@@ -640,8 +640,9 @@ static void ds_build_op_str(RDisasmState *ds) {
 			ds->opstr = strdup (ds->str);
 			core->parser->flagspace = ofs; // ???
 		} else {
-			if (!ds->opstr)
-				ds->opstr = strdup (asm_str?asm_str:"");
+			if (!ds->opstr) {
+				ds->opstr = strdup (asm_str? asm_str: "");
+			}
 		}
 	}
 	if (ds->use_esil) {
@@ -649,11 +650,13 @@ static void ds_build_op_str(RDisasmState *ds) {
 			free (ds->opstr);
 			ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
 		} else {
-			char *p = malloc (strlen (ds->opstr)+6); /* What's up '\0' ? */
-			strcpy (p, "TODO,");
-			strcpy (p+5, ds->opstr);
-			free (ds->opstr);
-			ds->opstr = p;
+			char *p = malloc (strlen (ds->opstr) + 6); /* What's up '\0' ? */
+			if (p) {
+				strcpy (p, "TODO,");
+				strcpy (p + 5, ds->opstr);
+				free (ds->opstr);
+				ds->opstr = p;
+			}
 		}
 	}
 	free (asm_str);
@@ -2241,15 +2244,20 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	}
 	if (p == UT64_MAX) {
 		/* do nothing */
-	} else if (((st64)p)>0) {
+	} else if (((st64)p) > 0) {
 		const char *kind;
-		char *msg = calloc(sizeof(char), len);
+		char *msg = calloc (sizeof (char), len);
 		RFlagItem *f, *f2;
 
-		r_io_read_at (core->io, p, (ut8*)msg, len-1);
+		r_io_read_at (core->io, p, (ut8*)msg, len - 1);
 
 		if (ds->analop.refptr) {
-			ut64 num = r_read_le64 (msg);
+			ut64 num;
+			if (core->print->big_endian) {
+				num = r_read_le64 (msg);
+			} else {
+				num = r_read_be64 (msg);
+			}
 			// TODO: make this more complete
 			switch (ds->analop.refptr) {
 			case 1: num &= UT8_MAX; break;
@@ -2270,7 +2278,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				r_cons_printf (" ; 0x%"PFMT64x"%s%s", p, *flag?" ; ":"", flag);
 			} else {
 				f = NULL;
-				if (n==UT32_MAX || n==UT64_MAX) {
+				if (n == UT32_MAX || n == UT64_MAX) {
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
 				} else if (n == n32 && (n32>-512 && n32 <512)) {
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
@@ -2319,19 +2327,19 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 
 			DOALIGN();
 			if (*msg) {
-				r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
+				r_cons_printf (" ; \"%s\"", msg); // @ 0x%"PFMT64x, msg, p);
 			} else {
 				r_cons_printf (" ; %s", f->name);
 			}
 		} else {
-			if (p==UT64_MAX || p==UT32_MAX) {
+			if (p == UT64_MAX || p == UT32_MAX) {
 				DOALIGN();
 				r_cons_printf (" ; -1", p);
 			} else if (((char)p>0) && p>='!' && p<='~') {
 				char ch = p;
 				DOALIGN();
 				r_cons_printf (" ; '%c'", ch);
-			} else if (p>10) {
+			} else if (p > 10) {
 				if ((st64)p<0) {
 					// resolve local var if possible
 					RAnalVar *v = r_anal_var_get (core->anal, ds->at, 'v', 1, (int)p);
@@ -2353,13 +2361,14 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 			}
-			kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, len-1);
+			kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, len - 1);
 			if (kind) {
 				if (!strcmp (kind, "text")) {
 					r_str_filter (msg, 0);
 					if (*msg) {
 						DOALIGN();
-						r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
+						//r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
+						r_cons_printf (" ; \"%s\"", msg); // @ 0x%"PFMT64x, msg, p);
 					}
 				} else if (!strcmp (kind, "invalid")){
 					int *n = (int*)&p;
@@ -2432,9 +2441,9 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 		}
 	}
 
-
 	memset (str, 0, sizeof (str));
 	if (val != 0LL) {
+#if 0
 		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, val);
 		if (fi) {
 			strncpy (str, fi->name, sizeof (str)-1);
@@ -2459,6 +2468,29 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 			}
 		} else {
 			msg = r_str_newf ("%s", str);
+		}
+
+#endif
+		(void)r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
+		str[sizeof (str)-1] = 0;
+		if (*str && r_str_is_printable (str)) {
+			// do nothing
+			msg = r_str_newf ("\"%s\"", str);
+		} else {
+			str[0] = 0;
+			if (*n32 == 0) {
+				// msg = strdup ("NULL");
+			} else if (*n32 == UT32_MAX) {
+				/* nothing */
+			} else {
+				if (ds && !ds->show_emu_str) {
+					msg = r_str_newf ("-> 0x%x", *n32);
+				}
+			}
+		}
+		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, val);
+		if (fi) {
+			msg = r_str_concatf (msg, " %s", fi->name);
 		}
 	}
 	if (ds && ds->show_emu_str) {
@@ -2498,7 +2530,6 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	if (ds->show_emu && ds->esil_regstate) {
 		RCore* core = ds->core;
-
 		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 		r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
 		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
@@ -2542,6 +2573,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);
+	//r_reg_setv (core->anal->reg, pc, ds->at);
 	esil->cb.hook_reg_write = myregwrite;
 	if (ds->show_emu_write) {
 		esil->cb.hook_mem_write = mymemwrite0;
@@ -2551,6 +2583,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	ds->esil_likely = 0;
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
+
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_SWI: {
 		char *s = cmd_syscall_dostr (core, -1);
