@@ -1099,14 +1099,26 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			st64 dst;
 			st8 *ptr;
 			int pfx;
-			int N;
+			int N = 1;
 			char *delta = NULL;
 			char *sib = NULL;
 			ut8 rm_byte = 0x40;
 			int argk = (*arg == '[');
-			dst = r_num_math (NULL, arg2);
+			ut64 t;
+			if (*arg2 == '-') {
+				N = -1;
+				// Don't modify arg2 here as sign is needed further down
+				t = r_num_math (NULL, arg2+1);
+			} else {
+				t = r_num_math (NULL, arg2);
+			}
+			if (t >> 63 != 0) {
+				eprintf ("Error: source value too big for register\n");
+				return 1;
+			}
+			dst = t * N;
 			ptr = (st8 *)&dst;
-			if (dst > ST32_MAX && dst < ST32_MIN) {
+			if (dst > ST32_MAX || dst < ST32_MIN) {
 				if (a->bits == 64) {
 					if (*arg == 'r') {
 						data[l++] = 0x48;
