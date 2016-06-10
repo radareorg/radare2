@@ -1109,6 +1109,50 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 #endif
 }
 
+R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {
+#if USE_NEW_FCN_STORE
+#warning TODO: r_anal_get_fcn_in_bounds
+	// TODO: type is ignored here? wtf.. we need more work on fcnstore
+	//if (root) return r_listrange_find_root (anal->fcnstore, addr);
+	return r_listrange_find_in_range (anal->fcnstore, addr);
+#else
+	RAnalFunction *fcn, *ret = NULL;
+	RListIter *iter;
+	if (type == R_ANAL_FCN_TYPE_ROOT) {
+		r_list_foreach (anal->fcns, iter, fcn) {
+			if (addr == fcn->addr)
+				return fcn;
+		}
+		return NULL;
+	}
+	r_list_foreach (anal->fcns, iter, fcn) {
+		if (!type || (fcn && fcn->type & type)) {
+			ut64 min = 0, max = 0;
+			RAnalBlock *bb;
+			RListIter *iter;
+			r_list_foreach (fcn->bbs, iter, bb) {
+				if (!max) {
+					min = bb->addr;
+					max = bb->addr + bb->size;
+				} else {
+					ut64 tmp = bb->addr + bb->size;
+					if (bb->addr < min) {
+						min = bb->addr;
+					}
+					if (tmp > max) {
+						max = tmp;
+					}
+				}
+			}
+			if (addr >= min && addr < max) {
+				ret = fcn;
+			}
+		}
+	}
+	return ret;
+#endif
+}
+
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 	RAnalFunction *fcn = NULL;
 	RListIter *iter;

@@ -145,6 +145,7 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
 	int i, match, align = core->search->align, hitctr = 0;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	ut8 buf[4096];
 	bool asterisk = false;
 	ut64 v64, n = 0;
@@ -183,9 +184,14 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 			default: eprintf ("Unknown vsize\n"); return -1;
 			}
 			if (match && !vinfun) {
-				RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-				if (fcn) {
-					match = false;
+				if (vinfunr) {
+					if (r_anal_get_fcn_in_bounds (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				} else {
+					if (r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
 				}
 			}
 			if (match) {
