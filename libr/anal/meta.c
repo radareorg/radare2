@@ -121,7 +121,7 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 R_API char *r_meta_get_string(RAnal *a, int type, ut64 addr) {
 	char key[100];
 	const char *k, *p, *p2;
-	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, 'C', addr);
+	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
 	k = sdb_const_get (DB, key, NULL);
 	if (!k) return NULL;
 	p = strchr (k, SDB_RS);
