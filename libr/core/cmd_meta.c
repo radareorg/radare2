@@ -721,7 +721,7 @@ static int cmd_meta(void *data, const char *input) {
 				"CCu", " [comment-text] [@addr]", "add unique comment",
 				"Ca", "[?]", "add comments to base pointer bases args/vars",
 				"Ce", "[?]", "add comments to stack pointer based args/vars",
-				"Cr", "[?]", "add comments to register based args",
+				"Cv", "[?]", "add comments to register based args",
 				"Cs", "[-] [size] [@addr]", "add string",
 				"Cz", "[@addr]", "add zero-terminated string",
 				"Ch", "[-] [size] [@addr]", "hide data",
