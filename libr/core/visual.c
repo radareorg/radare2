@@ -631,6 +631,30 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 	return target - 4;
 }
 
+//  Returns true if we can use analysis to find the previous operation address,
+//  sets prev_addr to the value of the instruction numinstrs back.
+//  If we can't use the anal, then set prev_addr to UT64_MAX and return false;
+R_API bool r_core_prevop_addr (RCore* core, ut64 start_addr, int numinstrs,
+		ut64* prev_addr) {
+	RAnalBlock* bb;
+	int i;
+	// Check that we're in a bb, otherwise this prevop stuff won't work.
+	bb = r_anal_bb_from_offset (core->anal, start_addr);
+	if (bb) {
+		if (r_anal_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
+			// Do some anal looping.
+			for (i = 0; i < numinstrs; ++i) {
+				*prev_addr = prevop_addr (core, start_addr);
+				start_addr = *prev_addr;
+			}
+			return true;
+		}
+	}
+	// Dang! not in a bb, return false and fallback to other methods.
+	*prev_addr = UT64_MAX;
+	return false;
+}
+
 static void reset_print_cur(RPrint *p) {
 	p->cur = 0;
 	p->ocur = -1;

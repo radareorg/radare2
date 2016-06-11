@@ -1017,11 +1017,19 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		}
 	} else if (!nb_bytes) {
 		if (nb_opcodes < 0) {
+			ut64 start;
 			/* Backward disassembly of `ilen` opcodes
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
-			r_core_asm_bwdis_len (core, &nb_bytes, &core->offset, nb_opcodes);
+			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &start)) {
+				// We have some anal_info.
+				nb_bytes = core->offset - start;
+			} else {
+				// anal ignorance.
+				r_core_asm_bwdis_len (core, &nb_bytes, &core->offset,
+						nb_opcodes);
+			}
 			r_core_read_at (core, core->offset, core->block, nb_bytes);
 		} else {
 			// workaround for the `for` loop below
@@ -2755,6 +2763,7 @@ static int cmd_print(void *data, const char *input) {
 		if (!processed_cmd) {
 			ut64 addr = core->offset;
 			ut8 *block = NULL;
+			ut64 start;
 
 			if (bw_disassemble) {
 				block = malloc (core->blocksize);
@@ -2769,7 +2778,13 @@ static int cmd_print(void *data, const char *input) {
 					} else { //pd
 						const int bs = core->blocksize;
 						int instr_len;
-						r_core_asm_bwdis_len (core, &instr_len, &addr, l);
+						if (r_core_prevop_addr (core, core->offset, l, &start)) {
+							// We have some anal_info.
+							instr_len = core->offset - start;
+						} else {
+							// anal ignorance.
+							r_core_asm_bwdis_len (core, &instr_len, &addr, l);
+						}
 						ut64 prevaddr = core->offset;
 						r_core_seek(core, prevaddr - instr_len, true);
 						block = realloc (block, R_MAX(instr_len, bs));
