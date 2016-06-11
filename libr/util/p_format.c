@@ -1018,7 +1018,10 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 				case 1: size+=1; break;
 				case 2: size+=2; break;
 				case 4: size+=4; break;
-				default: break;
+				case 8: size+=8; break;
+				default:
+					eprintf("Unknown enum format size: %d\n", tabsize);
+					break;
 				}
 				break;
 			case '?':
