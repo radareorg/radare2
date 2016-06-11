@@ -124,15 +124,9 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 static void trimbits(char *b) {
 	int len = strlen (b);
 	char *one = strchr (b, '1');
-	if (one) {
-		int z, pos = (int)(size_t)(one - b);
-		z = len - pos;
-		int bytes = 8 + ((z / 8) * 8);
-		z = len - bytes;
-		memmove (b, b + len - bytes, z + 1);
-	} else {
-		b[R_MIN (len, 8)] = 0;
-	}
+	int pos = one ? (int)(size_t)(one - b) : len - 1;
+	pos = (pos / 8) * 8;
+	memmove (b, b + pos, len - pos + 1);
 }
 
 // Set 'strout' to the binary representation of the input value.
