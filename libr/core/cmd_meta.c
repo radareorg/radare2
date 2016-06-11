@@ -571,6 +571,7 @@ void r_comment_var_help (RCore *core, char type) {
 	}
 }
 void r_comment_vars (RCore *core, const char *input) {
+	//TODO enable base64 and make it the default for C*
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	int idx;
 	char *name;
@@ -595,22 +596,27 @@ void r_comment_vars (RCore *core, const char *input) {
 		RListIter *iter;
 		var_list = r_anal_var_list (core->anal, fcn, input[0]);
 		r_list_foreach (var_list, iter, var) {
-			oldcomment = r_meta_get_string (core->anal, input[0], var->delta);
+			oldcomment = r_meta_get_var_comment (core->anal, input[0], var->delta, fcn->addr);
 			if (!oldcomment) {
 				continue;
 			}
 			if (!input[1]) {
 				r_cons_printf ("%s : %s\n", var->name, oldcomment);
 			} else {
-				r_cons_printf ("\"Ca %s %s @ 0x%08"PFMT64x"\"\n", var->name, oldcomment, core->offset);
+				r_cons_printf ("\"Ca %s base64:%s @ 0x%08"PFMT64x"\"\n", var->name,
+					sdb_encode ((const ut8 *) oldcomment, strlen(oldcomment)), fcn->addr);
 			}
 		}
 		}
 		break;
 	case ' ': {
+		//TODO check that idx exist
 		char *comment = strstr (name, " ");
 		if (comment && *comment) {
 			*comment ++=0;
+		}
+		if (!strncmp (comment, "base64:", 7)) {
+			comment = (char *)sdb_decode (comment + 7, NULL);
 		}
 		var = r_anal_var_get_byname (core->anal, fcn, input[0], name);
 		if (var) {
@@ -623,17 +629,21 @@ void r_comment_vars (RCore *core, const char *input) {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
 		}
-		oldcomment = r_meta_get_string (core->anal, input[0], idx);
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1 ,idx)) {
+			eprintf ("cant find variable at given offset\n");
+			break;
+		}
+		oldcomment = r_meta_get_var_comment (core->anal, input[0], idx, fcn->addr);
 		if (oldcomment) {
 			if (!comment || !*comment) {
 				r_cons_printf ("%s\n", oldcomment);
 				break;
 			}
-			char* text = r_str_newf ("%s\n%s", oldcomment, comment);
-			r_meta_set_string (core->anal, input[0], idx, text);
+			char *text = r_str_newf ("%s\n%s", oldcomment, comment);
+			r_meta_set_var_comment (core->anal, input[0], idx, fcn->addr, text);
 			free (text);
 		} else {
-			r_meta_set_string (core->anal, input[0], idx, comment);
+			r_meta_set_var_comment (core->anal, input[0], idx, fcn->addr, comment);
 		}
 		}
 		break;
@@ -649,7 +659,12 @@ void r_comment_vars (RCore *core, const char *input) {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
 		}
-		r_meta_del (core->anal, input[0], idx, UT64_MAX, NULL);
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1 ,idx)) {
+			eprintf ("cant find variable at given offset\n");
+			break;
+		}
+
+		r_meta_var_comment_del (core->anal, input[0], idx, fcn->addr);
 		break;
 	case '!': {
 		char *comment;
@@ -658,11 +673,11 @@ void r_comment_vars (RCore *core, const char *input) {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
 		}
-		oldcomment = r_meta_get_string ( core->anal, input[0], var->delta);
+		oldcomment = r_meta_get_var_comment ( core->anal, input[0], var->delta, fcn->addr);
 		comment = r_core_editor (core, NULL, oldcomment);
 		if (comment) {
-			r_meta_del (core->anal, input[0], var->delta, UT64_MAX, NULL);
-			r_meta_set_string (core->anal, input[0], var->delta, comment);
+			r_meta_var_comment_del (core->anal, input[0], var->delta, fcn->addr);
+			r_meta_set_var_comment (core->anal, input[0], var->delta, fcn->addr, comment);
 			free (comment);
 		}
 		free (var);
