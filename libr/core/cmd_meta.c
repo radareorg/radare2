@@ -572,6 +572,7 @@ void r_comment_var_help (RCore *core, char type) {
 }
 void r_comment_vars (RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	int idx;
 	char *name;
 	char *oldcomment;
 	RAnalVar *var;
@@ -612,31 +613,43 @@ void r_comment_vars (RCore *core, const char *input) {
 			*comment ++=0;
 		}
 		var = r_anal_var_get_byname (core->anal, fcn, input[0], name);
-		if (!var) {
+		if (var) {
+			idx = var->delta;
+		} else if (!strncmp (name, "0x", 2))  {
+			idx = (int) r_num_get (NULL, name);
+		} else if (!strncmp (name, "-0x", 3)) {
+			idx = -(int) r_num_get (NULL, name+1);
+		} else {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
 		}
-		oldcomment = r_meta_get_string (core->anal,input[0],var->delta);
+		oldcomment = r_meta_get_string (core->anal, input[0], idx);
 		if (oldcomment) {
 			if (!comment || !*comment) {
 				r_cons_printf ("%s\n", oldcomment);
 				break;
 			}
 			char* text = r_str_newf ("%s\n%s", oldcomment, comment);
-			r_meta_set_string (core->anal, input[0], var->delta, text);
+			r_meta_set_string (core->anal, input[0], idx, text);
 			free (text);
 		} else {
-			r_meta_set_string (core->anal, input[0], var->delta, comment);
+			r_meta_set_string (core->anal, input[0], idx, comment);
 		}
 		}
 		break;
 	case '-':
 		var = r_anal_var_get_byname (core->anal,fcn, input[0], name);
-		if (!var) {
+		if (var) {
+			idx = var->delta;
+		} else if (!strncmp (name, "0x", 2)) {
+			idx = (int) r_num_get (NULL, name);
+		} else if (!strncmp (name, "-0x", 3)) {
+			idx = -(int) r_num_get (NULL, name+1);
+		 }else {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
 		}
-		r_meta_del (core->anal, input[0], var->delta, UT64_MAX, NULL);
+		r_meta_del (core->anal, input[0], idx, UT64_MAX, NULL);
 		break;
 	case '!': {
 		char *comment;
@@ -654,8 +667,6 @@ void r_comment_vars (RCore *core, const char *input) {
 		}
 		free (var);
 		}
-		break;
-
 		break;
 	}
 }
