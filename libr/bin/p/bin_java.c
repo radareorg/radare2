@@ -27,6 +27,18 @@ static int init(void *user) {
 	return 0;
 }
 
+static int fini(void *user) {
+	IFDBG_BIN_JAVA eprintf ("Calling plugin fini = %d.\n", DB?1:0);
+	if (!DB) {
+		IFDBG_BIN_JAVA eprintf ("plugin DB already uninited.\n");
+	} else {
+		IFDBG_BIN_JAVA eprintf ("plugin DB beeing uninited.\n");
+		sdb_free (DB);
+		DB = NULL;
+	}
+	return 0;
+}
+
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	int result = false;
 	char *addr, value[1024] = {0};
@@ -167,12 +179,12 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	bool ret = false;
 	int off, version = 0;
 	if (buf && length>32 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
-		memcpy (&off, buf + 4 * sizeof(int), sizeof(int));
+		// XXX not sure about endianness here
+		memcpy (&off, buf + 4 * sizeof (int), sizeof (int));
 		version = buf[6] | (buf[7] <<8);
 		if (version>1024) {
-			r_mem_copyendian ((ut8*)&off,
-				(ut8*)&off, sizeof(int),
-				!LIL_ENDIAN);
+			// XXX is this correct in all cases? opposite of prev?
+			r_mem_swapendian ((ut8*)&off, (ut8*)&off, sizeof (int));
 			ret = true;
 		}
 	}
@@ -225,6 +237,7 @@ RBinPlugin r_bin_plugin_java = {
 	.desc = "java bin plugin",
 	.license = "LGPL3",
 	.init = init,
+	.fini = fini,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,

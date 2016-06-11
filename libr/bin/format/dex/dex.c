@@ -29,6 +29,8 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	// XXX: return value not checked
 	/* header */
 	//r_buf_read_at (bin->b, 0, (ut8*)&bin->header, sizeof (struct dex_header_t));
+	if (bin->size < sizeof(struct dex_header_t))
+		goto fail;
 	bin->header = (*(struct dex_header_t*)bin->b->buf);
 
 	/* strings */

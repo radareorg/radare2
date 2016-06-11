@@ -111,6 +111,12 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 
 		if (record->size + 3 < buf[3 + tmp_size] + tmp_size) {
 			eprintf ("Invalid Lnames record (bad size)\n");
+			free (ret);
+			return false;
+		}
+
+		if (!(buf[3 + tmp_size] + 1)) {
+			free (ret);
 			return false;
 		}
 

@@ -1367,7 +1367,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 	RBinDwarfDebugAbbrev *da = NULL;
 	// XXX - Set a suitable value here.
 	if (!obuf || len < 3) return da;
-	
+
 	da = R_NEW0(RBinDwarfDebugAbbrev);
 
 	r_bin_dwarf_init_debug_abbrev (da);
@@ -1426,7 +1426,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, sn)) {
 				return section;
-}
+			}
 		}
 	}
 	return NULL;
@@ -1498,16 +1498,21 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 	RBinFile *binfile = a ? a->cur: NULL;
 	if (binfile && section) {
 		len = section->size;
-		if (len<1) {
+		if (len < 1) {
 			return NULL;
 		}
-		buf = calloc (1, len+1);
+		buf = calloc (1, len + 1);
+		if (!buf) return NULL;
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
-		if (!ret) {
+		if (ret != len) {
 			free (buf);
 			return NULL;
 		}
 		list = r_list_new (); // always return empty list wtf
+		if (!list) {
+			free (buf);
+			return NULL;
+		}
 		list->free = r_bin_dwarf_row_free;
 		r_bin_dwarf_parse_line_raw2 (a, buf, len, mode);
 		// k bin/cur/addrinfo/*
@@ -1519,6 +1524,10 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 				RBinDwarfRow *row;
 				int line;
 				char *file = strdup (kv->value);
+				if (!file) {
+					free (buf);
+					return NULL;
+				}
 				char *tok = strchr (file, '|');
 				if (tok) {
 					*tok++ = 0;

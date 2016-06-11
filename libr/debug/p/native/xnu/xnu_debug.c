@@ -272,7 +272,11 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 		break;
 	default:
 		//th->gpr has a header and the state we should copy on the state only
+#if __POWERPC__
+#warning TODO powerpc support here
+#else
 		memcpy (&th->gpr.uts, buf, R_MIN (size, sizeof (th->gpr.uts)));
+#endif
 		ret = xnu_thread_set_gpr (dbg, th);
 		break;
 	}
@@ -516,57 +520,18 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 	return n;
 }
 
-static int get_bits () {
-#if __i386__ || __powerpc__
-	return R_SYS_BITS_32;
-#elif __x86_64__ || __mips__
-	return R_SYS_BITS_32 | R_SYS_BITS_64;
-#elif __arm__ || __aarch64__
-	return R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64;
-#else
-	return 0;
-#warning Unsupported architecture
-#endif
-}
-
-static int xnu_get_bits_with_sysctl (pid_t pid) {
-	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 };
-	size_t len = 4;
-	struct kinfo_proc kp;
-	size_t kinfo_size = sizeof (kp);
-
-	mib[3] = pid;
-	if (sysctl (mib, len, &kp, &kinfo_size, NULL, 0) == -1) {
-		perror ("sysctl");
-		return -1;
-  	}
-#if __arm__ || __aarch64__
-	return (kp.kp_proc.p_flag & P_LP64) ? 
-					R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64 
-					: R_SYS_BITS_16 | R_SYS_BITS_32;
-#else
-	return (kp.kp_proc.p_flag & P_LP64) ? 
-					R_SYS_BITS_32 | R_SYS_BITS_64 
-					: R_SYS_BITS_32;
-#endif
-}
-
 #define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 #define COMMAND_SIZE(segment_count,segment_command_sz,\
 	thread_count,tstate_size)\
 	segment_count * segment_command_sz + thread_count * \
 	sizeof (struct thread_command) + tstate_size * thread_count
 
-/* RDebug doesnt set the bits. FIXME when that is done */
-#define SAME_BITNESS(proc_pid)\
-	 (get_bits () == xnu_get_bits_with_sysctl (proc_pid))
-
 static void get_mach_header_sizes(size_t *mach_header_sz, 
 									size_t *segment_command_sz) {
 #if __ppc64__ || __x86_64__
 	*mach_header_sz = sizeof(struct mach_header_64);
 	*segment_command_sz = sizeof(struct segment_command_64);
-#elif __i386__ || __ppc__
+#elif __i386__ || __ppc__ || __POWERPC__
 	*mach_header_sz = sizeof(struct mach_header);
 	*segment_command_sz = sizeof(struct segment_command);
 #else
@@ -617,7 +582,7 @@ static void xnu_build_corefile_header (vm_offset_t header,
 	mh64->ncmds	= segment_count + thread_count;
 	mh64->sizeofcmds = command_size;
 	mh64->reserved = 0; // 8-byte alignment 
-#elif __i386__ || __ppc__
+#elif __i386__ || __ppc__ || __POWERPC__
 	struct mach_header *mh;
 	mh = (struct mach_header *)header;
 	mh->magic = MH_MAGIC;
@@ -662,17 +627,17 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 	int hoffset = header_end;
 	kern_return_t kr = KERN_SUCCESS;
 	int error = 0;
-	ssize_t wc;
+	ssize_t rc = 0;
 
 #define CAST_DOWN(type, addr) (((type)((uintptr_t)(addr))))
 #if __ppc64__ || __x86_64__
 	struct segment_command_64 *sc64;
-#elif __i386__ || __ppc__
+#elif __i386__ || __ppc__ || __POWERPC__
 	struct segment_command *sc;
 #endif
 
 	r_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
-		eprintf ("Writing section from 0x%llx to 0x%llx (%llu)\n", 
+		eprintf ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n", 
 			curr_map->addr, curr_map->addr_end, curr_map->size);
 
 		vm_map_offset_t vmoffset = curr_map->addr;
@@ -726,18 +691,19 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 					eprintf ("Failed to read target memory\n"); // XXX: Improve this message?
 					eprintf ("[DEBUG] kr = %d\n", kr);
 					eprintf ("[DEBUG] KERN_SUCCESS = %d\n", KERN_SUCCESS);
-					eprintf ("[DEBUG] xfer_size = %llu\n", xfer_size);
+					eprintf ("[DEBUG] xfer_size = %"PFMT64d"\n", (ut64)xfer_size);
 					eprintf ("[DEBUG] local_size = %d\n", local_size);
 					if (kr > 1) error = -1; // XXX: INVALID_ADDRESS is not a bug right know
 					goto cleanup;
 				}
-#if __ppc64__ || __x86_64__
-				r_buf_append_bytes (buffer, (const ut8*)local_address, xfer_size);
-#elif __i386__ || __ppc__
-				r_buf_append_bytes (buffer, (void *)CAST_DOWN (ut32, local_address),
+#if __ppc64__ || __x86_64__ || __aarch64__ || __arm64__
+				rc = r_buf_append_bytes (buffer, (const ut8*)local_address, xfer_size);
+// #elif __i386__ || __ppc__ || __arm__
+#else
+				rc = r_buf_append_bytes (buffer, (void *)CAST_DOWN (ut32, local_address),
 					CAST_DOWN (ut32, xfer_size));
 #endif
-				if (wc < 0) {
+				if (!rc) {
 					error = errno;
 					eprintf ("Failed to write in the destination\n");
 					goto cleanup;
@@ -764,16 +730,17 @@ static int xnu_get_thread_status (register thread_t thread, int flavor,
 }
 
 static void xnu_collect_thread_state (thread_t port, void *tirp) {
-	vm_offset_t header;
-	int i, hoffset;
 	coredump_thread_state_flavor_t *flavors;
-	struct thread_command *tc;
 	tir_t *tir = (tir_t *)tirp;
+	struct thread_command *tc;
+	vm_offset_t header;
+	ut64 hoffset;
+	int i;
 
 	header = tir->header;
 	hoffset = tir->hoffset;
 	flavors = tir->flavors;
-	eprintf ("[DEBUG] tc location: %p\n", hoffset);
+	eprintf ("[DEBUG] tc location: 0x%" PFMT64x "\n", hoffset);
 
 	tc = (struct thread_command *)(header + hoffset);
 	tc->cmd = LC_THREAD;
@@ -788,9 +755,7 @@ static void xnu_collect_thread_state (thread_t port, void *tirp) {
 			(thread_state_t)(header + hoffset), &flavors[i].count);
 		hoffset += flavors[i].count * sizeof (int);
 	}
-
 	tir->hoffset = hoffset;
-
 }
 
 #define CORE_ALL_SECT 0
@@ -805,8 +770,6 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	size_t segment_command_sz;
 	size_t padding_sz;
 	int hoffset;
-	off_t foffset;
-	vm_map_offset_t	vmoffset;
 
 	RBuffer *mem_maps_buffer;
 	vm_offset_t header;
@@ -827,7 +790,7 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 
 	segment_count = xnu_get_vmmap_entries_for_pid (dbg->pid);
 
-	memcpy(thread_flavor_array, flavors, sizeof(thread_flavor_array));
+	memcpy (thread_flavor_array, &flavors, sizeof (thread_flavor_array));
 	tstate_size = 0;
 
 	for (i = 0; i < coredump_nflavors; i++) {
@@ -1012,19 +975,18 @@ static const char * unparse_inheritance (vm_inherit_t i) {
 
 //it's not used (yet)
 vm_address_t get_kernel_base(task_t ___task) {
+	mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
+	vm_region_submap_info_data_64_t info;
+	ut64 naddr, addr = KERNEL_LOWER; // lowest possible kernel base address
+	unsigned int depth = 0;
 	kern_return_t ret;
 	task_t task;
-	vm_region_submap_info_data_64_t info;
 	ut64 size;
-	mach_msg_type_number_t info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
-	unsigned int depth = 0;
-	ut64 addr = KERNEL_LOWER;		 // lowest possible kernel base address
 	int count;
 
 	ret = task_for_pid (mach_task_self(), 0, &task);
 	if (ret != KERN_SUCCESS)
 		return 0;
-	ut64 naddr;
 	eprintf ("%d vs %d\n", task, ___task);
 	for (count = 128; count; count--) {
 		// get next memory region
@@ -1055,8 +1017,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 	return (vm_address_t)0;
 }
 
-extern int proc_regionfilename(int pid, uint64_t address,
-				  void * buffer, uint32_t buffersize);
+extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
 
 #define MAX_MACH_HEADER_SIZE (64 * 1024)
 #define DYLD_INFO_COUNT 5
@@ -1071,22 +1032,24 @@ typedef struct {
 	ut32 info_array_count;
 	ut32 info_array;
 } DyldAllImageInfos32;
+
 typedef struct {
 	ut32 image_load_address;
 	ut32 image_file_path;
 	ut32 image_file_mod_date;
 } DyldImageInfo32;
+
 typedef struct {
 	ut32 version;
 	ut32 info_array_count;
 	ut64 info_array;
 } DyldAllImageInfos64;
+
 typedef struct {
 	ut64 image_load_address;
 	ut64 image_file_path;
 	ut64 image_file_mod_date;
 } DyldImageInfo64;
-
 
 // TODO: Implement mach0 size.. maybe copypasta from rbin?
 static int mach0_size (RDebug *dbg, ut64 addr) {
@@ -1101,6 +1064,10 @@ static void xnu_map_free(RDebugMap *map) {
 }
 
 static RList *xnu_dbg_modules(RDebug *dbg) {
+#if __POWERPC__
+#warning TODO: xnu_dbg_modules not supported
+	return NULL;
+#else
 	struct task_dyld_info info;
 	mach_msg_type_number_t count;
 	kern_return_t kr;
@@ -1181,6 +1148,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 	}
 	free (info_array);
 	return list;
+#endif
 }
 
 RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
@@ -1234,12 +1202,14 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 			depth++;
 			continue;
 		}
+		module_name[0] = 0;
+#ifndef __POWERPC__
 		{
-			module_name[0] = 0;
 			int ret = proc_regionfilename (tid, address, module_name,
 							 sizeof (module_name));
 			module_name[ret] = 0;
 		}
+#endif
 		if (true) {
 			char maxperm[32];
 			char depthstr[32];
@@ -1260,9 +1230,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				info.is_submap? "_sub": "",
 				"", info.is_submap ? "_submap": "",
 				module_name, maxperm, depthstr);
-			mr = r_debug_map_new (buf, address, address+size,
-					xwr2rwx (info.protection), 0);
-			if (mr == NULL) {
+			if (!(mr = r_debug_map_new (buf, address, address + size, xwr2rwx (info.protection), 0))) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}

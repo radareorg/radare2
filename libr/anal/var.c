@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake */
+/* radare - LGPL - Copyright 2010-2016 - pancake, oddcoder */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -42,9 +42,9 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	if (!type) type = "int";
 //eprintf ("VAR ADD 0x%llx  - %d\n", addr, delta);
 	switch (kind) {
-	case 'a':
-	case 'r':
-	case 'v':
+	case 'a': // base pointer var/args
+	case 'v': // stack pointer var/args
+	case 'e': // registers args
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
@@ -52,13 +52,21 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	}
 	var_def = sdb_fmt (0,"%c,%s,%d,%s", kind, type, size, name);
 	if (scope>0) {
+		char *sign = "";
+		if (delta < 0) {
+			delta = -delta;
+			sign = "n";
+		}
 		/* local variable */
 		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
-		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%d", addr, kind, scope, delta);
+		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%s%d", addr, kind, scope, sign, delta);
 		char *name_key = sdb_fmt (3, "var.0x%"PFMT64x".%c.%d.%s", addr, kind, scope, name);
-		char *shortvar = sdb_fmt (4, "%d.%d", scope, delta);
+		char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, delta);
 		sdb_array_add (DB, fcn_key, shortvar, 0);
 		sdb_set (DB, var_key, var_def, 0);
+		if (*sign) {
+			delta = -delta;
+		}
 		sdb_num_set (DB, name_key, delta, 0);
 	} else {
 		/* global variable */
@@ -92,26 +100,34 @@ R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kin
 	}
 	switch (kind) {
 	case 'a':
-	case 'r':
 	case 'v':
+	case 'e':
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
 	var_def = sdb_fmt (0,"%c,%s,%d,%s", kind, type, size, name);
-	if (scope>0) {
+	if (scope > 0) {
+		char *sign = "";
+		if (delta < 0) {
+			delta = -delta;
+			sign = "n";
+		}
 		/* local variable */
-		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
-		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%d", addr, kind, scope, delta);
-		char *name_key = sdb_fmt (3, "var.0x%"PFMT64x".%c.%d.%s", addr, kind, scope, name);
-		char *shortvar = sdb_fmt (4, "%d.%d", scope, delta);
+		const char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
+		const char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%s%d", addr, kind, scope, sign, delta);
+		const char *name_key = sdb_fmt (3, "var.0x%"PFMT64x".%c.%d.%s", addr, kind, scope, name);
+		const char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, delta);
 		sdb_array_add (DB, fcn_key, shortvar, 0);
 		sdb_set (DB, var_key, var_def, 0);
+		if (*sign) {
+			delta = -delta;
+		}
 		sdb_num_set (DB, name_key, delta, 0);
 	} else {
 		/* global variable */
-		char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
+		const char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
 	return true;
@@ -135,19 +151,26 @@ R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind) {
 
 R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, int delta) {
 	RAnalVar *av;
-	if (delta<0) delta = -delta;
 	av = r_anal_var_get (a, addr, kind, scope, delta);
 	if (!av) {
 		return false;
 	}
 	if (scope>0) {
+		char *sign = "";
+		if (delta < 0) {
+			delta = -delta;
+			sign = "n";
+		}
 		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
-		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%d", addr, kind, scope, delta);
+		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%s%d", addr, kind, scope, sign, delta);
 		char *name_key = sdb_fmt (3, "var.0x%"PFMT64x".%c.%d.%s", addr, kind, scope, av->name);
-		char *shortvar = sdb_fmt (4, "%d.%d", scope, delta);
+		char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, delta);
 		sdb_array_remove (DB, fcn_key, shortvar, 0);
 		sdb_unset (DB, var_key, 0);
 		sdb_unset (DB, name_key, 0);
+		if (*sign) {
+			delta = -delta;
+		}
 	} else {
 		char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
 		char *var_def = sdb_fmt (2,"%c.%s,%d,%s", kind, av->type, av->size, av->name);
@@ -169,10 +192,14 @@ R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, con
 		if (varlist && *varlist) {
 			do {
 				char *word = sdb_anext (ptr, &next);
-				char *vardef = sdb_get (DB, sdb_fmt (1,
+				char *sign = strstr (word, "n");
+				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
 					"var.0x%"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
-				int delta = strlen(word)<3? -1: atoi (word+2);
+				if (sign) {
+					*sign = '-';
+				}
+				int delta = strlen (word) < 3 ? -1 : atoi (word + 2);
 				if (vardef) {
 					const char *p = strchr (vardef, ',');
 					if (p) {
@@ -181,7 +208,7 @@ R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, con
 							p = strchr (p + 1, ',');
 							if (p) {
 								int mykind = vardef[0];
-								if (!strcmp (p+1, name)) {
+								if (!strcmp (p + 1, name)) {
 									return r_anal_var_delete (a, fcn->addr,
 										mykind, 1, delta);
 								}
@@ -199,24 +226,51 @@ R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, con
 	return false;
 }
 
+R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kind, const char* name) {
+	RList *var_list;
+	RListIter *iter;
+	RAnalVar *var = NULL;
+	if (!fcn || !anal || !name) {
+		return 0;
+	}
+	var_list = r_anal_var_list (anal, fcn, kind);
+	r_list_foreach (var_list, iter, var) {
+		if (!strcmp (name, var->name)) {
+			break;
+		}
+	}
+	if (!var || strcmp (name, var->name)) {
+		return 0;
+	}
+	return  var;
+}
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
 	struct VarType vt;
+	char *sign = "";
 	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 	if (!fcn)
 		return NULL;
-	if (delta<0) {
-		kind = 'v';
+	if (delta < 0) {
+		delta = -delta;
+		sign = "n";
+	}
+	const char *vardef = sdb_const_get (DB,
+		sdb_fmt (0, "var.0x%"PFMT64x".%c.%d.%s%d",
+			fcn->addr, kind, scope, sign, delta), 0);
+	if (*sign) {
 		delta = -delta;
 	}
-	char *vardef = sdb_get (DB,
-		sdb_fmt (0, "var.0x%"PFMT64x".%c.%d.%d",
-			fcn->addr, kind, scope, delta), 0);
-	if (!vardef)
+	if (!vardef) {
 		return NULL;
+	}
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
 
 	av = R_NEW0 (RAnalVar);
+	if (!av) {
+		sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
+		return NULL;
+	}
 	av->addr = addr;
 	av->scope = scope;
 	av->delta = delta;
@@ -261,18 +315,24 @@ R_API int r_anal_var_check_name(const char *name) {
 
 // afvn local_48 counter
 R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind, const char *old_name, const char *new_name) {
-	char key[128];
-	char *stored_name;
+	char key[128], *stored_name;
 	int delta;
-	if (!r_anal_var_check_name (new_name))
+
+	if (!r_anal_var_check_name (new_name)) {
 		return 0;
+	}
 	if (scope>0) { // local
+		char *sign = "";
 		SETKEY ("var.0x%"PFMT64x".%c.%d.%s", var_addr, kind, scope, old_name);
 		delta = sdb_num_get (DB, key, 0);
 		sdb_unset (DB, key, 0);
 		SETKEY ("var.0x%"PFMT64x".%c.%d.%s", var_addr, kind, scope, new_name);
 		sdb_num_set (DB, key, delta, 0);
-		SETKEY ("var.0x%"PFMT64x".%c.%d.%d", var_addr, kind, scope, delta);
+		if (delta < 0) {
+			delta = -delta;
+			sign = "n";
+		}
+		SETKEY ("var.0x%"PFMT64x".%c.%d.%s%d", var_addr, kind, scope, sign, delta);
 		sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
 	} else { // global
 		SETKEY ("var.0x%"PFMT64x, var_addr);
@@ -337,9 +397,7 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
 	char *varlist;
 	int count = 0;
-	RList *list = r_list_new ();
 	if (!a || !fcn) {
-		r_list_free (list);
 		return 0;
 	}
 	if (!kind) kind = 'v'; // by default show vars
@@ -350,13 +408,13 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
 		if (varlist && *varlist) {
 			do {
 				char *word = sdb_anext (ptr, &next);
-				char *vardef = sdb_get (DB, sdb_fmt (1,
+				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
 					"var.0x%"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
 				if (vardef) {
 					count ++;
 				} else {
-					eprintf ("Cannot find '%s'\n", word);
+					eprintf ("Cannot find var '%s'\n", word);
 				}
 				ptr = next;
 			} while (next);
@@ -369,9 +427,10 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
 R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 	char *varlist;
 	RList *list = NULL;
-	if (!a || !fcn)
+	if (!a || !fcn) {
 		return NULL;
-	list = r_list_new (); 
+	}
+	list = r_list_new ();
 	if (!kind) kind = 'v'; // by default show vars
 	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c",
 		fcn->addr, kind), 0);
@@ -381,15 +440,23 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 			do {
 				struct VarType vt;
 				char *word = sdb_anext (ptr, &next);
-				char *vardef = sdb_get (DB, sdb_fmt (1,
+				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
 					"var.0x%"PFMT64x".%c.%s",
 					fcn->addr, kind, word), 0);
+				if (word[2] == 'n') {
+					word[2] = '-';
+				}
 				int delta = atoi (word+2);
 				if (vardef) {
 					sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 					sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
 					RAnalVar *av;
 					av = R_NEW0 (RAnalVar);
+					if (!av) {
+						free (varlist);
+						r_list_free (list);
+						return NULL;
+					}
 					av->delta = delta;
 					av->kind = kind;
 					av->name = strdup (vt.name);
@@ -397,9 +464,8 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 					av->type = strdup (vt.type);
 					r_list_append (list, av);
 					sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
-					free (vardef);
 				} else {
-					eprintf ("Cannot find '%s'\n", word);
+					// eprintf ("Cannot find var definition for '%s'\n", word);
 				}
 				ptr = next;
 			} while (next);
@@ -412,46 +478,129 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 
 static int var_comparator (const RAnalVar *a, const RAnalVar *b){
 	//avoid NULL dereference
-	if (a && b)
-		return a->delta > b->delta;
-	return false;
+	return (a && b) ? a->delta > b->delta : false;
 }
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode) {
-	RList *list = r_anal_var_list(anal, fcn, kind);
+	RList *list = r_anal_var_list (anal, fcn, kind);
 	r_list_sort (list, (RListComparator)var_comparator);
 	RAnalVar *var;
 	RListIter *iter;
-	if (mode=='j')
+	if (mode=='j') {
 		anal->cb_printf ("[");
+	}
 	r_list_foreach (list, iter, var) {
-		if (var->kind == kind) {
-			switch (mode) {
-			case '*':
-				// we cant express all type info here :(
+		if (var->kind != kind) {
+			continue;
+		}
+		switch (mode) {
+		case '*':
+			// we cant express all type info here :(
+			if (kind == 'v') { //registers
+				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
+				if (!i) {
+					eprintf ("Register not found");
+					break;
+				}
+				anal->cb_printf ("af%c %s %s %s @ 0x%"PFMT64x"\n",
+					kind, i->name, var->name, var->type, fcn->addr);
+
+			} else {
 				anal->cb_printf ("af%c %d %s %s @ 0x%"PFMT64x"\n",
-					kind, var->delta,
-					var->name, var->type, fcn->addr);
+					kind, var->delta, var->name, var->type,
+					fcn->addr);
+			}
+			break;
+		case 'j':
+			switch (var->kind) {
+			case 'a':
+				if (var->delta > 0) {
+					anal->cb_printf ("{\"name\":\"%s\","
+						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":\"%s+0x%x\"}",
+						var->name, var->type,anal->reg->name[R_REG_NAME_BP],
+						var->delta);
+				} else {
+					anal->cb_printf ("{\"name\":\"%s\","
+						"\"kind\":\"var\",\"type\":\"%s\",\"ref\":\"%s-0x%x\"}",
+						var->name, var->type,anal->reg->name[R_REG_NAME_BP],
+						-var->delta);
+
+				}
 				break;
-			case 'j':
+			case 'v':{
+				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
+				if (!i) {
+					eprintf ("Register not found");
+					break;
+				}
 				anal->cb_printf ("{\"name\":\"%s\","
-					"\"kind\":\"%s\",\"type\":\"%s\",\"ref\":\"%s%s0x%x\"}",
-					var->name, var->kind=='v'?"var":"arg", var->type,
-					anal->reg->name[R_REG_NAME_BP],
-					(var->kind=='v')?"-":"+", var->delta);
-				if (iter->n) anal->cb_printf (",");
+					"\"kind\":\"reg\",\"type\":\"%s\",\"ref\":\"%s\"}",
+					var->name, var->type, i->name, anal->reg->name[var->delta]);
+				}
 				break;
-			default:
-				anal->cb_printf ("%s %s %s @ %s%s0x%x\n",
-					kind=='v'?"var":"arg",
-					var->type, var->name,
-					anal->reg->name[R_REG_NAME_BP],
-					(kind=='v')?"-":"+",
-					var->delta);
+			case 'e':
+				if (var->delta < fcn->stack) {
+					anal->cb_printf ("{\"name\":\"%s\","
+						"\"kind\":\"var\",\"type\":\"%s\",\"ref\":\"%s+0x%x\"}",
+						var->name, var->type,anal->reg->name[R_REG_NAME_SP],
+						var->delta);
+				} else {
+					anal->cb_printf ("{\"name\":\"%s\","
+						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":\"%s-0x%x\"}",
+						var->name, var->type,anal->reg->name[R_REG_NAME_SP],
+						var->delta);
+				}
+				break;
+			}
+			if (iter->n)  {
+				anal->cb_printf (",");
+			}
+			break;
+		default:
+			switch (kind) {
+			case 'a':
+				if (var->delta > 0) {
+					anal->cb_printf ("arg %s %s @ %s+0x%x\n",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_BP],
+						var->delta);
+				} else {
+					anal->cb_printf ("var %s %s @ %s-0x%x\n",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_BP],
+						-var->delta);
+				}
+				break;
+			case 'v': {
+				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
+				if (!i) {
+					eprintf("Register not found");
+					break;
+				}
+
+				anal->cb_printf ("reg %s %s @ %s\n",
+					var->type, var->name, i->name);
+				}
+				break;
+			case 'e':
+				if ( var->delta < fcn->stack) {
+					anal->cb_printf ("var %s %s @ %s+0x%x\n",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_SP],
+						var->delta);
+				} else {
+					anal->cb_printf ("arg %s %s @ %s+0x%x\n",
+						var->type, var->name,
+						anal->reg->name[R_REG_NAME_SP],
+						var->delta);
+
+				}
+				break;
 			}
 		}
 	}
-	if (mode=='j')
+	if (mode == 'j') {
 		anal->cb_printf ("]\n");
+	}
 	r_list_free (list);
 }

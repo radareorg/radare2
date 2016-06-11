@@ -106,21 +106,30 @@ static int mips_j (ut8 *b, int op, int addr) {
 
 static int getreg (const char *p) {
 	int n;
+
 	if (!p || !*p) {
 		eprintf ("Missing argument\n");
 		return -1;
 	}
-	n = (int) r_num_get (NULL, p);
-	if (n != 0) {
+	/* check if it's a register */
+	for (n=0; regs[n]; n++) {
+		if (!strcmp (p, regs[n]))
+			return n;
+	}
+
+	/* try to convert it into a number */
+	if (p[0] == '-') {
+		n = (int) r_num_get (NULL, &p[1]);
+		n = -n;
+	} else {
+		n = (int) r_num_get (NULL, p);
+	}
+
+	if (n != 0 || p[0] == '0') {
 		return n;
 	}
-	if (strcmp (p, "0")) {
-		for (n=0; regs[n]; n++) {
-			if (!strcmp (p, regs[n]))
-				return n;
-		}
-		eprintf ("Invalid reg name (%s)\n", p);
-	}
+
+	eprintf ("Invalid reg name (%s) at pos %d\n", p, n);
 	return -1;
 }
 

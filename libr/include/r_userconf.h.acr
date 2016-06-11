@@ -3,12 +3,6 @@
 
 #include "r_version.h"
 
-#ifdef LIL_ENDIAN
-#undef LIL_ENDIAN
-#endif
-#define LIL_ENDIAN @LIL_ENDIAN@
-#define CPU_ENDIAN @BIG_ENDIAN@
-
 #define DEBUGGER @DEBUGGER@
 
 #if __WIN32__ || __CYGWIN__ || MINGW32
@@ -28,9 +22,6 @@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@
 #ifndef HAVE_LIB_SSL
 #define HAVE_LIB_SSL @HAVE_OPENSSL@
-#endif
-#ifndef HAVE_LIB_EWF
-#define HAVE_LIB_EWF @HAVE_LIB_EWF@
 #endif
 
 #define HAVE_FORK @HAVE_FORK@

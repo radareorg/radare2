@@ -8,7 +8,7 @@
 static int obs = 0;
 static int blocksize = 0;
 static int autoblocksize = 1;
-static void r_core_visual_refresh (RCore *core);
+static void visual_refresh(RCore *core);
 #define PIDX (R_ABS(core->printidx%NPF))
 
 #define debugfmt_default "?0;f tmp;sr SP;pxw 64;?1;dr=;?1;s-;s tmp;f-tmp;pd $r"
@@ -28,7 +28,7 @@ static int visual_repeat_thread(RThread *th) {
 	for (;;) {
 		if (core->cons->breaked)
 			break;
-		r_core_visual_refresh (core);
+		visual_refresh (core);
 		r_cons_flush ();
 		r_cons_gotoxy (0, 0);
 		r_cons_printf ("[@%d] ", i++);
@@ -110,6 +110,7 @@ static void visual_repeat(RCore *core) {
 #endif
 	} else {
 		RThread *th = r_th_new (visual_repeat_thread, core, 0);
+		if (!th) return;
 		r_th_start (th, 1);
 		r_cons_break (NULL, NULL);
 		r_cons_any_key (NULL);
@@ -143,17 +144,18 @@ static int zoom = 0;
 R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
 	const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
+	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char *homehud = r_str_home (R2_HOMEDIR"/hud");
 	char *res = NULL;
 	char *p = 0;
 
 	showcursor (core, true);
 	if (c && *c && r_file_exists (c))
-		res = r_cons_hud_file (c);
+		res = r_cons_hud_file (c, use_color);
 	if (!res && homehud)
-		res = r_cons_hud_file (homehud);
+		res = r_cons_hud_file (homehud, use_color);
 	if (!res && r_file_exists (f))
-		res = r_cons_hud_file (f);
+		res = r_cons_hud_file (f, use_color);
 	if (!res)
 		r_cons_message ("Cannot find hud file");
 
@@ -371,8 +373,9 @@ static int visual_nkey(RCore *core, int ch) {
 		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 		break;
 	}
-	if (oseek != UT64_MAX)
+	if (oseek != UT64_MAX) {
 		r_core_seek (core, oseek, 0);
+	}
 	return ch;
 }
 
@@ -381,6 +384,9 @@ static void setcursor (RCore *core, bool cur) {
 	if (core->print->cur_enabled) flags |= R_PRINT_FLAGS_CURSOR;
 	else flags &= ~(R_PRINT_FLAGS_CURSOR);
 	core->print->cur_enabled = cur;
+	if (core->print->cur == -1) {
+		core->print->cur = 0;
+	}
 	r_print_set_flags (core->print, flags);
 	core->print->col = core->print->cur_enabled ? 1 : 0;
 }
@@ -589,6 +595,9 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 
 	if (minop == maxop) {
+		if (minop == -1) {
+			return addr - 4;
+		}
 		return addr - minop;
 	}
 
@@ -620,6 +629,30 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 		i += len - 1;
 	}
 	return target - 4;
+}
+
+//  Returns true if we can use analysis to find the previous operation address,
+//  sets prev_addr to the value of the instruction numinstrs back.
+//  If we can't use the anal, then set prev_addr to UT64_MAX and return false;
+R_API bool r_core_prevop_addr (RCore* core, ut64 start_addr, int numinstrs,
+		ut64* prev_addr) {
+	RAnalBlock* bb;
+	int i;
+	// Check that we're in a bb, otherwise this prevop stuff won't work.
+	bb = r_anal_bb_from_offset (core->anal, start_addr);
+	if (bb) {
+		if (r_anal_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
+			// Do some anal looping.
+			for (i = 0; i < numinstrs; ++i) {
+				*prev_addr = prevop_addr (core, start_addr);
+				start_addr = *prev_addr;
+			}
+			return true;
+		}
+	}
+	// Dang! not in a bb, return false and fallback to other methods.
+	*prev_addr = UT64_MAX;
+	return false;
 }
 
 static void reset_print_cur(RPrint *p) {
@@ -990,13 +1023,15 @@ static bool fix_cursor(RCore *core) {
 	int offscreen = (core->cons->rows - 3) * p->cols;
 	bool res = false;
 
-	if (!core->print->cur_enabled) return false;
-	if (core->screen_bounds > 1) {
-		bool off_is_visible = core->offset < core->screen_bounds;
-		bool cur_is_visible = core->offset + p->cur < core->screen_bounds;
-		bool is_close = core->offset + p->cur < core->screen_bounds + 32;
+	if (!core->print->cur_enabled) {
+		return false;
+	}
+	if (core->print->screen_bounds > 1) {
+		bool off_is_visible = core->offset < core->print->screen_bounds;
+		bool cur_is_visible = core->offset + p->cur < core->print->screen_bounds;
+		bool is_close = core->offset + p->cur < core->print->screen_bounds + 32;
 
-		if (!cur_is_visible && !is_close) {
+		if ((!cur_is_visible && !is_close) || (!cur_is_visible && p->cur == 0)) {
 			// when the cursor is not visible and it's far from the
 			// last visible byte, just seek there.
 			r_core_seek_delta (core, p->cur);
@@ -1049,7 +1084,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	}
 
 	// do we need hotkeys for data references? not only calls?
-	if (ch >= '0'&& ch <= '9') {
+	// '0' is handled to seek at the beginning of the function
+	if (ch > '0' && ch <= '9') {
 		char chbuf[2];
 		ut64 off;
 
@@ -1058,7 +1094,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		off = r_core_get_asmqjmps (core, chbuf);
 		if (off != UT64_MAX) {
 			int delta = R_ABS ((st64)off-(st64)offset);
-			r_io_sundo_push (core->io, offset);
+			r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
 			if (core->print->cur_enabled && delta<100) {
 				core->print->cur = delta;
 			} else {
@@ -1092,15 +1128,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 							op->type == R_ANAL_OP_TYPE_CCALL) {
 						if (core->print->cur_enabled) {
 							int delta = R_ABS ((st64)op->jump-(st64)offset);
-							if ( op->jump < core->offset || op->jump >= core->screen_bounds) {
-								r_io_sundo_push (core->io, offset);
+							if ( op->jump < core->offset || op->jump >= core->print->screen_bounds) {
+								r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
 								r_core_visual_seek_animation (core, op->jump);
 								core->print->cur = 0;
 							} else {
+								r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
 								core->print->cur = delta;
 							}
 						} else {
-							r_io_sundo_push (core->io, offset);
+							r_io_sundo_push (core->io, offset, 0);
 							r_core_visual_seek_animation (core, op->jump);
 						}
 					}
@@ -1375,17 +1412,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
 			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-			int ocolor;
-
+			int ocolor = r_config_get_i (core->config, "scr.color");
 			if (!fun) {
-				r_cons_message("Not in a function. Type 'df' to define it here");
+				r_cons_message ("Not in a function. Type 'df' to define it here");
 				break;
 			} else if (r_list_empty (fun->bbs)) {
-				r_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
+				r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
 				break;
 			}
 			reset_print_cur (core->print);
-			ocolor = r_config_get_i (core->config, "scr.color");
 			r_core_visual_graph (core, NULL, NULL, true);
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
@@ -1400,7 +1435,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				offset = 0;
 			r_core_seek (core, offset, 1);
 		} else r_core_seek (core, 0, 1);
-		r_io_sundo_push (core->io, core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case 'G':
 		ret = 0;
@@ -1428,7 +1463,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			ret = -1;
 		}
 		if (ret != -1)
-			r_io_sundo_push (core->io, core->offset);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case 'h':
 		if (core->print->cur_enabled) {
@@ -1466,7 +1501,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 							f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 						}
 						if (f && f->folded) {
-							cols = core->offset - f->addr + f->size;
+							cols = core->offset - f->addr + r_anal_fcn_size (f);
 						} else {
 							r_asm_set_pc (core->assembler, core->offset);
 							cols = r_asm_disassemble (core->assembler,
@@ -1484,9 +1519,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (core->print->cur_enabled) {
 			cursor_nextrow (core, true);
 		} else {
-			if (core->screen_bounds > 1 && core->screen_bounds >= core->offset) {
-				ut64 addr = core->screen_bounds;
-				if (core->screen_bounds == core->offset) {
+			if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
+				ut64 addr = core->print->screen_bounds;
+				if (core->print->screen_bounds == core->offset) {
 					addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
 				}
 				r_core_seek (core, addr, 1);
@@ -1525,8 +1560,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (core->print->cur_enabled) {
 			cursor_prevrow (core, true);
 		} else {
-			if (core->screen_bounds > 1 && core->screen_bounds > core->offset) {
-				int delta = (core->screen_bounds - core->offset);
+			if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->offset) {
+				int delta = (core->print->screen_bounds - core->offset);
 				if (core->offset >= delta)
 					r_core_seek (core, core->offset - delta, 1);
 				else
@@ -1642,14 +1677,24 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_cons_clear00 ();
 		} else r_core_yank_paste (core, core->offset+core->print->cur, 0);
 		break;
+	case '0':
+		{
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+		if (fcn) {
+			r_core_seek (core, fcn->addr, 1);
+		}
+		}
+		break;
 	case '-':
 		if (core->print->cur_enabled) {
-			int cur = core->print->cur;
-			if (cur>=core->blocksize)
-				cur = core->print->cur-1;
-			if (core->print->ocur==-1) sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
-			else sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur<core->print->ocur?
-				core->print->cur:core->print->ocur, R_ABS (core->print->ocur-core->print->cur)+1);
+			if (core->print->ocur == -1) {
+				sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
+			} else {
+				sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+					? core->print->cur
+					: core->print->ocur,
+					R_ABS (core->print->ocur - core->print->cur) + 1);
+			}
 			r_core_cmd (core, buf, 0);
 		} else {
 			if (!autoblocksize)
@@ -1658,12 +1703,14 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '+':
 		if (core->print->cur_enabled) {
-			int cur = core->print->cur;
-			if (cur>=core->blocksize)
-				cur = core->print->cur-1;
-			if (core->print->ocur==-1) sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
-			else sprintf (buf, "woa 01 @ $$+%i!%i",
-				core->print->cur<core->print->ocur? core->print->cur: core->print->ocur, R_ABS (core->print->ocur-core->print->cur)+1);
+			if (core->print->ocur == -1) {
+				sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
+			} else {
+				sprintf (buf, "woa 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+					? core->print->cur
+					: core->print->ocur,
+					R_ABS (core->print->ocur - core->print->cur) + 1);
+			}
 			r_core_cmd (core, buf, 0);
 		} else {
 			if (!autoblocksize)
@@ -1687,15 +1734,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '>':
 		r_core_seek_align (core, core->blocksize, 1);
-		r_io_sundo_push (core->io, core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case '<':
 		r_core_seek_align (core, core->blocksize, -1);
 		r_core_seek_align (core, core->blocksize, -1);
-		r_io_sundo_push (core->io, core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case '.':
-		r_io_sundo_push (core->io, core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		if (core->print->cur_enabled) {
 			r_core_seek (core, core->offset+core->print->cur, 1);
 			core->print->cur = 0;
@@ -1741,16 +1788,33 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			} else {
 				switch (buf[i]) {
 				case '-':
-					memcpy (buf, "\"CC-", 4);
+					memcpy (buf, "\"CC-\x00", 5);
 					break;
 				case '!':
-					memcpy (buf, "\"CC!", 4);
+					memcpy (buf, "\"CC!\x00", 5);
 					break;
 				default:
 					memcpy (buf, "\"CC ", 4);
 					break;
 				}
 				strcat (buf, "\"");
+			}
+			if (buf[3] == ' ') {
+				// have to escape any quotes.
+				int j, len = strlen (buf);
+				char* duped = strdup (buf);
+				i = 4, j=4;
+				for (i=4, j=4; i < len; ++i,++j) {
+					char c = duped[i];
+					if (c == '"' && i != (len - 1)) {
+						buf[j] = '\\';
+						++j;
+						buf[j] = '"';
+					} else {
+						buf[j] = c;
+					}
+				}
+				free (duped);
 			}
 			r_core_cmd (core, buf, 1);
 			if (core->print->cur_enabled) r_core_seek (core, orig, 1);
@@ -1774,10 +1838,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'u':
 		{
-		ut64 off = r_io_sundo (core->io, core->offset);
-		if (off != UT64_MAX) {
-			r_core_visual_seek_animation (core, off);
-			reset_print_cur (core->print);
+		RIOUndos *undo = r_io_sundo (core->io, core->offset);
+		if (undo) {
+			r_core_visual_seek_animation (core, undo->off);
+			core->print->cur = undo->cursor;
 		} else {
 			eprintf ("Cannot undo\n");
 		}
@@ -1785,9 +1849,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'U':
 		{
-		ut64 off = r_io_sundo_redo (core->io);
-		if (off != UT64_MAX) {
-			r_core_visual_seek_animation (core, off);
+		RIOUndos *undo = r_io_sundo_redo (core->io);
+		if (undo) {
+			r_core_visual_seek_animation (core, undo->off);
 			reset_print_cur (core->print);
 		}
 		}
@@ -1856,10 +1920,10 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	{
 		int bsize = core->cons->rows * 5;
 
-		if (core->screen_bounds > 1) {
+		if (core->print->screen_bounds > 1) {
 			// estimate new blocksize with the size of the last
 			// printed instructions
-			int new_sz = core->screen_bounds - core->offset + 32;
+			int new_sz = core->print->screen_bounds - core->offset + 32;
 			if (new_sz > bsize) bsize = new_sz;
 		}
 		r_core_block_size (core, bsize);
@@ -1875,11 +1939,12 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		if (curpc && curpc != UT64_MAX && curpc != oldpc) {
 			// check dbg.follow here
 			int follow = (int)(st64)r_config_get_i (core->config, "dbg.follow");
-			if (follow>0) {
-				if ((curpc<core->offset) || (curpc> (core->offset+follow)))
+			if (follow > 0) {
+				if ((curpc<core->offset) || (curpc> (core->offset+follow))) {
 					r_core_seek (core, curpc, 1);
-			} else if (follow<0) {
-				r_core_seek (core, curpc+follow, 1);
+				}
+			} else if (follow < 0) {
+				r_core_seek (core, curpc + follow, 1);
 			}
 			oldpc = curpc;
 		}
@@ -1932,7 +1997,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	if (color) r_cons_strcat (Color_RESET);
 }
 
-static int r_core_visual_responsive (RCore *core) {
+static int visual_responsive(RCore *core) {
 	int h, w = r_cons_get_size (&h);
 	if (r_config_get_i (core->config, "scr.responsive")) {
 		if (w<110) {
@@ -1967,14 +2032,14 @@ static int r_core_visual_responsive (RCore *core) {
 	return w;
 }
 
-static void r_core_visual_refresh (RCore *core) {
+static void visual_refresh(RCore *core) {
 	int w;
 	const char *vi, *vcmd;
 	if (!core) return;
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	core->cons->blankline = true;
 
-	w = r_core_visual_responsive (core);
+	w = visual_responsive (core);
 
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
@@ -1983,7 +2048,6 @@ static void r_core_visual_refresh (RCore *core) {
 	}
 	r_cons_flush ();
 	r_cons_print_clear ();
-	//core->curtab = 0;
 
 	vi = r_config_get (core->config, "cmd.cprompt");
 	if (vi && *vi) {
@@ -2017,15 +2081,15 @@ static void r_core_visual_refresh (RCore *core) {
 	if (vcmd && *vcmd) {
 		// disable screen bounds when it's a user-defined command
 		// because it can cause some issues
-		core->screen_bounds = 0;
+		core->print->screen_bounds = 0;
 		r_core_cmd (core, vcmd, 0);
 	} else {
-		core->screen_bounds = 1LL;
-		r_core_cmd0 (core, zoom? "pz": printfmt[PIDX]);
+		core->print->screen_bounds = 1LL;
+		r_core_cmd0 (core, zoom ? "pz" : printfmt[PIDX]);
 	}
-	if (core->screen_bounds != 1LL) {
+	if (core->print->screen_bounds != 1LL) {
 		r_cons_printf ("[0x%08"PFMT64x"..0x%08"PFMT64x"]\n",
-			core->offset, core->screen_bounds);
+			core->offset, core->print->screen_bounds);
 	}
 	blocksize = core->num->value? core->num->value : core->blocksize;
 
@@ -2046,7 +2110,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	int wheel, flags, ch;
 	bool skip;
 
-	if (r_cons_get_size (&ch)<1 || ch<1) {
+	if (r_cons_get_size (&ch) < 1 || ch < 1) {
 		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
 		return 0;
 	}
@@ -2073,12 +2137,13 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 		if (core->printidx == 2) {
 			static char debugstr[512];
-			const char *cmdvhex = r_config_get (core->config, "cmd.stack");
 			const int ref = r_config_get_i (core->config, "dbg.slow");
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated
 			const int size = r_config_get_i (core->config, "stack.size");
 			const int delta = r_config_get_i (core->config, "stack.delta");
 			const int bytes = r_config_get_i (core->config, "stack.bytes");
+			const char *cmdvhex = r_config_get (core->config, "cmd.stack");
+
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof (debugstr),
 					"?0;f tmp;sr SP;%s;?1;%s;?1;s-;"
@@ -2111,7 +2176,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		r_cons_show_cursor (false);
 		if (wheel) r_cons_enable_mouse (true);
 		core->cons->event_data = core;
-		core->cons->event_resize = (RConsEvent)r_core_visual_refresh;
+		core->cons->event_resize = (RConsEvent)visual_refresh;
 		flags = core->print->flags;
 		color = r_config_get_i (core->config, "scr.color");
 		if (color) flags |= R_PRINT_FLAGS_COLOR;
@@ -2131,7 +2196,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			r_core_cmd (core, cmdprompt, 0);
 		}
 		core->print->vflush = !skip;
-		r_core_visual_refresh (core);
+		visual_refresh (core);
 		if (!skip) {
 			ch = r_cons_readchar ();
 			r_core_visual_show_char (core, ch);
@@ -2140,12 +2205,14 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	} while (skip || r_core_visual_cmd (core, ch));
 
 	r_cons_enable_mouse (false);
-	if (color)
+	if (color) {
 		r_cons_printf (Color_RESET);
+	}
 	r_config_set_i (core->config, "scr.color", color);
 	core->print->cur_enabled = false;
-	if (autoblocksize)
+	if (autoblocksize) {
 		r_core_block_size (core, obs);
+	}
 	r_cons_singleton ()->teefile = teefile;
 	r_cons_set_cup (false);
 	r_cons_clear00 ();

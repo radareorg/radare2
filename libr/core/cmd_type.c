@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+#include <string.h>
+
+#include "r_anal.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "sdb/sdb.h"
 
 static void show_help(RCore *core) {
 	const char *help_message[] = {
@@ -19,13 +25,33 @@ static void show_help(RCore *core) {
 		//"to",  "",         "List opened files",
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
-		"tp", " <type> <address>", "cast data at <adress> to <type> and print it",
+		"tp", " <type>  = <address>", "cast data at <adress> to <type> and print it",
 		"ts", "", "print loaded struct types",
 		"tu", "", "print loaded union types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 		NULL };
 	r_core_cmd_help (core, help_message);
 }
+
+static void save_parsed_type(RCore *core, const char *parsed) {
+	if (!core || !core->anal || !parsed) {
+		return;
+	}
+	// First, if this exists, let's remove it.
+	char *type = strdup (parsed);
+	if (type) {
+		char *name = strtok (type, "=");
+		if (!name || strchr (name, '\n') || strchr (name, ';')) {
+			/* do nothing */
+		} else {
+			r_core_cmdf (core, "\"t- %s\"", name);
+			// Now add the type to sdb.
+			sdb_query_lines (core->anal->sdb_types, parsed);
+		}
+		free (type);
+	}
+}
+
 //TODO
 //look at the next couple of functions
 //can be optimized into one right ... you see it you do it :P
@@ -66,7 +92,7 @@ static int linklist(void *p, const char *k, const char *v) {
 	return 1;
 }
 static int typelist(void *p, const char *k, const char *v) {
-	r_cons_printf ("tk %s = %s \n", k, v);
+	r_cons_printf ("tk %s = %s\n", k, v);
 #if 0
 	if (!strcmp (v, "func")) {
 		const char *rv = sdb_const_get (DB,
@@ -231,6 +257,7 @@ static int cmd_type(void *data, const char *input) {
 		} else {
 			char *fmt = r_anal_type_format (core->anal, input + 1);
 			if (fmt) {
+				r_str_chop (fmt);
 				r_cons_printf ("pf %s\n", fmt);
 				free (fmt);
 			} else eprintf ("Cannot find '%s' type\n", input + 1);
@@ -261,7 +288,7 @@ static int cmd_type(void *data, const char *input) {
 						out = r_parse_c_string (tmp);
 						if (out) {
 							//		r_cons_strcat (out);
-							sdb_query_lines (core->anal->sdb_types, out);
+							save_parsed_type (core, out);
 							free (out);
 						}
 						free (tmp);
@@ -270,7 +297,7 @@ static int cmd_type(void *data, const char *input) {
 					char *out = r_parse_c_file (filename);
 					if (out) {
 						//r_cons_strcat (out);
-						sdb_query_lines (core->anal->sdb_types, out);
+						save_parsed_type (core, out);
 						free (out);
 					}
 					//r_anal_type_loadfile (core->anal, filename);
@@ -301,7 +328,7 @@ static int cmd_type(void *data, const char *input) {
 			char *out = r_parse_c_string (tmp);
 			if (out) {
 				//r_cons_strcat (out);
-				sdb_query_lines (core->anal->sdb_types, out);
+				save_parsed_type (core, out);
 				free (out);
 			}
 		} else {
@@ -352,12 +379,18 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'p': {
-		const char *type = input + 2;
-		char *ptr = strchr (type, ' ');
-		if (ptr) {
-			*ptr++ = 0;
-			ut64 addr = r_num_math (core->num, ptr);
+	case 'p':
+		if (input[2]) {
+			ut64 addr = core->offset;
+			const char *type = input + 2;
+			char *ptr = strchr (type, '=');
+			if (ptr) {
+				char *tmp = ptr-1;
+				*ptr++ = 0;
+				while(isspace (*ptr)) ptr++;
+				while(isspace (*tmp)) *tmp-- = 0;
+				addr = r_num_math (core->num, ptr);
+			}
 			char *fmt = r_anal_type_format (core->anal, type);
 			if (fmt) {
 				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
@@ -366,7 +399,6 @@ static int cmd_type(void *data, const char *input) {
 		} else {
 			eprintf ("see t?\n");
 			break;
-		}
 		}
 		break;
 	case '-':

@@ -165,8 +165,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			if (fcn2->type != R_ANAL_FCN_TYPE_SYM || fcn2->name == NULL ||
 				strcmp (fcn->name, fcn2->name))
 				continue;
-			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,
-					fcn2->fingerprint, fcn2->size, NULL, &t);
+			r_diff_buffers_distance (NULL, fcn->fingerprint, r_anal_fcn_size (fcn),
+					fcn2->fingerprint, r_anal_fcn_size (fcn2), NULL, &t);
 #if 0
 			eprintf ("FCN NAME (NAME): %s - %s => %lli - %lli => %f\n", fcn->name, fcn2->name,
 					fcn->size, fcn2->size, t);
@@ -179,8 +179,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			R_FREE (fcn2->fingerprint);
 			fcn->diff->addr = fcn2->addr;
 			fcn2->diff->addr = fcn->addr;
-			fcn->diff->size = fcn2->size;
-			fcn2->diff->size = fcn->size;
+			fcn->diff->size = r_anal_fcn_size (fcn2);
+			fcn2->diff->size = r_anal_fcn_size (fcn);
 			R_FREE (fcn->diff->name);
 			if (fcn2->name)
 				fcn->diff->name = strdup (fcn2->name);
@@ -199,18 +199,20 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 		ot = 0;
 		mfcn = mfcn2 = NULL;
 		r_list_foreach (fcns2, iter2, fcn2) {
-			if (fcn->size > fcn2->size) {
-				maxsize = fcn->size;
-				minsize = fcn2->size;
+			int fcn_size = r_anal_fcn_size (fcn);
+			int fcn2_size = r_anal_fcn_size (fcn2);
+			if (fcn_size > fcn2_size) {
+				maxsize = fcn_size;
+				minsize = fcn2_size;
 			} else {
-				maxsize = fcn2->size;
-				minsize = fcn->size;
+				maxsize = fcn2_size;
+				minsize = fcn_size;
 			}
 			if ((fcn2->type != R_ANAL_FCN_TYPE_FCN && fcn2->type != R_ANAL_FCN_TYPE_SYM) ||
 				fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL || (maxsize * anal->diff_thfcn > minsize))
 				continue;
-			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,
-					fcn2->fingerprint, fcn2->size, NULL, &t);
+			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn_size,
+					fcn2->fingerprint, fcn2_size, NULL, &t);
 			fcn->diff->dist = fcn2->diff->dist = t;
 #if 0
 			int i;
@@ -244,8 +246,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			R_FREE (mfcn2->fingerprint);
 			mfcn->diff->addr = mfcn2->addr;
 			mfcn2->diff->addr = mfcn->addr;
-			mfcn->diff->size = mfcn2->size;
-			mfcn2->diff->size = mfcn->size;
+			mfcn->diff->size = r_anal_fcn_size (mfcn2);
+			mfcn2->diff->size = r_anal_fcn_size (mfcn);
 			R_FREE (mfcn->diff->name);
 			if (mfcn2->name)
 				mfcn->diff->name = strdup (mfcn2->name);

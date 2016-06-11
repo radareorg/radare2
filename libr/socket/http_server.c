@@ -13,6 +13,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
+	if (!hr) return NULL;
 	hr->s = r_socket_accept (s);
 	if (!hr->s) {
 		free (hr);

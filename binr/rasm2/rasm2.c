@@ -15,8 +15,9 @@ static RAsm *a = NULL;
 static RAnal *anal = NULL;
 static int coutput = false;
 static bool json = false;
+static bool quiet = false;
 
-static int showanal(RAnal *anal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json);
+static int showanal(RAnal *lanal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json);
 
 // TODO: add israw/len
 static int show_analinfo(const char *arg, ut64 offset) {
@@ -49,10 +50,10 @@ static int show_analinfo(const char *arg, ut64 offset) {
 	return ret;
 }
 
-static const char *has_esil(RAnal *a, const char *name) {
+static const char *has_esil(RAnal *lanal, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *h;
-	r_list_foreach (a->plugins, iter, h) {
+	r_list_foreach (anal->plugins, iter, h) {
 		if (!strcmp (name, h->name)) {
 			if (h->esil)
 				return "Ae";
@@ -62,12 +63,15 @@ static const char *has_esil(RAnal *a, const char *name) {
 	return "__";
 }
 
-static void rasm2_list(RAsm *a, const char *arch) {
+static void rasm2_list(RAsm *la, const char *arch) {
 	int i;
 	char bits[32];
 	const char *feat2, *feat;
 	RAsmPlugin *h;
 	RListIter *iter;
+	if (json) {
+		printf ("{");
+	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (arch) {
 			if (h->cpus && !strcmp (arch, h->name)) {
@@ -89,10 +93,22 @@ static void rasm2_list(RAsm *a, const char *arch) {
 			if (h->assemble && !h->disassemble) feat = "a_";
 			if (!h->assemble && h->disassemble) feat = "_d";
 			feat2 = has_esil (anal, h->name);
-			printf ("%s%s  %-9s  %-11s %-7s %s\n",
-				feat, feat2, bits, h->name,
-				h->license? h->license: "unknown", h->desc);
+			if (quiet) {
+				printf ("%s\n", h->name);
+			} else if (json) {
+				const char *str_bits = "32, 64";
+				const char *license = "GPL";
+				printf ("\"%s\":{\"bits\":[%s],\"license\":\"%s\",\"description\":\"%s\",\"features\":\"%s\"}%s",
+						h->name, str_bits, license, h->desc, feat, iter->n? ",": "");
+			} else {
+				printf ("%s%s  %-9s  %-11s %-7s %s\n",
+						feat, feat2, bits, h->name,
+						h->license? h->license: "unknown", h->desc);
+			}
 		}
+	}
+	if (json) {
+		printf ("}\n");
 	}
 }
 // TODO: move into libr/anal/stack.c ?
@@ -109,7 +125,7 @@ static char *stackop2str(int type) {
 	return strdup ("unknown");
 }
 
-static int showanal(RAnal *anal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json) {
+static int showanal(RAnal *lanal, RAnalOp *op, ut64 offset, ut8 *buf, int len, bool json) {
 	const char *optype = NULL;
 	char *bytes, *stackop = NULL;
 	int ret;
@@ -184,10 +200,12 @@ static int rasm_show_help(int v) {
 			" -B           Binary input/output (-l is mandatory for binary input)\n"
 			" -v           Show version information\n"
 			" -w           What's this instruction for? describe opcode\n"
+			" -q           quiet mode\n"
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
 		printf ("Environment:\n"
-		" RASM2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
+		" RASM2_NOPLUGINS  do not load shared plugins (speedup loading)\n"
+		" R_DEBUG          if defined, show error messages and crash signal\n"
 		"");
 	}
 	return 0;
@@ -309,6 +327,7 @@ static int __lib_asm_cb(RLibPlugin *pl, void *user, void *data) {
 	r_asm_add (a, hand);
 	return true;
 }
+
 static int __lib_asm_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
@@ -319,6 +338,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 	r_anal_add (anal, hand);
 	return true;
 }
+
 static int __lib_anal_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 	return true;
 }
@@ -329,6 +349,7 @@ int main (int argc, char *argv[]) {
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	unsigned char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
+	bool isbig = false;
 	ut64 offset = 0;
 	int fd = -1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0, skip = 0;
@@ -348,19 +369,21 @@ int main (int argc, char *argv[]) {
 				&__lib_asm_cb, &__lib_asm_dt, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_ANAL, "analysis/emulation plugins",
 				&__lib_anal_cb, &__lib_anal_dt, NULL);
-		path = r_sys_getenv ("LIBR_PLUGINS");
-		if (!path || !*path)
-			path = R2_LIBDIR "/radare2/" R2_VERSION;
-		r_lib_opendir (l, path);
-		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
-			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
-			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
-		}
+		
+		path = r_sys_getenv (R_LIB_ENV);
+		if (path && *path)
+			r_lib_opendir (l, path);
+		
 		if (1) {
 			char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
 			// eprintf ("OPENDIR (%s)\n", homeplugindir);
 			r_lib_opendir (l, homeplugindir);
 			free (homeplugindir);
+		}
+		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
+			r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
+			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
 		}
 		free (tmp);
 	}
@@ -372,10 +395,8 @@ int main (int argc, char *argv[]) {
 		r_asm_set_bits (a, sysbits);
 		r_anal_set_bits (anal, sysbits);
 	}
-	r_asm_set_big_endian (a, false);
-	r_anal_set_big_endian (anal, false);
 
-	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wO:")) != -1) {
+	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wqO:")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -402,7 +423,7 @@ int main (int argc, char *argv[]) {
 			dis = 2;
 			break;
 		case 'e':
-			r_asm_set_big_endian (a, !a->big_endian);
+			isbig = true;
 			break;
 		case 'E':
 			dis = 3;
@@ -419,7 +440,12 @@ int main (int argc, char *argv[]) {
 		case 'i':
 			skip = r_num_math (NULL, optarg);
 			break;
-		case 'j': json = true; break;
+		case 'j':
+			json = true;
+			break;
+		case 'q':
+			quiet = true;
+			break;
 		case 'k':
 			kernel = optarg;
 			break;
@@ -443,7 +469,11 @@ int main (int argc, char *argv[]) {
 			else r_asm_set_syntax (a, R_ASM_SYNTAX_INTEL);
 			break;
 		case 'v':
-			ret = blob_version ("rasm2");
+			if (quiet) {
+				printf ("%s\n", R2_VERSION);
+			} else {
+				ret = blob_version ("rasm2");
+			}
 			goto beach;
 		case 'w':
 			whatsop = true;
@@ -479,6 +509,8 @@ int main (int argc, char *argv[]) {
 	r_anal_set_bits (anal, (env_bits && *env_bits)? atoi (env_bits): bits);
 	a->syscall = r_syscall_new ();
 	r_syscall_setup (a->syscall, arch, kernel, bits);
+	isbig = r_asm_set_big_endian (a, isbig);
+	r_anal_set_big_endian (anal, isbig);
 
 	if (whatsop) {
 		const char *s = r_asm_describe (a, argv[optind]);

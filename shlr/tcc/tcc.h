@@ -1026,4 +1026,6 @@ ST_FUNC int classify_x86_64_va_arg(CType *ty);
 /********************************************************/
 PUB_FUNC void tcc_appendf (const char *fmt, ...);
 
+extern void (*tcc_cb)(const char *, char **);
+
 #endif /* _TCC_H */

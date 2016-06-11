@@ -14,11 +14,13 @@ CORE_TARGET_JAVA=core_java.${EXT_SO}
 
 ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${CORE_TARGET_JAVA}
+DEPS+=r_crypto
 
 ${CORE_TARGET_JAVA}: ${CORE_OBJ_JAVA}
 	${CC} $(call libname,core_java) ${CFLAGS} \
 		-o core_java.${EXT_SO} \
 		$(SHLR)/java/libr_java.a \
 		$(SHLR)/sdb/src/libsdb.a \
-		${CORE_OBJ_JAVA} ${CORE_SHARED2_JAVA}
+		${CORE_OBJ_JAVA} ${CORE_SHARED2_JAVA} \
+		-L$(LIBR)/crypto -lr_crypto
 endif

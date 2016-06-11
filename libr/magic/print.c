@@ -58,7 +58,7 @@ void file_mdump(struct r_magic *m) {
 		(void) eprintf ("(%s,",
 			       /* Note: type is unsigned */
 			       (m->in_type < file_nnames) ? 
-					file_names[m->in_type] : "*bad*");
+					magic_file_names[m->in_type] : "*bad*");
 		if (m->in_op & FILE_OPINVERSE)
 			(void) fputc('~', stderr);
 		(void) eprintf ("%c%u),",
@@ -68,7 +68,7 @@ void file_mdump(struct r_magic *m) {
 	}
 	(void) eprintf (" %s%s", (m->flag & UNSIGNED) ? "u" : "",
 		       /* Note: type is unsigned */
-		       (m->type < file_nnames) ? file_names[m->type] : "*bad*");
+		       (m->type < file_nnames) ? magic_file_names[m->type] : "*bad*");
 	if (m->mask_op & FILE_OPINVERSE)
 		(void) fputc('~', stderr);
 

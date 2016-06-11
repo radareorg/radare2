@@ -116,6 +116,7 @@ R_API int r_reg_cond(RReg *r, int type) {
 
 R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *f) {
 	if (!f) f = R_NEW0 (RRegFlags);
+	if (!f) return NULL;
 	f->s = r_reg_cond_get_value (r, "sign");     // sign, negate flag, less than zero
 	f->z = r_reg_cond_get_value (r, "zero");     // zero flag
 	f->c = r_reg_cond_get_value (r, "carry");    // carry flag

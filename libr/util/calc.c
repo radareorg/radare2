@@ -27,6 +27,8 @@ static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; 
 static inline RNumCalcValue Nadd(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n += v.n; return n; }
 static inline RNumCalcValue Nsub(RNumCalcValue n, RNumCalcValue v) { n.d -= v.d; n.n -= v.n; return n; }
 static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) { n.d *= v.d; n.n *= v.n; return n; }
+static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n <<= v.n; return n; }
+static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
 	if (v.d) n.d = (n.d - (n.d/v.d)); else n.d = 0;
 	if (v.n) n.n %= v.n; else n.n = 0;
@@ -54,6 +56,8 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 	RNumCalcValue left = term (num, nc, get);
 	for (;;) {
 		switch (nc->curr_tok) {
+		case RNCSHL: left = Nshl (left, term (num, nc, 1)); break;
+		case RNCSHR: left = Nshr (left, term (num, nc, 1)); break;
 		case RNCPLUS: left = Nadd (left, term (num, nc, 1)); break;
 		case RNCMINUS: left = Nsub (left, term (num, nc, 1)); break;
 		case RNCXOR: left = Nxor (left, term (num, nc, 1)); break;
@@ -134,6 +138,8 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCPRINT:
 	case RNCASSIGN:
 	case RNCRIGHTP:
+	case RNCSHL:
+	case RNCSHR:
 		return v;
 	//default: error (num, nc, "primary expected");
 	}
@@ -249,6 +255,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case '/':
 	case '(':
 	case ')':
+	case '<':
+	case '>':
 	case '=':
 		return nc->curr_tok = (RNumCalcToken) ch;
 	case '0': case '1': case '2': case '3': case '4':
@@ -307,7 +315,7 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 	nc->calc_err = NULL;
 }
 
-R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
+R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
 	RNumCalc *nc, nc_local;
 	if (!str || !*str)

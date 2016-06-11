@@ -69,6 +69,7 @@ typedef struct r_print_t {
 	RPrintColorFor hasrefs;
 	RStrHT *formats;
 	RCons *cons;
+	RConsBind consbind;
 	RNum *num;
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);
@@ -84,6 +85,9 @@ typedef struct r_print_t {
 	int row_offsets_sz;
 	// when true it makes visual mode flush the buffer to screen
 	bool vflush;
+	// represents the first not-visible offset on the screen
+	// (only when in visual disasm mode)
+	ut64 screen_bounds;
 } RPrint;
 
 #ifdef R_API
@@ -99,6 +103,7 @@ R_API int r_print_mute(RPrint *p, int x);
 R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API void r_print_addr(RPrint *p, ut64 addr);
+R_API void r_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step);
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len);
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
@@ -109,6 +114,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
 R_API void r_print_cursor(RPrint *p, int cur, int set);
 R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
+R_API int r_print_get_cursor(RPrint *p);
 R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
 #define SEEFLAG -2
@@ -153,6 +159,7 @@ R_API int r_print_pack7bit(const char *src, char *dest);
 R_API char *r_print_stereogram_bytes(const ut8 *buf, int len);
 R_API char *r_print_stereogram(const char *bump, int w, int h);
 R_API void r_print_stereogram_print(RPrint *p, const char *buf);
+R_API void r_print_set_screenbounds(RPrint *p, ut64 addr);
 #endif
 
 #ifdef __cplusplus

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_debug.h>
 #include <r_list.h>
@@ -83,9 +83,9 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	}
 }
 
-static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, PrintfCallback cb_printf, int bits) {
+static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, PrintfCallback cb_printf, int bits, int cons_width) {
 	ut64 mul, min = -1, max = 0;
-	int width = r_cons_get_size (NULL) - 80;
+	int width = cons_width - 80;
 	RListIter *iter;
 	RDebugMap *map;
 	if (width < 1) width = 30;
@@ -137,17 +137,17 @@ static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, Pri
 	}
 }
 
-R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, int use_color) {
+R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, int use_color, int cons_cols) {
 	if (dbg) {
 		if (dbg->maps) {
 			print_debug_map_ascii_art (dbg->maps, addr,
 				use_color, dbg->cb_printf,
-				dbg->bits);
+				dbg->bits, cons_cols);
 		}
 		if (dbg->maps_user) {
 			print_debug_map_ascii_art (dbg->maps_user,
 				addr, use_color,
-				dbg->cb_printf, dbg->bits);
+				dbg->cb_printf, dbg->bits, cons_cols);
 		}
 	}
 }

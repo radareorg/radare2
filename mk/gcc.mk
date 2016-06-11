@@ -19,6 +19,7 @@ ifeq ($(OSTYPE),darwin)
 ARCH=$(shell uname -m)
 #CFLAGS+=-arch ${ARCH}
 #LDFLAGS+=-arch ${ARCH}
+CFLAGS+=-fno-common
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,${LIBDIR}/
 else

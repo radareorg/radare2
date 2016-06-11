@@ -42,6 +42,14 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_cons);
 
+typedef int (*RConsGetSize)(int *rows);
+typedef int (*RConsGetCursor)(int *rows);
+
+typedef struct r_cons_bind_t {
+	RConsGetSize get_size;
+	RConsGetCursor get_cursor;
+} RConsBind;
+
 typedef struct r_cons_grep_t {
 	char strings[R_CONS_GREP_WORDS][R_CONS_GREP_WORD_SIZE];
 	int nstrings;
@@ -110,9 +118,12 @@ typedef struct r_cons_palette_t {
 	char *graph_box;
 	char *graph_box2;
 	char *graph_box3;
+	char *graph_box4;
 	char *graph_true;
 	char *graph_false;
 	char *graph_trufae;
+	char *graph_traced;
+	char *graph_current;
 
 #define R_CONS_PALETTE_LIST_SIZE 8
 	char *list[R_CONS_PALETTE_LIST_SIZE];
@@ -271,6 +282,7 @@ typedef struct r_cons_t {
 #define Color_BBLUE     "\x1b[1;34m"
 #define Color_BGRAY     "\x1b[1;38m"
 
+
 #define Colors_PLAIN { \
 	Color_BLACK, Color_RED, Color_WHITE, \
 	Color_GREEN, Color_MAGENTA, Color_YELLOW, \
@@ -398,7 +410,7 @@ R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
 R_API void r_cons_less(void);
-R_API void r_cons_2048(void);
+R_API void r_cons_2048(bool color);
 R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write (char *buffer);
@@ -431,10 +443,10 @@ R_API int r_cons_html_print(const char *ptr);
 
 // TODO: use gets() .. MUST BE DEPRECATED
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
-R_API char *r_cons_hud(RList *list, const char *prompt);
-R_API char *r_cons_hud_path(const char *path, int dir);
-R_API char *r_cons_hud_string(const char *s);
-R_API char *r_cons_hud_file(const char *f);
+R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor);
+R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor);
+R_API char *r_cons_hud_string(const char *s, const bool usecolor);
+R_API char *r_cons_hud_file(const char *f, const bool usecolor);
 
 R_API const char *r_cons_get_buffer(void);
 R_API void r_cons_grep(const char *str);
@@ -457,6 +469,7 @@ R_API int r_cons_get_column (void);
 R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
 R_API int r_cons_enable_mouse(const int enable);
+R_API void r_cons_bind(RConsBind *bind);
 #endif
 
 /* r_line */
@@ -553,10 +566,9 @@ typedef struct r_ascii_node_t {
 
 #define R_AGRAPH_MODE_NORMAL 0
 #define R_AGRAPH_MODE_OFFSET 1
-#define R_AGRAPH_MODE_ESIL 2
-#define R_AGRAPH_MODE_ESIL_OFFSET 3
-#define R_AGRAPH_MODE_MINI 4
-#define R_AGRAPH_MODE_MAX 5
+#define R_AGRAPH_MODE_MINI 2
+#define R_AGRAPH_MODE_SUMMARY 3
+#define R_AGRAPH_MODE_MAX 4
 
 typedef void (*RANodeCallback)(RANode *n, void *user);
 typedef void (*RAEdgeCallback)(RANode *from, RANode *to, void *user);

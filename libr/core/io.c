@@ -6,6 +6,8 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	int pid, *p = NULL;
 	ut8 is_gdb = (strcmp (debugbackend, "gdb") == 0);
 	RIODesc * fd = r->file ? r->file->desc : NULL;
+	const char *prompt = NULL;
+
 	p = fd ? fd->data : NULL;
 	r_config_set_i (r->config, "cfg.debug", 1);
 	if (!p) {
@@ -39,10 +41,15 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 		}
 	}
 	r_core_cmd (r, "sr PC", 0);
-	if (r_config_get_i (r->config, "dbg.status"))
-		r_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
-	else
-		r_config_set (r->config, "cmd.prompt", ".dr*");
+
+	/* set the prompt if it's not been set already by the callbacks */
+	prompt = r_config_get (r->config, "cmd.prompt");
+	if (prompt && !strcmp (prompt, "")) {
+		if (r_config_get_i (r->config, "dbg.status"))
+			r_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
+		else
+			r_config_set (r->config, "cmd.prompt", ".dr*");
+	}
 	r_config_set (r->config, "cmd.vprompt", ".dr*");
 	return true;
 }
@@ -97,23 +104,43 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	int i, j, len, ret = false;
-	char *str;
+	char *str = NULL;
 	ut8 *buf;
 
 	// XXX we can work with config.block instead of dupping it
 	buf = (ut8 *)malloc (core->blocksize);
-	str = (char *)malloc (strlen (arg)+1);
-	if (buf == NULL || str == NULL)
+	if (!buf)
 		goto beach;
 	memcpy (buf, core->block, core->blocksize);
+
 	if (op!='e') {
-		len = r_hex_str2bin (arg, (ut8 *)str);
-		if (len < 0) {
-			eprintf ("Invalid hexpair string\n");
-			goto beach;
+		// fill key buffer either from arg or from clipboard
+		if (arg) {  // parse arg for key
+			// r_hex_str2bin() is guaranteed to output maximum half the
+			// input size, or 1 byte if there is just a single nibble.
+			str = (char *)malloc (strlen (arg) / 2 + 1);
+			if (!str)
+				goto beach;
+			len = r_hex_str2bin (arg, (ut8 *)str);
+			// Output is invalid if there was just a single nibble,
+			// but in that case, len is negative (-1).
+			if (len <= 0) {
+				eprintf ("Invalid hexpair string\n");
+				goto beach;
+			}
+		} else {  // use clipboard as key
+			len = core->yank_buf->length;
+			if (len <= 0) {
+				eprintf ("Clipboard is empty and no value argument(s) given\n");
+				goto beach;
+			}
+			str = r_mem_dup (core->yank_buf->buf, len);
+			if (!str)
+				goto beach;
 		}
 	} else len = 0;
 
+	// execute the operand
 	if (op=='e') {
 		int wordsize = 1;
 		char *os, *p, *s = strdup (arg);
@@ -155,27 +182,21 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		if (wordsize<1) wordsize = 1;
 		if (wordsize == 1) {
 			for (i=n=0; i<core->blocksize; i++, n+= step)
-				buf[i] = (ut8)(n%dif)+from;
+				buf[i] = (ut8)(n % dif) + from;
 		} else if (wordsize == 2) {
 			ut16 num16 = from;
-			for (i=0; i<core->blocksize; i+=wordsize, num16 += step) {
-				r_mem_copyendian ((ut8*)buf+i,
-					(ut8*)&num16, sizeof (ut16),
-					!core->assembler->big_endian);
+			for (i = 0; i < core->blocksize; i += wordsize, num16 += step) {
+				r_write_le16 (buf + i, num16);
 			}
 		} else if (wordsize == 4) {
 			ut32 num32 = from;
-			for (i=0; i<core->blocksize; i += wordsize, num32 += step) {
-				r_mem_copyendian ((ut8*)buf+i,
-					(ut8*)&num32, sizeof (ut32),
-					!core->assembler->big_endian);
+			for (i = 0; i < core->blocksize; i += wordsize, num32 += step) {
+				r_write_le32 (buf + i, num32);
 			}
 		} else if (wordsize == 8) {
 			ut64 num64 = from;
-			for (i=0; i<core->blocksize; i+=wordsize, num64 += step) {
-				r_mem_copyendian ((ut8*)buf+i,
-					(ut8*)&num64, sizeof (ut64),
-					!core->assembler->big_endian);
+			for (i = 0; i < core->blocksize; i += wordsize, num64 += step) {
+				r_write_le64 (buf + i, num64);
 			}
 		} else {
 			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
@@ -230,7 +251,7 @@ R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
 	if (arch && bits) {
 		if (!oldarch) {
 			RBinInfo *info = r_bin_get_info (core->bin);
-			if (info) {
+			if (info && info->arch) {
 				oldarch = strdup (info->arch);
 				oldbits = info->bits;
 			} else {
@@ -270,9 +291,9 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		ret = r_core_block_read (core, 0);
 		if (core->io->ff) {
 			if (ret < 1 || ret > core->blocksize)
-				memset (core->block, 0xff, core->blocksize);
+				memset (core->block, core->io->Oxff, core->blocksize);
 			else
-				memset (core->block+ret, 0xff, core->blocksize-ret);
+				memset (core->block+ret, core->io->Oxff, core->blocksize-ret);
 			ret = core->blocksize;
 			core->offset = addr;
 		} else {
@@ -394,7 +415,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	RCoreFile *file = NULL;
 
 	r_list_foreach (core->files, iter, file) {
-		if (file && file->desc){
+		if (file && file->desc) {
 			core->io->raised = file->desc->fd;
 			core->switch_file_view = 1;
 			break;
@@ -405,7 +426,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 
 R_API int r_core_block_read(RCore *core, int next) {
 	if (core->file == NULL && r_core_file_set_first_valid(core) == NULL) {
-		memset (core->block, 0xff, core->blocksize);
+		memset (core->block, core->io->Oxff, core->blocksize);
 		return -1;
 	}
 	if (core->file && core->switch_file_view) {
@@ -420,8 +441,8 @@ R_API int r_core_block_read(RCore *core, int next) {
 
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (!core->io || !core->file || !core->file->desc || size<1) {
-		if (size>0)
-			memset (buf, 0xff, size);
+		if (size > 0)
+			memset (buf, core->io->Oxff, size);
 		return false;
 	}
 	r_io_use_desc (core->io, core->file->desc);

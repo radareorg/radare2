@@ -152,13 +152,14 @@ R_API int r_core_yank_set_str (RCore *core, ut64 addr, const char *str,
 R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	ut64 curseek = core->offset;
 	ut8 *buf = NULL;
-	if (len<0) {
+	if (len < 0) {
 		eprintf ("r_core_yank: cannot yank negative bytes\n");
 		return false;
 	}
 	if (len == 0) len = core->blocksize;
 	//free (core->yank_buf);
 	buf = malloc (len);
+	if (!buf) return false;
 	//core->yank_buf = (ut8 *)malloc (len);
 	if (addr != core->offset)
 		r_core_seek (core, addr, 1);
@@ -304,7 +305,7 @@ R_API int r_core_yank_hud_file (RCore *core, const char *input) {
 	ut32 len = 0;
 	if (!input || !*input) return false;
 	for (input++; *input==' '; input++) ;
-	buf = r_cons_hud_file (input);
+	buf = r_cons_hud_file (input, r_config_get_i (core->config, "scr.color")); 
 	len = buf ? strlen ((const char*)buf) + 1 : 0;
 	res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
@@ -315,7 +316,7 @@ R_API int r_core_yank_hud_path (RCore *core, const char *input, int dir) {
 	char *buf = NULL;
 	ut32 len = 0;
 	for (input++; *input==' '; input++) ;
-	buf = r_cons_hud_path (input, dir);
+	buf = r_cons_hud_path (input, dir, r_config_get_i (core->config, "scr.color"));
 	len = buf ? strlen ((const char*)buf) + 1 : 0;
 	return r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 }

@@ -18,8 +18,8 @@ Requirements
 ------------
 
 You can either install libyara with your prefered package manager, or you
-can execute sys/yara.sh in order to retrieve latest source, compile, and
-install the library.
+can execute `r2pm -i yara3-lib` and `r2pm -i yara3` in order to retrieve
+latest source, compile, and install the library.
 
 Yara in radare2
 ----------
@@ -44,13 +44,13 @@ Example
 
 Load a rule file on the fly, and then scan the currently opened file:
 ```
-yara add /home/name/rules/malware.rules
-yara scan
+yara3 add /home/name/rules/malware.rules
+yara3 scan
 ```
 Yara versions
 -------------
 
-Because radare2 has support for both yara versions currently, 
+Because radare2 has support for both yara versions currently,
 depending from the version/plugin you've loaded, you need
 to use the proper versioned command.
 E.g. `yara2` or `yara3`. For example `yara3 scan`.

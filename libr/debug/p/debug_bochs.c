@@ -77,7 +77,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	char strBase[19];
 	char strLimit[19];
 	int i = 0, pos = 0, lenRec = 0;
-	ut64 val = 0, valRIP = 0, posRIP = 0;
+	ut64 val = 0, valRIP = 0; //, posRIP = 0;
 
 	//eprintf ("bochs_reg_read\n");
 	if (bCapturaRegs == true) {
@@ -92,18 +92,18 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			if ( (desc->data[i] == (ut8)'r' && desc->data[i + 3] == (ut8)':')) {
 				strncpy (regname, &desc->data[i], 3);
 				regname[3] = 0;
-				strncpy(&strReg[2], &desc->data[i + 5], 8);
-				strncpy(&strReg[10], &desc->data[i + 14], 8);
+				strncpy (&strReg[2], &desc->data[i + 5], 8);
+				strncpy (&strReg[10], &desc->data[i + 14], 8);
 				strReg[0]='0';
 				strReg[1]='x';
 				strReg[18] = 0;
 				i += 22;
-				val = r_num_get (NULL,strReg);
+				val = r_num_get (NULL, strReg);
 				// eprintf("parseado %s = %s valx64 = %016"PFMT64x"\n", regname, strReg,val);
-				memcpy (&buf[pos],&val,8);
+				memcpy (&buf[pos], &val, 8);
 				// guardamos la posicion del rip y su valor para ajustarlo al obtener el CS
-				if (!strncmp (regname,"rip",3)) {
-					posRIP = pos;
+				if (!strncmp (regname, "rip", 3)) {
+				// UNUSED	posRIP = pos;
 					valRIP = val;
 				}
 				pos+= 8;
@@ -140,7 +140,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		   gdtr:base=0x0000000000000000, limit=0xffff
 		   idtr:base=0x0000000000000000, limit=0xffff
 		*/
-		bochs_send_cmd (desc,"sreg",true);
+		bochs_send_cmd (desc, "sreg", true);
 		
 		pos = 0x38;	
 		char * s [] = { "es:0x", "cs:0x","ss:0x","ds:0x","fs:0x","gs:0x",0};
@@ -173,10 +173,11 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 		}
 		// Cheat para evitar traducciones de direcciones
-		if (ripStop!=0)
+		if (ripStop != 0) {
 			memcpy (&buf[0], &ripStop, 8);	
-		else
+		} else {
 			memcpy (&buf[0], &valRIP, 8);	// guardamos el valor cs:ip en el registro virtual "vip"
+		}
 		//eprintf("guardando regs procesados%x\n",size);
 		memcpy (saveRegs,buf,size);
 		bCapturaRegs = false;
@@ -192,11 +193,11 @@ static int r_debug_bochs_reg_write(RDebug *dbg, int type, const ut8 *buf, int si
 	//eprintf("bochs_reg_write\n");
 	return -1;
 }
+
 void map_free(RDebugMap *map) {
 	free (map->name);
 	free (map);
 }
-
 
 static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 	//eprintf("bochs_map_getdebug:\n");
@@ -302,7 +303,6 @@ static int r_debug_bochs_stop(RDebug *dbg) {
 	return true;
 }
 
-
 static int r_debug_bochs_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	//eprintf ("bochs_attach:\n");
@@ -334,7 +334,7 @@ static const char *r_debug_bochs_reg_profile(RDebug *dbg) {
 	int bits = dbg->anal->bits;
 	
 	if (bits == 16 || bits == 32 || bits == 64) {
-		return strdup(
+		return strdup (
 				"=PC	csip\n"
 				"=SP	rsp\n"
 				"=BP	rbp\n"
@@ -514,7 +514,6 @@ static const char *r_debug_bochs_reg_profile(RDebug *dbg) {
 
 RDebugPlugin r_debug_plugin_bochs = {
 	.name = "bochs",
-	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
@@ -530,8 +529,6 @@ RDebugPlugin r_debug_plugin_bochs = {
 	.reg_read = &r_debug_bochs_reg_read,
 	.reg_write = &r_debug_bochs_reg_write,
 	.reg_profile = (void *)r_debug_bochs_reg_profile,
-	//.bp_write = &r_debug_gdb_bp_write,
-	//.bp_read = &r_debug_gdb_bp_read,
 };
 
 #ifndef CORELIB

@@ -1,16 +1,14 @@
 include ../../config.mk
 include ../../../mk/platform.mk
 
-# XXX
-CFLAGS+=-I../../include -I../arch/ -I../arch/include -Wall -shared ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 LDFLAGS+=${LINK}
 
-caca:
+nop:
 
 foo: all
 
 ALL_TARGETS=
-ALGOS=aes.mk
+ALGOS=aes.mk aes_cbc.mk
 include $(ALGOS)
 
 all: ${ALL_TARGETS}

@@ -1,3 +1,4 @@
+clang-log/
 *._d
 *._o
 *.[ado]
@@ -43,6 +44,7 @@ libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
+shlr/grub/libgrubfs.lib
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb

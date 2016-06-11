@@ -12,7 +12,8 @@ NOTES
 #include <r_anal.h>
 
 R_API RAnalCC* r_anal_cc_new () {
-	RAnalCC *cc = R_NEW (RAnalCC);
+	RAnalCC *cc = R_NEW0 (RAnalCC);
+	if (!cc) return NULL;
 	r_anal_cc_init (cc);
 	return cc;
 }
@@ -22,7 +23,6 @@ R_API void r_anal_cc_init (RAnalCC *cc) {
 }
 
 R_API int r_anal_cc_str2type (const char *str) {
-	if (!strcmp (str, "none")) return R_ANAL_CC_TYPE_NONE;
 	if (!strcmp (str, "cdecl")) return R_ANAL_CC_TYPE_CDECL;
 	if (!strcmp (str, "stdcall")) return R_ANAL_CC_TYPE_STDCALL;
 	if (!strcmp (str, "fastcall")) return R_ANAL_CC_TYPE_FASTCALL;
@@ -40,7 +40,6 @@ R_API int r_anal_cc_str2type (const char *str) {
 
 R_API const char *r_anal_cc_type2str(int type) {
 	switch (type) {
-	case R_ANAL_CC_TYPE_NONE: return "none";
 	case R_ANAL_CC_TYPE_CDECL: return "cdecl";
 	case R_ANAL_CC_TYPE_STDCALL: return "stdcall";
 	case R_ANAL_CC_TYPE_FASTCALL: return "fastcall";
@@ -76,12 +75,8 @@ R_API void r_anal_cc_reset (RAnalCC *cc) {
 R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	RSyscallItem *si;
 	RAnalFunction *fcn;
-	char str[1024], buf[64];
+	char buf[64], *str = NULL;
 	int i, eax = 0; // eax = arg0
-	int str_len = 0;
-	int buf_len = 0;
-
-	str[0] = 0;
 	switch (cc->type) {
 	case R_ANAL_CC_TYPE_FASTCALL: // INT
 		{
@@ -96,23 +91,25 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		si = r_syscall_get (anal->syscall, eax, (int)cc->jump);
 		if (si) {
 			//DEBUG r_cons_printf (" ; sc[0x%x][%d]=%s(", (int)analop.value, eax, si->name);
-			snprintf (str, sizeof (str), "%s (", si->name);
+			str = r_str_newf ("%s (", si->name);
 			for (i=0; i<si->args; i++) {
-				const char *reg = r_syscall_reg (anal->syscall, i+1, si->args);
+				const char *reg = r_syscall_reg (anal->syscall, i + 1, si->args);
 				if (!reg) break; // no registers?
 				item = r_reg_get (anal->reg, reg, R_REG_TYPE_GPR);
 				if (item) {
-					snprintf (buf, sizeof (buf), "0x%"PFMT64x, r_reg_get_value (anal->reg, item));
-					strcat (str, buf); // XXX: do not use strcat
+					ut64 val = r_reg_get_value (anal->reg, item);
+					snprintf (buf, sizeof (buf), "0x%"PFMT64x, val);
+					str = r_str_concat (str, buf);
 				} //else eprintf ("Unknown reg '%s'\n", reg);
-				if (i<si->args-1)
-					strcat (str, ","); // XXX: do not use strcat
+				if (i < si->args-1) {
+					str = r_str_concat (str, ",");
+				}
 			}
-			strcat (str, ")");
+			str = r_str_concat (str, ",");
 		} else {
 			int n = (int)cc->jump;
 			//if (n == 3) return NULL; // XXX: hack for x86
-			snprintf (str, sizeof (str), "syscall[0x%x][%d]=?", n, eax);
+			str = r_str_newf ("syscall[0x%x][%d]=?", n, eax);
 		}
 		}
 		break;
@@ -122,36 +119,33 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	case R_ANAL_CC_TYPE_STDCALL: // CALL
 		fcn = r_anal_get_fcn_in (anal, cc->jump,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_IMP);
-		if (fcn && fcn->name)
-			snprintf (str, sizeof (str), "%s(", fcn->name);
-		else if (cc->jump != -1LL)
-			snprintf (str, sizeof (str), "0x%08"PFMT64x"(", cc->jump);
-		else strncpy (str, "unk(", sizeof (str)-1);
-		str_len = strlen (str);
+		if (fcn && fcn->name) {
+			str = r_str_newf ("%s(", fcn->name);
+		} else if (cc->jump != -1LL) {
+			str = r_str_newf ("0x%08"PFMT64x"(", cc->jump);
+		} else {
+			str = r_str_newf ("unk(");
+		}
 		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?fcn->nargs:cc->nargs);
 		if (cc->nargs>8) {
 			//eprintf ("too many arguments for stdcall. chop to 8\n");
 			cc->nargs = 8;
 		}
 		// TODO: optimize string concat
-		for (i=0; i<cc->nargs; i++) {
+		for (i=0; i < cc->nargs; i++) {
 			if (cc->args[cc->nargs-i] != -1LL)
 				 snprintf (buf, sizeof (buf),
 					"0x%"PFMT64x, cc->args[cc->nargs-i]);
 			else strncpy (buf, "unk", sizeof (buf)-1);
-			buf_len = strlen (buf);
-			if ((buf_len+str_len+5)>=sizeof (str)) {
-				strcat (str, "...");
-				break;
+			str = r_str_concat (str, buf);
+			if (i < cc->nargs-1) {
+				str = r_str_concat (str, ", ");
 			}
-			strcat (str, buf);
-			str_len += buf_len;
-			if (i<cc->nargs-1) strcat (str, ", ");
 		}
-		strcat (str, ")");
+		str = r_str_concat (str, ")");
 		break;
 	}
-	return strdup (str);
+	return str;
 }
 
 R_API bool r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {

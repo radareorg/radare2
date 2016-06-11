@@ -156,11 +156,10 @@ RAsmPlugin r_asm_plugin_bf = {
 	.arch = "bf",
 	.license = "LGPL3",
 	.bits = 16|32|64,
+	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "Brainfuck",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = &assemble 
+	.assemble = &assemble
 };
 
 #ifndef CORELIB

@@ -103,6 +103,14 @@ R_API bool r_file_exists(const char *str) {
 	return (S_ISREG (buf.st_mode))? R_TRUE: R_FALSE;
 }
 
+R_API long r_file_proc_size(FILE *fd) {
+	long size = 0;
+	while (fgetc (fd) != EOF) {
+		size++;
+	}
+	return size;
+}
+
 R_API ut64 r_file_size(const char *str) {
 	struct stat buf = {0};
 	if (stat (str, &buf)==-1)
@@ -124,7 +132,7 @@ R_API char *r_file_abspath(const char *file) {
 	}
 	cwd = r_sys_getdir ();
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
-		ret = r_str_home (file+2);
+		ret = r_str_home (file + 2);
 	} else {
 #if __UNIX__ || __CYGWIN__
 		if (cwd && *file != '/')
@@ -139,7 +147,8 @@ R_API char *r_file_abspath(const char *file) {
 	if (!ret) ret = strdup (file);
 #if __UNIX__
 	{
-		char *abspath = realpath (ret, NULL);
+		char *resolved_path = calloc(4096, 1); // TODO: use MAXPATH
+		char *abspath = realpath (ret, resolved_path);
 		if (abspath) {
 			free (ret);
 			ret = abspath;
@@ -225,8 +234,16 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 		return NULL;
 	fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
-	if (sz==0)
-		sz = 65536;
+	if (sz==0) {
+		if (r_file_is_regular (str)) {
+			/* proc file */
+			fseek (fd, 0, SEEK_SET);
+			sz = r_file_proc_size (fd);
+			if (!sz) sz = -1;
+		} else {
+			sz = 65536;
+		}
+	}
 	if (sz <0) {
 		fclose (fd);
 		return NULL;
@@ -417,11 +434,10 @@ R_API char *r_file_root(const char *root, const char *path) {
 }
 
 R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
-	int ret;
 	FILE *fd;
-	if (!file || !*file || !buf) {
+	if (!file || !*file || !buf || len < 0) {
 		eprintf ("r_file_dump file: %s buf: %p\n", file, buf);
-		return R_FALSE;
+		return false;
 	}
 	if (append) {
 		fd = r_sandbox_fopen (file, "awb");
@@ -431,13 +447,18 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	}
 	if (fd == NULL) {
 		eprintf ("Cannot open '%s' for writing\n", file);
-		return R_FALSE;
+		return false;
 	}
-	if (len<0) len = strlen ((const char *)buf);
-	ret = fwrite (buf, 1, len, fd) == len;
-	if (!ret) eprintf ("r_file_dump: fwrite: error\n");
+	if (len < 0) {
+		len = strlen ((const char *)buf);
+	}
+	if (fwrite (buf, len, 1, fd) != 1) {
+		r_sys_perror ("r_file_dump: fwrite: error\n");
+		fclose (fd);
+		return false;
+	}
 	fclose (fd);
-	return ret;
+	return true;
 }
 
 R_API bool r_file_rm(const char *file) {
@@ -550,7 +571,7 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 
 	if (fh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("r_file_mmap_read: CreateFile");
+		r_sys_perror ("CreateFile");
 		return -1;
 	}
 
@@ -564,7 +585,7 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 		memcpy (obuf, buf, len);
 		UnmapViewOfFile (obuf);
 	} else {
-		r_sys_perror ("r_file_mmap_read: CreateFileMapping");
+		r_sys_perror ("CreateFileMapping");
 		CloseHandle (fh);
 		return -1;
 	}
@@ -608,7 +629,7 @@ static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 		FILE_SHARE_READ|(m->rw?FILE_SHARE_WRITE:0), NULL,
 		OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (m->fh == INVALID_HANDLE_VALUE) {
-		r_sys_perror ("r_file_mmap_windows: CreateFile");
+		r_sys_perror ("CreateFile");
 		free (m);
 		return NULL;
 	}
@@ -621,7 +642,7 @@ static RMmap *r_file_mmap_windows (RMmap *m, const char *file) {
 			FILE_MAP_COPY,
 			UT32_HI (m->base), UT32_LO (m->base), 0);
 	} else {
-		r_sys_perror ("r_file_mmap_windows: CreateFileMapping");
+		r_sys_perror ("CreateFileMapping");
 		CloseHandle (m->fh);
 		free (m);
 		m = NULL;

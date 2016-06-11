@@ -95,13 +95,13 @@ XATTR_DEFAULT = 1
 
 INCLUDEDIR = -I.
 INSTALL_DIR = /usr/local/bin
-CFLAGS+=-I/usr/local/include
+CFLAGS+=-I/usr/local/include -g
 
-MKSQUASHFS_OBJS = mksquashfs.o read_fs.o sort.o swap.o pseudo.o compressor.o \
+MKSQUASHFS_OBJS = mksquashfs.o read_fs.o sort.o pseudo.o compressor.o \
 	action.o
 
 UNSQUASHFS_OBJS = unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o \
-	unsquash-4.o swap.o compressor.o
+	unsquash-4.o compressor.o
 
 CFLAGS ?= -O2
 CFLAGS += $(EXTRA_CFLAGS) $(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 \
@@ -210,8 +210,6 @@ read_fs.o: read_fs.c squashfs_fs.h read_fs.h squashfs_swap.h compressor.h \
 	xattr.h
 
 sort.o: sort.c squashfs_fs.h sort.h mksquashfs.h
-
-swap.o: swap.c
 
 pseudo.o: pseudo.c pseudo.h
 

@@ -66,7 +66,7 @@ static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
 		lr = (ut32)debug_read_raw (pid, at);
 		memcpy (buf+x, &lr, last) ;
 	}
-	return sz; 
+	return sz;
 }
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
@@ -116,7 +116,7 @@ static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
 		if (debug_write_raw (pid, (void*)at, lr))
 			return sz-last;
 	}
-	return sz; 
+	return sz;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
@@ -185,6 +185,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (ret != -1) {
 			RIODesc *desc;
 			RIOPtrace *riop = R_NEW0 (RIOPtrace);
+			if (!riop) return NULL;
 			riop->pid = riop->tid = pid;
 			open_pidmem (riop);
 #if 1
@@ -218,7 +219,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				free (pidpath);
 			}
 #else
-			{	
+			{
 				char *pidpath = strdup ("/bin/ls"); //io->referer); //filer_sys_pid_to_path (pid);
 				desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
 						pidpath, rw | R_IO_EXEC, mode, riop);

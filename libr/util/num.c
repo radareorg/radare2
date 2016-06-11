@@ -7,32 +7,6 @@
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
 
-R_API ut16 r_num_ntohs (ut16 foo) {
-#if LIL_ENDIAN
-	ut8 *p = (ut8*)&foo;
-	foo = p[1] | p[0]<<8;
-#endif
-	return foo;
-}
-
-#define __htonq(x) (\
-        (((x) & 0xff00000000000000LL) >> 56)  | \
-        (((x) & 0x00ff000000000000LL) >> 40)  | \
-        (((x) & 0x0000ff0000000000LL) >> 24)  | \
-        (((x) & 0x000000ff00000000LL) >> 8)   | \
-        (((x) & 0x00000000ff000000LL) << 8)   | \
-        (((x) & 0x0000000000ff0000LL) << 24)  | \
-        (((x) & 0x000000000000ff00LL) << 40)  | \
-        (((x) & 0x00000000000000ffLL) << 56))
-
-R_API ut64 r_num_htonq(ut64 value) {
-        ut64 ret = value;
-#if LIL_ENDIAN
-        r_mem_copyendian ((ut8*)&ret, (ut8*)&value, 8, 0);
-#endif
-        return ret;
-}
-
 R_API void r_num_irand() {
 	srand (r_sys_now ());
 }
@@ -64,7 +38,7 @@ R_API void r_num_minmax_swap_i(int *a, int *b) {
 }
 
 R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
-	RNum *num = R_NEW (RNum);
+	RNum *num = R_NEW0 (RNum);
 	if (!num) return NULL;
 	num->value = 0LL;
 	num->callback = cb;
@@ -291,7 +265,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 					*p2 = '\0';
 					ret = r_num_op (op, ret, r_num_math_internal (num, p));
 					ret = r_num_op (op, ret, r_num_math (num, p2+1));
-					p = p2+1; 
+					p = p2+1;
 					continue;
 				} else eprintf ("WTF!\n");
 			} else ret = r_num_op (op, ret, r_num_math_internal (num, p));
@@ -305,14 +279,14 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 #endif
 }
 
-R_API int r_num_is_float(struct r_num_t *num, const char *str) {
+R_API int r_num_is_float(RNum *num, const char *str) {
 	// TODO: also support 'f' terminated strings
 	return (strchr (str, '.') != NULL)? R_TRUE:R_FALSE;
 }
 
-R_API double r_num_get_float(struct r_num_t *num, const char *str) {
+R_API double r_num_get_float(RNum *num, const char *str) {
 	double d = 0.0f;
-	sscanf (str, "%lf", &d);
+	(void) sscanf (str, "%lf", &d);
 	return d;
 }
 

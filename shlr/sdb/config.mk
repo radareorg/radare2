@@ -6,8 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-
-SDBVER=0.10.0
+SDBVER=0.10.2
 
 BUILD_MEMCACHE=0
 
@@ -97,6 +96,7 @@ ifeq (${OS},Darwin)
 EXT_SO=dylib
 SOVER=dylib
 LDFLAGS+=-dynamic
+LDFLAGS_SHARED+=-dynamiclib
   ifeq (${ARCH},i386)
 #CC+=-arch i386
 CC+=-arch x86_64

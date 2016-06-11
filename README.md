@@ -20,7 +20,7 @@
 r2 is a rewrite from scratch of radare in order to provide
 a set of libraries and tools to work with binary files.
 
-Radare project started as a forensics tool, an scriptable
+Radare project started as a forensics tool, a scriptable
 commandline hexadecimal editor able to open disk files,
 but later support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers, ..
@@ -75,6 +75,22 @@ version or remove all previous installations:
     $ make uninstall
     $ make purge
 
+# Package manager
+
+Radare2 has its own package manager - r2pm. It's packages 
+repository is on [GitHub too](https://github.com/radare/radare2-pm).
+To start to use it for the first time you need to initialize packages:
+
+    $ r2pm init
+
+And to refresh packages before installation/updating a new one:
+
+    $ r2pm refresh
+
+To install/update package use the command
+
+    $ r2pm install [package name]
+
 # Bindings
 
 All language bindings are under the r2-bindings directory.
@@ -86,7 +102,7 @@ to swig interfaces, nodejs-ffi or other and then compiled.
 
 The easiest way to install the python bindings is to run:
 
-    $ sys/python.sh
+    $ r2pm install python
 
 In addition there are `r2pipe` bindings, which are an API
 interface to interact with the prompt, passing commands

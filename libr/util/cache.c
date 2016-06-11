@@ -6,7 +6,8 @@
 // TODO: optimize reallocs.. store RBuffer info.. wait. extend r_buf_ for that?
 
 R_API RCache *r_cache_new() {
-	RCache *c = R_NEW (RCache);
+	RCache *c = R_NEW0 (RCache);
+	if (!c) return NULL;
 	c->buf = NULL;
 	c->base = 0;
 	c->len = 0;

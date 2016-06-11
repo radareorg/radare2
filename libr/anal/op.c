@@ -31,14 +31,15 @@ R_API RList *r_anal_op_list_new() {
 	return list;
 }
 
-R_API void r_anal_op_fini(RAnalOp *op) {
-	if (!op) // || !op->mnemonic)
-		return;
+R_API bool r_anal_op_fini(RAnalOp *op) {
+	if (!op) {
+		return false;
+	}
 	if (((ut64)(size_t)op) == UT64_MAX) {
-		return;
+		return false;
 	}
 	if (((ut64)(size_t)op->mnemonic) == UT64_MAX) {
-		return;
+		return false;
 	}
 	r_anal_var_free (op->var);
 	r_anal_value_free (op->src[0]);
@@ -54,6 +55,8 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	op->var = NULL;
 	op->switch_op = NULL;
 	R_FREE (op->mnemonic);
+	R_FREE (op->reg);
+	return true;
 }
 
 R_API void r_anal_op_free(void *_op) {
@@ -65,7 +68,7 @@ R_API void r_anal_op_free(void *_op) {
 
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = sdb_fmt (0, "inst.0x%"PFMT64x".vars", op->addr);
-	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
 	RAnalVar *res;
 
@@ -109,7 +112,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 }
 
 R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
-	RAnalOp *nop = R_NEW (RAnalOp);
+	RAnalOp *nop = R_NEW0 (RAnalOp);
 	if (!nop) return NULL;
 	*nop = *op;
 	if (op->mnemonic) {
@@ -133,7 +136,7 @@ R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 // TODO: return RAnalException *
 R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 	while (op) {
-		if (op->delay>0) {
+		if (op->delay > 0) {
 			anal->queued = r_anal_op_copy (op);
 			return false;
 		}
@@ -203,6 +206,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_CALL  : return "call";
 	case R_ANAL_OP_TYPE_CCALL : return "ccall";
 	case R_ANAL_OP_TYPE_CJMP  : return "cjmp";
+	case R_ANAL_OP_TYPE_MJMP  : return "mjmp";
 	case R_ANAL_OP_TYPE_CMP   : return "cmp";
 	case R_ANAL_OP_TYPE_CRET  : return "cret";
 	case R_ANAL_OP_TYPE_DIV   : return "div";
@@ -418,6 +422,8 @@ R_API const char *r_anal_stackop_tostring (int s) {
 		return "get";
 	case R_ANAL_STACK_SET:
 		return "set";
+	case R_ANAL_STACK_RESET:
+		return "reset";
 	}
 	return "unk";
 }

@@ -118,16 +118,16 @@ static int decode_emulation(ut16 instr, ut16 op1, struct msp430_cmd *cmd)
 	} else if (opcode == MSP430_MOV && ad == 0 && dst == MSP430_PC) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "br");
 		remove_second_operand(cmd);
-	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_SR && dst == MSP430_SR) {
+	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "clrn");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_R3 && dst == MSP430_SR) {
+	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "clrz");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIC && as == 3 && src == MSP430_SR && dst == MSP430_SR) {
+	} else if (opcode == MSP430_BIC && as == 3 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "dint");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 3 && src == MSP430_SR && dst == MSP430_SR) {
+	} else if (opcode == MSP430_BIS && as == 3 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", "eint");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_DADD && as == 0 && src == MSP430_R3) {
@@ -157,13 +157,13 @@ static int decode_emulation(ut16 instr, ut16 op1, struct msp430_cmd *cmd)
 	} else if (opcode == MSP430_SUBC && as == 0 && src == MSP430_R3) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", bw ? "sbc.b" : "sbc");
 		remove_first_operand(cmd);
-	} else if (opcode == MSP430_BIS && as == 1 && src == MSP430_R3) {
+	} else if (opcode == MSP430_BIS && as == 1 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setc");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_SR) {
+	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setn");
 		cmd->operands[0] = '\0';
-	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_R3) {
+	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
 		snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "setz");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_CMP && as == 0 && src == MSP430_R3) {
@@ -446,7 +446,7 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	ut16 operand1, operand2;
 	ut8 opcode;
 
-	r_mem_copyendian((ut8*)&instr, in, sizeof(ut16), LIL_ENDIAN);
+	instr = r_read_le16 (in);
 
 	opcode = get_twoop_opcode(instr);
 
@@ -464,8 +464,8 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	case MSP430_XOR:
 	case MSP430_AND:
 		cmd->type = MSP430_TWOOP;
-		r_mem_copyendian((ut8*)&operand1, in + 2, sizeof(ut16), LIL_ENDIAN);
-		r_mem_copyendian((ut8*)&operand2, in + 4, sizeof(ut16), LIL_ENDIAN);
+		operand1 = r_read_at_le16 (in, 2);
+		operand2 = r_read_at_le16 (in, 4);
 		ret = decode_twoop_opcode(instr, operand1, operand2, cmd);
 	break;
 	}
@@ -479,7 +479,7 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	if (ret > 0)
 		return ret;
 
-	r_mem_copyendian((ut8*)&operand1, in + 2, sizeof(ut16), LIL_ENDIAN);
+	operand1 = r_read_at_le16 (in, 2);
 	ret = decode_oneop_opcode(instr, operand1, cmd);
 
 	/* if ret < 0, it's an invalid opcode.Say so and return 2 since

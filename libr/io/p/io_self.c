@@ -65,7 +65,6 @@ static int update_self_regions(RIO *io, int pid) {
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
-	char null[64];
 	char path[1024], line[1024];
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path)-1, "/proc/%d/maps", pid);
@@ -79,8 +78,7 @@ static int update_self_regions(RIO *io, int pid) {
 		if (line[0]=='\0')
 			break;
 		path[0]='\0';
-		sscanf (line, "%s %s %s %s %s %s",
-			region+2, perms, null, null, null, path);
+		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region+2, perms, path);
 		memcpy (region, "0x", 2);
 		pos_c = strchr (region+2, '-');
 		if (pos_c) {

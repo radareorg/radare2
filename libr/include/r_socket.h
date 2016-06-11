@@ -32,6 +32,11 @@ R_LIB_VERSION_HEADER(r_socket);
 #ifndef MSG_DONTWAIT
 #define MSG_DONTWAIT 0
 #endif
+#ifndef SD_BOTH
+#define SD_RECEIVE  0
+#define SD_SEND 1
+#define SD_BOTH 2
+#endif
 
 typedef struct {
 	int magic;
@@ -163,7 +168,7 @@ R_API RSocketRapServer *r_socket_rap_server_create (const char *pathname);
 R_API void r_socket_rap_server_free (RSocketRapServer *rap_s);
 R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certfile);
 R_API RSocket* r_socket_rap_server_accept (RSocketRapServer *rap_s);
-R_API int r_socket_rap_server_continue (RSocketRapServer *rap_s);
+R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s);
 
 /* run.c */
 #define R_RUN_PROFILE_NARGS 512
@@ -200,6 +205,7 @@ typedef struct r_run_profile_t {
 	char *_connect;
 	char *_listen;
 	int _timeout;
+	int _timeout_sig;
 	int _nice;
 } RRunProfile;
 

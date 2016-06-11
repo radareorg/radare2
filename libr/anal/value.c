@@ -12,7 +12,8 @@ R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
 }
 
 R_API RAnalValue *r_anal_value_copy (RAnalValue *ov) {
-	RAnalValue *v = R_NEW (RAnalValue);
+	RAnalValue *v = R_NEW0 (RAnalValue);
+	if (!v) return NULL;
 	memcpy (v, ov, sizeof (RAnalValue));
 	// reference to reg and regdelta should be kept
 	return v;
@@ -54,7 +55,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 		if (anal->iob.io) {
 			ut8 data[8];
 			ut64 addr = r_anal_value_to_ut64 (anal, val);
-			r_mem_set_num (data, val->memref, num, anal->big_endian);
+			r_mem_set_num (data, val->memref, num);
 			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
 		} else eprintf ("No IO binded to r_anal\n");
 	} else {

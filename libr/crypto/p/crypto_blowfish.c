@@ -174,66 +174,81 @@ static ut32 F(struct blowfish_state *const state, const ut32 inbuf) {
 	return ((state->s[0][a] + state->s[1][b]) ^ state->s[2][c]) + state->s[3][d];
 }
 
-static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf, ut8 *outbuf, int keylen) {
+static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	ut32 left, right;
-	int index;
+	int index1, index2;
 
-	if (!state || !inbuf || !outbuf || keylen < 0) {
+	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
+		//let user deal with padding
+		if (buflen%8 != 0) eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
 		return;
 	}
-	left = (inbuf[0] << 24 | inbuf[1] << 16 | inbuf[2] << 8 | inbuf[3]);
-	right = (inbuf[4] << 24 | inbuf[5] << 16 | inbuf[6] << 8 | inbuf[7]);
+	
+	for (index1 = 0; index1 < buflen; index1 += 8) {
+		left = (inbuf[index1+0] << 24 | inbuf[index1+1] << 16 | inbuf[index1+2] << 8 | inbuf[index1+3]);
+		right = (inbuf[index1+4] << 24 | inbuf[index1+5] << 16 | inbuf[index1+6] << 8 | inbuf[index1+7]);
 
-	for (index = 0; index < 16; index += 1) {
-		left ^= state->p[index];
-		right ^= F (state, left);
+		for (index2 = 0; index2 < 16; index2 += 1) {
+			left ^= state->p[index2];
+			right ^= F (state, left);
+			swap (&left, &right);
+		}
+		/* Undo the last swap. */
 		swap (&left, &right);
-	}
-	/* Undo the last swap. */
-	swap (&left, &right);
-	right ^= state->p[16];
-	left ^= state->p[17];
+		right ^= state->p[16];
+		left ^= state->p[17];
 
-	outbuf[0] = left >> 24;
-	outbuf[1] = left >> 16;
-	outbuf[2] = left >> 8;
-	outbuf[3] = left;
-	outbuf[4] = right >> 24;
-	outbuf[5] = right >> 16;
-	outbuf[6] = right >> 8;
-	outbuf[7] = right;
+		outbuf[index1+0] = left >> 24;
+		outbuf[index1+1] = left >> 16;
+		outbuf[index1+2] = left >> 8;
+		outbuf[index1+3] = left;
+		outbuf[index1+4] = right >> 24;
+		outbuf[index1+5] = right >> 16;
+		outbuf[index1+6] = right >> 8;
+		outbuf[index1+7] = right;
+	}
 }
 
-#if 0
-static void blowfish_dcrypt(struct blowfish_state *const state, const ut8 *inbuf, ut8 *outbuf, int keylen) {
+static void blowfish_decrypt(struct blowfish_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	ut32 left, right;
-	int index;
+	int index1, index2;
 
-	left = (inbuf[0] << 24 | inbuf[1] << 16 | inbuf[2] << 8 | inbuf[3]);
-	right = (inbuf[4] << 24 | inbuf[5] << 16 | inbuf[6] << 8 | inbuf[7]);
-
-	for(index = 17; index > 1; index -= 1) {
-		left ^= state->p[index];
-		right ^= F(state, left);
-		swap (&left, &right);
+	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
+		//length of encrypted output of blowfish is multiple of 8 bytes. 
+		if (buflen%8 != 0) eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
+		return;
 	}
-	/* Undo the last swap. */
-	swap (&left, &right);
-	right ^= state->p[1];
-	left ^= state->p[0];
 
-	outbuf[0] = left >> 24;
-	outbuf[1] = left >> 16;
-	outbuf[2] = left >> 8;
-	outbuf[3] = left;
-	outbuf[4] = right >> 24;
-	outbuf[5] = right >> 16;
-	outbuf[6] = right >> 8;
-	outbuf[7] = right;
+	for (index1 = 0; index1 < buflen; index1 += 8) {
+		left = (inbuf[index1+0] << 24 | inbuf[index1+1] << 16 | inbuf[index1+2] << 8 | inbuf[index1+3]);
+		right = (inbuf[index1+4] << 24 | inbuf[index1+5] << 16 | inbuf[index1+6] << 8 | inbuf[index1+7]);
+
+		for (index2 = 17; index2 > 1; index2 -= 1) {
+			left ^= state->p[index2];
+			right ^= F(state, left);
+			swap (&left, &right);
+		}
+		/* Undo the last swap. */
+		swap (&left, &right);
+		right ^= state->p[1];
+		left ^= state->p[0];
+
+		outbuf[index1+0] = left >> 24;
+		outbuf[index1+1] = left >> 16;
+		outbuf[index1+2] = left >> 8;
+		outbuf[index1+3] = left;
+		outbuf[index1+4] = right >> 24;
+		outbuf[index1+5] = right >> 16;
+		outbuf[index1+6] = right >> 8;
+		outbuf[index1+7] = right;
+	}
 }
-#endif
 
 static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, int keylen) {
+	if (!state || !key || keylen > 56) {
+		return false;
+	}
+
 	ut8 block[8];
 	int index1, index2;
 
@@ -254,7 +269,7 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 
 	/* Recalculating P-boxes */
 	for (index1 = 0; index1 < 18; index1 += 2) {
-		blowfish_crypt (state, block, block, keylen);
+		blowfish_crypt (state, block, block, 8);
 		state->p[index1] = (block[0] << 24 | block[1] << 16 | block[2] << 8 | block[3]);
 		state->p[index1+1] = (block[4] << 24 | block[5] << 16 | block[6] << 8 | block[7]);
 	}
@@ -262,6 +277,7 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	/* Recalculating S-boxes */
 	for (index1 = 0; index1 < 4; index1 += 1) {
 		for (index2 = 0; index2 < 256; index2 += 2) {
+			blowfish_crypt (state, block, block, 8);
 			state->s[index1][index2] = (block[0] << 24 | block[1] << 16
 					| block[2] << 8 | block[3]);
 			state->s[index1][index2+1] = (block[4] << 24 | block[5] << 16
@@ -271,11 +287,11 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	return true;
 }
 
-///////////////////////////////////////////////////////////
-
 static struct blowfish_state st;
+static int flag = 0;
 
 static int blowfish_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	flag = direction;
 	return blowfish_init (&st, key, keylen);
 }
 
@@ -290,7 +306,11 @@ static bool blowfish_use(const char *algo) {
 static int update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) return false;
-	blowfish_crypt (&st, buf, obuf, len);
+	if (flag == 0) {
+		blowfish_crypt (&st, buf, obuf, len);
+	} else if (flag == 1) {
+		blowfish_decrypt (&st, buf, obuf, len);
+	}
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
 	return 0;
@@ -325,12 +345,12 @@ int main() {
 
 	/* encrypt */
 	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_crypt (&st, (const ut8*)"hello world", out, sizeof(out));
+	blowfish_crypt (&st, (const ut8*)"helloworld123456", out, sizeof(out));
 
 	/* decrypt */
 	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_dcrypt (&st, out, out, sizeof(out));
+	blowfish_decrypt (&st, out, out, sizeof(out));
 
-	eprintf ("%s\n", (const char *)out); // must print "hello world"
+	eprintf ("%s\n", (const char *)out); // must print "helloworld123456"
 }
 #endif

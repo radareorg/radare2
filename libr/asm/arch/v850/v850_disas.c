@@ -183,8 +183,8 @@ static int decode_jarl(const ut8 *instr, struct v850_cmd *cmd) {
 	ut16 word1, word2;
 	ut32 disp;
 
-	r_mem_copyendian ((ut8*)&word1, instr, 2, LIL_ENDIAN);
-	r_mem_copyendian ((ut8*)&word2, instr + 2, 2, LIL_ENDIAN);
+	word1 = r_read_le16 (instr);
+	word2 = r_read_at_le16 (instr, 2);
 
 	reg = get_reg2 (word1);
 	disp = (word2 << 6) | get_reg1 (word1);
@@ -199,8 +199,8 @@ static int decode_jarl(const ut8 *instr, struct v850_cmd *cmd) {
 static int decode_3operands(const ut8 *instr, struct v850_cmd *cmd) {
 	ut16 word1, word2;
 
-	r_mem_copyendian ((ut8*)&word1, instr, 2, LIL_ENDIAN);
-	r_mem_copyendian ((ut8*)&word2, instr + 2, 2, LIL_ENDIAN);
+	word1 = r_read_le16 (instr);
+	word2 = r_read_at_le16 (instr, 2);
 
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", instrs[get_opcode (word1)]);
 	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x, r%d, r%d",
@@ -212,8 +212,8 @@ static int decode_3operands(const ut8 *instr, struct v850_cmd *cmd) {
 static int decode_load_store(const ut8 *instr, struct v850_cmd *cmd) {
 	ut16 word1, word2;
 
-	r_mem_copyendian ((ut8*)&word1, instr, 2, LIL_ENDIAN);
-	r_mem_copyendian ((ut8*)&word2, instr + 2, 2, LIL_ENDIAN);
+	word1 = r_read_le16 (instr);
+	word2 = r_read_at_le16 (instr, 2);
 
 	switch (get_opcode (word1)) {
 	case V850_STB:
@@ -247,8 +247,8 @@ static int decode_bit_op(const ut8 *instr, struct v850_cmd *cmd) {
 	ut16 word1, word2;
 	ut8 reg1;
 
-	r_mem_copyendian ((ut8*)&word1, instr, 2, LIL_ENDIAN);
-	r_mem_copyendian ((ut8*)&word2, instr + 2, 2, LIL_ENDIAN);
+	word1 = r_read_le16 (instr);
+	word2 = r_read_at_le16 (instr, 2);
 
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", bit_instrs[word1 >> 14]);
 
@@ -262,8 +262,8 @@ static int decode_bit_op(const ut8 *instr, struct v850_cmd *cmd) {
 static int decode_extended(const ut8 *instr, struct v850_cmd *cmd) {
 	ut16 word1, word2;
 
-	r_mem_copyendian ((ut8*)&word1, instr, 2, LIL_ENDIAN);
-	r_mem_copyendian ((ut8*)&word2, instr + 2, 2, LIL_ENDIAN);
+	word1 = r_read_le16 (instr);
+	word2 = r_read_at_le16 (instr, 2);
 
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s",
 			ext_instrs1[get_opcode (word1)]);
@@ -310,7 +310,7 @@ int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd) {
 	int ret;
 	ut16 in;
 
-	r_mem_copyendian ((ut8*)&in, instr, 2, LIL_ENDIAN);
+	in = r_read_le16 (instr);
 
 	switch (get_opcode (in)) {
 	case V850_MOV:

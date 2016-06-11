@@ -91,21 +91,21 @@ bool bochs_wait(libbochs_t *b) {
 	int flags,n;
 	bochs_reset_buffer (b);
 	flags = fcntl (b->hReadPipeIn,F_GETFL,0);
-	n = fcntl (b->hReadPipeIn, (flags | O_NONBLOCK));
+	(void) fcntl (b->hReadPipeIn, (flags | O_NONBLOCK));
 	while (1) {
 		n = read (b->hReadPipeIn, lpTmpBuffer, SIZE_BUF - 1);
 		if (n >0) {
 			lpTmpBuffer[n] = 0;
 			if (b->punteroBuffer + n >= SIZE_BUF - 1)
 				bochs_reset_buffer(b);
-			memcpy (&b->data[b->punteroBuffer], lpTmpBuffer, n + 1);
+			memcpy (b->data + b->punteroBuffer, lpTmpBuffer, n + 1);
 			b->punteroBuffer += n;
 			if (strstr (&b->data[0], "<bochs:")) {
 				break;
 			}
 		}
 	}
-	n = fcntl (b->hReadPipeIn, (flags | ~O_NONBLOCK));
+	(void) fcntl (b->hReadPipeIn, (flags | ~O_NONBLOCK));
 	return true;
 #endif
 }

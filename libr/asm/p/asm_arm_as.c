@@ -101,6 +101,7 @@ RAsmPlugin r_asm_plugin_arm_as = {
 	.arch = "arm",
 	.license = "LGPL3",
 	.bits = 16|32|64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = NULL,

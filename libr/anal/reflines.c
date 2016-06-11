@@ -107,6 +107,14 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			nlines--;
 			if (nlines == 0) break;
 		}
+		{
+			const RAnalMetaItem *mi = r_meta_find (anal, addr, R_META_TYPE_ANY, 0);
+			if (mi) {
+				ptr += mi->size;
+				addr += mi->size;
+				continue;
+			}
+		}
 		if (anal->maxreflines && count > anal->maxreflines) {
 			break;
 		}
@@ -394,6 +402,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 
 	str = r_buf_free_to_string (b);
 	if (!str) {
+		r_list_free (lvls);
 		return NULL;
 	}
 	if (core->anal->lineswidth > 0) {

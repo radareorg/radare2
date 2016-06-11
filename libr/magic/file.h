@@ -85,8 +85,10 @@ ssize_t sread(int, void *, size_t, int);
 int file_check_mem(struct r_magic_set *, unsigned int);
 int file_looks_utf8(const unsigned char *, size_t, unichar *, size_t *);
 
-extern const char *file_names[];
+/*
+extern const char *magic_file_names[FILE_NAMES_SIZE];
 extern const size_t file_nnames;
+*/
 
 #ifndef HAVE_VASPRINTF
 int vasprintf(char **ptr, const char *format_string, va_list vargs);

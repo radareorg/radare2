@@ -387,7 +387,11 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	int numinstr, asmlen, ii;
 	RAsmCode *c;
 
-	if (len<1) return NULL;
+	if (len < 1) {
+		r_list_free (hits);
+		return NULL;
+	}
+
 	buf = (ut8 *)malloc (len);
 	if (hits == NULL || buf == NULL ){
 		if (hits) {

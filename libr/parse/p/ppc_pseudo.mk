@@ -6,4 +6,4 @@ STATIC_OBJ+=${OBJ_PPCPSEUDO}
 
 ${TARGET_PPCPSEUDO}: ${OBJ_PPCPSEUDO}
 	${CC} $(call libname,parse_ppc_pseudo) -L../../util -lr_util \
-		-shared ${CFLAGS} ${LDFLAGS} -o ${TARGET_PPCPSEUDO} ${OBJ_PPCPSEUDO}
+		${LDFLAGS_SHARED} ${CFLAGS} ${LDFLAGS} -o ${TARGET_PPCPSEUDO} ${OBJ_PPCPSEUDO}

@@ -109,10 +109,12 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 			va_end (ap);
 			return false;
 		}
-		vsnprintf (p, ret+1, fmt, ap);
+		vsnprintf (p, ret + 1, fmt, ap);
 		ret = r_strbuf_append (sb, p);
 		free (p);
-	} else ret = r_strbuf_append (sb, string);
+	} else {
+		ret = r_strbuf_append (sb, string);
+	}
 	va_end (ap);
 	return ret;
 }

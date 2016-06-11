@@ -7,6 +7,7 @@
 
 R_API void r_io_desc_init(RIO *io) {
 	io->files = r_list_new ();
+	if (!io->files) return;
 	io->files->free = (RListFree)r_io_desc_free;
 }
 
@@ -183,12 +184,12 @@ R_API void r_io_desc_list_visual(RIO *io, ut64 seek, ut64 len, int width, int us
 			}
 			if (io->va) {
 				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek>=s->from&& seek<s->to)?'*':' ', 
-						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ', 
+						(seek>=s->from&& seek<s->to)?'*':' ',
+						//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ',
 						color, s->from, color_end);
 			} else {
 				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
-						(seek>=s->from && seek<s->to)?'*':' ', 
+						(seek >= s->from && seek < s->to) ? '*':' ',
 						color, s->from, color_end);
 			}
 			for (j=0; j<width; j++) {
@@ -198,7 +199,7 @@ R_API void r_io_desc_list_visual(RIO *io, ut64 seek, ut64 len, int width, int us
 					io->cb_printf ("#");
 				else io->cb_printf ("-");
 			}
-			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %d\n", 
+			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %d\n",
 				color, s->to, color_end,
 				r_str_rwx_i (s->flags), s->fd);
 			i++;

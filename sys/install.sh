@@ -4,6 +4,8 @@ MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
+export MAKE="$MAKE"
+
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
 
 # find root

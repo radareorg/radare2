@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2016 - pancake, condret */
 
 #include <r_io.h>
 
@@ -16,7 +16,7 @@ virtual addresses are used when io.va is enabled
 and it checks for sections in order to find an address
 inside a mapped range.
 
-If a virtual address is not found in any section, 
+If a virtual address is not found in any section,
 then it looks into the map addresses.
 
 mapped addresses are used to map an RIODesc at a
@@ -62,13 +62,20 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	}
 	sections = r_io_section_get_in_vaddr_range (io, vaddr, vaddr+len);
 	if (!r_list_empty (sections)) {						//check if there is any section
-		ranges = r_list_new();
-		ranges->free = free;
+		ranges = r_list_newf (free);
+		if (!ranges) {
+			r_list_free (sections);
+			return false;
+		}
 		r_list_foreach (sections, iter, section) {
 			if (section->vaddr==0)
 				continue;
 			if (section->vaddr > tmp_vaddr) {
 				range = r_io_range_new();			//create a new range
+				if (!range) {
+					r_list_free (ranges);
+					return false;
+				}
 				range->from = tmp_vaddr;			//record unsectioned area
 				range->to = section->vaddr;
 				r_list_append (ranges, range);			//store the range
@@ -182,7 +189,7 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 		r_sys_backtrace();
 #endif
 		return 0;
-	} 
+	}
 	if (paddr == UT64_MAX) {
 		if (io->ff) {
 			memset (buf, 0xff, len);

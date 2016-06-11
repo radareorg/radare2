@@ -1,4 +1,8 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_types.h"
+#include "r_io.h"
 
 static int __dump_sections_to_disk(RCore *core) {
 	char file[128];

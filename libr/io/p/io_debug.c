@@ -33,7 +33,9 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 #endif
 
 #if __APPLE__
+#if !__POWERPC__
 #include <spawn.h>
+#endif
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
@@ -197,7 +199,7 @@ static void trace_me () {
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	bool runprofile = io->runprofile && *(io->runprofile);
 	char **argv;
-#if __APPLE__
+#if __APPLE__ && !__POWERPC__
 	if (!runprofile) {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 		posix_spawn_file_actions_t fileActions;

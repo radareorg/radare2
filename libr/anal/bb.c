@@ -22,7 +22,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->fingerprint = NULL;
 	bb->diff = r_anal_diff_new ();
 	bb->label = NULL;
-	bb->op_pos = R_NEWS (ut16, DFLT_NINSTR);
+	bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
 	bb->n_op_pos = DFLT_NINSTR;
 	return bb;
 }
@@ -80,9 +80,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			}
 			break;
 		}
-		if (oplen < 1) {
-			return R_ANAL_RET_END;
-		}
+		if (oplen < 1) goto beach;
 
 		r_anal_bb_set_offset (bb, bb->ninstr, addr + idx - bb->addr);
 		idx += oplen;
@@ -171,8 +169,10 @@ R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 	// the offset of the instruction 0 is not stored because always 0
 	if (i > 0) {
 		if (i >= bb->n_op_pos) {
+			ut16 *tmp_op_pos = realloc (bb->op_pos, (i * 2) * sizeof (*bb->op_pos));
+			if (!tmp_op_pos) return;
 			bb->n_op_pos = i * 2;
-			bb->op_pos = realloc (bb->op_pos, bb->n_op_pos * sizeof (*bb->op_pos));
+			bb->op_pos = tmp_op_pos;
 		}
 		bb->op_pos[i - 1] = v;
 	}

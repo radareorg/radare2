@@ -2,6 +2,7 @@
 #define R2_BP_H
 
 #include <r_types.h>
+#include <r_lib.h>
 #include <r_io.h>
 #include <r_list.h>
 
@@ -40,6 +41,8 @@ typedef struct r_bp_plugin_t {
 
 typedef struct r_bp_item_t {
 	char *name;
+	char *module_name; /*module where you get the base address*/
+	st64 module_delta; /*delta to apply to module */
 	ut64 addr;
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */
@@ -130,6 +133,7 @@ R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx);
 R_API RBreakpointItem *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx);
 R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx);
 R_API int r_bp_restore(RBreakpoint *bp, int set);
+R_API bool r_bp_restore_except(RBreakpoint *bp, int set, ut64 addr);
 R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr);
 
 /* traptrace */

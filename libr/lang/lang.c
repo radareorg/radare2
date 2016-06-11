@@ -17,27 +17,38 @@ R_LIB_VERSION(r_lang);
 static RLang *__lang = NULL;
 
 R_API void r_lang_plugin_free (RLangPlugin *p) {
-	if (p && p->fini)
+	if (p && p->fini) {
 		p->fini (__lang);
+	}
 }
 
 R_API RLang *r_lang_new() {
 	RLang *lang = R_NEW0 (RLang);
-	if (lang) {
-		lang->user = NULL;
-		lang->langs = r_list_new ();
-		lang->langs->free = (RListFree)r_lang_plugin_free;
-		lang->defs = r_list_new ();
-		lang->defs->free = (RListFree)r_lang_def_free;
-		lang->cb_printf = (PrintfCallback)printf;
-		r_lang_add (lang, &r_lang_plugin_c);
-#if __UNIX__
-		r_lang_add (lang, &r_lang_plugin_cpipe);
-#endif
-		r_lang_add (lang, &r_lang_plugin_vala);
-		r_lang_add (lang, &r_lang_plugin_rust);
-		r_lang_add (lang, &r_lang_plugin_pipe);
+	if (!lang) {
+		return NULL;
 	}
+	lang->user = NULL;
+	lang->langs = r_list_new ();
+	if (!lang->langs) {
+		r_lang_free (lang);
+		return NULL;
+	}
+	lang->langs->free = (RListFree)r_lang_plugin_free;
+	lang->defs = r_list_new ();
+	if (!lang->defs) {
+		r_lang_free (lang);
+		return NULL;
+	}
+	lang->defs->free = (RListFree)r_lang_def_free;
+	lang->cb_printf = (PrintfCallback)printf;
+	r_lang_add (lang, &r_lang_plugin_c);
+#if __UNIX__
+	r_lang_add (lang, &r_lang_plugin_cpipe);
+#endif
+	r_lang_add (lang, &r_lang_plugin_vala);
+	r_lang_add (lang, &r_lang_plugin_rust);
+	r_lang_add (lang, &r_lang_plugin_pipe);
+
 	return lang;
 }
 
@@ -69,15 +80,15 @@ R_API int r_lang_define(RLang *lang, const char *type, const char *name, void *v
 			return  true;
 		}
 	}
-	def = R_NEW (RLangDef);
-	if (def != NULL) {
-		def->type = strdup (type);
-		def->name = strdup (name);
-		def->value = value;
-		r_list_append (lang->defs, def);
-		return true;
+	def = R_NEW0 (RLangDef);
+	if (!def) {
+		return false;
 	}
-	return false;
+	def->type = strdup (type);
+	def->name = strdup (name);
+	def->value = value;
+	r_list_append (lang->defs, def);
+	return true;
 }
 
 R_API void r_lang_def_free (RLangDef *def) {
@@ -104,15 +115,17 @@ R_API void r_lang_undef(RLang *lang, const char *name) {
 }
 
 R_API int r_lang_setup(RLang *lang) {
-	if (lang->cur && lang->cur->setup)
+	if (lang->cur && lang->cur->setup) {
 		return lang->cur->setup (lang);
+	}
 	return false;
 }
 
 R_API int r_lang_add(RLang *lang, RLangPlugin *foo) {
 	if (foo && (!r_lang_get_by_name (lang, foo->name))) {
-		if (foo->init)
+		if (foo->init) {
 			foo->init (lang);
+		}
 		r_list_append (lang->langs, foo);
 	}
 	return true;
@@ -122,10 +135,14 @@ R_API int r_lang_add(RLang *lang, RLangPlugin *foo) {
 R_API int r_lang_list(RLang *lang) {
 	RListIter *iter;
 	RLangPlugin *h;
-	if (!lang)
+	if (!lang) {
 		return false;
+	}
 	r_list_foreach (lang->langs, iter, h) {
-		lang->cb_printf ("%s: %s\n", h->name, h->desc);
+		const char *license = h->license
+			? h->license : "???";
+		lang->cb_printf ("%s: (%s) %s\n",
+			h->name, license, h->desc);
 	}
 	return true;
 }
@@ -134,10 +151,11 @@ R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {
 	RListIter *iter;
 	RLangPlugin *h;
 	const char *p = r_str_lchr (ext, '.');
-	if (p) ext = p+1;
+	if (p) ext = p + 1;
 	r_list_foreach (lang->langs, iter, h) {
-		if (!strcasecmp (h->ext, ext))
+		if (!strcasecmp (h->ext, ext)) {
 			return h;
+		}
 	}
 	return NULL;
 }
@@ -146,8 +164,9 @@ R_API RLangPlugin *r_lang_get_by_name (RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
 	r_list_foreach (lang->langs, iter, h) {
-		if (!strcasecmp (h->name, name))
+		if (!strcasecmp (h->name, name)) {
 			return h;
+		}
 	}
 	return NULL;
 }
@@ -163,14 +182,16 @@ R_API int r_lang_use(RLang *lang, const char *name) {
 
 // TODO: store in r_lang and use it from the plugin?
 R_API int r_lang_set_argv(RLang *lang, int argc, char **argv) {
-	if (lang->cur && lang->cur->set_argv)
+	if (lang->cur && lang->cur->set_argv) {
 		return lang->cur->set_argv (lang, argc, argv);
+	}
 	return false;
 }
 
 R_API int r_lang_run(RLang *lang, const char *code, int len) { 
-	if (lang->cur && lang->cur->run)
+	if (lang->cur && lang->cur->run) {
 		return lang->cur->run (lang, code, len);
+	}
 	return false;
 }
 
@@ -181,8 +202,8 @@ R_API int r_lang_run_string(RLang *lang, const char *code) {
 R_API int r_lang_run_file(RLang *lang, const char *file) { 
 	int len, ret = false;
 	if (lang->cur) {
-		if (lang->cur->run_file == NULL) {
-			if (lang->cur->run != NULL) {
+		if (!lang->cur->run_file) {
+			if (lang->cur->run) {
 				char *code = r_file_slurp (file, &len);
 				ret = lang->cur->run (lang, code, len);
 				free (code);
@@ -197,12 +218,15 @@ R_API int r_lang_prompt(RLang *lang) {
 	char buf[1024];
 	const char *p;
 
-	if (lang->cur == NULL)
+	if (!lang || !lang->cur) {
 		return false;
+	}
 
-	if (lang->cur->prompt)
-		if (lang->cur->prompt (lang) == true)
+	if (lang->cur->prompt) {
+		if (lang->cur->prompt (lang)) {
 			return true;
+		}
+	}
 	/* init line */
 	RLine *line = r_line_singleton ();
 	RLineHistory hist = line->history;
@@ -210,9 +234,9 @@ R_API int r_lang_prompt(RLang *lang) {
 	RLineCompletion oc = line->completion;
 	RLineCompletion ocnull = {0};
 	char *prompt = strdup (line->prompt);  
-
 	line->completion = ocnull;
 	line->history = histnull;
+
 	/* foo */
 	for (;;) {
 		snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
@@ -225,12 +249,14 @@ R_API int r_lang_prompt(RLang *lang) {
 		if (*buf) buf[strlen (buf)-1]='\0';
 #endif
 		p = r_line_readline ();
-		if (!p) break;
+		if (!p) {
+			break;
+		}
 		r_line_hist_add (p);
 		strncpy (buf, p, sizeof (buf) - 1);
 		if (*buf == '!') {
 			if (buf[1]) {
-				r_sandbox_system (buf+1, 1);
+				r_sandbox_system (buf + 1, 1);
 			} else {
 				char *foo, *code = NULL;
 				do {

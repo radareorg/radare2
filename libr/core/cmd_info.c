@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <string.h>
+
+#include "r_bin.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
 
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
@@ -20,7 +26,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (s); break;
 	case R_BIN_NM_JAVA: res = r_bin_demangle_java (s); break;
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, s); break;
-	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s); break;
+	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s, core->bin->demanglercmd); break;
 	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
 	default:
 		r_bin_demangle_list (core->bin);
@@ -44,9 +50,9 @@ static int demangle(RCore *core, const char *s) {
 		return 1;
 	}
 	p = strdup (s);
-	q = p + (ss-s);
+	q = p + (ss - s);
 	*q = 0;
-	demangle_internal (core, p, q+1);
+	demangle_internal (core, p, q + 1);
 	free (p);
 	return 1;
 }
@@ -309,8 +315,10 @@ static int cmd_info(void *data, const char *input) {
 		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL); break;
 		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL); break;
 		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
+		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;			  
 		case 'z':
 			if (input[1] == 'z') {
+				char *biname;
 				char *ret;
 				const int min = core->bin->minstrlen;
 				const int max = core->bin->maxstrlen;
@@ -319,26 +327,37 @@ static int cmd_info(void *data, const char *input) {
 					eprintf ("Core file not open\n");
 					return 0;
 				}
+				biname = r_str_escape (core->file->desc->name);
 				switch (input[2]) {
 				case '*':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -rzz '%s'", min, max, core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -rzz %s", min, max, biname);
 					break;
 				case 'q':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz '%s'", min, max, core->file->desc->name);
+					if (input[3] == 'q') {
+						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qqzz %s", min, max, biname);
+						input++;
+					} else {
+						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz %s", min, max, biname);
+					}
 					break;
 				case 'j':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -jzz '%s'", min, max, core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -jzz %s", min, max, biname);
 					break;
 				default:
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -zz '%s'", min, max, core->file->desc->name);
+					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -zz %s", min, max, biname);
 					break;
 				}
 				if (ret && *ret) {
 					r_cons_strcat (ret);
 				}
 				free (ret);
+				free (biname);
 				input++;
 			} else {
+			    	if (input[1] == 'q') {
+				    	mode = (input[2] == 'q') ? R_CORE_BIN_SIMPLEST : R_CORE_BIN_SIMPLE;
+					input++;
+				}
 				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 			}
 			break;
@@ -437,6 +456,7 @@ static int cmd_info(void *data, const char *input) {
 				"ia", "", "Show all info (imports, exports, sections..)",
 				"ib", "", "Reload the current buffer for setting of the bin (use once only)",
 				"ic", "", "List classes, methods and fields",
+				"iC", "", "Show signature info (entitlements, ...)",
 				"id", "", "Debug information (source lines)",
 				"iD", " lang sym", "demangle symbolname for given language",
 				"ie", "", "Entrypoint",

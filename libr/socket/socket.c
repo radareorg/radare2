@@ -101,7 +101,8 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 #endif
 
 R_API RSocket *r_socket_new (int is_ssl) {
-	RSocket *s = R_NEW (RSocket);
+	RSocket *s = R_NEW0 (RSocket);
+	if (!s) return NULL;
 	s->is_ssl = is_ssl;
 	s->port = 0;
 #if __UNIX_
@@ -264,7 +265,17 @@ R_API int r_socket_close (RSocket *s) {
 #if __UNIX__ || defined(__CYGWIN__)
 		shutdown (s->fd, SHUT_RDWR);
 #endif
+#if __WINDOWS__ && !defined(__CYGWIN__) && !defined(__MINGW64__)
+		// https://msdn.microsoft.com/en-us/library/windows/desktop/ms740481(v=vs.85).aspx
+		shutdown (s->fd, SD_SEND);
+		do {
+			char buf = 0;
+			ret = recv (s->fd, &buf, 1, 0);
+		} while (ret != 0 && ret != SOCKET_ERROR);
+		ret = closesocket (s->fd);
+#else
 		ret = close (s->fd);
+#endif
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd) {
@@ -447,7 +458,7 @@ R_API int r_socket_flush(RSocket *s) {
 }
 
 // XXX: rewrite it to use select //
-/* waits secs until new data is received.     */
+/* waits secs until new data is received.	  */
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 #if __UNIX__ || defined(__CYGWIN__)
@@ -561,8 +572,8 @@ R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
 rep:
 	{
 	int ret = recv (s->fd, (void *)buf, len, 0);
-	if (ret != len)
-		return 0;
+	//if (ret != len)
+	//	return 0;
 	//r_sys_perror ("recv");
 	if (ret == -1) goto rep;
 	return ret;
@@ -583,7 +594,7 @@ R_API int r_socket_read_block(RSocket *s, unsigned char *buf, int len) {
 	return ret;
 }
 
-R_API int r_socket_gets(RSocket *s, char *buf,  int size) {
+R_API int r_socket_gets(RSocket *s, char *buf,	int size) {
 	int i = 0;
 	int ret = 0;
 
@@ -612,6 +623,7 @@ R_API int r_socket_gets(RSocket *s, char *buf,  int size) {
 
 R_API RSocket *r_socket_new_from_fd (int fd) {
 	RSocket *s = R_NEW0 (RSocket);
+	if (!s) return NULL;
 	s->fd = fd;
 	return s;
 }

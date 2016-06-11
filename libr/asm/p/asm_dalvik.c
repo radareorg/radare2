@@ -52,15 +52,16 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			// element_width = 2 bytes ushort little endian
 			// size = 4 bytes uint
 			// ([size*element_width+1)/2)+4
-			{
-				unsigned short elem_width = buf[2] | (buf[3]<<8);
+			if (len > 7) {
+				unsigned short elem_width = buf[2] | (buf[3] << 8);
 				unsigned int array_size = buf[4]|(buf[5]<<8)|(buf[6]<<16)|(buf[7]<<24);
-				sprintf (op->buf_asm, "fill-array-data-payload %d, %d",
+				snprintf (op->buf_asm, sizeof (op->buf_asm),
+					"fill-array-data-payload %d, %d",
 					elem_width, array_size);
-				size = 8;
 				payload = 2 * ((array_size * elem_width+1)/2);
-				len = 0;
 			}
+			size = 8;
+			len = 0;
 			break;
 		default:
 			/* nop */
@@ -428,7 +429,7 @@ static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	// TODO: use a hashtable here
 	for (i=0; i<256; i++)
 		if (!strcmp (dalvik_opcodes[i].name, buf)) {
-			r_mem_copyendian (op->buf, (void*)&i, 4, a->big_endian);
+			r_write_ble32 (op->buf, i, a->big_endian);
 			op->size = dalvik_opcodes[i].len;
 			return op->size;
 		}
@@ -441,9 +442,9 @@ RAsmPlugin r_asm_plugin_dalvik = {
 	.license = "LGPL3",
 	.desc = "AndroidVM Dalvik",
 	.bits = 32 | 64,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &dalvik_disassemble,
 	.assemble = &dalvik_assemble,
-	0
 };
 
 #ifndef CORELIB

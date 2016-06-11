@@ -14,6 +14,7 @@ R_API void r_bp_traptrace_free(void *ptr) {
 
 R_API RList *r_bp_traptrace_new() {
 	RList *list = r_list_new();
+	if (!list) return NULL;
 	list->free = &r_bp_traptrace_free;
 	return list;
 }

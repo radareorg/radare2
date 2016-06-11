@@ -27,6 +27,7 @@ R_LIB_VERSION_HEADER(r_asm);
 #define R_ASM_ARCH_PPC R_SYS_ARCH_PPC
 #define R_ASM_ARCH_M68K R_SYS_ARCH_M68K
 #define R_ASM_ARCH_JAVA R_SYS_ARCH_JAVA
+#define R_ASM_ARCH_LM32 R_SYS_ARCH_LM32
 #define R_ASM_ARCH_MIPS R_SYS_ARCH_MIPS
 #define R_ASM_ARCH_SPARC R_SYS_ARCH_SPARC
 #define R_ASM_ARCH_CSR R_SYS_ARCH_CSR
@@ -95,6 +96,7 @@ typedef struct r_asm_t {
 	ut64 pc;
 	void *user;
 	_RAsmPlugin *cur;
+	_RAsmPlugin *acur;
 	RList *plugins;
 	RBinBind binb;
 	RParse *ifilter;
@@ -110,13 +112,14 @@ typedef struct r_asm_t {
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 
 typedef struct r_asm_plugin_t {
-	char *name;
-	char *arch;
-	char *cpus;
-	char *desc;
-	char *license;
+	const char *name;
+	const char *arch;
+	const char *cpus;
+	const char *desc;
+	const char *license;
 	void *user; // user data pointer
 	int bits;
+	int endian;
 	bool (*init)(void *user);
 	bool (*fini)(void *user);
 	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
@@ -137,9 +140,11 @@ R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo);
 R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);
 R_API int r_asm_is_valid(RAsm *a, const char *name);
 R_API int r_asm_use(RAsm *a, const char *name);
+R_API bool r_asm_use_assembler(RAsm *a, const char *name);
+R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits);
 R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
-R_API int r_asm_set_big_endian(RAsm *a, int boolean);
+R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
 R_API int r_asm_set_syntax(RAsm *a, int syntax);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
@@ -148,6 +153,8 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
 R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file);
+R_API char *r_asm_to_string(RAsm *a, ut64 addr, const ut8 *b, int l);
+R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
 R_API int r_asm_filter_input(RAsm *a, const char *f);
 R_API int r_asm_filter_output(RAsm *a, const char *f);
 R_API char *r_asm_describe(RAsm *a, const char* str);

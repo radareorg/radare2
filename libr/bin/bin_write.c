@@ -47,3 +47,12 @@ R_API bool r_bin_wr_entry(RBin *bin, ut64 addr) {
 	}
 	return false;
 }
+
+R_API bool r_bin_wr_addlib(RBin *bin, const char *lib) {
+	RBinFile *binfile = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+	if (plugin && plugin->write && plugin->write->addlib) {
+		return plugin->write->addlib (bin->cur, lib);
+	}
+	return false;
+}

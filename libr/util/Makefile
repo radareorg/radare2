@@ -4,7 +4,7 @@ NAME=r_util
 DEPS=
 
 OBJS=mem.o pool.o num.o str.o hex.o file.o range.o
-OBJS+=prof.o cache.o sys.o buf.o w32-sys.o base64.o base85.o
+OBJS+=prof.o cache.o sys.o buf.o w32-sys.o base64.o base85.o base91.o
 OBJS+=list.o flist.o ht.o ht64.o mixed.o btree.o chmod.o graph.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o thread_lock.o thread_msg.o
@@ -12,7 +12,7 @@ OBJS+=strpool.o bitmap.o strht.o p_date.o p_format.o print.o
 OBJS+=p_seven.o slist.o randomart.o log.o zip.o debruijn.o
 OBJS+=utf8.o strbuf.o lib.o name.o spaces.o
 OBJS+=diff.o bdiff.o stack.o queue.o tree.o des.o
-OBJS+=swap.o
+OBJS+=punycode.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)
 ifeq (1,0)

@@ -47,6 +47,16 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}
+	const char *elf_type = Elf_(r_bin_elf_get_file_type (res));
+	if (elf_type && !strncmp (elf_type, "CORE", 4)) {
+		int len;
+		ut8 *regs = Elf_(r_bin_elf_grab_regstate)(res, &len);
+		eprintf ("LEN = %d\n", len);
+		char *hexregs = r_hex_bin2strdup (regs, len);
+		eprintf ("arw %s\n", hexregs);
+		free (hexregs);
+		free (regs);
+	}
 	r_buf_free (tbuf);
 	return res;
 }
@@ -55,15 +65,14 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
  	if (!arch || !arch->o) return false;
-	arch->o->bin_obj = load_bytes (arch, bytes, sz,
-		arch->o->loadaddr, arch->sdb);
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj != NULL;
 }
 
 static int destroy(RBinFile *arch) {
 	int i;
 	ELFOBJ* eobj = arch->o->bin_obj;
-	for (i=0; i< eobj->imports_by_ord_size; i++) {
+	for (i = 0; i < eobj->imports_by_ord_size; i++) {
 		RBinImport *imp = eobj->imports_by_ord[i];
 		if (imp) {
 			free (imp->name);
@@ -137,7 +146,6 @@ static RList* sections(RBinFile *arch) {
 	int i, num, found_load = 0;
 	struct Elf_(r_bin_elf_obj_t)* obj = arch && arch->o ? arch->o->bin_obj : NULL;
 	Elf_(Phdr)* phdr = NULL;
-
 
 	if (!obj || !(ret = r_list_new ()))
 		return NULL;
@@ -592,7 +600,7 @@ static RList* patch_relocs(RBin *b) {
 	if (!b) 
 		return NULL;
 	io = b->iob.get_io(&b->iob);
-	if (!io) 
+	if (!io || !io->desc) 
 		return NULL;
 	obj = r_bin_cur_object (b);
 	if (!obj) 

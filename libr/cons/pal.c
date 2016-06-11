@@ -66,9 +66,12 @@ R_API void r_cons_pal_init (const char *foo) {
 	cons->pal.graph_box = Color_RESET;
 	cons->pal.graph_box2 = Color_BLUE;
 	cons->pal.graph_box3 = Color_MAGENTA;
+	cons->pal.graph_box4 = Color_GRAY;
 	cons->pal.graph_true = Color_GREEN;
 	cons->pal.graph_false = Color_RED;
 	cons->pal.graph_trufae = Color_BLUE; // single jump
+	cons->pal.graph_traced = Color_YELLOW;
+	cons->pal.graph_current = Color_BLUE;
 
 	r_cons_pal_free ();
 	cons->pal.list[0] = strdup (Color_RED);
@@ -149,6 +152,7 @@ R_API char *r_cons_pal_parse (const char *str) {
 	ut8 r, g, b;
 	char out[128];
 	char *s = strdup (str);
+	if (!s) return NULL;
 	char *p = strchr (s + 1, ' ');
 	out[0] = 0;
 	if (p) *p++ = 0;
@@ -213,6 +217,7 @@ static struct {
 	{ "comment", r_offsetof (RConsPalette, comment) },
 	{ "args", r_offsetof (RConsPalette, args) },
 	{ "fname", r_offsetof (RConsPalette, fname) },
+	{ "floc", r_offsetof (RConsPalette, floc) },
 	{ "fline", r_offsetof (RConsPalette, fline) },
 	{ "flag", r_offsetof (RConsPalette, flag) },
 	{ "label", r_offsetof (RConsPalette, label) },
@@ -254,9 +259,12 @@ static struct {
 	{ "graph.box", r_offsetof (RConsPalette, graph_box) },
 	{ "graph.box2", r_offsetof (RConsPalette, graph_box2) },
 	{ "graph.box3", r_offsetof (RConsPalette, graph_box3) },
+	{ "graph.box4", r_offsetof (RConsPalette, graph_box4) },
 	{ "graph.true", r_offsetof (RConsPalette, graph_true) },
 	{ "graph.false", r_offsetof (RConsPalette, graph_false) },
 	{ "graph.trufae", r_offsetof (RConsPalette, graph_trufae) },
+	{ "graph.current", r_offsetof (RConsPalette, graph_current) },
+	{ "graph.traced", r_offsetof (RConsPalette, graph_traced) },
 
 	{ "gui.cflow", r_offsetof (RConsPalette, gui_cflow) },
 	{ "gui.dataoffset", r_offsetof (RConsPalette, gui_dataoffset) },
@@ -449,7 +457,7 @@ R_API void r_cons_pal_list (int rad) {
 	if (rad == 'j') r_cons_printf ("}\n");
 }
 
-R_API int r_cons_pal_set (const char *key, const char *val) {
+R_API int r_cons_pal_set(const char *key, const char *val) {
 	int i;
 	char **p;
 	for (i = 0; keys[i].name; i++) {
@@ -464,7 +472,7 @@ R_API int r_cons_pal_set (const char *key, const char *val) {
 	return false;
 }
 
-R_API const char *r_cons_pal_get_i (int n) {
+R_API const char *r_cons_pal_get_i(int n) {
 	int i;
 	for (i = 0; i < n && keys[i].name; i++) {}
 	if (i == n) return keys[n].name;

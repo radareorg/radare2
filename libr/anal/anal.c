@@ -75,7 +75,6 @@ static int meta_count_for(void *user, int idx) {
 
 R_API RAnal *r_anal_new() {
 	int i;
-	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
 	anal->os = strdup (R_SYS_OS);
@@ -114,13 +113,10 @@ R_API RAnal *r_anal_new() {
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
-	r_anal_set_big_endian (anal, false);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
 		for (i=0; anal_static_plugins[i]; i++) {
-			static_plugin = R_NEW (RAnalPlugin);
-			*static_plugin = *anal_static_plugins[i];
-			r_anal_add (anal, static_plugin);
+			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
 	return anal;
@@ -128,7 +124,7 @@ R_API RAnal *r_anal_new() {
 
 R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	if (p && p->fini) {
-		p->fini (p);
+		p->fini (NULL);
 	}
 }
 
@@ -171,16 +167,15 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 }
 
 // TODO: Must be deprecated
-R_API int r_anal_list(RAnal *anal) {
+R_API void r_anal_list(RAnal *anal) {
 	RAnalPlugin *h;
 	RListIter *it;
 	r_list_foreach (anal->plugins, it, h) {
 		anal->cb_printf ("anal %-10s %s\n", h->name, h->desc);
 	}
-	return false;
 }
 
-R_API int r_anal_use(RAnal *anal, const char *name) {
+R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RListIter *it;
 	RAnalPlugin *h;
 	r_list_foreach (anal->plugins, it, h) {
@@ -198,10 +193,26 @@ R_API int r_anal_use(RAnal *anal, const char *name) {
 	return false;
 }
 
-R_API int r_anal_set_reg_profile(RAnal *anal) {
-	if (anal && anal->cur && anal->cur->set_reg_profile)
-		return anal->cur->set_reg_profile (anal);
-	return false;
+R_API char *r_anal_get_reg_profile(RAnal *anal) {
+	if (anal && anal->cur && anal->cur->get_reg_profile)
+		return anal->cur->get_reg_profile (anal);
+	return NULL;
+}
+
+// deprecate.. or at least reuse get_reg_profile...
+R_API bool r_anal_set_reg_profile(RAnal *anal) {
+	bool ret = false;
+	if (anal && anal->cur && anal->cur->set_reg_profile) {
+		ret = anal->cur->set_reg_profile (anal);
+	} else {
+		char *p = r_anal_get_reg_profile (anal);
+		if (p && *p) {
+			r_reg_set_profile_string (anal->reg, p);
+			ret = true;
+		}
+		free (p);
+	}
+	return ret;
 }
 
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
@@ -244,11 +255,11 @@ R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int 
 	return r_anal_use (anal, arch);
 }
 
-R_API int r_anal_set_os(RAnal *anal, const char *os) {
+R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	return r_anal_set_triplet (anal, os, NULL, -1);
 }
 
-R_API int r_anal_set_bits(RAnal *anal, int bits) {
+R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	switch (bits) {
 	case 8:
 	case 16:
@@ -368,6 +379,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	}
 	len = r_hex_str2bin (str, buf);
 	r_anal_op (anal, op, addr, buf, len);
+	free (buf);
 	return op;
 }
 

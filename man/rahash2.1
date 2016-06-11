@@ -8,9 +8,11 @@
 .Op Fl BdDehjrkvq
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
+.Op Fl D Ar algo
 .Op Fl E Ar algo
 .Op Fl s Ar string
 .Op Fl i Ar iterations
+.Op Fl I Ar IV
 .Op Fl S Ar seed
 .Op Fl f Ar from
 .Op Fl x Ar hexstr
@@ -34,16 +36,16 @@ Select an algorithm for the hashing. Valid values are listed in: rahash2 -L
 Define the block size
 .It Fl c Ar hash
 Compare the computed hash with this one. Allowed only when a single hash is computed.
-.It Fl d
-encoDe base64 string or file
-.It Fl D
-Decode base64 string or file
+.It Fl D Ar algo
+Decrypt instead of hash using the given algorithm (base64, base91, rc4, aes, xor, blowfish, rot, rol, ror, rc2, rc6, punycode)
 .It Fl e
 Use little endian to display checksums
 .It Fl E Ar algo
-Encrypt instead of hash using the given algorithm (rc4, aes, xor, blowfish)
+Encrypt instead of hash using the given algorithm (base64, base91, rc4, aes, xor, blowfish, rot, rol, ror, rc2, rc6, punycode)
 .It Fl i Ar iters
 Apply the hash Iters times to itself+seed
+.It Fl I Ar [^]s:string|hexstr
+Set initialization vector (IV) for the cryptographic functions.
 .It Fl j
 Show output in JSON (see -r)
 .It Fl B

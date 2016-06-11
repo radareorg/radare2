@@ -16,21 +16,25 @@ if [ $? = 0 ]; then
 	export CC
 fi
 
-valac --help > /dev/null 2>&1
-if [ ! $? = 0 ]; then
+#valac --help > /dev/null 2>&1
+#if [ ! $? = 0 ]; then
 	# must install from tarball
-	VV=0.13.4
+	VV=0.32.0
 	SV=$(echo ${VV}|cut -d . -f 1,2)
 	if [ ! -d vala-${VV} ]; then
-		wget "http://download.gnome.org/sources/vala/${SV}/vala-${VV}.tar.bz2"
-		tar xjvf vala-${VV}.tar.bz2
+		wget "http://download.gnome.org/sources/vala/${SV}/vala-${VV}.tar.xz"
+		tar xJvf vala-${VV}.tar.xz
 	fi
 	cd vala-${VV} || exit 1
-	./configure --prefix=/usr && \
-	make && \
-	sudo make install
+	./configure --prefix="${PREFIX}" || exit 1
+	make || exit 1
+	sudo make install || exit 1
 	cd ..
-fi
+#fi
+
+exit 0
+
+# git install
 
 if [ -d vala ]; then
 	cd vala

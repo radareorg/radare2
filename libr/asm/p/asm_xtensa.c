@@ -47,6 +47,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	flen = strlen (format);
 	glen = strlen (buf_global);
 	tmp = malloc (flen + glen + 2);
+	if (!tmp) return 0;
 	memcpy (tmp, buf_global, glen);
 	memcpy (tmp+glen, format, flen);
 	tmp[flen+glen] = 0;
@@ -88,9 +89,9 @@ RAsmPlugin r_asm_plugin_xtensa = {
 	.arch = "xtensa",
 	.license = "GPL3",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "XTensa CPU",
-	.disassemble = &disassemble,
-	0
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

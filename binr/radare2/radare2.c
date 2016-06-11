@@ -84,7 +84,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	if (!strcmp ("w32dbg", d->plugin->name)) {
 		RIOW32Dbg *g = d->data;
 		r->io->desc->fd = g->pid;
-		//r_debug_attach (r->dbg,g->pid);  // no es necesario ya se hacen unos cuantos attach antes y despues ....
+		r_debug_attach (r->dbg,g->pid);
 	}
 	return r->io->winbase;
 #else
@@ -114,8 +114,8 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 
 static int main_help(int line) {
 	if (line < 2) {
-		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+		printf ("Usage: r2 [-ACdfLMnNqStuvwz] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
+			"          [-s addr] [-B baddr] [-M maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) printf (
 		" --           open radare2 on an empty file\n"
@@ -139,7 +139,8 @@ static int main_help(int line) {
 		" -k [k=v]     perform sdb query into core->sdb\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
-		" -m [addr]    map file at given address\n"
+		" -m [addr]    map file at given address (loadaddr)\n"
+		" -M           do not demangle symbol names\n"
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
 		" -o [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
@@ -156,7 +157,8 @@ static int main_help(int line) {
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
-	if (line == 2)
+	if (line == 2) {
+		char *homedir = r_str_home (R2_HOMEDIR);
 		printf (
 		"Scripts:\n"
 		" system   "R2_PREFIX"/share/radare2/radare2rc\n"
@@ -167,7 +169,7 @@ static int main_help(int line) {
 		" user     ~/.config/radare2/plugins\n"
 		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
 		"Environment:\n"
-		" RHOMEDIR     ~/.config/radare2\n" // TODO: rename to RHOME R2HOME?
+		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
@@ -178,7 +180,9 @@ static int main_help(int line) {
 		" INCDIR       "R2_INCDIR"\n"
 		" LIBDIR       "R2_LIBDIR"\n"
 		" LIBEXT       "R_LIB_EXT"\n"
-		);
+		, homedir);
+		free (homedir);
+	}
 	return 0;
 }
 
@@ -393,7 +397,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'k':
 			{
 				char *out = sdb_querys (r.sdb, NULL, 0, optarg);
-				if (out&& *out) {
+				if (out && *out) {
 					r_cons_printf ("%s\n", out);
 				}
 				free (out);
@@ -402,7 +406,9 @@ int main(int argc, char **argv, char **envp) {
 		case 'o': asmos = optarg; break;
 		case 'l': r_lib_open (r.lib, optarg); break;
 		case 'L': list_io_plugins (r.io); return 0;
-		case 'm': mapaddr = r_num_math (r.num, optarg); break;
+		case 'm':
+			mapaddr = r_num_math (r.num, optarg); break;
+			break;
 		case 'M':
 			{
 				r_config_set (r.config, "bin.demangle", "false");
@@ -414,7 +420,9 @@ int main(int argc, char **argv, char **envp) {
 		case 'p':
 			r_config_set (r.config, "file.project", optarg);
 			break;
-		case 'P': patchfile = optarg; break;
+		case 'P':
+			patchfile = optarg;
+			break;
 		case 'q':
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
@@ -430,9 +438,19 @@ int main(int argc, char **argv, char **envp) {
 			threaded = true;
 			break;
 #endif
-		case 'v': verify_version(0); return blob_version ("radare2");
-		case 'V': return verify_version (1);
-		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
+		case 'v':
+			if (quiet) {
+				printf ("%s\n", R2_VERSION);
+				return 0;
+			} else {
+				verify_version (0);
+				return blob_version ("radare2");
+			}
+		case 'V':
+			return verify_version (1);
+		case 'w':
+			perms = R_IO_READ | R_IO_WRITE;
+			break;
 		default:
 			help++;
 		}
@@ -444,9 +462,14 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (help > 1? 2: 0);
 	}
 	if (debug == 1) {
+		if (optind >= argc) {
+			eprintf ("Missing argument for -d\n");
+			return 1;
+		}
 		char *uri = strdup (argv[optind]);
-		if (strstr (uri, "://")) {
-			*uri = 0;
+		char *p = strstr (uri, "://");
+		if (p) {
+			*p = 0;
 			debugbackend = uri;
 			debug = 2;
 		} else {
@@ -537,7 +560,7 @@ int main(int argc, char **argv, char **envp) {
 	} else if (strcmp (argv[optind-1], "--")) {
 		if (debug) {
 			if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
-			r_config_set (r.config, "search.in", "raw"); // implicit?
+			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
 			r_config_set_i (r.config, "io.va", false); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
@@ -672,10 +695,12 @@ int main(int argc, char **argv, char **envp) {
 				const char *prj = r_config_get (r.config, "file.project");
 				if (prj && *prj) {
 					pfile = r_core_project_info (&r, prj);
-					if (pfile)
+					if (pfile) {
 						fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					else
+						r_core_project_open (&r, prj);
+					} else {
 						eprintf ("Cannot find project file\n");
+					}
 				}
 			}
 		}
@@ -810,6 +835,7 @@ int main(int argc, char **argv, char **envp) {
 		case 1: r_core_cmd0 (&r, "aa"); break;
 		case 2: r_core_cmd0 (&r, "aaa"); break;
 		case 3: r_core_cmd0 (&r, "aaaa"); break;
+		default: r_core_cmd0 (&r, "aaaaa"); break;
 		}
 		r_cons_flush ();
 	}
@@ -845,8 +871,11 @@ int main(int argc, char **argv, char **envp) {
 		}
 	if (sandbox)
 		r_config_set (r.config, "cfg.sandbox", "true");
-	if (quiet)
+	if (quiet) {
 		r_config_set (r.config, "scr.wheel", "false");
+		r_config_set (r.config, "scr.interactive", "false");
+		r_config_set (r.config, "scr.prompt", "false");
+	}
 
 	r.num->value = 0;
 	if (patchfile) {
@@ -895,7 +924,8 @@ int main(int argc, char **argv, char **envp) {
 				char *question;
 				if (debug) {
 					if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-						if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
+						if (r_config_get_i (r.config, "dbg.exitkills") &&
+								r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
 							r_debug_kill (r.dbg, 0, false, 9); // KILL
 					} else continue;
 				}
@@ -906,7 +936,7 @@ int main(int argc, char **argv, char **envp) {
 				free (question);
 			} else {
 				// r_core_project_save (&r, prj);
-				if (debug) {
+				if (debug && r_config_get_i (r.config, "dbg.exitkills")) {
 					r_debug_kill (r.dbg, 0, false, 9); // KILL
 				}
 			}
@@ -935,5 +965,6 @@ int main(int argc, char **argv, char **envp) {
 	r_cons_set_raw (0);
 	free (file);
 	r_str_const_free ();
+	r_cons_free ();
 	return ret;
 }

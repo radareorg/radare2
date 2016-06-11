@@ -1,4 +1,4 @@
-.Dd Jan 31, 2015
+.Dd May 15, 2016
 .Dt RADARE2 1
 .Sh NAME
 .Nm radare2
@@ -72,15 +72,15 @@ Do not load user settings/projects from ~/.radare2rc, ~/.config/radare2/radare2r
 .It Fl nn
 Only load the rbin structures (elf, mach0, ...)
 .It Fl N
-Do not perform any analysis (r_bin). Just load the raw file.
+Do not perform any analysis (r_bin). Just load the raw file
 .It Fl q
 Quiet mode (no prompt)
 .It Fl p Ar prj
 Set project file
 .It Fl P Ar file
-Apply rapatch file and quit
+Apply rapatch file and quit (see doc/rapatch.md for more details)
 .It Fl R Ar rarun2
-Specify dbg.profile rarun2 profile to use when spawning a program for debugging.
+Specify dbg.profile rarun2 profile to use when spawning a program for debugging
 .It Fl s Ar addr
 Start seeking at this address
 .It Fl S
@@ -88,9 +88,9 @@ Enable sandboxed mode (same as \-e cfg.sandbox=true)
 .It Fl t
 Get binary information using a thread
 .It Fl u
-Set bin.filter=false to load rbin info without filtering names.
+Set bin.filter=false to load rbin info without filtering names
 .It Fl v
-Show version information and exit.
+Show version information and exit (Use -qv to get just the version number)
 .It Fl V
 Show radare2 library versions
 .It Fl w
@@ -101,12 +101,12 @@ Show help message
 Show files and environment help
 .El
 .Sh SHELL
-Type '?' for help.
+Type '?' for help
 .Pp
 .Sh VISUAL
-To enter visual mode use the 'V' command. Then press '?' for help.
+To enter visual mode use the 'V' command. Then press '?' for help
 .Sh DEBUGGER
-In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for help.
+In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for help
 .Sh ENVIRONMENT
  RHOMEDIR     ~/.config/radare2
  RCFILE       ~/.radare2rc (user preferences, batch script)

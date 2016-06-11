@@ -6,7 +6,8 @@
 static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	const char *p;
 	int ret, olen, len = 0, bufsz = 32768, delta = 0;
-	char *dn, *res, *buf = malloc (bufsz+32); // XXX: use r_buffer here
+	char *dn, *res, *buf = malloc (bufsz + 32); // XXX: use r_buffer here
+	if (!buf) return NULL;
 
 	r_socket_block_time (s, 1, 5);
 	res = NULL;
@@ -59,6 +60,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	int ssl = !memcmp (url, "https://", 8);
 	char *response, *host, *path, *port = "80";
 	char *uri = strdup (url);
+	if (!uri) return NULL;
 
 	if (code) *code = 0;
 	if (rlen) *rlen = 0;
@@ -108,6 +110,7 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 	int ssl = !memcmp (url, "https://", 8);
 	char *response, *host, *path, *port = "80";
 	char *uri = strdup (url);
+	if (!uri) return NULL;
 
 	host = strstr (uri, "://");
 	if (!host) {

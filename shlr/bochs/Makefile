@@ -14,6 +14,11 @@ MINOR=1
 LD=$(CC)
 LDFLAGS+=-L${LIBR}/socket -lr_socket
 LDFLAGS+=-L${LIBR}/util -lr_util
+ifeq ($(OSTYPE),darwin)
+LDFLAGS_SHARED=-dynamiclib
+else
+LDFLAGS_SHARED=-shared
+endif
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
 
@@ -29,7 +34,7 @@ $(LIB):
 
 $(LIB)/$(LIBNAME).a: $(LIB) $(SRC_O)
 	mkdir -p $(LIB)
-	$(LD) $(PIC_CFLAGS) -shared -o $(LIB)/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
+	$(LD) $(PIC_CFLAGS) $(LDFLAGS_SHARED) -o $(LIB)/$(LIBFILE) $(CFLAGS) $(SRC_O) $(LDFLAGS) $(LINK)
 	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
 	$(RANLIB) $(LIB)/$(LIBNAME).a
 

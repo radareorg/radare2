@@ -149,12 +149,13 @@ SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 
 	SdbKv *kv;
 	if (cas) *cas = 0;
 	if (vlen) *vlen = 0;
-	if (!s||!key) return NULL;
+	if (!s || !key) return NULL;
 	// TODO: optimize, iterate once
 	keylen = strlen (key)+1;
 	hash = sdb_hash (key);
+
 	/* search in memory */
-	kv = (SdbKv*)ht_lookup (s->ht, hash);
+	kv = (SdbKv*) ht_lookup (s->ht, hash);
 	if (kv) {
 		if (!*kv->value)
 			return NULL;
@@ -169,18 +170,21 @@ SDB_API const char *sdb_const_get_len (Sdb* s, const char *key, int *vlen, ut32 
 		if (vlen) *vlen = kv->value_len;
 		return kv->value;
 	}
+
 	/* search in disk */
 	if (s->fd == -1)
 		return NULL;
-	(void)cdb_findstart (&s->db);
-	if (cdb_findnext (&s->db, hash, key, keylen) <1)
+	(void) cdb_findstart (&s->db);
+	if (cdb_findnext (&s->db, hash, key, keylen) < 1)
 		return NULL;
 	len = cdb_datalen (&s->db);
-	if (len == 0)
+	if (len < SDB_MIN_VALUE || len >= SDB_MAX_VALUE)
 		return NULL;
-	if (vlen) *vlen = len;
+	if (vlen)
+		*vlen = len;
+
 	pos = cdb_datapos (&s->db);
-	return s->db.map+pos;
+	return s->db.map + pos;
 }
 
 SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
@@ -190,50 +194,8 @@ SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
 // TODO: add sdb_getf?
 
 SDB_API char *sdb_get_len (Sdb* s, const char *key, int *vlen, ut32 *cas) {
-	ut32 hash, pos, len, keylen;
-	ut64 now = 0LL;
-	SdbKv *kv;
-	char *buf;
-
-	if (cas) *cas = 0;
-	if (vlen) *vlen = 0;
-	if (!s || !key) return NULL;
-	keylen = strlen (key)+1;
-	hash = sdb_hash (key);
-
-	/* search in memory */
-	kv = (SdbKv*)ht_lookup (s->ht, hash);
-	if (kv) {
-		if (!*kv->value)
-			return NULL;
-		if (kv->expire) {
-			if (!now) now = sdb_now ();
-			if (now > kv->expire) {
-				sdb_unset (s, key, 0);
-				return NULL;
-			}
-		}
-		if (cas) *cas = kv->cas;
-		if (vlen) *vlen = kv->value_len;
-		return strdup (kv->value);
-	}
-
-	/* search in disk */
-	if (s->fd == -1)
-		return NULL;
-	(void)cdb_findstart (&s->db);
-	if (!cdb_findnext (&s->db, hash, key, keylen))
-		return NULL;
-	if ((len = cdb_datalen (&s->db)) >= SDB_MAX_VALUE)
-		return NULL;
-	if (vlen)
-		*vlen = len;
-	if (!(buf = malloc (len+1))) // XXX too many mallocs
-		return NULL;
-	pos = cdb_datapos (&s->db);
-	cdb_read (&s->db, buf, len, pos);
-	buf[len] = 0;
-	return buf;
+	const char *value = sdb_const_get_len (s, key, vlen, cas);
+	return value ? strdup (value) : NULL;
 }
 
 SDB_API char *sdb_get (Sdb* s, const char *key, ut32 *cas) {

@@ -84,6 +84,11 @@ typedef struct {
 #define R_IO_DESC_TYPE_OPENED 1
 #define R_IO_DESC_TYPE_CLOSED 0
 
+typedef struct r_undo_t {
+	ut64 off;
+	int cursor;
+} RIOUndos;
+
 /* stores write and seek changes */
 #define R_IO_UNDOS 64
 typedef struct r_io_undo_t {
@@ -96,7 +101,7 @@ typedef struct r_io_undo_t {
 	int idx;
 	int undos; /* available undos */
 	int redos; /* available redos */
-	ut64 seek[R_IO_UNDOS];
+	RIOUndos seek[R_IO_UNDOS];
 	/*int fd[R_IO_UNDOS]; // XXX: Must be RIODesc* */
 } RIOUndo;
 
@@ -142,7 +147,8 @@ typedef struct r_io_t {
 	RList *cache;
 	RCache *buffer;
 	int buffer_enabled;
-	int ff;
+	bool ff;
+	ut8 Oxff;
 	int autofd;
 	int aslr;
 	ut64 winbase;
@@ -322,7 +328,7 @@ R_API int r_io_mread(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
 R_API int r_io_pread(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
-R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian);
+R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz);
 R_API int r_io_write(RIO *io, const ut8 *buf, int len);
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_mwrite(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
@@ -422,11 +428,11 @@ R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut6
 R_API int r_io_undo_init(RIO *io);
 R_API void r_io_undo_enable(RIO *io, int seek, int write);
 /* seek undo */
-R_API ut64 r_io_sundo(RIO *io, ut64 offset);
-R_API ut64 r_io_sundo_redo(RIO *io);
-R_API void r_io_sundo_push(RIO *io, ut64 off);
+R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset);
+R_API RIOUndos *r_io_sundo_redo(RIO *io);
+R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor);
 R_API void r_io_sundo_reset(RIO *io);
-R_API void r_io_sundo_list(RIO *io);
+R_API void r_io_sundo_list(RIO *io, int mode);
 /* write undo */
 R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len);
 R_API void r_io_wundo_apply_all(RIO *io, int set);
@@ -473,6 +479,7 @@ extern RIOPlugin r_io_plugin_mach;
 extern RIOPlugin r_io_plugin_debug;
 extern RIOPlugin r_io_plugin_shm;
 extern RIOPlugin r_io_plugin_gdb;
+extern RIOPlugin r_io_plugin_qnx;
 extern RIOPlugin r_io_plugin_rap;
 extern RIOPlugin r_io_plugin_http;
 extern RIOPlugin r_io_plugin_bfdbg;

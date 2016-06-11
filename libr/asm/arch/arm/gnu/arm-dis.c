@@ -20,6 +20,7 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+#include <r_types.h>
 #include "sysdep.h"
 #include <stdio.h>
 #include <string.h>
@@ -2088,7 +2089,7 @@ print_insn_coprocessor (bfd_vma pc,
 
 		    /* Is ``imm'' a negative number?  */
 		    if (imm & 0x40)
-		      imm |= (-1 << 7);
+		      imm |= (UT64_MAX << 7);
 
 		    func (stream, "%d", imm);
 		  }

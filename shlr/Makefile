@@ -20,9 +20,9 @@ CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20160405
+CS_UPD=20160531
 CS_BRA=next
-CS_TIP=31b4214c46a609062a6e4d23e8841e5f6a3efb15
+CS_TIP=1f3877da0190219395dc3154e59b4c6dda6af9c9
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -39,6 +39,7 @@ ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
 MODS+=gdb
+MODS+=qnx
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
@@ -168,7 +169,7 @@ tcc-clean tccclean:
 
 CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
 HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
-HFILES+=elf.h libtcc.h config.h i386-tok.h
+HFILES+=elf.h config.h i386-tok.h
 
 # TODO: use mob branch?
 

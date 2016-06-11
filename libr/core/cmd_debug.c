@@ -1,4 +1,8 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
+#include "r_core.h"
+#include "r_util.h"
+#include "sdb/sdb.h"
 
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
@@ -69,7 +73,7 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 			}
 		}
 		eprintf ("Running child until syscalls:");
-		for (i=0; i<count; i++)
+		for (i=0; i < count; i++)
 			eprintf ("%d ", syscalls[i]);
 		eprintf ("\n");
 		free (str);
@@ -118,7 +122,7 @@ static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
 	}
 }
 
-static void dot_trace_traverse(RCore *core, RTree *t) {
+static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 	const char *gfont = r_config_get (core->config, "graph.font");
 	struct dot_trace_ght aux_data;
 	RTreeVisitor vis = { 0 };
@@ -126,6 +130,10 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 	RListIter *iter;
 	RGraphNode *n;
 
+	if (fmt == 'i') {
+		r_core_cmd0 (core, "ag-;.dtg*;aggi");
+		return;
+	}
 	aux_data.graph = r_graph_new ();
 	aux_data.graphnodes = sdb_new0 ();
 
@@ -137,17 +145,19 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 
 	/* traverse the callgraph to print the dot file */
 	nodes = r_graph_get_nodes (aux_data.graph);
+	if (fmt == 0) {
 	r_cons_printf ("digraph code {\n"
 		"graph [bgcolor=white];\n"
 		"    node [color=lightgray, style=filled"
 		" shape=box fontname=\"%s\" fontsize=\"8\"];\n", gfont);
+	}
 	r_list_foreach (nodes, iter, n) {
 		struct trace_node *tn = (struct trace_node *)n->data;
 		const RList *neighbours = r_graph_get_neighbours (aux_data.graph, n);
 		RListIter *it_n;
 		RGraphNode *w;
 
-		if (tn) {
+		if (!fmt && tn) {
 			r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
 					"\" color=\"lightgray\" label=\"0x%08"PFMT64x
 					" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
@@ -156,12 +166,21 @@ static void dot_trace_traverse(RCore *core, RTree *t) {
 			 struct trace_node *tv = (struct trace_node *)w->data;
 
 			 if (tv && tn) {
-				 r_cons_printf ("\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
-						 "\" [color=\"red\"];\n", tn->addr, tv->addr);
+				 if (fmt) {
+					 r_cons_printf ("agn 0x%08"PFMT64x"\n", tn->addr);
+					 r_cons_printf ("agn 0x%08"PFMT64x"\n", tv->addr);
+					 r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+							 tn->addr, tv->addr);
+				 } else {
+					 r_cons_printf ("\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x
+							 "\" [color=\"red\"];\n", tn->addr, tv->addr);
+				 }
 			 }
 		}
 	}
-	r_cons_printf ("}\n");
+	if (!fmt) {
+		r_cons_printf ("}\n");
+	}
 
 	r_graph_free (aux_data.graph);
 	sdb_free (aux_data.graphnodes);
@@ -412,15 +431,17 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 'n':
 		eprintf ("TODO: debug_fork: %d\n", r_debug_child_fork (core->dbg));
 		break;
-	case 't':
+	case 't': // "dpt"
 		switch (input[2]) {
 		case 'n':
 			eprintf ("TODO: debug_clone: %d\n", r_debug_child_clone (core->dbg));
 			break;
 		case '=':
-		case ' ':
 			r_debug_select (core->dbg, core->dbg->pid,
 				(int) r_num_math (core->num, input+3));
+			break;
+		case ' ':
+			r_debug_thread_list (core->dbg, atoi (input+2));
 			break;
 		default:
 			r_debug_thread_list (core->dbg, core->dbg->pid);
@@ -962,8 +983,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '=':
 		r_debug_map_sync (core->dbg);
 		r_debug_map_list_visual (core->dbg, core->offset,
-					r_config_get_i (core->config,
-							"scr.color"));
+			r_config_get_i (core->config, "scr.color"),
+			r_cons_get_size (NULL));
 		break;
 	}
 	return true;
@@ -1171,9 +1192,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'b': // "drb"
 		{ // WORK IN PROGRESS // DEBUG COMMAND
 		int len;
-		const ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
+		ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
 		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+		free (buf);
 		}
 		break;
 	case 'c': // "drc"
@@ -1563,11 +1585,16 @@ static int checkbpcallback(RCore *core) {
 	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 	RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, pc);
 	if (bpi) {
+		// r_core_debug_breakpoint_hit (core, bpi);
+#if 0
 		const char *cmdbp = r_config_get (core->config, "cmd.bp");
-		if (bpi->data)
+		if (bpi->data && bpi->data[0]) {
 			r_core_cmd (core, bpi->data, 0);
-		if (cmdbp && *cmdbp)
+		}
+		if (cmdbp && *cmdbp) {
 			r_core_cmd (core, cmdbp, 0);
+		}
+#endif
 		return true;
 	}
 	return false;
@@ -1659,12 +1686,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	switch (input[1]) {
 	case '.':
 		if (input[2]) {
-			int bpsz = strcmp (core->dbg->arch, "arm") ? 1 : 4;
 			ut64 addr = r_num_tail (core->num, core->offset, input +2);
 			if (validAddress (core, addr)) {
-				bpi = hwbp
-				? r_bp_add_hw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-				: r_bp_add_sw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 			} else {
 				eprintf ("Invalid address\n");
 			}
@@ -1835,51 +1859,70 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'm': // "dbm"
+	case 'b': // "dbb"	
 		if (input[2]) {
 			core->dbg->bp->delta = (st64)r_num_math (core->num, input+2);
 		} else {
 			r_cons_printf ("%"PFMT64d"\n", core->dbg->bp->delta);
 		}
 		break;
+	case 'm': // "dbm"
+		if (input[2] && input[3]) {
+			char *string = strdup (input + 3);
+			char *module = NULL;
+			st64 delta = 0;
+			module = strtok (string, " ");
+			delta = (ut64)r_num_math (core->num, strtok (NULL, ""));
+			bpi = r_debug_bp_add (core->dbg, 0, hwbp, strdup (module), delta);
+			if (bpi) bpi->name = strdup (module);
+			free (string);
+		}
+		break;
 	case 'j': r_bp_list (core->dbg->bp, 'j'); break;
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
-	case '-':
+	case '-': // "db-"
 		if (input[2] == '*') r_bp_del_all (core->dbg->bp);
 		else r_bp_del (core->dbg->bp, r_num_math (core->num, input + 2));
 		break;
-	case 'c':
-		addr = r_num_math (core->num, input + 2);
-		bpi = r_bp_get_at (core->dbg->bp, addr);
-		if (bpi) {
-			char *arg = strchr (input + 2, ' ');
-			if (arg) arg = strchr (arg + 1, ' ');
-			if (arg) {
-				free (bpi->data);
-				bpi->data = strdup (arg + 1);
+	case 'c': // "dbc"
+		if (input[2] == ' ') {
+			char *inp = strdup (input + 3);
+			if (inp) {
+				char *arg = strchr (inp, ' ');
+				if (arg) {
+					*arg++ = 0;
+					addr = r_num_math (core->num, inp);
+					bpi = r_bp_get_at (core->dbg->bp, addr);
+					if (bpi) {
+						free (bpi->data);
+						bpi->data = strdup (arg);
+					} else {
+						eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+					}
+				} else {
+					eprintf ("Missing argument\n");
+				}
+				free (inp);
 			} else {
-				free (bpi->data);
-				bpi->data = NULL;
+				eprintf ("Cannot strdup. Your heap is fucked up\n");
 			}
-		} else eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+		} else {
+			eprintf ("Use: dbc [addr] [command]\n");
+		}
 		break;
-	case 's':
+	case 's': // "dbs"
 		addr = r_num_math (core->num, input + 2);
 		bpi = r_bp_get_at (core->dbg->bp, addr);
 		if (bpi) {
 			//bp->enabled = !bp->enabled;
 			r_bp_del (core->dbg->bp, addr);
 		} else {
-			if (hwbp) bpi = r_bp_add_hw (core->dbg->bp, addr,
-						1, R_BP_PROT_EXEC);
-			else bpi = r_bp_add_sw (core->dbg->bp, addr,
-						1, R_BP_PROT_EXEC);
-			if (!bpi) eprintf ("Cannot set breakpoint "
-					"(%s)\n", input + 2);
+
+			bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
-		r_bp_enable (core->dbg->bp, r_num_math (core->num,
-							input + 2), 0);
+		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), 0);
 		break;
 	case 'n': // "dbn"
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
@@ -1930,13 +1973,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			addr = r_num_math (core->num, input+2);
 			if (validAddress (core, addr)) {
-				int bpsz = 1;
-				if (!strcmp (core->dbg->arch, "arm")) {
-					bpsz = 4;
-				}
-				bpi = hwbp
-				? r_bp_add_hw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-				: r_bp_add_sw (core->dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+				// const int bpsz = (!strcmp (core->dbg->arch, "arm"))? 4: 1;
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 				if (bpi) {
 					free (bpi->name);
 					if (!strcmp (input + 2, "$$")) {
@@ -1945,8 +1983,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
 						if (f) {
 							if (f->offset != addr) {
-								newname = r_str_newf ("%s+%d\n",
-									f->name, (int)(addr - f->offset));
+								newname = r_str_newf ("%s+%d\n", f->name, (int)(addr - f->offset));
 							} else {
 								newname = strdup (f->name);
 							}
@@ -2619,7 +2656,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	return 1;
 }
 
-static char *set_corefile_name (const char *raw_name, pid_t pid) {
+static char *get_corefile_name (const char *raw_name, pid_t pid) {
 	return (!*raw_name)?
 		r_str_newf ("core.%u", pid) :
 		r_str_chop (strdup (raw_name));
@@ -2804,25 +2841,31 @@ static int cmd_debug(void *data, const char *input) {
 				"dtd", "", "List all traced disassembled",
 				"dtc [addr]|([from] [to] [addr])", "", "Trace call/ret",
 				"dtg", "", "Graph call/ret trace",
-				"dtr", "", "Reset traces (instruction//cals)",
+				"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
+				"dtgi", "", "Interactive debug trace",
+				"dt-", "", "Reset traces (instruction/calls)",
 				NULL
 			};
 			r_core_cmd_help (core, help_message);
 			}
 			break;
 		case 'c': // "dtc"
-			debug_trace_calls (core, input + 2);
+			if (input[2] == '?') {
+				eprintf ("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger\n");
+			} else {
+				debug_trace_calls (core, input + 2);
+			}
 			break;
 		case 'd':
 			// TODO: reimplement using the api
 			r_core_cmd0 (core, "pd 1 @@= `dt~[0]`");
 			break;
 		case 'g': // "dtg"
-			dot_trace_traverse (core, core->dbg->tree);
+			dot_trace_traverse (core, core->dbg->tree, input[2]);
 			break;
-		case 'r':
+		case '-':
 			r_tree_reset (core->dbg->tree);
-			r_debug_trace_free (core->dbg);
+			r_debug_trace_free (core->dbg->trace);
 			r_debug_tracenodes_reset (core->dbg);
 			core->dbg->trace = r_debug_trace_new ();
 			break;
@@ -2955,13 +2998,16 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		//r_core_cmd (core, "|reg", 0);
 		break;
-	case 'p':
+	case 'p': // "dp"
 		cmd_debug_pid (core, input);
 		break;
-	case 'h':
-		if (input[1]==' ')
-			r_debug_use (core->dbg, input+2);
-		else r_debug_plugin_list (core->dbg);
+	case 'h': // "dh"
+		if (input[1]==' ') {
+			char *str = r_str_chop (strdup (input + 2));
+			r_config_set (core->config, "dbg.backend", str);
+			// implicit by config.set r_debug_use (core->dbg, str);
+			free (str);
+		} else r_debug_plugin_list (core->dbg);
 		break;
 	case 'i':
 		{
@@ -3161,15 +3207,24 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'g': // "dg"
 		if (core->dbg->h && core->dbg->h->gcore) {
-			char *corefile = set_corefile_name (input + 1, core->dbg->pid);
-			eprintf ("Writing to file %s\n", corefile);
-			r_sandbox_creat (corefile, 0644);
-			RBuffer *file = r_buf_new_file (corefile);
-			if (!file) perror ("r_buf_new_file");
-			r_sandbox_enable (true);
-			core->dbg->h->gcore (core->dbg, file);
-			r_buf_free (file);
-			r_sandbox_enable (false);
+			if (core->dbg->pid == -1) {
+				eprintf ("Not debugging, can't write core.\n");
+				break;
+			}
+			char *corefile = get_corefile_name (input + 1, core->dbg->pid);
+			eprintf ("Writing to file '%s'\n", corefile);
+			r_file_rm (corefile);
+			RBuffer *dst = r_buf_new ();
+			if (dst) {
+				if (!core->dbg->h->gcore (core->dbg, dst)) {
+					eprintf ("dg: coredump failed\n");
+				}
+				r_file_dump (corefile, dst->buf, dst->length, 1);
+				r_buf_free (dst);
+			} else {
+				perror ("r_buf_new_file");
+			}
+			free (corefile);
 		}
 		break;
 	default: {

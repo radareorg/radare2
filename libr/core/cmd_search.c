@@ -1,5 +1,12 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
 
+#include <stddef.h>
+
+#include "r_core.h"
+#include "r_io.h"
+#include "r_list.h"
+#include "r_types_base.h"
+
 static int preludecnt = 0;
 static int searchflags = 0;
 static int searchshow = 0;
@@ -11,6 +18,7 @@ static int first_hit = true;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
+
 
 struct search_parameters {
 	RList *boundaries;
@@ -134,38 +142,75 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	r_cons_break_end ();
 }
 
-static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
+R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
 	int i, match, align = core->search->align, hitctr = 0;
+	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	ut8 buf[4096];
-	const int sz = sizeof (buf);
-	ut64 v64;
+	bool asterisk = false;
+	ut64 v64, n = 0;
 	ut32 v32;
 	ut16 v16;
-#define cbhit(y) r_cons_printf ("f hit0_%d = 0x%"PFMT64x"\n", hitctr, y); hitctr++
+	if (from >= to) {
+		eprintf ("Error: from must be lower than to\n");
+		return -1;
+	}
 	if (vmin >= vmax) {
 		eprintf ("Error: vmin must be lower than vmax\n");
 		return -1;
 	}
 	while (from < to) {
-		memset (buf, 0, sz); // probably unnecessary
-		(void)r_io_read_at (core->io, from, buf, sz);
-		for (i=0; i<sizeof (buf)-vsize; i++) {
-			void *v = (buf+i);
-			if (align && (from+i)%4)
+		memset (buf, 0, sizeof (buf)); // probably unnecessary
+		(void)r_io_read_at (core->io, from, buf, sizeof (buf));
+		if (r_cons_is_breaked ()) {
+			goto beach;
+		}
+		for (i=0; i < sizeof (buf) - vsize; i++) {
+			void *v = (buf + i);
+			ut64 addr = from + i;
+			if (r_cons_is_breaked ()) {
+				eprintf ("BEACH\n");
+				goto beach;
+			}
+			if (align && (addr) % align) {
 				continue;
+			}
 			match = false;
 			switch (vsize) {
-			case 1: match = (buf[i]>=vmin && buf[i]<=vmax); break;
-			case 2: v16 = *((ut16*)(v)); match = (v16>=vmin && v16<=vmax); break;
-			case 4: v32 = *((ut32 *)(v)); match = (v32>=vmin && v32<=vmax); break;
-			case 8: v64 = *((ut64 *)(v)); match = (v64>=vmin && v64<=vmax); break;
+			case 1: n = *(ut8*)(v); match = (buf[i]>=vmin && buf[i]<=vmax); break;
+			case 2: v16 = *((ut16*)(v)); match = (v16>=vmin && v16<=vmax); n = v16; break;
+			case 4: v32 = *((ut32 *)(v)); match = (v32>=vmin && v32<=vmax); n = v32; break;
+			case 8: v64 = *((ut64 *)(v)); match = (v64>=vmin && v64<=vmax); n = v64; break;
 			default: eprintf ("Unknown vsize\n"); return -1;
 			}
-			if (match)
-				cbhit (from+i);
+			if (match && !vinfun) {
+				if (vinfunr) {
+					if (r_anal_get_fcn_in_bounds (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				} else {
+					if (r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				}
+			}
+			if (match) {
+				if (asterisk) {
+					r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", n, addr);
+					r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", vsize, addr);
+					r_cons_printf ("f hit0_%d = 0x%"PFMT64x" # from 0x%"PFMT64x"\n",
+							hitctr, addr, n);
+				} else {
+					r_core_cmdf (core,"ax 0x%"PFMT64x" 0x%"PFMT64x, n, addr);
+					r_core_cmdf (core,"Cd %d @ 0x%"PFMT64x, vsize, addr);
+				}
+				hitctr++;
+			}
 		}
-		from += sz;
+		from += sizeof (buf);
 	}
+beach:
+	r_cons_break_end ();
 	return hitctr;
 }
 
@@ -486,7 +531,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				*from = f->addr;
-				*to = f->addr + f->size;
+				*to = f->addr + r_anal_fcn_size (f);
 
 				/* Search only inside the basic block */
 				if (!strcmp (mode, "anal.bb")) {
@@ -522,6 +567,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			if (!strcmp (mode, "io.sections.exec")) mask = R_IO_EXEC;
 			if (!strcmp (mode, "io.sections.write")) mask = R_IO_WRITE;
 
+			*from = UT64_MAX;
+			*to = 0;
 			r_list_foreach (core->io->sections, iter, s) {
 				if (!mask || (s->rwx & mask)) {
 					if (!list) {
@@ -536,6 +583,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					map->fd = s->fd;
 					map->from = s->vaddr;
 					map->to = s->vaddr + s->size;
+					if (map->from && map->to) {
+						if (map->from < *from)
+							*from = map->from;
+						if (map->to > *to)
+							*to = map->to;
+					}
 					map->flags = s->rwx;
 					map->delta = 0;
 					if (!(map->flags & protection)) {
@@ -570,6 +623,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						*from = map->addr;
 						*to = map->addr_end;
 						perm = map->perm;
+						break;
 					}
 				}
 				if (perm) {
@@ -590,6 +644,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				if (!strcmp (mode, "dbg.heap")) heap = true;
 				if (!strcmp (mode, "dbg.stack")) stack = true;
 
+				*from = UT64_MAX;
+				*to = 0;
 				r_list_foreach (core->dbg->maps, iter, map) {
 					add = (stack && strstr(map->name, "stack"))? 1: 0;
 					if (!add && (heap && (map->perm & R_IO_WRITE)) && strstr (map->name, "heap")) {
@@ -605,6 +661,14 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						nmap->fd = core->io->desc->fd;
 						nmap->from = map->addr;
 						nmap->to = map->addr_end;
+						if (nmap->from && nmap->to) {
+							if (nmap->from < *from) {
+								*from = nmap->from;
+							}
+							if (nmap->to > *to) {
+								*to = nmap->to;
+							}
+						}
 						nmap->flags = map->perm;
 						nmap->delta = 0;
 						r_list_append (list, nmap);
@@ -1294,8 +1358,10 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			res = r_anal_esil_pop (core->anal->esil);
 			if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
 				if (nres) {
-					if (!__cb_hit (&kw, core, addr))
+					if (!__cb_hit (&kw, core, addr)){
+						free (res);
 						break;
+					}
 					//eprintf (" HIT AT 0x%"PFMT64x"\n", addr);
 					kw.type = 0; //R_SEARCH_TYPE_ESIL;
 					kw.kwidx = kwidx;
@@ -1334,22 +1400,21 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	ut8 *buf;
 	RAnalOp aop;
 	int chk_family = 0;
-	int i, ret, bsize = core->blocksize;
+	int i, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
 	int maxhits, match, count = 0;
-	if (bsize<64)
-		bsize=64;
 	if (!strncmp (param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
 		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
 	else param->boundaries = NULL;
 
+	input = r_str_chop_ro (input);
 	if (*input=='f') {
 		chk_family = 1;
 		input++;
 	}
 	if (*input=='?') {
 		r_cons_printf ("Usage: /A%s [type]\n", chk_family?"f":"");
-		for (i=0; i<64; i++) {
+		for (i=0; i < 64; i++) {
 			const char *str;
 			if (chk_family) str = r_anal_op_family_to_string (i);
 			else str = r_anal_optype_to_string (i);
@@ -1371,7 +1436,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		if (i>=(bsize-32)) {
 			i = 0;
 		}
-		if (i==0) {
+		if (i == 0) {
 			r_core_read_at (core, at, buf, bsize);
 		}
 		ret = r_anal_op (core->anal, &aop, at, buf+i, bsize-i);
@@ -1379,17 +1444,19 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 			match = 0;
 			if (chk_family) {
 				const char *fam = r_anal_op_family_to_string (aop.family);
-				if (fam)
-				if (!*input || strstr (input, fam)) {
-					match = 1;
-					r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, fam);
+				if (fam) {
+					if (!*input || !strcmp (input, fam)) {
+						match = 1;
+						r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, fam);
+					}
 				}
 			} else {
 				const char *type = r_anal_optype_to_string (aop.type);
-				if (type)
-				if (!*input || strstr (input, type)) {
-					match = 1;
-					r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
+				if (type) {
+					if (!*input || !strcmp (input, type)) {
+						match = 1;
+						r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
+					}
 				}
 			}
 			if (match) {
@@ -1400,8 +1467,9 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 					r_flag_set (core->flags, flag, at, ret);
 				}
 				count++;
-				if (maxhits && count >= maxhits)
+				if (maxhits && count >= maxhits) {
 					break;
+				}
 			}
 			if (core->search->align>0) {
 				i += core->search->align -1;
@@ -1554,6 +1622,11 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			param->to = map->to;
 			searchhits = 0;
 
+			if (param->to < param->from) {
+				eprintf ("invalid from/to values\n");
+				break;
+			}
+
 			r_io_raise (core->io, map->fd);
 			fd = core->io->raised;
 			if (fd == -1 && core->io->desc) {
@@ -1570,20 +1643,28 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					break;
 				}
 			}
+
 			if (param->bckwrds) {
-				if (param->to < param->from + bufsz) {
+				if ((param->to - bufsz) <= param->from) {
 					at = param->from;
 					param->do_bckwrd_srch = false;
 				} else at = param->to - bufsz;
 			} else at = param->from;
+
 			/* bckwrds = false -> normal search -> must be at < to
 			   bckwrds search -> check later */
-			for (; ( !param->bckwrds && at < param->to ) ||  param->bckwrds ;) {
+			for (; (!param->bckwrds && at < param->to) || param->bckwrds;) {
 				print_search_progress (at, param->to, searchhits);
 				if (r_cons_singleton ()->breaked) {
 					eprintf ("\n\n");
 					break;
 				}
+
+				// avoid searching beyond limits
+				if ((at + bufsz) > param->to) {
+					bufsz = param->to - at;
+				}
+
 				//ret = r_core_read_at (core, at, buf, bufsz);
 				//	ret = r_io_read_at (core->io, at, buf, bufsz);
 				if (param->use_mread) {
@@ -1618,15 +1699,17 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
+
 				if (param->bckwrds) {
 					if (!param->do_bckwrd_srch) {
 						break;
 					}
-					if (at > param->from + bufsz) {
-						at -= bufsz;
-					} else {
+					if ((at - bufsz) < param->from) {
 						param->do_bckwrd_srch = false;
+						bufsz = at - param->from;
 						at = param->from;
+					} else {
+						at -= bufsz;
 					}
 				} else {
 					at += bufsz;
@@ -1702,7 +1785,7 @@ static int cmd_search(void *data, const char *input) {
 
 	core->in_search = true;
 	r_flag_space_push (core->flags, "searches");
-	param.from = param.to = 0;
+	param.from = param.to = UT64_MAX;
 	param.inverse = false;
 	param.crypto_search = false;
 	param.bckwrds = false;
@@ -1754,9 +1837,9 @@ static int cmd_search(void *data, const char *input) {
 	searchprefix = r_config_get (core->config, "search.prefix");
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	// TODO: get ranges from current IO section
-	/* XXX: Think how to get the section ranges here */
-	if (param.from == 0LL) param.from = core->offset;
-	if (param.to == 0LL) param.to = UT32_MAX; // XXX?
+	// XXX: Think how to get the section ranges here
+
+	if (param.from == UT64_MAX) param.from = core->offset;
 
 	/* we don't really care what's bigger bc there's a flag for backward search
 	   from now on 'from' and 'to' represent only the search boundaries, not
@@ -1844,7 +1927,7 @@ reread:
 		case 'f':
 		case '?':
 		case ' ':
-			do_anal_search (core, &param, input+1);
+			do_anal_search (core, &param, input + 1);
 			break;
 		default:
 			do_anal_search (core, &param, "?");
@@ -1931,16 +2014,18 @@ reread:
 	case 'V':
 		// TODO: add support for json
 		{
-		int err = 1, vsize = atoi (input+1);
+		int err = 1, vsize = atoi (input + 1);
 		if (vsize && input[2] && input[3]) {
-			ut64 vmin = r_num_math (core->num, input+2);
-			char *w = strchr (input+3, ' ');
+			char *w = strchr (input + 3, ' ');
 			if (w) {
+				*w++ = 0;
+				ut64 vmin = r_num_math (core->num, input + 3);
 				ut64 vmax = r_num_math (core->num, w);
-				if (vsize>0) {
+				if (vsize > 0) {
 					err = 0;
 					(void)cmd_search_value_in_range (core,
 					param.from, param.to, vmin, vmax, vsize);
+					r_cons_printf ("f-hit*\n");
 				}
 			}
 		}
@@ -1962,10 +2047,10 @@ reread:
 		case '8':
 			if (input[param_offset]){
 				n64 = r_num_math (core->num, input+param_offset);
-				r_mem_copyendian ((ut8*)&n64, (const ut8*)&n64,
-					8, !core->assembler->big_endian);
+				ut8 buf[sizeof (ut64)];
+				r_write_le64 (buf, n64);
 				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
+					r_search_keyword_new ((const ut8*)buf, sizeof (ut64), NULL, 0, NULL));
 			}
 			else eprintf ("Usage: /v8 value\n");
 			break;
@@ -1980,10 +2065,10 @@ reread:
 		case '2':
 			if (input[param_offset]){
 				n16 = (ut16)r_num_math (core->num, input+param_offset);
-				r_mem_copyendian ((ut8*)&n16, (ut8*)&n16,
-					2, !core->assembler->big_endian);
+				ut8 buf[sizeof (ut16)];
+				r_write_le16 (buf, n16);
 				r_search_kw_add (core->search,
-					r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
+					r_search_keyword_new ((const ut8*)buf, sizeof (ut16), NULL, 0, NULL));
 			}
 			else eprintf ("Usage: /v2 value\n");
 			break;
@@ -1992,10 +2077,10 @@ reread:
 			if (input[param_offset-1]) {
 				if (input[param_offset]){
 					n32 = (ut32)r_num_math (core->num, input+param_offset);
-					r_mem_copyendian ((ut8*)&n32, (const ut8*)&n32,
-						4, !core->assembler->big_endian);
+					ut8 buf[sizeof (ut32)];
+					r_write_le32 (buf, n32);
 					r_search_kw_add (core->search,
-						r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
+						r_search_keyword_new ((const ut8*)buf, sizeof (ut32), NULL, 0, NULL));
 				}
 			}
 			else eprintf ("Usage: /v4 value\n");
@@ -2112,14 +2197,14 @@ reread:
 			dosearch = true;
 		} else eprintf ("Missing delta\n");
 		break;
-	case '#':
+	case 'h':
 		{
-		char *p, *arg = r_str_chop (strdup (input+1));
+		char *p, *arg = r_str_chop (strdup (input + 1));
 		p = strchr (arg, ' ');
 		if (p) {
 			*p++ = 0;
 			if (*arg=='?') {
-				eprintf ("Usage: /#md5 [hash] [datalen]\n");
+				eprintf ("Usage: /h md5 [hash] [datalen]\n");
 			} else {
 				ut32 min = UT32_MAX;
 				ut32 max = UT32_MAX;
@@ -2136,7 +2221,7 @@ reread:
 				search_hash (core, arg, p, min, max);
 			}
 		} else {
-			eprintf ("Missing hash\n");
+			eprintf ("Missing hash. See ph?\n");
 		}
 		free (arg);
 		}
@@ -2266,7 +2351,7 @@ reread:
 			"/+", " /bin/sh", "construct the string with chunks",
 			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
 			"//", "", "repeat last search",
-			"/#", "[t] [hash] [len]", "find block matching this hash. See /#?",
+			"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
 			"/a", " jmp eax", "assemble opcode and search its bytes",
 			"/A", " jmp", "find analyzed instructions of this type (/A? for help)",
 			"/b", "", "search backwards",

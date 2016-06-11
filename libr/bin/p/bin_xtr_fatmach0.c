@@ -21,11 +21,11 @@ static int check(RBin *bin) {
 		return false;
 	}
 	h = m->buf;
-	if (m->len>=0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
-		memcpy (&off, h+4*sizeof (int), sizeof (int));
-		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+	if (m->len >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
+		// XXX assuming BE
+		off = r_read_at_be32 (h, 4 * sizeof (int));
 		if (off > 0 && off < m->len) {
-			memcpy (buf, h+off, 4);
+			memcpy (buf, h + off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
@@ -45,12 +45,13 @@ static int check_bytes(const ut8* bytes, ut64 sz) {
 	if (!bytes || sz < 0x300) {
 		return false;
 	}
-	memcpy (&off, bytes+4*sizeof (int), sizeof (int));
-	r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+	// XXX assuming BE
+	off = r_read_at_be32 (bytes, 4 * sizeof (int));
 
 	h = bytes;
-	if (sz>=0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
-		r_mem_copyendian ((ut8*)&off, (ut8*)h+4*sizeof(int), sizeof(int), !LIL_ENDIAN);
+	if (sz >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
+		// XXX assuming BE
+		off = r_read_at_be32 (h, 4 * sizeof (int));
 		if (off > 0 && off < sz) {
 			memcpy (buf, h+off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
@@ -112,8 +113,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 		return res;
 	}
 
-	res = r_bin_xtrdata_new (xtr_obj, free_xtr, arch->b, arch->offset,
-		arch->size, narch);
+	res = r_bin_xtrdata_new (xtr_obj, free_xtr, arch->b, arch->offset, arch->size, narch);
 	r_buf_free (arch->b);
 	free (arch);
 	return res;

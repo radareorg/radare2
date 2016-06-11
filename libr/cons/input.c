@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_cons.h>
 #include <string.h>
@@ -6,6 +6,7 @@
 #include <errno.h>
 #endif
 
+/* experimental support for x/y click */
 #define USE_CLICK 0
 
 #define I r_cons_singleton()
@@ -42,6 +43,46 @@ R_API int r_cons_controlz(int ch) {
 	return ch;
 }
 
+static int parseMouseEvent() {
+	int ch = r_cons_readchar ();
+	/* Skip the x/y coordinates */
+#if USE_CLICK
+	int x = r_cons_readchar() - 33;
+	int y = r_cons_readchar() - 33;
+#else
+	(void) r_cons_readchar ();
+	(void) r_cons_readchar ();
+#endif
+#if USE_CLICK
+	if (ch == 35) {
+		/* handle click  */
+#define CLICK_DEBUG 1
+#if CLICK_DEBUG
+		r_cons_gotoxy (0, 0);
+		r_cons_printf ("Click at %d %d\n", x, y);
+		r_cons_flush ();
+#endif
+		RCons *cons = r_cons_singleton ();
+		if (cons->onclick) {
+			cons->onclick (cons->data, x, y);
+		}
+		r_cons_enable_mouse (R_FALSE);
+		(void)r_cons_readchar ();
+		return 0;
+	}
+#endif
+	if (ch != 0x20 && ch >= 64 + 32) {
+		/* Grab wheel events only */
+		I->mouse_event = 1;
+		return "kj"[(ch - (64 + 32))&1];
+	}
+
+	// temporary disable the mouse wheel to allow select
+	r_cons_enable_mouse (R_FALSE);
+	(void)r_cons_readchar ();
+	return 0;
+}
+
 R_API int r_cons_arrow_to_hjkl(int ch) {
 #if __WINDOWS_ && !__CYGWIN__
 	return ch;
@@ -72,12 +113,13 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			ch = 0xf1 + (ch&0xf);
 			break;
 		}
-	case '[': // function keys (2)
+	case '[': // 0x5b function keys (2)
 		/* Haiku need ESC + [ for PageUp and PageDown  */
-		if (ch < 'A' || ch == '[')
+		if (ch < 'A' || ch == '[') {
 			ch = r_cons_readchar ();
+		}
 #else
-		ch = 0xf1 + (ch&0xf);
+		ch = 0xf1 + (ch & 0xf);
 		break;
 	case '[': // function keys (2)
 		ch = r_cons_readchar ();
@@ -150,56 +192,14 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				break;
 			} // F9-F12 not yet supported!!
 			break;
-		case '5': ch='K'; break; // repag
-		case '6': ch='J'; break; // avpag
-		case 'A': ch='k'; break; // up
-		case 'B': ch='j'; break; // down
-		case 'C': ch='l'; break; // right
-		case 'D': ch='h'; break; // left
-		case 'M': // Mouse events
-			ch = r_cons_readchar ();
-			/* Skip the x/y coordinates */
-#if USE_CLICK
-			int x = r_cons_readchar() - 33;
-			int y = r_cons_readchar() - 33;
-#else
-			(void) r_cons_readchar();
-			(void) r_cons_readchar();
-#endif
-#if USE_CLICK
-			if (ch==35) {
-				/* handle click  */
-#define CLICK_DEBUG 1
-#if CLICK_DEBUG
-				r_cons_gotoxy (0,0);
-				r_cons_printf ("Click at %d %d\n", x, y);
-				r_cons_flush ();
-#endif
-				RCons *cons = r_cons_singleton ();
-				if (cons->onclick) {
-					cons->onclick (cons->data, x, y);
-				}
-				r_cons_enable_mouse (R_FALSE);
-				(void)r_cons_readchar ();
-				ch = 0;
-			} else
-#endif
-			if (ch==0x20) {
-				// click - deprecated?
-				r_cons_enable_mouse (R_FALSE);
-				ch = 0;
-				//r_cons_enable_mouse (R_TRUE);
-			} else
-			if (ch >= 64 + 32) {
-				/* Grab wheel events only */
-				I->mouse_event = 1;
-				ch = "kj"[(ch - (64 + 32))&1];
-			} else {
-				// temporary disable the mouse wheel to allow select
-				r_cons_enable_mouse (R_FALSE);
-				(void)r_cons_readchar ();
-				ch = 0;
-			}
+		case '5': ch = 'K'; break; // repag
+		case '6': ch = 'J'; break; // avpag
+		/* arrow keys */
+		case 'A': ch = 'k'; break; // up
+		case 'B': ch = 'j'; break; // down
+		case 'C': ch = 'l'; break; // right
+		case 'D': ch = 'h'; break; // left
+		case 'M': ch = parseMouseEvent(); break;
 		}
 		break;
 	}
@@ -479,6 +479,7 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 
 R_API char *r_cons_input(const char *msg) {
 	char *oprompt = r_line_get_prompt (); //r_cons_singleton()->line->prompt);
+	if (!oprompt) return NULL;
 	char buf[1024];
 	if (msg) {
 		//r_cons_printf ("%s\n", msg);
