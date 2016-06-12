@@ -75,10 +75,16 @@ init|update)
 		git clone https://github.com/radare/radare2-pm || exit 1
 		cd radare2-pm
 	fi
-	rm -f "${R2PM_DBDIR}"
-	rm -f "${R2PM_DBDIR}/*"
-	rmdir "${R2PM_DBDIR}"
-	rm -f "${R2PM_DBDIR}"
+
+	if [ -d "${R2PM_DBDIR}" ] && [ ! -L "${R2PM_DBDIR}" ]; then
+	    # that's weird, it should be a symlink
+	    rm -f "${R2PM_DBDIR}/"*
+	    rmdir "${R2PM_DBDIR}"
+	else
+	    # doesn't exist, is a file or symlink
+	    rm -f "${R2PM_DBDIR}"
+	fi
+
 	ln -fs "${R2PM_USRDIR}"/git/radare2-pm/db "${R2PM_DBDIR}" || exit 1
 	echo "r2pm database initialized. Use 'r2pm update' to update"
 	exit 0
