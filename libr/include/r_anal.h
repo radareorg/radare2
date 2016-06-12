@@ -279,12 +279,12 @@ typedef struct r_anal_fcn_store_t {
 /* Stores useful function metadata */
 /* TODO: Think about moving more stuff to this structure? */
 typedef struct r_anal_fcn_meta_t {
-    ut64 min;           // min address
-    ut64 max;           // max address
-    int noofRef;        // number of cross references
-    int noofCallRef;    // number of calls
-    int sgnc;           // node cardinality of the functions callgraph
-    int sgec;           // edge cardinality of the functions callgraph
+	ut64 min;           // min address
+	ut64 max;           // max address
+	int noofRef;        // number of cross references
+	int noofCallRef;    // number of calls
+	int sgnc;           // node cardinality of the functions callgraph
+	int sgec;           // edge cardinality of the functions callgraph
 } RAnalFcnMeta;
 
 /* Store various function information,

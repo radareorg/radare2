@@ -1375,7 +1375,7 @@ R_API int r_core_anal_fcn_list_size(RCore *core) {
 	RAnalFunction *fcn;
 	RListIter *iter;
 	ut32 total = 0;
-
+	
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		total += r_anal_fcn_size (fcn);
 	}
@@ -1390,43 +1390,43 @@ static int cmpfcn(const void *_a, const void *_b) {
 
 /* Fill out metadata struct of functions */
 static int r_core_anal_fcn_gather_metadata(RList *fcns) {
-    RListIter *iter;
-    RAnalFunction *fcn;
-
-    r_list_foreach (fcns, iter, fcn) {
-        // Count the number of references and number of calls
-        RListIter *callrefiter;
-        RAnalRef *ref;
-        int noofCallRef = 0;
-        int noofRef = 0;
-        r_list_foreach (fcn->refs, callrefiter, ref) {
-            if (ref->type == R_ANAL_REF_TYPE_CALL) {
-                noofCallRef++;
-            }
-            noofRef++;
-        }
-        fcn->meta.noofRef = noofRef;
-        fcn->meta.noofCallRef = noofCallRef;
-
-        // Determine the bounds of the functions address space
-        ut64 min = UT64_MAX;
-        ut64 max = UT64_MIN;
-
-        RListIter *bbsiter;
-        RAnalBlock *bbi;
-        r_list_foreach (fcn->bbs, bbsiter, bbi) {
-            if (max < bbi->addr + bbi->size) {
-                max = bbi->addr + bbi->size;
-            }
-            if (min > bbi->addr) {
-                min = bbi->addr;
-            }
-        }
-        fcn->meta.min = min;
-        fcn->meta.max = max;
-    }
-    // TODO: Determine sgnc, sgec
-    return 0;
+	RListIter *iter;
+	RAnalFunction *fcn;
+	
+	r_list_foreach (fcns, iter, fcn) {
+		// Count the number of references and number of calls
+		RListIter *callrefiter;
+		RAnalRef *ref;
+		int noofCallRef = 0;
+		int noofRef = 0;
+		r_list_foreach (fcn->refs, callrefiter, ref) {
+			if (ref->type == R_ANAL_REF_TYPE_CALL) {
+				noofCallRef++;
+			}
+			noofRef++;
+		}
+		fcn->meta.noofRef = noofRef;
+		fcn->meta.noofCallRef = noofCallRef;
+		
+		// Determine the bounds of the functions address space
+		ut64 min = UT64_MAX;
+		ut64 max = UT64_MIN;
+		
+		RListIter *bbsiter;
+		RAnalBlock *bbi;
+		r_list_foreach (fcn->bbs, bbsiter, bbi) {
+			if (max < bbi->addr + bbi->size) {
+				max = bbi->addr + bbi->size;
+			}
+			if (min > bbi->addr) {
+				min = bbi->addr;
+			}
+		}
+		fcn->meta.min = min;
+		fcn->meta.max = max;
+	}
+	// TODO: Determine sgnc, sgec
+	return 0;
 }
 
 static char *r_core_get_function_name(RCore *core, RAnalFunction *fcn) {
@@ -1449,99 +1449,99 @@ static char *r_core_get_function_name(RCore *core, RAnalFunction *fcn) {
 
 #define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %4d %4d %5d %s%s\n"
 static int r_core_anal_fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
-    char *name = r_core_get_function_name(core, fcn);
-    
-    const char *color = "";
-    const char *color_end = "";
-    if (use_color) {
-    	color_end = Color_RESET;
-    	if (strstr (name, "sym.imp.")) {
-    		color = Color_YELLOW;
-    	} else if (strstr (name, "sym.")) {
-    		color = Color_GREEN;
-    	} else if (strstr (name, "sub.")) {
-    		color = Color_MAGENTA;
-    	}
-    }
-
-    r_cons_printf (FCN_LIST_VERBOSE_ENTRY, color,
-            fcn->addr,
-            r_anal_fcn_realsize (fcn),
-            r_list_length (fcn->bbs),
-    		r_anal_fcn_cc (fcn),
-    		fcn->meta.min,
-            r_anal_fcn_size (fcn),
-            fcn->meta.max,
-            fcn->meta.noofCallRef,
-    		r_anal_var_count (core->anal, fcn, 'v'),
-    		r_anal_var_count (core->anal, fcn, 'a'),
-            fcn->meta.noofRef,
-            fcn->maxstack,
-            name,
-            color_end);
-    R_FREE (name);
-    return 0;
+	char *name = r_core_get_function_name(core, fcn);
+	
+	const char *color = "";
+	const char *color_end = "";
+	if (use_color) {
+		color_end = Color_RESET;
+		if (strstr (name, "sym.imp.")) {
+			color = Color_YELLOW;
+		} else if (strstr (name, "sym.")) {
+			color = Color_GREEN;
+		} else if (strstr (name, "sub.")) {
+			color = Color_MAGENTA;
+		}
+	}
+	
+	r_cons_printf (FCN_LIST_VERBOSE_ENTRY, color,
+	        fcn->addr,
+	        r_anal_fcn_realsize (fcn),
+	        r_list_length (fcn->bbs),
+			r_anal_fcn_cc (fcn),
+			fcn->meta.min,
+	        r_anal_fcn_size (fcn),
+	        fcn->meta.max,
+	        fcn->meta.noofCallRef,
+			r_anal_var_count (core->anal, fcn, 'v'),
+			r_anal_var_count (core->anal, fcn, 'a'),
+	        fcn->meta.noofRef,
+	        fcn->maxstack,
+	        name,
+	        color_end);
+	R_FREE (name);
+	return 0;
 }
 
 static int r_core_anal_fcn_list_verbose(RCore *core, RList *fcns) {
-    bool use_color = r_config_get_i (core->config, "scr.color");
-
-    r_cons_printf ("%-11s %4s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
-    		"address", "size", "nbbs", "cc", "min bound", "max bound",
-    		"calls", "vars", "args", "xref", "frame", "name");
-    r_cons_printf ("%-11s %-4s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
-    		"===========", "====", "=====", "====", "===========", "===========",
-    		"=====", "====", "====", "====", "=====", "====");
-
-    RListIter *iter;
-    RAnalFunction *fcn;
-    r_list_foreach (fcns, iter, fcn) {
-        r_core_anal_fcn_print_verbose (core, fcn, use_color);
-    }
-
-    return 0;
+	bool use_color = r_config_get_i (core->config, "scr.color");
+	
+	r_cons_printf ("%-11s %4s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
+			"address", "size", "nbbs", "cc", "min bound", "max bound",
+			"calls", "vars", "args", "xref", "frame", "name");
+	r_cons_printf ("%-11s %-4s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
+			"===========", "====", "=====", "====", "===========", "===========",
+			"=====", "====", "====", "====", "=====", "====");
+	
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (fcns, iter, fcn) {
+		r_core_anal_fcn_print_verbose (core, fcn, use_color);
+	}
+	
+	return 0;
 }
 
 static int r_core_anal_fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
-    if (quiet) {
-        r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
-    } else {
-        char *name = r_core_get_function_name (core, fcn);
-        char *msg;
-    
-        int realsize = r_anal_fcn_realsize (fcn);
-        int size = r_anal_fcn_size (fcn);
-        if(realsize == size) {
-            msg = r_str_newf ("%-12d", size);
-        } else {
-            msg = r_str_newf ("%-4d -> %-4d", size, realsize);
-        }
-    
-        r_cons_printf ("0x%08"PFMT64x" %4d %4s %s\n",
-        		fcn->addr, r_list_length (fcn->bbs), msg, name);
-    
-        R_FREE (name);
-        R_FREE (msg);
-    }
-    return 0;
+	if (quiet) {
+		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
+	} else {
+		char *name = r_core_get_function_name (core, fcn);
+		char *msg;
+		
+		int realsize = r_anal_fcn_realsize (fcn);
+		int size = r_anal_fcn_size (fcn);
+		if(realsize == size) {
+			msg = r_str_newf ("%-12d", size);
+		} else {
+			msg = r_str_newf ("%-4d -> %-4d", size, realsize);
+		}
+		
+		r_cons_printf ("0x%08"PFMT64x" %4d %4s %s\n",
+				fcn->addr, r_list_length (fcn->bbs), msg, name);
+		
+		R_FREE (name);
+		R_FREE (msg);
+	}
+	return 0;
 }
 
 static int r_core_anal_fcn_list_default(RCore *core, RList *fcns, bool quiet) {
-    RListIter *iter;
-    RAnalFunction *fcn;
-    r_list_foreach (fcns, iter, fcn) {
-        r_core_anal_fcn_print_default (core, fcn, quiet);
-    }
-    if (quiet) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (fcns, iter, fcn) {
+		r_core_anal_fcn_print_default (core, fcn, quiet);
+	}
+	if (quiet) {
 		r_cons_newline ();
-    }
-    return 0;
+	}
+	return 0;
 }
 
 static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
-    RListIter *iter;
+	RListIter *iter;
 	RAnalRef *refi;
-    char *name = r_core_get_function_name (core, fcn);
+	char *name = r_core_get_function_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
@@ -1555,8 +1555,8 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		r_cons_printf (",\"diff\":\"%s\"",
 				fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
-
-    int first = 1;
+	
+	int first = 1;
 	r_cons_printf (",\"callrefs\":[");
 	r_list_foreach (fcn->refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
@@ -1567,8 +1567,8 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 					refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
 			first = 0;
 		}
-    }
-
+	}
+	
 	first = 1;
 	r_cons_printf ("],\"datarefs\":[");
 	r_list_foreach (fcn->refs, iter, refi) {
@@ -1576,8 +1576,8 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf ("%s%"PFMT64d, first?"":",", refi->addr);
 			first = 0;
 		}
-    }
-
+	}
+	
 	first = 1;
 	r_cons_printf ("],\"codexrefs\":[");
 	r_list_foreach (fcn->xrefs, iter, refi) {
@@ -1589,8 +1589,8 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 					refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
 			first = 0;
 		}
-    }
-
+	}
+	
 	first = 1;
 	r_cons_printf ("],\"dataxrefs\":[");
 	r_list_foreach (fcn->xrefs, iter, refi) {
@@ -1598,9 +1598,9 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf ("%s%"PFMT64d, first?"":",", refi->addr);
 			first = 0;
 		}
-    }
+	}
 	r_cons_printf ("]");
-
+	
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (",\"difftype\":\"%s\"",
 				fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
@@ -1611,25 +1611,25 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf (",\"diffname\":\"%s\"", fcn->diff->name);
 	}
 	r_cons_printf ("}");
-    R_FREE (name);
-    return 0;
+	R_FREE (name);
+	return 0;
 }
 
 static int r_core_anal_fcn_list_json(RCore *core, RList *fcns) {
-    RListIter *iter;
-    RAnalFunction *fcn;
-    int first = 1;
+	RListIter *iter;
+	RAnalFunction *fcn;
+	int first = 1;
 	r_cons_printf ("[");
-    r_list_foreach (fcns, iter, fcn) {
-        if (!first) r_cons_printf (",");
-        r_core_anal_fcn_print_json (core, fcn);
-    }
+	r_list_foreach (fcns, iter, fcn) {
+		if (!first) r_cons_printf (",");
+		r_core_anal_fcn_print_json (core, fcn);
+	}
 	r_cons_printf ("]\n");
-    return 0;
+	return 0;
 }
 
 static int r_core_anal_fcn_print_detail(RCore *core, RAnalFunction *fcn) {
-    char *name = r_core_get_function_name (core, fcn);
+	char *name = r_core_get_function_name (core, fcn);
 	r_cons_printf ("f %s %d 0x%08"PFMT64x"\n", name, r_anal_fcn_size (fcn), fcn->addr);
 	r_cons_printf ("af+ 0x%08"PFMT64x" %d %s %c %c\n",
 			fcn->addr, r_anal_fcn_size (fcn), name,
@@ -1646,15 +1646,15 @@ static int r_core_anal_fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	/* show variables  and arguments */
 	r_core_cmdf (core, "afa* @ 0x%"PFMT64x"\n", fcn->addr);
 	r_core_cmdf (core, "afv* @ 0x%"PFMT64x"\n", fcn->addr);
-    R_FREE (name);
-    return 0;
+	R_FREE (name);
+	return 0;
 }
 
 static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
-    RListIter *iter;
+	RListIter *iter;
 	RAnalRef *refi;
-    RAnalVar *vari;
-    char *name = r_core_get_function_name (core, fcn);
+	RAnalVar *vari;
+	char *name = r_core_get_function_name (core, fcn);
 	r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
 	r_cons_printf ("\n realsz: %d", r_anal_fcn_realsize (fcn));
@@ -1669,7 +1669,7 @@ static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		r_cons_printf (" [%s]",
 				fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
-
+	
 	r_cons_printf ("\n num-bbs: %d", r_list_length (fcn->bbs));
 	r_cons_printf ("\n call-refs: ");
 	r_list_foreach (fcn->refs, iter, refi)
@@ -1677,24 +1677,24 @@ static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			refi->type == R_ANAL_REF_TYPE_CALL)
 			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
 					refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
-
+	
 	r_cons_printf ("\n data-refs: ");
 	r_list_foreach (fcn->refs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_DATA)
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
-
+	
 	r_cons_printf ("\n code-xrefs: ");
 	r_list_foreach (fcn->xrefs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
 			refi->type == R_ANAL_REF_TYPE_CALL)
 			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
 					refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
-
+	
 	r_cons_printf ("\n data-xrefs: ");
 	r_list_foreach (fcn->xrefs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_DATA)
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
-
+	
 	if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf ("\n vars: %d", r_list_length (fcn->vars));
 		r_list_foreach (fcn->vars, iter, vari) {
@@ -1711,88 +1711,88 @@ static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf (" function: %s",
 				fcn->diff->name);
 	}
-    R_FREE (name)
-    return 0;
+	R_FREE (name)
+	return 0;
 }
 
 static int r_core_anal_fcn_list_detail(RCore *core, RList *fcns) {
-    RListIter *iter;
-    RAnalFunction *fcn;
-    r_list_foreach (fcns, iter, fcn) {
-        r_core_anal_fcn_print_detail (core, fcn);
-    }
-    r_cons_newline ();
-    return 0;
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (fcns, iter, fcn) {
+		r_core_anal_fcn_print_detail (core, fcn);
+	}
+	r_cons_newline ();
+	return 0;
 }
 
 static int r_core_anal_fcn_list_legacy(RCore *core, RList *fcns)
 {
-    RListIter *iter;
-    RAnalFunction *fcn;
-    r_list_foreach(fcns, iter, fcn) {
-        r_core_anal_fcn_print_legacy(core, fcn);
-    }
-    r_cons_newline();
-    return 0;
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach(fcns, iter, fcn) {
+		r_core_anal_fcn_print_legacy(core, fcn);
+	}
+	r_cons_newline();
+	return 0;
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
-    RList *fcns = core->anal->fcns;
-    if (r_list_empty (fcns)) return 0;
-
+	RList *fcns = core->anal->fcns;
+	if (r_list_empty (fcns)) return 0;
+	
 	r_list_sort (fcns, &cmpfcn);
-    r_core_anal_fcn_gather_metadata(fcns);
-
-    bool has_filter = (input && *input);
+	r_core_anal_fcn_gather_metadata(fcns);
+	
+	bool has_filter = (input && *input);
 	if (has_filter) {
-	    ut64 addr;
-        if (!strcmp (input, "$$")) {
-            addr = core->offset;
-        } else {
-		    addr = r_num_math (core->num, input + 1);
-        }
-
-        fcns = r_list_new();
-        if(!fcns) return -1;
-
-	    RListIter *iter;
-	    RAnalFunction *fcn;
-        r_list_foreach(core->anal->fcns, iter, fcn) {
-            if (in_function(fcn, addr) || (!strcmp(input, fcn->name))) {
-                r_list_append(fcns, fcn);
-            }
-        }
-    }
-
+		ut64 addr;
+		if (!strcmp (input, "$$")) {
+			addr = core->offset;
+		} else {
+			addr = r_num_math (core->num, input + 1);
+		}
+		
+		fcns = r_list_new();
+		if(!fcns) return -1;
+		
+		RListIter *iter;
+		RAnalFunction *fcn;
+		r_list_foreach(core->anal->fcns, iter, fcn) {
+			if (in_function(fcn, addr) || (!strcmp(input, fcn->name))) {
+				r_list_append(fcns, fcn);
+			}
+		}
+	}
+	
 	r_list_sort (core->anal->fcns, &cmpfcn);
-    switch (rad) {
-    case 's':
-        r_core_anal_fcn_list_size (core);
-        break;
-    case 'l':
-        r_core_anal_fcn_list_verbose (core, fcns);
-        break;
-    case 'q':
-        r_core_anal_fcn_list_default (core, fcns, true);
-        break;
-    case 'j':
-        r_core_anal_fcn_list_json(core, fcns);
-        break;
-    case '*':
-        r_core_anal_fcn_list_detail(core, fcns);
-        break;
-    case 1:
-        r_core_anal_fcn_list_legacy(core, fcns);
-        break;
-    default:
-        r_core_anal_fcn_list_default (core, fcns, false);
-        break;
-    }
-    if (has_filter) {
-        // The list does not own the its members, so don't purge.
-        R_FREE(fcns);
-    }
-    return 0;
+	switch (rad) {
+	case 's':
+		r_core_anal_fcn_list_size (core);
+		break;
+	case 'l':
+		r_core_anal_fcn_list_verbose (core, fcns);
+		break;
+	case 'q':
+		r_core_anal_fcn_list_default (core, fcns, true);
+		break;
+	case 'j':
+		r_core_anal_fcn_list_json(core, fcns);
+		break;
+	case '*':
+		r_core_anal_fcn_list_detail(core, fcns);
+		break;
+	case 1:
+		r_core_anal_fcn_list_legacy(core, fcns);
+		break;
+	default:
+		r_core_anal_fcn_list_default (core, fcns, false);
+		break;
+	}
+	if (has_filter) {
+		// The list does not own the its members, so don't purge.
+		R_FREE(fcns);
+	}
+	return 0;
 }
 
 static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest);
