@@ -397,6 +397,8 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
 		fcn->bits = 16;
+	} else {
+		fcn->bits = core->anal->bits;
 	}
 	fcn->addr = at;
 	r_anal_fcn_set_size (fcn, 0);
@@ -621,6 +623,18 @@ err_op:
 	return NULL;
 }
 
+static void print_hint_h_format(RAnalHint* hint) {
+	r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", hint->addr, hint->addr+hint->size);
+	HINTCMD (hint, arch, " arch='%s'", false);
+	HINTCMD (hint, bits, " bits=%d", false);
+	HINTCMD (hint, size, " size=%d", false);
+	HINTCMD (hint, opcode, " opcode='%s'", false);
+	HINTCMD (hint, syntax, " syntax='%s'", false);
+	HINTCMD (hint, immbase, " immbase=%d", false);
+	HINTCMD (hint, esil, " esil='%s'", false);
+	r_cons_newline ();
+}
+
 static int cb(void *p, const char *k, const char *v) {
 	RAnalHint *hint;
 	HintListState *hls = p;
@@ -653,19 +667,20 @@ static int cb(void *p, const char *k, const char *v) {
 		r_cons_printf ("}");
 		break;
 	default:
-		r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", hint->addr, hint->addr+hint->size);
-		HINTCMD (hint, arch, " arch='%s'", false);
-		HINTCMD (hint, bits, " bits=%d", false);
-		HINTCMD (hint, size, " size=%d", false);
-		HINTCMD (hint, opcode, " opcode='%s'", false);
-		HINTCMD (hint, syntax, " syntax='%s'", false);
-		HINTCMD (hint, immbase, " immbase=%d", false);
-		HINTCMD (hint, esil, " esil='%s'", false);
-		r_cons_newline ();
+		print_hint_h_format(hint);
+		break;
 	}
 	hls->count++;
 	free (hint);
 	return 1;
+}
+
+R_API void r_core_anal_hint_print (RAnal* a, ut64 addr) {
+	RAnalHint *hint = r_anal_hint_get(a, addr);
+
+	if (!hint) return;
+	print_hint_h_format(hint);
+	free(hint);
 }
 
 R_API void r_core_anal_hint_list (RAnal *a, int mode) {
@@ -1646,9 +1661,10 @@ R_API int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\n stackframe: %d", fcn->maxstack);
 	r_cons_printf ("\n call-convention: %s", r_anal_cc_type2str (fcn->call));
 	r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
+	r_cons_printf ("\n bits: %d", fcn->bits);
 	r_cons_printf ("\n type: %s",
-			fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":
-			fcn->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
+			fcn->type == R_ANAL_FCN_TYPE_SYM?"sym":
+			fcn->type == R_ANAL_FCN_TYPE_IMP?"imp": "fcn");
 	if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM)
 		r_cons_printf (" [%s]",
 				fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
@@ -1830,10 +1846,6 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
-	if (fcn->call == R_ANAL_CC_TYPE_FASTCALL) {
-		r_anal_var_add (core->anal, fcn->addr, 1, 0,'A', "int", 4,"arg_ecx");
-		r_anal_var_add (core->anal, fcn->addr, 1, 1,'A', "int", 4,"arg_edx");
-	}
 	free (buf);
 	return;
 }
@@ -2031,6 +2043,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 					break;
 				case R_ANAL_OP_TYPE_UCJMP:
 				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_MJMP:
 					if (op.ptr != -1 &&
 						core_anal_followptr (core, 'c',
 							at + i, op.ptr, ref,
@@ -2148,6 +2161,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				xref_to = op.jump;
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
 				type = R_ANAL_REF_TYPE_CODE;
 				xref_to = op.ptr;
@@ -2448,10 +2462,13 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 	ut64 addr = core->offset;
 	int depth = 0;
 	RAnalOp *op = NULL;
-	RAnalCycleFrame *prev = NULL, *cf = r_anal_cycle_frame_new ();
+	RAnalCycleFrame *prev = NULL, *cf = NULL;
 	RAnalCycleHook *ch;
 	RList *hooks = r_list_new ();
-	if (!hooks) return NULL;
+	if (!hooks) {
+		return NULL;
+	}
+	cf = r_anal_cycle_frame_new ();
 	while (cf && !core->cons->breaked) {
 		if ((op = r_core_anal_op (core, addr)) && (op->cycles) && (ccl > 0)) {
 			r_cons_clear_line (1);
@@ -2464,6 +2481,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 				loganal (op->addr, addr, depth);
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCALL:
 				ch = R_NEW0 (RAnalCycleHook);
 				ch->addr = op->addr;
@@ -2573,6 +2591,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 		} else {
 			ch = R_NEW0 (RAnalCycleHook);
 			if (!ch) {
+				r_anal_cycle_frame_free (cf);
 				r_list_free (hooks);
 				return NULL;
 			}
@@ -2933,6 +2952,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
 			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_MJMP:
 				{
 					ut64 dst = core->anal->esil->jump_target;
 					if (dst == UT64_MAX) {

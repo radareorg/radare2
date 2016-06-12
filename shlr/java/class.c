@@ -2012,6 +2012,8 @@ R_API ut64 r_bin_java_read_class_file2(RBinJavaObj *bin, const ut64 offset, cons
 		ut16 this_class;
 		ut16 super_class;
 	*/
+	if (cf2_buf + 6 > obuf + len)
+	    	return 0;
 	bin->cf2.cf2_size = 6;
 	bin->cf2.access_flags = R_BIN_JAVA_USHORT (cf2_buf, 0);
 	bin->cf2.this_class = R_BIN_JAVA_USHORT (cf2_buf, 2);
@@ -3791,8 +3793,12 @@ R_API RBinJavaAttrInfo* r_bin_java_source_code_file_attr_new (ut8 *buffer, ut64 
 	ut64 offset = 0;
 	RBinJavaAttrInfo* attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
-	if (!attr) return NULL;
+	if (!attr || !sz) {
+	    	free (attr);
+	    	return NULL;
+	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_SOURCE_FILE_ATTR;
+	//if (buffer + offset > buffer + sz) return NULL;
 	attr->info.source_file_attr.sourcefile_idx = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->size = offset;
@@ -4829,6 +4835,7 @@ R_API ut8 * r_bin_java_cp_get_fref_bytes (RBinJavaObj *bin, ut32 *out_sz, ut8 ta
 		if (fnt_bytes) {
 			ut8 *tbuf = malloc (fnt_len + *out_sz);
 			if (!tbuf) {
+				free (bytes);
 				free (fnt_bytes);
 				return NULL;
 			}

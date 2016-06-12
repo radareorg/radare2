@@ -217,6 +217,7 @@ static struct {
 	{ "comment", r_offsetof (RConsPalette, comment) },
 	{ "args", r_offsetof (RConsPalette, args) },
 	{ "fname", r_offsetof (RConsPalette, fname) },
+	{ "floc", r_offsetof (RConsPalette, floc) },
 	{ "fline", r_offsetof (RConsPalette, fline) },
 	{ "flag", r_offsetof (RConsPalette, flag) },
 	{ "label", r_offsetof (RConsPalette, label) },
@@ -456,7 +457,7 @@ R_API void r_cons_pal_list (int rad) {
 	if (rad == 'j') r_cons_printf ("}\n");
 }
 
-R_API int r_cons_pal_set (const char *key, const char *val) {
+R_API int r_cons_pal_set(const char *key, const char *val) {
 	int i;
 	char **p;
 	for (i = 0; keys[i].name; i++) {
@@ -471,7 +472,7 @@ R_API int r_cons_pal_set (const char *key, const char *val) {
 	return false;
 }
 
-R_API const char *r_cons_pal_get_i (int n) {
+R_API const char *r_cons_pal_get_i(int n) {
 	int i;
 	for (i = 0; i < n && keys[i].name; i++) {}
 	if (i == n) return keys[n].name;

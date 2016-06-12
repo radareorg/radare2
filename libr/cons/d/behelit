@@ -1,0 +1,53 @@
+ec b0x7f rgb:ff5f5f
+ec b0xff rgb:ff005f
+ec b0x00 rgb:262626
+ec btext rgb:af87ff
+ec other rgb:4e4e4e
+ec offset rgb:4e4e4e
+ec flow rgb:5f87ff
+ec input rgb:5fff5f
+ec prompt rgb:5f87ff
+ec args rgb:ff005f
+ec help rgb:af87d7
+ec comment rgb:ff005f
+ec flag rgb:5f87ff
+ec fline rgb:af87ff
+ec fname rgb:5f87ff
+ec floc rgb:5f87ff
+ec label rgb:5f87ff
+ec mov rgb:5f87ff
+ec call rgb:000000 rgb:00ff5f
+ec jmp rgb:000000 rgb:5f5fff
+ec cjmp rgb:000000 rgb:5f87ff
+ec cmp rgb:ff005f
+ec nop rgb:4e4e4e
+ec math rgb:ffff5f
+ec bin rgb:ff5f5f
+ec ret rgb:ff005f
+ec push rgb:af87ff
+ec pop rgb:af87ff
+ec swi rgb:8787ff
+ec crypto rgb:000000 rgb:ff5f5f
+ec trap rgb:000000 rgb:ff005f
+ec invalid rgb:000000 rgb:ff005f
+ec num rgb:af87ff rgb:121212
+ec reg rgb:5fff5f rgb:121212
+ec creg rgb:5f87ff
+ec ai.read rgb:00ff5f
+ec ai.write rgb:5f87ff
+ec ai.exec rgb:ff005f
+ec ai.seq rgb:af87ff
+ec ai.ascii rgb:ff5f5f
+ec graph.box rgb:00ff5f
+ec graph.box2 rgb:5f87ff
+ec graph.box3 rgb:af87ff
+ec graph.box4 rgb:ff005f
+ec graph.true rgb:00ff5f
+ec graph.false rgb:ff005f
+ec graph.trufae rgb:5f87ff
+ec graph.current rgb:5f87ff
+ec graph.traced rgb:ffff5f
+
+# background of the terminal must be #121212
+# foreground of the terminal must be #5fff5f
+# xterm -bg rgb:12/12/12 -fg rgb:5f/ff/5f

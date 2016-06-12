@@ -1202,12 +1202,14 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 			depth++;
 			continue;
 		}
+		module_name[0] = 0;
+#ifndef __POWERPC__
 		{
-			module_name[0] = 0;
 			int ret = proc_regionfilename (tid, address, module_name,
 							 sizeof (module_name));
 			module_name[ret] = 0;
 		}
+#endif
 		if (true) {
 			char maxperm[32];
 			char depthstr[32];

@@ -45,24 +45,36 @@ clflush=flush cache line
 cli=clear interrupt flag
 clts=clear task-switched flag in cr0
 cmc=complement carry flag
-cmovb=conditional move - below/not above or equal/carry (cf=1)
-cmovbe=conditional move - below or equal/not above (cf=1 and zf=1)
-cmove=conditional move - if equal (zf=1)
-cmovl=conditional move - less/not greater (sf!=of)
-cmovle=conditional move - less or equal/not greater ((zf=1) or (sf!=of))
+cmova=conditional move - above/not below nor equal (cf=0 and zf=0)
+cmovae=conditional move - above or equal/not below/not carry (cf=0)
+cmovb=conditional move - below/not above nor equal/carry (cf=1)
+cmovbe=conditional move - below or equal/not above (cf=1 or zf=1)
+cmovc=conditional move - carry/below/not above or equal (cf=1)
+cmove=conditional move - equal/zero (zf=1)
+cmovg=conditional move - greater/not less nor equal (zf=0 and sf=of)
+cmovge=conditional move - greater or equal/not less (sf=of)
+cmovl=conditional move - less/not greater nor equal (sf!=of)
+cmovle=conditional move - less or equal/not greater (zf=1 or sf!=of)
+cmovna=conditional move - not above/below or equal (cf=1 or zf=1)
+cmovnae=conditional move - not above nor equal/below/carry (cf=1)
 cmovnb=conditional move - not below/above or equal/not carry (cf=0)
-cmovnbe=conditional move - not below or equal/above (cf=0 and zf=0)
-cmovne=conditional move - if not equal (zf=0)
+cmovnbe=conditional move - not below nor equal/above (cf=0 and zf=0)
+cmovnc=conditional move - not carry/above or equal/not below (cf=0)
+cmovne=conditional move - not equal/not zero (zf=0)
+cmovng=conditional move - not greater/less or equal (zf=1 or sf!=of)
+cmovnge=conditional move - not greater nor equal/less (sf!=of)
 cmovnl=conditional move - not less/greater or equal (sf=of)
-cmovnle=conditional move - not less nor equal/greater ((zf=0) and (sf=of))
+cmovnle=conditional move - not less nor equal/greater (zf=0 and sf=of)
 cmovno=conditional move - not overflow (of=0)
-cmovnp=conditional move - not parity/parity odd
+cmovnp=conditional move - not parity/parity odd (pf=0)
 cmovns=conditional move - not sign (sf=0)
-cmovnz=conditional move - not zero/not equal (zf=1)
+cmovnz=conditional move - not zero/not equal (zf=0)
 cmovo=conditional move - overflow (of=1)
 cmovp=conditional move - parity/parity even (pf=1)
+cmovpe=conditional move - parity even/parity (pf=1)
+cmovpo=conditional move - parity odd/not parity (pf=0)
 cmovs=conditional move - sign (sf=1)
-cmovz=conditional move - zero/equal (zf=0)
+cmovz=conditional move - zero/equal (zf=1)
 cmp=compare two operands
 cmppd=compare packed double-fp values
 cmpps=compare packed single-fp values
@@ -247,42 +259,42 @@ invvpid=invalidate translations based on vpid
 iretd=interrupt return
 iretq=interrupt return (64 bit)
 iret=return from interrupt
-jae=jump short if above or equal (cf=0)
 ja=jump short if above (cf=0 and zf=0)
+jae=jump short if above or equal (cf=0)
+jb=jump short if below/not above nor equal/carry (cf=1)
 jbe=jump short if below or equal/not above (cf=1 and zf=1)
-jb=jump short if below/not above or equal/carry (cf=1)
 jc=jump short if carry (cf=1)
 jcxz=jump short if ecx register is 0
-jecxz=jump short if ecx is 0
 je=jump short if equal (zf=1)
-jge=jump short if greater or equal (sf=of)
+jecxz=jump short if ecx is 0
 jg=jump short if greater (zf=0 and sf=of)
-jle=jump short if less or equal/not greater ((zf=1) or (sf!=of))
+jge=jump short if greater or equal (sf=of)
 jl=jump short if less/not greater (sf!=of)
+jle=jump short if less or equal/not greater (zf=1 or sf!=of)
+jmp=jump
 jmpe=jump to ia-64 instruction set
 jmpf=jump
-jmp=jump
-jnae=jump short if not above or equal/below (cf=1)
 jna=jump short if not above/equal (cf=1 and zf=1)
-jnbe=jump short if not below or equal/above (cf=0 and zf=0)
+jnae=jump short if not above nor equal/below (cf=1)
 jnb=jump short if not below/above or equal/not carry (cf=0)
+jnbe=jump short if not below or equal/above (cf=0 and zf=0)
 jnc=jump short if not carry (cf=0)
 jne=jump short if not equal (zf=0)
+jng=jump short if not greater/less or equal (zf=1 or sf!=of)
 jnge=jump short if not greater/less (sf!=of)
-jng=jump short if not greater/less or equal ((zf=1) or (sf!=of))
-jnle=jump short if not less nor equal/greater ((zf=0) and (sf=of))
 jnl=jump short if not less/greater or equal (sf=of)
+jnle=jump short if not less nor equal/greater (zf=0 and sf=of)
 jno=jump short if not overflow (of=0)
-jnp=jump short if not parity/parity odd
+jnp=jump short if not parity/parity odd (pf=0)
 jns=jump short if not sign (sf=0)
-jnz=jump short if not zero/not equal (zf=1)
+jnz=jump short if not zero/not equal (zf=0)
 jo=jump short if overflow (of=1)
-jpe=jump short if parity even/parity (pf=1)
 jp=jump short if parity/parity even (pf=1)
-jpo=jump short if parity odd/not parity
+jpe=jump short if parity even/parity (pf=1)
+jpo=jump short if parity odd/not parity (pf=0)
 jrcxz=jump short if rcx register is 0
 js=jump short if sign (sf=1)
-jz=jump short if zero/equal (zf=0)
+jz=jump short if zero/equal (zf=1)
 lahf=load status flags into ah register
 lar=load acces right byte
 lddqu=load unaligned integer 128 bits
@@ -309,8 +321,6 @@ lodsw=Load string word
 loop=decrement count; jump short if ecx!=0
 loope=decrement count; jump short if ecx!=0 and zf=1
 loopne=decrement count; jump short if ecx!=0 and zf=0
-loopne=decrement count; jump short if ecx!=0 and zf=0
-loopnz=decrement count; jump short if ecx!=0 and zf=0
 loopnz=decrement count; jump short if ecx!=0 and zf=0
 loopz=decrement count; jump short if ecx!=0 and zf=1
 lsl=load segment limit
@@ -574,32 +584,36 @@ scasb=cmp al, ES:[edi++]
 scasq=cmp rax, ES:[rdi+=2]
 scas=scan string
 scasw=cmp ax, ES:[edi+=2]
-setbe=set byte on condition - below or equal/not above (cf=1 and zf=1)
-setb=set byte on condition - below/not above or equal/carry (cf=1)
-setc=set byte on condition - carry (cf=1)
-sete=set byte if equal (zf=1)
-setle=set byte on condition - less or equal/not greater ((zf=1) or (sf!=of))
-setl=set byte on condition - less/not greater (sf!=of)
-setnae=set byte on condition - not above or equal/below/carry (cf=1)
-setna=set byte on condition - below or not above/equal (cf=1 and zf=1)
-setnbe=set byte on condition - not below or equal/above (cf=0 and zf=0)
+seta=set byte on condition - above/not below nor equal (cf=0 and zf=0)
+setae=set byte on condition - above or equal/not below/not carry (cf=0)
+setb=set byte on condition - below/not above nor equal/carry (cf=1)
+setbe=set byte on condition - below or equal/not above (cf=1 or zf=1)
+setc=set byte on condition - carry/below/not above nor equal (cf=1)
+sete=set byte on condition - equal/zero (zf=1)
+setg=set byte on condition - greater/not less nor equal (zf=0 and sf=of)
+setge=set byte on condition - greater or equal/not less (sf=of)
+setl=set byte on condition - less/not greater nor equal (sf!=of)
+setle=set byte on condition - less or equal/not greater (zf=1 or sf!=of)
+setna=set byte on condition - not above/below or equal (cf=1 or zf=1)
+setnae=set byte on condition - not above nor equal/below/carry (cf=1)
 setnb=set byte on condition - not below/above or equal/not carry (cf=0)
-setnc=set byte on condition - carry (cf=1)
-setne=set byte on condition - not zero/not equal (zf=0)
-setnge=set byte on condition - not greater/less (sf!=of)
-setng=set byte on condition - not greater/less or equal ((zf=1) or (sf!=of))
-setnle=set byte on condition - not less nor equal/greater ((zf=0) and (sf=of))
+setnbe=set byte on condition - not below nor equal/above (cf=0 and zf=0)
+setnc=set byte on condition - not carry/above or equal/not below (cf=0)
+setne=set byte on condition - not equal/not zero (zf=0)
+setng=set byte on condition - not greater/less or equal (zf=1 or sf!=of)
+setnge=set byte on condition - not greater nor equal/less (sf!=of)
 setnl=set byte on condition - not less/greater or equal (sf=of)
+setnle=set byte on condition - not less nor equal/greater (zf=0 and sf=of)
 setno=set byte on condition - not overflow (of=0)
-setnp=set byte on condition - not parity/parity odd
+setnp=set byte on condition - not parity/parity odd (pf=0)
 setns=set byte on condition - not sign (sf=0)
-setnz=set byte on condition - not zero/not equal (zf=1)
+setnz=set byte on condition - not zero/not equal (zf=0)
 seto=set byte on condition - overflow (of=1)
-setpe=set byte on condition - parity/parity even (pf=1)
-setpo=set byte on condition - parity odd/not parity
 setp=set byte on condition - parity/parity even (pf=1)
+setpe=set byte on condition - parity even/parity (pf=1)
+setpo=set byte on condition - parity odd/not parity (pf=0)
 sets=set byte on condition - sign (sf=1)
-setz=set byte on condition - zero/equal (zf=0)
+setz=set byte on condition - zero/equal (zf=1)
 sfence=store fence
 sgdt=store global descriptor table register
 shld=double precision shift left

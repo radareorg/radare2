@@ -184,7 +184,8 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		sdb_free (dbg->tracenodes);
 		//r_debug_plugin_free();
 		free (dbg->btalgo);
-		r_debug_trace_free (dbg);
+		r_debug_trace_free (dbg->trace);
+		dbg->trace = NULL;
 		free (dbg->arch);
 		free (dbg->glob_libs);
 		free (dbg->glob_unlibs);

@@ -72,7 +72,7 @@ static void clippy(const char *msg) {
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *k;
-	char *p, out[128];
+	char *p, out[128] = {0};
 	ut64 n, n2;
 	int i;
 	RList *tmp;
@@ -188,7 +188,7 @@ static int cmd_help(void *data, const char *input) {
 			if (q) {
 				*q = 0;
 				n = r_num_get (core->num, p);
-				r_str_bits (out, (const ut8*)&n, sizeof (n), q+1);
+				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q+1);
 				r_cons_printf ("%s\n", out);
 			} else eprintf ("Usage: \"?b value bitstring\"\n");
 			free (p);
@@ -244,7 +244,7 @@ static int cmd_help(void *data, const char *input) {
 				free (asnum);
 			}
 			/* binary and floating point */
-			r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
+			r_str_bits64 (out, n);
 			r_cons_printf ("%s %.01lf %ff %lf\n",
 				out, core->num->fvalue, f, d);
 		}
@@ -375,7 +375,11 @@ static int cmd_help(void *data, const char *input) {
 			"$?", "", "last comparison value",
 			"$alias", "=value", "Alias commands (simple macros)",
 			"$b", "", "block size",
-			"$B", "", "begin of function",
+			"$B", "", "base address (aligned lowest map address)",
+			"$FB", "", "begin of function",
+			"$FE", "", "end of function",
+			"$FS", "", "function size",
+			"$FI", "", "function instructions",
 			"$c,$r", "", "get width and height of terminal",
 			"$Cn", "", "get nth call of function",
 			"$Dn", "", "get nth data reference in function",
@@ -390,7 +394,7 @@ static int cmd_help(void *data, const char *input) {
 			"$Xn", "", "get nth xref of function",
 			"$l", "", "opcode length",
 			"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
-			"$M", "", "address where the binary is mapped (base address)",
+			"$M", "", "map address (lowest map address)",
 			"$o", "", "here (current disk io offset)",
 			"$p", "", "getpid()",
 			"$P", "", "pid of children (only in debug)",

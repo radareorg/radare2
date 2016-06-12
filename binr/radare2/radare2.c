@@ -114,8 +114,8 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 
 static int main_help(int line) {
 	if (line < 2) {
-		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+		printf ("Usage: r2 [-ACdfLMnNqStuvwz] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
+			"          [-s addr] [-B baddr] [-M maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) printf (
 		" --           open radare2 on an empty file\n"
@@ -139,7 +139,8 @@ static int main_help(int line) {
 		" -k [k=v]     perform sdb query into core->sdb\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
-		" -m [addr]    map file at given address\n"
+		" -m [addr]    map file at given address (loadaddr)\n"
+		" -M           do not demangle symbol names\n"
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
 		" -o [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
@@ -396,7 +397,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'k':
 			{
 				char *out = sdb_querys (r.sdb, NULL, 0, optarg);
-				if (out&& *out) {
+				if (out && *out) {
 					r_cons_printf ("%s\n", out);
 				}
 				free (out);
@@ -405,7 +406,9 @@ int main(int argc, char **argv, char **envp) {
 		case 'o': asmos = optarg; break;
 		case 'l': r_lib_open (r.lib, optarg); break;
 		case 'L': list_io_plugins (r.io); return 0;
-		case 'm': mapaddr = r_num_math (r.num, optarg); break;
+		case 'm':
+			mapaddr = r_num_math (r.num, optarg); break;
+			break;
 		case 'M':
 			{
 				r_config_set (r.config, "bin.demangle", "false");
@@ -417,7 +420,9 @@ int main(int argc, char **argv, char **envp) {
 		case 'p':
 			r_config_set (r.config, "file.project", optarg);
 			break;
-		case 'P': patchfile = optarg; break;
+		case 'P':
+			patchfile = optarg;
+			break;
 		case 'q':
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
@@ -441,8 +446,11 @@ int main(int argc, char **argv, char **envp) {
 				verify_version (0);
 				return blob_version ("radare2");
 			}
-		case 'V': return verify_version (1);
-		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
+		case 'V':
+			return verify_version (1);
+		case 'w':
+			perms = R_IO_READ | R_IO_WRITE;
+			break;
 		default:
 			help++;
 		}
@@ -687,10 +695,12 @@ int main(int argc, char **argv, char **envp) {
 				const char *prj = r_config_get (r.config, "file.project");
 				if (prj && *prj) {
 					pfile = r_core_project_info (&r, prj);
-					if (pfile)
+					if (pfile) {
 						fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					else
+						r_core_project_open (&r, prj);
+					} else {
 						eprintf ("Cannot find project file\n");
+					}
 				}
 			}
 		}

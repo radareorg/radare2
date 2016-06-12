@@ -34,26 +34,57 @@ static void flag_every_function(RCore *core) {
 }
 
 static void var_help(RCore *core, char ch) {
-	const char *help_msg[] = {
-		"Usage:", "af[aAv]", " [idx] [type] [name]",
-		"af[aeAv]", "", "list stack based/fastcall function arguments, variables",
-		"af[aeAv]*", "", "same as af[aAv] but in r2 commands",
-		"af[aeAv]", " [idx] [name] ([type])", "define argument/variable with name and type and offset id",
-		"af[aeAv]n", " [old_name] [new_name]", "rename function argument / variable",
-		"af[aeAv]t", " [name] [new_type]", "change type for given argument / variable",
-		"af[aeAv]j", "", "return list of function arguments /variables in JSON format",
-		"af[aeAv]-", " [idx]", "delete argument/ variables at the given index",
+	const char *help_sp[] = {
+		"Usage:", "afe", " [idx] [type] [name]",
+		"afe", "", "list stack based arguments and variables",
+		"afe*", "", "same as afe but in r2 commands",
+		"afe", " [idx] [name] [type]", "define stack based arguments,variables",
+		"afen", " [old_name] [new_name]", "rename stack based argument or variable",
+		"afet", " [name] [new_type]", "change type for given argument or variable",
+		"afej", "", "return list of stack based arguments and variables in JSON format",
+		"afe-", " [name]", "delete stack based argument or variables with the given name",
+		"afeg", " [idx] [addr]", "define var get reference",
+		"afes", " [idx] [addr]", "define var set reference",
+		NULL
+	};
+	const char *help_bp[] = {
+		"Usage:", "afa", " [idx] [type] [name]",
+		"afa", "", "list base pointer based arguments, variables",
+		"afa*", "", "same as afa but in r2 commands",
+		"afa", " [idx] [name] ([type])", "define base pointer based argument, variable",
+		"afan", " [old_name] [new_name]", "rename base pointer based argument or variable",
+		"afat", " [name] [new_type]", "change type for given base pointer based argument or variable",
+		"afaj", "", "return list of base pointer based arguments, variables in JSON format",
+		"afa-", " [name]", "delete argument/ variables at the given name",
 		"afag", " [idx] [addr]", "define var get reference",
 		"afas", " [idx] [addr]", "define var set reference",
-		"afvg", " [idx] [addr]", "define var get reference",
-		"afvs", " [idx] [addr]", "define var set reference",
-		"afx", "[-] [from] [to]", "manipulate function xrefs",
-		"afM", "", "print byte map of functions coverage",
-		NULL };
-	if (ch == 'a' || ch == 'A' || ch == 'v') {
-		r_core_cmd_help (core, help_msg);
-	} else {
-		eprintf ("See afv? and afa?\n");
+		NULL
+	};
+	const char *help_reg[] = {
+		"Usage:", "afv", " [reg] [type] [name]",
+		"afv", "", "list register based arguments",
+		"afv*", "", "same as afv but in r2 commands",
+		"afv", " [reg] [name] ([type])", "define register arguments",
+		"afvn", " [old_name] [new_name]", "rename argument",
+		"afvt", " [name] [new_type]", "change type for given argument",
+		"afvj", "", "return list of register arguments in JSON format",
+		"afv-", " [name]", "delete register arguments at the given index",
+		"afvg", " [reg] [addr]", "define var get reference",
+		"afvs", " [reg] [addr]", "define var set reference",
+		NULL
+	};
+	switch (ch) {
+	case 'a':
+		r_core_cmd_help (core, help_bp);
+		break;
+	case 'e':
+		r_core_cmd_help (core, help_sp);
+		break;
+	case 'v':
+		r_core_cmd_help (core, help_reg);
+		break;
+	default:
+		eprintf ("See afv?, afe? and afa?\n");
 	}
 }
 
@@ -66,19 +97,12 @@ static int var_cmd(RCore *core, const char *str) {
 	str = (const char *)ostr;
 
 	switch (type) {
-	case 'V': // show vars in human readable format
-		r_anal_var_list_show (core->anal, fcn, 'v', 0);
-		r_anal_var_list_show (core->anal, fcn, 'a', 0);
-		r_anal_var_list_show (core->anal, fcn, 'A', 0);
-		r_anal_var_list_show (core->anal, fcn, 'e', 0);
-		break;
 	case '?':
 		var_help (core, 0);
 		break;
-	case 'v': // frame variable
-	case 'a': // stack arg
-	case 'A': // fastcall arg
-	case 'e': // off the stack variables
+	case 'v': // registers
+	case 'a': // base pointer vars/args
+	case 'e': // stack pointer vars/args
 		// XXX nested dup
 		if (str[1] == '?') {
 			var_help (core, *str);
@@ -107,11 +131,14 @@ static int var_cmd(RCore *core, const char *str) {
 					r_anal_var_delete (core->anal, fcn->addr,
 							type, 1, (int)r_num_math (core->num, str + 1));
 				} else {
-					r_anal_var_delete_byname (core->anal, fcn, type, str + 2);
+					char *name = r_str_chop ( strdup (str + 2));
+					r_anal_var_delete_byname (core->anal, fcn, type, name);
+					free (name);
 				}
 			}
 			break;
 		case 'n': {
+			RAnalVar *v1;
 			str++;
 			for (str++; *str == ' ';) str++;
 			char *new_name = strchr (str, ' ');
@@ -122,12 +149,25 @@ static int var_cmd(RCore *core, const char *str) {
 			*new_name++ = 0;
 			char *old_name = strdup (str);
 			r_str_split (old_name, ' ');
+			v1 = r_anal_var_get_byname (core->anal, fcn, 'a', new_name);
+			if (!v1) {
+				v1 = r_anal_var_get_byname (core->anal, fcn, 'e', new_name);
+			}
+			if (!v1) {
+				v1 = r_anal_var_get_byname (core->anal, fcn, 'v', new_name);
+			}
+			if(v1) {
+				free (v1);
+				eprintf("variable or arg with name `%s` already exist\n", new_name);
+				break;
+			}
 			r_anal_var_rename (core->anal, fcn->addr,
 					R_ANAL_VAR_SCOPE_LOCAL, (char)type,
 					old_name, new_name);
 			free (old_name);
 		} break;
 		case 't': {
+			//should we read types from t
 			const char *name = str + 1;
 			for (name++; *name == ' ';) name++;
 			char *new_type = strchr (name, ' ');
@@ -173,7 +213,16 @@ static int var_cmd(RCore *core, const char *str) {
 				break;
 			}
 			*p++ = 0;
-			delta = r_num_math (core->num, str);
+			if (type == 'v') { //registers
+				RRegItem *i = r_reg_get (core->anal->reg, str, -1);
+				if (!i) {
+					eprintf ("Register not found");
+					break;
+				}
+				delta = i->index;
+			} else {
+				delta = r_num_math (core->num, str);
+			}
 			name = p;
 			vartype = strchr (name, ' ');
 			if (vartype) {
@@ -298,17 +347,38 @@ static void cmd_syscall_do(RCore *core, int n) {
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
+	int stacksize = r_config_get_i (core->config, "esil.stacksize");
+	bool iotrap = r_config_get_i (core->config, "esil.iotrap");
+	bool romem = r_config_get_i (core->config, "esil.romem");
+	bool stats = r_config_get_i (core->config, "esil.stats");
+	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	int ret, i, j, idx, size;
+	const char *color = "";
+	const char *esilstr;
+	RAnalHint *hint;
+	RAnalEsil *esil;
 	RAsmOp asmop;
 	RAnalOp op;
 	ut64 addr;
-	RAnalHint *hint;
-	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	const char *color = "";
-	if (use_color)
+
+	// Variables required for setting up ESIL to REIL conversion
+	if (use_color) {
 		color = core->cons->pal.label;
-	if (fmt == 'j')
+	}
+	switch (fmt) {
+	case 'j':
 		r_cons_printf ("[");
+		break;
+	case 'r':
+		// Setup for ESIL to REIL conversion
+		esil = r_anal_esil_new (stacksize, iotrap);
+		if (!esil) {
+			return;
+		}
+		r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
+		r_anal_esil_set_pc (esil, core->offset);
+		break;
+	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
 		// TODO: use more anal hints
@@ -316,6 +386,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_asm_set_pc (core->assembler, addr);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
 		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx);
+		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		if (ret < 1 && fmt != 'd') {
 			eprintf ("Oops at 0x%08" PFMT64x " (", core->offset + idx);
 			for (i = idx, j = 0; i < core->blocksize && j < 3; ++i, ++j) {
@@ -334,6 +405,25 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (d);
 			} else r_cons_printf ("Unknown opcode\n");
 			free (opname);
+		} else if (fmt == 'e') {
+			if (*esilstr) {
+				if (use_color) {
+					r_cons_printf ("%s0x%" PFMT64x Color_RESET " %s\n", color, core->offset + idx, esilstr);
+				} else {
+					r_cons_printf ("0x%" PFMT64x " %s\n", core->offset + idx, esilstr);
+				}
+			}
+		} else if (fmt == 'r') {
+			if (*esilstr) {
+				if (use_color) {
+					r_cons_printf ("%s0x%" PFMT64x Color_RESET "\n", color, core->offset + idx);
+				} else {
+					r_cons_printf ("0x%" PFMT64x "\n", core->offset + idx);
+				}
+				r_anal_esil_parse (esil, esilstr);
+				r_anal_esil_dumpstack (esil);
+				r_anal_esil_stack_free (esil);
+			}
 		} else if (fmt == 'j') {
 			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
 			if (hint && hint->opcode)
@@ -351,9 +441,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			r_cons_printf ("\"size\": %d,", size);
 			r_cons_printf ("\"type\": \"%s\",",
 				r_anal_optype_to_string (op.type));
-			if (*R_STRBUF_SAFEGET (&op.esil))
+			if (op.reg) {
+				r_cons_printf ("\"reg\": \"%s\",", op.reg);
+			}
+			if (*esilstr) {
 				r_cons_printf ("\"esil\": \"%s\",",
-					R_STRBUF_SAFEGET (&op.esil));
+					esilstr);
+			}
 			if (hint && hint->jump != UT64_MAX)
 				op.jump = hint->jump;
 			if (op.jump != UT64_MAX)
@@ -417,8 +511,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("type2", "%s\n", t2);
 				}
 			}
-			if (*R_STRBUF_SAFEGET (&op.esil))
-				printline ("esil", "%s\n", R_STRBUF_SAFEGET (&op.esil));
+			if (op.reg)
+				printline ("reg", "%s\n", op.reg);
+			if (*esilstr)
+				printline ("esil", "%s\n", esilstr);
 			if (hint && hint->jump != UT64_MAX)
 				op.jump = hint->jump;
 			if (op.jump != UT64_MAX)
@@ -443,13 +539,15 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);
 		r_anal_hint_free (hint);
-		if (((idx + ret) < len) && (!nops || (i + 1) < nops))
+		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r')
 			r_cons_printf (",");
 	}
 
 	if (fmt == 'j') {
 		r_cons_printf ("]");
 		r_cons_newline ();
+	} else if (fmt == 'r') {
+		r_anal_esil_free (esil);
 	}
 }
 
@@ -615,9 +713,9 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 	int minlen = (int)(input[0]==' ') ? r_num_math (core->num, input + 1): 16;
 	ut64 code_size = r_num_get (core->num, "$SS");
-	ut64 base_addr = r_num_get (core->num, "$S"); 
+	ut64 base_addr = r_num_get (core->num, "$S");
 	ut64 chunk_size, chunk_offset, i;
-	RListIter *iter, *iter2;                     
+	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *b;
 	char* bitmap;
@@ -631,13 +729,13 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		// for each basic block in the function
-		r_list_foreach (fcn->bbs, iter2, b) { 
+		r_list_foreach (fcn->bbs, iter2, b) {
 			// if it is not withing range, continue
 			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
 				continue;
 			// otherwise mark each byte in the BB in the bitmap
 			for (counter = 0; counter < b->size; counter++) {
-				bitmap[b->addr+counter-base_addr] = '='; 
+				bitmap[b->addr+counter-base_addr] = '=';
 			}
 			// finally, add a special marker to show the beginning of a
 			// function
@@ -653,10 +751,11 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 			// We only print a region is its size is bigger than 15 bytes
 			if (chunk_size >= minlen){
 				fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-				if (fcn)
+				if (fcn) {
 					r_cons_printf ("0x%08"PFMT64x"  %6d   %s\n", base_addr+chunk_offset, chunk_size, fcn->name);
-				else 
+				} else {
 					r_cons_printf ("0x%08"PFMT64x"  %6d\n", base_addr+chunk_offset, chunk_size);
+				}
 			}
 			chunk_size = 0;
 			chunk_offset = i+1;
@@ -686,7 +785,7 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 	char* bitmap;
 	int assigned;
 	ut64 i;
-	
+
 	if (code_size < 1) return;
 	bitmap = calloc (1, code_size+64);
 	if (!bitmap) return;
@@ -694,14 +793,14 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		// for each basic block in the function
-		r_list_foreach (fcn->bbs, iter2, b) { 
+		r_list_foreach (fcn->bbs, iter2, b) {
 			// if it is not within range, continue
 			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
 				continue;
 			// otherwise mark each byte in the BB in the bitmap
 			int counter = 1;
 			for (counter = 0; counter < b->size; counter++) {
-				bitmap[b->addr+counter-base_addr] = '='; 
+				bitmap[b->addr+counter-base_addr] = '=';
 			}
 			bitmap[fcn->addr-base_addr] = 'F';
 		}
@@ -939,7 +1038,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		r_core_anal_fmap (core, input + 1);
 		break;
 	case 'a': // "afa"
-	case 'A': // "afA"
 	case 'v': // "afv"
 	case 'e': // "afe"
 		var_cmd (core, input + 1);
@@ -984,10 +1082,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			eprintf ("TODO\n") ;
 			} break;
 		case 'a': {
-			r_anal_var_delete_all (core->anal, fcn->addr, 'A');
+			r_anal_var_delete_all (core->anal, fcn->addr, 'e');
 			r_anal_var_delete_all (core->anal, fcn->addr, 'a');
 			r_anal_var_delete_all (core->anal, fcn->addr, 'v');
-			fcn_callconv(core, fcn);
+			fcn_callconv (core, fcn);
 			} break;
 		case ' ': {
 			int type = r_anal_cc_str2type (input + 3);
@@ -1219,7 +1317,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
 			"af-", " [addr]", "clean all function analysis data (or function at addr)",
 			"afa", "[?] [idx] [name] ([type])", "add function argument",
-			"af[aAv?]", "[arg]", "manipulate args, fastargs and variables in function",
+			"af[aev]", "?", "manipulate args, registers and variables in function",
 			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", " [addr]", "List basic blocks of given function",
 			"afB", " 16", "set current function as thumb (change asm.bits)",
@@ -2661,16 +2759,18 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case '?': {
 		const char *help_msg[] = {
 			"Usage:", "ao[e?] [len]", "Analyze Opcodes",
-			"aoj", "", "display opcode analysis information in JSON",
-			"aoe", "", "emulate opcode at current offset",
+			"aoj", " N", "display opcode analysis information in JSON for N opcodes",
+			"aoe", " N", "display esil form for N opcodes",
+			"aor", " N", "display reil form for N opcodes",
 			"aos", " [esil]", "show sdb representation of esil expression (TODO)",
-			"aoe", " 4", "emulate 4 opcodes starting at current offset",
 			"ao", " 5", "display opcode analysis of 5 opcodes",
 			"ao*", "", "display opcode in r commands",
 			NULL };
 		r_core_cmd_help (core, help_msg);
 	} break;
-	case 'j': {
+	case 'j':
+	case 'e':
+	case 'r': {
 		int count = 1;
 		if (input[1] && input[2]) {
 			l = (int)r_num_get (core->num, input + 1);
@@ -2683,11 +2783,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			len = l = core->blocksize;
 			count = 1;
 		}
-		core_anal_bytes (core, core->block, len, count, 'j');
+		core_anal_bytes (core, core->block, len, count, input[0]);
 	} break;
-	case 'e':
-		eprintf ("TODO: See 'ae' command\n");
-		break;
 	case '*':
 		r_core_anal_hint_list (core->anal, input[0]);
 		break;
@@ -3176,6 +3273,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		"ah?", "", "show this help",
 		"ah?", " offset", "show hint of given offset",
 		"ah", "", "list hints in human-readable format",
+		"ah.", "", "list hints in human-readable format from current offset",
 		"ah-", "", "remove all hints",
 		"ah-", " offset [size]", "remove hints at given offset",
 		"ah*", " offset", "list hints in radare commands format",
@@ -3192,9 +3290,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?':
 		if (input[1]) {
-			//ut64 addr = r_num_math (core->num, input+1);
-			eprintf ("TODO: show hint\n");
+			ut64 addr = r_num_math (core->num, input+1);
+			r_core_anal_hint_print (core->anal, addr);
 		} else r_core_cmd_help (core, help_msg);
+		break;
+	case '.': // ah.
+		r_core_anal_hint_print(core->anal, core->offset);
 		break;
 	case 'a': // set arch
 		if (input[1]) {
@@ -3749,7 +3850,7 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		}
 		break;
 	case '-':
-		r_debug_trace_free (core->dbg);
+		r_debug_trace_free (core->dbg->trace);
 		core->dbg->trace = r_debug_trace_new ();
 		break;
 	case ' ':
@@ -3927,11 +4028,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	ut64 o_align = geti ("search.align");
 	ut64 from, to, ptr;
 	ut64 vmin, vmax;
-	bool asterisk = false;
+	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
 	if (is_debug) {
-		// 
 		r_list_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
 	} else {
 		s = r_io_section_vget (core->io, core->offset);

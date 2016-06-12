@@ -238,7 +238,8 @@ R_API int r_core_visual_types(RCore *core) {
 				R_FREE (optword);
 				break;
 			}
-			if (menu<=0) return true; menu--;
+			if (menu <= 0) return true;
+			menu--;
 			option = _option;
 			if (menu==0) {
 				// if no flagspaces, just quit
@@ -760,7 +761,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'h':
 		case 'b': // back
 		case 'q':
-			if (menu<=0) return true; menu--;
+			if (menu <= 0) return true;
+			menu--;
 			option = _option;
 			if (menu==0) {
 				// if no flagspaces, just quit
@@ -1183,7 +1185,8 @@ R_API void r_core_visual_config(RCore *core) {
 			r_core_visual_config_hud (core);
 			break;
 		case 'q':
-			if (menu<=0) return; menu--;
+			if (menu <= 0) return;
+			menu--;
 			option = _option;
 			break;
 		case '*':
@@ -1692,8 +1695,9 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	if (!cmdf) return;
 	char *output = r_core_cmd_str (core, cmdf);
 	if (output) {
-		char *out = r_str_ansi_crop (output, 0, 0, w - colpos, h);
-		r_cons_printf ("Visual code analysis manipulation\n%s", out);
+		// 'h - 2' because we have two new lines in r_cons_printf
+		char *out = r_str_ansi_crop (output, 0, 0, w - colpos, h - 2);
+		r_cons_printf ("Visual code analysis manipulation\n%s\n", out);
 		free (out);
 		R_FREE (output);
 	}

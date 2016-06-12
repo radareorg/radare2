@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_db.h"
 #include "r_util.h"
@@ -38,9 +38,9 @@ beach:
 int r_db_table_key(struct r_db_table_t *table, const char *name) {
 	const char *word;
 	int i;
-	for(i=0;i<table->nelems;i++) {
-		word = r_str_word_get0(table->args, i);
-		if (!strcmp(name, word))
+	for (i = 0; i < table->nelems; i++) {
+		word = r_str_word_get0 (table->args, i);
+		if (!strcmp (name, word))
 			break;
 	}
 	return table->offset[i];
@@ -48,25 +48,23 @@ int r_db_table_key(struct r_db_table_t *table, const char *name) {
 
 /* Get offset of the N field in the table */
 int r_db_table_key_i(struct r_db_table_t *table, int elem) {
-	int key = -1;
-	if (elem>=0 && table->nelems<elem)
-		key = table->offset[elem];
-	return key;
+	return (elem>=0 && table->nelems<elem)
+		? table->offset[elem]
+		: -1;
 }
 
 /* Get name of the N field in the table */
 const char *r_db_table_field_i(struct r_db_table_t *table, int elem) {
-	const char *name = NULL;
-	if (elem>=0 && table->nelems<elem)
-		name = r_str_word_get0 (table->args, elem);
-	return name;
+	return (elem >= 0 && table->nelems < elem)
+		? r_str_word_get0 (table->args, elem)
+		: NULL;
 }
 
 void *r_db_table_free(struct r_db_table_t *table) {
-	if (table->name) free (table->name);
-	if (table->fmt) free (table->fmt);
-	if (table->args) free (table->args);
-	if (table->offset) free (table->offset);
-	if (table) free (table);
+	free (table->name);
+	free (table->fmt);
+	free (table->args);
+	free (table->offset);
+	free (table);
 	return NULL;
 }

@@ -106,6 +106,7 @@ static RList* sections(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
 	RList *ret = NULL;
+	char tmp[0x100];
 	int i, r;
 	ut32 addr;
 
@@ -132,17 +133,18 @@ static RList* sections(RBinFile *arch) {
 		goto out_error;
 	for (i = 0; i < h->sections; i++) {
 		RBinSection *item = R_NEW0(RBinSection);
-		char tmp[0x100];
 		addr = sect[i].name_addr - h->base;
-		if (addr > arch->size || addr + sizeof(tmp) > arch->size) {
+		tmp[0] = 0;
+		if (addr > arch->size || addr + sizeof (tmp) > arch->size) {
 			free (item);
 			goto out_error;
 		}
-		r = r_buf_read_at (arch->buf, addr, (ut8 *)tmp, sizeof(tmp));
+		r = r_buf_read_at (arch->buf, addr, (ut8 *)tmp, sizeof (tmp));
 		if (r < 1) {
 			free (item);
 			goto out_error;
 		}
+		tmp[sizeof (tmp) - 1] = 0;
 		snprintf (item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
@@ -191,6 +193,7 @@ static RList* libs(RBinFile *arch) {
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	if (r < 1)
 		goto out_error;
+	lib.name[7] = 0;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s)
 		r_list_append (ret, s);
@@ -203,6 +206,8 @@ static RList* libs(RBinFile *arch) {
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
 	if (r < 1)
 		goto out_error;
+
+	lib.name[7] = 0;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
 	if (s)
 		r_list_append (ret, s);

@@ -35,21 +35,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	n = cs_disasm (handle, (const ut8*)buf, len, off, 1, &insn);
-	if (n>0) {
-		if (insn->size>0) {
-			op->size = insn->size;
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
-				insn->mnemonic, insn->op_str[0]?" ":"",
-				insn->op_str);
-		}
+	op->size = 4;
+	if (n > 0 && insn->size > 0) {
+		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
+			insn->mnemonic, insn->op_str[0]?" ":"",
+			insn->op_str);
 		cs_free (insn, n);
-	}
-	if (op->size == 4) {
-		op->size = 4;
 		return op->size;
 	}
-	op->size = 4;
-	return -1;
+	//op->size = -1;
+	cs_free (insn, n);
+	return 4;
 }
 
 RAsmPlugin r_asm_plugin_ppc_cs = {

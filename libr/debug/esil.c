@@ -146,7 +146,7 @@ static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
 	if (!strcmp (regname, s)) {
 		ret = 1;
 	} else {
-#define CURVAL 0){}r_str_trim(s);if (!strcmp(regname,s) && regval
+#define CURVAL 0){}r_str_trim_head_tail (s);if (!strcmp(regname,s) && regval
 		ut64 regval = r_debug_reg_get_err (dbg, regname, NULL);
 		if (exprtoken (dbg, s, ">=", &p)) {
 			if (CURVAL >= r_num_math (dbg->num, p))
@@ -164,7 +164,7 @@ static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
 			if (CURVAL > r_num_math (dbg->num, p))
 				ret = 1;
 		} else if (exprtoken (dbg, s, " ", &p)) {
-			r_str_trim (s);
+			r_str_trim_head_tail (s);
 			if (!strcmp (regname, s)) {
 				ut64 num = r_num_math (dbg->num, p);
 				ret = exprmatch (dbg, num, s);

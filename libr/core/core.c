@@ -317,8 +317,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	case '$':
 		if (ok) *ok = 1;
 		// TODO: group analop-dependant vars after a char, so i can filter
-		r_anal_op (core->anal, &op, core->offset,
-			core->block, core->blocksize);
+		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize);
 		r_anal_op_fini (&op); // we dont need strings or pointers, just values, which are not nullified in fini
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
@@ -366,9 +365,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'e': return r_anal_op_is_eob (&op);
 		case 'j': return op.jump;
 		case 'p': return r_sys_getpid ();
-		case 'P': return (core->dbg->pid>0)? core->dbg->pid: 0;
+		case 'P': return (core->dbg->pid > 0)? core->dbg->pid: 0;
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref
+		case 'B':
 		case 'M': {
 				ut64 lower = UT64_MAX;
 				RListIter *iter;
@@ -376,6 +376,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				r_list_foreach (core->io->sections, iter, s) {
 					if (!s->vaddr && s->offset) continue;
 					if (s->vaddr < lower) lower = s->vaddr;
+				}
+				if (str[1] == 'B') {
+					/* clear lower bits of the lowest map address to define the base address */
+					const int clear_bits = 16;
+					lower >>= clear_bits;
+					lower <<= clear_bits;
 				}
 				return (lower == UT64_MAX)? 0LL: lower;
 			}
@@ -388,15 +394,16 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return r_io_desc_size (core->io, core->file->desc);
 			}
 			return 0LL;
-		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
+		case 'w':
+			return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
 			if ((s = r_io_section_vget (core->io, core->offset))) {
-				return (str[2]=='S'? s->size: s->vaddr);
+				return (str[2] == 'S'? s->size: s->vaddr);
 			}
 			return 0LL;
 		case 'D':
 			if (IS_NUMBER (str[2])) {
-				return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_DATA);
+				return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_DATA);
 			} else {
 				RDebugMap *map;
 				RListIter *iter;
@@ -410,18 +417,21 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '?': return core->num->value;
 		case '$': return core->offset;
 		case 'o': return r_io_section_vaddr_to_maddr_try (core->io, core->offset);
-		case 'C': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CALL);
-		case 'J': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CODE);
-		case 'X': return getref (core, atoi (str+2), 'x', R_ANAL_REF_TYPE_CALL);
-		case 'B':
+		case 'C': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
+		case 'J': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
+		case 'X': return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
+		case 'F': // "$F"
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			return fcn? fcn->addr: 0;
-		case 'I':
-			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			return fcn? fcn->ninstr: 0;
-		case 'F':
-			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			return r_anal_fcn_size (fcn);
+			if (fcn) {
+				switch (str[2]) {
+				case 'B': return fcn->addr; // begin
+				case 'E': return fcn->addr + fcn->_size; // end
+				case 'S': return r_anal_fcn_size (fcn);
+				case 'I': return fcn->ninstr;
+				}
+				return fcn->addr;
+			}
+			return 0;
 		}
 		break;
 	default:
@@ -572,9 +582,15 @@ static int autocomplete(RLine *line) {
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
-		} else if ((!strncmp (line->buffer.data, "afvn ", 5))) {
+		} else if ((!strncmp (line->buffer.data, "afvn ", 5))
+		|| (!strncmp (line->buffer.data, "afan ", 5))) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			RList *vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_VAR);
+			RList *vars;
+			if (!strncmp (line->buffer.data, "afvn ", 5)) {
+				vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_VAR);
+			} else {
+				vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
+			}
 			const char *f_ptr, *l_ptr;
 			RAnalVar *var;
 			int j = 0, len = strlen (line->buffer.data);
@@ -582,13 +598,13 @@ static int autocomplete(RLine *line) {
 			f_ptr = r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, ' ');
 			f_ptr = f_ptr != NULL ? f_ptr + 1 : line->buffer.data;
 			l_ptr = r_sub_str_rchr (line->buffer.data, line->buffer.index, len, ' ');
-			if (l_ptr == NULL) {
-				l_ptr = line->buffer.data + strlen (line->buffer.data);
+			if (!l_ptr) {
+				l_ptr = line->buffer.data + len;
 			}
 
 			r_list_foreach (vars, iter, var) {
 				if (!strncmp (f_ptr, var->name, l_ptr - f_ptr)) {
-					tmp_argv[j++] = strdup(var->name);
+					tmp_argv[j++] = strdup (var->name);
 				}
 			}
 			tmp_argv[j] = NULL;
@@ -925,14 +941,18 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 	return NULL;
 }
 
+/**
+ * Disassemble one instruction at specified address.
+ */
 static int __disasm(void *_core, ut64 addr) {
 	RCore *core = _core;
-	ut8 buf[32], *oblock;
+	ut64 prevaddr = core->offset;
 	int len;
-	oblock = core->block;
-	r_io_read_at (core->io, addr, (ut8*)buf, sizeof (buf));
-	len = r_core_print_disasm_instructions (core, sizeof (buf), 1);
-	core->block = oblock;
+
+	r_core_seek (core, addr, true);
+	len = r_core_print_disasm_instructions (core, 0, 1);
+	r_core_seek (core, prevaddr, true);
+
 	return len;
 }
 
@@ -1277,6 +1297,7 @@ R_API int r_core_init(RCore *core) {
 	core->cons->num = core->num;
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
+	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
 	core->cons->editor = (RConsEditorCallback)r_core_editor;
 	core->cons->user = (void*)core;
 	core->lang->cb_printf = r_cons_printf;
@@ -1300,6 +1321,7 @@ R_API int r_core_init(RCore *core) {
 	r_anal_noreturn_add (core->anal, "sym.abort", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "abort", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "sym.exit", UT64_MAX);
+	r_anal_noreturn_add (core->anal, "sym.imp.__libc_init", UT64_MAX); /* mips */
 
 	core->anal->meta_spaces.cb_printf = r_cons_printf;
 	core->anal->cb.on_fcn_new = on_fcn_new;

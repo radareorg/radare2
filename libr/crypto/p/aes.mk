@@ -1,4 +1,5 @@
 OBJ_AES=crypto_aes.o crypto_aes_algo.o
+DEPS+=r_util
 
 STATIC_OBJ+=${OBJ_AES}
 TARGET_AES=crypto_aes.${EXT_SO}

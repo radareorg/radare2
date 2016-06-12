@@ -3,9 +3,55 @@
 #include "elf_specs.h"
 #include <sys/procfs.h>
 
-#define SIZE_PR_FNAME	16
 
-#define ELF_HDR_SIZE	sizeof(Elf64_Ehdr)
+/*Macros for XSAVE/XRESTORE*/
+/*
+        From: http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developers-manual.pdf
+        Bit 00: x87 state. 
+        Bit 01: SSE state.
+        Bit 02: AVX state.
+        Bits 04 - 03: MPX state. (https://software.intel.com/sites/default/files/managed/9d/f6/Intel_MPX_EnablingGuide.pdf)
+        Bits 07 - 05: AVX-512 state.
+        Bit 08: Used for IA32_XSS.
+        Bit 09: PKRU state
+*/
+#define X87_BIT                 (1ULL << 0)
+#define SSE_BIT                 (1ULL << 1)
+#define AVX_BIT                 (1ULL << 2)
+#define BNDREGS_BIT             (1ULL << 3)
+#define BNDCSR_BIT              (1ULL << 4)
+/* From Intel MPX: "The OS should set both bits to ONE to enable Intel MPX; otherwise the processor would interpret Intel MPX instructions as NOPs" */
+#define MPX_BIT			(BNDREGS_BIT | BNDCSR_BIT) 
+/* https://software.intel.com/sites/default/files/managed/b4/3a/319433-024.pdf - Page 66
+"Execute XGETBV and verify that XCR0[7:5] = ‘111b’ (OPMASK state, upper 256-bit of ZMM0-ZMM15 and ZMM16-ZMM31 state are enabled by OS) and that XCR0[2:1] = ‘11b’ (XMM state and YMM state are enabled by OS)" */
+#define AVX512_k_BIT            (1ULL << 5)
+#define AVX512_ZMM0_15_BIT      (1ULL << 6)
+#define AVX512_ZMM16_31_BIT     (1ULL << 7)
+#define AVX512_FULL_BIT         (AVX512_k_BIT|AVX512_ZMM0_15_BIT|AVX512_ZMM16_31_BIT)
+#define IA32_XSS_BIT    	(1ULL << 8)     /* ?? */
+#define PKRU_BIT        	(1ULL << 9)     /* ?? */
+
+#define NO_STATE_BIT            X87_BIT
+#define XSTATE_SSE_SIZE         576
+#define XSTATE_AVX_SIZE         832
+/*#define XSTATE_BNDCGR ?? */
+#define XSTATE_MPX_SIZE         1088
+#define XSTATE_AVX512_k_SIZE    1152
+#define XSTATE_AVX512_ZMM0_7    1408
+#define XSTATE_AVX512_ZMM8_15   1664
+#define XSTATE_AVX512_ZMM16_31  2688
+#define XSTATE_FULL_SIZE        XSTATE_AVX512_ZMM16_31
+
+#define XSTATE_HDR_SIZE         XSTATE_SSE_SIZE
+#define XCR0_OFFSET             464
+
+#define XSTATE_SSE_MASK         (X87_BIT|SSE_BIT)
+#define XSTATE_AVX_MASK         (XSTATE_SSE_MASK|AVX_BIT)
+#define XSTATE_MPX_MASK         MPX_BIT
+#define XSTATE_AVX512_MASK      (XSTATE_AVX_MASK|AVX512_FULL_BIT)
+/*********************************/
+
+#define SIZE_PR_FNAME	16
 
 #define R_DEBUG_REG_T	struct user_regs_struct
 
@@ -20,10 +66,6 @@ NT_FILE layout:
 		[offset_address]
 	[filenames]
 */
-
-#define	DEFAULT_NOTE	6
-
-static int n_notes = DEFAULT_NOTE;
 
 #define	X_MEM	0x1
 #define	W_MEM	0x2
@@ -46,41 +88,45 @@ static int n_notes = DEFAULT_NOTE;
 #define	HT_FLAG	0x8
 #define	PV_FLAG	0x10 /* just for us */
 
-typedef struct proc_stat_content {
+typedef struct proc_per_process {
 	int pid;
+	char s_name;
+	ut32 uid;
+	ut32 gid;
 	int ppid;
 	int pgrp;
 	int sid;
-	char s_name;
 	ut32 flag;
+	long int nice;
+	long int num_threads;
+	unsigned char coredump_filter;
+} proc_per_process_t;
+
+typedef struct proc_per_thread {
+	int tid;
+	ut64 sigpend;
+	ut64 sighold;
 	ut64 utime;
 	ut64 stime;
 	long int cutime;
 	long int cstime;
-	long int nice;
-	long int num_threads;
-	ut64 sigpend;
-	ut64 sighold;
-	ut32 uid;
-	ut32 gid;
-	unsigned char coredump_filter;
-} proc_stat_content_t;
+	struct proc_per_thread *n;
+} proc_per_thread_t;
+
+typedef struct proc_content {
+	proc_per_thread_t *per_thread;
+	proc_per_process_t *per_process;
+} proc_content_t;
 
 typedef struct map_file {
 	ut32 count;
 	ut32 size;
 } map_file_t;
 
-typedef struct auxv_buff {
-	void *data;
-	size_t size;
-} auxv_buff_t;
-
 typedef struct linux_map_entry {
-	ut64 start_addr;
-	ut64 end_addr;
-	ut64 offset;
-	ut64 inode;
+	unsigned long start_addr;
+	unsigned long end_addr;
+	unsigned long offset;
 	ut8 perms;
 	bool anonymous;
 	bool dumpeable;
@@ -92,14 +138,52 @@ typedef struct linux_map_entry {
 
 #define ADD_MAP_NODE(p)	{ if (me_head) { p->n = NULL; me_tail->n = p; me_tail = p; } else { me_head = p; me_tail = p; } }
 
-typedef struct linux_elf_note {
-	prpsinfo_t *prpsinfo;
+typedef struct auxv_buff {
+        void *data;
+        size_t size;
+} auxv_buff_t;
+
+/*NT_* thread-wide*/
+typedef struct thread_elf_note {
 	prstatus_t *prstatus;
-	siginfo_t *siginfo;
-	auxv_buff_t *auxv;
 	elf_fpregset_t *fp_regset;
+#ifdef __i386__
+	elf_fpxregset_t	*fpx_regset;
+#endif
+	siginfo_t *siginfo;
+	void *xsave_data;
+	struct thread_elf_note *n;
+} thread_elf_note_t;
+
+/*NT_* process-wide*/
+typedef struct proc_elf_note {
+	prpsinfo_t *prpsinfo;
+	auxv_buff_t *auxv;
 	linux_map_entry_t *maps;
-} linux_elf_note_t;
+	thread_elf_note_t *thread_note;
+	int n_threads;
+} elf_proc_note_t;
+
+typedef enum {
+	NT_PRPSINFO_T = 0,
+	NT_AUXV_T,
+	NT_FILE_T,
+	NT_PRSTATUS_T,
+	NT_SIGINFO_T,
+	NT_FPREGSET_T,
+#ifdef __i386__
+	NT_PRXFPREG_T,
+#endif
+	NT_X86_XSTATE_T,
+	NT_LENGHT_T
+} note_type_t;
+
+typedef struct elf_note_types {
+	int size;
+	int size_roundedup;
+	int size_name;
+	char name[8];
+} note_info_t;		
 
 typedef enum {
 	ADDR,

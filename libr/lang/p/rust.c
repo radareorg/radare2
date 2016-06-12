@@ -107,6 +107,7 @@ static int lang_rust_run(RLang *lang, const char *code, int len) {
 static RLangPlugin r_lang_plugin_rust = {
 	.name = "rust",
 	.ext = "rs",
+	.license = "MIT",
 	.desc = "Rust language extension",
 	.run = lang_rust_run,
 	.init = (void*)lang_rust_init,

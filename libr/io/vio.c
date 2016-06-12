@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2016 - pancake, condret */
 
 #include <r_io.h>
 
@@ -62,9 +62,11 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	}
 	sections = r_io_section_get_in_vaddr_range (io, vaddr, vaddr+len);
 	if (!r_list_empty (sections)) {						//check if there is any section
-		ranges = r_list_new();
-		if (!ranges) return false;
-		ranges->free = free;
+		ranges = r_list_newf (free);
+		if (!ranges) {
+			r_list_free (sections);
+			return false;
+		}
 		r_list_foreach (sections, iter, section) {
 			if (section->vaddr==0)
 				continue;

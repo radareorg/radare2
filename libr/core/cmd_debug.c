@@ -983,8 +983,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '=':
 		r_debug_map_sync (core->dbg);
 		r_debug_map_list_visual (core->dbg, core->offset,
-					r_config_get_i (core->config,
-							"scr.color"));
+			r_config_get_i (core->config, "scr.color"),
+			r_cons_get_size (NULL));
 		break;
 	}
 	return true;
@@ -1886,19 +1886,30 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		else r_bp_del (core->dbg->bp, r_num_math (core->num, input + 2));
 		break;
 	case 'c': // "dbc"
-		addr = r_num_math (core->num, input + 2);
-		bpi = r_bp_get_at (core->dbg->bp, addr);
-		if (bpi) {
-			char *arg = strchr (input + 2, ' ');
-			if (arg) arg = strchr (arg + 1, ' ');
-			if (arg) {
-				free (bpi->data);
-				bpi->data = strdup (arg + 1);
+		if (input[2] == ' ') {
+			char *inp = strdup (input + 3);
+			if (inp) {
+				char *arg = strchr (inp, ' ');
+				if (arg) {
+					*arg++ = 0;
+					addr = r_num_math (core->num, inp);
+					bpi = r_bp_get_at (core->dbg->bp, addr);
+					if (bpi) {
+						free (bpi->data);
+						bpi->data = strdup (arg);
+					} else {
+						eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+					}
+				} else {
+					eprintf ("Missing argument\n");
+				}
+				free (inp);
 			} else {
-				free (bpi->data);
-				bpi->data = NULL;
+				eprintf ("Cannot strdup. Your heap is fucked up\n");
 			}
-		} else eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+		} else {
+			eprintf ("Use: dbc [addr] [command]\n");
+		}
 		break;
 	case 's': // "dbs"
 		addr = r_num_math (core->num, input + 2);
@@ -2854,7 +2865,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '-':
 			r_tree_reset (core->dbg->tree);
-			r_debug_trace_free (core->dbg);
+			r_debug_trace_free (core->dbg->trace);
 			r_debug_tracenodes_reset (core->dbg);
 			core->dbg->trace = r_debug_trace_new ();
 			break;
@@ -3204,12 +3215,15 @@ static int cmd_debug(void *data, const char *input) {
 			eprintf ("Writing to file '%s'\n", corefile);
 			r_file_rm (corefile);
 			RBuffer *dst = r_buf_new ();
-			if (!dst) perror ("r_buf_new_file");
-			if (!core->dbg->h->gcore (core->dbg, dst)) {
-				eprintf ("dg: coredump failed\n");
+			if (dst) {
+				if (!core->dbg->h->gcore (core->dbg, dst)) {
+					eprintf ("dg: coredump failed\n");
+				}
+				r_file_dump (corefile, dst->buf, dst->length, 1);
+				r_buf_free (dst);
+			} else {
+				perror ("r_buf_new_file");
 			}
-			r_file_dump (corefile, dst->buf, dst->length, 1);
-			r_buf_free (dst);
 			free (corefile);
 		}
 		break;

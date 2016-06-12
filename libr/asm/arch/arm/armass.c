@@ -155,14 +155,15 @@ static int getshift_unused (const char *s) {
 static int getreg(const char *str) {
 	int i;
 	const char *aliases[] = { "sl", "fp", "ip", "sp", "lr", "pc", NULL };
-	if (!str)
+	if (!str || !*str) {
 		return -1;
+	}
 	if (*str=='r')
-		return atoi (str+1);
+		return atoi (str + 1);
 	for (i=0; aliases[i]; i++) {
 		if (!strcmpnull (str, aliases[i])) {
 			return 10 + i;
-}
+		}
 	}
 	return -1;
 }
@@ -851,12 +852,21 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 					ao->o |= getshift (ao->a[3]);
 				break;
 			case TYPE_SWP:
-				ao->o = 0xe1;
-				ao->o |= (getreg(ao->a[0])<<4)<<16;
-				ao->o |= (0x90+getreg(ao->a[1]))<<24;
-				ao->o |= (getreg(ao->a[2]+1))<<8;
+				{
+				int a1 = getreg (ao->a[1]);
+				if (a1) {
+					ao->o = 0xe1;
+					ao->o |= (getreg(ao->a[0])<<4)<<16;
+					ao->o |= (0x90 + a1) << 24;
+					if (ao->a[2]) {
+						ao->o |= (getreg(ao->a[2]+1))<<8;
+					} else {
+						return 0;
+					}
+				}
 				if (0xff==((ao->o>>16)&0xff))
 					return 0;
+				}
 				break;
 			case TYPE_MOV:
 				if (!strcmpnull (ao->op, "movs"))

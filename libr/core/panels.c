@@ -617,7 +617,7 @@ repeat:
 				r_core_visual_prompt_input (core);
 				core->vmode = true;
 			} else if (!strcmp (action, "2048")) {
-				r_cons_2048 ();
+				r_cons_2048 (can->color);
 			} else if (strstr (action, "License")) {
 				r_cons_message ("Copyright 2006-2015 - pancake - LGPL");
 			} else if (strstr (action, "Fortune")) {

@@ -7,10 +7,13 @@
 static char *curtheme = NULL;
 static bool getNext = false;
 
-static bool nextpal_item(RCore *core, int mode, const char *file) {
+static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 	const char *fn = r_str_lchr (file, '/');
 	if (!fn) fn = file;
 	switch (mode) {
+	case 'j': // json
+		r_cons_printf ("%s\"%s\"", ctr?",":"", fn);
+		break;
 	case 'l': // list
 		r_cons_printf ("%s\n", fn);
 		break;
@@ -39,9 +42,13 @@ static void nextpal(RCore *core, int mode) {
 	RList *files = NULL;
 	RListIter *iter;
 	const char *fn;
+	int ctr = 0;
 	char *home = r_str_home (".config/radare2/cons/");
 
 	getNext = false;
+	if (mode == 'j') {
+		r_cons_printf ("[");
+	}
 	if (home) {
 		files = r_sys_dir (home);
 		r_list_foreach (files, iter, fn) {
@@ -63,7 +70,7 @@ static void nextpal(RCore *core, int mode) {
 						goto done;
 					}
 				} else {
-					if (!nextpal_item (core, mode, fn)) {
+					if (!nextpal_item (core, mode, fn, ctr++)) {
 						r_list_free (files);
 						files = NULL;
 						R_FREE (home);
@@ -92,8 +99,9 @@ static void nextpal(RCore *core, int mode) {
 					goto done;
 				}
 			} else {
-				if (!nextpal_item (core, mode, fn))
+				if (!nextpal_item (core, mode, fn, ctr++)) {
 					goto done;
+				}
 			}
 		}
 	}
@@ -112,6 +120,9 @@ done:
 	}
 	r_list_free (files);
 	files = NULL;
+	if (mode == 'j') {
+		r_cons_printf ("]\n");
+	}
 }
 
 static int cmd_eval(void *data, const char *input) {
@@ -197,7 +208,9 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			break;
 		case 'o': // "eco"
-			if (input[2] == ' ') {
+			if (input[2] == 'j') {
+				nextpal (core, 'j');
+			} else if (input[2] == ' ') {
 				bool failed = false;
 				char *home, path[512];
 				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input+3);

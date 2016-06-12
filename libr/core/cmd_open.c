@@ -406,7 +406,7 @@ static int cmd_open(void *data, const char *input) {
 			num = atoi (ptr? ptr: input+1);
 			addr = 0LL;
 		}
-		if (num<=0) {
+		if (num <= 0) {
 			const char *fn = input+1; //(isn?2:1);
 			if (fn && *fn) {
 				if (isn) fn++;

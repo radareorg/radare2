@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake, maijin */
+/* radare - LGPL - Copyright 2010-2016 - pancake, maijin */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -29,12 +29,12 @@ static int is_valid_project_name (const char *name) {
 static char *r_core_project_file(RCore *core, const char *file) {
 	const char *magic = "# r2 rdb project file";
 	char *data, *prjfile;
-	//if (*file != R_SYS_DIR[0]) {
 	if (r_file_is_abspath (file)) {
 		prjfile = strdup (file);
 	} else {
-		if (!is_valid_project_name (file))
+		if (!is_valid_project_name (file)) {
 			return NULL;
+		}
 		prjfile = r_file_abspath (r_config_get (
 			core->config, "dir.projects"));
 		prjfile = r_str_concat (prjfile, R_SYS_DIR);
@@ -247,13 +247,13 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 			if (feof (fd))
 				break;
 			if (!strncmp (buf, "\"e file.path = ", 15)) {
-				buf[strlen(buf)-2]=0;
+				buf[strlen (buf) - 2] = 0;
 				file = r_str_new (buf+15);
 				break;
 			}
 			// TODO: deprecate before 1.0
 			if (!strncmp (buf, "e file.path = ", 14)) {
-				buf[strlen(buf)-1]=0;
+				buf[strlen (buf)-1] = 0;
 				file = r_str_new (buf+14);
 				break;
 			}
@@ -273,7 +273,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 }
 
 R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
-	char *filename;
+	char *filename, *hl, *ohl = NULL;
 	int fd, fdold, tmp;
 
 	if (file == NULL || *file == '\0')
@@ -284,6 +284,12 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 	if (fd == -1) {
 		free (filename);
 		return false;
+	}
+
+	hl = r_cons_singleton ()->highlight;
+	if (hl) {
+		ohl = strdup (hl);
+		r_cons_highlight (NULL);
 	}
 
 	fdold = r_cons_singleton ()->fdout;
@@ -349,6 +355,11 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 
 	r_cons_singleton ()->fdout = fdold;
 	r_cons_singleton ()->is_interactive = true;
+
+	if (ohl) {
+		r_cons_highlight (ohl);
+		free (ohl);
+	}
 
 	close (fd);
 	free (filename);

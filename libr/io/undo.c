@@ -29,47 +29,57 @@ R_API void r_io_undo_enable(RIO *io, int s, int w) {
 
 /* undo seekz */
 
-R_API ut64 r_io_sundo(RIO *io, ut64 offset) {
-	ut64 off;
+R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
+	RIOUndos *undo;
 
 	if (!io->undo.s_enable || !io->undo.undos)
-		return UT64_MAX;
+		return NULL;
 
 	/* No redos yet, store the current seek so we can redo to it. */
 	if (!io->undo.redos) {
-		io->undo.seek[io->undo.idx] = offset;
+		undo = &io->undo.seek[io->undo.idx];
+		undo->off = offset;
+		undo->cursor = 0;
 	}
 
 	io->undo.idx = (io->undo.idx - 1 + R_IO_UNDOS) % R_IO_UNDOS;
 	io->undo.undos--;
 	io->undo.redos++;
 
-	off = io->undo.seek[io->undo.idx];
-	io->off = r_io_section_vaddr_to_maddr_try (io, off);
-	return off;
+	undo = &io->undo.seek[io->undo.idx];
+	io->off = r_io_section_vaddr_to_maddr_try (io, undo->off);
+	return undo;
 }
 
-R_API ut64 r_io_sundo_redo(RIO *io) {
-	ut64 off;
+R_API RIOUndos *r_io_sundo_redo(RIO *io) {
+	RIOUndos *undo;
 
 	if (!io->undo.s_enable || !io->undo.redos)
-		return UT64_MAX;
+		return NULL;
 
 	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
 	io->undo.undos++;
 	io->undo.redos--;
 
-	off = io->undo.seek[io->undo.idx];
-	io->off = r_io_section_vaddr_to_maddr_try (io, off);
-	return off;
+	undo = &io->undo.seek[io->undo.idx];
+	io->off = r_io_section_vaddr_to_maddr_try (io, undo->off);
+	return undo;
 }
 
-R_API void r_io_sundo_push(RIO *io, ut64 off) {
+R_API void r_io_sundo_push(RIO *io, ut64 off, int cursor) {
 	if (!io->undo.s_enable) return;
+	RIOUndos *undo;
 	//the first insert
-	if (io->undo.idx > 0)
-		if (io->undo.seek[io->undo.idx - 1] == off) return;
-	io->undo.seek[io->undo.idx] = off;
+	if (io->undo.idx > 0) {
+		undo = &io->undo.seek[io->undo.idx - 1];
+		if (undo->off == off && undo->cursor == cursor) {
+			return;
+		}
+	}
+
+	undo = &io->undo.seek[io->undo.idx];
+	undo->off = off;
+	undo->cursor = cursor;
 	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
 	/* Only R_IO_UNDOS - 1 undos can be used because r_io_sundo_undo () must
 	 * push the current position for redo as well, which takes one entry in
@@ -111,7 +121,8 @@ R_API void r_io_sundo_list(RIO *io, int mode) {
 	}
 	for (i = start; i < end || j == 0; i = (i + 1) % R_IO_UNDOS) {
 		int idx = (j< undos)? undos - j - 1: j - undos - 1;
-		ut64 addr = io->undo.seek[i];
+		RIOUndos *undo = &io->undo.seek[i];
+		ut64 addr = undo->off;
 		ut64 notLast = j+1<undos && (i != end - 1);
 		switch (mode) {
 		case '=':

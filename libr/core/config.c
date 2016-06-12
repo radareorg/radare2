@@ -171,6 +171,13 @@ static int cb_analrecont(void *user, void *data) {
 	return true;
 }
 
+static int cb_asmassembler(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	r_asm_use_assembler (core->assembler, node->value);
+	return true;
+}
+
 static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
@@ -1446,6 +1453,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
 	SETPREF("anal.strings", "false", "Identify and register strings during analysis (aar only)");
+	SETPREF("anal.vinfun", "false",  "Search values in functions (aav) (false by default to only find on non-code)");
+	SETPREF("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB("anal.bbsplit", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
 	SETCB("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
@@ -1540,6 +1549,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.family", "false", "Show family name in disasm");
 	SETPREF("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
 	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
+	SETCB("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
@@ -1740,11 +1750,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("http.root", R2_WWWROOT, "http root directory");
 #endif
 	SETPREF("http.port", "9090", "Server port");
-#if __ANDROID__ || __IPHONE_2_0
 	SETPREF("http.ui", "m", "Default webui (enyo, m, p, t)");
-#else
-	SETPREF("http.ui", "p", "Default webui (enyo, m, p, t)");
-#endif
 	SETPREF("http.sandbox", "false", "Sandbox the HTTP server");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI("http.dietime", 0, "Kill server after N seconds with no client");

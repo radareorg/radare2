@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_debug.h>
 
@@ -26,14 +26,13 @@ R_API RDebugTrace *r_debug_trace_new () {
 	return t;
 }
 
-R_API void r_debug_trace_free (RDebug *dbg) {
-	if (dbg->trace == NULL)
-		return;
-	r_list_purge (dbg->trace->traces);
-	free (dbg->trace->traces);
-	sdb_free (dbg->trace->db);
-	free (dbg->trace);
-	dbg->trace = NULL;
+R_API void r_debug_trace_free (RDebugTrace *trace) {
+	if (!trace) return;
+	r_list_purge (trace->traces);
+	free (trace->traces);
+	sdb_free (trace->db);
+	free (trace);
+	trace = NULL;
 }
 
 // TODO: added overlap/mask support here... wtf?

@@ -1017,11 +1017,19 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		}
 	} else if (!nb_bytes) {
 		if (nb_opcodes < 0) {
+			ut64 start;
 			/* Backward disassembly of `ilen` opcodes
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
-			r_core_asm_bwdis_len (core, &nb_bytes, &core->offset, nb_opcodes);
+			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &start)) {
+				// We have some anal_info.
+				nb_bytes = core->offset - start;
+			} else {
+				// anal ignorance.
+				r_core_asm_bwdis_len (core, &nb_bytes, &core->offset,
+						nb_opcodes);
+			}
 			r_core_read_at (core, core->offset, core->block, nb_bytes);
 		} else {
 			// workaround for the `for` loop below
@@ -1292,6 +1300,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_MJMP:
 			bgcolor = r_cons_swap_ground (pal->jmp);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
@@ -1904,6 +1913,56 @@ beach:
 
 static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
 	return a->addr - b->addr;
+}
+
+/* TODO: integrate this into r_anal */
+static void _pointer_table (RCore *core, ut64 origin, ut64 offset, const ut8 *buf, int len, int step, int mode) {
+	int i;
+	ut64 addr;
+	st32 *delta; // only for step == 4
+	if (step <1) {
+		step = 4;
+	}
+	if (origin != offset) {
+		switch (mode) {
+		case '*':
+			r_cons_printf ("CC-@ 0x%08"PFMT64x"\n", origin);
+			r_cons_printf ("CC switch table @ 0x%08"PFMT64x"\n", origin);
+			r_cons_printf ("axd 0x%"PFMT64x" 0x%08"PFMT64x"\n", origin, offset);
+			break;
+		case '.':
+			r_core_cmdf (core, "CC-@ 0x%08"PFMT64x"\n", origin);
+			r_core_cmdf (core, "CC switch table @ 0x%08"PFMT64x"\n", origin);
+			r_core_cmdf (core, "axd 0x%"PFMT64x" 0x%08"PFMT64x"\n", origin, offset);
+			break;
+		}
+	} else if (mode == '.') {
+		r_core_cmdf (core, "CC-@ 0x%08"PFMT64x"\n", origin);
+		r_core_cmdf (core, "CC switch table @ 0x%08"PFMT64x"\n", offset);
+	}
+	for (i = 0; i < len; i += step) {
+		delta = (st32*)(buf + i);
+		addr = offset + *delta;
+		if (!r_io_is_valid_offset (core->io, addr, 0)) {
+			break;
+		}
+		if (mode == '*') {
+			r_cons_printf ("af case.%d.0x%"PFMT64x" 0x%08"PFMT64x"\n", i, offset, addr);
+			r_cons_printf ("ax 0x%"PFMT64x" 0x%08"PFMT64x"\n", offset, addr);
+			r_cons_printf ("ax 0x%"PFMT64x" 0x%08"PFMT64x"\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
+			r_cons_printf ("aho case 0x%"PFMT64x" 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
+			r_cons_printf ("ahs %d @ 0x%08"PFMT64x"\n", step, offset + i);
+		} else if (mode == '.') {
+			r_core_cmdf (core, "af case.%d.0x%"PFMT64x" @ 0x%08"PFMT64x"\n", i, offset, addr);
+			r_core_cmdf (core, "ax 0x%"PFMT64x" 0x%08"PFMT64x"\n", offset, addr);
+			r_core_cmdf (core, "ax 0x%"PFMT64x" 0x%08"PFMT64x"\n", addr, offset); // wrong, but useful because forward xrefs dont work :?
+			r_core_cmdf (core, "CC+ case %d: 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", i / step, addr, origin);
+			r_core_cmdf (core, "aho case %d 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", i, addr, offset + i); // wrong, but useful because forward xrefs dont work :?
+			r_core_cmdf (core, "ahs %d @ 0x%08"PFMT64x"\n", step, offset + i);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"\n", offset + i, addr);
+		}
+	}
 }
 
 static int cmd_print(void *data, const char *input) {
@@ -2704,6 +2763,7 @@ static int cmd_print(void *data, const char *input) {
 		if (!processed_cmd) {
 			ut64 addr = core->offset;
 			ut8 *block = NULL;
+			ut64 start;
 
 			if (bw_disassemble) {
 				block = malloc (core->blocksize);
@@ -2718,8 +2778,14 @@ static int cmd_print(void *data, const char *input) {
 					} else { //pd
 						const int bs = core->blocksize;
 						int instr_len;
-						r_core_asm_bwdis_len (core, &instr_len, &addr, l);
-						ut32 prevaddr = core->offset;
+						if (r_core_prevop_addr (core, core->offset, l, &start)) {
+							// We have some anal_info.
+							instr_len = core->offset - start;
+						} else {
+							// anal ignorance.
+							r_core_asm_bwdis_len (core, &instr_len, &addr, l);
+						}
+						ut64 prevaddr = core->offset;
 						r_core_seek(core, prevaddr - instr_len, true);
 						block = realloc (block, R_MAX(instr_len, bs));
 						memcpy (block, core->block, bs);
@@ -3117,6 +3183,7 @@ static int cmd_print(void *data, const char *input) {
 				"pxQ", "", "same as above, but one per line",
 				"pxr", "[j]", "show words with references to flags and code",
 				"pxs", "", "show hexadecimal in sparse mode",
+				"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
 				"pxw", "", "show hexadecimal words dump (32bit)",
 				"pxW", "", "same as above, but one per line",
 				NULL};
@@ -3145,6 +3212,7 @@ static int cmd_print(void *data, const char *input) {
 				" _J    jump\n"
 				" cJ    conditional jump\n"
 				" _C    call\n"
+				" _R    ret\n"
 				" ==    cmp/test\n"
 				" XX    invalid\n");
 			} else if (l != 0) {
@@ -3190,6 +3258,18 @@ static int cmd_print(void *data, const char *input) {
 					core->block, len, 8, 1);
 			}
 			break;
+		case 't': // "pxt"
+			if (input[2] == '?') {
+				r_cons_printf ("Usage: pxt[.*] - print delta pointer table\n");
+			} else {
+				ut64 origin = core->offset;
+				const char *arg = strchr (input, ' ');
+				if (arg) {
+					origin = r_num_math (core->num, arg + 1);
+				}
+				_pointer_table (core, origin, core->offset, core->block, len, 4, input[2]);
+			}
+			break;
 		case 'd': // "pxd"
 			if (l != 0) {
 			switch (input[2]) {
@@ -3215,7 +3295,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			}
 			break;
-		case 'w': // "pxw
+		case 'w': // "pxw"
 			if (l != 0) {
 				r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
 			}
@@ -3695,7 +3775,7 @@ static int cmd_print(void *data, const char *input) {
 			 "p","[b|B|xb] [len] ([skip])", "bindump N bits skipping M",
 			 "p","[bB] [len]","bitstream of N bytes",
 			 "pc","[p] [len]","output C (or python) format",
-			 "p","[dD][ajbrfils] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
+			 "p","[dD][?] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>)",
 			 "ph","[?=|hash] ([len])","calculate hash for a block",
 			 "p","[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
@@ -3707,7 +3787,7 @@ static int cmd_print(void *data, const char *input) {
 			 "pu","[w] [len]","print N url encoded bytes (w=wide)",
 			 "pv","[jh] [mode]","show variable/pointer/value in memory",
 			 "p-","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
-			 "p","[xX][owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
+			 "px","[owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 			 "pz"," [len]","print zoom view (see pz? for help)",
 			 "pwd","","display current working directory",
 			 NULL
