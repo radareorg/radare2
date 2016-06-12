@@ -1389,7 +1389,7 @@ static int cmpfcn(const void *_a, const void *_b) {
 }
 
 /* Fill out metadata struct of functions */
-R_API int r_core_anal_fcn_gather_metadata(RList *fcns) {
+static int r_core_anal_fcn_gather_metadata(RList *fcns) {
     RListIter *iter;
     RAnalFunction *fcn;
 
@@ -1429,7 +1429,7 @@ R_API int r_core_anal_fcn_gather_metadata(RList *fcns) {
     return 0;
 }
 
-R_API char *r_core_get_function_name(RCore *core, RAnalFunction *fcn) {
+static char *r_core_get_function_name(RCore *core, RAnalFunction *fcn) {
     bool demangle;
     const char *lang;
 	demangle = r_config_get_i (core->config, "bin.demangle");
@@ -1448,7 +1448,7 @@ R_API char *r_core_get_function_name(RCore *core, RAnalFunction *fcn) {
 }
 
 #define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %4d %4d %5d %s%s\n"
-R_API int r_core_anal_fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
+static int r_core_anal_fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
     char *name = r_core_get_function_name(core, fcn);
     
     const char *color = "";
@@ -1483,7 +1483,7 @@ R_API int r_core_anal_fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool us
     return 0;
 }
 
-R_API int r_core_anal_fcn_list_verbose(RCore *core, RList *fcns) {
+static int r_core_anal_fcn_list_verbose(RCore *core, RList *fcns) {
     bool use_color = r_config_get_i (core->config, "scr.color");
 
     r_cons_printf ("%-11s %4s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
@@ -1502,7 +1502,7 @@ R_API int r_core_anal_fcn_list_verbose(RCore *core, RList *fcns) {
     return 0;
 }
 
-R_API int r_core_anal_fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
+static int r_core_anal_fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
     if (quiet) {
         r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
     } else {
@@ -1526,7 +1526,7 @@ R_API int r_core_anal_fcn_print_default(RCore *core, RAnalFunction *fcn, bool qu
     return 0;
 }
 
-R_API int r_core_anal_fcn_list_default(RCore *core, RList *fcns, bool quiet) {
+static int r_core_anal_fcn_list_default(RCore *core, RList *fcns, bool quiet) {
     RListIter *iter;
     RAnalFunction *fcn;
     r_list_foreach (fcns, iter, fcn) {
@@ -1538,7 +1538,7 @@ R_API int r_core_anal_fcn_list_default(RCore *core, RList *fcns, bool quiet) {
     return 0;
 }
 
-R_API int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
+static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
     RListIter *iter;
 	RAnalRef *refi;
     char *name = r_core_get_function_name (core, fcn);
@@ -1615,7 +1615,7 @@ R_API int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
     return 0;
 }
 
-R_API int r_core_anal_fcn_list_json(RCore *core, RList *fcns) {
+static int r_core_anal_fcn_list_json(RCore *core, RList *fcns) {
     RListIter *iter;
     RAnalFunction *fcn;
     int first = 1;
@@ -1628,7 +1628,7 @@ R_API int r_core_anal_fcn_list_json(RCore *core, RList *fcns) {
     return 0;
 }
 
-R_API int r_core_anal_fcn_print_detail(RCore *core, RAnalFunction *fcn) {
+static int r_core_anal_fcn_print_detail(RCore *core, RAnalFunction *fcn) {
     char *name = r_core_get_function_name (core, fcn);
 	r_cons_printf ("f %s %d 0x%08"PFMT64x"\n", name, r_anal_fcn_size (fcn), fcn->addr);
 	r_cons_printf ("af+ 0x%08"PFMT64x" %d %s %c %c\n",
@@ -1650,7 +1650,7 @@ R_API int r_core_anal_fcn_print_detail(RCore *core, RAnalFunction *fcn) {
     return 0;
 }
 
-R_API int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
+static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
     RListIter *iter;
 	RAnalRef *refi;
     RAnalVar *vari;
@@ -1715,7 +1715,7 @@ R_API int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
     return 0;
 }
 
-R_API int r_core_anal_fcn_list_detail(RCore *core, RList *fcns) {
+static int r_core_anal_fcn_list_detail(RCore *core, RList *fcns) {
     RListIter *iter;
     RAnalFunction *fcn;
     r_list_foreach (fcns, iter, fcn) {
@@ -1725,7 +1725,7 @@ R_API int r_core_anal_fcn_list_detail(RCore *core, RList *fcns) {
     return 0;
 }
 
-R_API int r_core_anal_fcn_list_legacy(RCore *core, RList *fcns)
+static int r_core_anal_fcn_list_legacy(RCore *core, RList *fcns)
 {
     RListIter *iter;
     RAnalFunction *fcn;
@@ -1766,27 +1766,27 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 
 	r_list_sort (core->anal->fcns, &cmpfcn);
     switch (rad) {
-        case 's':
-            r_core_anal_fcn_list_size (core);
-            break;
-        case 'l':
-            r_core_anal_fcn_list_verbose (core, fcns);
-            break;
-        case 'q':
-            r_core_anal_fcn_list_default (core, fcns, true);
-            break;
-        case 'j':
-            r_core_anal_fcn_list_json(core, fcns);
-            break;
-        case '*':
-            r_core_anal_fcn_list_detail(core, fcns);
-            break;
-        case 1:
-            r_core_anal_fcn_list_legacy(core, fcns);
-            break;
-        default:
-            r_core_anal_fcn_list_default (core, fcns, false);
-            break;
+    case 's':
+        r_core_anal_fcn_list_size (core);
+        break;
+    case 'l':
+        r_core_anal_fcn_list_verbose (core, fcns);
+        break;
+    case 'q':
+        r_core_anal_fcn_list_default (core, fcns, true);
+        break;
+    case 'j':
+        r_core_anal_fcn_list_json(core, fcns);
+        break;
+    case '*':
+        r_core_anal_fcn_list_detail(core, fcns);
+        break;
+    case 1:
+        r_core_anal_fcn_list_legacy(core, fcns);
+        break;
+    default:
+        r_core_anal_fcn_list_default (core, fcns, false);
+        break;
     }
     if (has_filter) {
         // The list does not own the its members, so don't purge.
