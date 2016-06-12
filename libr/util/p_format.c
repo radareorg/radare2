@@ -1038,10 +1038,13 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 			case 'B':
 			case 'E':
 				switch (tabsize) {
-				case 1: size+=1; break;
-				case 2: size+=2; break;
-				case 4: size+=4; break;
-				default: break;
+				case 1: size += 1; break;
+				case 2: size += 2; break;
+				case 4: size += 4; break;
+				case 8: size += 8; break;
+				default:
+					eprintf ("Unknown enum format size: %d\n", tabsize);
+					break;
 				}
 				break;
 			case '?':
@@ -1074,7 +1077,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	}
 	free (o);
 	free (args);
-	return (mode & R_PRINT_UNIONMODE)? biggest: size;
+	return (mode & R_PRINT_UNIONMODE)? biggest : size;
 }
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
