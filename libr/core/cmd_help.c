@@ -221,14 +221,12 @@ static int cmd_help(void *data, const char *input) {
 			double d;
 			float f;
 
-			n = r_num_math (core->num, input+1);
+			n = r_num_math (core->num, input + 1);
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
 			n32 = (ut32)(n & UT32_MAX);
 			asnum  = r_num_as_string (NULL, n);
-			memcpy (&f, &n32, sizeof (f));
-			memcpy (&d, &n, sizeof (d));
 
 			/* decimal, hexa, octal */
 			s = n>>16<<12;
@@ -245,6 +243,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			/* binary and floating point */
 			r_str_bits64 (out, n);
+			f = d = core->num->fvalue;
 			r_cons_printf ("%s %.01lf %ff %lf\n",
 				out, core->num->fvalue, f, d);
 		}
