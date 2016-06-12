@@ -873,33 +873,39 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'i': // "afi"
 		switch (input[2]) {
-		case '?': eprintf ("Usage: afi[j*] <addr>\n"); break;
-		case 'j': r_core_anal_fcn_list (core, input + 3, 'j'); break; // "afij"
-		case '*': r_core_anal_fcn_list (core, input + 3, 1); break;   // "afi*"
-		default: r_core_anal_fcn_list (core, input + 2, 0); break;
+		case '?':
+            eprintf ("Usage: afi[jl*] <addr>\n"); break;
+            eprintf ("afij - function info in json format\n");
+			eprintf ("afil - verbose function info\n");
+            eprintf ("afi* - function, variables and arguments\n");
+		case 'j':   // "afij"
+        case 'l':   // "afil"
+        case '*':   // "afi*"
+            r_core_anal_fcn_list (core, input + 3, input[2]);
+            break;
+		default:
+            r_core_anal_fcn_list (core, input + 2, 1);
+            break;
 		}
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afl[aljq*] <addr>\n");
+			eprintf ("Usage: afl[jlqs*]\n");
 			eprintf ("List all functions in quiet, commands or json format\n");
 			eprintf ("afl  - list functions\n");
-			eprintf ("afll - list function in verbose mode\n");
+            eprintf ("aflj - list functions in json format\n");
+			eprintf ("afll - list functions in verbose mode\n");
+            eprintf ("aflq - list functions in 'quiet' mode\n");
+            eprintf ("afls - print sum of sizes of all functions\n");
 			break;
-		case 'a':
-		case '*':
-		case 'j':
-		case 'q': // "aflq"
+        case 'j':
+        case 'l':
+        case 'q':
+        case 's':
 			r_core_anal_fcn_list (core, NULL, input[2]);
 			break;
-		case 's':
-			r_core_anal_fcn_list_size (core);
-			break;
-		case 'l': // "afll"
-			r_core_anal_fcn_list (core, NULL, 'l');
-			break;
-		default: // "afl"
+		default:
 			r_core_anal_fcn_list (core, NULL, 'o');
 			break;
 		}
