@@ -801,6 +801,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				}
 			}
 		}
+		if (REGBASE(0) == ARM_REG_PC) {
+			op->type = R_ANAL_OP_TYPE_UJMP;
+		}
 		break;
 	case ARM_INS_MSR:
 		msr_flags = insn->detail->arm.operands[0].reg >> 4;
