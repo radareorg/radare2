@@ -28,7 +28,7 @@ static void XREFKEY(char * const key, const size_t key_len,
 	snprintf (key, key_len, "%s.%s.0x%"PFMT64x, kind, _sdb_type, addr);
 }
 
-R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
+R_API bool r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
 	char *path, *db;
 	ut8 found = 0;
 	SdbListIter *it;
@@ -73,9 +73,9 @@ R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
 	return true;
 }
 
-R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
+R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
 	sdb_file (anal->sdb_xrefs, prjfile);
-	sdb_sync (anal->sdb_xrefs);
+	return sdb_sync (anal->sdb_xrefs);
 }
 
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type,
@@ -158,11 +158,13 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	return list;
 }
 
-R_API int r_anal_xrefs_init (RAnal *anal) {
+R_API bool r_anal_xrefs_init (RAnal *anal) {
 	sdb_reset (DB);
-	if (!DB) return false;
-	sdb_array_set (DB, "types", -1, "code.jmp,code.call,data.mem,data.string", 0);
-	return true;
+	if (DB) {
+		sdb_array_set (DB, "types", -1, "code.jmp,code.call,data.mem,data.string", 0);
+		return true;
+	}
+	return false;
 }
 
 static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {

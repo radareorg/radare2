@@ -1328,7 +1328,7 @@ R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal);
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
 R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
-R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile);
+R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjfile);
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
 R_API RList* r_anal_get_fcns (RAnal *anal);
@@ -1371,10 +1371,10 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kind, const char* name);
 
 /* project */
-R_API int r_anal_project_load(RAnal *anal, const char *prjfile);
-R_API int r_anal_project_save(RAnal *anal, const char *prjfile);
-R_API int r_anal_xrefs_load(RAnal *anal, const char *prjfile);
-R_API int r_anal_xrefs_init (RAnal *anal);
+R_API bool r_anal_project_load(RAnal *anal, const char *prjfile);
+R_API bool r_anal_project_save(RAnal *anal, const char *prjfile);
+R_API bool r_anal_xrefs_load(RAnal *anal, const char *prjfile);
+R_API bool r_anal_xrefs_init (RAnal *anal);
 
 #define R_ANAL_THRESHOLDFCN 0.7F
 #define R_ANAL_THRESHOLDBB 0.7F

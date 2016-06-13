@@ -95,9 +95,9 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->cb_printf = (PrintfCallback) printf;
-	r_anal_pin_init (anal);
-	r_anal_type_init (anal);
-	r_anal_xrefs_init (anal);
+	(void)r_anal_pin_init (anal);
+	(void)r_anal_type_init (anal);
+	(void)r_anal_xrefs_init (anal);
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
 	anal->split = true; // used from core
@@ -285,15 +285,17 @@ R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 }
 
 R_API char *r_anal_strmask (RAnal *anal, const char *data) {
-	RAnalOp *op;
-	ut8 *buf;
+	RAnalOp *op = NULL;
+	ut8 *buf = NULL;
 	char *ret = NULL;
 	int oplen, len, idx = 0;
 
-	ret = strdup (data);
-	buf = malloc (1+strlen (data));
-	op = r_anal_op_new ();
-	if (op == NULL || ret == NULL || buf == NULL) {
+	if (data && *data) {
+		ret = strdup (data);
+		buf = malloc (1 + strlen (data));
+		op = r_anal_op_new ();
+	}
+	if (!op || !ret || !buf) {
 		free (op);
 		free (buf);
 		free (ret);
@@ -354,17 +356,18 @@ R_API RList* r_anal_get_fcns (RAnal *anal) {
 	return anal->fcns;
 }
 
-R_API int r_anal_project_load(RAnal *anal, const char *prjfile) {
-	if (prjfile && *prjfile)
+R_API bool r_anal_project_load(RAnal *anal, const char *prjfile) {
+	if (prjfile && *prjfile) {
 		return r_anal_xrefs_load (anal, prjfile);
+	}
 	return false;
 }
 
-R_API int r_anal_project_save(RAnal *anal, const char *prjfile) {
-	if (!prjfile || !*prjfile)
-		return false;
-	r_anal_xrefs_save (anal, prjfile);
-	return true;
+R_API bool r_anal_project_save(RAnal *anal, const char *prjfile) {
+	if (prjfile && *prjfile) {
+		return r_anal_xrefs_save (anal, prjfile);
+	}
+	return false;
 }
 
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
