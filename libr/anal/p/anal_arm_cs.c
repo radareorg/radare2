@@ -688,9 +688,15 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 					if (!(addr & 2))
 						delta += 2;
 				}
+#if 1
 				r_strbuf_appendf (&op->esil,
 					"%d,2,2,%s,>>,<<,+,%s,+=",
 					delta, ARG(1), ARG(0));
+#else
+				r_strbuf_appendf (&op->esil,
+					"%d,%s,+,%s,+=",
+					delta, ARG(1), ARG(0));
+#endif
 			} else {
 				if (!strcmp (ARG(0), ARG(1))) {
 					r_strbuf_appendf (&op->esil, "2,%s,*=", ARG(0));
@@ -705,7 +711,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			} else {
 				if (!strcmp (ARG(0), ARG(1))) {
 					r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(2), ARG(0));
-				} else if (!strcmp (ARG(2),"0")) {
+				} else if (!strcmp (ARG(2), "0")) {
 					r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), ARG(0));
 				} else {
 					r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
@@ -769,14 +775,20 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
-					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,[4],%s,=",
+					//r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,[4],%s,=",
+					//	pcdelta, pc, LSHIFT2(1), MEMINDEX(1), REG(0));
+					r_strbuf_appendf (&op->esil, "%d,%s,+,%d,%s,<<,+,[4],%s,=",
 						pcdelta, pc, LSHIFT2(1), MEMINDEX(1), REG(0));
 				} else {
 					if (ISREG(1)) {
-						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,[4],%s,=",
+						//r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,[4],%s,=",
+						//	pcdelta, pc, MEMINDEX(1), REG(0));
+						r_strbuf_appendf (&op->esil, "%d,%s,+,%s,+,[4],%s,=",
 							pcdelta, pc, MEMINDEX(1), REG(0));
 					} else {
-						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,[4],%s,=",
+						//r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,[4],%s,=",
+							//pcdelta, pc, MEMDISP(1), REG(0));
+						r_strbuf_appendf (&op->esil, "%d,%s,+,%d,+,[4],%s,=",
 							pcdelta, pc, MEMDISP(1), REG(0));
 					}
 				}
