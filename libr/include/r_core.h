@@ -325,7 +325,7 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, 
 
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr);
-R_API void r_core_anal_esil (RCore *core, const char *str);
+R_API void r_core_anal_esil (RCore *core, const char *str, const char *addr);
 R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr);
 R_API ut64 r_core_anal_address (RCore *core, ut64 addr);

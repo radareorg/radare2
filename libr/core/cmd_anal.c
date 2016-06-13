@@ -4081,7 +4081,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
 		"aaa", "", "autoname functions after aa (see afna)",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
-		"aae", " [len]", "analyze references with ESIL",
+		"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 		"aai", "[j]", "show info of all analysis parameters",
 		"aar", " [len]", "analyze len bytes of instructions for references",
 		"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
@@ -4206,7 +4206,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	}
 	case 'e': // "aae"
-		r_core_anal_esil (core, input + 1);
+		{
+			char *len = strdup (input + 1);
+			char *addr = (len && *len) ? strchr (len + 1, ' ') : NULL;
+			if (addr) {
+				*addr++ = 0;
+			}
+			r_core_anal_esil (core, len, addr);
+			free (len);
+		}
 		break;
 	case 'r':
 		(void)r_core_anal_refs (core, input + 1);
