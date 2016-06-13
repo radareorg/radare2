@@ -1310,7 +1310,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afr", " ([name]) ([addr])", "analyze functions recursively",
 			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
 			"af-", " [addr]", "clean all function analysis data (or function at addr)",
-			"afa", "[?] [idx] [name] ([type])", "add function argument",
 			"af[aev]", "?", "manipulate args, registers and variables in function",
 			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", " [addr]", "List basic blocks of given function",
@@ -1327,7 +1326,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afna", "", "suggest automatic name for current offset",
 			"afs", " [addr] [fcnsign]", "get/set function signature at current address",
 			"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
-			"afv", "[?] [idx] [type] [name]", "add local var on current function",
 			NULL };
 		r_core_cmd_help (core, help_msg);
 		}
