@@ -1375,7 +1375,7 @@ R_API int r_core_anal_fcn_list_size(RCore *core) {
 	RAnalFunction *fcn;
 	RListIter *iter;
 	ut32 total = 0;
-	
+
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		total += r_anal_fcn_size (fcn);
 	}
@@ -1392,26 +1392,26 @@ static int cmpfcn(const void *_a, const void *_b) {
 static int r_core_anal_fcn_gather_metadata(RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
-	
+
 	r_list_foreach (fcns, iter, fcn) {
 		// Count the number of references and number of calls
 		RListIter *callrefiter;
 		RAnalRef *ref;
-		int noofCallRef = 0;
-		int noofRef = 0;
+		int numcallrefs = 0;
+		int numrefs = 0;
 		r_list_foreach (fcn->refs, callrefiter, ref) {
 			if (ref->type == R_ANAL_REF_TYPE_CALL) {
-				noofCallRef++;
+				numcallrefs++;
 			}
-			noofRef++;
+			numrefs++;
 		}
-		fcn->meta.noofRef = noofRef;
-		fcn->meta.noofCallRef = noofCallRef;
-		
+		fcn->meta.numrefs = numrefs;
+		fcn->meta.numcallrefs= numcallrefs;
+
 		// Determine the bounds of the functions address space
 		ut64 min = UT64_MAX;
 		ut64 max = UT64_MIN;
-		
+
 		RListIter *bbsiter;
 		RAnalBlock *bbi;
 		r_list_foreach (fcn->bbs, bbsiter, bbi) {
@@ -1430,27 +1430,27 @@ static int r_core_anal_fcn_gather_metadata(RList *fcns) {
 }
 
 static char *r_core_get_function_name(RCore *core, RAnalFunction *fcn) {
-    bool demangle;
-    const char *lang;
+	bool demangle;
+	const char *lang;
 	demangle = r_config_get_i (core->config, "bin.demangle");
 	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 
-    char *name = strdup (fcn->name ? fcn->name : "");
-    if (demangle) {
-        char *tmp;
-        tmp = r_bin_demangle (core->bin->cur, lang, name);
-        if (tmp) {
-            free(name);
-            name = tmp;
-        }
-    } 
-    return name;
+	char *name = strdup (fcn->name ? fcn->name : "");
+	if (demangle) {
+		char *tmp;
+		tmp = r_bin_demangle (core->bin->cur, lang, name);
+		if (tmp) {
+			free(name);
+			name = tmp;
+		}
+	} 
+	return name;
 }
 
 #define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %4d %4d %5d %s%s\n"
 static int r_core_anal_fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = r_core_get_function_name(core, fcn);
-	
+
 	const char *color = "";
 	const char *color_end = "";
 	if (use_color) {
@@ -1463,42 +1463,42 @@ static int r_core_anal_fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool u
 			color = Color_MAGENTA;
 		}
 	}
-	
+
 	r_cons_printf (FCN_LIST_VERBOSE_ENTRY, color,
-	        fcn->addr,
-	        r_anal_fcn_realsize (fcn),
-	        r_list_length (fcn->bbs),
+			fcn->addr,
+			r_anal_fcn_realsize (fcn),
+			r_list_length (fcn->bbs),
 			r_anal_fcn_cc (fcn),
 			fcn->meta.min,
-	        r_anal_fcn_size (fcn),
-	        fcn->meta.max,
-	        fcn->meta.noofCallRef,
+			r_anal_fcn_size (fcn),
+			fcn->meta.max,
+			fcn->meta.numcallrefs,
 			r_anal_var_count (core->anal, fcn, 'v'),
 			r_anal_var_count (core->anal, fcn, 'a'),
-	        fcn->meta.noofRef,
-	        fcn->maxstack,
-	        name,
-	        color_end);
+			fcn->meta.numrefs,
+			fcn->maxstack,
+			name,
+			color_end);
 	R_FREE (name);
 	return 0;
 }
 
 static int r_core_anal_fcn_list_verbose(RCore *core, RList *fcns) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
-	
+
 	r_cons_printf ("%-11s %4s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
 			"address", "size", "nbbs", "cc", "min bound", "max bound",
 			"calls", "vars", "args", "xref", "frame", "name");
 	r_cons_printf ("%-11s %-4s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
 			"===========", "====", "=====", "====", "===========", "===========",
 			"=====", "====", "====", "====", "=====", "====");
-	
+
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
 		r_core_anal_fcn_print_verbose (core, fcn, use_color);
 	}
-	
+
 	return 0;
 }
 
@@ -1506,22 +1506,18 @@ static int r_core_anal_fcn_print_default(RCore *core, RAnalFunction *fcn, bool q
 	if (quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
-		char *name = r_core_get_function_name (core, fcn);
-		char *msg;
-		
+		char *msg, *name = r_core_get_function_name (core, fcn);
 		int realsize = r_anal_fcn_realsize (fcn);
 		int size = r_anal_fcn_size (fcn);
-		if(realsize == size) {
+		if (realsize == size) {
 			msg = r_str_newf ("%-12d", size);
 		} else {
 			msg = r_str_newf ("%-4d -> %-4d", size, realsize);
 		}
-		
 		r_cons_printf ("0x%08"PFMT64x" %4d %4s %s\n",
 				fcn->addr, r_list_length (fcn->bbs), msg, name);
-		
-		R_FREE (name);
-		R_FREE (msg);
+		free (name);
+		free (msg);
 	}
 	return 0;
 }
@@ -1541,6 +1537,7 @@ static int r_core_anal_fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
+	int first = 1;
 	char *name = r_core_get_function_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
@@ -1555,8 +1552,6 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		r_cons_printf (",\"diff\":\"%s\"",
 				fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
-	
-	int first = 1;
 	r_cons_printf (",\"callrefs\":[");
 	r_list_foreach (fcn->refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
@@ -1568,7 +1563,7 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			first = 0;
 		}
 	}
-	
+
 	first = 1;
 	r_cons_printf ("],\"datarefs\":[");
 	r_list_foreach (fcn->refs, iter, refi) {
@@ -1577,7 +1572,7 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			first = 0;
 		}
 	}
-	
+
 	first = 1;
 	r_cons_printf ("],\"codexrefs\":[");
 	r_list_foreach (fcn->xrefs, iter, refi) {
@@ -1590,7 +1585,7 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			first = 0;
 		}
 	}
-	
+
 	first = 1;
 	r_cons_printf ("],\"dataxrefs\":[");
 	r_list_foreach (fcn->xrefs, iter, refi) {
@@ -1600,7 +1595,7 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 	r_cons_printf ("]");
-	
+
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (",\"difftype\":\"%s\"",
 				fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
@@ -1611,7 +1606,7 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf (",\"diffname\":\"%s\"", fcn->diff->name);
 	}
 	r_cons_printf ("}");
-	R_FREE (name);
+	free (name);
 	return 0;
 }
 
@@ -1646,7 +1641,7 @@ static int r_core_anal_fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	/* show variables  and arguments */
 	r_core_cmdf (core, "afa* @ 0x%"PFMT64x"\n", fcn->addr);
 	r_core_cmdf (core, "afv* @ 0x%"PFMT64x"\n", fcn->addr);
-	R_FREE (name);
+	free (name);
 	return 0;
 }
 
@@ -1669,7 +1664,7 @@ static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		r_cons_printf (" [%s]",
 				fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
-	
+
 	r_cons_printf ("\n num-bbs: %d", r_list_length (fcn->bbs));
 	r_cons_printf ("\n call-refs: ");
 	r_list_foreach (fcn->refs, iter, refi)
@@ -1677,24 +1672,24 @@ static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			refi->type == R_ANAL_REF_TYPE_CALL)
 			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
 					refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
-	
+
 	r_cons_printf ("\n data-refs: ");
 	r_list_foreach (fcn->refs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_DATA)
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
-	
+
 	r_cons_printf ("\n code-xrefs: ");
 	r_list_foreach (fcn->xrefs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
 			refi->type == R_ANAL_REF_TYPE_CALL)
 			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
 					refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
-	
+
 	r_cons_printf ("\n data-xrefs: ");
 	r_list_foreach (fcn->xrefs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_DATA)
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
-	
+
 	if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf ("\n vars: %d", r_list_length (fcn->vars));
 		r_list_foreach (fcn->vars, iter, vari) {
@@ -1711,7 +1706,7 @@ static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf (" function: %s",
 				fcn->diff->name);
 	}
-	R_FREE (name)
+	free (name);
 	return 0;
 }
 
@@ -1739,30 +1734,29 @@ static int r_core_anal_fcn_list_legacy(RCore *core, RList *fcns)
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	RList *fcns = core->anal->fcns;
 	if (r_list_empty (fcns)) return 0;
-	
+
 	r_list_sort (fcns, &cmpfcn);
-	r_core_anal_fcn_gather_metadata(fcns);
-	
-	ut64 addr;
-	addr = core->offset;
-	bool has_filter = input;
-	if (has_filter) {
+	r_core_anal_fcn_gather_metadata (fcns);
+
+	if (input) {		// input points to a filter argument
+		ut64 addr;
+		addr = core->offset;
 		if (*input) {
 			addr = r_num_math (core->num, input + 1);
 		}
-		
+
 		fcns = r_list_new();
 		if(!fcns) return -1;
-		
+
 		RListIter *iter;
 		RAnalFunction *fcn;
 		r_list_foreach(core->anal->fcns, iter, fcn) {
-			if (in_function(fcn, addr) || (!strcmp(input + 1, fcn->name))) {
-				r_list_append(fcns, fcn);
+			if (in_function (fcn, addr) || (!strcmp (input + 1, fcn->name))) {
+				r_list_append (fcns, fcn);
 			}
 		}
 	}
-	
+
 	r_list_sort (core->anal->fcns, &cmpfcn);
 	switch (rad) {
 	case 's':
@@ -1775,21 +1769,21 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		r_core_anal_fcn_list_default (core, fcns, true);
 		break;
 	case 'j':
-		r_core_anal_fcn_list_json(core, fcns);
+		r_core_anal_fcn_list_json (core, fcns);
 		break;
 	case '*':
-		r_core_anal_fcn_list_detail(core, fcns);
+		r_core_anal_fcn_list_detail (core, fcns);
 		break;
 	case 1:
-		r_core_anal_fcn_list_legacy(core, fcns);
+		r_core_anal_fcn_list_legacy (core, fcns);
 		break;
 	default:
 		r_core_anal_fcn_list_default (core, fcns, false);
 		break;
 	}
-	if (has_filter) {
+	if (input) {
 		// The list does not own the its members, so don't purge.
-		R_FREE(fcns);
+		free (fcns);
 	}
 	return 0;
 }

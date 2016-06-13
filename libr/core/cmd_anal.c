@@ -1002,6 +1002,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
         case 'l':
         case 'q':
         case 's':
+		case '*':
 			r_core_anal_fcn_list (core, NULL, input[2]);
 			break;
 		default:
