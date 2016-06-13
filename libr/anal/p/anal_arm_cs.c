@@ -355,6 +355,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 								MEMBASE64(1), MEMDISP64(1), size, REG64(0));
 					}
 				}
+				op->refptr = 4;
 			} else {
 				if (ISREG64(1)) {
 					if (OPCOUNT64() == 2) {
@@ -503,7 +504,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	int i;
 	char str[32][32];
 	int msr_flags;
-	int pcdelta = (thumb ? 4 : 8 ) - op->size;
+	int pcdelta = (thumb ? 4 : 8); // - op->size;
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 	switch (insn->detail->arm.cc) {
@@ -752,8 +753,15 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
 					"$$", MEMDISP(1), REG(0));
 			} else {
-				r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
-					MEMBASE(1), MEMDISP(1), REG(0));
+				int disp = MEMDISP(1);
+				// not refptr, because we cant grab the reg value statically op->refptr = 4;
+				if (disp < 0) {
+					r_strbuf_appendf (&op->esil, "%d,%s,-,[4],%s,=",
+							-disp, MEMBASE(1), REG(0));
+				} else {
+					r_strbuf_appendf (&op->esil, "%d,%s,+,[4],%s,=",
+							disp, MEMBASE(1), REG(0));
+				}
 			}
 		} else {
 			if (REGBASE(1) == ARM_REG_PC) {
@@ -781,8 +789,14 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 						r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
 							MEMBASE(1), MEMINDEX(1), REG(0));
 					} else {
-						r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
-							MEMBASE(1), MEMDISP(1), REG(0));
+						int disp = MEMDISP(1);
+						if (disp < 0) {
+							r_strbuf_appendf (&op->esil, "%d,%s,-,[4],%s,=",
+								-disp, MEMBASE(1), REG(0));
+						} else {
+							r_strbuf_appendf (&op->esil, "%d,%s,+,[4],%s,=",
+								disp, MEMBASE(1), REG(0));
+						}
 					}
 				}
 			}
@@ -984,7 +998,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		} else if (insn->detail->arm64.cc) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM64(0);
-			op->fail = addr+op->size;
+			op->fail = addr + op->size;
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = IMM64(0);

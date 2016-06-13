@@ -200,7 +200,7 @@ static ut64 getFunctionSize(Sdb *db) {
 	}
 	free (bbs);
 #endif
-	return max-min;
+	return max - min;
 }
 
 static int analyzeFunction (RCore *core, ut64 addr) {
