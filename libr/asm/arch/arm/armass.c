@@ -300,7 +300,7 @@ static void thumb_swap (ut32 *a) {
 }
 
 // TODO: group similar instructions like for non-thumb
-static int thumb_assemble(ArmOpcode *ao, const char *str) {
+static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int reg, j;
 	ao->o = UT32_MAX;
 	if (!strcmpnull (ao->op, "pop") && ao->a[0]) {
@@ -351,6 +351,19 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	if (!strcmpnull (ao->op, "stmia")) {
 		ao->o = 0xc0 + getreg (ao->a[0]);
 		ao->o |= getlist(ao->opstr) << 8;
+		return 2;
+	} else
+	if (!strcmpnull (ao->op, "cbz")) {
+		ut64 dst = getnum (ao->a[1]);
+		int delta = dst - off;
+		if (delta < 4) {
+			return -1;
+		}
+		ao->o = 0xb1;
+		ao->o += getreg (ao->a[0]) << 8;
+		delta -= 4;
+		delta /= 4;
+		ao->o |= delta << 12;
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "nop")) {
@@ -731,7 +744,7 @@ static int findyz(int x, int *y, int *z) {
         return 0;
 }
 
-static int arm_assemble(ArmOpcode *ao, const char *str) {
+static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int i, j, ret, reg, a, b;
 	for (i=0; ops[i].name; i++) {
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
@@ -934,7 +947,7 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 	return 0;
 }
 
-typedef int (*AssembleFunction)(ArmOpcode *, const char *);
+typedef int (*AssembleFunction)(ArmOpcode *, ut64, const char *);
 static AssembleFunction assemble[2] = { &arm_assemble, &thumb_assemble };
 
 ut32 armass_assemble(const char *str, ut64 off, int thumb) {
@@ -951,7 +964,7 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	if (thumb < 0 || thumb > 1) {
 		return -1;
 	}
-	if (!assemble[thumb] (&aop, buf)) {
+	if (!assemble[thumb] (&aop, off, buf)) {
 		//eprintf ("armass: Unknown opcode (%s)\n", buf);
 		return -1;
 	}
