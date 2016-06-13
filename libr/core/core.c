@@ -1400,6 +1400,8 @@ R_API int r_core_init(RCore *core) {
 	// TODO: get arch from r_bin or from native arch
 	r_asm_use (core->assembler, R_SYS_ARCH);
 	r_anal_use (core->anal, R_SYS_ARCH);
+	r_anal_type_init (core->anal);
+
 	if (R_SYS_BITS & R_SYS_BITS_64)
 		r_config_set_i (core->config, "asm.bits", 64);
 	else

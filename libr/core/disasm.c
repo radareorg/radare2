@@ -1865,7 +1865,7 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 			esil = comma+1;
 		}
 	}
-	// TODO: check following SHR instructions
+	// /TODO: check following SHR instructions
 }
 
 static void ds_print_show_bytes(RDisasmState *ds) {
@@ -2936,9 +2936,6 @@ toro:
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		r_asm_set_pc (core->assembler, ds->at);
 		ds_update_ref_lines (ds);
-		/* show type links */
-		r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
-
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ds->fcn = f;
 		if (f && f->folded && r_anal_fcn_is_in_offset (f, ds->at)) {
@@ -2998,10 +2995,23 @@ toro:
 			}
 		}
 		ds_show_comments_right (ds);
-		ret = ds_disassemble (ds, buf+idx, len-idx);
-		if (ret == -31337) {
-			inc = ds->oplen;
-			continue;
+		//TRY adding here
+		char *link_key = sdb_fmt (-1, "link.%08"PFMT64x, ds->addr + idx);
+		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
+		if (link_type) {
+			char *fmt = r_anal_type_format (core->anal, link_type);
+			if (fmt) {
+				r_cons_printf ("(%s)\n", link_type);
+				 r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, ds->addr + idx);
+				 inc += r_anal_type_get_size (core->anal, link_type) / 8;
+				 continue;
+			}
+		} else {
+			ret = ds_disassemble (ds, buf+idx, len-idx);
+			if (ret == -31337) {
+				inc = ds->oplen;
+				continue;
+			}
 		}
 		if (ds->retry) {
 			ds->retry = 0;
