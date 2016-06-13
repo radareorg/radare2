@@ -463,7 +463,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (!strcmp ("sp", MEMBASE64(2))) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
-			op->ptr = -MEMDISP64(2);
+			op->ptr = MEMDISP64(2);
 		}
 		break;
 	case ARM64_INS_ADRP:
@@ -974,8 +974,11 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		if (REGBASE64(1) == ARM64_REG_X29) {
 			op->stackop = R_ANAL_STACK_GET;
-			op->stackptr = 0;
-			op->ptr = MEMDISP64(1);
+			op->stackptr = MEMDISP64(1);
+		} else {
+			int d = (int)MEMDISP64(1);
+			op->ptr = (d < 0)? -d: d;
+			op->refptr = 4;
 		}
 		break;
 	case ARM64_INS_RET:
