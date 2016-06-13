@@ -26,8 +26,9 @@ static int visual_repeat_thread(RThread *th) {
 	RCore *core = th->user;
 	int i = 0;
 	for (;;) {
-		if (core->cons->breaked)
+		if (core->cons->breaked) {
 			break;
+		}
 		visual_refresh (core);
 		r_cons_flush ();
 		r_cons_gotoxy (0, 0);
