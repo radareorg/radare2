@@ -850,6 +850,10 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	for (i = 1; i < ds->oplen; i++) {
 		fi = r_flag_get_i (core->flags, ds->at + i);
 		if (fi) {
+			if (!strncmp (fi->name, "str.", 4)) {
+				ds->midflags = R_MIDFLAGS_REALIGN;
+				return i;
+			}
 			if (!strncmp (fi->name, "reloc.", 6)) {
 				if (print) {
 					r_cons_printf ("(%s)\n", fi->name);
@@ -2947,8 +2951,9 @@ toro:
 		}
 		if (ds->midflags) {
 			skip_bytes = handleMidFlags (core, ds, true);
-			if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
+			if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
 				ds->at += skip_bytes;
+			}
 		}
 		ds_show_flags (ds);
 		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
@@ -3033,14 +3038,16 @@ toro:
 		}
 		R_FREE (ds->opstr);
 		inc = ds->oplen;
-		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes)
+
+		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes) {
 			inc = skip_bytes;
-		if (inc < 1)
+		}
+		if (inc < 1) {
 			inc = 1;
+		}
 	}
 	if (nbuf == buf) {
-		free (buf);
-		buf = NULL;
+		R_FREE (buf);
 	}
 	r_cons_break_end ();
 
