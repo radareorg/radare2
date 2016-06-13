@@ -1,11 +1,11 @@
-.Dd May 15, 2016
+.Dd Jun 7, 2016
 .Dt R2PM 1
 .Sh NAME
 .Nm R2PM
 .Nd radare2 package manager
 .Sh SYNOPSIS
 .Nm r2pm
-.Op cmd
+.Op init|update|cmd
 .Op ...
 .Sh DESCRIPTION
 Allows to install, update, uninstall and discover plugins and tools that can be used with radare2.
@@ -34,6 +34,11 @@ Show usage help message
 Clean the source cache
 .El
 .Sh EXAMPLES
+.Pp
+Initialize and update the package database
+.Pp
+  $ r2pm init
+  $ r2pm update
 .Pp
 Install a package
 .Pp

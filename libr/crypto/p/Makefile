@@ -3,7 +3,7 @@ include ../../../mk/platform.mk
 
 LDFLAGS+=${LINK}
 
-caca:
+nop:
 
 foo: all
 

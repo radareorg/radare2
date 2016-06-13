@@ -1837,8 +1837,9 @@ R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname, const
  * bin, paddr otherwise */
 R_API ut64 r_binfile_get_vaddr(RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 	int use_va = 0;
-	if (binfile && binfile->o && binfile->o->info)
+	if (binfile && binfile->o && binfile->o->info) {
 		use_va = binfile->o->info->has_va;
+	}
 	return use_va? binobj_a2b (binfile->o, vaddr): paddr;
 }
 
@@ -1852,7 +1853,7 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 		if (bin->cur->o->info->bits == 16) {
 			RBinSection *s = r_bin_get_section_at (bin->cur->o, paddr, false);
 			// autodetect thumb
-			if (s && s->srwx & 1) {
+			if (s && s->srwx & 1 && strstr (s->name, "text")) {
 				if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {
 					vaddr = (vaddr >> 1) << 1;
 				}

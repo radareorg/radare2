@@ -1017,11 +1017,19 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		}
 	} else if (!nb_bytes) {
 		if (nb_opcodes < 0) {
+			ut64 start;
 			/* Backward disassembly of `ilen` opcodes
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
-			r_core_asm_bwdis_len (core, &nb_bytes, &core->offset, nb_opcodes);
+			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &start)) {
+				// We have some anal_info.
+				nb_bytes = core->offset - start;
+			} else {
+				// anal ignorance.
+				r_core_asm_bwdis_len (core, &nb_bytes, &core->offset,
+						nb_opcodes);
+			}
 			r_core_read_at (core, core->offset, core->block, nb_bytes);
 		} else {
 			// workaround for the `for` loop below
@@ -2755,6 +2763,7 @@ static int cmd_print(void *data, const char *input) {
 		if (!processed_cmd) {
 			ut64 addr = core->offset;
 			ut8 *block = NULL;
+			ut64 start;
 
 			if (bw_disassemble) {
 				block = malloc (core->blocksize);
@@ -2769,8 +2778,14 @@ static int cmd_print(void *data, const char *input) {
 					} else { //pd
 						const int bs = core->blocksize;
 						int instr_len;
-						r_core_asm_bwdis_len (core, &instr_len, &addr, l);
-						ut32 prevaddr = core->offset;
+						if (r_core_prevop_addr (core, core->offset, l, &start)) {
+							// We have some anal_info.
+							instr_len = core->offset - start;
+						} else {
+							// anal ignorance.
+							r_core_asm_bwdis_len (core, &instr_len, &addr, l);
+						}
+						ut64 prevaddr = core->offset;
 						r_core_seek(core, prevaddr - instr_len, true);
 						block = realloc (block, R_MAX(instr_len, bs));
 						memcpy (block, core->block, bs);
@@ -3197,6 +3212,7 @@ static int cmd_print(void *data, const char *input) {
 				" _J    jump\n"
 				" cJ    conditional jump\n"
 				" _C    call\n"
+				" _R    ret\n"
 				" ==    cmp/test\n"
 				" XX    invalid\n");
 			} else if (l != 0) {
@@ -3279,7 +3295,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			}
 			break;
-		case 'w': // "pxw
+		case 'w': // "pxw"
 			if (l != 0) {
 				r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
 			}
@@ -3771,7 +3787,7 @@ static int cmd_print(void *data, const char *input) {
 			 "pu","[w] [len]","print N url encoded bytes (w=wide)",
 			 "pv","[jh] [mode]","show variable/pointer/value in memory",
 			 "p-","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
-			 "p","[xX][owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
+			 "px","[owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 			 "pz"," [len]","print zoom view (see pz? for help)",
 			 "pwd","","display current working directory",
 			 NULL

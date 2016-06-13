@@ -210,8 +210,31 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 
 #define VARPREFIX "local"
 #define ARGPREFIX "arg"
-static char *get_varname (RAnal *a, const char *pfx, int idx) {
-	return r_str_newf ("%s_%xh", pfx, idx);
+static char *get_varname (RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
+	char *varname = r_str_newf ("%s_%xh", pfx, idx);
+	int i = 2;
+	while (1) {
+		RAnalVar *v = r_anal_var_get_byname (a, fcn, 'a', varname);
+		if (!v) {
+			v = r_anal_var_get_byname (a, fcn, 'e', varname);
+		}
+		if (!v) {
+			v = r_anal_var_get_byname (a, fcn, 'v', varname);
+		}
+		if (!v) {
+			break;
+		}
+		if (v->kind == type && R_ABS (v->delta) == idx) {
+			break;
+		}
+		free (varname);
+		free (v);
+		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
+		i++;
+	}
+
+
+	return varname;
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth);
@@ -309,13 +332,17 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 	}
 	ptr = (st64)r_num_get (NULL, addr);
 	if(*sign =='+') {
-		varname = get_varname (anal, ARGPREFIX, R_ABS (ptr));
+		if (ptr < fcn->stack &&  type == 'e') {
+			varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
+		} else {
+			varname = get_varname (anal, fcn, type, ARGPREFIX, R_ABS (ptr));
+		}
 		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, varname);
 		r_anal_var_access (anal, fcn->addr, type, 1, ptr, 0, op->addr);
 	} else {
-		varname = get_varname (anal, VARPREFIX, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, ptr,'v', NULL, anal->bits / 8, varname);
-		r_anal_var_access (anal, fcn->addr, 'v', 1, ptr, 1, op->addr);
+		varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
+		r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, varname);
+		r_anal_var_access (anal, fcn->addr, type, 1,-ptr, 1, op->addr);
 
 	}
 	free (varname);
@@ -324,8 +351,8 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 }
 
 R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
-	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", fcn->call);
-	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'v');
+	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", 'a');
+	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'a');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 'e');
 }
 
@@ -506,30 +533,24 @@ repeat:
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:
 			if ((int)op.ptr > 0) {
-				varname = get_varname (anal, ARGPREFIX, R_ABS(op.ptr));
-				r_anal_var_add (anal, fcn->addr, 1, op.ptr,
-						'a', NULL, anal->bits/8, varname);
-				r_anal_var_access (anal, fcn->addr, 'a', 1, op.ptr, 1, op.addr);
-				// TODO: DIR_IN?
+				varname = get_varname (anal, fcn, 'a', ARGPREFIX, R_ABS(op.ptr));
 			} else {
-				varname = get_varname (anal, VARPREFIX, R_ABS(op.ptr));
-				r_anal_var_add (anal, fcn->addr, 1, -op.ptr,
-						'v', NULL, anal->bits/8, varname);
-				r_anal_var_access (anal, fcn->addr, 'v', 1, -op.ptr, 1, op.addr);
+				varname = get_varname (anal, fcn, 'a', VARPREFIX, R_ABS(op.ptr));
 			}
+			r_anal_var_add (anal, fcn->addr, 1, op.ptr,
+					'a', NULL, anal->bits/8, varname);
+			r_anal_var_access (anal, fcn->addr, 'a', 1, op.ptr, 1, op.addr);
 			free (varname);
 			break;
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_GET:
 			if (((int)op.ptr) > 0) {
-				varname = get_varname (anal, ARGPREFIX, R_ABS(op.ptr));
-				r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'a', NULL, anal->bits/8, varname);
-				r_anal_var_access (anal, fcn->addr, 'a', 1, op.ptr, 0, op.addr);
+				varname = get_varname (anal, fcn, 'a', ARGPREFIX, R_ABS(op.ptr));
 			} else {
-				varname = get_varname (anal, VARPREFIX, R_ABS(op.ptr));
-				r_anal_var_add (anal, fcn->addr, 1, -op.ptr, 'v', NULL, anal->bits/8, varname);
-				r_anal_var_access (anal, fcn->addr, 'v', 1, -op.ptr, 0, op.addr);
+				varname = get_varname (anal, fcn, 'a', VARPREFIX, R_ABS(op.ptr));
 			}
+			r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'a', NULL, anal->bits/8, varname);
+			r_anal_var_access (anal, fcn->addr, 'a', 1, op.ptr, 0, op.addr);
 			free (varname);
 			break;
 		}
@@ -990,6 +1011,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		append = 1;
 	}
 	fcn->addr = addr;
+	fcn->bits = a->bits;
 	r_anal_fcn_set_size (fcn, size);
 	free (fcn->name);
 	if (!name) {
@@ -1079,6 +1101,50 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
 			if (fcn->addr == addr || (!ret && r_anal_fcn_is_in_offset (fcn, addr))) {
+				ret = fcn;
+			}
+		}
+	}
+	return ret;
+#endif
+}
+
+R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {
+#if USE_NEW_FCN_STORE
+#warning TODO: r_anal_get_fcn_in_bounds
+	// TODO: type is ignored here? wtf.. we need more work on fcnstore
+	//if (root) return r_listrange_find_root (anal->fcnstore, addr);
+	return r_listrange_find_in_range (anal->fcnstore, addr);
+#else
+	RAnalFunction *fcn, *ret = NULL;
+	RListIter *iter;
+	if (type == R_ANAL_FCN_TYPE_ROOT) {
+		r_list_foreach (anal->fcns, iter, fcn) {
+			if (addr == fcn->addr)
+				return fcn;
+		}
+		return NULL;
+	}
+	r_list_foreach (anal->fcns, iter, fcn) {
+		if (!type || (fcn && fcn->type & type)) {
+			ut64 min = 0, max = 0;
+			RAnalBlock *bb;
+			RListIter *iter;
+			r_list_foreach (fcn->bbs, iter, bb) {
+				if (!max) {
+					min = bb->addr;
+					max = bb->addr + bb->size;
+				} else {
+					ut64 tmp = bb->addr + bb->size;
+					if (bb->addr < min) {
+						min = bb->addr;
+					}
+					if (tmp > max) {
+						max = tmp;
+					}
+				}
+			}
+			if (addr >= min && addr < max) {
 				ret = fcn;
 			}
 		}

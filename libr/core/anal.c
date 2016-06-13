@@ -397,6 +397,8 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
 		fcn->bits = 16;
+	} else {
+		fcn->bits = core->anal->bits;
 	}
 	fcn->addr = at;
 	r_anal_fcn_set_size (fcn, 0);
@@ -1080,6 +1082,7 @@ R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	const char *esil;
 	RAnalOp *op;
+	eprintf ("TODO\n");
 	while (1) {
 		// TODO: Implement the proper logic for doing esil analysis
 		op = r_core_anal_op (core, at);
@@ -1102,10 +1105,9 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
  * If the function has been already analyzed, it adds a
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+	bool use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
 	RListIter *iter;
-
-	int use_esil = r_config_get_i (core->config, "anal.esil");
 
 	if (core->io->va && !core->io->raw) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
@@ -1529,6 +1531,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						count>1? ",":"", fcn->addr, name, r_anal_fcn_size (fcn));
 				r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 				r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
+				r_cons_printf (",\"bits\":%d", fcn->bits);
 				r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
 				r_cons_printf (",\"calltype\":\"%s\"", r_anal_cc_type2str (fcn->call));
 				r_cons_printf (",\"type\":\"%s\"",
@@ -1614,9 +1617,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				r_cons_printf ("\n stackframe: %d", fcn->maxstack);
 				r_cons_printf ("\n call-convention: %s", r_anal_cc_type2str (fcn->call));
 				r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
+				r_cons_printf ("\n bits: %d", fcn->bits);
 				r_cons_printf ("\n type: %s",
-						fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":
-						fcn->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
+						fcn->type == R_ANAL_FCN_TYPE_SYM?"sym":
+						fcn->type == R_ANAL_FCN_TYPE_IMP?"imp": "fcn");
 				if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM)
 					r_cons_printf (" [%s]",
 							fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
@@ -1727,10 +1731,6 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
-	if (fcn->call == R_ANAL_CC_TYPE_FASTCALL) {
-		r_anal_var_add (core->anal, fcn->addr, 1, 0,'A', "int", 4,"arg_ecx");
-		r_anal_var_add (core->anal, fcn->addr, 1, 1,'A', "int", 4,"arg_edx");
-	}
 	free (buf);
 	return;
 }
@@ -2597,55 +2597,67 @@ static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int l
 	return 1;
 }
 
+/* TODO: move into RCore? */
 static ut64 esilbreak_last_read = UT64_MAX;
 #if 0
 static ut32 esilbreak_last_data = UT32_MAX;
 #endif
 
+static ut64 ntarget = UT64_MAX;
+
 static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	ut8 str[128];
 	char cmd[128];
 	esilbreak_last_read = UT64_MAX;
-	if (myvalid (addr) && r_io_is_valid_offset (mycore->io, addr, 0)) {
-		ut32 refptr = 0;
-		if (r_io_read_at (mycore->io, addr, (ut8*)&refptr, sizeof (refptr)) != sizeof (refptr)) {
-			/* invalid read */
-			refptr = -1;
-		}
-		if (myvalid (refptr) && r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
-			esilbreak_last_read = addr;
-			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
-				(ut64)refptr, esil->address);
-			str[0] = 0;
-			if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
-				eprintf ("Invalid read\n");
+	if (ntarget == UT64_MAX || ntarget == addr) {
+		if (myvalid (addr) && r_io_is_valid_offset (mycore->io, addr, 0)) {
+			ut8 buf[4];
+			ut64 refptr;
+			if (r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf)) != sizeof (buf)) {
+				/* invalid read */
+				refptr = UT32_MAX;
+			} else {
+				refptr = r_read_ble32 (buf, esil->anal->big_endian);
+			}
+
+			if (myvalid (refptr) && r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
+				esilbreak_last_read = addr;
+				snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
+						(ut64)refptr, esil->address);
 				str[0] = 0;
-			}
-			str[sizeof(str)-1] = 0;
-			add_string_ref (mycore, refptr); //ut64 xref_to) {
-#if 0
-			char cmd2[128];
-			int slen = 0;
-			if (is_string (str, sizeof (str)-1, &slen)) {
-				char *str2[256];
-				esilbreak_last_data = refptr;
-				snprintf (str2, sizeof (str2) - 1, "esilref: '%s'", str);
-				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, esil->address, str2);
-				r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, refptr, str2);
-				if (refptr) {
-					snprintf (cmd2, sizeof (cmd2), "axd 0x%"PFMT64x" 0x%"PFMT64x,
-						esil->address, addr);
-					//eprintf ("%s\n", cmd2);
-					r_core_cmd0 (mycore, cmd2);
+				if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
+					eprintf ("Invalid read\n");
+					str[0] = 0;
 				}
-			}
+				str[sizeof(str)-1] = 0;
+				add_string_ref (mycore, refptr);
+#if 0
+				char cmd2[128];
+				int slen = 0;
+				if (is_string (str, sizeof (str)-1, &slen)) {
+					char *str2[256];
+					esilbreak_last_data = refptr;
+					snprintf (str2, sizeof (str2) - 1, "esilref: '%s'", str);
+					r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, esil->address, str2);
+					r_meta_set_string (mycore->anal, R_META_TYPE_COMMENT, refptr, str2);
+					if (refptr) {
+						snprintf (cmd2, sizeof (cmd2), "axd 0x%"PFMT64x" 0x%"PFMT64x,
+								esil->address, addr);
+						//eprintf ("%s\n", cmd2);
+						r_core_cmd0 (mycore, cmd2);
+					}
+				}
 #endif
-		} else {
-			snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
-				esil->address, addr);
+			} else {
+				snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
+						addr, esil->address); //, addr);
+				//eprintf ("Spurious reference pointer from to: 0x%08"PFMT64x"\n", addr);
+			}
+			//eprintf ("%s\n", cmd);
+			if (*cmd) {
+				r_core_cmd0 (mycore, cmd);
+			}
 		}
-		//eprintf ("%s\n", cmd);
-		r_core_cmd0 (mycore, cmd);
 	}
 	return 0; // fallback
 }
@@ -2675,7 +2687,8 @@ static void add_string_ref (RCore *core, ut64 xref_to) {
 	}
 }
 
-R_API void r_core_anal_esil (RCore *core, const char *str) {
+
+R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	RAnalEsil *ESIL = core->anal->esil;
 	const char *pcname;
@@ -2690,9 +2703,15 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 
 	mycore = core;
 	if (!strcmp (str, "?")) {
-		eprintf ("Usage: aae[f] [len] - analyze refs in function, section or len bytes with esil\n");
-		eprintf ("  aae $SS @ $S      - analyze the whole section\n");
+		eprintf ("Usage: aae[f] [len] [addr] - analyze refs in function, section or len bytes with esil\n");
+		eprintf ("  aae $SS @ $S            - analyze the whole section\n");
+		eprintf ("  aae $SS str.Hello @ $S  - find references for str.Hellow\n");
 		return;
+	}
+	if (target) {
+		ntarget = r_num_math (core->num, target);
+	} else {
+		ntarget = UT64_MAX;
 	}
 	if (!strcmp (str, "f")) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -2702,7 +2721,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		}
 	}
 	if (str[0] == ' ') {
-		end = addr + r_num_math (core->num, str+1);
+		end = addr + r_num_math (core->num, str + 1);
 	} else {
 		RIOSection *sect = r_io_section_vget (core->io, addr);
 		if (sect) {
@@ -2750,7 +2769,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		}
 		r_cons_break (cccb, core);
 		cur = addr + i;
-		if (!r_anal_op (core->anal, &op, cur, buf + i, iend-i)) {
+		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i)) {
 			i += minopsize - 1;
 		}
 		r_asm_set_pc (core->assembler, cur);
@@ -2759,11 +2778,11 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		if (i > iend) {
 			break;
 		}
-		if (r_asm_disassemble (core->assembler, &asmop, buf+i, iend-i) > 0) {
+		if (r_asm_disassemble (core->assembler, &asmop, buf + i, iend - i) > 0) {
 			op.mnemonic = strdup (asmop.buf_asm);
 		}
 		if (op.size < 1) {
-			i++;
+			i += minopsize - 1;
 			continue;
 		}
 		if (1) {
@@ -2780,10 +2799,14 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
-				if (strcmp (core->anal->cpu, "arm")) {
-					if (cfg_anal_strings) {
-						r_anal_ref_add (core->anal, op.ptr, cur, 'd');
-						add_string_ref (core, op.ptr);
+				if ((target && op.ptr == ntarget) || !target) {
+					if (strcmp (core->anal->cpu, "arm")) {
+						if (cfg_anal_strings) {
+							r_anal_ref_add (core->anal, op.ptr, cur, 'd');
+							if ((target && op.ptr == ntarget) || !target) {
+								add_string_ref (core, op.ptr);
+							}
+						}
 					}
 				}
 				break;
@@ -2791,35 +2814,39 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 				/* TODO: test if this is valid for other archs too */
 				if (core->anal->bits == 64 && !strcmp (core->anal->cpu, "arm")) {
 					ut64 dst = ESIL->cur;
-					r_anal_ref_add (core->anal, dst, cur, 'd');
+					if ((target && dst == ntarget) || !target) {
+						r_anal_ref_add (core->anal, dst, cur, 'd');
+					}
 				} else if ((core->anal->bits == 32 && !strcmp (core->anal->cpu, "mips"))) {
 				       ut64 dst = ESIL->cur;
 
 					if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name)
 						break;
 
-					if (!strcmp(op.src[0]->reg->name, "sp"))
+					if (!strcmp (op.src[0]->reg->name, "sp"))
 						break;
-					if (!strcmp(op.src[0]->reg->name, "zero"))
+					if (!strcmp (op.src[0]->reg->name, "zero"))
 						break;
 
 
-					if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) &&
-					    myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-						RFlagItem *f;
-						char *str;
+					if ((target && dst == ntarget) || !target) {
+						if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) &&
+								myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+							RFlagItem *f;
+							char *str;
 
-						r_anal_ref_add (core->anal, dst, cur, 'd');
-						if (cfg_anal_strings) {
-							add_string_ref (core, dst);
-						}
+							r_anal_ref_add (core->anal, dst, cur, 'd');
+							if (cfg_anal_strings) {
+								add_string_ref (core, dst);
+							}
 
-						if ((f = r_flag_get_i2 (core->flags, dst))) {
-							r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
-						} else if ((str = is_string_at (mycore, dst, NULL))) {
-							char *str2 = sdb_fmt (0, "esilref: '%s'", str);
-							r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, str2);
-							free (str);
+							if ((f = r_flag_get_i2 (core->flags, dst))) {
+								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
+							} else if ((str = is_string_at (mycore, dst, NULL))) {
+								char *str2 = sdb_fmt (0, "esilref: '%s'", str);
+								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, str2);
+								free (str);
+							}
 						}
 					}
 				}
@@ -2827,10 +2854,22 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 			case R_ANAL_OP_TYPE_LOAD:
 				{
 					ut64 dst = esilbreak_last_read;
-					if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-						r_anal_ref_add (core->anal, dst, cur, 'd');
-						if (cfg_anal_strings) {
-							add_string_ref (core, dst);
+					if ((target && dst == ntarget) || !target) {
+						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+							r_anal_ref_add (core->anal, dst, cur, 'd');
+							if (cfg_anal_strings) {
+								add_string_ref (core, dst);
+							}
+						}
+					}
+				}
+				break;
+			case R_ANAL_OP_TYPE_CALL:
+				{
+					ut64 dst = op.jump;
+					if ((target && dst == ntarget) || !target) {
+						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+							r_anal_ref_add (core->anal, dst, cur, 'C');
 						}
 					}
 				}
@@ -2843,8 +2882,10 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 					if (dst == UT64_MAX) {
 						dst = r_reg_getv (core->anal->reg, pcname);
 					}
-					if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-						r_anal_ref_add (core->anal, dst, cur, 'c');
+					if ((target && dst == ntarget) || !target) {
+						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+							r_anal_ref_add (core->anal, dst, cur, 'c');
+						}
 					}
 				}
 				break;

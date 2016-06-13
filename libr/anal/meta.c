@@ -118,10 +118,47 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 	return ret;
 }
 
+R_API int r_meta_set_var_comment (RAnal *a, int type, ut64 idx, ut64 addr, const char *s) {
+	char key[100], val[2048], *e_str;
+	int ret;
+	ut64 size;
+	int space_idx = a->meta_spaces.space_idx;
+	meta_type_add (a, type, addr);
+
+	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x".0x%"PFMT64x, type, addr, idx);
+	size = sdb_array_get_num (DB, key, 0, 0);
+	if (!size) {
+		size = strlen (s);
+		meta_inrange_add (a, addr, size);
+		ret = true;
+	} else ret = false;
+	e_str = sdb_encode ((const void*)s, -1);
+	snprintf (val, sizeof (val)-1, "%d,%d,%s", (int)size, space_idx, e_str);
+	sdb_set (DB, key, val, 0);
+	free ((void*)e_str);
+	return ret;
+}
+
 R_API char *r_meta_get_string(RAnal *a, int type, ut64 addr) {
 	char key[100];
 	const char *k, *p, *p2;
-	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, 'C', addr);
+	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
+	k = sdb_const_get (DB, key, NULL);
+	if (!k) return NULL;
+	p = strchr (k, SDB_RS);
+	if (!p) return NULL;
+	k = p+1;
+	p2 = strchr (k, SDB_RS);
+	if (!p2) {
+		return (char *)sdb_decode (k, NULL);
+	}
+	return (char *)sdb_decode (p2+1, NULL);
+}
+
+R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr) {
+	char key[100];
+	const char *k, *p, *p2;
+	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x".0x%"PFMT64x, type, addr, idx);
 	k = sdb_const_get (DB, key, NULL);
 	if (!k) return NULL;
 	p = strchr (k, SDB_RS);
@@ -186,6 +223,12 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 	}
 	sdb_unset (DB, key, 0);
 	return false;
+}
+R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr) {
+	char *key;
+	key = r_str_newf ("meta.%c.0x%"PFMT64x"0x%"PFMT64x, type, addr, idx);
+	sdb_unset (DB, key, 0);
+	return 0;
 }
 
 R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
@@ -332,6 +375,11 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 		case '*':
 		default:
 			switch (d->type) {
+			case 'a': //var and arg comments
+			case 'v':
+			case 'e':
+				//XXX I think they do not belong to here
+				break;
 			case 'C':
 				{
 				const char *type = r_meta_type_to_string (d->type);

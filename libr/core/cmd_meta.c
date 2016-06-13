@@ -523,6 +523,168 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 
 	return true;
 }
+void r_comment_var_help (RCore *core, char type) {
+	const char *help_a[] = {
+		"Usage:", "Ca", "[name] [comment]",
+		"Ca?", "", "show this help",
+		"Ca", "", "list all base pointer args/vars comments in human friendly format",
+		"Ca*", "", "list all base pointer args/vars comments in r2 format",
+		"Ca-", "[name]", "delete comments for var/arg at current offset for base pointer",
+		"Ca", "[name]", "Show comments for var/arg at current offset for base pointer",
+		"Ca", "[name] [comment]", "add/append comment for the variable with the current name",
+		"Ca!", "[name]", "edit comment using cfg editor",
+		NULL
+	};
+	const char *help_e[] = {
+		"Usage:", "Ce", "[name] [comment]",
+		"Ce?", "", "show this help",
+		"Ce", "", "list all stack based args/vars comments in human friendly format",
+		"Ce*", "", "list all stack based args/vars comments in r2 format",
+		"Ce-", "[name]", "delete comments for stack pointer var/arg with that name",
+		"Ce", "[name]", "Show comments for stack pointer var/arg with that name",
+		"Ce", "[name] [comment]", "add/append comment for the variable",
+		"Ce!", "[name]", "edit comment using cfg editor",
+		NULL
+	};
+	const char *help_v[] = {
+		"Usage:", "Cv", "[name] [comment]",
+		"Cv?", "", "show this help",
+		"Cv", "", "list all register based args comments in human friendly format",
+		"Cv*", "", "list all register based args comments in r2 format",
+		"Cv-", "[name]", "delete comments for register based arg for that name",
+		"Cv", "[name]", "Show comments for register based arg for that name",
+		"Cv", "[name] [comment]", "add/append comment for the variable",
+		"Cv!", "[name]", "edit comment using cfg editor",
+		NULL
+	};
+
+	switch (type) {
+	case 'a':
+		r_core_cmd_help (core, help_a);
+		break;
+	case 'e':
+		r_core_cmd_help (core, help_e);
+		break;
+	case 'v':
+		r_core_cmd_help (core, help_v);
+		break;
+	}
+}
+void r_comment_vars (RCore *core, const char *input) {
+	//TODO enable base64 and make it the default for C*
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	int idx;
+	char *name;
+	char *oldcomment;
+	RAnalVar *var;
+	if (input[1] == '?') {
+		r_comment_var_help (core, input[0]);
+		return;
+	}
+	if (!fcn) {
+		eprintf ("Cant find function here\n");
+		return;
+	}
+	name = strdup (input + 2);
+	while (*name == ' ') {
+		name++;
+	}
+	switch (input[1]) {
+	case '*':
+	case '\0': {
+		RList *var_list;
+		RListIter *iter;
+		var_list = r_anal_var_list (core->anal, fcn, input[0]);
+		r_list_foreach (var_list, iter, var) {
+			oldcomment = r_meta_get_var_comment (core->anal, input[0], var->delta, fcn->addr);
+			if (!oldcomment) {
+				continue;
+			}
+			if (!input[1]) {
+				r_cons_printf ("%s : %s\n", var->name, oldcomment);
+			} else {
+				r_cons_printf ("\"Ca %s base64:%s @ 0x%08"PFMT64x"\"\n", var->name,
+					sdb_encode ((const ut8 *) oldcomment, strlen(oldcomment)), fcn->addr);
+			}
+		}
+		}
+		break;
+	case ' ': {
+		//TODO check that idx exist
+		char *comment = strstr (name, " ");
+		if (comment && *comment) {
+			*comment ++=0;
+		}
+		if (!strncmp (comment, "base64:", 7)) {
+			comment = (char *)sdb_decode (comment + 7, NULL);
+		}
+		var = r_anal_var_get_byname (core->anal, fcn, input[0], name);
+		if (var) {
+			idx = var->delta;
+		} else if (!strncmp (name, "0x", 2))  {
+			idx = (int) r_num_get (NULL, name);
+		} else if (!strncmp (name, "-0x", 3)) {
+			idx = -(int) r_num_get (NULL, name+1);
+		} else {
+			eprintf ("cant find variable named `%s`\n",name);
+			break;
+		}
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1 ,idx)) {
+			eprintf ("cant find variable at given offset\n");
+			break;
+		}
+		oldcomment = r_meta_get_var_comment (core->anal, input[0], idx, fcn->addr);
+		if (oldcomment) {
+			if (!comment || !*comment) {
+				r_cons_printf ("%s\n", oldcomment);
+				break;
+			}
+			char *text = r_str_newf ("%s\n%s", oldcomment, comment);
+			r_meta_set_var_comment (core->anal, input[0], idx, fcn->addr, text);
+			free (text);
+		} else {
+			r_meta_set_var_comment (core->anal, input[0], idx, fcn->addr, comment);
+		}
+		}
+		break;
+	case '-':
+		var = r_anal_var_get_byname (core->anal,fcn, input[0], name);
+		if (var) {
+			idx = var->delta;
+		} else if (!strncmp (name, "0x", 2)) {
+			idx = (int) r_num_get (NULL, name);
+		} else if (!strncmp (name, "-0x", 3)) {
+			idx = -(int) r_num_get (NULL, name+1);
+		 }else {
+			eprintf ("cant find variable named `%s`\n",name);
+			break;
+		}
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1 ,idx)) {
+			eprintf ("cant find variable at given offset\n");
+			break;
+		}
+
+		r_meta_var_comment_del (core->anal, input[0], idx, fcn->addr);
+		break;
+	case '!': {
+		char *comment;
+		var = r_anal_var_get_byname (core->anal,fcn, input[0], name);
+		if (!var) {
+			eprintf ("cant find variable named `%s`\n",name);
+			break;
+		}
+		oldcomment = r_meta_get_var_comment ( core->anal, input[0], var->delta, fcn->addr);
+		comment = r_core_editor (core, NULL, oldcomment);
+		if (comment) {
+			r_meta_var_comment_del (core->anal, input[0], var->delta, fcn->addr);
+			r_meta_set_var_comment (core->anal, input[0], var->delta, fcn->addr, comment);
+			free (comment);
+		}
+		free (var);
+		}
+		break;
+	}
+}
 
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
@@ -531,6 +693,11 @@ static int cmd_meta(void *data, const char *input) {
 	int i;
 
 	switch (*input) {
+	case 'a': // Ca
+	case 'e': // Ce
+	case 'v': // Cr
+		r_comment_vars (core, input);
+		break;
 	case 'j':
 	case '*':
 		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
@@ -567,6 +734,9 @@ static int cmd_meta(void *data, const char *input) {
 				"CC!", " [@addr]", "edit comment with $EDITOR",
 				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
 				"CCu", " [comment-text] [@addr]", "add unique comment",
+				"Ca", "[?]", "add comments to base pointer bases args/vars",
+				"Ce", "[?]", "add comments to stack pointer based args/vars",
+				"Cv", "[?]", "add comments to register based args",
 				"Cs", "[-] [size] [@addr]", "add string",
 				"Cz", "[@addr]", "add zero-terminated string",
 				"Ch", "[-] [size] [@addr]", "hide data",

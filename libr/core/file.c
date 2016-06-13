@@ -15,8 +15,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	ut64 ofrom = 0, laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
 	RCoreFile *ofile = core->file;
-	RBinFile *bf = (ofile && ofile->desc) ?
-		r_bin_file_find_by_fd (core->bin, ofile->desc->fd) : NULL;
+	RBinFile *bf = (ofile && ofile->desc) 
+			? r_bin_file_find_by_fd (core->bin, ofile->desc->fd) 
+			: NULL;
 	RIODesc *odesc = ofile ? ofile->desc : NULL;
 	char *ofilepath = NULL, *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = false;
@@ -43,8 +44,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	newpid = odesc ? odesc->fd : -1;
 
 	if (isdebug) {
-		r_debug_kill (core->dbg, core->dbg->pid,
-			core->dbg->tid, 9); // KILL
+		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // KILL
 		perm = 7;
 	} else {
 		if (!perm) {
@@ -67,19 +67,23 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	// when the new memory maps are created.
 	path = strdup (ofilepath);
 	free (obinfilepath);
-	obinfilepath = strdup(ofilepath);
+	obinfilepath = strdup (ofilepath);
 
 	file = r_core_file_open (core, path, perm, laddr);
 	if (file) {
-		int had_rbin_info = 0;
+		bool had_rbin_info = false;
 
 		ofile->map->from = ofrom;
-		if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
-			had_rbin_info = 1;
+		if (ofile->desc) {
+			if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
+				had_rbin_info = true;
+			}
 		}
 		r_core_file_close (core, ofile);
 		r_core_file_set_by_file (core, file);
-		r_core_file_set_by_fd (core, file->desc->fd);
+		if (file->desc) {
+			r_core_file_set_by_fd (core, file->desc->fd);
+		}
 		ofile = NULL;
 		odesc = NULL;
 	//	core->file = file;
@@ -94,11 +98,10 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			}
 		}
 
-		/*
-		if (core->bin->cur && file->desc) {
-			core->bin->cur->fd = file->desc->fd;
-			ret = true;
-		}*/
+		if (core->bin->cur && file->desc && !loadbin) {
+		    	//force here NULL because is causing uaf look this better in future XXX @alvarofe
+			core->bin->cur = NULL;
+		}
 		// close old file
 	} else if (ofile) {
 		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
@@ -112,8 +115,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	}
 	if (isdebug) {
 		// XXX - select the right backend
-		if (core->file && core->file->desc)
+		if (core->file && core->file->desc) {
 			newpid = core->file->desc->fd;
+		}
 		//reopen and attach
 		r_core_setup_debugger (core, "native", true);
 		r_debug_select (core->dbg, newpid, newpid);
@@ -500,8 +504,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// TODO? necessary to restore the desc back?
 		// RIODesc *oldesc = desc;
 		// Fix to select pid before trying to load the binary
-		if ( (desc->plugin && desc->plugin->isdbg) \
-				|| r_config_get_i (r->config, "cfg.debug")) {
+		if ( (desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
 			ut64 laddr = r_config_get_i (r->config, "bin.laddr");
@@ -551,7 +554,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	if (r_config_get_i (r->config, "bin.libs")) {
 		ut64 libaddr = (r->assembler->bits == 64)
-			? 0x00007fff00000000
+			? 0x00007fff00000000LL
 			: 0x7f000000;
 		const char *lib;
 		RListIter *iter;

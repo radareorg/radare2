@@ -486,6 +486,20 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode,
 	}
 }
 
+static int r_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
+	ut64 prevseeki = seeki;
+
+	if (!p->disasm || !p->user) return 0;
+
+	size = R_MAX (1, size);
+
+	while (size-- > 0) {
+		seeki += p->disasm (p->user, seeki);
+	}
+
+	return seeki - prevseeki;
+}
+
 static void r_print_format_octal (const RPrint* p, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
@@ -1024,10 +1038,13 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 			case 'B':
 			case 'E':
 				switch (tabsize) {
-				case 1: size+=1; break;
-				case 2: size+=2; break;
-				case 4: size+=4; break;
-				default: break;
+				case 1: size += 1; break;
+				case 2: size += 2; break;
+				case 4: size += 4; break;
+				case 8: size += 8; break;
+				default:
+					eprintf ("Unknown enum format size: %d\n", tabsize);
+					break;
 				}
 				break;
 			case '?':
@@ -1060,7 +1077,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	}
 	free (o);
 	free (args);
-	return (mode & R_PRINT_UNIONMODE)? biggest: size;
+	return (mode & R_PRINT_UNIONMODE)? biggest : size;
 }
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
@@ -1499,9 +1516,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i+= (size==-1) ? 4 : 4*size;
 					break;
 				case 'D':
-					if (size>0) p->cb_printf ("Size not yet implemented\n");
-					if (p->disasm && p->user)
-						i += p->disasm (p->user, seeki);
+					i += r_print_format_disasm (p, seeki, size);
 					break;
 				case 'o':
 					r_print_format_octal (p, endian, mode, setval, seeki, buf, i, size);

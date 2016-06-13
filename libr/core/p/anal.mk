@@ -10,5 +10,6 @@ ${CORE_TARGET_ANAL}: ${CORE_OBJ_ANAL}
 	${CC} $(call libname,core_anal) ${CFLAGS} \
 		-o core_anal.${EXT_SO} \
 		$(SHLR)/sdb/src/libsdb.a \
+		-L$(LIBR)/crypto -lr_crypto \
 		${CORE_OBJ_ANAL}
 endif

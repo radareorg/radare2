@@ -144,6 +144,8 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 
 R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
 	int i, match, align = core->search->align, hitctr = 0;
+	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
+	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	ut8 buf[4096];
 	bool asterisk = false;
 	ut64 v64, n = 0;
@@ -165,30 +167,42 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 		}
 		for (i=0; i < sizeof (buf) - vsize; i++) {
 			void *v = (buf + i);
+			ut64 addr = from + i;
 			if (r_cons_is_breaked ()) {
 				eprintf ("BEACH\n");
 				goto beach;
 			}
-			if (align && (from + i) % align)
+			if (align && (addr) % align) {
 				continue;
+			}
 			match = false;
 			switch (vsize) {
-			case 1: match = (buf[i]>=vmin && buf[i]<=vmax); break;
+			case 1: n = *(ut8*)(v); match = (buf[i]>=vmin && buf[i]<=vmax); break;
 			case 2: v16 = *((ut16*)(v)); match = (v16>=vmin && v16<=vmax); n = v16; break;
 			case 4: v32 = *((ut32 *)(v)); match = (v32>=vmin && v32<=vmax); n = v32; break;
 			case 8: v64 = *((ut64 *)(v)); match = (v64>=vmin && v64<=vmax); n = v64; break;
 			default: eprintf ("Unknown vsize\n"); return -1;
 			}
+			if (match && !vinfun) {
+				if (vinfunr) {
+					if (r_anal_get_fcn_in_bounds (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				} else {
+					if (r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL)) {
+						match = false;
+					}
+				}
+			}
 			if (match) {
 				if (asterisk) {
-					r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", n, from + i);
-					r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", vsize, from + i);
+					r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", n, addr);
+					r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", vsize, addr);
 					r_cons_printf ("f hit0_%d = 0x%"PFMT64x" # from 0x%"PFMT64x"\n",
-							hitctr, from +i, n);
+							hitctr, addr, n);
 				} else {
-					//eprintf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", n, from + i);
-					r_core_cmdf (core,"ax 0x%"PFMT64x" 0x%"PFMT64x, n, from + i);
-					r_core_cmdf (core,"Cd %d @ 0x%"PFMT64x, vsize, from + i);
+					r_core_cmdf (core,"ax 0x%"PFMT64x" 0x%"PFMT64x, n, addr);
+					r_core_cmdf (core,"Cd %d @ 0x%"PFMT64x, vsize, addr);
 				}
 				hitctr++;
 			}

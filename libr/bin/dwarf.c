@@ -1504,7 +1504,10 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 		buf = calloc (1, len + 1);
 		if (!buf) return NULL;
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
-
+		if (ret != len) {
+			free (buf);
+			return NULL;
+		}
 		list = r_list_new (); // always return empty list wtf
 		if (!list) {
 			free (buf);

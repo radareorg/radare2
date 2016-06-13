@@ -161,4 +161,13 @@ RIOPlugin r_io_plugin_qnx = {
 	.plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
-	.isdbg = true};
+	.isdbg = true
+};
+
+#ifndef CORELIB
+struct r_lib_struct_t radare_plugin = {
+	.type = R_LIB_TYPE_IO,
+	.data = &r_io_plugin_qnx,
+	.version = R2_VERSION
+};
+#endif

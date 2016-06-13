@@ -755,13 +755,16 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	RDebugMap *map;
 	int i, perm, unk = 0;
 	char *pos_c;
-	char path[1024], line[1024];
+	char path[1024], line[1024], name[1024];
 	char region[100], region2[100], perms[5];
 	FILE *fd;
 	if (dbg->pid == -1) {
 		//eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
 		return NULL;
 	}
+	/* prepend 0x prefix */
+	region[0] = region2[0] = '0';
+	region[1] = region2[1] = 'x';
 #if __KFBSD__
 	list = r_debug_native_sysctl_map (dbg);
 	if (list != NULL) return list;
@@ -782,45 +785,77 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	}
 	list->free = (RListFree)_map_free;
 	while (!feof (fd)) {
-		line[0] = '\0';
-		fgets (line, sizeof (line) - 1, fd);
-		if (line[0] == '\0') break;
-		path[0] = '\0';
-		line[strlen (line) - 1] = '\0';
+		size_t line_len;
+		ut64 map_start, map_end;
+
+		if (!fgets (line, sizeof (line), fd))
+			break;
+		/* kill the newline if we got one */
+		line_len = strlen(line);
+		if (line[line_len - 1] == '\n') {
+			line[line_len - 1] = '\0';
+			line_len--;
+		}
+		/* maps files should not have empty lines */
+		if (line_len == 0)
+			break;
+
 #if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
-		sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
-			&region[2], &region2[2], &ign, &ign,
-			unkstr, perms, &ign, &ign);
+		if (sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
+				&region[2], &region2[2], &ign, &ign,
+				unkstr, perms, &ign, &ign) != 8) {
+			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
+			return NULL;
+		}
+
+		/* snag the file name */
 		pos_c = strchr (line, '/');
-		if (pos_c) strncpy (path, pos_c, sizeof (path) - 1);
-		else path[0] = '\0';
+		if (pos_c)
+			strncpy (name, pos_c, sizeof (name) - 1);
+		else
+			name[0] = '\0';
 #else
-		sscanf (line, "%s %s %*s %*s %*s %[^\n]", &region[2], perms, path);
+		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
+		i = sscanf (line, "%s %s %*s %*s %*s %[^\n]", &region[2], perms, name);
+		if (i == 2) {
+			name[0] = '\0';
+		} else if (i != 3) {
+			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
+			eprintf ("%s: problematic line: %s\n", __func__, line);
+			return NULL;
+		}
 
+		/* split the region in two */
 		pos_c = strchr (&region[2], '-');
-		if (!pos_c) continue;
+		if (!pos_c) // should this be an error?
+			continue;
 
-		pos_c[-1] = (char)'0'; // xxx. this is wrong
-		pos_c[ 0] = (char)'x';
-		strncpy (region2, pos_c - 1, sizeof (region2) - 1);
+		strncpy (&region2[2], pos_c + 1, sizeof (region2) - 2 - 1);
 #endif // __KFBSD__
-		region[0] = region2[0] = '0';
-		region[1] = region2[1] = 'x';
 
-		if (!*path) snprintf (path, sizeof (path), "unk%d", unk++);
+		if (!*name)
+			snprintf (name, sizeof (name), "unk%d", unk++);
 		perm = 0;
-		for (i = 0; perms[i] && i < 4; i++)
+		for (i = 0; perms[i] && i < 4; i++) {
 			switch (perms[i]) {
 			case 'r': perm |= R_IO_READ; break;
 			case 'w': perm |= R_IO_WRITE; break;
 			case 'x': perm |= R_IO_EXEC; break;
 			}
+		}
 
-		map = r_debug_map_new (path, r_num_get (NULL, region),
-				r_num_get (NULL, region2), perm, 0);
-		if (!map) break;
-		map->file = strdup (path);
+		map_start = r_num_get (NULL, region);
+		map_end = r_num_get (NULL, region2);
+		if (map_start == map_end || map_end == 0) {
+			eprintf ("%s: ignoring invalid map size: %s - %s\n", __func__, region, region2);
+			continue;
+		}
+
+		map = r_debug_map_new (name, map_start, map_end, perm, 0);
+		if (!map)
+			break;
+		map->file = strdup (name);
 		r_list_append (list, map);
 	}
 	fclose (fd);
@@ -1282,7 +1317,7 @@ static int r_debug_setup_ownership (int fd, RDebug *dbg) {
 static bool r_debug_gcore (RDebug *dbg, RBuffer *dest) {
 #if __APPLE__
 	return xnu_generate_corefile (dbg, dest);
-#elif __linux__ && __x86_64__
+#elif __linux__ && (__x86_64__ || __i386__)
 	return linux_generate_corefile (dbg, dest);
 #else
 	return false;

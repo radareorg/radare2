@@ -20,14 +20,19 @@ SDB_OBJS+=ls.o
 SDB_OBJS+=ns.o
 SDB_OBJS+=query.o
 SDB_OBJS+=sdb.o
-SDB_OBJS+=sdba.o
-SDB_OBJS+=sdbn.o
+SDB_OBJS+=base64.o
+SDB_OBJS+=disk.o
+SDB_OBJS+=array.o
+SDB_OBJS+=fmt.o
+SDB_OBJS+=match.o
+SDB_OBJS+=num.o
 SDB_OBJS+=util.o
+SDB_OBJS+=journal.o
 
 SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 
-#OBJS+=${SDBOBJS}
-LINK+=${SDBPATH}/*.o
+OBJS+=${SDBOBJS}
+#LINK+=${SDBPATH}/*.o
 
 CFLAGS+=-I${SDBPATH}/src
 pre: ${SDBLIB}

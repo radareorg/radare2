@@ -173,29 +173,28 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 #else
 #if __WINDOWS__
 	HANDLE hThread = 0;
-	char buf[512];
-	sprintf(buf,"R2PIPE_IN%x",_getpid());
-	SetEnvironmentVariable("R2PIPE_PATH",buf);
-	sprintf(buf,"\\\\.\\pipe\\R2PIPE_IN%x",_getpid());
-	hPipeInOut = CreateNamedPipe(buf,
+	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
+	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
+	SetEnvironmentVariable ("R2PIPE_PATH", r2pipe_var);
+	hPipeInOut = CreateNamedPipe (r2pipe_paz,
 			PIPE_ACCESS_DUPLEX,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 			PIPE_BUF_SIZE,
 			PIPE_BUF_SIZE,
-			0,
-			NULL);
+			0, NULL);
 	hproc = myCreateChildProcess (code);
-	if (!hproc) {
-		return false;
+	if (hproc) {
+		bStopThread = FALSE;
+		hThread = CreateThread (NULL, 0, ThreadFunction, lang, 0,0);
+		WaitForSingleObject (hproc, INFINITE);
+		bStopThread = TRUE;
+		DeleteFile (r2pipe_paz);
+		WaitForSingleObject (hThread, INFINITE);
+		CloseHandle (hPipeInOut);
 	}
-	bStopThread=FALSE;
-	hThread = CreateThread (NULL, 0,ThreadFunction,lang, 0,0);
-	WaitForSingleObject (hproc, INFINITE );
-	bStopThread = TRUE;
-	DeleteFile (buf);
-	WaitForSingleObject (hThread, INFINITE);
-	CloseHandle (hPipeInOut);
-	return true;
+	free (r2pipe_var);
+	free (r2pipe_paz);
+	return hproc != NULL;
 #endif
 #endif
 }

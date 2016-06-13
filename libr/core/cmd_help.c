@@ -72,7 +72,7 @@ static void clippy(const char *msg) {
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *k;
-	char *p, out[128];
+	char *p, out[128] = {0};
 	ut64 n, n2;
 	int i;
 	RList *tmp;
@@ -188,7 +188,7 @@ static int cmd_help(void *data, const char *input) {
 			if (q) {
 				*q = 0;
 				n = r_num_get (core->num, p);
-				r_str_bits (out, (const ut8*)&n, sizeof (n), q+1);
+				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q+1);
 				r_cons_printf ("%s\n", out);
 			} else eprintf ("Usage: \"?b value bitstring\"\n");
 			free (p);
@@ -221,14 +221,12 @@ static int cmd_help(void *data, const char *input) {
 			double d;
 			float f;
 
-			n = r_num_math (core->num, input+1);
+			n = r_num_math (core->num, input + 1);
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
 			n32 = (ut32)(n & UT32_MAX);
 			asnum  = r_num_as_string (NULL, n);
-			memcpy (&f, &n32, sizeof (f));
-			memcpy (&d, &n, sizeof (d));
 
 			/* decimal, hexa, octal */
 			s = n>>16<<12;
@@ -244,7 +242,8 @@ static int cmd_help(void *data, const char *input) {
 				free (asnum);
 			}
 			/* binary and floating point */
-			r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
+			r_str_bits64 (out, n);
+			f = d = core->num->fvalue;
 			r_cons_printf ("%s %.01lf %ff %lf\n",
 				out, core->num->fvalue, f, d);
 		}
