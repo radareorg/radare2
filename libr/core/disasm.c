@@ -2473,7 +2473,6 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 		} else {
 			msg = r_str_newf ("%s", str);
 		}
-
 #endif
 		(void)r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
@@ -2585,6 +2584,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		esil->cb.hook_mem_write = mymemwrite1;
 	}
 	ds->esil_likely = 0;
+	r_anal_esil_set_pc (esil, ds->at);
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
 
@@ -2951,8 +2951,9 @@ toro:
 				ds->at += skip_bytes;
 		}
 		ds_show_flags (ds);
-		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW)
+		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
 			ds->at -= skip_bytes;
+		}
 		ds_instruction_mov_lea (ds, idx);
 		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);

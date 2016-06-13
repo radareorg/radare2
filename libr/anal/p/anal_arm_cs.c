@@ -753,11 +753,12 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_LDR:
 		addr &= ~3LL;
 		if (MEMDISP(1) < 0) {
+			const char *pc = "$$";
 			if (REGBASE(1) == ARM_REG_PC) {
 				op->refptr = 4;
 				op->ptr = addr + pcdelta - MEMDISP(1);
 				r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=",
-					"$$", MEMDISP(1), REG(0));
+					pc, MEMDISP(1), REG(0));
 			} else {
 				int disp = MEMDISP(1);
 				// not refptr, because we cant grab the reg value statically op->refptr = 4;
@@ -771,7 +772,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			}
 		} else {
 			if (REGBASE(1) == ARM_REG_PC) {
-				const char *pc = "$$"; //MEMBASE(1);
+				const char *pc = "$$";
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
