@@ -196,17 +196,18 @@ R_API void r_core_sysenv_help(const RCore* core) {
 
 R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 	// TODO: remove tmpfilez
-	if (strstr (cmd, "BLOCK")) {
+	if (strstr (cmd, "R2_BLOCK")) {
 		// remove temporary BLOCK file
-		char *f = r_sys_getenv ("BLOCK");
+		char *f = r_sys_getenv ("R2_BLOCK");
 		if (f) {
 			r_file_rm (f);
-			r_sys_setenv ("BLOCK", NULL);
+			r_sys_setenv ("R2_BLOCK", NULL);
 			free (f);
 		}
 	}
-	r_sys_setenv ("BYTES", NULL);
-	r_sys_setenv ("OFFSET", NULL);
+	r_sys_setenv ("R2_FILE", NULL);
+	r_sys_setenv ("R2_BYTES", NULL);
+	r_sys_setenv ("R2_OFFSET", NULL);
 }
 
 #if DISCUSS
