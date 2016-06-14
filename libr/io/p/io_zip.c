@@ -375,7 +375,6 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				ZIP_CREATE, mode, rw);
 		} else {
 			filename_in_zipfile = r_str_newf ("%s", zip_filename);
-			free (zip_filename);
 			zip_filename = strdup (pikaboo + 3);
 			if (!strcmp (zip_filename, filename_in_zipfile)) {
 				//R_FREE (zip_filename);
@@ -436,7 +435,6 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	}
 done:
 	free (filename_in_zipfile);
-	free (zip_filename);
 	free (zip_uri);
 	return res;
 }

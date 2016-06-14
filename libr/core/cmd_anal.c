@@ -4224,13 +4224,19 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				free (len);
 			}
 		} else {
+			ut64 at = core->offset;
+			ut64 from = r_num_get (core->num, "$S");
+			r_core_seek (core, from, 1);
 			r_core_anal_esil (core, "$SS", NULL);
+			r_core_seek (core, at, 1);
 		}
 		break;
 	case 'r':
 		(void)r_core_anal_refs (core, input + 1);
 		break;
-	default: r_core_cmd_help (core, help_msg_aa); break;
+	default:
+		r_core_cmd_help (core, help_msg_aa);
+		break;
 	}
 
 	return true;
