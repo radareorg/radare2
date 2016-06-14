@@ -277,8 +277,9 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		{
 			int i = 0;
 #define stringValueAppend(x) { \
-	if (i + 1 < sizeof (x)) nc->string_value[i++] = x; \
-	else nc->string_value[sizeof(nc->string_value)-1] = 0; \
+	const size_t max = sizeof (nc->string_value) - 1; \
+	if (i < max) nc->string_value[i++] = x; \
+	else nc->string_value[max] = 0; \
 }
 			stringValueAppend(ch);
 			if (ch == '[') {
@@ -299,17 +300,12 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 					stringValueAppend(ch);
 				}
 			}
-			stringValueAppend(ch);
+			stringValueAppend(0);
 			if (ch!='\'') {
 				cin_putback (num, nc, ch);
 			}
 			return nc->curr_tok = RNCNAME;
 		}
-/*
- * Unreacheable code:
-		error (num, nc, "bad token");
-		return nc->curr_tok = RNCPRINT;
-*/
 	}
 }
 
