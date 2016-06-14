@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -230,11 +230,12 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	if (!r_file_exists (str))
 		return NULL;
 	fd = r_sandbox_fopen (str, "rb");
-	if (fd == NULL)
+	if (!fd) {
 		return NULL;
-	fseek (fd, 0, SEEK_END);
+	}
+	(void)fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
-	if (sz==0) {
+	if (sz == 0) {
 		if (r_file_is_regular (str)) {
 			/* proc file */
 			fseek (fd, 0, SEEK_SET);
@@ -244,12 +245,12 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 			sz = 65536;
 		}
 	}
-	if (sz <0) {
+	if (sz < 0) {
 		fclose (fd);
 		return NULL;
 	}
 	fseek (fd, 0, SEEK_SET);
-	ret = (char *)calloc (sz+1, 1);
+	ret = (char *)calloc (sz + 1, 1);
 	if (!ret) {
 		fclose (fd);
 		return NULL;
@@ -275,8 +276,9 @@ R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail) {
 	out = r_inflate (in, sz, NULL, outlen);
 	if (!out && origonfail) {
 		// if uncompression fails, return orig buffer ?
-		if (outlen)
+		if (outlen) {
 			*outlen = sz;
+		}
 		in[sz] = 0;
 		return in;
 	}
@@ -289,11 +291,12 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	long sz;
 	int c, bytes = 0;
 	FILE *fd = r_sandbox_fopen (str, "r");
-	if (fd == NULL)
+	if (!fd) {
 		return NULL;
-	fseek (fd, 0, SEEK_END);
+	}
+	(void)fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
-	fseek (fd, 0, SEEK_SET);
+	(void)fseek (fd, 0, SEEK_SET);
 	ret = (ut8*)malloc ((sz>>1)+1);
 	if (!ret) {
 		fclose (fd);
@@ -482,9 +485,8 @@ R_API char *r_file_readlink(const char *path) {
 	if (!r_sandbox_enable (0)) {
 #if __UNIX__
 		int ret;
-		char pathbuf[4096];
-		strncpy (pathbuf, path, sizeof (pathbuf)-1);
-		pathbuf[sizeof (pathbuf)-1] = 0;
+		char pathbuf[4096] = {0};
+		strncpy (pathbuf, path, sizeof (pathbuf) - 1);
 		repeat:
 		ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
 		if (ret != -1) {
