@@ -4213,14 +4213,18 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	}
 	case 'e': // "aae"
-		{
-			char *len = strdup (input + 1);
-			char *addr = (len && *len) ? strchr (len + 1, ' ') : NULL;
-			if (addr) {
-				*addr++ = 0;
+		if (input[1] == ' ') {
+			char *len = strdup (input + 2);
+			if (len) {
+				char *addr = strchr (len, ' ');
+				if (addr) {
+					*addr++ = 0;
+				}
+				r_core_anal_esil (core, len, addr);
+				free (len);
 			}
-			r_core_anal_esil (core, len, addr);
-			free (len);
+		} else {
+			r_core_anal_esil (core, "$SS", NULL);
 		}
 		break;
 	case 'r':

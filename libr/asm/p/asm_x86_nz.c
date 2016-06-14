@@ -1105,10 +1105,10 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			ut8 rm_byte = 0x40;
 			int argk = (*arg == '[');
 			ut64 t;
-			if (*arg2 == '-') {
+			if (arg2 && *arg2 == '-') {
 				N = -1;
 				// Don't modify arg2 here as sign is needed further down
-				t = r_num_math (NULL, arg2+1);
+				t = r_num_math (NULL, arg2 + 1);
 			} else {
 				t = r_num_math (NULL, arg2);
 			}

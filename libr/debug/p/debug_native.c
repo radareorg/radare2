@@ -767,7 +767,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	region[1] = region2[1] = 'x';
 #if __KFBSD__
 	list = r_debug_native_sysctl_map (dbg);
-	if (list != NULL) return list;
+	if (list) {
+		return list;
+	}
 	snprintf (path, sizeof (path), "/proc/%d/map", dbg->pid);
 #else
 	snprintf (path, sizeof (path), "/proc/%d/maps", dbg->pid);
@@ -791,30 +793,32 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		if (!fgets (line, sizeof (line), fd))
 			break;
 		/* kill the newline if we got one */
-		line_len = strlen(line);
+		line_len = strlen (line);
 		if (line[line_len - 1] == '\n') {
 			line[line_len - 1] = '\0';
 			line_len--;
 		}
 		/* maps files should not have empty lines */
-		if (line_len == 0)
+		if (line_len == 0) {
 			break;
-
+		}
 #if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
 		if (sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
 				&region[2], &region2[2], &ign, &ign,
 				unkstr, perms, &ign, &ign) != 8) {
 			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
+			r_list_free (list);
 			return NULL;
 		}
 
 		/* snag the file name */
 		pos_c = strchr (line, '/');
-		if (pos_c)
+		if (pos_c) {
 			strncpy (name, pos_c, sizeof (name) - 1);
-		else
+		} else {
 			name[0] = '\0';
+		}
 #else
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
 		i = sscanf (line, "%s %s %*s %*s %*s %[^\n]", &region[2], perms, name);
@@ -823,6 +827,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		} else if (i != 3) {
 			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
 			eprintf ("%s: problematic line: %s\n", __func__, line);
+			r_list_free (list);
 			return NULL;
 		}
 
@@ -853,8 +858,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		}
 
 		map = r_debug_map_new (name, map_start, map_end, perm, 0);
-		if (!map)
+		if (!map) {
 			break;
+		}
 		map->file = strdup (name);
 		r_list_append (list, map);
 	}

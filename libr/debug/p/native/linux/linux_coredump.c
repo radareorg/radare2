@@ -23,12 +23,12 @@ typedef Elf32_Nhdr elf_nhdr_t;
 typedef ut64 elf_offset_t;
 #endif
 
-#define fmt_addr	"%08lx-%08lx"
-#define ELF_HDR_SIZE    sizeof(elf_hdr_t)
+#define fmt_addr "%08lx-%08lx"
+#define ELF_HDR_SIZE sizeof(elf_hdr_t)
 
 /*Some fields from note section must be padded to 4 or 8 bytes*/
-#define round_up(a)     ((((a) + (4) - (1)) / (4)) * (4))
-#define sizeof_round_up(b)      round_up(sizeof(b))
+#define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
+#define sizeof_round_up(b) round_up(sizeof(b))
 
 static map_file_t mapping_file = { 0, 0 };
 static note_info_t note_info[NT_LENGHT_T];
@@ -184,17 +184,17 @@ static proc_per_thread_t *get_proc_thread_content (int pid, int tid) {
         p_sighold[temp_p_sighold - p_sighold - 1] = '\0';
         t->sigpend = atoi (p_sigpend);
         t->sighold = atoi (p_sighold);
-
         free (buff);
         return t;
 }
 
 static prstatus_t *linux_get_prstatus(int pid, int tid, proc_content_t *proc_data, short int signr) {
 	elf_gregset_t regs;
-	prstatus_t *p = R_NEW0 (prstatus_t);
+	prstatus_t *p;
 
 	proc_data->per_thread = get_proc_thread_content (pid, tid);
 	if (!proc_data->per_thread) return NULL;
+	p = R_NEW0 (prstatus_t);
 	if (!p) return NULL;
 	p->pr_cursig = p->pr_info.si_signo = signr;
 	p->pr_pid = proc_data->per_process->pid;
@@ -215,6 +215,7 @@ static prstatus_t *linux_get_prstatus(int pid, int tid, proc_content_t *proc_dat
 	if (ptrace (PTRACE_GETREGS, tid, NULL, &regs) < 0) {
 		perror ("PTRACE_GETREGS");
 		free (proc_data->per_thread);
+		free (p);
 		return NULL;
 	}
 	memcpy (p->pr_reg, &regs, sizeof (regs));
@@ -224,7 +225,6 @@ static prstatus_t *linux_get_prstatus(int pid, int tid, proc_content_t *proc_dat
 
 static elf_fpregset_t *linux_get_fp_regset(int pid) {
 	elf_fpregset_t *p = R_NEW0 (elf_fpregset_t);
-
 	if (p) {
 		if (ptrace (PTRACE_GETFPREGS, pid, NULL, p) < 0) {
 			perror ("PTRACE_GETFPREGS");
@@ -505,7 +505,9 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 	R_FREE (file);
 
 	ret = r_debug_map_sync (dbg);
-	if (!ret) return NULL;
+	if (!ret) {
+		goto error;
+	}
 	r_list_foreach (dbg->maps, iter, map) {
 		linux_map_entry_t *pmentry = R_NEW0 (linux_map_entry_t);
 		if (!pmentry) goto error;
@@ -828,20 +830,30 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 		return NULL;
 	}
 	
-	temp_p_uid = strstr (buff, "Uid:");
-	temp_p_gid = strstr (buff, "Gid:");
 	/* Uid */
-	while (!isdigit (*temp_p_uid++))  {}
-	p_uid = temp_p_uid - 1;
-	while (isdigit (*temp_p_uid++)) {}
-	p_uid[temp_p_uid - p_uid - 1] = '\0';
-	/* Gid */
-	while (!isdigit (*temp_p_gid++)) {}
-	p_gid = temp_p_gid - 1;
-	while (isdigit (*temp_p_gid++)) {}
-	p_gid[temp_p_gid - p_gid - 1] = '\0';
+	temp_p_uid = strstr (buff, "Uid:");
+	if (temp_p_uid) {
+		while (!isdigit (*temp_p_uid++))  {}
+		p_uid = temp_p_uid - 1;
+		while (isdigit (*temp_p_uid++)) {}
+		p_uid[temp_p_uid - p_uid - 1] = '\0';
+	} else {
+		p_uid = 0;
+	}
 	p->uid = atoi (p_uid);
+
+	/* Gid */
+	temp_p_gid = strstr (buff, "Gid:");
+	if (temp_p_uid) {
+		while (!isdigit (*temp_p_gid++)) {}
+		p_gid = temp_p_gid - 1;
+		while (isdigit (*temp_p_gid++)) {}
+		p_gid[temp_p_gid - p_gid - 1] = '\0';
+	} else {
+		p_gid = 0;
+	}
 	p->gid = atoi (p_gid);
+
 	free (buff);
 
 	/* Check the coredump_filter value if we have*/
@@ -961,9 +973,10 @@ void write_note_hdr (note_type_t type, ut8 **note_data) {
 		note_type = NT_X86_XSTATE;
 		nhdr.n_descsz = note_info[type].size;
 		break;
-	case NT_LENGHT_T:
-		/* TODO: not yet implemented */
-		break;
+	default:
+		/* shouldnt happen */
+		memset (*note_data, 0, size_note_hdr);
+		return;
 	}
 
 	nhdr.n_type = note_type;
@@ -981,7 +994,8 @@ static int *get_unique_thread_id (RDebug *dbg, int n_threads) {
 	RListIter *it;
 	RList *list;
 	RDebugPid *th;
-	int *thread_id, i = 0;
+	int *thread_id = NULL;
+	int i = 0;
 	bool found = false;
 
 	if (dbg->h) {
@@ -1204,8 +1218,8 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 	note_data += note_info[type].size_roundedup;
 
 	detach_threads (dbg, thread_id, elf_proc_note->n_threads);
+	free (thread_id);
 	return pnote_data;
-
 fail:
 	free (elf_proc_note->thread_note->siginfo);
 	free (elf_proc_note->thread_note->prstatus);
@@ -1216,6 +1230,7 @@ fail:
 	free (elf_proc_note->thread_note->xsave_data);
 	free (pnote_data);
 	free (maps_data);
+	free (thread_id);
 	return NULL;
 }
 
@@ -1323,6 +1338,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	}
 	proc_data = R_NEW0 (proc_content_t);
 	if (!proc_data) {
+		free (elf_proc_note);
 		return false;
 	}
 	proc_data->per_process = get_proc_process_content (dbg);
@@ -1385,6 +1401,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 cleanup:
 	may_clean_all (elf_proc_note, proc_data, elf_hdr);
 	free (shdr_pxnum);
+	free (note_data);
 	return !error;
 }
 #endif

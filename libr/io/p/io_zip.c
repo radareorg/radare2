@@ -338,9 +338,11 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 							if (!strcmp (name, chkstr)) {
 								zip_filename = r_str_newf ("//%s", chkstr);
 								free (chkstr);
+								free (bin_name);
 								break;
 							}
 							free (chkstr);
+							free (bin_name);
 						}
 					}
 				}
@@ -373,6 +375,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				ZIP_CREATE, mode, rw);
 		} else {
 			filename_in_zipfile = r_str_newf ("%s", zip_filename);
+			free (zip_filename);
 			zip_filename = strdup (pikaboo + 3);
 			if (!strcmp (zip_filename, filename_in_zipfile)) {
 				//R_FREE (zip_filename);
@@ -406,8 +409,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			}
 			r_list_free (files);
 		}
-		free (zip_uri);
-		return res;
+		goto done;
 	}
 	//eprintf("After parsing the given uri: %s\n", file);
 	//eprintf("Zip filename the given uri: %s\n", zip_filename);
@@ -417,8 +419,9 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		filename_in_zipfile, ZIP_CREATE, mode, rw);
 
 	if (zfo) {
-		if (zfo->entry == -1)
+		if (zfo->entry == -1) {
 			eprintf ("Warning: File did not exist, creating a new one.\n");
+		}
 		zfo->io_backref = io;
 		res = r_io_desc_new (&r_io_plugin_zip, zfo->fd,
 			zfo->name, rw, mode, zfo);
@@ -431,8 +434,10 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		r_io_desc_free (res);
 		res = NULL;
 	}
-	free (zip_uri);
+done:
 	free (filename_in_zipfile);
+	free (zip_filename);
+	free (zip_uri);
 	return res;
 }
 
@@ -440,8 +445,9 @@ static ut64 r_io_zip_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RIOZipFileObj *zfo;
 	ut64 seek_val = 0;
 
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 
 	zfo = fd->data;
 	seek_val = zfo->b->cur;
