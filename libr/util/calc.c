@@ -276,28 +276,33 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	default:
 		{
 			int i = 0;
-			nc->string_value[i++] = ch;
+#define stringValueAppend(x) { \
+	if (i + 1 < sizeof (x)) nc->string_value[i++] = x; \
+	else nc->string_value[sizeof(nc->string_value)-1] = 0; \
+}
+			stringValueAppend(ch);
 			if (ch == '[') {
 				while (cin_get (num, nc, &ch) && ch!=']') {
 					if (i > R_NUMCALC_STRSZ - 1) {
 						error (num, nc, "string too long");
 						return 0;
 					}
-					nc->string_value[i++] = ch;
+					stringValueAppend(ch);
 				}
-				nc->string_value[i++] = ch;
+				stringValueAppend(ch);
 			} else {
 				while (cin_get (num, nc, &ch) && isvalidchar ((unsigned char)ch)) {
 					if (i>=R_NUMCALC_STRSZ) {
 						error (num, nc, "string too long");
 						return 0;
 					}
-					nc->string_value[i++] = ch;
+					stringValueAppend(ch);
 				}
 			}
-			nc->string_value[i] = 0;
-			if (ch!='\'')
+			stringValueAppend(ch);
+			if (ch!='\'') {
 				cin_putback (num, nc, ch);
+			}
 			return nc->curr_tok = RNCNAME;
 		}
 /*
