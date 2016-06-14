@@ -16,11 +16,11 @@ static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
 
         r_list_foreach (list, iter, c) {
                 if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
-                        if (ret>0) {
+                        if (ret > 0) {
                                 da = ret;
                                 db = 0;
                                 l = c->size;
-                        } else if (ret<0) {
+                        } else if (ret < 0) {
                                 da = 0;
                                 db = -ret;
                                 l = c->size-db;
@@ -31,31 +31,34 @@ static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
                         }
 			// say hello to integer overflow, but this won't happen in
 			// realistic scenarios because malloc will fail befor
-                        if ((l+da)>len) l = len-da;
-                        if (l<1) l = 1; // XXX: fail
-                        else memcpy (buf+da, c->data+db, l);
+                        if ((l + da) > len) {
+				l = len - da;
+			}
+			if (l > 0) {
+				memcpy (buf + da, c->data + db, l);
+			}
                 }
         }
         return len;
 }
 
 static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int len) {
-	if (!data) return NULL;
-// TODO: make it more smart to reuse the already sparse items
-	RBufferSparse *s = R_NEW0 (RBufferSparse);
-	if (!s) return NULL;
-	s->from = addr;
-	s->to = addr + len;
-	s->size = len;
-	s->odata = NULL;
-	s->data = calloc (1, len);
-	if (!s->data) {
-		free (s);
-		return NULL;
+	if (l && data && len > 0) {
+		RBufferSparse *s = R_NEW0 (RBufferSparse);
+		if (s) {
+			s->data = calloc (1, len);
+			if (s->data) {
+				s->from = addr;
+				s->to = addr + len;
+				s->size = len;
+				s->odata = NULL;
+				memcpy (s->data, data, len);
+				return r_list_append (l, s)? s: NULL;
+			}
+			free (s);
+		}
 	}
-	memcpy (s->data, data, len);
-	if (r_list_append (l, s) == NULL) return NULL;
-	return s;
+	return NULL;
 }
 
 //ret -1 if failed; # of bytes copied if success
@@ -65,7 +68,7 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 
 	r_list_foreach (l, iter, s) {
 		if (addr >= s->from && addr < s->to) {
-			int newlen = (addr+len) - s->to;
+			int newlen = addr + len - s->to;
 			int delta = addr - s->from;
 			if (newlen> 0) {
 				// must realloc
@@ -145,8 +148,9 @@ R_API RBuffer *r_buf_new_sparse() {
 
 R_API RBuffer *r_buf_new() {
 	RBuffer *b = R_NEW0 (RBuffer);
-	if (!b) return NULL;
-	b->fd = -1;
+	if (b) {
+		b->fd = -1;
+	}
 	return b;
 }
 
@@ -236,10 +240,12 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 		}
 	}
 	/* avoid out-of-bounds */
-	if (b->cur < min)
+	if (b->cur < min) {
 		b->cur = min;
-	if (b->cur >= max)
+	}
+	if (b->cur >= max) {
 		b->cur = max;
+	}
 	return (int)b->cur;
 }
 
