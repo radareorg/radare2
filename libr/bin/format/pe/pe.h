@@ -84,6 +84,7 @@ struct PE_(r_bin_pe_obj_t) {
 
 	int import_directory_size;
 	int size;
+	int num_sections;
 	int endian;
 	RList *relocs;
 	const char* file;
@@ -128,3 +129,4 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf);
 int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, struct SDebugInfo *res);
 int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t) *bin);
 int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin);
+void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t **sects);
