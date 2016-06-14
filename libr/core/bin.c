@@ -1255,11 +1255,15 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (IS_MODE_SET (mode)) {
 			if (is_arm) {
 				int force_bits = 0;
-				if (va && symbol->bits == 16)
+				if (va && symbol->bits == 16) {
 					force_bits = 16;
-				if (info->bits == 16 && symbol->bits == 32)
+				}
+				if (info->bits == 16 && symbol->bits == 32) {
 					force_bits = 32;
-				r_anal_hint_set_bits (r->anal, addr, force_bits);
+				}
+				if (force_bits) {
+					r_anal_hint_set_bits (r->anal, addr, force_bits);
+				}
 			}
 
 			if (!strncmp (symbol->name, "imp.", 4)) {

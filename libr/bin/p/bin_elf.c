@@ -306,7 +306,8 @@ static RList* symbols(RBinFile *arch) {
 
 		/* detect thumb */
 		ptr->bits = bin_bits;
-		if (bin->ehdr.e_machine == EM_ARM) {
+		if (bin_bits != 64 && bin->ehdr.e_machine == EM_ARM) {
+			ptr->bits = 32;
 			if (ptr->vaddr & 1) {
 				ptr->vaddr--;
 				ptr->bits = 16;
@@ -345,7 +346,8 @@ static RList* symbols(RBinFile *arch) {
 
 		/* detect thumb */
 		ptr->bits = bin_bits;
-		if (bin->ehdr.e_machine == EM_ARM) {
+		if (bin_bits != 64 && bin->ehdr.e_machine == EM_ARM) {
+			ptr->bits = 32;
 			if (ptr->vaddr & 1) {
 				ptr->vaddr--;
 				ptr->bits = 16;

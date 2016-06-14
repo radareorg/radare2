@@ -1561,7 +1561,9 @@ char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	/* Hack for ARCompact */
-	if (bin->ehdr.e_machine == EM_ARC_A5) return 16;
+	if (bin->ehdr.e_machine == EM_ARC_A5) {
+		return 16;
+	}
 	/* Hack for Thumb */
 	if (bin->ehdr.e_machine == EM_ARM) {
 		if (bin->ehdr.e_type != ET_EXEC) {
