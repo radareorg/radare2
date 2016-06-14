@@ -226,9 +226,9 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 
 		// necessary because otherwise you can read the same thing you
 		// wrote on fdm.
-		tcgetattr(0, &t);
-		cfmakeraw(&t);
-		tcsetattr(0, TCSANOW, &t);
+		tcgetattr (0, &t);
+		cfmakeraw (&t);
+		tcsetattr (0, TCSANOW, &t);
 
 		if (!in) dup2 (saved_stdin, STDIN_FILENO);
 		if (!out) dup2 (saved_stdout, STDOUT_FILENO);
@@ -236,16 +236,24 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 		close (saved_stdin);
 		close (saved_stdout);
 		close (saved_stderr);
+		saved_stdin = -1;
+		saved_stdout = -1;
+		saved_stderr = -1;
 		return 0;
-	} else {
-		// father
-		close (saved_stdin);
-		close (saved_stdout);
-		close (saved_stderr);
-		if (in) dup2 (fdm, STDOUT_FILENO);
-		if (out) dup2 (fdm, STDIN_FILENO);
-		exit (r_sys_cmd (cmd));
 	}
+	// father
+	if (saved_stdin != -1) {
+		close (saved_stdin);
+	}
+	if (saved_stdout != -1) {
+		close (saved_stdout);
+	}
+	if (saved_stderr != -1) {
+		close (saved_stderr);
+	}
+	if (in) dup2 (fdm, STDOUT_FILENO);
+	if (out) dup2 (fdm, STDIN_FILENO);
+	exit (r_sys_cmd (cmd));
 #else
 #warning handle_redirection_proc : unimplemented for this platform
 	return -1;

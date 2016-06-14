@@ -177,6 +177,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		}
 
 		strncpy (buf, buf_, sizeof (buf));
+		buf[sizeof (buf) - 1] = 0;
 		}
 		return strdup (buf);
 	}
