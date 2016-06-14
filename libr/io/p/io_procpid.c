@@ -82,7 +82,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 		}
 		fd = ret; //TODO: use r_io_fd api
 		snprintf (procpidpath, sizeof (procpidpath), "/proc/%d/mem", pid);
-		fd = r_sandbox_open (procpidpath, O_RDWR);
+		fd = r_sandbox_open (procpidpath, O_RDWR, 0);
 		if (fd != -1) {
 			RIOProcpid *riop = R_NEW0 (RIOProcpid);
 			if (!riop) {

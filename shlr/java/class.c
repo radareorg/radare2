@@ -2945,8 +2945,8 @@ R_API void r_bin_java_attribute_free (void/*RBinJavaAttrInfo*/* a) {
 	if (attr) {
 		IFDBG eprintf ("Deleting attr %s, %p\n", attr->name, attr);
 		((RBinJavaAttrMetas *) attr->metas->type_info)->allocs->delete_obj (attr);
-		free (attr->metas);
-		free (attr);
+		//free (attr->metas);
+		//free (attr);
 	}
 }
 
@@ -3796,7 +3796,7 @@ R_API RBinJavaAttrInfo* r_bin_java_source_code_file_attr_new (ut8 *buffer, ut64 
 	RBinJavaAttrInfo* attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
 	if (!attr || !sz) {
-		r_bin_java_attribute_free (attr);
+		//free (attr); //r_bin_java_attribute_free (attr);
 	    	return NULL;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_SOURCE_FILE_ATTR;
