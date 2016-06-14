@@ -273,6 +273,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		// run io->cmdstr
 		// return back the string
 		buf[0] |= RMT_REPLY;
+		memset (buf + 1, 0, 4);
 		ret = r_socket_read_block (s, buf + 1, 4);
 		cmdlen = r_read_at_be32 (buf, 1);
 		if (cmdlen + 1 == 0) // check overflow
@@ -328,10 +329,12 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 		}
 		free (ptr);
 	}
+#if DEAD_CODE
 	/* Clean */
 	if (ret > 0) {
 		ret -= r_socket_read (s, (ut8*)buf, RMT_MAX);
 	}
+#endif
 	return i - j;
 }
 

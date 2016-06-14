@@ -68,12 +68,14 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 			return false;
 		}
 		r_list_foreach (sections, iter, section) {
-			if (section->vaddr==0)
+			if (section->vaddr==0) {
 				continue;
+			}
 			if (section->vaddr > tmp_vaddr) {
-				range = r_io_range_new();			//create a new range
+				range = r_io_range_new ();			//create a new range
 				if (!range) {
 					r_list_free (ranges);
+					r_list_free (sections);
 					return false;
 				}
 				range->from = tmp_vaddr;			//record unsectioned area

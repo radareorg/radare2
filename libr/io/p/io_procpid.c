@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2016 - pancake */
 
 #include <r_userconf.h>
 
@@ -6,16 +6,12 @@
 #include <r_lib.h>
 #include <r_cons.h>
 
-// XXX: maybe it works on other OS
 #if __linux__
 
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
-
-//static int fd;
-//static int pid;
 
 typedef struct {
 	int fd;
@@ -31,8 +27,9 @@ static int __waitpid(int pid) {
 }
 
 static int debug_os_read_at(int fdn, void *buf, int sz, ut64 addr) {
-	if (lseek (fdn, addr, 0) < 0)
+	if (lseek (fdn, addr, 0) < 0) {
 		return -1;
+	}
 	return read (fdn, buf, sz);
 }
 
@@ -43,8 +40,9 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int procpid_write_at(int fd, const ut8 *buf, int sz, ut64 addr) {
-	if ( lseek (fd, addr, 0) < 0)
+	if ( lseek (fd, addr, 0) < 0) {
 		return -1;
+	}
 	return write (fd, buf, sz);
 }
 
@@ -59,8 +57,8 @@ static int __plugin_open(struct r_io_t *io, const char *file, ut8 many) {
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	char procpidpath[64];
 	int fd, ret = -1;
-	if (__plugin_open (io, file,0)) {
-		int pid = atoi (file+10);
+	if (__plugin_open (io, file, 0)) {
+		int pid = atoi (file + 10);
 		if (file[0]=='a') {
 			ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 			if (ret == -1) {
@@ -74,24 +72,30 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 					eprintf ("ERRNO: %d (EINVAL)\n", errno);
 					break;
 				}
-			} else
-			if (__waitpid(pid))
+			} else if (__waitpid(pid)) {
 				ret = pid;
-			else eprintf ("Error in waitpid\n");
-		} else ret = pid;
-		fd = ret;//TODO: use r_io_fd api
+			} else {
+				eprintf ("Error in waitpid\n");
+			}
+		} else {
+			ret = pid;
+		}
+		fd = ret; //TODO: use r_io_fd api
 		snprintf (procpidpath, sizeof (procpidpath), "/proc/%d/mem", pid);
-		fd = open (procpidpath, O_RDWR);
+		fd = r_sandbox_open (procpidpath, O_RDWR);
 		if (fd != -1) {
 			RIOProcpid *riop = R_NEW0 (RIOProcpid);
-			if (!riop) return NULL;
+			if (!riop) {
+				close (fd);
+				return NULL;
+			}
 			riop->pid = pid;
 			riop->fd = fd;
 			return r_io_desc_new (&r_io_plugin_procpid, -1, file, true, 0, riop);
 		}
 		/* kill children */
 		eprintf ("Cannot open /proc/%d/mem of already attached process\n", pid);
-		ptrace (PTRACE_DETACH, pid, 0, 0);
+		(void)ptrace (PTRACE_DETACH, pid, 0, 0);
 	}
 	return NULL;
 }
@@ -109,12 +113,11 @@ static int __close(RIODesc *fd) {
 
 static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 	RIOProcpid *iop = (RIOProcpid*)fd->data;
-	//printf("ptrace io command (%s)\n", cmd);
-	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "pid")) {
 		int pid = atoi (cmd+4);
-		if (pid != 0)
+		if (pid != 0) {
 			iop->pid = pid;
+		}
 		io->cb_printf ("%d\n", iop->pid);
 		return 0;
 	} else eprintf ("Try: '=!pid'\n");
@@ -137,13 +140,8 @@ RIOPlugin r_io_plugin_procpid = {
 	.system = __system,
 	.init = __init,
 	.write = __write,
-        //void *widget;
-/*
-        struct debug_t *debug;
-        ut32 (*write)(int fd, const ut8 *buf, ut32 count);
-	int fds[R_IO_NFDS];
-*/
 };
+
 #else
 struct r_io_plugin_t r_io_plugin_procpid = {
 	.name = NULL

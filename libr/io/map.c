@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -337,7 +337,6 @@ R_API void r_io_map_list (RIO *io, int mode) {
 	RListIter *iter;
 	if (io && io->maps && io->cb_printf) {
 		r_list_foreach (io->maps, iter, map) {
-			if (!map) continue;
 			switch (mode) {
 			case 1:
 			case 'r':
