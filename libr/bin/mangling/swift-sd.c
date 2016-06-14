@@ -471,9 +471,11 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 								strcat (out, ", ");
 							}
 						} else {
-							strcat (out, " -> ");
-							STRCAT_BOUNDS (strlen (attr));
-							strcat (out, attr);
+							if (attr) {
+								strcat (out, " -> ");
+								STRCAT_BOUNDS (strlen (attr));
+								strcat (out, attr);
+							}
 						}
 					} else {
 						if (attr) {

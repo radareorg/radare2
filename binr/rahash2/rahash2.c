@@ -296,7 +296,7 @@ static void algolist() {
 	hashstr = x;\
 }
 
-static int is_power_of_two(const ut64 x) {
+static bool is_power_of_two(const ut64 x) {
 	return x && !(x & (x - 1));
 }
 
@@ -353,6 +353,7 @@ static int encrypt_or_decrypt_file (const char *algo, int direction, char *filen
 
 				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
 					eprintf ("Invalid IV.\n");
+					free (buf);
 					return 0;
 				}
 

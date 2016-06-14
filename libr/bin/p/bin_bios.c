@@ -16,8 +16,9 @@ static Sdb* get_sdb (RBinObject *o) {
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	// XXX: this may be wrong if check_bytes is true
+	if (!check_bytes (buf, sz)) {
+		return NULL;
+	}
 	return R_NOTNULL;
 }
 
@@ -71,8 +72,9 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	if ((buf) && (length > 0xffff)) {
 		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
 		/* Check if this a 'jmp' opcode */
-		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9))
+		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9)) {
 			return 1;
+		}
 	}
 	return 0;
 }

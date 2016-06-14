@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015 - pancake */
+/* radare2 - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -25,9 +25,12 @@ static int check_bytes(const ut8 *buf, ut64 length);
 static SBLHDR sb = {0};
 
 static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = r_buf_size (arch->buf);
-	return check_bytes (bytes, sz);
+	if (arch && arch->buf) {
+		const ut8 *bytes = r_buf_buffer (arch->buf);
+		ut64 sz = r_buf_size (arch->buf);
+		return check_bytes (bytes, sz);
+	}
+	return false;
 }
 
 static int check_bytes(const ut8 *buf, ut64 bufsz) {
