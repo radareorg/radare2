@@ -49,6 +49,8 @@ typedef struct r_io_t {
 	int cached;
 	int cached_read;
 	int buffer_enabled;
+	int debug;
+#warning remove debug from RIO
 	ut32 map_id;
 	ut32 sec_id;
 	SdbList *freed_map_ids;

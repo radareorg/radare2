@@ -420,7 +420,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			RIOSection *s;
 			*from = *to = core->offset;
 			r_list_foreach (core->io->sections, iter, s) {
-				if (*from >= s->offset && *from < (s->offset+s->size)) {
+				if (*from >= s->addr && *from < (s->addr+s->size)) {
 					*from = s->vaddr;
 					*to = s->vaddr+s->vsize;
 					break;
@@ -477,7 +477,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			if (!strcmp (mode, "io.sections.write")) mask = R_IO_WRITE;
 
 			r_list_foreach (core->io->sections, iter, s) {
-				if (!mask || (s->rwx & mask)) {
+				if (!mask || (s->flags & mask)) {
 					if (!list) {
 						list = r_list_newf (free);
 						maplist = true;
@@ -490,7 +490,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					map->fd = s->fd;
 					map->from = s->vaddr;
 					map->to = s->vaddr + s->size;
-					map->flags = s->rwx;
+					map->flags = s->flags;
 					map->delta = 0;
 					if (!(map->flags & protection)) {
 						R_FREE (map);
@@ -1446,7 +1446,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	int ret;
 
 	if (json) r_cons_printf("[");
-	int oraise = core->io->raised;
+	int oraise = core->io->desc->fd;
 	int bufsz;
 	RListIter *iter;
 	RIOMap *map;
@@ -1489,7 +1489,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			searchhits = 0;
 
 			r_io_raise (core->io, map->fd);
-			fd = core->io->raised;
+			fd = core->io->desc->fd;
 			if (fd == -1 && core->io->desc) {
 				fd = core->io->desc->fd;
 			}

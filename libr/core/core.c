@@ -311,7 +311,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'b': return core->blocksize;
 		case 's':
 			if (core->file) {
-				return r_io_desc_size (core->io, core->file->desc);
+				return r_io_desc_size (core->file->desc);
 			}
 			return 0LL;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
@@ -1608,7 +1608,10 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	//signal (SIGPIPE, SIG_DFL);
 #endif
 reaccept:
+#warning check this
+#if 0
 	core->io->plugin = NULL;
+#endif
 	r_cons_break (rap_break, rior);
 	while (!core->cons->breaked) {
 		c = r_socket_accept (fd);
@@ -1653,7 +1656,7 @@ reaccept:
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,
-								R_IO_READ, 0, 0, r_io_desc_size (core->io, file->desc));
+								R_IO_READ, 0, 0, r_io_desc_size (file->desc));
 						if (core->file && core->file->desc) {
 							pipefd = core->file->desc->fd;
 						} else {
@@ -1820,7 +1823,7 @@ reaccept:
 					x = core->offset;
 				} else {
 					if (core->file) {
-						x = r_io_desc_size (core->io, core->file->desc);
+						x = r_io_desc_size (core->file->desc);
 					} else {
 						x = 0;
 					}
