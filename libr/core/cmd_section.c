@@ -7,11 +7,11 @@ static int __dump_sections_to_disk(RCore *core) {
 
 	r_list_foreach (core->io->sections, iter, s) {
 		ut8 *buf = malloc (s->size);
-		r_io_read_at (core->io, s->offset, buf, s->size);
+		r_io_read_at (core->io, s->addr, buf, s->size);
 		snprintf (file, sizeof(file),
 			"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 			s->vaddr, s->vaddr+s->size,
-			r_str_rwx_i (s->rwx));
+			r_str_rwx_i (s->flags));
 		if (!r_file_dump (file, buf, s->size, 0)) {
 			eprintf ("Cannot write '%s'\n", file);
 			free (buf);
@@ -32,9 +32,9 @@ static int __dump_section_to_disk(RCore *core, char *file) {
 	if (core->io->va || core->io->debug)
 		o = r_io_section_vaddr_to_maddr_try (core->io, o);
 	r_list_foreach (core->io->sections, iter, s) {
-		if (o >= s->offset && o < s->offset + s->size) {
+		if (o >= s->addr && o < s->addr + s->size) {
 			ut8 *buf = malloc (s->size);
-			r_io_read_at (core->io, s->offset, buf, s->size);
+			r_io_read_at (core->io, s->addr, buf, s->size);
 			if (!file) {
 				heapfile = (char *)malloc (len * sizeof(char));
 				if (!heapfile) {
@@ -44,7 +44,7 @@ static int __dump_section_to_disk(RCore *core, char *file) {
 				snprintf (file, len,
 					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					s->vaddr, s->vaddr+s->size,
-					r_str_rwx_i (s->rwx));
+					r_str_rwx_i (s->flags));
 			}
 			if (!r_file_dump (file, buf, s->size, 0)) {
 				eprintf ("Cannot write '%s'\n", file);
@@ -194,7 +194,7 @@ static int cmd_section(void *data, const char *input) {
 		if (core->io->va || core->io->debug)
 			o = r_io_section_vaddr_to_maddr_try (core->io, o);
 		r_list_foreach (core->io->sections, iter, s) {
-			if (o >= s->offset && o < s->offset + s->size) {
+			if (o >= s->addr && o < s->addr + s->size) {
 				int sz;
 				char *buf = r_file_slurp (input + 2, &sz);
 				// TODO: use mmap here. we need a portable implementation
@@ -297,10 +297,10 @@ static int cmd_section(void *data, const char *input) {
 		if (core->io->va || core->io->debug)
 			o = r_io_section_vaddr_to_maddr_try (core->io, o);
 		r_list_foreach (core->io->sections, iter, s) {
-			if (o >= s->offset && o < s->offset + s->size) {
+			if (o >= s->addr && o < s->addr + s->size) {
 				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-					s->offset + s->vaddr,
-					s->offset + s->vaddr + s->size,
+					s->addr + s->vaddr,
+					s->addr + s->vaddr + s->size,
 					s->name);
 				break;
 			}

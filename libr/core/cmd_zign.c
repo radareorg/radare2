@@ -134,7 +134,7 @@ static int cmd_zign(void *data, const char *input) {
 			} else {
 				s = r_io_section_vget (core->io, core->io->off);
 				if (s) {
-					ini = core->io->va?s->vaddr:s->offset;
+					ini = core->io->va?s->vaddr:s->addr;
 					fin = ini + (core->io->va?s->vsize:s->size);
 				} else {
 					eprintf ("No section identified, please provide range.\n");
