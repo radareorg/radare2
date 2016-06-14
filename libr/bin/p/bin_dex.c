@@ -16,7 +16,7 @@
 #define dprintf if (0)eprintf
 #endif
 
-static Sdb *mdb= NULL;
+static Sdb *mdb = NULL;
 
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);

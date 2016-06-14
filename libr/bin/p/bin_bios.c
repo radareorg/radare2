@@ -71,6 +71,11 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if ((buf) && (length > 0xffff)) {
 		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
+		/* hacky check to avoid detecting multidex bins as bios */
+		/* need better fix for this */
+		if (!memcmp (buf, "dex", 3)) {
+			return 0;
+		}
 		/* Check if this a 'jmp' opcode */
 		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9)) {
 			return 1;
