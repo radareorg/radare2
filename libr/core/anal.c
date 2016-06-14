@@ -1389,7 +1389,7 @@ static int cmpfcn(const void *_a, const void *_b) {
 }
 
 /* Fill out metadata struct of functions */
-static int r_core_anal_fcn_gather_metadata(RList *fcns) {
+static int fcnlist_gather_metadata(RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 
@@ -1429,7 +1429,7 @@ static int r_core_anal_fcn_gather_metadata(RList *fcns) {
 	return 0;
 }
 
-static char *r_core_get_function_name(RCore *core, RAnalFunction *fcn) {
+static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 	bool demangle;
 	const char *lang;
 	demangle = r_config_get_i (core->config, "bin.demangle");
@@ -1448,8 +1448,8 @@ static char *r_core_get_function_name(RCore *core, RAnalFunction *fcn) {
 }
 
 #define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %4d %4d %5d %s%s\n"
-static int r_core_anal_fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
-	char *name = r_core_get_function_name(core, fcn);
+static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
+	char *name = get_fcn_name(core, fcn);
 
 	const char *color = "";
 	const char *color_end = "";
@@ -1483,7 +1483,7 @@ static int r_core_anal_fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool u
 	return 0;
 }
 
-static int r_core_anal_fcn_list_verbose(RCore *core, RList *fcns) {
+static int fcn_list_verbose(RCore *core, RList *fcns) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
 
 	r_cons_printf ("%-11s %4s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
@@ -1496,17 +1496,17 @@ static int r_core_anal_fcn_list_verbose(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		r_core_anal_fcn_print_verbose (core, fcn, use_color);
+		fcn_print_verbose (core, fcn, use_color);
 	}
 
 	return 0;
 }
 
-static int r_core_anal_fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
+static int fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
-		char *msg, *name = r_core_get_function_name (core, fcn);
+		char *msg, *name = get_fcn_name (core, fcn);
 		int realsize = r_anal_fcn_realsize (fcn);
 		int size = r_anal_fcn_size (fcn);
 		if (realsize == size) {
@@ -1522,11 +1522,11 @@ static int r_core_anal_fcn_print_default(RCore *core, RAnalFunction *fcn, bool q
 	return 0;
 }
 
-static int r_core_anal_fcn_list_default(RCore *core, RList *fcns, bool quiet) {
+static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		r_core_anal_fcn_print_default (core, fcn, quiet);
+		fcn_print_default (core, fcn, quiet);
 	}
 	if (quiet) {
 		r_cons_newline ();
@@ -1534,11 +1534,11 @@ static int r_core_anal_fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 	return 0;
 }
 
-static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
+static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
 	int first = 1;
-	char *name = r_core_get_function_name (core, fcn);
+	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
@@ -1610,22 +1610,22 @@ static int r_core_anal_fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int r_core_anal_fcn_list_json(RCore *core, RList *fcns) {
+static int fcn_list_json(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	int first = 1;
 	r_cons_printf ("[");
 	r_list_foreach (fcns, iter, fcn) {
 		if (!first) r_cons_printf (",");
-		r_core_anal_fcn_print_json (core, fcn);
+		fcn_print_json (core, fcn);
 		first = 0;
 	}
 	r_cons_printf ("]\n");
 	return 0;
 }
 
-static int r_core_anal_fcn_print_detail(RCore *core, RAnalFunction *fcn) {
-	char *name = r_core_get_function_name (core, fcn);
+static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
+	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("f %s %d 0x%08"PFMT64x"\n", name, r_anal_fcn_size (fcn), fcn->addr);
 	r_cons_printf ("af+ 0x%08"PFMT64x" %d %s %c %c\n",
 			fcn->addr, r_anal_fcn_size (fcn), name,
@@ -1646,11 +1646,11 @@ static int r_core_anal_fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
+static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
 	RAnalVar *vari;
-	char *name = r_core_get_function_name (core, fcn);
+	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
 	r_cons_printf ("\n realsz: %d", r_anal_fcn_realsize (fcn));
@@ -1711,22 +1711,22 @@ static int r_core_anal_fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int r_core_anal_fcn_list_detail(RCore *core, RList *fcns) {
+static int fcn_list_detail(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		r_core_anal_fcn_print_detail (core, fcn);
+		fcn_print_detail (core, fcn);
 	}
 	r_cons_newline ();
 	return 0;
 }
 
-static int r_core_anal_fcn_list_legacy(RCore *core, RList *fcns)
+static int fcn_list_legacy(RCore *core, RList *fcns)
 {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		r_core_anal_fcn_print_legacy (core, fcn);
+		fcn_print_legacy (core, fcn);
 	}
 	r_cons_newline ();
 	return 0;
@@ -1737,7 +1737,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	if (r_list_empty (fcns)) return 0;
 
 	r_list_sort (fcns, &cmpfcn);
-	r_core_anal_fcn_gather_metadata (fcns);
+	fcnlist_gather_metadata (fcns);
 
 	if (input) {		// input points to a filter argument
 		ut64 addr;
@@ -1764,22 +1764,22 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		r_core_anal_fcn_list_size (core);
 		break;
 	case 'l':
-		r_core_anal_fcn_list_verbose (core, fcns);
+		fcn_list_verbose (core, fcns);
 		break;
 	case 'q':
-		r_core_anal_fcn_list_default (core, fcns, true);
+		fcn_list_default (core, fcns, true);
 		break;
 	case 'j':
-		r_core_anal_fcn_list_json (core, fcns);
+		fcn_list_json (core, fcns);
 		break;
 	case '*':
-		r_core_anal_fcn_list_detail (core, fcns);
+		fcn_list_detail (core, fcns);
 		break;
 	case 1:
-		r_core_anal_fcn_list_legacy (core, fcns);
+		fcn_list_legacy (core, fcns);
 		break;
 	default:
-		r_core_anal_fcn_list_default (core, fcns, false);
+		fcn_list_default (core, fcns, false);
 		break;
 	}
 	if (input) {
