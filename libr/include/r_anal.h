@@ -276,6 +276,17 @@ typedef struct r_anal_fcn_store_t {
 	RList *l;
 } RAnalFcnStore;
 
+/* Stores useful function metadata */
+/* TODO: Think about moving more stuff to this structure? */
+typedef struct r_anal_fcn_meta_t {
+	ut64 min;           // min address
+	ut64 max;           // max address
+	int numrefs;        // number of cross references
+	int numcallrefs;    // number of calls
+	int sgnc;           // node cardinality of the functions callgraph
+	int sgec;           // edge cardinality of the functions callgraph
+} RAnalFcnMeta;
+
 /* Store various function information,
  * variables, arguments, refs and even
  * description */
@@ -312,6 +323,7 @@ typedef struct r_anal_type_function_t {
 	RList *refs;
 	RList *xrefs;
 #endif
+    RAnalFcnMeta meta;
 } RAnalFunction;
 
 struct r_anal_type_t {
