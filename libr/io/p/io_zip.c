@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake
+/* radare - LGPL - Copyright 2012-2016 - pancake
    io_zip.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 
@@ -28,6 +28,7 @@ typedef struct r_io_zip_uri_const_t {
 static RIOZipConstURI ZIP_URIS[] = {
 	{"zip://", 6},
 	{"apk://", 6},
+	{"ipa://", 6},
 	{"jar://", 6},
 	{NULL, 0}
 };
@@ -35,6 +36,7 @@ static RIOZipConstURI ZIP_URIS[] = {
 static RIOZipConstURI ZIP_ALL_URIS[] = {
 	{"zipall://", 9},
 	{"apkall://", 9},
+	{"ipaall://", 9},
 	{"jarall://", 9},
 	{NULL, 0}
 };
@@ -57,10 +59,8 @@ typedef struct r_io_zfo_t {
 
 static int r_io_zip_realloc_buf(RIOZipFileObj *zfo, int count);
 static int r_io_zip_truncate_buf(RIOZipFileObj *zfo, int size);
-int r_io_zip_slurp_file(RIOZipFileObj *zfo);
+static int r_io_zip_slurp_file(RIOZipFileObj *zfo);
 //static int r_io_zip_check_file(const char *file);
-int r_io_zip_open_zip_file(RIOZipFileObj * zfo);
-void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo);
 RIODesc *check_zip_file_open(RIO *io, const char* filename);
 RList *r_io_zip_get_files(char *archivename, ut32 flags, int mode, int rw);
 RIOZipFileObj * r_io_zip_create_new_file(const char *archivename, const char *filename, struct zip_stat *sb, ut32 flags, int mode, int rw);
@@ -92,7 +92,7 @@ static int r_io_zip_check_uri(const char *file) {
 	int i = 0;
 	if (r_io_zip_has_uri_substr (file)) {
 		for (i = 0; ZIP_URIS[i].name != NULL; i++) {
-			if (!memcmp (file, ZIP_URIS[i].name, ZIP_URIS[i].len) && file[ZIP_URIS[i].len]) {
+			if (!strncmp (file, ZIP_URIS[i].name, ZIP_URIS[i].len) && file[ZIP_URIS[i].len]) {
 				res = true;
 				break;
 			}
@@ -106,17 +106,13 @@ static int r_io_zip_check_uri_many(const char *file) {
 	int i = 0;
 	if (r_io_zip_has_uri_substr (file)) {
 		for (i = 0; ZIP_ALL_URIS[i].name != NULL; i++) {
-			if (!memcmp (file, ZIP_ALL_URIS[i].name, ZIP_ALL_URIS[i].len) && file[ZIP_ALL_URIS[i].len]) {
+			if (!strncmp (file, ZIP_ALL_URIS[i].name, ZIP_ALL_URIS[i].len) && file[ZIP_ALL_URIS[i].len]) {
 				res = true;
 				break;
 			}
 		}
 	}
 	return res;
-}
-
-int r_io_zip_open_zip_file(RIOZipFileObj * zfo) {
-	return zfo->opened;
 }
 
 struct zip * r_io_zip_open_archive(const char *archivename, ut32 flags, int mode, int rw) {
@@ -145,23 +141,8 @@ struct zip * r_io_zip_open_archive(const char *archivename, ut32 flags, int mode
 	return zipArch;
 }
 
-#if 0
-static int r_io_zip_check_file(const char *file) {
-	int res = false;
-	ut8 buf[10];
-	FILE * fp = r_sandbox_fopen (file, "rb");
-	if (file && fp) {
-		fread (buf, 1, 10, fp);
-		if (!memcmp (buf, "\x50\x4b\x03\x04", 4))
-			res = true;
-		fclose (fp);
-	}
-	return res;
-}
-#endif
-
-int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
-	int res = false;
+static int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
+	bool res = false;
 	struct zip_stat sb;
 	struct zip_file *zFile = NULL;
 	struct zip * zipArch ;
@@ -172,7 +153,6 @@ int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 	zipArch = r_io_zip_open_archive (
 		zfo->archivename, zfo->flags,
 		zfo->mode, zfo->rw);
-	//eprintf("Slurping file");
 
 	if (zipArch && zfo && zfo->entry != -1) {
 		zFile = zip_fopen_index (zipArch, zfo->entry, 0);
@@ -251,7 +231,7 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 	return res;
 }
 
-void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo) {
+static void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo) {
 	if (!zfo) return;
 	if (zfo->modified) {
 		r_io_zip_flush_file (zfo);
@@ -302,7 +282,6 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 
 		if (filename_in_zipfile[v-1] == '/') continue;
 
-
 		zfo = r_io_zip_alloc_zipfileobj (zip_filename,
 			filename_in_zipfile, ZIP_CREATE, mode, rw);
 
@@ -322,18 +301,55 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 	r_list_free (filenames);
 	return list_fds;
 }
+
 static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *res = NULL;
+	char *pikaboo;
 	RIOZipFileObj *zfo = NULL;
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
 
-	if (!r_io_zip_plugin_open (io, file, 0))
+	if (!r_io_zip_plugin_open (io, file, 0)) {
 		return res;
+	}
 	zip_uri = strdup (file);
 	if (!zip_uri) return NULL;
-	// 1) Tokenize to the '//' and find the base file directory ('/')
-	zip_filename = strstr(zip_uri, "//");
-	if (zip_filename && zip_filename[2]) {
+	pikaboo = strstr (zip_uri, "://");
+	if (pikaboo) {
+		zip_filename = strstr (pikaboo + 3, "//");
+		// 1) Tokenize to the '//' and find the base file directory ('/')
+		if (!zip_filename) {
+			if (!strncmp (zip_uri, "apk://", 6)) {
+				zip_filename = r_str_newf ("//%s//classes.dex", pikaboo + 3);
+			} else if (!strncmp (zip_uri, "ipa://", 6)) {
+				RList *files = NULL;
+				RListIter *iter;
+				char *name;
+				zip_filename = pikaboo + 3;
+				files = r_io_zip_get_files (zip_filename, 0, mode, rw );
+
+				if (files) {
+					r_list_foreach (files, iter, name) {
+						/* Find matching file */
+						char *bin_name = strstr (name, ".app/");
+						if (bin_name) {
+							const char *slash = r_str_rchr (name, bin_name, '/');
+							bin_name = r_str_ndup (slash + 1, (bin_name - slash) -1);
+							char *chkstr = r_str_newf ("Payload/%s.app/%s", bin_name);
+							if (!strcmp (name, chkstr)) {
+								zip_filename = r_str_newf ("//%s", chkstr);
+								free (chkstr);
+								break;
+							}
+							free (chkstr);
+						}
+					}
+				}
+			} else {
+				zip_filename = pikaboo + 1;
+			}
+		}
+	}
+	if (zip_filename && zip_filename[1] && zip_filename[2]) {
 		if (zip_filename[0] && zip_filename[0] == '/' &&
 			zip_filename[1] && zip_filename[1] == '/' ) {
 			*zip_filename++ = 0;
@@ -341,8 +357,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		*zip_filename++ = 0;
 
 		// check for // for file in the archive
-		if ( (filename_in_zipfile = strstr(zip_filename, "//")) &&
-			 filename_in_zipfile[2]) {
+		if ( (filename_in_zipfile = strstr (zip_filename, "//")) && filename_in_zipfile[2]) {
 			// null terminating uri to filename here.
 			*filename_in_zipfile++ = 0;
 			*filename_in_zipfile++ = 0;
@@ -356,28 +371,36 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			filename_in_zipfile = r_io_zip_get_by_file_idx (
 				zip_filename, filename_in_zipfile,
 				ZIP_CREATE, mode, rw);
+		} else {
+			filename_in_zipfile = r_str_newf ("%s", zip_filename);
+			zip_filename = strdup (pikaboo + 3);
+			if (!strcmp (zip_filename, filename_in_zipfile)) {
+				//R_FREE (zip_filename);
+				R_FREE (filename_in_zipfile);
+			}
 		}
 	}
 
 	if (!zip_filename) {// && !filename_in_zipfile) {
-		free (zip_uri);
+		//free (zip_uri);
 		eprintf ("usage: zip:///path/to/archive//filepath\n"
 			"usage: zip:///path/to/archive::[number]\n"
 			"Archive was not found.\n");
-		return res;
+		//return res;
 	}
 
 	// Failed to find the file name the archive.
 	if (!filename_in_zipfile) {
 		RList *files = NULL;
-		RListIter *iter, *iter_tmp;
+		RListIter *iter;
 		char *name;
 		//eprintf("usage: zip:///path/to/archive//filepath\n");
-		files = r_io_zip_get_files (zip_filename, 0, mode, rw );
+		files = r_io_zip_get_files (zip_filename, 0, mode, rw);
+		files = r_io_zip_get_files (zip_filename, 0, mode, rw);
 
 		if (files) {
 			ut32 i = 0;
-			r_list_foreach_safe (files, iter, iter_tmp, name) {
+			r_list_foreach (files, iter, name) {
 				io->cb_printf ("%d %s\n", i, name);
 				i++;
 			}
@@ -607,16 +630,16 @@ RIOZipFileObj* r_io_zip_alloc_zipfileobj(const char *archivename, const char *fi
 
 RIOZipFileObj *r_io_zip_create_new_file(const char *archivename, const char *filename, struct zip_stat *sb, ut32 flags, int mode, int rw) {
 	RIOZipFileObj *zfo = R_NEW0 (RIOZipFileObj);
-	if (!zfo)
-		return NULL;
-	zfo->b = r_buf_new ();
-	zfo->archivename = strdup (archivename);
-	zfo->name = strdup (sb?sb->name:filename);
-	zfo->entry = sb == NULL ? -1 : sb->index;
-	zfo->fd = r_num_rand (0xFFFF); // XXX: Use r_io_fd api
-	zfo->flags = flags;
-	zfo->mode = mode;
-	zfo->rw = rw;
+	if (zfo) {
+		zfo->b = r_buf_new ();
+		zfo->archivename = strdup (archivename);
+		zfo->name = strdup (sb? sb->name: filename);
+		zfo->entry = sb == NULL ? -1 : sb->index;
+		zfo->fd = r_num_rand (0xFFFF); // XXX: Use r_io_fd api
+		zfo->flags = flags;
+		zfo->mode = mode;
+		zfo->rw = rw;
+	}
 	return zfo;
 }
 
