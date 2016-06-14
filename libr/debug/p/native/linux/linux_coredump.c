@@ -108,6 +108,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 	}
 
 	strncpy (p->pr_psargs, ppsargs, sizeof (p->pr_psargs));
+	p->pr_psargs[sizeof (p->pr_psargs)-1] = 0;
 	free (buffer);
 	free (ppsargs);
 	free (pfname);

@@ -152,10 +152,14 @@ RList *linux_thread_list (int pid, RList *list) {
 #define MAXPID 99999
 		for (i = pid; i < MAXPID; i++) { // XXX
 			snprintf (cmdline, sizeof(cmdline), "/proc/%d/status", i);
-			if (fd != -1)
+			if (fd != -1) {
 				close (fd);
+				fd = -1;
+			}
 			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) continue;
+			if (fd == -1) {
+				continue;
+			}
 			if (read (fd, cmdline, 1024)<2) {
 				// read error
 				close (fd);
@@ -167,6 +171,7 @@ RList *linux_thread_list (int pid, RList *list) {
 				int tgid = atoi (ptr + 5);
 				if (tgid != pid) {
 					close (fd);
+					fd = -1;
 					continue;
 				}
 				if (read (fd, cmdline, sizeof(cmdline) - 1) <2) {
