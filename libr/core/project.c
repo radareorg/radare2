@@ -333,6 +333,10 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
+	if (opts & R_CORE_PRJ_DBG_BREAK) {
+		r_core_cmd (core, "db*", 0);
+		r_cons_flush ();
+	}
 	if (opts & R_CORE_PRJ_ANAL_HINTS) {
 		r_core_cmd (core, "ah*", 0);
 		r_cons_flush ();

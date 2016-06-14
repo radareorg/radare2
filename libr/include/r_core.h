@@ -454,6 +454,7 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 #define R_CORE_PRJ_ANAL_TYPES	0x0100
 #define R_CORE_PRJ_ANAL_MACROS	0x0200
 #define R_CORE_PRJ_ANAL_SEEK	0x0400
+#define R_CORE_PRJ_DBG_BREAK   0x0800
 #define R_CORE_PRJ_ALL		0xFFFF
 
 typedef struct r_core_bin_filter_t {
