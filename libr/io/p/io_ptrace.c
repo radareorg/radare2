@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -104,24 +104,31 @@ static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
 	ptrace_word *buf = (ptrace_word*)pbuf;
 	ut32 words = sz / sizeof (ptrace_word);
 	ut32 last = sz % sizeof (ptrace_word);
-	ut64 x, *at = (ut64 *)(size_t)addr;
+	ptrace_word x, *at = (ptrace_word *)(size_t)addr;
 	ptrace_word lr;
-	if (sz<1 || addr==UT64_MAX)
+	if (sz < 1 || addr == UT64_MAX) {
 		return -1;
-	for (x=0; x<words; x++)
-		debug_write_raw (pid, (ut32*)(at++), buf[x]);
+	}
+	for (x = 0; x < words; x++) {
+		int rc = debug_write_raw (pid, at++, buf[x]); //((ut32*)(at)), buf[x]);
+		if (rc) {
+			return -1;
+		}
+	}
 	if (last) {
 		lr = debug_read_raw (pid, (void*)at);
-		memcpy (&lr, buf+x, last);
-		if (debug_write_raw (pid, (void*)at, lr))
-			return sz-last;
+		memcpy (&lr, buf + x, last);
+		if (debug_write_raw (pid, (void*)at, lr)) {
+			return sz - last;
+		}
 	}
 	return sz;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	return ptrace_write_at (RIOPTRACE_PID (fd), buf, len, io->off);
 }
 
