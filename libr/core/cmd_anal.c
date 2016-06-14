@@ -1071,7 +1071,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) {
 				RAnalRef *ref;
 				RListIter *iter;
-				RIOSection *sect = r_io_section_vget (core->io, fcn->addr);
+				SdbList *secs = r_io_section_vget_secs_at (core->io, fcn->addr);		//use map-API here
+				RIOSection *sect = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
 				ut64 text_addr = 0x1000; // XXX use file baddr
 				if (sect) {
 					text_addr = sect->vaddr;
@@ -1470,7 +1472,7 @@ repeat:
 		return 1;
 	}
 	if (esil->exectrap) {
-		if (!(r_io_section_get_rwx (core->io, addr) & R_IO_EXEC)) {
+		if (!r_io_is_valid_offset (core->io, addr, R_IO_EXEC)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
@@ -2422,16 +2424,19 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	addr = core->offset;
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
-		RIOSection *s = r_io_section_vget (core->io, addr);
-		if (s && s->rwx & 1) {
+		SdbList *secs = r_io_section_vget_secs_at (core->io, addr);	//use map-API here
+		RIOSection *s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
+		if (s && s->flags & 1) {
 			// search in current section
 			if (s->size > binfile->size) {
 				addr = s->vaddr;
-				len = binfile->size - s->offset;
+				len = binfile->size - s->addr;
 			} else {
 				addr = s->vaddr;
 				len = s->size;
 			}
+#if 0
 		} else {
 			// search in full file
 			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
@@ -2445,6 +2450,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 					len = 0;
 				}
 			}
+#endif
 		}
 	}
 	/*
@@ -3406,11 +3412,13 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				rwx = map->perm;
 			}
 		} else if (core->io->va) {
-			RIOSection *section = r_io_section_vget (core->io, core->offset);
+			SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);	//use map-API here
+			RIOSection *section = secs ? ls_pop (secs): NULL;
+			ls_free (secs);
 			if (section) {
 				from = section->vaddr;
 				to = section->vaddr + section->vsize;
-				rwx = section->rwx;
+				rwx = section->flags;
 			}
 		} else {
 			RIOMap *map = r_io_map_get (core->io, core->offset);
@@ -3508,7 +3516,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 't': {
 		ut64 cur = core->offset;
-		RIOSection *s = r_io_section_vget (core->io, cur);
+		SdbList *secs = r_io_section_vget_secs_at (core->io, cur);		//use map-API here
+		RIOSection *s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
 		if (s) {
 			int hasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_core_seek (core, s->vaddr, 1);

@@ -134,7 +134,7 @@ static RIODesc *r_io_mmap_open(RIO *io, const char *file, int flags, int mode) {
 	mmo = r_io_mmap_create_new_file (io, name, mode, flags);
 
 	if (!mmo) return NULL;
-	return r_io_desc_new (&r_io_plugin_mmap, mmo->fd,
+	return r_io_desc_new (io, &r_io_plugin_mmap,
 				mmo->filename, flags, mode, mmo);
 }
 

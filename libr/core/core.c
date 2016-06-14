@@ -311,17 +311,28 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'b': return core->blocksize;
 		case 's':
 			if (core->file) {
-				return r_io_desc_size (core->io, core->file->desc);
+				return r_io_desc_size (core->file->desc);
 			}
 			return 0LL;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			s = r_io_section_vget (core->io, core->offset);
+			{
+				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
+				s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
+			}
 			return s? (str[2]=='S'? s->size: s->vaddr): 3;
 		case '?': return core->num->value;
 		case '$': return core->offset;
-		case 'o': return r_io_section_vaddr_to_maddr_try (core->io,
-				core->offset);
+		case 'o': 
+			{
+				SdbList *secs;
+				RIOSection *s;
+				secs = r_io_section_vget_secs_at (core->io, core->offset);
+				s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
+				return s ? core->offset - s->vaddr + s->addr : core->offset;
+			}
 		case 'C': return getref (core, atoi (str+2), 'r',
 				R_ANAL_REF_TYPE_CALL);
 		case 'J': return getref (core, atoi (str+2), 'r',
@@ -960,6 +971,7 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
+	SdbList *secs;
 	RIOSection *sect;
 	char *mapname;
 	RAnalFunction *fcn;
@@ -977,7 +989,9 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	} else {
 		mapname = NULL;
 	}
-	sect = value? r_io_section_vget (core->io, value): NULL;
+	secs = value? r_io_section_vget_secs_at (core->io, value): NULL;
+	sect = secs ? ls_pop (secs): NULL;
+	ls_free (secs);
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
@@ -1377,8 +1391,10 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 }
 
 static void prompt_sec(RCore *r, char *s, size_t maxlen) {
-	const RIOSection *sec = r_io_section_vget (r->io, r->offset);
+	const SdbList * secs = r_io_section_vget_secs_at (r->io, r->offset);
+	const RIOSection *sec = secs ? ls_pop (secs) : NULL;
 	if (!sec) return;
+	ls_free (secs);
 
 	snprintf (s, maxlen, "%s:", sec->name);
 }
@@ -1608,7 +1624,10 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	//signal (SIGPIPE, SIG_DFL);
 #endif
 reaccept:
+#warning check this
+#if 0
 	core->io->plugin = NULL;
+#endif
 	r_cons_break (rap_break, rior);
 	while (!core->cons->breaked) {
 		c = r_socket_accept (fd);
@@ -1653,7 +1672,7 @@ reaccept:
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,
-								R_IO_READ, 0, 0, r_io_desc_size (core->io, file->desc));
+								R_IO_READ, 0, 0, r_io_desc_size (file->desc));
 						if (core->file && core->file->desc) {
 							pipefd = core->file->desc->fd;
 						} else {
@@ -1820,7 +1839,7 @@ reaccept:
 					x = core->offset;
 				} else {
 					if (core->file) {
-						x = r_io_desc_size (core->io, core->file->desc);
+						x = r_io_desc_size (core->file->desc);
 					} else {
 						x = 0;
 					}

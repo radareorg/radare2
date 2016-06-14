@@ -56,7 +56,7 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 			FILE_SHARE_READ | rw? FILE_SHARE_WRITE:0,
 			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (w32->hnd != INVALID_HANDLE_VALUE)
-			return r_io_desc_new (&r_io_plugin_w32, getw32fd (w32),
+			return r_io_desc_new (io, &r_io_plugin_w32,
 				pathname, rw, mode, w32);
 		free (w32);
 	}

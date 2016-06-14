@@ -3,7 +3,8 @@
 #include "r_io.h"
 
 R_API void r_io_buffer_close(RIO* io) {
-	r_cache_flush (io->buffer);
+	if (io->buffer)
+		r_cache_flush (io->buffer);
 	io->buffer_enabled = 0;
 }
 

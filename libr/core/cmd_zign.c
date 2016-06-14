@@ -19,8 +19,7 @@ static int cmd_zign(void *data, const char *input) {
 				size = atoi (ptr+1);
 				if (size<1) size = 1;
 			}
-			if (r_io_read_at (core->io, core->offset, buf,
-					sizeof (buf)) == sizeof (buf)) {
+			if (r_io_read_at (core->io, core->offset, buf, sizeof (buf))) {
 				RFlagItem *flag = r_flag_get_i (core->flags, addr);
 				if (flag) {
 					name = flag->name;
@@ -50,8 +49,7 @@ static int cmd_zign(void *data, const char *input) {
 			r_cons_printf ("zn %s\n", input+2);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				ut8 buf[128];
-				if (r_io_read_at (core->io, fcni->addr, buf,
-						sizeof (buf)) == sizeof (buf)) {
+				if (r_io_read_at (core->io, fcni->addr, buf, sizeof (buf))) {
 					RFlagItem *flag = r_flag_get_i (
 						core->flags, fcni->addr);
 					if (flag) {
@@ -132,9 +130,11 @@ static int cmd_zign(void *data, const char *input) {
 					fin = ini+r_num_math (core->num, input+2);
 				}
 			} else {
-				s = r_io_section_vget (core->io, core->io->off);
+				SdbList *secs = r_io_section_vget_secs_at (core->io, core->io->off);
+				s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
 				if (s) {
-					ini = core->io->va?s->vaddr:s->offset;
+					ini = core->io->va?s->vaddr:s->addr;
 					fin = ini + (core->io->va?s->vsize:s->size);
 				} else {
 					eprintf ("No section identified, please provide range.\n");
@@ -152,7 +152,7 @@ static int cmd_zign(void *data, const char *input) {
 				eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
 				r_cons_printf ("fs sign\n");
 				r_cons_break (NULL, NULL);
-				if (r_io_read_at (core->io, ini, buf, len) == len) {
+				if (r_io_read_at (core->io, ini, buf, len)) {
 					for (idx=0; idx<len; idx++) {
 						if (r_cons_singleton ()->breaked)
 							break;
