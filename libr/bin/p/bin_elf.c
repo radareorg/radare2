@@ -49,12 +49,13 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	}
 	const char *elf_type = Elf_(r_bin_elf_get_file_type (res));
 	if (elf_type && !strncmp (elf_type, "CORE", 4)) {
-		int len;
+		int len = 0;
 		ut8 *regs = Elf_(r_bin_elf_grab_regstate)(res, &len);
-		eprintf ("LEN = %d\n", len);
-		char *hexregs = r_hex_bin2strdup (regs, len);
-		eprintf ("arw %s\n", hexregs);
-		free (hexregs);
+		if (regs && len > 0) {
+			char *hexregs = r_hex_bin2strdup (regs, len);
+			eprintf ("arw %s\n", hexregs);
+			free (hexregs);
+		}
 		free (regs);
 	}
 	r_buf_free (tbuf);
