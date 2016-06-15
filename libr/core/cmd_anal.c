@@ -617,7 +617,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 		}
 	}
 	if (mode == 'j') {
-		r_cons_printf ("]");
+		r_cons_printf ("]\n");
 	}
 	return true;
 }
