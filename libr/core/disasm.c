@@ -1811,6 +1811,57 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	}
 }
 
+static st64 revert_cdiv_magic(st64 magic) {
+    short s;
+    st64 E;
+    const st64 N = (1L << 31) - 1; // max positive 32bit integer
+    st64 candidate;
+    if (llabs (magic) < 0xFFFFFF) {
+        return 0;
+    }
+    if (llabs (magic) > 0xFFFFFFFF) {
+        return 0;
+    }
+    if (magic < 0) {
+        magic += 1L << 32;
+    }
+    for (s = 0; s < 16; ++s) {
+        E = 1L << (32 + s);
+        candidate = (E + magic - 1) / magic;
+        if ( (N * magic) >> (32 + s) == (N / candidate) ) {
+            return candidate;
+        }
+    }
+    return 0;
+}
+
+static void ds_cdiv_optimization(RDisasmState *ds) {
+    char *esil;
+    char *end, *comma;
+    st64 imm;
+    st64 divisor;
+    // TODO: early out
+    switch (ds->analop.type) {
+    case R_ANAL_OP_TYPE_MOV:
+    case R_ANAL_OP_TYPE_MUL:
+        esil = R_STRBUF_SAFEGET (&ds->analop.esil);
+        while (esil) {
+            comma = strstr (esil, ",");
+            if (!comma) break;
+            imm = strtol (esil, &end, 10);
+            if (comma && comma == end) {
+                divisor = revert_cdiv_magic (imm);
+                if (divisor) {
+                    r_cons_printf (" ; CDIV: %lld * 2^n", divisor);
+                    break;
+                }
+            }
+            esil = comma+1;
+        }
+    }
+    // TODO: check following SHR instructions
+}
+
 static void ds_print_show_bytes(RDisasmState *ds) {
 	RCore* core = ds->core;
 	char *nstr, *str = NULL, pad[64];
@@ -3019,6 +3070,7 @@ toro:
 		}
 		ds_print_op_push_info (ds);
 		ds_print_ptr (ds, len + 256, idx);
+		ds_cdiv_optimization (ds);
 		ds_print_comments_right (ds);
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 			ds_print_esil_anal (ds);
@@ -3668,6 +3720,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				handle_print_ptr (core, ds, len, idx);
 			}*/
 			ds_print_ptr (ds, len, idx);
+			ds_cdiv_optimization (ds);
 			ds_print_comments_right (ds);
 			ds_print_esil_anal (ds);
 			if ( !(ds->show_comments && ds->show_comment_right && ds->comment)) {
