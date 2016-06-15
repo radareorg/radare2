@@ -268,23 +268,56 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil,
 			"%s,%s,*,%s,+,%s,=",REG64(2),REG64(1),REG64(3), REG64(0));
 		break;
-	case ARM64_INS_ADD: OPCALL("+"); break;
-	case ARM64_INS_SUB: OPCALL("-"); break;
-	case ARM64_INS_MUL: OPCALL("*"); break;
-	case ARM64_INS_AND: OPCALL("&"); break;
-	case ARM64_INS_ORR: OPCALL("|"); break;
-	case ARM64_INS_EOR: OPCALL("^"); break;
-	case ARM64_INS_ORN: OPCALL_NEG("|"); break;
-	case ARM64_INS_EON: OPCALL_NEG("^"); break;
-	case ARM64_INS_LSR: OPCALL(">>"); break;
-	case ARM64_INS_LSL: OPCALL("<<"); break;
-
-
+	case ARM64_INS_ADD:
+		op->cycles = 1;
+		op->type = R_ANAL_OP_TYPE_ADD;
+		OPCALL("+");
+		break;
+	case ARM64_INS_SUB:
+		op->cycles = 1;
+		op->type = R_ANAL_OP_TYPE_ADD;
+		OPCALL("-");
+		break;
+	case ARM64_INS_MUL:
+		op->type = R_ANAL_OP_TYPE_MUL;
+		OPCALL("*");
+		break;
+	case ARM64_INS_AND:
+		op->type = R_ANAL_OP_TYPE_AND;
+		OPCALL("&");
+		break;
+	case ARM64_INS_ORR:
+		op->type = R_ANAL_OP_TYPE_OR;
+		OPCALL("|");
+		break;
+	case ARM64_INS_EOR:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		OPCALL("^");
+		break;
+	case ARM64_INS_ORN:
+		op->type = R_ANAL_OP_TYPE_OR;
+		OPCALL_NEG("|");
+		break;
+	case ARM64_INS_EON:
+		op->type = R_ANAL_OP_TYPE_NOT;
+		OPCALL_NEG("^");
+		break;
+	case ARM64_INS_LSR:
+		op->cycles = 1;
+		op->type = R_ANAL_OP_TYPE_SHR;
+		OPCALL(">>");
+		break;
+	case ARM64_INS_LSL:
+		op->cycles = 1;
+		op->type = R_ANAL_OP_TYPE_SHL;
+		OPCALL("<<");
+		break;
 	case ARM64_INS_STURB: // sturb wzr, [x9, 0xffffffffffffffff]
 		// TODO
 		break;
 	case ARM64_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
+		op->cycles = 1;
 		break;
 	case ARM64_INS_FDIV:
 	case ARM64_INS_SDIV:
@@ -405,6 +438,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_STUR:
 	case ARM64_INS_STR: // str x6, [x6,0xf90]
 	case ARM64_INS_STRH:
+	case ARM64_INS_STXR:
+	case ARM64_INS_STXRH:
+	case ARM64_INS_STXRB:
 		if ((int)MEMDISP64(1) < 0) {
 			r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",-,=[]",
 				REG64(0), MEMBASE64(1), -(int)MEMDISP64(1));
@@ -865,8 +901,24 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	return 0;
 }
 
-static void anop64 (RAnalOp *op, cs_insn *insn) {
+static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
+
+	/* grab family */
+	if (cs_insn_group (handle, insn, ARM64_GRP_CRYPTO)) {
+		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRC)) {
+		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+	} else if (cs_insn_group (handle, insn, ARM64_GRP_PRIVILEGE)) {
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
+		op->family = R_ANAL_OP_FAMILY_MMX;
+	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
+		op->family = R_ANAL_OP_FAMILY_FPU;
+	} else {
+		op->family = R_ANAL_OP_FAMILY_CPU;
+	}
+
 	switch (insn->id) {
 	case ARM64_INS_SVC:
 		op->type = R_ANAL_OP_TYPE_SWI;
@@ -879,6 +931,7 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case ARM64_INS_SUB:
+		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_SUB;
 		if (REGID64(0) == ARM64_REG_SP) {
 			if (REGID64(1) == ARM64_REG_SP) {
@@ -890,7 +943,21 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 			}
 		}
 		break;
+	case ARM64_INS_FDIV:
+	case ARM64_INS_SDIV:
+	case ARM64_INS_UDIV:
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_DIV;
+		break;
+	case ARM64_INS_MUL:
+	case ARM64_INS_FMUL:
+		/* TODO: if next instruction is also a MUL, cycles are /=2 */
+		/* also known as Register Indexing Addressing */
+		op->cycles = 4;
+		op->type = R_ANAL_OP_TYPE_MUL;
+		break;
 	case ARM64_INS_ADD:
+		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case ARM64_INS_CSEL:
@@ -958,6 +1025,11 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_STUR:
 	case ARM64_INS_STR:
 	case ARM64_INS_STP:
+	case ARM64_INS_STNP:
+	case ARM64_INS_STXR:
+	case ARM64_INS_STXRH:
+	case ARM64_INS_STLXRH:
+	case ARM64_INS_STXRB:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		if (REGBASE64(1) == ARM64_REG_X29) {
 			op->stackop = R_ANAL_STACK_SET;
@@ -970,6 +1042,8 @@ static void anop64 (RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDRSW:
 	case ARM64_INS_LDR:
 	case ARM64_INS_LDP:
+	case ARM64_INS_LDNP:
+	case ARM64_INS_LDPSW:
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
@@ -1054,13 +1128,31 @@ static int cond_cs2r2(int cc) {
 	return cc;
 }
 
-static void anop32 (RAnalOp *op, cs_insn *insn, bool thumb) {
+static void anop32 (csh handle, RAnalOp *op, cs_insn *insn, bool thumb) {
 	const ut64 addr = op->addr;
 	int i;
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
 	if (op->cond == R_ANAL_COND_NV) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return;
+	}
+	/* grab family */
+	if (cs_insn_group (handle, insn, ARM_GRP_CRYPTO)) {
+		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+	} else if (cs_insn_group (handle, insn, ARM_GRP_CRC)) {
+		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+	} else if (cs_insn_group (handle, insn, ARM_GRP_PRIVILEGE)) {
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+	} else if (cs_insn_group (handle, insn, ARM_GRP_VIRTUALIZATION)) {
+		op->family = R_ANAL_OP_FAMILY_VIRT;
+	} else if (cs_insn_group (handle, insn, ARM_GRP_NEON)) {
+		op->family = R_ANAL_OP_FAMILY_MMX;
+	} else if (cs_insn_group (handle, insn, ARM_GRP_FPARMV8)) {
+		op->family = R_ANAL_OP_FAMILY_FPU;
+	} else if (cs_insn_group (handle, insn, ARM_GRP_THUMB2DSP)) {
+		op->family = R_ANAL_OP_FAMILY_MMX;
+	} else {
+		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
 	switch (insn->id) {
 #if 0
@@ -1085,6 +1177,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
+		op->cycles = 1;
 		break;
 	case ARM_INS_POP:
 	case ARM_INS_FLDMDBX:
@@ -1322,12 +1415,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);
 		op->size = insn->size;
 		if (a->bits == 64) {
-			anop64 (op, insn);
+			anop64 (handle, op, insn);
 			if (a->decode) {
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
-			anop32 (op, insn, thumb);
+			anop32 (handle, op, insn, thumb);
 			if (a->decode) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}

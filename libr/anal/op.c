@@ -410,7 +410,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	return strdup (ret);
 }
 
-R_API const char *r_anal_stackop_tostring (int s) {
+R_API const char *r_anal_stackop_tostring(int s) {
 	switch (s) {
 	case R_ANAL_STACK_NULL:
 		return "null";
@@ -428,7 +428,7 @@ R_API const char *r_anal_stackop_tostring (int s) {
 	return "unk";
 }
 
-R_API const char *r_anal_op_family_to_string (int n) {
+R_API const char *r_anal_op_family_to_string(int n) {
 	static char num[32];
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
@@ -436,9 +436,19 @@ R_API const char *r_anal_op_family_to_string (int n) {
 	case R_ANAL_OP_FAMILY_FPU: return "fpu";
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
 	case R_ANAL_OP_FAMILY_PRIV: return "priv";
+	case R_ANAL_OP_FAMILY_VIRT: return "virt";
 	default:
 		snprintf (num, sizeof (num), "%d", n);
 		break;
 	}
 	return num;
+}
+
+R_API int r_anal_op_family_from_string(const char *f) {
+	if (!strcmp (f, "cpu")) return R_ANAL_OP_FAMILY_CPU;
+	if (!strcmp (f, "fpu")) return R_ANAL_OP_FAMILY_FPU;
+	if (!strcmp (f, "mmx")) return R_ANAL_OP_FAMILY_MMX;
+	if (!strcmp (f, "priv")) return R_ANAL_OP_FAMILY_PRIV;
+	if (!strcmp (f, "virt")) return R_ANAL_OP_FAMILY_VIRT;
+	return R_ANAL_OP_FAMILY_UNKNOWN;
 }
