@@ -427,9 +427,10 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			}
 		} else if (!strcmp (op, "add")) {
 			int pfx;
+			int N = 1;
+			char *delta;
 			if (*arg == '[') {
-				char *delta = strchr (arg + 1, '+');
-				arg++;
+				delta = strchr (++arg, '+');
 				pfx = 0;
 				if (delta) {
 					int n = getnum (a, arg2);
@@ -469,9 +470,19 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				eprintf ("Invalid syntax\n");
 				return 0;
 			}
-			if (a->bits == 64)
-				if (*arg == 'r')
+			if (*arg == 'r') {
+				if (a->bits == 64) {
 					data[l++] = 0x48;
+				} else {
+					eprintf ("Error: instruction not supported in 32 bit mode\n");
+					return 0;
+				}
+			}
+			if (*arg2 == 'r' && a->bits != 64) {
+				eprintf ("Error: instruction not supported in 32 bit mode\n");
+				return 0;
+			}
+
 			if (isnum (a, arg2)) {
 				int num = getnum (a, arg2);
 				if (num > 127 || num < -127) {
@@ -488,7 +499,40 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					data[l++] = num;
 				}
 			} else {
-				data[l++] = 0x01;
+				if (*arg2 == '[') {
+					data[l++] = 0x03;
+					arg2++;
+					delta = strchr (arg2, '+');
+					if (delta) {
+						N = 1;
+						*delta++ = 0;
+					} else {
+						delta = strchr (arg2, '-');
+						if (delta) {
+							N = -1;
+							*delta++ = 0;
+						}
+					}
+					if (delta) {
+						st32 d = r_num_math (NULL, delta) * N;
+						st16 mod_byte = 1;
+						if ((ST8_MIN > d) || (d > ST8_MAX)) {
+							mod_byte = 2;
+						}
+						data[l++] = mod_byte << 6 | getreg (arg) << 3 | getreg (arg2);
+						data[l++] = d;
+						if (mod_byte == 2) {
+							data[l++] = d >> 8;
+							data[l++] = d >> 16;
+							data[l++] = d >> 24;
+						}
+						return l;
+					}
+					data[l++] = getreg (arg2);
+					return l;
+				} else {
+					data[l++] = 0x01;
+				}
 				data[l++] = pfx | getreg (arg2) << 3 | getreg (arg);
 			}
 			return l;
@@ -626,6 +670,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					data[l++] = ptr[1];
 					data[l++] = ptr[2];
 					data[l++] = ptr[3];
+
 					return l;
 				} else {
 					eprintf ("unknown cmp\n");
