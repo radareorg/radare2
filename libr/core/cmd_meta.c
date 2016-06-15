@@ -378,7 +378,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 						core->anal, R_META_TYPE_COMMENT,
 						addr);
 				if (comment) {
-					char* text = r_str_newf("%s\n%s", comment, p);
+					char* text = r_str_newf ("%s\n%s", comment, p);
 					r_meta_add (core->anal,
 							R_META_TYPE_COMMENT,
 							addr, addr+1, text);
