@@ -754,7 +754,12 @@ static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
 		Sdb *sdb = NULL;
 		char key[32] = {0};
+		int size = bin->shdr[i].sh_size;
 
+		if (size < 1 || size > 128) {
+			eprintf ("Warning: Too big version info field %d\n", i);
+			continue;
+		}
 		switch (bin->shdr[i].sh_type) {
 		case SHT_GNU_verdef:
 			sdb = store_versioninfo_gnu_verdef (bin, &bin->shdr[i], bin->shdr[i].sh_size);
