@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -56,7 +56,7 @@ static char *flagname (const char *class, const char *method) {
 	int s_len;
 	char *p, *str, *s;
 	if (class && method) {
-		return r_str_newf ("static.%s", method);
+		return r_str_newf ("static.%s.%s", class, method);
 	}
 	if (!class || !method) {
 		return NULL;
@@ -475,8 +475,10 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 				r_list_append (bin->methods_list, sym);
 // this causes an invalid flag name issue
 				if (cls) {
-					if (!cls->methods)
+					if (!cls->methods) {
+						/* probably unnecessary for */
 						cls->methods = r_list_new ();
+					}
 					r_list_append (cls->methods, sym);
 				}
 				/* cache in sdb */
