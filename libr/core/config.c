@@ -1568,6 +1568,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF("asm.describe", "false", "Show opcode description");
+	SETPREF("asm.hints", "false", "Show hints for magic numbers in disasm");
 	SETPREF("asm.marks", "true", "Show marks before the disassembly");
 	SETCB("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
 	SETPREF("bin.libs", "false", "Try to load libraries after loading main binary");

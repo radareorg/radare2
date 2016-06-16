@@ -101,6 +101,7 @@ typedef struct r_disam_options_t {
 	int show_xrefs;
 	int show_functions;
 	int show_fcncalls;
+	int show_hints;
 	int show_marks;
 	int cursor;
 	int show_comment_right_default;
@@ -418,6 +419,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
 	ds->show_comment_right = r_config_get_i (core->config, "asm.cmtright"); // XX conflict with show_comment_right_default
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
+	ds->show_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
 	ds->pre = strdup ("  ");
 	ds->ocomment = NULL;
@@ -1812,54 +1814,55 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 }
 
 static st64 revert_cdiv_magic(st64 magic) {
-    short s;
-    st64 E;
-    const st64 N = (1L << 31) - 1; // max positive 32bit integer
-    st64 candidate;
-    if (llabs (magic) < 0xFFFFFF) {
-        return 0;
-    }
-    if (llabs (magic) > 0xFFFFFFFF) {
-        return 0;
-    }
-    if (magic < 0) {
-        magic += 1L << 32;
-    }
-    for (s = 0; s < 16; ++s) {
-        E = 1L << (32 + s);
-        candidate = (E + magic - 1) / magic;
-        if ( (N * magic) >> (32 + s) == (N / candidate) ) {
-            return candidate;
-        }
-    }
-    return 0;
+	short s;
+	st64 E;
+	const st64 N = (1L << 31) - 1; // max positive 32bit integer
+	st64 candidate;
+	if (llabs (magic) < 0xFFFFFF) {
+		return 0;
+	}
+	if (llabs (magic) > 0xFFFFFFFF) {
+		return 0;
+	}
+	if (magic < 0) {
+		magic += 1L << 32;
+	}
+	for (s = 0; s < 16; ++s) {
+		E = 1L << (32 + s);
+		candidate = (E + magic - 1) / magic;
+		if ( (N * magic) >> (32 + s) == (N / candidate) ) {
+			return candidate;
+		}
+	}
+	return 0;
 }
 
 static void ds_cdiv_optimization(RDisasmState *ds) {
-    char *esil;
-    char *end, *comma;
-    st64 imm;
-    st64 divisor;
-    // TODO: early out
-    switch (ds->analop.type) {
-    case R_ANAL_OP_TYPE_MOV:
-    case R_ANAL_OP_TYPE_MUL:
-        esil = R_STRBUF_SAFEGET (&ds->analop.esil);
-        while (esil) {
-            comma = strstr (esil, ",");
-            if (!comma) break;
-            imm = strtol (esil, &end, 10);
-            if (comma && comma == end) {
-                divisor = revert_cdiv_magic (imm);
-                if (divisor) {
-                    r_cons_printf (" ; CDIV: %lld * 2^n", divisor);
-                    break;
-                }
-            }
-            esil = comma+1;
-        }
-    }
-    // TODO: check following SHR instructions
+	char *esil;
+	char *end, *comma;
+	st64 imm;
+	st64 divisor;
+	if (!ds->show_hints)
+		return;
+	switch (ds->analop.type) {
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_MUL:
+		esil = R_STRBUF_SAFEGET (&ds->analop.esil);
+		while (esil) {
+			comma = strstr (esil, ",");
+			if (!comma) break;
+			imm = strtol (esil, &end, 10);
+			if (comma && comma == end) {
+				divisor = revert_cdiv_magic (imm);
+				if (divisor) {
+					r_cons_printf (" ; CDIV: %lld * 2^n", divisor);
+					break;
+				}
+			}
+			esil = comma+1;
+		}
+	}
+	// TODO: check following SHR instructions
 }
 
 static void ds_print_show_bytes(RDisasmState *ds) {
