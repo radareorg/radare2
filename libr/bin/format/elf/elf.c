@@ -756,8 +756,8 @@ static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 		char key[32] = {0};
 		int size = bin->shdr[i].sh_size;
 
-		if (size < 1 || size > 128) {
-			eprintf ("Warning: Too big version info field %d\n", i);
+		if (size < 0 || size > 0xFFFF) {
+			eprintf ("Warning: Too big version info field %d (%d)\n", i, size);
 			continue;
 		}
 		switch (bin->shdr[i].sh_type) {
