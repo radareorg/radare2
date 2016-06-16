@@ -1816,7 +1816,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 static st64 revert_cdiv_magic(st64 magic) {
 	short s;
 	st64 E;
-	const st64 N = (1L << 31) - 1; // max positive 32bit integer
+	const st64 N = ST64_MAX;
 	st64 candidate;
 	if (llabs (magic) < 0xFFFFFF) {
 		return 0;
@@ -1825,7 +1825,7 @@ static st64 revert_cdiv_magic(st64 magic) {
 		return 0;
 	}
 	if (magic < 0) {
-		magic += 1L << 32;
+		magic += 1L << 31;
 	}
 	for (s = 0; s < 16; ++s) {
 		E = 1L << (32 + s);
