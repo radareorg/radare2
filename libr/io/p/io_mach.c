@@ -448,9 +448,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		return 0;
 	}
 	if (!strncmp (cmd, "pid", 3)) {
-		const char *pidstr = cmd + 4;
+		const char *pidstr = cmd + 3;
 		int pid = -1;
-		if (!cmd[3]) {
+		if (*pidstr) {
 			int pid = RIOMACH_PID (fd->data);
 			eprintf ("%d\n", pid);
 			return 0;
@@ -458,7 +458,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (!strcmp (pidstr, "0")) {
 			pid = 0;
 		} else {
-			pid = atoi (cmd + 4);
+			pid = atoi (pidstr);
 			if (!pid) pid = -1;
 		}
 		if (pid != -1) {

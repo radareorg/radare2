@@ -114,7 +114,7 @@ static int __close(RIODesc *fd) {
 static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 	RIOProcpid *iop = (RIOProcpid*)fd->data;
 	if (!strncmp (cmd, "pid", 3)) {
-		int pid = atoi (cmd + 4);
+		int pid = atoi (cmd + 3);
 		if (pid > 0) {
 			iop->pid = pid;
 		}

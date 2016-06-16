@@ -14,8 +14,8 @@ NATIVE_OBJS=native/linux/linux_debug.o
 endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux))
 COREDUMP_OBJS=native/linux/linux_coredump.o
+NATIVE_OBJS+=native/procfs.o
 endif
-
 
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
 	${CC} $(call libname,debug_native) ${CFLAGS} \
