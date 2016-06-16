@@ -13,15 +13,17 @@
 
 //TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
 static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
-	if (! eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size)
+	if (! eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
 		return;
+	}
 	free (eobj->symbols_by_ord[ord]);
 	eobj->symbols_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinSymbol));
 }
 
 static inline bool setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
-	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size)
+	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
 		return false;
+	}
 	free (eobj->imports_by_ord[ord]);
 	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
 	eobj->imports_by_ord[ord]->name = strdup (ptr->name);
