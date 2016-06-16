@@ -81,7 +81,6 @@ typedef ut64 mips64_regs_t [274];
 int linux_step (RDebug *dbg);
 int linux_attach (RDebug *dbg, int pid);
 RDebugInfo *linux_info (RDebug *dbg, const char *arg);
-RList *linux_pid_list (int pid, RList *list);
 RList *linux_thread_list (int pid, RList *list);
 int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size);
