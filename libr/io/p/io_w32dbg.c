@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_userconf.h>
 
@@ -52,10 +52,10 @@ static int __plugin_open(RIO *io, const char *file, ut8 many) {
 }
 
 static int __attach (RIOW32Dbg *dbg) {
-	eprintf ("Attaching io to pid %d\n", dbg->pid);
 	dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, dbg->pid);
-	if (dbg->pi.hProcess == NULL)
+	if (!dbg->pi.hProcess) {
 		return -1;
+	}
 	return dbg->pid;
 }
 
@@ -63,8 +63,9 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
 		char *pidpath;
 		RIOW32Dbg *dbg = R_NEW (RIOW32Dbg);
-		if (dbg == NULL)
+		if (!dbg) {
 			return NULL;
+		}
 		dbg->pid = atoi (file+9);
 		if (__attach (dbg) == -1) {
 			free (dbg);
@@ -90,15 +91,27 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOW32Dbg *iop = fd->data;
 	//printf("w32dbg io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
-	if (!strcmp (cmd, "pid")) {
-		int pid = atoi (cmd+4);
-		if (pid != 0)
-			iop->pid = iop->tid = pid;
-		io->cb_printf ("\n");
-		//printf("PID=%d\n", io->fd);
-		return pid;
-	} else eprintf ("Try: '=!pid'\n");
-	return true;
+	if (!strncmp (cmd, "pid", 3)) {
+		if (cmd[3] == ' ') {
+			int pid = atoi (cmd + 3);
+			if  (pid > 0) {
+				dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
+				if (dbg->pi.hProcess) {
+					iop->pid = iop->tid = pid;
+				} else {
+					eprintf ("Cannot attach to %d\n", pid);
+				}
+			}
+			/* TODO: Implement child attach */
+			return -1;
+		} else {
+			io->cb_printf ("%d\n", iop->pid);
+			return pid;
+		}
+	} else {
+		eprintf ("Try: '=!pid'\n");
+	}
+	return -1;
 }
 
 static int __init(struct r_io_t *io) {
