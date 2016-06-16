@@ -505,7 +505,8 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 		dprintf ("    method code_offset: %u\n", (ut32)MC);
 		{
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			sym->name = r_str_newf ("virtual.%s", name);
+			//sym->name = r_str_newf ("virtual.%s.%s", class_name, name);
+			sym->name = r_str_newf ("%s.%s", class_name, name);
 			sym->type = r_str_const ("FUNC");
 			sym->paddr = sym->vaddr = MC;
 			r_list_append (bin->methods_list, sym);
