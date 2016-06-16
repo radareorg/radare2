@@ -66,24 +66,26 @@ static int r_debug_recoil(RDebug *dbg) {
 R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta) {
 	int bpsz = strcmp (dbg->arch, "arm") ? 1 : 4;
 	RBreakpointItem *bpi;
+	const char *module_name = module;
+
 	if (!addr && module) {
 		RListIter *iter;
 		RDebugMap *map;
 		bool detect_module, valid = false;
 		int perm;
+
 		if (m_delta) {
-		    	detect_module = false;
+			detect_module = false;
 			RList *list = r_debug_modules_list (dbg);
 			r_list_foreach (list, iter, map) {
 				if (strstr (map->file, module)) {
 					addr = map->addr + m_delta;
-					free (module);
-					module = strdup (map->file);
+					module_name = map->file;
 					break;
 				}
 			}
 		} else {
-		    	//module holds the address
+			//module holds the address
 			addr = (ut64)r_num_math (dbg->num, module);
 			if (!addr) return NULL;
 			detect_module = true;
@@ -91,30 +93,32 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 		r_debug_map_sync (dbg);
 		r_list_foreach (dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
-			    	valid = true;
+				valid = true;
 				if (detect_module) {
-					module = strdup (map->file);
+					module_name = map->file;
 					m_delta = addr - map->addr;
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
 				if (!(perm & R_BP_PROT_EXEC))
-				    	eprintf ("WARNING: setting bp within mapped memory without exec perm\n");
+					eprintf ("WARNING: setting bp within mapped memory without exec perm\n");
 				break;
 			}
 		}
 		if (!valid) {
-		    	eprintf ("WARNING: modules' base addr + delta doesn't compute in a valid address\n");
+			eprintf ("WARNING: module's base addr + delta is not a valid address\n");
 			return NULL;
 		}
 	}
 	bpi = hw
-	? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-	: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+		? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
+		: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
 	if (bpi) {
-	    	bpi->module_name  = module;
+		if (module_name) {
+			bpi->module_name = strdup (module_name);
+			bpi->name = r_str_newf ("%s+0x%" PFMT64x, module_name, m_delta);
+		}
 		bpi->module_delta = m_delta;
 	}
-	free (module);
 	return bpi;
 }
 
@@ -627,7 +631,7 @@ repeat:
 			ret = dbg->tid;
 		}
 		if (retwait == R_DEBUG_REASON_NEW_LIB ||
-		    retwait == R_DEBUG_REASON_EXIT_LIB) {
+				retwait == R_DEBUG_REASON_EXIT_LIB) {
 			goto repeat;
 		}
 #endif
@@ -769,7 +773,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 		if (pc == addr)
 			break;
 		if (r_bp_get_at (dbg->bp, pc))
-                        break;
+			break;
 		r_debug_continue (dbg);
 	}
 	// Clean up if needed

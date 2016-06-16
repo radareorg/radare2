@@ -556,11 +556,11 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 				continue;
 			}
 			dbg->iob.read_at (dbg->iob.io, snap->addr, b , snap->size);
-                        r_print_hexdiff (core->print,
+			r_print_hexdiff (core->print,
 				snap->addr, snap->data,
 				snap->addr, b,
 				snap->size, col);
-                        free (b);
+			free (b);
 		}
 		count ++;
 	}
@@ -1658,7 +1658,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbte", " <addr>", "Enable Breakpoint Trace",
 		"dbtd", " <addr>", "Disable Breakpoint Trace",
 		"dbts", " <addr>", "Swap Breakpoint Trace",
-		"dbm", " [<delta>]", "Define delta to be applied to all breakpoints (ASLR)",
+		"dbm", " <module> <offset>", "Add a breakpoint at an offset from a module's base",
 		"dbn", " [<name>]", "Show or set name for current breakpoint",
 		//
 		"dbi", "", "List breakpoint indexes",
@@ -1871,10 +1871,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			char *string = strdup (input + 3);
 			char *module = NULL;
 			st64 delta = 0;
+
 			module = strtok (string, " ");
 			delta = (ut64)r_num_math (core->num, strtok (NULL, ""));
-			bpi = r_debug_bp_add (core->dbg, 0, hwbp, strdup (module), delta);
-			if (bpi) bpi->name = strdup (module);
+			bpi = r_debug_bp_add (core->dbg, 0, hwbp, module, delta);
 			free (string);
 		}
 		break;
@@ -1918,7 +1918,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			//bp->enabled = !bp->enabled;
 			r_bp_del (core->dbg->bp, addr);
 		} else {
-
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
@@ -1973,17 +1972,16 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			addr = r_num_math (core->num, input+2);
 			if (validAddress (core, addr)) {
-				// const int bpsz = (!strcmp (core->dbg->arch, "arm"))? 4: 1;
 				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
 				if (bpi) {
 					free (bpi->name);
 					if (!strcmp (input + 2, "$$")) {
 						char *newname = NULL;
-						//RFlagItem *f = r_flag_get_at (core->flags, addr);
 						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
+
 						if (f) {
 							if (f->offset != addr) {
-								newname = r_str_newf ("%s+%d\n", f->name, (int)(addr - f->offset));
+								newname = r_str_newf ("%s+0x%" PFMT64x "\n", f->name, addr - f->offset);
 							} else {
 								newname = strdup (f->name);
 							}
@@ -1993,8 +1991,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						bpi->name = strdup (input + 2);
 					}
 				} else {
-					eprintf ("Cannot set breakpoint at "
-						"'%s'\n", input+2);
+					eprintf ("Cannot set breakpoint at '%s'\n", input + 2);
 				}
 			} else {
 				eprintf ("Cannot place a breakpoint on unmapped memory. See dbg.bpinmaps\n");
