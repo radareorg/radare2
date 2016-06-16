@@ -1782,7 +1782,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				eprintf ("Warning: malformed file, relocation entry #%u is partially beyond the end of section %u.\n", rel, i);
 			}
 			if (bin->ehdr.e_type == ET_REL) {
-				if (g_sections[i].info < bin->ehdr.e_shnum) {
+				if (g_sections[i].info < bin->ehdr.e_shnum && bin->shdr) {
 					ret[rel].rva = bin->shdr[g_sections[i].info].sh_offset + ret[rel].offset;
 					ret[rel].rva = Elf_(r_bin_elf_p2v) (bin, ret[rel].rva);
 				} else {
