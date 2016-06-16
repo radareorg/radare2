@@ -106,7 +106,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			return -1;
 		} else {
 			io->cb_printf ("%d\n", iop->pid);
-			return pid;
+			return iop->pid;
 		}
 	} else {
 		eprintf ("Try: '=!pid'\n");
