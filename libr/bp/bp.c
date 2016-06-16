@@ -279,10 +279,10 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			// b->data? b->data: "");
 			break;
 		case 'j':
-			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,\
-				\"prot\":\"%c%c%c\",\"hw\":%s,\
-				\"trace\":%s,\"enabled\":%s,\
-				\"data\":\"%s\"}",
+			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
+				"\"prot\":\"%c%c%c\",\"hw\":%s,"
+				"\"trace\":%s,\"enabled\":%s,"
+				"\"data\":\"%s\"}",
 				iter->p ? "," : "",
 				b->addr, b->size,
 				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
