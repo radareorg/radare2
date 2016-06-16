@@ -45,10 +45,12 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #include <sys/types.h>
 #include <sys/wait.h>
 #define R_DEBUG_REG_T struct reg
+#include "native/procfs.h"
 #if __KFBSD__
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
+#include "native/procfs.h"
 
 #elif __APPLE__
 #include <sys/resource.h>
@@ -63,6 +65,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 
 #elif __linux__
 #include "native/linux/linux_debug.h"
+#include "native/procfs.h"
 #if __x86_64__
 #include "native/linux/linux_coredump.h"
 #endif
@@ -327,7 +330,6 @@ static RList *r_debug_native_pids (int pid) {
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_pids (pid, list);
 #elif __APPLE__
-
 	if (pid) {
 		RDebugPid *p = xnu_get_pid (pid);
 		if (p) r_list_append (list, p);
@@ -339,70 +341,76 @@ static RList *r_debug_native_pids (int pid) {
 		}
 	}
 #else
-	int i, fd;
-	char *ptr, cmdline[1024];
+	int i;
+	char *ptr, buf[1024];
+
 	list->free = (RListFree)&r_debug_pid_free;
-	/* TODO */
 	if (pid) {
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
-		/* list parents */
 		DIR *dh;
 		struct dirent *de;
+
+		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
+		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
+
+		/* list parents */
 		dh = opendir ("/proc");
 		if (dh == NULL) {
+			r_sys_perror ("opendir /proc");
 			r_list_free (list);
 			return NULL;
 		}
-		//for (i=2; i<39999; i++) {
 		while ((de = readdir (dh))) {
-			i = atoi (de->d_name); if (!i) continue;
-			snprintf (cmdline, sizeof (cmdline), "/proc/%d/status", i);
-			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) continue;
-			if (read (fd, cmdline, sizeof(cmdline)) == -1) {
-				close (fd);
+			/* for each existing pid file... */
+			i = atoi (de->d_name);
+			if (i <= 0) {
 				continue;
 			}
-			cmdline[sizeof(cmdline) - 1] = '\0';
-			ptr = strstr (cmdline, "PPid:");
+
+			/* try to read the status */
+			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1) {
+				continue;
+			}
+
+			/* look for the parent process id */
+			ptr = strstr (buf, "PPid:");
 			if (ptr) {
-				int ret, ppid = atoi (ptr + 6);
-				close (fd);
+				int ppid = atoi (ptr + 6);
+
+				/* if this is the requested process... */
 				if (i == pid) {
 					//eprintf ("PPid: %d\n", ppid);
+					/* append it to the list with parent */
 					r_list_append (list, r_debug_pid_new (
 						"(ppid)", ppid, 's', 0));
 				}
-				if (ppid != pid) continue;
-				snprintf (cmdline, sizeof(cmdline) - 1, "/proc/%d/cmdline", ppid);
-				fd = open (cmdline, O_RDONLY);
-				if (fd == -1) continue;
-				ret = read (fd, cmdline, sizeof(cmdline));
-				if (ret > 0) {
-					cmdline[ret - 1] = '\0';
-					r_list_append (list, r_debug_pid_new (
-						cmdline, i, 's', 0));
+
+				/* ignore it if it is not one of our children */
+				if (ppid != pid) {
+					continue;
 				}
+
+				/* it's a child of the requested pid, read it's command line and add it */
+				if (procfs_pid_slurp (ppid, "cmdline", buf, sizeof(buf)) == -1) {
+					continue;
+				}
+
+				r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
 			}
-			close (fd);
 		}
 		closedir (dh);
-	} else
-	for (i = 2; i < MAXPID; i++) {
-		if (!r_sandbox_kill (i, 0)) {
-			int ret;
-			// TODO: Use slurp!
-			snprintf (cmdline, sizeof(cmdline), "/proc/%d/cmdline", i);
-			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) continue;
-			cmdline[0] = '\0';
-			ret = read (fd, cmdline, sizeof(cmdline));
-			if (ret > 0) {
-				cmdline[ret - 1] = '\0';
-				r_list_append (list, r_debug_pid_new (
-					cmdline, i, 's', 0));
-			}
-			close (fd);
+	} else {
+		/* try to bruteforce the processes
+		 * XXX(jjd): wouldn't listing the processes like before work better?
+		 */
+		for (i = 2; i < MAXPID; i++) {
+			/* try to send signal 0, if it fails it must not be valid */
+			if (r_sandbox_kill (i, 0) == -1)
+				continue;
+
+			if (procfs_pid_slurp (i, "cmdline", buf, sizeof(buf)) == -1)
+				continue;
+
+			r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
 		}
 	}
 #endif

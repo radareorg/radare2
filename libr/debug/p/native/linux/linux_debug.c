@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <sys/uio.h>
 #include "linux_debug.h"
+#include "../procfs.h"
 
 const char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
@@ -123,68 +124,57 @@ RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
 }
 
 RList *linux_thread_list (int pid, RList *list) {
-	int i, fd = -1, thid = 0;
-	char *ptr, cmdline[1024];
+	int i, thid = 0;
+	char *ptr, buf[1024];
 
 	if (!pid) {
 		r_list_free (list);
 		return NULL;
 	}
 	r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
-	/* list parents */
 
-	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
-	//while ((de = readdir (dh))) {
-	snprintf (cmdline, sizeof(cmdline), "/proc/%d/task", pid);
-	if (r_file_is_directory (cmdline)) {
+	/* if this process has a task directory, use that */
+	snprintf (buf, sizeof(buf), "/proc/%d/task", pid);
+	if (r_file_is_directory (buf)) {
 		struct dirent *de;
-		DIR *dh = opendir (cmdline);
+		DIR *dh = opendir (buf);
 		while ((de = readdir (dh))) {
 			int tid = atoi (de->d_name);
+
+			if (procfs_pid_slurp (tid, "comm", buf, sizeof(buf)) == -1) {
+				/* fall back to auto-id */
+				snprintf (buf, sizeof(buf), "thread_%d", thid++);
+			}
+
 			// TODO: get status, pc, etc..
-			r_list_append (list, r_debug_pid_new (cmdline, tid, 's', 0));
+			r_list_append (list, r_debug_pid_new (buf, tid, 's', 0));
 		}
 		closedir (dh);
 	} else {
 		/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
-		//while ((de = readdir (dh))) {
 #undef MAXPID
 #define MAXPID 99999
+		/* otherwise, brute force the pids */
 		for (i = pid; i < MAXPID; i++) { // XXX
-			snprintf (cmdline, sizeof(cmdline), "/proc/%d/status", i);
-			if (fd != -1) {
-				close (fd);
-				fd = -1;
-			}
-			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) {
+			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1)
 				continue;
-			}
-			if (read (fd, cmdline, 1024)<2) {
-				// read error
-				close (fd);
-				break;
-			}
-			cmdline[sizeof(cmdline) - 1] = '\0';
-			ptr = strstr (cmdline, "Tgid:");
+
+			/* look for a thread group id */
+			ptr = strstr (buf, "Tgid:");
 			if (ptr) {
 				int tgid = atoi (ptr + 5);
-				if (tgid != pid) {
-					close (fd);
-					fd = -1;
+
+				/* if it is not in our thread group, we don't want it */
+				if (tgid != pid)
 					continue;
+
+				if (procfs_pid_slurp (i, "comm", buf, sizeof(buf)) == -1) {
+					/* fall back to auto-id */
+					snprintf (buf, sizeof(buf), "thread_%d", thid++);
 				}
-				if (read (fd, cmdline, sizeof(cmdline) - 1) <2) {
-					break;
-				}
-				snprintf (cmdline, sizeof(cmdline), "thread_%d", thid++);
-				cmdline[sizeof (cmdline) - 1] = '\0';
-				r_list_append (list, r_debug_pid_new (cmdline, i, 's', 0));
+
+				r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
 			}
-		}
-		if (fd != -1) {
-			close (fd);
-			fd = -1;
 		}
 	}
 	return list;
