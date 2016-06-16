@@ -1798,17 +1798,17 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - f->offset);
 						if (delta > 0) {
-							snprintf (flagdesc, sizeof(flagdesc),
+							snprintf (flagdesc, sizeof (flagdesc),
 								"%s+%d", f->name, delta);
 						} else if (delta < 0) {
-							snprintf (flagdesc, sizeof(flagdesc),
+							snprintf (flagdesc, sizeof (flagdesc),
 								"%s%d", f->name, delta);
 						} else {
-							snprintf (flagdesc, sizeof(flagdesc),
+							snprintf (flagdesc, sizeof (flagdesc),
 								"%s", f->name);
 						}
 					} else {
-						snprintf (flagdesc, sizeof(flagdesc),
+						snprintf (flagdesc, sizeof (flagdesc),
 							"%s", f->name);
 					}
 				}
@@ -1820,13 +1820,13 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					if (f->offset != addr) {
 						int delta = (int)(frame->addr - 1 - f->offset);
 						if (delta > 0) {
-							snprintf (flagdesc2, sizeof(flagdesc2),
+							snprintf (flagdesc2, sizeof (flagdesc2),
 								"%s+%d", f->name, delta + 1);
 						} else if (delta<0) {
-							snprintf (flagdesc2, sizeof(flagdesc2),
+							snprintf (flagdesc2, sizeof (flagdesc2),
 								"%s%d", f->name, delta + 1);
 						} else {
-							snprintf (flagdesc2, sizeof(flagdesc2),
+							snprintf (flagdesc2, sizeof (flagdesc2),
 								"%s+1", f->name);
 						}
 					} else {
@@ -1839,14 +1839,14 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 
 				if (core->dbg->bits & R_SYS_BITS_64) {
-					snprintf (pcstr, sizeof(pcstr), "0x%-16" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof(spstr), "0x%-16" PFMT64x, frame->sp);
+					snprintf (pcstr, sizeof (pcstr), "0x%-16" PFMT64x, frame->addr);
+					snprintf (spstr, sizeof (spstr), "0x%-16" PFMT64x, frame->sp);
 				} else if (core->dbg->bits & R_SYS_BITS_32) {
-					snprintf (pcstr, sizeof(pcstr), "0x%-8" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof(spstr), "0x%-8" PFMT64x, frame->sp);
+					snprintf (pcstr, sizeof (pcstr), "0x%-8" PFMT64x, frame->addr);
+					snprintf (spstr, sizeof (spstr), "0x%-8" PFMT64x, frame->sp);
 				} else {
-					snprintf (pcstr, sizeof(pcstr), "0x%" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof(spstr), "0x%" PFMT64x, frame->sp);
+					snprintf (pcstr, sizeof (pcstr), "0x%" PFMT64x, frame->addr);
+					snprintf (spstr, sizeof (spstr), "0x%" PFMT64x, frame->sp);
 				}
 
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
@@ -2075,7 +2075,7 @@ static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 
 	snprintf (dbkey, TN_KEY_LEN, TN_KEY_FMT, addr);
 	t_node = (struct trace_node *)(size_t)sdb_num_get (db, dbkey, NULL);
 	if (!t_node) {
-		t_node = (struct trace_node *)malloc (sizeof(*t_node));
+		t_node = (struct trace_node *)malloc (sizeof (*t_node));
 		t_node->addr = addr;
 		t_node->refs = 1;
 		sdb_num_set (db, dbkey, (ut64)(size_t)t_node, 0);
