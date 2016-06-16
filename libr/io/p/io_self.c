@@ -177,6 +177,8 @@ static int __close(RIODesc *fd) {
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
 		eprintf ("%d\n", fd->fd);
+	} else if (!strncmp (cmd, "pid", 3)) {
+		/* do nothing here */
 	} else if (!strcmp (cmd, "maps")) {
 		int i;
 		for (i =0; i<self_sections_count ;i++) {

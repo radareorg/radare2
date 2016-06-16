@@ -458,7 +458,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (!strcmp (pidstr, "0")) {
 			pid = 0;
 		} else {
-			pid = atoi (cmd+4);
+			pid = atoi (cmd + 4);
 			if (!pid) pid = -1;
 		}
 		if (pid != -1) {

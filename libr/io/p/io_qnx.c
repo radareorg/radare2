@@ -136,17 +136,6 @@ static int __close (RIODesc *fd) {
 }
 
 static int __system (RIO *io, RIODesc *fd, const char *cmd) {
-	//printf("ptrace io command (%s)\n", cmd);
-	/* XXX ugly hack for testing purposes */
-	if (!strcmp (cmd, "help")) {
-		eprintf ("Usage: =!cmd args\n"
-			 " =!pid      - show targeted pid\n");
-	} else if (!strncmp (cmd, "pid", 3)) {
-		int pid = 1234;
-		io->cb_printf ("%d\n", pid);
-		return pid;
-	} else
-		eprintf ("Try: '=!pid'\n");
 	return true;
 }
 
