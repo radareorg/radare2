@@ -226,7 +226,7 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	return -1;
 #else
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
-//eprintf ("SIG %d\n", dbg->reason.signum);
+	//eprintf ("continuing with signal %d ...\n", dbg->reason.signum);
 	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
 #endif
 }
@@ -290,9 +290,11 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 		// XXX: this is blocking, ^C will be ignored
 		int ret = waitpid (pid, &status, 0);
 		if (ret == -1) {
+			r_sys_perror ("waitpid");
 			status = R_DEBUG_REASON_ERROR;
 		} else {
-			//printf ("status=%d (return=%d)\n", status, ret);
+			//printf ("r_debug_native_wait: status=%d (return=%d)\n", status, ret);
+
 			// TODO: switch status and handle reasons here
 			r_debug_handle_signals (dbg);
 
