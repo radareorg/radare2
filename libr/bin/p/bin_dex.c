@@ -387,7 +387,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 //eprintf ("SF %d IF %d DM %d VM %d\n", SF, IF, DM, VM);
 	dprintf ("  static fields: %u\n", (ut32)SF);
 	/* static fields */
-	for (i=0; i<SF; i++) {
+	for (i = 0; i < SF; i++) {
 		ut64 FI, FA;
 		p = r_uleb128 (p, p_end-p, &FI);
 		p = r_uleb128 (p, p_end-p, &FA);
@@ -398,7 +398,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	}
 	/* instance fields */
 	dprintf ("  instance fields: %u\n", (ut32)IF);
-	for (i=0; i<IF; i++) {
+	for (i = 0; i < IF; i++) {
 		ut64 FI, FA;
 		p = r_uleb128 (p, p_end-p, &FI);
 		p = r_uleb128 (p, p_end-p, &FA);
@@ -414,7 +414,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	}
 #endif
 	ut64 omi = 0;
-	for (i=0; i<DM; i++) {
+	for (i = 0; i < DM; i++) {
 		char *method_name, *flag_name;
 		ut64 MI, MA, MC;
 		p = r_uleb128 (p, p_end-p, &MI);
@@ -435,8 +435,9 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 		dprintf ("METHOD NAME %u\n", (ut32)MI);
 		if (!method_name) method_name = strdup ("unknown");
 		flag_name = flagname (class_name, method_name);
-		if (!flag_name)
+		if (!flag_name) {
 			continue;
+		}
 		dprintf ("f %s @ 0x%x\n", flag_name, (ut32)MC);
 		dprintf ("    { name: %d %d %s,\n", (ut32)MC, (ut32)MI, method_name);
 		dprintf ("      idx: %u,\n", (ut32)MI);
@@ -448,7 +449,7 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 			sym->name = flag_name;
 			sym->type = r_str_const ("FUNC");
 			sym->paddr = sym->vaddr = MC;
-			if (MC>0) { /* avoid methods at 0 paddr */
+			if (MC > 0) { /* avoid methods at 0 paddr */
 #if 0
 				// TODO: use sdb+pf to show method header
 				ut16 regsz;
@@ -487,21 +488,28 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	}
 	/* virtual methods */
 	dprintf ("  virtual methods: %u\n", (ut32)VM);
-	for (i=0; i<VM; i++) {
+	for (i = 0; i < VM; i++) {
 		ut64 MI, MA, MC;
 		p = r_uleb128 (p, p_end-p, &MI);
 		p = r_uleb128 (p, p_end-p, &MA);
 		p = r_uleb128 (p, p_end-p, &MC);
 
-		if (MI<bin->header.method_size) methods[MI] = 1;
-		if (MC>0 && bin->code_from>MC) bin->code_from = MC;
-		if (MC>0 && bin->code_to<MC) bin->code_to = MC;
+		if (MI < bin->header.method_size) methods[MI] = 1;
+		if (MC > 0 && bin->code_from > MC) bin->code_from = MC;
+		if (MC > 0 && bin->code_to < MC) bin->code_to = MC;
 
 		char *name = dex_method_name (bin, MI);
 		dprintf ("    method name: %s\n", name);
 		dprintf ("    method_idx: %u\n", (ut32)MI);
 		dprintf ("    method access_flags: %u\n", (ut32)MA);
 		dprintf ("    method code_offset: %u\n", (ut32)MC);
+		{
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			sym->name = r_str_newf ("virtual.%s", name);
+			sym->type = r_str_const ("FUNC");
+			sym->paddr = sym->vaddr = MC;
+			r_list_append (bin->methods_list, sym);
+		}
 		free (name);
 	}
 	free (class_name);
@@ -538,36 +546,38 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	}
 
 	dprintf ("Walking %d classes\n", bin->header.class_size);
-	if (bin->classes)
-	for (i=0; i<bin->header.class_size; i++) {
-		char *super_name, *class_name;
-		struct dex_class_t *c = &bin->classes[i];
-		class_name = dex_class_name (bin, c);
-		super_name = dex_class_super_name (bin, c);
-		dprintf ("{\n");
-		dprintf ("  class: 0x%x,\n", c->class_id); // indexed by ordinal
-		dprintf ("  super: \"%s\",\n", super_name); // indexed by name
-		dprintf ("  name: \"%s\",\n", class_name);
-		dprintf ("  methods: [\n");
-// sdb_queryf ("(-1)classes=%s", class_name)
-// sdb_queryf ("class.%s.super=%s", super_name)
-// sdb_queryf ("class.%s.methods=%d", class_name, DM);
-#if 0
-		if (c->class_data_offset == 0) {
-			eprintf ("Skip class\n");
-			continue;
+	if (bin->classes) {
+		for (i = 0; i < bin->header.class_size; i++) {
+			char *super_name, *class_name;
+			struct dex_class_t *c = &bin->classes[i];
+			class_name = dex_class_name (bin, c);
+			super_name = dex_class_super_name (bin, c);
+//eprintf ("%s\n", class_name);
+			dprintf ("{\n");
+			dprintf ("  class: 0x%x,\n", c->class_id); // indexed by ordinal
+			dprintf ("  super: \"%s\",\n", super_name); // indexed by name
+			dprintf ("  name: \"%s\",\n", class_name);
+			dprintf ("  methods: [\n");
+	// sdb_queryf ("(-1)classes=%s", class_name)
+	// sdb_queryf ("class.%s.super=%s", super_name)
+	// sdb_queryf ("class.%s.methods=%d", class_name, DM);
+	#if 0
+			if (c->class_data_offset == 0) {
+				eprintf ("Skip class\n");
+				continue;
+			}
+	#endif
+			free (methods);
+			methods = parse_class (arch, bin, c, NULL);
+			dprintf ("  ],\n");
+			dprintf ("},");
+			free (class_name);
+			free (super_name);
 		}
-#endif
-		free (methods);
-		methods = parse_class (arch, bin, c, NULL);
-		dprintf ("  ],\n");
-		dprintf ("},");
-		free (class_name);
-		free (super_name);
 	}
 	if (methods) {
 		dprintf ("imports: \n");
-		for (i = 0; i<bin->header.method_size; i++) {
+		for (i = 0; i < bin->header.method_size; i++) {
 			//RBinDexMethod *method = &bin->methods[i];
 			if (!methods[i]) {
 				char *method_name = dex_method_name (bin, i);
@@ -645,11 +655,13 @@ free (methodname);
 
 static RList* methods (RBinFile *arch) {
 	RBinDexObj *bin;
-	if (!arch || !arch->o || !arch->o->bin_obj)
+	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
+	}
 	bin = (RBinDexObj*) arch->o->bin_obj;
-	if (!bin->methods_list)
+	if (!bin->methods_list) {
 		dex_loadcode (arch, bin);
+	}
 	return bin->methods_list;
 }
 
@@ -700,8 +712,9 @@ static RList* classes (RBinFile *arch) {
 			continue;
 		}
 		// unsigned if (entry.source_file<0 || entry.source_file >= bin->header.strings_size)
-		if (entry.source_file >= bin->header.strings_size)
+		if (entry.source_file >= bin->header.strings_size) {
 			continue;
+		}
 		r_buf_read_at (bin->b, bin->strings[entry.source_file],
 				(ut8*)name, len);
 		//snprintf (ptr->name, sizeof (ptr->name), "field.%s.%d", name, i);
@@ -711,7 +724,7 @@ static RList* classes (RBinFile *arch) {
 		//class->name = strdup (name[0]<0x41? name+1: name);
 		class->name = dex_class_name_byid (bin, entry.class_id);
 		// find reference to this class instance
-		char *cn = getClassName(class->name);
+		char *cn = getClassName (class->name);
 		if (cn) {
 			free (class->name);
 			class->index = class_index++;
@@ -719,8 +732,7 @@ static RList* classes (RBinFile *arch) {
 			class->name = cn;
 			//class->addr = class_addr;
 
-			int *methods = parse_class (arch, bin, &entry, class);
-			free (methods);
+			free (parse_class (arch, bin, &entry, class));
 
 			r_list_append (ret, class);
 			dprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
