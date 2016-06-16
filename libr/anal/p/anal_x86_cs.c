@@ -1187,22 +1187,18 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_MUL:
 		{
 			char *src = getarg (&gop, 0, 0, NULL);
-			char *dst;
 			switch (src[0]) {
-				case 'r':
-					dst = strdup ("rax");
-					break;
-				case 'e':
-					dst = strdup ("eax");
-					break;
-				default:
-					dst = strdup ("al");
-					break;
+			case 'r':
+				esilprintf (op, "%s,rax,*=", src);
+				break;
+			case 'e':
+				esilprintf (op, "%s,eax,*=", src);
+				break;
+			default:
+				esilprintf (op, "%s,al,*=", src);
+				break;
 			}
-
-			esilprintf (op, "%s,%s,*=", src, dst);
 			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_MULX:
