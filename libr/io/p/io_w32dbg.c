@@ -94,7 +94,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "pid", 3)) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
-			if  (pid > 0) {
+			if  (pid > 0 && pid != iop->pid) {
 				dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 				if (dbg->pi.hProcess) {
 					iop->pid = iop->tid = pid;
