@@ -198,15 +198,17 @@ libr/debug/p/native/xnu/reg/darwin-x64.h
 
 A debugger plug-in that enables debugging code natively on QNX systems. Corresponding
 IO plugin is located in libr/io/p/io_qnx.c
+See doc/qnx
 
 ### libr/debug/p/debug_rap.c
 
-TODO (?? radare protocol??)
+See doc/rap
 
 ### libr/debug/p/debug_wind.c
 
 A debugger plugin that enables debugging code remotely via WinDbg protocol. WinDbg protocol
 parser is located in shlr/wind. Corresponding IO plugin located in libr/io/p/io_windbg.c
+See doc/windbg
 
 ## Conclusion
 
