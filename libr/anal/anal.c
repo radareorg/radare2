@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -160,8 +160,9 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 }
 
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
-	if (foo->init)
+	if (foo->init) {
 		foo->init (anal->user);
+	}
 	r_list_append (anal->plugins, foo);
 	return true;
 }
@@ -341,7 +342,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	fcni = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
-			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
+			if (addr >= bbi->addr && addr < (bbi->addr + bbi->size)) {
 				bbi->traced = true;
 				break;
 			}
@@ -374,8 +375,10 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	int len;
 	ut8 *buf;
 	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (!op) return NULL;
-	buf = malloc (strlen (str)+1);
+	if (!op) {
+		return NULL;
+	}
+	buf = calloc (1, strlen (str) + 1);
 	if (!buf) {
 		free (op);
 		return NULL;
@@ -387,6 +390,9 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 }
 
 R_API bool r_anal_op_is_eob (RAnalOp *op) {
+	if (op->eob) {
+		return true;
+	}
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:

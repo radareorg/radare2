@@ -51,7 +51,6 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
 	R_FREE (op->mnemonic);
-	memset (op, 0, sizeof (RAnalOp));
 	return true;
 }
 
@@ -80,7 +79,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	int ret = 0;
 
 	//len will end up in memcmp so check for negative	
-	if (!anal || len < 0) return -1;
+	if (!anal || len < 0) {
+		return -1;
+	}
 	if (anal->pcalign) {
 		if (addr % anal->pcalign) {
 			memset (op, 0, sizeof (RAnalOp));
@@ -95,7 +96,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		ret = anal->cur->op (anal, op, addr, data, len);
 		op->addr = addr;
 		op->var = get_used_var (anal, op);
-		if (ret < 1) op->type = R_ANAL_OP_TYPE_ILL;
+		if (ret < 1) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+		}
 	} else {
 		if (!memcmp (data, "\xff\xff\xff\xff", R_MIN(4, len))) {
 			op->type = R_ANAL_OP_TYPE_ILL;
