@@ -31,25 +31,31 @@ static inline bool setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 }
 
 static Sdb* get_sdb (RBinObject *o) {
-	struct Elf_(r_bin_elf_obj_t) *bin;
-	if (!o) return NULL;
-	bin = (struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
-	if (bin && bin->kv) return bin->kv;
+	if (o) {
+		struct Elf_(r_bin_elf_obj_t) *bin = (struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
+		if (bin && bin->kv) {
+			return bin->kv;
+		}
+	}
 	return NULL;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct Elf_(r_bin_elf_obj_t) *res;
+	const char *elf_type;
 	RBuffer *tbuf;
-	if (!buf || sz == 0 || sz == UT64_MAX)
+
+	if (!buf || sz == 0 || sz == UT64_MAX) {
 		return NULL;
+	}
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = Elf_(r_bin_elf_new_buf) (tbuf);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}
-	const char *elf_type = Elf_(r_bin_elf_get_file_type (res));
+
+	elf_type = Elf_(r_bin_elf_get_file_type (res));
 	if (elf_type && !strncmp (elf_type, "CORE", 4)) {
 		int len = 0;
 		ut8 *regs = Elf_(r_bin_elf_grab_regstate)(res, &len);
@@ -64,10 +70,13 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	return res;
 }
 
+/* TODO: must return bool */
 static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
- 	if (!arch || !arch->o) return false;
+	if (!arch || !arch->o) {
+		return false;
+	}
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj != NULL;
 }
@@ -123,19 +132,21 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 }
 
 static RList* entries(RBinFile *arch) {
-	RList *ret;
+	struct Elf_(r_bin_elf_obj_t)* obj;
 	RBinAddr *ptr = NULL;
-	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
+	RList *ret;
 
-	if (!obj)
+	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
-
-	if (!(ret = r_list_new ()))
+	}
+	obj = arch->o->bin_obj;
+	if (!(ret = r_list_new ())) {
 		return NULL;
-
+	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr)))
+	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
+	}
 	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
 	ptr->vaddr = Elf_(r_bin_elf_p2v) (arch->o->bin_obj, ptr->paddr);
 	r_list_append (ret, ptr);
@@ -150,13 +161,15 @@ static RList* sections(RBinFile *arch) {
 	struct Elf_(r_bin_elf_obj_t)* obj = arch && arch->o ? arch->o->bin_obj : NULL;
 	Elf_(Phdr)* phdr = NULL;
 
-	if (!obj || !(ret = r_list_new ()))
+	if (!obj || !(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
-			if (!(ptr = R_NEW0 (RBinSection)))
+			if (!(ptr = R_NEW0 (RBinSection))) {
 				break;
+			}
 			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
 			ptr->size = section[i].size;
 			ptr->vsize = section[i].size;
@@ -264,8 +277,9 @@ static RList* sections(RBinFile *arch) {
 		ptr->size = ehdr_size;
 		ptr->vsize = ehdr_size;
 		ptr->add = true;
-		if (obj->ehdr.e_type == ET_REL)
+		if (obj->ehdr.e_type == ET_REL) {
 			ptr->add = true;
+		}
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
@@ -295,8 +309,9 @@ static RList* symbols(RBinFile *arch) {
 		ut64 paddr = symbol[i].offset;
 		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
 
-		if (!(ptr = R_NEW0 (RBinSymbol)))
+		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			break;
+		}
 		ptr->name = strdup (symbol[i].name);
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const (symbol[i].bind);
@@ -374,19 +389,21 @@ static RList* imports(RBinFile *arch) {
 	RList *ret = NULL;
 	int i;
 
-	if (arch && arch->o && arch->o->bin_obj) {
-		bin = arch->o->bin_obj;
-	} else return NULL;
-
-	if (!(ret = r_list_newf (r_bin_import_free)))
+	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
+	}
+	bin = arch->o->bin_obj;
+	if (!(ret = r_list_newf (r_bin_import_free))) {
+		return NULL;
+	}
 	if (!(import = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS))) {
 		r_list_free (ret);
 		return NULL;
 	}
 	for (i = 0; !import[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinImport)))
+		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
+		}
 		ptr->name = strdup (import[i].name);
 		ptr->bind = r_str_const (import[i].bind);
 		ptr->type = r_str_const (import[i].type);

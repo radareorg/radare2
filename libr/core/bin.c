@@ -1253,16 +1253,13 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		snInit (r, &sn, symbol, lang);
 
 		if (IS_MODE_SET (mode)) {
-			if (is_arm) {
+			if (is_arm && info->bits < 33) { // 16 or 32
 				int force_bits = 0;
-				if (va && symbol->bits == 16) {
+				if (symbol->paddr & 1) {
 					force_bits = 16;
-				}
-#if 0
-				if (info->bits == 16 && symbol->bits == 32) {
+				} else if (info->bits == 16) {
 					force_bits = 32;
 				}
-#endif
 				if (force_bits) {
 					r_anal_hint_set_bits (r->anal, addr, force_bits);
 				}
