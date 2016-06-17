@@ -31,7 +31,7 @@ static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
 	//return (int)ret; //(int)len; //ret;
 }
 
-static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
+static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
 	return debug_os_read_at (fd->data, buf, len, io->off);
 }
@@ -41,14 +41,15 @@ static int w32dbg_write_at(RIOW32Dbg *dbg, const ut8 *buf, int len, ut64 addr) {
 	return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
 }
 
-static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return w32dbg_write_at (fd->data, buf, len, io->off);
 }
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	if (!strncmp (file, "attach://", 9))
+	if (!strncmp (file, "attach://", 9)) {
 		return true;
-	return (!strncmp (file, "w32dbg://", 9))? true: false;
+	}
+	return !strncmp (file, "w32dbg://", 9);
 }
 
 static int __attach (RIOW32Dbg *dbg) {
@@ -59,14 +60,14 @@ static int __attach (RIOW32Dbg *dbg) {
 	return dbg->pid;
 }
 
-static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
+static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
 		char *pidpath;
-		RIOW32Dbg *dbg = R_NEW (RIOW32Dbg);
+		RIOW32Dbg *dbg = R_NEW0 (RIOW32Dbg);
 		if (!dbg) {
 			return NULL;
 		}
-		dbg->pid = atoi (file+9);
+		dbg->pid = atoi (file + 9);
 		if (__attach (dbg) == -1) {
 			free (dbg);
 			return NULL;
@@ -79,7 +80,11 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
+	return (!whence)
+		? offset
+		: (whence == 1)
+			? io->off + offset
+			: UT64_MAX;
 }
 
 static int __close(RIODesc *fd) {
@@ -95,8 +100,8 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
 			if  (pid > 0 && pid != iop->pid) {
-				dbg->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-				if (dbg->pi.hProcess) {
+				iop->pi.hProcess = OpenProcess (PROCESS_ALL_ACCESS, false, pid);
+				if (iop->pi.hProcess) {
 					iop->pid = iop->tid = pid;
 				} else {
 					eprintf ("Cannot attach to %d\n", pid);
@@ -114,14 +119,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	return -1;
 }
 
-static int __init(struct r_io_t *io) {
-//	eprintf ("w32dbg init\n");
-	return true;
-}
-
-// TODO: rename w32dbg to io_w32dbg .. err io.w32dbg ??
 RIOPlugin r_io_plugin_w32dbg = {
-        //void *plugin;
 	.name = "w32dbg",
         .desc = "w32dbg io",
 	.license = "LGPL3",
@@ -131,7 +129,6 @@ RIOPlugin r_io_plugin_w32dbg = {
         .plugin_open = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
-	.init = __init,
 	.write = __write,
 	.isdbg = true
 };
