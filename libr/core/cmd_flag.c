@@ -433,7 +433,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			NULL
 			};
 			r_core_cmd_help (core, help_msg);
-        } else {
+		} else {
 			RFlagItem *fi;
 			const char *ret;
 			char *arg = r_str_chop (strdup (input+2));

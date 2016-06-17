@@ -2983,12 +2983,12 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1));
 		break;
 	case 'k': // "ask"
-	    if (input[1] == ' ') {
-            out = sdb_querys (core->anal->syscall->db, NULL, 0, input + 2);
-            if (out) {
-                r_cons_printf ("%s\n", out);
-                free (out);
-            }
+		if (input[1] == ' ') {
+			out = sdb_querys (core->anal->syscall->db, NULL, 0, input + 2);
+			if (out) {
+				r_cons_printf ("%s\n", out);
+				free (out);
+			}
 		} else eprintf ("|ERROR| Usage: ask [query]\n");
 		break;
 	default:

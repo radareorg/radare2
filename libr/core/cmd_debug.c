@@ -980,10 +980,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case '-':
 		if (input[1] != ' ') {
-            eprintf ("|ERROR| Usage: dm- [addr]\n");
-            break;
-        }
-        addr = r_num_math (core->num, input+2);
+			eprintf ("|ERROR| Usage: dm- [addr]\n");
+			break;
+		}
+		addr = r_num_math (core->num, input+2);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				r_debug_map_dealloc(core->dbg, map);
