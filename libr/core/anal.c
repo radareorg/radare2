@@ -1851,7 +1851,7 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 				break;
 			}
 			sz = bb->size - pos;
-			r_anal_op (core->anal, &op, 0, buf + bb->op_pos[i], sz);
+			r_anal_op (core->anal, &op, 0, buf + pos, sz);
 			op.addr = bb->addr + pos;
 			fill_args (core->anal, fcn, &op);
 		}
