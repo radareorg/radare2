@@ -58,36 +58,7 @@ static char *flagname (const char *class, const char *method) {
 	if (class && method) {
 		return r_str_newf ("static.%s.%s", class, method);
 	}
-	if (!class || !method) {
-		return NULL;
-	}
-	s_len = strlen (class) + strlen (method)+10;
-	s = malloc (s_len);
-	if (!s) return NULL;
-	str = s;
-	p = (char*)r_str_lchr (class, '$');
-	if (!p) p = (char *)r_str_lchr (class, '/');
-	p = (char*)r_str_rchr (class, p, '/');
-	if (p && *p) class = p + 1;
-	for (str=s; *class; class++) {
-		switch (*class) {
-		case '$':
-		case ' ':
-		case '/': *s++ = '_'; break;
-		case ';': *s++ = '.'; break;
-		default: *s++ = *class; break;
-		}
-	}
-	for (*s++='.'; *method; method++) {
-		switch (*method) {
-		case '<': case '>':
-		case '/': *s++ = '_'; break;
-		case ';': *s++ = '.'; break;
-		default: *s++ = *method; break;
-		}
-	}
-	*s = 0;
-	return str;
+	return NULL;
 }
 
 static int check(RBinFile *arch) {
@@ -607,12 +578,13 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 					r_list_append (bin->methods_list, sym);
 
 					RBinImport *imp = R_NEW0 (RBinImport);
+#if DEADCODE
 					if (class_name) {
 						imp->name = r_str_newf ("%s.%s", class_name, method_name);
 						eprintf ("ERROR\n");
-					} else {
-						imp->name = r_str_newf ("imp.%s", method_name);
 					}
+#endif
+					imp->name = r_str_newf ("imp.%s", method_name);
 					// TODO: filter more chars that can be trash
 					r_str_replace_char (imp->name, ';', '_');
 					imp->type = r_str_const ("FUNC");

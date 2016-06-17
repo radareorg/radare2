@@ -844,7 +844,7 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 
 	/* Gid */
 	temp_p_gid = strstr (buff, "Gid:");
-	if (temp_p_uid) {
+	if (temp_p_gid) {
 		while (!isdigit (*temp_p_gid++)) {}
 		p_gid = temp_p_gid - 1;
 		while (isdigit (*temp_p_gid++)) {}
