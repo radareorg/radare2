@@ -425,7 +425,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		r_core_cmd0 (core, "V");
 		break;
 	case 'c':
-		if (input[1]=='?') {
+		if (input[1]=='?' || input[1] != ' ') {
 			const char *help_msg[] = {
 			"Usage: fc", "<flagname> [color]", " # List colors with 'ecs'",
 			"fc", " flagname", "Get current color for given flagname",
