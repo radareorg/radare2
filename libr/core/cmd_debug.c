@@ -2001,7 +2001,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					eprintf ("Cannot set breakpoint at '%s'\n", input + 2);
 				}
 			} else {
-				eprintf ("Cannot place a breakpoint on unmapped memory. See dbg.bpinmaps\n");
+				eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory. See dbg.bpinmaps\n", addr);
 			}
 		}
 		break;

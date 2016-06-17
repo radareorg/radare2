@@ -565,14 +565,13 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 	int mode = 0;
 	ut64 addr;
 
-	if (*input && (input[1] == ' ' || !input[1])) {
-		if (*input == 'r')
-			mode = '*';
-		else mode = *input;
+	if (*input) {
+		mode = *input;
 		input++;
 	}
-	if (input && *input) {
-		addr = r_num_math (core->num, input);
+	const char *space = strchr (input, ' ');
+	if (space) {
+		addr = r_num_math (core->num, space + 1);
 	} else {
 		addr = core->offset;
 	}
@@ -590,6 +589,21 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
 		switch (mode) {
+		case 'r':
+			if (b->jump == UT64_MAX) {
+				ut64 retaddr = b->addr;
+				if (b->op_pos) {
+					retaddr += b->op_pos[b->ninstr - 2];
+				}
+				if (!strcmp (input, "*")) {
+					r_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
+				} else if (!strcmp (input, "-*")) {
+					r_cons_printf ("db-0x%08"PFMT64x"\n", retaddr);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x"\n", retaddr);
+				}
+			}
+			break;
 		case '*':
 			r_cons_printf ("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n",
 				b->addr & 0xFFFFF, b->addr);
@@ -1134,7 +1148,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		default:
 		case '?':
+			/* TODO: use r_core_help */
 			eprintf ("Usage: afb+ or afbb or afb\n"
+				/* TODO: move afbr into afr? */
+				" afbr        - show addresses of return instructions in the function\n"
+				" .afbr*      - set breakpoint on every return address of the fcn\n"
+				" .afbr-*     - undo the above operation\n"
+				" afbj        - show basic blocks information in JSON\n"
 				" afB [bits]  - define asm.bits for given function\n"
 				" afb [addr]  - list basic blocks of function (see afbq, afbj, afb*)\n"
 				" afb+ fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))  add bb to function @ fcnaddr\n");

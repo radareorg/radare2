@@ -448,7 +448,7 @@ repeat:
 		}
 		// check if opcode is in another basic block
 		// in that case we break
-		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
 			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 			if (idx == 0) {
 				gotoBeach (R_ANAL_RET_END);
@@ -466,9 +466,8 @@ repeat:
 			}
 		}
 		if (!overlapped) {
-			r_anal_bb_set_offset (bb, bb->ninstr, addr + idx - bb->addr);
+			r_anal_bb_set_offset (bb, bb->ninstr++, addr + idx - bb->addr);
 			bb->size += oplen;
-			bb->ninstr++;
 			fcn->ninstr++;
 		//	FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
 		//	fcn->size += oplen; /// XXX. must be the sum of all the bblocks

@@ -790,7 +790,7 @@ typedef struct r_anal_bb_t {
 	// offsets of instructions in this block
 	ut16 *op_pos;
 	// size of the op_pos array
-	int n_op_pos;
+	int n_op_pos; // XXX. isnt this the same as ninstr ?
 	ut8 *op_bytes;
 	ut8 op_sz;
 	ut64 eflags;

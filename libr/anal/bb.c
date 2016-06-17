@@ -82,10 +82,9 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		}
 		if (oplen < 1) goto beach;
 
-		r_anal_bb_set_offset (bb, bb->ninstr, addr + idx - bb->addr);
+		r_anal_bb_set_offset (bb, bb->ninstr++, idx); //addr + idx - bb->addr);
 		idx += oplen;
 		bb->size += oplen;
-		bb->ninstr++;
 #if R_ANAL_BB_HAS_OPS
 		r_list_append (bb->ops, op);
 #endif
@@ -166,8 +165,8 @@ R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
 
 /* set the offset of the i-th instruction in the basicblock bb */
 R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
-	// the offset of the instruction 0 is not stored because always 0
-	if (i > 0) {
+	// the offset 0 of the instruction 0 is not stored because always 0
+	if (i > 0 && v > 0) {
 		if (i >= bb->n_op_pos) {
 			ut16 *tmp_op_pos = realloc (bb->op_pos, (i * 2) * sizeof (*bb->op_pos));
 			if (!tmp_op_pos) return;
