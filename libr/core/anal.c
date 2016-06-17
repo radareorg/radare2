@@ -1822,25 +1822,37 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 	if (!core || !core->anal || !fcn || core->anal->opt.bb_max_size < 1) {
 		return;
 	}
-	buf = calloc (1, core->anal->opt.bb_max_size);
-	if(!buf) {
+	int bb_size = core->anal->opt.bb_max_size;
+	buf = calloc (1, bb_size);
+	if (!buf) {
 		return;
 	}
 	r_list_foreach (fcn->bbs, tmp, bb) {
-		if (bb->size < 1) continue;
-		tbuf = realloc (buf, bb->size);
-		if (!tbuf) {
-			break;
+		if (bb->size < 1) {
+			continue;
 		}
-		buf = tbuf;
+		if (bb->size > bb_size) {
+			tbuf = realloc (buf, bb->size);
+			if (!tbuf) {
+				break;
+			}
+			buf = tbuf;
+			bb_size = bb->size;
+		}
 		if (r_io_read_at (core->io, bb->addr, buf, bb->size) != bb->size) {
 			eprintf ("read error\n");
 			break;
 		}
-		for (i = 0 ; i < bb->op_pos_size; i++) {
+		for (i = 0 ; i < bb->ninstr; i++) {
 			RAnalOp op = { 0 };
-			r_anal_op (core->anal, &op, 0, buf + bb->op_pos[i], bb->size - bb->op_pos[i]);
-			op.addr = bb->addr + bb->op_pos[i];
+			int sz, pos = i? bb->op_pos[i - 1]: 0;
+			if (pos >= bb->size) {
+				/* out of range - internal issue */
+				break;
+			}
+			sz = bb->size - pos;
+			r_anal_op (core->anal, &op, 0, buf + bb->op_pos[i], sz);
+			op.addr = bb->addr + pos;
 			fill_args (core->anal, fcn, &op);
 		}
 	}

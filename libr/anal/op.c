@@ -91,8 +91,8 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			return -1;
 		}
 	}
-	if (len > 0 && anal && memset (op, 0, sizeof (RAnalOp)) &&
-		anal->cur && anal->cur->op && strcmp (anal->cur->name, "null")) {
+	memset (op, 0, sizeof (RAnalOp));
+	if (len > 0 && anal->cur && anal->cur->op && strcmp (anal->cur->name, "null")) {
 		ret = anal->cur->op (anal, op, addr, data, len);
 		op->addr = addr;
 		op->var = get_used_var (anal, op);

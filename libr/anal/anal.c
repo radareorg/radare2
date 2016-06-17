@@ -55,8 +55,7 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 }
 
 R_API void r_anal_unset_limits(RAnal *anal) {
-	free (anal->limit);
-	anal->limit = NULL;
+	R_FREE (anal->limit);
 }
 
 static void meta_unset_for(void *user, int idx) {
