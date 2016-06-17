@@ -399,6 +399,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		"dp=", "<pid>", "Select pid",
 		"dp-", " <pid>", "Dettach select pid",
 		"dpa", " <pid>", "Attach and select pid",
+		"dpc", "", "Select forked pid (see dbg.forks)",
+		"dpc*", "", "Display forked pid (see dbg.forks)",
 		"dpe", "", "Show path to executable",
 		"dpf", "", "Attach to pid like file fd // HACK",
 		"dpk", " <pid> [<signal>]", "Send signal to process (default 0)",
@@ -416,7 +418,19 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			r_debug_detach (core->dbg, core->dbg->pid);
 		}
 		break;
-	case 'k':
+	case 'c': // "dpc"
+		if (core->dbg->forked_pid != -1) {
+			if (input[2] == '*') {
+				eprintf ("dp %d\n", core->dbg->forked_pid);
+			} else {
+				r_debug_select (core->dbg, core->dbg->forked_pid, core->dbg->tid);
+				core->dbg->forked_pid = -1;
+			}
+		} else {
+			eprintf ("No recently forked children\n");
+		}
+		break;
+	case 'k': // "dpk"
 		/* stop, print, pass -- just use flags*/
 		/* XXX: not for threads? signal is for a whole process!! */
 		/* XXX: but we want fine-grained access to process resources */

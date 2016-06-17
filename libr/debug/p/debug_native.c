@@ -296,6 +296,42 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 			//printf ("r_debug_native_wait: status=%d (return=%d)\n", status, ret);
 
 			// TODO: switch status and handle reasons here
+#if __linux__ && defined(PT_GETEVENTMSG)
+			// Handle PTRACE_EVENT_*
+			if (WIFSTOPPED (status) && WSTOPSIG (status) == SIGTRAP) {
+				ut32 pt_evt = status >> 16;
+				ut32 data;
+
+				switch (pt_evt) {
+				case 0:
+					// Normal trap?
+					break;
+
+				case PTRACE_EVENT_FORK:
+					if (dbg->trace_forks) {
+						if (ptrace (PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
+							r_sys_perror ("ptrace GETEVENTMSG");
+						} else {
+							eprintf ("PTRACE_EVENT_FORK new_pid=%d\n", data);
+							dbg->forked_pid = data;
+							// TODO: more handling here?
+						}
+					}
+					break;
+				case PTRACE_EVENT_EXIT:
+					if (ptrace (PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
+						r_sys_perror ("ptrace GETEVENTMSG");
+					} else {
+						eprintf ("PTRACE_EVENT_EXIT pid=%d, status=%d\n", pid, data);
+					}
+					break;
+				default:
+					eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
+					break;
+				}
+			}
+#endif
+
 			r_debug_handle_signals (dbg);
 
 			if (WIFSTOPPED (status)) {
