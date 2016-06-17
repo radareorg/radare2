@@ -228,7 +228,7 @@ static char *get_varname (RAnal *a, RAnalFunction *fcn, char type, const char *p
 			break;
 		}
 		free (varname);
-		free (v);
+		r_anal_var_free (v);
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
 	}
