@@ -1212,9 +1212,6 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 // bb seems to be ignored
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalBlock *bbi;
-#if R_ANAL_BB_HAS_OPS
-	RAnalOp *opi;
-#endif
 	RListIter *iter;
 	if (addr == UT64_MAX)
 		return 0;
@@ -1258,19 +1255,6 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 				}
 			}
 			bbi->ninstr = new_bbi_instr;
-#if R_ANAL_BB_HAS_OPS
-			if (bbi->ops) {
-				r_list_foreach (bbi->ops, iter, opi) {
-					if (opi->addr >= addr) {
-						/* Remove opi from bbi->ops without free()ing it. */
-						r_list_split (bbi->ops, opi);
-						bbi->ninstr--;
-						r_list_append (bb->ops, opi);
-						bb->ninstr++;
-					}
-				}
-			}
-#endif
 			return R_ANAL_RET_END;
 		}
 	}
@@ -1281,10 +1265,6 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 	RAnalBlock *bbi;
 	RListIter *iter;
-#if R_ANAL_BB_HAS_OPS
-	RListIter *iter_tmp;
-	RAnalOp *opi;
-#endif
 	r_list_foreach (fcn->bbs, iter, bbi)
 		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size <= bbi->addr+bbi->size) {
 			bb->size = bbi->addr - bb->addr;
@@ -1295,14 +1275,6 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 				bb->type = R_ANAL_BB_TYPE_HEAD;
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 			} else bb->type = R_ANAL_BB_TYPE_BODY;
-#if R_ANAL_BB_HAS_OPS
-			/* We can reuse iter because we return before the outer loop. */
-			r_list_foreach_safe (bb->ops, iter, iter_tmp, opi) {
-				if (opi->addr >= bbi->addr) {
-					r_list_delete (bb->ops, iter);
-				}
-			}
-#endif
 			r_list_append (fcn->bbs, bb);
 			return R_ANAL_RET_END;
 		}

@@ -33,8 +33,6 @@ R_LIB_VERSION_HEADER(r_anal);
    bb_has_ops=1 -> 600M
    bb_has_ops=0 -> 350MB
  */
-#define R_ANAL_BB_HAS_OPS 0
-
 /* TODO: work in progress */
 #define USE_NEW_FCN_STORE 0
 
@@ -310,9 +308,6 @@ typedef struct r_anal_type_function_t {
 	int depth;
 	bool folded;
 	RAnalType *args; // list of arguments
-#if USE_VARSUBS
-	RAnalVarSub varsubs[R_ANAL_VARSUBS];
-#endif
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
 	RList *locs; // list of local variables
@@ -323,7 +318,7 @@ typedef struct r_anal_type_function_t {
 	RList *refs;
 	RList *xrefs;
 #endif
-    RAnalFcnMeta meta;
+	RAnalFcnMeta meta;
 } RAnalFunction;
 
 struct r_anal_type_t {
@@ -661,8 +656,6 @@ typedef struct r_anal_t {
 #if DEPRECATE
 	Sdb *sdb_args;  //
 	Sdb *sdb_vars; // globals?
-	//Sdb *sdb_locals;
-	// Sdb *sdb_ret;   // UNUSED
 #endif
 	Sdb *sdb_hints; // OK
 	Sdb *sdb_fcnsign; // OK
@@ -735,16 +728,16 @@ typedef struct r_anal_op_t {
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
 	int size;       /* size in bytes of opcode */
-	int nopcode;    /* number of bytes representing the opcode (not the arguments) */
+	int nopcode;    /* number of bytes representing the opcode (not the arguments) TODO: find better name */
 	int cycles;	/* cpu-cycles taken by instruction */
 	int failcycles;	/* conditional cpu-cycles */
 	int family;     /* family of opcode */
-	int eob;        /* end of block (boolean) */
+	bool eob;        /* end of block (boolean) */
 	/* Run N instructions before executing the current one */
 	int delay;      /* delay N slots (mips, ..)*/
 	ut64 jump;      /* true jmp */
 	ut64 fail;      /* false jmp */
-	ut32 selector;  /* segment selector */
+	//ut32 selector;  /* segment selector */
 	st64 ptr;       /* reference to memory */ /* XXX signed? */
 	ut64 val;       /* reference to value */ /* XXX signed? */
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
@@ -753,9 +746,9 @@ typedef struct r_anal_op_t {
 	RAnalVar *var;  /* local var/arg used by this instruction */
 	RAnalValue *src[3];
 	RAnalValue *dst;
-	struct r_anal_op_t *next; // XXX deprecate
+	struct r_anal_op_t *next; // TODO deprecate
 	RStrBuf esil;
-	char *reg; /* destination register */
+	const char *reg; /* destination register */
 	RAnalSwitchOp *switch_op;
 } RAnalOp;
 
@@ -782,18 +775,14 @@ typedef struct r_anal_bb_t {
 	char *label;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
-#if R_ANAL_BB_HAS_OPS
-	RList *ops;
-#endif
 	RAnalCond *cond;
 	RAnalSwitchOp *switch_op;
 	// offsets of instructions in this block
 	ut16 *op_pos;
 	// size of the op_pos array
-	int n_op_pos; // XXX. isnt this the same as ninstr ?
+	int op_pos_size;
 	ut8 *op_bytes;
 	ut8 op_sz;
-	ut64 eflags;
 	/* deprecate ??? where is this used? */
 	/* iirc only java. we must use r_anal_bb_from_offset(); instead */
 	struct r_anal_bb_t *head;

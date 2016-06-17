@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake, nibble */
-/* bb.c - basic block analysis */
+/* radare - LGPL - Copyright 2010-2016 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -15,15 +14,12 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->fail = UT64_MAX;
 	bb->switch_op = NULL;
 	bb->type = R_ANAL_BB_TYPE_NULL;
-#if R_ANAL_BB_HAS_OPS
-	bb->ops = r_anal_op_list_new ();
-#endif
 	bb->cond = NULL;
 	bb->fingerprint = NULL;
 	bb->diff = r_anal_diff_new ();
 	bb->label = NULL;
 	bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
-	bb->n_op_pos = DFLT_NINSTR;
+	bb->op_pos_size = DFLT_NINSTR;
 	return bb;
 }
 
@@ -39,10 +35,6 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	if (bb->switch_op) {
 		r_anal_switch_op_free (bb->switch_op);
 	}
-#if R_ANAL_BB_HAS_OPS
-	r_list_free (bb->ops);
-	bb->ops = NULL;
-#endif
 	bb->fingerprint = NULL;
 	bb->cond = NULL;
 	free (bb->label);
@@ -80,18 +72,15 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			}
 			break;
 		}
-		if (oplen < 1) goto beach;
-
-		r_anal_bb_set_offset (bb, bb->ninstr++, idx); //addr + idx - bb->addr);
+		if (oplen < 1) {
+			goto beach;
+		}
+		r_anal_bb_set_offset (bb, bb->ninstr++, addr + idx - bb->addr);
 		idx += oplen;
 		bb->size += oplen;
-#if R_ANAL_BB_HAS_OPS
-		r_list_append (bb->ops, op);
-#endif
 		if (head) {
 			bb->type = R_ANAL_BB_TYPE_HEAD;
 		}
-
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_CMP:
 			r_anal_cond_free (bb->cond);
@@ -167,10 +156,10 @@ R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
 R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 	// the offset 0 of the instruction 0 is not stored because always 0
 	if (i > 0 && v > 0) {
-		if (i >= bb->n_op_pos) {
+		if (i >= bb->op_pos_size) {
 			ut16 *tmp_op_pos = realloc (bb->op_pos, (i * 2) * sizeof (*bb->op_pos));
 			if (!tmp_op_pos) return;
-			bb->n_op_pos = i * 2;
+			bb->op_pos_size = i * 2;
 			bb->op_pos = tmp_op_pos;
 		}
 		bb->op_pos[i - 1] = v;

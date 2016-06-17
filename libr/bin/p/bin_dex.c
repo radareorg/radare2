@@ -53,10 +53,11 @@ static ut64 baddr(RBinFile *arch) {
 }
 
 static char *flagname (const char *class, const char *method) {
-	int s_len;
-	char *p, *str, *s;
-	if (class && method) {
-		return r_str_newf ("static.%s.%s", class, method);
+	if (method) {
+		if (class) {
+			return r_str_newf ("static.%s.%s", class, method);
+		}
+		return r_str_newf ("static.method.%s", method);
 	}
 	return NULL;
 }

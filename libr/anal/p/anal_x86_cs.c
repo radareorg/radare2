@@ -78,16 +78,19 @@ static bool is_xmm_reg(cs_x86_op op) {
  * @return         char* with the esil operand
  */
 static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
-	csh handle = gop->handle;
-	cs_insn *insn = gop->insn;
-	char buf[64];
 	char *setarg = setop ? setop : "";
+	cs_insn *insn = gop->insn;
+	csh handle = gop->handle;
+	char buf[64];
 	cs_x86_op op;
-	if (!insn->detail)
+
+	if (!insn->detail) {
 		return NULL;
+	}
 	buf[0] = 0;
-	if (n < 0 || n >= INSOPS)
+	if (n < 0 || n >= INSOPS) {
 		return NULL;
+	}
 	op = INSOP (n);
 	switch (op.type) {
 	case X86_OP_INVALID:
@@ -181,7 +184,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		}
 		return strdup (buf);
 	}
-	return strdup ("PoP");
+	return NULL;
 }
 
 static csh handle = 0;
@@ -1907,9 +1910,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			break;
 		case X86_OP_REG:
 			{
-			op->reg = getarg (&gop, 0, 0, NULL);
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = r_reg_get (a->reg, op->reg, R_REG_TYPE_GPR);
+			op->reg = cs_reg_name (gop.handle, INSOP(0).reg);
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			op->ptr = UT64_MAX;
 			}

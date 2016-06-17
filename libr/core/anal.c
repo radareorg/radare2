@@ -1814,26 +1814,31 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 }
 
 R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
-	if (!core || !fcn || core->anal->opt.bb_max_size < 1) {
-		return;
-	}
-	ut8 *buf = calloc(1,core->anal->opt.bb_max_size);
+	ut8 *tbuf, *buf;
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
 	int i;
-	if(!buf){
+
+	if (!core || !core->anal || !fcn || core->anal->opt.bb_max_size < 1) {
+		return;
+	}
+	buf = calloc (1, core->anal->opt.bb_max_size);
+	if(!buf) {
 		return;
 	}
 	r_list_foreach (fcn->bbs, tmp, bb) {
 		if (bb->size < 1) continue;
-		buf = realloc (buf, bb->size);
+		tbuf = realloc (buf, bb->size);
+		if (!tbuf) {
+			break;
+		}
+		buf = tbuf;
 		if (r_io_read_at (core->io, bb->addr, buf, bb->size) != bb->size) {
 			eprintf ("read error\n");
-			free(buf);
-			return;
+			break;
 		}
-		for (i = 0 ; i < bb->n_op_pos ; i++) {
-			RAnalOp op = {0};
+		for (i = 0 ; i < bb->op_pos_size; i++) {
+			RAnalOp op = { 0 };
 			r_anal_op (core->anal, &op, 0, buf + bb->op_pos[i], bb->size - bb->op_pos[i]);
 			op.addr = bb->addr + bb->op_pos[i];
 			fill_args (core->anal, fcn, &op);

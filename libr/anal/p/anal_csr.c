@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -6,24 +6,6 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include "../asm/arch/csr/dis.c"
-
-#if 0
-static int get_num(int num, int shift) {
-	int tmp;
-	char x = (char) ((num >> shift) & 0xff);
-	tmp = x;
-	tmp <<= shift;
-	return tmp;
-}
-
-static int get_operand(struct state *s, struct directive *d) {
-	int total = get_num (d->d_inst.in_operand, 0);
-	if (s->s_prefix == 2)
-		total += get_num (s->s_prefix_val, 16);
-	else total += get_num (s->s_prefix_val, 8);
-	return total;
-}
-#endif
 
 static int label_off(struct directive *d) {
 	int off = d->d_operand;
@@ -33,16 +15,20 @@ static int label_off(struct directive *d) {
 		off = (char) (off & 0xff);
 	} else if (d->d_prefix == 1) {
 		off = (short) (off & 0xffff);
-		if (lame)
+		if (lame) {
 			off -= 0x100;
+		}
 	} else {
 		off = (int) (off & 0xffffff);
-		if (off & 0x800000)
+		if (off & 0x800000) {
 			off |= 0xff000000;
-		if (off & 0x8000)
+		}
+		if (off & 0x8000) {
 			off -= 0x10000;
-		if (lame)
+		}
+		if (lame) {
 			off -= 0x100;
+		}
 	}
 	return d->d_off + off;
 }
@@ -57,8 +43,9 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	struct directive d = {{0}};
 	struct state s = {0};
 
-	if (op == NULL)
+	if (!anal || !op) {
 		return 2;
+	}
 
 	memcpy (&ins, bytes, sizeof (ins));
 	memcpy (&lol, bytes, sizeof (ins));
@@ -68,7 +55,8 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	s.s_prefix = 0;
 	memset (&d, '\0', sizeof (struct directive));
 	memcpy (&d.d_inst, s.s_buf, sizeof (d.d_inst));
-	d.d_off = (s.s_off+=2);
+	s.s_off += 2;
+	d.d_off = s.s_off;
 	csr_decode (&s, &d);
 	d.d_operand = get_operand (&s, &d);
 
@@ -144,7 +132,7 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				if (op->jump&1)
 					op->jump+=3;
 				op->fail = addr+2;
-				op->eob = 1;
+				op->eob = true;
 				break;
 			}
 			break;
@@ -164,7 +152,7 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				op->jump = label_off (&d)+4;
 				if (op->jump&1)
 					op->jump+=3;
-				op->eob = 1;
+				op->eob = true;
 				break;
 			case 1:
 				// BLT
@@ -173,7 +161,7 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				if (op->jump&1)
 					op->jump+=3;
 				op->fail = addr + 2;
-				op->eob = 1;
+				op->eob = true;
 				break;
 			case 2:
 				// BPL
@@ -182,7 +170,7 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				if (op->jump&1)
 					op->jump+=3;
 				op->fail = addr + 2;
-				op->eob = 1;
+				op->eob = true;
 				break;
 			case 3:
 				// BMI
@@ -191,7 +179,7 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				if (op->jump&1)
 					op->jump+=3;
 				op->fail = addr + 2;
-				op->eob = 1;
+				op->eob = true;
 				break;
 			}
 			break;

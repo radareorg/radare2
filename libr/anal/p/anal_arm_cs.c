@@ -1083,7 +1083,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_BR:
 		op->type = R_ANAL_OP_TYPE_UJMP;
-		op->eob = 1;
+		op->eob = true;
 		break;
 	case ARM64_INS_B:
 		// BX LR == RET
