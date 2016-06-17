@@ -117,17 +117,16 @@ libr/debug/p/bfvm.h
 
 A debugger plug-in that utilizes bochs emulator to control execution.
 
-
 ### libr/debug/p/debug_esil.c
 
 This debugger plug-in enables debugging and tracing radare own intermediate
 language, Evaluable Strings Intermediate Language (ESIL).
 
-
 ### libr/debug/p/debug_gdb.c
 
 A radare debugger plug-in that uses a remote GDB server/stub as its backend.
-
+The protocol parsing itself is located at shlr/gdb. And corresponding IO plugin is
+located in libr/io/p/io_gdb.c
 
 ### libr/debug/p/debug_native.c
 
@@ -197,18 +196,17 @@ libr/debug/p/native/xnu/reg/darwin-x64.h
 
 ### libr/debug/p/debug_qnx.c
 
-A debugger plug-in that enables debugging code natively on QNX systems.
-
+A debugger plug-in that enables debugging code natively on QNX systems. Corresponding
+IO plugin is located in libr/io/p/io_qnx.c
 
 ### libr/debug/p/debug_rap.c
 
 TODO (?? radare protocol??)
 
-
 ### libr/debug/p/debug_wind.c
 
-TODO (?? wind-river remote debug??)
-
+A debugger plugin that enables debugging code remotely via WinDbg protocol. WinDbg protocol
+parser is located in shlr/wind. Corresponding IO plugin located in libr/io/p/io_windbg.c
 
 ## Conclusion
 
