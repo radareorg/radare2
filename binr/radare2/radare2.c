@@ -33,7 +33,6 @@ static int verify_version(int show) {
 		{ "r_flags", &r_flag_version }, // XXX inconsistency
 		{ "r_core", &r_core_version },
 		{ "r_crypto", &r_crypto_version },
-		{ "r_db", &r_db_version },
 		{ "r_bp", &r_bp_version },
 		{ "r_debug", &r_debug_version },
 		{ "r_hash", &r_hash_version },

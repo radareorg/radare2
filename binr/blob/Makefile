@@ -29,7 +29,6 @@ CFLAGS=-I../../libr/include/
 ifeq ($(WITHNONPIC),1)
 LDFLAGS+=../../libr/io/libr_io.a
 LDFLAGS+=../../libr/asm/libr_asm.a
-LDFLAGS+=../../libr/db/libr_db.a
 LDFLAGS+=../../libr/egg/libr_egg.a
 LDFLAGS+=../../libr/core/libr_core.a
 LDFLAGS+=../../libr/crypto/libr_crypto.a
@@ -66,7 +65,6 @@ LDFLAGS+=-L../../libr/bin -lr_bin
 LDFLAGS+=-L../../libr/reg -lr_reg
 LDFLAGS+=-L../../libr/asm -lr_asm
 LDFLAGS+=-L../../libr/egg -lr_egg
-LDFLAGS+=-L../../libr/db -lr_db
 LDFLAGS+=-L../../libr/core -lr_core
 LDFLAGS+=-L../../libr/anal -lr_anal
 LDFLAGS+=-L../../libr/crypto -lr_crypto

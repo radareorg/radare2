@@ -796,7 +796,7 @@ static RList* construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx,
 		if (regex) {
 			// get the first regexp.
 			if (r_list_length (rx_list) > 0) {
-				rx = r_list_get_n(rx_list, count++);
+				rx = r_list_get_n (rx_list, count++);
 			}
 		}
 	}

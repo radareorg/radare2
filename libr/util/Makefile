@@ -40,7 +40,11 @@ ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
 endif
 endif
 
+pre: ${SDBLIB}
+	${MAKE} all
+
 include ../rules.mk
+include sdb.mk
 
 sync-regex regex-sync:
 	-rm -rf src/

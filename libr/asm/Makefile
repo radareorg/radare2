@@ -1,7 +1,7 @@
 include ../../global.mk
 
 NAME=r_asm
-DEPS=r_db r_syscall r_lang r_util r_parse 
+DEPS=r_syscall r_lang r_util r_parse
 DEPS+=r_flags r_cons r_reg r_anal
 CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shlr
 CURDIR=p/

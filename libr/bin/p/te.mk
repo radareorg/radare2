@@ -2,7 +2,7 @@ OBJ_TE=bin_te.o ../format/te/te.o
 
 STATIC_OBJ+=${OBJ_TE}
 TARGET_TE=bin_te.${EXT_SO}
-LINK+=-L../../db -lr_db $(SHLR)/sdb/src/libsdb.a
+#LINK+=-L../../util -lr_util $(SHLR)/sdb/src/libsdb.a
 
 ALL_TARGETS+=${TARGET_TE}
 

@@ -1,14 +1,9 @@
-include ../config.mk
-
-NAME=r_db
-DEPS=r_util
-
-OBJS=db.o table.o
-
 SDBPATH=../../shlr/sdb/src/
 SDBLIB=${SDBPATH}/libsdb.a
 EXTRA_TARGETS+=${SDBLIB}
 
+${SDBLIB}:
+	${MAKE} -C ${SDBPATH}
 SDB_OBJS=
 SDB_OBJS+=buffer.o
 SDB_OBJS+=cdb.o
@@ -32,14 +27,8 @@ SDB_OBJS+=journal.o
 SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 
 OBJS+=${SDBOBJS}
-#LINK+=${SDBPATH}/*.o
 
 CFLAGS+=-I${SDBPATH}/src
+
 pre: ${SDBLIB}
 	${MAKE} all
-
-include ../rules.mk
-
-${SDBLIB}:
-	${MAKE} -C ${SDBPATH}
-
