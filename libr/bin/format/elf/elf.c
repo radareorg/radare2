@@ -160,7 +160,7 @@ static int init_shdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int len;
 
 	if (!bin || bin->shdr) return true;
-	if (!UT32_MUL(&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
+	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
 		return false;
 	}
 	if (shdr_size < 1) {
@@ -548,15 +548,22 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	const char *section_name = "";
 	const char *link_section_name = "";
 	char *end = NULL;
-	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
+	Elf_(Shdr) *link_shdr = NULL;
 	Sdb *sdb = sdb_new0 ();
-	int i;
-	int cnt;
+	int cnt, i;
+	ut32 shdr_size = 0;
+
+	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
+		return false;
+	}
+	if (shdr->sh_link >= 0 && shdr->sh_link < shdr_size) {
+		link_shdr = &bin->shdr[shdr->sh_link];
+	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
 		section_name = &bin->shstrtab[shdr->sh_name];
 	}
-	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
+	if (link_shdr && bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
 	}
 	if (!defs) {
