@@ -2983,11 +2983,13 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1));
 		break;
 	case 'k': // "ask"
-		out = sdb_querys (core->anal->syscall->db, NULL, 0, input + 2);
-		if (out) {
-			r_cons_printf ("%s\n", out);
-			free (out);
-		}
+	    if (input[1] == ' ') {
+            out = sdb_querys (core->anal->syscall->db, NULL, 0, input + 2);
+            if (out) {
+                r_cons_printf ("%s\n", out);
+                free (out);
+            }
+		} else eprintf ("|ERROR| Usage: ask [query]\n");
 		break;
 	default:
 	case '?':
@@ -3354,7 +3356,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				"ahi", " s", "set base to string (2)",
 				NULL };
 			r_core_cmd_help (core, help_msg);
-		} else {
+		} else if (input[1] == ' ') {
 		// You can either specify immbase with letters, or numbers
 			const int base =
 				(input[2] == 'b') ? 1 :
@@ -3366,7 +3368,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				(input[2] == 'S') ? 80 : // syscall
 				(int) r_num_math (core->num, input + 1);
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
-		}
+		} else eprintf ("|ERROR| Usage: ahi [base]\n");
 		break;
 	case 'c':
 		r_anal_hint_set_jump (core->anal, core->offset,
@@ -3703,13 +3705,10 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		if (input[1] == '*') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
 			r_core_anal_coderefs (core, addr, '*');
-		} else {
+		} else if (input[1] == ' ') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 1): UT64_MAX;
 			r_core_anal_coderefs (core, addr, input[1] == 'j'? 2: 1);
-		}
-		break;
-	case 0: // "ag"
-		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_GRAPHBODY);
+		} else eprintf ("|ERROR| Usage: agc [addr]\n");
 		break;
 	case 'j': // "agj"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
@@ -3733,14 +3732,17 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case '?': // "ag?"
 		r_core_cmd_help (core, help_msg);
 		break;
-	default:
-		eprintf ("See ag?\n");
-		break;
-	case ' ':
+	case ' ': // "ag"
 		arg = strchr (input, ' ');
 		if (arg) arg++;
 		r_core_anal_graph (core, r_num_math (core->num, arg),
 				R_CORE_ANAL_GRAPHBODY);
+		break;
+	case 0:
+		eprintf ("|ERROR| Usage: ag [addr]\n");
+		break;
+	default:
+		eprintf ("See ag?\n");
 		break;
 	}
 }
