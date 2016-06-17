@@ -31,11 +31,9 @@ static inline bool setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 }
 
 static Sdb* get_sdb (RBinObject *o) {
-	if (o) {
+	if (o && o->bin_obj) {
 		struct Elf_(r_bin_elf_obj_t) *bin = (struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
-		if (bin && bin->kv) {
-			return bin->kv;
-		}
+		return bin->kv;
 	}
 	return NULL;
 }
@@ -108,8 +106,9 @@ static ut64 boffset(RBinFile *arch) {
 
 static RBinAddr* binsym(RBinFile *arch, int sym) {
 	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
-	ut64 addr = 0LL;
 	RBinAddr *ret = NULL;
+	ut64 addr = 0LL;
+
 	switch (sym) {
 	case R_BIN_SYM_ENTRY:
 		addr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
@@ -125,8 +124,14 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		break;
 	}
 	if (addr && addr != UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
+		struct Elf_(r_bin_elf_obj_t) *bin = arch->o->bin_obj;
+		bool is_arm = bin->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
+		if (is_arm && addr & 1) {
+			ret->bits = 16;
+			//ret->vaddr --; // noes
+		}
 	}
 	return ret;
 }
@@ -154,12 +159,12 @@ static RList* entries(RBinFile *arch) {
 }
 
 static RList* sections(RBinFile *arch) {
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
+	struct Elf_(r_bin_elf_obj_t)* obj = arch && arch->o ? arch->o->bin_obj : NULL;
 	struct r_bin_elf_section_t *section = NULL;
 	int i, num, found_load = 0;
-	struct Elf_(r_bin_elf_obj_t)* obj = arch && arch->o ? arch->o->bin_obj : NULL;
 	Elf_(Phdr)* phdr = NULL;
+	RBinSection *ptr = NULL;
+	RList *ret = NULL;
 
 	if (!obj || !(ret = r_list_new ())) {
 		return NULL;
@@ -197,8 +202,9 @@ static RList* sections(RBinFile *arch) {
 	if (phdr) {
 		int n = 0;
 		for (i = 0; i < num; i++) {
-			if (!(ptr = R_NEW0 (RBinSection)))
+			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
+			}
 			ptr->add = false;
 			ptr->size = phdr[i].p_filesz;
 			ptr->vsize = phdr[i].p_memsz;
@@ -244,15 +250,15 @@ static RList* sections(RBinFile *arch) {
 		}
 	}
 
-
 	if (r_list_empty (ret)) {
 		if (!arch->size) {
 			struct Elf_(r_bin_elf_obj_t) *bin = arch->o->bin_obj;
 			arch->size = bin? bin->size: 0x9999;
 		}
 		if (found_load == 0) {
-			if (!(ptr = R_NEW0 (RBinSection)))
+			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
+			}
 			sprintf (ptr->name, "uphdr");
 			ptr->size = arch->size;
 			ptr->vsize = arch->size;
@@ -283,7 +289,6 @@ static RList* sections(RBinFile *arch) {
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
-
 	return ret;
 }
 
@@ -339,16 +344,19 @@ static RList* symbols(RBinFile *arch) {
 	}
 	free (symbol);
 
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS)))
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS))) {
 		return ret;
+	}
 	for (i = 0; !symbol[i].last; i++) {
 		ut64 paddr = symbol[i].offset;
 		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
 
-		if (!symbol[i].size)
+		if (!symbol[i].size) {
 			continue;
-		if (!(ptr = R_NEW0 (RBinSymbol)))
+		}
+		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			break;
+		}
 		// TODO(eddyb) make a better distinction between imports and other symbols.
 		//snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", symbol[i].name);
 		ptr->name = r_str_newf ("imp.%s", symbol[i].name);
@@ -439,21 +447,24 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	RBinReloc *r = NULL;
 	ut64 B, P;
 
-	if (!bin || !rel) return NULL;
+	if (!bin || !rel) {
+		return NULL;
+	}
 	B = bin->baddr;
 	P = B + rel->rva;
-	if (!(r = R_NEW0 (RBinReloc)))
+	if (!(r = R_NEW0 (RBinReloc))) {
 		return r;
-
+	}
 	r->import = NULL;
 	r->symbol = NULL;
 	r->is_ifunc = false;
 	r->addend = rel->addend;
 	if (rel->sym) {
-		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym])
+		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym]) {
 			r->import = bin->imports_by_ord[rel->sym];
-		else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym])
+		} else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym]) {
 			r->symbol = bin->symbols_by_ord[rel->sym];
+		}
 	}
 	r->vaddr = rel->rva;
 	r->paddr = rel->offset;
@@ -533,31 +544,37 @@ static RList* relocs(RBinFile *arch) {
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	ut64 got_addr;
 	int i;
-	if (!arch || !arch->o || !arch->o->bin_obj)
+	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
+	}
 	bin = arch->o->bin_obj;
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	/* FIXME: This is a _temporary_ fix/workaround to prevent a use-after-
 	 * free detected by ASan that would corrupt the relocation names */
 	r_list_free (imports (arch));
 	if ((got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got")) == -1) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt");
-		if (got_addr == -1)
+		if (got_addr == -1) {
 			got_addr = 0;
+		}
 	}
 	if (got_addr < 1 && bin->ehdr.e_type == ET_REL) {
 		got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.r2");
-		if (got_addr == -1)
+		if (got_addr == -1) {
 			got_addr = 0;
+		}
 	}
 	if (arch->o) {
-		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin)))
+		if (!(relocs = Elf_(r_bin_elf_get_relocs) (bin))) {
 			return ret;
+		}
 		for (i = 0; !relocs[i].last; i++) {
-			if (!(ptr = reloc_convert (bin, &relocs[i], got_addr)))
+			if (!(ptr = reloc_convert (bin, &relocs[i], got_addr))) {
 				continue;
+			}
 			r_list_append (ret, ptr);
 		}
 		free (relocs);
@@ -631,9 +648,8 @@ static RList* patch_relocs(RBin *b) {
 	if (bin->ehdr.e_type != ET_REL)
 		return NULL;
 	if (!io->cached) {
-	    	eprintf (Color_YELLOW"Warning: run r2 with -e io.cache=true to fix relocations in disassembly"Color_RESET"\n");
-		//return without patch
-		return relocs (r_bin_cur(b));
+	    	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+		return relocs (r_bin_cur (b));
 	}
 	r_list_foreach (io->sections, iter, s) {
 		if (s->offset > offset) {
@@ -641,8 +657,9 @@ static RList* patch_relocs(RBin *b) {
 			g = s;
 		}
 	}
-	if (!g)
+	if (!g) {
 		return NULL;
+	}
 	n_off = g->offset + g->size;
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
@@ -698,12 +715,13 @@ static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	char *str;
 
-	if (!(ret = R_NEW0 (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
+	}
 	ret->lang = "c";
-	if (arch->file)
-		ret->file = strdup (arch->file);
-	else ret->file = NULL;
+	ret->file = arch->file
+		? strdup (arch->file)
+		: NULL;
 	if ((str = Elf_(r_bin_elf_get_rpath)(arch->o->bin_obj))) {
 		ret->rpath = strdup (str);
 		free (str);
@@ -742,8 +760,9 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->arch = str;
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(r_bin_elf_get_bits) (arch->o->bin_obj);
-	if (!strcmp (ret->arch, "avr"))
+	if (!strcmp (ret->arch, "avr")) {
 		ret->bits = 16;
+	}
 	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (arch->o->bin_obj);
 	ret->has_va = Elf_(r_bin_elf_has_va) (arch->o->bin_obj);
 	ret->has_nx = Elf_(r_bin_elf_has_nx) (arch->o->bin_obj);
@@ -763,14 +782,17 @@ static RList* fields(RBinFile *arch) {
 	struct r_bin_elf_field_t *field = NULL;
 	int i;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(field = Elf_(r_bin_elf_get_fields) (arch->o->bin_obj)))
+	if (!(field = Elf_(r_bin_elf_get_fields) (arch->o->bin_obj))) {
 		return ret;
+	}
 	for (i = 0; !field[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinField)))
+		if (!(ptr = R_NEW0 (RBinField))) {
 			break;
+		}
 		ptr->name = strdup (field[i].name);
 		ptr->vaddr = field[i].offset;
 		ptr->paddr = field[i].offset;
@@ -822,8 +844,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut32 baddr;
 	int is_arm = 0;
 	RBuffer *buf = r_buf_new ();
-	if (bin && bin->cur && bin->cur->o && bin->cur->o->info)
+	if (bin && bin->cur && bin->cur->o && bin->cur->o->info) {
 		is_arm = !strcmp (bin->cur->o->info->arch, "arm");
+	}
 	// XXX: hardcoded
 	if (is_arm) {
 		baddr = 0x40000;
