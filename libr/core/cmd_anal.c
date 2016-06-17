@@ -1151,7 +1151,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			/* TODO: use r_core_help */
 			eprintf ("Usage: afb+ or afbb or afb\n"
 				/* TODO: move afbr into afr? */
-				" afbr        - show addresses of return instructions in the function\n"
+				" afbr        - show addresses of instructions which leave the function\n"
 				" .afbr*      - set breakpoint on every return address of the fcn\n"
 				" .afbr-*     - undo the above operation\n"
 				" afbj        - show basic blocks information in JSON\n"
