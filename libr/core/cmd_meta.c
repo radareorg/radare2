@@ -415,15 +415,13 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 	case '-':
 		switch (input[2]) {
 		case '*':
-			core->num->value = r_meta_del (core->anal,
-					input[0], 0, UT64_MAX, NULL);
+			core->num->value = r_meta_del (core->anal, input[0], 0, UT64_MAX, NULL);
 			break;
 		case ' ':
 			addr = r_num_math (core->num, input+3);
 			/* fallthrough */
 		default:
-			core->num->value = r_meta_del (core->anal,
-					input[0], addr, 1, NULL);
+			core->num->value = r_meta_del (core->anal, input[0], addr, 1, NULL);
 			break;
 		}
 		break;
@@ -432,8 +430,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		break;
 	case '!':
 		{
-			char *out, *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+			char *out, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			out = r_core_editor (core, NULL, comment);
 			if (out) {
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
@@ -510,6 +507,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 			if (!n) n++;
 			addr_end = addr + n;
 			r_meta_add (core->anal, type, addr, addr_end, name);
+			r_flag_set (core->flags, name, addr, n);
 			free (t);
 			repcnt ++;
 			addr = addr_end;
