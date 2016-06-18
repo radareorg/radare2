@@ -23,6 +23,9 @@ addons:
       - dc
       - binutils
       - cabextract
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
 
 cache:
   - ccache
@@ -36,8 +39,10 @@ script:
   - export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
   - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
-  - export LIBR_INCLUDE=${TRAVIS_BUILD_DIR}/libr/include
-  - export LIBR_UTIL=${TRAVIS_BUILD_DIR}/libr/util
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then mkdir -p /tmp/kcov && pushd /tmp/kcov; fi
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then  mkdir ${TRAVIS_BUILD_DIR}/kcov; fi
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz && tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build && cmake .. && make && make install DESTDIR=../tmp && popd; fi
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then export KCOV="/tmp/kcov/kcov-master/tmp/usr/local/bin/kcov --coveralls-id=$TRAVIS_JOB_ID ${TRAVIS_BUILD_DIR}/kcov"; fi
   - export NOOK=1
   - export NOREPORT=1
   - cd radare2-regressions
