@@ -23,10 +23,19 @@ addons:
       - dc
       - binutils
       - cabextract
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
 
 cache:
   - ccache
   - apt
+
+before install:
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; mkdir -p /tmp/kcov && pushd /tmp/kcov; fi
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; mkdir ${TRAVIS_BUILD_DIR}/kcov; fi
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz && tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build && cmake .. && make && make install DESTDIR=../tmp && popd; fi
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; export KCOV="/tmp/kcov/kcov-master/tmp/usr/local/bin/kcov --coveralls-id=$TRAVIS_JOB_ID ${TRAVIS_BUILD_DIR}/kcov"; fi
 
 script:
   - git clone --depth 1 `doc/repo REGRESSIONS`
