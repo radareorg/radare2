@@ -33,6 +33,7 @@ script:
   - ./configure --prefix=`pwd`/install > /dev/null
   - make -s -j2 > /dev/null
   - make install > /dev/null
+  - export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
   - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
   - export LIBR_INCLUDE=${TRAVIS_BUILD_DIR}/libr/include
