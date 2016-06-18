@@ -648,7 +648,7 @@ repeat:
 			if (b) {
 				/* check if cur bp demands tracing or not */
 				if (b->trace)
-					eprintf("hit tracepoit at: %"PFMT64x"\n",pc);
+					eprintf("hit tracepoint at: %"PFMT64x"\n",pc);
 				else
 					eprintf("hit breakpoint at: %"PFMT64x"\n",pc);
 				if (dbg->trace->enabled)
