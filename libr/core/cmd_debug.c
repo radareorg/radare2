@@ -2455,46 +2455,54 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			r_core_cmd_help (core, help_message);
 		}
 	} else if (*input=='o') {
-		char *p, *name = strdup (input+2);
-		int signum = atoi (name);
-		p = strchr (name, ' ');
-		if (p) {
-			*p++ = 0;
-			// Actions:
-			//  - pass
-			//  - trace
-			//  - stop
-			if (signum<1) signum = r_debug_signal_resolve (core->dbg, name);
-			if (signum>0) {
-				if (strchr (p, 's')) {
-					r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_SKIP);
-				} else if (strchr (p, 'c')) {
-					r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_CONT);
-				} else {
-					eprintf ("Invalid option\n");
-				}
-			} else {
-				eprintf ("Invalid signal\n");
-			}
-		} else {
-			switch (input[1]) {
-			case 0:
-				r_debug_signal_list (core->dbg, 1);
-				break;
-			case '?':
-				eprintf ("|Usage: dko SIGNAL [skip|cont]\n"
-					"| 'SIGNAL' can be a number or a string that resolves with dk?..\n"
-					"| s - skip (do not enter into the signal handler\n"
-					"| c - continue into the signal handler\n"
-					"|   - no option means stop when signal is catched\n");
-				break;
-			default: // TODO: show help instead and do this only on "case ' '"
+		switch (input[1]) {
+		case 0: // "dko" - list signal skip/conts
+			r_debug_signal_list (core->dbg, 1);
+			break;
+		case ' ': // dko SIGNAL
+			if (input[2]) {
+				char *p, *name = strdup (input + 2);
+				int signum = atoi (name);
+				p = strchr (name, ' ');
+				if (p) *p++ = 0; /* got SIGNAL and an action */
+				// Actions:
+				//  - pass
+				//  - trace
+				//  - stop
 				if (signum<1) signum = r_debug_signal_resolve (core->dbg, name);
-				r_debug_signal_setup (core->dbg, signum, 0);
+				if (signum>0) {
+					if (!p || !p[0]) { // stop (the usual)
+						r_debug_signal_setup (core->dbg, signum, 0);
+					} else if (*p == 's') { // skip
+						r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_SKIP);
+					} else if (*p == 'c') { // cont
+						r_debug_signal_setup (core->dbg, signum, R_DBG_SIGNAL_CONT);
+					} else {
+						eprintf ("Invalid option: %s\n", p);
+					}
+				} else {
+					eprintf ("Invalid signal: %s\n", input + 2);
+				}
+				free (name);
 				break;
+			}
+			/* fall through */
+		case '?':
+		default:
+			{
+			const char* help_msg[] = {
+				"Usage:", "dko", " # Signal handling commands",
+				"dko", "", "List existing signal handling",
+				"dko", " [signal]", "Clear handling for a signal",
+				"dko", " [signal] [skip|cont]", "Set handling for a signal",
+				NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			eprintf ("NOTE: [signal] can be a number or a string that resolves with dk?\n"
+					"  skip means do not enter into the signal handler\n"
+					"  continue means enter into the signal handler\n");
 			}
 		}
-		free (name);
 	} else if (*input == 'j') {
 		r_debug_signal_list (core->dbg, 2);
 	} else if (!*input) {
