@@ -23,7 +23,6 @@ addons:
       - dc
       - binutils
       - cabextract
-      - kcov
 
 cache:
   - ccache
@@ -38,7 +37,6 @@ script:
   - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
   - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
   - mkdir ${TRAVIS_BUILD_DIR}/kcov
-  - export KCOV="kcov --coveralls-id=$TRAVIS_JOB_ID ${TRAVIS_BUILD_DIR}/kcov"
   - export NOOK=1
   - export NOREPORT=1
   - cd radare2-regressions
