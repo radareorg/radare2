@@ -1053,7 +1053,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 	}
 }
 
-static void cmd_reg_profile (RCore *core, const char *str) { // "arp" and "drp"
+static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" and "drp"
 	switch (str[1]) {
 	case 0:
 		if (core->dbg->reg->reg_profile_str) {
@@ -1062,14 +1062,15 @@ static void cmd_reg_profile (RCore *core, const char *str) { // "arp" and "drp"
 			//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
 		} else eprintf ("No register profile defined. Try 'dr.'\n");
 		break;
-	case '?':
+	case ' ':
+		r_reg_set_profile (core->dbg->reg, str+2);
+		break;
+	case '.':
 		{
-			eprintf ("Usage: drp[j] [regprofile-file]\n");
-			eprintf ("Usage: drps [newfakesize]\n");
-			RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
-			if (rs) {
-				eprintf ("size = %d\n", rs->arena->size);
-			}
+		RRegSet *rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
+		if (rs) {
+			eprintf ("size = %d\n", rs->arena->size);
+		}
 		}
 		break;
 	case 's':
@@ -1100,43 +1101,64 @@ static void cmd_reg_profile (RCore *core, const char *str) { // "arp" and "drp"
 			} else eprintf ("Cannot find GPR register arena.\n");
 		}
 		break;
-	case 'j': {
-			  // "drpj" .. dup from "arpj"
-			  RListIter *iter;
-			  RRegItem *r;
-			  int i;
-			  int first = 1;
-			  r_cons_printf ("{\"alias_info\":[");
-			  for (i = 0; i < R_REG_NAME_LAST; i++) {
-				  if (core->dbg->reg->name[i]) {
-					  if (!first) r_cons_printf (",");
-					  r_cons_printf ("{\"role\":%d,", i);
-					  r_cons_printf ("\"role_str\":\"%s\",",
-							  r_reg_get_role (i));
-					  r_cons_printf ("\"reg\":\"%s\"}",
-							  core->dbg->reg->name[i]);
-					  first = 0;
-				  }
-			  }
-			  r_cons_printf ("],\"reg_info\":[");
-			  first = 1;
-			  for (i = 0; i < R_REG_TYPE_LAST; i++) {
-				  r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
-					  if (!first) r_cons_printf (",");
-					  r_cons_printf ("{\"type\":%d,", r->type);
-					  r_cons_printf ("\"type_str\":\"%s\",",
-							  r_reg_get_type (r->type));
-					  r_cons_printf ("\"name\":\"%s\",", r->name);
-					  r_cons_printf ("\"size\":%d,", r->size);
-					  r_cons_printf ("\"offset\":%d}", r->offset);
-					  first = 0;
-				  }
-			  }
-			  r_cons_printf ("]}");
-		  } break;
-	default: // TODO: show help instead and do this only on "case 0"
-		  r_reg_set_profile (core->dbg->reg, str+2);
-		  break;
+	case 'j':
+		{
+			// "drpj" .. dup from "arpj"
+			RListIter *iter;
+			RRegItem *r;
+			int i;
+			int first = 1;
+			r_cons_printf ("{\"alias_info\":[");
+			for (i = 0; i < R_REG_NAME_LAST; i++) {
+				if (core->dbg->reg->name[i]) {
+					if (!first) r_cons_printf (",");
+					r_cons_printf ("{\"role\":%d,", i);
+					r_cons_printf ("\"role_str\":\"%s\",",
+							r_reg_get_role (i));
+					r_cons_printf ("\"reg\":\"%s\"}",
+							core->dbg->reg->name[i]);
+					first = 0;
+				}
+			}
+			r_cons_printf ("],\"reg_info\":[");
+			first = 1;
+			for (i = 0; i < R_REG_TYPE_LAST; i++) {
+				r_list_foreach (core->dbg->reg->regset[i].regs, iter, r) {
+					if (!first) r_cons_printf (",");
+					r_cons_printf ("{\"type\":%d,", r->type);
+					r_cons_printf ("\"type_str\":\"%s\",",
+							r_reg_get_type (r->type));
+					r_cons_printf ("\"name\":\"%s\",", r->name);
+					r_cons_printf ("\"size\":%d,", r->size);
+					r_cons_printf ("\"offset\":%d}", r->offset);
+					first = 0;
+				}
+			}
+			r_cons_printf ("]}");
+		}
+		break;
+	case '?':
+	default:
+		{
+		const char *from_a[] = { "arp", "arp.", "arpj", "arps" };
+		const char *help_msg[] = {
+			"Usage:", "drp", " # Register profile commands",
+			"drp", "", "Show the current register profile",
+			"drp", " [regprofile-file]", "Set the current register profile",
+			"drp.", "", "Show the current fake size",
+			"drpj", "", "Show the current register profile (JSON)",
+			"drps", " [new fake size]", "Set the fake size",
+			NULL
+		};
+		if (from == 'a') {
+			help_msg[1] = help_msg[3] = help_msg[6] = from_a[0];
+			help_msg[9] = from_a[1];
+			help_msg[12] = from_a[2];
+			help_msg[15] = from_a[3];
+		}
+		r_core_cmd_help (core, help_msg);
+		break;
+		}
 	}
 }
 
@@ -1450,7 +1472,7 @@ free (rf);
 		}
 		break;
 	case 'p': // "drp"
-		cmd_reg_profile (core, str);
+		cmd_reg_profile (core, 'd', str);
 		break;
 	case 't': // "drt"
 		switch (str[1]) {

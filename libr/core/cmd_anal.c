@@ -1714,9 +1714,9 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			break;
 		}
 		break;
-	case 'p': // drp
+	case 'p': // arp
 		// XXX we have to break out .h for these cmd_xxx files.
-		cmd_reg_profile (core, str);
+		cmd_reg_profile (core, 'a', str);
 		break;
 	case 't': // "drt"
 		for (i = 0; (name = r_reg_get_type (i)); i++)
