@@ -3,6 +3,7 @@
 #include <r_util.h>
 
 R_API RQueue *r_queue_new (int n) {
+	if (n <= 0) return NULL;
 	RQueue *q = R_NEW0 (RQueue);
 	if (!q) return NULL;
 	q->elems = R_NEWS0 (void *, n);
