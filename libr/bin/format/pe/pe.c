@@ -2346,7 +2346,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 	new_perm = (PE_IMAGE_SCN_MEM_READ | PE_IMAGE_SCN_MEM_WRITE | PE_IMAGE_SCN_MEM_EXECUTE);
 	base_addr = PE_(r_bin_pe_get_image_base) (bin);
 
-	for (i = 0; i < bin->num_sections; i++) {
+	for (i = 0; !sections[i].last; i++) {
 	        //strcmp against .text doesn't work in somes cases
 		if (strstr ((const char*)sections[i].name, "text")) {
 			bool fix = false;
@@ -2362,7 +2362,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 			if (entry->vaddr < addr_beg || entry->vaddr > addr_end)
 				fix = true;
 			//look for other segment with x that is already mapped and hold entrypoint
-			for (j = 0; j < bin->num_sections; j++) {
+			for (j = 0; !sections[j].last; j++) {
 				if (!strstr ((const char*)sections[j].name, "text") && (sections[j].flags & PE_IMAGE_SCN_MEM_EXECUTE)) {
 					addr_beg = sections[j].paddr;
 					addr_end = addr_beg + sections[j].size;
@@ -2390,7 +2390,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 		}
 	}
 	//if we arrive til here means there is no text section find one that is holding the code
-	for (i = 0; i < bin->num_sections; i++) {
+	for (i = 0; !sections[i].last; i++) {
 		if (sections[i].size > bin->size) continue;
 		addr_beg = sections[i].paddr;
 		addr_end = addr_beg + sections[i].size;
@@ -2423,26 +2423,40 @@ out_function:
 struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_section_t *sections = NULL;
 	PE_(image_section_header) *shdr;
-	int i;
+	int i, j, section_count = 0;
 
 	if (!bin || !bin->nt_headers) return NULL;
 	shdr = bin->section_header;
-	sections = calloc (bin->num_sections + 1, sizeof(struct r_bin_pe_section_t));
+	for (i = 0; i < bin->num_sections; i++) {
+		//just allocate the needed
+		if (shdr[i].SizeOfRawData || shdr[i].Misc.VirtualSize) section_count++;
+	}
+	sections = calloc (section_count + 1, sizeof(struct r_bin_pe_section_t));
 	if (!sections) {
 		r_sys_perror ("malloc (sections)");
 		return NULL;
 	}
-	for (i = 0; i < bin->num_sections; i++) {
-		memcpy (sections[i].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
-		sections[i].vaddr = shdr[i].VirtualAddress;
-		sections[i].size  = shdr[i].SizeOfRawData;
-		sections[i].vsize = shdr[i].Misc.VirtualSize;
-		sections[i].paddr = shdr[i].PointerToRawData;
-		sections[i].flags = shdr[i].Characteristics;
-		sections[i].last = 0;
+	for (i = 0, j = 0; i < bin->num_sections; i++) {
+		//if sz = 0 r_io_section_add will not add it so just skeep
+		if (!shdr[i].SizeOfRawData && !shdr[i].Misc.VirtualSize) continue;
+		if (shdr[i].Name[0] == '\0') {
+			char *new_name = r_str_newf ("sect_%d", j);
+			strcpy ((char *)sections[j].name, new_name);
+			free (new_name);
+		} else {
+			memcpy (sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
+			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
+		}
+		sections[j].vaddr = shdr[i].VirtualAddress;
+		sections[j].size  = shdr[i].SizeOfRawData;
+		sections[j].vsize = shdr[i].Misc.VirtualSize;
+		sections[j].paddr = shdr[i].PointerToRawData;
+		sections[j].flags = shdr[i].Characteristics;
+		sections[j].last = 0;
+		j++;
 	}
-	sections[i].last = 1;
+	sections[j].last = 1;
+	bin->num_sections = section_count;
 	return sections;
 }
 

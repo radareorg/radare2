@@ -20,7 +20,7 @@ struct r_bin_pe_addr_t {
 };
 
 struct r_bin_pe_section_t {
-	ut8  name[PE_IMAGE_SIZEOF_SHORT_NAME];
+	ut8  name[PE_IMAGE_SIZEOF_SHORT_NAME * 2];
 	ut64 size;
 	ut64 vsize;
 	ut64 vaddr;
