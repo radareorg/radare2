@@ -230,6 +230,7 @@ R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kin
 	RList *var_list;
 	RListIter *iter;
 	RAnalVar *var = NULL;
+	RAnalVar *av;
 	if (!fcn || !anal || !name) {
 		return 0;
 	}
@@ -239,10 +240,23 @@ R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kin
 			break;
 		}
 	}
+	
 	if (!var || strcmp (name, var->name)) {
+		r_list_free (var_list);
 		return 0;
 	}
-	return  var;
+
+	av = R_NEW0 (RAnalVar);
+	if (av) {
+		av->addr = var->addr;
+		av->scope = var->scope;
+		av->delta = var->delta;
+		av->name = strdup (var->name);
+		av->size = var->size;
+		av->type = strdup (var->type);
+	}
+	r_list_free (var_list);
+	return  av;
 }
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
