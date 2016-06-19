@@ -162,7 +162,7 @@ typedef struct r_io_t {
 } RIO;
 
 typedef struct r_io_plugin_t {
-	void *plugin;
+//	void *plugin;
 	char *name;
 	char *desc;
 	char *license;
@@ -170,8 +170,8 @@ typedef struct r_io_plugin_t {
 	int (*listener)(RIODesc *io);
 	int (*init)();
 	RIOUndo undo;
-	int isdbg;
-	int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
+	bool isdbg;
+	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
 	int (*system)(RIO *io, RIODesc *fd, const char *);
 	RIODesc* (*open)(RIO *io, const char *, int rw, int mode);
 	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int rw, int mode);

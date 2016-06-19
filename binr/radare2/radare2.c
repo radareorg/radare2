@@ -185,22 +185,6 @@ static int main_help(int line) {
 	return 0;
 }
 
-
-static void list_io_plugins(RIO *io) {
-	char str[4];
-	struct list_head *pos;
-	list_for_each_prev (pos, &io->io_list) {
-		RIOList *il = list_entry (pos, RIOList, list);
-		// read, write, debug, proxy
-		str[0] = 'r';
-		str[1] = il->plugin->write ? 'w' : '_';
-		str[2] = il->plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
-		printf ("%s  %-11s %s (%s)\n", str, il->plugin->name,
-			il->plugin->desc, il->plugin->license);
-	}
-}
-
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
@@ -258,6 +242,37 @@ static void radare2_rc(RCore *r) {
 	}
 }
 
+static bool run_commands(RList *cmds, RList *files, bool quiet) {
+	RListIter *iter;
+	const char *cmdn;
+	const char *file;
+	int ret;
+	/* -i */
+	r_list_foreach (files, iter, file) {
+		if (!r_file_exists (file)) {
+			eprintf ("Script '%s' not found.\n", file);
+			return false;
+		}
+		ret = r_core_run_script (&r, file);
+		if (ret == -2) {
+			eprintf ("Cannot open '%s'\n", file);
+		}
+		if (ret < 0 || (ret == 0 && quiet)) {
+			r_cons_flush ();
+			return false;
+		}
+	}
+	/* -c */
+	r_list_foreach (cmds, iter, cmdn) {
+		r_core_cmd0 (&r, cmdn);
+		r_cons_flush ();
+	}
+	if ((!r_list_empty (cmds)) && quiet) {
+		return false;
+	}
+	return true;
+}
+
 int main(int argc, char **argv, char **envp) {
 #if USE_THREADS
 	RThreadLock *lock = NULL;
@@ -280,12 +295,12 @@ int main(int argc, char **argv, char **envp) {
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
- 	int ret, i, c, perms = R_IO_READ;
+ 	int ret, c, perms = R_IO_READ;
 	int sandbox = 0;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
+	bool do_list_io_plugins = false;
 	char *pfile = NULL, *file = NULL;
-	char *cmdfile[32];
 	const char *debugbackend = "native";
 	const char *asmarch = NULL;
 	const char *asmos = NULL;
@@ -296,7 +311,7 @@ int main(int argc, char **argv, char **envp) {
 	int is_gdb = false;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
-	int cmdfilei = 0;
+	RList *files = r_list_new ();
 	int va = 1; // set va = 0 to load physical offsets from rbin
 
 	r_sys_set_environ (envp);
@@ -390,8 +405,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'F': forcebin = optarg; break;
 		case 'h': help++; break;
 		case 'i':
-			if (cmdfilei + 1 < (sizeof (cmdfile) / sizeof (*cmdfile)))
-				cmdfile[cmdfilei++] = optarg;
+			r_list_append (files, optarg);
 			break;
 		case 'k':
 			{
@@ -404,7 +418,9 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'o': asmos = optarg; break;
 		case 'l': r_lib_open (r.lib, optarg); break;
-		case 'L': list_io_plugins (r.io); return 0;
+		case 'L':
+			do_list_io_plugins = true;
+			break;
 		case 'm':
 			mapaddr = r_num_math (r.num, optarg); break;
 			break;
@@ -454,9 +470,22 @@ int main(int argc, char **argv, char **envp) {
 			help++;
 		}
 	}
+	if (do_list_io_plugins) {
+		if (r_config_get_i (r.config, "cfg.plugins")) {
+			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
+		}
+		run_commands (cmds, files, quiet);
+		r_core_list_io (&r);
+		r_cons_flush ();
+		r_list_free (evals);
+		r_list_free (files);
+		r_list_free (cmds);
+		return 0;
+	}
 
 	if (help > 0) {
 		r_list_free (evals);
+		r_list_free (files);
 		r_list_free (cmds);
 		return main_help (help > 1? 2: 0);
 	}
@@ -838,38 +867,20 @@ int main(int argc, char **argv, char **envp) {
 		}
 		r_cons_flush ();
 	}
-	/* run -i flags */
-	cmdfile[cmdfilei] = 0;
-	for (i = 0; i < cmdfilei; i++) {
-		if (!r_file_exists (cmdfile[i])) {
-			eprintf ("Script '%s' not found.\n", cmdfile[i]);
-			return 1;
-		}
-		ret = r_core_run_script (&r, cmdfile[i]);
-		//ret = r_core_cmd_file (&r, cmdfile[i]);
-		if (ret == -2)
-			eprintf ("Cannot open '%s'\n", cmdfile[i]);
-		if (ret < 0 || (ret == 0 && quiet)) {
-			r_cons_flush ();
-			return 0;
-		}
-	}
-/////
-	r_list_foreach (cmds, iter, cmdn) {
-		r_core_cmd0 (&r, cmdn);
-		r_cons_flush ();
-	}
-	if ((cmdfile[0] || !r_list_empty (cmds)) && quiet)
-		return 0;
+
+	run_commands (cmds, files, quiet);
 	r_list_free (cmds);
-/////
-	if (r_config_get_i (r.config, "scr.prompt"))
+	r_list_free (files);
+
+	if (r_config_get_i (r.config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
 			r_core_cmd (&r, "fo", 0);
 			r_cons_flush ();
 		}
-	if (sandbox)
+	}
+	if (sandbox) {
 		r_config_set (r.config, "cfg.sandbox", "true");
+	}
 	if (quiet) {
 		r_config_set (r.config, "scr.wheel", "false");
 		r_config_set (r.config, "scr.interactive", "false");

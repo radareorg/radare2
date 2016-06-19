@@ -280,18 +280,40 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	free (newfile);
 }
 
+R_API void r_core_list_io(RCore *core) {
+	struct list_head *pos;
+	RIO *io = core->io;
+	char str[4];
+	/* wtf  use rlist here! */
+	list_for_each_prev (pos, &io->io_list) {
+		RIOList *il = list_entry (pos, RIOList, list);
+		// read, write, debug, proxy
+		str[0] = 'r';
+		str[1] = il->plugin->write ? 'w' : '_';
+		str[2] = il->plugin->isdbg ? 'd' : '_';
+		str[3] = 0;
+		r_cons_printf ("%s  %-11s %s (%s)\n", str, il->plugin->name,
+			il->plugin->desc, il->plugin->license);
+	}
+}
+
 static int cmd_open(void *data, const char *input) {
 	const char *help_msg[] = {
 		"Usage: o","[com- ] [file] ([offset])","",
 		"o","","list opened files",
 		"o*","","list opened files in r2 commands",
 		"oa"," [addr]","Open bin info from the given address",
-		"oj","","list opened files in JSON format",
+		"ob","[lbdos] [...]","list open binary files backed by fd",
+		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"oc"," [file]","open core file, like relaunching r2",
-		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
+		"oj","","list opened files in JSON format",
+		"oL","","list all IO plugins registered",
+		"om","[?]","create, list, remove IO maps",
+		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 		"oo","","reopen current file (kill+fork in debugger)",
 		"oo","+","reopen current file in read-write",
 		"ood"," [args]","reopen in debugger mode (with args)",
+		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
 		"o"," 4","priorize io on fd 4 (bring to front)",
 		"o","-1","close file descriptor 1",
 		"o-","*","close all opened files",
@@ -299,10 +321,6 @@ static int cmd_open(void *data, const char *input) {
 		"o"," [file]","open [file] file in read-only",
 		"o","+[file]","open file in read-write mode",
 		"o"," [file] 0x4000","map file at 0x4000",
-		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-		"ob","[lbdos] [...]","list open binary files backed by fd",
-		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
-		"om","[?]","create, list, remove IO maps",
 		NULL
 	};
 	const char* help_msg_oo[] = {
@@ -353,6 +371,9 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		}
 		r_core_file_list (core, (int)(*input));
+		break;
+	case 'L':
+		r_core_list_io (core);
 		break;
 	case 'a':
 		if ('?' == input[1]) {
