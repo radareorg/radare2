@@ -1321,6 +1321,7 @@ R_API int r_core_init(RCore *core) {
 	r_anal_noreturn_add (core->anal, "sym.abort", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "abort", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "sym.exit", UT64_MAX);
+	r_anal_noreturn_add (core->anal, "sym._exit", UT64_MAX);
 	r_anal_noreturn_add (core->anal, "sym.imp.__libc_init", UT64_MAX); /* mips */
 	/* windows */
 	r_anal_noreturn_add (core->anal, "sym.imp.kernel32.dll_ExitProcess", UT64_MAX);
