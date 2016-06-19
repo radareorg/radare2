@@ -35,14 +35,12 @@ R_API bool r_io_plugin_init(RIO *io) {
 		if (!static_plugin) {
 			return false;
 		}
-		// memory leak here: static_plugin never freed
 		memcpy (static_plugin, io_static_plugins[i], sizeof (RIOPlugin));
-		if (!strncmp (static_plugin->name, "default", 7)) {
+		if (!strcmp (static_plugin->name, "default")) {
 			io->plugin_default = static_plugin;
-			//free (static_plugin);
-			//continue;
+		} else {
+			r_io_plugin_add (io, static_plugin);
 		}
-		r_io_plugin_add (io, static_plugin);
 	}
 	return true;
 }
@@ -78,7 +76,7 @@ R_API int r_io_plugin_list(RIO *io) {
 		str[1] = plugin->write ? 'w' : '_';
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
-		io->cb_printf ("%s  %-11s %s (%s)\n", str, plugin->name,
+		io->cb_printf ("%s  %-8s %s (%s)\n", str, plugin->name,
 			plugin->desc, plugin->license);
 		n++;
 	}
