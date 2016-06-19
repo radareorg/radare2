@@ -67,10 +67,10 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 	int bpsz = strcmp (dbg->arch, "arm") ? 1 : 4;
 	RBreakpointItem *bpi;
 	const char *module_name = module;
+	RListIter *iter;
+	RDebugMap *map;
 
 	if (!addr && module) {
-		RListIter *iter;
-		RDebugMap *map;
 		bool detect_module, valid = false;
 		int perm;
 
@@ -107,6 +107,17 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 		if (!valid) {
 			eprintf ("WARNING: module's base addr + delta is not a valid address\n");
 			return NULL;
+		}
+	}
+	if (!module) {
+		//express db breakpoints as dbm due to ASLR when saving into project
+		r_debug_map_sync (dbg);
+		r_list_foreach (dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				module_name = map->file;
+				m_delta = addr - map->addr;
+				break;
+			}
 		}
 	}
 	bpi = hw
