@@ -512,6 +512,9 @@ int main(int argc, char **argv, char **envp) {
 	if (r_config_get_i (r.config, "cfg.plugins")) {
 		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 	}
+	run_commands (cmds, files, quiet);
+	r_list_free (cmds);
+	r_list_free (files);
 
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (prefile) {
@@ -867,10 +870,6 @@ int main(int argc, char **argv, char **envp) {
 		}
 		r_cons_flush ();
 	}
-
-	run_commands (cmds, files, quiet);
-	r_list_free (cmds);
-	r_list_free (files);
 
 	if (r_config_get_i (r.config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
