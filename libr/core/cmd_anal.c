@@ -2423,11 +2423,11 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
 		RIOSection *s = r_io_section_vget (core->io, addr);
-		if (s && s->rwx & 1) {
+		if (s && s->flags & 1) {
 			// search in current section
 			if (s->size > binfile->size) {
 				addr = s->vaddr;
-				len = binfile->size - s->offset;
+				len = binfile->size - s->addr;
 			} else {
 				addr = s->vaddr;
 				len = s->size;
@@ -3410,7 +3410,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			if (section) {
 				from = section->vaddr;
 				to = section->vaddr + section->vsize;
-				rwx = section->rwx;
+				rwx = section->flags;
 			}
 		} else {
 			RIOMap *map = r_io_map_get (core->io, core->offset);

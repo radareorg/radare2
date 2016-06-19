@@ -78,7 +78,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 
 	{
 		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
-		baddr = s ? s->offset : r_config_get_i (core->config, "bin.baddr");
+		baddr = s ? s->addr : r_config_get_i (core->config, "bin.baddr");
 	}
 
 	line_count = start_addr ? 0 : 1;
@@ -378,7 +378,7 @@ static int cmd_seek(void *data, const char *input) {
 			RIOSection *s = r_io_section_vget (core->io, core->offset);
 			// XXX: this +2 is a hack. must fix gap between sections
 			if (s) r_core_seek (core, s->vaddr+s->size+2, 1);
-			else r_core_seek (core, r_io_desc_size (core->io, core->file->desc), 1);
+			else r_core_seek (core, r_io_desc_size (core->file->desc), 1);
 			}
 			break;
 		case 'l': // "sl"

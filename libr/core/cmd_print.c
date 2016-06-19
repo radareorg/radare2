@@ -1798,7 +1798,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		if (fsz<1)
-			fsz = (core->file && core->io)? r_io_desc_size (core->io, core->file->desc): 0;
+			fsz = (core->file && core->io)? r_io_desc_size (core->file->desc): 0;
 		if (nbsz) {
 			obsz = core->blocksize;
 			switch (input1) {
