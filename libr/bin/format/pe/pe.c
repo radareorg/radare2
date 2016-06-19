@@ -449,8 +449,10 @@ static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->num_sections = bin->nt_headers->file_header.NumberOfSections;
 	int sections_size;
 	if (bin->num_sections < 1) return true;
+#if 0
 	if (bin->num_sections == 0xffff)
 		bin->num_sections = 16; // hackaround for 65k sections file
+#endif
 	sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
