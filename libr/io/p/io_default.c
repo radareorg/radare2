@@ -27,7 +27,6 @@ static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence);
 static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size);
 static int r_io_def_mmap_resize(RIO *io, RIODesc *fd, ut64 size);
 
-static int __plugin_open_default(RIO *io, const char *file, ut8 many);
 static RIODesc *__open_default(RIO *io, const char *file, int flags, int mode);
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len);
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len);
@@ -316,7 +315,7 @@ static int r_io_def_mmap_resize(RIO *io, RIODesc *fd, ut64 size) {
 	return r_io_def_mmap_truncate (mmo, size);
 }
 
-static int __plugin_open_default(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 	return r_io_def_mmap_check_default (file);
 }
 
@@ -357,7 +356,7 @@ struct r_io_plugin_t r_io_plugin_default = {
 	.open = __open_default,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open_default,
+	.check = __plugin_open_default,
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize,

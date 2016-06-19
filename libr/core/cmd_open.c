@@ -280,23 +280,6 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	free (newfile);
 }
 
-R_API void r_core_list_io(RCore *core) {
-	struct list_head *pos;
-	RIO *io = core->io;
-	char str[4];
-	/* wtf  use rlist here! */
-	list_for_each_prev (pos, &io->io_list) {
-		RIOList *il = list_entry (pos, RIOList, list);
-		// read, write, debug, proxy
-		str[0] = 'r';
-		str[1] = il->plugin->write ? 'w' : '_';
-		str[2] = il->plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
-		r_cons_printf ("%s  %-11s %s (%s)\n", str, il->plugin->name,
-			il->plugin->desc, il->plugin->license);
-	}
-}
-
 static int cmd_open(void *data, const char *input) {
 	const char *help_msg[] = {
 		"Usage: o","[com- ] [file] ([offset])","",
@@ -373,7 +356,7 @@ static int cmd_open(void *data, const char *input) {
 		r_core_file_list (core, (int)(*input));
 		break;
 	case 'L':
-		r_core_list_io (core);
+		r_io_plugin_list (core->io);
 		break;
 	case 'a':
 		if ('?' == input[1]) {

@@ -136,8 +136,7 @@ typedef struct r_io_t {
 	int write_mask_len;
 	struct r_io_plugin_t *plugin;
 	RIOUndo undo;
-	//RList *iolist;
-	struct list_head io_list;
+	RList *plugins;
 	RList *sections;
 	int next_section_id;
 	RIOSection *section; /* current section (cache) */
@@ -159,6 +158,7 @@ typedef struct r_io_t {
 	void *user;
 	int (*cb_core_cmd)(void *user, const char *str);
 	char* (*cb_core_cmdstr)(void *user, const char *str);
+	struct r_io_plugin_t *plugin_default;
 } RIO;
 
 typedef struct r_io_plugin_t {
@@ -183,13 +183,8 @@ typedef struct r_io_plugin_t {
 	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);
 	int (*create)(RIO *io, const char *file, int mode, int type);
-	int (*plugin_open)(RIO *io, const char *, ut8 many);
+	bool (*check)(RIO *io, const char *, bool many);
 } RIOPlugin;
-
-typedef struct r_io_list_t {
-	RIOPlugin *plugin;
-	struct list_head list;
-} RIOList;
 
 struct r_io_bind_t;
 /* TODO: find better name... RIOSetFd_Callback? ..Func? .. too camels here */
@@ -288,18 +283,16 @@ typedef struct r_io_range_t {
 R_API RIO *r_io_new(void);
 R_API RIO *r_io_free(RIO *io);
 R_API void r_io_set_raw(RIO *io, int raw);
-R_API int r_io_plugin_init(RIO *io);
+R_API bool r_io_plugin_init(RIO *io);
 R_API void r_io_raise (RIO *io, int fd);
-R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin);
-R_API int r_io_plugin_close(RIO *io, int fd, RIOPlugin *plugin);
 R_API int r_io_plugin_generate(RIO *io);
-R_API int r_io_plugin_add(RIO *io, RIOPlugin *plugin);
+R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);
 R_API int r_io_plugin_list(RIO *io);
 R_API int r_io_is_listener(RIO *io);
 // TODO: _del ??
-R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, ut8 many);
+R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many);
 R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd);
-R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, ut8 many);
+R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many);
 
 /* io/io.c */
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);
@@ -335,7 +328,8 @@ R_API int r_io_mwrite(RIO *io, int fd, ut64 maddr, ut8 *buf, int len);
 R_API int r_io_pwrite(RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
 R_API int r_io_system(RIO *io,  const char *cmd);
-R_API int r_io_close(RIO *io, RIODesc *fd);
+R_API int r_io_plugin_close(RIO *io, RIODesc *desc);
+R_API int r_io_close(RIO *io, RIODesc *desc);
 R_API int r_io_close_all(RIO *io);
 R_API ut64 r_io_size(RIO *io); //, int fd);
 R_API int r_io_resize(RIO *io, ut64 newsize);

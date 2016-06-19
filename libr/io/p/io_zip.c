@@ -66,7 +66,6 @@ RList *r_io_zip_get_files(char *archivename, ut32 flags, int mode, int rw);
 RIOZipFileObj * r_io_zip_create_new_file(const char *archivename, const char *filename, struct zip_stat *sb, ut32 flags, int mode, int rw);
 RIOZipFileObj *r_io_zip_alloc_zipfileobj(const char *archive_name, const char *filename, ut32 flags, int mode, int rw);
 static int r_io_zip_init();
-static int r_io_zip_plugin_open(RIO *io, const char *file, ut8 many);
 static int r_io_zip_has_uri_substr(const char *file);
 static int r_io_zip_check_uri(const char *file);
 static int r_io_zip_flush_file(RIOZipFileObj *zfo);
@@ -78,6 +77,16 @@ static RIODesc * r_io_zip_open(RIO *io, const char *file, int rw, int mode);
 static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode);
 static int r_io_zip_check_uri_many(const char *file);
 static int r_io_zip_resize(RIO *io, RIODesc *fd, ut64 size);
+
+static bool r_io_zip_plugin_open(RIO *io, const char *file, bool many) {
+	if (io && file) {
+		if (many) {
+			return r_io_zip_check_uri_many (file);
+		}
+		return r_io_zip_check_uri (file);
+	}
+	return false;
+}
 
 static int r_io_zip_init(RIO *io) {
 	return true;
@@ -251,8 +260,9 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 	RIOZipFileObj *zfo = NULL;
 	char *filename_in_zipfile, *zip_filename = NULL, *zip_uri;
 
-	if (!r_io_zip_plugin_open (io, file, 1))
+	if (!r_io_zip_plugin_open (io, file, true)) {
 		return NULL;
+	}
 
 	zip_uri = strdup (file);
 	if (!zip_uri) return NULL;
@@ -308,8 +318,8 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	RIOZipFileObj *zfo = NULL;
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
 
-	if (!r_io_zip_plugin_open (io, file, 0)) {
-		return res;
+	if (!r_io_zip_plugin_open (io, file, false)) {
+		return NULL;
 	}
 	zip_uri = strdup (file);
 	if (!zip_uri) return NULL;
@@ -647,11 +657,6 @@ RIOZipFileObj *r_io_zip_create_new_file(const char *archivename, const char *fil
 	return zfo;
 }
 
-static int r_io_zip_plugin_open(RIO *io, const char *file, ut8 many) {
-	if (many) return (io && file) && (r_io_zip_check_uri_many (file));
-	return (io && file) && (r_io_zip_check_uri (file));
-}
-
 RIOPlugin r_io_plugin_zip = {
 	.name = "zip",
 	.desc = "Open zip files apk://foo.apk//MANIFEST or zip://foo.apk//theclass/fun.class, show files with: zip://foo.apk/, open all files with zipall://",
@@ -662,7 +667,7 @@ RIOPlugin r_io_plugin_zip = {
 	.read = r_io_zip_read,
 	.close = r_io_zip_close,
 	.lseek = r_io_zip_lseek,
-	.plugin_open = r_io_zip_plugin_open,
+	.check = r_io_zip_plugin_open,
 	.resize = r_io_zip_resize,
 	.init = r_io_zip_init
 };

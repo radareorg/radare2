@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -102,7 +102,7 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	return RIOMALLOC_OFF (fd);
 }
 
-static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
+static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "gzip://", 7));
 }
 
@@ -132,7 +132,7 @@ struct r_io_plugin_t r_io_plugin_gzip = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize,

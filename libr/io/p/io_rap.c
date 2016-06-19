@@ -113,7 +113,7 @@ static ut64 rap__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int rap__plugin_open(RIO *io, const char *pathname, ut8 many) {
+static bool rap__plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "rap://", 6)) \
 		|| (!strncmp (pathname, "raps://", 7));
 }
@@ -346,7 +346,7 @@ RIOPlugin r_io_plugin_rap = {
 	.open = rap__open,
 	.close = rap__close,
 	.read = rap__read,
-	.plugin_open = rap__plugin_open,
+	.check = rap__plugin_open,
 	.lseek = rap__lseek,
 	.system = rap__system,
 	.write = rap__write,

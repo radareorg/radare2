@@ -341,9 +341,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return mach_write_at (io, (RIOMach*)fd->data, buf, len, io->off);
 }
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return (!strncmp (file, "attach://", 9) \
-		|| !strncmp (file, "mach://", 7));
+static bool __plugin_open(RIO *io, const char *file, bool many) {
+	return (!strncmp (file, "attach://", 9) || !strncmp (file, "mach://", 7));
 }
 
 // s/inferior_task/port/
@@ -485,7 +484,7 @@ RIOPlugin r_io_plugin_mach = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,

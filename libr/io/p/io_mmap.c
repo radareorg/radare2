@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -26,14 +26,6 @@ static ut64 r_io_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence
 static ut64 r_io_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence);
 static int r_io_mmap_truncate(RIOMMapFileObj *mmo, ut64 size);
 static int r_io_mmap_resize(RIO *io, RIODesc *fd, ut64 size);
-static int __plugin_open(RIO *io, const char *file, ut8 many);
-static RIODesc *__open(RIO *io, const char *file, int flags, int mode);
-static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len);
-static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len);
-static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence);
-static int __close(RIODesc *fd);
-static int __resize(RIO *io, RIODesc *fd, ut64 newsize);
-
 
 static int r_io_mmap_refresh_buf(RIOMMapFileObj *mmo) {
 	RIO* io = mmo->io_backref;
@@ -189,7 +181,7 @@ static int r_io_mmap_resize(RIO *io, RIODesc *fd, ut64 size) {
 }
 
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return r_io_mmap_check (file);
 }
 
@@ -225,7 +217,7 @@ struct r_io_plugin_t r_io_plugin_mmap = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize,

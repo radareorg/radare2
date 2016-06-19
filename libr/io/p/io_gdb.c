@@ -14,7 +14,7 @@ typedef struct {
 static libgdbr_t *desc = NULL;
 static RIODesc *riogdb = NULL;
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "gdb://", 6));
 }
 
@@ -162,7 +162,7 @@ RIOPlugin r_io_plugin_gdb = {
 	.close = __close,
 	.read = __read,
 	.write = __write,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.isdbg = true

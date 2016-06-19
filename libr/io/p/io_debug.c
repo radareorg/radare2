@@ -366,7 +366,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 }
 #endif
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "dbg://", 6) && file[6]);
 }
 
@@ -406,7 +406,7 @@ RIOPlugin r_io_plugin_debug = {
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
 	.license = "LGPL3",
         .open = __open,
-        .plugin_open = __plugin_open,
+        .check = __plugin_open,
 	.isdbg = true,
 };
 #else

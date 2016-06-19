@@ -197,7 +197,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 	return r_buf_seek(rih->rbuf, offset, whence);
 }
 
-static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
+static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "ihex://", 7));
 }
 
@@ -395,7 +395,7 @@ RIOPlugin r_io_plugin_ihex = {
         .open = __open,
         .close = __close,
 	.read = __read,
-        .plugin_open = __plugin_open,
+        .check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 };

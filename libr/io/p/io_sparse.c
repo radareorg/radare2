@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2016 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -63,7 +63,7 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	return r_offset;
 }
 
-static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
+static bool __plugin_open(struct r_io_t *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "sparse://", 9));
 }
 
@@ -100,14 +100,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-struct r_io_plugin_t r_io_plugin_sparse = {
+RIOPlugin r_io_plugin_sparse = {
 	.name = "sparse",
 	.desc = "sparse buffer allocation (sparse://1024 sparse://)",
 	.license = "LGPL3",
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 	.resize = NULL,

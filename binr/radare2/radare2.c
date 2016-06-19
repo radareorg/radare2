@@ -475,7 +475,7 @@ int main(int argc, char **argv, char **envp) {
 			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 		}
 		run_commands (cmds, files, quiet);
-		r_core_list_io (&r);
+		r_io_plugin_list (r.io);
 		r_cons_flush ();
 		r_list_free (evals);
 		r_list_free (files);

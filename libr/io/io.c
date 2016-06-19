@@ -75,16 +75,8 @@ R_API int r_io_write_buf(RIO *io, struct r_buf_t *b) {
 }
 
 R_API RIO *r_io_free(RIO *io) {
-	struct list_head *pos, *n;
 	if (!io) return NULL;
-	/* TODO: properly free inner nfo */
-	/* TODO: memory leaks */
-	list_for_each_safe (pos, n, &io->io_list) {
-		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
-		R_FREE (il->plugin);
-		list_del (pos);
-		R_FREE (il);
-	}
+	r_list_free (io->plugins);
 	r_list_free (io->sections);
 	r_list_free (io->maps);
 	r_list_free (io->undo.w_list);
@@ -134,10 +126,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 				continue;
 			}
 			if (desc) {
-				if (desc->fd != -1)
-					r_io_plugin_open (io, desc->fd, plugin);
 				desc->uri = uri;
-				//desc->name = strdup (uri);
 				desc->referer = redir;
 			}
 		}
@@ -147,8 +136,6 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 		plugin = r_io_plugin_get_default (io, uri, 0);
 		desc = (plugin && plugin->open)? plugin->open (io, uri, flags, mode): NULL;
 		if (desc) {
-			if (desc->fd != -1)
-				r_io_plugin_open (io, desc->fd, plugin);
 			desc->uri = uri;
 		}
 	}
@@ -187,8 +174,7 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 	}
 
 	r_list_foreach (list_fds, iter, desc) {
-		if (desc)
-			desc->uri = strdup (uri);
+		desc->uri = strdup (uri);
 	}
 
 	io->plugin = iop;
@@ -410,8 +396,9 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	}
 
 	if (io->raw) {
-		if (r_io_seek (io, addr, R_IO_SEEK_SET) == UT64_MAX)
+		if (r_io_seek (io, addr, R_IO_SEEK_SET) == UT64_MAX) {
 			memset (buf, io->Oxff, len);
+		}
 		return r_io_read_internal (io, buf, len);
 	}
 
@@ -858,6 +845,17 @@ R_API int r_io_system(RIO *io, const char *cmd) {
 	return ret;
 }
 
+R_API int r_io_plugin_close(RIO *io, RIODesc *desc) {
+	if (io->plugin && io->plugin->close) {
+		int ret = io->plugin->close (desc);
+		if (desc == io->desc) {
+			io->desc = NULL;
+		}
+		return ret;
+	}
+	return -1;
+}
+
 R_API int r_io_close(RIO *io, RIODesc *d) {
 	RIODesc *cur = NULL;
 	if (io == NULL || d == NULL)
@@ -873,13 +871,7 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 			}
 			r_io_map_del (io, nfd);
 			r_io_section_rm_all (io, nfd);
-			r_io_plugin_close (io, nfd, io->plugin);
-			if (io->plugin && io->plugin->close) {
-				int ret = io->plugin->close (desc);
-				if (desc == io->desc)
-					io->desc = NULL;
-				return ret;
-			}
+			r_io_plugin_close (io, io->desc);
 			r_io_desc_del (io, desc->fd);
 		}
 	}
