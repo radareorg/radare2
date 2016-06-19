@@ -1701,6 +1701,8 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	struct r_bin_pe_addr_t *entry = NULL;
 	static bool debug = false;
 	PE_DWord pe_entry;
+	int i;
+	ut64 base_addr = PE_(r_bin_pe_get_image_base) (bin);
 
 	if (!bin || !bin->optional_header) return NULL;
 	if ((entry = malloc (sizeof (struct r_bin_pe_addr_t))) == NULL) {
@@ -1712,9 +1714,8 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	entry->paddr  = bin_pe_rva_to_paddr (bin, pe_entry);
 
 	if (entry->paddr >= bin->size) {
-		int i;
 	 	struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
-		ut64 paddr = 0, base_addr = PE_(r_bin_pe_get_image_base) (bin);
+		ut64 paddr = 0;
 		if (!debug) {
 			eprintf ("Warning: Invalid entrypoint ... "
 					"trying to fix it but i do not promise nothing\n");
@@ -1739,7 +1740,8 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 				}
 			}
 			if (min_off == -1) {
-				//no section just a hack to try to fix entrypoint
+				//no section just a hack to try to fix entrypoint 
+				//maybe doesn't work always
 				entry->paddr = pe_entry & ((bin->optional_header->SectionAlignment << 1) - 1);
 				entry->vaddr = entry->paddr + base_addr;
 			}
@@ -1749,6 +1751,17 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	}
 	if (entry->paddr == 0) {
 		if (!debug) eprintf ("Warning: NULL entrypoint\n");
+	 	struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
+		for (i = 0; i < bin->num_sections; i++) {
+			//If there is a section with x without w perm is a good candidate to be the entrypoint	
+			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].flags & PE_IMAGE_SCN_MEM_WRITE)) {
+				entry->paddr = sections[i].paddr;
+				entry->vaddr = sections[i].vaddr + base_addr;
+				break;
+			}
+			
+		}
+		free (sections);
 	}
 
 	if (is_arm (bin) && entry->vaddr & 1) {
@@ -2319,7 +2332,7 @@ int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
 //This function try to detect anomalies within section
 //we check if there is a section mapped at entrypoint, otherwise add it up
 void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t **sects) {
-    	int i = 0;
+	int i = 0;
 	struct r_bin_pe_section_t *sections = *sects;
 	ut64 addr_beg, addr_end, new_section_size, new_perm, base_addr;
 	struct r_bin_pe_addr_t *entry =  PE_(r_bin_pe_get_entrypoint) (bin);
@@ -2335,6 +2348,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 	        //strcmp against .text doesn't work in somes cases
 		if (strstr ((const char*)sections[i].name, "text")) {
 			bool fix = false;
+			int j;
 			//check paddr boundaries
 			addr_beg = sections[i].paddr;
 			addr_end = addr_beg + sections[i].size;
@@ -2345,6 +2359,23 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 			addr_end = addr_beg + sections[i].vsize;
 			if (entry->vaddr < addr_beg || entry->vaddr > addr_end)
 				fix = true;
+			//look for other segment with x that is already mapped and hold entrypoint
+			for (j = 0; j < bin->num_sections; j++) {
+				if (!strstr ((const char*)sections[j].name, "text") && (sections[j].flags & PE_IMAGE_SCN_MEM_EXECUTE)) {
+					addr_beg = sections[j].paddr;
+					addr_end = addr_beg + sections[j].size;
+					if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
+						if (sections[j].vsize == 0) sections[j].vsize = sections[j].size;
+						addr_beg = sections[j].vaddr + base_addr;
+						addr_end = addr_beg + sections[j].vsize;
+						if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
+							fix = false;
+							break;
+						}
+					}
+				}
+							
+			}
 			//if either vaddr or paddr fail we should update this section
 			if (fix) {		
 				strcpy ((char *)sections[i].name, "blob");
