@@ -763,8 +763,17 @@ repeat:
 			gotoBeachRet();
 			// For some reason, branch delayed code (MIPS) needs to continue
 			break;
+		case R_ANAL_OP_TYPE_UCALL:
+			/* call [dst] */
+			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
+			break;
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
+			/* call dst */
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
