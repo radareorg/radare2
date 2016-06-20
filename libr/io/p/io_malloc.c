@@ -104,7 +104,7 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	return RIOMALLOC_OFF (fd);
 }
 
-static bool __check(struct r_io_t *io, const char *pathname, bool many) {
+static bool __check(RIO *io, const char *pathname, bool many) {
 	return (
 		(!strncmp (pathname, "malloc://", 9)) ||
 		(!strncmp (pathname, "hex://", 6))
@@ -112,7 +112,7 @@ static bool __check(struct r_io_t *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (__check (io, pathname,0)) {
+	if (__check (io, pathname, 0)) {
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		if (!mal) return NULL;
 		mal->fd = -2; /* causes r_io_desc_new() to set the correct fd */
@@ -149,7 +149,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-struct r_io_plugin_t r_io_plugin_malloc = {
+RIOPlugin r_io_plugin_malloc = {
 	.name = "malloc",
 	.desc = "memory allocation (malloc://1024 hex://cd8090)",
 	.license = "LGPL3",

@@ -775,11 +775,11 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	}
 	if (io->plugin && io->plugin->lseek) {
 		ret = io->plugin->lseek (io, io->desc, offset, whence);
-	// XXX can be problematic on w32..so no 64 bit offset?
 	} else {
 		ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
 	}
-
+#if 0
+	// XXX can be problematic on w32..so no 64 bit offset?
 	if (ret != UT64_MAX) {
 		io->off = (whence == R_IO_SEEK_SET)
 			? offset // HACKY FIX linux-arm-32-bs at 0x10000
@@ -789,6 +789,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 			? r_io_section_maddr_to_vaddr (io, io->off)
 			: io->off;
 	}
+#endif
 	return ret;
 }
 
