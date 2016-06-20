@@ -225,12 +225,11 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	#warning "r_debug_native_continue not supported on this platform"
 	return -1;
 #else
-	int contsig;
+	int contsig = dbg->reason.signum;
 
-	if (sig != -1)
+	if (sig != -1) {
 		contsig = sig;
-	else
-		contsig = dbg->reason.signum;
+	}
 	//eprintf ("continuing with signal %d ...\n", contsig);
 	return ptrace (PTRACE_CONT, pid, NULL, contsig) == 0;
 #endif

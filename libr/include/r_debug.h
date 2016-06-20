@@ -186,30 +186,30 @@ typedef struct r_debug_t {
 	char *arch;
 	int bits; /// XXX: MUST SET ///
 
-	int pid;    	/* selected process id */
-	int tid;    	/* selected thread id */
-	int forked_pid;	/* last pid created by fork */
+	int pid; /* selected process id */
+	int tid; /* selected thread id */
+	int forked_pid; /* last pid created by fork */
 	RList *threads; /* XXX This is platform-specific !!! */
 
 	/* dbg.* config options (see e?dbg)
 	 * NOTE: some settings are checked inline instead of tracked here.
 	 */
-	int bpsize; 			/* size of a breakpoint */
-	char *btalgo;			/* select backtrace algorithm */
-	int btdepth; 			/* backtrace depth */
-	int regcols; 			/* display columns */
-	int swstep; 			/* steps with software traps */
-	int stop_all_threads; 	/* stop all threads at any stop */
-	int trace_forks; 		/* stop on new children */
-	int trace_execs; 		/* stop on new execs */
-	int trace_clone; 		/* stop on new threads */
-	char *glob_libs; 		/* stop on lib load */
-	char *glob_unlibs; 		/* stop on lib unload */
+	int bpsize; /* size of a breakpoint */
+	char *btalgo; /* select backtrace algorithm */
+	int btdepth; /* backtrace depth */
+	int regcols; /* display columns */
+	int swstep; /* steps with software traps */
+	int stop_all_threads; /* stop all threads at any stop */
+	int trace_forks; /* stop on new children */
+	int trace_execs; /* stop on new execs */
+	int trace_clone; /* stop on new threads */
+	char *glob_libs; /* stop on lib load */
+	char *glob_unlibs; /* stop on lib unload */
 
 	/* tracking debugger state */
-	int steps;				/* counter of steps done */
-	RDebugReason reason; 	/* stop reason */
-	RDebugRecoilMode recoil_mode; 	/* what did the user want to do? */
+	int steps; /* counter of steps done */
+	RDebugReason reason; /* stop reason */
+	RDebugRecoilMode recoil_mode; /* what did the user want to do? */
 
 	/* tracing vars */
 	RDebugTrace *trace;

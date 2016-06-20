@@ -474,7 +474,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case 'e': // "dpe"
 		{
-			int pid = (input[2] == ' ')? atoi(input + 2): core->dbg->pid;
+			int pid = (input[2] == ' ')? atoi (input + 2): core->dbg->pid;
 			char *exe = r_sys_pid_to_path (pid);
 			if (exe) {
 				r_cons_printf ("%s\n", exe);
@@ -3016,7 +3016,7 @@ static int cmd_debug(void *data, const char *input) {
 			NULL
 		};
 		RDebugInfo *rdi = r_debug_info (core->dbg, input + 2);
-		RDebugReasonType stop = r_debug_stop_reason(core->dbg);
+		RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 		char *escaped_str;
 		switch (input[1]) {
 		case '\0':
@@ -3029,7 +3029,7 @@ static int cmd_debug(void *data, const char *input) {
 				P ("signum=%d\n", core->dbg->reason.signum);
 				P ("sigpid=%d\n", core->dbg->reason.tid);
 				P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
-				P ("inbp=%s\n", core->dbg->reason.bp_addr? "true": "false");
+				P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
 				P ("pid=%d\n", rdi->pid);
 				P ("tid=%d\n", rdi->tid);
 				P ("uid=%d\n", rdi->uid);
@@ -3052,7 +3052,7 @@ static int cmd_debug(void *data, const char *input) {
 				P ("\"signum\":%d,", core->dbg->reason.signum);
 				P ("\"sigpid\":%d,", core->dbg->reason.tid);
 				P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
-				P ("\"inbp\":%s,", core->dbg->reason.bp_addr? "true": "false");
+				P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
 				P ("\"pid\":%d,", rdi->pid);
 				P ("\"tid\":%d,", rdi->tid);
 				P ("\"uid\":%d,", rdi->uid);
