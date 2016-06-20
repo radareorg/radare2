@@ -3,7 +3,7 @@
 #include <r_bp.h>
 #include "../config.h"
 
-R_API void r_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, int set) {
+R_API void r_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	if (set) {
 		//eprintf ("Setting bp at 0x%08"PFMT64x"\n", b->addr);
 		if (b->hw || !b->bbytes) {
@@ -24,7 +24,7 @@ R_API void r_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, int set) {
 /**
  * reflect all r_bp stuff in the process using dbg->bp_write or ->breakpoint
  */
-R_API int r_bp_restore(RBreakpoint *bp, int set) {
+R_API int r_bp_restore(RBreakpoint *bp, bool set) {
 	return r_bp_restore_except (bp, set, 0);
 }
 
@@ -33,7 +33,7 @@ R_API int r_bp_restore(RBreakpoint *bp, int set) {
  *
  * except the specified breakpoint...
  */
-R_API bool r_bp_restore_except(RBreakpoint *bp, int set, ut64 addr) {
+R_API bool r_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr) {
 	bool rc = true;
 	RListIter *iter;
 	RBreakpointItem *b;
