@@ -128,15 +128,19 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 			if (desc) {
 				desc->uri = uri;
 				desc->referer = redir;
+				io->plugin = plugin;
 			}
 		}
 		break;
 	}
 	if (!desc) {
 		plugin = r_io_plugin_get_default (io, uri, 0);
-		desc = (plugin && plugin->open)? plugin->open (io, uri, flags, mode): NULL;
+		desc = (plugin && plugin->open)
+			? plugin->open (io, uri, flags, mode)
+			: NULL;
 		if (desc) {
 			desc->uri = uri;
+			io->plugin = plugin;
 		}
 	}
 	if (!desc) {
@@ -184,20 +188,15 @@ static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, in
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc;
-	if (!io || !file || io->redirect)
+	if (!io || !file || io->redirect) {
 		return NULL;
-	desc = __getioplugin (io, file, flags, mode);
-	IO_IFDBG {
-		if (desc && desc->plugin)
-			eprintf ("Opened file: %s with %s\n",
-				file, desc->plugin->name);
 	}
+	desc = __getioplugin (io, file, flags, mode);
 	if (desc) {
 		r_io_desc_add (io, desc);
 		if (io->autofd || !io->desc)
 			r_io_use_desc (io, desc);
 	} // else eprintf ("r_io_open_nomap: Unable to open file: %s\n", file);
-
 	return desc;
 }
 
@@ -211,8 +210,9 @@ R_API RIODesc *r_io_open_at(RIO *io, const char *file, int flags, int mode, ut64
 	if (desc) {
 		r_io_desc_add (io, desc);
 		size = r_io_desc_size (io, desc);
-		if (io->autofd || !io->desc)
+		if (io->autofd || !io->desc) {
 			r_io_use_desc (io, desc);
+		}
 		r_io_map_new (io, desc->fd, mode, 0, maddr, size);
 	} else eprintf ("r_io_open_at: Unable to open file: %s\n", file);
 	return desc;
@@ -248,8 +248,9 @@ R_API int r_io_reopen(RIO *io, RIODesc *desc, int flags, int mode) {
 	RIOMap *map;
 	if (desc && desc->uri && io && io->files && (desc == r_io_desc_get (io, desc->fd))) {
 		n = __getioplugin (io, desc->uri, flags, mode);
-		if (!n)
+		if (!n) {
 			return false;
+		}
 		r_io_section_rm_all (io, desc->fd);
 		if (io->maps) {
 			r_list_foreach (io->maps, iter, map) {
