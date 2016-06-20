@@ -53,9 +53,12 @@ static int verify_version(int show) {
 	for (i = ret = 0; vcs[i].name; i++) {
 		struct vcs_t *v = &vcs[i];
 		const char *name = v->callback ();
-		if (!ret && strcmp (base, name))
+		if (!ret && strcmp (base, name)) {
 			ret = 1;
-		if (show) printf ("%s  %s\n", name, v->name);
+		}
+		if (show) {
+			printf ("%s  %s\n", name, v->name);
+		}
 	}
 	if (ret) {
 		if (show) eprintf ("WARNING: r2 library versions mismatch!\n");
@@ -135,6 +138,7 @@ static int main_help(int line) {
 		" -F [binplug] force to use that rbin plugin\n"
 		" -h, -hh      show help message, -hh for long\n"
 		" -i [file]    run script file\n"
+		" -I [file]    run script file before the file is opened\n"
 		" -k [k=v]     perform sdb query into core->sdb\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
@@ -267,10 +271,10 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 		r_core_cmd0 (&r, cmdn);
 		r_cons_flush ();
 	}
-	if ((!r_list_empty (cmds)) && quiet) {
-		return false;
+	if (r_list_empty (cmds) && quiet) {
+		return true;
 	}
-	return true;
+	return false;
 }
 
 int main(int argc, char **argv, char **envp) {
@@ -296,7 +300,7 @@ int main(int argc, char **argv, char **envp) {
 	int run_anal = 1;
 	int run_rc = 1;
  	int ret, c, perms = R_IO_READ;
-	int sandbox = 0;
+	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
 	bool do_list_io_plugins = false;
@@ -312,6 +316,7 @@ int main(int argc, char **argv, char **envp) {
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	RList *files = r_list_new ();
+	RList *prefiles = r_list_new ();
 	int va = 1; // set va = 0 to load physical offsets from rbin
 
 	r_sys_set_environ (envp);
@@ -322,6 +327,8 @@ int main(int argc, char **argv, char **envp) {
 	if (argc < 2) {
 		r_list_free (cmds);
 		r_list_free (evals);
+		r_list_free (files);
+		r_list_free (prefiles);
 		return main_help (1);
 	}
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
@@ -353,7 +360,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -400,12 +407,16 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'e':
 			r_config_eval (r.config, optarg);
-			r_list_append (evals, optarg); break;
+			r_list_append (evals, optarg);
+			break;
 		case 'f': fullfile = 1; break;
 		case 'F': forcebin = optarg; break;
 		case 'h': help++; break;
 		case 'i':
 			r_list_append (files, optarg);
+			break;
+		case 'I':
+			r_list_append (prefiles, optarg);
 			break;
 		case 'k':
 			{
@@ -446,8 +457,12 @@ int main(int argc, char **argv, char **envp) {
 		case 'R':
 			r_config_set (r.config, "dbg.profile", optarg);
 			break;
-		case 's': seek = r_num_math (r.num, optarg); break;
-		case 'S': sandbox = 1; break;
+		case 's':
+			seek = r_num_math (r.num, optarg);
+			break;
+		case 'S':
+			sandbox = true;
+			break;
 #if USE_THREADS
 		case 't':
 			threaded = true;
@@ -512,9 +527,8 @@ int main(int argc, char **argv, char **envp) {
 	if (r_config_get_i (r.config, "cfg.plugins")) {
 		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 	}
-	run_commands (cmds, files, quiet);
-	r_list_free (cmds);
-	r_list_free (files);
+	ret = run_commands (NULL, prefiles, false);
+	r_list_free (prefiles);
 
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (prefile) {
@@ -531,19 +545,21 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Missing URI for -C\n");
 			return 1;
 		}
-		if (!strncmp (uri, "http://", 7))
+		if (!strncmp (uri, "http://", 7)) {
 			r_core_cmdf (&r, "=+%s", uri);
-		else r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
+		} else {
+			r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
+		}
 		return 0;
 	}
 
 	switch (zflag) {
-		case 1:
-			r_config_set (r.config, "bin.strings", "false");
-			break;
-		case 2:
-			r_config_set (r.config, "bin.rawstr", "true");
-			break;
+	case 1:
+		r_config_set (r.config, "bin.strings", "false");
+		break;
+	case 2:
+		r_config_set (r.config, "bin.rawstr", "true");
+		break;
 	}
 
 	switch (va) {
@@ -871,6 +887,12 @@ int main(int argc, char **argv, char **envp) {
 		r_cons_flush ();
 	}
 
+	ret = run_commands (cmds, files, quiet);
+	r_list_free (cmds);
+	r_list_free (files);
+	if (ret) {
+		return 0;
+	}
 	if (r_config_get_i (r.config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
 			r_core_cmd (&r, "fo", 0);

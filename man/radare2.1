@@ -1,4 +1,4 @@
-.Dd May 15, 2016
+.Dd Jun 20, 2016
 .Dt RADARE2 1
 .Sh NAME
 .Nm radare2
@@ -11,6 +11,7 @@
 .Op Fl c Ar cmd
 .Op Fl e Ar k=v
 .Op Fl i Ar file
+.Op Fl I Ar prefile
 .Op Fl k Ar k=v
 .Op Fl m Ar addr
 .Op Fl o Ar kernel
@@ -54,7 +55,9 @@ Set configuration eval variable key=value. For example \-e scr.color=false
 .It Fl f
 Blocksize = file size
 .It Fl i Ar file
-Run script file
+Run script file. After the file is loaded
+.It Fl i Ar file
+Run script file. Before the file is loaded
 .It Fl o Ar kernel
 Select kernel (asm.os) for syscall resolution
 .It Fl k Ar k=v
