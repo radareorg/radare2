@@ -2705,6 +2705,9 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	switch (input[1]) {
 	case 0:
 		r_reg_arena_swap (core->dbg->reg, true);
+		// sync registers for BSD PT_STEP/PT_CONT
+		// XXX(jjd): is this necessary?
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 		r_debug_step (core->dbg, times);
 		break;
 	case 'i':
