@@ -779,6 +779,9 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	} else {
 		ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
 	}
+	if (whence == R_IO_SEEK_SET) {
+		io->off = offset;
+	}
 #if 0
 	// XXX can be problematic on w32..so no 64 bit offset?
 	if (ret != UT64_MAX) {
