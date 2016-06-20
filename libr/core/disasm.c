@@ -90,6 +90,7 @@ typedef struct r_disam_options_t {
 	int show_reloff;
 	int show_comments;
 	int show_jmphints;
+	bool show_leahints;
 	int show_slow;
 	int cmtcol;
 	int show_fcnlines;
@@ -399,6 +400,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_jmphints = r_config_get_i (core->config, "asm.jmphints");
+	ds->show_leahints = r_config_get_i (core->config, "asm.leahints");
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
 	ds->show_calls = r_config_get_i (core->config, "asm.calls");
 	ds->show_family = r_config_get_i (core->config, "asm.family");
@@ -2066,20 +2068,24 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 	char *shortcut = NULL;
 	RCore *core = ds->core;
 
-	if (!ds->show_jmphints) return;
+	if (!ds->show_jmphints) {
+		return;
+	}
 	if (core->vmode) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_LEA:
-			ds_align_comment(ds);
-			if (ds->show_color) r_cons_strcat (ds->pal_comment);
-			shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
-			if (shortcut) {
-				r_cons_printf (" ;[%s]", shortcut);
-				free (shortcut);
-			} else {
-				r_cons_strcat (" ;[?]");
+			if (ds->show_leahints) {
+				ds_align_comment(ds);
+				if (ds->show_color) r_cons_strcat (ds->pal_comment);
+				shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
+				if (shortcut) {
+					r_cons_printf (" ;[%s]", shortcut);
+					free (shortcut);
+				} else {
+					r_cons_strcat (" ;[?]");
+				}
+				if (ds->show_color) r_cons_strcat (Color_RESET);
 			}
-			if (ds->show_color) r_cons_strcat (Color_RESET);
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
