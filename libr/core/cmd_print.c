@@ -2494,6 +2494,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 			}
 			break;
+#if 0
 		case 'j':
 			{
 				char *str, *type;
@@ -2534,6 +2535,7 @@ static int cmd_print(void *data, const char *input) {
 				free (str);
 			}
 			break;
+#endif
 		case 'i': //psi
 			{
 			ut8 *buf = malloc (1024);
