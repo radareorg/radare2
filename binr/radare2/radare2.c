@@ -272,10 +272,10 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 		r_cons_flush ();
 	}
 	if (quiet) {
-		if (cmds && r_list_empty (cmds)) {
+		if (cmds && !r_list_empty (cmds)) {
 			return true;
 		}
-		if (r_list_empty (files)) {
+		if (!r_list_empty (files)) {
 			return true;
 		}
 	}
