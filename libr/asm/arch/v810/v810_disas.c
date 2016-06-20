@@ -271,7 +271,7 @@ static int decode_bit_op(const ut16 instr, struct v810_cmd *cmd) {
 }
 
 static int decode_extended(const ut16 word1, const ut16 word2, struct v810_cmd *cmd) {
-	ut8 subop = OPCODE(word2)>>2;
+	ut8 subop = OPCODE(word2);
 	if (subop > 0xC)
 		return -1;
 
