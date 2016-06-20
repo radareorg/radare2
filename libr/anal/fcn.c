@@ -228,7 +228,7 @@ static char *get_varname (RAnal *a, RAnalFunction *fcn, char type, const char *p
 			break;
 		}
 		free (varname);
-		free (v);
+		r_anal_var_free (v);
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
 	}
@@ -354,6 +354,10 @@ R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", 'a');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'a');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 'e');
+	extract_arg (anal, fcn, op, "bp", "+", 'a');
+	extract_arg (anal, fcn, op, "bp", "-", 'a');
+	extract_arg (anal, fcn, op, "sp", "+", 'e');
+
 }
 
 static bool isInvalidMemory (const ut8 *buf) {

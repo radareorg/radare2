@@ -229,16 +229,19 @@ R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, con
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kind, const char* name) {
 	RList *var_list;
 	RListIter *iter;
-	RAnalVar *var = NULL;
+	RAnalVar *var = NULL, *itervar;
 	if (!fcn || !anal || !name) {
 		return 0;
 	}
 	var_list = r_anal_var_list (anal, fcn, kind);
-	r_list_foreach (var_list, iter, var) {
-		if (!strcmp (name, var->name)) {
-			break;
+	r_list_foreach (var_list, iter, itervar) {
+		if (!strcmp (name, itervar->name)) {
+			var = itervar;
+		} else {
+			r_anal_var_free (itervar);
 		}
 	}
+	free (var_list);
 	if (!var || strcmp (name, var->name)) {
 		return 0;
 	}

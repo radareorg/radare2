@@ -2333,6 +2333,9 @@ R_API int r_core_anal_all(RCore *core) {
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (core->cons->breaked)
 			break;
+		r_anal_var_delete_all (core->anal, fcni->addr, 'e');
+		r_anal_var_delete_all (core->anal, fcni->addr, 'a');
+		r_anal_var_delete_all (core->anal, fcni->addr, 'v');
 		fcn_callconv (core, fcni);
 		if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
 			fcni->type = R_ANAL_FCN_TYPE_SYM;
