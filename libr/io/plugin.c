@@ -65,6 +65,17 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 	return io->plugin_default;
 }
 
+R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
+	RListIter *iter;
+	RIOPlugin *iop;
+	r_list_foreach (io->plugins, iter, iop) {
+		if (!strcmp (name, iop->name)) {
+			return iop;
+		}
+	}
+	return io->plugin_default;
+}
+
 R_API int r_io_plugin_list(RIO *io) {
 	RIOPlugin *plugin;
 	RListIter *iter;

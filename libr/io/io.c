@@ -204,14 +204,10 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *file, int flags, int mode) {
 R_API RIODesc *r_io_open_at(RIO *io, const char *file, int flags, int mode, ut64 maddr) {
 	RIODesc *desc;
 	ut64 size;
-	if (!io || !file || io->redirect)
+	if (!io || !file || io->redirect) {
 		return NULL;
-	desc = __getioplugin (io, file, flags, mode);
-	IO_IFDBG {
-		if (desc && desc->plugin)
-			eprintf ("Opened file: %s with %s\n",
-				file, desc->plugin->name);
 	}
+	desc = __getioplugin (io, file, flags, mode);
 	if (desc) {
 		r_io_desc_add (io, desc);
 		size = r_io_desc_size (io, desc);
@@ -622,16 +618,17 @@ R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size) {
 }
 
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {
-	int ret = false;
 	if (len > 0) {
 		io->write_mask_fd = io->desc->fd;
 		io->write_mask_buf = (ut8 *)malloc (len);
-		if (!io->write_mask_buf) return ret;
-		memcpy (io->write_mask_buf, buf, len);
-		io->write_mask_len = len;
-		ret = true;
-	} else io->write_mask_fd = -1;
-	return ret;
+		if (io->write_mask_buf) {
+			memcpy (io->write_mask_buf, buf, len);
+			io->write_mask_len = len;
+			return true;
+		}
+	}
+	io->write_mask_fd = -1;
+	return false;
 }
 
 R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
@@ -639,14 +636,17 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 	ut8 *data = NULL;
 
 	/* check section permissions */
-	if (io->enforce_rwx & R_IO_WRITE)
-		if (!(r_io_section_get_rwx (io, io->off) & R_IO_WRITE))
+	if (io->enforce_rwx & R_IO_WRITE) {
+		if (!(r_io_section_get_rwx (io, io->off) & R_IO_WRITE)) {
 			return -1;
+		}
+	}
 
 	if (io->cached) {
 		ret = r_io_cache_write (io, io->off, buf, len);
-		if (ret == len)
+		if (ret == len) {
 			return len;
+		}
 		if (ret > 0) {
 			len -= ret;
 			buf += ret;
@@ -666,9 +666,10 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
 		r_io_read (io, data, len);
 		r_io_seek (io, io->off, R_IO_SEEK_SET);
-		for (i = 0; i < len; i++)
+		for (i = 0; i < len; i++) {
 			data[i] = buf[i] &
 				io->write_mask_buf[i % io->write_mask_len];
+		}
 		buf = data;
 	}
 
@@ -720,8 +721,9 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 }
 
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
-	if (io->cached)
+	if (io->cached) {
 		return r_io_cache_write (io, addr, buf, len);
+	}
 	(void)r_io_seek (io, addr, R_IO_SEEK_SET);
 	// errors on seek are checked and ignored here //
 	return r_io_write (io, buf, len);
@@ -732,8 +734,9 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	// now, io-seek always works with vaddr, because it depends on read/write ops that use it
 	int posix_whence = SEEK_SET;
 	ut64 ret = UT64_MAX;
-	if (io == NULL)
+	if (!io) {
 		return ret;
+	}
 	if (io->buffer_enabled) {
 		io->off = offset;
 		return offset;
@@ -760,31 +763,32 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	if (!io->debug || !io->raw) { //
 		if (io->va && !r_list_empty (io->sections)) {
 			ut64 o = r_io_section_vaddr_to_maddr_try (io, offset);
-			if (o != UT64_MAX)
+			if (o != UT64_MAX) {
 				offset = o;
+			}
 			//	eprintf ("-(vadd)-> 0x%08llx\n", offset);
 		}
 	}
 	// if resolution fails... just return as invalid address
-	if (offset == UT64_MAX)
+	if (offset == UT64_MAX || !io->desc) {
 		return UT64_MAX;
-	if (io->desc != NULL) {
-		if (io->plugin && io->plugin->lseek)
-			ret = io->plugin->lseek (io, io->desc, offset, whence);
-		// XXX can be problematic on w32..so no 64 bit offset?
-		else
-			ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
-		if (ret != UT64_MAX) {
-			if (whence == R_IO_SEEK_SET)
-				io->off = offset; // FIX linux-arm-32-bs at 0x10000
-			else io->off = ret;
-			// XXX this can be tricky.. better not to use this .. must be deprecated
-			// r_io_sundo_push (io);
-			ret = (!io->debug && io->va && !r_list_empty (io->sections)) ?
-				r_io_section_maddr_to_vaddr (io, io->off) :
-				io->off;
-		} //else eprintf ("r_io_seek: cannot seek to %"PFMT64x"\n", offset);
-	}	//else { eprintf ("r_io_seek: null fd\n"); }
+	}
+	if (io->plugin && io->plugin->lseek) {
+		ret = io->plugin->lseek (io, io->desc, offset, whence);
+	// XXX can be problematic on w32..so no 64 bit offset?
+	} else {
+		ret = (ut64)lseek (io->desc->fd, offset, posix_whence);
+	}
+
+	if (ret != UT64_MAX) {
+		io->off = (whence == R_IO_SEEK_SET)
+			? offset // HACKY FIX linux-arm-32-bs at 0x10000
+			: ret;
+			io->off = offset; 
+		ret = (!io->debug && io->va && !r_list_empty (io->sections))
+			? r_io_section_maddr_to_vaddr (io, io->off)
+			: io->off;
+	}
 	return ret;
 }
 
@@ -822,8 +826,9 @@ R_API ut64 r_io_size(RIO *io) {
 	ut64 size, here;
 	if (!io) return 0LL;
 	oldva = io->va;
-	if (r_io_is_listener (io))
+	if (r_io_is_listener (io)) {
 		return UT64_MAX;
+	}
 	io->va = false;
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
@@ -979,8 +984,9 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 		return NULL;
 	}
 
-	if (*out_sz == UT64_MAX)
+	if (*out_sz == UT64_MAX) {
 		*out_sz = r_io_desc_size (io, desc);
+	}
 	if (*out_sz == 0x8000000) {
 		*out_sz = 1024 * 1024 * 1; // 2MB
 	}

@@ -12,7 +12,7 @@ R_API int r_io_map_count (RIO *io) {
 }
 
 R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
-	RIOMap *map = R_NEW (RIOMap);
+	RIOMap *map = R_NEW0 (RIOMap);
 	if (!map || ((UT64_MAX - size) < addr)) { //prevent interger-overflow
 		free (map);
 		return NULL;
@@ -65,7 +65,7 @@ R_API int r_io_map_truncate_update(RIO *io, int fd, ut64 sz) {
 	}
 	if (map) {
 		res = true;
-		map->to = map->from+sz;
+		map->to = map->from + sz;
 	}
 	return res;
 }
@@ -89,8 +89,9 @@ R_API RIOMap *r_io_map_resolve(RIO *io, int fd) {
 	RListIter *iter;
 	if (io && io->maps) {
 		r_list_foreach (io->maps, iter, map) {
-			if (map->fd == fd)
+			if (map->fd == fd) {
 				return map;
+			}
 		}
 	}
 	return NULL;
@@ -101,8 +102,9 @@ R_API RIOMap *r_io_map_resolve_from_list (RList *maps, int fd) {
 	RListIter *iter;
 	if (maps) {
 		r_list_foreach (maps, iter, map) {
-			if (map->fd == fd)
+			if (map->fd == fd) {
 				return map;
+			}
 		}
 	}
 	return NULL;
