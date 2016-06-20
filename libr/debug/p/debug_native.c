@@ -405,9 +405,11 @@ static RList *r_debug_native_pids (int pid) {
 			}
 
 			/* try to read the status */
-			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1) {
+			buf[0] = 0;
+			if (procfs_pid_slurp (i, "status", buf, sizeof (buf)) == -1) {
 				continue;
 			}
+			buf[sizeof (buf) - 1] = 0;
 
 			/* look for the parent process id */
 			ptr = strstr (buf, "PPid:");

@@ -549,7 +549,7 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	const char *link_section_name = "";
 	char *end = NULL;
 	Elf_(Shdr) *link_shdr = NULL;
-	Sdb *sdb = sdb_new0 ();
+	Sdb *sdb;
 	int cnt, i;
 	ut32 shdr_size = 0;
 
@@ -568,9 +568,9 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	}
 	if (!defs) {
 		eprintf ("Warning: Cannot allocate memory (Check Elf_(Verdef))\n");
-		sdb_free (sdb);
 		return NULL;
 	}
+	sdb = sdb_new0 ();
 	end = (char *)defs + shdr->sh_size;
 	sdb_set (sdb, "section_name", section_name, 0);
 	sdb_num_set (sdb, "entries", shdr->sh_info, 0);

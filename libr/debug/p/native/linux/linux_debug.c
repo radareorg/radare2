@@ -141,9 +141,10 @@ RList *linux_thread_list (int pid, RList *list) {
 		while ((de = readdir (dh))) {
 			int tid = atoi (de->d_name);
 
-			if (procfs_pid_slurp (tid, "comm", buf, sizeof(buf)) == -1) {
+			if (procfs_pid_slurp (tid, "comm", buf, sizeof (buf)) == -1) {
 				/* fall back to auto-id */
-				snprintf (buf, sizeof(buf), "thread_%d", thid++);
+				snprintf (buf, sizeof (buf), "thread_%d", thid++);
+				buf[sizeof (buf) - 1] = 0;
 			}
 
 			// TODO: get status, pc, etc..
@@ -156,8 +157,9 @@ RList *linux_thread_list (int pid, RList *list) {
 #define MAXPID 99999
 		/* otherwise, brute force the pids */
 		for (i = pid; i < MAXPID; i++) { // XXX
-			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1)
+			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1) {
 				continue;
+			}
 
 			/* look for a thread group id */
 			ptr = strstr (buf, "Tgid:");
