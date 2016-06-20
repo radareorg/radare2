@@ -248,11 +248,12 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 				dbg->bits = dbg->h->bits;
 			} else if (!(dbg->h->bits & dbg->bits)) {
 				dbg->bits = dbg->h->bits & R_SYS_BITS_64;
-				if (!dbg->bits)
+				if (!dbg->bits) {
 					dbg->bits = dbg->h->bits & R_SYS_BITS_32;
-				if (!dbg->bits)
+				}
+				if (!dbg->bits) {
 					dbg->bits = R_SYS_BITS_32;
-				eprintf ("Invalid value for bits\n");
+				}
 			}
 			free (dbg->arch);
 			dbg->arch = strdup (arch);
