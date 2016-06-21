@@ -563,6 +563,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		for (i = 0; i < bin->header.method_size; i++) {
 			//RBinDexMethod *method = &bin->methods[i];
 			if (!methods[i]) {
+				if (i >= bin->header.class_size) continue;
 				struct dex_class_t *c = &bin->classes[i];
 				char *class_name = dex_class_name (bin, c);
 				if (class_name) {
