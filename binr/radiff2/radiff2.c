@@ -440,7 +440,7 @@ int main(int argc, char **argv) {
 	case MODE_DIST:
 		{
 			RDiff *d = r_diff_new ();
-			d->verbose = true;
+			d->verbose = verbose;
 			r_diff_buffers_distance (d, bufa, sza, bufb, szb, &count, &sim);
 			r_diff_free (d);
 		}
