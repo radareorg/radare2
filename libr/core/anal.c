@@ -1739,7 +1739,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	r_list_sort (fcns, &cmpfcn);
 	fcnlist_gather_metadata (fcns);
 
-	if (input) {		// input points to a filter argument
+	if (input && *input) {// input points to a filter argument
 		ut64 addr;
 		addr = core->offset;
 		if (*input) {
@@ -1782,7 +1782,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		fcn_list_default (core, fcns, false);
 		break;
 	}
-	if (input) {
+	//make sure you don't free core->anal->fcns
+	if (input && core->anal->fcns != fcns) {
 		// The list does not own the its members, so don't purge.
 		free (fcns);
 	}
