@@ -197,6 +197,14 @@ R_API int r_io_write (RIO *io, ut8 *buf, int len)
 	return ret;
 }
 
+R_API ut64 r_io_size (RIO *io)
+{
+#warning rethink this, maybe not needed
+	if (io)
+		return r_io_desc_size (io->desc);
+	return 0LL;
+}
+
 RIO *bind_get_io (RIOBind *iob)
 {
 	if (!iob)
