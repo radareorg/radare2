@@ -177,6 +177,26 @@ R_API int r_io_write_at (RIO *io, ut64 addr, ut8 *buf, int len)
 	return r_io_pwrite_at (io, addr, buf, len);
 }
 
+R_API int r_io_read (RIO *io, ut8 *buf, int len)
+{
+	int ret;
+	if (!io)
+		return 0;
+	ret = r_io_read_at (io, io->off, buf, len);
+	io->off += len;					//TODO: check ret before
+	return ret;
+}
+
+R_API int r_io_write (RIO *io, ut8 *buf, int len)
+{
+	int ret;
+	if (!io)
+		return 0;
+	ret = r_io_write_at (io, io->off, buf, len);
+	io->off += len;
+	return ret;
+}
+
 RIO *bind_get_io (RIOBind *iob)
 {
 	if (!iob)

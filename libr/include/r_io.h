@@ -235,6 +235,8 @@ R_API int r_io_vread_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_vwrite_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_read_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_write_at (RIO *io, ut64 paddr, ut8 *buf, int len);
+R_API int r_io_read (RIO *io, ut8 *buf, int len);
+R_API int r_io_write (RIO *io, ut8 *buf, int len);
 R_API int r_io_bind (RIO *io, RIOBind *bnd);
 R_API int r_io_fini (RIO *io);
 R_API void r_io_free (RIO *io);
