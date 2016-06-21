@@ -189,7 +189,7 @@ typedef struct r_debug_t {
 	int pid; /* selected process id */
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
-	RList *threads; /* XXX This is platform-specific !!! */
+	RList *threads; /* NOTE: list contents are platform-specific */
 
 	/* dbg.* config options (see e?dbg)
 	 * NOTE: some settings are checked inline instead of tracked here.

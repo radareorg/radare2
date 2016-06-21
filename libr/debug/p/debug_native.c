@@ -329,16 +329,17 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 #endif // __linux__
 
 	/* propagate errors */
-	if (reason == R_DEBUG_REASON_ERROR)
+	if (reason == R_DEBUG_REASON_ERROR) {
 		return reason;
+	}
 
 	/* we don't know what to do yet, let's try harder to figure it out. */
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
 		if (WIFEXITED (status)) {
-			eprintf ("child exited with status %d\n", WEXITSTATUS(status));
+			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
 			reason = R_DEBUG_REASON_DEAD;
 		} else if (WIFSIGNALED (status)) {
-			eprintf ("child received signal %d\n", WTERMSIG(status));
+			eprintf ("child received signal %d\n", WTERMSIG (status));
 			reason = R_DEBUG_REASON_SIGNAL;
 		} else if (WIFSTOPPED (status)) {
 			eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
@@ -366,11 +367,12 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			eprintf ("STATUS=0?!?!?!?\n");
 			reason = R_DEBUG_REASON_DEAD;
 		} else {
-			if (ret != pid)
+			if (ret != pid) {
 				reason = R_DEBUG_REASON_NEW_PID;
-			else
+			} else {
 				/* ugh. still don't know :-/ */
 				eprintf ("CRAP. returning from wait without knowing why...\n");
+			}
 		}
 	}
 

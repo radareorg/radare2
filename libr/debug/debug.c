@@ -613,8 +613,9 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		ut32 r32[2];
 	} sp_top;
 
-	if (dbg->recoil_mode == R_DBG_RECOIL_NONE)
+	if (dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 		dbg->recoil_mode = R_DBG_RECOIL_STEP;
+	}
 
 	if (r_debug_is_dead (dbg)) {
 		return false;

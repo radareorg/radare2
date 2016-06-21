@@ -97,8 +97,9 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 	ut32 data;
 
 	/* we only handle stops with SIGTRAP here */
-	if (!WIFSTOPPED(status) || WSTOPSIG(status) != SIGTRAP)
+	if (!WIFSTOPPED(status) || WSTOPSIG(status) != SIGTRAP) {
 		return R_DEBUG_REASON_UNKNOWN;
+	}
 
 	pt_evt = status >> 16;
 	switch (pt_evt) {
