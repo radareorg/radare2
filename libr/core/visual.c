@@ -1114,19 +1114,17 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (core->io->va) {
 				ut64 offset = r_io_section_get_vaddr (core->io, 0);
 				if (offset == UT64_MAX) {
-					offset = r_io_desc_size (core->io,
-							core->file->desc)
+					offset = r_io_desc_size (core->file->desc)
 						- core->blocksize + 2*scols;
 					ret = r_core_seek (core, offset, 1);
 				} else {
-					offset += r_io_desc_size (core->io,
-							core->file->desc)
+					offset += r_io_desc_size (core->file->desc)
 						- core->blocksize + 2 * scols;
 					ret = r_core_seek (core, offset, 1);
 				}
 			} else {
 				ret = r_core_seek (core,
-						r_io_desc_size (core->io, core->file->desc)
+						r_io_desc_size (core->file->desc)
 						- core->blocksize + 2 * scols, 1);
 			}
 		} else {

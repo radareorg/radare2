@@ -829,23 +829,6 @@ static int cb_search_kwidx(void *user, void *data) {
 	return true;
 }
 
-static int cb_ioenforce(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	int perm = node->i_value;
-	core->io->enforce_rwx = 0;
-	if (perm & 1) core->io->enforce_rwx |= R_IO_READ;
-	if (perm & 2) core->io->enforce_rwx |= R_IO_WRITE;
-	return true;
-}
-
-static int cb_iosectonly(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->io->sectonly = node->i_value? 1: 0;
-	return true;
-}
-
 static int cb_iobuffer(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -886,7 +869,7 @@ static int cb_iova(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
-		if (r_io_desc_get (core->io, core->io->raised))			//ugly fix for r2 -d ... "r2 is going to die soon ..."
+		if (core->io->desc && r_io_desc_get (core->io, core->io->desc->fd))			//ugly fix for r2 -d ... "r2 is going to die soon ..."
 			r_core_block_read (core, 0);
 		// reload symbol information
 		if (r_list_length (r_bin_get_sections (core->bin))>0)
@@ -1787,9 +1770,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("rop.comments", "false", "Display comments in rop search output");
 
 	/* io */
-	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
 	SETCB("io.buffer", "false", &cb_iobuffer, "Load and use buffer cache if enabled");
-	SETCB("io.sectonly", "false", &cb_iosectonly, "Only read from sections (if any)");
 	SETI("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");

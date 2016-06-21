@@ -406,7 +406,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 
 	r_list_foreach (core->files, iter, file) {
 		if (file && file->desc){
-			core->io->raised = file->desc->fd;
+			r_io_desc_use (core->io, file->desc->fd);
 			core->switch_file_view = 1;
 			break;
 		}
@@ -420,11 +420,9 @@ R_API int r_core_block_read(RCore *core, int next) {
 		return -1;
 	}
 	if (core->file && core->switch_file_view) {
-		r_io_use_desc (core->io, core->file->desc);
+		r_io_desc_use (core->io, core->file->desc->fd);
 		r_core_bin_set_by_fd (core, core->file->desc->fd); //needed?
 		core->switch_file_view = 0;
-	} else	{
-		r_io_use_fd (core->io, core->io->raised); //possibly not needed
 	}
 	return r_io_read_at (core->io, core->offset+((next)?core->blocksize:0), core->block, core->blocksize);
 }
