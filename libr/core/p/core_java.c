@@ -2038,8 +2038,6 @@ RCorePlugin r_core_plugin_java = {
 	.desc = "Suite of java commands, java help for more info",
 	.license = "Apache",
 	.call = r_cmd_java_call,
-	.deinit = NULL,
-	.init = NULL,
 };
 
 #ifndef CORELIB

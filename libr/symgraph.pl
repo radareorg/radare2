@@ -1,8 +1,8 @@
 #!/bin/sh
 
 t="/tmp/symgraph"
-rm -rf $t
-mkdir -p $t/b $t/l
+rm -rf "$t"
+mkdir -p "$t/b" "$t/l"
 if [ "`uname`" = Darwin ]; then
 	SO=dylib
 else
@@ -19,7 +19,7 @@ dobin() {
 #	rabin2 -s ../binr/$1/$1 | cut -d = -f 8 > $t/b/$1.s
 }
 
-LIBS="anal asm bin bp cmd config cons crypto db debug diff flags hash io lang parse reg search socket syscall util core"
+LIBS="anal asm bin bp config cons crypto debug diff flags hash io lang parse reg search socket syscall util core"
 for a in $LIBS ; do
 	dolib ${a}
 done
