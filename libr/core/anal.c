@@ -93,9 +93,9 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 			if (addr >= ios->vaddr && addr < (ios->vaddr+ios->vsize)) {
 				// sections overlap, so we want to get the one with lower perms
 				if (_rwx != -1) {
-					_rwx = R_MIN (_rwx, ios->rwx);
+					_rwx = R_MIN (_rwx, ios->flags);
 				} else {
-					_rwx = ios->rwx;
+					_rwx = ios->flags;
 				}
 				// TODO: we should identify which maps come from the program or other
 				//types |= R_ANAL_ADDR_TYPE_PROGRAM;
@@ -246,7 +246,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 	}
 	r_io_read_at (core->io, ref->addr, buf, bufsz);
 
-	if (sec->rwx & R_IO_EXEC &&
+	if (sec->flags & R_IO_EXEC &&
 			check_fcn (core->anal, buf, bufsz, ref->addr, sec->vaddr, sec->vaddr + sec->vsize)) {
 		if (core->anal->limit) {
 			if (ref->addr < core->anal->limit->from || ref->addr > core->anal->limit->to) {
@@ -339,7 +339,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		// real read.
 		// this is unnecessary if its contiguous
 		buflen = r_io_read_at (core->io, at+delta, buf, core->anal->opt.bb_max_size);
-		if (core->io->va && !core->io->raw) {
+		if (core->io->va) {
 			if (!r_io_is_valid_offset (core->io, at+delta, !core->anal->opt.noncode)) {
 				goto error;
 			}
@@ -423,7 +423,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				ut64 addr = fcn->addr + fcn->size;
 				RIOSection *sect = r_io_section_vget (core->io, addr);
 				// only get next if found on an executable section
-				if (!sect || (sect && sect->rwx & 1)) {
+				if (!sect || (sect && sect->flags & 1)) {
 					for (i = 0; i < nexti; i++) {
 						if (next[i] == addr) {
 							break;
@@ -477,7 +477,7 @@ error:
 		if (fcn && has_next) {
 			ut64 newaddr = fcn->addr+fcn->size;
 			RIOSection *sect = r_io_section_vget (core->io, newaddr);
-			if (!sect || (sect && (sect->rwx & 1))) {
+			if (!sect || (sect && (sect->flags & 1))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
 					if (!next[i]) continue;
@@ -955,7 +955,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	int use_esil = r_config_get_i (core->config, "anal.esil");
 
-	if (core->io->va && !core->io->raw) {
+	if (core->io->va) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode))
 			return false;
 	}
@@ -1518,7 +1518,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
 	if (buf == NULL) return -1;
-	r_io_use_desc (core->io, core->file->desc);
+	r_io_desc_use (core->io, core->file->desc->fd);
 	if (ref == 0LL) {
 		eprintf ("Null reference search is not supported\n");
 		free (buf);
@@ -1636,7 +1636,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	if (rad == 'j')
 		r_cons_printf ("{");
 
-	r_io_use_desc (core->io, core->file->desc);
+	r_io_desc_use (core->io, core->file->desc->fd);
 	r_cons_break (NULL, NULL);
 	at = from;
 	while (at < to && !r_cons_singleton()->breaked) {

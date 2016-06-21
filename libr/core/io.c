@@ -252,16 +252,13 @@ R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
 }
 
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
-	RIOSection *newsection;
 	ut64 old = core->offset;
 	ut64 ret;
 
 	core->offset = addr;
 	/* XXX unnecesary call */
 	//r_io_use_fd (core->io, core->file->desc);
-	core->io->section = core->section; // HACK
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
-	newsection = core->io->section;
 
 	if (ret == UT64_MAX) {
 		//eprintf ("RET =%d %llx\n", ret, addr);
@@ -291,10 +288,7 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 			}
 		}
 	}
-	if (core->section != newsection) {
-		r_core_seek_archbits (core, core->offset);
-		core->section = newsection;
-	}
+	r_core_seek_archbits (core, core->offset);
 	return (ret==-1)? false: true;
 }
 
