@@ -735,6 +735,8 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		i += entry->vn_next;
 		snprintf (key, sizeof (key), "version%d", cnt );
 		sdb_ns_set (sdb, key, sdb_version);
+		//if entry->vn_next is 0 it iterate infinitely
+		if (!entry->vn_next) break;
 	}
 	free (need);
 	return sdb;
