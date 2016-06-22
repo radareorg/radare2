@@ -11,10 +11,10 @@ endif
 
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 NATIVE_OBJS=native/linux/linux_debug.o
+NATIVE_OBJS+=native/procfs.o
 endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux))
 COREDUMP_OBJS=native/linux/linux_coredump.o
-NATIVE_OBJS+=native/procfs.o
 endif
 
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
