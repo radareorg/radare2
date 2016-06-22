@@ -325,6 +325,24 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[l++] = 0x31;
 		return l;
 	}
+    if (!strcmp (op, "lfence")) {
+		data[l++] = 0x0f;
+		data[l++] = 0xae;
+        data[l++] = 0xe8;
+		return l;
+	}
+    if (!strcmp (op, "mfence")) {
+		data[l++] = 0x0f;
+		data[l++] = 0xae;
+        data[l++] = 0xf0;
+		return l;
+	}
+    if (!strcmp (op, "sfence")) {
+		data[l++] = 0x0f;
+		data[l++] = 0xae;
+        data[l++] = 0xf8;
+		return l;
+	}
 	if (!strncmp (op, "set", 3)) {
 #if 0
 SETAE/SETNB - Set if Above or Equal / Set if Not Below (386+)
