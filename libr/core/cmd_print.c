@@ -2058,7 +2058,7 @@ static int cmd_print(void *data, const char *input) {
 			if (!r_sandbox_enable (0)) {
 				char *cwd = r_sys_getdir ();
 				if (cwd) {
-					eprintf ("%s\n", cwd);
+					r_cons_printf ("%s\n", cwd);
 					free (cwd);
 				}
 			}
