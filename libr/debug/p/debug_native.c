@@ -299,6 +299,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 #if __APPLE__
 	// eprintf ("No waitpid here :D\n");
 	reason = xnu_wait (dbg, pid);
+	status = reason? 1: 0;
 #else
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
