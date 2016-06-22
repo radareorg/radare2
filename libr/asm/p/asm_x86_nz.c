@@ -554,6 +554,36 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				data[l++] = pfx | getreg (arg2) << 3 | getreg (arg);
 			}
 			return l;
+		} else if (!strcmp (op, "bt")) {
+			data[l++] = 0x0f;
+			if (isnum (a, arg)) {
+				eprintf ("Error: bad operand\n");
+				return -1;
+			}
+			if (isnum (a, arg2)) {
+				int n = getnum (a, arg2);
+				if (n < ST8_MIN || (n > 0 && n > UT8_MAX)) {
+					eprintf ("Error: Immediate exceeds bounds\n");
+					return -1;
+				}
+				data[l++] = 0xba;
+				if (*arg == '[') {
+					arg++;
+					data[l++] = 0x20 | getreg (arg);
+				} else {
+					data[l++] = 0xe0 | getreg (arg);
+				}
+				data[l++] = getnum (a, arg2);
+			} else {
+				data[l++] = 0xa3;
+				if (*arg == '[') {
+					arg++;
+					data[l++] = getreg (arg2) << 3 | getreg (arg);
+				} else {
+					data[l++] = 0x3 << 6 | getreg (arg2) << 3 | getreg (arg);
+				}
+			}
+			return l;
 		} else if (!strcmp (op, "sub")) {
 			int parg0 = 0;
 			int pfx;
