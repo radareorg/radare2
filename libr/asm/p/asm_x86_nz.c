@@ -86,11 +86,21 @@ static bool is64reg(const char *str) {
 	return false;
 }
 
+static bool is8bitrex(const char *str) {
+	int i;
+	const char *regs[] = {"spl", "bpl", "sil", "dil", NULL};
+	for (i = 0; regs[i]; i++) {
+		if (!strcmp (regs[i], str))
+			return true;
+	}
+	return false;
+}
+
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL};
-	//	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh", NULL };
 	const char *regs16[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL};
+	const char *regs16_rex[] = {"al", "cl", "dl", "bl", "spl", "bpl", "sil", "dil", NULL};
 	const char *regs64[] = {"rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL};
 	const char *regs64_2[] = {"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL};
 	if (!str)
@@ -106,6 +116,9 @@ static ut8 getreg(const char *str) {
 			return i;
 	for (i = 0; regs16[i]; i++)
 		if (!strncmp (regs16[i], str, strlen (regs16[i])))
+			return i;
+	for (i = 0; regs16_rex[i]; i++)
+		if (!strncmp (regs16_rex[i], str, strlen (regs16_rex[i])))
 			return i;
 	return 0xff;
 }
@@ -166,11 +179,13 @@ static int hasDword(char *op) {
 	if (arg) {
 		const int dword_len = strlen ("dword ptr");
 		memmove (arg, arg + dword_len, strlen (arg + dword_len) + 1);
+		return 1;
 	}
 	arg = strstr (op, "dword ");
 	if (arg) {
 		const int dword_len = strlen ("dword ");
 		memmove (arg, arg + dword_len, strlen (arg + dword_len) + 1);
+		return 1;
 	}
 	return 0;
 }
@@ -1415,7 +1430,18 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 							data[l++] = r1;
 							return l;
 						} else {
-							data[l++] = 0xb8 | r0;
+							if (is8bitrex (arg)) {
+								if (a->bits != 64) {
+									eprintf ("Error: Unable to assemble instruction in 32bit\n");
+									return -1;
+								}
+								data[l++] = 0x40;
+								data[l++] = 0x16 << 3 | r0;
+								data[l++] = r1;
+								return l;
+							} else {
+								data[l++] = 0xb8 | r0;
+							}
 						}
 					}
 				}
@@ -1431,9 +1457,21 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				if (r1 == 0xff) {
 					return 0;
 				}
-				if (a->bits == 64)
+				if (a->bits == 64) {
 					if (*arg == 'r')
 						data[l++] = 0x48;
+					if (is8bitrex (arg)) {
+						if (a->bits != 64) {
+							eprintf ("Error: Unable to assemble instruction in 32bit\n");
+							return -1;
+						}
+						data[l++] = 0x40;
+						data[l++] = 0x88;
+						data[l++] = 0x3 << 6 | r1 << 3 | r0;
+						return l;
+					}
+				}
+
 				data[l++] = 0x89;
 				if (delta) {
 					if (isnum (a, delta)) {
