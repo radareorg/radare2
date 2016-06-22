@@ -1739,11 +1739,13 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	r_list_sort (fcns, &cmpfcn);
 	fcnlist_gather_metadata (fcns);
 
-	if (input && *input) {// input points to a filter argument
+	if (input) {// input points to a filter argument
+		const char *name = input;
 		ut64 addr;
 		addr = core->offset;
 		if (*input) {
-			addr = r_num_math (core->num, input + 1);
+			name = input + 1;
+			addr = r_num_math (core->num, name);
 		}
 
 		fcns = r_list_new ();
@@ -1752,7 +1754,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		RListIter *iter;
 		RAnalFunction *fcn;
 		r_list_foreach (core->anal->fcns, iter, fcn) {
-			if (in_function (fcn, addr) || (!strcmp (input + 1, fcn->name))) {
+			if (in_function (fcn, addr) || (!strcmp (name, fcn->name))) {
 				r_list_append (fcns, fcn);
 			}
 		}
