@@ -296,20 +296,24 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 		}
 		/* parse accessors */
 		if (attr) {
-			int len;
+			int len = 0;
 			const char *name;
 			/* get field name and then type */
 			resolve (types, q, &attr);
 
 			//printf ("Accessor: %s\n", attr);
-			q = getnum (q+1, &len);
+			q = getnum (q + 1, &len);
 			name = getstring (q, len);
 #if 0
 			if (name && *name) {
 				printf ("Field Name: %s\n", name);
 			}
 #endif
-			resolve (types, q+len, &attr2);
+			if (len < strlen (q)) {
+				resolve (types, q + len, &attr2);
+			} else {
+				resolve (types, q, &attr2);
+			}
 //			printf ("Field Type: %s\n", attr2);
 
 			do {
