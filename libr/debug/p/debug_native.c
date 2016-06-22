@@ -225,9 +225,13 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	#warning "r_debug_native_continue not supported on this platform"
 	return -1;
 #else
-	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
-	//eprintf ("continuing with signal %d ...\n", dbg->reason.signum);
-	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
+	int contsig = dbg->reason.signum;
+
+	if (sig != -1) {
+		contsig = sig;
+	}
+	//eprintf ("continuing with signal %d ...\n", contsig);
+	return ptrace (PTRACE_CONT, pid, NULL, contsig) == 0;
 #endif
 }
 static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
@@ -257,8 +261,15 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 }
 #endif
 
-static int r_debug_native_wait (RDebug *dbg, int pid) {
+/*
+ * wait for an event and start trying to figure out what to do with it.
+ *
+ * Returns R_DEBUG_REASON_*
+ */
+static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	int status = -1;
+	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+
 #if __WINDOWS__ && !__CYGWIN__
 	int mode = 0;
 	status = w32_dbg_wait (dbg, pid);
@@ -273,7 +284,7 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
 			if (tracelib (dbg, mode=='l'? "load":"unload", r->lib))
-				status=R_DEBUG_REASON_TRAP;
+				status = R_DEBUG_REASON_TRAP;
 		} else {
 			eprintf ("%soading unknown library.\n", mode?"L":"Unl");
 		}
@@ -281,76 +292,101 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 	}
 #else
 	if (pid == -1) {
-		status = R_DEBUG_REASON_UNKNOWN;
-	} else {
+		eprintf ("r_debug_native_wait called with -1 pid!\n");
+		return R_DEBUG_REASON_ERROR;
+	}
+
 #if __APPLE__
-		// eprintf ("No waitpid here :D\n");
-		status = xnu_wait (dbg, pid);
+	// eprintf ("No waitpid here :D\n");
+	reason = xnu_wait (dbg, pid);
 #else
-		// XXX: this is blocking, ^C will be ignored
-		int ret = waitpid (pid, &status, 0);
-		if (ret == -1) {
-			r_sys_perror ("waitpid");
-			status = R_DEBUG_REASON_ERROR;
-		} else {
-			//printf ("r_debug_native_wait: status=%d (return=%d)\n", status, ret);
+	// XXX: this is blocking, ^C will be ignored
+#ifdef WAIT_ON_ALL_CHILDREN
+	//eprintf ("waiting on all children ...\n");
+	int ret = waitpid (-1, &status, __WALL);
+#else
+	//eprintf ("waiting on pid %d ...\n", pid);
+	int ret = waitpid (pid, &status, __WALL);
+#endif // WAIT_ON_ALL_CHILDREN
+	if (ret == -1) {
+		r_sys_perror ("waitpid");
+		return R_DEBUG_REASON_ERROR;
+	}
 
-			// TODO: switch status and handle reasons here
+	//eprintf ("r_debug_native_wait: status=%d (0x%x) (return=%d)\n", status, status, ret);
+
+#ifdef WAIT_ON_ALL_CHILDREN
+	if (ret != pid) {
+		reason = R_DEBUG_REASON_NEW_PID;
+		eprintf ("switching to pid %d\n", ret);
+		r_debug_select(dbg, ret, ret);
+	}
+#endif // WAIT_ON_ALL_CHILDREN
+
+	// TODO: switch status and handle reasons here
 #if __linux__ && defined(PT_GETEVENTMSG)
-			// Handle PTRACE_EVENT_*
-			if (WIFSTOPPED (status) && WSTOPSIG (status) == SIGTRAP) {
-				ut32 pt_evt = status >> 16;
-				ut32 data;
+	reason = linux_ptrace_event (dbg, pid, status);
+#endif // __linux__
 
-				switch (pt_evt) {
-				case 0:
-					// Normal trap?
-					break;
+	/* propagate errors */
+	if (reason == R_DEBUG_REASON_ERROR) {
+		return reason;
+	}
 
-				case PTRACE_EVENT_FORK:
-					if (dbg->trace_forks) {
-						if (ptrace (PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
-							r_sys_perror ("ptrace GETEVENTMSG");
-						} else {
-							eprintf ("PTRACE_EVENT_FORK new_pid=%d\n", data);
-							dbg->forked_pid = data;
-							// TODO: more handling here?
-						}
-					}
-					break;
-				case PTRACE_EVENT_EXIT:
-					if (ptrace (PTRACE_GETEVENTMSG, pid, 0, &data) == -1) {
-						r_sys_perror ("ptrace GETEVENTMSG");
-					} else {
-						eprintf ("PTRACE_EVENT_EXIT pid=%d, status=%d\n", pid, data);
-					}
-					break;
-				default:
-					eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
-					break;
-				}
-			}
-#endif
+	/* we don't know what to do yet, let's try harder to figure it out. */
+	if (reason == R_DEBUG_REASON_UNKNOWN) {
+		if (WIFEXITED (status)) {
+			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
+			reason = R_DEBUG_REASON_DEAD;
+		} else if (WIFSIGNALED (status)) {
+			eprintf ("child received signal %d\n", WTERMSIG (status));
+			reason = R_DEBUG_REASON_SIGNAL;
+		} else if (WIFSTOPPED (status)) {
+			eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
 
-			r_debug_handle_signals (dbg);
+			/* this one might be good enough... */
+			dbg->reason.signum = WSTOPSIG (status);
 
-			if (WIFSTOPPED (status)) {
-				dbg->reason.signum = WSTOPSIG (status);
-				status = R_DEBUG_REASON_SIGNAL;
-			} else if (status == 0 || ret == -1) {
-				status = R_DEBUG_REASON_DEAD;
+			/* the ptrace documentation says GETSIGINFO is only necessary for
+			 * differentiating the various stops.
+			 *
+			 * this might modify dbg->reason.signum
+			 */
+			if (!r_debug_handle_signals (dbg))
+				return R_DEBUG_REASON_ERROR;
+			reason = dbg->reason.type;
+		} else if (WIFCONTINUED (status)) {
+			eprintf ("child continued...\n");
+			reason = R_DEBUG_REASON_NONE;
+		} else if (status == 1) {
+			/* XXX(jjd): does this actually happen? */
+			eprintf ("EEK DEAD DEBUGEE!\n");
+			reason = R_DEBUG_REASON_DEAD;
+		} else if (status == 0) {
+			/* XXX(jjd): does this actually happen? */
+			eprintf ("STATUS=0?!?!?!?\n");
+			reason = R_DEBUG_REASON_DEAD;
+		} else {
+			if (ret != pid) {
+				reason = R_DEBUG_REASON_NEW_PID;
 			} else {
-				if (ret != pid)
-					status = R_DEBUG_REASON_NEW_PID;
-				else status = R_DEBUG_REASON_UNKNOWN;
+				/* ugh. still don't know :-/ */
+				eprintf ("CRAP. returning from wait without knowing why...\n");
 			}
 		}
-#endif
 	}
-#endif
+
+	/* if we still don't know what to do, we have a problem... */
+	if (reason == R_DEBUG_REASON_UNKNOWN) {
+		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
+		reason = R_DEBUG_REASON_ERROR;
+	}
+#endif // __APPLE__
+#endif // __WINDOWS__ && !__CYGWIN__
+
 	dbg->reason.tid = pid;
-	dbg->reason.type = status;
-	return status;
+	dbg->reason.type = reason;
+	return reason;
 }
 
 #undef MAXPID
@@ -1066,6 +1102,12 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 	return false;
 }
 
+/*
+ * set or unset breakpoints...
+ *
+ * we only handle the case for hardware breakpoints here. otherwise,
+ * we let the caller handle the work.
+ */
 static int r_debug_native_bp (RBreakpointItem *bp, int set, void *user) {
 	if (!bp) return false;
 #if __i386__ || __x86_64__

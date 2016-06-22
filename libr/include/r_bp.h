@@ -46,6 +46,7 @@ typedef struct r_bp_item_t {
 	ut64 addr;
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */
+	bool swstep; 	/* is this breakpoint from a swstep? */
 	int rwx;
 	int hw;
 	int trace;
@@ -132,9 +133,9 @@ R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx);
 
 R_API RBreakpointItem *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx);
 R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx);
-R_API int r_bp_restore(RBreakpoint *bp, int set);
-R_API bool r_bp_restore_except(RBreakpoint *bp, int set, ut64 addr);
-R_API int r_bp_recoil(RBreakpoint *bp, ut64 addr);
+R_API void r_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, bool set);
+R_API int r_bp_restore(RBreakpoint *bp, bool set);
+R_API bool r_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr);
 
 /* traptrace */
 R_API void r_bp_traptrace_free(void *ptr);

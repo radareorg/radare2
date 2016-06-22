@@ -42,32 +42,32 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
 }
 
-R_API int r_debug_trace_pc (RDebug *dbg) {
+/*
+ * something happened at the given pc that we need to trace
+ */
+R_API int r_debug_trace_pc (RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
-	RRegItem *ri;
 	RAnalOp op;
 	static ut64 oldpc = 0LL; // Must trace the previously traced instruction
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-	if ((ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1))) {
-		ut64 addr = r_reg_get_value (dbg->reg, ri);
-		if (!addr) {
-			return false;
-		}
-		if (dbg->iob.read_at (dbg->iob.io, addr, buf, sizeof (buf))>0) {
-			if (r_anal_op (dbg->anal, &op, addr, buf, sizeof (buf))>0) {
-				if (oldpc!=0LL) {
-					if (dbg->anal->esil) {
-						if (dbg->anal->trace) {
-							r_anal_esil_trace (dbg->anal->esil, &op);
-						}
+
+	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) > 0) {
+		if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)) > 0) {
+			if (oldpc != 0LL) {
+				if (dbg->anal->esil) {
+					if (dbg->anal->trace) {
+						r_anal_esil_trace (dbg->anal->esil, &op);
 					}
-					r_debug_trace_add (dbg, oldpc, op.size);
 				}
-				oldpc = addr;
-				return true;
-			} else eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", addr);
-		} //else eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", addr);
-	} else eprintf ("trace_pc: cannot get program counter\n");
+				r_debug_trace_add (dbg, oldpc, op.size);
+			}
+			oldpc = pc;
+			return true;
+		}
+		else
+			eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
+	}
+	//else
+	//	eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", pc);
 	return false;
 }
 
