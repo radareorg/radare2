@@ -117,7 +117,7 @@ typedef struct r_debug_frame_t {
 
 
 typedef struct r_debug_reason_t {
-	RDebugReasonType type;
+	int /*RDebugReasonType*/ type;
 	int tid;
 	int signum;
 	ut64 bp_addr;
