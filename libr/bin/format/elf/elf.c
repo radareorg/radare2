@@ -556,7 +556,7 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
 		return false;
 	}
-	if (shdr->sh_link >= 0 && shdr->sh_link < shdr_size) {
+	if (shdr->sh_link < shdr_size) {
 		link_shdr = &bin->shdr[shdr->sh_link];
 	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
