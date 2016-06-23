@@ -304,10 +304,18 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
 	//eprintf ("waiting on all children ...\n");
+#ifdef __OpenBSD__
+	int ret = waitpid (-1, &status, WAIT_ANY);
+#else
 	int ret = waitpid (-1, &status, __WALL);
+#endif
 #else
 	//eprintf ("waiting on pid %d ...\n", pid);
+#ifdef __OpenBSD__
+	int ret = waitpid (pid, &status, WAIT_ANY);
+#else
 	int ret = waitpid (pid, &status, __WALL);
+#endif
 #endif // WAIT_ON_ALL_CHILDREN
 	if (ret == -1) {
 		r_sys_perror ("waitpid");
