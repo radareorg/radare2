@@ -118,10 +118,12 @@ static char *swift_demangle_cmd(const char *s) {
 			swift_demangle = r_file_path ("swift-demangle");
 			if (!swift_demangle || !strcmp (swift_demangle, "swift-demangle")) {
 				char *xcrun = r_file_path ("xcrun");
-				if (xcrun && strcmp (xcrun, "xcrun")) {
-					free (swift_demangle);
-					swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
-					have_swift_demangle = 1;
+				if (xcrun) {
+					if (strcmp (xcrun, "xcrun")) {
+						free (swift_demangle);
+						swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
+						have_swift_demangle = 1;
+					}
 					free (xcrun);
 				}
 			}
@@ -249,9 +251,6 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 		}
 #endif
 		q = getnum (q, &len);
-		if (len > 0) {
-			eprintf ("LEN = %d\n", len);
-		}
 
 		q = numpos (p);
 		//printf ("(%s)\n", getstring (p, (q-p)));
