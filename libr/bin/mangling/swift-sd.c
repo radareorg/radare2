@@ -339,8 +339,10 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 		} else {
 			/* parse function parameters here */
 			// type len value/
-			for (i=0; q && q < q_end; i++) {
-				if (*q == 'f') q++;
+			for (i = 0; q && q < q_end; i++) {
+				if (*q == 'f') {
+					q++;
+				}
 				switch (*q) {
 				case 's':
 					{
@@ -470,7 +472,10 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 							strcat (out, s);
 							if (is_last) {
 								strcat (out, is_generic?">":")");
-								is_first = 1;
+								is_first = (*s != '_');
+								if (is_generic && !is_first) {
+									break;
+								}
 							} else {
 								strcat (out, ", ");
 							}
@@ -489,6 +494,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 						}
 					}
 					q += len;
+					p = q;
 				} else {
 					if (q) {
 						q++;
@@ -541,6 +547,14 @@ typedef struct {
 } Test;
 
 Test swift_tests[] = {
+{
+	"_TWPu0_Rq_Ss14CollectionType_GVSs17MapCollectionViewq_q0__Ss23_CollectionDefaultsTypeSs_8",
+	"<generic _CollectionDefaultsType>"
+},
+{
+	"_TWPurGVSs15CollectionOfOneq__Ss14CollectionTypeSs_248",
+	"CollectionOfOne<generic CollectionType><generic S>"
+},
 {
 	"_TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS"
 	,"Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String"

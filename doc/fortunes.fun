@@ -190,3 +190,4 @@ Your endian swaps
 *(ut64*)buffer ought to be illegal
 MY ENDIAN IS HUUUGE
 enlarge your endian
+How about Global Thermonuclear War?
