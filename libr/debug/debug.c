@@ -714,20 +714,24 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 }
 
 R_API int r_debug_step(RDebug *dbg, int steps) {
-	int i, ret;
+	int ret, steps_taken = 0;
 
 	/* who calls this without giving a positive number? */
 	if (steps < 1) {
 		steps = 1;
 	}
 
+	if (!dbg || !dbg->h) {
+		return steps_taken;
+	}
+
 	if (r_debug_is_dead (dbg)) {
-		return 0;
+		return steps_taken;
 	}
 
 	dbg->reason.type = R_DEBUG_REASON_STEP;
 
-	for (i = 0; i < steps; i++) {
+	for (; steps_taken < steps; steps_taken++) {
 		if (dbg->swstep) {
 			ret = r_debug_step_soft (dbg);
 		} else {
@@ -735,12 +739,13 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 		}
 		if (!ret) {
 			eprintf ("Stepping failed!\n");
-			return i;
+			return steps_taken;
 		}
 		dbg->steps++;
 		dbg->reason.type = R_DEBUG_REASON_STEP;
 	}
-	return i;
+
+	return steps_taken;
 }
 
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
@@ -752,29 +757,31 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
 	ut64 buf_pc, pc;
 	ut8 buf[DBG_BUF_SIZE];
-	int i;
+	int steps_taken = 0;
 
-	if (r_debug_is_dead (dbg))
-		return false;
+	if (r_debug_is_dead (dbg)) {
+		return steps_taken;
+	}
 
-	if (steps < 1)
+	if (steps < 1) {
 		steps = 1;
+	}
 
 	if (dbg->h && dbg->h->step_over) {
-		for (i = 0; i < steps; i++)
+		for (; steps_taken < steps; steps_taken++)
 			if (!dbg->h->step_over (dbg))
-				return false;
-		return i;
+				return steps_taken;
+		return steps_taken;
 	}
 
 	if (!dbg->anal || !dbg->reg)
-		return false;
+		return steps_taken;
 
 	// Initial refill
 	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
-	for (i = 0; i < steps; i++) {
+	for (; steps_taken < steps; steps_taken++) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		// Try to keep the buffer full
 		if (pc - buf_pc > sizeof (buf)) {
@@ -784,7 +791,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc))) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
-			return false;
+			return steps_taken;
 		}
 
 		// Skip over all the subroutine calls
@@ -796,20 +803,20 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
 			if (!r_debug_continue_until (dbg, op.fail)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
-				return false;
+				return steps_taken;
 			}
 		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
 			//eprintf ("REP: skip to next instruction...\n");
 			if (!r_debug_continue_until (dbg, pc+op.size)) {
 				eprintf ("step over failed over rep\n");
-				return false;
+				return steps_taken;
 			}
 		} else {
 			r_debug_step (dbg, 1);
 		}
 	}
 
-	return i;
+	return steps_taken;
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
