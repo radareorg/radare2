@@ -311,6 +311,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[1] = 0xa2;
 		return 2;
 	}
+	if (!strcmp (op, "fsincos")) {
+		data[0] = 0xd9;
+		data[1] = 0xfb;
+		return 2;
+ 	}
 
 	if (!strcmp (str, "call $$")) {
 		memcpy (data, "\xE8\xFF\xFF\xFF\xFF\xC1", 6);
