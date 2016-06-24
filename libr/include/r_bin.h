@@ -158,7 +158,7 @@ typedef struct r_bin_object_t {
 	ut64 baddr_shift;
 	ut64 loadaddr;
 	ut64 boffset;
-	int size;
+	ut64 size;
 	ut64 obj_size;
 	RList/*<RBinSection>*/ *sections;
 	RList/*<RBinImport>*/ *imports;
