@@ -1271,6 +1271,10 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		cu->dies[cu->length].tag = da->decls[abbr_code - 1].tag;
 		abbr_code += offset;
 
+		if (da->capacity < abbr_code) {
+			return NULL;
+		}
+
 		for (i = 0; i < da->decls[abbr_code - 1].length; i++) {
 			if (cu->dies[cu->length].length ==
 					cu->dies[cu->length].capacity)
