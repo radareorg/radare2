@@ -793,11 +793,11 @@ static int r_bin_dwarf_init_debug_info(RBinDwarfDebugInfo *inf) {
 
 static int r_bin_dwarf_init_die(RBinDwarfDIE *die) {
 	if (!die) return -EINVAL;
-	die->attr_values = calloc(sizeof(RBinDwarfAttrValue), 8);
+	die->attr_values = calloc (sizeof (RBinDwarfAttrValue), 8);
 
-	if (!die->attr_values)
+	if (!die->attr_values) {
 		return -ENOMEM;
-
+	}
 	die->capacity = 8;
 	die->length = 0;
 
@@ -882,16 +882,11 @@ static int r_bin_dwarf_expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 }
 
 static int r_bin_dwarf_init_debug_abbrev(RBinDwarfDebugAbbrev *da) {
-
 	if (!da) return -EINVAL;
 	da->decls = calloc (sizeof (RBinDwarfAbbrevDecl), DEBUG_ABBREV_CAP);
-eprintf ("DECLS = %d\n", DEBUG_ABBREV_CAP);
-
-
 	if (!da->decls) {
 		return -ENOMEM;
 	}
-
 	da->capacity = DEBUG_ABBREV_CAP;
 	da->length = 0;
 
@@ -1288,6 +1283,10 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 					&cu->dies[cu->length].attr_values[i],
 					&cu->hdr, debug_str, debug_str_len);
 
+			if (i < cu->dies[cu->length].capacity) {
+				eprintf ("Warning: malformed dwarf attribute capacity doesnt match length\n)");
+				break;
+			}
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
 				ut64 comp_dir = (ut64)(size_t)
 					cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
