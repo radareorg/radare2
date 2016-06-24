@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake, Fedor Sakharov */
+/* radare - LGPL - Copyright 2012-2016 - pancake, Fedor Sakharov */
 
 #define D0 if(1)
 #define D1 if(1)
@@ -884,9 +884,13 @@ static int r_bin_dwarf_expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 static int r_bin_dwarf_init_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 
 	if (!da) return -EINVAL;
-	da->decls = calloc(sizeof(RBinDwarfAbbrevDecl), DEBUG_ABBREV_CAP);
+	da->decls = calloc (sizeof (RBinDwarfAbbrevDecl), DEBUG_ABBREV_CAP);
+eprintf ("DECLS = %d\n", DEBUG_ABBREV_CAP);
 
-	if (!da->decls) return -ENOMEM;
+
+	if (!da->decls) {
+		return -ENOMEM;
+	}
 
 	da->capacity = DEBUG_ABBREV_CAP;
 	da->length = 0;
@@ -900,8 +904,8 @@ static int r_bin_dwarf_expand_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	if (!da || da->capacity == 0 || da->capacity != da->length)
 		return -EINVAL;
 
-	tmp = (RBinDwarfAbbrevDecl*)realloc(da->decls,
-			da->capacity * 2 * sizeof(RBinDwarfAbbrevDecl));
+	tmp = (RBinDwarfAbbrevDecl*)realloc (da->decls,
+			da->capacity * 2 * sizeof (RBinDwarfAbbrevDecl));
 
 	if (!tmp)
 		return -ENOMEM;
@@ -1327,14 +1331,20 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 //					inf->comp_units[curr_unit].hdr.version);
 			return -1;
 		}
-		if (inf->comp_units[curr_unit].hdr.length > len) return -1;
+		if (inf->comp_units[curr_unit].hdr.length > len) {
+			return -1;
+		}
 
 		inf->comp_units[curr_unit].hdr.abbrev_offset = READ (buf, ut32);
 		inf->comp_units[curr_unit].hdr.pointer_size = READ (buf, ut8);
 		inf->length++;
 
 		/* Linear search FIXME */
-		for (k = 0; k < da->decls->length; k++) {
+		if (da->decls->length >= da->capacity) {
+			eprintf ("WARNING: malformed dwarf have not enough buckets for decls.\n");
+		}
+		const int k_max = R_MIN (da->capacity, da->decls->length);
+		for (k = 0; k < k_max; k++) {
 			if (da->decls[k].offset ==
 				inf->comp_units[curr_unit].hdr.abbrev_offset) {
 				offset = k;
