@@ -1013,8 +1013,17 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 1, "^");
-			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
-				src, dst);
+			char *_dst;
+			if (dst && (strlen (dst) == 6) && (dst[0] == 'e') && (_dst = strdup (dst))) {
+				_dst[0] = 'r';
+				_dst[4] = '&';
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=,0xffffffff,%s",
+					src, dst, _dst);
+				free (_dst);
+			} else {
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
+					src, dst);
+			}
 			free (src);
 			free (dst);
 		}
