@@ -1898,10 +1898,14 @@ static void init_cv_nb10_header(SCV_NB10_HEADER *cv_nb10_header) {
 	cv_nb10_header->free = (void (*)(struct SCV_NB10_HEADER *)) free_cv_nb10_header;
 }
 
-static void get_rsds(ut8 *dbg_data, SCV_RSDS_HEADER *res) {
+static bool get_rsds(ut8 *dbg_data, int dbg_data_len, SCV_RSDS_HEADER *res) {
 	const int rsds_sz = 4 + sizeof (SGUID) + 4;
+	if (dbg_data_len < rsds_sz) {
+		return false;
+	}
 	memcpy (res, dbg_data, rsds_sz);
 	res->file_name = (ut8 *)strdup ((const char *)dbg_data + rsds_sz);
+	return true;
 }
 
 static void get_nb10(ut8 *dbg_data, SCV_NB10_HEADER *res) {
@@ -1910,19 +1914,23 @@ static void get_nb10(ut8 *dbg_data, SCV_NB10_HEADER *res) {
 	res->file_name = (ut8 *)strdup ((const char *)dbg_data + nb10sz);
 }
 
-static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *dbg_data, SDebugInfo *res) {
+static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *dbg_data, int dbg_data_len, SDebugInfo *res) {
 #define SIZEOF_FILE_NAME 255
 	int i = 0;
 
-	if (dbg_data == NULL)
+	if (!dbg_data) {
 		return 0;
+	}
 
 	switch (dbg_dir_entry->Type) {
 	case IMAGE_DEBUG_TYPE_CODEVIEW:
-		if (strncmp((char *)dbg_data, "RSDS", 4) == 0) {
+		if (strncmp ((char *)dbg_data, "RSDS", 4) == 0) {
 			SCV_RSDS_HEADER rsds_hdr;
 			init_rsdr_hdr (&rsds_hdr);
-			get_rsds (dbg_data, &rsds_hdr);
+			if (!get_rsds (dbg_data, dbg_data_len, &rsds_hdr)) {
+				eprintf ("Warning: Cannot read PE debug info\n");
+				return 0;
+			}
 			snprintf ((st8 *) res->guidstr, GUIDSTR_LEN,
 				"%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
 				rsds_hdr.guid.data1,
@@ -1995,7 +2003,7 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *re
 		dbg_data = (ut8 *) malloc (dbg_data_len + 1);
 		if (dbg_data) {
 			r_buf_read_at (bin->b, dbg_data_poff, dbg_data, dbg_data_len);
-			result = get_debug_info(img_dbg_dir_entry, dbg_data, res);
+			result = get_debug_info(img_dbg_dir_entry, dbg_data, dbg_data_len, res);
 			R_FREE(dbg_data);
 		}
 	}
