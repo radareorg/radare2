@@ -47,6 +47,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 		return NULL;
 	}
 	tbuf = r_buf_new ();
+	tbuf->fd = arch->fd;
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = Elf_(r_bin_elf_new_buf) (tbuf);
 	if (res) {

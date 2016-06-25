@@ -2358,7 +2358,9 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(RBuffer *buf) {
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
 	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
-	bin->size = buf->length;
+	ut64 curr = lseek (buf->fd, 0, SEEK_CUR);
+	bin->size = lseek (buf->fd, 0, SEEK_END);
+	lseek (buf->fd, curr, SEEK_SET);
 	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length)) {
 		return Elf_(r_bin_elf_free) (bin);
 	}

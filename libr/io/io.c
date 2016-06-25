@@ -1009,8 +1009,9 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 
 	buf = malloc (*out_sz);
 	if (!buf) {
-		eprintf ("Cannot allocate %" PFMT64d " bytes\n", *out_sz);
-		return NULL;
+		eprintf ("Failed to allocate %" PFMT64u " bytes. Allocating %d bytes.\n", *out_sz, R_IO_MAX_ALLOC);
+		*out_sz = R_IO_MAX_ALLOC;
+		buf = malloc (*out_sz);
 	}
 	if (buf && desc->plugin && desc->plugin->read) {
 		if (!buf || !desc->plugin->read (io, desc, buf, *out_sz)) {

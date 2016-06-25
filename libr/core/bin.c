@@ -430,7 +430,7 @@ static int bin_info(RCore *r, int mode) {
 	havecode = is_executable (obj) | (obj->entries != NULL);
 	compiled = get_compile_time (binfile->sdb);
 	snprintf (size_str, sizeof (size_str),
-		"%"PFMT64d,  r_bin_get_size (r->bin));
+		"%"PFMT64u,  r_bin_get_size (r->bin));
 	snprintf (baddr_str, sizeof (baddr_str),
 		"%"PFMT64d,  info->baddr);
 
