@@ -360,7 +360,7 @@ static int rabin_do_operation(const char *op) {
 		if (!plg) break;
 		if (plg->signature) {
 			const char *sign = plg->signature (cur);
-			r_cons_printf ("%s\n", sign);
+			r_cons_println (sign);
 			r_cons_flush ();
 		}
 		}

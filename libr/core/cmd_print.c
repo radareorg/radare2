@@ -2276,7 +2276,7 @@ static int cmd_print(void *data, const char *input) {
 				r_asm_set_pc (core->assembler, core->offset);
 				c = r_asm_mdisassemble_hexstr (core->assembler, hex);
 				if (c) {
-					r_cons_puts (c->buf_asm);
+					r_cons_print (c->buf_asm);
 					r_asm_code_free (c);
 				} else eprintf ("Invalid hexstr\n");
 			}
@@ -3778,7 +3778,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta
 				r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
 			} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
 		}
-		r_cons_puts (" ");
+		r_cons_print (" ");
 	} else {
 		if (offseg) {
 			ut32 s, a;
