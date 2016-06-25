@@ -713,7 +713,7 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		}
 		sdb_num_set (sdb_version, "cnt", entry->vn_cnt, 0);
 		vstart += entry->vn_aux;
-		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart + sizeof (Elf_(Vernaux)) < end; ++j) {
+		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; ++j) {
 			Elf_(Vernaux) * aux = NULL;
 			sdb_vernaux = sdb_new0 ();
 			if (!sdb_vernaux) {
