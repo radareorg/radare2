@@ -2878,7 +2878,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		if (core->offset + len > binfile->size) {
 			len = binfile->size - core->offset;
 		}
-		*/
+	*/
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
 	buf = malloc (4096);
@@ -2893,10 +2893,15 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			r_io_read_at (core->io, addr, buf, 4096);
 		}
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi)) {
-			if (op.size < 1) op.size = minop; // XXX must be +4 on arm/mips/.. like we do in disasm.c
+			if (op.size < 1) {
+				// XXX must be +4 on arm/mips/.. like we do in disasm.c
+				op.size = minop;
+			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
-				r_core_anal_fcn (core, op.jump, addr,
+				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
+					r_core_anal_fcn (core, op.jump, addr,
 						R_ANAL_REF_TYPE_NULL, depth);
+				}
 			}
 		} else {
 			op.size = minop;

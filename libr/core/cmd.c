@@ -1594,17 +1594,16 @@ next2:
 	} else ptr = NULL;
 	core->tmpseek = ptr? true: false;
 	if (ptr) {
-		ut64 tmpoff, tmpbsz, addr;
-		char *tmpasm = NULL;
-		const char *tmpbits = NULL;
-		char *tmpeval = NULL;
-		const char *offstr = NULL;
 		char *f, *ptr2 = strchr (ptr+1, '!');
+		ut64 addr = UT64_MAX;
+		const char *tmpbits = NULL;
+		const char *offstr = NULL;
+		ut64 tmpbsz = core->blocksize;
+		ut64 tmpoff = core->offset;
+		char *tmpeval = NULL;
+		char *tmpasm = NULL;
 		int sz, len;
 		ut8 *buf;
-		addr = UT64_MAX;
-		tmpoff = core->offset;
-		tmpbsz = core->blocksize;
 
 		*ptr = '\0';
 		for (ptr++; *ptr== ' '; ptr++);
@@ -1614,12 +1613,15 @@ next2:
 			ptr--;
 		}
 
-		if (ptr[0] && ptr[1] && ptr[2])
-			arroba = strchr (ptr+2, '@');
-		else arroba = NULL;
+		if (ptr[0] && ptr[1] && ptr[2]) {
+			arroba = strchr (ptr + 2, '@');
+		} else {
+			arroba = NULL;
+		}
 repeat_arroba:
-		if (arroba)
+		if (arroba) {
 			*arroba = 0;
+		}
 		if (ptr[0] && ptr[1]==':' && ptr[2]) {
 			usemyblock = 1;
 			switch (ptr[0]) {
