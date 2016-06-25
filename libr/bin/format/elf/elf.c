@@ -590,7 +590,7 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 		int isum = 0;
 
 		vstart += verdef->vd_aux;
-		if (vstart > end || vstart + sizeof(Elf_(Verdaux)) > end) {
+		if (vstart > end || vstart + sizeof (Elf_(Verdaux)) > end) {
 			sdb_free (sdb_verdef);
 			goto out_error;
 		}
@@ -659,6 +659,9 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 	if (shdr->sh_link > bin->ehdr.e_shnum) {
 		return NULL;
 	}
+	if (shdr->sh_size < 1) {
+		return NULL;
+	}
 	sdb = sdb_new0 ();
 	if (!sdb) return NULL;
 	link_shdr = &bin->shdr[shdr->sh_link];
@@ -710,15 +713,16 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 		}
 		sdb_num_set (sdb_version, "cnt", entry->vn_cnt, 0);
 		vstart += entry->vn_aux;
-		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart < end; ++j) {
+		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart + sizeof (Elf_(Vernaux)) < end; ++j) {
 			Elf_(Vernaux) * aux = NULL;
 			sdb_vernaux = sdb_new0 ();
-			if (!sdb_vernaux)
+			if (!sdb_vernaux) {
 				goto beach;
+			}
 			aux = (Elf_(Vernaux)*)(vstart);
-			if (aux->vna_name > bin->dynstr_size)
+			if (aux->vna_name > bin->dynstr_size) {
 				goto beach;
-
+			}
 			sdb_num_set (sdb_vernaux, "idx", isum, 0);
 			if (aux->vna_name > 0 && aux->vna_name + 8 < bin->dynstr_size) {
 				char name [16];
@@ -760,10 +764,12 @@ static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int num_versym = 0;
 	int i;
 
-	if (!bin || !bin->shdr)
+	if (!bin || !bin->shdr) {
 		return NULL;
-	if (!(sdb_versioninfo = sdb_new0 ()))
+	}
+	if (!(sdb_versioninfo = sdb_new0 ())) {
 		return NULL;
+	}
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		Sdb *sdb = NULL;
