@@ -611,7 +611,11 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			{
 				char *src = getarg (&gop, 1, 0, NULL);
 				char *dst = getarg (&gop, 0, 0, NULL);
+				const char *dst64 = r_reg_32_to_64 (a->reg, dst);
 				esilprintf (op, "%s,%s,=", src, dst);
+				if (a->bits == 64 && dst64) {
+					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", dst64);
+				}
 				free (src);
 				free (dst);
 				break;
@@ -1013,13 +1017,14 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 1, "^");
+			char *p;
 			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
 				src, dst);
-			if ((a->bits == 64) &&
-				dst && (strlen (dst) == 6) && (dst[0] == 'e')) {
-				dst[0] = 'r';
-				dst[4] = '&';
-				r_strbuf_appendf (&op->esil, ",0xffffffff,%s", dst);
+			if ((a->bits == 64) && (p = strchr (dst, (int)','))) {
+				*p = '\0';
+				if ((p = r_reg_32_to_64 (a->reg, dst))) {
+					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", p);
+				}
 			}
 			free (src);
 			free (dst);
