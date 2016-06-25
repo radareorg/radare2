@@ -618,7 +618,9 @@ R_API void r_cons_printf(const char *format, ...) {
 			va_end (ap);
 		}
 		I.buffer_len += written;
-	} else r_cons_strcat (format);
+	} else {
+		r_cons_strcat (format);
+	}
 }
 
 R_API int r_cons_get_column() {
@@ -657,7 +659,7 @@ R_API void r_cons_strcat(const char *str) {
 	int len;
 	if (!str||I.null) return;
 	len = strlen (str);
-	if (len>0)
+	if (len > 0)
 		r_cons_memcat (str, len);
 }
 
