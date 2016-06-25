@@ -3563,6 +3563,104 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	return true;
 }
 
+R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode) {
+	const bool scr_color = r_config_get_i (core->config, "scr.color");
+	int i, ret, err = 0, count = 0;
+	ut8 *buf = core->block;
+	char str[128];
+	RAsmOp asmop;
+	if (l < 1) {
+		l = len;
+	}
+	if (l > core->blocksize || addr != core->offset) {
+		buf = malloc (l + 1);
+		r_core_read_at (core, addr, buf, l);
+	}
+	if (mode == 'j') {
+		r_cons_printf ("[");
+	}
+	r_cons_break (NULL, NULL);
+	for (i = 0; i < l; i++) {
+		r_asm_set_pc (core->assembler, addr + i);
+		if (r_cons_singleton ()->breaked) {
+			break;
+		}
+		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, l - i);
+		if (ret < 1) {
+			ret = err = 1;
+			switch (mode) {
+			case 'j':
+			case '=':
+				break;
+			case 'i':
+				r_cons_printf ("???\n");
+				break;
+			default:
+				r_cons_printf ("0x%08"PFMT64x" ???\n", addr + i);
+				break;
+			}
+		} else {
+			count ++;
+			switch (mode) {
+			case 'i':
+				r_parse_filter (core->parser, core->flags, asmop.buf_asm,
+						str, sizeof (str), core->print->big_endian);
+				if (scr_color) {
+					char *buf_asm;
+					RAnalOp aop;
+					r_anal_op (core->anal, &aop, addr, buf+i, l-i);
+					buf_asm = r_print_colorize_opcode (str,
+							core->cons->pal.reg, core->cons->pal.num);
+					r_cons_printf ("%s%s\n",
+							r_print_color_op_type (core->print, aop.type),
+							buf_asm);
+					free (buf_asm);
+				} else {
+					r_cons_printf ("%s\n", asmop.buf_asm);
+				}
+				break;
+			case '=':
+				if (i < 28) {
+					char *str = r_str_newf ("0x%08"PFMT64x" %60s  %s\n",
+							addr + i, "", asmop.buf_asm);
+					char *sp = strchr (str, ' ');
+					if (sp) {
+						char *end = sp + 60 + 1;
+						const char *src = asmop.buf_hex;
+						char *dst = sp + 1 + (i * 2);
+						int len = strlen (src);
+						if (dst < end) {
+							if (dst + len >= end) {
+								len = end - dst;
+								dst[len] = '.';
+							}
+							memcpy (dst, src, len);
+						}
+					}
+					r_cons_strcat (str);
+					free (str);
+				}
+				break;
+			case 'j':
+				r_cons_printf ("{\"addr\":%08"PFMT64d",\"bytes\":\"%s\",\"inst\":\"%s\"}%s",
+					addr + i, asmop.buf_hex, asmop.buf_asm, ",");
+				break;
+			default:
+				r_cons_printf ("0x%08"PFMT64x" %20s  %s\n",
+						addr + i, asmop.buf_hex, asmop.buf_asm);
+			}
+		}
+	}
+	r_cons_break_end ();
+	if (buf != core->block) {
+		free (buf);
+	}
+	if (mode == 'j') {
+		r_cons_printf ("{}]\n");
+	}
+	return count;
+}
+
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	ut32 cur_buf_sz = 0;

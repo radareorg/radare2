@@ -2400,44 +2400,8 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {
-				RAsmOp asmop;
-				char str[128];
-				char* buf_asm;
-				ut8 *buf = core->block;
-				int colors_on = r_config_get_i (core->config, "scr.color");
-				if (l<1) l = len;
-				if (l>core->blocksize) {
-					buf = malloc (l+1);
-					r_core_read_at (core, core->offset, buf, l);
-				}
-				r_cons_break (NULL, NULL);
-				for (i=0; i<l; i++) {
-					ut64 addr = core->offset + i;
-					r_asm_set_pc (core->assembler, addr);
-					if (r_cons_singleton ()->breaked)
-						break;
-					if (r_asm_disassemble (core->assembler, &asmop, buf+i, l-i) < 1) {
-						r_cons_printf ("???\n");
-					} else {
-						r_parse_filter (core->parser, core->flags, asmop.buf_asm,
-								str, sizeof (str), core->print->big_endian);
-						if (colors_on) {
-							RAnalOp aop;
-							r_anal_op (core->anal, &aop, addr, buf+i, l-i);
-							buf_asm = r_print_colorize_opcode (str,
-									core->cons->pal.reg, core->cons->pal.num);
-							r_cons_printf ("%s%s\n",
-									r_print_color_op_type (core->print, aop.type),
-									buf_asm);
-							free (buf_asm);
-						} else {
-							r_cons_printf ("%s\n", asmop.buf_asm);
-						}
-					}
-				}
-				r_cons_break_end ();
-				if (buf != core->block)
-					free (buf);
+				r_core_print_disasm_all (core, core->offset,
+					l, len, 'i');
 			}
 			break;
 		case 'j': //pij is the same as pdj
@@ -2544,42 +2508,17 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'i': // "pdi" // "pDi"
 			processed_cmd = true;
-			if (*input == 'D')
+			if (*input == 'D') {
 				pdi (core, 0, l, 0);
-			else
+			} else {
 				pdi (core, l, 0, 0);
+			}
 			pd_result = 0;
 			break;
 		case 'a': // "pda"
 			processed_cmd = true;
-			{
-				RAsmOp asmop;
-				int ret, err = 0;
-				ut8 *buf = core->block;
-				if (l<1) l = len;
-				if (l>core->blocksize) {
-					buf = malloc (l+1);
-					r_core_read_at (core, core->offset, buf, l);
-				}
-				r_cons_break (NULL, NULL);
-				for (i=0; i<l; i++) {
-					r_asm_set_pc (core->assembler, core->offset+i);
-					if (r_cons_singleton ()->breaked)
-						break;
-					ret = r_asm_disassemble (core->assembler, &asmop,
-						buf+i, l-i);
-					if (ret<1) {
-						ret = err = 1;
-						//r_cons_printf ("???\n");
-						r_cons_printf ("0x%08"PFMT64x" ???\n", core->offset+i);
-					} else r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
-						core->offset+i, asmop.buf_hex, asmop.buf_asm);
-				}
-				r_cons_break_end ();
-				if (buf != core->block)
-					free (buf);
-				pd_result = true;
-			}
+			r_core_print_disasm_all (core, core->offset, l, len, input[2]);
+			pd_result = true;
 			break;
 		case 'r': // "pdr"
 			processed_cmd = true;
