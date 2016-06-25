@@ -1136,7 +1136,14 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
 			char *dst = getarg (&gop, 0, 1, "&");
+			char *p;
 			esilprintf (op, "%s,%s,$0,of,=,$0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", src, dst);
+			if ((a->bits == 64) && (p = strchr (dst, (int)','))) {
+				*p = '\0';
+				if ((p = r_reg_32_to_64 (a->reg, dst))) {
+					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", p);
+				}
+			}
 			free (src);
 			free (dst);
 		}
