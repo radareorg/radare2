@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
 
+#include <r_userconf.h>
+
+#if DEBUGGER
 #include <r_debug.h>
 #include <r_asm.h>
 #include <r_reg.h>
@@ -589,3 +592,4 @@ RList *linux_desc_list (int pid) {
 	return ret;
 }
 
+#endif
