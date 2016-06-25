@@ -700,9 +700,14 @@ static Sdb *store_versioninfo_gnu_verneed(struct Elf_(r_bin_elf_obj_t) *bin, Elf
 			goto beach;
 		sdb_num_set (sdb_version, "vn_version", entry->vn_version, 0);
 		sdb_num_set (sdb_version, "idx", i, 0);
-		if (entry->vn_file > bin->dynstr_size)
+		if (entry->vn_file > bin->dynstr_size) {
 			goto beach;
-		sdb_set (sdb_version, "file_name", &bin->dynstr[entry->vn_file], 0);
+		}
+		{
+			char *s = r_str_ndup (&bin->dynstr[entry->vn_file], 16);
+			sdb_set (sdb_version, "file_name", s, 0);
+			free (s);
+		}
 		sdb_num_set (sdb_version, "cnt", entry->vn_cnt, 0);
 		vstart += entry->vn_aux;
 		for (j = 0, isum = i + entry->vn_aux; j < entry->vn_cnt && vstart < end; ++j) {
