@@ -1589,7 +1589,7 @@ next2:
 	/* temporary seek commands */
 	if (*cmd!='(' && *cmd!='"') {
 		ptr = strchr (cmd, '@');
-		if (ptr == cmd+1 && *cmd=='?')
+		if (ptr == cmd + 1 && *cmd=='?')
 			ptr = NULL;
 	} else ptr = NULL;
 	core->tmpseek = ptr? true: false;
@@ -1602,6 +1602,7 @@ next2:
 		ut64 tmpoff = core->offset;
 		char *tmpeval = NULL;
 		char *tmpasm = NULL;
+		int tmpfd = -1;
 		int sz, len;
 		ut8 *buf;
 
@@ -1666,7 +1667,7 @@ repeat_arroba:
 					} else eprintf ("cannot allocate\n");
 				} else eprintf ("Invalid @x: syntax\n");
 				break;
-			case 'k':
+			case 'k': // "@k"
 				 {
 					char *out = sdb_querys (core->sdb, NULL, 0, ptr+((ptr[1])?2:1));
 					if (out) {
@@ -1674,6 +1675,12 @@ repeat_arroba:
 						free (out);
 					}
 				 }
+				break;
+			case 'o': // "@o:3"
+				if (ptr[1] ==':') {
+					tmpfd = core->io->raised;
+					r_io_raise (core->io, atoi (ptr + 2));
+				}
 				break;
 			case 'a': // "@a:"
 				if (ptr[1]==':') {
@@ -1789,7 +1796,6 @@ next_arroba:
 
 				tmpseek = true;
 			}
-
 			if (usemyblock) {
 				if (addr != UT64_MAX) {
 					core->offset = addr;
@@ -1823,6 +1829,9 @@ next_arroba:
 		if (tmpasm) {
 			r_config_set (core->config, "asm.arch", tmpasm);
 			tmpasm = NULL;
+		}
+		if (tmpfd != -1) {
+			r_io_raise (core->io, tmpfd);
 		}
 		if (tmpbits) {
 			r_config_set (core->config, "asm.bits", tmpbits);
