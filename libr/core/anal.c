@@ -1819,7 +1819,7 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 	return NULL;
 }
 
-R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
+R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 	ut8 *tbuf, *buf;
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
@@ -2299,6 +2299,7 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *entry;
 	RBinSymbol *symbol;
 	int depth = r_config_get_i (core->config, "anal.depth");
+	bool anal_vars = r_config_get_i (core->config, "anal.vars");
 
 	/* Analyze Functions */
 	/* Entries */
@@ -2335,16 +2336,18 @@ R_API int r_core_anal_all(RCore *core) {
 			}
 		}
 	}
-	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
-	r_list_foreach (core->anal->fcns, iter, fcni) {
-		if (core->cons->breaked)
-			break;
-		r_anal_var_delete_all (core->anal, fcni->addr, 'e');
-		r_anal_var_delete_all (core->anal, fcni->addr, 'a');
-		r_anal_var_delete_all (core->anal, fcni->addr, 'v');
-		fcn_callconv (core, fcni);
-		if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
-			fcni->type = R_ANAL_FCN_TYPE_SYM;
+	if (anal_vars) {
+		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (core->cons->breaked)
+				break;
+			r_anal_var_delete_all (core->anal, fcni->addr, 'e');
+			r_anal_var_delete_all (core->anal, fcni->addr, 'a');
+			r_anal_var_delete_all (core->anal, fcni->addr, 'v');
+			fcn_callconv (core, fcni);
+			if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
+				fcni->type = R_ANAL_FCN_TYPE_SYM;
+		}
 	}
 	return true;
 }
