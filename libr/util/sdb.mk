@@ -2,8 +2,6 @@ SDBPATH=../../shlr/sdb/src/
 SDBLIB=${SDBPATH}/libsdb.a
 EXTRA_TARGETS+=${SDBLIB}
 
-${SDBLIB}:
-	${MAKE} -C ${SDBPATH}
 SDB_OBJS=
 SDB_OBJS+=buffer.o
 SDB_OBJS+=cdb.o
@@ -26,9 +24,10 @@ SDB_OBJS+=journal.o
 
 SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 
-OBJS+=${SDBOBJS}
+OBJS+=$(SDBOBJS)
 
-CFLAGS+=-I${SDBPATH}/src
+CFLAGS+=-I$(SDBPATH)/src
 
-pre: ${SDBLIB}
-	${MAKE} all
+sdb_version:
+	$(MAKE) -C "$(SDBPATH)" sdb_version.h
+	${MAKE} -C ${SDBPATH}

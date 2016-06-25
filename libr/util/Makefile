@@ -40,8 +40,8 @@ ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
 endif
 endif
 
-pre: ${SDBLIB}
-	${MAKE} all
+EXTRA_PRE+=sdb_version
+#$(SDBLIB)
 
 include ../rules.mk
 include sdb.mk
