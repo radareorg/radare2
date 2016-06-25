@@ -3336,7 +3336,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes) {
 	RAsmOp asmop;
-	RAnalOp analop;
+	RAnalOp analop = {0};
 	RDisasmState *ds;
 	RAnalFunction *f;
 	int i, j, k, oplen, ret, line;
@@ -3445,6 +3445,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			j++;
 			continue;
 		}
+		r_anal_op_fini (&analop);
+
 		r_anal_op (core->anal, &analop, at, buf + i, nb_bytes - i);
 		ds = ds_init (core);
 		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
@@ -3560,6 +3562,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	}
 	r_cons_printf ("]");
 	core->offset = old_offset;
+	r_anal_op_fini (&analop);
 	return true;
 }
 

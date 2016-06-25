@@ -978,6 +978,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	free (pal_jump);
 	free (pal_fail);
 	free (pal_trfa);
+	free (pal_curr);
+	free (pal_traced);
+	free (pal_box4);
 	return nodes;
 }
 
