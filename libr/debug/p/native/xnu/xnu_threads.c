@@ -1,4 +1,7 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
+#include <r_userconf.h>
+#if DEBUGGER
 
 // TODO much work remains to be done
 #include "xnu_debug.h"
@@ -339,3 +342,4 @@ static int xnu_update_thread_list (RDebug *dbg) {
 	}
 	return true;
 }
+#endif

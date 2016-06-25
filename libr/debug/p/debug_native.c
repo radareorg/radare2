@@ -9,10 +9,11 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#include "native/drx.c" // x86 specific
-#include "r_cons.h"
 
 #if DEBUGGER
+
+#include "native/drx.c" // x86 specific
+#include "r_cons.h"
 
 static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
@@ -1500,7 +1501,7 @@ struct r_lib_struct_t radare_plugin = {
 //#endif
 #else // DEBUGGER
 struct r_debug_plugin_t r_debug_plugin_native = {
-	.name = "native",
+	NULL // .name = "native",
 };
 
 #endif // DEBUGGER

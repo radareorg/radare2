@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -7,8 +7,7 @@
 
 #define USE_RARUN 0
 
-#if __linux__ ||  __APPLE__ || __WINDOWS__ || \
-	__NetBSD__ || __KFBSD__ || __OpenBSD__
+#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
 #define DEBUGGER_SUPPORTED 1
 #else
 #define DEBUGGER_SUPPORTED 0
@@ -410,14 +409,14 @@ RIOPlugin r_io_plugin_debug = {
 	.isdbg = true,
 };
 #else
-struct r_io_plugin_t r_io_plugin_debug = {
+RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
         .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
 };
 #endif
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_debug,
 	.version = R2_VERSION
