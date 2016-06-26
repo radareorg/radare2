@@ -37,9 +37,9 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			if (h->cpus && !strcmp (arch, h->name)) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
-				for (i=0;i<n;i++)
-					r_cons_printf ("%s\n",
-						r_str_word_get0 (c, i));
+				for (i=0;i<n;i++) {
+					r_cons_println (r_str_word_get0 (c, i));
+				}
 				free (c);
 				break;
 			}
@@ -58,7 +58,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			if (!h->assemble && h->disassemble) feat = "_d";
 			feat2 = has_esil (core, h->name);
 			if (fmt == 'q') {
-				r_cons_printf ("%s\n", h->name);
+				r_cons_println (h->name);
 			} else if (fmt == 'j') {
 				const char *str_bits = "32, 64";
 				const char *license = "GPL";
@@ -352,7 +352,7 @@ static int cb_asmfeatures(void *user, void *data) {
 			if (core->assembler->cur->features) {
 				char *feat = strdup (core->assembler->cur->features);
 				r_str_replace_char (feat, ',','\n');
-				r_cons_printf ("%s\n", feat);
+				r_cons_println (feat);
 				free (feat);
 			}
 		}

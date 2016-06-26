@@ -1067,7 +1067,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			if (comment) {
 				r_cons_printf ("    %s; %s", COLOR(ds,color_comment),comment);
 			}
-			r_cons_printf ("%s\n", COLOR_RESET (ds));
+			r_cons_println (COLOR_RESET (ds));
 		}
 		r_list_free (regs);
 		// it's already empty, but rlist instance is still there
@@ -3313,7 +3313,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 				opcolor = r_print_color_op_type (core->print, ds->analop.type);
 				r_cons_printf ("%s%s" Color_RESET "\n", opcolor, ds->opstr);
 			} else {
-				r_cons_printf ("%s\n", ds->opstr);
+				r_cons_println (ds->opstr);
 			}
 			R_FREE (ds->opstr);
 		}
@@ -3619,7 +3619,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 							buf_asm);
 					free (buf_asm);
 				} else {
-					r_cons_printf ("%s\n", asmop.buf_asm);
+					r_cons_println (asmop.buf_asm);
 				}
 				break;
 			case '=':

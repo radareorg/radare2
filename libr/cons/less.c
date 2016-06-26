@@ -53,7 +53,7 @@ static void printpage (const char *line, int *index, RList **mla,
 		color_line (line + index[i], p, mla[i]);
 		r_strpool_ansi_chop (p, w);
 		r_cons_reset_colors ();
-		r_cons_printf ("%s\n", p->str);
+		r_cons_println (p->str);
 	}
 	r_strpool_free(p);
 	r_cons_flush ();

@@ -163,7 +163,7 @@ R_API int r_core_visual_hud(RCore *core) {
 	r_cons_clear ();
 	if (res) {
 		p = strchr (res, '\t');
-		r_cons_printf ("%s\n", res);
+		r_cons_println (res);
 		r_cons_flush ();
 		if (p) r_core_cmd0 (core, p+1);
 		free (res);
@@ -1994,7 +1994,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	else
 		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %s%d %s]> %s %s\n",
 			core->offset, pcs, core->blocksize, filename, bar, pos);
-	r_cons_printf ("%s", foo);
+	r_cons_print (foo);
 	if (color) r_cons_strcat (Color_RESET);
 }
 

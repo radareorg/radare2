@@ -527,7 +527,7 @@ static int cmd_write(void *data, const char *input) {
 			while (*p==' ') p++;
 			p = r_file_path (p);
 			if (p) {
-				r_cons_printf ("%s\n", p);
+				r_cons_println (p);
 				free (p);
 			}
 		}

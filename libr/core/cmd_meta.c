@@ -262,7 +262,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			  char *comment = r_meta_get_string (
 					  core->anal, R_META_TYPE_COMMENT, addr);
 			  if (comment) {
-				  r_cons_printf ("%s\n", comment);
+				  r_cons_println (comment);
 				  free (comment);
 			  }
 		  }
@@ -643,7 +643,7 @@ void r_comment_vars (RCore *core, const char *input) {
 					r_meta_set_var_comment (core->anal, input[0], idx, fcn->addr, text);
 					free (text);
 				} else {
-					r_cons_printf ("%s\n", oldcomment);
+					r_cons_println (oldcomment);
 				}
 			} else {
 				r_meta_set_var_comment (core->anal, input[0], idx, fcn->addr, comment);

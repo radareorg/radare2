@@ -2404,7 +2404,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 		}
 		d = r_anal_data (core->anal, addr + i, buf + i, len - i);
 		str = r_anal_data_to_string (d);
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 
 		if (d) {
 			switch (d->type) {

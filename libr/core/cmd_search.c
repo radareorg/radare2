@@ -1423,7 +1423,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 			if (!str || !*str) break;
 			if (!strcmp (str, "undefined"))
 				continue;
-			r_cons_printf ("%s\n", str);
+			r_cons_println (str);
 		}
 		return;
 	}

@@ -193,9 +193,9 @@ static int cmd_alias(void *data, const char *input) {
 	} else if (!buf[1]) {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
-		for (i=0; i<count; i++)
-			r_cons_printf ("%s\n", keys[i]);
-
+		for (i=0; i<count; i++) {
+			r_cons_println (keys[i]);
+		}
 	/* Execute alias */
 	} else {
 		char *v;
@@ -274,7 +274,7 @@ static int cmd_rap(void *data, const char *input) {
 		if (input[1]=='=') {
 			// swap core->cmdremote = core->cmdremote? 0: 1;
 			core->cmdremote = input[2]? 1: 0;
-			r_cons_printf ("%s\n", r_str_bool (core->cmdremote));
+			r_cons_println (r_str_bool (core->cmdremote));
 		} else {
 			r_io_system (core->io, input+1);
 		}
@@ -519,7 +519,7 @@ static int cmd_interpret(void *data, const char *input) {
 			}
 			rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
 			if (rbuf) {
-				r_cons_printf ("%s", rbuf);
+				r_cons_print (rbuf);
 				free (rbuf);
 			}
 		} else r_core_rtr_cmds (core, input+1);
@@ -611,7 +611,9 @@ static int cmd_kuery(void *data, const char *input) {
 	switch (input[0]) {
 	case ' ':
 		out = sdb_querys (s, NULL, 0, input+1);
-		if (out) r_cons_printf ("%s\n", out);
+		if (out) {
+			r_cons_println (out);
+		}
 		free (out);
 		break;
 	//case 's': r_pair_save (s, input+3); break;
@@ -642,7 +644,9 @@ static int cmd_kuery(void *data, const char *input) {
 				break;
 			if (!*buf) break;
 			out = sdb_querys (s, NULL, 0, buf);
-			if (out) r_cons_printf ("%s\n", out);
+			if (out) {
+				r_cons_println (out);
+			}
 		}
 		break;
 	case 'o':
@@ -730,7 +734,7 @@ static int cmd_kuery(void *data, const char *input) {
 		s = sdb_ns (core->sdb, inp+1, 1);
 		out = sdb_querys (s, NULL, 0, sp+1);
 		if (out) {
-			r_cons_printf ("%s\n", out);
+			r_cons_println (out);
 			free (out);
 		}
 		free (inp);
@@ -929,7 +933,7 @@ static int cmd_thread(void *data, const char *input) {
 				r_cons_printf ("Task %d Status %c Command %s\n",
 					task->id, task->state, task->msg->text);
 				if (task->msg->res)
-					r_cons_printf ("%s\n", task->msg->res);
+					r_cons_println (task->msg->res);
 			} else eprintf ("Cannot find task\n");
 		} else {
 			r_core_task_list (core, 1);
@@ -1040,7 +1044,7 @@ static int cmd_system(void *data, const char *input) {
 		} else {
 			if (!r_sandbox_enable (0)) {
 				core->cmdremote = input[1]? 1: 0;
-				r_cons_printf ("%s\n", r_str_bool (core->cmdremote));
+				r_cons_println (r_str_bool (core->cmdremote));
 			}
 		}
 		break;

@@ -276,7 +276,7 @@ R_API char *r_cons_message(const char *msg) {
 	r_cons_clear ();
 	r_cons_gotoxy ((cols - len) / 2, rows / 2); // XXX
 	/// TODO: add square, or talking clip here
-	r_cons_printf ("%s\n", msg);
+	r_cons_println (msg);
 	r_cons_flush ();
 	r_cons_gotoxy (0, rows - 2); // XXX
 	r_cons_any_key (NULL);
@@ -295,7 +295,7 @@ main () {
 	res = r_cons_hud (fl, NULL, 0);
 	r_cons_clear ();
 	if (res) {
-		r_cons_printf ("%s\n", res);
+		r_cons_println (res);
 		free (res);
 	}
 	r_cons_flush ();

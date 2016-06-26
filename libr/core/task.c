@@ -16,7 +16,11 @@ R_API void r_core_task_list (RCore *core, int mode) {
 			r_cons_printf ("Task %d Status %c Command %s\n",
 					task->id, task->state, task->msg->text);
 			if (mode == 1) {
-				r_cons_printf ("%s\n", task->msg->res? task->msg->res: "");
+				if (task->msg->res) {
+					r_cons_println (task->msg->res);
+				} else {
+					r_cons_println ("");
+				}
 			}
 			break;
 		}
@@ -109,7 +113,7 @@ R_API void r_core_task_add_bg (RCore *core, RCoreTask *task) {
 
 R_API int r_core_task_cat (RCore *core, int id) {
 	RCoreTask *task = r_core_task_get (core, id);
-	r_cons_printf ("%s\n", task->msg->res);
+	r_cons_println (task->msg->res);
 	r_core_task_del (core, id);
 	return true;
 }

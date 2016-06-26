@@ -14,7 +14,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 			switch (fmt) {
 			case 'j':r_cons_printf ("%s[%d,\"%s\"]",
 				printed?",":"",id, str); break;
-			case 't':r_cons_printf ("%s\n", str); break;
+			case 't':r_cons_println (str); break;
 			case '*':r_cons_printf ("\"l %s\"\n", str); break;
 			default: r_cons_printf ("%d %s\n", id, str); break;
 			}

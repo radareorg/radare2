@@ -427,7 +427,7 @@ int main(int argc, char **argv, char **envp) {
 			{
 				char *out = sdb_querys (r.sdb, NULL, 0, optarg);
 				if (out && *out) {
-					r_cons_printf ("%s\n", out);
+					r_cons_println (out);
 				}
 				free (out);
 			}
