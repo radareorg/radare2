@@ -287,7 +287,7 @@ R_API void r_cons_pal_save (const char *sdbfile) {
 static void r_cons_pal_show_gs () {
 	int i, n;
 
-	r_cons_printf ("\nGreyscale:\n");
+	r_cons_print ("\nGreyscale:\n");
 	for (i = 0x08, n = 0;  i <= 0xee; i += 0xa) {
 		char fg[32], bg[32];
 
@@ -307,7 +307,7 @@ static void r_cons_pal_show_gs () {
 static void r_cons_pal_show_256 () {
 	int r, g, b;
 
-	r_cons_printf ("\n\nXTerm colors:\n");
+	r_cons_print ("\n\nXTerm colors:\n");
 	for (r = 0x00; r <= 0xff; r += 0x28) {
 		if (r == 0x28) r = 0x5f;
 		for (b = 0x00; b <= 0xff; b += 0x28) {
@@ -333,7 +333,7 @@ static void r_cons_pal_show_rgb () {
 	const int inc = 3;
 	int i, j, k, n = 0;
 
-	r_cons_printf ("\n\nRGB:\n");
+	r_cons_print ("\n\nRGB:\n");
 	for (i = n = 0; i <= 0xf; i += inc) {
 		for (k = 0; k <= 0xf; k += inc) {
 			for (j = 0; j <= 0xf; j += inc) {
@@ -399,7 +399,7 @@ R_API void r_cons_pal_list (int rad) {
 	char **color, rgbstr[32];
 	const char *hasnext;
 	int i;
-	if (rad == 'j') r_cons_printf ("{");
+	if (rad == 'j') r_cons_print ("{");
 	for (i = 0; keys[i].name; i++) {
 		color = (char**) (p + keys[i].off);
 		switch (rad) {
@@ -454,7 +454,7 @@ R_API void r_cons_pal_list (int rad) {
 				keys[i].name);
 		}
 	}
-	if (rad == 'j') r_cons_printf ("}\n");
+	if (rad == 'j') r_cons_print ("}\n");
 }
 
 R_API int r_cons_pal_set(const char *key, const char *val) {

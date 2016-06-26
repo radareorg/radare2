@@ -175,7 +175,7 @@ static int cmd_alias(void *data, const char *input) {
 		*desc = 0;
 		v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
-			r_cons_printf ("%s\n", v);
+			r_cons_println (v);
 			free (buf);
 			return 1;
 		} else {

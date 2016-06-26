@@ -341,7 +341,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 static void cmd_syscall_do(RCore *core, int n) {
 	char *msg = cmd_syscall_dostr (core, n);
 	if (msg) {
-		r_cons_printf ("%s\n", msg);
+		r_cons_println (msg);
 		free (msg);
 	}
 }
@@ -1061,7 +1061,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_anal_str_to_fcn (core->anal, f, arg);
 			} else {
 				char *str = r_anal_fcn_to_string (core->anal, f);
-				r_cons_printf ("%s\n", str);
+				r_cons_println (str);
 				free (str);
 			}
 		} else {
@@ -1109,9 +1109,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_afC);
 			} break;
 		case 'l':{ //afCl list all function Calling conventions.
-			r_cons_printf ("%s\n", r_anal_cc_type2str (R_ANAL_CC_TYPE_CDECL));
-			r_cons_printf ("%s\n", r_anal_cc_type2str (R_ANAL_CC_TYPE_STDCALL));
-			r_cons_printf ("%s\n", r_anal_cc_type2str (R_ANAL_CC_TYPE_FASTCALL));
+			r_cons_println (r_anal_cc_type2str (R_ANAL_CC_TYPE_CDECL));
+			r_cons_println (r_anal_cc_type2str (R_ANAL_CC_TYPE_STDCALL));
+			r_cons_println (r_anal_cc_type2str (R_ANAL_CC_TYPE_FASTCALL));
 			//THOSE are the only implemented ones
 			//should I test for null ... no ;)
 			} break;
@@ -1136,7 +1136,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}break;
 		case 0:{
 			const char *str = r_anal_cc_type2str (fcn->call);
-			r_cons_printf ("%s\n", str);
+			r_cons_println (str);
 		       }break;
 		default:
 			eprintf("See afC?\n");
@@ -1587,7 +1587,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			RRegItem *r;
 			RListIter *iter;
 			r_list_foreach (rs->regs, iter, r) {
-				r_cons_printf ("%s\n", r->name);
+				r_cons_println (r->name);
 			}
 		}
 	} break;
@@ -1596,7 +1596,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		break;
 	case 'C': // "arC"
 		if (core->anal->reg->reg_profile_cmt) {
-			r_cons_printf ("%s\n", core->anal->reg->reg_profile_cmt);
+			r_cons_println (core->anal->reg->reg_profile_cmt);
 		}
 		break;
 	case 'w':
@@ -1676,7 +1676,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			if (*name && name[1]) {
 				r = r_reg_cond_get (core->dbg->reg, name);
 				if (r) {
-					r_cons_printf ("%s\n", r->name);
+					r_cons_println (r->name);
 				} else {
 					int id = r_reg_cond_from_string (name);
 					RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
@@ -1743,7 +1743,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		break;
 	case 't': // "drt"
 		for (i = 0; (name = r_reg_get_type (i)); i++)
-			r_cons_printf ("%s\n", name);
+			r_cons_println (name);
 		break;
 	case 'n': // "drn" // "arn"
 		if (*(str + 1) == '\0') {
@@ -1751,9 +1751,11 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			break;
 		}
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str + 2));
-		if (name && *name)
-			r_cons_printf ("%s\n", name);
-		else eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
+		if (name && *name) {
+			r_cons_println (name);
+		} else {
+			eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
+		}
 		break;
 	case 'd':								// "drd"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage
@@ -1998,7 +2000,7 @@ static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
 			r_cons_printf ("%s\"ascii\":true", COMMA);
 		if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
 			r_cons_printf ("%s\"sequence\":true", COMMA);
-		r_cons_printf ("}");
+		r_cons_print ("}");
 		break;
 	default:
 		if (type & R_ANAL_ADDR_TYPE_PROGRAM)
@@ -2207,7 +2209,7 @@ static void showregs (RList *list) {
 		char *reg;
 		RListIter *iter;
 		r_list_foreach (list, iter, reg) {
-			r_cons_printf ("%s", reg);
+			r_cons_print (reg);
 			if (iter->n) r_cons_printf (" ");
 		}
 		r_cons_newline();
@@ -2281,7 +2283,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		char *reg;
 		r_list_foreach (stats.regs, iter, reg) {
 			if (!contains (stats.regwrite, reg)) {
-				r_cons_printf ("%s", reg);
+				r_cons_print (reg);
 				if (iter->n) r_cons_printf (" ");
 			}
 		}
@@ -2299,7 +2301,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			char *reg;
 			r_list_foreach (stats.regs, iter, reg) {
 				if (!contains (stats.regwrite, reg)) {
-					r_cons_printf ("%s", reg);
+					r_cons_print (reg);
 					if (iter->n) r_cons_printf (" ");
 				}
 			}
@@ -2545,7 +2547,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (esil && esil->stats) {
 				char *out = sdb_querys (esil->stats, NULL, 0, input + 2);
 				if (out) {
-					r_cons_printf ("%s\n", out);
+					r_cons_println (out);
 					free (out);
 				}
 			} else eprintf ("esil.stats is empty. Run 'aei'\n");
@@ -2942,8 +2944,9 @@ static void cmd_asf(RCore *core, const char *input) {
 	} else {
 		ret = sdb_querys (core->anal->sdb_fcnsign, NULL, 0, "*");
 	}
-	if (ret && *ret)
-		r_cons_printf ("%s\n", ret);
+	if (ret && *ret) {
+		r_cons_println (ret);
+	}
 	free (ret);
 }
 
@@ -2974,7 +2977,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			if ((n = atoi (input + 2)) > 0) {
 				si = r_syscall_get (core->anal->syscall, n, -1);
 				if (si)
-					r_cons_printf ("%s\n", si->name);
+					r_cons_println (si->name);
 				else eprintf ("Unknown syscall number\n");
 			} else {
 				n = r_syscall_get_num (core->anal->syscall, input + 2);
@@ -3014,7 +3017,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		if (input[1] == ' ') {
 			out = sdb_querys (core->anal->syscall->db, NULL, 0, input + 2);
 			if (out) {
-				r_cons_printf ("%s\n", out);
+				r_cons_println (out);
 				free (out);
 			}
 		} else eprintf ("|ERROR| Usage: ask [query]\n");
@@ -3630,7 +3633,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 	{
 		Sdb *db = r_agraph_get_sdb (core->graph);
 		char *o = sdb_querys (db, "NULL", 0, "*");
-		r_cons_printf ("%s", o);
+		r_cons_print (o);
 		free (o);
 		break;
 	}
@@ -3847,7 +3850,7 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 			if (input[2] == ' ') {
 				char *s = sdb_querys (core->anal->esil->db_trace,
 						NULL, 0, input + 3);
-				r_cons_printf ("%s\n", s);
+				r_cons_println (s);
 				free (s);
 			} else {
 				eprintf ("Usage: atek [query]\n");
@@ -4536,7 +4539,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'k':
 			r = r_anal_data_kind (core->anal,
 					core->offset, core->block, core->blocksize);
-			r_cons_printf ("%s\n", r);
+			r_cons_println (r);
 			break;
 		case '\0':
 			r_core_anal_data (core, core->offset, 2 + (core->blocksize / 4), 1);

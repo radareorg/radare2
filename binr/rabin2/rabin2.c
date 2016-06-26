@@ -848,7 +848,7 @@ int main(int argc, char **argv) {
 	if (action&x) {\
 		if (isradjson) r_cons_printf ("%s\"%s\":",actions_done?",":"",n);\
 		if (!r_core_bin_info (&core, y, rad, va, &filter, chksum)) {\
-			if (isradjson) r_cons_printf ("false");\
+			if (isradjson) r_cons_print ("false");\
 		};\
 		actions_done++;\
 	}\
@@ -859,7 +859,7 @@ int main(int argc, char **argv) {
 	filter.name = name;
 	r_cons_new ()->is_interactive = false;
 
-	if (isradjson) r_cons_printf ("{");
+	if (isradjson) r_cons_print ("{");
 
 	// List fatmach0 sub-binaries, etc
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&

@@ -111,8 +111,10 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 		r_cons_gotoxy (0, 0);
 		current_entry_n = 0;
 		selected_entry = NULL;
-		if (prompt && *prompt)
-			r_cons_printf (">> %s\n", prompt);
+		if (prompt && *prompt) {
+			r_cons_print (">> ");
+			r_cons_println (prompt);
+		}
 		r_cons_printf ("> %s|\n", user_input);
 		// Iterate over each entry in the list
 		r_list_foreach (list, iter, current_entry) {
