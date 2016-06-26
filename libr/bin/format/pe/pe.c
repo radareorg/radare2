@@ -2000,7 +2000,7 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *re
 		if (dbg_data_len<1)  {
 			return false;
 		}
-		dbg_data = (ut8 *) malloc (dbg_data_len + 1);
+		dbg_data = (ut8 *) calloc (1, dbg_data_len + 1);
 		if (dbg_data) {
 			r_buf_read_at (bin->b, dbg_data_poff, dbg_data, dbg_data_len);
 			result = get_debug_info(img_dbg_dir_entry, dbg_data, dbg_data_len, res);
