@@ -868,10 +868,12 @@ R_API int r_io_plugin_close(RIO *io, RIODesc *desc) {
 
 R_API int r_io_close(RIO *io, RIODesc *d) {
 	RIODesc *cur = NULL;
-	if (io == NULL || d == NULL)
+	if (io == NULL || d == NULL) {
 		return -1;
-	if (d != io->desc)
+	}
+	if (d != io->desc) {
 		cur = io->desc;
+	}
 	if (r_io_use_desc (io, d)) {
 		int nfd = d->fd;
 		RIODesc *desc = r_io_desc_get (io, nfd);
@@ -883,6 +885,9 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 			r_io_section_rm_all (io, nfd);
 			r_io_plugin_close (io, io->desc);
 			//r_io_desc_del (io, desc->fd);
+		}
+		if (nfd == io->raised) {
+			io->raised = -1;
 		}
 	}
 	io->desc = cur;
