@@ -434,7 +434,11 @@ static int __close(RIODesc *fd) {
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-	RIOMach *riom = (RIOMach*)fd->data;
+	RIOMach *riom;
+	if (!io || !fd || cmd || !fd->data) {
+		return 0;
+	}
+	riom = (RIOMach*)fd->data;
 	/* XXX ugly hack for testing purposes */
 	if (!strncmp (cmd, "perm", 4)) {
 		int perm = r_str_rwx (cmd + 4);
