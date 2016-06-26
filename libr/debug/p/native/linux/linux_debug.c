@@ -306,7 +306,7 @@ static void print_fpu (void *f, int r){
 	}
 #else
 	PRINT_FPU (fpregs);
-	for(i = 0;i < 8; i++) {
+	for (i = 0;i < 8; i++) {
 		ut64 *b = (ut64 *)&fpregs.st_space[i*4];
 		ut32 *c = (ut32*)&fpregs.st_space;
 		float *f = (float *)&fpregs.st_space;
@@ -497,11 +497,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 
 int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 	if (type == R_REG_TYPE_DRX) {
-#if __POWERPC__
-		// no drx for powerpc
-		return false;
-// XXX: this android check is only for arm
-#elif !__ANDROID__
+#if !__ANDROID__ && (__i386__ || __x86_64__)
 		int i;
 		long *val = (long*)buf;
 		for (i = 0; i < 8; i++) { // DR0-DR7
