@@ -1591,7 +1591,9 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode) {
 	RBinSection *section = getsection (a, "debug_abbrev");
 	RBinDwarfDebugAbbrev *da = NULL;
 	RBinFile *binfile = a ? a->cur: NULL;
-
+	if (section->size > a->cur->size) {
+		return NULL;
+	}
 	if (binfile && section) {
 		len = section->size;
 		buf = calloc (1,len);

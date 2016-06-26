@@ -631,9 +631,13 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 			sdb_ns_set (sdb_verdef, key, sdb_parent);
 		}
 
-		i += verdef->vd_next;
 		snprintf (key, sizeof (key), "verdef%d", cnt);
 		sdb_ns_set (sdb, key, sdb_verdef);
+		if (!verdef->vd_next) {
+			sdb_free (sdb_verdef);
+			goto out_error;
+		}
+		i += verdef->vd_next;
 	}
 	free (defs);
 	return sdb;
@@ -778,7 +782,7 @@ static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 		if (size < 0 || size > bin->size) {
 			eprintf ("Warning: Too big version info field %d (%d)\n", i, size);
-			continue;
+			break;
 		}
 		switch (bin->shdr[i].sh_type) {
 		case SHT_GNU_verdef:
