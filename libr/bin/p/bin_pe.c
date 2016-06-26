@@ -228,8 +228,12 @@ static RList* imports(RBinFile *arch) {
 
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
-	if (!(ret = r_list_new ()) || !(relocs = r_list_new ()))
+	if (!(ret = r_list_new ()))
 		return NULL;
+	if (!(relocs = r_list_new ())) {
+		free (ret);
+		return NULL;
+	}
 
 	ret->free = free;
 	relocs->free = free;
