@@ -116,6 +116,11 @@ R_API void r_cons_color (int fg, int r, int g, int b) {
 	r_cons_printf ("\x1b[%d;5;%dm", fg? 48: 38, k);
 }
 
+R_API void r_cons_println(const char* str) {
+	r_cons_print (str);
+	r_cons_print ("\n");
+}
+
 R_API void r_cons_strcat_justify (const char *str, int j, char c) {
 	int i, o, len;
 	for (o=i=len=0; str[i]; i++, len++) {

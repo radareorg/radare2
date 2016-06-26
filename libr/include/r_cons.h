@@ -403,7 +403,7 @@ R_API void r_cons_set_last_interactive(void);
 R_API void r_cons_printf(const char *format, ...);
 R_API void r_cons_strcat(const char *str);
 #define r_cons_print(x) r_cons_strcat (x)
-#define r_cons_println(x) r_cons_strcat (x); r_cons_strcat("\n");
+R_API void r_cons_println(const char* str);
 R_API void r_cons_strcat_justify (const char *str, int j, char c);
 R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
