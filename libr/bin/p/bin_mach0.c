@@ -562,7 +562,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 	return ret;
 }
 
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!arch->o->sections) {

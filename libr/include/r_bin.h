@@ -280,7 +280,7 @@ typedef struct r_bin_plugin_t {
 	Sdb * (*get_sdb)(RBinObject *obj);
 	int (*load)(RBinFile *arch);
 	void *(*load_bytes)(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
-	int (*size)(RBinFile *bin); // return ut64 maybe? meh
+	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	int (*destroy)(RBinFile *arch);
 	int (*check)(RBinFile *arch);
 	int (*check_bytes)(const ut8 *buf, ut64 length);

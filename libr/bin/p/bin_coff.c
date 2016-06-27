@@ -255,7 +255,7 @@ static RList *fields(RBinFile *arch) {
 }
 
 
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	return 0;
 }
 

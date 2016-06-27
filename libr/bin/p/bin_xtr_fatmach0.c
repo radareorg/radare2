@@ -78,7 +78,7 @@ static bool load(RBin *bin) {
 	return ((bin->cur->xtr_obj = r_bin_fatmach0_new (bin->file)) != NULL);
 }
 
-static int size(RBin *bin) {
+static ut64 size(RBin *bin) {
 	// TODO
 	return 0;
 }
