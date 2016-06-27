@@ -1668,10 +1668,11 @@ int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
 #if R_BIN_MACH064
 	return 64;
 #else
-	if (bin->entry & 1) {
+	//this hack only applies with ARM cpu 
+	if (bin->hdr.cputype == CPU_TYPE_ARM && bin->entry & 1) {
 		return 16;
 	}
-	if ((bin->hdr.cpusubtype & 0xff) == CPU_SUBTYPE_ARM_V7K) {
+	if ((bin->hdr.cpusubtype & CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM_V7K) {
 		return 16;
 	}
 	return 32;
