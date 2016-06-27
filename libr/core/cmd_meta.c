@@ -633,7 +633,8 @@ void r_comment_vars (RCore *core, const char *input) {
 			free (heap_comment);
 			break;
 		}
-		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1 ,idx)) {
+		r_anal_var_free (var);
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0], 1, idx)) {
 			eprintf ("cant find variable at given offset\n");
 		} else {
 			oldcomment = r_meta_get_var_comment (core->anal, input[0], idx, fcn->addr);
@@ -664,11 +665,12 @@ void r_comment_vars (RCore *core, const char *input) {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
 		}
-		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1 ,idx)) {
+		r_anal_var_free (var);
+		//XXX TODO here we leak a var
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1,idx)) {
 			eprintf ("cant find variable at given offset\n");
 			break;
 		}
-
 		r_meta_var_comment_del (core->anal, input[0], idx, fcn->addr);
 		break;
 	case '!': {
@@ -678,14 +680,14 @@ void r_comment_vars (RCore *core, const char *input) {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
 		}
-		oldcomment = r_meta_get_var_comment ( core->anal, input[0], var->delta, fcn->addr);
+		oldcomment = r_meta_get_var_comment (core->anal, input[0], var->delta, fcn->addr);
 		comment = r_core_editor (core, NULL, oldcomment);
 		if (comment) {
 			r_meta_var_comment_del (core->anal, input[0], var->delta, fcn->addr);
 			r_meta_set_var_comment (core->anal, input[0], var->delta, fcn->addr, comment);
 			free (comment);
 		}
-		free (var);
+		r_anal_var_free (var);
 		}
 		break;
 	}

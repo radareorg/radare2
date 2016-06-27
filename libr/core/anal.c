@@ -1860,6 +1860,7 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 			r_anal_op (core->anal, &op, 0, buf + pos, sz);
 			op.addr = bb->addr + pos;
 			fill_args (core->anal, fcn, &op);
+			r_anal_op_fini (&op);
 		}
 	}
 
@@ -2831,7 +2832,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	RAnalEsil *ESIL = core->anal->esil;
 	const char *pcname;
 	RAsmOp asmop;
-	RAnalOp op;
+	RAnalOp op = {0};
 	ut8 *buf = NULL;
 	int i, iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
@@ -2907,6 +2908,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		r_cons_break (cccb, core);
 		cur = addr + i;
+		free (op.mnemonic);
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i)) {
 			i += minopsize - 1;
 		}
@@ -2956,16 +2958,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						r_anal_ref_add (core->anal, dst, cur, 'd');
 					}
 				} else if ((core->anal->bits == 32 && !strcmp (core->anal->cpu, "mips"))) {
-				       ut64 dst = ESIL->cur;
-
+					ut64 dst = ESIL->cur;
 					if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name)
 						break;
-
 					if (!strcmp (op.src[0]->reg->name, "sp"))
 						break;
 					if (!strcmp (op.src[0]->reg->name, "zero"))
 						break;
-
 
 					if ((target && dst == ntarget) || !target) {
 						if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) &&
@@ -3030,5 +3029,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			}
 		}
 	}
+	free (buf);
+	free (op.mnemonic);
 	r_cons_break_end ();
 }

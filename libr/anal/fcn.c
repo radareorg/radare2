@@ -210,7 +210,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 
 #define VARPREFIX "local"
 #define ARGPREFIX "arg"
-static char *get_varname (RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
+static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
 	while (1) {
@@ -221,10 +221,9 @@ static char *get_varname (RAnal *a, RAnalFunction *fcn, char type, const char *p
 		if (!v) {
 			v = r_anal_var_get_byname (a, fcn, 'v', varname);
 		}
-		if (!v) {
-			break;
-		}
+		if (!v) break;
 		if (v->kind == type && R_ABS (v->delta) == idx) {
+			r_anal_var_free (v);
 			break;
 		}
 		free (varname);
@@ -232,8 +231,6 @@ static char *get_varname (RAnal *a, RAnalFunction *fcn, char type, const char *p
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
 	}
-
-
 	return varname;
 }
 
@@ -297,7 +294,7 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 #define gotoBeach(x) ret=x;goto beach;
 #define gotoBeachRet() goto beach;
 
-void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
+void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
 	st64 ptr;
 	char *sig = r_str_newf (",%s,%s", reg, sign);
