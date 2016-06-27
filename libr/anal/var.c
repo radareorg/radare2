@@ -465,6 +465,11 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 						r_list_free (list);
 						return NULL;
 					}
+					if (!vt.name || !vt.type) {
+						//This should be properly fixed
+						eprintf ("Warning null var at %s-%d\n", __FILE__, __LINE__);
+						continue;
+					}
 					av->delta = delta;
 					av->kind = kind;
 					av->name = strdup (vt.name);
