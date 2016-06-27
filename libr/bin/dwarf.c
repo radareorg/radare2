@@ -1275,16 +1275,16 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		}
 
 		for (i = 0; i < da->decls[abbr_code - 1].length; i++) {
-			if (cu->dies[cu->length].length ==
-					cu->dies[cu->length].capacity)
+			if (cu->dies[cu->length].length == cu->dies[cu->length].capacity) {
 				r_bin_dwarf_expand_die (&cu->dies[cu->length]);
+			}
 			buf = r_bin_dwarf_parse_attr_value (buf, buf_end-buf,
 					&da->decls[abbr_code - 1].specs[i],
 					&cu->dies[cu->length].attr_values[i],
 					&cu->hdr, debug_str, debug_str_len);
 
 			if (i < cu->dies[cu->length].capacity) {
-				eprintf ("Warning: malformed dwarf attribute capacity doesnt match length\n)");
+				eprintf ("Warning: malformed dwarf attribute capacity doesn't match length\n");
 				break;
 			}
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
