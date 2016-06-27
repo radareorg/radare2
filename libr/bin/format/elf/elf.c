@@ -551,14 +551,10 @@ static Sdb *store_versioninfo_gnu_verdef(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	Elf_(Shdr) *link_shdr = NULL;
 	Sdb *sdb;
 	int cnt, i;
-	ut32 shdr_size = 0;
-
-	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
+	if (shdr->sh_link > bin->ehdr.e_shnum) {
 		return false;
 	}
-	if (shdr->sh_link < shdr_size) {
-		link_shdr = &bin->shdr[shdr->sh_link];
-	}
+	link_shdr = &bin->shdr[shdr->sh_link];
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
 		section_name = &bin->shstrtab[shdr->sh_name];
