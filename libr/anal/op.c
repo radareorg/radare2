@@ -77,6 +77,7 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int ret = 0;
+	RAnalVar *tmp;
 
 	//len will end up in memcmp so check for negative	
 	if (!anal || len < 0) {
@@ -96,8 +97,11 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		ret = anal->cur->op (anal, op, addr, data, len);
 		op->addr = addr;
 		//free the previous var in op->var
-		r_anal_var_free (op->var);
-		op->var = get_used_var (anal, op);
+		tmp = get_used_var (anal, op);
+		if (tmp) {
+			r_anal_var_free (op->var);
+			op->var = tmp;
+		}
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}

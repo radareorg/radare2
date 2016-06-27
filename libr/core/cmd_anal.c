@@ -2924,8 +2924,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
-					r_core_anal_fcn (core, op.jump, addr,
-						R_ANAL_REF_TYPE_NULL, depth);
+					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 				}
 			}
 		} else {
@@ -2933,6 +2932,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		}
 		addr += (op.size > 0)? op.size: 1;
 		bufi += (op.size > 0)? op.size: 1;
+		r_anal_op_fini (&op);
 	}
 	free (buf);
 }

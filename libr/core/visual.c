@@ -635,8 +635,7 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 //  Returns true if we can use analysis to find the previous operation address,
 //  sets prev_addr to the value of the instruction numinstrs back.
 //  If we can't use the anal, then set prev_addr to UT64_MAX and return false;
-R_API bool r_core_prevop_addr (RCore* core, ut64 start_addr, int numinstrs,
-		ut64* prev_addr) {
+R_API bool r_core_prevop_addr (RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr) {
 	RAnalBlock* bb;
 	int i;
 	// Check that we're in a bb, otherwise this prevop stuff won't work.
