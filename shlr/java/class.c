@@ -2080,6 +2080,10 @@ R_API ut64 r_bin_java_parse_interfaces (RBinJavaObj *bin, const ut64 offset, con
 	bin->interfaces_offset = offset;
 	r_list_free (bin->interfaces_list);
 	bin->interfaces_list = r_list_newf (r_bin_java_interface_free);
+	if (offset + 2 > len) {
+		bin->interfaces_size = 0;
+		return 0;
+	}
 	bin->interfaces_count = R_BIN_JAVA_USHORT (if_buf, 0);
 	adv += 2;
 	IFDBG eprintf ("Interfaces count: %d\n", bin->interfaces_count);
