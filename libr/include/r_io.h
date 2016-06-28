@@ -489,6 +489,7 @@ extern RIOPlugin r_io_plugin_windbg;
 extern RIOPlugin r_io_plugin_r2pipe;
 extern RIOPlugin r_io_plugin_r2web;
 extern RIOPlugin r_io_plugin_bochs;
+extern RIOPlugin r_io_plugin_w32r0;
 #endif
 
 #ifdef __cplusplus

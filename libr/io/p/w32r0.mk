@@ -1,0 +1,8 @@
+OBJ_W32R0=io_w32r0.o
+
+STATIC_OBJ+=${OBJ_W32R0}
+TARGET_W32R0=io_w32r0.${EXT_SO}
+ALL_TARGETS+=${TARGET_W32R0}
+
+${TARGET_W32R0}: ${OBJ_W32R0}
+	${CC} $(call libname,io_w32r0) ${CFLAGS} -o ${TARGET_W32R0} ${OBJ_W32R0} -lr_io
