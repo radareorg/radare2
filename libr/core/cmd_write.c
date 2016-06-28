@@ -734,7 +734,7 @@ static int cmd_write(void *data, const char *input) {
 	case 'r': //wr
 		off = r_num_math (core->num, input+1);
 		len = (int)off;
-		if (len>0) {
+		if (len > 0) {
 			buf = malloc (len);
 			if (buf != NULL) {
 				r_num_irand ();
@@ -856,7 +856,7 @@ static int cmd_write(void *data, const char *input) {
 					"wci","","commit write cache",
 					NULL
 				};
-				r_core_cmd_help(core, help_msg);
+				r_core_cmd_help (core, help_msg);
 			}
 			break;
 		case '*':
@@ -869,7 +869,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		}
 		break;
-	case ' ':
+	case ' ': // "w"
 		/* write string */
 		len = r_str_unescape (str);
 		r_core_write_at (core, core->offset, (const ut8*)str, len);
@@ -880,13 +880,17 @@ static int cmd_write(void *data, const char *input) {
 		WSEEK (core, len);
 		r_core_block_read (core, 0);
 		break;
-	case 'z':
+	case 'z': // "wz"
 		/* write zero-terminated string */
 		len = r_str_unescape (str);
 		r_core_write_at (core, core->offset, (const ut8*)str + 1, len);
+		if () {
+			core->num->value = len;
+		} else {
+			core->num->value = 0;
+		}
 #if 0
 		r_io_use_desc (core->io, core->file->desc);
-		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 #endif
 		WSEEK (core, len + 1);
 		r_core_block_read (core, 0);
@@ -937,9 +941,8 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'w':
 		str++;
-		len = (len-1)<<1;
-		if (len>0) tmp = malloc (len+1);
-		else tmp = NULL;
+		len = (len - 1) << 1;
+		tmp = (len > 0) ? malloc (len + 1) : NULL;
 		if (tmp) {
 			for (i=0; i<len; i++) {
 				if (i%2) tmp[i] = 0;
@@ -951,12 +954,14 @@ static int cmd_write(void *data, const char *input) {
 			WSEEK (core, len);
 			r_core_block_read (core, 0);
 			free (tmp);
-		} else eprintf ("Cannot malloc %d\n", len);
+		} else {
+			eprintf ("Cannot malloc %d\n", len);
+		}
 		break;
 	case 'x':
 		switch (input[1]) {
-		case 'f':
-			arg = (const char *)(input+((input[2]==' ')?3:2));
+		case 'f': // "wxf"
+			arg = (const char *)(input + ((input[2]==' ')? 3: 2));
 			if (!strcmp (arg, "-")) {
 				int len;
 				ut8 *out;
@@ -965,29 +970,38 @@ static int cmd_write(void *data, const char *input) {
 					out = (ut8 *)strdup (in);
 					if (out) {
 						len = r_hex_str2bin (in, out);
-						if (len>0)
+						if (len > 0) {
 							r_io_write_at (core->io, core->offset, out, len);
+							core->num->value = len;
+						} else {
+							core->num->value = 0;
+						}
 						free (out);
 					}
 					free (in);
 				}
 			} else if ((buf = r_file_slurp_hexpairs (arg, &size))) {
 				r_io_use_desc (core->io, core->file->desc);
-				r_io_write_at (core->io, core->offset, buf, size);
-				WSEEK (core, size);
+				if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
+					core->num->value = size;
+					WSEEK (core, size);
+				}
 				free (buf);
 				r_core_block_read (core, 0);
 			} else eprintf ("Cannot open file '%s'\n", arg);
 			break;
-		case 's':
+		case 's': // "wxs"
 			{
 				int len = cmd_write_hexpair (core, input + 1);
 				if (len > 0) {
 					r_core_seek_delta (core, len);
+					core->num->value = len;
+				} else {
+					core->num->value = 0;
 				}
 			}
 			break;
-		case ' ':
+		case ' ': // "wx ..."
 			cmd_write_hexpair (core, input + 1);
 			break;
 		default:
