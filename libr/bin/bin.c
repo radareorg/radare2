@@ -362,8 +362,11 @@ static void r_bin_object_delete_items(RBinObject *o) {
 	r_list_free (o->classes);
 	r_list_free (o->lines);
 	sdb_free (o->kv);
-	if (o->mem) o->mem->free = mem_free;
+	if (o->mem) {
+		o->mem->free = mem_free;
+	}
 	r_list_free (o->mem);
+	o->mem = NULL;
 	o->entries = NULL;
 	o->fields = NULL;
 	o->imports = NULL;
