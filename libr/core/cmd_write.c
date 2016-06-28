@@ -14,18 +14,20 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	if (len != 0) {
 		if (len < 0) {
 			len = -len;
-			if (len < core->blocksize)
+			if (len < core->blocksize) {
 				buf[len-1] |= core->block[len-1] & 0xf;
+			}
 		}
 		r_core_write_at (core, core->offset, buf, len);
-		if (r_config_get_i (core->config, "cfg.wseek"))
+		if (r_config_get_i (core->config, "cfg.wseek")) {
 			r_core_seek_delta (core, len);
+		}
 		r_core_block_read (core, 0);
 	} else {
 		eprintf ("Error: invalid hexpair string\n");
 	}
 	free (buf);
-	return !len;
+	return len;
 }
 
 static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
@@ -404,7 +406,7 @@ static int cmd_write(void *data, const char *input) {
 		"ws"," pstring","write 1 byte for length and then the string",
 		"wt"," file [sz]","write to file (from current seek, blocksize or sz bytes)",
 		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
-		"wx"," 9090","write two intel nops",
+		"wx[fs]"," 9090","write two intel nops (from wxfile or wxseek)",
 		"wv"," eip+34","write 32-64 bit value",
 		"wz"," string","write zero terminated string (like w + \\x00",
 		NULL
@@ -977,8 +979,16 @@ static int cmd_write(void *data, const char *input) {
 				r_core_block_read (core, 0);
 			} else eprintf ("Cannot open file '%s'\n", arg);
 			break;
+		case 's':
+			{
+				int len = cmd_write_hexpair (core, input + 1);
+				if (len > 0) {
+					r_core_seek_delta (core, len);
+				}
+			}
+			break;
 		case ' ':
-			cmd_write_hexpair(core, input+1);
+			cmd_write_hexpair (core, input + 1);
 			break;
 		default:
 			{
@@ -986,6 +996,7 @@ static int cmd_write(void *data, const char *input) {
 				"Usage:", "wx[f] [arg]", "",
 				"wx", " 9090", "write two intel nops",
 				"wxf", " -|file", "write contents of hexpairs file here",
+				"wxs", " 9090", "write hexpairs and seek at the end",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			break;

@@ -2374,8 +2374,9 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 					r_cons_println (signame);
 			} else {
 				signum = r_debug_signal_resolve (core->dbg, arg);
-				if (signum>0)
-					r_cons_println (signum);
+				if (signum > 0) {
+					r_cons_printf ("%d\n", signum);
+				}
 			}
 		} else {
 			const char * help_message[] = {
