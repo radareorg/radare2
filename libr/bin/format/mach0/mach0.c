@@ -1431,7 +1431,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		if (!(relocs = calloc (1, (1 + bind_size + lazy_size) * sizeof (struct reloc_t))))
 			return NULL;
 
-		opcodes = calloc (1, bind_size + lazy_size);
+		opcodes = calloc (1, bind_size + lazy_size + 1);
 		if (!opcodes) {
 			free (relocs);
 			return NULL;
