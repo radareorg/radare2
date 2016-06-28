@@ -287,10 +287,10 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 
 #if __WINDOWS__ && !__CYGWIN__
 	int mode = 0;
-	status = w32_dbg_wait (dbg, pid);
-	if (status == R_DEBUG_REASON_NEW_LIB) {
+	reason = w32_dbg_wait(dbg, pid);
+	if (reason == R_DEBUG_REASON_NEW_LIB) {
 		mode = 'l';
-	} else if (status == R_DEBUG_REASON_EXIT_LIB) {
+	} else if (reason == R_DEBUG_REASON_EXIT_LIB) {
 		mode = 'u';
 	} else {
 		mode = 0;
@@ -299,7 +299,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
 			if (tracelib (dbg, mode=='l'? "load":"unload", r->lib))
-				status = R_DEBUG_REASON_TRAP;
+				reason = R_DEBUG_REASON_TRAP;
 		} else {
 			eprintf ("%soading unknown library.\n", mode?"L":"Unl");
 		}

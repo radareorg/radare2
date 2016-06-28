@@ -542,7 +542,6 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
 	/* if our debugger plugin has wait */
 	if (dbg->h && dbg->h->wait) {
 		reason = dbg->h->wait (dbg, dbg->pid);
-
 		if (reason == R_DEBUG_REASON_DEAD) {
 			eprintf ("\n==> Process finished\n\n");
 			// XXX(jjd): TODO: handle fallback or something else
@@ -753,7 +752,7 @@ R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
 
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
-	ut64 buf_pc, pc;
+	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
 	int steps_taken = 0;
 
@@ -791,21 +790,24 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
 			return steps_taken;
 		}
-
+		if (op.fail == -1) {
+			ins_size = pc + op.size;
+		} else {
+			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
+			ins_size = op.fail;
+		}
 		// Skip over all the subroutine calls
 		if (op.type == R_ANAL_OP_TYPE_CALL  ||
 			op.type == R_ANAL_OP_TYPE_CCALL ||
 			op.type == R_ANAL_OP_TYPE_UCALL ||
 			op.type == R_ANAL_OP_TYPE_UCCALL) {
-
-			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
-			if (!r_debug_continue_until (dbg, op.fail)) {
+			if (!r_debug_continue_until(dbg, ins_size)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return steps_taken;
 			}
 		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
 			//eprintf ("REP: skip to next instruction...\n");
-			if (!r_debug_continue_until (dbg, pc+op.size)) {
+			if (!r_debug_continue_until(dbg, ins_size)) {
 				eprintf ("step over failed over rep\n");
 				return steps_taken;
 			}
