@@ -291,6 +291,8 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	if (bin->phdr[i].p_offset > bin->size)
 		return false;
+	if (bin->phdr[i].p_offset + sizeof(Elf_(Dyn)) > bin->size)
+		return false;
 	tmp = dyn = (Elf_(Dyn)*)((ut8 *)bin->b->buf + bin->phdr[i].p_offset);
 	for (entries = 0; (ut8*)dyn < ((ut8*)tmp + dyn_size); dyn++) {
 	    	entries++;
