@@ -689,7 +689,7 @@ static RList* classes (RBinFile *arch) {
 		return NULL;
 	}
 	bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
-	if (bin->header.class_size>bin->size) {
+	if (bin->header.class_size > bin->size) {
 		eprintf ("Too many classes %d\n", bin->header.class_size);
 		return NULL;
 	}
@@ -716,8 +716,10 @@ static RList* classes (RBinFile *arch) {
 		if (entry.source_file >= bin->header.strings_size) {
 			continue;
 		}
-		r_buf_read_at (bin->b, bin->strings[entry.source_file],
-				(ut8*)name, sizeof (name));
+		if (bin->strings[entry.source_file] > bin->size) {
+			continue;
+		}
+		r_buf_read_at (bin->b, bin->strings[entry.source_file], (ut8*)name, sizeof (name));
 		//snprintf (ptr->name, sizeof (ptr->name), "field.%s.%d", name, i);
 		class = R_NEW0 (RBinClass);
 		// get source file name (ClassName.java)
