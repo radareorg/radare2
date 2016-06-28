@@ -226,7 +226,7 @@ R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, con
 	return false;
 }
 
-R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kind, const char* name) {
+R_API RAnalVar *r_anal_var_get_byname(RAnal *anal, RAnalFunction *fcn, char kind, const char* name) {
 	RList *var_list;
 	RListIter *iter;
 	RAnalVar *var = NULL, *itervar;
@@ -236,16 +236,21 @@ R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kin
 	var_list = r_anal_var_list (anal, fcn, kind);
 	r_list_foreach (var_list, iter, itervar) {
 		if (!strcmp (name, itervar->name)) {
-			var = itervar;
-		} else {
-			r_anal_var_free (itervar);
-		}
+			var = calloc (1, sizeof(RAnalVar));
+			if (!var) return 0;
+			memcpy (var, itervar, sizeof(RAnalVar));
+			var->name = strdup (itervar->name);
+			var->type = strdup (itervar->type);
+			var->accesses = r_list_clone (itervar->accesses);
+			var->stores = r_list_clone (itervar->stores);
+			break;
+		} 
 	}
-	free (var_list);
+	r_list_free (var_list);
 	if (!var || strcmp (name, var->name)) {
 		return 0;
 	}
-	return  var;
+	return var;
 }
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
@@ -459,6 +464,11 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 						free (varlist);
 						r_list_free (list);
 						return NULL;
+					}
+					if (!vt.name || !vt.type) {
+						//This should be properly fixed
+						eprintf ("Warning null var at %s-%d\n", __FILE__, __LINE__);
+						continue;
 					}
 					av->delta = delta;
 					av->kind = kind;

@@ -95,6 +95,8 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (len > 0 && anal->cur && anal->cur->op && strcmp (anal->cur->name, "null")) {
 		ret = anal->cur->op (anal, op, addr, data, len);
 		op->addr = addr;
+		//free the previous var in op->var
+		r_anal_var_free (op->var);
 		op->var = get_used_var (anal, op);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
