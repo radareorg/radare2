@@ -3352,6 +3352,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	if (nb_opcodes) { // Disassemble `nb_opcodes` opcodes.
 		if (nb_opcodes < 0) {
 			int count, nbytes = 0;
+
 			/* Backward disassembly of `nb_opcodes` opcodes:
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
@@ -3361,7 +3362,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				eprintf ("Too many backward instructions\n");
 				return 0;
 			}
-			if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
+
+			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &addr)) {
+				nbytes = core->offset - addr;
+			} else if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
 				/* workaround to avoid empty arrays */
 #define BWRETRY 0
 #if BWRETRY
