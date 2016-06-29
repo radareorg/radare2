@@ -1,4 +1,4 @@
-// (c) 2016 Jeffrey Crowell
+// (c) 2016 Jeffrey Crowell, Riccardo Schirone(ret2libc)
 // BSD 3 Clause License
 // radare2
 
@@ -14,7 +14,7 @@ const int kSkipListDepth = 15; // max depth
 RSkipListNode *r_skiplist_node_new (void *data) {
 	RSkipListNode *res = R_NEW (RSkipListNode);
 	if (!res) return NULL;
-	res->forward = R_NEWS (RSkipListNode *, kSkipListDepth);
+	res->forward = R_NEWS (RSkipListNode *, kSkipListDepth + 1);
 	if (!res->forward) goto err_forward;
 	res->data = data;
 	return res;
@@ -115,33 +115,39 @@ R_API void r_skiplist_free(RSkipList *list) {
 R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	RSkipListNode *update[kSkipListDepth+1];
 	RSkipListNode *x;
-	int i, x_level;
+	int i, x_level, new_level;
 
+	// locate insertion points in the lists of all levels
 	x = find_insertpoint (list, data, update);
+	// check whether the element is already in the list
 	if (x != list->head && list->compare(x->data, data) == 0) {
 		return x;
 	}
 
-	for (x_level = 0; rand() < RAND_MAX/2 && x_level < kSkipListDepth; x_level++);
+	// randomly choose the number of levels the new node will be put in
+	for (x_level = 0; rand() < RAND_MAX/2 && x_level <= kSkipListDepth; x_level++);
 
+	// update the `update` array with default values when the current node
+	// has a level greater than the current one
+	new_level = list->list_level;
 	if (x_level > list->list_level) {
 		for (i = list->list_level + 1; i <= x_level; i++) {
 			update[i] = list->head;
 		}
-		list->list_level = x_level;
+		new_level = x_level;
 	}
 
 	x = r_skiplist_node_new (data);
-	if (!x) {
-		eprintf ("can't even malloc!");
-		return NULL;
-	}
+	if (!x) return NULL;
 
-	// update forward links
+	// update forward links for all `update` points,
+	// by inserting the new element in the list in each level
 	for (i = 0; i <= x_level; i++) {
 		x->forward[i] = update[i]->forward[i];
 		update[i]->forward[i] = x;
 	}
+
+	list->list_level = new_level;
 	list->size++;
 	return x;
 }
@@ -151,21 +157,22 @@ R_API void r_skiplist_delete(RSkipList* list, void* data) {
 	int i;
 	RSkipListNode *update[kSkipListDepth + 1], *x;
 
+	// locate delete points in the lists of all levels
 	x = find_insertpoint (list, data, update);
+	// do nothing if the element is not present in the list
 	if (x == list->head || list->compare(x->data, data) != 0) {
 		return;
 	}
 
-	// Update the fwd pointers.
+	// update forward links for all `update` points,
+	// by removing the element from the list in each level
 	for (i = 0; i <= list->list_level; i++) {
-		if (update[i]->forward[i] != x) {
-			break;
-		}
+		if (update[i]->forward[i] != x) break;
 		update[i]->forward[i] = x->forward[i];
 	}
 	r_skiplist_node_free (list, x);
 
-	// Update the level.
+	// update the level of the list
 	while ((list->list_level > 0) &&
 		(list->head->forward[list->list_level] == list->head)) {
 		list->list_level--;
