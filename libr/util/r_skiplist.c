@@ -52,44 +52,45 @@ R_API void r_skiplist_free(RSkipList *list) {
 // Inserts an element to the skiplist, and returns a pointer to the element's
 // node.
 R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
-    int i, newLevel;
-    RSkipListNode *update[kSkipListDepth+1];
-    RSkipListNode *x;
+	int i, newLevel;
+	RSkipListNode *update[kSkipListDepth+1];
+	RSkipListNode *x;
 
-    x = list->head;
-    for (i = list->list_level; i >= 0; i--) {
-        while (x->forward[i] != list->head
-          && list->compare (x->forward[i]->data, data) < 0)
-            x = x->forward[i];
-        update[i] = x;
-    }
-    x = x->forward[0];
-    if (x != list->head && list->compare(x->data, data) == 0) {
+	x = list->head;
+	for (i = list->list_level; i >= 0; i--) {
+		while (x->forward[i] != list->head
+			&& list->compare (x->forward[i]->data, data) < 0) {
+			x = x->forward[i];
+		}
+		update[i] = x;
+	}
+	x = x->forward[0];
+	if (x != list->head && list->compare(x->data, data) == 0) {
 		return x;
 	}
 
-    for (newLevel = 0; rand() < RAND_MAX/2 && newLevel < kSkipListDepth; newLevel++);
+	for (newLevel = 0; rand() < RAND_MAX/2 && newLevel < kSkipListDepth; newLevel++);
 
-    if (newLevel > list->list_level) {
-        for (i = list->list_level+ 1; i <= newLevel; i++) {
-            update[i] = list->head;
+	if (newLevel > list->list_level) {
+		for (i = list->list_level+ 1; i <= newLevel; i++) {
+			update[i] = list->head;
 		}
-        list->list_level = newLevel;
-    }
+		list->list_level = newLevel;
+	}
 
-    if ((x = malloc(sizeof(RSkipListNode) +
-      newLevel*sizeof(RSkipListNode *))) == 0) {
-        eprintf ("can't even malloc!");
+	if ((x = malloc(sizeof(RSkipListNode) +
+					newLevel*sizeof(RSkipListNode *))) == 0) {
+		eprintf ("can't even malloc!");
 		return NULL;
-    }
-    x->data = data;
+	}
+	x->data = data;
 
-    /* update forward links */
-    for (i = 0; i <= newLevel; i++) {
-        x->forward[i] = update[i]->forward[i];
-        update[i]->forward[i] = x;
-    }
-    return x;
+	/* update forward links */
+	for (i = 0; i <= newLevel; i++) {
+		x->forward[i] = update[i]->forward[i];
+		update[i]->forward[i] = x;
+	}
+	return x;
 }
 
 R_API void r_skiplist_delete(RSkipList* list, void* data) {
