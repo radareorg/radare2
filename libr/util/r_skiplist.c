@@ -17,14 +17,12 @@ const int kSkipListDepth = 15; // max depth
 // Returns a new heap-allocated skiplist.
 R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 	int i;
-	RSkipList* list = calloc (1, sizeof (RSkipList));
-	if ((list->head =
-				calloc (1,
-				sizeof (RSkipListNode) +
-				kSkipListDepth * sizeof (RSkipListNode*))) == NULL) {
-		eprintf ("can't init skiplist...");
-		return NULL;
-	}
+	RSkipList *list = R_NEW0 (RSkipList);
+	if (!list) return NULL;
+
+	list->head = calloc (1, sizeof (RSkipListNode) + kSkipListDepth * sizeof (RSkipListNode*));
+	if (!list->head) goto err_head;
+
 	for (i = 0; i <= kSkipListDepth; i++) {
 		list->head->forward[i] = list->head;
 	}
@@ -32,6 +30,10 @@ R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 	list->freefn = freefn;
 	list->compare = comparefn;
 	return list;
+
+err_head:
+	free (list);
+	return NULL;
 }
 
 // Remove all elements from the list
