@@ -884,7 +884,7 @@ static int cmd_write(void *data, const char *input) {
 		/* write zero-terminated string */
 		len = r_str_unescape (str);
 		r_core_write_at (core, core->offset, (const ut8*)str + 1, len);
-		if () {
+		if (len > 0) {
 			core->num->value = len;
 		} else {
 			core->num->value = 0;
