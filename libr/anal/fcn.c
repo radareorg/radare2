@@ -1407,10 +1407,15 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 }
 
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
-	RAnalBlock *bb;
-	RListIter *iter;
+	RAnalBlock bb_fake;
+	bb_fake.addr = addr;
+	bb_fake.size = 1;
 	bool has_bbs = false;
 
+	if (r_skiplist_find (fcn->bbs_sl, &bb_fake)) {
+		return true;
+	}
+/*
 	r_list_foreach (fcn->bbs, iter, bb) {
 		has_bbs = true;
 		if (addr >= bb->addr && addr < bb->addr + bb->size) {
@@ -1424,6 +1429,7 @@ R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
 		// FIXME: anal_java should create basicblocks
 		return addr >= fcn->addr && addr < fcn->addr + r_anal_fcn_size (fcn);
 	}
+	*/
 	return false;
 }
 
