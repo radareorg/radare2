@@ -145,7 +145,7 @@ R_API void r_skiplist_delete(RSkipList* list, void* data) {
 		update[i] = node;
 	}
 	node = node->forward[0];
-	if (node == list->head || !list->compare(node->data, data)) {
+	if (node == list->head || list->compare(node->data, data) != 0) {
 		return;
 	}
 
