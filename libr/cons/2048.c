@@ -1,9 +1,7 @@
 /* radare2 - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_cons.h>
-// TWOK is a C implemnetation of 2048 game
 
-#define ut8 unsigned char
 static ut8 twok_buf[4][4];
 static int score = 0;
 static int moves = 0;
@@ -128,10 +126,11 @@ static void twok_print(bool color) {
 		}
 	}
 	printf ("Hexboard:     'hjkl' and 'q'uit\n");
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
 		printf ("  %02x %02x %02x %02x\n",
 			twok_buf[i][0], twok_buf[i][1],
 			twok_buf[i][2], twok_buf[i][3]);
+	}
 }
 
 R_API void r_cons_2048(bool color) {
