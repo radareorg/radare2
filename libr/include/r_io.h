@@ -179,7 +179,7 @@ typedef struct r_io_plugin_t {
 	ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 	int (*close)(RIODesc *desc);
-	int (*resize)(RIO *io, RIODesc *fd, ut64 size);
+	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
 	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	bool (*accept)(RIO *io, RIODesc *desc, int fd);
 	int (*create)(RIO *io, const char *file, int mode, int type);
@@ -333,7 +333,7 @@ R_API int r_io_plugin_close(RIO *io, RIODesc *desc);
 R_API int r_io_close(RIO *io, RIODesc *desc);
 R_API int r_io_close_all(RIO *io);
 R_API ut64 r_io_size(RIO *io); //, int fd);
-R_API int r_io_resize(RIO *io, ut64 newsize);
+R_API bool r_io_resize(RIO *io, ut64 newsize);
 R_API int r_io_extend(RIO *io, ut64 size);
 R_API int r_io_extend_at(RIO *io, ut64 addr, ut64 size);
 R_API int r_io_accept(RIO *io, int fd);

@@ -36,23 +36,24 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return -1;
 }
 
-static int __resize(RIO *io, RIODesc *fd, ut64 count) {
+static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	ut8 * new_buf = NULL;
 	if (fd == NULL || fd->data == NULL || count == 0) {
-		return -1;
+		return false;
 	}
 	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd)) {
-		return -1;
+		return false;
 	}
 	new_buf = malloc (count);
 	if (!new_buf) return -1;
-	memcpy (new_buf, RIOMALLOC_BUF (fd), R_MIN(count, RIOMALLOC_SZ (fd)));
-	if (count > RIOMALLOC_SZ (fd) )
-		memset (new_buf+RIOMALLOC_SZ (fd), 0, count-RIOMALLOC_SZ (fd));
+	memcpy (new_buf, RIOMALLOC_BUF (fd), R_MIN (count, RIOMALLOC_SZ (fd)));
+	if (count > RIOMALLOC_SZ (fd)) {
+		memset (new_buf + RIOMALLOC_SZ (fd), 0, count - RIOMALLOC_SZ (fd));
+	}
 	free (RIOMALLOC_BUF (fd));
 	RIOMALLOC_BUF (fd) = new_buf;
 	RIOMALLOC_SZ (fd) = count;
-	return count;
+	return true;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
@@ -105,10 +106,7 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return (
-		(!strncmp (pathname, "malloc://", 9)) ||
-		(!strncmp (pathname, "hex://", 6))
-	);
+	return (!strncmp (pathname, "malloc://", 9)) || (!strncmp (pathname, "hex://", 6));
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -126,7 +124,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->offset = 0;
 			memset (mal->buf, 0, mal->size);
 			mal->size = r_hex_str2bin (pathname + 6, mal->buf);
-			if ((int)mal->size<1) {
+			if ((int)mal->size < 1) {
 				R_FREE (mal->buf);
 			}
 		} else {

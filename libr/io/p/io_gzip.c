@@ -21,10 +21,12 @@ typedef struct {
 #define RIOMALLOC_OFF(x) (((RIOGzip*)x->data)->offset)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (fd == NULL || fd->data == NULL)
+	if (fd == NULL || fd->data == NULL) {
 		return -1;
-	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd))
+	}
+	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd)) {
 		return -1;
+	}
 	if (RIOMALLOC_OFF (fd) + count > RIOMALLOC_SZ (fd))
 		count -= (RIOMALLOC_OFF (fd) + count-(RIOMALLOC_SZ (fd)));
 
@@ -36,24 +38,25 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return -1;
 }
 
-
-static int __resize(RIO *io, RIODesc *fd, ut64 count) {
+static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	ut8 * new_buf = NULL;
-	if (fd == NULL || fd->data == NULL || count == 0)
-		return -1;
-	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd))
-		return -1;
+	if (!fd || !fd->data || !count) {
+		return false;
+	}
+	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd)) {
+		return false;
+	}
 	new_buf = malloc (count);
-	if (!new_buf) return -1;
-	memcpy (new_buf, RIOMALLOC_BUF (fd), R_MIN(count, RIOMALLOC_SZ (fd)));
-	if (count > RIOMALLOC_SZ (fd) )
-		memset (new_buf+RIOMALLOC_SZ (fd), 0, count-RIOMALLOC_SZ (fd));
-
+	if (!new_buf) {
+		return false;
+	}
+	memcpy (new_buf, RIOMALLOC_BUF (fd), R_MIN (count, RIOMALLOC_SZ (fd)));
+	if (count > RIOMALLOC_SZ (fd))
+		memset (new_buf + RIOMALLOC_SZ (fd), 0, count - RIOMALLOC_SZ (fd));
 	free (RIOMALLOC_BUF (fd));
 	RIOMALLOC_BUF (fd) = new_buf;
 	RIOMALLOC_SZ (fd) = count;
-
-	return count;
+	return true;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
@@ -84,8 +87,9 @@ static int __close(RIODesc *fd) {
 
 static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	ut64 r_offset = offset;
-	if (!fd->data)
+	if (!fd->data) {
 		return offset;
+	}
 	switch (whence) {
 	case SEEK_SET:
 		r_offset = (offset <= RIOMALLOC_SZ (fd)) ? offset : RIOMALLOC_SZ (fd);
@@ -109,18 +113,18 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOGzip *mal = R_NEW0 (RIOGzip);
-		if (!mal) return NULL;
-		int len;
-		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);
-		mal->buf = r_inflate (data, len, NULL, &mal->size);
-		if (mal->buf) {
-			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
-				mal->fd, pathname, rw, mode, mal);
+		if (mal) {
+			int len;
+			ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);
+			mal->buf = r_inflate (data, len, NULL, &mal->size);
+			if (mal->buf) {
+				RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
+					mal->fd, pathname, rw, mode, mal);
+			}
+			free (data);
+			eprintf ("Cannot allocate (%s) %d bytes\n", pathname + 9, mal->size);
+			free (mal);
 		}
-		free (data);
-		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9,
-			mal->size);
-		free (mal);
 	}
 	return NULL;
 }

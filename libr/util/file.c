@@ -15,20 +15,23 @@
 
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
-	if (r_file_is_directory (filename))
-		return R_FALSE;
-	if (!r_file_exists (filename) || !r_file_is_regular (filename))
-		return R_FALSE;
+	if (r_file_is_directory (filename)) {
+		return false;
+	}
+	if (!r_file_exists (filename) || !r_file_is_regular (filename)) {
+		return false;
+	}
 #if __WINDOWS__
 	fd = r_sandbox_open (filename, O_RDWR, 0644);
 #else
 	fd = r_sandbox_open (filename, O_RDWR|O_SYNC, 0644);
 #endif
-	if (fd == -1)
-		return R_FALSE;
+	if (fd == -1) {
+		return false;
+	}
 	ftruncate (fd, newsize);
 	close (fd);
-	return R_TRUE;
+	return true;
 }
 
 /*
@@ -67,22 +70,21 @@ R_API char *r_file_dirname (const char *path) {
 
 R_API bool r_file_is_regular(const char *str) {
 	struct stat buf = {0};
-	if (!str||!*str)
-		return R_FALSE;
-	if (stat (str, &buf)==-1)
-		return R_FALSE;
-	return ((S_IFREG & buf.st_mode)==S_IFREG)? R_TRUE: R_FALSE;
+	if (!str || !*str || stat (str, &buf) == -1) {
+		return false;
+	}
+	return ((S_IFREG & buf.st_mode)==S_IFREG)? true: false;
 }
 
 R_API bool r_file_is_directory(const char *str) {
 	struct stat buf = {0};
 	if (!str||!*str)
-		return R_FALSE;
+		return false;
 	if (stat (str, &buf)==-1)
-		return R_FALSE;
+		return false;
 	if ((S_IFBLK & buf.st_mode) == S_IFBLK)
-		return R_FALSE;
-	return (S_IFDIR==(S_IFDIR & buf.st_mode))? R_TRUE: R_FALSE;
+		return false;
+	return (S_IFDIR==(S_IFDIR & buf.st_mode))? true: false;
 }
 
 R_API bool r_file_fexists(const char *fmt, ...) {
@@ -99,8 +101,8 @@ R_API bool r_file_fexists(const char *fmt, ...) {
 R_API bool r_file_exists(const char *str) {
 	struct stat buf = {0};
 	if (str && *str && stat (str, &buf)==-1)
-		return R_FALSE;
-	return (S_ISREG (buf.st_mode))? R_TRUE: R_FALSE;
+		return false;
+	return (S_ISREG (buf.st_mode))? true: false;
 }
 
 R_API long r_file_proc_size(FILE *fd) {
@@ -413,11 +415,12 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 			if (str[i]=='\n')
 				lines--;
 		ptr = str+i;
-		for (i=0; ptr[i]; i++)
+		for (i=0; ptr[i]; i++) {
 			if (ptr[i]=='\n') {
 				ptr[i]='\0';
 				break;
 			}
+		}
 		ptr = strdup (ptr);
 		free (str);
 	}
@@ -465,18 +468,20 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 }
 
 R_API bool r_file_rm(const char *file) {
-	if (r_sandbox_enable (0)) return R_FALSE;
+	if (r_sandbox_enable (0)) {
+		return false;
+	}
 	if (r_file_is_directory (file)) {
 #if __WINDOWS__
-		return (RemoveDirectory (file)==0)? R_TRUE: R_FALSE;
+		return !RemoveDirectory (file);
 #else
-		return (rmdir (file)==0)? R_TRUE: R_FALSE;
+		return !rmdir (file);
 #endif
 	} else {
 #if __WINDOWS__
-		return (DeleteFile (file)==0)? R_TRUE: R_FALSE;
+		return !DeleteFile (file);
 #else
-		return (unlink (file)==0)? R_TRUE: R_FALSE;
+		return !unlink (file);
 #endif
 	}
 }
