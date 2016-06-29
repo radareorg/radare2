@@ -762,7 +762,8 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_STR:
 		r_strbuf_appendf (&op->esil, "%s,0x%"PFMT64x",%s,%c,=[4]",
-			REG(0), R_ABS (MEMDISP(1)), MEMBASE(1), MEMDISP (1) > 0 ? '+' : '-');
+			REG(0), (ut64)R_ABS (MEMDISP(1)),
+			MEMBASE(1), MEMDISP (1) > 0 ? '+' : '-');
 		break;
 	case ARM_INS_STRB:
 		r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[1]",
@@ -801,10 +802,10 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				// not refptr, because we cant grab the reg value statically op->refptr = 4;
 				if (disp < 0) {
 					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,[4],%s,=",
-							-disp, MEMBASE(1), REG(0));
+							(ut64)-disp, MEMBASE(1), REG(0));
 				} else {
 					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,[4],%s,=",
-							disp, MEMBASE(1), REG(0));
+							(ut64)disp, MEMBASE(1), REG(0));
 				}
 			}
 		} else {
