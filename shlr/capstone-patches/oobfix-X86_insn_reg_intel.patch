@@ -1,0 +1,13 @@
+diff --git a/arch/X86/X86Mapping.c b/arch/X86/X86Mapping.c
+index f7d35d2..16450d1 100644
+--- a/arch/X86/X86Mapping.c
++++ b/arch/X86/X86Mapping.c
+@@ -2780,7 +2780,7 @@ x86_reg X86_insn_reg_intel(unsigned int id, enum cs_ac_type *access)
+ 		intel_regs_sorted = true;
+ 	}
+ 
+-	while (first <= last) {
++	while (first <= last && mid < ARR_SIZE(insn_regs_intel)) {
+ 		if (insn_regs_intel_sorted[mid].insn < id) {
+ 			first = mid + 1;
+ 		} else if (insn_regs_intel_sorted[mid].insn == id) {
