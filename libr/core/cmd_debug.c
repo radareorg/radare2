@@ -795,8 +795,127 @@ beach:
 	r_list_free (list);
 }
 
-static int cmd_debug_map_heap(RCore *core, const char *input) {
+static void print_main_arena(RCore *core, ut64 main_arena) {
+	eprintf (Color_GREEN" main_arena @ "Color_RESET""Color_BLUE"0x%"PFMT64x"\n\n"Color_RESET, main_arena);
 
+	ut8 out[sizeof(size_t)];
+	eprintf (Color_GREEN"struct malloc_state main_arena {\n"Color_RESET);
+
+	r_core_read_at (core, main_arena, out, sizeof(int));
+	ut64 mutex = r_read_ble32 ((const void*) out, core->print->big_endian);
+	eprintf (Color_GREEN"\tmutex = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, mutex);
+	
+	r_core_read_at (core, main_arena+4, out, sizeof(int));
+	ut64 flags = r_read_ble32 ((const void*) out, core->print->big_endian);
+	eprintf (Color_GREEN"\tflags = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, flags);
+
+	int i, j = 0;
+	eprintf (Color_GREEN"\tfastbinsY = {"Color_RESET);
+	for (i = 0; i < 10; i++) {
+		r_core_read_at (core, (main_arena+8 + (j++ *sizeof(size_t))), out, sizeof(size_t));
+		ut64 fastbinsY = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
+		eprintf (Color_BLUE"0x%"PFMT64x""Color_RESET, fastbinsY);			
+		if (i < 9) 
+			eprintf (Color_GREEN","Color_RESET);			
+	}
+	eprintf (Color_GREEN"}\n"Color_RESET);
+
+	r_core_read_at (core, main_arena+(sizeof(size_t)*11), out, sizeof(size_t));
+	ut64 top = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
+	eprintf (Color_GREEN"\ttop = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, top);
+
+	r_core_read_at (core, main_arena+sizeof(size_t)*12, out, sizeof(size_t));
+	ut64 last_remainder = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
+	eprintf (Color_GREEN"\tlast_remainder = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, last_remainder);
+
+	eprintf (Color_GREEN"\tbins {"Color_RESET);
+	j = 0;
+	bool isNull = false;
+	int offset = (NBYTES == 4) ? 14 : 13;
+	for (i = 0; i < 254; i++) {
+		(i % 2 == 0) ? eprintf ("\n\t") : eprintf ("\t");
+		r_core_read_at (core, (main_arena + sizeof(size_t)*(offset + j++)), out, sizeof(size_t));
+		ut64 bins = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
+		isNull = (bins == 0) ? true : false;
+		if (isNull) { 
+			eprintf (Color_BLUE"0x0 "Color_RESET""Color_GREEN"<repeats 254 times>"Color_RESET); 
+			break;
+		} else eprintf (Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN" <main_arena+%04d>, "Color_RESET, bins, bins-main_arena);
+	}
+
+	eprintf (Color_GREEN"\n\t}\t\n"Color_RESET);
+
+	eprintf (Color_GREEN"\tbinmap = {"Color_RESET);
+	j = 0;
+	offset = (NBYTES == 4) ? 268 : 267;
+	for(i = 0; i < 4; i++) {
+		r_core_read_at (core, (main_arena+ sizeof(size_t)*offset + (j++ * sizeof(int))), out, sizeof(int));
+		ut64 binmap = r_read_ble32 ((const void*) out, core->print->big_endian);
+		eprintf (Color_BLUE"0x%"PFMT64x""Color_RESET, binmap);
+		if (i < 3)
+			eprintf (Color_GREEN","Color_RESET);			
+	}
+	eprintf (Color_GREEN"}\n"Color_RESET);
+
+	const char *entry_str[] = {"next", "next_free", "system_mem", "max_system_mem"};
+
+	j = 0;
+	offset = (NBYTES == 4) ? 272 : 269;
+	for (i = 0; i < 4; i++) {
+		r_core_read_at (core, (main_arena+ sizeof(size_t)*offset + (j++ * sizeof(size_t))), out, sizeof(size_t));
+		ut64 entry = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
+		eprintf (Color_GREEN"\t%s = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, entry_str[i], entry);
+	}
+	eprintf (Color_GREEN"}\n\n"Color_RESET);
+}
+
+static ut64 get_vaddr_symbol(const char *path, const char *symname) {
+	RListIter *iter;
+	RBinSymbol *s;
+	RCore *core = r_core_new ();
+	ut64 vaddr = 0LL;
+
+	r_bin_load (core->bin, path, 0, 0, 0, -1, false);
+	RList *syms = r_bin_get_symbols (core->bin);
+	r_list_foreach (syms, iter, s) {
+		if (strstr (s->name, symname)) {
+			vaddr = s->vaddr;		
+			break;
+		}
+	}	
+	r_core_free (core);
+
+	return vaddr;
+}
+
+static void get_hash_debug_directory(const char *path, char *hash) {
+	RListIter *iter;
+	RBinSection *s;
+	RCore *core = r_core_new ();
+	char buf[20] = {0};
+
+	r_bin_load (core->bin, path, 0, 0, 0, -1, false);
+	RList *sects = r_bin_get_sections (core->bin);
+	r_list_foreach (sects, iter, s) {
+		if (strstr (s->name, ".note.gnu.build-id")) {
+			r_io_read_at (core->io, s->vaddr+16, (ut8 *) buf, 20);
+			break;
+		}
+	}
+	r_core_free (core);
+
+	int i, j = 0;
+	for (i = 0; i < 20; i++) {
+		if (i <= 1) 
+			hash[i + 2 * j++] = (ut8) '/';
+
+		sprintf (hash + j + 2 * i, "%02x", (ut8) buf[i]);
+	}
+
+	strcat (hash, ".debug");
+}
+
+static int cmd_debug_map_heap(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dmh", " # Memory map heap",
 		"dmha", "", "Struct Malloc State (main_arena)",
@@ -816,8 +935,9 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 		const char *symname = "main_arena";
 		const char *libc_ver = NULL;
 		const char *libc_ver_end = NULL;
-		ut64 main_arena = 0LL;
-		ut64 libc_addr = 0LL;
+		char hash[64] = {0}, path[256] = {0};
+		ut64 main_arena = UT64_MAX;
+		ut64 libc_addr = UT64_MAX;
 
 		r_debug_map_sync (core->dbg); 
 
@@ -829,126 +949,29 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 			}
 		}
 
-		if (access (dir_dbg, F_OK) == -1) {
+		if (!r_file_is_directory (dir_dbg)) {
 			eprintf ("Debug directory not found at /usr/lib, is libc<version>-dbg installed?\n");
 			break;			
 		}
 
-		if (access (dir_dbg_build_id, F_OK) == -1) {
+		if (!r_file_is_directory (dir_dbg_build_id)) {
 			libc_ver = dir_dbg;
 		} else {
-			RListIter *iter;
-			RBinSection *s;
-			RCore *co = r_core_new();
-			const char *path = libc_ver_end;
-			char buf[20];
-			char hash[64];
-			
-			memset (buf, 0x00, sizeof(buf));
-			memset (hash, 0x00, sizeof(hash));
-
-			r_bin_load (co->bin, path, 0, 0, 0, -1, false);
-			RList *sects = r_bin_get_sections (co->bin);
-			r_list_foreach (sects, iter, s) {
-				if (strstr (s->name, ".note.gnu.build-id")) {
-					r_io_read_at (co->io, s->vaddr+16, buf, 20);
-					break;
-				}
-			}
-			
-			short i, j = 0;
-			for (i = 0; i < 20; i++) {
-				if (i <= 1) 
-					hash[i + 2 * j++] = (unsigned char) '/';
-
-				snprintf (hash + j + 2 * i, 0x28u, "%02x", (unsigned char) buf[i]);
-			}
-
-			strncat (hash, ".debug", strlen(".debug"));
-			libc_ver = dir_dbg_build_id;
+			libc_ver = dir_dbg_build_id;	
+			get_hash_debug_directory (libc_ver_end, hash);		
 			libc_ver_end = hash;
-			r_core_free (co);
 		}
  		
-		// TODO: USE API
-		char *cmd, *res;
-		cmd = r_str_newf ("rabin2 -s %s%s | grep %s | cut -d ' ' -f 1 | cut -d '=' -f 2", libc_ver, libc_ver_end, symname);
-		res = r_sys_cmd_str (cmd, NULL, NULL);	
-		main_arena = libc_addr + (ut64) strtol (res, NULL, 16);
-		free (res);
-		free (cmd);
+		strcat (path, libc_ver);
+		strcat (path, libc_ver_end);
 
-		eprintf (Color_GREEN" main_arena @ "Color_RESET""Color_BLUE"0x%"PFMT64x"\n\n"Color_RESET, main_arena);
+		ut64 vaddr = get_vaddr_symbol (path, symname);
 
-		unsigned char out[sizeof(size_t)];
-		eprintf (Color_GREEN"struct malloc_state main_arena {\n"Color_RESET);
+		if (libc_addr != UT64_MAX && vaddr) {
+			main_arena = libc_addr + vaddr;
+			print_main_arena (core, main_arena);
+		} else eprintf ("Warning: virtual address of symbol main_arena could not be found\n");		
 
-		r_core_read_at (core, main_arena, out, sizeof(int));
-		ut64 mutex = r_read_ble32 ((const void*) out, core->print->big_endian);
-		eprintf (Color_GREEN"\tmutex = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, mutex);
-		
-		r_core_read_at (core, main_arena+4, out, sizeof(int));
-		ut64 flags = r_read_ble32 ((const void*) out, core->print->big_endian);
-		eprintf (Color_GREEN"\tflags = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, flags);
-
-		int i, j = 0;
-		eprintf (Color_GREEN"\tfastbinsY = {"Color_RESET);
-		for (i = 0; i < 10; i++) {
-			r_core_read_at (core, (main_arena+8 + (j++ *sizeof(size_t))), out, sizeof(size_t));
-			ut64 fastbinsY = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
-			eprintf (Color_BLUE"0x%"PFMT64x""Color_RESET, fastbinsY);			
-			if (i < 9) 
-				eprintf (Color_GREEN","Color_RESET);			
-		}
-		eprintf (Color_GREEN"}\n"Color_RESET);
-
-		r_core_read_at (core, main_arena+(sizeof(size_t)*11), out, sizeof(size_t));
-		ut64 top = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
-		eprintf (Color_GREEN"\ttop = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, top);
-
-		r_core_read_at (core, main_arena+sizeof(size_t)*12, out, sizeof(size_t));
-		ut64 last_remainder = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
-		eprintf (Color_GREEN"\tlast_remainder = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, last_remainder);
-
-		eprintf (Color_GREEN"\tbins {"Color_RESET);
-		j = 0;
-		bool isNull = false;
-		int offset = (NBYTES == 4) ? 14 : 13;
-		for (i = 0; i < 254; i++) {
-			(i % 2 == 0) ? eprintf ("\n\t") : eprintf ("\t");
-			r_core_read_at (core, (main_arena + sizeof(size_t)*(offset + j++)), out, sizeof(size_t));
-			ut64 bins = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
-			isNull = (bins == 0) ? true : false;
-			if (isNull) { 
-				eprintf (Color_BLUE"0x0 "Color_RESET""Color_GREEN"<repeats 254 times>"Color_RESET); 
-				break;
-			} else eprintf (Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN" <main_arena+%04d>, "Color_RESET, bins, bins-main_arena);
-		}
-
-		eprintf (Color_GREEN"\n\t}\t\n"Color_RESET);
-
-		eprintf (Color_GREEN"\tbinmap = {"Color_RESET);
-		j = 0;
-		offset = (NBYTES == 4) ? 268 : 267;
-		for(i = 0; i < 4; i++) {
-			r_core_read_at (core, (main_arena+ sizeof(size_t)*offset + (j++ * sizeof(int))), out, sizeof(int));
-			ut64 binmap = r_read_ble32 ((const void*) out, core->print->big_endian);
-			eprintf (Color_BLUE"0x%"PFMT64x""Color_RESET, binmap);
-			if (i < 3)
-				eprintf (Color_GREEN","Color_RESET);			
-		}
-		eprintf (Color_GREEN"}\n"Color_RESET);
-
-		char *entry_str[] = {"next", "next_free", "system_mem", "max_system_mem"};
-
-		j = 0;
-		offset = (NBYTES == 4) ? 272 : 269;
-		for (i = 0; i < 4; i++) {
-			r_core_read_at (core, (main_arena+ sizeof(size_t)*offset + (j++ * sizeof(size_t))), out, sizeof(size_t));
-			ut64 entry = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
-			eprintf (Color_GREEN"\t%s = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, entry_str[i], entry);
-		}
-		eprintf (Color_GREEN"}\n\n"Color_RESET);
 		}
 		break;
 	case '?':	
@@ -1160,9 +1183,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_cons_get_size (NULL));
 		break;
 	case 'h': // "dmh"
-		
 #ifdef __linux__
-		
 		cmd_debug_map_heap (core, input + 1);
 #endif
 		break;
