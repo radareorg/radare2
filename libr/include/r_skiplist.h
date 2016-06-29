@@ -14,12 +14,13 @@
 
 typedef struct r_skiplist_node_t {
 	void *data;	// pointer to the value
-	struct r_skiplist_node_t *forward[1]; // forward pointer
+	struct r_skiplist_node_t **forward; // forward pointer
 } RSkipListNode;
 
 typedef struct r_skiplist_t {
 	RSkipListNode *head;	// list header
 	int list_level; // current level of the list.
+	int size;
 	RListFree freefn;
 	RListComparator compare;
 } RSkipList;
@@ -30,5 +31,11 @@ R_API void r_skiplist_purge(RSkipList *list);
 R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data);
 R_API void r_skiplist_delete(RSkipList* list, void* data);
 R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data);
+
+#define r_skiplist_length(list) (list->size)
+
+#define r_skiplist_foreach(list, it, pos)\
+	if (list)\
+		for (it = list->head->forward[0]; it != list->head && ((pos = it->data) || 1); it = it->forward[0])
 
 #endif // R2_SKIP_LIST_H
