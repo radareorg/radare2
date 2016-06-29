@@ -1409,7 +1409,7 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock bb_fake;
 	bb_fake.addr = addr;
-	bb_fake.size = 1;
+	bb_fake.size = 0;
 	bool has_bbs = false;
 
 	if (r_skiplist_find (fcn->bbs_sl, &bb_fake)) {
