@@ -922,14 +922,14 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	int ret;
 	ut32 off = 0, len = 0;
 	ret = r_buf_fread_at (arch->buf, 100, (ut8*)&off, "i", 1);
 	if (ret != 4) return 0;
 	ret = r_buf_fread_at (arch->buf, 104, (ut8*)&len, "i", 1);
 	if (ret != 4) return 0;
-	return off+len + 0x20;
+	return off + len + 0x20;
 }
 struct r_bin_plugin_t r_bin_plugin_dex = {
 	.name = "dex",

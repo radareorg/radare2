@@ -179,7 +179,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	return sizeof (SBLHDR) + sb.psize;
 }
 

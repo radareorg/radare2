@@ -1007,16 +1007,27 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 		return NULL;
 	}
 	if (io->maxalloc && *out_sz > io->maxalloc) {
-		eprintf ("WARNING: File is greater than 0x%"PFMT64x" bytes.\nTry setting " \
-			"R_IO_MAX_ALLOC environment variable with the desired max " \
-			"allocation bytes.\n", io->maxalloc);
-		return NULL;
+		eprintf ("WARNING: File is greater than 0x%"PFMT64x" bytes.\n"
+				"Allocating R_IO_MAX_ALLOC set as the environment variable.\n", io->maxalloc);
+		*out_sz = io->maxalloc;
 	}
 
 	buf = malloc (*out_sz);
 	if (!buf) {
-		eprintf ("Cannot allocate %" PFMT64d " bytes\n", *out_sz);
-		return NULL;
+		if (*out_sz > R_IO_MAX_ALLOC) {
+			char *num_unit = r_num_units (NULL, *out_sz);
+			eprintf ("Failed to allocate %s bytes.\n"
+					"Allocating %"PFMT64u" bytes.\n", num_unit, (ut64)R_IO_MAX_ALLOC);
+			free (num_unit);
+			*out_sz = R_IO_MAX_ALLOC;
+			buf = malloc (*out_sz);
+		}
+		if (!buf) {
+			char *num_unit = r_num_units (NULL, *out_sz);
+			eprintf ("Failed to allocate %s bytes.\n", num_unit);
+			free (num_unit);
+			return NULL;
+		}
 	}
 	if (buf && desc->plugin && desc->plugin->read) {
 		if (!buf || !desc->plugin->read (io, desc, buf, *out_sz)) {
