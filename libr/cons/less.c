@@ -1,7 +1,7 @@
-/* radare2 - LGPL - Copyright 2014-2015 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2016 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
-#include <r_regex.h>		/* less / regex search */
+#include <r_regex.h>
 #include <r_util.h>
 
 static void color_line(const char *line, RStrpool *p, RList *ml){
@@ -9,17 +9,19 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 	char *m_addr;
 	RListIter *it;
 	RRegexMatch *m;
-	char *inv[2] = {R_CONS_INVERT(true, true),
-			R_CONS_INVERT(false, true)};
-	int linv[2] = {strlen(inv[0]), strlen(inv[1])};
-
-	r_strpool_empty(p);
+	char *inv[2] = {
+		R_CONS_INVERT (true, true),
+		R_CONS_INVERT (false, true)
+	};
+	int linv[2] = {
+		strlen (inv[0]),
+		strlen(inv[1])
+	};
+	r_strpool_empty (p);
 	r_list_foreach (ml, it, m) {
 		/* highlight a match */
-		r_strpool_memcat (p, line + offset,
-				  m->rm_so - offset);
+		r_strpool_memcat (p, line + offset, m->rm_so - offset);
 		r_strpool_memcat (p, inv[0], linv[0]);
-
 		m_len = m->rm_eo - m->rm_so;
 		if (m_len<0) m_len = 0;
 		m_addr = r_str_ndup (line + m->rm_so, m_len);
@@ -35,11 +37,10 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 
 	}
 	/* append final part of string w/o matches */
-	r_strpool_append(p, line + offset);
+	r_strpool_append (p, line + offset);
 }
 
-static void printpage (const char *line, int *index, RList **mla,
-		       int from, int to, int w) {
+static void printpage (const char *line, int *index, RList **mla, int from, int to, int w) {
 	int i;
 	RStrpool *p;
 
@@ -53,7 +54,7 @@ static void printpage (const char *line, int *index, RList **mla,
 		color_line (line + index[i], p, mla[i]);
 		r_strpool_ansi_chop (p, w);
 		r_cons_reset_colors ();
-		r_cons_printf ("%s\n", p->str);
+		r_cons_println (p->str);
 	}
 	r_strpool_free(p);
 	r_cons_flush ();
@@ -113,31 +114,30 @@ static int prev_match(int from, RList **mla){
 	return from;
 }
 
-static int all_matches(const char *s, RRegex *rx, RList **mla,
-		       int *lines, int lcount){
+static int all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount) {
 	int l, f = false;
 	RRegexMatch m;
 	int slen;
-	for(l = 0; l < lcount; l++){
+	for (l = 0; l < lcount; l++) {
 		m.rm_so = 0;
 		const char *loff = s + lines[l]; /* current line offset */
-		char *clean = strdup(loff);
+		char *clean = strdup (loff);
 		if (!clean) return 0;
 		int *cpos;
-		r_str_ansi_filter(clean, NULL, &cpos, 0);
-		m.rm_eo = slen = strlen(clean);
-		r_list_purge(mla[l]);
-		while(!r_regex_exec(rx, clean, 1, &m, R_REGEX_STARTEND)){
-			RRegexMatch *ms = malloc(sizeof(RRegexMatch));
+		r_str_ansi_filter (clean, NULL, &cpos, 0);
+		m.rm_eo = slen = strlen (clean);
+		r_list_purge (mla[l]);
+		while (!r_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)){
+			RRegexMatch *ms = R_NEW0 (RRegexMatch);
 			ms->rm_so = cpos[m.rm_so];
 			ms->rm_eo = cpos[m.rm_eo];
-			r_list_append(mla[l], ms);
+			r_list_append (mla[l], ms);
 			m.rm_so = m.rm_eo;
 			m.rm_eo = slen;
 			f = true;
 		}
-		free(cpos);
-		free(clean);
+		free (cpos);
+		free (clean);
 	}
 	return f;
 }
@@ -173,9 +173,9 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			return 0;
 		}
 	}
-	for (i = 0; i < lines_count; i++)
+	for (i = 0; i < lines_count; i++) {
 		mla[i] = r_list_new ();
-
+	}
 	r_cons_set_raw (true);
 	r_cons_show_cursor (false);
 	r_cons_reset ();
@@ -242,10 +242,14 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			break;
 		case 'n': 	/* next match */
 			/* search already performed */
-			if(rx) from = next_match(from, mla, lines_count);
+			if (rx) {
+				from = next_match (from, mla, lines_count);
+			}
 			break;
 		case 'p': 	/* previous match */
-			if(rx) from = prev_match(from, mla);
+			if (rx) {
+				from = prev_match(from, mla);
+			}
 			break;
 		}
 	}

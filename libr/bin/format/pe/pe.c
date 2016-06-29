@@ -88,12 +88,11 @@ static PE_DWord bin_pe_rva_to_paddr(RBinPEObj* bin, PE_DWord rva) {
 	PE_DWord section_base;
 	int i, section_size;
 
-	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++) {
+	for (i = 0; i < bin->num_sections; i++) {
 		section_base = bin->section_header[i].VirtualAddress;
 		section_size = bin->section_header[i].Misc.VirtualSize;
 		if (rva >= section_base && rva < section_base + section_size) {
-			return bin->section_header[i].PointerToRawData \
-				+ (rva - section_base);
+			return bin->section_header[i].PointerToRawData  + (rva - section_base);
 		}
 	}
 	return rva;
@@ -397,7 +396,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	}
 
 	sections = PE_(r_bin_pe_get_sections) (bin);
-	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++) {
+	for (i = 0; i < bin->num_sections; i++) {
 	    	//XXX search by section with +x permission since the section can be left blank
 		if (!strcmp ((char*)sections[i].name, ".text")) {
 			text_rva = sections[i].vaddr;
@@ -447,14 +446,14 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 }
 
 static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
-	int num_of_sections = bin->nt_headers->file_header.NumberOfSections;
+	bin->num_sections = bin->nt_headers->file_header.NumberOfSections;
 	int sections_size;
-	if (num_of_sections<1) {
-		//eprintf("Warning: Invalid number of sections\n");
-		return true;
-	}
-	sections_size = sizeof (PE_(image_section_header)) * num_of_sections;
-
+	if (bin->num_sections < 1) return true;
+#if 0
+	if (bin->num_sections == 0xffff)
+		bin->num_sections = 16; // hackaround for 65k sections file
+#endif
+	sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
 		return false;
@@ -701,8 +700,7 @@ static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t) *bin) {
 		r_sys_perror ("malloc (export directory)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, export_dir_paddr, (ut8*)bin->export_directory,
-			sizeof (PE_(image_export_directory))) == -1) {
+	if (r_buf_read_at (bin->b, export_dir_paddr, (ut8*)bin->export_directory, sizeof (PE_(image_export_directory))) == -1) {
 		eprintf ("Warning: read (export directory)\n");
 		free (bin->export_directory);
 		bin->export_directory = NULL;
@@ -1703,7 +1701,10 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_addr_t *entry = NULL;
+	static bool debug = false;
 	PE_DWord pe_entry;
+	int i;
+	ut64 base_addr = PE_(r_bin_pe_get_image_base) (bin);
 
 	if (!bin || !bin->optional_header) return NULL;
 	if ((entry = malloc (sizeof (struct r_bin_pe_addr_t))) == NULL) {
@@ -1714,12 +1715,64 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	entry->vaddr  = bin_pe_rva_to_va (bin, pe_entry);
 	entry->paddr  = bin_pe_rva_to_paddr (bin, pe_entry);
 
+	if (entry->paddr >= bin->size) {
+	 	struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
+		ut64 paddr = 0;
+		if (!debug) {
+			eprintf ("Warning: Invalid entrypoint ... "
+					"trying to fix it but i do not promise nothing\n");
+		}
+		for (i = 0; i < bin->num_sections; i++) {
+			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
+				entry->paddr = sections[i].paddr;
+				entry->vaddr = sections[i].vaddr + base_addr;
+				paddr = 1;
+				break;
+			}
+			
+		}
+		if (!paddr) {
+			ut64 min_off = -1;
+			for (i = 0; i < bin->num_sections; i++) {
+				//get the lowest section's paddr
+				if (sections[i].paddr < min_off) {
+					entry->paddr = sections[i].paddr;
+					entry->vaddr = sections[i].vaddr + base_addr;
+					min_off = sections[i].paddr;
+				}
+			}
+			if (min_off == -1) {
+				//no section just a hack to try to fix entrypoint 
+				//maybe doesn't work always
+				entry->paddr = pe_entry & ((bin->optional_header->SectionAlignment << 1) - 1);
+				entry->vaddr = entry->paddr + base_addr;
+			}
+		}
+		free (sections);
+
+	}
+	if (entry->paddr == 0) {
+		if (!debug) eprintf ("Warning: NULL entrypoint\n");
+	 	struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
+		for (i = 0; i < bin->num_sections; i++) {
+			//If there is a section with x without w perm is a good candidate to be the entrypoint	
+			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].flags & PE_IMAGE_SCN_MEM_WRITE)) {
+				entry->paddr = sections[i].paddr;
+				entry->vaddr = sections[i].vaddr + base_addr;
+				break;
+			}
+			
+		}
+		free (sections);
+	}
+
 	if (is_arm (bin) && entry->vaddr & 1) {
 		entry->vaddr--;
 		if (entry->paddr & 1) {
 			entry->paddr--;
 		}
 	}
+	if (!debug) debug = true;
 	return entry;
 }
 
@@ -1734,7 +1787,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	int n,i, export_dir_size;
 	int exports_sz = 0;
 
-	if (!bin || !bin->data_directory) 
+	if (!bin || !bin->data_directory)
 	    	return NULL;
 
 	data_dir_export = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
@@ -1845,10 +1898,14 @@ static void init_cv_nb10_header(SCV_NB10_HEADER *cv_nb10_header) {
 	cv_nb10_header->free = (void (*)(struct SCV_NB10_HEADER *)) free_cv_nb10_header;
 }
 
-static void get_rsds(ut8 *dbg_data, SCV_RSDS_HEADER *res) {
+static bool get_rsds(ut8 *dbg_data, int dbg_data_len, SCV_RSDS_HEADER *res) {
 	const int rsds_sz = 4 + sizeof (SGUID) + 4;
+	if (dbg_data_len < rsds_sz) {
+		return false;
+	}
 	memcpy (res, dbg_data, rsds_sz);
 	res->file_name = (ut8 *)strdup ((const char *)dbg_data + rsds_sz);
+	return true;
 }
 
 static void get_nb10(ut8 *dbg_data, SCV_NB10_HEADER *res) {
@@ -1857,19 +1914,23 @@ static void get_nb10(ut8 *dbg_data, SCV_NB10_HEADER *res) {
 	res->file_name = (ut8 *)strdup ((const char *)dbg_data + nb10sz);
 }
 
-static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *dbg_data, SDebugInfo *res) {
+static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *dbg_data, int dbg_data_len, SDebugInfo *res) {
 #define SIZEOF_FILE_NAME 255
 	int i = 0;
 
-	if (dbg_data == NULL)
+	if (!dbg_data) {
 		return 0;
+	}
 
 	switch (dbg_dir_entry->Type) {
 	case IMAGE_DEBUG_TYPE_CODEVIEW:
-		if (strncmp((char *)dbg_data, "RSDS", 4) == 0) {
+		if (strncmp ((char *)dbg_data, "RSDS", 4) == 0) {
 			SCV_RSDS_HEADER rsds_hdr;
 			init_rsdr_hdr (&rsds_hdr);
-			get_rsds (dbg_data, &rsds_hdr);
+			if (!get_rsds (dbg_data, dbg_data_len, &rsds_hdr)) {
+				eprintf ("Warning: Cannot read PE debug info\n");
+				return 0;
+			}
 			snprintf ((st8 *) res->guidstr, GUIDSTR_LEN,
 				"%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
 				rsds_hdr.guid.data1,
@@ -1939,10 +2000,10 @@ int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, SDebugInfo *re
 		if (dbg_data_len<1)  {
 			return false;
 		}
-		dbg_data = (ut8 *) malloc (dbg_data_len + 1);
+		dbg_data = (ut8 *) calloc (1, dbg_data_len + 1);
 		if (dbg_data) {
 			r_buf_read_at (bin->b, dbg_data_poff, dbg_data, dbg_data_len);
-			result = get_debug_info(img_dbg_dir_entry, dbg_data, res);
+			result = get_debug_info(img_dbg_dir_entry, dbg_data, dbg_data_len, res);
 			R_FREE(dbg_data);
 		}
 	}
@@ -2278,32 +2339,132 @@ int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->optional_header.SectionAlignment;
 }
 
+//This function try to detect anomalies within section
+//we check if there is a section mapped at entrypoint, otherwise add it up
+void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t **sects) {
+	int i = 0;
+	struct r_bin_pe_section_t *sections = *sects;
+	ut64 addr_beg, addr_end, new_section_size, new_perm, base_addr;
+	struct r_bin_pe_addr_t *entry =  PE_(r_bin_pe_get_entrypoint) (bin);
+
+	if (!entry) return;
+
+	new_section_size = bin->size;
+	new_section_size -= entry->paddr > bin->size? 0 : entry->paddr;
+	new_perm = (PE_IMAGE_SCN_MEM_READ | PE_IMAGE_SCN_MEM_WRITE | PE_IMAGE_SCN_MEM_EXECUTE);
+	base_addr = PE_(r_bin_pe_get_image_base) (bin);
+
+	for (i = 0; !sections[i].last; i++) {
+	        //strcmp against .text doesn't work in somes cases
+		if (strstr ((const char*)sections[i].name, "text")) {
+			bool fix = false;
+			int j;
+			//check paddr boundaries
+			addr_beg = sections[i].paddr;
+			addr_end = addr_beg + sections[i].size;
+			if (entry->paddr < addr_beg || entry->paddr > addr_end)
+				fix = true;
+			//check vaddr boundaries
+			addr_beg = sections[i].vaddr + base_addr;
+			addr_end = addr_beg + sections[i].vsize;
+			if (entry->vaddr < addr_beg || entry->vaddr > addr_end)
+				fix = true;
+			//look for other segment with x that is already mapped and hold entrypoint
+			for (j = 0; !sections[j].last; j++) {
+				if (!strstr ((const char*)sections[j].name, "text") && (sections[j].flags & PE_IMAGE_SCN_MEM_EXECUTE)) {
+					addr_beg = sections[j].paddr;
+					addr_end = addr_beg + sections[j].size;
+					if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
+						if (sections[j].vsize == 0) sections[j].vsize = sections[j].size;
+						addr_beg = sections[j].vaddr + base_addr;
+						addr_end = addr_beg + sections[j].vsize;
+						if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
+							fix = false;
+							break;
+						}
+					}
+				}
+							
+			}
+			//if either vaddr or paddr fail we should update this section
+			if (fix) {		
+				strcpy ((char *)sections[i].name, "blob");
+				sections[i].paddr = entry->paddr;
+				sections[i].vaddr = entry->vaddr - base_addr;
+				sections[i].size = sections[i].vsize  = new_section_size;
+				sections[i].flags = new_perm;
+			}
+			goto out_function;
+		}
+	}
+	//if we arrive til here means there is no text section find one that is holding the code
+	for (i = 0; !sections[i].last; i++) {
+		if (sections[i].size > bin->size) continue;
+		addr_beg = sections[i].paddr;
+		addr_end = addr_beg + sections[i].size;
+		if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
+			if (sections[i].vsize == 0) sections[i].vsize = sections[i].size;
+			addr_beg = sections[i].vaddr + base_addr;
+			addr_end = addr_beg + sections[i].vsize;
+			if (entry->vaddr < addr_beg || entry->vaddr > addr_end)
+				sections[i].vaddr = entry->vaddr - base_addr;
+			goto out_function;
+		}
+	}
+	//we need to create another section in order to load the entrypoint
+	sections = realloc (sections, (bin->num_sections + 2) * sizeof(struct r_bin_pe_section_t));
+	i = bin->num_sections;
+	sections[i].last = 0;
+	strcpy ((char *)sections[i].name, "blob");
+	sections[i].paddr = entry->paddr;
+	sections[i].vaddr = entry->vaddr - PE_(r_bin_pe_get_image_base) (bin);
+	sections[i].size = sections[i].vsize = new_section_size;
+	sections[i].flags = new_perm;
+	sections[i+1].last = 1;
+	*sects = sections;
+out_function:
+	free (entry);
+	return;
+
+}
+
 struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_section_t *sections = NULL;
 	PE_(image_section_header) *shdr;
-	int i, sections_count;
+	int i, j, section_count = 0;
 
 	if (!bin || !bin->nt_headers) return NULL;
 	shdr = bin->section_header;
-	sections_count = bin->nt_headers->file_header.NumberOfSections;
-	if (sections_count == 0xffff)
-		sections_count = 16; // hackaround for 65k sections file
-	sections = calloc (sections_count + 1, sizeof(struct r_bin_pe_section_t));
+	for (i = 0; i < bin->num_sections; i++) {
+		//just allocate the needed
+		if (shdr[i].SizeOfRawData || shdr[i].Misc.VirtualSize) section_count++;
+	}
+	sections = calloc (section_count + 1, sizeof(struct r_bin_pe_section_t));
 	if (!sections) {
 		r_sys_perror ("malloc (sections)");
 		return NULL;
 	}
-	for (i = 0; i < sections_count; i++) {
-		memcpy (sections[i].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
-		sections[i].vaddr = shdr[i].VirtualAddress;
-		sections[i].size  = shdr[i].SizeOfRawData;
-		sections[i].vsize = shdr[i].Misc.VirtualSize;
-		sections[i].paddr = shdr[i].PointerToRawData;
-		sections[i].flags = shdr[i].Characteristics;
-		sections[i].last = 0;
+	for (i = 0, j = 0; i < bin->num_sections; i++) {
+		//if sz = 0 r_io_section_add will not add it so just skeep
+		if (!shdr[i].SizeOfRawData && !shdr[i].Misc.VirtualSize) continue;
+		if (shdr[i].Name[0] == '\0') {
+			char *new_name = r_str_newf ("sect_%d", j);
+			strcpy ((char *)sections[j].name, new_name);
+			free (new_name);
+		} else {
+			memcpy (sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
+			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
+		}
+		sections[j].vaddr = shdr[i].VirtualAddress;
+		sections[j].size  = shdr[i].SizeOfRawData;
+		sections[j].vsize = shdr[i].Misc.VirtualSize;
+		sections[j].paddr = shdr[i].PointerToRawData;
+		sections[j].flags = shdr[i].Characteristics;
+		sections[j].last = 0;
+		j++;
 	}
-	sections[i].last = 1;
+	sections[j].last = 1;
+	bin->num_sections = section_count;
 	return sections;
 }
 

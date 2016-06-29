@@ -16,7 +16,7 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	if (sizeof(struct fat_header) + bin->nfat_arch * \
 		sizeof(struct fat_arch) > bin->size)
 		return false;
-	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch<1)
+	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch < 1)
 		return false;
 	size = bin->nfat_arch * sizeof (struct fat_arch);
 	if (size < bin->nfat_arch) return false;
@@ -50,8 +50,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 		return NULL;
 	}
 	if (bin->archs[idx].size == 0 || bin->archs[idx].size > bin->size) {
-		eprintf ("Skipping corrupted sub-bin %d arch %d\n",
-			idx, bin->archs[idx].size);
+		eprintf ("Skipping corrupted sub-bin %d arch %d\n", idx, bin->archs[idx].size);
 		free (ret);
 		return NULL;
 	}

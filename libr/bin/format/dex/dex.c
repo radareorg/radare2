@@ -36,21 +36,15 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	/* strings */
 //eprintf ("strings size: %d\n", bin->header.strings_size);
 	#define STRINGS_SIZE ((bin->header.strings_size+1)*sizeof(ut32))
-	bin->strings = (ut32 *) calloc (bin->header.strings_size +1, sizeof (ut32));
+	bin->strings = (ut32 *) calloc (bin->header.strings_size + 1, sizeof (ut32));
 	if (!bin->strings) {
 		goto fail;
 	}
-
-	//bin->strings = bin->b->buf + bin->header.strings_offset;
-	int left;
-	bin->strings = (ut32 *)r_buf_get_at (bin->b, bin->header.strings_offset, &left);
-	if (left< STRINGS_SIZE) {
-		FAIL ("Strings buffer is too small");
+	if (bin->header.strings_size > bin->size) {
+		free (bin->strings);
+		goto fail;
 	}
-#if 0
-	r_buf_read_at (bin->b, bin->header.strings_offset, (ut8*)bin->strings,
-			bin->header.strings_size * sizeof (ut32));
-#endif
+	r_buf_read_at (bin->b, bin->header.strings_offset, (ut8*)bin->strings, bin->header.strings_size * sizeof (ut32));
 	/* classes */
 	int classes_size = bin->header.class_size * sizeof (struct dex_class_t);
 	if (bin->header.class_offset + classes_size >= bin->size) {

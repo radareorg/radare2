@@ -210,7 +210,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 
 #define VARPREFIX "local"
 #define ARGPREFIX "arg"
-static char *get_varname (RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
+static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
 	while (1) {
@@ -221,19 +221,16 @@ static char *get_varname (RAnal *a, RAnalFunction *fcn, char type, const char *p
 		if (!v) {
 			v = r_anal_var_get_byname (a, fcn, 'v', varname);
 		}
-		if (!v) {
-			break;
-		}
+		if (!v) break;
 		if (v->kind == type && R_ABS (v->delta) == idx) {
+			r_anal_var_free (v);
 			break;
 		}
 		free (varname);
-		free (v);
+		r_anal_var_free (v);
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
 	}
-
-
 	return varname;
 }
 
@@ -297,7 +294,7 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 #define gotoBeach(x) ret=x;goto beach;
 #define gotoBeachRet() goto beach;
 
-void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
+void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
 	st64 ptr;
 	char *sig = r_str_newf (",%s,%s", reg, sign);
@@ -354,6 +351,10 @@ R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", 'a');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'a');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 'e');
+	extract_arg (anal, fcn, op, "bp", "+", 'a');
+	extract_arg (anal, fcn, op, "bp", "-", 'a');
+	extract_arg (anal, fcn, op, "sp", "+", 'e');
+
 }
 
 static bool isInvalidMemory (const ut8 *buf) {
@@ -448,7 +449,7 @@ repeat:
 		}
 		// check if opcode is in another basic block
 		// in that case we break
-		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
 			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 			if (idx == 0) {
 				gotoBeach (R_ANAL_RET_END);
@@ -466,9 +467,8 @@ repeat:
 			}
 		}
 		if (!overlapped) {
-			r_anal_bb_set_offset (bb, bb->ninstr, addr + idx - bb->addr);
+			r_anal_bb_set_offset (bb, bb->ninstr++, addr + idx - bb->addr);
 			bb->size += oplen;
-			bb->ninstr++;
 			fcn->ninstr++;
 		//	FITFCNSZ(); // defer this, in case this instruction is a branch delay entry
 		//	fcn->size += oplen; /// XXX. must be the sum of all the bblocks
@@ -764,8 +764,17 @@ repeat:
 			gotoBeachRet();
 			// For some reason, branch delayed code (MIPS) needs to continue
 			break;
+		case R_ANAL_OP_TYPE_UCALL:
+			/* call [dst] */
+			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
+			break;
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
+			/* call dst */
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
@@ -1213,9 +1222,6 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 // bb seems to be ignored
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalBlock *bbi;
-#if R_ANAL_BB_HAS_OPS
-	RAnalOp *opi;
-#endif
 	RListIter *iter;
 	if (addr == UT64_MAX)
 		return 0;
@@ -1259,19 +1265,6 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 				}
 			}
 			bbi->ninstr = new_bbi_instr;
-#if R_ANAL_BB_HAS_OPS
-			if (bbi->ops) {
-				r_list_foreach (bbi->ops, iter, opi) {
-					if (opi->addr >= addr) {
-						/* Remove opi from bbi->ops without free()ing it. */
-						r_list_split (bbi->ops, opi);
-						bbi->ninstr--;
-						r_list_append (bb->ops, opi);
-						bb->ninstr++;
-					}
-				}
-			}
-#endif
 			return R_ANAL_RET_END;
 		}
 	}
@@ -1282,10 +1275,6 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 	RAnalBlock *bbi;
 	RListIter *iter;
-#if R_ANAL_BB_HAS_OPS
-	RListIter *iter_tmp;
-	RAnalOp *opi;
-#endif
 	r_list_foreach (fcn->bbs, iter, bbi)
 		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size <= bbi->addr+bbi->size) {
 			bb->size = bbi->addr - bb->addr;
@@ -1296,14 +1285,6 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 				bb->type = R_ANAL_BB_TYPE_HEAD;
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 			} else bb->type = R_ANAL_BB_TYPE_BODY;
-#if R_ANAL_BB_HAS_OPS
-			/* We can reuse iter because we return before the outer loop. */
-			r_list_foreach_safe (bb->ops, iter, iter_tmp, opi) {
-				if (opi->addr >= bbi->addr) {
-					r_list_delete (bb->ops, iter);
-				}
-			}
-#endif
 			r_list_append (fcn->bbs, bb);
 			return R_ANAL_RET_END;
 		}

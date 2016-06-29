@@ -244,6 +244,19 @@ typedef struct r_queue_t {
 	unsigned int size;
 } RQueue;
 
+/* bitmap api */
+#if R_SYS_BITS == 4
+#define BITWORD_BITS_SHIFT 5
+#define RBitword ut32
+#else
+#define BITWORD_BITS_SHIFT 6
+#define RBitword ut64
+#endif
+typedef struct r_bitmap_t {
+	int length;
+	RBitword *bitmap;
+} RBitmap;
+
 /* tree api */
 struct r_tree_t;
 
@@ -316,6 +329,13 @@ R_API void r_queue_free (RQueue *q);
 R_API int r_queue_enqueue (RQueue *q, void *el);
 R_API void *r_queue_dequeue (RQueue *q);
 R_API int r_queue_is_empty (RQueue *q);
+
+R_API RBitmap *r_bitmap_new(size_t len);
+R_API void r_bitmap_set_bytes(RBitmap *b, const ut8 *buf, int len);
+R_API void r_bitmap_free(RBitmap *b);
+R_API void r_bitmap_set(RBitmap *b, size_t bit);
+R_API void r_bitmap_unset(RBitmap *b, size_t bit);
+R_API int r_bitmap_test(RBitmap *b, size_t bit);
 
 R_API RTree *r_tree_new (void);
 R_API RTreeNode *r_tree_add_node (RTree *t, RTreeNode *node, void *child_data);

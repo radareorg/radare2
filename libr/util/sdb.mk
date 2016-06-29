@@ -1,10 +1,3 @@
-include ../config.mk
-
-NAME=r_db
-DEPS=r_util
-
-OBJS=db.o table.o
-
 SDBPATH=../../shlr/sdb/src/
 SDBLIB=${SDBPATH}/libsdb.a
 EXTRA_TARGETS+=${SDBLIB}
@@ -31,15 +24,10 @@ SDB_OBJS+=journal.o
 
 SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 
-OBJS+=${SDBOBJS}
-#LINK+=${SDBPATH}/*.o
+OBJS+=$(SDBOBJS)
 
-CFLAGS+=-I${SDBPATH}/src
-pre: ${SDBLIB}
-	${MAKE} all
+CFLAGS+=-I$(SDBPATH)/src
 
-include ../rules.mk
-
-${SDBLIB}:
+sdb_version:
+	$(MAKE) -C "$(SDBPATH)" sdb_version.h
 	${MAKE} -C ${SDBPATH}
-

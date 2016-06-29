@@ -92,8 +92,7 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 	arch = r_bin_fatmach0_extract (fb, idx, &narch);
 	if (!arch) return res;
 
-	res = r_bin_xtrdata_new (NULL, NULL, arch->b, arch->offset,
-							arch->size, narch);
+	res = r_bin_xtrdata_new (NULL, NULL, arch->b, arch->offset, arch->size, narch);
 	r_buf_free (arch->b);
 	free (arch);
 	return res;
@@ -132,7 +131,7 @@ static RList * extractall(RBin *bin) {
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	r_list_append (res, data);
-	for (i=1; data && i < narch; i++) {
+	for (i = 1; data && i < narch; i++) {
 		data = NULL;
 		data = extract (bin, i);
 		r_list_append (res, data);
@@ -150,7 +149,7 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	r_list_append (res, data);
-	for (i=1; data && i < narch; i++) {
+	for (i = 1; data && i < narch; i++) {
 		data = NULL;
 		data = oneshot (bin, buf, size, i);
 		r_list_append (res, data);

@@ -33,7 +33,6 @@ static int verify_version(int show) {
 		{ "r_flags", &r_flag_version }, // XXX inconsistency
 		{ "r_core", &r_core_version },
 		{ "r_crypto", &r_crypto_version },
-		{ "r_db", &r_db_version },
 		{ "r_bp", &r_bp_version },
 		{ "r_debug", &r_debug_version },
 		{ "r_hash", &r_hash_version },
@@ -54,9 +53,12 @@ static int verify_version(int show) {
 	for (i = ret = 0; vcs[i].name; i++) {
 		struct vcs_t *v = &vcs[i];
 		const char *name = v->callback ();
-		if (!ret && strcmp (base, name))
+		if (!ret && strcmp (base, name)) {
 			ret = 1;
-		if (show) printf ("%s  %s\n", name, v->name);
+		}
+		if (show) {
+			printf ("%s  %s\n", name, v->name);
+		}
 	}
 	if (ret) {
 		if (show) eprintf ("WARNING: r2 library versions mismatch!\n");
@@ -136,6 +138,7 @@ static int main_help(int line) {
 		" -F [binplug] force to use that rbin plugin\n"
 		" -h, -hh      show help message, -hh for long\n"
 		" -i [file]    run script file\n"
+		" -I [file]    run script file before the file is opened\n"
 		" -k [k=v]     perform sdb query into core->sdb\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
@@ -184,22 +187,6 @@ static int main_help(int line) {
 		free (homedir);
 	}
 	return 0;
-}
-
-
-static void list_io_plugins(RIO *io) {
-	char str[4];
-	struct list_head *pos;
-	list_for_each_prev (pos, &io->io_list) {
-		RIOList *il = list_entry (pos, RIOList, list);
-		// read, write, debug, proxy
-		str[0] = 'r';
-		str[1] = il->plugin->write ? 'w' : '_';
-		str[2] = il->plugin->isdbg ? 'd' : '_';
-		str[3] = 0;
-		printf ("%s  %-11s %s (%s)\n", str, il->plugin->name,
-			il->plugin->desc, il->plugin->license);
-	}
 }
 
 // Load the binary information from rabin2
@@ -259,6 +246,42 @@ static void radare2_rc(RCore *r) {
 	}
 }
 
+static bool run_commands(RList *cmds, RList *files, bool quiet) {
+	RListIter *iter;
+	const char *cmdn;
+	const char *file;
+	int ret;
+	/* -i */
+	r_list_foreach (files, iter, file) {
+		if (!r_file_exists (file)) {
+			eprintf ("Script '%s' not found.\n", file);
+			return false;
+		}
+		ret = r_core_run_script (&r, file);
+		if (ret == -2) {
+			eprintf ("Cannot open '%s'\n", file);
+		}
+		if (ret < 0 || (ret == 0 && quiet)) {
+			r_cons_flush ();
+			return false;
+		}
+	}
+	/* -c */
+	r_list_foreach (cmds, iter, cmdn) {
+		r_core_cmd0 (&r, cmdn);
+		r_cons_flush ();
+	}
+	if (quiet) {
+		if (cmds && !r_list_empty (cmds)) {
+			return true;
+		}
+		if (!r_list_empty (files)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 int main(int argc, char **argv, char **envp) {
 #if USE_THREADS
 	RThreadLock *lock = NULL;
@@ -281,12 +304,12 @@ int main(int argc, char **argv, char **envp) {
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
- 	int ret, i, c, perms = R_IO_READ;
-	int sandbox = 0;
+ 	int ret, c, perms = R_IO_READ;
+	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
+	bool do_list_io_plugins = false;
 	char *pfile = NULL, *file = NULL;
-	char *cmdfile[32];
 	const char *debugbackend = "native";
 	const char *asmarch = NULL;
 	const char *asmos = NULL;
@@ -297,7 +320,8 @@ int main(int argc, char **argv, char **envp) {
 	int is_gdb = false;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
-	int cmdfilei = 0;
+	RList *files = r_list_new ();
+	RList *prefiles = r_list_new ();
 	int va = 1; // set va = 0 to load physical offsets from rbin
 
 	r_sys_set_environ (envp);
@@ -308,6 +332,8 @@ int main(int argc, char **argv, char **envp) {
 	if (argc < 2) {
 		r_list_free (cmds);
 		r_list_free (evals);
+		r_list_free (files);
+		r_list_free (prefiles);
 		return main_help (1);
 	}
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
@@ -339,7 +365,7 @@ int main(int argc, char **argv, char **envp) {
 		argv++;
 	} else prefile = 0;
 
-	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -386,26 +412,31 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'e':
 			r_config_eval (r.config, optarg);
-			r_list_append (evals, optarg); break;
+			r_list_append (evals, optarg);
+			break;
 		case 'f': fullfile = 1; break;
 		case 'F': forcebin = optarg; break;
 		case 'h': help++; break;
 		case 'i':
-			if (cmdfilei + 1 < (sizeof (cmdfile) / sizeof (*cmdfile)))
-				cmdfile[cmdfilei++] = optarg;
+			r_list_append (files, optarg);
+			break;
+		case 'I':
+			r_list_append (prefiles, optarg);
 			break;
 		case 'k':
 			{
 				char *out = sdb_querys (r.sdb, NULL, 0, optarg);
 				if (out && *out) {
-					r_cons_printf ("%s\n", out);
+					r_cons_println (out);
 				}
 				free (out);
 			}
 			break;
 		case 'o': asmos = optarg; break;
 		case 'l': r_lib_open (r.lib, optarg); break;
-		case 'L': list_io_plugins (r.io); return 0;
+		case 'L':
+			do_list_io_plugins = true;
+			break;
 		case 'm':
 			mapaddr = r_num_math (r.num, optarg); break;
 			break;
@@ -431,8 +462,12 @@ int main(int argc, char **argv, char **envp) {
 		case 'R':
 			r_config_set (r.config, "dbg.profile", optarg);
 			break;
-		case 's': seek = r_num_math (r.num, optarg); break;
-		case 'S': sandbox = 1; break;
+		case 's':
+			seek = r_num_math (r.num, optarg);
+			break;
+		case 'S':
+			sandbox = true;
+			break;
 #if USE_THREADS
 		case 't':
 			threaded = true;
@@ -455,9 +490,22 @@ int main(int argc, char **argv, char **envp) {
 			help++;
 		}
 	}
+	if (do_list_io_plugins) {
+		if (r_config_get_i (r.config, "cfg.plugins")) {
+			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
+		}
+		run_commands (cmds, files, quiet);
+		r_io_plugin_list (r.io);
+		r_cons_flush ();
+		r_list_free (evals);
+		r_list_free (files);
+		r_list_free (cmds);
+		return 0;
+	}
 
 	if (help > 0) {
 		r_list_free (evals);
+		r_list_free (files);
 		r_list_free (cmds);
 		return main_help (help > 1? 2: 0);
 	}
@@ -484,6 +532,8 @@ int main(int argc, char **argv, char **envp) {
 	if (r_config_get_i (r.config, "cfg.plugins")) {
 		r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 	}
+	ret = run_commands (NULL, prefiles, false);
+	r_list_free (prefiles);
 
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (prefile) {
@@ -500,19 +550,21 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Missing URI for -C\n");
 			return 1;
 		}
-		if (!strncmp (uri, "http://", 7))
+		if (!strncmp (uri, "http://", 7)) {
 			r_core_cmdf (&r, "=+%s", uri);
-		else r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
+		} else {
+			r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
+		}
 		return 0;
 	}
 
 	switch (zflag) {
-		case 1:
-			r_config_set (r.config, "bin.strings", "false");
-			break;
-		case 2:
-			r_config_set (r.config, "bin.rawstr", "true");
-			break;
+	case 1:
+		r_config_set (r.config, "bin.strings", "false");
+		break;
+	case 2:
+		r_config_set (r.config, "bin.rawstr", "true");
+		break;
 	}
 
 	switch (va) {
@@ -839,38 +891,22 @@ int main(int argc, char **argv, char **envp) {
 		}
 		r_cons_flush ();
 	}
-	/* run -i flags */
-	cmdfile[cmdfilei] = 0;
-	for (i = 0; i < cmdfilei; i++) {
-		if (!r_file_exists (cmdfile[i])) {
-			eprintf ("Script '%s' not found.\n", cmdfile[i]);
-			return 1;
-		}
-		ret = r_core_run_script (&r, cmdfile[i]);
-		//ret = r_core_cmd_file (&r, cmdfile[i]);
-		if (ret == -2)
-			eprintf ("Cannot open '%s'\n", cmdfile[i]);
-		if (ret < 0 || (ret == 0 && quiet)) {
-			r_cons_flush ();
-			return 0;
-		}
-	}
-/////
-	r_list_foreach (cmds, iter, cmdn) {
-		r_core_cmd0 (&r, cmdn);
-		r_cons_flush ();
-	}
-	if ((cmdfile[0] || !r_list_empty (cmds)) && quiet)
-		return 0;
+
+	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
-/////
-	if (r_config_get_i (r.config, "scr.prompt"))
+	r_list_free (files);
+	if (ret) {
+		return 0;
+	}
+	if (r_config_get_i (r.config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
 			r_core_cmd (&r, "fo", 0);
 			r_cons_flush ();
 		}
-	if (sandbox)
+	}
+	if (sandbox) {
 		r_config_set (r.config, "cfg.sandbox", "true");
+	}
 	if (quiet) {
 		r_config_set (r.config, "scr.wheel", "false");
 		r_config_set (r.config, "scr.interactive", "false");

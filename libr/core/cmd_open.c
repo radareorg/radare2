@@ -286,12 +286,17 @@ static int cmd_open(void *data, const char *input) {
 		"o","","list opened files",
 		"o*","","list opened files in r2 commands",
 		"oa"," [addr]","Open bin info from the given address",
-		"oj","","list opened files in JSON format",
+		"ob","[lbdos] [...]","list open binary files backed by fd",
+		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"oc"," [file]","open core file, like relaunching r2",
-		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
+		"oj","","list opened files in JSON format",
+		"oL","","list all IO plugins registered",
+		"om","[?]","create, list, remove IO maps",
+		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 		"oo","","reopen current file (kill+fork in debugger)",
 		"oo","+","reopen current file in read-write",
 		"ood"," [args]","reopen in debugger mode (with args)",
+		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
 		"o"," 4","priorize io on fd 4 (bring to front)",
 		"o","-1","close file descriptor 1",
 		"o-","*","close all opened files",
@@ -299,10 +304,6 @@ static int cmd_open(void *data, const char *input) {
 		"o"," [file]","open [file] file in read-only",
 		"o","+[file]","open file in read-write mode",
 		"o"," [file] 0x4000","map file at 0x4000",
-		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-		"ob","[lbdos] [...]","list open binary files backed by fd",
-		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
-		"om","[?]","create, list, remove IO maps",
 		NULL
 	};
 	const char* help_msg_oo[] = {
@@ -353,6 +354,9 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		}
 		r_core_file_list (core, (int)(*input));
+		break;
+	case 'L':
+		r_io_plugin_list (core->io);
 		break;
 	case 'a':
 		if ('?' == input[1]) {

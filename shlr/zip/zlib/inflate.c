@@ -1499,12 +1499,18 @@ int subvert;
 #endif
 }
 
+#ifndef UT64_MAX
+#define UT64_MAX 0xFFFFFFFFFFFFFFFFULL
+#endif
+
 long ZEXPORT inflateMark(strm)
 z_streamp strm;
 {
     struct inflate_state FAR *state;
 
-    if (strm == Z_NULL || strm->state == Z_NULL) return ((unsigned long long)-1L) << 16;
+    if (strm == Z_NULL || strm->state == Z_NULL) {
+        return UT64_MAX << 16;
+    }
     state = (struct inflate_state FAR *)strm->state;
     return ((long)(state->back) << 16) +
         (state->mode == COPY ? state->length :

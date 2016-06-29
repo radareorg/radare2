@@ -756,12 +756,14 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				getrange (ao->a[0]);
 				getrange (ao->a[1]);
 				getrange (ao->a[2]);
-				{
+				if (ao->a[0] && ao->a[1]) {
 					char rn[8];
 					strncpy (rn, ao->a[1], 2);
 					rn[2] = 0;
-					ao->o |= getreg (ao->a[0])<<20;
+					ao->o |= getreg (ao->a[0]) << 20;
 					ao->o |= getreg (rn)<<8; // delta
+				} else {
+					return 0;
 				}
 				ret = getreg (ao->a[2]);
 				if (ret != -1) {

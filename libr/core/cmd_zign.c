@@ -80,7 +80,7 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case 'n':
 		if (!input[1])
-			r_cons_printf ("%s\n", core->sign->ns);
+			r_cons_println (core->sign->ns);
 		else if (!strcmp ("-", input+1))
 			r_sign_ns (core->sign, "");
 		else r_sign_ns (core->sign, input+2);

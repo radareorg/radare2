@@ -175,7 +175,7 @@ static int cmd_alias(void *data, const char *input) {
 		*desc = 0;
 		v = r_cmd_alias_get (core->rcmd, buf, 0);
 		if (v) {
-			r_cons_printf ("%s\n", v);
+			r_cons_println (v);
 			free (buf);
 			return 1;
 		} else {
@@ -193,9 +193,9 @@ static int cmd_alias(void *data, const char *input) {
 	} else if (!buf[1]) {
 		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
-		for (i=0; i<count; i++)
-			r_cons_printf ("%s\n", keys[i]);
-
+		for (i=0; i<count; i++) {
+			r_cons_println (keys[i]);
+		}
 	/* Execute alias */
 	} else {
 		char *v;
@@ -274,7 +274,7 @@ static int cmd_rap(void *data, const char *input) {
 		if (input[1]=='=') {
 			// swap core->cmdremote = core->cmdremote? 0: 1;
 			core->cmdremote = input[2]? 1: 0;
-			r_cons_printf ("%s\n", r_str_bool (core->cmdremote));
+			r_cons_println (r_str_bool (core->cmdremote));
 		} else {
 			r_io_system (core->io, input+1);
 		}
@@ -519,7 +519,7 @@ static int cmd_interpret(void *data, const char *input) {
 			}
 			rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
 			if (rbuf) {
-				r_cons_printf ("%s", rbuf);
+				r_cons_print (rbuf);
 				free (rbuf);
 			}
 		} else r_core_rtr_cmds (core, input+1);
@@ -611,7 +611,9 @@ static int cmd_kuery(void *data, const char *input) {
 	switch (input[0]) {
 	case ' ':
 		out = sdb_querys (s, NULL, 0, input+1);
-		if (out) r_cons_printf ("%s\n", out);
+		if (out) {
+			r_cons_println (out);
+		}
 		free (out);
 		break;
 	//case 's': r_pair_save (s, input+3); break;
@@ -642,7 +644,9 @@ static int cmd_kuery(void *data, const char *input) {
 				break;
 			if (!*buf) break;
 			out = sdb_querys (s, NULL, 0, buf);
-			if (out) r_cons_printf ("%s\n", out);
+			if (out) {
+				r_cons_println (out);
+			}
 		}
 		break;
 	case 'o':
@@ -730,7 +734,7 @@ static int cmd_kuery(void *data, const char *input) {
 		s = sdb_ns (core->sdb, inp+1, 1);
 		out = sdb_querys (s, NULL, 0, sp+1);
 		if (out) {
-			r_cons_printf ("%s\n", out);
+			r_cons_println (out);
 			free (out);
 		}
 		free (inp);
@@ -929,7 +933,7 @@ static int cmd_thread(void *data, const char *input) {
 				r_cons_printf ("Task %d Status %c Command %s\n",
 					task->id, task->state, task->msg->text);
 				if (task->msg->res)
-					r_cons_printf ("%s\n", task->msg->res);
+					r_cons_println (task->msg->res);
 			} else eprintf ("Cannot find task\n");
 		} else {
 			r_core_task_list (core, 1);
@@ -1040,7 +1044,7 @@ static int cmd_system(void *data, const char *input) {
 		} else {
 			if (!r_sandbox_enable (0)) {
 				core->cmdremote = input[1]? 1: 0;
-				r_cons_printf ("%s\n", r_str_bool (core->cmdremote));
+				r_cons_println (r_str_bool (core->cmdremote));
 			}
 		}
 		break;
@@ -1589,22 +1593,22 @@ next2:
 	/* temporary seek commands */
 	if (*cmd!='(' && *cmd!='"') {
 		ptr = strchr (cmd, '@');
-		if (ptr == cmd+1 && *cmd=='?')
+		if (ptr == cmd + 1 && *cmd=='?')
 			ptr = NULL;
 	} else ptr = NULL;
 	core->tmpseek = ptr? true: false;
 	if (ptr) {
-		ut64 tmpoff, tmpbsz, addr;
-		char *tmpasm = NULL;
-		const char *tmpbits = NULL;
-		char *tmpeval = NULL;
-		const char *offstr = NULL;
 		char *f, *ptr2 = strchr (ptr+1, '!');
+		ut64 addr = UT64_MAX;
+		const char *tmpbits = NULL;
+		const char *offstr = NULL;
+		ut64 tmpbsz = core->blocksize;
+		ut64 tmpoff = core->offset;
+		char *tmpeval = NULL;
+		char *tmpasm = NULL;
+		int tmpfd = -1;
 		int sz, len;
 		ut8 *buf;
-		addr = UT64_MAX;
-		tmpoff = core->offset;
-		tmpbsz = core->blocksize;
 
 		*ptr = '\0';
 		for (ptr++; *ptr== ' '; ptr++);
@@ -1614,12 +1618,15 @@ next2:
 			ptr--;
 		}
 
-		if (ptr[0] && ptr[1] && ptr[2])
-			arroba = strchr (ptr+2, '@');
-		else arroba = NULL;
+		if (ptr[0] && ptr[1] && ptr[2]) {
+			arroba = strchr (ptr + 2, '@');
+		} else {
+			arroba = NULL;
+		}
 repeat_arroba:
-		if (arroba)
+		if (arroba) {
 			*arroba = 0;
+		}
 		if (ptr[0] && ptr[1]==':' && ptr[2]) {
 			usemyblock = 1;
 			switch (ptr[0]) {
@@ -1664,7 +1671,7 @@ repeat_arroba:
 					} else eprintf ("cannot allocate\n");
 				} else eprintf ("Invalid @x: syntax\n");
 				break;
-			case 'k':
+			case 'k': // "@k"
 				 {
 					char *out = sdb_querys (core->sdb, NULL, 0, ptr+((ptr[1])?2:1));
 					if (out) {
@@ -1672,6 +1679,12 @@ repeat_arroba:
 						free (out);
 					}
 				 }
+				break;
+			case 'o': // "@o:3"
+				if (ptr[1] ==':') {
+					tmpfd = core->io->raised;
+					r_io_raise (core->io, atoi (ptr + 2));
+				}
 				break;
 			case 'a': // "@a:"
 				if (ptr[1]==':') {
@@ -1787,7 +1800,6 @@ next_arroba:
 
 				tmpseek = true;
 			}
-
 			if (usemyblock) {
 				if (addr != UT64_MAX) {
 					core->offset = addr;
@@ -1821,6 +1833,9 @@ next_arroba:
 		if (tmpasm) {
 			r_config_set (core->config, "asm.arch", tmpasm);
 			tmpasm = NULL;
+		}
+		if (tmpfd != -1) {
+			r_io_raise (core->io, tmpfd);
 		}
 		if (tmpbits) {
 			r_config_set (core->config, "asm.bits", tmpbits);

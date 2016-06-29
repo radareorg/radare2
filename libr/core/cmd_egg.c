@@ -8,7 +8,7 @@ static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	if (input[1]!=' ') {
 		char *a = r_egg_option_get (egg, key);
 		if (a) {
-			r_cons_printf ("%s\n", a);
+			r_cons_println (a);
 			free (a);
 		}
 	} else r_egg_option_set (egg, key, input+2);
@@ -132,7 +132,7 @@ static int cmd_egg(void *data, const char *input) {
 			} else {
 				char *o = r_egg_option_get (egg, oa);
 				if (o) {
-					r_cons_printf ("%s\n", o);
+					r_cons_printf (o);
 					free (o);
 				}
 			}

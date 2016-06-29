@@ -163,7 +163,7 @@ R_API int r_core_visual_hud(RCore *core) {
 	r_cons_clear ();
 	if (res) {
 		p = strchr (res, '\t');
-		r_cons_printf ("%s\n", res);
+		r_cons_println (res);
 		r_cons_flush ();
 		if (p) r_core_cmd0 (core, p+1);
 		free (res);
@@ -635,8 +635,7 @@ static ut64 prevop_addr (RCore *core, ut64 addr) {
 //  Returns true if we can use analysis to find the previous operation address,
 //  sets prev_addr to the value of the instruction numinstrs back.
 //  If we can't use the anal, then set prev_addr to UT64_MAX and return false;
-R_API bool r_core_prevop_addr (RCore* core, ut64 start_addr, int numinstrs,
-		ut64* prev_addr) {
+R_API bool r_core_prevop_addr (RCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr) {
 	RAnalBlock* bb;
 	int i;
 	// Check that we're in a bb, otherwise this prevop stuff won't work.
@@ -1994,7 +1993,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	else
 		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %s%d %s]> %s %s\n",
 			core->offset, pcs, core->blocksize, filename, bar, pos);
-	r_cons_printf ("%s", foo);
+	r_cons_print (foo);
 	if (color) r_cons_strcat (Color_RESET);
 }
 

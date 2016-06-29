@@ -44,23 +44,68 @@ R_LIB_VERSION_HEADER(r_debug);
 #define PTRACE_SYSCALL PT_STEP
 #endif
 
-enum {
+
+/*
+ * states that a process can be in
+ */
+typedef enum {
 	R_DBG_PROC_STOP = 's',
 	R_DBG_PROC_RUN = 'r',
 	R_DBG_PROC_SLEEP = 'S',
 	R_DBG_PROC_ZOMBIE = 'z',
 	R_DBG_PROC_DEAD = 'd',
 	R_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
-};
+} RDebugPidState;
 
 
 // signal handling must support application and debugger level options
-enum {
-	R_DBG_SIGNAL_IGNORE=0, // ignore signal handler
-	R_DBG_SIGNAL_CONT=1, // pass signal to chlidren and continue execution
-	R_DBG_SIGNAL_SKIP=2, //
+typedef enum {
+	R_DBG_SIGNAL_IGNORE = 0, // ignore signal handler
+	R_DBG_SIGNAL_CONT = 1, // pass signal to chlidren and continue execution
+	R_DBG_SIGNAL_SKIP = 2, //
 	//..
-};
+} RDebugSignalMode;
+
+
+/*
+ * when a user wants to resume from a breakpoint, we need to know how they want
+ * to proceed. these values indicate their intention.
+ */
+typedef enum {
+	R_DBG_RECOIL_NONE = 0,
+	R_DBG_RECOIL_STEP,
+	R_DBG_RECOIL_CONTINUE
+} RDebugRecoilMode;
+
+/*
+ * List of reasons that an inferior might have stopped
+ */
+typedef enum {
+	R_DEBUG_REASON_DEAD = -1,
+	R_DEBUG_REASON_NONE = 0,
+	R_DEBUG_REASON_SIGNAL,
+	R_DEBUG_REASON_SEGFAULT,
+	R_DEBUG_REASON_BREAKPOINT,
+	R_DEBUG_REASON_READERR,
+	R_DEBUG_REASON_STEP,
+	R_DEBUG_REASON_ABORT,
+	R_DEBUG_REASON_WRITERR,
+	R_DEBUG_REASON_DIVBYZERO,
+	R_DEBUG_REASON_ILLEGAL,
+	R_DEBUG_REASON_UNKNOWN,
+	R_DEBUG_REASON_ERROR,
+	R_DEBUG_REASON_NEW_PID,
+	R_DEBUG_REASON_NEW_TID,
+	R_DEBUG_REASON_NEW_LIB,
+	R_DEBUG_REASON_EXIT_PID,
+	R_DEBUG_REASON_EXIT_TID,
+	R_DEBUG_REASON_EXIT_LIB,
+	R_DEBUG_REASON_TRAP,
+	R_DEBUG_REASON_SWI,
+	R_DEBUG_REASON_INT,
+	R_DEBUG_REASON_FPU,
+} RDebugReasonType;
+
 
 /* TODO: move to r_anal */
 typedef struct r_debug_frame_t {
@@ -70,11 +115,12 @@ typedef struct r_debug_frame_t {
 	ut64 bp;
 } RDebugFrame;
 
+
 typedef struct r_debug_reason_t {
-        int type;
+	int /*RDebugReasonType*/ type;
 	int tid;
 	int signum;
-	RBreakpointItem *bpi;
+	ut64 bp_addr;
 	ut64 timestamp;
 	ut64 addr;
 	ut64 ptr;
@@ -139,46 +185,58 @@ typedef struct r_debug_tracepoint_t {
 typedef struct r_debug_t {
 	char *arch;
 	int bits; /// XXX: MUST SET ///
-	int pid;    /* selected process id */
-	int tid;    /* selected thread id */
+
+	int pid; /* selected process id */
+	int tid; /* selected thread id */
+	int forked_pid; /* last pid created by fork */
+	RList *threads; /* NOTE: list contents are platform-specific */
+
+	/* dbg.* config options (see e?dbg)
+	 * NOTE: some settings are checked inline instead of tracked here.
+	 */
+	int bpsize; /* size of a breakpoint */
+	char *btalgo; /* select backtrace algorithm */
+	int btdepth; /* backtrace depth */
+	int regcols; /* display columns */
 	int swstep; /* steps with software traps */
-	int steps;  /* counter of steps done */
-	int newstate;
-	bool in_recoil; 			/* are we stopped due to bp? */
+	int stop_all_threads; /* stop all threads at any stop */
+	int trace_forks; /* stop on new children */
+	int trace_execs; /* stop on new execs */
+	int trace_clone; /* stop on new threads */
+	char *glob_libs; /* stop on lib load */
+	char *glob_unlibs; /* stop on lib unload */
+
+	/* tracking debugger state */
+	int steps; /* counter of steps done */
 	RDebugReason reason; /* stop reason */
+	RDebugRecoilMode recoil_mode; /* what did the user want to do? */
+
+	/* tracing vars */
 	RDebugTrace *trace;
-	int stop_all_threads;
+	Sdb *tracenodes;
+	RTree *tree;
+
 	RReg *reg;
 	const char *creg; // current register value
 	RBreakpoint *bp;
-	int bpsize;
-	int btdepth;
-	void *user;
+	void *user; // XXX(jjd): unused?? meant for caller's use??
+
 	/* io */
 	PrintfCallback cb_printf;
+	RIOBind iob;
+
 	struct r_debug_plugin_t *h;
 	struct list_head plugins;
+
 	RAnal *anal;
-	RIOBind iob;
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
 	RList *snaps; // <RDebugSnap>
-	RTree *tree;
-	Sdb *tracenodes;
 	Sdb *sgnls;
 	RCoreBind corebind;
-	int trace_forks;
-	int trace_execs;
-	int trace_clone;
 	// internal use only
 	int _mode;
-	RList *threads; // XXX This is platform-specific !!!
-	/* select backtrace algorithm */
-	char *btalgo;
 	RNum *num;
-	int regcols;
-	char *glob_libs;
-	char *glob_unlibs;
 } RDebug;
 
 typedef struct r_debug_desc_plugin_t {
@@ -268,46 +326,41 @@ typedef struct r_debug_pid_t {
 	ut64 pc;
 } RDebugPid;
 
-enum RDebugReasonType {
-	R_DEBUG_REASON_DEAD = -1,
-	R_DEBUG_REASON_NONE = 0,
-	R_DEBUG_REASON_SIGNAL,
-	R_DEBUG_REASON_SEGFAULT,
-	R_DEBUG_REASON_BREAKPOINT,
-	R_DEBUG_REASON_READERR,
-	R_DEBUG_REASON_STEP,
-	R_DEBUG_REASON_ABORT,
-	R_DEBUG_REASON_WRITERR,
-	R_DEBUG_REASON_DIVBYZERO,
-	R_DEBUG_REASON_ILLEGAL,
-	R_DEBUG_REASON_UNKNOWN,
-	R_DEBUG_REASON_ERROR,
-	R_DEBUG_REASON_NEW_PID,
-	R_DEBUG_REASON_NEW_TID,
-	R_DEBUG_REASON_NEW_LIB,
-	R_DEBUG_REASON_EXIT_PID,
-	R_DEBUG_REASON_EXIT_TID,
-	R_DEBUG_REASON_EXIT_LIB,
-	R_DEBUG_REASON_TRAP,
-	R_DEBUG_REASON_SWI,
-	R_DEBUG_REASON_INT,
-	R_DEBUG_REASON_FPU,
-};
-
+/*
+ * Radare's debugger has both an external and internal API.
+ *
+ * TODO(jjd): reconcile external API and extend it for better funcitonality
+ * when using R2 as a library.
+ */
 #ifdef R_API
+R_API RDebug *r_debug_new(int hard);
+R_API RDebug *r_debug_free(RDebug *dbg);
+
 R_API int r_debug_attach(RDebug *dbg, int pid);
 R_API int r_debug_detach(RDebug *dbg, int pid);
 R_API int r_debug_startv(RDebug *dbg, int argc, char **argv);
 R_API int r_debug_start(RDebug *dbg, const char *cmd);
-R_API int r_debug_stop_reason(RDebug *dbg);
+
+/* reason we stopped */
+R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg);
 R_API const char *r_debug_reason_to_string(int type);
-R_API int r_debug_wait(RDebug *dbg);
+
+/* wait for another event */
+R_API RDebugReasonType r_debug_wait(RDebug *dbg);
+
+/* continuations */
+R_API int r_debug_step(RDebug *dbg, int steps);
 R_API int r_debug_step_over(RDebug *dbg, int steps);
 R_API int r_debug_continue_until(RDebug *dbg, ut64 addr);
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over);
 R_API int r_debug_continue_until_nontraced(RDebug *dbg);
 R_API int r_debug_continue_syscall(RDebug *dbg, int sc);
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc);
+R_API int r_debug_continue(RDebug *dbg);
+R_API int r_debug_continue_kill(RDebug *dbg, int signal);
+
+/* process/thread handling */
+R_API int r_debug_select(RDebug *dbg, int pid, int tid);
 //R_API int r_debug_pid_add(RDebug *dbg);
 //R_API int r_debug_pid_add_thread(RDebug *dbg);
 //R_API int r_debug_pid_del(RDebug *dbg);
@@ -323,9 +376,6 @@ R_API bool r_debug_use(RDebug *dbg, const char *str);
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg);
 R_API void r_debug_info_free (RDebugInfo *rdi);
 
-R_API RDebug *r_debug_new(int hard);
-R_API RDebug *r_debug_free(RDebug *dbg);
-
 /* send signals */
 R_API void r_debug_signal_init(RDebug *dbg);
 R_API int r_debug_signal_send(RDebug *dbg, int num);
@@ -339,10 +389,6 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig);
 R_API RList *r_debug_kill_list(RDebug *dbg);
 // XXX: must be uint64 action
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
-R_API int r_debug_step(RDebug *dbg, int steps);
-R_API int r_debug_continue(RDebug *dbg);
-R_API int r_debug_continue_kill(RDebug *dbg, int signal);
-R_API int r_debug_select(RDebug *dbg, int pid, int tid);
 
 /* handle.c */
 R_API void r_debug_plugin_init(RDebug *dbg);
@@ -394,7 +440,7 @@ R_API int r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
 R_API ut64 r_debug_arg_get(RDebug *dbg, int fast, int num);
 R_API bool r_debug_arg_set(RDebug *dbg, int fast, int num, ut64 value);
 
-/*breakpoints*/
+/* breakpoints (most in r_bp, this calls those) */
 R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta);
 
 /* pid */
@@ -403,7 +449,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid);
 R_API void r_debug_tracenodes_reset(RDebug *dbg);
 
 R_API void r_debug_trace_reset(RDebug *dbg);
-R_API int r_debug_trace_pc(RDebug *dbg);
+R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc);
 R_API void r_debug_trace_at(RDebug *dbg, const char *str);
 R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr);
 R_API void r_debug_trace_list(RDebug *dbg, int mode);

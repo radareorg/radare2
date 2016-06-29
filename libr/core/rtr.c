@@ -81,7 +81,7 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 			strcpy (msg, "T");
 		}
 		ret = rtrcmd (T, msg);
-		r_cons_printf ("%s\n", ret);
+		r_cons_println (ret);
 		free (ret);
 		ret = rtrcmd (T, "Tl");
 		lastmsg = atoi (ret)-1;
@@ -97,7 +97,7 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 			eprintf ("/clear          clear text log messages\n");
 		} else if (!strncmp (buf, "/nick ", 6)) {
 			snprintf (msg, sizeof (msg) - 1, "* '%s' is now known as '%s'", me, buf+6);
-			r_cons_printf ("%s\n", msg);
+			r_cons_println (msg);
 			r_core_log_add (core, msg);
 			r_config_set (core->config, "cfg.user", buf+6);
 			me = r_config_get (core->config, "cfg.user");
@@ -106,7 +106,7 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 		} else if (!strcmp (buf, "/log")) {
 			char *ret = rtrcmd (T, "T");
 			if (ret) {
-				r_cons_printf ("%s\n", ret);
+				r_cons_println (ret);
 				free (ret);
 			}
 		} else if (!strcmp (buf, "/clear")) {
@@ -134,7 +134,7 @@ static bool rtr_visual (RCore *core, TextLog T, const char *cmd) {
 			char *ret;
 			r_cons_clear00 ();
 			ret = rtrcmd (T, cmd);
-			r_cons_printf ("%s\n", ret);
+			r_cons_println (ret);
 			free (ret);
 			r_cons_flush ();
 			if (r_cons_singleton ()->breaked)
@@ -152,7 +152,7 @@ static bool rtr_visual (RCore *core, TextLog T, const char *cmd) {
 			r_cons_clear00 ();
 			ret = rtrcmd (T, cmds[cmdidx]);
 			if (ret) {
-				r_cons_printf ("%s\n", ret);
+				r_cons_println (ret);
 				free (ret);
 			}
 			r_cons_flush ();
@@ -213,7 +213,7 @@ TODO:
 					if (buf[3]) {
 						char *res = rtrcmd (T, buf);
 						if (res) {
-							r_cons_printf ("%s\n", res);
+							r_cons_println (res);
 							free (res);
 						}
 						r_cons_flush ();
@@ -246,7 +246,7 @@ TODO:
 							r_line_hist_add (buf);
 							char *res = rtrcmd (T, buf);
 							if (res) {
-								r_cons_printf ("%s\n", res);
+								r_cons_println (res);
 								free (res);
 							}
 							r_cons_flush ();
@@ -612,7 +612,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 						res = r_socket_http_get (bar, NULL, &len);
 						if (res) {
 							res[len] = 0;
-							r_cons_printf ("%s\n", res);
+							r_cons_println (res);
 						}
 						free (bar);
 					} else {
@@ -1268,7 +1268,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 	r_socket_read (fh, (ut8*)cmd_output, cmd_len);
-	r_cons_printf ("%s\n", cmd_output);
+	r_cons_println (cmd_output);
 	free ((void *)cmd_output);
 }
 

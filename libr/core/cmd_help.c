@@ -134,7 +134,7 @@ static int cmd_help(void *data, const char *input) {
 			if (input[3] == '-')
 				r_base64_decode ((ut8*)buf, input+5, strlen (input+5));
 			else r_base64_encode (buf, (const ut8*)input+4, strlen (input+4));
-			r_cons_printf ("%s\n", buf);
+			r_cons_println (buf);
 			free (buf);
 		} else {
 			n = r_num_get (core->num, input+1);
@@ -156,7 +156,7 @@ static int cmd_help(void *data, const char *input) {
 		} else if (input[1]==' '){
 			char *d = r_asm_describe (core->assembler, input+2);
 			if (d && *d) {
-				r_cons_printf ("%s\n", d);
+				r_cons_println (d);
 				free (d);
 			} else eprintf ("Unknown opcode\n");
 		} else eprintf ("Use: ?d[.] [opcode]    to get the description of the opcode\n");
@@ -189,7 +189,7 @@ static int cmd_help(void *data, const char *input) {
 				*q = 0;
 				n = r_num_get (core->num, p);
 				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q+1);
-				r_cons_printf ("%s\n", out);
+				r_cons_println (out);
 			} else eprintf ("Usage: \"?b value bitstring\"\n");
 			free (p);
 		} else eprintf ("Whitespace expected after '?f'\n");
@@ -211,7 +211,7 @@ static int cmd_help(void *data, const char *input) {
 			char unit[32];
 			n = r_num_math (core->num, input+1);
 			r_num_units (unit, n);
-			r_cons_printf ("%s\n", unit);
+			r_cons_println (unit);
 		}
 		break;
 	case ' ':
@@ -433,7 +433,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
 			break;
 		case 'q':
-			r_cons_printf ("%s\n", R2_VERSION);
+			r_cons_println (R2_VERSION);
 			break;
 		}
 		break;
@@ -452,7 +452,7 @@ static int cmd_help(void *data, const char *input) {
 			ut8 *out = malloc (strlen (input)+1);
 			int len = r_hex_str2bin (input+1, out);
 			out[len] = 0;
-			r_cons_printf ("%s\n", (const char*)out);
+			r_cons_println ((const char*)out);
 			free (out);
 		} else if (!strncmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
 			ut64 n = r_num_math (core->num, input);
@@ -475,7 +475,7 @@ static int cmd_help(void *data, const char *input) {
 		// TODO: replace all ${flagname} by its value in hexa
 		char *newmsg = filter_flags (core, msg);
 		r_str_unescape (newmsg);
-		r_cons_printf ("%s\n", newmsg);
+		r_cons_println (newmsg);
 		free (newmsg);
 		}
 		break;
@@ -525,7 +525,7 @@ static int cmd_help(void *data, const char *input) {
 		n = r_io_section_vaddr_to_maddr_try (core->io, n);
 		s = r_io_section_mget_in (core->io, n);
 		if (s && *(s->name)) {
-			r_cons_printf ("%s\n", s->name);
+			r_cons_println (s->name);
 		}
 		break;
 		}

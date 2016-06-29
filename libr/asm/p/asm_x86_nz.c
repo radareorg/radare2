@@ -86,11 +86,21 @@ static bool is64reg(const char *str) {
 	return false;
 }
 
+static bool is8bitrex(const char *str) {
+	int i;
+	const char *regs[] = {"spl", "bpl", "sil", "dil", NULL};
+	for (i = 0; regs[i]; i++) {
+		if (!strcmp (regs[i], str))
+			return true;
+	}
+	return false;
+}
+
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL};
-	//	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh", NULL };
 	const char *regs16[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL};
+	const char *regs16_rex[] = {"al", "cl", "dl", "bl", "spl", "bpl", "sil", "dil", NULL};
 	const char *regs64[] = {"rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL};
 	const char *regs64_2[] = {"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL};
 	if (!str)
@@ -106,6 +116,9 @@ static ut8 getreg(const char *str) {
 			return i;
 	for (i = 0; regs16[i]; i++)
 		if (!strncmp (regs16[i], str, strlen (regs16[i])))
+			return i;
+	for (i = 0; regs16_rex[i]; i++)
+		if (!strncmp (regs16_rex[i], str, strlen (regs16_rex[i])))
 			return i;
 	return 0xff;
 }
@@ -166,11 +179,13 @@ static int hasDword(char *op) {
 	if (arg) {
 		const int dword_len = strlen ("dword ptr");
 		memmove (arg, arg + dword_len, strlen (arg + dword_len) + 1);
+		return 1;
 	}
 	arg = strstr (op, "dword ");
 	if (arg) {
 		const int dword_len = strlen ("dword ");
 		memmove (arg, arg + dword_len, strlen (arg + dword_len) + 1);
+		return 1;
 	}
 	return 0;
 }
@@ -296,6 +311,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[1] = 0xa2;
 		return 2;
 	}
+	if (!strcmp (op, "fsincos")) {
+		data[0] = 0xd9;
+		data[1] = 0xfb;
+		return 2;
+ 	}
 
 	if (!strcmp (str, "call $$")) {
 		memcpy (data, "\xE8\xFF\xFF\xFF\xFF\xC1", 6);
@@ -323,6 +343,24 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	if (!strcmp (op, "rdtsc")) {
 		data[l++] = 0x0f;
 		data[l++] = 0x31;
+		return l;
+	}
+    if (!strcmp (op, "lfence")) {
+		data[l++] = 0x0f;
+		data[l++] = 0xae;
+        data[l++] = 0xe8;
+		return l;
+	}
+    if (!strcmp (op, "mfence")) {
+		data[l++] = 0x0f;
+		data[l++] = 0xae;
+        data[l++] = 0xf0;
+		return l;
+	}
+    if (!strcmp (op, "sfence")) {
+		data[l++] = 0x0f;
+		data[l++] = 0xae;
+        data[l++] = 0xf8;
 		return l;
 	}
 	if (!strncmp (op, "set", 3)) {
@@ -427,9 +465,10 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			}
 		} else if (!strcmp (op, "add")) {
 			int pfx;
+			int N = 1;
+			char *delta;
 			if (*arg == '[') {
-				char *delta = strchr (arg + 1, '+');
-				arg++;
+				delta = strchr (++arg, '+');
 				pfx = 0;
 				if (delta) {
 					int n = getnum (a, arg2);
@@ -469,9 +508,19 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				eprintf ("Invalid syntax\n");
 				return 0;
 			}
-			if (a->bits == 64)
-				if (*arg == 'r')
+			if (*arg == 'r') {
+				if (a->bits == 64) {
 					data[l++] = 0x48;
+				} else {
+					eprintf ("Error: instruction not supported in 32 bit mode\n");
+					return 0;
+				}
+			}
+			if (*arg2 == 'r' && a->bits != 64) {
+				eprintf ("Error: instruction not supported in 32 bit mode\n");
+				return 0;
+			}
+
 			if (isnum (a, arg2)) {
 				int num = getnum (a, arg2);
 				if (num > 127 || num < -127) {
@@ -488,8 +537,71 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					data[l++] = num;
 				}
 			} else {
-				data[l++] = 0x01;
+				if (*arg2 == '[') {
+					data[l++] = 0x03;
+					arg2++;
+					delta = strchr (arg2, '+');
+					if (delta) {
+						N = 1;
+						*delta++ = 0;
+					} else {
+						delta = strchr (arg2, '-');
+						if (delta) {
+							N = -1;
+							*delta++ = 0;
+						}
+					}
+					if (delta) {
+						st32 d = r_num_math (NULL, delta) * N;
+						st16 mod_byte = 1;
+						if ((ST8_MIN > d) || (d > ST8_MAX)) {
+							mod_byte = 2;
+						}
+						data[l++] = mod_byte << 6 | getreg (arg) << 3 | getreg (arg2);
+						data[l++] = d;
+						if (mod_byte == 2) {
+							data[l++] = d >> 8;
+							data[l++] = d >> 16;
+							data[l++] = d >> 24;
+						}
+						return l;
+					}
+					data[l++] = getreg (arg2);
+					return l;
+				} else {
+					data[l++] = 0x01;
+				}
 				data[l++] = pfx | getreg (arg2) << 3 | getreg (arg);
+			}
+			return l;
+		} else if (!strcmp (op, "bt")) {
+			data[l++] = 0x0f;
+			if (isnum (a, arg)) {
+				eprintf ("Error: bad operand\n");
+				return -1;
+			}
+			if (isnum (a, arg2)) {
+				int n = getnum (a, arg2);
+				if (n < ST8_MIN || (n > 0 && n > UT8_MAX)) {
+					eprintf ("Error: Immediate exceeds bounds\n");
+					return -1;
+				}
+				data[l++] = 0xba;
+				if (*arg == '[') {
+					arg++;
+					data[l++] = 0x20 | getreg (arg);
+				} else {
+					data[l++] = 0xe0 | getreg (arg);
+				}
+				data[l++] = getnum (a, arg2);
+			} else {
+				data[l++] = 0xa3;
+				if (*arg == '[') {
+					arg++;
+					data[l++] = getreg (arg2) << 3 | getreg (arg);
+				} else {
+					data[l++] = 0x3 << 6 | getreg (arg2) << 3 | getreg (arg);
+				}
 			}
 			return l;
 		} else if (!strcmp (op, "sub")) {
@@ -626,6 +738,7 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 					data[l++] = ptr[1];
 					data[l++] = ptr[2];
 					data[l++] = ptr[3];
+
 					return l;
 				} else {
 					eprintf ("unknown cmp\n");
@@ -1105,10 +1218,10 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 			ut8 rm_byte = 0x40;
 			int argk = (*arg == '[');
 			ut64 t;
-			if (*arg2 == '-') {
+			if (arg2 && *arg2 == '-') {
 				N = -1;
 				// Don't modify arg2 here as sign is needed further down
-				t = r_num_math (NULL, arg2+1);
+				t = r_num_math (NULL, arg2 + 1);
 			} else {
 				t = r_num_math (NULL, arg2);
 			}
@@ -1322,7 +1435,18 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 							data[l++] = r1;
 							return l;
 						} else {
-							data[l++] = 0xb8 | r0;
+							if (is8bitrex (arg)) {
+								if (a->bits != 64) {
+									eprintf ("Error: Unable to assemble instruction in 32bit\n");
+									return -1;
+								}
+								data[l++] = 0x40;
+								data[l++] = 0x16 << 3 | r0;
+								data[l++] = r1;
+								return l;
+							} else {
+								data[l++] = 0xb8 | r0;
+							}
 						}
 					}
 				}
@@ -1338,9 +1462,21 @@ SETNP/SETPO - Set if No Parity / Set if Parity Odd (386+)
 				if (r1 == 0xff) {
 					return 0;
 				}
-				if (a->bits == 64)
+				if (a->bits == 64) {
 					if (*arg == 'r')
 						data[l++] = 0x48;
+					if (is8bitrex (arg)) {
+						if (a->bits != 64) {
+							eprintf ("Error: Unable to assemble instruction in 32bit\n");
+							return -1;
+						}
+						data[l++] = 0x40;
+						data[l++] = 0x88;
+						data[l++] = 0x3 << 6 | r1 << 3 | r0;
+						return l;
+					}
+				}
+
 				data[l++] = 0x89;
 				if (delta) {
 					if (isnum (a, delta)) {

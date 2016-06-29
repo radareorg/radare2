@@ -140,7 +140,6 @@ REPORT PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK
 SUBDIRS ./config-user.mk
 	libr/include/r_userconf.h
 	pkgcfg/r_io.pc
-	pkgcfg/r_db.pc
 	pkgcfg/r_magic.pc
 	pkgcfg/r_asm.pc
 	pkgcfg/r_bin.pc

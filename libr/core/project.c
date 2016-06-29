@@ -78,7 +78,7 @@ R_API int r_core_project_cat(RCore *core, const char *name) {
 	if (path) {
 		char *data = r_file_slurp (path, NULL);
 		if (data) {
-			r_cons_printf ("%s\n", data);
+			r_cons_println (data);
 			free (data);
 		}
 	}
@@ -110,7 +110,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	default:
 		r_list_foreach (list, iter, foo) {
 			if (r_core_is_project (core, foo))
-				r_cons_printf ("%s\n", foo);
+				r_cons_println (foo);
 		}
 		break;
 	}
@@ -331,6 +331,10 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 	}
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_core_cmd (core, "afl*", 0);
+		r_cons_flush ();
+	}
+	if (opts & R_CORE_PRJ_DBG_BREAK) {
+		r_core_cmd (core, "db*", 0);
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_ANAL_HINTS) {

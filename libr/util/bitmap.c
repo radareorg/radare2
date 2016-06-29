@@ -3,25 +3,12 @@
 
 #define BITMAP_TEST 0
 
-#if R_SYS_BITS == 4
-#define BITWORD_BITS_SHIFT 5
-#define RBitword ut32
-#else
-#define BITWORD_BITS_SHIFT 6
-#define RBitword ut64
-#endif
-
 #define BITWORD_BITS (sizeof(RBitword) * 8)
 #define BITWORD_BITS_MASK (BITWORD_BITS - 1)
 #define BITWORD_MULT(bit)  ((bit + (BITWORD_BITS_MASK)) & ~(BITWORD_BITS_MASK))
 #define BITWORD_TEST(x, y) ((x>>y) & 1)
 
 #define BITMAP_WORD_COUNT(bit) (BITWORD_MULT(bit) >> BITWORD_BITS_SHIFT)
-
-typedef struct r_bitmap_t {
-	int length;
-	RBitword *bitmap;
-} RBitmap;
 
 R_API RBitmap *r_bitmap_new(size_t len) {
 	RBitmap *b = R_NEW0 (RBitmap);
@@ -42,7 +29,7 @@ R_API void r_bitmap_free(RBitmap *b) {
 	free (b);
 }
 
-R_API void bitmap_set(RBitmap *b, size_t bit) {
+R_API void r_bitmap_set(RBitmap *b, size_t bit) {
 	if (bit<b->length)
 		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] |= \
 			((RBitword)1 << (bit & BITWORD_BITS_MASK));
@@ -72,21 +59,21 @@ static const uint32_t test_values[] = { 1,2,3,4,8,34,543,2343 };
 static void set_values(Bitmap *bitmap, const uint32_t *values, int len) {
 	int i;
 	for(i=0; i < len; i++) {
-		bitmap_set(bitmap, values[i]);
+		r_bitmap_set(bitmap, values[i]);
 	}
 }
 
 static void unset_values(Bitmap *bitmap, const uint32_t *values, int len) {
 	int i;
 	for(i=0; i < len; i++) {
-		bitmap_unset(bitmap, values[i]);
+		r_bitmap_unset(bitmap, values[i]);
 	}
 }
 
 static void check_values(Bitmap *bitmap, const uint32_t *values, int len, bool is_set) {
 	int i;
 	for(i=0; i < len; i++) {
-		assert(bitmap_test(bitmap, values[i]) == is_set);
+		assert(r_bitmap_test(bitmap, values[i]) == is_set);
 	}
 }
 

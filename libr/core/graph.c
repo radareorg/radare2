@@ -1080,15 +1080,15 @@ static void place_single (const RAGraph *g, int l, const RGraphNode *bm,
 	}
 }
 
-static int RM_listcmp (const struct len_pos_t *a, const struct len_pos_t *b) {
+static int RM_listcmp(const struct len_pos_t *a, const struct len_pos_t *b) {
 	return a->pos < b->pos;
 }
 
-static int RP_listcmp (const struct len_pos_t *a, const struct len_pos_t *b) {
+static int RP_listcmp(const struct len_pos_t *a, const struct len_pos_t *b) {
 	return a->pos >= b->pos;
 }
 
-static void collect_changes (const RAGraph *g, int l, const RGraphNode *b, int from_up, int s, int e, RList *list, int is_left) {
+static void collect_changes(const RAGraph *g, int l, const RGraphNode *b, int from_up, int s, int e, RList *list, int is_left) {
 	const RGraphNode *vt = g->layers[l].nodes[e - 1];
 	const RGraphNode *vtp = g->layers[l].nodes[s];
 	RListComparator lcmp;
@@ -1116,7 +1116,6 @@ static void collect_changes (const RAGraph *g, int l, const RGraphNode *b, int f
 				c++;
 			} else {
 				cx = R_NEW (struct len_pos_t);
-
 				c--;
 				cx->len = 2;
 				cx->pos = av->x;
@@ -1153,6 +1152,8 @@ static void combine_sequences (const RAGraph *g, int l, const RGraphNode *bm, co
 	const RGraphNode *vt, *vtp;
 	RANode *at, *atp;
 	int rm, rp, t, m, i;
+	Rm->free = (RListFree)free;
+	Rp->free = (RListFree)free;
 
 	t = (a + r) / 2;
 	vt = g->layers[l].nodes[t - 1];
@@ -2078,7 +2079,7 @@ static void agraph_prev_node(RAGraph *g) {
 
 static void agraph_update_title (RAGraph *g, RAnalFunction *fcn) {
 	const char *mode_str = g->is_callgraph ? mode2str (g, "CG") : mode2str (g, "BB");
-	char *new_title = r_str_newf(
+	char *new_title = r_str_newf (
 			"[0x%08"PFMT64x"]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
 			fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
 			g->zoom, mode_str, mousemodes[mousemode], g->movspeed);

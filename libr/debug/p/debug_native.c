@@ -9,10 +9,11 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#include "native/drx.c" // x86 specific
-#include "r_cons.h"
 
 #if DEBUGGER
+
+#include "native/drx.c" // x86 specific
+#include "r_cons.h"
 
 static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
@@ -45,10 +46,12 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #include <sys/types.h>
 #include <sys/wait.h>
 #define R_DEBUG_REG_T struct reg
+#include "native/procfs.h"
 #if __KFBSD__
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
+#include "native/procfs.h"
 
 #elif __APPLE__
 #include <sys/resource.h>
@@ -63,6 +66,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 
 #elif __linux__
 #include "native/linux/linux_debug.h"
+#include "native/procfs.h"
 #if __x86_64__
 #include "native/linux/linux_coredump.h"
 #endif
@@ -222,9 +226,13 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	#warning "r_debug_native_continue not supported on this platform"
 	return -1;
 #else
-	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
-//eprintf ("SIG %d\n", dbg->reason.signum);
-	return ptrace (PTRACE_CONT, pid, NULL, data) == 0;
+	int contsig = dbg->reason.signum;
+
+	if (sig != -1) {
+		contsig = sig;
+	}
+	//eprintf ("continuing with signal %d ...\n", contsig);
+	return ptrace (PTRACE_CONT, pid, NULL, contsig) == 0;
 #endif
 }
 static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
@@ -254,8 +262,15 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 }
 #endif
 
-static int r_debug_native_wait (RDebug *dbg, int pid) {
+/*
+ * wait for an event and start trying to figure out what to do with it.
+ *
+ * Returns R_DEBUG_REASON_*
+ */
+static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	int status = -1;
+	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+
 #if __WINDOWS__ && !__CYGWIN__
 	int mode = 0;
 	status = w32_dbg_wait (dbg, pid);
@@ -270,7 +285,7 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
 			if (tracelib (dbg, mode=='l'? "load":"unload", r->lib))
-				status=R_DEBUG_REASON_TRAP;
+				status = R_DEBUG_REASON_TRAP;
 		} else {
 			eprintf ("%soading unknown library.\n", mode?"L":"Unl");
 		}
@@ -278,38 +293,102 @@ static int r_debug_native_wait (RDebug *dbg, int pid) {
 	}
 #else
 	if (pid == -1) {
-		status = R_DEBUG_REASON_UNKNOWN;
-	} else {
-#if __APPLE__
-		// eprintf ("No waitpid here :D\n");
-		status = xnu_wait (dbg, pid);
-#else
-		// XXX: this is blocking, ^C will be ignored
-		int ret = waitpid (pid, &status, 0);
-		if (ret == -1) {
-			status = R_DEBUG_REASON_ERROR;
-		} else {
-			//printf ("status=%d (return=%d)\n", status, ret);
-			// TODO: switch status and handle reasons here
-			r_debug_handle_signals (dbg);
+		eprintf ("r_debug_native_wait called with -1 pid!\n");
+		return R_DEBUG_REASON_ERROR;
+	}
 
-			if (WIFSTOPPED (status)) {
-				dbg->reason.signum = WSTOPSIG (status);
-				status = R_DEBUG_REASON_SIGNAL;
-			} else if (status == 0 || ret == -1) {
-				status = R_DEBUG_REASON_DEAD;
+#if __APPLE__
+	// eprintf ("No waitpid here :D\n");
+	reason = xnu_wait (dbg, pid);
+	status = reason? 1: 0;
+#else
+	// XXX: this is blocking, ^C will be ignored
+#ifdef WAIT_ON_ALL_CHILDREN
+	//eprintf ("waiting on all children ...\n");
+	int ret = waitpid (-1, &status, WAIT_ANY); //__WALL);
+#else
+	//eprintf ("waiting on pid %d ...\n", pid);
+	int ret = waitpid (pid, &status, WAIT_ANY); //__WALL);
+#endif // WAIT_ON_ALL_CHILDREN
+	if (ret == -1) {
+		r_sys_perror ("waitpid");
+		return R_DEBUG_REASON_ERROR;
+	}
+
+	//eprintf ("r_debug_native_wait: status=%d (0x%x) (return=%d)\n", status, status, ret);
+
+#ifdef WAIT_ON_ALL_CHILDREN
+	if (ret != pid) {
+		reason = R_DEBUG_REASON_NEW_PID;
+		eprintf ("switching to pid %d\n", ret);
+		r_debug_select(dbg, ret, ret);
+	}
+#endif // WAIT_ON_ALL_CHILDREN
+
+	// TODO: switch status and handle reasons here
+#if __linux__ && defined(PT_GETEVENTMSG)
+	reason = linux_ptrace_event (dbg, pid, status);
+#endif // __linux__
+
+	/* propagate errors */
+	if (reason == R_DEBUG_REASON_ERROR) {
+		return reason;
+	}
+
+	/* we don't know what to do yet, let's try harder to figure it out. */
+	if (reason == R_DEBUG_REASON_UNKNOWN) {
+		if (WIFEXITED (status)) {
+			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
+			reason = R_DEBUG_REASON_DEAD;
+		} else if (WIFSIGNALED (status)) {
+			eprintf ("child received signal %d\n", WTERMSIG (status));
+			reason = R_DEBUG_REASON_SIGNAL;
+		} else if (WIFSTOPPED (status)) {
+			eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
+
+			/* this one might be good enough... */
+			dbg->reason.signum = WSTOPSIG (status);
+
+			/* the ptrace documentation says GETSIGINFO is only necessary for
+			 * differentiating the various stops.
+			 *
+			 * this might modify dbg->reason.signum
+			 */
+			if (!r_debug_handle_signals (dbg))
+				return R_DEBUG_REASON_ERROR;
+			reason = dbg->reason.type;
+		} else if (WIFCONTINUED (status)) {
+			eprintf ("child continued...\n");
+			reason = R_DEBUG_REASON_NONE;
+		} else if (status == 1) {
+			/* XXX(jjd): does this actually happen? */
+			eprintf ("EEK DEAD DEBUGEE!\n");
+			reason = R_DEBUG_REASON_DEAD;
+		} else if (status == 0) {
+			/* XXX(jjd): does this actually happen? */
+			eprintf ("STATUS=0?!?!?!?\n");
+			reason = R_DEBUG_REASON_DEAD;
+		} else {
+			if (ret != pid) {
+				reason = R_DEBUG_REASON_NEW_PID;
 			} else {
-				if (ret != pid)
-					status = R_DEBUG_REASON_NEW_PID;
-				else status = R_DEBUG_REASON_UNKNOWN;
+				/* ugh. still don't know :-/ */
+				eprintf ("CRAP. returning from wait without knowing why...\n");
 			}
 		}
-#endif
 	}
-#endif
+
+	/* if we still don't know what to do, we have a problem... */
+	if (reason == R_DEBUG_REASON_UNKNOWN) {
+		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
+		reason = R_DEBUG_REASON_ERROR;
+	}
+#endif // __APPLE__
+#endif // __WINDOWS__ && !__CYGWIN__
+
 	dbg->reason.tid = pid;
-	dbg->reason.type = status;
-	return status;
+	dbg->reason.type = reason;
+	return reason;
 }
 
 #undef MAXPID
@@ -327,7 +406,6 @@ static RList *r_debug_native_pids (int pid) {
 #if __WINDOWS__ && !__CYGWIN__
 	return w32_pids (pid, list);
 #elif __APPLE__
-
 	if (pid) {
 		RDebugPid *p = xnu_get_pid (pid);
 		if (p) r_list_append (list, p);
@@ -339,70 +417,78 @@ static RList *r_debug_native_pids (int pid) {
 		}
 	}
 #else
-	int i, fd;
-	char *ptr, cmdline[1024];
+	int i;
+	char *ptr, buf[1024];
+
 	list->free = (RListFree)&r_debug_pid_free;
-	/* TODO */
 	if (pid) {
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
-		/* list parents */
 		DIR *dh;
 		struct dirent *de;
+
+		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
+		r_list_append (list, r_debug_pid_new ("(current)", pid, 's', 0));
+
+		/* list parents */
 		dh = opendir ("/proc");
 		if (dh == NULL) {
+			r_sys_perror ("opendir /proc");
 			r_list_free (list);
 			return NULL;
 		}
-		//for (i=2; i<39999; i++) {
 		while ((de = readdir (dh))) {
-			i = atoi (de->d_name); if (!i) continue;
-			snprintf (cmdline, sizeof (cmdline), "/proc/%d/status", i);
-			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) continue;
-			if (read (fd, cmdline, sizeof(cmdline)) == -1) {
-				close (fd);
+			/* for each existing pid file... */
+			i = atoi (de->d_name);
+			if (i <= 0) {
 				continue;
 			}
-			cmdline[sizeof(cmdline) - 1] = '\0';
-			ptr = strstr (cmdline, "PPid:");
+
+			/* try to read the status */
+			buf[0] = 0;
+			if (procfs_pid_slurp (i, "status", buf, sizeof (buf)) == -1) {
+				continue;
+			}
+			buf[sizeof (buf) - 1] = 0;
+
+			/* look for the parent process id */
+			ptr = strstr (buf, "PPid:");
 			if (ptr) {
-				int ret, ppid = atoi (ptr + 6);
-				close (fd);
+				int ppid = atoi (ptr + 6);
+
+				/* if this is the requested process... */
 				if (i == pid) {
 					//eprintf ("PPid: %d\n", ppid);
+					/* append it to the list with parent */
 					r_list_append (list, r_debug_pid_new (
 						"(ppid)", ppid, 's', 0));
 				}
-				if (ppid != pid) continue;
-				snprintf (cmdline, sizeof(cmdline) - 1, "/proc/%d/cmdline", ppid);
-				fd = open (cmdline, O_RDONLY);
-				if (fd == -1) continue;
-				ret = read (fd, cmdline, sizeof(cmdline));
-				if (ret > 0) {
-					cmdline[ret - 1] = '\0';
-					r_list_append (list, r_debug_pid_new (
-						cmdline, i, 's', 0));
+
+				/* ignore it if it is not one of our children */
+				if (ppid != pid) {
+					continue;
 				}
+
+				/* it's a child of the requested pid, read it's command line and add it */
+				if (procfs_pid_slurp (ppid, "cmdline", buf, sizeof(buf)) == -1) {
+					continue;
+				}
+
+				r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
 			}
-			close (fd);
 		}
 		closedir (dh);
-	} else
-	for (i = 2; i < MAXPID; i++) {
-		if (!r_sandbox_kill (i, 0)) {
-			int ret;
-			// TODO: Use slurp!
-			snprintf (cmdline, sizeof(cmdline), "/proc/%d/cmdline", i);
-			fd = open (cmdline, O_RDONLY);
-			if (fd == -1) continue;
-			cmdline[0] = '\0';
-			ret = read (fd, cmdline, sizeof(cmdline));
-			if (ret > 0) {
-				cmdline[ret - 1] = '\0';
-				r_list_append (list, r_debug_pid_new (
-					cmdline, i, 's', 0));
-			}
-			close (fd);
+	} else {
+		/* try to bruteforce the processes
+		 * XXX(jjd): wouldn't listing the processes like before work better?
+		 */
+		for (i = 2; i < MAXPID; i++) {
+			/* try to send signal 0, if it fails it must not be valid */
+			if (r_sandbox_kill (i, 0) == -1)
+				continue;
+
+			if (procfs_pid_slurp (i, "cmdline", buf, sizeof(buf)) == -1)
+				continue;
+
+			r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
 		}
 	}
 #endif
@@ -767,7 +853,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	region[1] = region2[1] = 'x';
 #if __KFBSD__
 	list = r_debug_native_sysctl_map (dbg);
-	if (list != NULL) return list;
+	if (list) {
+		return list;
+	}
 	snprintf (path, sizeof (path), "/proc/%d/map", dbg->pid);
 #else
 	snprintf (path, sizeof (path), "/proc/%d/maps", dbg->pid);
@@ -791,30 +879,32 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		if (!fgets (line, sizeof (line), fd))
 			break;
 		/* kill the newline if we got one */
-		line_len = strlen(line);
+		line_len = strlen (line);
 		if (line[line_len - 1] == '\n') {
 			line[line_len - 1] = '\0';
 			line_len--;
 		}
 		/* maps files should not have empty lines */
-		if (line_len == 0)
+		if (line_len == 0) {
 			break;
-
+		}
 #if __KFBSD__
 		// 0x8070000 0x8072000 2 0 0xc1fde948 rw- 1 0 0x2180 COW NC vnode /usr/bin/gcc
 		if (sscanf (line, "%s %s %d %d 0x%s %3s %d %d",
 				&region[2], &region2[2], &ign, &ign,
 				unkstr, perms, &ign, &ign) != 8) {
 			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
+			r_list_free (list);
 			return NULL;
 		}
 
 		/* snag the file name */
 		pos_c = strchr (line, '/');
-		if (pos_c)
+		if (pos_c) {
 			strncpy (name, pos_c, sizeof (name) - 1);
-		else
+		} else {
 			name[0] = '\0';
+		}
 #else
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
 		i = sscanf (line, "%s %s %*s %*s %*s %[^\n]", &region[2], perms, name);
@@ -823,6 +913,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		} else if (i != 3) {
 			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
 			eprintf ("%s: problematic line: %s\n", __func__, line);
+			r_list_free (list);
 			return NULL;
 		}
 
@@ -853,8 +944,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		}
 
 		map = r_debug_map_new (name, map_start, map_end, perm, 0);
-		if (!map)
+		if (!map) {
 			break;
+		}
 		map->file = strdup (name);
 		r_list_append (list, map);
 	}
@@ -1012,6 +1104,12 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 	return false;
 }
 
+/*
+ * set or unset breakpoints...
+ *
+ * we only handle the case for hardware breakpoints here. otherwise,
+ * we let the caller handle the work.
+ */
 static int r_debug_native_bp (RBreakpointItem *bp, int set, void *user) {
 	if (!bp) return false;
 #if __i386__ || __x86_64__
@@ -1403,7 +1501,7 @@ struct r_lib_struct_t radare_plugin = {
 //#endif
 #else // DEBUGGER
 struct r_debug_plugin_t r_debug_plugin_native = {
-	.name = "native",
+	NULL // .name = "native",
 };
 
 #endif // DEBUGGER

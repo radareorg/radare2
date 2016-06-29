@@ -14,7 +14,7 @@ typedef struct {
 static libqnxr_t *desc = NULL;
 static RIODesc *rioqnx = NULL;
 
-static int __plugin_open (RIO *io, const char *file, ut8 many) {
+static bool __plugin_open (RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "qnx://", 6));
 }
 
@@ -136,17 +136,6 @@ static int __close (RIODesc *fd) {
 }
 
 static int __system (RIO *io, RIODesc *fd, const char *cmd) {
-	//printf("ptrace io command (%s)\n", cmd);
-	/* XXX ugly hack for testing purposes */
-	if (!strcmp (cmd, "help")) {
-		eprintf ("Usage: =!cmd args\n"
-			 " =!pid      - show targeted pid\n");
-	} else if (!strncmp (cmd, "pid", 3)) {
-		int pid = 1234;
-		io->cb_printf ("%d\n", pid);
-		return pid;
-	} else
-		eprintf ("Try: '=!pid'\n");
 	return true;
 }
 
@@ -158,7 +147,7 @@ RIOPlugin r_io_plugin_qnx = {
 	.close = __close,
 	.read = __read,
 	.write = __write,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.isdbg = true

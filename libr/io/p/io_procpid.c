@@ -34,13 +34,12 @@ static int debug_os_read_at(int fdn, void *buf, int sz, ut64 addr) {
 }
 
 static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
-	ut64 addr = io->off;
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
-	return debug_os_read_at (RIOPROCPID_FD (fd), buf, len, addr);
+	return debug_os_read_at (RIOPROCPID_FD (fd), buf, len, io->off);
 }
 
 static int procpid_write_at(int fd, const ut8 *buf, int sz, ut64 addr) {
-	if ( lseek (fd, addr, 0) < 0) {
+	if (lseek (fd, addr, 0) < 0) {
 		return -1;
 	}
 	return write (fd, buf, sz);
@@ -50,7 +49,7 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
 	return procpid_write_at (RIOPROCPID_FD (fd), buf, len, io->off);
 }
 
-static int __plugin_open(struct r_io_t *io, const char *file, ut8 many) {
+static bool __plugin_open(struct r_io_t *io, const char *file, bool many) {
 	return (!strncmp (file, "procpid://", 10));
 }
 
@@ -113,9 +112,9 @@ static int __close(RIODesc *fd) {
 
 static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 	RIOProcpid *iop = (RIOProcpid*)fd->data;
-	if (!strcmp (cmd, "pid")) {
-		int pid = atoi (cmd+4);
-		if (pid != 0) {
+	if (!strncmp (cmd, "pid", 3)) {
+		int pid = atoi (cmd + 3);
+		if (pid > 0) {
 			iop->pid = pid;
 		}
 		io->cb_printf ("%d\n", iop->pid);
@@ -135,7 +134,7 @@ RIOPlugin r_io_plugin_procpid = {
         .open = __open,
         .close = __close,
 	.read = __read,
-        .plugin_open = __plugin_open,
+        .check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.init = __init,

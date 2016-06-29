@@ -21,7 +21,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	short ofst;
 	int imm = 0, d, r, k;
 	ut8 kbuf[4];
-	ut16 ins = AVR_SOFTCAST(buf[0],buf[1]);
+	ut16 ins = AVR_SOFTCAST (buf[0],buf[1]);
 	char *arg, str[32];
 	if (op == NULL)
 		return 2;
@@ -59,9 +59,11 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	} else if (!strncmp (str, "out ", 4)) {
 		op->type = R_ANAL_OP_TYPE_IO;
 		op->type2 = 1;
+		op->val = imm;
 	} else if (!strncmp (str, "in ", 3)) {
 		op->type = R_ANAL_OP_TYPE_IO;
 		op->type2 = 0;
+		op->val = imm;
 	} else if (!strncmp (str, "push ", 5)) {
 		op->type = R_ANAL_OP_TYPE_PUSH;
 	}

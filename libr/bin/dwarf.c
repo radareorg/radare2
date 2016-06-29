@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake, Fedor Sakharov */
+/* radare - LGPL - Copyright 2012-2016 - pancake, Fedor Sakharov */
 
 #define D0 if(1)
 #define D1 if(1)
@@ -793,11 +793,11 @@ static int r_bin_dwarf_init_debug_info(RBinDwarfDebugInfo *inf) {
 
 static int r_bin_dwarf_init_die(RBinDwarfDIE *die) {
 	if (!die) return -EINVAL;
-	die->attr_values = calloc(sizeof(RBinDwarfAttrValue), 8);
+	die->attr_values = calloc (sizeof (RBinDwarfAttrValue), 8);
 
-	if (!die->attr_values)
+	if (!die->attr_values) {
 		return -ENOMEM;
-
+	}
 	die->capacity = 8;
 	die->length = 0;
 
@@ -882,12 +882,11 @@ static int r_bin_dwarf_expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 }
 
 static int r_bin_dwarf_init_debug_abbrev(RBinDwarfDebugAbbrev *da) {
-
 	if (!da) return -EINVAL;
-	da->decls = calloc(sizeof(RBinDwarfAbbrevDecl), DEBUG_ABBREV_CAP);
-
-	if (!da->decls) return -ENOMEM;
-
+	da->decls = calloc (sizeof (RBinDwarfAbbrevDecl), DEBUG_ABBREV_CAP);
+	if (!da->decls) {
+		return -ENOMEM;
+	}
 	da->capacity = DEBUG_ABBREV_CAP;
 	da->length = 0;
 
@@ -900,8 +899,8 @@ static int r_bin_dwarf_expand_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	if (!da || da->capacity == 0 || da->capacity != da->length)
 		return -EINVAL;
 
-	tmp = (RBinDwarfAbbrevDecl*)realloc(da->decls,
-			da->capacity * 2 * sizeof(RBinDwarfAbbrevDecl));
+	tmp = (RBinDwarfAbbrevDecl*)realloc (da->decls,
+			da->capacity * 2 * sizeof (RBinDwarfAbbrevDecl));
 
 	if (!tmp)
 		return -ENOMEM;
@@ -1271,15 +1270,23 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		cu->dies[cu->length].tag = da->decls[abbr_code - 1].tag;
 		abbr_code += offset;
 
+		if (da->capacity < abbr_code) {
+			return NULL;
+		}
+
 		for (i = 0; i < da->decls[abbr_code - 1].length; i++) {
-			if (cu->dies[cu->length].length ==
-					cu->dies[cu->length].capacity)
+			if (cu->dies[cu->length].length == cu->dies[cu->length].capacity) {
 				r_bin_dwarf_expand_die (&cu->dies[cu->length]);
+			}
 			buf = r_bin_dwarf_parse_attr_value (buf, buf_end-buf,
 					&da->decls[abbr_code - 1].specs[i],
 					&cu->dies[cu->length].attr_values[i],
 					&cu->hdr, debug_str, debug_str_len);
 
+			if (i < cu->dies[cu->length].capacity) {
+				eprintf ("Warning: malformed dwarf attribute capacity doesn't match length\n");
+				break;
+			}
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
 				ut64 comp_dir = (ut64)(size_t)
 					cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
@@ -1323,14 +1330,20 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 //					inf->comp_units[curr_unit].hdr.version);
 			return -1;
 		}
-		if (inf->comp_units[curr_unit].hdr.length > len) return -1;
+		if (inf->comp_units[curr_unit].hdr.length > len) {
+			return -1;
+		}
 
 		inf->comp_units[curr_unit].hdr.abbrev_offset = READ (buf, ut32);
 		inf->comp_units[curr_unit].hdr.pointer_size = READ (buf, ut8);
 		inf->length++;
 
 		/* Linear search FIXME */
-		for (k = 0; k < da->decls->length; k++) {
+		if (da->decls->length >= da->capacity) {
+			eprintf ("WARNING: malformed dwarf have not enough buckets for decls.\n");
+		}
+		const int k_max = R_MIN (da->capacity, da->decls->length);
+		for (k = 0; k < k_max; k++) {
 			if (da->decls[k].offset ==
 				inf->comp_units[curr_unit].hdr.abbrev_offset) {
 				offset = k;
@@ -1578,13 +1591,14 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode) {
 	RBinSection *section = getsection (a, "debug_abbrev");
 	RBinDwarfDebugAbbrev *da = NULL;
 	RBinFile *binfile = a ? a->cur: NULL;
-
-	if (binfile && section) {
-		len = section->size;
-		buf = calloc (1,len);
-		r_buf_read_at (binfile->buf, section->paddr, buf, len);
-		da = r_bin_dwarf_parse_abbrev_raw (buf, len, mode);
-		free (buf);
+	if (!section || !binfile) return NULL;
+	if (section->size > binfile->size) {
+		return NULL;
 	}
+	len = section->size;
+	buf = calloc (1,len);
+	r_buf_read_at (binfile->buf, section->paddr, buf, len);
+	da = r_bin_dwarf_parse_abbrev_raw (buf, len, mode);
+	free (buf);
 	return da;
 }

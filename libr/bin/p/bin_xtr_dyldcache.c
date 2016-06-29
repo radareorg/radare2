@@ -30,7 +30,7 @@ static int destroy(RBin *bin) {
 	return free_xtr (bin->cur->xtr_obj);
 }
 
-static int free_xtr (void *xtr_obj) {
+static int free_xtr(void *xtr_obj) {
 	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t*)xtr_obj);
 	return true;
 }

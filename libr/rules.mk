@@ -54,7 +54,14 @@ ifeq (${OSTYPE},haiku)
 LINK+=-lnetwork
 endif
 
+ifneq ($(EXTRA_PRE),)
+all: $(EXTRA_PRE)
+	$(MAKE) all2
+
+all2: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
+else
 all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
+endif
 ifneq ($(SILENT),)
 	@-if [ -f p/Makefile ]; then (cd p && ${MAKE}) ; fi
 else
@@ -62,7 +69,7 @@ else
 endif
 
 ifeq ($(WITHPIC),1)
-${LIBSO}: $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
+$(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
 	  test $$a -nt ${LIBSO} && do=1 ; \

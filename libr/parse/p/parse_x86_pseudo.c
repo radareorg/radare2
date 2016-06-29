@@ -210,20 +210,6 @@ static inline int issegoff (const char *w) {
 #endif
 
 static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-#if USE_VARSUBS
-	int i;
-	char *ptr, *ptr2;
-	for (i = 0; i < R_ANAL_VARSUBS; i++)
-		if (f->varsubs[i].pat[0] != '\0' && \
-			f->varsubs[i].sub[0] != '\0' && \
-			(ptr = strstr (data, f->varsubs[i].pat))) {
-				*ptr = '\0';
-				ptr2 = ptr + strlen (f->varsubs[i].pat);
-				snprintf (str, len, "%s%s%s", data,
-					f->varsubs[i].sub, ptr2);
-		}
-	return true;
-#else
 	RAnalVar *reg, *bparg, *sparg;
 	RListIter *regiter, *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
@@ -354,7 +340,6 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	r_list_free (bpargs);
 	r_list_free (regs);
 	return ret;
-#endif
 }
 
 RParsePlugin r_parse_plugin_x86_pseudo = {

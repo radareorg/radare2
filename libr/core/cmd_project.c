@@ -27,7 +27,7 @@ static int cmd_project(void *data, const char *input) {
 			r_core_project_open (core, file);
 		} else {
 			if (file && *file)
-				r_cons_printf ("%s\n", file);
+				r_cons_println (file);
 		}
 		break;
 	case 'l':
@@ -39,7 +39,7 @@ static int cmd_project(void *data, const char *input) {
 	case 's':
 		if (r_core_project_save (core, file)) {
 			r_config_set (core->config, "file.project", file);
-			r_cons_printf ("%s\n", file);
+			r_cons_println (file);
 		}
 		break;
 	case 'S':
@@ -116,7 +116,7 @@ static int cmd_project(void *data, const char *input) {
 					char *data = r_file_slurp (str, &len);
 					char *res = r_base64_encode_dyn (data, len);
 					if (res) {
-						r_cons_printf ("%s\n", res);
+						r_cons_println (res);
 						free (res);
 					}
 					free (data);
@@ -142,7 +142,7 @@ static int cmd_project(void *data, const char *input) {
 			char *str = r_core_project_notes_file (core, fileproject);
 			char *data = r_file_slurp (str, NULL);
 			if (data) {
-				r_cons_printf ("%s\n", data);
+				r_cons_println (data);
 				free (data);
 			}
 			free (str);

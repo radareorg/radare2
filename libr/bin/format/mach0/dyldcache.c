@@ -111,8 +111,8 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			struct segment_command *seg = (struct segment_command *)lc;
 			int t = seg->filesize;
 			if (seg->fileoff + seg->filesize > bin->size || seg->fileoff > bin->size) {
-			    	eprintf ("malformed dyldcache\n");
-			    	free (ret);
+				eprintf ("malformed dyldcache\n");
+				free (ret);
 				r_buf_free (dbuf);
 				return NULL;
 			}

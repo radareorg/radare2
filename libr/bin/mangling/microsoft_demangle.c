@@ -1162,15 +1162,15 @@ static EDemanglerErr parse_microsoft_mangled_name(	char *sym,
 		if (err == eDemanglerErrOK) {
 			if (!ptr64) {
 				if (!storage_class) {
-					*demangled_name = r_str_newf("%s %s", tmp, type_code_str.type_str);
+					*demangled_name = r_str_newf ("%s %s", tmp, type_code_str.type_str);
 				} else {
-					*demangled_name = r_str_newf("%s %s %s", tmp, storage_class,type_code_str.type_str);
+					*demangled_name = r_str_newf ("%s %s %s", tmp, storage_class,type_code_str.type_str);
 				}
 			} else {
 				if (!storage_class) {
-					*demangled_name = r_str_newf("%s %s %s", tmp, ptr64, type_code_str.type_str);
+					*demangled_name = r_str_newf ("%s %s %s", tmp, ptr64, type_code_str.type_str);
 				} else {
-					*demangled_name = r_str_newf("%s %s %s %s", tmp, storage_class, ptr64, type_code_str.type_str);
+					*demangled_name = r_str_newf ("%s %s %s %s", tmp, storage_class, ptr64, type_code_str.type_str);
 				}
 			}
 		}

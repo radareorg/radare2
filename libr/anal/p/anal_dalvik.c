@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 */
+/* radare - LGPL - Copyright 2010-2016 - pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -216,22 +216,22 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x11: // return-object
 		case 0xf1: // return-void-barrier
 			op->type = R_ANAL_OP_TYPE_RET;
-			op->eob  = 1;
+			op->eob = true;
 			break;
 		case 0x28: // goto
 			op->jump = addr + ((char)data[1])*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->eob  = 1;
+			op->eob = true;
 			break;
 		case 0x29: // goto/16
 			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->eob  = 1;
+			op->eob = true;
 			break;
 		case 0x2a: // goto/32
 			op->jump = addr + (int)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24))*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->eob  = 1;
+			op->eob = true;
 			break;
 		case 0x2c:
 		case 0x2b:
@@ -262,7 +262,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			//XXX fix this better the check is to avoid an oob
 			op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
 			op->fail = addr + sz;
-			op->eob = 1;
+			op->eob = true;
 			break;
 		case 0xec: // breakpoint
 		case 0x1d: // monitor-enter

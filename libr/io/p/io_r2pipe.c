@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2016 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -114,7 +114,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
+static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "r2pipe://", 9));
 }
 
@@ -156,7 +156,7 @@ RIOPlugin r_io_plugin_r2pipe = {
         .open = __open,
         .close = __close,
 	.read = __read,
-        .plugin_open = __plugin_open,
+        .check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 	.system = __system

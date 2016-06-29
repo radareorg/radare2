@@ -234,12 +234,13 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = malloc (left);
+				name = malloc (left + 1);
 				len = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
 				if (len < 1) {
 					eprintf ("Error reading\n");
 					goto error;
 				}
+				name[left] = 0;
 			}
 			field->name = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
 			R_FREE (name);

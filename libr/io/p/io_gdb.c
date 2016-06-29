@@ -14,7 +14,7 @@ typedef struct {
 static libgdbr_t *desc = NULL;
 static RIODesc *riogdb = NULL;
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "gdb://", 6));
 }
 
@@ -145,7 +145,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
                         " =!pid      - show targeted pid\n");
 	} else if (!strncmp (cmd, "pid", 3)) {
 		int pid = 1234;
-		io->cb_printf ("%d\n", pid);
+		if (!cmd[3]) {
+			io->cb_printf ("%d\n", pid);
+		}
 		return pid;
 	} else eprintf ("Try: '=!pid'\n");
         return true;
@@ -160,7 +162,7 @@ RIOPlugin r_io_plugin_gdb = {
 	.close = __close,
 	.read = __read,
 	.write = __write,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.isdbg = true

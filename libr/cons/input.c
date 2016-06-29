@@ -260,7 +260,7 @@ R_API int r_cons_any_key(const char *msg) {
 	if (msg && *msg) {
 		r_cons_printf ("\n-- %s --\n", msg);
 	} else {
-		r_cons_strcat ("\n--press any key--\n");
+		r_cons_print ("\n--press any key--\n");
 	}
 	r_cons_flush ();
 	return r_cons_readchar ();

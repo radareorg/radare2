@@ -153,6 +153,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	b->enabled = true;
 	b->rwx = rwx;
 	b->hw = hw;
+	// NOTE: for hw breakpoints there are no bytes to save/restore
 	if (!hw) {
 		b->bbytes = calloc (size + 16, 1);
 		if (obytes) {
@@ -162,10 +163,9 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 			b->obytes = NULL;
 		}
 		/* XXX: endian .. use bp->endian */
-		// XXX for hw breakpoints there are no bytes
 		ret = r_bp_get_bytes (bp, b->bbytes, size, 0, 0);
-		if (ret == 0) {
-			eprintf ("Cannot get breakpoint bytes. No r_bp_use()?\n");
+		if (ret != size) {
+			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
 			r_bp_item_free (b);
 			return NULL;
 		}
@@ -279,10 +279,10 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			// b->data? b->data: "");
 			break;
 		case 'j':
-			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,\
-				\"prot\":\"%c%c%c\",\"hw\":%s,\
-				\"trace\":%s,\"enabled\":%s,\
-				\"data\":\"%s\"}",
+			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
+				"\"prot\":\"%c%c%c\",\"hw\":%s,"
+				"\"trace\":%s,\"enabled\":%s,"
+				"\"data\":\"%s\"}",
 				iter->p ? "," : "",
 				b->addr, b->size,
 				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',

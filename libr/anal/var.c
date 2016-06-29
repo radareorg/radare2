@@ -28,15 +28,15 @@ struct VarType {
 // kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
 #endif
 
-R_API int r_anal_fcn_arg_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name) {
+R_API int r_anal_fcn_arg_add(RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name) {
 	return r_anal_var_add (a, fna, scope, delta, 'a', type, 4, name);
 }
 
-R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name) {
+R_API int r_anal_fcn_var_add(RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name) {
 	return r_anal_var_add (a, fna, scope, delta, 'v', type, 4, name);
 }
 
-R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
+R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
 	if (!kind) kind ='v';
 	if (!type) type = "int";
@@ -78,7 +78,7 @@ R_API int r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	return true;
 }
 
-R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
+R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
 	if (!kind) kind ='v';
 	if (!type) type = "int";
@@ -133,7 +133,7 @@ R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kin
 	return true;
 }
 
-R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind) {
+R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind) {
 	RAnalFunction *fcn;
 	fcn = r_anal_get_fcn_in (a, addr, 0);
 	if (fcn) {
@@ -149,13 +149,10 @@ R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind) {
 	return 0;
 }
 
-R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, int delta) {
-	RAnalVar *av;
-	av = r_anal_var_get (a, addr, kind, scope, delta);
-	if (!av) {
-		return false;
-	}
-	if (scope>0) {
+R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int delta) {
+	RAnalVar *av = r_anal_var_get (a, addr, kind, scope, delta);
+	if (!av) return false;
+	if (scope > 0) {
 		char *sign = "";
 		if (delta < 0) {
 			delta = -delta;
@@ -168,19 +165,18 @@ R_API int r_anal_var_delete (RAnal *a, ut64 addr, const char kind, int scope, in
 		sdb_array_remove (DB, fcn_key, shortvar, 0);
 		sdb_unset (DB, var_key, 0);
 		sdb_unset (DB, name_key, 0);
-		if (*sign) {
-			delta = -delta;
-		}
+		if (*sign) delta = -delta;
 	} else {
 		char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
 		char *var_def = sdb_fmt (2,"%c.%s,%d,%s", kind, av->type, av->size, av->name);
 		sdb_array_remove (DB, var_global, var_def, 0);
 	}
+	r_anal_var_free (av);
 	r_anal_var_access_clear (a, addr, scope, delta);
 	return true;
 }
 
-R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, const char *name) {
+R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, const char *name) {
 	char *varlist;
 	if (!a || !fcn) {
 		return false;
@@ -226,25 +222,33 @@ R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int kind, con
 	return false;
 }
 
-R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kind, const char* name) {
+R_API RAnalVar *r_anal_var_get_byname(RAnal *anal, RAnalFunction *fcn, char kind, const char* name) {
 	RList *var_list;
 	RListIter *iter;
-	RAnalVar *var = NULL;
+	RAnalVar *var = NULL, *itervar;
 	if (!fcn || !anal || !name) {
 		return 0;
 	}
 	var_list = r_anal_var_list (anal, fcn, kind);
-	r_list_foreach (var_list, iter, var) {
-		if (!strcmp (name, var->name)) {
+	r_list_foreach (var_list, iter, itervar) {
+		if (!strcmp (name, itervar->name)) {
+			var = calloc (1, sizeof(RAnalVar));
+			if (!var) return 0;
+			memcpy (var, itervar, sizeof(RAnalVar));
+			var->name = strdup (itervar->name);
+			var->type = strdup (itervar->type);
+			var->accesses = r_list_clone (itervar->accesses);
+			var->stores = r_list_clone (itervar->stores);
 			break;
-		}
+		} 
 	}
+	r_list_free (var_list);
 	if (!var || strcmp (name, var->name)) {
 		return 0;
 	}
-	return  var;
+	return var;
 }
-R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int delta) {
+R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
 	struct VarType vt;
 	char *sign = "";
@@ -286,11 +290,11 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int d
 	return av;
 }
 
-R_API void r_anal_var_free (RAnalVar *av) {
+R_API void r_anal_var_free(RAnalVar *av) {
 	if (av) {
 		free (av->name);
 		free (av->type);
-		free (av);
+		R_FREE (av);
 	}
 }
 
@@ -456,6 +460,13 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 						free (varlist);
 						r_list_free (list);
 						return NULL;
+					}
+					if (!vt.name || !vt.type) {
+						//This should be properly fixed
+						eprintf ("Warning null var in fcn.0x%"PFMT64x".%c.%s at %s-%d\n", 
+								fcn->addr, kind, word, __FILE__, __LINE__);
+						free (av);
+						continue;
 					}
 					av->delta = delta;
 					av->kind = kind;

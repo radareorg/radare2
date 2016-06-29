@@ -1185,7 +1185,7 @@ static int r_cmd_java_get_all_access_flags_value (const char *cmd) {
 	}
 
 	r_list_foreach (the_list, iter, str) {
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 	}
 	r_list_free (the_list);
 	return true;
@@ -1251,7 +1251,7 @@ static int r_cmd_java_handle_flags_str (RCore *core, const char *cmd) {
 			case 'f': r_cons_printf ("Field Access Flags String: "); break;
 			case 'c': r_cons_printf ("Class Access Flags String: "); break;
 		}
-		r_cons_printf ("%s\n", flags_str);
+		r_cons_println (flags_str);
 		free (flags_str);
 		res = true;
 	}
@@ -1298,7 +1298,7 @@ static int r_cmd_java_handle_flags_str_at (RCore *core, const char *cmd) {
 			case 'f': r_cons_printf ("Field Access Flags String: "); break;
 			case 'c': r_cons_printf ("Class Access Flags String: "); break;
 		}
-		r_cons_printf ("%s\n", flags_str);
+		r_cons_println (flags_str);
 		free (flags_str);
 		res = true;
 	}
@@ -1483,7 +1483,7 @@ static int r_cmd_java_print_json_definitions( RBinJavaObj *obj ) {
 	DsoJsonObj *json_obj = r_bin_java_get_bin_obj_json (obj);
 	char *str = dso_json_obj_to_str (json_obj);
 	dso_json_obj_del (json_obj); // XXX memleak
-	r_cons_printf ("%s\n", str);
+	r_cons_println (str);
 	return true;
 }
 
@@ -1563,7 +1563,7 @@ static RBinJavaObj * r_cmd_java_get_bin_obj(RAnal *anal) {
 static int r_cmd_java_resolve_cp_idx (RBinJavaObj *obj, ut16 idx) {
 	if (obj && idx){
 		char * str = r_bin_java_resolve_without_space (obj, idx);
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 		free (str);
 	}
 	return true;
@@ -1572,7 +1572,7 @@ static int r_cmd_java_resolve_cp_idx (RBinJavaObj *obj, ut16 idx) {
 static int r_cmd_java_resolve_cp_type (RBinJavaObj *obj, ut16 idx) {
 	if (obj && idx){
 		char * str = r_bin_java_resolve_cp_idx_type (obj, idx);
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 		free (str);
 	}
 	return true;
@@ -1581,7 +1581,7 @@ static int r_cmd_java_resolve_cp_type (RBinJavaObj *obj, ut16 idx) {
 static int r_cmd_java_resolve_cp_idx_b64 (RBinJavaObj *obj, ut16 idx) {
 	if (obj && idx){
 		char * str = r_bin_java_resolve_b64_encode (obj, idx) ;
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 		free (str);
 	}
 	return true;
@@ -1601,7 +1601,7 @@ static int r_cmd_java_resolve_cp_address (RBinJavaObj *obj, ut16 idx) {
 static int r_cmd_java_resolve_cp_to_key (RBinJavaObj *obj, ut16 idx) {
 	if (obj && idx){
 		char * str = r_bin_java_resolve_cp_idx_to_string (obj, idx) ;
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 		free (str);
 	}
 	return true;
@@ -1662,7 +1662,7 @@ static int r_cmd_java_print_field_num_name (RBinJavaObj *obj) {
 	char * str;
 	RListIter *iter = NULL;
 	r_list_foreach (the_list, iter, str) {
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 	}
 	r_list_free (the_list);
 	return true;
@@ -1673,7 +1673,7 @@ static int r_cmd_java_print_method_num_name (RBinJavaObj *obj) {
 	char * str;
 	RListIter *iter = NULL;
 	r_list_foreach (the_list, iter, str) {
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 	}
 	r_list_free (the_list);
 	return true;
@@ -1698,7 +1698,7 @@ static int UNUSED_FUNCTION(r_cmd_java_print_field_count) (RBinJavaObj *obj) {
 static int r_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx) {
 	char * res = r_bin_java_get_field_name (obj, idx);
 	if (res) {
-		r_cons_printf ("%s\n", res);
+		r_cons_println (res);
 	} else {
 		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
 	}
@@ -1725,7 +1725,7 @@ static int _(r_cmd_java_print_method_count)(RBinJavaObj *obj) {
 static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx) {
 	char * res = r_bin_java_get_method_name (obj, idx);
 	if (res) {
-		r_cons_printf ("%s\n", res);
+		r_cons_println (res);
 	} else {
 		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
 	}
@@ -2038,8 +2038,6 @@ RCorePlugin r_core_plugin_java = {
 	.desc = "Suite of java commands, java help for more info",
 	.license = "Apache",
 	.call = r_cmd_java_call,
-	.deinit = NULL,
-	.init = NULL,
 };
 
 #ifndef CORELIB

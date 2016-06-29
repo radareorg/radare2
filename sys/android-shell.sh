@@ -51,6 +51,13 @@ if [ -f ~/.r2androidrc ]; then
 	echo "Using data from ${HOME}/.r2androidrc.."
 else
 	#[ -z "${SDK}" ] && SDK=${HOME}/Downloads/android-sdk-${OS}
+	if [ -z "${NDK}" ]; then
+		if [ "`uname`" = "Darwin" ]; then
+			NDK=${HOME}/Library/Android/sdk/ndk-bundle/
+		else
+			NDK=${HOME}/Downloads/android-ndk-r7b
+		fi
+	fi
 	[ -z "${NDK}" ] && NDK=${HOME}/Downloads/android-ndk-r7b
 fi
 

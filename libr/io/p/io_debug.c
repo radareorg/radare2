@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -7,8 +7,7 @@
 
 #define USE_RARUN 0
 
-#if __linux__ ||  __APPLE__ || __WINDOWS__ || \
-	__NetBSD__ || __KFBSD__ || __OpenBSD__
+#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
 #define DEBUGGER_SUPPORTED 1
 #else
 #define DEBUGGER_SUPPORTED 0
@@ -366,7 +365,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 }
 #endif
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "dbg://", 6) && file[6]);
 }
 
@@ -406,18 +405,18 @@ RIOPlugin r_io_plugin_debug = {
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
 	.license = "LGPL3",
         .open = __open,
-        .plugin_open = __plugin_open,
+        .check = __plugin_open,
 	.isdbg = true,
 };
 #else
-struct r_io_plugin_t r_io_plugin_debug = {
+RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
         .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
 };
 #endif
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_debug,
 	.version = R2_VERSION

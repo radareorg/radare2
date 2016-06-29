@@ -57,22 +57,22 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 //can be optimized into one right ... you see it you do it :P
 static int sdbforcb(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "type", strlen ("type") + 1))
-		r_cons_printf ("%s\n", k);
+		r_cons_println (k);
 	return 1;
 }
 static int stdprintifstruct(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "struct", strlen ("struct") + 1))
-		r_cons_printf ("%s\n", k);
+		r_cons_println (k);
 	return 1;
 }
 static int stdprintiffunc(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "func", strlen ("func") + 1))
-		r_cons_printf ("%s\n", k);
+		r_cons_println (k);
 	return 1;
 }
 static int stdprintifunion(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "union", strlen ("union") + 1))
-		r_cons_printf ("%s\n", k);
+		r_cons_println (k);
 	return 1;
 }
 static int sdbdelete(void *p, const char *k, const char *v) {
@@ -191,7 +191,7 @@ static int cmd_type(void *data, const char *input) {
 				*--p = '.';
 				const char *res = sdb_const_get (core->anal->sdb_types, s, 0);
 				if (res)
-					r_cons_printf ("%s\n", res);
+					r_cons_println (res);
 				else eprintf ("Invalid enum member\n");
 			} else {
 				eprintf ("This is not an enum\n");
@@ -212,7 +212,7 @@ static int cmd_type(void *data, const char *input) {
 					if (!name || strcmp (kv->value, name)) {
 						free (name);
 						name = strdup (kv->key);
-						r_cons_printf ("%s\n", name);
+						r_cons_println (name);
 					}
 				}
 			}
@@ -240,7 +240,7 @@ static int cmd_type(void *data, const char *input) {
 				const char *q = sdb_fmt (0, "%s.0x%x", s, (ut32)r_num_math (core->num, p));
 				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
 				if (res)
-					r_cons_printf ("%s\n", res);
+					r_cons_println (res);
 			} else {
 				eprintf ("This is not an enum\n");
 			}

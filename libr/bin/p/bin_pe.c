@@ -130,10 +130,11 @@ static RList* sections(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = PE_(r_bin_pe_get_sections)(arch->o->bin_obj))){
+	if (!(sections = PE_(r_bin_pe_get_sections) (arch->o->bin_obj))){
 		r_list_free (ret);
 		return NULL;
 	}
+	PE_(r_bin_pe_check_sections) (arch->o->bin_obj, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
@@ -227,8 +228,12 @@ static RList* imports(RBinFile *arch) {
 
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
-	if (!(ret = r_list_new ()) || !(relocs = r_list_new ()))
+	if (!(ret = r_list_new ()))
 		return NULL;
+	if (!(relocs = r_list_new ())) {
+		free (ret);
+		return NULL;
+	}
 
 	ret->free = free;
 	relocs->free = free;

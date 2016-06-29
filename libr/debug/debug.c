@@ -26,64 +26,184 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
 	free (rdi->libname);
 }
 
-/* restore program counter after breakpoint hit */
-static int r_debug_recoil(RDebug *dbg) {
-	int recoil;
-	RRegItem *ri;
-	if (r_debug_is_dead (dbg)) {
+
+/*
+ * Recoiling after a breakpoint has two stages:
+ * 1. remove the breakpoint and fix the program counter.
+ * 2. on resume, single step once and then replace the breakpoint.
+ *
+ * Thus, we have two functions to handle these situations.
+ * r_debug_bp_hit handles stage 1.
+ * r_debug_recoil handles stage 2.
+ */
+static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc) {
+	RBreakpointItem *b;
+
+	/* if we are tracing, update the tracing data */
+	if (dbg->trace->enabled) {
+		r_debug_trace_pc (dbg, pc);
+	}
+
+	/* remove all sw breakpoints for now. we'll set them back in stage 2
+	 *
+	 * this is necessary because while stopped we don't want any breakpoints in
+	 * the code messing up our analysis.
+	 */
+	if (!r_bp_restore (dbg->bp, false)) { // unset sw breakpoints
 		return false;
 	}
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-	ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
-	dbg->reason.bpi = NULL;
-	if (ri) {
-		ut64 addr = r_reg_get_value (dbg->reg, ri);
-		recoil = r_bp_recoil (dbg->bp, addr - dbg->bpsize);
-		//eprintf ("[R2] Breakpoint recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
-		if (recoil < 1)
-			recoil = 0; // XXX Hack :D
-		if (recoil) {
-			dbg->in_recoil = true;
-			dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
-			dbg->reason.bpi = r_bp_get_at (dbg->bp, addr-recoil);
-			dbg->reason.addr = addr - recoil;
-			r_reg_set_value (dbg->reg, ri, addr-recoil);
-			if (r_reg_get_value (dbg->reg, ri) != (addr-recoil)) {
-				eprintf ("r_debug_recoil: Cannot set program counter\n");
+
+	/* if we are recoiling, tell r_debug_step that we ignored a breakpoint
+	 * event */
+	if (!dbg->swstep && dbg->recoil_mode != R_DBG_RECOIL_NONE) {
+		dbg->reason.bp_addr = 0;
+		return true;
+	}
+
+	/* see if we really have a breakpoint here... */
+	b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
+	if (!b) { /* we don't. nothing left to do */
+		return true;
+	}
+
+	/* set the pc value back */
+	pc -= b->size;
+	if (!r_reg_set_value (dbg->reg, pc_ri, pc)) {
+		eprintf ("failed to set PC!\n");
+		return false;
+	}
+	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
+		eprintf ("cannot set registers!\n");
+		return false;
+	}
+
+	/* if we are on a software stepping breakpoint, we hide what is going on... */
+	if (b->swstep) {
+		dbg->reason.bp_addr = 0;
+		return true;
+	}
+
+	/* setup our stage 2 */
+	dbg->reason.bp_addr = b->addr;
+
+	/* inform the user of what happened */
+	eprintf ("hit %spoint at: %"PFMT64x "\n",
+			b->trace ? "trace" : "break", pc);
+
+	/* now that we've cleaned up after the breakpoint, call the other
+	 * potential breakpoint handlers
+	 */
+	if (dbg->corebind.core && dbg->corebind.bphit) {
+		dbg->corebind.bphit (dbg->corebind.core, b);
+	}
+
+	/* XXX(jjd): i don't think this goes here...
+	if (b->trace) {
+		r_debug_step (dbg, 1);
+		goto repeat;
+	}
+	 */
+	return true;
+}
+
+/* enable all software breakpoints */
+static int r_debug_bps_enable(RDebug *dbg) {
+	/* restore all sw breakpoints. we are about to step/continue so these need
+	 * to be in place. */
+	if (!r_bp_restore (dbg->bp, true))
+		return false;
+
+	/* done recoiling... */
+	dbg->recoil_mode = R_DBG_RECOIL_NONE;
+	return true;
+}
+
+/*
+ * replace breakpoints before we continue execution
+ *
+ * this is called from r_debug_step_hard or r_debug_continue_kill
+ *
+ * this is a trick process because of breakpoints/tracepoints.
+ *
+ * if a breakpoint was just hit, we need step over that instruction before
+ * allowing the caller to proceed as desired.
+ *
+ * if the user wants to step, the single step here does the job.
+ */
+static int r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode) {
+	/* if bp_addr is not set, we must not have actually hit a breakpoint */
+	if (!dbg->reason.bp_addr) {
+		return r_debug_bps_enable (dbg);
+	}
+
+	/* don't do anything if we already are recoiling */
+	if (dbg->recoil_mode != R_DBG_RECOIL_NONE) {
+		/* the first time recoil is called with swstep, we just need to
+		 * look up the bp and step past it.
+		 * the second time it's called, the new sw breakpoint should exist
+		 * so we just restore all except what we originally hit and reset.
+		 */
+		if (dbg->swstep) {
+			if (!r_bp_restore_except (dbg->bp, true, dbg->reason.bp_addr)) {
 				return false;
 			}
-			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
-			//eprintf ("[BP Hit] Setting pc to 0x%"PFMT64x"\n", (addr-recoil));
 			return true;
 		}
-	} else {
-		eprintf ("r_debug_recoil: Cannot get program counter\n");
+
+		/* otherwise, avoid recursion */
+		return true;
 	}
-	return false;
+
+	/* we have entered recoil! */
+	dbg->recoil_mode = rc_mode;
+
+	/* step over the place with the breakpoint and let the caller resume */
+	if (r_debug_step (dbg, 1) != 1) {
+		return false;
+	}
+
+	/* when stepping away from a breakpoint during recoil in stepping mode,
+	 * the r_debug_bp_hit function tells us that it was called
+	 * innapropriately by setting bp_addr back to zero. however, recoil_mode
+	 * is still set. we use this condition to know not to proceed but
+	 * pretend as if we had.
+	 */
+	if (!dbg->reason.bp_addr && dbg->recoil_mode == R_DBG_RECOIL_STEP) {
+		/* restore all sw breakpoints. we are about to step/continue so these need
+		 * to be in place. */
+		if (!r_bp_restore (dbg->bp, true)) {
+			return false;
+		}
+		return true;
+	}
+
+	return r_debug_bps_enable (dbg);
 }
 
 /* add a breakpoint with some typical values */
 R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta) {
 	int bpsz = strcmp (dbg->arch, "arm") ? 1 : 4;
 	RBreakpointItem *bpi;
+	const char *module_name = module;
+	RListIter *iter;
+	RDebugMap *map;
+
 	if (!addr && module) {
-		RListIter *iter;
-		RDebugMap *map;
 		bool detect_module, valid = false;
 		int perm;
+
 		if (m_delta) {
-		    	detect_module = false;
+			detect_module = false;
 			RList *list = r_debug_modules_list (dbg);
 			r_list_foreach (list, iter, map) {
 				if (strstr (map->file, module)) {
 					addr = map->addr + m_delta;
-					free (module);
-					module = strdup (map->file);
+					module_name = map->file;
 					break;
 				}
 			}
 		} else {
-		    	//module holds the address
+			//module holds the address
 			addr = (ut64)r_num_math (dbg->num, module);
 			if (!addr) return NULL;
 			detect_module = true;
@@ -91,30 +211,43 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 		r_debug_map_sync (dbg);
 		r_list_foreach (dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
-			    	valid = true;
+				valid = true;
 				if (detect_module) {
-					module = strdup (map->file);
+					module_name = map->file;
 					m_delta = addr - map->addr;
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
 				if (!(perm & R_BP_PROT_EXEC))
-				    	eprintf ("WARNING: setting bp within mapped memory without exec perm\n");
+					eprintf ("WARNING: setting bp within mapped memory without exec perm\n");
 				break;
 			}
 		}
 		if (!valid) {
-		    	eprintf ("WARNING: modules' base addr + delta doesn't compute in a valid address\n");
+			eprintf ("WARNING: module's base addr + delta is not a valid address\n");
 			return NULL;
 		}
 	}
+	if (!module) {
+		//express db breakpoints as dbm due to ASLR when saving into project
+		r_debug_map_sync (dbg);
+		r_list_foreach (dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				module_name = map->file;
+				m_delta = addr - map->addr;
+				break;
+			}
+		}
+	}
 	bpi = hw
-	? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
-	: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
+		? r_bp_add_hw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC)
+		: r_bp_add_sw (dbg->bp, addr, bpsz, R_BP_PROT_EXEC);
 	if (bpi) {
-	    	bpi->module_name  = module;
+		if (module_name) {
+			bpi->module_name = strdup (module_name);
+			bpi->name = r_str_newf ("%s+0x%" PFMT64x, module_name, m_delta);
+		}
 		bpi->module_delta = m_delta;
 	}
-	free (module);
 	return bpi;
 }
 
@@ -125,6 +258,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->arch = strdup (R_SYS_ARCH);
 	dbg->bits = R_SYS_BITS;
 	dbg->trace_forks = 1;
+	dbg->forked_pid = -1;
 	dbg->trace_clone = 0;
 	R_FREE (dbg->btalgo);
 	dbg->trace_execs = 0;
@@ -136,8 +270,6 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->tree = r_tree_new ();
 	dbg->tracenodes = sdb_new0 ();
 	dbg->swstep = 0;
-	dbg->newstate = 0;
-	dbg->in_recoil = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = r_debug_trace_new ();
 	dbg->cb_printf = (void *)printf;
@@ -232,11 +364,12 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 				dbg->bits = dbg->h->bits;
 			} else if (!(dbg->h->bits & dbg->bits)) {
 				dbg->bits = dbg->h->bits & R_SYS_BITS_64;
-				if (!dbg->bits)
+				if (!dbg->bits) {
 					dbg->bits = dbg->h->bits & R_SYS_BITS_32;
-				if (!dbg->bits)
+				}
+				if (!dbg->bits) {
 					dbg->bits = R_SYS_BITS_32;
-				eprintf ("Invalid value for bits\n");
+				}
 			}
 			free (dbg->arch);
 			dbg->arch = strdup (arch);
@@ -343,6 +476,8 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid))
 		return false;
 
+	r_io_system (dbg->iob.io, sdb_fmt (0, "pid %d", pid));
+
 	dbg->pid = pid;
 	dbg->tid = tid;
 
@@ -378,7 +513,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	return "unhandled";
 }
 
-R_API int r_debug_stop_reason(RDebug *dbg) {
+R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg) {
 	// TODO: return reason to stop debugging
 	// - new process
 	// - trap instruction
@@ -388,35 +523,84 @@ R_API int r_debug_stop_reason(RDebug *dbg) {
 	return dbg->reason.type;
 }
 
-/* Returns  R_DEBUG_REASON_* */
-R_API int r_debug_wait(RDebug *dbg) {
-	int ret = 0;
-	if (!dbg)
-		return false;
+/*
+ * wait for an event to happen on the selected pid/tid
+ *
+ * Returns  R_DEBUG_REASON_*
+ */
+R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
+	RDebugReasonType reason = R_DEBUG_REASON_ERROR;
+
+	if (!dbg) {
+		return reason;
+	}
+
+	/* default to unknown */
 	dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
-	if (r_debug_is_dead (dbg))
-		return dbg->reason.type = R_DEBUG_REASON_DEAD;
+	if (r_debug_is_dead (dbg)) {
+		return R_DEBUG_REASON_DEAD;
+	}
+
+	/* if our debugger plugin has wait */
 	if (dbg->h && dbg->h->wait) {
-		dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
-		ret = dbg->h->wait (dbg, dbg->pid);
-		dbg->newstate = 1;
-		if (ret == -1) {
+		reason = dbg->h->wait (dbg, dbg->pid);
+
+		if (reason == R_DEBUG_REASON_DEAD) {
 			eprintf ("\n==> Process finished\n\n");
-			r_debug_select (dbg, -1, -1);
+			// XXX(jjd): TODO: handle fallback or something else
+			//r_debug_select (dbg, -1, -1);
+			return R_DEBUG_REASON_DEAD;
 		}
-		if (dbg->trace->enabled)
-			r_debug_trace_pc (dbg);
-		dbg->reason.type = ret;
-		if (ret == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
+
+		/* propagate errors from the plugin */
+		if (reason == R_DEBUG_REASON_ERROR) {
+			return R_DEBUG_REASON_ERROR;
+		}
+
+		/* read general purpose registers */
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
+			return R_DEBUG_REASON_ERROR;
+		}
+
+		/* if the underlying stop reason is a breakpoint, call the handlers */
+		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP) {
+			RRegItem *pc_ri;
+			ut64 pc;
+
+			/* get the program coounter */
+			pc_ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
+			if (!pc_ri) { /* couldn't find PC?! */
+				return R_DEBUG_REASON_ERROR;
+			}
+
+			/* get the value */
+			pc = r_reg_get_value (dbg->reg, pc_ri);
+
+			if (!r_debug_bp_hit (dbg, pc_ri, pc)) {
+				return R_DEBUG_REASON_ERROR;
+			}
+
+			/* where does this really need to go?!
+				if (b->trace) {
+					r_debug_step (dbg, 1);
+					goto repeat;
+				}
+			 */
+		}
+
+		dbg->reason.type = reason;
+		if (reason == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
 			/* handle signal on continuations here */
+			eprintf ("got signal...\n");
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 			const char *name = r_debug_signal_resolve_i (dbg, dbg->reason.signum);
-			if (name && strcmp ("SIGTRAP", name))
+			if (name && strcmp ("SIGTRAP", name)) {
 				r_cons_printf ("[+] signal %d aka %s received %d\n",
 						dbg->reason.signum, name, what);
+			}
 		}
 	}
-	return ret;
+	return reason;
 }
 
 R_API int r_debug_step_soft(RDebug *dbg) {
@@ -429,6 +613,10 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		ut64 r64;
 		ut32 r32[2];
 	} sp_top;
+
+	if (dbg->recoil_mode == R_DBG_RECOIL_NONE) {
+		dbg->recoil_mode = R_DBG_RECOIL_STEP;
+	}
 
 	if (r_debug_is_dead (dbg)) {
 		return false;
@@ -474,7 +662,10 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	}
 
 	for (i = 0; i < br; i++) {
-		r_bp_add_sw (dbg->bp, next[i], dbg->bpsize, R_BP_PROT_EXEC);
+		RBreakpointItem *bpi = r_bp_add_sw (dbg->bp, next[i], dbg->bpsize, R_BP_PROT_EXEC);
+		if (bpi) {
+			bpi->swstep = true;
+		}
 	}
 
 	ret = r_debug_continue (dbg);
@@ -487,44 +678,74 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 }
 
 R_API int r_debug_step_hard(RDebug *dbg) {
+	RDebugReasonType reason;
+
 	dbg->reason.type = R_DEBUG_REASON_STEP;
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
+
+	/* only handle recoils when not already in recoil mode. */
+	if (dbg->recoil_mode == R_DBG_RECOIL_NONE) {
+		/* handle the stage-2 of breakpoints */
+		if (!r_debug_recoil (dbg, R_DBG_RECOIL_STEP)) {
+			return false;
+		}
+
+		/* recoil already stepped once, so we don't step again. */
+		if (dbg->recoil_mode == R_DBG_RECOIL_STEP) {
+			dbg->recoil_mode = R_DBG_RECOIL_NONE;
+			return true;
+		}
+	}
+
 	if (!dbg->h->step (dbg)) {
 		return false;
 	}
-	return r_debug_wait (dbg);
+	reason = r_debug_wait (dbg);
+	/* TODO: handle better */
+	if (reason == R_DEBUG_REASON_ERROR) {
+		return false;
+	}
+	if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
+		return false;
+	}
+	return true;
 }
 
 R_API int r_debug_step(RDebug *dbg, int steps) {
-	int i, ret;
+	int ret, steps_taken = 0;
 
-	if (!dbg || !dbg->h) {
-		return false;
-	}
-	dbg->reason.type = R_DEBUG_REASON_STEP;
-	if (r_debug_is_dead (dbg)) {
-		return false;
-	}
-
+	/* who calls this without giving a positive number? */
 	if (steps < 1) {
 		steps = 1;
 	}
 
-	for (i = 0; i < steps; i++) {
-		ret = dbg->swstep
-			? r_debug_step_soft (dbg)
-			: r_debug_step_hard (dbg);
+	if (!dbg || !dbg->h) {
+		return steps_taken;
+	}
+
+	if (r_debug_is_dead (dbg)) {
+		return steps_taken;
+	}
+
+	dbg->reason.type = R_DEBUG_REASON_STEP;
+
+	for (; steps_taken < steps; steps_taken++) {
+		if (dbg->swstep) {
+			ret = r_debug_step_soft (dbg);
+		} else {
+			ret = r_debug_step_hard (dbg);
+		}
 		if (!ret) {
 			eprintf ("Stepping failed!\n");
-			return false;
+			return steps_taken;
 		}
 		dbg->steps++;
 		dbg->reason.type = R_DEBUG_REASON_STEP;
 	}
 
-	return i;
+	return steps_taken;
 }
 
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
@@ -536,29 +757,31 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	RAnalOp op;
 	ut64 buf_pc, pc;
 	ut8 buf[DBG_BUF_SIZE];
-	int i;
+	int steps_taken = 0;
 
-	if (r_debug_is_dead (dbg))
-		return false;
+	if (r_debug_is_dead (dbg)) {
+		return steps_taken;
+	}
 
-	if (steps < 1)
+	if (steps < 1) {
 		steps = 1;
+	}
 
 	if (dbg->h && dbg->h->step_over) {
-		for (i = 0; i < steps; i++)
+		for (; steps_taken < steps; steps_taken++)
 			if (!dbg->h->step_over (dbg))
-				return false;
-		return i;
+				return steps_taken;
+		return steps_taken;
 	}
 
 	if (!dbg->anal || !dbg->reg)
-		return false;
+		return steps_taken;
 
 	// Initial refill
 	buf_pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 
-	for (i = 0; i < steps; i++) {
+	for (; steps_taken < steps; steps_taken++) {
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		// Try to keep the buffer full
 		if (pc - buf_pc > sizeof (buf)) {
@@ -568,7 +791,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc))) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
-			return false;
+			return steps_taken;
 		}
 
 		// Skip over all the subroutine calls
@@ -580,28 +803,29 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
 			if (!r_debug_continue_until (dbg, op.fail)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
-				return false;
+				return steps_taken;
 			}
 		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
 			//eprintf ("REP: skip to next instruction...\n");
 			if (!r_debug_continue_until (dbg, pc+op.size)) {
 				eprintf ("step over failed over rep\n");
-				return false;
+				return steps_taken;
 			}
 		} else {
 			r_debug_step (dbg, 1);
 		}
 	}
 
-	return i;
+	return steps_taken;
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
-	ut64 pc;
-	int retwait, ret = false;
+	RDebugReasonType reason, ret = false;
+
 	if (!dbg) {
 		return false;
 	}
+
 #if __WINDOWS__
 	r_cons_break (w32_break_process, dbg);
 #endif
@@ -610,55 +834,42 @@ repeat:
 		return false;
 	}
 	if (dbg->h && dbg->h->cont) {
-		if (dbg->in_recoil) {
-			/* if we are recoiling, we should not set the breakpoint that
-			 * caused us to stop.
-			 */
-			dbg->in_recoil = false;
-			r_bp_restore_except (dbg->bp, true, dbg->reason.addr);
-		} else {
-			r_bp_restore (dbg->bp, true); // set sw breakpoints
-		}
+		/* handle the stage-2 of breakpoints */
+		if (!r_debug_recoil (dbg, R_DBG_RECOIL_CONTINUE))
+			return false;
+
+		/* tell the inferior to go! */
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
-		dbg->reason.signum = 0;
-		retwait = r_debug_wait (dbg);
+
+		//XXX(jjd): why? //dbg->reason.signum = 0;
+
+		reason = r_debug_wait (dbg);
+
 #if __WINDOWS__
-		if (retwait != R_DEBUG_REASON_DEAD) {
+		if (reason != R_DEBUG_REASON_DEAD) {
+			// XXX(jjd): returning a thread id?!
 			ret = dbg->tid;
 		}
-		if (retwait == R_DEBUG_REASON_NEW_LIB ||
-		    retwait == R_DEBUG_REASON_EXIT_LIB) {
+		if (reason == R_DEBUG_REASON_NEW_LIB ||
+			reason == R_DEBUG_REASON_EXIT_LIB) {
 			goto repeat;
 		}
 #endif
-		if (r_debug_is_dead (dbg))
+
+		/* if continuing killed the inferior, we won't be able to get
+		 * the registers.. */
+		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 			return false;
-		r_bp_restore (dbg->bp, false); // unset sw breakpoints
-		if (r_debug_recoil (dbg) || (dbg->reason.type == R_DEBUG_REASON_BREAKPOINT)) {
-			/* check if cur bp demands tracing or not */
-			pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-			RBreakpointItem *b = r_bp_get_at (dbg->bp, pc);
-			if (b) {
-				/* check if cur bp demands tracing or not */
-				if (b->trace)
-					eprintf("hit tracepoit at: %"PFMT64x"\n",pc);
-				else
-					eprintf("hit breakpoint at: %"PFMT64x"\n",pc);
-				if (dbg->trace->enabled)
-					r_debug_trace_pc (dbg);
-				// TODO: delegate this to RCore.bphit(RCore, RBreakopintItem)
-				if (dbg->corebind.core && dbg->corebind.bphit) {
-					dbg->corebind.bphit (dbg->corebind.core, b);
-				}
-				if (b->trace) {
-					r_debug_step (dbg, 1);
-					goto repeat;
-				}
-			}
 		}
+
+		/* choose the thread that was returned from the continue function */
+		// XXX(jjd): there must be a cleaner way to do this...
 		r_debug_select (dbg, dbg->pid, ret);
 		sig = 0; // clear continuation after signal if needed
-		if (retwait == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
+
+		/* handle general signals here based on the return from the wait
+		 * function */
+		if (reason == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 			if (what & R_DBG_SIGNAL_CONT) {
 				sig = dbg->reason.signum;
@@ -720,7 +931,9 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 
 	// step first, we dont want to check current optype
 	for (;;) {
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false))
+			break;
+
 		pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		// Try to keep the buffer full
 		if (pc - buf_pc > sizeof (buf)) {
@@ -769,7 +982,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 		if (pc == addr)
 			break;
 		if (r_bp_get_at (dbg->bp, pc))
-                        break;
+			break;
 		r_debug_continue (dbg);
 	}
 	// Clean up if needed
@@ -830,22 +1043,35 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		return -1;
 	}
 	for (;;) {
+		RDebugReasonType reason;
+
 		if (r_cons_singleton()->breaked)
 			break;
 #if __linux__
 		// step is needed to avoid dupped contsc results
+		/* XXX(jjd): actually one stop is before the syscall, the other is
+		 * after.  this allows you to inspect the arguments before and the
+		 * return value after... */
 		r_debug_step (dbg, 1);
 #endif
 		dbg->h->contsc (dbg, dbg->pid, 0); // TODO handle return value
 		// wait until continuation
-		r_debug_wait (dbg);
+		reason = r_debug_wait (dbg);
+		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
+			break;
+		}
+		if (reason != R_DEBUG_REASON_STEP) {
+			break;
+		}
+
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			eprintf ("--> cannot sync regs, process is probably dead\n");
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
-		if (n_sc == -1)
+		if (n_sc == -1) {
 			continue;
+		}
 		if (n_sc == 0) {
 			break;
 		}

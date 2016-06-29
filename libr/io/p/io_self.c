@@ -116,7 +116,7 @@ static int update_self_regions(RIO *io, int pid) {
 #endif
 }
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "self://", 7));
 }
 
@@ -177,6 +177,8 @@ static int __close(RIODesc *fd) {
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
 		eprintf ("%d\n", fd->fd);
+	} else if (!strncmp (cmd, "pid", 3)) {
+		/* do nothing here */
 	} else if (!strcmp (cmd, "maps")) {
 		int i;
 		for (i =0; i<self_sections_count ;i++) {
@@ -200,7 +202,7 @@ struct r_io_plugin_t r_io_plugin_self = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,

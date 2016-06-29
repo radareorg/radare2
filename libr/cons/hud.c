@@ -9,8 +9,6 @@ R_API char *r_cons_hud_file(const char *f, const bool usecolor) {
 	if (s) {
 		char *ret = r_cons_hud_string (s, usecolor);
 		free (s);
-		if (!ret)
-			ret = strdup ("");
 		return ret;
 	}
 	return NULL;
@@ -111,8 +109,10 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 		r_cons_gotoxy (0, 0);
 		current_entry_n = 0;
 		selected_entry = NULL;
-		if (prompt && *prompt)
-			r_cons_printf (">> %s\n", prompt);
+		if (prompt && *prompt) {
+			r_cons_print (">> ");
+			r_cons_println (prompt);
+		}
 		r_cons_printf ("> %s|\n", user_input);
 		// Iterate over each entry in the list
 		r_list_foreach (list, iter, current_entry) {
@@ -178,16 +178,20 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 		ch = r_cons_readchar ();
 		nch = r_cons_arrow_to_hjkl (ch);
 		if (nch == 'j' && ch != 'j') {
-			if (top_entry_n + 1 < current_entry_n)
+			if (top_entry_n + 1 < current_entry_n) {
 				top_entry_n++;
+			}
 		} else if (nch == 'k' && ch != 'k') {
-			if (top_entry_n >= 0)
+			if (top_entry_n >= 0) {
 				top_entry_n--;
+			}
 		} else switch (ch) {
 			case 9: // \t
-				if (top_entry_n + 1 < current_entry_n)
+				if (top_entry_n + 1 < current_entry_n) {
 					top_entry_n++;
-				else top_entry_n = 0;
+				} else {
+					top_entry_n = 0;
+				}
 				break;
 			case 10: // \n
 			case 13: // \r
@@ -233,14 +237,14 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 
 // Display the list of files in a directory
 R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor) {
-	char *tmp = NULL, *ret = NULL;
+	char *tmp, *ret = NULL;
 	RList *files;
 	if (path) {
-		while (*path == ' ')
-			path++;
-		tmp = (*path)? strdup (path): strdup ("./");
-	} else tmp = strdup ("./");
-
+		path = r_str_chop_ro (path);
+		tmp = strdup (*path? path: "./");
+	} else {
+		tmp = strdup ("./");
+	}
 	files = r_sys_dir (tmp);
 	if (files) {
 		ret = r_cons_hud (files, tmp, usecolor);
@@ -257,7 +261,9 @@ R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor) {
 			}
 		}
 		r_list_free (files);
-	} else eprintf ("No files found\n");
+	} else {
+		eprintf ("No files found\n");
+	}
 	if (!ret) {
 		free (tmp);
 		return NULL;
@@ -265,18 +271,14 @@ R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor) {
 	return tmp;
 }
 
-// TODO: Add fmt support
 R_API char *r_cons_message(const char *msg) {
-	int cols, rows;
 	int len = strlen (msg);
-	cols = r_cons_get_size (&rows);
-
+	int rows, cols = r_cons_get_size (&rows);
 	r_cons_clear ();
-	r_cons_gotoxy ((cols - len) / 2, rows / 2); // XXX
-	/// TODO: add square, or talking clip here
-	r_cons_printf ("%s\n", msg);
+	r_cons_gotoxy ((cols - len) / 2, rows / 2);
+	r_cons_println (msg);
 	r_cons_flush ();
-	r_cons_gotoxy (0, rows - 2); // XXX
+	r_cons_gotoxy (0, rows - 2);
 	r_cons_any_key (NULL);
 	return NULL;
 }
@@ -288,12 +290,11 @@ main () {
 	r_flist_set (fl, 0, "foo is pure cow");
 	r_flist_set (fl, 1, "bla is kinda crazy");
 	r_flist_set (fl, 2, "funny to see you here");
-
 	r_cons_new ();
 	res = r_cons_hud (fl, NULL, 0);
 	r_cons_clear ();
 	if (res) {
-		r_cons_printf ("%s\n", res);
+		r_cons_println (res);
 		free (res);
 	}
 	r_cons_flush ();

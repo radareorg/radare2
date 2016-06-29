@@ -5,7 +5,6 @@ build-project hash ;
 
 build-project reg ;
 build-project cons ;
-build-project db ;
 build-project magic ;
 build-project diff ;
 build-project bp ;

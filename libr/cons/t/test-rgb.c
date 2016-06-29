@@ -14,7 +14,7 @@ i=j=k =0;
 	for (j=0;j<255;j+=40) { for (k=0;k<255;k+=40) {
 		r_cons_rgb (i, j, k, 0);
 		r_cons_rgb (i, j, k, 1);
-		r_cons_printf ("__");
+		r_cons_print ("__");
 		r_cons_reset_colors ();
 
 		r_cons_rgb (i, j, k, 0);

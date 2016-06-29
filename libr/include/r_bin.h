@@ -103,6 +103,7 @@ typedef struct r_bin_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
 	int type;
+	int bits;
 } RBinAddr;
 
 typedef struct r_bin_hash_t {

@@ -346,7 +346,7 @@ static int bin_strings(RCore *r, int mode, int va) {
 			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			r_cons_printf ("%s\n", string->string);
+			r_cons_println (string->string);
 		} else if (IS_MODE_JSON (mode)) {
 			q = r_base64_encode_dyn (string->string, -1);
 			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
@@ -1087,7 +1087,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		if (IS_MODE_SET (mode)) {
 			// TODO(eddyb) symbols that are imports.
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("%s\n", escname);
+			r_cons_println (escname);
 		} else if (IS_MODE_JSON (mode)) {
 			str = r_str_utf16_encode (symname, -1);
 			str = r_str_replace (str, "\"", "\\\"", 1);
@@ -1253,13 +1253,16 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		snInit (r, &sn, symbol, lang);
 
 		if (IS_MODE_SET (mode)) {
-			if (is_arm) {
+			if (is_arm && info->bits < 33) { // 16 or 32
 				int force_bits = 0;
-				if (va && symbol->bits == 16)
+				if (symbol->paddr & 1) {
 					force_bits = 16;
-				if (info->bits == 16 && symbol->bits == 32)
+				} else if (info->bits == 16) {
 					force_bits = 32;
-				r_anal_hint_set_bits (r->anal, addr, force_bits);
+				}
+				if (force_bits) {
+					r_anal_hint_set_bits (r->anal, addr, force_bits);
+				}
 			}
 
 			if (!strncmp (symbol->name, "imp.", 4)) {
@@ -1846,7 +1849,7 @@ static int bin_libs(RCore *r, int mode) {
 			r_cons_printf ("%s\"%s\"", iter->p ? "," : "", lib);
 		} else {
 			// simple and normal print mode
-			r_cons_printf ("%s\n", lib);
+			r_cons_println (lib);
 		}
 		i++;
 	}
@@ -2114,8 +2117,8 @@ static int bin_signature(RCore *r, int mode) {
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 	if (!plg) return false;
 	if (plg->signature) {
-	    	const char *signature = plg->signature (cur);
-		r_cons_printf ("%s\n", signature);
+		const char *signature = plg->signature (cur);
+		r_cons_println (signature);
 		return true;
 	}
 	return false;

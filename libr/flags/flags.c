@@ -103,6 +103,10 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		free (f->spaces[i]);
 	}
+	//in our case this is a list so just make sure to free it up
+	for (i = 0; i < f->ht_off->size_index; i++) {
+		r_list_free (f->ht_off->table[i].data);
+	}
 	r_hashtable64_free (f->ht_off);
 	r_hashtable64_free (f->ht_name);
 	r_list_free (f->flags);

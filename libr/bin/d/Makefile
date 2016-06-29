@@ -21,11 +21,13 @@ clean:
 
 .PHONY: all clean install install-symlink symstall
 
+FORMATS=elf32 elf64 elf_enums pe32 trx
+
 install: ${F_SDB}
 	@echo "[i] Installing bin format files"
 	rm -rf "$P"
 	mkdir -p "$P"
-	-cp -f * "$P" || true
+	-cp -f $(FORMATS) "$P" || true
 	mkdir -p "$P/dll"
 	cp -f dll/*.sdb "$P/dll"
 

@@ -425,7 +425,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		r_core_cmd0 (core, "V");
 		break;
 	case 'c':
-		if (input[1]=='?') {
+		if (input[1]=='?' || input[1] != ' ') {
 			const char *help_msg[] = {
 			"Usage: fc", "<flagname> [color]", " # List colors with 'ecs'",
 			"fc", " flagname", "Get current color for given flagname",
@@ -444,7 +444,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			if (fi) {
 				ret = r_flag_color (core->flags, fi, color);
 				if (!color && ret)
-					r_cons_printf ("%s\n", ret);
+					r_cons_println (ret);
 			} else {
 				eprintf ("Unknown flag '%s'\n", arg);
 			}
@@ -465,7 +465,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			} else {
 				item = r_flag_get_i (core->flags, r_num_math (core->num, p));
 				if (item && item->comment) {
-					r_cons_printf ("%s\n", item->comment);
+					r_cons_println (item->comment);
 				} else eprintf ("Cannot find item\n");
 			}
 			free (p);
@@ -559,7 +559,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 					r_cons_printf ("%s + %d\n", f->name,
 						(int)(addr - f->offset));
 				} else {
-					r_cons_printf ("%s\n", f->name);
+					r_cons_println (f->name);
 				}
 			}
 		}

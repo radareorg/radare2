@@ -37,9 +37,9 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			if (h->cpus && !strcmp (arch, h->name)) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
-				for (i=0;i<n;i++)
-					r_cons_printf ("%s\n",
-						r_str_word_get0 (c, i));
+				for (i=0;i<n;i++) {
+					r_cons_println (r_str_word_get0 (c, i));
+				}
 				free (c);
 				break;
 			}
@@ -58,7 +58,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			if (!h->assemble && h->disassemble) feat = "_d";
 			feat2 = has_esil (core, h->name);
 			if (fmt == 'q') {
-				r_cons_printf ("%s\n", h->name);
+				r_cons_println (h->name);
 			} else if (fmt == 'j') {
 				const char *str_bits = "32, 64";
 				const char *license = "GPL";
@@ -352,7 +352,7 @@ static int cb_asmfeatures(void *user, void *data) {
 			if (core->assembler->cur->features) {
 				char *feat = strdup (core->assembler->cur->features);
 				r_str_replace_char (feat, ',','\n');
-				r_cons_printf ("%s\n", feat);
+				r_cons_println (feat);
 				free (feat);
 			}
 		}
@@ -1453,6 +1453,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF("anal.esil", "false", "Use the new ESIL code analysis");
 	SETPREF("anal.strings", "false", "Identify and register strings during analysis (aar only)");
+	SETPREF("anal.vars", "true",  "Analyze local variables and arguments");
 	SETPREF("anal.vinfun", "false",  "Search values in functions (aav) (false by default to only find on non-code)");
 	SETPREF("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
@@ -1502,6 +1503,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
+	SETPREF("asm.leahints", "true", "Show LEA hints [numbers] in disasm");
 	SETPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETPREF("asm.flgoff", "false", "Show offset in flags");
@@ -1568,6 +1570,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF("asm.describe", "false", "Show opcode description");
+	SETPREF("asm.hints", "false", "Show hints for magic numbers in disasm");
 	SETPREF("asm.marks", "true", "Show marks before the disassembly");
 	SETCB("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
 	SETPREF("bin.libs", "false", "Try to load libraries after loading main binary");

@@ -79,7 +79,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
+static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	const char *uri = "r2web://";
 	return (!strncmp (pathname, uri, strlen (uri)));
 }
@@ -135,7 +135,7 @@ RIOPlugin r_io_plugin_r2web = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,

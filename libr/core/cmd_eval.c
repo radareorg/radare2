@@ -15,7 +15,7 @@ static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 		r_cons_printf ("%s\"%s\"", ctr?",":"", fn);
 		break;
 	case 'l': // list
-		r_cons_printf ("%s\n", fn);
+		r_cons_println (fn);
 		break;
 	case 'p': // previous
 		// TODO: move logic here
@@ -135,7 +135,7 @@ static int cmd_eval(void *data, const char *input) {
 			if (node) {
 				const char *type = r_config_node_type (node);
 				if (type && *type) {
-					r_cons_printf ("%s\n", type);
+					r_cons_println (type);
 				}
 			}
 		} else {
@@ -149,12 +149,12 @@ static int cmd_eval(void *data, const char *input) {
 			if (var) while (*var==' ') var++;
 			p = r_sys_getenv (var);
 			if (p) {
-				r_cons_printf ("%s\n", p);
+				r_cons_println (p);
 				free (p);
 			} else {
 				char **e = r_sys_get_environ ();
 				while (e && *e) {
-					r_cons_printf ("%s\n", *e);
+					r_cons_println (*e);
 					e++;
 				}
 			}

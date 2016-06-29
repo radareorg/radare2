@@ -235,7 +235,7 @@ static int cmd_info(void *data, const char *input) {
 			case 'v':
 				if (db) {
 					char *o = sdb_querys (db, NULL, 0, input+3);
-					if (o && *o) r_cons_printf ("%s", o);
+					if (o && *o) r_cons_print (o);
 					free (o);
 				}
 				break;
@@ -243,14 +243,14 @@ static int cmd_info(void *data, const char *input) {
 			case ' ':
 				if (db) {
 					char *o = sdb_querys (db, NULL, 0, input+2);
-					if (o && *o) r_cons_printf ("%s", o);
+					if (o && *o) r_cons_print (o);
 					free (o);
 				}
 				break;
 			case '\0':
 				if (db) {
 					char *o = sdb_querys (db, NULL, 0, "*");
-					if (o && *o) r_cons_printf ("%s", o);
+					if (o && *o) r_cons_print (o);
 					free (o);
 				}
 				break;

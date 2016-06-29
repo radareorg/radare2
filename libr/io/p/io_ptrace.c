@@ -156,11 +156,13 @@ static void close_pidmem(RIOPtrace *iop) {
 	}
 }
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	if (!strncmp (file, "ptrace://", 9))
+static bool __plugin_open(RIO *io, const char *file, bool many) {
+	if (!strncmp (file, "ptrace://", 9)) {
 		return true;
-	if (!strncmp (file, "attach://", 9))
+	}
+	if (!strncmp (file, "attach://", 9)) {
 		return true;
+	}
 	return false;
 }
 
@@ -287,7 +289,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		int pid = iop->pid;
 		if (cmd[3] == ' ') {
 			pid = atoi (cmd+4);
-			if (pid != 0) {
+			if (pid > 0 && pid != iop->pid) {
 				(void)ptrace (PTRACE_ATTACH, pid, 0, 0);
 				// TODO: do not set pid if attach fails?
 				iop->pid = iop->tid = pid;
@@ -308,7 +310,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,

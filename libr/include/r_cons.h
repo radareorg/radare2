@@ -402,7 +402,8 @@ R_API void r_cons_set_last_interactive(void);
 /* output */
 R_API void r_cons_printf(const char *format, ...);
 R_API void r_cons_strcat(const char *str);
-#define r_cons_puts(x) r_cons_strcat(x)
+#define r_cons_print(x) r_cons_strcat (x)
+R_API void r_cons_println(const char* str);
 R_API void r_cons_strcat_justify (const char *str, int j, char c);
 R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
@@ -468,7 +469,7 @@ R_API void r_cons_column(int c);
 R_API int r_cons_get_column (void);
 R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
-R_API int r_cons_enable_mouse(const int enable);
+R_API bool r_cons_enable_mouse(const bool enable);
 R_API void r_cons_bind(RConsBind *bind);
 #endif
 

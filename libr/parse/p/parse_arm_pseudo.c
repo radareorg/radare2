@@ -217,93 +217,93 @@ static int parse(RParse *p, const char *data, char *str) {
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RAnalVar *var;
 	RListIter *iter;
-	char oldstr[64], newstr[64];
+	char *oldstr, *newstr;
 	char *tstr = strdup (data);
 	if (!tstr) return false;
-	RList *vars, *args;
+	RList *spargs, *bpargs, *regargs;
 
 	if (!p->varlist) {
 		free (tstr);
 		return false;
 	}
 
-	vars = p->varlist (p->anal, f, 'v');
-	args = p->varlist (p->anal, f, 'a');
-	r_list_join (vars, args);
-	switch (p->anal->bits) {
-	case 64:
-		r_list_foreach (vars, iter, var) {
-			if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
-					"[%s, %d]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-			else snprintf (oldstr, sizeof (oldstr)-1,
-					"[%s, 0x%x]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-			snprintf (newstr, sizeof (newstr)-1, "[%s + %s]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->name);
-			if (strstr (tstr, oldstr) != NULL) {
-				tstr = r_str_replace (tstr, oldstr, newstr, 1);
-				break;
-			}
-			// Try with no spaces
-			snprintf (oldstr, sizeof (oldstr)-1, "[%s + 0x%x]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-			if (strstr (tstr, oldstr) != NULL) {
-				tstr = r_str_replace (tstr, oldstr, newstr, 1);
-				break;
-			}
+	regargs = p->varlist (p->anal, f, 'v');
+	bpargs = p->varlist (p->anal, f, 'a');
+	spargs = p->varlist (p->anal, f, 'e');
+	r_list_foreach (bpargs, iter, var) {
+		if (var->delta > -10 && var->delta < 10) {
+			oldstr = r_str_newf ("[%s, %d]",
+				p->anal->reg->name[R_REG_NAME_BP],
+				var->delta);
+		} else if (var->delta > 0) {
+			oldstr = r_str_newf ("[%s, 0x%x]",
+			p->anal->reg->name[R_REG_NAME_BP],
+				var->delta);
+		} else {
+			oldstr = r_str_newf ("[%s, -0x%x]",
+				p->anal->reg->name[R_REG_NAME_BP],
+				-var->delta);
 		}
-		break;
-	case 32:
-		r_list_foreach (vars, iter, var) {
-			if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
-					"[%s, -%d]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-			else snprintf (oldstr, sizeof (oldstr)-1,
-					"[%s, -0x%x]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-			if (strstr (tstr, oldstr) != NULL) {
-				snprintf (newstr, sizeof (newstr)-1, "[%s - %s]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->name);
-				tstr = r_str_replace (tstr, oldstr, newstr, 1);
-				break;
-			}
-			// asm.pseudo
-			if (var->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
-					"[%s - %d]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-			else snprintf (oldstr, sizeof (oldstr)-1,
-					"[%s - 0x%x]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-			snprintf (newstr, sizeof (newstr)-1, "[%s - %s]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->name);
-			if (strstr (tstr, oldstr) != NULL) {
-				tstr = r_str_replace (tstr, oldstr, newstr, 1);
-				break;
-			}
-			// Try with no spaces
-			snprintf (oldstr, sizeof (oldstr)-1, "[%s-0x%x]",
-					p->anal->reg->name[R_REG_NAME_BP],
-					var->delta);
-			if (strstr (tstr, oldstr) != NULL) {
-				tstr = r_str_replace (tstr, oldstr, newstr, 1);
-				break;
-			}
+		if (strstr (tstr, oldstr)) {
+			newstr = r_str_newf ("[%s %c %s]",
+				p->anal->reg->name[R_REG_NAME_BP],
+				var->delta > 0 ? '+' : '-',
+				var->name);
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			free (newstr);
+			free (oldstr);
+			break;
 		}
-		break;
-	case 16:
-		//
-		break;
+		free(oldstr);
+	}
+	r_list_foreach (spargs, iter, var) {
+		if (var->delta > -10 && var->delta < 10) {
+			oldstr = r_str_newf ("[sp, %d]", var->delta);
+		} else if (var->delta > 0) {
+			oldstr = r_str_newf ("[sp, 0x%x]", var->delta);
+		} else {
+			oldstr = r_str_newf ("[sp, -0x%x]", -var->delta);
+		}
+		if (strstr (tstr, oldstr)) {
+			newstr = r_str_newf ("[sp %c %s]",
+				var->delta > 0 ? '+' : '-',
+				var->name);
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			free (newstr);
+			free (oldstr);
+			break;
+		}
+		free (oldstr);
+		if (var->delta > -10 && var->delta < 10) {
+			oldstr = r_str_newf ("[%s, %d]",
+				p->anal->reg->name[R_REG_NAME_SP],
+				var->delta);
+		} else if (var->delta > 0) {
+			oldstr = r_str_newf ("[%s, 0x%x]",
+				p->anal->reg->name[R_REG_NAME_SP],
+				var->delta);
+		} else {
+			oldstr = r_str_newf ("[%s, -0x%x]",
+				p->anal->reg->name[R_REG_NAME_SP],
+				-var->delta);
+		}
+		if (strstr (tstr, oldstr)) {
+			newstr = r_str_newf ("[%s %c %s]",
+				p->anal->reg->name[R_REG_NAME_BP],
+				var->delta > 0 ? '+' : '-',
+				var->name);
+			tstr = r_str_replace (tstr, oldstr, newstr, 1);
+			free (newstr);
+			free (oldstr);
+			break;
+		}
+		free (oldstr);
+	}
+	r_list_foreach (regargs, iter, var) {
+		RRegItem *r = r_reg_index_get (p->anal->reg, var->delta);
+		if (r && r->name && strstr (tstr, r->name)) {
+			tstr = r_str_replace (tstr, r->name, var->name, 1);
+		}
 	}
 	if (len > strlen (tstr)) {
 		strncpy (str, tstr, strlen (tstr));
