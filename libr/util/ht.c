@@ -228,7 +228,7 @@ R_API bool ht_(insert) (RHT *ht, utH hash, void *data) {
 R_API void ht_(remove) (RHT *ht, utH hash) {
 	RHTE *entry = ht_(search) (ht, hash);
 	if (entry) {
-		entry->data = (void *) &deleted_data;
+		entry->data = NULL;
 		ht->entries--;
 		ht->deleted_entries++;
 	}
