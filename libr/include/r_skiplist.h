@@ -15,20 +15,20 @@
 typedef struct r_skiplist_node_t {
 	void *data;	// pointer to the value
 	struct r_skiplist_node_t *forward[1]; // forward pointer
-} r_skiplist_node;
+} RSkipListNode;
 
 typedef struct r_skiplist_t {
-	r_skiplist_node *head;	// list header
+	RSkipListNode *head;	// list header
 	int list_level; // current level of the list.
 	RListFree freefn;
 	RListComparator compare;
-} r_skiplist;
+} RSkipList;
 
-typedef r_skiplist RSkipList;
-
-R_API r_skiplist* r_skiplist_new(RListFree freefn, RListComparator comparefn);
-R_API r_skiplist_node* r_skiplist_insert(r_skiplist* list, void* data);
-R_API void r_skiplist_delete(r_skiplist* list, void* data);
-R_API r_skiplist_node* r_skiplist_find(r_skiplist* list, void* data);
+R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn);
+R_API void r_skiplist_free(RSkipList *list);
+R_API void r_skiplist_purge(RSkipList *list);
+R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data);
+R_API void r_skiplist_delete(RSkipList* list, void* data);
+R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data);
 
 #endif // R2_SKIP_LIST_H
