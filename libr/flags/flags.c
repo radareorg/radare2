@@ -36,6 +36,7 @@ static void remove_offsetmap(RFlag *f, RFlagItem *item) {
 	if (fs_off) {
 		r_list_delete_data (fs_off, item);
 		if (r_list_empty (fs_off)) {
+			//here we leak memory since data is a List 
 			r_hashtable64_remove (f->ht_off, XOROFF (item->offset));
 		}
 	}
