@@ -156,11 +156,13 @@ static void close_pidmem(RIOPtrace *iop) {
 	}
 }
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	if (!strncmp (file, "ptrace://", 9))
+static bool __plugin_open(RIO *io, const char *file, bool many) {
+	if (!strncmp (file, "ptrace://", 9)) {
 		return true;
-	if (!strncmp (file, "attach://", 9))
+	}
+	if (!strncmp (file, "attach://", 9)) {
 		return true;
+	}
 	return false;
 }
 
