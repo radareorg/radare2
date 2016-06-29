@@ -15,6 +15,7 @@
 #include <r_io.h>
 #include <r_reg.h>
 #include <r_list.h>
+#include <r_skiplist.h>
 #include <r_util.h>
 #include <r_syscall.h>
 #include <r_flags.h>
@@ -312,7 +313,8 @@ typedef struct r_anal_type_function_t {
 	RAnalDiff *diff;
 	RList *locs; // list of local variables
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
-	RList *bbs;
+	//RList *bbs;
+	RSkipList *bbs_sl;
 	RList *vars;
 #if FCN_OLD
 	RList *refs;
