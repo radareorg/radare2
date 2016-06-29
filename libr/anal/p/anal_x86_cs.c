@@ -22,6 +22,7 @@
 #define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
 #define INSOP(n) insn->detail->x86.operands[n]
 #define INSOPS insn->detail->x86.op_count
+#define ISIMM(x) insn->detail->x86.operands[x].type == ARM_OP_IMM
 
 struct Getarg {
 	csh handle;
@@ -973,8 +974,9 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			break;
 		case X86_OP_MEM:
 			if (INSOP(0).mem.base == X86_REG_RIP) {
+				/* nothing here */
 			} else {
-				cs_x86_op in = INSOP(0);
+				cs_x86_op in = INSOP (0);
 				if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
 					if (a->decode) {
 						esilprintf (op, "0x%"PFMT64x",[],%s,=", INSOP(0).mem.disp, pc);
@@ -999,11 +1001,17 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_INSW:
 	case X86_INS_INSD:
 	case X86_INS_INSB:
+		if (ISIMM (1)) {
+			op->val = INSOP (1).imm;
+		}
 		break;
 	case X86_INS_OUT:
 	case X86_INS_OUTSB:
 	case X86_INS_OUTSD:
 	case X86_INS_OUTSW:
+		if (ISIMM (0)) {
+			op->val = INSOP (0).imm;
+		}
 		break;
 	case X86_INS_VXORPD:
 	case X86_INS_VXORPS:

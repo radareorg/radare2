@@ -1661,8 +1661,9 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	for (;*infos; infos++) {
 		/* XXX wtf, must use anal.meta.deserialize() */
 		char *p, *q;
-		if (*infos==',')
+		if (*infos == ',') {
 			continue;
+		}
 		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, *infos, ds->at);
 		metas = sdb_const_get (s, key, 0);
 		MI.size = sdb_array_get_num (s, key, 0, 0);
@@ -1873,10 +1874,12 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	char *flagstr = NULL;
 	char extra[64];
 	int j,k;
-	if (!ds->show_bytes)
+	if (!ds->show_bytes) {
 		return;
-	if (ds->nb<1)
+	}
+	if (ds->nb < 1) {
 		return;
+	}
 	strcpy (extra, " ");
 	if (ds->show_flag_in_bytes) {
 		flagstr = r_flag_get_liststr (core->flags, ds->at);
@@ -1917,8 +1920,10 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 				k = ds->nb - r_str_ansi_len (nstr)+1;
 			}
 			if (k > 0) {
-			    	//setting to sizeof screw up the disasm
-			    	if (k > sizeof(pad)) k = 18;
+				// setting to sizeof screw up the disasm
+				if (k > sizeof (pad)) {
+					k = 18;
+				}
 				for (j = 0; j < k; j++) {
 					pad[j] = ' ';
 				}
@@ -1947,9 +1952,12 @@ static void ds_print_indent(RDisasmState *ds) {
 	if (ds->show_indent) {
 		char indent[128];
 		int num = ds->indent_level * ds->indent_space;
-		if (num < 0) num = 0;
-		if (num >= sizeof (indent))
-			num = sizeof(indent)-1;
+		if (num < 0) {
+			num = 0;
+		}
+		if (num >= sizeof (indent)) {
+			num = sizeof (indent) - 1;
+		}
 		memset (indent, ' ', num);
 		indent[num] = 0;
 		r_cons_strcat (indent);
@@ -1963,7 +1971,9 @@ static void ds_print_opstr(RDisasmState *ds) {
 }
 
 static void ds_print_color_reset(RDisasmState *ds) {
-	if (ds->show_color) r_cons_strcat (Color_RESET);
+	if (ds->show_color) {
+		r_cons_strcat (Color_RESET);
+	}
 }
 
 static int ds_print_middle(RDisasmState *ds, int ret) {
@@ -2001,23 +2011,23 @@ static void ds_print_import_name(RDisasmState *ds) {
 	RCore * core = ds->core;
 
 	switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_CALL:
-			if (core->bin->cur->o->imports && core->bin->cur->o->relocs) {
-				r_list_foreach (core->bin->cur->o->relocs, iter, rel) {
-					if ((rel->vaddr == ds->analop.jump) &&
-						(rel->import != NULL)) {
-						if (ds->show_color) {
-							r_cons_strcat (ds->color_fname);
-						}
-						// TODO: handle somehow ordinals import
-						ds_align_comment (ds);
-						r_cons_printf ("  ; (imp.%s)", rel->import->name);
-						ds_print_color_reset (ds);
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_CALL:
+		if (core->bin->cur->o->imports && core->bin->cur->o->relocs) {
+			r_list_foreach (core->bin->cur->o->relocs, iter, rel) {
+				if ((rel->vaddr == ds->analop.jump) &&
+					(rel->import != NULL)) {
+					if (ds->show_color) {
+						r_cons_strcat (ds->color_fname);
 					}
+					// TODO: handle somehow ordinals import
+					ds_align_comment (ds);
+					r_cons_printf ("  ; (imp.%s)", rel->import->name);
+					ds_print_color_reset (ds);
 				}
 			}
+		}
 	}
 }
 
@@ -2026,9 +2036,20 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	const char *label;
 	RAnalFunction *f;
 	RCore *core = ds->core;
-	if (!ds->show_comments)
+	if (!ds->show_comments) {
 		return;
+	}
 	switch (ds->analop.type) {
+	case R_ANAL_OP_TYPE_IO:
+		{
+			const int imm = (int)ds->analop.val;
+			RSyscall *sc = ds->core->anal->syscall;
+			const char *ioname = r_syscall_get_io (sc, imm);
+			if (ioname && *ioname) {
+				r_cons_printf (" ; IO %s", ioname);
+			}
+		}
+		break;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_CALL:
