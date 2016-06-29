@@ -922,7 +922,7 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	int ret;
 	ut32 off = 0, len = 0;
 	ret = r_buf_fread_at (arch->buf, 100, (ut8*)&off, "i", 1);

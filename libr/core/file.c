@@ -889,11 +889,11 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			r_cons_printf ("o %s 0x%"PFMT64x"\n", f->desc->uri, (ut64)from);
 			break;
 		default:
-			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%d %s\n",
+			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64u" %s\n",
 					core->io->raised == f->desc->fd?'*':'-',
 					(int)f->desc->fd, f->desc->uri, (ut64)from,
 					f->desc->flags & R_IO_WRITE? "rw": "r",
-					(ut32)r_io_desc_size (core->io, f->desc),
+					r_io_desc_size (core->io, f->desc),
 					overlapped?"overlaps":"");
 			break;
 		}
