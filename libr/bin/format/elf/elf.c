@@ -2364,6 +2364,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(RBuffer *buf) {
 	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length)) {
 		return Elf_(r_bin_elf_free) (bin);
 	}
+	(bin->b)->fd = buf->fd;
 	if (!elf_init (bin)) {
 		return Elf_(r_bin_elf_free) (bin);
 	}

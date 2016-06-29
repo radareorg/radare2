@@ -426,18 +426,47 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 }
 
 static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
-	ut64 len, check_len;
+	ut64 len, check_len, file_sz, readbytes;
 	int i, j, k, tsize, bigendian, m = 1;
 	if (!b || b->empty) return 0;
+#if 0
 	if (b->fd != -1) {
 		eprintf ("r_buf_fcpy_at not supported yet for r_buf_new_file\n");
 		return 0;
 	}
+#endif
+	//remove this and use a global way to get size using fd or add a field for file size in rbuffer.
+	ut64 curr = lseek(b->fd, 0, SEEK_CUR);
+	file_sz = lseek(b->fd, 0, SEEK_END);
+	lseek(b->fd, curr, SEEK_SET);
+	//remove upto this part.
+
 	if (addr == R_BUF_CUR)
 		addr = b->cur;
 	else addr -= b->base;
-	if (addr == UT64_MAX || addr > b->length)
+	if (addr == UT64_MAX)
 		return -1;
+	ut8 *tmp_buf = NULL;
+	readbytes = b->length;
+	if (addr > b->length) {
+		if (b->fd == -1 || addr > file_sz) return -1;
+		tmp_buf = malloc (b->length);
+		if (!tmp_buf) {
+			eprintf ("Failed to allocate %"PFMT64u" bytes of memory.\n", b->length);
+			return -1;
+		}
+		//TODO: use a proper function. currently using own version.
+		lseek (b->fd, addr, SEEK_SET);
+		readbytes = read (b->fd, tmp_buf, b->length);
+		lseek (b->fd, curr, SEEK_SET);
+		if (readbytes == -1) {
+			free (tmp_buf);
+			return -1;
+		}
+	}
+	if (!tmp_buf) {
+		tmp_buf = b->buf;
+	}
 	tsize = 2;
 	for (i = len = 0; i < n; i++)
 	for (j = 0; fmt[j]; j++) {
@@ -460,11 +489,16 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		   tsize and m are not user controled, then don't
 		   need to check possible overflow.
 		 */
-		if (!UT64_ADD (&check_len, len, tsize*m))
+		if (!UT64_ADD (&check_len, len, tsize*m)) {
+			if (tmp_buf != b->buf) free (tmp_buf);
 			return -1;
-		if (!UT64_ADD (&check_len, check_len, addr))
+		}
+		if (!UT64_ADD (&check_len, check_len, addr)) {
+			if (tmp_buf != b->buf) free (tmp_buf);
 			return -1;
-		if (check_len > b->length) {
+		}
+		if (check_len > file_sz) {//b->length) {
+			if (tmp_buf != b->buf) free (tmp_buf);
 			return check_len;
 			// return -1;
 		}
@@ -472,18 +506,24 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		for (k = 0; k < m; k++) {
 			if (write) {
 				r_mem_swaporcopy ((ut8*)&buf[addr+len+(k*tsize)],
-						  (const ut8*)&b->buf[len+(k*tsize)],
-						  tsize, bigendian);
+						  (const ut8*)&tmp_buf[len+(k*tsize)],
+						  tsize, bigendian); //TODO: check this
 			} else {
+				if (tmp_buf == b->buf)
 				r_mem_swaporcopy ((ut8*)&buf[len+(k*tsize)],
-						  (const ut8*)&b->buf[addr+len+(k*tsize)],
+						  (const ut8*)&tmp_buf[addr+len+(k*tsize)],
+						  tsize, bigendian); //TODO: check this
+				else
+				r_mem_swaporcopy ((ut8*)&buf[len+(k*tsize)],
+						  (const ut8*)&tmp_buf[len+(k*tsize)],
 						  tsize, bigendian);
 			}
 		}
 		len += tsize * m;
 		m = 1;
 	}
-	b->cur = addr + len;
+	if (tmp_buf != b->buf) free(tmp_buf);
+	b->cur = (addr > b->length) ? b->length : addr + len; //TODO: check this
 	return len;
 }
 
