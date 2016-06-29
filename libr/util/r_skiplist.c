@@ -78,8 +78,8 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 		list->list_level = newLevel;
 	}
 
-	if ((x = malloc(sizeof(RSkipListNode) +
-					newLevel*sizeof(RSkipListNode *))) == 0) {
+	x = malloc(sizeof(RSkipListNode) + newLevel*sizeof(RSkipListNode *));
+	if (!x) {
 		eprintf ("can't even malloc!");
 		return NULL;
 	}
@@ -101,7 +101,7 @@ R_API void r_skiplist_delete(RSkipList* list, void* data) {
 	node = list->head;
 	for (i = list->list_level; i >=0; i--) {
 		while (node->forward[i] != list->head &&
-				list->compare (node->forward[i]->data, data) < 1) {
+			list->compare (node->forward[i]->data, data) < 1) {
 			node = node->forward[i];
 		}
 		update[i] = node;
@@ -115,15 +115,14 @@ R_API void r_skiplist_delete(RSkipList* list, void* data) {
 	for (i = 0; i <= list->list_level; i++) {
 		if (update[i]->forward[i] != node) {
 			break;
-		} else {
-			update[i]->forward[i] = node->forward[i];
 		}
+		update[i]->forward[i] = node->forward[i];
 	}
 	free (node);
 
 	// Update the level.
 	while ((list->list_level > 0) &&
-			(list->head->forward[list->list_level] == list->head)) {
+		(list->head->forward[list->list_level] == list->head)) {
 		list->list_level--;
 	}
 }
@@ -133,7 +132,7 @@ R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data) {
 	RSkipListNode* node = list->head;
 	for (i = list->list_level; i >= 0; i--) {
 		while (node->forward[i] != list->head &&
-				list->compare (node->forward[i]->data, data) < 0) {
+			list->compare (node->forward[i]->data, data) < 0) {
 			node = node->forward[i];
 		}
 	}
