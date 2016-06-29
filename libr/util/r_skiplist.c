@@ -103,7 +103,7 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 		update[i] = x;
 	}
 	x = x->forward[0];
-	if (x->forward[0] != list->head && list->compare(x->data, data) == 0) {
+	if (x != list->head && list->compare(x->data, data) == 0) {
 		return x;
 	}
 
