@@ -555,6 +555,7 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	// deallocate niceties
 	r_list_free (fcn->bbs);
 	fcn->bbs = r_anal_bb_list_new ();
+	fcn->bbs_sl = r_skiplist_new (free, (RListComparator)r_anal_bb_compare);
 
 	IFDBG eprintf ("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n",
 		fcn->name, fcn->addr, r_anal_fcn_size (fcn));
