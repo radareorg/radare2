@@ -1588,11 +1588,7 @@ static void algolist(int mode) {
 		ut64 bits = ((ut64)1) << i;
 		const char *name = r_hash_name (bits);
 		if (!name || !*name) break;
-		if (mode) {
-			r_cons_println (name);
-		} else {
-			r_cons_println (name);
-		}
+		r_cons_println (name);
 	}
 	if (!mode) r_cons_newline ();
 }

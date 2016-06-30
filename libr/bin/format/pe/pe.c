@@ -2449,7 +2449,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		if (!shdr[i].SizeOfRawData && !shdr[i].Misc.VirtualSize) continue;
 		if (shdr[i].Name[0] == '\0') {
 			char *new_name = r_str_newf ("sect_%d", j);
-			strcpy ((char *)sections[j].name, new_name);
+			strncpy ((char *)sections[j].name, new_name, R_ARRAY_SIZE(sections[j].name));
 			free (new_name);
 		} else {
 			memcpy (sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);

@@ -297,7 +297,8 @@ static void cmd_write_value (RCore *core, const char *input) {
 	if (core->file) {
 		r_io_use_desc (core->io, core->file->desc);
 	}
-	r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+	if (res == UT64_MAX) return;
 	if (type == 0)
 		type = (off&UT64_32U)? 8: 4;
 	switch (type) {
