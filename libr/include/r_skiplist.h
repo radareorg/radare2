@@ -31,11 +31,16 @@ R_API void r_skiplist_purge(RSkipList *list);
 R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data);
 R_API void r_skiplist_delete(RSkipList* list, void* data);
 R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data);
+R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2);
 
 #define r_skiplist_length(list) (list->size)
 
 #define r_skiplist_foreach(list, it, pos)\
 	if (list)\
 		for (it = list->head->forward[0]; it != list->head && ((pos = it->data) || 1); it = it->forward[0])
+
+#define r_skiplist_foreach_safe(list, it, tmp, pos)\
+	if (list)\
+		for (it = list->head->forward[0]; it != list->head && ((pos = it->data) || 1) && ((tmp = it->forward[0]) || 1); it = tmp)
 
 #endif // R2_SKIP_LIST_H

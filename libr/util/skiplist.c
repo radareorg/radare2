@@ -11,10 +11,10 @@
 
 const int kSkipListDepth = 15; // max depth
 
-RSkipListNode *r_skiplist_node_new (void *data) {
+RSkipListNode *r_skiplist_node_new (void *data, int level) {
 	RSkipListNode *res = R_NEW (RSkipListNode);
 	if (!res) return NULL;
-	res->forward = R_NEWS (RSkipListNode *, kSkipListDepth + 1);
+	res->forward = R_NEWS (RSkipListNode *, level + 1);
 	if (!res->forward) goto err_forward;
 	res->data = data;
 	return res;
@@ -70,7 +70,7 @@ R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 	RSkipList *list = R_NEW0 (RSkipList);
 	if (!list) return NULL;
 
-	list->head = r_skiplist_node_new (NULL);
+	list->head = r_skiplist_node_new (NULL, kSkipListDepth);
 	if (!list->head) goto err_head;
 
 	init_head (list);
@@ -125,7 +125,7 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	}
 
 	// randomly choose the number of levels the new node will be put in
-	for (x_level = 0; rand() < RAND_MAX/2 && x_level <= kSkipListDepth; x_level++);
+	for (x_level = 0; rand() < RAND_MAX/2 && x_level < kSkipListDepth; x_level++);
 
 	// update the `update` array with default values when the current node
 	// has a level greater than the current one
@@ -137,7 +137,7 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 		new_level = x_level;
 	}
 
-	x = r_skiplist_node_new (data);
+	x = r_skiplist_node_new (data, x_level);
 	if (!x) return NULL;
 
 	// update forward links for all `update` points,
@@ -181,10 +181,19 @@ R_API void r_skiplist_delete(RSkipList* list, void* data) {
 }
 
 R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data) {
-	int i;
 	RSkipListNode* x = find_insertpoint (list, data, NULL);
 	if (x != list->head && list->compare (x->data, data) == 0) {
 		return x;
 	}
 	return NULL;
+}
+
+// Add all the elements of `l2` in `l1`.
+R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
+	RSkipListNode *it;
+	void *data;
+
+	r_skiplist_foreach (l2, it, data) {
+		r_skiplist_insert (l1, data);
+	}
 }
