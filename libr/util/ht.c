@@ -55,10 +55,6 @@
 #define RHTE RHashTableEntry
 #endif
 
-//static const utH deleted_data;
-// HACK :D .. but.. use magic instead?
-#define deleted_data hash_sizes
-
 static const struct {
 // XXX: this can be ut32 ...
    //ut32 max_entries, size, rehash;
@@ -102,9 +98,10 @@ static const struct {
     { 2147483648ul,	2362232233ul,	2362232231ul}
 };
 
-#define entry_is_free(x) (!x || !x->data)
-#define entry_is_deleted(x) x->data==&deleted_data
-#define entry_is_present(x) (x->data && x->data != &deleted_data)
+#define DELETED_HASH ((ut32)~0)
+#define entry_is_free(x) (!x->hash && !x->data)
+#define entry_is_deleted(x) (x->hash == DELETED_HASH && !x->data)
+#define entry_is_present(x) (x->data || (x->hash && x->hash != DELETED_HASH))
 
 /**
  * Finds a hash table entry with the given key and hash of that key.
@@ -228,6 +225,7 @@ R_API bool ht_(insert) (RHT *ht, utH hash, void *data) {
 R_API void ht_(remove) (RHT *ht, utH hash) {
 	RHTE *entry = ht_(search) (ht, hash);
 	if (entry) {
+		entry->hash = DELETED_HASH;
 		entry->data = NULL;
 		ht->entries--;
 		ht->deleted_entries++;
