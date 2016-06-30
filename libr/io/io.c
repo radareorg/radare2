@@ -746,16 +746,13 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		posix_whence = SEEK_SET;
-		ret = offset;
 		break;
 	case R_IO_SEEK_CUR:
 		//		offset += io->off;
 		posix_whence = SEEK_CUR;
-		ret = offset + io->off;
 		break;
 	case R_IO_SEEK_END:
 		//offset = UT64_MAX; // XXX: depending on io bits?
-		ret = UT64_MAX;
 		posix_whence = SEEK_END;
 		break;
 	}

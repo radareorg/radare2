@@ -314,9 +314,11 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
 		r_io_seek (io, off, R_IO_SEEK_SET);
 		return off;
 	}
-	if (io->debug) /* HACK */
+	if (io->debug) { /* HACK */
 		r_io_seek (io, off, R_IO_SEEK_SET);
-	else r_io_seek (io, paddr, R_IO_SEEK_SET);
+	} else  {
+		r_io_seek (io, paddr, R_IO_SEEK_SET); 
+	}
 	return paddr;
 }
 

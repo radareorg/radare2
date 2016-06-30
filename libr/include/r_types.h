@@ -209,7 +209,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define IS_NUMBER(x) (x>='0'&&x<='9')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
-#define R_ARRAY_SIZE(x) (sizeof (x) / sizeof (x)[0])
+#define R_ARRAY_SIZE(x) (sizeof (x) / sizeof (x[0]))
 
 #define R_PTR_ALIGN(v,t) \
 	((char *)(((size_t)(v) ) \

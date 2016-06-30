@@ -254,7 +254,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 
 		q = numpos (p);
 		//printf ("(%s)\n", getstring (p, (q-p)));
-		for (i=0, len = 1; len && q < q_end; q += len, i++) {
+		for (i = 0, len = 1; len && q < q_end; q += len, i++) {
 			if (*q == 'P') {
 		//		printf ("PUBLIC: ");
 				q++;
@@ -281,7 +281,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 			return 0;
 		}
 		p = resolve (flags, q, &attr);
-		if (!p && ((*q=='U') || (*q == 'R'))) {
+		if (!p && ((*q == 'U') || (*q == 'R'))) {
 			p = resolve (metas, q, &attr);
 			if (attr && *q == 'R') {
 				attr = NULL;
