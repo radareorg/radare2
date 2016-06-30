@@ -69,6 +69,9 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #include "native/procfs.h"
 # ifdef __ANDROID__
 #  define WAIT_ANY -1
+#  ifndef WIFCONTINUED
+#   define WIFCONTINUED(s) ((s) == 0xffff)
+#  endif
 # endif
 #if __x86_64__
 #include "native/linux/linux_coredump.h"
