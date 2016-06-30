@@ -1013,7 +1013,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '.':
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
-				r_cons_prinln (map->name);
+				r_cons_println (map->name);
 				break;
 			}
 		}
