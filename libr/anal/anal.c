@@ -325,12 +325,12 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFunction *fcni;
-	RListIter *iter2;
+	RSkipListNode *iter2;
 #define OLD 0
 #if OLD
 	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcni) {
-		r_list_foreach (fcni->bbs, iter2, bbi) {
+		r_skiplist_foreach (fcni->bbs, iter2, bbi) {
 			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
 				bbi->traced = true;
 				break;
@@ -340,7 +340,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 #else
 	fcni = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcni) {
-		r_list_foreach (fcni->bbs, iter2, bbi) {
+		r_skiplist_foreach (fcni->bbs, iter2, bbi) {
 			if (addr >= bbi->addr && addr < (bbi->addr + bbi->size)) {
 				bbi->traced = true;
 				break;

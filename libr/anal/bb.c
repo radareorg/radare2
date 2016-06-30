@@ -6,6 +6,10 @@
 
 #define DFLT_NINSTR 3
 
+R_API int r_anal_bb_compare(RAnalBlock* a, RAnalBlock* b) {
+	return a->addr - b->addr;
+}
+
 R_API RAnalBlock *r_anal_bb_new() {
 	RAnalBlock *bb = R_NEW0 (RAnalBlock);
 	if (!bb) return NULL;
@@ -42,10 +46,8 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	free (bb);
 }
 
-R_API RList *r_anal_bb_list_new() {
-	RList *list = r_list_new ();
-	if (!list) return NULL;
-	list->free = (void*)r_anal_bb_free;
+R_API RSkipList *r_anal_bb_list_new() {
+	RSkipList *list = r_skiplist_new ((RListFree)r_anal_bb_free, (RListComparator)r_anal_bb_compare);
 	return list;
 }
 
@@ -135,11 +137,12 @@ R_API inline int r_anal_bb_is_in_offset (RAnalBlock *bb, ut64 off) {
 }
 
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
-	RListIter *iter, *iter2;
+	RListIter *iter;
+	RSkipListNode *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
 	r_list_foreach (anal->fcns, iter, fcn)
-		r_list_foreach (fcn->bbs, iter2, bb)
+		r_skiplist_foreach (fcn->bbs, iter2, bb)
 			if (r_anal_bb_is_in_offset (bb, off))
 				return bb;
 	return NULL;

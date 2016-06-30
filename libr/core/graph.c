@@ -1584,9 +1584,9 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
-	RListIter *iter;
+	RSkipListNode *iter;
 	core->keep_asmqjmps = false;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
 
@@ -1610,12 +1610,12 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
-	RListIter *iter;
+	RSkipListNode *iter;
 	char *shortcut = NULL;
 	int shortcuts = 0;
 
 	core->keep_asmqjmps = false;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
 
@@ -1640,7 +1640,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		core->keep_asmqjmps = true;
 	}
 
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		RANode *u, *v;
 		char *title;
 

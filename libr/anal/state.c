@@ -44,7 +44,7 @@ R_API void r_anal_state_insert_bb (RAnalState* state, RAnalBlock *bb) {
 		state->current_fcn) {
 		RAnalBlock *tmp_bb;
 		IFDBG eprintf ("Inserting bb 0x%04"PFMT64x" into hash table\n", bb->addr);
-		r_list_append(state->current_fcn->bbs, bb);
+		r_skiplist_insert (state->current_fcn->bbs, bb);
         state->bytes_consumed += state->current_bb->op_sz;
 		IFDBG eprintf ("[--] Consumed 0x%02x bytes, for a total of 0x%02x\n", (short )state->current_bb->op_sz, (short) state->bytes_consumed);
 		if (r_hashtable64_insert(state->ht, bb->addr, bb)) {

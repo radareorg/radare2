@@ -210,7 +210,7 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 	RList *list;
 	RAnalRefline *item;
 	RAnalBlock *bb;
-	RListIter *bb_iter;
+	RSkipListNode *bb_iter;
 
 	int index = 0;
 	ut32 len;
@@ -219,7 +219,7 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 	if (!list) return NULL;
 
 	/* analyze code block */
-	r_list_foreach (fcn->bbs, bb_iter, bb) {
+	r_skiplist_foreach (fcn->bbs, bb_iter, bb) {
 		if (!bb || bb->size == 0) continue;
 		if (nlines != -1 && --nlines == 0) break;
 		len = bb->size;

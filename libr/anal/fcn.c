@@ -42,15 +42,15 @@ R_API const char *r_anal_fcn_type_tostring(int type) {
 R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 	ut64 eof; /* end of function */
 	RAnalBlock *bb;
-	RListIter *iter, *iter2;
+	RSkipListNode *iter, *iter2;
 	if (!fcn || newsize < 1)
 		return false;
 	r_anal_fcn_set_size (fcn, newsize);
 	eof = fcn->addr + r_anal_fcn_size (fcn);
-	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
+	r_skiplist_foreach_safe (fcn->bbs, iter, iter2, bb) {
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
-			r_list_delete (fcn->bbs, iter);
+			r_skiplist_delete (fcn->bbs, iter);
 			continue;
 		}
 		if (bb->addr + bb->size >= eof) {
@@ -108,8 +108,8 @@ R_API void r_anal_fcn_free(void *_fcn) {
 #endif
 	r_list_free (fcn->locs);
 	if (fcn->bbs) {
-		fcn->bbs->free = (RListFree)r_anal_bb_free;
-		r_list_free (fcn->bbs);
+		fcn->bbs->freefn = (RListFree)r_anal_bb_free;
+		r_skiplist_free (fcn->bbs);
 		fcn->bbs = NULL;
 	}
 
@@ -171,9 +171,9 @@ R_API int r_anal_fcn_xref_del (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 }
 
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
+	RSkipListNode *iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
 		if (bb->addr >= eaddr && addr == bb->addr) {
 				return bb;
@@ -193,7 +193,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 	bb->jump = UT64_MAX;
 	bb->fail = UT64_MAX;
 	bb->type = 0; // TODO
-	r_list_append (fcn->bbs, bb);
+	r_skiplist_insert (fcn->bbs, bb);
 	if (anal->cb.on_fcn_bb_new) {
 		anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
 	}
@@ -929,11 +929,6 @@ R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn) {
 	}
 }
 
-static int cmpaddr (const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr > b->addr);
-}
-
 R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 	RAnalRef *ref;
 	RListIter *iter;
@@ -959,14 +954,14 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 
 	if (ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {	// cfg analysis completed
 		RListIter *iter;
+		RSkipListNode *iter_node;
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
 		ut64 overlapped = -1;
 		RAnalFunction *fcn1 = NULL;
 
 		// set function size as length of continuous sequence of bbs
-		r_list_sort (fcn->bbs, &cmpaddr);
-		r_list_foreach (fcn->bbs, iter, bb) {
+		r_skiplist_foreach (fcn->bbs, iter_node, bb) {
 			if (endaddr == bb->addr) {
 				endaddr += bb->size;
 			} else if (endaddr < bb->addr &&
@@ -1138,8 +1133,8 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 		if (!type || (fcn && fcn->type & type)) {
 			ut64 min = 0, max = 0;
 			RAnalBlock *bb;
-			RListIter *iter;
-			r_list_foreach (fcn->bbs, iter, bb) {
+			RSkipListNode *iter;
+			r_skiplist_foreach (fcn->bbs, iter, bb) {
 				if (!max) {
 					min = bb->addr;
 					max = bb->addr + bb->size;
@@ -1176,10 +1171,10 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 /* rename RAnalFunctionBB.add() */
 R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {
 	RAnalBlock *bb = NULL, *bbi;
-	RListIter *iter;
+	RSkipListNode *iter;
 	int mid = 0;
 
-	r_list_foreach (fcn->bbs, iter, bbi) {
+	r_skiplist_foreach (fcn->bbs, iter, bbi) {
 		if (addr == bbi->addr) {
 			bb = bbi;
 			mid = 0;
@@ -1222,11 +1217,11 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 // bb seems to be ignored
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalBlock *bbi;
-	RListIter *iter;
+	RSkipListNode *iter;
 	if (addr == UT64_MAX)
 		return 0;
 
-	r_list_foreach (fcn->bbs, iter, bbi) {
+	r_skiplist_foreach (fcn->bbs, iter, bbi) {
 		if (addr == bbi->addr) return R_ANAL_RET_DUP;
 
 		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
@@ -1274,8 +1269,8 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 // TODO: rename fcn_bb_overlap()
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 	RAnalBlock *bbi;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, bbi)
+	RSkipListNode *iter;
+	r_skiplist_foreach (fcn->bbs, iter, bbi)
 		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size <= bbi->addr+bbi->size) {
 			bb->size = bbi->addr - bb->addr;
 			bb->jump = bbi->addr;
@@ -1285,7 +1280,7 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 				bb->type = R_ANAL_BB_TYPE_HEAD;
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 			} else bb->type = R_ANAL_BB_TYPE_BODY;
-			r_list_append (fcn->bbs, bb);
+			r_skiplist_insert (fcn->bbs, bb);
 			return R_ANAL_RET_END;
 		}
 	return R_ANAL_RET_NEW;
@@ -1299,10 +1294,10 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
     P = the number of connected components (exit nodes).
 */
 	int E = 0, N = 0, P = 0;
-	RListIter *iter;
+	RSkipListNode *iter;
 	RAnalBlock *bb;
 
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
 		if (bb->jump == UT64_MAX) {
 			P++; // exit nodes
@@ -1392,29 +1387,27 @@ R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal) { return anal->xrefs; }
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal) { return anal->vars; }
 #endif
 
-R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
+R_API RSkipList* r_anal_fcn_get_bbs(RAnalFunction *fcn) {
 	// avoid received to free this thing
-	anal->bbs->free = NULL;
-	return anal->bbs;
+	fcn->bbs->freefn = NULL;
+	return fcn->bbs;
 }
 
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb;
-	RListIter *iter;
-	bool has_bbs = false;
+	RSkipListNode *iter;
 
-	r_list_foreach (fcn->bbs, iter, bb) {
-		has_bbs = true;
-		if (addr >= bb->addr && addr < bb->addr + bb->size) {
-			return true;
-		}
-	}
-
-	if (!has_bbs) {
+	if (r_skiplist_empty (fcn->bbs)) {
 		// hack to make anal_java work, because it doesn't use
 		// basicblocks.
 		// FIXME: anal_java should create basicblocks
 		return addr >= fcn->addr && addr < fcn->addr + r_anal_fcn_size (fcn);
+	}
+
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
+		if (addr >= bb->addr && addr < bb->addr + bb->size) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -1434,10 +1427,10 @@ R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
 R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
+	RSkipListNode *iter;
 	RAnalBlock *bb;
 
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == addr) return bb;
 	}
 	return NULL;
@@ -1459,11 +1452,11 @@ R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn) {
  * basicblocks this function is composed of.
  * IMPORTANT: this will become, one day, the only size of a function */
 R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn) {
-	RListIter *iter;
+	RSkipListNode *iter;
 	RAnalBlock *bb;
 	ut32 sz = 0;
 
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		sz += bb->size;
 	}
 	return sz;
