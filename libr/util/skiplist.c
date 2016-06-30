@@ -14,7 +14,7 @@ const int kSkipListDepth = 15; // max depth
 RSkipListNode *r_skiplist_node_new (void *data, int level) {
 	RSkipListNode *res = R_NEW (RSkipListNode);
 	if (!res) return NULL;
-	res->forward = R_NEWS (RSkipListNode *, level + 1);
+	res->forward = R_NEWS0 (RSkipListNode *, level + 1);
 	if (!res->forward) goto err_forward;
 	res->data = data;
 	return res;
@@ -32,10 +32,10 @@ void r_skiplist_node_free (RSkipList *list, RSkipListNode *node) {
 	free (node);
 }
 
-void init_head (RSkipList *list) {
+void init_head (RSkipListNode *head) {
 	int i;
 	for (i = 0; i <= kSkipListDepth; i++) {
-		list->head->forward[i] = list->head;
+		head->forward[i] = head;
 	}
 }
 
@@ -73,7 +73,7 @@ R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 	list->head = r_skiplist_node_new (NULL, kSkipListDepth);
 	if (!list->head) goto err_head;
 
-	init_head (list);
+	init_head (list->head);
 	list->list_level = 0;
 	list->size = 0;
 	list->freefn = freefn;
@@ -97,7 +97,7 @@ R_API void r_skiplist_purge(RSkipList *list) {
 
 		r_skiplist_node_free (list, x);
 	}
-	init_head (list);
+	init_head (list->head);
 	list->size = 0;
 	list->list_level = 0;
 }
