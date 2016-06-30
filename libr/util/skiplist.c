@@ -189,7 +189,7 @@ R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data) {
 	return NULL;
 }
 
-// Add all the elements of `l2` in `l1`.
+// Move all the elements of `l2` in `l1`.
 R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
 	RSkipListNode *it;
 	void *data;
@@ -197,13 +197,15 @@ R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
 	r_skiplist_foreach (l2, it, data) {
 		r_skiplist_insert (l1, data);
 	}
+
+	r_skiplist_purge (l2);
 }
 
 // Returns the first data element in the list, if present, NULL otherwise
 R_API void *r_skiplist_get_first(RSkipList *list) {
 	if (!list) return NULL;
 	RSkipListNode *res = list->head->forward[0];
-	return res == list->head ? NULL : res;
+	return res == list->head ? NULL : res->data;
 }
 
 // Return true if the list is empty
@@ -212,6 +214,9 @@ R_API bool r_skiplist_empty(RSkipList *list) {
 }
 
 // Return a new allocated RList representing the given `list`
+//
+// NOTE: the data will be shared between the two lists. The user of this
+//       function should choose which list will "own" the data pointers.
 R_API RList *r_skiplist_to_list(RSkipList *list) {
 	RList *res = r_list_new ();
 	RSkipListNode *n;
