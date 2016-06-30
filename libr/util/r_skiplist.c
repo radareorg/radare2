@@ -29,54 +29,52 @@ R_API r_skiplist* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 		list->head->forward[i] = list->head;
 	}
 	list->list_level = 0;
+	list->freefn = freefn;
+	list->compare = comparefn;
 	return list;
 }
 
 // Inserts an element to the skiplist, and returns a pointer to the element's
 // node.
 R_API r_skiplist_node* r_skiplist_insert(r_skiplist* list, void* data) {
-	int i, new_level;
-	r_skiplist_node* update [kSkipListDepth + 1];
-	r_skiplist_node* nnode;
+    int i, newLevel;
+    r_skiplist_node *update[kSkipListDepth+1];
+    r_skiplist_node *x;
 
-	// Find the spot for it.
-	nnode = list->head;
-	for (i = list->list_level; i >= 0; i--) {
-		while ((nnode->forward[i] != list->head) &&
-				(list->compare (nnode->forward[i]->data, data) < 1)) {
-			nnode = nnode->forward[i];
+    x = list->head;
+    for (i = list->list_level; i >= 0; i--) {
+        while (x->forward[i] != list->head
+          && list->compare (x->forward[i]->data, data) < 0)
+            x = x->forward[i];
+        update[i] = x;
+    }
+    x = x->forward[0];
+    if (x != list->head && list->compare(x->data, data) == 0) {
+		return x;
+	}
+
+    for (newLevel = 0; rand() < RAND_MAX/2 && newLevel < kSkipListDepth; newLevel++);
+
+    if (newLevel > list->list_level) {
+        for (i = list->list_level+ 1; i <= newLevel; i++) {
+            update[i] = list->head;
 		}
-		update[i] = nnode;
-	}
-	nnode = nnode->forward[0];
-	if (nnode != list->head && list->compare (nnode->data, data) == 0) {
-		return nnode;
-	}
+        list->list_level = newLevel;
+    }
 
-	// Determine the level "randomly".
-	// Skiplists are a probabilistic datastructure.
-	for (new_level = 0; rand() % 2 && new_level < kSkipListDepth; new_level++);
-
-	if (new_level < list->list_level) {
-		for (i = list->list_level + 1; i <= new_level; i++) {
-			update[i] = list->head;
-		}
-	}
-
-	// Okie, now make the node actually...
-	if ((nnode = calloc (1,
-					sizeof (r_skiplist_node) +
-					new_level * sizeof (r_skiplist_node*))) == NULL) {
-		eprintf ("can't calloc new node for skiplist");
+    if ((x = malloc(sizeof(r_skiplist_node) +
+      newLevel*sizeof(r_skiplist_node *))) == 0) {
+        eprintf ("can't even malloc!");
 		return NULL;
-	}
-	nnode->data = data;
+    }
+    x->data = data;
 
-	// update fwd links.
-	for (i = 0; i <= new_level; i++) {
-		nnode->forward[i] = update[i]->forward[i];
-	}
-	return nnode;
+    /* update forward links */
+    for (i = 0; i <= newLevel; i++) {
+        x->forward[i] = update[i]->forward[i];
+        update[i]->forward[i] = x;
+    }
+    return x;
 }
 
 R_API void r_skiplist_delete(r_skiplist* list, void* data) {
