@@ -796,23 +796,23 @@ beach:
 }
 
 static void print_main_arena(RCore *core, ut64 main_arena) {
-	eprintf (Color_GREEN" main_arena @ "Color_RESET""Color_BLUE"0x%"PFMT64x"\n\n"Color_RESET, main_arena);
-
 	ut8 out[sizeof(size_t)];
+	eprintf (Color_GREEN" main_arena @ "Color_RESET""Color_BLUE"0x%"PFMT64x"\n\n"Color_RESET, main_arena);
 	eprintf (Color_GREEN"struct malloc_state main_arena {\n"Color_RESET);
 
 	r_core_read_at (core, main_arena, out, sizeof(int));
 	ut64 mutex = r_read_ble32 ((const void*) out, core->print->big_endian);
-	eprintf (Color_GREEN"\tmutex = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, mutex);
 	
-	r_core_read_at (core, main_arena+4, out, sizeof(int));
+	r_core_read_at (core, main_arena + sizeof(int), out, sizeof(int));
 	ut64 flags = r_read_ble32 ((const void*) out, core->print->big_endian);
+
+	eprintf (Color_GREEN"\tmutex = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, mutex);		
 	eprintf (Color_GREEN"\tflags = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, flags);
 
-	int i, j = 0;
+	int i;
 	eprintf (Color_GREEN"\tfastbinsY = {"Color_RESET);
 	for (i = 0; i < 10; i++) {
-		r_core_read_at (core, (main_arena+8 + (j++ *sizeof(size_t))), out, sizeof(size_t));
+		r_core_read_at (core, main_arena + sizeof(int)*2 + sizeof(size_t)*i, out, sizeof(size_t));
 		ut64 fastbinsY = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
 		eprintf (Color_BLUE"0x%"PFMT64x""Color_RESET, fastbinsY);			
 		if (i < 9) 
@@ -820,36 +820,37 @@ static void print_main_arena(RCore *core, ut64 main_arena) {
 	}
 	eprintf (Color_GREEN"}\n"Color_RESET);
 
-	r_core_read_at (core, main_arena+(sizeof(size_t)*11), out, sizeof(size_t));
+	int offset = sizeof(size_t) * 10;
+	r_core_read_at (core, main_arena + sizeof(int)*2 + offset, out, sizeof(size_t));
 	ut64 top = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
-	eprintf (Color_GREEN"\ttop = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, top);
 
-	r_core_read_at (core, main_arena+sizeof(size_t)*12, out, sizeof(size_t));
+	offset = sizeof(size_t) * 11;
+	r_core_read_at (core, main_arena + sizeof(int)*2 + offset, out, sizeof(size_t));
 	ut64 last_remainder = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
-	eprintf (Color_GREEN"\tlast_remainder = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, last_remainder);
 
+	eprintf (Color_GREEN"\ttop = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, top);
+	eprintf (Color_GREEN"\tlast_remainder = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, last_remainder);
 	eprintf (Color_GREEN"\tbins {"Color_RESET);
-	j = 0;
+
 	bool isNull = false;
-	int offset = (NBYTES == 4) ? 14 : 13;
+	offset = sizeof(size_t) * 12;
 	for (i = 0; i < 254; i++) {
 		(i % 2 == 0) ? eprintf ("\n\t") : eprintf ("\t");
-		r_core_read_at (core, (main_arena + sizeof(size_t)*(offset + j++)), out, sizeof(size_t));
+		r_core_read_at (core, main_arena + sizeof(int)*2 + offset + sizeof(size_t)*i, out, sizeof(size_t));
 		ut64 bins = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
 		isNull = (bins == 0) ? true : false;
 		if (isNull) { 
-			eprintf (Color_BLUE"0x0 "Color_RESET""Color_GREEN"<repeats 254 times>"Color_RESET); 
+			eprintf (Color_BLUE"0x0 "Color_RESET""Color_GREEN"<repeats 254 times>"Color_RESET);
 			break;
 		} else eprintf (Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN" <main_arena+%04d>, "Color_RESET, bins, bins-main_arena);
 	}
 
 	eprintf (Color_GREEN"\n\t}\t\n"Color_RESET);
-
 	eprintf (Color_GREEN"\tbinmap = {"Color_RESET);
-	j = 0;
-	offset = (NBYTES == 4) ? 268 : 267;
+
+	offset = sizeof(size_t) * 266;
 	for(i = 0; i < 4; i++) {
-		r_core_read_at (core, (main_arena+ sizeof(size_t)*offset + (j++ * sizeof(int))), out, sizeof(int));
+		r_core_read_at (core, main_arena + sizeof(int)*2 + offset + sizeof(int)*i, out, sizeof(int));
 		ut64 binmap = r_read_ble32 ((const void*) out, core->print->big_endian);
 		eprintf (Color_BLUE"0x%"PFMT64x""Color_RESET, binmap);
 		if (i < 3)
@@ -859,10 +860,9 @@ static void print_main_arena(RCore *core, ut64 main_arena) {
 
 	const char *entry_str[] = {"next", "next_free", "system_mem", "max_system_mem"};
 
-	j = 0;
-	offset = (NBYTES == 4) ? 272 : 269;
+	offset = (NBYTES == 4) ? sizeof(size_t) * 270 : sizeof(size_t) * 268;
 	for (i = 0; i < 4; i++) {
-		r_core_read_at (core, (main_arena+ sizeof(size_t)*offset + (j++ * sizeof(size_t))), out, sizeof(size_t));
+		r_core_read_at (core, main_arena + sizeof(int)*2 + offset + sizeof(size_t)*i, out, sizeof(size_t));
 		ut64 entry = (NBYTES == 4) ? r_read_ble32 ((const void*) out, core->print->big_endian) : r_read_ble64 ((const void*) out, core->print->big_endian);
 		eprintf (Color_GREEN"\t%s = "Color_RESET""Color_BLUE" 0x%"PFMT64x""Color_RESET""Color_GREEN",\n"Color_RESET, entry_str[i], entry);
 	}
