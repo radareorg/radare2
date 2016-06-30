@@ -153,7 +153,7 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 }
 
 // Delete node with data as it's payload.
-R_API void r_skiplist_delete(RSkipList* list, void* data) {
+R_API bool r_skiplist_delete(RSkipList* list, void* data) {
 	int i;
 	RSkipListNode *update[kSkipListDepth + 1], *x;
 
@@ -161,7 +161,7 @@ R_API void r_skiplist_delete(RSkipList* list, void* data) {
 	x = find_insertpoint (list, data, update);
 	// do nothing if the element is not present in the list
 	if (x == list->head || list->compare(x->data, data) != 0) {
-		return;
+		return false;
 	}
 
 	// update forward links for all `update` points,
@@ -178,6 +178,7 @@ R_API void r_skiplist_delete(RSkipList* list, void* data) {
 		list->list_level--;
 	}
 	list->size--;
+	return true;
 }
 
 R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data) {
@@ -196,4 +197,29 @@ R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
 	r_skiplist_foreach (l2, it, data) {
 		r_skiplist_insert (l1, data);
 	}
+}
+
+// Returns the first data element in the list, if present, NULL otherwise
+R_API void *r_skiplist_get_first(RSkipList *list) {
+	if (!list) return NULL;
+	RSkipListNode *res = list->head->forward[0];
+	return res == list->head ? NULL : res;
+}
+
+// Return true if the list is empty
+R_API bool r_skiplist_empty(RSkipList *list) {
+	return list->size == 0;
+}
+
+// Return a new allocated RList representing the given `list`
+R_API RList *r_skiplist_to_list(RSkipList *list) {
+	RList *res = r_list_new ();
+	RSkipListNode *n;
+	void *data;
+
+	r_skiplist_foreach (list, n, data) {
+		r_list_append (res, data);
+	}
+
+	return res;
 }
