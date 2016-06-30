@@ -1262,6 +1262,10 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		return;
 	}
 	cmd_len = r_read_at_be32 (bufr, 1);
+	if (cmd_len < 1 || cmd_len > 16384) {
+		eprintf ("Error: cmd_len is wrong\n");
+		return;
+	}
 	cmd_output = calloc (1, cmd_len + 1);
 	if (!cmd_output) {
 		eprintf ("Error: Allocating cmd output\n");
