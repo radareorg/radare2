@@ -524,50 +524,52 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 	return true;
 }
 void r_comment_var_help (RCore *core, char type) {
-	const char *help_a[] = {
-		"Usage:", "Ca", "[name] [comment]",
-		"Ca?", "", "show this help",
-		"Ca", "", "list all base pointer args/vars comments in human friendly format",
-		"Ca*", "", "list all base pointer args/vars comments in r2 format",
-		"Ca-", "[name]", "delete comments for var/arg at current offset for base pointer",
-		"Ca", "[name]", "Show comments for var/arg at current offset for base pointer",
-		"Ca", "[name] [comment]", "add/append comment for the variable with the current name",
-		"Ca!", "[name]", "edit comment using cfg editor",
+	const char *help_bp[] = {
+		"Usage:", "Cvb", "[name] [comment]",
+		"Cvb?", "", "show this help",
+		"Cvb", "", "list all base pointer args/vars comments in human friendly format",
+		"Cvb*", "", "list all base pointer args/vars comments in r2 format",
+		"Cvb-", "[name]", "delete comments for var/arg at current offset for base pointer",
+		"Cvb", "[name]", "Show comments for var/arg at current offset for base pointer",
+		"Cvb", "[name] [comment]", "add/append comment for the variable with the current name",
+		"Cvb!", "[name]", "edit comment using cfg editor",
 		NULL
 	};
-	const char *help_e[] = {
-		"Usage:", "Ce", "[name] [comment]",
-		"Ce?", "", "show this help",
-		"Ce", "", "list all stack based args/vars comments in human friendly format",
-		"Ce*", "", "list all stack based args/vars comments in r2 format",
-		"Ce-", "[name]", "delete comments for stack pointer var/arg with that name",
-		"Ce", "[name]", "Show comments for stack pointer var/arg with that name",
-		"Ce", "[name] [comment]", "add/append comment for the variable",
-		"Ce!", "[name]", "edit comment using cfg editor",
+	const char *help_sp[] = {
+		"Usage:", "Cvs", "[name] [comment]",
+		"Cvs?", "", "show this help",
+		"Cvs", "", "list all stack based args/vars comments in human friendly format",
+		"Cvs*", "", "list all stack based args/vars comments in r2 format",
+		"Cvs-", "[name]", "delete comments for stack pointer var/arg with that name",
+		"Cvs", "[name]", "Show comments for stack pointer var/arg with that name",
+		"Cvs", "[name] [comment]", "add/append comment for the variable",
+		"Cvs!", "[name]", "edit comment using cfg editor",
 		NULL
 	};
-	const char *help_v[] = {
-		"Usage:", "Cv", "[name] [comment]",
-		"Cv?", "", "show this help",
-		"Cv", "", "list all register based args comments in human friendly format",
-		"Cv*", "", "list all register based args comments in r2 format",
-		"Cv-", "[name]", "delete comments for register based arg for that name",
-		"Cv", "[name]", "Show comments for register based arg for that name",
-		"Cv", "[name] [comment]", "add/append comment for the variable",
-		"Cv!", "[name]", "edit comment using cfg editor",
+	const char *help_reg[] = {
+		"Usage:", "Cvr", "[name] [comment]",
+		"Cvr?", "", "show this help",
+		"Cvr", "", "list all register based args comments in human friendly format",
+		"Cvr*", "", "list all register based args comments in r2 format",
+		"Cvr-", "[name]", "delete comments for register based arg for that name",
+		"Cvr", "[name]", "Show comments for register based arg for that name",
+		"Cvr", "[name] [comment]", "add/append comment for the variable",
+		"Cvr!", "[name]", "edit comment using cfg editor",
 		NULL
 	};
 
 	switch (type) {
-	case 'a':
-		r_core_cmd_help (core, help_a);
+	case 'b':
+		r_core_cmd_help (core, help_bp);
 		break;
-	case 'e':
-		r_core_cmd_help (core, help_e);
+	case 's':
+		r_core_cmd_help (core, help_sp);
 		break;
-	case 'v':
-		r_core_cmd_help (core, help_v);
+	case 'r':
+		r_core_cmd_help (core, help_reg);
 		break;
+	default:
+		r_cons_printf("See Cvb, Cvs and Cvr\n");
 	}
 }
 void r_comment_vars (RCore *core, const char *input) {
@@ -579,7 +581,7 @@ void r_comment_vars (RCore *core, const char *input) {
 	char *heap_comment = NULL;
 	RAnalVar *var;
 
-	if (input[1] == '?') {
+	if (input[1] == '?' || (input[0] != 'b' && input[0] != 'r' && input[0] != 's') ) {
 		r_comment_var_help (core, input[0]);
 		return;
 	}
@@ -605,7 +607,7 @@ void r_comment_vars (RCore *core, const char *input) {
 			if (!input[1]) {
 				r_cons_printf ("%s : %s\n", var->name, oldcomment);
 			} else {
-				r_cons_printf ("\"Ca %s base64:%s @ 0x%08"PFMT64x"\"\n", var->name,
+				r_cons_printf ("\"Cv%c %s base64:%s @ 0x%08"PFMT64x"\"\n", input[0], var->name,
 					sdb_encode ((const ut8 *) oldcomment, strlen(oldcomment)), fcn->addr);
 			}
 		}
@@ -701,10 +703,8 @@ static int cmd_meta(void *data, const char *input) {
 	int i;
 
 	switch (*input) {
-	case 'a': // Ca
-	case 'e': // Ce
 	case 'v': // Cr
-		r_comment_vars (core, input);
+		r_comment_vars (core, input + 1);
 		break;
 	case 'j':
 	case '*':

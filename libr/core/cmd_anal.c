@@ -35,210 +35,193 @@ static void flag_every_function(RCore *core) {
 
 static void var_help(RCore *core, char ch) {
 	const char *help_sp[] = {
-		"Usage:", "afe", " [idx] [type] [name]",
-		"afe", "", "list stack based arguments and variables",
-		"afe*", "", "same as afe but in r2 commands",
-		"afe", " [idx] [name] [type]", "define stack based arguments,variables",
-		"afen", " [old_name] [new_name]", "rename stack based argument or variable",
-		"afet", " [name] [new_type]", "change type for given argument or variable",
-		"afej", "", "return list of stack based arguments and variables in JSON format",
-		"afe-", " [name]", "delete stack based argument or variables with the given name",
-		"afeg", " [idx] [addr]", "define var get reference",
-		"afes", " [idx] [addr]", "define var set reference",
+		"Usage:", "afvs", " [idx] [type] [name]",
+		"afvs", "", "list stack based arguments and variables",
+		"afvs*", "", "same as afvs but in r2 commands",
+		"afvs", " [idx] [name] [type]", "define stack based arguments,variables",
+		"afvsn", " [old_name] [new_name]", "rename stack based argument or variable",
+		"afvst", " [name] [new_type]", "change type for given argument or variable",
+		"afvsj", "", "return list of stack based arguments and variables in JSON format",
+		"afss-", " [name]", "delete stack based argument or variables with the given name",
+		"afvsg", " [idx] [addr]", "define var get reference",
+		"afvss", " [idx] [addr]", "define var set reference",
 		NULL
 	};
 	const char *help_bp[] = {
-		"Usage:", "afa", " [idx] [type] [name]",
-		"afa", "", "list base pointer based arguments, variables",
-		"afa*", "", "same as afa but in r2 commands",
-		"afa", " [idx] [name] ([type])", "define base pointer based argument, variable",
-		"afan", " [old_name] [new_name]", "rename base pointer based argument or variable",
-		"afat", " [name] [new_type]", "change type for given base pointer based argument or variable",
-		"afaj", "", "return list of base pointer based arguments, variables in JSON format",
-		"afa-", " [name]", "delete argument/ variables at the given name",
-		"afag", " [idx] [addr]", "define var get reference",
-		"afas", " [idx] [addr]", "define var set reference",
+		"Usage:", "afvb", " [idx] [type] [name]",
+		"afvb", "", "list base pointer based arguments, variables",
+		"afvb*", "", "same as afvb but in r2 commands",
+		"afvb", " [idx] [name] ([type])", "define base pointer based argument, variable",
+		"afvbn", " [old_name] [new_name]", "rename base pointer based argument or variable",
+		"afvbt", " [name] [new_type]", "change type for given base pointer based argument or variable",
+		"afvbj", "", "return list of base pointer based arguments, variables in JSON format",
+		"afvb-", " [name]", "delete argument/ variables at the given name",
+		"afvbg", " [idx] [addr]", "define var get reference",
+		"afvbs", " [idx] [addr]", "define var set reference",
 		NULL
 	};
 	const char *help_reg[] = {
-		"Usage:", "afv", " [reg] [type] [name]",
-		"afv", "", "list register based arguments",
-		"afv*", "", "same as afv but in r2 commands",
-		"afv", " [reg] [name] ([type])", "define register arguments",
-		"afvn", " [old_name] [new_name]", "rename argument",
-		"afvt", " [name] [new_type]", "change type for given argument",
-		"afvj", "", "return list of register arguments in JSON format",
-		"afv-", " [name]", "delete register arguments at the given index",
-		"afvg", " [reg] [addr]", "define var get reference",
-		"afvs", " [reg] [addr]", "define var set reference",
+		"Usage:", "afvr", " [reg] [type] [name]",
+		"afvr", "", "list register based arguments",
+		"afvr*", "", "same as afvr but in r2 commands",
+		"afvr", " [reg] [name] ([type])", "define register arguments",
+		"afvrn", " [old_name] [new_name]", "rename argument",
+		"afvrt", " [name] [new_type]", "change type for given argument",
+		"afvrj", "", "return list of register arguments in JSON format",
+		"afvr-", " [name]", "delete register arguments at the given index",
+		"afvrg", " [reg] [addr]", "define var get reference",
+		"afvrs", " [reg] [addr]", "define var set reference",
 		NULL
 	};
 	switch (ch) {
-	case 'a':
+	case 'b':
 		r_core_cmd_help (core, help_bp);
 		break;
-	case 'e':
+	case 's':
 		r_core_cmd_help (core, help_sp);
 		break;
-	case 'v':
+	case 'r':
 		r_core_cmd_help (core, help_reg);
 		break;
 	default:
-		eprintf ("See afv?, afe? and afa?\n");
+		eprintf ("See afvb?, afvr? and afvs?\n");
 	}
 }
 
-static int var_cmd(RCore *core, const char *str) {
+static int var_cmd (RCore *core, const char *str) {
 	char *p, *ostr;
 	int delta, type = *str, res = true;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-
 	ostr = p = strdup (str);
 	str = (const char *)ostr;
-
-	switch (type) {
-	case '?':
-		var_help (core, 0);
+	if (!str[0] || str[1] == '?'|| str[0] == '?') {
+		var_help (core, *str);
+		return res;
+	}
+	if (!fcn) {
+		eprintf ("Cannot find function here\n");
+		return false;
+	}
+	/* Variable access CFvs = set fun var */
+	switch (str[1]) {
+	case '\0':
+	case '*':
+	case 'j':
+		r_anal_var_list_show (core->anal, fcn, type, str[1]);
 		break;
-	case 'v': // registers
-	case 'a': // base pointer vars/args
-	case 'e': // stack pointer vars/args
-		// XXX nested dup
-		if (str[1] == '?') {
-			var_help (core, *str);
-			break;
-		}
-		if (!fcn && str[1] != 'j' && str[1] != '*') {
-			eprintf ("Cannot find function here\n");
-			break;
-		}
-
-		/* Variable access CFvs = set fun var */
-		switch (str[1]) {
-		case '\0':
-		case '*':
-		case 'j':
-			r_anal_var_list_show (core->anal, fcn, type, str[1]);
-			break;
-		case '.':
-			r_anal_var_list_show (core->anal, fcn, core->offset, 0);
-			break;
-		case '-': // "afaAev-"
-			if (str[2] == '*') {
-				r_anal_var_delete_all (core->anal, fcn->addr, type);
+	case '.':
+		r_anal_var_list_show (core->anal, fcn, core->offset, 0);
+		break;
+	case '-': // "afv[bsr]-"
+		if (str[2] == '*') {
+			r_anal_var_delete_all (core->anal, fcn->addr, type);
+		} else {
+			if (IS_NUMBER (str[2])) {
+				r_anal_var_delete (core->anal, fcn->addr,
+						type, 1, (int)r_num_math (core->num, str + 1));
 			} else {
-				if (IS_NUMBER (str[2])) {
-					r_anal_var_delete (core->anal, fcn->addr,
-							type, 1, (int)r_num_math (core->num, str + 1));
-				} else {
-					char *name = r_str_chop ( strdup (str + 2));
-					r_anal_var_delete_byname (core->anal, fcn, type, name);
-					free (name);
-				}
+				char *name = r_str_chop ( strdup (str + 2));
+				r_anal_var_delete_byname (core->anal, fcn, type, name);
+				free (name);
 			}
-			break;
-		case 'n': {
-			RAnalVar *v1;
-			str++;
-			for (str++; *str == ' ';) str++;
-			char *new_name = strchr (str, ' ');
-			if (!new_name) {
-				var_help (core, type);
-				break;
-			}
-			*new_name++ = 0;
-			char *old_name = strdup (str);
-			r_str_split (old_name, ' ');
-			v1 = r_anal_var_get_byname (core->anal, fcn, 'a', new_name);
-			if (!v1) {
-				v1 = r_anal_var_get_byname (core->anal, fcn, 'e', new_name);
-			}
-			if (!v1) {
-				v1 = r_anal_var_get_byname (core->anal, fcn, 'v', new_name);
-			}
-			if(v1) {
-				free (v1);
-				eprintf("variable or arg with name `%s` already exist\n", new_name);
-				break;
-			}
-			r_anal_var_rename (core->anal, fcn->addr,
-					R_ANAL_VAR_SCOPE_LOCAL, (char)type,
-					old_name, new_name);
-			free (old_name);
-		} break;
-		case 't': {
-			//should we read types from t
-			const char *name = str + 1;
-			for (name++; *name == ' ';) name++;
-			char *new_type = strchr (name, ' ');
-			if (!new_type) {
-				var_help (core, type);
-				break;
-			}
-			*new_type++ = 0;
-			r_anal_var_retype (core->anal, fcn->addr,
-					R_ANAL_VAR_SCOPE_LOCAL, -1, (char)str[0],
-					new_type, -1, name);
-		} break;
-		case 's':
-		case 'g':
-			if (str[2] != '\0') {
-				int rw = 0; // 0 = read, 1 = write
-				RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
-								(char)type, atoi (str + 2), R_ANAL_VAR_SCOPE_LOCAL);
-				if (!var) {
-					eprintf ("Cannot find variable in: '%s'\n", str);
-					res = false;
-					break;
-				}
-				if (var != NULL) {
-					int scope = (str[1] == 'g')? 0: 1;
-					r_anal_var_access (core->anal, fcn->addr, (char)type,
-							scope, atoi (str + 2), rw, core->offset);
-					r_anal_var_free (var);
-					break;
-				}
-			} else eprintf ("Missing argument\n");
-			break;
-		case ' ': {
-			const char *name;
-			char *vartype;
-			int size = 4;
-			int scope = 1;
-
-			for (str++; *str == ' ';) str++;
-			p = strchr (str, ' ');
-			if (!p) {
-				var_help (core, type);
-				break;
-			}
-			*p++ = 0;
-			if (type == 'v') { //registers
-				RRegItem *i = r_reg_get (core->anal->reg, str, -1);
-				if (!i) {
-					eprintf ("Register not found");
-					break;
-				}
-				delta = i->index;
-			} else {
-				delta = r_num_math (core->num, str);
-			}
-			name = p;
-			vartype = strchr (name, ' ');
-			if (vartype) {
-				*vartype++ = 0;
-				r_anal_var_add (core->anal, fcn->addr,
-						scope, delta, type,
-						vartype, size, name);
-			} else eprintf ("Missing name\n");
+		}
+		break;
+	case 'n': {
+		RAnalVar *v1;
+		str++;
+		for (str++; *str == ' ';) str++;
+		char *new_name = strchr (str, ' ');
+		if (!new_name) {
+			var_help (core, type);
 			break;
 		}
-		default:
-			var_help (core, *str);
+		*new_name++ = 0;
+		char *old_name = strdup (str);
+		r_str_split (old_name, ' ');
+		v1 = r_anal_var_get_byname (core->anal, fcn, 'r', new_name);
+		if (!v1) {
+			v1 = r_anal_var_get_byname (core->anal, fcn, 'b', new_name);
+		}
+		if (!v1) {
+			v1 = r_anal_var_get_byname (core->anal, fcn, 's', new_name);
+		}
+		if(v1) {
+			free (v1);
+			eprintf("variable or arg with name `%s` already exist\n", new_name);
 			break;
 		}
+		r_anal_var_rename (core->anal, fcn->addr,
+				R_ANAL_VAR_SCOPE_LOCAL, (char)type,
+				old_name, new_name);
+		free (old_name);
+	} break;
+	case 't': {
+		//should we read types from t
+		const char *name = str + 1;
+		for (name++; *name == ' ';) name++;
+		char *new_type = strchr (name, ' ');
+		if (!new_type) {
+			var_help (core, type);
+			break;
+		}
+		*new_type++ = 0;
+		r_anal_var_retype (core->anal, fcn->addr,
+				R_ANAL_VAR_SCOPE_LOCAL, -1, (char)str[0],
+				new_type, -1, name);
+	} break;
+	case 's':
+	case 'g':
+		if (str[2] != '\0') {
+			int rw = 0; // 0 = read, 1 = write
+			RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
+							(char)type, atoi (str + 2), R_ANAL_VAR_SCOPE_LOCAL);
+			if (!var) {
+				eprintf ("Cannot find variable in: '%s'\n", str);
+				res = false;
+				break;
+			}
+			if (var != NULL) {
+				int scope = (str[1] == 'g')? 0: 1;
+				r_anal_var_access (core->anal, fcn->addr, (char)type,
+						scope, atoi (str + 2), rw, core->offset);
+				r_anal_var_free (var);
+				break;
+			}
+		} else eprintf ("Missing argument\n");
+		break;
+	case ' ': {
+		const char *name;
+		char *vartype;
+		int size = 4;
+		int scope = 1;
+			for (str++; *str == ' ';) str++;
+		p = strchr (str, ' ');
+		if (!p) {
+			var_help (core, type);
+			break;
+		}
+		*p++ = 0;
+		if (type == 'r') { //registers
+			RRegItem *i = r_reg_get (core->anal->reg, str, -1);
+			if (!i) {
+				eprintf ("Register not found");
+				break;
+			}
+			delta = i->index;
+		} else {
+			delta = r_num_math (core->num, str);
+		}
+		name = p;
+		vartype = strchr (name, ' ');
+		if (vartype) {
+			*vartype++ = 0;
+			r_anal_var_add (core->anal, fcn->addr,
+					scope, delta, type,
+					vartype, size, name);
+		} else eprintf ("Missing name\n");
 		break;
 	}
+	};
 
 	free (ostr);
 	return res;
@@ -1075,10 +1058,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'M': // "afM" - print functions map
 		r_core_anal_fmap (core, input + 1);
 		break;
-	case 'a': // "afa"
 	case 'v': // "afv"
-	case 'e': // "afe"
-		var_cmd (core, input + 1);
+		var_cmd (core, input + 2);
 		break;
 	case 'c': // "afc"
 		{
@@ -1119,12 +1100,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			//TODO guess calling conventions
 			eprintf ("TODO\n") ;
 			} break;
-		case 'a': {
-			r_anal_var_delete_all (core->anal, fcn->addr, 'e');
-			r_anal_var_delete_all (core->anal, fcn->addr, 'a');
-			r_anal_var_delete_all (core->anal, fcn->addr, 'v');
-			fcn_callconv (core, fcn);
-			} break;
+		case 'a':
+			if (r_config_get_i (core->config, "anal.vars")) {
+				r_anal_var_delete_all (core->anal, fcn->addr, 'r');
+				r_anal_var_delete_all (core->anal, fcn->addr, 'b');
+				r_anal_var_delete_all (core->anal, fcn->addr, 's');
+				fcn_callconv (core, fcn);
+			}
+			break;
 		case ' ': {
 			int type = r_anal_cc_str2type (input + 3);
 			if (type == -1) {
@@ -1360,7 +1343,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afr", " ([name]) ([addr])", "analyze functions recursively",
 			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
 			"af-", " [addr]", "clean all function analysis data (or function at addr)",
-			"af[aev]", "?", "manipulate args, registers and variables in function",
+			"afv[bsr]", "?", "manipulate args, registers and variables in function",
 			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", " [addr]", "List basic blocks of given function",
 			"afB", " 16", "set current function as thumb (change asm.bits)",
