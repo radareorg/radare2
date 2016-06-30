@@ -480,7 +480,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			int pid = (input[2] == ' ')? atoi (input + 2): core->dbg->pid;
 			char *exe = r_sys_pid_to_path (pid);
 			if (exe) {
-				r_cons_printf ("%s\n", exe);
+				r_cons_println (exe);
 				free (exe);
 			}
 		}
@@ -1013,7 +1013,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '.':
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
-				r_cons_printf ("%s\n", map->name);
+				r_cons_prinln (map->name);
 				break;
 			}
 		}
@@ -1125,7 +1125,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s", mode, baddr, map->name);
 					}
 					res = r_sys_cmd_str (cmd, NULL, NULL);
-					r_cons_printf ("%s\n",res);
+					r_cons_println (res);
 					free (res);
 					free (cmd);
 				} else {
@@ -1220,7 +1220,7 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 	case 0:
 		if (core->dbg->reg->reg_profile_str) {
 			//core->anal->reg = core->dbg->reg;
-			r_cons_printf ("%s\n", core->dbg->reg->reg_profile_str);
+			r_cons_println (core->dbg->reg->reg_profile_str);
 			//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
 		} else eprintf ("No register profile defined. Try 'dr.'\n");
 		break;
@@ -1341,7 +1341,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	switch (str[0]) {
 	case 'C': // "drC"
 		if (core->dbg->reg->reg_profile_cmt) {
-			r_cons_printf ("%s\n", core->dbg->reg->reg_profile_cmt);
+			r_cons_println (core->dbg->reg->reg_profile_cmt);
 		}
 		break;
 	case '-': // "dr-"
@@ -1407,7 +1407,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				RRegItem *r;
 				RListIter *iter;
 				r_list_foreach (rs->regs, iter, r) {
-					r_cons_printf ("%s\n", r->name);
+					r_cons_println (r->name);
 				}
 			}
 		}
@@ -1430,7 +1430,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (*name && name[1]) {
 			r = r_reg_cond_get (core->dbg->reg, name);
 			if (r) {
-				r_cons_printf ("%s\n", r->name);
+				r_cons_println (r->name);
 			} else {
 				int id = r_reg_cond_from_string (name);
 				RRegFlags* rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
@@ -1640,7 +1640,7 @@ free (rf);
 		switch (str[1]) {
 		case 0:
 			for (i = 0; (name = r_reg_get_type (i)); i++) {
-				r_cons_printf ("%s\n", name);
+				r_cons_println (name);
 			}
 			break;
 		case ' ':
@@ -1692,7 +1692,7 @@ free (rf);
 			r_str_case (foo, true);
 			name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (foo));
 			if (name && *name) {
-				r_cons_printf ("%s\n", name);
+				r_cons_println (name);
 			} else eprintf ("Oops. try drn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
 			free (foo);
 		}
@@ -2147,7 +2147,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 		} else {
 			if (bpi && bpi->name) {
-				r_cons_printf ("%s\n", bpi->name);
+				r_cons_println (bpi->name);
 			}
 		}
 		break;
@@ -2565,11 +2565,11 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			if (signum>0) {
 				signame = r_debug_signal_resolve_i (core->dbg, signum);
 				if (signame)
-                                        r_cons_println (signame);
+                                	r_cons_println (signame);
 			} else {
 				signum = r_debug_signal_resolve (core->dbg, arg);
 				if (signum > 0) {
-                                        r_cons_println (signum);  
+                                	r_cons_println (signum);  
 				}
 			}
 		} else {
@@ -3023,7 +3023,7 @@ static int cmd_debug(void *data, const char *input) {
 		char str[128];
 		str[0] = 0;
 		r_print_date_get_now (core->print, str);
-		r_cons_printf ("%s\n", str);
+		r_cons_println (str);
 		return 0;
 	}
 
