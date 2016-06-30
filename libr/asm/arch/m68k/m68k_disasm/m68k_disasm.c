@@ -2411,6 +2411,8 @@ static void iaddstr(dis_buffer_t *dbuf, const char *s) {
 static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int dd) {
 	ut8 scale, idx;
 	const short *nval;
+	//dbug-val hold an stacked array in the function instlen of size of 8 shorts  
+	const short *nval_end = dbuf->val + 8;
 	ut16 ext;
 	int disp = 0, odisp = 0, bd = 0, od = 0, reg = 0;
 
@@ -2528,6 +2530,7 @@ static void get_modregstr_moto(dis_buffer_t *dbuf, int bit, int mod, int sz, int
 				}
 				nval += 2;
 			}
+			if ((char *)nval >= (char*)nval_end) return;
 			if (od == 1)
 				odisp = 0;
 			else if (od == 2) {
@@ -2732,7 +2735,6 @@ static void get_modregstr_mit(dis_buffer_t *dbuf,int bit, int mod, int sz, int d
 				disp = *(long *)nval;
 				nval += 2;
 			}
-
 			if (od == 1)
 				odisp = 0;
 			else if (od == 2) {
