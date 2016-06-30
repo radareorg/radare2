@@ -36,7 +36,10 @@ static void remove_offsetmap(RFlag *f, RFlagItem *item) {
 	if (fs_off) {
 		r_list_delete_data (fs_off, item);
 		if (r_list_empty (fs_off)) {
+			//make sure to free the list
+			RList *tmp_list = r_hashtable64_lookup (f->ht_off, XOROFF(item->offset));
 			r_hashtable64_remove (f->ht_off, XOROFF (item->offset));
+			r_list_free (tmp_list);
 		}
 	}
 }
