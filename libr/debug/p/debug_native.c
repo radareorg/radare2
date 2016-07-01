@@ -83,6 +83,12 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #define DEBUGGER 0
 #endif // ARCH
 
+#ifdef __WALL
+#define WAITPID_FLAGS __WALL
+#else
+#define WAITPID_FLAGS 0
+#endif
+
 #endif /* IF DEBUGGER */
 
 /* begin of debugger code */
@@ -311,10 +317,10 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
 	//eprintf ("waiting on all children ...\n");
-	int ret = waitpid (-1, &status, WAIT_ANY); //__WALL);
+	int ret = waitpid (-1, &status, WAITPID_FLAGS);
 #else
 	//eprintf ("waiting on pid %d ...\n", pid);
-	int ret = waitpid (pid, &status, WAIT_ANY); //__WALL);
+	int ret = waitpid (pid, &status, WAITPID_FLAGS);
 #endif // WAIT_ON_ALL_CHILDREN
 	if (ret == -1) {
 		r_sys_perror ("waitpid");
