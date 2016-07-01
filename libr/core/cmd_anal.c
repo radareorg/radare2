@@ -661,14 +661,13 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 			r_skiplist_free (fcn->bbs);
 			fcn->bbs = NULL;
 		} else {
-			RAnalBlock *b;
-			RSkipListNode *iter;
-			r_skiplist_foreach (fcn->bbs, iter, b) {
-				if (b->addr == addr) {
-					r_skiplist_delete (fcn->bbs, b);
-					return true;
-				}
-			}
+			RAnalBlock search_bb;
+			bool res;
+
+			search_bb.addr = addr;
+			search_bb.size = 0;
+			res = r_skiplist_delete (fcn->bbs, &search_bb);
+			if (res) return true;
 
 			eprintf ("Cannot find basic block\n");
 		}

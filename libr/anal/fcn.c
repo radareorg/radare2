@@ -1427,13 +1427,13 @@ R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
 R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
-	RSkipListNode *iter;
-	RAnalBlock *bb;
+	RSkipListNode *res;
+	RAnalBlock search_bb;
 
-	r_skiplist_foreach (fcn->bbs, iter, bb) {
-		if (bb->addr == addr) return bb;
-	}
-	return NULL;
+	search_bb.addr = addr;
+	search_bb.size = 0;
+	res = r_skiplist_find (fcn->bbs, &search_bb);
+	return res ? (RAnalBlock *)res->data : NULL;
 }
 
 /* directly set the size of the function */

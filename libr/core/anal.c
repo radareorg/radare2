@@ -986,7 +986,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
-	struct r_anal_bb_t *bb, *bbi;
+	struct r_anal_bb_t *bb;
 	ut64 jump, fail;
 	int rc = true;
 	ut8 *buf = NULL;
@@ -1002,9 +1002,13 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		ret = r_anal_fcn_split_bb (core->anal, fcn, bb, at);
 	} else {
 		RSkipListNode *iter;
-		r_skiplist_foreach (fcn->bbs, iter, bbi) {
-			if (at == bbi->addr)
-				ret = R_ANAL_RET_DUP;
+		RAnalBlock search_bb;
+
+		search_bb.addr = at;
+		search_bb.size = 0;
+		iter = r_skiplist_find (fcn->bbs, &search_bb);
+		if (iter) {
+			ret = R_ANAL_RET_DUP;
 		}
 	}
 	if (ret == R_ANAL_RET_DUP) /* Dupped bb */
