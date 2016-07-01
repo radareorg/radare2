@@ -6,6 +6,13 @@
 
 #define DFLT_NINSTR 3
 
+R_API int r_anal_bb_compare_range(RAnalBlock* a, RAnalBlock* b) {
+	if (b->addr >= a->addr && b->addr + b->size < a->addr + a->size) {
+		return 0;
+	}
+	return r_anal_bb_compare(a, b);
+}
+
 R_API int r_anal_bb_compare(RAnalBlock* a, RAnalBlock* b) {
 	return a->addr - b->addr;
 }

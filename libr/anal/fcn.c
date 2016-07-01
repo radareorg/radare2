@@ -1404,12 +1404,13 @@ R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
 		return addr >= fcn->addr && addr < fcn->addr + r_anal_fcn_size (fcn);
 	}
 
-	r_skiplist_foreach (fcn->bbs, iter, bb) {
-		if (addr >= bb->addr && addr < bb->addr + bb->size) {
-			return true;
-		}
-	}
-	return false;
+	fcn->bbs->compare = (RListComparator)r_anal_bb_compare_range;
+	RAnalBlock search_bb;
+	search_bb.addr = addr;
+	search_bb.size = 0;
+	iter = r_skiplist_find (fcn->bbs, &search_bb);
+	fcn->bbs->compare = (RListComparator)r_anal_bb_compare;
+	return iter != NULL;
 }
 
 R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {

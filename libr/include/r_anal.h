@@ -1202,6 +1202,7 @@ R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
 R_API int r_anal_bb_compare(RAnalBlock* a, RAnalBlock* b);
+R_API int r_anal_bb_compare_range(RAnalBlock* a, RAnalBlock* b);
 
 /* op.c */
 R_API const char *r_anal_stackop_tostring (int s);

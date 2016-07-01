@@ -1063,15 +1063,20 @@ fin:
 /* returns the address of the basic block that contains addr or UT64_MAX if
  * there is no such basic block */
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr) {
-	RAnalBlock *bbi;
 	RAnalFunction *fcni;
 	RListIter *iter;
-	RSkipListNode *iter2;
 	r_list_foreach (core->anal->fcns, iter, fcni) {
-		r_skiplist_foreach (fcni->bbs, iter2, bbi) {
-			if (addr >= bbi->addr && addr < bbi->addr+bbi->size) {
-				return bbi->addr;
-			}
+		RAnalBlock search_bb;
+		RSkipListNode *res;
+
+		fcni->bbs->compare = (RListComparator)r_anal_bb_compare_range;
+		search_bb.addr = addr;
+		search_bb.size = 0;
+		res = r_skiplist_find (fcni->bbs, &search_bb);
+		fcni->bbs->compare = (RListComparator)r_anal_bb_compare;
+		if (res) {
+			RAnalBlock *b = (RAnalBlock *)res->data;
+			return b->addr;
 		}
 	}
 	return UT64_MAX;
