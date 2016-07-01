@@ -98,7 +98,7 @@ static const struct {
     { 2147483648ul,	2362232233ul,	2362232231ul}
 };
 
-#define DELETED_HASH ((ut32)~0)
+#define DELETED_HASH UT32_MAX
 #define entry_is_free(x) (!x->hash && !x->data)
 #define entry_is_deleted(x) (x->hash == DELETED_HASH && !x->data)
 #define entry_is_present(x) (x->data || (x->hash && x->hash != DELETED_HASH))
