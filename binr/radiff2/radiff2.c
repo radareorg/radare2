@@ -46,7 +46,7 @@ static RCore* opencore(const char *f) {
 		r_core_bin_load (c, NULL, baddr);
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
-	if (anal_all) {
+	if (f && anal_all) {
 		const char *cmd = "aac";
 		switch (anal_all) {
 		case 1: cmd = "aaa"; break;
@@ -254,6 +254,40 @@ static void handle_sha256 (const ut8 *block, int len) {
 	r_hash_free (ctx);
 }
 
+static ut8 *slurp(RCore **c, const char *file, int *sz) {
+	RIODesc *d;
+	RIO *io;
+	if (c && strstr (file, "://")) {
+		ut8 *data = NULL;
+		ut64 size;
+		if (!*c) {
+			*c = opencore (NULL);
+		}
+		io = (*c)->io;
+		d = r_io_open (io, file, 0, 0);
+		if (!d) {
+			return NULL;
+		}
+		size = r_io_size (io);
+		if (size > 0 || size < ST32_MAX) {
+			data = calloc (1, size);
+			if (r_io_read_at (io, 0, data, size) == size) {
+				if (sz) {
+					*sz = size;
+				}
+			} else {
+				eprintf ("slurp: read error\n");
+				R_FREE (data);
+			}
+		} else {
+			eprintf ("slurp: File is too big\n");
+		}
+		r_io_close (io, d);
+		return data;
+	}
+	return (ut8*)r_file_slurp (file, sz);
+}
+
 int main(int argc, char **argv) {
 	const char *addr = NULL;
 	RCore *c, *c2;
@@ -399,13 +433,12 @@ int main(int argc, char **argv) {
 		r_core_free (c2);
 		return 0;
 	}
-
-	bufa = (ut8*)r_file_slurp (file, &sza);
+	bufa = slurp (&c, file, &sza);
 	if (!bufa) {
 		eprintf ("radiff2: Cannot open %s\n", r_str_get (file));
 		return 1;
 	}
-	bufb = (ut8*)r_file_slurp (file2, &szb);
+	bufb = slurp (&c, file2, &szb);
 	if (!bufb) {
 		eprintf ("radiff2: Cannot open: %s\n", r_str_get (file2));
 		free (bufa);

@@ -263,7 +263,7 @@ typedef struct r_io_range_t {
 				desc->fd = ((size_t)desc)&0xffffff; \
 			} else \
 			if (ffd == -1) { \
-				desc->fd = ((size_t)&desc)&0xffffff; \
+				desc->fd = ((size_t)desc)&0xffffff; \
 			} else desc->fd = ffd; \
 			desc->data = fdata; \
 		} else { \
@@ -306,10 +306,6 @@ R_API int r_io_reopen (RIO *io, RIODesc *desc, int flags, int mode);
 R_API int r_io_redirect(RIO *io, const char *file);
 //checks if io-access is reasonable at this offset
 R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
-
-// TODO: deprecate
-R_API int r_io_set_fd(RIO *io, RIODesc *fd);
-R_API int r_io_set_fdn(RIO *io, int fd);
 
 R_API RIODesc *r_io_use_fd(RIO *io, int fd);
 R_API int r_io_use_desc(RIO *io, RIODesc *fd);
