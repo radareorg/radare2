@@ -444,6 +444,9 @@ int main(int argc, char **argv) {
 		free (bufa);
 		return 1;
 	}
+	if (sza != szb) {
+		eprintf ("File size differs %d vs %d\n", sza, szb);
+	}
 
 	switch (mode) {
 	case MODE_COLS:
