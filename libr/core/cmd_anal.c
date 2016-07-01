@@ -42,7 +42,7 @@ static void var_help(RCore *core, char ch) {
 		"afvsn", " [old_name] [new_name]", "rename stack based argument or variable",
 		"afvst", " [name] [new_type]", "change type for given argument or variable",
 		"afvsj", "", "return list of stack based arguments and variables in JSON format",
-		"afss-", " [name]", "delete stack based argument or variables with the given name",
+		"afvs-", " [name]", "delete stack based argument or variables with the given name",
 		"afvsg", " [idx] [addr]", "define var get reference",
 		"afvss", " [idx] [addr]", "define var set reference",
 		NULL
