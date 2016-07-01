@@ -56,14 +56,14 @@ R_API char *r_cons_color_random_string(int bg) {
 	const char *color = "white";
 	r = r_num_rand (8);
 	switch (r) {
-	case 0: color = "red";
-	case 1: color = "white";
-	case 2: color = "green";
-	case 3: color = "magenta";
-	case 4: color = "yellow";
-	case 5: color = "cyan";
-	case 6: color = "blue";
-	case 7: color = "gray";
+	case 0: color = "red"; break;
+	case 1: color = "white"; break;
+	case 2: color = "green"; break;
+	case 3: color = "magenta"; break;
+	case 4: color = "yellow"; break;
+	case 5: color = "cyan"; break;
+	case 6: color = "blue"; break;
+	case 7: color = "gray"; break;
 	}
 	return strdup (color);
 }
@@ -82,22 +82,22 @@ R_API char *r_cons_color_random(int bg) {
 	// random ansi
 	r = r_num_rand (16);
 	switch (r) {
-	case 0: color = Color_RED;
-	case 1: color = Color_BRED;
-	case 2: color = Color_WHITE;
-	case 3: color = Color_BWHITE;
-	case 4: color = Color_GREEN;
-	case 5: color = Color_BGREEN;
-	case 6: color = Color_MAGENTA;
-	case 7: color = Color_BMAGENTA;
-	case 8: color = Color_YELLOW;
-	case 9: color = Color_BYELLOW;
-	case 10: color = Color_CYAN;
-	case 11: color = Color_BCYAN;
-	case 12: color = Color_BLUE;
-	case 13: color = Color_BBLUE;
-	case 14: color = Color_GRAY;
-	case 15: color = Color_BGRAY;
+	case 0: color = Color_RED; break;
+	case 1: color = Color_BRED; break;
+	case 2: color = Color_WHITE; break;
+	case 3: color = Color_BWHITE; break;
+	case 4: color = Color_GREEN; break;
+	case 5: color = Color_BGREEN; break;
+	case 6: color = Color_MAGENTA; break;
+	case 7: color = Color_BMAGENTA; break;
+	case 8: color = Color_YELLOW; break;
+	case 9: color = Color_BYELLOW; break;
+	case 10: color = Color_CYAN; break;
+	case 11: color = Color_BCYAN; break;
+	case 12: color = Color_BLUE; break;
+	case 13: color = Color_BBLUE; break;
+	case 14: color = Color_GRAY; break;
+	case 15: color = Color_BGRAY; break;
 	}
 	return strdup (color);
 }
