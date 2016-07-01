@@ -48,19 +48,19 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 R_API int r_debug_trace_pc (RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
 	RAnalOp op;
-	static ut64 oldpc = 0LL; // Must trace the previously traced instruction
+	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 
-	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) <= 0) {
-		//eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", addr);
+	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) != sizeof (buf)) {
+		eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
 
-	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)) <= 0) {
+	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)) < 1) {
 		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
 
-	if (oldpc != 0LL) {
+	if (oldpc != UT64_MAX) {
 		if (dbg->anal->esil && dbg->anal->trace) {
 			r_anal_esil_trace (dbg->anal->esil, &op);
 		}
