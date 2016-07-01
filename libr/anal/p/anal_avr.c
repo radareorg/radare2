@@ -15,7 +15,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 // hack to get avr disasm in anal, this must be fixed by merging both worlds
 #include "../asm/arch/avr/disasm.c"
 
-#define	AVR_SOFTCAST(x,y)	(x+(y*0x100))
+#define	AVR_SOFTCAST(x,y) (x+(y*0x100))
 
 static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 	ut64 dst = 2 + addr + b[0] * 2;
@@ -322,18 +322,20 @@ static int avr_custom_des (RAnalEsil *esil) {
 	char *round;
 	ut64 key, text;
 	int r, enc;
-	if (!esil || !esil->anal || !esil->anal->reg)
+	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
+	}
 	round = r_anal_esil_pop (esil);
-	if (!round)
+	if (!round) {
 		return false;
-	if(!r_anal_esil_get_parm (esil, round, &key)) {
+	}
+	if (!r_anal_esil_get_parm (esil, round, &key)) {
 		free (round);
 		return false;
 	}
 	free (round);
 	r = (int)key;
-	r_anal_esil_reg_read (esil, "HF", &key, NULL);
+	r_anal_esil_reg_read (esil, "hf", &key, NULL);
 	enc = (int)key;
 	r_anal_esil_reg_read (esil, "deskey", &key, NULL);
 	r_anal_esil_reg_read (esil, "text", &text, NULL);
@@ -357,8 +359,8 @@ static int esil_avr_fini (RAnalEsil *esil) {
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p =
-		"=PC	PC\n"
-		"=SP	SP\n"
+		"=PC	pc\n"
+		"=SP	sp\n"
 // explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
 // and http://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
 		"=A0	r25\n"
@@ -372,7 +374,6 @@ SP: 8- or 16-bit stack pointer
 SREG: 8-bit status register
 RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 #endif
-
 // 8bit registers x 32
 		"gpr	r0	.8	0	0\n"
 		"gpr	r1	.8	1	0\n"
@@ -410,19 +411,19 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r31	.8	31	0\n"
 
 // 16 bit overlapped registers for memory addressing
-		"gpr	X	.16	26	0\n"
-		"gpr	Y	.16	28	0\n"
-		"gpr	Z	.16	30	0\n"
+		"gpr	x	.16	26	0\n"
+		"gpr	y	.16	28	0\n"
+		"gpr	z	.16	30	0\n"
 // special purpose registers
-		"gpr	PC	.16	32	0\n"
-		"gpr	SP	.16	34	0\n"
-		"gpr	SREG	.8	36	0\n"
+		"gpr	pc	.16	32	0\n"
+		"gpr	sp	.16	34	0\n"
+		"gpr	sreg	.8	36	0\n"
 // 8bit segment registers to be added to X, Y, Z to get 24bit offsets
-		"gpr	RAMPX	.8	37	0\n"
-		"gpr	RAMPY	.8	38	0\n"
-		"gpr	RAMPZ	.8	39	0\n"
-		"gpr	RAMPD	.8	40	0\n"
-		"gpr	EIND	.8	41	0\n"
+		"gpr	rampx	.8	37	0\n"
+		"gpr	rampy	.8	38	0\n"
+		"gpr	rampz	.8	39	0\n"
+		"gpr	rampd	.8	40	0\n"
+		"gpr	eind	.8	41	0\n"
 // status bit register stored in SREG
 /*
 C Carry flag. This is a borrow flag on subtracts.
@@ -434,14 +435,14 @@ H Half carry. This is an internal carry from additions and is used to support BC
 T Bit copy. Special bit load and bit store instructions use this bit.
 I Interrupt flag. Set when interrupts are enabled.
 */
-		"gpr	CF	.1	288	0\n" // 288 = (offsetof(SREG))*8= 36 * 8
-		"gpr	ZF	.1	289	0\n"
-		"gpr	NF	.1	290	0\n"
-		"gpr	VF	.1	291	0\n"
-		"gpr	SF	.1	292	0\n"
-		"gpr	HF	.1	293	0\n"
-		"gpr	TF	.1	294	0\n"
-		"gpr	IF	.1	295	0\n"
+		"gpr	cf	.1	288	0\n" // 288 = (offsetof(SREG))*8= 36 * 8
+		"gpr	zf	.1	289	0\n"
+		"gpr	nf	.1	290	0\n"
+		"gpr	vf	.1	291	0\n"
+		"gpr	sf	.1	292	0\n"
+		"gpr	hf	.1	293	0\n"
+		"gpr	tf	.1	294	0\n"
+		"gpr	if	.1	295	0\n"
 		;
 
 	return r_reg_set_profile_string (anal->reg, p);
