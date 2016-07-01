@@ -1643,8 +1643,10 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	fcn_list_bbs (fcn);
 	/* show variables  and arguments */
-	r_core_cmdf (core, "afa* @ 0x%"PFMT64x"\n", fcn->addr);
-	r_core_cmdf (core, "afv* @ 0x%"PFMT64x"\n", fcn->addr);
+	r_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
+	r_core_cmdf (core, "afvr* @ 0x%"PFMT64x"\n", fcn->addr);
+	r_core_cmdf (core, "afvs* @ 0x%"PFMT64x"\n", fcn->addr);
+
 	free (name);
 	return 0;
 }
@@ -1819,7 +1821,7 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 	return NULL;
 }
 
-R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
+R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 	ut8 *tbuf, *buf;
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
@@ -2342,10 +2344,12 @@ R_API int r_core_anal_all(RCore *core) {
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (core->cons->breaked)
 				break;
-			r_anal_var_delete_all (core->anal, fcni->addr, 'e');
-			r_anal_var_delete_all (core->anal, fcni->addr, 'a');
-			r_anal_var_delete_all (core->anal, fcni->addr, 'v');
-			fcn_callconv (core, fcni);
+			if (r_config_get_i (core->config, "anal.vars")) {
+				r_anal_var_delete_all (core->anal, fcni->addr, 'r');
+				r_anal_var_delete_all (core->anal, fcni->addr, 'b');
+				r_anal_var_delete_all (core->anal, fcni->addr, 's');
+				fcn_callconv (core, fcni);
+			}
 			if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
 				fcni->type = R_ANAL_FCN_TYPE_SYM;
 		}

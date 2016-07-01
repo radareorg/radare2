@@ -245,9 +245,9 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
                 free (tstr);
 		return false;
         }
-	regs = p->varlist (p->anal, f, 'v');
-	bpargs = p->varlist (p->anal, f, 'a');
-	spargs = p->varlist (p->anal, f, 'e');
+	regs = p->varlist (p->anal, f, 'r');
+	bpargs = p->varlist (p->anal, f, 'b');
+	spargs = p->varlist (p->anal, f, 's');
 	/*iterate over stack pointer arguments/variables*/
 	r_list_foreach (spargs, spiter,sparg) {
 		if (sparg->delta < 10) {

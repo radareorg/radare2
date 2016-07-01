@@ -227,9 +227,9 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		return false;
 	}
 
-	regargs = p->varlist (p->anal, f, 'v');
-	bpargs = p->varlist (p->anal, f, 'a');
-	spargs = p->varlist (p->anal, f, 'e');
+	regargs = p->varlist (p->anal, f, 'r');
+	bpargs = p->varlist (p->anal, f, 'b');
+	spargs = p->varlist (p->anal, f, 's');
 	r_list_foreach (bpargs, iter, var) {
 		if (var->delta > -10 && var->delta < 10) {
 			oldstr = r_str_newf ("[%s, %d]",

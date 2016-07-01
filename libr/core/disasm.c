@@ -986,9 +986,9 @@ static void ds_show_functions(RDisasmState *ds) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
-		RList *args = r_anal_var_list (core->anal, f, 'a');
-		RList *regs = r_anal_var_list (core->anal, f, 'v');
-		RList *sp_vars = r_anal_var_list (core->anal, f, 'e');
+		RList *args = r_anal_var_list (core->anal, f, 'b');
+		RList *regs = r_anal_var_list (core->anal, f, 'r');
+		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
@@ -1026,7 +1026,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			r_cons_printf ("%s; ", COLOR (ds, color_other));
 			switch (var->kind) {
-			case 'a':
+			case 'b':
 				if (var->delta > 0) {
 					r_cons_printf ("arg %s %s @ %s+0x%x",
 						var->type, var->name,
@@ -1039,7 +1039,7 @@ static void ds_show_functions(RDisasmState *ds) {
 						-var->delta);
 				}
 				break;
-			case 'v': {
+			case 'r': {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
 					eprintf("Register not found");
@@ -1049,7 +1049,7 @@ static void ds_show_functions(RDisasmState *ds) {
 					var->type, var->name, i->name);
 				}
 				break;
-			case 'e':
+			case 's':
 				if ( var->delta < f->stack) {
 					r_cons_printf ("var %s %s @ %s+0x%x",
 						var->type, var->name,
