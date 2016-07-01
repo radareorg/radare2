@@ -49,8 +49,8 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 	eof = fcn->addr + r_anal_fcn_size (fcn);
 	r_skiplist_foreach_safe (fcn->bbs, iter, iter2, bb) {
 		if (bb->addr >= eof) {
-			// already called by r_list_delete r_anal_bb_free (bb);
-			r_skiplist_delete (fcn->bbs, iter);
+			// already called by r_skiplist_delete_node r_anal_bb_free (bb);
+			r_skiplist_delete_node (fcn->bbs, iter);
 			continue;
 		}
 		if (bb->addr + bb->size >= eof) {
