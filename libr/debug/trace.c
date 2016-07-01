@@ -50,25 +50,24 @@ R_API int r_debug_trace_pc (RDebug *dbg, ut64 pc) {
 	RAnalOp op;
 	static ut64 oldpc = 0LL; // Must trace the previously traced instruction
 
-	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) > 0) {
-		if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)) > 0) {
-			if (oldpc != 0LL) {
-				if (dbg->anal->esil) {
-					if (dbg->anal->trace) {
-						r_anal_esil_trace (dbg->anal->esil, &op);
-					}
-				}
-				r_debug_trace_add (dbg, oldpc, op.size);
-			}
-			oldpc = pc;
-			return true;
-		}
-		else
-			eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
+	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) <= 0) {
+		//eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", addr);
+		return false;
 	}
-	//else
-	//	eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", pc);
-	return false;
+
+	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)) <= 0) {
+		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
+		return false;
+	}
+
+	if (oldpc != 0LL) {
+		if (dbg->anal->esil && dbg->anal->trace) {
+			r_anal_esil_trace (dbg->anal->esil, &op);
+		}
+		r_debug_trace_add (dbg, oldpc, op.size);
+	}
+	oldpc = pc;
+	return true;
 }
 
 R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
