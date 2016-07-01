@@ -11,7 +11,7 @@
 
 const int kSkipListDepth = 15; // max depth
 
-RSkipListNode *r_skiplist_node_new (void *data, int level) {
+static RSkipListNode *r_skiplist_node_new (void *data, int level) {
 	RSkipListNode *res = R_NEW (RSkipListNode);
 	if (!res) return NULL;
 	res->forward = R_NEWS0 (RSkipListNode *, level + 1);
@@ -24,7 +24,7 @@ err_forward:
 	return NULL;
 }
 
-void r_skiplist_node_free (RSkipList *list, RSkipListNode *node) {
+static void r_skiplist_node_free (RSkipList *list, RSkipListNode *node) {
 	if (list->freefn && node->data) {
 		list->freefn (node->data);
 	}
@@ -32,7 +32,7 @@ void r_skiplist_node_free (RSkipList *list, RSkipListNode *node) {
 	free (node);
 }
 
-void init_head (RSkipListNode *head) {
+static void init_head (RSkipListNode *head) {
 	int i;
 	for (i = 0; i <= kSkipListDepth; i++) {
 		head->forward[i] = head;
@@ -45,14 +45,20 @@ void init_head (RSkipListNode *head) {
 //
 // NOTE: `updates` should be big enough to contain `list->list_level + 1`
 //       elements, when provided.
-RSkipListNode *find_insertpoint(RSkipList *list, void *data, RSkipListNode **updates) {
+static RSkipListNode *find_insertpoint(RSkipList *list, void *data, RSkipListNode **updates, bool by_data) {
 	RSkipListNode *x = list->head;
 	int i;
 
 	for (i = list->list_level; i >= 0; i--) {
-		while (x->forward[i] != list->head
-			&& list->compare (x->forward[i]->data, data) < 0) {
-			x = x->forward[i];
+		if (by_data) {
+			while (x->forward[i] != list->head
+				&& list->compare (x->forward[i]->data, data) < 0) {
+				x = x->forward[i];
+			}
+		} else {
+			while (x->forward[i] != list->head && x->forward[i] != data) {
+				x = x->forward[i];
+			}
 		}
 		if (updates) {
 			updates[i] = x;
@@ -60,6 +66,34 @@ RSkipListNode *find_insertpoint(RSkipList *list, void *data, RSkipListNode **upd
 	}
 	x = x->forward[0];
 	return x;
+}
+
+static bool delete_element(RSkipList* list, void* data, bool by_data) {
+	int i;
+	RSkipListNode *update[kSkipListDepth + 1], *x;
+
+	// locate delete points in the lists of all levels
+	x = find_insertpoint (list, data, update, by_data);
+	// do nothing if the element is not present in the list
+	if (x == list->head || list->compare(x->data, data) != 0) {
+		return false;
+	}
+
+	// update forward links for all `update` points,
+	// by removing the element from the list in each level
+	for (i = 0; i <= list->list_level; i++) {
+		if (update[i]->forward[i] != x) break;
+		update[i]->forward[i] = x->forward[i];
+	}
+	r_skiplist_node_free (list, x);
+
+	// update the level of the list
+	while ((list->list_level > 0) &&
+		(list->head->forward[list->list_level] == list->head)) {
+		list->list_level--;
+	}
+	list->size--;
+	return true;
 }
 
 // Takes in a pointer to the function to free a list element, and a pointer to
@@ -118,7 +152,7 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	int i, x_level, new_level;
 
 	// locate insertion points in the lists of all levels
-	x = find_insertpoint (list, data, update);
+	x = find_insertpoint (list, data, update, true);
 	// check whether the element is already in the list
 	if (x != list->head && list->compare(x->data, data) == 0) {
 		return x;
@@ -154,35 +188,16 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 
 // Delete node with data as it's payload.
 R_API bool r_skiplist_delete(RSkipList* list, void* data) {
-	int i;
-	RSkipListNode *update[kSkipListDepth + 1], *x;
+	return delete_element (list, data, true);
+}
 
-	// locate delete points in the lists of all levels
-	x = find_insertpoint (list, data, update);
-	// do nothing if the element is not present in the list
-	if (x == list->head || list->compare(x->data, data) != 0) {
-		return false;
-	}
-
-	// update forward links for all `update` points,
-	// by removing the element from the list in each level
-	for (i = 0; i <= list->list_level; i++) {
-		if (update[i]->forward[i] != x) break;
-		update[i]->forward[i] = x->forward[i];
-	}
-	r_skiplist_node_free (list, x);
-
-	// update the level of the list
-	while ((list->list_level > 0) &&
-		(list->head->forward[list->list_level] == list->head)) {
-		list->list_level--;
-	}
-	list->size--;
-	return true;
+// Delete the given RSkipListNode from the skiplist
+R_API bool r_skiplist_delete_node(RSkipList *list, RSkipListNode *node) {
+	return delete_element (list, node, false);
 }
 
 R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data) {
-	RSkipListNode* x = find_insertpoint (list, data, NULL);
+	RSkipListNode* x = find_insertpoint (list, data, NULL, true);
 	if (x != list->head && list->compare (x->data, data) == 0) {
 		return x;
 	}
