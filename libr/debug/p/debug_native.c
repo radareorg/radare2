@@ -314,7 +314,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	int ret = waitpid (-1, &status, WAIT_ANY); //__WALL);
 #else
 	//eprintf ("waiting on pid %d ...\n", pid);
-	int ret = waitpid (pid, &status, WAIT_ANY); //__WALL);
+	int ret = waitpid (pid, &status, 0);
 #endif // WAIT_ON_ALL_CHILDREN
 	if (ret == -1) {
 		r_sys_perror ("waitpid");
