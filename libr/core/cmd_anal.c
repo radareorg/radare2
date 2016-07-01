@@ -1499,6 +1499,9 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 	if (core->anal->cur->arch && !strcmp (core->anal->cur->arch, "6502") && bits == 8) {
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
 	}
+	if (core->anal->cur->arch && !strcmp (core->anal->cur->arch, "avr") && bits == 8) {
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
+	}
 	if (mode == '=') {
 		int pcbits = 0;
 		const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
