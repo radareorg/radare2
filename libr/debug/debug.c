@@ -36,8 +36,12 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
  * r_debug_bp_hit handles stage 1.
  * r_debug_recoil handles stage 2.
  */
-static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc) {
+static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
 	RBreakpointItem *b;
+
+	/* initialize the output parameter */
+	if (pb)
+		*pb = NULL;
 
 	/* if we are tracing, update the tracing data */
 	if (dbg->trace->enabled) {
@@ -65,6 +69,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc) {
 	if (!b) { /* we don't. nothing left to do */
 		return true;
 	}
+	*pb = b;
 
 	/* set the pc value back */
 	pc -= b->size;
@@ -96,13 +101,6 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc) {
 	if (dbg->corebind.core && dbg->corebind.bphit) {
 		dbg->corebind.bphit (dbg->corebind.core, b);
 	}
-
-	/* XXX(jjd): i don't think this goes here...
-	if (b->trace) {
-		r_debug_step (dbg, 1);
-		goto repeat;
-	}
-	 */
 	return true;
 }
 
@@ -492,6 +490,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_NONE: return "none";
 	case R_DEBUG_REASON_SIGNAL: return "signal";
 	case R_DEBUG_REASON_BREAKPOINT: return "breakpoint";
+	case R_DEBUG_REASON_TRACEPOINT: return "tracepoint";
 	case R_DEBUG_REASON_READERR: return "read-error";
 	case R_DEBUG_REASON_WRITERR: return "write-error";
 	case R_DEBUG_REASON_DIVBYZERO: return "div-by-zero";
@@ -565,6 +564,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
 		/* if the underlying stop reason is a breakpoint, call the handlers */
 		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP) {
 			RRegItem *pc_ri;
+			RBreakpointItem *b = NULL;
 			ut64 pc;
 
 			/* get the program coounter */
@@ -576,16 +576,15 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
 			/* get the value */
 			pc = r_reg_get_value (dbg->reg, pc_ri);
 
-			if (!r_debug_bp_hit (dbg, pc_ri, pc)) {
+			if (!r_debug_bp_hit (dbg, pc_ri, pc, &b)) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
-			/* where does this really need to go?!
-				if (b->trace) {
-					r_debug_step (dbg, 1);
-					goto repeat;
-				}
-			 */
+			/* if we hit a tracing breakpoint, we need to continue in
+			 * whatever mode the user desired. */
+			if (b && b->trace) {
+				reason = R_DEBUG_REASON_TRACEPOINT;
+			}
 		}
 
 		dbg->reason.type = reason;
@@ -860,6 +859,13 @@ repeat:
 		 * the registers.. */
 		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 			return false;
+		}
+
+		/* if we hit a tracing breakpoint, we need to continue in
+		 * whatever mode the user desired. */
+		if (reason == R_DEBUG_REASON_TRACEPOINT) {
+			r_debug_step (dbg, 1);
+			goto repeat;
 		}
 
 		/* choose the thread that was returned from the continue function */
