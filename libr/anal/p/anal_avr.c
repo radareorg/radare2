@@ -17,11 +17,17 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 #define	AVR_SOFTCAST(x,y)	(x+(y*0x100))
 
+static ut64 rjmp_dest(ut64 addr, const ut8* b) {
+	ut64 dst = 2 + addr + b[0] * 2;
+	dst += ((b[1] & 0xf) * 2) << 8;
+	return dst;
+}
+
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	short ofst;
 	int imm = 0, d, r, k;
 	ut8 kbuf[4];
-	ut16 ins = AVR_SOFTCAST (buf[0],buf[1]);
+	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
 	char *arg, str[32];
 	if (op == NULL)
 		return 2;
@@ -222,41 +228,46 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 	// 0xf0 - 0xf7 BR
 	if ((buf[1] >= 0xf0 && buf[1] <= 0xf8)) {
-		//int cond = (buf[0] & 7);
+		// int cond = (buf[0] & 7);
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = imm;
 		op->fail = addr + 2;
+		return op->size;
 	}
 	if ((buf[1] >= 0xc0 && buf[1] <= 0xcf)) { // rjmp
 		op->type = R_ANAL_OP_TYPE_JMP; // relative jump
-		op->jump = 0;
+		ut64 dst = rjmp_dest (addr, buf);
+		op->jump = dst;
+		op->fail = UT64_MAX;
+		r_strbuf_setf (&op->esil, "%d,PC,=", (int)dst);
+		return op->size;
 	}
 	switch (buf[1]) {
-		case 0x96:			//ADIW
-			op->type = R_ANAL_OP_TYPE_ADD;
-			op->cycles = 2;
-			break;
-		case 0x97:			//SBIW
-			op->type = R_ANAL_OP_TYPE_SUB;
-			op->cycles = 2;
-			break;
-		case 0x98:			//SBI
-		case 0x9a:			//CBI
-			op->type = R_ANAL_OP_TYPE_IO;
-			op->cycles = 2;		//1 for atTiny
-			break;
-		case 0x99:			//SBIC
-		case 0x9b:			//SBIS
-			op->type = R_ANAL_OP_TYPE_CMP;
-			op->type2 = R_ANAL_OP_TYPE_CJMP;
-			op->failcycles = 1;
-			break;
+	case 0x96: // ADIW
+		op->type = R_ANAL_OP_TYPE_ADD;
+		op->cycles = 2;
+		break;
+	case 0x97: // SBIW
+		op->type = R_ANAL_OP_TYPE_SUB;
+		op->cycles = 2;
+		break;
+	case 0x98: // SBI
+	case 0x9a: // CBI
+		op->type = R_ANAL_OP_TYPE_IO;
+		op->cycles = 2; // 1 for atTiny
+		break;
+	case 0x99: // SBIC
+	case 0x9b: // SBIS
+		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type2 = R_ANAL_OP_TYPE_CJMP;
+		op->failcycles = 1;
+		break;
 	}
 	if (!memcmp (buf, "\x0e\x94", 2)) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
 		op->fail = (op->addr)+4;
-// override even if len<4 wtf
+		// override even if len<4 wtf
 		len = 4;
 		if (len>3) {
 			memcpy (kbuf, buf+2, 2);
@@ -274,29 +285,29 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // rcall (relative)
 		op->fail = (op->addr)+2;
-		ofst = ins<<4;
-		ofst>>=4;
-		ofst*=2;
-		op->jump = addr+ofst+2;
+		ofst = ins << 4;
+		ofst >>= 4;
+		ofst *= 2;
+		op->jump = addr + ofst + 2;
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	}
-	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e)==0x0c)) {
+	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e) == 0x0c)) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CJMP; // breq, jmp (absolute)
-		op->fail = (op->addr)+4;
-		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
+		op->fail = op->addr + 4;
+		anal->iob.read_at (anal->iob.io, addr + 2, kbuf, 2);
 		// TODO: check return value
 		op->jump = AVR_SOFTCAST(kbuf[0], kbuf[1]) * 2;
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	}
 	if ((buf[1] & 0xf0) == 0xc0) { // rjmp (relative)
-		op->addr=addr;
+		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->fail = (op->addr)+2;
-		ofst = ins<<4;
-		ofst>>=4;
-		ofst*=2;
-		op->jump = addr+ofst+2;
+		op->fail = (op->addr) + 2;
+		ofst = ins << 4;
+		ofst >>= 4;
+		ofst *= 2;
+		op->jump = addr + ofst + 2;
 		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	}
 	if (ins == 0x9508 || ins == 0x9518) { // ret || reti
