@@ -318,7 +318,9 @@ R_API int r_core_yank_hud_path (RCore *core, const char *input, int dir) {
 	for (input++; *input==' '; input++) ;
 	buf = r_cons_hud_path (input, dir, r_config_get_i (core->config, "scr.color"));
 	len = buf ? strlen ((const char*)buf) + 1 : 0;
-	return r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
+	int res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
+	free (buf);
+	return res;
 }
 
 R_API int r_core_yank_file_ex (RCore *core, const char *input) {
