@@ -1034,6 +1034,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 
 				if (ret == R_ANAL_RET_NEW) {
 					r_list_append (fcn->bbs, bb);
+					r_skiplist_insert (fcn->bbs_sl, bb);
 					fail = bb->fail;
 					jump = bb->jump;
 					if (fail != -1)
@@ -1051,6 +1052,7 @@ error:
 	rc = false;
 fin:
 	r_list_delete_data (fcn->bbs, bb);
+	r_skiplist_delete (fcn->bbs_sl, bb);
 	r_anal_bb_free (bb);
 	free (buf);
 	return rc;
@@ -1446,7 +1448,7 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 			free (name);
 			name = tmp;
 		}
-	} 
+	}
 	return name;
 }
 

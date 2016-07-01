@@ -50,6 +50,7 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
 		if (bb->addr >= eof) {
 			// already called by r_list_delete r_anal_bb_free (bb);
+			r_skiplist_delete (fcn->bbs_sl, iter);
 			r_list_delete (fcn->bbs, iter);
 			continue;
 		}
@@ -84,6 +85,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->xrefs = r_anal_ref_list_new ();
 #endif
 	fcn->bbs = r_anal_bb_list_new ();
+	fcn->bbs_sl = r_skiplist_new (free, (RListComparator)r_anal_bb_compare);
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
 	return fcn;
@@ -109,6 +111,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->locs);
 	if (fcn->bbs) {
 		fcn->bbs->free = (RListFree)r_anal_bb_free;
+		//XXX TODO (crowell) free the skiplist!!!
 		r_list_free (fcn->bbs);
 		fcn->bbs = NULL;
 	}
@@ -194,6 +197,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 	bb->fail = UT64_MAX;
 	bb->type = 0; // TODO
 	r_list_append (fcn->bbs, bb);
+	r_skiplist_insert (fcn->bbs_sl, bb);
 	if (anal->cb.on_fcn_bb_new) {
 		anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
 	}
@@ -1286,6 +1290,7 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 			} else bb->type = R_ANAL_BB_TYPE_BODY;
 			r_list_append (fcn->bbs, bb);
+			r_skiplist_insert (fcn->bbs_sl, bb);
 			return R_ANAL_RET_END;
 		}
 	return R_ANAL_RET_NEW;
@@ -1399,10 +1404,15 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 }
 
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
-	RAnalBlock *bb;
-	RListIter *iter;
+	RAnalBlock bb_fake;
+	bb_fake.addr = addr;
+	bb_fake.size = 0;
 	bool has_bbs = false;
 
+	if (r_skiplist_find (fcn->bbs_sl, &bb_fake)) {
+		return true;
+	}
+/*
 	r_list_foreach (fcn->bbs, iter, bb) {
 		has_bbs = true;
 		if (addr >= bb->addr && addr < bb->addr + bb->size) {
@@ -1416,6 +1426,7 @@ R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
 		// FIXME: anal_java should create basicblocks
 		return addr >= fcn->addr && addr < fcn->addr + r_anal_fcn_size (fcn);
 	}
+	*/
 	return false;
 }
 

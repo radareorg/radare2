@@ -5,6 +5,14 @@
 #include <r_list.h>
 
 #define DFLT_NINSTR 3
+R_API int r_anal_bb_compare(RAnalBlock* a, RAnalBlock* b) {
+	if (a->addr + a->size < b->addr) {
+		return -1;
+	} else if (b->addr + b->size < a->addr) {
+		return 1;
+	}
+	return 0;
+}
 
 R_API RAnalBlock *r_anal_bb_new() {
 	RAnalBlock *bb = R_NEW0 (RAnalBlock);

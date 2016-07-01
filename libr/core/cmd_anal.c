@@ -666,6 +666,7 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 	if (fcn) {
 		if (!strcmp (input, "*")) {
 			r_list_free (fcn->bbs);
+			// TODO(crowell) free the skiplist
 			fcn->bbs = NULL;
 		} else {
 			RAnalBlock *b;

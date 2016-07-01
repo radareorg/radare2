@@ -15,6 +15,7 @@
 #include <r_io.h>
 #include <r_reg.h>
 #include <r_list.h>
+#include <r_skiplist.h>
 #include <r_util.h>
 #include <r_syscall.h>
 #include <r_flags.h>
@@ -313,6 +314,7 @@ typedef struct r_anal_type_function_t {
 	RList *locs; // list of local variables
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
+	RSkipList *bbs_sl;
 	RList *vars;
 #if FCN_OLD
 	RList *refs;
@@ -1200,6 +1202,7 @@ R_API int r_anal_bb_is_in_offset(RAnalBlock *bb, ut64 addr);
 R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
+R_API int r_anal_bb_compare(RAnalBlock* a, RAnalBlock* b);
 
 /* op.c */
 R_API const char *r_anal_stackop_tostring (int s);
