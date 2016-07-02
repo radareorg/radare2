@@ -801,6 +801,48 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 	free (buf);
 	return list;
 }
+#elif __OpenBSD__
+static RList *r_debug_native_sysctl_map (RDebug *dbg) {
+	int mib[3];
+	size_t len;
+	struct kinfo_vmentry entry;
+	u_long old_end = 0;
+	RList *list = NULL;
+	RDebugMap *map;
+
+	len = sizeof(entry);
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC_VMMAP;
+	mib[2] = dbg->pid;
+	entry.kve_start = 0;
+
+	if (sysctl (mib, 3, &entry, &len, NULL, 0) == -1) {
+		eprintf ("Could not get memory map: %s\n", strerror(errno));
+		return NULL;
+	}
+
+	list = r_debug_map_list_new();
+	if (!list) return NULL;
+
+	while (sysctl (mib, 3, &entry, &len, NULL, 0) != -1) {
+		if (old_end == entry.kve_end) {
+			/* No more entries */
+			break;
+		}
+		/* path to vm obj is not included in kinfo_vmentry.
+		 * see usr.sbin/procmap for namei-cache lookup.
+		 */
+		map = r_debug_map_new ("", entry.kve_start, entry.kve_end,
+				entry.kve_protection, 0);
+		if (!map) break;
+		r_list_append (list, map);
+
+		entry.kve_start = entry.kve_start + 1;
+		old_end = entry.kve_end;
+	}
+
+	return list;
+}
 #endif
 
 static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
@@ -895,6 +937,12 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	/* prepend 0x prefix */
 	region[0] = region2[0] = '0';
 	region[1] = region2[1] = 'x';
+
+#if __OpenBSD__
+	/* OpenBSD has no procfs, so no idea trying. */
+	return r_debug_native_sysctl_map (dbg);
+#endif
+
 #if __KFBSD__
 	list = r_debug_native_sysctl_map (dbg);
 	if (list) {
