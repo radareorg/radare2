@@ -347,12 +347,14 @@ static const rsp_op_escape rsp_escapes_table[] = {
 
 
 static const rsp_instruction_priv* rsp_decode_priv(ut32 iw) {
+	const rsp_op_escape* escape;
+
 	/* handle NOP pseudo instruction */
 	if (iw == 0) {
 		return &rsp_op_table[352];
 	}
 
-	const rsp_op_escape* escape = &rsp_escapes_table[(iw >> 25)];
+	escape = &rsp_escapes_table[(iw >> 25)];
 	return &rsp_op_table[escape->offset + ((iw >> escape->shift) & escape->mask)];
 }
 

@@ -21,6 +21,8 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		RAnalValue* value;
 		char esil[32];
 	} parsed_operands[RSP_MAX_OPNDS];
+	ut32 iw;
+	rsp_instruction r_instr;
 
 	if (!op) {
 		return 4;
@@ -35,8 +37,8 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "TODO");
 
-	ut32 iw = r_read_ble32 (b, anal->big_endian);
-	rsp_instruction r_instr = rsp_instruction_decode (addr, iw);
+	iw = r_read_ble32 (b, anal->big_endian);
+	r_instr = rsp_instruction_decode (addr, iw);
 
 	/* parse operands */
 	for (i = 0; i < r_instr.noperands; ++i) {
