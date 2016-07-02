@@ -5,6 +5,10 @@ DEPS=r_reg r_anal r_bp r_io r_parse r_cons r_syscall r_hash r_flags r_util
 DEPS+=r_socket
 CFLAGS+=-DCORELIB
 
+ifeq ($(OSTYPE),bsd))
+LDFLAGS=-lkvm
+endif
+
 #SDBPATH=../../shlr/sdb/src/
 #SDBLIB=${SDBPATH}/libsdb.a
 #LINK+=${SDBLIB}
