@@ -25,7 +25,7 @@ static void snappendf(char** dst, size_t* size, const char* format, ...) {
 	va_end (va);
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len){
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	/* all instructions are 32bit words */
 	if (len < 4) {
 		op->size = 0;
