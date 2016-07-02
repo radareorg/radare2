@@ -23,8 +23,9 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
         char esil[32];
     } parsed_operands[RSP_MAX_OPNDS];
 
-	if (op == NULL)
+	if (!op) {
 		return 4;
+    }
 
 	memset (op, 0, sizeof (RAnalOp));
     op->type = R_ANAL_OP_TYPE_UNK;
