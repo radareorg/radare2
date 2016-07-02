@@ -16,8 +16,8 @@ extern const char* rsp_c2_vreg_element_names[];
 
 
 enum {
-    RSP_DMEM_OFFSET = 0x0000,
-    RSP_IMEM_OFFSET = 0x1000
+	RSP_DMEM_OFFSET = 0x0000,
+	RSP_IMEM_OFFSET = 0x1000
 };
 
 /* restrict address inside rsp MEM */
@@ -26,7 +26,7 @@ static inline ut64 rsp_mem_addr(ut64 addr, ut64 base) { addr &= 0xfff; addr |= b
 
 typedef enum {
 	RSP_OP_INVALID,
-    RSP_OP_NOP,
+	RSP_OP_NOP,
 	RSP_OP_SLL,
 	RSP_OP_SRL,
 	RSP_OP_SRA,
@@ -143,35 +143,35 @@ typedef enum {
 } rsp_opcode;
 
 typedef enum {
-    RSP_OPND_GP_REG,           /* u=reg_num */
-    RSP_OPND_TARGET,           /* u=imem_address */
-    RSP_OPND_OFFSET,           /* u=imem_address, s=offset */
-    RSP_OPND_ZIMM,             /* u=zero-extended imm */
-    RSP_OPND_SIMM,             /* s=sign extended imm */
-    RSP_OPND_SHIFT_AMOUNT,     /* u=shift amount */
-    RSP_OPND_BASE_OFFSET,      /* u=reg_numm, s=offset */
-    RSP_OPND_C0_REG,           /* u=reg_num */
-    RSP_OPND_C2_CREG,          /* u=reg_num */
-    RSP_OPND_C2_ACCU,          /* u=reg_num */
-    RSP_OPND_C2_VREG,          /* u=reg_num */
-    RSP_OPND_C2_VREG_BYTE,     /* u=reg_num, s=byte element (0-15) */
-    RSP_OPND_C2_VREG_SCALAR,   /* u=reg_num, s=scalar element (0-7) */
-    RSP_OPND_C2_VREG_ELEMENT   /* u=reg_num, s=element (0-15) */
+	RSP_OPND_GP_REG,           /* u=reg_num */
+	RSP_OPND_TARGET,           /* u=imem_address */
+	RSP_OPND_OFFSET,           /* u=imem_address, s=offset */
+	RSP_OPND_ZIMM,             /* u=zero-extended imm */
+	RSP_OPND_SIMM,             /* s=sign extended imm */
+	RSP_OPND_SHIFT_AMOUNT,     /* u=shift amount */
+	RSP_OPND_BASE_OFFSET,      /* u=reg_numm, s=offset */
+	RSP_OPND_C0_REG,           /* u=reg_num */
+	RSP_OPND_C2_CREG,          /* u=reg_num */
+	RSP_OPND_C2_ACCU,          /* u=reg_num */
+	RSP_OPND_C2_VREG,          /* u=reg_num */
+	RSP_OPND_C2_VREG_BYTE,     /* u=reg_num, s=byte element (0-15) */
+	RSP_OPND_C2_VREG_SCALAR,   /* u=reg_num, s=scalar element (0-7) */
+	RSP_OPND_C2_VREG_ELEMENT   /* u=reg_num, s=element (0-15) */
 } rsp_operand_type;
 
 typedef struct {
-    rsp_operand_type type;
-    ut64 u;
-    st64 s;
+	rsp_operand_type type;
+	ut64 u;
+	st64 s;
 } rsp_operand;
 
 enum { RSP_MAX_OPNDS = 3 };
 
 typedef struct {
-    const char* mnemonic;
-    rsp_opcode opcode;
-    int noperands;
-    rsp_operand operands[RSP_MAX_OPNDS];
+	const char* mnemonic;
+	rsp_opcode opcode;
+	int noperands;
+	rsp_operand operands[RSP_MAX_OPNDS];
 } rsp_instruction;
 
 rsp_instruction rsp_instruction_decode(ut64 pc, ut32 iw);

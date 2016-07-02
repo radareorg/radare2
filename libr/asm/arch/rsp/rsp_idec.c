@@ -4,53 +4,50 @@
 
 
 const char* rsp_gp_reg_soft_names[] = {
-    "zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
-    "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
-    "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
-    "t8", "t9", "k0", "k1", "gp", "sp", "s8", "ra"
+	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
+	"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
+	"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
+	"t8", "t9", "k0", "k1", "gp", "sp", "s8", "ra"
 };
 
 const char* rsp_c0_reg_soft_names[] = {
-    "SP_MEM_ADDR", "SP_DRAM_ADDR", "SP_RD_LEN",     "SP_WR_LEN",
-    "SP_STATUS",   "SP_DMA_FULL",  "SP_DMA_BUSY",   "SP_SEMAPHORE",
-    "DPC_START",   "DPC_END",      "DPC_CURRENT",   "DPC_STATUS",
-    "DPC_CLOCK",   "DPC_BUF_BUSY", "DPC_PIPE_BUSY", "DPC_TMEM_BUSY"
+	"SP_MEM_ADDR", "SP_DRAM_ADDR", "SP_RD_LEN",     "SP_WR_LEN",
+	"SP_STATUS",   "SP_DMA_FULL",  "SP_DMA_BUSY",   "SP_SEMAPHORE",
+	"DPC_START",   "DPC_END",      "DPC_CURRENT",   "DPC_STATUS",
+	"DPC_CLOCK",   "DPC_BUF_BUSY", "DPC_PIPE_BUSY", "DPC_TMEM_BUSY"
 };
 
 const char* rsp_gp_reg_names[] = {
-    "$0",  "$1",  "$2",  "$3",  "$4",  "$5",  "$6",  "$7",
-    "$8",  "$9",  "$10", "$11", "$12", "$13", "$14", "$15",
-    "$16", "$17", "$18", "$19", "$20", "$21", "$22", "$23",
-    "$24", "$25", "$26", "$27", "$28", "$29", "$30", "$31",
+	"$0",  "$1",  "$2",  "$3",  "$4",  "$5",  "$6",  "$7",
+	"$8",  "$9",  "$10", "$11", "$12", "$13", "$14", "$15",
+	"$16", "$17", "$18", "$19", "$20", "$21", "$22", "$23",
+	"$24", "$25", "$26", "$27", "$28", "$29", "$30", "$31",
 };
 
 const char* rsp_c0_reg_names[] = {
-    "$c0", "$c1", "$c2",  "$c3",  "$c4",  "$c5",  "$c6",  "$c7",
-    "$c8", "$c9", "$c10", "$c11", "$c12", "$c13", "$c14", "$c15"
+	"$c0", "$c1", "$c2",  "$c3",  "$c4",  "$c5",  "$c6",  "$c7",
+	"$c8", "$c9", "$c10", "$c11", "$c12", "$c13", "$c14", "$c15"
 };
 
 const char* rsp_c2_creg_names[] = {
-    "$vco", "$vcc", "$vce", "???"
+	"$vco", "$vcc", "$vce", "???"
 };
 
 const char* rsp_c2_accu_names[] = {
-    "ACC_H", "ACC_M", "ACC_L", "???"
+	"ACC_H", "ACC_M", "ACC_L", "???"
 };
 
 const char* rsp_c2_vreg_names[] = {
-    "$v0",  "$v1",  "$v2",  "$v3",  "$v4",  "$v5",  "$v6",  "$v7",
-    "$v8",  "$v9",  "$v10", "$v11", "$v12", "$v13", "$v14", "$v15",
-    "$v16", "$v17", "$v18", "$v19", "$v20", "$v21", "$v22", "$v23",
-    "$v24", "$v25", "$v26", "$v27", "$v28", "$v29", "$v30", "$v31"
+	"$v0",  "$v1",  "$v2",  "$v3",  "$v4",  "$v5",  "$v6",  "$v7",
+	"$v8",  "$v9",  "$v10", "$v11", "$v12", "$v13", "$v14", "$v15",
+	"$v16", "$v17", "$v18", "$v19", "$v20", "$v21", "$v22", "$v23",
+	"$v24", "$v25", "$v26", "$v27", "$v28", "$v29", "$v30", "$v31"
 };
 
 const char* rsp_c2_vreg_element_names[] = {
-    "",    "[?]", "[0q]", "[1q]", "[0h]", "[1h]", "[2h]", "[3h]",
-    "[0]", "[1]", "[2]",  "[3]",  "[4]",  "[5]",  "[6]",  "[7]"
+	"",    "[?]", "[0q]", "[1q]", "[0h]", "[1h]", "[2h]", "[3h]",
+	"[0]", "[1]", "[2]",  "[3]",  "[4]",  "[5]",  "[6]",  "[7]"
 };
-
-
-
 
 /* Operand decoders description */
 #define RS_DECODER              { RSP_OPND_GP_REG,          21, 0x1f,    0, 0, 0, 0, 0 }
@@ -222,96 +219,96 @@ const char* rsp_c2_vreg_element_names[] = {
 #define SW      { "sw",      RSP_OP_SW,        OPNDS_RT_BASE_OFFSET }
 
 typedef struct {
-    rsp_operand_type type;
-    unsigned int u_shift;
-    ut32 u_mask;
-    unsigned int u_lshift;
-    unsigned int s_shift;
-    ut32 s_mask;
-    ut32 s_smask;
-    unsigned int s_lshift;
+	rsp_operand_type type;
+	unsigned int u_shift;
+	ut32 u_mask;
+	unsigned int u_lshift;
+	unsigned int s_shift;
+	ut32 s_mask;
+	ut32 s_smask;
+	unsigned int s_lshift;
 } rsp_operand_decoder;
 
 typedef struct {
-    const char* mnemonic;
-    rsp_opcode opcode;
-    int noperands;
-    rsp_operand_decoder odecs[RSP_MAX_OPNDS];
+	const char* mnemonic;
+	rsp_opcode opcode;
+	int noperands;
+	rsp_operand_decoder odecs[RSP_MAX_OPNDS];
 } rsp_instruction_priv;
 
 static const rsp_instruction_priv rsp_op_table[] = {
 /* SPECIAL opcodes table
  * 0-63
  */
-    SLL,     INVALID, SRL,     SRA,     SLLV,    INVALID, SRLV,    SRAV,
-    JR,      INVALID, INVALID, INVALID, INVALID, BREAK,   INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    ADD,     ADDU,    SUB,     SUBU,    AND,     OR,      XOR,     NOR,
-    INVALID, INVALID, SLT,     SLTU,    INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	SLL,     INVALID, SRL,     SRA,     SLLV,    INVALID, SRLV,    SRAV,
+	JR,      INVALID, INVALID, INVALID, INVALID, BREAK,   INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	ADD,     ADDU,    SUB,     SUBU,    AND,     OR,      XOR,     NOR,
+	INVALID, INVALID, SLT,     SLTU,    INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
 /* REGIMM opcodes table
- * 64-95
- */
-    BLTZ,    BGEZ,    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    BLTZAL,  BGEZAL,  INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+* 64-95
+*/
+	BLTZ,    BGEZ,    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	BLTZAL,  BGEZAL,  INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
 /* COP0 opcodes table
- * 96-127
- */
-    MFC0,    INVALID, INVALID, INVALID, MTC0,    INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+* 96-127
+*/
+	MFC0,    INVALID, INVALID, INVALID, MTC0,    INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
 /* COP2/1 opcodes table
- * 128-159
- */
-    MFC2,    INVALID, CFC2,    INVALID, MTC2,    INVALID, CTC2,    INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+* 128-159
+*/
+	MFC2,    INVALID, CFC2,    INVALID, MTC2,    INVALID, CTC2,    INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
 /* COP2/2 opcodes table
- * 160-223
- */
-    VMULF,   VMULU,   INVALID, INVALID, VMUDL,   VMUDM,   VMUDN,   VMUDH,
-    VMACF,   VMACU,   INVALID, INVALID, VMADL,   VMADM,   VMADN,   VMADH,
-    VADD,    VSUB,    INVALID, VABS,    VADDC,   VSUBC,   INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, VSAR,    INVALID, INVALID,
-    VLT,     VEQ,     VNE,     VGE,     VCL,     VCH,     VCR,     VMRG,
-    VAND,    VNAND,   VOR,     VNOR,    VXOR,    VNXOR,   INVALID, INVALID,
-    VRCP,    VRCPL,   VRCPH,   VMOV,    VRSQ,    VRSQL,   VRSQH,   VNOP,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+* 160-223
+*/
+	VMULF,   VMULU,   INVALID, INVALID, VMUDL,   VMUDM,   VMUDN,   VMUDH,
+	VMACF,   VMACU,   INVALID, INVALID, VMADL,   VMADM,   VMADN,   VMADH,
+	VADD,    VSUB,    INVALID, VABS,    VADDC,   VSUBC,   INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, VSAR,    INVALID, INVALID,
+	VLT,     VEQ,     VNE,     VGE,     VCL,     VCH,     VCR,     VMRG,
+	VAND,    VNAND,   VOR,     VNOR,    VXOR,    VNXOR,   INVALID, INVALID,
+	VRCP,    VRCPL,   VRCPH,   VMOV,    VRSQ,    VRSQL,   VRSQH,   VNOP,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
 /* LWC2 opcodes table
- * 224-255
- */
-    LBV,     LSV,     LLV,     LDV,     LQV,     LRV,     LPV,     LUV,
-    LHV,     LFV,     INVALID, LTV,     INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+* 224-255
+*/
+	LBV,     LSV,     LLV,     LDV,     LQV,     LRV,     LPV,     LUV,
+	LHV,     LFV,     INVALID, LTV,     INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
 /* SWC2 opcodes table
- * 256-287
- */
-    SBV,     SSV,     SLV,     SDV,     SQV,     SRV,     SPV,     SUV,
-    SHV,     SFV,     SWV,     STV,     INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+* 256-287
+*/
+	SBV,     SSV,     SLV,     SDV,     SQV,     SRV,     SPV,     SUV,
+	SHV,     SFV,     SWV,     STV,     INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
 /* Main opcodes table
- * 288-351
- */
-    INVALID, INVALID, J,       JAL,     BEQ,     BNE,     BLEZ,    BGTZ,
-    ADDI,    ADDIU,   SLTI,    SLTIU,   ANDI,    ORI,     XORI,    LUI,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    LB,      LH,      INVALID, LW,      LBU,     LHU,     INVALID, INVALID,
-    SB,      SH,      INVALID, SW,      INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
-    INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+* 288-351
+*/
+	INVALID, INVALID, J,       JAL,     BEQ,     BNE,     BLEZ,    BGTZ,
+	ADDI,    ADDIU,   SLTI,    SLTIU,   ANDI,    ORI,     XORI,    LUI,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	LB,      LH,      INVALID, LW,      LBU,     LHU,     INVALID, INVALID,
+	SB,      SH,      INVALID, SW,      INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
+	INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID, INVALID,
 /* Pseudo opcodes
- * 352 - ???
- */
-    NOP
+* 352 - ???
+*/
+	NOP
 };
 
 #define SPECIAL   { 0,    0, 0x3f }
@@ -325,86 +322,82 @@ static const rsp_instruction_priv rsp_op_table[] = {
 
 typedef struct {
 	ut16 offset;
-    ut8 shift;
-    ut8 mask;
+	ut8 shift;
+	ut8 mask;
 } rsp_op_escape;
 
 static const rsp_op_escape rsp_escapes_table[] = {
-    SPECIAL, SPECIAL, REGIMM,  REGIMM, MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    COP0,    COP0,    MAIN,    MAIN,   COP2,    VECTOP,  MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   LWC2,    LWC2,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   SWC2,    SWC2,    MAIN,    MAIN,
-    MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN
+	SPECIAL, SPECIAL, REGIMM,  REGIMM, MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	COP0,    COP0,    MAIN,    MAIN,   COP2,    VECTOP,  MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   LWC2,    LWC2,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   SWC2,    SWC2,    MAIN,    MAIN,
+	MAIN,    MAIN,    MAIN,    MAIN,   MAIN,    MAIN,    MAIN,    MAIN
 };
 
 
 static const rsp_instruction_priv* rsp_decode_priv(ut32 iw) {
-    /* handle NOP pseudo instruction */
-    if (iw == 0) {
-        return &rsp_op_table[352];
-    }
+	/* handle NOP pseudo instruction */
+	if (iw == 0) {
+	return &rsp_op_table[352];
+	}
 
-    const rsp_op_escape* escape = &rsp_escapes_table[(iw >> 25)];
-    return &rsp_op_table[escape->offset + ((iw >> escape->shift) & escape->mask)];
+	const rsp_op_escape* escape = &rsp_escapes_table[(iw >> 25)];
+	return &rsp_op_table[escape->offset + ((iw >> escape->shift) & escape->mask)];
 }
 
 static inline st32 rsp_sign_extend(st32 x, st32 m)
 {
-    /* assume that bits of x above the m are already zeros
-     * which is the case when called from rsp_operand_decode
-     */
-    return (x ^ m) - m;
+	/* assume that bits of x above the m are already zeros
+	* which is the case when called from rsp_operand_decode
+	*/
+	return (x ^ m) - m;
 }
 
 static rsp_operand rsp_operand_decode(ut64 pc, ut32 iw, const rsp_operand_decoder* odec) {
+	rsp_operand opnd;
 
-    rsp_operand opnd;
+	opnd.type = odec->type;
+	opnd.u = ((iw >> odec->u_shift) & odec->u_mask) << odec->u_lshift;
+	opnd.s = rsp_sign_extend ((iw >> odec->s_shift) & odec->s_mask, odec->s_smask) << odec->s_lshift;
 
-    opnd.type = odec->type;
-    opnd.u = ((iw >> odec->u_shift) & odec->u_mask) << odec->u_lshift;
-    opnd.s = rsp_sign_extend((iw >> odec->s_shift) & odec->s_mask, odec->s_smask) << odec->s_lshift;
+	/* handle targets/offsets IMEM addresses */
+	switch (opnd.type) {
+	case RSP_OPND_TARGET:
+		opnd.u = rsp_mem_addr (opnd.u, RSP_IMEM_OFFSET);
+		break;
+	case RSP_OPND_OFFSET:
+		/* +4 for delay slot */
+		opnd.u = rsp_mem_addr (pc + 4 + opnd.s, RSP_IMEM_OFFSET);
+		break;
+	default: /* do nothing */ break;
+	}
 
-    /* handle targets/offsets IMEM addresses */
-    switch(opnd.type)
-    {
-    case RSP_OPND_TARGET:
-        opnd.u = rsp_mem_addr(opnd.u, RSP_IMEM_OFFSET);
-        break;
-
-    case RSP_OPND_OFFSET:
-        /* +4 for delay slot */
-        opnd.u = rsp_mem_addr(pc + 4 + opnd.s, RSP_IMEM_OFFSET);
-        break;
-    default: /* do nothing */ break;
-    }
-
-    return opnd;
+	return opnd;
 }
 
 rsp_instruction rsp_instruction_decode(ut64 pc, ut32 iw) {
+	int opnd;
+	const rsp_instruction_priv* priv = rsp_decode_priv (iw);
 
-    int opnd;
-    const rsp_instruction_priv* priv = rsp_decode_priv(iw);
+	rsp_instruction r_instr;
 
-    rsp_instruction r_instr;
+	r_instr.mnemonic = priv->mnemonic;
+	r_instr.opcode = priv->opcode;
+	r_instr.noperands = priv->noperands;
+	for (opnd = 0; opnd < r_instr.noperands; ++opnd) {
+		r_instr.operands[opnd] = rsp_operand_decode (pc, iw, &priv->odecs[opnd]);
+	}
 
-    r_instr.mnemonic = priv->mnemonic;
-    r_instr.opcode = priv->opcode;
-    r_instr.noperands = priv->noperands;
-    for(opnd = 0; opnd < r_instr.noperands; ++opnd) {
-        r_instr.operands[opnd] = rsp_operand_decode(pc, iw, &priv->odecs[opnd]);
-    }
-
-    return r_instr;
+	return r_instr;
 }
