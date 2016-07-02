@@ -165,11 +165,19 @@ R_API RHT* ht_(new)(void) {
 	ht->deleted_entries = 0;
 	ht->rehash = hash_sizes[ht->size_index].rehash;
 	ht->max_entries = hash_sizes[ht->size_index].max_entries;
+	ht->free = NULL;
 	return ht;
 }
 
 R_API void ht_(free)(RHT *ht) {
 	if (ht) {
+		if (ht->free) {
+			int i;
+			for (i = 0; i < ht->size; i++) {
+				ht->free (ht->table[i].data);
+				ht->table[i].data = NULL;
+			} 
+		}
 		free (ht->table);
 		free (ht);
 	}
@@ -189,7 +197,7 @@ R_API void *ht_(lookup)(RHT *ht, utH hash) {
  * Note that insertion may rearrange the table on a resize or rehash,
  * so previously found hash_entries are no longer valid after this function.
  */
-R_API bool ht_(insert) (RHT *ht, utH hash, void *data) {
+R_API bool ht_(insert)(RHT *ht, utH hash, void *data) {
 	utH hash_address;
 
 	if (ht->entries >= ht->max_entries)
@@ -208,7 +216,7 @@ R_API bool ht_(insert) (RHT *ht, utH hash, void *data) {
 			entry->hash = hash;
 			entry->data = data;
 			ht->entries++;
-			return R_TRUE;
+			return true;
 		}
 		double_hash = hash % ht->rehash;
 		if (double_hash == 0)
@@ -219,13 +227,16 @@ R_API bool ht_(insert) (RHT *ht, utH hash, void *data) {
 	/* We could hit here if a required resize failed. An unchecked-malloc
 	 * application could ignore this result.
 	 */
-	return R_FALSE;
+	return false;
 }
 
-R_API void ht_(remove) (RHT *ht, utH hash) {
+R_API void ht_(remove)(RHT *ht, utH hash) {
 	RHTE *entry = ht_(search) (ht, hash);
 	if (entry) {
 		entry->hash = DELETED_HASH;
+		if (ht->free) {
+			ht->free (entry->data);
+		}
 		entry->data = NULL;
 		ht->entries--;
 		ht->deleted_entries++;

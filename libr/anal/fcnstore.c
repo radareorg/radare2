@@ -23,6 +23,9 @@ static int cmpfun(void *a, void *b) {
 R_API RListRange* r_listrange_new () {
 	RListRange *s = R_NEW (RListRange);
 	s->h = r_hashtable64_new ();
+	s->h->free = (RHashFree)r_list_free;
+	//s->l shouldn't free is a helper structure to get data in order
+	//s->h will free the list that contains RAnalFunction
 	s->l = r_list_new ();
 	return s;
 }
@@ -58,11 +61,10 @@ R_API void r_listrange_add(RListRange *s, RAnalFunction *f) {
 		list = r_hashtable64_lookup (s->h, key);
 		if (list) {
 			if (!r_list_contains (list, f))
-			//r_list_add_sorted (list, f, cmpfun);
 			r_list_append (list, f);
 		} else {
 			list = r_list_new ();
-			//r_list_add_sorted (list, f, cmpfun);
+			list->free = (RListFree)r_anal_fcn_free;
 			r_list_append (list, f);
 			r_hashtable64_insert (s->h, key, list);
 		}
@@ -76,7 +78,7 @@ R_API void r_listrange_del(RListRange *s, RAnalFunction *f) {
 	if (!f) return;
 	from = f->addr;
 	to = f->addr + f->size;
-	for (addr = from; addr<to; addr = r_listrange_next (addr)) {
+	for (addr = from; addr < to; addr = r_listrange_next (addr)) {
 		list = r_hashtable64_lookup (s->h, r_listrange_key (addr));
 		if (list) r_list_delete_data (list, f);
 	}
