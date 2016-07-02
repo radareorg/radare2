@@ -173,11 +173,11 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_YPQ:
-		retVal = sprintf(strOperand, "y + %d",
+		retVal = sprintf(strOperand, "y+%d",
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_ZPQ:
-		retVal = sprintf(strOperand, "z + %d",
+		retVal = sprintf(strOperand, "z+%d",
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_X: retVal = sprintf(strOperand, "x"); break;

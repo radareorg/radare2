@@ -18,8 +18,10 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #define	AVR_SOFTCAST(x,y) (x+(y*0x100))
 
 static ut64 rjmp_dest(ut64 addr, const ut8* b) {
-	ut64 dst = 2 + addr + b[0] * 2;
-	dst += ((b[1] & 0xf) * 2) << 8;
+	ut64 dst = 2 + addr + ((st8)b[0] * 2);
+	if ((st8)b[0] > 0) {
+		dst += ((b[1] & 0xf) * 2) << 8;
+	}
 	return dst;
 }
 
@@ -29,8 +31,9 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	ut8 kbuf[4];
 	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
 	char *arg, str[32];
-	if (op == NULL)
+	if (op == NULL) {
 		return 2;
+	}
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->ptr = UT64_MAX;
@@ -153,77 +156,77 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 	if ((buf[1] & 0xfe) == 0x92) {
 		switch (buf[0] & 0xf) {
-			case 4:		//XCH
-				op->type = R_ANAL_OP_TYPE_XCHG;
-				op->cycles = 2;
-				r_strbuf_setf (&op->esil, "r%d,Z,^=[1],Z,[1],r%d,^=,r%d,Z,^=[1]", d, d, d);
-				break;
-			case 5:		//LAS
-				op->type = R_ANAL_OP_TYPE_LOAD;
-				op->cycles = 2;
-				r_strbuf_setf (&op->esil, "r%d,Z,[1],|,Z,[1],r%d,=,Z,=[1]", d, d);
-				break;
-			case 6:		//LAC
-				op->type = R_ANAL_OP_TYPE_LOAD;
-				op->cycles = 2;
-				r_strbuf_setf (&op->esil, "r%d,Z,[1],&,Z,[1],-,Z,[1],r%d,=,Z,=[1]", d, d);
-				break;
-			case 7:		//LAT
-				op->type = R_ANAL_OP_TYPE_LOAD;
-				op->cycles = 2;
-				r_strbuf_setf (&op->esil, "r%d,Z,[1],^,Z,[1],r%d,=,Z,=[1]", d, d);
-				break;
+		case 4:		//XCH
+			op->type = R_ANAL_OP_TYPE_XCHG;
+			op->cycles = 2;
+			r_strbuf_setf (&op->esil, "r%d,Z,^=[1],Z,[1],r%d,^=,r%d,Z,^=[1]", d, d, d);
+			break;
+		case 5:		//LAS
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->cycles = 2;
+			r_strbuf_setf (&op->esil, "r%d,Z,[1],|,Z,[1],r%d,=,Z,=[1]", d, d);
+			break;
+		case 6:		//LAC
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->cycles = 2;
+			r_strbuf_setf (&op->esil, "r%d,Z,[1],&,Z,[1],-,Z,[1],r%d,=,Z,=[1]", d, d);
+			break;
+		case 7:		//LAT
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->cycles = 2;
+			r_strbuf_setf (&op->esil, "r%d,Z,[1],^,Z,[1],r%d,=,Z,=[1]", d, d);
+			break;
 		}
 	}
 	if ((buf[1] & 0xfe) == 0x94) {
 		switch (buf[0] & 0xf) {
-			case 0:		//COM
-				op->type = R_ANAL_OP_TYPE_CPL;
-				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "r%d,0xff,-,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=,1,CF,=", d, d, d);
-				break;
-			case 1:		//NEG
-				op->type = R_ANAL_OP_TYPE_CPL;
-				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "r%d,NUM,0,r%d,=,r%d,-=,$b3,HF,=,$b8,CF,=,CF,!,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);	//Hack for accessing internal vars
-				break;
-			case 2:		//SWAP
-				op->type = R_ANAL_OP_TYPE_ROL;
-				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "4,r%d,0xf,&,<<,4,r%d,0xf0,&,>>,|,r%d,=", d, d, d);
-				break;
-			case 3:		//INC
-				op->type = R_ANAL_OP_TYPE_ADD;
-				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "r%d,1,+,0xff,&,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);
-				break;
-			case 5:		//ASR
-				op->type = R_ANAL_OP_TYPE_SAR;
-				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>,0x80,r%d,&,|,r%d,=,$z,ZF,=,r%d,0x80,&,NF,=,CF,NF,^,VF,=,NF,VF,^,SF,=", d, d, d, d, d);
-				break;
-			case 6: 	//LSR
-				op->type = R_ANAL_OP_TYPE_SHR;
-				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>=,$z,ZF,=,0,NF,=,CF,VF,=,CF,SF,=", d, d);
-				break;
-			case 7:		//ROR
-				op->type = R_ANAL_OP_TYPE_ROR;
-				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "CF,NF,=,r%d,1,&,7,CF,<<,1,r%d,>>,|,r%d,=,$z,ZF,=,CF,=,NF,CF,^,VF,=,NF,VF,^,SF,=", d, d, d);
-				break;
-			case 10:	//DEC
-				op->type = R_ANAL_OP_TYPE_SUB;
-				op->cycles = 1;
-				r_strbuf_setf (&op->esil, "1,r%d,-=,$z,ZF,=,r%d,0x80,&,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d);
-				break;
-			case 11:
-				if (d < 16) {	//DES
-					op->type = R_ANAL_OP_TYPE_CRYPTO;
-					op->cycles = 1;		//redo this
-					r_strbuf_setf (&op->esil, "%d,des", d);
-				}
-				break;
+		case 0:		//COM
+			op->type = R_ANAL_OP_TYPE_CPL;
+			op->cycles = 1;
+			r_strbuf_setf (&op->esil, "r%d,0xff,-,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=,1,CF,=", d, d, d);
+			break;
+		case 1:		//NEG
+			op->type = R_ANAL_OP_TYPE_CPL;
+			op->cycles = 1;
+			r_strbuf_setf (&op->esil, "r%d,NUM,0,r%d,=,r%d,-=,$b3,HF,=,$b8,CF,=,CF,!,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);	//Hack for accessing internal vars
+			break;
+		case 2:		//SWAP
+			op->type = R_ANAL_OP_TYPE_ROL;
+			op->cycles = 1;
+			r_strbuf_setf (&op->esil, "4,r%d,0xf,&,<<,4,r%d,0xf0,&,>>,|,r%d,=", d, d, d);
+			break;
+		case 3:		//INC
+			op->type = R_ANAL_OP_TYPE_ADD;
+			op->cycles = 1;
+			r_strbuf_setf (&op->esil, "r%d,1,+,0xff,&,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);
+			break;
+		case 5:		//ASR
+			op->type = R_ANAL_OP_TYPE_SAR;
+			op->cycles = 1;
+			r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>,0x80,r%d,&,|,r%d,=,$z,ZF,=,r%d,0x80,&,NF,=,CF,NF,^,VF,=,NF,VF,^,SF,=", d, d, d, d, d);
+			break;
+		case 6: 	//LSR
+			op->type = R_ANAL_OP_TYPE_SHR;
+			op->cycles = 1;
+			r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>=,$z,ZF,=,0,NF,=,CF,VF,=,CF,SF,=", d, d);
+			break;
+		case 7:		//ROR
+			op->type = R_ANAL_OP_TYPE_ROR;
+			op->cycles = 1;
+			r_strbuf_setf (&op->esil, "CF,NF,=,r%d,1,&,7,CF,<<,1,r%d,>>,|,r%d,=,$z,ZF,=,CF,=,NF,CF,^,VF,=,NF,VF,^,SF,=", d, d, d);
+			break;
+		case 10:	//DEC
+			op->type = R_ANAL_OP_TYPE_SUB;
+			op->cycles = 1;
+			r_strbuf_setf (&op->esil, "1,r%d,-=,$z,ZF,=,r%d,0x80,&,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d);
+			break;
+		case 11:
+			if (d < 16) {	//DES
+				op->type = R_ANAL_OP_TYPE_CRYPTO;
+				op->cycles = 1;		//redo this
+				r_strbuf_setf (&op->esil, "%d,des", d);
+			}
+			break;
 		}
 	}
 	// 0xf0 - 0xf7 BR
