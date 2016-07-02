@@ -509,27 +509,28 @@ static RList *r_debug_native_pids (int pid) {
 #else /* rest is BSD */
 	struct kinfo_proc* kp;
 	int cnt = 0;
-	kvm_t* kd = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, NULL);
-	if (kd == NULL)
+	kvm_t* kd = kvm_openfiles (NULL, NULL, NULL, KVM_NO_FILES, NULL);
+	if (!kd) {
 		return NULL;
+	}
 
 	if (pid) {
-		kp = kvm_getprocs(kd, KERN_PROC_PID, pid, sizeof(*kp), &cnt);
+		kp = kvm_getprocs (kd, KERN_PROC_PID, pid, sizeof(*kp), &cnt);
 		if (cnt == 1) {
 			RDebugPid *p = r_debug_pid_new (kp->p_comm, pid, 's', 0);
 			if (p) r_list_append (list, p);
 			/* we got our processes, now fetch the parent process */
-			kp = kvm_getprocs(kd, KERN_PROC_PID, kp->p_ppid, sizeof(*kp), &cnt);
+			kp = kvm_getprocs (kd, KERN_PROC_PID, kp->p_ppid, sizeof(*kp), &cnt);
                         if (cnt == 1) {
 				RDebugPid *p = r_debug_pid_new (kp->p_comm, kp->p_pid, 's', 0);
 				if (p) r_list_append (list, p);
 			}
 		}
 	} else {
-		kp = kvm_getprocs(kd, KERN_PROC_UID, geteuid(), sizeof(*kp), &cnt);
+		kp = kvm_getprocs (kd, KERN_PROC_UID, geteuid(), sizeof(*kp), &cnt);
 		int i;
 		for (i = 0; i < cnt; i++) {
-			RDebugPid *p = r_debug_pid_new ((kp+i)->p_comm, (kp+i)->p_pid, 's', 0);
+			RDebugPid *p = r_debug_pid_new ((kp + i)->p_comm, (kp + i)->p_pid, 's', 0);
 			if (p) r_list_append (list, p);
 		}
 	}
