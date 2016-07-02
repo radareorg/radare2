@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+
+typedef void (*RHashFree)(void *ptr);
+
 /** hashtable **/
 typedef struct r_hashtable_entry_t {
 	ut32 hash;
@@ -19,6 +22,7 @@ typedef struct r_hashtable_t {
 	ut32 size_index;
 	ut32 entries;
 	ut32 deleted_entries;
+	RHashFree free; //function pointer to free data in table 
 } RHashTable;
 
 typedef struct r_hashtable64_entry_t {
@@ -34,6 +38,7 @@ typedef struct r_hashtable64_t {
 	ut64 size_index;
 	ut64 entries;
 	ut64 deleted_entries;
+	RHashFree free; //function pointer to free data in table 
 } RHashTable64;
 
 R_API RHashTable* r_hashtable_new(void);
