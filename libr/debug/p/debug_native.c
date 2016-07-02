@@ -42,13 +42,14 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #endif
 
 #elif __BSD__
+#include <sys/sysctl.h>
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <kvm.h>
 #define R_DEBUG_REG_T struct reg
 #include "native/procfs.h"
 #if __KFBSD__
-#include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
 #include "native/procfs.h"
@@ -430,7 +431,7 @@ static RList *r_debug_native_pids (int pid) {
 			if (p) r_list_append (list, p);
 		}
 	}
-#else
+#elif __linux__
 	int i;
 	char *ptr, buf[1024];
 
@@ -505,6 +506,35 @@ static RList *r_debug_native_pids (int pid) {
 			r_list_append (list, r_debug_pid_new (buf, i, 's', 0));
 		}
 	}
+#else /* rest is BSD */
+	struct kinfo_proc* kp;
+	int cnt = 0;
+	kvm_t* kd = kvm_openfiles (NULL, NULL, NULL, KVM_NO_FILES, NULL);
+	if (!kd) {
+		return NULL;
+	}
+
+	if (pid) {
+		kp = kvm_getprocs (kd, KERN_PROC_PID, pid, sizeof(*kp), &cnt);
+		if (cnt == 1) {
+			RDebugPid *p = r_debug_pid_new (kp->p_comm, pid, 's', 0);
+			if (p) r_list_append (list, p);
+			/* we got our processes, now fetch the parent process */
+			kp = kvm_getprocs (kd, KERN_PROC_PID, kp->p_ppid, sizeof(*kp), &cnt);
+                        if (cnt == 1) {
+				RDebugPid *p = r_debug_pid_new (kp->p_comm, kp->p_pid, 's', 0);
+				if (p) r_list_append (list, p);
+			}
+		}
+	} else {
+		kp = kvm_getprocs (kd, KERN_PROC_UID, geteuid(), sizeof(*kp), &cnt);
+		int i;
+		for (i = 0; i < cnt; i++) {
+			RDebugPid *p = r_debug_pid_new ((kp + i)->p_comm, (kp + i)->p_pid, 's', 0);
+			if (p) r_list_append (list, p);
+		}
+	}
+	kvm_close(kd);
 #endif
 	return list;
 }
