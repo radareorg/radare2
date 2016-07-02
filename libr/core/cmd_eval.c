@@ -235,7 +235,7 @@ static int cmd_eval(void *data, const char *input) {
 					eprintf ("Something went wrong\n");
 				}
 			} else if (input[2]=='?') {
-				eprintf ("Usage: eco [themename]  ;load theme from /usr/share/radare2/0.10.2-git/cons/\n");
+				eprintf ("Usage: eco [themename]  ;load theme from "R2_DATDIR"/radare2/"R2_VERSION"/cons/\n");
 
 			} else {
 				nextpal (core, 'l');
