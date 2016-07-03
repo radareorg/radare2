@@ -916,9 +916,9 @@ static elf_fpxregset_t *linux_get_fpx_regset (int tid) {
 #endif
 
 void *linux_get_xsave_data (int tid, ut32 size) {
+#if PTRACE_GETREGSET
 	struct iovec transfer;
 	char *xsave_data = calloc (size, 1);
-		
 	if (!xsave_data) {
 		return NULL;
 	}
@@ -929,8 +929,10 @@ void *linux_get_xsave_data (int tid, ut32 size) {
 		free (xsave_data);
 		return NULL;
 	}
-
 	return xsave_data;
+#else
+	return NULL;
+#endif
 }
 
 void write_note_hdr (note_type_t type, ut8 **note_data) {
@@ -1235,6 +1237,7 @@ fail:
 }
 
 static int get_xsave_size(int pid) {
+#if PTRACE_GETREGSET
 	struct iovec local;
 	unsigned long xstate_hdr[XSTATE_HDR_SIZE/sizeof(unsigned long)];
 	unsigned long xcr0;
@@ -1261,6 +1264,9 @@ static int get_xsave_size(int pid) {
 	default:
 		return 0;
 	}
+#else
+	return 0;
+#endif
 }
 	
 static void init_note_info_structure(int pid, size_t auxv_size) {
