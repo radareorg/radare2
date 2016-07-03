@@ -61,6 +61,7 @@ static int demangle(RCore *core, const char *s) {
 static void r_core_file_info (RCore *core, int mode) {
 	const char *fn = NULL;
 	int dbg = r_config_get_i (core->config, "cfg.debug");
+	bool io_cache = r_config_get_i (core->config, "io.cache");
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *binfile = r_core_bin_cur (core);
 	RCoreFile *cf = core->file;
@@ -101,6 +102,8 @@ static void r_core_file_info (RCore *core, int mode) {
 			if (fsz != UT64_MAX) {
 				r_cons_printf (",\"size\":%"PFMT64d, fsz);
 			}
+			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache || \
+				cf->desc->flags & R_IO_WRITE ));
 			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
 				cf->desc->flags & 7 ));
 			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64)core->io->desc->obsz);
@@ -129,6 +132,8 @@ static void r_core_file_info (RCore *core, int mode) {
 			if (fsz != UT64_MAX) {
 				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
 			}
+			pair ("iorw", r_str_bool ( io_cache || \
+				cf->desc->flags & R_IO_WRITE ));
 			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x,
 				(ut64)core->io->desc->obsz));
 			pair ("mode", r_str_rwx_i (cf->desc->flags & 7));
