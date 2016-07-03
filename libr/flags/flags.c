@@ -158,7 +158,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			if (IS_IN_SPACE (f, flag)) {
 				continue;
 			}
-			if (!in_range || flag->offset < range_from || flag->offset >= range_to) {
+			if (in_range && (flag->offset < range_from || flag->offset >= range_to)) {
 				continue;
 			}
 			r_cons_printf ("%s{\"name\":\"%s\",\"size\":\"%"PFMT64d"\",",
@@ -182,7 +182,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			if (IS_IN_SPACE (f, flag)) {
 				continue;
 			}
-			if (!in_range || flag->offset < range_from || flag->offset >= range_to) {
+			if (in_range && (flag->offset < range_from || flag->offset >= range_to)) {
 				continue;
 			}
 			if (fs == -1 || flag->space != fs) {
@@ -211,7 +211,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			if (IS_IN_SPACE (f, flag)) {
 				continue;
 			}
-			if (!in_range || flag->offset < range_from || flag->offset >= range_to) {
+			if (in_range && (flag->offset < range_from || flag->offset >= range_to)) {
 				continue;
 			}
 			if (flag->alias) {
@@ -228,7 +228,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			if (IS_IN_SPACE (f, flag)) {
 				continue;
 			}
-			if (!in_range || flag->offset < range_from || flag->offset >= range_to) {
+			if (in_range && (flag->offset < range_from || flag->offset >= range_to)) {
 				continue;
 			}
 			if (flag->alias) {

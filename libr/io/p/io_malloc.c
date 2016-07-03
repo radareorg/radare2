@@ -113,6 +113,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		if (!mal) return NULL;
+		rw = 7; // RWX
 		mal->fd = -2; /* causes r_io_desc_new() to set the correct fd */
 		if (!strncmp (pathname, "hex://", 6)) {
 			mal->size = strlen (pathname);
@@ -131,7 +132,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->size = r_num_math (NULL, pathname + 9);
 			if (((int)mal->size) <= 0) {
 				free (mal);
-				eprintf ("Cannot allocate (%s) 0 bytes\n", pathname+9);
+				eprintf ("Cannot allocate (%s) 0 bytes\n", pathname + 9);
 				return NULL;
 			}
 			mal->offset = 0;
@@ -139,9 +140,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		if (mal->buf) {
 			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
-				mal->fd, pathname, rw, mode,mal);
+				mal->fd, pathname, rw, mode, mal);
 		}
-		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9, mal->size);
+		eprintf ("Cannot allocate (%s) %d bytes\n", pathname + 9, mal->size);
 		free (mal);
 	}
 	return NULL;

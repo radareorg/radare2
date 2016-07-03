@@ -214,7 +214,9 @@ R_API RIODesc *r_io_open_at(RIO *io, const char *file, int flags, int mode, ut64
 			r_io_use_desc (io, desc);
 		}
 		r_io_map_new (io, desc->fd, mode, 0, maddr, size);
-	} else eprintf ("r_io_open_at: Unable to open file: %s\n", file);
+	} else {
+		eprintf ("r_io_open_at: Unable to open file: %s\n", file);
+	}
 	return desc;
 }
 
