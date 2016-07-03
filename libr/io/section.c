@@ -69,7 +69,7 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, 
 		return s;
 	}
 	s = r_io_section_get_name (io, name);
-	if (s == NULL) {
+	if (!s) {
 		s = R_NEW0 (RIOSection);
 		s->id = io->next_section_id++;
 	} else {
@@ -470,15 +470,17 @@ R_API RList *r_io_section_get_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RListIter *iter;
 	RList *sections = r_list_new ();
 	if (!sections) return NULL;
-	sections->free = r_io_section_free;
+	//Here section->free is not needed and wrong since we are appending into
+	//the list sections from io->sections that are widely used so just free the
+	//list but not the elements to avoid UAF. r_io_free will free sections for us
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
 		if (!(s->rwx & R_IO_MAP)) continue;
 		sec_from = s->vaddr;
 		sec_to = sec_from + s->vsize;
-		if (sec_from <= addr && addr < sec_to) r_list_append(sections, s);
-		if (sec_from < endaddr && endaddr < sec_to) r_list_append(sections, s);
-		if (addr <= sec_from && sec_to <= endaddr) r_list_append(sections, s);
+		if (sec_from <= addr && addr < sec_to) r_list_append (sections, s);
+		if (sec_from < endaddr && endaddr < sec_to) r_list_append (sections, s);
+		if (addr <= sec_from && sec_to <= endaddr) r_list_append (sections, s);
 	}
 	return sections;
 }
