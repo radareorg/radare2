@@ -393,6 +393,7 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 
 static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
+	char *cpu;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = NULL;
@@ -480,6 +481,12 @@ static int cb_asmarch(void *user, void *data) {
 			r_config_set_i (core->config, "asm.pcalign", v);
 		} else {
 			r_config_set_i (core->config, "asm.pcalign", 0);
+		}
+	}
+	if (cpu = r_config_get (core->config, "anal.cpu")) {
+		if (!r_sysregs_setup (core->anal->sysregs, asmos, cpu)) {
+			//eprintf ("asm.arch: Cannot setup sysregs '%s%s' from '%s'\n",
+			//	asmos, cpu, R2_LIBDIR"/radare2/"R2_VERSION"/sysregs");
 		}
 	}
 	if (core->anal) {

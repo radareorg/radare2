@@ -47,6 +47,23 @@ typedef struct r_syscall_t {
 	PrintfCallback cb_printf;
 } RSyscall;
 
+// todo: add the ability to describe particular bits
+typedef struct r_sysregs_item_t {
+	ut64 address;
+	ut64 size;
+	int type;
+	const char *name;
+	const char *description;
+} RSysregsItem;
+
+typedef struct r_sysregs_t {
+	FILE *fd;
+	char *arch;
+	char *cpu;
+	RSysregsItem *sysregs;
+	Sdb *db;
+} RSysregs;
+
 /* plugin struct */
 typedef struct r_syscall_plugin_t {
 	char *name;
@@ -81,6 +98,12 @@ R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi);
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num);
 R_API RList *r_syscall_list(RSyscall *ctx);
 R_API int r_syscall_get_swi(RSyscall *s);
+
+/* CPU specific registers */
+R_API RSysregs *r_sysregs_new(void);
+R_API void r_sysregs_free(RSysregs *ctx);
+R_API int r_sysregs_setup(RSysregs *ctx, const char *arch, const char *cpu);
+R_API RSysregsItem *r_sysregs_get(RSysregs *ctx, ut64 addr, int type);
 
 /* io */
 R_API const char *r_syscall_get_io(RSyscall *s, int ioport);
