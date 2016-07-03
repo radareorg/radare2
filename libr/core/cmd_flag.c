@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
-#include <stddef.h>
 
+#include <stddef.h>
 #include "r_cons.h"
 #include "r_core.h"
 
@@ -56,8 +56,9 @@ static int cmd_flag(void *data, const char *input) {
 	st64 base;
 
 	// TODO: off+=cursor
-	if (*input)
-		str = strdup (input+1);
+	if (*input) {
+		str = strdup (input + 1);
+	}
 rep:
 	switch (*input) {
 	case 'e':
@@ -135,13 +136,13 @@ rep:
 			break;
 		}
 		break;
-	case 'm':
+	case 'm': // "fm"
 		r_flag_move (core->flags, core->offset, r_num_math (core->num, input+1));
 		break;
-	case '2':
+	case '2': // "f2"
 		r_flag_get_i2 (core->flags, r_num_math (core->num, input+1));
 		break;
-	case 'R':
+	case 'R': // "fR"
 		{
 		if (*str == '\0'){
 			eprintf ("Usage: fR [from] [to] ([mask])\n");
@@ -170,11 +171,11 @@ rep:
 		}
 		}
 		break;
-	case 'b':
+	case 'b': // "fb"
 		switch (input[1]) {
 		case ' ':
-			free(str);
-			str = strdup (input+2);
+			free (str);
+			str = strdup (input + 2);
 			ptr = strchr (str, ' ');
 			if (ptr) {
 				RListIter *iter;
@@ -186,7 +187,9 @@ rep:
 					if (r_str_glob (flag->name, ptr+1))
 						flag->offset += base;
 				}
-			} else core->flags->base = r_num_math (core->num, input+1);
+			} else {
+				core->flags->base = r_num_math (core->num, input+1);
+			}
 			free (str);
 			str = NULL;
 			break;
@@ -206,7 +209,6 @@ rep:
 		char* s = strchr (str, ' ');
 		char* s2 = NULL;
 		ut32 bsze = 1; //core->blocksize;
-
 		if (eq) {
 			// TODO: add support for '=' char in flag comments
 			*eq = 0;
@@ -217,10 +219,11 @@ rep:
 			s2 = strchr (s+1, ' ');
 			if (s2) {
 				*s2 = '\0';
-				if (s2[1]&&s2[2])
-					off = r_num_math (core->num, s2+1);
+				if (s2[1] && s2[2]) {
+					off = r_num_math (core->num, s2 + 1);
+				}
 			}
-			bsze = r_num_math (core->num, s+1);
+			bsze = r_num_math (core->num, s + 1);
 		}
 		if (*str == '.') {
 			input++;
@@ -231,7 +234,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			if (fcn) r_anal_var_add (core->anal, fcn->addr, 0, off, 'v', "int", 4, str+1);
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 #endif
-		} else r_flag_set (core->flags, str, off, bsze);
+		} else {
+			r_flag_set (core->flags, str, off, bsze);
+		}
 		}
 		break;
 	case '-':
@@ -461,22 +466,26 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				item = r_flag_get (core->flags, p);
 				if (item) {
 					r_flag_item_set_comment (item, q+1);
-				} else eprintf ("Cannot find flag with name '%s'\n", p);
+				} else {
+					eprintf ("Cannot find flag with name '%s'\n", p);
+				}
 			} else {
 				item = r_flag_get_i (core->flags, r_num_math (core->num, p));
 				if (item && item->comment) {
 					r_cons_println (item->comment);
-				} else eprintf ("Cannot find item\n");
+				} else {
+					eprintf ("Cannot find item\n");
+				}
 			}
 			free (p);
 		} else eprintf ("Usage: fC [name] [comment]\n");
 		break;
 	case 'o':
 		{ // TODO: use file.fortunes // can be dangerous in sandbox mode
-			char *fortunes_tips = R2_PREFIX"/share/doc/radare2/fortunes.tips";
-			char *fortunes_fun = R2_PREFIX"/share/doc/radare2/fortunes.fun";
-			char *fortunes_nsfw = R2_PREFIX"/share/doc/radare2/fortunes.nsfw";
-			char *types = (char *)r_config_get(core->config, "cfg.fortunetype");
+			char *fortunes_tips = R2_PREFIX "/share/doc/radare2/fortunes.tips";
+			char *fortunes_fun = R2_PREFIX "/share/doc/radare2/fortunes.fun";
+			char *fortunes_nsfw = R2_PREFIX "/share/doc/radare2/fortunes.nsfw";
+			char *types = (char *)r_config_get (core->config, "cfg.fortunetype");
 			char *line = NULL, *templine = NULL;
 			int i = 0;
 			if (strstr(types, "tips")) {
@@ -521,18 +530,50 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				item = r_flag_get_i (core->flags, core->offset);
 			}
 			if (item) {
-				if (!r_flag_rename (core->flags, item, new))
+				if (!r_flag_rename (core->flags, item, new)) {
 					eprintf ("Invalid name\n");
+				}
 			} else {
 				eprintf ("Cannot find flag (%s)\n", old);
 			}
 		}
 		break;
+	case '\0':
 	case 'n': // "fn"
 	case '*': // "f*"
-	case '\0':
 	case 'j': // "fj"
-		r_flag_list (core->flags, *input, input[0]? input+1:"");
+		r_flag_list (core->flags, *input, input[0]? input + 1: "");
+		break;
+	case 'i': // "fi"
+		if (input[1] == ' ' || input[2] == ' ') {
+			char *arg = strdup (r_str_chop_ro (input + 2));
+			if (*arg) {
+				arg = strdup (r_str_chop_ro (input + 2));
+				char *sp = strchr (arg, ' ');
+				if (!sp) {
+					char *newarg = r_str_newf ("%c0x%"PFMT64x" %s+0x%"PFMT64x,
+						input[1], core->offset, arg, core->offset);
+					free (arg);
+					arg = newarg;
+				} else {
+					char *newarg = r_str_newf ("%c%s", input[1], arg);
+					free (arg);
+					arg = newarg;
+				}
+			} else {
+				free (arg);
+				arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
+					core->offset, core->offset + core->blocksize);
+			}
+			r_flag_list (core->flags, 'i', arg);
+			free (arg);
+		} else {
+			// XXX dupe for prev case
+			char *arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
+				core->offset, core->offset + core->blocksize);
+			r_flag_list (core->flags, 'i', arg);
+			free (arg);
+		}
 		break;
 	case 'd': // "fd"
 		{
@@ -541,9 +582,10 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			switch (input[1]) {
 			case '?':
 				eprintf ("Usage: fd [offset|flag|expression]\n");
-				if (str)
+				if (str) {
 					free (str);
-				return R_FALSE;
+				}
+				return false;
 			case '\0':
 				addr = core->offset;
 				break;
@@ -589,6 +631,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fd"," addr","return flag+delta",
 		"fe-","","resets the enumerator counter",
 		"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
+		"fi"," [size] | [from] [to]","show flags in current block or range",
 		"fg","","bring visual mode to foreground",
 		"fj","","list flags in JSON format",
 		"fl"," [flag] [size]","show or set flag length (size)",
