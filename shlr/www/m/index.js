@@ -152,6 +152,7 @@ Autocompletion.prototype.valid = function() {
 		return;
 	}
 	this.form_.blur();
+	this.prepareView();
 	return seek(this.completions_[this.activeChoice_].name);
 };
 
@@ -199,6 +200,293 @@ Autocompletion.prototype.keyHandler = function(e) {
 	}
 };
 
+Autocompletion.prototype.setPrepareView = function(callback) {
+	this.preparationCallback = callback;
+};
+
+/**
+ * Prepare view to show the result
+ */
+Autocompletion.prototype.prepareView = function() {
+	if (typeof this.preparationCallback === 'undefined') {
+		return;
+	}
+	this.preparationCallback();
+};
+
+/**
+ * Making a splittable container zone
+ */
+function ContainerZone(containerNode, rulerNode, titleNode) {
+	this.container = document.getElementById(containerNode);
+	this.ruler = document.getElementById(rulerNode);
+	this.title = document.getElementById(titleNode);
+	this.currentLayout = this.Layout.FULL;
+	this.widgets = [];
+	this.populatedWidgets = [];
+	this.initRuler();
+
+	this.focus_ = 0;
+	this.focusListeners = [];
+
+	var _this = this;
+	this.fallback = function() {
+		var emptyWidget = _this.getWidget('New Widget', false);
+		emptyWidget.setHTMLContent('<p class="mdl-typography--text-center">Ready !</p>');
+		_this.add(emptyWidget);
+	};
+}
+
+ContainerZone.prototype.Layout = {
+	FULL: 'full',
+	HORIZONTAL: 'horizontal',
+	VERTICAL: 'vertical'
+};
+
+/**
+ * Define the widget method that would be called when splitting
+ */
+ContainerZone.prototype.fallbackWidget = function(callback) {
+	this.fallback = callback;
+};
+
+ContainerZone.prototype.initRuler = function() {
+	var context = {};
+	var _this = this;
+
+	this.rulerProp = {
+		gap: 0.005, // 0.5% margin between two panels
+		pos: 0.5
+	};
+
+	var initDrag = function(e) {
+		context = {
+			startX: e.clientX,
+			startWidth: parseInt(document.defaultView.getComputedStyle(_this.ruler).width, 10),
+			interval: (e.clientX - _this.ruler.offsetLeft)
+		};
+		document.documentElement.addEventListener('mousemove', doDrag, false);
+		document.documentElement.addEventListener('mouseup', stopDrag, false);
+
+		// Prevent selecting text
+		e.preventDefault();
+	};
+
+	var doDrag = function(e) {
+		var relativePosition = (e.clientX - context.interval) / _this.container.offsetWidth;
+		_this.rulerProp.pos = relativePosition;
+		_this.container.children[0].style.width = (relativePosition - _this.rulerProp.gap) * 100 + '%';
+		_this.container.children[1].style.width = ((1 - relativePosition) - _this.rulerProp.gap) * 100 + '%';
+		_this.ruler.style.marginLeft = relativePosition * 100 + '%';
+	};
+
+	var stopDrag = function() {
+		document.documentElement.removeEventListener('mousemove', doDrag, false);
+		document.documentElement.removeEventListener('mouseup', stopDrag, false);
+	};
+
+	this.ruler.addEventListener('mousedown', initDrag);
+};
+
+
+ContainerZone.prototype.setFocus = function(focus) {
+	this.focus_ = focus;
+	for (var i = 0 ; i < this.focusListeners.length ; i++) {
+		this.focusListeners[i].focusHasChanged(focus);
+	}
+};
+
+ContainerZone.prototype.getFocus = function() {
+	return this.focus_;
+};
+
+/**
+ * Autobinding implies the widget to be populated as is
+ * Will be completed by the user manipulating the widget
+ */
+ContainerZone.prototype.getWidget = function(name, autobinding) {
+	var autobinding = (typeof autobinding === 'undefined'); // Default is true
+
+	for (var i = 0 ; i < this.widgets.length ; i++) {
+		if (this.widgets[i].getName() === name) {
+			if (autobinding) { // Autobinding
+				this.add(this.widgets[i]);
+			}
+			return this.widgets[i];
+		}
+	}
+
+	var newWidget = new Widget(name);
+	this.widgets.push(newWidget);
+
+	if (autobinding) {
+		this.add(newWidget);
+	}
+
+	return newWidget;
+};
+
+ContainerZone.prototype.getWidgetDOMWrapper = function(widget) {
+	var offset = this.populatedWidgets.indexOf(widget);
+	if (offset === -1) {
+		console.log('Can\'t get DOM wrapper of a non-populated widget');
+		return;
+	}
+
+	return this.container.children[offset];
+};
+
+ContainerZone.prototype.isSplitted = function() {
+	return this.currentLayout !== this.Layout.FULL;
+};
+
+ContainerZone.prototype.merge = function() {
+	if (!this.isSplitted()) {
+		return;
+	}
+
+	// Reset and clear
+	this.ruler.style.marginLeft = '50%';
+	this.ruler.style.display = 'none';
+	this.rulerProp.pos = 0.5;
+
+	var keep = this.getWidgetDOMWrapper(this.populatedWidgets[this.getFocus()]);
+	keep.className = 'rwidget full focus';
+	keep.style.width = 'auto';
+
+	for (var i = 0 ; i < this.container.children.length ; i++) {
+		if (i != this.getFocus()) {
+			this.container.removeChild(this.container.children[i]);
+			this.populatedWidgets.splice(i, 1);
+		}
+	}
+
+	this.setFocus(0)
+	this.currentLayout = this.Layout.FULL;
+	this.drawTitle();
+};
+
+ContainerZone.prototype.split = function(layout) {
+	if (this.isSplitted()) {
+		return;
+	}
+
+	this.ruler.style.display = 'block';
+	this.container.children[0].style.width = (this.rulerProp.pos - this.rulerProp.gap) * 100 + '%';
+
+	for (var i = 0 ; i < this.populatedWidgets.length ; i++) {
+		this.getWidgetDOMWrapper(this.populatedWidgets[i]).classList.remove('full');
+		this.getWidgetDOMWrapper(this.populatedWidgets[i]).classList.add(layout);
+	}
+
+	this.currentLayout = layout;
+
+	if (this.populatedWidgets.length <= 1) {
+		// We pop the fallback widget
+		this.fallback();
+	}
+
+	// We want to set the focus on the space
+	this.setFocus(1);
+	this.drawTitle();
+};
+
+ContainerZone.prototype.add = function(widget) {
+	if (this.populatedWidgets.indexOf(widget) !== -1) {
+		// Can't open the same panel more than once: draw() should be called
+		return;
+	}
+
+	// Special case at beginning when the widget is already loaded
+	if (widget.isAlreadyThere()) {
+		this.populatedWidgets.push(widget);
+		this.applyFocusEvent_(widget);
+		return;
+	}
+
+	var widgetElement = document.createElement('div');
+	widgetElement.classList.add('rwidget');
+	widgetElement.classList.add(this.currentLayout);
+	widget.binding(widgetElement);
+
+	if (this.isSplitted()) {
+		var layoutFull = this.populatedWidgets.length >= 2;
+
+		// If the container is full, we remove the active widget
+		if (layoutFull) {
+			// TODO, handle default width 50% -> doesn't consider previous resizing
+			this.container.removeChild(this.container.children[this.getFocus()]); // from DOM
+			this.populatedWidgets.splice(this.getFocus(), 1);
+		}
+
+		if (this.getFocus() === 0 && layoutFull) { // Poping first
+			this.populatedWidgets.unshift(widget);
+			if (!widget.isAlreadyThere()) {
+				this.container.insertBefore(widgetElement, this.container.children[0]);
+				this.container.children[0].style.width = (this.rulerProp.pos - this.rulerProp.gap) * 100 + '%';
+			}
+		} else { // Second panel
+			this.populatedWidgets.push(widget);
+			if (!widget.isAlreadyThere()) {
+				this.container.appendChild(widgetElement);
+				this.container.children[1].style.width = ((1 - this.rulerProp.pos) - this.rulerProp.gap) * 100 + '%';
+			}
+		}
+	} else {
+		if (this.populatedWidgets.length >= 1) {
+			this.container.removeChild(this.container.children[this.getFocus()]); // from DOM
+		}
+		this.populatedWidgets = [widget];
+		if (!widget.isAlreadyThere()) {
+			this.container.appendChild(widgetElement);
+			this.container.children[0].style.width = 'auto';
+		}
+	}
+
+	this.moveFocusOnWidget(widget);
+	this.applyFocusEvent_(widget);
+	widget.setOffset(this.getFocus());
+	this.drawTitle();
+};
+
+ContainerZone.prototype.moveFocusOnWidget = function(widget) {
+	this.setFocus(this.populatedWidgets.indexOf(widget));
+	this.container.children[this.getFocus()].classList.add('focus');
+
+	if (this.isSplitted()) {
+		this.container.children[(this.getFocus() + 1) % 2 ].classList.remove('focus');
+	}
+
+	this.drawTitle();
+};
+
+ContainerZone.prototype.drawTitle = function() {
+	if (this.layout === this.Layout.FULL || this.populatedWidgets.length === 1) {
+		this.title.innerHTML = this.populatedWidgets[0].getName();
+	} else {
+		var titles = [];
+		for (var i = 0 ; i < this.populatedWidgets.length ; i++) {
+			if (this.getFocus() == i) {
+				titles.push('<strong>' + this.populatedWidgets[i].getName() + '</strong>');
+			} else {
+				titles.push(this.populatedWidgets[i].getName());
+			}
+		}
+		this.title.innerHTML = titles.join(' & ');
+	}
+};
+
+ContainerZone.prototype.applyFocusEvent_ = function(widget) {
+	var _this = this;
+	var element = this.getWidgetDOMWrapper(widget);
+	element.addEventListener('mousedown', function() {
+		_this.moveFocusOnWidget(widget);
+	});
+};
+
+ContainerZone.prototype.addFocusListener = function(obj) {
+	this.focusListeners.push(obj);
+};
 'use strict';
 
 (function() {
@@ -366,14 +654,14 @@ function analyze() {
 		panelDisasm();
 	});
 }
-
 function uiCheckList(grp, id, label) {
 	return '<li> <label for="' + grp + '" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"> <input type="checkbox" id="' + id + '" class="mdl-checkbox__input" /><span class="mdl-checkbox__label">' + label + '</span> </label> </li>';
 }
 
 function notes() {
-	var c = document.getElementById('content');
-	document.getElementById('title').innerHTML = 'Notes';
+	var widget = widgetContainer.getWidget('Notes');
+	var dom = widgetContainer.getWidgetDOMWrapper(widget);
+
 	var out = '<br />' + uiButton('javascript:panelComments()', '&lt; Comments');
 	out += '<br /><br /><textarea rows=32 style="width:100%"></textarea>';
 	c.innerHTML = out;
@@ -410,7 +698,7 @@ function delAllFlags() {
 }
 
 function setNullFlagspace(fs) {
-	var update = fs ? panelFlags : flagspaces;
+	updates.registerMethod(widgetContainer.getFocus(), fs ? panelFlags : flagspaces);
 	r2.cmd('fs *', function() {
 		flagspaces();
 	});
@@ -418,8 +706,12 @@ function setNullFlagspace(fs) {
 
 /* rename to panelFlagSpaces */
 function flagspaces() {
-	var c = document.getElementById('content');
-	document.getElementById('title').innerHTML = 'Flag Spaces';
+
+	var widget = widgetContainer.getWidget('Flag Spaces');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), flagspaces);
+
 	c.innerHTML = '<br />&nbsp;' + uiRoundButton('javascript:panelFlags()', 'undo');
 	c.innerHTML += '&nbsp;' + uiButton('javascript:setNullFlagspace()', 'Deselect');
 	c.innerHTML += '&nbsp;' + uiButton('javascript:setFlagspace()', 'Add');
@@ -607,10 +899,12 @@ function uiBlock(d) {
 }
 
 function panelSettings() {
-	update = panelSettings;
 	var out = '';
-	document.getElementById('title').innerHTML = 'Settings';
-	var c = document.getElementById('content');
+
+	var widget = widgetContainer.getWidget('Settings');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelSettings);
 
 	c.style.backgroundColor = '#f0f0f0';
 	out += '<div style=\'margin:10px\'>';
@@ -734,9 +1028,17 @@ function panelSettings() {
 }
 
 function printHeaderPanel(title, cmd, grep) {
-	update = panelFunctions;
-	document.getElementById('title').innerHTML = title;
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget(title);
+	widget.setDark();
+	var dom = widgetContainer.getWidgetDOMWrapper(widget);
+
+	// TODO, warning? panelFunction // printHeaderPanel (not a complete widget)
+	updates.registerMethod(widget.getOffset(), panelFunctions);
+
+	var c = document.createElement('div');
+	dom.innerHTML = '';
+	dom.appendChild(c);
+
 	c.style.color = '#202020 !important';
 	c.style.backgroundColor = '#202020';
 	var out = '' ; //
@@ -810,9 +1112,12 @@ function panelHeaders() {
 }
 
 function panelFunctions() {
-	update = panelFunctions;
-	document.getElementById('title').innerHTML = 'Functions';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Functions');
+	widget.setDark();
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelFunctions);
+
 	c.style.backgroundColor = '#f0f0f0';
 	var body = '<br />';
 	body += uiButton('javascript:analyzeSymbols()', 'Symbols');
@@ -878,9 +1183,11 @@ function vSplit() {
 }
 
 function panelConsole() {
-	update = panelConsole;
-	document.getElementById('title').innerHTML = 'Console';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Console');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelConsole);
+
 	c.innerHTML = '<br />';
 	if (inColor) {
 		c.style.backgroundColor = '#202020';
@@ -983,9 +1290,11 @@ function toggleScriptOutput() {
 }
 
 function panelScript() {
-	update = panelScript;
-	document.getElementById('title').innerHTML = 'Script';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Script');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelScript);
+
 	c.style.backgroundColor = '#f0f0f0';
 	var localScript = localStorage.getItem('script');
 	var out = '<br />' + uiButton('javascript:runScript()', 'Run');
@@ -1001,9 +1310,11 @@ function panelScript() {
 }
 
 function panelSearch() {
-	update = panelSearch;
-	document.getElementById('title').innerHTML = 'Search';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Search');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelSearch);
+
 	c.style.backgroundColor = '#f0f0f0';
 	var out = '<br />';
 	out += '<input style=\'background-color:white !important;padding-left:10px;top:3.5em;height:1.8em;color:white\' onkeypress=\'searchKey()\' class=\'mdl-card--expand mdl-textfield__input\' id=\'search_input\'/>';
@@ -1019,9 +1330,11 @@ function panelSearch() {
 }
 
 function panelFlags() {
-	update = panelFlags;
-	document.getElementById('title').innerHTML = 'Flags';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Flags');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelFlags);
+
 	c.style.backgroundColor = '#f0f0f0';
 	c.innerHTML = '<br />';
 	c.innerHTML += uiButton('javascript:flagspaces()', 'Spaces');
@@ -1045,9 +1358,11 @@ function panelFlags() {
 }
 
 function panelComments() {
-	update = panelComments;
-	document.getElementById('title').innerHTML = 'Comments';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Comments');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelComments);
+
 	c.style.backgroundColor = '#f0f0f0';
 	c.innerHTML = '<br />';
 	c.innerHTML += uiButton('javascript:notes()', 'Notes');
@@ -1079,11 +1394,12 @@ function down() {
 }
 
 function panelHexdump() {
-	document.getElementById('content').scrollTop = 0;
-	update = panelHexdump;
-	lastView = panelHexdump;
-	var c = document.getElementById('content');
-	document.getElementById('title').innerHTML = 'Hexdump';
+	var widget = widgetContainer.getWidget('Hexdump');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelHexdump);
+	lastViews.registerMethod(widget.getOffset(), panelHexdump);
+
 	if (inColor) {
 		c.style.backgroundColor = '#202020';
 	}
@@ -1096,7 +1412,7 @@ function panelHexdump() {
 	out += '</div><br /><br /><br />';
 	c.innerHTML = out;
 	var tail = inColor ? '@e:scr.color=1,scr.html=1' : '';
-	r2.cmd('pxa' + tail, function(d) {
+	r2.cmd('pxa 4096' + tail, function(d) {
 		var color = inColor ? 'white' : 'black';
 		d = clickableOffsets(d);
 		var pre = '<div><center>' + uiRoundButton('javascript:up()', 'keyboard_arrow_up');
@@ -1115,38 +1431,41 @@ function uiRoundButton(a, b, c) {
 }
 
 function panelDisasm() {
-	document.getElementById('content').scrollTop = 0;
-	update = panelDisasm;
-	lastView = panelDisasm;
-	var c = document.getElementById('content');
-	document.getElementById('title').innerHTML = 'Disassembly';
+	var widget = widgetContainer.getWidget('Disassembly');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelDisasm);
+	lastViews.registerMethod(widget.getOffset(), panelDisasm);
+
 	if (inColor) {
 		c.style.backgroundColor = '#202020';
 	}
 	var out = '<div style=\'position:fixed;margin:0.5em\'>';
-	/*
-	    	out += uiRoundButton('javascript:up()', 'keyboard_arrow_up');
-	    	out += uiRoundButton('javascript:down()', 'keyboard_arrow_down');
-	    	out += '&nbsp;';
-*/
+	out += uiRoundButton('javascript:up()', 'keyboard_arrow_up');
+	out += uiRoundButton('javascript:down()', 'keyboard_arrow_down');
+	out += '&nbsp;';
 	out += uiButton('javascript:analyze()', 'ANLZ');
 	out += uiButton('javascript:comment()', 'CMNT');
 	out += uiButton('javascript:info()', 'Info');
 	out += uiButton('javascript:rename()', 'RNME');
 	out += uiButton('javascript:write()', 'Wrte');
 	out += '</div><br /><br /><br />';
+
 	c.innerHTML = out;
 	c.style['font-size'] = '12px';
-	c.style.overflow = 'scroll';
 	var tail = '';
 	if (inColor) {
 		tail = '@e:scr.color=1,scr.html=1';
 	}
+
 	r2.cmd('pd 128' + tail, function(d) {
 		var dis = clickableOffsets(d);
-		c.innerHTML += '<center>' + uiRoundButton('javascript:up()', 'keyboard_arrow_up') + uiRoundButton('javascript:down()', 'keyboard_arrow_down') + '</center>';
-		c.innerHTML += '<pre style=\'color:grey\'>' + dis + '<pre>';
-		c.innerHTML += '<center>' + uiRoundButton('javascript:down()', 'keyboard_arrow_down') + '</center><br /><br />';
+		ret = '';
+		ret += '<center>' + uiRoundButton('javascript:up()', 'keyboard_arrow_up') + uiRoundButton('javascript:down()', 'keyboard_arrow_down') + '</center>';
+		ret += '<pre style=\'color:grey\'>' + dis + '<pre>';
+		ret += '<center>' + uiRoundButton('javascript:down()', 'keyboard_arrow_down') + '</center><br /><br />';
+
+		c.innerHTML += ret;
 	});
 }
 
@@ -1187,11 +1506,13 @@ function panelDebug() {
 	r2.cmd('e cfg.debug', function(x) {
 		nativeDebugger = (x.trim() == 'true');
 	});
-	document.getElementById('content').scrollTop = 0;
-	update = panelDebug;
-	lastView = panelDebug;
-	var c = document.getElementById('content');
-	document.getElementById('title').innerHTML = 'Debugger';
+
+	var widget = widgetContainer.getWidget('Debugger');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
+	updates.registerMethod(widget.getOffset(), panelDebug);
+	lastViews.registerMethod(widget.getOffset(), panelDebug);
+
 	if (inColor) {
 		c.style.backgroundColor = '#202020';
 	}
@@ -1248,9 +1569,11 @@ function rename() {
 	}
 }
 function info() {
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Info');
+	widget.setDark();
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
 	var color = inColor ? 'white' : 'black';
-	document.getElementById('title').innerHTML = 'Info';
 	var out = '<br />'; //Version: "+d;
 	out += uiRoundButton('javascript:panelDisasm()', 'undo');
 	out += '&nbsp;';
@@ -1266,8 +1589,9 @@ function info() {
 }
 
 function blocks() {
-	document.getElementById('title').innerHTML = 'Blocks';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Blocks');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
 	c.style['overflow'] = 'none';
 	var color = inColor ? 'white' : 'black';
 	c.innerHTML = '<br />';
@@ -1279,8 +1603,9 @@ function blocks() {
 }
 
 function pdtext() {
-	document.getElementById('title').innerHTML = 'Function';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Function');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
 	c.style['overflow'] = 'none';
 	var color = inColor ? 'white' : 'black';
 	c.innerHTML = '<br />';
@@ -1293,8 +1618,9 @@ function pdtext() {
 }
 
 function pdf() {
-	document.getElementById('title').innerHTML = 'Function';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Function');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
 	c.style['overflow'] = 'none';
 	var color = inColor ? 'white' : 'black';
 	c.innerHTML = '<br />';
@@ -1306,8 +1632,9 @@ function pdf() {
 }
 
 function decompile() {
-	document.getElementById('title').innerHTML = 'Decompile';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Decompile');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
 	c.style['overflow'] = 'none';
 	var color = inColor ? 'white' : 'black';
 	c.innerHTML = '<br />';
@@ -1319,8 +1646,10 @@ function decompile() {
 }
 
 function graph() {
-	document.getElementById('title').innerHTML = 'Graph';
-	var c = document.getElementById('content');
+	var widget = widgetContainer.getWidget('Graph');
+	widget.setDark();
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+
 	c.style['overflow'] = 'auto';
 	var color = inColor ? 'white' : 'black';
 	c.innerHTML = '<br />&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a>';
@@ -1433,8 +1762,6 @@ function onClick(a, b) {
 	}
 }
 
-updateInfo();
-
 function panelHelp() {
 	alert('TODO');
 }
@@ -1467,17 +1794,39 @@ function analyzeButton() {
 }
 
 var twice = false;
+var widgetContainer = undefined;
+var updates = undefined;
+var lastViews = undefined;
 function ready() {
 	if (twice) {
 		return;
 	}
 	twice = true;
-	updateFortune();
-	updateInfo();
-	updateEntropy();
+
+
+	updates = new UpdateManager();
+	lastViews = new UpdateManager();
+
+	// Define Widget container
+	widgetContainer = new ContainerZone('content', 'ruler', 'title');
+	widgetContainer.fallbackWidget(panelDisasm);
+	widgetContainer.addFocusListener(updates);
+	widgetContainer.addFocusListener(lastViews);
+
+	update = function() {
+		updates.apply();
+	};
+
+	lastView = function() {
+		lastViews.apply();
+	};
+
+	// Defining default situation
+	panelOverview();
 
 	/* left menu */
 	onClick('analyze_button', analyzeButton);
+	onClick('menu_overview', panelOverview);
 	onClick('menu_headers', panelHeaders);
 	onClick('info_headers', panelHeaders);
 	onClick('menu_disasm', panelDisasm);
@@ -1506,7 +1855,14 @@ function ready() {
 	});
 
 	// Set autocompletion
-	new Autocompletion('search', 'search_autocomplete', 'fs *;fj');
+	var autocompletion = new Autocompletion('search', 'search_autocomplete', 'fs *;fj');
+	autocompletion.setPrepareView(function() {
+		// If not splitted we split the view
+		if (!widgetContainer.isSplitted()) {
+			widgetContainer.split(widgetContainer.Layout.VERTICAL);
+		}
+		panelDisasm();
+	});
 
 	// Close the drawer on click with small screens
 	document.querySelector('.mdl-layout__drawer').addEventListener('click', function () {
@@ -1547,47 +1903,230 @@ document.body.onkeypress = function(e) {
  * - support tabs and console
  */
 var statusLog = [];
-var statusBig = false;
+var Mode = {
+	LINE: 0,
+	HALF: 1,
+	FULL: 2
+};
+var Tab = {
+	LOGS: 0,
+	CONSOLE: 1
+};
+var statusMode = Mode.LINE;
 var statusTimeout = null;
+var statusTab = Tab.LOGS;
+
+function setStatusbarBody() {
+	function addElement(e, id) {
+		var doc = document.createElement(e);
+		doc.id = id;
+		doc.className = id;
+		return doc;
+	}
+	var doc;
+	try {
+		var statusbar = document.getElementById('tab_terminal');
+		statusbar.innerHTML = '';
+		statusbar.parentNode.removeChild(statusbar);
+	} catch (e) {
+	}
+	try {
+		var statusbar = document.getElementById('tab_logs');
+		statusbar.innerHTML = '';
+		statusbar.parentNode.removeChild(statusbar);
+	} catch (e) {
+	}
+	switch (statusTab) {
+	case Tab.LOGS:
+		var parser = new DOMParser();
+		var doc = document.createElement('div');
+		doc.id = 'tab_logs';
+		var msg = statusLog.join('<br />');
+		doc.appendChild (parser.parseFromString(msg, "text/xml").documentElement);
+		return doc; //break;
+	case Tab.CONSOLE:
+		var doc = document.createElement('div');
+		doc.id = 'tab_terminal';
+		doc.appendChild(addElement('div', 'terminal'));
+		doc.appendChild(addElement('div', 'terminal_output'));
+		var pr0mpt = addElement('div', 'terminal_prompt');
+		pr0mpt.appendChild(addElement('input', 'terminal_input'));
+		doc.appendChild(pr0mpt);
+		break;
+	}
+	if (doc !== undefined) {
+		var statusbar = document.getElementById('statusbar');
+		var terminal = document.getElementById('terminal');
+		if (!terminal) {
+			statusbar.parentNode.insertBefore (doc, statusbar);
+			if (statusTab === Tab.CONSOLE) {
+				terminal_ready ();
+			}
+		}
+	}
+}
 
 function statusMessage(x, t) {
 	var statusbar = document.getElementById('statusbar');
-	statusbar.innerHTML = x;
-	if (statusTimeout !== null) {
-		clearTimeout(statusTimeout);
-		statusTimeout = null;
-	}
-	if (t !== undefined) {
-		statusTimeout = setTimeout(function() {
-			statusMessage('&nbsp;');
-		}, t * 1000);
-	}
-	if (x.trim()) {
+	if (x) {
 		statusLog.push(x);
+	}
+	if (statusMode === Mode.LINE) {
+		statusbar.innerHTML = x;
+		if (statusTimeout !== null) {
+			clearTimeout(statusTimeout);
+			statusTimeout = null;
+		}
+		if (t !== undefined) {
+			statusTimeout = setTimeout(function() {
+				statusMessage('&nbsp;');
+			}, t * 1000);
+		}
+	} else {
+		setStatusbarBody();
 	}
 }
 
 function statusToggle() {
 	var statusbar = document.getElementById('statusbar');
-	statusBig = !statusBig;
-	if (statusBig) {
-		statusbar.parentNode.classList.add('bigger');
-		statusbar.innerHTML = statusLog.join('<br />');
-	} else {
-		statusbar.parentNode.classList.remove('bigger');
+	var container = document.getElementById('container');
+	if (statusMode == Mode.HALF) {
+		statusTab = Tab.LOGS;
+		statusMode = Mode.LINE;
 		statusbar.innerHTML = '&nbsp;';
+		try {
+			statusbar.parentNode.classList.remove('half');
+			statusbar.parentNode.classList.remove('full');
+
+			container.classList.remove('sbIsHalf');
+			container.classList.remove('sbIsFull');
+		} catch (e) {
+		}
+		setStatusbarBody();
+	} else {
+		statusMode = Mode.HALF;
+		try {
+			statusbar.parentNode.classList.remove('full');
+			container.classList.remove('sbIsFull');
+		} catch (e) {
+		}
+		statusbar.parentNode.classList.add('half');
+		container.classList.add('sbIsHalf');
+		//setStatusbarBody();
 	}
 }
 
-function statusInitialize() {
+function statusConsole() {
+	if (statusTab == Tab.CONSOLE) {
+		statusTab = Tab.LOGS;
+
+	} else {
+		statusTab = Tab.CONSOLE;
+	}
+	setStatusbarBody();
+}
+
+function statusFullscreen() {
 	var statusbar = document.getElementById('statusbar');
+	var container = document.getElementById('container');
+	if (statusMode == Mode.FULL) {
+		statusMode = Mode.HALF;
+		try {
+			statusbar.parentNode.classList.remove('full');
+			container.classList.remove('sbIsFull');
+		} catch (e) {
+		}
+		statusbar.parentNode.classList.add('half');
+		container.classList.add('sbIsHalf');
+	} else {
+		statusMode = Mode.FULL;
+		try {
+			statusbar.parentNode.classList.remove('half');
+			container.classList.remove('sbIsHalf');
+		} catch (e) {
+			/* do nothing */
+		}
+		statusbar.parentNode.classList.add('full');
+		container.classList.add('sbIsFull');
+	}
+}
+
+
+function addButton(label, callback) {
+	var a = document.createElement('a');
+	a.href = 'javascript:'+callback+'()';
+	a.innerHTML = label;
+	return a;
+}
+
+function initializeStatusbarTitle() {
+	var title = document.getElementById('statusbar_title');
+	var div = document.createElement('div');
+	title.class = 'statusbar_title';
+	title.id = 'statusbar_title';
+	div.className = 'statusbar_title';
+	div.style.textAlign = 'right';
+	div.appendChild (addButton ('v ', 'statusToggle'));
+	div.appendChild (addButton ('^ ', 'statusFullscreen'));
+	div.appendChild (addButton ('$ ', 'statusConsole'));
+	div.appendChild (addButton ('> ', 'statusBarAtRight'));
+	title.parentNode.replaceChild (div, title);
+	// title.parentNode.insertBefore (div, title);
+}
+
+function statusInitialize() {
+	initializeStatusbarTitle();
+	var statusbar = document.getElementById('statusbar');
+	statusbar.innerHTML = '';
 	statusbar.parentNode.addEventListener('click', function() {
-		statusToggle();
+		if (statusMode == Mode.LINE) {
+			statusToggle();
+		}
 	});
 	statusMessage('Loading webui...', 2);
 }
 
 statusInitialize();
+
+/* --- terminal.js --- */
+function submit(cmd) {
+	var output = document.getElementById('terminal_output');
+	var input = document.getElementById('terminal_input');
+	if (!input || !output) {
+		console.error('No terminal_{input|output} found');
+		return;
+	}
+	if (cmd === 'clear') {
+		output.innerHTML = '';
+		input.value = '';
+		return;
+	}
+	r2.cmd(cmd, function(res) {
+		res += '\n';
+		output.innerHTML += ' > '
+			+ cmd + '\n' + res;
+		input.value = '';
+		var bar = document.getElementById('statusbar_scroll');
+		bar.scrollTop = bar.scrollHeight;
+	});
+}
+
+function terminal_ready() {
+	r2.cmd("e scr.color=true");
+	var input = document.getElementById('terminal_input');
+	if (!input) {
+		console.error('Cannot find terminal_input');
+		return;
+	}
+	input.focus();
+	input.onkeypress = function(e){
+	    if (e.keyCode == 13) {
+		submit(input.value);
+	    }
+	}
+}
+
+/* --- terminal.js --- */
 
 /**
  * Handling DataTables with jQuery plugin
@@ -1706,4 +2245,171 @@ function uiTableRow(cols) {
 
 function uiTableEnd() {
 	return '</tbody> </table>';
+}
+
+function UpdateManager() {
+	this.updateMethods = [{}, {}];
+	this.currentFocus = undefined;
+};
+
+UpdateManager.prototype.registerMethod = function(offset, method) {
+	this.updateMethods[offset] = method;
+};
+
+UpdateManager.prototype.focusHasChanged = function(offset) {
+	this.currentFocus = offset;
+};
+
+UpdateManager.prototype.apply = function() {
+	if (typeof this.currentFocus === 'undefined') {
+		return;
+	}
+	this.updateMethods[this.currentFocus]();
+};
+
+function Widget(name, identifier) {
+	this.name = name;
+	this.identifier = identifier;
+
+	if (typeof identifier !== 'undefined') {
+		this.DOMWrapper = document.getElementById(identifier);
+	}
+}
+
+Widget.prototype.binding = function(domElement) {
+	this.DOMWrapper = domElement;
+	if (typeof this.content !== 'undefined') {
+		this.DOMWrapper.innerHTML = this.content;
+	}
+};
+
+Widget.prototype.setHTMLContent = function(content) {
+	this.content = content;
+};
+
+Widget.prototype.getName = function() {
+	return this.name;
+};
+
+Widget.prototype.getIdentifier = function() {
+	return this.identifier;
+};
+
+Widget.prototype.setOffset = function(offset) {
+	this.offset = offset;
+};
+
+Widget.prototype.getOffset = function() {
+	return this.offset;
+};
+
+/**
+ * Identify the special case where the content is already here, in the page
+ */
+Widget.prototype.isAlreadyThere = function() {
+	return (typeof this.identifier !== 'undefined');
+};
+
+Widget.prototype.setDark = function() {
+	this.DOMWrapper.style.backgroundColor = 'rgb(32, 32, 32)';
+};
+function panelOverview() {
+	var widget = widgetContainer.getWidget('Overview');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+	updates.registerMethod(widget.getOffset(), panelSettings);
+
+	var out = '<div class="mdl-grid demo-content">';
+	out += '<div class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">';
+	out += '	<div id="info"> </div>';
+	out += '	<br />';
+	out += '	<a id="info_headers" class="mdl-buton mdl-js-buttom mdl-js-ripple-effect" style="cursor:pointer">read more...</a>';
+	out += '	<h3>Entropy</h3>';
+	out += '		<svg fill="currentColor" viewBox="0 0 500 80" id="entropy-graph"></svg>';
+	out += '</div>';
+
+	out += '<div class="demo-cards mdl-cell mdl-cell--4-col mdl-cell--8-col-tablet mdl-grid mdl-grid--no-spacing">';
+	out += '	<div class="demo-updates mdl-card mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--12-col-desktop">';
+	out += '		<div class="mdl-card__title mdl-card--expand mdl-color--teal-300">';
+	out += '			<h2 class="mdl-card__title-text">Fortunes</h2>';
+	out += '		</div>';
+	out += '		<div class="mdl-card__supporting-text mdl-color-text--grey-600" id="fortune">';
+	out += '			Always use r2 from git';
+	out += '		</div>';
+	out += '		<div class="mdl-card__actions mdl-card--border">';
+	out += '			<a href="javascript:updateFortune()" class="mdl-button mdl-js-button mdl-js-ripple-effect">Next</a>';
+	out += '		</div>';
+	out += '	</div>';
+	out += '	<div class="demo-separator mdl-cell--1-col"></div>';
+	out += '	<div class="demo-options mdl-card mdl-color--teal-300 mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">';
+	out += '		<div class="mdl-card__supporting-text mdl-color-grey-600">';
+	out += '			<h3 class="mdl-cart__title-text">Analysis Options</h3>';
+	out += '			<ul>';
+	out += '				<li>';
+	out += '					<label for="anal_symbols" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input type="checkbox" id="anal_symbols" class="mdl-checkbox__input" />';
+	out += '						<span id="anal_symbols" class="mdl-checkbox__label">Analyze symbols</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '				<li>';
+	out += '					<label for="anal_calls" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input id="anal_calls" type="checkbox" class="mdl-checkbox__input" />';
+	out += '						<span class="mdl-checkbox__label">Analyze calls</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '				<li>';
+	out += '					<label for="anal_emu" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input id="anal_emu" type="checkbox" class="mdl-checkbox__input" />';
+	out += '						<span class="mdl-checkbox__label">Emulate code</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '				<li>';
+	out += '					<label for="anal_prelude" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input id="anal_prelude" type="checkbox" class="mdl-checkbox__input" />';
+	out += '						<span class="mdl-checkbox__label">Find preludes</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '				<li>';
+	out += '					<label for="anal_autoname" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input type="checkbox" id="anal_autoname" class="mdl-checkbox__input" />';
+	out += '						<span id="anal_autoname" class="mdl-checkbox__label">Autoname fcns</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '			</ul>';
+	out += '		</div>';
+	out += '		<div class="mdl-card__actions mdl-card--border">';
+	out += '			<a href="#" id="analyze_button" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-color--blue-grey-50 mdl-color-text--blue-greu-50">Analyze</a>';
+	out += '			<div class="mdl-layout-spacer"></div>';
+	out += '			<i class="material-icons">room</i>';
+	out += '		</div>';
+	out += '	</div>';
+	out += '</div>';
+	out += '<div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">';
+	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelDisasm();seek(\'entry0\');" title="Go to disassembly">';
+	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
+	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">code</text>';
+	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan font-size="0.2" dy="-0.07">%</tspan></text>';
+	out += '	</svg>';
+	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelHexdump();seek(\'0x00\');" title="Go to hexdump">';
+	out += '		<use xlink:href="#piechart2" mask="url(#piemask)" />';
+	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">data</text>';
+	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">22<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
+	out += '	</svg>';
+	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelStrings()" title="Go to strings">';
+	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
+	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">strings</text>';
+	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">4<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
+	out += '	</svg>';
+	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelFunctions()" title="Go to functions">';
+	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
+	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">functions</text>';
+	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
+	out += '	</svg>';
+	out += '</div>';
+	out += '</div>';
+
+	c.innerHTML = out;
+
+	updateFortune();
+	updateInfo();
+	updateEntropy();
 }

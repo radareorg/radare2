@@ -83,19 +83,21 @@
 
 					<ul class="mdl-menu mdl-js-menu mdl-js-ripple-effect mdl-menu--bottom-right" for="hdrbtn">
 						<li class="mdl-menu__item"><a target=_blank href="./">New Window</a></li>
-						<li onclick="singlePanel()" class="mdl-menu__item">Single Panel</li>
-						<li onclick="hSplit()" class="mdl-menu__item">Horiz Split</li>
-						<li onclick="vSplit()" class="mdl-menu__item">Vert Split</li>
+						<li onclick="widgetContainer.merge()" class="mdl-menu__item">Single Panel</li>
+						<!--<li onclick="hSplit()" class="mdl-menu__item">Horiz Split</li>-->
+						<li onclick="widgetContainer.split(widgetContainer.Layout.VERTICAL);" class="mdl-menu__item">Vert Split</li>
 						<li id='menu_seek' class="mdl-menu__item">Seek</li>
 						<!-- <li id='menu_console' class="mdl-menu__item">Console</li> -->
 						<li id='menu_settings' class="mdl-menu__item">Settings</li>
 						<li id='menu_about' class="mdl-menu__item">About</li>
 						<li id='menu_mail' class="mdl-menu__item">Contact</li>
 					</ul>
+
+					<div id="widgetTools"></div>
 				</div>
 			</header>
 
-			<div class="demo-drawer mdl-layout__drawer mdl-color--blue-grey-900">
+			<div class="demo-drawer mdl-layout__drawer mdl-color--blue-grey-900 hoverable">
 				<header class="demo-drawer-header">
 					<p class="mdl-typography--text-center">
 						<a href="./">
@@ -119,7 +121,7 @@
 				</header>
 
 				<nav class="demo-navigation mdl-navigation mdl-color--blue-grey-800">
-					<a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons">home</i>Overview</a>
+					<a id='menu_overview' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">home</i>Overview</a>
 					<a id='menu_headers' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">people</i>Headers</a>
 					<a id='menu_disasm' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">receipt</i>Disassembly</a>
 					<a id='menu_hexdump' class="mdl-navigation__link"><i class="mdl-color-text--blue-grey-400 material-icons">dashboard</i>Hexdump</a>
@@ -138,99 +140,14 @@
 				</nav>
 			</div>
 
-			<main class="mdl-layout__content" id="content">
-				<div class="mdl-grid demo-content">
-					<div class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">
-						<div id="info"> </div>
-						<br />
-						<a id='info_headers' class="mdl-buton mdl-js-buttom mdl-js-ripple-effect" style="cursor:pointer">read more...</a>
-						<h3>Entropy</h3>
-							<svg fill="currentColor" viewBox="0 0 500 80" id="entropy-graph"></svg>
-					</div>
-
-					<div class="demo-cards mdl-cell mdl-cell--4-col mdl-cell--8-col-tablet mdl-grid mdl-grid--no-spacing">
-						<div class="demo-updates mdl-card mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--12-col-desktop">
-							<div class="mdl-card__title mdl-card--expand mdl-color--teal-300">
-								<h2 class="mdl-card__title-text">Fortunes</h2>
-							</div>
-							<div class="mdl-card__supporting-text mdl-color-text--grey-600" id='fortune'>
-								Always use r2 from git
-							</div>
-							<div class="mdl-card__actions mdl-card--border">
-								<a href="javascript:updateFortune()" class="mdl-button mdl-js-button mdl-js-ripple-effect">Next</a>
-							</div>
-						</div>
-						<div class="demo-separator mdl-cell--1-col"></div>
-						<div class="demo-options mdl-card mdl-color--teal-300 mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
-							<div class="mdl-card__supporting-text mdl-color-grey-600">
-								<h3 class="mdl-cart__title-text">Analysis Options</h3>
-								<ul>
-									<li>
-										<label for="anal_symbols" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
-											<input type="checkbox" id="anal_symbols" class="mdl-checkbox__input" />
-											<span id="anal_symbols" class="mdl-checkbox__label">Analyze symbols</span>
-										</label>
-									</li>
-									<li>
-										<label for="anal_calls" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
-											<input id="anal_calls" type="checkbox" class="mdl-checkbox__input" />
-											<span class="mdl-checkbox__label">Analyze calls</span>
-										</label>
-									</li>
-									<li>
-										<label for="anal_emu" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
-											<input id="anal_emu" type="checkbox" class="mdl-checkbox__input" />
-											<span class="mdl-checkbox__label">Emulate code</span>
-										</label>
-									</li>
-									<li>
-										<label for="anal_prelude" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
-											<input id="anal_prelude" type="checkbox" class="mdl-checkbox__input" />
-											<span class="mdl-checkbox__label">Find preludes</span>
-										</label>
-									</li>
-									<li>
-										<label for="anal_autoname" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
-											<input type="checkbox" id="anal_autoname" class="mdl-checkbox__input" />
-											<span id="anal_autoname" class="mdl-checkbox__label">Autoname fcns</span>
-										</label>
-									</li>
-								</ul>
-							</div>
-							<div class="mdl-card__actions mdl-card--border">
-								<a href="#" id="analyze_button" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-color--blue-grey-50 mdl-color-text--blue-greu-50">Analyze</a>
-								<div class="mdl-layout-spacer"></div>
-								<i class="material-icons">room</i>
-							</div>
-						</div>
-					</div>
-					<div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">
-						<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelDisasm();seek('entry0');" title="Go to disassembly">
-							<use xlink:href="#piechart" mask="url(#piemask)" />
-							<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">code</text>
-							<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan font-size="0.2" dy="-0.07">%</tspan></text>
-						</svg>
-						<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelHexdump();seek('0x00');" title="Go to hexdump">
-							<use xlink:href="#piechart2" mask="url(#piemask)" />
-							<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">data</text>
-							<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">22<tspan dy="-0.07" font-size="0.2">%</tspan></text>
-						</svg>
-						<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelStrings()" title="Go to strings">
-							<use xlink:href="#piechart" mask="url(#piemask)" />
-							<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">strings</text>
-							<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">4<tspan dy="-0.07" font-size="0.2">%</tspan></text>
-						</svg>
-						<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelFunctions()" title="Go to functions">
-							<use xlink:href="#piechart" mask="url(#piemask)" />
-							<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">functions</text>
-							<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan dy="-0.07" font-size="0.2">%</tspan></text>
-						</svg>
-					</div>
-				</div>
+			<main class="mdl-layout__content" id="container">
+				<div id="ruler"></div>
+				<div id="content"></div>
 			</main>
 
-			<footer class="mdl-mini-footer statusbar">
-				<div id="statusbar"></div>
+			<footer class="mdl-mini-footer statusbar" id="statusbar_scroll">
+				<div class="statusbar_title" id="statusbar_title" style="width:100%"></div>
+				<div class="statusbar_body" id="statusbar"></div>
 			</footer>
 
 		</div>
