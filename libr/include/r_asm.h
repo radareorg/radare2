@@ -107,6 +107,7 @@ typedef struct r_asm_t {
 	RParse *ifilter;
 	RParse *ofilter;
 	Sdb *pair;
+	RSysregs *sysregs;
 	RSyscall *syscall;
 	RNum *num;
 	char *features;

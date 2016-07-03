@@ -281,6 +281,7 @@ static void ds_print_color_reset(RDisasmState *ds);
 static int ds_print_middle(RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
 static void ds_print_import_name(RDisasmState *ds);
+static void ds_print_sysregs(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds, int pos);
@@ -2725,6 +2726,43 @@ static void ds_print_import_name(RDisasmState *ds) {
 	}
 }
 
+static void ds_print_sysregs(RDisasmState *ds) {
+	RCore *core = ds->core;
+	if (!ds->show_comments) {
+		return;
+	}
+	switch (ds->analop.type) {
+	// Syscalls first
+	case R_ANAL_OP_TYPE_IO:
+		{
+			const int imm = (int)ds->analop.val;
+			RSyscall *sc = core->anal->syscall;
+			const char *ioname = r_syscall_get_io (sc, imm);
+			if (ioname && *ioname) {
+				ALIGN;
+				ds_comment (ds, true, "; IO %s", ioname);
+				ds->has_description = true;
+			}
+		}
+		break;
+	// Then sysregs
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_STORE:
+		{
+			const int imm = (int)ds->analop.ptr;
+			const RSysregsItem *sr = r_sysregs_get (core->anal, imm, 0);
+			if (sr) {
+				ALIGN;
+				ds_comment (ds, true, "; REG %s - %s", sr->name, sr->description);
+				ds->has_description = true;
+			}
+		}
+		break;
+	}
+}
+
 static void ds_print_fcn_name(RDisasmState *ds) {
 	int delta;
 	const char *label;
@@ -2734,18 +2772,6 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	switch (ds->analop.type) {
-	case R_ANAL_OP_TYPE_IO:
-		{
-			const int imm = (int)ds->analop.val;
-			RSyscall *sc = ds->core->anal->syscall;
-			const char *ioname = r_syscall_get_io (sc, imm);
-			if (ioname && *ioname) {
-				ALIGN;
-				ds_comment (ds, true, "; IO %s", ioname);
-				ds->has_description = true;
-			}
-		}
-		break;
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_CALL:
@@ -4322,6 +4348,7 @@ toro:
 			if (!ds->pseudo) {
 				R_FREE (ds->opstr);
 			}
+			ds_print_sysregs (ds);
 			ds_print_fcn_name (ds);
 			ds_print_color_reset (ds);
 			if (ds->show_emu) {
@@ -4378,6 +4405,7 @@ toro:
 			if (ds->show_comments && ds->show_comment_right) {
 				ds_instruction_mov_lea (ds, idx);
 				ds_print_ptr (ds, len + 256, idx);
+				ds_print_sysregs (ds);
 				ds_print_fcn_name (ds);
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);
@@ -5217,6 +5245,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds);
 			ds_print_opstr (ds);
+			ds_print_sysregs (ds);
 			ds_print_fcn_name (ds);
 			ds_print_import_name (ds);
 			ds_print_color_reset (ds);

@@ -128,6 +128,8 @@ windist:
 	cp -f libr/magic/d/default/* "${WINDIST}/share/radare2/${VERSION}/magic"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/syscall"
 	cp -f libr/syscall/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/syscall"
+	mkdir -p "${WINDIST}/share/radare2/${VERSION}/sysregs"
+	cp -f libr/sysregs/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/sysregs"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/fcnsign"
 	cp -f libr/anal/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/fcnsign"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/opcodes"
@@ -276,6 +278,7 @@ deinstall uninstall:
 	cd binr && ${MAKE} uninstall PARENT=1
 	cd shlr && ${MAKE} uninstall PARENT=1
 	cd libr/syscall/d && ${MAKE} uninstall PARENT=1
+	cd libr/sysregs/d && ${MAKE} uninstall PARENT=1
 	cd libr/anal/d && ${MAKE} uninstall PARENT=1
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
