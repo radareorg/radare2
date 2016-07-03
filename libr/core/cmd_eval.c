@@ -1,7 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2016 - pancake */
+
 #include <stddef.h>
 #include <stdbool.h>
-
 #include "r_core.h"
 
 static char *curtheme = NULL;
@@ -192,7 +192,7 @@ static int cmd_eval(void *data, const char *input) {
 			"ecr","","set random palette",
 			"ecs","","show a colorful palette",
 			"ecj","","show palette in JSON",
-			"ecc","","show palette in CSS",
+			"ecc"," [prefix]","show palette in CSS",
 			"eco"," dark|white","load white color scheme template",
 			"ecp","","load previous color theme",
 			"ecn","","load next color theme",
@@ -213,7 +213,7 @@ static int cmd_eval(void *data, const char *input) {
 			} else if (input[2] == ' ') {
 				bool failed = false;
 				char *home, path[512];
-				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input+3);
+				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input + 3);
 				home = r_str_home (path);
 				snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
 					R2_VERSION"/cons/%s", input+3);
@@ -222,7 +222,7 @@ static int cmd_eval(void *data, const char *input) {
 						//curtheme = r_str_dup (curtheme, path);
 						curtheme = r_str_dup (curtheme, input + 3);
 					} else {
-						if (r_core_cmd_file (core, input+3)) {
+						if (r_core_cmd_file (core, input + 3)) {
 							curtheme = r_str_dup (curtheme, input + 3);
 						} else {
 							eprintf ("eco: cannot open colorscheme profile (%s)\n", path);
@@ -234,7 +234,7 @@ static int cmd_eval(void *data, const char *input) {
 				if (failed) {
 					eprintf ("Something went wrong\n");
 				}
-			} else if (input[2]=='?') {
+			} else if (input[2] == '?') {
 				eprintf ("Usage: eco [themename]  ;load theme from "R2_DATDIR"/radare2/"R2_VERSION"/cons/\n");
 
 			} else {
@@ -242,18 +242,25 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			break;
 		case 's': r_cons_pal_show (); break; // "ecs"
-		case '*': r_cons_pal_list (1); break; // "ec*"
+		case '*': r_cons_pal_list (1, NULL); break; // "ec*"
 		case 'h': // echo
 			if (( p = strchr (input, ' ') )) {
 				r_cons_strcat (p+1);
 				r_cons_newline ();
 			} else {
-				r_cons_pal_list ('h'); break; // "ecj"
+				// "ech"
+				r_cons_pal_list ('h', NULL);
 			}
 			break;
-		case 'j': r_cons_pal_list ('j'); break; // "ecj"
-		case 'c': r_cons_pal_list ('c'); break; // "ecc"
-		case '\0': r_cons_pal_list (0); break; // "ec"
+		case 'j': // "ecj"
+			r_cons_pal_list ('j', NULL);
+			break;
+		case 'c': // "ecc"
+			r_cons_pal_list ('c', input + 2);
+			break;
+		case '\0': // "ec"
+			r_cons_pal_list (0, NULL);
+			break;
 		case 'r': // "ecr"
 			r_cons_pal_random ();
 			break;

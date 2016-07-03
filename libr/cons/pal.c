@@ -382,7 +382,7 @@ R_API const char *r_cons_pal_get_color (int n) {
 	return NULL;
 }
 
-R_API void r_cons_pal_list (int rad) {
+R_API void r_cons_pal_list (int rad, const char *arg) {
 	RConsPalette *pal = & (r_cons_singleton ()->pal);
 	ut8 r, g, b, *p = (ut8*)pal;
 	char *name, **color, rgbstr[32];
@@ -400,6 +400,10 @@ R_API void r_cons_pal_list (int rad) {
 				keys[i].name, r, g, b, hasnext);
 			break;
 		case 'c': {
+			const char *prefix = r_str_chop_ro (arg);
+			if (!prefix) {
+				prefix = "";
+			}
 			r = g = b = 0;
 			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			hasnext = (keys[i + 1].name) ? "\n" : "";
@@ -408,10 +412,12 @@ R_API void r_cons_pal_list (int rad) {
 			char *name = strdup (keys[i].name);
 			int j, len = strlen (name);
 			for (j = 0; j < len; j++) {
-				if (name[j] == '.') name[j] = '_';
+				if (name[j] == '.') {
+					name[j] = '_';
+				}
 			}
-			r_cons_printf (".%s { color: rgb(%d, %d, %d); }%s",
-				name, r, g, b, hasnext);
+			r_cons_printf (".%s%s { color: rgb(%d, %d, %d); }%s",
+				prefix, name, r, g, b, hasnext);
 			free (name);
 			}
 			break;

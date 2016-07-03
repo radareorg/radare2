@@ -435,7 +435,7 @@ R_API const char *r_cons_pal_get_i (int n);
 R_API const char *r_cons_pal_get_color(int n);
 R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
-R_API void r_cons_pal_list (int rad);
+R_API void r_cons_pal_list (int rad, const char *arg);
 R_API void r_cons_pal_show (void);
 R_API int r_cons_get_size(int *rows);
 R_API int r_cons_get_cursor(int *rows);
