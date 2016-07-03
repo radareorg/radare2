@@ -350,11 +350,16 @@ static void mem_free(void *data) {
 
 static void r_bin_object_delete_items(RBinObject *o) {
 	ut32 i = 0;
+	RListIter *iter;
+	RBinReloc *reloc;
 	if (!o) return;
 	r_list_free (o->entries);
 	r_list_free (o->fields);
 	r_list_free (o->imports);
 	r_list_free (o->libs);
+	r_list_foreach (o->relocs, iter, reloc) {
+		r_bin_import_free (reloc->import);
+	}
 	r_list_free (o->relocs);
 	r_list_free (o->sections);
 	r_list_free (o->strings);
@@ -409,15 +414,17 @@ R_API void r_bin_import_free(void *_imp) {
 		R_FREE (imp->name);
 		R_FREE (imp->classname);
 		R_FREE (imp->descriptor);
-		free (imp);
+		R_FREE (imp);
 	}
 }
 
 R_API void r_bin_symbol_free(void *_sym) {
 	RBinSymbol *sym = (RBinSymbol *)_sym;
-	free (sym->name);
-	free (sym->classname);
-	free (sym);
+	if (sym) { 
+		free (sym->name);
+		free (sym->classname);
+		free (sym);
+	}
 }
 
 R_API void r_bin_string_free(void *_str) {

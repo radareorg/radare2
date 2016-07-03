@@ -170,41 +170,41 @@ static RList* symbols(RBinFile *arch) {
 
 	if (!(ret = r_list_new ()))
 		return NULL;
-	ret->free = free;
+	ret->free = (RListFree)r_bin_symbol_free;
 	if ((symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
-		    if (!(ptr = R_NEW0 (RBinSymbol)))
-			break;
-		    ptr->name = strdup ((char *)symbols[i].name);
-		    ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
-		    //strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		    ptr->bind = r_str_const ("GLOBAL");
-		    ptr->type = r_str_const ("FUNC");
-		    ptr->size = 0;
-		    ptr->vaddr = symbols[i].vaddr;
-		    ptr->paddr = symbols[i].paddr;
-		    ptr->ordinal = symbols[i].ordinal;
-		    r_list_append (ret, ptr);
+			if (!(ptr = R_NEW0 (RBinSymbol)))
+				break;
+			ptr->name = strdup ((char *)symbols[i].name);
+			ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
+			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+			ptr->bind = r_str_const ("GLOBAL");
+			ptr->type = r_str_const ("FUNC");
+			ptr->size = 0;
+			ptr->vaddr = symbols[i].vaddr;
+			ptr->paddr = symbols[i].paddr;
+			ptr->ordinal = symbols[i].ordinal;
+			r_list_append (ret, ptr);
 		}
 		free (symbols);
 	}
 
 	if ((imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) {
-        for (i = 0; !imports[i].last; i++) {
-            if (!(ptr = R_NEW0 (RBinSymbol)))
-                break;
-            //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-	    ptr->name = r_str_newf ("imp.%s", imports[i].name);
-            //strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
-            ptr->bind = r_str_const ("NONE");
-            ptr->type = r_str_const ("FUNC");
-            ptr->size = 0;
-            ptr->vaddr = imports[i].vaddr;
-            ptr->paddr = imports[i].paddr;
-            ptr->ordinal = imports[i].ordinal;
-            r_list_append (ret, ptr);
-        }
-        free (imports);
+		for (i = 0; !imports[i].last; i++) {
+			if (!(ptr = R_NEW0 (RBinSymbol)))
+				break;
+			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+			ptr->name = r_str_newf ("imp.%s", imports[i].name);
+			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
+			ptr->bind = r_str_const ("NONE");
+			ptr->type = r_str_const ("FUNC");
+			ptr->size = 0;
+			ptr->vaddr = imports[i].vaddr;
+			ptr->paddr = imports[i].paddr;
+			ptr->ordinal = imports[i].ordinal;
+			r_list_append (ret, ptr);
+		}
+		free (imports);
 	}
 	return ret;
 }
@@ -234,14 +234,20 @@ static RList* imports(RBinFile *arch) {
 		free (ret);
 		return NULL;
 	}
-
-	ret->free = free;
+	/*
+	not set ret->free because reloc->import will point to ptr producing UAF
+	so in r_bin_object_delete_items free this memory going through the list and
+	r_bin_import_free them
+	*/
 	relocs->free = free;
-
 	((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs = relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj)))
-		return ret;
+	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) {
+		free (ret);
+		free (relocs);
+		((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs = NULL;
+		return NULL;
+	}
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport)))
 			break;
@@ -329,17 +335,18 @@ static int is_vb6(RBinFile *arch) {
 }
 
 static int has_canary(RBinFile *arch) {
-	const RList* imports_list = imports (arch);
+	RList* imports_list = imports (arch);
 	RListIter *iter;
 	RBinImport *import;
 	// TODO: use O(1) when imports sdbized
 	if (imports_list) {
-		r_list_foreach (imports_list, iter, import)
+		r_list_foreach (imports_list, iter, import) { 
 			if (!strcmp (import->name, "__security_init_cookie")) {
-				//r_list_free (imports_list);
+				r_list_free (imports_list);
 				return 1;
 			}
-		// DO NOT FREE IT! r_list_free (imports_list);
+		}
+		r_list_free (imports_list);
 	}
 	return 0;
 }
