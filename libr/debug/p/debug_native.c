@@ -528,7 +528,7 @@ static RList *r_debug_native_pids (int pid) {
 	int cnt = 0;
 	kvm_t* kd = kvm_openfiles (NULL, NULL, NULL, KVM_OPEN_FLAG, &errbuf);
 	if (!kd) {
-		r_sys_perror("kvm_openfiles says %s\n", errbuf);
+		eprintf ("kvm_openfiles says %s\n", errbuf);
 		return NULL;
 	}
 
