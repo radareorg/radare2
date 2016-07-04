@@ -42,7 +42,6 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 
 	/* parse operands */
 	for (i = 0; i < r_instr.noperands; ++i) {
-
 		parsed_operands[i].value = r_anal_value_new ();
 		parsed_operands[i].esil[0] = '\0';
 
@@ -53,16 +52,16 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			break;
 		case RSP_OPND_ZIMM:
 		case RSP_OPND_SHIFT_AMOUNT:
-			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%u", r_instr.operands[i].u);
+			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%"PFMT64d, r_instr.operands[i].u);
 			parsed_operands[i].value->imm = op->val = r_instr.operands[i].u;
 			break;
 		case RSP_OPND_SIMM:
-			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%d", r_instr.operands[i].s);
+			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%"PFMT64d, r_instr.operands[i].s);
 			parsed_operands[i].value->imm = op->val = r_instr.operands[i].s;
 			break;
 		case RSP_OPND_BASE_OFFSET:
 			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil),
-			"%d,%s,+", r_instr.operands[i].s, rsp_gp_reg_soft_names[r_instr.operands[i].u]);
+			"%"PFMT64d",%s,+", r_instr.operands[i].s, rsp_gp_reg_soft_names[r_instr.operands[i].u]);
 			parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_gp_reg_soft_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
 			parsed_operands[i].value->imm = r_instr.operands[i].s;
 			break;
@@ -72,13 +71,21 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			op->jump = r_instr.operands[i].u;
 			op->fail = rsp_mem_addr (addr + 8, RSP_IMEM_OFFSET);
 			op->eob = 1;
-			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%u", r_instr.operands[i].u);
+			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%"PFMT64d, r_instr.operands[i].u);
 			parsed_operands[i].value->imm = r_instr.operands[i].u;
 			parsed_operands[i].value->memref = 4;
 			break;
 		case RSP_OPND_C0_REG:
 			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%s", rsp_c0_reg_names[r_instr.operands[i].u]);
 			parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_c0_reg_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
+			break;
+		case RSP_OPND_C2_CREG:
+		case RSP_OPND_C2_ACCU:
+		case RSP_OPND_C2_VREG:
+		case RSP_OPND_C2_VREG_BYTE:
+		case RSP_OPND_C2_VREG_SCALAR:
+		case RSP_OPND_C2_VREG_ELEMENT:
+			/* TODO */
 			break;
 		}
 	}
