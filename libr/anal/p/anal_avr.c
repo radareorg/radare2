@@ -131,7 +131,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->jump = op->fail + avrdis (str, op->fail, kbuf, 4);
 		op->failcycles = 1;
 		op->cycles = ((op->jump - op->fail) == 4) ? 3 : 2;
-		r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,?{0x%"PFMT64x",PC,=,}", r, d, op->jump);
+		r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,?{,0x%"PFMT64x",PC,=,}", r, d, op->jump);
 		break;
 	case 0x20:	//AND
 		op->type = R_ANAL_OP_TYPE_AND;
