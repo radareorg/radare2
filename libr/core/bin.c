@@ -201,8 +201,9 @@ static bool string_filter(RCore *core, const char *str) {
 	case 'a': // only alphanumeric - plain ascii
 		for (i = 0; str[i]; i++) {
 			char ch = str[i];
-			if (ch<0 || !IS_PRINTABLE (ch))
+			if (ch < 1 || !IS_PRINTABLE (ch)) {
 				return false;
+			}
 		}
 		break;
 	case 'e': // emails
@@ -224,44 +225,46 @@ static bool string_filter(RCore *core, const char *str) {
 			return false;
 		break;
         case 'i': //IPV4
-                {
-                    int segment = 0;
-                    int segmentsum = 0;
-                    bool prevd = false;
-                    for (i = 0; str[i]; i++) {
-                            char ch = str[i];
-                            if (ch >= '0' && ch <='9') {
-                                segmentsum = segmentsum*10 + (ch - '0');
-                                if (segment == 3 )
-                                    return true;
-                                prevd = true;
-                            } else if (ch == '.') {
-                                if (prevd == true && segmentsum < 256){
-                                    segment++;
-                                    segmentsum = 0;
-                                } else {
-                                    segmentsum = 0;
-                                    segment = 0;
-                                }
-                                prevd = false;
-                            } else {
-                                segmentsum = 0;
-                                prevd = false;
-                                segment = 0;
-                            }
-                    }
-                    return false;
-                }
-
-	case 'p': // path
-		if (str[0] != '/')
+		{
+			int segment = 0;
+			int segmentsum = 0;
+			bool prevd = false;
+			for (i = 0; str[i]; i++) {
+				char ch = str[i];
+				if (ch >= '0' && ch <= '9') {
+					segmentsum = segmentsum*10 + (ch - '0');
+					if (segment == 3) {
+						return true;
+					}
+					prevd = true;
+				} else if (ch == '.') {
+					if (prevd == true && segmentsum < 256){
+						segment++;
+						segmentsum = 0;
+					} else {
+						segmentsum = 0;
+						segment = 0;
+					}
+					prevd = false;
+				} else {
+					segmentsum = 0;
+					prevd = false;
+					segment = 0;
+				}
+			}
 			return false;
+		}
+	case 'p': // path
+		if (str[0] != '/') {
+			return false;
+		}
 		break;
 	case '8': // utf8
 		for (i = 0; str[i]; i++) {
 			char ch = str[i];
-			if (ch<0)
+			if (ch < 0) {
 				return true;
+			}
 		}
 		return false;
 		break;

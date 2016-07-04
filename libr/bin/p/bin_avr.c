@@ -120,6 +120,10 @@ static RList* symbols(RBinFile *arch) {
 	return ret;
 }
 
+static RList* strings (RBinFile *arch) {
+	return NULL;
+}
+
 RBinPlugin r_bin_plugin_avr = {
 	.name = "avr",
 	.desc = "ATmel AVR MCUs",
@@ -130,8 +134,7 @@ RBinPlugin r_bin_plugin_avr = {
 	.symbols = &symbols,
 	.check_bytes = &check_bytes,
 	.info = &info,
-	.minstrlen = 10,
-	.strfilter = 'U'
+	.strings = &strings,
 };
 
 #ifndef CORELIB
