@@ -1331,12 +1331,12 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	elf_proc_note_t *elf_proc_note = NULL;
 	elf_shdr_t *shdr_pxnum = NULL;
 	elf_hdr_t *elf_hdr = NULL;
-	void *note_data;
+	void *note_data = NULL;
 	bool error = false;
 	size_t note_section_size;
 	int n_segments;
 	ut32 hdr_size;
-	elf_offset_t offset;
+	elf_offset_t offset = 0;
 
 	elf_proc_note = R_NEW0 (elf_proc_note_t);
 	if (!elf_proc_note) {
