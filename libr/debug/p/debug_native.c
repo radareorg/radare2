@@ -47,6 +47,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <kvm.h>
+#include <limits.h>
 #define R_DEBUG_REG_T struct reg
 #include "native/procfs.h"
 #if __KFBSD__
@@ -522,10 +523,12 @@ static RList *r_debug_native_pids (int pid) {
 # define KP_PID(x) (x)->ki_pid
 # define KP_PPID(x) (x)->ki_ppid
 #endif
+	char errbuf[_POSIX2_LINE_MAX];
 	struct kinfo_proc* kp;
 	int cnt = 0;
-	kvm_t* kd = kvm_openfiles (NULL, NULL, NULL, KVM_OPEN_FLAG, NULL);
+	kvm_t* kd = kvm_openfiles (NULL, NULL, NULL, KVM_OPEN_FLAG, &errbuf);
 	if (!kd) {
+		r_sys_perror("kvm_openfiles says %s\n", errbuf);
 		return NULL;
 	}
 
@@ -534,7 +537,7 @@ static RList *r_debug_native_pids (int pid) {
 		if (cnt == 1) {
 			RDebugPid *p = r_debug_pid_new (KP_COMM(kp), pid, 's', 0);
 			if (p) r_list_append (list, p);
-			/* we got our processes, now fetch the parent process */
+			/* we got our process, now fetch the parent process */
 			kp = KVM_GETPROCS (kd, KERN_PROC_PID, KP_PPID(kp), &cnt);
                         if (cnt == 1) {
 				RDebugPid *p = r_debug_pid_new (KP_COMM(kp), KP_PID(kp), 's', 0);
