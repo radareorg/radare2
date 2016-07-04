@@ -510,7 +510,7 @@ static RList *r_debug_native_pids (int pid) {
 #ifdef __OpenBSD__
 # define KVM_OPEN_FLAG KVM_NO_FILES
 # define KVM_GETPROCS(kd, opt, arg, cntptr) \
-	kvm_getprocs (kd, opt, arg, sizeof(*ld), cntptr)
+	kvm_getprocs (kd, opt, arg, sizeof(struct kinfo_proc), cntptr)
 # define KP_COMM(x) (x)->p_comm
 # define KP_PID(x) (x)->p_pid
 # define KP_PPID(x) (x)->p_ppid
