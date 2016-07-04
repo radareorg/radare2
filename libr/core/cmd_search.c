@@ -405,7 +405,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 		if (json) {
 			if (!first_hit) r_cons_printf (",");
-			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":\"%s\"}",
+			r_cons_printf ("{\"offset\": %"PFMT64d",\"id:\":%d,\"data\":%s}",
 					base_addr + addr, kw->kwidx, s);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
