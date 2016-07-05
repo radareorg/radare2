@@ -917,13 +917,16 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	const bool colorize = r_config_get_i (core->config, "scr.color");
 	const bool rop_comments = r_config_get_i (core->config, "rop.comments");
 	const bool esil = r_config_get_i (core->config, "asm.esil");
+	const bool rop_db = r_config_get_i (core->config, "rop.db");
 
 	switch (mode) {
 	case 'j':
 		//Handle comma between gadgets
-		if (!*json_first) r_cons_strcat (",");
-		else *json_first = false;
-
+		if (*json_first) {
+			*json_first = 0;
+		} else {
+			r_cons_strcat (",");
+		}
 		r_cons_printf ("{\"opcodes\":[");
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
@@ -939,8 +942,9 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 				iter->n?",":"");
 			free (buf);
 		}
-		if (hit)
+		if (hit) {
 			r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
+		}
 		break;
 	case 'l':
 		// Print gadgets in a 'linear manner', each sequence
@@ -967,7 +971,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			}
 			free (buf);
 		}
-		if (esil && hit) {
+		if (rop_db && hit) {
 			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
 			r_cons_printf ("Gadget size: %d\n", (int)size);
 			Sdb *db = sdb_ns (core->sdb, "rop", true);
