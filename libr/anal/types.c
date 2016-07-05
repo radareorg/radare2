@@ -40,13 +40,12 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	sdb_unset (DB, str, 0);
 }
 
-R_API int r_anal_type_get_size (RAnal *anal, char *type) {
+R_API int r_anal_type_get_size (RAnal *anal, const char *type) {
 	char *query;
 	const char *t = sdb_const_get (anal->sdb_types, type, 0);
 	if (!strcmp (t, "type")){
 		query = sdb_fmt (-1, "type.%s.size", type);
-		int ret = sdb_num_get (anal->sdb_types, query, 0);
-		return ret;
+		return sdb_num_get (anal->sdb_types, query, 0);
 	}
 	if (!strcmp (t, "struct")) {
 		query = sdb_fmt (-1, "struct.%s", type);
@@ -56,8 +55,8 @@ R_API int r_anal_type_get_size (RAnal *anal, char *type) {
 		do {
 			char *name = sdb_anext (ptr, &next);
 			query = sdb_fmt (-1, "struct.%s.%s", t, type, name);
-			char * subtype = sdb_get (anal->sdb_types, query, 0);
-			char *tmp = strchr(subtype, ',');
+			char *subtype = sdb_get (anal->sdb_types, query, 0);
+			char *tmp = strchr (subtype, ',');
 			if (tmp) {
 				*tmp = 0;
 			}
@@ -73,12 +72,13 @@ R_API int r_anal_type_get_size (RAnal *anal, char *type) {
 }
 
 R_API RList *r_anal_type_fcn_list (RAnal *anal) {
-	int args_n, i;
-	char *key ,*value;
-	SdbKv *kv;
-	SdbListIter *sdb_iter;
 	SdbList *sdb_list = sdb_foreach_list (anal->sdb_types);
 	RList *list = r_list_new ();
+	char *name, *key ,*value;
+	SdbListIter *sdb_iter;
+	int args_n, i;
+	SdbKv *kv;
+
 	if (!list || !sdb_list) {
 		return 0;
 	}
@@ -113,7 +113,6 @@ R_API RList *r_anal_type_fcn_list (RAnal *anal) {
 		//for as much architectures as we want here as we want here
 		fcn->vars = r_list_new ();
 		for (i = 0; i < args_n; i++) {
-			char *name;
 			RAnalVar *arg = R_NEW0 (RAnalVar);
 			key = r_str_newf ("func.%s.arg.%d", kv->key, i);
 			value = sdb_get (anal->sdb_types, key, 0);

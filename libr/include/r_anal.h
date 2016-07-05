@@ -1130,7 +1130,7 @@ R_API RAnalFunction *r_listrange_find_in_range(RListRange* s, ut64 addr);
 R_API RAnalFunction *r_listrange_find_root(RListRange* s, ut64 addr);
 /* --------- */ /* REFACTOR */ /* ---------- */
 /* type.c */
-R_API int r_anal_type_get_size (RAnal *anal, char *type);
+R_API int r_anal_type_get_size (RAnal *anal, const char *type);
 R_API RAnalType *r_anal_type_new(void);
 R_API void r_anal_type_add(RAnal *l, RAnalType *t);
 R_API void r_anal_type_del(RAnal *l, const char *name);

@@ -13,12 +13,11 @@ static int searchshow = 0;
 static int searchhits = 0;
 static int maplist = 0;
 static int maxhits = 0;
-static int json = 0;
+static bool json = 0;
 static int first_hit = true;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
-
 
 struct search_parameters {
 	RList *boundaries;
@@ -80,11 +79,11 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 				goto hell;
 			}
 			eprintf ("Search in range 0x%08"PFMT64x" and 0x%08"PFMT64x"\n", from, to);
-			int blocks = (int)(to-from-len);
+			int blocks = (int)(to - from - len);
 			eprintf ("Carving %d blocks...\n", blocks);
 			(void)r_io_read_at (core->io, from, buf, bufsz);
-			for (i = 0; (from+i+len)<to; i++) {
-				char *s = r_hash_to_string (NULL, hashname, buf+i, len);
+			for (i = 0; (from + i + len) < to; i++) {
+				char *s = r_hash_to_string (NULL, hashname, buf + i, len);
 				if (!(i%5)) eprintf ("%d\r", i);
 				if (!s) {
 					eprintf ("Hash fail\n");
@@ -119,9 +118,10 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	int size, sz = sizeof (buf);
 
 	r_cons_break (NULL, NULL);
-	while (from <to) {
-		if (r_cons_singleton()->breaked)
+	while (from < to) {
+		if (r_cons_singleton()->breaked) {
 			break;
+		}
 		r_io_read_at (core->io, from, buf, sz);
 		plug = r_bin_get_binplugin_by_bytes (core->bin, buf, sz);
 		if (plug) {
@@ -916,7 +916,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	RAsmOp asmop;
 	int colorize = r_config_get_i (core->config, "scr.color");
 	int rop_comments = r_config_get_i (core->config, "rop.comments");
-	int esil = r_config_get_i (core->config, "asm.esil");
+	const bool esil = r_config_get_i (core->config, "asm.esil");
 
 	switch (mode) {
 	case 'j':
@@ -968,11 +968,11 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			free (buf);
 		}
 		if (esil && hit) {
-			r_cons_printf ("Gadget size: %d\n", size);
-			char input[80] = { 0 };
-			sprintf(input, "rop/0x%08"PFMT64x"=%d", ((RCoreAsmHit *)hitlist->head->data)->addr, size);
-
-			sdb_querys (core->sdb, NULL, 0, input);
+			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
+			r_cons_printf ("Gadget size: %d\n", (int)size);
+			Sdb *db = sdb_ns (core->sdb, "rop", true);
+			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
+			sdb_num_set (db, key, size, 0);
 		}
 		break;
 	default:
@@ -980,7 +980,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 		r_list_foreach (hitlist, iter, hit) {
 			char *comment = rop_comments ?r_meta_get_string (core->anal,
 					R_META_TYPE_COMMENT, hit->addr) : NULL;
-			if (hit->len<0) {
+			if (hit->len < 0) {
 				eprintf ("Invalid hit length here\n");
 				continue;
 			}
@@ -2189,7 +2189,9 @@ reread:
 		}
 		ignorecase = true;
 	case 'j':
-		if (input[0] =='j') json = true;
+		if (input[0] =='j') {
+			json = true;
+		}
 		/* pass-thru */
 	case ' ': /* search string */
 		inp = strdup (input+1+ignorecase+json);

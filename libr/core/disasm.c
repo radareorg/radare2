@@ -2995,6 +2995,7 @@ toro:
 			}
 		}
 		ds_show_comments_right (ds);
+
 		//TRY adding here
 		char *link_key = sdb_fmt (-1, "link.%08"PFMT64x, ds->addr + idx);
 		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
@@ -3002,12 +3003,13 @@ toro:
 			char *fmt = r_anal_type_format (core->anal, link_type);
 			if (fmt) {
 				r_cons_printf ("(%s)\n", link_type);
-				 r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, ds->addr + idx);
-				 inc += r_anal_type_get_size (core->anal, link_type) / 8;
-				 continue;
+				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, ds->addr + idx);
+				inc += r_anal_type_get_size (core->anal, link_type) / 8;
+				free (fmt);
+				continue;
 			}
 		} else {
-			ret = ds_disassemble (ds, buf+idx, len-idx);
+			ret = ds_disassemble (ds, buf + idx, len - idx);
 			if (ret == -31337) {
 				inc = ds->oplen;
 				continue;
@@ -3148,12 +3150,12 @@ toro:
 	retry:
 		if (len<4) len = 4;
 		buf = nbuf = malloc (len);
-		if (ds->tries>0) {
+		if (ds->tries > 0) {
 			if (r_core_read_at (core, ds->addr, buf, len) ) {
 				goto toro;
 			}
 		}
-		if (ds->lines<ds->l) {
+		if (ds->lines < ds->l) {
 			//ds->addr += idx;
 			if (r_core_read_at (core, ds->addr, buf, len) != len) {
 				//ds->tries = -1;
@@ -3175,9 +3177,8 @@ toro:
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
 	ds_free (ds);
-	{ /* used by asm.emu */
-		r_reg_arena_pop (core->anal->reg);
-	}
+	/* used by asm.emu */
+	r_reg_arena_pop (core->anal->reg);
 	return idx; //-ds->lastfail;
 }
 
@@ -3228,10 +3229,9 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			r_core_block_read (core, 0);
 		}
 	}
-
-	if (ds->l == 0)
+	if (ds->l == 0) {
 		ds->l = ds->len;
-
+	}
 	r_cons_break (NULL, NULL);
 #define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
 	for (i = j = 0; isTheEnd; i += ret, j++) {
