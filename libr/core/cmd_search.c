@@ -344,8 +344,25 @@ R_API int r_core_search_preludes(RCore *core) {
 	return ret;
 }
 
+/* TODO: maybe move into util/str */
+static char *getstring(char *b, int l) {
+	char *r, *res = malloc (l + 1);
+	int i;
+	if (!res) {
+		return NULL;
+	}
+	for (i=0, r = res; i < l; b++, i++) {
+		if (IS_PRINTABLE (*b)) {
+			*r++ = *b;
+		}
+	}
+	*r = 0;
+	return res;
+}
+
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
+	const bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	ut64 base_addr = 0;
 
 	if (!core) {
@@ -364,20 +381,33 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			return false;
 		}
 	}
-
 	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
 		ut32 buf_sz = kw->keyword_length;
-		ut8 *buf = malloc (buf_sz);
+		ut8 *buf = malloc (buf_sz + 1);
 		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (json) ? 3 : 1;
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
-			str = malloc (kw->keyword_length + 20);
-			r_core_read_at (core, base_addr + addr,
-				(ut8*)str, kw->keyword_length);
-			p = r_str_utf16_encode (str, kw->keyword_length);
-			s = r_str_newf ("\"%s\"", p);
+			{
+				const int ctx = 16;
+				char *pre, *pos, *wrd;
+				const int len = kw->keyword_length;
+				char *buf = malloc (len + 32 + ctx * 2);
+				r_core_read_at (core, addr - ctx, (ut8*)buf, len + (ctx * 2));
+				pre = getstring (buf, ctx);
+				wrd = r_str_utf16_encode (buf + ctx, len);
+				pos = getstring (buf + ctx + len, ctx);
+				free (buf);
+				if (use_color) {
+					s = r_str_newf (".%s"Color_BYELLOW"%s"Color_RESET"%s.", pre, wrd, pos);
+				} else {
+					s = r_str_newf (".%s"Color_INVERT"%s"Color_RESET"%s.", pre, wrd, pos);
+				}
+				free (pre);
+				free (wrd);
+				free (pos);
+			}
 			free (p);
 			break;
 		default:
@@ -1503,10 +1533,11 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	if (outmode != 'j')
 		json = 0;
 
-	if (!strncmp (param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
+	if (!strncmp (param->mode, "dbg.", 4) || !strncmp (param->mode, "io.sections", 11)) {
 		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
-	else
+	} else {
 		param->boundaries = NULL;
+	}
 
 	maxhits = (int)r_config_get_i (core->config, "search.count");
 
@@ -1520,20 +1551,25 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		maplist = true;
 	}
 
-	if (json) r_cons_printf ("[");
+	if (json) {
+		r_cons_print ("[");
+	}
 	r_cons_break (NULL, NULL);
 	r_list_foreach (param->boundaries, itermap, map) {
 		param->from = map->from;
 		param->to = map->to;
-		if (r_cons_singleton()->breaked)
+		if (r_cons_singleton()->breaked) {
 			break;
-
-		if (maxhits && count >= maxhits)
+		}
+		if (maxhits && count >= maxhits) {
 			break;
-
-		if (outmode == 0) hits = NULL;
-		else hits = r_core_asm_strsearch (core, input+2,
+		}
+		if (outmode == 0) {
+			hits = NULL;
+		} else {
+			hits = r_core_asm_strsearch (core, input+2,
 				param->from, param->to, maxhits, regexp);
+		}
 		if (hits) {
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_singleton()->breaked)
@@ -1584,8 +1620,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	int bufsz;
 	RListIter *iter;
 	RIOMap *map;
-	if (!searchflags && !json)
+	if (!searchflags && !json) {
 		r_cons_printf ("fs hits\n");
+	}
 	core->search->inverse = param->inverse;
 	searchcount = r_config_get_i (core->config, "search.count");
 	if (searchcount)
@@ -1649,8 +1686,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					at = param->from;
 					param->do_bckwrd_srch = false;
 				} else at = param->to - bufsz;
-			} else at = param->from;
-
+			} else {
+				at = param->from;
+			}
 			/* bckwrds = false -> normal search -> must be at < to
 			   bckwrds search -> check later */
 			for (; (!param->bckwrds && at < param->to) || param->bckwrds;) {
@@ -1681,7 +1719,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				   buf[i] = tolower (buf[i]);
 				   }
 				   */
-				if (ret <1)
+				if (ret < 1)
 					break;
 				if (param->crypto_search) {
 					int delta = 0;
@@ -1727,7 +1765,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			} else if (!json) {
 				eprintf ("hits: %d\n", searchhits);
 			}
-			if (!r_list_empty (core->search->kws)) {
+			{
 				RListIter *iter;
 				RSearchKeyword *kw;
 				r_list_foreach (core->search->kws, iter, kw) {
