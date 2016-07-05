@@ -906,7 +906,7 @@ ret:
 	return hitlist;
 }
 
-static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first) {
+static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) {
 	const char *otype;
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
@@ -914,8 +914,9 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	unsigned int size = 0;
 	RAnalOp analop = {0};
 	RAsmOp asmop;
-	int colorize = r_config_get_i (core->config, "scr.color");
-	int rop_comments = r_config_get_i (core->config, "rop.comments");
+	bool colorize = r_config_get_i (core->config, "scr.color");
+	bool rop_comments = r_config_get_i (core->config, "rop.comments");
+	bool esil = r_config_get_i (core->config, "asm.esil");
 
 	switch (mode) {
 	case 'j':
@@ -951,7 +952,12 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			r_core_read_at (core, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-			if (colorize) {
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
+			size += hit->len;
+			char *opstr = (R_STRBUF_SAFEGET (&analop.esil));
+			if (esil) {
+				r_cons_printf ("%s\n", opstr);
+			} else if (colorize) {
 				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
 						core->cons->pal.reg, core->cons->pal.num);
 				r_cons_printf (" %s%s;", buf_asm, Color_RESET);
@@ -960,6 +966,11 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 				r_cons_printf (" %s;", asmop.buf_asm);
 			}
 			free (buf);
+		}
+		if (esil && hit) {
+ 			char *key = sdb_fmt (0, "rop/0x%08"PFMT64x, ((RCoreAsmHit *)hitlist->head->data)->addr);
+			sdb_num_set (core->sdb, key, size, 0);
+			r_cons_printf ("Gadget size: %d\n", size);
 		}
 		break;
 	default:
@@ -977,6 +988,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
+			size += hit->len;
 			if (colorize) {
 				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
 						core->cons->pal.reg, core->cons->pal.num);
