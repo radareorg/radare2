@@ -55,43 +55,57 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 //TODO
 //look at the next couple of functions
 //can be optimized into one right ... you see it you do it :P
-static int sdbforcb(void *p, const char *k, const char *v) {
+static int sdbforcb (void *p, const char *k, const char *v) {
 	if (!strncmp (v, "type", strlen ("type") + 1))
 		r_cons_println (k);
 	return 1;
 }
-static int stdprintifstruct(void *p, const char *k, const char *v) {
+static int stdprintifstruct (void *p, const char *k, const char *v) {
 	if (!strncmp (v, "struct", strlen ("struct") + 1))
 		r_cons_println (k);
 	return 1;
 }
-static int stdprintiffunc(void *p, const char *k, const char *v) {
+static int stdprintiffunc (void *p, const char *k, const char *v) {
 	if (!strncmp (v, "func", strlen ("func") + 1))
 		r_cons_println (k);
 	return 1;
 }
-static int stdprintifunion(void *p, const char *k, const char *v) {
+static int stdprintifunion (void *p, const char *k, const char *v) {
 	if (!strncmp (v, "union", strlen ("union") + 1))
 		r_cons_println (k);
 	return 1;
 }
-static int sdbdelete(void *p, const char *k, const char *v) {
+static int sdbdelete (void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	r_anal_type_del (core->anal, k);
 	return 1;
 }
-static int sdbdeletelink(void *p, const char *k, const char *v) {
+static int sdbdeletelink (void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	if (!strncmp (k, "link.", strlen ("link.")))
 		r_anal_type_del (core->anal, k);
 	return 1;
 }
-static int linklist(void *p, const char *k, const char *v) {
+static int linklist (void *p, const char *k, const char *v) {
 	if (!strncmp (k, "link.", strlen ("link.")))
-		r_cons_printf ("tl %s @ 0x%s\n", v, k + strlen ("link."));
+		r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
 	return 1;
 }
-static int typelist(void *p, const char *k, const char *v) {
+static int linklist_readable (void *p, const char *k, const char *v) {
+	RCore *core = (RCore *)p;
+	if (!strncmp (k, "link.", strlen ("link."))) {
+		char *fmt = r_anal_type_format (core->anal, v);
+		if (!fmt) {
+			eprintf("Cant fint type %s", v);
+			return 1;
+		}
+		r_cons_printf ("(%s)\n", v);
+		r_core_cmdf (core, "pf %s @ 0x%s\n", fmt, k + strlen ("link."));
+	}
+	return 1;
+
+}
+static int typelist (void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s = %s\n", k, v);
 #if 0
 	if (!strcmp (v, "func")) {
@@ -341,24 +355,67 @@ static int cmd_type(void *data, const char *input) {
 		case '?': {
 			const char *help_message[] = {
 				"Usage:", "", "",
-				"tl", "<typename>", "link a type to current adress.",
-				"tl", "<typename> <address>", "link type to given address.",
+				"tl", "", "list all links in readable format",
+				"tl", "[typename]", "link a type to current adress.",
+				"tl", "[typename] = [address]", "link type to given address.",
+				"tls", "[address]", "show link at given address",
 				"tl-*", "", "delete all links.",
-				"tl-", "<address>", "delete link at given address.",
+				"tl-", "[address]", "delete link at given address.",
 				"tl*", "", "list all links in radare2 command format",
 				"tl?", "", "print this help.",
 				NULL };
 			r_core_cmd_help (core, help_message);
 			} break;
 		case ' ': {
-			const char *type = input + 2;
-			char *ptr = strchr (type, ' ');
+			char *type = strdup (input + 2);
+			char *ptr = strchr (type, '=');
 			ut64 addr;
+
 			if (ptr) {
 				*ptr++ = 0;
-				addr = r_num_math (core->num, ptr);
-			} else addr = core->offset;
-			r_anal_type_link (core->anal, type, addr);
+				r_str_chop (ptr);
+				if (ptr && *ptr) {
+					addr = r_num_math (core->num, ptr);
+				} else {
+					eprintf ("address is unvalid\n");
+					free (type);
+					break;
+				}
+			} else {
+				addr = core->offset;
+			}
+			r_str_chop (type);
+			char *tmp = sdb_get (core->anal->sdb_types, type, 0);
+			if (tmp && *tmp) {
+				r_anal_type_link (core->anal, type, addr);
+				free (tmp);
+			} else {
+				eprintf ("unknown type %s\n", type);
+			}
+			free (type);
+			}
+			break;
+		case 's': {
+			int ptr;
+			char *addr = strdup (input + 2);
+			SdbKv *kv;
+			SdbListIter *sdb_iter;
+			SdbList *sdb_list = sdb_foreach_list (core->anal->sdb_types);
+			r_str_chop (addr);
+			ptr = r_num_math (NULL, addr);
+			//r_core_cmdf (core, "tl~0x%08"PFMT64x" = ", addr);
+			ls_foreach (sdb_list, sdb_iter, kv) {
+				char *linkptr;
+				if (strncmp (kv->key, "link.", strlen ("link."))) {
+					continue;
+				}
+				linkptr = sdb_fmt (-1,"0x%s", kv->key + strlen ("link."));
+				if (ptr == r_num_math (NULL, linkptr)) {
+					linklist_readable (core, kv->key, kv->value);
+				}
+			}
+			free (addr);
+			ls_free (sdb_list);
 			}
 			break;
 		case '-':
@@ -376,6 +433,9 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case '*':
 			sdb_foreach (core->anal->sdb_types, linklist, core);
+			break;
+		case '\0':
+			sdb_foreach (core->anal->sdb_types, linklist_readable, core);
 			break;
 		}
 		break;

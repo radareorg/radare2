@@ -5,7 +5,8 @@ F+= linux-x86-64
 F+= darwin-x86-64
 F+= windows-x86-32
 F+= windows-x86-64
-
+F+= types-x86-32
+F+= types-x86-64
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
 

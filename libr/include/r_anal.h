@@ -295,7 +295,7 @@ typedef struct r_anal_type_function_t {
 	int bits; // ((> bits 0) (set-bits bits))
 	short type;
 	/*item_list *rets; // Type of return value */
-	short rets;
+	char *rets;
 	short fmod; //  static, inline or volatile?
 	/* TODO: Change to RAnalCC ??? */
 	short call; // calling convention
@@ -323,22 +323,9 @@ typedef struct r_anal_type_function_t {
 
 struct r_anal_type_t {
 	char *name;
-	ut32 size;
 	ut32 type;
-	union {
-		RAnalTypeVar *v;
-		RAnalTypePtr *p;
-		RAnalTypeArray *a;
-		RAnalTypeStruct *s;
-		RAnalTypeUnion *u;
-		RAnalTypeAlloca *al;
-		RAnalFunction *f;
-	} custom;
-	RAnalType *next;
-	RAnalType *prev;
-	RAnalType *head;
-	// Parent filename
-	char* filename;
+	ut32 size;
+	RList *content;
 };
 
 enum {
@@ -1143,6 +1130,7 @@ R_API RAnalFunction *r_listrange_find_in_range(RListRange* s, ut64 addr);
 R_API RAnalFunction *r_listrange_find_root(RListRange* s, ut64 addr);
 /* --------- */ /* REFACTOR */ /* ---------- */
 /* type.c */
+R_API int r_anal_type_get_size (RAnal *anal, char *type);
 R_API RAnalType *r_anal_type_new(void);
 R_API void r_anal_type_add(RAnal *l, RAnalType *t);
 R_API void r_anal_type_del(RAnal *l, const char *name);
@@ -1165,6 +1153,7 @@ R_API char *r_anal_type_format (RAnal *anal, const char *t);
 R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val);
 
 /* anal.c */
+R_API void r_anal_type_init(RAnal *anal);
 R_API RAnal *r_anal_new(void);
 R_API int r_anal_purge (RAnal *anal);
 R_API RAnal *r_anal_free(RAnal *r);

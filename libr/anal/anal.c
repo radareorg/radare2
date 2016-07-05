@@ -11,38 +11,24 @@ R_LIB_VERSION(r_anal);
 static RAnalPlugin *anal_static_plugins[] =
 	{ R_ANAL_STATIC_PLUGINS };
 
-static void r_anal_type_init(RAnal *anal) {
-	Sdb *D = anal->sdb_types;
-	sdb_set (D, "unsigned int", "type", 0);
-	sdb_set (D, "unsigned char", "type", 0);
-	sdb_set (D, "unsigned short", "type", 0);
-	sdb_set (D, "short", "type", 0);
-	sdb_set (D, "int", "type", 0);
-	sdb_set (D, "long", "type", 0);
-	sdb_set (D, "long long", "type", 0);
-	sdb_set (D, "void *", "type", 0);
-	sdb_set (D, "char", "type", 0);
-	sdb_set (D, "char *", "type", 0);
-	sdb_set (D, "const char*", "type", 0);
-	sdb_set (D, "uint8_t", "type", 0);
-	sdb_set (D, "uint16_t", "type", 0);
-	sdb_set (D, "uint32_t", "type", 0);
-	sdb_set (D, "uint64_t", "type", 0);
-	sdb_set (D, "type.unsigned int", "i", 0);
-	sdb_set (D, "type.unsigned char", "b", 0);
-	sdb_set (D, "type.unsigned short", "w", 0);
-	sdb_set (D, "type.short", "w", 0);
-	sdb_set (D, "type.int", "d", 0);
-	sdb_set (D, "type.long", "x", 0);
-	sdb_set (D, "type.long long", "q", 0);
-	sdb_set (D, "type.void *", "p", 0);
-	sdb_set (D, "type.char", "b", 0);
-	sdb_set (D, "type.char *", "*z", 0);
-	sdb_set (D, "type.const char*", "*z", 0);
-	sdb_set (D, "type.uint8_t", "b", 0);
-	sdb_set (D, "type.uint16_t", "w", 0);
-	sdb_set (D, "type.uint32_t", "d", 0);
-	sdb_set (D, "type.uint64_t", "q", 0);
+R_API void r_anal_type_init(RAnal *anal) {
+	const char *anal_arch =  anal->cur->arch;
+	char *dbpath;
+	if (!strcmp (anal_arch, "x86")) {
+		Sdb *db;
+#define TYPESPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
+		dbpath = r_str_newf (TYPESPATH"/types-%s-%d.sdb", anal_arch,
+			anal->bits);
+		if (r_file_exists (dbpath)) {
+			db = sdb_new (0, dbpath, 0);
+			sdb_merge (anal->sdb_types, db);
+			sdb_close (db);
+			sdb_free (db);
+		}
+		free (dbpath);
+	} else {
+		//TODO add other architectures and profiles at libr/anal
+	}
 }
 
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
@@ -95,7 +81,6 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
-	(void)r_anal_type_init (anal);
 	(void)r_anal_xrefs_init (anal);
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
