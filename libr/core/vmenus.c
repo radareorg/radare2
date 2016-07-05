@@ -55,6 +55,119 @@ static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 		sdb_fmt (0, "type.%s", k), 0);
 }
 
+static bool edit_bits (RCore *core) {
+	const int nbits = sizeof (ut64) * 8;
+	int i, j, x = 0;
+	RAsmOp asmop;
+	ut8 buf[sizeof (ut64)];
+
+	if (core->blocksize < sizeof (ut64)) {
+		return false;
+	}
+	memcpy (buf, core->block, sizeof (ut64));
+	for (;;) {
+		(void) r_asm_disassemble (core->assembler,
+			&asmop, buf, sizeof (ut64));
+		r_cons_clear00 ();
+		r_cons_printf ("r2's bit editor:\n\n");
+		r_cons_printf ("hex: %s\n", asmop.buf_hex);
+		r_cons_printf ("len: %d\n", asmop.size);
+		r_cons_printf ("asm: %s\n", asmop.buf_asm);
+		r_cons_printf ("chr:");
+		for (i = 0; i < 8; i++) {
+			ut8 *byte = buf + i;
+			char ch = IS_PRINTABLE(*byte)? *byte: '?';
+			r_cons_printf (" %5s'%c'", " ", ch);
+		}
+		r_cons_printf ("\ndec:");
+		for (i = 0; i < 8; i++) {
+			ut8 *byte = buf + i;
+			r_cons_printf (" %8d", *byte);
+		}
+		r_cons_printf ("\nhex:");
+		for (i = 0; i < 8; i++) {
+			ut8 *byte = buf + i;
+			r_cons_printf ("     0x%02x", *byte);
+		}
+		r_cons_printf ("\nbit: ");
+		for (i = 0; i < 8; i++) {
+			ut8 *byte = buf + i;
+			for (j = 0; j < 8; j++) {
+				bool bit = R_BIT_CHK (byte, 7 - j);
+				r_cons_printf ("%d", bit? 1: 0);
+			}
+			r_cons_print (" ");
+		}
+		r_cons_newline ();
+		char str_pos[128];
+		memset (str_pos, '-', nbits + 7);
+		str_pos[x + (x/8)] = '^';
+		str_pos[nbits + 7] = 0;
+		str_pos[8] = ' ';
+		str_pos[17] = ' ';
+		str_pos[26] = ' ';
+		str_pos[35] = ' ';
+		str_pos[44] = ' ';
+		str_pos[53] = ' ';
+		str_pos[62] = ' ';
+		r_cons_printf ("pos: %s\n", str_pos);
+		r_cons_newline ();
+		r_cons_visual_flush ();
+
+		int ch = r_cons_readchar ();
+		if (ch == -1 || ch == 4) {
+			break;
+		}
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		switch (ch) {
+		case 'q':
+			return false;
+		case 'j':
+		case 'k':
+		case ' ':
+			//togglebit();
+			{
+				const int nbyte = x / 8;
+				const int nbit = 7 - (x - (nbyte * 8));
+				ut8 *byte = buf + nbyte;
+				bool bit = R_BIT_CHK(byte, nbit);
+				if (bit) {
+					R_BIT_UNSET(byte, nbit);
+				} else {
+					R_BIT_SET(byte, nbit);
+				}
+			}
+			break;
+		case 'h':
+			x = R_MAX (x - 1, 0);
+			break;
+		case 'l':
+			x = R_MIN (x + 1, nbits - 1);
+			break;
+		case ':': // TODO: move this into a separate helper function
+			{
+			char cmd[1024];
+			r_cons_show_cursor (true);
+			r_cons_set_raw (0);
+			cmd[0]='\0';
+			r_line_set_prompt (":> ");
+			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+				cmd[0] = '\0';
+			}
+			r_core_cmd (core, cmd, 1);
+			r_cons_set_raw (1);
+			r_cons_show_cursor (false);
+			if (cmd[0]) {
+				r_cons_any_key (NULL);
+			}
+			r_cons_clear ();
+			}
+			break;
+		}
+	}
+	return true;
+}
+
 // belongs to r_core_visual_types
 static int sdbforcb (void *p, const char *k, const char *v) {
 	const char *pre = " ";
@@ -314,8 +427,9 @@ R_API int r_core_visual_types(RCore *core) {
 			r_core_cmd (core, cmd, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
-			if (cmd[0])
+			if (cmd[0]) {
 				r_cons_any_key (NULL);
+			}
 			r_cons_clear ();
 			continue;
 		}
@@ -1982,17 +2096,18 @@ R_API void r_core_visual_define (RCore *core) {
 		int cur = core->print->cur;
 		if (core->print->ocur != -1) {
 			plen = R_ABS (core->print->cur- core->print->ocur)+1;
-			if (core->print->ocur<cur)
+			if (core->print->ocur<cur) {
 				cur = core->print->ocur;
+			}
 		}
 		off += cur;
 		p += cur;
 	}
 	{
 		int h = 0;
-		(void)r_cons_get_size (&h);
-		h-=19;
-		if (h<0) {
+		(void) r_cons_get_size (&h);
+		h -= 19;
+		if (h < 0) {
 			r_cons_clear00 ();
 		} else {
 			r_cons_gotoxy (0, h);
@@ -2001,6 +2116,7 @@ R_API void r_core_visual_define (RCore *core) {
 	const char *lines[] = { ""
 		,"[Vd]- Define current block as:"
 		," $    define flag size"
+		," 1    edit bits"
 		," b    set as byte"
 		," B    set as short word (2 bytes)"
 		," c    set as code"
@@ -2027,7 +2143,7 @@ R_API void r_core_visual_define (RCore *core) {
 		, NULL};
 	{
 		int i;
-		for (i=0;lines[i];i++) {
+		for (i = 0; lines[i]; i++) {
 			r_cons_fill_line ();
 			r_cons_printf ("\r%s\n", lines[i]);
 		}
@@ -2054,6 +2170,9 @@ repeat:
 				r_cons_show_cursor (false);
 			}
 		}
+		break;
+	case '1':
+		edit_bits (core);
 		break;
 	case 'x':
 		r_core_cmd0 (core, "./r");
