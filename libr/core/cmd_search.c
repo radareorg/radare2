@@ -937,6 +937,13 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			}
 			free (buf);
 		}
+		if (esil && hit) {
+			r_cons_printf ("Gadget size: %d", size);
+			char input[80] = { 0 };
+			sprintf(input, "rop/0x%08"PFMT64x"=%d", ((RCoreAsmHit *)hitlist->head->data)->addr, size);
+
+			sdb_querys (core->sdb, NULL, 0, input);
+		}
 		break;
 	default:
 		// Print gadgets with new instruction on a new line.
