@@ -922,7 +922,6 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			r_core_read_at (core, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 			size += hit->len;
 			char *opstr = (R_STRBUF_SAFEGET (&analop.esil));
@@ -937,6 +936,13 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 				r_cons_printf (" %s;", asmop.buf_asm);
 			}
 			free (buf);
+		}
+		if (esil && hit) {
+			r_cons_printf ("Gadget size: %d\n", size);
+			char input[80] = { 0 };
+			sprintf(input, "rop/0x%08"PFMT64x"=%d", ((RCoreAsmHit *)hitlist->head->data)->addr, size);
+
+			sdb_querys (core->sdb, NULL, 0, input);
 		}
 		break;
 	default:
