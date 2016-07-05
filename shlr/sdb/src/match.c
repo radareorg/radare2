@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2015 - pancake */
+/* sdb - MIT - Copyright 2015-2016 - pancake */
 
 #include "sdb.h"
 #include <ctype.h>
@@ -36,7 +36,7 @@ static inline int mycmp(const char *a, const char *b, int n, int any) {
 
 static inline int strstr2(const char *a, const char *b, int n) {
 	int i, j;
-	for (i=j=0; a[i] && b[j] && j<n; i++) {
+	for (i = j = 0; a[i] && b[j] && j < n; i++) {
 		if (a[i] == b[j]) {
 			j++;
 		} else {
@@ -46,11 +46,12 @@ static inline int strstr2(const char *a, const char *b, int n) {
 	return j == n;
 }
 
-static inline int compareString(const char *a, const char *b, int blen, int flags) {
+static inline bool compareString(const char *a, const char *b, int blen, int flags) {
 	const int start = flags & SDB_LIKE_START;
 	const int end = flags & SDB_LIKE_END;
 	char *aa = NULL;
-	int alen, ret = 0;
+	int alen;
+	bool ret = false;
 	if (!a || !b || blen<0)
 		return 0;
 	if (flags & SDB_LIKE_BASE64) {
@@ -77,12 +78,11 @@ static inline int compareString(const char *a, const char *b, int blen, int flag
 	return ret;
 }
 
-SDB_API int sdb_match (const char *str, const char *glob) {
-	int flags = SDB_LIKE_NONE;
-	int glob_len;
-	int begin = 0;
-	if (!str || !glob)
-		return 0;
+SDB_API bool sdb_match (const char *str, const char *glob) {
+	int glob_len, flags = SDB_LIKE_NONE;
+	if (!str || !glob) {
+		return false;
+	}
 	glob_len = strlen (glob);
 	if (haveSuffix (glob, glob_len, "?i")) {
 		glob_len -= 2;
@@ -98,7 +98,7 @@ SDB_API int sdb_match (const char *str, const char *glob) {
 		glob_len--;
 		flags |= SDB_LIKE_START;
 	}
-	if (haveSuffix (glob+begin, glob_len-begin, "$")) {
+	if (haveSuffix (glob, glob_len, "$")) {
 		glob_len--;
 		flags |= SDB_LIKE_END;
 	}

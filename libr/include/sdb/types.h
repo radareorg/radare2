@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <sys/types.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 

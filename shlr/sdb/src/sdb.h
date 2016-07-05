@@ -28,6 +28,7 @@ extern "C" {
 #if __SDB_WINDOWS__ && !__CYGWIN__
 #include <windows.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
@@ -45,6 +46,7 @@ extern char *strdup (const char *);
 #define SDB_SS ","
 #define SDB_MAX_PATH 256
 #define SDB_NUM_BASE 16
+#define SDB_NUM_BUFSZ 64
 
 #define SDB_OPTION_NONE 0
 #define SDB_OPTION_ALL 0xff
@@ -103,6 +105,8 @@ void sdb_close (Sdb *s);
 void sdb_config (Sdb *s, int options);
 int  sdb_free (Sdb* s);
 void sdb_file (Sdb* s, const char *dir);
+bool sdb_merge (Sdb* d, Sdb *s);
+int sdb_count (Sdb* s);
 void sdb_reset (Sdb* s);
 void sdb_setup (Sdb* s, int options);
 void sdb_drain (Sdb*, Sdb*);
@@ -188,6 +192,7 @@ ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas);
 ut64 sdb_now (void);
 ut64 sdb_unow (void);
 ut32 sdb_hash (const char *key);
+ut32 sdb_hash_len (const char *key, ut32 *len);
 
 /* json api */
 int sdb_isjson (const char *k);
@@ -226,8 +231,8 @@ int sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
 int sdb_array_indexof(Sdb *s, const char *key, const char *val, ut32 cas);
 int sdb_array_set (Sdb* s, const char *key, int idx, const char *val, ut32 cas);
 int sdb_array_set_num (Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
-int sdb_array_append(Sdb *s, const char *key, const char *val, ut32 cas);
-int sdb_array_append_num(Sdb *s, const char *key, ut64 val, ut32 cas);
+bool sdb_array_append(Sdb *s, const char *key, const char *val, ut32 cas);
+bool sdb_array_append_num(Sdb *s, const char *key, ut64 val, ut32 cas);
 int sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas);
 int sdb_array_prepend_num(Sdb *s, const char *key, ut64 val, ut32 cas);
 char *sdb_array_get (Sdb* s, const char *key, int idx, ut32 *cas);
@@ -272,16 +277,16 @@ int sdb_hook_call(Sdb *s, const char *k, const char *v);
 void sdb_hook_free(Sdb *s);
 /* Util.c */
 int sdb_check_value (const char *s);
-int sdb_check_key (const char *s);
+bool sdb_check_key (const char *s);
 int sdb_isnum (const char *s);
 
 const char *sdb_type(const char *k);
-int sdb_match (const char *str, const char *glob);
-int sdb_bool_set(Sdb *db, const char *str, int v, ut32 cas);
-int sdb_bool_get(Sdb *db, const char *str, ut32 *cas);
+bool sdb_match(const char *str, const char *glob);
+int sdb_bool_set(Sdb *db, const char *str, bool v, ut32 cas);
+bool sdb_bool_get(Sdb *db, const char *str, ut32 *cas);
 
 // base64
-ut8 *sdb_decode(const char *in, int *len);
+ut8 *sdb_decode (const char *in, int *len);
 char *sdb_encode(const ut8 *bin, int len);
 void sdb_encode_raw(char *bout, const ut8 *bin, int len);
 int sdb_decode_raw(ut8 *bout, const char *bin, int len);
