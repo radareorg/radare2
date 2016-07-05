@@ -914,8 +914,8 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	unsigned int size = 0;
 	RAnalOp analop = {0};
 	RAsmOp asmop;
-	int colorize = r_config_get_i (core->config, "scr.color");
-	int rop_comments = r_config_get_i (core->config, "rop.comments");
+	const bool colorize = r_config_get_i (core->config, "scr.color");
+	const bool rop_comments = r_config_get_i (core->config, "rop.comments");
 	const bool esil = r_config_get_i (core->config, "asm.esil");
 
 	switch (mode) {
