@@ -906,7 +906,7 @@ ret:
 	return hitlist;
 }
 
-static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first) {
+static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) {
 	const char *otype;
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
@@ -914,9 +914,9 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	unsigned int size = 0;
 	RAnalOp analop = {0};
 	RAsmOp asmop;
-	int colorize = r_config_get_i (core->config, "scr.color");
-	int rop_comments = r_config_get_i (core->config, "rop.comments");
-	int esil = r_config_get_i (core->config, "asm.esil");
+	bool colorize = r_config_get_i (core->config, "scr.color");
+	bool rop_comments = r_config_get_i (core->config, "rop.comments");
+	bool esil = r_config_get_i (core->config, "asm.esil");
 
 	switch (mode) {
 	case 'j':
@@ -968,11 +968,9 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			free (buf);
 		}
 		if (esil && hit) {
+ 			char *key = sdb_fmt (0, "rop/0x%08"PFMT64x, ((RCoreAsmHit *)hitlist->head->data)->addr);
+			sdb_num_set (core->sdb, key, size, 0);
 			r_cons_printf ("Gadget size: %d\n", size);
-			char input[80] = { 0 };
-			sprintf(input, "rop/0x%08"PFMT64x"=%d", ((RCoreAsmHit *)hitlist->head->data)->addr, size);
-
-			sdb_querys (core->sdb, NULL, 0, input);
 		}
 		break;
 	default:
