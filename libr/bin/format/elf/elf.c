@@ -2348,12 +2348,17 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 	ut8 *buf;
+	int size;
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
-	if (!bin) return NULL;
+	if (!bin) {
+		return NULL;
+	}
 	memset (bin, 0, sizeof (struct Elf_(r_bin_elf_obj_t)));
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
+	if (!(buf = (ut8*)r_file_slurp (file, &size))) {
 		return Elf_(r_bin_elf_free) (bin);
+	}
+	bin->size = size;
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
 		free (buf);
