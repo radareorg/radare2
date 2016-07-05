@@ -402,7 +402,8 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				if (use_color) {
 					s = r_str_newf (".%s"Color_BYELLOW"%s"Color_RESET"%s.", pre, wrd, pos);
 				} else {
-					s = r_str_newf (".%s"Color_INVERT"%s"Color_RESET"%s.", pre, wrd, pos);
+					// s = r_str_newf ("\"%s"Color_INVERT"%s"Color_RESET"%s\"", pre, wrd, pos);
+					s = r_str_newf ("\"%s%s%s\"", pre, wrd, pos);
 				}
 				free (pre);
 				free (wrd);
