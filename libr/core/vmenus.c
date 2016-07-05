@@ -138,6 +138,12 @@ static bool edit_bits (RCore *core) {
 				}
 			}
 			break;
+		case '+':
+			buf[(x/8)]++;
+			break;
+		case '-':
+			buf[(x/8)]--;
+			break;
 		case 'h':
 			x = R_MAX (x - 1, 0);
 			break;
