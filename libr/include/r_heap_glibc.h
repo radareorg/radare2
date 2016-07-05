@@ -17,6 +17,7 @@ extern "C" {
 #define MALLOC_ALIGNMENT MAX (2 * sizeof(INTERNAL_SIZE_T),  __alignof__ (long double))
 #define MALLOC_ALIGN_MASK (MALLOC_ALIGNMENT - 1)
 #define SIZE_SZ (sizeof(INTERNAL_SIZE_T))
+#define NPAD -6
 
 typedef struct r_malloc_chunk {
 	INTERNAL_SIZE_T      prev_size;	 /* Size of previous chunk (if free).  */
@@ -59,7 +60,7 @@ typedef struct r_heap_info {
 	/* Make sure the following data is properly aligned, particularly
 	that sizeof (heap_info) + 2 * SIZE_SZ is a multiple of
 	MALLOC_ALIGNMENT. */
-	char pad[-6 * SIZE_SZ & MALLOC_ALIGN_MASK];
+	char pad[NPAD * SIZE_SZ & MALLOC_ALIGN_MASK];
 } RHeapInfo;
 
 #ifdef __cplusplus
