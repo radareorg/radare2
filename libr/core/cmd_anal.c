@@ -993,18 +993,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'i': // "afi"
 		switch (input[2]) {
 		case '?':
-        	eprintf ("Usage: afi[jl*] <addr>\n"); break;
-        	eprintf ("afij - function info in json format\n");
+			eprintf ("Usage: afi[jl*] <addr>\n"); break;
+			eprintf ("afij - function info in json format\n");
 			eprintf ("afil - verbose function info\n");
-        	eprintf ("afi* - function, variables and arguments\n");
+			eprintf ("afi* - function, variables and arguments\n");
+			break;
 		case 'j':   // "afij"
-        case 'l':   // "afil"
-        case '*':   // "afi*"
-        	r_core_anal_fcn_list (core, input + 3, input[2]);
-        	break;
+		case 'l':   // "afil"
+		case '*':   // "afi*"
+			r_core_anal_fcn_list (core, input + 3, input[2]);
+			break;
 		default:
-        	r_core_anal_fcn_list (core, input + 2, 1);
-        	break;
+			r_core_anal_fcn_list (core, input + 2, 1);
+			break;
 		}
 		break;
 	case 'l': // "afl"
@@ -3670,7 +3671,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"ag", " [addr]", "output graphviz code (bb at addr and children)",
 		"ag-", "", "Reset the current ASCII art graph (see agn, age, agg?)",
 		"aga", " [addr]", "idem, but only addresses",
-		"agc", " [addr]", "output graphviz call graph of function",
+		"agc", "[j] [addr]", "output graphviz call graph of function",
+		"agC", "[j]", "Same as agc -1. full program callgraph",
 		"agd", " [fcn name]", "output graphviz code of diffed function",
 		"age", "[?] title1 title2", "Add an edge to the current graph",
 		"agf", " [addr]", "Show ASCII art graph of given function",
@@ -3718,6 +3720,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			free (list);
 		}
 		break;
+	case 'C': // "agC"
+		r_core_anal_coderefs (core, UT64_MAX, input[1] == 'j'? 2: 1);
+		break;
 	case 'c': // "agc"
 		if (input[1] == '*') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
@@ -3725,7 +3730,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		} else if (input[1] == ' ') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 1): UT64_MAX;
 			r_core_anal_coderefs (core, addr, input[1] == 'j'? 2: 1);
-		} else eprintf ("|ERROR| Usage: agc [addr]\n");
+		} else {
+			eprintf ("|ERROR| Usage: agc [addr]\n");
+		}
 		break;
 	case 'j': // "agj"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);

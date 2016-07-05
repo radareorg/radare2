@@ -203,10 +203,14 @@ R_API RBuffer *r_buf_new_file (const char *file) {
 
 // TODO: rename to new_from_file ?
 R_API RBuffer *r_buf_new_slurp (const char *file) {
+	int len;
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
-	b->buf = (ut8*)r_file_slurp (file, &b->length);
-	if (b->buf) return b;
+	b->buf = (ut8*)r_file_slurp (file, &len);
+	b->length = len;
+	if (b->buf) {
+		return b;
+	}
 	r_buf_free (b);
 	return NULL; /* we just freed b, don't return it */
 }
