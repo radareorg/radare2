@@ -97,7 +97,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	size_t symbols_by_ord_size;
 
 	int bss;
-	int size;
+	ut64 size;
 	ut64 baddr;
 	ut64 boffset;
 	int endian;

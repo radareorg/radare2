@@ -114,7 +114,7 @@ typedef struct r_buf_cache_t {
 
 typedef struct r_buf_t {
 	ut8 *buf;
-	int length;
+	ut64 length;
 	st64 cur;
 	ut64 base;
 	RMmap *mmap;
@@ -407,7 +407,7 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse();
 /* methods */
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
-R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length);
+R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length);
 R_API int r_buf_append_string(RBuffer *b, const char *str);
 R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a);
 R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length);

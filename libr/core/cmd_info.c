@@ -481,6 +481,7 @@ static int cmd_info(void *data, const char *input) {
 				"iV", "", "Display file version info",
 				"iz", "", "Strings in data sections",
 				"izz", "", "Search for Strings in the whole binary",
+				"iZ", "", "Guess size of binary program",
 				NULL
 				};
 				r_core_cmd_help (core, help_message);

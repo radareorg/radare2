@@ -169,7 +169,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	// TODO: walk rar structures and guess size here...
 	return 0x9a+128; // XXX
 }

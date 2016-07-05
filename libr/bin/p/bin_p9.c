@@ -182,7 +182,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	ut64 text, data, syms, spsz;
 	if (!arch->o->info)
 		arch->o->info = info (arch);
