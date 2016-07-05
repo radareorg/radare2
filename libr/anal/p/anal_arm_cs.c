@@ -186,7 +186,11 @@ static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n)
 		r_strbuf_appendf (sb, "%d,%s,%s", LSHIFT2_64(n), REG64(n), DECODE_SHIFT64(n));
 	} else {
 		/* ASR: add the missing ones if negative */
-		ut64 missing_ones = bitmask_by_width[LSHIFT2_64(n)-1] << (REGSIZE64(n)*8 - LSHIFT2_64(n));
+		int index = LSHIFT2_64(n) - 1;
+		if (index < 0) {
+			return;
+		}
+		ut64 missing_ones = bitmask_by_width[index] << (REGSIZE64(n)*8 - LSHIFT2_64(n));
 		r_strbuf_appendf (sb, "%d,%s,%s,1,%s,<<<,1,&,?{,%"PFMT64u",}{,0,},|", 
 			LSHIFT2_64(n), REG64(n), DECODE_SHIFT64(n), REG64(n), missing_ones);
 	}
@@ -910,8 +914,10 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRC)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+#if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
+#endif
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
 		op->family = R_ANAL_OP_FAMILY_MMX;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
@@ -1147,10 +1153,12 @@ static void anop32 (csh handle, RAnalOp *op, cs_insn *insn, bool thumb) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_CRC)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+#if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_VIRTUALIZATION)) {
 		op->family = R_ANAL_OP_FAMILY_VIRT;
+#endif
 	} else if (cs_insn_group (handle, insn, ARM_GRP_NEON)) {
 		op->family = R_ANAL_OP_FAMILY_MMX;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_FPARMV8)) {
