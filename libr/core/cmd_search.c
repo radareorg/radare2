@@ -974,7 +974,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 		}
 		if (rop_db && hit) {
 			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
-			r_cons_printf ("Gadget size: %d\n", (int)size);
+			//r_cons_printf ("Gadget size: %d\n", (int)size);
 			Sdb *db = sdb_ns (core->sdb, "rop", true);
 			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
 			sdb_num_set (db, key, size, 0);
