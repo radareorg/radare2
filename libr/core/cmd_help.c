@@ -352,6 +352,7 @@ static int cmd_help(void *data, const char *input) {
 			"@e:", "k=v,k=v", "temporary change eval vars",
 			"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
 			"@f:", "file", "temporary replace block with file contents",
+			"@o:", "fd", "temporary switch to another fd",
 			"@s:", "string", "same as above but from a string",
 			"@x:", "909192", "from hex pairs string",
 			"@..", "from to", "temporary set from and to for commands supporting ranges",
