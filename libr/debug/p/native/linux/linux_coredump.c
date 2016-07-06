@@ -822,16 +822,15 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 			&no_li, &p->nice, &p->num_threads);
 		free (buff);
 	}
-			
 	file = sdb_fmt (0, "/proc/%d/status", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		free (p);
 		return NULL;
 	}
-	
-	/* Uid */
 	temp_p_uid = strstr (buff, "Uid:");
+	temp_p_gid = strstr (buff, "Gid:");
+	/* Uid */
 	if (temp_p_uid) {
 		while (!isdigit (*temp_p_uid++))  {}
 		p_uid = temp_p_uid - 1;
@@ -843,7 +842,6 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 	p->uid = atoi (p_uid);
 
 	/* Gid */
-	temp_p_gid = strstr (buff, "Gid:");
 	if (temp_p_gid) {
 		while (!isdigit (*temp_p_gid++)) {}
 		p_gid = temp_p_gid - 1;
@@ -855,7 +853,6 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 	p->gid = atoi (p_gid);
 
 	free (buff);
-
 	/* Check the coredump_filter value if we have*/
 	file = sdb_fmt (0, "/proc/%d/coredump_filter", dbg->pid);
 	buff = r_file_slurp (file, &size);
@@ -916,7 +913,7 @@ static elf_fpxregset_t *linux_get_fpx_regset (int tid) {
 #endif
 
 void *linux_get_xsave_data (int tid, ut32 size) {
-#if PTRACE_GETREGSET
+#ifdef PTRACE_GETREGSET
 	struct iovec transfer;
 	char *xsave_data = calloc (size, 1);
 	if (!xsave_data) {
@@ -1237,7 +1234,7 @@ fail:
 }
 
 static int get_xsave_size(int pid) {
-#if PTRACE_GETREGSET
+#ifdef PTRACE_GETREGSET
 	struct iovec local;
 	unsigned long xstate_hdr[XSTATE_HDR_SIZE/sizeof(unsigned long)];
 	unsigned long xcr0;
@@ -1265,6 +1262,7 @@ static int get_xsave_size(int pid) {
 		return 0;
 	}
 #else
+	eprintf ("get_xsave_size - returning 0\n");
 	return 0;
 #endif
 }
@@ -1321,6 +1319,7 @@ static void init_note_info_structure(int pid, size_t auxv_size) {
 	/* NT_X86_XSTATE_T*/
 	type = NT_X86_XSTATE_T;
 	note_info[type].size = get_xsave_size (pid);
+	// eprintf ("NT_X86_XSTATE_T: %d\n", note_info[type].size);
 	note_info[type].size_roundedup = round_up (note_info[type].size);
 	note_info[type].size_name = len_name_linux;
 	strncpy (note_info[type].name, "LINUX", sizeof (note_info[type].name));
