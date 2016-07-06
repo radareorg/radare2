@@ -17,7 +17,7 @@ R_API void r_anal_type_init(RAnal *anal) {
 	if (!strcmp (anal_arch, "x86")) {
 		Sdb *db;
 #define TYPESPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
-		dbpath = r_str_newf (TYPESPATH"/types-%s-%d.sdb", anal_arch,
+		dbpath = sdb_fmt (-1, TYPESPATH"/types-%s-%d.sdb", anal_arch,
 			anal->bits);
 		if (r_file_exists (dbpath)) {
 			db = sdb_new (0, dbpath, 0);
@@ -25,12 +25,11 @@ R_API void r_anal_type_init(RAnal *anal) {
 			sdb_close (db);
 			sdb_free (db);
 		}
-		free (dbpath);
 	} else {
 		//TODO add other architectures and profiles at libr/anal
 	}
 }
-
+#undef TYPESPATH
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
 	anal->limit = R_NEW0 (RAnalRange);

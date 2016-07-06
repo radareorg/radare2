@@ -447,6 +447,19 @@ static int bin_info(RCore *r, int mode) {
 			if (info->lang) {
 				r_config_set (r->config, "bin.lang", info->lang);
 			}
+			if (info->os && !strcmp (info->os, "windows")) {
+				char *dbpath;
+				Sdb *db;
+#define TYPESPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
+				dbpath = sdb_fmt (-1, TYPESPATH"/windows-x86-%d.sdb", r->anal->bits);
+				if (r_file_exists (dbpath)) {
+					db = sdb_new (0, dbpath, 0);
+					sdb_merge (r->anal->sdb_types, db);
+					sdb_close (db);
+					sdb_free (db);
+				}
+			}
+#undef TYPESPATH
 			r_config_set (r->config, "asm.os", info->os);
 			r_config_set (r->config, "asm.arch", info->arch);
 			r_config_set (r->config, "anal.arch", info->arch);

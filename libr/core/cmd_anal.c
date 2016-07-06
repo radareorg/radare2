@@ -73,6 +73,14 @@ static void var_help(RCore *core, char ch) {
 		"afvrs", " [reg] [addr]", "define var set reference",
 		NULL
 	};
+	const char *help_general[] = {
+		"Usage:", "afv","[rbsa]",
+		"afvr", "?", "manipulate register based arguments",
+		"afvb", "?", "manipulate bp based arguments/ vars",
+		"afvs", "?", "manipulate sp based arguments/ vars",
+		"afva", "", "analyze function arguments/vars",
+		NULL
+	};
 	switch (ch) {
 	case 'b':
 		r_core_cmd_help (core, help_bp);
@@ -83,8 +91,11 @@ static void var_help(RCore *core, char ch) {
 	case 'r':
 		r_core_cmd_help (core, help_reg);
 		break;
+	case '?':
+		r_core_cmd_help (core, help_general);
+		break;
 	default:
-		eprintf ("See afvb?, afvr? and afvs?\n");
+		eprintf ("See afv?, afvb?, afvr? and afvs?\n");
 	}
 }
 
@@ -103,6 +114,13 @@ static int var_cmd (RCore *core, const char *str) {
 		return false;
 	}
 	/* Variable access CFvs = set fun var */
+	if (str[0] == 'a' && r_config_get_i (core->config, "anal.vars")) {
+		r_anal_var_delete_all (core->anal, fcn->addr, 'r');
+		r_anal_var_delete_all (core->anal, fcn->addr, 'b');
+		r_anal_var_delete_all (core->anal, fcn->addr, 's');
+		fcn_callconv (core, fcn);
+	}
+
 	switch (str[1]) {
 	case '\0':
 	case '*':
@@ -1082,9 +1100,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"Usage:", "afC[agl?]", "",
 			"afC", " convention", "Manually set calling convention for current function",
 			"afC", "", "Show Calling convention for the Current function",
-			"afCa", "", "Analyse function argument for the current calling convention",
+			"afCa", "", "Analyse function for finding the current calling convention",
 			"afCl", "", "List all available calling conventions",
-			"afCg", "", "Guess calling convention of function at current offset",
 			NULL };
 		switch (input[2]) {
 		case'?': {
@@ -1097,17 +1114,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			//THOSE are the only implemented ones
 			//should I test for null ... no ;)
 			} break;
-		case 'g': {
-			//TODO guess calling conventions
-			eprintf ("TODO\n") ;
-			} break;
 		case 'a':
-			if (r_config_get_i (core->config, "anal.vars")) {
-				r_anal_var_delete_all (core->anal, fcn->addr, 'r');
-				r_anal_var_delete_all (core->anal, fcn->addr, 'b');
-				r_anal_var_delete_all (core->anal, fcn->addr, 's');
-				fcn_callconv (core, fcn);
-			}
+			eprintf ("Todo\n");
 			break;
 		case ' ': {
 			int type = r_anal_cc_str2type (input + 3);
@@ -1344,7 +1352,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afr", " ([name]) ([addr])", "analyze functions recursively",
 			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
 			"af-", " [addr]", "clean all function analysis data (or function at addr)",
-			"afv[bsr]", "?", "manipulate args, registers and variables in function",
+			"afv[bsra]", "?", "manipulate args, registers and variables in function",
 			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", " [addr]", "List basic blocks of given function",
 			"afB", " 16", "set current function as thumb (change asm.bits)",
@@ -4130,7 +4138,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 static int cmd_anal_all(RCore *core, const char *input) {
 	const char *help_msg_aa[] = {
 		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
-		"aa", " ", "alias for 'af@@ sym.*;af@entry0'", //;.afna @@ fcn.*'",
+		"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
 		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
 		"aaa", "", "autoname functions after aa (see afna)",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
