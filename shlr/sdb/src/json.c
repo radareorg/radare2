@@ -162,11 +162,13 @@ SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, u
 	if (*v) {
 		int is_str = isstring (v);
 		int msz = len[0]+len[1]+len[2]+strlen (v);
-		if (msz<1)
+		if (msz < 1) {
 			return 0;
+		}
 		str = malloc (msz);
-		if (!str)
+		if (!str) {
 			return 0;
+		}
 		idx = len[0];
 		memcpy (str, beg[0], idx);
 		if (is_str) {

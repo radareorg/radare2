@@ -82,19 +82,27 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 	const char *p = str;
 	char *o, *n;
 	int i, len;
-	if (!str || !*str) return NULL;
+	if (!str || !*str) {
+		return NULL;
+	}
 	if (idx < 0) {
 		int len = sdb_alen (str);
 		idx = -idx;
-		if (idx > len)
+		if (idx > len) {
 			return NULL;
+		}
 		idx = len - idx;
 	}
 	if (idx == 0) {
 		n = strchr (str, SDB_RS);
-		if (!n) return strdup (str);
+		if (!n) {
+			return strdup (str);
+		}
 		len = n - str;
 		o = malloc (len + 1);
+		if (!o) {
+			return NULL;
+		}
 		memcpy (o, str, len);
 		o[len] = 0;
 		return o;
@@ -108,9 +116,12 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 	if (!n) return strdup (p);
 	len = n - p;
 	o = malloc (len + 1);
-	memcpy (o, p, len);
-	o[len] = 0;
-	return o;
+	if (o) {
+		memcpy (o, p, len);
+		o[len] = 0;
+		return o;
+	}
+	return NULL;
 }
 
 SDB_API int sdb_array_insert_num(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
@@ -131,7 +142,7 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val, 
 	lstr--;
 	//lstr = strlen (str); // we can optimize this by caching value len in memory . add sdb_const_get_size()
 	x = malloc (lval + lstr + 2);
-	if (idx==-1) {
+	if (idx == -1) {
 		memcpy (x, str, lstr);
 		x[lstr] = SDB_RS;
 		memcpy (x+lstr+1, val, lval + 1);
@@ -141,6 +152,9 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val, 
 		memcpy (x + lval + 1, str, lstr + 1);
 	} else {
 		char *nstr = malloc (lstr + 1);
+		if (!nstr) {
+			return false;
+		}
 		memcpy (nstr, str, lstr + 1);
 		ptr = (char *)Aindexof (nstr, idx);
 		if (ptr) {
@@ -214,6 +228,9 @@ SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 
 		qsort (vals, i, sizeof (ut64*), cstring_cmp);
 	}
 	nstr_p = nstr = malloc (lstr + lval + 3);
+	if (!nstr) {
+		return 1;
+	}
 	for (i = 0; vals[i]; i++) {
 		while (str_p < str_e) {
 			if (astrcmp (vals[i], str_p) < 0) {
@@ -281,6 +298,9 @@ SDB_API bool sdb_array_append(Sdb *s, const char *key, const char *val, ut32 cas
 	if (str && *str && str_len > 0) {
 		int val_len = strlen (val);
 		char *newval = malloc (str_len + val_len + 2);
+		if (!newval) {
+			return false;
+		}
 		memcpy (newval, str, str_len);
 		newval[str_len] = SDB_RS;
 		memcpy (newval+str_len+1, val, val_len);
@@ -313,10 +333,12 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val, ut3
 	if (idx>len) {
 		int ret, i, ilen = idx-len;
 		char *newkey = malloc (ilen + lval + 1);
-		if (!newkey)
+		if (!newkey) {
 			return 0;
-		for (i = 0; i < ilen; i++)
+		}
+		for (i = 0; i < ilen; i++) {
 			newkey [i] = SDB_RS;
+		}
 		memcpy (newkey+i, val, lval+1);
 		ret = sdb_array_insert (s, key, -1, newkey, cas);
 		free (newkey);
@@ -327,6 +349,9 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val, ut3
 	if (ptr) {
 		int diff = ptr-str;
 		char *nstr = malloc (lstr + lval + 2);
+		if (!nstr) {
+			return false;
+		}
 		ptr = nstr+diff;
 		//memcpy (nstr, str, lstr+1);
 		memcpy (nstr, str, diff);
@@ -492,6 +517,9 @@ SDB_API int sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas
 	if (str && *str) {
 		int val_len = strlen (val);
 		char *newval = malloc (str_len + val_len + 2);
+		if (!newval) {
+			return 0;
+		}
 		memcpy (newval, val, val_len);
 		newval[val_len] = SDB_RS;
 		memcpy (newval + val_len + 1, str, str_len);

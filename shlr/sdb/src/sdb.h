@@ -160,7 +160,7 @@ void* sdb_ptr_get(Sdb *db, const char *key, ut32 *cas);
 int sdb_disk_create (Sdb* s);
 int sdb_disk_insert (Sdb* s, const char *key, const char *val);
 int sdb_disk_finish (Sdb* s);
-int sdb_disk_unlink (Sdb* s);
+bool sdb_disk_unlink (Sdb* s);
 
 /* iterate */
 void sdb_dump_begin (Sdb* s);

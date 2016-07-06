@@ -172,7 +172,7 @@ static RList* symbols(RBinFile *arch) {
 	showstr ("ModemCode", hdr->CountryCode, 12);
 	showstr ("CountryCode", hdr->CountryCode, 16);
 	/* parse vtable */
-	for (i=0; i<64; i++) {
+	for (i = 0; i<64; i++) {
 		switch (i) {
 		case 0: name = "SSP"; break;
 		case 1: name = "Reset"; break;

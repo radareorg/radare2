@@ -97,13 +97,19 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	if (root) {
 		rlen = strlen (root);
 		line = malloc (klen + vlen + rlen + 3);
+		if (!line) {
+			return 0;
+		}
 		memcpy (line, root, rlen);
 		line[rlen]='/'; /*append the '/' at the end of the namespace */
 		memcpy (line+rlen+1, k, klen);
 		line[rlen+klen+1] = '=';
 		memcpy (line+rlen+klen+2, v, vlen+1);
 	} else {
-		line = malloc (klen + vlen +2);
+		line = malloc (klen + vlen + 2);
+		if (!line) {
+			return 0;
+		}
 		memcpy (line, k, klen);
 		line[klen] = '=';
 		memcpy (line+klen+1,v,vlen+1);
@@ -162,9 +168,13 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 			return NULL;
 		}
 	} else {
-		if (len<1 || !buf) {
+		if (len < 1 || !buf) {
 			bufset = 1;
 			buf = malloc ((len = 64));
+			if (!buf) {
+				strbuf_free (out);
+				return NULL;
+			}
 		}
 		cmd = buf;
 	}
@@ -172,8 +182,9 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 	next = NULL;
 repeat:
 	/* skip spaces */
-	while (*cmd && (*cmd == ' ' || *cmd == '\t'))
+	while (*cmd && (*cmd == ' ' || *cmd == '\t')) {
 		cmd++;
+	}
 	s = r;
 	p = cmd;
 	eq = NULL;
@@ -760,7 +771,7 @@ static char *slurp(const char *file) {
 		return NULL;
 	}
 	lseek (fd, 0, SEEK_SET);
-	text = malloc (sz+1);
+	text = malloc (sz + 1);
 	if (!text) {
 		close (fd);
 		return NULL;

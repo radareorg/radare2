@@ -46,17 +46,19 @@ static inline int r_sys_mkdirp(char *dir) {
 SDB_API int sdb_disk_create (Sdb* s) {
 	int nlen;
 	char *str;
-	if (!s || !s->dir || s->fdump >=0) {
+	if (!s || !s->dir || s->fdump >= 0) {
 		return 0; // cannot re-create
 	}
 	free (s->ndump);
 	s->ndump = NULL;
 	nlen = strlen (s->dir);
 	str = malloc (nlen+5);
-	if (!str) return 0;
-	memcpy (str, s->dir, nlen+1);
+	if (!str) {
+		return 0;
+	}
+	memcpy (str, s->dir, nlen + 1);
 	r_sys_mkdirp (str);
-	memcpy (str+nlen, ".tmp", 5);
+	memcpy (str + nlen, ".tmp", 5);
 	close (s->fdump);
 	s->fdump = open (str, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, SDB_MODE);
 	if (s->fdump == -1) {
@@ -112,9 +114,6 @@ SDB_API int sdb_disk_finish (Sdb* s) {
 	return ret;
 }
 
-SDB_API int sdb_disk_unlink (Sdb *s) {
-	if (s->dir && *(s->dir))
-		if (unlink (s->dir) != -1)
-			return 1;
-	return 0;
+SDB_API bool sdb_disk_unlink (Sdb *s) {
+	return (s->dir && *(s->dir) && unlink (s->dir) != -1);
 }
