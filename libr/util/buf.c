@@ -10,36 +10,36 @@
 // copied from riocacheread
 // ret # of bytes copied
 static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
-        int l, ret, da, db;
-        RListIter *iter;
-        RBufferSparse *c;
+	int l, ret, da, db;
+	RListIter *iter;
+	RBufferSparse *c;
 
-        r_list_foreach (list, iter, c) {
-                if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
-                        if (ret > 0) {
-                                da = ret;
-                                db = 0;
-                                l = c->size;
-                        } else if (ret < 0) {
-                                da = 0;
-                                db = -ret;
-                                l = c->size-db;
-                        } else {
-                                da = 0;
-                                db = 0;
-                                l = c->size;
-                        }
+	r_list_foreach (list, iter, c) {
+		if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
+			if (ret > 0) {
+				da = ret;
+				db = 0;
+				l = c->size;
+			} else if (ret < 0) {
+				da = 0;
+				db = -ret;
+				l = c->size-db;
+			} else {
+				da = 0;
+				db = 0;
+				l = c->size;
+			}
 			// say hello to integer overflow, but this won't happen in
 			// realistic scenarios because malloc will fail befor
-                        if ((l + da) > len) {
+			if ((l + da) > len) {
 				l = len - da;
 			}
 			if (l > 0) {
 				memcpy (buf + da, c->data + db, l);
 			}
-                }
-        }
-        return len;
+		}
+	}
+	return len;
 }
 
 static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int len) {
@@ -430,18 +430,46 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 }
 
 static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
-	ut64 len, check_len;
+	ut64 len, check_len, file_sz, new_addr, new_len;
+	RIOBind *iob = (RIOBind *)b->iob;
 	int i, j, k, tsize, bigendian, m = 1;
 	if (!b || b->empty) return 0;
 	if (b->fd != -1) {
 		eprintf ("r_buf_fcpy_at not supported yet for r_buf_new_file\n");
 		return 0;
 	}
-	if (addr == R_BUF_CUR)
+
+	file_sz = (iob && iob->io) ? iob->size (iob->io) : b->length;
+
+	if (addr == R_BUF_CUR) {
 		addr = b->cur;
-	else addr -= b->base;
-	if (addr == UT64_MAX || addr > b->length)
+	} else if (addr > b->base && addr < (b->base + b->length)) {
+		addr -= b->base;
+	} else if ((addr > (b->base + b->length) && addr < file_sz) || (addr < b->base)) {
+		if (!(iob && (iob->io))) {
+			return -1;
+		}
+		if ((addr + b->length) > file_sz) {
+			if (iob->read_at (iob->io, file_sz - b->length, b->buf, b->length) < b->length) {
+				return -1;
+			}
+			b->base = file_sz - b->length;
+		} else {
+			if (iob->read_at (iob->io, addr, b->buf, b->length) < b->length) {
+				return -1;
+			}
+			b->base = addr;
+		}
+		addr -= b->base;
+		b->cur = addr;
+	}
+	if (addr == UT64_MAX || addr > file_sz) {
 		return -1;
+	}
+
+	new_addr = addr;
+	new_len = 0;
+
 	tsize = 2;
 	for (i = len = 0; i < n; i++)
 	for (j = 0; fmt[j]; j++) {
@@ -464,30 +492,48 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		   tsize and m are not user controled, then don't
 		   need to check possible overflow.
 		 */
-		if (!UT64_ADD (&check_len, len, tsize*m))
+		if (!UT64_ADD (&check_len, new_len, tsize*m))
 			return -1;
-		if (!UT64_ADD (&check_len, check_len, addr))
+		if (!UT64_ADD (&check_len, check_len, new_addr))
 			return -1;
 		if (check_len > b->length) {
-			return check_len;
-			// return -1;
+			if (!(iob && iob->io) || (check_len + b->base) > file_sz) {
+				return check_len;
+			}
+			if ((b->base + new_addr + new_len + b->length) > file_sz) {
+				if (iob->read_at (iob->io, file_sz - b->length, b->buf, b->length) < b->length) {
+					return check_len;
+				}
+				new_addr += b->base + new_len;
+				b->base = file_sz - b->length;
+				new_addr -= b->base;
+			} else {
+				if (iob->read_at (iob->io, b->base + new_addr + new_len, b->buf, b->length) < b->length) {
+					return check_len;
+				}
+				b->base += new_addr + new_len;
+				new_addr = 0;
+			}
+			b->cur = new_addr;
+			new_len = 0;
 		}
 
 		for (k = 0; k < m; k++) {
 			if (write) {
 				r_mem_swaporcopy ((ut8*)&buf[addr+len+(k*tsize)],
-						  (const ut8*)&b->buf[len+(k*tsize)],
-						  tsize, bigendian);
+						  (const ut8*)&b->buf[new_len+(k*tsize)],
+						  tsize, bigendian);//XXX: This might mess up. Take a look at this.
 			} else {
 				r_mem_swaporcopy ((ut8*)&buf[len+(k*tsize)],
-						  (const ut8*)&b->buf[addr+len+(k*tsize)],
+						  (const ut8*)&b->buf[new_addr+new_len+(k*tsize)],
 						  tsize, bigendian);
 			}
 		}
 		len += tsize * m;
+		new_len += tsize * m;
 		m = 1;
 	}
-	b->cur = addr + len;
+	b->cur = new_addr + new_len;
 	return len;
 }
 
@@ -513,6 +559,9 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 //ret 0 if failed; ret copied length if successful
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	st64 pa;
+	RIOBind *iob = (RIOBind *)b->iob;
+	int ret; //temporary variable used for multiple thing
+	ut64 file_sz;
 	if (!b || !buf || len < 1) return 0;
 #if R_BUF_CUR != UT64_MAX
 #error R_BUF_CUR must be UT64_MAX
@@ -521,20 +570,83 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 		addr = b->cur;
 	}
 	if (!b->sparse) {
-		if (addr < b->base || len<1)
+		if (len < 1)
 			return 0;
+		if (addr < b->base) {
+			if (!(iob && iob->io)) {
+				return 0;
+			}
+			if (iob->read_at (iob->io, addr, b->buf, b->length) < b->length) {
+				return 0;
+			}
+			b->base = addr;
+			b->cur = 0;
+		}
 		pa = addr - b->base;
 		if (pa+len > b->length) {
-			memset (buf, 0xff, len);
-			len = b->length - pa;
-			if (len < 0) {
-				return 0;
+			if (!(iob && iob->io)) {
+				memset (buf, 0xff, len);
+				len = b->length - pa;
+				if (len < 0) {
+					return 0;
+				}
+			} else {
+				file_sz = iob->size (iob->io);
+				if (addr + len > file_sz) {
+					memset (buf, 0xff, len);
+					len = (int)(file_sz - addr);
+					if (len < 0) {
+						return 0;
+					}
+				}
+				if (pa > 0) {
+					if ((addr + b->length) > file_sz) {
+						if (iob->read_at (iob->io, file_sz - b->length, b->buf, b->length) < b->length) {
+							return -1;
+						}
+						b->base = file_sz - b->length;
+						b->cur = addr - b->base;
+					} else {
+						if (iob->read_at (iob->io, addr, b->buf, b->length) < b->length) {
+							return -1;
+						}
+						b->base = addr;
+						b->cur = 0;
+					}
+				}
+				pa = 0;
+				if (len > b->length) { //equivalent to (pa+len) > b->length
+					int len_copied = 0;
+					while (len_copied < len) {
+						if ((addr + len_copied + b->length) > file_sz) {
+							if (iob->read_at (iob->io, file_sz - b->length, b->buf, b->length) < b->length ) {
+								return 0;
+							}
+							b->base = file_sz - b->length;
+							b->cur = addr - b->base;
+						} else {
+							if (iob->read_at (iob->io, addr + len_copied, b->buf, b->length) < b->length) {
+								return 0;
+							}
+							b->base = addr + len_copied;
+							b->cur = 0;
+						}
+						ret = (b->length < (len - len_copied)) ? b->length : len - len_copied;
+						ret = r_buf_cpy (b, addr, buf + len_copied, b->buf, ret, false);
+						if (ret == -1) {
+							break;
+						}
+						len_copied += ret;
+					}
+					return len_copied;
+				}
 			}
 		}
 	}
 	// must be +pa, but maybe its missused?
 	//return r_buf_cpy (b, addr, buf, b->buf+pa, len, false);
-	return r_buf_cpy (b, addr, buf, b->buf, len, false);
+	ret = r_buf_cpy (b, addr, buf, b->buf, len, false);
+	return (ret == -1) ? 0 : ret;
 }
 
 R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {

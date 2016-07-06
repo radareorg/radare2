@@ -457,6 +457,8 @@ R_API int r_io_buffer_load(RIO* io, ut64 addr, int len);
 R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len);
 R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len);
 
+R_API int r_io_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
+
 #define r_io_range_new()	R_NEW0(RIORange)
 #define r_io_range_free(x)	free(x)
 
