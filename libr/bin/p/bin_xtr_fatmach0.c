@@ -78,7 +78,7 @@ static bool load(RBin *bin) {
 	return ((bin->cur->xtr_obj = r_bin_fatmach0_new (bin->file)) != NULL);
 }
 
-static ut64 size(RBin *bin) {
+static ut64 size(RBinFile *arch) {
 	// TODO
 	return 0;
 }
@@ -117,7 +117,6 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 	free (arch);
 	return res;
 }
-
 
 static RList * extractall(RBin *bin) {
 	RList *res = NULL;

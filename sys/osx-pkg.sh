@@ -9,8 +9,12 @@
 SRC=/tmp/r2osx
 PREFIX=/usr/local
 DST="$(pwd)/sys/osx-pkg/radare2.unpkg"
-VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
-[ -z "${VERSION}" ] && VERSION=0.10.0
+if [ -n "$1" ]; then
+	VERSION="$1"
+else
+	VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
+	[ -z "${VERSION}" ] && VERSION=0.10.4
+fi
 [ -z "${MAKE}" ] && MAKE=make
 
 rm -rf "${SRC}"

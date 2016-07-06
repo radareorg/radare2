@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=0.10.1
+PREVIOUS_RELEASE=0.10.3
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
@@ -344,6 +344,9 @@ osx-sign:
 
 osx-sign-libs:
 	$(MAKE) -C binr/radare2 osx-sign-libs
+
+osx-pkg:
+	sys/osx-pkg.sh $(VERSION)
 
 quality:
 	./sys/shellcheck.sh
