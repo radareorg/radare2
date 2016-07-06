@@ -239,6 +239,7 @@ R_API int r_io_read (RIO *io, ut8 *buf, int len);
 R_API int r_io_write (RIO *io, ut8 *buf, int len);
 R_API ut64 r_io_size (RIO *io);
 R_API int r_io_bind (RIO *io, RIOBind *bnd);
+R_API ut64 r_io_seek (RIO *io, ut64 offset, int whence);
 R_API int r_io_fini (RIO *io);
 R_API void r_io_free (RIO *io);
 #define r_io_bind_init(x) memset(&x,0,sizeof(x))

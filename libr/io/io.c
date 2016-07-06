@@ -248,6 +248,25 @@ R_API int r_io_bind (RIO *io, RIOBind *bnd)
 	return true;
 }
 
+R_API ut64 r_io_seek (RIO *io, ut64 offset, int whence)
+{
+	if (!io)
+		return 0LL;
+	switch (whence) {
+		case R_IO_SEEK_SET:
+			io->off = offset;
+			break;
+		case R_IO_SEEK_CUR:
+			io->off += offset;
+			break;
+		case R_IO_SEEK_END:
+		default:
+			io->off = (ut64)(-1);
+			break;
+	}
+	return io->off;
+}
+
 //remove all descs and maps
 R_API int r_io_fini (RIO *io)
 {
