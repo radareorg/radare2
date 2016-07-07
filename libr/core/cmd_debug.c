@@ -805,43 +805,8 @@ static void update_main_arena(RCore *core, ut64 m_arena, RHeap_MallocState *main
 #define PRINT_GA(msg) PRINT_A (Color_GREEN, msg)
 #define PRINT_BA(msg) PRINT_A (Color_BLUE, msg)
 
-static void print_main_arena(ut64 m_arena, RHeap_MallocState *main_arena, int format) {
+static void print_main_arena(ut64 m_arena, RHeap_MallocState *main_arena) {
 	int i, offset;
-	if (format == '*') {
-		for (i = 0; i < NBINS * 2 - 2; i += 2) {
-			if (!main_arena->bins[i]) {
-				break; // sure ?
-			} else {
-				offset = (size_t)&main_arena->last_remainder - (size_t)&main_arena->mutex + sizeof (size_t);
-				ut64 addr = (size_t)m_arena + (size_t)offset + sizeof (size_t) * i - sizeof (size_t) * 2;
-				ut64 bina = (ut64)(size_t)main_arena->bins[i];
-				r_cons_printf ("f chunk.%d = 0x%"PFMT64x"\n", i, addr);
-				r_cons_printf ("f chunk.%d = 0x%"PFMT64x"\n", i, addr);
-				/* dupe */
-				r_cons_printf ("f chunk.%d.bk = 0x%"PFMT64x"\n", i + 1, addr);
-				bina = (ut64)(size_t)main_arena->bins[i + 1];
-				r_cons_printf ("f chunk.%d.bin = 0x%"PFMT64x"\n", i + 1, addr);
-			}
-		}
-		for (i = 0; i < BINMAPSIZE; i++) {
-			r_cons_printf ("f binmap.%d = 0x%x", i, (int)main_arena->binmap[i]);
-		}
-		{	/* maybe use SDB instead of flags for this? */
-			char *units = r_num_units (NULL, (ut64)(size_t)main_arena->max_system_mem);
-			r_cons_printf ("f heap.maxmem = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, (ut64)(size_t)main_arena->system_mem);
-			r_cons_printf ("f heap.sysmem = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, (ut64)(size_t)main_arena->next_free);
-			r_cons_printf ("f heap.nextfree = %s\n", units);
-			free (units);
-			units = r_num_units (NULL, (ut64)(size_t)main_arena->next);
-			r_cons_printf ("f heap.next= %s\n", units);
-			free (units);
-		}
-		return;
-	}
 	PRINT_GA ("main_arena @ ");
 	PRINTF_BA ("0x%"PFMT64x"\n\n", (ut64)(size_t)m_arena);
 	PRINT_GA ("struct malloc_state main_arena {\n");
@@ -971,7 +936,7 @@ out_error:
 	r_core_free (core);
 }
 
-bool str_start_with(const char *ptr, const char *str) {
+static int str_start_with(const char *ptr, const char *str) {
 	return !strncmp (ptr, str, (size_t)strlen (str));
 }
 
@@ -1047,35 +1012,56 @@ arena:
 			eprintf ("Warning: out of memory\n");
 			return true;
 		}
-		update_main_arena (core, *m_arena, main_arena);
+        	update_main_arena (core, *m_arena, main_arena);
 		return false;
 	}			
 }
 
-void print_heap_chunk(RCore *core) {
+static void print_heap_chunk(RCore *core) {
+	char bits[sizeof (size_t)] = {0};
 	RHeapChunk *cnk = R_NEW0 (RHeapChunk);
-	core->offset  -= sizeof(size_t)*2;
-	r_core_read_at (core, core->offset, (ut8 *) cnk , sizeof(RHeapChunk));
+	ut64 chunk = core->offset;
+	if (!cnk) {
+		eprintf ("Warning: out of memory\n");
+		return;
+	}
+	
+	r_core_read_at (core, chunk - sizeof (size_t) * 2, (ut8 *) cnk, sizeof (RHeapChunk));
+	r_str_bits (bits, (ut8 *) &cnk->size, sizeof (size_t), NULL);
 
 	PRINT_GA ("struct malloc_chunk @ ");
-	PRINTF_BA ("0x%"PFMT64x, core->offset);
-	PRINT_GA ("{\n  prev_size = ");
+	PRINTF_BA ("0x%"PFMT64x, chunk - sizeof (size_t) * 2);
+	PRINT_GA (" {\n  prev_size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->prev_size));
 	PRINT_GA (",\n  size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->size));
+	PRINT_GA(",\n  flags: |N:");
+	PRINTF_BA("%c", bits[sizeof (size_t) - 3]);
+	PRINT_GA(" |M:");
+	PRINTF_BA("%c", bits[sizeof (size_t) - 2]);
+	PRINT_GA(" |P:");
+	PRINTF_BA("%c", bits[sizeof (size_t) - 1]);	
 	PRINT_GA (",\n  fd = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->fd));
 	PRINT_GA (",\n  bk = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->bk));
 
-	if(cnk->size-sizeof(size_t)*2 >= 512){
+	if(cnk->size - sizeof (size_t) * 2 >= 512) {
 		PRINT_GA (",\n  fd-nextsize = ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->fd_nextsize));
 		PRINT_GA (",\n  bk-nextsize = ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->bk_nextsize));
 	}
+
 	PRINT_GA (",\n}\n");
-	
+	ut64 size = ((cnk->size >> 3) << 3) - sizeof (size_t) * 2;
+	if (size > 1024) {
+		PRINT_GA ("chunk too big to be displayed\n");
+		size = 1024;
+	} 
+	PRINT_GA ("chunk data = \n");
+	r_print_hexdump (core->print, chunk + sizeof (size_t) * 2, core->block, size, SIZE_SZ * 8, SIZE_SZ);
+	free (cnk);
 }
 
 /* TODO comand dmhb to iterate and print double linked list of bins
@@ -1088,21 +1074,16 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 	static ut64 m_arena = UT64_MAX;	
 	const char* help_msg[] = {
 		"Usage:", "dmh", " # Memory map heap",
-		"dmh*", "", "show heap chunks in r2 commands",
-		"dmha", "", "struct Malloc State (main_arena)",
-		"dmhc", "@[malloc_addr]", "print malloc_chunk struct for a given malloc chunk",
-		"dmh?", "", "show map heap help",
+		"dmha", "", "Struct Malloc State (main_arena)",
+		"dmhc", " @[malloc_addr]", "Print malloc_chunk struct for a given malloc chunk",
+		"dmh?", "", "Show map heap help",
 		NULL
 	};
 
 	switch (input[0]) {
-	case 'j': // "dmhj"
-		eprintf ("TODO: JSON output for dmh is not yet implemented\n");
-		break;
-	case '*': // "dmh*"
 	case 'a': // "dmha"
 		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
-			print_main_arena (m_arena, main_arena, *input);
+			print_main_arena (m_arena, main_arena);
 		}
 		break;
 	/*
@@ -1114,7 +1095,7 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 	*/
 	case 'c': // "dmhc"
 		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
-			print_heap_chunk (core);
+            		print_heap_chunk (core);
 		}
 		break;	
 	case '?':
@@ -1143,7 +1124,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
 		"dms", " <id> <mapaddr>", "take memory snapshot",
 		"dms-", " <id> <mapaddr>", "restore memory snapshot",
-		"dmh", "", "Show map heap",
+		"dmh", "", "Show map of heap",
 		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
 		NULL};
@@ -2711,9 +2692,8 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			int signum = atoi (arg);
 			if (signum > 0) {
 				signame = r_debug_signal_resolve_i (core->dbg, signum);
-				if (signame) {
-					r_cons_println (signame);
-				}
+				if (signame)
+                                	r_cons_println (signame);
 			} else {
 				signum = r_debug_signal_resolve (core->dbg, arg);
 				if (signum > 0) {
