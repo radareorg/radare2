@@ -450,8 +450,7 @@ static int bin_info(RCore *r, int mode) {
 			if (info->os && !strcmp (info->os, "windows")) {
 				char *dbpath;
 				Sdb *db;
-#define TYPESPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
-				dbpath = sdb_fmt (-1, TYPESPATH"/windows-x86-%d.sdb", r->anal->bits);
+				dbpath = R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign/windows-types.sdb";
 				if (r_file_exists (dbpath)) {
 					db = sdb_new (0, dbpath, 0);
 					sdb_merge (r->anal->sdb_types, db);

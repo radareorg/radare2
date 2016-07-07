@@ -7,6 +7,7 @@ F+= windows-x86-32
 F+= windows-x86-64
 F+= types-x86-32
 F+= types-x86-64
+F+= windows-types
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
 
