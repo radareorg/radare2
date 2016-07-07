@@ -1033,10 +1033,10 @@ arena:
 				if (main_arena) {
 					update_main_arena (core, *m_arena, main_arena);
 					return false;
-				}else{
+				} else {
 					eprintf ("Warning: out of memory\n");
 				}
-			}else{
+			} else {
 				eprintf ("Warning: glibc library with symbol main_arena could not be found. Is libc6-dbg installed?\n");
 			}
 		}
@@ -1112,7 +1112,7 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 		"Usage:", "dmh", " # Memory map heap",
 		"dmh*", "", "show heap chunks in r2 commands",
 		"dmha", "", "Struct Malloc State (main_arena)",
-		"dmhc", " [malloc_addr]", "Print malloc_chunk struct for a given malloc chunk",
+		"dmhc", "@[malloc_addr]", "Print malloc_chunk struct for a given malloc chunk",
 		"dmh?", "", "Show map heap help",
 		NULL
 	};
@@ -1121,7 +1121,7 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 	case 'j': // "dmhj"
 		eprintf ("TODO: JSON output for dmh is not yet implemented\n");
 		break;
-	case '*':
+	case '*': // "dmh*"
 	case 'a': // "dmha"
 		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
 			print_main_arena (m_arena, main_arena, *input);
