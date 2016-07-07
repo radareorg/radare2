@@ -2722,12 +2722,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
+					" +/-/0        - zoom in/out/default\n"
+					" ;            - add comment in current basic block\n"
 					" .            - center graph to the current node\n"
 					" :cmd         - run radare command\n"
 					" '            - toggle asm.comments\n"
-					" ;            - add comment in current basic block\n"
-					" /            - highlight text\n"
 					" \"            - toggle graph.refs\n"
+					" /            - highlight text\n"
+					" |            - set cmd.gprompt"
 					" >            - show function callgraph (see graph.refs)\n"
 					" <            - show program callgraph (see graph.refs)\n"
 					" Home/End     - go to the top/bottom of the canvas\n"
@@ -2735,6 +2737,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" C            - toggle scr.colors\n"
 					" hjkl         - scroll canvas\n"
 					" HJKL         - move node\n"
+					" m/M          - change mouse modes\n"
 					" tab          - select next node\n"
 					" TAB          - select previous node\n"
 					" t/f          - follow true/false edges\n"
@@ -2749,7 +2752,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" V            - toggle basicblock / call graphs\n"
 					" w            - toggle between movements speed 1 and graph.scroll\n"
 					" x/X          - jump to xref/ref\n"
-					" +/-/0        - zoom in/out/default\n");
+					" Z            - follow parent node");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;
