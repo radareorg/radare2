@@ -2183,7 +2183,7 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 					goto beach;
 				}
 				if (strtab_section->sh_offset > bin->size ||
-				  strtab_section->sh_offset + strtab_section->sh_size > bin->size) {
+					strtab_section->sh_offset + strtab_section->sh_size > bin->size) {
 					goto beach;
 				}
 				if (r_buf_read_at (bin->b, strtab_section->sh_offset,
@@ -2394,6 +2394,7 @@ static int is_in_vphdr (Elf_(Phdr) *p, ut64 addr) {
 	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_memsz;
 }
 
+
 /* converts a physical address to the virtual address, looking
  * at the program headers in the binary bin */
 ut64 Elf_(r_bin_elf_p2v) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr) {
@@ -2409,9 +2410,13 @@ ut64 Elf_(r_bin_elf_p2v) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr) {
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
-		if (!p) break;
-
+		if (!p) {
+			break;
+		}
 		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
+			if (!p->p_vaddr && !p->p_offset) {
+				continue;
+			}
 			return p->p_vaddr + paddr - p->p_offset;
 		}
 	}
@@ -2434,8 +2439,13 @@ ut64 Elf_(r_bin_elf_v2p) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr) {
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
-		if (!p) break;
+		if (!p) {
+			break;
+		}
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
+			if (!p->p_offset && !p->p_vaddr) {
+				continue;
+			}
 			return p->p_offset + vaddr - p->p_vaddr;
 		}
 	}
