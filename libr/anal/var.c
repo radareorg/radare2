@@ -280,9 +280,9 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	av->addr = addr;
 	av->scope = scope;
 	av->delta = delta;
-	av->name = strdup (vt.name);
+	av->name = vt.name? strdup (vt.name) : strdup ("unkown_var");
 	av->size = vt.size;
-	av->type = strdup (vt.type);
+	av->type = vt.type? strdup (vt.type) : strdup ("unkown_type"); 
 
 	sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 	// TODO:
