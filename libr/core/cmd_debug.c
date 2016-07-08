@@ -971,7 +971,7 @@ out_error:
 	r_core_free (core);
 }
 
-bool str_start_with(const char *ptr, const char *str) {
+int str_start_with(const char *ptr, const char *str) {
 	return !strncmp (ptr, str, (size_t)strlen (str));
 }
 
@@ -1047,35 +1047,56 @@ arena:
 			eprintf ("Warning: out of memory\n");
 			return true;
 		}
-		update_main_arena (core, *m_arena, main_arena);
+        	update_main_arena (core, *m_arena, main_arena);
 		return false;
 	}			
 }
 
-void print_heap_chunk(RCore *core) {
+static void print_heap_chunk(RCore *core) {
+	char bits[sizeof (size_t)] = {0};
 	RHeapChunk *cnk = R_NEW0 (RHeapChunk);
-	core->offset  -= sizeof(size_t)*2;
-	r_core_read_at (core, core->offset, (ut8 *) cnk , sizeof(RHeapChunk));
+	ut64 chunk = core->offset;
+	if (!cnk) {
+		eprintf ("Warning: out of memory\n");
+		return;
+	}
+	
+	r_core_read_at (core, chunk - sizeof (size_t) * 2, (ut8 *) cnk, sizeof (RHeapChunk));
+	r_str_bits (bits, (ut8 *) &cnk->size, sizeof (size_t), NULL);
 
 	PRINT_GA ("struct malloc_chunk @ ");
-	PRINTF_BA ("0x%"PFMT64x, core->offset);
-	PRINT_GA ("{\n  prev_size = ");
+	PRINTF_BA ("0x%"PFMT64x, chunk - sizeof (size_t) * 2);
+	PRINT_GA (" {\n  prev_size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->prev_size));
 	PRINT_GA (",\n  size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->size));
+	PRINT_GA(",\n  flags: |N:");
+	PRINTF_BA("%c", bits[sizeof (size_t) - 3]);
+	PRINT_GA(" |M:");
+	PRINTF_BA("%c", bits[sizeof (size_t) - 2]);
+	PRINT_GA(" |P:");
+	PRINTF_BA("%c", bits[sizeof (size_t) - 1]);	
 	PRINT_GA (",\n  fd = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->fd));
 	PRINT_GA (",\n  bk = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->bk));
 
-	if(cnk->size-sizeof(size_t)*2 >= 512){
+	if(cnk->size - sizeof (size_t) * 2 >= 512) {
 		PRINT_GA (",\n  fd-nextsize = ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->fd_nextsize));
 		PRINT_GA (",\n  bk-nextsize = ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->bk_nextsize));
 	}
+
 	PRINT_GA (",\n}\n");
-	
+	ut64 size = ((cnk->size >> 3) << 3) - sizeof (size_t) * 2;
+	if (size > 1024) {
+		r_cons_println("Warning: Chunk cannot be displayed completely due to size constraint");
+		size = 1024;
+	}
+	PRINT_GA ("chunk data = \n");
+	r_print_hexdump (core->print, chunk + sizeof (size_t) * 2, core->block, size, SIZE_SZ * 8, SIZE_SZ);
+	free (cnk);
 }
 
 /* TODO comand dmhb to iterate and print double linked list of bins
@@ -1083,15 +1104,16 @@ void print_heap_bins (RCore *core, RHeap_MallocState *main_arena) {
 	eprintf ("\tbins = 0x%"PFMT64x"\n", (ut64)(size_t)(main_arena->bins[0]));
 }
 */
+
 static int cmd_debug_map_heap(RCore *core, const char *input) {
 	RHeap_MallocState *main_arena =  R_NEW0 (RHeap_MallocState);
 	static ut64 m_arena = UT64_MAX;	
 	const char* help_msg[] = {
 		"Usage:", "dmh", " # Memory map heap",
 		"dmh*", "", "show heap chunks in r2 commands",
-		"dmha", "", "struct Malloc State (main_arena)",
-		"dmhc", "@[malloc_addr]", "print malloc_chunk struct for a given malloc chunk",
-		"dmh?", "", "show map heap help",
+		"dmha", "", "Struct Malloc State (main_arena)",
+		"dmhc", "@[malloc_addr]", "Print malloc_chunk struct for a given malloc chunk",
+		"dmh?", "", "Show map heap help",
 		NULL
 	};
 
@@ -1114,7 +1136,7 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 	*/
 	case 'c': // "dmhc"
 		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
-			print_heap_chunk (core);
+            		print_heap_chunk (core);
 		}
 		break;	
 	case '?':
@@ -1143,7 +1165,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
 		"dms", " <id> <mapaddr>", "take memory snapshot",
 		"dms-", " <id> <mapaddr>", "restore memory snapshot",
-		"dmh", "", "Show map heap",
+		"dmh", "", "Show heap map",
 		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
 		NULL};
@@ -2711,9 +2733,8 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			int signum = atoi (arg);
 			if (signum > 0) {
 				signame = r_debug_signal_resolve_i (core->dbg, signum);
-				if (signame) {
-					r_cons_println (signame);
-				}
+				if (signame)
+                                	r_cons_println (signame);
 			} else {
 				signum = r_debug_signal_resolve (core->dbg, arg);
 				if (signum > 0) {
