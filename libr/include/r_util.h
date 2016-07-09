@@ -13,6 +13,7 @@
 #include <r_th.h>
 #include <dirent.h>
 #include <sys/time.h>
+#include <r_util/r_debruijn.h>
 #if __UNIX__
 #include <signal.h>
 #endif
@@ -834,10 +835,6 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode);
 R_API int r_sandbox_chdir(const char *path);
 R_API int r_sandbox_check_path(const char *path);
 R_API int r_sandbox_kill(int pid, int sig);
-
-/* derbuijn.c */
-R_API char* r_debruijn_pattern(int size, int start, const char* charset);
-R_API int r_debruijn_offset(ut64 value, int guest_endian);
 
 /* strpool */
 #define R_STRPOOL_INC 1024

@@ -2,9 +2,6 @@
 
 #include <r_util.h>
 
-// For information about the algorithm, see Joe Sawada and Frank Ruskey, "An
-// Efficient Algorithm for Generating Necklaces with Fixed Density"
-
 // The following two (commented out) lines are the character set used in peda.
 // You may use this charset instead of the A-Za-z0-9 charset normally used.
 // char* peda_charset =
