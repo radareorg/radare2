@@ -552,16 +552,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 }
 
-static int bb_cmp(const void *a, const void *b) {
-	const RAnalBlock *ba = a;
-	const RAnalBlock *bb = b;
-	return ba->addr - bb->addr;
-}
-
 static int anal_fcn_list_bb(RCore *core, const char *input) {
 	RDebugTracepoint *tp = NULL;
 	RAnalFunction *fcn;
-	RListIter *iter;
+	RSkipListNode *iter;
 	RAnalBlock *b;
 	int mode = 0;
 	ut64 addr;
@@ -587,8 +581,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 		r_cons_printf ("fs blocks\n");
 		break;
 	}
-	r_list_sort (fcn->bbs, bb_cmp);
-	r_list_foreach (fcn->bbs, iter, b) {
+	r_skiplist_foreach (fcn->bbs, iter, b) {
 		switch (mode) {
 		case 'r':
 			if (b->jump == UT64_MAX) {
@@ -615,11 +608,11 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 		case 'j':
 			//r_cons_printf ("%" PFMT64d "%s", b->addr, iter->n? ",": "");
 			{
-			RListIter *iter2;
+			RSkipListNode *iter2;
 			RAnalBlock *b2;
 			int inputs = 0;
 			int outputs = 0;
-			r_list_foreach (fcn->bbs, iter2, b2) {
+			r_skiplist_foreach (fcn->bbs, iter2, b2) {
 				if (b2->jump == b->addr) {
 					inputs++;
 				}
@@ -634,7 +627,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 				outputs ++;
 			}
 			r_cons_printf ("{\"addr\":%" PFMT64d ",\"size\":%d,\"inputs\":%d,\"outputs\":%d,\"ninstr\":%d,\"traced\":%s}%s",
-				b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced), iter->n? ",":"");
+				b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced), r_skiplist_islast(fcn->bbs, iter)? ",":"");
 			//%s", b->addr, iter->n? ",": "");
 			}
 			break;
@@ -666,17 +659,17 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
 		if (!strcmp (input, "*")) {
-			r_list_free (fcn->bbs);
+			r_skiplist_free (fcn->bbs);
 			fcn->bbs = NULL;
 		} else {
-			RAnalBlock *b;
-			RListIter *iter;
-			r_list_foreach (fcn->bbs, iter, b) {
-				if (b->addr == addr) {
-					r_list_delete (fcn->bbs, iter);
-					return true;
-				}
-			}
+			RAnalBlock search_bb;
+			bool res;
+
+			search_bb.addr = addr;
+			search_bb.size = 0;
+			res = r_skiplist_delete (fcn->bbs, &search_bb);
+			if (res) return true;
+
 			eprintf ("Cannot find basic block\n");
 		}
 	} else {
@@ -753,7 +746,8 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 	ut64 code_size = r_num_get (core->num, "$SS");
 	ut64 base_addr = r_num_get (core->num, "$S");
 	ut64 chunk_size, chunk_offset, i;
-	RListIter *iter, *iter2;
+	RListIter *iter;
+	RSkipListNode *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *b;
 	char* bitmap;
@@ -767,7 +761,7 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		// for each basic block in the function
-		r_list_foreach (fcn->bbs, iter2, b) {
+		r_skiplist_foreach (fcn->bbs, iter2, b) {
 			// if it is not withing range, continue
 			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
 				continue;
@@ -817,7 +811,8 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 	int cols = r_config_get_i (core->config, "hex.cols") * 4;
 	ut64 code_size = r_num_get (core->num, "$SS");
 	ut64 base_addr = r_num_get (core->num, "$S");
-	RListIter *iter, *iter2;
+	RListIter *iter;
+	RSkipListNode *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *b;
 	char* bitmap;
@@ -831,7 +826,7 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 	// for each function
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		// for each basic block in the function
-		r_list_foreach (fcn->bbs, iter2, b) {
+		r_skiplist_foreach (fcn->bbs, iter2, b) {
 			// if it is not within range, continue
 			if ((fcn->addr < base_addr) || (fcn->addr >= base_addr+code_size))
 				continue;
@@ -2551,13 +2546,13 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'f': // "aef"
 	{
-		RListIter *iter;
+		RSkipListNode *iter;
 		RAnalBlock *bb;
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 							core->offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (fcn) {
 			// emulate every instruction in the function recursively across all the basic blocks
-			r_list_foreach (fcn->bbs, iter, bb) {
+			r_skiplist_foreach (fcn->bbs, iter, bb) {
 				ut64 pc = bb->addr;
 				ut64 end = bb->addr + bb->size;
 				RAnalOp op;
@@ -4306,8 +4301,8 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 		char *bitmap = calloc (1, fcn_size);
 		if (bitmap) {
 			RAnalBlock *b;
-			RListIter *iter;
-			r_list_foreach (fcn->bbs, iter, b) {
+			RSkipListNode *iter;
+			r_skiplist_foreach (fcn->bbs, iter, b) {
 				int f = b->addr - fcn->addr;
 				int t = R_MIN (f + b->size, fcn_size);
 				if (f>=0) {

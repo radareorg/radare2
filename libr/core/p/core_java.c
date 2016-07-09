@@ -903,7 +903,8 @@ static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (get_anal (core));
 	RAnalFunction *fcn = NULL;
 	RAnalBlock *bb = NULL;
-	RListIter *bb_iter, *fn_iter, *iter;
+	RListIter *fn_iter, *iter;
+	RSkipListNode *bb_iter;
 	RCmdJavaCPResult *cp_res = NULL;
 	ut16 idx = -1;
 	RList *find_list;
@@ -930,7 +931,7 @@ static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 	find_list->free = free;
 	// XXX - this will break once RAnal moves to sdb
 	r_list_foreach (core->anal->fcns, fn_iter, fcn) {
-		r_list_foreach (fcn->bbs, bb_iter, bb) {
+		r_skiplist_foreach (fcn->bbs, bb_iter, bb) {
 			char op = bb->op_bytes[0];
 			cp_res = NULL;
 			switch (op) {
@@ -1771,7 +1772,8 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 	RBinJavaObj *bin = anal ? (RBinJavaObj *) r_cmd_java_get_bin_obj (anal) : NULL;
 	RAnalBlock *bb = NULL;
 	RAnalFunction *fcn = NULL;
-	RListIter *bb_iter = NULL, *fcn_iter = NULL;
+	RListIter *fcn_iter = NULL;
+	RSkipListNode *bb_iter;
 	ut64 func_addr = -1;
 	const char *fmt, *p = r_cmd_java_consumetok (input, ' ', -1);
 	func_addr = p && *p && r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
@@ -1791,7 +1793,7 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 	r_list_foreach (anal->fcns, fcn_iter, fcn) {
 		ut8 do_this_one = func_addr == -1 || r_anal_fcn_is_in_offset (fcn, func_addr);
 		if (!do_this_one) continue;
-		r_list_foreach (fcn->bbs, bb_iter, bb) {
+		r_skiplist_foreach (fcn->bbs, bb_iter, bb) {
 			char *operation = NULL, *type = NULL;
 			ut64 addr = -1;
 			ut16 cp_ref_idx = -1;

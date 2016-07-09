@@ -40,7 +40,8 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 		}
 		/* Fingerprint fcn bbs (functions basic-blocks) */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
-			r_list_foreach (fcn->bbs, iter2, bb) {
+			RSkipListNode *iter_bb;
+			r_skiplist_foreach (fcn->bbs, iter_bb, bb) {
 				r_anal_diff_fingerprint_bb (cores[i]->anal, bb);
 			}
 		}

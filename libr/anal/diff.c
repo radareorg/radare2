@@ -79,14 +79,14 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 
 R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn) {
 	RAnalBlock *bb;
-	RListIter *iter;
+	RSkipListNode *iter;
 	int len = 0;
 
 	if (anal && anal->cur && anal->cur->fingerprint_fcn)
 		return (anal->cur->fingerprint_fcn (anal, fcn));
 
 	fcn->fingerprint = NULL;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		len += bb->size;
 		fcn->fingerprint = realloc (fcn->fingerprint, len);
 		if (!fcn->fingerprint)
@@ -98,7 +98,7 @@ R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn) {
 
 R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 	RAnalBlock *bb, *bb2, *mbb, *mbb2;
-	RListIter *iter, *iter2;
+	RSkipListNode *iter, *iter2;
 	double t, ot;
 
 	if (!anal) return false;
@@ -106,12 +106,12 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 		return (anal->cur->diff_bb (anal, fcn, fcn2));
 
 	fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		if (bb->diff && bb->diff->type != R_ANAL_DIFF_TYPE_NULL)
 			continue;
 		ot = 0;
 		mbb = mbb2 = NULL;
-		r_list_foreach (fcn2->bbs, iter2, bb2) {
+		r_skiplist_foreach (fcn2->bbs, iter2, bb2) {
 			if (bb2->diff && bb2->diff->type == R_ANAL_DIFF_TYPE_NULL) {
 				r_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
 						bb2->fingerprint, bb2->size, NULL, &t);

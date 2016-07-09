@@ -563,7 +563,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 							fcn->addr < next_module_function->addr + flirt_fcn_size) {
 						r_list_join(next_module_function->refs, fcn->refs);
 						r_list_join(next_module_function->xrefs, fcn->xrefs);
-						r_list_join(next_module_function->bbs, fcn->bbs);
+						r_skiplist_join(next_module_function->bbs, fcn->bbs);
 						r_list_join(next_module_function->locs, fcn->locs);
 						r_list_join(next_module_function->vars, fcn->vars);
 						next_module_function->ninstr += fcn->ninstr;

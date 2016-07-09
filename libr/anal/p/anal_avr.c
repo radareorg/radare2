@@ -296,7 +296,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e) == 0x0c)) {
 		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_CJMP; // breq, jmp (absolute)
+		op->type = R_ANAL_OP_TYPE_JMP; // jmp (absolute)
 		op->fail = op->addr + 4;
 		anal->iob.read_at (anal->iob.io, addr + 2, kbuf, 2);
 		// TODO: check return value
