@@ -123,8 +123,10 @@ windist:
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/doc/radare2"
 	mkdir -p "${WINDIST}/include/libr/sdb"
+	mkdir -p "${WINDIST}/include/libr/r_util
 	@echo "${C}[WINDIST] Copying development files${R}"
 	cp -f libr/include/sdb/*.h "${WINDIST}/include/libr/sdb/"
+	cp -f libr/include/r_util/*.h "${WINDIST}/include/libr/r_util/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
 	#mkdir -p "${WINDIST}/include/libr/sflib"
 	@cp -f doc/fortunes.* "${WINDIST}/share/doc/radare2"

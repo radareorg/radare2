@@ -109,6 +109,10 @@ install-includes:
 	(cd include/sdb && for FILE in * ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
+	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
+	(cd include/r_util && for FILE in * ; do \
+		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_util/$$FILE" ; \
+	done)
 
 symstall install-symlink:
 	mkdir -p "${DESTDIR}${BINDIR}" \
