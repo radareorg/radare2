@@ -2221,6 +2221,7 @@ RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, in
 				eprintf ("Warning: read (sym)\n");
 				goto beach;
 			}
+			free (ret);
 			ret = calloc (nsym, sizeof (RBinElfSymbol));
 			if (!ret) {
 				eprintf ("Cannot allocate %d symbols\n", nsym);

@@ -108,6 +108,8 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	} else {
 		line = malloc (klen + vlen + 2);
 		if (!line) {
+			//XXX coverity complains here that v should be freed.
+			//v is const, let's const-correctify these.
 			return 0;
 		}
 		memcpy (line, k, klen);

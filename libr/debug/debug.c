@@ -39,8 +39,12 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
 static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
 	RBreakpointItem *b;
 
+	if (!pb) {
+		eprintf ("BreakpointItem is NULL!\n");
+		return false;
+	}
 	/* initialize the output parameter */
-	if (pb) *pb = NULL;
+	*pb = NULL;
 
 	/* if we are tracing, update the tracing data */
 	if (dbg->trace->enabled) {

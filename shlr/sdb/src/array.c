@@ -153,6 +153,7 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val, 
 	} else {
 		char *nstr = malloc (lstr + 1);
 		if (!nstr) {
+			free (x);
 			return false;
 		}
 		memcpy (nstr, str, lstr + 1);

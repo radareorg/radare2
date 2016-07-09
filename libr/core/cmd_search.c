@@ -362,13 +362,14 @@ static char *getstring(char *b, int l) {
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
-	const bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	ut64 base_addr = 0;
+	const bool use_color;
 
 	if (!core) {
 		eprintf ("Error: Callback has an invalid RCore.\n");
 		return false;
 	}
+	use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	if (maxhits && searchhits >= maxhits) {
 		//eprintf ("Error: search.maxhits reached.\n");
 		return false;
