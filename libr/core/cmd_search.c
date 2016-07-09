@@ -363,7 +363,7 @@ static char *getstring(char *b, int l) {
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	ut64 base_addr = 0;
-	const bool use_color;
+	bool use_color;
 
 	if (!core) {
 		eprintf ("Error: Callback has an invalid RCore.\n");
