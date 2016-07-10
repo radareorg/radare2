@@ -2658,7 +2658,10 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 			}
 		}
 		if (!done) {
-			eprintf ("Usage: de [rwx] [reg|mem] [expr]\n");
+			const char *help_de_msg[] = {
+				"Usage:", "de", " [rwx] [reg|mem] [expr]",
+				NULL};
+			r_core_cmd_help (core, help_de_msg);
 		}
 		free (line);
 		}
@@ -2683,10 +2686,13 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 				addr = naddr;
 			}
 		} else if (input[1] == '?' || !input[1]) {
-			// TODO: use r_core_help here
-			eprintf ("Usage: des[u] [arg]\n");
-			eprintf (" des [num-of-instructions]\n");
-			eprintf (" desu [address]\n");
+			const char *help_des_msg[] = {
+				"Usage:", "des", "[u] [arg]",
+				"des", " [N]", "step-in N instructions with esildebug",
+				"desu", " [addr]", "esildebug until specific address",
+				NULL};
+
+			r_core_cmd_help (core, help_des_msg);
 		} else {
 			r_core_cmd0 (core, "aei");
 			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
@@ -2709,19 +2715,25 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		break;
 	case '?':
 	default:
-		eprintf ("Usage: de[-sc] [rwx] [rm] [expr]\n");
-		eprintf ("Examples:\n");
-		eprintf ("> de               # list esil watchpoints\n");
-		eprintf ("> de-*             # delete all esil watchpoints\n");
-		eprintf ("> de r r rip       # stop when reads rip\n");
-		eprintf ("> de rw m ADDR     # stop when read or write in ADDR\n");
-		eprintf ("> de w r rdx       # stop when rdx register is modified\n");
-		eprintf ("> de x m FROM..TO  # stop when rip in range\n");
-		eprintf ("> dec              # continue execution until matching expression\n");
-		eprintf ("> des [num]        # step-in N instructions with esildebug\n");
-		eprintf ("> desu [addr]      # esildebug until specific address\n");
-		eprintf ("TODO: Add support for conditionals in expressions like rcx == 4 or rcx<10\n");
-		eprintf ("TODO: Turn on/off debugger trace of esil debugging\n");
+		{
+			const char *help_msg[] = {
+				"Usage:", "de", "[-sc] [rwx] [rm] [expr]",
+				"de", "", "list esil watchpoints",
+				"de-*", "", "delete all esil watchpoints",
+				"de", " [rwx] [rm] [addr|reg|from..to]", "stop on condition",
+				"dec", "", "continue execution until matching expression",
+				"des", " [N]", "step-in N instructions with esildebug",
+				"desu", " [addr]", "esildebug until specific address",
+				NULL};
+
+			r_core_cmd_help (core, help_msg);
+			r_cons_printf ("Examples:\n"
+					" de r r rip       # stop when reads rip\n"
+					" de rw m ADDR     # stop when read or write in ADDR\n"
+					" de w r rdx       # stop when rdx register is modified\n"
+					" de x m FROM..TO  # stop when rip in range\n",
+					NULL);
+		}
 		break;
 	}
 }
