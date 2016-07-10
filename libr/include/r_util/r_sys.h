@@ -2,6 +2,13 @@
 #define R_SYS_H
 #include <r_list.h>
 
+enum {
+	R_SYS_BITS_8 = 1,
+	R_SYS_BITS_16 = 2,
+	R_SYS_BITS_32 = 4,
+	R_SYS_BITS_64 = 8,
+};
+
 R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);
 R_API ut64 r_sys_now(void);

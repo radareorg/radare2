@@ -1,17 +1,6 @@
 #ifndef R_FILE_H
 #define R_FILE_H
-
-typedef struct r_mmap_t {
-	ut8 *buf;
-	ut64 base;
-	int len;
-	int fd;
-	int rw;
-#if __WINDOWS__
-	HANDLE fh;
-	HANDLE fm;
-#endif
-} RMmap;
+#include <r_util/r_mem.h>
 
 R_API int r_file_is_abspath(const char *file);
 R_API bool r_file_truncate (const char *filename, ut64 newsize);

@@ -1,6 +1,7 @@
 #ifndef R_TREE_H
 #define R_TREE_H
 #include <r_list.h>
+#include <r_util/r_queue.h>
 
 struct r_tree_t;
 
