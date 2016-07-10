@@ -27,25 +27,24 @@ static int cmd_quit(void *data, const char *input) {
 		core->num->value = 0LL;
 		return -2;
 	default:
-		if (*input == ' ') {
+		while (*input == ' ') {
 			input++;
 		}
 		if (*input) {
 			r_num_math (core->num, input);
-		}
-		else {
+		} else {
 			core->num->value = 0LL;
 		}
+
 		if (*input == 'y') {
 			core->num->value = 5;
-		}
-		else if (*input == 'n') {
+		} else if (*input == 'n') {
 			core->num->value = 1;
 		}
+
 		if (input[1] == 'y') {
 			core->num->value += 10;	
-		}
-		else if (input[1] == 'n') {
+		} else if (input[1] == 'n') {
 			core->num->value += 2;	
 		}
 		//exit (*input?r_num_math (core->num, input+1):0);
