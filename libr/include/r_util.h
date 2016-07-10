@@ -13,8 +13,24 @@
 #include <r_th.h>
 #include <dirent.h>
 #include <sys/time.h>
+#if 0
+#include <r_util/r_big.h>
+#endif
+#include <r_util/r_bitmap.h>
+#include <r_util/r_utf8.h>
 #include <r_util/r_debruijn.h>
+#include <r_util/r_des.h>
+#include <r_util/r_file.h>
+#include <r_util/r_num.h>
 #include <r_util/r_graph.h>
+#include <r_util/r_range.h>
+#include <r_util/r_sandbox.h>
+#include <r_util/r_spaces.h>
+#include <r_util/r_str.h>
+#include <r_util/r_strpool.h>
+#include <r_util/r_sys.h>
+#include <r_util/r_tree.h>
+#include <r_util/r_uleb128.h>
 #if __UNIX__
 #include <signal.h>
 #endif
@@ -56,19 +72,6 @@ R_REFCTR_REF (foo)
 R_REFCTR_UNREF (foo)
 #endif
 
-#define R_SPACES_MAX 512
-
-typedef struct r_space_t {
-	int space_idx;
-	int space_idx2;
-	char *spaces[R_SPACES_MAX];
-	RList *spacestack; // metaspaces
-	PrintfCallback cb_printf;
-	void (*unset_for)(void *user, int idx);
-	int (*count_for)(void *user, int idx);
-	void *user;
-} RSpaces;
-
 /* empty classes */
 typedef struct { } RSystem;
 //typedef struct { } RStr;
@@ -91,18 +94,6 @@ typedef struct r_mem_pool_factory_t {
 	int limit;
 	RMemoryPool **pools;
 } RPoolFactory;
-
-typedef struct r_mmap_t {
-	ut8 *buf;
-	ut64 base;
-	int len;
-	int fd;
-	int rw;
-#if __WINDOWS__
-	HANDLE fh;
-	HANDLE fm;
-#endif
-} RMmap;
 
 /* copied from RIOCache */
 typedef struct r_buf_cache_t {
@@ -138,62 +129,6 @@ typedef struct r_prof_t {
 	struct timeval begin;
 	double result;
 } RProfile;
-
-/* numbers */
-#define R_NUMCALC_STRSZ 1024
-
-typedef struct {
-	double d;
-	ut64 n;
-} RNumCalcValue;
-
-typedef enum {
-	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
-	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
-	//RNCXOR='^', RNCOR='|', RNCAND='&',
-	RNCNEG='~', RNCAND='&', RNCORR='|', RNCXOR='^',
-	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
-	RNCSHL='<', RNCSHR = '>'
-
-} RNumCalcToken;
-
-typedef struct r_num_calc_t {
-	RNumCalcToken curr_tok;
-	RNumCalcValue number_value;
-	char string_value[R_NUMCALC_STRSZ];
-	int errors;
-	char oc;
-	const char *calc_err;
-	int calc_i;
-	const char *calc_buf;
-	int calc_len;
-} RNumCalc;
-
-
-typedef struct r_num_t {
-	ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
-//	RNumCallback callback;
-	ut64 value;
-	double fvalue;
-	void *userptr;
-	int dbz; /// division by zero happened
-	RNumCalc nc;
-} RNum;
-
-typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
-
-typedef struct r_range_item_t {
-	ut64 fr;
-	ut64 to;
-	ut8 *data;
-	int datalen;
-} RRangeItem;
-
-typedef struct r_range_t {
-	int count;
-	int changed;
-	RList *ranges;
-} RRange;
 
 /* bitsize */
 enum {
@@ -246,43 +181,6 @@ typedef struct r_queue_t {
 	unsigned int size;
 } RQueue;
 
-/* bitmap api */
-#if R_SYS_BITS == 4
-#define BITWORD_BITS_SHIFT 5
-#define RBitword ut32
-#else
-#define BITWORD_BITS_SHIFT 6
-#define RBitword ut64
-#endif
-typedef struct r_bitmap_t {
-	int length;
-	RBitword *bitmap;
-} RBitmap;
-
-/* tree api */
-struct r_tree_t;
-
-typedef struct r_tree_node_t {
-	struct r_tree_node_t *parent;
-	struct r_tree_t *tree;
-	RList *children; // <RTreeNode>
-	unsigned int n_children;
-	int depth;
-	RListFree free;
-	void *data;
-} RTreeNode;
-
-typedef struct r_tree_t {
-	RTreeNode *root;
-} RTree;
-
-typedef struct r_tree_visitor_t {
-	void (*pre_visit)(RTreeNode *, struct r_tree_visitor_t *);
-	void (*post_visit)(RTreeNode *, struct r_tree_visitor_t *);
-	void (*discover_child)(RTreeNode *, struct r_tree_visitor_t *);
-	void *data;
-} RTreeVisitor;
-typedef void (*RTreeNodeVisitCb)(RTreeNode *n, RTreeVisitor *vis);
 
 #ifdef R_API
 R_API RStack *r_stack_new (unsigned int n);
@@ -298,50 +196,6 @@ R_API int r_queue_enqueue (RQueue *q, void *el);
 R_API void *r_queue_dequeue (RQueue *q);
 R_API int r_queue_is_empty (RQueue *q);
 
-R_API RBitmap *r_bitmap_new(size_t len);
-R_API void r_bitmap_set_bytes(RBitmap *b, const ut8 *buf, int len);
-R_API void r_bitmap_free(RBitmap *b);
-R_API void r_bitmap_set(RBitmap *b, size_t bit);
-R_API void r_bitmap_unset(RBitmap *b, size_t bit);
-R_API int r_bitmap_test(RBitmap *b, size_t bit);
-
-R_API RTree *r_tree_new (void);
-R_API RTreeNode *r_tree_add_node (RTree *t, RTreeNode *node, void *child_data);
-R_API void r_tree_reset (RTree *t);
-R_API void r_tree_free (RTree *t);
-R_API void r_tree_dfs (RTree *t, RTreeVisitor *vis);
-R_API void r_tree_bfs (RTree *t, RTreeVisitor *vis);
-
-R_API RGraphNode *r_graph_get_node (const RGraph *g, unsigned int idx);
-R_API RListIter *r_graph_node_iter (const RGraph *g, unsigned int idx);
-R_API const RList *r_graph_get_nodes (const RGraph *g);
-R_API RGraph *r_graph_new (void);
-R_API void r_graph_free (RGraph* g);
-R_API void r_graph_reset (RGraph *g);
-R_API RGraphNode *r_graph_add_node (RGraph *g, void *data);
-R_API void r_graph_del_node (RGraph *g, RGraphNode *n);
-R_API void r_graph_add_edge (RGraph *g, RGraphNode *from, RGraphNode *to);
-R_API void r_graph_add_edge_at (RGraph *g, RGraphNode *from, RGraphNode *to, int nth);
-R_API void r_graph_del_edge (RGraph *g, RGraphNode *from, RGraphNode *to);
-R_API const RList *r_graph_get_neighbours (const RGraph *g, const RGraphNode *n);
-R_API RGraphNode *r_graph_nth_neighbour (const RGraph *g, const RGraphNode *n, int nth);
-R_API const RList *r_graph_innodes (const RGraph *g, const RGraphNode *n);
-R_API const RList *r_graph_all_neighbours (const RGraph *g, const RGraphNode *n);
-R_API int r_graph_adjacent (const RGraph *g, const RGraphNode *from, const RGraphNode *to);
-R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis);
-R_API void r_graph_dfs (RGraph *g, RGraphVisitor *vis);
-
-R_API int r_file_is_abspath(const char *file);
-R_API bool r_file_truncate (const char *filename, ut64 newsize);
-R_API ut64 r_file_size(const char *str);
-R_API char *r_file_root(const char *root, const char *path);
-R_API bool r_file_is_directory(const char *str);
-R_API bool r_file_is_regular(const char *str);
-R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base);
-R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len);
-R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len);
-R_API void r_file_mmap_free (RMmap *m);
-
 // TODO: find better names and write vapis
 #define ut8p_b(x) ((x)[0])
 #define ut8p_bw(x) ((x)[0]|((x)[1]<<8))
@@ -350,18 +204,6 @@ R_API void r_file_mmap_free (RMmap *m);
 #define ut8p_lw(x) ((x)[1]|((x)[0]<<8))
 #define ut8p_ld(x) ((x)[3]|((x)[2]<<8)|((x)[1]<<16)|((x)[0]<<24))
 #define ut8p_lq(x) ((x)[7]|((x)[6]<<8)|((x)[5]<<16)|((x)[4]<<24)|((x)[3]<<32)|((x)[2]<<40)|((x)[1]<<48)|((x)[0]<<56))
-
-R_API RNum *r_num_new(RNumCallback cb, void *ptr);
-R_API void r_num_free(RNum *num);
-R_API char *r_num_units(char *buf, ut64 num);
-R_API int r_num_conditional(RNum *num, const char *str);
-R_API ut64 r_num_calc (RNum *num, const char *str, const char **err);
-R_API const char *r_num_calc_index (RNum *num, const char *p);
-R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize);
-R_API int r_num_is_valid_input(RNum *num, const char *input_value);
-R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
-R_API char* r_num_as_string(RNum *___, ut64 n);
-R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
 
 #define R_BUF_CUR UT64_MAX
 /* constructors */
@@ -437,20 +279,6 @@ R_API int r_mem_cmp_mask (const ut8 *dest, const ut8 *orig, const ut8 *mask, int
 R_API const ut8 *r_mem_mem (const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align);
 
-#define r_num_abs(x) x>0?x:-x
-R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
-R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
-R_API ut64 r_num_math(RNum *num, const char *str);
-R_API ut64 r_num_get(RNum *num, const char *str);
-R_API int r_num_to_bits(char *out, ut64 num);
-R_API int r_num_to_trits(char *out, ut64 num);	//Rename this please
-R_API int r_num_rand(int max);
-R_API void r_num_irand(void);
-R_API ut16 r_num_ntohs (ut16 foo);
-R_API int r_is_valid_input_num_value(RNum *num, const char *input_value);
-R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
-
-
 /* TODO ..use as uppercase maybe? they are macros! */
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r')
@@ -476,121 +304,6 @@ R_API int r_base91_decode(ut8 *bout, const char *bin, int len);
 R_API char *r_punycode_encode(const char*src, int srclen, int *dstlen);
 R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen);
 
-/* strings */
-static inline void r_str_rmch (char *s, char ch) {
-	for (;*s; s++) {
-		if (*s==ch)
-			memmove (s, s+1, strlen (s));
-	}
-}
-#define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
-R_API const char *r_str_pad(const char ch, int len);
-R_API const char *r_str_rchr(const char *base, const char *p, int ch);
-R_API const char *r_str_closer_chr (const char *b, const char *s);
-R_API int r_str_bounds(const char *str, int *h);
-R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
-R_API int r_str_len_utf8 (const char *s);
-R_API int r_str_len_utf8char (const char *s, int left);
-R_API void r_str_filter_zeroline(char *str, int len);
-R_API int r_str_write (int fd, const char *b);
-R_API void r_str_ncpy(char *dst, const char *src, int n);
-R_API void r_str_sanitize(char *c);
-R_API const char *r_str_casestr(const char *a, const char *b);
-R_API const char *r_str_lastbut (const char *s, char ch, const char *but);
-R_API int r_str_split(char *str, char ch);
-R_API char* r_str_replace(char *str, const char *key, const char *val, int g);
-R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
-#define r_str_cpy(x,y) memmove(x,y,strlen(y)+1);
-R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz);
-R_API int r_str_bits64(char *strout, ut64 in);
-R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz);
-R_API int r_str_rwx(const char *str);
-R_API int r_str_replace_char (char *s, int a, int b);
-R_API int r_str_replace_char_once (char *s, int a, int b);
-R_API const char *r_str_rwx_i(int rwx);
-R_API void r_str_writef(int fd, const char *fmt, ...);
-R_API char *r_str_arg_escape (const char *arg);
-R_API char **r_str_argv(const char *str, int *_argc);
-R_API void r_str_argv_free(char **argv);
-R_API char *r_str_new(const char *str);
-R_API int r_str_is_printable(const char *str);
-R_API char *r_str_concatlen(char *ptr, const char *string, int slen);
-R_API char *r_str_newf(const char *fmt, ...);
-R_API char *r_str_newlen(const char *str, int len);
-R_API const char *r_str_bool(int b);
-R_API const char *r_str_ansi_chrn(const char *str, int n);
-R_API int r_str_ansi_len(const char *str);
-R_API int r_str_ansi_chop(char *str, int str_len, int n);
-R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len);
-R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
-R_API int r_str_word_count(const char *string);
-R_API int r_str_char_count(const char *string, char ch);
-R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
-R_API int r_str_word_set0(char *str);
-R_API const char *r_str_word_get0(const char *str, int idx);
-R_API char *r_str_word_get_first(const char *string);
-R_API char *r_str_chop(char *str);
-R_API const char *r_str_chop_ro(const char *str);
-R_API char *r_str_trim_head(char *str);
-R_API const char *r_str_trim_const(const char *str);
-R_API char *r_str_trim_tail(char *str);
-R_API char *r_str_trim_head_tail(char *str);
-R_API ut32 r_str_hash(const char *str);
-R_API ut64 r_str_hash64(const char *str);
-R_API char *r_str_clean(char *str);
-R_API int r_str_nstr(char *from, char *to, int size);
-R_API const char *r_str_lchr(const char *str, char chr);
-R_API const char *r_sub_str_lchr(const char *str, int start, int end, char chr);
-R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr);
-R_API char *r_str_ichr(char *str, char chr);
-R_API int r_str_ccmp(const char *dst, const char *orig, int ch);
-R_API int r_str_cmp(const char *dst, const char *orig, int len);
-R_API int r_str_ccpy(char *dst, char *orig, int ch);
-R_API const char *r_str_get(const char *str);
-R_API char *r_str_ndup(const char *ptr, int len);
-R_API char *r_str_dup(char *ptr, const char *string);
-R_API void *r_str_free(void *ptr);
-R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
-R_API int r_str_delta(char *p, char a, char b);
-R_API void r_str_filter(char *str, int len);
-R_API const char * r_str_tok(const char *str1, const char b, size_t len);
-
-typedef void (*str_operation)(char *c);
-
-R_API int r_str_do_until_token(str_operation op, char *str, const char tok);
-
-R_API void r_str_const_free();
-R_API const char *r_str_const(const char *ptr);
-
-R_API int r_str_re_match(const char *str, const char *reg);
-R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
-R_API int r_str_unescape(char *buf);
-R_API char *r_str_escape(const char *buf);
-R_API char *r_str_escape_dot(const char *buf);
-R_API void r_str_uri_decode(char *buf);
-R_API char *r_str_uri_encode(const char *buf);
-R_API char *r_str_utf16_decode(const ut8 *s, int len);
-R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian);
-R_API char *r_str_utf16_encode(const char *s, int len);
-R_API char *r_str_home(const char *str);
-R_API int r_str_nlen(const char *s, int n);
-R_API int r_wstr_clen(const char *s);
-R_API char *r_str_prefix(char *ptr, const char *string);
-R_API char *r_str_prefix_all(char *s, const char *pfx);
-R_API char *r_str_concat(char *ptr, const char *string);
-R_API char *r_str_concatf(char *ptr, const char *fmt, ...);
-R_API char *r_str_concatch(char *x, char y);
-R_API void r_str_case(char *str, bool up);
-R_API void r_str_chop_path(char *s);
-R_API ut8 r_str_contains_macro(const char *input_value);
-R_API void r_str_truncate_cmd(char *string);
-R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
-				  const char *key, const char *val, int g);
-R_API char *r_hex_from_c(const char *code);
-R_API bool r_str_glob(const char *str, const char *glob);
-R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
-R_API char *r_str_between(const char *str, const char *prefix, const char *suffix);
-
 R_API int r_hex_pair2bin(const char *arg);
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask);
 R_API int r_hex_str2bin(const char *in, ut8 *out);
@@ -600,145 +313,11 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c);
 R_API int r_hex_str_is_valid(const char * s);
 R_API st64 r_hex_bin_truncate(ut64 in, int n);
 
-R_API int r_file_chmod(const char *file, const char *mod, int recursive);
-R_API char *r_file_temp(const char *prefix);
-R_API char *r_file_path(const char *bin);
-R_API const char *r_file_basename(const char *path);
-R_API char *r_file_dirname(const char *path);
-R_API char *r_file_abspath(const char *file);
-R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
-R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);
-R_API char *r_stdin_slurp(int *sz);
-R_API char *r_file_slurp(const char *str, int *usz);
-//R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
-R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
-R_API char *r_file_slurp_random_line(const char *file);
-R_API char *r_file_slurp_random_line_count(const char *file, int *linecount);
-R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz);
-R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append);
-R_API bool r_file_rm(const char *file);
-R_API bool r_file_exists(const char *str);
-R_API bool r_file_fexists(const char *fmt, ...);
-R_API char *r_file_slurp_line(const char *file, int line, int context);
-R_API int r_file_mkstemp(const char *prefix, char **oname);
-R_API char *r_file_tmpdir(void);
-R_API char *r_file_readlink(const char *path);
-
-R_API ut64 r_sys_now(void);
-R_API int r_sys_fork(void);
-R_API int r_sys_stop(void);
-R_API char *r_sys_pid_to_path(int pid);
-R_API int r_sys_run(const ut8 *buf, int len);
-R_API int r_sys_getpid(void);
-R_API int r_sys_crash_handler(const char *cmd);
-R_API const char *r_sys_arch_str(int arch);
-R_API int r_sys_arch_id(const char *arch);
-R_API bool r_sys_arch_match(const char *archstr, const char *arch);
-R_API RList *r_sys_dir(const char *path);
-R_API void r_sys_perror_str(const char *fun);
-#if __WINDOWS__ && !defined(__CYGWIN__)
-#define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
-#define r_sys_mkdir_failed() (GetLastError () != ERROR_ALREADY_EXISTS)
-#else
-#define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
-#define r_sys_mkdir_failed() (errno != EEXIST)
-#endif
-R_API bool r_sys_mkdirp(const char *dir);
-R_API int r_sys_sleep(int secs);
-R_API int r_sys_usleep(int usecs);
-R_API char *r_sys_getenv(const char *key);
-R_API int r_sys_setenv(const char *key, const char *value);
-R_API int r_sys_clearenv(void);
-R_API char *r_sys_whoami(char *buf);
-R_API char *r_sys_getdir(void);
-R_API int r_sys_chdir(const char *s);
-R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
-#if __WINDOWS__
-R_API char *r_sys_cmd_str_w32(const char *cmd);
-#endif
-R_API int r_sys_truncate(const char *file, int sz);
-R_API int r_sys_cmd(const char *cmd);
-R_API int r_sys_cmdbg(const char *cmd);
-R_API int r_sys_cmdf(const char *fmt, ...);
-R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
-R_API char *r_sys_cmd_strf(const char *cmd, ...);
-//#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
-R_API void r_sys_backtrace(void);
-
-/* utf8 */
-//typedef wchar_t RRune;
-typedef int RRune;
-R_API int r_utf8_encode(ut8 *ptr, const RRune ch);
-R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch);
-R_API int r_utf8_encode_str(const RRune *str, ut8 *dst, const int dst_length);
-R_API int r_utf8_size(const ut8 *ptr);
-R_API int r_utf8_strlen(const ut8 *str);
-R_API int r_isprint(const RRune c);
-
 /* LOG */
 R_API void r_log_msg(const char *str);
 R_API void r_log_error(const char *str);
 R_API void r_log_file(const char *str);
 R_API void r_log_progress(const char *str, int percent);
-
-/* Ranges */
-R_API RRange *r_range_new(void);
-R_API RRange *r_range_new_from_string(const char *string);
-R_API RRange *r_range_free(RRange *r);
-R_API RRangeItem *r_range_item_get(RRange *r, ut64 addr);
-R_API ut64 r_range_size(RRange *r);
-R_API int r_range_add_from_string(RRange *rgs, const char *string);
-R_API RRangeItem *r_range_add(RRange *rgs, ut64 from, ut64 to, int rw);
-R_API int r_range_sub(RRange *rgs, ut64 from, ut64 to);
-R_API void r_range_merge(RRange *rgs, RRange *r);
-R_API int r_range_contains(RRange *rgs, ut64 addr);
-R_API int r_range_sort(RRange *rgs);
-R_API void r_range_percent(RRange *rgs);
-R_API int r_range_list(RRange *rgs, int rad);
-R_API int r_range_get_n(RRange *rgs, int n, ut64 *from, ut64 *to);
-R_API RRange *r_range_inverse(RRange *rgs, ut64 from, ut64 to, int flags);
-R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);
-
-#if 0
-/* big */
-#if HAVE_LIB_GMP
-#define RNumBig mpz_t
-#elif HAVE_LIB_SSL
-#define RNumBig BIGNUM
-#else
-#define	R_BIG_SIZE 10000
-typedef struct r_num_big_t {
-	char dgts[R_BIG_SIZE];
-	int sign, last;
-} RNumBig;
-#endif
-
-R_API RNumBig *r_big_new(RNumBig *b);
-R_API void r_big_free(RNumBig *b);
-R_API void r_big_sub(RNumBig *a, RNumBig *b, RNumBig *c);
-R_API void r_big_print(RNumBig *n);
-R_API void r_big_set(RNumBig *a, RNumBig *b);
-R_API void r_big_set_st(RNumBig *n, int v);
-R_API void r_big_set_st64(RNumBig *n, st64 v);
-R_API void r_big_set_str(RNumBig *n, const char *str);
-R_API void r_big_add(RNumBig *c, RNumBig *a, RNumBig *b);
-R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b);
-R_API int r_big_cmp(RNumBig *a, RNumBig *b);
-R_API int r_big_cmp_st(RNumBig *n, int v);
-R_API void r_big_shift(RNumBig *n, int d);
-R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b);
-R_API void r_big_mul_ut(RNumBig *c, RNumBig *a, ut32 b);
-R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b);
-R_API void r_big_div_ut(RNumBig *a, RNumBig *b, ut32 c);
-R_API int r_big_divisible_ut(RNumBig *n, ut32 v);
-R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
-#endif
-
-/* uleb */
-R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v);
-R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v);
-R_API const ut8 *r_uleb128_encode(const ut64 s, int *len);
-R_API const ut8 *r_leb128(const ut8 *data, st64 *v);
 
 /*swap*/
 static inline ut16 r_swap_ut16(ut16 val) {
@@ -787,45 +366,6 @@ R_API const char *r_constr_get(RConstr *c, const char *str);
 R_API const char *r_constr_append(RConstr *c, const char *str);
 R_API const char *r_constr_add(RConstr *c, const char *str);
 
-/* sandbox */
-R_API DIR* r_sandbox_opendir(const char *path);
-R_API int r_sandbox_lseek(int fd, ut64 addr, int mode);
-R_API int r_sandbox_close(int fd);
-R_API int r_sandbox_read(int fd, ut8 *buf, int len);
-R_API int r_sandbox_write(int fd, const ut8 *buf, int len);
-R_API bool r_sandbox_enable(bool e);
-R_API bool r_sandbox_disable(bool e);
-R_API int r_sandbox_system(const char *x, int fork);
-R_API bool r_sandbox_creat(const char *path, int mode);
-R_API int r_sandbox_open(const char *path, int mode, int perm);
-R_API FILE *r_sandbox_fopen(const char *path, const char *mode);
-R_API int r_sandbox_chdir(const char *path);
-R_API int r_sandbox_check_path(const char *path);
-R_API int r_sandbox_kill(int pid, int sig);
-
-/* strpool */
-#define R_STRPOOL_INC 1024
-
-typedef struct {
-	char *str;
-	int len;
-	int size;
-} RStrpool;
-
-R_API RStrpool* r_strpool_new(int sz);
-R_API char *r_strpool_alloc(RStrpool *p, int l);
-R_API int r_strpool_memcat(RStrpool *p, const char *s, int len);
-R_API int r_strpool_ansi_chop(RStrpool *p, int n);
-R_API int r_strpool_append(RStrpool *p, const char *s);
-R_API void r_strpool_free(RStrpool *p);
-R_API int r_strpool_fit(RStrpool *p);
-R_API char *r_strpool_get(RStrpool *p, int index);
-R_API char *r_strpool_get_i(RStrpool *p, int index);
-R_API int r_strpool_get_index(RStrpool *p, const char *s);
-R_API char *r_strpool_next(RStrpool *p, int index);
-R_API char *r_strpool_slice(RStrpool *p, int index);
-R_API char *r_strpool_empty(RStrpool *p);
-
 typedef struct r_strht_t {
 	RStrpool *sp;
 	RHashTable *ht;
@@ -858,33 +398,6 @@ R_API char *r_strbuf_drain(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);
-
-R_API char **r_sys_get_environ(void);
-R_API void r_sys_set_environ(char **e);
-R_API ut64 des_round(ut64 plaintext, ut64 round_key);
-
-/* spaces */
-
-R_API void r_space_init(RSpaces *f, void (*unset_for)(void*, int), int (*count_for)(void *,int), void *user);
-R_API void r_space_fini(RSpaces *f);
-R_API int r_space_get(RSpaces *f, const char *name);
-R_API const char *r_space_get_i(RSpaces *f, int idx);
-R_API int r_space_push(RSpaces *f, const char *name);
-R_API int r_space_pop(RSpaces *f);
-R_API int r_space_set(RSpaces *f, const char *name);
-R_API int r_space_unset(RSpaces *f, const char *fs);
-R_API int r_space_list(RSpaces *f, int mode);
-R_API int r_space_rename(RSpaces *f, const char *oname, const char *nname);
-
-R_API ut64 r_des_pc2(ut64 k);
-R_API ut64 r_des_pc1(ut64 k);
-R_API ut64 r_des_get_roundkey(ut64 key, int round, int enc);
-R_API ut64 r_des_round(ut64 plaintext, ut64 roundkey);
-R_API ut64 r_des_f(ut32 half, ut64 round_key);
-R_API ut32 r_des_sbox(ut8 in, const ut32* box);
-R_API ut64 r_des_ip(ut64 state, int inv);
-R_API ut64 r_des_expansion(ut32 half);
-R_API ut32 r_des_p(ut32 half);
 
 R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
 
