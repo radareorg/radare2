@@ -1,7 +1,7 @@
 #ifndef R_STR_H
 #define R_STR_H
 
-static inline void r_str_rmch (char *s, char ch) {
+static inline void r_str_rmch(char *s, char ch) {
 	for (;*s; s++) {
 		if (*s==ch)
 			memmove (s, s+1, strlen (s));
@@ -10,17 +10,17 @@ static inline void r_str_rmch (char *s, char ch) {
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
-R_API const char *r_str_closer_chr (const char *b, const char *s);
+R_API const char *r_str_closer_chr(const char *b, const char *s);
 R_API int r_str_bounds(const char *str, int *h);
 R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
-R_API int r_str_len_utf8 (const char *s);
-R_API int r_str_len_utf8char (const char *s, int left);
+R_API int r_str_len_utf8(const char *s);
+R_API int r_str_len_utf8char(const char *s, int left);
 R_API void r_str_filter_zeroline(char *str, int len);
-R_API int r_str_write (int fd, const char *b);
+R_API int r_str_write(int fd, const char *b);
 R_API void r_str_ncpy(char *dst, const char *src, int n);
 R_API void r_str_sanitize(char *c);
 R_API const char *r_str_casestr(const char *a, const char *b);
-R_API const char *r_str_lastbut (const char *s, char ch, const char *but);
+R_API const char *r_str_lastbut(const char *s, char ch, const char *but);
 R_API int r_str_split(char *str, char ch);
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g);
 R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
@@ -29,11 +29,11 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz);
 R_API int r_str_bits64(char *strout, ut64 in);
 R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz);
 R_API int r_str_rwx(const char *str);
-R_API int r_str_replace_char (char *s, int a, int b);
-R_API int r_str_replace_char_once (char *s, int a, int b);
+R_API int r_str_replace_char(char *s, int a, int b);
+R_API int r_str_replace_char_once(char *s, int a, int b);
 R_API const char *r_str_rwx_i(int rwx);
 R_API void r_str_writef(int fd, const char *fmt, ...);
-R_API char *r_str_arg_escape (const char *arg);
+R_API char *r_str_arg_escape(const char *arg);
 R_API char **r_str_argv(const char *str, int *_argc);
 R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(const char *str);
@@ -79,7 +79,7 @@ R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
 R_API const char * r_str_tok(const char *str1, const char b, size_t len);
 
-typedef void (*str_operation)(char *c);
+typedef void(*str_operation)(char *c);
 
 R_API int r_str_do_until_token(str_operation op, char *str, const char tok);
 

@@ -47,9 +47,9 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 R_API void r_num_free(RNum *num);
 R_API char *r_num_units(char *buf, ut64 num);
 R_API int r_num_conditional(RNum *num, const char *str);
-R_API ut64 r_num_calc (RNum *num, const char *str, const char **err);
-R_API const char *r_num_calc_index (RNum *num, const char *p);
-R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize);
+R_API ut64 r_num_calc(RNum *num, const char *str, const char **err);
+R_API const char *r_num_calc_index(RNum *num, const char *p);
+R_API ut64 r_num_chs(int cylinder, int head, int sector, int sectorsize);
 R_API int r_num_is_valid_input(RNum *num, const char *input_value);
 R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API char* r_num_as_string(RNum *___, ut64 n);
@@ -62,6 +62,6 @@ R_API int r_num_to_bits(char *out, ut64 num);
 R_API int r_num_to_trits(char *out, ut64 num);	//Rename this please
 R_API int r_num_rand(int max);
 R_API void r_num_irand(void);
-R_API ut16 r_num_ntohs (ut16 foo);
+R_API ut16 r_num_ntohs(ut16 foo);
 
 #endif //  R_NUM_H
