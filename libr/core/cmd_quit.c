@@ -3,6 +3,7 @@
 
 static int cmd_quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	const char *prj = NULL;
 	const char* help_msg[] = {
 		"Usage:",  "q[!][!] [retval]", "",
 		"q","","quit program",
@@ -10,6 +11,7 @@ static int cmd_quit(void *data, const char *input) {
 		"q!!","","force quit without saving history",
 		"q"," 1","quit with return value 1",
 		"q"," a-b","quit with return value a-b",
+		"q[y/n][y/n]","","quit, chose to kill process, chose to save project ",
 		NULL};
 	if (input)
 	switch (*input) {
@@ -30,6 +32,14 @@ static int cmd_quit(void *data, const char *input) {
 		if (*input)
 			r_num_math (core->num, input);
 		else core->num->value = 0LL;
+		if (*input == 'y')
+			core->num->value=5;
+		else if (*input == 'n')
+			core->num->value=1;
+		if (input[1] == 'y')
+			core->num->value+=10;	
+		else if (input[1] == 'n')
+			core->num->value+=2;	
 		//exit (*input?r_num_math (core->num, input+1):0);
 		//if (core->http_up) return R_FALSE; // cancel quit when http is running
 		return -2;

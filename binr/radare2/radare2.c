@@ -958,23 +958,43 @@ int main(int argc, char **argv, char **envp) {
 			debug = r_config_get_i (r.config, "cfg.debug");
 			if (ret != -1 && r_config_get_i (r.config, "scr.interactive")) {
 				char *question;
+				int no_question_debug = ret & 1;
+				int no_question_save = (ret & 2)>>1;
+				int y_kill_debug = (ret & 4)>>2;
+				int y_save_project = (ret & 8)>>3;
+
 				if (debug) {
-					if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-						if (r_config_get_i (r.config, "dbg.exitkills") &&
-								r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
+					if(no_question_debug){
+						if (r_config_get_i (r.config, "dbg.exitkills") && y_kill_debug){
 							r_debug_kill (r.dbg, 0, false, 9); // KILL
-					} else continue;
+						} 
+					} else {
+						if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
+							if (r_config_get_i (r.config, "dbg.exitkills") &&
+									r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
+								r_debug_kill (r.dbg, 0, false, 9); // KILL
+						} else continue;
+					}
 				}
 				prj = r_config_get (r.config, "file.project");
-				question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
-				if (prj && *prj && r_cons_yesno ('y', question))
-					r_core_project_save (&r, prj);
-				free (question);
+				if (no_question_save){
+					if (prj && *prj && y_save_project){
+						r_core_project_save (&r, prj);
+					} 
+				}
+				else {
+						question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
+						if (prj && *prj && r_cons_yesno ('y', question))
+							r_core_project_save (&r, prj);
+						free (question);
+				}
+				
 			} else {
 				// r_core_project_save (&r, prj);
-				if (debug && r_config_get_i (r.config, "dbg.exitkills")) {
+				if (debug && r_config_get_i (r.config, "dbg.exitkills") ) {
 					r_debug_kill (r.dbg, 0, false, 9); // KILL
 				}
+				
 			}
 			break;
 		}
