@@ -2660,7 +2660,8 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		if (!done) {
 			const char *help_de_msg[] = {
 				"Usage:", "de", " [rwx] [reg|mem] [expr]",
-				NULL};
+				NULL
+			};
 			r_core_cmd_help (core, help_de_msg);
 		}
 		free (line);
@@ -2690,8 +2691,8 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 				"Usage:", "des", "[u] [arg]",
 				"des", " [N]", "step-in N instructions with esildebug",
 				"desu", " [addr]", "esildebug until specific address",
-				NULL};
-
+				NULL
+			};
 			r_core_cmd_help (core, help_des_msg);
 		} else {
 			r_core_cmd0 (core, "aei");
@@ -2724,15 +2725,14 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 				"dec", "", "continue execution until matching expression",
 				"des", " [N]", "step-in N instructions with esildebug",
 				"desu", " [addr]", "esildebug until specific address",
-				NULL};
-
+				NULL
+			};
 			r_core_cmd_help (core, help_msg);
 			r_cons_printf ("Examples:\n"
 					" de r r rip       # stop when reads rip\n"
 					" de rw m ADDR     # stop when read or write in ADDR\n"
 					" de w r rdx       # stop when rdx register is modified\n"
-					" de x m FROM..TO  # stop when rip in range\n",
-					NULL);
+					" de x m FROM..TO  # stop when rip in range\n");
 		}
 		break;
 	}
