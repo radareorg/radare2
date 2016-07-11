@@ -1284,7 +1284,7 @@ R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, int scope, int delta, const ch
 R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,
 		int scope, ut32 idx);
 /* args */
-R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind);
+R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 
 /* vars // globals. not here  */
 
