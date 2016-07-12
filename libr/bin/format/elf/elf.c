@@ -268,7 +268,8 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
-	Elf_(Dyn) *tmp, *dyn = NULL;
+	Elf_(Dyn) *dyn = NULL;
+	ut64 tmp;
 	Elf_(Addr) strtabaddr = 0;
 	ut64 offset = 0;
 	char *strtab = NULL;
@@ -276,12 +277,13 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	int entries;
 	int i, r;
 	ut32 dyn_size;
+	RIOBind *iob = (RIOBind *)(bin->b->iob);
 
 	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
 		return false;
 	for (i = 0; i < bin->ehdr.e_phnum ; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-		    	dyn_size = bin->phdr[i].p_filesz;
+			dyn_size = bin->phdr[i].p_filesz;
 			break;
 		}
 	}
@@ -293,14 +295,59 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	if (bin->phdr[i].p_offset + sizeof(Elf_(Dyn)) > bin->size)
 		return false;
-	tmp = dyn = (Elf_(Dyn)*)((ut8 *)bin->b->buf + bin->phdr[i].p_offset);
-	for (entries = 0; (ut8*)dyn < ((ut8*)tmp + dyn_size); dyn++) {
-	    	entries++;
-		if (dyn->d_tag == DT_NULL) {
+
+	tmp = bin->phdr[i].p_offset; //TODO: this thing is a total fuck :/
+	if (tmp < bin->b->base || tmp > (bin->b->base + bin->b->length)) {
+		if (!(iob && iob->io)) {
+			return false;
+		}
+		if (tmp + bin->b->length > bin->size) {
+			if (iob->read_at (iob->io, bin->size - bin->b->length, bin->b->buf, bin->b->length) < bin->b->length) {
+				return false;
+			}
+			bin->b->base = bin->size - bin->b->length;
+			bin->b->cur = bin->size - tmp;
+			tmp -= bin->b->base;
+		} else {
+			if (iob->read_at (iob->io, tmp, bin->b->buf, bin->b->length) < bin->b->length) {
+				return false;
+			}
+			bin->b->base = tmp;
+			bin->b->cur = 0;
+			tmp = 0;
+		}
+	}
+	for (entries = 0; (tmp + bin->b->base) < (bin->phdr[i].p_offset+dyn_size); ) {
+		entries++;
+		if (((Elf_(Dyn)*)((ut8*)bin->b->buf + tmp))->d_tag == DT_NULL) {
 			break;
 		}
-		if ((ut8*)(dyn+2) > ((ut8*)bin->b->buf + bin->size))
-		    	return false;
+		if ((bin->b->base + tmp + sizeof(Elf_(Dyn))) > bin->size) {
+			return false;
+		}
+		if ((tmp + sizeof(Elf_(Dyn))) > bin->size) {
+			if (!(iob && iob->io) || (bin->b->base + tmp + sizeof(Elf_(Dyn))) > bin->size) {
+				return false;
+			}
+			if ((bin->b->base + tmp + bin->b->length) > bin->size) {
+				if (iob->read_at (iob->io, bin->size - bin->b->length, bin->b->buf, bin->b->length) < bin->b->length) {
+					return false;
+				}
+				tmp += bin->b->base;
+				bin->b->base = bin->size - bin->b->length;
+				bin->b->cur = 0;
+				tmp -= bin->b->base;
+			} else {
+				if (iob->read_at (iob->io, bin->b->base + tmp, bin->b->buf, bin->b->length) < bin->b->length) {
+					return false;
+				}
+				bin->b->base += tmp;
+				bin->b->cur = 0;
+				tmp = 0;
+			}
+		} else {
+			tmp += sizeof(Elf_(Dyn));
+		}
 	}
 	if (entries < 1) return false;
 	dyn = (Elf_(Dyn)*)calloc (entries, sizeof (Elf_(Dyn)));
