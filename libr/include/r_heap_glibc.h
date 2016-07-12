@@ -14,31 +14,31 @@ extern "C" {
 #define BINMAPSIZE (NBINS / BITSPERMAP)
 #define INTERNAL_SIZE_T size_t
 #define MAX(a,b) (((a)>(b))?(a):(b))
-#define MALLOC_ALIGNMENT MAX (2 * sizeof(INTERNAL_SIZE_T),  __alignof__ (long double))
+#define MALLOC_ALIGNMENT MAX (2 * sizeof (INTERNAL_SIZE_T),  __alignof__ (long double))
 #define MALLOC_ALIGN_MASK (MALLOC_ALIGNMENT - 1)
-#define SIZE_SZ (sizeof(INTERNAL_SIZE_T))
+#define SIZE_SZ (sizeof (INTERNAL_SIZE_T))
 #define NPAD -6
 
 #define largebin_index_32(sz)                                                \
-(((((unsigned long)(sz)) >>  6) <= 38)?  56 + (((unsigned long)(sz)) >>  6): \
- ((((unsigned long)(sz)) >>  9) <= 20)?  91 + (((unsigned long)(sz)) >>  9): \
- ((((unsigned long)(sz)) >> 12) <= 10)? 110 + (((unsigned long)(sz)) >> 12): \
- ((((unsigned long)(sz)) >> 15) <=  4)? 119 + (((unsigned long)(sz)) >> 15): \
- ((((unsigned long)(sz)) >> 18) <=  2)? 124 + (((unsigned long)(sz)) >> 18): \
+(((((ut32)(sz)) >>  6) <= 38)?  56 + (((ut32)(sz)) >>  6): \
+ ((((ut32)(sz)) >>  9) <= 20)?  91 + (((ut32)(sz)) >>  9): \
+ ((((ut32)(sz)) >> 12) <= 10)? 110 + (((ut32)(sz)) >> 12): \
+ ((((ut32)(sz)) >> 15) <=  4)? 119 + (((ut32)(sz)) >> 15): \
+ ((((ut32)(sz)) >> 18) <=  2)? 124 + (((ut32)(sz)) >> 18): \
 					126)
 #define largebin_index_32_big(sz)                                            \
-(((((unsigned long)(sz)) >>  6) <= 45)?  49 + (((unsigned long)(sz)) >>  6): \
- ((((unsigned long)(sz)) >>  9) <= 20)?  91 + (((unsigned long)(sz)) >>  9): \
- ((((unsigned long)(sz)) >> 12) <= 10)? 110 + (((unsigned long)(sz)) >> 12): \
- ((((unsigned long)(sz)) >> 15) <=  4)? 119 + (((unsigned long)(sz)) >> 15): \
- ((((unsigned long)(sz)) >> 18) <=  2)? 124 + (((unsigned long)(sz)) >> 18): \
+(((((ut32)(sz)) >>  6) <= 45)?  49 + (((ut32)(sz)) >>  6): \
+ ((((ut32)(sz)) >>  9) <= 20)?  91 + (((ut32)(sz)) >>  9): \
+ ((((ut32)(sz)) >> 12) <= 10)? 110 + (((ut32)(sz)) >> 12): \
+ ((((ut32)(sz)) >> 15) <=  4)? 119 + (((ut32)(sz)) >> 15): \
+ ((((ut32)(sz)) >> 18) <=  2)? 124 + (((ut32)(sz)) >> 18): \
                                         126)
 #define largebin_index_64(sz)                                                \
-(((((unsigned long)(sz)) >>  6) <= 48)?  48 + (((unsigned long)(sz)) >>  6): \
- ((((unsigned long)(sz)) >>  9) <= 20)?  91 + (((unsigned long)(sz)) >>  9): \
- ((((unsigned long)(sz)) >> 12) <= 10)? 110 + (((unsigned long)(sz)) >> 12): \
- ((((unsigned long)(sz)) >> 15) <=  4)? 119 + (((unsigned long)(sz)) >> 15): \
- ((((unsigned long)(sz)) >> 18) <=  2)? 124 + (((unsigned long)(sz)) >> 18): \
+(((((ut32)(sz)) >>  6) <= 48)?  48 + (((ut32)(sz)) >>  6): \
+ ((((ut32)(sz)) >>  9) <= 20)?  91 + (((ut32)(sz)) >>  9): \
+ ((((ut32)(sz)) >> 12) <= 10)? 110 + (((ut32)(sz)) >> 12): \
+ ((((ut32)(sz)) >> 15) <=  4)? 119 + (((ut32)(sz)) >> 15): \
+ ((((ut32)(sz)) >> 18) <=  2)? 124 + (((ut32)(sz)) >> 18): \
 					126)
 #define largebin_index(sz) \
   (SIZE_SZ == 8 ? largebin_index_64 (sz)                                     \
