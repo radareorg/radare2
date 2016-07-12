@@ -798,30 +798,28 @@ static void update_main_arena(RCore *core, ut64 m_arena, RHeap_MallocState *main
 }
 
 #define PRINTF_A(color, fmt , ...) r_cons_printf (color fmt Color_RESET, __VA_ARGS__)
+#define PRINTF_YA(fmt, ...) PRINTF_A (Color_YELLOW, fmt, __VA_ARGS__)
 #define PRINTF_GA(fmt, ...) PRINTF_A (Color_GREEN, fmt, __VA_ARGS__)
 #define PRINTF_BA(fmt, ...) PRINTF_A (Color_BLUE, fmt, __VA_ARGS__)
 
 #define PRINT_A(color, msg) r_cons_print (color msg Color_RESET)
+#define PRINT_YA(msg) PRINT_A (Color_YELLOW, msg)
 #define PRINT_GA(msg) PRINT_A (Color_GREEN, msg)
 #define PRINT_BA(msg) PRINT_A (Color_BLUE, msg)
 
 static void print_main_arena(ut64 m_arena, RHeap_MallocState *main_arena, int format) {
-	int i, offset;
+	int i, j, k, offset, start;
+	ut64 apart[NSMALLBINS + 1] = {0LL};
+
 	if (format == '*') {
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
-			if (!main_arena->bins[i]) {
-				break; // sure ?
-			} else {
-				offset = (size_t)&main_arena->last_remainder - (size_t)&main_arena->mutex + sizeof (size_t);
-				ut64 addr = (size_t)m_arena + (size_t)offset + sizeof (size_t) * i - sizeof (size_t) * 2;
-				ut64 bina = (ut64)(size_t)main_arena->bins[i];
-				r_cons_printf ("f chunk.%d = 0x%"PFMT64x"\n", i, addr);
-				r_cons_printf ("f chunk.%d = 0x%"PFMT64x"\n", i, addr);
-				/* dupe */
-				r_cons_printf ("f chunk.%d.bk = 0x%"PFMT64x"\n", i + 1, addr);
-				bina = (ut64)(size_t)main_arena->bins[i + 1];
-				r_cons_printf ("f chunk.%d.bin = 0x%"PFMT64x"\n", i + 1, addr);
-			}
+			offset = (size_t)&main_arena->last_remainder - (size_t)&main_arena->mutex + sizeof (size_t);
+			ut64 addr = (size_t)m_arena + (size_t)offset + sizeof (size_t) * i - sizeof (size_t) * 2;
+			ut64 bina = (ut64)(size_t)main_arena->bins[i];
+			r_cons_printf ("f chunk.%d.bin = 0x%"PFMT64x"\n", i, addr);
+			r_cons_printf ("f chunk.%d.fd = 0x%"PFMT64x"\n", i, bina);
+			bina = (ut64)(size_t)main_arena->bins[i + 1];				
+			r_cons_printf ("f chunk.%d.bk = 0x%"PFMT64x"\n", i, bina);
 		}
 		for (i = 0; i < BINMAPSIZE; i++) {
 			r_cons_printf ("f binmap.%d = 0x%x", i, (int)main_arena->binmap[i]);
@@ -842,6 +840,7 @@ static void print_main_arena(ut64 m_arena, RHeap_MallocState *main_arena, int fo
 		}
 		return;
 	}
+
 	PRINT_GA ("main_arena @ ");
 	PRINTF_BA ("0x%"PFMT64x"\n\n", (ut64)(size_t)m_arena);
 	PRINT_GA ("struct malloc_state main_arena {\n");
@@ -849,43 +848,91 @@ static void print_main_arena(ut64 m_arena, RHeap_MallocState *main_arena, int fo
 	PRINTF_BA ("0x%x\n", (int)main_arena->mutex);
 	PRINT_GA ("  flags = ");
 	PRINTF_BA ("0x%x\n", (int)main_arena->flags);
-	PRINT_GA ("  fastbinsY = {");
+	PRINT_GA ("  fastbinsY = {\n");
 
-	for (i = 0; i < NFASTBINS; i++) {
-		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)main_arena->fastbinsY[i]);
+	for (i = 0, j = 1, k = SIZE_SZ * 4; i < NFASTBINS; i++, j++, k += SIZE_SZ * 2) {
+		PRINTF_YA (" Fastbin %02d: ", j);
+		PRINT_GA (" chunksize:");
+		PRINTF_BA (" ==%04d ", k);
+		PRINTF_GA ("0x%"PFMT64x, (ut64)(size_t)main_arena->fastbinsY[i]);
 		if (i < NFASTBINS - 1) {
-			PRINT_GA (",");
+			PRINT_GA (",\n");
 		}
 	}
-	PRINT_GA ("}\n");
+	PRINT_GA ("\n}\n");
 	PRINT_GA ("  top = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)main_arena->top);
 	PRINT_GA (",\n");
 	PRINT_GA ("  last_remainder = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)main_arena->last_remainder);
 	PRINT_GA (",\n");
-	PRINT_GA ("  bins {");
+	PRINT_GA ("  bins {\n");
+
+	/* Index & size for largebins */
+	start = (SIZE_SZ == 4) ? 512 : 1024;
+	for (i = start, k = 0, j = 0; j < NBINS - 2 && i < 1024*1024; i += 64) {
+		j = largebin_index(i);
+		if (j == k + NSMALLBINS + 1) {
+			apart[k++] = i; 
+		} 
+	}
 
 	offset = (size_t)&main_arena->last_remainder - (size_t)&main_arena->mutex + sizeof (size_t);
-	for (i = 0; i < NBINS * 2 - 2; i += 2) {
-		if (i % 2 == 0) r_cons_print ("\n    ");
-		if (!main_arena->bins[i]) {
-			PRINT_BA ("0x0 ");
-			PRINT_GA ("<repeats 254 times>");
-			break;
+	for (i = 0, j = 1, k = SIZE_SZ * 4; i < NBINS * 2 - 2; i += 2, j++) {
+		PRINTF_YA (" Bin %03d: ", j);
+		if (j == 1) {
+			PRINT_GA ("Unsorted Bin");
+			PRINT_GA (" [");
+			PRINT_GA (" chunksize:");
+			PRINT_BA (" undefined ");
+		} else if (j > 1 && j <= NSMALLBINS) {
+			if (j == 2) {
+				PRINT_GA ("             ┌");		
+			} else if (j == (NSMALLBINS / 2)) {
+				PRINT_GA ("  Small Bins │");			
+			} else if (j != 2 && j != (NSMALLBINS / 2) && j != NSMALLBINS) {
+				PRINT_GA ("             │");			
+			} else {
+				PRINT_GA ("             └");			
+			}
+			PRINT_GA (" chunksize:");
+			PRINTF_BA (" ==%06d  ", k);
+			if (j < NSMALLBINS) {
+				k += SIZE_SZ * 2;
+			}
 		} else {
-			PRINTF_GA ("0x%"PFMT64x"->fd = ", (size_t)m_arena + (size_t)offset + sizeof (size_t) * i - sizeof (size_t) * 2);
-			PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)main_arena->bins[i]);
-			PRINT_GA (", ");
-			PRINTF_GA ("0x%"PFMT64x"->bk = ", (size_t)m_arena + (size_t)offset + sizeof (size_t) * i - sizeof (size_t) * 2);
-			PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)main_arena->bins[i + 1]);
-			PRINT_GA (", ");
+			if (j == NSMALLBINS + 1) {
+				PRINT_GA ("             ┌");		
+			} else if (j == (NSMALLBINS / 2) * 3) {
+				PRINT_GA ("  Large Bins │");
+			} else if (j != NSMALLBINS + 1 && j != (NSMALLBINS / 2) * 3 && j != NBINS - 1) {
+				PRINT_GA ("             │");			
+			} else {
+				PRINT_GA ("             └");			
+			}
+	
+			PRINT_GA (" chunksize:");
+			if (j != NBINS - 1) {					
+				PRINTF_BA (" >=%06d  ", apart[j - NSMALLBINS - 1]);
+			} else {
+				PRINT_BA (" remaining ");			
+			}							
 		}
+
+		ut64 bin = (size_t)m_arena + (size_t)offset + sizeof (size_t) * i - sizeof (size_t) * 2;
+		PRINTF_GA ("0x%"PFMT64x"->fd = ", (ut64)(size_t)bin);
+		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)main_arena->bins[i]);
+		PRINT_GA (", ");
+		PRINTF_GA ("0x%"PFMT64x"->bk = ", (ut64)(size_t)bin);
+		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)main_arena->bins[i + 1]);
+		PRINT_GA (", ");
+		r_cons_print ("\n");
 	}
-	PRINT_GA ("\n  }\n");
+
+	PRINT_GA ("  }\n");
 	PRINT_GA ("  binmap = {");
 
-	for(i = 0; i < BINMAPSIZE; i++) {
+	for (i = 0; i < BINMAPSIZE; i++) {
 		PRINTF_BA ("0x%x", (int)main_arena->binmap[i]);
 		if (i < BINMAPSIZE - 1) {
 			PRINT_GA (",");
@@ -953,7 +1000,7 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 			err = r_io_read_at (core->io, s->vaddr + 16, (ut8 *) buf, 20);
 			if (!err) {
 				eprintf ("Unable to read from memory\n");
-				goto out_error; 
+				goto out_error;
 			}
 			break;
 		}
@@ -971,19 +1018,19 @@ out_error:
 	r_core_free (core);
 }
 
-int str_start_with(const char *ptr, const char *str) {
+static int str_start_with(const char *ptr, const char *str) {
 	return !strncmp (ptr, str, (size_t)strlen (str));
 }
 
 static bool r_resolve_main_arena(RCore *core, ut64 *m_arena, RHeap_MallocState *main_arena) {
 	RListIter *iter;
 	RDebugMap *map;
-	
+
 	if (*m_arena == UT64_MAX) {
 		const char *dir_dbg = "/usr/lib/debug";
 		const char *dir_build_id = "/.build-id";
 		const char *symname = "main_arena";
-		const char *libc_ver_end = NULL; 
+		const char *libc_ver_end = NULL;
 		char hash[64] = {0}, *path = NULL;
 		bool is_debug_file[2];
 		ut64 libc_addr = UT64_MAX;
@@ -1008,7 +1055,7 @@ static bool r_resolve_main_arena(RCore *core, ut64 *m_arena, RHeap_MallocState *
 
 		if (!is_debug_file[0] && !is_debug_file[1]) {
 			path = r_cons_input ("Is a custom library? (LD_PRELOAD=..) Enter full path glibc: ");
-			goto arena;			
+			goto arena;
 		}
 
 		if (is_debug_file[0]) {
@@ -1018,13 +1065,13 @@ static bool r_resolve_main_arena(RCore *core, ut64 *m_arena, RHeap_MallocState *
 
 		if (is_debug_file[1] && r_file_is_directory ("/usr/lib/debug") && !r_file_is_directory ("/usr/lib/debug/.build-id")) {
 			path = r_str_newf ("%s%s", dir_dbg, libc_ver_end);
-		} 
+		}
 
 		if (is_debug_file[1] && r_file_is_directory ("/usr/lib/debug/.build-id")) {
 			get_hash_debug_file (libc_ver_end, hash, sizeof (hash));
 			libc_ver_end = hash;
 			path = r_str_newf ("%s%s%s", dir_dbg, dir_build_id, libc_ver_end);
-		} 
+		}
 arena:
 		if (r_file_exists (path)) {
 			ut64 vaddr = get_vaddr_symbol (path, symname);
@@ -1032,56 +1079,55 @@ arena:
 				*m_arena = libc_addr + vaddr;
 				if (main_arena) {
 					update_main_arena (core, *m_arena, main_arena);
-					return false;
 				} else {
 					eprintf ("Warning: out of memory\n");
+					return true;
 				}
 			} else {
-				eprintf ("Warning: glibc library with symbol main_arena could not be found. Is libc6-dbg installed?\n");
+				eprintf ("Warning: Symbol main_arena could not be found. Is libc6-dbg installed?\n");
+				return true;
 			}
-		}
-		free (path);
-		return true;
-	} else {
-		if (!main_arena) {
-			eprintf ("Warning: out of memory\n");
+		} else {
+			eprintf ("Warning: glibc library with symbol main_arena could not be found. Is libc6-dbg installed?\n");
 			return true;
 		}
+
+		free (path);
+	} else {
         	update_main_arena (core, *m_arena, main_arena);
-		return false;
-	}			
+	}
+
+	return false;
 }
 
 static void print_heap_chunk(RCore *core) {
-	char bits[sizeof (size_t)] = {0};
 	RHeapChunk *cnk = R_NEW0 (RHeapChunk);
 	ut64 chunk = core->offset;
 	if (!cnk) {
 		eprintf ("Warning: out of memory\n");
 		return;
 	}
-	
-	r_core_read_at (core, chunk - sizeof (size_t) * 2, (ut8 *) cnk, sizeof (RHeapChunk));
-	r_str_bits (bits, (ut8 *) &cnk->size, sizeof (size_t), NULL);
+
+	r_core_read_at (core, chunk, (ut8 *) cnk, sizeof (RHeapChunk));
 
 	PRINT_GA ("struct malloc_chunk @ ");
-	PRINTF_BA ("0x%"PFMT64x, chunk - sizeof (size_t) * 2);
+	PRINTF_BA ("0x%"PFMT64x, chunk);
 	PRINT_GA (" {\n  prev_size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->prev_size));
 	PRINT_GA (",\n  size = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->size));
 	PRINT_GA(",\n  flags: |N:");
-	PRINTF_BA("%c", bits[sizeof (size_t) - 3]);
+	PRINTF_BA("%1d", cnk->size & 4);
 	PRINT_GA(" |M:");
-	PRINTF_BA("%c", bits[sizeof (size_t) - 2]);
+	PRINTF_BA("%1d", cnk->size & 2);
 	PRINT_GA(" |P:");
-	PRINTF_BA("%c", bits[sizeof (size_t) - 1]);	
+	PRINTF_BA("%1d", cnk->size & 1);
 	PRINT_GA (",\n  fd = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->fd));
 	PRINT_GA (",\n  bk = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->bk));
 
-	if(cnk->size - sizeof (size_t) * 2 >= 512) {
+	if (cnk->size > sizeof (size_t) * 128) {
 		PRINT_GA (",\n  fd-nextsize = ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(cnk->fd_nextsize));
 		PRINT_GA (",\n  bk-nextsize = ");
@@ -1090,59 +1136,279 @@ static void print_heap_chunk(RCore *core) {
 
 	PRINT_GA (",\n}\n");
 	ut64 size = ((cnk->size >> 3) << 3) - sizeof (size_t) * 2;
-	if (size > 1024) {
-		r_cons_println("Warning: Chunk cannot be displayed completely due to size constraint");
-		size = 1024;
+	if (size > sizeof (size_t) * 128) {
+		PRINT_GA ("chunk too big to be displayed\n");
+		size = sizeof (size_t) * 128;
 	}
 	PRINT_GA ("chunk data = \n");
-	r_print_hexdump (core->print, chunk + sizeof (size_t) * 2, core->block, size, SIZE_SZ * 8, SIZE_SZ);
+	r_print_hexdump (core->print, chunk + sizeof (size_t) * 2, (ut8 *)cnk + (sizeof (size_t) * 2), size, SIZE_SZ * 8, SIZE_SZ);
 	free (cnk);
 }
 
-/* TODO comand dmhb to iterate and print double linked list of bins
-void print_heap_bins (RCore *core, RHeap_MallocState *main_arena) {
-	eprintf ("\tbins = 0x%"PFMT64x"\n", (ut64)(size_t)(main_arena->bins[0]));
+static bool print_double_linked_list_bin(RCore *core,  RHeap_MallocState *main_arena, ut64 m_arena, ut64 offset, ut64 num_bin) {
+	ut64 bin = (size_t)main_arena->bins[num_bin];
+	if (!bin) {
+		return false;
+	}
+
+	RListIter *iter;
+	RDebugMap *map;
+	ut64 next = UT64_MAX, brk_start = UT64_MAX;
+	RHeapChunk *cnk = R_NEW0 (RHeapChunk);
+	if (!cnk) {
+		eprintf ("Warning: out of memory\n");
+		return false;
+	}
+
+	bin = (size_t)m_arena + (size_t)offset + SIZE_SZ * num_bin * 2 - SIZE_SZ * 2;
+	r_core_read_at (core, bin, (ut8 *)cnk, sizeof (RHeapChunk));
+
+	if (!core || !core->dbg || !core->dbg->maps) {
+                return false;
+        }
+
+        r_debug_map_sync (core->dbg);
+        r_list_foreach (core->dbg->maps, iter, map) {
+                if (strstr (map->name, "heap")) {
+                        brk_start = map->addr;
+                        break;
+                }
+        }
+
+	if (brk_start == UT64_MAX) {
+		eprintf ("No map heap\n");
+		return false;		
+	}
+
+	switch (num_bin) {
+	case 0:
+		PRINT_GA ("  double linked list unsorted bin {\n");
+		break;
+	case 1 ... NSMALLBINS - 1:
+		PRINT_GA ("  double linked list small bin {\n");
+		break;
+	case NSMALLBINS ... NBINS - 2:
+		PRINT_GA ("  double linked list large bin {\n");
+		break;
+	}
+
+	PRINTF_GA ("    0x%"PFMT64x, (ut64)(size_t) bin);
+	while ((ut64)(size_t)cnk->fd != bin) {
+		PRINTF_BA ("->fd = 0x%"PFMT64x, (ut64)(size_t)(cnk->fd));
+		next = (ut64)(size_t)cnk->fd;
+		if (next < brk_start || next > (ut64)(size_t)main_arena->top) {
+			eprintf ("Double linked list corrupted\n");
+			return false;
+		}	
+		r_core_read_at (core, next, (ut8 *)cnk, sizeof (RHeapChunk));
+	}
+
+	PRINTF_GA ("->fd = 0x%"PFMT64x, (ut64)(size_t)(cnk->fd));
+	next = (ut64)(size_t)cnk->fd;
+	if (next != bin) {
+		eprintf ("Double linked list corrupted\n");
+		return false;
+	}	
+	r_core_read_at (core, next, (ut8 *)cnk, sizeof (RHeapChunk));
+
+	PRINTF_GA ("\n    0x%"PFMT64x, (ut64)(size_t) bin);
+	while ((ut64)(size_t)cnk->bk != bin) {
+		PRINTF_BA ("->bk = 0x%"PFMT64x, (ut64)(size_t)(cnk->bk));
+		next = (ut64)(size_t)cnk->bk;
+		if (next < brk_start || next > (ut64)(size_t)main_arena->top) {
+			eprintf ("Double linked list corrupted\n");
+			return false;
+		}	
+		r_core_read_at (core, next, (ut8 *)cnk, sizeof (RHeapChunk));
+	}
+
+	PRINTF_GA ("->bk = 0x%"PFMT64x, (ut64)(size_t)(cnk->bk));
+	PRINT_GA ("\n  }\n");
+	free (cnk);
+
+	return true;
 }
-*/
+
+static void print_heap_bin(RCore *core, RHeap_MallocState *main_arena, ut64 m_arena, const char *input) {
+	int i;
+	ut64 num_bin = UT64_MAX;
+	ut64 offset = (size_t)&main_arena->last_remainder - (size_t)&main_arena->mutex + SIZE_SZ;
+
+	switch (input[0]) {
+	case '\0': // "dmhb"
+		PRINT_YA ("Bins {\n");
+		for (i = 0; i < NBINS - 1; i++) {
+			PRINTF_YA (" Bin %03d:\n", i + 1);
+			if (!print_double_linked_list_bin (core, main_arena, m_arena, offset, i)) {
+				PRINT_GA ("  Empty bin");
+				PRINT_BA ("  0x0\n");
+			}
+		}
+		PRINT_YA ("\n}\n");
+		break;
+	case ' ': // "dmhb [bin_num]
+		num_bin = r_num_math (core->num, input + 1) - 1;
+		if (num_bin < 0 || num_bin > NBINS - 2) {
+			eprintf ("Error: 0 < bin <= %d\n", NBINS - 1);
+			break;
+		}
+		PRINTF_YA ("  Bin %03d:\n", num_bin + 1);
+		if (!print_double_linked_list_bin (core, main_arena, m_arena, offset, num_bin)) {
+			PRINT_GA ("Empty bin");
+			PRINT_BA (" 0x0\n");
+		}
+		break;
+	}
+}
+
+static bool print_single_linked_list_bin(RCore *core, RHeap_MallocState *main_arena, ut64 m_arena, ut64 offset, ut64 bin_num) {
+	ut64 bin = (size_t)main_arena->fastbinsY[bin_num];
+	if (!bin) {
+		return false;
+	}
+
+	RListIter *iter;
+	RDebugMap *map;
+	ut64 next = UT64_MAX, brk_start = UT64_MAX;
+	RHeapChunk *cnk = R_NEW0 (RHeapChunk);
+	if (!cnk) {
+		eprintf ("Warning: out of memory\n");
+		return false;
+	}
+
+	if (!core || !core->dbg || !core->dbg->maps) {
+                return false;
+        }
+
+        r_debug_map_sync (core->dbg);
+        r_list_foreach (core->dbg->maps, iter, map) {
+                if (strstr (map->name, "heap")) {
+                        brk_start = map->addr;
+                        break;
+                }
+        }
+
+	if (brk_start == UT64_MAX) {
+		eprintf ("No map heap\n");
+		return false;		
+	}
+
+	bin = (size_t)m_arena + (size_t)offset + SIZE_SZ * bin_num;
+	if (!bin) {
+		eprintf ("An error has ocurred\n");
+		return false;
+	}
+	r_core_read_at (core, bin, (ut8 *)&next, sizeof (size_t));
+
+	PRINTF_GA ("  fastbin %d @ ", bin_num + 1);
+	PRINTF_GA ("0x%"PFMT64x" {\n   ",  (ut64)(size_t)bin);
+
+	while (next && next >= brk_start && next <= (ut64)(size_t)main_arena->top) {
+		PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)next);
+		r_core_read_at (core, next, (ut8 *)cnk, sizeof (RHeapChunk));
+		next = (ut64)(size_t)cnk->fd;
+		PRINTF_BA ("%s", next ? "->fd = " : "");
+	}
+
+	if (!next) {
+		PRINT_GA ("\n  }\n");
+		return true;
+	} else {
+		eprintf ("Linked list corrupted\n");
+		return false;			
+	}
+}
+
+static void print_heap_fastbin(RCore *core, RHeap_MallocState *main_arena, ut64 m_arena, const char *input) {
+	int i;
+	ut64 num_bin = UT64_MAX;
+	ut64 offset = (size_t)&main_arena->fastbinsY - (size_t)&main_arena->mutex;
+
+	switch (input[0]) {
+	case '\0': //dmhf
+		PRINT_YA ("fastbinY {\n");
+		for (i = 1; i <= NFASTBINS; i++) {
+			PRINTF_YA (" Fastbin %02d\n", i);
+			if (!print_single_linked_list_bin (core, main_arena, m_arena, offset, i - 1)) {
+				PRINT_GA ("  Empty bin");
+				PRINT_BA ("  0x0\n");
+			}
+		}
+		PRINT_YA ("}\n");
+		break;
+	case ' ': //dmhf [bin_num]
+		num_bin = r_num_math (core->num, input + 1) - 1;
+		if (num_bin < 0 || num_bin >= NFASTBINS) {
+			eprintf ("Error: 0 < bin <= %d\n", NFASTBINS);
+			break;
+		}
+		if(!print_single_linked_list_bin (core, main_arena, m_arena, offset, num_bin)){
+			PRINT_GA (" Empty bin");
+			PRINT_BA (" 0x0\n");
+		}
+		break;
+	}
+}
+
+static void print_current_heap(RCore *core, RHeap_MallocState *main_arena) {
+	eprintf ("0x%"PFMT64x"\n", (ut64)(size_t)(main_arena->top));
+	eprintf ("still in the process of development ...\n");
+}
 
 static int cmd_debug_map_heap(RCore *core, const char *input) {
-	RHeap_MallocState *main_arena =  R_NEW0 (RHeap_MallocState);
-	static ut64 m_arena = UT64_MAX;	
+	RHeap_MallocState *main_arena = R_NEW0 (RHeap_MallocState);
+	if (!main_arena) {
+		eprintf ("Warning: out of memory\n");
+		return false;
+	}
+	static ut64 m_arena = UT64_MAX;
 	const char* help_msg[] = {
 		"Usage:", "dmh", " # Memory map heap",
-		"dmh*", "", "show heap chunks in r2 commands",
 		"dmha", "", "Struct Malloc State (main_arena)",
-		"dmhc", "@[malloc_addr]", "Print malloc_chunk struct for a given malloc chunk",
+		"dmhb", "", "Show bins information",
+		"dmhb", " [bin_num]", "Print double linked list of the number of bin",
+		"dmhc", " @[malloc_addr]", "Print malloc_chunk struct for a given malloc chunk",
+		"dmhf", "", "Show fastbins information",
+		"dmhf", " [fastbin_num]", "Print single linked list of the number of fastbin",
 		"dmh?", "", "Show map heap help",
 		NULL
 	};
 
 	switch (input[0]) {
-	case 'j': // "dmhj"
-		eprintf ("TODO: JSON output for dmh is not yet implemented\n");
+	case '\0': //"dmh"
+		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
+			print_current_heap (core, main_arena);
+		}
 		break;
-	case '*': // "dmh*"
+	case '*':
 	case 'a': // "dmha"
 		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
 			print_main_arena (m_arena, main_arena, *input);
 		}
 		break;
-	/*
 	case 'b': // "dmhb"
 		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
-			print_heap_bins (core, main_arena);		
+			print_heap_bin (core, main_arena, m_arena, input+1);
 		}
 		break;
-	*/
 	case 'c': // "dmhc"
 		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
             		print_heap_chunk (core);
 		}
-		break;	
+		break;
+	case 'f': // "dmhf"
+		if (!r_resolve_main_arena (core, &m_arena, main_arena)) {
+            		print_heap_fastbin (core, main_arena, m_arena, input+1);
+		}
+		break;
+	case 'j': // "dmhj"
+		eprintf ("TODO: JSON output for dmh is not yet implemented\n");
+		break;
 	case '?':
 		r_core_cmd_help (core, help_msg);
 		break;
 	}
+
 	free (main_arena);
 	return true;
 }
@@ -1165,7 +1431,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
 		"dms", " <id> <mapaddr>", "take memory snapshot",
 		"dms-", " <id> <mapaddr>", "restore memory snapshot",
-		"dmh", "", "Show heap map",
+		"dmh", "", "Show map of heap",
 		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
 		NULL};
