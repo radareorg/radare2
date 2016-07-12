@@ -1,12 +1,16 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
 
-#include "r_heap_glibc.h"
 #include "r_core.h"
 #include "r_util.h"
 #include "sdb/sdb.h"
 
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
+
+
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+#include "r_heap_glibc.h"
+#endif
 
 struct dot_trace_ght {
 	RGraph *graph;
@@ -793,6 +797,9 @@ beach:
 	r_list_free (list);
 }
 
+
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+
 static void update_main_arena(RCore *core, ut64 m_arena, RHeap_MallocState *main_arena) {
 	r_core_read_at (core, m_arena, (ut8 *)main_arena, sizeof (RHeap_MallocState));
 }
@@ -1248,7 +1255,7 @@ static void print_heap_bin(RCore *core, RHeap_MallocState *main_arena, ut64 m_ar
 		break;
 	case ' ': // "dmhb [bin_num]
 		num_bin = r_num_math (core->num, input + 1) - 1;
-		if (num_bin < 0 || num_bin > NBINS - 2) {
+		if (num_bin > NBINS - 2) {
 			eprintf ("Error: 0 < bin <= %d\n", NBINS - 1);
 			break;
 		}
@@ -1338,7 +1345,7 @@ static void print_heap_fastbin(RCore *core, RHeap_MallocState *main_arena, ut64 
 		break;
 	case ' ': //dmhf [bin_num]
 		num_bin = r_num_math (core->num, input + 1) - 1;
-		if (num_bin < 0 || num_bin >= NFASTBINS) {
+		if (num_bin >= NFASTBINS) {
 			eprintf ("Error: 0 < bin <= %d\n", NFASTBINS);
 			break;
 		}
@@ -1355,7 +1362,7 @@ static void print_current_heap(RCore *core, RHeap_MallocState *main_arena) {
 	eprintf ("still in the process of development ...\n");
 }
 
-static int cmd_debug_map_heap(RCore *core, const char *input) {
+static int cmd_dbg_map_heap_glibc(RCore *core, const char *input) {
 	RHeap_MallocState *main_arena = R_NEW0 (RHeap_MallocState);
 	if (!main_arena) {
 		eprintf ("Warning: out of memory\n");
@@ -1363,7 +1370,7 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 	}
 	static ut64 m_arena = UT64_MAX;
 	const char* help_msg[] = {
-		"Usage:", "dmh", " # Memory map heap",
+		"Usage:", "dmh", " # Memory map heap info glibc",
 		"dmha", "", "Struct Malloc State (main_arena)",
 		"dmhb", "", "Show bins information",
 		"dmhb", " [bin_num]", "Print double linked list of the number of bin",
@@ -1412,6 +1419,7 @@ static int cmd_debug_map_heap(RCore *core, const char *input) {
 	free (main_arena);
 	return true;
 }
+#endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
 static int cmd_debug_map(RCore *core, const char *input) {
 	const char* help_msg[] = {
@@ -1617,9 +1625,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case 'h': // "dmh"
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		cmd_debug_map_heap (core, input + 1);
+		cmd_dbg_map_heap_glibc (core, input + 1);
 #else
-		eprintf ("GLIBC not installed\n");
+		eprintf ("MALLOC algorithm not supported\n");
 #endif
 		break;
 	}
