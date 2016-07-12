@@ -63,5 +63,7 @@ R_API int r_num_to_trits(char *out, ut64 num);	//Rename this please
 R_API int r_num_rand(int max);
 R_API void r_num_irand(void);
 R_API ut16 r_num_ntohs(ut16 foo);
+R_API ut64 r_get_input_num_value(RNum *num, const char *input_value);
+R_API int r_is_valid_input_num_value(RNum *num, const char *input_value);
 
 #endif //  R_NUM_H
