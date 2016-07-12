@@ -295,10 +295,10 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 		RListIter *iter;
 		r_list_foreach (list, iter, ref) {
 			if ((ref->to > addr) && (ref->to < addr+len))
-				return R_TRUE;
+				return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 static const char* get_corner_char(RAnalRefline *ref, ut64 addr, int is_middle) {

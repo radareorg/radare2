@@ -63,7 +63,7 @@ R_API int r_strht_set(RStrHT *s, const char *key, const char *val) {
 	r_hashtable_remove (s->ht, h);
 	v = r_strpool_append (s->sp, val);
 	r_hashtable_insert (s->ht, h, (void*)(size_t)v+1);
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_strht_clear(RStrHT *s) {

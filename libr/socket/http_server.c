@@ -135,7 +135,7 @@ R_API void r_socket_http_close (RSocketHTTPRequest *rs) {
 
 #if MAIN
 int main() {
-	RSocket *s = r_socket_new (R_FALSE);
+	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
 		eprintf ("Cannot listen here\n");
 		return 1;

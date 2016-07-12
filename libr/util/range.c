@@ -240,9 +240,9 @@ R_API int r_range_contains(RRange *rgs, ut64 addr) {
 	RListIter *iter;
 	r_list_foreach (rgs->ranges, iter, r) {
 		if (addr >= r->fr && addr <= r->to)
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_range_sort(RRange *rgs) {
@@ -250,15 +250,15 @@ R_API int r_range_sort(RRange *rgs) {
 	RRangeItem *r, *r2;
 
 	if (!rgs->changed)
-		return R_FALSE;
-	rgs->changed = R_FALSE;
+		return false;
+	rgs->changed = false;
 
 	r_list_foreach (rgs->ranges, iter, r) {
 		r_list_foreach (rgs->ranges, iter2, r2) {
 			if ((r != r2) && (r->fr > r2->fr)) {
 				// TODO : IMPLEMENTED A FUCKING SWAP IN R_LIST!!!
 				// list_move (pos, pos2);
-				rgs->changed = R_TRUE;
+				rgs->changed = true;
 			}
 		}
 	}

@@ -167,7 +167,7 @@ R_API RPrint *r_print_new() {
 	if (!p) return NULL;
 	strcpy (p->datefmt, "%Y-%m-%d %H:%M:%S %z");
 	r_io_bind_init (p->iob);
-	p->pairs = R_TRUE;
+	p->pairs = true;
 	p->cb_printf = printf;
 	p->oprintf = nullprinter;
 	p->bits = 32;

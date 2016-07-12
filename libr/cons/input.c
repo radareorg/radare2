@@ -66,7 +66,7 @@ static int parseMouseEvent() {
 		if (cons->onclick) {
 			cons->onclick (cons->data, x, y);
 		}
-		r_cons_enable_mouse (R_FALSE);
+		r_cons_enable_mouse (false);
 		(void)r_cons_readchar ();
 		return 0;
 	}
@@ -78,7 +78,7 @@ static int parseMouseEvent() {
 	}
 
 	// temporary disable the mouse wheel to allow select
-	r_cons_enable_mouse (R_FALSE);
+	r_cons_enable_mouse (false);
 	(void)r_cons_readchar ();
 	return 0;
 }
@@ -216,8 +216,8 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 		r_cons_show_cursor (1);
 	}
 #if 0
-	int mouse = r_cons_enable_mouse (R_FALSE);
-	r_cons_enable_mouse (R_FALSE);
+	int mouse = r_cons_enable_mouse (false);
+	r_cons_enable_mouse (false);
 	r_cons_flush ();
 #endif
 	if (cons->user_fgets) {

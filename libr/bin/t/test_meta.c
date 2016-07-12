@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	}
 
 	bin = r_bin_new ();
-	if (!r_bin_load (bin, argv[1], R_FALSE)) {
+	if (!r_bin_load (bin, argv[1], false)) {
 		eprintf ("r_bin: Cannot open '%s'\n", argv[1]);
 		return 1;
 	}

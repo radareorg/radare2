@@ -105,7 +105,7 @@ R_API int r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
 	case R_REG_COND_LT: return ((S && !O) || (!S && O));
 	case R_REG_COND_LE: return (Z || (S && !O) || (!S && O));
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_reg_cond(RReg *r, int type) {

@@ -36,7 +36,7 @@ R_API void r_socket_rap_server_free (RSocketRapServer *rap_s) {
 
 R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certfile) {
 	if (!rap_s || rap_s->port[0] == '\0')
-		return R_FALSE;
+		return false;
 	return r_socket_listen (rap_s->fd, rap_s->port, certfile);
 }
 

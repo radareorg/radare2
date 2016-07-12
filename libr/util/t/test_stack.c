@@ -53,22 +53,22 @@ int main(int argc, char **argv) {
 	check(r_stack_size(s), 2, "stack.2");
 	n = (int)r_stack_pop(s);
 	check(n, 1, NULL);
-	check_empty(s, R_FALSE);
+	check_empty(s, false);
 	check(r_stack_size(s), 1, "stack.1");
 	n = (int)r_stack_pop(s);
 	check(n, 10, NULL);
 
 	check(r_stack_size(s), 0, "stack.0.2");
-	check_empty(s, R_TRUE);
+	check_empty(s, true);
 	n = (int)r_stack_pop(s);
 	check(n, 0, NULL);
 	n = (int)r_stack_pop(s);
 	check(n, 0, NULL);
-	check_empty(s, R_TRUE);
+	check_empty(s, true);
 
 	r_stack_push(s, (void *)10);
 	r_stack_push(s, (void *)1);
-	check_empty(s, R_FALSE);
+	check_empty(s, false);
 
 	r_stack_free(s);
 	return 0;

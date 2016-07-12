@@ -281,7 +281,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 
 R_API int r_num_is_float(RNum *num, const char *str) {
 	// TODO: also support 'f' terminated strings
-	return (strchr (str, '.') != NULL)? R_TRUE:R_FALSE;
+	return (strchr (str, '.') != NULL)? true:false;
 }
 
 R_API double r_num_get_float(RNum *num, const char *str) {
@@ -333,7 +333,7 @@ R_API int r_num_to_trits (char *out, ut64 num) {
 	i++;
 	memmove (out, &out[i], j);
 	out[j] = '\0';
-	return R_TRUE;
+	return true;
 }
 
 R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {

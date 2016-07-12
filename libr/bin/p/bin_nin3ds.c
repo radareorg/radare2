@@ -45,7 +45,7 @@ static int destroy(RBinFile *arch) {
 static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *sections[4] = {NULL, NULL, NULL, NULL};
-	int i, corrupt = R_FALSE;
+	int i, corrupt = false;
 
 	if (!(ret = r_list_new ())) return NULL;
 
@@ -60,7 +60,7 @@ static RList* sections(RBinFile *arch) {
 			else if (loaded_header.sections[i].type == 0x1)
 				strncpy(sections[i]->name, "arm11", 5);
 			else {
-				corrupt = R_TRUE;
+				corrupt = true;
 				break;
 			}
 			sections[i]->size = loaded_header.sections[i].size;

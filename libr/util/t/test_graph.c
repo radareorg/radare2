@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 	RGraphNode *gn2 = r_graph_add_node(g, (void *)2);
 	check_ptr(r_graph_get_node(g, gn2->idx), gn2, "get_node.2");
 	r_graph_add_edge(g, gn, gn2);
-	check(r_graph_adjacent(g, gn, gn2), R_TRUE, "is_adjacent.1");
+	check(r_graph_adjacent(g, gn, gn2), true, "is_adjacent.1");
 	RList *exp_gn_neigh = r_list_new();
 	r_list_append(exp_gn_neigh, gn2);
 	check_list(r_graph_get_neighbours(g, gn), exp_gn_neigh, "get_neighbours.1");
@@ -105,15 +105,15 @@ int main(int argc, char **argv) {
 	r_graph_add_edge (g, gn8, gn9);
 	check(g->n_edges, 17, "n_edges");
 	r_graph_del_edge (g, gn8, gn9);
-	check(r_graph_adjacent (g, gn8, gn9), R_FALSE, "is_adjacent.0");
+	check(r_graph_adjacent (g, gn8, gn9), false, "is_adjacent.0");
 	check(g->n_edges, 16, "n_edges.1");
 	r_graph_add_edge (g, gn9, gn8);
 	check(g->n_edges, 17, "n_edges.2");
-	check(r_graph_adjacent (g, gn9, gn8), R_TRUE, "is_adjacent");
+	check(r_graph_adjacent (g, gn9, gn8), true, "is_adjacent");
 	r_graph_del_edge (g, gn9, gn8);
 	r_graph_add_edge (g, gn8, gn9);
-	check(r_graph_adjacent (g, gn9, gn8), R_FALSE, "is_adjacent.1");
-	check(r_graph_adjacent (g, gn8, gn9), R_TRUE, "is_adjacent.2");
+	check(r_graph_adjacent (g, gn9, gn8), false, "is_adjacent.1");
+	check(r_graph_adjacent (g, gn8, gn9), true, "is_adjacent.2");
 
 	RGraphVisitor vis = { 0 };
 	vis.data = r_list_new();

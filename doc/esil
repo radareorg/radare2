@@ -47,7 +47,7 @@ zf,?{,eip,esp,=[],eax,eip,=,%r,esp,-=,}
 
 The whitespace, newlines and other chars are ignored in esil, so the first thing to do is:
 ```
-esil = r_str_replace (esil, " ", "", R_TRUE);
+esil = r_str_replace (esil, " ", "", true);
 ```
 Syscalls are specially handled by '$' at the beginning of the expression. After that char you have an optional numeric value that specifies the number of syscall. The emulator must handle those expressions and 'simulate' the syscalls. (r_esil_syscall)
 

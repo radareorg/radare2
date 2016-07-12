@@ -56,7 +56,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				}
 				newstr[k]='\0';
 			}
-			return R_TRUE;
+			return true;
 		}
 	}
 
@@ -69,7 +69,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		}
 	}
 
-	return R_FALSE;
+	return false;
 }
 
 struct r_parse_plugin_t r_parse_plugin_z80_pseudo = {

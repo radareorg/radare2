@@ -84,7 +84,7 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 		case R_ANAL_COND_LE: return arg0<=0;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 // XXX conflict naming with tostring()

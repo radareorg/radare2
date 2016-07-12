@@ -46,8 +46,8 @@ static int cmd_quit(void *data, const char *input) {
 			core->num->value += 2;	
 		}
 		//exit (*input?r_num_math (core->num, input+1):0);
-		//if (core->http_up) return R_FALSE; // cancel quit when http is running
+		//if (core->http_up) return false; // cancel quit when http is running
 		return -2;
 	}
-	return R_FALSE;
+	return false;
 }

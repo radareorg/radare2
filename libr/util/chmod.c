@@ -21,7 +21,7 @@ R_API int r_file_chmod (const char *file, const char *mod, int recursive) {
 	oper = '=';
 	mode = 0;
 	if (!parsemode (mod))
-		return R_FALSE;
+		return false;
 	return chmodr (file, recursive);
 #else
 	return -1;
@@ -49,11 +49,11 @@ int chmodr(const char *path, int rflag) {
 	}
 	if (chmod (path, st.st_mode) == -1) {
 		eprintf ("chmod %s:", path);
-		return R_FALSE;
+		return false;
 	}
 	if (rflag)
 		recurse (path, rflag, chmodr);
-	return R_TRUE;
+	return true;
 }
 
 int parsemode(const char *str) {
@@ -75,7 +75,7 @@ int parsemode(const char *str) {
 		if (octal & 00004) mode |= S_IROTH;
 		if (octal & 00002) mode |= S_IWOTH;
 		if (octal & 00001) mode |= S_IXOTH;
-		return R_TRUE;
+		return true;
 	}
 	for(p = str; *p; p++)
 		switch(*p) {
@@ -114,11 +114,11 @@ int parsemode(const char *str) {
 		/* error */
 		default:
 			eprintf ("%s: invalid mode\n", str);
-			return R_FALSE;
+			return false;
 		}
 	if (mask)
 		mode &= mask;
-	return R_TRUE;
+	return true;
 }
 
 char * agetcwd(void) {

@@ -77,12 +77,12 @@ R_API void r_strpool_free (RStrpool *p) {
 R_API int r_strpool_fit(RStrpool *p) {
 	char *s;
 	if (p->len == p->size)
-		return R_FALSE;
+		return false;
 	s = realloc (p->str, p->len);
-	if (!s) return R_FALSE;
+	if (!s) return false;
 	p->str = s;
 	p->size = p->len;
-	return R_TRUE;
+	return true;
 }
 
 R_API char *r_strpool_get(RStrpool *p, int index) {

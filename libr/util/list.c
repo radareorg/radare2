@@ -267,7 +267,7 @@ R_API int r_list_del_n(RList *list, int n) {
 	int i;
 
 	if (!list)
-		return R_FALSE;
+		return false;
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++)
 		if (i == n) {
 			if (it->p == NULL && it->n == NULL) {
@@ -283,9 +283,9 @@ R_API int r_list_del_n(RList *list, int n) {
 				it->n->p = it->p;
 			}
 			free (it);
-			return R_TRUE;
+			return true;
 		}
-	return R_FALSE;
+	return false;
 }
 
 R_API void *r_list_get_top(const RList *list) {
@@ -374,10 +374,10 @@ R_API int r_list_set_n(RList *list, int n, void *p) {
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
 		if (i == n) {
 			it->data = p;
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void *r_list_get_n(const RList *list, int n) {

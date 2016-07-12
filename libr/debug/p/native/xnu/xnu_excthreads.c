@@ -114,7 +114,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
 		eprintf ("error to get drx registers modificy_trace_bit arm\n");
-		return R_FALSE;
+		return false;
 	}
 	if (th->flavor == ARM_DEBUG_STATE32) {
 		arm_debug_state32_t *state = &th->debug.drx32;
@@ -125,7 +125,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		ret = xnu_thread_get_gpr (dbg, th);
 		if (!ret) {
 			eprintf ("error to get gpr register modificy_trace_bit arm\n");
-			return R_FALSE;
+			return false;
 		}
 		regs = (R_REG_T*)&th->gpr;
 		if (enable) {

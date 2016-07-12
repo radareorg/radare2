@@ -18,8 +18,8 @@ R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
 	register int i;
 	for (i=0; i<len; i++)
 		if (a[i] != b[i])
-			return R_FALSE;
-	return R_TRUE;
+			return false;
+	return true;
 }
 
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
@@ -145,9 +145,9 @@ R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num) {
 		r_write_le64 (dest, num);
 		break;
 	default:
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
 // The default endian is LE for streams.
@@ -230,12 +230,12 @@ R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *nee
 // TODO: implement pack/unpack helpers use vararg or wtf?
 R_API int r_mem_pack() {
 	// TODO: copy this from r_buf??
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_mem_unpack(const ut8 *buf) {
 	// TODO: copy this from r_buf??
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_mem_protect(void *ptr, int size, const char *prot) {
@@ -245,23 +245,23 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	if (strchr (prot, 'r')) p |= PROT_READ;
 	if (strchr (prot, 'w')) p |= PROT_WRITE;
 	if (mprotect (ptr, size, p)==-1)
-		return R_FALSE;
+		return false;
 #elif __WINDOWS__ || __CYGWIN__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
 	r = strchr (prot, 'r')? 1: 0;
 	w = strchr (prot, 'w')? 1: 0;
 	x = strchr (prot, 'x')? 1: 0;;
-	if (w && x) return R_FALSE;
+	if (w && x) return false;
 	if (x) p = PAGE_EXECUTE_READ;
 	else if (w) p = PAGE_READWRITE;
 	else if (r) p = PAGE_READONLY;
 	if (!VirtualProtect (ptr, size, p, NULL))
-		return R_FALSE;
+		return false;
 #else
 	#warning Unknown platform
 #endif
-	return R_TRUE;
+	return true;
 }
 
 R_API void *r_mem_dup (void *s, int l) {

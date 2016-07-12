@@ -210,13 +210,13 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 	int ret = 1;
 	dbg = d;
 	if (!ESIL) {
-		ESIL = r_anal_esil_new (32, R_TRUE);
+		ESIL = r_anal_esil_new (32, true);
 		// TODO setup something?
 	}
 	if (!ESIL)
 		return 0;
 
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	opc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, opc, obuf, sizeof (obuf));
 
@@ -235,7 +235,7 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 			eprintf ("Step failed\n");
 			return 0;
 		}
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 		//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	}
 
@@ -258,7 +258,7 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 				eprintf ("Step failed\n");
 				return 0;
 			}
-			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 			//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		}
 	}
