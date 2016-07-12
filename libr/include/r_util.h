@@ -112,15 +112,6 @@ typedef struct r_list_range_t {
 #define ut8p_ld(x) ((x)[3]|((x)[2]<<8)|((x)[1]<<16)|((x)[0]<<24))
 #define ut8p_lq(x) ((x)[7]|((x)[6]<<8)|((x)[5]<<16)|((x)[4]<<24)|((x)[3]<<32)|((x)[2]<<40)|((x)[1]<<48)|((x)[0]<<56))
 
-/* TODO ..use as uppercase maybe? they are macros! */
-#define strnull(x) (!x||!*x)
-#define iswhitechar(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r')
-#define iswhitespace(x) ((x)==' '||(x)=='\t')
-#define isseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
-		(x)==','||(x)==';'||(x)==':'||(x)=='['||(x)==']'|| \
-		(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
-#define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F'))
-
 /*swap*/
 static inline ut16 r_swap_ut16(ut16 val) {
     return (val << 8) | (val >> 8 );

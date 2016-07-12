@@ -1,6 +1,15 @@
 #ifndef R_STR_H
 #define R_STR_H
 
+/* TODO ..use as uppercase maybe? they are macros! */
+#define strnull(x) (!x||!*x)
+#define iswhitechar(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r')
+#define iswhitespace(x) ((x)==' '||(x)=='\t')
+#define isseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
+		(x)==','||(x)==';'||(x)==':'||(x)=='['||(x)==']'|| \
+		(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
+#define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F'))
+
 static inline void r_str_rmch(char *s, char ch) {
 	for (;*s; s++) {
 		if (*s==ch)
@@ -114,4 +123,5 @@ R_API char *r_hex_from_c(const char *code);
 R_API bool r_str_glob(const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
 R_API char *r_str_between(const char *str, const char *prefix, const char *suffix);
+
 #endif //  R_STR_H
