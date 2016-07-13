@@ -1106,7 +1106,6 @@ arena:
 	} else {
 		update_main_arena (core, *m_arena, main_arena);
 	}
-	free (path);
 	return false;
 }
 
