@@ -94,7 +94,7 @@ R_API void r_cons_rgb_init (void) {
 				rgbinit (r, g, b);
 }
 
-R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
+R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 	const char *q = 0;
 	int isbg = 0, bold = 255; // 127; // 255 ?
 	//const double k = (256/6);
@@ -103,7 +103,7 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 	//if (*p!='[') return 0;
 	if (*p != '[') p--;
 	switch (p[1]) {
-	case '1': bold = 255; p += 2; break;
+	case '1': bold = 255; break;
 	case '3': isbg = 0; break;
 	case '4': isbg = 1; break;
 	}
@@ -112,14 +112,13 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 	if (strchr (p, ';')) {
 		if (p[4] == '5')  {
 			int x, y, z;
-			int n = atoi (p+6);
+			int n = atoi (p + 6);
 			unrgb (n, &x, &y, &z);
 			SETRGB (x, y, z);
 		} else {
 			/* truecolor */
-			p += 6;
 			/* complex rgb */
-			if (r) *r = atoi (p);
+			if (r) *r = atoi (p + 6);
 			q = strchr (p, ';');
 			if (!q) return 0;
 			if (g) *g = atoi (q + 1);
