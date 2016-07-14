@@ -183,7 +183,20 @@ static int r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode) {
 
 /* add a breakpoint with some typical values */
 R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *module, st64 m_delta) {
-	int bpsz = strcmp (dbg->arch, "arm") ? 1 : 4;
+	int bpsz;
+	if (!strcmp (arch,"arm")) {
+		bpsz = 4;
+	} else if (!strcmp (arch,"mips")) {
+		bpsz = 4;
+	} else if (!strcmp (arch,"ppc")) {
+		bpsz = 4;
+	} else if (!strcmp (arch,"sparc")) {
+		bpsz = 4;
+	} else if (!strcmp (arch,"sh")) {
+		bpsz = 2;
+	} else {
+		bpsz = 1;
+	}
 	RBreakpointItem *bpi;
 	const char *module_name = module;
 	RListIter *iter;
