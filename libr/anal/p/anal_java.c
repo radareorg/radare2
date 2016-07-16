@@ -599,6 +599,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 		ut64 length = buf_len - offset;
 
 		RAnalFunction *fcn = r_anal_fcn_new ();
+		fcn->cc = r_anal_cc_default (anal);
 		result = analyze_from_code_buffer ( anal, fcn, addr, buffer+offset, length );
 		if (result == R_ANAL_RET_ERROR) {
 			eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
@@ -652,6 +653,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 					check_addr_in_code (method, end)) ) {
 
 					RAnalFunction *fcn = r_anal_fcn_new ();
+					fcn->cc = r_anal_cc_default (anal);
 					java_set_function_prototype (anal, fcn, method);
 					result = analyze_from_code_attr ( anal, fcn, method, loadaddr );
 					if (result == R_ANAL_RET_ERROR) {

@@ -233,7 +233,7 @@ static void ds_print_import_name(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds);
-static void ds_print_cc_update(RDisasmState *ds);
+//static void ds_print_cc_update(RDisasmState *ds);
 static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds);
 static void ds_print_op_push_info(RDisasmState *ds);
@@ -2128,6 +2128,7 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 }
 
 // modifies anal register state
+#if 0
 static void ds_print_cc_update(RDisasmState *ds) {
 	// declare static since this variable is reused locally, and needs to maintain
 	// state
@@ -2193,7 +2194,7 @@ static void ds_print_cc_update(RDisasmState *ds) {
 		r_anal_cc_reset (&cc);
 	}
 }
-
+#endif
 // align for comment
 static void ds_align_comment(RDisasmState *ds) {
 	const int cmtcol = ds->cmtcol;
@@ -3106,7 +3107,7 @@ toro:
 				r_asm_set_syntax (core->assembler, os);
 			}
 			ds_print_core_vmode (ds);
-			ds_print_cc_update (ds);
+			//ds_print_cc_update (ds);
 		} else {
 			ds->mi_found = 0;
 		}
@@ -3857,7 +3858,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 				r_asm_set_syntax (core->assembler, os);
 			}
 			ds_print_core_vmode (ds);
-			ds_print_cc_update (ds);
+			//ds_print_cc_update (ds);
 			ds_print_op_push_info (ds);
 			/*if (ds->analop.refptr) {
 				handle_print_refptr (core, ds);

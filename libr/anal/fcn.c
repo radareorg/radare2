@@ -76,7 +76,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	/* Function qualifier: static/volatile/inline/naked/virtual */
 	fcn->fmod = R_ANAL_FQUALIFIER_NONE;
 	/* Function calling convention: cdecl/stdcall/fastcall/etc */
-	fcn->call = R_ANAL_CC_TYPE_CDECL;
+	fcn->cc = NULL;
 	/* Function attributes: weak/noreturn/format/etc */
 	fcn->addr = UT64_MAX;
 	fcn->bits = 0;
@@ -1029,6 +1029,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		append = 1;
 	}
 	fcn->addr = addr;
+	fcn->cc = r_anal_cc_default (a);
 	fcn->bits = a->bits;
 	r_anal_fcn_set_size (fcn, size);
 	free (fcn->name);
