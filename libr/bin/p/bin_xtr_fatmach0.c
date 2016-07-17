@@ -5,6 +5,7 @@
 #include <r_lib.h>
 #include <r_bin.h>
 #include "mach0/fatmach0.h"
+#include "mach0/mach0.h"
 
 static RBinXtrData * extract(RBin *bin, int idx);
 static RList * extractall(RBin *bin);
@@ -88,33 +89,76 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 	RBinXtrData * res = NULL;
 	struct r_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
 	struct r_bin_fatmach0_arch_t *arch;
+	struct MACH0_(mach_header) *hdr = NULL;
 
 	arch = r_bin_fatmach0_extract (fb, idx, &narch);
 	if (!arch) return res;
 
-	res = r_bin_xtrdata_new (NULL, NULL, arch->b, arch->offset, arch->size, narch);
+	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+	if (!metadata) {
+		r_buf_free (arch->b);
+		free (arch);
+		return NULL;
+	}
+
+	hdr = MACH0_(get_hdr_from_bytes) (arch->b);
+	if (!hdr) {
+		free (arch);
+		free (hdr);
+		return NULL;
+	}
+
+	metadata->arch = MACH0_(get_cputype_from_hdr) (hdr);
+	metadata->bits = MACH0_(get_bits_from_hdr) (hdr);
+	metadata->libname = strdup ("mach0");
+
+	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata, bin->sdb);
+
 	r_buf_free (arch->b);
 	free (arch);
+	free (hdr);
 	return res;
 }
 
 static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
-	void *xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size);
-	struct r_bin_fatmach0_obj_t *fb = xtr_obj;
+	struct r_bin_fatmach0_obj_t *fb;
 	struct r_bin_fatmach0_arch_t *arch;
 	RBinXtrData *res = NULL;
 	int narch;
+	struct MACH0_(mach_header) *hdr;
 
+	if (!bin || !bin->cur) {
+		return NULL;
+	}
 
+	if (!bin->cur->xtr_obj) {
+		bin->cur->xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size);
+	}
+
+	fb = bin->cur->xtr_obj;
 	arch = r_bin_fatmach0_extract (fb, idx, &narch);
 	if (!arch) {
-		free_xtr (xtr_obj);
 		return res;
 	}
 
-	res = r_bin_xtrdata_new (xtr_obj, free_xtr, arch->b, arch->offset, arch->size, narch);
+	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+	if (!metadata) {
+		return NULL;
+	}
+	hdr = MACH0_(get_hdr_from_bytes) (arch->b);
+	if (!hdr) {
+		free (arch);
+		return NULL;
+	}
+
+	metadata->arch = MACH0_(get_cputype_from_hdr) (hdr);
+	metadata->bits = MACH0_(get_bits_from_hdr) (hdr);
+	metadata->libname = strdup ("mach0");
+
+	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata, bin->sdb);
 	r_buf_free (arch->b);
 	free (arch);
+	free (hdr);
 	return res;
 }
 

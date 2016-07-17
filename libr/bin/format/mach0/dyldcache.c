@@ -180,6 +180,19 @@ void* r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin) {
 	return NULL;
 }
 
+void* r_bin_dydlcache_get_libname(struct r_bin_dyldcache_lib_t *lib, char **libname) {
+	char *cur = lib->path;
+	char *res = lib->path;
+	int path_length = strlen (lib->path);
+	while (cur < cur + path_length - 1) {
+		cur = strchr (cur, '/');
+		if (!cur) break;
+		cur++;
+		res = cur;
+	}
+	(*libname) = res;
+}
+
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {
 	struct r_bin_dyldcache_obj_t *bin;
 	ut8 *buf;

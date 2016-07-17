@@ -154,5 +154,7 @@ char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_filetype)(struct MACH0_(obj_t)* bin);
 ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin);
-
+char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
+int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr);
+struct MACH0_(mach_header)* MACH0_(get_hdr_from_bytes)(RBuffer *buf);
 #endif
