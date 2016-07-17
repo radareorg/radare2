@@ -215,6 +215,30 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 	ut32 aLen;
 	ut32 bLen;
 
+	// temp pointer will be used to switch v0 and v1 after processing the inner loop.
+	int *temp;
+	int *v0, *v1;
+
+	// We need these variables outside the context of the loops as we need to
+	// survive multiple loop iterations.
+	// start and stop are used in our inner loop
+	// colMin tells us the current 'best' edit distance.
+	// extendStop & extendStart are used when we get 'double up' edge conditions
+	// that require us to keep some more data.
+	int start = 0;
+	int stop = 0;
+	int smallest;
+	int colMin = 0;
+	int extendStop = 0;
+	int extendStart = 0;
+
+	//we could move cost into the 'i' loop.
+	int cost = 0;
+
+	// loops can get very big, this can be removed, but it's currently in there for debugging
+	// and optimisation testing.
+	ut64 loops = 0;
+
 	// We need the longest file to be 'A' because our optimisation tries to stop and start
 	// around the diagonal.
 	//  AAAAAAA
@@ -241,7 +265,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		aLen = la;
 		bLen = lb;
 	}
-
+	stop = bLen;
 	// Preliminary tests
 
 	//Do we have both files a & b, and are they at least one byte?
@@ -259,26 +283,21 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		}
 		return true;
 	}
-
 	// Only calloc if we have to do some processing
 
 	// calloc v0 & v1 and check they initialised
-	int *v0 = (int*) calloc ((bLen + 3), sizeof (int));
+	v0 = (int*) calloc ((bLen + 3), sizeof (int));
 	if (!v0) {
-		eprintf("Error: cannot allocate %i bytes.", bLen + 3);
+		eprintf ("Error: cannot allocate %i bytes.", bLen + 3);
 		return false;
 	}
 
-	int *v1 = (int*) calloc ((bLen + 3), sizeof (int));
+	v1 = (int*) calloc ((bLen + 3), sizeof (int));
 	if (!v1) {
-		eprintf("Error: cannot allocate %i bytes", 2 * (bLen + 3));
-		free(v0);
+		eprintf ("Error: cannot allocate %i bytes", 2 * (bLen + 3));
+		free (v0);
 		return false;
 	}
-
-	// temp pointer will be used to switch v0 and v1 after processing the inner loop.
-	int *temp;
-
 
 	// initialise v0 and v1.
 	// With optimisiation we only strictly we only need to initialise v0[0..2]=0..2 & v1[0] = 1;
@@ -287,27 +306,6 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		v1[i] = i + 1;
 	}
 
-
-	// We need these variables outside the context of the loops as we need to
-	// survive multiple loop iterations.
-	// start and stop are used in our inner loop
-	// colMin tells us the current 'best' edit distance.
-	// extendStop & extendStart are used when we get 'double up' edge conditions
-	// that require us to keep some more data.
-	int start = 0;
-	int stop = bLen;
-	int smallest;
-	int colMin = 0;
-	int extendStop = 0;
-	int extendStart = 0;
-
-	//we could move cost into the 'i' loop.
-	int cost = 0;
-
-	// loops can get very big, this can be removed, but it's currently in there for debugging
-	// and optimisation testing.
-	ut64 loops = 0;
-
 	// Outer loop = the length of the longest input file.
 	for (i = 0; i < aLen; i++) {
 
@@ -315,7 +313,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		// bLen (so we don't run off the end of our array)
 		// or 'two below the diagonal' PLUS any extension we need for 'double up' edge values
 		// (see extendStop for logic)
-		stop = R_MIN((i + extendStop + 2), bLen);
+		stop = R_MIN ((i + extendStop + 2), bLen);
 
 		// We need a value in the result column (v1[start]).
 		// If you look at the loop below, we need it because we look at v1[j] as one of the
@@ -342,7 +340,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 			v1[j + 2] = smallest + 1;
 
 			// If we have seen a smaller number, it's the new column Minimum
-			colMin=R_MIN((colMin),(smallest));
+			colMin = R_MIN ((colMin), (smallest));
 
 		}
 
@@ -370,7 +368,6 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 			start --;
 			extendStart ++;
 		}
-
 		//Switch v0 and v1 pointers via temp pointer
 		temp = v0;
 		v0 = v1;
@@ -381,12 +378,10 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 			eprintf ("\rProcessing %d of %d\r", i, aLen);
 		}
 	}
-
 	//Clean up output on loop exit (purely aesthetic)
 	if (verbose) {
 		eprintf ("\rProcessing %d of %d (loops=%llu)\n", i, aLen,loops);
 	}
-
 	if (distance) {
 		// the final distance is the last byte we processed in the inner loop.
 		// v0 is used instead of v1 because we switched the pointers before exiting the outer loop
@@ -396,9 +391,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 			*similarity = (double)1 - diff;
 		}
 	}
-
 	free (v0);
 	free (v1);
-
 	return true;
 }
