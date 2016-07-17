@@ -1105,7 +1105,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	const ut8 *buf_end = obuf + obuf_len;
 	size_t j;
 
-	if (!spec || !value || !hdr || !obuf) {
+	if (!spec || !value || !hdr || !obuf || !*obuf) {
 		return NULL;
 	}
 	value->form = spec->attr_form;
