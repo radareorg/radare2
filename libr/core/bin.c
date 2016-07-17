@@ -540,7 +540,7 @@ static int bin_info(RCore *r, int mode) {
 		pair_str ("rpath", info->rpath, mode, false);
 		pair_str ("binsz", size_str, mode, false);
 		pair_str ("compiled", compiled, mode, false);
-		pair_str ("dbg_file", info->debug_file_name, mode, false);
+		pair_str ("dbg_file", r_str_escape(info->debug_file_name), mode, false);
 		if (info->claimed_checksum) {
 			/* checksum specified in header */
 			pair_str ("hdr.csum", info->claimed_checksum, mode, false);
