@@ -1681,6 +1681,21 @@ int MACH0_(get_bits)(struct MACH0_(obj_t)* bin) {
 #endif
 }
 
+int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr) {
+	#if R_BIN_MACH064
+		return 64;
+	#else
+		//this hack only applies with ARM cpu 
+		if (hdr->cputype == CPU_TYPE_ARM) {
+			return 16;
+		}
+		if ((hdr->cpusubtype & CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM_V7K) {
+			return 16;
+		}
+	#endif
+	return 32;
+}
+
 int MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin) {
 	bool is_ppc = bin && bin->hdr.cputype == CPU_TYPE_POWERPC64;
 	if (!is_ppc) is_ppc = bin && bin->hdr.cputype == CPU_TYPE_POWERPC;
@@ -1723,6 +1738,28 @@ char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin) {
 	}
 	return strdup ("unknown");
 }
+
+char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
+	switch (hdr->cputype) {
+	case CPU_TYPE_VAX: 	return strdup ("vax");
+	case CPU_TYPE_MC680x0:	return strdup ("mc680x0");
+	case CPU_TYPE_I386:
+	case CPU_TYPE_X86_64:	return strdup ("x86");
+	case CPU_TYPE_MC88000:	return strdup ("mc88000");
+	case CPU_TYPE_MC98000:	return strdup ("mc98000");
+	case CPU_TYPE_HPPA:	return strdup ("hppa");
+	case CPU_TYPE_ARM:
+	case CPU_TYPE_ARM64:	return strdup ("arm");
+	case CPU_TYPE_SPARC:	return strdup ("sparc");
+	case CPU_TYPE_MIPS:	return strdup ("mips");
+	case CPU_TYPE_I860:	return strdup ("i860");
+	case CPU_TYPE_POWERPC:
+	case CPU_TYPE_POWERPC64:return strdup ("ppc");
+	default:		return strdup ("unknown");
+	}
+	return strdup ("unknown");
+}
+
 
 // TODO: use const char*
 char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin) {
@@ -1926,4 +1963,48 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 		}
 	}
 	return addr;
+}
+
+struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
+	ut32 magic = 0;
+	int len;
+	struct MACH0_(mach_header) *macho_hdr = R_NEW0 (struct MACH0_(mach_header));
+	int big_endian;
+
+	if (!macho_hdr) {
+		return NULL;
+	}
+
+	if (r_buf_read_at (buf, 0, (ut8*)&magic, 4) < 1) {
+		eprintf ("Error: read (magic)\n");
+		return false;
+	}
+
+	if (magic == MACH0_(MH_MAGIC)) {
+		big_endian = false;
+	} else if (magic == MACH0_(MH_CIGAM)) { 
+		big_endian = true;
+	} else if (magic == FAT_CIGAM) {
+		big_endian = true;
+	} else if (magic == 0xfeedfacf) {
+		big_endian = false;
+	} else {
+		free (macho_hdr);
+		return NULL;
+	}
+
+	len = r_buf_fread_at (buf, 0, (ut8*)macho_hdr,
+#if R_BIN_MACH064
+		big_endian?"8I":"8i", 1
+#else
+		big_endian?"7I":"7i", 1
+#endif
+	);
+
+	if (len != sizeof(struct MACH0_(mach_header))) {
+		free (macho_hdr);
+		return NULL;
+	}
+
+	return macho_hdr;
 }
