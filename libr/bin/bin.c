@@ -246,7 +246,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	if (min < 0)
 		return;
 
-	if (!to || to > arch->buf->length)
+	if (!to || to > arch->size)//arch->buf->length)
 		to = arch->buf->length;
 
 	if (arch->rawstr != 2) {
