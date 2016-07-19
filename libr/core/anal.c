@@ -802,8 +802,14 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		r_cons_printf ("{\"name\":\"%s\"", fcn->name);
 		r_cons_printf (",\"offset\":%"PFMT64d, fcn->addr);
 		r_cons_printf (",\"ninstr\":%"PFMT64d, fcn->ninstr);
-		r_cons_printf (",\"nargs\":%d", r_anal_var_count (core->anal, fcn, 'a'));
-		r_cons_printf (",\"locals\":%d", r_anal_var_count (core->anal, fcn, 'v'));
+		r_cons_printf (",\"nargs\":%d",
+			r_anal_var_count (core->anal, fcn, 'r', 1) +
+			r_anal_var_count (core->anal, fcn, 's', 1) +
+			r_anal_var_count (core->anal, fcn, 'b', 1));
+		r_cons_printf (",\"nlocals\":%d",
+			r_anal_var_count (core->anal, fcn, 'r', 0) +
+			r_anal_var_count (core->anal, fcn, 's', 0) +
+			r_anal_var_count (core->anal, fcn, 'b', 0));
 		r_cons_printf (",\"size\":%d", r_anal_fcn_size (fcn));
 		r_cons_printf (",\"stack\":%d", fcn->stack);
 		r_cons_printf (",\"type\":%d", fcn->type); // TODO: output string
@@ -1450,7 +1456,7 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 	return name;
 }
 
-#define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %4d %4d %5d %s%s\n"
+#define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = get_fcn_name(core, fcn);
 
@@ -1476,8 +1482,12 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 			r_anal_fcn_size (fcn),
 			fcn->meta.max,
 			fcn->meta.numcallrefs,
-			r_anal_var_count (core->anal, fcn, 'v'),
-			r_anal_var_count (core->anal, fcn, 'a'),
+			r_anal_var_count (core->anal, fcn, 's', 0) +
+			r_anal_var_count (core->anal, fcn, 'b', 0) +
+			r_anal_var_count (core->anal, fcn, 'r', 0),
+			r_anal_var_count (core->anal, fcn, 's', 1) +
+			r_anal_var_count (core->anal, fcn, 'b', 1) +
+			r_anal_var_count (core->anal, fcn, 'r', 1),
 			fcn->meta.numrefs,
 			fcn->maxstack,
 			name,
@@ -1491,10 +1501,10 @@ static int fcn_list_verbose(RCore *core, RList *fcns) {
 
 	r_cons_printf ("%-11s %4s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
 			"address", "size", "nbbs", "cc", "min bound", "max bound",
-			"calls", "vars", "args", "xref", "frame", "name");
+			"calls", "locals", "args", "xref", "frame", "name");
 	r_cons_printf ("%-11s %-4s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
 			"===========", "====", "=====", "====", "===========", "===========",
-			"=====", "====", "====", "====", "=====", "====");
+			"=====", "======", "====", "====", "=====", "====");
 
 	RListIter *iter;
 	RAnalFunction *fcn;
@@ -1610,6 +1620,15 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		if (fcn->diff->name != NULL)
 			r_cons_printf (",\"diffname\":\"%s\"", fcn->diff->name);
 	}
+	r_cons_printf (",\"nargs\":%d",
+		r_anal_var_count (core->anal, fcn, 'r', 1) +
+		r_anal_var_count (core->anal, fcn, 'r', 1) +
+		r_anal_var_count (core->anal, fcn, 'r', 1));
+	r_cons_printf (",\"nlocals\":%d",
+		r_anal_var_count (core->anal, fcn, 'r', 0) +
+		r_anal_var_count (core->anal, fcn, 'r', 0) +
+		r_anal_var_count (core->anal, fcn, 'r', 0));
+
 	r_cons_printf ("}");
 	free (name);
 	return 0;
@@ -1656,7 +1675,6 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
-	RAnalVar *vari;
 	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
@@ -1699,13 +1717,19 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
-		r_cons_printf ("\n vars: %d", r_list_length (fcn->vars));
-		r_list_foreach (fcn->vars, iter, vari) {
-			char *s = r_anal_type_to_str (core->anal, vari->type);
-			r_cons_printf ("\n  %s %s @ 0x%02x", s, vari->name, vari->delta);
-			free (s);
-		}
-		r_cons_printf ("\n diff: type: %s",
+		int args_count = r_anal_var_count (core->anal, fcn, 'b', 1);
+		args_count += r_anal_var_count (core->anal, fcn, 's', 1);
+		args_count += r_anal_var_count (core->anal, fcn, 'r', 1);
+		int var_count = r_anal_var_count (core->anal, fcn, 'b', 0);
+		var_count += r_anal_var_count (core->anal, fcn, 's', 0);
+		var_count += r_anal_var_count (core->anal, fcn, 'r', 0);
+
+
+		r_cons_printf ("\n locals:%d\n args: %d\n", var_count, args_count);
+		r_anal_var_list_show (core->anal, fcn, 'b', 0);
+		r_anal_var_list_show (core->anal, fcn, 's', 0);
+		r_anal_var_list_show (core->anal, fcn, 'r', 0);
+		r_cons_printf (" diff: type: %s",
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"match":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
 		if (fcn->diff->addr != -1)
