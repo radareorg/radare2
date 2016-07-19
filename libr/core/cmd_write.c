@@ -409,7 +409,7 @@ static int cmd_write(void *data, const char *input) {
 		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 		"wx[fs]"," 9090","write two intel nops (from wxfile or wxseek)",
 		"wv"," eip+34","write 32-64 bit value",
-		"wz"," string","write zero terminated string (like w + \\x00",
+		"wz"," string","write zero terminated string (like w + \\x00)",
 		NULL
 	};
 
