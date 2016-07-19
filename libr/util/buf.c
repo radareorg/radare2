@@ -443,9 +443,9 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 	if (addr == R_BUF_CUR) {
 		addr = b->cur;
-	} else if (addr > b->base && addr < (b->base + b->length)) {
+	} else if (addr >= b->base && addr < (b->base + b->length)) {
 		addr -= b->base;
-	} else if ((addr > (b->base + b->length) && addr < file_sz) || (addr < b->base)) {
+	} else if ((addr >= (b->base + b->length) && addr <= file_sz) || (addr < b->base)) {
 		if (!(iob && (iob->io))) {
 			return -1;
 		}
