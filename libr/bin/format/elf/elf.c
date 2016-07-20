@@ -1067,7 +1067,7 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				switch (reloc_type) {
 				case R_386_GLOB_DAT:
 				case R_386_JMP_SLOT:
-					if (of + sizeof(Elf_(Addr)) >= bin->b->length) {
+					if (of + sizeof(Elf_(Addr)) >= bin->size) {
 						// do nothing
 					} else {
 						// ONLY FOR X86
@@ -2081,7 +2081,7 @@ static RBinElfSymbol* get_symbols_from_phdr (struct Elf_(r_bin_elf_obj_t) *bin, 
 	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
 		return NULL;
 	for (j = 0; j < bin->dyn_entries; j++) {
-	    	switch (bin->dyn_buf[j].d_tag) {
+		switch (bin->dyn_buf[j].d_tag) {
 		case (DT_SYMTAB):
 			addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_buf[j].d_un.d_ptr);
 			break;
@@ -2147,15 +2147,15 @@ static RBinElfSymbol* get_symbols_from_phdr (struct Elf_(r_bin_elf_obj_t) *bin, 
 		ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 		ret[ret_ctr].size = tsize;
 		{
-		   int rest = R_MIN (ELF_STRING_LENGTH,128)-1;
-		   int st_name = sym[k].st_name;
-		   int maxsize = R_MIN (bin->size, bin->strtab_size);
-		   if (st_name < 0 || st_name >= maxsize) {
-			ret[ret_ctr].name[0] = 0;
-		   } else {
-			const int len = __strnlen (bin->strtab+st_name, rest);
-			memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
-		   }
+			int rest = R_MIN (ELF_STRING_LENGTH,128)-1;
+			int st_name = sym[k].st_name;
+			int maxsize = R_MIN (bin->size, bin->strtab_size);
+			if (st_name < 0 || st_name >= maxsize) {
+				ret[ret_ctr].name[0] = 0;
+			} else {
+				const int len = __strnlen (bin->strtab+st_name, rest);
+				memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
+			}
 		}
 		ret[ret_ctr].ordinal = k;
 		ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
