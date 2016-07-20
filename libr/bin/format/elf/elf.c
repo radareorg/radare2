@@ -267,7 +267,7 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return true;
 }
 
-static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
+static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	ut64 tmp;
 	Elf_(Addr) strtabaddr = 0;
@@ -296,7 +296,7 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->phdr[i].p_offset + sizeof(Elf_(Dyn)) > bin->size)
 		return false;
 
-	tmp = bin->phdr[i].p_offset; //TODO: this thing is a total fuck :/
+	tmp = bin->phdr[i].p_offset;
 	if (tmp < bin->b->base || tmp > (bin->b->base + bin->b->length)) {
 		if (!(iob && iob->io)) {
 			return false;
@@ -317,7 +317,7 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 			tmp = 0;
 		}
 	}
-	for (entries = 0; (tmp + bin->b->base) < (bin->phdr[i].p_offset+dyn_size); ) {
+	for (entries = 0; (entries * sizeof (Elf_(Dyn))) < dyn_size; ) {
 		entries++;
 		if (((Elf_(Dyn)*)((ut8*)bin->b->buf + tmp))->d_tag == DT_NULL) {
 			break;
@@ -326,7 +326,7 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 			return false;
 		}
 		if ((tmp + sizeof(Elf_(Dyn))) > bin->size) {
-			if (!(iob && iob->io) || (bin->b->base + tmp + sizeof(Elf_(Dyn))) > bin->size) {
+			if (!(iob && iob->io)) {
 				return false;
 			}
 			if ((bin->b->base + tmp + bin->b->length) > bin->size) {
@@ -349,9 +349,13 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 			tmp += sizeof(Elf_(Dyn));
 		}
 	}
-	if (entries < 1) return false;
+	if (entries < 1) {
+		return false;
+	}
 	dyn = (Elf_(Dyn)*)calloc (entries, sizeof (Elf_(Dyn)));
-	if (!dyn) return false;
+	if (!dyn) {
+		return false;
+	}
 
 	if (!UT32_MUL (&dyn_size, entries, sizeof (Elf_(Dyn)))) {
 		goto beach;
