@@ -1646,6 +1646,15 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	int i, n = core->assembler->bits / 8;
 	int type = 'v';
 	bool fixed_size = true;
+	const char* help_msg[] = {
+		 "Usage: pv[j][1,2,4,8,z]", "", "",
+		 "pv", "",  "print bytes based on asm.bits",
+		 "pv1", "", "print 1 byte in memory",
+		 "pv2", "", "print 2 bytes in memory",
+		 "pv4", "", "print 4 bytes in memory",
+		 "pv8", "", "print 8 bytes in memory",
+		 "pvz", "", "print value as string (alias for ps)",
+		 NULL};
 	switch (input[0]) {
 	case '1':
 		n = 1;
@@ -1669,7 +1678,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 	}
 	// variables can be
 	switch (input[0]) {
-	case 'z': // "prz"
+	case 'z': // "pvz"
 		type = 'z';
 		if (input[1]) {
 			input++;
@@ -1677,7 +1686,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 			r_core_cmdf (core, "ps");
 			break;
 		}
-		/* fallthrough */
+	/* fallthrough */
 	case ' ':
 		for (i = 0; stack[i]; i++) {
 			if (!strcmp (input + 1, stack[i])) {
@@ -1708,12 +1717,11 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		}
 		break;
 	case '?':
-		eprintf ("Usage: pv[z8] [ret arg#]\n");
+		r_core_cmd_help (core, help_msg);
 		break;
 	default:
 		{
 			ut64 v;
-			ut64 mask = UT64_MAX;
 			if (!fixed_size) n = 0;
 			switch (n) {
 			case 1:
@@ -1733,14 +1741,14 @@ static void cmd_print_pv(RCore *core, const char *input) {
 				r_cons_printf ("0x%016" PFMT64x "\n", v);
 				break;
 			default:
+				v = r_read_ble64 (core->block, core->print->big_endian);
 				switch (core->assembler->bits / 8) {
-				case 1: mask = UT8_MAX; break;
-				case 2: mask = UT16_MAX; break;
-				case 4: mask = UT32_MAX; break;
+				case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
+				case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
+				case 4: r_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
+				case 8: r_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
 				default: break;
 				}
-				v = r_read_ble64 (core->block, core->print->big_endian);
-				r_cons_printf ("0x%0x\n", v & mask);
 				break;
 			}
 		}
