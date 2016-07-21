@@ -1708,7 +1708,7 @@ static void cmd_print_pv(RCore *core, const char *input) {
 		}
 		break;
 	case '?':
-		eprintf ("Usage: pv[z] [ret arg#]\n");
+		eprintf ("Usage: pv[z8] [ret arg#]\n");
 		break;
 	default:
 		{
