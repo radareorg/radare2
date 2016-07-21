@@ -1172,6 +1172,7 @@ static bool print_double_linked_list_bin(RCore *core,  RHeap_MallocState *main_a
 	bin = (size_t)m_arena + (size_t)offset + SIZE_SZ * num_bin * 2 - SIZE_SZ * 2;
 
 	if (!core || !core->dbg || !core->dbg->maps) {
+		free (cnk);
 		return false;
 	}
 

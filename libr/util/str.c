@@ -995,18 +995,20 @@ R_API void r_str_sanitize(char *c) {
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_ (const char *buf, const int dot_nl) {
+static char *r_str_escape_(const char *buf, const int dot_nl) {
 	char *new_buf, *q;
 	const char *p;
 
-	if (!buf)
+	if (!buf) {
 		return NULL;
-
+	}
+	
 	/* Worst case scenario, we convert every byte */
 	new_buf = malloc (1 + (strlen (buf) * 4));
 
-	if (!new_buf)
+	if (!new_buf) {
 		return NULL;
+	}
 
 	p = buf;
 	q = new_buf;
@@ -1047,8 +1049,9 @@ static char *r_str_escape_ (const char *buf, const int dot_nl) {
 				 * set ones are supported) */
 				if (*p == '\0') goto out;
 				if (*p == '[')
-					for (p++; *p != 'm'; p++)
+					for (p++; *p != 'm'; p++) {
 						if (*p == '\0') goto out;
+					}
 				break;
 			default:
 				/* Outside the ASCII printable range */
@@ -1071,11 +1074,11 @@ out:
 	return new_buf;
 }
 
-R_API char *r_str_escape (const char *buf) {
+R_API char *r_str_escape(const char *buf) {
 	return r_str_escape_ (buf, false);
 }
 
-R_API char *r_str_escape_dot (const char *buf) {
+R_API char *r_str_escape_dot(const char *buf) {
 	return r_str_escape_ (buf, true);
 }
 
