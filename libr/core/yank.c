@@ -35,7 +35,7 @@ static ut32 consume_chars(const char *input, char b) {
 	return i;
 }
 
-static int perform_mapped_file_yankRCore *core, ut64 offset, ut64 len, const char *filename) {
+static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const char *filename) {
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	RIODesc *yankfd = NULL;
