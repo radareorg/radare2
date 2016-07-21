@@ -104,7 +104,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 				(const struct tm*) gmtime((const time_t*)&t));
 			if (ret) {
 				p->cb_printf("%s\n", datestr);
-				ret = R_TRUE;
+				ret = true;
 			}
 		}
 	}

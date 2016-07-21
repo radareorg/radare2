@@ -36,25 +36,25 @@ typedef void (*RGraphNodeCallback)(RGraphNode *n, RGraphVisitor *vis);
 typedef void (*RGraphEdgeCallback)(const RGraphEdge *e, RGraphVisitor *vis);
 
 // Contrructs a new RGraph, returns heap-allocated graph.
-R_API RGraph *r_graph_new ();
+R_API RGraph *r_graph_new(void);
 // Destroys the graph and all nodes.
-R_API void r_graph_free (RGraph* t);
+R_API void r_graph_free(RGraph* g);
 // Gets the data of a node by index.
-R_API RGraphNode *r_graph_get_node (const RGraph *t, unsigned int idx);
-R_API RListIter *r_graph_node_iter (const RGraph *t, unsigned int idx);
-R_API void r_graph_reset (RGraph *t);
-R_API RGraphNode *r_graph_add_node (RGraph *t, void *data);
+R_API RGraphNode *r_graph_get_node(const RGraph *g, unsigned int idx);
+R_API RListIter *r_graph_node_iter(const RGraph *g, unsigned int idx);
+R_API void r_graph_reset(RGraph *g);
+R_API RGraphNode *r_graph_add_node(RGraph *g, void *data);
 // XXX 'n' is destroyed after calling this function.
-R_API void r_graph_del_node(RGraph *t, RGraphNode *n);
-R_API void r_graph_add_edge (RGraph *t, RGraphNode *from, RGraphNode *to);
-R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int nth);
-R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to);
-R_API const RList *r_graph_get_neighbours (const RGraph *g, const RGraphNode *n);
-R_API RGraphNode *r_graph_nth_neighbour (const RGraph *g, const RGraphNode *n, int nth);
-R_API const RList *r_graph_innodes (const RGraph *g, const RGraphNode *n);
-R_API const RList *r_graph_all_neighbours (const RGraph *g, const RGraphNode *n);
-R_API const RList *r_graph_get_nodes (const RGraph *g);
-R_API int r_graph_adjacent (const RGraph *g, const RGraphNode *from, const RGraphNode *to);
-R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis);
-R_API void r_graph_dfs (RGraph *g, RGraphVisitor *vis);
+R_API void r_graph_del_node(RGraph *g, RGraphNode *n);
+R_API void r_graph_add_edge(RGraph *g, RGraphNode *from, RGraphNode *to);
+R_API void r_graph_add_edge_at(RGraph *g, RGraphNode *from, RGraphNode *to, int nth);
+R_API void r_graph_del_edge(RGraph *g, RGraphNode *from, RGraphNode *to);
+R_API const RList *r_graph_get_neighbours(const RGraph *g, const RGraphNode *n);
+R_API RGraphNode *r_graph_nth_neighbour(const RGraph *g, const RGraphNode *n, int nth);
+R_API const RList *r_graph_innodes(const RGraph *g, const RGraphNode *n);
+R_API const RList *r_graph_all_neighbours(const RGraph *g, const RGraphNode *n);
+R_API const RList *r_graph_get_nodes(const RGraph *g);
+R_API int r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGraphNode *to);
+R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
+R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis);
 #endif //  R_GRAPH_H

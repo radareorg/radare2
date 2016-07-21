@@ -409,7 +409,7 @@ static int cmd_write(void *data, const char *input) {
 		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 		"wx[fs]"," 9090","write two intel nops (from wxfile or wxseek)",
 		"wv"," eip+34","write 32-64 bit value",
-		"wz"," string","write zero terminated string (like w + \\x00",
+		"wz"," string","write zero terminated string (like w + \\x00)",
 		NULL
 	};
 
@@ -861,12 +861,15 @@ static int cmd_write(void *data, const char *input) {
 			}
 			break;
 		case '*':
-			r_io_cache_list (core->io, true);
+			r_io_cache_list (core->io, 1);
+			break;
+		case 'j':
+			r_io_cache_list (core->io, 2);
 			break;
 		case '\0':
 			//if (!r_config_get_i (core->config, "io.cache"))
 			//	eprintf ("[warning] e io.cache must be true\n");
-			r_io_cache_list (core->io, false);
+			r_io_cache_list (core->io, 0);
 			break;
 		}
 		break;

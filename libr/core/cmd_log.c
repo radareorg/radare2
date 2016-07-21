@@ -89,7 +89,7 @@ static int cmd_log(void *data, const char *input) {
 			const char* help_msg[] = {
 			"Usage:", "T","[-][ num|msg]",
 			"T", "", "List all Text log messages",
-			"T", " new comment", "0x80480",
+			"T", " message", "Add new log message",
 			"T", " 123", "List log from 123",
 			"T", " 10 3", "List 3 log messages starting from 10",
 			"T*", "", "List in radare commands",

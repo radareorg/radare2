@@ -540,7 +540,7 @@ static int bin_info(RCore *r, int mode) {
 		pair_str ("rpath", info->rpath, mode, false);
 		pair_str ("binsz", size_str, mode, false);
 		pair_str ("compiled", compiled, mode, false);
-		pair_str ("dbg_file", info->debug_file_name, mode, false);
+		pair_str ("dbg_file", r_str_escape(info->debug_file_name), mode, false);
 		if (info->claimed_checksum) {
 			/* checksum specified in header */
 			pair_str ("hdr.csum", info->claimed_checksum, mode, false);
@@ -548,12 +548,6 @@ static int bin_info(RCore *r, int mode) {
 		if (info->actual_checksum) {
 			/* computed checksum */
 			pair_str ("cmp.csum", info->actual_checksum, mode, false);
-		}
-
-		// checksums are only supported for pe atm
-		if (info->rclass && strncmp ("pe", info->rclass, 2) == 0) {
-			pair_str ("crc32", info->claimed_checksum, mode, false);
-			pair_str ("crc32c", info->actual_checksum, mode, false);
 		}
 
 		for (i = 0; info->sum[i].type; i++) {
@@ -1231,16 +1225,19 @@ static bool isAnExport(RBinSymbol *s) {
 
 static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly) {
 	RBinInfo *info = r_bin_get_info (r->bin);
-	if (!info) return 0;
-	int is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
-	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	RList *entries = r_bin_get_entries (r->bin);
 	RBinSymbol *symbol;
-	const char *lang;
+	RBinAddr *entry;
 	RListIter *iter;
 	RList *symbols;
+	const char *lang;
 	int lastfs = 's';
 	int i = 0;
-
+	int is_arm, bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	if (!info) {
+		return 0;
+	}
+	is_arm = info && info->arch && !strncmp (info->arch, "arm", 3);
 	lang = bin_demangle ? r_config_get (r->config, "bin.lang") : NULL;
 
 	symbols = r_bin_get_symbols (r->bin);
@@ -1254,6 +1251,26 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	} else if (!at && !exponly) {
 		if (IS_MODE_RAD (mode)) r_cons_printf ("fs symbols\n");
 		if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Symbols]\n");
+	}
+
+	//handle thumb and arm for entry point since they are not present in symbols
+	r_list_foreach (entries, iter, entry) {
+		if (IS_MODE_SET (mode)) {
+			if (is_arm && info->bits < 33) { // 16 or 32
+				int force_bits = 0;
+				ut64 addr = rva (r->bin, entry->paddr, entry->vaddr, va);
+				if (entry->paddr & 1 || entry->bits == 16) {
+					force_bits = 16;
+				} else if (info->bits == 16 && entry->bits == 32) {
+					force_bits = 32;
+				} else if (!(entry->paddr & 1)) {
+					force_bits = 32;
+				}
+				if (force_bits) {
+					r_anal_hint_set_bits (r->anal, addr, force_bits);
+				}
+			}
+		}
 	}
 	r_list_foreach (symbols, iter, symbol) {
 		ut64 addr = rva (r->bin, symbol->paddr, symbol->vaddr, va);
@@ -1270,9 +1287,11 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (IS_MODE_SET (mode)) {
 			if (is_arm && info->bits < 33) { // 16 or 32
 				int force_bits = 0;
-				if (symbol->paddr & 1) {
+				if (symbol->paddr & 1 || symbol->bits == 16) {
 					force_bits = 16;
-				} else if (info->bits == 16) {
+				} else if (info->bits == 16 && symbol->bits == 32) {
+					force_bits = 32;
+				} else if (!(symbol->paddr & 1) && symbol->bits == 32) {
 					force_bits = 32;
 				}
 				if (force_bits) {

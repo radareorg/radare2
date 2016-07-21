@@ -48,7 +48,7 @@ R_API int r_sandbox_check_path (const char *path) {
 #if __UNIX__
 	if (readlink (path, &ch, 1) != -1) return 0;
 #endif
-	return R_TRUE;
+	return true;
 }
 
 R_API bool r_sandbox_disable (bool e) {
@@ -238,12 +238,12 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 
 R_API int r_sys_stop () {
 	int pid;
-	if (enabled) return R_FALSE;
+	if (enabled) return false;
 	pid = r_sys_getpid ();
 #ifndef SIGSTOP
 #define SIGSTOP 19
 #endif
 	if (!r_sandbox_kill (pid, SIGSTOP))
-		return R_TRUE;
-	return R_FALSE;
+		return true;
+	return false;
 }

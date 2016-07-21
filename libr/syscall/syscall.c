@@ -77,7 +77,7 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 		SYSCALLPATH, os, arch, bits);
 	if (!r_file_exists (file)) {
 		//eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
-		return R_FALSE;
+		return false;
 	}
 
 	//eprintf ("DBG098: syscall->db must be reindexed for k\n");

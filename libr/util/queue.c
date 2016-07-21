@@ -35,7 +35,7 @@ static int increase_capacity (RQueue *q) {
 
 	newelems = R_NEWS0(void *, new_capacity);
 	if (!newelems)
-		return R_FALSE;
+		return false;
 
 	i = -1;
 	tmp_front = q->front;
@@ -50,20 +50,20 @@ static int increase_capacity (RQueue *q) {
 	q->front = 0;
 	q->rear = i;
 	q->capacity = new_capacity;
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_queue_enqueue (RQueue *q, void *el) {
 	if (is_full(q)) {
 		int res = increase_capacity (q);
 		if (!res)
-			return R_FALSE;
+			return false;
 	}
 
 	q->rear = (q->rear + 1) % q->capacity;
 	q->elems[q->rear] = el;
 	q->size++;
-	return R_TRUE;
+	return true;
 }
 
 R_API void *r_queue_dequeue (RQueue *q) {

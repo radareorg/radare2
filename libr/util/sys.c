@@ -102,12 +102,12 @@ R_API ut64 r_sys_now(void) {
 R_API int r_sys_truncate(const char *file, int sz) {
 #if __WINDOWS__ && !__CYGWIN__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
-	if (!fd) return R_FALSE;
+	if (!fd) return false;
 	ftruncate (fd, sz);
 	close (fd);
-	return R_TRUE;
+	return true;
 #else
-	return truncate (file, sz)? R_FALSE: R_TRUE;
+	return truncate (file, sz)? false: true;
 #endif
 }
 
@@ -263,7 +263,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 	void *array[1];
 
 	if (!checkcmd (cmd))
-		return R_FALSE;
+		return false;
 #ifdef HAVE_BACKTRACE
 	/* call this outside of the signal handler to init it safely */
 	backtrace (array, 1);
@@ -290,9 +290,9 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 	sigaddset (&sigact.sa_mask, SIGKILL);
 	sigaction (SIGKILL, &sigact, (struct sigaction *)NULL);
-	return R_TRUE;
+	return true;
 #else
-	return R_FALSE;
+	return false;
 #endif
 }
 
@@ -338,25 +338,25 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 
 	if (len) *len = 0;
 	if (pipe (sh_in))
-		return R_FALSE;
+		return false;
 	if (output) {
 		if (pipe (sh_out)) {
 			close (sh_in[0]);
 			close (sh_in[1]);
 			close (sh_out[0]);
 			close (sh_out[1]);
-			return R_FALSE;
+			return false;
 		}
 	}
 	if (pipe (sh_err)) {
 		close (sh_in[0]);
 		close (sh_in[1]);
-		return R_FALSE;
+		return false;
 	}
 
 	switch ((pid = r_sys_fork ())) {
 	case -1:
-		return R_FALSE;
+		return false;
 	case 0:
 		dup2 (sh_in[0], 0);
 		close (sh_in[0]);
@@ -372,12 +372,12 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	default:
 		outputptr = strdup ("");
 		if (!outputptr)
-			return R_FALSE;
+			return false;
 		if (sterr) {
 			*sterr = strdup ("");
 			if (!*sterr) {
 				free (outputptr);
-				return R_FALSE;
+				return false;
 			}
 		}
 		if (output) close (sh_out[1]);
@@ -437,14 +437,14 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			char *escmd = r_str_escape (cmd);
 			eprintf ("%s: failed command '%s'\n", __func__, escmd);
 			free (escmd);
-			return R_FALSE;
+			return false;
 		}
 
 		if (output) *output = outputptr;
 		else free (outputptr);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 #elif __WINDOWS__
 // TODO: fully implement the rest
@@ -452,13 +452,13 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	char *result = r_sys_cmd_str_w32 (cmd);
 	if (len) *len = 0;
 	if (output) *output = result;
-	if (result) return R_TRUE;
-	return R_FALSE;
+	if (result) return true;
+	return false;
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	eprintf ("r_sys_cmd_str: not yet implemented for this platform\n");
-	return R_FALSE;
+	return false;
 }
 #endif
 
@@ -636,7 +636,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	if (!ptr || !buf) {
 		eprintf ("r_sys_run: Cannot run empty buffer\n");
 		free (p);
-		return R_FALSE;
+		return false;
 	}
 	memcpy (ptr, buf, sz);
 	r_mem_protect (ptr, sz, "rx");

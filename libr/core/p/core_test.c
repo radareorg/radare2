@@ -20,7 +20,7 @@ mv core_test.so ~/.config/radare2/plugins
 
 static int r_cmd_test_call() {
 	eprintf ("Dummy!\n");
-	return R_FALSE;
+	return false;
 }
 
 RCorePlugin r_core_plugin_test = {

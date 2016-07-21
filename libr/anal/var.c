@@ -400,34 +400,22 @@ R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int s
 	return false;
 }
 
-R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind) {
-	char *varlist;
-	int count = 0;
-	if (!a || !fcn) {
-		return 0;
-	}
-	if (!kind) kind = 'v'; // by default show vars
-	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c",
-		fcn->addr, kind), 0);
-	if (varlist) {
-		char *next, *ptr = varlist;
-		if (varlist && *varlist) {
-			do {
-				char *word = sdb_anext (ptr, &next);
-				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
-					"var.0x%"PFMT64x".%c.%s",
-					fcn->addr, kind, word), 0);
-				if (vardef) {
-					count ++;
-				} else {
-					eprintf ("Cannot find var '%s'\n", word);
-				}
-				ptr = next;
-			} while (next);
+R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
+	//local: type = 0
+	//arg: type = 1
+	RList *list = r_anal_var_list (a, fcn, kind);
+	RAnalVar *var;
+	RListIter *iter;
+	int count[2] = {0};
+	r_list_foreach(list, iter, var) {
+		if (kind == 'r') {
+			count[1] ++;
+			continue;
 		}
+		count[(kind == 'b' && var->delta > 0) || (kind == 's' && var->delta > fcn->stack)]++;
 	}
-	free (varlist);
-	return count;
+	r_list_free (list);
+	return count[type];
 }
 
 R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {

@@ -45,8 +45,8 @@ int main(int argc, char **argv) {
 		struct r_hash_t *ctx;
 		const ut8 *c;
 		int i;
-		//r_hash_init(&ctx, R_TRUE, R_HASH_ALL);
-		ctx = r_hash_new (R_TRUE, R_HASH_ALL);
+		//r_hash_init(&ctx, true, R_HASH_ALL);
+		ctx = r_hash_new (true, R_HASH_ALL);
 		c = r_hash_do_md5 (ctx, buf, size);
 		printf ("MD5: ");
 		for (i=0;i<R_HASH_SIZE_MD5;i++) { printf("%02x", c[i]); }

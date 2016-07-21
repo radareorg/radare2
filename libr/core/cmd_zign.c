@@ -47,7 +47,7 @@ static int cmd_zign(void *data, const char *input) {
 				fd = r_sandbox_open (ptr+1, O_RDWR|O_CREAT|O_TRUNC, 0644);
 				if (fd == -1) {
 					eprintf ("Cannot open %s in read-write\n", ptr+1);
-					return R_FALSE;
+					return false;
 				}
 				r_cons_singleton ()->fdout = fd;
 				r_cons_strcat ("# Signatures\n");
@@ -124,7 +124,7 @@ static int cmd_zign(void *data, const char *input) {
 			if (input[1]) {
 				if(input[1] != ' ') {
 					eprintf ("Usage: z%c [ini] [end]\n", *input);
-					return R_FALSE;
+					return false;
 				}
 
 				char *ptr = strchr (input+2, ' ');
@@ -143,12 +143,12 @@ static int cmd_zign(void *data, const char *input) {
 					fin = ini + (core->io->va?s->vsize:s->size);
 				} else {
 					eprintf ("No section identified, please provide range.\n");
-					return R_FALSE;
+					return false;
 				}
 			}
 			if (ini>=fin) {
 				eprintf ("Invalid range (0x%"PFMT64x"-0x%"PFMT64x").\n", ini, fin);
-				return R_FALSE;
+				return false;
 			}
 			len = fin-ini;
 			buf = malloc (len);

@@ -61,7 +61,7 @@ if (a == b) do_something ();
 if (a == b) do_something ();
 else do_something_else ();
 
-if (!ok) return R_FALSE;
+if (!ok) return false;
 
 if (!buf) goto err_buf;
 
@@ -94,8 +94,8 @@ if (a == b) {
 
 ```c
 int check(RCore *c, int a, int b) {
-	if (!c) return R_FALSE;
-	if (a < 0 || b < 1) return R_FALSE;
+	if (!c) return false;
+	if (a < 0 || b < 1) return false;
 
 	... /* do something else */
 }

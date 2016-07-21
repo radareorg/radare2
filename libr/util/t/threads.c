@@ -28,7 +28,7 @@ int test1() {
 #if __i386__ || __x86_64__
 	asm ("int3");
 #endif
-	//r_th_start (th, R_TRUE);
+	//r_th_start (th, true);
 	while (r_th_wait_async (th)) {
 		printf ("\nwaiting...\n");
 		fflush (stdout);
@@ -37,7 +37,7 @@ int test1() {
 	}
 	printf ("\nfinished\n");
 #if 0
-	r_th_start(th, R_TRUE);
+	r_th_start(th, true);
 	sleep(1);
 #endif
 	/* wait and free */

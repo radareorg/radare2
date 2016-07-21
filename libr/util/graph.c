@@ -220,8 +220,8 @@ R_API const RList *r_graph_get_nodes (const RGraph *g) {
 
 /* true if there is an edge from the node `from` to the node `to` */
 R_API int r_graph_adjacent (const RGraph *g, const RGraphNode *from, const RGraphNode *to) {
-	if (!g || !from) return R_FALSE;
-	return r_list_contains (from->out_nodes, to) ? R_TRUE : R_FALSE;
+	if (!g || !from) return false;
+	return r_list_contains (from->out_nodes, to) ? true : false;
 }
 
 R_API void r_graph_dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis) {

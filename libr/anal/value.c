@@ -65,7 +65,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 		if (val->reg)
 			r_reg_set_value (anal->reg, val->reg, num);
 	}
-	return R_FALSE;							//is this necessary
+	return false;							//is this necessary
 }
 
 R_API char *r_anal_value_to_string (RAnalValue *value) {

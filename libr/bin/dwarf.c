@@ -1161,7 +1161,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.data = READ (buf, ut64);
 		break;
 	case DW_FORM_string:
-		value->encoding.str_struct.string = strdup((const char*)buf);
+		value->encoding.str_struct.string = *buf? strdup((const char*)buf) : NULL;
 		buf += (strlen((const char*)buf) + 1);
 		break;
 	case DW_FORM_block:

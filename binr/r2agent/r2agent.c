@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 	}
-	s = r_socket_new (R_FALSE);
+	s = r_socket_new (false);
 	s->local = listenlocal;
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Cannot listen on %d\n", s->port);
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 	}
 	
 	eprintf ("http://localhost:%d/\n", s->port);
-	if (dosandbox && !r_sandbox_enable (R_TRUE)) {
+	if (dosandbox && !r_sandbox_enable (true)) {
 		eprintf ("sandbox: Cannot be enabled.\n");
 		return 1;
 	}

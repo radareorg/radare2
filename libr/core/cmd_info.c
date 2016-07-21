@@ -108,7 +108,7 @@ static void r_core_file_info (RCore *core, int mode) {
 				cf->desc->flags & 7 ));
 			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64)core->io->desc->obsz);
 			if (cf->desc->referer && *cf->desc->referer)
-				r_cons_printf ("\"referer\":\"%s\"", cf->desc->referer);
+				r_cons_printf (",\"referer\":\"%s\"", cf->desc->referer);
 		}
 		r_cons_printf (",\"block\":%d", core->blocksize);
 		if (binfile) {

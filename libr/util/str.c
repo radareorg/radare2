@@ -655,13 +655,13 @@ R_API int r_str_ccmp(const char *dst, const char *src, int ch) {
 // NOTE: this is not useful as a comparitor, as it returns true or false.
 R_API int r_str_cmp(const char *a, const char *b, int len) {
 	if (a==b)
-		return R_TRUE;
+		return true;
 	for (;len--;) {
 		if (*a=='\0'||*b=='\0'||*a!=*b)
-			return R_TRUE;
+			return true;
 		a++; b++;
 	}
-	return R_FALSE;
+	return false;
 }
 
 // Copies all characters from src to dst up until the character 'ch'.
@@ -1072,11 +1072,11 @@ out:
 }
 
 R_API char *r_str_escape (const char *buf) {
-	return r_str_escape_ (buf, R_FALSE);
+	return r_str_escape_ (buf, false);
 }
 
 R_API char *r_str_escape_dot (const char *buf) {
-	return r_str_escape_ (buf, R_TRUE);
+	return r_str_escape_ (buf, true);
 }
 
 /* ansi helpers */

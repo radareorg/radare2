@@ -3,7 +3,7 @@
 int main() {
 	int ret;
 	char buf[1024];
-	RSocket *s = r_socket_new (R_FALSE);
+	RSocket *s = r_socket_new (false);
 	if (r_socket_connect (s, "localhost", "9090", 0, 10)) {
 		do {
 			ret = r_socket_gets (s, buf, sizeof (buf));

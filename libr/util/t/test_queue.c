@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	RQueue *q = r_queue_new(5);
 	int n;
 
-	check_empty(q, R_TRUE);
+	check_empty(q, true);
 	r_queue_enqueue(q, (void *)1);
 	r_queue_enqueue(q, (void *)2);
 	r_queue_enqueue(q, (void *)3);
@@ -43,12 +43,12 @@ int main(int argc, char **argv) {
 	check(n, 6);
 	n = (int)r_queue_dequeue(q);
 	check(n, 7);
-	check_empty(q, R_FALSE);
+	check_empty(q, false);
 	n = (int)r_queue_dequeue(q);
 	check(n, 8);
 	n = (int)r_queue_dequeue(q);
 	check(n, 0);
-	check_empty(q, R_TRUE);
+	check_empty(q, true);
 
 	r_queue_enqueue(q, (void *)1);
 	r_queue_enqueue(q, (void *)2);
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 	n = (int)r_queue_dequeue(q);
 	check(n, 2);
 
-	check_empty(q, R_FALSE);
+	check_empty(q, false);
 
 	r_queue_free(q);
 	return 0;

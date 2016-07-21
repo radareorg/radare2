@@ -8,7 +8,7 @@ int main (int argc, char ** argv) {
 	ut8 buf [MAX_LINE+1];
 
 	memset (buf, 0, MAX_LINE+1);
-	RSocket *s = r_socket_new (R_TRUE);
+	RSocket *s = r_socket_new (true);
 	if (s == NULL) {
 		fprintf (stderr, "Error, cannot create new socket \n");
 		return 1;

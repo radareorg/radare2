@@ -156,7 +156,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	buf = calloc (1, bsize + 1);
 	if (!buf)
 		return 1;
-	ctx = r_hash_new (R_TRUE, algobit);
+	ctx = r_hash_new (true, algobit);
 
 	if (rad == 'j')
 		printf ("[");
@@ -572,7 +572,7 @@ int main(int argc, char **argv) {
 			for (i = 1; i < 0x800000; i <<= 1) {
 				if (algobit & i) {
 					int hashbit = i & algobit;
-					ctx = r_hash_new (R_TRUE, hashbit);
+					ctx = r_hash_new (true, hashbit);
 					from = 0;
 					to = strsz;
 					do_hash_internal (ctx, hashbit,

@@ -57,6 +57,11 @@ shlr/sdb/src/sdb-version.h
 shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
 shlr/capstone/
+sys/.mark_python-deps
+sys/.mark_swig
+sys/_work
+radare2-bindings
+radare2-regressions
 radare2-w32-*
 radare2-regressions
 tags

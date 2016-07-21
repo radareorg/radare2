@@ -86,17 +86,19 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 	ut32 magic = 0;
 	int len;
 
-	if (r_buf_read_at (bin->b, 0, (ut8*)&magic, 4) == -1) {
+	if (r_buf_read_at (bin->b, 0, (ut8*)&magic, 4) < 1) {
 		eprintf ("Error: read (magic)\n");
 		return false;
 	}
-	if (magic == MACH0_(MH_MAGIC))
+	if (magic == MACH0_(MH_MAGIC)) {
 		bin->big_endian = false;
-	else if (magic == MACH0_(MH_CIGAM))
+	} else if (magic == MACH0_(MH_CIGAM)) {
 		bin->big_endian = true;
-	else if (magic == FAT_CIGAM)
+	} else if (magic == FAT_CIGAM) {
 		bin->big_endian = true;
-	else return false; // object files are magic == 0, but body is different :?
+	} else {
+		return false; // object files are magic == 0, but body is different :?
+	}
 	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr,
 #if R_BIN_MACH064
 		bin->big_endian?"8I":"8i", 1
@@ -127,7 +129,7 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 			"MH_DEAD_STRIPPABLE_DYLIB=0x400000,"
 			"MH_HAS_TLV_DESCRIPTORS=0x800000,"
 			"MH_NO_HEAP_EXECUTION=0x1000000 }",0);
-	if (len == -1) {
+	if (len < 1) {
 		eprintf ("Error: read (hdr)\n");
 		return false;
 	}
@@ -255,7 +257,7 @@ static int parse_symtab(struct MACH0_(obj_t)* bin, ut64 off) {
 		bin->symstrlen = st.strsize;
 		len = r_buf_read_at (bin->b, st.stroff, (ut8*)bin->symstr,
 				st.strsize);
-		if (len == -1 || len == 0) {
+		if (len < 1) {
 			eprintf ("Error: read (symstr)\n");
 			R_FREE (bin->symstr);
 			return false;
@@ -1438,7 +1440,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		}
 		len = r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size);
 		i = r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
-		if (len < 1 || i == 0 || i == -1) {
+		if (len < 1 || i < 1) {
 			eprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n",
 			(ut64)(size_t)bin->dyld_info->bind_off);
 			free (opcodes);
@@ -1913,7 +1915,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 		if (entry > bin->size || entry + sizeof (b) > bin->size)
 			return 0;
 		i = r_buf_read_at (bin->b, entry, b, sizeof (b));
-		if (i == 0 || i == -1)
+		if (i < 1)
 			return 0;
 		for (i=0; i<64; i++) {
 			if (b[i] == 0xe8 && !b[i+3] && !b[i+4]) {

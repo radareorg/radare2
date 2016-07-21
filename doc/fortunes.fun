@@ -95,7 +95,7 @@ May the segfault be with you.
 I script in C, because I can.
 EXPLICIT CONTENT
 Bindings are mostly powered by tears.
-In Soviet Russia, radare2 have documentation.
+In Soviet Russia, radare2 has documentation.
 Initial frame selected; you cannot go up.
 Unk, unk, unk, unk
 Experts agree, security holes suck, and we fixed some of them!
