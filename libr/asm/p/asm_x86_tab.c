@@ -390,273 +390,273 @@ Opcode opcodes[] = {
 	//////////////////////
 
 	/////// 0x0_ ///////
-	{"add", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x00}},
-	{"add", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x01}},
-	{"add", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x02}},
-	{"add", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x03}},
-	{"add", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x04}},
-	{"add", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x05}},
+	//{"add", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x00}},
+	//{"add", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x01}},
+	//{"add", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x02}},
+	//{"add", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x03}},
+	//{"add", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x04}},
+	//{"add", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x05}},
+//
+	//{"push", {(OT_SEGMENTREG & OT_REG(X86R_ES))}, 1, {0x06}},
+	//{"pop", {(OT_SEGMENTREG & OT_REG(X86R_ES))}, 1, {0x07}},
+//
+	//{"or", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x08}},
+	//{"or", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x09}},
+	//{"or", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x0A}},
+	//{"or", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x0B}},
+	//{"or", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x0C}},
+	//{"or", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x0D}},
+//
+	//{"push", {(OT_SEGMENTREG & OT_REG(X86R_CS))}, 1, {0x0E}},
+	//// Two byte opcodes start with 0x0F
+//
+	///////// 0x1_ ///////
+	//{"adc", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x10}},
+	//{"adc", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x11}},
+	//{"adc", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x12}},
+	//{"adc", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x13}},
+	//{"adc", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x14}},
+	//{"adc", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x15}},
+//
+	//{"push", {(OT_SEGMENTREG & OT_REG(X86R_SS))}, 1, {0x16}},
+	//{"pop", {(OT_SEGMENTREG & OT_REG(X86R_SS))}, 1, {0x17}},
+//
+	//{"sbb", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x18}},
+	//{"sbb", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x19}},
+	//{"sbb", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x1A}},
+	//{"sbb", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x1B}},
+	//{"sbb", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x1C}},
+	//{"sbb", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x1D}},
+//
+	//{"push", {(OT_SEGMENTREG & OT_REG(X86R_DS))}, 1, {0x1E}},
+	//{"pop", {(OT_SEGMENTREG & OT_REG(X86R_DS))}, 1, {0x1F}},
+//
+	///////// 0x2_ ///////
+	//{"and", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x20}},
+	//{"and", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x21}},
+	//{"and", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x22}},
+	//{"and", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x23}},
+	//{"and", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x24}},
+	//{"and", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x25}},
+//
+	//// 0x26: ES segment prefix
+	//{"daa", {}, 1, {0x27}},
+//
+	//{"sub", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x28}},
+	//{"sub", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x29}},
+	//{"sub", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x2A}},
+	//{"sub", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x2B}},
+	//{"sub", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x2C}},
+	//{"sub", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x2D}},
+//
+	//// 0x2E: CS segment prefix
+	//{"das", {}, 1, {0x2F}},
+//
+	///////// 0x3_ ///////
+	//{"xor", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x30}},
+	//{"xor", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x31}},
+	//{"xor", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x32}},
+	//{"xor", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x33}},
+	//{"xor", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x34}},
+	//{"xor", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x35}},
+//
+	//// 0x36: SS segment prefix
+	//{"aaa", {}, 1, {0x37}},
+//
+	//{"cmp", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x38}},
+	//{"cmp", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x39}},
+	//{"cmp", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x3A}},
+	//{"cmp", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x3B}},
+	//{"cmp", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x3C}},
+	//{"cmp", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x3D}},
+//
+	//// 0x3E: DS segment prefix
+	//{"aas", {}, 1, {0x3F}},
+//
+	///////// 0x4_ ///////
+	//{"inc", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x40}},
+	//{"inc", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x41}},
+	//{"inc", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x42}},
+	//{"inc", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x43}},
+	//{"inc", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x44}},
+	//{"inc", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x45}},
+	//{"inc", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x46}},
+	//{"inc", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x47}},
+	//{"dec", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x48}},
+	//{"dec", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x49}},
+	//{"dec", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x4A}},
+	//{"dec", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x4B}},
+	//{"dec", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x4C}},
+	//{"dec", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x4D}},
+	//{"dec", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x4E}},
+	//{"dec", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x4F}},
 
-	{"push", {(OT_SEGMENTREG & OT_REG(X86R_ES))}, 1, {0x06}},
-	{"pop", {(OT_SEGMENTREG & OT_REG(X86R_ES))}, 1, {0x07}},
-
-	{"or", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x08}},
-	{"or", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x09}},
-	{"or", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x0A}},
-	{"or", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x0B}},
-	{"or", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x0C}},
-	{"or", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x0D}},
-
-	{"push", {(OT_SEGMENTREG & OT_REG(X86R_CS))}, 1, {0x0E}},
-	// Two byte opcodes start with 0x0F
-
-	/////// 0x1_ ///////
-	{"adc", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x10}},
-	{"adc", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x11}},
-	{"adc", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x12}},
-	{"adc", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x13}},
-	{"adc", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x14}},
-	{"adc", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x15}},
-
-	{"push", {(OT_SEGMENTREG & OT_REG(X86R_SS))}, 1, {0x16}},
-	{"pop", {(OT_SEGMENTREG & OT_REG(X86R_SS))}, 1, {0x17}},
-
-	{"sbb", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x18}},
-	{"sbb", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x19}},
-	{"sbb", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x1A}},
-	{"sbb", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x1B}},
-	{"sbb", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x1C}},
-	{"sbb", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x1D}},
-
-	{"push", {(OT_SEGMENTREG & OT_REG(X86R_DS))}, 1, {0x1E}},
-	{"pop", {(OT_SEGMENTREG & OT_REG(X86R_DS))}, 1, {0x1F}},
-
-	/////// 0x2_ ///////
-	{"and", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x20}},
-	{"and", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x21}},
-	{"and", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x22}},
-	{"and", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x23}},
-	{"and", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x24}},
-	{"and", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x25}},
-
-	// 0x26: ES segment prefix
-	{"daa", {}, 1, {0x27}},
-
-	{"sub", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x28}},
-	{"sub", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x29}},
-	{"sub", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x2A}},
-	{"sub", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x2B}},
-	{"sub", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x2C}},
-	{"sub", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x2D}},
-
-	// 0x2E: CS segment prefix
-	{"das", {}, 1, {0x2F}},
-
-	/////// 0x3_ ///////
-	{"xor", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x30}},
-	{"xor", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x31}},
-	{"xor", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x32}},
-	{"xor", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x33}},
-	{"xor", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x34}},
-	{"xor", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x35}},
-
-	// 0x36: SS segment prefix
-	{"aaa", {}, 1, {0x37}},
-
-	{"cmp", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x38}},
-	{"cmp", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x39}},
-	{"cmp", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x3A}},
-	{"cmp", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x3B}},
-	{"cmp", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x3C}},
-	{"cmp", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x3D}},
-
-	// 0x3E: DS segment prefix
-	{"aas", {}, 1, {0x3F}},
-
-	/////// 0x4_ ///////
-	{"inc", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x40}},
-	{"inc", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x41}},
-	{"inc", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x42}},
-	{"inc", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x43}},
-	{"inc", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x44}},
-	{"inc", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x45}},
-	{"inc", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x46}},
-	{"inc", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x47}},
-	{"dec", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x48}},
-	{"dec", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x49}},
-	{"dec", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x4A}},
-	{"dec", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x4B}},
-	{"dec", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x4C}},
-	{"dec", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x4D}},
-	{"dec", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x4E}},
-	{"dec", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x4F}},
-
-	/////// 0x5_ ///////
-	{"push", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x50}},
-	{"push", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x51}},
-	{"push", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x52}},
-	{"push", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x53}},
-	{"push", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x54}},
-	{"push", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x55}},
-	{"push", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x56}},
-	{"push", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x57}},
-	{"pop", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x58}},
-	{"pop", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x59}},
-	{"pop", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x5A}},
-	{"pop", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x5B}},
-	{"pop", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x5C}},
-	{"pop", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x5D}},
-	{"pop", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x5E}},
-	{"pop", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x5F}},
-
-	/////// 0x6_ ///////
-	{"pusha", {}, 1, {0x60}},	{"pushad", {}, 1, {0x60}},
-	{"popa", {}, 1, {0x61}},	{"popad", {}, 1, {0x61}},
+	///////// 0x5_ ///////
+	//{"push", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x50}},
+	//{"push", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x51}},
+	//{"push", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x52}},
+	//{"push", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x53}},
+	//{"push", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x54}},
+	//{"push", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x55}},
+	//{"push", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x56}},
+	//{"push", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x57}},
+	//{"pop", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x58}},
+	//{"pop", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x59}},
+	//{"pop", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x5A}},
+	//{"pop", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x5B}},
+	//{"pop", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x5C}},
+	//{"pop", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x5D}},
+	//{"pop", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x5E}},
+	//{"pop", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x5F}},
+//
+	///////// 0x6_ ///////
+	//{"pusha", {}, 1, {0x60}},	{"pushad", {}, 1, {0x60}},
+	//{"popa", {}, 1, {0x61}},	{"popad", {}, 1, {0x61}},
 	{"bound", {OT_REGSPECOP(GP) | OT_DWORD, OT_MEMONLYOP | OT_QWORD}, 1, {0x62}},
 	{"arpl", {OT_REGMEMOP(GP) | OT_WORD, OT_REGSPECOP(GP) | OT_WORD}, 1, {0x63}},
 	// 0x64: FS segment prefix
 	// 0x65: GS segment prefix
 	// 0x66: operand size prefix
 	// 0x67: address size prefix
-	{"push", {OT_IMMOP | OT_DWORD}, 1, {0x68}},
+	//{"push", {OT_IMMOP | OT_DWORD}, 1, {0x68}},
 	{"imul", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x69}},
-	{"push", {OT_IMMOP | OT_BYTE}, 1, {0x6A}},
+	//{"push", {OT_IMMOP | OT_BYTE}, 1, {0x6A}},
 	{"imul", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x6B}},
-	{"insb", {}, 1, {0x6C}},
-	{"ins", {}, 1, {0x6D}}, {"insd", {}, 1, {0x6D}},
-	{"insw", {}, 2, {0x66, 0x6D}},
-	{"outsb", {}, 1, {0x6E}},
-	{"outs", {}, 1, {0x6F}}, {"outsd", {}, 1, {0x6F}},
-	{"outsw", {}, 2, {0x66, 0x6F}},
+	//{"insb", {}, 1, {0x6C}},
+	//{"ins", {}, 1, {0x6D}}, {"insd", {}, 1, {0x6D}},
+	//{"insw", {}, 2, {0x66, 0x6D}},
+	//{"outsb", {}, 1, {0x6E}},
+	//{"outs", {}, 1, {0x6F}}, {"outsd", {}, 1, {0x6F}},
+	//{"outsw", {}, 2, {0x66, 0x6F}},
 
 	/////// 0x7_ ///////
-	{"jo", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x70}},
-	{"jno", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x71}},
-	{"jb", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x72}},
-	{"jnae", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x72}},
-	{"jc", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x72}},
-	{"jnb", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x73}},
-	{"jae", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x73}},
-	{"jnc", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x73}},
-	{"jz", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x74}},
-	{"je", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x74}},
-	{"jnz", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x75}},
-	{"jne", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x75}},
-	{"jbe", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x76}},
-	{"jna", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x76}},
-	{"jnbe", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x77}},
-	{"ja", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x77}},
-	{"js", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x78}},
-	{"jns", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x79}},
-	{"jp", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7A}},
-	{"jpe", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7A}},
-	{"jnp", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7B}},
-	{"jpo", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7B}},
-	{"jl", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7C}},
-	{"jnge", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7C}},
-	{"jnl", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7D}},
-	{"jge", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7D}},
-	{"jle", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7E}},
-	{"jng", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7E}},
-	{"jnle", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7F}},
-	{"jg", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7F}},
+	//{"jo", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x70}},
+	//{"jno", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x71}},
+	//{"jb", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x72}},
+	//{"jnae", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x72}},
+	//{"jc", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x72}},
+	//{"jnb", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x73}},
+	//{"jae", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x73}},
+	//{"jnc", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x73}},
+	//{"jz", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x74}},
+	//{"je", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x74}},
+	//{"jnz", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x75}},
+	//{"jne", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x75}},
+	//{"jbe", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x76}},
+	//{"jna", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x76}},
+	//{"jnbe", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x77}},
+	//{"ja", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x77}},
+	//{"js", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x78}},
+	//{"jns", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x79}},
+	//{"jp", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7A}},
+	//{"jpe", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7A}},
+	//{"jnp", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7B}},
+	//{"jpo", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7B}},
+	//{"jl", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7C}},
+	//{"jnge", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7C}},
+	//{"jnl", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7D}},
+	//{"jge", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7D}},
+	//{"jle", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7E}},
+	//{"jng", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7E}},
+	//{"jnle", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7F}},
+	//{"jg", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0x7F}},
 
 	/////// 0x8_ ///////
 	// 0x80 -- 0x83: immediate group 1
 	// 0x84, 0x85: TODO: test
 	// 0x86, 0x87: TODO: xchg
-	{"mov", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x88}},
-	{"mov", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x89}},
-	{"mov", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x8A}},
-	{"mov", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x8B}},
-	{"mov", {OT_MEMONLYOP | OT_WORD, OT_REGSPECOP(SEGMENT) | OT_WORD}, 1, {0x8C}}, // ?
-	{"lea", {OT_REGSPECOP(GP) | OT_DWORD, OT_MEMONLYOP | OT_DWORD}, 1, {0x8D}},	// allow all sizes?
-	{"mov", {OT_REGSPECOP(SEGMENT) | OT_WORD, OT_MEMONLYOP | OT_WORD}, 1, {0x8E}}, // ?
-	{"pop", {}, 1, {0x8F}},  // ?
+	//{"mov", {OT_REGMEMOP(GP) | OT_BYTE, OT_REGSPECOP(GP) | OT_BYTE}, 1, {0x88}},
+	////{"mov", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 1, {0x89}},
+	//{"mov", {OT_REGSPECOP(GP) | OT_BYTE, OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x8A}},
+	//{"mov", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 1, {0x8B}},
+	//{"mov", {OT_MEMONLYOP | OT_WORD, OT_REGSPECOP(SEGMENT) | OT_WORD}, 1, {0x8C}}, // ?
+	//{"lea", {OT_REGSPECOP(GP) | OT_DWORD, OT_MEMONLYOP | OT_DWORD}, 1, {0x8D}},	// allow all sizes?
+	//{"mov", {OT_REGSPECOP(SEGMENT) | OT_WORD, OT_MEMONLYOP | OT_WORD}, 1, {0x8E}}, // ?
+	//{"pop", {}, 1, {0x8F}},  // ?
 
 	/////// 0x9_ ///////
-	{"nop", {}, 1, {0x90}},
-	{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x90}},
-	{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x91}},
-	{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x92}},
-	{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x93}},
-	{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x94}},
-	{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x95}},
-	{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x96}},
-	{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x97}},
-	{"cbw", {}, 1, {0x98}},
-	{"cwde", {}, 2, {0x66, 0x98}},  // ?
-	{"cwd", {}, 1, {0x99}},
-	{"cdq", {}, 2, {0x66, 0x99}},  // ?
+	//{"nop", {}, 1, {0x90}},
+	//{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0x90}},
+	//{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 1, {0x91}},
+	//{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 1, {0x92}},
+	//{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 1, {0x93}},
+	//{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 1, {0x94}},
+	//{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 1, {0x95}},
+	//{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 1, {0x96}},
+	//{"xchg", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 1, {0x97}},
+	//{"cbw", {}, 1, {0x98}},
+	//{"cwde", {}, 2, {0x66, 0x98}},  // ?
+	//{"cwd", {}, 1, {0x99}},
+	//{"cdq", {}, 2, {0x66, 0x99}},  // ?
 	// 0x9A: TODO far call
-	{"wait", {}, 1, {0x9B}},
-	{"fwait", {}, 1, {0x9B}},
-	{"pushfd", {}, 1, {0x9C}},
-	{"popfd", {}, 1, {0x9D}},
-	{"sahf", {}, 1, {0x9E}},
-	{"lahf", {}, 1, {0x9F}},
+	//{"wait", {}, 1, {0x9B}},
+	//{"fwait", {}, 1, {0x9B}},
+	//{"pushfd", {}, 1, {0x9C}},
+	//{"popfd", {}, 1, {0x9D}},
+	//{"sahf", {}, 1, {0x9E}},
+	//{"lahf", {}, 1, {0x9F}},
 
 	/////// 0xA_ ///////
-	{"mov", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_MEMIMMOP | OT_BYTE}, 1, {0xA0}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_MEMIMMOP | OT_DWORD}, 1, {0xA1}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_MEMIMMOP | OT_BYTE}, 1, {0xA0}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_MEMIMMOP | OT_DWORD}, 1, {0xA1}},
 	// 0xA2 -- 0xA3
-	{"movsb", {}, 1, {0xA4}},
-	{"movsd", {}, 1, {0xA5}},
-	{"movsw", {}, 2, {0x66, 0xA5}},
-	{"cmpsb", {}, 1, {0xA6}},
-	{"cmpsd", {}, 1, {0xA7}},
-	{"cmpsw", {}, 2, {0x66, 0xA7}},
+	//{"movsb", {}, 1, {0xA4}},
+	//{"movsd", {}, 1, {0xA5}},
+	//{"movsw", {}, 2, {0x66, 0xA5}},
+	//{"cmpsb", {}, 1, {0xA6}},
+	//{"cmpsd", {}, 1, {0xA7}},
+	//{"cmpsw", {}, 2, {0x66, 0xA7}},
 	// 0xA8 -- 0xA9: as above
-	{"stosb", {}, 1, {0xAA}},
-	{"stosd", {}, 1, {0xAB}},
-	{"stosw", {}, 2, {0x66, 0xAB}},
-	{"lodsb", {}, 1, {0xAC}},
-	{"lodsd", {}, 1, {0xAD}},
-	{"lodsw", {}, 2, {0x66, 0xAD}},
-	{"scasb", {}, 1, {0xAE}},
-	{"scasd", {}, 1, {0xAF}},
-	{"scasw", {}, 2, {0x66, 0xAF}},
+	//{"stosb", {}, 1, {0xAA}},
+	//{"stosd", {}, 1, {0xAB}},
+	//{"stosw", {}, 2, {0x66, 0xAB}},
+	//{"lodsb", {}, 1, {0xAC}},
+	//{"lodsd", {}, 1, {0xAD}},
+	//{"lodsw", {}, 2, {0x66, 0xAD}},
+	//{"scasb", {}, 1, {0xAE}},
+	//{"scasd", {}, 1, {0xAF}},
+	//{"scasw", {}, 2, {0x66, 0xAF}},
 
 	/////// 0xB_ ///////
-	{"mov", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB0}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_CL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB1}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_DL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB2}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_BL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB3}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_AH)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB4}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_CH)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB5}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_DH)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB6}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_BH)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB7}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xB8}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xB9}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBA}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBB}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBC}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBD}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBE}},
-	{"mov", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBF}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB0}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_CL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB1}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_DL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB2}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_BL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB3}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_AH)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB4}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_CH)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB5}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_DH)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB6}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_BH)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xB7}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xB8}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xB9}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBA}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBB}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBC}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBD}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBE}},
+	//{"mov", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0xBF}},
 
 	/////// 0xC_ ///////
 	// 0xC0 -- 0xC1: shift group 2
-	{"ret", {OT_IMMOP | OT_WORD}, 1, {0xC2}},
-	{"ret", {}, 1, {0xC3}},
+	//{"ret", {OT_IMMOP | OT_WORD}, 1, {0xC2}},
+	//{"ret", {}, 1, {0xC3}},
 	{"les", {OT_REGSPECOP(GP) | OT_DWORD, OT_MEMONLYOP | OT_BYTE}, 1, {0xC4}},
 	{"lds", {OT_REGSPECOP(GP) | OT_DWORD, OT_MEMONLYOP | OT_BYTE}, 1, {0xC5}},
 	// 0xC6 -- 0xC7 mov group
 	{"enter", {OT_IMMOP | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0xC8}},
-	{"leave", {}, 1, {0xC9}},
-	{"retf", {OT_IMMOP | OT_WORD}, 1, {0xCA}},
-	{"retf", {}, 1, {0xCB}},
-	{"int3", {}, 1, {0xCC}},
-	{"int", {OT_IMMOP | OT_BYTE}, 1, {0xCD}},
-	{"into", {}, 1, {0xCE}},
-	{"iretd", {OT_IMMOP | OT_BYTE}, 1, {0xCF}},
+	//{"leave", {}, 1, {0xC9}},
+	//{"retf", {OT_IMMOP | OT_WORD}, 1, {0xCA}},
+	//{"retf", {}, 1, {0xCB}},
+	//{"int3", {}, 1, {0xCC}},
+	//{"int", {OT_IMMOP | OT_BYTE}, 1, {0xCD}},
+	//{"into", {}, 1, {0xCE}},
+	//{"iretd", {OT_IMMOP | OT_BYTE}, 1, {0xCF}},
 
 	/////// 0xD_ ///////
 	// 0xD0 -- 0xD3: shift group 2
 	{"aam", {OT_IMMOP | OT_BYTE}, 1, {0xD4}},  // ?
 	{"aad", {OT_IMMOP | OT_BYTE}, 1, {0xD5}},  // ?
 	// 0xD6: reserved
-	{"xlatb", {}, 1, {0xD7}},
+	//{"xlatb", {}, 1, {0xD7}},
 	// 0xD8 -- 0xDF: FPU
 
 	/////// 0xE_ ///////
@@ -665,33 +665,33 @@ Opcode opcodes[] = {
 	{"loop", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0xE2}},
 	{"jcxz", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0xE3}},
 	{"jecxz", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0xE3}},
-	{"in", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xE4}},
-	{"in", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0xE5}},
-	{"out", {OT_IMMOP | OT_BYTE, (OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE}, 1, {0xE6}},
-	{"out", {OT_IMMOP | OT_BYTE, (OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0xE7}},
-	{"call", {OT_IMMOP | OT_DWORD}, 1, {0xE8}},
-	{"jmp", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0xE9}},
-	{"jmp", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0xEA}},  // ?
-	{"jmp", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0xEB}},
-	{"in", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, (OT_GPREG & OT_REG(X86R_DX)) | OT_WORD}, 1, {0xEC}},
-	{"in", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_DX)) | OT_WORD}, 1, {0xED}},
-	{"out", {(OT_GPREG & OT_REG(X86R_DX)) | OT_WORD, (OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE}, 1, {0xEE}},
-	{"out", {(OT_GPREG & OT_REG(X86R_DX)) | OT_WORD, (OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0xEF}},
+	//{"in", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0xE4}},
+	//{"in", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0xE5}},
+	//{"out", {OT_IMMOP | OT_BYTE, (OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE}, 1, {0xE6}},
+	//{"out", {OT_IMMOP | OT_BYTE, (OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0xE7}},
+	//{"call", {OT_IMMOP | OT_DWORD}, 1, {0xE8}},
+	//{"jmp", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0xE9}},
+	//{"jmp", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0xEA}},  // ?
+	//{"jmp", {OT_IMMOP | OT_JMPADDRESS | OT_BYTE}, 1, {0xEB}},
+	//{"in", {(OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE, (OT_GPREG & OT_REG(X86R_DX)) | OT_WORD}, 1, {0xEC}},
+	//{"in", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD, (OT_GPREG & OT_REG(X86R_DX)) | OT_WORD}, 1, {0xED}},
+	//{"out", {(OT_GPREG & OT_REG(X86R_DX)) | OT_WORD, (OT_GPREG & OT_REG(X86R_AL)) | OT_BYTE}, 1, {0xEE}},
+	//{"out", {(OT_GPREG & OT_REG(X86R_DX)) | OT_WORD, (OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 1, {0xEF}},
 
 	/////// 0xF_ ///////
 	// 0xF0: lock prefix
 	// 0xF1: reserved
 	// 0xF2: repne prefix
 	// 0xF3: rep(e) prefix
-	{"hlt", {}, 1, {0xF4}},
-	{"cmc", {}, 1, {0xF5}},
+	//{"hlt", {}, 1, {0xF4}},
+	//{"cmc", {}, 1, {0xF5}},
 	// 0xF6 -- 0xF7: unary group 3
-	{"clc", {}, 1, {0xF8}},
-	{"stc", {}, 1, {0xF9}},
-	{"cli", {}, 1, {0xFA}},
-	{"sti", {}, 1, {0xFB}},
-	{"cld", {}, 1, {0xFC}},
-	{"std", {}, 1, {0xFD}},
+	//{"clc", {}, 1, {0xF8}},
+	//{"stc", {}, 1, {0xF9}},
+	//{"cli", {}, 1, {0xFA}},
+	//{"sti", {}, 1, {0xFB}},
+	//{"cld", {}, 1, {0xFC}},
+	//{"std", {}, 1, {0xFD}},
 	// 0xFE: group 4
 	// 0xFF: group 5
 
@@ -705,15 +705,15 @@ Opcode opcodes[] = {
 	{"lar", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 2, {0x0F, 0x02}},
 	{"lsl", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGMEMOP(GP) | OT_DWORD}, 2, {0x0F, 0x03}},
 	// 0x0F 0x04-0x05: reserved
-	{"clts", {}, 2, {0x0F, 0x06}},
+	//{"clts", {}, 2, {0x0F, 0x06}},
 	// 0x0F 0x07: reserved
-	{"invd", {}, 2, {0x0F, 0x08}},
-	{"wbinvd", {}, 2, {0x0F, 0x09}},
+	//{"invd", {}, 2, {0x0F, 0x08}},
+	//{"wbinvd", {}, 2, {0x0F, 0x09}},
 	// 0x0F 0x0A: reserved
-	{"ud2", {}, 2, {0x0F, 0x0B}},
+	//{"ud2", {}, 2, {0x0F, 0x0B}},
 	// 0x0F 0x0C: reserved
-	{"prefetch", {}, 2, {0x0F, 0x0D}},
-	{"femms", {}, 2, {0x0F, 0x0E}},
+	//{"prefetch", {}, 2, {0x0F, 0x0D}},
+	//{"femms", {}, 2, {0x0F, 0x0E}},
 	// 0x0F 0x0F: 3DNow! prefix
 
 	/////// 0x0F 0x1_ ///////
@@ -729,10 +729,10 @@ Opcode opcodes[] = {
 	// 0x0F 0x19-0x1F: reserved
 
 	/////// 0x0F 0x2_ ///////
-	{"mov", {OT_CONTROLREG, OT_REGMEMOP(GP) | OT_DWORD}, 2, {0x0F, 0x20}},
-	{"mov", {OT_REGMEMOP(GP) | OT_DWORD, OT_DEBUGREG}, 2, {0x0F, 0x21}},
-	{"mov", {OT_REGMEMOP(GP) | OT_DWORD, OT_CONTROLREG}, 2, {0x0F, 0x22}},
-	{"mov", {OT_DEBUGREG, OT_REGMEMOP(GP) | OT_DWORD}, 2, {0x0F, 0x23}},
+	//{"mov", {OT_CONTROLREG, OT_REGMEMOP(GP) | OT_DWORD}, 2, {0x0F, 0x20}},
+	//{"mov", {OT_REGMEMOP(GP) | OT_DWORD, OT_DEBUGREG}, 2, {0x0F, 0x21}},
+	//{"mov", {OT_REGMEMOP(GP) | OT_DWORD, OT_CONTROLREG}, 2, {0x0F, 0x22}},
+	//{"mov", {OT_DEBUGREG, OT_REGMEMOP(GP) | OT_DWORD}, 2, {0x0F, 0x23}},
 	// 0x0F 0x24-0x27: reserved
 	{"movaps", {OT_REGSPECOP(XMM) | OT_OWORD, OT_REGMEMOP(XMM) | OT_OWORD}, 2, {0x0F, 0x28}},
 	{"movaps", {OT_REGMEMOP(XMM) | OT_OWORD, OT_REGSPECOP(XMM) | OT_OWORD}, 2, {0x0F, 0x29}},
@@ -744,12 +744,12 @@ Opcode opcodes[] = {
 	{"comiss", {OT_REGSPECOP(XMM) | OT_OWORD, OT_REGMEMOP(XMM) | OT_OWORD}, 2, {0x0F, 0x2F}},
 
 	/////// 0x0F 0x3_ ///////
-	{"wrmsr", {}, 2, {0x0F, 0x30}},
-	{"rdtsc", {}, 2, {0x0F, 0x31}},
-	{"rdmsr", {}, 2, {0x0F, 0x32}},
-	{"rdpmc", {}, 2, {0x0F, 0x33}},
-	{"sysenter", {}, 2, {0x0F, 0x34}},
-	{"sysexit", {}, 2, {0x0F, 0x35}},
+	//{"wrmsr", {}, 2, {0x0F, 0x30}},
+	//{"rdtsc", {}, 2, {0x0F, 0x31}},
+	//{"rdmsr", {}, 2, {0x0F, 0x32}},
+	//{"rdpmc", {}, 2, {0x0F, 0x33}},
+	//{"sysenter", {}, 2, {0x0F, 0x34}},
+	//{"sysexit", {}, 2, {0x0F, 0x35}},
 	// 0x0F 0x36-0x3F: reserved
 
 	/////// 0x0F 0x4_ ///////
@@ -833,36 +833,36 @@ Opcode opcodes[] = {
 	{"movq", {OT_REGMEMOP(MMX) | OT_QWORD, OT_REGSPECOP(MMX) | OT_QWORD}, 2, {0x0F, 0x7F}},
 
 	/////// 0x0F 0x8_ ///////
-	{"jo", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x80}},
-	{"jno", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x81}},
-	{"jb", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
-	{"jnae", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
-	{"jc", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
-	{"jnb", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
-	{"jae", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
-	{"jnc", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
-	{"jz", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x84}},
-	{"je", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x84}},
-	{"jnz", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x85}},
-	{"jne", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x85}},
-	{"jbe", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x86}},
-	{"jna", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x86}},
-	{"jnbe", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x87}},
-	{"ja", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x87}},
-	{"js", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x88}},
-	{"jns", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x89}},
-	{"jp", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8A}},
-	{"jpe", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8A}},
-	{"jnp", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8B}},
-	{"jpo", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8B}},
-	{"jl", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8C}},
-	{"jnge", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8C}},
-	{"jnl", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8D}},
-	{"jge", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8D}},
-	{"jle", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8E}},
-	{"jng", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8E}},
-	{"jnle", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8F}},
-	{"jg", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8F}},
+	//{"jo", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x80}},
+	//{"jno", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x81}},
+	//{"jb", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
+	//{"jnae", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
+	//{"jc", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x82}},
+	//{"jnb", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
+	//{"jae", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
+	//{"jnc", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x83}},
+	//{"jz", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x84}},
+	//{"je", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x84}},
+	//{"jnz", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x85}},
+	//{"jne", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x85}},
+	//{"jbe", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x86}},
+	//{"jna", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x86}},
+	//{"jnbe", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x87}},
+	//{"ja", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x87}},
+	//{"js", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x88}},
+	//{"jns", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x89}},
+	//{"jp", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8A}},
+	//{"jpe", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8A}},
+	//{"jnp", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8B}},
+	//{"jpo", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8B}},
+	//{"jl", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8C}},
+	//{"jnge", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8C}},
+	//{"jnl", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8D}},
+	//{"jge", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8D}},
+	//{"jle", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8E}},
+	//{"jng", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8E}},
+	//{"jnle", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8F}},
+	//{"jg", {OT_IMMOP | OT_JMPADDRESS | OT_DWORD}, 1, {0x0F, 0x8F}},
 
 	/////// 0x0F 0x9_ ///////
 	// TODO: what is the value of spec for these instructions?
@@ -898,16 +898,16 @@ Opcode opcodes[] = {
 	{"setg", {OT_REGMEMOP(GP) | OT_BYTE}, 1, {0x0F, 0x9F}},
 
 	/////// 0x0F 0xA_ ///////
-	{"push", {(OT_SEGMENTREG & OT_REG(X86R_FS))}, 2, {0x0F, 0xA0}},
-	{"pop", {(OT_SEGMENTREG & OT_REG(X86R_FS))}, 2, {0x0F, 0xA1}},
-	{"cpuid", {}, 2, {0x0F, 0xA2}},
-	{"bt", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 2, {0x0F, 0xA3}},
+	//{"push", {(OT_SEGMENTREG & OT_REG(X86R_FS))}, 2, {0x0F, 0xA0}},
+	//{"pop", {(OT_SEGMENTREG & OT_REG(X86R_FS))}, 2, {0x0F, 0xA1}},
+	//{"cpuid", {}, 2, {0x0F, 0xA2}},
+	//{"bt", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 2, {0x0F, 0xA3}},
 	{"shld", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 2, {0x0F, 0xA4}},
 	{"shld", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD, (OT_GPREG & OT_REG(X86R_CL)) | OT_BYTE}, 2, {0x0F, 0xA5}},
 	// 0x0F 0xA6-0xA7: reserved
-	{"push", {(OT_SEGMENTREG & OT_REG(X86R_GS))}, 2, {0x0F, 0xA8}},
-	{"pop", {(OT_SEGMENTREG & OT_REG(X86R_GS))}, 2, {0x0F, 0xA9}},
-	{"rsm", {}, 2, {0x0F, 0xAA}},
+	//{"push", {(OT_SEGMENTREG & OT_REG(X86R_GS))}, 2, {0x0F, 0xA8}},
+	//{"pop", {(OT_SEGMENTREG & OT_REG(X86R_GS))}, 2, {0x0F, 0xA9}},
+	//{"rsm", {}, 2, {0x0F, 0xAA}},
 	{"bts", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD}, 2, {0x0F, 0xAB}},
 	{"shrd", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 2, {0x0F, 0xAC}},
 	{"shrd", {OT_REGMEMOP(GP) | OT_DWORD, OT_REGSPECOP(GP) | OT_DWORD, (OT_GPREG & OT_REG(X86R_CL)) | OT_BYTE}, 2, {0x0F, 0xAD}},
@@ -941,14 +941,14 @@ Opcode opcodes[] = {
 	{"pextrw", {OT_REGSPECOP(GP) | OT_DWORD, OT_REGONLYOP(MMX) | OT_QWORD, OT_IMMOP | OT_BYTE}, 2, {0x0F, 0xC5}},
 	{"shufps", {OT_REGSPECOP(XMM) | OT_OWORD, OT_REGMEMOP(XMM) | OT_OWORD, OT_IMMOP | OT_BYTE}, 2, {0x0F, 0xC6}},
 	// 0x0F 0xB7: group 9
-	{"bswap", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 2, {0x0F, 0xC8}},
-	{"bswap", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 2, {0x0F, 0xC9}},
-	{"bswap", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 2, {0x0F, 0xCA}},
-	{"bswap", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 2, {0x0F, 0xCB}},
-	{"bswap", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 2, {0x0F, 0xCC}},
-	{"bswap", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 2, {0x0F, 0xCD}},
-	{"bswap", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 2, {0x0F, 0xCE}},
-	{"bswap", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 2, {0x0F, 0xCF}},
+	//{"bswap", {(OT_GPREG & OT_REG(X86R_EAX)) | OT_DWORD}, 2, {0x0F, 0xC8}},
+	//{"bswap", {(OT_GPREG & OT_REG(X86R_ECX)) | OT_DWORD}, 2, {0x0F, 0xC9}},
+	//{"bswap", {(OT_GPREG & OT_REG(X86R_EDX)) | OT_DWORD}, 2, {0x0F, 0xCA}},
+	//{"bswap", {(OT_GPREG & OT_REG(X86R_EBX)) | OT_DWORD}, 2, {0x0F, 0xCB}},
+	//{"bswap", {(OT_GPREG & OT_REG(X86R_ESP)) | OT_DWORD}, 2, {0x0F, 0xCC}},
+	//{"bswap", {(OT_GPREG & OT_REG(X86R_EBP)) | OT_DWORD}, 2, {0x0F, 0xCD}},
+	//{"bswap", {(OT_GPREG & OT_REG(X86R_ESI)) | OT_DWORD}, 2, {0x0F, 0xCE}},
+	//{"bswap", {(OT_GPREG & OT_REG(X86R_EDI)) | OT_DWORD}, 2, {0x0F, 0xCF}},
 
 	/////// 0x0F 0xD_ ///////
 	// 0x0F 0xD0: reserved
@@ -1015,34 +1015,34 @@ Opcode opcodes[] = {
 	///////////////////////////////////////////
 
 	// IMMEDIATE GROUP 1
-	{"add", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 0},
-	{"or", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 1},
-	{"adc", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 2},
-	{"sbb", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 3},
-	{"and", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 4},
-	{"sub", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 5},
-	{"xor", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 6},
-	{"cmp", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 7},
-
-	{"add", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 0},
-	{"or", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 1},
-	{"adc", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 2},
-	{"sbb", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 3},
-	{"and", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 4},
-	{"sub", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 5},
-	{"xor", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 6},
-	{"cmp", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 7},
+	//{"add", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 0},
+	//{"or", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 1},
+	//{"adc", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 2},
+	//{"sbb", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 3},
+	//{"and", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 4},
+	//{"sub", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 5},
+	//{"xor", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 6},
+	//{"cmp", {OT_REGMEMOP(GP) | OT_BYTE, OT_IMMOP | OT_BYTE}, 1, {0x80}, SPECIAL_SPEC + 7},
+//
+	//{"add", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 0},
+	//{"or", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 1},
+	//{"adc", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 2},
+	//{"sbb", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 3},
+	//{"and", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 4},
+	//{"sub", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 5},
+	//{"xor", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 6},
+	//{"cmp", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_DWORD}, 1, {0x81}, SPECIAL_SPEC + 7},
 
 	// Are there opcodes starting with 0x82?
 
-	{"add", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 0},
-	{"or", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 1},
-	{"adc", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 2},
-	{"sbb", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 3},
-	{"and", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 4},
-	{"sub", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 5},
-	{"xor", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 6},
-	{"cmp", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 7},
+	//{"add", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 0},
+	//{"or", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 1},
+	//{"adc", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 2},
+	//{"sbb", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 3},
+	//{"and", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 4},
+	//{"sub", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 5},
+	//{"xor", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 6},
+	//{"cmp", {OT_REGMEMOP(GP) | OT_DWORD, OT_IMMOP | OT_BYTE}, 1, {0x83}, SPECIAL_SPEC + 7},
 
 	// SHIFT GROUP 2
 	// TODO
@@ -1057,7 +1057,7 @@ Opcode opcodes[] = {
 	{"fadd", {OT_REGONLYOP(FPU), (OT_FPUREG & OT_REG(0)) | OT_FPUSIZE}, 1, {0xDC}, SPECIAL_SPEC + 0},
 	// ...
 
-	{"fsin", {}, 2, {0xD9, 0xFE}}
+	//{"fsin", {}, 2, {0xD9, 0xFE}}
 };
 
 
