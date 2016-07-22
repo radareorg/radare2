@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../asm/arch/csr/dis.c"
+#include "../asm/arch/xap/dis.c"
 
 static int label_off(struct directive *d) {
 	int off = d->d_operand;
@@ -37,7 +37,7 @@ static inline ut16 i2ut16(struct instruction *in) {
 	return *((uint16_t*)in);
 }
 
-static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len) {
+static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len) {
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
 	struct directive d = {{0}};
@@ -57,7 +57,7 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	memcpy (&d.d_inst, s.s_buf, sizeof (d.d_inst));
 	s.s_off += 2;
 	d.d_off = s.s_off;
-	csr_decode (&s, &d);
+	xap_decode (&s, &d);
 	d.d_operand = get_operand (&s, &d);
 
 	memset (op, 0, sizeof (RAnalOp));
@@ -203,19 +203,19 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	return op->size;
 }
 
-struct r_anal_plugin_t r_anal_plugin_csr = {
-	.name = "csr",
-	.desc = "CSR code analysis plugin",
+struct r_anal_plugin_t r_anal_plugin_xap = {
+	.name = "xap",
+	.desc = "XAP code analysis plugin",
 	.license = "LGPL3",
-	.arch = "csr",
+	.arch = "xap",
 	.bits = 16,
-	.op = &csr_op,
+	.op = &xap_op,
 };
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_csr,
+	.data = &r_anal_plugin_xap,
 	.version = R2_VERSION
 };
 #endif

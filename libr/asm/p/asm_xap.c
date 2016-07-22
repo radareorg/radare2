@@ -5,9 +5,9 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_asm.h>
-#include "csr/dis.c"
+#include "xap/dis.c"
 
-static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
+static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	struct state *s = get_state();
 	struct directive *d;
 	memset(s, 0, sizeof(*s));
@@ -16,7 +16,7 @@ static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	s->s_out = NULL;
 	d = next_inst(s);
 	if (d != NULL) {
-		csr_decode(s, d);
+		xap_decode(s, d);
 		strcpy(str, d->d_asm);
 		free(d);
 	} else *str = '\0';
@@ -29,24 +29,24 @@ static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	return 0;
 }
 static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
-	arch_csr_disasm (op->buf_asm, buf, a->pc);
+	arch_xap_disasm (op->buf_asm, buf, a->pc);
 	return (op->size=2);
 }
 
-RAsmPlugin r_asm_plugin_csr = {
-	.name = "csr",
-	.arch = "csr",
+RAsmPlugin r_asm_plugin_xap = {
+	.name = "xap",
+	.arch = "xap",
 	.license = "PD",
 	.bits = 16,
 	.endian = R_SYS_ENDIAN_LITTLE,
-	.desc = "Cambridge Silicon Radio (CSR)",
+	.desc = "XAP4 RISC (CSR)",
 	.disassemble = &disassemble
 };
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_csr,
+	.data = &r_asm_plugin_xap,
 	.version = R2_VERSION
 };
 #endif

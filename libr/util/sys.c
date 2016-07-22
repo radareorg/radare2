@@ -58,7 +58,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"java", R_SYS_ARCH_JAVA},
     {"mips", R_SYS_ARCH_MIPS},
     {"sparc", R_SYS_ARCH_SPARC},
-    {"csr", R_SYS_ARCH_CSR},
+    {"xap", R_SYS_ARCH_XAP},
     {"tms320", R_SYS_ARCH_TMS320},
     {"msil", R_SYS_ARCH_MSIL},
     {"objd", R_SYS_ARCH_OBJD},

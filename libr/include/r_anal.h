@@ -1537,7 +1537,7 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
-extern RAnalPlugin r_anal_plugin_csr;
+extern RAnalPlugin r_anal_plugin_xap;
 extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_avr;
 extern RAnalPlugin r_anal_plugin_arm_gnu;

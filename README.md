@@ -28,7 +28,7 @@ code, debugging programs, attaching to remote gdb servers, ..
    radare2 is portable.
 
    * **Architectures:**
-	* 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
+        * 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, xap,
    dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, msil,
    msp430, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810,
    x86-64, zimg, risc-v.

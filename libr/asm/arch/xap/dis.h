@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_CSR_DIS_H_
-#define _INCLUDE_CSR_DIS_H_
+#ifndef _INCLUDE_XAP_DIS_H_
+#define _INCLUDE_XAP_DIS_H_
 
 #include <r_types.h>
 
@@ -81,6 +81,6 @@ struct state {
 #define ADDR_MODE_RELATIVE	0
 #define ADDR_MODE_X_RELATIVE	2
 
-static void csr_decode(struct state *s, struct directive *d);
+static void xap_decode(struct state *s, struct directive *d);
 
 #endif

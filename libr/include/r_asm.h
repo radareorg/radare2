@@ -30,7 +30,7 @@ R_LIB_VERSION_HEADER(r_asm);
 #define R_ASM_ARCH_LM32 R_SYS_ARCH_LM32
 #define R_ASM_ARCH_MIPS R_SYS_ARCH_MIPS
 #define R_ASM_ARCH_SPARC R_SYS_ARCH_SPARC
-#define R_ASM_ARCH_CSR R_SYS_ARCH_CSR
+#define R_ASM_ARCH_XAP R_SYS_ARCH_XAP
 #define R_ASM_ARCH_MSIL R_SYS_ARCH_MSIL
 #define R_ASM_ARCH_OBJD R_SYS_ARCH_OBJD
 #define R_ASM_ARCH_BF R_SYS_ARCH_BF
@@ -188,7 +188,7 @@ extern RAsmPlugin r_asm_plugin_arm_cs;
 extern RAsmPlugin r_asm_plugin_arm_as;
 extern RAsmPlugin r_asm_plugin_armthumb;
 extern RAsmPlugin r_asm_plugin_arm_winedbg;
-extern RAsmPlugin r_asm_plugin_csr;
+extern RAsmPlugin r_asm_plugin_xap;
 extern RAsmPlugin r_asm_plugin_ppc_gnu;
 extern RAsmPlugin r_asm_plugin_ppc_cs;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;

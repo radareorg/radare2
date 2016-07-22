@@ -439,7 +439,7 @@ static int decode_known(struct state *s, struct directive *d) {
 	return 1;
 }
 
-static void csr_decode(struct state *s, struct directive *d) {
+static void xap_decode(struct state *s, struct directive *d) {
 	int prefix = s->s_prefix;
 	if (!decode_fixed (s, d))
 		if (!decode_known (s, d))
@@ -498,7 +498,7 @@ static void own(struct state *s)
 	/* decode instructions */
 	s->s_off = 0;
 	while ((d = next_inst(s))) {
-		csr_decode(s, d);
+		xap_decode(s, d);
 
 		if (s->s_ff_quirk) {
 			strcpy(last->d_asm, "DC\t0x8000");

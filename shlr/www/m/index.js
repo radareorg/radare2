@@ -950,7 +950,7 @@ function panelSettings() {
 	{ name: 'bf', js: 'configArch' },
 	{ name: 'cr16', js: 'configArch' },
 	{ name: 'cris', js: 'configArch' },
-	{ name: 'csr', js: 'configArch' },
+	{ name: 'xap', js: 'configArch' },
 	{ name: 'dcpu16', js: 'configArch' },
 	{ name: 'ebc', js: 'configArch' }
 	]},
