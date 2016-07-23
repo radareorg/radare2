@@ -964,11 +964,13 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file) {
 
 struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf) {
 	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
+	RIOBind *iob = (RIOBind *)(buf->iob);
 	if (!bin) return NULL;
 	bin->kv = sdb_new (NULL, "bin.mach0", 0);
 	bin->b = r_buf_new ();
-	bin->size = buf->length;
-	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
+	bin->size = (iob && iob->io) ? r_io_size (iob->io) : buf->length;
+	bin->b->iob = iob;
+	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length)){
 		return MACH0_(mach0_free) (bin);
 	}
 	if (!init(bin))
