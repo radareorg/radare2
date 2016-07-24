@@ -632,7 +632,7 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 							b->cur = 0;
 						}
 						ret = (b->length < (len - len_copied)) ? b->length : len - len_copied;
-						ret = r_buf_cpy (b, addr, buf + len_copied, b->buf, ret, false);
+						ret = r_buf_cpy (b, addr + len_copied, buf + len_copied, b->buf, ret, false);
 						if (ret == -1) {
 							break;
 						}

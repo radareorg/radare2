@@ -269,7 +269,7 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
-	ut64 tmp;
+	ut8 *tmp_buf = NULL;
 	Elf_(Addr) strtabaddr = 0;
 	ut64 offset = 0;
 	char *strtab = NULL;
@@ -277,7 +277,6 @@ static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int entries;
 	int i, r;
 	ut32 dyn_size;
-	RIOBind *iob = (RIOBind *)(bin->b->iob);
 
 	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
 		return false;
@@ -296,59 +295,25 @@ static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->phdr[i].p_offset + sizeof(Elf_(Dyn)) > bin->size)
 		return false;
 
-	tmp = bin->phdr[i].p_offset;
-	if (tmp < bin->b->base || tmp > (bin->b->base + bin->b->length)) {
-		if (!(iob && iob->io)) {
-			return false;
-		}
-		if (tmp + bin->b->length > bin->size) {
-			if (iob->read_at (iob->io, bin->size - bin->b->length, bin->b->buf, bin->b->length) < bin->b->length) {
-				return false;
-			}
-			bin->b->base = bin->size - bin->b->length;
-			bin->b->cur = bin->size - tmp;
-			tmp -= bin->b->base;
-		} else {
-			if (iob->read_at (iob->io, tmp, bin->b->buf, bin->b->length) < bin->b->length) {
-				return false;
-			}
-			bin->b->base = tmp;
-			bin->b->cur = 0;
-			tmp = 0;
-		}
+	tmp_buf = calloc (1, dyn_size + 1);
+	if (!tmp_buf) {
+		eprintf ("Out of memory\n");
+		return false;
 	}
+	if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, tmp_buf, dyn_size) != dyn_size) {
+		eprintf ("Failed to init dynamic section\n");
+		free (tmp_buf);
+		return false;
+	}
+
 	for (entries = 0; (entries * sizeof (Elf_(Dyn))) < dyn_size; ) {
 		entries++;
-		if (((Elf_(Dyn)*)((ut8*)bin->b->buf + tmp))->d_tag == DT_NULL) {
+		if (((Elf_(Dyn)*)(tmp_buf) + entries)->d_tag == DT_NULL) {
 			break;
 		}
-		if ((bin->b->base + tmp + sizeof(Elf_(Dyn))) > bin->size) {
-			return false;
-		}
-		if ((tmp + sizeof(Elf_(Dyn))) > bin->size) {
-			if (!(iob && iob->io)) {
-				return false;
-			}
-			if ((bin->b->base + tmp + bin->b->length) > bin->size) {
-				if (iob->read_at (iob->io, bin->size - bin->b->length, bin->b->buf, bin->b->length) < bin->b->length) {
-					return false;
-				}
-				tmp += bin->b->base;
-				bin->b->base = bin->size - bin->b->length;
-				bin->b->cur = 0;
-				tmp -= bin->b->base;
-			} else {
-				if (iob->read_at (iob->io, bin->b->base + tmp, bin->b->buf, bin->b->length) < bin->b->length) {
-					return false;
-				}
-				bin->b->base += tmp;
-				bin->b->cur = 0;
-				tmp = 0;
-			}
-		} else {
-			tmp += sizeof(Elf_(Dyn));
-		}
+		entries++;
 	}
+	free (tmp_buf);
 	if (entries < 1) {
 		return false;
 	}
