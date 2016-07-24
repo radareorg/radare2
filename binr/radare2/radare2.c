@@ -936,7 +936,7 @@ int main(int argc, char **argv, char **envp) {
 				int err = r_core_prompt (&r, false);
 				if (err < 1) {
 					// handle ^D
-					r.num->value=0;
+					r.num->value = 0;
 					break;
 				}
 				if (lock) r_th_lock_enter (lock);
