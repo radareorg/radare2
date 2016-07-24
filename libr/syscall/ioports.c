@@ -62,7 +62,7 @@ RSyscallPort sysport_avr[] = {
 	{ 0x0d, "SPCR: SPI Control Register."},
 	{ 0x0c, "UDR: USART I/O Data Register."},
 	{ 0x0b, "UCSRA: USART Control and Status Register A."},
-	{ 0x0a, "UCSRA: USART Control and Status Register B."},
+	{ 0x0a, "UCSRB: USART Control and Status Register B."},
 	{ 0x09, "UBRRL: USART Baud Rate Registers Low byte. A.k.a setting serial port speed."},
 	{ 0x08, "ACSR: Analog Comparator Control and Status Register."},
 	{ 0x07, "ADMUX: ADC Multiplexer Selection Register."},
