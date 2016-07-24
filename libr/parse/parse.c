@@ -154,7 +154,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 	// remove "dword" 2
 	while ((ptr = findNextNumber (ptr))) {
 		if (x86) for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
-		else for (ptr2 = ptr; *ptr2 && (*ptr2!=']' || (*ptr2=='\x1b') || !isseparator (*ptr2)); ptr2++);
+		else for (ptr2 = ptr; *ptr2 && (*ptr2!=']' && (*ptr2!='\x1b') && !isseparator (*ptr2)); ptr2++);
 		off = r_num_math (NULL, ptr);
 		if (off > 0xff) {
 			fcn = r_anal_get_fcn_in (p->anal, off, 0);
