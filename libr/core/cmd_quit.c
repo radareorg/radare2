@@ -35,19 +35,13 @@ static int cmd_quit(void *data, const char *input) {
 		} else {
 			core->num->value = 0LL;
 		}
-<<<<<<< HEAD
 
-=======
->>>>>>> b2cd7fb23c0d4afe7e224a41f5a23a897d2715c8
 		if (*input == 'y') {
 			core->num->value = 5;
 		} else if (*input == 'n') {
 			core->num->value = 1;
 		}
-<<<<<<< HEAD
 
-=======
->>>>>>> b2cd7fb23c0d4afe7e224a41f5a23a897d2715c8
 		if (input[1] == 'y') {
 			core->num->value += 10;	
 		} else if (input[1] == 'n') {
