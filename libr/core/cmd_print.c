@@ -2020,16 +2020,18 @@ static int cmd_print(void *data, const char *input) {
 		}// else l = 0;
 	} else l = len;
 
-	if (len > core->blocksize)
+	if (len > core->blocksize) {
 		len = core->blocksize;
+	}
 
 	if (input[0] != 'd' && input[0] != 'm' && input[0]!='a' && input[0] != 'f') {
 		n = core->blocksize_max;
 		i = (int)n;
 		if (i != n) i = 0;
 		if (i && l > i) {
-			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ %s' instead?\n",
-					i, l, *input, input+2);
+			eprintf ("This block size is too big (0x%"PFMT64x
+				" < 0x%x). Did you mean 'p%c @ %s' instead?\n",
+				n, l, *input, input+2);
 			goto beach;
 		}
 	}
