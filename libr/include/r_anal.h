@@ -223,12 +223,13 @@ typedef struct r_anal_cc_type_t {
 } RAnalCCType;
 
 enum {
-	R_ANAL_FCN_TYPE_NULL = 0,
-	R_ANAL_FCN_TYPE_FCN = 1,
-	R_ANAL_FCN_TYPE_LOC = 2,
-	R_ANAL_FCN_TYPE_SYM = 4,
-	R_ANAL_FCN_TYPE_IMP = 8,
-	R_ANAL_FCN_TYPE_ROOT = 16  /* matching flag */
+	R_ANAL_FCN_TYPE_NULL = 1 << 0,
+	R_ANAL_FCN_TYPE_FCN = 1 << 1,
+	R_ANAL_FCN_TYPE_LOC = 1 << 2,
+	R_ANAL_FCN_TYPE_SYM = 1 << 3,
+	R_ANAL_FCN_TYPE_IMP = 1 << 4,
+	R_ANAL_FCN_TYPE_INT = 1 << 5, /* priviledged function - ends with iret/reti/.. */
+	R_ANAL_FCN_TYPE_ROOT = 1 << 6  /* matching flag */
 };
 
 #define R_ANAL_VARSUBS 32
@@ -293,7 +294,7 @@ typedef struct r_anal_type_function_t {
 	char* dsc; // For producing nice listings
 	ut32 _size;
 	int bits; // ((> bits 0) (set-bits bits))
-	short type;
+	int type;
 	/*item_list *rets; // Type of return value */
 	char *rets;
 	short fmod; //  static, inline or volatile?

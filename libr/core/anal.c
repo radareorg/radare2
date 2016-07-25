@@ -469,9 +469,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				fcn->name = strdup (f->name);
 			} else {
 				fcn->name = r_str_newf ("%s.%08"PFMT64x,
-						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
-						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
-						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", fcn->addr);
+						r_anal_fcn_type_tostring (fcn->type), fcn->addr);
 				/* Add flag */
 				r_flag_space_push (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name,
@@ -557,9 +555,7 @@ error:
 			if (!fcn->name) {
 				// XXX dupped code.
 				fcn->name = r_str_newf ("%s.%08"PFMT64x,
-						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
-						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
-						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
+					r_anal_fcn_type_tostring (fcn->type), at);
 				/* Add flag */
 				r_flag_space_push (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, r_anal_fcn_size (fcn));
@@ -1558,13 +1554,12 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
 	r_cons_printf (",\"calltype\":\"%s\"", r_anal_cc_type2str (fcn->call));
-	r_cons_printf (",\"type\":\"%s\"",
-			fcn->type == R_ANAL_FCN_TYPE_SYM?"sym":
-			fcn->type == R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
-	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM)
+	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
+	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (",\"diff\":\"%s\"",
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
+	}
 	r_cons_printf (",\"callrefs\":[");
 	r_list_foreach (fcn->refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
@@ -1683,9 +1678,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\n call-convention: %s", r_anal_cc_type2str (fcn->call));
 	r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
 	r_cons_printf ("\n bits: %d", fcn->bits);
-	r_cons_printf ("\n type: %s",
-			fcn->type == R_ANAL_FCN_TYPE_SYM?"sym":
-			fcn->type == R_ANAL_FCN_TYPE_IMP?"imp": "fcn");
+	r_cons_printf ("\n type: %s", r_anal_fcn_type_tostring (fcn->type));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM)
 		r_cons_printf (" [%s]",
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
@@ -1780,7 +1773,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		}
 
 		fcns = r_list_new ();
-		if(!fcns) return -1;
+		if (!fcns) return -1;
 
 		RListIter *iter;
 		RAnalFunction *fcn;

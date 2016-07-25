@@ -1836,13 +1836,15 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -regsz * 8;
 		break;
-	case X86_INS_RET:
-	case X86_INS_RETF:
-	case X86_INS_RETFQ:
 	case X86_INS_IRET:
 	case X86_INS_IRETD:
 	case X86_INS_IRETQ:
 	case X86_INS_SYSRET:
+		op->family = R_ANAL_OP_FAMILY_PRIV;
+		/* fallthrough */
+	case X86_INS_RET:
+	case X86_INS_RETF:
+	case X86_INS_RETFQ:
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -regsz;

@@ -34,6 +34,7 @@ R_API const char *r_anal_fcn_type_tostring(int type) {
 	case R_ANAL_FCN_TYPE_LOC: return "loc";
 	case R_ANAL_FCN_TYPE_SYM: return "sym";
 	case R_ANAL_FCN_TYPE_IMP: return "imp";
+	case R_ANAL_FCN_TYPE_INT: return "int"; // interrupt
 	case R_ANAL_FCN_TYPE_ROOT: return "root";
 	}
 	return "unk";
@@ -832,16 +833,19 @@ river:
 			last_push_addr = op.val;
 			break;
 		case R_ANAL_OP_TYPE_RET:
+			if (op.family == R_ANAL_OP_FAMILY_PRIV) {
+				fcn->type = R_ANAL_FCN_TYPE_INT;
+			}
 			if (last_is_push && anal->opt.pushret) {
 				op.type = R_ANAL_OP_TYPE_JMP;
 				op.jump = last_push_addr;
 				bb->jump = op.jump;
 				recurseAt (op.jump);
-				gotoBeachRet();
+				gotoBeachRet ();
 			} else {
 				if (op.cond == 0) {
 					VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
-							addr+delay.un_idx-oplen, overlapped,
+							addr + delay.un_idx-oplen, overlapped,
 							bb->size, r_anal_fcn_size (fcn));
 					FITFCNSZ ();
 					r_anal_op_fini (&op);
@@ -850,8 +854,9 @@ river:
 			}
 			break;
 		}
-		if (op.type != R_ANAL_OP_TYPE_PUSH)
+		if (op.type != R_ANAL_OP_TYPE_PUSH) {
 			last_is_push = false;
+		}
 	}
 beach:
 	r_anal_op_fini (&op);
@@ -944,12 +949,16 @@ R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 		}
 	}
 }
+
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	int ret;
 	r_anal_fcn_set_size (fcn, 0);
-	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE)?
-			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
-	if (fcn->addr == UT64_MAX) fcn->addr = addr;
+	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE)
+		? R_ANAL_FCN_TYPE_LOC
+		: R_ANAL_FCN_TYPE_FCN;
+	if (fcn->addr == UT64_MAX) {
+		fcn->addr = addr;
+	}
 	if (anal->cur && anal->cur->fcn) {
 		int result = anal->cur->fcn (anal, fcn, addr, buf, len, reftype);
 		if (anal->cur->custom_fn_anal) return result;
