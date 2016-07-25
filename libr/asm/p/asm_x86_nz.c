@@ -35,7 +35,6 @@ static ut64 getnum(RAsm *a, const char *s);
 #define OT_CONTROLREG ((1 << (OPTYPE_SHIFT + 7)) | OT_REGALL)
 #define OT_DEBUGREG   ((1 << (OPTYPE_SHIFT + 8)) | OT_REGALL)
 #define OT_SREG       ((1 << (OPTYPE_SHIFT + 9)) | OT_REGALL)
-#define OT_RXREG	  ((1 << (OPTYPE_SHIFT + 10)) | OT_REGALL)
 // more?
 
 #define OT_REGTYPE    ((OT_GPREG | OT_SEGMENTREG | OT_FPUREG | OT_MMXREG | OT_XMMREG | OT_CONTROLREG | OT_DEBUGREG) & ~OT_REGALL)
@@ -82,7 +81,7 @@ typedef enum register_t {
 	X86R_AX = 0, X86R_CX, X86R_DX, X86R_BX, X86R_SP, X86R_BP, X86R_SI, X86R_DI,
 	X86R_AL = 0, X86R_CL, X86R_DL, X86R_BL, X86R_AH, X86R_CH, X86R_DH, X86R_BH,
 	X86R_RAX = 0, X86R_RCX, X86R_RDX, X86R_RBX, X86R_RSP, X86R_RBP, X86R_RSI, X86R_RDI,
-	X86R_R8 = 0, X86R_R9, X86R_R10, X86R_R11, X86R_R12, X86R_R13, X86R_R14, X86R_R15, 
+	X86R_R8 = 0, X86R_R9, X86R_R10, X86R_R11, X86R_R12, X86R_R13, X86R_R14, X86R_R15,
 	X86R_CS = 0, X86R_SS, X86R_DS, X86R_ES, X86R_FS, X86R_GS	// Is this the right order?
 } Register;
 
@@ -90,7 +89,10 @@ typedef struct operand_t {
 	ut32 type;
 	st8 sign;
 	union {
-		Register reg;
+		struct {
+			Register reg;
+			bool extended;
+		};
 		struct {
 			long offset;
 			st8 offset_sign;
@@ -262,12 +264,19 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode op, int op1) {
 	int mod_byte = 0;
 	int reg = 0;
 	int rm = 0;
+	int rex = 0;
 	st32 offset = 0;
 
 	if (a->bits == 64 &&
 		((op.operands[0].type & OT_QWORD) |
 		 (op.operands[1].type & OT_QWORD))) {
-		data[l++] = 0x48;
+		if (op.operands[0].extended) {
+				rex = 1;
+		}
+		if (op.operands[1].extended) {
+			rex += 4;
+		}
+		data[l++] = 0x48 | rex;
 	}
 
 	if (op.operands[0].type & OT_MEMORY && op.operands[1].type & OT_REGALL) {
@@ -938,7 +947,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 	int offset = 0;
 	int mod = 0;
 	int base = 0;
+	int rex = 0;
 	ut64 immediate = 0;
+
 	if (op.operands[1].type & OT_CONSTANT) {
 		if (!op.operands[1].is_good_flag) {
 			return -1;
@@ -1020,18 +1031,19 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 				data[l++] = immediate >> 24;
 			}
 		}
-	} else if (op.operands[1].type & OT_GPREG &&
+	} else if (op.operands[1].type & OT_REGALL &&
 			 !(op.operands[1].type & OT_MEMORY)) {
 		if (op.operands[0].type & OT_CONSTANT) {
 			return -1;
 		}
 		if (a->bits == 64) {
-			if (op.operands[0].type & OT_RXREG ||
-			    op.operands[1].type & OT_RXREG) {
-				data[l++] = 0x49;
-			} else {
-				data[l++] = 0x48;
+			if (op.operands[0].extended) {
+				rex = 1;
 			}
+			if (op.operands[1].extended) {
+				rex += 4;
+			}
+			data[l++] = 0x48 | rex;
 		}
 		offset = op.operands[0].offset * op.operands[0].offset_sign;
 		data[l++] = (op.operands[0].type & OT_BYTE) ? 0x88 : 0x89;
@@ -1686,8 +1698,8 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
 	const char *regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
 	const char *regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
-	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
-	const char *regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
+	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL};
+	const char *regs64ext[] = {"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
 	const char *sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL};
 
 	// Get token (especially the length)
@@ -1699,18 +1711,20 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	*pos = nextpos;
 
 	// General purpose registers
-	if (length == 3 && token[0] == 'e')
+	if (length == 3 && token[0] == 'e') {
 		for (i = 0; regs[i]; i++)
 			if (!strncasecmp (regs[i], token, length)) {
 				*type = (OT_GPREG & OT_REG(i)) | OT_DWORD;
 				return i;
 			}
-	if (length == 2 && (token[1] == 'l' || token[1] == 'h'))
+	}
+	if (length == 2 && (token[1] == 'l' || token[1] == 'h')) {
 		for (i = 0; regs8[i]; i++)
 			if (!strncasecmp (regs8[i], token, length)) {
 				*type = (OT_GPREG & OT_REG(i)) | OT_BYTE;
 				return i;
 			}
+	}
 	if (length == 2) {
 		for (i = 0; regs16[i]; i++) {
 			if (!strncasecmp (regs16[i], token, length)) {
@@ -1735,21 +1749,24 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		}
 		for (i = 0; regs64ext[i]; i++) {
 			if (!strncasecmp (regs64ext[i], token, length)) {
-				*type = (OT_RXREG & ~OT_REGALL) | OT_QWORD;
-				return i;
+				*type = (OT_GPREG & OT_REG(i)) | OT_QWORD;
+				return i + 8;
 			}
 		}
 	}
 
 	// Extended registers
-	if (!strncasecmp ("st", token, length)) {
+	if (!strncasecmp ("st", token, 2)) {
 		*type = (OT_FPUREG & ~OT_REGALL);
+		*pos = 3;
 	}
-	if (!strncasecmp ("mm", token, length)) {
+	if (!strncasecmp ("mm", token, 2)) {
 		*type = (OT_MMXREG & ~OT_REGALL);
+		*pos = 3;
 	}
-	if (!strncasecmp ("xmm", token, length)) {
+	if (!strncasecmp ("xmm", token, 3)) {
 		*type = (OT_XMMREG & ~OT_REGALL);
+		*pos = 4;
 	}
 
 	// Now read number, possibly with parantheses
@@ -1761,9 +1778,15 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 			*pos = nextpos;
 
 		// read number
+		int maxreg = (a->bits == 64) ? 15 : 7;
 		if (getToken (str, pos, &nextpos) != TT_NUMBER ||
 				(reg = getnum (a, str + *pos)) > 7)
-			eprintf ("Too large register index!");
+				if (reg > 15) {
+					eprintf ("Too large register index!\n");
+				} else {
+					reg -= 8;
+				}
+
 		*pos = nextpos;
 
 		// pass by ')'
@@ -1900,6 +1923,11 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 		nextpos = pos;
 		RFlagItem *flag;
 		op->reg = parseReg (a, str, &nextpos, &op->type);
+		op->extended = false;
+		if (op->reg > 7) {
+			op->extended = true;
+			op->reg -= 8;
+		}
 
 		if (op->reg == X86R_UNDEFINED && a->num) {
 			RCore *core = (RCore *)(a->num->userptr);
@@ -1915,8 +1943,6 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 				str = ++p;
 			}
 			op->immediate = getnum (a, str);
-
-			//if (op->immediate == -1) {op->immediate = 0;}
 		}
 	} else {                             // immediate
 		// We don't know the size, so let's just set no size flag.
