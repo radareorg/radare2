@@ -1994,11 +1994,14 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				}
 				return lt_ptr->size;
 			} else {
-				return lt_ptr->opdo (a, data, instr);
+				if (lt_ptr->opdo) {
+					return lt_ptr->opdo (a, data, instr);
+				}
+				break;
 			}
 		}
 	}
-	eprintf ("Error: Unknown instruction (%s)\n", instr.mnemonic);
+	//eprintf ("Error: Unknown instruction (%s)\n", instr.mnemonic);
 	return -1;
 }
 
