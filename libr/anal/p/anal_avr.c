@@ -18,11 +18,14 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #define	AVR_SOFTCAST(x,y) (x+(y*0x100))
 
 static ut64 rjmp_dest(ut64 addr, const ut8* b) {
-	ut64 dst = 2 + addr + ((st8)b[0] * 2);
-	if ((st8)b[0] > 0) {
-		dst += ((b[1] & 0xf) * 2) << 8;
+	uint16_t data = (b[0] + (b[1] << 8)) & 0xfff;
+	int32_t op = data;
+	op <<= 1;
+	if (op & 0x1000) {
+		short val = (~op) & 0xfff;
+		return (ut64)(addr - val + 1);
 	}
-	return dst;
+	return addr + op + 2;
 }
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -31,7 +34,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	ut8 kbuf[4];
 	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
 	char *arg, str[32];
-	if (op == NULL) {
+	if (!op) {
 		return 2;
 	}
 	memset (op, '\0', sizeof (RAnalOp));
@@ -242,7 +245,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		ut64 dst = rjmp_dest (addr, buf);
 		op->jump = dst;
 		op->fail = UT64_MAX;
-		r_strbuf_setf (&op->esil, "%d,PC,=", (int)dst);
+		r_strbuf_setf (&op->esil, "%"PFMT64d",PC,=", dst);
 		return op->size;
 	}
 	switch (buf[1]) {

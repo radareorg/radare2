@@ -2071,9 +2071,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_DIV:
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
+	case X86_INS_AAM:
 	case X86_INS_IMUL:
-		op->type = R_ANAL_OP_TYPE_MUL;
-		break;
 	case X86_INS_MUL:
 	case X86_INS_MULX:
 	case X86_INS_MULPD:
