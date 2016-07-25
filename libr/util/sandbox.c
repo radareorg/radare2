@@ -138,8 +138,9 @@ R_API bool r_sandbox_creat (const char *path, int mode) {
 }
 
 static char *expand_home(const char *p) {
-	if (*p=='~')
+	if (*p == '~') {
 		return r_str_home (p);
+	}
 	return strdup (p);
 }
 
@@ -220,8 +221,10 @@ R_API int r_sandbox_kill(int pid, int sig) {
 	// XXX: fine-tune. maybe we want to enable kill for child?
 	if (enabled) return -1;
 #if __UNIX__
-	if (pid>0) return kill (pid, sig);
-	eprintf ("r_sandbox_kill: Better not to kill pids <= 0.\n");
+	if (pid > 0) {
+		return kill (pid, sig);
+	}
+	// eprintf ("r_sandbox_kill: Better not to kill pids <= 0.\n");
 #endif
 	return -1;
 }
@@ -230,20 +233,21 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 	if (!path)
 		return NULL;
 	if (r_sandbox_enable (0)) {
-		if (path && !r_sandbox_check_path (path))
+		if (path && !r_sandbox_check_path (path)) {
 			return NULL;
+		}
 	}
 	return opendir (path);
 }
 
 R_API int r_sys_stop () {
 	int pid;
-	if (enabled) return false;
+	if (enabled) {
+		return false;
+	}
 	pid = r_sys_getpid ();
 #ifndef SIGSTOP
 #define SIGSTOP 19
 #endif
-	if (!r_sandbox_kill (pid, SIGSTOP))
-		return true;
-	return false;
+	return (!r_sandbox_kill (pid, SIGSTOP));
 }
