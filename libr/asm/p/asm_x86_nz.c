@@ -35,6 +35,7 @@ static ut64 getnum(RAsm *a, const char *s);
 #define OT_CONTROLREG ((1 << (OPTYPE_SHIFT + 7)) | OT_REGALL)
 #define OT_DEBUGREG   ((1 << (OPTYPE_SHIFT + 8)) | OT_REGALL)
 #define OT_SREG       ((1 << (OPTYPE_SHIFT + 9)) | OT_REGALL)
+#define OT_RXREG	  ((1 << (OPTYPE_SHIFT + 10)) | OT_REGALL)
 // more?
 
 #define OT_REGTYPE    ((OT_GPREG | OT_SEGMENTREG | OT_FPUREG | OT_MMXREG | OT_XMMREG | OT_CONTROLREG | OT_DEBUGREG) & ~OT_REGALL)
@@ -81,6 +82,7 @@ typedef enum register_t {
 	X86R_AX = 0, X86R_CX, X86R_DX, X86R_BX, X86R_SP, X86R_BP, X86R_SI, X86R_DI,
 	X86R_AL = 0, X86R_CL, X86R_DL, X86R_BL, X86R_AH, X86R_CH, X86R_DH, X86R_BH,
 	X86R_RAX = 0, X86R_RCX, X86R_RDX, X86R_RBX, X86R_RSP, X86R_RBP, X86R_RSI, X86R_RDI,
+	X86R_R8 = 0, X86R_R9, X86R_R10, X86R_R11, X86R_R12, X86R_R13, X86R_R14, X86R_R15, 
 	X86R_CS = 0, X86R_SS, X86R_DS, X86R_ES, X86R_FS, X86R_GS	// Is this the right order?
 } Register;
 
@@ -1024,7 +1026,12 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 			return -1;
 		}
 		if (a->bits == 64) {
-			data[l++] = 0x48;
+			if (op.operands[0].type & OT_RXREG ||
+			    op.operands[1].type & OT_RXREG) {
+				data[l++] = 0x49;
+			} else {
+				data[l++] = 0x48;
+			}
 		}
 		offset = op.operands[0].offset * op.operands[0].offset_sign;
 		data[l++] = (op.operands[0].type & OT_BYTE) ? 0x88 : 0x89;
@@ -1680,6 +1687,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	const char *regs8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", NULL };
 	const char *regs16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", NULL };
 	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
+	const char *regs64ext[] = { "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", NULL };
 	const char *sregs[] = { "es", "cs", "ss", "ds", "fs", "gs", NULL};
 
 	// Get token (especially the length)
@@ -1725,9 +1733,15 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 				return i;
 			}
 		}
+		for (i = 0; regs64ext[i]; i++) {
+			if (!strncasecmp (regs64ext[i], token, length)) {
+				*type = (OT_RXREG & ~OT_REGALL) | OT_QWORD;
+				return i;
+			}
+		}
 	}
 
-	// Numbered registers
+	// Extended registers
 	if (!strncasecmp ("st", token, length)) {
 		*type = (OT_FPUREG & ~OT_REGALL);
 	}
