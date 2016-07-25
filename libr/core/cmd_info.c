@@ -299,7 +299,7 @@ static int cmd_info(void *data, const char *input) {
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
 				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL);
 			} else  { //iS entropy,sha1
-				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2);
+				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 3);
 				//we move input until get '\0'
 				while (*(++input));
 				//input-- because we are inside a while that does input++
