@@ -123,7 +123,9 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode op) {
 	int mod_byte = 0;
 	int offset = 0;
 	st32 immediate = 0;
-
+	if (!op.operands[1].is_good_flag) {
+		return -1;
+	}
 	if (a->bits == 64) data[l++] = 0x48;
 
 	if (!strcmp (op.mnemonic, "adc")) {
@@ -262,6 +264,9 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode op, int op1) {
 	int rm = 0;
 	st32 offset = 0;
 
+	if (!op.operands[1].is_good_flag) {
+		return -1;
+	}
 	if (a->bits == 64 &&
 		((op.operands[0].type & OT_QWORD) |
 		 (op.operands[1].type & OT_QWORD))) {
@@ -1887,22 +1892,23 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 		RFlagItem *flag;
 		op->reg = parseReg (a, str, &nextpos, &op->type);
 
-		if (op->reg == X86R_UNDEFINED && a->num) {
-			RCore *core = (RCore *)(a->num->userptr);
-			op->is_good_flag = true;
-			if (!(flag = r_flag_get (core->flags, str))) {
-				op->is_good_flag = false;
+		if (op->reg == X86R_UNDEFINED) {
+			op->is_good_flag = false;
+			if (!(a->num) ) {
 				return nextpos;
 			}
 			op->type = OT_CONSTANT;
+			RCore *core = (RCore *)(a->num->userptr);
+			if (core && (flag = r_flag_get (core->flags, str))) {
+				op->is_good_flag = true;
+			}
+
 			char *p = strchr (str, '-');
 			if (p) {
 				op->sign = -1;
 				str = ++p;
 			}
 			op->immediate = getnum (a, str);
-
-			//if (op->immediate == -1) {op->immediate = 0;}
 		}
 	} else {                             // immediate
 		// We don't know the size, so let's just set no size flag.
