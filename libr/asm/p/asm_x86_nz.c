@@ -559,7 +559,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode op) {
 			}
 			offset = op.operands[0].offset * op.operands[0].offset_sign;
 			if (offset) {
-				mod = (offset > 128 || offset < 129) ? 0x2 : 0x1;
+				mod = (offset > 128 || offset < -129) ? 0x2 : 0x1;
 			}
 
 			if (op.operands[0].regs[0] == X86R_EBP) {
@@ -615,7 +615,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode op) {
 					return l;
 				}
 				if (offset) {
-					mod = (offset > 128 || offset < 129) ? 0x2 : 0x1;
+					mod = (offset > 128 || offset < -129) ? 0x2 : 0x1;
 				}
 				if (op.operands[0].regs[0] == X86R_EBP) {
 					mod = 0x2;
@@ -1074,7 +1074,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 					return l;
 				}
 				if (offset) {
-					mod = (offset > 128 || offset < 129) ? 0x2 : 0x1;
+					mod = (offset > 128 || offset < -129) ? 0x2 : 0x1;
 				}
 				if (op.operands[0].regs[0] == X86R_EBP) {
 					mod = 0x2;
