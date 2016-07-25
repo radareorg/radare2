@@ -1779,25 +1779,27 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		Register reg = X86R_UNDEFINED;
 
 		// pass by '(',if there is one
-		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == '(')
+		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == '(') {
 			*pos = nextpos;
+		}
 
 		// read number
-		int maxreg = (a->bits == 64) ? 15 : 7;
+		// const int maxreg = (a->bits == 64) ? 15 : 7;
 		if (getToken (str, pos, &nextpos) != TT_NUMBER ||
-				(reg = getnum (a, str + *pos)) > 7)
-				if (reg > 15) {
-					eprintf ("Too large register index!\n");
-				} else {
-					reg -= 8;
-				}
+				(reg = getnum (a, str + *pos)) > 7) {
+			if ((int)reg > 15) {
+				eprintf ("Too large register index!\n");
+			} else {
+				reg -= 8;
+			}
+		}
 
 		*pos = nextpos;
 
 		// pass by ')'
-		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == ')')
+		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == ')') {
 			*pos = nextpos;
-
+		}
 		*type |= (OT_REG(reg) & ~OT_REGTYPE);
 		return reg;
 	}
