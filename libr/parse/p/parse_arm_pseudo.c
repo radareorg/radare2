@@ -21,6 +21,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "adc",  "1 = 2 + 3"},
 		{ 3, "add",  "1 = 2 + 3"},
 		{ 2, "add",  "1 += 2"},
+		{ 2, "adds",  "1 += 2"},
 		{ 3, "adds",  "1 = 2 + 3"},
 		{ 3, "addw",  "1 = 2 + 3"},
 		{ 3, "add.w",  "1 = 2 + 3"},
@@ -28,7 +29,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "adrp",  "1 = 2"},
 		{ 0, "and",  "1 = 2 & 3"},
 		{ 0, "ands",  "1 &= 2"},
+		{ 0, "asls",  "1 = 2 << 3"},
 		{ 0, "asl",  "1 = 2 << 3"},
+		{ 0, "asrs",  "1 = 2 >> 3"},
 		{ 0, "asr",  "1 = 2 >> 3"},
 		{ 0, "b",  "jmp 1"},
 		{ 0, "cbz",  "if !1 jmp 2"},
@@ -50,10 +53,16 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "eor",  "1 = 2 ^ 3"},
 		{ 0, "fdv",  "1 = 2 / 3"},
 		{ 0, "fml",  "1 = 2 * 3"},
-		{ 0, "ldr",  "1 = 2"},
-		{ 0, "ldrb",  "1 = 2"},
-		{ 0, "ldr.w",  "1 = 2"},
-		{ 0, "ldrsw",  "1 = 2 + 3"},
+		{ 2, "ldr",  "1 = 2"},
+		{ 2, "ldrb",  "1 = (byte) 2"},
+		{ 2, "ldrsb",  "1 = (byte) 2"},
+		{ 2, "ldr.w",  "1 = 2"},
+		{ 2, "ldrsw",  "1 = 2"},
+		{ 3, "ldr",  "1 = 2 + 3"},
+		{ 3, "ldrb",  "1 = (byte) 2 + 3"},
+		{ 3, "ldrsb",  "1 = (byte) 2 + 3"},
+		{ 3, "ldr.w",  "1 = 2 + 3"},
+		{ 3, "ldrsw",  "1 = 2 + 3"},
 		{ 0, "lsl",  "1 = 2 << 3"},
 		{ 0, "lsr",  "1 = 2 >> 3"},
 		{ 0, "mov",  "1 = 2"},
@@ -64,19 +73,24 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "vmov.i32",  "1 = 2"},
 		{ 0, "muf",  "1 = 2 * 3"},
 		{ 0, "mul",  "1 = 2 * 3"},
+		{ 0, "muls",  "1 = 2 * 3"},
 		{ 0, "orr",  "1 = 2 | 3"},
 		{ 0, "rmf",  "1 = 2 % 3"},
 		{ 0, "bge",  "(>=) goto 1"},
 		{ 0, "sbc",  "1 = 2 - 3"},
 		{ 0, "sqt",  "1 = sqrt(2)"},
-		{ 0, "str",  "2 + 3 = 1"},
 		{ 0, "lsrs",  "1 = 2 >> 3"},
 		{ 0, "lsls",  "1 = 2 << 3"},
 		{ 0, "lsr",  "1 = 2 >> 3"},
 		{ 0, "lsl",  "1 = 2 << 3"},
-		{ 0, "strb",  "2 =(byte) 1"},
-		{ 0, "strh",  "2 =(halt) 1"},
-		{ 0, "strh.w",  "2 + 3 = 1"},
+		{ 2, "str",  "2 = 1"},
+		{ 2, "strb",  "2 = (byte) 1"},
+		{ 2, "strh",  "2 = (half) 1"},
+		{ 2, "strh.w",  "2 = (half) 1"},
+		{ 3, "str",  "2 + 3 = 1"},
+		{ 3, "strb",  "2 + 3 = (byte) 1"},
+		{ 3, "strh",  "2 + 3 = (half) 1"},
+		{ 3, "strh.w",  "2 + 3 = (half) 1"},
 		{ 3, "sub",  "1 = 2 - 3"},
 		{ 3, "subs",  "1 = 2 - 3"},
 		{ 2, "sub",  "1 -= 2"}, // THUMB
@@ -123,10 +137,6 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				} else newstr[k] = ops[i].str[j];
 			}
 			newstr[k]='\0';
-			if (argc == 4 && argv[2][0] == '[') {
-				strcat (newstr+k, " + ");
-				strcat (newstr+k+3, argv[3]);
-			}
 			r_str_replace_char (newstr, '{', '(');
 			r_str_replace_char (newstr, '}', ')');
 			return true;
