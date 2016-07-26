@@ -37,7 +37,7 @@ static int free_xtr(void *xtr_obj) {
 }
 
 static bool load(RBin *bin) {
-	if (!bin || !bin->cur) 
+	if (!bin || !bin->cur)
 	    	return false;
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_dyldcache_new (bin->cur->file);
@@ -65,6 +65,14 @@ static RList * extractall(RBin *bin) {
 	return result;
 }
 
+
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+	meta->arch = MACH0_(get_cputype_from_hdr) (hdr);
+	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
+	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
+	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
+}
+
 static RBinXtrData * extract(RBin *bin, int idx) {
 	int nlib = 0;
 	RBinXtrData *res = NULL;
@@ -78,17 +86,13 @@ static RBinXtrData * extract(RBin *bin, int idx) {
 		if (!metadata) {
 			return NULL;
 		}
-
 		hdr = MACH0_(get_hdr_from_bytes) (lib->b);
 		if (!hdr) {
 			free (lib);
 			free (hdr);
 			return NULL;
 		}
-
-		metadata->arch = MACH0_(get_cputype_from_hdr) (hdr);
-		metadata->bits = MACH0_(get_bits_from_hdr) (hdr);
-
+		fill_metadata_info_from_hdr (metadata, hdr);
 		r_bin_dydlcache_get_libname (lib, &libname);
 		metadata->libname = strdup (libname);
 
@@ -119,23 +123,17 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 		return NULL;
 	}
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-
 	if (!metadata) {
 		return NULL;
 	}
-
 	hdr = MACH0_(get_hdr_from_bytes) (lib->b);
 	if (!hdr) {
 		free (lib);
 		free (hdr);
 		return NULL;
 	}
-
-	metadata->arch = MACH0_(get_cputype_from_hdr) (hdr);
-	metadata->bits = MACH0_(get_bits_from_hdr) (hdr);
-
+	fill_metadata_info_from_hdr (metadata, hdr);
 	r_bin_dydlcache_get_libname (lib, &libname);
-
 	metadata->libname = strdup (libname);
 
 	res = r_bin_xtrdata_new (lib->b, lib->offset, lib->b->length, nlib, metadata, bin->sdb);

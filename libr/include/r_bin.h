@@ -238,6 +238,8 @@ typedef struct r_bin_xtr_metadata_t {
 	char *arch;
 	int bits;
 	char *libname;
+	char *machine;
+	char *type;
 } RBinXtrMetadata;
 
 typedef int (*FREE_XTR)(void *xtr_obj);

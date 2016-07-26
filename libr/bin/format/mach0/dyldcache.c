@@ -174,23 +174,27 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 }
 
 void* r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin) {
-	if (!bin) return NULL;
+	if (!bin) {
+		return NULL;
+	}
 	r_buf_free (bin->b);
 	free (bin);
 	return NULL;
 }
 
-void* r_bin_dydlcache_get_libname(struct r_bin_dyldcache_lib_t *lib, char **libname) {
+void r_bin_dydlcache_get_libname(struct r_bin_dyldcache_lib_t *lib, char **libname) {
 	char *cur = lib->path;
 	char *res = lib->path;
 	int path_length = strlen (lib->path);
 	while (cur < cur + path_length - 1) {
 		cur = strchr (cur, '/');
-		if (!cur) break;
+		if (!cur) {
+			break;
+		}
 		cur++;
 		res = cur;
 	}
-	(*libname) = res;
+	*libname = res;
 }
 
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {

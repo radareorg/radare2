@@ -18,7 +18,7 @@ struct r_bin_dyldcache_lib_t {
 	char path[1024];
 	int size;
 	ut64 offset;
-	RBuffer *b; 
+	RBuffer *b;
 	int last;
 };
 
@@ -67,5 +67,6 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 void *r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin);
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file);
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_from_bytes_new (const ut8* bytes, ut64 size);
+void r_bin_dydlcache_get_libname(struct r_bin_dyldcache_lib_t *lib, char **libname);
 
 #endif

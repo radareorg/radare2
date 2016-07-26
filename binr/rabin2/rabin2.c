@@ -114,7 +114,7 @@ static bool isBinopHelp(const char *op) {
 	return false;
 }
 
-static bool extract_binobj (const RBinFile *bf, const RBinXtrData *data, int idx) {
+static bool extract_binobj(const RBinFile *bf, const RBinXtrData *data, int idx) {
 	ut64 bin_size = data ? data->size : 0;
 	ut8 *bytes;
 	ut8 *bytes_encoded;
@@ -176,12 +176,19 @@ static bool extract_binobj (const RBinFile *bf, const RBinXtrData *data, int idx
 	}
 
 	outfile_sz = outpath_sz + strlen (ptr) + strlen (arch) + 23;
-	if (outfile_sz)
+	if (outfile_sz) {
 		outfile = malloc (outfile_sz);
+	}
 
-	if (outfile)
-		snprintf (outfile, outfile_sz, "%s/%s.%s.%s_%i.%d",
-			outpath, ptr, arch, libname, bits, idx);
+	if (outfile) {
+		if (libname) {
+			snprintf (outfile, outfile_sz, "%s/%s.%s.%s_%i.%d",
+					  outpath, ptr, arch, libname, bits, idx);
+		} else {
+			snprintf (outfile, outfile_sz, "%s/%s.%s_%i.%d",
+					  outpath, ptr, arch, bits, idx);
+		}
+	}
 
 
 	if (!outfile || !r_file_dump (outfile, bytes, bin_size, 0)) {
@@ -635,8 +642,9 @@ int main(int argc, char **argv) {
 		case 'L': r_bin_list (bin, rad == R_CORE_BIN_JSON); return 1;
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
-			if (laddr == UT64_MAX)
+			if (laddr == UT64_MAX) {
 				va = false;
+			}
 			break;
 		case 'B':
 			baddr = r_num_math (NULL, optarg);

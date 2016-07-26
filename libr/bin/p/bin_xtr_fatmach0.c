@@ -79,11 +79,18 @@ static bool load(RBin *bin) {
 	return ((bin->cur->xtr_obj = r_bin_fatmach0_new (bin->file)) != NULL);
 }
 
-static ut64 size(RBinFile *arch) {
+static int size(RBin *bin) {
 	// TODO
 	return 0;
 }
 
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+	meta->arch = MACH0_(get_cputype_from_hdr) (hdr);
+	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
+	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
+	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
+	meta->libname = NULL;
+}
 static RBinXtrData * extract(RBin* bin, int idx) {
 	int narch;
 	RBinXtrData * res = NULL;
@@ -100,18 +107,13 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 		free (arch);
 		return NULL;
 	}
-
 	hdr = MACH0_(get_hdr_from_bytes) (arch->b);
 	if (!hdr) {
 		free (arch);
 		free (hdr);
 		return NULL;
 	}
-
-	metadata->arch = MACH0_(get_cputype_from_hdr) (hdr);
-	metadata->bits = MACH0_(get_bits_from_hdr) (hdr);
-	metadata->libname = strdup ("mach0");
-
+	fill_metadata_info_from_hdr (metadata, hdr);
 	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata, bin->sdb);
 
 	r_buf_free (arch->b);
@@ -150,11 +152,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 		free (arch);
 		return NULL;
 	}
-
-	metadata->arch = MACH0_(get_cputype_from_hdr) (hdr);
-	metadata->bits = MACH0_(get_bits_from_hdr) (hdr);
-	metadata->libname = strdup ("mach0");
-
+	fill_metadata_info_from_hdr (metadata, hdr);
 	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata, bin->sdb);
 	r_buf_free (arch->b);
 	free (arch);
