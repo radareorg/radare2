@@ -354,10 +354,12 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 					"different pid %d\n", ret);
 			}
 		} while (ret != child_pid);
-		if (WIFSTOPPED (status))
+		if (WIFSTOPPED (status)) {
 			eprintf ("Process with PID %d started...\n", (int)child_pid);
-		if (WEXITSTATUS (status) == MAGIC_EXIT)
+		}
+		if (WEXITSTATUS (status) == MAGIC_EXIT) {
 			child_pid = -1;
+		}
 		// XXX kill (pid, SIGSTOP);
 		break;
 	}
@@ -366,8 +368,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #endif
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
+	if (!strncmp (file, "waitfor://", 10)) {
+		return true;
+	}
 	if (!strncmp (file, "pidof://", 8)) {
-		return 1;
+		return true;
 	}
 	return (!strncmp (file, "dbg://", 6) && file[6]);
 }
@@ -386,7 +391,6 @@ static int get_pid_of(RIO *io, const char *procname) {
 				return proc->pid;
 			}
 		}
-		eprintf ("PIDS %p\n", pids);
 	} else {
 		eprintf ("Cannot enumerate processes\n");
 	}
@@ -395,10 +399,22 @@ static int get_pid_of(RIO *io, const char *procname) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
-	if (!strncmp (file, "pidof://", 8)) {
-		int target_pid = get_pid_of (io, file + 8);
+	if (!strncmp (file, "waitfor://", 10)) {
+		const char *procname = file + 10;
+		eprintf ("Waiting for %s\n", procname);
+		while (true) {
+			int target_pid = get_pid_of (io, procname);
+			if (target_pid != -1) {
+				snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
+				file = uri;
+				break;
+			}
+			r_sys_usleep (100);
+		}
+	} else if (!strncmp (file, "pidof://", 8)) {
+		const char *procname = file + 8;
+		int target_pid = get_pid_of (io, procname);
 		if (target_pid != -1) {
-			eprintf ("PIDOF %s\n", file + 8);
 			snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
 			file = uri;
 		} else {
