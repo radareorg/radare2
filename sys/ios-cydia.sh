@@ -34,6 +34,10 @@ makeDeb() {
 fromscratch=1
 onlymakedeb=0
 
+if [ "$1" = makedeb ]; then
+	onlymakedeb=1
+fi
+
 if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
@@ -46,7 +50,7 @@ else
 		RV=0
 	fi
 	if [ $RV = 0 ]; then
-		time make -j4
+		time make -j2
 		if [ $? = 0 ]; then
 			makeDeb
 		fi

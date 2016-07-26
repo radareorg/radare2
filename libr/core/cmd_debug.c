@@ -1570,10 +1570,11 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						baddr = r_bin_get_baddr (core->bin);
 						if (libname) {
 							char *cmd, *res;
+							const char *file = map->file? map->file: map->name;
 							if (symname) {
-								cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s | grep %s", mode, baddr, map->name, symname);
+								cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s | grep %s", mode, baddr, file, symname);
 							} else {
-								cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s", mode, baddr, map->name);
+								cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s", mode, baddr, file);
 							}
 							res = r_sys_cmd_str (cmd, NULL, NULL);
 							r_cons_println (res);

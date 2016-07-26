@@ -28,21 +28,27 @@ static task_t task_dbg = 0;
 #include "xnu_excthreads.c"
 #endif
 
+/* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
 static thread_t getcurthread (RDebug *dbg) {
 	thread_array_t threads = NULL;
 	unsigned int n_threads = 0;
 	task_t t = pid_to_task (dbg->pid);
-	if (!t)
+	if (!t) {
 		return -1;
-	if (task_threads (t, &threads, &n_threads))
+	}
+	if (task_threads (t, &threads, &n_threads)) {
 		return -1;
-	if (n_threads < 1)
+	}
+	if (n_threads < 1) {
 		return -1;
-	if (n_threads > 1)
+	}
+#if 0
+	if (n_threads > 1) {
 		eprintf ("THREADS: %d\n", n_threads);
+	}
+#endif
 	return threads[0];
 }
-
 
 static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 	RListIter *it = NULL;
