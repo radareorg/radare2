@@ -1553,7 +1553,7 @@ R_API int r_str_len_utf8char (const char *s, int left) {
 	return i;
 }
 
-R_API int r_str_len_utf8 (const char *s) {
+R_API int r_str_len_utf8(const char *s) {
 	int i = 0, j = 0;
 	while (s[i]) {
 		if ((s[i] & 0xc0) != 0x80) j++;
