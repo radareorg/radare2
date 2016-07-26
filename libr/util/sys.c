@@ -614,9 +614,11 @@ R_API int r_sys_arch_id(const char *arch) {
 
 R_API const char *r_sys_arch_str(int arch) {
 	int i;
-	for (i=0; arch_bit_array[i].name; i++)
-		if (arch & arch_bit_array[i].bit)
+	for (i=0; arch_bit_array[i].name; i++) {
+		if (arch & arch_bit_array[i].bit) {
 			return arch_bit_array[i].name;
+		}
+	}
 	return "none";
 }
 
@@ -677,10 +679,10 @@ R_API int r_is_heap (void *p) {
 	void *q = malloc (8);
 	ut64 mask = UT64_MAX;
 	ut64 addr = (ut64)(size_t)q;
-	addr>>=16;
-	addr<<=16;
-	mask>>=16;
-	mask<<=16;
+	addr >>= 16;
+	addr <<= 16;
+	mask >>= 16;
+	mask <<= 16;
 	free (q);
 	return (((ut64)(size_t)p) == mask);
 }

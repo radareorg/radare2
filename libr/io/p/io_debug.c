@@ -366,11 +366,46 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #endif
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
+	if (!strncmp (file, "pidof://", 8)) {
+		return 1;
+	}
 	return (!strncmp (file, "dbg://", 6) && file[6]);
+}
+
+#include <r_core.h>
+static int get_pid_of(RIO *io, const char *procname) {
+	RCore *c = io->user;
+	if (c && c->dbg && c->dbg->h) {
+		RListIter *iter;
+		RDebugPid *proc;
+		RDebug *d = c->dbg;
+		RList *pids = d->h->pids (0);
+		r_list_foreach (pids, iter, proc) {
+			if (strstr (proc->path, procname)) {
+				eprintf ("Matching PID %d %s\n", proc->pid, proc->path);
+				return proc->pid;
+			}
+		}
+		eprintf ("PIDS %p\n", pids);
+	} else {
+		eprintf ("Cannot enumerate processes\n");
+	}
+	return -1;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
+	if (!strncmp (file, "pidof://", 8)) {
+		int target_pid = get_pid_of (io, file + 8);
+		if (target_pid != -1) {
+			eprintf ("PIDOF %s\n", file + 8);
+			snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
+			file = uri;
+		} else {
+			eprintf ("Cannot find matching process for %s\n", file);
+			return NULL;
+		}
+	}
 	if (__plugin_open (io, file,  0)) {
 		const char *pidfile = file + 6;
 		char *endptr;
@@ -379,8 +414,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 		if (pid == -1) {
 			pid = fork_and_ptraceme (io, io->bits, file+6);
-			if (pid == -1)
+			if (pid == -1) {
 				return NULL;
+			}
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
 #elif __APPLE__
@@ -402,7 +438,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
-        .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
+        .desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof://)",
 	.license = "LGPL3",
         .open = __open,
         .check = __plugin_open,
