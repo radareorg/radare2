@@ -1478,7 +1478,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg);
 			break;
 		case 'p': // "dmp"
-			if (input[1] == ' ') {
+			if (input[1] == '?') {
+				eprintf ("Usage: dmp [addr] [size] [perms]\n");
+				eprintf ("Usage: dmp [perms] # change dbg.map permissions\n");
+			} else if (input[1] == ' ') {
 				int perms;
 				char *p, *q;
 				ut64 size, addr;
@@ -1491,11 +1494,27 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						addr = r_num_math (core->num, input + 2);
 						size = r_num_math (core->num, p);
 						perms = r_str_rwx (q);
-						eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
-						eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
+					//	eprintf ("(%s)(%s)(%s)\n", input + 2, p, q);
+					//	eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
 						r_debug_map_protect (core->dbg, addr, size, perms);
 					} else eprintf ("See dmp?\n");
-				} else eprintf ("See dmp?\n");
+				} else {
+					r_debug_map_sync (core->dbg); // update process memory maps
+					addr = UT64_MAX;
+					r_list_foreach (core->dbg->maps, iter, map) {
+						if (core->offset >= map->addr  && core->offset < map->addr_end) {
+							addr = map->addr;
+							size = map->size;
+							break;
+						}
+					}
+					perms = r_str_rwx (input + 2);
+					if (addr != UT64_MAX && perms >= 0) {
+						r_debug_map_protect (core->dbg, addr, size, perms);
+					} else {
+						eprintf ("See dmp?\n");
+					}
+				}
 			} else eprintf ("See dmp?\n");
 			break;
 		case 'd':
@@ -3739,7 +3758,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'x':
 			switch (input[1]) {
-				case 'a':
+				case 'a': // "dxa"
 					{
 						RAsmCode *acode;
 						r_asm_set_pc (core->assembler, core->offset);
@@ -3771,7 +3790,7 @@ static int cmd_debug(void *data, const char *input) {
 						r_reg_arena_pop (core->dbg->reg);
 					}
 					break;
-				case 's':
+				case 's': // "dxs"
 					if (input[2]) {
 						char *str;
 						r_cons_push ();
@@ -3783,7 +3802,7 @@ static int cmd_debug(void *data, const char *input) {
 						eprintf ("Missing parameter used in gs by dxs\n");
 					}
 					break;
-				case 'r':
+				case 'r': // "dxr"
 					r_reg_arena_push (core->dbg->reg);
 					if (input[2] == ' ') {
 						ut8 bytes[4096];

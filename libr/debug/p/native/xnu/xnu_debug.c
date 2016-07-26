@@ -68,8 +68,9 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 	tid = getcurthread (dbg);
 	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
 			  (RListComparator)&thread_find);
-	if (it)
+	if (it) {
 		return (xnu_thread_t *)it->data;
+	}
 	eprintf ("Thread not found get_xnu_thread\n");
 	return NULL;
 }
@@ -444,16 +445,19 @@ static vm_prot_t unix_prot_to_darwin(int prot) {
 
 int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	int ret;
+	task_t task = pid_to_task (dbg->tid);
 	// TODO: align pointers
+#if 0
 	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	if (!th) {
 		return false;
 	}
-	ret = vm_protect (th->port, (vm_address_t)addr,
-			 (vm_size_t)size, (boolean_t)0,
-			 VM_PROT_COPY | perms);
+#endif
+#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
+	int xnu_perms = xwr2rwx (perms);
+	ret = mach_vm_protect (task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); //VM_PROT_COPY | perms);
 	if (ret != KERN_SUCCESS) {
-		eprintf ("vm_protect failed\n");
+		perror ("vm_protect");
 		return false;
 	}
 	return true;
@@ -678,9 +682,10 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 		sc->nsects = 0;
 #endif
 
-		if ((curr_map->perm & VM_PROT_READ) == 0) 
+		if ((curr_map->perm & VM_PROT_READ) == 0) {
 			mach_vm_protect (task_dbg, curr_map->addr, curr_map->size, FALSE,
 				curr_map->perm | VM_PROT_READ);
+		}
 
 		/* Acording to osxbook, the check should be like this: */
 #if 0
