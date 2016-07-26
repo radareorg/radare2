@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -69,7 +69,7 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if ((buf) && (length > 0xffff)) {
+	if (buf && length > 0xffff && buf[0] != 0xcf) {
 		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
 		/* hacky check to avoid detecting multidex bins as bios */
 		/* need better fix for this */
