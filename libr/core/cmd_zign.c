@@ -209,29 +209,7 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	default:
 	case '?':{
-		const char* help_msg[] = {
-			"Usage:", "z[abcp/*-] [arg]", "Zignatures",
-			"z", "", "show status of zignatures",
-			"z*", "", "display all zignatures",
-			"z-", " namespace", "Unload zignatures in namespace",
-			"z-*", "", "unload all zignatures",
-			"z/", " [ini] [end]", "search zignatures between these regions",
-			"za", " ...", "define new zignature for analysis",
-			"zb", " name bytes", "define zignature for bytes",
-			"zB", " size", "Generate zignatures for current offset/flag",
-			"zc", " @ fcn.foo", "flag signature if matching (.zc@@fcn)",
-			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
-			"zF", " file", "Open a FLIRT signature file and scan opened file",
-			"zFd", " file", "Dump a FLIRT signature",
-			"zg", " namespace [file]", "Generate zignatures for current file",
-			"zh", " name bytes", "define function header zignature",
-			"zn", " namespace", "Define namespace for following zignatures (until zn-)",
-			"zn", "", "Display current namespace",
-			"zn-", "", "Unset namespace",
-			"zp", " name bytes", "define new zignature for function body",
-			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_z);
 			 }
 		break;
 	}

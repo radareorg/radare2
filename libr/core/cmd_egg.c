@@ -150,21 +150,7 @@ eprintf ("TODO: list options\n");
 		}
 		break;
 	case '?': {
-		const char* help_msg[] = {
-			"Usage:", "g[wcilper] [arg]", "Go compile shellcodes",
-			"g", " foo.r", "Compile r_egg source file",
-			"gw", "", "Compile and write",
-			"gc", " cmd=/bin/ls", "Set config option for shellcodes and encoders",
-			"gc", "", "List all config options",
-			"gl", "", "List plugins (shellcodes, encoders)",
-			"gs", " name args", "Compile syscall name(args)",
-			"gi", " exec", "Compile shellcode. like ragg2 -i",
-			"gp", " padding", "Define padding for command",
-			"ge", " xor", "Specify an encoder",
-			"gr", "", "Reset r_egg",
-			"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_g);
 		}
 		break;
 	}

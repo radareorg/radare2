@@ -368,25 +368,8 @@ static int step_line(RCore *core, int times) {
 
 static void cmd_debug_pid(RCore *core, const char *input) {
 	int pid, sig;
-	const char *ptr, *help_msg[] = {
-		"Usage:", "dp", " # Process commands",
-		"dp", "", "List current pid and childrens",
-		"dp", " <pid>", "List children of pid",
-		"dp*", "", "List all attachable pids",
-		"dp=", "<pid>", "Select pid",
-		"dp-", " <pid>", "Dettach select pid",
-		"dpa", " <pid>", "Attach and select pid",
-		"dpc", "", "Select forked pid (see dbg.forks)",
-		"dpc*", "", "Display forked pid (see dbg.forks)",
-		"dpe", "", "Show path to executable",
-		"dpf", "", "Attach to pid like file fd // HACK",
-		"dpk", " <pid> [<signal>]", "Send signal to process (default 0)",
-		"dpn", "", "Create new process (fork)",
-		"dptn", "", "Create new thread (clone)",
-		"dpt", "", "List threads of current pid",
-		"dpt", " <pid>", "List threads of process",
-		"dpt=", "<thread>", "Attach to thread",
-		NULL};
+	const char *ptr;
+
 	switch (input[1]) {
 		case 0:
 			eprintf ("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
@@ -444,7 +427,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 					break;
 				case '?':
 				default:
-					r_core_cmd_help (core, help_msg);
+					r_core_cmd_help (core, help_msg_dp);
 					break;
 			}
 			break;
@@ -493,7 +476,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			break;
 		case '?':
 		default:
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_dp);
 			break;
 	}
 }
@@ -562,22 +545,6 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 }
 
 static int cmd_debug_map_snapshot(RCore *core, const char *input) {
-	const char* help_msg[] = {
-		"Usage:", "dms", " # Memory map snapshots",
-		"dms", "", "List memory snapshots",
-		"dmsj", "", "list snapshots in JSON",
-		"dms*", "", "list snapshots in r2 commands",
-		"dms", " addr", "take snapshot with given id of map at address",
-		"dms", "-id", "delete memory snapshot",
-		"dmsC", " id comment", "add comment for given snapshot",
-		"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
-		"dmsw", "", "snapshot of the writable maps",
-		"dmsa", "", "full snapshot of all `dm` maps",
-		"dmsf", " [file] @ addr", "read snapshot from disk",
-		"dmst", " [file] @ addr", "dump snapshot to disk",
-		// TODO: dmsj - for json
-		NULL
-	};
 	switch (*input) {
 		case 'f':
 			{
@@ -631,7 +598,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 			}
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_dms);
 			break;
 		case '-':
 			if (input[1]=='*') {
@@ -722,19 +689,11 @@ static void cmd_debug_modules(RCore *core, int mode) { // "dmm"
 	RDebugMap *map;
 	RList *list;
 	RListIter *iter;
-	const char* help_msg[] = {
-		"Usage:", "dmm", " # Module memory maps commands",
-		"dmm", "", "List modules of target process",
-		"dmm.", "", "List memory map of current module",
-		"dmmj", "", "List modules of target process (JSON)",
-		"dmm*", "", "List modules of target process (r2 commands)",
-		NULL
-	};
 
 	/* avoid processing the list if the user only wants help */
 	if (mode == '?') {
 show_help:
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_dmm);
 		return;
 	}
 	if (mode == 'j') {
@@ -1379,17 +1338,6 @@ static int cmd_dbg_map_heap_glibc(RCore *core, const char *input) {
 		return false;
 	}
 	static ut64 m_arena = UT64_MAX;
-	const char* help_msg[] = {
-		"Usage:", "dmh", " # Memory map heap info glibc",
-		"dmha", "", "Struct Malloc State (main_arena)",
-		"dmhb", "", "Show bins information",
-		"dmhb", " [bin_num]", "Print double linked list of the number of bin",
-		"dmhc", " @[malloc_addr]", "Print malloc_chunk struct for a given malloc chunk",
-		"dmhf", "", "Show fastbins information",
-		"dmhf", " [fastbin_num]", "Print single linked list of the number of fastbin",
-		"dmh?", "", "Show map heap help",
-		NULL
-	};
 
 	switch (input[0]) {
 		case '\0': //"dmh"
@@ -1422,7 +1370,7 @@ static int cmd_dbg_map_heap_glibc(RCore *core, const char *input) {
 			eprintf ("TODO: JSON output for dmh is not yet implemented\n");
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_dmh);
 			break;
 	}
 
@@ -1432,27 +1380,6 @@ static int cmd_dbg_map_heap_glibc(RCore *core, const char *input) {
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
 static int cmd_debug_map(RCore *core, const char *input) {
-	const char* help_msg[] = {
-		"Usage:", "dm", " # Memory maps commands",
-		"dm", "", "List memory maps of target process",
-		"dm=", "", "List memory maps of target process (ascii-art bars)",
-		"dm", " <address> <size>", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
-		"dm.", "", "Show map name of current address",
-		"dm*", "", "List memmaps in radare commands",
-		"dm-", "<address>", "Deallocate memory map of <address>",
-		"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
-		"dmi", " [addr|libname] [symname]", "List symbols of target lib",
-		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
-		"dmj", "", "List memmaps in JSON format",
-		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
-		"dmm", "[j*]", "List modules (libraries, binaries loaded in memory)",
-		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
-		"dms", " <id> <mapaddr>", "take memory snapshot",
-		"dms-", " <id> <mapaddr>", "restore memory snapshot",
-		"dmh", "", "Show map of heap",
-		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
-		"TODO:", "", "map files in process memory. (dmf file @ [addr])",
-		NULL};
 	RListIter *iter;
 	RDebugMap *map;
 	ut64 addr = core->offset;
@@ -1475,7 +1402,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			} else cmd_debug_modules (core, input[1]);
 			break;
 		case '?':
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_dm);
 			break;
 		case 'p': // "dmp"
 			if (input[1] == ' ') {
@@ -1757,22 +1684,13 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 		default:
 			{
 				const char *from_a[] = { "arp", "arp.", "arpj", "arps" };
-				const char *help_msg[] = {
-					"Usage:", "drp", " # Register profile commands",
-					"drp", "", "Show the current register profile",
-					"drp", " [regprofile-file]", "Set the current register profile",
-					"drp.", "", "Show the current fake size",
-					"drpj", "", "Show the current register profile (JSON)",
-					"drps", " [new fake size]", "Set the fake size",
-					NULL
-				};
 				if (from == 'a') {
-					help_msg[1] = help_msg[3] = help_msg[6] = from_a[0];
-					help_msg[9] = from_a[1];
-					help_msg[12] = from_a[2];
-					help_msg[15] = from_a[3];
+					help_msg_drp[1] = help_msg_drp[3] = help_msg_drp[6] = from_a[0];
+					help_msg_drp[9] = from_a[1];
+					help_msg_drp[12] = from_a[2];
+					help_msg_drp[15] = from_a[3];
 				}
-				r_core_cmd_help (core, help_msg);
+				r_core_cmd_help (core, help_msg_drp);
 				break;
 			}
 	}
@@ -1814,43 +1732,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				core->num->value = off;
 				//r_reg_get_value (core->dbg->reg, r));
 			} else {
-				const char * help_message[] = {
-					"Usage: dr", "", "Registers commands",
-					"dr", "", "Show 'gpr' registers",
-					"dr", " <register>=<val>", "Set register value",
-					"dr=", "", "Show registers in columns",
-					"dr?", "<register>", "Show value of given register",
-					"drb", " [type]", "Display hexdump of gpr arena (WIP)",
-					"drC", "", "Show register profile comments",
-					"drc", " [name]", "Related to conditional flag registers",
-					"drd", "", "Show only different registers",
-					"drl", "", "List all register names",
-					"drn", " <pc>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
-					"dro", "", "Show previous (old) values of registers",
-					"drp", " <file>", "Load register metadata file",
-					"drp", "", "Display current register profile",
-					"drps", "", "Fake register profile size",
-					"drr", "", "Show registers references (telescoping)",
-					"drs", " [?]", "Stack register states",
-					"drt", "", "Show all register types",
-					"drt", " flg", "Show flag registers",
-					"drt", " all", "Show all registers",
-					"drt", " 16", "Show 16 bit registers",
-					"drt", " 32", "Show 32 bit registers",
-					"drt", " 80", "Show 80 bit registers (long double)",
-					"drx", "", "Show all debug registers",
-					"drx", " idx addr len rwx", "Modify hardware breakpoint",
-					"drx-", "number", "Clear hardware breakpoint",
-					"drf","","show fpu registers (80 bit long double)",
-					"drm","","show multimedia packed registers",
-					"drm"," mmx0 0 32 = 12","set the first 32 bit word of the mmx reg to 12",
-					"drw"," <hexnum>", "Set contents of the register arena",
-					".dr", "*", "Include common register values in flags",
-					".dr", "-", "Unflag all registers",
-					NULL
-				};
 				// TODO: 'drs' to swap register arenas and display old register valuez
-				r_core_cmd_help (core, help_message);
+				r_core_cmd_help (core, help_msg_dr);
 			}
 			break;
 		case 'l': // "drl"
@@ -1959,14 +1842,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				case '?':
 				default:
 						  {
-							  const char * help_message[] = {
-								  "Usage: drx", "", "Hardware breakpoints commands",
-								  "drx", "", "List all (x86?) hardware breakpoints",
-								  "drx", " <number> <address> <length> <perms>", "Modify hardware breakpoint",
-								  "drx-", "<number>", "Clear hardware breakpoint",
-								  NULL
-							  };
-							  r_core_cmd_help (core, help_message);
+							  r_core_cmd_help (core, help_msg_drx);
 						  }
 						  break;
 			}
@@ -1988,21 +1864,14 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				case '?':
 				default:
 					{
-						const char * help_message[] = {
-							"Usage: drs", "", "Register states commands",
-							"drs", "", "List register stack",
-							"drs", "+", "Push register state",
-							"drs", "-", "Pop register state",
-							NULL
-						};
-						r_core_cmd_help (core, help_message);
+						r_core_cmd_help (core, help_msg_drs);
 					}
 					break;
 			}
 			break;
 		case 'm': // "drm"
 			if (str[1]=='?') {
-				eprintf ("Usage: drm [reg] [idx] [wordsize] [= value]\n");
+				r_core_cmd_help (core, help_msg_drm);
 			} else if (str[1]==' ') {
 				int word = 0;
 				int size = 0; // auto
@@ -2048,7 +1917,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_debug_reg_sync (core->dbg, -R_REG_TYPE_FPU, false);
 			//r_debug_drx_list (core->dbg);
 			if (str[1]=='?') {
-				eprintf ("Usage: drf [fpureg] [= value]\n");
+				r_core_cmd_help (core, help_msg_drf);
 			} else if (str[1]==' ') {
 				char *p, *name = strdup (str+2);
 				char *eq = strchr (name, '=');
@@ -2128,14 +1997,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				case '?':
 				default:
 					{
-						const char *help_msg[] = {
-							"Usage:", "drt", " [type] [size]    # debug register types",
-							"drt", "", "List all available register types",
-							"drt", " [size]", "Show all regs in the profile of size",
-							"drt", " [type]", "Show all regs in the profile of this type",
-							"drt", " [type] [size]", "Same as above for type and size",
-							NULL};
-						r_core_cmd_help (core, help_msg);
+						r_core_cmd_help (core, help_msg_drt);
 					}
 					break;
 			}
@@ -2288,43 +2150,6 @@ static void static_debug_stop(void *u) {
 
 static void r_core_cmd_bp(RCore *core, const char *input) {
 	RBreakpointItem *bpi;
-	const char* help_msg[] = {
-		"Usage: db", "", " # Breakpoints commands",
-		"db", "", "List breakpoints",
-		"db", " sym.main", "Add breakpoint into sym.main",
-		"db", " <addr>", "Add breakpoint",
-		"db", " -<addr>", "Remove breakpoint",
-		"db.", "", "Show breakpoint info in current offset",
-		"dbj", "", "List breakpoints in JSON format",
-		// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
-		"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
-		"dbd", " <addr>", "Disable breakpoint",
-		"dbe", " <addr>", "Enable breakpoint",
-		"dbs", " <addr>", "Toggle breakpoint",
-
-		"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-		"dbt*", "", "Display backtrace in flags",
-		"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
-		"dbtj", "", "Display backtrace in JSON",
-		"dbte", " <addr>", "Enable Breakpoint Trace",
-		"dbtd", " <addr>", "Disable Breakpoint Trace",
-		"dbts", " <addr>", "Swap Breakpoint Trace",
-		"dbm", " <module> <offset>", "Add a breakpoint at an offset from a module's base",
-		"dbn", " [<name>]", "Show or set name for current breakpoint",
-		//
-		"dbi", "", "List breakpoint indexes",
-		"dbic", " <index> <cmd>", "Run command at breakpoint index",
-		"dbie", " <index>", "Enable breakpoint by index",
-		"dbid", " <index>", "Disable breakpoint by index",
-		"dbis", " <index>", "Swap Nth breakpoint",
-		"dbite", " <index>", "Enable breakpoint Trace by index",
-		"dbitd", " <index>", "Disable breakpoint Trace by index",
-		"dbits", " <index>", "Swap Nth breakpoint trace",
-		//
-		"dbh", " x86", "Set/list breakpoint plugin handlers",
-		"drx", " number addr len rwx", "Modify hardware breakpoint",
-		"drx-", "number", "Clear hardware breakpoint",
-		NULL};
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
 	RDebugFrame *frame;
 	RListIter *iter;
@@ -2723,7 +2548,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				   break;
 		case '?':
 		default:
-				   r_core_cmd_help (core, help_msg);
+				   r_core_cmd_help (core, help_msg_db);
 				   break;
 	}
 }
@@ -2943,11 +2768,7 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 					}
 				}
 				if (!done) {
-					const char *help_de_msg[] = {
-						"Usage:", "de", " [rwx] [reg|mem] [expr]",
-						NULL
-					};
-					r_core_cmd_help (core, help_de_msg);
+					r_core_cmd_help (core, help_msg_de);
 				}
 				free (line);
 			}
@@ -2972,13 +2793,7 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 					addr = naddr;
 				}
 			} else if (input[1] == '?' || !input[1]) {
-				const char *help_des_msg[] = {
-					"Usage:", "des", "[u] [arg]",
-					"des", " [N]", "step-in N instructions with esildebug",
-					"desu", " [addr]", "esildebug until specific address",
-					NULL
-				};
-				r_core_cmd_help (core, help_des_msg);
+				r_core_cmd_help (core, help_msg_des);
 			} else {
 				r_core_cmd0 (core, "aei");
 				r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
@@ -3002,22 +2817,7 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 		case '?':
 		default:
 			{
-				const char *help_msg[] = {
-					"Usage:", "de", "[-sc] [rwx] [rm] [expr]",
-					"de", "", "list esil watchpoints",
-					"de-*", "", "delete all esil watchpoints",
-					"de", " [rwx] [rm] [addr|reg|from..to]", "stop on condition",
-					"dec", "", "continue execution until matching expression",
-					"des", " [N]", "step-in N instructions with esildebug",
-					"desu", " [addr]", "esildebug until specific address",
-					NULL
-				};
-				r_core_cmd_help (core, help_msg);
-				r_cons_printf ("Examples:\n"
-						" de r r rip       # stop when reads rip\n"
-						" de rw m ADDR     # stop when read or write in ADDR\n"
-						" de w r rdx       # stop when rdx register is modified\n"
-						" de x m FROM..TO  # stop when rip in range\n");
+				r_core_cmd_help (core, help_msg_de);
 			}
 			break;
 	}
@@ -3039,18 +2839,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 				}
 			}
 		} else {
-			const char * help_message[] = {
-				"Usage: dk", "", "Signal commands",
-				"dk", "", "List all signal handlers of child process",
-				"dk", " <signal>", "Send KILL signal to child",
-				"dk", " <signal>=1", "Set signal handler for <signal> in child",
-				"dk?", "<signal>", "Name/signum resolver",
-				"dko", " <signal>", "Reset skip or cont options for given signal",
-				"dko", " <signal> [|skip|cont]", "On signal SKIP handler or CONT into",
-				"dkj", "", "List all signal handlers in JSON",
-				NULL
-			};
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_dk);
 		}
 	} else if (*input=='o') {
 		switch (input[1]) {
@@ -3088,17 +2877,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			case '?':
 			default:
 				{
-					const char* help_msg[] = {
-						"Usage:", "dko", " # Signal handling commands",
-						"dko", "", "List existing signal handling",
-						"dko", " [signal]", "Clear handling for a signal",
-						"dko", " [signal] [skip|cont]", "Set handling for a signal",
-						NULL
-					};
-					r_core_cmd_help (core, help_msg);
-					eprintf ("NOTE: [signal] can be a number or a string that resolves with dk?\n"
-							"  skip means do not enter into the signal handler\n"
-							"  continue means enter into the signal handler\n");
+					r_core_cmd_help (core, help_msg_dko);
 				}
 		}
 	} else if (*input == 'j') {
@@ -3197,27 +2976,9 @@ static bool cmd_dcu (RCore *core, const char *input) {
 static int cmd_debug_continue (RCore *core, const char *input) {
 	int pid, old_pid, signum;
 	char *ptr;
-	const char * help_message[] = {
-		"Usage: dc", "", "Execution continuation commands",
-		"dc", "", "Continue execution of all children",
-		"dc", " <pid>", "Continue execution of pid",
-		"dc", "[-pid]", "Stop execution of pid",
-		"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
-		"dcc", "", "Continue until call (use step into)",
-		"dccu", "", "Continue until unknown call (call reg)",
-		"dcf", "", "Continue until fork (TODO)",
-		"dck", " <signal> <pid>", "Continue sending signal to process",
-		"dco", " <num>", "Step over <num> instructions",
-		"dcp", "", "Continue until program code (mapped io section)",
-		"dcr", "", "Continue until ret (uses step over)",
-		"dcs", " <num>", "Continue until syscall",
-		"dct", " <len>", "Traptrace from curseek to len, no argument to list",
-		"dcu", "[..end|addr] ([end])", "Continue until address (or range)",
-		/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
-		/*"TODO: same for only user/libs side, to avoid steping into libs",*/
-		/*"TODO: support for threads?",*/
-		NULL
-	};
+	/*"TODO: dcu/dcr needs dbg.untilover=true??",*/
+	/*"TODO: same for only user/libs side, to avoid steping into libs",*/
+	/*"TODO: support for threads?",*/
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
 		case 0: // "dc"
@@ -3277,11 +3038,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 					break;
 				default:
 				case '?':
-					eprintf ("|Usage: dcs [syscall-name-or-number]\n");
-					eprintf ("|dcs         : continue until next syscall\n");
-					eprintf ("|dcs mmap    : continue until next call to mmap\n");
-					eprintf ("|dcs*        : trace all syscalls (strace)\n");
-					eprintf ("|dcs?        : show this help\n");
+					r_core_cmd_help (core, help_msg_dcs);
 					break;
 			}
 			break;
@@ -3323,7 +3080,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			break;
 		case '?': // "dc?"
 		default:
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_dc);
 			return 0;
 	}
 	return 1;
@@ -3340,23 +3097,6 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;
-	const char * help_message[] = {
-		"Usage: ds", "", "Step commands",
-		"ds", "", "Step one instruction",
-		"ds", " <num>", "Step <num> instructions",
-		"dsf", "", "Step until end of frame",
-		"dsi", " <cond>", "Continue until condition matches",
-		"dsl", "", "Step one source line",
-		"dsl", " <num>", "Step <num> source lines",
-		"dso", " <num>", "Step over <num> instructions",
-		"dsp", "", "Step into program (skip libs)",
-		"dss", " <num>", "Skip <num> step instructions",
-		"dsu", " <address>", "Step until address",
-		"dsui", " <instr>", "Step until an instruction that matches `instr`",
-		"dsue", " <esil>", "Step until esil expression matches",
-		"dsuf", " <flag>", "Step until pc == flag matching name",
-		NULL
-	};
 	if (strlen (input) > 2) {
 		times = atoi (input + 2);
 	}
@@ -3471,7 +3211,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			break;
 		case '?':
 		default:
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_ds);
 			return 0;
 	}
 	return 1;
@@ -3499,7 +3239,7 @@ static int cmd_debug(void *data, const char *input) {
 			switch (input[1]) {
 				case 'c': // "dtc"
 					if (input[2] == '?') {
-						eprintf ("Usage: dtc [addr] ([from] [to] [addr]) - trace calls in debugger\n");
+						r_core_cmd_help (core, help_msg_dtc);
 					} else {
 						debug_trace_calls (core, input + 2);
 					}
@@ -3523,18 +3263,7 @@ static int cmd_debug(void *data, const char *input) {
 				case '?':
 				default:
 					{
-						const char * help_message[] = {
-							"Usage: dt", "", "Trace commands",
-							"dt", "", "List all traces ",
-							"dtd", "", "List all traced disassembled",
-							"dtc [addr]|([from] [to] [addr])", "", "Trace call/ret",
-							"dtg", "", "Graph call/ret trace",
-							"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
-							"dtgi", "", "Interactive debug trace",
-							"dt-", "", "Reset traces (instruction/calls)",
-							NULL
-						};
-						r_core_cmd_help (core, help_message);
+						r_core_cmd_help (core, help_msg_dt);
 					}
 					break;
 			}
@@ -3618,15 +3347,7 @@ static int cmd_debug(void *data, const char *input) {
 				case '?':
 				default:
 					{
-						const char * help_message[] = {
-							"Usage: dd", "", "Descriptors commands",
-							"dd", "", "List file descriptors",
-							"dd", " <file>", "Open and map that file into the UI",
-							"dd-", "<fd>", "Close stdout fd",
-							"dd*", "", "List file descriptors (in radare commands)",
-							NULL
-						};
-						r_core_cmd_help (core, help_message);
+						r_core_cmd_help (core, help_msg_dd);
 					}
 					break;
 			}
@@ -3673,12 +3394,6 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'i':
 			{
-				const char * help_message[] = {
-					"Usage: di", "", "Debugger target information",
-					"di", "", "Show debugger target information",
-					"dij", "", "Same as above, but in JSON format",
-					NULL
-				};
 				RDebugInfo *rdi = r_debug_info (core->dbg, input + 2);
 				RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 				char *escaped_str;
@@ -3731,7 +3446,7 @@ static int cmd_debug(void *data, const char *input) {
 #undef PS
 					case '?':
 					default:
-						r_core_cmd_help (core, help_message);
+						r_core_cmd_help (core, help_msg_di);
 				}
 				if (rdi)
 					r_debug_info_free (rdi);
@@ -3815,18 +3530,7 @@ static int cmd_debug(void *data, const char *input) {
 				case '?':
 				default:
 					{
-						const char* help_msg[] = {
-							"Usage: dx", "", " # Code injection commands",
-							"dx", " <opcode>...", "Inject opcodes",
-							"dxa", " nop", "Assemble code and inject",
-							"dxe", " egg-expr", "compile egg expression and inject it",
-							"dxr", " <opcode>...", "Inject opcodes and restore state",
-							"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
-							"\nExamples:", "", "",
-							"dx", " 9090", "Inject two x86 nop",
-							"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "Inject and restore state",
-							NULL};
-						r_core_cmd_help (core, help_msg);
+						r_core_cmd_help (core, help_msg_dx);
 					}
 					break;
 			}
@@ -3842,12 +3546,7 @@ static int cmd_debug(void *data, const char *input) {
 				case '?':
 				default:
 					{
-						const char* help_msg[] = {
-							"Usage:", "do", " # Debug commands",
-							"do", "", "Open process (reload, alias for 'oo')",
-							"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
-							NULL};
-						r_core_cmd_help (core, help_msg);
+						r_core_cmd_help (core, help_msg_do);
 					}
 					break;
 			}
@@ -3895,29 +3594,7 @@ static int cmd_debug(void *data, const char *input) {
 		case '?':
 		default:
 			{
-				const char* help_msg[] = {
-					"Usage:", "d", " # Debug commands",
-					"db", "[?]", "Breakpoints commands",
-					"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
-					"dc", "[?]", "Continue execution",
-					"dd", "[?]", "File descriptors (!fd in r1)",
-					"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
-					"dg", " <file>", "Generate a core-file (WIP)",
-					"dh", " [handler]", "List or set debugger handler",
-					"dH", " [handler]", "Transplant process to a new handler",
-					"di", "", "Show debugger backend information (See dh)",
-					"dk", "[?]", "List, send, get, set, signal handlers of child",
-					"dm", "[?]", "Show memory maps",
-					"do", "", "Open process (reload, alias for 'oo')",
-					"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
-					"dp", "[?]", "List, attach to process or thread id",
-					"dr", "[?]", "Cpu registers",
-					"ds", "[?]", "Step, over, source line",
-					"dt", "[?]", "Display instruction traces (dtr=reset)",
-					"dw", " <pid>", "Block prompt until pid dies",
-					"dx", "[?]", "Inject and run code on target process (See gs)",
-					NULL};
-				r_core_cmd_help (core, help_msg);
+				r_core_cmd_help (core, help_msg_d);
 			}
 			break;
 	}

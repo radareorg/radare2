@@ -233,9 +233,9 @@ static int cmd_seek(void *data, const char *input) {
 					break;
 				}
 				free (cb.str);
-			} else eprintf ("Usage: sC[?*] comment-grep\n"
-				"sC*        list all comments\n"
-				"sC const   seek to comment matching 'const'\n");
+			} else {
+				r_core_cmd_help (core, help_msg_sC);
+			}
 			break;
 		case ' ':
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
@@ -404,13 +404,6 @@ static int cmd_seek(void *data, const char *input) {
 		case 'l': // "sl"
 			{
 			int sl_arg = r_num_math (core->num, input+1);
-			const char *help_msg[] = {
-				"Usage:", "sl+ or sl- or slc", "",
-				"sl", " [line]", "Seek to absolute line",
-				"sl", "[+-][line]", "Seek to relative line",
-				"slc", "", "Clear line cache",
-				"sll", "", "Show total number of lines",
-				NULL };
 			switch (input[1]) {
 			case 0:
 				if (!core->print->lines_cache) {
@@ -441,40 +434,13 @@ static int cmd_seek(void *data, const char *input) {
 				eprintf ("%d lines\n", core->print->lines_cache_sz-1);
 				break;
 			case '?':
-				r_core_cmd_help (core, help_msg);
+				r_core_cmd_help (core, help_msg_sl);
 				break;
 			}
 			}
 			break;
 		case '?': {
-			const char * help_message[] = {
-			"Usage: s", "", " # Seek commands",
-			"s", "", "Print current address",
-			"s", " addr", "Seek to address",
-			"s-", "", "Undo seek",
-			"s-", " n", "Seek n bytes backward",
-			"s--", "", "Seek blocksize bytes backward",
-			"s+", "", "Redo seek",
-			"s+", " n", "Seek n bytes forward",
-			"s++", "", "Seek blocksize bytes forward",
-			"s[j*=]", "", "List undo seek history (JSON, =list, *r2)",
-			"s/", " DATA", "Search for next occurrence of 'DATA'",
-			"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
-			"s.", "hexoff", "Seek honoring a base from core->offset",
-			"sa", " [[+-]a] [asz]", "Seek asz (or bsize) aligned to addr",
-			"sb", "", "Seek aligned to bb start",
-			"sC", " string", "Seek to comment matching given string",
-			"sf", "", "Seek to next function (f->addr+f->size)",
-			"sf", " function", "Seek to address of specified function",
-			"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
-			"sl", "[+-]line", "Seek to line",
-			"sn/sp", "", "Seek next/prev scr.nkey",
-			"so", " [N]", "Seek to N next opcode(s)",
-			"sr", " pc", "Seek to register",
-			//"sp [page]  seek page N (page = block)",
-			NULL
-			};
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help(core, help_msg_s);
 		}
 			break;
 		}

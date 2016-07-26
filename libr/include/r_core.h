@@ -28,6 +28,7 @@
 #include "r_util.h"
 #include "r_crypto.h"
 #include "r_bind.h"
+#include "r_help.h"
 
 #ifdef __cplusplus
 extern "C" {

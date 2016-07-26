@@ -19,7 +19,9 @@ static int cmd_project(void *data, const char *input) {
 	case 'c':
 		if (input[1]==' ') {
 			r_core_project_cat (core, input+2);
-		} else eprintf ("Usage: Pc [prjname]\n");
+		} else {
+			r_core_cmd_help (core, help_msg_Pc);
+		}
 		break;
 	case 'o':
 	//	if (r_file_is_regular (file))
@@ -45,7 +47,9 @@ static int cmd_project(void *data, const char *input) {
 	case 'S':
 		if (input[1] == ' ') {
 			r_core_project_save_rdb (core, input+2, R_CORE_PRJ_ALL);
-		} else eprintf ("Usage: PS [file]\n");
+		} else {
+			r_core_cmd_help (core, help_msg_PS);
+		}
 		break;
 	case 'n':
 		if (!fileproject || !*fileproject) {
@@ -134,7 +138,7 @@ static int cmd_project(void *data, const char *input) {
 					free (data);
 				}
 			} else {
-				eprintf ("Usage: `Pnj` or `Pnj ...`\n");
+				r_core_cmd_help (core, help_msg_Pnj);
 			}
 			break;
 		case 0:
@@ -150,16 +154,7 @@ static int cmd_project(void *data, const char *input) {
 			break;
 		case '?':
 			{
-				const char* help_msg[] = {
-					"Usage:", "Pn[j-?] [...]", "Project Notes",
-					"Pn", "", "show project notes",
-					"Pn", " -", "edit notes with cfg.editor",
-					"Pn-", "", "delete notes",
-					"Pn-", "str", "delete lines matching /str/ in notes",
-					"Pnj", "", "show notes in base64",
-					"Pnj", " [base64]", "set notes in base64",
-					NULL};
-				r_core_cmd_help (core, help_msg);
+				r_core_cmd_help (core, help_msg_Pn);
 			}
 			break;
 		}
@@ -169,22 +164,7 @@ static int cmd_project(void *data, const char *input) {
 		free (r_core_project_info (core, file));
 		break;
 	default: {
-		const char* help_msg[] = {
-		"Usage:", "P[?osi] [file]", "Project management",
-		"Pc", " [file]", "show project script to console",
-		"Pd", " [file]", "delete project",
-		"Pi", " [file]", "show project information",
-		"Pl", "", "list all projects",
-		"Pn", "[j]", "show project notes (Pnj for json)",
-		"Pn", " [base64]", "set notes text",
-		"Pn", " -", "edit notes with cfg.editor",
-		"Po", " [file]", "open project",
-		"Ps", " [file]", "save project",
-		"PS", " [file]", "save script file",
-		"NOTE:", "", "See 'e file.project'",
-		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",
-		NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_P);
 		}
 		break;
 	}

@@ -150,11 +150,7 @@ static int cmd_mount(void *data, const char *_input) {
 		input++;
 		switch (*input) {
 		case '?':
-			r_cons_printf (
-			"Usage: mf[no] [...]\n"
-			" mfn /foo *.c       ; search files by name in /foo path\n"
-			" mfo /foo 0x5e91    ; search files by offset in /foo path\n"
-			);
+			r_core_cmd_help (core, help_msg_mf);
 			break;
 		case 'n':
 			input++;
@@ -203,25 +199,8 @@ static int cmd_mount(void *data, const char *_input) {
 		eprintf ("TODO\n");
 		break;
 	case '?': {
-		const char* help_msg[] = {
-			"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
-			"m", "", "List all mountpoints in human readable format",
-			"m*", "", "Same as above, but in r2 commands",
-			"ml", "", "List filesystem plugins",
-			"m", " /mnt", "Mount fs at /mnt with autodetect fs and current offset",
-			"m", " /mnt ext2 0", "Mount ext2 fs at /mnt with delta 0 on IO",
-			"m-/", "", "Umount given path (/)",
-			"my", "", "Yank contents of file into clipboard",
-			"mo", " /foo", "Get offset and size of given file",
-			"mg", " /foo", "Get contents of file/dir dumped to disk (XXX?)",
-			"mf", "[o|n]", "Search files for given filename or for offset",
-			"md", " /", "List directory contents for path",
-			"mp", "", "List all supported partition types",
-			"mp", " msdos 0", "Show partitions in msdos format at offset 0",
-			"ms", " /mnt", "Open filesystem prompt at /mnt",
-			//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
+		r_core_cmd_help (core, help_msg_m);
 		}
 		break;
 	}

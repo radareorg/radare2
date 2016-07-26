@@ -2,33 +2,6 @@
 
 #include "r_core.h"
 
-static void showhelp(RCore *core) {
-	const char* help_msg[] = {
-		"Usage:", "c[?dfx] [argument]", " # Compare",
-		"c", " [string]", "Compare a plain with escaped chars string",
-		"c*", " [string]", "Compare a plain with escaped chars string (output r2 commands)",
-		"c4", " [value]", "Compare a doubleword from a math expression",
-		"c8", " [value]", "Compare a quadword from a math expression",
-		"cat", " [file]", "Show contents of file (see pwd, ls)",
-		"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
-		"ccc", " [at] [(at)]", "Same as above, but only showing different lines",
-		"ccd", " [at] [(at)]", "Compares in two disasm columns of block size",
-		//"cc", " [offset]", "code bindiff current block against offset"
-		//"cD", " [file]", "like above, but using radiff -b",
-		"cf", " [file]", "Compare contents of file at current seek",
-		"cg", "[o] [file]","Graphdiff current file and [file]",
-		"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
-		"cu", " [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
-		"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
-		"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
-		"cw", "[us?] [...]", "Compare memory watchers",
-		"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
-		"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
-		"cX", " [addr]", "Like 'cc' but using hexdiff output",
-		NULL
-	};
-	r_core_cmd_help (core, help_msg);
-}
 R_API void r_core_cmpwatch_free (RCoreCmpWatcher *w) {
 	free (w->ndata);
 	free (w->odata);
@@ -240,18 +213,7 @@ static void cmd_cmp_watcher (RCore *core, const char *input) {
 		r_core_cmpwatch_show (core, UT64_MAX, 0);
 		break;
 	case '?': {
-			const char * help_message[] = {
-				"Usage: cw", "", "Watcher commands",
-				"cw", "", "List all compare watchers",
-				"cw", " addr", "List all compare watchers",
-				"cw", " addr sz cmd", "Add a memory watcher",
-				//"cws", " [addr]", "Show watchers",
-				"cw", "*", "List compare watchers in r2 cmds",
-				"cwr", " [addr]", "Reset/revert watchers",
-				"cwu", " [addr]", "Update watchers",
-				NULL
-			};
-			r_core_cmd_help(core, help_message);
+			r_core_cmd_help(core, help_msg_cw);
 		}
 		break;
 	}
@@ -566,14 +528,7 @@ static int cmd_cmp(void *data, const char *input) {
 				r_anal_diff_setup (core->anal, false, -1, -1);
 				break;
 			default: {
-				const char * help_message[] = {
-				"Usage: cg", "", "Graph code commands",
-				"cg",  "", "diff ratio among functions (columns: off-A, match-ratio, off-B)",
-				"cgf", "[fcn]", "Compare functions (curseek vs fcn)",
-				"cgo", "", "Opcode-bytes code graph diff",
-				NULL
-				};
-				r_core_cmd_help(core, help_message);
+				r_core_cmd_help(core, help_msg_cg);
 				return false;
 				}
 			}
@@ -621,17 +576,11 @@ static int cmd_cmp(void *data, const char *input) {
 			cmd_cmp_disasm (core, input+2, 'u');
 			break;
 		default: {
-			const char* help_msg[] = {
-			"Usage: cu",  " [offset]", "# Creates a unified hex patch",
-			"cu", " $$+1 > p", "Compare current seek and +1",
-			"cud", " $$+1 > p", "Compare disasm current seek and +1",
-			"wu", " p", "Apply unified hex patch",
-			NULL};
-			r_core_cmd_help (core, help_msg); }
+			r_core_cmd_help (core, help_msg_cu); }
 		}
 		break;
 	case '?':
-		showhelp (core);
+		r_core_cmd_help (core, help_msg_c);
 		break;
 	case 'v': // "cv"
 		{
@@ -665,12 +614,7 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		default:
 		case '?':
-			eprintf ("Usage: cv[1248] [num]\n"
-			"Show offset if current value equals to the one specified\n"
-			" /v 18312   # serch for a known value\n"
-			" dc\n"
-			" cv4 18312 @@ hit*\n"
-			" dc\n");
+			r_core_cmd_help (core, help_msg_cv);
 			break;
 		}
 		}
@@ -691,7 +635,7 @@ static int cmd_cmp(void *data, const char *input) {
 		//		r_cons_flush ();
 		break;
 	default:
-		showhelp (core);
+		r_core_cmd_help (core, help_msg_c);
 	}
 	if (val != UT64_MAX)
 		core->num->value = val;

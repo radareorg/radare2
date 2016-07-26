@@ -74,7 +74,7 @@ rep:
 			flagenum = 0;
 			break;
 		default:
-			eprintf ("|Usage: fe[-| name] @@= 1 2 3 4\n");
+			r_core_cmd_help (core, help_msg_fe);
 			break;
 		}
 		break;
@@ -84,7 +84,7 @@ rep:
 			flagbars_dos (core);
 			break;
 		case '?':
-			eprintf ("Usage: f= or f== to display flag bars\n");
+			r_core_cmd_help (core, help_msg_fequals);
 			break;
 		default:
 			flagbars (core);
@@ -128,8 +128,7 @@ rep:
 			}
 			break;
 		case '?':
-			eprintf ("Usage: fV[*-] [nkey] [offset]\n");
-			eprintf ("Dump/Restore visual marks (mK/'K)\n");
+			r_core_cmd_help (core, help_msg_fV);
 			break;
 		default:
 			r_core_visual_mark_dump (core);
@@ -165,9 +164,7 @@ rep:
 			ret = r_flag_relocate (core->flags, from, mask, to);
 			eprintf ("Relocated %d flags\n", ret);
 		} else {
-			eprintf ("Usage: fR [from] [to] ([mask])\n");
-			eprintf ("Example to relocate PIE flags on debugger:\n"
-				" > fR entry0 `dm~:1[1]`\n");
+			r_core_cmd_help (core, help_msg_fR);
 		}
 		}
 		break;
@@ -199,7 +196,7 @@ rep:
 				core->flags->base);
 			break;
 		default:
-			eprintf ("Usage: fb [addr] [[flags*]]\n");
+			r_core_cmd_help (core, help_msg_fb);
 			break;
 		}
 		break;
@@ -353,20 +350,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		switch (input[1]) {
 		case '?':
 			{
-			const char *help_msg[] = {
-			"Usage: fs","[*] [+-][flagspace|addr]", " # Manage flagspaces",
-			"fs","","display flagspaces",
-			"fs"," *","select all flagspaces",
-			"fs"," flagspace","select flagspace or create if it doesn't exist",
-			"fs","-flagspace","remove flagspace",
-			"fs","-*","remove all flagspaces",
-			"fs","+foo","push previous flagspace and set",
-			"fs","-","pop to the previous flagspace",
-			"fs","-.","remove the current flagspace",
-			"fsm"," [addr]","move flags at given address to the current flagspace",
-			"fsr"," newname","rename selected flagspace",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_fs);
 			}
 			break;
 		case '+':
@@ -431,13 +415,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		break;
 	case 'c':
 		if (input[1]=='?' || input[1] != ' ') {
-			const char *help_msg[] = {
-			"Usage: fc", "<flagname> [color]", " # List colors with 'ecs'",
-			"fc", " flagname", "Get current color for given flagname",
-			"fc", " flagname color", "Set color to a flag",
-			NULL
-			};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_fc);
 		} else {
 			RFlagItem *fi;
 			const char *ret;
@@ -478,7 +456,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				}
 			}
 			free (p);
-		} else eprintf ("Usage: fC [name] [comment]\n");
+		} else {
+			r_core_cmd_help (core, help_msg_fC);
+		}
 		break;
 	case 'o':
 		{ // TODO: use file.fortunes // can be dangerous in sandbox mode
@@ -581,7 +561,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			RFlagItem *f = NULL;
 			switch (input[1]) {
 			case '?':
-				eprintf ("Usage: fd [offset|flag|expression]\n");
+				r_core_cmd_help (core, help_msg_fd);
 				if (str) {
 					free (str);
 				}
@@ -608,44 +588,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		break;
 	case '?':
 	{
-		const char *help_msg[] = {
-		"Usage: f","[?] [flagname]", " # Manage offset-name flags",
-		"f","","list flags (will only list flags from selected flagspaces)",
-		"f."," [*[*]]","list local per-function flags (*) as r2 commands",
-		"f.","blah=$$+12","set local function label named 'blah'",
-		"f*","","list flags in r commands",
-		"f"," name 12 @ 33","set flag 'name' with length 12 at offset 33",
-		"f"," name = 33","alias for 'f name @ 33' or 'f name 1 33'",
-		"f"," name 12 33 [cmt]","same as above + optional comment",
-		"f-",".blah@fcn.foo","delete local label from function at current seek (also f.-)",
-		"f--","","delete all flags and flagspaces (deinit)",
-		"f+","name 12 @ 33","like above but creates new one if doesnt exist",
-		"f-","name","remove flag 'name'",
-		"f-","@addr","remove flag at address expression",
-		"f."," fname","list all local labels for the given function",
-		"fa"," [name] [alias]","alias a flag to evaluate an expression",
-		"fb"," [addr]","set base address for new flags",
-		"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
-		"fc"," [name] [color]","set color for given flag",
-		"fC"," [name] [cmt]","set comment for given flag",
-		"fd"," addr","return flag+delta",
-		"fe-","","resets the enumerator counter",
-		"fe"," [name]","create flag name.#num# enumerated flag. See fe?",
-		"fi"," [size] | [from] [to]","show flags in current block or range",
-		"fg","","bring visual mode to foreground",
-		"fj","","list flags in JSON format",
-		"fl"," [flag] [size]","show or set flag length (size)",
-		"fm"," addr","move flag at current offset to new address",
-		"fn","","list flags displaying the real name (demangled)",
-		"fo","","show fortunes",
-		//" fc [name] [cmt]  ; set execution command for a specific flag"
-		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
-		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
-		"fs"," ?+-*","manage flagspaces",
-		"fS","[on]","sort flags by offset or name",
-		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
-		NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_f);
 		break;
 	}
 	}
