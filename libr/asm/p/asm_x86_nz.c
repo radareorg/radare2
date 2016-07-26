@@ -1668,6 +1668,7 @@ LookupTable oplookup[] = {
 	{"xor", &opxor, 0},
 	{"xsetbv", NULL, 0x0f01d1, 3},
 	{"test", &optest, 0},
+	{ NULL, NULL, 0}
 };
 
 static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
@@ -2031,7 +2032,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
 
-	Opcode instr;
+	Opcode instr = {0};
 	parseOpcode (a, op, &instr);
 
 	for (lt_ptr = oplookup; lt_ptr - oplookup < sizeof (oplookup); ++lt_ptr) {
