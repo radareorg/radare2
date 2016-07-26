@@ -2036,7 +2036,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	parseOpcode (a, op, &instr);
 
 	for (lt_ptr = oplookup; lt_ptr - oplookup < sizeof (oplookup); ++lt_ptr) {
-		if (!r_str_casestr (instr.mnemonic, lt_ptr->mnemonic)) {
+		int alen = strlen (instr.mnemonic);
+		int blen = strlen (lt_ptr->mnemonic);
+		if (!strncasecmp (instr.mnemonic, lt_ptr->mnemonic, R_MIN (alen, blen))) {
 			if (lt_ptr->opcode > 0) {
 				ut8 *ptr = (ut8 *)&lt_ptr->opcode;
 				int i = 0;
