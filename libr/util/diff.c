@@ -320,6 +320,9 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		// potential shortest edit distances.
 		// In all cases where the edit distance can't 'reach',
 		// the value of v1[start] simply increments.
+		if (start > bLen) {
+			break;
+		} 
 		v1[start] = v0[start] + 1;
 
 		// need to have a bigger number in colMin than we'll ever encounter in the inner loop
@@ -336,6 +339,9 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 
 			// populate the next two entries in v1.
 			// only really required if this is the last loop.
+			if (j + 2 > bLen + 3) {
+				break;
+			}
 			v1[j + 1] = smallest;
 			v1[j + 2] = smallest + 1;
 
@@ -364,7 +370,7 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		// which means we need to keep an extra row of data
 		// so don't increment the start counter this time, BUT keep
 		// extendStart up our sleeves for next iteration.
-		if ( ( i + 1  < aLen ) && ( aBufPtr[i + 1] == bBufPtr[start]) ) {
+		if (i + 1 < aLen && start < bLen && aBufPtr[i + 1] == bBufPtr[start]) {
 			start --;
 			extendStart ++;
 		}
