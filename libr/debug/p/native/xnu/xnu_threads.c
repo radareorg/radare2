@@ -24,7 +24,9 @@ static void xnu_thread_free (xnu_thread_t *thread) {
 // XXX this should work as long as in arm trace bit relies on this
 static bool xnu_thread_get_drx (RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;
-	if (!dbg || !thread) return false;
+	if (!dbg || !thread) {
+		return false;
+	}
 #if __x86_64__ || __i386__
 	thread->flavor     = x86_DEBUG_STATE;
 	thread->count      = x86_DEBUG_STATE_COUNT;
@@ -60,13 +62,15 @@ static bool xnu_thread_get_drx (RDebug *dbg, xnu_thread_t *thread) {
 
 static int xnu_thread_set_drx (RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;
-	if (!dbg || !thread)
+	if (!dbg || !thread) {
 		return false;
+	}
 #if __i386__ || __x86_64__
 	x86_debug_state_t *regs;
 	regs = &thread->drx;
-	if (!regs)
+	if (!regs) {
 		return false;
+	}
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
 	if (dbg->bits == R_SYS_BITS_64) {
@@ -165,11 +169,13 @@ static bool xnu_thread_get_gpr (RDebug *dbg, xnu_thread_t *thread) {
 #else
 	thread->state = &regs->uts;
 #if __arm || __arm64 || __aarch64
-	thread->flavor     = ARM_UNIFIED_THREAD_STATE;
-	thread->count      = ARM_UNIFIED_THREAD_STATE_COUNT;
-	thread->state_size = (dbg->bits == R_SYS_BITS_64) ?
-				     sizeof (arm_thread_state64_t) :
-				     sizeof (arm_thread_state32_t);
+	thread->flavor = ARM_UNIFIED_THREAD_STATE;
+	thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
+	if (dbg->bits == R_SYS_BITS_64) {
+		thread->state_size = sizeof (arm_thread_state64_t);
+	} else {
+		thread->state_size = sizeof (arm_thread_state32_t);
+	}
 #elif __x86_64__ || __i386__
 	thread->flavor     = x86_THREAD_STATE;
 	thread->count      = x86_THREAD_STATE_COUNT;
@@ -234,8 +240,9 @@ static xnu_thread_t *xnu_get_thread_with_info (RDebug *dbg, thread_t port) {
 	xnu_thread_t *thread = R_NEW0 (xnu_thread_t);
 	if (!thread) return NULL;
 	thread->port = port;
-	if (!xnu_fill_info_thread (dbg, thread))
+	if (!xnu_fill_info_thread (dbg, thread)) {
 		thread->name = strdup ("unknown");
+	}
 	return thread;
 }
 
@@ -263,9 +270,6 @@ static int xnu_update_thread_list (RDebug *dbg) {
 	if (!dbg->threads) {
 		dbg->threads = r_list_newf ((RListFree)&xnu_thread_free);
 		if (!dbg->threads) {
-			eprintf (
-				"Impossible to create the list dbg->threads"
-				" in xnu_update_thread_list\n");
 			return false;
 		}
 	}
@@ -306,13 +310,14 @@ static int xnu_update_thread_list (RDebug *dbg) {
 					break;
 				}
 			}
-			if (flag)
+			if (flag) {
 				// it is not longer alive so remove from the
 				// list
 				r_list_delete (dbg->threads, iter);
-			else
+			} else {
 				// otherwise update the info
 				xnu_update_thread_info (dbg, thread);
+			}
 		}
 		// ok now we have to insert those threads that we don't have
 		for (i = 0; i < thread_count; i++) {

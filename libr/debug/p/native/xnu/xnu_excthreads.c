@@ -129,7 +129,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		}
 		regs = (R_REG_T*)&th->gpr;
 		if (enable) {
-			static chained_address = 0;
+			static ut64 chained_address = 0;
 			RIOBind *bio = &dbg->iob;
 			//set a breakpoint that will stop when the PC doesn't
 			//match the current one
