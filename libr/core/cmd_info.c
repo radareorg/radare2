@@ -343,13 +343,13 @@ static int cmd_info(void *data, const char *input) {
 					return 0;
 				}
 				biname = r_str_escape (core->file->desc->name);
-				if(!tmpcore){
+				if (!tmpcore) {
 	                                eprintf ("Cannot create core\n");
 				        return 0;
 	                        }
 				tmpcore->bin->minstrlen = min;
 				tmpcore->bin->maxstrlen = max;
-				if(!r_bin_load (tmpcore->bin, biname, UT64_MAX, UT64_MAX, xtr_idx, fd, rawstr)){
+				if (!r_bin_load (tmpcore->bin, biname, UT64_MAX, UT64_MAX, xtr_idx, fd, rawstr)){
 	                                eprintf ("Cannot load information\n");
 					return 0;
 	                        }
