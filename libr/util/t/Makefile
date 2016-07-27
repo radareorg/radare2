@@ -6,7 +6,6 @@ LDFLAGS+=-lr_util -L..
 
 BINS=test
 BINS+=sparse
-BINS+=rax2
 BINS+=array
 BINS+=pool
 BINS+=argv
