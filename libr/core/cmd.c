@@ -96,15 +96,9 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 #endif
 
 static int cmd_uname(void *data, const char *input) {
-	const char* help_msg[] = {
-		"Usage:", "u", "uname or undo write/seek",
-		"u", "", "show system uname",
-		"uw", "", "alias for wc (requires: e io.cache=true)",
-		"us", "", "alias for s- (seek history)",
-		NULL};
 	switch (input[0]) {
 	case '?':
-		r_core_cmd_help (data, help_msg);
+		r_core_cmd_help (data, help_msg_u);
 		return 1;
 	case 's':
 		r_core_cmdf (data, "s-%s", input+1);
@@ -131,17 +125,7 @@ static int cmd_alias(void *data, const char *input) {
 	char *def, *q, *desc, *buf;
 	RCore *core = (RCore *)data;
 	if (*input=='?') {
-		const char* help_msg[] = {
-			"Usage:", "$alias[=cmd] [args...]", "Alias commands",
-			"$", "", "list all defined aliases",
-			"$*", "", "same as above, but using r2 commands",
-			"$", "dis='af;pdf'", "create command - analyze to show function",
-			"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
-			"$", "dis=", "undefine alias",
-			"$", "dis", "execute the previously defined alias",
-			"$", "dis?", "show commands aliased by 'analyze'",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_alias);
 		return 0;
 	}
 	i = strlen (input);
@@ -243,9 +227,7 @@ static void aliascmd(RCore *core, const char *str) {
 		}
 		break;
 	case '?':
-		eprintf ("Usage: =$[-][remotecmd]  # remote command alias\n");
-		eprintf (" =$dr   # makes 'dr' alias for =!dr\n");
-		eprintf (" =$-dr  # unset 'dr' alias\n");
+		r_core_cmd_help(core, help_msg_remotecmd_alias);
 		break;
 	case 0:
 		r_core_cmd0 (core, "$");
@@ -342,25 +324,7 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank_dump (core, r_num_math (core->num, ""));
 		break;
 	default:{
-		const char* help_msg[] = {
-		"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
-		"y", "", "show yank buffer information (srcoff len bytes)",
-		"y", " 16", "copy 16 bytes into clipboard",
-		"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
-		"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
-		"yz", "", "copy up to blocksize zero terminated string bytes into clipboard",
-		"yz", " 16", "copy up to 16 zero terminated string bytes into clipboard",
-		"yz", " @ 0x200", "copy up to blocksize zero terminated string bytes into clipboard from 0x200",
-		"yz", " 16 @ 0x200", "copy up to 16 zero terminated string bytes into clipboard from 0x200",
-		"yp", "", "print contents of clipboard",
-		"yx", "", "print contents of clipboard in hexadecimal",
-		"ys", "", "print contents of clipboard as string",
-		"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
-		"yf", " 64 0x200", "file copy 64 bytes from 0x200 from file (opens w/ io), use -1 for all bytes",
-		"yfa", " file copy", "copy all bytes from file (opens w/ io)",
-		"yy", " 0x3344", "paste clipboard",
-		NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_yank);
 		}
 		break;
 	}
@@ -548,19 +512,7 @@ static int cmd_interpret(void *data, const char *input) {
 		r_cmd_macro_call (&core->rcmd->macro, input + 1);
 		break;
 	case '?':{
-		const char* help_msg[] = {
-		"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", " # define macro or load r2, cparse or rlang file",
-		".", "", "repeat last command backward",
-		".", "r2cmd", "interpret the output of the command as r2 commands",
-		"..", "", "repeat last command forward (same as \\n)",
-		".:", "8080", "listen for commands on given tcp port",
-		".", " foo.r2", "interpret r2 script",
-		".-", "", "open cfg.editor and interpret tmp file",
-		".!", "rabin -ri $FILE", "interpret output of command",
-		".", "(foo 1 2 3)", "run macro 'foo' with args 1, 2, 3",
-		"./", " ELF", "interpret output of command /m ELF as r. commands",
-		NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_dot);
 		}
 		break;
 #if 1
@@ -703,22 +655,7 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		break;
 	case '?': {
-			const char* help_msg[] = {
-			"Usage:", "k[s] [key[=value]]", "Sdb Query",
-			"k", " foo=bar", "set value",
-			"k", " foo", "show value",
-			"k", "", "list keys",
-			"ko", " [file.sdb] [ns]", "open file into namespace",
-			"kd", " [file.sdb] [ns]", "dump namespace to disk",
-			"ks", " [ns]", "enter the sdb query shell",
-			"k", " anal/meta/*", "ist kv from anal > meta namespaces",
-			"k", " anal/**", "list namespaces under anal",
-			"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
-			//"kl", " ha.sdb", "load keyvalue from ha.sdb",
-			//"ks", " ha.sdb", "save keyvalue to ha.sdb",
-			NULL,
-			};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_k);
 		}
 		break;
 	}
@@ -773,17 +710,7 @@ static int cmd_bsize(void *data, const char *input) {
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
 	case '?':{
-		const char* help_msg[] = {
-			"Usage:",  "b[f] [arg]\n", "Get/Set block size",
-			"b", "", "display current block size",
-			"b", " 33", "set block size to 33",
-			"b", "+3", "increase blocksize by 3",
-			"b", "-16", "decrease blocksize by 16",
-			"b", " eip+4", "numeric argument can be an expression",
-			"bf", " foo", "set block size to flag size",
-			"bm", " 1M", "set max block size",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_b);
 		}
 		break;
 	default:
@@ -835,16 +762,7 @@ static int cmd_resize(void *data, const char *input) {
 		break;
 	default:
 	case '?':{
-		const char* help_msg[] = {
-			"Usage:", "r[+-][ size]", "Resize file",
-			"r", "", "display file size",
-			"r", " size", "expand or truncate file to given size",
-			"r-", "num", "remove num bytes, move following data down",
-			"r+", "num", "insert num bytes, move following data up",
-			"rm" ," [file]", "remove file",
-			"r2" ," [file]", "launch r2",
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_r);
 		}
 		return true;
 	}
@@ -951,25 +869,8 @@ static int cmd_thread(void *data, const char *input) {
 		break;
 	case '?':
 		{
-		const char* help_msg[] = {
-			"Usage:", "&[-|<cmd>]", "Manage tasks",
-			"&", "", "list all running threads",
-			"&=", "", "show output of all tasks",
-			"&=", " 3", "show output of task 3",
-			"&j", "", "list all running threads (in JSON)",
-			"&?", "", "show this help",
-			"&+", " aa", "push to the task list",
-			"&-", " 1", "delete task #1",
-			"&", "-*", "delete all threads",
-			"&", " aa", "run analysis in background",
-			"&", " &&", "run all tasks in background",
-			"&&", "", "run all pendings tasks (and join threads)",
-			"&&&", "", "run all pendings tasks until ^C",
-			"","","TODO: last command should honor asm.bits",
-			"","","WARN: this feature is very experimental. Use it with caution",
-			NULL};
 		// TODO: integrate with =h& and bg anal/string/searchs/..
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_ampersand);
 		}
 		break;
 	case ' ':
@@ -1003,14 +904,7 @@ static int cmd_pointer(void *data, const char *input) {
 	char *str, *eq;
 	while (*input==' ') input++;
 	if (!*input || *input=='?') {
-		const char* help_msg[] = {
-			"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
-			"*", "entry0=cc", "write trap in entrypoint",
-			"*", "entry0+10=0x804800", "write value in delta address",
-			"*", "entry0", "read byte at given address",
-			"TODO: last command should honor asm.bits", "", "",
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_star);
 		return ret;
 	}
 	str = strdup (input);
@@ -1878,14 +1772,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 
 	switch (each[0]) {
 	case '?':
-		r_cons_printf ("Usage: @@@ [type]     # types:\n");
-		r_cons_printf (" symbols\n");
-		r_cons_printf (" imports\n");
-		r_cons_printf (" regs\n");
-		r_cons_printf (" threads\n");
-		r_cons_printf (" comments\n");
-		r_cons_printf (" functions\n");
-		r_cons_printf (" flags\n");
+		r_core_cmd_help (core, help_msg_3at);
 		break;
 	case 'c':
 		switch (each[1]) {
@@ -2004,19 +1891,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 	switch (each[0]) {
 	case '?':{
-		const char* help_msg[] = {
-		"@@", "", " # foreach iterator command:",
-		"Repeat a command over a list of offsets", "", "",
-		"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
-		"x", " @@dbt[abs]", "run a command on every backtrace address, bp or sp",
-		"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
-		"x", " @@=off1 off2 ..", "manual list of offsets",
-		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
-		"x", " @@t", "\"\" on all threads (see dp)",
-		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
-		// TODO: Add @@k sdb-query-expression-here
-		NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_2at);
 		}
 		break;
 	case 't':

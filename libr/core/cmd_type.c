@@ -6,33 +6,6 @@
 #include "r_core.h"
 #include "sdb/sdb.h"
 
-static void show_help(RCore *core) {
-	const char *help_message[] = {
-		"Usage: t", "", "# cparse types commands",
-		"t", "", "List all loaded types",
-		"t", " <type>", "Show type in 'pf' syntax",
-		"t*", "", "List types info in r2 commands",
-		"t-", " <name>", "Delete types by its name",
-		"t-*", "", "Remove all types",
-		//"t-!", "",          "Use to open $EDITOR",
-		"tb", " <enum> <value>", "Show matching enum bitfield for given number",
-		"te", "", "List all loaded enums",
-		"te", " <enum> <value>", "Show name for given enum number",
-		"td", " <string>", "Load types from string",
-		"tf", "", "List all loaded functions signatures",
-		"tk", " <sdb-query>", "Perform sdb query",
-		"tl", "[?]", "Show/Link type to an address",
-		//"to",  "",         "List opened files",
-		"to", " -", "Open cfg.editor to load types",
-		"to", " <path>", "Load types from C header file",
-		"tp", " <type>  = <address>", "cast data at <adress> to <type> and print it",
-		"ts", "", "print loaded struct types",
-		"tu", "", "print loaded union types",
-		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
-		NULL };
-	r_core_cmd_help (core, help_message);
-}
-
 static void save_parsed_type(RCore *core, const char *parsed) {
 	if (!core || !core->anal || !parsed) {
 		return;
@@ -160,12 +133,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'u': // "tu"
 		switch (input[1]) {
 		case '?': {
-			const char *help_message[] = {
-				"USAGE tu[...]", "", "",
-				"tu", "", "List all loaded unions",
-				"tu?", "", "show this help",
-				NULL };
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_tu);
 		} break;
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifunion, core);
@@ -181,12 +149,7 @@ static int cmd_type(void *data, const char *input) {
 	case 's': // "ts"
 		switch (input[1]) {
 		case '?': {
-			const char *help_message[] = {
-				"USAGE ts[...]", "", "",
-				"ts", "", "List all loaded structs",
-				"ts?", "", "show this help",
-				NULL };
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_ts);
 		} break;
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifstruct, core);
@@ -235,13 +198,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		if (input[1] == '?') {
-			const char *help_message[] = {
-				"USAGE te[...]", "", "",
-				"te", "", "List all loaded enums",
-				"te", " <enum> <value>", "Show name for given enum number",
-				"te?", "", "show this help",
-				NULL };
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_te);
 			break;
 		}
 		char *p, *s = strdup (input + 2);
@@ -325,14 +282,7 @@ static int cmd_type(void *data, const char *input) {
 	// td - parse string with cparse engine and load types from it
 	case 'd':
 		if (input[1] == '?') {
-			const char *help_message[] = {
-				"Usage:", "\"td [...]\"", "",
-				"td", "[string]", "Load types from string",
-				NULL };
-			r_core_cmd_help (core, help_message);
-			r_cons_printf ("Note: The td command should be put between double quotes\n"
-				"Example: \" td struct foo {int bar;int cow};\""
-				"\nt");
+			r_core_cmd_help (core, help_msg_td);
 
 		} else if (input[1] == ' ') {
 			char tmp[8192];
@@ -353,18 +303,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'l':
 		switch (input[1]) {
 		case '?': {
-			const char *help_message[] = {
-				"Usage:", "", "",
-				"tl", "", "list all links in readable format",
-				"tl", "[typename]", "link a type to current adress.",
-				"tl", "[typename] = [address]", "link type to given address.",
-				"tls", "[address]", "show link at given address",
-				"tl-*", "", "delete all links.",
-				"tl-", "[address]", "delete link at given address.",
-				"tl*", "", "list all links in radare2 command format",
-				"tl?", "", "print this help.",
-				NULL };
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_tl);
 			} break;
 		case ' ': {
 			char *type = strdup (input + 2);
@@ -463,10 +402,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case '-':
 		if (input[1] == '?') {
-			const char *help_message[] = {
-				"Usage: t-", " <type>", "Delete type by its name",
-				NULL };
-			r_core_cmd_help (core, help_message);
+			r_core_cmd_help (core, help_msg_tminus);
 		} else if (input[1] == '*') {
 			sdb_foreach (core->anal->sdb_types, sdbdelete, core);
 		} else {
@@ -499,7 +435,7 @@ static int cmd_type(void *data, const char *input) {
 		break;
 
 	case '?':
-		show_help (core);
+		r_core_cmd_help (core, help_msg_t);
 		break;
 	}
 	return true;

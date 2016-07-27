@@ -10,7 +10,7 @@ static void find_refs(RCore *core, const char *glob) {
 	if (!*glob)
 		glob = "str.";
 	if (*glob == '?') {
-		eprintf ("Usage: arf [flag-str-filter]\n");
+		r_core_cmd_help (core, help_msg_arf);
 		return;
 	}
 	eprintf ("Finding references of flags matching '%s'...\n", glob);
@@ -34,65 +34,18 @@ static void flag_every_function(RCore *core) {
 }
 
 static void var_help(RCore *core, char ch) {
-	const char *help_sp[] = {
-		"Usage:", "afvs", " [idx] [type] [name]",
-		"afvs", "", "list stack based arguments and variables",
-		"afvs*", "", "same as afvs but in r2 commands",
-		"afvs", " [idx] [name] [type]", "define stack based arguments,variables",
-		"afvsn", " [old_name] [new_name]", "rename stack based argument or variable",
-		"afvst", " [name] [new_type]", "change type for given argument or variable",
-		"afvsj", "", "return list of stack based arguments and variables in JSON format",
-		"afvs-", " [name]", "delete stack based argument or variables with the given name",
-		"afvsg", " [idx] [addr]", "define var get reference",
-		"afvss", " [idx] [addr]", "define var set reference",
-		NULL
-	};
-	const char *help_bp[] = {
-		"Usage:", "afvb", " [idx] [type] [name]",
-		"afvb", "", "list base pointer based arguments, variables",
-		"afvb*", "", "same as afvb but in r2 commands",
-		"afvb", " [idx] [name] ([type])", "define base pointer based argument, variable",
-		"afvbn", " [old_name] [new_name]", "rename base pointer based argument or variable",
-		"afvbt", " [name] [new_type]", "change type for given base pointer based argument or variable",
-		"afvbj", "", "return list of base pointer based arguments, variables in JSON format",
-		"afvb-", " [name]", "delete argument/ variables at the given name",
-		"afvbg", " [idx] [addr]", "define var get reference",
-		"afvbs", " [idx] [addr]", "define var set reference",
-		NULL
-	};
-	const char *help_reg[] = {
-		"Usage:", "afvr", " [reg] [type] [name]",
-		"afvr", "", "list register based arguments",
-		"afvr*", "", "same as afvr but in r2 commands",
-		"afvr", " [reg] [name] ([type])", "define register arguments",
-		"afvrn", " [old_name] [new_name]", "rename argument",
-		"afvrt", " [name] [new_type]", "change type for given argument",
-		"afvrj", "", "return list of register arguments in JSON format",
-		"afvr-", " [name]", "delete register arguments at the given index",
-		"afvrg", " [reg] [addr]", "define var get reference",
-		"afvrs", " [reg] [addr]", "define var set reference",
-		NULL
-	};
-	const char *help_general[] = {
-		"Usage:", "afv","[rbsa]",
-		"afvr", "?", "manipulate register based arguments",
-		"afvb", "?", "manipulate bp based arguments/ vars",
-		"afvs", "?", "manipulate sp based arguments/ vars",
-		"afva", "", "analyze function arguments/vars",
-		NULL
-	};
 	switch (ch) {
 	case 'b':
-		r_core_cmd_help (core, help_bp);
+		r_core_cmd_help (core, help_msg_afvb);
 		break;
 	case 's':
-		r_core_cmd_help (core, help_sp);
+		r_core_cmd_help (core, help_msg_afvs);
 		break;
 	case 'r':
-		r_core_cmd_help (core, help_reg);
+		r_core_cmd_help (core, help_msg_afvr);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_general);
+		r_core_cmd_help (core, help_msg_afv);
 		break;
 	default:
 		eprintf ("See afv?, afvb?, afvr? and afvs?\n");
@@ -1011,10 +964,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'i': // "afi"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afi[jl*] <addr>\n"); break;
-			eprintf ("afij - function info in json format\n");
-			eprintf ("afil - verbose function info\n");
-			eprintf ("afi* - function, variables and arguments\n");
+			r_core_cmd_help (core, help_msg_afi);
 			break;
 		case 'j':   // "afij"
 		case 'l':   // "afil"
@@ -1029,13 +979,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'l': // "afl"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afl[jlqs*]\n");
-			eprintf ("List all functions in quiet, commands or json format\n");
-			eprintf ("afl  - list functions\n");
-			eprintf ("aflj - list functions in json format\n");
-			eprintf ("afll - list functions in verbose mode\n");
-			eprintf ("aflq - list functions in 'quiet' mode\n");
-			eprintf ("afls - print sum of sizes of all functions\n");
+			r_core_cmd_help (core, help_msg_afl);
 			break;
 		case 'j':
 		case 'l':
@@ -1096,13 +1040,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			eprintf ("Cant find function here\n");
 			break;
 		}
-		const char *help_afC[] = {
-			"Usage:", "afC[agl?]", "",
-			"afC", " convention", "Manually set calling convention for current function",
-			"afC", "", "Show Calling convention for the Current function",
-			"afCa", "", "Analyse function for finding the current calling convention",
-			"afCl", "", "List all available calling conventions",
-			NULL };
 		switch (input[2]) {
 		case'?': {
 			r_core_cmd_help (core, help_afC);
@@ -1115,7 +1052,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			//should I test for null ... no ;)
 			} break;
 		case 'a':
-			eprintf ("Todo\n");
+			eprintf ("TODO\n");
 			break;
 		case ' ': {
 			int type = r_anal_cc_str2type (input + 3);
@@ -1163,26 +1100,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		default:
 		case '?':
-			/* TODO: use r_core_help */
-			eprintf ("Usage: afb+ or afbb or afb\n"
-				/* TODO: move afbr into afr? */
-				" afbr        - show addresses of instructions which leave the function\n"
-				" .afbr*      - set breakpoint on every return address of the fcn\n"
-				" .afbr-*     - undo the above operation\n"
-				" afbj        - show basic blocks information in JSON\n"
-				" afB [bits]  - define asm.bits for given function\n"
-				" afb [addr]  - list basic blocks of function (see afbq, afbj, afb*)\n"
-				" afb+ fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))  add bb to function @ fcnaddr\n");
+			r_core_cmd_help (core, help_msg_afb);
 			break;
 		}
 		break;
 	case 'n': // "afn"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afn[sa] - analyze function names\n");
-			eprintf (" afna       - construct a function name for the current offset\n");
-			eprintf (" afns       - list all strings associated with the current function\n");
-			eprintf (" afn [name] - rename function\n");
+			r_core_cmd_help (core, help_msg_afn);
 			break;
 		case 's':
 			free (r_core_anal_fcn_autoname (core, core->offset, 1));
@@ -1319,14 +1244,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		default:
 		case '?':
 			{
-			const char *help_msg[] = {
-				"Usage:", "afx[-cCd?] [src] [dst]", "# manage function references (see also ar?)",
-				"afxc", " sym.main+0x38 sym.printf", "add code ref",
-				"afxC", " sym.main sym.puts", "add call ref",
-				"afxd", " sym.main str.helloworld", "add data ref",
-				"afx-", " sym.main str.helloworld", "remove reference",
-				NULL };
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_afx);
 			}
 			break;
 		}
@@ -1346,30 +1264,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case '?':
 		{ // "af?"
-		const char *help_msg[] = {
-			"Usage:", "af", "",
-			"af", " ([name]) ([addr])", "analyze functions (start at addr or $$)",
-			"afr", " ([name]) ([addr])", "analyze functions recursively",
-			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
-			"af-", " [addr]", "clean all function analysis data (or function at addr)",
-			"afv[bsra]", "?", "manipulate args, registers and variables in function",
-			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
-			"afb", " [addr]", "List basic blocks of given function",
-			"afB", " 16", "set current function as thumb (change asm.bits)",
-			"afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
-			"afC[?]", " type @[addr]", "set calling convention for function",
-			"aff", "", "re-adjust function boundaries to fit",
-			"afF", "[1|0|]", "fold/unfold/toggle",
-			"afg", "", "non-interactive ascii-art basic-block graph (See VV)",
-			"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
-			"afl", "[l*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
-			"afo", " [fcn.name]", "show address for the function named like this",
-			"afn", " name [addr]", "rename name for function at address (change flag too)",
-			"afna", "", "suggest automatic name for current offset",
-			"afs", " [addr] [fcnsign]", "get/set function signature at current address",
-			"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
-			NULL };
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_af);
 		}
 		break;
 	case 'r': // "afr" // analyze function recursively
@@ -1509,54 +1404,6 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 	core->dbg->reg = hack;
 }
 
-static void ar_show_help(RCore *core) {
-	const char *help_message[] = {
-		"Usage: ar", "", "# Analysis Registers",
-		"ar", "", "Show 'gpr' registers",
-		"ar0", "", "Reset register arenas to 0",
-		"ara", "", "Manage register arenas",
-		"ar", " 16", "Show 16 bit registers",
-		"ar", " 32", "Show 32 bit registers",
-		"ar", " all", "Show all bit registers",
-		"ar", " <type>", "Show all registers of given type",
-		"arC", "", "Display register profile comments",
-		"arr", "", "Show register references (telescoping)",
-		"ar=", "", "Show register values in columns",
-		"ar?", " <reg>", "Show register value",
-		"arb", " <type>", "Display hexdump of the given arena",
-		"arc", " <name>", "Conditional flag registers",
-		"ard", " <name>", "Show only different registers",
-		"arn", " <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
-		"aro", "", "Show old (previous) register values",
-		"arp", " <file>", "Load register profile from file",
-		"ars", "", "Stack register state",
-		"art", "", "List all register types",
-		"arw", " <hexnum>", "Set contents of the register arena",
-		".ar*", "", "Import register values as flags",
-		".ar-", "", "Unflag all registers",
-		NULL };
-	r_core_cmd_help (core, help_message);
-}
-
-static void cmd_ara_help(RCore *core) {
-	const char *help_msg[] = {
-		"Usage:", "ara[+-s]", "Register Arena Push/Pop/Swap",
-		"ara", "", "show all register arenas allocated",
-		"ara", "+", "push a new register arena for each type",
-		"ara", "-", "pop last register arena",
-		"aras", "", "swap last two register arenas",
-		NULL };
-	r_core_cmd_help (core, help_msg);
-}
-
-static void cmd_arw_help (RCore *core) {
-	const char *help_msg[] = {
-		"Usage:", " arw ", "# Set contents of the register arena",
-		"arw", " <hexnum>", "Set contents of the register arena",
-		NULL };
-	r_core_cmd_help (core, help_msg);
-}
-
 // XXX dup from drp :OOO
 void cmd_anal_reg (RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
@@ -1597,21 +1444,21 @@ void cmd_anal_reg (RCore *core, const char *str) {
 	case 'w':
 		switch (str[1]) {
 		case '?': {
-			cmd_arw_help (core);
+			r_core_cmd_help (core, help_msg_arw);
 			break;
 		}
 		case ' ':
 			r_reg_arena_set_bytes (core->anal->reg, str + 1);
 			break;
 		default:
-			cmd_arw_help (core);
+			r_core_cmd_help (core, help_msg_arw);
 			break;
 		}
                 break;
 	case 'a': // "ara"
 		switch (str[1]) {
 		case '?':
-			cmd_ara_help (core);
+			r_core_cmd_help (core, help_msg_ara);
 			break;
 		case 's':
 			r_reg_arena_swap (core->anal->reg, false);
@@ -1643,7 +1490,9 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		if (str[1]) {
 			ut64 off = r_reg_getv (core->anal->reg, str + 1);
 			r_cons_printf ("0x%08" PFMT64x "\n", off);
-		} else ar_show_help (core);
+		} else { 
+			r_core_cmd_help (core, help_msg_ar);
+		}
 		break;
 	case 'r':
 		r_core_debug_rr (core, core->anal->reg);
@@ -1718,13 +1567,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			r_reg_arena_push (core->dbg->reg);
 			break;
 		case '?': {
-			const char *help_msg[] = {
-				"Usage:", "drs", " # Register states commands",
-				"drs", "", "List register stack",
-				"drs+", "", "Push register state",
-				"drs-", "", "Pop register state",
-				NULL };
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_drs);
 		} break;
 		default:
 			r_cons_printf ("%d\n", r_list_length (
@@ -2308,27 +2151,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	return true;
 }
 
-static void aea_help(RCore *core) {
-	const char *help_msg[] = {
-		"Examples:", "aea", " show regs used in a range",
-		"aea", " [ops]", "Show regs used in N instructions",
-		"aeaf", "", "Show regs used in current function",
-		"aear", " [ops]", "Show regs read in N instructions",
-		"aeaw", " [ops]", "Show regs written in N instructions",
-		"aean", " [ops]", "Show regs not written in N instructions",
-		"aeA", " [len]", "Show regs used in N bytes (subcommands are the same)",
-		NULL };
-	r_core_cmd_help (core, help_msg);
-}
-
 static void cmd_anal_esil(RCore *core, const char *input) {
-	const char *help_msg[] = {
-		"Usage:", "aep[-c] ", " [...]",
-		"aepc", " [addr]", "change program counter for esil",
-		"aep", "-[addr]", "remove pin",
-		"aep", " [name] @ [addr]", "set pin",
-		"aep", "", "list pins",
-		NULL };
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
 	int stacksize = r_config_get_i (core->config, "esil.stacksize");
@@ -2365,7 +2188,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_anal_pin (core->anal, addr, input + 2);
 			break;
 		default:
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_aep);
 			break;
 		}
 		break;
@@ -2441,10 +2264,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'c':
 		if (input[1] == '?') { // "aec?"
-			eprintf ("aecs         - continue until syscall\n");
-			eprintf ("aec          - continue until exception\n");
-			eprintf ("aecu [addr]  - continue until address\n");
-			eprintf ("aecue [expr] - continue until esil expression\n");
+			r_core_cmd_help (core, help_msg_aec);
 		} else if (input[1] == 's') { // "aecs"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			ut64 newaddr;
@@ -2609,7 +2429,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'A': // "aeA"
 		if (input[1] == '?') {
-			aea_help (core);
+			r_core_cmd_help (core, help_msg_aea);
 		} else if (input[1] == 'r') {
 			cmd_aea (core, 1 + (1<<1), core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'w') {
@@ -2625,7 +2445,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'a': // "aea"
 		if (input[1] == '?') {
-			aea_help (core);
+			r_core_cmd_help (core, help_msg_aea);
 		} else if (input[1] == 'r') {
 			cmd_aea (core, 1<<1, core->offset, r_num_math (core->num, input+2));
 		} else if (input[1] == 'w') {
@@ -2680,79 +2500,17 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case '?':
 		if (input[1] == '?') {
-			const char *help_msg[] = {
-				"Examples:", "ESIL", " examples and documentation",
-				"+", "=", "A+=B => B,A,+=",
-				"+", "", "A=A+B => B,A,+,A,=",
-				"*", "=", "A*=B => B,A,*=",
-				"/", "=", "A/=B => B,A,/=",
-				"&", "=", "and ax, bx => bx,ax,&=",
-				"|", "", "or r0, r1, r2 => r2,r1,|,r0,=",
-				"^", "=", "xor ax, bx => bx,ax,^=",
-				">>", "=", "shr ax, bx => bx,ax,>>=  # shift right",
-				"<<", "=", "shr ax, bx => bx,ax,<<=  # shift left",
-				"", "[]", "mov eax,[eax] => eax,[],eax,=",
-				"=", "[]", "mov [eax+3], 1 => 1,3,eax,+,=[]",
-				"=", "[1]", "mov byte[eax],1 => 1,eax,=[1]",
-				"=", "[8]", "mov [rax],1 => 1,rax,=[8]",
-				"$", "", "int 0x80 => 0x80,$",
-				"$$", "", "simulate a hardware trap",
-				"==", "", "pops twice, compare and update esil flags",
-				"<", "", "compare for smaller",
-				"<", "=", "compare for smaller or equal",
-				">", "", "compare for bigger",
-				">", "=", "compare bigger for or equal",
-				"?{", "", "if popped value != 0 run the block until }",
-				"POP", "", "drops last element in the esil stack",
-				"TODO", "", "the instruction is not yet esilized",
-				"STACK", "", "show contents of stack",
-				"CLEAR", "", "clears the esil stack",
-				"BREAK", "", "terminates the string parsing",
-				"GOTO", "", "jump to the Nth word popped from the stack",
-				NULL };
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_esil);
 			break;
 		}
 	/* fall through */
 	default: {
-		const char *help_msg[] = {
-			"Usage:", "ae[idesr?] [arg]", "ESIL code emulation",
-			"ae?", "", "show this help",
-			"ae??", "", "show ESIL help",
-			"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
-			"aeim", "", "initialize ESIL VM stack (aeim- remove)",
-			"aeip", "", "initialize ESIL program counter to curseek",
-			"ae", " [expr]", "evaluate ESIL expression",
-			"aex", " [hex]", "evaluate opcode expression",
-			"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
-			"aep", " [addr]", "change esil PC to this address",
-			"aef", " [addr]", "emulate function",
-			"aek", " [query]", "perform sdb query on ESIL.info",
-			"aek-", "", "resets the ESIL.info sdb instance",
-			"aec", "", "continue until ^C",
-			"aecs", " [sn]", "continue until syscall number",
-			"aecu", " [addr]", "continue until address",
-			"aecue", " [esil]", "continue until esil expression match",
-			"aetr", "[esil]", "Convert an ESIL Expression to REIL",
-			"aes", "", "perform emulated debugger step",
-			"aeso", " ", "step over",
-			"aesu", " [addr]", "step until given address",
-			"aesue", " [esil]", "step until esil expression match",
-			"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
-			NULL };
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_ae);
 	} break;
 	}
 }
 
 static void cmd_anal_noreturn(RCore *core, const char *input) {
-	const char *help_msg[] = {
-		"Usage:", "an [-][0xaddr|symname]", " manage no-return marks",
-		"an[a]", " 0x3000", "stop function analysis if call/jmp to this address",
-		"an[n]", " sym.imp.exit", "same as above but for flag/fcn names",
-		"an", "-*", "remove all no-return references",
-		"an", "", "list them all",
-		NULL };
 	switch (input[0]) {
 	case '-':
 		r_anal_noreturn_drop (core->anal, input + 1);
@@ -2770,11 +2528,11 @@ static void cmd_anal_noreturn(RCore *core, const char *input) {
 		if (input[1] == ' ') {
 			r_anal_noreturn_add (core->anal, NULL,
 					r_num_math (core->num, input + 1));
-		} else r_core_cmd_help (core, help_msg);
+		} else r_core_cmd_help (core, help_msg_an);
 		break;
 	case 'n':
 		if (input[1] == ' ') {
-		} else r_core_cmd_help (core, help_msg);
+		} else r_core_cmd_help (core, help_msg_an);
 		break;
 	case '*':
 	case 'r':
@@ -2785,7 +2543,7 @@ static void cmd_anal_noreturn(RCore *core, const char *input) {
 		break;
 	default:
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_an);
 		break;
 	}
 }
@@ -2796,16 +2554,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 
 	switch (input[0]) {
 	case '?': {
-		const char *help_msg[] = {
-			"Usage:", "ao[e?] [len]", "Analyze Opcodes",
-			"aoj", " N", "display opcode analysis information in JSON for N opcodes",
-			"aoe", " N", "display esil form for N opcodes",
-			"aor", " N", "display reil form for N opcodes",
-			"aos", " [esil]", "show sdb representation of esil expression (TODO)",
-			"ao", " 5", "display opcode analysis of 5 opcodes",
-			"ao*", "", "display opcode in r commands",
-			NULL };
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_ao);
 	} break;
 	case 'j':
 	case 'e':
@@ -2951,17 +2700,6 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	RList *list;
 	char *out;
 	int n;
-	const char *help_msg[] = {
-		"Usage: as[ljk?]", "", "syscall name <-> number utility",
-		"as", "", "show current syscall and arguments",
-		"as", " 4", "show syscall 4 based on asm.os and current regs/mem",
-		"asf", " [k[=[v]]]", "list/set/unset pf function signatures (see fcnsign)",
-		"asj", "", "list of syscalls in JSON",
-		"asl", "", "list of syscalls by asm.os and asm.arch",
-		"asl", " close", "returns the syscall number for close",
-		"asl", " 4", "returns the name of the syscall number 4",
-		"ask", " [query]", "perform syscall/ queries",
-		NULL };
 
 	switch (input[0]) {
 	case 'f': // "asf"
@@ -3019,7 +2757,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		break;
 	default:
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_as);
 		break;
 	}
 }
@@ -3076,22 +2814,6 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 
 static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
-	const char *help_msg[] = {
-		"Usage:", "ax[?d-l*]", " # see also 'afx?'",
-		"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
-		"axc", " addr [at]", "add code jmp ref // unused?",
-		"axC", " addr [at]", "add code call ref",
-		"axg", " addr", "show xrefs graph to reach current function",
-		"axd", " addr [at]", "add data ref",
-		"axj", "", "list refs in json format",
-		"axF", " [flg-glob]", "find data/code references of flags",
-		"axt", " [addr]", "find data/code references to this address",
-		"axf", " [addr]", "find data/code references from this address",
-		"ax-", " [at]", "clean all refs (or refs from addr)",
-		"ax", "", "list refs",
-		"axk", " [query]", "perform sdb query",
-		"ax*", "", "output radare commands",
-		NULL };
 	switch (input[0]) {
 	case '-': { // "ax-"
 		const char *inp;
@@ -3287,7 +3009,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	} break;
 	default:
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_ax);
 		break;
 	}
 
@@ -3315,31 +3037,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	*/
 
 static void cmd_anal_hint(RCore *core, const char *input) {
-	const char *help_msg[] = {
-		"Usage:", "ah[lba-]", "Analysis Hints",
-		"ah?", "", "show this help",
-		"ah?", " offset", "show hint of given offset",
-		"ah", "", "list hints in human-readable format",
-		"ah.", "", "list hints in human-readable format from current offset",
-		"ah-", "", "remove all hints",
-		"ah-", " offset [size]", "remove hints at given offset",
-		"ah*", " offset", "list hints in radare commands format",
-		"aha", " ppc 51", "set arch for a range of N bytes",
-		"ahb", " 16 @ $$", "force 16bit for current instruction",
-		"ahc", " 0x804804", "override call/jump address",
-		"ahf", " 0x804840", "override fallback address for call",
-		"ahi", " 10", "define numeric base for immediates (1, 8, 10, 16, s)",
-		"ahs", " 4", "set opcode size=4",
-		"ahS", " jz", "set asm.syntax=jz for this opcode",
-		"aho", " foo a0,33", "replace opcode string",
-		"ahe", " eax+=3", "set vm analysis string",
-		NULL };
 	switch (input[0]) {
 	case '?':
 		if (input[1]) {
 			ut64 addr = r_num_math (core->num, input+1);
 			r_core_anal_hint_print (core->anal, addr);
-		} else r_core_cmd_help (core, help_msg);
+		} else r_core_cmd_help (core, help_msg_ah);
 		break;
 	case '.': // ah.
 		r_core_anal_hint_print(core->anal, core->offset);
@@ -3370,18 +3073,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'i': // "ahi"
 		if (input[1] == '?') {
-			const char* help_msg[] = {
-				"Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
-				"ahi", " [base]", "set numeric base (1, 2, 8, 10, 16)",
-				"ahi", " b", "set base to binary (1)",
-				"ahi", " d", "set base to decimal (10)",
-				"ahi", " h", "set base to hexadecimal (16)",
-				"ahi", " o", "set base to octal (8)",
-				"ahi", " i", "set base to IP address (32)",
-				"ahi", " S", "set base to syscall (80)",
-				"ahi", " s", "set base to string (2)",
-				NULL };
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_ahi);
 		} else if (input[1] == ' ') {
 		// You can either specify immbase with letters, or numbers
 			const int base =
@@ -3498,16 +3190,6 @@ static void agraph_print_edge(RANode *from, RANode *to, void *user) {
 }
 
 static void cmd_agraph_node(RCore *core, const char *input) {
-	const char *help_msg[] = {
-		"Usage:", "agn [title] [body]", "",
-		"Examples:", "", "",
-		"agn", " title1 body1", "Add a node with title \"title1\" and body \"body1\"",
-		"agn", " \"title with space\" \"body with space\"", "Add a node with spaces in the title and in the body",
-		"agn", " title1 base64:Ym9keTE=", "Add a node with the body specified as base64",
-		"agn-", " title1", "Remove a node with title \"title1\"",
-		"agn?", "", "Show this help",
-		NULL };
-
 	switch (*input) {
 	case ' ': {
 		char *newbody = NULL;
@@ -3562,21 +3244,12 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 	}
 	case '?':
 	default:
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_agn);
 		break;
 	}
 }
 
 static void cmd_agraph_edge(RCore *core, const char *input) {
-	const char *help_msg[] = {
-		"Usage:", "age [title1] [title2]", "",
-		"Examples:", "", "",
-		"age", " title1 title2", "Add an edge from the node with \"title1\" as title to the one with title \"title2\"",
-		"age", " \"title1 with spaces\" title2", "Add an edge from node \"title1 with spaces\" to node \"title2\"",
-		"age-", " title1 title2", "Remove an edge from the node with \"title1\" as title to the one with title \"title2\"",
-		"age?", "", "Show this help",
-		NULL };
-
 	switch (*input) {
 	case ' ':
 	case '-': {
@@ -3608,21 +3281,12 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 	}
 	case '?':
 	default:
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_age);
 		break;
 	}
 }
 
 static void cmd_agraph_print(RCore *core, const char *input) {
-	const char *help_msg[] = {
-		"Usage:", "agg[kid?*]", "print graph",
-		"agg", "", "show current graph in ascii art",
-		"aggk", "", "show graph in key=value form",
-		"aggd", "", "print the current graph in GRAPHVIZ dot format",
-		"aggi", "", "enter interactive mode for the current graph",
-		"aggd", "", "print the current graph in GRAPHVIZ dot format",
-		"agg*", "", "in r2 commands, to save in projects, etc",
-		NULL };
 	switch (*input) {
 	case 'k': // "aggk"
 	{
@@ -3659,7 +3323,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		r_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_agg);
 		break;
 	default:
 		core->graph->can->linemode = 1;
@@ -3674,25 +3338,6 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 static void cmd_anal_graph(RCore *core, const char *input) {
 	RList *list;
 	const char *arg;
-	const char *help_msg[] = {
-		"Usage:", "ag[?f]", "Graphviz/graph code",
-		"ag", " [addr]", "output graphviz code (bb at addr and children)",
-		"ag-", "", "Reset the current ASCII art graph (see agn, age, agg?)",
-		"aga", " [addr]", "idem, but only addresses",
-		"agc", "[j] [addr]", "output graphviz call graph of function",
-		"agC", "[j]", "Same as agc -1. full program callgraph",
-		"agd", " [fcn name]", "output graphviz code of diffed function",
-		"age", "[?] title1 title2", "Add an edge to the current graph",
-		"agf", " [addr]", "Show ASCII art graph of given function",
-		"agg", "[kdi*]", "Print graph in ASCII-Art, graphviz, k=v, r2 or visual",
-		"agj", " [addr]", "idem, but in JSON format",
-		"agk", " [addr]", "idem, but in SDB key-value format",
-		"agl", " [fcn name]", "output graphviz code using meta-data",
-		"agn", "[?] title body", "Add a node to the current graph",
-		"ags", " [addr]", "output simple graphviz call graph of function (only bb offset)",
-		"agt", " [addr]", "find paths from current offset to given address",
-		"agv", "[acdltfl] [a]", "view function using graphviz",
-		NULL };
 
 	switch (input[0]) {
 	case 'f':			// "agf"
@@ -3762,7 +3407,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		r_core_cmd0 (core, "=H /graph/");
 		break;
 	case '?': // "ag?"
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_ag);
 		break;
 	case ' ': // "ag"
 		arg = strchr (input, ' ');
@@ -3783,24 +3428,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 	RDebugTracepoint *t;
 	const char *ptr;
 	ut64 addr = core->offset;
-	const char *help_msg[] = {
-		"Usage:", "at", "[*] [addr]",
-		"at", "", "list all traced opcode ranges",
-		"at-", "", "reset the tracing information",
-		"at*", "", "list all traced opcode offsets",
-		"at+", " [addr] [times]", "add trace for address N times",
-		"at", " [addr]", "show trace info at address",
-		"ate", "", "show esil trace logs (anal.trace)",
-		"ate", " [idx]", "show commands to restore to this trace index",
-		"ate", "-", "clear esil trace logs",
-		"att", " [tag]", "select trace tag (no arg unsets)",
-		"at%", "", "TODO",
-		"ata", " 0x804020 ...", "only trace given addresses",
-		"atr", "", "show traces as range commands (ar+)",
-		"atd", "", "show disassembly trace (use .atd)",
-		"atl", "", "list all traced addresses (useful for @@= `atl`)",
-		"atD", "", "show dwarf trace (at*|rsc dwarf-traces $FILE)",
-		NULL };
 
 	switch (input[0]) {
 	case 'r':
@@ -3858,16 +3485,11 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("|Usage: ate[ilk] [-arg]\n"
-				"| ate           esil trace log single instruction\n"
-				"| ate idx       show commands for that index log\n"
-				"| ate-*         delete all esil traces\n"
-				"| atei          esil trace log single instruction\n"
-				"| atek  [sdbq]  esil trace log single instruction\n");
+			r_core_cmd_help (core, help_msg_ate);
 		}
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_at);
 		eprintf ("Current Tag: %d\n", core->dbg->trace->tag);
 		break;
 	case 'a':
@@ -3929,12 +3551,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	ut64 from, to;
 	char *ptr;
 	int rad, n;
-	const char *help_msg_aar[] = {
-		"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
-		"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
-		"aarj", " [sz]", "list found xrefs in JSON format",
-		"aar*", " [sz]", "list found xrefs in radare commands format",
-		NULL };
+
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aar);
 		return 0;
@@ -4136,23 +3753,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
-	const char *help_msg_aa[] = {
-		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
-		"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
-		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
-		"aaa", "", "autoname functions after aa (see afna)",
-		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
-		"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
-		"aai", "[j]", "show info of all analysis parameters",
-		"aar", " [len]", "analyze len bytes of instructions for references",
-		"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
-		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
-		"aat", " [len]", "analyze all consecutive functions in section",
-		"aap", "", "find and analyze function preludes",
-		"aav", " [sat]", "find values referencing a specific section or map",
-		"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
-		NULL };
-
 	switch (*input) {
 	case '?': r_core_cmd_help (core, help_msg_aa); break;
 	case 'c': cmd_anal_calls (core, input + 1); break; // "aac"
@@ -4373,36 +3973,6 @@ static int cmd_anal(void *data, const char *input) {
 	const char *r;
 	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
-	const char *help_msg_ad[] = {
-		"Usage:", "ad", "[kt] [...]",
-		"ad", " [N] [D]", "analyze N data words at D depth",
-		"adf", "", "analyze data in function (use like .adf @@=`afl~[0]`",
-		"adfg", "", "analyze data in function gaps",
-		"adt", "", "analyze data trampolines (wip)",
-		"adk", "", "analyze data kind (code, text, data, invalid, ...)",
-		NULL };
-	const char *help_msg[] = {
-		"Usage:", "a", "[abdefFghoprxstc] [...]",
-		"ab", " [hexpairs]", "analyze bytes",
-		"aa", "", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
-		"ac", " [cycles]", "analyze which op could be executed in [cycles]",
-		"ad", "", "analyze data trampoline (wip)",
-		"ad", " [from] [to]", "analyze data pointers to (from-to)",
-		"ae", " [expr]", "analyze opcode eval expression (see ao)",
-		"af", "[rnbcsl?+-*]", "analyze Functions",
-		"aF", "", "same as above, but using anal.depth=1",
-		"ag", "[?acgdlf]", "output Graphviz code",
-		"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
-		"ai", " [addr]", "address information (show perms, stack, heap, ...)",
-		"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
-		"an", "[an-] [...]", "manage no-return addresses/symbols/functions",
-		"ar", "", "like 'dr' but for the esil vm. (registers)",
-		"ap", "", "find prelude for current offset",
-		"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
-		"as", " [num]", "analyze syscall using dbg.reg",
-		"at", "[trd+-%*?] [.]", "analyze execution traces",
-		//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
-		NULL };
 
 	r_cons_break (NULL, NULL);
 
@@ -4559,7 +4129,8 @@ static int cmd_anal(void *data, const char *input) {
 		else r_cons_printf ("No plugins for this analysis plugin\n");
 		break;
 	default:
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_a);
+		// TODO move in separate help_msg or the same as above?
 		r_cons_printf ("Examples:\n"
 			" f ts @ `S*~text:0[3]`; f t @ section..text\n"
 			" f ds @ `S*~data:0[3]`; f d @ section..data\n"

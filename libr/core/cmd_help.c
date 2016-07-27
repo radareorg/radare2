@@ -91,12 +91,7 @@ static int cmd_help(void *data, const char *input) {
 		RListIter *iter;
 		RCorePlugin *cp;
 		if (input[1]=='?') {
-			const char* help_msg[] = {
-				"Usage:", ":[plugin] [args]", "",
-				":", "", "list RCore plugins",
-				":java", "", "run java plugin",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_colon);
 			return 0;
 		}
 		if (input[1])
@@ -261,13 +256,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
-				"|?vi1 200    -> 1 byte size value (char)\n"
-				"|?vi2 0xffff -> 2 byte size value (short)\n"
-				"|?vi4 0xffff -> 4 byte size value (int)\n"
-				"|?vi8 0xffff -> 8 byte size value (st64)\n"
-				"| No argument shows $? value\n"
-				"|?vi will show in decimal instead of hex\n");
+			r_core_cmd_help (core, help_msg_quev);
 			break;
 		case '\0':
 		        r_cons_printf ("%d\n", (st32)n);
@@ -324,101 +313,18 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '@':
 		{
-		const char* help_msg[] = {
-			"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
-			"0", "", "alias for 's 0'",
-			"0x", "addr", "alias for 's 0x..'",
-			"#", "cmd", "if # is a number repeat the command # times",
-			"/*", "", "start multiline comment",
-			"*/", "", "end multiline comment",
-			".", "cmd", "execute output of command as r2 script",
-			".:", "8080", "wait for commands on port 8080",
-			".!", "rabin2 -re $FILE", "run command output as r2 script",
-			"*", "", "output of command in r2 script format (CC*)",
-			"j", "", "output of command in JSON format (pdj)",
-			"~", "?", "count number of lines (like wc -l)",
-			"~", "??", "show internal grep help",
-			"~", "..", "internal less",
-			"~", "{}", "json indent",
-			"~", "{}..", "json indent and less",
-			"~", "word", "grep for lines matching word",
-			"~", "!word", "grep for lines NOT matching word",
-			"~", "word[2]", "grep 3rd column of lines matching word",
-			"~", "word:3[0]", "grep 1st column from the 4th line matching mov",
-			"@", " 0x1024", "temporary seek to this address (sym.main+3",
-			"@", " addr[!blocksize]", "temporary set a new blocksize",
-			"@a:", "arch[:bits]", "temporary set arch and bits",
-			"@b:", "bits", "temporary set asm.bits",
-			"@e:", "k=v,k=v", "temporary change eval vars",
-			"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
-			"@f:", "file", "temporary replace block with file contents",
-			"@o:", "fd", "temporary switch to another fd",
-			"@s:", "string", "same as above but from a string",
-			"@x:", "909192", "from hex pairs string",
-			"@..", "from to", "temporary set from and to for commands supporting ranges",
-			"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
-			"@@", " hit*", "run the command on every flag matching 'hit*'",
-			"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
-			">", "file", "pipe output of command to file",
-			">>", "file", "append to file",
-			"`", "pdi~push:0[0]`",  "replace output of command inside the line",
-			"|", "cmd", "pipe output to command (pd|less) (.dr*)",
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_at_general);
 		return 0;
 		}
 	case '$':{
-		const char* help_msg[] = {
-			"Usage: ?v [$.]","","",
-			"$$", "", "here (current virtual seek)",
-			"$?", "", "last comparison value",
-			"$alias", "=value", "Alias commands (simple macros)",
-			"$b", "", "block size",
-			"$B", "", "base address (aligned lowest map address)",
-			"$F", "", "current function size",
-			"$FB", "", "begin of function",
-			"$FE", "", "end of function",
-			"$FS", "", "function size",
-			"$FI", "", "function instructions",
-			"$c,$r", "", "get width and height of terminal",
-			"$Cn", "", "get nth call of function",
-			"$Dn", "", "get nth data reference in function",
-			"$D", "", "current debug map base address ?v $D @ rsp",
-			"$DD", "", "current debug map size",
-			"$e", "", "1 if end of block, else 0",
-			"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
-			"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
-			"$Ja", "", "get nth jump of function",
-			"$Xn", "", "get nth xref of function",
-			"$l", "", "opcode length",
-			"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
-			"$M", "", "map address (lowest map address)",
-			"$o", "", "here (current disk io offset)",
-			"$p", "", "getpid()",
-			"$P", "", "pid of children (only in debug)",
-			"$s", "", "file size",
-			"$S", "", "section offset",
-			"$SS", "", "section size",
-			"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
-			"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
-			"${ev}", "", "get value of eval config variable",
-			"$k{kv}", "", "get value of an sdb query value",
-			"RNum", "", "$variables usable in math expressions",
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_dollar_sign);
 		}
 		return true;
 	case 'V':
 		switch (input[1]) {
 		case '?':
 			{
-				const char* help_msg[] = {
-					"Usage: ?V[jq]","","",
-					"?V", "", "show version information",
-					"?Vj", "", "same as above but in JSON",
-					"?Vq", "", "quiet mode, just show the version number",
-					NULL};
-				r_core_cmd_help (core, help_msg);
+				r_core_cmd_help (core, help_msg_queV);
 			}
 			break;
 		case 0:
@@ -597,47 +503,7 @@ static int cmd_help(void *data, const char *input) {
 					r_core_cmd (core, input+1, 0);
 				break;
 			}
-			const char* help_msg[] = {
-			"Usage: ?[?[?]] expression", "", "",
-			"?", " eip-0x804800", "show hex and dec result for this math expr",
-			"?:", "", "list core cmd plugins",
-			"?!", " [cmd]", "? != 0",
-			"?+", " [cmd]", "? > 0",
-			"?-", " [cmd]", "? < 0",
-			"?=", " eip-0x804800", "hex and dec result for this math expr",
-			"??", "", "show value of operation",
-			"??", " [cmd]", "? == 0 run command when math matches",
-			"?B", " [elem]", "show range boundaries like 'e?search.in",
-			"?P", " paddr", "get virtual address for given physical one",
-			"?S", " addr", "return section name of given address",
-			"?T", "", "show loading times",
-			"?V", "", "show library version of r_core",
-			"?X", " num|expr", "returns the hexadecimal value numeric expr",
-			"?_", " hudfile", "load hud menu with given file",
-			"?b", " [num]", "show binary value of number",
-			"?b64[-]", " [str]", "encode/decode in base64",
-			"?d[.]", " opcode", "describe opcode for asm.arch",
-			"?e", " string", "echo string",
-			"?f", " [num] [str]", "map each bit of the number as flag string index",
-			"?h", " [str]", "calculate hash for given string",
-			"?i", "[ynmkp] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",
-			"?ik", "", "press any key input dialog",
-			"?im", " message", "show message centered in screen",
-			"?in", " prompt", "noyes input prompt",
-			"?iy", " prompt", "yesno input prompt",
-			"?l", " str", "returns the length of string",
-			"?o", " num", "get octal value",
-			"?p", " vaddr", "get physical address for given virtual address",
-			"?r", " [from] [to]", "generate random number between from-to",
-			"?s", " from to step", "sequence of numbers from to by steps",
-			"?t", " cmd", "returns the time to run a command",
-			"?u", " num", "get value in human units (KB, MB, GB, TB)",
-			"?v", " eip-0x804800", "show hex value of math expr",
-			"?vi", " rsp-rbp", "show decimal value of math expr",
-			"?x", " num|str|-hexst", "returns the hexpair of number or string",
-			"?y", " [str]", "show contents of yank buffer, or set with string",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_queque);
 			return 0;
 		} else if (input[1]) {
 			if (core->num->value) {
@@ -652,52 +518,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '\0':
 	default:{
-		const char* help_message[] = {
-		"%var", "=value", "Alias for 'env' command",
-		"*", "off[=[0x]value]", "Pointer read/write data/values (see ?v, wx, wv)",
-		"(macro arg0 arg1)",  "", "Manage scripting macros",
-		".", "[-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
-		"="," [cmd]", "Run this command via rap://",
-		"/","", "Search for bytes, regexps, patterns, ..",
-		"!"," [cmd]", "Run given command as in system(3)",
-		"#"," [algo] [len]", "Calculate hash checksum of current block",
-		"#","!lang [..]", "Hashbang to run an rlang script",
-		"a","", "Perform analysis of code",
-		"b","", "Get or change block size",
-		"c"," [arg]", "Compare block with given data",
-		"C","", "Code metadata management",
-		"d","", "Debugger commands",
-		"e"," [a[=b]]", "List/get/set config evaluable vars",
-		"f"," [name][sz][at]", "Set flag at current address",
-		"g"," [arg]", "Go compile shellcodes with r_egg",
-		"i"," [file]", "Get info about opened file",
-		"k"," [sdb-query]", "Run sdb-query. see k? for help, 'k *', 'k **' ...",
-		"m","", "Mountpoints commands",
-		"o"," [file] ([offset])", "Open file at optional address",
-		"p"," [len]", "Print current block with format and length",
-		"P","", "Project management utilities",
-		"q"," [ret]", "Quit program with a return value",
-		"r"," [len]", "Resize file",
-		"s"," [addr]", "Seek to address (also for '0x', '0x1' == 's 0x1')",
-		"S","", "Io section manipulation information",
-		"t","", "Cparse types management",
-		"T"," [-] [num|msg]", "Text log utility",
-		"u","", "uname/undo seek/write",
-		"V","", "Enter visual mode (vcmds=visualvisual  keystrokes)",
-		"w"," [str]", "Multiple write operations",
-		"x"," [len]", "Alias for 'px' (print hexadecimal)",
-		"y"," [len] [[[@]addr", "Yank/paste bytes from/to memory",
-		"z", "", "Zignatures management",
-		"?[??]","[expr]", "Help or evaluate math expression",
-		"?$?", "", "Show available '$' variables and aliases",
-		"?@?", "", "Misc help for '@' (seek), '~' (grep) (see ~?""?)",
-		"?:?", "", "List and manage core plugins",
-		NULL
-		};
-		r_cons_printf("Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
-			"Append '?' to any char command to get detailed help\n"
-			"Prefix with number to repeat command N times (f.ex: 3x)\n");
-		r_core_cmd_help (core, help_message);
+		r_core_cmd_help (core, help_msg_que);
 		}
 		break;
 	}

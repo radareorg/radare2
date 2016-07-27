@@ -174,16 +174,7 @@ static int cmd_hash(void *data, const char *input) {
 		return cmd_hash_bang (core, input);
 	}
 	if (*input == '?') {
-		const char *helpmsg3[] = {
-		"Usage #!interpreter [<args>] [<file] [<<eof]","","",
-		" #", "", "comment - do nothing",
-		" #!","","list all available interpreters",
-		" #!python","","run python commandline",
-		" #!python"," foo.py","run foo.py python script (same as '. foo.py')",
-		//" #!python <<EOF        get python code until 'EOF' mark\n"
-		" #!python"," arg0 a1 <<q","set arg0 and arg1 and read until 'q'",
-		NULL};
-		r_core_cmd_help (core, helpmsg3);
+		r_core_cmd_help (core, help_msg_hash);
 		return false;
 	}
 	/* this is a comment - captain obvious */

@@ -454,42 +454,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case '?': {
-			const char * help_message[] = {
-				"Usage: i", "", "Get info from opened file",
-				"Output mode:", "", "",
-				"'*'", "", "Output in radare commands",
-				"'j'", "", "Output in json",
-				"'q'", "", "Simple quiet output",
-				"Actions:", "", "",
-				"i|ij", "", "Show info of current file (in JSON)",
-				"iA", "", "List archs",
-				"ia", "", "Show all info (imports, exports, sections..)",
-				"ib", "", "Reload the current buffer for setting of the bin (use once only)",
-				"ic", "", "List classes, methods and fields",
-				"iC", "", "Show signature info (entitlements, ...)",
-				"id", "", "Debug information (source lines)",
-				"iD", " lang sym", "demangle symbolname for given language",
-				"ie", "", "Entrypoint",
-				"iE", "", "Exports (global symbols)",
-				"ih", "", "Headers",
-				"ii", "", "Imports",
-				"iI", "", "Binary info",
-				"ik", " [query]", "Key-value database from RBinObject",
-				"il", "", "Libraries",
-				"iL", "", "List all RBin plugins loaded",
-				"im", "", "Show info about predefined memory allocation",
-				"iM", "", "Show main address",
-				"io", " [file]", "Load info from file (or last opened) use bin.baddr",
-				"ir|iR", "", "Relocs",
-				"is", "", "Symbols",
-				"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
-				"iV", "", "Display file version info",
-				"iz", "", "Strings in data sections",
-				"izz", "", "Search for Strings in the whole binary",
-				"iZ", "", "Guess size of binary program",
-				NULL
-				};
-				r_core_cmd_help (core, help_message);
+				r_core_cmd_help (core, help_msg_i);
 			}
 			goto done;
 		case '*':

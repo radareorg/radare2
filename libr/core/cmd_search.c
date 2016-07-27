@@ -1933,7 +1933,7 @@ reread:
 		break;
 	case 'b':
 		if (*(++input) == '?'){
-			eprintf ("Usage: /b<command> [value] backward search, see '/?'\n");
+			r_core_cmd_help (core, help_msg_slashb);
 			goto beach;
 		}
 		core->search->bckwrds = param.bckwrds = param.do_bckwrd_srch = true;
@@ -1957,16 +1957,7 @@ reread:
 		break;
 	case 'R':
 		if (input[1]=='?') {
-			const char* help_msg[] = {
-				"Usage: /R", "", "Search for ROP gadgets",
-				"/R", " [filter-by-string]" , "Show gadgets",
-				"/R/", " [filter-by-regexp]" , "Show gadgets [regular expression]",
-				"/Rl", " [filter-by-string]" , "Show gadgets in a linear manner",
-				"/R/l", " [filter-by-regexp]" , "Show gadgets in a linear manner [regular expression]",
-				"/Rj", " [filter-by-string]", "JSON output",
-				"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_slashR);
 		} else if (input[1] == '/') {
 			r_core_search_rop (core, param.from, param.to, 0, input+1, 1);
 		} else r_core_search_rop (core, param.from, param.to, 0, input+1, 0);
@@ -2023,12 +2014,7 @@ reread:
 			default:{
 				dosearch = false;
 				param.crypto_search = false;
-				const char* help_msg[] = {
-					"Usage: /C", "", "Search for crypto materials",
-					"/Ca", "" , "Search for AES keys",
-					"/Cr", "", "Search for private RSA keys",
-					NULL};
-				r_core_cmd_help (core, help_msg);
+				r_core_cmd_help (core, help_msg_slashC);
 				}
 			}
 		} break;
@@ -2288,12 +2274,7 @@ reread:
 		break;
 	case 'x': /* search hex */
 		if (input[1]=='?') {
-			const char* help_msg[] = {
-				"Usage:", "/x [hexpairs]:[binmask]", "Search in memory",
-				"/x ", "9090cd80", "search for those bytes",
-				"/x ", "9090cd80:ffff7ff0", "search with binary mask",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_slashx);
 		} else {
 			RSearchKeyword *kw;
 			char *s, *p = strdup (input+json+2);
@@ -2320,17 +2301,7 @@ reread:
 		break;
 	case 'c': /* search asm */
 		if (input[1] == '?') {
-			const char* help_msg[] = {
-				"Usage:", "/c [inst]", " Search for asm",
-				"/c ", "instr", "search for instruction 'instr'",
-				"/c/ ", "instr", "search for instruction that matches regexp 'instr'",
-				"/c ", "instr1;instr2", "search for instruction 'instr1' followed by 'instr2'",
-				"/c/ ", "instr1;instr2", "search for regex instruction 'instr1' followed by regex 'instr2'",
-				"/cj ", "instr", "json output",
-				"/c/j ", "instr", "regex search with json output",
-				"/c* ", "instr", "r2 command output",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_slashc);
 		}
 		do_asm_search (core, &param, input);
 		dosearch = 0;
@@ -2403,49 +2374,7 @@ reread:
 		}
 		break;
 	case '?':{
-		const char* help_msg[] = {
-			"Usage:", "/[amx/] [arg]", "Search stuff (see 'e??search' for options)",
-			"/"," foo\\x00", "search for string 'foo\\0'",
-			"/j"," foo\\x00", "search for string 'foo\\0' (json output)",
-			"/!", " ff", "search for first occurrence not matching",
-			"/+", " /bin/sh", "construct the string with chunks",
-			"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
-			"//", "", "repeat last search",
-			"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
-			"/a", " jmp eax", "assemble opcode and search its bytes",
-			"/A", " jmp", "find analyzed instructions of this type (/A? for help)",
-			"/b", "", "search backwards",
-			"/B", "", "search recognized RBin headers",
-			"/c", " jmp [esp]", "search for asm code",
-			"/C", "[ar]", "search for crypto materials",
-			"/d", " 101112", "search for a deltified sequence of bytes",
-			"/e", " /E.F/i", "match regular expression",
-			"/E", " esil-expr", "offset matching given esil expressions %%= here ",
-			"/i", " foo", "search for string 'foo' ignoring case",
-			"/m", " magicfile", "search for matching magic file (use blocksize)",
-			"/p", " patternsize", "search for pattern of given size",
-			"/P", "", "show offset of previous instruction",
-			"/r", " sym.printf", "analyze opcode reference an offset",
-			"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
-			"/v", "[1248] value", "look for an `asm.bigendian` 32bit value",
-			"/V", "[1248] min max", "look for an `asm.bigendian` 32bit value in range",
-			"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
-			"/wi", " foo", "search for wide string ignoring case 'f\\0o\\0o\\0'",
-			"/x"," ff..33", "search for hex string ignoring some nibbles",
-			"/x"," ff0033", "search for hex string",
-			"/x"," ff43 ffd0", "search for hexpair with mask",
-			"/z"," min max", "search for strings of given size",
-#if 0
-			"\nConfiguration:", "", " (type `e??search.` for a complete list)",
-			"e", " cmd.hit = x", "command to execute on every search hit",
-			"e", " search.in = ?", "specify where to search stuff (depends on .from/.to)",
-			"e", " search.align = 4", "only catch aligned search hits",
-			"e", " search.from = 0", "start address",
-			"e", " search.to = 0", "end address",
-			"e", " search.flags = true", "if enabled store flags on keyword hits",
-#endif
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_slash);
 		}
 		break;
 	default:

@@ -139,7 +139,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 			}
 		} else {
-			eprintf ("Usage: et [varname]  ; show type of eval var\n");
+			r_core_cmd_help (core, help_msg_et);
 		}
 		break;
 	case 'n': // env
@@ -184,27 +184,7 @@ static int cmd_eval(void *data, const char *input) {
 			r_cons_pal_init (NULL);
 			break;
 		case '?': {
-			const char *helpmsg[] = {
-			"Usage ec[s?] [key][[=| ]fg] [bg]","","",
-			"ec","","list all color keys",
-			"ec*","","same as above, but using r2 commands",
-			"ecd","","set default palette",
-			"ecr","","set random palette",
-			"ecs","","show a colorful palette",
-			"ecj","","show palette in JSON",
-			"ecc"," [prefix]","show palette in CSS",
-			"eco"," dark|white","load white color scheme template",
-			"ecp","","load previous color theme",
-			"ecn","","load next color theme",
-			"ec"," prompt red","change color of prompt",
-			"ec"," prompt red blue","change color and background of prompt",
-			""," ","",
-			"colors:","","rgb:000, red, green, blue, ...",
-			"e scr.rgbcolor","=1|0","for 256 color cube (boolean)",
-			"e scr.truecolor","=1|0","for 256*256*256 colors (boolean)",
-			"$DATADIR/radare2/cons","","~/.config/radare2/cons ./",
-			NULL};
-			r_core_cmd_help (core, helpmsg);
+			r_core_cmd_help (core, help_msg_ec);
 			}
 			break;
 		case 'o': // "eco"
@@ -316,23 +296,7 @@ static int cmd_eval(void *data, const char *input) {
 		case '?': r_config_list (core->config, input+2, 2); break;
 		default: r_config_list (core->config, input+1, 2); break;
 		case 0:{
-			const char* help_msg[] = {
-			"Usage:", "e[?] [var[=value]]", "Evaluable vars",
-			"e","?asm.bytes", "show description",
-			"e", "??", "list config vars with description",
-			"e", "", "list config vars",
-			"e-", "", "reset config vars",
-			"e*", "", "dump config vars in r commands",
-			"e!", "a", "invert the boolean value of 'a' var",
-			"ee", "var", "open editor to change the value of var",
-			"er", " [key]", "set config key as readonly. no way back",
-			"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
-			"et", " [key]", "show type of given config variable",
-			"e", " a", "get value of var 'a'",
-			"e", " a=b", "set var 'a' the 'b' value",
-			"env", " [k[=v]]", "get/set environment variable",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_e);
 			}
 		}
 		break;

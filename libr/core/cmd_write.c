@@ -118,28 +118,6 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 static void cmd_write_op (RCore *core, const char *input) {
 	ut8 *buf;
 	int len;
-	const char* help_msg[] = {
-		"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
-		"wo[aAdlmorwx24]","", "without hexpair values, clipboard is used",
-		"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-		"woA"," [val]","&=  and",
-		"wod"," [val]", "/=  divide",
-		"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
-		"woe"," [from to] [step] [wsz=1]","..  create sequence",
-		"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
-		"wol"," [val]","<<= shift left",
-		"wom"," [val]", "*=  multiply",
-		"woo"," [val]","|=  or",
-		"wop[DO]"," [arg]","De Bruijn Patterns",
-		"wor"," [val]", ">>= shift right",
-		"woR","","random bytes (alias for 'wr $b')",
-		"wos"," [val]", "-=  substraction",
-		"wow"," [val]", "==  write looped value (alias for 'wb')",
-		"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
-		"wo2"," [val]","2=  2 byte endian swap",
-		"wo4"," [val]", "4=  4 byte endian swap",
-		NULL
-	};
 	if (!input[0])
 		return;
 	switch (input[1]) {
@@ -244,13 +222,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		case '?':
 		default:
 			{
-				const char* wop_help_msg[] = {
-					"Usage:","wop[DO]"," len @ addr | value",
-					"wopD"," len [@ addr]","Write a De Bruijn Pattern of length 'len' at address 'addr'",
-					"wopO"," value", "Finds the given value into a De Bruijn Pattern at current offset",
-					NULL
-				};
-				r_core_cmd_help (core, wop_help_msg);
+				r_core_cmd_help (core, help_msg_wop);
 				break;
 			}
 		}
@@ -258,7 +230,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case '\0':
 	case '?':
 	default:
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_wo);
 		break;
 	}
 }
@@ -277,13 +249,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 	switch (input[1]) {
 	case '?':
 	{
-		const char* help_msg[] = {
-			"Usage:", "wv[size] [value]", "write value of given size",
-			"wv1", " 234", "write one byte with this value",
-			"wv", " 0x834002", "write dword with this value",
-			"Supported sizes are:", "1, 2, 4, 8", "",
-			NULL};
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_wv);
 		return;
 	}
 	case '1': type = 1; break;
@@ -382,36 +348,6 @@ static int cmd_write(void *data, const char *input) {
 	ut64 off;
 	ut8 *buf;
 	st64 num = 0;
-	const char* help_msg[] = {
-		"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
-		"w","[1248][+-][n]","increment/decrement byte,word..",
-		"w"," foobar","write string 'foobar'",
-		"w0"," [len]","write 'len' bytes with value 0x00",
-		"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
-		"wa"," push ebp","write opcode, separated by ';' (use '\"' around the command)",
-		"waf"," file","assemble file and write bytes",
-		"wao"," op","modify opcode (change conditional of jump. nop, etc)",
-		"wA"," r 0","alter/modify opcode at current seek (see wA?)",
-		"wb"," 010203","fill current block with cyclic hexpairs",
-		"wB","[-]0xVALUE","set or unset bits with given value",
-		"wc","","list all write changes",
-		"wc","[ir*?]","write cache undo/commit/reset/list (io.cache)",
-		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
-		"we","[nNsxX] [arg]","extend write operations (insert instead of replace)",
-		"wf"," -|file","write contents of file at current offset",
-		"wh"," r2","whereis/which shell command",
-		"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
-		"wo?"," hex","write in block with operation. 'wo?' fmi",
-		"wp"," -|file","apply radare patch file. See wp? fmi",
-		"wr"," 10","write 10 random bytes",
-		"ws"," pstring","write 1 byte for length and then the string",
-		"wt"," file [sz]","write to file (from current seek, blocksize or sz bytes)",
-		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
-		"wx[fs]"," 9090","write two intel nops (from wxfile or wxseek)",
-		"wv"," eip+34","write 32-64 bit value",
-		"wz"," string","write zero terminated string (like w + \\x00)",
-		NULL
-	};
 
 	if (!input)
 		return 0;
@@ -646,15 +582,7 @@ static int cmd_write(void *data, const char *input) {
 
 
 		if (cmd_suc == false) {
-			const char* help_msg[] = {
-			"Usage", "", "write extend",
-			"wen", " <num>", "insert num null bytes at current offset",
-			"wex", " <hex_bytes>", "insert bytes at current offset",
-			"weN", " <addr> <len>", "insert bytes at address",
-			"weX", " <addr> <hex_bytes>", "insert bytes at address",
-			"wes", " <addr>  <dist> <block_size>", "shift a blocksize left or write in the editor",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_we);
 		}
 		}
 		break;
@@ -673,8 +601,7 @@ static int cmd_write(void *data, const char *input) {
 					free (data);
 				}
 			} else {
-				eprintf ("Usage: wp [-|r2patch-file]\n"
-			         "TODO: rapatch format documentation here\n");
+				r_core_cmd_help (core, help_msg_wp);
 			}
 		}
 		break;
@@ -765,17 +692,7 @@ static int cmd_write(void *data, const char *input) {
 		case '?':
 		default:
 			{
-			const char* help_msg[] = {
-				"Usage:", " wA", "[type] [value]",
-				"Types", "", "",
-				"r", "", "raw write value",
-				"v", "", "set value (taking care of current address)",
-				"d", "", "destination register",
-				"0", "", "1st src register",
-				"1", "", "2nd src register",
-				"Example:",  "wA r 0", "# e800000000",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_wA);
 			break;
 			}
 		}
@@ -847,17 +764,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '?':
 			{
-				const char* help_msg[] = {
-					"Usage:", "wc[ir+-*?]","  # NOTE: Uses io.cache=true",
-					"wc","","list all write changes",
-					"wc-"," [from] [to]","remove write op at curseek or given addr",
-					"wc+"," [addr]","commit change from cache to io",
-					"wc*","","\"\" in radare commands",
-					"wcr","","reset all write changes in cache",
-					"wci","","commit write cache",
-					NULL
-				};
-				r_core_cmd_help (core, help_msg);
+				r_core_cmd_help (core, help_msg_wc);
 			}
 			break;
 		case '*':
@@ -901,7 +808,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 't': // "wt"
 		if (*str == '?' || *str == '\0') {
-			eprintf ("Usage: wt[a] file [size]   write 'size' bytes in current block to file\n");
+			r_core_cmd_help (core, help_msg_wt);
 			free (ostr);
 			return 0;
 		} else {
@@ -1010,13 +917,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		default:
 			{
-			const char* help_msg[] = {
-				"Usage:", "wx[f] [arg]", "",
-				"wx", " 9090", "write two intel nops",
-				"wxf", " -|file", "write contents of hexpairs file here",
-				"wxs", " 9090", "write hexpairs and seek at the end",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_wx);
 			break;
 			}
 		}
@@ -1069,15 +970,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		default:
 			{
-			const char* help_msg[] = {
-				"Usage:", "wa[of*] [arg]", "",
-				"wa", " nop", "write nopcode using asm.arch and asm.bits",
-				"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
-				"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
-				"waf", "foo.asm" , "assemble file and write bytes",
-				"wao?", "", "show help for assembler operation on current opcode (hack)",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_wa);
 			break;
 			}
 		}
@@ -1144,7 +1037,9 @@ static int cmd_write(void *data, const char *input) {
 				free (data);
 			} else eprintf ("See wd?\n");
 			free (inp);
-		} else eprintf ("Usage: wd [source-offset] [length] @ [dest-offset]\n");
+		} else {
+			r_core_cmd_help (core, help_msg_wd);
+		}
 		break;
 	case 's':
 		if (str && *str && str[1]) {
@@ -1169,7 +1064,7 @@ static int cmd_write(void *data, const char *input) {
 			WSEEK (core, core->oobi_len);
 			r_core_block_read (core, 0);
 		} else {
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_w);
 		}
 		break;
 	}
