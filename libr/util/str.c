@@ -170,16 +170,6 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 	return out;
 }
 
-/* int c; ret = hex2int(&c, 'c'); */
-// Converts a SINGLE hexchar to it's integer value.
-static int hex2int(ut8 *val, ut8 c) {
-	if ('0' <= c && c <= '9') *val = (ut8)(*val) * 16 + ( c - '0');
-	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + ( c - 'A' + 10);
-	else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + ( c - 'a' + 10);
-	else return 1;
-	return 0;
-}
-
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 	int n, i, j, k, ret, len;
 	len = strlen (str);
@@ -955,8 +945,8 @@ R_API int r_str_unescape(char *buf) {
 				eprintf ("Unexpected end of string.\n");
 				return 0;
 			}
-			err |= hex2int (&ch,  buf[i+2]);
-			err |= hex2int (&ch2, buf[i+3]);
+			err |= r_hex_to_byte (&ch,  buf[i+2]);
+			err |= r_hex_to_byte (&ch2, buf[i+3]);
 			if (err) {
 				eprintf ("Error: Non-hexadecimal chars in input.\n");
 				return 0; // -1?
