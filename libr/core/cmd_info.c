@@ -192,7 +192,7 @@ static int cmd_info(void *data, const char *input) {
 	bool newline = r_config_get_i (core->config, "scr.interactive");
 	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
-	int fd, i, va = core->io->va || core->io->debug;
+	int i, va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
 	Sdb *db;
@@ -330,6 +330,11 @@ static int cmd_info(void *data, const char *input) {
 			if (input[1] == 'z') {
 				char *biname;
 				char *ret;
+				int fd = -1;
+				int xtr_idx = 0;
+				int rawstr = 1;
+				RCore *tmpcore = r_core_new ();
+				RCore *p2core = core;
 				const int min = core->bin->minstrlen;
 				const int max = core->bin->maxstrlen;
 				/* TODO: reimplement in C to avoid forks */
@@ -338,11 +343,13 @@ static int cmd_info(void *data, const char *input) {
 					return 0;
 				}
 				biname = r_str_escape (core->file->desc->name);
-				fd = r_core_file_cur_fd (core);
-				if(!r_bin_load (core->bin, biname, UT64_MAX, UT64_MAX, 0, fd, 1)){
-	                                eprintf ("Cannot open file\n");
+				if(!tmpcore)
+				        return 0;
+				if(!r_bin_load (tmpcore->bin, biname, UT64_MAX, UT64_MAX, xtr_idx, fd, rawstr)){
+	                                eprintf ("Cannot load information\n");
 					return 0;
 	                        }
+				core = tmpcore;
 				switch (input[2]) {
 				case '*':
 				        mode = R_CORE_BIN_RADARE;
@@ -368,10 +375,8 @@ static int cmd_info(void *data, const char *input) {
 				if (ret && *ret) {
 					r_cons_strcat (ret);
 				}
-				if(!r_bin_load (core->bin, biname, UT64_MAX, UT64_MAX, 0, fd, 0)){
-	                                eprintf ("Cannot open file\n");
-					return 0;
-	                        }
+				core = p2core;
+				r_core_free (tmpcore);
 				free (ret);
 				free (biname);
 				input++;
