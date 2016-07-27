@@ -916,10 +916,19 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	unsigned int size = 0;
 	RAnalOp analop = {0};
 	RAsmOp asmop;
+	Sdb *db = NULL;
 	const bool colorize = r_config_get_i (core->config, "scr.color");
 	const bool rop_comments = r_config_get_i (core->config, "rop.comments");
 	const bool esil = r_config_get_i (core->config, "asm.esil");
 	const bool rop_db = r_config_get_i (core->config, "rop.db");
+
+	if (rop_db) {
+		db = sdb_ns (core->sdb, "rop", true);
+		if (!db) {
+			eprintf ("Error: Could not create SDB 'rop' namespace\n");
+			return;
+		}
+	}
 
 	switch (mode) {
 	case 'j':
@@ -944,7 +953,13 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 				iter->n?",":"");
 			free (buf);
 		}
-		if (hit) {
+		if (db && hit) {
+			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
+			//r_cons_printf ("Gadget size: %d\n", (int)size);
+			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
+			sdb_num_set (db, key, size, 0);
+			r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
+		} else if (hit) {
 			r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
 		}
 		break;
@@ -973,10 +988,9 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			}
 			free (buf);
 		}
-		if (rop_db && hit) {
+		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
 			//r_cons_printf ("Gadget size: %d\n", (int)size);
-			Sdb *db = sdb_ns (core->sdb, "rop", true);
 			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
 			sdb_num_set (db, key, size, 0);
 		}
@@ -1019,6 +1033,12 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 				}
 			}
 			free (buf);
+		}
+		if (db && hit) {
+			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
+			//r_cons_printf ("Gadget size: %d\n", (int)size);
+			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
+			sdb_num_set (db, key, size, 0);
 		}
 	}
 	if (mode != 'j') r_cons_newline ();
@@ -1070,6 +1090,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const ut8 prot = r_config_get_i (core->config, "rop.nx") ? R_IO_READ|R_IO_WRITE|R_IO_EXEC : R_IO_EXEC;
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
+	const bool rop_db = r_config_get_i (core->config, "rop.db");
 	int max_count = r_config_get_i(core->config, "search.count");
 	ut64 search_from = r_config_get_i (core->config, "search.from");
 	ut64 search_to = r_config_get_i (core->config, "search.to");
