@@ -1790,6 +1790,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 				(reg = getnum (a, str + *pos)) > 7) {
 			if ((int)reg > 15) {
 				eprintf ("Too large register index!\n");
+				return X86R_UNDEFINED;
 			} else {
 				reg -= 8;
 			}
@@ -1800,6 +1801,12 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		// pass by ')'
 		if (getToken (str, pos, &nextpos) == TT_SPECIAL && str[*pos] == ')') {
 			*pos = nextpos;
+		}
+		// Safety to prevent a shift bigger than 31. Reg
+		// should never be > 8 anyway
+		if (reg > 7) {
+			eprintf ("Too large register index!\n");
+			return X86R_UNDEFINED;
 		}
 		*type |= (OT_REG(reg) & ~OT_REGTYPE);
 		return reg;
