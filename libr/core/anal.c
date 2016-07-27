@@ -388,6 +388,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	ut64 *next = NULL;
 	int buflen, fcnlen;
 	RAnalFunction *fcn = r_anal_fcn_new ();
+	fcn->cc = r_anal_cc_default (core->anal);
 	if (!fcn) {
 		eprintf ("Error: new (fcn)\n");
 		return false;
@@ -1553,7 +1554,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
-	r_cons_printf (",\"calltype\":\"%s\"", r_anal_cc_type2str (fcn->call));
+	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
 	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (",\"diff\":\"%s\"",
@@ -1653,8 +1654,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 			fcn->type == R_ANAL_FCN_TYPE_IMP?'i':'f',
 			fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?'m':
 			fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
-	r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n",
-		r_anal_cc_type2str (fcn->call), fcn->addr);
+	r_cons_printf ("afC %s @ 0x%08"PFMT64x"\n", fcn->cc, fcn->addr);
 	if (fcn->folded)
 		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
 	fcn_list_bbs (fcn);
@@ -1675,7 +1675,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
 	r_cons_printf ("\n realsz: %d", r_anal_fcn_realsize (fcn));
 	r_cons_printf ("\n stackframe: %d", fcn->maxstack);
-	r_cons_printf ("\n call-convention: %s", r_anal_cc_type2str (fcn->call));
+	r_cons_printf ("\n call-convention: %s", fcn->cc);
 	r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
 	r_cons_printf ("\n bits: %d", fcn->bits);
 	r_cons_printf ("\n type: %s", r_anal_fcn_type_tostring (fcn->type));

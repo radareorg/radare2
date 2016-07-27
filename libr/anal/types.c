@@ -74,7 +74,8 @@ R_API int r_anal_type_get_size (RAnal *anal, const char *type) {
 R_API RList *r_anal_type_fcn_list (RAnal *anal) {
 	SdbList *sdb_list = sdb_foreach_list (anal->sdb_types);
 	RList *list = r_list_new ();
-	char *name, *key ,*value;
+	char *name, *value;
+	const char *key;
 	SdbListIter *sdb_iter;
 	int args_n, i;
 	SdbKv *kv;
@@ -92,20 +93,15 @@ R_API RList *r_anal_type_fcn_list (RAnal *anal) {
 		//setting function name and return type
 		fcn->name = strdup (kv->key);
 		//setting function return type
-		key = r_str_newf ("func.%s.ret", kv->key);
+		key = sdb_fmt (-1, "func.%s.ret", kv->key);
 		fcn->rets = sdb_get (anal->sdb_types, key, 0);
-		free (key);
 		//setting calling conventions
-		key = r_str_newf ("func.%s.cc", kv->key);
-		value = sdb_get (anal->sdb_types, key, 0);
-		fcn->call = r_anal_cc_str2type (value);
-		free (key);
-		free (value);
+		key = sdb_fmt (-1, "func.%s.cc", kv->key);
+		fcn->cc = sdb_get (anal->sdb_types, key, 0);
 		//Filling function args
-		key = r_str_newf ("func.%s.args", kv->key);
+		key = sdb_fmt (-1, "func.%s.args", kv->key);
 		value = sdb_get (anal->sdb_types, key, 0);
 		args_n = r_num_math (NULL, value);
-		free (key);
 		free (value);
 		if (!args_n) {
 			continue;

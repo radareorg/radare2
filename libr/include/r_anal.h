@@ -179,48 +179,11 @@ enum {
 };
 
 /*--------------------Function Convnetions-----------*/
-#define	R_ANAL_CC_TYPE_CDECL 'a'
+//XXX dont use then in the future
 #define	R_ANAL_CC_TYPE_STDCALL 0
+#define        R_ANAL_CC_TYPE_PASCAL 1
 #define R_ANAL_CC_TYPE_FASTCALL 'A' // syscall
-#define	R_ANAL_CC_TYPE_PASCAL 1
-#define R_ANAL_CC_TYPE_WINAPI 2 // Microsoft's pascal call clone
-#define R_ANAL_CC_TYPE_MSFASTCALL 3 // microsoft fastcall
-#define R_ANAL_CC_TYPE_BOFASTCALL 4 // borland fastcall
-#define R_ANAL_CC_TYPE_WAFASTCALL 5 // wacom fastcall
-#define R_ANAL_CC_TYPE_CLARION 6 // TopSpeed/Clarion/JPI
-	/* Clarion:
-	 *	first four integer parameters are passed in registers:
-	 *	eax, ebx, ecx, edx. Floating point parameters are passed
-	 *	on the floating point stack - registers
-	 *	st0, st1, st2, st3, st4, st5, st6. Structure parameters
-	 *	are always passed on the stack. Additional parameters
-	 *	are passed on the stack after registers are exhausted.
-	 *	Integer values are returned in eax, pointers in edx
-	 *	and floating point types in st0.
-	 */
-#define R_ANAL_CC_TYPE_SAFECALL 7 // Delphi and Free Pascal on Windows
 #define R_ANAL_CC_TYPE_SYSV 8
-#define R_ANAL_CC_TYPE_THISCALL 9
-
-#define R_ANAL_CC_ARGS 16
-
-typedef struct r_anal_cc_t {
-	int type;
-	int bits; // 8, 16, 32, ...
-	int rel; // relative or absolute?
-	ut64 off; // offset of the call instruction (caller)
-	ut64 jump; // offset of the call instruction (caller)
-	int nargs;
-	ut64 args[R_ANAL_CC_ARGS];
-	// TODO: Store arguments someway
-} RAnalCC;
-
-typedef struct r_anal_cc_type_t {
-	int rtl; // right-to-left? if false use left-to-right
-	int alignstack;
-	//
-	//const char **reglist; //
-} RAnalCCType;
 
 enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
@@ -298,8 +261,7 @@ typedef struct r_anal_type_function_t {
 	/*item_list *rets; // Type of return value */
 	char *rets;
 	short fmod; //  static, inline or volatile?
-	/* TODO: Change to RAnalCC ??? */
-	short call; // calling convention
+	const char *cc; // calling convention
 	char* attr; // __attribute__(()) list
 	ut64 addr;
 	int stack; //stack frame size
@@ -647,6 +609,7 @@ typedef struct r_anal_t {
 #endif
 	Sdb *sdb_hints; // OK
 	Sdb *sdb_fcnsign; // OK
+	Sdb *sdb_cc; // calling conventions
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
@@ -1154,7 +1117,6 @@ R_API char *r_anal_type_format (RAnal *anal, const char *t);
 R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val);
 
 /* anal.c */
-R_API void r_anal_type_init(RAnal *anal);
 R_API RAnal *r_anal_new(void);
 R_API int r_anal_purge (RAnal *anal);
 R_API RAnal *r_anal_free(RAnal *r);
@@ -1413,17 +1375,11 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API
-R_API RAnalCC* r_anal_cc_new (void);
-R_API void r_anal_cc_init (RAnalCC *cc);
-R_API RAnalCC* r_anal_cc_new_from_string (const char *str, int type);
-R_API void r_anal_cc_free (RAnalCC* cc);
-R_API void r_anal_cc_reset (RAnalCC *cc);
-R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc);
-R_API bool r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op);
-R_API const char *r_anal_cc_type2str(int type);
-R_API int r_anal_cc_str2type (const char *str);
-//R_API int r_anal_cc_register (RAnal *anal, RAnalCC *cc);
-//R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc);
+R_API int r_anal_cc_exist (RAnal *anal, const char *convention);
+R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n);
+R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention);
+R_API const char *r_anal_cc_default(RAnal *anal);
+R_API const char *r_anal_cc_to_constant(RAnal *anal, char *convention);
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr);
 
 typedef struct r_anal_data_t {

@@ -2,7 +2,12 @@
 
 #include "r_util.h"
 #include "r_core.h"
-
+static int cc_print(void *p, const char *k, const char *v) {
+	if (!strcmp (v, "cc")) {
+		r_cons_println (k);
+	}
+	return 1;
+}
 static void find_refs(RCore *core, const char *glob) {
 	char cmd[128];
 	ut64 curseek = core->offset;
@@ -299,6 +304,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	res = r_str_concatf (res, "%d = %s (", item->num, item->name);
 	// TODO: move this to r_syscall
 	for (i = 0; i < item->args; i++) {
+		//TODO replace the hardcoded CC with the sdb ones
 		ut64 arg = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i + 1);
 		//r_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
 		if (item->sargs) {
@@ -317,6 +323,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 				res = r_str_concatf (res, "\"%s\"", str);
 				break;
 			case 'Z': {
+				//TODO replace the hardcoded CC with the sdb ones
 				ut64 len = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i + 2);
 				len = R_MIN (len + 1, sizeof (str) - 1);
 				if (len == 0) len = 16; // override default
@@ -1092,7 +1099,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'C':{ // "afC"
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-		if (!fcn && !(input[2] == '?'|| input[2] == 'l')) {
+		if (!fcn && !(input[2] == '?'|| input[2] == 'l' || input[2] == 'o')) {
 			eprintf ("Cant find function here\n");
 			break;
 		}
@@ -1102,36 +1109,41 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afC", "", "Show Calling convention for the Current function",
 			"afCa", "", "Analyse function for finding the current calling convention",
 			"afCl", "", "List all available calling conventions",
+			"afCo", " path", "Open Calling Convention sdb profile from given path",
 			NULL };
 		switch (input[2]) {
-		case'?': {
+		case 'o':{
+			char *dbpath = r_str_chop ( strdup (input + 3));
+			if (r_file_exists (dbpath)) {
+				Sdb *db = sdb_new (0, dbpath, 0);
+				sdb_merge (core->anal->sdb_cc, db);
+				sdb_close (db);
+				sdb_free (db);
+			}
+			} break;
+		case'?':
 			r_core_cmd_help (core, help_afC);
-			} break;
-		case 'l':{ //afCl list all function Calling conventions.
-			r_cons_println (r_anal_cc_type2str (R_ANAL_CC_TYPE_CDECL));
-			r_cons_println (r_anal_cc_type2str (R_ANAL_CC_TYPE_STDCALL));
-			r_cons_println (r_anal_cc_type2str (R_ANAL_CC_TYPE_FASTCALL));
-			//THOSE are the only implemented ones
-			//should I test for null ... no ;)
-			} break;
+			break;
+		case 'l': //afCl list all function Calling conventions.
+			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
+			break;
 		case 'a':
 			eprintf ("Todo\n");
 			break;
 		case ' ': {
-			int type = r_anal_cc_str2type (input + 3);
-			if (type == -1) {
+			char *cc = r_str_chop (strdup (input + 3));
+			if (!r_anal_cc_exist (core->anal, cc)) {
 				eprintf ("Unknown calling convention '%s'\n"
-					"See afCl for available types\n", input + 3);
+					"See afCl for available types\n", cc);
 			} else {
-				fcn->call = type;
+				fcn->cc = r_anal_cc_to_constant (core->anal, cc);
 			}
 			}break;
-		case 0:{
-			const char *str = r_anal_cc_type2str (fcn->call);
-			r_cons_println (str);
-		       }break;
+		case 0:
+			r_cons_println (fcn->cc);
+			break;
 		default:
-			eprintf("See afC?\n");
+			eprintf ("See afC?\n");
 		}
 		}break;
 	case 'B': // "afB" // set function bits

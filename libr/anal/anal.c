@@ -11,25 +11,6 @@ R_LIB_VERSION(r_anal);
 static RAnalPlugin *anal_static_plugins[] =
 	{ R_ANAL_STATIC_PLUGINS };
 
-R_API void r_anal_type_init(RAnal *anal) {
-	const char *anal_arch =  anal->cur->arch;
-	char *dbpath;
-	if (!strcmp (anal_arch, "x86")) {
-		Sdb *db;
-#define TYPESPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
-		dbpath = sdb_fmt (-1, TYPESPATH"/types-%s-%d.sdb", anal_arch,
-			anal->bits);
-		if (r_file_exists (dbpath)) {
-			db = sdb_new (0, dbpath, 0);
-			sdb_merge (anal->sdb_types, db);
-			sdb_close (db);
-			sdb_free (db);
-		}
-	} else {
-		//TODO add other architectures and profiles at libr/anal
-	}
-}
-#undef TYPESPATH
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
 	anal->limit = R_NEW0 (RAnalRange);
@@ -78,6 +59,7 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
+	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);

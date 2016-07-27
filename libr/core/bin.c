@@ -415,6 +415,53 @@ static int is_executable (RBinObject *obj) {
 	return false;
 }
 
+#define DBSPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
+
+void r_anal_type_init(RCore *core) {
+	const char *anal_arch = r_config_get (core->config, "asm.arch");
+	char *dbpath;
+	if (!strcmp (anal_arch, "x86")) {
+		Sdb *db;
+		dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", anal_arch,
+		r_config_get_i (core->config, "asm.bits"));
+		if (r_file_exists (dbpath)) {
+			db = sdb_new (0, dbpath, 0);
+			sdb_merge (core->anal->sdb_types, db);
+			sdb_close (db);
+			sdb_free (db);
+		}
+	}
+	if (core->anal->os && !strcmp (core->anal->os, "windows")) {
+		char *dbpath;
+		Sdb *db;
+		dbpath = R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign/windows-types.sdb";
+		if (r_file_exists (dbpath)) {
+			db = sdb_new (0, dbpath, 0);
+			sdb_merge (core->anal->sdb_types, db);
+			sdb_close (db);
+			sdb_free (db);
+		}
+	}
+
+}
+
+void r_anal_cc_init(RCore *core) {
+	const char *anal_arch = r_config_get (core->config, "asm.arch");
+	char *dbpath;
+	if (!strcmp (anal_arch, "x86")) {
+		Sdb *db;
+		dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch,
+			r_config_get_i (core->config, "asm.bits"));
+		if (r_file_exists (dbpath)) {
+			db = sdb_new (0, dbpath, 0);
+			sdb_merge (core->anal->sdb_cc, db);
+			sdb_close (db);
+			sdb_free (db);
+		}
+	}
+}
+#undef DBSPATH
+
 static int bin_info(RCore *r, int mode) {
 	int i, j, v;
 	char str[R_FLAG_NAME_SIZE];
@@ -447,18 +494,6 @@ static int bin_info(RCore *r, int mode) {
 			if (info->lang) {
 				r_config_set (r->config, "bin.lang", info->lang);
 			}
-			if (info->os && !strcmp (info->os, "windows")) {
-				char *dbpath;
-				Sdb *db;
-				dbpath = R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign/windows-types.sdb";
-				if (r_file_exists (dbpath)) {
-					db = sdb_new (0, dbpath, 0);
-					sdb_merge (r->anal->sdb_types, db);
-					sdb_close (db);
-					sdb_free (db);
-				}
-			}
-#undef TYPESPATH
 			r_config_set (r->config, "asm.os", info->os);
 			r_config_set (r->config, "asm.arch", info->arch);
 			r_config_set (r->config, "anal.arch", info->arch);
@@ -580,6 +615,8 @@ static int bin_info(RCore *r, int mode) {
 		pair_str ("guid", info->guid, mode, true);
 		if (IS_MODE_JSON (mode)) r_cons_printf ("}");
 	}
+	r_anal_type_init (r);
+	r_anal_cc_init (r);
 	return true;
 }
 
