@@ -192,7 +192,7 @@ static int cmd_info(void *data, const char *input) {
 	bool newline = r_config_get_i (core->config, "scr.interactive");
 	RBinObject *o = r_bin_cur_object (core->bin);
 	RCoreFile *cf = core->file;
-	int i, va = core->io->va || core->io->debug;
+	int fd, i, va = core->io->va || core->io->debug;
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
 	Sdb *db;
@@ -338,28 +338,40 @@ static int cmd_info(void *data, const char *input) {
 					return 0;
 				}
 				biname = r_str_escape (core->file->desc->name);
+				fd = r_core_file_cur_fd (core);
+				if(!r_bin_load (core->bin, biname, UT64_MAX, UT64_MAX, 0, fd, 1)){
+	                                eprintf ("Cannot open file\n");
+					return 0;
+	                        }
 				switch (input[2]) {
 				case '*':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -rzz %s", min, max, biname);
+				        mode = R_CORE_BIN_RADARE;
+					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				case 'q':
 					if (input[3] == 'q') {
 						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qqzz %s", min, max, biname);
 						input++;
 					} else {
-						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz %s", min, max, biname);
+		                                mode = R_CORE_BIN_SIMPLE;
+						RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					}
 					break;
 				case 'j':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -jzz %s", min, max, biname);
+				        mode = R_CORE_BIN_JSON;
+					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				default:
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -zz %s", min, max, biname);
+					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				}
 				if (ret && *ret) {
 					r_cons_strcat (ret);
 				}
+				if(!r_bin_load (core->bin, biname, UT64_MAX, UT64_MAX, 0, fd, 0)){
+	                                eprintf ("Cannot open file\n");
+					return 0;
+	                        }
 				free (ret);
 				free (biname);
 				input++;
