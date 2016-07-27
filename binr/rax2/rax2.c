@@ -5,6 +5,7 @@
 #include "../blob/version.c"
 
 #define STDIN_BUFFER_SIZE 354096
+#define R_STATIC_ASSERT(x) switch (0) {case 0: case (x):;}
 
 static RNum *num;
 static int help();

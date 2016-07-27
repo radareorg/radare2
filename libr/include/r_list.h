@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_flist.h>
+#include <ht.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,12 @@ typedef struct r_list_t {
 	RListIter *tail;
 	RListFree free;
 } RList;
+
+typedef struct r_list_range_t {
+	RHashTable64 *h;
+	RList *l;
+	//RListComparator c;
+} RListRange;
 
 typedef int (*RListComparator)(const void *a, const void *b);
 

@@ -1,6 +1,8 @@
 #ifndef R_STR_H
 #define R_STR_H
 
+typedef int (*RStrRangeCallback) (void *, int);
+
 /* TODO ..use as uppercase maybe? they are macros! */
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r')
