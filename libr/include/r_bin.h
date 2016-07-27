@@ -199,6 +199,7 @@ typedef struct r_bin_file_t {
 	struct r_bin_xtr_plugin_t *curxtr;
 	struct r_bin_plugin_t *curplugin;
 	RList *objs;
+	RList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
@@ -233,18 +234,26 @@ typedef struct r_bin_t {
 	bool demanglercmd;
 } RBin;
 
+typedef struct r_bin_xtr_metadata_t {
+	char *arch;
+	int bits;
+	char *libname;
+	char *machine;
+	char *type;
+} RBinXtrMetadata;
+
 typedef int (*FREE_XTR)(void *xtr_obj);
 typedef struct r_bin_xtr_extract_t {
 	char *file;
-	RBuffer *buf;
+	Sdb *sdb;
 	ut64 size;
 	ut64 offset;
 	int file_count;
-	void *xtr_obj;
-	FREE_XTR free_xtr;
+	int loaded;
+	RBinXtrMetadata *metadata;
 } RBinXtrData;
 
-R_API RBinXtrData * r_bin_xtrdata_new (void *xtr_obj, FREE_XTR free_xtr, RBuffer *buf, ut64 offset, ut64 size, ut32 file_count);
+R_API RBinXtrData * r_bin_xtrdata_new (RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata, Sdb *sdb);
 R_API void r_bin_xtrdata_free (void /*RBinXtrData*/ *data);
 R_API void r_bin_info_free (RBinInfo *rb);
 R_API void r_bin_import_free(void *_imp);

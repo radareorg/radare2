@@ -5,6 +5,7 @@
 #include <r_lib.h>
 #include <r_bin.h>
 #include "mach0/dyldcache.h"
+#include "mach0/mach0.h"
 
 static RBinXtrData * extract(RBin *bin, int idx);
 static RList * extractall(RBin *bin);
@@ -36,9 +37,11 @@ static int free_xtr(void *xtr_obj) {
 }
 
 static bool load(RBin *bin) {
-	if (!bin || !bin->cur) 
+	if (!bin || !bin->cur)
 	    	return false;
-	bin->cur->xtr_obj = r_bin_dyldcache_new (bin->cur->file);
+	if (!bin->cur->xtr_obj) {
+		bin->cur->xtr_obj = r_bin_dyldcache_new (bin->cur->file);
+	}
 	if (!bin->file)
 	    	bin->file = bin->cur->file;
 	return bin->cur->xtr_obj? true : false;
@@ -62,16 +65,41 @@ static RList * extractall(RBin *bin) {
 	return result;
 }
 
+
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+	meta->arch = MACH0_(get_cputype_from_hdr) (hdr);
+	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
+	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
+	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
+}
+
 static RBinXtrData * extract(RBin *bin, int idx) {
 	int nlib = 0;
 	RBinXtrData *res = NULL;
+	char *libname;
+	struct MACH0_(mach_header) *hdr;
 	struct r_bin_dyldcache_lib_t *lib = r_bin_dyldcache_extract (
 		(struct r_bin_dyldcache_obj_t*)bin->cur->xtr_obj, idx, &nlib);
+
 	if (lib) {
-		res = r_bin_xtrdata_new (NULL, NULL, lib->b,
-			lib->offset, lib->size, nlib);
+		RBinXtrMetadata *metadata = R_NEW0(RBinXtrMetadata);
+		if (!metadata) {
+			return NULL;
+		}
+		hdr = MACH0_(get_hdr_from_bytes) (lib->b);
+		if (!hdr) {
+			free (lib);
+			free (hdr);
+			return NULL;
+		}
+		fill_metadata_info_from_hdr (metadata, hdr);
+		r_bin_dydlcache_get_libname (lib, &libname);
+		metadata->libname = strdup (libname);
+
+		res = r_bin_xtrdata_new (lib->b, lib->offset, lib->size, nlib, metadata, bin->sdb);
 		r_buf_free (lib->b);
 		free (lib);
+		free (hdr);
 	}
 	return res;
 }
@@ -81,19 +109,36 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	struct r_bin_dyldcache_obj_t *xtr_obj;
 	struct r_bin_dyldcache_lib_t *lib;
 	int nlib = 0;
-	if (!bin->file) {
-		if (!load (bin))
-		    	return NULL;
-	}
-	//XXX why allocate again and again? use bin->cur->xtr_obj though is producing uaf review
-	xtr_obj = r_bin_dyldcache_from_bytes_new (buf, size);
+	char *libname;
+	struct MACH0_(mach_header) *hdr;
+
+	if (!load (bin))
+		return NULL;
+
+	xtr_obj = bin->cur->xtr_obj;
 	lib = r_bin_dyldcache_extract (xtr_obj, idx, &nlib);
 	if (!lib) {
 		free_xtr (xtr_obj);
+		bin->cur->xtr_obj = NULL;
 		return NULL;
 	}
-	res = r_bin_xtrdata_new (xtr_obj, free_xtr, lib->b, lib->offset, lib->size, nlib);
+	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+	if (!metadata) {
+		return NULL;
+	}
+	hdr = MACH0_(get_hdr_from_bytes) (lib->b);
+	if (!hdr) {
+		free (lib);
+		free (hdr);
+		return NULL;
+	}
+	fill_metadata_info_from_hdr (metadata, hdr);
+	r_bin_dydlcache_get_libname (lib, &libname);
+	metadata->libname = strdup (libname);
+
+	res = r_bin_xtrdata_new (lib->b, lib->offset, lib->b->length, nlib, metadata, bin->sdb);
 	r_buf_free (lib->b);
+	free (hdr);
 	free (lib);
 	return res;
 }

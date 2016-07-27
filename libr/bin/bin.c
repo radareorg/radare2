@@ -46,7 +46,6 @@ static void r_bin_file_free(void /*RBinFile*/ *bf_);
 static RBinFile *r_bin_file_create_append(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname);
 
 static int r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *xtr_data);
-static int r_bin_files_populate_from_xtrlist(RBin *bin, RBinFile *binfile, ut64 baseaddr, ut64 loadaddr, RList *xtr_data_list);
 static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 
@@ -67,34 +66,40 @@ R_API void r_bin_iobind(RBin *bin, RIO *io) {
 }
 
 // TODO: move these two function do a different file
-R_API RBinXtrData *r_bin_xtrdata_new(void *xtr_obj, FREE_XTR free_xtr, RBuffer *buf, ut64 offset, ut64 size, ut32 file_count) {
+R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata, Sdb *sdb) {
 	RBinXtrData *data = NULL;
-	RBuffer *tb = buf? r_buf_new (): NULL;
-	if (!tb) return data;
-	if (!r_buf_append_buf (tb, buf)) {
-		r_buf_free (tb);
-		return data;
-	}
+	char *encoded_bin;
 	data = R_NEW0 (RBinXtrData);
 	if (!data) {
-		r_buf_free (tb);
 		return NULL;
 	}
-	data->xtr_obj = xtr_obj;
-	data->free_xtr = free_xtr;
-	data->buf = tb;
 	data->offset = offset;
 	data->size = size;
 	data->file_count = file_count;
-	return data;
+	data->sdb = sdb;
+	data->metadata = metadata;
+	data->loaded = 0;
+
+	encoded_bin = sdb_encode (r_buf_buffer (buf), r_buf_size (buf));
+	if (encoded_bin) {
+		sdb_set (data->sdb, sdb_fmt (0, "%d", offset), encoded_bin, 0);
+		free (encoded_bin);
+		return data;
+	}
+	return NULL;
 }
 
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 	RBinXtrData *data = data_;
 	if (data) {
-		if (data->free_xtr) data->free_xtr (data->xtr_obj);
+		sdb_remove (data->sdb, sdb_fmt (0, "%d", data->offset), 0);
+		if (data->metadata) {
+			free (data->metadata->libname);
+			free (data->metadata->arch);
+			free (data->metadata->machine);
+			free (data->metadata);
+		}
 		free (data->file);
-		r_buf_free (data->buf);
 		free (data);
 	}
 }
@@ -434,7 +439,9 @@ R_API void r_bin_field_free(void *_fld) {
 
 static void r_bin_object_free(void /*RBinObject*/ *o_) {
 	RBinObject *o = o_;
-	if (!o) return;
+	if (!o) {
+		return;
+	}
 	r_bin_info_free (o->info);
 	r_bin_object_delete_items (o);
 }
@@ -824,7 +831,7 @@ static void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	if (plugin && plugin->destroy)
 		plugin->destroy (a);
 
-	if (a->curxtr && a->curxtr->destroy)
+	if (a->curxtr && a->curxtr->destroy && a->xtr_obj)
 		a->curxtr->free_xtr ((void *)(a->xtr_obj));
 
 	r_buf_free (a->buf);
@@ -835,6 +842,7 @@ static void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	}
 	free (a->file);
 	r_list_free (a->objs);
+	r_list_free (a->xtr_data);
 	r_bin_object_free (a->o);
 	memset (a, 0, sizeof (RBinFile));
 	free (a);
@@ -853,16 +861,6 @@ static RBinFile *r_bin_file_create_append(RBin *bin, const char *file, const ut8
 	return bf;
 }
 
-static int r_bin_files_populate_from_xtrlist(RBin *bin, RBinFile *binfile, ut64 baseaddr, ut64 loadaddr, RList *xtr_data_list) {
-	RListIter *iter = NULL;
-	RBinXtrData *data = NULL;
-	int res = true;
-	r_list_foreach (xtr_data_list, iter, data) {
-		res = r_bin_file_object_new_from_xtr_data (bin, binfile, baseaddr, loadaddr, data);
-		if (!res) break;
-	}
-	return res;
-}
 
 static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
 	RBinFile *bf = bin? r_bin_file_find_by_name (bin, filename): NULL;
@@ -874,18 +872,21 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const 
 		if (!bin->cur)
 			bin->cur = bf;
 	}
+
 	if (idx == 0 && xtr && bytes) {
 		RList *xtr_data_list = xtr->extractall_from_bytes (bin, bytes, sz);
 		if (xtr_data_list) {
-			if (!r_bin_files_populate_from_xtrlist (bin, bf, baseaddr, loadaddr, xtr_data_list))
+			bf->xtr_data = xtr_data_list;
+			// set the first sub binary as the primary RBinObject
+			RBinXtrData *xtr_data = r_list_get_n (xtr_data_list, 0);
+			if (!r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data))
 				eprintf ("Error: failed to load the Extracted Objects with %s for %s.\n", xtr->name, bf->file);
 		}
-		r_list_free (xtr_data_list);
 	} else if (xtr && xtr->extract_from_bytes) {
 		if (idx == 0) idx = 1;
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bin, bytes, sz, idx);
 		if (xtr_data) {
-			if (r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data))
+			if (!r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data))
 				eprintf ("Error: failed to load the Extracted Objects with %s for %s.\n", xtr->name, bf->file);
 		}
 		r_bin_xtrdata_free (xtr_data);
@@ -971,23 +972,30 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 
 	ut64 bytes_sz = binfile? r_buf_size (binfile->buf): 0;
 	Sdb *sdb = binfile? binfile->sdb: NULL;
 	RBinObject *o = R_NEW0 (RBinObject);
-	if (!o) return NULL;
+	if (!o) {
+		return NULL;
+	}
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
 	o->kv = sdb_new0 ();
 	o->baddr = baseaddr;
 	o->baddr_shift = 0;
+	o->plugin = plugin;
+	o->loadaddr = loadaddr;
+
 	// XXX more checking will be needed here
 	// only use LoadBytes if buffer offset != 0
 	//if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset) ) {
 	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
 		ut64 bsz = bytes_sz - offset;
-		if (sz < bsz) bsz = sz;
+		if (sz < bsz) {
+			bsz = sz;
+		}
 		o->bin_obj = plugin->load_bytes (binfile, bytes + offset, sz, loadaddr, sdb);
 		if (!o->bin_obj) {
 			eprintf ("Error in r_bin_object_new: load_bytes failed for %s plugin\n",
-				plugin->name);
+					plugin->name);
 			sdb_free (o->kv);
 			free (o);
 			return NULL;
@@ -1002,7 +1010,9 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 
 			binfile->sdb_info = o->kv;
 			// mark as do not walk
 			sdb_ns_set (binfile->sdb, "info", o->kv);
-		} else binfile->o = old_o;
+		} else {
+			binfile->o = old_o;
+		}
 		o->obj_size = sz;
 	} else {
 		sdb_free (o->kv);
@@ -1010,10 +1020,6 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 
 		return NULL;
 	}
 
-	o->plugin = plugin;
-	o->loadaddr = loadaddr;
-	o->baddr = baseaddr;
-	o->baddr_shift = 0;
 	// XXX - binfile could be null here meaning an improper load
 	// XXX - object size cant be set here and needs to be set where
 	// where the object is created from.  The reason for this is to prevent
@@ -1052,8 +1058,9 @@ static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, u
 	binfile->curxtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
 	binfile->sdb = sdb;
 	binfile->size = file_sz;
-
+	binfile->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
 	binfile->objs = r_list_newf ((RListFree)r_bin_object_free);
+	binfile->xtr_obj  = NULL;
 
 	if (!binfile->buf) {
 		//r_bin_file_free (binfile);
@@ -1078,24 +1085,50 @@ static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, u
 static int r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data) {
 	RBinObject *o = NULL;
 	RBinPlugin *plugin = NULL;
+	ut8* bytes;
+	char *bytes_encoded;
 	ut64 offset = data? data->offset: 0;
+	ut64 sz = data ? data->size : 0;
+
+	if (!data || !bf) return false;
 
 	// for right now the bytes used will just be the offest into the binfile buffer
 	// if the extraction requires some sort of transformation then this will need to be fixed
 	// here.
-	const ut8 *bytes = data? r_buf_buffer (data->buf): NULL;
-	ut64 sz = data? r_buf_size (data->buf): 0;
-	//if (!data || !data->buf) return bf;
-	if (!data || !bf) return false;
+	bytes_encoded = sdb_get (data->sdb, sdb_fmt (0, "%d", data->offset), 0);
+	if (!bytes_encoded) {
+		return false;
+	}
+	bytes = sdb_decode (bytes_encoded, NULL);
+	free (bytes_encoded);
+	if (!bytes) {
+		return false;
+	}
 
-	plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
-	if (!plugin) plugin = r_bin_get_binplugin_any (bin);
+	plugin = r_bin_get_binplugin_by_bytes (bin, (const ut8*)bytes, sz);
+	if (!plugin) {
+		plugin = r_bin_get_binplugin_any (bin);
+	}
+	r_buf_free (bf->buf);
+	bf->buf = r_buf_new_with_bytes ((const ut8*)bytes, data->size);
+	free (bytes);
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	// size is set here because the reported size of the object depends on if loaded from xtr plugin or partially read
 	if (o && !o->size) o->size = sz;
 
-	if (!o) return false;
+	if (!o) {
+		return false;
+	}
 	bf->narch = data->file_count;
+
+	o->info = R_NEW0 (RBinInfo);
+	o->info->file = strdup (bf->file);
+	o->info->bits = data->metadata->bits;
+	o->info->arch = strdup (data->metadata->arch);
+	o->info->machine = strdup (data->metadata->machine);
+	o->info->type = strdup (data->metadata->type);
+	o->info->has_va = true;
+	data->loaded = true;
 	return true;
 }
 
@@ -1488,10 +1521,11 @@ R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *
 	RBinInfo *info = NULL;
 	r_list_foreach (binfile->objs, iter, obj) {
 		info = obj->info;
-		if (info && info->arch && info->file &&
-		(bits == info->bits) &&
-		!strcmp (info->arch, arch) &&
-		!strcmp (info->file, name)) {
+		if (info && info->arch &&
+			info->file &&
+		   (bits == info->bits) &&
+			!strcmp (info->arch, arch) &&
+			!strcmp (info->file, name)) {
 			break;
 		}
 		obj = NULL;
@@ -1502,20 +1536,35 @@ R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *
 R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits, const char *name) {
 	RListIter *iter;
 	RBinFile *binfile = NULL;
-	RBinObject *o = NULL;
+	RBinXtrData *xtr_data;
 
-	if (!name || !arch) return NULL;
+	if (!name || !arch) {
+		return NULL;
+	}
 	r_list_foreach (bin->binfiles, iter, binfile) {
-		o = r_bin_object_find_by_arch_bits (binfile, arch, bits, name);
-		if (o) break;
-		binfile = NULL;
+		if (binfile->xtr_data) {
+			RListIter *iter_xtr;
+			// look for sub-bins in Xtr Data and Load if we need to
+			r_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
+				if (xtr_data->metadata && xtr_data->metadata->arch) {
+					char *iter_arch = xtr_data->metadata->arch;
+					int iter_bits = xtr_data->metadata->bits;
+					if (bits == iter_bits && !strcmp (iter_arch, arch)) {
+						if (!xtr_data->loaded) {
+							if (!r_bin_file_object_new_from_xtr_data (bin, binfile, UT64_MAX, r_bin_get_laddr(bin), xtr_data))
+								return NULL;
+						}
+						return binfile;
+					}
+				}
+			}
+		}
 	}
 	return binfile;
 }
 
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
-	RBinFile *cur = r_bin_cur (bin),
-		*binfile = NULL;
+	RBinFile *cur = r_bin_cur (bin), *binfile = NULL;
 	RBinObject *obj = NULL;
 	name = !name && cur? cur->file: name;
 	binfile = r_bin_file_find_by_arch_bits (bin, arch, bits, name);
@@ -1626,6 +1675,31 @@ R_API int r_bin_select_idx(RBin *bin, const char *name, int idx) {
 	return obj && nbinfile && r_bin_file_set_cur_binfile_obj (bin, nbinfile, obj);
 }
 
+static void list_xtr_archs(RBin *bin, int mode) {
+	RBinFile *binfile = r_bin_cur (bin);
+	if (binfile->xtr_data) {
+		RListIter *iter_xtr;
+		RBinXtrData *xtr_data;
+		int bits, i = 0;
+		char *arch, *machine;
+		r_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
+			if (xtr_data->metadata && xtr_data->metadata->arch) {
+				arch = xtr_data->metadata->arch;
+				machine = xtr_data->metadata->machine;
+				bits = xtr_data->metadata->bits;
+				if (mode == 'j') {
+					bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+							"\"offset\":%" PFMT64d ",\"size\":\"%" PFMT64d ",\"machine\":\"%s\"}",
+							i++? ",": "", arch, bits, xtr_data->offset, xtr_data->size, machine);
+				} else {
+					bin->cb_printf ("%03i 0x%08" PFMT64x " %"PFMT64d" %s_%i %s\n", i++,
+							xtr_data->offset, xtr_data->size, arch, bits, machine);
+				}
+			}
+		}
+	}
+}
+
 R_API void r_bin_list_archs(RBin *bin, int mode) {
 	RListIter *iter;
 	int i = 0;
@@ -1636,6 +1710,11 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	const char *name = binfile? binfile->file: NULL;
 	int narch = binfile? binfile->narch: 0;
 
+	//are we with xtr format?
+	if (binfile->curxtr) {
+		list_xtr_archs (bin, mode);
+		return;
+	}
 	Sdb *binfile_sdb = binfile? binfile->sdb: NULL;
 	if (!binfile_sdb) {
 		eprintf ("Cannot find SDB!\n");
@@ -1645,12 +1724,13 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		return;
 	}
 	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
-
 	if (mode == 'j') {
 		bin->cb_printf ("\"bins\":[");
 	}
 	RBinFile *nbinfile = r_bin_file_find_by_name_n (bin, name, i);
-	if (!nbinfile) return;
+	if (!nbinfile) {
+		return;
+	}
 	i = -1;
 	r_list_foreach (nbinfile->objs, iter, obj) {
 		RBinInfo *info = obj->info;
@@ -1849,8 +1929,12 @@ R_API ut64 r_binfile_get_vaddr(RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
  * paddr otherwise */
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
-	if (!bin || !bin->cur) return UT64_MAX;
-	if (paddr == UT64_MAX) return UT64_MAX;
+	if (!bin || !bin->cur) {
+		return UT64_MAX;
+	}
+	if (paddr == UT64_MAX) {
+		return UT64_MAX;
+	}
 	/* hack to realign thumb symbols */
 	if (bin->cur->o && bin->cur->o->info && bin->cur->o->info->arch) {
 		if (bin->cur->o->info->bits == 16) {
@@ -1973,6 +2057,7 @@ R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *ob
 
 R_API int r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf) {
 	RBinObject *obj = bf? bf->o: NULL;
+
 	if (!obj) return false;
 	return r_bin_file_set_cur_binfile_obj (bin, bf, obj);
 }
