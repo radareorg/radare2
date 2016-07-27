@@ -4,8 +4,7 @@ BINDEPS=r_util
 
 LDFLAGS+=-lr_util -L..
 
-BINS=test
-BINS+=sparse
+BINS=sparse
 BINS+=array
 BINS+=pool
 BINS+=argv
