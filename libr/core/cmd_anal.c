@@ -1038,12 +1038,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'l': // "afl"
 		switch (input[2]) {
 		case '?':
-			eprintf ("Usage: afl[jlqs*]\n");
+			eprintf ("Usage: afl\n");
 			eprintf ("List all functions in quiet, commands or json format\n");
 			eprintf ("afl  - list functions\n");
 			eprintf ("aflj - list functions in json format\n");
 			eprintf ("afll - list functions in verbose mode\n");
 			eprintf ("aflq - list functions in 'quiet' mode\n");
+			eprintf ("aflqj - list functions in json 'quiet' mode\n");
 			eprintf ("afls - print sum of sizes of all functions\n");
 			break;
 		case 'j':
