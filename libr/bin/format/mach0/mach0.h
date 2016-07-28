@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2016 - pancake, nibble */
 
 #include <r_bin.h>
 #include <r_types.h>
@@ -72,7 +72,7 @@ struct blob_index_t {
 
 struct blob_t {
     ut32 magic;
-    ut32  length;
+    ut32 length;
 };
 
 struct super_blob_t {

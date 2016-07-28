@@ -1443,7 +1443,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 				r_list_foreach (fcn->refs, iter, ref) {
 					if (ref->addr == UT64_MAX || ref->addr < text_addr) {
-						eprintf ("Warning: ignore call 0x%08"PFMT64x"\n", ref->addr);
+						eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
 						continue;
 					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);

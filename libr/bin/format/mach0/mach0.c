@@ -368,7 +368,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 			return false;
 		}
 		if (bin->dysymtab.indirectsymoff > bin->size || \
-		  bin->dysymtab.indirectsymoff + size_tab > bin->size){
+				bin->dysymtab.indirectsymoff + size_tab > bin->size){
 			R_FREE (bin->indirectsyms);
 			return false;
 		}
@@ -385,42 +385,48 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	return true;
 }
 
-static void parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
+static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
     	int i, len;
 	ut32 count, data;
 	struct linkedit_data_command link = {};
-    	if (off > bin->size || off + sizeof(struct linkedit_data_command) > bin->size)
-	    	return;
+	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
+		return false;
+	}
 	len = r_buf_fread_at (bin->b, off, (ut8*)&link, bin->big_endian ? "4I" : "4i", 1);
 	if (len < 1) {
 		eprintf ("Failed to get data while parsing LC_CODE_SIGNATURE command\n");
-		return;
+		return false;
 	}
 	data = link.dataoff;
-	if (data > bin->size || data + sizeof(struct super_blob_t) > bin->size)
-	    	return;
+	if (data > bin->size || data + sizeof (struct super_blob_t) > bin->size) {
+		return false;
+	}
 	struct super_blob_t *super = (struct super_blob_t *) (bin->b->buf + data);
 	count = r_read_ble32 (&super->count, little_);
 	for (i = 0; i < count; ++i) {
-		if ((ut8 *)(super->index + i + 1) >
-		    (ut8 *)(bin->b->buf + bin->size))
-			return;
+		if ((ut8 *)(super->index + i + 1) > (ut8 *)(bin->b->buf + bin->size)) {
+			break;
+		}
+		int slot = r_read_ble32 (&super->index[i].type, little_);
 		if (r_read_ble32 (&super->index[i].type, little_) == CSSLOT_ENTITLEMENTS) {
 			ut32 begin = r_read_ble32 (&super->index[i].offset, little_);
-			if (begin > bin->size || begin + sizeof(struct blob_t) > bin->size)
-			    	return;
+			if (begin > bin->size || begin + sizeof (struct blob_t) > bin->size) {
+				break;
+			}
 			struct blob_t *entitlements = (struct blob_t *) ((ut8*)super + begin);
 			len = r_read_ble32 (&entitlements->length, little_) - sizeof(struct blob_t);
-			if (len > bin->size || len < 1)
-			    	return;
-			bin->signature = calloc (1, len + 1);
-			if (!bin->signature)
-			    	return;
-			memcpy (bin->signature, entitlements + 1, len);
-			bin->signature[len] = '\0';
-			return;
+			if (len <= bin->size && len > 1) {
+				bin->signature = calloc (1, len + 1);
+				if (bin->signature) {
+					memcpy (bin->signature, entitlements + 1, len);
+					bin->signature[len] = '\0';
+					return true;
+				}
+			}
+			break;
 		}
 	}
+	return false;
 }
 
 static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64 off, bool is_first_thread) {
@@ -865,7 +871,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 			break;
 		case LC_CODE_SIGNATURE:
-			parse_signature(bin, off);
+			parse_signature (bin, off);
 			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "signature", 0);
 			/* ut32 dataoff
 			// ut32 datasize */
