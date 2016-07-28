@@ -711,18 +711,18 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if (mode & R_PRINT_DOT) {
 		//p->cb_printf ("%s", setval);
-		p->cb_printf ("%f", (float)addr);
+		p->cb_printf ("%f", *(float*)&addr);
 	} else {
 		if (MUSTSEE)
 			if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
 		if (size==-1)
-			p->cb_printf ("%f", (float)addr);
+			p->cb_printf ("%f", *(float*)&addr);
 		else {
 			if (!SEEVALUE) p->cb_printf ("[ ");
 			while (size--) {
 				updateAddr (buf, i, endian, &addr, NULL);
 				if (elem == -1 || elem == 0) {
-					p->cb_printf ("%f", (float)addr);
+					p->cb_printf ("%f", *(float*)&addr);
 					if (elem == 0) elem = -2;
 				}
 				if (size != 0 && elem == -1)
