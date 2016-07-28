@@ -20,6 +20,7 @@ SECURITY IMPLICATIONS
 
 static RSocket *s = NULL;
 static RThread *httpthread = NULL;
+static RThread *rapthread = NULL;
 static const char *listenport = NULL;
 
 typedef struct {
@@ -33,6 +34,11 @@ typedef struct {
 	int launch;
 	char *path;
 } HttpThread;
+
+typedef struct {
+	RCore *core;
+	const char* input;
+} RapThread;
 
 static char *rtrcmd (TextLog T, const char *str) {
 	char *res, *ptr2;
@@ -828,6 +834,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	return ret;
 }
 
+
 R_API void r_core_rtr_help(RCore *core) {
 	const char* help_msg[] = {
 	"Usage:", " =[:!+-=hH] [...]", " # radare remote command execution protocol",
@@ -843,6 +850,7 @@ R_API void r_core_rtr_help(RCore *core) {
 	"!=!", "", "enable remote cmd mode",
 	"\nrap server:","","",
 	"=", ":port", "listen on given port using rap protocol (o rap://9999)",
+	"=&", ":port", "start rap server in background",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
 	"\nhttp server:", "", "",
 	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
@@ -1188,15 +1196,41 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 	}
 }
 
+static void r_core_rtr_rap_run(RCore *core, const char *input) {
+	r_core_cmdf (core, "o rap://%s", input);
+}
+
+static int r_core_rtr_rap_thread (RThread *th) {
+	if (!th) return false;
+	RapThread *rt = th->user;
+	if (!rt || !rt->core) return false;
+	r_core_rtr_rap_run (rt->core, rt->input);
+	return true;
+}
+
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	char bufw[1024], bufr[8], *cmd_output = NULL;
 	const char *cmd = NULL;
 	int i, cmd_len, fd = atoi (input);
 
 	if (*input==':' && !strchr (input + 1, ':')) {
-		r_core_cmdf (core, "o rap://%s", input);
+		r_core_rtr_rap_run (core, input);
 		return;
 	}
+
+	if (*input=='&') {
+		if (rapthread) {
+			eprintf ("RAP Thread is already running\n");
+			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
+		} else {
+			RapThread rt = { core, input + 1 };
+			rapthread = r_th_new (r_core_rtr_rap_thread, &rt, 0);
+			r_th_start (rapthread, 1);
+			eprintf ("Background rap server started.\n");
+		}
+		return;
+	}
+
 	if (fd != 0) {
 		RSocket *fh = rtr_host[rtr_n].fd;
 		for (rtr_n = 0; fh && fh->fd != fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
