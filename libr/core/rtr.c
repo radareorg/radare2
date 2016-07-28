@@ -785,13 +785,9 @@ the_end:
 static int r_core_rtr_http_thread (RThread *th) {
 	int ret;
 
-	if (!th) {
-		return false;
-	}
+	if (!th) return false;
 	HttpThread *ht = th->user;
-	if (!ht || !ht->core) {
-		return false;
-	}
+	if (!ht || !ht->core) return false;
 	ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
 	R_FREE (ht->path);
 	return ret;
@@ -826,8 +822,8 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		} else {
 			const char *tpath = r_str_trim_const (path + 1);
 			HttpThread ht = { core, launch, strdup (tpath) };
-			httpthread = r_th_new (r_core_rtr_http_thread, &ht, false);
-			r_th_start (httpthread, true);
+			httpthread = r_th_new (r_core_rtr_http_thread, &ht, 0);
+			r_th_start (httpthread, 1);
 			eprintf ("Background http server started.\n");
 		}
 		return 0;
@@ -837,6 +833,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	} while (ret == -2);
 	return ret;
 }
+
 
 R_API void r_core_rtr_help(RCore *core) {
 	const char* help_msg[] = {
@@ -1204,13 +1201,9 @@ static void r_core_rtr_rap_run(RCore *core, const char *input) {
 }
 
 static int r_core_rtr_rap_thread (RThread *th) {
-	if (!th) {
-		return false;
-	}
+	if (!th) return false;
 	RapThread *rt = th->user;
-	if (!rt || !rt->core) {
-		return false;
-	}
+	if (!rt || !rt->core) return false;
 	r_core_rtr_rap_run (rt->core, rt->input);
 	return true;
 }
@@ -1231,8 +1224,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
 		} else {
 			RapThread rt = { core, input + 1 };
-			rapthread = r_th_new (r_core_rtr_rap_thread, &rt, false);
-			r_th_start (rapthread, true);
+			rapthread = r_th_new (r_core_rtr_rap_thread, &rt, 0);
+			r_th_start (rapthread, 1);
 			eprintf ("Background rap server started.\n");
 		}
 		return;
