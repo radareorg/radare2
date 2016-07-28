@@ -834,7 +834,6 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	return ret;
 }
 
-
 R_API void r_core_rtr_help(RCore *core) {
 	const char* help_msg[] = {
 	"Usage:", " =[:!+-=hH] [...]", " # radare remote command execution protocol",
@@ -1201,9 +1200,13 @@ static void r_core_rtr_rap_run(RCore *core, const char *input) {
 }
 
 static int r_core_rtr_rap_thread (RThread *th) {
-	if (!th) return false;
+	if (!th) {
+		return false;
+	}
 	RapThread *rt = th->user;
-	if (!rt || !rt->core) return false;
+	if (!rt || !rt->core) {
+		return false;
+	}
 	r_core_rtr_rap_run (rt->core, rt->input);
 	return true;
 }
@@ -1224,8 +1227,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
 		} else {
 			RapThread rt = { core, input + 1 };
-			rapthread = r_th_new (r_core_rtr_rap_thread, &rt, 0);
-			r_th_start (rapthread, 1);
+			rapthread = r_th_new (r_core_rtr_rap_thread, &rt, false);
+			r_th_start (rapthread, true);
 			eprintf ("Background rap server started.\n");
 		}
 		return;
