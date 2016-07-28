@@ -909,6 +909,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 }
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
+	char i;
 	switch (input[1]) {
 	case 'f':
 		r_anal_fcn_fit_overlaps (core->anal, NULL);
@@ -1026,10 +1027,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'j':   // "afij"
 		case 'l':   // "afil"
 		case '*':   // "afi*"
-			r_core_anal_fcn_list (core, input + 3, input[2]);
+			r_core_anal_fcn_list (core, input + 3, input + 2);
 			break;
 		default:
-			r_core_anal_fcn_list (core, input + 2, 1);
+			i = 1;
+			r_core_anal_fcn_list (core, input + 2, &i);
 			break;
 		}
 		break;
@@ -1049,10 +1051,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'q':
 		case 's':
 		case '*':
-			r_core_anal_fcn_list (core, NULL, input[2]);
+			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
 		default:
-			r_core_anal_fcn_list (core, NULL, 'o');
+			i = 'o';
+			r_core_anal_fcn_list (core, NULL, &i);
 			break;
 		}
 		break;
