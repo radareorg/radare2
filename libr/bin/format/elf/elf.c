@@ -267,8 +267,9 @@ static int init_strtab(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return true;
 }
 
-static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
-	Elf_(Dyn) *tmp, *dyn = NULL;
+static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
+	Elf_(Dyn) *dyn = NULL;
+	ut8 *tmp_buf = NULL;
 	Elf_(Addr) strtabaddr = 0;
 	ut64 offset = 0;
 	char *strtab = NULL;
@@ -281,7 +282,7 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	for (i = 0; i < bin->ehdr.e_phnum ; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-		    	dyn_size = bin->phdr[i].p_filesz;
+			dyn_size = bin->phdr[i].p_filesz;
 			break;
 		}
 	}
@@ -293,18 +294,33 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	if (bin->phdr[i].p_offset + sizeof(Elf_(Dyn)) > bin->size)
 		return false;
-	tmp = dyn = (Elf_(Dyn)*)((ut8 *)bin->b->buf + bin->phdr[i].p_offset);
-	for (entries = 0; (ut8*)dyn < ((ut8*)tmp + dyn_size); dyn++) {
-	    	entries++;
-		if (dyn->d_tag == DT_NULL) {
+
+	tmp_buf = calloc (1, dyn_size + 1);
+	if (!tmp_buf) {
+		eprintf ("Out of memory\n");
+		return false;
+	}
+	if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, tmp_buf, dyn_size) != dyn_size) {
+		eprintf ("Failed to init dynamic section\n");
+		free (tmp_buf);
+		return false;
+	}
+
+	for (entries = 0; (entries * sizeof (Elf_(Dyn))) < dyn_size; ) {
+		entries++;
+		if (((Elf_(Dyn)*)(tmp_buf) + entries)->d_tag == DT_NULL) {
 			break;
 		}
-		if ((ut8*)(dyn+2) > ((ut8*)bin->b->buf + bin->size))
-		    	return false;
+		entries++;
 	}
-	if (entries < 1) return false;
+	free (tmp_buf);
+	if (entries < 1) {
+		return false;
+	}
 	dyn = (Elf_(Dyn)*)calloc (entries, sizeof (Elf_(Dyn)));
-	if (!dyn) return false;
+	if (!dyn) {
+		return false;
+	}
 
 	if (!UT32_MUL (&dyn_size, entries, sizeof (Elf_(Dyn)))) {
 		goto beach;
@@ -1016,7 +1032,7 @@ static ut64 get_import_addr(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				switch (reloc_type) {
 				case R_386_GLOB_DAT:
 				case R_386_JMP_SLOT:
-					if (of + sizeof(Elf_(Addr)) >= bin->b->length) {
+					if (of + sizeof(Elf_(Addr)) >= bin->size) {
 						// do nothing
 					} else {
 						// ONLY FOR X86
@@ -2030,7 +2046,7 @@ static RBinElfSymbol* get_symbols_from_phdr (struct Elf_(r_bin_elf_obj_t) *bin, 
 	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
 		return NULL;
 	for (j = 0; j < bin->dyn_entries; j++) {
-	    	switch (bin->dyn_buf[j].d_tag) {
+		switch (bin->dyn_buf[j].d_tag) {
 		case (DT_SYMTAB):
 			addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_buf[j].d_un.d_ptr);
 			break;
@@ -2096,15 +2112,15 @@ static RBinElfSymbol* get_symbols_from_phdr (struct Elf_(r_bin_elf_obj_t) *bin, 
 		ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 		ret[ret_ctr].size = tsize;
 		{
-		   int rest = R_MIN (ELF_STRING_LENGTH,128)-1;
-		   int st_name = sym[k].st_name;
-		   int maxsize = R_MIN (bin->size, bin->strtab_size);
-		   if (st_name < 0 || st_name >= maxsize) {
-			ret[ret_ctr].name[0] = 0;
-		   } else {
-			const int len = __strnlen (bin->strtab+st_name, rest);
-			memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
-		   }
+			int rest = R_MIN (ELF_STRING_LENGTH,128)-1;
+			int st_name = sym[k].st_name;
+			int maxsize = R_MIN (bin->size, bin->strtab_size);
+			if (st_name < 0 || st_name >= maxsize) {
+				ret[ret_ctr].name[0] = 0;
+			} else {
+				const int len = __strnlen (bin->strtab+st_name, rest);
+				memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
+			}
 		}
 		ret[ret_ctr].ordinal = k;
 		ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
@@ -2347,6 +2363,7 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 	return NULL;
 }
 
+//XXX: this function will break unless r_file_slurp is fixed
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 	ut8 *buf;
 	int size;
@@ -2374,10 +2391,12 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 }
 
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(RBuffer *buf) {
+	RIOBind *iob = (RIOBind *)(buf->iob);
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
 	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
-	bin->size = buf->length;
+	bin->size = (iob && iob->io) ? r_io_size (iob->io) : buf->length;
+	bin->b->iob = iob;
 	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length)) {
 		return Elf_(r_bin_elf_free) (bin);
 	}

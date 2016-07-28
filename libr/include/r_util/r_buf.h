@@ -14,6 +14,7 @@ typedef struct r_buf_t {
 	bool ro; // read-only
 	int fd;
 	RList *sparse;
+	void *iob; // use for RIOBind
 } RBuffer;
 
 typedef struct r_buf_cache_t {

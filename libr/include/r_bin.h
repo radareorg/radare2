@@ -184,7 +184,7 @@ typedef struct r_bin_object_t {
 typedef struct r_bin_file_t {
 	char *file;
 	int fd;
-	int size;
+	ut64 size;
 	int rawstr;
 	ut32 id;
 	RBuffer *buf;
