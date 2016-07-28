@@ -785,9 +785,13 @@ the_end:
 static int r_core_rtr_http_thread (RThread *th) {
 	int ret;
 
-	if (!th) return false;
+	if (!th) {
+		return false;
+	}
 	HttpThread *ht = th->user;
-	if (!ht || !ht->core) return false;
+	if (!ht || !ht->core) {
+		return false;
+	}
 	ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
 	R_FREE (ht->path);
 	return ret;
@@ -822,8 +826,8 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		} else {
 			const char *tpath = r_str_trim_const (path + 1);
 			HttpThread ht = { core, launch, strdup (tpath) };
-			httpthread = r_th_new (r_core_rtr_http_thread, &ht, 0);
-			r_th_start (httpthread, 1);
+			httpthread = r_th_new (r_core_rtr_http_thread, &ht, false);
+			r_th_start (httpthread, true);
 			eprintf ("Background http server started.\n");
 		}
 		return 0;
