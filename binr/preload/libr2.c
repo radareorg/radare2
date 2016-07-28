@@ -13,7 +13,7 @@ static RCoreFile *openself(void) {
 	RCoreFile *fd = NULL;
 	char *out = r_core_cmd_str (core, "o");
 	if (out) {
-		if (!strstr(out, "self://")) {
+		if (!strstr (out, "self://")) {
 			fd = r_core_file_open (core, "self://", R_IO_RW, 0);
 		}
 		free (out);
@@ -22,7 +22,7 @@ static RCoreFile *openself(void) {
 }
 
 static void sigusr1(int s) {
-	RCoreFile *fd = openself();
+	RCoreFile *fd = openself ();
 	r_core_prompt_loop (core);
 	r_core_file_close (core, fd);
 }

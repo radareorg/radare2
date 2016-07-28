@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2014-2015 - pancake */
+/* radare - LGPL - Copyright 2014-2016 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
+#include <dlfcn.h>
 
 #if DEBUGGER
 #if __APPLE__
@@ -33,19 +34,20 @@ typedef struct {
 
 static RIOSelfSection self_sections[1024];
 static int self_sections_count = 0;
+static bool mameio = false;
 
 static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
 	int i;
-	for (i=0; i<self_sections_count; i++) {
-
-		if (addr >= self_sections[i].from && \
-			addr < self_sections[i].to) {
-				if (left)
-					*left = self_sections[i].to-addr;
-				if (perm)
-					*perm = self_sections[i].perm;
-				return true;
+	for (i = 0; i < self_sections_count; i++) {
+		if (addr >= self_sections[i].from && addr < self_sections[i].to) {
+			if (left) {
+				*left = self_sections[i].to-addr;
 			}
+			if (perm) {
+				*perm = self_sections[i].perm;
+			}
+			return true;
+		}
 	}
 	return false;
 }
@@ -53,9 +55,9 @@ static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
 static int update_self_regions(RIO *io, int pid) {
 	self_sections_count = 0;
 #if __APPLE__
-	mach_port_t	task;
-	kern_return_t	rc;
-	rc = task_for_pid (mach_task_self(),pid, &task);
+	mach_port_t task;
+	kern_return_t rc;
+	rc = task_for_pid (mach_task_self (), pid, &task);
 	if (rc) {
 		eprintf ("task_for_pid failed\n");
 		return false;
@@ -67,7 +69,7 @@ static int update_self_regions(RIO *io, int pid) {
 	int i, l, perm;
 	char path[1024], line[1024];
 	char region[100], region2[100], perms[5];
-	snprintf (path, sizeof (path)-1, "/proc/%d/maps", pid);
+	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", pid);
 	FILE *fd = fopen (path, "r");
 	if (!fd)
 		return false;
@@ -75,37 +77,36 @@ static int update_self_regions(RIO *io, int pid) {
 	while (!feof (fd)) {
 		line[0]='\0';
 		fgets (line, sizeof (line)-1, fd);
-		if (line[0]=='\0')
+		if (line[0] == '\0') {
 			break;
+		}
 		path[0]='\0';
 		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region+2, perms, path);
 		memcpy (region, "0x", 2);
-		pos_c = strchr (region+2, '-');
+		pos_c = strchr (region + 2, '-');
 		if (pos_c) {
 			*pos_c++ = 0;
 			memcpy (region2, "0x", 2);
 			l = strlen (pos_c);
-			memcpy (region2+2, pos_c, l);
-			region2[2+l] = 0;
+			memcpy (region2 + 2, pos_c, l);
+			region2[2 + l] = 0;
 		} else {
 			region2[0] = 0;
 		}
 		perm = 0;
-		for (i = 0; i < 4 && perms[i]; i++)
+		for (i = 0; i < 4 && perms[i]; i++) {
 			switch (perms[i]) {
 			case 'r': perm |= R_IO_READ; break;
 			case 'w': perm |= R_IO_WRITE; break;
 			case 'x': perm |= R_IO_EXEC; break;
 			}
+		}
 		self_sections[self_sections_count].from = r_num_get (NULL, region);
 		self_sections[self_sections_count].to = r_num_get (NULL, region2);
 		self_sections[self_sections_count].name = strdup (path);
-
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
 		r_num_get (NULL, region2);
-		if (!pos_c)
-			continue;
 	}
 	fclose (fd);
 
@@ -134,8 +135,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
-	int left;
-	int perm;
+	int left, perm;
 	if (self_in_section (io, io->off, &left, &perm)) {
 		if (perm & R_IO_READ) {
 			int newlen = R_MIN (len, left);
@@ -174,28 +174,133 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
+static void got_alarm(int sig) {
+	// !!! may die if not running from r2preload !!! //
+	kill (getpid (), SIGUSR1);
+}
+
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
 		eprintf ("%d\n", fd->fd);
 	} else if (!strncmp (cmd, "pid", 3)) {
 		/* do nothing here */
+	} else if (!strncmp (cmd, "kill", 4)) {
+		if (r_sandbox_enable (false)) {
+			eprintf ("This is unsafe, so disabled by the sandbox\n");
+			return 1;
+		}
+		/* do nothing here */
+		kill (getpid (), 9);
+	} else if (!strncmp (cmd, "call ", 5)) {
+		size_t cbptr = 0;
+		if (r_sandbox_enable (false)) {
+			eprintf ("This is unsafe, so disabled by the sandbox\n");
+			return 1;
+		}
+		ut64 result = 0;
+		char *argv = strdup (cmd + 5);
+		int argc = r_str_word_set0 (argv);
+		if (argc == 0) {
+			eprintf ("Usage: =!call [fcnptr] [a0] [a1] ...\n");
+			return 0;
+		}
+		const char *sym = r_str_word_get0 (argv, 0);
+		if (sym) {
+			const char *symbol = cmd + 6;
+			void *lib = dlopen (NULL, RTLD_NOW);
+			void *ptr = dlsym (lib, symbol);
+			if (ptr) {
+				cbptr = (ut64)(size_t)ptr;
+			} else {
+				cbptr = r_num_math (NULL, symbol);
+			}
+			dlclose (lib);
+		}
+		if (argc == 1) {
+			size_t (*cb)() = (size_t(*)())cbptr;
+			result = cb ();
+		} else if (argc == 2) {
+			size_t (*cb)(size_t a0) = (size_t(*)(size_t))cbptr;
+			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
+			result = cb (a0);
+		} else if (argc == 3) {
+			size_t (*cb)(size_t a0, size_t a1) = (size_t(*)(size_t,size_t))cbptr;
+			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
+			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
+			result = cb (a0, a1);
+		} else if (argc == 4) {
+			size_t (*cb)(size_t a0, size_t a1, size_t a2) = \
+				(size_t(*)(size_t,size_t,size_t))cbptr;
+			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
+			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
+			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
+			result = cb (a0, a1, a2);
+		} else if (argc == 5) {
+			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3) = \
+				(size_t(*)(size_t,size_t,size_t,size_t))cbptr;
+			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
+			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
+			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
+			ut64 a3 = r_num_math (NULL, r_str_word_get0 (argv, 4));
+			result = cb (a0, a1, a2, a3);
+		} else if (argc == 6) {
+			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3, size_t a4) = \
+				(size_t(*)(size_t,size_t,size_t,size_t,size_t))cbptr;
+			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
+			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
+			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
+			ut64 a3 = r_num_math (NULL, r_str_word_get0 (argv, 4));
+			ut64 a4 = r_num_math (NULL, r_str_word_get0 (argv, 5));
+			result = cb (a0, a1, a2, a3, a4);
+		} else {
+			eprintf ("Unsupported number of arguments in call\n");
+		}
+		eprintf ("RES %"PFMT64d"\n", result);
+	} else if (!strncmp (cmd, "alarm ", 6)) {
+		signal (SIGALRM, got_alarm);
+		// TODO: use setitimer
+		alarm (atoi (cmd + 6));
+	} else if (!strncmp (cmd, "dlsym ", 6)) {
+		const char *symbol = cmd + 6;
+		void *lib = dlopen (NULL, RTLD_NOW);
+		void *ptr = dlsym (lib, symbol);
+		eprintf ("(%s) 0x%08"PFMT64x"\n", symbol, (ut64)(size_t)ptr);
+		dlclose (lib);
+	} else if (!strcmp (cmd, "mameio")) {
+		void *lib = dlopen (NULL, RTLD_NOW);
+		void *ptr = dlsym (lib, "_ZN12device_debug2goEj");
+	//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
+		// readmem(0, )
+		if (ptr) {
+		//	gothis =
+			eprintf ("TODO: No MAME IO implemented yet\n");
+			mameio = true;
+		} else {
+			eprintf ("This process is not a MAME!");
+		}
+		dlclose (lib);
 	} else if (!strcmp (cmd, "maps")) {
 		int i;
-		for (i =0; i<self_sections_count ;i++) {
+		for (i = 0; i < self_sections_count; i++) {
 			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
 				self_sections[i].from, self_sections[i].to,
 				r_str_rwx_i (self_sections[i].perm),
 				self_sections[i].name);
 		}
 	} else {
-		eprintf ("|Usage: \n");
-		eprintf ("| =!pid     show getpid()\n");
-		eprintf ("| =!maps    show map regions\n");
+		eprintf ("|Usage: =![cmd] [args]\n");
+		eprintf ("| =!pid               show getpid()\n");
+		eprintf ("| =!maps              show map regions\n");
+		eprintf ("| =!kill              commit suicide\n");
+		eprintf ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
+		eprintf ("| =!dlsym [sym]       dlopen\n");
+		eprintf ("| =!call [sym] [...]  nativelly call a function\n");
+		eprintf ("| =!mameio            enter mame IO mode\n");
 	}
 	return 0;
 }
 
-struct r_io_plugin_t r_io_plugin_self = {
+RIOPlugin r_io_plugin_self = {
 	.name = "self",
 	.desc = "read memory from myself using 'self://'",
 	.license = "LGPL3",
@@ -218,8 +323,7 @@ struct r_lib_struct_t radare_plugin = {
 
 #if __APPLE__
 // mach/mach_vm.h not available for iOS
-kern_return_t mach_vm_region
-(
+kern_return_t mach_vm_region (
         vm_map_t target_task,
         mach_vm_address_t *address,
         mach_vm_size_t *size,
@@ -272,38 +376,29 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 
 		if (!done) {
 			// Even on iOS, we use VM_REGION_BASIC_INFO_COUNT_64. This works.
-
 			count = VM_REGION_BASIC_INFO_COUNT_64;
-
-
-			kret =
-			mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
+			kret = mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
 				(vm_region_info_t) &info, &count, &object_name);
-
-			if (kret != KERN_SUCCESS)
-			 {
+			if (kret != KERN_SUCCESS) {
 				/* iOS 6 workaround - attempt to reget the task port to avoiD */
 				/* "(ipc/send) invalid destination port" (1000003 or something) */
 				task_for_pid(mach_task_self(),getpid (), &task);
-
-				kret =
-				mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
+				kret = mach_vm_region (task, &address, &size, VM_REGION_BASIC_INFO,
 					(vm_region_info_t) &info, &count, &object_name);
-
-
 			}
 			if (kret != KERN_SUCCESS) {
 				eprintf ("mach_vm_region failed for address %p - Error: %x\n",
 					(void*)(size_t)address, kret);
 				size = 0;
-				if (address >= 0x4000000) return;
+				if (address >= 0x4000000) {
+					return;
+				}
 				print = done = 1;
 			}
 		}
-
-		if (address != prev_address + prev_size)
+		if (address != prev_address + prev_size) {
 			print = 1;
-
+		}
 		if ((info.protection != prev_info.protection)
 			|| (info.max_protection != prev_info.max_protection)
 			|| (info.inheritance != prev_info.inheritance)
@@ -312,14 +407,10 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 			print = 1;
 
 		if (print) {
-			int	print_size;
+			int print_size;
 			char *print_size_unit;
-			if (num_printed == 0)
 
-				printf ("Region ");
-			else
-				printf ("   ... ");
-
+			io->cb_printf (num_printed? "   ... ": "Region ");
 			//findListOfBinaries(task, prev_address, prev_size);
 			/* Quick hack to show size of segment, which GDB does not */
 			print_size = prev_size;
@@ -329,23 +420,23 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 			/* End Quick hack */
 			io->cb_printf (" %p - %p [%d%s](%x/%x; %d, %s, %s)",
 				(void*)(size_t)(prev_address),
-			       (void*)(size_t)(prev_address + prev_size),
-			       print_size,
-			       print_size_unit,
-			       prev_info.protection,
-			       prev_info.max_protection,
-			       prev_info.inheritance,
-			       prev_info.shared ? "shared" : "private",
-			       prev_info.reserved ? "reserved" : "not-reserved");
+				(void*)(size_t)(prev_address + prev_size),
+				print_size,
+				print_size_unit,
+				prev_info.protection,
+				prev_info.max_protection,
+				prev_info.inheritance,
+				prev_info.shared ? "shared" : "private",
+				prev_info.reserved ? "reserved" : "not-reserved");
 
 			self_sections[self_sections_count].from = prev_address;
 			self_sections[self_sections_count].to = prev_address+prev_size;
 			self_sections[self_sections_count].perm = PERM_READ; //prev_info.protection;
 			self_sections_count++;
 
-			if (nsubregions > 1)
+			if (nsubregions > 1) {
 				io->cb_printf (" (%d sub-regions)", nsubregions);
-
+			}
 			io->cb_printf ("\n");
 
 			prev_address = address;
@@ -363,8 +454,9 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 			eprintf ("Max %d num_printed %d\n", max, num_printed);
 			done = 1;
 		}
-		if (done)
+		if (done) {
 			break;
+		}
 	 }
 }
 #endif

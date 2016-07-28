@@ -903,10 +903,12 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char* fmtname,
 		case 2: addr &= UT16_MAX; break;
 		case 4: addr &= UT32_MAX; break;
 	}
-	if (MUSTSEE)
+	if (MUSTSEE) {
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
-	if (p->get_bitfield)
+	}
+	if (p->get_bitfield) {
 		bitfield = p->get_bitfield (p->user, fmtname, addr);
+	}
 	if (bitfield && *bitfield) {
 		if (MUSTSEEJSON) p->cb_printf ("\"%s\"}", bitfield);
 		else if (MUSTSEE) p->cb_printf (" %s (bitfield) = %s\n", fieldname, bitfield);
@@ -988,10 +990,10 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	}
 
 	r_str_word_set0 (args);
-	for (i=0; i<strlen (fmt); i++) {
+	for (i=0; i < strlen (fmt); i++) {
 		if (fmt[i] == '[') {
 			char *end = strchr (fmt+i,']');
-			if (end == NULL) {
+			if (!end) {
 				eprintf ("No end bracket.\n");
 				continue;
 			}
@@ -1004,70 +1006,70 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 		}
 
 		switch (fmt[i]) {
-			case 'c':
-			case 'b':
-			case '.':
-			case 'X':
-				size += tabsize*1;
-				break;
-			case 'w':
-				size += tabsize*2;
-				break;
-			case 'd':
-			case 'o':
-			case 'i':
-			case 'x':
-			case 'f':
-			case 's':
-			case 't':
-			case ':':
-				size += tabsize*4;
-				break;
-			case 'S':
-			case 'q':
-				size += tabsize*8;
-				break;
-			case 'z':
-			case 'Z':
-				size += tabsize;
-				break;
-			case '*':
-				size += tabsize*4;
-				i++;
-				break;
-			case 'B':
-			case 'E':
-				switch (tabsize) {
-				case 1: size += 1; break;
-				case 2: size += 2; break;
-				case 4: size += 4; break;
-				case 8: size += 8; break;
-				default:
-					eprintf ("Unknown enum format size: %d\n", tabsize);
-					break;
-				}
-				break;
-			case '?':
-				{
-				const char *format = NULL;
-				char *endname = NULL, *structname = NULL;
-				structname = strdup (r_str_word_get0 (args, idx));
-				if (*structname == '(') {
-					endname = strchr (structname, ')');
-				} else {
-					eprintf ("Struct name missing (%s)\n", structname);
-					free (structname);
-					break;
-				}
-				if (endname) *endname = '\0';
-				format = r_strht_get (p->formats, structname + 1);
-				free (structname);
-				size += tabsize * r_print_format_struct_size (format, p, mode);
-				}
-				break;
-				// TODO continue list
+		case 'c':
+		case 'b':
+		case '.':
+		case 'X':
+			size += tabsize*1;
+			break;
+		case 'w':
+			size += tabsize*2;
+			break;
+		case 'd':
+		case 'o':
+		case 'i':
+		case 'x':
+		case 'f':
+		case 's':
+		case 't':
+		case ':':
+			size += tabsize*4;
+			break;
+		case 'S':
+		case 'q':
+			size += tabsize*8;
+			break;
+		case 'z':
+		case 'Z':
+			size += tabsize;
+			break;
+		case '*':
+			size += tabsize*4;
+			i++;
+			break;
+		case 'B':
+		case 'E':
+			switch (tabsize) {
+			case 1: size += 1; break;
+			case 2: size += 2; break;
+			case 4: size += 4; break;
+			case 8: size += 8; break;
 			default:
+				eprintf ("Unknown enum format size: %d\n", tabsize);
 				break;
+			}
+			break;
+		case '?':
+			{
+			const char *format = NULL;
+			char *endname = NULL, *structname = NULL;
+			structname = strdup (r_str_word_get0 (args, idx));
+			if (*structname == '(') {
+				endname = strchr (structname, ')');
+			} else {
+				eprintf ("Struct name missing (%s)\n", structname);
+				free (structname);
+				break;
+			}
+			if (endname) *endname = '\0';
+			format = r_strht_get (p->formats, structname + 1);
+			free (structname);
+			size += tabsize * r_print_format_struct_size (format, p, mode);
+			}
+			break;
+			// TODO continue list
+		default:
+			break;
 		}
 		idx++;
 		if (mode & R_PRINT_UNIONMODE) {
@@ -1104,17 +1106,17 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len,
 	return r_print_format_struct_size (fmt, p, mode);
 }
 
-static char* get_args_offset( const char *arg ) {
-    char *args = strchr (arg, ' ');
-    char *sq_bracket = strchr (arg, '[');
-    int max = 30;
-    if (args && sq_bracket) {
-        char *csq_bracket = strchr(arg, ']');
-        while (args && csq_bracket && csq_bracket > args && max--) {
-            args = strchr (csq_bracket, ' ');
-        }
-    }
-    return args;
+static char* get_args_offset(const char *arg) {
+	char *args = strchr (arg, ' ');
+	char *sq_bracket = strchr (arg, '[');
+	int max = 30;
+	if (args && sq_bracket) {
+		char *csq_bracket = strchr (arg, ']');
+		while (args && csq_bracket && csq_bracket > args && max--) {
+			args = strchr (csq_bracket, ' ');
+		}
+	}
+	return args;
 }
 
 #define MINUSONE ((void*)(size_t)-1)
@@ -1527,7 +1529,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i += (size==-1) ? 4 : 4*size;
 					break;
 				case 'w':
-					r_print_format_word(p, endian, mode, setval, seeki, buf, i, size);
+					r_print_format_word (p, endian, mode, setval, seeki, buf, i, size);
 					i += (size==-1) ? 2 : 2*size;
 					break;
 				case 'z': // zero terminated string
