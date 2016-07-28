@@ -454,7 +454,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
-        .desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof://)",
+        .desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof:// waitfor://)",
 	.license = "LGPL3",
         .open = __open,
         .check = __plugin_open,
