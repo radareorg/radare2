@@ -714,6 +714,7 @@ int main(int argc, char **argv, char **envp) {
 						} else eprintf ("r_io_create: Permission denied.\n");
 					}
 					if (fh) {
+						r_core_cmdf (&r, ".!rabin2 -rk '' '%s'", r.file->desc->name);
 						if (run_anal > 0) {
 #if USE_THREADS
 							if (!rabin_th)
@@ -733,12 +734,6 @@ int main(int argc, char **argv, char **envp) {
 								if (!r_core_bin_load (&r, filepath, baddr)) {
 									r_config_set_i (r.config, "io.va", false);
 								}
-							}
-						} else {
-							if (run_anal < 0) {
-								// PoC -- must move -rk functionalitiy into rcore
-								// this may be used with caution (r2 -nn $FILE)
-								r_core_cmdf (&r, ".!rabin2 -rk '' '%s'", r.file->desc->name);
 							}
 						}
 					}
