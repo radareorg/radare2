@@ -207,14 +207,14 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		const char *sym = r_str_word_get0 (argv, 0);
 		if (sym) {
 			const char *symbol = cmd + 6;
-			void *lib = dlopen (NULL, RTLD_NOW);
-			void *ptr = dlsym (lib, symbol);
+			void *lib = r_lib_dl_open(NULL);
+			void *ptr = r_lib_dl_sym (lib, symbol);
 			if (ptr) {
 				cbptr = (ut64)(size_t)ptr;
 			} else {
 				cbptr = r_num_math (NULL, symbol);
 			}
-			dlclose (lib);
+			r_lib_dl_close (lib);
 		}
 		if (argc == 1) {
 			size_t (*cb)() = (size_t(*)())cbptr;
@@ -262,13 +262,13 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		alarm (atoi (cmd + 6));
 	} else if (!strncmp (cmd, "dlsym ", 6)) {
 		const char *symbol = cmd + 6;
-		void *lib = dlopen (NULL, RTLD_NOW);
-		void *ptr = dlsym (lib, symbol);
+		void *lib = r_lib_dl_open (NULL);
+		void *ptr = r_lib_dl_sym (lib, symbol);
 		eprintf ("(%s) 0x%08"PFMT64x"\n", symbol, (ut64)(size_t)ptr);
-		dlclose (lib);
+		r_lib_dl_close (lib);
 	} else if (!strcmp (cmd, "mameio")) {
-		void *lib = dlopen (NULL, RTLD_NOW);
-		void *ptr = dlsym (lib, "_ZN12device_debug2goEj");
+		void *lib = r_lib_dl_open (NULL);
+		void *ptr = r_lib_dl_sym (lib, "_ZN12device_debug2goEj");
 	//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
 		// readmem(0, )
 		if (ptr) {
@@ -278,7 +278,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		} else {
 			eprintf ("This process is not a MAME!");
 		}
-		dlclose (lib);
+		r_lib_dl_close (lib);
 	} else if (!strcmp (cmd, "maps")) {
 		int i;
 		for (i = 0; i < self_sections_count; i++) {
