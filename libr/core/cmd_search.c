@@ -1090,7 +1090,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	const ut8 prot = r_config_get_i (core->config, "rop.nx") ? R_IO_READ|R_IO_WRITE|R_IO_EXEC : R_IO_EXEC;
 	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
-	const bool rop_db = r_config_get_i (core->config, "rop.db");
 	int max_count = r_config_get_i(core->config, "search.count");
 	ut64 search_from = r_config_get_i (core->config, "search.from");
 	ut64 search_to = r_config_get_i (core->config, "search.to");
@@ -1830,6 +1829,51 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	if (json) r_cons_printf("]");
 }
 
+static void rop_kuery(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
+	bool json_first = true;
+	SdbListIter *sdb_iter;
+	SdbList *sdb_list;
+	SdbKv *kv;
+	char *out;
+
+	if (!db_rop) {
+		eprintf ("Error: could not find SDB 'rop' namespace\n");
+		return;
+	}
+
+	switch (*input) {
+	case 'q':
+		sdb_list = sdb_foreach_list (db_rop);
+		ls_foreach (sdb_list, sdb_iter, kv) {
+			r_cons_printf ("%s ", kv->key);
+		}
+		r_cons_newline ();
+		break;
+	case 'j':
+		r_cons_print ("{\"gadgets\":[");
+		sdb_list = sdb_foreach_list (db_rop);
+		ls_foreach (sdb_list, sdb_iter, kv) {
+			if (json_first) {
+				json_first = false;
+			} else {
+				r_cons_print (",");
+			}
+			r_cons_printf ("{\"address\":%s,\"size\":%s}", kv->key, kv->value);
+		}
+		r_cons_printf ("]}\n");
+		break;
+	default:
+		out = sdb_querys (core->sdb, NULL, 0, "rop/*");
+		if (out) {
+			r_cons_println (out);
+		}
+		free (out);
+		break;
+	}
+}
+
 static int cmd_search(void *data, const char *input) {
 	struct search_parameters param;
 	bool dosearch = false;
@@ -1977,7 +2021,7 @@ reread:
 		}
 		break;
 	case 'R':
-		if (input[1]=='?') {
+		if (input[1] == '?') {
 			const char* help_msg[] = {
 				"Usage: /R", "", "Search for ROP gadgets",
 				"/R", " [filter-by-string]" , "Show gadgets",
@@ -1986,10 +2030,23 @@ reread:
 				"/R/l", " [filter-by-regexp]" , "Show gadgets in a linear manner [regular expression]",
 				"/Rj", " [filter-by-string]", "JSON output",
 				"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
+				"/Rk", "", "Query stored ROP gadgets",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == '/') {
 			r_core_search_rop (core, param.from, param.to, 0, input+1, 1);
+		} else if (input[1] == 'k') {
+			if (input[2] == '?') {
+				const char* help_msg[] = {
+					"Usage: /Rk", "", "Query stored ROP gadgets",
+					"/Rk", "", "Show gadgets",
+					"/Rkj", "", "JSON output",
+					"/Rkq", "", "List Gadgets offsets",
+					NULL};
+				r_core_cmd_help (core, help_msg);
+			} else {
+				rop_kuery (core, input + 2);
+			}
 		} else r_core_search_rop (core, param.from, param.to, 0, input+1, 0);
 		goto beach;
 	case 'r': // "/r"
