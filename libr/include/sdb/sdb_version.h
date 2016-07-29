@@ -1,1 +1,1 @@
-#define SDB_VERSION "0.10.2"
+#define SDB_VERSION "0.10.4"

@@ -6,7 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-SDBVER=0.10.2
+SDBVER=0.10.4
 
 BUILD_MEMCACHE=0
 
@@ -92,6 +92,13 @@ ifeq (${OS},w32)
 OSTYPE=MINGW32
 endif
 
+ifneq (,$(findstring mingw,${OSTYPE})$(findstring msys,${OSTYPE})$(findstring cygwin,${OSTYPE}))
+EXT_SO=dll
+SOVER=${EXT_SO}
+else
+EXT_SO=so
+SOVER=${EXT_SO}.${SDBVER}
+endif
 ifeq (${OS},Darwin)
 EXT_SO=dylib
 SOVER=dylib
@@ -104,19 +111,13 @@ CC+=-arch x86_64
 else
   ifneq (,$(findstring CYGWIN,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
-EXT_SO=dll
-SOVER=${EXT_SO}
 LDFLAGS_SHARED?=-shared
   else
     ifneq (,$(findstring MINGW32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
-EXT_SO=dll
-SOVER=${EXT_SO}
     else
 CFLAGS+=-fPIC
 SOVERSION=0
-EXT_SO=so
-SOVER=${EXT_SO}.${SDBVER}
 LDFLAGS_SHARED?=-fPIC 
     endif
   endif
