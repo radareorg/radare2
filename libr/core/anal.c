@@ -1630,14 +1630,18 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int fcn_list_json(RCore *core, RList *fcns) {
+static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	int first = 1;
 	r_cons_printf ("[");
 	r_list_foreach (fcns, iter, fcn) {
 		if (!first) r_cons_printf (",");
-		fcn_print_json (core, fcn);
+		if (quiet) {
+			r_cons_printf ("\"0x%08"PFMT64x"\"", fcn->addr);
+		} else {
+			fcn_print_json (core, fcn);
+		}
 		first = 0;
 	}
 	r_cons_printf ("]\n");
@@ -1756,7 +1760,7 @@ static int fcn_list_legacy(RCore *core, RList *fcns)
 	return 0;
 }
 
-R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
+R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
 	RList *fcns = core->anal->fcns;
 	if (r_list_empty (fcns)) return 0;
 
@@ -1785,7 +1789,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	}
 
 	r_list_sort (core->anal->fcns, &cmpfcn);
-	switch (rad) {
+	switch (*rad) {
 	case 's':
 		r_core_anal_fcn_list_size (core);
 		break;
@@ -1793,10 +1797,14 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		fcn_list_verbose (core, fcns);
 		break;
 	case 'q':
-		fcn_list_default (core, fcns, true);
+		if (rad[1] == 'j') {
+			fcn_list_json (core, fcns, true);
+		} else {
+			fcn_list_default (core, fcns, true);
+		}
 		break;
 	case 'j':
-		fcn_list_json (core, fcns);
+		fcn_list_json (core, fcns, false);
 		break;
 	case '*':
 		fcn_list_detail (core, fcns);
