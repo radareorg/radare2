@@ -92,7 +92,7 @@ ifeq (${OS},w32)
 OSTYPE=MINGW32
 endif
 
-ifneq (,$(findstring mingw,${OSTYPE})$(findstring msys,${OSTYPE})$(findstring cygwin,${OSTYPE}))
+ifneq (,$(findstring MINGW,${OSTYPE})$(findstring MSYS,${OSTYPE})$(findstring CYGWIN,${OSTYPE}))
 EXT_SO=dll
 SOVER=${EXT_SO}
 else
