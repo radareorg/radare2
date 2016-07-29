@@ -908,10 +908,71 @@ ret:
 	return hitlist;
 }
 
+static int rop_classify_nops (RCore *core, RList *ropList) {
+	char *esil_str;
+	int changes = 1;
+	RListIter *iter, *iter_r;
+	RRegItem *item;
+	RList *head;
+	RHashTable *ht_old = r_hashtable_new ();
+	RHashTable *ht_new = r_hashtable_new ();
+
+	// TODO: this seems useless ? should confirm
+	// RReg *hack = core->dbg->reg;
+	// core->dbg->reg = core->anal->reg;
+	r_list_foreach (ropList, iter_r, esil_str) {
+		if (strchr (esil_str, '[')) { // avoid MEM read/write for now
+			return -1;
+		}
+
+		// r_cons_printf ("Emulating: %s\n", cmd);
+		cmd_anal_esil (core, esil_str);
+
+		head = r_reg_get_list (core->dbg->reg, 0);
+		if (!head) {
+			return 0;
+		}
+		r_list_foreach (head, iter, item) {
+			ut64 delta, diff, value;
+
+			value = r_reg_get_value (core->dbg->reg, item);
+			r_reg_arena_swap (core->dbg->reg, false);
+			diff = r_reg_get_value (core->dbg->reg, item);
+			r_reg_arena_swap (core->dbg->reg, false);
+			delta = value - diff;
+			//restore initial value
+			r_reg_set_value (core->dbg->reg, item, diff);
+
+			if (delta != 0) {
+				// r_cons_printf ("REG changed: %s ( %d --> %d) \n", item->name, diff, value);
+				changes = 0;
+			}
+		}
+	}
+	// core->dbg->reg = hack;
+
+	return changes;
+}
+
+static void rop_classify (RCore *core, Sdb *db, RList *ropList, const char *key, unsigned int size) {
+	int nop = rop_classify_nops (core, ropList);
+	if (nop == 1) {
+		// char *str = sdb_fmt (0, "0x"PFMT64x"-->NOP", size);
+		char *str = r_str_newf ("0x%"PFMT64x"-->NOP", size);
+		sdb_set (db, key, str, 0);
+	} else if (nop == -1) {
+		char *str = r_str_newf ("0x%"PFMT64x"-->MEM access", size);
+		sdb_set (db, key, str, 0);
+	} else {
+		sdb_num_set (db, key, size, 0);
+	}
+}
+
 static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first) {
 	const char *otype;
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
+	RList *ropList;
 	char *buf_asm;
 	unsigned int size = 0;
 	RAnalOp analop = {0};
@@ -924,6 +985,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 
 	if (rop_db) {
 		db = sdb_ns (core->sdb, "rop", true);
+		ropList = r_list_newf (free);
 		if (!db) {
 			eprintf ("Error: Could not create SDB 'rop' namespace\n");
 			return;
@@ -946,6 +1008,10 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 			size += hit->len;
+			if (analop.type != R_ANAL_OP_TYPE_RET) {
+				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
+				r_list_append (ropList, (void*)opstr_n);
+			}
 			r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%d,"
 				"\"opcode\":\"%s\",\"type\":\"%s\"}%s",
 				hit->addr, hit->len, asmop.buf_asm,
@@ -957,7 +1023,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
 			//r_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
-			sdb_num_set (db, key, size, 0);
+			rop_classify (core, db, ropList, key, size);
 			r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
 		} else if (hit) {
 			r_cons_printf ("],\"retaddr\":%"PFMT64d",\"size\":%d}", hit->addr, size);
@@ -975,7 +1041,11 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 			size += hit->len;
-			char *opstr = (R_STRBUF_SAFEGET (&analop.esil));
+			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
+			if (analop.type != R_ANAL_OP_TYPE_RET) {
+				char *opstr_n = r_str_newf (" %s", opstr);
+				r_list_append (ropList, (void*)opstr_n);
+			}
 			if (esil) {
 				r_cons_printf ("%s\n", opstr);
 			} else if (colorize) {
@@ -992,7 +1062,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
 			//r_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
-			sdb_num_set (db, key, size, 0);
+			rop_classify (core, db, ropList, key, size);
 		}
 		break;
 	default:
@@ -1011,6 +1081,10 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len);
 			size += hit->len;
+			if (analop.type != R_ANAL_OP_TYPE_RET) {
+				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
+				r_list_append (ropList, (void*)opstr_n);
+			}
 			if (colorize) {
 				buf_asm = r_print_colorize_opcode (asmop.buf_asm,
 						core->cons->pal.reg, core->cons->pal.num);
@@ -1038,10 +1112,11 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			const ut64 addr = ((RCoreAsmHit *)hitlist->head->data)->addr;
 			//r_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
-			sdb_num_set (db, key, size, 0);
+			rop_classify (core, db, ropList, key, size);
 		}
 	}
 	if (mode != 'j') r_cons_newline ();
+	r_list_free (ropList);
 }
 
 R_API RList* r_core_get_boundaries_ok(RCore *core) {
