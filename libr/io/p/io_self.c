@@ -175,8 +175,10 @@ static int __close(RIODesc *fd) {
 }
 
 static void got_alarm(int sig) {
+#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	// !!! may die if not running from r2preload !!! //
 	kill (getpid (), SIGUSR1);
+#endif
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
@@ -256,10 +258,14 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			eprintf ("Unsupported number of arguments in call\n");
 		}
 		eprintf ("RES %"PFMT64d"\n", result);
+#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
 		signal (SIGALRM, got_alarm);
 		// TODO: use setitimer
 		alarm (atoi (cmd + 6));
+#else
+	#warning "self:// alarm is not implemented for this platform yet"
+#endif
 	} else if (!strncmp (cmd, "dlsym ", 6)) {
 		const char *symbol = cmd + 6;
 		void *lib = r_lib_dl_open (NULL);
