@@ -4,7 +4,18 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
+
+#ifdef __MINGW32__
+#include <_mingw.h> /* private MinGW header */
+# ifdef __MINGW64_VERSION_MAJOR
+#  define __r_mingw_w64__
+# endif
+#endif /* __MINGW32__ */
+
+/* This header is not in the Mingw-w64 due to some license issues */
+#ifndef __r_mingw_w64__
 #include <dlfcn.h>
+#endif
 
 #if DEBUGGER
 #if __APPLE__
@@ -300,7 +311,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("| =!pid               show getpid()\n");
 		eprintf ("| =!maps              show map regions\n");
 		eprintf ("| =!kill              commit suicide\n");
+#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 		eprintf ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
+#endif
 		eprintf ("| =!dlsym [sym]       dlopen\n");
 		eprintf ("| =!call [sym] [...]  nativelly call a function\n");
 		eprintf ("| =!mameio            enter mame IO mode\n");
