@@ -909,6 +909,66 @@ ret:
 	return hitlist;
 }
 
+static int rop_classify_nops (RCore *core, RList *ropList) {
+	char *esil_str;
+	int changes = 1;
+	RListIter *iter, *iter_r;
+	RRegItem *item;
+	RList *head;
+	RHashTable *ht_old = r_hashtable_new ();
+	RHashTable *ht_new = r_hashtable_new ();
+
+	// TODO: this seems useless ? should confirm
+	// RReg *hack = core->dbg->reg;
+	// core->dbg->reg = core->anal->reg;
+	r_list_foreach (ropList, iter_r, esil_str) {
+		if (strchr (esil_str, '[')) { // avoid MEM read/write for now
+			return -1;
+		}
+
+		// r_cons_printf ("Emulating: %s\n", cmd);
+		cmd_anal_esil (core, esil_str);
+
+		head = r_reg_get_list (core->dbg->reg, 0);
+		if (!head) {
+			return 0;
+		}
+		r_list_foreach (head, iter, item) {
+			ut64 delta, diff, value;
+
+			value = r_reg_get_value (core->dbg->reg, item);
+			r_reg_arena_swap (core->dbg->reg, false);
+			diff = r_reg_get_value (core->dbg->reg, item);
+			r_reg_arena_swap (core->dbg->reg, false);
+			delta = value - diff;
+			//restore initial value
+			r_reg_set_value (core->dbg->reg, item, diff);
+
+			if (delta != 0) {
+				// r_cons_printf ("REG changed: %s ( %d --> %d) \n", item->name, diff, value);
+				changes = 0;
+			}
+		}
+	}
+	// core->dbg->reg = hack;
+
+	return changes;
+}
+
+static void rop_classify (RCore *core, Sdb *db, RList *ropList, const char *key, unsigned int size) {
+	int nop = rop_classify_nops (core, ropList);
+	if (nop == 1) {
+		// char *str = sdb_fmt (0, "0x"PFMT64x"-->NOP", size);
+		char *str = r_str_newf ("0x%"PFMT64x"-->NOP", size);
+		sdb_set (db, key, str, 0);
+	} else if (nop == -1) {
+		char *str = r_str_newf ("0x%"PFMT64x"-->MEM access", size);
+		sdb_set (db, key, str, 0);
+	} else {
+		sdb_num_set (db, key, size, 0);
+	}
+}
+
 static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first) {
 	const char *otype;
 	RCoreAsmHit *hit = NULL;
