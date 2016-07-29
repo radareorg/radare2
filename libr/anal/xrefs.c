@@ -28,51 +28,6 @@ static void XREFKEY(char * const key, const size_t key_len,
 	snprintf (key, key_len, "%s.%s.0x%"PFMT64x, kind, _sdb_type, addr);
 }
 
-R_API bool r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
-	char *path, *db;
-	ut8 found = 0;
-	SdbListIter *it;
-	SdbNs *ns;
-
-	if (!prjfile || !*prjfile) {
-		return false;
-	}
-
-	if (prjfile[0] == '/') {
-		db = r_str_newf ("%s.d", prjfile);
-		if (!db) return false;
-		path = strdup (db);
-	} else {
-		db = r_str_newf (R2_HOMEDIR"/projects/%s.d", prjfile);
-		if (!db) return false;
-		path = r_str_home (db);
-	}
-
-	if (!path) {
-		free (db);
-		return false;
-	}
-
-	ls_foreach (anal->sdb->ns, it, ns){
-		if (ns->sdb == DB){
-			ls_delete (anal->sdb->ns, it);
-			found = 1;
-			break;
-		}
-	}
-	if (!found) sdb_free (DB);
-	DB = sdb_new (path, "xrefs", 0);
-	if (!DB) {
-		free (db);
-		free (path);
-		return false;
-	}
-	sdb_ns_set (anal->sdb, "xrefs", DB);
-	free (path);
-	free (db);
-	return true;
-}
-
 R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
 	sdb_file (anal->sdb_xrefs, prjfile);
 	return sdb_sync (anal->sdb_xrefs);

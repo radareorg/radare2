@@ -2136,3 +2136,10 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	}
 	return b;
 }
+
+R_API bool r_core_project_load(RCore *core, const char *prjfile) {
+	if (prjfile && *prjfile) {
+		return r_core_xrefs_load (core, prjfile);
+	}
+	return false;
+}
