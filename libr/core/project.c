@@ -276,7 +276,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 		r_core_bin_load (core, filepath, UT64_MAX);
 	}
 	// FIXME: If r_anal_project_load is not called before r_core_cmd_file, xrefs are not loaded correctly
-	r_anal_project_load (core->anal, prjfile);
+	r_core_project_load (core, prjfile);
 	r_core_rop_load (core, prjfile);
 	ret = r_core_cmd_file (core, prj);
 	r_config_bump (core->config, "asm.arch");

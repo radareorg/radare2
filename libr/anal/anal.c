@@ -322,13 +322,6 @@ R_API RList* r_anal_get_fcns (RAnal *anal) {
 	return anal->fcns;
 }
 
-R_API bool r_anal_project_load(RAnal *anal, const char *prjfile) {
-	if (prjfile && *prjfile) {
-		return r_anal_xrefs_load (anal, prjfile);
-	}
-	return false;
-}
-
 R_API bool r_anal_project_save(RAnal *anal, const char *prjfile) {
 	if (prjfile && *prjfile) {
 		return r_anal_xrefs_save (anal, prjfile);
