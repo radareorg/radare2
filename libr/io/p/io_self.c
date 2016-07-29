@@ -186,6 +186,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("%d\n", fd->fd);
 	} else if (!strncmp (cmd, "pid", 3)) {
 		/* do nothing here */
+#if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	} else if (!strncmp (cmd, "kill", 4)) {
 		if (r_sandbox_enable (false)) {
 			eprintf ("This is unsafe, so disabled by the sandbox\n");
@@ -193,6 +194,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		/* do nothing here */
 		kill (getpid (), 9);
+#endif
 	} else if (!strncmp (cmd, "call ", 5)) {
 		size_t cbptr = 0;
 		if (r_sandbox_enable (false)) {
