@@ -1234,16 +1234,12 @@ R_API int r_anal_fcn_local_del_index(RAnal *anal, RAnalFunction *fcn, ut32 index
 #define R_ANAL_FCN_VARKIND_ARG 'a'
 #define R_ANAL_FCN_VARKIND_FASTARG 'A'
 
-#define r_anal_fcn_local_add(x,y,z,n,t) r_anal_fcn_var_add(x, y->addr, z,\
-R_ANAL_FCN_VARKIND_LOCAL, n, t)
 #define r_anal_fcn_local_del_index(x,y,z) r_anal_fcn_var_del_byindex(x, y,\
 R_ANAL_FCN_VARKIND_LOCAL, z)
 #define r_anal_fcn_local_del_name(x,y,z) error
 
-R_API int r_anal_fcn_arg_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name);
 
 R_API int r_anal_fcn_var_del_bydelta (RAnal *a, ut64 fna, const char kind, int scope, ut32 delta);
-R_API int r_anal_fcn_var_add (RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name);
 R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,
 		int scope, ut32 idx);
 /* args */

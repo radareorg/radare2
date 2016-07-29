@@ -28,16 +28,6 @@ struct VarType {
 // kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
 #endif
 
-R_API int r_anal_fcn_arg_add(RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name) {
-	//XXX brocken and almost useless due to new implementation
-	return r_anal_var_add (a, fna, scope, delta, 'a', type, 4, name);
-}
-
-R_API int r_anal_fcn_var_add(RAnal *a, ut64 fna, int scope, int delta, const char *type, const char *name) {
-	//XXX same as the previous one
-	return r_anal_var_add (a, fna, scope, delta, 'v', type, 4, name);
-}
-
 R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
 	if (!kind) kind ='b';
@@ -320,7 +310,7 @@ R_API int r_anal_var_check_name(const char *name) {
 }
 
 // afvn local_48 counter
-R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind, const char *old_name, const char *new_name) {
+R_API int r_anal_var_rename(RAnal *a, ut64 var_addr, int scope, char kind, const char *old_name, const char *new_name) {
 	char key[128], *stored_name;
 	int delta;
 

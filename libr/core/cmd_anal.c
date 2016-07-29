@@ -44,6 +44,7 @@ static void var_help(RCore *core, char ch) {
 		"afvs", "", "list stack based arguments and variables",
 		"afvs*", "", "same as afvs but in r2 commands",
 		"afvs", " [idx] [name] [type]", "define stack based arguments,variables",
+		"afvsd", " name", "Displays the value of stack pointer args and locals in the debugger",
 		"afvsn", " [old_name] [new_name]", "rename stack based argument or variable",
 		"afvst", " [name] [new_type]", "change type for given argument or variable",
 		"afvsj", "", "return list of stack based arguments and variables in JSON format",
@@ -57,6 +58,7 @@ static void var_help(RCore *core, char ch) {
 		"afvb", "", "list base pointer based arguments, variables",
 		"afvb*", "", "same as afvb but in r2 commands",
 		"afvb", " [idx] [name] ([type])", "define base pointer based argument, variable",
+		"afvbd", " name", "Displays the value of base pointer args and locals in the debugger",
 		"afvbn", " [old_name] [new_name]", "rename base pointer based argument or variable",
 		"afvbt", " [name] [new_type]", "change type for given base pointer based argument or variable",
 		"afvbj", "", "return list of base pointer based arguments, variables in JSON format",
@@ -70,6 +72,7 @@ static void var_help(RCore *core, char ch) {
 		"afvr", "", "list register based arguments",
 		"afvr*", "", "same as afvr but in r2 commands",
 		"afvr", " [reg] [name] ([type])", "define register arguments",
+		"afvrd", " name", "Displays the value of register based args in the debugger",
 		"afvrn", " [old_name] [new_name]", "rename argument",
 		"afvrt", " [name] [new_type]", "change type for given argument",
 		"afvrj", "", "return list of register arguments in JSON format",
@@ -149,6 +152,55 @@ static int var_cmd (RCore *core, const char *str) {
 			}
 		}
 		break;
+	case 'd': {
+		char *name = r_str_chop(strdup(str+2));
+		RAnalVar *v = r_anal_var_get_byname (core->anal, fcn, type, name);
+		if (!v) {
+			eprintf ("no arg/local with this name exists\n");
+			free (name);
+			break;
+		}
+		char *fmt = r_anal_type_format (core->anal, v->type);
+		if (!fmt) {
+			 eprintf ("type:%s doesn't exist\n", v->type);
+			 break;
+		}
+		switch (type) {
+		case 'r':{
+				RRegItem *i = r_reg_index_get (core->anal->reg, v->delta);
+				if (i) {
+					r_cons_printf ("pf r (%s)\n", i->name);
+				} else {
+					eprintf ("register not found\n");
+					break;
+				}
+			}
+			break;
+		case 'b':
+			if (v->delta > 0) {
+				 r_cons_printf ("pf %s @%s+0x%x\n", fmt,
+					core->anal->reg->name[R_REG_NAME_BP],
+					v->delta);
+			} else {
+				r_cons_printf ("pf %s @%s-0x%x\n", fmt,
+					core->anal->reg->name[R_REG_NAME_BP],
+					-v->delta);
+
+			}
+			break;
+		case 's':
+			r_cons_printf ("pf %s @ %s+0x%x\n", fmt,
+				core->anal->reg->name[R_REG_NAME_SP], v->delta);
+			break;
+		};
+		free (v->name);
+		free (v->type);
+		r_list_free (v->accesses);
+		free (v->stores);
+		free (v);
+		free (name);
+	}
+		 break;
 	case 'n': {
 		RAnalVar *v1;
 		str++;
