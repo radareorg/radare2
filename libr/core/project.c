@@ -160,7 +160,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 static bool r_core_rop_load(RCore *core, const char *prjfile) {
-	char *path, *db, *db_hack;
+	char *path, *db;
 	bool found = 0;
 	SdbListIter *it;
 	SdbNs *ns;
@@ -178,9 +178,8 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 		path = strdup (db);
 	} else {
 		db = r_str_newf ("%s/%s.d", prjdir, prjfile);
-		db_hack = db + 2;
 		if (!db) return false;
-		path = r_str_home (db_hack);
+		path = r_file_abspath (db);
 	}
 
 	if (!path) {
