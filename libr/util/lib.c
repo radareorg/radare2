@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -39,31 +39,40 @@ static int __has_debug = 0;
 
 /* XXX: Rename this helper function */
 R_API const char *r_lib_types_get(int idx) {
-	if (idx < 0 || idx > R_LIB_TYPE_LAST-1)
+	if (idx < 0 || idx > R_LIB_TYPE_LAST - 1) {
 		return "unk";
+	}
 	return r_lib_types[idx];
 }
 
 R_API int r_lib_types_get_i(const char *str) {
 	int i;
-	for (i=0; r_lib_types[i]; i++) {
-		if (!strcmp (str, r_lib_types[i])) 
+	for (i = 0; r_lib_types[i]; i++) {
+		if (!strcmp (str, r_lib_types[i])) {
 			return i;
+		}
 	}
 	return -1;
 }
 
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret;
-	if (!libname || !*libname)
+#if __UNIX__
+	if (!libname) {
+		return dlopen (NULL, RTLD_NOW);
+	}
+#endif
+	if (!libname || !*libname) {
 		return NULL;
+	}
 	ret = DLOPEN (libname);
-	if (__has_debug && ret == NULL)
+	if (__has_debug && ret == NULL) {
 #if __UNIX__
 		eprintf ("dlerror(%s): %s\n", libname, dlerror ());
 #else
 		eprintf ("r_lib_dl_open: Cannot open '%s'\n", libname);
 #endif
+	}
 	return ret;
 }
 

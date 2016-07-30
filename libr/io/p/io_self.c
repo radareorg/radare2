@@ -164,8 +164,9 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 		if (self_in_section (io, io->off, &left, &perm)) {
 			int newlen = R_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
-			if (newlen>0)
+			if (newlen > 0) {
 				memcpy (ptr, buf, newlen);
+			}
 			return newlen;
 		}
 	}
@@ -222,7 +223,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		const char *sym = r_str_word_get0 (argv, 0);
 		if (sym) {
 			const char *symbol = cmd + 6;
-			void *lib = r_lib_dl_open(NULL);
+			void *lib = r_lib_dl_open (NULL);
 			void *ptr = r_lib_dl_sym (lib, symbol);
 			if (ptr) {
 				cbptr = (ut64)(size_t)ptr;
