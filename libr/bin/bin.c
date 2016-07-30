@@ -1237,24 +1237,24 @@ R_API int r_bin_list(RBin *bin, int json) {
 	RBinXtrPlugin *bp;
 	RBinXtrPlugin *bx;
 	if (json) {
-		printf ("{\"bin\":[");
+		bin->cb_printf ("{\"bin\":[");
 		r_list_foreach (bin->plugins, it, bp) {
-			printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
+			bin->cb_printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
 				bp->name, bp->desc, bp->license);
 		}
-		printf ("],\"xtr\":[");
+		bin->cb_printf ("],\"xtr\":[");
 		r_list_foreach (bin->binxtrs, it, bx) {
-			printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
+			bin->cb_printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
 				bx->name, bx->desc, bx->license);
 		}
-		printf ("]}\n");
+		bin->cb_printf ("]}\n");
 	} else {
 		r_list_foreach (bin->plugins, it, bp) {
-			printf ("bin  %-11s %s (%s)\n",
+			bin->cb_printf ("bin  %-11s %s (%s)\n",
 				bp->name, bp->desc, bp->license);
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
-			printf ("xtr  %-11s %s (%s)\n", bx->name,
+			bin->cb_printf ("xtr  %-11s %s (%s)\n", bx->name,
 				bx->desc, bx->license);
 		}
 	}
