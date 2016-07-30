@@ -623,8 +623,6 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	for (pad_byte = EI_PAD; pad_byte < EI_NIDENT; pad_byte++) {
 		h->e_ident[pad_byte] = '\0';
 	}
-	/* buffer overrun here */
-	h->e_ident[EI_NIDENT] = EI_NIDENT;
 	h->e_type = ET_CORE;
 #if __x86_64__
 	h->e_machine = EM_X86_64;
