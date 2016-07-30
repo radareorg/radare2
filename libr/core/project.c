@@ -159,6 +159,59 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	return 0;
 }
 
+static bool r_core_rop_load(RCore *core, const char *prjfile) {
+	char *path, *db, *db_hack;
+	bool found = 0;
+	SdbListIter *it;
+	SdbNs *ns;
+
+	const char *prjdir = r_config_get (core->config, "dir.projects");
+	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
+
+	if (!prjfile || !*prjfile) {
+		return false;
+	}
+
+	if (*prjfile == '/') {
+		db = r_str_newf ("%s.d", prjfile);
+		if (!db) return false;
+		path = strdup (db);
+	} else {
+		db = r_str_newf ("%s/%s.d", prjdir, prjfile);
+		db_hack = db + 2;
+		if (!db) return false;
+		path = r_str_home (db_hack);
+	}
+
+	if (!path) {
+		free (db);
+		return false;
+	}
+
+	if (rop_db) {
+		ls_foreach (core->sdb->ns, it, ns){
+			if (ns->sdb == rop_db) {
+				ls_delete (core->sdb->ns, it);
+				found = true;
+				break;
+			}
+		}
+	}
+	if (!found) {
+		sdb_free (rop_db);
+	}
+	rop_db = sdb_new (path, "rop", 0);
+	if (!rop_db) {
+		free (db);
+		free (path);
+		return false;
+	}
+	sdb_ns_set (core->sdb, "rop", rop_db);
+	free (path);
+	free (db);
+	return true;
+}
+
 R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int askuser = 1;
 	int ret, close_current_session = 1;
@@ -225,6 +278,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	}
 	// FIXME: If r_anal_project_load is not called before r_core_cmd_file, xrefs are not loaded correctly
 	r_anal_project_load (core->anal, prjfile);
+	r_core_rop_load (core, prjfile);
 	ret = r_core_cmd_file (core, prj);
 	r_config_bump (core->config, "asm.arch");
 	free (filepath);
@@ -393,6 +447,13 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 
 	snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "xrefs", prj);
 	r_anal_project_save (core->anal, buf);
+
+	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
+	if (rop_db) {
+		snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "rop", prj);
+		sdb_file (rop_db, buf);
+		sdb_sync (rop_db);
+	}
 
 	if (!r_core_project_save_rdb (core, prj, R_CORE_PRJ_ALL^R_CORE_PRJ_XREFS)) {
 		eprintf ("Cannot open '%s' for writing\n", prj);
