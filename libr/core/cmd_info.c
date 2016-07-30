@@ -330,6 +330,11 @@ static int cmd_info(void *data, const char *input) {
 			if (input[1] == 'z') {
 				char *biname;
 				char *ret;
+				int fd = -1;
+				int xtr_idx = 0;
+				int rawstr = 1;
+				RCore *tmpcore = r_core_new ();
+				RCore *p2core = core;
 				const int min = core->bin->minstrlen;
 				const int max = core->bin->maxstrlen;
 				/* TODO: reimplement in C to avoid forks */
@@ -338,28 +343,44 @@ static int cmd_info(void *data, const char *input) {
 					return 0;
 				}
 				biname = r_str_escape (core->file->desc->name);
+				if (!tmpcore) {
+	                                eprintf ("Cannot create core\n");
+				        return 0;
+	                        }
+				tmpcore->bin->minstrlen = min;
+				tmpcore->bin->maxstrlen = max;
+				if (!r_bin_load (tmpcore->bin, biname, UT64_MAX, UT64_MAX, xtr_idx, fd, rawstr)){
+	                                eprintf ("Cannot load information\n");
+					return 0;
+	                        }
+				core = tmpcore;
 				switch (input[2]) {
 				case '*':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -rzz %s", min, max, biname);
+				        mode = R_CORE_BIN_RADARE;
+					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				case 'q':
 					if (input[3] == 'q') {
 						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qqzz %s", min, max, biname);
 						input++;
 					} else {
-						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qzz %s", min, max, biname);
+		                                mode = R_CORE_BIN_SIMPLE;
+						RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					}
 					break;
 				case 'j':
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -jzz %s", min, max, biname);
+				        mode = R_CORE_BIN_JSON;
+					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				default:
-					ret = r_sys_cmd_strf ("rabin2 -N %d:%d -zz %s", min, max, biname);
+					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				}
 				if (ret && *ret) {
 					r_cons_strcat (ret);
 				}
+				core = p2core;
+				r_core_free (tmpcore);
 				free (ret);
 				free (biname);
 				input++;
