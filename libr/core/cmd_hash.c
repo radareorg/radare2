@@ -21,6 +21,7 @@ static void handle_entropy (const ut8 *block, int len);
 static void handle_hamdist (const ut8 *block, int len);
 static void handle_parity (const ut8 *block, int len);
 static void handle_pcprint (const ut8 *input, int len);
+static void handle_luhn (const ut8 *input, int len);
 
 typedef struct {
 	const char *name;
@@ -41,6 +42,7 @@ static RHashHashHandlers hash_handlers[] = {
 	{"parity", handle_parity},
 	{"hamdist", handle_hamdist},
 	{"pcprint", handle_pcprint},
+	{"luhn", handle_luhn},
 	{NULL, NULL},
 };
 
@@ -122,6 +124,10 @@ static void handle_hamdist (const ut8 *block, int len) {
 static void handle_pcprint (const ut8 *block, int len) {
 	r_cons_printf ("%d\n", r_hash_pcprint (block, len));
 	//r_cons_printf ("%02x\n", r_hash_pcprint (block, len));
+}
+
+static void handle_luhn (const ut8 *block, int len) {
+	r_cons_printf ("%d\n", r_hash_luhn (block, len));
 }
 
 static int cmd_hash_bang (RCore *core, const char *input) {

@@ -78,6 +78,7 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_XOR 1
 #define R_HASH_SIZE_XORPAIR 2
 #define R_HASH_SIZE_HAMDIST 1
+#define R_HASH_SIZE_LUHN 1
 
 #define R_HASH_NONE 0
 #define R_HASH_MD5 1
@@ -100,7 +101,8 @@ typedef struct r_hash_seed_t {
 #define R_HASH_BASE64 131072
 #define R_HASH_BASE91 262144
 #define R_HASH_PUNYCODE 524288
-#define R_HASH_ALL 0xFFFFF
+#define R_HASH_LUHN 1048576
+#define R_HASH_ALL 0x1FFFFF
 
 #ifdef R_API
 /* OO */
@@ -136,6 +138,7 @@ R_API ut8 r_hash_xor(const ut8 *b, ut64 len);
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len);
 R_API int r_hash_parity(const ut8 *buf, ut64 len);
 R_API ut8 r_hash_mod255(const ut8 *b, ut64 len);
+R_API ut64 r_hash_luhn(const ut8 *buf, ut64 len);
 
 /* analysis */
 R_API ut8  r_hash_hamdist(const ut8 *buf, int len);

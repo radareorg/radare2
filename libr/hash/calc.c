@@ -85,5 +85,9 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		*ctx->digest = r_hash_mod255 (buf, len);
 		return R_HASH_SIZE_MOD255;
 	}
+	if (algobit & R_HASH_LUHN) {
+		*ctx->digest = r_hash_luhn (buf, len);
+		return R_HASH_SIZE_LUHN;
+	}
 	return 0;
 }
