@@ -25,9 +25,10 @@ static const hash_name_bytes[] = {
 	 {"hamdist", R_HASH_HAMDIST},
 	 {"pcprint", R_HASH_PCPRINT},
 	 {"mod255", R_HASH_MOD255},
-	 {"base64",R_HASH_BASE64},
-	 {"base91",R_HASH_BASE91},
-	 {"punycode",R_HASH_PUNYCODE},
+	 {"base64", R_HASH_BASE64},
+	 {"base91", R_HASH_BASE91},
+	 {"punycode", R_HASH_PUNYCODE},
+	 {"luhn", R_HASH_LUHN},
 	 {NULL, 0}
 };
 
@@ -109,6 +110,7 @@ R_API int r_hash_size(ut64 algo) {
 	if (algo & R_HASH_XORPAIR) return R_HASH_SIZE_XORPAIR;
 	if (algo & R_HASH_MOD255) return R_HASH_SIZE_MOD255;
 	if (algo & R_HASH_PCPRINT) return R_HASH_SIZE_PCPRINT;
+	if (algo & R_HASH_LUHN) return R_HASH_SIZE_LUHN;
 	return 0;
 }
 
