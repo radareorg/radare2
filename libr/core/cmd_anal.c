@@ -1399,9 +1399,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'g': // "afg" - non-interactive VV
-		r_core_visual_graph (core, NULL, NULL, false);
-		break;
 	case 'F': // "afF"
 		{
 		RAnalFunction *fcn;
@@ -1428,7 +1425,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afC[?]", " type @[addr]", "set calling convention for function",
 			"aff", "", "re-adjust function boundaries to fit",
 			"afF", "[1|0|]", "fold/unfold/toggle",
-			"afg", "", "non-interactive ascii-art basic-block graph (See VV)",
 			"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 			"afl", "[l*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 			"afo", " [fcn.name]", "show address for the function named like this",
@@ -3764,7 +3760,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 
 	switch (input[0]) {
 	case 'f':			// "agf"
-		r_core_cmd0 (core, "afg"); // afg should be deprecated imho
+		r_core_visual_graph (core, NULL, NULL, false);
 		break;
 	case '-':
 		r_agraph_reset (core->graph);
