@@ -187,7 +187,7 @@ static int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 }
 static int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
 	DWORD ret = -1, bRead = 0;
-	LPVOIDlpBuffer = NULL;
+	LPVOID lpBuffer = NULL;
 	int bufsize;
 	PPA p;
 	if(gHandleDriver) {
