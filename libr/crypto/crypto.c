@@ -17,6 +17,7 @@ static const crypto_name_bytes[] = {
 	{"rol", R_CRYPTO_ROL},
 	{"rot", R_CRYPTO_ROT},
 	{"blowfish", R_CRYPTO_BLOWFISH},
+	{"cps2", R_CRYPTO_CPS2},
 	{NULL, 0}
 };
 
