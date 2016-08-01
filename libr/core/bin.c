@@ -1267,6 +1267,7 @@ static void snFini(SymName *sn) {
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (strncmp (s->name, "imp.", 4) == 0) return false;
+	if (s->bind == NULL) return false;
 	return (strcmp (s->bind, "GLOBAL") == 0);
 }
 
