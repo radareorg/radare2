@@ -1266,8 +1266,10 @@ static void snFini(SymName *sn) {
 
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
-	if (strncmp (s->name, "imp.", 4) == 0) return false;
-	return (strcmp (s->bind, "GLOBAL") == 0);
+	if (!strncmp (s->name, "imp.", 4)) {
+		return false;
+	}
+	return (s->bind && !strcmp (s->bind, "GLOBAL"));
 }
 
 static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly) {
