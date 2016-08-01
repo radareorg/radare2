@@ -223,7 +223,7 @@ void sdb_ns_free (Sdb* s);
 void sdb_ns_lock(Sdb *s, int lock, int depth);
 void sdb_ns_sync (Sdb* s);
 int sdb_ns_set (Sdb *s, const char *name, Sdb *r);
-int sdb_ns_unset (Sdb *s, const char *name);
+bool sdb_ns_unset (Sdb *s, const char *name, Sdb *r);
 
 // array
 int sdb_array_contains (Sdb* s, const char *key, const char *val, ut32 *cas);

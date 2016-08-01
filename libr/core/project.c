@@ -211,6 +211,11 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	return true;
 }
 
+R_API void r_core_project_load(RCore *core, const char *prjfile) {
+	(void)r_core_rop_load (core, prjfile);
+	(void)r_core_project_load_xrefs (core, prjfile);
+}
+
 R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int askuser = 1;
 	int ret, close_current_session = 1;
@@ -275,9 +280,8 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 		// TODO: handle base address
 		r_core_bin_load (core, filepath, UT64_MAX);
 	}
-	// FIXME: If r_anal_project_load is not called before r_core_cmd_file, xrefs are not loaded correctly
+	/* load sdb stuff in here */
 	r_core_project_load (core, prjfile);
-	r_core_rop_load (core, prjfile);
 	ret = r_core_cmd_file (core, prj);
 	r_config_bump (core->config, "asm.arch");
 	free (filepath);
@@ -470,4 +474,45 @@ R_API char *r_core_project_notes_file (RCore *core, const char *file) {
 	notes_txt = r_str_newf ("%s"R_SYS_DIR"%s.d"R_SYS_DIR"notes.txt", prjpath, file);
 	free (prjpath);
 	return notes_txt;
+}
+
+#define DB core->anal->sdb_xrefs
+
+R_API bool r_core_project_load_xrefs(RCore *core, const char *prjfile) {
+	char *path, *db;
+
+	const char *prjdir = r_config_get (core->config, "dir.projects");
+
+	if (!prjfile || !*prjfile) {
+		return false;
+	}
+
+	if (prjfile[0] == '/') {
+		db = r_str_newf ("%s.d", prjfile);
+		if (!db) return false;
+		path = strdup (db);
+	} else {
+		db = r_str_newf ("%s/%s.d", prjdir, prjfile);
+		if (!db) return false;
+		path = r_file_abspath (db);
+	}
+
+	if (!path) {
+		free (db);
+		return false;
+	}
+
+	if (!sdb_ns_unset (core->anal->sdb, NULL, DB)) {
+		sdb_free (DB);
+	}
+	DB = sdb_new (path, "xrefs", 0);
+	if (!DB) {
+		free (db);
+		free (path);
+		return false;
+	}
+	sdb_ns_set (core->anal->sdb, "xrefs", DB);
+	free (path);
+	free (db);
+	return true;
 }

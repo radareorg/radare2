@@ -2106,9 +2106,9 @@ R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, 
 }
 
 R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) {
-	int i, num;
 	RBuffer *b = NULL;
 	char code[1024];
+	int i, num;
 
 	num = r_syscall_get_num (core->anal->syscall, name);
 	if (!num) {
@@ -2123,23 +2123,20 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	// TODO: setup arch/bits/os?
 	r_egg_load (core->egg, code, 0);
 
-	if (!r_egg_compile (core->egg))
+	if (!r_egg_compile (core->egg)) {
 		eprintf ("Cannot compile.\n");
-	if (!r_egg_assemble (core->egg))
+	}
+	if (!r_egg_assemble (core->egg)) {
 		eprintf ("r_egg_assemble: invalid assembly\n");
+	}
 	if ((b = r_egg_get_bin (core->egg))) {
-		if (b->length>0) {
-			for (i=0; i<b->length; i++)
+		if (b->length > 0) {
+			for (i = 0; i < b->length; i++) {
 				r_cons_printf ("%02x", b->buf[i]);
+			}
 			r_cons_printf ("\n");
 		}
 	}
 	return b;
 }
 
-R_API bool r_core_project_load(RCore *core, const char *prjfile) {
-	if (prjfile && *prjfile) {
-		return r_core_xrefs_load (core, prjfile);
-	}
-	return false;
-}

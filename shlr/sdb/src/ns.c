@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2014 - pancake */
+/* sdb - MIT - Copyright 2011-2016 - pancake */
 
 #include "sdb.h"
 
@@ -113,17 +113,31 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	return ns;
 }
 
-/*
-static void sdb_ns_free (SdbNs *) {
+SDB_API bool sdb_ns_unset (Sdb *s, const char *name, Sdb *r) {
+	SdbNs *ns;
+	SdbListIter *it;
+	if (s && (name || r)) {
+		ls_foreach (s->ns, it, ns) {
+			if (name && (!strcmp (name, ns->name))) {
+				ls_delete (s->ns, it);
+				return true;
+			}
+			if (r && ns->sdb == r) {
+				ls_delete (s->ns, it);
+				return true;
+			}
+		}
+	}
+	return false;
 }
-*/
 
 SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ut32 hash = sdb_hash (name);
-	if (!s || !r || !name)
+	if (!s || !r || !name) {
 		return 0;
+	}
 	ls_foreach (s->ns, it, ns) {
 		if (ns->hash == hash) {
 			if (ns->sdb == r)
@@ -134,8 +148,9 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 			return 1;
 		}
 	}
-	if (s->ns_lock)
+	if (s->ns_lock) {
 		return 0;
+	}
 	ns = R_NEW (SdbNs);
 	ns->name = strdup (name);
 	ns->hash = hash;
