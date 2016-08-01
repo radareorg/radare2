@@ -328,8 +328,8 @@ static int cmd_info(void *data, const char *input) {
 		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;			  
 		case 'z':
 			if (input[1] == 'z') {
-				char *biname;
-				char *ret;
+				char *biname = NULL;
+				char *ret = NULL;
 				int fd = -1;
 				int xtr_idx = 0;
 				int rawstr = 1;
