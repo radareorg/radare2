@@ -416,7 +416,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		int delta = r_anal_fcn_size (fcn);
 
 		// XXX hack slow check io error
-		if ((buflen = r_io_read_at (core->io, at+delta, buf, 4) != 4)) {
+		if ((buflen = r_io_read_at (core->io, at + delta, buf, 4) != 4)) {
 			eprintf ("read errro\n");
 			goto error;
 		}
@@ -428,11 +428,14 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				goto error;
 			}
 		}
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_singleton ()->breaked) {
 			break;
-		fcnlen = r_anal_fcn (core->anal, fcn, at+delta, buf, buflen, reftype);
-		if (core->anal->opt.searchstringrefs) r_anal_set_stringrefs(core, fcn);
-		if (fcnlen<0) {
+		}
+		fcnlen = r_anal_fcn (core->anal, fcn, at + delta, buf, buflen, reftype);
+		if (core->anal->opt.searchstringrefs) {
+			r_anal_set_stringrefs (core, fcn);
+		}
+		if (fcnlen < 0) {
 			switch (fcnlen) {
 			case R_ANAL_RET_ERROR:
 			case R_ANAL_RET_NEW:
@@ -440,8 +443,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			case R_ANAL_RET_END:
 				break;
 			default:
-				eprintf ("Oops. Negative function size at 0x%08"PFMT64x" (%d)\n",
-					at, fcnlen);
+				eprintf ("Oops. Negative fcnsize at 0x%08"PFMT64x" (%d)\n", at, fcnlen);
 				continue;
 			}
 		}
@@ -457,11 +459,11 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
 			}
 		}
-
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && r_anal_fcn_size (fcn) < 1)) { /* Error analyzing function */
-			if (core->anal->opt.followbrokenfcnsrefs)
+			if (core->anal->opt.followbrokenfcnsrefs) {
 				r_anal_analyze_fcn_refs(core, fcn, depth);
+			}
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_flag_get_i2 (core->flags, fcn->addr);
@@ -512,8 +514,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				// only get next if found on an executable section
 				if (!sect || (sect && sect->rwx & 1)) {
 					for (i = 0; i < nexti; i++) {
-						if (next[i] == addr)
+						if (next[i] == addr) {
 							break;
+						}
 					}
 					if (i == nexti) {
 						ut64 at = fcn->addr + r_anal_fcn_size (fcn);
@@ -530,7 +533,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 					}
 				}
 			}
-			if (!r_anal_analyze_fcn_refs (core, fcn, depth)) goto error;
+			if (!r_anal_analyze_fcn_refs (core, fcn, depth)) {
+				goto error;
+			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
 	R_FREE (buf);
