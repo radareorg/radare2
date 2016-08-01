@@ -1322,9 +1322,7 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, char kind, const char* name);
 
 /* project */
-R_API bool r_anal_project_load(RAnal *anal, const char *prjfile);
 R_API bool r_anal_project_save(RAnal *anal, const char *prjfile);
-R_API bool r_anal_xrefs_load(RAnal *anal, const char *prjfile);
 R_API bool r_anal_xrefs_init (RAnal *anal);
 
 #define R_ANAL_THRESHOLDFCN 0.7F
