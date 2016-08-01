@@ -545,7 +545,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	int i;
 	char str[32][32];
 	int msr_flags;
-	int pcdelta = (thumb ? 4 : 8); // - op->size;
+	int pcdelta = (thumb ? 4 : 8);
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 	switch (insn->detail->arm.cc) {
@@ -724,20 +724,10 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		if (!strcmp (ARG(2), "")) {
 			if (!strcmp (ARG(1), "pc")) {
 				int delta = thumb ? 4 : 8;
-				if (thumb) {
-					delta -= op->size;
-					if (!(addr & 2))
-						delta += 2;
-				}
-#if 1
-				r_strbuf_appendf (&op->esil,
-					"%d,2,2,%s,>>,<<,+,%s,+=",
-					delta, ARG(1), ARG(0));
-#else
+				const char *pc = "$$";
 				r_strbuf_appendf (&op->esil,
 					"%d,%s,+,%s,+=",
-					delta, ARG(1), ARG(0));
-#endif
+					delta, pc, ARG(0));
 			} else {
 				if (!strcmp (ARG(0), ARG(1))) {
 					r_strbuf_appendf (&op->esil, "2,%s,*=", ARG(0));
@@ -747,8 +737,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			}
 		} else {
 			if (!strcmp (ARG(1), "pc")) {
-				int delta = 4; //thumb ? 4 : 8;
-				r_strbuf_appendf (&op->esil, "%d,%s,+,%s,+,%s,=", delta, ARG(2), ARG(1), ARG(0));
+				const char *pc = "$$";
+				int delta = thumb ? 4 : 8;
+				r_strbuf_appendf (&op->esil, "%d,%s,+,%s,+,%s,=", delta, ARG(2), pc, ARG(0));
 			} else {
 				if (!strcmp (ARG(0), ARG(1))) {
 					r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(2), ARG(0));
@@ -798,8 +789,8 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			const char *pc = "$$";
 			if (REGBASE(1) == ARM_REG_PC) {
 				op->refptr = 4;
-				op->ptr = addr + pcdelta - MEMDISP(1);
-				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,[4],%s,=",
+				op->ptr = addr + pcdelta + MEMDISP(1);
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,>>,<<,+,[4],%s,=",
 					MEMDISP(1), pc, REG(0));
 			} else {
 				int disp = MEMDISP(1);
@@ -818,20 +809,14 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
-					//r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,[4],%s,=",
-					//	pcdelta, pc, LSHIFT2(1), MEMINDEX(1), REG(0));
-					r_strbuf_appendf (&op->esil, "%d,%s,+,%d,%s,<<,+,[4],%s,=",
+					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,[4],%s,=",
 						pcdelta, pc, LSHIFT2(1), MEMINDEX(1), REG(0));
 				} else {
 					if (ISREG(1)) {
-						//r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,[4],%s,=",
-						//	pcdelta, pc, MEMINDEX(1), REG(0));
-						r_strbuf_appendf (&op->esil, "%d,%s,+,%s,+,[4],%s,=",
+						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,[4],%s,=",
 							pcdelta, pc, MEMINDEX(1), REG(0));
 					} else {
-						//r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,[4],%s,=",
-							//pcdelta, pc, MEMDISP(1), REG(0));
-						r_strbuf_appendf (&op->esil, "%d,%s,+,%d,+,[4],%s,=",
+						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,[4],%s,=",
 							pcdelta, pc, MEMDISP(1), REG(0));
 					}
 				}
@@ -1229,9 +1214,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(1) == ARM_REG_PC) {
-			op->ptr = (addr & ~3) + (thumb ? 4 : 8) + IMM(2);
-//if (addr & 2) { op->ptr += 2; }
-			op->refptr = 4;
+			//op->ptr = pc + addr + (thumb ? 4 : 8) + IMM(2);
+			//op->refptr = 4;
 		}
 		break;
 	case ARM_INS_VMOV:
@@ -1430,7 +1414,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (n<1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
-		bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);
+		//bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);
+		bool thumb = a->bits == 16;
 		op->size = insn->size;
 		if (a->bits == 64) {
 			anop64 (handle, op, insn);
