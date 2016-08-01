@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 
 #include <r_util.h>
 #include <stdlib.h>
@@ -9,37 +9,44 @@
 // TODO: find better name (r_mem_length()); is this used somewhere?
 R_API int r_mem_count(const ut8 **addr) {
 	int i = 0;
-	while (*addr++)
+	while (*addr++) {
 		i++;
+	}
 	return i;
 }
 
 R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
 	register int i;
-	for (i=0; i<len; i++)
-		if (a[i] != b[i])
+	for (i = 0; i < len; i++) {
+		if (a[i] != b[i]) {
 			return false;
+		}
+	}
 	return true;
 }
 
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
-	int i=0, j;
-	while (i<dsize)
-		for (j=0; j<osize && i<dsize;j++)
+	int i = 0, j;
+	while (i < dsize) {
+		for (j = 0; j < osize && i < dsize; j++) {
 			dest[i++] = orig[j];
+		}
+	}
 }
 
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
 	int i, ret = -1;
 	ut8 *mdest, *morig;
 	mdest = malloc (len);
-	if (!mdest) return ret;
+	if (!mdest) {
+		return ret;
+	}
 	morig = malloc (len);
 	if (!morig) {
 		free (mdest);
 		return ret;
 	}
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		mdest[i] = dest[i]&mask[i];
 		morig[i] = orig[i]&mask[i];
 	}
@@ -53,7 +60,6 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 	ut8 srcmask, dstmask;
 	int bytes = (int)(bits / 8);
 	bits = bits % 8;
-
 	memcpy (dst, src, bytes);
 	if (bits) {
 		srcmask = dstmask = 0;
@@ -193,8 +199,9 @@ R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
 		dest[7] = buffer[0];
 		break;
 	default:
-		if (dest != orig)
+		if (dest != orig) {
 			memmove (dest, orig, size);
+		}
 	}
 }
 
@@ -213,29 +220,22 @@ R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int
 
 // TODO: rename to r_mem_mem and refactor all calls to this function
 R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align) {
-	int i, until = hlen-nlen+1;
-	if (align < 1) align = 1;
-	if (hlen<1 || nlen<1)
+	int i, until = hlen - nlen + 1;
+	if (align < 1) {
+		align = 1;
+	}
+	if (hlen < 1 || nlen < 1) {
 		return NULL;
-	if (align>1) {
+	}
+	if (align > 1) {
 		until -= (until % align);
 	}
-	for (i=0; i<until; i+=align) {
-		if (!memcmp (haystack+i, needle, nlen))
+	for (i = 0; i < until; i += align) {
+		if (!memcmp (haystack+i, needle, nlen)) {
 			return haystack+i;
+		}
 	}
 	return NULL;
-}
-
-// TODO: implement pack/unpack helpers use vararg or wtf?
-R_API int r_mem_pack() {
-	// TODO: copy this from r_buf??
-	return true;
-}
-
-R_API int r_mem_unpack(const ut8 *buf) {
-	// TODO: copy this from r_buf??
-	return true;
 }
 
 R_API int r_mem_protect(void *ptr, int size, const char *prot) {
@@ -252,12 +252,19 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	r = strchr (prot, 'r')? 1: 0;
 	w = strchr (prot, 'w')? 1: 0;
 	x = strchr (prot, 'x')? 1: 0;;
-	if (w && x) return false;
-	if (x) p = PAGE_EXECUTE_READ;
-	else if (w) p = PAGE_READWRITE;
-	else if (r) p = PAGE_READONLY;
-	if (!VirtualProtect (ptr, size, p, NULL))
+	if (w && x) {
 		return false;
+	}
+	if (x) {
+		p = PAGE_EXECUTE_READ;
+	} else if (w) {
+		p = PAGE_READWRITE;
+	} else if (r) {
+		p = PAGE_READONLY;
+	}
+	if (!VirtualProtect (ptr, size, p, NULL)) {
+		return false;
+	}
 #else
 	#warning Unknown platform
 #endif
@@ -276,7 +283,7 @@ R_API void r_mem_reverse(ut8 *b, int l) {
 	int i, end = l / 2;
 	for (i = 0; i < end; i++) {
 		tmp = b[i];
-		b[i] = b[l-i-1];
-		b[l-i-1] = tmp;
+		b[i] = b[l - i - 1];
+		b[l - i - 1] = tmp;
 	}
 }
