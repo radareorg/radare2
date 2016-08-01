@@ -111,8 +111,7 @@ static BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
 static BOOL InitDriver(VOID)
 {
 	gHandleDriver = CreateFileA (strDeviceName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_DIRECTORY, 0);
-	if (gHandleDriver != INVALID_HANDLE_VALUE)
-	{
+	if (gHandleDriver != INVALID_HANDLE_VALUE) {
 		return TRUE;
 	}
 	return FALSE;
