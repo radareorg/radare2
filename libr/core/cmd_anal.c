@@ -491,8 +491,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			r_cons_printf ("\"prefix\": %" PFMT64d ",", op.prefix);
 			r_cons_printf ("\"addr\": %" PFMT64d ",", core->offset + idx);
 			r_cons_printf ("\"bytes\": \"");
-			for (j = 0; j < size; j++)
-				r_cons_printf ("%02x", buf[j]);
+			for (j = 0; j < size; j++) {
+				r_cons_printf ("%02x", buf[j + idx]);
+			}
 			r_cons_printf ("\",");
 			if (op.val != UT64_MAX)
 				r_cons_printf ("\"val\": %" PFMT64d ",", op.val);
@@ -548,14 +549,16 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline ("opcode", "%s\n", asmop.buf_asm);
 			if (hint) {
-				if (hint->opcode)
+				if (hint->opcode) {
 					printline ("ophint", "%s\n", hint->opcode);
+				}
 				printline ("addr", "0x%08" PFMT64x "\n", (hint->addr + idx));
 			}
 			printline ("prefix", "%" PFMT64d "\n", op.prefix);
 			printline ("bytes", NULL, 0);
-			for (j = 0; j < size; j++)
-				r_cons_printf ("%02x", buf[j]);
+			for (j = 0; j < size; j++) {
+				r_cons_printf ("%02x", buf[j + idx]);
+			}
 			r_cons_newline ();
 			if (op.val != UT64_MAX)
 				printline ("val", "0x%08" PFMT64x "\n", op.val);
@@ -2869,7 +2872,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			"aos", " [esil]", "show sdb representation of esil expression (TODO)",
 			"ao", " 5", "display opcode analysis of 5 opcodes",
 			"ao*", "", "display opcode in r commands",
-			NULL };
+			NULL
+		};
 		r_core_cmd_help (core, help_msg);
 	} break;
 	case 'j':
@@ -2878,7 +2882,9 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		int count = 1;
 		if (input[1] && input[2]) {
 			l = (int)r_num_get (core->num, input + 1);
-			if (l > 0) count = l;
+			if (l > 0) {
+				count = l;
+			}
 			if (l > tbs) {
 				r_core_block_size (core, l * 4);
 				//len = l;
