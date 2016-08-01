@@ -145,11 +145,13 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
 	if (!metadata) {
+		free (arch);
 		return NULL;
 	}
 	hdr = MACH0_(get_hdr_from_bytes) (arch->b);
 	if (!hdr) {
 		free (arch);
+		free (metadata);
 		return NULL;
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);

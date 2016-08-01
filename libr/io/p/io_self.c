@@ -218,6 +218,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		int argc = r_str_word_set0 (argv);
 		if (argc == 0) {
 			eprintf ("Usage: =!call [fcnptr] [a0] [a1] ...\n");
+			free (argv);
 			return 0;
 		}
 		const char *sym = r_str_word_get0 (argv, 0);
@@ -272,6 +273,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			eprintf ("Unsupported number of arguments in call\n");
 		}
 		eprintf ("RES %"PFMT64d"\n", result);
+		free (argv);
 #if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
 		signal (SIGALRM, got_alarm);

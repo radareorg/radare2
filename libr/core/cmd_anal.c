@@ -1169,13 +1169,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			NULL };
 		switch (input[2]) {
 		case 'o':{
-			char *dbpath = r_str_chop ( strdup (input + 3));
+			char *dbpath = r_str_chop (strdup (input + 3));
 			if (r_file_exists (dbpath)) {
 				Sdb *db = sdb_new (0, dbpath, 0);
 				sdb_merge (core->anal->sdb_cc, db);
 				sdb_close (db);
 				sdb_free (db);
 			}
+			free (dbpath);
 			} break;
 		case'?':
 			r_core_cmd_help (core, help_afC);

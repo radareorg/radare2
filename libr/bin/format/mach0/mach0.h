@@ -146,7 +146,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_class)(struct MACH0_(obj_t)* bin);
 int MACH0_(get_bits)(struct MACH0_(obj_t)* bin);
-int MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin);
+bool MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin);
 int MACH0_(is_pie)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin);

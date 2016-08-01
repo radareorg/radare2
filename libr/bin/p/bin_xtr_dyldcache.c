@@ -73,7 +73,7 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 }
 
-static RBinXtrData * extract(RBin *bin, int idx) {
+static RBinXtrData *extract(RBin *bin, int idx) {
 	int nlib = 0;
 	RBinXtrData *res = NULL;
 	char *libname;
@@ -84,6 +84,7 @@ static RBinXtrData * extract(RBin *bin, int idx) {
 	if (lib) {
 		RBinXtrMetadata *metadata = R_NEW0(RBinXtrMetadata);
 		if (!metadata) {
+			free (lib);
 			return NULL;
 		}
 		hdr = MACH0_(get_hdr_from_bytes) (lib->b);
@@ -112,8 +113,9 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	char *libname;
 	struct MACH0_(mach_header) *hdr;
 
-	if (!load (bin))
+	if (!load (bin)) {
 		return NULL;
+	}
 
 	xtr_obj = bin->cur->xtr_obj;
 	lib = r_bin_dyldcache_extract (xtr_obj, idx, &nlib);
@@ -124,6 +126,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	}
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
 	if (!metadata) {
+		free (lib);
 		return NULL;
 	}
 	hdr = MACH0_(get_hdr_from_bytes) (lib->b);

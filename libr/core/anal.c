@@ -388,11 +388,11 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	ut64 *next = NULL;
 	int buflen, fcnlen;
 	RAnalFunction *fcn = r_anal_fcn_new ();
-	fcn->cc = r_anal_cc_default (core->anal);
 	if (!fcn) {
 		eprintf ("Error: new (fcn)\n");
 		return false;
 	}
+	fcn->cc = r_anal_cc_default (core->anal);
 
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {

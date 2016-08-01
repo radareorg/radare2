@@ -407,7 +407,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		if ((ut8 *)(super->index + i + 1) > (ut8 *)(bin->b->buf + bin->size)) {
 			break;
 		}
-		int slot = r_read_ble32 (&super->index[i].type, little_);
+		//int slot = r_read_ble32 (&super->index[i].type, little_);
 		if (r_read_ble32 (&super->index[i].type, little_) == CSSLOT_ENTITLEMENTS) {
 			ut32 begin = r_read_ble32 (&super->index[i].offset, little_);
 			if (begin > bin->size || begin + sizeof (struct blob_t) > bin->size) {
@@ -1690,16 +1690,18 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr) {
 	if (hdr->magic == MH_MAGIC_64 || hdr->magic == MH_CIGAM_64) {
 		return 64;
 	}
-	if ((hdr->cpusubtype & CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM_V7K) {
+	if ((hdr->cpusubtype & CPU_SUBTYPE_MASK) == (CPU_SUBTYPE_ARM_V7K << 24)) {
 		return 16;
 	}
 	return 32;
 }
 
-int MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin) {
-	bool is_ppc = bin && bin->hdr.cputype == CPU_TYPE_POWERPC64;
-	if (!is_ppc) is_ppc = bin && bin->hdr.cputype == CPU_TYPE_POWERPC;
-	return is_ppc;
+bool MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin) {
+	if (bin) {
+		const int cpu = bin->hdr.cputype;
+		return cpu == CPU_TYPE_POWERPC || cpu == CPU_TYPE_POWERPC64;
+	}
+	return false;
 }
 
 const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin) {
@@ -1718,24 +1720,45 @@ const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin) {
 }
 
 char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
+	const char *archstr = "unknown";
 	switch (hdr->cputype) {
-	case CPU_TYPE_VAX: 	return strdup ("vax");
-	case CPU_TYPE_MC680x0:	return strdup ("mc680x0");
+	case CPU_TYPE_VAX:
+		archstr = "vax";
+		break;
+	case CPU_TYPE_MC680x0:
+		archstr = "mc680x0";
+		break;
 	case CPU_TYPE_I386:
-	case CPU_TYPE_X86_64:	return strdup ("x86");
-	case CPU_TYPE_MC88000:	return strdup ("mc88000");
-	case CPU_TYPE_MC98000:	return strdup ("mc98000");
-	case CPU_TYPE_HPPA:	return strdup ("hppa");
+	case CPU_TYPE_X86_64:
+		archstr = "x86";
+		break;
+	case CPU_TYPE_MC88000:
+		archstr = "mc88000";
+		break;
+	case CPU_TYPE_MC98000:
+		archstr = "mc98000";
+		break;
+	case CPU_TYPE_HPPA:
+		archstr = "hppa";
+		break;
 	case CPU_TYPE_ARM:
-	case CPU_TYPE_ARM64:	return strdup ("arm");
-	case CPU_TYPE_SPARC:	return strdup ("sparc");
-	case CPU_TYPE_MIPS:	return strdup ("mips");
-	case CPU_TYPE_I860:	return strdup ("i860");
+	case CPU_TYPE_ARM64:
+		archstr = "arm";
+		break;
+	case CPU_TYPE_SPARC:
+		archstr = "sparc";
+		break;
+	case CPU_TYPE_MIPS:
+		archstr = "mips";
+		break;
+	case CPU_TYPE_I860:
+		archstr = "i860";
+		break;
 	case CPU_TYPE_POWERPC:
-	case CPU_TYPE_POWERPC64:return strdup ("ppc");
-	default:		return strdup ("unknown");
+	case CPU_TYPE_POWERPC64:
+		archstr = "ppc";
 	}
-	return strdup ("unknown");
+	return strdup (archstr);
 }
 
 char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin) {
@@ -1903,22 +1926,21 @@ int MACH0_(is_pie)(struct MACH0_(obj_t)* bin) {
 	return (bin && bin->hdr.filetype == MH_EXECUTE && bin->hdr.flags & MH_PIE);
 }
 
-
 char* MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
+	const char *mhtype = "Unknown";
 	switch (hdr->filetype) {
-	case MH_OBJECT:		return strdup ("Relocatable object");
-	case MH_EXECUTE:	return strdup ("Executable file");
-	case MH_FVMLIB:		return strdup ("Fixed VM shared library");
-	case MH_CORE:		return strdup ("Core file");
-	case MH_PRELOAD:	return strdup ("Preloaded executable file");
-	case MH_DYLIB:		return strdup ("Dynamically bound shared library");
-	case MH_DYLINKER:	return strdup ("Dynamic link editor");
-	case MH_BUNDLE:		return strdup ("Dynamically bound bundle file");
-	case MH_DYLIB_STUB:	return strdup ("Shared library stub for static linking (no sections)");
-	case MH_DSYM:		return strdup ("Companion file with only debug sections");
-	default:		 	return strdup ("Unknown");
+	case MH_OBJECT:		mhtype = "Relocatable object";
+	case MH_EXECUTE:	mhtype = "Executable file";
+	case MH_FVMLIB:		mhtype = "Fixed VM shared library";
+	case MH_CORE:		mhtype = "Core file";
+	case MH_PRELOAD:	mhtype = "Preloaded executable file";
+	case MH_DYLIB:		mhtype = "Dynamically bound shared library";
+	case MH_DYLINKER:	mhtype = "Dynamic link editor";
+	case MH_BUNDLE:		mhtype = "Dynamically bound bundle file";
+	case MH_DYLIB_STUB:	mhtype = "Shared library stub for static linking (no sections)";
+	case MH_DSYM:		mhtype = "Companion file with only debug sections";
 	}
-	return strdup ("Unknown");
+	return strdup (mhtype);
 }
 
 char* MACH0_(get_filetype)(struct MACH0_(obj_t)* bin) {
@@ -1933,13 +1955,15 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 	struct symbol_t *symbols;
 	int i;
 
-	if (!(symbols = MACH0_(get_symbols) (bin)))
+	if (!(symbols = MACH0_(get_symbols) (bin))) {
 		return 0;
-	for (i = 0; !symbols[i].last; i++)
+	}
+	for (i = 0; !symbols[i].last; i++) {
 		if (!strcmp (symbols[i].name, "_main")) {
 			addr = symbols[i].addr;
 			break;
 		}
+	}
 	free (symbols);
 
 	if (!addr && bin->main_cmd.cmd == LC_MAIN)
@@ -1974,12 +1998,11 @@ struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
 	if (!macho_hdr) {
 		return NULL;
 	}
-
 	if (r_buf_read_at (buf, 0, (ut8*)&magic, 4) < 1) {
 		eprintf ("Error: read (magic)\n");
+		free (macho_hdr);
 		return false;
 	}
-
 	if (magic == MACH0_(MH_MAGIC)) {
 		big_endian = false;
 	} else if (magic == MACH0_(MH_CIGAM)) { 
@@ -1992,7 +2015,6 @@ struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
 		free (macho_hdr);
 		return NULL;
 	}
-
 	len = r_buf_fread_at (buf, 0, (ut8*)macho_hdr,
 #if R_BIN_MACH064
 		big_endian?"8I":"8i", 1
@@ -2000,11 +2022,9 @@ struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
 		big_endian?"7I":"7i", 1
 #endif
 	);
-
 	if (len != sizeof(struct MACH0_(mach_header))) {
 		free (macho_hdr);
 		return NULL;
 	}
-
 	return macho_hdr;
 }

@@ -67,9 +67,8 @@ R_API void r_bin_iobind(RBin *bin, RIO *io) {
 
 // TODO: move these two function do a different file
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata, Sdb *sdb) {
-	RBinXtrData *data = NULL;
 	char *encoded_bin;
-	data = R_NEW0 (RBinXtrData);
+	RBinXtrData *data = R_NEW0 (RBinXtrData);
 	if (!data) {
 		return NULL;
 	}
@@ -86,6 +85,7 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 		free (encoded_bin);
 		return data;
 	}
+	free (data);
 	return NULL;
 }
 
@@ -1711,7 +1711,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	int narch = binfile? binfile->narch: 0;
 
 	//are we with xtr format?
-	if (binfile->curxtr) {
+	if (binfile && binfile->curxtr) {
 		list_xtr_archs (bin, mode);
 		return;
 	}
