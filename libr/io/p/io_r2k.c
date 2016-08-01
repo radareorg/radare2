@@ -1,4 +1,4 @@
-/* io_r2k- LGPL - Copyright SkUaTeR */
+/* io_r2k- LGPL - Copyright SkUaTeR 2016*/
 
 #include "r_io.h"
 #include "r_lib.h"
