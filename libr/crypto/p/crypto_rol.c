@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2016 - pancake */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 
