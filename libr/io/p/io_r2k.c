@@ -15,8 +15,7 @@ typedef  struct _PPA {
 	unsigned char buffer;
 } PA, * PPA;
 
-typedef struct _RTL_PROCESS_MODULE_INFORMATION
-{
+typedef struct _RTL_PROCESS_MODULE_INFORMATION {
 	HANDLE Section;
 	PVOID MappedBase;
 	PVOID ImageBase;
@@ -29,8 +28,7 @@ typedef struct _RTL_PROCESS_MODULE_INFORMATION
 	UCHAR  FullPathName[256];
 } RTL_PROCESS_MODULE_INFORMATION, *PRTL_PROCESS_MODULE_INFORMATION;
 
-typedef struct _RTL_PROCESS_MODULES
-{
+typedef struct _RTL_PROCESS_MODULES {
 	ULONG NumberOfModules;
 	RTL_PROCESS_MODULE_INFORMATION Modules[1];
 } RTL_PROCESS_MODULES, *PRTL_PROCESS_MODULES;
@@ -46,7 +44,7 @@ typedef struct _RTL_PROCESS_MODULES
 
 static HANDLE gHandleDriver = NULL;
 
-BOOL InstallService(const char * rutaDriver, LPCSTR  lpServiceName, LPCSTR  lpDisplayName) {
+static BOOL InstallService(const char * rutaDriver, LPCSTR  lpServiceName, LPCSTR  lpDisplayName) {
 	HANDLE hSCManager;
 	HANDLE hService;
 	BOOL ret = FALSE;
@@ -61,7 +59,7 @@ BOOL InstallService(const char * rutaDriver, LPCSTR  lpServiceName, LPCSTR  lpDi
 	}
 	return ret;
 }
-BOOL RemoveService(LPCSTR lpServiceName) {
+static BOOL RemoveService(LPCSTR lpServiceName) {
 	HANDLE hSCManager;
 	HANDLE hService;
 	BOOL ret = FALSE;
@@ -78,7 +76,7 @@ BOOL RemoveService(LPCSTR lpServiceName) {
 	}
 	return ret;
 }
-BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
+static BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
 	HANDLE hSCManager;
 	HANDLE hService;
 	SERVICE_STATUS ssStatus;
@@ -95,13 +93,11 @@ BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
 				else {
 					eprintf ("Service started [FAIL]\n");
 				}
-			}
-			else {
+			} else {
 				if (ControlService (hService, SERVICE_CONTROL_STOP, &ssStatus)) {
 					printf ("Service Stopped [OK]\n");
 					ret = TRUE;
-				}
-				else {
+				} else {
 					printf ("Service Stopped [FAIL]\n");
 				}
 			}
@@ -112,7 +108,7 @@ BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
 	}
 	return ret;
 }
-BOOL InitDriver(VOID)
+static BOOL InitDriver(VOID)
 {
 	gHandleDriver = CreateFileA (strDeviceName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_DIRECTORY, 0);
 	if (gHandleDriver != INVALID_HANDLE_VALUE)
@@ -121,10 +117,8 @@ BOOL InitDriver(VOID)
 	}
 	return FALSE;
 }
-char *GetFileName(unsigned char *path)
-{
-	char *pfile;
-	pfile = path + strlen (path);
+static char *GetFileName(unsigned char *path) {
+	char *pfile = path + strlen (path);
 	for (; pfile > path; pfile--) {
 		if ((*pfile == '\\') || (*pfile == '/')) {
 			pfile++;
@@ -174,8 +168,7 @@ static int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 		if (DeviceIoControl (gHandleDriver, IOCTL_READ_KERNEL_MEM, lpBuffer, bufsize, lpBuffer, bufsize, &bRead, NULL)) {
 			memcpy (buf, lpBuffer, len);
 			ret = len;
-		}
-		else {
+		} else {
 			ret = -1;
 			//eprintf("[r2k] ReadKernelMemory: Error IOCTL_READ_KERNEL_MEM.\n");
 		}
@@ -187,7 +180,7 @@ static int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 }
 static int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
 	DWORD ret = -1, bRead = 0;
-	LPVOIDlpBuffer = NULL;
+	LPVOID lpBuffer = NULL;
 	int bufsize;
 	PPA p;
 	if(gHandleDriver) {
@@ -202,8 +195,7 @@ static int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
 		memcpy (&p->buffer, buf, len);
 		if (DeviceIoControl (gHandleDriver, IOCTL_WRITE_KERNEL_MEM, lpBuffer, bufsize, lpBuffer, bufsize, &bRead, NULL)) {
 			ret = len;
-		}
-		else {
+		} else {
 			eprintf ("[r2k] WriteKernelMemory: Error IOCTL_WRITE_KERNEL_MEM.\n");
 			ret = -1;
 		}
@@ -217,8 +209,7 @@ static int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
 static int Init (const char * driverPath) {
 	BOOL ret = FALSE;
 	if (InitDriver () == FALSE) {
-		if (strlen (driverPath))
-		{
+		if (strlen (driverPath)) {
 			StartStopService ("r2k",TRUE);
 			RemoveService ("r2k");
 			eprintf ("Installing driver: %s\n", driverPath);
@@ -230,8 +221,7 @@ static int Init (const char * driverPath) {
 			eprintf ("Error initalizating driver, try r2k://pathtodriver\nEx: radare2.exe r2k://c:\\r2k.sys");
 		
 		}
-	}
-	else {
+	} else {
 		eprintf ("Driver present [OK]\n");
 		ret = TRUE;
 	} 
