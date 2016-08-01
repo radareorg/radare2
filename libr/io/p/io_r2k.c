@@ -35,14 +35,14 @@ typedef struct _RTL_PROCESS_MODULES
 	RTL_PROCESS_MODULE_INFORMATION Modules[1];
 } RTL_PROCESS_MODULES, *PRTL_PROCESS_MODULES;
 
-#define strDeviceName     "\\\\.\\r2k\\"
-#define		CLOSE_DRIVER	    	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
-#define		IOCTL_READ_PHYS_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x807, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
-#define		IOCTL_READ_KERNEL_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
-#define		IOCTL_WRITE_KERNEL_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x805, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
-#define		IOCTL_GET_PHYSADDR	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x809, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
-#define		IOCTL_WRITE_PHYS_MEM	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x808, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
-#define		IOCTL_GET_SYSTEM_MODULES	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x80a, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define strDeviceName "\\\\.\\r2k\\"
+#define CLOSE_DRIVER CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define IOCTL_READ_PHYS_MEM CTL_CODE(FILE_DEVICE_UNKNOWN, 0x807, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define IOCTL_READ_KERNEL_MEM CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define IOCTL_WRITE_KERNEL_MEM CTL_CODE(FILE_DEVICE_UNKNOWN, 0x805, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define IOCTL_GET_PHYSADDR CTL_CODE(FILE_DEVICE_UNKNOWN, 0x809, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define IOCTL_WRITE_PHYS_MEM CTL_CODE(FILE_DEVICE_UNKNOWN, 0x808, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+#define IOCTL_GET_SYSTEM_MODULES CTL_CODE(FILE_DEVICE_UNKNOWN, 0x80a, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 
 static HANDLE gHandleDriver = NULL;
 
@@ -50,86 +50,83 @@ BOOL InstallService(const char * rutaDriver, LPCSTR  lpServiceName, LPCSTR  lpDi
 	HANDLE hSCManager;
 	HANDLE hService;
 	BOOL ret = FALSE;
-
-	hSCManager = OpenSCManagerA(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+	hSCManager = OpenSCManagerA (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if (hSCManager)	{
-		hService = CreateServiceA(hSCManager, lpServiceName, lpDisplayName, SERVICE_START | DELETE | SERVICE_STOP, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_IGNORE, rutaDriver, NULL, NULL, NULL, NULL, NULL);
+		hService = CreateServiceA (hSCManager, lpServiceName, lpDisplayName, SERVICE_START | DELETE | SERVICE_STOP, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_IGNORE, rutaDriver, NULL, NULL, NULL, NULL, NULL);
 		if (hService) {
-			CloseServiceHandle(hService);
+			CloseServiceHandle (hService);
 			ret = TRUE;
 		}
-		CloseServiceHandle(hSCManager);
+		CloseServiceHandle (hSCManager);
 	}
 	return ret;
 }
-BOOL RemoveService(LPCSTR  lpServiceName) {
+BOOL RemoveService(LPCSTR lpServiceName) {
 	HANDLE hSCManager;
 	HANDLE hService;
 	BOOL ret = FALSE;
 
-	hSCManager = OpenSCManagerA(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
-	if (hSCManager)	{
-		hService = OpenServiceA(hSCManager, lpServiceName, SERVICE_START | DELETE | SERVICE_STOP);
+	hSCManager = OpenSCManagerA (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+	if (hSCManager) {
+		hService = OpenServiceA (hSCManager, lpServiceName, SERVICE_START | DELETE | SERVICE_STOP);
 		if (hService) {
-			DeleteService(hService);
-			CloseServiceHandle(hService);
+			DeleteService (hService);
+			CloseServiceHandle (hService);
 			ret = TRUE;
 		}
-		CloseServiceHandle(hSCManager);
+		CloseServiceHandle (hSCManager);
 	}
 	return ret;
 }
-BOOL StartStopService(LPCSTR  lpServiceName, BOOL bStop) {
+BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
 	HANDLE hSCManager;
 	HANDLE hService;
 	SERVICE_STATUS ssStatus;
 	BOOL ret = FALSE;
-	hSCManager = OpenSCManagerA(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+	hSCManager = OpenSCManagerA (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if (hSCManager)	{
-		hService = OpenServiceA(hSCManager, lpServiceName, SERVICE_START | DELETE | SERVICE_STOP);
+		hService = OpenServiceA (hSCManager, lpServiceName, SERVICE_START | DELETE | SERVICE_STOP);
 		if (hService) {
 			if (!bStop) {
-				if (StartServiceA(hService, 0, NULL)) {
-					eprintf("Service started [OK]\n");
+				if (StartServiceA (hService, 0, NULL)) {
+					eprintf ("Service started [OK]\n");
 					ret = TRUE;
 				}
 				else {
-					eprintf("Service started [FAIL]\n");
+					eprintf ("Service started [FAIL]\n");
 				}
 			}
 			else {
-				if (ControlService(hService, SERVICE_CONTROL_STOP, &ssStatus)) {
-					printf("Service Stopped [OK]\n");
+				if (ControlService (hService, SERVICE_CONTROL_STOP, &ssStatus)) {
+					printf ("Service Stopped [OK]\n");
 					ret = TRUE;
 				}
 				else {
-					printf("Service Stopped [FAIL]\n");
+					printf ("Service Stopped [FAIL]\n");
 				}
 			}
-			CloseServiceHandle(hService);
-			DeleteService(hService);
+			CloseServiceHandle (hService);
+			DeleteService (hService);
 		}
-		CloseServiceHandle(hSCManager);
+		CloseServiceHandle (hSCManager);
 	}
 	return ret;
 }
 BOOL InitDriver(VOID)
 {
-	gHandleDriver = CreateFileA(strDeviceName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_DIRECTORY, 0);
+	gHandleDriver = CreateFileA (strDeviceName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_DIRECTORY, 0);
 	if (gHandleDriver != INVALID_HANDLE_VALUE)
 	{
 		return TRUE;
 	}
-	return(FALSE);
+	return FALSE;
 }
 char *GetFileName(unsigned char *path)
 {
 	char *pfile;
-	pfile = path + strlen(path);
-	for (; pfile > path; pfile--)
-	{
-		if ((*pfile == '\\') || (*pfile == '/'))
-		{
+	pfile = path + strlen (path);
+	for (; pfile > path; pfile--) {
+		if ((*pfile == '\\') || (*pfile == '/')) {
 			pfile++;
 			break;
 		}
@@ -139,105 +136,103 @@ char *GetFileName(unsigned char *path)
 static int GetSystemModules(RIO *io) {
 	DWORD bRead = 0;
 	int i;
-	LPVOID	lpBufMods = NULL;
+	LPVOID lpBufMods = NULL;
 	int bufmodsize = 1024 * 1024;
 	if(gHandleDriver) {
-		if (!(lpBufMods = malloc(bufmodsize))) {
-			eprintf("[r2k] GetSystemModules: Error cant allocate %i bytes of memory.\n", bufmodsize);
+		if (!(lpBufMods = malloc (bufmodsize))) {
+			eprintf ("[r2k] GetSystemModules: Error cant allocate %i bytes of memory.\n", bufmodsize);
 			return -1;
 		}
-		if (DeviceIoControl(gHandleDriver, IOCTL_GET_SYSTEM_MODULES, lpBufMods, bufmodsize, lpBufMods, bufmodsize, &bRead, NULL)) {
+		if (DeviceIoControl (gHandleDriver, IOCTL_GET_SYSTEM_MODULES, lpBufMods, bufmodsize, lpBufMods, bufmodsize, &bRead, NULL)) {
 			PRTL_PROCESS_MODULES pm = (PRTL_PROCESS_MODULES)lpBufMods;
 			PRTL_PROCESS_MODULE_INFORMATION pMod = pm->Modules;
-			for (i = 0; i < pm->NumberOfModules; i++)
-			{
+			for (i = 0; i < pm->NumberOfModules; i++) {
 				//eprintf("%p %x = %-50s \n", pMod[i].ImageBase, pMod[i].ImageBase, GetFileName(pMod[i].FullPathName));
-				io->cb_printf("f nt.%s 0x%x @ 0x%p\n", GetFileName(pMod[i].FullPathName), pMod[i].ImageSize, pMod[i].ImageBase);
+				io->cb_printf ("f nt.%s 0x%x @ 0x%p\n", GetFileName(pMod[i].FullPathName), pMod[i].ImageSize, pMod[i].ImageBase);
 			}
 		}
 	} else {
-		eprintf("Driver not initialized.\n");
+		eprintf ("Driver not initialized.\n");
 	}
 	return 1;
 }
-static int ReadKernelMemory(ut64 address, ut8 *buf, int len) {
+static int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 	DWORD ret = -1, bRead = 0;
-	LPVOID	lpBuffer = NULL;
+	LPVOID lpBuffer = NULL;
 	int bufsize;
 	PPA p;
-	memset(buf, '\xff', len);
+	memset (buf, '\xff', len);
 	if(gHandleDriver) {
-		bufsize = sizeof(PA) + len;
-		if (!(lpBuffer = malloc(bufsize))) {
-			eprintf("[r2k] ReadKernelMemory: Error cant allocate %i bytes of memory.\n", bufsize);
+		bufsize = sizeof (PA) + len;
+		if (!(lpBuffer = malloc (bufsize))) {
+			eprintf ("[r2k] ReadKernelMemory: Error cant allocate %i bytes of memory.\n", bufsize);
 			return -1;
 		}
 		p = (PPA)lpBuffer;
 		p->address.QuadPart = address;
 		p->len = len;
-		if (DeviceIoControl(gHandleDriver, IOCTL_READ_KERNEL_MEM, lpBuffer, bufsize, lpBuffer, bufsize, &bRead, NULL)) {
-			memcpy(buf, lpBuffer, len);
+		if (DeviceIoControl (gHandleDriver, IOCTL_READ_KERNEL_MEM, lpBuffer, bufsize, lpBuffer, bufsize, &bRead, NULL)) {
+			memcpy (buf, lpBuffer, len);
 			ret = len;
 		}
 		else {
 			ret = -1;
 			//eprintf("[r2k] ReadKernelMemory: Error IOCTL_READ_KERNEL_MEM.\n");
 		}
-		free(lpBuffer);
+		free (lpBuffer);
 	} else {
 		eprintf("Driver not initialized.\n");
 	}
 	return ret;
 }
-
-static int WriteKernelMemory(ut64 address, const ut8 *buf, int len) {
+static int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
 	DWORD ret = -1, bRead = 0;
-	LPVOID	lpBuffer = NULL;
+	LPVOIDlpBuffer = NULL;
 	int bufsize;
 	PPA p;
 	if(gHandleDriver) {
-		bufsize = sizeof(PA) + len;
-		if (!(lpBuffer = malloc(bufsize))) {
-			eprintf("[r2k] WriteKernelMemory: Error cant allocate %i bytes of memory.\n", bufsize);
+		bufsize = sizeof (PA) + len;
+		if (!(lpBuffer = malloc (bufsize))) {
+			eprintf ("[r2k] WriteKernelMemory: Error cant allocate %i bytes of memory.\n", bufsize);
 			return -1;
 		}
 		p = (PPA)lpBuffer;
 		p->address.QuadPart = address;
 		p->len = len;
-		memcpy(&p->buffer, buf, len);
-		if (DeviceIoControl(gHandleDriver, IOCTL_WRITE_KERNEL_MEM, lpBuffer, bufsize, lpBuffer, bufsize, &bRead, NULL)) {
+		memcpy (&p->buffer, buf, len);
+		if (DeviceIoControl (gHandleDriver, IOCTL_WRITE_KERNEL_MEM, lpBuffer, bufsize, lpBuffer, bufsize, &bRead, NULL)) {
 			ret = len;
 		}
 		else {
-			eprintf("[r2k] WriteKernelMemory: Error IOCTL_WRITE_KERNEL_MEM.\n");
+			eprintf ("[r2k] WriteKernelMemory: Error IOCTL_WRITE_KERNEL_MEM.\n");
 			ret = -1;
 		}
-		free(lpBuffer);
+		free (lpBuffer);
 	} else {
-		eprintf("Driver not initialized.\n");
+		eprintf ("Driver not initialized.\n");
 	}
 	return ret;
 }
 
-static int Init(const char * driverPath) {
+static int Init (const char * driverPath) {
 	BOOL ret = FALSE;
-	if (InitDriver() == FALSE) {
-		if (strlen(driverPath))
+	if (InitDriver () == FALSE) {
+		if (strlen (driverPath))
 		{
-			StartStopService("r2k",TRUE);
-			RemoveService("r2k");
-			eprintf("Installing driver: %s\n", driverPath);
-			if (InstallService(driverPath, "r2k", "r2k")) {
-				StartStopService("r2k",FALSE);
-				ret = InitDriver();
+			StartStopService ("r2k",TRUE);
+			RemoveService ("r2k");
+			eprintf ("Installing driver: %s\n", driverPath);
+			if (InstallService (driverPath, "r2k", "r2k")) {
+				StartStopService ("r2k",FALSE);
+				ret = InitDriver ();
 			}
 		} else {
-			eprintf("Error initalizating driver, try r2k://pathtodriver\nEx: radare2.exe r2k://c:\\r2k.sys");
+			eprintf ("Error initalizating driver, try r2k://pathtodriver\nEx: radare2.exe r2k://c:\\r2k.sys");
 		
 		}
 	}
 	else {
-		eprintf("Driver present [OK]\n");
+		eprintf ("Driver present [OK]\n");
 		ret = TRUE;
 	} 
 	return ret;
@@ -247,59 +242,50 @@ static int Init(const char * driverPath) {
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 #if __WINDOWS__
 	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
-	return WriteKernelMemory(io->off, buf, count);
+	return WriteKernelMemory (io->off, buf, count);
 #else
-	eprintf("TODO: r2k not implemented for this plataform.\n");
+	eprintf ("TODO: r2k not implemented for this plataform.\n");
 	return -1;
 #endif
 }
-
 static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #if __WINDOWS__
-	return ReadKernelMemory(io->off, buf, count);
+	return ReadKernelMemory (io->off, buf, count);
 #else
-	eprintf("TODO: r2k not implemented for this plataform.\n");
-	memset(buf, '\xff', len);
+	eprintf ("TODO: r2k not implemented for this plataform.\n");
+	memset (buf, '\xff', len);
 	return len;
 #endif
 }
-
 static int r2k__close(RIODesc *fd) {
 	if(gHandleDriver) {
-		CloseHandle(gHandleDriver);
-		StartStopService("r2k",TRUE);
+		CloseHandle (gHandleDriver);
+		StartStopService ("r2k",TRUE);
 	}
 	return 0;
 }
-
 static ut64 r2k__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
         return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
 }
-
 static int r2k__plugin_open(RIO *io, const char *pathname, ut8 many) {
 	return (!strncmp (pathname, "r2k://", 6));
 }
 static int r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
-	if (!strncmp(cmd, "mod", 3)) {
-		GetSystemModules(io);
-		if (cmd[3] == ' ') {
-			//int pid = atoi(cmd + 3);
-		}
-		else {
-		}
+	if (!strncmp (cmd, "mod", 3)) {
+		GetSystemModules (io);
 	}
 	else {
-		eprintf("Try: '=!?'\n");
+		eprintf ("Try: '=!mod'\n    '.=!mod'\n");
 	}
 	return -1;
 }
 static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "r2k://", 6)) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);
-		if(Init(&pathname[6]) == FALSE) {
-			eprintf("r2k__open: Error cant init driver: %s\n", &pathname[6]);
+		if(Init (&pathname[6]) == FALSE) {
+			eprintf ("r2k__open: Error cant init driver: %s\n", &pathname[6]);
 		}
-		return r_io_desc_new(&r_io_plugin_r2k, -1, pathname, rw, mode, w32);
+		return r_io_desc_new (&r_io_plugin_r2k, -1, pathname, rw, mode, w32);
 		free (w32);
 	}
 	return NULL;
