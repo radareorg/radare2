@@ -59,6 +59,7 @@ static BOOL InstallService(const char * rutaDriver, LPCSTR  lpServiceName, LPCST
 	}
 	return ret;
 }
+
 static BOOL RemoveService(LPCSTR lpServiceName) {
 	HANDLE hSCManager;
 	HANDLE hService;
@@ -76,6 +77,7 @@ static BOOL RemoveService(LPCSTR lpServiceName) {
 	}
 	return ret;
 }
+
 static BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
 	HANDLE hSCManager;
 	HANDLE hService;
@@ -108,6 +110,7 @@ static BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
 	}
 	return ret;
 }
+
 static BOOL InitDriver(VOID)
 {
 	gHandleDriver = CreateFileA (strDeviceName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_DIRECTORY, 0);
@@ -116,6 +119,7 @@ static BOOL InitDriver(VOID)
 	}
 	return FALSE;
 }
+
 static char *GetFileName(unsigned char *path) {
 	char *pfile = path + strlen (path);
 	for (; pfile > path; pfile--) {
@@ -126,6 +130,7 @@ static char *GetFileName(unsigned char *path) {
 	}
 	return pfile;
 }
+
 static int GetSystemModules(RIO *io) {
 	DWORD bRead = 0;
 	int i;
@@ -149,6 +154,7 @@ static int GetSystemModules(RIO *io) {
 	}
 	return 1;
 }
+
 static int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 	DWORD ret = -1, bRead = 0;
 	LPVOID lpBuffer = NULL;
@@ -177,6 +183,7 @@ static int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 	}
 	return ret;
 }
+
 static int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
 	DWORD ret = -1, bRead = 0;
 	LPVOID lpBuffer = NULL;
@@ -237,6 +244,7 @@ int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return -1;
 #endif
 }
+
 static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #if __WINDOWS__
 	return ReadKernelMemory (io->off, buf, count);
@@ -246,19 +254,27 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return len;
 #endif
 }
+
 static int r2k__close(RIODesc *fd) {
+#if __WINDOWS__
 	if(gHandleDriver) {
 		CloseHandle (gHandleDriver);
 		StartStopService ("r2k",TRUE);
 	}
+#else
+	eprintf ("TODO: r2k not implemented for this plataform.\n");
+#endif
 	return 0;
 }
+
 static ut64 r2k__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
         return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
 }
+
 static int r2k__plugin_open(RIO *io, const char *pathname, ut8 many) {
 	return (!strncmp (pathname, "r2k://", 6));
 }
+
 static int r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "mod", 3)) {
 		GetSystemModules (io);
@@ -268,6 +284,7 @@ static int r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	return -1;
 }
+
 static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "r2k://", 6)) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);
