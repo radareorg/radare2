@@ -5,18 +5,6 @@
 #include <r_lib.h>
 #include <r_cons.h>
 
-#ifdef __MINGW32__
-#include <_mingw.h> /* private MinGW header */
-# ifdef __MINGW64_VERSION_MAJOR
-#  define __r_mingw_w64__
-# endif
-#endif /* __MINGW32__ */
-
-/* This header is not in the Mingw-w64 due to some license issues */
-#ifndef __r_mingw_w64__
-#include <dlfcn.h>
-#endif
-
 #if DEBUGGER
 #if __APPLE__
 #include <mach/vm_map.h>
