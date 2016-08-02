@@ -19,6 +19,7 @@ static char* file = NULL;
 static char *name = NULL;
 static int rw = false;
 static int va = true;
+static char *stdin_buf = NULL;
 static const char *do_demangle = NULL;
 static ut64 at = 0LL;
 static RLib *l;
@@ -91,11 +92,18 @@ static int rabin_show_help(int v) {
 }
 
 static char *stdin_gets() {
-        static char buf[96096];
-        fgets (buf, sizeof (buf)-1, stdin);
-        if (feof (stdin)) return NULL;
-        buf[strlen (buf)-1] = 0;
-        return strdup (buf);
+#define STDIN_BUF_SIZE 96096
+	if (!stdin_buf) {
+		/* XXX: never freed. leaks! */
+		stdin_buf = malloc (STDIN_BUF_SIZE);
+	}
+	memset (stdin_buf, 0, STDIN_BUF_SIZE);
+        fgets (stdin_buf, sizeof (stdin_buf) - 1, stdin);
+        if (feof (stdin)) {
+		return NULL;
+	}
+        stdin_buf[strlen (stdin_buf) - 1] = 0;
+        return strdup (stdin_buf);
 }
 
 static void __sdb_prompt(Sdb *sdb) {
@@ -990,6 +998,7 @@ int main(int argc, char **argv) {
 		printf ("}");
 	r_cons_flush ();
 	r_core_fini (&core);
+	free (stdin_buf);
 
 	return 0;
 }
