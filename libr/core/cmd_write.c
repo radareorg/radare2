@@ -237,7 +237,8 @@ static void cmd_write_op (RCore *core, const char *input) {
 		case 'O':
 			len = (int)(input[3]==' ')?
 				r_num_math (core->num, input + 3): core->blocksize;
-			core->num->value = r_debruijn_offset (len, 0 /* use LE */);
+			//core->assembler->big_endian 1 if big but in r_debruijn_offset is the contrary
+			core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 			break;
 		case '\0':
