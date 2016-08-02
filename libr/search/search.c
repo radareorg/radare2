@@ -225,10 +225,7 @@ static int maskcmp(RSearchKeyword *kw, const ut8* buf, int kwidx) {
 	}
 	a &= kw->bin_binmask[k];
 	b &= kw->bin_binmask[k];
-	if (a != b)
-		return 0;
-
-	return 1;
+	return (a == b)? 1: 0;
 }
 
 R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
@@ -252,8 +249,9 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 			kw->count++;
 			count++;
 			/* Stop at the first occurrence */
-			if (s->inverse)
+			if (s->inverse) {
 				return -1;
+			}
 		}
 	}
 #else
@@ -371,7 +369,6 @@ R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int le
 		count = 0;
 	}
 #endif
-
 	return count;
 }
 
@@ -395,15 +392,14 @@ R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *us
 /* TODO: initialize update callback in _init or begin... */
 R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len) {
 	int ret = -1;
-	if (s->update != NULL) {
+	if (s->update) {
 		ret = s->update (s, *from, buf, len);
 		if (s->mode == R_SEARCH_AES) {
-			int l = R_SEARCH_AES_BOX_SIZE;
-			//*from -= R_SEARCH_AES_BOX_SIZE;
-			if (len<l) l = len;
-			return l;
+			ret = R_MIN (R_SEARCH_AES_BOX_SIZE, len);
 		}
-	} else eprintf ("r_search_update: No search method defined\n");
+	} else {
+		eprintf ("r_search_update: No search method defined\n");
+	}
 	return ret;
 }
 
@@ -413,7 +409,9 @@ R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
 
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
 	RSearchHit *hit = R_NEW0 (RSearchHit);
-	if (!hit) return false;
+	if (!hit) {
+		return false;
+	}
 	hit->kw = k;
 	hit->addr = addr;
 	r_list_append (user, hit);

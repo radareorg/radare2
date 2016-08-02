@@ -3485,15 +3485,17 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		r_anal_op (core->anal, &analop, at, buf + i, nb_bytes - i);
 		ds = ds_init (core);
-		if (ds->pseudo) r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
-		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+		if (ds->pseudo) {
+			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
+		}
+		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list;
 			r_parse_varsub (core->parser, f, at, ds->analop.size,
 				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
 		}
 		oplen = r_asm_op_get_size (&asmop);
-		r_cons_printf (j>0? ",{": "{");
+		r_cons_printf (j > 0 ? ",{" : "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
 		if (f) {
 			r_cons_printf (",\"fcn_addr\":%"PFMT64d, f->addr);

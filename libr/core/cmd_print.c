@@ -2623,7 +2623,7 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				ut32 bsz = core->blocksize;
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (f && input[2] == 'j') { // "pdfj"
 					ut8 *buf;
 					ut32 fcn_size = r_anal_fcn_size (f);
