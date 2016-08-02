@@ -69,14 +69,15 @@ R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, c
 
 R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
+	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 	if (!kind) {
 		kind = R_ANAL_VAR_KIND_BPV;
 	}
 	if (!type) {
 		type = "int";
 	}
-	if (size==-1) {
-		RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
+
+	if (size == -1) {
 		RList *list = r_anal_var_list (a, fcn, kind);
 		RListIter *iter;
 		RAnalVar *var;
@@ -108,9 +109,9 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 			sign = "_";
 		}
 		/* local variable */
-		const char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", addr, kind);
-		const char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%s%d", addr, kind, scope, sign, delta);
-		const char *name_key = sdb_fmt (3, "var.0x%"PFMT64x".%d.%s", addr, scope, name);
+		const char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x".%c", fcn->addr, kind);
+		const char *var_key = sdb_fmt (2, "var.0x%"PFMT64x".%c.%d.%s%d", fcn->addr, kind, scope, sign, delta);
+		const char *name_key = sdb_fmt (3, "var.0x%"PFMT64x".%d.%s", fcn->addr, scope, name);
 		const char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, delta);
 		const char *name_val = sdb_fmt (5, "%c,%d", kind, delta);
 		sdb_array_add (DB, fcn_key, shortvar, 0);
@@ -121,7 +122,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		sdb_set (DB, name_key, name_val, 0);
 	} else {
 		/* global variable */
-		const char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
+		const char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, fcn->addr);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
 	return true;
@@ -255,7 +256,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 		sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 		return NULL;
 	}
-	av->addr = addr;
+	av->addr = fcn->addr;
 	av->scope = scope;
 	av->delta = delta;
 	av->name = vt.name? strdup (vt.name) : strdup ("unkown_var");
