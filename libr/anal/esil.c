@@ -193,6 +193,11 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 		return 0;
 	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
 }
+static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	if (!esil || !esil->anal || !esil->anal->iob.io || !addr)
+		return 0;
+	return esil->anal->iob.read_at (esil->anal->iob.io, addr, buf, len);
+}
 
 R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	int i, ret = 0;
@@ -235,6 +240,24 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	return ret;
 }
 
+static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	int ret;
+	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
+		return 0;
+	}
+	if (esil->nowrite) {
+		return 0;
+	}
+	ret = esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len);
+	if (ret != len) {
+		if (esil->iotrap) {
+			esil->trap = R_ANAL_TRAP_WRITE_ERR;
+			esil->trap_code = addr;
+		}
+	}
+	return ret;
+}
+
 R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int i, ret = 0;
 	if (!buf || !esil)
@@ -267,6 +290,30 @@ static int internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *nu
 static int internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
 	RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
 	if (reg) {
+		r_reg_set_value (esil->anal->reg, reg, num);
+		return true;
+	}
+	return false;
+}
+static int internal_esil_reg_write_no_null (RAnalEsil *esil, const char *regname, ut64 num) {
+	if (!esil || !esil->anal->reg) {
+		return false;
+	}
+	RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
+	const char *pc = r_reg_get_name (esil->anal->reg, R_REG_NAME_PC);
+	const char *sp = r_reg_get_name (esil->anal->reg, R_REG_NAME_SP);
+	const char *bp = r_reg_get_name (esil->anal->reg, R_REG_NAME_BP);
+	//trick to protect strcmp from segfaulting with out making the condition complex
+	if (!pc) {
+		pc = "pc";
+	}
+	if (!sp) {
+		sp = "sp";
+	}
+	if (!bp) {
+		bp = "bp";
+	}
+	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
 		r_reg_set_value (esil->anal->reg, reg, num);
 		return true;
 	}
@@ -2537,7 +2584,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 }
 
 /* register callbacks using this anal module. */
-R_API int r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats) {
+R_API int r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull) {
 	if (!esil) return false;
 	//esil->debug = 0;
 	esil->anal = anal;
@@ -2545,12 +2592,22 @@ R_API int r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats) 
 	esil->trap = 0;
 	esil->trap_code = 0;
 	//esil->user = NULL;
-
 	esil->cb.reg_read = internal_esil_reg_read;
-	esil->cb.reg_write = internal_esil_reg_write;
 	esil->cb.mem_read = internal_esil_mem_read;
-	esil->cb.mem_write = internal_esil_mem_write;
 
+	if (nonull) {
+		// never writes zero to PC, BP, SP, why? because writing
+		// zeros to these registers is equivalent to acessing NULL
+		// pointer somehow
+		esil->cb.reg_write = internal_esil_reg_write_no_null;
+		esil->cb.mem_read = internal_esil_mem_read_no_null;
+		esil->cb.mem_write = internal_esil_mem_write_no_null;
+
+	} else {
+		esil->cb.reg_write = internal_esil_reg_write;
+		esil->cb.mem_read = internal_esil_mem_read;
+		esil->cb.mem_write = internal_esil_mem_write;
+	}
 	r_anal_esil_mem_ro (esil, romem);
 	r_anal_esil_stats (esil, stats);
 	r_anal_esil_setup_ops (esil);

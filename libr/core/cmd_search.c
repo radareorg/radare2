@@ -1381,6 +1381,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		const int kwidx = r_config_get_i (core->config, "search.kwidx");
 		const int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		const int stacksize = r_config_get_i (core->config, "esil.stacksize");
+		int nonull = r_config_get_i (core->config, "esil.nonull");
 		int hit_happens = 0;
 		int hit_combo = 0;
 		char *res;
@@ -1394,7 +1395,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		core->anal->esil->cb.user = core;
 		r_anal_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo);
 		/* hook addrinfo */
-		r_anal_esil_setup (core->anal->esil, core->anal, 1, 0);
+		r_anal_esil_setup (core->anal->esil, core->anal, 1, 0, nonull);
 		r_anal_esil_stack_free (core->anal->esil);
 		core->anal->esil->debug = 0;
 		for (; addr<param->to; addr++) {

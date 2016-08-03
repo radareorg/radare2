@@ -1807,6 +1807,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("esil.iotrap", "true", &cb_iotrap, "invalid read or writes produce a trap exception");
 	SETPREF("esil.romem", "false", "Set memory as read-only for ESIL");
 	SETPREF("esil.stats", "false", "Statistics from ESIL emulation stored in sdb");
+	SETPREF("esil.nonull", "false", "Prevent memory read, memory write at null pointer");
 
 	/* scr */
 #if __EMSCRIPTEN__
