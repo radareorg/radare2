@@ -24,14 +24,14 @@ export LIBEXT="`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`"
 export R2HOMEDIR="`r2 -hh | grep '^ RHOMEDIR' | awk '{print $2}' 2> /dev/null`"
 #[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
 export R2PM_PLUGDIR="${R2HOMEDIR}/plugins/"
-# bindir
-export R2PM_HOMEBINDIR="${R2PM_PLUGDIR}/bin/"
-export R2PM_SYSBINDIR="${BINDIR}"
-export R2PM_BINDIR=${R2PM_HOMEBINDIR}
 # prefix
 export R2PM_SYSPREFIX="${PREFIX}"
 export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix/"
 export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
+# bindir
+export R2PM_HOMEBINDIR="${R2PM_HOMEPREFIX}/bin/"
+export R2PM_SYSBINDIR="${BINDIR}"
+export R2PM_BINDIR=${R2PM_HOMEBINDIR}
 # www
 export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
 export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/"
@@ -313,8 +313,8 @@ case "$1" in
 	echo " -c,clean                    clear source cache"
 	echo "Environment:"
 	echo "SUDO=sudo                    use this tool as sudo"
-	#echo "R2PM_PREFIX=/usr         prefix for syspkgs"
 	echo "R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins"
+	echo "R2PM_BINDIR=~/.config/radare2/prefix/bin # bindir in r2's PATH"
 	echo "R2PM_PLUGDIR=/usr/lib/radare2/last/      # for system-wide plugin installs"
 	;;
 esac
