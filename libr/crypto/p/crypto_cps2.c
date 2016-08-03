@@ -722,7 +722,10 @@ static bool cps2_use(const char *algo) {
 
 static int update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *output = calloc (1, len);
+	/* TODO : control decryption errors */
 	cps2_decrypt ((const ut16 *)buf, (ut16*)output, len, cps2key, UPPER_LIMIT);
+	r_crypto_append (cry, output, len);
+	free (output);
 	return true;
 }
 
