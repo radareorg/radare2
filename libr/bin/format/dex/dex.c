@@ -1,16 +1,17 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include "dex.h"
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
-	char *version;
-	if (!bin) return NULL;
-	version = malloc (8);
-	memset (version, 0, 8);
-	memcpy (version, bin->b->buf+4, 3);
-	return version;
+	if (bin) {
+		char *version = malloc (8);
+		memset (version, 0, 8);
+		memcpy (version, bin->b->buf + 4, 3);
+		return version;
+	}
+	return NULL;
 }
 
 #define FAIL(x) { eprintf(x"\n"); goto fail; }
@@ -21,7 +22,7 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	}
 	bin->size = buf->length;
 	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
+	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)) {
 		goto fail;
 	}
 	// XXX: this is not endian safe
@@ -64,7 +65,7 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	if (bin->header.method_offset + methods_size >= bin->size) {
 		methods_size = bin->size - bin->header.method_offset;
 	}
-	if (methods_size<0) {
+	if (methods_size < 0) {
 		methods_size = 0;
 	}
 	bin->header.method_size = methods_size / sizeof (struct dex_method_t);
@@ -77,7 +78,7 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	if (bin->header.types_offset + types_size >= bin->size) {
 		types_size = bin->size - bin->header.types_offset;
 	}
-	if (types_size<0) {
+	if (types_size < 0) {
 		types_size = 0;
 	}
 	bin->header.types_size = types_size / sizeof (struct dex_type_t);
@@ -129,8 +130,7 @@ int dex_read_uleb128 (const ut8 *ptr) {
 
 #define LEB_MAX_SIZE 6
 int dex_uleb128_len (const ut8 *ptr) {
-	int i=1, result = *(ptr++);
-
+	int i = 1, result = *(ptr++);
 	while (result > 0x7f && i <= LEB_MAX_SIZE) {
 		result = *(ptr++);
 		i++;

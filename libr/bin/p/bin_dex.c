@@ -55,7 +55,7 @@ static ut64 baddr(RBinFile *arch) {
 static char *flagname (const char *class, const char *method) {
 	if (method) {
 		if (class) {
-			return r_str_newf ("static.%s.%s", class, method);
+			return r_str_newf ("%s.%s", class, method);
 		}
 		return r_str_newf ("static.method.%s", method);
 	}
@@ -243,19 +243,19 @@ static char *getstr (RBinDexObj *bin, int idx) {
 
 static char *get_string (RBinDexObj *bin, int cid, int idx) {
 	char *c_name, *m_name, *res;
-	if (idx<0)
+	if (idx<0 || idx>=bin->header.strings_size) {
 		return NULL;
-	if (idx<0 || idx>=bin->header.strings_size)
+	}
+	if (cid<0 || cid>=bin->header.strings_size) {
 		return NULL;
-	if (cid<0 || cid>=bin->header.strings_size)
-		return NULL;
+	}
 	c_name = getstr (bin, cid);
 	m_name = getstr (bin, idx);
-	if (c_name && *c_name==',') {
+	if (c_name && *c_name == ',') {
 		res = r_str_newf ("%s", m_name);
 	} else {
 		if (c_name && m_name) {
-			res = r_str_newf ("%s.%s", c_name, m_name);
+			res = r_str_newf ("method.%s", m_name);
 		} else {
 			if (m_name) {
 				res = r_str_newf ("unk.%s", c_name);
@@ -271,15 +271,17 @@ static char *get_string (RBinDexObj *bin, int cid, int idx) {
 
 /* TODO: check boundaries */
 static char *dex_method_name (RBinDexObj *bin, int idx) {
-	int cid, tid;
-	if (idx<0 || idx>=bin->header.method_size)
+	if (idx < 0 || idx >= bin->header.method_size) {
 		return NULL;
-	cid = bin->methods[idx].class_id;
-	tid = bin->methods[idx].name_id;
-	if (cid<0 || cid >= bin->header.strings_size)
+	}
+	int cid = bin->methods[idx].class_id;
+	int tid = bin->methods[idx].name_id;
+	if (cid < 0 || cid >= bin->header.strings_size) {
 		return NULL;
-	if (tid<0 || tid >= bin->header.strings_size)
+	}
+	if (tid < 0 || tid >= bin->header.strings_size) {
 		return NULL;
+	}
 	return get_string (bin, cid, tid);
 }
 
@@ -413,7 +415,9 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 
 		method_name = dex_method_name (bin, MI);
 		dprintf ("METHOD NAME %u\n", (ut32)MI);
-		if (!method_name) method_name = strdup ("unknown");
+		if (!method_name) {
+			method_name = strdup ("unknown");
+		}
 		flag_name = flagname (class_name, method_name);
 		if (!flag_name) {
 			continue;
@@ -563,7 +567,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		for (i = 0; i < bin->header.method_size; i++) {
 			//RBinDexMethod *method = &bin->methods[i];
 			if (!methods[i]) {
-				if (i >= bin->header.class_size) continue;
+				if (i >= bin->header.class_size) {
+					continue;
+				}
 				struct dex_class_t *c = &bin->classes[i];
 				char *class_name = dex_class_name (bin, c);
 				if (class_name) {
