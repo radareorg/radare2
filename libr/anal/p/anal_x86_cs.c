@@ -158,7 +158,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 
 		if (component_count > 1) {
 			if (component_count > 2) {
-				snprintf (buf_, sizeof (buf), "%s+", buf);
+				snprintf (buf_, sizeof (buf), "%s+,", buf);
 				strncpy (buf, buf_, sizeof (buf));
 			}
 			if (disp < 0) {
