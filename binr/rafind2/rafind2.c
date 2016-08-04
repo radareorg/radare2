@@ -49,7 +49,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 						break;
 					}
 					str[j++] = buf[i++];
-					if (j > 60) {
+					if (j > 80) {
 						strcpy (str + j, "...");
 						j += 3;
 						break;
