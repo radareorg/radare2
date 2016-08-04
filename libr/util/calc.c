@@ -26,7 +26,11 @@ static inline RNumCalcValue Nxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; 
 static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n &= v.n; return n; }
 static inline RNumCalcValue Nadd(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n += v.n; return n; }
 static inline RNumCalcValue Nsub(RNumCalcValue n, RNumCalcValue v) { n.d -= v.d; n.n -= v.n; return n; }
-static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) { n.d *= v.d; n.n *= v.n; return n; }
+static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) {
+	n.d *= v.d;
+	n.n *= v.n;
+	return n;
+}
 static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n <<= v.n; return n; }
 static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
@@ -346,9 +350,14 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	//if (nc->curr_tok == RNCEND) return 0LL; // XXX: Error
 	//if (nc->curr_tok == RNCPRINT) //return 0LL; // XXX: the fuck
 	//	n = expr (num, nc, 0);
+#if 0
 	if (n.d != ((double)(ut64)n.d)) {
 		if (num) num->fvalue = n.d;
 	} else if (num) num->fvalue = (double)n.n;
+#endif
+	if (num) {
+		num->fvalue = n.d;
+	}
 	return n.n;
 }
 
