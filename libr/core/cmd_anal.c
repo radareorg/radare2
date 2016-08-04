@@ -2,18 +2,21 @@
 
 #include "r_util.h"
 #include "r_core.h"
+
 static int cc_print(void *p, const char *k, const char *v) {
 	if (!strcmp (v, "cc")) {
 		r_cons_println (k);
 	}
 	return 1;
 }
+
 static void find_refs(RCore *core, const char *glob) {
 	char cmd[128];
 	ut64 curseek = core->offset;
 	while (*glob == ' ') glob++;
-	if (!*glob)
+	if (!*glob) {
 		glob = "str.";
+	}
 	if (*glob == '?') {
 		eprintf ("Usage: arf [flag-str-filter]\n");
 		return;
@@ -1499,7 +1502,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 				r_list_foreach (fcn->refs, iter, ref) {
 					if (ref->addr == UT64_MAX || ref->addr < text_addr) {
-						eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
+						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
 						continue;
 					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
@@ -4118,7 +4121,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	int covr = compute_coverage (core);
 	int call = compute_calls (core);
 	int xrfs = r_anal_xrefs_count (core->anal);
-	int cvpc = (code>0)? (covr * 100 / code): 0;
+	int cvpc = (code > 0)? (covr * 100 / code): 0;
 	if (*input == 'j') {
 		r_cons_printf ("{\"fcns\":%d", fcns);
 		r_cons_printf (",\"xrefs\":%d", xrfs);
@@ -4143,6 +4146,17 @@ static void r_core_anal_info (RCore *core, const char *input) {
 }
 
 extern int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize);
+
+static void cmd_anal_aad(RCore *core, const char *input) {
+	RListIter *iter;
+	RAnalRef *ref;
+	RList *list = r_list_newf (NULL);
+	r_anal_xrefs_from (core->anal, list, "xref", R_ANAL_REF_TYPE_DATA, UT64_MAX);
+	r_list_foreach (list, iter, ref) {
+		r_core_cmdf (core, "af @ 0x%"PFMT64x, ref->addr);
+	}
+	r_list_free (list);
+}
 
 static void cmd_anal_aav(RCore *core, const char *input) {
 #define set(x,y) r_config_set(core->config, x, y);
@@ -4213,6 +4227,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
 		"aaa", "", "autoname functions after aa (see afna)",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
+		"aad", " [len]", "analyze data references to code",
 		"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 		"aai", "[j]", "show info of all analysis parameters",
 		"aar", " [len]", "analyze len bytes of instructions for references",
@@ -4231,6 +4246,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case '*':
 		r_core_cmd0 (core, "af @@ sym.*");
 		r_core_cmd0 (core, "af @ entry0");
+		break;
+	case 'd': // "aad"
+		cmd_anal_aad (core, input);
 		break;
 	case 'v': // "aav"
 		cmd_anal_aav (core, input);
@@ -4286,10 +4304,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				rowlog (core, "Analyze function calls (aac)");
 				r_core_seek (core, curseek, 1);
-				(void)cmd_anal_calls (core, ""); // "aac"
-				rowlog_done(core);
-				if (core->cons->breaked)
+				(void) cmd_anal_calls (core, ""); // "aac"
+				(void) cmd_anal_aad (core, NULL);
+				rowlog_done (core);
+				if (core->cons->breaked) {
 					goto jacuzzi;
+				}
 				if (input[1] == 'a') { // "aaaa"
 					rowlog (core, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae $SS @ $S");

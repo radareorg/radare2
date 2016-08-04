@@ -180,8 +180,8 @@ enum {
 
 /*--------------------Function Convnetions-----------*/
 //XXX dont use then in the future
-#define	R_ANAL_CC_TYPE_STDCALL 0
-#define        R_ANAL_CC_TYPE_PASCAL 1
+#define R_ANAL_CC_TYPE_STDCALL 0
+#define R_ANAL_CC_TYPE_PASCAL 1
 #define R_ANAL_CC_TYPE_FASTCALL 'A' // syscall
 #define R_ANAL_CC_TYPE_SYSV 8
 
@@ -398,7 +398,7 @@ typedef enum {
 	R_ANAL_OP_TYPE_NOT   = 30,
 	R_ANAL_OP_TYPE_STORE = 31,  /* store from register to memory */
 	R_ANAL_OP_TYPE_LOAD  = 32,  /* load from memory to register */
-	R_ANAL_OP_TYPE_LEA   = 33,
+	R_ANAL_OP_TYPE_LEA   = 33, /* TODO add ulea */
 	R_ANAL_OP_TYPE_LEAVE = 34,
 	R_ANAL_OP_TYPE_ROR   = 35,
 	R_ANAL_OP_TYPE_ROL   = 36,

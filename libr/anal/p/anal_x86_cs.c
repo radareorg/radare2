@@ -1769,6 +1769,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->type = R_ANAL_OP_TYPE_LEA;
 		switch (INSOP(1).type) {
 		case X86_OP_MEM:
+			// op->type = R_ANAL_OP_TYPE_ULEA;
 			op->ptr = INSOP(1).mem.disp;
 			op->refptr = INSOP(1).size;
 			switch (INSOP(1).mem.base) {
@@ -1786,8 +1787,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			}
 			break;
 		case X86_OP_IMM:
-			if (INSOP(1).imm > 10)
+			if (INSOP(1).imm > 10) {
 				op->ptr = INSOP(1).imm;
+			}
 			break;
 		default:
 			break;
