@@ -2861,6 +2861,21 @@ static void cmd_anal_noreturn(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_anal_bytes(RCore *core, const char *input) {
+	int len = core->blocksize;
+	int tbs = len;
+	if (input[0]) {
+		len = (int)r_num_get (core->num, input + 1);
+		if (len > tbs) {
+			r_core_block_size (core, len);
+		}
+	}
+	core_anal_bytes (core, core->block, len, 0, input[0]);
+	if (tbs != core->blocksize) {
+		r_core_block_size (core, tbs);
+	}
+}
+
 static void cmd_anal_opcode(RCore *core, const char *input) {
 	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
@@ -4540,6 +4555,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
 	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
 	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
+	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"
 	case 'n': cmd_anal_noreturn (core, input + 1); break; // "an"
 	case 'F':
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
