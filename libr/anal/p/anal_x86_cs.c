@@ -229,6 +229,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		(a->bits==32)?"esp":"rsp";
 	const char *bp = (a->bits==16)?"bp":
 		(a->bits==32)?"ebp":"rbp";
+	const char *si = (a->bits==16)?"si":
+		(a->bits==32)?"esi":"rsi";
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
@@ -510,10 +512,10 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			r_strbuf_appendf (&op->esil, "rax,rdi,=[8],df,?{,8,edi,-=,},df,!,?{,8,edi,+=,}");
 		break;
 	case X86_INS_LODSB:
-			r_strbuf_appendf (&op->esil, "esi,[1],al,=,df,?{,1,esi,-=,},df,!,?{,1,esi,+=,}");
+			r_strbuf_appendf (&op->esil, "%s,[1],al,=,df,?{,1,%s,-=,},df,!,?{,1,%s,+=,}", si, si, si);
 		break;
 	case X86_INS_LODSW:
-			r_strbuf_appendf (&op->esil, "esi,[2],ax,=,df,?{,2,esi,-=,},df,!,?{,2,esi,+=,}");
+			r_strbuf_appendf (&op->esil, "%s,[2],ax,=,df,?{,2,%s,-=,},df,!,?{,2,%s,+=,}", si, si, si);
 		break;
 	case X86_INS_LODSD:
 			r_strbuf_appendf (&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
@@ -548,12 +550,12 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			int width = INSOP(0).size;
 			const char *src = cs_reg_name(*handle, INSOP(1).mem.base);
 			const char *dst = cs_reg_name(*handle, INSOP(0).mem.base);
-			r_strbuf_appendf (&op->esil, 
+			r_strbuf_appendf (&op->esil,
 					"%s,[%d],%s,=[%d],"\
 					"df,?{,%d,%s,-=,%d,%s,-=,},"\
 					"df,!,?{,%d,%s,+=,%d,%s,+=,}",
-					src, width, dst, width, 
-					width, src, width, dst, 
+					src, width, dst, width,
+					width, src, width, dst,
 					width, src, width, dst);
 		} else {
 			int width = INSOP(0).size;
@@ -561,7 +563,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			const char *dst = cs_reg_name(*handle, INSOP(0).mem.base);
 			esilprintf (op, "%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
 					"df,!,?{,%d,%s,+=,%d,%s,+=,}",
-					src, width, dst, width, width, src, width, 
+					src, width, dst, width, width, src, width,
 					dst, width, src, width, dst);
 		}
 		break;
@@ -792,13 +794,13 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				"%s,[%d],%d,%s,+=,%s,=,"
 				"%s,[%d],%d,%s,+=,%s,=,"
 				"%s,=",
-				sp, rs, rs, sp, "edi", 
-				sp, rs, rs, sp, "esi", 
-				sp, rs, rs, sp, "ebp", 
-				sp, rs, rs, sp, 
-				sp, rs, rs, sp, "ebx", 
-				sp, rs, rs, sp, "edx", 
-				sp, rs, rs, sp, "ecx", 
+				sp, rs, rs, sp, "edi",
+				sp, rs, rs, sp, "esi",
+				sp, rs, rs, sp, "ebp",
+				sp, rs, rs, sp,
+				sp, rs, rs, sp, "ebx",
+				sp, rs, rs, sp, "edx",
+				sp, rs, rs, sp, "ecx",
 				sp, rs, rs, sp, "eax",
 				sp
 				);
@@ -2232,7 +2234,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		anop (a, op, addr, buf, len, &handle, insn);
 		if (a->decode) {
 			anop_esil (a, op, addr, buf, len, &handle, insn);
-		}	
+		}
 	}
 //#if X86_GRP_PRIVILEGE>0
 	if (insn) {
@@ -2329,6 +2331,9 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	si	.16	12	0\n"
 		"gpr	di	.16	16	0\n"
 		"seg	cs	.16	52	0\n"
+		"seg	ss	.16	52	0\n"
+		"seg	ds	.16	54	0\n"
+		"seg	es	.16	58	0\n"
 		"gpr	flags	.16	56	0\n"
 		"gpr	cf	.1	.448	0\n"
 		"flg	pf	.1	.449	0\n"
