@@ -261,6 +261,10 @@ case "$1" in
 -lu)
 	R2PM_ListUninstalled "$2"
 	;;
+-r|run)
+	shift
+	PATH="${R2PM_BINDIR}:${PATH}" $*
+	;;
 -v|version)
 	echo "r2pm ${R2VERSION}"
 	;;
@@ -306,8 +310,9 @@ case "$1" in
 	echo " -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)"
 	echo " -l,list                     list installed pkgs"
 	echo " -lu                         list uninstalled packages"
-	echo " -t,test FX,XX,BR BID        check in travis regressions"
+	echo " -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH"
 	echo " -s,search [<keyword>]       search in database"
+	echo " -t,test FX,XX,BR BID        check in travis regressions"
 	echo " -v,version                  show version"
 	echo " -h,help                     show this message"
 	echo " -c,clean                    clear source cache"
