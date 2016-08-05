@@ -204,22 +204,22 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[3]<<8) | buf[2];
 			*str = 0;
 			switch (vA) {
-				case 1:
-					sprintf (str, " {v%i}", buf[4] & 0x0f);
-					break;
-				case 2:
-					sprintf (str, " {v%i, v%i}", buf[4]&0x0f, (buf[4]&0xf0)>>4);
-					break;
-				case 3:
-					sprintf (str, " {v%i, v%i, v%i}", buf[4]&0x0f,
-							(buf[4]&0xf0)>>4, buf[5]&0x0f);
-					break;
-				case 4:
-					sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4]&0x0f,
-							(buf[4]&0xf0)>>4, buf[5]&0x0f, (buf[5]&0xf0)>>4);
-					break;
-				default:
-					sprintf (str, " {}");
+			case 1:
+				sprintf (str, " {v%i}", buf[4] & 0x0f);
+				break;
+			case 2:
+				sprintf (str, " {v%i, v%i}", buf[4]&0x0f, (buf[4]&0xf0)>>4);
+				break;
+			case 3:
+				sprintf (str, " {v%i, v%i, v%i}", buf[4]&0x0f,
+						(buf[4]&0xf0)>>4, buf[5]&0x0f);
+				break;
+			case 4:
+				sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4]&0x0f,
+						(buf[4]&0xf0)>>4, buf[5]&0x0f, (buf[5]&0xf0)>>4);
+				break;
+			default:
+				sprintf (str, " {}");
 			}
 			strasm = r_str_concat (strasm, str);
 			sprintf (str, ", [%04x]", vB);

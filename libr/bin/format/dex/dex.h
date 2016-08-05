@@ -79,7 +79,7 @@ typedef struct dex_class_t {
 typedef struct r_bin_dex_obj_t {
 	int size;
 	const char *file;
-	struct r_buf_t *b;
+	RBuffer *b;
 	struct dex_header_t header;
 	ut32 *strings;
 	struct dex_class_t *classes;
