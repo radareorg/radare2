@@ -1171,7 +1171,7 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
 R_API void r_anal_esil_trace_list (RAnalEsil *esil);
 R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);
 R_API bool r_anal_esil_set_pc (RAnalEsil *esil, ut64 addr);
-R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats);
+R_API int r_anal_esil_setup (RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull);
 R_API void r_anal_esil_free (RAnalEsil *esil);
 R_API int r_anal_esil_parse (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_dumpstack (RAnalEsil *esil);

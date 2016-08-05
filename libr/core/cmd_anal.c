@@ -1909,10 +1909,11 @@ repeat:
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		int exectrap = r_config_get_i (core->config, "esil.exectrap");
 		int stacksize = r_config_get_i (core->config, "esil.stacksize");
+		int nonull = r_config_get_i (core->config, "esil.nonull");
 		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap)))
 			return 0;
 		esil = core->anal->esil;
-		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 		esil->exectrap = exectrap;
 		RList *entries = r_bin_get_entries (core->bin);
 		RBinAddr *entry = NULL;
@@ -2188,6 +2189,7 @@ static ut8 *regstate = NULL;
 
 static void esil_init (RCore *core) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	int nonull = r_config_get_i (core->config, "esil.nonull");
 	opc = r_reg_getv (core->anal->reg, pc);
 	if (!opc || opc==UT64_MAX) opc = core->offset;
 	if (!core->anal->esil) {
@@ -2197,7 +2199,7 @@ static void esil_init (RCore *core) {
 			R_FREE (regstate);
 			return;
 		}
-		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
+		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, nonull);
 	}
 	free (regstate);
 	regstate = r_reg_arena_peek (core->anal->reg);
@@ -2406,6 +2408,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats = r_config_get_i (core->config, "esil.stats");
+	int nonull = r_config_get_i (core->config, "esil.nonull");
 	ut64 until_addr = UT64_MAX;
 	const char *until_expr = NULL;
 	RAnalOp *op;
@@ -2459,7 +2462,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (!(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap)))
 				return;
 		}
-		r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
 		r_anal_esil_parse (esil, input + 1);
 		r_anal_esil_dumpstack (esil);
@@ -2589,7 +2592,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			}
 			if (!(esil = core->anal->esil = r_anal_esil_new (stacksize, iotrap)))
 				return;
-			r_anal_esil_setup (esil, core->anal, romem, stats); // setup io
+			r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 			esil->debug = (int)r_config_get_i (core->config, "esil.debug");
 			/* restore user settings for interrupt handling */
 			{
@@ -3902,10 +3905,11 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 			int romem = r_config_get_i (core->config, "esil.romem");
 			int stats = r_config_get_i (core->config, "esil.stats");
 			int iotrap = r_config_get_i (core->config, "esil.iotrap");
+			int nonull = r_config_get_i (core->config, "esil.nonull");
 			if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap)))
 				return;
 			r_anal_esil_setup (core->anal->esil,
-					core->anal, romem, stats);
+					core->anal, romem, stats, nonull);
 		}
 		switch (input[1]) {
 		case 0:

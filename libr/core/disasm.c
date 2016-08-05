@@ -2606,7 +2606,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 			R_FREE (ds->esil_regstate);
 			return;
 		}
-		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0);
+		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
 	}
 	core->anal->esil->user = ds;
 	free (ds->esil_regstate);
