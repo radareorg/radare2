@@ -417,47 +417,31 @@ static int is_executable (RBinObject *obj) {
 
 #define DBSPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
 
-void r_anal_type_init(RCore *core) {
-	const char *anal_arch = r_config_get (core->config, "asm.arch");
+static void r_anal_type_init(RCore *core) {
+	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	char *dbpath;
-	if (!strcmp (anal_arch, "x86")) {
-		Sdb *db;
-		dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", anal_arch,
-		r_config_get_i (core->config, "asm.bits"));
-		if (r_file_exists (dbpath)) {
-			db = sdb_new (0, dbpath, 0);
-			sdb_merge (core->anal->sdb_types, db);
-			sdb_close (db);
-			sdb_free (db);
-		}
+	Sdb *db;
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", anal_arch,
+	r_config_get_i (core->config, "asm.bits"));
+	if (r_file_exists (dbpath)) {
+		db = sdb_new (0, dbpath, 0);
+		sdb_merge (core->anal->sdb_types, db);
+		sdb_close (db);
+		sdb_free (db);
 	}
-	if (core->anal->os && !strcmp (core->anal->os, "windows")) {
-		char *dbpath;
-		Sdb *db;
-		dbpath = R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign/windows-types.sdb";
-		if (r_file_exists (dbpath)) {
-			db = sdb_new (0, dbpath, 0);
-			sdb_merge (core->anal->sdb_types, db);
-			sdb_close (db);
-			sdb_free (db);
-		}
-	}
-
 }
 
-void r_anal_cc_init(RCore *core) {
-	const char *anal_arch = r_config_get (core->config, "asm.arch");
+static void r_anal_cc_init(RCore *core) {
+	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	char *dbpath;
-	if (!strcmp (anal_arch, "x86")) {
-		Sdb *db;
-		dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch,
-			r_config_get_i (core->config, "asm.bits"));
-		if (r_file_exists (dbpath)) {
-			db = sdb_new (0, dbpath, 0);
-			sdb_merge (core->anal->sdb_cc, db);
-			sdb_close (db);
-			sdb_free (db);
-		}
+	Sdb *db;
+	dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch,
+		r_config_get_i (core->config, "asm.bits"));
+	if (r_file_exists (dbpath)) {
+		db = sdb_new (0, dbpath, 0);
+		sdb_merge (core->anal->sdb_cc, db);
+		sdb_close (db);
+		sdb_free (db);
 	}
 }
 #undef DBSPATH
