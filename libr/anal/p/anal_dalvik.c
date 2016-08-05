@@ -50,6 +50,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x0c: // move-result-object // TODO: add MOVRET OP TYPE ??
 		case 0x0b: // move-result-wide
 			op->type = R_ANAL_OP_TYPE_MOV;
+			int vA = (int) -data[1];
+			op->stackop = R_ANAL_STACK_SET;
+			op->ptr = vA;
 			break;
 		case 0x1a: // const-string
 		case 0x1c: // const-class
