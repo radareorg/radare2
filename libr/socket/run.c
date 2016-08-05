@@ -309,10 +309,9 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 }
 
 R_API int r_run_parsefile (RRunProfile *p, const char *b) {
-	int ret;
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
-		ret = r_run_parse (p, s);
+		int ret = r_run_parse (p, s);
 		free (s);
 		return ret;
 	}

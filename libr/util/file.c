@@ -222,8 +222,6 @@ R_API char *r_stdin_slurp (int *sz) {
 #endif
 }
 
-//r_file_slurp: load file *str, alloc new buffer, close file. ret &buffer
-//Caller must free(buffer)
 R_API char *r_file_slurp(const char *str, int *usz) {
 	size_t rsz;
 	char *ret;
@@ -263,9 +261,10 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 		sz = rsz;
 	}
 	fclose (fd);
-	ret[sz]='\0';
-	if (usz)
+	ret[sz] = '\0';
+	if (usz) {
 		*usz = (ut32)sz;
+	}
 	return ret;
 }
 

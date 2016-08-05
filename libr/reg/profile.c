@@ -5,11 +5,12 @@
 #include <r_lib.h>
 
 static const char *parse_alias(RReg *reg, char **tok, const int n) {
-	if (n != 2) return "Invalid syntax";
-	int role = r_reg_get_name_idx (tok[0] + 1);
-	return r_reg_set_name (reg, role, tok[1]) ?
-		NULL :
-		"Invalid alias";
+	if (n == 2) {
+		int role = r_reg_get_name_idx (tok[0] + 1);
+		return r_reg_set_name (reg, role, tok[1])
+			? NULL : "Invalid alias";
+	}
+	return "Invalid syntax";
 }
 
 // Sizes prepended with a dot are expressed in bits
