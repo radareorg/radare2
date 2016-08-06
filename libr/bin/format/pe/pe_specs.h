@@ -255,6 +255,18 @@ typedef struct {
     ut32 ManagedNativeHeaderSize;
 } Pe32_image_clr_header, Pe64_image_clr_header;
 
+typedef struct {
+	ut64 Signature;
+	ut16 MajorVersion;
+	ut16 MinorVersion;
+	ut64 Reserved;
+	ut32 VersionStringLength;
+	char* VersionString;
+	ut16 Flags;
+	ut16 NumberOfStreams;
+} Pe32_image_metadata_header, Pe64_image_metadata_header;
+
+
 #define PE_IMAGE_SIZEOF_SHORT_NAME 8
 
 #define PE_IMAGE_SCN_MEM_SHARED    0x10000000

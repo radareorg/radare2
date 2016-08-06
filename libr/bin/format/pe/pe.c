@@ -567,6 +567,59 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
 	return computed_cs;
 }
 
+static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
+	PE_DWord metadata_directory = bin->clr_hdr ? bin_pe_rva_to_paddr (bin, bin->clr_hdr->MetaDataDirectoryAddress) : 0;
+	PE_(image_metadata_header) *metadata = R_NEW0 (PE_(image_metadata_header));
+	int rr;
+	if (!metadata) return 0;
+	if (!metadata_directory) {
+		free (metadata);
+		return 0;
+	}
+	rr = r_buf_read_at (bin->b, metadata_directory,
+					    (ut8*)(metadata), 24);
+	if (rr != 24) {
+		eprintf ("Warning: read (metaadata header)\n");
+		free (metadata);
+		return 0;
+	}
+	printf("Metadata Signature: %x %d\n", metadata->Signature, metadata->VersionStringLength);
+
+	// read the version string
+	int len = metadata->VersionStringLength;
+	if (len > 0) {
+		metadata->VersionString = malloc(len);
+		if (!metadata->VersionString) {
+			eprintf ("Warning: read (metaadata header) - cannot parse version string\n");
+			free (metadata);
+			return 0;
+		}
+		rr = r_buf_read_at (bin->b, metadata_directory + 24,
+						    (ut8*)(metadata->VersionString), len);
+		if (rr != len) {
+			eprintf ("Warning: read (metaadata header) - cannot parse version string\n");
+			free (metadata->VersionString);
+			free (metadata);
+			return 0;
+		}
+
+		printf("Version: %s\n", metadata->VersionString);
+	}
+
+	// read the header after the string
+	rr = r_buf_read_at (bin->b, metadata_directory + 24 + metadata->VersionStringLength,
+						(ut8*)(metadata + 24 + sizeof(char *)), 4);
+		
+	if (rr != 4) {
+		eprintf ("Warning: read (metaadata header (after version string))\n");
+		free (metadata);
+		return 0;
+	}
+	printf("Number of Metadata Streams: %d\n", metadata->Flags);
+	bin->metadata_header = metadata;
+	return 1;
+}
+
 static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_data_directory) *clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
 	PE_DWord image_clr_hdr_paddr       = clr_dir ? bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress) : 0;
@@ -580,18 +633,20 @@ static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	printf("%x\n", clr_hdr->HeaderSize);
 
-	if (clr_hdr->HeaderSize != 48) {
+	if (clr_hdr->HeaderSize != 0x48) {
 		// probably not a .NET binary
+		// 64bit?
 		eprintf ("Not a .NET binary!\n");
 		free (clr_hdr);
 		return 0;
 	}
 	if (rr != len) {
-		eprintf ("Warning: read (delay import directory)\n");
+		eprintf ("Warning: read (clr header)\n");
 		free (clr_hdr);
 		return 0;
 	}
 
+	bin->clr_hdr = clr_hdr;
 	return 1;
 }
 
@@ -1673,21 +1728,22 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->optional_header = NULL;
 	bin->data_directory = NULL;
 	bin->endian = 0; /* TODO: get endian */
-	if (!bin_pe_init_hdr(bin)) {
+	if (!bin_pe_init_hdr (bin)) {
 		eprintf ("Warning: File is not PE\n");
 		return false;
 	}
-	if (!bin_pe_init_sections(bin)) {
+	if (!bin_pe_init_sections (bin)) {
 		eprintf ("Warning: Cannot initialize sections\n");
 		return false;
 	}
-	bin_pe_init_imports(bin);
-	bin_pe_init_exports(bin);
-	bin_pe_init_resource(bin);
-	bin_pe_init_tls(bin);
-	bin_pe_init_clr_hdr(bin);
+	bin_pe_init_imports (bin);
+	bin_pe_init_exports (bin);
+	bin_pe_init_resource (bin);
+	bin_pe_init_tls (bin);
+	bin_pe_init_clr_hdr (bin);
+	bin_pe_init_metadata_hdr (bin);
 
-	PE_(r_bin_store_all_resource_version_info)(bin);
+	PE_(r_bin_store_all_resource_version_info) (bin);
 	bin->relocs = NULL;
 	return true;
 }

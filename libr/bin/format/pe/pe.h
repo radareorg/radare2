@@ -75,6 +75,11 @@ struct PE_(r_bin_pe_obj_t) {
 	PE_(image_tls_directory)          *tls_directory;
 	Pe_image_resource_directory       *resource_directory;
 	PE_(image_delay_import_directory) *delay_import_directory;
+
+	// these pointers pertain to the .net relevant sections
+	PE_(image_clr_header) *clr_hdr;
+	PE_(image_metadata_header) *metadata_header;
+
 	// these values define the real offset into the untouched binary
 	ut64 nt_header_offset;
 	ut64 import_directory_offset;
