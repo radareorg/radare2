@@ -235,7 +235,8 @@ capstone-sync:
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 ifeq ($(CS_PATCHES),1)
 	-cd capstone ; $(GIT) reset --hard
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
+	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 endif
 
 .PHONY: capstone
