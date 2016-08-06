@@ -567,6 +567,34 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
 	return computed_cs;
 }
 
+static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
+	PE_(image_data_directory) *clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
+	PE_DWord image_clr_hdr_paddr       = clr_dir ? bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress) : 0;
+	int clr_dir_size                   = clr_dir ? clr_dir->Size : 0;
+	PE_(image_clr_header) *clr_hdr 	   = R_NEW0 (PE_(image_clr_header));
+	int rr, len 					   = sizeof (PE_(image_clr_header));
+
+	if (!clr_hdr) return 0;
+	rr = r_buf_read_at (bin->b, image_clr_hdr_paddr,
+					    (ut8*)(clr_hdr), len);
+
+	printf("%x\n", clr_hdr->HeaderSize);
+
+	if (clr_hdr->HeaderSize != 48) {
+		// probably not a .NET binary
+		eprintf ("Not a .NET binary!\n");
+		free (clr_hdr);
+		return 0;
+	}
+	if (rr != len) {
+		eprintf ("Warning: read (delay import directory)\n");
+		free (clr_hdr);
+		return 0;
+	}
+
+	return 1;
+}
+
 static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_(image_data_directory) *data_dir_import = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
 	PE_(image_data_directory) *data_dir_delay_import = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
@@ -1657,6 +1685,7 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin_pe_init_exports(bin);
 	bin_pe_init_resource(bin);
 	bin_pe_init_tls(bin);
+	bin_pe_init_clr_hdr(bin);
 
 	PE_(r_bin_store_all_resource_version_info)(bin);
 	bin->relocs = NULL;

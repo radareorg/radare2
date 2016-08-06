@@ -233,6 +233,28 @@ typedef struct {
 	Pe64_image_data_directory DataDirectory[PE_IMAGE_DIRECTORY_ENTRIES];
 } Pe64_image_optional_header;
 
+typedef struct {
+	ut32 HeaderSize;
+	ut16 MajorRuntimeVersion;
+	ut16 MinorRuntimeVersion;
+	ut32 MetaDataDirectoryAddress;
+	ut32 MetaDataDirectorySize;
+	ut32 Flags;
+	ut32 EntryPointToken;
+	ut32 ResourcesDirectoryAddress;
+	ut32 ResourcesDirectorySize;
+	ut32 StrongNameSignatureAddress;
+	ut32 StrongNameSignatureSize;
+    ut32 CodeManagerTableAddress;
+    ut32 CodeManagerTableSize;
+    ut32 VTableFixupsAddress;
+    ut32 VTableFixupsSize;
+    ut32 ExportAddressTableJumpsAddress;
+    ut32 ExportAddressTableJumpsSize;
+    ut32 ManagedNativeHeaderAddress;
+    ut32 ManagedNativeHeaderSize;
+} Pe32_image_clr_header, Pe64_image_clr_header;
+
 #define PE_IMAGE_SIZEOF_SHORT_NAME 8
 
 #define PE_IMAGE_SCN_MEM_SHARED    0x10000000
