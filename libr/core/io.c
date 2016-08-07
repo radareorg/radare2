@@ -288,21 +288,21 @@ R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
 		arch = strdup (arch);
 	}
 	if (arch && bits) {
+		if (bits != oldbits) {
+			r_config_set_i (core->config, "asm.bits", bits);
+			oldbits = bits;
+		}
 		if (!oldarch) {
 			RBinInfo *info = r_bin_get_info (core->bin);
 			if (info && info->arch) {
 				oldarch = strdup (info->arch);
-				oldbits = info->bits;
 			} else {
 				oldarch = strdup (r_config_get (core->config, "asm.arch"));
 				oldbits = r_config_get_i (core->config, "asm.bits");
 			}
-		}
-		if (strcmp (arch, oldarch)) {
-			r_config_set (core->config, "asm.arch", arch);
-		}
-    	if (bits != oldbits) {
-			r_config_set_i (core->config, "asm.bits", bits);
+			if (strcmp (arch, oldarch)) {
+				r_config_set (core->config, "asm.arch", arch);
+			}
 		}
 		free (arch);
 		return 1;
