@@ -647,7 +647,10 @@ int main(int argc, char **argv) {
 		case 'p': va = false; break;
 		case 'r': rad = true; break;
 		case 'v': return blob_version ("rabin2");
-		case 'L': r_bin_list (bin, rad == R_CORE_BIN_JSON); return 1;
+		case 'L':
+			bin->cb_printf = (PrintfCallback)printf;
+			r_bin_list (bin, rad == R_CORE_BIN_JSON);
+			return 1;
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == UT64_MAX) {
@@ -657,8 +660,12 @@ int main(int argc, char **argv) {
 		case 'B':
 			baddr = r_num_math (NULL, optarg);
 			break;
-		case '@': at = r_num_math (NULL, optarg); break;
-		case 'n': name = optarg; break;
+		case '@':
+			at = r_num_math (NULL, optarg);
+			break;
+		case 'n':
+			name = optarg;
+			break;
 		case 'N':
 			tmp = strchr (optarg, ':');
 			r_config_set (core.config, "bin.minstr", optarg);
