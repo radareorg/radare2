@@ -2639,6 +2639,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				}
 			} else eprintf ("esil.stats is empty. Run 'aei'\n");
 			break;
+		case '-':
+			sdb_reset (esil->stats);
+			break;
 		}
 		break;
 	case 'f': // "aef"
