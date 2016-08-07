@@ -565,13 +565,12 @@ static int cmd_help(void *data, const char *input) {
 			char foo[1024];
 			r_cons_flush ();
 			for (input++; *input==' '; input++);
-			// TODO: use prompt input
-			snprintf (foo, sizeof (foo)-1, "%s: ", input);
+			// TODO: r_cons_input()
+			snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 			r_line_set_prompt (foo);
 			r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
 			foo[strlen (foo)] = 0;
-			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR,
-				foo, strlen (foo)+1);
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 			core->num->value = r_num_math (core->num, foo);
 			}
 			break;

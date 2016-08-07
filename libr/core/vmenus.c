@@ -1724,7 +1724,6 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 	}
 }
 
-
 // In visual mode, display function list
 static ut64 var_functions_show(RCore *core, int idx, int show) {
 	int i = 0;
@@ -2079,10 +2078,12 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 static void define_data_ntimes (RCore *core, ut64 off, int times, int type) {
 	int i = 0;
 	r_meta_cleanup (core->anal, off, off + core->blocksize);
-	if (times < 0)
+	if (times < 0) {
 		times = 1;
-	for (i = 0; i < times; i++, off += type)
+	}
+	for (i = 0; i < times; i++, off += type) {
 		r_meta_add (core->anal, R_META_TYPE_DATA, off, off + type, "");
+	}
 
 }
 
@@ -2232,17 +2233,44 @@ repeat:
 		RAnalOp op;
 		char *q = NULL;
 		ut64 tgt_addr = UT64_MAX;
-		if (!isDisasmPrint (core->printidx)) break;
-
-		// TODO: get the aligned instruction even if the cursor is in
-		//       the middle of it.
+		if (!isDisasmPrint (core->printidx)) {
+			break;
+		}
+		// TODO: get the aligned instruction even if the cursor is in the middle of it.
 		r_anal_op (core->anal, &op, off,
 			core->block + off - core->offset, 32);
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 		if (op.var) {
-			q = r_str_newf ("?i Rename variable %s to;afvn %s `?y`",
-				op.var->name, op.var->name);
+//			q = r_str_newf ("?i Rename variable %s to;afvn %s `?y`", op.var->name, op.var->name);
+#if 1
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
+			if (fcn) {
+				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn, R_ANAL_VAR_KIND_BPV, op.var->name);
+				if (!bar) {
+					bar = r_anal_var_get_byname (core->anal, fcn, R_ANAL_VAR_KIND_SPV, op.var->name);
+					if (!bar) {
+						bar = r_anal_var_get_byname (core->anal, fcn, R_ANAL_VAR_KIND_REG, op.var->name);
+					}
+				}
+				if (bar) {
+					char *newname = r_cons_input (sdb_fmt (0, "New variable name for '%s': ", bar->name));
+					if (newname) {
+						if (*newname) {
+							r_anal_var_rename (core->anal, fcn->addr, bar->scope,
+								bar->kind, bar->name, newname);
+						}
+						free (newname);
+					}
+				} else {
+					eprintf ("Cannot find variable\n");
+					r_sys_sleep (1);
+				}
+			} else {
+				eprintf ("Cannot find function\n");
+				r_sys_sleep (1);
+			}
+#endif
 		} else if (tgt_addr != UT64_MAX) {
 			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, tgt_addr, R_ANAL_FCN_TYPE_NULL);
 			RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);

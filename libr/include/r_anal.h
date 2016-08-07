@@ -637,20 +637,22 @@ typedef struct r_anal_var_access_t {
 	int set;
 } RAnalVarAccess;
 
+#define R_ANAL_VAR_KIND_ANY 0
 #define R_ANAL_VAR_KIND_ARG 'a'
-#define R_ANAL_VAR_KIND_VAR 'v'
 #define R_ANAL_VAR_KIND_REG 'r'
+#define R_ANAL_VAR_KIND_BPV 'b'
+#define R_ANAL_VAR_KIND_SPV 's'
 
 // generic for args and locals
 typedef struct r_anal_var_t {
-	char *name;		/* name of the variable */
-	char *type; // cparse type of the variable
-	char kind; // 'a'rg, 'v'ar ..
-	ut64 addr;		// not used correctly?
-	ut64 eaddr;		// not used correctly?
+	char *name;  /* name of the variable */
+	char *type;  // cparse type of the variable
+	char kind;   // 'a'rg, 'v'ar ..
+	ut64 addr;   // not used correctly?
+	ut64 eaddr;  // not used correctly?
 	int size;
-	int delta;		/* delta offset inside stack frame */
-	int scope;		/* global, local... | in, out... */
+	int delta;   /* delta offset inside stack frame */
+	int scope;   /* global, local... | in, out... */
 	/* probably dupped or so */
 	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
 	RList/*RAnalValue*/ *stores;   /* where this */

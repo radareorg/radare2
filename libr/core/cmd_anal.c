@@ -87,8 +87,8 @@ static void var_help(RCore *core, char ch) {
 	const char *help_general[] = {
 		"Usage:", "afv","[rbsa]",
 		"afvr", "?", "manipulate register based arguments",
-		"afvb", "?", "manipulate bp based arguments/ vars",
-		"afvs", "?", "manipulate sp based arguments/ vars",
+		"afvb", "?", "manipulate BP based arguments/vars",
+		"afvs", "?", "manipulate SP based arguments/vars",
 		"afva", "", "analyze function arguments/vars",
 		NULL
 	};

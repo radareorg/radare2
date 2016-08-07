@@ -16,23 +16,19 @@ struct VarType {
 
 #define SDB_VARTYPE_FMT "czdz"
 
-// WHAT ABOUT REGISTER VARIABLES?
-
 #define EXISTS(x,y...) snprintf (key, sizeof (key)-1, x, ##y), sdb_exists(DB,key)
 #define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x, ##y);
 #define SETKEY2(x,y...) snprintf (key2, sizeof (key)-1, x, ##y);
 #define SETVAL(x,y...) snprintf (val, sizeof (val)-1, x, ##y);
 
-#if 0
-// DUPPED FUNCTIONALITY
-// kind = char? 'a'rg 'v'var (local, in frame), 'A' fast arg, register
-#endif
-
 R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
-	if (!kind) kind ='b';
-	if (!type) type = "int";
-//eprintf ("VAR ADD 0x%llx  - %d\n", addr, delta);
+	if (!kind) {
+		kind = R_ANAL_VAR_KIND_BPV;
+	}
+	if (!type) {
+		type = "int";
+	}
 	switch (kind) {
 	case 'r': // base pointer var/args
 	case 'b': // stack pointer var/args
@@ -43,7 +39,7 @@ R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, c
 		return false;
 	}
 	var_def = sdb_fmt (0,"%c,%s,%d,%s", kind, type, size, name);
-	if (scope>0) {
+	if (scope > 0) {
 		char *sign = "";
 		if (delta < 0) {
 			delta = -delta;
@@ -72,8 +68,12 @@ R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, c
 
 R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
-	if (!kind) kind ='b';
-	if (!type) type = "int";
+	if (!kind) {
+		kind = R_ANAL_VAR_KIND_BPV;
+	}
+	if (!type) {
+		type = "int";
+	}
 	if (size==-1) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 		RList *list = r_anal_var_list (a, fcn, kind);
@@ -91,9 +91,9 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		r_list_free (list);
 	}
 	switch (kind) {
-	case 'r':
-	case 'b':
-	case 's':
+	case R_ANAL_VAR_KIND_REG:
+	case R_ANAL_VAR_KIND_BPV:
+	case R_ANAL_VAR_KIND_SPV:
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
@@ -226,9 +226,10 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *anal, RAnalFunction *fcn, char kind
 		if (!strcmp (name, itervar->name)) {
 			var = calloc (1, sizeof(RAnalVar));
 			if (!var) return 0;
-			memcpy (var, itervar, sizeof(RAnalVar));
+			memcpy (var, itervar, sizeof (RAnalVar));
 			var->name = strdup (itervar->name);
 			var->type = strdup (itervar->type);
+			var->kind = itervar->kind;
 			var->accesses = r_list_clone (itervar->accesses);
 			var->stores = r_list_clone (itervar->stores);
 			break;
@@ -317,7 +318,10 @@ R_API int r_anal_var_rename(RAnal *a, ut64 var_addr, int scope, char kind, const
 	if (!r_anal_var_check_name (new_name)) {
 		return 0;
 	}
-	if (scope>0) { // local
+	// XXX: This is hardcoded because ->kind seems to be 0
+	scope = 1;
+	// XXX. this is pretty weak, because oldname may not exist  too and error returned.
+	if (scope > 0) { // local
 		char *sign = "";
 		SETKEY ("var.0x%"PFMT64x".%c.%d.%s", var_addr, kind, scope, old_name);
 		delta = sdb_num_get (DB, key, 0);
@@ -333,8 +337,16 @@ R_API int r_anal_var_rename(RAnal *a, ut64 var_addr, int scope, char kind, const
 	} else { // global
 		SETKEY ("var.0x%"PFMT64x, var_addr);
 		stored_name = sdb_array_get (DB, key, R_ANAL_VAR_SDB_NAME, 0);
-		if (!stored_name) return 0;
-		if (stored_name != old_name) return 0;
+		if (!stored_name) {
+			eprintf ("Cannot find key in storage.\n");
+			return 0;
+		}
+		if (old_name == NULL) {
+			old_name = stored_name;
+		} else if (strcmp (stored_name, old_name)) {
+			eprintf ("Old name missmatch %s vs %s.\n", stored_name, old_name);
+			return 0;
+		}
 		sdb_unset (DB, key, 0);
 		SETKEY ("var.0x%"PFMT64x, var_addr);
 		sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
@@ -349,10 +361,10 @@ R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int 
 	const char *xs_type_str = xs_type? "writes": "reads";
 	// TODO: kind is not used
 	if (scope > 0) { // local
-		char *var_local = sdb_fmt (0, "var.0x%"PFMT64x".%d.%d.%s",
+		const char *var_local = sdb_fmt (0, "var.0x%"PFMT64x".%d.%d.%s",
 			var_addr, scope, delta, xs_type_str);
-		char *inst_key = sdb_fmt (1, "inst.0x%"PFMT64x".vars", xs_addr);
-		char *var_def = sdb_fmt(2, "0x%"PFMT64x",%c,0x%x,0x%x", var_addr,
+		const char *inst_key = sdb_fmt (1, "inst.0x%"PFMT64x".vars", xs_addr);
+		const char *var_def = sdb_fmt (2, "0x%"PFMT64x",%c,0x%x,0x%x", var_addr,
 			kind, scope, delta);
 		sdb_set (DB, inst_key, var_def, 0);
 		return sdb_array_add_num (DB, var_local, xs_addr, 0);
@@ -397,7 +409,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 	RAnalVar *var;
 	RListIter *iter;
 	int count[2] = {0};
-	r_list_foreach(list, iter, var) {
+	r_list_foreach (list, iter, var) {
 		if (kind == 'r') {
 			count[1] ++;
 			continue;
@@ -415,9 +427,10 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 		return NULL;
 	}
 	list = r_list_new ();
-	if (!kind) kind = 'v'; // by default show vars
-	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c",
-		fcn->addr, kind), 0);
+	if (!kind) {
+		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
+	}
+	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c", fcn->addr, kind), 0);
 	if (varlist) {
 		char *next, *ptr = varlist;
 		if (varlist && *varlist) {
@@ -430,7 +443,7 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 				if (word[2] == 'n') {
 					word[2] = '-';
 				}
-				int delta = atoi (word+2);
+				int delta = atoi (word + 2);
 				if (vardef) {
 					sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 					sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);

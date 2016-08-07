@@ -587,7 +587,7 @@ static int autocomplete(RLine *line) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			RList *vars;
 			if (!strncmp (line->buffer.data, "afvn ", 5)) {
-				vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_VAR);
+				vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
 			} else {
 				vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
 			}
