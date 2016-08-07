@@ -292,23 +292,65 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
+
+static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **sym) {
+	int bin_bits = Elf_(r_bin_elf_get_bits) (bin);
+	RBinSymbol *ptr = *sym;
+	if (ptr->name[0] == '$' && !ptr->name[2]) {
+		switch (ptr->name[1]) {
+		case 'a' : //arm 
+			ptr->bits = 32;
+			break;
+		case 't': //thumb
+			ptr->bits = 16;
+			if (ptr->vaddr & 1) {
+				ptr->vaddr--;
+			}
+			if (ptr->paddr & 1) {
+				ptr->paddr--;
+			}
+			break;
+		case 'd': //data
+			break;
+		default:
+			goto arm_symbol;
+		}
+	} else {
+arm_symbol:
+		ptr->bits = bin_bits;
+		if (bin_bits != 64) {
+			ptr->bits = 32;
+			if (ptr->vaddr & 1) {
+				ptr->vaddr--;
+				ptr->bits = 16;
+			}
+			if (ptr->paddr & 1) {
+				ptr->paddr--;
+				ptr->bits = 16;
+			}
+		}
+	}
+}
 static RBinInfo* info(RBinFile *arch);
 static RList* symbols(RBinFile *arch) {
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
 	RBinSymbol *ptr = NULL;
 	RList *ret = NULL;
-	int i, bin_bits;
+	int i;
 
-	if (!arch || !arch->o || !arch->o->bin_obj) return NULL;
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		return NULL;
+	}
 
 	bin = arch->o->bin_obj;
 	ret = r_list_new ();
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	ret->free = free;
 
-	bin_bits = Elf_(r_bin_elf_get_bits) (arch->o->bin_obj);
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_SYMBOLS)))
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_SYMBOLS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
 		ut64 paddr = symbol[i].offset;
@@ -327,30 +369,18 @@ static RList* symbols(RBinFile *arch) {
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
 
-		/* detect thumb */
-		ptr->bits = bin_bits;
-		if (bin_bits != 64 && bin->ehdr.e_machine == EM_ARM) {
-			ptr->bits = 32;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-				ptr->bits = 16;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-				ptr->bits = 16;
-			}
+		if (bin->ehdr.e_machine == EM_ARM) {
+			_set_arm_thumb_bits (bin, &ptr); 
 		}
 		r_list_append (ret, ptr);
 	}
 	free (symbol);
-
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS))) {
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_IMPORTS))) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
 		ut64 paddr = symbol[i].offset;
 		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
-
 		if (!symbol[i].size) {
 			continue;
 		}
@@ -369,19 +399,9 @@ static RList* symbols(RBinFile *arch) {
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
-
 		/* detect thumb */
-		ptr->bits = bin_bits;
-		if (bin_bits != 64 && bin->ehdr.e_machine == EM_ARM) {
-			ptr->bits = 32;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-				ptr->bits = 16;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-				ptr->bits = 16;
-			}
+		if (bin->ehdr.e_machine == EM_ARM) {
+			_set_arm_thumb_bits (bin, &ptr); 
 		}
 		r_list_append (ret, ptr);
 	}

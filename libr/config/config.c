@@ -324,14 +324,20 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		node->i_value = i;
 	} else {
 		if (!cfg->lock) {
-			if (i < 1024)
+			if (i < 1024) {
 				snprintf (buf, sizeof (buf), "%" PFMT64d "", i);
-			else snprintf (buf, sizeof (buf), "0x%08" PFMT64x "", i);
+			} else {
+				snprintf (buf, sizeof (buf), "0x%08" PFMT64x "", i);
+			}
 			node = r_config_node_new (name, buf);
-			if (!node) return NULL;
+			if (!node) {
+				return NULL;
+			}
 			node->flags = CN_RW | CN_OFFT;
 			node->i_value = i;
-			if (cfg->ht) r_hashtable_insert (cfg->ht, node->hash, node);
+			if (cfg->ht) {
+				r_hashtable_insert (cfg->ht, node->hash, node);
+			}
 			if (cfg->nodes) {
 				r_list_append (cfg->nodes, node);
 				cfg->n_nodes++;
@@ -342,7 +348,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 	if (node && node->setter) {
 		ut64 oi = node->i_value;
 		int ret = node->setter (cfg->user, node);
-		if (ret == false) {
+		if (!ret) {
 			node->i_value = oi;
 			free (node->value);
 			node->value = strdup (ov? ov: "");

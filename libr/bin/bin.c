@@ -1419,6 +1419,36 @@ R_API int r_bin_is_string(RBin *bin, ut64 va) {
 	return false;
 }
 
+
+//callee must not free the symbol
+R_API RBinSymbol *r_bin_get_symbol_at_vaddr(RBin *bin, ut64 addr) {
+	//use skiplist here
+	RList *symbols = r_bin_get_symbols (bin);
+	RListIter *iter;
+	RBinSymbol *symbol;
+	r_list_foreach (symbols, iter, symbol) {
+		if (symbol->vaddr == addr) {
+			return symbol;
+		}
+	}
+	return NULL;
+}
+
+
+//callee must not free the symbol
+R_API RBinSymbol *r_bin_get_symbol_at_paddr(RBin *bin, ut64 addr) {
+	//use skiplist here
+	RList *symbols = r_bin_get_symbols (bin);
+	RListIter *iter;
+	RBinSymbol *symbol;
+	r_list_foreach (symbols, iter, symbol) {
+		if (symbol->paddr == addr) {
+			return symbol;
+		}
+	}
+	return NULL;
+}
+
 R_API RList *r_bin_get_symbols(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	return o? o->symbols: NULL;

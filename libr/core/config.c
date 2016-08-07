@@ -75,7 +75,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 }
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
-	int autoseg = (!strncmp (asmarch, "x86", 3) && asmbits==16);
+	int autoseg = (!strncmp (asmarch, "x86", 3) && asmbits == 16);
 	r_config_set (cfg, "asm.segoff", r_str_bool (autoseg));
 }
 
@@ -203,10 +203,15 @@ static int cb_asmarch(void *user, void *data) {
 
 	if (core->assembler && core->assembler->cur) {
 		bits = core->assembler->cur->bits;
-		if (8 & bits) bits = 8;
-		else if (16 & bits) bits = 16;
-		else if (32 & bits) bits = 32;
-		else bits = 64;
+		if (8 & bits) {
+			bits = 8;
+		} else if (16 & bits) {
+			bits = 16;
+		} else if (32 & bits) {
+			bits = 32;
+		} else {
+			bits = 64;
+		}
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
@@ -231,11 +236,13 @@ static int cb_asmarch(void *user, void *data) {
 	// set pcalign
 	{
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v != -1) r_config_set_i (core->config, "asm.pcalign", v);
-		else r_config_set_i (core->config, "asm.pcalign", 0);
+		if (v != -1) {
+			r_config_set_i (core->config, "asm.pcalign", v);
+		} else {
+			r_config_set_i (core->config, "asm.pcalign", 0);
+		}
 	}
-	if (!r_syscall_setup (core->anal->syscall, node->value,
-				asmos, core->anal->bits)) {
+	if (!r_syscall_setup (core->anal->syscall, node->value, asmos, core->anal->bits)) {
 		//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 		//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 	}

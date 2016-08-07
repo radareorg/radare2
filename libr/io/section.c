@@ -539,8 +539,12 @@ R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bi
 
 R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits) {
 	RIOSection *s = r_io_section_vget (io, addr);
-	if (!s || !s->bits || !s->arch) return NULL;
-	if (bits) *bits = s->bits;
+	if (!s || !s->bits || !s->arch) {
+		return NULL;
+	}
+	if (bits) {
+		*bits = s->bits;
+	}
 	return r_sys_arch_str (s->arch);
 }
 

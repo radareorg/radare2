@@ -2917,13 +2917,15 @@ toro:
 		/* highlight eip */
 		const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 		RFlagItem *item = r_flag_get (core->flags, pc);
-		if (item) ds->dest = item->offset;
+		if (item) {
+			ds->dest = item->offset;
+		}
 	}
 
 	ds_print_esil_anal_init (ds);
 	r_cons_break (NULL, NULL);
 	inc = 0;
-	if (ds->l == 0) {
+	if (!ds->l) {
 		len = ds->l = core->blocksize;
 	}
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l;
@@ -2953,14 +2955,17 @@ toro:
 				ds_print_offset (ds);
 				r_cons_printf ("(%d byte folded function)\n", r_anal_fcn_size (f));
 				//r_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
-				if (delta<0) delta = -delta;
+				if (delta < 0) {
+					delta = -delta;
+				}
 				ds->addr += delta + idx;
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
 				idx = 0;
 				of = f;
-				if (len == l)
+				if (len == l) {
 					break;
+				}
 				continue;
 			} else {
 				ds->lines--;

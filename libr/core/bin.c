@@ -1276,31 +1276,41 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	symbols = r_bin_get_symbols (r->bin);
 	r_space_set (&r->anal->meta_spaces, "bin");
 
-	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
-	else if (IS_MODE_SET (mode)) r_flag_space_set (r->flags, "symbols");
-	else if (!at && exponly) {
-		if (IS_MODE_RAD (mode)) r_cons_printf ("fs exports\n");
-		if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Exports]\n");
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("[");
+	} else if (IS_MODE_SET (mode)) {
+		r_flag_space_set (r->flags, "symbols");
+	} else if (!at && exponly) {
+		if (IS_MODE_RAD (mode)) {
+			r_cons_printf ("fs exports\n");
+		} else if (IS_MODE_NORMAL (mode)) {
+			r_cons_printf ("[Exports]\n");
+		}
 	} else if (!at && !exponly) {
-		if (IS_MODE_RAD (mode)) r_cons_printf ("fs symbols\n");
-		if (IS_MODE_NORMAL (mode)) r_cons_printf ("[Symbols]\n");
+		if (IS_MODE_RAD (mode)) {
+			r_cons_printf ("fs symbols\n");
+		} else if (IS_MODE_NORMAL (mode)) {
+			r_cons_printf ("[Symbols]\n");
+		}
 	}
 
 	//handle thumb and arm for entry point since they are not present in symbols
-	r_list_foreach (entries, iter, entry) {
-		if (IS_MODE_SET (mode)) {
-			if (is_arm && info->bits < 33) { // 16 or 32
-				int force_bits = 0;
-				ut64 addr = rva (r->bin, entry->paddr, entry->vaddr, va);
-				if (entry->paddr & 1 || entry->bits == 16) {
-					force_bits = 16;
-				} else if (info->bits == 16 && entry->bits == 32) {
-					force_bits = 32;
-				} else if (!(entry->paddr & 1)) {
-					force_bits = 32;
-				}
-				if (force_bits) {
-					r_anal_hint_set_bits (r->anal, addr, force_bits);
+	if (is_arm) {
+		r_list_foreach (entries, iter, entry) {
+			if (IS_MODE_SET (mode)) {
+				if (info->bits < 33) { // 16 or 32
+					int force_bits = 0;
+					ut64 addr = rva (r->bin, entry->paddr, entry->vaddr, va);
+					if (entry->paddr & 1 || entry->bits == 16) {
+						force_bits = 16;
+					} else if (info->bits == 16 && entry->bits == 32) {
+						force_bits = 32;
+					} else if (!(entry->paddr & 1)) {
+						force_bits = 32;
+					}
+					if (force_bits) {
+						r_anal_hint_set_bits (r->anal, addr, force_bits);
+					}
 				}
 			}
 		}

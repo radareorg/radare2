@@ -243,11 +243,22 @@ beach:
 	return ret;
 }
 
-R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
+R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
 	static char *oldarch = NULL;
 	static int oldbits = 32;
 	int bits = 0;// = core->io->section->bits;
-	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);
+	char *arch = (char *)r_io_section_get_archbits (core->io, addr, &bits);
+	if (!bits) {
+		RBinSymbol *symbol = r_bin_get_symbol_at_vaddr (core->bin, addr);
+		if (symbol) { 
+			bits = symbol->bits;
+		}
+	} 
+	if (!arch) {
+		arch = strdup (r_config_get (core->config, "asm.arch"));
+	} else {
+		arch = strdup (arch);
+	}
 	if (arch && bits) {
 		if (!oldarch) {
 			RBinInfo *info = r_bin_get_info (core->bin);
@@ -261,6 +272,7 @@ R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
 		}
 		r_config_set (core->config, "asm.arch", arch);
 		r_config_set_i (core->config, "asm.bits", bits);
+		free (arch);
 		return 1;
 	}
 	if (oldarch) {
@@ -269,6 +281,7 @@ R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
 		free (oldarch);
 		oldarch = NULL;
 	}
+	free (arch);
 	return 0;
 }
 
