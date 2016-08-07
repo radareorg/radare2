@@ -274,7 +274,7 @@ static void _set_bits(RCore *core, ut64 addr, int *bits) {
 
 R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
 	static char *oldarch = NULL;
-	static int oldbits = 32;
+	static int oldbits = 0;
 	bool flag = false;
 	int bits = 0;
 	char *arch = (char *)r_io_section_get_archbits (core->io, addr, &bits);
@@ -295,8 +295,7 @@ R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
 				oldbits = info->bits;
 			} else {
 				oldarch = strdup (r_config_get (core->config, "asm.arch"));
-				//Why is hardcoded this value?
-				oldbits = 32;
+				oldbits = r_config_get_i (core->config, "asm.bits");
 			}
 		}
 		if (strcmp (arch, oldarch)) {
