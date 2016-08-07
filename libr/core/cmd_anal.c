@@ -1162,7 +1162,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'C':{ // "afC"
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn && !(input[2] == '?'|| input[2] == 'l' || input[2] == 'o')) {
-			eprintf ("Cant find function here\n");
+			eprintf ("Cannot find function here\n");
 			break;
 		}
 		const char *help_afC[] = {

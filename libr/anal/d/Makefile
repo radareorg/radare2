@@ -9,6 +9,7 @@ F+= types-x86-32
 F+= types-x86-64
 F+= windows-types
 F+= cc-x86-32
+F+= cc-avr-8
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
 
