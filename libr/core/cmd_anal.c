@@ -1495,19 +1495,26 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) {
 				RAnalRef *ref;
 				RListIter *iter;
-				RIOSection *sect = r_io_section_vget (core->io, fcn->addr);
-				ut64 text_addr = 0x1000; // XXX use file baddr
-				if (sect) {
-					text_addr = sect->vaddr;
-				}
 				r_list_foreach (fcn->refs, iter, ref) {
-					if (ref->addr == UT64_MAX || ref->addr < text_addr) {
+					if (ref->addr == UT64_MAX) {
 						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
 						continue;
 					}
+					if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
+						continue;
+							
+					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
-					RAnalFunction *f = r_anal_get_fcn_at (core->anal, fcn->addr, 0);
-					if (!f) {
+					RAnalFunction *f = r_anal_get_fcn_at (core->anal, ref->addr, 0);
+					if (f) {
+						RListIter *iter;
+						RAnalRef *ref;
+						r_list_foreach (f->refs, iter, ref) {
+							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
+
+							// recursively follow fcn->refs again and again
+						}
+					} else {
 						f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
 						if (f) {
 							/* cut function */

@@ -822,10 +822,11 @@ repeat:
 					}
 				}
 			}
+			/// wtf whats anal.cpu doing here?
 			if (anal->cpu) { /* if UJMP is in .plt section just skip it */
 				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
 				if (s && s->name) {
-					int in_plt = strstr (s->name, ".plt") != NULL;
+					bool in_plt = strstr (s->name, ".plt") != NULL;
 					if (strstr (anal->cpu, "arm")) {
 						if (anal->bits == 64) {
 							if (!in_plt) goto river;
@@ -836,6 +837,7 @@ repeat:
 				}
 			}
 			FITFCNSZ ();
+			
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
 river:
