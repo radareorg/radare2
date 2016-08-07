@@ -169,13 +169,13 @@ static RList* strings (RBinFile *arch) {
 		len = dex_read_uleb128 (buf);
 		if (len > 1 && len < R_BIN_SIZEOF_STRINGS) {
 			ptr->string = malloc (len + 1);
-			if (!ptr->string) 
+			if (!ptr->string)
 				goto out_error;
 			off = bin->strings[i] + dex_uleb128_len (buf);
 			if (off > bin->size || off + len > bin->size) {
 				free (ptr->string);
 				goto out_error;
-			}	
+			}
 			r_buf_read_at (bin->b, off, (ut8*)ptr->string, len);
 			ptr->string[len] = 0;
 			ptr->vaddr = ptr->paddr = bin->strings[i];
@@ -381,7 +381,7 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 	return get_string (bin, cid, tid);
 }
 
-static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct dex_class_t *c, RBinClass *cls) {
+static int *parse_class(RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct dex_class_t *c, RBinClass *cls) {
 	int i, *methods;
 	ut64 SF, IF, DM, VM;
 	const ut8 *p, *p_end;
@@ -417,7 +417,8 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	dprintf ("  static fields: %u\n", (ut32)SF);
 	/* static fields */
 	int lastidx = 0;
-	DexField *fields = r_buf_get_at (binfile->buf, bin->header.fields_offset, NULL);
+	//XXX r_buf_get_at broken with R_IO_MAX_ALLOC
+	DexField *fields = (DexField *)r_buf_get_at (binfile->buf, bin->header.fields_offset, NULL);
 	const ut8 *op = p;
 	for (i = 0; i < SF; i++) {
 #if 0
@@ -441,13 +442,17 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 // TODO: add comment or store that fcn var info in sdb directly
 		eprintf ("    field access_flags: 0x%x\n", (ut32)FA);
 #endif
-		int field_id = 0;
 		ut64 fieldIdx, accessFlags;
 		int fieldOffset = bin->header.fields_offset + (p - op);
+		char *name = NULL;
 		p = r_uleb128 (p, p_end - p, &fieldIdx); // fieldIdx
 		p = r_uleb128 (p, p_end - p, &accessFlags); // accessFlags
 		fieldIdx += lastidx;
-		char *name = getstr (bin, fields[fieldIdx].name_id); //fields[lastidx].name_id);
+		if (bin->header.fields_offset + sizeof (DexField) * fieldIdx > bin->size) {
+			free (methods);
+			return NULL;
+		}
+		name = getstr (bin, fields[fieldIdx].name_id); //fields[lastidx].name_id);
 		class_name = r_str_replace (class_name, "method.", "", 0);
 		class_name = r_str_replace (class_name, ";", "_", 0);
 		//eprintf ("f sym.%s.static.field.%d_%s = %d\n", class_name, i, name, fieldOffset);
@@ -465,7 +470,6 @@ static int *parse_class (RBinFile *binfile, struct r_bin_dex_obj_t *bin, struct 
 	lastidx = 0;
 	op = p;
 	for (i = 0; i < IF; i++) {
-		int field_id = 0;
 		ut64 fieldIdx, accessFlags;
 		int fieldOffset = bin->header.fields_offset + (p - op);
 		p = r_uleb128 (p, p_end - p, &fieldIdx); // fieldIdx
@@ -666,8 +670,8 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		for (i = 0; i < bin->header.method_size; i++) {
 			//RBinDexMethod *method = &bin->methods[i];
 			if (methods[i]) {
-				struct dex_class_t *c = &bin->classes[i];
 #if 0
+				struct dex_class_t *c = &bin->classes[i];
 				char *class_name = dex_class_name (bin, c);
 				char *method_name = dex_method_name (bin, i);
 				// dprintf ("java %s %s\n", class_name, method_name);
