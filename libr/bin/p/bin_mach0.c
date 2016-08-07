@@ -80,11 +80,13 @@ static RList* entries(RBinFile *arch) {
 	RBinObject *obj = arch ? arch->o : NULL;
 	struct addr_t *entry = NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_new ()))
+	if (!obj || !obj->bin_obj || !(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(entry = MACH0_(get_entrypoint) (obj->bin_obj)))
+	if (!(entry = MACH0_(get_entrypoint) (obj->bin_obj))) {
 		return ret;
+	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->offset + obj->boffset;
 		ptr->vaddr = entry->addr; //
@@ -165,8 +167,9 @@ static RList* symbols(RBinFile *arch) {
 			"LOCAL":"GLOBAL");
 		ptr->type = r_str_const ("FUNC");
 		ptr->vaddr = symbols[i].addr;
-		ptr->paddr = symbols[i].offset+obj->boffset;
+		ptr->paddr = symbols[i].offset + obj->boffset;
 		ptr->size = symbols[i].size;
+		ptr->bits = wordsize;
 		if (wordsize == 16) {
 			// if thumb, hint non-thumb symbols
 			if (!(ptr->paddr & 1)) {

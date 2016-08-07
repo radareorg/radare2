@@ -1624,7 +1624,7 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 				entry->offset = (ut64)bin->sects[i].offset;
 				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
-				if (entry->addr==0) // workaround for object files
+				if (!entry->addr) // workaround for object files
 					entry->addr = entry->offset;
 				break;
 			}

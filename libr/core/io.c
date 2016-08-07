@@ -243,30 +243,47 @@ beach:
 	return ret;
 }
 
-R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
-	static char *oldarch = NULL;
-	static int oldbits = 32;
-	int bits = 0;
-	char *arch = (char *)r_io_section_get_archbits (core->io, addr, &bits);
+
+static void _set_bits(RCore *core, ut64 addr, int *bits) {
+	RBinAddr *entry;
+	RListIter *iter;
+	RAnalHint *hint;
+	RList *entries = NULL;
+
+	hint = r_anal_hint_get (core->anal, addr);
+	if (hint) {
+		*bits = hint->bits;
+		return;
+	}
+	entries = r_bin_get_entries (core->bin);
+	r_list_foreach (entries, iter, entry) {
+		if (entry->vaddr == addr) {
+			*bits = entry->bits;
+			return;
+		}
+	}
 	if (!bits) {
 		RBinSymbol *symbol = r_bin_get_symbol_at_vaddr (core->bin, addr);
 		if (symbol) { 
-			bits = symbol->bits;
-		} else {
-			//do we have a entry at addr?
-			RBinAddr *entry;
-			RListIter *iter;
-			RList *entries = r_bin_get_entries (core->bin);
-			r_list_foreach (entries, iter, entry) {
-				if (entry->vaddr == addr) {
-					bits = entry->bits;
-					break;
-				}
-			}
+			*bits = symbol->bits;
+			return;
 		}
 	} 
+}
+
+
+R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
+	static char *oldarch = NULL;
+	static int oldbits = 32;
+	bool flag = false;
+	int bits = 0;
+	char *arch = (char *)r_io_section_get_archbits (core->io, addr, &bits);
+	if (!bits) {
+		_set_bits (core, addr, &bits);
+	}
 	if (!arch) {
 		arch = strdup (r_config_get (core->config, "asm.arch"));
+		flag = true;
 	} else {
 		arch = strdup (arch);
 	}
@@ -278,19 +295,28 @@ R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
 				oldbits = info->bits;
 			} else {
 				oldarch = strdup (r_config_get (core->config, "asm.arch"));
+				//Why is hardcoded this value?
 				oldbits = 32;
 			}
 		}
-		r_config_set (core->config, "asm.arch", arch);
-		r_config_set_i (core->config, "asm.bits", bits);
+		if (strcmp (arch, oldarch)) {
+			r_config_set (core->config, "asm.arch", arch);
+		}
+    	if (bits != oldbits) {
+			r_config_set_i (core->config, "asm.bits", bits);
+		}
 		free (arch);
 		return 1;
 	}
 	if (oldarch) {
-		r_config_set (core->config, "asm.arch", oldarch);
-		r_config_set_i (core->config, "asm.bits", oldbits);
+		if (!(flag && !strcmp (oldarch, arch))) {
+			r_config_set (core->config, "asm.arch", oldarch);
+		}
 		free (oldarch);
 		oldarch = NULL;
+	}
+	if (oldbits) {
+		r_config_set_i (core->config, "asm.bits", oldbits);
 	}
 	free (arch);
 	return 0;

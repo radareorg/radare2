@@ -2649,7 +2649,11 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
 	int i, ioc, nargs;
-	if (!esil || !ds->show_comments || !ds->show_emu) {
+	if (!esil) {
+		ds_print_esil_anal_init (ds);
+		esil = core->anal->esil;
+	}
+	if (!ds->show_comments || !ds->show_emu) {
 		goto beach;
 	}
 	{
