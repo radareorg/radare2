@@ -1049,6 +1049,10 @@ R_API void r_io_set_raw(RIO *io, int raw) {
 
 // check if reading at offset or writting to offset is reasonable
 R_API int r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
+	bool io_sectonly = io->sectonly;
+	bool io_va = io->va;
+//io_va=true;
+//	io_sectonly = true;
 	if (!io) {
 		eprintf ("r_io_is_valid_offset: io is NULL\n");
 		r_sys_backtrace ();
@@ -1071,41 +1075,34 @@ R_API int r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
 if (hasperm) {
 	int ret = (r_io_map_exists_for_offset (io, offset) ||
 			r_io_section_exists_for_vaddr (io, offset, hasperm));
-if (!ret)
-	r_sys_backtrace ();
 }
 #endif
-	switch (io->va) {
-#if 0
-       case 0: return (offset < r_io_size (io));
-       case 1: return (r_io_map_exists_for_offset (io, offset) ||
-                       r_io_section_exists_for_vaddr (io, offset, hasperm));
-#else
-	case 0: {
+	if (!io_va) {
 		if ((r_io_map_exists_for_offset (io, offset))) {
 			return true;
 		}
 		return (offset < r_io_size (io));
-	} break;
-	case 1:
-		if (io->debug) {
-			// check debug maps here
-			return 1;
+	}
+	if (io->debug) {
+		// TODO check debug maps here
+		return 1;
+	} else {
+		if (io_sectonly) {
+			if (r_list_empty (io->sections)) {
+				return true;
+			}
+			return (r_io_map_exists_for_offset (io, offset) ||
+				r_io_section_exists_for_vaddr (io, offset, hasperm));
 		} else {
-			if (io->sectonly) {
-				if (r_list_empty (io->sections)) {
+			if (!io_va) {
+				if (!io_va && r_io_map_exists_for_offset (io, offset)) {
 					return true;
 				}
-				return (r_io_map_exists_for_offset (io, offset) ||
-					r_io_section_exists_for_vaddr (io, offset, hasperm));
-			} else {
-				return (r_io_map_exists_for_offset (io, offset) ||
-					r_io_section_exists_for_vaddr (io, offset, hasperm));
-				//return (offset < r_io_size (io));
 			}
+			return r_io_section_exists_for_vaddr (io, offset, hasperm);
+			//return (offset < r_io_size (io));
 		}
-#endif
-	} // more io.va modes pls
+	}
 	eprintf ("r_io_is_valid_offset: io->va is %i\n", io->va);
 	r_sys_backtrace ();
 	return R_FAIL;

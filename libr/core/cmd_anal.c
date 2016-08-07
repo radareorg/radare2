@@ -1500,16 +1500,26 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
 						continue;
 					}
+					if (ref->type != 'c' && ref->type != 'C') {
+						/* only follow code/call references */
+						continue;
+					}
 					if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
 						continue;
 							
 					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
+					/* use recursivity here */
+#if 1
 					RAnalFunction *f = r_anal_get_fcn_at (core->anal, ref->addr, 0);
 					if (f) {
 						RListIter *iter;
 						RAnalRef *ref;
 						r_list_foreach (f->refs, iter, ref) {
+							if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
+								continue;
+
+							}
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
 
 							// recursively follow fcn->refs again and again
@@ -1527,6 +1537,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 							eprintf ("Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
 						}
 					}
+#endif
 				}
 			}
 		}

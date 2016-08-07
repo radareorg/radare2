@@ -423,9 +423,13 @@ R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr, int hasperm) {
 // TODO: deprecate ?
 R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr, int hasperm) {
 	RIOSection *s = r_io_section_vget (io, vaddr);
-	if (!s) return false;
-	if (hasperm) return (s->rwx & hasperm)? true: false;
-	return true;
+	if (s) {
+		if (hasperm) {
+			return (s->rwx & hasperm);
+		}
+		return true;
+	}
+	return false;
 }
 
 // dupped in vio.c
