@@ -122,7 +122,9 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 				if (!top_entry_n || current_entry_n >= top_entry_n) {
 					// remove everything after a tab (in ??, it contains the commands)
 					x = strchr (current_entry, '\t');
-					if (x) *x = 0;
+					if (x) {
+						*x = 0;
+					}
 					p = strdup (current_entry);
 					// if the filter is empty, print the entry and move on
 					if (!user_input[0]) {
@@ -135,7 +137,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 							r_cons_printf (" %c ", first_line? '-': ' ');
 							// Instead of printing one char at the time
 							// (which would be slow), we group substrings of the same color
-							for (j = 0; p[j]; j++) {
+							for (j = 0; p[j] && j < buf_size; j++) {
 								if (mask[j] != last_mask) {
 									tmp = p[j];
 									p[j] = 0;
@@ -165,9 +167,12 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 					}
 					// Clean up and restore the tab character (if any)
 					free (p);
-					if (x) *x = '\t';
-					if (first_line) 
+					if (x) {
+						*x = '\t';
+					}
+					if (first_line) {
 						selected_entry = current_entry;
+					}	
 					first_line = 0;
 				}
 				current_entry_n++;
