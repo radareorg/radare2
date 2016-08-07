@@ -246,12 +246,23 @@ beach:
 R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
 	static char *oldarch = NULL;
 	static int oldbits = 32;
-	int bits = 0;// = core->io->section->bits;
+	int bits = 0;
 	char *arch = (char *)r_io_section_get_archbits (core->io, addr, &bits);
 	if (!bits) {
 		RBinSymbol *symbol = r_bin_get_symbol_at_vaddr (core->bin, addr);
 		if (symbol) { 
 			bits = symbol->bits;
+		} else {
+			//do we have a entry at addr?
+			RBinAddr *entry;
+			RListIter *iter;
+			RList *entries = r_bin_get_entries (core->bin);
+			r_list_foreach (entries, iter, entry) {
+				if (entry->vaddr == addr) {
+					bits = entry->bits;
+					break;
+				}
+			}
 		}
 	} 
 	if (!arch) {

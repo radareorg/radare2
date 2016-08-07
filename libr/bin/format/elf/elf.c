@@ -1179,15 +1179,23 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut64 entry;
-	if (!bin) return 0LL;
+	if (!bin) {
+		return 0LL;
+	}
 	entry = r_read_ble32 (&bin->ehdr.e_entry, 0);
-	if (entry == 0LL) {
+	if (entry == 0LL) { 
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
-		if (entry != UT64_MAX) return entry;
+		if (entry != UT64_MAX) {
+			return entry;
+		}
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
-		if (entry != UT64_MAX) return entry;
+		if (entry != UT64_MAX) {
+			return entry;
+		}
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init");
-		if (entry != UT64_MAX) return entry;
+		if (entry != UT64_MAX) {
+			return entry;
+		}
 	}
 	return Elf_(r_bin_elf_v2p) (bin, entry);
 }

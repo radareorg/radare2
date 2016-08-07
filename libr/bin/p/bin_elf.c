@@ -152,8 +152,23 @@ static RList* entries(RBinFile *arch) {
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (arch->o->bin_obj);
-	ptr->vaddr = Elf_(r_bin_elf_p2v) (arch->o->bin_obj, ptr->paddr);
+	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
+	ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+
+	if (obj->ehdr.e_machine == EM_ARM) {
+		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
+		if (bin_bits != 64) {
+			ptr->bits = 32;
+			if (ptr->vaddr & 1) {
+				ptr->vaddr--;
+				ptr->bits = 16;
+			}
+			if (ptr->paddr & 1) {
+				ptr->paddr--;
+				ptr->bits = 16;
+			}
+		}
+	}
 	r_list_append (ret, ptr);
 	return ret;
 }
