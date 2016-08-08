@@ -72,8 +72,10 @@ init|update)
 		cd radare2-pm
 		git pull || exit 1
 	else
+		echo git clone https://github.com/radare/radare2-pm
 		git clone https://github.com/radare/radare2-pm || exit 1
 		cd radare2-pm
+		pwd
 	fi
 
 	if [ -d "${R2PM_DBDIR}" ] && [ ! -L "${R2PM_DBDIR}" ]; then
