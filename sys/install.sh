@@ -32,7 +32,7 @@ fi
 
 type sudo || NOSUDO=1
 [ "$(id -u)" = 0 ] || SUDO=sudo
-[ -n "${NOSUDO}" ] && SUDO=
+[ -n "${NOSUDO}" ] && SUDO="echo NOTE: Please run as root: "
 
 if [ "${M32}" = 1 ]; then
 	./sys/build-m32.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}
