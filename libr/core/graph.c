@@ -1,12 +1,18 @@
-/* Copyright radare2 - 2014-2015 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2016 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
 #include <ctype.h>
 #include <limits.h>
 
-static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
 static int mousemode = 0;
+static const char *mousemodes[] = {
+	"canvas-y",
+	"canvas-x",
+	"node-y",
+	"node-x",
+	NULL
+};
 
 #define BORDER 3
 #define BORDER_WIDTH 4
@@ -2743,9 +2749,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" t/f          - follow true/false edges\n"
 					" g([A-Za-z]*) - follow jmp/call identified by shortcut\n"
 					" G            - debug trace callgraph (generated with dtc)\n"
+					" n            - rename function\n"
+					" o            - go/seek to given offset\n"
 					" r            - refresh graph\n"
 					" R            - randomize colors\n"
-					" o            - go/seek to given offset\n"
 					" u/U          - undo/redo seek\n"
 					" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
 					" s/S          - step / step over\n"
@@ -2781,8 +2788,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
 			if (undo) {
 				r_core_seek (core, undo->off, 0);
+			} else {
+				eprintf ("Cannot undo\n");
 			}
-			else eprintf ("Can not undo\n");
 			break;
 		}
 		case 'U':
@@ -2831,20 +2839,34 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'm':
 			mousemode++;
-			if (!mousemodes[mousemode])
+			if (!mousemodes[mousemode]) {
 				mousemode = 0;
+			}
 			break;
 		case 'M':
 			mousemode--;
-			if (mousemode<0)
+			if (mousemode < 0) {
 				mousemode = 3;
+			}
+			break;
+		case 'n':
+			{
+				char *newname = r_cons_input ("New function name:");
+				if (newname) {
+					if (*newname) {
+						r_core_cmdf (core, "\"afn %s\"", newname);
+						get_bbupdate (g, core, fcn);
+					}
+					free (newname);
+				}
+			}
 			break;
 		case 'J':
 			if (okey == 27 && r_cons_readchar () == 126) {
 				// handle page down key
 				can->sy -= PAGEKEY_SPEED * (invscroll ? -1 : 1);
 			} else {
-				get_anode(g->curnode)->y += movspeed;
+				get_anode (g->curnode)->y += movspeed;
 			}
 			break;
 		case 'K':
@@ -2852,7 +2874,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				// handle page up key
 				can->sy += PAGEKEY_SPEED * (invscroll ? -1 : 1);
 			} else {
-				get_anode(g->curnode)->y -= movspeed;
+				get_anode (g->curnode)->y -= movspeed;
 			}
 			break;
 		case 'F':
@@ -2868,10 +2890,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				const RGraphNode *gn = find_near_of (g, NULL, true);
 				g->update_seek_on = get_anode (gn);
 			} else {
-				get_anode(g->curnode)->x -= movspeed;
+				get_anode (g->curnode)->x -= movspeed;
 			}
 			break;
-		case 'L': get_anode(g->curnode)->x += movspeed; break;
+		case 'L': get_anode (g->curnode)->x += movspeed; break;
 		case 'j': can->sy -= movspeed * (invscroll ? -1 : 1); break;
 		case 'k': can->sy += movspeed * (invscroll ? -1 : 1); break;
 		case 'l': can->sx -= movspeed * (invscroll ? -1 : 1); break;
