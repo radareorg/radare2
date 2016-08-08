@@ -623,7 +623,7 @@ void r_comment_vars (RCore *core, const char *input) {
 			heap_comment = (char *)sdb_decode (comment + 7, NULL);
 			comment = heap_comment;
 		}
-		var = r_anal_var_get_byname (core->anal, fcn, input[0], name);
+		var = r_anal_var_get_byname (core->anal, fcn, name);
 		if (var) {
 			idx = var->delta;
 		} else if (!strncmp (name, "0x", 2))  {
@@ -656,7 +656,7 @@ void r_comment_vars (RCore *core, const char *input) {
 		}
 		break;
 	case '-':
-		var = r_anal_var_get_byname (core->anal,fcn, input[0], name);
+		var = r_anal_var_get_byname (core->anal,fcn, name);
 		if (var) {
 			idx = var->delta;
 		} else if (!strncmp (name, "0x", 2)) {
@@ -677,7 +677,7 @@ void r_comment_vars (RCore *core, const char *input) {
 		break;
 	case '!': {
 		char *comment;
-		var = r_anal_var_get_byname (core->anal,fcn, input[0], name);
+		var = r_anal_var_get_byname (core->anal,fcn, name);
 		if (!var) {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
