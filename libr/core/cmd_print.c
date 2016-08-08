@@ -2550,24 +2550,35 @@ static int cmd_print(void *data, const char *input) {
 						}
 					}
 					r_list_sort (f->bbs, (RListComparator)bbcmp);
-					// TODO: sort by addr
-					bool asm_lines = r_config_get_i (core->config, "asm.lines");
-					r_config_set_i (core->config, "asm.lines", 0);
-					//r_list_sort (f->bbs, &r_anal_ex_bb_address_comparator);
-					r_list_foreach (f->bbs, iter, b) {
-						r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-#if 1
-						if (b->jump != UT64_MAX) {
-							r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
-							//r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
+					if (input[2] == 'j') {
+						r_cons_printf ("[");
+						r_list_foreach (f->bbs, iter, b) {
+							r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+							if (iter->n) {
+								r_cons_printf (",");
+							}
 						}
-						if (b->fail != UT64_MAX) {
-							r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
+						r_cons_printf ("]");
+					} else {
+						// TODO: sort by addr
+						bool asm_lines = r_config_get_i (core->config, "asm.lines");
+						r_config_set_i (core->config, "asm.lines", 0);
+						//r_list_sort (f->bbs, &r_anal_ex_bb_address_comparator);
+						r_list_foreach (f->bbs, iter, b) {
+							r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+	#if 1
+							if (b->jump != UT64_MAX) {
+								r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
+								//r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
+							}
+							if (b->fail != UT64_MAX) {
+								r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
+							}
+							r_cons_newline ();
+	#endif
 						}
-						r_cons_newline ();
-#endif
+						r_config_set_i (core->config, "asm.lines", asm_lines);
 					}
-					r_config_set_i (core->config, "asm.lines", asm_lines);
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 					core->num->value = 0;
