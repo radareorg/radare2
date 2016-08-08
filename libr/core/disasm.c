@@ -1892,7 +1892,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			for (j = 0; j < k; j++)
 				pad[j] = ' ';
 			pad[j] = '\0';
-		} else { 
+		} else {
 		    	pad[0] = 0;
 		}
 	} else {
@@ -2338,19 +2338,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		r_io_read_at (core->io, p, (ut8*)msg, len - 1);
 
 		if (ds->analop.refptr) {
-			ut64 num;
-			if (core->print->big_endian) {
-				num = r_read_be64 (msg);
-			} else {
-				num = r_read_le64 (msg);
-			}
-			// TODO: make this more complete
-			switch (ds->analop.refptr) {
-			case 1: num &= UT8_MAX; break;
-			case 2: num &= UT16_MAX; break;
-			case 4: num &= UT32_MAX; break;
-			case 8: num &= UT64_MAX; break;
-			}
+			ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr*8);
+
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
 
