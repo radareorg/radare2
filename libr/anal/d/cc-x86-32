@@ -38,4 +38,7 @@ cc.watcom.arg1=eax
 cc.watcom.arg2=edx
 cc.watcom.arg3=ebx
 cc.watcom.arg4=ecx
-cc.watcom.argn=stack
+
+pascal=cc
+cc.pascal.name=pascal
+cc.pascal.argn=stack_rev

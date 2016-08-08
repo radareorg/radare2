@@ -8,7 +8,13 @@ F+= windows-x86-64
 F+= types-x86-32
 F+= types-x86-64
 F+= windows-types
+F+= cc-x86-64
 F+= cc-x86-32
+F+= cc-mips-32
+F+= cc-m68k-32
+F+= cc-sparc-32
+F+= cc-arm-64
+F+= cc-arm-32
 F+= cc-avr-8
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
