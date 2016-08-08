@@ -377,6 +377,8 @@ static int cmd_help(void *data, const char *input) {
 			"$B", "", "base address (aligned lowest map address)",
 			"$F", "", "current function size",
 			"$FB", "", "begin of function",
+			"$Fb", "", "address of the current basic block",
+			"$Fs", "", "size of the current basic block",
 			"$FE", "", "end of function",
 			"$FS", "", "function size",
 			"$FI", "", "function instructions",

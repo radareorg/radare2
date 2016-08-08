@@ -237,6 +237,28 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	return UT64_MAX;
 }
 
+static ut64 bbBegin(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size)) {
+			return bb->addr;
+		}
+	}
+	return UT64_MAX;
+}
+
+static ut64 bbSize(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size)) {
+			return bb->size;
+		}
+	}
+	return 0;
+}
+
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RAnalFunction *fcn;
@@ -428,6 +450,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				case 'E': return fcn->addr + fcn->_size; // end
 				case 'S': return r_anal_fcn_size (fcn);
 				case 'I': return fcn->ninstr;
+				/* basic blocks */
+				case 'b': return bbBegin (fcn, core->offset);
+				case 's': return bbSize (fcn, core->offset);
 				}
 				return fcn->addr;
 			}
@@ -2139,4 +2164,3 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	}
 	return b;
 }
-
