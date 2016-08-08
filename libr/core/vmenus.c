@@ -2246,11 +2246,11 @@ repeat:
 #if 1
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
-				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn, R_ANAL_VAR_KIND_BPV, op.var->name);
+				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
 				if (!bar) {
-					bar = r_anal_var_get_byname (core->anal, fcn, R_ANAL_VAR_KIND_SPV, op.var->name);
+					bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
 					if (!bar) {
-						bar = r_anal_var_get_byname (core->anal, fcn, R_ANAL_VAR_KIND_REG, op.var->name);
+						bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
 					}
 				}
 				if (bar) {

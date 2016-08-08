@@ -44,28 +44,26 @@ static void flag_every_function(RCore *core) {
 static void var_help(RCore *core, char ch) {
 	const char *help_sp[] = {
 		"Usage:", "afvs", " [idx] [type] [name]",
-		"afvs", "", "list stack based arguments and variables",
+		"afvs", "", "list stack based arguments and locals",
 		"afvs*", "", "same as afvs but in r2 commands",
-		"afvs", " [idx] [name] [type]", "define stack based arguments,variables",
+		"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
 		"afvsd", " name", "Displays the value of stack pointer args and locals in the debugger",
-		"afvsn", " [old_name] [new_name]", "rename stack based argument or variable",
-		"afvst", " [name] [new_type]", "change type for given argument or variable",
-		"afvsj", "", "return list of stack based arguments and variables in JSON format",
-		"afvs-", " [name]", "delete stack based argument or variables with the given name",
+		"afvst", " [name] [new_type]", "change type for given argument or locals",
+		"afvsj", "", "return list of stack based arguments and locals in JSON format",
+		"afvs-", " [name]", "delete stack based argument or locals with the given name",
 		"afvsg", " [idx] [addr]", "define var get reference",
 		"afvss", " [idx] [addr]", "define var set reference",
 		NULL
 	};
 	const char *help_bp[] = {
 		"Usage:", "afvb", " [idx] [type] [name]",
-		"afvb", "", "list base pointer based arguments, variables",
+		"afvb", "", "list base pointer based arguments, locals",
 		"afvb*", "", "same as afvb but in r2 commands",
-		"afvb", " [idx] [name] ([type])", "define base pointer based argument, variable",
+		"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
 		"afvbd", " name", "Displays the value of base pointer args and locals in the debugger",
-		"afvbn", " [old_name] [new_name]", "rename base pointer based argument or variable",
-		"afvbt", " [name] [new_type]", "change type for given base pointer based argument or variable",
-		"afvbj", "", "return list of base pointer based arguments, variables in JSON format",
-		"afvb-", " [name]", "delete argument/ variables at the given name",
+		"afvbt", " [name] [new_type]", "change type for given base pointer based argument or locals",
+		"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
+		"afvb-", " [name]", "delete argument/locals at the given name",
 		"afvbg", " [idx] [addr]", "define var get reference",
 		"afvbs", " [idx] [addr]", "define var set reference",
 		NULL
@@ -76,20 +74,20 @@ static void var_help(RCore *core, char ch) {
 		"afvr*", "", "same as afvr but in r2 commands",
 		"afvr", " [reg] [name] ([type])", "define register arguments",
 		"afvrd", " name", "Displays the value of register based args in the debugger",
-		"afvrn", " [old_name] [new_name]", "rename argument",
-		"afvrt", " [name] [new_type]", "change type for given argument",
+				"afvrt", " [name] [new_type]", "change type for given argument",
 		"afvrj", "", "return list of register arguments in JSON format",
 		"afvr-", " [name]", "delete register arguments at the given index",
-		"afvrg", " [reg] [addr]", "define var get reference",
-		"afvrs", " [reg] [addr]", "define var set reference",
+		"afvrg", " [reg] [addr]", "define argument get reference",
+		"afvrs", " [reg] [addr]", "define argument set reference",
 		NULL
 	};
 	const char *help_general[] = {
 		"Usage:", "afv","[rbsa]",
 		"afvr", "?", "manipulate register based arguments",
-		"afvb", "?", "manipulate BP based arguments/vars",
-		"afvs", "?", "manipulate SP based arguments/vars",
-		"afva", "", "analyze function arguments/vars",
+		"afvb", "?", "manipulate bp based arguments/locals",
+		"afvs", "?", "manipulate sp based arguments/locals",
+		"afvn", " [old_name] [new_name]", "rename arguments/locals",
+		"afva", "", "analyze function arguments/locals",
 		NULL
 	};
 	switch (ch) {
@@ -125,13 +123,35 @@ static int var_cmd (RCore *core, const char *str) {
 		return false;
 	}
 	/* Variable access CFvs = set fun var */
-	if (str[0] == 'a' && r_config_get_i (core->config, "anal.vars")) {
-		r_anal_var_delete_all (core->anal, fcn->addr, 'r');
-		r_anal_var_delete_all (core->anal, fcn->addr, 'b');
-		r_anal_var_delete_all (core->anal, fcn->addr, 's');
-		fcn_callconv (core, fcn);
+	switch (str[0]) {
+	case 'a':
+		if (r_config_get_i (core->config, "anal.vars")) {
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
+			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
+			fcn_callconv (core, fcn);
+		}
+		return true;
+	case 'n': {
+		RAnalVar *v1;
+		char *str_dup = strdup (str);
+		char *old_name = r_str_trim_head (strchr (str_dup, ' '));
+		char *new_name = strchr (old_name, ' ');
+		if (!new_name) {
+			var_help (core, '?');
+			return false;
+		}
+		*new_name++ = 0;
+		r_str_chop (new_name);
+		v1 = r_anal_var_get_byname (core->anal, fcn, old_name);
+		if (v1) {
+			r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
+				v1->kind, old_name, new_name);
+			r_anal_var_free (v1);
+		}
+		free (str_dup);
+	} return true;
 	}
-
 	switch (str[1]) {
 	case '\0':
 	case '*':
@@ -157,7 +177,7 @@ static int var_cmd (RCore *core, const char *str) {
 		break;
 	case 'd': {
 		char *name = r_str_chop(strdup(str+2));
-		RAnalVar *v = r_anal_var_get_byname (core->anal, fcn, type, name);
+		RAnalVar *v = r_anal_var_get_byname (core->anal, fcn, name);
 		if (!v) {
 			eprintf ("no arg/local with this name exists\n");
 			free (name);
@@ -204,35 +224,6 @@ static int var_cmd (RCore *core, const char *str) {
 		free (name);
 	}
 		 break;
-	case 'n': {
-		RAnalVar *v1;
-		str++;
-		for (str++; *str == ' ';) str++;
-		char *new_name = strchr (str, ' ');
-		if (!new_name) {
-			var_help (core, type);
-			break;
-		}
-		*new_name++ = 0;
-		char *old_name = strdup (str);
-		r_str_split (old_name, ' ');
-		v1 = r_anal_var_get_byname (core->anal, fcn, 'r', new_name);
-		if (!v1) {
-			v1 = r_anal_var_get_byname (core->anal, fcn, 'b', new_name);
-		}
-		if (!v1) {
-			v1 = r_anal_var_get_byname (core->anal, fcn, 's', new_name);
-		}
-		if(v1) {
-			free (v1);
-			eprintf("variable or arg with name `%s` already exist\n", new_name);
-			break;
-		}
-		r_anal_var_rename (core->anal, fcn->addr,
-				R_ANAL_VAR_SCOPE_LOCAL, (char)type,
-				old_name, new_name);
-		free (old_name);
-	} break;
 	case 't': {
 		//should we read types from t
 		const char *name = str + 1;

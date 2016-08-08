@@ -222,12 +222,12 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
 	while (1) {
-		RAnalVar *v = r_anal_var_get_byname (a, fcn, 'a', varname);
+		RAnalVar *v = r_anal_var_get_byname (a, fcn, varname);
 		if (!v) {
-			v = r_anal_var_get_byname (a, fcn, 'e', varname);
+			v = r_anal_var_get_byname (a, fcn, varname);
 		}
 		if (!v) {
-			v = r_anal_var_get_byname (a, fcn, 'v', varname);
+			v = r_anal_var_get_byname (a, fcn, varname);
 		}
 		if (!v) break;
 		if (v->kind == type && R_ABS (v->delta) == idx) {
