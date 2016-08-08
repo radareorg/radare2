@@ -90,7 +90,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass);
 
 static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass);
 
-static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBinClass *klass);
+static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBinClass *klass, bool is_static);
 
 static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass);
 
@@ -386,7 +386,7 @@ error:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBinClass *klass) {
+static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBinClass *klass, bool is_static) {
 	struct MACH0_(SMethodList) ml;
 	struct MACH0_(SMethod) m;
 	mach0_ut r;
@@ -397,13 +397,14 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	RBinSymbol *method = NULL;
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
-		eprintf ("uncorrect RBinFile pointer\n");
+		eprintf ("incorrect RBinFile pointer\n");
 		return;
 	}
 
 	r = get_pointer (p, &offset, &left, arch);
-	if (r == 0)
+	if (r == 0) {
 		return;
+	}
 	memset (&ml, '\0', sizeof (struct MACH0_(SMethodList)));
 
 	if (r + left < r || r + sizeof (struct MACH0_(SMethodList)) < r) return;
@@ -494,6 +495,9 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 		}
 #endif
 		method->vaddr = m.imp;
+		method->type = is_static
+			? "FUNC"
+			: "METH";
 
 		if (is_thumb (arch)) {
 			if (method->vaddr & 1) {
@@ -601,18 +605,17 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 
 		if (pc.instanceMethods > 0) {
 			get_method_list_t (pc.instanceMethods, arch,
-					class_name, klass);
+					class_name, klass, false);
 		}
 		if (pc.classMethods > 0) {
 			get_method_list_t (pc.classMethods, arch,
-					class_name, klass);
+					class_name, klass, true);
 		}
 		R_FREE (class_name);
 		p += sizeof (ut32);
 		offset += sizeof (ut32);
 	}
 }
-
 
 static const char *skipnum(const char *s) {
 	while (IS_NUMBER (*s)) s++;
@@ -709,7 +712,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 #endif
 
 	if (cro.baseMethods > 0) {
-		get_method_list_t (cro.baseMethods, arch, klass->name, klass);
+		get_method_list_t (cro.baseMethods, arch, klass->name, klass, false);
 	}
 
 	if (cro.baseProtocols > 0) {

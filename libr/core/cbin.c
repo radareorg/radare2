@@ -1816,8 +1816,9 @@ static int bin_classes(RCore *r, int mode) {
 	if (!cs) return false;
 
 	// XXX: support for classes is broken and needs more love
-	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
-	else if (IS_MODE_SET (mode)) {
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("[");
+	} else if (IS_MODE_SET (mode)) {
 		if (!r_config_get_i (r->config, "bin.classes")) {
 			return false;
 		}
@@ -1827,7 +1828,9 @@ static int bin_classes(RCore *r, int mode) {
 	}
 
 	r_list_foreach (cs, iter, c) {
-		if (!c || !c->name || !c->name[0]) continue;
+		if (!c || !c->name || !c->name[0]) {
+			continue;
+		}
 		name = strdup (c->name);
 		r_name_filter (name, 0);
 
@@ -1865,8 +1868,8 @@ static int bin_classes(RCore *r, int mode) {
 					c->index);
 			}
 			r_list_foreach (c->methods, iter2, sym) {
-				r_cons_printf ("%s{\"name\":\"%s\",\"addr\":%"PFMT64d"}",
-					iter2->p? ",": "", sym->name, sym->vaddr);
+				r_cons_printf ("%s{\"name\":\"%s\",\"static\":%s,\"addr\":%"PFMT64d"}",
+					iter2->p? ",": "", sym->name, (sym->bind && strcmp (sym->bind, "METH"))? "true": "false", sym->vaddr);
 			}
 			r_cons_printf ("]}");
 		} else {

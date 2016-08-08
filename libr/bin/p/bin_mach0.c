@@ -164,7 +164,7 @@ static RList* symbols(RBinFile *arch) {
 		ptr->name = strdup ((char*)symbols[i].name);
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-			"LOCAL":"GLOBAL");
+			"LOCAL": "GLOBAL");
 		ptr->type = r_str_const ("FUNC");
 		ptr->vaddr = symbols[i].addr;
 		ptr->paddr = symbols[i].offset + obj->boffset;
