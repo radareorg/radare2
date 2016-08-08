@@ -2339,14 +2339,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 
 		if (ds->analop.refptr) {
 			ut64 num;
-#if 0
 			if (core->print->big_endian) {
-				num = r_read_le64 (msg);
-			} else {
 				num = r_read_be64 (msg);
+			} else {
+				num = r_read_le64 (msg);
 			}
-#endif
-			num = r_read_le64 (msg);
 			// TODO: make this more complete
 			switch (ds->analop.refptr) {
 			case 1: num &= UT8_MAX; break;
