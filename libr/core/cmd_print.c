@@ -102,10 +102,11 @@ static void cmd_pDj (RCore *core, const char *arg) {
 		ut8 *buf = malloc (bsize);
 		if (buf) {
 			r_io_read_at (core->io, core->offset, buf, bsize);
-			r_core_print_disasm_json (core, core->offset, buf,
-				bsize, 0);
+			r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
 			free (buf);
-		} else eprintf ("cannot allocate %d bytes\n", bsize);
+		} else {
+			eprintf ("cannot allocate %d bytes\n", bsize);
+		}
 	}
 	r_cons_newline ();
 }
@@ -2730,14 +2731,15 @@ static int cmd_print(void *data, const char *input) {
 
 			if (bw_disassemble) {
 				block = malloc (core->blocksize);
-				if (l<0) l = -l;
+				if (l < 0) {
+					l = -l;
+				}
 				if (block) {
 					if (*input == 'D'){ //pD
 						free (block);
 						block = malloc (l);
 						r_core_read_at (core, addr-l, block, l); //core->blocksize);
-						core->num->value = r_core_print_disasm (core->print,
-							core, addr-l, block, l, l, 0, 1);
+						core->num->value = r_core_print_disasm (core->print, core, addr-l, block, l, l, 0, 1);
 					} else { //pd
 						const int bs = core->blocksize;
 						int instr_len;

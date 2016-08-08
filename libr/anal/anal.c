@@ -41,7 +41,9 @@ static int meta_count_for(void *user, int idx) {
 R_API RAnal *r_anal_new() {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
-	if (!anal) return NULL;
+	if (!anal) {
+		return NULL;
+	}
 	anal->os = strdup (R_SYS_OS);
 	anal->noreturn = r_list_newf ((RListFree)&r_anal_noreturn_free);
 	anal->reflines = anal->reflines2 = NULL;
@@ -70,6 +72,7 @@ R_API RAnal *r_anal_new() {
 	r_io_bind_init (anal->iob);
 	r_flag_bind_init (anal->flb);
 	anal->reg = r_reg_new ();
+	anal->bits_ranges = r_list_newf (free);
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
 #if USE_NEW_FCN_STORE
@@ -80,7 +83,7 @@ R_API RAnal *r_anal_new() {
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
-		for (i=0; anal_static_plugins[i]; i++) {
+		for (i = 0; anal_static_plugins[i]; i++) {
 			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
@@ -483,4 +486,46 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 		}
 	}
 	return false;
+}
+
+static int cmp_range(const void *a, const void *b) {
+	RAnalRange *range_a = (RAnalRange *)a;
+	RAnalRange *range_b = (RAnalRange *)b;
+	return range_a->from > range_b->from;
+}
+
+static int build_range(void *p, const char *k, const char *v) {
+	RAnal *a = (RAnal *)p;
+	RList *list_range = a->bits_ranges;
+	RAnalHint *hint;
+	hint = r_anal_hint_from_string (a, sdb_atoi (k + 5), v);
+	if (hint->bits) {
+		RAnalRange *range = R_NEW0 (RAnalRange);
+		if (!range) {
+			return 0;	
+		}
+		range->bits = hint->bits;
+		range->from = hint->addr;
+		r_list_append (list_range, range);
+	}
+	return 1;
+}
+
+
+//based on anal hint we construct a list of RAnalRange to handle
+//better arm/thumb though maybe handy in other contexts
+R_API void r_anal_build_range_on_hints(RAnal *a) {
+	RListIter *iter;
+	RAnalRange *range;
+	//construct again the range from hint to handle properly arm/thumb
+	r_list_free (a->bits_ranges);
+	a->bits_ranges = r_list_new ();
+	a->bits_ranges->free = free;
+	sdb_foreach (a->sdb_hints, build_range, a);
+	r_list_sort (a->bits_ranges, cmp_range);
+	r_list_foreach (a->bits_ranges, iter, range) {
+		if (iter->n && !range->to) {
+			range->to = ((RAnalRange *)(iter->n->data))->from;
+		}
+	}
 }

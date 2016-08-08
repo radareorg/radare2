@@ -312,9 +312,12 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 	if (!pre) r_cons_newline ();
 }
 
+
 static RDisasmState * ds_init(RCore *core) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
-	if (!ds) return NULL;
+	if (!ds) {
+		return NULL;
+	}
 	ds->core = core;
 	ds->pal_comment = core->cons->pal.comment;
 	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
@@ -470,7 +473,6 @@ static RDisasmState * ds_init(RCore *core) {
 		if (core->utf8)
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
 	}
-
 	return ds;
 }
 
@@ -666,10 +668,11 @@ static void ds_build_op_str(RDisasmState *ds) {
 	free (asm_str);
 }
 
+//removed hints bits from since r_anal_build_range_on_hints along with
+//r_core_seek_archbits will be used instead. The ranges are built from hints
 R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 	static char *hint_arch = NULL;
 	static char *hint_syntax = NULL;
-	static int hint_bits = 0;
 	r_anal_hint_free (hint);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint_arch) {
@@ -679,10 +682,6 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 	if (hint_syntax) {
 		r_config_set (core->config, "asm.syntax", hint_syntax);
 		hint_syntax = NULL;
-	}
-	if (hint_bits) {
-		r_config_set_i (core->config, "asm.bits", hint_bits);
-		hint_bits = 0;
 	}
 	if (hint) {
 		/* arch */
@@ -696,12 +695,6 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 			if (!hint_syntax) hint_syntax = strdup (
 				r_config_get (core->config, "asm.syntax"));
 			r_config_set (core->config, "asm.syntax", hint->syntax);
-		}
-		/* bits */
-		if (hint->bits) {
-			if (!hint_bits) hint_bits =
-				r_config_get_i (core->config, "asm.bits");
-			r_config_set_i (core->config, "asm.bits", hint->bits);
 		}
 	}
 	return hint;
@@ -1318,7 +1311,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		return true;
 	}
 	ret = r_asm_disassemble (core->assembler, &ds->asmop, buf, len);
-	if (ds->asmop.size < 1) ds->asmop.size = 1;
+	if (ds->asmop.size < 1) {
+		ds->asmop.size = 1;
+	}
 
 	if (ds->show_nodup) {
 		const char *opname = (ret < 1)? "invalid": ds->asmop.buf_asm;
@@ -2892,8 +2887,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, ds->addr+idx);
-	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ?
-		r_vline_u : r_vline_a;
+	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? r_vline_u : r_vline_a;
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
@@ -2918,6 +2912,8 @@ toro:
 	if (!ds->l) {
 		len = ds->l = core->blocksize;
 	}
+
+	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l;
 			idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
@@ -3031,8 +3027,12 @@ toro:
 			ds->analop.type = R_ANAL_OP_TYPE_ILL;
 		}
 		if (ds->hint) {
-			if (ds->hint->size) ds->analop.size = ds->hint->size;
-			if (ds->hint->ptr) ds->analop.ptr = ds->hint->ptr;
+			if (ds->hint->size) {
+				ds->analop.size = ds->hint->size;
+			}
+			if (ds->hint->ptr) {
+				ds->analop.ptr = ds->hint->ptr;
+			}
 		}
 		ds_print_bbline (ds);
 		if (ds->at >= addr) {
@@ -3144,7 +3144,9 @@ toro:
 #if HASRETRY
 	if (!ds->cbytes && ds->lines<ds->l && dorepeat) {
 	retry:
-		if (len<4) len = 4;
+		if (len < 4) {
+			len = 4;
+		}
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
 			if (r_core_read_at (core, ds->addr, buf, len) ) {
@@ -3181,7 +3183,7 @@ toro:
 /* Disassemble either `nb_opcodes` instructions, or
  * `nb_bytes` bytes; both can be negative.
  * Set to 0 the parameter you don't use */
-R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_opcodes) {
+R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes) {
 	RDisasmState *ds = NULL;
 	int i, j, ret, len = 0;
 	RAnalFunction *f;
@@ -3225,20 +3227,20 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 			r_core_block_read (core, 0);
 		}
 	}
-	if (ds->l == 0) {
+	if (!ds->l) {
 		ds->l = ds->len;
 	}
 	r_cons_break (NULL, NULL);
+
+	//build ranges to map addr with bits
+	r_anal_build_range_on_hints (core->anal);
 #define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
 	for (i = j = 0; isTheEnd; i += ret, j++) {
 		ds->at = core->offset +i;
 		hasanal = false;
 		r_core_seek_archbits (core, ds->at);
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_singleton ()->breaked) {
 			break;
-		if (ds->hint) {
-			r_anal_hint_free (ds->hint);
-			ds->hint = NULL;
 		}
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		r_asm_set_pc (core->assembler, ds->at);
@@ -3247,8 +3249,9 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 		if (!ds->hint || !ds->hint->bits) {
 			if (f) {
 				if (f->bits) {
-					if (!ds->oldbits)
+					if (!ds->oldbits) {
 						ds->oldbits = r_config_get_i (core->config, "asm.bits");
+					}
 					if (ds->oldbits != f->bits) {
 						r_config_set_i (core->config, "asm.bits", f->bits);
 					}
@@ -3265,12 +3268,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int nb_bytes, int nb_op
 				}
 			}
 		}
-		ret = r_asm_disassemble (core->assembler,
-			&ds->asmop, core->block+i, core->blocksize-i);
+		ret = r_asm_disassemble (core->assembler, &ds->asmop, core->block+i, core->blocksize-i);
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
-			r_anal_op (core->anal, &ds->analop, ds->at,
-				core->block + i, core->blocksize - i);
+			r_anal_op (core->anal, &ds->analop, ds->at, core->block + i, core->blocksize - i);
 			hasanal = true;
 		}
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
