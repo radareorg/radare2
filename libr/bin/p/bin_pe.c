@@ -94,19 +94,19 @@ static void add_tls_callbacks(RBinFile *arch, RList* list) {
 		}
 		count++;
 	} while (vaddr != 0);
-
 }
 
 static RList* entries(RBinFile *arch) {
-	RList* ret;
-	RBinAddr *ptr = NULL;
 	struct r_bin_pe_addr_t *entry = NULL;
+	RBinAddr *ptr = NULL;
+	RList* ret;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
-	ret->free = free;
-	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->o->bin_obj)))
+	}
+	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->o->bin_obj))) {
 		return ret;
+	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->paddr;
 		ptr->vaddr = entry->vaddr;
@@ -114,7 +114,6 @@ static RList* entries(RBinFile *arch) {
 		r_list_append (ret, ptr);
 	}
 	free (entry);
-
 	// get TLS callback addresses
 	add_tls_callbacks (arch, ret);
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 nodepad */
+/* radare - LGPL - Copyright 2015-2016 nodepad */
 
 #include <r_types.h>
 #include <r_bin.h>
@@ -6,31 +6,31 @@
 
 static Sdb * get_sdb(RBinObject *o) {
 	const struct r_bin_mz_obj_t *bin;
-	if (!o || !o->bin_obj) return NULL;
-	bin = (struct r_bin_mz_obj_t *) o->bin_obj;
-	if (bin && bin->kv) return bin->kv;
+	if (o && o->bin_obj) {
+		bin = (struct r_bin_mz_obj_t *) o->bin_obj;
+		if (bin && bin->kv) {
+			return bin->kv;
+		}
+	}
 	return NULL;
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int exth_offset;
 	int ret = false;
-	if (!buf)
+	if (!buf || length <= 0x3d) {
 		return false;
-	if (length <= 0x3d)
-		return false;
-	if (!memcmp (buf, "MZ", 2) || !memcmp (buf, "ZM", 2))
-	{
+	}
+	if (!memcmp (buf, "MZ", 2) || !memcmp (buf, "ZM", 2)) {
 		ret = true;
-
 		exth_offset = (buf[0x3c] | (buf[0x3d]<<8));
-		if (length > exth_offset+2)
-		{
+		if (length > exth_offset + 2) {
 			if (!memcmp (buf+exth_offset, "PE", 2) ||
-				!memcmp (buf+exth_offset, "NE", 2) ||
-				!memcmp (buf+exth_offset, "LE", 2) ||
-				!memcmp (buf+exth_offset, "LX", 2) )
+			    !memcmp (buf+exth_offset, "NE", 2) ||
+			    !memcmp (buf+exth_offset, "LE", 2) ||
+			    !memcmp (buf+exth_offset, "LX", 2) ) {
 				ret = false;
+			}
 		}
 	}
 	return ret;
@@ -50,23 +50,20 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz,
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_mz_new_buf (tbuf);
-	if (res)
+	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+	}
 	r_buf_free (tbuf);
 	return (void *)res;
 }
 
 static int load(RBinFile *arch) {
-	const void *res;
-	const ut8 *bytes;
-	ut64 sz;
-
-	if (!arch || !arch->o)
+	if (!arch || !arch->o) {
 		return false;
-
-	bytes = r_buf_buffer (arch->buf);
-	sz = r_buf_size (arch->buf);
-	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	}
+	const ut8 *bytes = r_buf_buffer (arch->buf);
+	ut64 sz = r_buf_size (arch->buf);
+	const void *res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	arch->o->bin_obj = (void *)res;
 	return res != NULL;
 }
@@ -77,34 +74,31 @@ static int destroy(RBinFile *arch) {
 }
 
 static RList * entries(RBinFile *arch) {
-	int entry;
-	RList *res = NULL;
 	RBinAddr *ptr = NULL;
-
-	if (!(res = r_list_new ()))
+	RList *res = NULL;
+	if (!(res = r_list_newf (free))) {
 		return NULL;
-	res->free = free;
-
-	entry = r_bin_mz_get_entrypoint (arch->o->bin_obj);
-
+	}
+	int entry = r_bin_mz_get_entrypoint (arch->o->bin_obj);
 	if (entry >= 0) {
-		if ((ptr = R_NEW (RBinAddr))) {
+		if ((ptr = R_NEW0 (RBinAddr))) {
 			ptr->paddr = (ut64) entry;
 			ptr->vaddr = (ut64) entry;
 			r_list_append (res, ptr);
 		}
 	}
-
 	return res;
 }
 
 static RList * sections(RBinFile *arch) {
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
 	const struct r_bin_mz_segment_t *segments = NULL;
+	RBinSection *ptr = NULL;
+	RList *ret = NULL;
 	int i;
-	if (!(ret = r_list_new ()))
+
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	if (!(segments = r_bin_mz_get_segments (arch->o->bin_obj))){
 		r_list_free (ret);
@@ -131,7 +125,9 @@ static RList * sections(RBinFile *arch) {
 
 static RBinInfo * info(RBinFile *arch) {
 	RBinInfo * const ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	ret->file = strdup (arch->file);
 	ret->bclass = strdup ("MZ");
 	ret->rclass = strdup ("mz");
@@ -140,19 +136,14 @@ static RBinInfo * info(RBinFile *arch) {
 	ret->machine = strdup ("i386");
 	ret->type = strdup ("EXEC (Executable file)");
 	ret->subsystem = strdup ("DOS");
-	ret->rpath = NULL;
-	ret->cpu = NULL;
-	ret->guid = NULL;
-	ret->debug_file_name = NULL;
 	ret->bits = 16;
-	ret->big_endian = false;
 	ret->dbg_info = 0;
+	ret->big_endian = false;
 	ret->has_crypto = false;
 	ret->has_canary = false;
 	ret->has_nx = false;
 	ret->has_pi = false;
 	ret->has_va = false;
-
 	return ret;
 }
 
@@ -162,17 +153,16 @@ static RList * relocs(RBinFile *arch) {
 	const struct r_bin_mz_reloc_t *relocs = NULL;
 	int i;
 
-	if (!arch || !arch->o || !arch->o->bin_obj)
+	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
-	if (!(ret = r_list_new ()))
+	}
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
-
-	ret->free = free;
-
-	if (!(relocs = r_bin_mz_get_relocs (arch->o->bin_obj)))
+	}
+	if (!(relocs = r_bin_mz_get_relocs (arch->o->bin_obj))) {
 		return ret;
+	}
 	for (i = 0; !relocs[i].last; i++) {
-
 		if (!(rel = R_NEW0 (RBinReloc))) {
 			free ((void *)relocs);
 			r_list_free (ret);
@@ -187,7 +177,7 @@ static RList * relocs(RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_mz = {
+RBinPlugin r_bin_plugin_mz = {
 	.name = "mz",
 	.desc = "MZ bin plugin",
 	.license = "MIT",
@@ -205,7 +195,7 @@ struct r_bin_plugin_t r_bin_plugin_mz = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mz,
 	.version = R2_VERSION

@@ -764,7 +764,7 @@ static int bin_pe_init_tls(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_DWord tls_paddr = bin_pe_rva_to_paddr (bin,
 		data_dir_tls->VirtualAddress);
 
-	image_tls_directory = R_NEW (PE_(image_tls_directory));
+	image_tls_directory = R_NEW0 (PE_(image_tls_directory));
 	if (r_buf_read_at (bin->b, tls_paddr, (ut8*)image_tls_directory, sizeof (PE_(image_tls_directory))) != sizeof (PE_(image_tls_directory))) {
 		eprintf ("Warning: read (image_tls_directory)\n");
 		free(image_tls_directory);
