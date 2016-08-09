@@ -47,10 +47,13 @@ TRAVIS_JOB=86948888
 IS_SYSPKG=0
 R2PM_USRDIR="${HOME}/.config/radare2/r2pm/"
 R2PM_ETCD="${R2HOMEDIR}/radare2/radare2rc.d"
+IS_LOCAL=0
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
 if [ -z "${R2PM_GITDIR}" ]; then
 	R2PM_GITDIR="${R2PM_USRDIR}/git/"
+else
+	IS_LOCAL=1
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${HOME}/.config/radare2/r2pm/db" ]; then
@@ -146,13 +149,15 @@ R2PM_GIT() {
 	URL="$1"
 	DIR="`basename $1`"
 	cd "${R2PM_GITDIR}"
-	if [ -d "${R2PM_GITDIR}/${DIR}" ]; then
-		cd "${DIR}"
-		git pull
-	else
-		git clone "${URL}" || R2PM_FAIL "Oops"
-		cd "${DIR}" || R2PM_FAIL "Oops"
-	fi
+	if [ ${IS_LOCAL} = 0 ]; then
+	        if [ -d "${R2PM_GITDIR}/${DIR}" ]; then
+		        cd "${DIR}"
+		        git pull
+	        else
+		        git clone "${URL}" || R2PM_FAIL "Oops"
+		        cd "${DIR}" || R2PM_FAIL "Oops"
+	        fi
+    	fi
 }
 
 R2PM_FAIL() {
