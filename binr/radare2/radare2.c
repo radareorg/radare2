@@ -457,6 +457,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'q':
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
+			r_config_set (r.config, "cfg.fortunes", "false");
 			quiet = true;
 			break;
 		case 'R':

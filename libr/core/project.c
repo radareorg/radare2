@@ -220,8 +220,12 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int askuser = 1;
 	int ret, close_current_session = 1;
 	char *prj, *filepath;
-	if (!prjfile || !*prjfile)
+	if (!prjfile || !*prjfile) {
 		return false;
+	}
+	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
+	const bool scr_interactive = r_config_get_i (core->config, "scr.interactive");
+	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
 	prj = r_core_project_file (core, prjfile);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
@@ -245,7 +249,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 		}
 	}
 	if (!strcmp (prjfile, r_config_get (core->config, "file.project"))) {
-		eprintf ("Reloading project\n");
+		//eprintf ("Reloading project\n");
 		askuser = 0;
 #if 0
 		free (prj);
@@ -283,6 +287,9 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	/* load sdb stuff in here */
 	r_core_project_load (core, prjfile);
 	ret = r_core_cmd_file (core, prj);
+	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
+	r_config_set_i (core->config, "scr.interactive", scr_interactive);
+	r_config_set_i (core->config, "scr.prompt", scr_prompt);
 	r_config_bump (core->config, "asm.arch");
 	free (filepath);
 	free (prj);
