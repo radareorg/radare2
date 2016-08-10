@@ -10,6 +10,7 @@
 #include <r_list.h> // radare linked list
 #include <r_flist.h> // radare fixed pointer array iterators
 #include <list.h> // kernel linked list
+#include <r_skiplist.h> // skiplist
 #include <r_th.h>
 #include <dirent.h>
 #include <sys/time.h>

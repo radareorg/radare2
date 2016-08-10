@@ -15,6 +15,7 @@
 #include <r_io.h>
 #include <r_reg.h>
 #include <r_list.h>
+#include <r_skiplist.h>
 #include <r_util.h>
 #include <r_syscall.h>
 #include <r_flags.h>
@@ -275,7 +276,9 @@ typedef struct r_anal_type_function_t {
 	RAnalDiff *diff;
 	RList *locs; // list of local variables
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
-	RList *bbs;
+	RSkipList *bbs;
+	RSkipList *collapsed_ranges; // Collapsed Ranges of basic blocks
+	bool ranges_valid;  // Is the collapsed_ranges currently valid
 	RList *vars;
 #if FCN_OLD
 	RList *refs;
@@ -1145,7 +1148,7 @@ R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym);
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_new(void);
-R_API RList *r_anal_bb_list_new(void);
+R_API RSkipList *r_anal_bb_list_new(void);
 R_API void r_anal_bb_free(RAnalBlock *bb);
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
 		ut64 addr, ut8 *buf, ut64 len, int head);
@@ -1154,6 +1157,8 @@ R_API int r_anal_bb_is_in_offset(RAnalBlock *bb, ut64 addr);
 R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
+R_API int r_anal_bb_compare(RAnalBlock* a, RAnalBlock* b);
+R_API int r_anal_bb_compare_range(RAnalBlock* a, RAnalBlock* b);
 
 /* op.c */
 R_API const char *r_anal_stackop_tostring (int s);
@@ -1283,7 +1288,7 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
 R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjfile);
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
-R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
+R_API RSkipList* r_anal_fcn_get_bbs(RAnalFunction *fcn);
 R_API RList* r_anal_get_fcns (RAnal *anal);
 #endif
 

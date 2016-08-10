@@ -458,7 +458,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 
 static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length  ) {
 	char gen_name[1025];
-	RListIter *bb_iter;
+	RSkipListNode *bb_iter;
 	RAnalBlock *bb;
 	ut64 actual_size = 0;
 	RAnalState *state = NULL;
@@ -483,7 +483,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	state->user_state = nodes;
 
 	result = analyze_method (anal, fcn, state);
-	r_list_foreach (fcn->bbs, bb_iter, bb) {
+	r_skiplist_foreach (fcn->bbs, bb_iter, bb) {
 		actual_size += bb->size;
 	}
 
@@ -553,8 +553,10 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	ut64 bytes_consumed = 0;
 	// deallocate niceties
-	r_list_free (fcn->bbs);
+	r_skiplist_free (fcn->bbs);
 	fcn->bbs = r_anal_bb_list_new ();
+	fcn->ranges_valid = false;
+	fcn->collapsed_ranges = NULL;
 
 	IFDBG eprintf ("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n",
 		fcn->name, fcn->addr, r_anal_fcn_size (fcn));

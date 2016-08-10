@@ -289,31 +289,21 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 }
 
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
-	RAnalBlock *bbi;
-	RAnalFunction *fcni;
-	RListIter *iter2;
-#define OLD 0
-#if OLD
-	RListIter *iter;
-	r_list_foreach (anal->fcns, iter, fcni) {
-		r_list_foreach (fcni->bbs, iter2, bbi) {
-			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
-				bbi->traced = true;
-				break;
-			}
-		}
-	}
-#else
-	fcni = r_anal_get_fcn_in (anal, addr, 0);
+	RAnalFunction *fcni = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcni) {
-		r_list_foreach (fcni->bbs, iter2, bbi) {
-			if (addr >= bbi->addr && addr < (bbi->addr + bbi->size)) {
-				bbi->traced = true;
-				break;
-			}
+		RAnalBlock search_bb;
+		RSkipListNode *res;
+
+		search_bb.addr = addr;
+		search_bb.size = 0;
+		fcni->bbs->compare = (RListComparator)r_anal_bb_compare_range;
+		res = r_skiplist_find (fcni->bbs, &search_bb);
+		fcni->bbs->compare = (RListComparator)r_anal_bb_compare;
+		if (res) {
+			RAnalBlock *b = (RAnalBlock *)res->data;
+			b->traced = true;
 		}
 	}
-#endif
 }
 
 R_API RList* r_anal_get_fcns (RAnal *anal) {

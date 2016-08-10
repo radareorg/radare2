@@ -809,7 +809,7 @@ repeat:
 			if (!fun) {
 				r_cons_message("Not in a function. Type 'df' to define it here");
 				break;
-			} else if (r_list_empty (fun->bbs)) {
+			} else if (r_skiplist_empty (fun->bbs)) {
 				r_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
 				break;
 			}

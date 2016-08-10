@@ -764,7 +764,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	int is_json = opts & R_CORE_ANAL_JSON;
 	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	struct r_anal_bb_t *bbi;
-	RListIter *iter;
+	RSkipListNode *iter_bb;
 	int left = 300;
 	int count = 0;
 	int nodes = 0;
@@ -819,7 +819,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		if (fcn->dsc) r_cons_printf (",\"signature\":\"%s\"", fcn->dsc);
 		r_cons_printf (",\"blocks\":[");
 	}
-	r_list_foreach (fcn->bbs, iter, bbi) {
+	r_skiplist_foreach (fcn->bbs, iter_bb, bbi) {
 		count ++;
 		if (is_keva) {
 			char key[128];
@@ -994,8 +994,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
-	struct r_anal_bb_t *bb, *bbi;
-	RListIter *iter;
+	struct r_anal_bb_t *bb;
 	ut64 jump, fail;
 	int rc = true;
 	ut8 *buf = NULL;
@@ -1010,9 +1009,14 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	if (core->anal->split) {
 		ret = r_anal_fcn_split_bb (core->anal, fcn, bb, at);
 	} else {
-		r_list_foreach (fcn->bbs, iter, bbi) {
-			if (at == bbi->addr)
-				ret = R_ANAL_RET_DUP;
+		RSkipListNode *iter;
+		RAnalBlock search_bb;
+
+		search_bb.addr = at;
+		search_bb.size = 0;
+		iter = r_skiplist_find (fcn->bbs, &search_bb);
+		if (iter) {
+			ret = R_ANAL_RET_DUP;
 		}
 	}
 	if (ret == R_ANAL_RET_DUP) /* Dupped bb */
@@ -1041,7 +1045,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 					ret = r_anal_fcn_bb_overlaps (fcn, bb);
 
 				if (ret == R_ANAL_RET_NEW) {
-					r_list_append (fcn->bbs, bb);
+					r_skiplist_insert (fcn->bbs, bb);
 					fail = bb->fail;
 					jump = bb->jump;
 					if (fail != -1)
@@ -1058,7 +1062,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 error:
 	rc = false;
 fin:
-	r_list_delete_data (fcn->bbs, bb);
+	r_skiplist_delete (fcn->bbs, bb);
 	r_anal_bb_free (bb);
 	free (buf);
 	return rc;
@@ -1067,14 +1071,20 @@ fin:
 /* returns the address of the basic block that contains addr or UT64_MAX if
  * there is no such basic block */
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr) {
-	RAnalBlock *bbi;
 	RAnalFunction *fcni;
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	r_list_foreach (core->anal->fcns, iter, fcni) {
-		r_list_foreach (fcni->bbs, iter2, bbi) {
-			if (addr >= bbi->addr && addr < bbi->addr+bbi->size) {
-				return bbi->addr;
-			}
+		RAnalBlock search_bb;
+		RSkipListNode *res;
+
+		fcni->bbs->compare = (RListComparator)r_anal_bb_compare_range;
+		search_bb.addr = addr;
+		search_bb.size = 0;
+		res = r_skiplist_find (fcni->bbs, &search_bb);
+		fcni->bbs->compare = (RListComparator)r_anal_bb_compare;
+		if (res) {
+			RAnalBlock *b = (RAnalBlock *)res->data;
+			return b->addr;
 		}
 	}
 	return UT64_MAX;
@@ -1351,9 +1361,9 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 
 static void fcn_list_bbs(RAnalFunction *fcn) {
 	RAnalBlock *bbi;
-	RListIter *iter;
+	RSkipListNode *iter;
 
-	r_list_foreach (fcn->bbs, iter, bbi) {
+	r_skiplist_foreach (fcn->bbs, iter, bbi) {
 		r_cons_printf ("afb+ 0x%08"PFMT64x" 0x%08"PFMT64x" %d ",
 				fcn->addr, bbi->addr, bbi->size);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
@@ -1423,9 +1433,9 @@ static int fcnlist_gather_metadata(RList *fcns) {
 		ut64 min = UT64_MAX;
 		ut64 max = UT64_MIN;
 
-		RListIter *bbsiter;
+		RSkipListNode *bbsiter;
 		RAnalBlock *bbi;
-		r_list_foreach (fcn->bbs, bbsiter, bbi) {
+		r_skiplist_foreach (fcn->bbs, bbsiter, bbi) {
 			if (max < bbi->addr + bbi->size) {
 				max = bbi->addr + bbi->size;
 			}
@@ -1478,7 +1488,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	r_cons_printf (FCN_LIST_VERBOSE_ENTRY, color,
 			fcn->addr,
 			r_anal_fcn_realsize (fcn),
-			r_list_length (fcn->bbs),
+			r_skiplist_length (fcn->bbs),
 			r_anal_fcn_cc (fcn),
 			fcn->meta.min,
 			r_anal_fcn_size (fcn),
@@ -1530,7 +1540,7 @@ static int fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 			msg = r_str_newf ("%-4d -> %-4d", size, realsize);
 		}
 		r_cons_printf ("0x%08"PFMT64x" %4d %4s %s\n",
-				fcn->addr, r_list_length (fcn->bbs), msg, name);
+				fcn->addr, r_skiplist_length (fcn->bbs), msg, name);
 		free (name);
 		free (msg);
 	}
@@ -1558,7 +1568,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			fcn->addr, name, r_anal_fcn_size (fcn));
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
-	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
+	r_cons_printf (",\"nbbs\":%d", r_skiplist_length (fcn->bbs));
 	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
 	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
@@ -1693,7 +1703,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 
-	r_cons_printf ("\n num-bbs: %d", r_list_length (fcn->bbs));
+	r_cons_printf ("\n num-bbs: %d", r_skiplist_length (fcn->bbs));
 	r_cons_printf ("\n call-refs: ");
 	r_list_foreach (fcn->refs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
@@ -1855,7 +1865,7 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 
 R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 	ut8 *tbuf, *buf;
-	RListIter *tmp = NULL;
+	RSkipListNode *tmp = NULL;
 	RAnalBlock *bb = NULL;
 	int i;
 
@@ -1867,7 +1877,7 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 	if (!buf) {
 		return;
 	}
-	r_list_foreach (fcn->bbs, tmp, bb) {
+	r_skiplist_foreach (fcn->bbs, tmp, bb) {
 		if (bb->size < 1) {
 			continue;
 		}
@@ -1904,14 +1914,16 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
 
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RAnalBlock *bb, *root = NULL, *dest = NULL;
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RList *list2 = NULL, *list = NULL;
 	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
+		RSkipListNode *iter2;
 		if (!r_anal_fcn_is_in_offset (fcn, core->offset))
 			continue;
-		r_list_foreach (fcn->bbs, iter2, bb) {
+
+		r_skiplist_foreach (fcn->bbs, iter2, bb) {
 			if (r_anal_bb_is_in_offset (bb, addr)) {
 				dest = bb;
 			}
@@ -2706,7 +2718,7 @@ R_API void r_core_anal_undefine (RCore *core, ut64 off) {
 /* Join function at addr2 into function at addr */
 // addr use to be core->offset
 R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
-	RListIter *iter;
+	RSkipListNode *iter;
 	ut64 min = 0;
 	ut64 max = 0;
 	int first = 1;
@@ -2720,7 +2732,7 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 	// join all basic blocks from f1 into f2 if they are not
 	// delete f2
 	eprintf ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x"\n", addr, addr2);
-	r_list_foreach (f1->bbs, iter, bb) {
+	r_skiplist_foreach (f1->bbs, iter, bb) {
 		if (first) {
 			min = bb->addr;
 			max = bb->addr + bb->size;
@@ -2732,7 +2744,7 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 				max = bb->addr + bb->size;
 		}
 	}
-	r_list_foreach (f2->bbs, iter, bb) {
+	r_skiplist_foreach (f2->bbs, iter, bb) {
 		if (first) {
 			min = bb->addr;
 			max = bb->addr + bb->size;
@@ -2743,7 +2755,7 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 			if (bb->addr + bb->size > max)
 				max = bb->addr + bb->size;
 		}
-		r_list_append (f1->bbs, bb);
+		r_skiplist_insert (f1->bbs, bb);
 	}
 	// TODO: import data/code/refs
 	// update size
