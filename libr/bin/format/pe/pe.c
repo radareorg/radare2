@@ -576,25 +576,34 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 		free (metadata);
 		return 0;
 	}
+
 	rr = r_buf_read_at (bin->b, metadata_directory,
-					    (ut8*)(metadata), 24);
-	if (rr != 24) {
-		eprintf ("Warning: read (metaadata header)\n");
-		free (metadata);
-		return 0;
-	}
-	printf("Metadata Signature: %x %d\n", metadata->Signature, metadata->VersionStringLength);
+					    (ut8*)(&metadata->Signature), 4);
+
+	if (rr != 4) goto fail;
+	rr = r_buf_read_at (bin->b, metadata_directory + 4,
+					    (ut8*)(&metadata->MajorVersion), 2);
+	if (rr != 2) goto fail;
+
+	rr = r_buf_read_at (bin->b, metadata_directory + 6,
+					    (ut8*)(&metadata->MinorVersion), 2);
+	if (rr != 2) goto fail;
+	rr = r_buf_read_at (bin->b, metadata_directory + 8,
+					    (ut8*)(&metadata->Reserved), 4);
+	if (rr != 4) goto fail;
+	rr = r_buf_read_at (bin->b, metadata_directory + 12,
+					    (ut8*)(&metadata->VersionStringLength), 4);
+	if (rr != 4) goto fail;
+
+	//printf("Metadata Signature: %x %x %d\n", metadata_directory, metadata->Signature, metadata->VersionStringLength);
 
 	// read the version string
 	int len = metadata->VersionStringLength;
 	if (len > 0) {
 		metadata->VersionString = malloc(len);
-		if (!metadata->VersionString) {
-			eprintf ("Warning: read (metaadata header) - cannot parse version string\n");
-			free (metadata);
-			return 0;
-		}
-		rr = r_buf_read_at (bin->b, metadata_directory + 24,
+		if (!metadata->VersionString) goto fail;
+
+		rr = r_buf_read_at (bin->b, metadata_directory + 16,
 						    (ut8*)(metadata->VersionString), len);
 		if (rr != len) {
 			eprintf ("Warning: read (metaadata header) - cannot parse version string\n");
@@ -603,21 +612,27 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 			return 0;
 		}
 
-		printf("Version: %s\n", metadata->VersionString);
+		printf(".NET Version: %s\n", metadata->VersionString);
 	}
 
 	// read the header after the string
-	rr = r_buf_read_at (bin->b, metadata_directory + 24 + metadata->VersionStringLength,
-						(ut8*)(metadata + 24 + sizeof(char *)), 4);
-		
-	if (rr != 4) {
-		eprintf ("Warning: read (metaadata header (after version string))\n");
-		free (metadata);
-		return 0;
-	}
-	printf("Number of Metadata Streams: %d\n", metadata->Flags);
+	rr = r_buf_read_at (bin->b, metadata_directory + 16 + metadata->VersionStringLength,
+						(ut8*)(&metadata->Flags), 2);
+
+	if (rr != 2) goto fail;
+
+	rr = r_buf_read_at (bin->b, metadata_directory + 16 + metadata->VersionStringLength + 2,
+						(ut8*)(&metadata->NumberOfStreams), 2);
+
+	if (rr != 2) goto fail;
+
+	printf("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
 	bin->metadata_header = metadata;
-	return 1;
+	return 1;	
+fail:
+	eprintf ("Warning: read (metaadata header)\n");
+	free (metadata);
+	return 0;
 }
 
 static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
