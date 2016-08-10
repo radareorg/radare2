@@ -3,7 +3,7 @@ Calling Conventions profiles
 
 Radare2 uses calling conventions to help in identifying function formal arguments and return types. It is used also as guide for basic function prototype (WIP at the time of writing this wiki).
 
-Profile grammer
+Profile grammar
 ===============
 
 Since the profiles are based on sdb database, Creating one is as simple as creating group of `key=value` pairs in text file. then parsing it into sdb data file.

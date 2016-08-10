@@ -16,6 +16,9 @@ F+= cc-sparc-32
 F+= cc-arm-64
 F+= cc-arm-32
 F+= cc-avr-8
+F+= cc-powerpc-32
+F+= cc-powerpc-64
+
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
 
