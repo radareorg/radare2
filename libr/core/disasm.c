@@ -3476,10 +3476,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			j++;
 			continue;
 		}
-		r_anal_op_fini (&ds->analop);
-
-		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i);
+		
 		ds = ds_init (core);
+		r_anal_op_fini (&ds->analop);
+		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i);
+		
 		if (ds->pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		}
