@@ -3364,7 +3364,6 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes) {
 	RAsmOp asmop;
-	RAnalOp analop = {0};
 	RDisasmState *ds;
 	RAnalFunction *f;
 	int i, j, k, oplen, ret, line;
@@ -3477,9 +3476,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			j++;
 			continue;
 		}
-		r_anal_op_fini (&analop);
+		r_anal_op_fini (&ds->analop);
 
-		r_anal_op (core->anal, &analop, at, buf + i, nb_bytes - i);
+		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i);
 		ds = ds_init (core);
 		if (ds->pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
@@ -3507,26 +3506,26 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			free (escaped_str);
 		}
 		if (ds->use_esil) {
-			const char * esil = R_STRBUF_SAFEGET (&analop.esil);
+			const char * esil = R_STRBUF_SAFEGET (&ds->analop.esil);
 			r_cons_printf (",\"esil\":\"%s\"", esil);
 		}
 		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
 		r_cons_printf (",\"family\":\"%s\"",
-				r_anal_op_family_to_string (analop.family));
-		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (analop.type));
+				r_anal_op_family_to_string (ds->analop.family));
+		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (ds->analop.type));
 		// wanted the numerical values of the type information
-		r_cons_printf (",\"type_num\":%"PFMT64d, analop.type);
-		r_cons_printf (",\"type2_num\":%"PFMT64d, analop.type2);
+		r_cons_printf (",\"type_num\":%"PFMT64d, ds->analop.type);
+		r_cons_printf (",\"type2_num\":%"PFMT64d, ds->analop.type2);
 		// handle switch statements
-		if (analop.switch_op && r_list_length (analop.switch_op->cases) > 0) {
+		if (ds->analop.switch_op && r_list_length (ds->analop.switch_op->cases) > 0) {
 			// XXX - the java caseop will still be reported in the assembly,
 			// this is an artifact to make ensure the disassembly is properly
 			// represented during the analysis
 			RListIter *iter;
 			RAnalCaseOp *caseop;
-			int cnt = r_list_length (analop.switch_op->cases);
+			int cnt = r_list_length (ds->analop.switch_op->cases);
 			r_cons_printf (", \"switch\":[");
-			r_list_foreach (analop.switch_op->cases, iter, caseop ) {
+			r_list_foreach (ds->analop.switch_op->cases, iter, caseop ) {
 				cnt--;
 				r_cons_printf ("{");
 				r_cons_printf ("\"addr\":%"PFMT64d, caseop->addr);
@@ -3537,10 +3536,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 			r_cons_printf ("]");
 		}
-		if (analop.jump != UT64_MAX ) {
-			r_cons_printf (",\"jump\":%"PFMT64d, analop.jump);
-			if (analop.fail != UT64_MAX) {
-				r_cons_printf (",\"fail\":%"PFMT64d, analop.fail);
+		if (ds->analop.jump != UT64_MAX ) {
+			r_cons_printf (",\"jump\":%"PFMT64d, ds->analop.jump);
+			if (ds->analop.fail != UT64_MAX) {
+				r_cons_printf (",\"fail\":%"PFMT64d, ds->analop.fail);
 			}
 		}
 		/* add flags */
@@ -3596,7 +3595,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	}
 	r_cons_printf ("]");
 	core->offset = old_offset;
-	r_anal_op_fini (&analop);
+	r_anal_op_fini (&ds->analop);
 	return true;
 }
 
