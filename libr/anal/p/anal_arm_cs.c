@@ -1587,16 +1587,18 @@ static char *get_reg_profile(RAnal *anal) {
 
 static int archinfo(RAnal *anal, int q) {
 	if (q == R_ANAL_ARCHINFO_ALIGN) {
-		if (anal && anal->bits == 16)
+		if (anal && anal->bits == 16) {
 			return 2;
+		}
 		return 4;
 	}
 	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
 		return 4;
 	}
 	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
-		if (anal && anal->bits == 16)
+		if (anal && anal->bits == 16) {
 			return 2;
+		}
 		return 4;
 	}
 	return 4; // XXX

@@ -225,7 +225,9 @@ static int cb_asmarch(void *user, void *data) {
 		char *p, *s = strdup (node->value);
 		if (s) {
 			p = strchr (s, '.');
-			if (p) *p = 0;
+			if (p) {
+				*p = 0;
+			}
 			if (!r_config_set (core->config, "anal.arch", s)) {
 				/* fall back to the anal.null plugin */
 				r_config_set (core->config, "anal.arch", "null");
@@ -294,7 +296,7 @@ static int cb_asmbits(void *user, void *data) {
 
 	if (bits > 0) {
 		ret = r_asm_set_bits (core->assembler, bits);
-		if (ret == false) {
+		if (!ret) {
 			RAsmPlugin *h = core->assembler->cur;
 			if (h) {
 				eprintf ("Cannot set bits %d to '%s'\n", bits, h->name);
@@ -303,7 +305,7 @@ static int cb_asmbits(void *user, void *data) {
 				ret = true;
 			}
 		}
-		if (!r_anal_set_bits (core->anal, node->i_value)) {
+		if (!r_anal_set_bits (core->anal, bits)) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
 		}
 		core->print->bits = bits;
@@ -341,8 +343,11 @@ static int cb_asmbits(void *user, void *data) {
 	/* set pcalign */
 	{
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v != -1) r_config_set_i (core->config, "asm.pcalign", v);
-		else r_config_set_i (core->config, "asm.pcalign", 0);
+		if (v != -1) {
+			r_config_set_i (core->config, "asm.pcalign", v);
+		} else {
+			r_config_set_i (core->config, "asm.pcalign", 0);
+		}
 	}
 	return ret;
 }
@@ -399,7 +404,9 @@ static int cb_asm_pcalign(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	int align = node->i_value;
-	if (align<0) align = 0;
+	if (align < 0) {
+		align = 0;
+	}
 	core->assembler->pcalign = align;
 	core->anal->pcalign = align;
 	return true;

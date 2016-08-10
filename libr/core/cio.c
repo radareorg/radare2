@@ -245,30 +245,15 @@ beach:
 
 
 static void _set_bits(RCore *core, ut64 addr, int *bits) {
-	RBinAddr *entry;
+	RAnalRange *range;
 	RListIter *iter;
-	RAnalHint *hint;
-	RList *entries = NULL;
 
-	hint = r_anal_hint_get (core->anal, addr);
-	if (hint) {
-		*bits = hint->bits;
-		return;
-	}
-	entries = r_bin_get_entries (core->bin);
-	r_list_foreach (entries, iter, entry) {
-		if (entry->vaddr == addr) {
-			*bits = entry->bits;
+	r_list_foreach (core->anal->bits_ranges, iter, range) {
+		if (addr >= range->from && addr < range->to) {
+			*bits = range->bits;
 			return;
 		}
 	}
-	if (!bits) {
-		RBinSymbol *symbol = r_bin_get_symbol_at_vaddr (core->bin, addr);
-		if (symbol) { 
-			*bits = symbol->bits;
-			return;
-		}
-	} 
 }
 
 

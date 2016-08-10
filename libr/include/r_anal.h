@@ -49,6 +49,7 @@ typedef struct r_anal_meta_item_t {
 	int space;
 } RAnalMetaItem;
 
+
 typedef struct {
 	struct r_anal_t *anal;
 	int type;
@@ -61,6 +62,7 @@ typedef struct {
 typedef struct r_anal_range_t {
 	ut64 from;
 	ut64 to;
+	int bits;
 } RAnalRange;
 
 #define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
@@ -616,6 +618,7 @@ typedef struct r_anal_t {
 	RList *reflines;
 	RList *reflines2;
 	RList *noreturn;
+	RList /*RAnalRange*/ *bits_ranges;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -1420,6 +1423,8 @@ R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type);
 
 /* hints */
+
+R_API void r_anal_build_range_on_hints (RAnal *a);
 //R_API void r_anal_hint_list (RAnal *anal, int mode);
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_del (RAnal *anal, ut64 addr, int size);
