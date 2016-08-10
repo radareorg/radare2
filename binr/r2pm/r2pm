@@ -47,9 +47,14 @@ TRAVIS_JOB=86948888
 IS_SYSPKG=0
 R2PM_USRDIR="${HOME}/.config/radare2/r2pm/"
 R2PM_ETCD="${R2HOMEDIR}/radare2/radare2rc.d"
+IS_LOCAL=0
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
-
+if [ -z "${R2PM_GITDIR}" ]; then
+	R2PM_GITDIR="${R2PM_USRDIR}/git/"
+else
+	IS_LOCAL=1
+fi
 if [ -z "${R2PM_DBDIR}" ]; then
 	if [ -d "${HOME}/.config/radare2/r2pm/db" ]; then
 		R2PM_DBDIR="${HOME}/.config/radare2/r2pm/db"
@@ -100,7 +105,7 @@ if [ ! -d "${R2PM_DBDIR}" ]; then
 fi
 
 mkdir -p "${R2PM_USRDIR}/pkg/"
-mkdir -p "${R2PM_USRDIR}/git/"
+mkdir -p "${R2PM_GITDIR}"
 mkdir -p "${R2PM_PLUGDIR}"
 
 R2PM_SYSPKG() {
@@ -143,14 +148,16 @@ R2PM_ListUninstalled() {
 R2PM_GIT() {
 	URL="$1"
 	DIR="`basename $1`"
-	cd "${R2PM_USRDIR}/git/"
-	if [ -d "${R2PM_USRDIR}/git/${DIR}" ]; then
-		cd "${DIR}"
-		git pull
-	else
-		git clone "${URL}" || R2PM_FAIL "Oops"
-		cd "${DIR}" || R2PM_FAIL "Oops"
-	fi
+	cd "${R2PM_GITDIR}"
+	if [ ${IS_LOCAL} = 0 ]; then
+	        if [ -d "${R2PM_GITDIR}/${DIR}" ]; then
+		        cd "${DIR}"
+		        git pull
+	        else
+		        git clone "${URL}" || R2PM_FAIL "Oops"
+		        cd "${DIR}" || R2PM_FAIL "Oops"
+	        fi
+    	fi
 }
 
 R2PM_FAIL() {
@@ -294,8 +301,8 @@ case "$1" in
 -c|clean)
 	R2PM_List radare2 | grep radare2
 	if [ $? != 0 ]; then
-		rm -rf "${R2PM_USRDIR}/git/"
-		mkdir -p "${R2PM_USRDIR}/git/"
+		rm -rf "${R2PM_GITDIR}"
+		mkdir -p "${R2PM_GITDIR}"
 	else
 		echo "r2 is installed with r2pm, do not clean the cache to avoid autodestruction"
 		echo "do not disassemble do not disassemble do not disassemble do not disassemble"
