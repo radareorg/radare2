@@ -10,13 +10,17 @@
 #include <r_anal.h>
 #include <r_parse.h>
 
-static int can_replace(const char *str, int idx, int max_operands) {
-	int ret = true;
-	if (str[idx] > '9' || str[idx] < '1') ret = false;
-	if (str[idx + 1] != '\x00' && str[idx + 1] <= '9' && str[idx + 1] >= '1')
-		ret = false;
-	if ((int)((int)str[idx] - 0x30) > max_operands) ret = false;
-	return ret;
+static bool can_replace(const char *str, int idx, int max_operands) {
+	if (str[idx] > '9' || str[idx] < '1') {
+		return false;
+	}
+	if (str[idx + 1] != '\x00' && str[idx + 1] <= '9' && str[idx + 1] >= '1') {
+		return false;
+	}
+	if ((int)((int)str[idx] - 0x30) > max_operands) {
+		return false;
+	}
+	return true;
 }
 
 static int replace(int argc, const char *argv[], char *newstr) {
@@ -72,7 +76,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							strcpy (newstr+k, w);
 							k += strlen(w)-1;
 						}
-					} else newstr[k] = ops[i].str[j];
+					} else {
+						newstr[k] = ops[i].str[j];
+					}
 				}
 				newstr[k]='\0';
 			}
@@ -108,8 +114,9 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 
 	// malloc can be slow here :?
-	if ((buf = malloc (len+1)) == NULL)
+	if ((buf = malloc (len + 1)) == NULL) {
 		return false;
+	}
 	memcpy (buf, data, len+1);
 
 	r_str_replace_in (buf, len+1, ".l", "", 1);
@@ -162,12 +169,12 @@ static int parse(RParse *p, const char *data, char *str) {
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
-			for (i=0; i<4; i++) {
-				if (wa[i][0] != '\0')
+			for (i = 0; i < 5; i++) {
+				if (wa[i][0] != '\0') {
 					nw++;
+				}
 			}
 			replace (nw, wa, str);
-
 			{
 				char *pluseq = strstr (str, "+ =");
 				if (pluseq) {
