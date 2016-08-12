@@ -12,24 +12,27 @@
 const int kSkipListDepth = 15; // max depth
 
 static RSkipListNode *r_skiplist_node_new (void *data, int level) {
-	RSkipListNode *res = R_NEW (RSkipListNode);
-	if (!res) return NULL;
+	RSkipListNode *res = R_NEW0 (RSkipListNode);
+	if (!res) {
+		return NULL;
+	}
 	res->forward = R_NEWS0 (RSkipListNode *, level + 1);
-	if (!res->forward) goto err_forward;
+	if (!res->forward)  {
+		free (res);
+		return NULL;
+	}
 	res->data = data;
 	return res;
-
-err_forward:
-	free (res);
-	return NULL;
 }
 
 static void r_skiplist_node_free (RSkipList *list, RSkipListNode *node) {
-	if (list->freefn && node->data) {
-		list->freefn (node->data);
+	if (node) {
+		if (list->freefn) {
+			list->freefn (node->data);
+		}
+		free (node->forward);
+		free (node);
 	}
-	free (node->forward);
-	free (node);
 }
 
 static void init_head (RSkipListNode *head) {
@@ -102,10 +105,15 @@ static bool delete_element(RSkipList* list, void* data, bool by_data) {
 // Returns a new heap-allocated skiplist.
 R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 	RSkipList *list = R_NEW0 (RSkipList);
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 
 	list->head = r_skiplist_node_new (NULL, kSkipListDepth);
-	if (!list->head) goto err_head;
+	if (!list->head) {
+		free (list);
+		return NULL;
+	}
 
 	init_head (list->head);
 	list->list_level = 0;
@@ -113,22 +121,18 @@ R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn) {
 	list->freefn = freefn;
 	list->compare = comparefn;
 	return list;
-
-err_head:
-	free (list);
-	return NULL;
 }
 
 // Remove all elements from the list
 R_API void r_skiplist_purge(RSkipList *list) {
 	RSkipListNode *n;
-	if (!list) return;
-
+	if (!list) {
+		return;
+	}
 	n = list->head->forward[0];
 	while (n != list->head) {
 		RSkipListNode *x = n;
 		n = n->forward[0];
-
 		r_skiplist_node_free (list, x);
 	}
 	init_head (list->head);
@@ -138,7 +142,9 @@ R_API void r_skiplist_purge(RSkipList *list) {
 
 // Free the entire list and it's element (if freefn is specified)
 R_API void r_skiplist_free(RSkipList *list) {
-	if (!list) return;
+	if (!list) {
+		return;
+	}
 	r_skiplist_purge (list);
 	r_skiplist_node_free (list, list->head);
 	free (list);
@@ -147,14 +153,14 @@ R_API void r_skiplist_free(RSkipList *list) {
 // Inserts an element to the skiplist, and returns a pointer to the element's
 // node.
 R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
-	RSkipListNode *update[kSkipListDepth+1];
+	RSkipListNode *update[kSkipListDepth + 1];
 	RSkipListNode *x;
 	int i, x_level, new_level;
 
 	// locate insertion points in the lists of all levels
 	x = find_insertpoint (list, data, update, true);
 	// check whether the element is already in the list
-	if (x != list->head && list->compare(x->data, data) == 0) {
+	if (x != list->head && !list->compare(x->data, data)) {
 		return x;
 	}
 
@@ -172,7 +178,9 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	}
 
 	x = r_skiplist_node_new (data, x_level);
-	if (!x) return NULL;
+	if (!x) {
+		return NULL;
+	}
 
 	// update forward links for all `update` points,
 	// by inserting the new element in the list in each level
@@ -218,7 +226,9 @@ R_API void r_skiplist_join(RSkipList *l1, RSkipList *l2) {
 
 // Returns the first data element in the list, if present, NULL otherwise
 R_API void *r_skiplist_get_first(RSkipList *list) {
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 	RSkipListNode *res = list->head->forward[0];
 	return res == list->head ? NULL : res->data;
 }
@@ -228,7 +238,9 @@ R_API void *r_skiplist_get_n(RSkipList *list, int n) {
 	int count = 0;
 	RSkipListNode *node;
 	void *data;
-	if (!list || n < 0) return NULL;
+	if (!list || n < 0) {
+		return NULL;
+	}
 	r_skiplist_foreach (list, node, data) {
 		if (count == n) {
 			return data;
