@@ -2,6 +2,29 @@
 
 #include "r_util.h"
 #include "r_core.h"
+static void type_cmd_help (RCore *core) {
+	const char *help_msg[] = {
+			"Usage:", "aftm", "",
+			"aftm", "", "type matching ana",
+			NULL
+	};
+	r_core_cmd_help (core, help_msg);
+}
+static void type_cmd(RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	if (!fcn) {
+		eprintf ("cant find function here\n");
+	}
+	switch (*input) {
+	case 'm':
+		r_anal_esil_set_pc (core->anal->esil, fcn->addr);
+		r_anal_type_match (core, fcn);
+		break;
+	case '?':
+		type_cmd_help (core);
+		break;
+	}
+}
 
 static int cc_print(void *p, const char *k, const char *v) {
 	if (!strcmp (v, "cc")) {
@@ -1140,6 +1163,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'v': // "afv"
 		var_cmd (core, input + 2);
 		break;
+	case 't': // "aft"
+		type_cmd (core, input + 2);
+		break;
 	case 'c': // "afc"
 		{
 		RAnalFunction *fcn;
@@ -1421,6 +1447,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afB", " 16", "set current function as thumb (change asm.bits)",
 			"afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
 			"afC[?]", " type @[addr]", "set calling convention for function",
+			"aft[?]", "", "type matching, type propagation",
 			"aff", "", "re-adjust function boundaries to fit",
 			"afF", "[1|0|]", "fold/unfold/toggle",
 			"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
@@ -1899,7 +1926,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 	}
 }
 
-static int esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
+R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr) {
 	// Stepping
 	int ret;
 	ut8 code[256];
@@ -1974,33 +2001,40 @@ repeat:
 		}
 
 		r_anal_esil_set_pc (esil, addr);
-		r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
-		if (core->anal->cur && core->anal->cur->esil_post_loop)
-			core->anal->cur->esil_post_loop (esil, &op);
-		r_anal_esil_dumpstack (esil);
-		r_anal_esil_stack_free (esil);
-
-		delay_slot--;
-
-		if (((st64)delay_slot) <= 0) {
-			// no delay slot, or just consumed
-			ut64 jump_target_set = 0;
-			r_anal_esil_reg_read (esil, "$js", &jump_target_set, NULL);
-			if (jump_target_set) {
-				// perform the branch
-				ut64 jump_target = 0;
-				r_anal_esil_reg_read (esil, "$jt", &jump_target, NULL);
-				r_anal_esil_reg_write (esil, "$js", 0);
-				r_reg_setv (core->anal->reg, name, jump_target);
+		if (core->dbg->trace->enabled) {
+			RReg *reg = core->dbg->reg;
+			core->dbg->reg = core->anal->reg;
+			r_debug_trace_pc (core->dbg, addr);
+			core->dbg->reg = reg;
+		} else {
+			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
+			if (core->anal->cur && core->anal->cur->esil_post_loop) {
+				core->anal->cur->esil_post_loop (esil, &op);
 			}
-		}
+			r_anal_esil_dumpstack (esil);
+			r_anal_esil_stack_free (esil);
+			delay_slot--;
 
-		if (((st64)delay_slot) >= 0) {
-			// save decreased delay slot counter
-			r_anal_esil_reg_write (esil, "$ds", delay_slot);
-			if (!esil->trap) {
-				// emulate the instruction and its delay slots in the same 'aes' step
-				goto repeat;
+			if (((st64)delay_slot) <= 0) {
+				// no delay slot, or just consumed
+				ut64 jump_target_set = 0;
+				r_anal_esil_reg_read (esil, "$js", &jump_target_set, NULL);
+				if (jump_target_set) {
+					// perform the branch
+					ut64 jump_target = 0;
+					r_anal_esil_reg_read (esil, "$jt", &jump_target, NULL);
+					r_anal_esil_reg_write (esil, "$js", 0);
+					r_reg_setv (core->anal->reg, name, jump_target);
+				}
+			}
+
+			if (((st64)delay_slot) >= 0) {
+				// save decreased delay slot counter
+				r_anal_esil_reg_write (esil, "$ds", delay_slot);
+				if (!esil->trap) {
+					// emulate the instruction and its delay slots in the same 'aes' step
+					goto repeat;
+				}
 			}
 		}
 	}
@@ -2012,12 +2046,6 @@ repeat:
 			r_core_cmd0 (core, "sr PC");
 	}
 
-	if (core->dbg->trace->enabled) {
-		RReg *reg = core->dbg->reg;
-		core->dbg->reg = core->anal->reg;
-		r_debug_trace_pc (core->dbg, pc);
-		core->dbg->reg = reg;
-	}
 	// check addr
 	if (until_addr != UT64_MAX) {
 		if (r_reg_getv (core->anal->reg, name) == until_addr) {
@@ -2492,7 +2520,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			ut64 pc = r_debug_reg_get (core->dbg, "PC");
 			RAnalOp *op = r_core_anal_op (core, pc);
 			if (!op) break;
-			esil_step (core, UT64_MAX, NULL);
+			r_core_esil_step (core, UT64_MAX, NULL);
 			r_debug_reg_set (core->dbg, "PC", pc + op->size);
 			r_anal_esil_set_pc (esil, pc + op->size);
 			r_core_cmd0 (core, ".ar*");
@@ -2503,7 +2531,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			} else {
 				until_addr = r_num_math (core->num, input + 2);
 			}
-			esil_step (core, until_addr, until_expr);
+			r_core_esil_step (core, until_addr, until_expr);
 			r_core_cmd0 (core, ".ar*");
 			break;
 		case 'o': // "aeso"
@@ -2512,12 +2540,12 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 				until_addr = addr + op->size;
 			}
-			esil_step (core, until_addr, until_expr);
+			r_core_esil_step (core, until_addr, until_expr);
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
 			break;
 		default:
-			esil_step (core, until_addr, until_expr);
+			r_core_esil_step (core, until_addr, until_expr);
 			r_core_cmd0 (core, ".ar*");
 			break;
 		}
@@ -2543,7 +2571,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					eprintf ("trap at 0x%08" PFMT64x "\n", addr);
 					break;
 				}
-				ret = esil_step (core, UT64_MAX, NULL);
+				ret = r_core_esil_step (core, UT64_MAX, NULL);
 				r_anal_op_free (op);
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
 					break;
@@ -2568,7 +2596,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			else if (input[1] == 'u')
 				until_addr = r_num_math (core->num, input + 2);
 			else until_expr = "0";
-			esil_step (core, until_addr, until_expr);
+			r_core_esil_step (core, until_addr, until_expr);
 		}
 		break;
 	case 'i': // "aei"

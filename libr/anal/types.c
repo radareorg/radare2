@@ -40,7 +40,7 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	sdb_unset (DB, str, 0);
 }
 
-R_API int r_anal_type_get_size (RAnal *anal, const char *type) {
+R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 	char *query;
 	const char *t = sdb_const_get (anal->sdb_types, type, 0);
 	if (!strcmp (t, "type")){
@@ -71,7 +71,7 @@ R_API int r_anal_type_get_size (RAnal *anal, const char *type) {
 
 }
 
-R_API RList *r_anal_type_fcn_list (RAnal *anal) {
+R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 	SdbList *sdb_list = sdb_foreach_list (anal->sdb_types);
 	RList *list = r_list_new ();
 	char *name, *value;
@@ -132,20 +132,10 @@ R_API RList *r_anal_type_fcn_list (RAnal *anal) {
 	return list;
 }
 
-R_API RAnalFunction *r_anal_get_function_type (RAnal *anal, const char *name) {
-	return 0;
-}
-
 R_API char* r_anal_type_to_str (RAnal *a, const char *type) {
 	// convert to C text... maybe that should be in format string..
 	return NULL;
 }
-
-#if 0
-R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
-	return NULL;
-}
-#endif
 
 R_API RList *r_anal_type_list_new() {
 	return NULL;
@@ -158,35 +148,13 @@ R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value) 
 
 }
 
-#if UNUSED_CODE
-// Define local vars using ctypes! this is code reuse!
-// ctypes must store get/set access?
-// where's the scope?
-R_API int r_anal_type_frame (RAnal *anal, ut64 addr, const char *type, const char *name, int off, int size) {
-	Sdb *DB = anal->sdb_types;
-	// TODO: check if type already exists and return false
-	sdb_queryf (DB, "frame.%08"PFMT64x".%s=%s,%d,%d",
-		addr, name, type, off, size);
-	sdb_queryf (DB,
-		"frame.%08"PFMT64x"=%s", addr, name);
-	return true;
-	
-}
-
-R_API int r_anal_type_frame_del (RAnal *anal, ut64 addr, const char *name) {
-	//"(-)frame.%08"PFMT64x"=%s", addr, name
-	//"frame.%08"PFMT64x".%s=", addr, name
-	return true;
-}
-#endif
-
-R_API int r_anal_type_link (RAnal *anal, const char *type, ut64 addr) {
+R_API int r_anal_type_link(RAnal *anal, const char *type, ut64 addr) {
 	if (sdb_const_get (anal->sdb_types, type, 0)) {
 		char *laddr = r_str_newf ("link.%08"PFMT64x, addr);
 		sdb_set (anal->sdb_types, laddr, type, 0);
 		free (laddr);
 		return true;
-	} 
+	}
 	// eprintf ("Cannot find type\n");
 	return false;
 }
@@ -209,7 +177,7 @@ static void filter_type(char *t) {
 	}
 }
 
-R_API char *r_anal_type_format (RAnal *anal, const char *t) {
+R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 	int n, m;
 	char *p, *q, var[128], var2[128], var3[128];
 	char *fmt = NULL;
@@ -276,4 +244,38 @@ R_API char *r_anal_type_format (RAnal *anal, const char *t) {
 		return fmt;
 	}
 	return NULL;
+}
+// Function prototypes api
+R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name) {
+	char *fcn = sdb_const_get (anal->sdb_types, func_name, 0);
+	return fcn && !strcmp (fcn, "func");
+}
+
+R_API const char *r_anal_type_func_cc(RAnal *anal, const char *func_name) {
+	char *query = sdb_fmt (-1, "func.%s.cc", func_name);
+	return sdb_const_get (anal->sdb_types, query, 0);
+}
+
+R_API int r_anal_type_func_args_count(RAnal *anal, const char *func_name) {
+	char *query = sdb_fmt (-1, "func.%s.args", func_name);
+	return sdb_num_get (anal->sdb_types, query, 0);
+}
+
+R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i) {
+	char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
+	char *ret = sdb_get (anal->sdb_types, query, 0);
+	char *comma = strchr (ret, ',');
+	if (comma) {
+		*comma = 0;
+		return ret;
+	}
+	free (ret);
+	return NULL;
+}
+
+R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i) {
+	char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
+	const char *get = sdb_const_get (anal->sdb_types, query, 0);
+	char *ret = strchr (get, ',');
+	return ret ==0 ? ret : ret + 1;
 }
