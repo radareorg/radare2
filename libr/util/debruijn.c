@@ -87,22 +87,6 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	return pat2;
 }
 
-// In-place reverse a string.
-static void reverse_string(char* str) {
-	char *start = str, *end, temp;
-	// Skip null and empty strings.
-	if (!str || !*str)
-		return;
-	end = start + strlen (str) - 1;
-	while (end > start) {
-		temp = *start;
-		*start = *end;
-		*end = temp;
-		++start;
-		--end;
-	}
-}
-
 // Generate a cyclic pattern of 0x10000 long.
 // The returned string is malloced, and it is the responsibility of the caller
 // to free the memory.
@@ -115,36 +99,49 @@ static char* cyclic_pattern_long() {
 // Finds the offset of a given value in a cyclic pattern of an integer.
 // Guest endian = 1 if little, 0 if big.
 // Host endian = 1 if little, 0 if big.
-R_API int r_debruijn_offset(ut64 value, int guest_endian) {
-	ut64 needle_l[2];  // Hold the value as a string.
-	char* needle, *pattern;
-	int n, host_endian, retval;
+R_API int r_debruijn_offset(ut64 value, int big_endian) {
+	char* needle, *pattern, buf[9];
+	int n, retval;
 	char* pch;
 
-	if (value == 0)
+	if (value == 0) {
 		return -1;
-	pattern = cyclic_pattern_long();
+	}
+	pattern = cyclic_pattern_long ();
 
-	needle_l[0] = value;
-	needle_l[1] = 0;
-	needle = (char*)&needle_l;
-	// On little-endian systems with more bits than the binary being analyzed, we
-	// may need to find the begin of this.
-	while (!needle[0])
-		needle++;
-
+	if (big_endian) {
+		buf[7] = value & 0xff;
+		buf[6] = (value >> 8) & 0xff;
+		buf[5] = (value >> 16) & 0xff;
+		buf[4] = (value >> 24) & 0xff;
+		buf[3] = (value >> 32) & 0xff;
+		buf[2] = (value >> 40) & 0xff;
+		buf[1] = (value >> 48) & 0xff;
+		buf[0] = (value >> 56) & 0xff;
+		buf[8] = 0; // EOF
+	} else {
+		buf[0] = value & 0xff;
+		buf[1] = (value >> 8) & 0xff;
+		buf[2] = (value >> 16) & 0xff;
+		buf[3] = (value >> 24) & 0xff;
+		buf[4] = (value >> 32) & 0xff;
+		buf[5] = (value >> 40) & 0xff;
+		buf[6] = (value >> 48) & 0xff;
+		buf[7] = (value >> 56) & 0xff;
+		buf[8] = 0; // EOF
+	}
+	for (needle = buf; !*needle; needle++) {
+		/* do nothing here */
+	}
 	// we should not guess the endian. its already handled by other functions
 	// and configure by the user in cfg.bigendian
 	n = 1;
-	// little endian if true
-	host_endian = (*(char*)&n == 1) ? 1 : 0;
-	if (host_endian != guest_endian)
-		reverse_string (needle);
 
 	pch = strstr (pattern, needle);
 	retval = -1;
-	if (pch != NULL)
-		retval = (int)(pch - pattern);
+	if (pch) {
+		retval = (int)(size_t)(pch - pattern);
+	}
 	free (pattern);
 	return retval;
 }

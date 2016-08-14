@@ -221,7 +221,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		break;
 	case 'p': // debrujin patterns
 		switch (input[2]) {
-		case 'D':
+		case 'D': // "wopD"
 			len = (int)(input[3]==' ')?
 				r_num_math (core->num, input + 3): core->blocksize;
 			if (len > 0) {
@@ -234,11 +234,11 @@ static void cmd_write_op (RCore *core, const char *input) {
 				}
 			}
 			break;
-		case 'O':
-			len = (int)(input[3]==' ')?
-				r_num_math (core->num, input + 3): core->blocksize;
-			//core->assembler->big_endian 1 if big but in r_debruijn_offset is the contrary
-			core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
+		case 'O': // "wopO"
+			len = (int)(input[3]==' ')
+				? r_num_math (core->num, input + 3)
+				: core->blocksize;
+			core->num->value = r_debruijn_offset (len, r_config_get_i (core->config, "cfg.bigendian"));
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 			break;
 		case '\0':
