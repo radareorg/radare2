@@ -2211,7 +2211,13 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	int ret = false;
 
 	if (core->cmdfilter) {
-		if (strchr (cstr, ';') || strncmp (cstr, core->cmdfilter, strlen (core->cmdfilter))) {
+		const char *invalid_chars = ";|>`@";
+		for (i = 0; invalid_chars[i]; i++) {
+			if (strchr (cstr, invalid_chars[i])) {
+				return 1;
+			}
+		}
+		if (strncmp (cstr, core->cmdfilter, strlen (core->cmdfilter))) {
 			return 1;
 		}
 	}
