@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 #include <stdbool.h>
 #include <string.h>
 
@@ -206,14 +206,19 @@ static void cmd_write_op (RCore *core, const char *input) {
 					bits = ((ut64)1) << i;
 					const char *name = r_hash_name (bits);
 					if (!name || !*name) break;
-						printf ("  %s\n", name);
+					printf ("  %s\n", name);
 				}
+				eprintf ("Available Encoders/Decoders: \n");
+				// TODO: do not hardcode
+				eprintf ("  base64\n");
+				eprintf ("  base91\n");
+				eprintf ("  punycode\n");
 				eprintf ("Currently supported crypto algos:\n");
 				for (i = 0; ; i++) {
 					bits = ((ut64)1) << i;
 					const char *name = r_crypto_name (bits);
 					if (!name || !*name) break;
-						printf ("  %s\n", name);
+					printf ("  %s\n", name);
 				}
 			}
 			free (args);
@@ -222,12 +227,26 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case 'p': // debrujin patterns
 		switch (input[2]) {
 		case 'D': // "wopD"
-			len = (int)(input[3]==' ')?
-				r_num_math (core->num, input + 3): core->blocksize;
+			len = (int)(input[3]==' ')
+				? r_num_math (core->num, input + 3)
+				: core->blocksize;
 			if (len > 0) {
+				/* XXX This seems to fail at generating long patterns (wopD 512K) */
 				buf = (ut8*)r_debruijn_pattern (len, 0, NULL); //debruijn_charset);
 				if (buf) {
-					r_core_write_at (core, core->offset, buf, len);
+					const ut8 *ptr = buf;
+					ut64 addr = core->offset;
+					while (true) {
+						int res = r_core_write_at (core, addr, ptr, len);
+						if (res < 1 || len == res) {
+							break;
+						}
+						if (res < len) {
+							ptr += res;
+							len -= res;
+							addr += res;
+						}
+					} 
 					free (buf);
 				} else {
 					eprintf ("Couldn't generate pattern of length %d\n", len);

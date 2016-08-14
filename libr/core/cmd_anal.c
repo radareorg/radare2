@@ -2225,6 +2225,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	if (!r_io_section_get_name (core->io, "esil_stack")) {
 		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d esil_stack", addr, addr, size, size);
 	}
+//	r_core_cmdf (core, "wopD 0x%"PFMT64x" @ 0x%"PFMT64x, size, addr);
 	r_core_seek (core, curoff, 0);
 }
 

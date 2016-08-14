@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - crowell */
+/* radare - LGPL - Copyright 2014-2016 - crowell, pancake */
 
 #include <r_util.h>
 
@@ -12,20 +12,16 @@ static const char* debruijn_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno
 
 // Generate a De Bruijn sequence.
 static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int order,
-		int maxlen, int size, int* prenecklace_a, char* sequence,
-		const char* charset) {
+		int maxlen, int size, int* prenecklace_a, char* sequence, const char* charset) {
 	int j;
-	if (!charset || !sequence) {
-		return;
-	}
-	if (strlen(sequence) == maxlen) {
+	if (!charset || !sequence || strlen (sequence) == maxlen) {
 		return;
 	}
 	if (prenecklace_len_t > order) {
 		if (order % lyndon_prefix_len_p == 0) {
 			for (j = 1; j <= lyndon_prefix_len_p; ++j) {
 				sequence[strlen(sequence)] = charset[prenecklace_a[j]];
-				if (strlen(sequence) == maxlen) {
+				if (strlen (sequence) == maxlen) {
 					return;
 				}
 			}
@@ -38,7 +34,7 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 		for (j = prenecklace_a[prenecklace_len_t - lyndon_prefix_len_p] + 1;
 				j < size; ++j) {
 			prenecklace_a[prenecklace_len_t] = j;
-			de_bruijn_seq(prenecklace_len_t + 1, prenecklace_len_t, order, maxlen,
+			de_bruijn_seq (prenecklace_len_t + 1, prenecklace_len_t, order, maxlen,
 					size, prenecklace_a, sequence, charset);
 		}
 	}
@@ -72,10 +68,11 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	if (start >= size) {
 		return (char*)NULL;
 	}
-	pat = de_bruijn(charset, 3 /*subsequence length*/, size);
+	pat = de_bruijn (charset, 3 /*subsequence length*/, size);
 	if (!pat) return NULL;
-	if (start == 0)
+	if (start == 0) {
 		return pat;
+	}
 	pat2 = calloc ((size - start) + 1, sizeof(char));
 	if (!pat2) {
 		free (pat);
@@ -85,15 +82,6 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	pat2[size-start] = 0;
 	free (pat);
 	return pat2;
-}
-
-// Generate a cyclic pattern of 0x10000 long.
-// The returned string is malloced, and it is the responsibility of the caller
-// to free the memory.
-static char* cyclic_pattern_long() {
-	// 0x10000 should be long enough. This is how peda works, and nobody
-	// complains.
-	return r_debruijn_pattern (0x10000, 0, debruijn_charset);
 }
 
 // Finds the offset of a given value in a cyclic pattern of an integer.
@@ -107,7 +95,8 @@ R_API int r_debruijn_offset(ut64 value, int big_endian) {
 	if (value == 0) {
 		return -1;
 	}
-	pattern = cyclic_pattern_long ();
+	// 0x10000 should be long enough. This is how peda works, and nobody complains
+	pattern = r_debruijn_pattern (0x10000, 0, debruijn_charset);
 
 	if (big_endian) {
 		buf[7] = value & 0xff;
