@@ -15,11 +15,14 @@ static bool r_anal_emul_init (RCore *core) {
 	}
 	return true;
 }
-static void type_match (RCore *core, ut64 addr, const char *fcn_name) {
+static void type_match (RCore *core, ut64 addr, char *name) {
 	Sdb *trace = core->anal->esil->db_trace;
 	RAnal *anal = core->anal;
 	RAnalVar *v;
-	if (!r_anal_type_func_exist (anal, fcn_name)) {
+	char *fcn_name;
+	if (r_anal_type_func_exist (anal, name)) {
+		fcn_name = strdup (name);
+	} else if (!(fcn_name = r_anal_type_func_guess (anal, name))) {
 		eprintf ("can't find function prototype for %s\n",fcn_name);
 		return;
 	}
@@ -134,6 +137,7 @@ static void type_match (RCore *core, ut64 addr, const char *fcn_name) {
 		}
 		free (type);
 	}
+	free (fcn_name);
 }
 
 static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {

@@ -247,7 +247,7 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 }
 // Function prototypes api
 R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name) {
-	char *fcn = sdb_const_get (anal->sdb_types, func_name, 0);
+	const char *fcn = sdb_const_get (anal->sdb_types, func_name, 0);
 	return fcn && !strcmp (fcn, "func");
 }
 
@@ -277,5 +277,24 @@ R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i
 	char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get (anal->sdb_types, query, 0);
 	char *ret = strchr (get, ',');
-	return ret ==0 ? ret : ret + 1;
+	return ret == 0 ? ret : ret + 1;
+}
+static int capture_sub_string (void *p, const char *k, const char *v) {
+	char **ret = (char **)p;
+	if (strcmp (v, "func")) {
+		return 1;
+	}
+	if (strstr (ret[1], k) && (!ret[0] || strlen(k) > strlen (ret[0]))) {
+		free (ret[0]);
+		ret[0] = strdup (k);
+	}
+	return 1;
+}
+R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
+	char *ret[] = {
+		NULL,
+		func_name
+	};
+	sdb_foreach (anal->sdb_types, capture_sub_string, ret);
+	return ret[0];
 }

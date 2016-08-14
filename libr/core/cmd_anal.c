@@ -5,14 +5,14 @@
 static void type_cmd_help (RCore *core) {
 	const char *help_msg[] = {
 			"Usage:", "aftm", "",
-			"aftm", "", "type matching ana",
+			"aftm", "", "type matching analysis",
 			NULL
 	};
 	r_core_cmd_help (core, help_msg);
 }
 static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	if (!fcn) {
+	if (!fcn && *input != '?') {
 		eprintf ("cant find function here\n");
 	}
 	switch (*input) {

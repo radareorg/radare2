@@ -1124,7 +1124,8 @@ R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name);
 R_API const char *r_anal_type_func_cc(RAnal *anal, const char *func_name);
 R_API int r_anal_type_func_args_count(RAnal *anal, const char *func_name);
 R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i);
- R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i);
+R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i);
+R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name);
 /* anal.c */
 R_API RAnal *r_anal_new(void);
 R_API int r_anal_purge (RAnal *anal);
