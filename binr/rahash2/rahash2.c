@@ -278,6 +278,12 @@ static void algolist() {
 		printf ("  %s\n", name);
 	}
 	eprintf ("\n");
+	eprintf ("Available Encoders/Decoders: \n");
+	// TODO: do not hardcode
+	eprintf ("  base64\n");
+	eprintf ("  base91\n");
+	eprintf ("  punycode\n");
+	eprintf ("\n");
 	eprintf ("Available Crypto Algos: \n");
 	for (i = 0; ; i++) {
 		bits = ((ut64)1) << i;
@@ -453,7 +459,7 @@ int main(int argc, char **argv) {
 			eprintf ("rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.\n");
 			return 1;
 		}
-		algobit = r_hash_name_to_bits(algo);
+		algobit = r_hash_name_to_bits (algo);
 		// if algobit represents a single algorithm then it's a power of 2
 		if (!is_power_of_two (algobit)) {
 			eprintf ("rahash2: Option -c incompatible with multiple algorithms in -a.\n");
@@ -569,6 +575,10 @@ int main(int argc, char **argv) {
 				str[strsz] = 0;
 			}
 			algobit = r_hash_name_to_bits (algo);
+			if (algobit == 0) {
+				eprintf ("Invalid algorithm. See -E, -D maybe?\n");
+				return 1;
+			}
 			for (i = 1; i < 0x800000; i <<= 1) {
 				if (algobit & i) {
 					int hashbit = i & algobit;

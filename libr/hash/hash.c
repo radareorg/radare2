@@ -25,9 +25,9 @@ static const hash_name_bytes[] = {
 	 {"hamdist", R_HASH_HAMDIST},
 	 {"pcprint", R_HASH_PCPRINT},
 	 {"mod255", R_HASH_MOD255},
-	 {"base64", R_HASH_BASE64},
-	 {"base91", R_HASH_BASE91},
-	 {"punycode", R_HASH_PUNYCODE},
+	 // {"base64", R_HASH_BASE64},
+	 // {"base91", R_HASH_BASE91},
+	 // {"punycode", R_HASH_PUNYCODE},
 	 {"luhn", R_HASH_LUHN},
 	 {NULL, 0}
 };
