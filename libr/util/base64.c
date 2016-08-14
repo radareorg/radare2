@@ -32,7 +32,7 @@ static int b64_decode(const char in[4], ut8 out[3]) {
 			return -1;
 		v[i] = cd64[in[i] - 43];
 		if (v[i] == '$') {
-			len = i - 1;
+			len = i? i - 1: -1;
 			break;
 		} else v[i] -= 62;
 	}
