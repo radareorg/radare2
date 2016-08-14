@@ -83,7 +83,9 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	if (mmo->rawio) {
 		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
 		if (mmo->nocache) {
+#ifdef F_NOCACHE
 			fcntl (mmo->fd, F_NOCACHE, 1);
+#endif
 		}
 		return (mmo->fd != -1);
 	}
@@ -95,7 +97,9 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		mmo->rawio = 1;
 		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
 		if (mmo->nocache) {
+#ifdef F_NOCACHE
 			fcntl (mmo->fd, F_NOCACHE, 1);
+#endif
 		}
 		return (mmo->fd != -1);
 	}
