@@ -2210,6 +2210,11 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false;
 
+	if (core->cmdfilter) {
+		if (strchr (cstr, ';') || strncmp (cstr, core->cmdfilter, strlen (core->cmdfilter))) {
+			return 1;
+		}
+	}
 	if (core->cmdremote) {
 		if (*cstr != '=' && *cstr != 'q' && strncmp (cstr, "!=", 2)) {
 			r_io_system (core->io, cstr);

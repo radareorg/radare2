@@ -166,6 +166,7 @@ typedef struct r_core_t {
 	int cmdremote;
 	char *lastsearch;
 	bool fixedblock;
+	char *cmdfilter;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);

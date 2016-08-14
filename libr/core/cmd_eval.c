@@ -7,6 +7,13 @@
 static char *curtheme = NULL;
 static bool getNext = false;
 
+static bool load_theme(RCore *core, const char *path) {
+	core->cmdfilter = "ec ";
+	bool res = r_core_cmd_file (core, path);
+	core->cmdfilter = NULL;
+	return res;
+}
+
 static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 	const char *fn = r_str_lchr (file, '/');
 	if (!fn) fn = file;
@@ -216,13 +223,13 @@ static int cmd_eval(void *data, const char *input) {
 				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input + 3);
 				home = r_str_home (path);
 				snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
-					R2_VERSION"/cons/%s", input+3);
-				if (!r_core_cmd_file (core, home)) {
-					if (r_core_cmd_file (core, path)) {
+					R2_VERSION"/cons/%s", input + 3);
+				if (!load_theme (core, home)) {
+					if (load_theme (core, path)) {
 						//curtheme = r_str_dup (curtheme, path);
 						curtheme = r_str_dup (curtheme, input + 3);
 					} else {
-						if (r_core_cmd_file (core, input + 3)) {
+						if (load_theme (core, input + 3)) {
 							curtheme = r_str_dup (curtheme, input + 3);
 						} else {
 							eprintf ("eco: cannot open colorscheme profile (%s)\n", path);
