@@ -228,9 +228,9 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 #endif
 	} else {
-		r_socket_free (rap_fd);
-		free (rior);
-		return NULL;
+	//	r_socket_free (rap_fd);
+	//	free (rior);
+		//return NULL;
 	}
 	//r_socket_free (rap_fd);
 	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
