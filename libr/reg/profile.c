@@ -19,7 +19,7 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 static ut64 parse_size(char *s, char **end) {
 	ut64 r = 0;
 	if (*s == '.') {
-		r = strtoul (s+1, end, 10);
+		r = strtoul (s + 1, end, 10);
 	} else {
 		char *has_dot = strchr (s, '.');
 		if (has_dot) {
@@ -42,8 +42,9 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		return "Invalid syntax";
 
 	type = r_reg_type_by_name (tok[0]);
-	if (type < 0)
+	if (type < 0) {
 		return "Invalid register type";
+	}
 
 	item = R_NEW0 (RRegItem);
 	if (!item) return "Unable to allocate memory";
@@ -79,13 +80,17 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		r_reg_item_free (item);
 		return "Duplicate register definition";
 	}
+	/* Hack to put flags in the same arena as gpr */
+	if (type == R_REG_TYPE_FLG) {
+		type = R_REG_TYPE_GPR;
+	}
 
 	r_list_append (reg->regset[item->type].regs, item);
 
 	// Update the overall profile size
-	if (item->offset + item->size > reg->size)
+	if (item->offset + item->size > reg->size) {
 		reg->size = item->offset + item->size;
-
+	}
 	return NULL;
 }
 
@@ -135,16 +140,18 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			while (*p == ' ' || *p == '\t')
 				p++;
 			// Skip the rest of the line is a comment is encountered
-			if (*p == '#')
+			if (*p == '#') {
 				while (*p != '\n')
 					p++;
+			}
 			// EOL ?
 			if (*p == '\n')
 				break;
 			// Gather a handful of chars
 			// Use isgraph instead of isprint because the latter considers ' ' printable
-			for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;)
+			for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;) {
 				tmp[i++] = *p++;
+			}
 			tmp[i] = '\0';
 			// Limit the number of tokens
 			if (j > PARSER_MAX_TOKENS - 1)
@@ -157,9 +164,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			// Do the actual parsing
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
-			const char *r = (*first == '=') ?
-						parse_alias (reg, tok, j) :
-						parse_def (reg, tok, j);
+			const char *r = (*first == '=')
+				? parse_alias (reg, tok, j)
+				: parse_def (reg, tok, j);
 			// Clean up
 			for (i = 0; i < j; i++)
 				free (tok[i]);
@@ -176,8 +183,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	} while (*p++);
 
 	// Align to byte boundary if needed
-	if (reg->size & 7)
+	if (reg->size & 7) {
 		reg->size += 8 - (reg->size & 7);
+	}
 	reg->size >>= 3; // bits to bytes (divide by 8)
 	r_reg_fit_arena (reg);
 

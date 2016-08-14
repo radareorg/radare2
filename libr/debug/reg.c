@@ -55,11 +55,11 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
 	int i, delta, from, to, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
+	RPrint *pr = NULL;
 	int colwidth = 20;
 	RListIter *iter;
 	RRegItem *item;
 	RList *head;
-	RPrint *pr = NULL;
 	ut64 diff;
 
 	if (!dbg || !dbg->reg) {
@@ -90,21 +90,24 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->regcols) {
 		cols = dbg->regcols;
 	}
-	if (rad == 'j')
+	if (rad == 'j') {
 		dbg->cb_printf ("{");
+	}
 	if (type == -1) {
 		from = 0;
 		to = R_REG_TYPE_LAST;
 	} else {
 		from = type;
-		to = from +1;
+		to = from + 1;
 	}
 
 	int itmidx = -1;
 	dbg->creg = NULL;
 	for (i = from; i < to; i++) {
 		head = r_reg_get_list (dbg->reg, i);
-		if (!head) continue;
+		if (!head) {
+			continue;
+		}
 		r_list_foreach (head, iter, item) {
 			ut64 value;
 #if 0
@@ -122,7 +125,6 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				continue;
 			}
 #endif
-
 			if (type != -1) {
 				if (type != item->type) continue;
 				if (size != 0 && size != item->size) continue;
@@ -208,19 +210,23 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			n++;
 		}
 	}
-	if (rad == 'j') dbg->cb_printf ("}\n");
-	else if (n > 0 && rad == 2 && ((n%cols)))
+	if (rad == 'j') {
+		dbg->cb_printf ("}\n");
+	} else if (n > 0 && rad == 2 && ((n%cols))) {
 		dbg->cb_printf ("\n");
+	}
 	return n;
 }
 
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 	RRegItem *ri;
 	int role = r_reg_get_name_idx (name);
-	if (!dbg || !dbg->reg)
+	if (!dbg || !dbg->reg) {
 		return false;
-	if (role != -1)
+	}
+	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
+	}
 	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);
 	if (ri) {
 		r_reg_set_value (dbg->reg, ri, num);
