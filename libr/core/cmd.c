@@ -2208,7 +2208,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd, *ptr, *rcmd;
-	int ret = false;
+	int ret = false, i;
 
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
