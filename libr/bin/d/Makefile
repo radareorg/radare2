@@ -10,7 +10,7 @@ DLLS=ws2_32 oleaut32 wsock32 msi csmfpapi msvbvm60 kernel32
 DLLS+=aclui activeds atl borlndmm browseui comctl32 dsound
 DLLS+=mfc42 mfc42u mstlsapi msvbvm50 odbc32 olecli32 oledlg
 DLLS+=olepro32 olesvr32 shdocvw shell32 shlwapi uxtheme
-DLLS+=vb40032 vssapi winmm cabinet
+DLLS+=vb40032 vssapi winmm cabinet gsprop32 spr32d70
 DLL_SDB=$(addsuffix .sdb,$(addprefix dll/,$(DLLS)))
 #-include $(OBJS:.o=.d)
 
