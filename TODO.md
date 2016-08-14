@@ -304,38 +304,6 @@ Future
 	 - the r_flag_get by string should have another construction with btree
 	   for the string of the name
 
-Threads
-=======
-* implement non-threaded thread api (dummy one, when no support)
-* test w32 port
-* Implement a pure clone(2) backend
-* Added a threading pool super-api
-
-# Debug information in binaries
-* dwarf, pdb, def, lib
-  - from file, from section, ...
-  - load symbols from .lib or .def (find signatures)
-    .def -> .idt , .lib -> ar2idt
-* Useful information in the PDB format
-  - programming language used (dwarf only?)
-  - offset - file:line
-  - elements { position, type, name, length, offset, delta }
-  - types // using the r_anal vartype API (not yet implemented)
-  - position = { inlined, global, local } enum
-  - function = { visibility, position, type, calltype (cc), arglist, return }
-  - visibility = { local, exported, qualified }
-  Types {
-  	// element types
-  	array, bitfield, class, struct, union, enum, pointer
-  	procedure, function, arglist, vtshape, fieldlist
-  	
-  	// data types
-  	float, char, signed short, bool, address, ..
-  }
-  Type {
-  	char, short, ushort, long, ulong, 
-  }
-
 <pre>
 .------------------------.
 |   ___       ___  ____  |
