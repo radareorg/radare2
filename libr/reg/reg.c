@@ -37,9 +37,7 @@ R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32) {
 }
 
 R_API const char *r_reg_get_type(int idx) {
-	if (idx >= 0 && idx < R_REG_TYPE_LAST)
-		return types[idx];
-	return NULL;
+	return (idx >= 0 && idx < R_REG_TYPE_LAST)? types[idx]: NULL;
 }
 
 R_API int r_reg_type_by_name(const char *str) {
@@ -47,8 +45,9 @@ R_API int r_reg_type_by_name(const char *str) {
 	for (i = 0; i < R_REG_TYPE_LAST && types[i]; i++)
 		if (!strcmp (types[i], str))
 			return i;
-	if (!strcmp (str, "all"))
+	if (!strcmp (str, "all")) {
 		return R_REG_TYPE_ALL;
+	}
 	eprintf ("Unknown register type: '%s'\n", str);
 	return -1;
 }
@@ -236,8 +235,9 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	RListIter *iter;
 	RRegItem *r;
 	int i, e;
-	if (!reg || !name)
+	if (!reg || !name) {
 		return NULL;
+	}
 	if (type == -1) {
 		i = 0;
 		e = R_REG_TYPE_LAST;
@@ -257,8 +257,9 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
-	if (type < 0 || type > (R_REG_TYPE_LAST - 1))
+	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
+	}
 	return reg->regset[type].regs;
 }
 

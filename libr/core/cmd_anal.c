@@ -1613,6 +1613,9 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 		}
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
+	if (type != R_REG_TYPE_FLG && size == 1) {
+		r_debug_reg_list (core->dbg, R_REG_TYPE_FLG, bits, mode, use_color);
+	}
 	core->dbg->reg = hack;
 }
 
@@ -1922,7 +1925,9 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		}
 		if (type != R_REG_TYPE_LAST) {
 			__anal_reg_list (core, type, size, str[0]);
-		} else eprintf ("cmd_debug_reg: Unknown type\n");
+		} else {
+			eprintf ("cmd_debug_reg: Unknown type\n");
+		}
 	}
 }
 
