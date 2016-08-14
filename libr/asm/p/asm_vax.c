@@ -21,11 +21,13 @@ static int bytes_size = 0;
 
 static int vax_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
-	if (delta<0) {
+	if (delta < 0) {
 		return -1; // disable backward reads
 	}
-	//if ((delta+length)>4) return -1;
-	memcpy (myaddr, bytes+delta, R_MIN (length, bytes_size));
+	if (delta > length) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, R_MIN (length, bytes_size));
 	return 0;
 }
 
