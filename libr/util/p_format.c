@@ -712,7 +712,6 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	float val_f = 0.0f;
 	ut64 addr = 0;
-	ut32 addr32;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size/ARRAYINDEX_COEF - 1;

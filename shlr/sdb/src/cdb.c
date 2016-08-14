@@ -82,7 +82,7 @@ int cdb_read(struct cdb *c, char *buf, ut32 len, ut32 pos) {
 	}
 	while (len > 0) {
 		ssize_t r = read (c->fd, buf, len);
-		if (r != len) {
+		if (r < 1 || (ut32) r != len) {
 			return 0;
 		}
 		buf += r;

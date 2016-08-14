@@ -43,13 +43,13 @@ static int astrcmp (const char *a, const char *b) {
 	}
 }
 
-static inline int cstring_cmp(const void *a, const void *b) {
+static inline int cstring_cmp(const void *a, const void *b) { 
 	const char **va = (const char **)a;
 	const char **vb = (const char **)b;
 	return astrcmp (*va, *vb);
 }
 
-static inline int int_cmp(const void *a, const void *b) {
+static inline int int_cmp(const void *a, const void *b) { 
 	const ut64 va = *(const ut64 *)a;
 	const ut64 vb = *(const ut64 *)b;
 	if (va > vb) {
@@ -59,7 +59,7 @@ static inline int int_cmp(const void *a, const void *b) {
 		return -1;
 	}
 	return 0;
-}
+} 
 
 SDB_API ut64 sdb_array_get_num(Sdb *s, const char *key, int idx, ut32 *cas) {
 	int i;
@@ -639,3 +639,4 @@ SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 	free (nums);
 	return;
 }
+

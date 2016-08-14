@@ -448,9 +448,9 @@ static int cmtcb(void *usr, const char *k, const char *v) {
 		RList *list = (RList*)usr;
 		char *msg, *comma = strchr (v, ',');
 		if (comma) {
-			comma = strchr (comma+1, ',');
+			comma = strchr (comma + 1, ',');
 			if (comma) {
-				msg = (char *)sdb_decode (comma+1, NULL);
+				msg = (char *)sdb_decode (comma + 1, NULL);
 				if (msg) {
 					msg = r_str_replace (msg, "\n", "", true);
 					r_list_append (list, r_str_newf ("%s  %s", k+7, msg));
