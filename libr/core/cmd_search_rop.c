@@ -184,7 +184,7 @@ static void fillRegisterValues (RCore *core) {
 static char* rop_classify_constant (RCore *core, RList *ropList) {
 	char *esil_str, *constant;
 	char *ct = NULL;
-	RListIter *iter_src, *iter_r, *iter_dst, *iter_const;
+	RListIter *iter_r, *iter_dst, *iter_const;
 	RRegItem *item_dst;
 	RList *head, *constants;
 	RList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL, *reg_read = NULL,
@@ -370,7 +370,7 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 
 static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 	char *esil_str, *op;
-	char *arithmetic = NULL, *arithmetic_f = NULL;
+	char *arithmetic = NULL;
 	RListIter *iter_src1, *iter_src2, *iter_r, *iter_dst, *iter_ops;
 	RRegItem *item_src1, *item_src2, *item_dst;
 	RList *head;
@@ -510,8 +510,6 @@ static int rop_classify_nops (RCore *core, RList *ropList) {
 	RList *head;
 	RList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL, *reg_read = NULL,
 		*reg_write = NULL, *mem_read = NULL, *mem_write = NULL;
-	RHashTable *ht_old = r_hashtable_new ();
-	RHashTable *ht_new = r_hashtable_new ();
 	const bool romem = r_config_get_i (core->config, "esil.romem");
 	const bool stats = r_config_get_i (core->config, "esil.stats");
 
@@ -524,10 +522,6 @@ static int rop_classify_nops (RCore *core, RList *ropList) {
 	// RReg *hack = core->dbg->reg;
 	// core->dbg->reg = core->anal->reg;
 	r_list_foreach (ropList, iter_r, esil_str) {
-		// if (strchr (esil_str, '[')) { // avoid MEM read/write for now
-		//  return -1;
-		// }
-
 		fillRegisterValues (core);
 
 		// r_cons_printf ("Emulating:%s\n", esil_str);
@@ -583,7 +577,7 @@ static void rop_classify (RCore *core, Sdb *db, RList *ropList, const char *key,
 	char *str = r_str_newf ("0x%"PFMT64x, size);
 
 	if (nop == 1) {
-		str = r_str_concat (str, "  -->  NOP");
+		str = r_str_concat (str, " NOP");
 		sdb_set (db, key, str, 0);
 	} else {
 		if (mov) {
