@@ -784,19 +784,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				r_print_cursor (p, j, 0);
 				j += step - 1;
 			} else if (base == -8) {
-				long long *w = (long long *)(buf + j);
-				printfmt ("%23"PFMT64d" ", *w);
+				long long w = r_read_ble64 (buf + j, p->big_endian);
+				printfmt ("%23"PFMT64d" ", w);
 				j += 7;
 			} else if (base == -1) {
-				st8 *w = (st8*)(buf+j);
-				printfmt ("%4d ", *w);
+				st8 w = r_read_ble8 (buf + j);
+				printfmt ("%4d ", w);
 			} else if (base == -10) {
-				st16 *w = (st16*)(buf+j);
-				printfmt ("%7d ", *w);
+				st16 w = r_read_ble16 (buf + j, p->big_endian);
+				printfmt ("%7d ", w);
 				j += 1;
 			} else if (base == 10) {
-				int *w = (int*)(buf+j);
-				printfmt ("%13d ", *w);
+				int w = r_read_ble32 (buf + j, p->big_endian);
+				printfmt ("%13d ", w);
 				j += 3;
 			} else {
 				if (j >= len) {
