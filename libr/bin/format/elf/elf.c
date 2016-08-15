@@ -787,6 +787,10 @@ static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 			break;
 		}
 		int left = size - (i * sizeof (Elf_(Shdr)));
+		left = R_MIN (left, bin->shdr[i].sh_size);
+		if (left < 1) {
+			break;
+		}
 		switch (bin->shdr[i].sh_type) {
 		case SHT_GNU_verdef:
 			sdb = store_versioninfo_gnu_verdef (bin, &bin->shdr[i], left);
