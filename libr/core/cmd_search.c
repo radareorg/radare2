@@ -402,7 +402,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				pos = getstring (buf + ctx + len, ctx);
 				free (buf);
 				if (use_color) {
-					s = r_str_newf (".%s"Color_BYELLOW"%s"Color_RESET"%s.", pre, wrd, pos);
+					s = r_str_newf (".%s"Color_YELLOW"%s"Color_RESET"%s.", pre, wrd, pos);
 				} else {
 					// s = r_str_newf ("\"%s"Color_INVERT"%s"Color_RESET"%s\"", pre, wrd, pos);
 					s = r_str_newf ("\"%s%s%s\"", pre, wrd, pos);
@@ -2468,7 +2468,7 @@ reread:
 			eprintf ("Usage: /+ [string]\n");
 		}
 		break;
-	case 'z': /* search asm */
+	case 'z': /* search strings of min-max range*/
 		{
 		char *p;
 		ut32 min, max;
@@ -2476,14 +2476,14 @@ reread:
 			eprintf ("Usage: /z min max\n");
 			break;
 		}
-		if ((p = strchr (input+2, ' '))) {
+		if ((p = strchr (input + 2, ' '))) {
 			*p = 0;
 			max = r_num_math (core->num, p+1);
 		} else {
 			eprintf ("Usage: /z min max\n");
 			break;
 		}
-		min = r_num_math (core->num, input+2);
+		min = r_num_math (core->num, input + 2);
 		if (!r_search_set_string_limits (core->search, min, max)) {
 			eprintf ("Error: min must be lower than max\n");
 			break;
@@ -2491,8 +2491,11 @@ reread:
 		r_search_reset (core->search, R_SEARCH_STRING);
 		r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search,
-			r_search_keyword_new_hexmask ("00", NULL)); //XXX
+		{
+			RSearchKeyword *kw = r_search_keyword_new_hexmask ("00", NULL);
+			kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
+			r_search_kw_add (core->search, kw);
+		}
 		r_search_begin (core->search);
 		dosearch = true;
 		}
