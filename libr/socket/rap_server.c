@@ -49,7 +49,7 @@ R_API RSocket* r_socket_rap_server_accept (RSocketRapServer *rap_s) {
 }
 
 R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s) {
-	int i, ret = true;
+	int i, whence, ret = true;
 	ut64 offset;
 	char *ptr = NULL;
 	if (!rap_s || !rap_s->fd)
@@ -58,7 +58,7 @@ R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 		return false;
 	r_socket_read_block (rap_s->fd, rap_s->buf, 1);
 	ret = rap_s->buf[0];
-	switch (rap_s->buf[0]) {
+	switch (ret) {
 	case RAP_RMT_OPEN:
 		r_socket_read_block (rap_s->fd, &rap_s->buf[1], 2);
 		r_socket_read_block (rap_s->fd, &rap_s->buf[3], (int)rap_s->buf[2]);
@@ -78,23 +78,25 @@ R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 		r_socket_flush (rap_s->fd);
 		break;
 	case RAP_RMT_WRITE:
-		r_socket_read_block (rap_s->fd, &rap_s->buf[1], 4);
-		i = r_read_be32 (&rap_s->buf[1]);
-		if (i > RAP_RMT_MAX || i < 0)
+		r_socket_read_block (rap_s->fd, rap_s->buf + 1, 4);
+		i = r_read_be32 (rap_s->buf + 1);
+		if (i > RAP_RMT_MAX || i < 0) {
 			i = RAP_RMT_MAX;
-		r_socket_read_block (rap_s->fd, &rap_s->buf[5], i);
-		rap_s->write(rap_s->user, &rap_s->buf[5], i);
+		}
+		r_socket_read_block (rap_s->fd, rap_s->buf + 5, i);
+		rap_s->write (rap_s->user, rap_s->buf + 5, i);
 		rap_s->buf[0] = RAP_RMT_WRITE | RAP_RMT_REPLY;
 		r_socket_write (rap_s->fd, rap_s->buf, 5);
 		r_socket_flush (rap_s->fd);
 		break;
 	case RAP_RMT_SEEK:
 		r_socket_read_block (rap_s->fd, &rap_s->buf[1], 9);
-		i = r_read_be32 (&rap_s->buf[1]);
-		offset = r_read_be64 (&rap_s->buf[2]);
-		offset = rap_s->seek (rap_s->user, offset, i);
-		r_write_be64 (&rap_s->buf[2], offset);
+		whence = rap_s->buf[1];
+		offset = r_read_be64 (&rap_s->buf + 2);
+		offset = rap_s->seek (rap_s->user, offset, whence);
+		/* prepare reply */
 		rap_s->buf[0] = RAP_RMT_SEEK | RAP_RMT_REPLY;
+		r_write_be64 (rap_s->buf + 1, offset);
 		r_socket_write (rap_s->fd, rap_s->buf, 9);
 		r_socket_flush (rap_s->fd);
 		break;

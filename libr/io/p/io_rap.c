@@ -33,8 +33,8 @@ static int rap__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		eprintf ("rap__write: error\n");
 		ret = -1;
 	}
+	ret = r_read_be32 (&tmp);
 	free (tmp);
-	// TODO: get reply
 	return ret;
 }
 
@@ -104,12 +104,15 @@ static ut64 rap__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	r_socket_write (s, &tmp, 10);
 	r_socket_flush (s);
 	// get reply
+	memset (tmp, 0, 9);
 	ret = r_socket_read_block (s, (ut8*)&tmp, 9);
 	if (ret != 9 || tmp[0] != (RMT_SEEK | RMT_REPLY)) {
+		// eprintf ("%d %d  - %02x %02x %02x %02x %02x %02x %02x\n", 
+		// ret, whence, tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6]);
 		eprintf ("Unexpected lseek reply\n");
 		return -1;
 	}
-	offset = r_read_at_be64 (tmp, 1);
+	offset = r_read_at_be64 (tmp + 1, 1);
 	return offset;
 }
 
