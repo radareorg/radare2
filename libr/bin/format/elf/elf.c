@@ -411,7 +411,7 @@ static Sdb *store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 		return NULL;
 
 	int i;
-	const int num_entries = shdr->sh_size / sizeof (Elf_(Versym));
+	const int num_entries = sz / sizeof (Elf_(Versym));
 	const char *section_name = "";
 	const char *link_section_name = "";
 	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
@@ -440,8 +440,9 @@ static Sdb *store_versioninfo_gnu_versym(struct Elf_(r_bin_elf_obj_t) *bin, Elf_
 	sdb_num_set (sdb, "link", shdr->sh_link, 0);
 	sdb_set (sdb, "link_section_name", link_section_name, 0);
 
-	for (i = num_entries; i--;)
+	for (i = num_entries; i--;) {
 		data[i] = *(ut16*)&edata[i * sizeof (ut16)];
+	}
 
 	R_FREE (edata);
 
@@ -778,23 +779,27 @@ static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 		char key[32] = {0};
 		int size = bin->shdr[i].sh_size;
 
+		if (size - (i*sizeof(Elf_(Shdr)) > bin->size)) {
+			size = bin->size - (i*sizeof(Elf_(Shdr)));
+		}
 		if (bin->shdr[i].sh_offset + ((i + 1) * sizeof (Elf_(Shdr))) > bin->size) {
 			eprintf ("Warning: Too big version info field %d (%d)\n", i, size);
 			break;
 		}
+		int left = size - (i * sizeof (Elf_(Shdr)));
 		switch (bin->shdr[i].sh_type) {
 		case SHT_GNU_verdef:
-			sdb = store_versioninfo_gnu_verdef (bin, &bin->shdr[i], bin->shdr[i].sh_size);
+			sdb = store_versioninfo_gnu_verdef (bin, &bin->shdr[i], left);
 			snprintf (key, sizeof (key), "verdef%d", num_verdef++);
 			sdb_ns_set (sdb_versioninfo, key, sdb);
 			break;
 		case SHT_GNU_verneed:
-			sdb = store_versioninfo_gnu_verneed (bin, &bin->shdr[i], bin->shdr[i].sh_size);
+			sdb = store_versioninfo_gnu_verneed (bin, &bin->shdr[i], left);
 			snprintf (key, sizeof (key), "verneed%d", num_verneed++);
 			sdb_ns_set (sdb_versioninfo, key, sdb);
 			break;
 		case SHT_GNU_versym:
-			sdb = store_versioninfo_gnu_versym (bin, &bin->shdr[i], bin->shdr[i].sh_size);
+			sdb = store_versioninfo_gnu_versym (bin, &bin->shdr[i], left);
 			snprintf (key, sizeof (key), "versym%d", num_versym++);
 			sdb_ns_set (sdb_versioninfo, key, sdb);
 			break;
