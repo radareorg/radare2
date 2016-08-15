@@ -1186,7 +1186,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				r_core_visual_seek_animation (core, off);
 				core->print->cur = 0;
 			}
-			r_core_block_read (core, 1);
+			r_core_block_read (core);
 		}
 	} else
 	switch (ch) {
@@ -2009,7 +2009,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		setcursor (core, false);
 		return false;
 	}
-	r_core_block_read (core, 0);
+	r_core_block_read (core);
 	return true;
 }
 

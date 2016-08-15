@@ -3224,7 +3224,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			nb_bytes = ds->len = core->blocksize;
 		} else {
 			r_core_block_size (core, ds->len);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		}
 	}
 	if (!ds->l) {

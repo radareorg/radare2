@@ -598,7 +598,7 @@ int main(int argc, char **argv, char **envp) {
 			fh = r_core_file_open (&r, path, perms, mapaddr);
 			if (fh) {
 				r_io_write_at (r.io, 0, buf, sz);
-				r_core_block_read (&r, 0);
+				r_core_block_read (&r);
 				free (buf);
 				// TODO: load rbin thing
 			} else {

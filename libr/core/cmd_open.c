@@ -234,7 +234,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		break;
 	}
-	r_core_block_read (core, 0);
+	r_core_block_read (core);
 }
 
 R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
@@ -438,7 +438,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 		}
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 		break;
 	case 'b':
 		cmd_open_bin (core, input);
@@ -474,7 +474,7 @@ static int cmd_open(void *data, const char *input) {
 		// hackaround to fix invalid read
 		//r_core_cmd0 (core, "oo");
 		// uninit deref
-		//r_core_block_read (core, 0);
+		//r_core_block_read (core);
 		break;
 	case 'm':
 		cmd_open_map (core, input);

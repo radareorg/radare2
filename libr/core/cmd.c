@@ -867,7 +867,7 @@ static int cmd_resize(void *data, const char *input) {
 
 	if (newsize < core->offset+core->blocksize ||
 			oldsize < core->offset+core->blocksize) {
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 	}
 	return true;
 }
@@ -1808,7 +1808,7 @@ next_arroba:
 			} else {
 				if (addr != UT64_MAX) {
 					if (!ptr[1] || r_core_seek (core, addr, 1)) {
-						r_core_block_read (core, 0);
+						r_core_block_read (core);
 						ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 					} else {
 						ret = 0;

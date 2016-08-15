@@ -132,7 +132,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			r_io_raise (core->io, desc->fd);
 			core->switch_file_view = 1;
 #endif
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		} else {
 			const char *name = (cf && cf->desc) ? cf->desc->name : "ERROR";
 			eprintf ("Error: Unable to switch the view to file: %s\n", name);
