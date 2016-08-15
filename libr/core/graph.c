@@ -2882,6 +2882,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				// handle end key
 				const RGraphNode *gn = find_near_of (g, NULL, false);
 				g->update_seek_on = get_anode (gn);
+			} else {
+				r_core_visual_trackflags (core);
 			}
 			break;
 		case 'H':
@@ -2918,6 +2920,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'w':
 			agraph_toggle_speed (g, core);
+			break;
+		case '_':
+			r_core_visual_hudstuff (core);
 			break;
 		case -1: // EOF
 		case ' ':
