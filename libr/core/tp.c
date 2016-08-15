@@ -15,6 +15,7 @@ static bool r_anal_emul_init (RCore *core) {
 	}
 	return true;
 }
+
 static void type_match (RCore *core, ut64 addr, char *name) {
 	Sdb *trace = core->anal->esil->db_trace;
 	RAnal *anal = core->anal;
@@ -23,7 +24,7 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 	if (r_anal_type_func_exist (anal, name)) {
 		fcn_name = strdup (name);
 	} else if (!(fcn_name = r_anal_type_func_guess (anal, name))) {
-		eprintf ("can't find function prototype for %s\n",fcn_name);
+		eprintf ("can't find function prototype for %s\n", name);
 		return;
 	}
 	const char* cc = r_anal_type_func_cc (anal, fcn_name);
@@ -61,7 +62,7 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 								r_anal_var_free (v);
 							}
 						}
-						int sp_idx = sp - sdb_array_get_num (trace, tmp, i2, 0);
+						int sp_idx = sdb_array_get_num (trace, tmp, i2, 0) - sp;
 						if ((v =r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
 							r_anal_var_retype (anal, addr, 1, sp_idx, R_ANAL_VAR_KIND_SPV, type, -1, v->name);
 							r_anal_var_free (v);
@@ -97,7 +98,7 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 									r_anal_var_free (v);
 								}
 							}
-							int sp_idx = sp - sdb_array_get_num (trace, tmp, i2, 0);
+							int sp_idx = sdb_array_get_num (trace, tmp, i2, 0) - sp;
 							if ((v =r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
 								r_anal_var_retype (anal, addr, 1, sp_idx, R_ANAL_VAR_KIND_SPV, type, -1, v->name);
 								r_anal_var_free (v);
@@ -107,8 +108,9 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 					}
 
 				}
+				size +=r_anal_type_get_size (anal, type) / 8;
 			}
-			size +=r_anal_type_get_size (anal, type) / 8;
+			break;
 		} else {
 			for (j = idx; j >= 0; j--) {
 				if (sdb_array_contains (trace, sdb_fmt (-1, "%d.reg.write", j), place, 0)) {
@@ -125,7 +127,7 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 								r_anal_var_free (v);
 							}
 						}
-						int sp_idx = sp - sdb_array_get_num (trace, tmp, i2, 0);
+						int sp_idx = sdb_array_get_num (trace, tmp, i2, 0) - sp;
 						if ((v =r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
 							r_anal_var_retype (anal, addr, 1, sp_idx, R_ANAL_VAR_KIND_SPV, type, -1, v->name);
 							r_anal_var_free (v);
