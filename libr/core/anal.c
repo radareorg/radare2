@@ -3069,3 +3069,136 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	free (op.mnemonic);
 	r_cons_break_end ();
 }
+
+#define VTABLE_BUFF_SIZE 10
+
+typedef struct vtable_info_t {
+	ut64 saddr;//starting address
+	int methods;
+} vtable_info;
+
+static const char *textSectionName = ".text";
+static const char *roSectionName =".rodata";
+
+static void printVtable(RCore *core, vtable_info *table) {
+	if (table && core) {
+		int curMethod = 0;
+		int totalMethods = table->methods;
+		ut64 startAddress = table->saddr;
+		const char *methodName = "No Name found";
+		ut64 bits = r_config_get_i (core->config, "asm.bits");
+		char *lang = r_config_get_i (core->config, "bin.lang");
+		r_cons_printf ("\nVtable Found at : 0x%08"PFMT64x"\n", startAddress);
+		int wordSize = bits / 8;
+		while (curMethod < totalMethods) {
+			ut64 curAddressValue = r_io_read_i (core->io, startAddress, 8);
+			RBinSymbol* curSymbol = r_bin_get_symbol_at_vaddr (core->bin, curAddressValue);
+			if (curSymbol) methodName = r_bin_demangle (core->bin->cur, lang, curSymbol->name);
+			r_cons_printf ("0x%-08"PFMT64x" : %s\n", startAddress, methodName);
+			startAddress += wordSize;
+			curMethod++;
+		}
+		r_cons_newline ();
+	}
+}
+
+static int inTextSection(RCore *core, ut64 curAddress) {
+	//value at curAddress
+	ut64 curAddressValue = r_io_read_i (core->io, curAddress, 8);
+	//section of the curAddress
+	RBinSection* value = r_bin_get_section_at (core->bin->cur->o, curAddressValue, true);
+	//If the pointed value lies in .text section
+	return value && (!strcmp (value->name, textSectionName));
+}
+
+static int isVtableStart(RCore *core, ut64 curAddress) {
+	if (curAddress == UT64_MAX || curAddress == 0) {
+		return false;
+	}
+	RAnalRef *xref;
+	RListIter *xrefIter;
+	ut8 buf[VTABLE_BUFF_SIZE];
+	if (inTextSection (core, curAddress)) {
+		//total xref's to curAddress
+		RList *xrefs = r_anal_xrefs_get (core->anal, curAddress);
+		if (!r_list_empty (xrefs)) {
+			r_list_foreach (xrefs, xrefIter, xref) {
+				//section in which currenct xref lies
+				RBinSection* xrefsection = r_bin_get_section_at(core->bin->cur->o, xref->addr, true);
+				if (!strcmp (xrefsection->name, textSectionName)) {
+					r_io_read_at (core->io, xref->addr, buf, VTABLE_BUFF_SIZE);
+					RAsmCode *disassembly = r_asm_mdisassemble (core->assembler, buf, VTABLE_BUFF_SIZE);
+					if ((!strncmp (disassembly->buf_asm, "mov", 3)) ||
+						(!strncmp (disassembly->buf_asm, "lea", 3))) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+RList* search_virtual_tables(RCore *core){
+	if (!core) {
+		return NULL;
+	}
+	ut64 startAddress;
+	ut64 endAddress;
+	RListIter * iter;
+	RIOSection *section;
+	RList *vtables = r_list_new();//List of vtables
+	ut64 bits = r_config_get_i (core->config, "asm.bits");
+	int wordSize = bits/8;
+	if (vtables) {
+		if (core->io->sections) {
+			r_list_foreach (core->io->sections, iter, section){
+				if (!strcmp(section->name, roSectionName) ) {//checking for .rodata
+					ut8 *segBuff = calloc (1, section->size);
+					r_io_read_at( core->io, section->offset, segBuff, section->size);
+					startAddress = section->vaddr;
+					endAddress = startAddress + (section->size) - (bits/8);
+					while (startAddress <= endAddress) {
+						if (isVtableStart(core, startAddress)) {
+							vtable_info *vtable = calloc (1, sizeof(vtable_info));
+							vtable->saddr = startAddress;
+							int noOfMethods = 0;
+							while (inTextSection(core, startAddress)) {
+								noOfMethods++;
+								startAddress += wordSize;
+							}
+							vtable->methods = noOfMethods;
+							r_list_append (vtables, vtable);
+							continue;
+						}
+						startAddress += 1;
+					}
+				}
+			}
+		} else {
+			//stripped binary
+			eprintf ("No virtual tables Found\n");
+			return NULL;
+		}
+	} else {
+		//no space allocated for vtables
+		eprintf ("Initialization Error\n");
+		return NULL;
+	}
+	return vtables;
+}
+
+R_API void r_anal_list_vtables(void *core) {
+	const char *curArch =((RCore *)core)->bin->cur->o->info->arch;
+	const char *curSupportedArch = "x86";
+	if (!strcmp (curArch, curSupportedArch)) {
+		RList* vtables = search_virtual_tables ((RCore *)core);
+		RListIter* vtableIter;
+		vtable_info* table;
+		if (vtables) {
+			r_list_foreach (vtables, vtableIter, table) {
+				printVtable ((RCore *)core, table);
+			}
+		}
+	}
+}
