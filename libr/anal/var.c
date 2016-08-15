@@ -76,7 +76,9 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 	if (!type) {
 		type = "int";
 	}
-
+	if (!a || !fcn) {
+		return false;
+	}
 	if (size == -1) {
 		RList *list = r_anal_var_list (a, fcn, kind);
 		RListIter *iter;

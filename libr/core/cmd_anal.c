@@ -1614,11 +1614,7 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 		}
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
-	if (type != R_REG_TYPE_FLG && size == 1) {
-		r_debug_reg_list (core->dbg, R_REG_TYPE_FLG, bits, mode, use_color);
-	} else {
-		r_debug_reg_list (core->dbg, R_REG_TYPE_FLG, bits, mode, use_color);
-	}
+	r_debug_reg_list (core->dbg, R_REG_TYPE_FLG, bits, mode, use_color);
 	core->dbg->reg = hack;
 }
 
