@@ -114,10 +114,16 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 			r_cons_println (prompt);
 		}
 		r_cons_printf ("> %s|\n", user_input);
+		int counter = 0;
+		int rows = r_cons_get_size (NULL);
 		// Iterate over each entry in the list
 		r_list_foreach (list, iter, current_entry) {
 			memset (mask, 0, buf_size);
 			if (!user_input[0] || strmatch (current_entry, user_input, mask, buf_size)) {
+				counter++;
+				if (counter == rows) {
+					break;
+				}
 				// if the user scrolled down the list, do not print the first entries
 				if (!top_entry_n || current_entry_n >= top_entry_n) {
 					// remove everything after a tab (in ??, it contains the commands)
