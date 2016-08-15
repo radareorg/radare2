@@ -226,7 +226,7 @@ static int cmd_seek(void *data, const char *input) {
 					off = cb.addr;
 					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 					r_core_seek (core, off, 1);
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 					break;
 				default:
 					eprintf ("Too many results\n");
@@ -240,7 +240,7 @@ static int cmd_seek(void *data, const char *input) {
 		case ' ':
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_seek (core, off * sign, 1);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			break;
 		case '/':
 			{
@@ -312,9 +312,9 @@ static int cmd_seek(void *data, const char *input) {
 				RIOUndos *undo = r_io_sundo (core->io, core->offset);
 				if (undo) {
 					r_core_seek (core, undo->off, 0);
+					r_core_block_read (core);
 				}
 			}
-			r_core_block_read (core, 1);
 			break;
 		case 'n':
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));

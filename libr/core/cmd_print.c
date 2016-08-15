@@ -1052,7 +1052,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	} else {
 		if (len > core->blocksize) {
 			r_core_block_size (core, len);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		}
 	}
 	r_cons_break (NULL, NULL);

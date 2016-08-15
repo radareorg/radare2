@@ -917,7 +917,7 @@ static int cb_iobuffer(void *user, void *data) {
 	} else {
 		r_io_buffer_close (core->io);
 	}
-	r_core_block_read (core, 0);
+	r_core_block_read (core);
 	return true;
 }
 
@@ -947,7 +947,7 @@ static int cb_iova(void *user, void *data) {
 		core->io->va = node->i_value;
 		/* ugly fix for r2 -d ... "r2 is going to die soon ..." */
 		if (r_io_desc_get (core->io, core->io->raised)) {
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		}
 		/* reload symbol information */
 		if (r_list_length (r_bin_get_sections (core->bin)) > 0) {

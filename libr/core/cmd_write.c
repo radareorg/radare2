@@ -22,7 +22,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		if (r_config_get_i (core->config, "cfg.wseek")) {
 			r_core_seek_delta (core, len);
 		}
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 	} else {
 		eprintf ("Error: invalid hexpair string\n");
 	}
@@ -163,10 +163,10 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case '4':
 		if (input[2]) {  // parse val from arg
 			r_core_write_op (core, input+3, input[1]);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		} else {  // use clipboard instead of val
 			r_core_write_op (core, NULL, input[1]);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		}
 		break;
 	case 'R':
@@ -174,7 +174,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 		break;
 	case 'n':
 		r_core_write_op (core, "ff", 'x');
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 		break;
 	case 'E': // encrypt
 	case 'D': // decrypt
@@ -343,7 +343,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 		WSEEK (core, 8);
 		break;
 	}
-	r_core_block_read (core, 0);
+	r_core_block_read (core);
 }
 
 static bool cmd_wf(RCore *core, const char *input) {
@@ -385,7 +385,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 		r_io_write_at (core->io, core->offset, buf + u_offset, u_size);
 		WSEEK (core, size);
 		free (buf);
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 	} else {
 		eprintf ("Cannot open file '%s'\n", arg);
 	}
@@ -536,7 +536,7 @@ static int cmd_write(void *data, const char *input) {
 		if (!fail) {
 			r_core_write_at (core, core->offset, buf, len);
 			WSEEK (core, len);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			free (buf);
 		} else {
 			eprintf ("Usage: w6[de] base64/hex\n");
@@ -572,7 +572,7 @@ static int cmd_write(void *data, const char *input) {
 					const ut64 cur_off = core->offset;
 					cmd_suc = r_core_extend_at (core, core->offset, len);
 					core->offset = cur_off;
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 				}
 			}
 			break;
@@ -589,7 +589,7 @@ static int cmd_write(void *data, const char *input) {
 					cmd_suc = r_core_extend_at (core, addr, len);
 					cmd_suc = r_core_seek (core, cur_off, 1);
 					core->offset = addr;
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 				}
 			}
 			break;
@@ -606,7 +606,7 @@ static int cmd_write(void *data, const char *input) {
 						r_core_write_at (core, cur_off, bytes, len);
 					}
 					core->offset = cur_off;
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 				}
 				free (bytes);
 			}
@@ -627,7 +627,7 @@ static int cmd_write(void *data, const char *input) {
 						r_core_write_at (core, addr, bytes, len);
 					}
 					core->offset = addr;
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 				}
 				free (bytes);
 			}
@@ -804,7 +804,7 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 		case 'i':
 			r_io_cache_commit (core->io, 0, UT64_MAX);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			break;
 		case 'r':
 			r_io_cache_reset (core->io, true);
@@ -812,7 +812,7 @@ static int cmd_write(void *data, const char *input) {
 			 * the cache wrote past the original EOF these changes are no
 			 * longer displayed. */
 			memset (core->block, 0xff, core->blocksize);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			break;
 		case '+':
 			if (input[2]=='*') {
@@ -863,7 +863,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 			/* See 'r' above. */
 			memset (core->block, 0xff, core->blocksize);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			break;
 		case '?':
 			{
@@ -902,7 +902,7 @@ static int cmd_write(void *data, const char *input) {
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 #endif
 		WSEEK (core, len);
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 		break;
 	case 'z': // "wz"
 		/* write zero-terminated string */
@@ -917,7 +917,7 @@ static int cmd_write(void *data, const char *input) {
 		r_io_use_desc (core->io, core->file->desc);
 #endif
 		WSEEK (core, len + 1);
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 		break;
 	case 't': // "wt"
 		if (*str == '?' || *str == '\0') {
@@ -976,7 +976,7 @@ static int cmd_write(void *data, const char *input) {
 			r_io_use_desc (core->io, core->file->desc);
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			free (tmp);
 		} else {
 			eprintf ("Cannot malloc %d\n", len);
@@ -1011,7 +1011,7 @@ static int cmd_write(void *data, const char *input) {
 					WSEEK (core, size);
 				}
 				free (buf);
-				r_core_block_read (core, 0);
+				r_core_block_read (core);
 			} else eprintf ("Cannot open file '%s'\n", arg);
 			break;
 		case 's': // "wxs"
@@ -1062,7 +1062,7 @@ static int cmd_write(void *data, const char *input) {
 						eprintf ("Written %d bytes (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
 					r_core_write_at (core, core->offset, acode->buf, acode->len);
 					WSEEK (core, acode->len);
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 				}
 				r_asm_code_free (acode);
 			}
@@ -1081,7 +1081,7 @@ static int cmd_write(void *data, const char *input) {
 						eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
 						r_core_write_at (core, core->offset, acode->buf, acode->len);
 						WSEEK (core, acode->len);
-						r_core_block_read (core, 0);
+						r_core_block_read (core);
 					}
 					r_asm_code_free (acode);
 				} else eprintf ("Cannot assemble file\n");
@@ -1112,7 +1112,7 @@ static int cmd_write(void *data, const char *input) {
 				r_mem_copyloop (core->block, buf, core->blocksize, len);
 				r_core_write_at (core, core->offset, core->block, core->blocksize);
 				WSEEK (core, core->blocksize);
-				r_core_block_read (core, 0);
+				r_core_block_read (core);
 			} else eprintf ("Wrong argument\n");
 			free (buf);
 		} else eprintf ("Cannot malloc %d\n", len+1);
@@ -1176,7 +1176,7 @@ static int cmd_write(void *data, const char *input) {
 				r_core_write_at (core, core->offset, &ulen, 1);
 				r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
 				WSEEK (core, len);
-				r_core_block_read (core, 0);
+				r_core_block_read (core);
 			}
 		} else eprintf ("Too short.\n");
 		break;
@@ -1187,7 +1187,7 @@ static int cmd_write(void *data, const char *input) {
 			r_io_use_desc (core->io, core->file->desc);
 			r_io_write (core->io, core->oobi, core->oobi_len);
 			WSEEK (core, core->oobi_len);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		} else {
 			r_core_cmd_help (core, help_msg);
 		}

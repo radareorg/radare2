@@ -1570,8 +1570,6 @@ static void set_prompt (RCore *r) {
 	const char *END = "";
 	const char *remote = "";
 
-	// hacky fix fo rio
-	r_core_block_read (r, 0);
 	if (cmdprompt && *cmdprompt)
 		r_core_cmd (r, cmdprompt, 0);
 
@@ -1686,7 +1684,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		core->block = bump;
 		core->blocksize = bsize;
 		memset (core->block, 0xff, core->blocksize);
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 	}
 	return ret;
 }
@@ -1906,7 +1904,7 @@ reaccept:
 					// TODO: reply error here
 					return -1;
 				} else {
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 					ptr[0] = RMT_READ | RMT_REPLY;
 					if (i>RMT_MAX)
 						i = RMT_MAX;
