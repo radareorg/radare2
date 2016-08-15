@@ -1290,6 +1290,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			}
 		}
 		arg = orig;
+		int flag = 0;
 		for (idx = 0; i < len && arg < argend && *arg; arg++) {
 			int size = 0, elem = 0; /* size of the array, element of the array */
 			char *fieldname = NULL, *fmtname = NULL;
@@ -1376,8 +1377,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					elem = -1;
 				}
 				idx++;
-				if (MUSTSEE && !SEEVALUE) {
+				if (MUSTSEE && !SEEVALUE && !flag) {
 					p->cb_printf (namefmt, fieldname);
+					flag = 1;
 				}
 			}
 
@@ -1438,9 +1440,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			case ':': // skip 4 bytes
 				if (size == -1) i+=4;
 				else while (size--) i+=4;
+				idx--;
 				continue;
 			case '.': // skip 1 byte
 				i += (size == -1)? 1: size;
+				idx--;
 				continue;
 			case 'p': // pointer reference
 				if (*(arg+1) == '2') {
@@ -1460,6 +1464,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				}
 				break;
 			}
+			flag = 0;
 
 			/* flags */
 			if (mode & R_PRINT_SEEFLAGS && isptr != NULLPTR) {
