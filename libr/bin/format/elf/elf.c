@@ -788,7 +788,7 @@ static Sdb *store_versioninfo(struct Elf_(r_bin_elf_obj_t) *bin) {
 		}
 		int left = size - (i * sizeof (Elf_(Shdr)));
 		left = R_MIN (left, bin->shdr[i].sh_size);
-		if (left < 1) {
+		if (left < 0) {
 			break;
 		}
 		switch (bin->shdr[i].sh_type) {
