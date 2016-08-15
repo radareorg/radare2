@@ -5,10 +5,10 @@ const exec = require('child_process').exec;
 const spawn = require('child_process').spawn;
 const AsciiTable = require('ascii-table');
 
-const lastTag = '0.10.3';
+const lastTag = '0.10.4';
 const curVersion = '@'; //0.10.4';
 const showOnlyFinalReport = true;
-const codeName = 'Tooth';
+const codeName = 'PreCon';
 const topTen = 0;
 const topFive = 999;
 

@@ -397,6 +397,10 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
+	if (opts & R_CORE_PRJ_FLAGS) {
+		r_core_cmd (core, "f.*", 0);
+		r_cons_flush ();
+	}
 	if (opts & R_CORE_PRJ_DBG_BREAK) {
 		r_core_cmd (core, "db*", 0);
 		r_cons_flush ();
