@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_flags.h>
 #include <r_cons.h>
@@ -55,14 +55,14 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 		return f->space_idx;
 	}
 
-	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i] != NULL && !strcmp (name, f->spaces[i])) {
 			f->space_idx = i;
 			return f->space_idx;
 		}
 	}
 	/* not found */
-	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i] == NULL) {
 			f->spaces[i] = strdup (name);
 			f->space_idx = i;
@@ -113,17 +113,17 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 	const char *defspace = NULL;
 	int count, len, i, j = 0;
 	if (mode == 'j')
-		r_cons_printf ("[");
+		f->cb_printf ("[");
 	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
 		if (!f->spaces[i]) continue;
 		count = r_flag_space_count (f, i);
 		if (mode=='j') {
-			r_cons_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
+			f->cb_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
 					j? ",":"", f->spaces[i],
 					(i==f->space_idx)? ",\"selected\":true":"",
 					count);
 		} else if (mode=='*') {
-			r_cons_printf ("fs %s\n", f->spaces[i]);
+			f->cb_printf ("fs %s\n", f->spaces[i]);
 			if (i==f->space_idx) defspace = f->spaces[i];
 		} else {
 			#define INDENT 5
@@ -132,33 +132,40 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 			snprintf (num1, sizeof (num1), "%d", count);
 			memset(spaces, ' ', sizeof (spaces));
 			len = strlen (num0) + strlen (num1);
-			if (len<INDENT) {
+			if (len < INDENT) {
 				spaces[INDENT-len] = 0;
-			} else spaces[0] = 0;
-			r_cons_printf ("%s%s %s %c %s\n", num0, spaces, num1,
+			} else {
+				spaces[0] = 0;
+			}
+			f->cb_printf ("%s%s %s %c %s\n", num0, spaces, num1,
 					(i==f->space_idx)?'*':'.',
 					f->spaces[i]);
 		}
 		j++;
 	}
-	if (defspace)
-		r_cons_printf ("fs %s # current\n", defspace);
-	if (mode == 'j')
-		r_cons_printf ("]\n");
+	if (defspace) {
+		f->cb_printf ("fs %s # current\n", defspace);
+	}
+	if (mode == 'j') {
+		f->cb_printf ("]\n");
+	}
 	return j;
 }
 
 R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname) {
 	int i;
 	if (!oname) {
-		if (f->space_idx == -1)
+		if (f->space_idx == -1) {
 			return false;
+		}
 		oname = f->spaces[f->space_idx];
 	}
-	if (!nname) return false;
+	if (!nname) {
+		return false;
+	}
 	while (*oname==' ') oname++;
 	while (*nname==' ') nname++;
-	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i]  && !strcmp (oname, f->spaces[i])) {
 			free (f->spaces[i]);
 			f->spaces[i] = strdup (nname);

@@ -71,6 +71,7 @@ R_API RFlag * r_flag_new() {
 		return NULL;
 	}
 	f->base = 0;
+	f->cb_printf = (PrintfCallback)printf;
 	f->flags = r_list_new ();
 	if (!f->flags) {
 		r_flag_free (f);
@@ -153,7 +154,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 	switch (rad) {
 	case 'j': {
 		int first = 1;
-		r_cons_printf ("[");
+		f->cb_printf ("[");
 		r_list_foreach (f->flags, iter, flag) {
 			if (IS_IN_SPACE (f, flag)) {
 				continue;
@@ -161,19 +162,19 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			if (in_range && (flag->offset < range_from || flag->offset >= range_to)) {
 				continue;
 			}
-			r_cons_printf ("%s{\"name\":\"%s\",\"size\":\"%"PFMT64d"\",",
+			f->cb_printf ("%s{\"name\":\"%s\",\"size\":\"%"PFMT64d"\",",
 				first?"":",", flag->name, flag->size);
 			if (flag->alias) {
-				r_cons_printf ("\"alias\":\"%s\"", flag->alias);
+				f->cb_printf ("\"alias\":\"%s\"", flag->alias);
 			} else {
-				r_cons_printf ("\"offset\":%"PFMT64d, flag->offset);
+				f->cb_printf ("\"offset\":%"PFMT64d, flag->offset);
 			}
 			if (flag->comment)
-				r_cons_printf (",\"comment\":\"}");
-			else r_cons_printf ("}");
+				f->cb_printf (",\"comment\":\"}");
+			else f->cb_printf ("}");
 			first = 0;
 		}
-		r_cons_printf ("]\n");
+		f->cb_printf ("]\n");
 		}
 		break;
 	case 1:
@@ -191,15 +192,15 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 				flagspace = r_flag_space_get_i (f, fs);
 				if (!flagspace || !*flagspace)
 					flagspace = "*";
-				r_cons_printf ("fs %s\n", flagspace);
+				f->cb_printf ("fs %s\n", flagspace);
 			}
 			if (flag->alias) {
-				r_cons_printf ("fa %s %s\n", flag->name, flag->alias);
+				f->cb_printf ("fa %s %s\n", flag->name, flag->alias);
 				if (flag->comment && *flag->comment)
-					r_cons_printf ("\"fC %s %s\"\n",
+					f->cb_printf ("\"fC %s %s\"\n",
 						flag->name, flag->comment);
 			} else {
-				r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"%s%s %s\n",
+				f->cb_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"%s%s %s\n",
 					flag->name, flag->size, flag->offset,
 					pfx?"+":"", pfx?pfx:"",
 					flag->comment? flag->comment:"");
@@ -215,10 +216,10 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 				continue;
 			}
 			if (flag->alias) {
-				r_cons_printf ("%s %"PFMT64d" %s\n",
+				f->cb_printf ("%s %"PFMT64d" %s\n",
 						flag->alias, flag->size, flag->realname);
 			} else {
-				r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
+				f->cb_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
 						flag->offset, flag->size, flag->realname);
 			}
 		}
@@ -232,10 +233,10 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 				continue;
 			}
 			if (flag->alias) {
-				r_cons_printf ("%s %"PFMT64d" %s\n",
+				f->cb_printf ("%s %"PFMT64d" %s\n",
 					flag->alias, flag->size, flag->name);
 			} else {
-				r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
+				f->cb_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
 					flag->offset, flag->size, flag->name);
 			}
 		}

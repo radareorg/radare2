@@ -38,6 +38,7 @@ typedef struct r_flag_t {
 	RHashTable64 *ht_name; /* hashmap key=item name, value=RList of items */
 	RList *flags;   /* list of RFlagItem contained in the flag */
 	RList *spacestack;
+	PrintfCallback cb_printf;
 } RFlag;
 
 /* compile time dependency */
