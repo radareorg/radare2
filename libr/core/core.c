@@ -1570,8 +1570,6 @@ static void set_prompt (RCore *r) {
 	const char *END = "";
 	const char *remote = "";
 
-	// hacky fix fo rio
-	r_core_block_read (r, 0);
 	if (cmdprompt && *cmdprompt)
 		r_core_cmd (r, cmdprompt, 0);
 
