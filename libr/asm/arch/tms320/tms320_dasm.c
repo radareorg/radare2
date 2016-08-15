@@ -1101,6 +1101,11 @@ static insn_head_t c55x_list[] = {
 int tms320_dasm_init(tms320_dasm_t * dasm) {
 	int i = 0;
 
+	if (dasm->map) {
+		/* already initialized */
+		return 0;
+	}
+
 	dasm->map = ht_(new)();
 
 	for (i = 0; i < ARRAY_SIZE(c55x_list); i++)

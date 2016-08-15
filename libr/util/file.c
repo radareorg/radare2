@@ -154,6 +154,8 @@ R_API char *r_file_abspath(const char *file) {
 		if (abspath) {
 			free (ret);
 			ret = abspath;
+		} else {
+			free (resolved_path);
 		}
 	}
 #endif
