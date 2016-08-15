@@ -4527,19 +4527,17 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 	return true;
 }
 
-void r_anal_virtual_functions(void *core, const char* input) {
+static void r_anal_virtual_functions(void *core, const char* input) {
 	const char * help_msg[] = {
 		"Usage:", "av ", "analyze the .rodata section and list virtual function present",
 		NULL};
-	switch(input[0]) {
-		case '\0': //av
-		{
-			r_anal_list_vtables (core);
-			break;
-		}
-		default :
-			r_core_cmd_help (core, help_msg);
-			break;
+	switch (input[0]) {
+	case '\0': //av
+		r_anal_list_vtables (core);
+		break;
+	default :
+		r_core_cmd_help (core, help_msg);
+		break;
 	}
 }
 
@@ -4643,7 +4641,7 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_syscall (core, input + 1);
 		break;
 	case 'v':
-		r_anal_virtual_functions(core, input + 1);
+		r_anal_virtual_functions (core, input + 1);
 		break;
 	case 'x':
 		if (!cmd_anal_refs (core, input + 1)) {

@@ -3077,19 +3077,19 @@ typedef struct vtable_info_t {
 	int methods;
 } vtable_info;
 
-char *textSectionName = ".text";
-char *roSectionName =".rodata";
+static const char *textSectionName = ".text";
+static const char *roSectionName =".rodata";
 
 static void printVtable(RCore *core, vtable_info *table) {
-	if (table) {
+	if (table && core) {
 		int curMethod = 0;
 		int totalMethods = table->methods;
 		ut64 startAddress = table->saddr;
-		char *methodName = "No Name found";
+		const char *methodName = "No Name found";
 		ut64 bits = r_config_get_i (core->config, "asm.bits");
-		char* lang = r_config_get_i (core->config, "bin.lang");
-		r_cons_printf ("\nVtable Found at : 0x%-08"PFMT64x"\n", startAddress);
-		int wordSize = bits/8;
+		char *lang = r_config_get_i (core->config, "bin.lang");
+		r_cons_printf ("\nVtable Found at : 0x%08"PFMT64x"\n", startAddress);
+		int wordSize = bits / 8;
 		while (curMethod < totalMethods) {
 			ut64 curAddressValue = r_io_read_i (core->io, startAddress, 8);
 			RBinSymbol* curSymbol = r_bin_get_symbol_at_vaddr (core->bin, curAddressValue);
@@ -3098,7 +3098,7 @@ static void printVtable(RCore *core, vtable_info *table) {
 			startAddress += wordSize;
 			curMethod++;
 		}
-		r_cons_printf("\n");
+		r_cons_newline ();
 	}
 }
 
@@ -3108,10 +3108,7 @@ static int inTextSection(RCore *core, ut64 curAddress) {
 	//section of the curAddress
 	RBinSection* value = r_bin_get_section_at (core->bin->cur->o, curAddressValue, true);
 	//If the pointed value lies in .text section
-	if (value && (!strcmp (value->name, textSectionName))) {
-		return true;
-	}
-	return false;
+	return value && (!strcmp (value->name, textSectionName));
 }
 
 static int isVtableStart(RCore *core, ut64 curAddress) {
@@ -3121,11 +3118,11 @@ static int isVtableStart(RCore *core, ut64 curAddress) {
 	RAnalRef *xref;
 	RListIter *xrefIter;
 	ut8 buf[VTABLE_BUFF_SIZE];
-	if (inTextSection(core, curAddress)) {
+	if (inTextSection (core, curAddress)) {
 		//total xref's to curAddress
 		RList *xrefs = r_anal_xrefs_get (core->anal, curAddress);
-		if (!r_list_empty(xrefs)) {
-			r_list_foreach(xrefs, xrefIter, xref) {
+		if (!r_list_empty (xrefs)) {
+			r_list_foreach (xrefs, xrefIter, xref) {
 				//section in which currenct xref lies
 				RBinSection* xrefsection = r_bin_get_section_at(core->bin->cur->o, xref->addr, true);
 				if (!strcmp (xrefsection->name, textSectionName)) {
@@ -3143,6 +3140,9 @@ static int isVtableStart(RCore *core, ut64 curAddress) {
 }
 
 RList* search_virtual_tables(RCore *core){
+	if (!core) {
+		return NULL;
+	}
 	ut64 startAddress;
 	ut64 endAddress;
 	RListIter * iter;
@@ -3177,25 +3177,28 @@ RList* search_virtual_tables(RCore *core){
 			}
 		} else {
 			//stripped binary
-			r_cons_printf ("No virtual tables Found\n");
+			eprintf ("No virtual tables Found\n");
 			return NULL;
 		}
 	} else {
 		//no space allocated for vtables
-		r_cons_printf ("Initialization Error\n");
+		eprintf ("Initialization Error\n");
 		return NULL;
 	}
 	return vtables;
 }
 
-void r_anal_list_vtables(void *core) {
-	RList* vtables = search_virtual_tables ((RCore *)core);
-	RListIter* vtableIter;
-	vtable_info* table;
-	if (vtables) {
-		r_list_foreach (vtables, vtableIter, table) {
-			printVtable ((RCore *)core, table);
+R_API void r_anal_list_vtables(void *core) {
+	const char *curArch =((RCore *)core)->bin->cur->o->info->arch;
+	const char *curSupportedArch = "x86";
+	if (!strcmp (curArch, curSupportedArch)) {
+		RList* vtables = search_virtual_tables ((RCore *)core);
+		RListIter* vtableIter;
+		vtable_info* table;
+		if (vtables) {
+			r_list_foreach (vtables, vtableIter, table) {
+				printVtable ((RCore *)core, table);
+			}
 		}
 	}
 }
-
