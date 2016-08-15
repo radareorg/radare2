@@ -181,9 +181,29 @@ static void fillRegisterValues (RCore *core) {
 	r_reg_arena_push (core->dbg->reg);
 }
 
+// split esil string in flags part and main instruction
+// hacky, only tested for x86, TODO: portable version
+// NOTE: esil_main and esil_flg are heap allocated and must be freed by the caller
+static void esil_split_flg (char *esil_str, char **esil_main, char **esil_flg) {
+	char *split = strstr (esil_str, "f,=");
+	const int kCommaHits = 2;
+	int hits = 0;
+
+	if (split) {
+		while (hits != kCommaHits) {
+			--split;
+			if (*split == ',') {
+				hits++;
+			}
+		}
+		*esil_flg = strdup (++split);
+		*esil_main = r_str_ndup (esil_str, strlen (esil_str) - strlen (*esil_flg) - 1);
+	}
+}
+
 static char* rop_classify_constant (RCore *core, RList *ropList) {
 	char *esil_str, *constant;
-	char *ct = NULL;
+	char *ct = NULL, *esil_main = NULL, *esil_flg = NULL;
 	RListIter *iter_r, *iter_dst, *iter_const;
 	RRegItem *item_dst;
 	RList *head, *constants;
@@ -215,8 +235,16 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 			r_reg_set_value (core->dbg->reg, item_dst, r);
 		}
 
-		// r_cons_printf ("Emulating const pattern:%s\n", esil_str);
-		cmd_anal_esil (core, esil_str);
+		esil_split_flg (esil_str, &esil_main, &esil_flg);
+
+		// r_cons_printf ("Split : <%s> + <%s>\n", esil_main, esil_flg);
+		if (esil_main) {
+			// r_cons_printf ("Emulating const pattern:%s\n", esil_main);
+			cmd_anal_esil (core, esil_main);
+		} else {
+			// r_cons_printf ("Emulating const pattern:%s\n", esil_str);
+			cmd_anal_esil (core, esil_str);
+		}
 		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
 		// r_cons_println (out);
 		if (out) {
@@ -230,11 +258,17 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 		}
 
 		if (!r_list_find (ops_list, "=", (RListComparator)strcmp)) {
+			free (out);
+			R_FREE (esil_flg);
+			R_FREE (esil_main);
 			continue;
 		}
 
 		head = r_reg_get_list (core->dbg->reg, 0);
 		if (!head) {
+			free (out);
+			R_FREE (esil_flg);
+			R_FREE (esil_main);
 			return NULL;
 		}
 		r_list_foreach (head, iter_dst, item_dst) {
@@ -260,6 +294,8 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 			}
 		}
 		free (out);
+		R_FREE (esil_flg);
+		R_FREE (esil_main);
 	}
 
 	return ct;
@@ -267,7 +303,7 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 
 static char* rop_classify_mov (RCore *core, RList *ropList) {
 	char *esil_str;
-	char *mov = NULL;
+	char *mov = NULL, *esil_main = NULL, *esil_flg = NULL;
 	RListIter *iter_src, *iter_r, *iter_dst;
 	RRegItem *item_src, *item_dst;
 	RList *head;
@@ -293,8 +329,16 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 			r_reg_set_value (core->dbg->reg, item_dst, r);
 		}
 
-		// r_cons_printf ("Emulating mov pattern:%s\n", esil_str);
-		cmd_anal_esil (core, esil_str);
+		esil_split_flg (esil_str, &esil_main, &esil_flg);
+
+		// r_cons_printf ("Split : <%s> + <%s>\n", esil_main, esil_flg);
+		if (esil_main) {
+			// r_cons_printf ("Emulating mov pattern:%s\n", esil_main);
+			cmd_anal_esil (core, esil_main);
+		} else {
+			// r_cons_printf ("Emulating mov pattern:%s\n", esil_str);
+			cmd_anal_esil (core, esil_str);
+		}
 		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
 		// r_cons_println (out);
 		if (out) {
@@ -308,11 +352,17 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 		}
 
 		if (!r_list_find (ops_list, "=", (RListComparator)strcmp)) {
+			free (out);
+			R_FREE (esil_flg);
+			R_FREE (esil_main);
 			continue;
 		}
 
 		head = r_reg_get_list (core->dbg->reg, 0);
 		if (!head) {
+			free (out);
+			R_FREE (esil_flg);
+			R_FREE (esil_main);
 			return NULL;
 		}
 		r_list_foreach (head, iter_dst, item_dst) {
@@ -345,7 +395,6 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 				}
 
 				// you never mov from flags
-				// if (isFlag (item_src->name, core->dbg->reg)) {
 				if (isFlag (item_src)) {
 					continue;
 				}
@@ -363,6 +412,8 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 			}
 		}
 		free (out);
+		R_FREE (esil_flg);
+		R_FREE (esil_main);
 	}
 
 	return mov;
@@ -370,7 +421,7 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 
 static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 	char *esil_str, *op;
-	char *arithmetic = NULL;
+	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
 	RListIter *iter_src1, *iter_src2, *iter_r, *iter_dst, *iter_ops;
 	RRegItem *item_src1, *item_src2, *item_dst;
 	RList *head;
@@ -400,8 +451,16 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 			r_reg_arena_push (core->dbg->reg);
 		}
 
-		// r_cons_printf ("Emulating arithmetic pattern:%s\n", esil_str);
-		cmd_anal_esil (core, esil_str);
+		esil_split_flg (esil_str, &esil_main, &esil_flg);
+
+		// r_cons_printf ("Split : <%s> + <%s>\n", esil_main, esil_flg);
+		if (esil_main) {
+			// r_cons_printf ("Emulating arithmetic pattern:%s\n", esil_main);
+			cmd_anal_esil (core, esil_main);
+		} else {
+			// r_cons_printf ("Emulating arithmetic pattern:%s\n", esil_str);
+			cmd_anal_esil (core, esil_str);
+		}
 		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
 		// r_cons_println (out);
 		if (out) {
@@ -415,6 +474,9 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 		}
 
 		if (!ops_list) {
+			free (out);
+			R_FREE (esil_flg);
+			R_FREE (esil_main);
 			return NULL;
 		}
 
@@ -461,7 +523,6 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 						}
 
 						// dont check flags for arithmetic
-						// if (isFlag (item_dst->name, core->dbg->reg)) {
 						if (isFlag (item_dst)) {
 							continue;
 						}
@@ -495,6 +556,8 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 			}
 		}
 		free (out);
+		R_FREE (esil_flg);
+		R_FREE (esil_main);
 	}
 	free (op_result);
 	free (op_result_r);
@@ -505,11 +568,7 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 static int rop_classify_nops (RCore *core, RList *ropList) {
 	char *esil_str;
 	int changes = 1;
-	RListIter *iter, *iter_r;
-	RRegItem *item;
-	RList *head;
-	RList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL, *reg_read = NULL,
-		*reg_write = NULL, *mem_read = NULL, *mem_write = NULL;
+	RListIter *iter_r;
 	const bool romem = r_config_get_i (core->config, "esil.romem");
 	const bool stats = r_config_get_i (core->config, "esil.stats");
 
@@ -518,57 +577,22 @@ static int rop_classify_nops (RCore *core, RList *ropList) {
 		return -2;
 	}
 
-	// TODO: this seems useless ? should confirm
-	// RReg *hack = core->dbg->reg;
-	// core->dbg->reg = core->anal->reg;
 	r_list_foreach (ropList, iter_r, esil_str) {
-		// if (strchr (esil_str, '[')) { // avoid MEM read/write for now
-		//  return -1;
-		// }
-
 		fillRegisterValues (core);
 
-		// r_cons_printf ("Emulating:%s\n", esil_str);
+		// r_cons_printf ("Emulating nop:%s\n", esil_str);
 		cmd_anal_esil (core, esil_str);
 		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
 		// r_cons_println (out);
 		if (out) {
-			ops_list = parse_list (strstr (out, "ops.list"));
-			flg_read = parse_list (strstr (out, "flg.read"));
-			flg_write = parse_list (strstr (out, "flg.write"));
-			reg_read = parse_list (strstr (out, "reg.read"));
-			reg_write = parse_list (strstr (out, "reg.write"));
-			mem_read = parse_list (strstr (out, "mem.read"));
-			mem_write = parse_list (strstr (out, "mem.write"));
+			return 0;
 		}
 		else {
 			// directly say NOP
 			continue;
 		}
-
-		head = r_reg_get_list (core->dbg->reg, 0);
-		if (!head) {
-			return 0;
-		}
-		r_list_foreach (head, iter, item) {
-			ut64 delta, diff, value;
-
-			value = r_reg_get_value (core->dbg->reg, item);
-			r_reg_arena_swap (core->dbg->reg, false);
-			diff = r_reg_get_value (core->dbg->reg, item);
-			r_reg_arena_swap (core->dbg->reg, false);
-			delta = value - diff;
-			//restore initial value
-			// r_reg_set_value (core->dbg->reg, item, diff);
-
-			if (delta != 0) {
-				// r_cons_printf ("REG changed: %s ( %d --> %d) \n", item->name, diff, value);
-				changes = 0;
-			}
-		}
 		free (out);
 	}
-	// core->dbg->reg = hack;
 
 	return changes;
 }
@@ -581,7 +605,7 @@ static void rop_classify (RCore *core, Sdb *db, RList *ropList, const char *key,
 	char *str = r_str_newf ("0x%"PFMT64x, size);
 
 	if (nop == 1) {
-		str = r_str_concat (str, "  -->  NOP");
+		str = r_str_concat (str, " NOP");
 		sdb_set (db, key, str, 0);
 	} else {
 		if (mov) {
