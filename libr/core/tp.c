@@ -145,6 +145,7 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 	char *str = strdup (r_strbuf_get (&op->esil));
 	char *tmp = strchr (str, ',');
 	if (!tmp) {
+		free (str);
 		return 0;
 	}
 	*tmp++ = 0;
@@ -167,7 +168,7 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 addr = fcn->addr;
-	if (!r_anal_emul_init (core)) {
+	if (!core || !r_anal_emul_init (core) || !fcn ) {
 		return;
 	}
 	RRegItem *pc_reg = r_reg_get (core->anal->reg, pc, -1);
