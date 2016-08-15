@@ -2750,6 +2750,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" g([A-Za-z]*) - follow jmp/call identified by shortcut\n"
 					" G            - debug trace callgraph (generated with dtc)\n"
 					" n            - rename function\n"
+					" F            - enter flag selector\n"
+					" _            - enter hud selector\n"
 					" o            - go/seek to given offset\n"
 					" r            - refresh graph\n"
 					" R            - randomize colors\n"
