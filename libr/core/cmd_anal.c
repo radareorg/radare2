@@ -201,6 +201,7 @@ static int var_cmd (RCore *core, const char *str) {
 		break;
 	case 'd': {
 		char *name = r_str_chop(strdup(str+2));
+		r_core_cmd0 (core, ".dr*");
 		RAnalVar *v = r_anal_var_get_byname (core->anal, fcn, name);
 		if (!v) {
 			eprintf ("no arg/local with this name exists\n");
