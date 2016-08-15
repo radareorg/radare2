@@ -416,18 +416,30 @@ static int is_executable (RBinObject *obj) {
 }
 
 #define DBSPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
+static void sdb_concat_by_path (Sdb *s, const char *path) {
+	Sdb *db = sdb_new (0, path, 0);
+	sdb_merge (s, db);
+	sdb_close (db);
+	sdb_free (db);
 
+}
 static void r_anal_type_init(RCore *core) {
+	Sdb *types = core->anal->sdb_types;
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
+	const char *os = r_config_get (core->config, "asm.os");
+	int bits = core->assembler->bits;
 	char *dbpath;
-	Sdb *db;
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", anal_arch,
-	r_config_get_i (core->config, "asm.bits"));
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%s.sdb", os);
 	if (r_file_exists (dbpath)) {
-		db = sdb_new (0, dbpath, 0);
-		sdb_merge (core->anal->sdb_types, db);
-		sdb_close (db);
-		sdb_free (db);
+		sdb_concat_by_path (types, dbpath);
+	}
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%s-%d.sdb", anal_arch, os, bits);
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
+	}
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", anal_arch, bits);
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
 	}
 }
 

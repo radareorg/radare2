@@ -14,6 +14,7 @@ static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (!fcn && *input != '?') {
 		eprintf ("cant find function here\n");
+		return;
 	}
 	switch (*input) {
 	case 'm':
