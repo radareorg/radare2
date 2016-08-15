@@ -784,8 +784,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				r_print_cursor (p, j, 0);
 				j += step - 1;
 			} else if (base == -8) {
-				printfmt ("    %d=%c=%X ", -base, 0x3d, 13);
-				j += 3;
+				long long *w = (long long *)(buf + j);
+				printfmt ("%23"PFMT64d" ", *w);
+				j += 7;
 			} else if (base == -1) {
 				st8 *w = (st8*)(buf+j);
 				printfmt ("%4d ", *w);

@@ -4534,7 +4534,7 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 		NULL};
 	switch (input[0]) {
 	case '\0': //av
-		r_anal_list_vtables (core);
+		r_core_anal_list_vtables (core);
 		break;
 	default :
 		r_core_cmd_help (core, help_msg);

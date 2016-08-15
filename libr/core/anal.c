@@ -3087,7 +3087,7 @@ static void printVtable(RCore *core, vtable_info *table) {
 		ut64 startAddress = table->saddr;
 		const char *methodName = "No Name found";
 		ut64 bits = r_config_get_i (core->config, "asm.bits");
-		char *lang = r_config_get_i (core->config, "bin.lang");
+		const char *lang = r_config_get (core->config, "bin.lang");
 		r_cons_printf ("\nVtable Found at : 0x%08"PFMT64x"\n", startAddress);
 		int wordSize = bits / 8;
 		while (curMethod < totalMethods) {
@@ -3188,7 +3188,7 @@ RList* search_virtual_tables(RCore *core){
 	return vtables;
 }
 
-R_API void r_anal_list_vtables(void *core) {
+R_API void r_core_anal_list_vtables(void *core) {
 	const char *curArch =((RCore *)core)->bin->cur->o->info->arch;
 	const char *curSupportedArch = "x86";
 	if (!strcmp (curArch, curSupportedArch)) {
