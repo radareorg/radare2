@@ -24,7 +24,10 @@ static inline bool setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
 		return false;
 	}
-	free (eobj->imports_by_ord[ord]);
+	if (eobj->imports_by_ord[ord]) {
+		free (eobj->imports_by_ord[ord]->name);
+		free (eobj->imports_by_ord[ord]);
+	}
 	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
 	eobj->imports_by_ord[ord]->name = strdup (ptr->name);
 	return true;
@@ -40,7 +43,7 @@ static Sdb* get_sdb (RBinObject *o) {
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct Elf_(r_bin_elf_obj_t) *res;
-	const char *elf_type;
+	char *elf_type;
 	RBuffer *tbuf;
 
 	if (!buf || sz == 0 || sz == UT64_MAX) {
@@ -64,6 +67,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 		}
 		free (regs);
 	}
+	free (elf_type);
 	r_buf_free (tbuf);
 	return res;
 }

@@ -897,7 +897,8 @@ int main(int argc, char **argv, char **envp) {
 	r_list_free (cmds);
 	r_list_free (files);
 	if (ret) {
-		return 0;
+		ret = 0;
+		goto beach;
 	}
 	if (r_config_get_i (r.config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
@@ -1018,6 +1019,8 @@ int main(int argc, char **argv, char **envp) {
 
 	/* capture return value */
 	ret = r.num->value;
+
+beach:
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command
 	// exectution.
