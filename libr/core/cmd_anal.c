@@ -160,10 +160,12 @@ static int var_cmd (RCore *core, const char *str) {
 		RAnalVar *v1;
 		char *str_dup = strdup (str);
 		char *old_name = r_str_trim_head (strchr (str_dup, ' '));
+		if (!old_name) {
+			goto failed;
+		}
 		char *new_name = strchr (old_name, ' ');
 		if (!new_name) {
-			var_help (core, '?');
-			return false;
+			goto failed;
 		}
 		*new_name++ = 0;
 		r_str_chop (new_name);
@@ -174,7 +176,14 @@ static int var_cmd (RCore *core, const char *str) {
 			r_anal_var_free (v1);
 		}
 		free (str_dup);
-	} return true;
+		return true;
+	failed:
+		if(str_dup) {
+			free (str_dup);
+		}
+		var_help (core, '?');
+		return false;
+	}
 	}
 	switch (str[1]) {
 	case '\0':
