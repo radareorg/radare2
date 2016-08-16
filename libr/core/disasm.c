@@ -2927,6 +2927,7 @@ toro:
 			break;
 		}
 		r_core_seek_archbits (core, ds->at); // slow but safe
+		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
 		r_asm_set_pc (core->assembler, ds->at);
 		ds_update_ref_lines (ds);
@@ -3248,6 +3249,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			break;
 		}
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
+		ds->has_description = false;
 		r_asm_set_pc (core->assembler, ds->at);
 		// XXX copypasta from main disassembler function
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
@@ -3401,7 +3403,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				/* workaround to avoid empty arrays */
 #define BWRETRY 0
 #if BWRETRY
-				nb_opcodes+=1;
+				nb_opcodes ++;
 				if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
 #endif
 					r_cons_printf ("]");
@@ -3409,15 +3411,16 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 #if BWRETRY
 				}
 #endif
-				nb_opcodes-=1;
+				nb_opcodes --;
 			}
 			count = R_MIN (nb_bytes, nbytes);
-			if (count>0) {
+			if (count > 0) {
 				r_core_read_at (core, addr, buf, count);
 				r_core_read_at (core, addr+count, buf+count, nb_bytes-count);
 			} else {
-				if (nb_bytes>0)
+				if (nb_bytes > 0) {
 					memset (buf, 0xff, nb_bytes);
+				}
 			}
 		} else {
 			// If we are disassembling a positive number of lines, enable dis_opcodes
@@ -3483,6 +3486,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		
 		ds = ds_init (core);
+		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
 		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i);
 		
@@ -3746,7 +3750,6 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	ds->l = l;
 	ds->buf = buf;
 	ds->len = r_anal_fcn_size (fcn);
-	ds->has_description = false;
 	ds->addr = fcn->addr;
 	ds->fcn = fcn;
 
