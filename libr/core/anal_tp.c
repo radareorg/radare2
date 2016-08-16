@@ -168,6 +168,7 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 	free (str);
 	return ret;
 }
+
 R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 addr = fcn->addr;
@@ -185,18 +186,22 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		if (op->type == R_ANAL_OP_TYPE_CALL) {
 			RAnalFunction *fcn_call = r_anal_get_fcn_in (core->anal, op->jump, -1);
 			//eprintf ("in the middle of %s\n", fcn_call->name);
-			type_match (core, addr, fcn_call->name);
-			addr += op->size;
-			r_anal_op_free (op);
-			r_reg_set_value (core->dbg->reg, pc_reg, addr);
-			r_debug_reg_sync (core->dbg, -1, true);
-			r_anal_esil_set_pc (core->anal->esil, addr);
-			addr += stack_clean (core, addr, fcn);
-			r_reg_set_value (core->dbg->reg, pc_reg, addr);
-			r_debug_reg_sync (core->dbg, -1, true);
-			r_anal_esil_set_pc (core->anal->esil, addr);
+			if (fcn_call) {
+				type_match (core, addr, fcn_call->name);
+				addr += op->size;
+				r_anal_op_free (op);
+				r_reg_set_value (core->dbg->reg, pc_reg, addr);
+				r_debug_reg_sync (core->dbg, -1, true);
+				r_anal_esil_set_pc (core->anal->esil, addr);
+				addr += stack_clean (core, addr, fcn);
+				r_reg_set_value (core->dbg->reg, pc_reg, addr);
+				r_debug_reg_sync (core->dbg, -1, true);
+				r_anal_esil_set_pc (core->anal->esil, addr);
+			} else {
+				eprintf ("Cannot find function at 0x%08"PFMT64x"\n", op->jump);
+				break;
+			}
 			continue;
-			//eprintf ("call\n");
 		} else {
 			r_core_esil_step (core, UT64_MAX, NULL);
 			r_anal_op_free (op);
