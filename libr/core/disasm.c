@@ -190,6 +190,7 @@ typedef struct r_disam_options_t {
 	bool prev_ins_eq;
 	int prev_ins_count;
 	bool show_nodup;
+	bool has_description;
 
 	// caches
 	char *_tabsbuf;
@@ -2041,7 +2042,12 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			RSyscall *sc = ds->core->anal->syscall;
 			const char *ioname = r_syscall_get_io (sc, imm);
 			if (ioname && *ioname) {
+				ds_align_comment (ds);
+				if (ds->show_color) {
+					r_cons_strcat (ds->color_comment);
+				}
 				r_cons_printf (" ; IO %s", ioname);
+				ds->has_description = true;
 			}
 		}
 		break;
@@ -2734,10 +2740,12 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	char *desc = NULL;
 	RCore *core = ds->core;
 	ds_print_relocs (ds);
-	if (ds->asm_describe) {
-		char *locase = strdup (ds->asmop.buf_asm);
-		if (!locase) return;
-		char *op = strchr (locase, ' ');
+	if (ds->asm_describe && !ds->has_description) {
+		char *op, *locase = strdup (ds->asmop.buf_asm);
+		if (!locase) {
+			return;
+		}
+		op = strchr (locase, ' ');
 		if (op) *op = 0;
 		r_str_case (locase, 0);
 		desc = r_asm_describe (core->assembler, locase);
@@ -3741,6 +3749,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	ds->l = l;
 	ds->buf = buf;
 	ds->len = r_anal_fcn_size (fcn);
+	ds->has_description = false;
 	ds->addr = fcn->addr;
 	ds->fcn = fcn;
 
