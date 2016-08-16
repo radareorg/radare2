@@ -175,9 +175,9 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		// set = 2 is reserved for lea, where the operand is a memory address,
 		// but the corresponding memory is not loaded.
 		if (set == 1) {
-			snprintf (buf_, sizeof (buf), "%s,%s=[%d]", buf, setarg, op.size);
+			snprintf (buf_, sizeof (buf), "%s,%s=[%d]", buf, setarg, op.size==10?8:op.size);
 		} else if (set == 0) {
-			snprintf (buf_, sizeof (buf), "%s,[%d]", buf, op.size);
+			snprintf (buf_, sizeof (buf), "%s,[%d]", buf, op.size==10? 8: op.size);
 		}
 
 		strncpy (buf, buf_, sizeof (buf));
