@@ -2404,7 +2404,7 @@ repeat:
 			dorunword = 2;
 		}
 
-		if (dorunword) {
+		if (dorunword && *word) {
 			if (!runword (esil, word)) {
 				return 0;
 			}
