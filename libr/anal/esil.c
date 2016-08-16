@@ -2404,19 +2404,21 @@ repeat:
 			dorunword = 2;
 		}
 
-		if (dorunword && *word) {
-			if (!runword (esil, word)) {
-				return 0;
+		if (dorunword) {
+			if (*word) {
+				if (!runword (esil, word)) {
+					return 0;
+				}
+				word[wordi] = ',';
+				wordi = 0;
+				switch (evalWord (esil, ostr, &str)) {
+					case 0: goto loop;
+					case 1: return 0;
+					case 2: continue;
+				}
+				if (dorunword == 1)
+					return 0;
 			}
-			word[wordi] = ',';
-			wordi = 0;
-			switch (evalWord (esil, ostr, &str)) {
-			case 0: goto loop;
-			case 1: return 0;
-			case 2: continue;
-			}
-			if (dorunword == 1)
-				return 0;
 			str++;
 		}
 		word[wordi++] = *str;
