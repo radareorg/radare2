@@ -398,7 +398,7 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_FLAGS) {
-		r_core_cmd (core, "f.*", 0);
+		r_core_cmd (core, "f.**", 0);
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_DBG_BREAK) {
@@ -443,8 +443,9 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	bool ret = true;
 	char *prj, buf[1024];
 
-	if (file == NULL || *file == '\0')
+	if (!file || !*file) {
 		return false;
+	}
 
 	prj = r_core_project_file (core, file);
 	if (!prj) {
