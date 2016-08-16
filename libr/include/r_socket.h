@@ -152,7 +152,7 @@ enum {
 typedef struct r_socket_rap_server_t {
 	RSocket *fd;
 	char port[5];
-	ut8 buf[4101]; //This should be used as a static buffer for everything done by the server
+	ut8 buf[RAP_RMT_MAX + 32]; //This should be used as a static buffer for everything done by the server
 	rap_server_open open;
 	rap_server_seek seek;
 	rap_server_read read;

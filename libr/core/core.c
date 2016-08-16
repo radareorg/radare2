@@ -1989,29 +1989,35 @@ reaccept:
 				break;
 				}
 			case RMT_WRITE:
-				r_socket_read (c, buf, 5);
-				x = r_read_at_be32 (buf, 1);
+				r_socket_read (c, buf, 4);
+				x = r_read_at_be32 (buf, 0);
 				ptr = malloc (x);
 				r_socket_read (c, ptr, x);
-				r_core_write_at (core, core->offset, ptr, x);
+				int ret = r_core_write_at (core, core->offset, ptr, x);
+				buf[0] = RMT_WRITE | RMT_REPLY;
+				r_write_be32 (buf + 1, ret);
+				r_socket_write (c, buf, 5);
+				r_socket_flush (c);
 				free (ptr);
 				ptr = NULL;
 				break;
 			case RMT_SEEK:
 				r_socket_read_block (c, buf, 9);
 				x = r_read_at_be64 (buf, 1);
-				if (buf[0]!=2) {
-					r_core_seek (core, x, buf[0]);
-					x = core->offset;
-				} else {
+				if (buf[0] == 2) {
 					if (core->file) {
 						x = r_io_desc_size (core->io, core->file->desc);
 					} else {
 						x = 0;
 					}
+				} else {
+					if (buf[0] == 0) {
+						r_core_seek (core, x, 1); //buf[0]);
+					}
+					x = core->offset;
 				}
 				buf[0] = RMT_SEEK | RMT_REPLY;
-				r_write_be64 (buf+1, x);
+				r_write_be64 (buf + 1, x);
 				r_socket_write (c, buf, 9);
 				r_socket_flush (c);
 				break;

@@ -16,9 +16,13 @@ static int rap__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	ut8 *tmp;
 	int ret;
 
+	if (count < 1) {
+		return count;
+	}
 	// TOOD: if count > RMT_MAX iterate !
-	if (count > RMT_MAX)
+	if (count > RMT_MAX) {
 		count = RMT_MAX;
+	}
 	if (!(tmp = (ut8 *)malloc (count + 5))) {
 		eprintf ("rap__write: malloc failed\n");
 		return -1;
@@ -33,7 +37,7 @@ static int rap__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		eprintf ("rap__write: error\n");
 		ret = -1;
 	}
-	ret = r_read_be32 (&tmp);
+	ret = r_read_be32 (tmp + 1);
 	free (tmp);
 	return ret;
 }
@@ -53,8 +57,9 @@ static int rap__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	ut8 tmp[5];
 
 	// XXX. if count is > RMT_MAX, just perform multiple queries
-	if (count > RMT_MAX)
+	if (count > RMT_MAX) {
 		count = RMT_MAX;
+	}
 	// send
 	tmp[0] = RMT_READ;
 	r_write_be32 (tmp + 1, count);

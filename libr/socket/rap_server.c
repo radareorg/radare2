@@ -84,7 +84,8 @@ R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 			i = RAP_RMT_MAX;
 		}
 		r_socket_read_block (rap_s->fd, rap_s->buf + 5, i);
-		rap_s->write (rap_s->user, rap_s->buf + 5, i);
+		int ret = rap_s->write (rap_s->user, rap_s->buf + 5, i);
+		r_write_be32 (rap_s->buf + 1, ret);
 		rap_s->buf[0] = RAP_RMT_WRITE | RAP_RMT_REPLY;
 		r_socket_write (rap_s->fd, rap_s->buf, 5);
 		r_socket_flush (rap_s->fd);
