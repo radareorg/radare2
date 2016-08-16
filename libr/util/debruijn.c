@@ -63,6 +63,7 @@ static char* de_bruijn(const char* charset, int order, int maxlen) {
 // to free the memory.
 R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	char *pat, *pat2;
+	ut64 len;
 	if (!charset)
 		charset = debruijn_charset;
 	if (start >= size) {
@@ -71,6 +72,12 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	pat = de_bruijn (charset, 3 /*subsequence length*/, size);
 	if (!pat) return NULL;
 	if (start == 0) {
+		len = strlen (pat);
+		if (size != len) {
+			eprintf ("warning: requested pattern of length %lld, "
+					 "generated length %lld\n",
+					 size, len);
+		}
 		return pat;
 	}
 	pat2 = calloc ((size - start) + 1, sizeof(char));
@@ -81,6 +88,12 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	strncpy (pat2, pat + start, size - start);
 	pat2[size-start] = 0;
 	free (pat);
+	len = strlen (pat2);
+	if (size != len) {
+		eprintf ("warning: requested pattern of length %lld, "
+				 "generated length %lld\n",
+				 size, len);
+	}
 	return pat2;
 }
 
