@@ -342,9 +342,29 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 		ref1.type = R_ANAL_REF_TYPE_DATA;
 		ref1.at = ref->addr;
 		ref1.addr = 0;
+		ut32 i32;
+		ut16 i16;
+		ut8 i8;
 		for (offs = 0; offs < bufsz; offs += sz, ref1.at += sz) {
-			// XXX wtf endian
-			memcpy ((ut8*)&ref1.addr, buf + offs, sz);
+			ut8* bo = buf + offs;
+			bool be = core->anal->big_endian;
+			switch (sz) {
+			case 1:
+				i8 = r_read_ble8 (bo);
+				ref1.addr = (ut64)i8;
+				break;
+			case 2:
+				i16 = r_read_ble16 (bo, be);
+				ref1.addr = (ut64)i16;
+				break;
+			case 4:
+				i32 = r_read_ble32 (bo, be);
+				ref1.addr = (ut64)i32;
+				break;
+			case 8:
+				ref1.addr = r_read_ble64 (bo, be);
+				break;
+			}
 			r_anal_try_get_fcn (core, &ref1, fcndepth, refdepth-1);
 		}
 	}

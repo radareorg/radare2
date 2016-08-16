@@ -265,7 +265,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	fclose (fd);
 	ret[sz] = '\0';
 	if (usz) {
-		*usz = (ut32)sz;
+		*usz = (int)sz;
 	}
 	return ret;
 }

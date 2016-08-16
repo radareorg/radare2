@@ -474,14 +474,40 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		}
 
 		for (k = 0; k < m; k++) {
+			ut8* dest1 = &buf[addr+len+(k*tsize)];
+			ut8* src1 = &b->buf[len+(k*tsize)];
+			ut8* dest2 = &buf[len+(k*tsize)];
+			ut8* src2 = &b->buf[addr+len+(k*tsize)];
 			if (write) {
-				r_mem_swaporcopy ((ut8*)&buf[addr+len+(k*tsize)],
-						  (const ut8*)&b->buf[len+(k*tsize)],
-						  tsize, bigendian);
+				switch (tsize) {
+				case 1:
+					*dest1 = r_read_ble8 (src1);
+					break;
+				case 2:
+					*((ut16*)dest1) = r_read_ble16 (src1, bigendian);
+					break;
+				case 4:
+					*((ut32*)dest1) = r_read_ble32 (src1, bigendian);
+					break;
+				case 8:
+					*((ut64*)dest1) = r_read_ble64 (src1, bigendian);
+					break;
+				}
 			} else {
-				r_mem_swaporcopy ((ut8*)&buf[len+(k*tsize)],
-						  (const ut8*)&b->buf[addr+len+(k*tsize)],
-						  tsize, bigendian);
+				switch (tsize) {
+				case 1:
+					*dest2 = r_read_ble8 (src2);
+					break;
+				case 2:
+					*((ut16*)dest2) = r_read_ble16 (src2, bigendian);
+					break;
+				case 4:
+					*((ut32*)dest2) = r_read_ble32 (src2, bigendian);
+					break;
+				case 8:
+					*((ut64*)dest2) = r_read_ble64 (src2, bigendian);
+					break;
+				}
 			}
 		}
 		len += tsize * m;
