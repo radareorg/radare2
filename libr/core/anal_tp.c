@@ -178,7 +178,8 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RRegItem *pc_reg = r_reg_get (core->anal->reg, pc, -1);
 	r_reg_set_value (core->dbg->reg, pc_reg, fcn->addr);
 	r_debug_reg_sync (core->dbg, -1, true);
-	while (1) {
+	r_cons_break (NULL, NULL);
+	while (!r_cons_is_breaked ()) {
 		RAnalOp *op = r_core_anal_op (core, addr);
 		if (!op || op->type == R_ANAL_OP_TYPE_RET) {
 			return;
@@ -209,4 +210,5 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		r_core_cmd0 (core, ".ar*");
 		addr = r_num_get (core->num, pc);
 	}
+	r_cons_break_end ();
 }
