@@ -49,6 +49,15 @@ R_API int r_stack_is_empty(RStack *s) {
 	return s->top == -1;
 }
 
-R_API unsigned int r_stack_size(RStack *s) {
-	return (unsigned int)(s->top + 1);
+R_API ut32 r_stack_size(RStack *s) {
+	return (ut32)(s->top + 1);
+}
+
+R_API void *r_stack_peek(RStack *s) {
+	void *res;
+	if (s->top != -1) {
+		res = s->elems[s->top];
+		return res;
+	}
+	return NULL;
 }

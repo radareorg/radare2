@@ -238,9 +238,9 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 }
 
 static ut64 bbBegin(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
+	RSkipListNode *iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size)) {
 			return bb->addr;
 		}
@@ -249,9 +249,9 @@ static ut64 bbBegin(RAnalFunction *fcn, ut64 addr) {
 }
 
 static ut64 bbSize(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
+	RSkipListNode *iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	r_skiplist_foreach (fcn->bbs, iter, bb) {
 		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size)) {
 			return bb->size;
 		}

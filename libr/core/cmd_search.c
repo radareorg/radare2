@@ -568,10 +568,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 
 				/* Search only inside the basic block */
 				if (!strcmp (mode, "anal.bb")) {
-					RListIter *iter;
+					RSkipListNode *iter;
 					struct r_anal_bb_t *bb;
 
-					r_list_foreach (f->bbs, iter, bb) {
+					r_skiplist_foreach (f->bbs, iter, bb) {
 						*from = core->offset;
 						if ((*from >= bb->addr) && (*from < (bb->addr+bb->size))) {
 							*from = bb->addr;

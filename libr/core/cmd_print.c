@@ -1515,8 +1515,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
 				RAnalBlock *bb;
-				RListIter *iter;
-				r_list_foreach (fcn->bbs, iter, bb) {
+				RSkipListNode *iter;
+				r_skiplist_foreach (fcn->bbs, iter, bb) {
 					if (addr == bb->jump) {
 						r_cons_printf ("%s0x%08"PFMT64x":\n", use_color? Color_YELLOW:"", addr);
 						label = true;
@@ -1527,7 +1527,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					r_cons_printf ("%s0x%08"PFMT64x":\n", use_color? Color_YELLOW:"", addr);
 				}
 				if (strstr (line, "=<")) {
-					r_list_foreach (fcn->bbs, iter, bb) {
+					r_skiplist_foreach (fcn->bbs, iter, bb) {
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {
@@ -1921,10 +1921,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	}
 beach:
 	return;
-}
-
-static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
-	return a->addr - b->addr;
 }
 
 /* TODO: integrate this into r_anal */
@@ -2540,22 +2536,21 @@ static int cmd_print(void *data, const char *input) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
-					RListIter *iter;
+					RSkipListNode *iter;
 					RAnalBlock *b;
 					// XXX: hack must be reviewed/fixed in code analysis
-					if (r_list_length (f->bbs) == 1) {
+					if (r_skiplist_length (f->bbs) == 1) {
 						ut32 fcn_size = r_anal_fcn_size (f);
-						b = r_list_get_top (f->bbs);
+						b = r_skiplist_get_first (f->bbs);
 						if (b->size > fcn_size) {
 							b->size = fcn_size;
 						}
 					}
-					r_list_sort (f->bbs, (RListComparator)bbcmp);
 					if (input[2] == 'j') {
 						r_cons_printf ("[");
-						r_list_foreach (f->bbs, iter, b) {
+						r_skiplist_foreach (f->bbs, iter, b) {
 							r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-							if (iter->n) {
+							if (!r_skiplist_islast (f->bbs, iter)) {
 								r_cons_printf (",");
 							}
 						}
@@ -2565,7 +2560,7 @@ static int cmd_print(void *data, const char *input) {
 						bool asm_lines = r_config_get_i (core->config, "asm.lines");
 						r_config_set_i (core->config, "asm.lines", 0);
 						//r_list_sort (f->bbs, &r_anal_ex_bb_address_comparator);
-						r_list_foreach (f->bbs, iter, b) {
+						r_skiplist_foreach (f->bbs, iter, b) {
 							r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
 	#if 1
 							if (b->jump != UT64_MAX) {

@@ -3705,6 +3705,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	ut32 len = 0;
 	int ret, idx = 0, i;
 	RListIter *bb_iter;
+	RSkipListNode *bb_node;
 	RAnalBlock *bb = NULL;
 	RDisasmState *ds;
 	RList *bb_list = NULL;
@@ -3744,7 +3745,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	ds->addr = fcn->addr;
 	ds->fcn = fcn;
 
-	r_list_foreach (fcn->bbs, bb_iter, bb) {
+	r_skiplist_foreach (fcn->bbs, bb_node, bb) {
 		r_list_add_sorted (bb_list, bb, cmpaddr);
 	}
 	// Premptively read the bb data locs for ref lines

@@ -48,9 +48,9 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 	// use it for indentation
 	// asm.pseudo=true
 	// asm.decode=true
-	RAnalBlock *bb = r_list_first (fcn->bbs);
+	RAnalBlock *bb = r_skiplist_get_first (fcn->bbs);
 	char indentstr[1024];
-	int n_bb = r_list_length (fcn->bbs);
+	int n_bb = r_skiplist_length (fcn->bbs);
 	r_cons_printf ("function %s () {", fcn->name);
 	int indent = 1;
 	int nindent = 1;
