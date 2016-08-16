@@ -178,7 +178,7 @@ static int var_cmd (RCore *core, const char *str) {
 		free (str_dup);
 		return true;
 	failed:
-        free (str_dup);
+		free (str_dup);
 		var_help (core, '?');
 		return false;
 	}
@@ -1724,7 +1724,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			cmd_arw_help (core);
 			break;
 		}
-                break;
+		break;
 	case 'a': // "ara"
 		switch (str[1]) {
 		case '?':
@@ -4509,8 +4509,8 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 }
 
 static int cmpaddr (const void *_a, const void *_b) {
-        const RAnalFunction *a = _a, *b = _b;
-        return (a->addr > b->addr);
+		const RAnalFunction *a = _a, *b = _b;
+		return (a->addr > b->addr);
 }
 
 static bool anal_fcn_data_gaps (RCore *core, const char *input) {
