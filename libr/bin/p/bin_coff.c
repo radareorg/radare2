@@ -171,7 +171,6 @@ static RList *symbols(RBinFile *arch) {
 			ptr->ordinal = 0;
 			r_list_append (ret, ptr);
 			i += obj->symbols[i].n_numaux;
-			free (ptr);
 		}
 	}
 
