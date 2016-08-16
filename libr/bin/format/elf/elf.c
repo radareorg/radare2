@@ -107,11 +107,11 @@ static int init_phdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->ehdr.e_phnum == 0)
 		return false;
 	if (bin->phdr) return true;
-	if (!UT32_MUL (&phdr_size, bin->ehdr.e_phnum, sizeof (Elf_(Phdr))))
+	if (!UT32_MUL (&phdr_size, (ut32)bin->ehdr.e_phnum, sizeof (Elf_(Phdr))))
 		return false;
 	if (!phdr_size)
 		return false;
-	if (phdr_size > bin->size)
+	if (phdr_size > (ut32)bin->size)
 		return false;
 	if (bin->ehdr.e_phoff > bin->size)
 		return false;
@@ -1191,7 +1191,7 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!bin) {
 		return 0LL;
 	}
-	entry = r_read_ble32 (&bin->ehdr.e_entry, 0);
+	entry = bin->ehdr.e_entry;
 	if (entry == 0LL) { 
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) {
@@ -2394,7 +2394,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(RBuffer *buf) {
 	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
 	bin->kv = sdb_new0 ();
 	bin->b = r_buf_new ();
-	bin->size = buf->length;
+	bin->size = (ut32)buf->length;
 	if (!r_buf_set_bytes (bin->b, buf->buf, buf->length)) {
 		return Elf_(r_bin_elf_free) (bin);
 	}
