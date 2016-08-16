@@ -666,7 +666,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 
 	bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
-		eprintf ("No pointer\n");
+		// eprintf ("No pointer\n");
 		return;
 	}
 
