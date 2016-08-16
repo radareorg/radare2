@@ -160,10 +160,12 @@ static int var_cmd (RCore *core, const char *str) {
 		RAnalVar *v1;
 		char *str_dup = strdup (str);
 		char *old_name = r_str_trim_head (strchr (str_dup, ' '));
+		if (!old_name) {
+			goto failed;
+		}
 		char *new_name = strchr (old_name, ' ');
 		if (!new_name) {
-			var_help (core, '?');
-			return false;
+			goto failed;
 		}
 		*new_name++ = 0;
 		r_str_chop (new_name);
@@ -174,7 +176,12 @@ static int var_cmd (RCore *core, const char *str) {
 			r_anal_var_free (v1);
 		}
 		free (str_dup);
-	} return true;
+		return true;
+	failed:
+		free (str_dup);
+		var_help (core, '?');
+		return false;
+	}
 	}
 	switch (str[1]) {
 	case '\0':
@@ -1717,7 +1724,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			cmd_arw_help (core);
 			break;
 		}
-                break;
+		break;
 	case 'a': // "ara"
 		switch (str[1]) {
 		case '?':
@@ -4502,8 +4509,8 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 }
 
 static int cmpaddr (const void *_a, const void *_b) {
-        const RAnalFunction *a = _a, *b = _b;
-        return (a->addr > b->addr);
+		const RAnalFunction *a = _a, *b = _b;
+		return (a->addr > b->addr);
 }
 
 static bool anal_fcn_data_gaps (RCore *core, const char *input) {
