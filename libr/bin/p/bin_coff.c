@@ -59,6 +59,51 @@ static RBinAddr *binsym(RBinFile *arch, int sym) {
 	return NULL;
 }
 
+
+static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
+	RBinSymbol *ptr = *sym;
+	char * coffname = NULL;
+	struct coff_symbol *s = NULL;
+	if (idx > bin->hdr.f_nsyms) {
+		return false;
+	}
+	s = &bin->symbols[idx];
+	coffname = r_coff_symbol_name (bin, s);
+	if (!coffname) {
+		return false;
+	}
+	ptr->name = strdup (coffname);
+	free (coffname);
+	ptr->forwarder = r_str_const ("NONE");
+
+	switch (s->n_sclass) {
+	case COFF_SYM_CLASS_FUNCTION:
+		ptr->type = r_str_const ("FUNC");
+		break;
+	case COFF_SYM_CLASS_FILE:
+		ptr->type = r_str_const ("FILE");
+		break;
+	case COFF_SYM_CLASS_SECTION:
+		ptr->type = r_str_const ("SECTION");
+		break;
+	case COFF_SYM_CLASS_EXTERNAL:
+		ptr->type = r_str_const ("EXTERNAL");
+		break;
+	case COFF_SYM_CLASS_STATIC:
+		ptr->type = r_str_const ("STATIC");
+		break;
+	default:
+		ptr->type = r_str_const (sdb_fmt (0, "%i", s->n_sclass));
+		break;
+	}
+	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns) {
+		ptr->paddr = bin->scn_hdrs[s->n_scnum].s_scnptr + s->n_value;
+	}
+	ptr->size = 4;
+	ptr->ordinal = 0;
+	return true;
+}
+
 static RList *entries(RBinFile *arch) {
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 	RList *ret;
@@ -119,61 +164,26 @@ static RList *sections(RBinFile *arch) {
 }
 
 static RList *symbols(RBinFile *arch) {
-	const char *coffname;
-	size_t i;
+	int i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
-	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 
-	if (!(ret = r_list_newf (free))) {
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
+	if (!(ret = r_list_new ())) {
 		return ret;
 	}
-
+	ret->free = free;
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
-			coffname = r_coff_symbol_name (obj, &obj->symbols[i]);
-			if (!coffname) {
-				free (ptr);
-				break;
+			if (_fill_bin_symbol (obj, i, &ptr)) {
+				r_list_append (ret, ptr);
 			}
-			ptr->name = strdup (coffname);
-			ptr->forwarder = r_str_const ("NONE");
-
-			switch (obj->symbols[i].n_sclass) {
-			case COFF_SYM_CLASS_FUNCTION:
-				ptr->type = r_str_const ("FUNC");
-				break;
-			case COFF_SYM_CLASS_FILE:
-				ptr->type = r_str_const ("FILE");
-				break;
-			case COFF_SYM_CLASS_SECTION:
-				ptr->type = r_str_const ("SECTION");
-				break;
-			case COFF_SYM_CLASS_EXTERNAL:
-				ptr->type = r_str_const ("EXTERNAL");
-				break;
-			case COFF_SYM_CLASS_STATIC:
-				ptr->type = r_str_const ("STATIC");
-				break;
-			default:
-				ptr->type = r_str_const (sdb_fmt(0, "%i", obj->symbols[i].n_sclass));
-				break;
-			}
-
-			if (obj->symbols[i].n_scnum < obj->hdr.f_nscns) {
-				ptr->paddr = obj->scn_hdrs[obj->symbols[i].n_scnum].s_scnptr +
-				obj->symbols[i].n_value;
-			}
-			ptr->size = 4;
-			ptr->ordinal = 0;
-			r_list_append (ret, ptr);
 			i += obj->symbols[i].n_numaux;
 		}
 	}
-
 	return ret;
 }
 
@@ -186,7 +196,58 @@ static RList *libs(RBinFile *arch) {
 }
 
 static RList *relocs(RBinFile *arch) {
-	return NULL;
+	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj*)arch->o->bin_obj;
+	RBinReloc *reloc;
+	struct coff_reloc *rel;
+	int j, i = 0;
+	RList *list_rel;
+	list_rel = r_list_new ();
+	if (!list_rel || !bin || !bin->scn_hdrs) {
+		return NULL;
+	}
+	for (i = 0; i < bin->hdr.f_nscns; i++) {
+		if (bin->scn_hdrs[i].s_nreloc) {
+			int len = 0, size = bin->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
+			if (size < 0) {
+				return list_rel;
+			}
+			rel = calloc (1, size + 1);
+			if (!rel) {
+				return list_rel;
+			}
+			if (bin->scn_hdrs[i].s_relptr > bin->size ||
+				bin->scn_hdrs[i].s_relptr + size > bin->size) {
+				return list_rel;
+			}
+			len = r_buf_read_at (bin->b, bin->scn_hdrs[i].s_relptr, (ut8*)rel, size);
+			if (len != size) {
+				free (rel);
+				return list_rel;
+			}
+			for (j = 0; j < bin->scn_hdrs[i].s_nreloc; j++) {
+				RBinSymbol *symbol = R_NEW0 (RBinSymbol);
+				if (!symbol) {
+					continue;
+				}
+				if (!_fill_bin_symbol (bin, rel[j].r_symndx, &symbol)) {
+					free (symbol);
+					continue;
+				}
+				reloc = R_NEW0 (RBinReloc);
+				if (!reloc) {
+					free (symbol);
+					continue;
+				}
+				reloc->type = rel[j].r_type; //XXX the type if different from what r2 expects
+				reloc->symbol = symbol;
+				reloc->paddr = bin->scn_hdrs[i].s_scnptr + rel[j].r_vaddr;
+				reloc->vaddr = reloc->paddr;
+				r_list_append (list_rel, reloc);
+			}
+			
+		}
+	}
+	return list_rel;
 }
 
 static RBinInfo *info(RBinFile *arch) {

@@ -28,7 +28,7 @@ bool r_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
 struct r_bin_coff_obj* r_bin_coff_new_buf(struct r_buf_t *buf);
 void r_bin_coff_free(struct r_bin_coff_obj *obj);
 RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj);
-const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr);
+char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr);
 int r_coff_is_stripped (struct r_bin_coff_obj *obj);
 
 #endif /* COFF_H */

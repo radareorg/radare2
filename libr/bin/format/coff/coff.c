@@ -4,7 +4,7 @@
 
 #include "coff.h"
 
-bool r_coff_supported_arch (const ut8 *buf) {
+bool r_coff_supported_arch(const ut8 *buf) {
 	ut16 arch = *(ut16*)buf;
 	switch (arch) {
 	case COFF_FILE_MACHINE_AMD64:
@@ -17,12 +17,12 @@ bool r_coff_supported_arch (const ut8 *buf) {
 	}
 }
 
-int r_coff_is_stripped (struct r_bin_coff_obj *obj) {
+int r_coff_is_stripped(struct r_bin_coff_obj *obj) {
 	return !!(obj->hdr.f_flags & (COFF_FLAGS_TI_F_RELFLG | \
 		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
-const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr) {
+char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 	char n[256] = {0};
 	int len = 0, offset = 0;
 	union { 
@@ -49,7 +49,7 @@ const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr) {
 	return strdup (n);
 }
 
-static int r_coff_rebase_sym (struct r_bin_coff_obj *obj, RBinAddr *addr, struct coff_symbol *sym) {
+static int r_coff_rebase_sym(struct r_bin_coff_obj *obj, RBinAddr *addr, struct coff_symbol *sym) {
 	if (sym->n_scnum < 1 || sym->n_scnum > obj->hdr.f_nscns) {
 		return 0;
 	}
