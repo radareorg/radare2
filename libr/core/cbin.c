@@ -421,9 +421,9 @@ static void sdb_concat_by_path (Sdb *s, const char *path) {
 	sdb_merge (s, db);
 	sdb_close (db);
 	sdb_free (db);
-
 }
-static void r_anal_type_init(RCore *core) {
+
+R_API void r_core_anal_type_init(RCore *core) {
 	Sdb *types = core->anal->sdb_types;
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	const char *os = r_config_get (core->config, "asm.os");
@@ -443,11 +443,10 @@ static void r_anal_type_init(RCore *core) {
 	}
 }
 
-static void r_anal_cc_init(RCore *core) {
-	const char *anal_arch = r_config_get (core->config, "anal.arch");
-	char *dbpath;
+R_API void r_core_anal_cc_init(RCore *core) {
 	Sdb *db;
-	dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch,
+	const char *anal_arch = r_config_get (core->config, "anal.arch");
+	char *dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch,
 		r_config_get_i (core->config, "asm.bits"));
 	if (r_file_exists (dbpath)) {
 		db = sdb_new (0, dbpath, 0);
@@ -593,15 +592,15 @@ static int bin_info(RCore *r, int mode) {
 		}
 
 		for (i = 0; info->sum[i].type; i++) {
-			int len;
 			RBinHash *h = &info->sum[i];
 			ut64 hash = r_hash_name_to_bits (h->type);
 			RHash *rh = r_hash_new (true, hash);
-			len = r_hash_calculate (rh, hash, (const ut8*)
+			int len = r_hash_calculate (rh, hash, (const ut8*)
 					binfile->buf->buf+h->from, h->to);
-			if (len < 1) eprintf ("Invaild wtf\n");
+			if (len < 1) {
+				eprintf ("Invaild wtf\n");
+			}
 			r_hash_free (rh);
-
 			r_cons_printf ("%s\t%d-%dc\t", h->type, h->from, h->to+h->from);
 			for (j = 0; j < h->len; j++) {
 				r_cons_printf ("%02x", h->buf[j]);
@@ -611,8 +610,8 @@ static int bin_info(RCore *r, int mode) {
 		pair_str ("guid", info->guid, mode, true);
 		if (IS_MODE_JSON (mode)) r_cons_printf ("}");
 	}
-	r_anal_type_init (r);
-	r_anal_cc_init (r);
+	r_core_anal_type_init (r);
+	r_core_anal_cc_init (r);
 	return true;
 }
 
