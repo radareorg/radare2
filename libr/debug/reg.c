@@ -101,6 +101,8 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		to = from + 1;
 	}
 
+	to = R_MAX (to, R_REG_TYPE_FLG + 1);
+
 	int itmidx = -1;
 	dbg->creg = NULL;
 	for (i = from; i < to; i++) {
@@ -126,7 +128,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			}
 #endif
 			if (type != -1) {
-				if (type != item->type) continue;
+				if (type != item->type && R_REG_TYPE_FLG != item->type) continue;
 				if (size != 0 && size != item->size) continue;
 			}
 			value = r_reg_get_value (dbg->reg, item);
