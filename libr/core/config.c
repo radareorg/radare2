@@ -185,7 +185,6 @@ static int cb_asmarch(void *user, void *data) {
 	if (core->anal->bits) {
 		bits = core->anal->bits;
 	}
-
 	if (*node->value == '?') {
 		rasm2_list (core, NULL, node->value[1]);
 		return false;
@@ -195,12 +194,10 @@ static int cb_asmarch(void *user, void *data) {
 	if (!*node->value) {
 		return false;
 	}
-
 	if (!r_asm_use (core->assembler, node->value)) {
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-
 	if (core->assembler && core->assembler->cur) {
 		bits = core->assembler->cur->bits;
 		if (8 & bits) {
@@ -265,6 +262,9 @@ static int cb_asmarch(void *user, void *data) {
 		// set endian of display to match binary
 		core->print->big_endian = bigbin;
 	}
+	/* reload types and cc info */
+	r_core_anal_type_init (core);
+	r_core_anal_cc_init (core);
 	return true;
 }
 
