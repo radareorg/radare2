@@ -93,7 +93,7 @@ R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 	case RAP_RMT_SEEK:
 		r_socket_read_block (rap_s->fd, &rap_s->buf[1], 9);
 		whence = rap_s->buf[1];
-		offset = r_read_be64 (&rap_s->buf + 2);
+		offset = r_read_be64 (rap_s->buf + 2);
 		offset = rap_s->seek (rap_s->user, offset, whence);
 		/* prepare reply */
 		rap_s->buf[0] = RAP_RMT_SEEK | RAP_RMT_REPLY;
