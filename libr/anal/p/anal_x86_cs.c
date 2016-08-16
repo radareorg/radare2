@@ -177,7 +177,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		if (set == 1) {
 			snprintf (buf_, sizeof (buf), "%s,%s=[%d]", buf, setarg, op.size);
 		} else if (set == 0) {
-			snprintf (buf_, sizeof (buf), "%s,[%d]", buf, op.size);
+			snprintf (buf_, sizeof (buf), "%s,[%d]", buf, gop->bits==64? 8: 4); //op.size);
 		}
 
 		strncpy (buf, buf_, sizeof (buf));
