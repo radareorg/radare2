@@ -1569,16 +1569,41 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 	return 0;
 }
 
+static int count_edges(RAnalFunction *fcn, int *ebbs) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	int edges = 0;
+	if (ebbs) {
+		*ebbs = 0;
+	}
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
+			*ebbs = *ebbs + 1;
+		} else {
+			if (bb->jump != UT64_MAX) {
+				edges ++;
+			}
+			if (bb->fail != UT64_MAX) {
+				edges ++;
+			}
+		}
+	}
+	return edges;
+}
+
 static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
 	int first = 1;
+	int ebbs = 0;
 	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
+	r_cons_printf (",\"edges\":%d", count_edges (fcn, &ebbs));
+	r_cons_printf (",\"ebbs\":%d", ebbs);
 	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
 	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
@@ -1699,6 +1724,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalRef *refi;
+	int ebbs = 0;
 	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
@@ -1714,6 +1740,8 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 
 	r_cons_printf ("\n num-bbs: %d", r_list_length (fcn->bbs));
+	r_cons_printf ("\n edges: %d", count_edges (fcn, &ebbs));
+	r_cons_printf ("\n end-bbs: %d", ebbs);
 	r_cons_printf ("\n call-refs: ");
 	r_list_foreach (fcn->refs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
