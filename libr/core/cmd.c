@@ -678,7 +678,7 @@ static int cmd_kuery(void *data, const char *input) {
 			} else eprintf ("Missing sdb namespace\n");
 			free (fn);
 		} else {
-			eprintf ("Usage: ko [file] [namepsace]\n");
+			eprintf ("Usage: ko [file] [namespace]\n");
 		}
 		break;
 	case 'd':
@@ -699,7 +699,7 @@ static int cmd_kuery(void *data, const char *input) {
 			} else eprintf ("Missing sdb namespace\n");
 			free (fn);
 		} else {
-			eprintf ("Usage: kd [file] [namepsace]\n");
+			eprintf ("Usage: kd [file] [namespace]\n");
 		}
 		break;
 	case '?': {
