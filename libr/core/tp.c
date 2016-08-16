@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2016 - oddcoder */
 /*type matching - type propagation*/
+
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_core.h>
@@ -178,7 +179,7 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_debug_reg_sync (core->dbg, -1, true);
 	while (1) {
 		RAnalOp *op = r_core_anal_op (core, addr);
-		if (op->type == R_ANAL_OP_TYPE_RET) {
+		if (!op || op->type == R_ANAL_OP_TYPE_RET) {
 			return;
 		}
 		if (op->type == R_ANAL_OP_TYPE_CALL) {

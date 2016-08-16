@@ -18,7 +18,7 @@ static void type_cmd(RCore *core, const char *input) {
 	}
 	switch (*input) {
 	case 'm':
-		r_anal_esil_set_pc (core->anal->esil, fcn->addr);
+		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 		r_anal_type_match (core, fcn);
 		break;
 	case '?':
