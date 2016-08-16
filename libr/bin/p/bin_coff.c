@@ -190,6 +190,7 @@ static RBinInfo *info(RBinFile *arch) {
 
 	ret->file = arch->file? strdup (arch->file): NULL;
 	ret->rclass = strdup ("coff");
+	ret->bclass = strdup ("coff");
 	ret->type = strdup ("COFF (Executable file)");
 	ret->os = strdup ("any");
 	ret->subsystem = strdup ("any");
