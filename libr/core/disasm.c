@@ -234,14 +234,10 @@ static void ds_print_import_name(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds);
-//static void ds_print_cc_update(RDisasmState *ds);
 static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds);
 static void ds_print_op_push_info(RDisasmState *ds);
-//static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 *word4);
 static void ds_print_comments_right(RDisasmState *ds);
-//static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 );
-//static void handle_print_refptr (RCore *core, RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 
 static int cmpaddr(const void *_a, const void *_b) {
@@ -446,8 +442,9 @@ static RDisasmState * ds_init(RCore *core) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
-		if (ds->show_utf8)
+		if (ds->show_utf8) {
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
+		}
 	}
 
 	if (ds->show_lines) ds->ocols += 10; // XXX

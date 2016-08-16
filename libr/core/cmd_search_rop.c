@@ -159,8 +159,11 @@ static void fillRegisterValues (RCore *core) {
 	}
 
 	iter_reg = regs->head;
+	if (!iter_reg) {
+		return;
+	}
 	reg_item = iter_reg->data;
-	if (!(iter_reg && reg_item)) {
+	if (!reg_item) {
 		return;
 	}
 	r_reg_arena_pop (core->dbg->reg);
@@ -172,8 +175,11 @@ static void fillRegisterValues (RCore *core) {
 			r_reg_set_value (core->dbg->reg, reg_item, addr);
 			// r_reg_arena_push (core->dbg->reg);
 			iter_reg = iter_reg->n;
+			if (!iter_reg) {
+				break;
+			}
 			reg_item = iter_reg->data;
-			if (!(iter_reg && reg_item)) {
+			if (!reg_item) {
 				break;
 			}
 		}
@@ -429,8 +435,8 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 		*reg_write = NULL, *mem_read = NULL, *mem_write = NULL;
 	const bool romem = r_config_get_i (core->config, "esil.romem");
 	const bool stats = r_config_get_i (core->config, "esil.stats");
-	ut64 *op_result = malloc (sizeof (*op_result));
-	ut64 *op_result_r = malloc (sizeof (*op_result_r));
+	ut64 *op_result = R_NEW0 (ut64);
+	ut64 *op_result_r = R_NEW0 (ut64);
 
 	if (!romem || !stats) {
 		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
@@ -442,6 +448,8 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 		// fillRegisterValues (core);
 		head = r_reg_get_list (core->dbg->reg, 0);
 		if (!head) {
+			free (op_result);
+			free (op_result_r);
 			return NULL;
 		}
 		r_list_foreach (head, iter_dst, item_dst) {
@@ -475,6 +483,9 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 
 		if (!ops_list) {
 			free (out);
+			free (op_result);
+			free (op_result_r);
+			free (arithmetic);
 			R_FREE (esil_flg);
 			R_FREE (esil_main);
 			return NULL;
@@ -561,6 +572,7 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 	}
 	free (op_result);
 	free (op_result_r);
+	free (arithmetic);
 
 	return arithmetic;
 }

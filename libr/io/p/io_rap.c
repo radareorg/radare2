@@ -36,8 +36,9 @@ static int rap__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (r_socket_read (s, tmp, 5) != 5) { // TODO read_block?
 		eprintf ("rap__write: error\n");
 		ret = -1;
+	} else {
+		ret = r_read_be32 (tmp + 1);
 	}
-	ret = r_read_be32 (tmp + 1);
 	free (tmp);
 	return ret;
 }

@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2016 - oddcoder */
-/*type matching - type propagation*/
+/* type matching - type propagation */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -144,20 +144,29 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 }
 
 static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
+	int offset, ret;
+	char *tmp, *str, *sig;
 	RAnalOp *op = r_core_anal_op (core, addr);
-	char *str = strdup (r_strbuf_get (&op->esil));
-	char *tmp = strchr (str, ',');
+	if (!op) {
+		return 0;
+	}
+	str = strdup (r_strbuf_get (&op->esil));
+	if (!str) {
+		return 0;
+	}
+	tmp = strchr (str, ',');
 	if (!tmp) {
 		free (str);
 		return 0;
 	}
 	*tmp++ = 0;
-	int offset = r_num_math (core->num, str);
+
+	offset = r_num_math (core->num, str);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	char *sig = sdb_fmt (-1, "%s,+=", sp);
-	int ret = 0;
+	sig = sdb_fmt (-1, "%s,+=", sp);
+	ret = 0;
 	if (!strncmp (tmp, sig, strlen (sig))) {
-		char *esil = sdb_fmt (-1, "%d,%s,-=", offset, sp);
+		const char *esil = sdb_fmt (-1, "%d,%s,-=", offset, sp);
 		r_anal_esil_parse (core->anal->esil, esil);
 		r_anal_esil_dumpstack (core->anal->esil);
 		r_anal_esil_stack_free (core->anal->esil);
