@@ -10,10 +10,14 @@
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
+static Sdb* get_sdb(RBinObject *o) {
+	if (!o) {
+		return NULL;
+	}
 	struct r_bin_coff_obj *bin = (struct r_bin_coff_obj *) o->bin_obj;
-	if (bin->kv) return bin->kv;
+	if (bin->kv) {
+		return bin->kv;
+	}
 	return NULL;
 }
 
@@ -21,7 +25,9 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 
-	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
+	if (!buf || !sz || sz == UT64_MAX) {
+		return NULL;
+	}
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_coff_new_buf(tbuf);
@@ -33,7 +39,9 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return false;
+	if (!arch || !arch->o) {
+		return false;
+	}
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj ? true: false;
 }
@@ -56,11 +64,9 @@ static RList *entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
-
-	ret->free = free;
-
+	}
 	ptr = r_coff_get_entry(obj);
 	r_list_append(ret, ptr);
 
@@ -74,36 +80,39 @@ static RList *sections(RBinFile *arch) {
 	RBinSection *ptr = NULL;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 
-	ret = r_list_new();
-
-	if (!ret)
+	ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
+	}
+	if (obj && obj->scn_hdrs) {
+		for (i = 0; i < obj->hdr.f_nscns; i++) {
+			coffname = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
+			if (!coffname) {
+				r_list_free (ret);
+				return NULL;
+			}
 
-	if (obj && obj->scn_hdrs)
-	for (i = 0; i < obj->hdr.f_nscns; i++) {
-		coffname = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
-		if (!coffname) {
-			r_list_free (ret);
-			return NULL;
+			ptr = R_NEW0 (RBinSection);
+			if (!ptr) {
+				return ret;
+			}
+			strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
+			ptr->size = obj->scn_hdrs[i].s_size;
+			ptr->vsize = obj->scn_hdrs[i].s_size;
+			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
+			ptr->add = true;
+			ptr->srwx = R_BIN_SCN_MAP;
+			if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_READ) {
+				ptr->srwx |= R_BIN_SCN_READABLE;
+			}
+			if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_WRITE) {
+				ptr->srwx |= R_BIN_SCN_WRITABLE;
+			}
+			if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_EXECUTE) {
+				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
+			}
+			r_list_append (ret, ptr);
 		}
-
-		ptr = R_NEW0 (RBinSection);
-		strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
-
-		ptr->size = obj->scn_hdrs[i].s_size;
-		ptr->vsize = obj->scn_hdrs[i].s_size;
-		ptr->paddr = obj->scn_hdrs[i].s_scnptr;
-		ptr->add = true;
-
-		ptr->srwx = R_BIN_SCN_MAP;
-		if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_READ)
-			ptr->srwx |= R_BIN_SCN_READABLE;
-		if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_WRITE)
-			ptr->srwx |= R_BIN_SCN_WRITABLE;
-		if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_EXECUTE)
-			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
-
-		r_list_append (ret, ptr);
 	}
 
 	return ret;
@@ -114,59 +123,56 @@ static RList *symbols(RBinFile *arch) {
 	size_t i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
-
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 
-	if (!(ret = r_list_new()))
+	if (!(ret = r_list_newf (free))) {
 		return ret;
+	}
 
-	ret->free = free;
+	if (obj->symbols) {
+		for (i = 0; i < obj->hdr.f_nsyms; i++) {
+			if (!(ptr = R_NEW0 (RBinSymbol))) {
+				break;
+			}
+			coffname = r_coff_symbol_name (obj, &obj->symbols[i]);
+			if (!coffname) {
+				free (ptr);
+				break;
+			}
+			ptr->name = strdup (coffname);
+			ptr->forwarder = r_str_const ("NONE");
 
-	if (obj->symbols)
-	for (i = 0; i < obj->hdr.f_nsyms; i++) {
-		if (!(ptr = R_NEW0 (RBinSymbol)))
-			break;
-		coffname = r_coff_symbol_name (obj, &obj->symbols[i]);
-		if (!coffname) {
-			free (ptr);
-			break;
-		}
-		ptr->name = strdup (coffname);
-		ptr->forwarder = r_str_const ("NONE");
+			switch (obj->symbols[i].n_sclass) {
+			case COFF_SYM_CLASS_FUNCTION:
+				ptr->type = r_str_const ("FUNC");
+				break;
+			case COFF_SYM_CLASS_FILE:
+				ptr->type = r_str_const ("FILE");
+				break;
+			case COFF_SYM_CLASS_SECTION:
+				ptr->type = r_str_const ("SECTION");
+				break;
+			case COFF_SYM_CLASS_EXTERNAL:
+				ptr->type = r_str_const ("EXTERNAL");
+				break;
+			case COFF_SYM_CLASS_STATIC:
+				ptr->type = r_str_const ("STATIC");
+				break;
+			default:
+				ptr->type = r_str_const (sdb_fmt(0, "%i", obj->symbols[i].n_sclass));
+				break;
+			}
 
-		switch (obj->symbols[i].n_sclass) {
-		case COFF_SYM_CLASS_FUNCTION:
-			ptr->type = r_str_const ("FUNC");
-			break;
-		case COFF_SYM_CLASS_FILE:
-			ptr->type = r_str_const ("FILE");
-			break;
-		case COFF_SYM_CLASS_SECTION:
-			ptr->type = r_str_const ("SECTION");
-			break;
-		case COFF_SYM_CLASS_EXTERNAL:
-			ptr->type = r_str_const ("EXTERNAL");
-			break;
-		case COFF_SYM_CLASS_STATIC:
-			ptr->type = r_str_const ("STATIC");
-			break;
-		default:
-			ptr->type = r_str_const (sdb_fmt(0, "%i", obj->symbols[i].n_sclass));
-			break;
-		}
-
-		if (obj->symbols[i].n_scnum < obj->hdr.f_nscns) {
-			ptr->paddr = obj->scn_hdrs[obj->symbols[i].n_scnum].s_scnptr +
+			if (obj->symbols[i].n_scnum < obj->hdr.f_nscns) {
+				ptr->paddr = obj->scn_hdrs[obj->symbols[i].n_scnum].s_scnptr +
 				obj->symbols[i].n_value;
+			}
+			ptr->size = 4;
+			ptr->ordinal = 0;
+			r_list_append (ret, ptr);
+			i += obj->symbols[i].n_numaux;
+			free (ptr);
 		}
-
-		ptr->size = 4;
-		ptr->ordinal = 0;
-
-		r_list_append (ret, ptr);
-
-		i += obj->symbols[i].n_numaux;
-		free (ptr);
 	}
 
 	return ret;
@@ -201,12 +207,15 @@ static RBinInfo *info(RBinFile *arch) {
 	if (r_coff_is_stripped (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	} else {
-		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_RELFLG))
+		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_RELFLG)) {
 			ret->dbg_info |= R_BIN_DBG_RELOCS;
-		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_LNNO))
+		}
+		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_LNNO)) {
 			ret->dbg_info |= R_BIN_DBG_LINENUMS;
-		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC))
+		}
+		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC)) {
 			ret->dbg_info |= R_BIN_DBG_SYMS;
+		}
 	}
 
 	switch (obj->hdr.f_magic) {
@@ -279,8 +288,9 @@ ut32 NUMOFSYMS
 ut16 OPTHDRSIZE
 ut16 CHARACTERISTICS
 #endif
-	if (buf && length >= 20)
+	if (buf && length >= 20) {
 		return r_coff_supported_arch (buf);
+	}
 	return false;
 }
 
