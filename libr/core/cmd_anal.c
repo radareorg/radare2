@@ -1533,7 +1533,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					}
 					if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
 						continue;
-							
 					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
 					/* use recursivity here */
@@ -1622,7 +1621,6 @@ static void __anal_reg_list(RCore *core, int type, int size, char mode) {
 		}
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
-	r_debug_reg_list (core->dbg, R_REG_TYPE_FLG, bits, mode, use_color);
 	core->dbg->reg = hack;
 }
 
