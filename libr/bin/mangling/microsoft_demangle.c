@@ -146,15 +146,14 @@ copy_string_err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int get_template(char *buf, SStrInfo *str_info)
-{
+int get_template(char *buf, SStrInfo *str_info) {
 	int len = 0;
 	unsigned int i = 0;
 	char *str_type_code = 0;
 	char *tmp = strstr(buf, "@");
 	STypeCodeStr type_code_str;
-	RListIter *it = 0;
-	RList *saved_abbr_names = abbr_names;	// save current abbr names, this
+	// RListIter *it = NULL;
+	// RList *saved_abbr_names = abbr_names;	// save current abbr names, this
 
 	if (!tmp) {
 		goto get_template_err;
@@ -1403,8 +1402,8 @@ parse_microsoft_mangled_name_err:
 ///////////////////////////////////////////////////////////////////////////////
 EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name) {
 	EDemanglerErr err = eDemanglerErrOK;
-	RListIter *it = 0;
-	char *tmp = 0;
+//	RListIter *it = NULL;
+//	char *tmp = NULL;
 
 	// TODO: need refactor... maybe remove the static variable somewhere?
 	abbr_types = r_list_newf (free);
