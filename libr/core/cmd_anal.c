@@ -178,9 +178,7 @@ static int var_cmd (RCore *core, const char *str) {
 		free (str_dup);
 		return true;
 	failed:
-		if(str_dup) {
-			free (str_dup);
-		}
+        free (str_dup);
 		var_help (core, '?');
 		return false;
 	}
