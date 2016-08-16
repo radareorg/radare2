@@ -23,19 +23,30 @@ int r_coff_is_stripped (struct r_bin_coff_obj *obj) {
 }
 
 const char *r_coff_symbol_name (struct r_bin_coff_obj *obj, void *ptr) {
-// XXX: this must be fixed (fuzzy can make it crash)
-#if 0
-	union { char name[8]; struct { ut32 zero; ut32 offset; }; } *p = ptr;
-	if (!ptr)
+	char n[256] = {0};
+	int len = 0, offset = 0;
+	union { 
+		char name[8]; 
+		struct { 
+			ut32 zero; 
+			ut32 offset; 
+		}; 
+	} *p = ptr;
+	if (!ptr) {
 		return NULL;
-	if (p->zero)
-		return p->name;
-
-	return (char *)obj->b->buf + obj->hdr.f_symptr + 
-		obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset;
-#else
-	return NULL;
-#endif
+	}
+	if (p->zero) {
+		return strdup (p->name);
+	}
+	offset = obj->hdr.f_symptr + obj->hdr.f_nsyms * sizeof (struct coff_symbol) + p->offset;
+	if (offset > obj->size) {
+		return NULL;
+	}
+	len = r_buf_read_at (obj->b, offset, (ut8*)n, sizeof (n));
+	if (len < 1) {
+		return NULL;
+	}
+	return strdup (n);
 }
 
 static int r_coff_rebase_sym (struct r_bin_coff_obj *obj, RBinAddr *addr, struct coff_symbol *sym) {
@@ -120,8 +131,8 @@ static bool r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj) {
 }
 
 static bool r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
-	ut64 offset = sizeof (struct coff_hdr) + (obj->hdr.f_opthdr * sizeof (struct coff_opt_hdr));
 	int ret, size;
+	ut64 offset = sizeof (struct coff_hdr) + (obj->hdr.f_opthdr ? sizeof (struct coff_opt_hdr) : 0); 
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
 		offset += 2;
 	}
@@ -129,7 +140,7 @@ static bool r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
 	if (offset > obj->size || offset + size > obj->size || size < 0) {
 		return false;
 	}
-	obj->scn_hdrs = calloc (1, size);
+	obj->scn_hdrs = calloc (1, size + 1); 
 	if (!obj->scn_hdrs) {
 		return false;
 	}
@@ -154,7 +165,7 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 		offset + size > obj->size) {
 		return false;
 	} 
-	obj->symbols = calloc (1, size);
+	obj->symbols = calloc (1, size + 1);
 	if (!obj->symbols) {
 		return false;
 	}
@@ -177,10 +188,7 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf) {
 		eprintf ("Warning: failed to init hdr\n");
 		return false;
 	}
-	if (!r_bin_coff_init_opt_hdr (obj)) {
-		eprintf ("Warning: failed to init opt hdr\n");
-		return false;
-	}
+	r_bin_coff_init_opt_hdr (obj);
 	if (!r_bin_coff_init_scn_hdr (obj)) {
 		eprintf ("Warning: failed to init section header\n");
 		return false;
