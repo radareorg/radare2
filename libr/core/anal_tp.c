@@ -11,10 +11,7 @@ static bool r_anal_emul_init (RCore *core) {
 	r_config_set (core->config, "anal.trace", "true");
 	r_config_set (core->config, "dbg.trace", "true");
 	r_config_set (core->config, "esil.nonull", "true");
-	if (!core->anal->esil) {
-		return false;
-	}
-	return true;
+	return (core->anal->esil != NULL);
 }
 
 static void type_match (RCore *core, ut64 addr, char *name) {
@@ -30,7 +27,7 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 	}
 	const char* cc = r_anal_type_func_cc (anal, fcn_name);
 	if (!cc || !r_anal_cc_exist (anal, cc)) {
-		eprintf("cant find %s calling covnention %s\n", fcn_name, cc);
+		eprintf("cant find %s calling convention %s\n", fcn_name, cc);
 	}
 	int i, j, max = r_anal_type_func_args_count (anal, fcn_name);
 	int size = 0, idx = sdb_num_get (trace, "idx", 0);
@@ -216,8 +213,9 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			r_core_esil_step (core, UT64_MAX, NULL);
 			r_anal_op_free (op);
 		}
-		r_core_cmd0 (core, ".ar*");
-		addr = r_num_get (core->num, pc);
+		addr = r_reg_getv (core->anal->reg, "PC");
+		//r_core_cmd0 (core, ".ar*");
+		//addr = r_num_get (core->num, pc);
 	}
 	r_cons_break_end ();
 }
