@@ -4573,6 +4573,7 @@ static int cmd_anal(void *data, const char *input) {
 		"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
 		"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 		"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
+		"aO", "", "Analyze N instructions in M bytes",
 		"an", "[an-] [...]", "manage no-return addresses/symbols/functions",
 		"ar", "", "like 'dr' but for the esil vm. (registers)",
 		"ap", "", "find prelude for current offset",
