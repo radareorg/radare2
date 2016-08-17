@@ -324,6 +324,8 @@ static void print_format_help_help(RCore *core) {
 	" ", "E", "resolve enum name (see t?)",
 	" ", "f", "float value (4 bytes)",
 	" ", "i", "%%i integer value (4 bytes)",
+	" ", "n", "next char specifies size of signed value (1, 2, 4 or 8 byte(s))",
+	" ", "N", "next char specifies size of unsigned value (1, 2, 4 or 8 byte(s))",
 	" ", "o", "0x%%08o octal value (4 byte)",
 	" ", "p", "pointer reference (2, 4 or 8 bytes)",
 	" ", "q", "quadword (8 bytes)",
@@ -361,6 +363,8 @@ static void print_format_help_help_help(RCore *core) {
 	"pf", " 10xiz pointer length string", "Print a size 10 array of the xiz struct with its field names",
 	"pf", " {integer}bifc", "Print integer times the following format (bifc)",
 	"pf", " [4]w[7]i", "Print an array of 4 words and then an array of 7 integers",
+	"pf", " ic...?i foo bar \"(pf xw yo foo)troll\" yo", "Print nested anonymous structres",
+	"pf", "n2", "print signed short (2 bytes) value. Use N insted of n for printing unsigned values",
 	NULL};
 	r_core_cmd_help (core, help_msg);
 }
@@ -549,10 +553,11 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				char *fields = NULL;
 				*space++ = 0;
 				fields = strchr (space, ' ');
-				if (strchr (name, '.') != NULL || (fields != NULL && strchr(fields, '.') != NULL))
+				if (strchr (name, '.') != NULL) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
-				else
+				} else {
 					r_strht_set (core->print->formats, name, space);
+				}
 				free (name);
 				free (input);
 				return;

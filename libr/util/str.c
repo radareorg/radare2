@@ -333,13 +333,15 @@ R_API int r_str_word_set0(char *str) {
 	if (!str || !*str)
 		return 0;
 	for (i=0; str[i] && str[i+1]; i++) {
-		if (str[i]==' ' && str[i+1]==' ') {
-			int len = strlen (str+i+1)+1;
+		if (i > 0 && str[i-1] == ' ' && str[i] == ' ') {
+			int len = strlen (str+i)+1;
 			memmove (str+i, str+i+1, len);
+			i--;
 		}
 	}
-	if (str[i]==' ')
+	if (str[i]==' ') {
 		str[i] = 0;
+	}
 	for (i=1, p=str; *p; p++) {
 		if (*p=='\"') {
 			if (quote) {
@@ -355,9 +357,13 @@ R_API int r_str_word_set0(char *str) {
 		if (quote) continue;
 		if (*p==' ') {
 			char *q = p-1;
-			if (p>str && *q=='\\') {
-				memmove (q, p, strlen (p)+1);
-				continue;
+			if (p > str && (*q == '\\' || !*q)) {
+				memmove (p, p+1, strlen (p+1)+1);
+				if (*q == '\\') {
+					*q = ' ';
+					continue;
+				}
+				p--;
 			}
 			i++;
 			*p='\0';
