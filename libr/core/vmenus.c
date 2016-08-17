@@ -1824,18 +1824,18 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
-	//RAnalFunction *fcn;
 	ut64 addr;
 	char old[1024];
 	int cols = r_cons_get_size (NULL);
-
-	if (!core) return 0LL;
-	old[0]='\0';
+	if (!core) {
+		return 0LL;
+	}
+	old[0] = '\0';
 	addr = core->offset;
-	//fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-
 	cols -= 50;
-	if (cols > 60) cols = 60;
+	if (cols > 60) {
+		cols = 60;
+	}
 
 	r_cons_clear00 ();
 	r_cons_flush ();
@@ -1895,9 +1895,10 @@ R_API void r_core_visual_anal(RCore *core) {
 	for (;;) {
 		addr = r_core_visual_anal_refresh (core);
 		ch = r_cons_readchar ();
-		if (ch==4||ch==-1) {
-			if (level==0)
+		if (ch == 4 || ch == -1) {
+			if (level == 0) {
 				goto beach;
+			}
 			level--;
 			continue;
 		}
@@ -1912,6 +1913,7 @@ R_API void r_core_visual_anal(RCore *core) {
 				" variables: Add, Modify, Delete\n"
 				"Moving:\n"
 				" j,k     select next/prev item\n"
+				" J,K     scroll next/prev page\n"
 				" h,q     go back, quit\n"
 				" l,ret   enter, function\n"
 			);
@@ -1980,7 +1982,29 @@ R_API void r_core_visual_anal(RCore *core) {
 			option++;
 			if (option >= nfcns) --option;
 			break;
-		case 'k': option = (option<=0)? 0: option-1; break;
+		case 'k':
+			option = (option<=0)? 0: option-1;
+			break;
+		case 'J':
+			{
+				int rows = 0;
+				r_cons_get_size (&rows);
+				option += (rows - 5);
+				if (option >= nfcns) {
+					option = nfcns - 1;
+				}
+			}
+			break;
+		case 'K':
+			{
+				int rows = 0;
+				r_cons_get_size (&rows);
+				option -= (rows - 5);
+				if (option < 0) {
+					option = 0;
+				}
+			}
+			break;
 		case 'g':
 			r_core_seek (core, addr, SEEK_SET);
 			goto beach;
