@@ -29,6 +29,17 @@
 #define LIBC_HAVE_FORK 1
 #endif
 
+#if defined(__OpenBSD__)
+#include <sys/param.h>
+#undef MAXCOMLEN	/* redefined in zipint.h */
+#endif
+
+#if (OpenBSD >= 201605) /* release >= 5.9 */
+#define LIBC_HAVE_PLEDGE 1
+#else
+#define LIBC_HAVE_PLEDGE 0
+#endif
+
 #ifdef __GNUC__
 #  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
 #else
