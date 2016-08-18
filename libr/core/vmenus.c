@@ -1803,7 +1803,7 @@ static int level = 0;
 static ut64 addr = 0;
 static int option = 0;
 static int printMode = 0;
-static const int lastPrintMode = 5;
+#define lastPrintMode 5
 
 static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
