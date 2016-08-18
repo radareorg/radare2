@@ -1527,19 +1527,20 @@ function panelFlags() {
 	c.innerHTML += uiButton('javascript:delAllFlags()', 'DeleteAll');
 	c.innerHTML += '<br /><br />';
 	r2.cmd('f', function(d) {
+
+		var table = new Table(
+			['+Offset', '+Size', 'Name'],
+			[true, true, false],
+			'flagsTable');
+
 		var lines = d.split(/\n/); //clickableOffsets (d).split (/\n/);
-		var body = uiTableBegin(['+Offset', '+Size', 'Name']);
 		for (var i in lines) {
 			var line = lines[i].split(/ /);
-			if (line.length >= 3)
-			body += uiTableRow([
-			'+' + line[0],
-			'+' + line[1],
-			line[2]
-			]);
+			if (line.length >= 3) {
+				table.addRow([line[0], line[1], line[2]]);
+			}
 		}
-		body += uiTableEnd();
-		c.innerHTML += body;
+		table.insertInto(c);
 	});
 }
 
@@ -1554,18 +1555,19 @@ function panelComments() {
 	c.innerHTML += uiButton('javascript:notes()', 'Notes');
 	c.innerHTML += '<br /><br />';
 	r2.cmd('CC', function(d) {
+		var table = new Table(
+			['+Offset', 'Comment'],
+			[true, false],
+			'commentsTable');
+
 		var lines = d.split(/\n/); //clickableOffsets (d).split (/\n/);
-		var body = uiTableBegin(['+Offset', 'Comment']);
 		for (var i in lines) {
 			var line = lines[i].split(/ (.+)?/);
-			if (line.length >= 2)
-			body += uiTableRow([
-			'+' + line[0],
-			'+' + line[1]
-			]);
+			if (line.length >= 2) {
+				table.addRow([line[0], line[1]]);
+			}
 		}
-		body += uiTableEnd();
-		c.innerHTML += body;
+		table.insertInto(c);
 	});
 }
 
@@ -2621,7 +2623,7 @@ function Disasm(containerElement, lineHeight) {
 	this.refreshInitialOffset();
 	this.init();
 
-	this.offsetHistory = [this.initialOffset];
+	this.offsetHistory = ['0x' + this.initialOffset.toString(16)];
 	this.indexOffsetHistory = 0;
 
 	var _this = this;
@@ -2851,29 +2853,57 @@ Disasm.prototype.getCurrentOffset = function() {
 };
 
 Disasm.prototype.oncontextmenu = function(evt, offset) {
+	this.refreshContextMenu(offset);
+	var menu = document.getElementById('contextmenuDisasm');
+	evt.preventDefault();
+
+	if (this.contextMenuOpen) {
+		menu.classList.remove('active');
+	} else {
+		this.currentOffset = offset;
+		menu.classList.add('active');
+		menu.style.left = evt.clientX + 'px';
+		menu.style.top = evt.clientY + 'px';
+	}
+
+	this.contextMenuOpen = !this.contextMenuOpen;
+};
+
+Disasm.prototype.onfctmenu = function(evt, fct) {
+	evt.preventDefault();
+
+	var offset;
+	r2.cmd('?v ' + fct, function(hex) {
+		offset = hex;
+	});
+
+	var newName = prompt('Rename?', fct);
+	if (newName === null || newName === '') {
+		return;
+	}
+
+	r2.cmd('fr ' + newName + '@ ' + offset);
+};
+
+Disasm.prototype.onvarmenu = function(evt, varName) {
+	evt.preventDefault();
+
+	var newName = prompt('Rename?', varName);
+	if (newName === null || newName === '') {
+		return;
+	}
+
+	r2.cmd('afvn ' + varName + ' ' + newName);
+};
+
+Disasm.prototype.refreshContextMenu = function(offset) {
 	// check with aoj first, if 'val' field exists: open
 	var isUndefined;
 	r2.cmdj('aoj @' + offset, function(info) {
 		isUndefined = typeof info[0].val === 'undefined';
 	});
 
-	if (!isUndefined) {
-		var menu = document.getElementById('contextmenuDisasm');
-		evt.preventDefault();
-
-		if (this.contextMenuOpen) {
-			menu.classList.remove('active');
-		} else {
-			this.currentOffset = offset;
-			menu.classList.add('active');
-			menu.style.left = evt.clientX + 'px';
-			menu.style.top = evt.clientY + 'px';
-		}
-
-		this.contextMenuOpen = !this.contextMenuOpen;
-	} else {
-		console.log('NOT opening ctxt menu');
-	}
+	this.drawContextualMenu(!isUndefined);
 };
 
 Disasm.prototype.getPresentBlock = function() {
@@ -2926,13 +2956,34 @@ Disasm.prototype.drawChunk = function(chunk, domAnchor) {
 	var _this = this;
 	for (var i = 0 ; i < spans.length; i++) {
 		if (spans[i].tagName === 'SPAN') {
-			spans[i].addEventListener('contextmenu', function(id) {
-				return function(evt) {
-					return _this.oncontextmenu(evt, id);
-				};
-			}(spans[i].id));
+			if (spans[i].className.indexOf('offset') !== -1) {
+				spans[i].addEventListener('contextmenu', function(id) {
+					return function(evt) {
+						return _this.oncontextmenu(evt, id);
+					};
+				}(spans[i].id));
+			} else if (spans[i].className.indexOf('fcn') !== -1) {
+				spans[i].addEventListener('contextmenu', function(id) {
+					return function(evt) {
+						return _this.onfctmenu(evt, id);
+					};
+				}(spans[i].id));
+			} else if (spans[i].className.indexOf('var') !== -1) {
+				spans[i].addEventListener('contextmenu', function(id) {
+					return function(evt) {
+						return _this.onvarmenu(evt, id);
+					};
+				}(spans[i].id));
+			}
 		}
 	}
+
+	// Highligh current offset (seek)
+	var curElem = document.getElementById(this.nav.getSeekOffset());
+	if (curElem !== null) {
+		curElem.classList.add('currentOffset');
+	}
+
 	return document.getElementById(domAnchor);
 };
 
@@ -3072,10 +3123,37 @@ Disasm.prototype.replaceScrollPosition = function(offset) {
 	this.container.getBody().scrollTop = requiredScroll;
 };
 
-Disasm.prototype.drawContextualMenu = function() {
+Disasm.prototype.drawContextualMenu = function(enableAoj) {
 	var _this = this;
 
-	var applyOp = function(offset, cmd) {
+	var displayRes = function(offset, cmd) {
+		var output;
+		var fullCmd = cmd + ' @' + offset;
+		r2.cmdj(fullCmd, function(d) {
+			output = d;
+		});
+
+		if (output === null || output.constructor !== Array) {
+			alert('No available ouput!');
+			return;
+		}
+
+		_this.addLongListDialog(output);
+	};
+
+	var applyOp = function(offset, cmd, prompting) {
+		var arg = '';
+		if (typeof prompting !== 'undefined') {
+			arg = prompt(prompting + '?');
+			if (arg == '') {
+				return;
+			}
+		}
+
+		if (arg != '') {
+			cmd += ' ' + arg;
+		}
+
 		r2.cmd(cmd + ' @' + offset);
 		_this.nav.cleanOldData();
 		_this.draw();
@@ -3101,9 +3179,9 @@ Disasm.prototype.drawContextualMenu = function() {
 		// { name: 'define flag color (fc)', shortcut: 'C', fct: function(evt, offset) { return applyOp(offset, 'C'); } },
 		// { name: 'set as data', shortcut: 'd', fct: function(evt, offset) { return applyOp(offset, 'd'); } },
 		// { name: 'end of function', shortcut: 'e', fct: function(evt, offset) { return applyOp(offset, 'e'); } },
-		{ name: 'analyze function', shortcut: 'f', fct: function(evt, offset) { return applyOp(offset, 'af'); } },
+		{ aoj: true, name: 'analyze function', shortcut: 'f', fct: function(evt, offset) { return applyOp(offset, 'af'); } },
 		// { name: 'format', shortcut: 'F', fct: function(evt, offset) { return applyOp(offset, 'F'); } },
-		{ name: 'immediate base...', shortcut: 'i', expand: [
+		{ aoj: true, name: 'immediate base...', shortcut: 'i', expand: [
 			{
 				name: 'binary',
 				fct: function(evt, offset) { return applyOp(offset, 'ahi b'); }
@@ -3124,20 +3202,25 @@ Disasm.prototype.drawContextualMenu = function() {
 		// { name: 'merge up (join this and previous function)', shortcut: 'k', fct: function(evt, offset) { return applyOp(offset, 'k'); } },
 		// { name: 'highlight word', shortcut: 'h', fct: function(evt, offset) { return applyOp(offset, 'h'); } },
 		// { name: 'manpage for current call', shortcut: 'm', fct: function(evt, offset) { return applyOp(offset, 'm'); } },
-		{ name: 'rename flag used at cursor', shortcut: 'n', fct: function(evt, offset) { return applyOp(offset, 'fr'); } },
+		{ aoj: true, name: 'rename flag', shortcut: 'n', fct: function(evt, offset) { return applyOp(offset, 'fr', 'Name'); } },
 		// { name: 'rename function', shortcut: 'r', fct: function(evt, offset) { return applyOp(offset, 'r'); } },
 		// { name: 'find references /r', shortcut: 'R', fct: function(evt, offset) { return applyOp(offset, 'R'); } },
-		{ name: 'set string', shortcut: 's', fct: function(evt, offset) { return applyOp(offset, 'Cs'); } },
+		{ aoj: true, name: 'set string', shortcut: 's', fct: function(evt, offset) { return applyOp(offset, 'Cs'); } },
 		// { name: 'set strings in current block', shortcut: 'S', fct: function(evt, offset) { return applyOp(offset, 'S'); } },
 		// { name: 'undefine metadata here', shortcut: 'u', fct: function(evt, offset) { return applyOp(offset, 'u'); } },
-		{ name: 'find xrefs to current address (./r)', shortcut: 'x', fct: function(evt, offset) { return applyOp(offset, 'axt'); } },
+		{ aoj: false, name: 'find xrefs', shortcut: 'x', fct: function(evt, offset) { return displayRes(offset, 'axtj'); } },
 		// { name: 'set as 32bit word', shortcut: 'w', fct: function(evt, offset) { return applyOp(offset, 'w'); } },
 		// { name: 'set as 64bit word', shortcut: 'W', fct: function(evt, offset) { return applyOp(offset, 'W'); } }
 	];
 
-	var menu = document.createElement('nav');
-	menu.id = 'contextmenuDisasm';
-	menu.classList.add('context-menu');
+	var menu = document.getElementById('contextmenuDisasm');
+	if (menu === null) {
+		var menu = document.createElement('nav');
+		menu.id = 'contextmenuDisasm';
+		menu.classList.add('context-menu');
+	} else {
+		menu.innerHTML = '';
+	}
 
 	var ul = document.createElement('ul');
 	menu.appendChild(ul);
@@ -3167,7 +3250,7 @@ Disasm.prototype.drawContextualMenu = function() {
 		});
 
 		// expandable menu
-		if (typeof items[i].expand !== 'undefined') {
+		if (typeof items[i].expand !== 'undefined' && (enableAoj && items[i].aoj || !items[i].aoj)) {
 			// Make submenu reachable
 			li.addEventListener('mouseenter', function(evt) {
 				if (evt.target.isSubOpen) {
@@ -3198,7 +3281,11 @@ Disasm.prototype.drawContextualMenu = function() {
 				bindAction(subLi, items[i].expand[j].fct);
 			}
 		} else {
-			bindAction(li, items[i].fct);
+			if (enableAoj && items[i].aoj || !items[i].aoj) {
+				bindAction(li, items[i].fct);
+			} else {
+				li.classList.add('disabled');
+			}
 		}
 	}
 
@@ -3224,6 +3311,91 @@ Disasm.prototype.drawContextualMenu = function() {
 	document.addEventListener('click', function() {
 		closeMenu();
 	});
+};
+
+/**
+ * Show a list of element in a specific dialog
+ */
+Disasm.prototype.addLongListDialog = function(list) {
+	var _this = this;
+	var dialog = document.createElement('dialog');
+	dialog.className = 'mdl-dialog';
+
+	if (!dialog.showModal) {
+		dialogPolyfill.registerDialog(dialog);
+	}
+
+	var content = document.createElement('div');
+	content.className = 'mdl-dialog__content';
+	dialog.appendChild(content);
+
+	var title = document.createElement('p');
+	title.appendChild(document.createTextNode('Results'));
+	title.className = 'mdl-typography--text-center';
+	content.appendChild(title);
+
+	var container = document.createElement('div');
+	container.className = 'mdl-card__supporting-text';
+	dialog.appendChild(container);
+
+	var table = document.createElement('table');
+	table.className = 'disasm-table-dialog';
+	table.style.width = '100%';
+	table.style.border = '1px dashed red';
+	container.appendChild(table);
+
+	var thead = document.createElement('thead');
+	table.appendChild(thead);
+
+	var keys = Object.keys(list[0]);
+	for (var i = 0 ; i < keys.length ; i++) {
+		var th = document.createElement('th');
+		th.appendChild(document.createTextNode(keys[i]));
+		thead.appendChild(th);
+	}
+
+	var tbody = document.createElement('tbody');
+	table.appendChild(tbody);
+
+	for (var i = 0 ; i < list.length ; i++) {
+		var tr = document.createElement('tr');
+		tbody.appendChild(tr);
+
+		for (var j = 0 ; j < keys.length ; j++) {
+			var td = document.createElement('td');
+			tr.appendChild(td);
+
+			var text;
+			if (keys[j] === 'opcode') {
+				text = clickableOffsets(list[i][keys[j]]);
+			} else if (keys[j] === 'from') {
+				var hex = '0x' + list[i][keys[j]].toString(16);
+				text = '<a href="javascript:seek(\'' + hex + '\');">0x' + hex + '</a>';
+			} else {
+				text = list[i][keys[j]];
+			}
+
+			td.innerHTML = text;
+		}
+	}
+
+	var actions = document.createElement('div');
+	actions.className = 'mdl-dialog__actions';
+	dialog.appendChild(actions);
+
+	var closeButton = document.createElement('button');
+	closeButton.className = 'mdl-button';
+	closeButton.innerHTML = 'Close';
+	closeButton.addEventListener('click', function() {
+		dialog.close();
+		document.body.removeChild(dialog);
+	});
+	actions.appendChild(closeButton);
+
+	document.body.appendChild(dialog);
+	componentHandler.upgradeDom();
+
+	dialog.showModal();
 };
 
 // Should refactor with HexPairNav and go/get methods
@@ -3491,6 +3663,10 @@ DisasmNavigator.prototype.refreshCurrentOffset = function() {
 	r2.cmd('s', function(offset) {
 		_this.currentOffset = parseInt(offset, 16);
 	});
+};
+
+DisasmNavigator.prototype.getSeekOffset = function() {
+	return this.currentOffset;
 };
 
 /**
@@ -5183,6 +5359,8 @@ function panelOverview() {
 	updateFortune();
 	updateInfo();
 	updateEntropy();
+
+	componentHandler.upgradeDom();
 }
 
 var disasm;
