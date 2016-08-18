@@ -1,8 +1,11 @@
 #!/bin/sh
 
+fromscratch=1
+onlymakedeb=0
+
 if [ -z "${CPU}" ]; then
-export CPU=arm64
-export CPU=armv7
+	export CPU=arm64
+	export CPU=armv7
 fi
 
 export BUILD=1
@@ -17,9 +20,6 @@ if [ ! -d sys/ios-include ]; then
 fi
 
 . sys/ios-env.sh
-
-BINS="r2 radare2 rax2 rabin2 rahash2 rafind2 rarun2 r2agent ragg2 ragg2-cc radiff2"
-LIBS=
 
 makeDeb() {
 	make -C binr ios-sdk-sign
@@ -49,9 +49,6 @@ makeDeb() {
 	)
 	( cd sys/cydia/radare2 ; sudo make clean ; sudo make )
 }
-
-fromscratch=1
-onlymakedeb=1
 
 if [ "$1" = makedeb ]; then
 	onlymakedeb=1
