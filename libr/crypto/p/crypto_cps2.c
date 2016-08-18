@@ -707,8 +707,9 @@ static ut32 cps2key[2] = {0};
 static int set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen == 8) {
 		memcpy (&cps2key, key, keylen);
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 static int get_key_size(RCrypto *cry) {
