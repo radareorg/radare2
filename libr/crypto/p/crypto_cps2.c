@@ -668,11 +668,11 @@ static void cps2_decrypt(const ut16 *rom, ut16 *dec, int length, const ut32 *mas
 			dec[a] = feistel(rom[a], fn2_groupA, fn2_groupB,
 				&sboxes2[0*4], &sboxes2[1*4], &sboxes2[2*4], &sboxes2[3*4],
 				key2[0], key2[1], key2[2], key2[3]);
-			dec[a] = r_read_be16(&dec[a]);
+			dec[a] = r_read_be16 (&dec[a]);
 		}
 		// copy the unencrypted part
 		while (a < length/2) {
-			dec[a] = r_read_be16(&rom[a]);
+			dec[a] = r_read_be16 (&rom[a]);
 			a += 0x10000;
 		}
 	}
