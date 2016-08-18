@@ -25,6 +25,7 @@ static void show_help(RCore *core) {
 		//"to",  "",         "List opened files",
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
+		"tos", " <path>", "Load types from parsed Sdb database",
 		"tp", " <type>  = <address>", "cast data at <adress> to <type> and print it",
 		"ts", "", "print loaded struct types",
 		"tu", "", "print loaded union types",
@@ -317,6 +318,14 @@ static int cmd_type(void *data, const char *input) {
 					//r_anal_type_loadfile (core->anal, filename);
 				}
 				free (homefile);
+			} else if (input[1] == 's') {
+				const char *dbpath = input + 3;
+				if (r_file_exists (dbpath)) {
+					Sdb *db_tmp = sdb_new (0, dbpath, 0);
+					sdb_merge (core->anal->sdb_types, db_tmp);
+					sdb_close (db_tmp);
+					sdb_free (db_tmp);
+				}
 			}
 		} else {
 			eprintf ("Sandbox: system call disabled\n");
