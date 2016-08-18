@@ -355,14 +355,14 @@ static int get_oneop_opcode(ut16 instr)
 static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 {
 	int ret = 2;
-	ut8 ad, opcode;
+	ut8 as, opcode;
 
 	if ((instr >> 10) != 4)
 		return -1;
 
 	opcode = get_oneop_opcode(instr);
 
-	ad = get_as(instr);
+	as = get_as(instr);
 
 	snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s",
 			one_op_instrs[opcode]);
@@ -376,7 +376,7 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 	case MSP430_SXT:
 	case MSP430_PUSH:
 	case MSP430_CALL:
-		switch (ad) {
+		switch (as) {
 		case 0:
 			switch (get_dst(instr)) {
 			case MSP430_R3:
@@ -389,7 +389,14 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 			ret = 2;
 			break;
 		case 1:
+			/* most of these instructions take another word as an immediate */
+			ret = 4;
 			switch (get_dst(instr)) {
+			case MSP430_R3:
+				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1, "#1");
+				/* this is an unusual encoding in that there's no index word */
+				ret = 2;
+				break;
 			case MSP430_PC:
 				snprintf(cmd->operands, MSP430_INSTR_MAXLEN - 1,
 						"0x%04x", op);
@@ -403,7 +410,6 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 						"0x%x(r%d)", op, get_dst(instr));
 			}
 
-			ret = 4;
 			break;
 		case 2:
 			switch (get_dst(instr)) {
