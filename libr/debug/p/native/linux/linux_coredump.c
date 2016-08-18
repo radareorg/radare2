@@ -1,20 +1,21 @@
 /* radare - LGPL - Copyright 2016 - Oscar Salvador */
 
-#if __x86_64__ || __i386__
+#if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <r_debug.h>
 #include <sys/uio.h>
 #include <sys/ptrace.h>
+#include <asm/ptrace.h>
 #include "linux_coredump.h"
 
 /* For compability */
-#if __x86_64__
+#if __x86_64__ || __arm64__
 typedef Elf64_auxv_t elf_auxv_t;
 typedef Elf64_Ehdr elf_hdr_t;
 typedef Elf64_Phdr elf_phdr_t;
 typedef Elf64_Shdr elf_shdr_t;
 typedef Elf64_Nhdr elf_nhdr_t;
 typedef ut32 elf_offset_t;
-#elif __i386__
+#elif __i386__ || __arm__
 typedef Elf32_auxv_t elf_auxv_t;
 typedef Elf32_Ehdr elf_hdr_t;
 typedef Elf32_Phdr elf_phdr_t;
@@ -39,6 +40,7 @@ static bool is_a_kernel_mapping(const char *name) {
 		&& strcmp (name, "[vsyscall]")
 		&& strcmp (name, "[vvar]")
 		&& strcmp (name, "[heap]")
+		&& strcmp (name, "[vectors]")
 		&& strncmp (name, "[stack", strlen ("[stack")));
 }
 
@@ -197,7 +199,7 @@ static prstatus_t *linux_get_prstatus(int pid, int tid, proc_content_t *proc_dat
 	p = R_NEW0 (prstatus_t);
 	if (!p) return NULL;
 	p->pr_cursig = p->pr_info.si_signo = signr;
-	p->pr_pid = proc_data->per_process->pid;
+	p->pr_pid = tid;
 	p->pr_ppid = proc_data->per_process->ppid;
 	p->pr_pgrp = proc_data->per_process->pgrp;
 	p->pr_sid = proc_data->per_process->sid;
@@ -334,83 +336,102 @@ static bool dump_this_map(char *buff_smaps, unsigned long start_addr, unsigned l
 		}
 	}
 
-	if (!flags_str || !found) {
-		/* if we don't have VmFlags, just dump it. I'll fix it later on */
-		eprintf ("VmFlags: not found\n");
-		free (identity);
-		free (aux);
-		return true;
-	}
-
-	flags_str = strchr (flags_str, ' ');
-	if (!flags_str) {
-		goto fail;
-	}
-	while (*flags_str++ == ' ') {}
-	flags_str--;
-
-	p = strtok (flags_str, " ");
-	while (p) {
-		if (!strncmp (p, "sh", 2)) {
-			vmflags |= SH_FLAG;
-		}
-		if (!strncmp (p, "io", 2)) {
-			vmflags |= IO_FLAG;
-		}
-		if (!strncmp (p, "ht", 2)) {
-			vmflags |= HT_FLAG;
-		}
-		if (!strncmp (p, "dd", 2)) {
-			vmflags |= DD_FLAG;
-		}
-		p = strtok (NULL, " ");
-	}
-
-	if (!(vmflags & SH_FLAG)) {
-		vmflags |= PV_FLAG;
-	}
-	/* first check for dd and io flags */
-	if ((vmflags & DD_FLAG) || (vmflags & IO_FLAG)) {
-		goto fail;
-	}
-
-	/* if current map comes from kernel and does not have DD flag, just stop checking */
-	if (kernel_mapping) {
-		goto beach;
-	}
-
-	if (vmflags & HT_FLAG) {
-		if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
-			goto beach;
-		}
-		if (filter_flags & MAP_HUG_SHR) {
-			goto beach;
-		}
-	}
-
-	if (vmflags & SH_FLAG) {
-		if (filter_flags & MAP_ANON_SHR) {
-			goto beach;
-		}
-		if (filter_flags & MAP_HUG_SHR) {
-			goto beach;
-		}
-	}
-
-	if (vmflags & PV_FLAG) {
-		if ((filter_flags & MAP_ANON_PRIV) && anonymous) {
-			goto beach;
-		}
-		if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
-			goto beach;
-		}
-	}
 	if (file_backed) {
-		if (filter_flags & MAP_FILE_PRIV) {
+                if (filter_flags & MAP_FILE_PRIV) {
+                        goto beach;
+                }
+                if (filter_flags & MAP_FILE_SHR) {
+                        goto beach;
+                }
+        }
+
+	if (!flags_str || !found) {
+		/* if we don't have VmFlags, let's check it out in another way */
+		if (kernel_mapping) {
+                        goto beach;
+                }
+
+		if (perms & P_MEM) {
+			if ((filter_flags & MAP_ANON_PRIV) && anonymous) {
+				goto beach;
+			}
+			if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
+				goto beach;
+			}
+		}
+
+		if (perms & S_MEM) {
+			if (filter_flags & MAP_ANON_SHR) {
+				goto beach;
+			}
+			if (filter_flags & MAP_HUG_SHR) {
+				goto beach;
+			}
+		}				
+	} else {
+		/* We have VmFlags */
+		flags_str = strchr (flags_str, ' ');
+		if (!flags_str) {
+			goto fail;
+		}
+		while (*flags_str++ == ' ') {}
+		flags_str--;
+
+		p = strtok (flags_str, " ");
+		while (p) {
+			if (!strncmp (p, "sh", 2)) {
+				vmflags |= SH_FLAG;
+			}
+			if (!strncmp (p, "io", 2)) {
+				vmflags |= IO_FLAG;
+			}
+			if (!strncmp (p, "ht", 2)) {
+				vmflags |= HT_FLAG;
+			}
+			if (!strncmp (p, "dd", 2)) {
+				vmflags |= DD_FLAG;
+			}
+			p = strtok (NULL, " ");
+		}
+
+		if (!(vmflags & SH_FLAG)) {
+			vmflags |= PV_FLAG;
+		}
+		/* first check for dd and io flags */
+		if ((vmflags & DD_FLAG) || (vmflags & IO_FLAG)) {
+			goto fail;
+		}
+
+		/* if current map comes from kernel and does not have DD flag, just stop checking */
+		if (kernel_mapping) {
 			goto beach;
 		}
-		if (filter_flags & MAP_FILE_SHR) {
-			goto beach;
+
+		if (vmflags & HT_FLAG) {
+			if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
+				goto beach;
+			}
+			if (filter_flags & MAP_HUG_SHR) {
+				goto beach;
+			}
+		}
+
+		if (vmflags & SH_FLAG) {
+			if (filter_flags & MAP_ANON_SHR) {
+				goto beach;
+			}
+			if (filter_flags & MAP_HUG_SHR) {
+				goto beach;
+			}
+		}
+
+		if (vmflags & PV_FLAG) {
+			if ((filter_flags & MAP_ANON_PRIV) && anonymous) {
+				goto beach;
+			}
+			if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
+				goto beach;
+			}
 		}
 	}
 
@@ -610,9 +631,9 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	h->e_ident[EI_MAG1] = ELFMAG1;
 	h->e_ident[EI_MAG2] = ELFMAG2;
 	h->e_ident[EI_MAG3] = ELFMAG3;
-#if __x86_64__
+#if __x86_64__ || __arm64__
 	h->e_ident[EI_CLASS] = ELFCLASS64;     /*64bits */
-#elif __i386__
+#elif __i386__ || __arm__
 	h->e_ident[EI_CLASS] = ELFCLASS32;
 #endif
 	h->e_ident[EI_DATA] = ELFDATA2LSB;
@@ -628,6 +649,10 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	h->e_machine = EM_X86_64;
 #elif __i386__
 	h->e_machine = EM_386;
+#elif __arm__
+	h->e_machine = EM_ARM;
+#elif __arm64__ 
+	h->e_machine = EM_AARCH64;
 #endif
 	h->e_version = EV_CURRENT;
 	h->e_entry = 0x0;
@@ -645,10 +670,12 @@ static elf_hdr_t *build_elf_hdr(int n_segments) {
 	return h;
 }
 
-static int get_n_mappings(linux_map_entry_t *me_head) {
+static int get_info_mappings(linux_map_entry_t *me_head, size_t *maps_size) {
 	linux_map_entry_t *p;
 	int n_entries;
 	for (n_entries = 0, p = me_head; p; p = p->n) {
+		if (p->dumpeable)
+			*maps_size += p->end_addr - p->start_addr;
 		/* We don't count maps which does not have r/w perms */
 		if ((p->perms & R_MEM) || (p->perms & W_MEM))
 			n_entries++;
@@ -896,6 +923,7 @@ static bool dump_elf_sheader_pxnum(RBuffer *dest, elf_shdr_t *shdr) {
 
 #if __i386__
 static elf_fpxregset_t *linux_get_fpx_regset (int tid) {
+#ifdef PTRACE_GETREGSET
 	struct iovec transfer;
 	elf_fpxregset_t *fpxregset = R_NEW0 (elf_fpxregset_t);
 
@@ -907,9 +935,13 @@ static elf_fpxregset_t *linux_get_fpx_regset (int tid) {
 		return NULL;
 	}
 	return fpxregset;
+#else
+	return NULL;
+#endif
 }
 #endif
 
+#if __i386__ || __x86_64__
 void *linux_get_xsave_data (int tid, ut32 size) {
 #ifdef PTRACE_GETREGSET
 	struct iovec transfer;
@@ -929,6 +961,28 @@ void *linux_get_xsave_data (int tid, ut32 size) {
 	return NULL;
 #endif
 }
+#endif
+
+#if __arm__ || __arm64__
+void *linux_get_arm_vfp_data (int tid) {
+#ifdef PTRACE_GETVFPREGS
+	char *vfp_data = calloc (ARM_VFPREGS_SIZE + 1, 1);
+	if (!vfp_data) {
+		return NULL;
+	}
+
+	if (ptrace (PTRACE_GETVFPREGS, tid, 0, vfp_data) < 0) {
+		perror ("linux_get_arm_vfp_data");
+		free (vfp_data);
+		return NULL;
+	}
+
+	return vfp_data;
+#else
+	return NULL;
+#endif
+}
+#endif
 
 void write_note_hdr (note_type_t type, ut8 **note_data) {
 	elf_nhdr_t nhdr;
@@ -966,10 +1020,17 @@ void write_note_hdr (note_type_t type, ut8 **note_data) {
 		note_type = NT_SIGINFO;
 		nhdr.n_descsz = note_info[type].size;
 		break;
+#if __i386__ || __x86_64__
 	case NT_X86_XSTATE_T:
 		note_type = NT_X86_XSTATE;
 		nhdr.n_descsz = note_info[type].size;
 		break;
+#elif __arm__ || __arm64__
+	case NT_ARM_VFP_T:
+		note_type = NT_ARM_VFP;
+		nhdr.n_descsz = note_info[type].size;
+		break;
+#endif
 	default:
 		/* shouldnt happen */
 		memset (*note_data, 0, size_note_hdr);
@@ -977,7 +1038,7 @@ void write_note_hdr (note_type_t type, ut8 **note_data) {
 	}
 
 	nhdr.n_type = note_type;
-	if (note_type == NT_X86_XSTATE) {
+	if (note_type == NT_X86_XSTATE || note_type == NT_ARM_VFP || note_type == NT_PRXFPREG) {
 		nhdr.n_namesz = sizeof ("LINUX");
 	} else {
 		nhdr.n_namesz = sizeof ("CORE");
@@ -1048,7 +1109,14 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 	int i, n_notes = 0, *thread_id;
 	size_t size = 0;
 	note_type_t type;
+#if __i386__
+	bool fpx_flag = false;
+#endif
+#if __i386__ || __x86_64__
 	bool xsave_flag = false;
+#elif __arm__ || __arm64__
+	bool vfp_flag = false;
+#endif
 
 	maps_data = get_ntfile_data (elf_proc_note->maps);
 	if (!maps_data) {
@@ -1094,10 +1162,14 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 		n_notes++;
 #if __i386__
 		type = NT_PRXFPREG_T;
-		size += note_info[type].size_roundedup;
-                size += note_info[type].size_name;
-		n_notes++;
+		if (note_info[type].size) {
+			fpx_flag = true;
+			size += note_info[type].size_roundedup;
+        	        size += note_info[type].size_name;
+			n_notes++;
+		}
 #endif
+#if __i386__ || __x86_64__
 		type = NT_X86_XSTATE_T;
 		if (note_info[type].size) {
 			xsave_flag = true;
@@ -1105,6 +1177,16 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
                 	size += note_info[type].size_name;
 			n_notes++;
 		}
+#endif
+#if __arm__ || __arm64__
+		type = NT_ARM_VFP_T;
+		if (note_info[type].size) {
+			vfp_flag = true;
+			size += note_info[type].size_roundedup;
+			size += note_info[type].size_name;
+			n_notes++;
+		}
+#endif
 	}
 	size += round_up (n_notes * sizeof (elf_nhdr_t));
 	*section_size = size;
@@ -1141,11 +1223,14 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 				goto fail;
 			}
 #if __i386__
-			elf_proc_note->thread_note->fpx_regset = linux_get_fpx_regset (thread_id[i]);
-			if (!elf_proc_note->thread_note->fpx_regset) {
-				goto fail;
+			if (fpx_flag) {
+				elf_proc_note->thread_note->fpx_regset = linux_get_fpx_regset (thread_id[i]);
+				if (!elf_proc_note->thread_note->fpx_regset) {
+					goto fail;
+				}
 			}
 #endif
+#if __i386__ || __x86_64__
 			if (xsave_flag) {
 				elf_proc_note->thread_note->xsave_data = linux_get_xsave_data (thread_id[i], 
 										note_info[NT_X86_XSTATE_T].size);
@@ -1153,7 +1238,14 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 					goto fail;
 				}
 			}
-
+#elif __arm__ || __arm64__
+			if (vfp_flag) {
+				elf_proc_note->thread_note->arm_vfp_data = linux_get_arm_vfp_data (thread_id[i]);
+				if (!elf_proc_note->thread_note->arm_vfp_data) {
+					goto fail;
+				}
+			}
+#endif
 			type = NT_PRSTATUS_T;
 			write_note_hdr (type, &note_data);
 			memcpy (note_data, note_info[type].name, note_info[type].size_name);
@@ -1168,12 +1260,15 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			memcpy (note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size_roundedup);
 			note_data += note_info[type].size_roundedup;
 #if __i386__
-			type = NT_PRXFPREG_T;
-			write_note_hdr (type, &note_data);
-			memcpy (note_data, note_info[type].name, note_info[type].size_name);
-			note_data += note_info[type].size_name;
-			memcpy (note_data, elf_proc_note->thread_note->fpx_regset, note_info[type].size_roundedup);
-			note_data += note_info[type].size_roundedup;
+			if (fpx_flag) {
+				type = NT_PRXFPREG_T;
+				write_note_hdr (type, &note_data);
+				memcpy (note_data, note_info[type].name, note_info[type].size_name);
+				note_data += note_info[type].size_name;
+				memcpy (note_data, elf_proc_note->thread_note->fpx_regset, note_info[type].size_roundedup);
+				note_data += note_info[type].size_roundedup;
+				R_FREE (elf_proc_note->thread_note->fpx_regset);
+			}
 #endif
 			type = NT_SIGINFO_T;
 			write_note_hdr (type, &note_data);
@@ -1182,6 +1277,19 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			memcpy (note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size_roundedup);
 			note_data += note_info[type].size_roundedup;
 
+#if __arm__ || __arm64
+			if (vfp_flag) {
+				type = NT_ARM_VFP_T;
+				write_note_hdr (type, &note_data);
+				memcpy (note_data, note_info[type].name, note_info[type].size_name);
+				note_data += note_info[type].size_name;
+				memcpy (note_data, elf_proc_note->thread_note->arm_vfp_data, note_info[type].size_roundedup);
+				note_data += note_info[type].size_roundedup;
+				R_FREE (elf_proc_note->thread_note->arm_vfp_data);
+			}
+#endif
+
+#if __i386__ || __x86_64__
 			if (xsave_flag) {
 				type = NT_X86_XSTATE_T;
 				write_note_hdr (type, &note_data);
@@ -1189,15 +1297,12 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 				note_data += note_info[type].size_name;
 				memcpy (note_data, elf_proc_note->thread_note->xsave_data, note_info[type].size_roundedup);
 				note_data += note_info[type].size_roundedup;
+				R_FREE (elf_proc_note->thread_note->xsave_data);
 			}
-			
+#endif
 			R_FREE (elf_proc_note->thread_note->siginfo);
 			R_FREE (elf_proc_note->thread_note->prstatus);
 			R_FREE (elf_proc_note->thread_note->fp_regset);
-#if __i386__
-			R_FREE (elf_proc_note->thread_note->fpx_regset);
-#endif
-			R_FREE (elf_proc_note->thread_note->xsave_data);
 		}
 	}
 	type = NT_AUXV_T;
@@ -1224,13 +1329,18 @@ fail:
 #if __i386__
 	free (elf_proc_note->thread_note->fpx_regset);
 #endif
+#if __i386__ || __x86_64__
 	free (elf_proc_note->thread_note->xsave_data);
+#elif __arm__ || __arm64__
+	free (elf_proc_note->thread_note->arm_vfp_data);
+#endif
 	free (pnote_data);
 	free (maps_data);
 	free (thread_id);
 	return NULL;
 }
 
+#if __i386__ || __x86_64
 static int get_xsave_size(int pid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec local;
@@ -1260,10 +1370,30 @@ static int get_xsave_size(int pid) {
 		return 0;
 	}
 #else
-	eprintf ("get_xsave_size - returning 0\n");
 	return 0;
 #endif
 }
+#endif
+
+#if __i386__
+static int get_i386_fpx_size(void) {
+#ifdef PTRACE_GETREGSET
+	return sizeof (elf_fpxregset_t);	
+#else
+	return 0;
+#endif
+}
+#endif
+
+#if __arm__ || __arm64__
+static int get_arm_vfpregs_size(void) {
+#ifdef PTRACE_GETVFPREGS
+	return ARM_VFPREGS_SIZE;
+#else
+	return 0;
+#endif
+}
+#endif
 	
 static void init_note_info_structure(int pid, size_t auxv_size) {
 	note_type_t type;
@@ -1294,13 +1424,13 @@ static void init_note_info_structure(int pid, size_t auxv_size) {
 	note_info[type].size_roundedup = sizeof_round_up (prstatus_t);
 	note_info[type].size_name = len_name_core;
 	strncpy (note_info[type].name, "CORE", sizeof (note_info[type].name));
-	/*NT_SIGINFO_T*/
+	/* NT_SIGINFO_T */
 	type = NT_SIGINFO_T;
 	note_info[type].size = sizeof (siginfo_t);
 	note_info[type].size_roundedup = sizeof_round_up (siginfo_t);
 	note_info[type].size_name = len_name_core;
 	strncpy (note_info[type].name, "CORE", sizeof (note_info[type].name));
-	/*NT_FPREGSET_T*/
+	/* NT_FPREGSET_T */
 	type = NT_FPREGSET_T;
 	note_info[type].size = sizeof (elf_fpregset_t);
 	note_info[type].size_roundedup = sizeof_round_up (elf_fpregset_t);
@@ -1308,19 +1438,27 @@ static void init_note_info_structure(int pid, size_t auxv_size) {
 	strncpy (note_info[type].name, "CORE", sizeof (note_info[type].name));
 #if __i386__
 	type = NT_PRXFPREG_T;
-	note_info[type].size = sizeof (elf_fpxregset_t);
+	note_info[type].size = get_i386_fpx_size();
 	note_info[type].size_roundedup = sizeof_round_up (elf_fpxregset_t);
 	note_info[type].size_name = len_name_core;
 	strncpy (note_info[type].name, "CORE", sizeof (note_info[type].name));
 	type++;
 #endif
-	/* NT_X86_XSTATE_T*/
+#if __x86_64__ || __i386__
+	/* NT_X86_XSTATE_T */
 	type = NT_X86_XSTATE_T;
 	note_info[type].size = get_xsave_size (pid);
-	// eprintf ("NT_X86_XSTATE_T: %d\n", note_info[type].size);
 	note_info[type].size_roundedup = round_up (note_info[type].size);
 	note_info[type].size_name = len_name_linux;
 	strncpy (note_info[type].name, "LINUX", sizeof (note_info[type].name));
+#elif __arm__ || __arm64__
+	/* NT_ARM_VFP_T */
+	type = NT_ARM_VFP_T;
+	note_info[type].size = get_arm_vfpregs_size();
+	note_info[type].size_roundedup = round_up (note_info[type].size);
+	note_info[type].size_name = len_name_linux;
+	strncpy (note_info[type].name, "LINUX", sizeof (note_info[type].name));	
+#endif
 }
 
 bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
@@ -1330,7 +1468,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	elf_hdr_t *elf_hdr = NULL;
 	void *note_data = NULL;
 	bool error = false;
-	size_t note_section_size;
+	size_t note_section_size, maps_size = 0;
 	int n_segments;
 	ut32 hdr_size;
 	elf_offset_t offset = 0;
@@ -1370,7 +1508,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
                 error = true;
                 goto cleanup;
         }	
-	n_segments = get_n_mappings (elf_proc_note->maps);
+	n_segments = get_info_mappings (elf_proc_note->maps, &maps_size);
 
 	init_note_info_structure(dbg->pid, elf_proc_note->auxv->size);
 	note_data = build_note_section (dbg, elf_proc_note, proc_data, &note_section_size);
@@ -1384,12 +1522,16 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		error = true;
 		goto cleanup;
 	}
-	if (elf_hdr->e_phnum == PN_XNUM) { /* Fix this with offset */
-		shdr_pxnum = get_extra_sectionhdr (elf_hdr, offset, n_segments);
-	}
 
 	hdr_size = (proc_data->per_process->coredump_filter & MAP_ELF_HDR) ? elf_hdr->e_ehsize : 0;
 	if (hdr_size) {
+		if (elf_hdr->e_phnum == PN_XNUM) {
+			elf_offset_t offset_shdr;
+			/* Since extra secion header must be placed at the end, 
+				we need to compute the total size to known at which position should be written */
+			offset_shdr = hdr_size + (elf_hdr->e_phnum * elf_hdr->e_phentsize) + note_section_size + maps_size;
+			shdr_pxnum = get_extra_sectionhdr (elf_hdr, offset_shdr, n_segments);
+		}
 		(void)dump_elf_header (dest, elf_hdr);
 	}
 	offset = hdr_size + (elf_hdr->e_phnum * elf_hdr->e_phentsize);

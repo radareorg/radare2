@@ -1535,7 +1535,7 @@ static int r_debug_setup_ownership (int fd, RDebug *dbg) {
 static bool r_debug_gcore (RDebug *dbg, RBuffer *dest) {
 #if __APPLE__
 	return xnu_generate_corefile (dbg, dest);
-#elif __linux__ && (__x86_64__ || __i386__) && !__ANDROID__
+#elif __linux__ && (__x86_64__ || __i386__ || __arm__ || __arm64__)
 	return linux_generate_corefile (dbg, dest);
 #else
 	return false;
