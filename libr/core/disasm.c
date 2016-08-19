@@ -1493,10 +1493,13 @@ static void ds_print_stackptr(RDisasmState *ds) {
 			ds->stackptr > ds->ostackptr? "+":
 			ds->stackptr < ds->ostackptr? "-": " ");
 		ds->ostackptr = ds->stackptr;
-		if (ds->analop.stackop == R_ANAL_STACK_RESET) {
+		switch (ds->analop.stackop) {
+		case R_ANAL_STACK_RESET:
 			ds->stackptr = 0;
-		} else {
+			break;
+		case R_ANAL_STACK_INC:
 			ds->stackptr += ds->analop.stackptr;
+			break;
 		}
 		/* XXX if we reset the stackptr 'ret 0x4' has not effect.
 		 * Use RAnalFunction->RAnalOp->stackptr? */
