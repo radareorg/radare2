@@ -1223,90 +1223,6 @@ function panelSettings() {
 	c.innerHTML = out;
 }
 
-function printHeaderPanel(title, cmd, grep) {
-	var widget = widgetContainer.getWidget(title);
-	widget.setDark();
-	var dom = widgetContainer.getWidgetDOMWrapper(widget);
-
-	// TODO, warning? panelFunction // printHeaderPanel (not a complete widget)
-	updates.registerMethod(widget.getOffset(), panelFunctions);
-
-	var c = document.createElement('div');
-	dom.innerHTML = '';
-	dom.appendChild(c);
-
-	c.style.color = '#202020 !important';
-	c.style.backgroundColor = '#202020';
-	var out = '' ; //
-	/*
-	out += ''
-	+' <div class="mdl-tabs mdl-js-tabs">'
-	+'  <div class="mdl-tabs__tab-bar mds-js-ripple-effect">'
-	+'    <a href="#tab1-panel" class="mdl-tabs__tab is-active">Headers</a>'
-	+'    <a href="#tab2-panel" class="mdl-tabs__tab">Symbols</a>'
-	+'    <a href="#tab3-panel" class="mdl-tabs__tab">Imports</a>'
-	+'    <a href="#tab4-panel" class="mdl-tabs__tab">Relocs</a>'
-	+'    <a href="#tab5-panel" class="mdl-tabs__tab">Sections</a>'
-	+'    <a href="#tab6-panel" class="mdl-tabs__tab">SDB</a>'
-	+'  </div>'
-	+'  <div class="mdl-tabs__panel is-active" id="tab1-panel">'
-	+'    <p>Tab 1 Content</p>'
-	+'  </div>'
-	+'  <div class="mdl-tabs__panel" id="tab2-panel">'
-	+'    <p>Tab 2 Content</p>'
-	+'  </div>'
-	+'  <div class="mdl-tabs__panel" id="tab3-panel">'
-	+'    <p>Tab 3 Content</p>'
-	+'  </div>'
-	+'</div>';
-*/
-	out += '<div style=\'position:fixed;margin:0.5em\'>';
-	out += '&nbsp;' + uiRoundButton('javascript:location.href="/m"', 'undo');
-	out += uiButton('javascript:panelHeaders()', 'Headers');
-	out += uiButton('javascript:panelSymbols()', 'Symbols');
-	out += uiButton('javascript:panelImports()', 'Imports');
-	out += uiButton('javascript:panelRelocs()', 'Relocs');
-	out += uiButton('javascript:panelSections()', 'Sections');
-	out += uiButton('javascript:panelStrings()', 'Strings');
-	out += uiButton('javascript:panelSdb()', 'Sdb');
-	out += '</div><br /><br /><br /><br />';
-	c.innerHTML = out;
-
-	if (grep) {
-		cmd += '~' + grep;
-	}
-	r2.cmd(cmd, function(d) {
-		var color = '#f0f0f0';
-		d = clickableOffsets(d);
-		c.innerHTML += '<pre style=\'margin:1.2em;color:' + color + ' !important\'>' + d + '<pre>';
-	});
-}
-
-function panelSdb() {
-	printHeaderPanel('SDB', 'k bin/cur/***');
-}
-function panelSections() {
-	printHeaderPanel('Sections', 'iSq');
-}
-function panelStrings() {
-	printHeaderPanel('Strings', 'izq');
-}
-function panelImports() {
-	printHeaderPanel('Imports', 'isq', ' imp.');
-}
-
-function panelRelocs() {
-	printHeaderPanel('Relocs', 'ir');
-}
-
-function panelSymbols() {
-	printHeaderPanel('Imports', 'isq', '!imp');
-}
-
-function panelHeaders() {
-	printHeaderPanel('Headers', 'ie;i');
-}
-
 function panelFunctions() {
 	var widget = widgetContainer.getWidget('Functions');
 	widget.setDark();
@@ -1335,9 +1251,10 @@ function panelFunctions() {
 
 		var lines = d.split(/\n/); //clickableOffsets (d).split (/\n/);
 		for (var i in lines) {
-			var line = lines[i].split(/ +/);
-			if (line.length >= 3) {
-				table.addRow([line[0], line[3], line[1], line[2]]);
+			var items = lines[i].match(/^(0x[0-9a-f]+)\s+([0-9]+)\s+([0-9]+(\s+\-&gt;\s+[0-9]+)?)\s+(.+)$/);
+			if (items !== null) {
+				console.log(items);
+				table.addRow([items[1], items[5], items[2], items[3]]);
 			}
 		}
 		table.insertInto(c);
@@ -1538,33 +1455,6 @@ function panelFlags() {
 			var line = lines[i].split(/ /);
 			if (line.length >= 3) {
 				table.addRow([line[0], line[1], line[2]]);
-			}
-		}
-		table.insertInto(c);
-	});
-}
-
-function panelComments() {
-	var widget = widgetContainer.getWidget('Comments');
-	var c = widgetContainer.getWidgetDOMWrapper(widget);
-
-	updates.registerMethod(widget.getOffset(), panelComments);
-
-	c.style.backgroundColor = '#f0f0f0';
-	c.innerHTML = '<br />';
-	c.innerHTML += uiButton('javascript:notes()', 'Notes');
-	c.innerHTML += '<br /><br />';
-	r2.cmd('CC', function(d) {
-		var table = new Table(
-			['+Offset', 'Comment'],
-			[true, false],
-			'commentsTable');
-
-		var lines = d.split(/\n/); //clickableOffsets (d).split (/\n/);
-		for (var i in lines) {
-			var line = lines[i].split(/ (.+)?/);
-			if (line.length >= 2) {
-				table.addRow([line[0], line[1]]);
 			}
 		}
 		table.insertInto(c);
@@ -1796,108 +1686,6 @@ Array.prototype.forEach.call(document.querySelectorAll('.mdl-card__media'), func
 	});
 });
 
-function updateFortune() {
-	r2.cmd('fo', function(d) {
-		document.getElementById('fortune').innerHTML = d;
-		readFortune();
-	});
-}
-
-// say a message
-function speak(text, callback) {
-    var u = new SpeechSynthesisUtterance();
-    u.text = text;
-    u.lang = 'en-US';
- 
-    u.onend = function () {
-        if (callback) {
-            callback();
-        }
-    };
- 
-    u.onerror = function (e) {
-        if (callback) {
-            callback(e);
-        }
-    };
- 
-    speechSynthesis.speak(u);
-}
-
-function readFortune() {
-	var f = document.getElementById('fortune').innerHTML;
-	speak (f);
-}
-
-function updateInfo() {
-	r2.cmd('i', function(d) {
-		var lines = d.split(/\n/g);
-		var lines1 = lines.slice(0,lines.length / 2);
-		var lines2 = lines.slice(lines.length / 2);
-		var body = '';
-
-		body += '<table style=\'width:100%\'><tr><td>';
-		for (var i in lines1) {
-			var line = lines1[i].split(/ (.+)?/);
-			if (line.length >= 2)
-			body += '<b>' + line[0] + '</b> ' + line[1] + '<br/>';
-		}
-		body += '</td><td>';
-		for (var i in lines2) {
-			var line = lines2[i].split(/ (.+)?/);
-			if (line.length >= 2)
-			body += '<b>' + line[0] + '</b> ' + line[1] + '<br/>';
-		}
-		body += '</td></tr></table>';
-		document.getElementById('info').innerHTML = body;
-	});
-}
-
-function updateEntropy() {
-	var eg = document.getElementById('entropy-graph');
-	var box = eg.getBoundingClientRect();
-	var height = (0 | box.height) - 35 - 19;
-	r2.cmd('p=ej 50 $s @ $M', function(d) {
-		var body = '';
-		var res = JSON.parse(d);
-		var values = new Array();
-
-		for (var i in res['entropy']) values.push(res['entropy'][i]['value']);
-
-		var nbvals = values.length;
-		var min = Math.min.apply(null, values);
-		var max = Math.max.apply(null, values);
-		var inc = 500.0 / nbvals;
-
-		// Minimum entropy has 0.1 transparency. Max has 1.
-		for (var i in values) {
-			var y = 0.1 + (1 - 0.1) * ((values[i] - min) / (max - min));
-			var addr = '0x' + res['entropy'][i]['addr'].toString(16);
-			body += '<rect x="' + (inc * i).toString();
-			body += '" y="0" width="' + inc.toString();
-			body += '" height="' + height + '" style="fill:black;fill-opacity:';
-			body += y.toString() + ';"><title>';
-			body += addr + ' </title></rect>' ;
-
-			if (i % 8 == 0) {
-				body += '<text transform="matrix(1 0 0 1 ';
-				body += (i * inc).toString();
-				body += ' ' + (height + 15) + ')" fill="ff8888" font-family="\'Roboto\'" font-size="9">';
-				body += addr + '</text>';
-			}
-		}
-
-		eg.innerHTML = body;
-		eg.onclick = function(e) {
-			var box = eg.getBoundingClientRect();
-			var pos = e.clientX - box.left;
-			var i = 0 | (pos / (box.width / nbvals));
-			var addr = '0x' + res['entropy'][i]['addr'].toString(16);
-			seek(addr);
-		};
-	});
-}
-
 function onClick(a, b) {
 	var h = document.getElementById(a);
 	if (h) {
@@ -1973,8 +1761,6 @@ function ready() {
 	/* left menu */
 	onClick('analyze_button', analyzeButton);
 	onClick('menu_overview', panelOverview);
-	onClick('menu_headers', panelHeaders);
-	onClick('info_headers', panelHeaders);
 	onClick('menu_disasm', panelDisasm);
 	onClick('menu_debug', panelDebug);
 	onClick('menu_hexdump', panelHexdump);
@@ -2030,7 +1816,7 @@ document.body.onkeypress = function(e) {
 		panelHexdump,
 		panelFunctions,
 		panelFlags,
-		panelHeaders,
+		panelOverview,
 		panelSettings,
 		panelSearch
 		];
@@ -2437,10 +2223,14 @@ function clickableOffsets(x) {
  * @param {Array} nonum - List of booleans, set true if non-numeric
  * @param {String} id - Id (DOM) of the current table, internal usage for DataTable plugin
  */
-function Table(cols, nonum, id) {
+function Table(cols, nonum, id, onChange) {
 	this.cols = cols;
 	this.nonum = nonum;
-	this.clickableOffset = [];
+	this.clickableOffset = new Array(cols.length);
+	this.clickableOffset.fill(false);
+	this.contentEditable = new Array(cols.length);
+	this.contentEditable.fill(false);
+	this.onChange = onChange;
 	this.id = id || false;
 
 	this.init();
@@ -2465,8 +2255,8 @@ Table.prototype.init = function() {
 		if (this.cols[c][0] == '+') {
 			this.clickableOffset[c] = true;
 			this.cols[c] = this.cols[c].substr(1);
-		} else {
-			this.clickableOffset[c] = false;
+		} else if (this.cols[c][0] == '~') {
+			this.contentEditable[c] = true;
 		}
 
 		var th = document.createElement('th');
@@ -2487,8 +2277,44 @@ Table.prototype.addRow = function(cells) {
 		if (this.clickableOffset[i]) {
 			td.innerHTML = clickableOffsets(cells[i]);
 		} else {
-			td.appendChild(document.createTextNode(cells[i]));
+			td.innerHTML = cells[i];
 		}
+
+		if (this.contentEditable[i]) {
+			var _this = this;
+			td.initVal = td.innerHTML;
+			td.contentEditable = true;
+			td.busy = false;
+
+			td.addEventListener('blur', function(evt) {
+				if (evt.target.busy) {
+					return;
+				}
+				if (evt.target.initVal == evt.target.innerHTML) {
+					return;
+				}
+				evt.target.busy = true;
+				_this.onChange(cells, evt.target.innerHTML);
+				evt.target.initVal = evt.target.innerHTML;
+				evt.target.busy = false;
+			});
+
+			td.addEventListener('keydown', function(evt) {
+				if (evt.keyCode != 13 || evt.target.busy) {
+					return;
+				}
+				if (evt.target.initVal == evt.target.innerHTML) {
+					return;
+				}
+				evt.preventDefault();
+				evt.target.busy = true;
+				_this.onChange(cells, evt.target.innerHTML);
+				evt.target.initVal = evt.target.innerHTML;
+				evt.target.busy = false;
+				evt.target.blur();
+			});
+		}
+
 		tr.appendChild(td);
 	}
 };
@@ -2615,1060 +2441,6 @@ Widget.prototype.isAlreadyThere = function() {
 Widget.prototype.setDark = function() {
 	this.DOMWrapper.style.backgroundColor = 'rgb(32, 32, 32)';
 };
-Disasm.prototype = new RadareInfiniteBlock();
-Disasm.prototype.constructor = Disasm;
-function Disasm(containerElement, lineHeight) {
-	this.container = new FlexContainer(containerElement, 'disasm');
-	this.lineHeight = lineHeight;
-	this.refreshInitialOffset();
-	this.init();
-
-	this.offsetHistory = ['0x' + this.initialOffset.toString(16)];
-	this.indexOffsetHistory = 0;
-
-	var _this = this;
-	seekAction.registerLocalAction('Disassembly', function(offset) {
-		var gap = (_this.offsetHistory.length - 1) - _this.indexOffsetHistory;
-		for (var i = 0 ; i < gap ; i++) {
-			_this.offsetHistory.pop();
-		}
-		_this.offsetHistory.push(offset);
-		_this.indexOffsetHistory = _this.offsetHistory.length - 1;
-		_this.nav.refreshCurrentOffset();
-		_this.draw();
-	});
-}
-
-/**
- * How many screen we want to retrieve in one round-trip with r2
- */
-Disasm.prototype.infineHeightProvisioning = 3;
-
-/**
- * Fetch and initialize data
- */
-Disasm.prototype.init = function() {
-	var _this = this;
-
-	this.drawContextualMenu();
-	this.drawAnalysisDialog();
-	// 5% (default is 20%) : dynamic sized content, re-drawn
-	this.defineInfiniteParams(0.05);
-
-	this.container.pause('Crunching some data...');
-	this.nav.crunchingData(function() {
-		_this.container.resume();
-	});
-};
-
-Disasm.prototype.resetContainer = function(container) {
-	// TODO: cache, faster
-	this.container.replug(container);
-	this.container.reset();
-	this.refreshInitialOffset();
-	this.defineInfiniteParams(0.05);
-};
-
-/**
- * Gather data and set event to configure infinite scrolling
- */
-Disasm.prototype.defineInfiniteParams = function(trigger) {
-	RadareInfiniteBlock.prototype.defineInfiniteParams.call(this, trigger);
-	this.nav = new DisasmNavigator(this.howManyLines, this.initialOffset);
-};
-
-Disasm.prototype.draw = function(callback) {
-	var _this = this;
-	this.drawControls(this.container.getControls());
-	this.container.drawBody(function(element) {
-		_this.drawContent(element, function() {
-			_this.replaceScrollPosition(_this.nav.currentOffset);
-			if (typeof callback !== 'undefined') {
-				callback();
-			}
-		});
-	});
-};
-
-
-/**
- * Will trigger analysis from checked analysis method
- * of the analysis dialog (<=> analysisMethod by offset)
- */
-Disasm.prototype.processChosenAnalysis = function(endCallback) {
-	for (var i = 0 ; i < this.analysisMethods.length ; i++) {
-		this.analysisMethods[i].action(this.analysisMethods[i].active);
-	}
-
-	/* TODO, adapt to overview panel context
-		updateFortune();
-		updateInfo();
-		updateEntropy();
-	*/
-
-	// Reprocessing
-	this.nav.crunchingData(function() {
-		// Done
-	});
-
-	// After, we refresh the current display
-	this.draw(endCallback);
-};
-
-Disasm.prototype.drawAnalysisDialog = function() {
-	this.analysisMethods = [{
-		name: 'Analyze symbols',
-		ugly: 'symbols',
-		active: false,
-		action: function(active) {
-			if (!active) {
-				return;
-			}
-			r2.cmd('aa');
-		}
-	},{
-		name: 'Analyse calls',
-		ugly: 'calls',
-		active: false,
-		action: function(active) {
-			if (active) {
-				r2.cmd('e anal.calls=true;aac');
-			} else {
-				r2.cmd('e anal.calls=false');
-			}
-		}
-	},{
-		name: 'Emulate code',
-		ugly: 'code',
-		active: false,
-		action: function(active) {
-			if (active) {
-				r2.cmd('e asm.emu=1;aae;e asm.emu=0');
-			} else {
-				r2.cmd('e asm.emu=false');
-			}
-		}
-	},{
-		name: 'Find preludes',
-		ugly: 'preludes',
-		active: false,
-		action: function(active) {
-			if (!active) {
-				return;
-			}
-			r2.cmd('aap');
-		}
-	},{
-		name: 'Autoname functions',
-		ugly: 'fcts',
-		active: false,
-		action: function(active) {
-			if (!active) {
-				return;
-			}
-			r2.cmd('aan');
-		}
-	}];
-
-	var _this = this;
-	this.analysisDialog = document.createElement('dialog');
-	this.analysisDialog.className = 'mdl-dialog';
-
-	if (!this.analysisDialog.showModal) {
-		dialogPolyfill.registerDialog(this.analysisDialog);
-	}
-
-	var content = document.createElement('div');
-	content.className = 'mdl-dialog__content';
-	this.analysisDialog.appendChild(content);
-
-	var title = document.createElement('p');
-	title.appendChild(document.createTextNode('Pick some analysis method'));
-	title.className = 'mdl-typography--text-center';
-	content.appendChild(title);
-
-	var methods = document.createElement('ul');
-	methods.className = 'mdl-card__supporting-text';
-	this.analysisDialog.appendChild(methods);
-
-	for (var i = 0 ; i < this.analysisMethods.length ; i++) {
-		var li = document.createElement('li');
-		methods.appendChild(li);
-
-		var wrappingLabel = document.createElement('label');
-		wrappingLabel.for = this.analysisMethods[i].ugly;
-		wrappingLabel.className = 'mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect';
-		li.appendChild(wrappingLabel);
-
-		var input = document.createElement('input');
-		input.type = 'checkbox';
-		input.offset = i;
-		input.id = this.analysisMethods[i].ugly;
-		input.checked = this.analysisMethods[i].active;
-		input.className = 'mdl-checkbox__input';
-		wrappingLabel.appendChild(input);
-
-		input.addEventListener('change', function(evt) {
-			_this.analysisMethods[evt.target.offset].active = evt.target.checked;
-		});
-
-		var name = document.createElement('span');
-		name.className = 'mdl-checkbox__label';
-		name.appendChild(document.createTextNode(this.analysisMethods[i].name));
-		wrappingLabel.appendChild(name);
-	}
-
-	var actions = document.createElement('div');
-	actions.className = 'mdl-dialog__actions';
-	this.analysisDialog.appendChild(actions);
-
-	var closeButton = document.createElement('button');
-	closeButton.className = 'mdl-button';
-	closeButton.innerHTML = 'Close';
-	closeButton.addEventListener('click', function() {
-		_this.analysisDialog.close();
-	});
-	actions.appendChild(closeButton);
-
-	var proceedButton = document.createElement('button');
-	proceedButton.className = 'mdl-button';
-	proceedButton.innerHTML = 'Proceed';
-	proceedButton.addEventListener('click', function() {
-		_this.processChosenAnalysis(function() {
-			_this.analysisDialog.close();
-		});
-	});
-	actions.appendChild(proceedButton);
-
-	document.body.appendChild(this.analysisDialog);
-	componentHandler.upgradeDom();
-};
-
-Disasm.prototype.extractOffset_ = function(str) {
-	return parseInt(str.slice(5));
-};
-
-Disasm.prototype.getCurrentOffset = function() {
-	return this.currentOffset;
-};
-
-Disasm.prototype.oncontextmenu = function(evt, offset) {
-	this.refreshContextMenu(offset);
-	var menu = document.getElementById('contextmenuDisasm');
-	evt.preventDefault();
-
-	if (this.contextMenuOpen) {
-		menu.classList.remove('active');
-	} else {
-		this.currentOffset = offset;
-		menu.classList.add('active');
-		menu.style.left = evt.clientX + 'px';
-		menu.style.top = evt.clientY + 'px';
-	}
-
-	this.contextMenuOpen = !this.contextMenuOpen;
-};
-
-Disasm.prototype.onfctmenu = function(evt, fct) {
-	evt.preventDefault();
-
-	var offset;
-	r2.cmd('?v ' + fct, function(hex) {
-		offset = hex;
-	});
-
-	var newName = prompt('Rename?', fct);
-	if (newName === null || newName === '') {
-		return;
-	}
-
-	r2.cmd('fr ' + newName + '@ ' + offset);
-};
-
-Disasm.prototype.onvarmenu = function(evt, varName) {
-	evt.preventDefault();
-
-	var newName = prompt('Rename?', varName);
-	if (newName === null || newName === '') {
-		return;
-	}
-
-	r2.cmd('afvn ' + varName + ' ' + newName);
-};
-
-Disasm.prototype.refreshContextMenu = function(offset) {
-	// check with aoj first, if 'val' field exists: open
-	var isUndefined;
-	r2.cmdj('aoj @' + offset, function(info) {
-		isUndefined = typeof info[0].val === 'undefined';
-	});
-
-	this.drawContextualMenu(!isUndefined);
-};
-
-Disasm.prototype.getPresentBlock = function() {
-	var blocks = [];
-	var bodyChildren = this.container.getBody();
-	for (var i = 0 ; i < bodyChildren.length ; i++) {
-		blocks.push(this.extractOffset_(bodyChildren[i].className));
-	}
-	return blocks;
-};
-
-Disasm.prototype.drawContent = function(dom, callback) {
-	var _this = this;
-
-	var list = this.nav.getShownOffset();
-	isTopMax = (list[0] === 0);
-
-	// If we are already at top
-	if (this.isTopMax && isTopMax) {
-		return;
-	} else {
-		this.isTopMax = isTopMax;
-	}
-
-	// reset container
-	this.container.getBody().innerHTML = '';
-
-	for (var i = 0 ; i < list.length ; i++) {
-		var domAnchor = document.createElement('span');
-		this.container.getBody().appendChild(domAnchor);
-		this.nav.get(list[i].offset, list[i].size, function(anchor, last) {
-			return function(chunk) {
-				_this.drawChunk(chunk, anchor);
-
-				if (last && typeof callback !== 'undefined') {
-					callback();
-				}
-			};
-		}(domAnchor, (i === list.length - 1)));
-	}
-};
-
-/**
- * Draw a chunk before or after the current content
- */
-Disasm.prototype.drawChunk = function(chunk, domAnchor) {
-	domAnchor.innerHTML = chunk.data;
-	var pre = domAnchor.children[0];
-	var spans = pre.children;
-	var _this = this;
-	for (var i = 0 ; i < spans.length; i++) {
-		if (spans[i].tagName === 'SPAN') {
-			if (spans[i].className.indexOf('offset') !== -1) {
-				spans[i].addEventListener('contextmenu', function(id) {
-					return function(evt) {
-						return _this.oncontextmenu(evt, id);
-					};
-				}(spans[i].id));
-			} else if (spans[i].className.indexOf('fcn') !== -1) {
-				spans[i].addEventListener('contextmenu', function(id) {
-					return function(evt) {
-						return _this.onfctmenu(evt, id);
-					};
-				}(spans[i].id));
-			} else if (spans[i].className.indexOf('var') !== -1) {
-				spans[i].addEventListener('contextmenu', function(id) {
-					return function(evt) {
-						return _this.onvarmenu(evt, id);
-					};
-				}(spans[i].id));
-			}
-		}
-	}
-
-	// Highligh current offset (seek)
-	var curElem = document.getElementById(this.nav.getSeekOffset());
-	if (curElem !== null) {
-		curElem.classList.add('currentOffset');
-	}
-
-	return document.getElementById(domAnchor);
-};
-
-Disasm.prototype.infiniteDrawingContent = function(where, pos, endCallback) {
-	var _this = this;
-	var firstVisibleOffset = this.firstVisibleOffset();
-	this.drawContent(this.container.getBody(), function() {
-		_this.replaceScrollPosition(firstVisibleOffset);
-		endCallback();
-	}); // TODO Add stop scroll
-};
-
-Disasm.prototype.drawControls = function(dom) {
-	var out = uiRoundButton('javascript:disasm.nav.go(-1);disasm.draw();', 'keyboard_arrow_up');
-	out += uiRoundButton('javascript:disasm.nav.go(1);disasm.draw();', 'keyboard_arrow_down');
-	out += '&nbsp;';
-	out += uiButton('javascript:analyze()', 'ANLZ');
-	out += uiButton('javascript:comment()', 'CMNT');
-	out += uiButton('javascript:info()', 'Info');
-	out += uiButton('javascript:rename()', 'RNME');
-	out += uiButton('javascript:write()', 'Wrte');
-
-	out += uiButton('javascript:disasm.openAnalysisDialog()', 'Process analysis');
-	out += '<ul id="disasm-history"></ul>';
-
-	dom.innerHTML = out;
-
-	this.history = document.getElementById('disasm-history');
-	this.drawHistory(this.history);
-};
-
-Disasm.prototype.drawHistory = function(dom) {
-	var canGoBefore = (this.indexOffsetHistory > 0);
-	var canGoAfter = (this.indexOffsetHistory < this.offsetHistory.length - 1);
-
-	var _this = this;
-	dom.innerHTML = '';
-	for (var i = 0 ; i < this.offsetHistory.length ; i++) {
-		var isCurrent = (i === this.indexOffsetHistory);
-
-		var li = document.createElement('li');
-		li.className = (isCurrent) ? 'active' : '';
-		li.i = i;
-		li.x = this.offsetHistory[i];
-		li.appendChild(document.createTextNode(this.offsetHistory[i]));
-		li.addEventListener('click', function(evt) {
-			var x = evt.target.x;
-			// Global does not trigger the callback for specific widget
-			seekAction.applyGlobal(x.toString());
-			_this.indexOffsetHistory = evt.target.i;
-			_this.nav.refreshCurrentOffset();
-			_this.draw();
-		});
-
-		dom.appendChild(li);
-	}
-
-	var li = document.createElement('li');
-	li.title = 'Seek();';
-	li.appendChild(document.createTextNode('?'));
-	li.addEventListener('click', function() {
-		seek();
-	});
-	dom.appendChild(li);
-};
-
-Disasm.prototype.openAnalysisDialog = function() {
-	this.analysisDialog.showModal();
-};
-
-/**
- * We want to know the first offset currently visible at the moment
- * when the user ask for more data by scrolling
- */
-Disasm.prototype.firstVisibleOffset = function() {
-	// Part of the container already scrolled
-	var hiddenContainerPart = this.container.getBody().scrollTop;
-	if (hiddenContainerPart === 0) {
-		return;
-	}
-
-	// We want to isolate the chunk that it's visible on the first line visible
-	var curSum = 0;
-	var elements = this.container.getBody().children;
-	var selectedChunk = elements[0];
-	for (var i = 1 ; i < elements.length ; i++) {
-		var height = elements[i].getBoundingClientRect().height;
-		curSum += height;
-		// When the current container start in the visible zone
-		// we know it's occurs in the previous, we abort here
-		if (curSum > hiddenContainerPart) {
-			// We restore the previous value, we need it
-			curSum -= height;
-			break;
-		}
-		selectedChunk = elements[i];
-	}
-
-	// Then, we want to guess approximately which offset was that line
-	var visibleSpace = curSum - hiddenContainerPart;
-	var hiddenSpace = selectedChunk.getBoundingClientRect().height - visibleSpace;
-
-	var offsetRelatedToThatChunk = this.extractOffset_(selectedChunk.children[0].id);
-
-	var guessedOffset = offsetRelatedToThatChunk + Math.ceil(hiddenSpace / this.lineHeight);
-
-	return guessedOffset;
-};
-
-/**
- * We know the last approx. visible offset from firstVisibleOffset
- * we want to adjust the current view to set this same offset on
- * a near position.
- */
-Disasm.prototype.replaceScrollPosition = function(offset) {
-	//console.log(offset.toString(16));
-	if (typeof offset === 'undefined') {
-		return;
-	}
-
-	// We select the chunk where the offset belongs
-	var position = this.nav.getChunkPositionFor(offset);
-	if (position === -1) {
-		console.log('Chunk position from offset not found');
-		return;
-	}
-
-	var chunk = this.container.getBody().children[position];
-	var blockOffset = this.extractOffset_(chunk.children[0].id);
-	var startFromTop = chunk.offsetTop;
-	var chunkHeight = chunk.getBoundingClientRect().height;
-
-	var progression = (offset - blockOffset) / this.nav.getSize(blockOffset);
-	var adjustment = Math.floor(progression * chunkHeight);
-	var requiredScroll = startFromTop + adjustment;
-
-	this.container.getBody().scrollTop = requiredScroll;
-};
-
-Disasm.prototype.drawContextualMenu = function(enableAoj) {
-	var _this = this;
-
-	var displayRes = function(offset, cmd) {
-		var output;
-		var fullCmd = cmd + ' @' + offset;
-		r2.cmdj(fullCmd, function(d) {
-			output = d;
-		});
-
-		if (output === null || output.constructor !== Array) {
-			alert('No available ouput!');
-			return;
-		}
-
-		_this.addLongListDialog(output);
-	};
-
-	var applyOp = function(offset, cmd, prompting) {
-		var arg = '';
-		if (typeof prompting !== 'undefined') {
-			arg = prompt(prompting + '?');
-			if (arg == '') {
-				return;
-			}
-		}
-
-		if (arg != '') {
-			cmd += ' ' + arg;
-		}
-
-		r2.cmd(cmd + ' @' + offset);
-		_this.nav.cleanOldData();
-		_this.draw();
-	};
-
-	/**
-	 * Take a r2 cmd in parameter, will format output into a dialog to validate stuff
-	 */
-	var presentResults = function(offset, cmd, drawingFct, validationCallback) {
-		var output;
-		r2.cmd(cmd + ' @' + offset, function(d) {
-			output = d;
-		});
-		drawingFct(this.resultDialog, output, validationCallback);
-	};
-
-	var items = [// can add: 'expand' property for expandable menu
-		// { name: 'define flag size', shortcut: '$', fct: function(evt, offset) { return applyOp(offset, '$'); } },
-		// { name: 'edit bits', shortcut: '1', fct: function(evt, offset) { return applyOp(offset, '1'); } },
-		// { name: 'set as byte', shortcut: 'b', fct: function(evt, offset) { return applyOp(offset, 'b'); } },
-		// { name: 'set as short word (2 bytes)', shortcut: 'B', fct: function(evt, offset) { return applyOp(offset, 'B'); } },
-		// { name: 'set as code', shortcut: 'c', fct: function(evt, offset) { return applyOp(offset, 'c'); } },
-		// { name: 'define flag color (fc)', shortcut: 'C', fct: function(evt, offset) { return applyOp(offset, 'C'); } },
-		// { name: 'set as data', shortcut: 'd', fct: function(evt, offset) { return applyOp(offset, 'd'); } },
-		// { name: 'end of function', shortcut: 'e', fct: function(evt, offset) { return applyOp(offset, 'e'); } },
-		{ aoj: true, name: 'analyze function', shortcut: 'f', fct: function(evt, offset) { return applyOp(offset, 'af'); } },
-		// { name: 'format', shortcut: 'F', fct: function(evt, offset) { return applyOp(offset, 'F'); } },
-		{ aoj: true, name: 'immediate base...', shortcut: 'i', expand: [
-			{
-				name: 'binary',
-				fct: function(evt, offset) { return applyOp(offset, 'ahi b'); }
-			},{
-				name: 'octal',
-				fct: function(evt, offset) { return applyOp(offset, 'ahi o'); }
-			},{
-				name: 'decimal',
-				fct: function(evt, offset) { return applyOp(offset, 'ahi d'); }
-			},{
-				name: 'hexadecimal',
-				fct: function(evt, offset) { return applyOp(offset, 'ahi h'); }
-			},{
-				name: 'string',
-				fct: function(evt, offset) { return applyOp(offset, 'ahi s'); }
-			}] },
-		// { name: 'merge down (join this and next functions)', shortcut: 'j', fct: function(evt, offset) { return applyOp(offset, 'j'); } },
-		// { name: 'merge up (join this and previous function)', shortcut: 'k', fct: function(evt, offset) { return applyOp(offset, 'k'); } },
-		// { name: 'highlight word', shortcut: 'h', fct: function(evt, offset) { return applyOp(offset, 'h'); } },
-		// { name: 'manpage for current call', shortcut: 'm', fct: function(evt, offset) { return applyOp(offset, 'm'); } },
-		{ aoj: true, name: 'rename flag', shortcut: 'n', fct: function(evt, offset) { return applyOp(offset, 'fr', 'Name'); } },
-		// { name: 'rename function', shortcut: 'r', fct: function(evt, offset) { return applyOp(offset, 'r'); } },
-		// { name: 'find references /r', shortcut: 'R', fct: function(evt, offset) { return applyOp(offset, 'R'); } },
-		{ aoj: true, name: 'set string', shortcut: 's', fct: function(evt, offset) { return applyOp(offset, 'Cs'); } },
-		// { name: 'set strings in current block', shortcut: 'S', fct: function(evt, offset) { return applyOp(offset, 'S'); } },
-		// { name: 'undefine metadata here', shortcut: 'u', fct: function(evt, offset) { return applyOp(offset, 'u'); } },
-		{ aoj: false, name: 'find xrefs', shortcut: 'x', fct: function(evt, offset) { return displayRes(offset, 'axtj'); } },
-		// { name: 'set as 32bit word', shortcut: 'w', fct: function(evt, offset) { return applyOp(offset, 'w'); } },
-		// { name: 'set as 64bit word', shortcut: 'W', fct: function(evt, offset) { return applyOp(offset, 'W'); } }
-	];
-
-	var menu = document.getElementById('contextmenuDisasm');
-	if (menu === null) {
-		var menu = document.createElement('nav');
-		menu.id = 'contextmenuDisasm';
-		menu.classList.add('context-menu');
-	} else {
-		menu.innerHTML = '';
-	}
-
-	var ul = document.createElement('ul');
-	menu.appendChild(ul);
-
-	var _this = this;
-	var bindAction = function(element, action) {
-		element.addEventListener('mousedown', (function(fct) {
-			return function(evt) {
-				fct(evt, _this.getCurrentOffset());
-			};
-		}(action)));
-	};
-
-	for (var i = 0 ; i < items.length ; i++) {
-		var li = document.createElement('li');
-		ul.appendChild(li);
-		li.appendChild(document.createTextNode(items[i].name));
-		li.isSubOpen = false;
-
-		li.addEventListener('mouseenter', function(evt) {
-			// Cleaning old "active"
-			var subactives = Array.prototype.slice.call(evt.target.parentNode.getElementsByClassName('subactive'));
-			for (var x = 0 ; x < subactives.length ; x++) {
-				subactives[x].classList.remove('subactive');
-				subactives[x].isSubOpen = false;
-			}
-		});
-
-		// expandable menu
-		if (typeof items[i].expand !== 'undefined' && (enableAoj && items[i].aoj || !items[i].aoj)) {
-			// Make submenu reachable
-			li.addEventListener('mouseenter', function(evt) {
-				if (evt.target.isSubOpen) {
-					return;
-				} else {
-					evt.target.isSubOpen = true;
-				}
-
-				var subMenu = evt.target.children[0];
-				if (typeof subMenu === 'undefined') {
-					return;
-				}
-
-				var dim = evt.target.getBoundingClientRect();
-				var indexOf = Array.prototype.slice.call(evt.target.parentNode.children).indexOf(evt.target);
-				evt.target.classList.add('subactive');
-				subMenu.style.left = dim.width + 'px';
-				subMenu.style.top = indexOf * dim.height + 'px';
-			});
-
-			// Creating sub menu
-			var subUl = document.createElement('ul');
-			li.appendChild(subUl);
-			for (var j = 0 ; j < items[i].expand.length ; j++) {
-				var subLi = document.createElement('li');
-				subUl.appendChild(subLi);
-				subLi.appendChild(document.createTextNode(items[i].expand[j].name));
-				bindAction(subLi, items[i].expand[j].fct);
-			}
-		} else {
-			if (enableAoj && items[i].aoj || !items[i].aoj) {
-				bindAction(li, items[i].fct);
-			} else {
-				li.classList.add('disabled');
-			}
-		}
-	}
-
-	document.body.appendChild(menu);
-	componentHandler.upgradeDom();
-
-	var _this = this;
-	this.contextMenuOpen = false;
-	var closeMenu = function() {
-		if (!_this.contextMenuOpen) {
-			return;
-		}
-		menu.classList.remove('active');
-		_this.contextMenuOpen = false;
-	};
-
-	window.onkeyup = function(e) {
-		if (e.keyCode === 27) {
-			closeMenu();
-		}
-	};
-
-	document.addEventListener('click', function() {
-		closeMenu();
-	});
-};
-
-/**
- * Show a list of element in a specific dialog
- */
-Disasm.prototype.addLongListDialog = function(list) {
-	var _this = this;
-	var dialog = document.createElement('dialog');
-	dialog.className = 'mdl-dialog';
-
-	if (!dialog.showModal) {
-		dialogPolyfill.registerDialog(dialog);
-	}
-
-	var content = document.createElement('div');
-	content.className = 'mdl-dialog__content';
-	dialog.appendChild(content);
-
-	var title = document.createElement('p');
-	title.appendChild(document.createTextNode('Results'));
-	title.className = 'mdl-typography--text-center';
-	content.appendChild(title);
-
-	var container = document.createElement('div');
-	container.className = 'mdl-card__supporting-text';
-	dialog.appendChild(container);
-
-	var table = document.createElement('table');
-	table.className = 'disasm-table-dialog';
-	table.style.width = '100%';
-	table.style.border = '1px dashed red';
-	container.appendChild(table);
-
-	var thead = document.createElement('thead');
-	table.appendChild(thead);
-
-	var keys = Object.keys(list[0]);
-	for (var i = 0 ; i < keys.length ; i++) {
-		var th = document.createElement('th');
-		th.appendChild(document.createTextNode(keys[i]));
-		thead.appendChild(th);
-	}
-
-	var tbody = document.createElement('tbody');
-	table.appendChild(tbody);
-
-	for (var i = 0 ; i < list.length ; i++) {
-		var tr = document.createElement('tr');
-		tbody.appendChild(tr);
-
-		for (var j = 0 ; j < keys.length ; j++) {
-			var td = document.createElement('td');
-			tr.appendChild(td);
-
-			var text;
-			if (keys[j] === 'opcode') {
-				text = clickableOffsets(list[i][keys[j]]);
-			} else if (keys[j] === 'from') {
-				var hex = '0x' + list[i][keys[j]].toString(16);
-				text = '<a href="javascript:seek(\'' + hex + '\');">0x' + hex + '</a>';
-			} else {
-				text = list[i][keys[j]];
-			}
-
-			td.innerHTML = text;
-		}
-	}
-
-	var actions = document.createElement('div');
-	actions.className = 'mdl-dialog__actions';
-	dialog.appendChild(actions);
-
-	var closeButton = document.createElement('button');
-	closeButton.className = 'mdl-button';
-	closeButton.innerHTML = 'Close';
-	closeButton.addEventListener('click', function() {
-		dialog.close();
-		document.body.removeChild(dialog);
-	});
-	actions.appendChild(closeButton);
-
-	document.body.appendChild(dialog);
-	componentHandler.upgradeDom();
-
-	dialog.showModal();
-};
-
-// Should refactor with HexPairNav and go/get methods
-/**
- * DisasmNavigator
- * Based on non-fixed size of "chunk"
- * will use:
- *	this.navigationData, as dictionnary [offset => {size, callback, data}]
- *	this.navigationOffsets, for all ordered [offset]
- * 	this.currentlyShown, as currently shown [offset]
- */
-DisasmNavigator.prototype = new BlockNavigator();
-DisasmNavigator.prototype.constructor = DisasmNavigator;
-function DisasmNavigator(howManyLines, startOffset) {
-	this.currentOffset = startOffset;
-	this.howManyLines = howManyLines;
-	this.gap = this.howManyLines * 2;
-
-	this.providerWorker = new Worker('disasmProvider.js');
-
-	this.optimalLines = this.howManyLines * 3;
-	this.MINFILL = this.optimalLines * 0.8;
-
-	this.items = [];
-
-	this.init();
-}
-
-DisasmNavigator.prototype.init = function() {
-	BlockNavigator.prototype.init.apply(this);
-	this.currentlyShown = [];
-	this.populateFirst();
-};
-
-DisasmNavigator.prototype.line2offset = function(line) {
-	return line * 2;
-};
-
-DisasmNavigator.prototype.offset2line = function(offset) {
-	return offset / 2;
-};
-
-DisasmNavigator.prototype.configureWorker_ = function() {
-	var _this = this;
-	this.providerWorker.onmessage = function(e) {
-		var item;
-		for (var i = 0 ; i < _this.items.length ; i++) {
-			if (_this.items[i].offset === e.data.offset &&
-				_this.items[i].size === e.data.size) {
-				item = _this.items[i];
-			}
-		}
-
-		if (typeof item === 'undefined') {
-			console.log('Unable to find origin item');
-			return;
-		}
-
-		item.data = e.data.data;
-		item.status = _this.Status.COMPLETED;
-		for (var i = 0 ; i < item.callback.length ; i++) {
-			item.callback[i](item);
-		}
-		item.callback = [];
-	};
-};
-
-DisasmNavigator.prototype.cleanOldData = function() {
-	for (var i = 0 ; i < this.items.length ; i++) {
-		delete this.items[i].data;
-		delete this.items[i].status;
-	}
-};
-
-DisasmNavigator.prototype.crunchingData = function(onReadyCallback) {
-	var initWorker = new Worker('disasmNavProvider.js');
-	var _this = this;
-
-	initWorker.onmessage = function(e) {
-		_this.navigationData = e.data;
-		_this.navigationOffsets = Object.keys(e.data);
-		_this.navigationOffsets.sort();
-		initWorker.terminate();
-		onReadyCallback();
-	};
-
-	initWorker.postMessage(true);
-};
-
-DisasmNavigator.prototype.getOverlappingIntervals = function(start, end) {
-	var intervals = [];
-	for (var offset in this.navigationData) {
-		var endInterval = offset + this.navigationData[offset].size;
-		if (start >= offset || end <= endInterval) {
-			intervals.push(offset);
-		}
-	}
-	return intervals;
-};
-
-DisasmNavigator.prototype.populateFirst = function() {
-	return this.populateFrom(this.currentOffset);
-};
-
-/**
- * Create block between [start;end[
- */
-DisasmNavigator.prototype.fillGap = function(start, end, artifical) {
-	var curSize = end - start;
-	if (curSize > this.howManyLines) {
-		var half = Math.round(end / 2);
-		return [{
-			offset: start,
-			size: Math.round(curSize / 2),
-			artifical: artifical
-		}].concat(this.fillGap(start + Math.round(curSize / 2), end));
-	} else {
-		return [{
-			offset: start,
-			size: curSize,
-			artifical: artifical
-		}];
-	}
-};
-
-DisasmNavigator.prototype.populateFrom = function(offset) {
-	// From currentOffset
-	// I want at least 80% of 3 screens
-
-	// go up of 1 screen, take first in order
-
-	var fromOffset = offset - this.line2offset(this.howManyLines);
-	var endOffset = fromOffset + (3 * this.line2offset(this.howManyLines));
-
-	var existingIntervals = this.getOverlappingIntervals(fromOffset, endOffset);
-
-	var requestedIntervals = []; // {offset, size}
-
-	// If they overlap between them, we merge
-	for (var i = 0 ; i < existingIntervals.length - 1 ; i++) {
-		var endCurrent = existingIntervals[i];
-		var startNext = existingIntervals[i + 1];
-		if (startNext < endCurrent) {
-			if (endNext <= endCurrent) { // inclusive
-				requestedIntervals.push({
-					offset: existingIntervals[i],
-					size: this.navigationData[existingIntervals[i]].size
-				});
-			} else {
-				var endNext = startNext + this.navigationData[startNext].size;
-				requestedIntervals.push({
-					offset: existingIntervals[i],
-					size: endNext - existingIntervals[i]
-				});
-			}
-		}
-	}
-
-	if (requestedIntervals.length > 0) {
-		// If there is gap before
-		if (requestedIntervals[0].offset !== fromOffset) {
-			requestedIntervals = requestedIntervals.concat(this.fillGap(fromOffset, requestedIntervals[0].offset));
-		}
-
-		// If there is a gap after
-		var lastInterval = requestedIntervals[requestedIntervals.length - 1];
-		var lastOffsetInterval = (lastInterval.offset + lastInterval.size);
-		if (lastOffsetInterval !== endOffset) {
-			requestedIntervals = requestedIntervals.concat(this.fillGap(lastOffsetInterval + 1, endOffset));
-		}
-
-		// If there is a gap between
-		for (var i = 0 ; i < requestedIntervals.length - 1 ; i++) {
-			var endCurrent = existingIntervals[i];
-			var startNext = existingIntervals[i + 1];
-
-			if (startNext - endCurrent > 1) {
-				requestedIntervals = requestedIntervals.concat(this.fillGap(endCurrent + 1, startNext));
-			}
-		}
-	} else {
-		requestedIntervals = this.fillGap(fromOffset, endOffset, true);
-	}
-
-	this.currentlyShown = requestedIntervals;
-
-	/****
-	TODO: check if existing (data field), if not, ask provider
-	don't care about total length, but need to find approx. the line requested:
-		which interval, starting at? +lineHeight*diff
-	*****/
-};
-
-/**
- * Returns the current chunks to display
- * Will be conciliated with offset (key)
- */
-DisasmNavigator.prototype.getShownOffset = function() {
-	return this.currentlyShown;
-};
-
-DisasmNavigator.prototype.getSize = function(offset) {
-	for (var i = 0 ; i < this.currentlyShown.length ; i++) {
-		if (this.currentlyShown[i].offset === offset) {
-			return this.currentlyShown[i].size;
-		}
-	}
-	return -1;
-};
-
-DisasmNavigator.prototype.getChunkPositionFor = function(offset) {
-	for (var i = 0 ; i < this.currentlyShown.length ; i++) {
-		if (offset >= this.currentlyShown[i].offset &&
-			offset < this.currentlyShown[i].offset + this.currentlyShown[i].size) {
-			return i;
-		}
-	}
-
-	return -1;
-};
-
-DisasmNavigator.prototype.get = function(offset, size, callback) {
-	// TODO: retrieve data (async) and call
-	var item;
-	for (var i = 0 ; i < this.items.length ; i++) {
-		if (this.items[i].offset === offset &&
-			this.items[i].size === size) {
-			item = this.items[i];
-		}
-	}
-
-	if (typeof item === 'undefined') {
-		item = {
-			offset: offset,
-			size: size
-		};
-		this.items.push(item);
-	}
-
-	if (typeof item.data !== 'undefined') {
-		return callback(item);
-	} else { // Not currently here
-		if (typeof item.callback === 'undefined') {
-			item.callback = [];
-		}
-		// Store in callback, could be retrieving or we will start it
-		item.callback.push(callback);
-		if (item.status !== this.Status.LAUNCHED) { // Need to be retrieved
-			item.status = this.Status.LAUNCHED;
-			this.providerWorker.postMessage({
-				offset: item.offset,
-				size: item.size
-			});
-		}
-	}
-};
-
-DisasmNavigator.prototype.go = function(dir) {
-	this.currentOffset += dir * (this.howManyLines * 2);
-	this.populateFrom(this.currentOffset);
-};
-
-DisasmNavigator.prototype.refreshCurrentOffset = function() {
-	var _this = this;
-	r2.cmd('s', function(offset) {
-		_this.currentOffset = parseInt(offset, 16);
-	});
-};
-
-DisasmNavigator.prototype.getSeekOffset = function() {
-	return this.currentOffset;
-};
-
 /**
  * UI management
  * Container should be currently sized for the purpose
@@ -5096,6 +3868,1060 @@ function basename(path) {
 	return path.split(/[\\/]/).pop();
 }
 
+Disasm.prototype = new RadareInfiniteBlock();
+Disasm.prototype.constructor = Disasm;
+function Disasm(containerElement, lineHeight) {
+	this.container = new FlexContainer(containerElement, 'disasm');
+	this.lineHeight = lineHeight;
+	this.refreshInitialOffset();
+	this.init();
+
+	this.offsetHistory = ['0x' + this.initialOffset.toString(16)];
+	this.indexOffsetHistory = 0;
+
+	var _this = this;
+	seekAction.registerLocalAction('Disassembly', function(offset) {
+		var gap = (_this.offsetHistory.length - 1) - _this.indexOffsetHistory;
+		for (var i = 0 ; i < gap ; i++) {
+			_this.offsetHistory.pop();
+		}
+		_this.offsetHistory.push(offset);
+		_this.indexOffsetHistory = _this.offsetHistory.length - 1;
+		_this.nav.refreshCurrentOffset();
+		_this.draw();
+	});
+}
+
+/**
+ * How many screen we want to retrieve in one round-trip with r2
+ */
+Disasm.prototype.infineHeightProvisioning = 3;
+
+/**
+ * Fetch and initialize data
+ */
+Disasm.prototype.init = function() {
+	var _this = this;
+
+	this.drawContextualMenu();
+	this.drawAnalysisDialog();
+	// 5% (default is 20%) : dynamic sized content, re-drawn
+	this.defineInfiniteParams(0.05);
+
+	this.container.pause('Crunching some data...');
+	this.nav.crunchingData(function() {
+		_this.container.resume();
+	});
+};
+
+Disasm.prototype.resetContainer = function(container) {
+	// TODO: cache, faster
+	this.container.replug(container);
+	this.container.reset();
+	this.refreshInitialOffset();
+	this.defineInfiniteParams(0.05);
+};
+
+/**
+ * Gather data and set event to configure infinite scrolling
+ */
+Disasm.prototype.defineInfiniteParams = function(trigger) {
+	RadareInfiniteBlock.prototype.defineInfiniteParams.call(this, trigger);
+	this.nav = new DisasmNavigator(this.howManyLines, this.initialOffset);
+};
+
+Disasm.prototype.draw = function(callback) {
+	var _this = this;
+	this.drawControls(this.container.getControls());
+	this.container.drawBody(function(element) {
+		_this.drawContent(element, function() {
+			_this.replaceScrollPosition(_this.nav.currentOffset);
+			if (typeof callback !== 'undefined') {
+				callback();
+			}
+		});
+	});
+};
+
+
+/**
+ * Will trigger analysis from checked analysis method
+ * of the analysis dialog (<=> analysisMethod by offset)
+ */
+Disasm.prototype.processChosenAnalysis = function(endCallback) {
+	for (var i = 0 ; i < this.analysisMethods.length ; i++) {
+		this.analysisMethods[i].action(this.analysisMethods[i].active);
+	}
+
+	/* TODO, adapt to overview panel context
+		updateFortune();
+		updateInfo();
+		updateEntropy();
+	*/
+
+	// Reprocessing
+	this.nav.crunchingData(function() {
+		// Done
+	});
+
+	// After, we refresh the current display
+	this.draw(endCallback);
+};
+
+Disasm.prototype.drawAnalysisDialog = function() {
+	this.analysisMethods = [{
+		name: 'Analyze symbols',
+		ugly: 'symbols',
+		active: false,
+		action: function(active) {
+			if (!active) {
+				return;
+			}
+			r2.cmd('aa');
+		}
+	},{
+		name: 'Analyse calls',
+		ugly: 'calls',
+		active: false,
+		action: function(active) {
+			if (active) {
+				r2.cmd('e anal.calls=true;aac');
+			} else {
+				r2.cmd('e anal.calls=false');
+			}
+		}
+	},{
+		name: 'Emulate code',
+		ugly: 'code',
+		active: false,
+		action: function(active) {
+			if (active) {
+				r2.cmd('e asm.emu=1;aae;e asm.emu=0');
+			} else {
+				r2.cmd('e asm.emu=false');
+			}
+		}
+	},{
+		name: 'Find preludes',
+		ugly: 'preludes',
+		active: false,
+		action: function(active) {
+			if (!active) {
+				return;
+			}
+			r2.cmd('aap');
+		}
+	},{
+		name: 'Autoname functions',
+		ugly: 'fcts',
+		active: false,
+		action: function(active) {
+			if (!active) {
+				return;
+			}
+			r2.cmd('aan');
+		}
+	}];
+
+	var _this = this;
+	this.analysisDialog = document.createElement('dialog');
+	this.analysisDialog.className = 'mdl-dialog';
+
+	if (!this.analysisDialog.showModal) {
+		dialogPolyfill.registerDialog(this.analysisDialog);
+	}
+
+	var content = document.createElement('div');
+	content.className = 'mdl-dialog__content';
+	this.analysisDialog.appendChild(content);
+
+	var title = document.createElement('p');
+	title.appendChild(document.createTextNode('Pick some analysis method'));
+	title.className = 'mdl-typography--text-center';
+	content.appendChild(title);
+
+	var methods = document.createElement('ul');
+	methods.className = 'mdl-card__supporting-text';
+	this.analysisDialog.appendChild(methods);
+
+	for (var i = 0 ; i < this.analysisMethods.length ; i++) {
+		var li = document.createElement('li');
+		methods.appendChild(li);
+
+		var wrappingLabel = document.createElement('label');
+		wrappingLabel.for = this.analysisMethods[i].ugly;
+		wrappingLabel.className = 'mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect';
+		li.appendChild(wrappingLabel);
+
+		var input = document.createElement('input');
+		input.type = 'checkbox';
+		input.offset = i;
+		input.id = this.analysisMethods[i].ugly;
+		input.checked = this.analysisMethods[i].active;
+		input.className = 'mdl-checkbox__input';
+		wrappingLabel.appendChild(input);
+
+		input.addEventListener('change', function(evt) {
+			_this.analysisMethods[evt.target.offset].active = evt.target.checked;
+		});
+
+		var name = document.createElement('span');
+		name.className = 'mdl-checkbox__label';
+		name.appendChild(document.createTextNode(this.analysisMethods[i].name));
+		wrappingLabel.appendChild(name);
+	}
+
+	var actions = document.createElement('div');
+	actions.className = 'mdl-dialog__actions';
+	this.analysisDialog.appendChild(actions);
+
+	var closeButton = document.createElement('button');
+	closeButton.className = 'mdl-button';
+	closeButton.innerHTML = 'Close';
+	closeButton.addEventListener('click', function() {
+		_this.analysisDialog.close();
+	});
+	actions.appendChild(closeButton);
+
+	var proceedButton = document.createElement('button');
+	proceedButton.className = 'mdl-button';
+	proceedButton.innerHTML = 'Proceed';
+	proceedButton.addEventListener('click', function() {
+		_this.processChosenAnalysis(function() {
+			_this.analysisDialog.close();
+		});
+	});
+	actions.appendChild(proceedButton);
+
+	document.body.appendChild(this.analysisDialog);
+	componentHandler.upgradeDom();
+};
+
+Disasm.prototype.extractOffset_ = function(str) {
+	return parseInt(str.slice(5));
+};
+
+Disasm.prototype.getCurrentOffset = function() {
+	return this.currentOffset;
+};
+
+Disasm.prototype.oncontextmenu = function(evt, offset) {
+	this.refreshContextMenu(offset);
+	var menu = document.getElementById('contextmenuDisasm');
+	evt.preventDefault();
+
+	if (this.contextMenuOpen) {
+		menu.classList.remove('active');
+	} else {
+		this.currentOffset = offset;
+		menu.classList.add('active');
+		menu.style.left = evt.clientX + 'px';
+		menu.style.top = evt.clientY + 'px';
+	}
+
+	this.contextMenuOpen = !this.contextMenuOpen;
+};
+
+Disasm.prototype.onfctmenu = function(evt, fct) {
+	evt.preventDefault();
+
+	var offset;
+	r2.cmd('?v ' + fct, function(hex) {
+		offset = hex;
+	});
+
+	var newName = prompt('Rename?', fct);
+	if (newName === null || newName === '') {
+		return;
+	}
+
+	r2.cmd('fr ' + newName + '@ ' + offset);
+};
+
+Disasm.prototype.onvarmenu = function(evt, varName) {
+	evt.preventDefault();
+
+	var newName = prompt('Rename?', varName);
+	if (newName === null || newName === '') {
+		return;
+	}
+
+	r2.cmd('afvn ' + varName + ' ' + newName);
+};
+
+Disasm.prototype.refreshContextMenu = function(offset) {
+	// check with aoj first, if 'val' field exists: open
+	var isUndefined;
+	r2.cmdj('aoj @' + offset, function(info) {
+		isUndefined = typeof info[0].val === 'undefined';
+	});
+
+	this.drawContextualMenu(!isUndefined);
+};
+
+Disasm.prototype.getPresentBlock = function() {
+	var blocks = [];
+	var bodyChildren = this.container.getBody();
+	for (var i = 0 ; i < bodyChildren.length ; i++) {
+		blocks.push(this.extractOffset_(bodyChildren[i].className));
+	}
+	return blocks;
+};
+
+Disasm.prototype.drawContent = function(dom, callback) {
+	var _this = this;
+
+	var list = this.nav.getShownOffset();
+	isTopMax = (list[0] === 0);
+
+	// If we are already at top
+	if (this.isTopMax && isTopMax) {
+		return;
+	} else {
+		this.isTopMax = isTopMax;
+	}
+
+	// reset container
+	this.container.getBody().innerHTML = '';
+
+	for (var i = 0 ; i < list.length ; i++) {
+		var domAnchor = document.createElement('span');
+		this.container.getBody().appendChild(domAnchor);
+		this.nav.get(list[i].offset, list[i].size, function(anchor, last) {
+			return function(chunk) {
+				_this.drawChunk(chunk, anchor);
+
+				if (last && typeof callback !== 'undefined') {
+					callback();
+				}
+			};
+		}(domAnchor, (i === list.length - 1)));
+	}
+};
+
+/**
+ * Draw a chunk before or after the current content
+ */
+Disasm.prototype.drawChunk = function(chunk, domAnchor) {
+	domAnchor.innerHTML = chunk.data;
+	var pre = domAnchor.children[0];
+	var spans = pre.children;
+	var _this = this;
+	for (var i = 0 ; i < spans.length; i++) {
+		if (spans[i].tagName === 'SPAN') {
+			if (spans[i].className.indexOf('offset') !== -1) {
+				spans[i].addEventListener('contextmenu', function(id) {
+					return function(evt) {
+						return _this.oncontextmenu(evt, id);
+					};
+				}(spans[i].id));
+			} else if (spans[i].className.indexOf('fcn') !== -1) {
+				spans[i].addEventListener('contextmenu', function(id) {
+					return function(evt) {
+						return _this.onfctmenu(evt, id);
+					};
+				}(spans[i].id));
+			} else if (spans[i].className.indexOf('var') !== -1) {
+				spans[i].addEventListener('contextmenu', function(id) {
+					return function(evt) {
+						return _this.onvarmenu(evt, id);
+					};
+				}(spans[i].id));
+			}
+		}
+	}
+
+	// Highligh current offset (seek)
+	var curElem = document.getElementById(this.nav.getSeekOffset());
+	if (curElem !== null) {
+		curElem.classList.add('currentOffset');
+	}
+
+	return document.getElementById(domAnchor);
+};
+
+Disasm.prototype.infiniteDrawingContent = function(where, pos, endCallback) {
+	var _this = this;
+	var firstVisibleOffset = this.firstVisibleOffset();
+	this.drawContent(this.container.getBody(), function() {
+		_this.replaceScrollPosition(firstVisibleOffset);
+		endCallback();
+	}); // TODO Add stop scroll
+};
+
+Disasm.prototype.drawControls = function(dom) {
+	var out = uiRoundButton('javascript:disasm.nav.go(-1);disasm.draw();', 'keyboard_arrow_up');
+	out += uiRoundButton('javascript:disasm.nav.go(1);disasm.draw();', 'keyboard_arrow_down');
+	out += '&nbsp;';
+	out += uiButton('javascript:analyze()', 'ANLZ');
+	out += uiButton('javascript:comment()', 'CMNT');
+	out += uiButton('javascript:info()', 'Info');
+	out += uiButton('javascript:rename()', 'RNME');
+	out += uiButton('javascript:write()', 'Wrte');
+
+	out += uiButton('javascript:disasm.openAnalysisDialog()', 'Process analysis');
+	out += '<ul id="disasm-history"></ul>';
+
+	dom.innerHTML = out;
+
+	this.history = document.getElementById('disasm-history');
+	this.drawHistory(this.history);
+};
+
+Disasm.prototype.drawHistory = function(dom) {
+	var canGoBefore = (this.indexOffsetHistory > 0);
+	var canGoAfter = (this.indexOffsetHistory < this.offsetHistory.length - 1);
+
+	var _this = this;
+	dom.innerHTML = '';
+	for (var i = 0 ; i < this.offsetHistory.length ; i++) {
+		var isCurrent = (i === this.indexOffsetHistory);
+
+		var li = document.createElement('li');
+		li.className = (isCurrent) ? 'active' : '';
+		li.i = i;
+		li.x = this.offsetHistory[i];
+		li.appendChild(document.createTextNode(this.offsetHistory[i]));
+		li.addEventListener('click', function(evt) {
+			var x = evt.target.x;
+			// Global does not trigger the callback for specific widget
+			seekAction.applyGlobal(x.toString());
+			_this.indexOffsetHistory = evt.target.i;
+			_this.nav.refreshCurrentOffset();
+			_this.draw();
+		});
+
+		dom.appendChild(li);
+	}
+
+	var li = document.createElement('li');
+	li.title = 'Seek();';
+	li.appendChild(document.createTextNode('?'));
+	li.addEventListener('click', function() {
+		seek();
+	});
+	dom.appendChild(li);
+};
+
+Disasm.prototype.openAnalysisDialog = function() {
+	this.analysisDialog.showModal();
+};
+
+/**
+ * We want to know the first offset currently visible at the moment
+ * when the user ask for more data by scrolling
+ */
+Disasm.prototype.firstVisibleOffset = function() {
+	// Part of the container already scrolled
+	var hiddenContainerPart = this.container.getBody().scrollTop;
+	if (hiddenContainerPart === 0) {
+		return;
+	}
+
+	// We want to isolate the chunk that it's visible on the first line visible
+	var curSum = 0;
+	var elements = this.container.getBody().children;
+	var selectedChunk = elements[0];
+	for (var i = 1 ; i < elements.length ; i++) {
+		var height = elements[i].getBoundingClientRect().height;
+		curSum += height;
+		// When the current container start in the visible zone
+		// we know it's occurs in the previous, we abort here
+		if (curSum > hiddenContainerPart) {
+			// We restore the previous value, we need it
+			curSum -= height;
+			break;
+		}
+		selectedChunk = elements[i];
+	}
+
+	// Then, we want to guess approximately which offset was that line
+	var visibleSpace = curSum - hiddenContainerPart;
+	var hiddenSpace = selectedChunk.getBoundingClientRect().height - visibleSpace;
+
+	var offsetRelatedToThatChunk = this.extractOffset_(selectedChunk.children[0].id);
+
+	var guessedOffset = offsetRelatedToThatChunk + Math.ceil(hiddenSpace / this.lineHeight);
+
+	return guessedOffset;
+};
+
+/**
+ * We know the last approx. visible offset from firstVisibleOffset
+ * we want to adjust the current view to set this same offset on
+ * a near position.
+ */
+Disasm.prototype.replaceScrollPosition = function(offset) {
+	//console.log(offset.toString(16));
+	if (typeof offset === 'undefined') {
+		return;
+	}
+
+	// We select the chunk where the offset belongs
+	var position = this.nav.getChunkPositionFor(offset);
+	if (position === -1) {
+		console.log('Chunk position from offset not found');
+		return;
+	}
+
+	var chunk = this.container.getBody().children[position];
+	var blockOffset = this.extractOffset_(chunk.children[0].id);
+	var startFromTop = chunk.offsetTop;
+	var chunkHeight = chunk.getBoundingClientRect().height;
+
+	var progression = (offset - blockOffset) / this.nav.getSize(blockOffset);
+	var adjustment = Math.floor(progression * chunkHeight);
+	var requiredScroll = startFromTop + adjustment;
+
+	this.container.getBody().scrollTop = requiredScroll;
+};
+
+Disasm.prototype.drawContextualMenu = function(enableAoj) {
+	var _this = this;
+
+	var displayRes = function(offset, cmd) {
+		var output;
+		var fullCmd = cmd + ' @' + offset;
+		r2.cmdj(fullCmd, function(d) {
+			output = d;
+		});
+
+		if (output === null || output.constructor !== Array) {
+			alert('No available ouput!');
+			return;
+		}
+
+		_this.addLongListDialog(output);
+	};
+
+	var applyOp = function(offset, cmd, prompting) {
+		var arg = '';
+		if (typeof prompting !== 'undefined') {
+			arg = prompt(prompting + '?');
+			if (arg == '') {
+				return;
+			}
+		}
+
+		if (arg != '') {
+			cmd += ' ' + arg;
+		}
+
+		r2.cmd(cmd + ' @' + offset);
+		_this.nav.cleanOldData();
+		_this.draw();
+	};
+
+	/**
+	 * Take a r2 cmd in parameter, will format output into a dialog to validate stuff
+	 */
+	var presentResults = function(offset, cmd, drawingFct, validationCallback) {
+		var output;
+		r2.cmd(cmd + ' @' + offset, function(d) {
+			output = d;
+		});
+		drawingFct(this.resultDialog, output, validationCallback);
+	};
+
+	var items = [// can add: 'expand' property for expandable menu
+		// { name: 'define flag size', shortcut: '$', fct: function(evt, offset) { return applyOp(offset, '$'); } },
+		// { name: 'edit bits', shortcut: '1', fct: function(evt, offset) { return applyOp(offset, '1'); } },
+		// { name: 'set as byte', shortcut: 'b', fct: function(evt, offset) { return applyOp(offset, 'b'); } },
+		// { name: 'set as short word (2 bytes)', shortcut: 'B', fct: function(evt, offset) { return applyOp(offset, 'B'); } },
+		// { name: 'set as code', shortcut: 'c', fct: function(evt, offset) { return applyOp(offset, 'c'); } },
+		// { name: 'define flag color (fc)', shortcut: 'C', fct: function(evt, offset) { return applyOp(offset, 'C'); } },
+		// { name: 'set as data', shortcut: 'd', fct: function(evt, offset) { return applyOp(offset, 'd'); } },
+		// { name: 'end of function', shortcut: 'e', fct: function(evt, offset) { return applyOp(offset, 'e'); } },
+		{ aoj: true, name: 'analyze function', shortcut: 'f', fct: function(evt, offset) { return applyOp(offset, 'af'); } },
+		// { name: 'format', shortcut: 'F', fct: function(evt, offset) { return applyOp(offset, 'F'); } },
+		{ aoj: true, name: 'immediate base...', shortcut: 'i', expand: [
+			{
+				name: 'binary',
+				fct: function(evt, offset) { return applyOp(offset, 'ahi b'); }
+			},{
+				name: 'octal',
+				fct: function(evt, offset) { return applyOp(offset, 'ahi o'); }
+			},{
+				name: 'decimal',
+				fct: function(evt, offset) { return applyOp(offset, 'ahi d'); }
+			},{
+				name: 'hexadecimal',
+				fct: function(evt, offset) { return applyOp(offset, 'ahi h'); }
+			},{
+				name: 'string',
+				fct: function(evt, offset) { return applyOp(offset, 'ahi s'); }
+			}] },
+		// { name: 'merge down (join this and next functions)', shortcut: 'j', fct: function(evt, offset) { return applyOp(offset, 'j'); } },
+		// { name: 'merge up (join this and previous function)', shortcut: 'k', fct: function(evt, offset) { return applyOp(offset, 'k'); } },
+		// { name: 'highlight word', shortcut: 'h', fct: function(evt, offset) { return applyOp(offset, 'h'); } },
+		// { name: 'manpage for current call', shortcut: 'm', fct: function(evt, offset) { return applyOp(offset, 'm'); } },
+		{ aoj: true, name: 'rename flag', shortcut: 'n', fct: function(evt, offset) { return applyOp(offset, 'fr', 'Name'); } },
+		// { name: 'rename function', shortcut: 'r', fct: function(evt, offset) { return applyOp(offset, 'r'); } },
+		// { name: 'find references /r', shortcut: 'R', fct: function(evt, offset) { return applyOp(offset, 'R'); } },
+		{ aoj: true, name: 'set string', shortcut: 's', fct: function(evt, offset) { return applyOp(offset, 'Cs'); } },
+		// { name: 'set strings in current block', shortcut: 'S', fct: function(evt, offset) { return applyOp(offset, 'S'); } },
+		// { name: 'undefine metadata here', shortcut: 'u', fct: function(evt, offset) { return applyOp(offset, 'u'); } },
+		{ aoj: false, name: 'find xrefs', shortcut: 'x', fct: function(evt, offset) { return displayRes(offset, 'axtj'); } },
+		// { name: 'set as 32bit word', shortcut: 'w', fct: function(evt, offset) { return applyOp(offset, 'w'); } },
+		// { name: 'set as 64bit word', shortcut: 'W', fct: function(evt, offset) { return applyOp(offset, 'W'); } }
+	];
+
+	var menu = document.getElementById('contextmenuDisasm');
+	if (menu === null) {
+		var menu = document.createElement('nav');
+		menu.id = 'contextmenuDisasm';
+		menu.classList.add('context-menu');
+	} else {
+		menu.innerHTML = '';
+	}
+
+	var ul = document.createElement('ul');
+	menu.appendChild(ul);
+
+	var _this = this;
+	var bindAction = function(element, action) {
+		element.addEventListener('mousedown', (function(fct) {
+			return function(evt) {
+				fct(evt, _this.getCurrentOffset());
+			};
+		}(action)));
+	};
+
+	for (var i = 0 ; i < items.length ; i++) {
+		var li = document.createElement('li');
+		ul.appendChild(li);
+		li.appendChild(document.createTextNode(items[i].name));
+		li.isSubOpen = false;
+
+		li.addEventListener('mouseenter', function(evt) {
+			// Cleaning old "active"
+			var subactives = Array.prototype.slice.call(evt.target.parentNode.getElementsByClassName('subactive'));
+			for (var x = 0 ; x < subactives.length ; x++) {
+				subactives[x].classList.remove('subactive');
+				subactives[x].isSubOpen = false;
+			}
+		});
+
+		// expandable menu
+		if (typeof items[i].expand !== 'undefined' && (enableAoj && items[i].aoj || !items[i].aoj)) {
+			// Make submenu reachable
+			li.addEventListener('mouseenter', function(evt) {
+				if (evt.target.isSubOpen) {
+					return;
+				} else {
+					evt.target.isSubOpen = true;
+				}
+
+				var subMenu = evt.target.children[0];
+				if (typeof subMenu === 'undefined') {
+					return;
+				}
+
+				var dim = evt.target.getBoundingClientRect();
+				var indexOf = Array.prototype.slice.call(evt.target.parentNode.children).indexOf(evt.target);
+				evt.target.classList.add('subactive');
+				subMenu.style.left = dim.width + 'px';
+				subMenu.style.top = indexOf * dim.height + 'px';
+			});
+
+			// Creating sub menu
+			var subUl = document.createElement('ul');
+			li.appendChild(subUl);
+			for (var j = 0 ; j < items[i].expand.length ; j++) {
+				var subLi = document.createElement('li');
+				subUl.appendChild(subLi);
+				subLi.appendChild(document.createTextNode(items[i].expand[j].name));
+				bindAction(subLi, items[i].expand[j].fct);
+			}
+		} else {
+			if (enableAoj && items[i].aoj || !items[i].aoj) {
+				bindAction(li, items[i].fct);
+			} else {
+				li.classList.add('disabled');
+			}
+		}
+	}
+
+	document.body.appendChild(menu);
+	componentHandler.upgradeDom();
+
+	var _this = this;
+	this.contextMenuOpen = false;
+	var closeMenu = function() {
+		if (!_this.contextMenuOpen) {
+			return;
+		}
+		menu.classList.remove('active');
+		_this.contextMenuOpen = false;
+	};
+
+	window.onkeyup = function(e) {
+		if (e.keyCode === 27) {
+			closeMenu();
+		}
+	};
+
+	document.addEventListener('click', function() {
+		closeMenu();
+	});
+};
+
+/**
+ * Show a list of element in a specific dialog
+ */
+Disasm.prototype.addLongListDialog = function(list) {
+	var _this = this;
+	var dialog = document.createElement('dialog');
+	dialog.className = 'mdl-dialog';
+
+	if (!dialog.showModal) {
+		dialogPolyfill.registerDialog(dialog);
+	}
+
+	var content = document.createElement('div');
+	content.className = 'mdl-dialog__content';
+	dialog.appendChild(content);
+
+	var title = document.createElement('p');
+	title.appendChild(document.createTextNode('Results'));
+	title.className = 'mdl-typography--text-center';
+	content.appendChild(title);
+
+	var container = document.createElement('div');
+	container.className = 'mdl-card__supporting-text';
+	dialog.appendChild(container);
+
+	var table = document.createElement('table');
+	table.className = 'disasm-table-dialog';
+	table.style.width = '100%';
+	table.style.border = '1px dashed red';
+	container.appendChild(table);
+
+	var thead = document.createElement('thead');
+	table.appendChild(thead);
+
+	var keys = Object.keys(list[0]);
+	for (var i = 0 ; i < keys.length ; i++) {
+		var th = document.createElement('th');
+		th.appendChild(document.createTextNode(keys[i]));
+		thead.appendChild(th);
+	}
+
+	var tbody = document.createElement('tbody');
+	table.appendChild(tbody);
+
+	for (var i = 0 ; i < list.length ; i++) {
+		var tr = document.createElement('tr');
+		tbody.appendChild(tr);
+
+		for (var j = 0 ; j < keys.length ; j++) {
+			var td = document.createElement('td');
+			tr.appendChild(td);
+
+			var text;
+			if (keys[j] === 'opcode') {
+				text = clickableOffsets(list[i][keys[j]]);
+			} else if (keys[j] === 'from') {
+				var hex = '0x' + list[i][keys[j]].toString(16);
+				text = '<a href="javascript:seek(\'' + hex + '\');">0x' + hex + '</a>';
+			} else {
+				text = list[i][keys[j]];
+			}
+
+			td.innerHTML = text;
+		}
+	}
+
+	var actions = document.createElement('div');
+	actions.className = 'mdl-dialog__actions';
+	dialog.appendChild(actions);
+
+	var closeButton = document.createElement('button');
+	closeButton.className = 'mdl-button';
+	closeButton.innerHTML = 'Close';
+	closeButton.addEventListener('click', function() {
+		dialog.close();
+		document.body.removeChild(dialog);
+	});
+	actions.appendChild(closeButton);
+
+	document.body.appendChild(dialog);
+	componentHandler.upgradeDom();
+
+	dialog.showModal();
+};
+
+// Should refactor with HexPairNav and go/get methods
+/**
+ * DisasmNavigator
+ * Based on non-fixed size of "chunk"
+ * will use:
+ *	this.navigationData, as dictionnary [offset => {size, callback, data}]
+ *	this.navigationOffsets, for all ordered [offset]
+ * 	this.currentlyShown, as currently shown [offset]
+ */
+DisasmNavigator.prototype = new BlockNavigator();
+DisasmNavigator.prototype.constructor = DisasmNavigator;
+function DisasmNavigator(howManyLines, startOffset) {
+	this.currentOffset = startOffset;
+	this.howManyLines = howManyLines;
+	this.gap = this.howManyLines * 2;
+
+	this.providerWorker = new Worker('disasmProvider.js');
+
+	this.optimalLines = this.howManyLines * 3;
+	this.MINFILL = this.optimalLines * 0.8;
+
+	this.items = [];
+
+	this.init();
+}
+
+DisasmNavigator.prototype.init = function() {
+	BlockNavigator.prototype.init.apply(this);
+	this.currentlyShown = [];
+	this.populateFirst();
+};
+
+DisasmNavigator.prototype.line2offset = function(line) {
+	return line * 2;
+};
+
+DisasmNavigator.prototype.offset2line = function(offset) {
+	return offset / 2;
+};
+
+DisasmNavigator.prototype.configureWorker_ = function() {
+	var _this = this;
+	this.providerWorker.onmessage = function(e) {
+		var item;
+		for (var i = 0 ; i < _this.items.length ; i++) {
+			if (_this.items[i].offset === e.data.offset &&
+				_this.items[i].size === e.data.size) {
+				item = _this.items[i];
+			}
+		}
+
+		if (typeof item === 'undefined') {
+			console.log('Unable to find origin item');
+			return;
+		}
+
+		item.data = e.data.data;
+		item.status = _this.Status.COMPLETED;
+		for (var i = 0 ; i < item.callback.length ; i++) {
+			item.callback[i](item);
+		}
+		item.callback = [];
+	};
+};
+
+DisasmNavigator.prototype.cleanOldData = function() {
+	for (var i = 0 ; i < this.items.length ; i++) {
+		delete this.items[i].data;
+		delete this.items[i].status;
+	}
+};
+
+DisasmNavigator.prototype.crunchingData = function(onReadyCallback) {
+	var initWorker = new Worker('disasmNavProvider.js');
+	var _this = this;
+
+	initWorker.onmessage = function(e) {
+		_this.navigationData = e.data;
+		_this.navigationOffsets = Object.keys(e.data);
+		_this.navigationOffsets.sort();
+		initWorker.terminate();
+		onReadyCallback();
+	};
+
+	initWorker.postMessage(true);
+};
+
+DisasmNavigator.prototype.getOverlappingIntervals = function(start, end) {
+	var intervals = [];
+	for (var offset in this.navigationData) {
+		var endInterval = offset + this.navigationData[offset].size;
+		if (start >= offset || end <= endInterval) {
+			intervals.push(offset);
+		}
+	}
+	return intervals;
+};
+
+DisasmNavigator.prototype.populateFirst = function() {
+	return this.populateFrom(this.currentOffset);
+};
+
+/**
+ * Create block between [start;end[
+ */
+DisasmNavigator.prototype.fillGap = function(start, end, artifical) {
+	var curSize = end - start;
+	if (curSize > this.howManyLines) {
+		var half = Math.round(end / 2);
+		return [{
+			offset: start,
+			size: Math.round(curSize / 2),
+			artifical: artifical
+		}].concat(this.fillGap(start + Math.round(curSize / 2), end));
+	} else {
+		return [{
+			offset: start,
+			size: curSize,
+			artifical: artifical
+		}];
+	}
+};
+
+DisasmNavigator.prototype.populateFrom = function(offset) {
+	// From currentOffset
+	// I want at least 80% of 3 screens
+
+	// go up of 1 screen, take first in order
+
+	var fromOffset = offset - this.line2offset(this.howManyLines);
+	var endOffset = fromOffset + (3 * this.line2offset(this.howManyLines));
+
+	var existingIntervals = this.getOverlappingIntervals(fromOffset, endOffset);
+
+	var requestedIntervals = []; // {offset, size}
+
+	// If they overlap between them, we merge
+	for (var i = 0 ; i < existingIntervals.length - 1 ; i++) {
+		var endCurrent = existingIntervals[i];
+		var startNext = existingIntervals[i + 1];
+		if (startNext < endCurrent) {
+			if (endNext <= endCurrent) { // inclusive
+				requestedIntervals.push({
+					offset: existingIntervals[i],
+					size: this.navigationData[existingIntervals[i]].size
+				});
+			} else {
+				var endNext = startNext + this.navigationData[startNext].size;
+				requestedIntervals.push({
+					offset: existingIntervals[i],
+					size: endNext - existingIntervals[i]
+				});
+			}
+		}
+	}
+
+	if (requestedIntervals.length > 0) {
+		// If there is gap before
+		if (requestedIntervals[0].offset !== fromOffset) {
+			requestedIntervals = requestedIntervals.concat(this.fillGap(fromOffset, requestedIntervals[0].offset));
+		}
+
+		// If there is a gap after
+		var lastInterval = requestedIntervals[requestedIntervals.length - 1];
+		var lastOffsetInterval = (lastInterval.offset + lastInterval.size);
+		if (lastOffsetInterval !== endOffset) {
+			requestedIntervals = requestedIntervals.concat(this.fillGap(lastOffsetInterval + 1, endOffset));
+		}
+
+		// If there is a gap between
+		for (var i = 0 ; i < requestedIntervals.length - 1 ; i++) {
+			var endCurrent = existingIntervals[i];
+			var startNext = existingIntervals[i + 1];
+
+			if (startNext - endCurrent > 1) {
+				requestedIntervals = requestedIntervals.concat(this.fillGap(endCurrent + 1, startNext));
+			}
+		}
+	} else {
+		requestedIntervals = this.fillGap(fromOffset, endOffset, true);
+	}
+
+	this.currentlyShown = requestedIntervals;
+
+	/****
+	TODO: check if existing (data field), if not, ask provider
+	don't care about total length, but need to find approx. the line requested:
+		which interval, starting at? +lineHeight*diff
+	*****/
+};
+
+/**
+ * Returns the current chunks to display
+ * Will be conciliated with offset (key)
+ */
+DisasmNavigator.prototype.getShownOffset = function() {
+	return this.currentlyShown;
+};
+
+DisasmNavigator.prototype.getSize = function(offset) {
+	for (var i = 0 ; i < this.currentlyShown.length ; i++) {
+		if (this.currentlyShown[i].offset === offset) {
+			return this.currentlyShown[i].size;
+		}
+	}
+	return -1;
+};
+
+DisasmNavigator.prototype.getChunkPositionFor = function(offset) {
+	for (var i = 0 ; i < this.currentlyShown.length ; i++) {
+		if (offset >= this.currentlyShown[i].offset &&
+			offset < this.currentlyShown[i].offset + this.currentlyShown[i].size) {
+			return i;
+		}
+	}
+
+	return -1;
+};
+
+DisasmNavigator.prototype.get = function(offset, size, callback) {
+	// TODO: retrieve data (async) and call
+	var item;
+	for (var i = 0 ; i < this.items.length ; i++) {
+		if (this.items[i].offset === offset &&
+			this.items[i].size === size) {
+			item = this.items[i];
+		}
+	}
+
+	if (typeof item === 'undefined') {
+		item = {
+			offset: offset,
+			size: size
+		};
+		this.items.push(item);
+	}
+
+	if (typeof item.data !== 'undefined') {
+		return callback(item);
+	} else { // Not currently here
+		if (typeof item.callback === 'undefined') {
+			item.callback = [];
+		}
+		// Store in callback, could be retrieving or we will start it
+		item.callback.push(callback);
+		if (item.status !== this.Status.LAUNCHED) { // Need to be retrieved
+			item.status = this.Status.LAUNCHED;
+			this.providerWorker.postMessage({
+				offset: item.offset,
+				size: item.size
+			});
+		}
+	}
+};
+
+DisasmNavigator.prototype.go = function(dir) {
+	this.currentOffset += dir * (this.howManyLines * 2);
+	this.populateFrom(this.currentOffset);
+};
+
+DisasmNavigator.prototype.refreshCurrentOffset = function() {
+	var _this = this;
+	r2.cmd('s', function(offset) {
+		_this.currentOffset = parseInt(offset, 16);
+	});
+};
+
+DisasmNavigator.prototype.getSeekOffset = function() {
+	return this.currentOffset;
+};
+
 /**
  * Define a container in absolute position
  * Create two area: control + body
@@ -5260,107 +5086,42 @@ InfiniteScrolling.prototype.scrollEvent_ = function(e) {
 	this.prevScroll = p;
 };
 
-function panelOverview() {
-	var widget = widgetContainer.getWidget('Overview');
+function panelComments() {
+	var widget = widgetContainer.getWidget('Comments');
 	var c = widgetContainer.getWidgetDOMWrapper(widget);
-	updates.registerMethod(widget.getOffset(), panelSettings);
 
-	var out = '<div class="mdl-grid demo-content">';
-	out += '<div class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col">';
-	out += '	<div id="info"> </div>';
-	out += '	<br />';
-	out += '	<a id="info_headers" class="mdl-buton mdl-js-buttom mdl-js-ripple-effect" style="cursor:pointer">read more...</a>';
-	out += '	<h3>Entropy</h3>';
-	out += '		<svg fill="currentColor" viewBox="0 0 500 80" id="entropy-graph"></svg>';
-	out += '</div>';
+	updates.registerMethod(widget.getOffset(), panelComments);
 
-	out += '<div class="demo-cards mdl-cell mdl-cell--4-col mdl-cell--8-col-tablet mdl-grid mdl-grid--no-spacing">';
-	out += '	<div class="demo-updates mdl-card mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--12-col-desktop">';
-	out += '		<div class="mdl-card__title mdl-card--expand mdl-color--teal-300">';
-	out += '			<h2 class="mdl-card__title-text">Fortunes</h2>';
-	out += '		</div>';
-	out += '		<div class="mdl-card__supporting-text mdl-color-text--grey-600" id="fortune">';
-	out += '			Always use r2 from git';
-	out += '		</div>';
-	out += '		<div class="mdl-card__actions mdl-card--border">';
-	out += '			<a href="javascript:updateFortune()" class="mdl-button mdl-js-button mdl-js-ripple-effect">Next</a>';
-	out += '		</div>';
-	out += '	</div>';
-	out += '	<div class="demo-separator mdl-cell--1-col"></div>';
-	out += '	<div class="demo-options mdl-card mdl-color--teal-300 mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">';
-	out += '		<div class="mdl-card__supporting-text mdl-color-grey-600">';
-	out += '			<h3 class="mdl-cart__title-text">Analysis Options</h3>';
-	out += '			<ul>';
-	out += '				<li>';
-	out += '					<label for="anal_symbols" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
-	out += '						<input type="checkbox" id="anal_symbols" class="mdl-checkbox__input" />';
-	out += '						<span id="anal_symbols" class="mdl-checkbox__label">Analyze symbols</span>';
-	out += '					</label>';
-	out += '				</li>';
-	out += '				<li>';
-	out += '					<label for="anal_calls" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
-	out += '						<input id="anal_calls" type="checkbox" class="mdl-checkbox__input" />';
-	out += '						<span class="mdl-checkbox__label">Analyze calls</span>';
-	out += '					</label>';
-	out += '				</li>';
-	out += '				<li>';
-	out += '					<label for="anal_emu" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
-	out += '						<input id="anal_emu" type="checkbox" class="mdl-checkbox__input" />';
-	out += '						<span class="mdl-checkbox__label">Emulate code</span>';
-	out += '					</label>';
-	out += '				</li>';
-	out += '				<li>';
-	out += '					<label for="anal_prelude" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
-	out += '						<input id="anal_prelude" type="checkbox" class="mdl-checkbox__input" />';
-	out += '						<span class="mdl-checkbox__label">Find preludes</span>';
-	out += '					</label>';
-	out += '				</li>';
-	out += '				<li>';
-	out += '					<label for="anal_autoname" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
-	out += '						<input type="checkbox" id="anal_autoname" class="mdl-checkbox__input" />';
-	out += '						<span id="anal_autoname" class="mdl-checkbox__label">Autoname fcns</span>';
-	out += '					</label>';
-	out += '				</li>';
-	out += '			</ul>';
-	out += '		</div>';
-	out += '		<div class="mdl-card__actions mdl-card--border">';
-	out += '			<a href="#" id="analyze_button" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-color--blue-grey-50 mdl-color-text--blue-greu-50">Analyze</a>';
-	out += '			<div class="mdl-layout-spacer"></div>';
-	out += '			<i class="material-icons">room</i>';
-	out += '		</div>';
-	out += '	</div>';
-	out += '</div>';
-	out += '<div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">';
-	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelDisasm();seek(\'entry0\');" title="Go to disassembly">';
-	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
-	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">code</text>';
-	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan font-size="0.2" dy="-0.07">%</tspan></text>';
-	out += '	</svg>';
-	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelHexdump();seek(\'0x00\');" title="Go to hexdump">';
-	out += '		<use xlink:href="#piechart2" mask="url(#piemask)" />';
-	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">data</text>';
-	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">22<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
-	out += '	</svg>';
-	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelStrings()" title="Go to strings">';
-	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
-	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">strings</text>';
-	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">4<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
-	out += '	</svg>';
-	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelFunctions()" title="Go to functions">';
-	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
-	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">functions</text>';
-	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
-	out += '	</svg>';
-	out += '</div>';
-	out += '</div>';
+	c.style.backgroundColor = '#f0f0f0';
+	c.innerHTML = '<br />';
+	c.innerHTML += uiButton('javascript:notes()', 'Notes');
+	c.innerHTML += '<br /><br />';
+	r2.cmd('CC', function(d) {
+		var table = new Table(
+			['+Offset', '~Comment'],
+			[true, false],
+			'commentsTable',
+			function(row, newVal) {
+				var offset = row[0];
 
-	c.innerHTML = out;
+				// remove
+				r2.cmd('CC- @ ' + offset);
 
-	updateFortune();
-	updateInfo();
-	updateEntropy();
+				// add new
+				r2.cmd('CCu base64:' + window.btoa(newVal) + ' @ ' + offset);
 
-	componentHandler.upgradeDom();
+				update();
+			});
+
+		var lines = d.split(/\n/); //clickableOffsets (d).split (/\n/);
+		for (var i in lines) {
+			var line = lines[i].split(/ (.+)?/);
+			if (line.length >= 2) {
+				table.addRow([line[0], line[1]]);
+			}
+		}
+		table.insertInto(c);
+	});
 }
 
 var disasm;
@@ -5422,3 +5183,299 @@ function panelHexdump() {
 	updates.registerMethod(widget.getOffset(), function() {});
 	lastViews.registerMethod(widget.getOffset(), recall);
 };
+
+var headersCmd = {
+	symbols: {
+		cmd: 'isq',
+		grep: '!imp',
+		ready: false
+	},
+	imports: {
+		cmd: 'isq',
+		grep: 'imp.',
+		ready: false
+	},
+	relocs: {
+		cmd: 'ir',
+		grep: null,
+		ready: false
+	},
+	sections: {
+		cmd: 'iSq',
+		grep: null,
+		ready: false
+	},
+	strings: {
+		cmd: 'izq',
+		grep: null,
+		ready: false
+	},
+	sdb: {
+		cmd: 'k bin/cur/***',
+		grep: null,
+		ready: false
+	}
+};
+
+var infoCellHeight = -1;
+
+function panelOverview() {
+	var widget = widgetContainer.getWidget('Overview');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+	updates.registerMethod(widget.getOffset(), panelOverview);
+
+	var out = '<div class="mdl-grid demo-content">';
+	out += '<div class="demo-graphs mdl-shadow--2dp mdl-color--white mdl-cell mdl-cell--8-col" id="info-cell">';
+	out += '	<div class="mdl-tabs mdl-js-tabs">';
+	out += '		<div class="mdl-tabs__tab-bar" id="overview-tabs">';
+	out += '			<a href="#tab-info" class="mdl-tabs__tab is-active">Headers</a>';
+	out += '			<a href="#tab-symbols" class="mdl-tabs__tab" onclick="overviewLoad(this, headersCmd.symbols)">Symbols</a>';
+	out += '			<a href="#tab-imports" class="mdl-tabs__tab" onclick="overviewLoad(this, headersCmd.imports)">Imports</a>';
+	out += '			<a href="#tab-relocs" class="mdl-tabs__tab" onclick="overviewLoad(this, headersCmd.relocs)">Relocs</a>';
+	out += '			<a href="#tab-sections" class="mdl-tabs__tab" onclick="overviewLoad(this, headersCmd.sections)">Sections</a>';
+	out += '			<a href="#tab-strings" class="mdl-tabs__tab" onclick="overviewLoad(this, headersCmd.strings)">Strings</a>';
+	out += '			<a href="#tab-sdb" class="mdl-tabs__tab" onclick="overviewLoad(this, headersCmd.sdb)">SDB</a>';
+	out += '		</div>';
+	out += '		<div id="overview-content">';
+	out += '			<div class="mdl-tabs__panel is-active" id="tab-info"></div>';
+	out += '			<div class="mdl-tabs__panel" id="tab-symbols"></div>';
+	out += '			<div class="mdl-tabs__panel" id="tab-infos"></div>';
+	out += '			<div class="mdl-tabs__panel" id="tab-imports"></div>';
+	out += '			<div class="mdl-tabs__panel" id="tab-relocs"></div>';
+	out += '			<div class="mdl-tabs__panel" id="tab-sections"></div>';
+	out += '			<div class="mdl-tabs__panel" id="tab-strings"></div>';
+	out += '			<div class="mdl-tabs__panel" id="tab-sdb"></div>';
+	out += '		</div>';
+	out += '	</div>';
+	out += '</div>';
+
+	out += '<div class="demo-cards mdl-cell mdl-cell--4-col mdl-cell--8-col-tablet mdl-grid mdl-grid--no-spacing">';
+	out += '	<div class="demo-updates mdl-card mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--12-col-desktop">';
+	out += '		<div class="mdl-card__title mdl-card--expand mdl-color--teal-300">';
+	out += '			<h2 class="mdl-card__title-text">Fortunes</h2>';
+	out += '		</div>';
+	out += '		<div class="mdl-card__supporting-text mdl-color-text--grey-600" id="fortune">';
+	out += '			Always use r2 from git';
+	out += '		</div>';
+	out += '		<div class="mdl-card__actions mdl-card--border">';
+	out += '			<a href="javascript:updateFortune()" class="mdl-button mdl-js-button mdl-js-ripple-effect">Next</a>';
+	out += '		</div>';
+	out += '	</div>';
+	out += '	<div class="demo-separator mdl-cell--1-col"></div>';
+	out += '	<div class="demo-options mdl-card mdl-color--teal-300 mdl-shadow--2dp mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">';
+	out += '		<div class="mdl-card__supporting-text mdl-color-grey-600">';
+	out += '			<h3 class="mdl-cart__title-text">Analysis Options</h3>';
+	out += '			<ul>';
+	out += '				<li>';
+	out += '					<label for="anal_symbols" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input type="checkbox" id="anal_symbols" class="mdl-checkbox__input" />';
+	out += '						<span id="anal_symbols" class="mdl-checkbox__label">Analyze symbols</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '				<li>';
+	out += '					<label for="anal_calls" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input id="anal_calls" type="checkbox" class="mdl-checkbox__input" />';
+	out += '						<span class="mdl-checkbox__label">Analyze calls</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '				<li>';
+	out += '					<label for="anal_emu" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input id="anal_emu" type="checkbox" class="mdl-checkbox__input" />';
+	out += '						<span class="mdl-checkbox__label">Emulate code</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '				<li>';
+	out += '					<label for="anal_prelude" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input id="anal_prelude" type="checkbox" class="mdl-checkbox__input" />';
+	out += '						<span class="mdl-checkbox__label">Find preludes</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '				<li>';
+	out += '					<label for="anal_autoname" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	out += '						<input type="checkbox" id="anal_autoname" class="mdl-checkbox__input" />';
+	out += '						<span id="anal_autoname" class="mdl-checkbox__label">Autoname fcns</span>';
+	out += '					</label>';
+	out += '				</li>';
+	out += '			</ul>';
+	out += '		</div>';
+	out += '		<div class="mdl-card__actions mdl-card--border">';
+	out += '			<a href="#" id="analyze_button" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-color--blue-grey-50 mdl-color-text--blue-greu-50">Analyze</a>';
+	out += '			<div class="mdl-layout-spacer"></div>';
+	out += '			<i class="material-icons">room</i>';
+	out += '		</div>';
+	out += '	</div>';
+	out += '</div>';
+	out += '<div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">';
+	out += '	<h3>Entropy</h3>';
+	out += '		<svg fill="currentColor" viewBox="0 0 500 80" id="entropy-graph"></svg>';
+	out += '</div>';
+
+	out += '<div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">';
+	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelDisasm();seek(\'entry0\');" title="Go to disassembly">';
+	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
+	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">code</text>';
+	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan font-size="0.2" dy="-0.07">%</tspan></text>';
+	out += '	</svg>';
+	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelHexdump();seek(\'0x00\');" title="Go to hexdump">';
+	out += '		<use xlink:href="#piechart2" mask="url(#piemask)" />';
+	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">data</text>';
+	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">22<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
+	out += '	</svg>';
+	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelStrings()" title="Go to strings">';
+	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
+	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">strings</text>';
+	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">4<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
+	out += '	</svg>';
+	out += '	<svg fill="currentColor" width="200px" height="200px" viewBox="0 0 1 1" class="demo-chart mdl-cell mdl-cell--4-col mdl-cell--3-col-desktop clickable" onclick="panelFunctions()" title="Go to functions">';
+	out += '		<use xlink:href="#piechart" mask="url(#piemask)" />';
+	out += '		<text x="0.3" y="0.2" font-family="Roboto" font-size="0.1" fill="#888" text-anchor="top" dy="0.1">functions</text>';
+	out += '		<text x="0.5" y="0.5" font-family="Roboto" font-size="0.3" fill="#888" text-anchor="middle" dy="0.1">82<tspan dy="-0.07" font-size="0.2">%</tspan></text>';
+	out += '	</svg>';
+	out += '</div>';
+	out += '</div>';
+
+	c.innerHTML = out;
+
+	updateFortune();
+	updateInfo();
+	updateEntropy();
+	
+	componentHandler.upgradeDom();
+
+	// Set max height with MDL behavior
+	var infoCellHeight = document.getElementById('info-cell').getBoundingClientRect().height;
+	var content = document.getElementById('overview-content');
+	content.style.height = infoCellHeight - document.getElementById('overview-tabs').getBoundingClientRect().height + 'px';
+	content.style.overflow = 'auto';
+}
+
+function updateFortune() {
+	r2.cmd('fo', function(d) {
+		document.getElementById('fortune').innerHTML = d;
+		readFortune();
+	});
+}
+
+// say a message
+function speak(text, callback) {
+	if (typeof SpeechSynthesisUtterance === 'undefined') {
+		return;
+	}
+	var u = new SpeechSynthesisUtterance();
+	u.text = text;
+	u.lang = 'en-US';
+
+	u.onend = function() {
+		if (callback) {
+			callback();
+		}
+	};
+
+	u.onerror = function(e) {
+		if (callback) {
+			callback(e);
+		}
+	};
+
+	speechSynthesis.speak(u);
+}
+
+function readFortune() {
+	var f = document.getElementById('fortune').innerHTML;
+	speak(f);
+}
+
+function updateInfo() {
+	r2.cmd('i', function(d) {
+		var lines = d.split(/\n/g);
+		var lines1 = lines.slice(0,lines.length / 2);
+		var lines2 = lines.slice(lines.length / 2);
+		var body = '';
+
+		body += '<table style=\'width:100%\'><tr><td>';
+		for (var i in lines1) {
+			var line = lines1[i].split(/ (.+)?/);
+			if (line.length >= 2) {
+				body += '<b>' + line[0] + '</b> ' + line[1] + '<br/>';
+			}
+		}
+		body += '</td><td>';
+		for (var i in lines2) {
+			var line = lines2[i].split(/ (.+)?/);
+			if (line.length >= 2) {
+				body += '<b>' + line[0] + '</b> ' + line[1] + '<br/>';
+			}
+		}
+		body += '</td></tr></table>';
+		document.getElementById('tab-info').innerHTML = body;
+	});
+}
+
+function updateEntropy() {
+	var eg = document.getElementById('entropy-graph');
+	var box = eg.getBoundingClientRect();
+	var height = (0 | box.height) - 35 - 19;
+	r2.cmd('p=ej 50 $s @ $M', function(d) {
+		var body = '';
+		var res = JSON.parse(d);
+		var values = new Array();
+
+		for (var i in res.entropy) {
+			values.push(res.entropy[i].value);
+		}
+
+		var nbvals = values.length;
+		var min = Math.min.apply(null, values);
+		var max = Math.max.apply(null, values);
+		var inc = 500.0 / nbvals;
+
+		// Minimum entropy has 0.1 transparency. Max has 1.
+		for (var i in values) {
+			var y = 0.1 + (1 - 0.1) * ((values[i] - min) / (max - min));
+			var addr = '0x' + res.entropy[i].addr.toString(16);
+			body += '<rect x="' + (inc * i).toString();
+			body += '" y="0" width="' + inc.toString();
+			body += '" height="' + height + '" style="fill:black;fill-opacity:';
+			body += y.toString() + ';"><title>';
+			body += addr + ' </title></rect>' ;
+
+			if (i % 8 == 0) {
+				body += '<text transform="matrix(1 0 0 1 ';
+				body += (i * inc).toString();
+				body += ' ' + (height + 15) + ')" fill="ff8888" font-family="\'Roboto\'" font-size="9">';
+				body += addr + '</text>';
+			}
+		}
+
+		eg.innerHTML = body;
+		eg.onclick = function(e) {
+			var box = eg.getBoundingClientRect();
+			var pos = e.clientX - box.left;
+			var i = 0 | (pos / (box.width / nbvals));
+			var addr = '0x' + res.entropy[i].addr.toString(16);
+			seek(addr);
+		};
+	});
+}
+
+function overviewLoad(evt, args) {
+	if (args.ready) {
+		return;
+	}
+
+	var cmd = args[0];
+	var grep = args[1];
+
+	var cmd = args.cmd;
+	if (args.grep) {
+		cmd += '~' + args.grep;
+	}
+
+	r2.cmd(cmd, function(d) {
+		var dest = document.getElementById(evt.href.split('#')[1]);
+		dest.innerHTML = '<pre style=\'margin:1.2em;\'>' + clickableOffsets(d) + '<pre>';
+	});
+
+	args.ready = true;
+}
+
