@@ -160,14 +160,14 @@ static int decode_imm_reg(const ut16 instr, struct v810_cmd *cmd) {
 	case V810_MOV_IMM5:
 	case V810_ADD_IMM5:
 	case V810_CMP_IMM5:
-		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%hhd, r%u",
+		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%d, r%u",
 				(st8)SEXT5(immed), REG2(instr));
 		break;
 	case V810_LDSR:
 	case V810_STSR:
 		if (immed > 0x19 || (immed > 0x7 && immed < 0x18)) {
-			snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "s%hhu, r%u",
-					immed, REG2(instr));
+			snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "s%u, r%u",
+					  (ut8)immed, REG2(instr));
 		} else if (sysreg_names[immed]) {
 			snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%s, r%u",
 					sysreg_names[immed], REG2(instr));

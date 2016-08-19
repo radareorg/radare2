@@ -109,10 +109,10 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 		k(BIT_R "&,?{,%3$hhd,3,+,pc,+=,}"); break;
 	case 0x30: /* jnb  */
 		k(BIT_R "&,!,?{,%3$hhd,3,+,pc,+=,}"); break;
-	case 0x40: /* jc   */ emitf("C,!,?{,%hhd,2,+,pc,+=,}", buf[1]); break;
-	case 0x50: /* jnc  */ emitf("C,""?{,%hhd,2,+,pc,+=,}", buf[1]); break;
-	case 0x60: /* jz   */ emitf("A,!,?{,%hhd,2,+,pc,+=,}", buf[1]); break;
-	case 0x70: /* jnz  */ emitf("A,""?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x40: /* jc   */ emitf("C,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
+	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
+	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
+	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x80: /* sjmp */ j(ESX_L1 JMP("2")); break;
 	case 0x90: /* mov  */ emitf("%d,dptr,=", (buf[1]<<8) + buf[2]); break;
 	case 0xA0: /* orl  */ k(BIT_R "C,|="); break;
