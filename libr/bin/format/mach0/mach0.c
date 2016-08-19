@@ -997,10 +997,11 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	char segname[32], sectname[32];
 	int i, j, to;
 
-	if (!bin)
+	if (!bin) {
 		return NULL;
+	}
 	/* for core files */
-	if (bin->nsects <1 && bin->nsegs > 0) {
+	if (bin->nsects < 1 && bin->nsegs > 0) {
 		struct MACH0_(segment_command) *seg;
 		if (!(sections = calloc ((bin->nsegs + 1), sizeof (struct section_t)))) {
 			return NULL;
@@ -1021,13 +1022,16 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		return sections;
 	}
 
-	if (!bin->sects)
+	if (!bin->sects) {
 		return NULL;
+	}
 	to = R_MIN (bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
-	if (to < 1)
+	if (to < 1) {
 		return NULL;
-	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct section_t))))
+	}
+	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct section_t)))) {
 		return NULL;
+	}
 	for (i = 0; i < to; i++) {
 		sections[i].offset = (ut64)bin->sects[i].offset;
 		sections[i].addr = (ut64)bin->sects[i].addr;
@@ -1037,7 +1041,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname)-1);
 		// hack to support multiple sections with same name
 		snprintf (segname, sizeof (segname), "%d", i); // wtf
-		for (j=0; j<bin->nsegs; j++) {
+		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
 				sections[i].srwx = prot2perm (bin->segs[j].initprot);
