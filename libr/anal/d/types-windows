@@ -180,7 +180,7 @@ type.LPCTSTR=*z
 
 LPFILETIME=type
 type.LPFILETIME=p
-type.LPFILETIME.pointto=_FILENAME
+type.LPFILETIME.pointto=_FILETIME
 
 LPTSTR=type
 type.LPTSTR=*z
