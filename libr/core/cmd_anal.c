@@ -1291,6 +1291,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			}
 			break;
+		case 0:
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+				if (fcn) {
+					r_cons_printf ("%s\n", fcn->name);
+				}
+			}
+			break;
 		case ' ':
 			{
 			ut64 off = core->offset;
