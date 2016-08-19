@@ -1279,12 +1279,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'n': // "afn"
 		switch (input[2]) {
-		case '?':
-			eprintf ("Usage: afn[sa] - analyze function names\n");
-			eprintf (" afna       - construct a function name for the current offset\n");
-			eprintf (" afns       - list all strings associated with the current function\n");
-			eprintf (" afn [name] - rename function\n");
-			break;
 		case 's':
 			free (r_core_anal_fcn_autoname (core, core->offset, 1));
 			break;
@@ -1297,7 +1291,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			}
 			break;
-		default:
+		case ' ':
 			{
 			ut64 off = core->offset;
 			char *p, *name = strdup (input + 3);
@@ -1315,6 +1309,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				free (name);
 			}
 			}
+			break;
+		default:
+			eprintf ("Usage: afn[sa] - analyze function names\n");
+			eprintf (" afna       - construct a function name for the current offset\n");
+			eprintf (" afns       - list all strings associated with the current function\n");
+			eprintf (" afn [name] - rename function\n");
 			break;
 		}
 		break;
