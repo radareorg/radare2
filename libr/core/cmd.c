@@ -2013,10 +2013,26 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"x", " @@=off1 off2 ..", "manual list of offsets",
 		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
 		"x", " @@t", "\"\" on all threads (see dp)",
+		"x", " @@f", "\"\" on all functions (see aflq)",
 		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 		// TODO: Add @@k sdb-query-expression-here
 		NULL};
 		r_core_cmd_help (core, help_msg);
+		}
+		break;
+	case 'f':
+		{
+			RAnalFunction *fcn;
+			RListIter *iter;
+			if (core->anal) {
+				r_list_foreach (core->anal->fcns, iter, fcn) {
+					r_core_seek (core, fcn->addr, 1);
+					r_core_cmd (core, cmd, 0);
+					r_cons_newline ();
+				}
+			}
+			free (ostr);
+			return false;
 		}
 		break;
 	case 't':
@@ -2029,7 +2045,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_printf ("# PID %d\n", p->pid);
 					r_debug_select (core->dbg, p->pid, p->pid);
 					r_core_cmd (core, cmd, 0);
-					r_cons_printf("\n");
+					r_cons_newline ();
 				}
 				r_list_free (list);
 			}
