@@ -1504,15 +1504,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 
 		bool swapbits = false;
-		{
-			if (mybits == 32) {
-				const char *asmarch = r_config_get (core->config, "asm.arch");
-				if (strstr (asmarch, "arm")) {
-					RFlagItem *item = r_flag_get_i (core->flags, addr + 1);
-					if (item) {
-						r_config_set_i (core->config, "asm.bits", 16);
-						swapbits = true;
-					}
+		if (mybits == 32) {
+			const char *asmarch = r_config_get (core->config, "asm.arch");
+			if (strstr (asmarch, "arm")) {
+				RFlagItem *item = r_flag_get_i (core->flags, addr + 1);
+				if (item) {
+					r_config_set_i (core->config, "asm.bits", 16);
+					swapbits = true;
 				}
 			}
 		}
@@ -4343,7 +4341,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @ entry0");
 		break;
-	case 'n': r_core_anal_autoname_all_fcns (core); break; //aan
+	case 'n':
+		r_core_anal_autoname_all_fcns (core);
+		break; //aan
 	case 'p': // "aap"
 		if (*input == '?') {
 			// TODO: accept parameters for ranges

@@ -284,6 +284,7 @@ typedef struct r_anal_type_function_t {
 	RList *xrefs;
 #endif
 	RAnalFcnMeta meta;
+	RRangeTiny bbr;
 } RAnalFunction;
 
 struct r_anal_type_t {

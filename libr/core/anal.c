@@ -2637,7 +2637,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 				r_list_push (cf->hooks, ch);
 				ch = NULL;
 			case R_ANAL_OP_TYPE_CALL:
-				if (op->addr !=  op->jump) { //no selfies
+				if (op->addr != op->jump) { //no selfies
 					cf->naddr = addr;
 					prev = cf;
 					cf = r_anal_cycle_frame_new ();

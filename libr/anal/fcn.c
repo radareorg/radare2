@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#define USE_TINYRANGE_BBS 1
 // XXX must be configurable by the user
 #define FCN_DEPTH 512
 
@@ -90,6 +91,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->bbs = r_anal_bb_list_new ();
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
+	r_tinyrange_init (&fcn->bbr);
 	return fcn;
 }
 
@@ -108,6 +110,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	fcn->_size = 0;
 	free (fcn->name);
 	free (fcn->attr);
+	r_tinyrange_fini (&fcn->bbr);
 #if FCN_OLD
 	r_list_free (fcn->refs);
 	r_list_free (fcn->xrefs);
@@ -1005,7 +1008,9 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 					   bb->addr - endaddr < anal->opt.bbs_alignment &&
 					   !(bb->addr & (anal->opt.bbs_alignment - 1))) {
 				endaddr = bb->addr + bb->size;
-			} else break;
+			} else {
+				break;
+			}
 		}
 		r_anal_fcn_resize (fcn, endaddr - fcn->addr);
 
@@ -1025,6 +1030,16 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 	return ret;
 }
 
+static void update_tinyrange_bbs(RAnalFunction *fcn) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_sort (fcn->bbs, &cmpaddr);
+	r_tinyrange_fini (&fcn->bbr);
+	r_list_foreach (fcn->bbs, iter, bb) {
+		r_tinyrange_add (&fcn->bbr, bb->addr, bb->addr + bb->size);
+	}
+}
+
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 	RAnalFunction *f = r_anal_get_fcn_in (anal, fcn->addr, R_ANAL_FCN_TYPE_ROOT);
@@ -1040,6 +1055,7 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 	if (anal->cb.on_fcn_new) {
 		anal->cb.on_fcn_new (anal, anal->user, fcn);
 	}
+	update_tinyrange_bbs (fcn);
 	return true;
 }
 
@@ -1181,6 +1197,11 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
+#if USE_TINYRANGE_BBS
+			if (r_tinyrange_in (&fcn->bbr, addr)) {
+				return fcn;
+			}
+#else
 			ut64 min = 0, max = 0;
 			RAnalBlock *bb;
 			RListIter *iter;
@@ -1201,6 +1222,7 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 			if (addr >= min && addr < max) {
 				ret = fcn;
 			}
+#endif
 		}
 	}
 	return ret;
@@ -1447,23 +1469,31 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 }
 
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
-	RAnalBlock *bb;
-	RListIter *iter;
 	bool has_bbs = false;
 
-	r_list_foreach (fcn->bbs, iter, bb) {
+#if USE_TINYRANGE_BBS
+	if (r_tinyrange_in (&fcn->bbr, addr)) {
+		return true;
+	}
+	return false;
+#else
+	RAnalBlock *bb;
+	RListIter *iter;
+	if (!r_list_empty (fcn->bbs)) {
 		has_bbs = true;
+	}
+	r_list_foreach (fcn->bbs, iter, bb) {
 		if (addr >= bb->addr && addr < bb->addr + bb->size) {
 			return true;
 		}
 	}
-
 	if (!has_bbs) {
 		// hack to make anal_java work, because it doesn't use
 		// basicblocks.
 		// FIXME: anal_java should create basicblocks
 		return addr >= fcn->addr && addr < fcn->addr + r_anal_fcn_size (fcn);
 	}
+#endif
 	return false;
 }
 
