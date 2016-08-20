@@ -69,14 +69,17 @@ R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, c
 
 R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
-	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 	if (!kind) {
 		kind = R_ANAL_VAR_KIND_BPV;
 	}
 	if (!type) {
 		type = "int";
 	}
-	if (!a || !fcn) {
+	if (!a) {
+		return false;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
+	if (!fcn) {
 		return false;
 	}
 	if (size == -1) {
