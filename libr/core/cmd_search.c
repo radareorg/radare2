@@ -320,9 +320,11 @@ R_API int r_core_search_preludes(RCore *core) {
 		} else if (strstr (arch, "x86")) {
 			switch (bits) {
 			case 32:
+				r_core_search_prelude (core, from, to, // mov edi, edi;push ebp; mov ebp,esp
+					(const ut8 *)"\x8b\xff\x55\x8b\xec", 5, NULL, 0);
 				r_core_search_prelude (core, from, to,
 					(const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
-				r_core_search_prelude (core, from, to,
+				r_core_search_prelude (core, from, to, // push ebp; mov ebp, esp
 					(const ut8 *)"\x55\x8b\xec", 3, NULL, 0);
 				break;
 			case 64:
