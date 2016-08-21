@@ -5,6 +5,23 @@
 #include "r_list.h"
 #include "r_sign.h"
 
+static void fcn_zig_add(RSignItem *si, int pref, ut8 *addr) {
+	if (si->type == 'f') {
+		r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
+			si->name, pref, addr);
+	} else if(si->type == 'p') {
+		r_cons_printf ("afn sign.fun_%s_%d 0x%08"PFMT64x"\n",
+				si->name, pref, addr);
+	} else {
+		r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
+			si->name, addr);
+	}
+}
+
+static int fcn_offset_cmp(ut64 offset, const RAnalFunction *fcn) {
+	return fcn->addr == offset ? 0 : -1;
+}
+
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RAnalFunction *fcni;
@@ -54,21 +71,46 @@ static int cmd_zign(void *data, const char *input) {
 			}
 			r_cons_printf ("zn %s\n", input+2);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
-				ut8 buf[128];
+				RAnalOp *op;
+				int len, oplen, idx = 0;
+				ut8 *buf;
+
+				len = r_anal_fcn_size (fcni);
+				if (!(buf = malloc (len))) {
+					return false;
+				}
 				if (r_io_read_at (core->io, fcni->addr, buf,
-						sizeof (buf)) == sizeof (buf)) {
+						len) == len) {
 					RFlagItem *flag = r_flag_get_i (
 						core->flags, fcni->addr);
 					if (flag) {
 						name = flag->name;
 						r_cons_printf ("zb %s ", name);
-						len = (r_anal_fcn_size (fcni) > sizeof (buf))?
-							sizeof (buf): r_anal_fcn_size(fcni);
-						for (i=0; i<len; i++)
-							r_cons_printf ("%02x", buf[i]);
+						if (!(op = r_anal_op_new ())) {
+							free (buf);
+							return false;
+						}
+						while (idx < len) {
+							if ((oplen = r_anal_op (core->anal, op, fcni->addr+idx, buf+idx, len-idx)) <1) {
+								break;
+							}
+							if (op->nopcode != 0) {
+								memset (buf+idx+op->nopcode, 0, oplen-op->nopcode);
+							}
+							idx += oplen;
+						}
+
+						for (i=0; i<len; i++) {
+							if (buf[i] == 0) {
+								r_cons_printf ("..");
+							} else {
+								r_cons_printf ("%02x", buf[i]);
+							}
+						}
 						r_cons_newline ();
 					} else eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
 				} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcni->addr);
+				free (buf);
 			}
 			r_cons_strcat ("zn-\n");
 			if (ptr) {
@@ -164,14 +206,7 @@ static int cmd_zign(void *data, const char *input) {
 						si = r_sign_check (core->sign, buf+idx, len-idx);
 						if (si) {
 							count++;
-							if (si->type == 'f')
-								r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
-									si->name, idx, ini+idx); //core->offset);
-							else if(si->type == 'p')
-								r_cons_printf ("afn sign.fun_%s_%d 0x%08"PFMT64x"\n",
-										si->name, idx, ini+idx);
-							else r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
-								si->name, ini+idx); //core->offset+idx);
+							fcn_zig_add (si, idx, ini+idx);
 							eprintf ("- Found %d matching function signatures\r", count);
 						}
 					}
@@ -207,6 +242,42 @@ static int cmd_zign(void *data, const char *input) {
 			r_sign_flirt_scan (core->anal, input + 2);
 		}
 		break;
+	case '.':
+		{
+			RSignItem *si;
+			int len = 0;
+			int count = 0;
+			RListIter *it;
+			ut8 *buf;
+
+			if (r_list_empty (core->anal->fcns)) {
+				eprintf("No functions found, please run some analysis before.\n");
+				return false;
+			}
+			if (!(it = r_list_find (core->anal->fcns, core->offset, (RListComparator)fcn_offset_cmp))) {
+				return false;
+			}
+			fcni = (RAnalFunction*)it->data;
+			if (r_cons_singleton ()->breaked)
+				break;
+			len = r_anal_fcn_size (fcni);
+			if (!(buf = malloc (len))) {
+				return false;
+			}
+			if (r_io_read_at (core->io, fcni->addr, buf,
+					len) == len) {
+				si = r_sign_check (core->sign, buf, len);
+				if (si) {
+					r_cons_printf ("fs sign\n");
+					count++;
+					fcn_zig_add (si, count, fcni->addr);
+				}
+			}
+			free (buf);
+			r_cons_break_end ();
+			core->sign->matches += count;
+		}
+		break;
 	default:
 	case '?':{
 		const char* help_msg[] = {
@@ -216,6 +287,7 @@ static int cmd_zign(void *data, const char *input) {
 			"z-", " namespace", "Unload zignatures in namespace",
 			"z-*", "", "unload all zignatures",
 			"z/", " [ini] [end]", "search zignatures between these regions",
+			"z.", " [@addr]", "match zignatures by function at address",
 			"za", " ...", "define new zignature for analysis",
 			"zb", " name bytes", "define zignature for bytes",
 			"zB", " size", "Generate zignatures for current offset/flag",
