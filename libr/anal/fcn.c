@@ -1030,7 +1030,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 				break;
 			}
 		}
-#if JAYRO_04
+#if !JAYRO_04
 		r_anal_fcn_resize (fcn, endaddr - fcn->addr);
 
 		// resize function if overlaps
