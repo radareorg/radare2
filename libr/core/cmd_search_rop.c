@@ -727,6 +727,7 @@ static int rop_classify_nops (RCore *core, RList *ropList) {
 }
 
 static void rop_classify (RCore *core, Sdb *db, RList *ropList, const char *key, unsigned int size) {
+	Sdb *db_nop = NULL, *db_mov = NULL, *db_ct = NULL, *db_aritm = NULL, *db_aritm_ct = NULL;
 	int nop = rop_classify_nops (core, ropList);
 	char *mov  = rop_classify_mov (core, ropList);
 	char *ct  = rop_classify_constant (core, ropList);
@@ -734,28 +735,47 @@ static void rop_classify (RCore *core, Sdb *db, RList *ropList, const char *key,
 	char *arithm_ct  = rop_classify_arithmetic_const (core, ropList);
 	char *str = r_str_newf ("0x%"PFMT64x, size);
 
+	db_nop = sdb_ns (db, "nop", true);
+	db_mov = sdb_ns (db, "mov", true);
+	db_ct = sdb_ns (db, "const", true);
+	db_aritm = sdb_ns (db, "arithm", true);
+	db_aritm_ct = sdb_ns (db, "arithm_ct", true);
+
+	if (!db_nop || !db_mov || !db_ct || !db_aritm || !db_aritm_ct) {
+		eprintf ("Error: Could not create SDB 'rop' sub-namespaces\n");
+		return;
+	}
+
 	if (nop == 1) {
-		str = r_str_concat (str, " NOP");
-		sdb_set (db, key, str, 0);
+		char *str_nop = r_str_newf ("%s NOP", str);
+		sdb_set (db_nop, key, str_nop, 0);
+		free (str_nop);
 	} else {
 		if (mov) {
-			str = r_str_concatf (str, " MOV { %s }", mov);
+			char *str_mov = r_str_newf ("%s MOV { %s }", str, mov);
+			sdb_set (db_mov, key, str_mov, 0);
+			free (str_mov);
 			free (mov);
 		}
 		if (ct) {
-			str = r_str_concatf (str, " LOAD CONST { %s }", ct);
+			char *str_ct = r_str_newf ("%s LOAD_CONST { %s }", str, ct);
+			sdb_set (db_ct, key, str_ct, 0);
+			free (str_ct);
 			free (ct);
 		}
 		if (arithm) {
-			str = r_str_concatf (str, " ARITHMETIC { %s }", arithm);
+			char *str_arithm = r_str_newf ("%s ARITHMETIC { %s }", str, arithm);
+			sdb_set (db_aritm, key, str_arithm, 0);
+			free (str_arithm);
 			free (arithm);
 		}
 		if (arithm_ct) {
-			str = r_str_concatf (str, " ARITHMETIC_CONST { %s }", arithm_ct);
+			char *str_arithm_ct = r_str_newf ("%s ARITHMETIC_CONST { %s }", str, arithm_ct);
+			sdb_set (db_aritm_ct, key, str_arithm_ct, 0);
+			free (str_arithm_ct);
 			free (arithm_ct);
 		}
 	}
 
-	sdb_set (db, key, str, 0);
 	free (str);
 }
