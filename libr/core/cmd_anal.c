@@ -2698,7 +2698,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					eprintf ("Invalid block size\n");
 				}
 				eprintf ("Emulate basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", pc, end);
-				buf = malloc (bbs + 1);
+				buf = calloc (1, bbs + 1);
 				r_io_read_at (core->io, pc, buf, bbs);
 				int left;
 				while (pc < end) {
@@ -2980,7 +2980,9 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		int count = 0;
 		if (input[0]) {
 			l = (int)r_num_get (core->num, input + 1);
-			if (l > 0) count = l;
+			if (l > 0) {
+				count = l;
+			}
 			if (l > tbs) {
 				r_core_block_size (core, l * 4);
 				//len = l;
@@ -4482,7 +4484,7 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 			r_list_foreach (fcn->bbs, iter, b) {
 				int f = b->addr - fcn->addr;
 				int t = R_MIN (f + b->size, fcn_size);
-				if (f>=0) {
+				if (f >= 0) {
 					while (f < t) {
 						bitmap[f++] = 1;
 					}

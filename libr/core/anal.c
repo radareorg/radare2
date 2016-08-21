@@ -8,6 +8,7 @@
 
 #include <string.h>
 
+#define SLOW_IO 0
 #define HASNEXT_FOREVER 1
 
 #define in_function(fn,y) ((y) >= (fn)->addr && (y) < ((fn)->addr + r_anal_fcn_size (fn)))
@@ -1014,15 +1015,16 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
-	struct r_anal_bb_t *bb, *bbi;
+	RAnalBlock *bb, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
-	int rc = true;
 	ut8 *buf = NULL;
-	int ret = R_ANAL_RET_NEW, buflen, bblen = 0;
+	int buflen, bblen = 0, rc = true;
+	int ret = R_ANAL_RET_NEW;
 
-	--fcn->depth;
-	if (fcn->depth <= 0) return false;
+	if (--fcn->depth <= 0) {
+		return false;
+	}
 
 	bb = r_anal_bb_new ();
 	if (!bb) return false;
@@ -1031,43 +1033,56 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		ret = r_anal_fcn_split_bb (core->anal, fcn, bb, at);
 	} else {
 		r_list_foreach (fcn->bbs, iter, bbi) {
-			if (at == bbi->addr)
+			if (at == bbi->addr) {
 				ret = R_ANAL_RET_DUP;
+			}
 		}
 	}
-	if (ret == R_ANAL_RET_DUP) /* Dupped bb */
+	if (ret == R_ANAL_RET_DUP) {
+		/* Dupped basic block */
 		goto error;
+	}
 
 	if (ret == R_ANAL_RET_NEW) { /* New bb */
 		// XXX: use static buffer size of 512 or so
 		buf = malloc (core->anal->opt.bb_max_size);
-		if (!buf)
+		if (!buf) {
 			goto error;
-
+		}
 		do {
 			// check io error
-			if (r_io_read_at (core->io, at+bblen, buf, 4) != 4) // ETOOSLOW
+#if SLOW_IO
+			if (r_io_read_at (core->io, at + bblen, buf, 4) != 4) { // ETOOSLOW
 				goto error;
+			}
 			r_core_read_at (core, at+bblen, buf, core->anal->opt.bb_max_size);
-			if (!r_io_is_valid_offset (core->io, at+bblen, !core->anal->opt.noncode))
+#else
+			if (r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size) != 4) { // ETOOSLOW
 				goto error;
+			}
+#endif
+			if (!r_io_is_valid_offset (core->io, at + bblen, !core->anal->opt.noncode)) {
+				goto error;
+			}
 			buflen = core->anal->opt.bb_max_size;
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
 			if (bblen == R_ANAL_RET_ERROR ||
 				(bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				goto error;
 			} else if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
-				if (core->anal->split)
+				if (core->anal->split) {
 					ret = r_anal_fcn_bb_overlaps (fcn, bb);
-
+				}
 				if (ret == R_ANAL_RET_NEW) {
 					r_anal_fcn_bbadd (fcn, bb);
 					fail = bb->fail;
 					jump = bb->jump;
-					if (fail != -1)
+					if (fail != -1) {
 						r_core_anal_bb (core, fcn, fail, false);
-					if (jump != -1)
+					}
+					if (jump != -1) {
 						r_core_anal_bb (core, fcn, jump, false);
+					}
 				}
 			}
 		} while (bblen != R_ANAL_RET_END);
@@ -1117,8 +1132,9 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 	while (1) {
 		// TODO: Implement the proper logic for doing esil analysis
 		op = r_core_anal_op (core, at);
-		if (!op)
+		if (!op) {
 			break;
+		}
 		esil = R_STRBUF_SAFEGET (&op->esil);
 		eprintf ("0x%08"PFMT64x" %d %s\n", at, op->size, esil);
 		at += op->size;
@@ -1437,7 +1453,7 @@ static int fcnlist_gather_metadata(RList *fcns) {
 			numrefs++;
 		}
 		fcn->meta.numrefs = numrefs;
-		fcn->meta.numcallrefs= numcallrefs;
+		fcn->meta.numcallrefs = numcallrefs;
 
 		// Determine the bounds of the functions address space
 		ut64 min = UT64_MAX;
@@ -1957,8 +1973,9 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (!r_anal_fcn_is_in_offset (fcn, core->offset))
+		if (!r_anal_fcn_is_in_offset (fcn, core->offset)) {
 			continue;
+		}
 		r_list_foreach (fcn->bbs, iter2, bb) {
 			if (r_anal_bb_is_in_offset (bb, addr)) {
 				dest = bb;
