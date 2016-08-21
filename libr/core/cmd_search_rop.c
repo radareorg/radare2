@@ -250,6 +250,10 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 			reg_write = parse_list (strstr (out, "reg.write"));
 			mem_read = parse_list (strstr (out, "mem.read"));
 			mem_write = parse_list (strstr (out, "mem.write"));
+		} else {
+			R_FREE (esil_flg);
+			R_FREE (esil_main);
+			continue;
 		}
 
 		if (!r_list_find (ops_list, "=", (RListComparator)strcmp)) {
@@ -291,6 +295,13 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 		free (out);
 		R_FREE (esil_flg);
 		R_FREE (esil_main);
+		r_list_free (ops_list);
+		r_list_free (flg_read);
+		r_list_free (flg_write);
+		r_list_free (reg_read);
+		r_list_free (reg_write);
+		r_list_free (mem_read);
+		r_list_free (mem_write);
 	}
 
 	return ct;
@@ -340,6 +351,10 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 			reg_write = parse_list (strstr (out, "reg.write"));
 			mem_read = parse_list (strstr (out, "mem.read"));
 			mem_write = parse_list (strstr (out, "mem.write"));
+		} else {
+			R_FREE (esil_flg);
+			R_FREE (esil_main);
+			continue;
 		}
 
 		if (!r_list_find (ops_list, "=", (RListComparator)strcmp)) {
@@ -407,6 +422,13 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 		free (out);
 		R_FREE (esil_flg);
 		R_FREE (esil_main);
+		r_list_free (ops_list);
+		r_list_free (flg_read);
+		r_list_free (flg_write);
+		r_list_free (reg_read);
+		r_list_free (reg_write);
+		r_list_free (mem_read);
+		r_list_free (mem_write);
 	}
 
 	return mov;
@@ -427,6 +449,8 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 
 	if (!romem || !stats) {
 		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
+		free (op_result);
+		free (op_result_r);
 		return NULL;
 	}
 
@@ -460,16 +484,10 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 			reg_write = parse_list (strstr (out, "reg.write"));
 			mem_read = parse_list (strstr (out, "mem.read"));
 			mem_write = parse_list (strstr (out, "mem.write"));
-		}
-
-		if (!ops_list) {
-			free (out);
-			free (op_result);
-			free (op_result_r);
-			free (arithmetic);
+		} else {
 			R_FREE (esil_flg);
 			R_FREE (esil_main);
-			return NULL;
+			continue;
 		}
 
 		r_list_foreach (ops_list, iter_ops, op) {
@@ -551,6 +569,13 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 		free (out);
 		R_FREE (esil_flg);
 		R_FREE (esil_main);
+		r_list_free (ops_list);
+		r_list_free (flg_read);
+		r_list_free (flg_write);
+		r_list_free (reg_read);
+		r_list_free (reg_write);
+		r_list_free (mem_read);
+		r_list_free (mem_write);
 	}
 	free (op_result);
 	free (op_result_r);
@@ -573,6 +598,8 @@ static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
 
 	if (!romem || !stats) {
 		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
+		free (op_result);
+		free (op_result_r);
 		return NULL;
 	}
 
@@ -610,13 +637,12 @@ static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
 			reg_write = parse_list (strstr (out, "reg.write"));
 			mem_read = parse_list (strstr (out, "mem.read"));
 			mem_write = parse_list (strstr (out, "mem.write"));
-		}
-
-		if (!ops_list) {
-			free (out);
+		} else {
+			free (op_result);
+			free (op_result_r);
 			R_FREE (esil_flg);
 			R_FREE (esil_main);
-			return NULL;
+			continue;
 		}
 
 		r_list_foreach (ops_list, iter_ops, op) {
@@ -687,6 +713,12 @@ static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
 		free (out);
 		R_FREE (esil_flg);
 		R_FREE (esil_main);
+		r_list_free (flg_read);
+		r_list_free (flg_write);
+		r_list_free (reg_read);
+		r_list_free (reg_write);
+		r_list_free (mem_read);
+		r_list_free (mem_write);
 	}
 	free (op_result);
 	free (op_result_r);
@@ -714,13 +746,13 @@ static int rop_classify_nops (RCore *core, RList *ropList) {
 		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
 		// r_cons_println (out);
 		if (out) {
+			free (out);
 			return 0;
 		}
 		else {
 			// directly say NOP
 			continue;
 		}
-		free (out);
 	}
 
 	return changes;
