@@ -2161,6 +2161,15 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	}
 }
 
+static int cs_len_prefix_opcode(uint8_t *item) {
+	int i, len = 0;
+	for (i = 0; i < 4; i++) {
+		len = len + (item[i] != 0) ? 1 : 0;
+	}
+	return len;
+}
+
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode = 0;
 #if USE_ITER_API
@@ -2216,6 +2225,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		//const char *pc = (a->bits==16)?"ip": (a->bits==32)?"eip":"rip";
 		//const char *sp = (a->bits==16)?"sp": (a->bits==32)?"esp":"rsp";
 		//const char *bp = (a->bits==16)?"bp": (a->bits==32)?"ebp":"rbp";
+		op->nopcode = cs_len_prefix_opcode (insn->detail->x86.prefix)
+			+cs_len_prefix_opcode (insn->detail->x86.opcode);
 		op->size = insn->size;
 		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;
