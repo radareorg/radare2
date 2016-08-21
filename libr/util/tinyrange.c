@@ -5,11 +5,13 @@ R_API RRangeTiny *r_tinyrange_new() {
 }
 
 R_API void r_tinyrange_init(RRangeTiny *bbr) {
+	bbr->count = 0;
 	bbr->pairs = 0;
 	bbr->ranges = NULL;
 }
 
 R_API void r_tinyrange_fini(RRangeTiny *bbr) {
+	bbr->count = 0;
 	bbr->pairs = 0;
 	R_FREE (bbr->ranges);
 }
@@ -48,6 +50,7 @@ R_API bool r_tinyrange_add(RRangeTiny *bbr, ut64 from, ut64 to) {
 			idx += 2;
 			void *ranges = realloc (bbr->ranges, sizeof (ut64) * bbr->pairs * 2);
 			if (!ranges) {
+				bbr->pairs--;
 				return false;
 			}
 			bbr->ranges = ranges;
@@ -60,6 +63,7 @@ R_API bool r_tinyrange_add(RRangeTiny *bbr, ut64 from, ut64 to) {
 		bbr->ranges[0] = from;
 		bbr->ranges[1] = to;
 	}
+	bbr->count++;
 	return true;
 }
 

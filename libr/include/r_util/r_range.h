@@ -5,6 +5,7 @@
 
 typedef struct r_range_tiny_t {
 	int pairs;
+	int count;
 	ut64 *ranges;
 } RRangeTiny;
 

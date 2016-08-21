@@ -1061,7 +1061,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 					ret = r_anal_fcn_bb_overlaps (fcn, bb);
 
 				if (ret == R_ANAL_RET_NEW) {
-					r_list_append (fcn->bbs, bb);
+					r_anal_fcn_bbadd (fcn, bb);
 					fail = bb->fail;
 					jump = bb->jump;
 					if (fail != -1)
@@ -2791,7 +2791,7 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 			if (bb->addr + bb->size > max)
 				max = bb->addr + bb->size;
 		}
-		r_list_append (f1->bbs, bb);
+		r_anal_fcn_bbadd (f1, bb);
 	}
 	// TODO: import data/code/refs
 	// update size
