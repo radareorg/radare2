@@ -2,14 +2,52 @@
 
 #include "r_util.h"
 #include "r_core.h"
+
+/* better aac for windows-x86-32 */
+#define JAYRO_03 0
+
+#if JAYRO_03
+
+static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
+	ut64 align = addr % PE_ALIGN;
+	ut32 call_bytes;
+
+	// XXX this is x86 specific
+	if (align == 0) {
+		call_bytes = (ut32)((ut8*)buf)[bufi + 3] << 24;
+		call_bytes |= (ut32)((ut8*)buf)[bufi + 2] << 16;
+		call_bytes |= (ut32)((ut8*)buf)[bufi + 1] << 8;
+		call_bytes |= (ut32)((ut8*)buf)[bufi];
+	} else {
+		call_bytes = (ut32)((ut8*)buf)[bufi - align + 3] << 24;
+		call_bytes |= (ut32)((ut8*)buf)[bufi - align + 2] << 16;
+		call_bytes |= (ut32)((ut8*)buf)[bufi - align + 1] << 8;
+		call_bytes |= (ut32)((ut8*)buf)[bufi - align];
+	}
+	if (call_bytes >= from && call_bytes <= to) {
+		return true;
+	}
+	call_bytes = (ut32)((ut8*)buf)[bufi + 4] << 24;
+	call_bytes |= (ut32)((ut8*)buf)[bufi + 3] << 16;
+	call_bytes |= (ut32)((ut8*)buf)[bufi + 2] << 8;
+	call_bytes |= (ut32)((ut8*)buf)[bufi + 1];
+	call_bytes += addr + 5;
+	if (call_bytes >= from && call_bytes <= to) {
+		return false;
+	}
+	return false;
+}
+#endif
+
 static void type_cmd_help (RCore *core) {
 	const char *help_msg[] = {
-			"Usage:", "aftm", "",
-			"aftm", "", "type matching analysis",
-			NULL
+		"Usage:", "aftm", "",
+		"aftm", "", "type matching analysis",
+		NULL
 	};
 	r_core_cmd_help (core, help_msg);
 }
+
 static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (!fcn && *input != '?') {
@@ -3059,7 +3097,9 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		if (core->cons->breaked)
 			break;
 		// TODO: too many ioreads here
-		if (bufi > 4000) bufi = 0;
+		if (bufi > 4000) {
+			bufi = 0;
+		}
 		if (!bufi) {
 			r_io_read_at (core->io, addr, buf, 4096);
 		}
@@ -3069,10 +3109,21 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				op.size = minop;
 			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
+#if JAYRO_03
+				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
+					fcn = r_anal_get_fcn_in(core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
+					if (!fcn) {
+						r_core_anal_fcn (core, op.jump, addr,
+								R_ANAL_REF_TYPE_NULL, depth);
+					}
+				}
+#else
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 				}
+#endif
 			}
+
 		} else {
 			op.size = minop;
 		}
