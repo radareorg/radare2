@@ -16,7 +16,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->type = R_ANAL_BB_TYPE_NULL;
 	bb->cond = NULL;
 	bb->fingerprint = NULL;
-	bb->diff = r_anal_diff_new ();
+	bb->diff = NULL; //r_anal_diff_new ();
 	bb->label = NULL;
 	bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
 	bb->op_pos_size = DFLT_NINSTR;
@@ -27,14 +27,11 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	if (!bb) return;
 	r_anal_cond_free (bb->cond);
 	free (bb->fingerprint);
-	if (bb->diff) {
-		r_anal_diff_free (bb->diff);
-		bb->diff = NULL;
-	}
+	r_anal_diff_free (bb->diff);
+	bb->diff = NULL;
 	free (bb->op_bytes);
-	if (bb->switch_op) {
-		r_anal_switch_op_free (bb->switch_op);
-	}
+	r_anal_switch_op_free (bb->switch_op);
+	bb->switch_op = NULL;
 	bb->fingerprint = NULL;
 	bb->cond = NULL;
 	free (bb->label);
@@ -139,10 +136,13 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
-	r_list_foreach (anal->fcns, iter, fcn)
-		r_list_foreach (fcn->bbs, iter2, bb)
-			if (r_anal_bb_is_in_offset (bb, off))
+	r_list_foreach (anal->fcns, iter, fcn) {
+		r_list_foreach (fcn->bbs, iter2, bb) {
+			if (r_anal_bb_is_in_offset (bb, off)) {
 				return bb;
+			}
+		}
+	}
 	return NULL;
 }
 
@@ -154,17 +154,22 @@ R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
 }
 
 /* set the offset of the i-th instruction in the basicblock bb */
-R_API void r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
+R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 	// the offset 0 of the instruction 0 is not stored because always 0
 	if (i > 0 && v > 0) {
 		if (i >= bb->op_pos_size) {
-			ut16 *tmp_op_pos = realloc (bb->op_pos, (i * 2) * sizeof (*bb->op_pos));
-			if (!tmp_op_pos) return;
-			bb->op_pos_size = i * 2;
+			int new_pos_size = i * 2;
+			ut16 *tmp_op_pos = realloc (bb->op_pos, new_pos_size * sizeof (*bb->op_pos));
+			if (!tmp_op_pos) {
+				return false;
+			}
+			bb->op_pos_size = new_pos_size;
 			bb->op_pos = tmp_op_pos;
 		}
 		bb->op_pos[i - 1] = v;
+		return true;
 	}
+	return true;
 }
 
 /* return the address of the instruction that occupy a given offset.
@@ -173,8 +178,9 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 	ut16 delta, delta_off, last_delta;
 	int i;
 
-	if (!r_anal_bb_is_in_offset (bb, off)) return UT64_MAX;
-
+	if (!r_anal_bb_is_in_offset (bb, off)) {
+		return UT64_MAX;
+	}
 	last_delta = 0;
 	delta_off = off - bb->addr;
 	for (i = 0; i < bb->ninstr; i++) {

@@ -37,14 +37,15 @@ static RCore *mycore = NULL;
 #define MINLEN 1
 static int is_string (const ut8 *buf, int size, int *len) {
 	int i;
-	if (size<1)
+	if (size < 1) {
 		return 0;
-	if (size>3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
+	}
+	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
 		*len = 1; // XXX: TODO: Measure wide string length
 		return 2; // is wide
 	}
-	for (i=0; i<size; i++) {
-		if (!buf[i] && i>MINLEN) {
+	for (i = 0; i < size; i++) {
+		if (!buf[i] && i > MINLEN) {
 			*len = i;
 			return 1;
 		}
@@ -70,8 +71,7 @@ static int is_string (const ut8 *buf, int size, int *len) {
 // - addr is in different section than core->offset
 static bool iscodesection(RCore *core, ut64 addr) {
 	RIOSection *s = r_io_section_vget (core->io, addr);
-	if (!s) return false;
-	if (strstr (s->name, "text")) {
+	if (s && s->name && strstr (s->name, "text")) {
 		return true;
 	}
 	return false;
@@ -1002,8 +1002,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			free (str);
 		}
 	}
-	if (is_json)
+	if (is_json) {
 		r_cons_printf ("]}");
+	}
 	free (pal_jump);
 	free (pal_fail);
 	free (pal_trfa);
@@ -1050,14 +1051,13 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 			goto error;
 		}
 		do {
-			// check io error
 #if SLOW_IO
 			if (r_io_read_at (core->io, at + bblen, buf, 4) != 4) { // ETOOSLOW
 				goto error;
 			}
-			r_core_read_at (core, at+bblen, buf, core->anal->opt.bb_max_size);
+			r_core_read_at (core, at + bblen, buf, core->anal->opt.bb_max_size);
 #else
-			if (r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size) != 4) { // ETOOSLOW
+			if (r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size) != core->anal->opt.bb_max_size) { // ETOOSLOW
 				goto error;
 			}
 #endif
@@ -1066,10 +1066,10 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 			}
 			buflen = core->anal->opt.bb_max_size;
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head);
-			if (bblen == R_ANAL_RET_ERROR ||
-				(bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
+			if (bblen == R_ANAL_RET_ERROR || (bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				goto error;
-			} else if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
+			}
+			if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
 				if (core->anal->split) {
 					ret = r_anal_fcn_bb_overlaps (fcn, bb);
 				}
@@ -3138,28 +3138,33 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 #define VTABLE_BUFF_SIZE 10
 
 typedef struct vtable_info_t {
-	ut64 saddr;//starting address
+	ut64 saddr; //starting address
 	int methods;
 } vtable_info;
-
-static const char *textSectionName = ".text";
-static const char *roSectionName =".rodata";
 
 static void printVtable(RCore *core, vtable_info *table) {
 	if (table && core) {
 		int curMethod = 0;
 		int totalMethods = table->methods;
 		ut64 startAddress = table->saddr;
-		const char *methodName = "No Name found";
-		ut64 bits = r_config_get_i (core->config, "asm.bits");
+		char *methodName;
+		const char *noMethodName = "No Name found";
+		int bits = r_config_get_i (core->config, "asm.bits");
 		const char *lang = r_config_get (core->config, "bin.lang");
-		r_cons_printf ("\nVtable Found at : 0x%08"PFMT64x"\n", startAddress);
+		r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", startAddress);
 		int wordSize = bits / 8;
 		while (curMethod < totalMethods) {
 			ut64 curAddressValue = r_io_read_i (core->io, startAddress, 8);
 			RBinSymbol* curSymbol = r_bin_get_symbol_at_vaddr (core->bin, curAddressValue);
-			if (curSymbol) methodName = r_bin_demangle (core->bin->cur, lang, curSymbol->name);
-			r_cons_printf ("0x%-08"PFMT64x" : %s\n", startAddress, methodName);
+			if (curSymbol) {
+				methodName = r_bin_demangle (core->bin->cur, lang, curSymbol->name);
+			} else {
+				methodName = noMethodName;
+			}
+			r_cons_printf ("0x%08"PFMT64x" : %s\n", startAddress, methodName);
+			if (methodName != noMethodName) {
+				free (methodName);
+			}
 			startAddress += wordSize;
 			curMethod++;
 		}
@@ -3173,29 +3178,30 @@ static int inTextSection(RCore *core, ut64 curAddress) {
 	//section of the curAddress
 	RBinSection* value = r_bin_get_section_at (core->bin->cur->o, curAddressValue, true);
 	//If the pointed value lies in .text section
-	return value && (!strcmp (value->name, textSectionName));
+	return value && (!strcmp (value->name, ".text");
 }
 
 static int isVtableStart(RCore *core, ut64 curAddress) {
-	if (curAddress == UT64_MAX || curAddress == 0) {
-		return false;
-	}
+	RAsmOp asmop = {0};
 	RAnalRef *xref;
 	RListIter *xrefIter;
 	ut8 buf[VTABLE_BUFF_SIZE];
+	if (!curAddress || curAddress == UT64_MAX) {
+		return false;
+	}
 	if (inTextSection (core, curAddress)) {
-		//total xref's to curAddress
+		// total xref's to curAddress
 		RList *xrefs = r_anal_xrefs_get (core->anal, curAddress);
 		if (!r_list_empty (xrefs)) {
 			r_list_foreach (xrefs, xrefIter, xref) {
-				//section in which currenct xref lies
-				RBinSection* xrefsection = r_bin_get_section_at(core->bin->cur->o, xref->addr, true);
-				if (!strcmp (xrefsection->name, textSectionName)) {
+				// section in which currenct xref lies
+				if (inTextSection (core, xref->addr)) {
 					r_io_read_at (core->io, xref->addr, buf, VTABLE_BUFF_SIZE);
-					RAsmCode *disassembly = r_asm_mdisassemble (core->assembler, buf, VTABLE_BUFF_SIZE);
-					if ((!strncmp (disassembly->buf_asm, "mov", 3)) ||
-						(!strncmp (disassembly->buf_asm, "lea", 3))) {
-						return true;
+					if (r_asm_disassemble (core->assembler, &asmop, buf, VTABLE_BUFF_SIZE) > 0) {
+						if ((!strncmp (asmop.buf_asm, "mov", 3)) ||
+						    (!strncmp (asmop.buf_asm, "lea", 3))) {
+							return true;
+						}
 					}
 				}
 			}
@@ -3212,51 +3218,47 @@ RList* search_virtual_tables(RCore *core){
 	ut64 endAddress;
 	RListIter * iter;
 	RIOSection *section;
-	RList *vtables = r_list_new();//List of vtables
+	RList *vtables = r_list_new();
 	ut64 bits = r_config_get_i (core->config, "asm.bits");
-	int wordSize = bits/8;
-	if (vtables) {
-		if (core->io->sections) {
-			r_list_foreach (core->io->sections, iter, section){
-				if (!strcmp(section->name, roSectionName) ) {//checking for .rodata
-					ut8 *segBuff = calloc (1, section->size);
-					r_io_read_at( core->io, section->offset, segBuff, section->size);
-					startAddress = section->vaddr;
-					endAddress = startAddress + (section->size) - (bits/8);
-					while (startAddress <= endAddress) {
-						if (isVtableStart(core, startAddress)) {
-							vtable_info *vtable = calloc (1, sizeof(vtable_info));
-							vtable->saddr = startAddress;
-							int noOfMethods = 0;
-							while (inTextSection(core, startAddress)) {
-								noOfMethods++;
-								startAddress += wordSize;
-							}
-							vtable->methods = noOfMethods;
-							r_list_append (vtables, vtable);
-							continue;
-						}
-						startAddress += 1;
+	int wordSize = bits / 8;
+	if (!vtables) {
+		return NULL;
+	}
+	r_list_foreach (core->io->sections, iter, section) {
+		if (!strcmp (section->name, ".rodata")) {
+			ut8 *segBuff = calloc (1, section->size);
+			r_io_read_at( core->io, section->offset, segBuff, section->size);
+			startAddress = section->vaddr;
+			endAddress = startAddress + (section->size) - (bits/8);
+			while (startAddress <= endAddress) {
+				if (isVtableStart (core, startAddress)) {
+					vtable_info *vtable = calloc (1, sizeof(vtable_info));
+					vtable->saddr = startAddress;
+					int noOfMethods = 0;
+					while (inTextSection (core, startAddress)) {
+						noOfMethods++;
+						startAddress += wordSize;
 					}
+					vtable->methods = noOfMethods;
+					r_list_append (vtables, vtable);
+					continue;
 				}
+				startAddress += 1;
 			}
-		} else {
-			//stripped binary
-			eprintf ("No virtual tables Found\n");
-			return NULL;
 		}
-	} else {
-		//no space allocated for vtables
-		eprintf ("Initialization Error\n");
+	}
+	if (r_list_empty (vtables)) {
+		// stripped binary?
+		eprintf ("No virtual tables found\n");
+		r_list_free (vtables);
 		return NULL;
 	}
 	return vtables;
 }
 
 R_API void r_core_anal_list_vtables(void *core) {
-	const char *curArch =((RCore *)core)->bin->cur->o->info->arch;
-	const char *curSupportedArch = "x86";
-	if (!strcmp (curArch, curSupportedArch)) {
+	const char *curArch = ((RCore *)core)->bin->cur->o->info->arch;
+	if (!strcmp (curArch, "x86")) {
 		RList* vtables = search_virtual_tables ((RCore *)core);
 		RListIter* vtableIter;
 		vtable_info* table;
@@ -3265,5 +3267,7 @@ R_API void r_core_anal_list_vtables(void *core) {
 				printVtable ((RCore *)core, table);
 			}
 		}
+	} else {
+		eprintf ("Unsupported architecture to find vtables\n");
 	}
 }

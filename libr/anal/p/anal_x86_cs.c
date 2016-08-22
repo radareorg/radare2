@@ -2164,7 +2164,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 static int cs_len_prefix_opcode(uint8_t *item) {
 	int i, len = 0;
 	for (i = 0; i < 4; i++) {
-		len = len + (item[i] != 0) ? 1 : 0;
+		len += (item[i] != 0) ? 1 : 0;
 	}
 	return len;
 }

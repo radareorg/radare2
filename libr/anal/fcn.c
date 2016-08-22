@@ -34,7 +34,9 @@
 
 #define VERBOSE_DELAY if(0)
 
+#if USE_SDB_CACHE
 static Sdb *HB = NULL;
+#endif
 
 R_API const char *r_anal_fcn_type_tostring(int type) {
 	switch (type) {
@@ -1294,11 +1296,16 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 	bb->fail = fail;
 	bb->type = type;
 	if (diff) {
-		bb->diff->type = diff->type;
-		bb->diff->addr = diff->addr;
-		R_FREE (bb->diff->name);
-		if (diff->name) {
-			bb->diff->name = strdup (diff->name);
+		if (!bb->diff) {
+			bb->diff = r_anal_diff_new ();
+		}
+		if (bb->diff) {
+			bb->diff->type = diff->type;
+			bb->diff->addr = diff->addr;
+			if (diff->name) {
+				R_FREE (bb->diff->name);
+				bb->diff->name = strdup (diff->name);
+			}
 		}
 	}
 	_________________UpdateBB (fcn, bb);
