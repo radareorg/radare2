@@ -267,7 +267,6 @@ static bool string_filter(RCore *core, const char *str) {
 			}
 		}
 		return false;
-		break;
 	}
 	return true;
 }
@@ -280,7 +279,7 @@ static int bin_strings(RCore *r, int mode, int va) {
 	RListIter *iter;
 	RList *list;
 	RBin *bin = r->bin;
-	RBinFile * binfile = r_core_bin_cur (r);
+	RBinFile *binfile = r_core_bin_cur (r);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 
 	if (!binfile) return false;
@@ -306,8 +305,9 @@ static int bin_strings(RCore *r, int mode, int va) {
 	bin->maxstrlen = maxstr;
 	maxstr = bin->maxstrlen;
 
-	if ((list = r_bin_get_strings (bin)) == NULL) return false;
-
+	if (!(list = r_bin_get_strings (bin))) {
+		return false;
+	}
 	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
 	if (IS_MODE_RAD (mode)) r_cons_printf ("fs strings");
 	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {

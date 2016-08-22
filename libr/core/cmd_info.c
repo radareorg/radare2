@@ -325,7 +325,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL); break;
 		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL); break;
 		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
-		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;			  
+		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;
 		case 'z':
 			if (input[1] == 'z') {
 				char *biname = NULL;
@@ -333,27 +333,40 @@ static int cmd_info(void *data, const char *input) {
 				int fd = -1;
 				int xtr_idx = 0;
 				int rawstr = 1;
-				RCore *tmpcore = r_core_new ();
-				RCore *p2core = core;
+				RCore *r2core = core;
 				const int min = core->bin->minstrlen;
 				const int max = core->bin->maxstrlen;
+
+#if 0
+				RCons _cons, *cons;
+				cons = r_cons_singleton ();
+				memcpy (&_cons, cons, sizeof (RCons));
+				cons = &_cons;
+#endif
+#if 1
+				RLine _line, *line;
+				line = r_line_singleton ();
+				memcpy (&_line, line, sizeof (RLine));
+				line = &_line;
+#endif
 				/* TODO: reimplement in C to avoid forks */
 				if (!core->file) {
 					eprintf ("Core file not open\n");
 					return 0;
 				}
 				biname = r_str_escape (core->file->desc->name);
+				RCore *tmpcore = r_core_new ();
 				if (!tmpcore) {
 	                                eprintf ("Cannot create core\n");
 				        return 0;
 	                        }
+				core = tmpcore;
 				tmpcore->bin->minstrlen = min;
 				tmpcore->bin->maxstrlen = max;
 				if (!r_bin_load (tmpcore->bin, biname, UT64_MAX, UT64_MAX, xtr_idx, fd, rawstr)){
 	                                eprintf ("Cannot load information\n");
-					return 0;
+					goto beach;
 	                        }
-				core = tmpcore;
 				switch (input[2]) {
 				case '*':
 				        mode = R_CORE_BIN_RADARE;
@@ -361,7 +374,7 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				case 'q':
 					if (input[3] == 'q') {
-						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qqzz %s", min, max, biname);
+						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qqzz '%s'", min, max, biname);
 						input++;
 					} else {
 		                                mode = R_CORE_BIN_SIMPLE;
@@ -379,14 +392,21 @@ static int cmd_info(void *data, const char *input) {
 				if (ret && *ret) {
 					r_cons_strcat (ret);
 				}
-				core = p2core;
+beach:
+				core = r2core;
 				r_core_free (tmpcore);
+				//memcpy (r_cons_singleton (), cons, sizeof (RCons));
+				/* do not copy rcons because it will segfault later
+				 * because of globals like consbuffersize */
+				memcpy (r_line_singleton (), line, sizeof (RLine));
 				free (ret);
 				free (biname);
 				input++;
 			} else {
 			    	if (input[1] == 'q') {
-				    	mode = (input[2] == 'q') ? R_CORE_BIN_SIMPLEST : R_CORE_BIN_SIMPLE;
+					mode = (input[2] == 'q')
+						? R_CORE_BIN_SIMPLEST
+						: R_CORE_BIN_SIMPLE;
 					input++;
 				}
 				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
@@ -404,8 +424,9 @@ static int cmd_info(void *data, const char *input) {
 				int count = 0;
 				if (input[2] && obj) {
 					r_list_foreach (obj->classes, iter, cls) {
-						if (idx != count++)
+						if (idx != count++) {
 							continue;
+						}
 						switch (input[1]) {
 						case '*':
 							r_list_foreach (cls->methods, iter2, sym) {
