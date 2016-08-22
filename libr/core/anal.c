@@ -3159,7 +3159,7 @@ static void printVtable(RCore *core, vtable_info *table) {
 			if (curSymbol) {
 				methodName = r_bin_demangle (core->bin->cur, lang, curSymbol->name);
 			} else {
-				methodName = noMethodName;
+				methodName = (char*)noMethodName;
 			}
 			r_cons_printf ("0x%08"PFMT64x" : %s\n", startAddress, methodName);
 			if (methodName != noMethodName) {
@@ -3178,7 +3178,7 @@ static int inTextSection(RCore *core, ut64 curAddress) {
 	//section of the curAddress
 	RBinSection* value = r_bin_get_section_at (core->bin->cur->o, curAddressValue, true);
 	//If the pointed value lies in .text section
-	return value && (!strcmp (value->name, ".text");
+	return value && !strcmp (value->name, ".text");
 }
 
 static int isVtableStart(RCore *core, ut64 curAddress) {

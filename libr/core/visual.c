@@ -699,7 +699,7 @@ repeat:
 		r_cons_gotoxy (1, 1);
 		r_cons_printf ("[GOTO XREF]> 0x%08"PFMT64x"\n", addr);
 		if (r_list_empty (xrefs)) {
-			r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", addr);
+			r_cons_printf ("No XREF found at 0x%"PFMT64x"\n", addr);
 			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
@@ -710,7 +710,7 @@ repeat:
 			lines -= 3;
 			r_list_foreach (xrefs, iter, refi) {
 				if (idx >= skip) {
-					if (count>9) {
+					if (count > 9) {
 						strcpy (cstr, "?");
 					} else {
 						snprintf (cstr, sizeof (cstr), "%d", count);
@@ -728,6 +728,10 @@ repeat:
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA",
 							fun?fun->name:"unk");
+					if (idx == skip) {
+						r_core_cmdf (core, "pd 20 @ 0x%08"PFMT64x, refi->addr);
+						r_cons_column (60);
+					}
 					if (++count >= lines) {
 						r_cons_printf ("...\n");
 						break;
@@ -736,7 +740,9 @@ repeat:
 				idx++;
 			}
 		}
-	} else xrefs = NULL;
+	} else {
+		xrefs = NULL;
+	}
 	if (!xrefs || !r_list_length (xrefs)) {
 		r_list_free (xrefs);
 		return 0;
@@ -748,6 +754,9 @@ repeat:
 		goto repeat;
 	} else if (ch == 'k') {
 		skip--;
+		if (skip < 0) {
+			skip = 0;
+		}
 		goto repeat;
 	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
 		refi = r_list_get_n (xrefs, skip);
