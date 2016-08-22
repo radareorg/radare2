@@ -11,6 +11,13 @@ static bool r_anal_emul_init (RCore *core) {
 	r_config_set (core->config, "anal.trace", "true");
 	r_config_set (core->config, "dbg.trace", "true");
 	r_config_set (core->config, "esil.nonull", "true");
+	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
+	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	if ((bp && !r_reg_getv (core->anal->reg, bp)) || (sp && !r_reg_getv (core->anal->reg, sp))) {
+		eprintf ("Stack isn't initiatized.\n");
+		eprintf ("Try running aei and aeim commands before aftm for default stack initialization\n");
+		return false;
+	}
 	return (core->anal->esil != NULL);
 }
 
@@ -33,12 +40,8 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 	int size = 0, idx = sdb_num_get (trace, "idx", 0);
 	const char *sp_name = r_reg_get_name (anal->reg, R_REG_NAME_SP);
 	const char *bp_name = r_reg_get_name (anal->reg, R_REG_NAME_BP);
-	RRegItem *r = r_reg_get (anal->reg, sp_name, -1);
-	ut64 bp, sp = r_reg_get_value (anal->reg, r);
-	if (bp_name) {
-		r = r_reg_get (anal->reg, bp_name, -1);
-		bp = r_reg_get_value (anal->reg, r);
-	}
+	ut64 sp = r_reg_getv (anal->reg, sp_name);
+	ut64 bp = r_reg_getv (anal->reg, bp_name);
 	for (i = 0; i < max; i++) {
 		char *type = r_anal_type_func_args_type (anal, fcn_name, i);
 		const char *name =r_anal_type_func_args_name (anal, fcn_name, i);
@@ -176,13 +179,12 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 }
 
 R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	ut64 addr = fcn->addr;
 	if (!core || !r_anal_emul_init (core) || !fcn ) {
 		return;
 	}
-	RRegItem *pc_reg = r_reg_get (core->anal->reg, pc, -1);
-	r_reg_set_value (core->dbg->reg, pc_reg, fcn->addr);
+	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	ut64 addr = fcn->addr;
+	r_reg_setv (core->dbg->reg, pc, fcn->addr);
 	r_debug_reg_sync (core->dbg, -1, true);
 	r_cons_break (NULL, NULL);
 	while (!r_cons_is_breaked ()) {
@@ -197,11 +199,11 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				type_match (core, addr, fcn_call->name);
 				addr += op->size;
 				r_anal_op_free (op);
-				r_reg_set_value (core->dbg->reg, pc_reg, addr);
+				r_reg_setv (core->dbg->reg, pc, addr);
 				r_debug_reg_sync (core->dbg, -1, true);
 				r_anal_esil_set_pc (core->anal->esil, addr);
 				addr += stack_clean (core, addr, fcn);
-				r_reg_set_value (core->dbg->reg, pc_reg, addr);
+				r_reg_setv (core->dbg->reg, pc, addr);
 				r_debug_reg_sync (core->dbg, -1, true);
 				r_anal_esil_set_pc (core->anal->esil, addr);
 			} else {
@@ -213,9 +215,8 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			r_core_esil_step (core, UT64_MAX, NULL);
 			r_anal_op_free (op);
 		}
-		addr = r_reg_getv (core->anal->reg, "PC");
-		//r_core_cmd0 (core, ".ar*");
-		//addr = r_num_get (core->num, pc);
+		r_core_cmd0 (core, ".ar*");
+		addr = r_reg_getv (core->anal->reg, pc);
 	}
 	r_cons_break_end ();
 }
