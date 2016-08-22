@@ -100,7 +100,7 @@ static int cmd_zign(void *data, const char *input) {
 							idx += oplen;
 						}
 
-						for (i=0; i < len; i++) {
+						for (i = 0; i < len; i++) {
 							if (buf[i] == 0) {
 								r_cons_printf ("..");
 							} else {
