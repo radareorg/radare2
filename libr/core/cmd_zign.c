@@ -206,7 +206,7 @@ static int cmd_zign(void *data, const char *input) {
 						si = r_sign_check (core->sign, buf+idx, len-idx);
 						if (si) {
 							count++;
-							fcn_zig_add (si, idx, ini+idx);
+							fcn_zig_add (si, idx, (unsigned char *)ini+idx);
 							eprintf ("- Found %d matching function signatures\r", count);
 						}
 					}
@@ -254,7 +254,7 @@ static int cmd_zign(void *data, const char *input) {
 				eprintf("No functions found, please run some analysis before.\n");
 				return false;
 			}
-			if (!(it = r_list_find (core->anal->fcns, core->offset, (RListComparator)fcn_offset_cmp))) {
+			if (!(it = r_list_find (core->anal->fcns, (const void *)core->offset, (RListComparator)fcn_offset_cmp))) {
 				return false;
 			}
 			fcni = (RAnalFunction*)it->data;
@@ -270,7 +270,7 @@ static int cmd_zign(void *data, const char *input) {
 				if (si) {
 					r_cons_printf ("fs sign\n");
 					count++;
-					fcn_zig_add (si, count, fcni->addr);
+					fcn_zig_add (si, count, (unsigned char *)fcni->addr);
 				}
 			}
 			free (buf);
