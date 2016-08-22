@@ -593,6 +593,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				if (p && *p && strcmp (p, "null"))
 					r_cons_printf ("\"stack\":\"%s\",", p);
 			}
+			if (op.stackptr) {
+				r_cons_printf ("\"stackptr\":%d,", op.stackptr);
+			}
 			{
 				const char *arg = (op.type & R_ANAL_OP_TYPE_COND)?
 					r_anal_cond_tostring (op.cond): NULL;
