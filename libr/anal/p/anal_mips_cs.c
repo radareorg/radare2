@@ -347,8 +347,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_ADDI:
 		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "0,32,%s,0xffffffff,&,%s,+,>>,>,?{,1,TRAP,}{,%s,%s,+,%s,=,}",
-				ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
+			r_strbuf_appendf (&op->esil, "30,0x80000000,%s,%s,^,&,>>,31,0x80000000,%s,&,0x80000000,%s,%s,+,&,^,>>,|,1,==,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
+				ARG(2), ARG(1), ARG(2), ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
 		}
 		break;
 	case MIPS_INS_DADD:
