@@ -9,7 +9,7 @@ static void fcn_zig_add(RSignItem *si, int pref, ut8 *addr) {
 	if (si->type == 'f') {
 		r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
 			si->name, pref, addr);
-	} else if(si->type == 'p') {
+	} else if (si->type == 'p') {
 		r_cons_printf ("afn sign.fun_%s_%d 0x%08"PFMT64x"\n",
 				si->name, pref, addr);
 	} else {
@@ -91,7 +91,7 @@ static int cmd_zign(void *data, const char *input) {
 							return false;
 						}
 						while (idx < len) {
-							if ((oplen = r_anal_op (core->anal, op, fcni->addr+idx, buf+idx, len-idx)) <1) {
+							if ((oplen = r_anal_op (core->anal, op, fcni->addr+idx, buf+idx, len-idx)) < 1) {
 								break;
 							}
 							if (op->nopcode != 0) {
@@ -100,7 +100,7 @@ static int cmd_zign(void *data, const char *input) {
 							idx += oplen;
 						}
 
-						for (i=0; i<len; i++) {
+						for (i=0; i < len; i++) {
 							if (buf[i] == 0) {
 								r_cons_printf ("..");
 							} else {
