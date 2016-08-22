@@ -224,23 +224,29 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 
 R_API RAnalVar *r_anal_var_get_byname(RAnal *a, RAnalFunction *fcn, const char* name) {
 	if (!fcn || !a || !name) {
-		return 0;
+		return NULL;
 	}
 	char *name_key =  sdb_fmt (-1, "var.0x%"PFMT64x".%d.%s", fcn->addr, 1, name);
-	const char *name_value = sdb_const_get(DB, name_key, 0);
+	const char *name_value = sdb_const_get (DB, name_key, 0);
 	if (!name_value) {
-		return 0;
+		return NULL;
 	}
-	int delta = r_num_math (NULL, strchr(name_value, ',')+1);
-	return r_anal_var_get (a, fcn->addr, *name_value, 1, delta);
+	const char *comma = strchr (name_value, ',');
+	if (comma) {
+		int delta = r_num_math (NULL, comma + 1);
+		return r_anal_var_get (a, fcn->addr, *name_value, 1, delta);
+	}
+	return NULL;
 }
+
 R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
 	struct VarType vt;
 	char *sign = "";
 	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
-	if (!fcn)
+	if (!fcn) {
 		return NULL;
+	}
 	if (delta < 0) {
 		delta = -delta;
 		sign = "_";
@@ -325,17 +331,20 @@ R_API int r_anal_var_rename(RAnal *a, ut64 var_addr, int scope, char kind, const
 		const char *sign = "";
 		SETKEY ("var.0x%"PFMT64x".%d.%s", var_addr, scope, old_name);
 		char *name_val = sdb_get (DB, key, 0);
-		delta = r_num_math(NULL, strchr (name_val, ',') + 1);
-		sdb_unset (DB, key, 0);
-		SETKEY ("var.0x%"PFMT64x".%d.%s", var_addr, scope, new_name);
-		sdb_set (DB, key, name_val, 0);
-		free (name_val);
-		if (delta < 0) {
-			delta = -delta;
-			sign = "_";
+		char *comma = strchr (name_val, ',');
+		if (comma) {
+			delta = r_num_math (NULL, comma + 1);
+			sdb_unset (DB, key, 0);
+			SETKEY ("var.0x%"PFMT64x".%d.%s", var_addr, scope, new_name);
+			sdb_set (DB, key, name_val, 0);
+			free (name_val);
+			if (delta < 0) {
+				delta = -delta;
+				sign = "_";
+			}
+			SETKEY ("var.0x%"PFMT64x".%c.%d.%s%d", var_addr, kind, scope, sign, delta);
+			sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
 		}
-		SETKEY ("var.0x%"PFMT64x".%c.%d.%s%d", var_addr, kind, scope, sign, delta);
-		sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
 	} else { // global
 		SETKEY ("var.0x%"PFMT64x, var_addr);
 		stored_name = sdb_array_get (DB, key, R_ANAL_VAR_SDB_NAME, 0);
