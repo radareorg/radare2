@@ -214,7 +214,7 @@ static int visual_help() {
 	" sS       step / step over\n"
 	" T        enter textlog chat console (TT)\n"
 	" uU       undo/redo seek\n"
-	" v        visual code analysis menu\n"
+	" v        visual function/vars code analysis menu\n"
 	" V        (V)iew graph using cmd.graph (agv?)\n"
 	" wW       seek cursor to next/prev word\n"
 	" xX       show xrefs/refs of current function from/to data/code\n"

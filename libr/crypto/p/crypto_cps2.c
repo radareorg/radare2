@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2016 - pancake */
 
 /* XXX this must be specified by the user/rom? */
-#define UPPER_LIMIT 0xffffff
+#define UPPER_LIMIT 0x400000
 
 #define BIT(x,n) (((x)>>(n))&1)
 
@@ -668,10 +668,11 @@ static void cps2_decrypt(const ut16 *rom, ut16 *dec, int length, const ut32 *mas
 			dec[a] = feistel(rom[a], fn2_groupA, fn2_groupB,
 				&sboxes2[0*4], &sboxes2[1*4], &sboxes2[2*4], &sboxes2[3*4],
 				key2[0], key2[1], key2[2], key2[3]);
+			dec[a] = r_read_be16 (&dec[a]);
 		}
 		// copy the unencrypted part
 		while (a < length/2) {
-			dec[a] = rom[a];
+			dec[a] = r_read_be16 (&rom[a]);
 			a += 0x10000;
 		}
 	}
@@ -706,9 +707,13 @@ static ut32 cps2key[2] = {0};
 
 static int set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen == 8) {
-		memcpy (&cps2key, key, keylen);
+		/* fix key endianness */
+		const ut32 *key32 = (const ut32*)key;
+		cps2key[0] = r_read_be32 (key32);
+		cps2key[1] = r_read_be32 (key32 + 1);
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 static int get_key_size(RCrypto *cry) {

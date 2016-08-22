@@ -114,15 +114,17 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch
 	mach0_ut r;
 	mach0_ut addr;
 
-	RList *sctns = NULL;
+	static RList *sctns = NULL;
 	RListIter *iter = NULL;
 	RBinSection *s = NULL;
 
-	sctns = r_bin_plugin_mach.sections (arch);
 	if (sctns == NULL) {
-		// retain just for debug
-		// eprintf ("there is no sections\n");
-		return 0;
+		sctns = r_bin_plugin_mach.sections (arch);
+		if (sctns == NULL) {
+			// retain just for debug
+			// eprintf ("there is no sections\n");
+			return 0;
+		}
 	}
 
 	addr = p;
@@ -131,7 +133,10 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch
 			if (offset) *offset = addr - s->vaddr;
 			if (left) *left = s->vsize - (addr - s->vaddr);
 			r = (s->paddr + (addr - s->vaddr));
+#if 0
 			r_list_free (sctns);
+			sctns = NULL;
+#endif
 			return r;
 		}
 	}
@@ -139,7 +144,10 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch
 	if (offset) *offset = 0;
 	if (left) *left = 0;
 
+#if 0
 	r_list_free (sctns);
+	sctns = NULL;
+#endif
 
 	return 0;
 }
@@ -746,8 +754,9 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	ut32 is_meta_class = 0;
 	int len;
 
-	if (!(r = get_pointer (p, &offset, &left, arch)))
+	if (!(r = get_pointer (p, &offset, &left, arch))) {
 		return;
+	}
 	if ((r + left) < r || (r + size) < r) return;
 	if (r > arch->size || r + left > arch->size) return;
 	if (r + size > arch->size) return;

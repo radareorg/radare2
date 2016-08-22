@@ -425,15 +425,28 @@ static void sdb_concat_by_path (Sdb *s, const char *path) {
 
 R_API void r_core_anal_type_init(RCore *core) {
 	Sdb *types = core->anal->sdb_types;
+	sdb_reset (types); // make sure they are empty this is initializing
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	const char *os = r_config_get (core->config, "asm.os");
 	int bits = core->assembler->bits;
 	char *dbpath;
+	if (r_file_exists (DBSPATH"/types.sdb")) {
+		sdb_concat_by_path (types, DBSPATH"/types.sdb");
+	}
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%s.sdb", anal_arch);
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
+	}
 	dbpath = sdb_fmt (-1, DBSPATH"/types-%s.sdb", os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%s-%d.sdb", anal_arch, os, bits);
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%d.sdb", bits);
+
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
+	}
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
@@ -441,18 +454,23 @@ R_API void r_core_anal_type_init(RCore *core) {
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%s.sdb", anal_arch, os);
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
+	}
+	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%s-%d.sdb", anal_arch, os, bits);
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
+	}
 }
 
 R_API void r_core_anal_cc_init(RCore *core) {
-	Sdb *db;
+	sdb_reset ( core->anal->sdb_cc);
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	char *dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch,
 		r_config_get_i (core->config, "asm.bits"));
 	if (r_file_exists (dbpath)) {
-		db = sdb_new (0, dbpath, 0);
-		sdb_merge (core->anal->sdb_cc, db);
-		sdb_close (db);
-		sdb_free (db);
+		sdb_concat_by_path (core->anal->sdb_cc, dbpath);
 	}
 }
 #undef DBSPATH

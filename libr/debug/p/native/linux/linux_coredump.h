@@ -3,7 +3,7 @@
 #include "elf_specs.h"
 #include <sys/procfs.h>
 
-
+#if __i386__ || __x86_64__
 /*Macros for XSAVE/XRESTORE*/
 /*
         From: http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developers-manual.pdf
@@ -50,6 +50,7 @@
 #define XSTATE_MPX_MASK         MPX_BIT
 #define XSTATE_AVX512_MASK      (XSTATE_AVX_MASK|AVX512_FULL_BIT)
 /*********************************/
+#endif
 
 #define SIZE_PR_FNAME	16
 
@@ -147,11 +148,15 @@ typedef struct auxv_buff {
 typedef struct thread_elf_note {
 	prstatus_t *prstatus;
 	elf_fpregset_t *fp_regset;
-#ifdef __i386__
+#if __i386__
 	elf_fpxregset_t	*fpx_regset;
 #endif
 	siginfo_t *siginfo;
+#if __i386__ || __x86_64__
 	void *xsave_data;
+#elif __arm__ || __arm64__
+	void *arm_vfp_data;
+#endif
 	struct thread_elf_note *n;
 } thread_elf_note_t;
 
@@ -171,10 +176,14 @@ typedef enum {
 	NT_PRSTATUS_T,
 	NT_SIGINFO_T,
 	NT_FPREGSET_T,
-#ifdef __i386__
+#if __i386__
 	NT_PRXFPREG_T,
 #endif
+#if __i386__ || __x86_64__
 	NT_X86_XSTATE_T,
+#elif __arm__ || __arm64__
+	NT_ARM_VFP_T,
+#endif
 	NT_LENGHT_T
 } note_type_t;
 

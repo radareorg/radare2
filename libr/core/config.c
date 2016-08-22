@@ -1665,7 +1665,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETPREF("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETPREF("stack.anotated", "false", "Show anotated hexdump in visual debug");
-	SETI("stack.size", 64,  "Size of anotated hexdump in visual debug");
+	SETI("stack.size", 64,  "Size in bytes of stack hexdump in visual debug");
 	SETI("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");

@@ -66,8 +66,8 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		break;
 	case V810_MOV_IMM5:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		r_strbuf_appendf (&op->esil, "%hhd,r%u,=",
-						 SEXT5(IMM5(word1)), REG2(word1));
+		r_strbuf_appendf (&op->esil, "%d,r%u,=",
+						  (st8)SEXT5(IMM5(word1)), REG2(word1));
 		break;
 	case V810_MOVHI:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -166,8 +166,8 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		break;
 	case V810_CMP_IMM5:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		r_strbuf_appendf (&op->esil, "%hhd,r%u,==",
-						 SEXT5(IMM5(word1)), REG2(word1));
+		r_strbuf_appendf (&op->esil, "%d,r%u,==",
+						  (st8)SEXT5(IMM5(word1)), REG2(word1));
 		update_flags (op, -1);
 		break;
 	case V810_SUB:
@@ -190,8 +190,8 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		break;
 	case V810_ADD_IMM5:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		r_strbuf_appendf (&op->esil, "%hhd,r%u,+=",
-						 SEXT5(IMM5(word1)), REG2(word1));
+		r_strbuf_appendf (&op->esil, "%d,r%u,+=",
+						  (st8)SEXT5(IMM5(word1)), REG2(word1));
 		update_flags(op, -1);
 		break;
 	case V810_SHR:
@@ -203,8 +203,8 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		break;
 	case V810_SHR_IMM5:
 		op->type = R_ANAL_OP_TYPE_SHR;
-		r_strbuf_appendf (&op->esil, "%hhu,r%u,>>=",
-						 IMM5(word1), REG2(word1));
+		r_strbuf_appendf (&op->esil, "%u,r%u,>>=",
+						  (ut8)IMM5(word1), REG2(word1));
 		update_flags (op, V810_FLAG_CY | V810_FLAG_S | V810_FLAG_Z);
 		clear_flags (op, V810_FLAG_OV);
 		break;
@@ -221,8 +221,8 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		op->type = R_ANAL_OP_TYPE_SAR;
 		imm5 = IMM5(word1);
 		reg2 = REG2(word1);
-		r_strbuf_appendf (&op->esil, "31,r%u,>>,?{,%hhu,32,-,%hhu,1,<<,--,<<,}{,0,},%hhu,r%u,>>,|,r%u,=",
-						 reg2, imm5, imm5, imm5, reg2, reg2);
+		r_strbuf_appendf (&op->esil, "31,r%u,>>,?{,%u,32,-,%u,1,<<,--,<<,}{,0,},%u,r%u,>>,|,r%u,=",
+						  reg2, (ut8)imm5, (ut8)imm5, (ut8)imm5, reg2, reg2);
 		update_flags (op, V810_FLAG_CY | V810_FLAG_S | V810_FLAG_Z);
 		clear_flags (op, V810_FLAG_OV);
 		break;
@@ -235,8 +235,8 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		break;
 	case V810_SHL_IMM5:
 		op->type = R_ANAL_OP_TYPE_SHL;
-		r_strbuf_appendf (&op->esil, "%hhu,r%u,<<=",
-						 IMM5(word1), REG2(word1));
+		r_strbuf_appendf (&op->esil, "%u,r%u,<<=",
+						  (ut8)IMM5(word1), REG2(word1));
 		update_flags (op, V810_FLAG_CY | V810_FLAG_S | V810_FLAG_Z);
 		clear_flags (op, V810_FLAG_OV);
 		break;

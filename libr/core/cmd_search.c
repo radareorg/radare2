@@ -320,9 +320,11 @@ R_API int r_core_search_preludes(RCore *core) {
 		} else if (strstr (arch, "x86")) {
 			switch (bits) {
 			case 32:
+				r_core_search_prelude (core, from, to, // mov edi, edi;push ebp; mov ebp,esp
+					(const ut8 *)"\x8b\xff\x55\x8b\xec", 5, NULL, 0);
 				r_core_search_prelude (core, from, to,
 					(const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
-				r_core_search_prelude (core, from, to,
+				r_core_search_prelude (core, from, to, // push ebp; mov ebp, esp
 					(const ut8 *)"\x55\x8b\xec", 3, NULL, 0);
 				break;
 			case 64:
@@ -1850,8 +1852,9 @@ static void rop_kuery(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
 	bool json_first = true;
-	SdbListIter *sdb_iter;
+	SdbListIter *sdb_iter, *it;
 	SdbList *sdb_list;
+	SdbNs *ns;
 	SdbKv *kv;
 	char *out;
 
@@ -1862,31 +1865,78 @@ static void rop_kuery(void *data, const char *input) {
 
 	switch (*input) {
 	case 'q':
-		sdb_list = sdb_foreach_list (db_rop);
-		ls_foreach (sdb_list, sdb_iter, kv) {
-			r_cons_printf ("%s ", kv->key);
+		ls_foreach (db_rop->ns, it, ns) {
+			sdb_list = sdb_foreach_list (ns->sdb);
+			ls_foreach (sdb_list, sdb_iter, kv) {
+				r_cons_printf ("%s ", kv->key);
+			}
 		}
-		r_cons_newline ();
 		break;
 	case 'j':
 		r_cons_print ("{\"gadgets\":[");
-		sdb_list = sdb_foreach_list (db_rop);
-		ls_foreach (sdb_list, sdb_iter, kv) {
-			if (json_first) {
-				json_first = false;
-			} else {
-				r_cons_print (",");
+			ls_foreach (db_rop->ns, it, ns) {
+			sdb_list = sdb_foreach_list (ns->sdb);
+			ls_foreach (sdb_list, sdb_iter, kv) {
+				char *dup = strdup (kv->value);
+				char *size = strtok (dup, " ");
+				char *tok = strtok (NULL, "{}");
+				tok = strtok (NULL, "{}");
+				if (!tok) {
+					tok = strdup ("NOP");
+				}
+				if (json_first) {
+					json_first = false;
+				} else {
+					r_cons_print (",");
+				}
+				r_cons_printf ("{\"address\":%s, \"size\":%s, \"type\":\"%s\", \"effect\":\"%s\"}",
+					kv->key, size, ns->name, tok);
+				free (dup);
 			}
-			r_cons_printf ("{\"address\":%s,\"size\":%s}", kv->key, kv->value);
 		}
 		r_cons_printf ("]}\n");
 		break;
+	case ' ':
+		if (!strcmp (input + 1, "nop")) {
+			out = sdb_querys (core->sdb, NULL, 0, "rop/nop/*");
+			if (out) {
+				r_cons_println (out);
+				free (out);
+			}
+		} else if (!strcmp (input + 1, "mov")) {
+			out = sdb_querys (core->sdb, NULL, 0, "rop/mov/*");
+			if (out) {
+				r_cons_println (out);
+				free (out);
+			}
+		} else if (!strcmp (input + 1, "const")) {
+			out = sdb_querys (core->sdb, NULL, 0, "rop/const/*");
+			if (out) {
+				r_cons_println (out);
+				free (out);
+			}
+		} else if (!strcmp (input + 1, "arithm")) {
+			out = sdb_querys (core->sdb, NULL, 0, "rop/arithm/*");
+			if (out) {
+				r_cons_println (out);
+				free (out);
+			}
+		} else if (!strcmp (input + 1, "arithm_ct")) {
+			out = sdb_querys (core->sdb, NULL, 0, "rop/arithm_ct/*");
+			if (out) {
+				r_cons_println (out);
+				free (out);
+			}
+		} else {
+			eprintf ("Invalid ROP class\n");
+		}
+		break;
 	default:
-		out = sdb_querys (core->sdb, NULL, 0, "rop/*");
+		out = sdb_querys (core->sdb, NULL, 0, "rop/***");
 		if (out) {
 			r_cons_println (out);
+			free (out);
 		}
-		free (out);
 		break;
 	}
 }
@@ -2047,7 +2097,7 @@ reread:
 				"/R/l", " [filter-by-regexp]" , "Show gadgets in a linear manner [regular expression]",
 				"/Rj", " [filter-by-string]", "JSON output",
 				"/R/j", " [filter-by-regexp]", "JSON output [regular expression]",
-				"/Rk", "", "Query stored ROP gadgets",
+				"/Rk", " [select-by-class]", "Query stored ROP gadgets",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == '/') {
@@ -2056,7 +2106,7 @@ reread:
 			if (input[2] == '?') {
 				const char* help_msg[] = {
 					"Usage: /Rk", "", "Query stored ROP gadgets",
-					"/Rk", "", "Show gadgets",
+					"/Rk", " [nop|mov|const|arithm|arithm_ct]", "Show gadgets",
 					"/Rkj", "", "JSON output",
 					"/Rkq", "", "List Gadgets offsets",
 					NULL};

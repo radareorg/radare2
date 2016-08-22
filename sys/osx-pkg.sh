@@ -13,7 +13,7 @@ if [ -n "$1" ]; then
 	VERSION="$1"
 else
 	VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
-	[ -z "${VERSION}" ] && VERSION=0.10.4
+	[ -z "${VERSION}" ] && VERSION=0.10.5
 fi
 [ -z "${MAKE}" ] && MAKE=make
 
@@ -29,9 +29,7 @@ if [ -d "${SRC}" ]; then
 		find . | cpio -o --format odc | gzip -c > "${DST}/Payload"
 	)
 	mkbom ${SRC} "${DST}/Bom"
-
 	# Repackage
-
 	pkgutil --flatten "${DST}" "${DST}/../radare2-${VERSION}.pkg"
 else
 	echo "Failed install. DESTDIR is empty"

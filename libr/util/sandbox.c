@@ -53,6 +53,12 @@ R_API int r_sandbox_check_path (const char *path) {
 
 R_API bool r_sandbox_disable (bool e) {
 	if (e) {
+#if LIBC_HAVE_PLEDGE
+		if (enabled) {
+			eprintf ("sandbox mode couldn't be disabled when pledged\n");
+			return enabled;
+		}
+#endif
 		disabled = enabled;
 		enabled = 0;
 	} else {
@@ -63,7 +69,16 @@ R_API bool r_sandbox_disable (bool e) {
 
 R_API bool r_sandbox_enable (bool e) {
 	if (enabled) return true;
-	return (enabled = !!e);
+	enabled = !!e;
+
+#if LIBC_HAVE_PLEDGE
+	if (enabled && pledge ("stdio rpath tty prot_exec", NULL) == -1) {
+		eprintf ("sandbox: pledge call failed\n");
+		exit (1);
+	}
+#endif
+
+	return enabled;
 }
 
 R_API int r_sandbox_system (const char *x, int n) {

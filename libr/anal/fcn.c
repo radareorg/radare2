@@ -4,9 +4,14 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#define USE_TINYRANGE_BBS 0
+#define USE_SDB_CACHE 0
+#define SDB_KEY_BB "bb.0x%"PFMT64x".0x%"PFMT64x
 // XXX must be configurable by the user
 #define FCN_DEPTH 512
 
+/* speedup analysis by removing some function overlapping checks */
+#define JAYRO_04 0
 
 // 16 KB is the maximum size for a basic block
 #define MAXBBSIZE 16 * 1024
@@ -29,6 +34,8 @@
 
 #define VERBOSE_DELAY if(0)
 
+static Sdb *HB = NULL;
+
 R_API const char *r_anal_fcn_type_tostring(int type) {
 	switch (type) {
 	case R_ANAL_FCN_TYPE_NULL: return "null";
@@ -41,6 +48,23 @@ R_API const char *r_anal_fcn_type_tostring(int type) {
 	}
 	return "unk";
 }
+
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalBlock *a = _a, *b = _b;
+	return (a->addr > b->addr);
+}
+
+#if USE_TINYRANGE_BBS
+static void update_tinyrange_bbs(RAnalFunction *fcn) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_sort (fcn->bbs, &cmpaddr);
+	r_tinyrange_fini (&fcn->bbr);
+	r_list_foreach (fcn->bbs, iter, bb) {
+		r_tinyrange_add (&fcn->bbr, bb->addr, bb->addr + bb->size);
+	}
+}
+#endif
 
 R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 	ut64 eof; /* end of function */
@@ -90,6 +114,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->bbs = r_anal_bb_list_new ();
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
+	r_tinyrange_init (&fcn->bbr);
 	return fcn;
 }
 
@@ -108,6 +133,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	fcn->_size = 0;
 	free (fcn->name);
 	free (fcn->attr);
+	r_tinyrange_fini (&fcn->bbr);
 #if FCN_OLD
 	r_list_free (fcn->refs);
 	r_list_free (fcn->xrefs);
@@ -201,7 +227,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 	bb->jump = UT64_MAX;
 	bb->fail = UT64_MAX;
 	bb->type = 0; // TODO
-	r_list_append (fcn->bbs, bb);
+	r_anal_fcn_bbadd (fcn, bb);
 	if (anal->cb.on_fcn_bb_new) {
 		anal->cb.on_fcn_bb_new (anal, anal->user, fcn, bb);
 	}
@@ -954,11 +980,6 @@ R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn) {
 	}
 }
 
-static int cmpaddr (const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr > b->addr);
-}
-
 R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 	RAnalRef *ref;
 	RListIter *iter;
@@ -1005,8 +1026,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 					   bb->addr - endaddr < anal->opt.bbs_alignment &&
 					   !(bb->addr & (anal->opt.bbs_alignment - 1))) {
 				endaddr = bb->addr + bb->size;
-			} else break;
+			} else {
+				break;
+			}
 		}
+#if !JAYRO_04
 		r_anal_fcn_resize (fcn, endaddr - fcn->addr);
 
 		// resize function if overlaps
@@ -1020,6 +1044,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		if (overlapped != -1) {
 			r_anal_fcn_resize (fcn, overlapped - fcn->addr);
 		}
+#endif
 		r_anal_trim_jmprefs (fcn);
 	}
 	return ret;
@@ -1051,7 +1076,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		return false;
 	}
 	fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);
-	if (fcn == NULL) {
+	if (!fcn) {
 		if (!(fcn = r_anal_fcn_new ())) {
 			return false;
 		}
@@ -1162,6 +1187,16 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 #endif
 }
 
+R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
+	return r_tinyrange_in (&fcn->bbr, addr);
+}
+
+static void _________________UpdateBB (RAnalFunction *fcn, RAnalBlock *bb) {
+#if USE_TINYRANGE_BBS
+	update_tinyrange_bbs (fcn);
+#endif
+}
+
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {
 #if USE_NEW_FCN_STORE
 #warning TODO: r_anal_get_fcn_in_bounds
@@ -1181,6 +1216,11 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn && fcn->type & type)) {
+#if USE_TINYRANGE_BBS
+			if (r_anal_fcn_in (fcn, addr)) {
+				return fcn;
+			}
+#else
 			ut64 min = 0, max = 0;
 			RAnalBlock *bb;
 			RListIter *iter;
@@ -1201,6 +1241,7 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 			if (addr >= min && addr < max) {
 				ret = fcn;
 			}
+#endif
 		}
 	}
 	return ret;
@@ -1260,6 +1301,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			bb->diff->name = strdup (diff->name);
 		}
 	}
+	_________________UpdateBB (fcn, bb);
 	return true;
 }
 
@@ -1311,6 +1353,7 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 				}
 			}
 			bbi->ninstr = new_bbi_instr;
+			_________________UpdateBB (fcn, bb);
 			return R_ANAL_RET_END;
 		}
 	}
@@ -1322,7 +1365,7 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 	RAnalBlock *bbi;
 	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size <= bbi->addr+bbi->size) {
+		if (bb->addr + bb->size > bbi->addr && bb->addr + bb->size <= bbi->addr+bbi->size) {
 			bb->size = bbi->addr - bb->addr;
 			bb->jump = bbi->addr;
 			bb->fail = -1;
@@ -1334,6 +1377,7 @@ R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb) {
 				bb->type = R_ANAL_BB_TYPE_BODY;
 			}
 			r_list_append (fcn->bbs, bb);
+			_________________UpdateBB (fcn, bb);
 			return R_ANAL_RET_END;
 		}
 	}
@@ -1442,28 +1486,28 @@ R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal) { return anal->vars; }
 
 R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 	// avoid received to free this thing
+	//anal->bbs->rc++;
 	anal->bbs->free = NULL;
 	return anal->bbs;
 }
 
-R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
+R_API int r_anal_fcn_is_in_offset(RAnalFunction *fcn, ut64 addr) {
+	if (r_list_empty (fcn->bbs)) {
+		return addr >= fcn->addr && addr < fcn->addr + fcn->_size;// r_anal_fcn_size (fcn);
+	}
+#if USE_TINYRANGE_BBS
+	if (r_anal_fcn_in (fcn, addr)) {
+		return true;
+	}
+#else
 	RAnalBlock *bb;
 	RListIter *iter;
-	bool has_bbs = false;
-
 	r_list_foreach (fcn->bbs, iter, bb) {
-		has_bbs = true;
 		if (addr >= bb->addr && addr < bb->addr + bb->size) {
 			return true;
 		}
 	}
-
-	if (!has_bbs) {
-		// hack to make anal_java work, because it doesn't use
-		// basicblocks.
-		// FIXME: anal_java should create basicblocks
-		return addr >= fcn->addr && addr < fcn->addr + r_anal_fcn_size (fcn);
-	}
+#endif
 	return false;
 }
 
@@ -1482,12 +1526,27 @@ R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
 R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
+#if USE_SDB_CACHE
+	return sdb_ptr_get (HB, sdb_fmt(0, SDB_KEY_BB, fcn->addr, addr), NULL);
+#else
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->addr == addr) return bb;
+		if (bb->addr == addr) {
+			return bb;
+		}
 	}
 	return NULL;
+#endif
+}
+
+
+R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
+#if USE_SDB_CACHE
+	return sdb_ptr_set (HB, sdb_fmt (0, SDB_KEY_BB, fcn->addr, bb->addr), bb, NULL);
+#endif
+	r_list_append (fcn->bbs, bb);
+	return true;
 }
 
 /* directly set the size of the function */

@@ -1726,30 +1726,31 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 
 // In visual mode, display function list
 static ut64 var_functions_show(RCore *core, int idx, int show) {
-	int i = 0;
+	int wdelta = (idx > 5)? idx - 5: 0;
 	ut64 seek = core->offset;
 	ut64 addr = core->offset;
-	int window;
-	int wdelta = (idx>5)?idx-5:0;
-	RListIter *iter;
 	RAnalFunction *fcn;
+	int window, i = 0;
+	RListIter *iter;
 
 	// Adjust the windows size automaticaly
 	(void)r_cons_get_size (&window);
-	window-=8; // Size of printed things
+	window -= 8; // Size of printed things
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (i>=wdelta) {
+		if (i >= wdelta) {
 			if (i> window+wdelta) {
 				r_cons_printf ("...\n");
 				break;
-			} else if (idx == i)
+			}
+			if (idx == i) {
 				addr = fcn->addr;
+			}
 			if (show)
-				r_cons_printf ("%c%c 0x%08llx (%s)\n",
+				r_cons_printf ("%c%c 0x%08"PFMT64x" %4d %s\n",
 					(seek == fcn->addr)?'>':' ',
 					(idx==i)?'*':' ',
-					fcn->addr, fcn->name);
+					fcn->addr, r_anal_fcn_realsize (fcn), fcn->name);
 		}
 		i++;
 	}
@@ -1760,7 +1761,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 static ut64 var_variables_show(RCore* core, int idx, int show) {
 	int i = 0;
 	const ut64 addr = var_functions_show (core, idx, 0);
-	RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RListIter *iter;
@@ -1775,7 +1776,7 @@ static ut64 var_variables_show(RCore* core, int idx, int show) {
 	window -= 8;  // Size of printed things.
 
 	// A new line so this looks reasonable.
-	r_cons_printf ("\n");
+	r_cons_newline ();
 
 	r_list_foreach (list, iter, var) {
 		if (i >= wdelta) {
@@ -1801,6 +1802,8 @@ static ut64 var_variables_show(RCore* core, int idx, int show) {
 static int level = 0;
 static ut64 addr = 0;
 static int option = 0;
+static int printMode = 0;
+#define lastPrintMode 5
 
 static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
@@ -1810,13 +1813,23 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	int h, sz = 16, w = r_cons_get_size (&h);
 	if (fcn) sz = R_MIN (r_anal_fcn_size (fcn), h * 15); // max instr is 15 bytes.
 
-	char *cmdf = r_str_newf ("pD %d @ 0x%"PFMT64x, sz, addr);
-	if (!cmdf) return;
+	const char *cmd, *printCmds[lastPrintMode] = {
+		"pdf", "afi", "pds", "pdc", "pdr"
+	};
+	if (printMode > 0 && printMode < lastPrintMode) {
+		cmd = printCmds[printMode];
+	} else {
+		cmd = printCmds[printMode = 0];
+	}
+	char *cmdf = r_str_newf ("%s @ 0x%"PFMT64x, cmd, addr);
+	if (!cmdf) {
+		return;
+	}
 	char *output = r_core_cmd_str (core, cmdf);
 	if (output) {
 		// 'h - 2' because we have two new lines in r_cons_printf
 		char *out = r_str_ansi_crop (output, 0, 0, w - colpos, h - 2);
-		r_cons_printf ("Visual code analysis manipulation\n%s\n", out);
+		r_cons_printf ("Visual code review (%s)\n%s\n", cmd, out);
 		free (out);
 		R_FREE (output);
 	}
@@ -1824,18 +1837,18 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
-	//RAnalFunction *fcn;
 	ut64 addr;
 	char old[1024];
 	int cols = r_cons_get_size (NULL);
-
-	if (!core) return 0LL;
-	old[0]='\0';
+	if (!core) {
+		return 0LL;
+	}
+	old[0] = '\0';
 	addr = core->offset;
-	//fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-
 	cols -= 50;
-	if (cols > 60) cols = 60;
+	if (cols > 60) {
+		cols = 60;
+	}
 
 	r_cons_clear00 ();
 	r_cons_flush ();
@@ -1895,9 +1908,10 @@ R_API void r_core_visual_anal(RCore *core) {
 	for (;;) {
 		addr = r_core_visual_anal_refresh (core);
 		ch = r_cons_readchar ();
-		if (ch==4||ch==-1) {
-			if (level==0)
+		if (ch == 4 || ch == -1) {
+			if (level == 0) {
 				goto beach;
+			}
 			level--;
 			continue;
 		}
@@ -1912,7 +1926,9 @@ R_API void r_core_visual_anal(RCore *core) {
 				" variables: Add, Modify, Delete\n"
 				"Moving:\n"
 				" j,k     select next/prev item\n"
+				" J,K     scroll next/prev page\n"
 				" h,q     go back, quit\n"
+				" p,P     switch next/prev print mode\n"
 				" l,ret   enter, function\n"
 			);
 			r_cons_flush ();
@@ -1963,6 +1979,16 @@ R_API void r_core_visual_anal(RCore *core) {
 			r_cons_set_raw (true);
 			r_cons_show_cursor (false);
 			break;
+		case 'p':
+			printMode ++;
+			break;
+		case 'P':
+			if (printMode == 0) {
+				printMode = lastPrintMode;
+			} else {
+				printMode --;
+			}
+			break;
 		case 'd':
 			switch (level) {
 			case 0:
@@ -1980,7 +2006,29 @@ R_API void r_core_visual_anal(RCore *core) {
 			option++;
 			if (option >= nfcns) --option;
 			break;
-		case 'k': option = (option<=0)? 0: option-1; break;
+		case 'k':
+			option = (option<=0)? 0: option-1;
+			break;
+		case 'J':
+			{
+				int rows = 0;
+				r_cons_get_size (&rows);
+				option += (rows - 5);
+				if (option >= nfcns) {
+					option = nfcns - 1;
+				}
+			}
+			break;
+		case 'K':
+			{
+				int rows = 0;
+				r_cons_get_size (&rows);
+				option -= (rows - 5);
+				if (option < 0) {
+					option = 0;
+				}
+			}
+			break;
 		case 'g':
 			r_core_seek (core, addr, SEEK_SET);
 			goto beach;

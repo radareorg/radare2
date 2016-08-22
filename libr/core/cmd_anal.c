@@ -2,14 +2,52 @@
 
 #include "r_util.h"
 #include "r_core.h"
+
+/* better aac for windows-x86-32 */
+#define JAYRO_03 0
+
+#if JAYRO_03
+
+static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
+	ut64 align = addr % PE_ALIGN;
+	ut32 call_bytes;
+
+	// XXX this is x86 specific
+	if (align == 0) {
+		call_bytes = (ut32)((ut8*)buf)[bufi + 3] << 24;
+		call_bytes |= (ut32)((ut8*)buf)[bufi + 2] << 16;
+		call_bytes |= (ut32)((ut8*)buf)[bufi + 1] << 8;
+		call_bytes |= (ut32)((ut8*)buf)[bufi];
+	} else {
+		call_bytes = (ut32)((ut8*)buf)[bufi - align + 3] << 24;
+		call_bytes |= (ut32)((ut8*)buf)[bufi - align + 2] << 16;
+		call_bytes |= (ut32)((ut8*)buf)[bufi - align + 1] << 8;
+		call_bytes |= (ut32)((ut8*)buf)[bufi - align];
+	}
+	if (call_bytes >= from && call_bytes <= to) {
+		return true;
+	}
+	call_bytes = (ut32)((ut8*)buf)[bufi + 4] << 24;
+	call_bytes |= (ut32)((ut8*)buf)[bufi + 3] << 16;
+	call_bytes |= (ut32)((ut8*)buf)[bufi + 2] << 8;
+	call_bytes |= (ut32)((ut8*)buf)[bufi + 1];
+	call_bytes += addr + 5;
+	if (call_bytes >= from && call_bytes <= to) {
+		return false;
+	}
+	return false;
+}
+#endif
+
 static void type_cmd_help (RCore *core) {
 	const char *help_msg[] = {
-			"Usage:", "aftm", "",
-			"aftm", "", "type matching analysis",
-			NULL
+		"Usage:", "aftm", "",
+		"aftm", "", "type matching analysis",
+		NULL
 	};
 	r_core_cmd_help (core, help_msg);
 }
+
 static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (!fcn && *input != '?') {
@@ -1279,12 +1317,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'n': // "afn"
 		switch (input[2]) {
-		case '?':
-			eprintf ("Usage: afn[sa] - analyze function names\n");
-			eprintf (" afna       - construct a function name for the current offset\n");
-			eprintf (" afns       - list all strings associated with the current function\n");
-			eprintf (" afn [name] - rename function\n");
-			break;
 		case 's':
 			free (r_core_anal_fcn_autoname (core, core->offset, 1));
 			break;
@@ -1297,7 +1329,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			}
 			break;
-		default:
+		case 0:
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+				if (fcn) {
+					r_cons_printf ("%s\n", fcn->name);
+				}
+			}
+			break;
+		case ' ':
 			{
 			ut64 off = core->offset;
 			char *p, *name = strdup (input + 3);
@@ -1315,6 +1355,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				free (name);
 			}
 			}
+			break;
+		default:
+			eprintf ("Usage: afn[sa] - analyze function names\n");
+			eprintf (" afna       - construct a function name for the current offset\n");
+			eprintf (" afns       - list all strings associated with the current function\n");
+			eprintf (" afn [name] - rename function\n");
 			break;
 		}
 		break;
@@ -1496,15 +1542,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 
 		bool swapbits = false;
-		{
-			if (mybits == 32) {
-				const char *asmarch = r_config_get (core->config, "asm.arch");
-				if (strstr (asmarch, "arm")) {
-					RFlagItem *item = r_flag_get_i (core->flags, addr + 1);
-					if (item) {
-						r_config_set_i (core->config, "asm.bits", 16);
-						swapbits = true;
-					}
+		if (mybits == 32) {
+			const char *asmarch = r_config_get (core->config, "asm.arch");
+			if (strstr (asmarch, "arm")) {
+				RFlagItem *item = r_flag_get_i (core->flags, addr + 1);
+				if (item) {
+					r_config_set_i (core->config, "asm.bits", 16);
+					swapbits = true;
 				}
 			}
 		}
@@ -2692,7 +2736,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					eprintf ("Invalid block size\n");
 				}
 				eprintf ("Emulate basic block 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", pc, end);
-				buf = malloc (bbs + 1);
+				buf = calloc (1, bbs + 1);
 				r_io_read_at (core->io, pc, buf, bbs);
 				int left;
 				while (pc < end) {
@@ -2974,7 +3018,9 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		int count = 0;
 		if (input[0]) {
 			l = (int)r_num_get (core->num, input + 1);
-			if (l > 0) count = l;
+			if (l > 0) {
+				count = l;
+			}
 			if (l > tbs) {
 				r_core_block_size (core, l * 4);
 				//len = l;
@@ -3051,7 +3097,9 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		if (core->cons->breaked)
 			break;
 		// TODO: too many ioreads here
-		if (bufi > 4000) bufi = 0;
+		if (bufi > 4000) {
+			bufi = 0;
+		}
 		if (!bufi) {
 			r_io_read_at (core->io, addr, buf, 4096);
 		}
@@ -3061,10 +3109,21 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				op.size = minop;
 			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
+#if JAYRO_03
+				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
+					fcn = r_anal_get_fcn_in(core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
+					if (!fcn) {
+						r_core_anal_fcn (core, op.jump, addr,
+								R_ANAL_REF_TYPE_NULL, depth);
+					}
+				}
+#else
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 				}
+#endif
 			}
+
 		} else {
 			op.size = minop;
 		}
@@ -4335,7 +4394,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @ entry0");
 		break;
-	case 'n': r_core_anal_autoname_all_fcns (core); break; //aan
+	case 'n':
+		r_core_anal_autoname_all_fcns (core);
+		break; //aan
 	case 'p': // "aap"
 		if (*input == '?') {
 			// TODO: accept parameters for ranges
@@ -4474,7 +4535,7 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 			r_list_foreach (fcn->bbs, iter, b) {
 				int f = b->addr - fcn->addr;
 				int t = R_MIN (f + b->size, fcn_size);
-				if (f>=0) {
+				if (f >= 0) {
 					while (f < t) {
 						bitmap[f++] = 1;
 					}
@@ -4573,6 +4634,7 @@ static int cmd_anal(void *data, const char *input) {
 		"ah", "[?lba-]", "analysis hints (force opcode size, ...)",
 		"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 		"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
+		"aO", "", "Analyze N instructions in M bytes",
 		"an", "[an-] [...]", "manage no-return addresses/symbols/functions",
 		"ar", "", "like 'dr' but for the esil vm. (registers)",
 		"ap", "", "find prelude for current offset",
