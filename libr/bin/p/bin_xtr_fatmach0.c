@@ -19,6 +19,7 @@ static int check(RBin *bin) {
 	RMmap *m = r_file_mmap (bin->file, false, 0);
 	if (!m || !m->buf) {
 		r_file_mmap_free (m);
+		eprintf("check failed\n");
 		return false;
 	}
 	h = m->buf;
@@ -35,6 +36,7 @@ static int check(RBin *bin) {
 		}
 	}
 	r_file_mmap_free (m);
+	eprintf("check=%d\n", ret);
 	return ret;
 }
 
@@ -62,6 +64,7 @@ static int check_bytes(const ut8* bytes, ut64 sz) {
 				ret = true;
 		}
 	}
+	eprintf("checkbytes=%d\n", ret);
 	return ret;
 }
 

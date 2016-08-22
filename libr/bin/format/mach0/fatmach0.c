@@ -7,29 +7,44 @@
 
 static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	ut32 size;
-	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "2I", 1);
+	ut32 i;
+	ut8 hdrbytes[sizeof (struct fat_header)] = {0};
+	int len = r_buf_read_at (bin->b, 0, &hdrbytes[0], sizeof (struct fat_header));
 	if (len < 1) {
 		perror ("read (fat_header)");
 		return false;
 	}
+	bin->hdr.magic = r_read_be32 (&hdrbytes[0]);
+	bin->hdr.nfat_arch = r_read_be32 (&hdrbytes[4]);
 	bin->nfat_arch = bin->hdr.nfat_arch;
-	if (sizeof(struct fat_header) + bin->nfat_arch * \
+	if (sizeof(struct fat_header) + bin->nfat_arch *
 		sizeof(struct fat_arch) > bin->size)
 		return false;
-	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch < 1)
+	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch < 1) {
+		eprintf("Endian FAT_MAGIC failed (?)\n");
 		return false;
+	}
 	size = bin->nfat_arch * sizeof (struct fat_arch);
 	if (size < bin->nfat_arch) return false;
 	if (!(bin->archs = malloc (size))) {
 		perror ("malloc (fat_arch)");
 		return false;
 	}
-	len = r_buf_fread_at (bin->b, R_BUF_CUR, (ut8*)bin->archs, "5I", bin->nfat_arch);
-	if (len < 1) {
-		perror ("read (fat_arch)");
-		R_FREE (bin->archs);
-		return false;
+	for (i = 0; i < bin->nfat_arch; i++) {
+		ut8 archbytes[sizeof (struct fat_arch)] = {0};
+		len = r_buf_read_at (bin->b, 8 + i * sizeof (struct fat_arch), &archbytes[0], sizeof (struct fat_arch));
+		if (len < 1) {
+			perror ("read (fat_arch)");
+			R_FREE (bin->archs);
+			return false;
+		}
+		bin->archs[i].cputype = r_read_be32 (&archbytes[0]);
+		bin->archs[i].cpusubtype = r_read_be32 (&archbytes[4]);
+		bin->archs[i].offset = r_read_be32 (&archbytes[8]);
+		bin->archs[i].size = r_read_be32 (&archbytes[12]);
+		bin->archs[i].align = r_read_be32 (&archbytes[16]);
 	}
+	eprintf("fatmach init worked\n");
 	return true;
 }
 

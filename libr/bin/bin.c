@@ -687,6 +687,8 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		sz = file_sz;
 	}
 
+	bin->file = desc->name;
+
 	if (r_list_length (bin->binfiles) == 0) {
 		if ((file_sz == 0 || file_sz == UT64_MAX) && is_debugger) {
 			int fail = 1;
@@ -727,7 +729,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		// XXX - for the time being this is fine, but we may want to change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr->check && xtr->check_bytes (buf_bytes, sz)) {
+			if (xtr && xtr->check (bin) && xtr->check_bytes (buf_bytes, sz)) {
 				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {
 						free (buf_bytes);

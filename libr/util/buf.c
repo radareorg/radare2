@@ -474,38 +474,46 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		}
 
 		for (k = 0; k < m; k++) {
-			ut8* dest1 = &buf[addr+len+(k*tsize)];
 			ut8* src1 = &b->buf[len+(k*tsize)];
-			ut8* dest2 = &buf[len+(k*tsize)];
 			ut8* src2 = &b->buf[addr+len+(k*tsize)];
+			void* dest1 = &buf[addr+len+(k*tsize)];
+			void* dest2 = &buf[len+(k*tsize)];
+			ut8* dest1_8 = (ut8*)dest1;
+			ut16* dest1_16 = (ut16*)dest1;
+			ut32* dest1_32 = (ut32*)dest1;
+			ut64* dest1_64 = (ut64*)dest1;
+			ut8* dest2_8 = (ut8*)dest2;
+			ut16* dest2_16 = (ut16*)dest2;
+			ut32* dest2_32 = (ut32*)dest2;
+			ut64* dest2_64 = (ut64*)dest2;
 			if (write) {
 				switch (tsize) {
 				case 1:
-					*dest1 = r_read_ble8 (src1);
+					*dest1_8 = r_read_ble8 (src1);
 					break;
 				case 2:
-					*((ut16*)dest1) = r_read_ble16 (src1, bigendian);
+					*dest1_16 = r_read_ble16 (src1, bigendian);
 					break;
 				case 4:
-					*((ut32*)dest1) = r_read_ble32 (src1, bigendian);
+					*dest1_32 = r_read_ble32 (src1, bigendian);
 					break;
 				case 8:
-					*((ut64*)dest1) = r_read_ble64 (src1, bigendian);
+					*dest1_64 = r_read_ble64 (src1, bigendian);
 					break;
 				}
 			} else {
 				switch (tsize) {
 				case 1:
-					*dest2 = r_read_ble8 (src2);
+					*dest2_8 = r_read_ble8 (src2);
 					break;
 				case 2:
-					*((ut16*)dest2) = r_read_ble16 (src2, bigendian);
+					*dest2_16 = r_read_ble16 (src2, bigendian);
 					break;
 				case 4:
-					*((ut32*)dest2) = r_read_ble32 (src2, bigendian);
+					*dest2_32 = r_read_ble32 (src2, bigendian);
 					break;
 				case 8:
-					*((ut64*)dest2) = r_read_ble64 (src2, bigendian);
+					*dest2_64 = r_read_ble64 (src2, bigendian);
 					break;
 				}
 			}
