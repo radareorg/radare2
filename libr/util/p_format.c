@@ -1202,7 +1202,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 			char tmp = 0;
 			structname = strdup (r_str_word_get0 (args, idx));
 			if (*structname == '(') {
-				endname = r_str_rchr (structname, NULL, ')');
+				endname = (char*)r_str_rchr (structname, NULL, ')');
 			} else {
 				eprintf ("Struct name missing (%s)\n", structname);
 				free (structname);
@@ -1296,6 +1296,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 								 int slide, int mode, const char *setval, char *field, int anon) {
 	const char *fmt;
 	char namefmt[128];
+	slide++;
 	if ((slide % STRUCTPTR) > NESTDEPTH || (slide % STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
 		return 0;
@@ -1409,15 +1410,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			R_FREE (args);
 		}
 		for (i = 0; i < nargs; i++) {
-			char *tmp = r_str_word_get0 (args, i);
-			char *nm = NULL;
+			const char *tmp = r_str_word_get0 (args, i);
+			const char *nm = NULL;
 			int len;
 			nm = r_str_rchr (tmp, NULL, ')');
-			if (nm) {
-				len = strlen (nm+1);
-			} else {
-				len = strlen (tmp);
-			}
+			len = strlen (nm ? nm + 1 : tmp);
 			if (len > maxl) {
 				maxl = len;
 			}
@@ -1425,7 +1422,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		l++;
 		const char *ends = " "; // XXX trailing space warning
 		snprintf (namefmt, sizeof (namefmt), "%%%ds :%s",
-			maxl + 6 * slide % STRUCTPTR, ends);
+			((maxl + 1) * (1+slide)) % STRUCTPTR, ends);
 	}
 #define ISPOINTED ((slide%STRUCTFLAG)/STRUCTPTR<=(oldslide%STRUCTFLAG)/STRUCTPTR)
 #define ISNESTED ((slide%STRUCTPTR)<=(oldslide%STRUCTPTR))
@@ -1519,8 +1516,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				oarg = fieldname = strdup (r_str_word_get0 (args, idx));
 				if (ISSTRUCT || tmp=='E' || tmp=='B' || tmp=='r') {
 					if (*fieldname == '(') {
-						fmtname = fieldname+1;
-						fieldname = r_str_rchr (fieldname, NULL, ')');
+						fmtname = fieldname + 1;
+						fieldname = (char*)r_str_rchr (fieldname, NULL, ')');
 						if (fieldname) {
 							*fieldname++ = '\0';
 						} else {
