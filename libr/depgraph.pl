@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Usage : perl depgraph.pl | dot -Tpng /dev/stdin > deps.png
+# Usage : perl depgraph.pl dot | dot -Tpng > deps.png
 #
 grep -e DEPS */Makefile | sed -e 's,/Makefile,,' > /tmp/rdeps.txt
 
