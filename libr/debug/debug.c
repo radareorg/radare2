@@ -170,11 +170,6 @@ static int r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode) {
 	 * pretend as if we had.
 	 */
 	if (!dbg->reason.bp_addr && dbg->recoil_mode == R_DBG_RECOIL_STEP) {
-		/* restore all sw breakpoints. we are about to step/continue so these need
-		 * to be in place. */
-		if (!r_bp_restore (dbg->bp, true)) {
-			return false;
-		}
 		return true;
 	}
 
