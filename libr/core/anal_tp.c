@@ -197,19 +197,18 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			//eprintf ("in the middle of %s\n", fcn_call->name);
 			if (fcn_call) {
 				type_match (core, addr, fcn_call->name);
-				addr += op->size;
-				r_anal_op_free (op);
-				r_reg_setv (core->dbg->reg, pc, addr);
-				r_debug_reg_sync (core->dbg, -1, true);
-				r_anal_esil_set_pc (core->anal->esil, addr);
-				addr += stack_clean (core, addr, fcn);
-				r_reg_setv (core->dbg->reg, pc, addr);
-				r_debug_reg_sync (core->dbg, -1, true);
-				r_anal_esil_set_pc (core->anal->esil, addr);
 			} else {
 				eprintf ("Cannot find function at 0x%08"PFMT64x"\n", op->jump);
-				break;
 			}
+			addr += op->size;
+			r_anal_op_free (op);
+			r_reg_setv (core->dbg->reg, pc, addr);
+			r_debug_reg_sync (core->dbg, -1, true);
+			r_anal_esil_set_pc (core->anal->esil, addr);
+			addr += stack_clean (core, addr, fcn);
+			r_reg_setv (core->dbg->reg, pc, addr);
+			r_debug_reg_sync (core->dbg, -1, true);
+			r_anal_esil_set_pc (core->anal->esil, addr);
 			continue;
 		} else {
 			r_core_esil_step (core, UT64_MAX, NULL);
