@@ -1676,13 +1676,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						r_reg_get_name_idx (string));
 				if (!regname)
 					regname = string;
-				r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
+				r = r_reg_get (core->dbg->reg, regname, R_REG_TYPE_GPR);
 				if (r) {
 					if (r->flags) {
 						r_cons_printf ("0x%08"PFMT64x" ->",
 								r_reg_get_value (core->dbg->reg, r));
 						r_reg_set_bvalue (core->dbg->reg, r, arg+1);
-						r_debug_reg_sync (core->dbg, -1, true);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 						r_cons_printf ("0x%08"PFMT64x"\n",
 								r_reg_get_value (core->dbg->reg, r));
 					} else {
@@ -1690,7 +1690,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 								r_reg_get_value (core->dbg->reg, r));
 						r_reg_set_value (core->dbg->reg, r,
 								r_num_math (core->num, arg+1));
-						r_debug_reg_sync (core->dbg, -1, true);
+						r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 						r_cons_printf ("0x%08"PFMT64x"\n",
 								r_reg_get_value (core->dbg->reg, r));
 					}

@@ -1938,12 +1938,12 @@ void cmd_anal_reg (RCore *core, const char *str) {
 			*arg = 0;
 			ostr = r_str_chop (strdup (str + 1));
 			regname = r_str_clean (ostr);
-			r = r_reg_get (core->dbg->reg, regname, -1);
+			r = r_reg_get (core->dbg->reg, regname, R_REG_TYPE_GPR); //-1);
 			if (!r) {
 				int type = r_reg_get_name_idx (regname);
 				if (type != -1) {
 					const char *alias = r_reg_get_name (core->dbg->reg, type);
-					r = r_reg_get (core->dbg->reg, alias, -1);
+					r = r_reg_get (core->dbg->reg, alias, R_REG_TYPE_GPR);
 				}
 			}
 			if (r) {
@@ -1951,7 +1951,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 				//	r_reg_get_value (core->dbg->reg, r));
 				r_reg_set_value (core->dbg->reg, r,
 						r_num_math (core->num, arg + 1));
-				r_debug_reg_sync (core->dbg, -1, true);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));
 			} else {
