@@ -47,6 +47,7 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 		const char *name =r_anal_type_func_args_name (anal, fcn_name, i);
 		const char *place = r_anal_cc_arg (anal, cc, i + 1);
 		if (!strcmp (place, "stack")) {
+			// type_match_stack ();
 			for (j = idx; j >= 0; j--) {
 				ut64 write_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.mem.write", j), 0);
 				if (write_addr == sp + size) {
@@ -64,7 +65,7 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 							}
 						}
 						int sp_idx = sdb_array_get_num (trace, tmp, i2, 0) - sp;
-						if ((v =r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
+						if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
 							r_anal_var_retype (anal, addr, 1, sp_idx, R_ANAL_VAR_KIND_SPV, type, -1, v->name);
 							r_anal_var_free (v);
 						}
@@ -74,6 +75,7 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 			}
 			size += r_anal_type_get_size (anal, type) / 8;
 		} else if (!strcmp (place , "stack_rev")) {
+			// type_match_stack_rev ();
 			free (type);
 			int k;
 			for ( k = max -1; k >=i; k--) {
@@ -109,10 +111,11 @@ static void type_match (RCore *core, ut64 addr, char *name) {
 					}
 
 				}
-				size +=r_anal_type_get_size (anal, type) / 8;
+				size += r_anal_type_get_size (anal, type) / 8;
 			}
 			break;
 		} else {
+			// type_match_reg ();
 			for (j = idx; j >= 0; j--) {
 				if (sdb_array_contains (trace, sdb_fmt (-1, "%d.reg.write", j), place, 0)) {
 					ut64 instr_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.addr", j), 0);

@@ -1,11 +1,13 @@
-/* radare - LGPL - Copyright 2014-2015 - pancake */
+/* radare - LGPL - Copyright 2014-2016 - pancake */
 
 #include <r_core.h>
 
 R_API void r_core_task_list (RCore *core, int mode) {
 	RListIter *iter;
 	RCoreTask *task;
-	if (mode=='j') r_cons_printf ("[");
+	if (mode == 'j') {
+		r_cons_printf ("[");
+	}
 	r_list_foreach (core->tasks, iter, task) {
 		switch (mode) {
 		case 'j':
@@ -19,13 +21,15 @@ R_API void r_core_task_list (RCore *core, int mode) {
 				if (task->msg->res) {
 					r_cons_println (task->msg->res);
 				} else {
-					r_cons_println ("");
+					r_cons_newline ();
 				}
 			}
 			break;
 		}
 	}
-	if (mode=='j') r_cons_printf("]\n");
+	if (mode == 'j') {
+		r_cons_printf ("]\n");
+	}
 }
 
 R_API void r_core_task_join (RCore *core, RCoreTask *task) {
@@ -48,13 +52,14 @@ static int r_core_task_thread(RCore *core, RCoreTask *task) {
 
 R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user) {
 	RCoreTask *task = R_NEW0 (RCoreTask);
-	if (!task) return NULL;
-	task->msg = r_th_msg_new (cmd, r_core_task_thread);
-	task->id = r_list_length (core->tasks)+1;
-	task->state = 's'; // stopped
-	task->core = core;
-	task->user = user;
-	task->cb = cb;
+	if (task) {
+		task->msg = r_th_msg_new (cmd, r_core_task_thread);
+		task->id = r_list_length (core->tasks)+1;
+		task->state = 's'; // stopped
+		task->core = core;
+		task->user = user;
+		task->cb = cb;
+	}
 	return task;
 }
 
@@ -63,10 +68,12 @@ R_API void r_core_task_run(RCore *core, RCoreTask *_task) {
 	RListIter *iter;
 	char *str;
 	r_list_foreach_prev (core->tasks, iter, task) {
-		if (_task && task != _task)
+		if (_task && task != _task) {
 			continue;
-		if (task->state!='s')
+		}
+		if (task->state != 's') {
 			continue;
+		}
 		task->state = 'r'; // running
 		str = r_core_cmd_str (core, task->msg->text);
 		eprintf ("Task %d finished width %d bytes: %s\n%s\n",
@@ -85,8 +92,9 @@ R_API void r_core_task_run_bg(RCore *core, RCoreTask *_task) {
 	RListIter *iter;
 	char *str;
 	r_list_foreach_prev (core->tasks, iter, task) {
-		if (_task && task != _task)
+		if (_task && task != _task) {
 			continue;
+		}
 		task->state = 'r'; // running
 		str = r_core_cmd_str (core, task->msg->text);
 		eprintf ("Task %d finished width %d bytes: %s\n%s\n",

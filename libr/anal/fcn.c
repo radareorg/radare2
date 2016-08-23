@@ -391,7 +391,6 @@ R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, "bp", "+", 'b');
 	extract_arg (anal, fcn, op, "bp", "-", 'b');
 	extract_arg (anal, fcn, op, "sp", "+", 's');
-
 }
 
 static bool isInvalidMemory (const ut8 *buf) {
