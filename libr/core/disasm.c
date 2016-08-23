@@ -1254,7 +1254,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		if (ds->show_color)
 			r_cons_strcat (ds->color_flag);
 		//beginch = (iter->p && printed) ? ", " : "";
-		if (ds->asm_demangle) {
+		if (ds->asm_demangle && flag->realname) {
 			const char *lang = r_config_get (core->config, "bin.lang");
 			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname);
 			r_cons_printf ("%s:\n", name? name: flag->realname);
