@@ -347,7 +347,7 @@ R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str) {
 	int type = -1;
 	RBin *bin;
-	if (!binfile || !*str) return NULL;
+	if (!binfile || !str || !*str) return NULL;
 
 	bin = binfile->rbin;
 	if (!strncmp (str, "sym.", 4))
