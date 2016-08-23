@@ -305,8 +305,9 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off) {
 	RListIter *iter;
 
 	r_list_foreach (f->flags, iter, item) {
-		if (f->space_strict && IS_IN_SPACE (f, item))
+		if (f->space_strict && IS_IN_SPACE (f, item)) {
 			continue;
+		}
 		if (item->offset == off) {
 			return evalFlag (f, item);
 		}
@@ -412,11 +413,17 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	RFlagItem *p;
 	ut64 hash;
 
-	if (!f || !item || !name || !*name) return false;
+	if (!f || !item || !name || !*name) {
+		return false;
+	}
 	hash = r_str_hash64 (name);
 	p = r_hashtable64_lookup (f->ht_name, hash);
-	if (p) return false;
-	if (!set_name (item, name)) return false;
+	if (p) {
+		return false;
+	}
+	if (!set_name (item, name)) {
+		return false;
+	}
 	r_hashtable64_remove (f->ht_name, hash);
 	r_hashtable64_insert (f->ht_name, item->namehash, item);
 	return true;
