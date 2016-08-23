@@ -759,28 +759,21 @@ var update = function() {/* nop */};
 var inColor = true;
 var lastView = panelDisasm;
 
-function uiButton(href, label, type) {
-	if (type == 'active') {
-		return '&nbsp;<a href="' + href.replace(/"/g,'\'') + '" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast" style="background-color:#f04040 !important">' + label + '</a>';
-	}
-	return '&nbsp;<a href="' + href.replace(/"/g,'\'') + '" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">' + label + '</a>';
-}
-
 function write() {
 	var str = prompt('hexpairs, quoted string or :assembly');
 	if (str != '') {
 		switch (str[0]) {
-		case ':':
-			str = str.substring(1);
-			r2.cmd('"wa ' + str + '"', update);
-			break;
-		case '"':
-			str = str.replace(/"/g, '');
-			r2.cmd('w ' + str, update);
-			break;
-		default:
-			r2.cmd('wx ' + str, update);
-			break;
+			case ':':
+				str = str.substring(1);
+				r2.cmd('"wa ' + str + '"', update);
+				break;
+			case '"':
+				str = str.replace(/"/g, '');
+				r2.cmd('w ' + str, update);
+				break;
+			default:
+				r2.cmd('wx ' + str, update);
+				break;
 		}
 	}
 }
@@ -848,9 +841,6 @@ function analyze() {
 		panelDisasm();
 	});
 }
-function uiCheckList(grp, id, label) {
-	return '<li> <label for="' + grp + '" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"> <input type="checkbox" id="' + id + '" class="mdl-checkbox__input" /><span class="mdl-checkbox__label">' + label + '</span> </label> </li>';
-}
 
 function notes() {
 	var widget = widgetContainer.getWidget('Notes');
@@ -862,24 +852,36 @@ function notes() {
 }
 
 function setFlagspace(fs) {
-	if (!fs) fs = prompt('name');
-	if (!fs) return;
+	if (!fs) {
+		fs = prompt('name');
+	}
+	if (!fs) {
+		return;
+	}
 	r2.cmd('fs ' + fs, function() {
 		flagspaces();
 	});
 }
 
 function renameFlagspace(fs) {
-	if (!fs) fs = prompt('name');
-	if (!fs) return;
+	if (!fs) {
+		fs = prompt('name');
+	}
+	if (!fs) {
+		return;
+	}
 	r2.cmd('fsr ' + fs, function() {
 		flagspaces();
 	});
 }
 
 function delFlagspace(fs) {
-	if (!fs) fs = '.';
-	if (!fs) return;
+	if (!fs) {
+		fs = '.';
+	}
+	if (!fs) {
+		return;
+	}
 	r2.cmd('fs-' + fs, function() {
 		flagspaces();
 	});
@@ -921,12 +923,13 @@ function flagspaces() {
 				var selected = line[2].indexOf('.') == -1;
 				var a = '';
 				a += '<a href="javascript:setFlagspace(\'' + line[3] + '\')">';
-				if (selected) a += '<font color=\'red\'>' + line[3] + '</font>';
-				else a += line[3];
+				if (selected) {
+					a += '<font color=\'red\'>' + line[3] + '</font>';
+				} else {
+					a += line[3];
+				}
 				a += '</a>';
-				body += uiTableRow([
-				'+' + line[1], a
-				]);
+				body += uiTableRow(['+' + line[1], a]);
 			}
 		}
 		body += uiTableEnd();
@@ -936,291 +939,44 @@ function flagspaces() {
 
 function analyzeSymbols() {
 	statusMessage('Analyzing symbols...');
-	r2.cmd('aa',function() {
+	r2.cmd('aa', function() {
 		statusMessage('done');
 		update();
 	});
 }
 function analyzeRefs() {
 	statusMessage('Analyzing references...');
-	r2.cmd('aar',function() {
+	r2.cmd('aar', function() {
 		statusMessage('done');
 		update();
 	});
 }
 function analyzeCalls() {
 	statusMessage('Analyzing calls...');
-	r2.cmd('aac',function() {
+	r2.cmd('aac', function() {
 		statusMessage('done');
 		update();
 	});
 }
 function analyzeFunction() {
 	statusMessage('Analyzing function...');
-	r2.cmd('af',function() {
+	r2.cmd('af', function() {
 		statusMessage('done');
 		update();
 	});
 }
 function analyzeNames() {
 	statusMessage('Analyzing names...');
-	r2.cmd('.afna @@ fcn.*',function() {
+	r2.cmd('.afna @@ fcn.*', function() {
 		statusMessage('done');
 		update();
 	});
 }
 
-function smallDisasm() {
-	r2.cmd('e asm.bytes=false');
-	r2.cmd('e asm.lines=false');
-	r2.cmd('e asm.cmtright=false');
-}
-
-function mediumDisasm() {
-	r2.cmd('e asm.bytes=false');
-	r2.cmd('e asm.lines=true');
-	r2.cmd('e asm.lineswidth=8');
-	r2.cmd('e asm.cmtright=false');
-}
-
-function largeDisasm() {
-	r2.cmd('e asm.bytes=true');
-	r2.cmd('e asm.lines=true');
-	r2.cmd('e asm.lineswidth=12');
-	r2.cmd('e asm.cmtright=true');
-}
-
-function configPseudo() {
-	r2.cmd('e asm.pseudo=1');
-	r2.cmd('e asm.syntax=intel');
-}
-
-function configOpcodes() {
-	r2.cmd('e asm.pseudo=0');
-	r2.cmd('e asm.syntax=intel');
-}
-
-function configATT() {
-	r2.cmd('e asm.pseudo=0');
-	r2.cmd('e asm.syntax=att');
-}
-
 function panelAbout() {
 	r2.cmd('?V', function(version) {
-		alert('radare2 material webui by --pancake @ 2015-2016\n\n'+version.trim());
+		alert('radare2 material webui by --pancake @ 2015-2016\n\n' + version.trim());
 	});
-}
-
-function configColorDefault() {
-	r2.cmd('ecd', function() {
-		update();
-	});
-}
-function configColorRandom() {
-	r2.cmd('ecr', function() {
-		update();
-	});
-}
-
-function configColorTheme(theme) {
-	r2.cmd('eco ' + theme, function() {
-		update();
-	});
-}
-
-function configPA() {
-	r2.cmd('e io.va=false');
-}
-
-function configVA() {
-	r2.cmd('e io.va=true');
-}
-
-function configDebug() {
-	r2.cmd('e io.va=true');
-	r2.cmd('e io.debug=true');
-}
-
-function configArch(name) { r2.cmd('e asm.arch=' + name); }
-function configBits8() { r2.cmd('e asm.bits=8'); }
-function configBits16() { r2.cmd('e asm.bits=16'); }
-function configBits32() { r2.cmd('e asm.bits=32'); }
-function configBits64() { r2.cmd('e asm.bits=64'); }
-function configColorTrue() { inColor = true; }
-function configColorFalse() { inColor = false; }
-
-var comboId = 0;
-
-function uiCombo(d) {
-	var fun_name = 'combo' + (++comboId);
-	var fun = fun_name + ' = function(e) {';
-	fun += ' var sel = document.getElementById("opt_' + fun_name + '");';
-	fun += ' var opt = sel.options[sel.selectedIndex].value;';
-	fun += ' switch (opt) {';
-	for (var a in d) {
-		fun += 'case "' + d[a].name + '": ' + d[a].js + '(' + d[a].name + ');break;';
-	}
-	fun += '}}';
-	// CSP violation here
-	eval(fun);
-	var out = '<select id="opt_' + fun_name + '" onchange="' + fun_name + '()">';
-	for (var a in d) {
-		var def = (d[a].default) ? ' default' : '';
-		out += '<option' + def + '>' + d[a].name + '</option>';
-	}
-	out += '</select>';
-	return out;
-}
-
-function uiSwitch(d) {
-	// TODO: not yet done
-	var out = '' + d +
-	'<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="switch-1">' +
-	'<input type="checkbox" id="switch-1" class="mdl-switch__input" checked />' +
-	'<span class="mdl-switch__label"></span>' +
-	'</label>';
-	return out;
-}
-
-function uiBlock(d) {
-	var out = '<div class="mdl-card__supporting-text mdl-shadow--2dp mdl-color-text--blue-grey-50 mdl-cell" style="display:inline-block;margin:5px;color:black !important;background-color:white !important">';
-	out += '<h3 style="color:black">' + d.name + '</h3>';
-	for (var i in d.blocks) {
-		var D = d.blocks[i];
-		out += '<br />' + D.name + ': ';
-		out += uiCombo(D.buttons);
-	}
-	out += '</div>';
-	return out;
-}
-
-function panelSettings() {
-	var out = '';
-
-	var widget = widgetContainer.getWidget('Settings');
-	var c = widgetContainer.getWidgetDOMWrapper(widget);
-
-	updates.registerMethod(widget.getOffset(), panelSettings);
-
-	c.style.backgroundColor = '#f0f0f0';
-	out += '<div style=\'margin:10px\'>';
-	out += uiBlock({ name: 'Platform', blocks: [
-	{ name: 'Arch', buttons: [
-	{ name: 'x86', js: 'configArch', default: true },
-	{ name: 'arm', js: 'configArch' },
-	{ name: 'mips', js: 'configArch' },
-	{ name: 'java', js: 'configArch' },
-	{ name: 'dalvik', js: 'configArch' },
-	{ name: '6502', js: 'configArch' },
-	{ name: '8051', js: 'configArch' },
-	{ name: 'h8300', js: 'configArch' },
-	{ name: 'hppa', js: 'configArch' },
-	{ name: 'i4004', js: 'configArch' },
-	{ name: 'i8008', js: 'configArch' },
-	{ name: 'lh5801', js: 'configArch' },
-	{ name: 'lm32', js: 'configArch' },
-	{ name: 'm68k', js: 'configArch' },
-	{ name: 'malbolge', js: 'configArch' },
-	{ name: 'mcs96', js: 'configArch' },
-	{ name: 'msp430', js: 'configArch' },
-	{ name: 'nios2', js: 'configArch' },
-	{ name: 'ppc', js: 'configArch' },
-	{ name: 'rar', js: 'configArch' },
-	{ name: 'sh', js: 'configArch' },
-	{ name: 'snes', js: 'configArch' },
-	{ name: 'sparc', js: 'configArch' },
-	{ name: 'spc700', js: 'configArch' },
-	{ name: 'sysz', js: 'configArch' },
-	{ name: 'tms320', js: 'configArch' },
-	{ name: 'v810', js: 'configArch' },
-	{ name: 'v850', js: 'configArch' },
-	{ name: 'ws', js: 'configArch' },
-	{ name: 'xcore', js: 'configArch' },
-	{ name: 'prospeller', js: 'configArch' },
-	{ name: 'gb', js: 'configArch' },
-	{ name: 'z80', js: 'configArch' },
-	{ name: 'arc', js: 'configArch' },
-	{ name: 'avr', js: 'configArch' },
-	{ name: 'bf', js: 'configArch' },
-	{ name: 'cr16', js: 'configArch' },
-	{ name: 'cris', js: 'configArch' },
-	{ name: 'csr', js: 'configArch' },
-	{ name: 'dcpu16', js: 'configArch' },
-	{ name: 'ebc', js: 'configArch' }
-	]},
-	{ name: 'Bits', buttons: [
-	{ name: '64', js: 'configBits64' },
-	{ name: '32', js: 'configBits32', default: true },
-	{ name: '16', js: 'configBits16' },
-	{ name: '8', js: 'configBits8' }
-	]},
-	{ name: 'OS', buttons: [
-	{ name: 'Linux', js: 'configOS_LIN', default: true },
-	{ name: 'Windows', js: 'configOS_W32' },
-	{ name: 'OSX', js: 'configOS_OSX' }
-	]}
-	]
-	});
-	out += uiBlock({ name: 'Disassembly', blocks: [
-	{
-	name: 'Size', buttons: [
-	{ name: 'S', js: 'smallDisasm' },
-	{ name: 'M', js: 'mediumDisasm' },
-	{ name: 'L', js: 'largeDisasm' }
-	]},
-	{
-	name: 'Decoding', buttons: [
-	{ name: 'Pseudo', js: 'configPseudo' },
-	{ name: 'Opcodes', js: 'configOpcodes' },
-	{ name: 'ATT', js: 'configATT' }
-	]},
-		       {
-			name: 'Colors', buttons: [
-			{ name: 'Yes', js: 'configColorTrue', default: true },
-			{ name: 'No', js: 'configColorFalse' }
-			]
-		}, {
-			name: 'Theme', buttons: [
-				{ name: 'Default', js: 'configColorDefault' },
-				{ name: 'Random', js: 'configColorRandom' },
-				{ name: 'Solarized', js: 'configColorTheme("solarized")' },
-				{ name: 'Ogray', js: 'configColorTheme("ogray")' },
-				{ name: 'Twilight', js: 'configColorTheme("twilight")' },
-				{ name: 'Rasta', js: 'configColorTheme("rasta")' },
-				{ name: 'Tango', js: 'configColorTheme("tango")' },
-				{ name: 'White', js: 'configColorTheme("white")' }
-				]}
-						]
-		});
-	out += uiBlock({ name: 'Core/IO', blocks: [
-		{
-			name: 'Mode', buttons: [
-			{ name: 'PA', js: 'configPA' },
-			{ name: 'VA', js: 'configVA' },
-			{ name: 'Debug', js: 'configDebug' }
-			]
-		}
-]});
-	out += uiBlock({ name: 'Analysis', blocks: [
-		{
-			name: 'HasNext', buttons: [
-			{ name: 'Yes', js: 'configAnalHasnextTrue', default: true },
-			{ name: 'No', js: 'configAnalHasnextFalse' }
-			]
-		},{
-			name: 'Skip Nops', buttons: [
-			{ name: 'Yes', js: 'configAnalNopskipTrue', default: true },
-			{ name: 'No', js: 'configAnalNopskipFalse' }
-			]
-		},{
-			name: 'NonCode', buttons: [
-			{ name: 'Yes', js: 'configAnalNoncodeTrue' },
-			{ name: 'No', js: 'configAnalNoncodeFalse', default: true }
-			]
-		}
-		]});
-	out += '</div>';
-	c.innerHTML = out;
 }
 
 function panelFunctions() {
@@ -1241,9 +997,6 @@ function panelFunctions() {
 	c.innerHTML = body;
 	r2.cmd('e scr.utf8=false');
 	r2.cmd('afl', function(d) {
-		//var dis = clickableOffsets (d);
-		//c.innerHTML += "<pre style='font-family:Console,Courier New,monospace' style='color:white !important'>"+dis+"<pre>";
-
 		var table = new Table(
 			['+Address', 'Name', '+Size', '+CC'],
 			[false, true, false, false],
@@ -1253,7 +1006,6 @@ function panelFunctions() {
 		for (var i in lines) {
 			var items = lines[i].match(/^(0x[0-9a-f]+)\s+([0-9]+)\s+([0-9]+(\s+\-&gt;\s+[0-9]+)?)\s+(.+)$/);
 			if (items !== null) {
-				console.log(items);
 				table.addRow([items[1], items[5], items[2], items[3]]);
 			}
 		}
@@ -1262,14 +1014,15 @@ function panelFunctions() {
 
 }
 
-var last_console_output = '';
+var lastConsoleOutput = '';
 
 function runCommand(text) {
-	if (!text)
-	text = document.getElementById('input').value;
+	if (!text) {
+		text = document.getElementById('input').value;
+	}
 	r2.cmd(text, function(d) {
-		last_console_output = '\n' + d;
-		document.getElementById('output').innerHTML = last_console_output;
+		lastConsoleOutput = '\n' + d;
+		document.getElementById('output').innerHTML = lastConsoleOutput;
 	});
 }
 
@@ -1292,18 +1045,20 @@ function panelConsole() {
 	updates.registerMethod(widget.getOffset(), panelConsole);
 
 	c.innerHTML = '<br />';
+	var common = 'onkeypress=\'consoleKey()\' class=\'mdl-card--expand mdl-textfield__input\' id=\'input\'';
 	if (inColor) {
 		c.style.backgroundColor = '#202020';
-		c.innerHTML += '<input style=\'position:fixed;padding-left:10px;top:4em;height:1.8em;color:white\' onkeypress=\'consoleKey()\' class=\'mdl-card--expand mdl-textfield__input\' id=\'input\'/>';
+		var styles = 'position:fixed;padding-left:10px;top:4em;height:1.8em;color:white';
+		c.innerHTML += '<input style=\'' + styles + '\' ' + common + ' />';
 		//c.innerHTML += uiButton('javascript:runCommand()', 'Run');
 		c.innerHTML += '<div id=\'output\' class=\'pre\' style=\'color:white !important\'><div>';
 	} else {
 		c.style.backgroundColor = '#f0f0f0';
-		c.innerHTML += '<input style=\'color:black\' onkeypress=\'consoleKey()\' class=\'mdl-card--expand mdl-textfield__input\' id=\'input\'/>';
+		c.innerHTML += '<input style=\'color:black\' ' + common + '/>';
 		c.innerHTML += uiButton('javascript:runCommand()', 'Run');
 		c.innerHTML += '<div id=\'output\' class=\'pre\' style=\'color:black!important\'><div>';
 	}
-	document.getElementById('output').innerHTML = last_console_output;
+	document.getElementById('output').innerHTML = lastConsoleOutput;
 }
 
 function searchKey(e) {
@@ -1323,27 +1078,34 @@ function runSearchMagic() {
 	});
 }
 function runSearchCode(text) {
-	if (!text) text = document.getElementById('search_input').value;
+	if (!text) {
+		text = document.getElementById('search_input').value;
+	}
 	r2.cmd('"/c ' + text + '"', function(d) {
 		document.getElementById('search_output').innerHTML = clickableOffsets(d);
 	});
 }
 function runSearchString(text) {
-	if (!text) text = document.getElementById('search_input').value;
+	if (!text) {
+		text = document.getElementById('search_input').value;
+	}
 	r2.cmd('/ ' + text, function(d) {
 		document.getElementById('search_output').innerHTML = clickableOffsets(d);
 	});
 }
 function runSearchROP(text) {
-	if (!text) text = document.getElementById('search_input').value;
+	if (!text) {
+		text = document.getElementById('search_input').value;
+	}
 	r2.cmd('"/R ' + text + '"', function(d) {
 		document.getElementById('search_output').innerHTML = clickableOffsets(d);
 	});
 }
 
 function runSearch(text) {
-	if (!text)
-	text = document.getElementById('search_input').value;
+	if (!text) {
+		text = document.getElementById('search_input').value;
+	}
 	if (text[0] == '"') {
 		r2.cmd('"/ ' + text + '"', function(d) {
 			document.getElementById('search_output').innerHTML = clickableOffsets(d);
@@ -1357,14 +1119,14 @@ function runSearch(text) {
 
 function indentScript() {
 	var str = document.getElementById('script').value;
-	var indented = js_beautify(str);
+	var indented = /* NOT DEFINED js_beautify*/ (str);
 	document.getElementById('script').value = indented;
-	localStorage['script'] = indented;
+	localStorage.script = indented;
 }
 
 function runScript() {
 	var str = document.getElementById('script').value;
-	localStorage['script'] = str;
+	localStorage.script = str;
 	document.getElementById('scriptOutput').innerHTML = '';
 	try {
 		var msg = '"use strict";' +
@@ -1419,8 +1181,10 @@ function panelSearch() {
 	updates.registerMethod(widget.getOffset(), panelSearch);
 
 	c.style.backgroundColor = '#f0f0f0';
+	var style = 'background-color:white !important;padding-left:10px;top:3.5em;height:1.8em;color:white';
+	var classes = 'mdl-card--expand mdl-textfield__input';
 	var out = '<br />';
-	out += '<input style=\'background-color:white !important;padding-left:10px;top:3.5em;height:1.8em;color:white\' onkeypress=\'searchKey()\' class=\'mdl-card--expand mdl-textfield__input\' id=\'search_input\'/>';
+	out += '<input style=\'' + style + '\' onkeypress=\'searchKey()\' class=\'' + classes + '\' id=\'search_input\'/>';
 	out += '<br />';
 	out += uiButton('javascript:runSearch()', 'Hex');
 	out += uiButton('javascript:runSearchString()', 'String');
@@ -1469,14 +1233,6 @@ function up() {
 function down() {
 	r2.cmd('s++');
 	update();
-}
-
-function uiRoundButton(a, b, c) {
-	var out = '';
-	out += '<button onclick=' + a + ' class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect" ' + c + '>';
-	out += '<i class="material-icons" style="opacity:1">' + b + '</i>';
-	out += '</button>';
-	return out;
 }
 
 var nativeDebugger = false;
@@ -1602,10 +1358,12 @@ function blocks() {
 	var widget = widgetContainer.getWidget('Blocks');
 	var c = widgetContainer.getWidgetDOMWrapper(widget);
 
-	c.style['overflow'] = 'none';
+	c.style.overflow = 'none';
 	var color = inColor ? 'white' : 'black';
+	var cl = 'mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect ';
+	cl += 'mdl-color--accent mdl-color-text--accent-contrast';
 	c.innerHTML = '<br />';
-	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
+	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="' + cl + '">&lt; INFO</a> <h3 color=white></h3>';
 	var tail = inColor ? '@e:scr.color=1,scr.html=1' : '';
 	r2.cmd('pdr' + tail, function(d) {
 		c.innerHTML += '<pre style=\'color:' + color + '\'>' + d + '<pre>';
@@ -1616,10 +1374,12 @@ function pdtext() {
 	var widget = widgetContainer.getWidget('Function');
 	var c = widgetContainer.getWidgetDOMWrapper(widget);
 
-	c.style['overflow'] = 'none';
+	c.style.overflow = 'none';
 	var color = inColor ? 'white' : 'black';
+	var cl = 'mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect ';
+	cl += 'mdl-color--accent mdl-color-text--accent-contrast';
 	c.innerHTML = '<br />';
-	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
+	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="' + cl + '">&lt; INFO</a> <h3 color=white></h3>';
 	var tail = inColor ? '@e:scr.color=1,scr.html=1,asm.lineswidth=0' : '@e:asm.lineswidth=0';
 	r2.cmd('e scr.color=1;s entry0;s $S;pD $SS;e scr.color=0', function(d) {
 		d = clickableOffsets(d);
@@ -1631,10 +1391,12 @@ function pdf() {
 	var widget = widgetContainer.getWidget('Function');
 	var c = widgetContainer.getWidgetDOMWrapper(widget);
 
-	c.style['overflow'] = 'none';
+	c.style.overflow = 'none';
 	var color = inColor ? 'white' : 'black';
+	var cl = 'mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect ';
+	cl += 'mdl-color--accent mdl-color-text--accent-contrast';
 	c.innerHTML = '<br />';
-	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
+	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="' + cl + '">&lt; INFO</a> <h3 color=white></h3>';
 	var tail = inColor ? '@e:scr.color=1,scr.html=1,asm.lineswidth=0' : '@e:asm.lineswidth=0';
 	r2.cmd('pdf' + tail, function(d) {
 		c.innerHTML += '<pre style=\'color:' + color + '\'>' + d + '<pre>';
@@ -1645,10 +1407,12 @@ function decompile() {
 	var widget = widgetContainer.getWidget('Decompile');
 	var c = widgetContainer.getWidgetDOMWrapper(widget);
 
-	c.style['overflow'] = 'none';
+	c.style.overflow = 'none';
 	var color = inColor ? 'white' : 'black';
+	var cl = 'mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect ';
+	cl += 'mdl-color--accent mdl-color-text--accent-contrast';
 	c.innerHTML = '<br />';
-	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a> <h3 color=white></h3>';
+	c.innerHTML += '&nbsp;<a href="javascript:panelDisasm()" class="' + cl + '">&lt; INFO</a> <h3 color=white></h3>';
 	var tail = inColor ? '@e:scr.color=1,scr.html=1' : '';
 	r2.cmd('pdc' + tail, function(d) {
 		c.innerHTML += '<pre style=\'color:' + color + '\'>' + d + '<pre>';
@@ -1660,9 +1424,11 @@ function graph() {
 	widget.setDark();
 	var c = widgetContainer.getWidgetDOMWrapper(widget);
 
-	c.style['overflow'] = 'auto';
+	c.style.overflow = 'auto';
 	var color = inColor ? 'white' : 'black';
-	c.innerHTML = '<br />&nbsp;<a href="javascript:panelDisasm()" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">&lt; INFO</a>';
+	var cl = 'mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect ';
+	cl += 'mdl-color--accent mdl-color-text--accent-contrast';
+	c.innerHTML = '<br />&nbsp;<a href="javascript:panelDisasm()" class="' + cl + '">&lt; INFO</a>';
 	var tail = inColor ? '@e:scr.color=1,scr.html=1' : '';
 	r2.cmd('agf' + tail, function(d) {
 		d = clickableOffsets(d);
@@ -1738,6 +1504,9 @@ function ready() {
 	}
 	twice = true;
 
+	// Loading configuration from localStorage (see panelSettings)
+	applyConf();
+
 	updates = new UpdateManager();
 	lastViews = new UpdateManager();
 
@@ -1797,7 +1566,7 @@ function ready() {
 	});
 
 	// Close the drawer on click with small screens
-	document.querySelector('.mdl-layout__drawer').addEventListener('click', function () {
+	document.querySelector('.mdl-layout__drawer').addEventListener('click', function() {
 		document.querySelector('.mdl-layout__obfuscator').classList.remove('is-visible');
 		this.classList.remove('is-visible');
 	}, false);
@@ -1826,7 +1595,9 @@ document.body.onkeypress = function(e) {
 		var k = e.charCode - 0x30;
 		if (k >= 0 && k < keys.length) {
 			var fn = keys[k];
-			if (fn) fn();
+			if (fn) {
+				fn();
+			}
 		}
 	}
 };
@@ -2216,6 +1987,156 @@ function clickableOffsets(x) {
 	return x;
 }
 
+function uiButton(href, label, type) {
+	var classes = 'mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect ';
+	classes += 'mdl-color--accent mdl-color-text--accent-contrast';
+	if (type == 'active') {
+		var st = 'style="background-color:#f04040 !important"';
+		return '&nbsp;<a href="' + href.replace(/"/g, '\'') + '" class="' + classes + '" ' + st + '>' + label + '</a>';
+	}
+	return '&nbsp;<a href="' + href.replace(/"/g, '\'') + '" class="' + classes + '">' + label + '</a>';
+}
+
+function uiCheckList(grp, id, label) {
+	var output = '<li>';
+	ouput += '<label for="' + grp + '" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">';
+	ouput += '<input type="checkbox" id="' + id + '" class="mdl-checkbox__input" />';
+	ouput += '<span class="mdl-checkbox__label">' + label + '</span>';
+	ouput += '</label></li>';
+
+	return output;
+}
+
+var comboId = 0;
+function uiCombo(d) {
+	var funName = 'combo' + (++comboId);
+	var fun = funName + ' = function(e) {';
+	fun += ' var sel = document.getElementById("opt_' + funName + '");';
+	fun += ' var opt = sel.options[sel.selectedIndex].value;';
+	fun += ' switch (opt) {';
+	for (var a in d) {
+		fun += 'case "' + d[a].name + '": ' + d[a].js + '(' + d[a].name + ');break;';
+	}
+	fun += '}}';
+	// CSP violation here
+	eval(fun);
+	var out = '<select id="opt_' + funName + '" onchange="' + funName + '()">';
+	for (var a in d) {
+		var def = (d[a].default) ? ' default' : '';
+		out += '<option' + def + '>' + d[a].name + '</option>';
+	}
+	out += '</select>';
+	return out;
+}
+
+/**
+ * Add a switch, with a name "label", define default state by isChecked
+ * callbacks are bound when un-checked.
+ */
+var idSwitch = 0;
+function uiSwitch(dom, name, isChecked, onChange) {
+	var id = 'switch-' + (++idSwitch);
+
+	var label = document.createElement('label');
+	label.className = 'mdl-switch mdl-js-switch mdl-js-ripple-effect';
+	label.for = id;
+	dom.appendChild(label);
+
+	var input = document.createElement('input');
+	input.type = 'checkbox';
+	input.className = 'mdl-switch__input';
+	input.checked = isChecked;
+	input.id = id;
+	label.appendChild(input);
+
+	input.addEventListener('change', function(evt) {
+		onChange(name, evt.target.checked);
+	});
+
+	var span = document.createElement('span');
+	span.className = 'mdl-switch__label';
+	span.innerHTML = name;
+	label.appendChild(span);
+}
+
+function uiActionButton(dom, action, label) {
+	var button = document.createElement('a');
+	button.href = '#';
+	button.innerHTML = label;
+	button.addEventListener('click', action);
+	dom.appendChild(button);
+
+	var classes = 'mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect ';
+	classes += 'mdl-color--accent mdl-color-text--accent-contrast';
+	button.className = classes;
+	button.style.margin = '3px';
+}
+
+var selectId = 0;
+function uiSelect(dom, name, list, defaultOffset, onChange) {
+	var id = 'select-' + (++selectId);
+
+	var div = document.createElement('div');
+	div.className = 'mdl-selectfield mdl-js-selectfield mdl-selectfield--floating-label';
+	dom.appendChild(div);
+
+	var select = document.createElement('select');
+	select.className = 'mdl-selectfield__select';
+	select.id = id;
+	select.name = id;
+	div.appendChild(select);
+
+	for (var i = 0 ; i < list.length ; i++) {
+		var option = document.createElement('option');
+		option.innerHTML = list[i];
+		option.value = list[i];
+		select.appendChild(option);
+		if (i === defaultOffset) {
+			option.selected = true;
+		}
+	}
+
+	select.addEventListener('change', function(evt) {
+		onChange(evt.target.value);
+	});
+
+	var label = document.createElement('label');
+	label.className = 'mdl-selectfield__label';
+	label.for = id;
+	label.innerHTML = name;
+	div.appendChild(label);
+}
+
+// function uiSwitch(d) {
+// 	// TODO: not yet done
+// 	var out = d;
+// 	out += '<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect" for="switch-1">';
+// 	out += '<input type="checkbox" id="switch-1" class="mdl-switch__input" checked />';
+// 	out += '<span class="mdl-switch__label"></span>';
+// 	out += '</label>';
+// 	return out;
+// }
+
+function uiBlock(d) {
+	var classes = 'mdl-card__supporting-text mdl-shadow--2dp mdl-color-text--blue-grey-50 mdl-cell';
+	var styles = 'display:inline-block;margin:5px;color:black !important;background-color:white !important';
+	var out = '';
+	for (var i in d.blocks) {
+		var D = d.blocks[i];
+		out += '<br />' + D.name + ': ';
+		out += uiCombo(D.buttons);
+	}
+	return out;
+}
+
+function uiRoundButton(a, b, c) {
+	var out = '';
+	out += '<button onclick=' + a + ' class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect" ' + c + '>';
+	out += '<i class="material-icons" style="opacity:1">' + b + '</i>';
+	out += '</button>';
+	return out;
+}
+
 /**
  * Handling DataTables with jQuery plugin
  *
@@ -2326,16 +2247,14 @@ Table.prototype.insertInto = function(node) {
 	}
 };
 
-
 /**
  * Legacy methods, extracted from main JS
  */
-
-function uiTableBegin(cols, id) {
+function uiTableBegin(cols, domId) {
 	var out = '';
-	var id = id || '';
-	console.log(id.substr(1));
-	out += '<table id="'+id.substr(1)+'" style="margin-left:10px" class="mdl-data-table mdl-js-data-table mdl-data-table--selectable mdl-shadow--2dp">';
+	var id = domId || '';
+	var classes = 'mdl-data-table mdl-js-data-table mdl-data-table--selectable mdl-shadow--2dp';
+	out += '<table id="' + id.substr(1) + '" style="margin-left:10px" class="' + classes + '">';
 	//out += '<table class="mdl-data-table mdl-js-data-table mdl-data-table--selectable">';
 
 	out += '  <thead> <tr>';
@@ -2359,7 +2278,9 @@ function uiTableRow(cols) {
 	var out = '<tr>';
 	for (var i in cols) {
 		var col = cols[i];
-		if (!col) continue;
+		if (!col) {
+			continue;
+		}
 		if (col[0] == '+') {
 			col = clickableOffsets(col.substring(1));
 			type = '';
@@ -2440,7 +2361,13 @@ Widget.prototype.isAlreadyThere = function() {
 
 Widget.prototype.setDark = function() {
 	this.DOMWrapper.style.backgroundColor = 'rgb(32, 32, 32)';
+
+	// Flex containers compatibility
+	if (typeof this.DOMWrapper.children[1] !== 'undefined') {
+		this.DOMWrapper.children[1].style.backgroundColor = 'rgb(32, 32, 32)';
+	}
 };
+
 /**
  * UI management
  * Container should be currently sized for the purpose
@@ -3961,11 +3888,9 @@ Disasm.prototype.processChosenAnalysis = function(endCallback) {
 
 	// Reprocessing
 	this.nav.crunchingData(function() {
-		// Done
+		// After, we refresh the current display
+		this.draw(endCallback);
 	});
-
-	// After, we refresh the current display
-	this.draw(endCallback);
 };
 
 Disasm.prototype.drawAnalysisDialog = function() {
@@ -4741,8 +4666,12 @@ DisasmNavigator.prototype.crunchingData = function(onReadyCallback) {
 DisasmNavigator.prototype.getOverlappingIntervals = function(start, end) {
 	var intervals = [];
 	for (var offset in this.navigationData) {
+		var startInterval = offset;
 		var endInterval = offset + this.navigationData[offset].size;
-		if (start >= offset || end <= endInterval) {
+		if ((startInterval <= start && endInterval >= end) || // all-incl
+			(startInterval <= start && endInterval >= start) || // before-overlap
+			(startInterval <= end && endInterval >= end) || // after-overlap
+			(startInterval >= start && endInterval <= end)) { // included
 			intervals.push(offset);
 		}
 	}
@@ -4758,6 +4687,8 @@ DisasmNavigator.prototype.populateFirst = function() {
  */
 DisasmNavigator.prototype.fillGap = function(start, end, artifical) {
 	var curSize = end - start;
+	// FIX, can't cut everywhere: byte alignment (invalid lines)
+	return [{offset: start, size: curSize, artifical: artifical}];
 	if (curSize > this.howManyLines) {
 		var half = Math.round(end / 2);
 		return [{
@@ -5138,11 +5069,13 @@ function panelDisasm() {
 	}
 
 	disasm.draw();
+	widget.setDark();
 
 	var recall = function() {
 		disasm.refreshInitialOffset();
 		disasm.resetContainer(c);
 		disasm.draw();
+		widget.setDark();
 	};
 
 	// Disasm is "seekable", we need to define behavior before and after drawing
@@ -5172,11 +5105,13 @@ function panelHexdump() {
 	}
 
 	hexdump.draw();
+	widget.setDark();
 
 	var recall = function() {
 		hexdump.refreshInitialOffset();
 		hexdump.resetContainer(c);
 		hexdump.draw();
+		widget.setDark();
 	};
 
 	// Hexdump is "seekable", we need to define behavior before and after drawing
@@ -5222,6 +5157,7 @@ var infoCellHeight = -1;
 function panelOverview() {
 	var widget = widgetContainer.getWidget('Overview');
 	var c = widgetContainer.getWidgetDOMWrapper(widget);
+	lastViews.registerMethod(widget.getOffset(), panelOverview);
 	updates.registerMethod(widget.getOffset(), panelOverview);
 
 	var out = '<div class="mdl-grid demo-content">';
@@ -5307,7 +5243,7 @@ function panelOverview() {
 	out += '</div>';
 	out += '<div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">';
 	out += '	<h3>Entropy</h3>';
-	out += '		<svg fill="currentColor" viewBox="0 0 500 80" id="entropy-graph"></svg>';
+	out += '	<svg fill="currentColor" viewBox="0 0 500 80" id="entropy-graph"></svg>';
 	out += '</div>';
 
 	out += '<div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid">';
@@ -5413,8 +5349,8 @@ function updateInfo() {
 
 function updateEntropy() {
 	var eg = document.getElementById('entropy-graph');
-	var box = eg.getBoundingClientRect();
-	var height = (0 | box.height) - 35 - 19;
+	var boxHeight = eg.viewBox.baseVal.height;
+	var height = (0 | boxHeight) - 19;
 	r2.cmd('p=ej 50 $s @ $M', function(d) {
 		var body = '';
 		var res = JSON.parse(d);
@@ -5479,3 +5415,248 @@ function overviewLoad(evt, args) {
 	args.ready = true;
 }
 
+
+function getConf(confKey) {
+	var local = localStorage.getItem(confKey.name);
+	if (local !== null) {
+		if (local === 'false') {
+			local = false;
+		} else if (local === 'true') {
+			local = true;
+		}
+		return local;
+	} else {
+		return confKey.defVal;
+	}
+}
+
+function saveConf(confKey, val) {
+	localStorage.setItem(confKey.name, val);
+	confKey.apply(val);
+}
+
+function applyConf(force) {
+	force = (typeof force === 'undefined') ? false : force;
+	for (var item in R2Conf) {
+		var cnf = R2Conf[item];
+		if ((!force && getConf(cnf) !== cnf.defVal) || force) {
+			cnf.apply(getConf(cnf));
+		}
+	}
+}
+
+function resetConf() {
+	for (var item in R2Conf) {
+		var cnf = R2Conf[item];
+		localStorage.removeItem(cnf.name);
+	}
+	applyConf(true);
+}
+
+var R2Conf = {
+	platform: { name: 'platform', defVal: 'x86', apply: function(p) { r2.cmd('e asm.arch=' + p); } },
+	bits: { name: 'bits', defVal: '32', apply: function(p) { r2.cmd('e asm.bits=' + p); } },
+	os: { name: 'os', defVal: 'Linux', apply: function(p) { console.log('OS is now: ' + p); } }, // missing
+	size: { name: 'size', defVal: 'S', apply: function(p) {
+			switch (p) {
+				case 'S':
+					r2.cmd('e asm.bytes=false');
+					r2.cmd('e asm.lines=false');
+					r2.cmd('e asm.cmtright=false');
+					break;
+				case 'M':
+					r2.cmd('e asm.bytes=false');
+					r2.cmd('e asm.lines=true');
+					r2.cmd('e asm.lineswidth=8');
+					r2.cmd('e asm.cmtright=false');
+					break;
+				case 'L':
+					r2.cmd('e asm.bytes=true');
+					r2.cmd('e asm.lines=true');
+					r2.cmd('e asm.lineswidth=12');
+					r2.cmd('e asm.cmtright=true');
+					break;
+			};
+		}
+	},
+	decoding: { name: 'decoding', defVal: 'Pseudo', apply: function(p) {
+			switch (p) {
+				case 'Pseudo':
+					r2.cmd('e asm.pseudo=1');
+					r2.cmd('e asm.syntax=intel');
+					break;
+				case 'Opcodes':
+					r2.cmd('e asm.pseudo=0');
+					r2.cmd('e asm.syntax=intel');
+					break;
+				case 'ATT':
+					r2.cmd('e asm.pseudo=0');
+					r2.cmd('e asm.syntax=att');
+					break;
+			};
+		}
+	},
+	mode: { name: 'mode', defVal: 'PA', apply: function(p) {
+			switch (p) {
+				case 'PA':
+					r2.cmd('e io.va=false');
+					break;
+				case 'VA':
+					r2.cmd('e io.va=true');
+					break;
+				case 'Debug':
+					r2.cmd('e io.va=true');
+					r2.cmd('e io.debug=true');
+					break;
+			};
+		}
+	},
+	analHasNext: { name: 'analHasNext', defVal: true, apply: function(p) { console.log('analHasNext is ' + p); } },
+	analSkipNops: { name: 'analSkipNops', defVal: true, apply: function(p) { console.log('analSkipNops is ' + p); } },
+	analNonCode: { name: 'analNonCode', defVal: false, apply: function(p) { console.log('analNonCode is ' + p); } },
+	colors: { name: 'colors', defVal: true, apply: function(p) { inColor = p; } },
+	theme: { name: 'theme', defVal: 'none', apply: function(p) { r2.cmd('eco ' + p); } } // TODO
+};
+
+function panelSettings() {
+	var widget = widgetContainer.getWidget('Settings');
+	var c = widgetContainer.getWidgetDOMWrapper(widget);
+	c.innerHTML = '';
+	updates.registerMethod(widget.getOffset(), panelSettings);
+
+	var grid = document.createElement('div');
+	grid.className = 'mdl-grid';
+	c.appendChild(grid);
+
+	var platform = createGrid(grid, 'Platform');
+	drawPlatform(platform);
+
+	var disassembly = createGrid(grid, 'Disassembly');
+	drawDisassembly(disassembly);
+
+	var coreio = createGrid(grid, 'Core/IO');
+	drawCoreIO(coreio);
+
+	var analysis = createGrid(grid, 'Analysis');
+	drawAnalysis(analysis);
+
+	var colors = createGrid(grid, 'Colors');
+	drawColors(colors);
+
+	var reset = createGrid(grid, 'Reset configuration');
+	uiActionButton(reset, function() {
+		resetConf();
+		update();
+	}, 'RESET');
+
+	componentHandler.upgradeDom();
+}
+
+function savedFromList(list, name, defaultOffset) {
+	var value = defaultOffset;
+	var saved = localStorage.getItem(name);
+	if (saved !== null) {
+		value = list.indexOf(saved);
+	}
+	return value;
+}
+
+function drawPlatform(dom) {
+	var archs = ['x86', 'arm', 'mips', 'java', 'dalvik', '6502', '8051', 'h8300', 'hppa', 'i4004', 'i8008', 'lh5801',
+		'lm32', 'm68k', 'malbolge', 'mcs96', 'msp430', 'nios2', 'ppc', 'rar', 'sh', 'snes', 'sparc', 'spc700', 'sysz',
+		'tms320', 'v810', 'v850', 'ws', 'xcore', 'prospeller', 'gb', 'z80', 'arc', 'avr', 'bf', 'cr16', 'cris', 'csr',
+		'dcpu16', 'ebc'];
+	uiSelect(dom, 'Platform', archs, archs.indexOf(getConf(R2Conf.platform)), function(item) {
+		saveConf(R2Conf.platform, item);
+	});
+
+	var bits = ['64', '32', '16', '8'];
+	uiSelect(dom, 'Bits', bits, bits.indexOf(getConf(R2Conf.bits)), function(item) {
+		saveConf(R2Conf.bits, item);
+	});
+
+	var os = ['Linux', 'Windows', 'OSX'];
+	uiSelect(dom, 'OS', os, os.indexOf(getConf(R2Conf.os)), function(item) {
+		saveConf(R2Conf.os, item);
+	});
+}
+
+function drawDisassembly(dom) {
+	var sizes = ['S', 'M', 'L'];
+	uiSelect(dom, 'Size', sizes, sizes.indexOf(getConf(R2Conf.size)), function(item) {
+		saveConf(R2Conf.size, item);
+	});
+	var decoding = ['Pseudo', 'Opcodes', 'ATT'];
+	uiSelect(dom, 'Decoding', decoding, decoding.indexOf(getConf(R2Conf.decoding)), function(item) {
+		saveConf(R2Conf.decoding, item);
+	});
+}
+
+function drawCoreIO(dom) {
+	var mode = ['PA', 'VA', 'Debug'];
+	uiSelect(dom, 'Mode', mode, mode.indexOf(getConf(R2Conf.mode)), function(item) {
+		saveConf(R2Conf.mode, item);
+	});
+}
+
+function drawAnalysis(dom) {
+	var configAnal = function(param, state, conf) {
+		saveConf(conf, state);
+	};
+
+	uiSwitch(dom, 'HasNext', getConf(R2Conf.analHasNext), function(param, state) {
+		return configAnal(param, state, R2Conf.analHasNext);
+	});
+	uiSwitch(dom, 'Skip Nops', getConf(R2Conf.analSkipNops), function(param, state) {
+		return configAnal(param, state, R2Conf.analSkipNops);
+	});
+	uiSwitch(dom, 'NonCode', getConf(R2Conf.analNonCode), function(param, state) {
+		return configAnal(param, state, R2Conf.analNonCode);
+	});
+}
+
+function drawColors(dom) {
+	var colors;
+	r2.cmdj('ecoj', function(data) {
+		colors = data;
+	});
+
+	uiSwitch(dom, 'Colors', getConf(R2Conf.colors), function(param, state) {
+		saveConf(R2Conf.colors, state);
+	});
+
+	// Randomize
+	uiActionButton(dom, function() {
+		r2.cmd('ecr', function() {
+			update();
+		});
+	}, 'Randomize');
+
+	// Set default
+	uiActionButton(dom, function() {
+		r2.cmd('ecd', function() {
+			update();
+		});
+	}, 'Reset colors');
+
+	uiSelect(dom, 'Theme', colors, colors.indexOf(getConf(R2Conf.theme)), function(theme) {
+		saveConf(R2Conf.theme, theme);
+	});
+}
+
+function createGrid(dom, name) {
+	var div = document.createElement('div');
+	div.className = 'mdl-cell mdl-color--white mdl-shadow--2dp mdl-cell--4-col';
+	div.style.padding = '10px';
+	dom.appendChild(div);
+
+	var title = document.createElement('span');
+	title.className = 'mdl-layout-title';
+	title.innerHTML = name;
+	div.appendChild(title);
+
+	var content = document.createElement('div');
+	div.appendChild(content);
+
+	return content;
+}
