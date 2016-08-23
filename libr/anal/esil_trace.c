@@ -30,9 +30,9 @@ static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int
 		//eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
 		sdb_array_add (DB, KEY ("reg.read"), name, 0);
 		sdb_num_set (DB, KEYREG ("reg.read", name), val, 0);
-	} else {
-		eprintf ("[ESIL] REG READ %s FAILED\n", name);
-	}
+	} //else {
+		//eprintf ("[ESIL] REG READ %s FAILED\n", name);
+	//}
 	return ret;
 }
 

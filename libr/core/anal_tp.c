@@ -4,12 +4,25 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_core.h>
+enum {
+	ROMEM=0,
+	ASM_TRACE,
+	ANAL_TRACE,
+	DBG_TRACE,
+	NONULL,
+	STATES_SIZE
+};
 
-static bool r_anal_emul_init (RCore *core) {
+static bool r_anal_emul_init(RCore *core, bool *state) {
+	state[ROMEM] = r_config_get_i (core->config, "esil.romem");
 	r_config_set (core->config, "esil.romem", "true");
+	state[ASM_TRACE] = r_config_get_i (core->config, "asm.trace");
 	r_config_set (core->config, "asm.trace", "true");
+	state[ANAL_TRACE] = r_config_get_i (core->config, "anal.trace");
 	r_config_set (core->config, "anal.trace", "true");
+	state[DBG_TRACE] = r_config_get_i (core->config, "dbg.trace");
 	r_config_set (core->config, "dbg.trace", "true");
+	state[NONULL] = r_config_get_i (core->config, "esil.nonull");
 	r_config_set (core->config, "esil.nonull", "true");
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
@@ -21,7 +34,16 @@ static bool r_anal_emul_init (RCore *core) {
 	return (core->anal->esil != NULL);
 }
 
-static void type_match (RCore *core, ut64 addr, char *name) {
+static void r_anal_emul_restore(RCore *core, bool *state) {
+	sdb_reset (core->anal->esil->db_trace);
+	r_config_set_i (core->config, "esil.romem", state[ROMEM]);
+	r_config_set_i (core->config, "asm.trace", state[ASM_TRACE]);
+	r_config_set_i (core->config, "anal.trace", state[ANAL_TRACE]);
+	r_config_set_i (core->config, "dbg.trace", state[DBG_TRACE]);
+	r_config_set_i (core->config, "esil.nonull", state[NONULL]);
+}
+
+static void type_match(RCore *core, ut64 addr, char *name) {
 	Sdb *trace = core->anal->esil->db_trace;
 	RAnal *anal = core->anal;
 	RAnalVar *v;
@@ -182,7 +204,9 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 }
 
 R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	if (!core || !r_anal_emul_init (core) || !fcn ) {
+	bool esil_var[STATES_SIZE];
+	if (!core || !r_anal_emul_init (core, esil_var) || !fcn ) {
+		r_anal_emul_restore (core, esil_var);
 		return;
 	}
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
@@ -193,6 +217,7 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	while (!r_cons_is_breaked ()) {
 		RAnalOp *op = r_core_anal_op (core, addr);
 		if (!op || op->type == R_ANAL_OP_TYPE_RET) {
+			r_anal_emul_restore (core, esil_var);
 			return;
 		}
 		if (op->type == R_ANAL_OP_TYPE_CALL) {
@@ -200,19 +225,18 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			//eprintf ("in the middle of %s\n", fcn_call->name);
 			if (fcn_call) {
 				type_match (core, addr, fcn_call->name);
-				addr += op->size;
-				r_anal_op_free (op);
-				r_reg_setv (core->dbg->reg, pc, addr);
-				r_debug_reg_sync (core->dbg, -1, true);
-				r_anal_esil_set_pc (core->anal->esil, addr);
-				addr += stack_clean (core, addr, fcn);
-				r_reg_setv (core->dbg->reg, pc, addr);
-				r_debug_reg_sync (core->dbg, -1, true);
-				r_anal_esil_set_pc (core->anal->esil, addr);
 			} else {
 				eprintf ("Cannot find function at 0x%08"PFMT64x"\n", op->jump);
-				break;
 			}
+			addr += op->size;
+			r_anal_op_free (op);
+			r_reg_setv (core->dbg->reg, pc, addr);
+			r_debug_reg_sync (core->dbg, -1, true);
+			r_anal_esil_set_pc (core->anal->esil, addr);
+			addr += stack_clean (core, addr, fcn);
+			r_reg_setv (core->dbg->reg, pc, addr);
+			r_debug_reg_sync (core->dbg, -1, true);
+			r_anal_esil_set_pc (core->anal->esil, addr);
 			continue;
 		} else {
 			r_core_esil_step (core, UT64_MAX, NULL);
@@ -222,4 +246,6 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		addr = r_reg_getv (core->anal->reg, pc);
 	}
 	r_cons_break_end ();
+	r_anal_emul_restore (core, esil_var);
+
 }
