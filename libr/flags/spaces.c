@@ -5,17 +5,20 @@
 
 R_API int r_flag_space_get(RFlag *f, const char *name) {
 	int i;
-	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
-		if (f->spaces[i] != NULL)
-			if (!strcmp (name, f->spaces[i]))
+	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
+		if (f->spaces[i] != NULL) {
+			if (!strcmp (name, f->spaces[i])) {
 				return i;
-	}
+			}
+		}
+	}	
 	return -1;
 }
 
-R_API const char *r_flag_space_get_i (RFlag *f, int idx) {
-	if (idx==-1 || idx>=R_FLAG_SPACES_MAX || !f || !f->spaces[idx] || !*f->spaces[idx])
+R_API const char *r_flag_space_get_i(RFlag *f, int idx) {
+	if (idx == -1 || idx >= R_FLAG_SPACES_MAX || !f || !f->spaces[idx] || !*f->spaces[idx]) {
 		return "";
+	}
 	return f->spaces[idx];
 }
 
@@ -50,7 +53,7 @@ R_API int r_flag_space_pop(RFlag *f) {
 
 R_API int r_flag_space_set(RFlag *f, const char *name) {
 	int i;
-	if (name == NULL || *name == '*') {
+	if (!name || *name == '*') {
 		f->space_idx = -1;
 		return f->space_idx;
 	}
@@ -76,8 +79,10 @@ R_API int r_flag_space_unset (RFlag *f, const char *fs) {
 	RListIter *iter;
 	RFlagItem *fi;
 	int i, count = 0;
-	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
-		if (!f->spaces[i]) continue;
+	for (i = 0; i<R_FLAG_SPACES_MAX; i++) {
+		if (!f->spaces[i]) {
+			continue;
+		}
 		if (!fs || !strcmp (fs, f->spaces[i])) {
 			if (f->space_idx == i) {
 				f->space_idx = -1;
@@ -95,7 +100,7 @@ R_API int r_flag_space_unset (RFlag *f, const char *fs) {
 	return count;
 }
 
-static int r_flag_space_count (RFlag *f, int n) {
+static int r_flag_space_count(RFlag *f, int n) {
 	RListIter *iter;
 	int count = 0;
 	RFlagItem *fi;

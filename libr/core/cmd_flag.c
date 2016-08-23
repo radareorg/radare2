@@ -373,9 +373,11 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			r_flag_space_push (core->flags, input+2);
 			break;
 		case 'r':
-			if (input[2]==' ')
-				r_flag_space_rename (core->flags, NULL, input+2);
-			else eprintf ("Usage: fsr [newname]\n");
+			if (input[2] ==' ') {
+				r_flag_space_rename (core->flags, NULL, input + 2);
+			} else {
+				eprintf ("Usage: fsr [newname]\n");
+			}
 			break;
 		case '-':
 			switch (input[2]) {
@@ -407,20 +409,23 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		case 'm':
 			{ RFlagItem *f;
 			ut64 off = core->offset;
-			if (input[2] == ' ')
+			if (input[2] == ' ') {
 				off = r_num_math (core->num, input+2);
+			}
 			f = r_flag_get_i (core->flags, off);
 			if (f) {
 				f->space = core->flags->space_idx;
-			} else eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
+			} else {
+				eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
+			}
 			}
 			break;
 		default: {
 			int i, j = 0;
-			for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+			for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 				if (core->flags->spaces[i])
 					r_cons_printf ("%02d %c %s\n", j++,
-					(i==core->flags->space_idx)?'*':' ',
+					(i == core->flags->space_idx)?'*':' ',
 					core->flags->spaces[i]);
 			}
 			} break;
