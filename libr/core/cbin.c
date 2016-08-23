@@ -1220,7 +1220,6 @@ static const char *getPrefixFor(const char *s) {
 }
 
 typedef struct {
-	ut64 addr;
 	const char *pfx; // prefix for flags
 	char *name;      // raw symbol name
 	char *nameflag;  // flag name for symbol
