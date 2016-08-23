@@ -202,6 +202,10 @@ R_API void r_core_syscmd_mkdir(const char *dir) {
 	if (p) {
 		int ret;
 		char *dirname;
+		if (r_sandbox_enable (0)) {
+			eprintf ("sandbox: Cannot use mkdir command\n");
+			return;
+		}
 		if (!strncmp (p+1, "-p ", 3)) {
 			dirname = r_str_chop (strdup (p+3));
 			ret = r_sys_mkdirp (dirname);
