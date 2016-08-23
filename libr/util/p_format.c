@@ -1131,7 +1131,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 		}
 	}
 
-	r_str_word_set0 (args);
+	r_str_word_set0_stack (args);
 	fmt_len = strlen (fmt);
 	for (; i < fmt_len; i++) {
 		if (fmt[i] == '[') {
@@ -1405,7 +1405,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			tmp = *args;
 		}
 		args = strdup (args);
-		nargs = r_str_word_set0 (args);
+		nargs = r_str_word_set0_stack (args);
 		if (nargs == 0) {
 			R_FREE (args);
 		}

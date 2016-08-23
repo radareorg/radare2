@@ -330,8 +330,9 @@ R_API int r_str_split(char *str, char ch) {
 R_API int r_str_word_set0(char *str) {
 	int i, quote = 0;
 	char *p;
-	if (!str || !*str)
+	if (!str || !*str) {
 		return 0;
+	}
 	for (i=0; str[i] && str[i+1]; i++) {
 		if (i > 0 && str[i-1] == ' ' && str[i] == ' ') {
 			int len = strlen (str+i)+1;
@@ -369,6 +370,77 @@ R_API int r_str_word_set0(char *str) {
 			*p='\0';
 		} // s/ /\0/g
 	}
+	return i;
+}
+
+R_API int r_str_word_set0_stack(char *str) {
+	int i;
+	char *p, *q;
+	RStack *s;
+	void *pop;
+	if (!str || !*str) {
+		return 0;
+	}
+	for (i=0; str[i] && str[i+1]; i++) {
+		if (i > 0 && str[i-1] == ' ' && str[i] == ' ') {
+			int len = strlen (str+i)+1;
+			memmove (str+i, str+i+1, len);
+			i--;
+		}
+		if (i == 0 && str[i] == ' ') {
+			memmove (str+i, str+i+1, strlen(str+i)+1);
+		}
+	}
+	if (str[i]==' ') {
+		str[i] = 0;
+	}
+	s = r_stack_new (5); //Some random number
+	for (i = 1, p = str; *p; p++) {
+		q = p - 1;
+		if (p > str && (*q == '\\')) {
+			memmove (q, p, strlen (p) + 1);
+			p--;
+			continue;
+		}
+		if (*p == '(' || *p == '{' || *p == '[') {
+			r_stack_push(s, (void *)p);
+			continue;
+		} else if (*p == '\'' || *p == '"') {
+			pop = r_stack_pop (s);
+			if (pop && *(char *)pop != *p) {
+				r_stack_push (s, pop);
+				r_stack_push (s, (void *)p);
+			} else if (!pop) {
+				r_stack_push (s, (void *)p);
+			}
+			continue;
+		} else if (*p == ')' || *p == '}' || *p == ']') {
+			pop = r_stack_pop (s);
+			if (pop) {
+				if ((*(char *)pop == '(' && *p == ')') ||
+					(*(char *)pop == '{' && *p == '}') ||
+					(*(char *)pop == '[' && *p == ']')) {
+					continue;
+				}
+			}
+		}
+
+		if (*p == ' ') {
+			if (p > str && !*q) {
+				memmove (p, p+1, strlen (p+1)+1);
+				if (*q == '\\') {
+					*q = ' ';
+					continue;
+				}
+				p--;
+			}
+			if (r_stack_is_empty(s)) {
+				i++;
+				*p = '\0';
+			}
+		}
+	}
+	r_stack_free (s);
 	return i;
 }
 
