@@ -1131,7 +1131,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 		}
 	}
 
-	r_str_word_set0 (args);
+	r_str_word_set0_stack (args);
 	fmt_len = strlen (fmt);
 	for (; i < fmt_len; i++) {
 		if (fmt[i] == '[') {
@@ -1288,7 +1288,6 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	}
 	free (o);
 	free (args);
-	//TODO: what if struct is `pf.abc {2}ii a b` should the size be 8 or 16? same goes for `pf 2ii a b`
 	return (mode & R_PRINT_UNIONMODE)? biggest : size;
 }
 
@@ -1405,7 +1404,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			tmp = *args;
 		}
 		args = strdup (args);
-		nargs = r_str_word_set0 (args);
+		nargs = r_str_word_set0_stack (args);
 		if (nargs == 0) {
 			R_FREE (args);
 		}
@@ -1887,7 +1886,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						}
 						if (mode & R_PRINT_ISFIELD) {
 							if (!SEEVALUE) {
-								p->cb_printf ("]");
+								p->cb_printf ("]\n");
 							}
 						}
 						if (MUSTSEEJSON) {
