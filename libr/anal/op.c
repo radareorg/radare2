@@ -55,7 +55,9 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 }
 
 R_API void r_anal_op_free(void *_op) {
-	if (!_op) return;
+	if (!_op) {
+		return;
+	}
 	r_anal_op_fini (_op);
 	memset (_op, 0, sizeof (RAnalOp));
 	free (_op);

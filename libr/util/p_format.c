@@ -25,7 +25,7 @@ static float updateAddr(const ut8 *buf, int i, int endian, ut64 *addr, ut64 *add
 	// assert sizeof (float) == sizeof (ut32))
 	ut32 tmpaddr;
 	r_mem_swaporcopy ((ut8*)&f, buf + i, sizeof (float), endian);
-	
+
 	if (addr) {
 		tmpaddr = r_read_ble32 (buf + i, endian);
 		*addr = (ut64)tmpaddr;
@@ -1102,9 +1102,13 @@ static void r_print_format_num (const RPrint *p, int endian, int mode, const cha
 int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	char *o, *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0;
-	if (!f) return -1;
+	if (!f) {
+		return -1;
+	}
 	o = strdup (f);
-	if (!o) return -1;
+	if (!o) {
+		return -1;
+	}
 	end = strchr (o, ' ');
 	fmt = o;
 	if (!end && !(end = strchr (o, '\0'))) {
@@ -1135,15 +1139,15 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	fmt_len = strlen (fmt);
 	for (; i < fmt_len; i++) {
 		if (fmt[i] == '[') {
-			char *end = strchr (fmt+i,']');
+			char *end = strchr (fmt + i,']');
 			if (!end) {
 				eprintf ("No end bracket.\n");
 				continue;
 			}
 			*end = '\0';
-			tabsize = r_num_math (NULL, fmt+i+1);
+			tabsize = r_num_math (NULL, fmt + i + 1);
 			*end = ']';
-			while (fmt[i++]!=']');
+			while (fmt[i++] != ']');
 		} else {
 			tabsize = 1;
 		}
@@ -1226,6 +1230,8 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 		case '{':
 			while (fmt[i] != '}') {
 				if (!fmt[i]) {
+					free (o);
+					free (args);
 					return -1;
 				}
 				i++;
@@ -1840,6 +1846,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 					if (mode & R_PRINT_SEEFLAGS) {
 						slide += STRUCTFLAG;
+					}
+					if (!fmtname) {
+						break;
 					}
 					format = strchr (fmtname, ' ');
 					if (format) {

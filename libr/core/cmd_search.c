@@ -1878,11 +1878,13 @@ static void rop_kuery(void *data, const char *input) {
 			sdb_list = sdb_foreach_list (ns->sdb);
 			ls_foreach (sdb_list, sdb_iter, kv) {
 				char *dup = strdup (kv->value);
+				bool flag = false; //to free tok when doing strdup
 				char *size = strtok (dup, " ");
 				char *tok = strtok (NULL, "{}");
 				tok = strtok (NULL, "{}");
 				if (!tok) {
 					tok = strdup ("NOP");
+					flag = true;
 				}
 				if (json_first) {
 					json_first = false;
@@ -1892,6 +1894,9 @@ static void rop_kuery(void *data, const char *input) {
 				r_cons_printf ("{\"address\":%s, \"size\":%s, \"type\":\"%s\", \"effect\":\"%s\"}",
 					kv->key, size, ns->name, tok);
 				free (dup);
+				if (flag) {
+					free (tok);
+				}
 			}
 		}
 		r_cons_printf ("]}\n");

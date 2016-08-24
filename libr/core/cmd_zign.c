@@ -79,10 +79,8 @@ static int cmd_zign(void *data, const char *input) {
 				if (!(buf = malloc (len))) {
 					return false;
 				}
-				if (r_io_read_at (core->io, fcni->addr, buf,
-						len) == len) {
-					RFlagItem *flag = r_flag_get_i (
-						core->flags, fcni->addr);
+				if (r_io_read_at (core->io, fcni->addr, buf, len) == len) {
+					RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 					if (flag) {
 						name = flag->name;
 						r_cons_printf ("zb %s ", name);
@@ -91,15 +89,14 @@ static int cmd_zign(void *data, const char *input) {
 							return false;
 						}
 						while (idx < len) {
-							if ((oplen = r_anal_op (core->anal, op, fcni->addr+idx, buf+idx, len-idx)) < 1) {
+							if ((oplen = r_anal_op (core->anal, op, fcni->addr + idx, buf + idx, len - idx)) < 1) {
 								break;
 							}
 							if (op->nopcode != 0) {
-								memset (buf+idx+op->nopcode, 0, oplen-op->nopcode);
+								memset (buf + idx + op->nopcode, 0, oplen-op->nopcode);
 							}
 							idx += oplen;
 						}
-
 						for (i = 0; i < len; i++) {
 							if (buf[i] == 0) {
 								r_cons_printf ("..");
@@ -108,9 +105,14 @@ static int cmd_zign(void *data, const char *input) {
 							}
 						}
 						r_cons_newline ();
-					} else eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
-				} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcni->addr);
+					} else {
+						eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
+					}
+				} else {
+					eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcni->addr);
+				}
 				free (buf);
+				r_anal_op_free (op);
 			}
 			r_cons_strcat ("zn-\n");
 			if (ptr) {
