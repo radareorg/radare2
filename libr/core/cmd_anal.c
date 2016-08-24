@@ -1499,7 +1499,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afr", " ([name]) ([addr])", "analyze functions recursively",
 			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
 			"af-", " [addr]", "clean all function analysis data (or function at addr)",
-			"afv[bsra]", "?", "manipulate args, registers and variables in function",
 			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", " [addr]", "List basic blocks of given function",
 			"afB", " 16", "set current function as thumb (change asm.bits)",
@@ -1511,16 +1510,21 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 			"afl", "[l*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 			"afo", " [fcn.name]", "show address for the function named like this",
+			"afm", " name", "merge two functions",
+			"afM", " name", "print functions map",
 			"afn", " name [addr]", "rename name for function at address (change flag too)",
 			"afna", "", "suggest automatic name for current offset",
 			"afs", " [addr] [fcnsign]", "get/set function signature at current address",
+			"afv[bsra]", "?", "manipulate args, registers and variables in function",
 			"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
 			NULL };
 		r_core_cmd_help (core, help_msg);
 		}
 		break;
 	case 'r': // "afr" // analyze function recursively
-	default: {
+	case ' ':
+	case 0:
+		{
 		char *uaddr = NULL, *name = NULL;
 		int mybits = core->assembler->bits;
 		int depth = r_config_get_i (core->config, "anal.depth");
@@ -1625,6 +1629,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		flag_every_function (core);
 	}
+	default:
+		return false;
+		break;
 	}
 	return true;
 }
