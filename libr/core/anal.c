@@ -2782,6 +2782,10 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 		eprintf ("Cannot find function\n");
 		return;
 	}
+	if (f1 == f2) {
+		eprintf ("Cannot merge the same function\n");
+		return;
+	}
 	// join all basic blocks from f1 into f2 if they are not
 	// delete f2
 	eprintf ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x"\n", addr, addr2);
