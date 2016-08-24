@@ -551,12 +551,18 @@ R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr) 
 }
 
 R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
-	if (!base) return NULL;
-	if (!p) p = base + strlen (base);
-	for (; p>base; p--)
-		if (ch == *p)
+	if (!base) {
+		return NULL;
+	}
+	if (!p) {
+		p = base + strlen (base);
+	}
+	for (; p >= base; p--) {
+		if (ch == *p) {
 			break;
-	return p;
+		}
+	}
+	return (p < base) ? NULL : p;
 }
 
 R_API int r_str_nstr(char *from, char *to, int size) {
