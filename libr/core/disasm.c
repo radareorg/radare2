@@ -100,6 +100,7 @@ typedef struct r_disam_options_t {
 	int show_stackptr;
 	int show_spacy;
 	int show_xrefs;
+	int show_cmtrefs;
 	int show_functions;
 	int show_fcncalls;
 	int show_hints;
@@ -409,6 +410,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
+	ds->show_cmtrefs = r_config_get_i (core->config, "asm.cmtrefs");
 	ds->cmtfold = r_config_get_i (core->config, "asm.cmtfold");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
@@ -733,6 +735,35 @@ static void ds_pre_xrefs(RDisasmState *ds) {
 	ds->line = ds->refline2;
 	ds_print_lines_left (ds);
 	ds->line = tmp;
+}
+
+static void ds_show_refs(RDisasmState *ds) {
+	RList *list;
+	RAnalRef *ref;
+	RListIter *iter;
+	RFlagItem *flagi, *flagat;
+	char *cmt;
+
+	if (!ds->show_cmtrefs) {
+		return;
+	}
+	list = r_anal_xrefs_get_from (ds->core->anal, ds->at);
+	r_list_foreach (list, iter, ref) {
+		cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
+		flagi = r_flag_get_i (ds->core->flags, ref->addr);
+		flagat = r_flag_get_at (ds->core->flags, ref->addr);
+		ds_align_comment (ds);
+		if (ds->show_color) {
+			r_cons_strcat (ds->color_comment);
+		}
+		if (flagi && flagat && (strcmp (flagi->name, flagat->name) != 0)) {
+			r_cons_printf (" ; (%s)", flagi->name);
+		}
+		if (cmt) {
+			r_cons_printf (" ; (%s)", cmt);
+		}
+		ds_print_color_reset (ds);
+	}
 }
 
 static void ds_show_xrefs(RDisasmState *ds) {
@@ -3119,6 +3150,7 @@ toro:
 		ds_print_ptr (ds, len + 256, idx);
 		ds_cdiv_optimization (ds);
 		ds_print_comments_right (ds);
+		ds_show_refs (ds);
 		if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 			ds_print_esil_anal (ds);
 			r_cons_newline ();
@@ -3878,6 +3910,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_print_ptr (ds, len, idx);
 			ds_cdiv_optimization (ds);
 			ds_print_comments_right (ds);
+			ds_show_refs (ds);
 			ds_print_esil_anal (ds);
 			if ( !(ds->show_comments && ds->show_comment_right && ds->comment)) {
 				r_cons_newline ();
