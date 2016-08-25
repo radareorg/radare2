@@ -1859,7 +1859,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						}
 					}
 					oldslide = slide;
-					slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+					//slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+					slide += NESTEDSTRUCT;
 					if (size == -1) {
 							s = r_print_format_struct (p, seeki,
 										   buf+i, len-i, fmtname, slide,
@@ -1903,7 +1904,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						}
 					}
 					oldslide = slide;
-					slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+					//slide -= (isptr) ? STRUCTPTR : NESTEDSTRUCT;
+					slide -= NESTEDSTRUCT;
 					if (mode & R_PRINT_SEEFLAGS) {
 						oldslide = slide;
 						slide-=STRUCTFLAG;
