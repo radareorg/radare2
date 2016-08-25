@@ -1557,6 +1557,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.offset", "true", "Show offsets at disassembly");
 	SETPREF("asm.spacy", "false", "Spacy disasm after calls and before flags");
 	SETPREF("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
+	SETPREF("asm.reloff.flags", "true", "Show relative offsets to flags (not only functions)");
 	SETPREF("asm.section", "false", "Show section name before offset");
 	SETI("asm.section.col", 20, "Columns width to show asm.section");
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax");

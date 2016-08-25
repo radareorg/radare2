@@ -88,6 +88,7 @@ typedef struct r_disam_options_t {
 	bool show_flags;
 	bool show_bytes;
 	bool show_reloff;
+	bool show_reloff_flags;
 	bool show_comments;
 	bool show_jmphints;
 	bool show_leahints;
@@ -394,6 +395,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
+	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
 	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_jmphints = r_config_get_i (core->config, "asm.jmphints");
@@ -1541,32 +1543,47 @@ static void ds_print_offset(RDisasmState *ds) {
 	r_print_set_screenbounds (core->print, ds->at);
 	if (ds->show_offset) {
 		static RFlagItem sfi = {0};
+		const char *label = NULL;
 		RFlagItem *fi;
-		int delta = 0;
+		int delta = -1;
 		if (ds->show_reloff) {
-			RAnalFunction *f = r_anal_get_fcn_at (core->anal,
-					ds->at, R_ANAL_FCN_TYPE_NULL);
+			RAnalFunction *f = r_anal_get_fcn_at (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+			if (!f) {
+				f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+			}
 			if (f) {
 				delta = ds->at - f->addr;
 				sfi.name = f->name;
 				sfi.offset = f->addr;
 				ds->lastflag = &sfi;
+				label = f->name;
 			} else {
-				fi = r_flag_get_i (core->flags, ds->at);
-				if (fi) ds->lastflag = fi;
-				if (ds->lastflag) {
-					if (ds->lastflag->offset == ds->at) {
-						delta = 0;
-					} else {
-						delta = ds->at - ds->lastflag->offset;
+				if (ds->show_reloff_flags) {
+					/* XXX: this is wrong if starting to disasm after a flag */
+					fi = r_flag_get_i (core->flags, ds->at);
+					if (fi) {
+						ds->lastflag = fi;
 					}
-				} else {
-					delta = ds->at - core->offset;
+					if (ds->lastflag) {
+						if (ds->lastflag->offset == ds->at) {
+							delta = 0;
+						} else {
+							delta = ds->at - ds->lastflag->offset;
+						}
+					} else {
+						delta = ds->at - core->offset;
+					}
+					if (ds->lastflag) {
+						label = ds->lastflag->name;
+					}
 				}
 			}
+			if (!ds->lastflag) {
+				delta = 0;
+			}
 		}
-		r_print_offset (core->print, ds->at, (ds->at==ds->dest),
-				ds->show_offseg, delta);
+		r_print_offset (core->print, ds->at, (ds->at == ds->dest),
+				ds->show_offseg, delta, label);
 	}
 	if (ds->atabsoff > 0) {
 		if (ds->_tabsoff != ds->atabsoff) {
