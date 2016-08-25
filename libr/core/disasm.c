@@ -46,11 +46,11 @@ static const char* r_vline_u[] = {
 typedef struct r_disam_options_t {
 	RCore *core;
 	char str[1024], strsub[1024];
-	int use_esil;
-	int show_color;
+	bool use_esil;
+	bool show_color;
 	int colorop;
 	int acase;
-	int show_flgoff;
+	bool show_flgoff;
 	int atabs;
 	int atabsonce;
 	int atabsoff;
@@ -59,52 +59,52 @@ typedef struct r_disam_options_t {
 	int filter;
 	int interactive;
 	int varsub;
-	int show_lines;
-	int show_lines_ret;
-	int show_lines_call;
+	bool show_lines;
+	bool show_lines_ret;
+	bool show_lines_call;
 	int linesright;
 	int tracespace;
 	int cyclespace;
 	int cmtfold;
 	int show_indent;
 	bool show_dwarf;
-	int show_size;
-	int show_trace;
-	int show_family;
-	int asm_describe;
+	bool show_size;
+	bool show_trace;
+	bool show_family;
+	bool asm_describe;
 	int linesout;
 	int adistrick;
 	int asm_demangle;
-	int show_offset;
-	int show_bbline;
-	int show_emu;
-	int show_emu_str;
-	int show_emu_write;
-	int show_section;
+	bool show_offset;
+	bool show_bbline;
+	bool show_emu;
+	bool show_emu_str;
+	bool show_emu_write;
+	bool show_section;
 	int show_section_col;
-	int show_symbols;
+	bool show_symbols;
 	int show_symbols_col;
-	int show_offseg;
-	int show_flags;
-	int show_bytes;
-	int show_reloff;
-	int show_comments;
-	int show_jmphints;
+	bool show_offseg;
+	bool show_flags;
+	bool show_bytes;
+	bool show_reloff;
+	bool show_comments;
+	bool show_jmphints;
 	bool show_leahints;
-	int show_slow;
+	bool show_slow;
 	int cmtcol;
-	int show_fcnlines;
-	int show_calls;
-	int show_cmtflgrefs;
-	int show_cycles;
-	int show_stackptr;
-	int show_spacy;
-	int show_xrefs;
-	int show_cmtrefs;
-	int show_functions;
-	int show_fcncalls;
-	int show_hints;
-	int show_marks;
+	bool show_fcnlines;
+	bool show_calls;
+	bool show_cmtflgrefs;
+	bool show_cycles;
+	bool show_stackptr;
+	bool show_spacy;
+	bool show_xrefs;
+	bool show_cmtrefs;
+	bool show_functions;
+	bool show_fcncalls;
+	bool show_hints;
+	bool show_marks;
 	int cursor;
 	int show_comment_right_default;
 	int flagspace_ports;
@@ -122,8 +122,8 @@ typedef struct r_disam_options_t {
 	int show_utf8;
 	int lines;
 	int oplen;
-	int varxs;
-	int vars;
+	bool show_varxs;
+	bool show_vars;
 	int midflags;
 	const char *pal_comment;
 	const char *color_comment;
@@ -181,18 +181,14 @@ typedef struct r_disam_options_t {
 	RAsmOp asmop;
 	RAnalOp analop;
 	RAnalFunction *fcn;
-
 	const ut8 *buf;
 	int len;
-
 	int maxrefs;
-
 	char *prev_ins;
 	bool prev_ins_eq;
 	int prev_ins_count;
 	bool show_nodup;
 	bool has_description;
-
 	// caches
 	char *_tabsbuf;
 	int _tabsoff;
@@ -367,8 +363,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->interactive = r_config_get_i (core->config, "scr.interactive");
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-	ds->vars = r_config_get_i (core->config, "asm.vars");
-	ds->varxs = r_config_get_i (core->config, "asm.varxs");
+	ds->show_vars = r_config_get_i (core->config, "asm.vars");
+	ds->show_varxs = r_config_get_i (core->config, "asm.varxs");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.linesright");
@@ -1004,7 +1000,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		ds->pre = r_str_concat (ds->pre, " ");
 	}
 	ds->stackptr = 0;
-	if (ds->vars) {
+	if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
@@ -2296,7 +2292,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 }
 
 static void ds_print_asmop_payload(RDisasmState *ds) {
-	if (ds->varxs) {
+	if (ds->show_varxs) {
 		// XXX asume analop is filled
 		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 		int v = ds->analop.ptr;
