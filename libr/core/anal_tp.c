@@ -206,8 +206,11 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 }
 
 R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	bool esil_var[STATES_SIZE];
-	if (!core || !r_anal_emul_init (core, esil_var) || !fcn ) {
+	bool esil_var[STATES_SIZE] = {false};
+	if (!core ) {
+		return;
+	}
+	if (!r_anal_emul_init (core, esil_var) || !fcn ) {
 		r_anal_emul_restore (core, esil_var);
 		return;
 	}
