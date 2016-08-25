@@ -168,6 +168,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
 	io->winbase = de.u.CreateProcessInfo.lpBaseOfImage;
+	io->wintid = tid;
+	io->winpid = pid;
         return pid;
 
 err_fork:
