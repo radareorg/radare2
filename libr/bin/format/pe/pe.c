@@ -577,28 +577,24 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 		return 0;
 	}
 
-	rr = r_buf_read_at (bin->b, metadata_directory,
-					    (ut8*)(&metadata->Signature), 4);
 
-	if (rr != 4) goto fail;
-	rr = r_buf_read_at (bin->b, metadata_directory + 4,
-					    (ut8*)(&metadata->MajorVersion), 2);
-	if (rr != 2) goto fail;
+	rr = r_buf_fread_at (bin->b, metadata_directory,
+					    (ut8*)metadata, bin->big_endian ? "1I2S": "1i2s", 1);
+	if (rr < 1) goto fail;
 
-	rr = r_buf_read_at (bin->b, metadata_directory + 6,
-					    (ut8*)(&metadata->MinorVersion), 2);
-	if (rr != 2) goto fail;
-	rr = r_buf_read_at (bin->b, metadata_directory + 8,
-					    (ut8*)(&metadata->Reserved), 4);
-	if (rr != 4) goto fail;
-	rr = r_buf_read_at (bin->b, metadata_directory + 12,
-					    (ut8*)(&metadata->VersionStringLength), 4);
-	if (rr != 4) goto fail;
+	rr = r_buf_fread_at (bin->b, metadata_directory + 8,
+					    (ut8*)(&metadata->Reserved), bin->big_endian ? "1I": "1i", 1);
+	if (rr < 1) goto fail;
 
-	//printf("Metadata Signature: %x %x %d\n", metadata_directory, metadata->Signature, metadata->VersionStringLength);
+	rr = r_buf_fread_at (bin->b, metadata_directory + 12,
+					    (ut8*)(&metadata->VersionStringLength), bin->big_endian ? "1I": "1i", 1);
+	if (rr < 1) goto fail;
+
+
+	printf("Metadata Signature: %x %x %d\n", metadata_directory, metadata->Signature, metadata->VersionStringLength);
 
 	// read the version string
-	int len = metadata->VersionStringLength;
+	int len = metadata->VersionStringLength; // XXX: dont trust this length 
 	if (len > 0) {
 		metadata->VersionString = malloc(len);
 		if (!metadata->VersionString) goto fail;
@@ -616,15 +612,10 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 	}
 
 	// read the header after the string
-	rr = r_buf_read_at (bin->b, metadata_directory + 16 + metadata->VersionStringLength,
-						(ut8*)(&metadata->Flags), 2);
+	rr = r_buf_fread_at (bin->b, metadata_directory + 16 + metadata->VersionStringLength,
+						(ut8*)(&metadata->Flags), bin->big_endian ? "2S": "2s", 1);
 
-	if (rr != 2) goto fail;
-
-	rr = r_buf_read_at (bin->b, metadata_directory + 16 + metadata->VersionStringLength + 2,
-						(ut8*)(&metadata->NumberOfStreams), 2);
-
-	if (rr != 2) goto fail;
+	if (rr < 1) goto fail;
 
 	printf("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
 	bin->metadata_header = metadata;
@@ -646,7 +637,7 @@ static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 	rr = r_buf_read_at (bin->b, image_clr_hdr_paddr,
 					    (ut8*)(clr_hdr), len);
 
-	printf("%x\n", clr_hdr->HeaderSize);
+//	printf("%x\n", clr_hdr->HeaderSize);
 
 	if (clr_hdr->HeaderSize != 0x48) {
 		// probably not a .NET binary
@@ -1742,7 +1733,7 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->delay_import_directory = NULL;
 	bin->optional_header = NULL;
 	bin->data_directory = NULL;
-	bin->endian = 0; /* TODO: get endian */
+	bin->big_endian = 0;
 	if (!bin_pe_init_hdr (bin)) {
 		eprintf ("Warning: File is not PE\n");
 		return false;
@@ -1754,6 +1745,9 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin_pe_init_imports (bin);
 	bin_pe_init_exports (bin);
 	bin_pe_init_resource (bin);
+
+	bin->big_endian = PE_(r_bin_pe_is_big_endian) (bin);
+
 	bin_pe_init_tls (bin);
 	bin_pe_init_clr_hdr (bin);
 	bin_pe_init_metadata_hdr (bin);

@@ -90,7 +90,7 @@ struct PE_(r_bin_pe_obj_t) {
 	int import_directory_size;
 	int size;
 	int num_sections;
-	int endian;
+	int big_endian;
 	RList *relocs;
 	const char* file;
 	struct r_buf_t* b;

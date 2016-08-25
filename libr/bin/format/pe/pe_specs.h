@@ -259,7 +259,7 @@ typedef struct {
 	ut64 Signature;
 	ut16 MajorVersion;
 	ut16 MinorVersion;
-	ut64 Reserved;
+	ut32 Reserved;
 	ut32 VersionStringLength;
 	char* VersionString;
 	ut16 Flags;
