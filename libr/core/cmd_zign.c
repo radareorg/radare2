@@ -71,7 +71,7 @@ static int cmd_zign(void *data, const char *input) {
 			}
 			r_cons_printf ("zn %s\n", input+2);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
-				RAnalOp *op;
+				RAnalOp *op = NULL;
 				int len, oplen, idx = 0;
 				ut8 *buf;
 

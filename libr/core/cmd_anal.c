@@ -4432,8 +4432,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			}
 			r_core_anal_all (core);
 			rowlog_done (core);
-			if (core->cons->breaked)
+			if (core->cons->breaked) {
 				goto jacuzzi;
+			}
 			r_cons_clear_line (1);
 			r_cons_break_end ();
 			if (*input == 'a') { // "aaa"
@@ -4442,9 +4443,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_cmd0 (core, "s $S");
 				rowlog (core, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, input + 1); // "aar"
-				rowlog_done(core);
-				if (core->cons->breaked)
+				rowlog_done (core);
+				if (core->cons->breaked) {
 					goto jacuzzi;
+				}
 				rowlog (core, "Analyze function calls (aac)");
 				r_core_seek (core, curseek, 1);
 				(void) cmd_anal_calls (core, ""); // "aac"
@@ -4476,8 +4478,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_anal_autoname_all_fcns (core);
 				}
 				rowlog_done (core);
-				if (core->cons->breaked)
+				if (core->cons->breaked) {
 					goto jacuzzi;
+				}
 				r_core_cmd0 (core, "s-");
 			}
 		jacuzzi:

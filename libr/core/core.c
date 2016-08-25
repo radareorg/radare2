@@ -1691,25 +1691,26 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 }
 
 R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
-	int diff, inc = (times>=0)?1:-1;
+	int diff, inc = (times >= 0)? 1: -1;
 	ut64 seek = core->offset;
-
-	if (!align)
+	if (!align) {
 		return false;
+	}
 	diff = core->offset%align;
-	if (times == 0)
+	if (times == 0) {
 		diff = -diff;
-	else if (diff) {
+	} else if (diff) {
 		if (inc>0) diff += align-diff;
 		else diff = -diff;
 		if (times) times -= inc;
 	}
-	while ((times*inc)>0) {
+	while ((times*inc) > 0) {
 		times -= inc;
 		diff += align*inc;
 	}
-	if (diff<0 && -diff>seek)
+	if (diff < 0 && -diff > seek) {
 		seek = diff = 0;
+	}
 	return r_core_seek (core, seek+diff, 1);
 }
 
@@ -1720,7 +1721,7 @@ R_API char *r_core_op_str(RCore *core, ut64 addr) {
 	r_asm_set_pc (core->assembler, addr);
 	r_core_read_at (core, addr, buf, sizeof (buf));
 	ret = r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
-	return (ret>0)?strdup (op.buf_asm): NULL;
+	return (ret > 0)? strdup (op.buf_asm): NULL;
 }
 
 R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
@@ -1754,22 +1755,19 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 		return -1;
 	}
 	fd = rior->fd;
-
 	eprintf ("RAP Server started (rap.loop=%s)\n",
 			r_config_get (core->config, "rap.loop"));
-#if __UNIX__
-	// XXX: ugly workaround
-	//signal (SIGINT, exit);
-	//signal (SIGPIPE, SIG_DFL);
-#endif
 reaccept:
 	core->io->plugin = NULL;
 	r_cons_break (rap_break, rior);
 	while (!core->cons->breaked) {
 		c = r_socket_accept (fd);
-		if (!c) break;
-		if (core->cons->breaked)
+		if (!c) {
+			break;
+		}
+		if (core->cons->breaked) {
 			return -1;
+		}
 		if (c == NULL) {
 			eprintf ("rap: cannot accept\n");
 			/*r_socket_close (c);*/
@@ -1898,13 +1896,8 @@ reaccept:
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
 				i = r_read_be32 (buf);
-				ptr = (ut8 *)malloc (i + core->blocksize+5);
-				if (ptr == NULL) {
-					eprintf ("Cannot read %d bytes\n", i);
-					r_socket_close (c);
-					// TODO: reply error here
-					return -1;
-				} else {
+				ptr = (ut8 *)malloc (i + core->blocksize + 5);
+				if (ptr) {
 					r_core_block_read (core);
 					ptr[0] = RMT_READ | RMT_REPLY;
 					if (i>RMT_MAX)
@@ -1917,6 +1910,11 @@ reaccept:
 					r_socket_flush (c);
 					free (ptr);
 					ptr = NULL;
+				} else {
+					eprintf ("Cannot read %d bytes\n", i);
+					r_socket_close (c);
+					// TODO: reply error here
+					return -1;
 				}
 				break;
 			case RMT_CMD:
@@ -1937,8 +1935,12 @@ reaccept:
 						fflush (stdout);
 						cmd_output = r_core_cmd_str (core, cmd);
 						free (cmd);
-					} else eprintf ("rap: cannot malloc\n");
-				} else eprintf ("rap: invalid length '%d'\n", i);
+					} else {
+						eprintf ("rap: cannot malloc\n");
+					}
+				} else {
+					eprintf ("rap: invalid length '%d'\n", i);
+				}
 				/* write */
 				if (cmd_output) {
 					cmd_len = strlen (cmd_output) + 1;
@@ -1946,7 +1948,6 @@ reaccept:
 					cmd_output = strdup ("");
 					cmd_len = 0;
 				}
-
 #if DEMO_SERVER_SENDS_CMD_TO_CLIENT
 				static bool once = true;
 				/* TODO: server can reply a command request to the client only here */
@@ -2084,7 +2085,6 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 	if (!editor || !*editor) {
 		return NULL;
 	}
-
 	if (file) {
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
@@ -2096,19 +2096,27 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 		free (name);
 		return NULL;
 	}
-	if (str) write (fd, str, strlen (str));
+	if (str) {
+		write (fd, str, strlen (str));
+	}
 	close (fd);
 
 	if (name && (!editor || !*editor || !strcmp (editor, "-"))) {
+		RCons *cons = r_cons_singleton ();
+		void *tmp = cons->editor;
+		cons->editor = NULL;
 		r_cons_editor (name, NULL);
+		cons->editor = tmp;
 	} else {
-		if (editor && name)
+		if (editor && name) {
 			r_sys_cmdf ("%s '%s'", editor, name);
+		}
 	}
 	ret = name? r_file_slurp (name, &len): 0;
 	if (ret) {
-		if (len && ret[len - 1] == '\n')
-			ret[len-1] = 0; // chop
+		if (len && ret[len - 1] == '\n') {
+			ret[len - 1] = 0; // chop
+		}
 		if (!file) {
 			r_file_rm (name);
 		}
