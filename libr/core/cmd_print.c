@@ -3809,11 +3809,12 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta
 			int sz2 = lenof (delta, 1);
 			if (delta > 0 || label) {
 				if (label) {
+					const int label_padding = 10;
 					if (delta > 0) {
-						const char *pad = r_str_pad (' ', sz - sz2 + 20); //label? strlen (label):0);
+						const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
 						r_cons_printf ("%s%s"Color_RESET"+0x%x%s", k, label, delta, pad);
 					} else {
-						const char *pad = r_str_pad (' ', sz + 20); //label? strlen (label):0);
+						const char *pad = r_str_pad (' ', sz + label_padding);
 						r_cons_printf ("%s%s"Color_RESET"%s", k, label, pad);
 					}
 				} else {

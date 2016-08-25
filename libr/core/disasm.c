@@ -48,6 +48,7 @@ typedef struct r_disam_options_t {
 	char str[1024], strsub[1024];
 	bool use_esil;
 	bool show_color;
+	bool show_color_bytes;
 	int colorop;
 	int acase;
 	bool show_flgoff;
@@ -351,7 +352,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
 	ds->show_spacy = r_config_get_i (core->config, "asm.spacy");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
-	ds->colorop = r_config_get_i (core->config, "scr.colorops");
+	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
+	ds->colorop = r_config_get_i (core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
@@ -1912,13 +1914,15 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	RCore* core = ds->core;
 	char *nstr, *str = NULL, pad[64];
 	char *flagstr = NULL;
+	int oldFlags = core->print->flags;
 	char extra[64];
-	int j,k;
-	if (!ds->show_bytes) {
+	int j, k;
+
+	if (!ds->show_bytes || ds->nb < 1) {
 		return;
 	}
-	if (ds->nb < 1) {
-		return;
+	if (!ds->show_color_bytes) {
+		core->print->flags &= ~R_PRINT_FLAGS_COLOR;
 	}
 	strcpy (extra, " ");
 	if (ds->show_flag_in_bytes) {
@@ -1927,10 +1931,11 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	if (flagstr) {
 		str = flagstr;
 		if (ds->nb > 0) {
-			k = ds->nb-strlen (flagstr)-1;
+			k = ds->nb-strlen (flagstr) - 1;
 			if (k < 0 || k > sizeof(pad)) k = 0;
-			for (j = 0; j < k; j++)
+			for (j = 0; j < k; j++) {
 				pad[j] = ' ';
+			}
 			pad[j] = '\0';
 		} else {
 		    	pad[0] = 0;
@@ -1938,9 +1943,12 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	} else {
 		if (ds->show_flag_in_bytes) {
 			k = ds->nb - 1;
-			if (k < 0 || k > sizeof(pad)) k = 0;
-			for (j=0; j<k; j++)
+			if (k < 0 || k > sizeof (pad)) {
+				k = 0;
+			}
+			for (j = 0; j < k; j++) {
 				pad[j] = ' ';
+			}
 			pad[j] = '\0';
 			str = strdup ("");
 		} else {
@@ -1957,7 +1965,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			if (ds->print->bytespace) {
 				k = (ds->nb + (ds->nb / 2)) - r_str_ansi_len (nstr) + 2;
 			} else {
-				k = ds->nb - r_str_ansi_len (nstr)+1;
+				k = ds->nb - r_str_ansi_len (nstr) + 1;
 			}
 			if (k > 0) {
 				// setting to sizeof screw up the disasm
@@ -1986,6 +1994,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		r_cons_printf ("%s%s %s", pad, str, extra);
 	}
 	free (str);
+	core->print->flags = oldFlags;
 }
 
 static void ds_print_indent(RDisasmState *ds) {
@@ -2030,11 +2039,13 @@ static int ds_print_middle(RDisasmState *ds, int ret) {
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	RCore *core = ds->core;
 	const char *label;
-
-	if (!f) f = r_anal_get_fcn_in (core->anal, ds->at, 0);
+	if (!f) {
+		f = r_anal_get_fcn_in (core->anal, ds->at, 0);
+	}
 	label = r_anal_fcn_label_at (core->anal, f, ds->at);
-	if (!label)
+	if (!label) {
 		return false;
+	}
 	if (ds->show_color) {
 		r_cons_strcat (ds->color_label);
 		r_cons_printf (" .%s:\n", label);
