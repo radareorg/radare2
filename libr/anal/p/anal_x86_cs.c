@@ -807,7 +807,6 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	case X86_INS_POP:
-	case X86_INS_POPCNT:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
 			esilprintf (op,
@@ -1829,7 +1828,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		break;
 	case X86_INS_POP:
 	case X86_INS_POPF:
-	case X86_INS_POPCNT:
+	case X86_INS_POPFD:
+	case X86_INS_POPFQ:
 		op->type = R_ANAL_OP_TYPE_POP;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -regsz;
