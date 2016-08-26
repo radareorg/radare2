@@ -2284,7 +2284,7 @@ print_insn_coprocessor (bfd_vma pc,
 		  case 'z':
 		    {
 		      int single = *c++ == 'y';
-		      int regno;
+		      int regno = 0;
 
 		      switch (*c)
 			{
@@ -2977,7 +2977,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			    /* Various width encodings.  */
 			    {
 			      int base = 8 << (*c - 'S'); /* 8,16 or 32 */
-			      int limit;
+			      int limit = 0;
 			      unsigned low, high;
 
 			      c++;
