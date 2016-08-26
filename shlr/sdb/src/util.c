@@ -8,6 +8,8 @@
 #include <sys/time.h>
 #endif
 
+#include <stdlib.h>
+
 // XXX deprecate or wtf? who uses this??
 SDB_API int sdb_check_value(const char *s) {
 	if (!s || *s == '$')
