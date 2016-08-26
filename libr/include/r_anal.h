@@ -706,6 +706,9 @@ typedef struct r_anal_op_t {
 	struct r_anal_op_t *next; // TODO deprecate
 	RStrBuf esil;
 	const char *reg; /* destination register */
+	const char *ireg; /* register used for indirect memory computation*/
+	int scale;
+	ut64 disp;
 	RAnalSwitchOp *switch_op;
 } RAnalOp;
 
