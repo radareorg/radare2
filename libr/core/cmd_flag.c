@@ -512,7 +512,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				}
 			}
 			if (line) {
-				r_cons_printf (" -- %s\n", line);
+				r_cons_printf (" ר◀◀ : %s\n", line);
 				free (line);
 			}
 		}
