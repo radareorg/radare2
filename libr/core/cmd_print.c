@@ -983,14 +983,14 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 
 R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 	long int delta = 0;
-	int col = core->cons->columns>123;
+	int col = core->cons->columns > 123;
 	ut8 *b = malloc (core->blocksize);
 	ut64 addr = core->offset;
 	memset (b, 0xff, core->blocksize);
 	delta = addr - from;
-	r_core_read_at (core, to+delta, b, core->blocksize);
+	r_core_read_at (core, to + delta, b, core->blocksize);
 	r_print_hexdiff (core->print, core->offset, core->block,
-		to+delta, b, core->blocksize, col);
+		to + delta, b, core->blocksize, col);
 	free (b);
 }
 
@@ -1084,7 +1084,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		if (show_offset) {
 			const int show_offseg = 0;
 			ut64 at = core->offset + i;
-			r_print_offset (core->print, at, 0, show_offseg, 0);
+			r_print_offset (core->print, at, 0, show_offseg, 0, NULL);
 		}
 		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret<1) {
@@ -3201,7 +3201,7 @@ static int cmd_print(void *data, const char *input) {
 			for (i = c = 0; i < len; i++,c++) {
 				if (c == 0) {
 					r_print_offset (core->print,
-						core->offset + i, 0, 0, 0);
+						core->offset + i, 0, 0, 0, NULL);
 				}
 				r_str_bits (buf, core->block+i, 8, NULL);
 				SPLIT_BITS (buf);
@@ -3791,40 +3791,56 @@ static int lenof (ut64 off, int two) {
 }
 
 // TODO : move to r_util? .. depends on r_cons...
-R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta) {
-	int show_color = p->flags & R_PRINT_FLAGS_COLOR;
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta, const char *label) {
+	bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
 		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
-		if (invert)
+		if (invert) {
 			r_cons_invert (true, true);
+		}
 		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;
-			s = (off-a)>>4;
+			s = (off - a) >> 4;
 			r_cons_printf ("%s%04x:%04x"Color_RESET,
-				k, s&0xFFFF, a&0xFFFF);
+				k, s & 0xFFFF, a & 0xFFFF);
 		} else {
 			int sz = lenof (off, 0);
 			int sz2 = lenof (delta, 1);
-			const char *pad = r_str_pad (' ', sz-sz2);
-			if (delta>0) {
-				r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
-			} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
+			if (delta > 0 || label) {
+				if (label) {
+					const int label_padding = 10;
+					if (delta > 0) {
+						const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
+						r_cons_printf ("%s%s"Color_RESET"+0x%x%s", k, label, delta, pad);
+					} else {
+						const char *pad = r_str_pad (' ', sz + label_padding);
+						r_cons_printf ("%s%s"Color_RESET"%s", k, label, pad);
+					}
+				} else {
+					const char *pad = r_str_pad (' ', sz - sz2);
+					r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+				}
+			} else {
+				r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
+			}
 		}
 		r_cons_print (" ");
 	} else {
 		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;
-			s = (off-a)>>4;
-			r_cons_printf ("%04x:%04x", s&0xFFFF, a&0xFFFF);
+			s = (off - a) >> 4;
+			r_cons_printf ("%04x:%04x", s & 0xFFFF, a & 0xFFFF);
 		} else {
 			int sz = lenof (off, 0);
 			int sz2 = lenof (delta, 1);
-			const char *pad = r_str_pad (' ', sz-5-sz2-3);
+			const char *pad = r_str_pad (' ', sz - 5 - sz2 - 3);
 			if (delta>0) {
 				r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
-			} else r_cons_printf ("0x%08"PFMT64x" ", off);
+			} else {
+				r_cons_printf ("0x%08"PFMT64x" ", off);
+			}
 		}
 	}
 }

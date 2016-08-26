@@ -1158,7 +1158,7 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 	if (dbg->h && dbg->h->kill) {
 		return dbg->h->kill (dbg, pid, tid, sig);
 	}
-	eprintf ("Backend does not implements kill()\n");
+	eprintf ("Backend does not implement kill()\n");
 	return false;
 }
 
