@@ -3177,12 +3177,17 @@ static void printVtable(RCore *core, vtable_info *table) {
 }
 
 static int inTextSection(RCore *core, ut64 curAddress) {
-	//value at curAddress
-	ut64 curAddressValue = r_io_read_i (core->io, curAddress, 8);
 	//section of the curAddress
-	RBinSection* value = r_bin_get_section_at (core->bin->cur->o, curAddressValue, true);
+	RBinSection* value = r_bin_get_section_at (core->bin->cur->o, curAddress, true);
 	//If the pointed value lies in .text section
 	return value && !strcmp (value->name, ".text");
+}
+
+static int valueInTextSection(RCore *core, ut64 curAddress) {
+	//value at the current address
+	ut64 curAddressValue = r_io_read_i (core->io, curAddress, 8);
+	//if the value is in text section
+	return inTextSection (core, curAddressValue);
 }
 
 static int isVtableStart(RCore *core, ut64 curAddress) {
@@ -3193,7 +3198,7 @@ static int isVtableStart(RCore *core, ut64 curAddress) {
 	if (!curAddress || curAddress == UT64_MAX) {
 		return false;
 	}
-	if (inTextSection (core, curAddress)) {
+	if (valueInTextSection (core, curAddress)) {
 		// total xref's to curAddress
 		RList *xrefs = r_anal_xrefs_get (core->anal, curAddress);
 		if (!r_list_empty (xrefs)) {
@@ -3239,7 +3244,7 @@ RList* search_virtual_tables(RCore *core){
 					vtable_info *vtable = calloc (1, sizeof(vtable_info));
 					vtable->saddr = startAddress;
 					int noOfMethods = 0;
-					while (inTextSection (core, startAddress)) {
+					while (valueInTextSection (core, startAddress)) {
 						noOfMethods++;
 						startAddress += wordSize;
 					}
