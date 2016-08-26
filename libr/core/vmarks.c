@@ -18,19 +18,15 @@ R_API void r_core_visual_mark_dump(RCore *core) {
 	if (!marks_init)
 		return;
 	for (i=0; i<UT8_MAX; i++) {
-		if (marks[i]) {
+		if (marks[i] != UT64_MAX) {
 			r_cons_printf ("fV %d 0x%"PFMT64x"\n", i, marks[i]);
 		}
-		marks[i] = 0;
 	}
 }
 
 R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr) {
 	if (!marks_init) {
-		int i;
-		for (i=0; i<UT8_MAX; i++)
-			marks[i] = 0;
-		marks_init = true;
+		r_core_visual_mark_reset(core);
 	}
 	marks[ch] = core->offset;
 }
