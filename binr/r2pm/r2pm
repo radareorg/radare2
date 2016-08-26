@@ -147,14 +147,18 @@ R2PM_ListUninstalled() {
 
 R2PM_GIT() {
 	URL="$1"
-	DIR="`basename $1`"
+	if [ -z "$2" ]; then
+		DIR="`basename $1`"
+	else
+		DIR="$2"
+	fi
 	cd "${R2PM_GITDIR}"
 	if [ ${IS_LOCAL} = 0 ]; then
 	        if [ -d "${R2PM_GITDIR}/${DIR}" ]; then
 		        cd "${DIR}"
 		        git pull
 	        else
-		        git clone "${URL}" || R2PM_FAIL "Oops"
+		        git clone "${URL}" "${DIR}" || R2PM_FAIL "Oops"
 		        cd "${DIR}" || R2PM_FAIL "Oops"
 	        fi
     	fi
