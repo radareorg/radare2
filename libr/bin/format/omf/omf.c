@@ -109,7 +109,8 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 			continue;
 		}
 
-		if (record->size + 3 < buf[3 + tmp_size] + tmp_size) {
+		if (record->size + 3 < buf[3 + tmp_size] + tmp_size
+		|| buf[3 + tmp_size] + 1 >= 0) {
 			eprintf ("Invalid Lnames record (bad size)\n");
 			free (ret);
 			return false;
@@ -126,7 +127,7 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 		}
 
 		memcpy (names[ct_name], buf + 3 + tmp_size + 1,
-			buf[3 + tmp_size]);
+			buf[3 + tmp_size] & 0xff);
 
 		ct_name++;
 		tmp_size += buf[3 + tmp_size] + 1;
