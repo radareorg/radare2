@@ -151,6 +151,8 @@ typedef struct r_io_t {
 	int autofd;
 	int aslr;
 	ut64 winbase;
+	int wintid;
+	int winpid;
 	ut64 maxalloc;
 	char *runprofile;
 	char *args;

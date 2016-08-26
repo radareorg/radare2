@@ -29,8 +29,8 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 				return false;
 			}
 		} else {
-			//int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
-			int bufsize = dbg->reg->size;
+			int bufsize = dbg->reg->regset[i].arena->size;
+			//int bufsize = dbg->reg->size;
 			if (bufsize>0) {
 				ut8 *buf = calloc (1, bufsize);
 				if (!buf) return false;
@@ -41,14 +41,17 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 					eprintf ("r_debug_reg: error reading registers\n");
 					free (buf);
 					return false;
-				} else r_reg_set_bytes (dbg->reg, i, buf, R_MIN (size, bufsize));
+				} else {
+					r_reg_set_bytes (dbg->reg, i, buf, bufsize);
+				}
 				free (buf);
 			}
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
 		//   break;
 		// Continue the syncronization or just stop if it was asked only for a single type of regs
-	} while ((type == R_REG_TYPE_ALL) && (i++ < R_REG_TYPE_LAST));
+		i++;
+	} while ((type == R_REG_TYPE_ALL) && (i < R_REG_TYPE_LAST));
 	return true;
 }
 
@@ -229,10 +232,10 @@ R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
 	}
-	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);
+	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
 		r_reg_set_value (dbg->reg, ri, num);
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
+		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
 	}
 	return (ri != NULL);
 }
@@ -260,9 +263,9 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err) {
 			return UT64_MAX;
 		}
 	}
-	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);
+	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
 		ret = r_reg_get_value (dbg->reg, ri);
 	}
 	return ret;

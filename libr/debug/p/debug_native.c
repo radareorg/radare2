@@ -121,20 +121,21 @@ static const char *r_debug_native_reg_profile (RDebug *dbg) {
 #include "native/reg.c" // x86 specific
 
 #endif
-
-static int r_debug_native_step (RDebug *dbg) {
 #if __WINDOWS__ && !__CYGWIN__
+static int windows_step (RDebug *dbg) {
 	/* set TRAP flag */
 	CONTEXT regs __attribute__ ((aligned (16)));
-	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR,
-				(ut8 *)&regs, sizeof (regs));
+	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
 	regs.EFlags |= 0x100;
-	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR,
-				(ut8 *)&regs, sizeof (regs));
-	r_debug_native_continue (dbg, dbg->pid,
-				dbg->tid, dbg->reason.signum);
+	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
+	r_debug_native_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
 	r_debug_handle_signals (dbg);
 	return true;
+}
+#endif
+static int r_debug_native_step (RDebug *dbg) {
+#if __WINDOWS__ && !__CYGWIN__
+	return windows_step (dbg);
 #elif __APPLE__
 	return xnu_step (dbg);
 #elif __BSD__
@@ -635,11 +636,24 @@ static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	if (sizeof(CONTEXT) < size)
 		size = sizeof(CONTEXT);
-
 	memcpy (buf, &ctx, size);
 	return size;
 // XXX this must be defined somewhere else
 
+}
+static int windows_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
+	BOOL ret = false;
+	HANDLE thread;
+	CONTEXT ctx __attribute__((aligned (16)));
+	thread = w32_open_thread (dbg->pid, dbg->tid);
+	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+	GetThreadContext (thread, &ctx);
+	if (type == R_REG_TYPE_DRX || type == R_REG_TYPE_GPR || type == R_REG_TYPE_SEG) {
+		memcpy (&ctx, buf, size);
+		ret = SetThreadContext (thread, &ctx)? true: false;
+	}
+	CloseHandle (thread);
+	return ret;
 }
 #endif
 
@@ -741,19 +755,9 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 		return xnu_reg_write (dbg, type, buf, size);
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
-		#if __WINDOWS__
-		int tid = dbg->tid;
-		int pid = dbg->pid;
-		BOOL ret;
-		HANDLE thread;
-		CONTEXT ctx __attribute__((aligned (16)));
-		memcpy (&ctx, buf, sizeof (CONTEXT));
-		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		thread = w32_open_thread (pid, tid);
-		ret=SetThreadContext (thread, &ctx)? true: false;
-		CloseHandle(thread);
-		return ret;
-		#endif
+#if __WINDOWS__ && !__CYGWIN__
+		return windows_reg_write(dbg, type, buf, size);
+#endif
 		return false;
 #endif
 #else // i386/x86-64
@@ -762,15 +766,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 	} else
 	if (type == R_REG_TYPE_GPR) {
 #if __WINDOWS__ && !__CYGWIN__
-		BOOL ret;
-		CONTEXT ctx __attribute__((aligned (16)));
-		memcpy (&ctx, buf, sizeof (CONTEXT));
-		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	//	eprintf ("EFLAGS =%x\n", ctx.EFlags);
-		HANDLE thread = w32_open_thread (dbg->pid, dbg->tid);
-		ret = SetThreadContext (thread, &ctx)? true: false;
-		CloseHandle (thread);
-		return ret;
+		return windows_reg_write(dbg, type, buf, size);
 #elif __linux__
 		return linux_reg_write (dbg, type, buf, size);
 #elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__
@@ -1623,5 +1619,6 @@ struct r_lib_struct_t radare_plugin = {
 struct r_debug_plugin_t r_debug_plugin_native = {
 	NULL // .name = "native",
 };
+
 
 #endif // DEBUGGER
