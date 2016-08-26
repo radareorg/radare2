@@ -239,7 +239,10 @@ R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
 	// ignores errors
-	return r_debug_reg_get_err (dbg, name, NULL);
+	char upper_name[16];
+	strncpy (upper_name, name, sizeof (upper_name));
+	r_str_case (upper_name, true);
+	return r_debug_reg_get_err (dbg, (const char *)upper_name, NULL);
 }
 
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err) {
