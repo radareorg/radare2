@@ -443,6 +443,15 @@ static int cmd_seek(void *data, const char *input) {
 			case '?':
 				r_core_cmd_help (core, help_msg);
 				break;
+			case 'c':
+				R_FREE (core->lines_cache);
+				break;
+			case '?':
+				eprintf ("Usage: sl+ or sl- or slc\n");
+				eprintf (" sl [line]    - Seek to absolute line\n");
+				eprintf (" sl[+-][line] - Seek to relative line\n");
+				eprintf (" slc          - Clear line cache\n");
+				break;
 			}
 			}
 			break;
