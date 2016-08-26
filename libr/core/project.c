@@ -388,6 +388,8 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 		r_str_write (fd, "# meta\n");
 		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
 		r_cons_flush ();
+		r_core_cmd (core, "fV*", 0);
+		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_XREFS) {
 		r_core_cmd (core, "ax*", 0);
