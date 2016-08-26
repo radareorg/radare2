@@ -2228,7 +2228,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," e    end of function"
 		," f    analyze function"
 		," F    format"
-		," i    immediate base (b(in), o(ct), d(ec), h(ex), s(tr)"
+		," i    immediate base (b(in), o(ct), d(ec), h(ex), s(tr))"
 		," j    merge down (join this and next functions)"
 		," k    merge up (join this and previous function)"
 		," h    highlight word"
@@ -2284,8 +2284,7 @@ repeat:
 			r_cons_show_cursor (true);
 			r_line_set_prompt ("immbase: ");
 			if (r_cons_fgets (str, sizeof (str), 0, NULL) > 0) {
-				r_core_cmdf (core, "ahi %d @ 0x%"PFMT64x,
-					(int)r_num_math (core->num, str), off);
+				r_core_cmdf (core, "ahi %s @ 0x%"PFMT64x, str, off);
 			}
 		}
 		break;
