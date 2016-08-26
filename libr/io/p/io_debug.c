@@ -244,7 +244,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 		(void)posix_spawnattr_setflags (&attr, ps_flags);
 #if __i386__ || __x86_64__
-		cpu = CPU_TYPE_I386;
+		cpu = CPU_TYPE_X86;
 		if (bits == 64) cpu |= CPU_ARCH_ABI64;
 #else
 		cpu = CPU_TYPE_ANY;
