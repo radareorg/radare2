@@ -820,11 +820,9 @@ int main(int argc, char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 	if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
-		if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
-			eprintf ("r_bin: Cannot open file\n");
-			r_core_fini (&core);
-			return 1;
-		}
+		eprintf ("r_bin: Cannot open file\n");
+		r_core_fini (&core);
+		return 1;
 	}
 	if (baddr != UT64_MAX) {
 		r_bin_set_baddr (bin, baddr);
