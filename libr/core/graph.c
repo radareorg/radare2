@@ -2735,7 +2735,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" '            - toggle asm.comments\n"
 					" \"            - toggle graph.refs\n"
 					" /            - highlight text\n"
-					" |            - set cmd.gprompt"
+					" |            - set cmd.gprompt\n"
 					" >            - show function callgraph (see graph.refs)\n"
 					" <            - show program callgraph (see graph.refs)\n"
 					" Home/End     - go to the top/bottom of the canvas\n"
