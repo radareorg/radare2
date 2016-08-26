@@ -114,13 +114,19 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		eprintf ("Cannot reopen\n");
 	}
 	if (isdebug) {
+		int newtid = newpid;
 		// XXX - select the right backend
 		if (core->file && core->file->desc) {
 			newpid = core->file->desc->fd;
+#if __WINDOWS__
+			newpid = core->io->winpid;
+			newtid = core->io->wintid;
+			r_debug_select (core->dbg, newpid, newtid);
+#endif
 		}
 		//reopen and attach
 		r_core_setup_debugger (core, "native", true);
-		r_debug_select (core->dbg, newpid, newpid);
+		r_debug_select (core->dbg, newpid, newtid);
 		//
 	}
 
