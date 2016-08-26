@@ -869,6 +869,7 @@ static RList* classes (RBinFile *arch) {
 			free (class);
 		}
 	}
+	free (name);
 	return ret;
 }
 
