@@ -756,7 +756,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
 #if __WINDOWS__ && !__CYGWIN__
-		return windows_reg_write(dbg, type, buf, size);
+		return windows_reg_write (dbg, type, buf, size);
 #endif
 		return false;
 #endif

@@ -121,7 +121,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 #if __WINDOWS__
 			newpid = core->io->winpid;
 			newtid = core->io->wintid;
-			r_debug_select(core->dbg, newpid, newtid);
+			r_debug_select (core->dbg, newpid, newtid);
 #endif
 		}
 		//reopen and attach
