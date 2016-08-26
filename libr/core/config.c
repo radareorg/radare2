@@ -1910,7 +1910,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* io */
 	SETICB("io.enforce", 0, &cb_ioenforce, "Honor IO section permissions for 1=read , 2=write, 0=none");
 	SETCB("io.buffer", "false", &cb_iobuffer, "Load and use buffer cache if enabled");
-	SETCB("io.sectonly", "false", &cb_iosectonly, "Only read from sections (if any)");
+	SETCB("io.sectonly", "true", &cb_iosectonly, "Only read from sections (if any)");
 	SETI("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");
