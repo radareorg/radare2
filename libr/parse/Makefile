@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_parse
-DEPS=r_flags r_util r_anal r_syscall r_reg
+DEPS=r_flags r_util r_syscall r_reg
 # indirect dependencies
 DEPS+=r_cons
 

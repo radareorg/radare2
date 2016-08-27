@@ -168,7 +168,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		}
 		off = r_num_math (NULL, ptr);
 		if (off > 0xff) {
-			fcn = r_anal_get_fcn_in (p->anal, off, 0);
+			fcn = p->analb.get_fcn_in (p->anal, off, 0);
 			if (fcn && fcn->addr == off) {
 				*ptr = 0;
 				// hack to realign pointer for colours

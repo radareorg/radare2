@@ -31,8 +31,11 @@ OBJLIBS+=hint.o anal.o data.o xrefs.o esil.o sign.o
 OBJLIBS+=anal_ex.o switch.o state.o cycles.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
 OBJLIBS+=esil2reil.o pin.o
+ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-modules.o
+ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-isa.o
+ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/elf32-xtensa.o
 
-OBJS=${STATIC_OBJS} ${OBJLIBS}
+OBJS=${STATIC_OBJS} ${OBJLIBS} ${ASMOBJS}
 
 test tests: tests-esil
 

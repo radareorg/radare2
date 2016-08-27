@@ -511,3 +511,10 @@ R_API void r_anal_build_range_on_hints(RAnal *a) {
 		}
 	}
 }
+
+R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
+	if (b) {
+		b->anal = anal;
+		b->get_fcn_in = r_anal_get_fcn_in;
+	}
+}

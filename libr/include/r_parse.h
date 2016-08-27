@@ -29,6 +29,7 @@ typedef struct r_parse_t {
 	RAnalHint *hint; // weak anal ref
 	RList *parsers;
 	RAnalVarList varlist;
+	RAnalBind analb;
 } RParse;
 
 typedef struct r_parse_plugin_t {
