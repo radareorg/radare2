@@ -2126,6 +2126,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					   case 'c': // "dbic"
 						   p = strchr (input + 3, ' ');
 						   if (p) {
+							   do {
+								   ++p;
+							   } while ( isdigit (*p) );
 							   if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
 								   bpi->data = strdup (p+1);
 							   } else eprintf ("Cannot set command\n");
