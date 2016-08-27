@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_util.h>
+#include <r_cons.h>
 #include <r_socket.h>
 
 #define R2P_MAGIC 0x329193
@@ -133,12 +134,17 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 
 	if (r2p->child) {
 		char ch;
-		eprintf ("Child is %d\n", r2p->child);
+		eprintf ("[+] r2pipe child is %d\n", r2p->child);
+#if 0
 		if (read (r2p->output[0], &ch, 1) != 1) {
 			eprintf ("Failed to read 1 byte\n");
 			r2p_close (r2p);
 			return NULL;
 		}
+		if (ch == 0x00) {
+			eprintf ("[+] r2pipe-io link stablished\n");
+		}
+#endif
 	} else {
 		int rc = 0;
 		if (cmd && *cmd) {
@@ -198,14 +204,13 @@ R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 R_API int r2p_write(R2Pipe *r2p, const char *str) {
 	char *cmd;
 	int ret, len;
-	if (!r2p || !str)
+	if (!r2p || !str) {
 		return -1;
+	}
 	len = strlen (str) + 1; /* include \x00 */
 	cmd = malloc (len + 2);
 	if (!cmd) return 0;
 	memcpy (cmd, str, len);
-	cmd[len++] = '\n';
-	cmd[len] = 0;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	DWORD dwWritten = -1;
 	WriteFile (r2p->pipe, cmd, len, &dwWritten, NULL);
@@ -233,7 +238,7 @@ R_API char *r2p_read(R2Pipe *r2p) {
 	if (!bSuccess || !buf[0]) {
 		return NULL;
 	}
-	if (dwRead>0) {
+	if (dwRead > 0) {
 		buf[dwRead] = 0;
 	}
 	buf[bufsz-1] = 0;
