@@ -2227,7 +2227,7 @@ static void bin_elf_versioninfo(RCore *r) {
 		const char *section_name = sdb_const_get (sdb, "section_name", 0);
 		const char *link_section_name = sdb_const_get (sdb, "link_section_name", 0);
 
-		r_cons_printf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
+		r_cons_printf ("Version symbols section '%s' contains %"PFMT64u" entries:\n", section_name, num_entries);
 		r_cons_printf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
 			(ut64)addr, (ut64)offset, (ut32)link, link_section_name);
 
