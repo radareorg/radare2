@@ -668,11 +668,11 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		br = 2;
 		break;
 	case R_ANAL_OP_TYPE_MJMP:
-		if (op.ireg==NULL) {
+		if (!op.ireg) {
 			next[0] = op.jump;
 			br = 1;
 		} else {
-			r = r_debug_reg_get(dbg,op.ireg);
+			r = r_debug_reg_get (dbg,op.ireg);
 			if (dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
 				next[0] = op.addr + op.size;
 				br = 1;
@@ -688,7 +688,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		br = 1;
 		break;
 	case R_ANAL_OP_TYPE_UCALL:
-		r = r_debug_reg_get(dbg,op.ireg);
+		r = r_debug_reg_get (dbg,op.ireg);
 		if (dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
 			next[0] = op.addr + op.size;
 			br = 1;
