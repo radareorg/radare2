@@ -621,8 +621,9 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
 
 R_API int r_debug_step_soft(RDebug *dbg) {
 	ut8 buf[32];
-	ut64 pc, sp;
+	ut64 pc, sp, r;
 	ut64 next[2];
+	ut64 memval;
 	RAnalOp op;
 	int br, i, ret;
 	union {
@@ -666,9 +667,34 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		next[1] = op.fail;
 		br = 2;
 		break;
+	case R_ANAL_OP_TYPE_MJMP:
+		if (!op.ireg) {
+			next[0] = op.jump;
+			br = 1;
+		} else {
+			r = r_debug_reg_get (dbg,op.ireg);
+			if (dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
+				next[0] = op.addr + op.size;
+				br = 1;
+				break;
+			}
+			next[0] = memval;
+			br = 1;
+		}
+		break;
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_JMP:
 		next[0] = op.jump;
+		br = 1;
+		break;
+	case R_ANAL_OP_TYPE_UCALL:
+		r = r_debug_reg_get (dbg,op.ireg);
+		if (dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
+			next[0] = op.addr + op.size;
+			br = 1;
+			break;
+		}
+		next[0] = memval;
 		br = 1;
 		break;
 	default:
