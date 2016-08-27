@@ -3265,18 +3265,25 @@ RList* search_virtual_tables(RCore *core){
 	return vtables;
 }
 
-R_API void r_core_anal_list_vtables(void *core) {
-	const char *curArch = ((RCore *)core)->bin->cur->o->info->arch;
-	if (!strcmp (curArch, "x86")) {
-		RList* vtables = search_virtual_tables ((RCore *)core);
-		RListIter* vtableIter;
-		vtable_info* table;
-		if (vtables) {
+R_API void r_core_anal_list_vtables(void *core, bool printJson) {
+	RList* vtables = search_virtual_tables ((RCore *)core);
+	RListIter* vtableIter;
+	vtable_info* table;
+	if (vtables) {
+		if (printJson) {
+			bool isFirstElement = true;
+			r_cons_printf("[");
+			r_list_foreach (vtables, vtableIter, table) {
+				if (!isFirstElement) r_cons_printf (",");
+				r_cons_printf ("{\"vtable_start_offset\":0x%08"PFMT64x",\"no_of_methods\":%d}",
+				 table->saddr, table->methods);
+				isFirstElement = false;
+			}
+			r_cons_printf("]\n");
+		} else {
 			r_list_foreach (vtables, vtableIter, table) {
 				printVtable ((RCore *)core, table);
 			}
 		}
-	} else {
-		eprintf ("Unsupported architecture to find vtables\n");
 	}
 }

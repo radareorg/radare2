@@ -4608,16 +4608,24 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 }
 
 static void r_anal_virtual_functions(void *core, const char* input) {
-	const char * help_msg[] = {
-		"Usage:", "av ", "analyze the .rodata section and list virtual function present",
-		NULL};
-	switch (input[0]) {
-	case '\0': //av
-		r_core_anal_list_vtables (core);
-		break;
-	default :
-		r_core_cmd_help (core, help_msg);
-		break;
+	const char *curArch = ((RCore *)core)->bin->cur->o->info->arch;
+	if (!strcmp (curArch, "x86")) {
+		const char * help_msg[] = {
+			"Usage:", "av ", "analyze the .rodata section and list virtual function present",
+			NULL};
+		switch (input[0]) {
+		case 'j': //avj
+			r_core_anal_list_vtables (core, true);
+			break;
+		case '\0': //av
+			r_core_anal_list_vtables (core, false);
+			break;
+		default :
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
+	} else {
+		eprintf ("Unsupported architecture to find vtables\n");
 	}
 }
 
