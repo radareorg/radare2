@@ -318,8 +318,14 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '!': // "?!"
 		if (input[1]) {
-			if (!core->num->value)
-				return core->num->value = r_core_cmd (core, input+1, 0);
+			if (!core->num->value) {
+				if (input[1] == '?') {
+					r_core_sysenv_help (core);
+					return 0;
+				} else {
+					return core->num->value = r_core_cmd (core, input+1, 0);
+				}
+			}
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '@':
