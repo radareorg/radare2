@@ -29,8 +29,9 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 				return false;
 			}
 		} else {
-			int bufsize = dbg->reg->regset[i].arena->size;
-			//int bufsize = dbg->reg->size;
+			//int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
+			int bufsize = dbg->reg->size;
+			//int bufsize = dbg->reg->regset[i].arena->size;
 			if (bufsize>0) {
 				ut8 *buf = calloc (1, bufsize);
 				if (!buf) return false;
@@ -42,7 +43,8 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 					free (buf);
 					return false;
 				} else {
-					r_reg_set_bytes (dbg->reg, i, buf, bufsize);
+					r_reg_set_bytes (dbg->reg, i, buf, R_MIN (size, bufsize));
+					//r_reg_set_bytes (dbg->reg, i, buf, bufsize);
 				}
 				free (buf);
 			}
