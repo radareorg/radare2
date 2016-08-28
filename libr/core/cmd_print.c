@@ -1591,7 +1591,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 static void algolist(int mode) {
 	int i;
 	for (i = 0; i < R_HASH_NBITS ; i++) {
-		ut64 bits = 1LL << i;
+		ut64 bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
 		if (name && *name) {
 			r_cons_println (name);
