@@ -80,6 +80,8 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_HAMDIST 1
 #define R_HASH_SIZE_LUHN 1
 
+#define R_HASH_NBITS (8*sizeof(ut64))
+
 #define R_HASH_NONE 0
 #define R_HASH_MD5 1
 #define R_HASH_SHA1 2
