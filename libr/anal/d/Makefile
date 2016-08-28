@@ -12,6 +12,7 @@ F+= types-x86-64
 F+= types-windows
 F+= types-x86-windows-32
 F+= types-x86-windows-64
+F+= types-x86-osx-64
 F+= cc-x86-64
 F+= cc-x86-32
 F+= cc-mips-32

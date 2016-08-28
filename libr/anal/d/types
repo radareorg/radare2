@@ -67,3 +67,7 @@ type.int32_t.size=32
 int64_t=type
 type.int64_t=q
 type.int64_t.size=64
+
+uid_t=type
+type.uid_t=i
+type.uid_t.size=64
