@@ -629,13 +629,21 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 static char *get_reg_profile(RAnal *anal) {
 	return strdup (
-		"=PC	a15\n"
+		// Assuming call0 ABI
+		"# a0		return address\n"
+		"# a1		stack pointer\n"
+		"# a2-a7	arguments\n"
+		"# a2-a5	return value (call0 ABI)\n"
+		"# a12-a15	callee-saved (call0 ABI)\n"
+		"=PC	pc\n"
 		"=BP	a14\n"
-		"=SP	a13\n" // XXX
-		"=A0	a0\n"
-		"=A1	a1\n"
-		"=A2	a2\n"
-		"=A3	a3\n"
+		"=SP	a1\n"
+		"=A0	a2\n"
+		"=A1	a3\n"
+		"=A2	a4\n"
+		"=A3	a5\n"
+		"=A4	a6\n"
+		"=A5	a7\n"
 		"gpr	a0	.32	0	0\n"
 		"gpr	a1	.32	4	0\n"
 		"gpr	a2	.32	8	0\n"
@@ -652,6 +660,9 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	a13	.32	8	0\n"
 		"gpr	a14	.32	8	0\n"
 		"gpr	a15	.32	8	0\n"
+
+		// pc
+		"gpr	pc	.32	8	0\n"
 	);
 }
 
