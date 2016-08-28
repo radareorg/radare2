@@ -76,17 +76,21 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	        return true;
 	}
 	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
-	if (!memcmp (buf, "dex\n036\0", 8))
+	if (!memcmp (buf, "dex\n036\0", 8)) {
 	        return true;
+	}
 	// M3 (Nov-Dec 07)
-	if (!memcmp (buf, "dex\n009\0", 8))
+	if (!memcmp (buf, "dex\n009\0", 8)) {
 	        return true;
+	}
 	// M5 (Feb-Mar 08)
-        if (!memcmp (buf, "dex\n009\0", 8))
+        if (!memcmp (buf, "dex\n009\0", 8)) {
 	        return true;
+	}
 	// Default fall through, should still be a dex file
-	if (!memcmp (buf, "dex\n", 4))
+	if (!memcmp (buf, "dex\n", 4)) {
                 return true;
+	}
 	return false;
 }
 
@@ -161,10 +165,12 @@ static RList* strings (RBinFile *arch) {
 		return NULL;
 	ret->free = free;
 	for (i = 0; i < bin->header.strings_size; i++) {
-		if (!(ptr = R_NEW0 (RBinString)))
+		if (!(ptr = R_NEW0 (RBinString))) {
 			break;
-		if (bin->strings[i] > bin->size || bin->strings[i] + 6 > bin->size)
+		}
+		if (bin->strings[i] > bin->size || bin->strings[i] + 6 > bin->size) {
 			goto out_error;
+		}
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
 		if (len > 1 && len < R_BIN_SIZEOF_STRINGS) {
@@ -443,7 +449,7 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		if (1) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			/* index matters because two fields can have the same name */
-			sym->name = r_str_newf ("sfield.%s.%d_%s", class_name, i, fieldName);
+			sym->name = r_str_newf ("%s.sfield_%d_%s", class_name, i, fieldName);
 			sym->name = r_str_replace (sym->name, "method.", "", 0);
 			sym->name = r_str_replace (sym->name, ";", "", 0);
 			sym->type = r_str_const ("STATIC");
@@ -484,7 +490,10 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		//eprintf ("f sym.%s.field.%d_%s = %d\n", class_name, i, name, fieldOffset);
 		if (1) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			sym->name = r_str_newf ("ifield.%s.%d_%s", class_name, i, name);
+			//sym->name = r_str_newf ("ifield.%s.%d_%s", class_name, i, name);
+			sym->name = r_str_newf ("%s.ifield_%d_%s", class_name, i, name);
+			sym->name = r_str_replace (sym->name, "method.", "", 0);
+			sym->name = r_str_replace (sym->name, ";", "", 0);
 			sym->type = r_str_const ("FIELD");
 			sym->paddr = sym->vaddr = total;
 		//	eprintf ("0x%x  %s\n", fieldIndex + bin->header.fields_offset, sym->name);
@@ -523,6 +532,8 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 			method_name = strdup ("unknown");
 		}
 		flag_name = flagname (class_name, method_name);
+		flag_name = r_str_replace (flag_name, "method.", "", 0);
+		flag_name = r_str_replace (flag_name, ";", "", 0);
 		if (!flag_name) {
 			continue;
 		}
@@ -602,6 +613,8 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			//sym->name = r_str_newf ("virtual.%s.%s", class_name, name);
 			sym->name = r_str_newf ("%s.%s", class_name, name);
+			sym->name = r_str_replace (sym->name, "method.", "", 0);
+			sym->name = r_str_replace (sym->name, ";", "", 0);
 			sym->type = r_str_const ("METH");
 			sym->paddr = sym->vaddr = MC;
 			r_list_append (bin->methods_list, sym);
