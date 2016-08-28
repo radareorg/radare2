@@ -47,7 +47,7 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
 }
 
 R_API void r_num_free(RNum *num) {
-	free (num);
+	R_FREE (num);
 }
 
 #define KB (1024)

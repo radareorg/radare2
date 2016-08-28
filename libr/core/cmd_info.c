@@ -357,19 +357,19 @@ static int cmd_info(void *data, const char *input) {
 				biname = r_str_escape (core->file->desc->name);
 				RCore *tmpcore = r_core_new ();
 				if (!tmpcore) {
-	                                eprintf ("Cannot create core\n");
-				        return 0;
-	                        }
+					eprintf ("Cannot create core\n");
+					return 0;
+				}
 				core = tmpcore;
 				tmpcore->bin->minstrlen = min;
 				tmpcore->bin->maxstrlen = max;
 				if (!r_bin_load (tmpcore->bin, biname, UT64_MAX, UT64_MAX, xtr_idx, fd, rawstr)){
-	                                eprintf ("Cannot load information\n");
+					eprintf ("Cannot load information\n");
 					goto beach;
-	                        }
+				}
 				switch (input[2]) {
 				case '*':
-				        mode = R_CORE_BIN_RADARE;
+					mode = R_CORE_BIN_RADARE;
 					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				case 'q':
@@ -377,12 +377,12 @@ static int cmd_info(void *data, const char *input) {
 						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qqzz '%s'", min, max, biname);
 						input++;
 					} else {
-		                                mode = R_CORE_BIN_SIMPLE;
+						mode = R_CORE_BIN_SIMPLE;
 						RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					}
 					break;
 				case 'j':
-				        mode = R_CORE_BIN_JSON;
+					mode = R_CORE_BIN_JSON;
 					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				default:
@@ -395,6 +395,8 @@ static int cmd_info(void *data, const char *input) {
 beach:
 				core = r2core;
 				r_core_free (tmpcore);
+				//how cons is singleton cons->num was referring tmpcore->num that is freed causing UAF
+				core->cons->num = core->num;
 				//memcpy (r_cons_singleton (), cons, sizeof (RCons));
 				/* do not copy rcons because it will segfault later
 				 * because of globals like consbuffersize */

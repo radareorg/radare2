@@ -1438,7 +1438,9 @@ R_API int r_core_init(RCore *core) {
 }
 
 R_API RCore *r_core_fini(RCore *c) {
-	if (!c) return NULL;
+	if (!c) {
+		return NULL;
+	}
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
 	// avoid double free

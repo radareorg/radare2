@@ -40,13 +40,12 @@ R_API void r_cons_grep(const char *str) {
 	char buf[R_CONS_GREP_BUFSIZE];
 	char *ptr, *optr, *ptr2, *ptr3;
 
-	if (!str || !*str)
+	if (!str || !*str) {
 		return;
-
+	}
 	cons = r_cons_singleton ();
 	memset (&(cons->grep), 0, sizeof (cons->grep));
 	cons->grep.line = -1;
-
 	while (*str) {
 		switch (*str) {
 		case '.':
@@ -107,7 +106,6 @@ R_API void r_cons_grep(const char *str) {
 	if (ptr2 && ptr3) {
 		ptr2[0] = '\0';
 		ptr2++;
-
 		for (; ptr2 <= ptr3; ++ptr2) {
 			if (fail) {
 				memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
@@ -115,7 +113,6 @@ R_API void r_cons_grep(const char *str) {
 				fail = 0;
 				break;
 			}
-
 			switch (*ptr2) {
 			case '-':
 				is_range = 1;
