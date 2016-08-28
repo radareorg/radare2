@@ -167,8 +167,12 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	ut32 offset, left, j;
 	char *name;
 	int len;
+	bool bigendian = arch->o->info->big_endian;
 	mach0_ut ivar_offset_p, ivar_offset;
 	RBinField *field = NULL;
+	ut8 sivarlist[sizeof (struct MACH0_(SIVarList))] = {0};
+	ut8 sivar[sizeof (struct MACH0_(SIVar))] = {0};
+	ut8 offs[sizeof (mach0_ut)] = {0};
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		eprintf ("uncorrect RBinFile pointer\n");
@@ -185,13 +189,16 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	if (r + sizeof (struct MACH0_(SIVarList)) > arch->size) return;
 
 	if (left < sizeof (struct MACH0_(SIVarList))) {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&il, left);
+		len = r_buf_read_at (arch->buf, r, sivarlist, left);
 	} else {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&il,
+		len = r_buf_read_at (arch->buf, r, sivarlist,
 				sizeof (struct MACH0_(SIVarList)));
 	}
 
 	if (len < 1) return;
+
+	il.entsize = r_read_ble (&sivarlist[0], bigendian, 32);
+	il.count = r_read_ble (&sivarlist[4], bigendian, 32);
 
 	p += sizeof (struct MACH0_(SIVarList));
 	offset += sizeof (struct MACH0_(SIVarList));
@@ -210,12 +217,29 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		if (r + sizeof (struct MACH0_(SIVar)) > arch->size) goto error;
 
 		if (left < sizeof (struct MACH0_(SIVar))) {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&i, left);
+			len = r_buf_read_at (arch->buf, r, sivar, left);
 		} else {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&i,
+			len = r_buf_read_at (arch->buf, r, sivar,
 					sizeof (struct MACH0_(SIVar)));
 		}
 		if (len < 1) goto error;
+
+		switch (sizeof (mach0_ut)) {
+		case 4:
+			i.offset = r_read_ble (&sivar[0], bigendian, 32);
+			i.name = r_read_ble (&sivar[4], bigendian, 32);
+			i.type = r_read_ble (&sivar[8], bigendian, 32);
+			i.alignment = r_read_ble (&sivar[12], bigendian, 32);
+			i.size = r_read_ble (&sivar[16], bigendian, 32);
+			break;
+		case 8:
+			i.offset = r_read_ble (&sivar[0], bigendian, 64);
+			i.name = r_read_ble (&sivar[8], bigendian, 64);
+			i.type = r_read_ble (&sivar[16], bigendian, 64);
+			i.alignment = r_read_ble (&sivar[24], bigendian, 32);
+			i.size = r_read_ble (&sivar[28], bigendian, 32);
+			break;
+		}
 		ivar_offset_p = get_pointer (i.offset, NULL, &left, arch);
 
 		if (ivar_offset_p > arch->size) goto error;
@@ -223,12 +247,13 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 
 		if (ivar_offset_p != 0 && left >= sizeof (mach0_ut)) {
 			len = r_buf_read_at (arch->buf, ivar_offset_p,
-					(ut8 *)&ivar_offset,
-					sizeof (ivar_offset));
+					offs,
+					sizeof (mach0_ut));
 			if (len < 1) {
 				eprintf ("Error reading\n");
 				goto error;
 			}
+			ivar_offset = r_read_ble (offs, bigendian, 8 * sizeof (mach0_ut));
 			field->vaddr = ivar_offset;
 		}
 
@@ -291,7 +316,10 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 	ut32 offset, left, j;
 	char *name;
 	int len;
+	bool bigendian = arch->o->info->big_endian;
 	RBinField *property = NULL;
+	ut8 sopl[sizeof (struct MACH0_(SObjcPropertyList))] = {0};
+	ut8 sop[sizeof (struct MACH0_(SObjcProperty))] = {0};
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		eprintf ("uncorrect RBinFile pointer\n");
@@ -308,12 +336,15 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 	if (r + sizeof (struct MACH0_(SObjcPropertyList)) > arch->size) return;
 
 	if (left < sizeof (struct MACH0_(SObjcPropertyList))) {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&opl, left);
+		len = r_buf_read_at (arch->buf, r, sopl, left);
 	} else {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&opl,
+		len = r_buf_read_at (arch->buf, r, sopl,
 				sizeof (struct MACH0_(SObjcPropertyList)));
 	}
 	if (len < 1) return;
+
+	opl.entsize = r_read_ble (&sopl[0], bigendian, 32);
+	opl.count = r_read_ble (&sopl[4], bigendian, 32);
 
 	p += sizeof (struct MACH0_(SObjcPropertyList));
 	offset += sizeof (struct MACH0_(SObjcPropertyList));
@@ -335,13 +366,16 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 		if (r + sizeof (struct MACH0_(SObjcProperty)) > arch->size) goto error;
 
 		if (left < sizeof (struct MACH0_(SObjcProperty))) {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&op, left);
+			len = r_buf_read_at (arch->buf, r, sop, left);
 		} else {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&op,
+			len = r_buf_read_at (arch->buf, r, sop,
 					sizeof (struct MACH0_(SObjcProperty)));
 		}
 		if (len < 1) goto error;
 
+		op.name = r_read_ble (&sop[0], bigendian, 8 * sizeof (mach0_ut));
+		op.attributes = r_read_ble (&sop[sizeof (mach0_ut)], bigendian,
+						8 * sizeof (mach0_ut));
 		r = get_pointer (op.name, NULL, &left, arch);
 		if (r) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
@@ -401,6 +435,9 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	ut32 offset, left, i;
 	char *name = NULL;
 	int len;
+	bool bigendian = arch->o->info->big_endian;
+	ut8 sml[sizeof (struct MACH0_(SMethodList))] = {0};
+	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
 
 	RBinSymbol *method = NULL;
 
@@ -420,12 +457,15 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	if (r + sizeof (struct MACH0_(SMethodList)) > arch->size) return;
 
 	if (left < sizeof (struct MACH0_(SMethodList))) {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&ml, left);
+		len = r_buf_read_at (arch->buf, r, sml, left);
 	} else {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&ml,
+		len = r_buf_read_at (arch->buf, r, sml,
 				sizeof (struct MACH0_(SMethodList)));
 	}
 	if (len < 1) return;
+
+	ml.entsize = r_read_ble (&sml[0], bigendian, 32);
+	ml.count = r_read_ble (&sml[4], bigendian, 32);
 
 	p += sizeof (struct MACH0_(SMethodList));
 	offset += sizeof (struct MACH0_(SMethodList));
@@ -448,15 +488,20 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 		if (r + sizeof (struct MACH0_(SMethod)) > arch->size) goto error;
 
 		if (left < sizeof (struct MACH0_(SMethod))) {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&m, left);
+			len = r_buf_read_at (arch->buf, r, sm, left);
 		} else {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&m,
+			len = r_buf_read_at (arch->buf, r, sm,
 					sizeof (struct MACH0_(SMethod)));
 		}
 		if (len < 1) {
 			eprintf ("READ ERROR\n");
 			goto error;
 		}
+
+		m.name = r_read_ble (&sm[0], bigendian, 8 * sizeof (mach0_ut));
+		m.types = r_read_ble (&sm[sizeof (mach0_ut)], bigendian, 8 * sizeof (mach0_ut));
+		m.imp = r_read_ble (&sm[2 * sizeof (mach0_ut)], bigendian,
+					8 * sizeof (mach0_ut));
 
 		r = get_pointer (m.name, NULL, &left, arch);
 		if (r != 0) {
@@ -531,9 +576,13 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	struct MACH0_(SProtocolList) pl = { 0 };
 	struct MACH0_(SProtocol) pc;
 	char *class_name = NULL;
-	ut32 offset, left, i;
+	ut32 offset, left, i, j;
 	mach0_ut q, r;
 	int len;
+	bool bigendian = arch->o->info->big_endian;
+	ut8 spl[sizeof (struct MACH0_(SProtocolList))] = {0};
+	ut8 spc[sizeof (struct MACH0_(SProtocol))] = {0};
+	ut8 sptr[sizeof (mach0_ut)] = {0};
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		eprintf ("get_protocol_list_t: Invalid RBinFile pointer\n");
@@ -548,12 +597,14 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	if (r + sizeof (struct MACH0_(SProtocolList)) > arch->size) return;
 
 	if (left < sizeof (struct MACH0_(SProtocolList))) {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&pl, left);
+		len = r_buf_read_at (arch->buf, r, spl, left);
 	} else {
-		len = r_buf_read_at (arch->buf, r, (ut8 *)&pl,
+		len = r_buf_read_at (arch->buf, r, spl,
 				sizeof (struct MACH0_(SProtocolList)));
 	}
 	if (len < 1) return;
+
+	pl.count = r_read_ble (&spl[0], bigendian, 8 * sizeof (mach0_ut));
 
 	p += sizeof (struct MACH0_(SProtocolList));
 	offset += sizeof (struct MACH0_(SProtocolList));
@@ -566,11 +617,12 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		if (r + sizeof (mach0_ut) > arch->size) return;
 
 		if (left < sizeof (ut32)) {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&q, left);
+			len = r_buf_read_at (arch->buf, r, sptr, left);
 		} else {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&q, sizeof (mach0_ut));
+			len = r_buf_read_at (arch->buf, r, sptr, sizeof (mach0_ut));
 		}
 		if (len < 1) return;
+		q = r_read_ble (&sptr[0], bigendian, 8 * sizeof (mach0_ut));
 
 		if (!(r = get_pointer (q, &offset, &left, arch))) {
 			return;
@@ -581,14 +633,30 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		if (r > arch->size || r + left > arch->size) return;
 		if (r + sizeof (struct MACH0_(SProtocol)) > arch->size) return;
 
-		// TODO: use r_buf_fread to avoid endianness issues
 		if (left < sizeof (struct MACH0_(SProtocol))) {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&pc, left);
+			len = r_buf_read_at (arch->buf, r, spc, left);
 		} else {
-			len = r_buf_read_at (arch->buf, r, (ut8 *)&pc,
+			len = r_buf_read_at (arch->buf, r, spc,
 					sizeof (struct MACH0_(SProtocol)));
 		}
 		if (len < 1) return;
+
+		j = 0;
+		pc.isa = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
+		j += sizeof (mach0_ut);
+		pc.name = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
+		j += sizeof (mach0_ut);
+		pc.protocols = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
+		j += sizeof (mach0_ut);
+		pc.instanceMethods = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
+		j += sizeof (mach0_ut);
+		pc.classMethods = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
+		j += sizeof (mach0_ut);
+		pc.optionalInstanceMethods = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
+		j += sizeof (mach0_ut);
+		pc.optionalClassMethods = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
+		j += sizeof (mach0_ut);
+		pc.instanceProperties = r_read_ble (&spc[j], bigendian, 8 * sizeof (mach0_ut));
 
 		r = get_pointer (pc.name, NULL, &left, arch);
 		if (r != 0) {
@@ -663,9 +731,11 @@ static char *demangle_classname(const char *s) {
 static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBinClass *klass) {
 	struct MACH0_(obj_t) * bin;
 	struct MACH0_(SClassRoT) cro = { 0 };
-	ut32 offset, left;
+	ut32 offset, left, i;
 	ut64 r, s;
 	int len;
+	bool bigendian = arch->o->info->big_endian;
+	ut8 scro[sizeof (struct MACH0_(SClassRoT))] = {0};
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		eprintf ("Invalid RBinFile pointer\n");
@@ -687,10 +757,35 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 		eprintf ("Not enough data for SClassRoT\n");
 		return;
 	}
-	len = r_buf_read_at (arch->buf, r, (ut8 *)&cro, sizeof (cro));
+	len = r_buf_read_at (arch->buf, r, scro, sizeof (cro));
 	if (len < 1) {
 		return;
 	}
+
+	i = 0;
+	cro.flags = r_read_ble (&scro[i], bigendian, 8 * sizeof (ut32));
+	i += sizeof (ut32);
+	cro.instanceStart = r_read_ble (&scro[i], bigendian, 8 * sizeof (ut32));
+	i += sizeof (ut32);
+	cro.instanceSize = r_read_ble (&scro[i], bigendian, 8 * sizeof (ut32));
+	i += sizeof (ut32);
+#ifdef R_BIN_MACH064
+	cro.reserved = r_read_ble (&scro[i], bigendian, 8 * sizeof (ut32));
+	i += sizeof (ut32);
+#endif
+	cro.ivarLayout = r_read_ble (&scro[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	cro.name = r_read_ble (&scro[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	cro.baseMethods = r_read_ble (&scro[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	cro.baseProtocols = r_read_ble (&scro[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	cro.ivars = r_read_ble (&scro[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	cro.weakIvarLayout = r_read_ble (&scro[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	cro.baseProperties = r_read_ble (&scro[i], bigendian, 8 * sizeof (mach0_ut));
 
 	s = r;
 	if ((r = get_pointer (cro.name, NULL, &left, arch))) {
@@ -753,6 +848,9 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	ut32 offset = 0, left = 0;
 	ut32 is_meta_class = 0;
 	int len;
+	bool bigendian = arch->o->info->big_endian;
+	ut8 sc[sizeof (struct MACH0_(SClass))] = {0};
+	ut32 i;
 
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
 		return;
@@ -765,9 +863,19 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		eprintf ("Cannot parse obj class info out of bounds\n");
 		return;
 	}
-	// TODO: use buf_fread here to avoid endianness issues
-	len = r_buf_read_at (arch->buf, r, (ut8 *)&c, size);
+	len = r_buf_read_at (arch->buf, r, sc, size);
 	if (len < 1) return;
+
+	i = 0;
+	c.isa = r_read_ble (&sc[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	c.superclass = r_read_ble (&sc[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	c.cache = r_read_ble (&sc[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	c.vtable = r_read_ble (&sc[i], bigendian, 8 * sizeof (mach0_ut));
+	i += sizeof (mach0_ut);
+	c.data = r_read_ble (&sc[i], bigendian, 8 * sizeof (mach0_ut));
 
 	klass->addr = c.isa;
 	get_class_ro_t (c.data & ~0x3, arch, &is_meta_class, klass);
@@ -856,6 +964,8 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 	mach0_ut p = 0;
 	ut32 left = 0;
 	int len;
+	bool bigendian = arch->o->info->big_endian;
+	ut8 pp[sizeof (mach0_ut)] = {0};
 
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
@@ -927,14 +1037,11 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 			goto get_classes_error;
 		}
 
-// TODO: unnecessary slow sequential read? use fread for endianness
-#ifdef R_BIN_MACH064
-		len = r_buf_fread_at (arch->buf, s->paddr + i, (ut8 *)&p, "l", 1);
-#else
-		len = r_buf_fread_at (arch->buf, s->paddr + i, (ut8 *)&p, "i", 1);
-#endif
+		len = r_buf_read_at (arch->buf, s->paddr + i, pp, sizeof (mach0_ut));
+
 		if (len < 1) goto get_classes_error;
 
+		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
 		get_class_t (p, arch, klass);
 
 		if (!klass->name) {
