@@ -4,19 +4,18 @@
 #include <r_util.h>
 #include "dex.h"
 
-char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
+char* r_bin_dex_get_version(RBinDexObj *bin) {
 	if (bin) {
-		char *version = malloc (8);
-		memset (version, 0, 8);
-		memcpy (version, bin->b->buf + 4, 3);
-		return version;
+		ut8* version = calloc (1, 8);
+		r_buf_read_at (bin->b, 4, version, 3);
+		return (char *)version;
 	}
 	return NULL;
 }
 
 #define FAIL(x) { eprintf(x"\n"); goto fail; }
-struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
-	struct r_bin_dex_obj_t *bin = R_NEW0 (struct r_bin_dex_obj_t);
+RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
+	RBinDexObj *bin = R_NEW0 (RBinDexObj);
 	int i;
 	ut8 *bufptr;
 	struct dex_header_t *dexhdr;
@@ -29,8 +28,9 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 		goto fail;
 	}
 	/* header */
-	if (bin->size < sizeof(struct dex_header_t))
+	if (bin->size < sizeof(struct dex_header_t)) {
 		goto fail;
+	}
 	bufptr = bin->b->buf;
 	dexhdr = &bin->header;
 
@@ -133,7 +133,7 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	if (dexhdr->fields_offset + fields_size >= bin->size) {
 		fields_size = bin->size - dexhdr->fields_offset;
 	}
-	if (fields_size<0) {
+	if (fields_size < 0) {
 		fields_size = 0;
 	}
 	dexhdr->fields_size = fields_size / sizeof (struct dex_field_t);
