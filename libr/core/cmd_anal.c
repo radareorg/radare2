@@ -42,6 +42,7 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 static void type_cmd_help (RCore *core) {
 	const char *help_msg[] = {
 		"Usage:", "aftm", "",
+		"afta", "", "Setup memory and analyse do type matching analysis for all functions",
 		"aftm", "", "type matching analysis",
 		NULL
 	};
@@ -50,11 +51,26 @@ static void type_cmd_help (RCore *core) {
 
 static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	if (!fcn && *input != '?') {
+	if (!fcn && *input != '?' && *input != 'a') {
 		eprintf ("cant find function here\n");
 		return;
 	}
+	RListIter *it;
+	ut64 seek;
 	switch (*input) {
+	case 'a':
+		seek = core->offset;
+		r_core_cmd0 (core, "aei");
+		r_core_cmd0 (core, "aeim");
+		r_list_foreach (core->anal->fcns, it, fcn) {
+			r_core_seek (core, fcn->addr, true);
+			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
+			r_anal_type_match (core, fcn);
+		}
+		r_core_cmd0 (core, "aeim-");
+		r_core_cmd0 (core, "aei-");
+		r_core_seek (core, seek, true);
+		break;
 	case 'm':
 		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 		r_anal_type_match (core, fcn);
