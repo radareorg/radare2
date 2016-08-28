@@ -2107,7 +2107,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	if (buf == NULL) return -1;
+	if (!buf) {
+		return -1;
+	}
 	r_io_use_desc (core->io, core->file->desc);
 	if (ref == 0LL) {
 		eprintf ("Null reference search is not supported\n");

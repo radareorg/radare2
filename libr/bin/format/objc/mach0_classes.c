@@ -472,11 +472,11 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 				name = malloc (left + 1);
 				len = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
 				name[left] = 0;
-				if (len < 1) goto error;
+				if (len < 1) {
+					goto error;
+				}
 			}
-
 			copy_sym_name_with_namespace (class_name, name, method);
-
 			R_FREE (name);
 		}
 #if OBJC_UNNECESSARY
@@ -486,19 +486,24 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
 
-			if (r + left < r) goto error;
-			if (r > arch->size || r + left > arch->size) goto error;
-
+			if (r + left < r || r > arch->size || r + left > arch->size) {
+				goto error;
+			}
 			if (bin->has_crypto) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
 				name = malloc (left + 1);
+				if (!name) {
+					goto error;
+				}
 				len = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
 				name[left] = 0;
-				if (len == 0 || len == -1) goto error;
+				if (len != left) {
+					free (name);
+					goto error;
+				}
 			}
-
 			R_FREE (name);
 		}
 #endif
@@ -506,7 +511,6 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 		method->type = is_static
 			? "FUNC"
 			: "METH";
-
 		if (is_thumb (arch)) {
 			if (method->vaddr & 1) {
 				method->vaddr >>= 1;
@@ -514,9 +518,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 				//eprintf ("0x%08llx METHOD %s\n", method->vaddr, method->name);
 			}
 		}
-
 		r_list_append (klass->methods, method);
-
 		p += sizeof (struct MACH0_(SMethod));
 		offset += sizeof (struct MACH0_(SMethod));
 	}
@@ -923,7 +925,8 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 
 		if (s->paddr > arch->size || s->paddr + size > arch->size) {
 			goto get_classes_error;
-		} else if (s->paddr + size < s->paddr) {
+		}
+		if (s->paddr + size < s->paddr) {
 			goto get_classes_error;
 		}
 
@@ -933,8 +936,9 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 #else
 		len = r_buf_fread_at (arch->buf, s->paddr + i, (ut8 *)&p, "i", 1);
 #endif
-		if (len < 1) goto get_classes_error;
-
+		if (len < 1) {
+			goto get_classes_error;
+		}
 		get_class_t (p, arch, klass);
 
 		if (!klass->name) {
