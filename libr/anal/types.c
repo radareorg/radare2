@@ -43,6 +43,9 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 	char *query;
 	const char *t = sdb_const_get (anal->sdb_types, type, 0);
+	if (!t) {
+		return 0;
+	}
 	if (!strcmp (t, "type")){
 		query = sdb_fmt (-1, "type.%s.size", type);
 		return sdb_num_get (anal->sdb_types, query, 0);
