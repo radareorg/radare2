@@ -30,7 +30,7 @@ static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	short ofst;
-	int imm = 0, d, r, k;
+	int imm = 0, imm2 = 0, d, r, k;
 	ut8 kbuf[4];
 	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
 	char *arg, str[32];
@@ -51,6 +51,11 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (arg) {
 		arg++;
 		imm = (int)r_num_get (NULL, arg);
+		arg = strchr (arg, ',');
+		if (arg) {
+			arg++;
+			imm2 = (int)r_num_get (NULL, arg);
+		}
 	}
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -75,7 +80,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	} else if (!strncmp (str, "in ", 3)) {
 		op->type = R_ANAL_OP_TYPE_IO;
 		op->type2 = 0;
-		op->val = imm;
+		op->val = imm2;
 	} else if (!strncmp (str, "push ", 5)) {
 		op->type = R_ANAL_OP_TYPE_PUSH;
 	}
