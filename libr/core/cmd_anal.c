@@ -4614,6 +4614,9 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 			"Usage:", "av ", "analyze the .rodata section and list virtual function present",
 			NULL};
 		switch (input[0]) {
+		case '*'://av*
+			r_core_anal_list_vtables_all (core);
+			break;
 		case 'j': //avj
 			r_core_anal_list_vtables (core, true);
 			break;

@@ -3275,15 +3275,39 @@ R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 			r_cons_printf("[");
 			r_list_foreach (vtables, vtableIter, table) {
 				if (!isFirstElement) r_cons_printf (",");
-				r_cons_printf ("{\"vtable_start_offset\":0x%08"PFMT64x",\"no_of_methods\":%d}",
-				 table->saddr, table->methods);
+				r_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":%d}",
+					table->saddr, table->methods);
 				isFirstElement = false;
 			}
-			r_cons_printf("]\n");
+			r_cons_println("]");
 		} else {
 			r_list_foreach (vtables, vtableIter, table) {
 				printVtable ((RCore *)core, table);
 			}
+		}
+	}
+}
+
+R_API void r_core_anal_list_vtables_all(void *core){
+	RList* vtables = search_virtual_tables ((RCore *)core);
+	RListIter* vtableIter;
+	vtable_info* table;
+	int curVtable = 1;
+	if (vtables) {
+		r_cons_printf ("%-4s %-20s %-15s %-10s %-18s %-10s %-10s %-10s\n",
+			"No", "Name", "RealName", "Methods", "Namehash", "Offset",
+				"Size", "Comment");
+		r_cons_printf ("%-4s %-20s %-15s %-10s %-18s %-10s %-10s %-10s\n",
+			"==", "====", "========", "========", "========", "======",
+				"====", "======");
+		r_list_foreach (vtables, vtableIter, table) {
+			RFlagItem* flagItem = r_flag_get_at (((RCore *)core)->flags, table->saddr);
+			if (flagItem) {
+				r_cons_printf ("%-4d %-20s %-15s %-10d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+					curVtable, flagItem->name, flagItem->realname, table->methods, flagItem->namehash,
+						flagItem->offset, flagItem->size, flagItem->comment);
+			}
+			curVtable ++;
 		}
 	}
 }
