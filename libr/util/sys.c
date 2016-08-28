@@ -522,6 +522,17 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	return NULL;
 }
 
+R_API bool r_sys_mkdir(const char *dir) {
+	if (r_sandbox_enable (0))
+		return false;
+
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	return CreateDirectory (dir, NULL) != 0;
+#else
+	return mkdir (dir, 0755) != -1;
+#endif
+}
+
 R_API bool r_sys_mkdirp(const char *dir) {
 	bool ret = true;
 	char slash = R_SYS_DIR[0];
