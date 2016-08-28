@@ -271,10 +271,12 @@ static void algolist() {
 	ut64 bits;
 	int i;
 	eprintf ("Available Hashes: \n");
-	for (i = 0; i < 64; i++) {
-		bits = ((ut64)1) << i;
+	for (i = 0; i < R_HASH_NBITS; i++) {
+		bits = 1LL << i;
 		const char *name = r_hash_name (bits);
-		if (name && *name) printf ("  %s\n", name);
+		if (name && *name) {
+			 printf ("  %s\n", name);
+		}
 	}
 	eprintf ("\n");
 	eprintf ("Available Encoders/Decoders: \n");
