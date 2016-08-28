@@ -623,13 +623,16 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	ut8 buf[32];
 	ut64 pc, sp, r;
 	ut64 next[2];
-	ut64 memval;
 	RAnalOp op;
 	int br, i, ret;
 	union {
 		ut64 r64;
 		ut32 r32[2];
 	} sp_top;
+	union {
+		ut64 r64;
+		ut32 r32[2];
+	} memval;
 
 	if (dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 		dbg->recoil_mode = R_DBG_RECOIL_STEP;
@@ -654,7 +657,6 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	if (op.type == R_ANAL_OP_TYPE_ILL) {
 		return false;
 	}
-
 	switch (op.type) {
 	case R_ANAL_OP_TYPE_RET:
 		dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8);
@@ -670,17 +672,16 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	case R_ANAL_OP_TYPE_MJMP:
 		if (!op.ireg) {
 			next[0] = op.jump;
-			br = 1;
 		} else {
 			r = r_debug_reg_get (dbg,op.ireg);
-			if (dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
+			if (dbg->iob.read_at (dbg->iob.io,
+			      r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
 				next[0] = op.addr + op.size;
-				br = 1;
-				break;
+			} else {
+				next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
 			}
-			next[0] = memval;
-			br = 1;
 		}
+		br = 1;
 		break;
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_JMP:
@@ -688,13 +689,17 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		br = 1;
 		break;
 	case R_ANAL_OP_TYPE_UCALL:
-		r = r_debug_reg_get (dbg,op.ireg);
-		if (dbg->iob.read_at (dbg->iob.io, r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
-			next[0] = op.addr + op.size;
-			br = 1;
-			break;
+		if (op.ireg) {
+			r = r_debug_reg_get (dbg,op.ireg);
+		} else {
+			r = 0;
 		}
-		next[0] = memval;
+		if (dbg->iob.read_at (dbg->iob.io,
+		      r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
+			next[0] = op.addr + op.size;
+		} else {
+			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+		}
 		br = 1;
 		break;
 	default:
