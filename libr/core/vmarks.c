@@ -30,7 +30,7 @@ R_API void r_core_visual_mark_set(RCore *core, ut8 ch, ut64 addr) {
 	if (!marks_init) {
 		r_core_visual_mark_reset(core);
 	}
-	marks[ch] = core->offset;
+	marks[ch] = addr;
 }
 
 R_API void r_core_visual_mark(RCore *core, ut8 ch) {
