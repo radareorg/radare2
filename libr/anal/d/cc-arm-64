@@ -1,7 +1,7 @@
 default.cc=arm64
 
 arm64=cc
-cc.arm64.name=arm32
+cc.arm64.name=arm64
 cc.arm64.arg1=x0
 cc.arm64.arg2=x1
 cc.arm64.arg3=x2
