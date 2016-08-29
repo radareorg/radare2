@@ -468,7 +468,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	sdb_reset ( core->anal->sdb_cc);
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	char *dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch,
-		r_config_get_i (core->config, "asm.bits"));
+		core->anal->bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (core->anal->sdb_cc, dbpath);
 	}
