@@ -1859,14 +1859,12 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 }
 
 static st64 revert_cdiv_magic(st64 magic) {
+	ut64 amagic = llabs (magic);
 	const st64 N = ST64_MAX;
 	st64 E, candidate;
 	short s;
 
-	if (llabs (magic) < 0xFFFFFF) {
-		return 0;
-	}
-	if (llabs (magic) > UT32_MAX) {
+	if (amagic < 0xFFFFFF || amagic > UT32_MAX) {
 		return 0;
 	}
 	if (magic < 0) {
@@ -1875,8 +1873,10 @@ static st64 revert_cdiv_magic(st64 magic) {
 	for (s = 0; s < 16; s++) {
 		E = 1LL << (32 + s);
 		candidate = (E + magic - 1) / magic;
-		if ( (N * magic) >> (32 + s) == (N / candidate) ) {
-			return candidate;
+		if (candidate > 0) {
+			if ( ((N * magic) >> (32 + s)) == (N / candidate) ) {
+				return candidate;
+			}
 		}
 	}
 	return 0;
@@ -1904,7 +1904,7 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 					break;
 				}
 			}
-			esil = comma+1;
+			esil = comma + 1;
 		}
 	}
 	// /TODO: check following SHR instructions
