@@ -1875,6 +1875,10 @@ static st64 revert_cdiv_magic(st64 magic) {
 	for (s = 0; s < 16; s++) {
 		E = 1LL << (32 + s);
 		candidate = (E + magic - 1) / magic;
+		// avoid division by 0
+		if (candidate == 0) {
+			continue;
+		}
 		if ( (N * magic) >> (32 + s) == (N / candidate) ) {
 			return candidate;
 		}
