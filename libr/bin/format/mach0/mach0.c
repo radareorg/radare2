@@ -2016,8 +2016,11 @@ struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
 	} else if (magic == 0xfeedfacf) {
 		big_endian = false;
 	} else {
+		/* also extract non-mach0s */
+#if 0 
 		free (macho_hdr);
 		return NULL;
+#endif
 	}
 	len = r_buf_fread_at (buf, 0, (ut8*)macho_hdr,
 #if R_BIN_MACH064

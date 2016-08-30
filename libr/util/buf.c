@@ -70,7 +70,7 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 		if (addr >= s->from && addr < s->to) {
 			int newlen = addr + len - s->to;
 			int delta = addr - s->from;
-			if (newlen> 0) {
+			if (newlen > 0) {
 				// must realloc
 				ut8 *ndata = realloc (s->data, len + newlen);
 				if (ndata) {
@@ -85,7 +85,9 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 			return len;
 		}
 	}
-	if (sparse_append(l, addr, data, len) == NULL) return -1;
+	if (!sparse_append (l, addr, data, len)) {
+		return -1;
+	}
 	return len;
 }
 
@@ -94,21 +96,24 @@ static bool sparse_limits(RList *l, ut64 *min, ut64 *max) {
 	RBufferSparse *s;
 	RListIter *iter;
 
-	if (min) *min = UT64_MAX;
-
+	if (min) {
+		*min = UT64_MAX;
+	}
 	r_list_foreach (l, iter, s) {
 		if (set) {
-			set = true;
-			if (min) *min = s->from;
-			if (max) *max = s->to;
+			if (min && s->from < *min) {
+				*min = s->from;
+			}
+			if (max && s->to > *max) {
+				*max = s->to;
+			}
 		} else {
+			set = true;
 			if (min) {
-				if (s->from < *min)
-					*min = s->from;
+				*min = s->from;
 			}
 			if (max) {
-				if (s->to > *max)
-					*max = s->to;
+				*max = s->to;
 			}
 		}
 	}
@@ -160,8 +165,12 @@ R_API const ut8 *r_buf_buffer (RBuffer *b) {
 
 R_API ut64 r_buf_size (RBuffer *b) {
 	if (!b) return 0LL;
+	if (b->fd != -1) {
+		return b->length;
+	}
 	if (b->sparse) {
 		ut64 max = 0LL;
+eprintf ("GETTING SIZE\n");
 		if (sparse_limits (b->sparse, NULL, &max)) {
 			return max; // -min
 		}
@@ -186,9 +195,13 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 	return NULL; /* we just freed b, don't return it */
 }
 
-R_API RBuffer *r_buf_new_file (const char *file) {
+R_API RBuffer *r_buf_new_file(const char *file, bool newFile) {
 	const int mode = 0644;
-	int fd = r_sandbox_open (file, O_RDWR, mode);
+	int flags = O_RDWR;
+	if (newFile) {
+		flags |= O_CREAT;
+	}
+	int fd = r_sandbox_open (file, flags, mode);
 	if (fd != -1) {
 		RBuffer *b = r_buf_new ();
 		if (!b) {
@@ -202,7 +215,7 @@ R_API RBuffer *r_buf_new_file (const char *file) {
 }
 
 // TODO: rename to new_from_file ?
-R_API RBuffer *r_buf_new_slurp (const char *file) {
+R_API RBuffer *r_buf_new_slurp(const char *file) {
 	int len;
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
@@ -213,6 +226,13 @@ R_API RBuffer *r_buf_new_slurp (const char *file) {
 	}
 	r_buf_free (b);
 	return NULL; /* we just freed b, don't return it */
+}
+
+R_API bool r_buf_dump(RBuffer *b, const char *file) {
+	if (!b || !file) {
+		return false;
+	}
+	return r_file_dump (file, r_buf_get_at (b, 0, NULL), r_buf_size (b), 0);
 }
 
 R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
@@ -286,11 +306,14 @@ R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
 
 R_API char *r_buf_to_string(RBuffer *b) {
 	char *s;
-	if (!b) return strdup ("");
-	s = malloc (b->length+1);
-	if (!s) return NULL;
-	memmove (s, b->buf, b->length);
-	s[b->length] = 0;
+	if (!b) {
+		return strdup ("");
+	}
+	s = malloc (b->length + 1);
+	if (s) {
+		memmove (s, b->buf, b->length);
+		s[b->length] = 0;
+	}
 	return s;
 }
 
@@ -395,14 +418,13 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	if (b->fd != -1) {
 		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
 			// seek failed - print error here?
-			return 0;
+			// return 0;
 		}
 		if (write) {
 			return r_sandbox_write (b->fd, src, len);
-		} else {
-			memset (dst, 0, len);
-			return r_sandbox_read (b->fd, dst, len);
 		}
+		memset (dst, 0, len);
+		return r_sandbox_read (b->fd, dst, len);
 	}
 	if (b->sparse) {
 		if (write) {
@@ -531,8 +553,9 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	if (addr == UT64_MAX || addr > b->length) {
 		return NULL;
 	}
-	if (left)
+	if (left) {
 		*left = b->length - addr;
+	}
 	return b->buf+addr;
 }
 
@@ -545,6 +568,10 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 #endif
 	if (addr == R_BUF_CUR) {
 		addr = b->cur;
+	}
+	if (b->fd != -1) {
+		r_sandbox_lseek (b->fd, addr, SEEK_SET);
+		return r_sandbox_read (b->fd, buf, len);
 	}
 	if (!b->sparse) {
 		if (addr < b->base || len<1)
@@ -569,7 +596,21 @@ R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 //ret 0 or -1 if failed; ret copied length if success
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
-	if (!b || !buf || len < 1) return 0;
+	if (!b || !buf || len < 1) {
+		return 0;
+	}
+	if (b->fd != -1) {
+		r_sandbox_lseek (b->fd, addr, SEEK_SET);
+		ut64 newlen = addr + len;
+		if (newlen > b->length) {
+			b->length = newlen;
+			ftruncate (b->fd, newlen);
+		}
+		return r_sandbox_write (b->fd, buf, len);
+	}
+	if (b->sparse) {
+		return (sparse_write (b->sparse, addr, buf, len) < 0) ? -1 : len;
+	}
 	if (b->empty) {
 		b->empty = 0;
 		free (b->buf);

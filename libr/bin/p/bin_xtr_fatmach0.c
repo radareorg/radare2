@@ -54,12 +54,13 @@ static int check_bytes(const ut8* bytes, ut64 sz) {
 		// XXX assuming BE
 		off = r_read_at_be32 (h, 4 * sizeof (int));
 		if (off > 0 && off < sz) {
-			memcpy (buf, h+off, 4);
+			memcpy (buf, h + off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-				!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+				!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
 				ret = true;
+			}
 		}
 	}
 	return ret;
@@ -91,6 +92,7 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 	meta->libname = NULL;
 }
+
 static RBinXtrData * extract(RBin* bin, int idx) {
 	int narch;
 	RBinXtrData * res = NULL;
@@ -99,8 +101,9 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 	struct MACH0_(mach_header) *hdr = NULL;
 
 	arch = r_bin_fatmach0_extract (fb, idx, &narch);
-	if (!arch) return res;
-
+	if (!arch) {
+		return res;
+	}
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
 	if (!metadata) {
 		r_buf_free (arch->b);
@@ -114,8 +117,8 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 		return NULL;
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);
-	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata, bin->sdb);
-
+	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size,
+		narch, metadata, bin->sdb);
 	r_buf_free (arch->b);
 	free (arch);
 	free (hdr);
@@ -200,7 +203,8 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 
 	return res;
 }
-struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
+
+RBinXtrPlugin r_bin_xtr_plugin_fatmach0 = {
 	.name = "fatmach0",
 	.desc = "fat mach0 bin extractor plugin",
 	.license = "LGPL3",
@@ -217,7 +221,7 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_fatmach0,
 	.version = R2_VERSION

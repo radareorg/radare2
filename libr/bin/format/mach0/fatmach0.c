@@ -13,13 +13,17 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 		return false;
 	}
 	bin->nfat_arch = bin->hdr.nfat_arch;
-	if (sizeof(struct fat_header) + bin->nfat_arch * \
-		sizeof(struct fat_arch) > bin->size)
+	if (sizeof (struct fat_header) + bin->nfat_arch * \
+			sizeof (struct fat_arch) > bin->size) {
 		return false;
-	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch < 1)
+	}
+	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch < 1) {
 		return false;
+	}
 	size = bin->nfat_arch * sizeof (struct fat_arch);
-	if (size < bin->nfat_arch) return false;
+	if (size < bin->nfat_arch) {
+		return false;
+	}
 	if (!(bin->archs = malloc (size))) {
 		perror ("malloc (fat_arch)");
 		return false;
@@ -37,14 +41,16 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 	struct r_bin_fatmach0_arch_t *ret;
 	ut8 *buf = NULL;
 
-	if (!bin || (idx < 0) || (idx > bin->nfat_arch))
+	if (!bin || (idx < 0) || (idx > bin->nfat_arch)) {
 		return NULL;
-
+	}
 	if (bin->archs[idx].offset > bin->size || \
 	  bin->archs[idx].offset + bin->archs[idx].size > bin->size)
 		return NULL;
 
-	if (narch) *narch = bin->nfat_arch;
+	if (narch) {
+		*narch = bin->nfat_arch;
+	}
 	if (!(ret = R_NEW0 (struct r_bin_fatmach0_arch_t))) {
 		perror ("malloc (ret)");
 		return NULL;
@@ -83,7 +89,9 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 }
 
 void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin) {
-	if (!bin) return NULL;
+	if (!bin) {
+		return NULL;
+	}
 	free (bin->archs);
 	r_buf_free (bin->b);
 	R_FREE (bin);

@@ -30,10 +30,11 @@ R_API RBuffer *r_buf_new(void);
 R_API RBuffer *r_buf_new_with_bytes(const ut8* bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_pointers(const ut8 *bytes, ut64 len);
 R_API RBuffer *r_buf_new_with_buf(RBuffer *b);
-R_API RBuffer *r_buf_new_file(const char *file);
+R_API RBuffer *r_buf_new_file(const char *file, bool newFile);
 R_API RBuffer *r_buf_new_slurp(const char *file);
 R_API RBuffer *r_buf_mmap(const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse();
+R_API bool r_buf_dump (RBuffer *buf, const char *file);
 /* methods */
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length);

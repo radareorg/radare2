@@ -72,6 +72,7 @@ static int rabin_show_help(int v) {
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -v              display version and quit\n"
 		" -x              extract bins contained in file\n"
+		" -X [fmt] [f] .. package in fat or zip the given files andbins contained in file\n"
 		" -z              strings (from data section)\n"
 		" -zz             strings (from raw bins [e bin.rawstr=1])\n"
 		" -zzz            dump raw strings to stdout (for huge files)\n"
@@ -538,7 +539,7 @@ int main(int argc, char **argv) {
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |= x
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeElRwO:o:pPqQrvLhuxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeElRwO:o:pPqQrvLhuxXzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (R_BIN_REQ_CLASSES);
@@ -621,6 +622,7 @@ int main(int argc, char **argv) {
 		case 'l': set_action (R_BIN_REQ_LIBS); break;
 		case 'R': set_action (R_BIN_REQ_RELOCS); break;
 		case 'x': set_action (R_BIN_REQ_EXTRACT); break;
+		case 'X': set_action (R_BIN_REQ_PACKAGE); break;
 		case 'w': rw = true; break;
 		case 'O':
 			op = optarg;
@@ -685,7 +687,7 @@ int main(int argc, char **argv) {
 			return rabin_show_help (0);
 		}
 		type = r_bin_demangle_type (do_demangle);
-		file = argv[optind +1];
+		file = argv[optind + 1];
 		if (!strcmp (file, "-")) {
 			for (;;) {
 				file = stdin_gets();
@@ -754,7 +756,7 @@ int main(int argc, char **argv) {
 			data = NULL;
 			datalen = 0;
 		}
-		code = malloc (strlen (p)+1);
+		code = malloc (strlen (p) + 1);
 		if (!code) {
 			r_core_fini (&core);
 			return 1;
@@ -802,6 +804,34 @@ int main(int argc, char **argv) {
 		}
 		eprintf ("Cannot open the '%s' library\n", file);
 		return 1;
+	}
+	if (action & R_BIN_REQ_PACKAGE) {
+		RList *files = r_list_newf (NULL);
+		const char *format = argv[optind];
+		const char *file = argv[optind + 1];
+		int i, rc = 0;
+
+		if (optind + 3 > argc) {
+			eprintf ("Usage: rabin2 -X [fat|zip] foo.zip a b c\n");
+			return 1;
+		}
+		eprintf ("FMT %s\n", format);
+		eprintf ("PKG %s\n", file);
+		for (i = optind + 2; i < argc; i++) {
+			eprintf ("ADD %s\n", argv[i]);
+			r_list_append (files, argv[i]);
+		}
+		RBuffer *buf = r_bin_package (core.bin, format, file, files);
+		/* TODO: return bool or something to catch errors\n") */
+		if (buf) {
+			bool ret = r_buf_dump (buf, file);
+			r_buf_free (buf);
+			if (!ret) {
+				rc = 1;
+			}
+		}
+		r_core_fini (&core);
+		return rc;
 	}
 
 	if (file && *file) {
@@ -889,8 +919,9 @@ int main(int argc, char **argv) {
 	filter.name = name;
 	r_cons_new ()->is_interactive = false;
 
-	if (isradjson) r_cons_print ("{");
-
+	if (isradjson) {
+		r_cons_print ("{");
+	}
 	// List fatmach0 sub-binaries, etc
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!r_bin_select (bin, arch, bits, arch_name))) {
@@ -997,10 +1028,12 @@ int main(int argc, char **argv) {
 			eprintf ("Cannot extract bins from '%s'. No supported plugins found!\n", bin->file);
 		}
 	}
-	if (op && action & R_BIN_REQ_OPERATION)
+	if (op && action & R_BIN_REQ_OPERATION) {
 		rabin_do_operation (op);
-	if (isradjson)
+	}
+	if (isradjson) {
 		printf ("}");
+	}
 	r_cons_flush ();
 	r_core_fini (&core);
 	free (stdin_buf);

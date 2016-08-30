@@ -3,8 +3,8 @@
 #include <r_util.h>
 #include <signal.h>
 
-static bool enabled = 0;
-static bool disabled = 0;
+static bool enabled = false;
+static bool disabled = false;
 
 /**
  * This function verifies that the given path is allowed. Paths are allowed only if they don't
@@ -68,16 +68,16 @@ R_API bool r_sandbox_disable (bool e) {
 }
 
 R_API bool r_sandbox_enable (bool e) {
-	if (enabled) return true;
+	if (enabled) {
+		return true;
+	}
 	enabled = !!e;
-
 #if LIBC_HAVE_PLEDGE
 	if (enabled && pledge ("stdio rpath tty prot_exec", NULL) == -1) {
 		eprintf ("sandbox: pledge call failed\n");
 		exit (1);
 	}
 #endif
-
 	return enabled;
 }
 
@@ -161,29 +161,29 @@ static char *expand_home(const char *p) {
 
 R_API int r_sandbox_lseek (int fd, ut64 addr, int whence) {
 	if (enabled) {
-		return lseek (fd, (off_t)addr, whence);
+		return -1;
 	}
-	return -1;
+	return lseek (fd, (off_t)addr, whence);
 }
 
 R_API int r_sandbox_read (int fd, ut8* buf, int len) {
-	return enabled? read (fd, buf, len): -1;
+	return enabled? -1 : read (fd, buf, len);
 }
 
 R_API int r_sandbox_write (int fd, const ut8* buf, int len) {
-	return enabled? write (fd, buf, len): -1;
+	return enabled? -1 : write (fd, buf, len);
 }
 
 R_API int r_sandbox_close (int fd) {
-	return enabled? close (fd): -1;
+	return enabled? -1 : close (fd);
 }
 
 /* perm <-> mode */
 R_API int r_sandbox_open (const char *path, int mode, int perm) {
-	int ret;
-	char *epath;
-	if (!path) return -1;
-	epath = expand_home (path);
+	if (!path) {
+		return -1;
+	}
+	char *epath = expand_home (path);
 #if __WINDOWS__
 	mode |= O_BINARY;
 #endif
@@ -195,7 +195,7 @@ R_API int r_sandbox_open (const char *path, int mode, int perm) {
 			return -1;
 		}
 	}
-	ret = open (epath, mode, perm);
+	int ret = open (epath, mode, perm);
 	free (epath);
 	return ret;
 }
