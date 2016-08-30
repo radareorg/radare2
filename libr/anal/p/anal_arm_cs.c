@@ -6,7 +6,7 @@
 #include <capstone/arm.h>
 #include "esil.h"
 /* arm64 */
-#define IMM64(x) insn->detail->arm64.operands[x].imm
+#define IMM64(x) (ut64)(insn->detail->arm64.operands[x].imm)
 
 /* arm32 */
 #define REG(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].reg))
@@ -24,7 +24,7 @@
 #define MEMINDEX64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
-#define MEMDISP64(x) insn->detail->arm64.operands[x].mem.disp
+#define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) insn->detail->arm.operands[x].type == ARM_OP_IMM
 #define ISIMM64(x) insn->detail->arm64.operands[x].type == ARM64_OP_IMM
 #define ISREG(x) insn->detail->arm.operands[x].type == ARM_OP_REG
@@ -192,7 +192,7 @@ static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n)
 		}
 		ut64 missing_ones = bitmask_by_width[index] << (REGSIZE64(n)*8 - LSHIFT2_64(n));
 		r_strbuf_appendf (sb, "%d,%s,%s,1,%s,<<<,1,&,?{,%"PFMT64u",}{,0,},|", 
-			LSHIFT2_64(n), REG64(n), DECODE_SHIFT64(n), REG64(n), missing_ones);
+			LSHIFT2_64(n), REG64(n), DECODE_SHIFT64(n), REG64(n), (ut64)missing_ones);
 	}
 }
 
@@ -266,7 +266,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_ADR:
 		// TODO: must be 21bit signed
 		r_strbuf_setf (&op->esil,
-			"%"PFMT64d",%s,=",IMM64(1), REG64(0));
+			"%"PFMT64d",%s,=", IMM64(1), REG64(0));
 		break;
 	case ARM64_INS_MADD:
 		r_strbuf_setf (&op->esil,
@@ -447,10 +447,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_STXRB:
 		if ((int)MEMDISP64(1) < 0) {
 			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,-,=[]",
-				REG64(0), -(int)MEMDISP64(1), MEMBASE64(1));
+				REG64(0), (ut64)-(int)MEMDISP64(1), MEMBASE64(1));
 		} else {
 			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,+,=[]",
-				REG64(0), MEMDISP64(1), MEMBASE64(1));
+				REG64(0), (ut64)MEMDISP64(1), MEMBASE64(1));
 		}
 		break;
 	case ARM64_INS_CBZ:
@@ -791,7 +791,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,>>,<<,+,[4],%s,=",
-					MEMDISP(1), pc, REG(0));
+					(ut64)MEMDISP(1), pc, REG(0));
 			} else {
 				int disp = MEMDISP(1);
 				// not refptr, because we cant grab the reg value statically op->refptr = 4;
@@ -865,7 +865,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_UBFX:
 		if (IMM (3)>0 && IMM (3)<=32-IMM (2)) {
 			r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64u",<<,&,>>,%s,=",
-				IMM (2),REG (1),IMM (2),bitmask_by_width[IMM (3)-1],REG (0));
+				IMM (2),REG (1),IMM (2),(ut64)bitmask_by_width[IMM (3)-1],REG (0));
 		}
 		break;
 	case ARM_INS_UXTB:
