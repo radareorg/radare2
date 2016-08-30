@@ -351,7 +351,7 @@ R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg);
 R_API const char *r_debug_reason_to_string(int type);
 
 /* wait for another event */
-R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp);
+R_API RDebugReasonType r_debug_wait(RCore *core, RDebug *dbg, RBreakpointItem **bp);
 
 /* continuations */
 R_API int r_debug_step(RDebug *dbg, int steps, RCore *core);

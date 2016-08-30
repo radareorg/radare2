@@ -37,8 +37,9 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
  * r_debug_bp_hit handles stage 1.
  * r_debug_recoil handles stage 2.
  */
-static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
+static int r_debug_bp_hit(RCore *core, RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
 	RBreakpointItem *b;
+	int showinfo = 0;
 
 	if (!pb) {
 		eprintf ("BreakpointItem is NULL!\n");
@@ -96,8 +97,11 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	dbg->reason.bp_addr = b->addr;
 
 	/* inform the user of what happened */
-	eprintf ("hit %spoint at: %"PFMT64x "\n",
-			b->trace ? "trace" : "break", pc);
+	showinfo = r_config_get_i (core->config, "cmd.bphitinfo");
+	if (showinfo) {
+		eprintf ("hit %spoint at: %"PFMT64x "\n",
+				b->trace ? "trace" : "break", pc);
+	}
 
 	/* now that we've cleaned up after the breakpoint, call the other
 	 * potential breakpoint handlers
@@ -546,7 +550,7 @@ R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg) {
  *
  * Returns  R_DEBUG_REASON_*
  */
-R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
+R_API RDebugReasonType r_debug_wait(RCore *core, RDebug *dbg, RBreakpointItem **bp) {
 	RDebugReasonType reason = R_DEBUG_REASON_ERROR;
 
 	if (!dbg) {
@@ -598,7 +602,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			/* get the value */
 			pc = r_reg_get_value (dbg->reg, pc_ri);
 
-			if (!r_debug_bp_hit (dbg, pc_ri, pc, &b)) {
+			if (!r_debug_bp_hit (core, dbg, pc_ri, pc, &b)) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
@@ -760,7 +764,7 @@ R_API int r_debug_step_hard(RDebug *dbg, RCore *core) {
 	if (!dbg->h->step (dbg)) {
 		return false;
 	}
-	reason = r_debug_wait (dbg, NULL);
+	reason = r_debug_wait (core, dbg, NULL);
 	/* TODO: handle better */
 	if (reason == R_DEBUG_REASON_ERROR) {
 		return false;
@@ -905,11 +909,12 @@ repeat:
 
 		//XXX(jjd): why? //dbg->reason.signum = 0;
 
-		reason = r_debug_wait (dbg, &bp);
+		reason = r_debug_wait (core, dbg, &bp);
 		if (reason == R_DEBUG_REASON_COND ) {
 			if (bp->cond) {
 				r_core_cmd0 (core, bp->cond);
 			}
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			if (core->num->value != 0) {
 				goto repeat;
 			}
@@ -1134,7 +1139,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc, RCore *core)
 #endif
 		dbg->h->contsc (dbg, dbg->pid, 0); // TODO handle return value
 		// wait until continuation
-		reason = r_debug_wait (dbg, NULL);
+		reason = r_debug_wait (core, dbg, NULL);
 		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 			break;
 		}
