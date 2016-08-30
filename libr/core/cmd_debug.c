@@ -84,7 +84,7 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 		eprintf ("Running child until next syscall\n");
 	}
 	r_reg_arena_swap (core->dbg->reg, true);
-	r_debug_continue_syscalls (core->dbg, syscalls, count);
+	r_debug_continue_syscalls (core->dbg, syscalls, count, core);
 	free (syscalls);
 }
 
@@ -208,7 +208,7 @@ static int step_until(RCore *core, ut64 addr) {
 			break;
 		if (r_debug_is_dead (core->dbg))
 			break;
-		r_debug_step (core->dbg, 1);
+		r_debug_step (core->dbg, 1, core);
 		off = r_debug_reg_get (core->dbg, "PC");
 		// check breakpoint here
 	} while (off != addr);
@@ -228,7 +228,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 			break;
 		if (r_debug_is_dead (core->dbg))
 			break;
-		r_debug_step (core->dbg, 1);
+		r_debug_step (core->dbg, 1, core);
 		r_debug_reg_sync (core->dbg, -1, 0);
 		if (r_anal_esil_condition (core->anal->esil, esilstr)) {
 			eprintf ("ESIL BREAK!\n");
@@ -256,7 +256,7 @@ static int step_until_inst(RCore *core, const char *instr) {
 			break;
 		if (r_debug_is_dead (core->dbg))
 			break;
-		r_debug_step (core->dbg, 1);
+		r_debug_step (core->dbg, 1, core);
 		r_debug_reg_sync (core->dbg, -1, 0);
 		/* TODO: disassemble instruction and strstr */
 		pc = r_debug_reg_get (core->dbg, "PC");
@@ -293,7 +293,7 @@ static int step_until_flag(RCore *core, const char *instr) {
 			break;
 		if (r_debug_is_dead (core->dbg))
 			break;
-		r_debug_step (core->dbg, 1);
+		r_debug_step (core->dbg, 1, core);
 		r_debug_reg_sync (core->dbg, -1, 0);
 		pc = r_debug_reg_get (core->dbg, "PC");
 		list = r_flag_get_list (core->flags, pc);
@@ -317,7 +317,7 @@ static int step_until_eof(RCore *core) {
 	do {
 		if (r_cons_singleton ()->breaked)
 			break;
-		if (!r_debug_step (core->dbg, 1))
+		if (!r_debug_step (core->dbg, 1, core))
 			break;
 		off = r_debug_reg_get (core->dbg, "SP");
 		// check breakpoint here
@@ -348,7 +348,7 @@ static int step_line(RCore *core, int times) {
 		find_meta = true;
 	}
 	do {
-		r_debug_step (core->dbg, 1);
+		r_debug_step (core->dbg, 1, core);
 		off = r_debug_reg_get (core->dbg, "PC");
 		if (!r_bin_addr2line (core->bin, off, file2, sizeof (file2), &line2)) {
 			if (find_meta)
@@ -513,7 +513,7 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 		r_bp_traptrace_enable (core->dbg->bp, true);
 		do {
 			ut8 buf[32];
-			r_debug_continue (core->dbg);
+			r_debug_continue (core->dbg, core);
 			addr = r_debug_reg_get (core->dbg, "PC");
 			if (addr == 0LL) {
 				eprintf ("pc=0\n");
@@ -1766,6 +1766,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbj", "", "List breakpoints in JSON format",
 		// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
 		"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
+		"dbC", " <addr> <cmd>", "Set breakpoint condition on command",
 		"dbd", " <addr>", "Disable breakpoint",
 		"dbe", " <addr>", "Enable breakpoint",
 		"dbs", " <addr>", "Toggle breakpoint",
@@ -2043,6 +2044,34 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 					   eprintf ("Use: dbc [addr] [command]\n");
 				   }
 				   break;
+		case 'C': // "dbC"
+				   if (input[2] == ' ') {
+					   char *inp = strdup (input + 3);
+					   if (inp) {
+						   char *arg = strchr (inp, ' ');
+						   if (arg) {
+							   *arg++ = 0;
+							   addr = r_num_math (core->num, inp);
+							   bpi = r_bp_get_at (core->dbg->bp, addr);
+							   if (bpi) {
+								   if (bpi->cond) {
+									free (bpi->cond);
+								   }
+								   bpi->cond = strdup (arg);
+							   } else {
+								   eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+							   }
+						   } else {
+							   eprintf ("Missing argument\n");
+						   }
+						   free (inp);
+					   } else {
+						   eprintf ("Cannot strdup. Your heap is fucked up\n");
+					   }
+				   } else {
+					   eprintf ("Use: dbc [addr] [command]\n");
+				   }
+				   break;
 		case 's': // "dbs"
 				   addr = r_num_math (core->num, input + 2);
 				   bpi = r_bp_get_at (core->dbg->bp, addr);
@@ -2267,9 +2296,9 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 			break;
 		if (r_debug_is_dead (dbg))
 			break;
-		if (debug_to != UT64_MAX && !r_debug_continue_until (dbg, debug_to))
+		if (debug_to != UT64_MAX && !r_debug_continue_until (dbg, debug_to, core))
 			break;
-		else if (!r_debug_step (dbg, 1))
+		else if (!r_debug_step (dbg, 1, core))
 			break;
 		debug_to = UT64_MAX;
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false))
@@ -2288,7 +2317,7 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 					// store regs
 					// step into
 					// get pc
-					r_debug_step (dbg, 1);
+					r_debug_step (dbg, 1, core);
 					r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 					called_addr = r_debug_reg_get (dbg, "PC");
 					called_in_range = called_addr >= from && called_addr < to;
@@ -2317,7 +2346,7 @@ static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_ad
 			case R_ANAL_OP_TYPE_RET:
 #if 0
 				// TODO: we must store ret value for each call in the graph path to do this check
-				r_debug_step (dbg, 1);
+				r_debug_step (dbg, 1, core);
 				r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 				addr = r_debug_reg_get (dbg, "PC");
 				// TODO: step into and check return address if correct
@@ -2432,7 +2461,7 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 				while (addr != fin) {
 					r_debug_esil_prestep (core->dbg, r_config_get_i (
 								core->config, "esil.prestep"));
-					r_debug_esil_step (core->dbg, 1);
+					r_debug_esil_step (core->dbg, 1, core);
 					naddr = r_debug_reg_get (core->dbg, "PC");
 					if (naddr == addr) {
 						eprintf ("Detected loophole\n");
@@ -2452,7 +2481,7 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 				r_core_cmd0 (core, "aei");
 				r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
 				// continue
-				r_debug_esil_step (core->dbg, r_num_math (core->num, input + 1));
+				r_debug_esil_step (core->dbg, r_num_math (core->num, input + 1), core);
 			}
 			break;
 		case 'c':
@@ -2461,7 +2490,7 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 			} else {
 				r_core_cmd0 (core, "aei");
 				r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
-				r_debug_esil_continue (core->dbg);
+				r_debug_esil_continue (core->dbg, core);
 			}
 			break;
 		case 0:
@@ -2645,7 +2674,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		do {
 			if (r_cons_is_breaked ())
 				break;
-			r_debug_step (core->dbg, 1);
+			r_debug_step (core->dbg, 1, core);
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			pc = r_debug_reg_get (core->dbg, "PC");
 			eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
@@ -2657,7 +2686,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		eprintf ("Continue until 0x%08"PFMT64x" using %d bpsize\n", addr, core->dbg->bpsize);
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC);
-		r_debug_continue (core->dbg);
+		r_debug_continue (core->dbg, core);
 		r_bp_del (core->dbg->bp, addr);
 	}
 	return true;
@@ -2691,7 +2720,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	switch (input[1]) {
 		case 0: // "dc"
 			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_continue (core->dbg);
+			r_debug_continue (core->dbg, core);
 			break;
 		case 'a': // "dca"
 			eprintf ("TODO: dca\n");
@@ -2706,14 +2735,14 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		case 'c': // "dcc"
 			r_reg_arena_swap (core->dbg->reg, true);
 			if (input[2] == 'u') {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
+				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0, core);
 			} else {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0, core);
 			}
 			break;
 		case 'r':
 			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1, core);
 			break;
 		case 'k':
 			// select pid and r_debug_continue_kill (core->dbg,
@@ -2727,10 +2756,10 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 				int tid = pid; // XXX
 				*ptr = 0;
 				r_debug_select (core->dbg, pid, tid);
-				r_debug_continue_kill (core->dbg, signum);
+				r_debug_continue_kill (core->dbg, signum, core);
 				r_debug_select (core->dbg, old_pid, old_tid);
 			} else {
-				r_debug_continue_kill (core->dbg, signum);
+				r_debug_continue_kill (core->dbg, signum, core);
 			}
 			break;
 		case 's':
@@ -2763,7 +2792,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 				core->dbg->trace->enabled = 0;
 				r_cons_break (static_debug_stop, core->dbg);
 				do {
-					r_debug_step (core->dbg, 1);
+					r_debug_step (core->dbg, 1, core);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 					pc = r_debug_reg_get (core->dbg, "PC");
 					eprintf (" %d %"PFMT64x"\r", n++, pc);
@@ -2784,7 +2813,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			pid = atoi (input + 2);
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_select (core->dbg, pid, core->dbg->tid);
-			r_debug_continue (core->dbg);
+			r_debug_continue (core->dbg, core);
 			r_debug_select (core->dbg, old_pid, core->dbg->tid);
 			break;
 		case 't':
@@ -2838,7 +2867,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			// sync registers for BSD PT_STEP/PT_CONT
 			// XXX(jjd): is this necessary?
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-			r_debug_step (core->dbg, times);
+			r_debug_step (core->dbg, times, core);
 			break;
 		case 'i':
 			if (input[2] == ' ') {
@@ -2847,7 +2876,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				do {
 					if (r_cons_singleton ()->breaked)
 						break;
-					r_debug_step (core->dbg, 1);
+					r_debug_step (core->dbg, 1, core);
 					if (r_debug_is_dead (core->dbg))
 						break;
 					r_core_cmd0 (core, ".dr*");
@@ -2893,11 +2922,11 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				if (aop.type == R_ANAL_OP_TYPE_CALL) {
 					RIOSection *s = r_io_section_vget (core->io, aop.jump);
 					if (!s) {
-						r_debug_step_over (core->dbg, times);
+						r_debug_step_over (core->dbg, times, core);
 						continue;
 					}
 				}
-				r_debug_step (core->dbg, 1);
+				r_debug_step (core->dbg, 1, core);
 			}
 			break;
 		case 's':
@@ -2930,7 +2959,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				sprintf(delb, "db 0x%"PFMT64x"", addr);
 				r_bp_del (core->dbg->bp, addr);
 				r_reg_arena_swap (core->dbg->reg, true);
-				r_debug_step_over (core->dbg, times);
+				r_debug_step_over (core->dbg, times, core);
 				if (bpi) r_core_cmd0 (core, delb);
 				break;
 			}
@@ -3216,7 +3245,7 @@ static int cmd_debug(void *data, const char *input) {
 						if (acode && *acode->buf_hex) {
 							r_reg_arena_push (core->dbg->reg);
 							r_debug_execute (core->dbg, acode->buf,
-									acode->len, 0);
+									acode->len, 0, core);
 							r_reg_arena_pop (core->dbg->reg);
 						}
 						r_asm_code_free (acode);
@@ -3236,7 +3265,7 @@ static int cmd_debug(void *data, const char *input) {
 						b = r_egg_get_bin (egg);
 						r_asm_set_pc (core->assembler, core->offset);
 						r_reg_arena_push (core->dbg->reg);
-						r_debug_execute (core->dbg, b->buf, b->length, 0);
+						r_debug_execute (core->dbg, b->buf, b->length, 0, core);
 						r_reg_arena_pop (core->dbg->reg);
 					}
 					break;
@@ -3262,7 +3291,7 @@ static int cmd_debug(void *data, const char *input) {
 							if (bytes_len > 0) {
 								r_debug_execute (core->dbg,
 										bytes, bytes_len,
-										0);
+										0, core);
 							} else {
 								eprintf ("Invalid hexpairs\n");
 							}
@@ -3276,7 +3305,7 @@ static int cmd_debug(void *data, const char *input) {
 						if (strlen (input + 2) < 4096){
 							int bytes_len = r_hex_str2bin (input + 2, bytes);
 							if (bytes_len>0) r_debug_execute (core->dbg,
-									bytes, bytes_len, 0);
+									bytes, bytes_len, 0, core);
 							else eprintf ("Invalid hexpairs\n");
 						} else eprintf ("Injection opcodes so long\n");
 					}

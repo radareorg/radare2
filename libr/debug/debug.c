@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, jduck, TheLemonMan */
 
 #include <r_debug.h>
+#include <r_core.h>
 #include <signal.h>
 
 #if __WINDOWS__
@@ -131,7 +132,7 @@ static int r_debug_bps_enable(RDebug *dbg) {
  *
  * if the user wants to step, the single step here does the job.
  */
-static int r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode) {
+static int r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode, RCore *core) {
 	/* if bp_addr is not set, we must not have actually hit a breakpoint */
 	if (!dbg->reason.bp_addr) {
 		return r_debug_bps_enable (dbg);
@@ -159,7 +160,7 @@ static int r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode) {
 	dbg->recoil_mode = rc_mode;
 
 	/* step over the place with the breakpoint and let the caller resume */
-	if (r_debug_step (dbg, 1) != 1) {
+	if (r_debug_step (dbg, 1, core) != 1) {
 		return false;
 	}
 
@@ -400,7 +401,7 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
  * TODO: Add support for reverse stack architectures
  * Also known as r_debug_inject()
  */
-R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
+R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore, RCore *core) {
 	int orig_sz;
 	ut8 stackbackup[4096];
 	ut8 *backup, *orig = NULL;
@@ -433,7 +434,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		/* execute code here */
 		dbg->iob.write_at (dbg->iob.io, rpc, buf, len);
 		//r_bp_add_sw (dbg->bp, rpc+len, 4, R_BP_PROT_EXEC);
-		r_debug_continue (dbg);
+		r_debug_continue (dbg,core);
 		//r_bp_del (dbg->bp, rpc+len);
 		/* TODO: check if stopped in breakpoint or not */
 
@@ -545,11 +546,15 @@ R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg) {
  *
  * Returns  R_DEBUG_REASON_*
  */
-R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
+R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 	RDebugReasonType reason = R_DEBUG_REASON_ERROR;
 
 	if (!dbg) {
 		return reason;
+	}
+
+	if (bp) {
+		*bp = NULL;
 	}
 
 	/* default to unknown */
@@ -599,6 +604,12 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
 
 			/* if we hit a tracing breakpoint, we need to continue in
 			 * whatever mode the user desired. */
+			if (b && b->cond) {
+				if (bp) {
+					*bp = b;
+				}
+				reason = R_DEBUG_REASON_COND;
+			}
 			if (b && b->trace) {
 				reason = R_DEBUG_REASON_TRACEPOINT;
 			}
@@ -619,7 +630,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
 	return reason;
 }
 
-R_API int r_debug_step_soft(RDebug *dbg) {
+R_API int r_debug_step_soft(RDebug *dbg, RCore *core) {
 	ut8 buf[32];
 	ut64 pc, sp, r;
 	ut64 next[2];
@@ -715,7 +726,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		}
 	}
 
-	ret = r_debug_continue (dbg);
+	ret = r_debug_continue (dbg, core);
 
 	for (i = 0; i < br; i++) {
 		r_bp_del (dbg->bp, next[i]);
@@ -724,7 +735,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	return ret;
 }
 
-R_API int r_debug_step_hard(RDebug *dbg) {
+R_API int r_debug_step_hard(RDebug *dbg, RCore *core) {
 	RDebugReasonType reason;
 
 	dbg->reason.type = R_DEBUG_REASON_STEP;
@@ -735,7 +746,7 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 	/* only handle recoils when not already in recoil mode. */
 	if (dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 		/* handle the stage-2 of breakpoints */
-		if (!r_debug_recoil (dbg, R_DBG_RECOIL_STEP)) {
+		if (!r_debug_recoil (dbg, R_DBG_RECOIL_STEP, core)) {
 			return false;
 		}
 
@@ -749,7 +760,7 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 	if (!dbg->h->step (dbg)) {
 		return false;
 	}
-	reason = r_debug_wait (dbg);
+	reason = r_debug_wait (dbg, NULL);
 	/* TODO: handle better */
 	if (reason == R_DEBUG_REASON_ERROR) {
 		return false;
@@ -760,7 +771,7 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 	return true;
 }
 
-R_API int r_debug_step(RDebug *dbg, int steps) {
+R_API int r_debug_step(RDebug *dbg, int steps, RCore *core) {
 	int ret, steps_taken = 0;
 
 	/* who calls this without giving a positive number? */
@@ -780,9 +791,9 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 
 	for (; steps_taken < steps; steps_taken++) {
 		if (dbg->swstep) {
-			ret = r_debug_step_soft (dbg);
+			ret = r_debug_step_soft (dbg, core);
 		} else {
-			ret = r_debug_step_hard (dbg);
+			ret = r_debug_step_hard (dbg, core);
 		}
 		if (!ret) {
 			eprintf ("Stepping failed!\n");
@@ -800,7 +811,7 @@ R_API void r_debug_io_bind(RDebug *dbg, RIO *io) {
 	r_io_bind (io, &dbg->iob);
 }
 
-R_API int r_debug_step_over(RDebug *dbg, int steps) {
+R_API int r_debug_step_over(RDebug *dbg, int steps, RCore *core) {
 	RAnalOp op;
 	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
@@ -851,26 +862,27 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			op.type == R_ANAL_OP_TYPE_CCALL ||
 			op.type == R_ANAL_OP_TYPE_UCALL ||
 			op.type == R_ANAL_OP_TYPE_UCCALL) {
-			if (!r_debug_continue_until (dbg, ins_size)) {
+			if (!r_debug_continue_until (dbg, ins_size, core)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return steps_taken;
 			}
 		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
 			//eprintf ("REP: skip to next instruction...\n");
-			if (!r_debug_continue_until (dbg, ins_size)) {
+			if (!r_debug_continue_until (dbg, ins_size, core)) {
 				eprintf ("step over failed over rep\n");
 				return steps_taken;
 			}
 		} else {
-			r_debug_step (dbg, 1);
+			r_debug_step (dbg, 1, core);
 		}
 	}
 
 	return steps_taken;
 }
 
-R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
+R_API int r_debug_continue_kill(RDebug *dbg, int sig, RCore *core) {
 	RDebugReasonType reason, ret = false;
+	RBreakpointItem *bp = NULL;
 
 	if (!dbg) {
 		return false;
@@ -885,7 +897,7 @@ repeat:
 	}
 	if (dbg->h && dbg->h->cont) {
 		/* handle the stage-2 of breakpoints */
-		if (!r_debug_recoil (dbg, R_DBG_RECOIL_CONTINUE))
+		if (!r_debug_recoil (dbg, R_DBG_RECOIL_CONTINUE, core))
 			return false;
 
 		/* tell the inferior to go! */
@@ -893,7 +905,16 @@ repeat:
 
 		//XXX(jjd): why? //dbg->reason.signum = 0;
 
-		reason = r_debug_wait (dbg);
+		reason = r_debug_wait (dbg, &bp);
+		if (reason == R_DEBUG_REASON_COND ) {
+			if (bp->cond) {
+				r_core_cmd0 (core, bp->cond);
+			}
+			if (core->num->value != 0) {
+				goto repeat;
+			}
+		}
+
 
 #if __WINDOWS__
 		if (reason != R_DEBUG_REASON_DEAD) {
@@ -915,7 +936,7 @@ repeat:
 		/* if we hit a tracing breakpoint, we need to continue in
 		 * whatever mode the user desired. */
 		if (reason == R_DEBUG_REASON_TRACEPOINT) {
-			r_debug_step (dbg, 1);
+			r_debug_step (dbg, 1, core);
 			goto repeat;
 		}
 
@@ -955,16 +976,16 @@ repeat:
 	return ret;
 }
 
-R_API int r_debug_continue(RDebug *dbg) {
-	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
+R_API int r_debug_continue(RDebug *dbg, RCore *core) {
+	return r_debug_continue_kill (dbg, 0, core); //dbg->reason.signum);
 }
 
-R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
+R_API int r_debug_continue_until_nontraced(RDebug *dbg, RCore *core) {
 	eprintf ("TODO\n");
 	return false;
 }
 
-R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
+R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over, RCore *core) {
 	int ret, n = 0;
 	ut64 pc, buf_pc = 0;
 	RAnalOp op;
@@ -979,7 +1000,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 		return false;
 	}
 
-	r_debug_step (dbg, 1);
+	r_debug_step (dbg, 1, core);
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 
 	// Initial refill
@@ -1006,8 +1027,8 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			break;
 		// Step over and repeat
 		ret = over
-			? r_debug_step_over (dbg, 1)
-			: r_debug_step (dbg, 1);
+			? r_debug_step_over (dbg, 1, core)
+			: r_debug_step (dbg, 1, core);
 
 		if (!ret) {
 			eprintf ("r_debug_step: failed\n");
@@ -1019,7 +1040,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	return n;
 }
 
-R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
+R_API int r_debug_continue_until(RDebug *dbg, ut64 addr, RCore *core) {
 	int has_bp;
 	ut64 pc;
 
@@ -1040,7 +1061,7 @@ R_API int r_debug_continue_until(RDebug *dbg, ut64 addr) {
 			break;
 		if (r_bp_get_at (dbg->bp, pc))
 			break;
-		r_debug_continue (dbg);
+		r_debug_continue (dbg, core);
 	}
 	// Clean up if needed
 	if (!has_bp) {
@@ -1080,13 +1101,13 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	return reg;
 }
 
-R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
+R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc, RCore *core) {
 	int i, err, reg, ret = false;
 	if (!dbg || !dbg->h || r_debug_is_dead (dbg))
 		return false;
 	if (!dbg->h->contsc) {
 		/* user-level syscall tracing */
-		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
+		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0, core);
 		return show_syscall (dbg, "A0");
 	}
 
@@ -1109,11 +1130,11 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		/* XXX(jjd): actually one stop is before the syscall, the other is
 		 * after.  this allows you to inspect the arguments before and the
 		 * return value after... */
-		r_debug_step (dbg, 1);
+		r_debug_step (dbg, 1, core);
 #endif
 		dbg->h->contsc (dbg, dbg->pid, 0); // TODO handle return value
 		// wait until continuation
-		reason = r_debug_wait (dbg);
+		reason = r_debug_wait (dbg, NULL);
 		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 			break;
 		}
@@ -1142,12 +1163,12 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	return ret;
 }
 
-R_API int r_debug_continue_syscall(RDebug *dbg, int sc) {
-	return r_debug_continue_syscalls (dbg, &sc, 1);
+R_API int r_debug_continue_syscall(RDebug *dbg, int sc, RCore *core) {
+	return r_debug_continue_syscalls (dbg, &sc, 1, core);
 }
 
 // TODO: remove from here? this is code injection!
-R_API int r_debug_syscall(RDebug *dbg, int num) {
+R_API int r_debug_syscall(RDebug *dbg, int num ) {
 	bool ret = true;
 	if (dbg->h->contsc) {
 		ret = dbg->h->contsc (dbg, dbg->pid, num);
