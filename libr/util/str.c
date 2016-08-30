@@ -779,9 +779,7 @@ R_API char *r_str_word_get_first(const char *text) {
 }
 
 R_API const char *r_str_get(const char *str) {
-	if (str == NULL)
-		return nullstr_c;
-	return str;
+	return str? str: nullstr_c;
 }
 
 R_API char *r_str_ndup(const char *ptr, int len) {
