@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016 - pancake, esanfelix, pof */
 
 /* XXX this must be specified by the user/rom? */
 #define UPPER_LIMIT 0x400000
@@ -8,6 +8,8 @@
 #define BITSWAP8(val,B7,B6,B5,B4,B3,B2,B1,B0) \
         ((BIT(val,B7) << 7) | (BIT(val,B6) << 6) | (BIT(val,B5) << 5) | (BIT(val,B4) << 4) | \
 	(BIT(val,B3) << 3) | (BIT(val,B2) << 2) | (BIT(val,B1) << 1) | (BIT(val,B0) << 0))
+
+static int flag = 0;
 
 // license:BSD-3-Clause
 // copyright-holders:Paul Leaman, Andreas Naive, Nicola Salmoria,Charles MacDonald
@@ -600,7 +602,7 @@ static void optimise_sboxes(struct optimised_sbox* out, const struct sbox* in) {
 	}
 }
 
-static void cps2_decrypt(const ut16 *rom, ut16 *dec, int length, const ut32 *master_key, ut32 upper_limit) {
+static void cps2_crypt(const ut16 *rom, ut16 *dec, int length, const ut32 *master_key, ut32 upper_limit) {
 	int i;
 	ut32 key1[4];
 	struct optimised_sbox sboxes1[4*4];
@@ -635,13 +637,14 @@ static void cps2_decrypt(const ut16 *rom, ut16 *dec, int length, const ut32 *mas
 		ut32 key2[4];
 
 		if ((i & 0xff) == 0) {
-			eprintf ("Decrypting %d%%\r", i*100/0x10000);
+			eprintf ("Crypting %d%%\r", i*100/0x10000);
 		}
 
 		// pass the address through FN1
 		seed = feistel(i, fn1_groupA, fn1_groupB,
 				&sboxes1[0*4], &sboxes1[1*4], &sboxes1[2*4], &sboxes1[3*4],
 				key1[0], key1[1], key1[2], key1[3]);
+
 
 		// expand the result to 64-bit
 		expand_subkey (subkey, seed);
@@ -663,12 +666,21 @@ static void cps2_decrypt(const ut16 *rom, ut16 *dec, int length, const ut32 *mas
 		key2[2] ^= BIT(key2[2], 7) << 11;
 		key2[3] ^= BIT(key2[3], 1) <<  5;
 
-		// decrypt the opcodes
+		// en/decrypt the opcodes
 		for (a = i; a < length/2 && a < upper_limit/2; a += 0x10000) {
-			dec[a] = feistel(rom[a], fn2_groupA, fn2_groupB,
-				&sboxes2[0*4], &sboxes2[1*4], &sboxes2[2*4], &sboxes2[3*4],
-				key2[0], key2[1], key2[2], key2[3]);
-			dec[a] = r_read_be16 (&dec[a]);
+			if (flag == 0) {
+				/* encrypt */
+				dec[a] = r_read_be16 (&rom[a]);
+				dec[a] = feistel(dec[a], fn2_groupA, fn2_groupB,
+					&sboxes2[3*4], &sboxes2[2*4], &sboxes2[1*4], &sboxes2[0*4],
+					key2[3], key2[2], key2[1], key2[0]);
+			} else {
+				/* decrypt */
+				dec[a] = feistel(rom[a], fn2_groupA, fn2_groupB,
+					&sboxes2[0*4], &sboxes2[1*4], &sboxes2[2*4], &sboxes2[3*4],
+					key2[0], key2[1], key2[2], key2[3]);
+				dec[a] = r_read_be16 (&dec[a]);
+			}
 		}
 		// copy the unencrypted part
 		while (a < length/2) {
@@ -706,6 +718,7 @@ main(cps_state,cps2crypt) {
 static ut32 cps2key[2] = {0};
 
 static int set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+	flag = direction;
 	if (keylen == 8) {
 		/* fix key endianness */
 		const ut32 *key32 = (const ut32*)key;
@@ -728,7 +741,7 @@ static bool cps2_use(const char *algo) {
 static int update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *output = calloc (1, len);
 	/* TODO : control decryption errors */
-	cps2_decrypt ((const ut16 *)buf, (ut16*)output, len, cps2key, UPPER_LIMIT);
+	cps2_crypt ((const ut16 *)buf, (ut16*)output, len, cps2key, UPPER_LIMIT);
 	r_crypto_append (cry, output, len);
 	free (output);
 	return true;
