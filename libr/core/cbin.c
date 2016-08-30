@@ -464,7 +464,27 @@ R_API void r_core_anal_type_init(RCore *core) {
 	}
 }
 
+static int save_ptr(void *p, const char *k, const char *v) {
+	Sdb *sdbs[2];
+	sdbs[0] = ((Sdb**) p)[0];
+	sdbs[1] = ((Sdb**) p)[1];
+	if (!strncmp (v, "cc", strlen("cc") + 1)) {
+		const char *x = sdb_const_get (sdbs[1], sdb_fmt (-1, "cc.%s.name", k), 0);
+		char *tmp = sdb_fmt (-1, "0x%08"PFMT64x, (ut64)x);
+		sdb_set (sdbs[0], tmp, x, 0);
+	}
+	return 1;
+}
+
 R_API void r_core_anal_cc_init(RCore *core) {
+	Sdb *sdbs[2];
+	sdbs[0] = sdb_new0 ();
+	sdbs[1] = core->anal->sdb_cc;
+	//save pointers and values stored inside them
+	//to recover from freeing heeps
+	const char *defaultcc = sdb_const_get (sdbs[1], "default.cc", 0);
+	sdb_set (sdbs[0], sdb_fmt (-1, "0x%08"PFMT64x, defaultcc), defaultcc, 0);
+	sdb_foreach (core->anal->sdb_cc, save_ptr, sdbs);
 	sdb_reset ( core->anal->sdb_cc);
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 
@@ -477,6 +497,21 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (core->anal->sdb_cc, dbpath);
 	}
+	//restore all freed CC or replace with new default cc
+	RListIter *it;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, it, fcn) {
+		char *ptr = sdb_fmt (-1, "0x%08"PFMT64x, (ut64)fcn->cc);
+		const char *cc = sdb_const_get (sdbs[0], ptr, 0);
+		if (cc) {
+			fcn->cc = r_anal_cc_to_constant (core->anal, (char *)cc);
+		}
+		if (!fcn->cc) {
+			fcn->cc = r_anal_cc_default (core->anal);
+		}
+	}
+	sdb_close (sdbs[0]);
+	sdb_free (sdbs[0]);
 }
 #undef DBSPATH
 
