@@ -328,9 +328,6 @@ typedef struct r_debug_pid_t {
 	ut64 pc;
 } RDebugPid;
 
-struct r_core_t;
-typedef struct r_core_t RCore;
-
 /*
  * Radare's debugger has both an external and internal API.
  *
@@ -351,18 +348,18 @@ R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg);
 R_API const char *r_debug_reason_to_string(int type);
 
 /* wait for another event */
-R_API RDebugReasonType r_debug_wait(RCore *core, RDebug *dbg, RBreakpointItem **bp);
+R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp);
 
 /* continuations */
-R_API int r_debug_step(RDebug *dbg, int steps, RCore *core);
-R_API int r_debug_step_over(RDebug *dbg, int steps, RCore *core);
-R_API int r_debug_continue_until(RDebug *dbg, ut64 addr, RCore *core);
-R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over, RCore *core);
-R_API int r_debug_continue_until_nontraced(RDebug *dbg, RCore *core);
-R_API int r_debug_continue_syscall(RDebug *dbg, int sc, RCore *core);
-R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc, RCore *core);
-R_API int r_debug_continue(RDebug *dbg, RCore *core);
-R_API int r_debug_continue_kill(RDebug *dbg, int signal, RCore *core);
+R_API int r_debug_step(RDebug *dbg, int steps);
+R_API int r_debug_step_over(RDebug *dbg, int steps);
+R_API int r_debug_continue_until(RDebug *dbg, ut64 addr);
+R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over);
+R_API int r_debug_continue_until_nontraced(RDebug *dbg);
+R_API int r_debug_continue_syscall(RDebug *dbg, int sc);
+R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc);
+R_API int r_debug_continue(RDebug *dbg);
+R_API int r_debug_continue_kill(RDebug *dbg, int signal);
 
 /* process/thread handling */
 R_API int r_debug_select(RDebug *dbg, int pid, int tid);
@@ -431,7 +428,7 @@ R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err);
 
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io);
-R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore, RCore *core);
+R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore);
 R_API int r_debug_map_sync(RDebug *dbg);
 
 R_API int r_debug_stop(RDebug *dbg);
@@ -471,9 +468,9 @@ R_API int r_debug_drx_unset(RDebug *dbg, int idx);
 
 /* esil */
 R_API ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok);
-R_API int r_debug_esil_stepi(RDebug *dbg, RCore *core);
-R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count, RCore *core);
-R_API ut64 r_debug_esil_continue(RDebug *dbg, RCore *core);
+R_API int r_debug_esil_stepi(RDebug *dbg);
+R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count);
+R_API ut64 r_debug_esil_continue(RDebug *dbg);
 R_API void r_debug_esil_watch(RDebug *dbg, int rwx, int dev, const char *expr);
 R_API void r_debug_esil_watch_reset(RDebug *dbg);
 R_API void r_debug_esil_watch_list(RDebug *dbg);

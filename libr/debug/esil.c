@@ -204,7 +204,7 @@ R_API void r_debug_esil_prestep (RDebug *d, int p) {
 	prestep = p;
 }
 
-R_API int r_debug_esil_stepi (RDebug *d, RCore *core) {
+R_API int r_debug_esil_stepi (RDebug *d) {
 	RAnalOp op;
 	ut8 obuf[64];
 	int ret = 1;
@@ -231,7 +231,7 @@ R_API int r_debug_esil_stepi (RDebug *d, RCore *core) {
 	if (prestep) {
 		// required when a exxpression is like <= == ..
 		// otherwise it will stop at the next instruction
-		if (r_debug_step (dbg, 1, core)<1) {
+		if (r_debug_step (dbg, 1)<1) {
 			eprintf ("Step failed\n");
 			return 0;
 		}
@@ -254,7 +254,7 @@ R_API int r_debug_esil_stepi (RDebug *d, RCore *core) {
 	}
 	if (!prestep) {
 		if (ret && !has_match) {
-			if (r_debug_step (dbg, 1, core)<1) {
+			if (r_debug_step (dbg, 1)<1) {
 				eprintf ("Step failed\n");
 				return 0;
 			}
@@ -265,7 +265,7 @@ R_API int r_debug_esil_stepi (RDebug *d, RCore *core) {
 	return ret;
 }
 
-R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count, RCore *core) {
+R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 	count++;
 	has_match = 0;
 	r_cons_break (NULL, NULL);
@@ -283,13 +283,13 @@ R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count, RCore *core) {
 				break;
 			}
 		}
-	} while (r_debug_esil_stepi (dbg, core));
+	} while (r_debug_esil_stepi (dbg));
 	r_cons_break_end ();
 	return opc;
 }
 
-R_API ut64 r_debug_esil_continue (RDebug *dbg, RCore *core) {
-	return r_debug_esil_step (dbg, UT32_MAX, core);
+R_API ut64 r_debug_esil_continue (RDebug *dbg) {
+	return r_debug_esil_step (dbg, UT32_MAX);
 }
 
 static void ewps_free(EsilBreak *ew) {
