@@ -13,12 +13,8 @@ static void r_bp_item_free (RBreakpointItem *b) {
 	free (b->bbytes);
 	free (b->obytes);
 	free (b->module_name);
-        if (b->data) {
-            free (b->data);
-        }
-        if (b->cond) {
-            free (b->cond);
-        }
+	free (b->data);
+	free (b->cond);
 	free (b);
 }
 
