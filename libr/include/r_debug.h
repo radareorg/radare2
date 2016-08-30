@@ -12,6 +12,7 @@
 #include <r_syscall.h>
 #include "list.h"
 
+#include <r_config.h>
 #include "r_bind.h"
 #ifdef __cplusplus
 extern "C" {

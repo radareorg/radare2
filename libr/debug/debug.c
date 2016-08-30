@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
-#include <r_core.h>
+#include <r_config.h>
 #include <signal.h>
 
 #if __WINDOWS__
@@ -39,7 +39,6 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
  */
 static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
 	RBreakpointItem *b;
-	RCore *core = (RCore *)dbg->corebind.core;
 	int showinfo = 1;
 
 	if (!pb) {
@@ -98,8 +97,8 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	dbg->reason.bp_addr = b->addr;
 
 	/* inform the user of what happened */
-	if (core) {
-		showinfo = r_config_get_i (core->config, "cmd.hitinfo");
+	if (dbg->corebind.config) {
+		showinfo = r_config_get_i (dbg->corebind.config, "cmd.hitinfo");
 	}
 	if (showinfo) {
 		eprintf ("hit %spoint at: %"PFMT64x "\n",
@@ -914,13 +913,12 @@ repeat:
 
 		reason = r_debug_wait (dbg, &bp);
 		if (dbg->corebind.core) {
-			RCore *core = dbg->corebind.core;
+			RNum *num = dbg->corebind.num;
 			if (reason == R_DEBUG_REASON_COND ) {
 				if (bp->cond) {
-					dbg->corebind.cmd (core, bp->cond);
+					dbg->corebind.cmd (dbg->corebind.core, bp->cond);
 				}
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-				if (core->num->value != 0) {
+				if (num->value != 0) {
 					goto repeat;
 				}
 			}
