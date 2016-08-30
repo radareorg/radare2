@@ -9,7 +9,10 @@
         ((BIT(val,B7) << 7) | (BIT(val,B6) << 6) | (BIT(val,B5) << 5) | (BIT(val,B4) << 4) | \
 	(BIT(val,B3) << 3) | (BIT(val,B2) << 2) | (BIT(val,B1) << 1) | (BIT(val,B0) << 0))
 
-static int flag = 0;
+#include <r_lib.h>
+#include <r_crypto.h>
+
+static bool crypt_direction;
 
 // license:BSD-3-Clause
 // copyright-holders:Paul Leaman, Andreas Naive, Nicola Salmoria,Charles MacDonald
@@ -124,9 +127,6 @@ all regions of the game. The watchdog instructions are listed alongside
 the decryption keys.
 
 *******************************************************************************/
-
-#include <r_crypto.h>
-
 /******************************************************************************/
 
 static const int fn1_groupA[8] = { 10, 4, 6, 7, 2, 13, 15, 14 };
@@ -645,7 +645,6 @@ static void cps2_crypt(const ut16 *rom, ut16 *dec, int length, const ut32 *maste
 				&sboxes1[0*4], &sboxes1[1*4], &sboxes1[2*4], &sboxes1[3*4],
 				key1[0], key1[1], key1[2], key1[3]);
 
-
 		// expand the result to 64-bit
 		expand_subkey (subkey, seed);
 
@@ -666,20 +665,20 @@ static void cps2_crypt(const ut16 *rom, ut16 *dec, int length, const ut32 *maste
 		key2[2] ^= BIT(key2[2], 7) << 11;
 		key2[3] ^= BIT(key2[3], 1) <<  5;
 
-		// en/decrypt the opcodes
+		// de/en-crypt the opcodes
 		for (a = i; a < length/2 && a < upper_limit/2; a += 0x10000) {
-			if (flag == 0) {
-				/* encrypt */
-				dec[a] = r_read_be16 (&rom[a]);
-				dec[a] = feistel(dec[a], fn2_groupA, fn2_groupB,
-					&sboxes2[3*4], &sboxes2[2*4], &sboxes2[1*4], &sboxes2[0*4],
-					key2[3], key2[2], key2[1], key2[0]);
-			} else {
+			if (crypt_direction) {
 				/* decrypt */
-				dec[a] = feistel(rom[a], fn2_groupA, fn2_groupB,
+				dec[a] = feistel (rom[a], fn2_groupA, fn2_groupB,
 					&sboxes2[0*4], &sboxes2[1*4], &sboxes2[2*4], &sboxes2[3*4],
 					key2[0], key2[1], key2[2], key2[3]);
 				dec[a] = r_read_be16 (&dec[a]);
+			} else {
+				/* encrypt */
+				dec[a] = r_read_be16 (&rom[a]);
+				dec[a] = feistel (dec[a], fn2_groupA, fn2_groupB,
+					&sboxes2[3*4], &sboxes2[2*4], &sboxes2[1*4], &sboxes2[0*4],
+					key2[3], key2[2], key2[1], key2[0]);
 			}
 		}
 		// copy the unencrypted part
@@ -718,7 +717,7 @@ main(cps_state,cps2crypt) {
 static ut32 cps2key[2] = {0};
 
 static int set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
+	crypt_direction = (direction != 0);
 	if (keylen == 8) {
 		/* fix key endianness */
 		const ut32 *key32 = (const ut32*)key;
