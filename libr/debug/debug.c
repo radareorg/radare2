@@ -40,7 +40,7 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
 static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
 	RBreakpointItem *b;
 	RCore *core = (RCore *)dbg->corebind.core;
-	int showinfo = 0;
+	int showinfo = 1;
 
 	if (!pb) {
 		eprintf ("BreakpointItem is NULL!\n");
@@ -98,7 +98,9 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	dbg->reason.bp_addr = b->addr;
 
 	/* inform the user of what happened */
-	showinfo = r_config_get_i (core->config, "cmd.bphitinfo");
+	if (core) {
+		showinfo = r_config_get_i (core->config, "cmd.hitinfo");
+	}
 	if (showinfo) {
 		eprintf ("hit %spoint at: %"PFMT64x "\n",
 				b->trace ? "trace" : "break", pc);
