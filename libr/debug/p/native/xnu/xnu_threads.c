@@ -9,7 +9,9 @@
 
 static void xnu_thread_free (xnu_thread_t *thread) {
 	kern_return_t kr;
-	if (!thread) return;
+	if (!thread) {
+		return;
+	}
 	free (thread->name);
 	// if we free our thread from the list we need to decrement the ref
 	// count
@@ -28,24 +30,23 @@ static bool xnu_thread_get_drx (RDebug *dbg, xnu_thread_t *thread) {
 		return false;
 	}
 #if __x86_64__ || __i386__
-	thread->flavor     = x86_DEBUG_STATE;
-	thread->count      = x86_DEBUG_STATE_COUNT;
-	thread->state_size = (dbg->bits == R_SYS_BITS_64) ?
-				     sizeof (x86_debug_state64_t) :
-				     sizeof (x86_debug_state32_t);
+	thread->flavor = x86_DEBUG_STATE;
+	thread->count = x86_DEBUG_STATE_COUNT;
+	thread->state_size = (dbg->bits == R_SYS_BITS_64)
+		? sizeof (x86_debug_state64_t)
+		: sizeof (x86_debug_state32_t);
 	thread->state = &thread->drx.uds;
 	rc = thread_get_state (thread->port, thread->flavor,
-			       (thread_state_t)&thread->drx, &thread->count);
-
-#elif __arm || __arm64 || __aarch64
+	       (thread_state_t)&thread->drx, &thread->count);
+#elif __arm__ || __arm64__ || __arm || __arm64 || __aarch64
 #if defined(ARM_DEBUG_STATE32) && (defined(__arm64__) || defined(__aarch64__))
-	thread->count  = ARM_DEBUG_STATE32_COUNT;
+	thread->count = ARM_DEBUG_STATE32_COUNT;
 	thread->flavor = ARM_DEBUG_STATE32;
 	rc = thread_get_state (thread->port, thread->flavor,
 			       (thread_state_t)&thead->debug.drx32,
 			       &thread->count);
 #else
-	thread->count  = ARM_DEBUG_STATE_COUNT;
+	thread->count = ARM_DEBUG_STATE_COUNT;
 	thread->flavor = ARM_DEBUG_STATE;
 	rc = thread_get_state (thread->port, thread->flavor,
 			       (thread_state_t)&thread->debug.drx,
@@ -109,7 +110,7 @@ static int xnu_thread_set_drx (RDebug *dbg, xnu_thread_t *thread) {
 	return false;
 #else
 	regs->dsh.flavor = 0;
-	thread->count    = 0;
+	thread->count = 0;
 #endif
 	if (rc != KERN_SUCCESS) {
 		perror ("thread_set_state");
@@ -128,6 +129,8 @@ static int xnu_thread_set_gpr (RDebug *dbg, xnu_thread_t *thread) {
 #if __i386__ || __x86_64__
 	// thread->flavor is used in a switch+case but in regs->tsh.flavor we
 	// specify
+	thread->state = &regs->uts;
+	//thread->state = regs;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
 	if (dbg->bits == R_SYS_BITS_64) {
@@ -138,6 +141,8 @@ static int xnu_thread_set_gpr (RDebug *dbg, xnu_thread_t *thread) {
 		regs->tsh.count  = x86_THREAD_STATE32_COUNT;
 	}
 #elif __arm || __arm64 || __aarch64
+#if 0
+	/* unified doesnt seems to work */
 	thread->flavor = ARM_UNIFIED_THREAD_STATE;
 	thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
 	if (dbg->bits == R_SYS_BITS_64) {
@@ -146,6 +151,17 @@ static int xnu_thread_set_gpr (RDebug *dbg, xnu_thread_t *thread) {
 	} else {
 		regs->ash.flavor = ARM_THREAD_STATE32;
 		regs->ash.count  = ARM_THREAD_STATE32_COUNT;
+	}
+#endif
+	thread->state = regs;
+	if (dbg->bits == R_SYS_BITS_64) {
+		thread->flavor = ARM_THREAD_STATE64;
+		thread->count = ARM_THREAD_STATE64_COUNT;
+		thread->state_size = sizeof (arm_thread_state64_t);
+	} else {
+		thread->flavor = ARM_THREAD_STATE;
+		thread->count = ARM_THREAD_STATE_COUNT;
+		thread->state_size = sizeof (arm_thread_state32_t);
 	}
 #endif
 	rc = thread_set_state (thread->port, thread->flavor,
@@ -161,28 +177,33 @@ static int xnu_thread_set_gpr (RDebug *dbg, xnu_thread_t *thread) {
 static bool xnu_thread_get_gpr (RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t rc;
 	R_REG_T *regs;
-	if (!dbg || !thread) return false;
+	if (!dbg || !thread) {
+		return false;
+	}
 	regs = &thread->gpr;
-	if (!regs) return false;
+	if (!regs) {
+		return false;
+	}
 #if __POWERPC__
-	thread->state = &regs;
-#else
-	thread->state = &regs->uts;
-#if __arm || __arm64 || __aarch64
-	thread->flavor = ARM_UNIFIED_THREAD_STATE;
-	thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
+	thread->state = regs;
+#elif __arm || __arm64 || __aarch64
+	thread->state = regs;
 	if (dbg->bits == R_SYS_BITS_64) {
+		thread->flavor = ARM_THREAD_STATE64;
+		thread->count = ARM_THREAD_STATE64_COUNT;
 		thread->state_size = sizeof (arm_thread_state64_t);
 	} else {
+		thread->flavor = ARM_THREAD_STATE;
+		thread->count = ARM_THREAD_STATE_COUNT;
 		thread->state_size = sizeof (arm_thread_state32_t);
 	}
 #elif __x86_64__ || __i386__
-	thread->flavor     = x86_THREAD_STATE;
-	thread->count      = x86_THREAD_STATE_COUNT;
+	thread->state = &regs->uts;
+	thread->flavor = x86_THREAD_STATE;
+	thread->count = x86_THREAD_STATE_COUNT;
 	thread->state_size = (dbg->bits == R_SYS_BITS_64) ?
 				     sizeof (x86_thread_state64_t) :
 				     sizeof (x86_thread_state32_t);
-#endif
 #endif
 	rc = thread_get_state (thread->port, thread->flavor,
 			       (thread_state_t)regs, &thread->count);
@@ -255,7 +276,9 @@ static int xnu_update_thread_info (RDebug *dbg, xnu_thread_t *thread) {
 }
 
 static int thread_find (thread_t *port, xnu_thread_t *a) {
-	if (a && port && (a->port == *port)) return 0;  // match
+	if (a && port && (a->port == *port)) {
+		return 0;  // match
+	}
 	return 1;
 }
 
@@ -329,8 +352,9 @@ static int xnu_update_thread_list (RDebug *dbg) {
 				// free the ownership over the thread
 				kr = mach_port_deallocate (mach_task_self (),
 							   thread_list[i]);
-				if (kr != KERN_SUCCESS)
+				if (kr != KERN_SUCCESS) {
 					eprintf ("Failed to deallocate port\n");
+				}
 				continue;
 			}
 			// otherwise insert it

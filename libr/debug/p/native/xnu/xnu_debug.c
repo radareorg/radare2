@@ -293,30 +293,32 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 }
 
 int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	bool ret;
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
-	if (!th)
+	if (!th) {
 		return 0;
+	}
 	switch (type) {
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
 	case R_REG_TYPE_GPR:
-		ret = xnu_thread_get_gpr (dbg, th);
+		if (!xnu_thread_get_gpr (dbg, th)) {
+			return 0;
+		}
 		break;
 	case R_REG_TYPE_DRX:
-		ret = xnu_thread_get_drx (dbg, th);
+		if (!xnu_thread_get_drx (dbg, th)) {
+			return 0;
+		}
 		break;
 	default:
 		return 0;
 	}
-	if (!ret) {
-		perror ("xnu_reg_read");
-		return 0;
-	}
 	if (th->state) {
 		int rsz = R_MIN (th->state_size, size);
-		memcpy (buf, th->state, rsz);
-		return rsz;
+		if (rsz > 0) {
+			memcpy (buf, th->state, rsz);
+			return rsz;
+		}
 	}
 	return 0;
 }

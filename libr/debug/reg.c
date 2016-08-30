@@ -29,22 +29,21 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 				return false;
 			}
 		} else {
-			//int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
-			int bufsize = dbg->reg->size;
-			//int bufsize = dbg->reg->regset[i].arena->size;
-			if (bufsize>0) {
+			// int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
+			//int bufsize = dbg->reg->size;
+			int bufsize = dbg->reg->regset[i].arena->size;
+			if (bufsize > 0) {
 				ut8 *buf = calloc (1, bufsize);
-				if (!buf) return false;
+				if (!buf) {
+					return false;
+				}
 				//we have already checked dbg->h and dbg->h->reg_read above
 				size = dbg->h->reg_read (dbg, i, buf, bufsize);
 				// we need to check against zero because reg_read can return false
-				if (!size) {
-					eprintf ("r_debug_reg: error reading registers\n");
-					free (buf);
-					return false;
-				} else {
+				if (size > 0) {
 					r_reg_set_bytes (dbg->reg, i, buf, R_MIN (size, bufsize));
-					//r_reg_set_bytes (dbg->reg, i, buf, bufsize);
+			//		free (buf);
+			//		return true;
 				}
 				free (buf);
 			}

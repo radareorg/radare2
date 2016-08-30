@@ -146,7 +146,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
         if (!CreateProcess (argv[0], cmdline, NULL, NULL, FALSE,
 			CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
 			NULL, NULL, &si, &pi)) {
-			r_sys_perror ("CreateProcess");
+		r_sys_perror ("CreateProcess");
 		return -1;
         }
 	free (cmdline);
@@ -247,7 +247,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		(void)posix_spawnattr_setflags (&attr, ps_flags);
 #if __i386__ || __x86_64__
 		cpu = CPU_TYPE_I386;
-		if (bits == 64) cpu |= CPU_ARCH_ABI64;
+		if (bits == 64) {
+			cpu |= CPU_ARCH_ABI64;
+		}
 #else
 		cpu = CPU_TYPE_ANY;
 #endif
@@ -267,7 +269,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			eprintf ("posix_spawnp: Invalid argument\n");
 			break;
 		case 86:
-			eprintf ("Unsupported architecture\n");
+			eprintf ("Unsupported architecture. Please specify -b 32\n");
 			break;
 		default:
 			eprintf ("posix_spawnp: unknown error %d\n", ret);

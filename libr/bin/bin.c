@@ -1875,6 +1875,7 @@ R_API RBuffer *r_bin_create(RBin *bin, const ut8 *code, int codelen, const ut8 *
 
 R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RList *files) {
 	if (!strcmp (type, "zip")) {
+#if 0
 		int zep = 0;
 		struct zip * z = zip_open (file, 8 | 1, &zep);
 		if (z) {
@@ -1897,6 +1898,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		} else {
 			eprintf ("Cannot create zip file\n");
 		}
+#endif
 	} else if (!strcmp (type, "fat")) {
 		const char *f;
 		int size;
