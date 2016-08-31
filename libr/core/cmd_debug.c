@@ -1268,7 +1268,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					"dr", " <register>=<val>", "Set register value",
 					"dr=", "", "Show registers in columns",
 					"dr?", "<register>", "Show value of given register",
-					"drb", " [type]", "Display hexdump of gpr arena (WIP)",
+					"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 					"drC", "", "Show register profile comments",
 					"drc", " [name]", "Related to conditional flag registers",
 					"drd", "", "Show only different registers",
@@ -1315,11 +1315,31 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			break;
 		case 'b': // "drb"
-			{ // WORK IN PROGRESS // DEBUG COMMAND
+			{
 				int len;
 				ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
-				//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
-				r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+				/* TODO : parse [type] parameter here instead of hardcoded GPR */
+				switch (str[1]) {
+					case '1':
+						r_print_hexdump (core->print, 0LL, buf, len, 8, 1);
+						break;
+					case '2':
+						r_print_hexdump (core->print, 0LL, buf, len, 16, 2);
+						break;
+					case '4':
+						r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+						break;
+					case '8':
+						r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
+						break;
+					default:
+						if (core->assembler->bits == 64) {
+							r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
+						} else {
+							r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+						}
+						break;
+				}
 				free (buf);
 			}
 			break;
