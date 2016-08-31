@@ -364,6 +364,7 @@ static int cmd_help(void *data, const char *input) {
 			"@..", "from to", "temporary set from and to for commands supporting ranges",
 			"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
 			"@@", " hit*", "run the command on every flag matching 'hit*'",
+			"@@?", "[ktfb..]", "show help for the iterator operator",
 			"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
 			">", "file", "pipe output of command to file",
 			">>", "file", "append to file",

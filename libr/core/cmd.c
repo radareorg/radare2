@@ -2013,6 +2013,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"x", " @@=off1 off2 ..", "manual list of offsets",
 		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
 		"x", " @@t", "\"\" on all threads (see dp)",
+		"x", " @@b", "\"\" on all basic blocks of current function (see afb)",
 		"x", " @@f", "\"\" on all functions (see aflq)",
 		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 		// TODO: Add @@k sdb-query-expression-here
@@ -2020,7 +2021,26 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		r_core_cmd_help (core, help_msg);
 		}
 		break;
-	case 'f':
+	case 'b': // "@@b" - function basic blocks
+		{
+			RListIter *iter;
+			RAnalBlock *bb;
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			int bs = core->blocksize;
+			if (fcn) {
+				r_list_sort (fcn->bbs, bb_cmp);
+				r_list_foreach (fcn->bbs, iter, bb) {
+					r_core_block_size (core, bb->size);
+					r_core_seek (core, bb->addr, 1);
+					r_core_cmd (core, cmd, 0);
+				}
+			}
+			free (ostr);
+			r_core_block_size (core, bs);
+			return false;
+		}
+		break;
+	case 'f': // "@@f"
 		{
 			RAnalFunction *fcn;
 			RListIter *iter;
@@ -2028,7 +2048,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					r_core_seek (core, fcn->addr, 1);
 					r_core_cmd (core, cmd, 0);
-					r_cons_newline ();
 				}
 			}
 			free (ostr);
