@@ -1531,6 +1531,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afn", " name [addr]", "rename name for function at address (change flag too)",
 			"afna", "", "suggest automatic name for current offset",
 			"afs", " [addr] [fcnsign]", "get/set function signature at current address",
+			"afu", " [addr]", "resize and analyze function from current address until addr",
 			"afv[bsra]", "?", "manipulate args, registers and variables in function",
 			"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
 			NULL };
