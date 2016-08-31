@@ -209,8 +209,9 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #else
 	task_t task = pid_to_task (pid);
 	kern_return_t kr;
-	if (!task)
+	if (!task) {
 		return false;
+	}
 	//TODO free refs count threads
 	xnu_thread_t *th  = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
@@ -331,8 +332,9 @@ RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	if (!th) {
 		return NULL;
 	}
-	if (addr == -1)
+	if (addr == -1) {
 		anywhere = VM_FLAGS_ANYWHERE;
+	}
 	ret = vm_allocate (th->port, (vm_address_t *)&base,
 			  (vm_size_t)size, anywhere);
 	if (ret != KERN_SUCCESS) {
@@ -384,13 +386,11 @@ RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 		eprintf ("Error while querying the process info to sysctl\n");
 		return NULL;
 	}
-
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
 	rdi->uid = kp.kp_eproc.e_ucred.cr_uid;
 	rdi->gid = kp.kp_eproc.e_ucred.cr_gid;
-
 	return rdi;
 }
 
@@ -470,11 +470,11 @@ task_t pid_to_task (int pid) {
 	kern_return_t kr;
 	task_t task = -1;
 	int err;
-
 	/* it means that we are done with the task*/
 	if (task_dbg != 0 && old_pid == pid) {
 		return task_dbg;
-	} else if (task_dbg != 0 && old_pid != pid) {
+	}
+	if (task_dbg != 0 && old_pid != pid) {
 		//we changed the process pid so deallocate a ref from the old_task
 		//since we are going to get a new task
 		kr = mach_port_deallocate (mach_task_self (), task_dbg);
@@ -523,11 +523,14 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 
 		count = VM_REGION_SUBMAP_INFO_COUNT_64;
 		kr = vm_region_recurse_64 (task, &address, &size, &nesting_depth,
-									(vm_region_info_64_t)&info, &count);
-
-		if (kr == KERN_INVALID_ADDRESS) break;
-		if (kr) mach_error ("vm_region:", kr); break;
-
+			(vm_region_info_64_t)&info, &count);
+		if (kr == KERN_INVALID_ADDRESS) {
+			break;
+		}
+		if (kr) {
+			mach_error ("vm_region:", kr);
+			break;
+		}
 		if (info.is_submap) {
 			nesting_depth++;
 		} else {
@@ -569,7 +572,6 @@ static cpu_type_t xnu_get_cpu_type (pid_t pid) {
 		perror ("sysctlnametomib");
 		return -1;
 	}
-
 	mib[len++] = pid;
 	if (sysctl (mib, len, &cpu_type, &cpu_type_len, NULL, 0) == -1) {
 		perror ("sysctl");
@@ -654,7 +656,6 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 #elif __i386__ || __ppc__ || __POWERPC__
 	struct segment_command *sc;
 #endif
-
 	r_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
 		eprintf ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n", 
 			curr_map->addr, curr_map->addr_end, curr_map->size);
@@ -904,9 +905,9 @@ RDebugPid *xnu_get_pid (int pid) {
 	}
 
 	// copy the number of argument to nargs
-	memcpy (&nargs, procargs, sizeof(nargs));
-	iter_args =  procargs + sizeof(nargs);
-	end_args = &procargs[size-30]; // end of the argument space
+	memcpy (&nargs, procargs, sizeof (nargs));
+	iter_args =  procargs + sizeof (nargs);
+	end_args = &procargs[size - 30]; // end of the argument space
 	if (iter_args >= end_args) {
 		eprintf ("getcmdargs(): argument length mismatch");
 		free (procargs);
@@ -1159,7 +1160,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 		//eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
 		size = mach0_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr + size, 7, 0);
-		if (mr == NULL) {
+		if (!mr) {
 			eprintf ("Cannot create r_debug_map_new\n");
 			break;
 		}
@@ -1186,11 +1187,12 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	RDebugMap *mr = NULL;
 	RList *list = NULL;
 	int i = 0;
-	if (!task)
+	if (!task) {
 		return NULL;
-	if (only_modules)
+	}
+	if (only_modules) {
 		return xnu_dbg_modules (dbg);
-
+	}
 #if __arm64__ || __aarch64__
 	size = osize = 16384; // acording to frida
 #else

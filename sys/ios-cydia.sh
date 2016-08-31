@@ -5,7 +5,7 @@ onlymakedeb=0
 
 if [ -z "${CPU}" ]; then
 	export CPU=arm64
-	export CPU=armv7
+	#export CPU=armv7
 fi
 
 export BUILD=1

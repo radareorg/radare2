@@ -228,7 +228,7 @@ static int coredump_nflavors = 3;
 
 static coredump_thread_state_flavor_t
 thread_flavor_array[] = {
-	{ ARM64_THREAD_STATE64, ARM64_THREAD_STATE64_COUNT }
+	{ ARM_UNIFIED_THREAD_STATE, ARM_UNIFIED_THREAD_STATE_COUNT}
 };
 
 static int coredump_nflavors = 1;
