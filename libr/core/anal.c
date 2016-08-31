@@ -3144,36 +3144,28 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 typedef struct vtable_info_t {
 	ut64 saddr; //starting address
 	int methods;
+	RList* funtions;
 } vtable_info;
 
-static void printVtable(RCore *core, vtable_info *table) {
-	if (table && core) {
+static RList* getVtableMethods(RCore *core, vtable_info *table) {
+	RList* vtableMethods = r_list_new ();
+	if (table && core && vtableMethods) {
 		int curMethod = 0;
 		int totalMethods = table->methods;
 		ut64 startAddress = table->saddr;
-		char *methodName;
-		const char *noMethodName = "No Name found";
 		int bits = r_config_get_i (core->config, "asm.bits");
-		const char *lang = r_config_get (core->config, "bin.lang");
-		r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", startAddress);
 		int wordSize = bits / 8;
 		while (curMethod < totalMethods) {
 			ut64 curAddressValue = r_io_read_i (core->io, startAddress, 8);
-			RBinSymbol* curSymbol = r_bin_get_symbol_at_vaddr (core->bin, curAddressValue);
-			if (curSymbol) {
-				methodName = r_bin_demangle (core->bin->cur, lang, curSymbol->name);
-			} else {
-				methodName = (char*)noMethodName;
-			}
-			r_cons_printf ("0x%08"PFMT64x" : %s\n", startAddress, methodName);
-			if (methodName != noMethodName) {
-				free (methodName);
-			}
+			RAnalFunction *curFuntion = r_anal_get_fcn_in (core->anal, curAddressValue, 0);
+			r_list_append (vtableMethods, curFuntion);
 			startAddress += wordSize;
 			curMethod++;
 		}
-		r_cons_newline ();
+		table->funtions = vtableMethods;
+		return vtableMethods;
 	}
+	return NULL;
 }
 
 static int inTextSection(RCore *core, ut64 curAddress) {
@@ -3268,7 +3260,13 @@ RList* search_virtual_tables(RCore *core){
 R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 	RList* vtables = search_virtual_tables ((RCore *)core);
 	RListIter* vtableIter;
+	RListIter* vtableMethodNameIter;
 	vtable_info* table;
+	RAnalFunction *curMethod;
+	ut64 bits = r_config_get_i (((RCore *)core)->config, "asm.bits");
+	int wordSize = bits / 8;
+	const char *noMethodName = "No Name found";
+
 	if (vtables) {
 		if (printJson) {
 			bool isFirstElement = true;
@@ -3282,7 +3280,20 @@ R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 			r_cons_println("]");
 		} else {
 			r_list_foreach (vtables, vtableIter, table) {
-				printVtable ((RCore *)core, table);
+				ut64 vtableStartAddress = table->saddr;
+				RList *vtableMethods = getVtableMethods ((RCore *)core, table);
+				r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
+				if (vtableMethods) {
+					r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
+						if (curMethod->name) {
+							r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, curMethod->name);
+						} else {
+							r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, noMethodName);
+						}
+						vtableStartAddress += wordSize;
+					}
+					r_cons_newline ();
+				}
 			}
 		}
 	}
@@ -3291,23 +3302,19 @@ R_API void r_core_anal_list_vtables(void *core, bool printJson) {
 R_API void r_core_anal_list_vtables_all(void *core){
 	RList* vtables = search_virtual_tables ((RCore *)core);
 	RListIter* vtableIter;
+	RListIter* vtableMethodNameIter;
+	RAnalFunction* function;
 	vtable_info* table;
-	int curVtable = 1;
+
 	if (vtables) {
-		r_cons_printf ("%-4s %-20s %-15s %-10s %-18s %-10s %-10s %-10s\n",
-			"No", "Name", "RealName", "Methods", "Namehash", "Offset",
-				"Size", "Comment");
-		r_cons_printf ("%-4s %-20s %-15s %-10s %-18s %-10s %-10s %-10s\n",
-			"==", "====", "========", "========", "========", "======",
-				"====", "======");
 		r_list_foreach (vtables, vtableIter, table) {
-			RFlagItem* flagItem = r_flag_get_at (((RCore *)core)->flags, table->saddr);
-			if (flagItem) {
-				r_cons_printf ("%-4d %-20s %-15s %-10d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-					curVtable, flagItem->name, flagItem->realname, table->methods, flagItem->namehash,
-						flagItem->offset, flagItem->size, flagItem->comment);
+			RList *vtableMethods = getVtableMethods ((RCore *)core, table);
+			if (vtableMethods) {
+				r_list_foreach (vtableMethods, vtableMethodNameIter, function) {
+					// char *ret = r_str_newf ("vtable.%s", table->funtio);
+					r_cons_printf ("f %s=0x%08"PFMT64x"\n", function->name, function->addr);
+				}
 			}
-			curVtable ++;
 		}
 	}
 }
