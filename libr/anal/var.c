@@ -241,7 +241,7 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, RAnalFunction *fcn, const char* 
 
 R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int delta) {
 	RAnalVar *av;
-	struct VarType vt;
+	struct VarType vt = { 0 };
 	char *sign = "";
 	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 	if (!fcn) {
@@ -260,6 +260,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	if (!vardef) {
 		return NULL;
 	}
+	sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
 
 	av = R_NEW0 (RAnalVar);
@@ -446,7 +447,7 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 		char *next, *ptr = varlist;
 		if (varlist && *varlist) {
 			do {
-				struct VarType vt;
+				struct VarType vt = {0};
 				char *word = sdb_anext (ptr, &next);
 				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
 					"var.0x%"PFMT64x".%c.%s",

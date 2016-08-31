@@ -1439,7 +1439,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		free (line);
 		return;
 	}
-	for (i=0; i<count; i++) {
+	for (i = 0; i < count; i++) {
 		ut64 addr = UT64_MAX;
 		ox = strstr (line, "0x");
 		qo = strstr (line, "\"");
@@ -1488,9 +1488,13 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 #endif
 		}
-		if (string2) R_FREE(string2);
+		if (string2) {
+			R_FREE (string2);
+		}
 		str = strstr (line, "sym.");
-		if (!str) str = strstr (line, "fcn.");
+		if (!str) {
+			str = strstr (line, "fcn.");
+		}
 		if (str) {
 			char *qoe = strchr (str, ' ');
 			if (qoe) {
