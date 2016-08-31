@@ -30,8 +30,8 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			}
 		} else {
 			// int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
-			//int bufsize = dbg->reg->size;
-			int bufsize = dbg->reg->regset[i].arena->size;
+			int bufsize = dbg->reg->size;
+			//int bufsize = dbg->reg->regset[i].arena->size;
 			if (bufsize > 0) {
 				ut8 *buf = calloc (1, bufsize);
 				if (!buf) {
