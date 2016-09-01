@@ -767,7 +767,7 @@ R_API int r_cons_get_size(int *rows) {
 	if (isatty (0) && ioctl (0, TIOCGWINSZ, &win) == 0) {
 		if ((win.ws_col == 0) || (win.ws_row == 0)) {
 			const char *tty = ttyname (1);
-			int fd = open (tty, O_RDONLY);
+			int fd = open (tty? tty: "/dev/tty", O_RDONLY);
 			if (fd != -1) {
 				int ret = ioctl (fd, TIOCGWINSZ, &win);
 				if ((ret != 0) || (win.ws_col == 0) || (win.ws_row == 0)) {
@@ -823,8 +823,11 @@ R_API void r_cons_show_cursor (int cursor) {
 #if __WINDOWS__ && !__CYGWIN__
 	// TODO
 #else
-	if (cursor) write (1, "\x1b[?25h", 6);
-	else write (1, "\x1b[?25l", 6);
+	if (cursor) {
+		write (1, "\x1b[?25h", 6);
+	} else {
+		write (1, "\x1b[?25l", 6);
+	}
 #endif
 }
 
@@ -842,19 +845,27 @@ R_API void r_cons_show_cursor (int cursor) {
  */
 static int oldraw = -1;
 R_API void r_cons_set_raw(int is_raw) {
-	if (oldraw != -1)
-		if (is_raw == oldraw)
+	if (oldraw != -1) {
+		if (is_raw == oldraw) {
 			return;
+		}
+	}
 #if EMSCRIPTEN
 	/* do nothing here */
 #elif __UNIX__ || __CYGWIN__
 	// enforce echo off
 	I.term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-	if (is_raw) tcsetattr (0, TCSANOW, &I.term_raw);
-	else tcsetattr (0, TCSANOW, &I.term_buf);
+	if (is_raw) {
+		tcsetattr (0, TCSANOW, &I.term_raw);
+	} else {
+		tcsetattr (0, TCSANOW, &I.term_buf);
+	}
 #elif __WINDOWS__
-	if (is_raw) SetConsoleMode (h, (DWORD)I.term_raw);
-	else SetConsoleMode (h, (DWORD)I.term_buf);
+	if (is_raw) {
+		SetConsoleMode (h, (DWORD)I.term_raw);
+	} else {
+		SetConsoleMode (h, (DWORD)I.term_buf);
+	}
 #else
 #warning No raw console supported for this platform
 #endif
@@ -933,16 +944,23 @@ R_API void r_cons_set_title(const char *str) {
 }
 
 R_API void r_cons_zero() {
-	if (I.line) I.line->zerosep = true;
+	if (I.line) {
+		I.line->zerosep = true;
+	}
 	write (1, "", 1);
 }
 
 R_API void r_cons_highlight (const char *word) {
-	char *rword, *res, *clean;
-	char *inv[2] = {R_CONS_INVERT (true, true),
-			R_CONS_INVERT (false, true)};
-	int linv[2] = { strlen (inv[0]), strlen (inv[1]) };
 	int l, *cpos;
+	char *rword, *res, *clean;
+	char *inv[2] = {
+		R_CONS_INVERT (true, true),
+		R_CONS_INVERT (false, true)
+	};
+	int linv[2] = {
+		strlen (inv[0]),
+		strlen (inv[1])
+	};
 
 	if (word && *word && I.buffer) {
 		int word_len = strlen (word);
