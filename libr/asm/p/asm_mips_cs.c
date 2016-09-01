@@ -51,8 +51,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
-	int ret = mips_assemble (str, a->pc, op->buf);
-	return ret;
+	return mips_assemble (str, a->pc, op->buf);
 }
 
 RAsmPlugin r_asm_plugin_mips_cs = {

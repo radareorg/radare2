@@ -319,15 +319,19 @@ static int rasm_asm(const char *buf, ut64 offset, ut64 len, int bits, int bin) {
 			int b = acode->len;
 			if (bits == 1) {
 				int bytes = (b / 8) + 1;
-				for (i = 0; i < bytes; i++)
-					for (j = 0; j < 8 && b--; j++)
+				for (i = 0; i < bytes; i++) {
+					for (j = 0; j < 8 && b--; j++) {
 						printf ("%c", (acode->buf[i] & (1 << j))? '1': '0');
+					}
+				}
 				printf ("\n");
-			} else print_buf (acode->buf_hex);
+			} else {
+				print_buf (acode->buf_hex);
+			}
 		}
 	}
 	r_asm_code_free (acode);
-	return ret > 0;
+	return (ret > 0);
 }
 
 /* asm callback */
@@ -520,7 +524,7 @@ int main (int argc, char *argv[]) {
 	{
 		bool canbebig = r_asm_set_big_endian (a, isbig);
 		if (isbig && !canbebig) {
-			eprintf ("Warning: This architecture can't swap endian.\n");
+			eprintf ("Warning: This architecture can't swap to big endian.\n");
 		}
 		r_anal_set_big_endian (anal, canbebig);
 	}

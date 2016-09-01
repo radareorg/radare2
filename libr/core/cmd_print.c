@@ -26,10 +26,11 @@ static char get_string_type (const ut8 *buf, ut64 len){
 		if (needle+rc+2 < len &&
 			buf[needle+rc+0] == 0x00 &&
 			buf[needle+rc+1] == 0x00 &&
-			buf[needle+rc+2] == 0x00)
+			buf[needle+rc+2] == 0x00) {
 			str_type = 'w';
-		else
+		} else {
 			str_type = 'a';
+		}
 		for (rc = i = 0; needle < len ; i+= rc){
 			RRune r;
 			if (str_type == 'w'){
@@ -44,7 +45,7 @@ static char get_string_type (const ut8 *buf, ut64 len){
 				if(rc > 1) str_type = 'u';
 			}
 			/*Invalid sequence detected*/
-			if (!rc){
+			if (!rc) {
 				needle++;
 				break;
 			}
@@ -125,17 +126,14 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 	int result = false;
 	char *input_one = NULL, *input_two = NULL, *input_three = NULL;
-	char *str_clone = NULL,
-		 *ptr_str_clone = NULL,
-		 *trimmed_clone = NULL;
+	char *str_clone = NULL, *ptr_str_clone = NULL, *trimmed_clone = NULL;
 
-	if (input == NULL || blocksize == NULL || asm_arch == NULL || bits == NULL) {
+	if (!input || !blocksize || !asm_arch || !bits) {
 		return false;
 	}
 
 	str_clone = strdup (input);
 	trimmed_clone = r_str_trim_head_tail (str_clone);
-
 	input_one = trimmed_clone;
 
 	ptr_str_clone = strchr (trimmed_clone, ' ');
@@ -2312,11 +2310,11 @@ static int cmd_print(void *data, const char *input) {
 			int i;
 			int bytes;
 			r_asm_set_pc (core->assembler, core->offset);
-			acode = r_asm_massemble (core->assembler, input+1);
+			acode = r_asm_massemble (core->assembler, input + 1);
 			if (acode && *acode->buf_hex) {
 				bytes = strlen (acode->buf_hex) >> 1;
 				for (i = 0; i < bytes; i++) {
-					ut8 b = acode->buf[ core->print->big_endian? (bytes - 1 - i): i ];
+					ut8 b = acode->buf[i]; // core->print->big_endian? (bytes - 1 - i): i ];
 					r_cons_printf ("%02x", b);
 				}
 				r_cons_newline ();
