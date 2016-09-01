@@ -94,19 +94,28 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			return -1;
 		}
 	}
-	if (opcode == UT32_MAX)
+	if (opcode == UT32_MAX) {
 		return -1;
+	}
 	if (is_thumb) {
 		const int o = opcode >> 16;
-		opsize = o>0? 4: 2; //(o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
+		opsize = o > 0? 4: 2; //(o&0x80 && ((o&0xe0)==0xe0))? 4: 2;
 		if (opsize == 4) {
-			r_write_be32(op->buf, opcode);
+			if (a->big_endian) {
+				r_write_le32 (op->buf, opcode);
+			} else {
+				r_write_be32 (op->buf, opcode);
+			}
 		} else if (opsize == 2) {
-			r_write_be16(op->buf, opcode & UT16_MAX);
+			r_write_be16 (op->buf, opcode & UT16_MAX);
 		}
 	} else {
 		opsize = 4;
-		r_write_be32(op->buf, opcode);
+		if (a->big_endian) {
+			r_write_le32 (op->buf, opcode);
+		} else {
+			r_write_be32 (op->buf, opcode);
+		}
 	}
 // XXX. thumb endian assembler needs no swap
 	return opsize;
