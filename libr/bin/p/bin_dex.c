@@ -18,7 +18,7 @@
 
 static Sdb *mdb = NULL;
 
-static char *getstr (RBinDexObj *bin, int idx) {
+static char *getstr(RBinDexObj *bin, int idx) {
 	ut8 buf[6];
 	ut64 len;
 	int uleblen;
@@ -742,8 +742,9 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		if (!method_name) {
 			method_name = strdup ("unknown");
 		}
-		flag_name = flagname (class_name, method_name);
-		flag_name = r_str_replace (flag_name, "method.", "", 0);
+		//flag_name = flagname (class_name, method_name);
+		//flag_name = r_str_replace (flag_name, "method.", "", 0);
+        flag_name = r_str_newf ("%s.method.%s", class_name, method_name);
 		flag_name = r_str_replace (flag_name, ";", "", 0);
 		if (!flag_name) {
 			continue;
@@ -844,8 +845,8 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		{
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			//sym->name = r_str_newf ("virtual.%s.%s", class_name, name);
-			sym->name = r_str_newf ("%s.%s", class_name, name);
-			sym->name = r_str_replace (sym->name, "method.", "", 0);
+			sym->name = r_str_newf ("%s.method.%s", class_name, name);
+			//sym->name = r_str_replace (sym->name, "method.", "", 0);
 			sym->name = r_str_replace (sym->name, ";", "", 0);
 			sym->type = r_str_const ("METH");
 			sym->paddr = sym->vaddr = MC;
@@ -1128,7 +1129,7 @@ static RList* classes (RBinFile *arch) {
 		//class->name = strdup (name[0]<0x41? name+1: name);
 		class->name = dex_class_name_byid (bin, entry.class_id);
 		// find reference to this class instance
-		char *cn = getClassName (class->name);
+		char *cn = dex_class_name (bin, &entry);
 		if (cn) {
 			free (class->name);
 			class->index = class_index++;
@@ -1140,9 +1141,8 @@ static RList* classes (RBinFile *arch) {
 
 			r_list_append (ret, class);
 
-			//TODO?
-
 		} else {
+            dprintf("INVALID CLASS NAME");
 			free (class->name);
 			free (class);
 		}
