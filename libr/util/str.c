@@ -782,6 +782,10 @@ R_API const char *r_str_get(const char *str) {
 	return str? str: nullstr_c;
 }
 
+R_API const char *r_str_get2(const char *str) {
+	return str? str: nullstr;
+}
+
 R_API char *r_str_ndup(const char *ptr, int len) {
 	char *out = malloc (len+1);
 	if (!out) return NULL;

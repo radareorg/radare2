@@ -12,6 +12,7 @@
 #include <r_syscall.h>
 #include "list.h"
 
+#include <r_config.h>
 #include "r_bind.h"
 #ifdef __cplusplus
 extern "C" {
@@ -87,6 +88,7 @@ typedef enum {
 	R_DEBUG_REASON_SEGFAULT,
 	R_DEBUG_REASON_BREAKPOINT,
 	R_DEBUG_REASON_TRACEPOINT,
+	R_DEBUG_REASON_COND,
 	R_DEBUG_REASON_READERR,
 	R_DEBUG_REASON_STEP,
 	R_DEBUG_REASON_ABORT,
@@ -186,6 +188,7 @@ typedef struct r_debug_tracepoint_t {
 typedef struct r_debug_t {
 	char *arch;
 	int bits; /// XXX: MUST SET ///
+	int hitinfo;
 
 	int pid; /* selected process id */
 	int tid; /* selected thread id */
@@ -347,7 +350,7 @@ R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg);
 R_API const char *r_debug_reason_to_string(int type);
 
 /* wait for another event */
-R_API RDebugReasonType r_debug_wait(RDebug *dbg);
+R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp);
 
 /* continuations */
 R_API int r_debug_step(RDebug *dbg, int steps);

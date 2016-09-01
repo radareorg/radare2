@@ -79,6 +79,13 @@ static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 	r_config_set (cfg, "asm.segoff", r_str_bool (autoseg));
 }
 
+static int cb_debug_hitinfo(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->dbg->hitinfo = node->i_value;
+	return true;
+}
+
 static int cb_analeobjmp(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1727,6 +1734,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF("cmd.bp", "", "Run when a breakpoint is hit");
+	SETICB("cmd.hitinfo", 1, &cb_debug_hitinfo, "Show info when a tracepoint/breakpoint is hit");
 	SETPREF("cmd.times", "", "Run when a command is repeated (number prefix)");
 	SETPREF("cmd.stack", "", "Command to display the stack in visual debug mode");
 	SETPREF("cmd.cprompt", "", "Column visual prompt commands");

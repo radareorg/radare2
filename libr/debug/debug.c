@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, jduck, TheLemonMan */
+/* radare - LGPL - Copyright 2009-2016 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
+#include <r_core.h>
 #include <signal.h>
 
 #if __WINDOWS__
@@ -95,8 +96,10 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	dbg->reason.bp_addr = b->addr;
 
 	/* inform the user of what happened */
-	eprintf ("hit %spoint at: %"PFMT64x "\n",
-			b->trace ? "trace" : "break", pc);
+	if (dbg->hitinfo) {
+		eprintf ("hit %spoint at: %"PFMT64x "\n",
+				b->trace ? "trace" : "break", pc);
+	}
 
 	/* now that we've cleaned up after the breakpoint, call the other
 	 * potential breakpoint handlers
@@ -293,6 +296,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->num = r_num_new (r_debug_num_callback, dbg);
 	dbg->h = NULL;
 	dbg->threads = NULL;
+	dbg->hitinfo = 1;
 	/* TODO: needs a redesign? */
 	dbg->maps = r_debug_map_list_new ();
 	dbg->maps_user = r_debug_map_list_new ();
@@ -545,13 +549,15 @@ R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg) {
  *
  * Returns  R_DEBUG_REASON_*
  */
-R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
+R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 	RDebugReasonType reason = R_DEBUG_REASON_ERROR;
-
 	if (!dbg) {
 		return reason;
 	}
 
+	if (bp) {
+		*bp = NULL;
+	}
 	/* default to unknown */
 	dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
 	if (r_debug_is_dead (dbg)) {
@@ -599,6 +605,12 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg) {
 
 			/* if we hit a tracing breakpoint, we need to continue in
 			 * whatever mode the user desired. */
+			if (dbg->corebind.core && b && b->cond) {
+				if (bp) {
+					*bp = b;
+				}
+				reason = R_DEBUG_REASON_COND;
+			}
 			if (b && b->trace) {
 				reason = R_DEBUG_REASON_TRACEPOINT;
 			}
@@ -749,7 +761,7 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 	if (!dbg->h->step (dbg)) {
 		return false;
 	}
-	reason = r_debug_wait (dbg);
+	reason = r_debug_wait (dbg, NULL);
 	/* TODO: handle better */
 	if (reason == R_DEBUG_REASON_ERROR) {
 		return false;
@@ -871,6 +883,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	RDebugReasonType reason, ret = false;
+	RBreakpointItem *bp = NULL;
 
 	if (!dbg) {
 		return false;
@@ -893,7 +906,20 @@ repeat:
 
 		//XXX(jjd): why? //dbg->reason.signum = 0;
 
-		reason = r_debug_wait (dbg);
+		reason = r_debug_wait (dbg, &bp);
+		if (dbg->corebind.core) {
+			RCore *core = (RCore *)dbg->corebind.core;
+			RNum *num = core->num;
+			if (reason == R_DEBUG_REASON_COND) {
+				if (bp->cond && dbg->corebind.cmd) {
+					dbg->corebind.cmd (dbg->corebind.core, bp->cond);
+				}
+				if (num->value) {
+					goto repeat;
+				}
+			}
+		}
+
 
 #if __WINDOWS__
 		if (reason != R_DEBUG_REASON_DEAD) {
@@ -1113,7 +1139,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 #endif
 		dbg->h->contsc (dbg, dbg->pid, 0); // TODO handle return value
 		// wait until continuation
-		reason = r_debug_wait (dbg);
+		reason = r_debug_wait (dbg, NULL);
 		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 			break;
 		}

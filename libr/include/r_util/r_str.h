@@ -83,6 +83,7 @@ R_API int r_str_ccmp(const char *dst, const char *orig, int ch);
 R_API int r_str_cmp(const char *dst, const char *orig, int len);
 R_API int r_str_ccpy(char *dst, char *orig, int ch);
 R_API const char *r_str_get(const char *str);
+R_API const char *r_str_get2(const char *str);
 R_API char *r_str_ndup(const char *ptr, int len);
 R_API char *r_str_dup(char *ptr, const char *string);
 R_API void *r_str_free(void *ptr);

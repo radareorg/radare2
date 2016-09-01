@@ -1766,6 +1766,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbj", "", "List breakpoints in JSON format",
 		// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
 		"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
+		"dbC", " <addr> <cmd>", "Set breakpoint condition on command",
 		"dbd", " <addr>", "Disable breakpoint",
 		"dbe", " <addr>", "Enable breakpoint",
 		"dbs", " <addr>", "Toggle breakpoint",
@@ -2029,6 +2030,32 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 							   if (bpi) {
 								   free (bpi->data);
 								   bpi->data = strdup (arg);
+							   } else {
+								   eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
+							   }
+						   } else {
+							   eprintf ("Missing argument\n");
+						   }
+						   free (inp);
+					   } else {
+						   eprintf ("Cannot strdup. Your heap is fucked up\n");
+					   }
+				   } else {
+					   eprintf ("Use: dbc [addr] [command]\n");
+				   }
+				   break;
+		case 'C': // "dbC"
+				   if (input[2] == ' ') {
+					   char *inp = strdup (input + 3);
+					   if (inp) {
+						   char *arg = strchr (inp, ' ');
+						   if (arg) {
+							   *arg++ = 0;
+							   addr = r_num_math (core->num, inp);
+							   bpi = r_bp_get_at (core->dbg->bp, addr);
+							   if (bpi) {
+								   free (bpi->cond);
+								   bpi->cond = strdup (arg);
 							   } else {
 								   eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
 							   }
