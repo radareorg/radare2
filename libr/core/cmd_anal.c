@@ -1467,7 +1467,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			char *p;
 			ut64 a, b;
 			RAnalFunction *fcn;
-			char *mi = strdup (input + 2);
+			char *mi = strdup (input + 3);
 			if (mi && *mi == ' ' && (p = strchr (mi + 1, ' '))) {
 				*p = 0;
 				a = r_num_math (core->num, mi);
