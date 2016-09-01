@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #define USE_THREADS 1
+#define UNCOLORIZE_NONTTY 0
 
 #include <sdb.h>
 #include <r_core.h>
@@ -49,7 +50,9 @@ static int verify_version(int show) {
 		{NULL,NULL}
 	};
 
-	if (show) printf ("%s  r2\n", base);
+	if (show) {
+		printf ("%s  r2\n", base);
+	}
 	for (i = ret = 0; vcs[i].name; i++) {
 		struct vcs_t *v = &vcs[i];
 		const char *name = v->callback ();
@@ -61,8 +64,11 @@ static int verify_version(int show) {
 		}
 	}
 	if (ret) {
-		if (show) eprintf ("WARNING: r2 library versions mismatch!\n");
-		else eprintf ("WARNING: r2 library versions mismatch! See r2 -V\n");
+		if (show) {
+			eprintf ("WARNING: r2 library versions mismatch!\n");
+		} else {
+			eprintf ("WARNING: r2 library versions mismatch! See r2 -V\n");
+		}
 	}
 	return ret;
 }
@@ -71,11 +77,11 @@ static int verify_version(int show) {
 // r_debug_get_baddr
 static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	char *abspath;
-	int ret;
 	RListIter *iter;
 	RDebugMap *map;
-	if (!r || !r->io || !r->io->desc)
+	if (!r || !r->io || !r->io->desc) {
 		return 0LL;
+	}
 #if __WINDOWS__
 	typedef struct {
 		int pid;
@@ -90,9 +96,9 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	}
 	return r->io->winbase;
 #else
-	ret = r_debug_attach (r->dbg, r->io->desc->fd);
-	if (ret == -1)
+	if (r_debug_attach (r->dbg, r->io->desc->fd) == -1) {
 		return 0LL;
+	}
 #endif
 	r_debug_map_sync (r->dbg);
 	abspath = r_file_abspath (file);
@@ -119,7 +125,8 @@ static int main_help(int line) {
 		printf ("Usage: r2 [-ACdfLMnNqStuvwz] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
 			"          [-s addr] [-B baddr] [-M maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
-	if (line != 1) printf (
+	if (line != 1) {
+		printf (
 		" --           open radare2 on an empty file\n"
 		" -            equivalent of 'r2 malloc://512'\n"
 		" =            read file from stdin (use -i and -c to run cmds)\n"
@@ -160,6 +167,7 @@ static int main_help(int line) {
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
 		" -z, -zz      do not load strings or load them even in raw\n");
+	}
 	if (line == 2) {
 		char *homedir = r_str_home (R2_HOMEDIR);
 		printf (
@@ -198,12 +206,20 @@ static int rabin_delegate(RThread *th) {
 		ptr = cmd;
 		if (ptr)
 			do {
-				if (th) r_th_lock_enter (th->user);
+				if (th) {
+					r_th_lock_enter (th->user);
+				}
 				nptr = strchr (ptr, '\n');
-				if (nptr) *nptr = 0;
+				if (nptr) {
+					*nptr = 0;
+				}
 				r_core_cmd (&r, ptr, 0);
-				if (nptr) ptr = nptr + 1;
-				if (th) r_th_lock_leave(th->user);
+				if (nptr) {
+					ptr = nptr + 1;
+				}
+				if (th) {
+					r_th_lock_leave(th->user);
+				}
 			} while (nptr);
 		//r_core_cmd (&r, cmd, 0);
 		r_str_free (rabin_cmd);
@@ -358,12 +374,14 @@ int main(int argc, char **argv, char **envp) {
 	r_core_init (&r);
 
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
-	if (argc>1 && !strcmp (argv[1], "-")) {
+	if (argc > 1 && !strcmp (argv[1], "-")) {
 		argv[1] = argv[0];
 		prefile = 1;
 		argc--;
 		argv++;
-	} else prefile = 0;
+	} else {
+		prefile = 0;
+	}
 
 	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
@@ -892,10 +910,12 @@ int main(int argc, char **argv, char **envp) {
 		}
 		r_cons_flush ();
 	}
+#if UNCOLORIZE_NONTTY
 #if __UNIX__
 	if (!r_cons_isatty ()) {
 		r_config_set_i (r.config, "scr.color", 0);
 	}
+#endif
 #endif
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
@@ -1008,18 +1028,11 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		}
 	}
-#if __UNIX__
-	if (r_cons_isatty ()) {
-#endif
-		 if (r_config_get_i (r.config, "scr.histsave") &&
-				r_config_get_i (r.config, "scr.interactive") &&
-				!r_sandbox_enable (0))
-			r_line_hist_save (R2_HOMEDIR"/history");
-#if __UNIX__
-	} else {
-		r_config_set_i (r.config, "scr.color", 0);
+	if (r_config_get_i (r.config, "scr.histsave") &&
+			r_config_get_i (r.config, "scr.interactive") &&
+			!r_sandbox_enable (0)) {
+		r_line_hist_save (R2_HOMEDIR"/history");
 	}
-#endif
 	// TODO: kill thread
 
 	/* capture return value */

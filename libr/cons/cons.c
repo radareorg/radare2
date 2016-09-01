@@ -729,17 +729,22 @@ R_API bool r_cons_isatty() {
 	const char *tty;
 	struct stat sb;
 
-	if (!isatty (1))
+	if (!isatty (1)) {
 		return false;
-	if (ioctl (1, TIOCGWINSZ, &win))
+	}
+	if (ioctl (1, TIOCGWINSZ, &win)) {
 		return false;
-	if ((win.ws_col == 0) || (win.ws_row == 0))
+	}
+	if ((win.ws_col == 0) || (win.ws_row == 0)) {
 		return false;
+	}
 	tty = ttyname (1);
-	if (!tty)
+	if (!tty) {
 		return false;
-	if (stat(tty, &sb) || !S_ISCHR(sb.st_mode))
+	}
+	if (stat (tty, &sb) || !S_ISCHR (sb.st_mode)) {
 		return false;
+	}
 	return true;
 #endif
 	/* non-UNIX do not have ttys */
