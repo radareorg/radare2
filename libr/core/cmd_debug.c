@@ -2054,9 +2054,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 							   addr = r_num_math (core->num, inp);
 							   bpi = r_bp_get_at (core->dbg->bp, addr);
 							   if (bpi) {
-								   if (bpi->cond) {
-									free (bpi->cond);
-								   }
+								   free (bpi->cond);
 								   bpi->cond = strdup (arg);
 							   } else {
 								   eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);

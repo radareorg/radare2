@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
-#include <r_config.h>
+#include <r_core.h>
 #include <signal.h>
 
 #if __WINDOWS__
@@ -39,7 +39,6 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
  */
 static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
 	RBreakpointItem *b;
-	int showinfo = 1;
 
 	if (!pb) {
 		eprintf ("BreakpointItem is NULL!\n");
@@ -97,10 +96,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	dbg->reason.bp_addr = b->addr;
 
 	/* inform the user of what happened */
-	if (dbg->corebind.config) {
-		showinfo = r_config_get_i (dbg->corebind.config, "cmd.hitinfo");
-	}
-	if (showinfo) {
+	if (dbg->hitinfo) {
 		eprintf ("hit %spoint at: %"PFMT64x "\n",
 				b->trace ? "trace" : "break", pc);
 	}
@@ -300,6 +296,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->num = r_num_new (r_debug_num_callback, dbg);
 	dbg->h = NULL;
 	dbg->threads = NULL;
+	dbg->hitinfo = 1;
 	/* TODO: needs a redesign? */
 	dbg->maps = r_debug_map_list_new ();
 	dbg->maps_user = r_debug_map_list_new ();
@@ -554,7 +551,6 @@ R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg) {
  */
 R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 	RDebugReasonType reason = R_DEBUG_REASON_ERROR;
-
 	if (!dbg) {
 		return reason;
 	}
@@ -562,7 +558,6 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 	if (bp) {
 		*bp = NULL;
 	}
-
 	/* default to unknown */
 	dbg->reason.type = R_DEBUG_REASON_UNKNOWN;
 	if (r_debug_is_dead (dbg)) {
@@ -913,12 +908,13 @@ repeat:
 
 		reason = r_debug_wait (dbg, &bp);
 		if (dbg->corebind.core) {
-			RNum *num = dbg->corebind.num;
-			if (reason == R_DEBUG_REASON_COND ) {
-				if (bp->cond) {
+			RCore *core= (RCore *)dbg->corebind.core;
+			RNum *num = core->num;
+			if (reason == R_DEBUG_REASON_COND) {
+				if (bp->cond && dbg->corebind.cmd) {
 					dbg->corebind.cmd (dbg->corebind.core, bp->cond);
 				}
-				if (num->value != 0) {
+				if (num->value) {
 					goto repeat;
 				}
 			}

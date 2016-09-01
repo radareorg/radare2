@@ -16,8 +16,6 @@ typedef struct r_core_bind_t {
 	RCoreCmdStr cmdstr;
 	RCorePuts puts;
 	RCoreDebugBpHit bphit;
-	RNum *num;
-	RConfig *config;
 } RCoreBind;
 
 #endif

@@ -1,5 +1,5 @@
  Examples of Macros
-====================
+--------------------
 NOTE: in radare2, do not add a space between the "," and the next
       command otherwise you are in for pain...
 
@@ -12,7 +12,7 @@ NOTE: in radare2, do not add a space between the "," and the next
 .(loop_macro)
 
 Backtrace implementation for x86-64:
-=====================================
+------------------------------------
 
 (backtrace,
 aa

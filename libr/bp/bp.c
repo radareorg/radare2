@@ -263,10 +263,10 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->hw ? "hw": "sw",
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
-				b->data ? b->data : "",
-				b->cond ? b->cond : "",
-				b->name ? b->name : "",
-				b->module_name ? b->module_name : "");
+				r_str_get2(b->data),
+				r_str_get2(b->cond),
+				r_str_get2(b->name),
+				r_str_get2(b->module_name));
 			break;
 		case 1:
 		case 'r':
@@ -295,8 +295,8 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->hw ? "true" : "false",
 				b->trace ? "true" : "false",
 				b->enabled ? "true" : "false",
-				b->data ? b->data : "",
-				b->cond ? b->cond : "");
+				r_str_get2(b->data),
+				r_str_get2(b->cond));
 			break;
 		}
 		/* TODO: Show list of pids and trace points, conditionals */

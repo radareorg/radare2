@@ -194,8 +194,6 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cmd = (RCoreCmd)r_core_cmd0;
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->puts = (RCorePuts)r_cons_strcat;
-	bnd->num = core->num;
-	bnd->config = core->config;
 	return true;
 }
 
@@ -1407,6 +1405,7 @@ R_API int r_core_init(RCore *core) {
 	core->offset = 0LL;
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (true);
+	r_core_bind (core, &core->dbg->corebind);
 	core->dbg->cb_printf = (PrintfCallback)r_cons_printf;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
@@ -1420,7 +1419,6 @@ R_API int r_core_init(RCore *core) {
 	r_debug_io_bind (core->dbg, core->io);
 
 	r_core_config_init (core);
-	r_core_bind (core, &core->dbg->corebind);
 
 	r_core_loadlibs_init (core);
 	//r_core_loadlibs (core);

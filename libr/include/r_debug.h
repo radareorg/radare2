@@ -188,6 +188,7 @@ typedef struct r_debug_tracepoint_t {
 typedef struct r_debug_t {
 	char *arch;
 	int bits; /// XXX: MUST SET ///
+	int hitinfo;
 
 	int pid; /* selected process id */
 	int tid; /* selected thread id */
