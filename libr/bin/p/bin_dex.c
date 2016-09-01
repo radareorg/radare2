@@ -394,7 +394,7 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBinClass *cls) {
 	ut64 SF, IF, DM, VM, lastIndex;
 	ut8 ff[sizeof (DexField)] = {0};
-	char *class_name, *cln = NULL;
+	char *class_name; // , *cln = NULL;
 	int total, i, *methods;
 	const ut8 *p, *p_end;
 	DexField field;
@@ -482,8 +482,10 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		field.type_id = r_read_le16 (ff + 2);
 		field.name_id = r_read_le32 (ff + 4);
 		char *name = getstr (bin, field.name_id);
+#if 0
 		cln = r_str_replace (strdup (class_name), "method.", "", 0);
 		cln = r_str_replace (cln, ";", "_", 0);
+#endif
 		if (accessFlags == 0) {
 		//	eprintf ("PUBLIC\n");
 		}

@@ -1901,10 +1901,9 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 #endif
 	} else if (!strcmp (type, "fat")) {
 		const char *f;
-		int size;
 		RListIter *iter;
 		ut32 num;
-		ut8 *num8 = &num;
+		ut8 *num8 = (ut8*)&num;
 		RBuffer *buf = r_buf_new_file (file, true);
 		r_buf_write_at (buf, 0, (const ut8*)"\xca\xfe\xba\xbe", 4);
 		int count = r_list_length (files);
@@ -1916,11 +1915,12 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		int item = 0;
 		r_list_foreach (files, iter, f) {
 			int f_len = 0;
-			ut8 *f_buf = r_file_slurp (f, &f_len);
+			ut8 *f_buf = (ut8 *)r_file_slurp (f, &f_len);
 			if (f_buf && f_len >= 0) {
 				eprintf ("ADD %s %d\n", f, f_len);
 			} else {
 				eprintf ("Cannot open %s\n", f);
+				free (f_buf);
 				continue;
 			}
 			item++;
@@ -1946,6 +1946,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 			r_buf_write_at (buf, off + 8, num8, 4);
 			off += 20;
 			from += f_len + (f_len % 0x1000);
+			free (f_buf);
 		}
 		r_buf_free (buf);
 		return NULL;

@@ -133,9 +133,9 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 	env ("R2PIPE_OUT", r2p->output[1]);
 
 	if (r2p->child) {
-		char ch;
 		eprintf ("[+] r2pipe child is %d\n", r2p->child);
 #if 0
+		char ch;
 		if (read (r2p->output[0], &ch, 1) != 1) {
 			eprintf ("Failed to read 1 byte\n");
 			r2p_close (r2p);

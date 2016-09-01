@@ -562,7 +562,9 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 //ret 0 if failed; ret copied length if successful
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	st64 pa;
-	if (!b || !buf || len < 1) return 0;
+	if (!b || !buf || len < 1) {
+		return 0;
+	}
 #if R_BUF_CUR != UT64_MAX
 #error R_BUF_CUR must be UT64_MAX
 #endif
@@ -570,7 +572,9 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 		addr = b->cur;
 	}
 	if (b->fd != -1) {
-		r_sandbox_lseek (b->fd, addr, SEEK_SET);
+		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
+			return 0;
+		}
 		return r_sandbox_read (b->fd, buf, len);
 	}
 	if (!b->sparse) {
@@ -600,8 +604,10 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 		return 0;
 	}
 	if (b->fd != -1) {
-		r_sandbox_lseek (b->fd, addr, SEEK_SET);
 		ut64 newlen = addr + len;
+		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
+			return 0;
+		}
 		if (newlen > b->length) {
 			b->length = newlen;
 			ftruncate (b->fd, newlen);

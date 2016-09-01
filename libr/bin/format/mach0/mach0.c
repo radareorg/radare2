@@ -1997,7 +1997,7 @@ struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
 	ut32 magic = 0;
 	int len;
 	struct MACH0_(mach_header) *macho_hdr = R_NEW0 (struct MACH0_(mach_header));
-	int big_endian;
+	bool big_endian = false;
 
 	if (!macho_hdr) {
 		return NULL;

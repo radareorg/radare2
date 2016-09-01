@@ -65,19 +65,23 @@ ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 	RBinAddr *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
 	ut8 buf[512];
-	if (!bin)
+	if (!bin) {
 		return 0LL;
-
+	}
 	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {
 		eprintf ("Error: read (entry)\n");
 	} else {
 		if (buf[367] == 0xe8) {
 			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
-			addr = entry->vaddr + 367 + 5 + delta;
+			delta += 367 + 5;
+			addr = entry->vaddr;
+			if (delta >= (UT64_MAX - addr)) {
+				return UT64_MAX;
+			}
+			addr += delta;
 		}
 	}
 	free (entry);
-
 	return addr;
 }
 

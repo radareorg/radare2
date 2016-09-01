@@ -31,7 +31,6 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 static void free_pdb_stream(void *stream) {
 	R_PDB_STREAM *pdb_stream = (R_PDB_STREAM *) stream;
-
 	if (pdb_stream) {
 		//R_FREE (pdb_stream->pages);
 		if (pdb_stream->pages) {
@@ -60,13 +59,11 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf/*FILE *fp*/,
 	pdb_stream->indx = index;
 	pdb_stream->page_size = page_size;
 	pdb_stream->pages_amount = pages_amount;
-
 	if (size == -1) {
-		pdb_stream->size =  pages_amount * page_size;
+		pdb_stream->size = pages_amount * page_size;
 	} else {
 		pdb_stream->size = size;
 	}
-
 	init_r_stream_file (&(pdb_stream->stream_file), buf, pages, pages_amount, size, page_size);
 	pdb_stream->free_ = free_pdb_stream;
 
@@ -75,7 +72,10 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf/*FILE *fp*/,
 
 ///////////////////////////////////////////////////////////////////////////////
 static int read_int_var(char *var_name, int *var, R_PDB *pdb) {
-	int bytes_read = r_buf_read(pdb->buf, (unsigned char *)var, 4);
+	if (!var) {
+		*var = 0;
+	}
+	int bytes_read = r_buf_read (pdb->buf, (ut8*)var, 4);
 	if (bytes_read != 4) {
 		eprintf ("error while reading from file [%s]", var_name);
 		return 0;
@@ -86,9 +86,12 @@ static int read_int_var(char *var_name, int *var, R_PDB *pdb) {
 ///////////////////////////////////////////////////////////////////////////////
 static int count_pages(int length, int page_size) {
 	int num_pages = 0;
-	num_pages = length / page_size;
-	if (length % page_size)
-		num_pages++;
+	if (page_size > 0) {
+		num_pages = length / page_size;
+		if (length % page_size) {
+			num_pages++;
+		}
+	}
 	return num_pages;
 }
 
@@ -145,7 +148,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 
 	sizes = (int *) calloc (num_streams, 4);
 	if (!sizes) {
-		R_FREE(data);
+		R_FREE (data);
 		eprintf ("too much amount of streams\n"
 			   "current pdb file is not correct\n");
 		return 0;
@@ -154,8 +157,9 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	for (i = 0; i < num_streams && (tmp_data+4 < data_end); i++) {
 		stream_size = *(int *)(tmp_data);
 		tmp_data += 4;
-		if (stream_size == UT32_MAX)
+		if (stream_size == UT32_MAX) {
 			stream_size = 0;
+		}
 		memcpy (sizes + i, &stream_size, 4);
 	}
 
@@ -398,7 +402,7 @@ static int pdb_read_root(R_PDB *pdb) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int pdb7_parse(R_PDB *pdb) {
+static bool pdb7_parse(R_PDB *pdb) {
 	char signature[PDB7_SIGNATURE_LEN + 1];
 	int num_root_index_pages = 0;
 	int *root_index_pages = 0;
@@ -420,25 +424,29 @@ static int pdb7_parse(R_PDB *pdb) {
 		goto error;
 	}
 
-	if (!read_int_var ("page_size", &page_size, pdb))
+	if (!read_int_var ("page_size", &page_size, pdb)) {
 		goto error;
-	if (!read_int_var ("alloc_tbl_ptr", &alloc_tbl_ptr, pdb))
+	}
+	if (!read_int_var ("alloc_tbl_ptr", &alloc_tbl_ptr, pdb)) {
 		goto error;
-	if (!read_int_var ("num_file_pages", &num_file_pages, pdb))
+	}
+	if (!read_int_var ("num_file_pages", &num_file_pages, pdb)) {
 		goto error;
-	if (!read_int_var ("root_size", &root_size, pdb))
+	}
+	if (!read_int_var ("root_size", &root_size, pdb)) {
 		goto error;
-	if (!read_int_var("reserved", &reserved, pdb))
+	}
+	if (!read_int_var("reserved", &reserved, pdb)) {
 		goto error;
-
+	}
 	// FIXME: why they is not equal ????
 //	if (memcmp(signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN) != 0) {
 //		printf("Invalid signature for PDB7 format\n");
 //		//goto error;
 //	}
 
-	num_root_pages = count_pages(root_size, page_size);
-	num_root_index_pages = count_pages((num_root_pages * 4), page_size);
+	num_root_pages = count_pages (root_size, page_size);
+	num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
 
 	root_index_pages = (int *)calloc (sizeof(int), num_root_index_pages);
 	if (!root_index_pages) {
@@ -454,7 +462,7 @@ static int pdb7_parse(R_PDB *pdb) {
 		goto error;
 	}
 
-	root_page_data = (int *)calloc(page_size, num_root_index_pages);
+	root_page_data = (int *)calloc (page_size, num_root_index_pages);
 	if (!root_page_data) {
 		eprintf ("error memory allocation of root_page_data\n");
 		goto error;
@@ -493,36 +501,35 @@ static int pdb7_parse(R_PDB *pdb) {
 	R_FREE (root_page_list);
 	R_FREE (root_page_data);
 	R_FREE (root_index_pages);
-	return 1;
-
+	return true;
 error:
 	R_FREE (root_page_list);
 	R_FREE (root_page_data);
 	R_FREE (root_index_pages);
-	return 0;
+	return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void finish_pdb_parse(R_PDB *pdb)
-{
+static void finish_pdb_parse(R_PDB *pdb) {
 	R_PDB7_ROOT_STREAM *p = pdb->root_stream;
 
 	RListIter *it;
 	SPage *page = 0;
 
-	if (!p)
+	if (!p) {
 		return;
-	it = r_list_iterator(p->streams_list);
-	while (r_list_iter_next(it)) {
-		page = (SPage *) r_list_iter_get(it);
-		free(page->stream_pages);
+	}
+	it = r_list_iterator (p->streams_list);
+	while (r_list_iter_next (it)) {
+		page = (SPage *) r_list_iter_get (it);
+		free (page->stream_pages);
 		page->stream_pages = 0;
-		free(page);
+		free (page);
 		page = 0;
 	}
-	r_list_free(p->streams_list);
+	r_list_free (p->streams_list);
 	p->streams_list = 0;
-	free(p);
+	free (p);
 	p = 0;
 	// end of free of R_PDB7_ROOT_STREAM
 
@@ -535,7 +542,7 @@ static void finish_pdb_parse(R_PDB *pdb)
 	SStreamParseFunc *stream_parse_func;
 	R_PDB_STREAM *pdb_stream = 0;
 	int i = 0;
-	it = r_list_iterator(pdb->pdb_streams);
+	it = r_list_iterator (pdb->pdb_streams);
 	while (r_list_iter_next(it)) {
 		switch (i) {
 		case 1:
@@ -546,49 +553,43 @@ static void finish_pdb_parse(R_PDB *pdb)
 		case 2:
 			tpi_stream = (STpiStream *) r_list_iter_get(it);
 			tpi_stream->free_(tpi_stream);
-			free(tpi_stream);
+			free (tpi_stream);
 			break;
 		case 3:
 			dbi_stream = (SDbiStream *) r_list_iter_get(it);
 			dbi_stream->free_(dbi_stream);
-			free(dbi_stream);
+			free (dbi_stream);
 			break;
 		default:
 			find_indx_in_list(pdb->pdb_streams2, i, &stream_parse_func);
 			if (stream_parse_func) {
 				break;
 			}
-
 			pdb_stream = (R_PDB_STREAM *) r_list_iter_get(it);
 			pdb_stream->free_(pdb_stream);
-			free(pdb_stream);
+			free (pdb_stream);
 			break;
 		}
-
 		i++;
 	}
-	r_list_free(pdb->pdb_streams);
+	r_list_free (pdb->pdb_streams);
 	// enf of free of pdb->pdb_streams
 
 	// start of free pdb->pdb_streams2
 	it = r_list_iterator(pdb->pdb_streams2);
-	while (r_list_iter_next(it)) {
+	while (r_list_iter_next (it)) {
 		stream_parse_func = (SStreamParseFunc *) r_list_iter_get(it);
 		if (stream_parse_func->free) {
 			stream_parse_func->free(stream_parse_func->stream);
 			free(stream_parse_func->stream);
 		}
-		free(stream_parse_func);
+		free (stream_parse_func);
 	}
-	r_list_free(pdb->pdb_streams2);
+	r_list_free (pdb->pdb_streams2);
 	// end of free pdb->streams2
 
-	if (pdb->stream_map)
-		free(pdb->stream_map);
-
-	if (pdb->buf) {
-		free(pdb->buf);
-	}
+	free (pdb->stream_map);
+	free (pdb->buf);
 
 //	fclose(pdb->fp);
 //	printf("finish_pdb_parse()\n");
@@ -796,33 +797,32 @@ void build_command_field(ELeafType lt, char **command_field) {
 
 ///////////////////////////////////////////////////////////////////////////////
 void build_name_field(char *name, char **name_field) {
-	if (!name)
-		*name_field = NULL;
-	else
-		*name_field = strdup (name);
+	*name_field = name? strdup (name): NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name,
-										char *type, int i, int *pos,
-										int offset,
-										char *format_flags_field,
-										char **members_field) {
+int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, char *type,
+		int i, int *pos, int offset, char *format_flags_field, char **members_field) {
 	switch (lt) {
 	case eLF_STRUCTURE:
 	case eLF_UNION:
 		members_field[i] = (char *) malloc(sizeof(char) * strlen(name) + 1);
 		if (!members_field[i]) return 0;
 		strcpy(members_field[i], name);
-		if (build_format_flags(pdb, type, *pos, format_flags_field, &members_field[i]) == 0) {
+		if (build_format_flags (pdb, type, *pos, format_flags_field, &members_field[i]) == 0) {
 			return 0;
 		}
 		*pos = *pos + 1;
 		break;
 	case eLF_ENUM:
+		members_field[i] = r_str_newf ("%s=0x%08x", name, offset);
+#if 0
 		members_field[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
-		if (!members_field[i]) return 0;
-		sprintf(members_field[i], "%s=%08X", name, offset);
+		if (!members_field[i]) {
+			return 0;
+		}
+		sprintf (members_field[i], "%s=%08X", name, offset);
+#endif
 		break;
 	default:
 		return 0;
@@ -845,17 +845,15 @@ int alloc_format_flag_and_member_fields(RList *ptmp,
 		(void)r_list_iter_get(it2);
 		*members_amount = *members_amount + 1;
 	}
-
 	if (!*members_amount) {
 		return 0;
 	}
-
 	*flags_format_field = (char *) malloc(*members_amount + 1);
-	memset(*flags_format_field, 0, *members_amount + 1);
+	memset (*flags_format_field, 0, *members_amount + 1);
 
 	size = sizeof *members_name_field * (*members_amount);
 	*members_name_field = (char **) malloc(size);
-	for(i = 0; i < *members_amount; i++) {
+	for (i = 0; i < *members_amount; i++) {
 		(*members_name_field)[i] = 0;
 	}
 
@@ -891,7 +889,7 @@ static void print_types(R_PDB *pdb, int mode) {
 	}
 
 	if (mode == 'j') {
-		pdb->cb_printf("{\"%s\":[","types");
+		pdb->cb_printf ("{\"%s\":[","types");
 	}
 
 	it = r_list_iterator(tpi_stream->types);
@@ -978,11 +976,9 @@ static void print_types(R_PDB *pdb, int mode) {
 					pdb->cb_printf ("%s\n", type);
 					break;
 				case 'r':
-					if (!build_flags_format_and_members_field(pdb, lt, name, type,
-															i, &pos, offset,
-															flags_format_field,
-															members_name_field)) {
-						R_FREE(type);
+					if (!build_flags_format_and_members_field(pdb, lt, name, type, i,
+							&pos, offset, flags_format_field, members_name_field)) {
+						R_FREE (type);
 						goto err;
 					}
 					break;
@@ -1003,8 +999,7 @@ static void print_types(R_PDB *pdb, int mode) {
 					}
 					break;
 				}
-
-				R_FREE(type);
+				R_FREE (type);
 				i++;
 			}
 
@@ -1030,43 +1025,40 @@ static void print_types(R_PDB *pdb, int mode) {
 					pdb->cb_printf("\n");
 				}
 			}
-
 			if (mode == 'j') {
 				pdb->cb_printf("]}");
 			}
-
 err:
 			if (mode == 'r') {
 				R_FREE(command_field);
 				R_FREE(name_field);
 				R_FREE(flags_format_field);
 				for (i = 0; i < members_amount; i++) {
-					R_FREE(members_name_field[i]);
+					R_FREE (members_name_field[i]);
 				}
-				R_FREE(members_name_field);
+				R_FREE (members_name_field);
 			}
 		}
 	}
 
 	if (mode == 'j') {
-		pdb->cb_printf("]}");
+		pdb->cb_printf ("]}");
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
-	RList *l = 0;
-	RListIter *it = 0;
-	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0 ,
-			*gsym = 0, *tmp = 0;
-	SGDATAStream *gsym_data_stream = 0;
-	SGlobal *gdata = 0;
-	SPEStream *pe_stream = 0;
+	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0 , *gsym = 0, *tmp = 0;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
+	SGDATAStream *gsym_data_stream = 0;
+	SPEStream *pe_stream = 0;
+	SGlobal *gdata = 0;
+	RListIter *it = 0;
+	RList *l = 0;
 
 	l = pdb->pdb_streams2;
-	it = r_list_iterator(l);
-	while (r_list_iter_next(it)) {
+	it = r_list_iterator (l);
+	while (r_list_iter_next (it)) {
 		tmp = (SStreamParseFunc *) r_list_iter_get(it);
 		switch (tmp->type) {
 		case ePDB_STREAM_SECT__HDR_ORIG:
@@ -1092,7 +1084,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	}
 
 	if (format == 'j')
-		pdb->cb_printf("{\"%s\":[","gvars");
+		pdb->cb_printf ("{\"%s\":[","gvars");
 
 	gsym_data_stream = (SGDATAStream *) gsym->stream;
 	if ((omap != 0) && (sctns_orig != 0)) {
@@ -1144,9 +1136,9 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 				   gdata->name.name, (gdata->segment -1));
 		}
 	}
-
-	if (format == 'j')
-		pdb->cb_printf("]}");
+	if (format == 'j') {
+		pdb->cb_printf ("]}");
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1158,9 +1150,9 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 		eprintf ("struct R_PDB is not correct\n");
 		goto error;
 	}
-	if (!pdb->cb_printf)
+	if (!pdb->cb_printf) {
 		pdb->cb_printf = (PrintfCallback)printf;
-
+	}
 	pdb->buf = r_buf_new_slurp (filename);
 //	pdb->fp = r_sandbox_fopen (filename, "rb");
 //	if (!pdb->fp) {
@@ -1180,7 +1172,7 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 		goto error;
 	}
 
-	r_buf_seek(pdb->buf, 0, 0);
+	r_buf_seek (pdb->buf, 0, 0);
 
 	if (!memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 		pdb->pdb_parse = pdb7_parse;
