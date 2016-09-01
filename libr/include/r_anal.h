@@ -622,6 +622,13 @@ typedef struct r_anal_t {
 	RList /*RAnalRange*/ *bits_ranges;
 } RAnal;
 
+typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
+
+typedef struct r_anal_bind_t {
+	RAnal *anal;
+	RAnalGetFcnIn get_fcn_in;
+} RAnalBind;
+
 typedef struct r_anal_hint_t {
 	ut64 addr;
 	ut64 ptr;
@@ -1149,6 +1156,7 @@ R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcn_type_tostring(int type);
+R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 
 /* fcnsign */
 R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
