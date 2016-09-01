@@ -36,7 +36,7 @@ typedef struct dex_header_t {
 typedef struct dex_proto_t {
 	ut32 shorty_id;
 	ut32 return_type_id;
-	ut32 params_id;
+	ut32 parameters_off;
 } DexProto;
 
 typedef struct dex_type_t {
@@ -75,10 +75,11 @@ typedef struct r_bin_dex_obj_t {
 	RBuffer *b;
 	struct dex_header_t header;
 	ut32 *strings;
-	struct dex_class_t *classes;
-	struct dex_method_t *methods;
 	struct dex_type_t *types;
+	struct dex_proto_t *protos;
 	struct dex_field_t *fields;
+	struct dex_method_t *methods;
+	struct dex_class_t *classes;
 	RList *methods_list;
 	RList *imports_list;
 	ut64 code_from;
