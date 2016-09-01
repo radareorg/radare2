@@ -251,6 +251,26 @@ static RFlagItem *evalFlag(RFlag *f, RFlagItem *item) {
 	return item;
 }
 
+/* return true if flag.* exist at offset. Otherwise, false is returned.
+ * For example (f, "sym", 3, 0x1000)*/
+R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off) {
+	RListIter *iter = NULL;
+	RFlagItem *item = NULL;
+	if (!f) {
+		return false;
+	}
+	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
+	if (!list) {
+		return false;
+	}
+	r_list_foreach (list, iter, item) {
+		if (item->name && !strncmp (item->name, flag_prefix, fp_size)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 /* return the flag item with name "name" in the RFlag "f", if it exists.
  * Otherwise, NULL is returned. */
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
@@ -569,6 +589,7 @@ R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color) {
 // BIND
 R_API int r_flag_bind(RFlag *f, RFlagBind *fb) {
 	fb->f = f;
+	fb->exist_at = r_flag_exist_at;
 	fb->get = r_flag_get;
 	fb->get_at = r_flag_get_at;
 	fb->set = r_flag_set;

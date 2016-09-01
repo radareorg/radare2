@@ -1825,6 +1825,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					r_core_read_at (core, ptr, b, src->memref);
 					off = r_mem_get_num (b, src->memref);
 					item = r_flag_get_i (core->flags, off);
+					//TODO: introduce env for this print?
 					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
 							dst->reg->name, ptr, off, item?item->name: "");
 				}
@@ -1847,11 +1848,11 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				r_core_read_at (core, ptr, b, sizeof (b)); //memref);
 				off = r_mem_get_num (b, memref);
 				item = r_flag_get_i (core->flags, off);
-				{
-				char s[64];
-				r_str_ncpy (s, (const char *)b, sizeof (s));
-				r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
-						dst->reg->name, ptr, off, item?item->name: s);
+				if (ds->show_leahints) {
+					char s[64];
+					r_str_ncpy (s, (const char *)b, sizeof (s));
+					r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
+							dst->reg->name, ptr, off, item?item->name: s);
 				}
 			}
 		}

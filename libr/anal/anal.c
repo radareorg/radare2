@@ -49,6 +49,7 @@ R_API RAnal *r_anal_new() {
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->limit = NULL;
 	anal->opt.nopskip = true; // skip nops in code analysis
+	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->decode = true; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();

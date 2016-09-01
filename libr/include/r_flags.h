@@ -43,6 +43,7 @@ typedef struct r_flag_t {
 
 /* compile time dependency */
 
+typedef bool (*RFlagExistAt)(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
 typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
@@ -51,6 +52,7 @@ typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
 typedef struct r_flag_bind_t {
 	int init;
 	RFlag *f;
+	RFlagExistAt exist_at;
 	RFlagGet get;
 	RFlagGetAt get_at;
 	RFlagSet set;
@@ -64,6 +66,7 @@ R_API int r_flag_bind(RFlag *io, RFlagBind *bnd);
 R_API RFlag * r_flag_new(void);
 R_API RFlag * r_flag_free(RFlag *f);
 R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
+R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);

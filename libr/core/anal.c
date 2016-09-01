@@ -1166,6 +1166,10 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
  * If the function has been already analyzed, it adds a
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+	if (from == UT64_MAX && r_anal_get_fcn_in (core->anal, at, 0)) {
+		return 0;
+	}
+
 	bool use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
 	RListIter *iter;
