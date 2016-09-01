@@ -30,7 +30,7 @@ typedef struct R_PDB {
 	void (*print_gvars)(struct R_PDB *pdb, ut64 img_base, int format);
 } R_PDB;
 
-int init_pdb_parser(R_PDB *pdb, const char *filename);
+bool init_pdb_parser(R_PDB *pdb, const char *filename);
 
 #ifdef __cplusplus
 }

@@ -815,7 +815,7 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, c
 		*pos = *pos + 1;
 		break;
 	case eLF_ENUM:
-		members_field[i] = r_str_newf ("%s=0x%08x", name, offset);
+		members_field[i] = r_str_newf ("%s=%08x", name, offset);
 #if 0
 		members_field[i] = (char *) malloc(sizeof(char) * strlen(name) + 8 + 1 + 1); // 8 - hex int, 1 - =
 		if (!members_field[i]) {
@@ -831,17 +831,11 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, c
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-int alloc_format_flag_and_member_fields(RList *ptmp,
-										char **flags_format_field,
-										int *members_amount,
-										char ***members_name_field) {
-	int i = 0;
-	RListIter *it2 = 0;
-	int size = 0;
+int alloc_format_flag_and_member_fields(RList *ptmp, char **flags_format_field, int *members_amount, char ***members_name_field) {
+	int i = 0, size = 0;
 
-	it2 = r_list_iterator(ptmp);
-	while (r_list_iter_next(it2)) {
+	RListIter *it2 = r_list_iterator(ptmp);
+	while (r_list_iter_next (it2)) {
 		(void)r_list_iter_get(it2);
 		*members_amount = *members_amount + 1;
 	}
@@ -852,11 +846,10 @@ int alloc_format_flag_and_member_fields(RList *ptmp,
 	memset (*flags_format_field, 0, *members_amount + 1);
 
 	size = sizeof *members_name_field * (*members_amount);
-	*members_name_field = (char **) malloc(size);
+	*members_name_field = (char **) malloc (size);
 	for (i = 0; i < *members_amount; i++) {
 		(*members_name_field)[i] = 0;
 	}
-
 	return 1;
 }
 
@@ -901,46 +894,42 @@ static void print_types(R_PDB *pdb, int mode) {
 		t = (SType *) r_list_iter_get(it);
 		tf = &t->type_data;
 		lt = tf->leaf_type;
-		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION)
-			|| (tf->leaf_type == eLF_ENUM)) {
-
+		if ((tf->leaf_type == eLF_STRUCTURE) || (tf->leaf_type == eLF_UNION) || (tf->leaf_type == eLF_ENUM)) {
 			if (tf->is_fwdref) {
-				tf->is_fwdref(tf, &val);
+				tf->is_fwdref (tf, &val);
 				if (val == 1) {
 					continue;
 				}
 			}
-
 			if ((mode == 8) && (is_first == 0)) {
-				pdb->cb_printf(",");
+				pdb->cb_printf (",");
 			}
-
 			is_first = 0;
-
-			if (tf->get_name)
-				tf->get_name(tf, &name);
+			if (tf->get_name) {
+				tf->get_name (tf, &name);
+			}
 			// val for STRUCT or UNION mean size
-			if (tf->get_val)
-				tf->get_val(tf, &val);
-			if (tf->get_members)
-				tf->get_members(tf, &ptmp);
+			if (tf->get_val) {
+				tf->get_val (tf, &val);
+			}
+			if (tf->get_members) {
+				tf->get_members (tf, &ptmp);
+			}
 			//pdb->cb_printf ("%s: size 0x%x\n", name, val);
 			switch (mode) {
 			case 'd': pdb->cb_printf ("%s: size 0x%x\n", name, val); break;
 			case 'r':
 				build_command_field (lt, &command_field);
 				build_name_field (name, &name_field);
-				if (!alloc_format_flag_and_member_fields(ptmp,
-														&flags_format_field,
-														&members_amount,
-														&members_name_field)) {
+				if (!alloc_format_flag_and_member_fields (ptmp, &flags_format_field,
+						&members_amount, &members_name_field)) {
 					goto err;
 				}
 				break;
 			case 'j':
 				switch (lt) {
 				case eLF_ENUM:
-					pdb->cb_printf("{\"type\":\"%s\", \"name\":\"%s\",\"%s\":[",
+					pdb->cb_printf ("{\"type\":\"%s\", \"name\":\"%s\",\"%s\":[",
 								"enum", name , "enums");
 					break;
 				case eLF_STRUCTURE:
@@ -955,21 +944,23 @@ static void print_types(R_PDB *pdb, int mode) {
 				break;
 			}
 
-			it2 = r_list_iterator(ptmp);
-			while (r_list_iter_next(it2)) {
+			it2 = r_list_iterator (ptmp);
+			while (r_list_iter_next (it2)) {
 				if ((mode == 'j') && (i)) {
-					pdb->cb_printf(",");
+					pdb->cb_printf (",");
 				}
-
 				tf = (STypeInfo *) r_list_iter_get(it2);
-				if (tf->get_name)
-					tf->get_name(tf, &name);
-				if (tf->get_val)
-					tf->get_val(tf, &offset);
-				else
+				if (tf->get_name) {
+					tf->get_name (tf, &name);
+				}
+				if (tf->get_val) {
+					tf->get_val (tf, &offset);
+				} else {
 					offset = 0;
-				if (tf->get_print_type)
-					tf->get_print_type(tf, &type);
+				}
+				if (tf->get_print_type) {
+					tf->get_print_type (tf, &type);
+				}
 				switch (mode) {
 				case 'd':
 					pdb->cb_printf ("  0x%x: %s type:", offset, name);
@@ -985,14 +976,14 @@ static void print_types(R_PDB *pdb, int mode) {
 				case 'j': // JSON
 					switch (lt) {
 					case eLF_ENUM:
-						pdb->cb_printf("{\"%s\":\"%s\",\"%s\":%d}",
-									"enum_name", name, "enum_val", offset);
+						pdb->cb_printf ("{\"%s\":\"%s\",\"%s\":%d}",
+								"enum_name", name, "enum_val", offset);
 						break;
 					case eLF_STRUCTURE:
 					case eLF_UNION:
-						pdb->cb_printf("{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":%d}",
-									"member_type", type + strlen("(member)") + 1,
-									"member_name", name, "offset", offset);
+						pdb->cb_printf ("{\"%s\":\"%s\",\"%s\":\"%s\",\"%s\":%d}",
+								"member_type", type + strlen("(member)") + 1,
+								"member_name", name, "offset", offset);
 						break;
 					default:
 						break;
@@ -1004,33 +995,31 @@ static void print_types(R_PDB *pdb, int mode) {
 			}
 
 			if (mode == 'r') {
-				pdb->cb_printf("%s %s ", command_field, name_field);
+				pdb->cb_printf ("%s %s ", command_field, name_field);
 				if (lt != eLF_ENUM) {
-					pdb->cb_printf("%s ", flags_format_field);
+					pdb->cb_printf ("%s ", flags_format_field);
 				} else {
-					pdb->cb_printf("%c ", '{');
+					pdb->cb_printf ("%c ", '{');
 				}
-
 				sym = (lt == eLF_ENUM) ? ',' : ' ';
 				for (i = 0; i < members_amount; i++) {
-					pdb->cb_printf("%s", members_name_field[i]);
+					pdb->cb_printf ("%s", members_name_field[i]);
 					if ((i + 1) != members_amount) {
-						pdb->cb_printf("%c", sym);
+						pdb->cb_printf ("%c", sym);
 					}
 				}
-
 				if (lt == eLF_ENUM) {
-					pdb->cb_printf(" };\"\n");
+					pdb->cb_printf (" };\"\n");
 				} else {
-					pdb->cb_printf("\n");
+					pdb->cb_printf ("\n");
 				}
 			}
 			if (mode == 'j') {
-				pdb->cb_printf("]}");
+				pdb->cb_printf ("]}");
 			}
 err:
 			if (mode == 'r') {
-				R_FREE(command_field);
+				R_FREE (command_field);
 				R_FREE(name_field);
 				R_FREE(flags_format_field);
 				for (i = 0; i < members_amount; i++) {
@@ -1077,28 +1066,24 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 			break;
 		}
 	}
-
 	if (!gsym) {
 		eprintf ("there is no global symbols in current pdb\n");
 		return;
 	}
-
-	if (format == 'j')
+	if (format == 'j') {
 		pdb->cb_printf ("{\"%s\":[","gvars");
-
+	}
 	gsym_data_stream = (SGDATAStream *) gsym->stream;
 	if ((omap != 0) && (sctns_orig != 0)) {
 		pe_stream = (SPEStream *) sctns_orig->stream;
 	} else {
 		pe_stream = (SPEStream *) sctns->stream;
 	}
-
-	it = r_list_iterator(gsym_data_stream->globals_list);
-	while (r_list_iter_next(it)) {
-		if ((format == 'j') && (gdata)) {
-			pdb->cb_printf(",");
+	it = r_list_iterator (gsym_data_stream->globals_list);
+	while (r_list_iter_next (it)) {
+		if ((format == 'j') && gdata) {
+			pdb->cb_printf (",");
 		}
-
 		gdata = (SGlobal *) r_list_iter_get(it);
 		sctn_header = r_list_get_n(pe_stream->sections_hdrs, (gdata->segment -1));
 		if (sctn_header) {
@@ -1142,7 +1127,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int init_pdb_parser(R_PDB *pdb, const char *filename) {
+bool init_pdb_parser(R_PDB *pdb, const char *filename) {
 	char *signature = NULL;
 	int bytes_read = 0;
 
@@ -1159,14 +1144,13 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 //		eprintf ("file %s can not be open\n", filename);
 //		goto error;
 //	}
-
 	signature = (char *)calloc (1, PDB7_SIGNATURE_LEN);
 	if (!signature) {
 		eprintf ("memory allocation error\n");
 		goto error;
 	}
 
-	bytes_read = r_buf_read(pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
+	bytes_read = r_buf_read(pdb->buf, (ut8 *)signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
 		eprintf ("file reading error\n");
 		goto error;
@@ -1188,10 +1172,8 @@ int init_pdb_parser(R_PDB *pdb, const char *filename) {
 	pdb->print_types = print_types;
 	pdb->print_gvars = print_gvars;
 //	printf("init_pdb_parser() finish with success\n");
-	return 1;
-
+	return true;
 error:
 	R_FREE (signature);
-
-	return 0;
+	return false;
 }
