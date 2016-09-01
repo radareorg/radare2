@@ -8,7 +8,7 @@
 #define r_hash_adler32 __adler32
 #include "../../hash/adler32.c"
 
-#define DEBUG_PRINTF 1
+#define DEBUG_PRINTF 0
 
 #if DEBUG_PRINTF
 #define dprintf eprintf
@@ -1134,7 +1134,7 @@ static RList* classes (RBinFile *arch) {
 			free (class->name);
 			class->index = class_index++;
 			class->addr = entry.class_id + bin->header.class_offset;
-			class->name = cn;
+			class->name = r_str_replace (cn, ";", "", 0);;
 			//class->addr = class_addr;
 
 			free (parse_class (arch, bin, &entry, class));

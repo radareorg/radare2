@@ -4,7 +4,7 @@
 #include <r_util.h>
 #include "dex.h"
 
-#define DEBUG_PRINTF 1
+#define DEBUG_PRINTF 0
 
 #if DEBUG_PRINTF
 #define dprintf eprintf
