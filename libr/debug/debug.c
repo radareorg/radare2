@@ -908,7 +908,7 @@ repeat:
 
 		reason = r_debug_wait (dbg, &bp);
 		if (dbg->corebind.core) {
-			RCore *core= (RCore *)dbg->corebind.core;
+			RCore *core = (RCore *)dbg->corebind.core;
 			RNum *num = core->num;
 			if (reason == R_DEBUG_REASON_COND) {
 				if (bp->cond && dbg->corebind.cmd) {

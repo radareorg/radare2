@@ -82,7 +82,7 @@ static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 static int cb_debug_hitinfo(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->dbg->hitinfo= node->i_value;
+	core->dbg->hitinfo = node->i_value;
 	return true;
 }
 
