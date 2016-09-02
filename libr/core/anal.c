@@ -266,7 +266,9 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				if (dump) {
 					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
 				}
-				if (blacklisted_word(f->name)) { break; }
+				if (blacklisted_word (f->name)) {
+    					break;
+				}
 				if (strstr (f->name, "isatty"))
 					use_isatty = 1;
 				if (strstr (f->name, "getopt"))
