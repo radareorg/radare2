@@ -1730,6 +1730,7 @@ R_API int r_core_config_init(RCore *core) {
 	} else {
 		r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
 	}
+	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF("cmd.bp", "", "Run when a breakpoint is hit");
@@ -1812,6 +1813,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETPREF("graph.font", "Courier", "Font for dot graphs");
 	SETPREF("graph.offset", "false", "Show offsets in graphs");
+	SETPREF("graph.web", "false", "Display graph in web browser (VV)");
 	SETI("graph.from", UT64_MAX, "");
 	SETI("graph.to", UT64_MAX, "");
 	SETI("graph.scroll", 5, "Scroll speed in ascii-art graph");

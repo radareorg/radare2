@@ -3920,6 +3920,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"agn", "[?] title body", "Add a node to the current graph",
 		"ags", " [addr]", "output simple graphviz call graph of function (only bb offset)",
 		"agt", " [addr]", "find paths from current offset to given address",
+		"agv", "[acdltfl] [a]", "view function using graphviz",
 		NULL };
 
 	switch (input[0]) {
@@ -3985,6 +3986,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'd': // "agd"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1),
 				R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+		break;
+	case 'v': // "agv"
+		r_core_cmd0 (core, "=H /graph/");
 		break;
 	case '?': // "ag?"
 		r_core_cmd_help (core, help_msg);
