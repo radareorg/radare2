@@ -1862,10 +1862,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					//slide += (isptr) ? STRUCTPTR : NESTEDSTRUCT;
 					slide += NESTEDSTRUCT;
 					if (size == -1) {
-							s = r_print_format_struct (p, seeki,
-										   buf+i, len-i, fmtname, slide,
-										   mode, setval, nxtfield, anon);
-							i += (isptr) ? (p->bits / 8) : s;
+						s = r_print_format_struct (p, seeki,
+									   buf+i, len-i, fmtname, slide,
+									   mode, setval, nxtfield, anon);
+						i += (isptr) ? (p->bits / 8) : s;
+						if (MUSTSEEJSON) {
+							if (!isptr) {
+								p->cb_printf ("]}");
+							}
+						}
 					} else {
 						if (mode & R_PRINT_ISFIELD) {
 							if (!SEEVALUE) {
