@@ -2014,6 +2014,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
 		"x", " @@t", "\"\" on all threads (see dp)",
 		"x", " @@b", "\"\" on all basic blocks of current function (see afb)",
+		"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
 		"x", " @@f", "\"\" on all functions (see aflq)",
 		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 		// TODO: Add @@k sdb-query-expression-here
@@ -2037,6 +2038,26 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 			free (ostr);
 			r_core_block_size (core, bs);
+			return false;
+		}
+		break;
+	case 'i': // "@@i" - function instructions
+		{
+			RListIter *iter;
+			RAnalBlock *bb;
+			int i;
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			if (fcn) {
+				r_list_sort (fcn->bbs, bb_cmp);
+				r_list_foreach (fcn->bbs, iter, bb) {
+					for (i = 0; i < bb->op_pos_size; i++) {
+						ut64 addr = bb->addr + bb->op_pos[i];
+						r_core_seek (core, addr, 1);
+						r_core_cmd (core, cmd, 0);
+					}
+				}
+			}
+			free (ostr);
 			return false;
 		}
 		break;

@@ -329,6 +329,7 @@ case "$1" in
 	echo " -v,version                  show version"
 	echo " -h,help                     show this message"
 	echo " -c,clean                    clear source cache"
+	echo " init | update ..            initialize/update database"
 	echo "Environment:"
 	echo "SUDO=sudo                    use this tool as sudo"
 	echo "R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins"
