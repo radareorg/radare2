@@ -255,6 +255,16 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				if (dump) {
 					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
 				}
+				if (strstr (f->name, "__stack_chk_guard"))
+					break;
+				if (strstr (f->name, "__stderrp"))
+					break;
+				if (strstr (f->name, "__stdinp"))
+					break;
+				if (strstr (f->name, "__stdoutp"))
+					break;
+				if (strstr (f->name, "_DefaultRuneLocale"))
+					break;
 				if (strstr (f->name, "isatty"))
 					use_isatty = 1;
 				if (strstr (f->name, "getopt"))
