@@ -25,7 +25,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_v810 = {
 	.name = "v810",
 	.license = "LGPL3",
-	.desc = "V810 disassembly plugin",
+	.desc = "v810 disassembly plugin",
 	.arch = "v810",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_LITTLE,
