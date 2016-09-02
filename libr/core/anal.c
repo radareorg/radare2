@@ -241,8 +241,7 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 }
 
 static bool blacklisted_word(char* name) {
-	const char * list[] = {"__stack_chk_guard", "__stderrp", "__stdinp", "__stdoutp", 
-	"_DefaultRuneLocale"};
+	const char * list[] = {"__stack_chk_guard", "__stderrp", "__stdinp", "__stdoutp", "_DefaultRuneLocale"};
 	int i;
 	for (i = 0; i < sizeof (list) / sizeof (list[0]); i++) {
         	if (strstr (name, list[i])) { return true; }
