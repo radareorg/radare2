@@ -3,6 +3,9 @@
 #include "r_util.h"
 #include "r_core.h"
 
+/* hacky inclusion */
+#include "anal_vt.c"
+
 /* better aac for windows-x86-32 */
 #define JAYRO_03 0
 
@@ -3920,7 +3923,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"agn", "[?] title body", "Add a node to the current graph",
 		"ags", " [addr]", "output simple graphviz call graph of function (only bb offset)",
 		"agt", " [addr]", "find paths from current offset to given address",
-		"agv", "[acdltfl] [a]", "view function using graphviz",
+		"agv", "", "Show function graph in web/png (see graph.web and cmd.graph) or agf for asciiart",
 		NULL };
 
 	switch (input[0]) {
@@ -3988,15 +3991,23 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 		break;
 	case 'v': // "agv"
-		r_core_cmd0 (core, "=H /graph/");
+		if (r_config_get_i (core->config, "graph.web")) {
+			r_core_cmd0 (core, "=H /graph/");
+		} else {
+			const char *cmd = r_config_get (core->config, "cmd.graph");
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			} else {
+				r_core_cmd0 (core, "agf");
+			}
+		}
 		break;
 	case '?': // "ag?"
 		r_core_cmd_help (core, help_msg);
 		break;
 	case ' ': // "ag"
 		arg = strchr (input, ' ');
-		if (arg) arg++;
-		r_core_anal_graph (core, r_num_math (core->num, arg),
+		r_core_anal_graph (core, r_num_math (core->num, arg? arg + 1: NULL),
 				R_CORE_ANAL_GRAPHBODY);
 		break;
 	case 0:
