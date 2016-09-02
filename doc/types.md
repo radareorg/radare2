@@ -126,6 +126,31 @@ func.strcasecmp.ret=int
 func.strcasecmp.cc=cdecl
 ```
 
+### Function callbacks
+
+This one isn't really a type on its own. It is a so called dummy type.
+You can't really define a function callback type on its own. However, you can add function callbacks to other datatypes as structs, unions or functions themselves.
+At the current time this is just temporary solution to this problem till another more reliable solution come to live.
+Assume you have something like `qsort` function from C library on x86
+```
+void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
+```
+
+It would be translated into
+
+```
+qsort=func
+func.qsort=args=4
+func.qsort.arg0=void *,base
+func.qsort.arg1=size_t,nmemb
+func.qsort.arg2=size_t,size
+func.qsort.arg3=func,compar
+func.qsort.ret=void
+func.qsort.cc=cdecl
+```
+
+That concept of `=func,compar` can just be applied to any situation where you need to insert a function callback. Needless to say that this callback should to be defined on its own. As you may have noticed this implementation almost delete all high level data about the call back except for that it is a function.
+
 ## Integrating with r2 source
 
 in order to add definitions to r2 source there is very flexible naming convention. First the file should be located in `path/to/r2/libr/anal/d`. Then you should add an entry for it in `Makefile` that exist at the same directory. Make sure that the name follow this convention:

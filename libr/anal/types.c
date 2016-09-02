@@ -44,6 +44,9 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 	char *query;
 	const char *t = sdb_const_get (anal->sdb_types, type, 0);
 	if (!t) {
+		if (!strcmp (type, "func")) {
+			return r_anal_type_get_size (anal, "void *");
+		}
 		return 0;
 	}
 	if (!strcmp (t, "type")){
