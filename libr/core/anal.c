@@ -239,6 +239,17 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 		}
 	}
 }
+
+static bool blacklisted_word(char* name) {
+	const char * list[] = {"__stack_chk_guard", "__stderrp", "__stdinp", "__stdoutp", 
+	"_DefaultRuneLocale"};
+	int i;
+	for (i = 0; i < sizeof(list)/sizeof(list[0]); i++) {
+        	if (strstr(name, list[i]) != NULL) return true;
+    	}
+	return false;
+}
+
 /* suggest a name for the function at the address 'addr'.
  * If dump is true, every strings associated with the function is printed */
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
@@ -255,16 +266,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				if (dump) {
 					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
 				}
-				if (strstr (f->name, "__stack_chk_guard"))
-					break;
-				if (strstr (f->name, "__stderrp"))
-					break;
-				if (strstr (f->name, "__stdinp"))
-					break;
-				if (strstr (f->name, "__stdoutp"))
-					break;
-				if (strstr (f->name, "_DefaultRuneLocale"))
-					break;
+				if (blacklisted_word(f->name)) { break; }
 				if (strstr (f->name, "isatty"))
 					use_isatty = 1;
 				if (strstr (f->name, "getopt"))
