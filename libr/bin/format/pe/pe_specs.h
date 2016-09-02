@@ -266,6 +266,11 @@ typedef struct {
 	ut16 NumberOfStreams;
 } Pe32_image_metadata_header, Pe64_image_metadata_header;
 
+typedef struct {
+	ut32 Offset;
+	ut32 Size;
+	char *Name;
+} Pe32_image_metadata_stream, Pe64_image_metadata_stream;
 
 #define PE_IMAGE_SIZEOF_SHORT_NAME 8
 

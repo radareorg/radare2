@@ -10,6 +10,7 @@
 #include <time.h>
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
+#define MAX_METADATA_STRING_LENGTH 256
 
 struct SCV_NB10_HEADER;
 typedef struct {
@@ -567,6 +568,20 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
 	return computed_cs;
 }
 
+static int bin_pe_read_metadata_string(char *to, char *from) {
+	int covered = 0;
+	while (covered < MAX_METADATA_STRING_LENGTH) {
+		to[covered] = from[covered];
+		if (from[covered] == '\0') { 
+			covered += 1;
+			break;
+		}
+		covered++;
+	}
+	while (covered % 4 != 0) covered++;
+	return covered;
+}
+
 static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 	PE_DWord metadata_directory = bin->clr_hdr ? bin_pe_rva_to_paddr (bin, bin->clr_hdr->MetaDataDirectoryAddress) : 0;
 	PE_(image_metadata_header) *metadata = R_NEW0 (PE_(image_metadata_header));
@@ -619,7 +634,38 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	printf("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
 	bin->metadata_header = metadata;
-	return 1;	
+
+
+	// read metadata streams
+	int start_of_stream = metadata_directory + 20 + metadata->VersionStringLength;
+	PE_(image_metadata_stream) *stream;
+	PE_(image_metadata_stream) **streams = malloc(sizeof(PE_(image_metadata_stream) *) * metadata->NumberOfStreams);
+	if (!streams) goto fail;
+	int count = 0;
+
+	while (count < metadata->NumberOfStreams) {
+		stream = malloc(sizeof(PE_(image_metadata_stream)));
+		if (!stream) goto fail;
+
+		if (r_buf_fread_at (bin->b, start_of_stream, (ut8*)stream, bin->big_endian ? "2I": "2i", 1) < 1) {
+			free (stream);
+			goto fail;
+		}
+		printf("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
+		char *stream_name = malloc(MAX_METADATA_STRING_LENGTH + 1);
+		int c = bin_pe_read_metadata_string(stream_name, bin->b->buf + start_of_stream + 8);
+		if (c == 0) {
+			free(stream);
+			goto fail;
+		}
+		printf("%s %d\n", stream_name, c);
+		stream->Name = stream_name;
+		streams[count] = stream;
+		start_of_stream += 8 + c;
+		count += 1;
+	}
+	bin->streams = streams;
+	return 1;
 fail:
 	eprintf ("Warning: read (metaadata header)\n");
 	free (metadata);

@@ -79,6 +79,7 @@ struct PE_(r_bin_pe_obj_t) {
 	// these pointers pertain to the .net relevant sections
 	PE_(image_clr_header) *clr_hdr;
 	PE_(image_metadata_header) *metadata_header;
+	PE_(image_metadata_stream) **streams;
 
 	// these values define the real offset into the untouched binary
 	ut64 nt_header_offset;
