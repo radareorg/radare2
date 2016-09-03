@@ -33,8 +33,8 @@ static inline int __strnlen(const char *str, int len) {
 }
 
 static int handle_e_ident(struct Elf_(r_bin_elf_obj_t) *bin) {
-	return strncmp ((char *)bin->ehdr.e_ident, ELFMAG, SELFMAG) == 0 ||
-		strncmp ((char *)bin->ehdr.e_ident, CGCMAG, SCGCMAG) == 0;
+	return !strncmp ((char *)bin->ehdr.e_ident, ELFMAG, SELFMAG) ||
+		   !strncmp ((char *)bin->ehdr.e_ident, CGCMAG, SCGCMAG);
 }
 
 static int init_ehdr(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -103,20 +103,28 @@ static int init_phdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut32 phdr_size;
 	int len;
 
-	if (bin->ehdr.e_phnum == 0)
+	if (!bin->ehdr.e_phnum) {
 		return false;
-	if (bin->phdr) return true;
-	if (!UT32_MUL (&phdr_size, (ut32)bin->ehdr.e_phnum, sizeof (Elf_(Phdr))))
+	}
+	if (bin->phdr) {
+		return true;
+	}
+	if (!UT32_MUL (&phdr_size, (ut32)bin->ehdr.e_phnum, sizeof (Elf_(Phdr)))) {
 		return false;
-	if (!phdr_size)
+	}
+	if (!phdr_size) {
 		return false;
-	if (phdr_size > (ut32)bin->size)
+	}
+	if (phdr_size > (ut32)bin->size) {
 		return false;
-	if (bin->ehdr.e_phoff > bin->size)
+	}
+	if (bin->ehdr.e_phoff > bin->size) {
+		return false; 
+	}
+	if (bin->ehdr.e_phoff + phdr_size > bin->size) {
 		return false;
-	if (bin->ehdr.e_phoff + phdr_size > bin->size)
-		return false;
-	if ((bin->phdr = calloc (phdr_size, 1)) == NULL) {
+	}
+	if (!(bin->phdr = calloc (phdr_size, 1))) {
 		perror ("malloc (phdr)");
 		return false;
 	}
@@ -171,7 +179,7 @@ static int init_shdr(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return false;
 	if (bin->ehdr.e_shoff + shdr_size > bin->size)
 		return false;
-	if ((bin->shdr = calloc (1, shdr_size + 1)) == NULL) {
+	if (!(bin->shdr = calloc (1, shdr_size + 1))) {
 		perror ("malloc (shdr)");
 		return false;
 	}
@@ -276,7 +284,7 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i, r;
 	ut32 dyn_size;
 
-	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
+	if (!bin || !bin->phdr || !bin->ehdr.e_phnum)
 		return false;
 	for (i = 0; i < bin->ehdr.e_phnum ; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
@@ -382,26 +390,26 @@ static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, co
 	return NULL;
 }
 
-static char *get_ver_flags (ut32 flags) {
+static char *get_ver_flags(ut32 flags) {
 	static char buff[32];
 	buff[0] = 0;
 
-	if (flags == 0)
+	if (!flags) {
 		return "none";
-
-	if (flags & VER_FLG_BASE)
+	}
+	if (flags & VER_FLG_BASE) {
 		strcpy (buff, "BASE ");
-
+	}
 	if (flags & VER_FLG_WEAK) {
-		if (flags & VER_FLG_BASE)
+		if (flags & VER_FLG_BASE) {
 			strcat (buff, "| ");
-
+		}
 		strcat (buff, "WEAK ");
 	}
 
-	if (flags & ~(VER_FLG_BASE | VER_FLG_WEAK))
+	if (flags & ~(VER_FLG_BASE | VER_FLG_WEAK)) {
 		strcat (buff, "| <unknown>");
-
+	}
 	return buff;
 }
 
@@ -1200,7 +1208,7 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return 0LL;
 	}
 	entry = bin->ehdr.e_entry;
-	if (entry == 0LL) { 
+	if (!entry) { 
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) {
 			return entry;
@@ -1403,13 +1411,18 @@ char *Elf_(r_bin_elf_intrp)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!bin || !bin->phdr) return NULL;
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (bin->phdr[i].p_type == PT_INTERP) {
+			char *str = NULL;
 			ut64 addr = bin->phdr[i].p_offset;
 			int sz = bin->phdr[i].p_memsz;
 			sdb_num_set (bin->kv, "elf_header.intrp_addr", addr, 0);
 			sdb_num_set (bin->kv, "elf_header.intrp_size", sz, 0);
-			if (sz < 1) return NULL;
-			char *str = malloc (sz + 1);
-			if (!str) return NULL;
+			if (sz < 1) {
+				return NULL;
+			}
+			str = malloc (sz + 1);
+			if (!str) {
+				return NULL;
+			}
 			if (r_buf_read_at (bin->b, addr, (ut8*)str, sz) < 1) {
 				eprintf ("Warning: read (main)\n");
 				return 0;
@@ -1424,7 +1437,9 @@ char *Elf_(r_bin_elf_intrp)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 int Elf_(r_bin_elf_get_static)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	if (!bin->phdr) return false;
+	if (!bin->phdr) {
+		return false;
+	}
 	for (i = 0; i < bin->ehdr.e_phnum; i++) {
 		if (bin->phdr[i].p_type == PT_INTERP) {
 			return false;
@@ -1715,7 +1730,7 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	for (j = 0; j< bin->dyn_entries; j++) {
 		if (bin->dyn_buf[j].d_tag == DT_RPATH || bin->dyn_buf[j].d_tag == DT_RUNPATH) {
-			if ((ret = calloc (1, ELF_STRING_LENGTH)) == NULL) {
+			if (!(ret = calloc (1, ELF_STRING_LENGTH))) {
 				perror ("malloc (rpath)");
 				return NULL;
 			}
@@ -1867,7 +1882,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	for (j = 0, k = 0; j < bin->dyn_entries; j++)
 		if (bin->dyn_buf[j].d_tag == DT_NEEDED) {
 			ret = realloc (ret, (k+1) * sizeof (RBinElfLib));
-			if (ret == NULL) {
+			if (!ret) {
 				perror ("realloc (libs)");
 				return NULL;
 			}
@@ -1883,7 +1898,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			}
 		}
 	ret = realloc (ret, (k+1) * sizeof (RBinElfLib));
-	if (ret == NULL) {
+	if (!ret) {
 		perror ("realloc (libs)");
 		return NULL;
 	}
@@ -1896,7 +1911,7 @@ static RBinElfSection* get_sections_from_phdr(struct Elf_(r_bin_elf_obj_t) *bin)
 	int i, num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
-	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0)
+	if (!bin || !bin->phdr || !bin->ehdr.e_phnum)
 		return NULL;
 
 	for (i = 0; i < bin->dyn_entries; i++) {
@@ -1982,7 +1997,7 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) 
 		return get_sections_from_phdr (bin);
 	}
 
-	if ((ret = calloc ((bin->ehdr.e_shnum + 1), sizeof (RBinElfSection))) == NULL)
+	if (!(ret = calloc ((bin->ehdr.e_shnum + 1), sizeof (RBinElfSection))))
 		return NULL;
 
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
@@ -2064,7 +2079,7 @@ static RBinElfSymbol* get_symbols_from_phdr(struct Elf_(r_bin_elf_obj_t) *bin, i
 	ut64 toffset;
 	ut32 size, sym_size = 0;
 
-	if (!bin || !bin->phdr || bin->ehdr.e_phnum == 0) {
+	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
 		return NULL;
 	}
 	for (j = 0; j < bin->dyn_entries; j++) {
@@ -2179,6 +2194,25 @@ beach:
 	return NULL;
 }
 
+
+
+static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_symbols)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	if (bin->phdr_symbols) {
+		return bin->phdr_symbols;
+	}
+	bin->phdr_symbols = get_symbols_from_phdr (bin, R_BIN_ELF_SYMBOLS);
+	return bin->phdr_symbols;
+}
+
+
+static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_imports)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	if (bin->phdr_imports) {
+		return bin->phdr_imports;
+	}
+	bin->phdr_imports = get_symbols_from_phdr (bin, R_BIN_ELF_IMPORTS);
+	return bin->phdr_imports;
+}
+
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
 	ut32 shdr_size;
 	int tsize, nsym, ret_ctr, i, k, newsize;
@@ -2191,8 +2225,10 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(struct Elf_(r_bin_elf
 
 	RBinElfSymbol *phdr_symbols = NULL;
 
-	if (!bin || !bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff) {
-		return get_symbols_from_phdr (bin, type);
+	if (!bin || !bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
+		return (type == R_BIN_ELF_SYMBOLS)
+				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
+				: Elf_(r_bin_elf_get_phdr_imports) (bin);
 	}
 	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
 		return false;
@@ -2220,7 +2256,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(struct Elf_(r_bin_elf
 				return NULL;
 			}
 			if (!strtab) {
-				if ((strtab = (char *)calloc (1, 8 + strtab_section->sh_size)) == NULL) {
+				if (!(strtab = (char *)calloc (1, 8 + strtab_section->sh_size))) {
 					eprintf ("malloc (syms strtab)");
 					goto beach;
 				}
@@ -2333,7 +2369,9 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(struct Elf_(r_bin_elf
 		}
 	}
 	if (ret) {
-		phdr_symbols = get_symbols_from_phdr (bin, type);
+		phdr_symbols = (type == R_BIN_ELF_SYMBOLS)
+				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
+				: Elf_(r_bin_elf_get_phdr_imports) (bin);
 		if (phdr_symbols) {
 			RBinElfSymbol *p = phdr_symbols;
 			RBinElfSymbol *d = ret;
@@ -2393,7 +2431,7 @@ RBinElfField* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i = 0, j;
 	if (!bin)
 		return NULL;
-	if ((ret = calloc ((bin->ehdr.e_phnum+3 + 1), sizeof (RBinElfField))) == NULL)
+	if (!(ret = calloc ((bin->ehdr.e_phnum + 3 + 1), sizeof (RBinElfField))))
 		return NULL;
 	strncpy (ret[i].name, "ehdr", ELF_STRING_LENGTH);
 	ret[i].offset = 0;
