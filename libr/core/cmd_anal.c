@@ -1589,6 +1589,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				fcn->bits = core->assembler->bits;
 			}
 		}
+		if (r_config_get_i (core->config, "anal.vars")) {
+			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			fcn_callconv (core, fcn);
+		}
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
 			if (fcn) {
