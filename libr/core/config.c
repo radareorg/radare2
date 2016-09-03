@@ -1718,17 +1718,25 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* cmd */
 	if (r_file_exists ("/usr/bin/xdot")) {
-		r_config_set (cfg, "cmd.graph", "!xdot a.dot");
-	} else if (r_file_exists ("/usr/bin/open")) {
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!open a.gif");
-	} else if (r_file_exists ("/usr/bin/gqview")) {
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
-	} else if (r_file_exists ("/usr/bin/eog")) {
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!eog a.gif");
-	} else if (r_file_exists ("/usr/bin/xdg-open")) {
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!xdg-open a.gif");
+		r_config_set (cfg, "cmd.graph", "ag $$ > a.dot;!xdot a.dot");
 	} else {
-		r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
+		char *dotPath = r_file_path ("dot");
+		if (dotPath) {
+			R_FREE (dotPath);
+			if (r_file_exists ("/usr/bin/open")) {
+				r_config_set (cfg, "cmd.graph", "ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!open a.gif");
+			} else if (r_file_exists ("/usr/bin/gqview")) {
+				r_config_set (cfg, "cmd.graph", "ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!gqview a.gif");
+			} else if (r_file_exists ("/usr/bin/eog")) {
+				r_config_set (cfg, "cmd.graph", "ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!eog a.gif");
+			} else if (r_file_exists ("/usr/bin/xdg-open")) {
+				r_config_set (cfg, "cmd.graph", "ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!xdg-open a.gif");
+			} else {
+				r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
+			}
+		} else {
+			r_config_set (cfg, "cmd.graph", "agf");
+		}
 	}
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
