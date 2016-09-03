@@ -185,10 +185,9 @@ static RList* sections(RBinFile *arch) {
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
 
-	if (!obj || !(ret = r_list_new ())) {
+	if (!obj || !(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
@@ -212,7 +211,6 @@ static RList* sections(RBinFile *arch) {
 			}
 			r_list_append (ret, ptr);
 		}
-		free (section);
 	}
 
 	// program headers is another section

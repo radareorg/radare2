@@ -371,10 +371,13 @@ beach:
 
 static RBinElfSection* get_section_by_name(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name) {
 	int i;
-	if (!bin->g_sections) return NULL;
+	if (!bin->g_sections) {
+		return NULL;
+	}
 	for (i = 0; !bin->g_sections[i].last; i++) {
-		if (!strncmp (bin->g_sections[i].name, section_name, ELF_STRING_LENGTH-1))
+		if (!strncmp (bin->g_sections[i].name, section_name, ELF_STRING_LENGTH-1)) {
 			return &bin->g_sections[i];
+		}
 	}
 	return NULL;
 }
@@ -885,9 +888,7 @@ static int elf_init(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->symbols_by_ord_size = 0;
 	bin->symbols_by_ord = NULL;
 	bin->g_sections = Elf_(r_bin_elf_get_sections) (bin);
-
 	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
-
 	sdb_ns_set (bin->kv, "versioninfo", store_versioninfo (bin));
 
 	return true;
@@ -1733,13 +1734,14 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 static size_t get_relocs_num(struct Elf_(r_bin_elf_obj_t) *bin) {
 	size_t i, ret = 0;
-
 	/* we need to be careful here, in malformed files the section size might
 	 * not be a multiple of a Rel/Rela size; round up so we allocate enough
 	 * space.
 	 */
 #define NUMENTRIES_ROUNDUP(sectionsize, entrysize) (((sectionsize)+(entrysize)-1)/(entrysize))
-	if (!bin->g_sections) return 0;
+	if (!bin->g_sections) {
+		return 0;
+	}
 	for (i = 0; !bin->g_sections[i].last; i++) {
 		if (!strncmp (bin->g_sections[i].name, ".rela.", strlen (".rela."))) {
 			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, sizeof(Elf_(Rela)));
@@ -1798,25 +1800,34 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	RBinElfReloc *ret = NULL;
 	ut64 section_text_offset = 0LL;
 
-	if (!bin || !bin->g_sections) return NULL;
-
+	if (!bin || !bin->g_sections) {
+		return NULL;
+	}
 	reloc_num = get_relocs_num (bin);
-	if (!reloc_num)	return NULL;
+	if (!reloc_num)	{
+		return NULL;
+	}
 	bin->reloc_num = reloc_num;
-
 	ret = (RBinElfReloc*)calloc ((size_t)reloc_num + 1, sizeof(RBinElfReloc));
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	section_text_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".text");
-	if (section_text_offset == -1) section_text_offset = 0;
-
+	if (section_text_offset == -1) {
+		section_text_offset = 0;	
+	}
 	for (i = 0, rel = 0; !bin->g_sections[i].last && rel < reloc_num ; i++) {
 		bool is_rela = 0 == strncmp (bin->g_sections[i].name, ".rela.", strlen (".rela."));
 		bool is_rel  = 0 == strncmp (bin->g_sections[i].name, ".rel.",  strlen (".rel."));
 		if (!is_rela && !is_rel)
 			continue;
 		for (j = 0; j < bin->g_sections[i].size; j += res) {
-			if (bin->g_sections[i].size > bin->size) break;
-			if (bin->g_sections[i].offset > bin->size) break;
+			if (bin->g_sections[i].size > bin->size) {
+				break;
+			}
+			if (bin->g_sections[i].offset > bin->size) {
+				break;
+			}
 			if (rel >= reloc_num) {
 				eprintf ("Internal error: ELF relocation buffer too small,"
 				         "please file a bug report.");
@@ -1850,9 +1861,9 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	RBinElfLib *ret = NULL;
 	int j, k;
 
-	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *(bin->strtab+1) == '0')
+	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *(bin->strtab+1) == '0') {
 		return NULL;
-
+	}
 	for (j = 0, k = 0; j < bin->dyn_entries; j++)
 		if (bin->dyn_buf[j].d_tag == DT_NEEDED) {
 			ret = realloc (ret, (k+1) * sizeof (RBinElfLib));
@@ -1963,6 +1974,9 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) 
 	char unknown_s[20], invalid_s[20];
 	int i, nidx, unknown_c=0, invalid_c=0;
 
+	if (bin->g_sections) {
+		return bin->g_sections;
+	}
 	if (!bin || !bin->shdr) {
 		//we don't give up search in phdr section
 		return get_sections_from_phdr (bin);
@@ -2415,15 +2429,16 @@ void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin) {
 		free (bin->imports_by_ord);
 	}
 	if (bin->symbols_by_ord) {
-		for (i=0; i<bin->symbols_by_ord_size; i++)
+		for (i = 0; i<bin->symbols_by_ord_size; i++) {
 			free (bin->symbols_by_ord[i]);
+		}
 		free (bin->symbols_by_ord);
 	}
 	r_buf_free (bin->b);
-	free (bin);
 	R_FREE (bin->g_sections);
 	R_FREE (bin->g_symbols);
 	R_FREE (bin->g_imports);
+	free (bin);
 	return NULL;
 }
 
@@ -2510,8 +2525,9 @@ ut64 Elf_(r_bin_elf_p2v) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 paddr) {
 ut64 Elf_(r_bin_elf_v2p) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr) {
 	int i;
 
-	if (!bin) return 0;
-
+	if (!bin) {
+		return 0;
+	}
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return vaddr - bin->baddr;
@@ -2530,6 +2546,5 @@ ut64 Elf_(r_bin_elf_v2p) (struct Elf_(r_bin_elf_obj_t) *bin, ut64 vaddr) {
 			return p->p_offset + vaddr - p->p_vaddr;
 		}
 	}
-
 	return vaddr;
 }
