@@ -363,18 +363,16 @@ static RList* symbols(RBinFile *arch) {
 	}
 
 	bin = arch->o->bin_obj;
-	ret = r_list_new ();
+	ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_SYMBOLS)))
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin))) {
 		return ret;
+	}
 	for (i = 0; !symbol[i].last; i++) {
 		ut64 paddr = symbol[i].offset;
 		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
-
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			break;
 		}
@@ -387,14 +385,12 @@ static RList* symbols(RBinFile *arch) {
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
-
 		if (bin->ehdr.e_machine == EM_ARM) {
 			_set_arm_thumb_bits (bin, &ptr); 
 		}
 		r_list_append (ret, ptr);
 	}
-	free (symbol);
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_IMPORTS))) {
+	if (!(symbol = Elf_(r_bin_elf_get_imports) (bin))) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
@@ -424,8 +420,6 @@ static RList* symbols(RBinFile *arch) {
 		}
 		r_list_append (ret, ptr);
 	}
-	free (symbol);
-
 	return ret;
 }
 
@@ -443,7 +437,7 @@ static RList* imports(RBinFile *arch) {
 	if (!(ret = r_list_newf (r_bin_import_free))) {
 		return NULL;
 	}
-	if (!(import = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS))) {
+	if (!(import = Elf_(r_bin_elf_get_imports) (bin))) {
 		r_list_free (ret);
 		return NULL;
 	}
@@ -458,7 +452,6 @@ static RList* imports(RBinFile *arch) {
 		(void)setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
-	free (import);
 	return ret;
 }
 
