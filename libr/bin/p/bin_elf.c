@@ -9,8 +9,6 @@
 #include <r_cons.h>
 #include "elf/elf.h"
 
-#define ELFOBJ struct Elf_(r_bin_elf_obj_t)
-
 //TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
 static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (! eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
@@ -423,7 +421,7 @@ static RList* symbols(RBinFile *arch) {
 
 static RList* imports(RBinFile *arch) {
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
-	struct r_bin_elf_symbol_t *import = NULL;
+	RBinElfSymbol *import = NULL;
 	RBinImport *ptr = NULL;
 	RList *ret = NULL;
 	int i;

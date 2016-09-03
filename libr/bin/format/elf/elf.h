@@ -14,6 +14,7 @@
 
 #define R_BIN_ELF_SYMBOLS 0x0
 #define R_BIN_ELF_IMPORTS 0x1
+#define ELFOBJ struct Elf_(r_bin_elf_obj_t)
 
 typedef struct r_bin_elf_section_t {
 	ut64 offset;
@@ -35,6 +36,7 @@ typedef struct r_bin_elf_symbol_t {
 	const char *type;
 	char name[ELF_STRING_LENGTH];
 	int last;
+	bool in_shdr;
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {
@@ -110,7 +112,6 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBinElfSymbol *g_imports;
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
-	bool show_override;
 };
 
 int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin);
