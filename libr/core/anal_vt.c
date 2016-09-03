@@ -24,6 +24,7 @@ static RList* getVtableMethods(RCore *core, vtable_info *table) {
 		table->funtions = vtableMethods;
 		return vtableMethods;
 	}
+	r_list_free (vtableMethods);
 	return NULL;
 }
 
@@ -174,5 +175,6 @@ static void r_core_anal_list_vtables_all(void *core) {
 			r_cons_printf ("f %s=0x%08"PFMT64x"\n", function->name, function->addr);
 		}
 	}
+	r_list_free (vtables);
 }
 

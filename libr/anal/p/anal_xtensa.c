@@ -685,7 +685,7 @@ static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 			: opcode == 83 ? 2 // l16si
 			: opcode == 84 ? 4 // l32i
 			: opcode == 31 ? 4 // l32i.n
-			: opcode == 86 ? 1 : 1; // l8ui
+			: 1; // opcode == 86 ? 1 : 1; // l8ui
 
 	sign_extend_bit = 0;
 
@@ -825,7 +825,7 @@ static void esil_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format f
 		: opcode == 36 ? 4 // s32i.n
 		: opcode == 100 ? 4 // s32i
 		: opcode == 99 ? 2 // s16i
-		: opcode == 101 ? 1 : 1; // s8i
+		: 1; // opcode == 101 ? 1 : 1; // s8i
 
 	switch (opcode) {
 	case 100: // s32i
@@ -1725,6 +1725,7 @@ static void esil_extract_unsigned(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void analop_esil (RAnal *a, RAnalOp *op, ut64 addr, ut8 *buffer, size_t len) {
+	unsigned int i;
 	if (!xtensa_default_isa) {
 		xtensa_default_isa = xtensa_isa_init (0, 0);
 	}
@@ -1733,7 +1734,6 @@ static void analop_esil (RAnal *a, RAnalOp *op, ut64 addr, ut8 *buffer, size_t l
 	xtensa_isa isa = xtensa_default_isa;
 	xtensa_format format;
 	ut32 nslots;
-	size_t i;
 
 	static xtensa_insnbuf insn_buffer = NULL;
 	static xtensa_insnbuf slot_buffer = NULL;

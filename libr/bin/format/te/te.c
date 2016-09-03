@@ -76,6 +76,7 @@ ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 			delta += 367 + 5;
 			addr = entry->vaddr;
 			if (delta >= (UT64_MAX - addr)) {
+				free (entry);
 				return UT64_MAX;
 			}
 			addr += delta;

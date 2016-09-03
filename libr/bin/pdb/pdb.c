@@ -72,7 +72,7 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf/*FILE *fp*/,
 
 ///////////////////////////////////////////////////////////////////////////////
 static int read_int_var(char *var_name, int *var, R_PDB *pdb) {
-	if (!var) {
+	if (var) {
 		*var = 0;
 	}
 	int bytes_read = r_buf_read (pdb->buf, (ut8*)var, 4);
