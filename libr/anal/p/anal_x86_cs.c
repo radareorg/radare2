@@ -500,10 +500,18 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	}
 		break;
 	case X86_INS_STOSB:
+		if (a->bits<32) {
+			r_strbuf_appendf (&op->esil, "al,di,=[1],df,?{,1,di,-=,},df,!,?{,1,di,+=,}");
+		} else {
 			r_strbuf_appendf (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
+		}
 		break;
 	case X86_INS_STOSW:
+		if (a->bits<32) {
+			r_strbuf_appendf (&op->esil, "ax,di,=[2],df,?{,2,di,-=,},df,!,?{,2,di,+=,}");
+		} else {
 			r_strbuf_appendf (&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
+		}
 		break;
 	case X86_INS_STOSD:
 			r_strbuf_appendf (&op->esil, "eax,edi,=[4],df,?{,4,edi,-=,},df,!,?{,4,edi,+=,}");
