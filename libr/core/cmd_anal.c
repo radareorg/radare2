@@ -1029,7 +1029,6 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 	if (r_reg_get (core->anal->reg, name, -1)) {
 		name = r_str_newf ("fcn.%s", name);
 	}
-
 	fcn = r_anal_get_fcn_in (core->anal, off,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) return false;
@@ -1583,15 +1582,16 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
-		if (swapbits) {
-			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-			if (fcn) {
-				fcn->bits = core->assembler->bits;
-			}
+		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		if (fcn && swapbits) {
+			fcn->bits = core->assembler->bits;
 		}
-		if (r_config_get_i (core->config, "anal.vars")) {
-			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		if (fcn && r_config_get_i (core->config, "anal.vars")) {
 			fcn_callconv (core, fcn);
+		}
+		if (fcn) {
+			/* ensure we use a proper name */
+			setFunctionName (core, addr, fcn->name, false);
 		}
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
@@ -1620,10 +1620,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						r_list_foreach (f->refs, iter, ref) {
 							if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
 								continue;
-
 							}
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
-
 							// recursively follow fcn->refs again and again
 						}
 					} else {

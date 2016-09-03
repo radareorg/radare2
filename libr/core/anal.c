@@ -351,7 +351,6 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 			}
 		}
 		r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth-1);
-
 	} else {
 		ut64 offs, sz = core->anal->bits >> 3;
 		RAnalRef ref1;
