@@ -400,6 +400,15 @@ static int cb_asmlineswidth(void *user, void *data) {
 	return true;
 }
 
+static int cb_emustr(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		r_config_set (core->config, "asm.emu", "true");
+	}
+	return true;
+}
+
 static int cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1547,7 +1556,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
-	SETPREF("asm.emustr", "false", "Show only strings if any in the asm.emu output");
+	SETCB("asm.emustr", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
