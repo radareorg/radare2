@@ -1188,25 +1188,25 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	}
 }
 
-R_API void r_print_2bpp_row(RPrint *p, ut8 *buf)
-{
+R_API void r_print_2bpp_row(RPrint *p, ut8 *buf) {
 	int i, c = 0;
 	char *color;
-	for (i=0; i<8; i++) {
+	for (i = 0; i < 8; i++) {
 		if (buf[1] & ((1<<7)>>i) ) c = 2;
 		if (buf[0] & ((1<<7)>>i) ) c++;
 		switch (c) {
-			case 0:
-				color = Color_BGWHITE;
+		case 0:
+			color = Color_BGWHITE;
 			break;
-			case 1:
-				color = Color_BGRED;
+		case 1:
+			color = Color_BGRED;
 			break;
-			case 2:
-				color = Color_BGBLUE;
+		case 2:
+			color = Color_BGBLUE;
 			break;
-			case 3:
-				color = Color_BGBLACK;
+		case 3:
+			color = Color_BGBLACK;
+			break;
 		}
 		p->cb_printf("%s  ", color);
 		c = 0;

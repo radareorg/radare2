@@ -205,15 +205,13 @@ static int var_cmd (RCore *core, const char *str) {
 	}
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
-	case 'a':
-		if (r_config_get_i (core->config, "anal.vars")) {
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
-			fcn_callconv (core, fcn);
-		}
+	case 'a': // "afva"
+		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
+		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
+		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
+		fcn_callconv (core, fcn);
 		return true;
-	case 'n': {
+	case 'n': { // "afvn"
 		RAnalVar *v1;
 		char *str_dup = strdup (str);
 		char *old_name = r_str_trim_head (strchr (str_dup, ' '));
@@ -569,8 +567,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		} else if (fmt == 'j') {
 			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
-			if (hint && hint->opcode)
+			if (hint && hint->opcode) {
 				r_cons_printf ("\"ophint\": \"%s\",", hint->opcode);
+			}
 			r_cons_printf ("\"prefix\": %" PFMT64d ",", op.prefix);
 			r_cons_printf ("\"addr\": %" PFMT64d ",", core->offset + idx);
 			r_cons_printf ("\"bytes\": \"");
@@ -578,10 +577,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_printf ("%02x", buf[j + idx]);
 			}
 			r_cons_printf ("\",");
-			if (op.val != UT64_MAX)
+			if (op.val != UT64_MAX) {
 				r_cons_printf ("\"val\": %" PFMT64d ",", op.val);
-			if (op.ptr != UT64_MAX)
+			}
+			if (op.ptr != UT64_MAX) {
 				r_cons_printf ("\"ptr\": %" PFMT64d ",", op.ptr);
+			}
 			r_cons_printf ("\"size\": %d,", size);
 			r_cons_printf ("\"type\": \"%s\",",
 				r_anal_optype_to_string (op.type));
@@ -689,7 +690,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//free (hint);
 		r_anal_hint_free (hint);
 		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r')
-			r_cons_printf (",");
+			r_cons_print (",");
 	}
 
 	if (fmt == 'j') {

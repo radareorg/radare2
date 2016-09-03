@@ -3314,8 +3314,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'r': // "pxr"
-			if (l != 0) {
-			if (input[2] == 'j') {
+			if (l != 0 && input[2] == 'j') {
 				int base = core->anal->bits;
 				r_cons_printf ("[");
 				const char *comma = "";
@@ -3353,10 +3352,9 @@ static int cmd_print(void *data, const char *input) {
 				core->print->flags |= R_PRINT_FLAGS_REFS;
 				r_print_hexdump (core->print, core->offset,
 					core->block, len,
-					bitsize, bitsize/8);
+					bitsize, bitsize / 8);
 				core->print->flags &= ~R_PRINT_FLAGS_REFS;
 				core->print->cols = ocols;
-			}
 			}
 			break;
 		case 'h':

@@ -586,6 +586,13 @@ static int cmd_help(void *data, const char *input) {
 		}
 		r_cons_set_raw (0);
 		break;
+	case 'w':
+		{
+			ut64 addr = r_num_math (core->num, input + 1);
+			const char *rstr = core->print->hasrefs (core->print->user, addr);
+			r_cons_println (rstr);
+		}
+		break;
 	case 't': {
 		struct r_prof_t prof;
 		r_prof_start (&prof);
@@ -642,6 +649,7 @@ static int cmd_help(void *data, const char *input) {
 			"?u", " num", "get value in human units (KB, MB, GB, TB)",
 			"?v", " eip-0x804800", "show hex value of math expr",
 			"?vi", " rsp-rbp", "show decimal value of math expr",
+			"?w", " addr", "show what's in this address (like pxr/pxq does)",
 			"?x", " num|str|-hexst", "returns the hexpair of number or string",
 			"?y", " [str]", "show contents of yank buffer, or set with string",
 			NULL};
