@@ -3314,47 +3314,49 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'r': // "pxr"
-			if (l != 0 && input[2] == 'j') {
-				int base = core->anal->bits;
-				r_cons_printf ("[");
-				const char *comma = "";
-				const ut8 *buf = core->block;
-				int withref = 0;
-				for (i=0; i< core->blocksize; i+= (base/4)) {
-					ut64 addr = core->offset + i;
-					ut64 *foo = (ut64*)(buf+i);
-					ut64 val = *foo;
-					if (base==32) val &= UT32_MAX;
-					r_cons_printf ("%s{\"addr\":%"PFMT64d",\"value\":%" \
-							PFMT64d, comma, addr, val);
-					comma = ",";
-					// XXX: this only works in little endian
-					withref = 0;
-					if (core->print->hasrefs) {
-						const char *rstr = core->print->hasrefs (core->print->user, val);
-						if (rstr && *rstr) {
-							char *ns; //r_str_ansi_chop (ns, -1, 0);
-							ns = r_str_escape (rstr);
-							r_cons_printf (",\"ref\":\"%s\"}", *ns==' '?ns+1:ns);
-							free (ns);
-							withref = 1;
+			if (l != 0) {
+				if (input[2] == 'j') {
+					int base = core->anal->bits;
+					r_cons_printf ("[");
+					const char *comma = "";
+					const ut8 *buf = core->block;
+					int withref = 0;
+					for (i=0; i< core->blocksize; i+= (base/4)) {
+						ut64 addr = core->offset + i;
+						ut64 *foo = (ut64*)(buf+i);
+						ut64 val = *foo;
+						if (base==32) val &= UT32_MAX;
+						r_cons_printf ("%s{\"addr\":%"PFMT64d",\"value\":%" \
+								PFMT64d, comma, addr, val);
+						comma = ",";
+						// XXX: this only works in little endian
+						withref = 0;
+						if (core->print->hasrefs) {
+							const char *rstr = core->print->hasrefs (core->print->user, val);
+							if (rstr && *rstr) {
+								char *ns; //r_str_ansi_chop (ns, -1, 0);
+								ns = r_str_escape (rstr);
+								r_cons_printf (",\"ref\":\"%s\"}", *ns==' '?ns+1:ns);
+								free (ns);
+								withref = 1;
+							}
 						}
+						if (!withref) r_cons_printf ("}");
 					}
-					if (!withref) r_cons_printf ("}");
+					r_cons_printf ("]\n");
+				} else {
+					const int ocols = core->print->cols;
+					int bitsize = core->assembler->bits;
+					/* Thumb is 16bit arm but handles 32bit data */
+					if (bitsize == 16) bitsize = 32;
+					core->print->cols = 1;
+					core->print->flags |= R_PRINT_FLAGS_REFS;
+					r_print_hexdump (core->print, core->offset,
+							core->block, len,
+							bitsize, bitsize / 8);
+					core->print->flags &= ~R_PRINT_FLAGS_REFS;
+					core->print->cols = ocols;
 				}
-				r_cons_printf ("]\n");
-			} else {
-				const int ocols = core->print->cols;
-				int bitsize = core->assembler->bits;
-				/* Thumb is 16bit arm but handles 32bit data */
-				if (bitsize == 16) bitsize = 32;
-				core->print->cols = 1;
-				core->print->flags |= R_PRINT_FLAGS_REFS;
-				r_print_hexdump (core->print, core->offset,
-					core->block, len,
-					bitsize, bitsize / 8);
-				core->print->flags &= ~R_PRINT_FLAGS_REFS;
-				core->print->cols = ocols;
 			}
 			break;
 		case 'h':
