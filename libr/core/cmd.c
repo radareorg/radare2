@@ -1213,12 +1213,17 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			if ((colon = strchr (cmd, ';')))
 				*colon = 0;
 		}
-	} else colon = NULL;
-	if (rep>0) {
-		while (*cmd >= '0' && *cmd <= '9')
+	} else {
+		colon = NULL;
+	}
+	if (rep > 0) {
+		while (*cmd >= '0' && *cmd <= '9') {
 			cmd++;
+		}
 		// do not repeat null cmd
-		if (!*cmd) goto beach;
+		if (!*cmd) {
+			goto beach;
+		}
 	}
 	if (rep<1) rep = 1;
 	// XXX if output is a pipe then we dont want to be interactive
@@ -1246,18 +1251,22 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			}
 		}
 		char *cr = strdup (cmdrep);
+		core->break_loop = false;
 		ret = r_core_cmd_subst_i (core, cmd, colon);
-		if (ret && *cmd=='q') {
+		if (ret && *cmd == 'q') {
 			free (cr);
 			goto beach;
 		}
+		if (core->break_loop) {
+			break;
+		}
 		if (cr && *cr) {
-			if (orep>1) {
+			if (orep > 1) {
 				// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
 				r_cons_flush ();
 				// XXX: we must inport register flags in C
-				r_core_cmd0 (core, ".dr*");
-				r_core_cmd0 (core, cr);
+				(void)r_core_cmd0 (core, ".dr*");
+				(void)r_core_cmd0 (core, cr);
 			}
 		}
 		free (cr);
@@ -1267,8 +1276,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		for (++colon; *colon==';'; colon++);
 		r_core_cmd_subst (core, colon);
 	} else {
-		if (!*icmd)
+		if (!*icmd) {
 			r_core_cmd_nullcallback (core);
+		}
 	}
 beach:
 	free (icmd);

@@ -167,6 +167,7 @@ typedef struct r_core_t {
 	char *lastsearch;
 	bool fixedblock;
 	char *cmdfilter;
+	bool break_loop;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
