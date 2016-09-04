@@ -83,6 +83,7 @@ static int cmd_zign(void *data, const char *input) {
 			} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", addr);
 		} else eprintf ("Usage: zB [size] @@ sym*\nNote: Use zn and zn-");
 		break;
+	case 'G':
 	case 'g':
 		if (input[1]==' ' && input[2]) {
 			int fdold = r_cons_singleton ()->fdout;
@@ -108,6 +109,7 @@ static int cmd_zign(void *data, const char *input) {
 				if (!(buf = calloc (1, len))) {
 					return false;
 				}
+				/* XXX this is wrong. we must read for each basic block not the whole function length */
 				if (r_io_read_at (core->io, fcni->addr, buf, len) == len) {
 					RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 					if (flag) {
@@ -117,19 +119,25 @@ static int cmd_zign(void *data, const char *input) {
 							return false;
 						}
 						zlen = 0;
-						while (idx < len) {
-							if ((oplen = r_anal_op (core->anal, op, fcni->addr + idx, buf + idx, len - idx)) < 1) {
-								break;
+						if (input[0] == 'G') {
+							zlen = len;
+						} else {
+							while (idx < len) {
+								if ((oplen = r_anal_op (core->anal, op, fcni->addr + idx, buf + idx, len - idx)) < 1) {
+									break;
+								}
+								if (op->nopcode != 0) {
+									int left = R_MAX (oplen - op->nopcode, 0);
+									memset (buf + idx + op->nopcode, 0, left);
+								}
+								zlen += op->nopcode;
+								idx += oplen;
 							}
-							if (op->nopcode != 0) {
-								memset (buf + idx + op->nopcode, 0, oplen - op->nopcode);
-							}
-							zlen += op->nopcode;
-							idx += oplen;
 						}
 						if (zlen > minzlen) {
 							r_cons_printf ("zb %s ", name);
 							for (i = 0; i < len; i++) {
+								/* XXX assuming buf[i] == 0 is wrong because mask != data */
 								if (buf[i] == 0) {
 									r_cons_printf ("..");
 								} else {
@@ -339,7 +347,8 @@ static int cmd_zign(void *data, const char *input) {
 			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
 			"zF", " file", "Open a FLIRT signature file and scan opened file",
 			"zFd", " file", "Dump a FLIRT signature",
-			"zg", " namespace [file]", "Generate zignatures for current file",
+			"zg", " namespace [file]", "Generate zignatures",
+			"zG", " namespace [file]", "Generate exact-match zignatures",
 			"zh", " name bytes", "define function header zignature",
 			"zn", " namespace", "define namespace for following zignatures (until zn-)",
 			"zn", "", "display current namespace",
