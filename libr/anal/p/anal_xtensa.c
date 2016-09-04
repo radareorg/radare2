@@ -1565,6 +1565,13 @@ static void esil_callx(xtensa_isa isa, xtensa_opcode opcode,
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &dst_reg);
 	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
 
+	r_strbuf_appendf (
+		&op->esil,
+		"%s%d" CM "0" CM "+" CM,
+		xtensa_regfile_shortname (isa, dst_rf),
+		dst_reg
+	);
+
 	if (callx) {
 		r_strbuf_append (
 			&op->esil,
@@ -1574,14 +1581,7 @@ static void esil_callx(xtensa_isa isa, xtensa_opcode opcode,
 		);
 	}
 
-	r_strbuf_appendf (
-		&op->esil,
-			"%s%d"	CM
-			"pc"	CM
-			"=",
-		xtensa_regfile_shortname (isa, dst_rf),
-		dst_reg
-	);
+	r_strbuf_append (&op->esil, "pc" CM "=");
 }
 
 static void esil_set_shift_amount(xtensa_isa isa, xtensa_opcode opcode,
