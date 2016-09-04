@@ -86,7 +86,8 @@ static int cmd_zign(void *data, const char *input) {
 	case 'g':
 		if (input[1]==' ' && input[2]) {
 			int fdold = r_cons_singleton ()->fdout;
-			ptr = strchr (input+2, ' ');
+			int minzlen = r_config_get_i (core->config, "cfg.minzlen");
+			ptr = strchr (input + 2, ' ');
 			if (ptr) {
 				*ptr = '\0';
 				fd = r_sandbox_open (ptr+1, O_RDWR|O_CREAT|O_TRUNC, 0644);
@@ -100,7 +101,7 @@ static int cmd_zign(void *data, const char *input) {
 			r_cons_printf ("zn %s\n", input + 2);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				RAnalOp *op = NULL;
-				int len, oplen, idx = 0;
+				int zlen, len, oplen, idx = 0;
 				ut8 *buf;
 
 				len = r_anal_fcn_size (fcni);
@@ -111,28 +112,34 @@ static int cmd_zign(void *data, const char *input) {
 					RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 					if (flag) {
 						name = flag->name;
-						r_cons_printf ("zb %s ", name);
 						if (!(op = r_anal_op_new ())) {
 							free (buf);
 							return false;
 						}
+						zlen = 0;
 						while (idx < len) {
 							if ((oplen = r_anal_op (core->anal, op, fcni->addr + idx, buf + idx, len - idx)) < 1) {
 								break;
 							}
 							if (op->nopcode != 0) {
-								memset (buf + idx + op->nopcode, 0, oplen-op->nopcode);
+								memset (buf + idx + op->nopcode, 0, oplen - op->nopcode);
 							}
+							zlen += op->nopcode;
 							idx += oplen;
 						}
-						for (i = 0; i < len; i++) {
-							if (buf[i] == 0) {
-								r_cons_printf ("..");
-							} else {
-								r_cons_printf ("%02x", buf[i]);
+						if (zlen > minzlen) {
+							r_cons_printf ("zb %s ", name);
+							for (i = 0; i < len; i++) {
+								if (buf[i] == 0) {
+									r_cons_printf ("..");
+								} else {
+									r_cons_printf ("%02x", buf[i]);
+								}
 							}
+							r_cons_newline ();
+						} else {
+							r_cons_printf ("%s zignature is too small\n", name);
 						}
-						r_cons_newline ();
 					} else {
 						eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
 					}

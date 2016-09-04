@@ -1678,6 +1678,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF("cfg.wseek", "false", "Seek after write");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+	SETI("cfg.minzlen", 2, "Minimum zignature length to filter in 'zg'");
 
 	/* diff */
 	SETI("diff.from", 0, "Set source diffing address for px (uses cc command)");
