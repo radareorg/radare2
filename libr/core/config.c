@@ -1465,6 +1465,25 @@ static int cb_linesabs(void *user, void *data) {
 	return true;
 }
 
+static char *getViewerPath() {
+	int i;
+	const char *viewers[] = {
+		"open",
+		"geeqie",
+		"gqview",
+		"eog",
+		"xdg-open"
+	};
+	for (i = 0; viewers[i]; i++) {
+		char *dotPath = r_file_path (viewers[i]);
+		if (dotPath && strcmp (dotpath, viewers[i])) {
+			return dotPath;
+		}
+		free (dotPath);
+	}
+	return NULL;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1726,27 +1745,28 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
 	/* cmd */
-	if (r_file_exists ("/usr/bin/xdot")) {
+	char *xdotPath = r_file_path ("xdot");
+	if (r_file_exists (xdotPath)) {
 		r_config_set (cfg, "cmd.graph", "ag $$ > a.dot;!xdot a.dot");
 	} else {
 		char *dotPath = r_file_path ("dot");
-		if (dotPath) {
+		if (r_file_exists (dotPath)) {
 			R_FREE (dotPath);
-			if (r_file_exists ("/usr/bin/open")) {
-				r_config_set (cfg, "cmd.graph", "ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!open a.gif");
-			} else if (r_file_exists ("/usr/bin/gqview")) {
-				r_config_set (cfg, "cmd.graph", "ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!gqview a.gif");
-			} else if (r_file_exists ("/usr/bin/eog")) {
-				r_config_set (cfg, "cmd.graph", "ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!eog a.gif");
-			} else if (r_file_exists ("/usr/bin/xdg-open")) {
-				r_config_set (cfg, "cmd.graph", "ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!xdg-open a.gif");
+			char *viewer = getViewerPath();
+			if (viewer) {
+				char *cmd = r_str_newf ("ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!%s a.gif", viewer);
+				r_config_set (cfg, "cmd.graph", cmd);
+				free (viewer);
+				free (cmd);
 			} else {
 				r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
 			}
 		} else {
 			r_config_set (cfg, "cmd.graph", "agf");
 		}
+		free (dotPath);
 	}
+	free (xdotPath);
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
