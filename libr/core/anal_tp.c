@@ -58,7 +58,8 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 	}
 	const char* cc = r_anal_type_func_cc (anal, fcn_name);
 	if (!cc || !r_anal_cc_exist (anal, cc)) {
-		eprintf("cant find %s calling convention %s\n", fcn_name, cc);
+		eprintf ("can't find %s calling convention %s\n", fcn_name, cc);
+		return;
 	}
 	int i, j, max = r_anal_type_func_args_count (anal, fcn_name);
 	int size = 0, idx = sdb_num_get (trace, "idx", 0);
