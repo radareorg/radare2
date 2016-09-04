@@ -6,6 +6,8 @@
 #include "r_list.h"
 #include "r_sign.h"
 
+static int cmd_zign(void *data, const char *input);
+
 static void fcn_zig_add(RSignItem *si, int pref, ut8 *addr) {
 	const int type = si->type;
 	if (type == 'f') {
@@ -22,9 +24,26 @@ static int fcn_offset_cmp(ut64 offset, const RAnalFunction *fcn) {
 }
 
 static void openSignature(RCore *core, const char *str) {
-	if (str && *str == ' ' && str[1]) {
-		/* TODO: Support faster loading by using the API */
-		(void)r_core_cmdf (core, ". %s", str);
+	if (str && *str) {
+		int len = 0;
+		char *ptr, *data = r_file_slurp (str, &len);
+		if (data) {
+			for (ptr = data;;) {
+				char *nl = strchr (ptr, '\n');
+				if (nl) {
+					*nl = 0;
+				} else {
+					break;
+				}
+				if (*ptr == 'z') {
+					cmd_zign (core, ptr +1);
+				}
+				ptr = nl + 1;
+			}
+			free (data);
+		} else {
+			eprintf ("Cannot open %s\n", str);
+		}
 	} else {
 		eprintf ("Usage: zo [filename] (Same as '. filename')\n");
 	}
@@ -232,7 +251,11 @@ static int cmd_zign(void *data, const char *input) {
 		}
 		break;
 	case 'o':
-		openSignature (core, input + 1);
+		if (input[1] == ' ') {
+			openSignature (core, input + 2);
+		} else {
+			eprintf ("Usage: zo [filename] (Same as '. filename')\n");
+		}
 		break;
 	case '\0':
 	case '*':
