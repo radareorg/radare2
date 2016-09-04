@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
 #include "r_anal.h"
 #include "r_cons.h"
 #include "r_core.h"
@@ -6,20 +7,27 @@
 #include "r_sign.h"
 
 static void fcn_zig_add(RSignItem *si, int pref, ut8 *addr) {
-	if (si->type == 'f') {
-		r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n",
-			si->name, pref, addr);
-	} else if (si->type == 'p') {
-		r_cons_printf ("afn sign.fun_%s_%d 0x%08"PFMT64x"\n",
-				si->name, pref, addr);
+	const int type = si->type;
+	if (type == 'f') {
+		r_cons_printf ("f sign.fun_%s_%d @ 0x%08"PFMT64x"\n", si->name, pref, addr);
+	} else if (type == 'p') {
+		r_cons_printf ("afn sign.fun_%s_%d 0x%08"PFMT64x"\n", si->name, pref, addr);
 	} else {
-		r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n",
-			si->name, addr);
+		r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n", si->name, addr);
 	}
 }
 
 static int fcn_offset_cmp(ut64 offset, const RAnalFunction *fcn) {
 	return fcn->addr == offset ? 0 : -1;
+}
+
+static void openSignature(RCore *core, const char *str) {
+	if (str && *str == ' ' && str[1]) {
+		/* TODO: Support faster loading by using the API */
+		(void)r_core_cmdf (core, ". %s", str);
+	} else {
+		eprintf ("Usage: zo [filename] (Same as '. filename')\n");
+	}
 }
 
 static int cmd_zign(void *data, const char *input) {
@@ -36,13 +44,14 @@ static int cmd_zign(void *data, const char *input) {
 			ut8 buf[128];
 			ut64 addr = core->offset;
 			int size = 32;
-			ptr = strchr (input+2, ' ');
+			ptr = strchr (input + 2, ' ');
 			if (ptr) {
-				size = atoi (ptr+1);
-				if (size<1) size = 1;
+				size = atoi (ptr + 1);
+				if (size < 1) {
+					size = 1;
+				}
 			}
-			if (r_io_read_at (core->io, core->offset, buf,
-					sizeof (buf)) == sizeof (buf)) {
+			if (r_io_read_at (core->io, core->offset, buf, sizeof (buf)) == sizeof (buf)) {
 				RFlagItem *flag = r_flag_get_i (core->flags, addr);
 				if (flag) {
 					name = flag->name;
@@ -69,14 +78,14 @@ static int cmd_zign(void *data, const char *input) {
 				r_cons_singleton ()->fdout = fd;
 				r_cons_strcat ("# Signatures\n");
 			}
-			r_cons_printf ("zn %s\n", input+2);
+			r_cons_printf ("zn %s\n", input + 2);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				RAnalOp *op = NULL;
 				int len, oplen, idx = 0;
 				ut8 *buf;
 
 				len = r_anal_fcn_size (fcni);
-				if (!(buf = malloc (len))) {
+				if (!(buf = calloc (1, len))) {
 					return false;
 				}
 				if (r_io_read_at (core->io, fcni->addr, buf, len) == len) {
@@ -222,6 +231,9 @@ static int cmd_zign(void *data, const char *input) {
 			}
 		}
 		break;
+	case 'o':
+		openSignature (core, input + 1);
+		break;
 	case '\0':
 	case '*':
 		r_sign_list (core->sign, (*input=='*'), 0);
@@ -286,22 +298,23 @@ static int cmd_zign(void *data, const char *input) {
 			"Usage:", "z[abcp/*-] [arg]", "Zignatures",
 			"z", "", "show status of zignatures",
 			"z*", "", "display all zignatures",
-			"z-", " namespace", "Unload zignatures in namespace",
+			"z-", " namespace", "unload zignatures in namespace",
 			"z-*", "", "unload all zignatures",
 			"z/", " [ini] [end]", "search zignatures between these regions",
 			"z.", " [@addr]", "match zignatures by function at address",
 			"za", " ...", "define new zignature for analysis",
 			"zb", " name bytes", "define zignature for bytes",
-			"zB", " size", "Generate zignatures for current offset/flag",
+			"zB", " size", "generate zignatures for current offset/flag",
 			"zc", " @ fcn.foo", "flag signature if matching (.zc@@fcn)",
 			"zf", " name fmt", "define function zignature (fast/slow, args, types)",
 			"zF", " file", "Open a FLIRT signature file and scan opened file",
 			"zFd", " file", "Dump a FLIRT signature",
 			"zg", " namespace [file]", "Generate zignatures for current file",
 			"zh", " name bytes", "define function header zignature",
-			"zn", " namespace", "Define namespace for following zignatures (until zn-)",
-			"zn", "", "Display current namespace",
-			"zn-", "", "Unset namespace",
+			"zn", " namespace", "define namespace for following zignatures (until zn-)",
+			"zn", "", "display current namespace",
+			"zn-", "", "unset namespace",
+			"zo", " [filename]", "open Signature files (Same as . filename)",
 			"zp", " name bytes", "define new zignature for function body",
 			"NOTE:", "", "bytes can contain '.' (dots) to specify a binary mask",
 			NULL};
