@@ -402,7 +402,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_meta_hsdmf (RCore *core, const char *input) {
+static int cmd_meta_hsdmf(RCore *core, const char *input) {
 	int n, type = input[0];
 	char *t = 0, *p, name[256];
 	int repeat = 1;
@@ -523,15 +523,15 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 
 	return true;
 }
-void r_comment_var_help (RCore *core, char type) {
+void r_comment_var_help(RCore *core, char type) {
 	const char *help_bp[] = {
 		"Usage:", "Cvb", "[name] [comment]",
 		"Cvb?", "", "show this help",
 		"Cvb", "", "list all base pointer args/vars comments in human friendly format",
 		"Cvb*", "", "list all base pointer args/vars comments in r2 format",
 		"Cvb-", "[name]", "delete comments for var/arg at current offset for base pointer",
-		"Cvb", "[name]", "Show comments for var/arg at current offset for base pointer",
-		"Cvb", "[name] [comment]", "add/append comment for the variable with the current name",
+		"Cvb", " [name]", "Show comments for var/arg at current offset for base pointer",
+		"Cvb", " [name] [comment]", "add/append comment for the variable with the current name",
 		"Cvb!", "[name]", "edit comment using cfg editor",
 		NULL
 	};
@@ -572,7 +572,7 @@ void r_comment_var_help (RCore *core, char type) {
 		r_cons_printf("See Cvb, Cvs and Cvr\n");
 	}
 }
-void r_comment_vars (RCore *core, const char *input) {
+void r_comment_vars(RCore *core, const char *input) {
 	//TODO enable base64 and make it the default for C*
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	int idx;
@@ -616,12 +616,15 @@ void r_comment_vars (RCore *core, const char *input) {
 	case ' ': {
 		// TODO check that idx exist
 		char *comment = strstr (name, " ");
-		if (comment && *comment) {
-			*comment ++=0;
-		}
-		if (!strncmp (comment, "base64:", 7)) {
-			heap_comment = (char *)sdb_decode (comment + 7, NULL);
-			comment = heap_comment;
+		if (comment) { // new comment given
+			if(*comment) {
+				*comment ++=0;
+			}
+
+			if (!strncmp (comment, "base64:", 7)) {
+				heap_comment = (char *)sdb_decode (comment + 7, NULL);
+				comment = heap_comment;
+			}
 		}
 		var = r_anal_var_get_byname (core->anal, fcn, name);
 		if (var) {
