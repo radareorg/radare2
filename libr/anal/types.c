@@ -200,6 +200,7 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 		for (n = 0; (p = sdb_array_get (DB, var, n, NULL)); n++) {
 			const char *tfmt;
 			char *type, *type2;
+			int elements;
 			//int off;
 			//int size;
 			snprintf (var2, sizeof (var2), "%s.%s", var, p);
@@ -228,11 +229,21 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 						free (q);
 					}
 				} else {
+					elements = sdb_array_get_num (DB, var2, 2, NULL);
 					snprintf (var3, sizeof (var3), "type.%s", type);
 					tfmt = sdb_const_get (DB, var3, NULL);
 					if (tfmt) {
 						filter_type (type);
-						fmt = r_str_concat (fmt, tfmt);
+						if (elements > 0) {
+							fmt = r_str_concatf (fmt, "[%d]", elements);
+							if (*tfmt == '*') { // is not pointer but local array
+								fmt = r_str_concat (fmt, tfmt+1);
+							} else {
+								fmt = r_str_concat (fmt, tfmt);
+							}
+						} else {
+							fmt = r_str_concat (fmt, tfmt);
+						}
 						vars = r_str_concat (vars, p);
 						vars = r_str_concat (vars, " ");
 					} else eprintf ("Cannot resolve type '%s'\n", var3);
