@@ -1476,7 +1476,7 @@ static char *getViewerPath() {
 	};
 	for (i = 0; viewers[i]; i++) {
 		char *dotPath = r_file_path (viewers[i]);
-		if (dotPath && strcmp (dotpath, viewers[i])) {
+		if (dotPath && strcmp (dotPath, viewers[i])) {
 			return dotPath;
 		}
 		free (dotPath);
