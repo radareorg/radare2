@@ -288,31 +288,39 @@ static int init_dynamic_section(ELFOBJ *bin) {
 		return false;
 	for (i = 0; i < bin->ehdr.e_phnum ; i++) {
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-		    	dyn_size = bin->phdr[i].p_filesz;
+			dyn_size = bin->phdr[i].p_filesz;
 			break;
 		}
 	}
-	if (i == bin->ehdr.e_phnum)
+	if (i == bin->ehdr.e_phnum) {
 		return false;
-	if (bin->phdr[i].p_filesz > bin->size)
+	}
+	if (bin->phdr[i].p_filesz > bin->size) {
 		return false;
-	if (bin->phdr[i].p_offset > bin->size)
+	}
+	if (bin->phdr[i].p_offset > bin->size) {
 		return false;
-	if (bin->phdr[i].p_offset + sizeof(Elf_(Dyn)) > bin->size)
+	}
+	if (bin->phdr[i].p_offset + sizeof(Elf_(Dyn)) > bin->size) { 
 		return false;
+	}
 	tmp = dyn = (Elf_(Dyn)*)((ut8 *)bin->b->buf + bin->phdr[i].p_offset);
 	for (entries = 0; (ut8*)dyn < ((ut8*)tmp + dyn_size); dyn++) {
-	    	entries++;
+		entries++;
 		if (dyn->d_tag == DT_NULL) {
 			break;
 		}
-		if ((ut8*)(dyn+2) > ((ut8*)bin->b->buf + bin->size))
-		    	return false;
+		if ((ut8*)(dyn+2) > ((ut8*)bin->b->buf + bin->size)) {
+	   		return false;
+		}
 	}
-	if (entries < 1) return false;
+	if (entries < 1) {
+		return false;
+	}
 	dyn = (Elf_(Dyn)*)calloc (entries, sizeof (Elf_(Dyn)));
-	if (!dyn) return false;
-
+	if (!dyn) {
+		return false;
+	}
 	if (!UT32_MUL (&dyn_size, entries, sizeof (Elf_(Dyn)))) {
 		goto beach;
 	}
@@ -320,14 +328,13 @@ static int init_dynamic_section(ELFOBJ *bin) {
 		goto beach;
 	}
 	offset = Elf_(r_bin_elf_v2p) (bin, bin->phdr[i].p_vaddr);
-	if (offset > bin->size || offset + dyn_size > bin->size)
+	if (offset > bin->size || offset + dyn_size > bin->size) {
 		goto beach;
+	}
 #if R_BIN_ELF64
-	r = r_buf_fread_at (bin->b, offset, (ut8 *)dyn,
-			bin->endian ? "2L":"2l", entries);
+	r = r_buf_fread_at (bin->b, offset, (ut8 *)dyn, bin->endian ? "2L":"2l", entries);
 #else
-	r = r_buf_fread_at (bin->b, offset, (ut8 *)dyn,
-			bin->endian ? "2I":"2i", entries);
+	r = r_buf_fread_at (bin->b, offset, (ut8 *)dyn, bin->endian ? "2I":"2i", entries);
 #endif
 	if (r < 1) {
 		 goto beach;
@@ -350,8 +357,9 @@ static int init_dynamic_section(ELFOBJ *bin) {
 		goto beach;
 	}
 	strtab = (char *)calloc (1, strsize + 1);
-	if (!strtab)
+	if (!strtab) {
 		goto beach;
+	}
 	if (strtabaddr + strsize > bin->size) {
 		free (strtab);
 		goto beach;
@@ -1764,7 +1772,7 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 
 
 static size_t get_relocs_num(ELFOBJ *bin) {
-	size_t i, ret = 0;
+	size_t i, size, ret = 0;
 	/* we need to be careful here, in malformed files the section size might
 	 * not be a multiple of a Rel/Rela size; round up so we allocate enough
 	 * space.
@@ -1773,11 +1781,18 @@ static size_t get_relocs_num(ELFOBJ *bin) {
 	if (!bin->g_sections) {
 		return 0;
 	}
+	size = bin->is_rela == DT_REL ? sizeof (Elf_(Rel)) : sizeof (Elf_(Rela));
 	for (i = 0; !bin->g_sections[i].last; i++) {
 		if (!strncmp (bin->g_sections[i].name, ".rela.", strlen (".rela."))) {
-			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, sizeof(Elf_(Rela)));
+			if (!bin->is_rela) {
+				size = sizeof (Elf_(Rela));
+			}
+			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
 		} else if (!strncmp (bin->g_sections[i].name, ".rel.", strlen (".rel."))){
-			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, sizeof(Elf_(Rel)));
+			if (!bin->is_rela) {
+				size = sizeof (Elf_(Rel));
+			}
+			ret += NUMENTRIES_ROUNDUP (bin->g_sections[i].size, size);
 		}
 	}
 	return ret;
@@ -1789,7 +1804,7 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	if (offset > bin->size) {
 		return -1;
 	}
-	if (is_rela) {
+	if (is_rela == DT_RELA) {
 		Elf_(Rela) rela;
 #if R_BIN_ELF64
 		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rela,
@@ -1802,7 +1817,7 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 		if (len < 1) {
 			return -1;
 		}
-		r->is_rela = is_rela;
+		r->is_rela = true;
 		r->offset = rela.r_offset;
 		r->type = ELF_R_TYPE(rela.r_info);
 		r->sym = ELF_R_SYM(rela.r_info);
@@ -1822,7 +1837,7 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 		if (len < 1) {
 			return -1;
 		}
-		r->is_rela = is_rela;
+		r->is_rela = false;
 		r->offset = rel.r_offset;
 		r->type = ELF_R_TYPE(rel.r_info);
 		r->sym = ELF_R_SYM(rel.r_info);
@@ -1832,7 +1847,7 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 }
 
 RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
-	int res, rel, i, j;
+	int res, rel, rela, i, j;
 	size_t reloc_num = 0;
 	RBinElfReloc *ret = NULL;
 	ut64 section_text_offset = 0LL;
@@ -1871,7 +1886,16 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 				         "please file a bug report.");
 				break;
 			}
-			res = read_reloc (bin, &ret[rel], is_rela, bin->g_sections[i].offset + j);
+			if (!bin->is_rela) {
+				if (is_rela) {
+					rela = DT_RELA;
+				} else {
+					rela = DT_REL;
+				}
+			} else {
+				rela = bin->is_rela;
+			}
+			res = read_reloc (bin, &ret[rel], rela, bin->g_sections[i].offset + j);
 			if (j + res > bin->g_sections[i].size) {
 				eprintf ("Warning: malformed file, relocation entry #%u is partially beyond the end of section %u.\n", rel, i);
 			}
@@ -1970,7 +1994,9 @@ static RBinElfSection* get_sections_from_phdr(ELFOBJ *bin) {
 		}
 	}
 	ret = calloc (num_sections + 1, sizeof(RBinElfSection));
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	i = 0;
 	if (reldyn) {
 		ret[i].offset = Elf_(r_bin_elf_v2p) (bin, reldyn);
