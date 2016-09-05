@@ -22,10 +22,10 @@ static int cmd_macro(void *data, const char *input) {
 			"()", "", "break inside macro",
 			"(*", "", "list all defined macros",
 			"", "Argument support:", "",
-			"(foo x y\\n$0 @ $1)", "", "define fun with args",
+			"(foo x y, $0 @ $1)", "", "define fun with args (x - $0, y - $1)",
 			".(foo 128 0x804800)", "", "call it with args",
 			"", "Iterations:", "",
-			".(foo\\n() $@)", "", "define iterator returning iter index",
+			".(foo,() $@)", "", "define iterator returning iter index",
 			"x @@ .(foo)", "", "iterate over them",
 			NULL};
 		r_core_cmd_help (core, help_msg);
