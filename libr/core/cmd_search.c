@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <stddef.h>
+#include <time.h>
 
 #include "r_core.h"
 #include "r_io.h"
@@ -230,6 +231,8 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	int ret;
 	ut64 at;
 	ut8 *b = (ut8 *)malloc (core->blocksize);
+	int timeout = r_config_get_i (core->config, "anal.aaptimeout");
+	time_t stop_time = time(NULL) + timeout;
 // TODO: handle sections ?
 	if (from >= to) {
 		eprintf ("aap: Invalid search range 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", from, to);
@@ -243,8 +246,15 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	r_search_set_callback (core->search, &__prelude_cb_hit, core);
 	preludecnt = 0;
 	for (at = from; at < to; at += core->blocksize) {
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_singleton ()->breaked) {
 			break;
+		}
+		if (timeout > 0 && (stop_time - time(NULL)) < 0) {
+			r_cons_break (NULL, NULL);
+			r_cons_println ("timeout: aap");
+			r_cons_break_end (); //is it correct usage?
+			break;
+		}
 		ret = r_io_read_at (core->io, at, b, core->blocksize);
 		if (ret != core->blocksize)
 			break;
