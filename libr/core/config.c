@@ -121,6 +121,13 @@ static int cb_analnopskip (void *user, void *data) {
 	return true;
 }
 
+static int cb_analhpskip (void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.hpskip = node->i_value;
+	return true;
+}
+
 static int cb_analbbsplit (void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1519,6 +1526,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.vinfun", "false",  "Search values in functions (aav) (false by default to only find on non-code)");
 	SETPREF("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
+	SETCB("anal.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
 	SETCB("anal.bbsplit", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
 	SETCB("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");

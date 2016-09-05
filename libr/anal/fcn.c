@@ -15,6 +15,7 @@
 
 // 16 KB is the maximum size for a basic block
 #define MAXBBSIZE 16 * 1024
+#define MAX_FLG_NAME_SIZE 64
 
 #define FIX_JMP_FWD 0
 #define JMP_IS_EOB 1
@@ -414,11 +415,34 @@ static bool is_delta_pointer_table (RAnal *anal, ut64 ptr) {
 	return true;
 }
 
+static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
+	return src && dst && src->reg && dst->reg && src->reg->name && dst->reg->name;
+}
+
+//0 if not skipped; 1 if skipped; 2 if skipped before
+static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb, ut64 addr,
+				   char *tmp_buf, int oplen, int un_idx, int *idx) {
+	//this step is required in order to prevent infinite recursion in some cases
+	if ((addr + un_idx - oplen) == fcn->addr) {
+		if (!anal->flb.exist_at (anal->flb.f, "skip", 4, op->addr)) {
+			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE, PFMT64u"\0", op->addr); //"\0" just in case
+			anal->flb.set (anal->flb.f, tmp_buf, op->addr, oplen);
+			fcn->addr += oplen;
+			bb->size -= oplen;
+			bb->addr += oplen;
+			*idx = un_idx;
+			return 1;
+		}
+		return 2;
+	}
+	return 0;
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
-	int ret = R_ANAL_RET_END;
+	int ret = R_ANAL_RET_END, skip_ret = 0;
 	int overlapped = 0;
 	char *varname;
 	RAnalOp op = {0};
@@ -431,6 +455,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		int adjust;
 		int un_idx; // delay.un_idx
 	} delay = {0};
+	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
 
 	if (anal->sleep) {
 		r_sys_usleep (anal->sleep);
@@ -597,18 +622,42 @@ repeat:
 		}
 
 		switch (op.type) {
+		case R_ANAL_OP_TYPE_MOV:
+			//skip mov reg,reg
+			if (anal->opt.hpskip && regs_exist(op.src[0], op.dst)
+					&& !strcmp (op.src[0]->reg->name, op.dst->reg->name)) {
+				skip_ret = skip_hp (anal, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
+				if (skip_ret == 1) {
+					goto repeat;
+				}
+				if (skip_ret == 2) {
+					return R_ANAL_RET_END;
+				}
+			}
+			break;
 		case R_ANAL_OP_TYPE_LEA:
+			//skip lea reg,[reg]
+			if (anal->opt.hpskip && regs_exist(op.src[0], op.dst)
+					&& !strcmp (op.src[0]->reg->name, op.dst->reg->name)) {
+				skip_ret = skip_hp (anal, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
+				if (skip_ret == 1) {
+					goto repeat;
+				}
+				if (skip_ret == 2) {
+					return R_ANAL_RET_END;
+				}
+			}
 			if (anal->opt.jmptbl) {
 				if (is_delta_pointer_table (anal, op.ptr)) {
 					anal->cb_printf ("pxt. 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", op.addr, op.ptr);
 					//jmptbl_addr = op.ptr;
 					//jmptbl_size = -1;
-			//		ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
+					//ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
 				}
 			}
 			break;
 		case R_ANAL_OP_TYPE_ILL:
-			if (anal->opt.nopskip && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
+			if (anal->opt.nopskip && len > 3 && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 				if ((addr + delay.un_idx-oplen) == fcn->addr) {
 					fcn->addr += oplen;
 					bb->size -= oplen;
@@ -640,15 +689,26 @@ repeat:
 			return R_ANAL_RET_END;
 		case R_ANAL_OP_TYPE_NOP:
 			if (anal->opt.nopskip) {
-				RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
-				// do not skip nops if there's a flag at starting address
-				if (!fi || strncmp (fi->name, "sym.", 4)) {
-					if ((addr + delay.un_idx - oplen) == fcn->addr) {
-						fcn->addr += oplen;
-						bb->size -= oplen;
-						bb->addr += oplen;
-						idx = delay.un_idx;
+				if (!strcmp (anal->cur->arch, "mips")) {
+					//Looks like this flags check is useful only for mips
+					// do not skip nops if there's a flag at starting address
+					RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
+					if (!fi || strncmp (fi->name, "sym.", 4)) {
+						if ((addr + delay.un_idx - oplen) == fcn->addr) {
+							fcn->addr += oplen;
+							bb->size -= oplen;
+							bb->addr += oplen;
+							idx = delay.un_idx;
+							goto repeat;
+						}
+					}
+				} else {
+					skip_ret = skip_hp (anal, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
+					if (skip_ret == 1) {
 						goto repeat;
+					}
+					if (skip_ret == 2) {
+						return R_ANAL_RET_END;
 					}
 				}
 			}
@@ -864,7 +924,7 @@ repeat:
 				}
 			}
 			FITFCNSZ ();
-			
+
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
 river:
