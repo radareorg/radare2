@@ -75,8 +75,10 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_MUL;
 	} else if (!strncmp (str, "out ", 4)) {
 		op->type = R_ANAL_OP_TYPE_IO;
+		r_strbuf_setf (&op->esil, "[]");
 		op->type2 = 1;
 		op->val = imm;
+		op->cycles = 1;
 	} else if (!strncmp (str, "in ", 3)) {
 		op->type = R_ANAL_OP_TYPE_IO;
 		op->type2 = 0;
@@ -86,6 +88,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 	if (ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
+		r_strbuf_setf (&op->esil, ",");
 		op->cycles = 1;
 	}
 	if (buf[1] == 1) {			//MOVW
@@ -260,6 +263,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		break;
 	case 0x97: // SBIW
 		op->type = R_ANAL_OP_TYPE_SUB;
+		r_strbuf_setf (&op->esil, ",", dst);
 		op->cycles = 2;
 		break;
 	case 0x98: // SBI
