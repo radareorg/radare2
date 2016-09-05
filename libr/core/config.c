@@ -1609,7 +1609,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
-	SETPREF("asm.relsub", "false", "Substitute pc relative expressions in disasm");
+	SETPREF("asm.relsub", "true", "Substitute pc relative expressions in disasm");
 	SETPREF("asm.cmtfold", "false", "Fold comments, toggle with Vz");
 	SETPREF("asm.family", "false", "Show family name in disasm");
 	SETPREF("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
