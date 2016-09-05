@@ -263,7 +263,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		break;
 	case 0x97: // SBIW
 		op->type = R_ANAL_OP_TYPE_SUB;
-		r_strbuf_setf (&op->esil, ",", dst);
+//		r_strbuf_setf (&op->esil, ",", dst);
 		op->cycles = 2;
 		break;
 	case 0x98: // SBI
