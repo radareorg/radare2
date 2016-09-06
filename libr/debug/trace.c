@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_debug.h>
 
@@ -7,24 +7,32 @@
 // DO IT WITH SDB
 
 R_API RDebugTrace *r_debug_trace_new () {
-	RDebugTrace *t = R_NEW (RDebugTrace);
+	RDebugTrace *t = R_NEW0 (RDebugTrace);
+	if (!t) return NULL;
 	t->tag = 1; // UT32_MAX;
 	t->addresses = NULL;
 	t->enabled = false;
 	t->traces = r_list_new ();
+	if (!t->traces) {
+		r_debug_trace_free (t);
+		return NULL;
+	}
 	t->traces->free = free;
 	t->db = sdb_new0 ();
+	if (!t->db) {
+		r_debug_trace_free (t);
+		return NULL;
+	}
 	return t;
 }
 
-R_API void r_debug_trace_free (RDebug *dbg) {
-	if (dbg->trace == NULL)
-		return;
-	r_list_purge (dbg->trace->traces);
-	free (dbg->trace->traces);
-	sdb_free (dbg->trace->db);
-	free (dbg->trace);
-	dbg->trace = NULL;
+R_API void r_debug_trace_free (RDebugTrace *trace) {
+	if (!trace) return;
+	r_list_purge (trace->traces);
+	free (trace->traces);
+	sdb_free (trace->db);
+	free (trace);
+	trace = NULL;
 }
 
 // TODO: added overlap/mask support here... wtf?
@@ -34,33 +42,29 @@ R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
 	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
 }
 
-R_API int r_debug_trace_pc (RDebug *dbg) {
+/*
+ * something happened at the given pc that we need to trace
+ */
+R_API int r_debug_trace_pc (RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
-	RRegItem *ri;
 	RAnalOp op;
-	static ut64 oldpc = 0LL; // Must trace the previously traced instruction
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-	if ((ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1))) {
-		ut64 addr = r_reg_get_value (dbg->reg, ri);
-		if (!addr) {
-			return false;
-		}
-		if (dbg->iob.read_at (dbg->iob.io, addr, buf, sizeof (buf))>0) {
-			if (r_anal_op (dbg->anal, &op, addr, buf, sizeof (buf))>0) {
-				if (oldpc!=0LL) {
-					if (dbg->anal->esil) {
-						if (dbg->anal->trace) {
-							r_anal_esil_trace (dbg->anal->esil, &op);
-						}
-					}
-					r_debug_trace_add (dbg, oldpc, op.size);
-				}
-				oldpc = addr;
-				return true;
-			} else eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", addr);
-		} //else eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", addr);
-	} else eprintf ("trace_pc: cannot get program counter\n");
-	return false;
+	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
+	if (dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf)) != sizeof (buf)) {
+		eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", pc);
+		return false;
+	}
+	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)) < 1) {
+		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
+		return false;
+	}
+	if (dbg->anal->esil && dbg->anal->trace) {
+		r_anal_esil_trace (dbg->anal->esil, &op);
+	}
+	if (oldpc != UT64_MAX) {
+		r_debug_trace_add (dbg, oldpc, op.size); //XXX review what this line really do
+	}
+	oldpc = pc;
+	return true;
 }
 
 R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
@@ -135,6 +139,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	tp = r_debug_trace_get (dbg, addr);
 	if (!tp) {
 		tp = R_NEW0 (RDebugTracepoint);
+		if (!tp) return NULL;
 		tp->stamp = r_sys_now ();
 		tp->addr = addr;
 		tp->tags = tag;

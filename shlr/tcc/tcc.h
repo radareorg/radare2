@@ -237,7 +237,7 @@ typedef struct SValue {
 typedef struct Sym {
     int v;    /* symbol token */
     char *asm_label;    /* associated asm label */
-    size_t r;    /* associated register */
+    unsigned int r;    /* associated register */
     union {
         long long c;    /* associated number */
         int *d;   /* define token stream */
@@ -253,7 +253,7 @@ typedef struct Sym {
 
 /* GNUC attribute definition */
 typedef struct AttributeDef {
-    unsigned
+    unsigned int
       func_call     : 3, /* calling convention (0..5), see below */
       aligned       : 5, /* alignement (0..16) */
       packed        : 1,
@@ -1025,5 +1025,7 @@ ST_FUNC int classify_x86_64_va_arg(CType *ty);
 #endif
 /********************************************************/
 PUB_FUNC void tcc_appendf (const char *fmt, ...);
+
+extern void (*tcc_cb)(const char *, char **);
 
 #endif /* _TCC_H */

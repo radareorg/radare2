@@ -6,8 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-
-SDBVER=0.9.8
+SDBVER=0.10.4
 
 BUILD_MEMCACHE=0
 
@@ -29,7 +28,10 @@ INSTALL_MAN=$(INSTALL) -m 444
 INSTALL_LIB=$(INSTALL) -c
 endif
 
-CFLAGS_STD=-std=gnu99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L 
+# link time optimization
+#CFLAGS_STD=-std=gnu99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L -flto -O2
+
+CFLAGS_STD=-std=gnu99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L
 #CFLAGS+=-Wno-initializer-overrides
 CFLAGS+=${CFLAGS_STD}
 
@@ -41,10 +43,10 @@ CFLAGS+=-Wall
 CFLAGS+=-Wsign-compare
 # some old gcc doesnt support this
 # CFLAGS+=-Wmissing-field-initializers
-#CFLAGS+=-O3
+CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0
-CFLAGS+=-g
-LDFLAGS+=-g
+#CFLAGS+=-g
+#LDFLAGS+=-g -flto
 
 HAVE_VALA=#$(shell valac --version 2> /dev/null)
 # This is hacky
@@ -90,10 +92,18 @@ ifeq (${OS},w32)
 OSTYPE=MINGW32
 endif
 
+ifneq (,$(findstring MINGW,${OSTYPE})$(findstring MSYS,${OSTYPE})$(findstring CYGWIN,${OSTYPE}))
+EXT_SO=dll
+SOVER=${EXT_SO}
+else
+EXT_SO=so
+SOVER=${EXT_SO}.${SDBVER}
+endif
 ifeq (${OS},Darwin)
 EXT_SO=dylib
 SOVER=dylib
 LDFLAGS+=-dynamic
+LDFLAGS_SHARED+=-dynamiclib
   ifeq (${ARCH},i386)
 #CC+=-arch i386
 CC+=-arch x86_64
@@ -101,19 +111,13 @@ CC+=-arch x86_64
 else
   ifneq (,$(findstring CYGWIN,${OSTYPE}))
 CFLAGS+=-D__CYGWIN__=1
-EXT_SO=dll
-SOVER=${EXT_SO}
 LDFLAGS_SHARED?=-shared
   else
     ifneq (,$(findstring MINGW32,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
-EXT_SO=dll
-SOVER=${EXT_SO}
     else
 CFLAGS+=-fPIC
 SOVERSION=0
-EXT_SO=so
-SOVER=${EXT_SO}.${SDBVER}
 LDFLAGS_SHARED?=-fPIC 
     endif
   endif

@@ -50,7 +50,8 @@ static int printDisassembledInstruction(char *out, const disassembledInstruction
 		return 0;
 
 	strcat (out, dInstruction.instruction->mnemonic);
-	strcat (out, " ");
+	if (dInstruction.instruction->numOperands > 0)
+		strcat (out, " ");
 
 	for (i = 0; i < dInstruction.instruction->numOperands; i++) {
 		/* If we're not on the first operand, but not on the last one either, print a comma separating
@@ -172,22 +173,22 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_YPQ:
-		retVal = sprintf(strOperand, "Y+%d",
+		retVal = sprintf(strOperand, "y+%d",
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_ZPQ:
-		retVal = sprintf(strOperand, "Z+%d",
+		retVal = sprintf(strOperand, "z+%d",
 			dInstruction.operands[operandNum]);
 		break;
-	case OPERAND_X: retVal = sprintf(strOperand, "X"); break;
-	case OPERAND_XP: retVal = sprintf(strOperand, "X+"); break;
-	case OPERAND_MX: retVal = sprintf(strOperand, "-X"); break;
-	case OPERAND_Y: retVal = sprintf(strOperand, "Y"); break;
-	case OPERAND_YP: retVal = sprintf(strOperand, "Y+"); break;
-	case OPERAND_MY: retVal = sprintf(strOperand, "-Y"); break;
-	case OPERAND_Z: retVal = sprintf(strOperand, "Z"); break;
-	case OPERAND_ZP: retVal = sprintf(strOperand, "Z+"); break;
-	case OPERAND_MZ: retVal = sprintf(strOperand, "-Z"); break;
+	case OPERAND_X: retVal = sprintf(strOperand, "x"); break;
+	case OPERAND_XP: retVal = sprintf(strOperand, "x+"); break;
+	case OPERAND_MX: retVal = sprintf(strOperand, "-x"); break;
+	case OPERAND_Y: retVal = sprintf(strOperand, "y"); break;
+	case OPERAND_YP: retVal = sprintf(strOperand, "y+"); break;
+	case OPERAND_MY: retVal = sprintf(strOperand, "-y"); break;
+	case OPERAND_Z: retVal = sprintf(strOperand, "z"); break;
+	case OPERAND_ZP: retVal = sprintf(strOperand, "z+"); break;
+	case OPERAND_MZ: retVal = sprintf(strOperand, "-z"); break;
 	/* This is impossible by normal operation. */
 	default: return ERROR_UNKNOWN_OPERAND;
 	}

@@ -19,8 +19,19 @@ the rules are described in a lispy .sb file:
 **NOTE**: r2 -S is an alias for -e cfg.sandbox=true
 
 
-OpenBSD
--------
+OpenBSD (starting to 5.9)
+-------------------------
+
+OpenBSD comes with support for sandboxing using the pledge(2) syscall.
+
+Only the following are allowed:
+
+- stdio and tty manipulation
+- filesystem reading
+- mmap(2) `PROT_EXEC` manipulation
+
+OpenBSD (until 5.9)
+-------------------
 
 OpenBSD comes with support for sandboxing using the systrace utility.
 

@@ -11,8 +11,9 @@ R_API RAnalValue *r_anal_value_new_from_string(const char *str) {
 	return NULL;
 }
 
-R_API RAnalValue *r_anal_value_copy (RAnalValue *ov) {
-	RAnalValue *v = R_NEW (RAnalValue);
+R_API RAnalValue *r_anal_value_copy(RAnalValue *ov) {
+	RAnalValue *v = R_NEW0 (RAnalValue);
+	if (!v) return NULL;
 	memcpy (v, ov, sizeof (RAnalValue));
 	// reference to reg and regdelta should be kept
 	return v;
@@ -20,17 +21,20 @@ R_API RAnalValue *r_anal_value_copy (RAnalValue *ov) {
 
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RAnalValue *value) {
+	free (value);
+#if 0
 	ut64 pval = (ut64)(size_t)value;
 	if (pval && pval != UT64_MAX) {
 		/* TODO: free RRegItem objects? */
 		free (value);
 	}
+#endif
 }
 
 // mul*value+regbase+regidx+delta
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	ut64 num;
-	if (val==NULL)
+	if (!val)
 		return 0LL;
 	num = val->base + (val->delta*(val->mul?val->mul:1));
 	if (val->reg)
@@ -54,14 +58,14 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 		if (anal->iob.io) {
 			ut8 data[8];
 			ut64 addr = r_anal_value_to_ut64 (anal, val);
-			r_mem_set_num (data, val->memref, num, anal->big_endian);
+			r_mem_set_num (data, val->memref, num);
 			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
 		} else eprintf ("No IO binded to r_anal\n");
 	} else {
 		if (val->reg)
 			r_reg_set_value (anal->reg, val->reg, num);
 	}
-	return R_FALSE;							//is this necessary
+	return false;							//is this necessary
 }
 
 R_API char *r_anal_value_to_string (RAnalValue *value) {

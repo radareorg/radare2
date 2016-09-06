@@ -26,5 +26,4 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin);
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file);
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_from_bytes_new(const ut8* buf, ut64 size);
-
 #endif

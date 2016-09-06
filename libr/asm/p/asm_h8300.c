@@ -25,11 +25,8 @@ RAsmPlugin r_asm_plugin_h8300 = {
 	.desc = "H8/300 disassembly plugin",
 	.arch = "h8300",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL
+	.endian = R_SYS_ENDIAN_BIG,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

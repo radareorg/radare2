@@ -1,9 +1,10 @@
 include ../config.mk
+
 EXTRA_TARGETS+=do
 EXTRA_CLEAN=doclean
 
 NAME=r_anal
-DEPS=r_util r_db r_reg r_syscall
+DEPS=r_util r_reg r_syscall
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
 LDFLAGS+=${BN_LIBS}
@@ -26,12 +27,15 @@ include ${STATIC_ANAL_PLUGINS}
 STATIC_OBJS=$(addprefix $(LTOP)/anal/p/,$(STATIC_OBJ))
 OBJLIBS=meta.o reflines.o ref.o op.o fcn.o bb.o var.o
 OBJLIBS+=cond.o value.o cc.o diff.o types.o fcnstore.o
-OBJLIBS+=hint.o vm.o anal.o data.o xrefs.o esil.o sign.o
+OBJLIBS+=hint.o anal.o data.o xrefs.o esil.o sign.o
 OBJLIBS+=anal_ex.o switch.o state.o cycles.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
 OBJLIBS+=esil2reil.o pin.o
+ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-modules.o
+ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-isa.o
+ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/elf32-xtensa.o
 
-OBJS=${STATIC_OBJS} ${OBJLIBS}
+OBJS=${STATIC_OBJS} ${OBJLIBS} ${ASMOBJS}
 
 test tests: tests-esil
 

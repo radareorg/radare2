@@ -1,4 +1,109 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_types.h"
+#include "r_io.h"
+
+static int __dump_sections_to_disk(RCore *core) {
+	char file[128];
+	RListIter *iter;
+	RIOSection *s;
+
+	r_list_foreach (core->io->sections, iter, s) {
+		ut8 *buf = malloc (s->size);
+		r_io_read_at (core->io, s->offset, buf, s->size);
+		snprintf (file, sizeof(file),
+			"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+			s->vaddr, s->vaddr+s->size,
+			r_str_rwx_i (s->rwx));
+		if (!r_file_dump (file, buf, s->size, 0)) {
+			eprintf ("Cannot write '%s'\n", file);
+			free (buf);
+			return false;
+		}
+		eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
+		free (buf);
+	}
+	return false;
+}
+
+static int __dump_section_to_disk(RCore *core, char *file) {
+	char *heapfile = NULL;
+	ut64 o = core->offset;
+	RListIter *iter;
+	RIOSection *s;
+	int len = 128;
+	if (core->io->va || core->io->debug)
+		o = r_io_section_vaddr_to_maddr_try (core->io, o);
+	r_list_foreach (core->io->sections, iter, s) {
+		if (o >= s->offset && o < s->offset + s->size) {
+			ut8 *buf = malloc (s->size);
+			r_io_read_at (core->io, s->offset, buf, s->size);
+			if (!file) {
+				heapfile = (char *)malloc (len * sizeof(char));
+				if (!heapfile) {
+					return false;
+				}
+				file = heapfile;
+				snprintf (file, len,
+					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+					s->vaddr, s->vaddr+s->size,
+					r_str_rwx_i (s->rwx));
+			}
+			if (!r_file_dump (file, buf, s->size, 0)) {
+				eprintf ("Cannot write '%s'\n", file);
+				free (buf);
+				free (heapfile);
+				return false;
+			}
+			eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
+			free (buf);
+			free (heapfile);
+			return true;
+		}
+	}
+	return false;
+}
+
+static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut64 off, char *oldname) {
+	RFlagItem *item = NULL;
+	RListIter *iter;
+	const RList *list = NULL;
+	int len = 0;
+	char *secname = NULL;
+	list = r_flag_get_list (flags, s->vaddr);
+	secname = sdb_fmt (-1, "section.%s", oldname);
+	len = strlen (secname);
+	r_list_foreach (list, iter, item) {
+		if (!item->name)  {
+			continue;
+		}
+		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
+			free (item->realname);
+			item->name = strdup (sdb_fmt (-1, "section.%s", s->name));
+			r_str_chop (item->name);
+			r_name_filter (item->name, 0);
+			item->realname = item->name;
+			break;
+		}
+	}
+	list = r_flag_get_list (flags, s->vaddr + s->size);
+	secname = sdb_fmt (-1, "section_end.%s", oldname);
+	len = strlen (secname);
+	r_list_foreach (list, iter, item) {
+		if (!item->name)  {
+			continue;
+		}
+		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
+			free (item->realname);
+			item->name = strdup (sdb_fmt (-1, "section_end.%s", s->name));
+			r_str_chop (item->name);
+			r_name_filter (item->name, 0);
+			item->realname = item->name;
+			break;
+		}
+	}
+}
 
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -9,7 +114,7 @@ static int cmd_section(void *data, const char *input) {
 		"S*","","list sections (in radare commands)",
 		"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
 		"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
-		"Sd"," [file]","dump current section to a file (see dmd)",
+		"Sd[a]"," [file]","dump current (all) section to a file (see dmd)",
 		"Sl"," [file]","load contents of file into current section (see dml)",
 		"Sj","","list sections in JSON (alias for iSj)",
 		"Sr"," [name]","rename section on current seek",
@@ -30,9 +135,10 @@ static int cmd_section(void *data, const char *input) {
 		case '\0':
 			{
 			int b = 0;
-			const char *n = r_io_section_get_archbits (core->io,
-				core->offset, &b);
-			if (n) r_cons_printf ("%s %d\n", n, b);
+			const char *n = r_io_section_get_archbits (core->io, core->offset, &b);
+			if (n) {
+				r_cons_printf ("%s %d\n", n, b);
+			}
 			}
 			break;
 		case '-':
@@ -55,19 +161,16 @@ static int cmd_section(void *data, const char *input) {
 					free (ptr);
 					break;
 				}
-				if (i == 3)
-					offset = r_num_math (core->num,
-							r_str_word_get0 (ptr, 2));
-				bits = r_num_math (core->num,
-						r_str_word_get0 (ptr, 1));
+				if (i == 3) {
+					offset = r_num_math (core->num, r_str_word_get0 (ptr, 2));
+				}
+				bits = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 				arch = r_str_word_get0 (ptr, 0);
-				if (r_io_section_set_archbits (core->io,
-						offset, arch, bits)) {
+				if (r_io_section_set_archbits (core->io, offset, arch, bits)) {
 					core->section = NULL;
 					r_core_seek (core, core->offset, 0);
 				} else {
-					eprintf ("Cannot set arch/bits at "
-						" 0x%08"PFMT64x"\n",offset);
+					eprintf ("Cannot set arch/bits at 0x%08"PFMT64x"\n",offset);
 				}
 				free (ptr);
 				break;
@@ -81,6 +184,7 @@ static int cmd_section(void *data, const char *input) {
 			ut64 vaddr;
 			char *p = strchr (input + 2, ' ');
 			if (p) {
+				*p = 0;
 				vaddr = r_num_math (core->num, p + 1);
 				len = (int)(size_t)(p-input + 2);
 			} else {
@@ -88,11 +192,13 @@ static int cmd_section(void *data, const char *input) {
 			}
 			s = r_io_section_vget (core->io, vaddr);
 			if (s) {
-				if (!len) len = sizeof (s->name);
-				r_str_ncpy (s->name, input + 2, len);
+				char *oldname = s->name;
+				s->name = strdup (input + 2);
+				//update flag space for the given section
+				update_section_flag_at_with_oldname (s, core->flags, s->vaddr, oldname);
+				free (oldname);
 			} else {
-				eprintf ("No section found in "
-					" 0x%08"PFMT64x"\n", core->offset);
+				eprintf ("No section found in  0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
 			eprintf ("Usage: Sr [name] ([offset])\n");
@@ -100,34 +206,23 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case 'd':
 		{
-		char file[128];
-		ut64 o = core->offset;
-		RListIter *iter;
-		RIOSection *s;
-		if (core->io->va || core->io->debug)
-			o = r_io_section_vaddr_to_maddr_try (core->io, o);
-		r_list_foreach (core->io->sections, iter, s) {
-			if (o >= s->offset && o < s->offset + s->size) {
-				ut8 *buf = malloc (s->size);
-				r_io_read_at (core->io, s->offset, buf, s->size);
-				if (input[1] == ' ' && input[2]) {
-					snprintf (file, sizeof(file),
-						"%s", input + 2);
-				} else {
-					snprintf (file, sizeof(file),
-						"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
-						s->vaddr, s->vaddr+s->size,
-						r_str_rwx_i (s->rwx));
-				}
-				if (!r_file_dump (file, buf, s->size, 0)) {
-					eprintf ("Cannot write '%s'\n", file);
-					free (buf);
-					return false;
-				}
-				eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
-				free (buf);
-				return true;
+		char *file = NULL;
+		int len = 128;
+		switch (input[1]) {
+		case 0:
+			__dump_section_to_disk (core, NULL);
+			break;
+		case ' ':
+			if (input[2]) {
+				file = (char *)malloc(len * sizeof(char));
+				snprintf (file, len, "%s", input + 2);
 			}
+			__dump_section_to_disk (core, file);
+			free (file);
+			break;
+		case 'a':
+			__dump_sections_to_disk (core);
+			break;
 		}
 		}
 		break;
@@ -236,7 +331,8 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case '=':
 		r_io_section_list_visual (core->io, core->offset, core->blocksize,
-					r_config_get_i (core->config, "scr.color"));
+					r_config_get_i (core->config, "scr.color"),
+					r_cons_get_size (NULL));
 		break;
 	case '.':
 		{

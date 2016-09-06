@@ -4,32 +4,33 @@
 
 R_API int r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9'))
-		return R_TRUE;
+		return true;
 	switch (ch) {
 	case ':':
 	case '.':
 	case '_':
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_name_check(const char *name) {
 	if (!name || !*name)
-		return R_FALSE;
+		return false;
 	/* Cannot start by number */
 	if (*name >= '0' && *name <= '9')
-		return R_FALSE;
+		return false;
 	/* Cannot contain non-alphanumeric chars + [:._] */
 	for (; *name != '\0'; name++)
 		if (!r_name_validate_char (*name))
-			return R_FALSE;
-	return R_TRUE;
+			return false;
+	return true;
 }
 
 R_API int r_name_filter(char *name, int maxlen) {
 	int i;
 	char *oname;
+	if (!name) return 0;
 	if (maxlen < 0) {
 		maxlen = strlen (name);
 	}

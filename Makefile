@@ -1,16 +1,20 @@
 -include config-user.mk
 include global.mk
 
+PREVIOUS_RELEASE=0.10.4
+
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
-R2VC=$(shell git rev-list --all --count)
 USE_ZIP=YES
 ZIP=zip
+
+R2VC=$(shell git rev-list --all --count 2>/dev/null)
 ifeq ($(R2VC),)
 R2VC=9999999
 endif
+
 STRIP?=strip
 ifneq ($(shell xz --help 2>/dev/null | grep improve),)
 TAR=tar -cvf
@@ -22,6 +26,22 @@ TAREXT=tar.gz
 CZ=gzip -f
 endif
 PWD=$(shell pwd)
+
+# For echo without quotes
+Q='
+ESC=
+ifeq ($(BUILD_OS),windows)
+ifeq ($(OSTYPE),mingw32)
+ifneq (,$(findstring mingw32-make,$(MAKE)))
+ifneq ($(APPVEYOR),True)
+	Q=
+	ESC=^
+	LC_ALL=C
+	export LC_ALL
+endif
+endif
+endif
+endif
 
 all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C shlr/zip
@@ -37,13 +57,16 @@ GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 GIT_NOW=$(shell date +%Y-%m-%d)
 
 libr/include/r_version.h:
-	echo "#ifndef R_VERSION_H" > $@
-	echo "#define R_VERSION_H 1" >> $@
-	echo "#define R2_VERSION_COMMIT $(R2VC)" >> $@
-	echo '#define R2_GITTAP "$(GIT_TAP)"' >> $@
-	echo '#define R2_GITTIP "$(GIT_TIP)"' >> $@
-	echo '#define R2_BIRTH "$(GIT_NOW)"' >> $@
-	echo '#endif' >> $@
+	@echo Generating r_version.h file
+	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
+	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
+	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
+	@echo $(Q)#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#endif$(Q) >> $@.tmp
+	@cmp -s $@.tmp $@ || (mv -f $@.tmp $@ && echo "Update libr/include/r_version.h")
+	@rm -f $@.tmp
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
@@ -54,10 +77,10 @@ w32:
 	sys/mingw32.sh
 
 depgraph.png:
-	cd libr ; perl depgraph.pl | dot -Tpng -odepgraph.png
+	cd libr ; perl depgraph.pl dot | dot -Tpng -o../depgraph.png
 
 android:
-	@if [ -z "$(NDK_ARCH)" ]; then echo "Set NDK_ARCH=[arm|mips|x86]" ; false; fi
+	@if [ -z "$(NDK_ARCH)" ]; then echo "Set NDK_ARCH=[arm|arm64|mips|x86]" ; false; fi
 	sys/android-${NDK_ARCH}.sh
 
 w32dist:
@@ -100,11 +123,20 @@ windist:
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/doc/radare2"
 	mkdir -p "${WINDIST}/include/libr/sdb"
+	mkdir -p "${WINDIST}/include/libr/r_util"
 	@echo "${C}[WINDIST] Copying development files${R}"
 	cp -f libr/include/sdb/*.h "${WINDIST}/include/libr/sdb/"
+	cp -f libr/include/r_util/*.h "${WINDIST}/include/libr/r_util/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
 	#mkdir -p "${WINDIST}/include/libr/sflib"
 	@cp -f doc/fortunes.* "${WINDIST}/share/doc/radare2"
+	@mkdir -p "${WINDIST}/share/radare2/${VERSION}/format/dll"
+	@cp -f libr/bin/d/elf32 "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/elf64 "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/elf_enums "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/pe32 "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/trx "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/dll/*.sdb "${WINDIST}/share/radare2/${VERSION}/format/dll"
 	@mkdir -p "${WINDIST}/share/radare2/${VERSION}/cons"
 	@cp -f libr/cons/d/* "${WINDIST}/share/radare2/${VERSION}/cons"
 	@mkdir -p "${WINDIST}/share/radare2/${VERSION}/hud"
@@ -131,14 +163,19 @@ pkgcfg:
 
 install-man:
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
+	mkdir -p "${DESTDIR}${MANDIR}/man7"
 	for FILE in man/*.1 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man1" ; done
 	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
+	for FILE in man/*.7 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man7" ; done
 
 install-man-symlink:
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
+	mkdir -p "${DESTDIR}${MANDIR}/man7"
 	cd man && for FILE in *.1 ; do \
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
 	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
+	for FILE in *.7 ; do \
+		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
 
 install-doc:
 	${INSTALL_DIR} "${DESTDIR}${DATADIR}/doc/radare2"
@@ -165,6 +202,7 @@ install love: install-doc install-man install-www
 	cp -f doc/hud "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	sys/ldconfig.sh
+	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 # Remove make .d files. fixes build when .c files are removed
 rmd:
@@ -208,6 +246,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	sys/ldconfig.sh
+	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1
@@ -249,7 +288,7 @@ strip:
 	-for FILE in "${DESTDIR}${LIBDIR}/libr_"*".${EXT_SO}" "${DESTDIR}${LIBDIR}/libr2.${EXT_SO}" ; do \
 		 ${STRIP} -s "$$FILE" ; done
 
-purge: purge-doc purge-dev
+purge: purge-doc purge-dev user-uninstall
 	for FILE in ${R2BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
 	rm -f "${DESTDIR}${BINDIR}/ragg2-cc"
 	rm -f "${DESTDIR}${BINDIR}/r2"
@@ -258,15 +297,29 @@ purge: purge-doc purge-dev
 	rm -rf "${DESTDIR}${LIBDIR}/radare2"
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
 
+R2V=radare2-${VERSION}
+
 dist:
+	rm -rf $(R2V)
+	git clone . $(R2V)
+	-cd $(R2V) && [ ! -f config-user.mk -o configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
+	cd $(R2V) ; git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
+	$(MAKE) -C $(R2V)/shlr capstone-sync
+	FILES=`cd $(R2V); git ls-files | sed -e "s,^,$(R2V)/,"` ; \
+	CS_FILES=`cd $(R2V)/shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,$(R2V)/shlr/capstone/,"` ; \
+	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "$(R2V)/ChangeLog" ; \
+	${CZ} "radare2-${VERSION}.tar"
+
+olddist:
 	-[ configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
-	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
+	#git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
+	git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
 	cd shlr && ${MAKE} capstone-sync
 	DIR=`basename "$$PWD"` ; \
 	FILES=`git ls-files | sed -e "s,^,radare2-${VERSION}/,"` ; \
 	CS_FILES=`cd shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,radare2-${VERSION}/shlr/capstone/,"` ; \
 	cd .. && mv "$${DIR}" "radare2-${VERSION}" && \
-	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "radare2-${VERSION}/ChangeLog" ;\
+	${TAR} "radare2-${VERSION}.tar" $${FILES} $${CS_FILES} "radare2-${VERSION}/ChangeLog" ; \
 	${CZ} "radare2-${VERSION}.tar" ; \
 	mv "radare2-${VERSION}" "$${DIR}"
 
@@ -290,11 +343,21 @@ tests:
 
 osx-sign:
 	$(MAKE) -C binr/radare2 osx-sign
+
 osx-sign-libs:
 	$(MAKE) -C binr/radare2 osx-sign-libs
 
+osx-pkg:
+	sys/osx-pkg.sh $(VERSION)
+
 quality:
 	./sys/shellcheck.sh
+
+menu nconfig:
+	./sys/menu.sh || true
+
+pie:
+	sys/pie.sh ${PREVIOUS_RELEASE}
 
 include ${MKPLUGINS}
 

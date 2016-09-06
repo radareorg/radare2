@@ -391,6 +391,7 @@ R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	RListIter *iter;
 	RCmdMacroItem *m;
 	char *name = strdup (_name);
+	if (!name) return false;
 	char *ptr = strchr (name, ')');
 	if (ptr) *ptr = '\0';
 	r_list_foreach (mac->macros, iter, m) {
@@ -424,6 +425,23 @@ R_API void r_cmd_macro_list(RCmdMacro *mac) {
 		idx++;
 	}
 }
+
+// TODO: use mac->cb_printf which is r_cons_printf at the end
+R_API void r_cmd_macro_meta(RCmdMacro *mac) {
+	RCmdMacroItem *m;
+	int j;
+	RListIter *iter;
+	r_list_foreach (mac->macros, iter, m) {
+		mac->cb_printf ("(%s %s, ", m->name, m->args);
+		for (j=0; m->code[j]; j++) {
+			if (m->code[j]=='\n')
+				mac->cb_printf (", ");
+			else mac->cb_printf ("%c", m->code[j]);
+		}
+		mac->cb_printf (")\n");
+	}
+}
+
 #if 0
 (define name value
   f $0 @ $1)

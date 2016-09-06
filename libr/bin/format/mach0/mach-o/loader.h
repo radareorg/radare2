@@ -52,13 +52,13 @@
  * 32-bit architectures.
  */
 struct mach_header {
-	ut32	magic;		/* mach magic number identifier */
-	cpu_type_t	cputype;	/* cpu specifier */
-	cpu_subtype_t	cpusubtype;	/* machine specifier */
-	ut32	filetype;	/* type of file */
-	ut32	ncmds;		/* number of load commands */
-	ut32	sizeofcmds;	/* the size of all the load commands */
-	ut32	flags;		/* flags */
+	ut32 magic;		  /* mach magic number identifier */
+	cpu_type_t cputype;       /* cpu specifier */
+	cpu_subtype_t cpusubtype; /* machine specifier */
+	ut32 filetype;		  /* type of file */
+	ut32 ncmds;		  /* number of load commands */
+	ut32 sizeofcmds;	  /* the size of all the load commands */
+	ut32 flags;		  /* flags */
 };
 
 /* Constant for the magic field of the mach_header (32-bit architectures) */
@@ -70,14 +70,14 @@ struct mach_header {
  * 64-bit architectures.
  */
 struct mach_header_64 {
-	ut32	magic;		/* mach magic number identifier */
-	cpu_type_t	cputype;	/* cpu specifier */
-	cpu_subtype_t	cpusubtype;	/* machine specifier */
-	ut32	filetype;	/* type of file */
-	ut32	ncmds;		/* number of load commands */
-	ut32	sizeofcmds;	/* the size of all the load commands */
-	ut32	flags;		/* flags */
-	ut32	reserved;	/* reserved */
+	ut32 magic;		  /* mach magic number identifier */
+	cpu_type_t cputype;       /* cpu specifier */
+	cpu_subtype_t cpusubtype; /* machine specifier */
+	ut32 filetype;		  /* type of file */
+	ut32 ncmds;		  /* number of load commands */
+	ut32 sizeofcmds;	  /* the size of all the load commands */
+	ut32 flags;		  /* flags */
+	ut32 reserved;		  /* reserved */
 };
 
 /* Constant for the magic field of the mach_header_64 (64-bit architectures) */
@@ -207,6 +207,9 @@ struct mach_header_64 {
 					   require it. Only used in MH_EXECUTE
 					   filetypes. */
 
+#define MH_APP_EXTENSION_SAFE = 0x02000000 /* The code was linked for use in an application extension. */
+#define MH_DYLD_SHARED_CACHE = 0x80000000 /* Found on libraries embedded in dyldcache */
+
 /*
  * The load commands directly follow the mach_header.  The total size of all
  * of the commands is given by the sizeofcmds field in the mach_header.  All
@@ -225,15 +228,15 @@ struct mach_header_64 {
  * padding zeroed like objects will compare byte for byte.
  */
 struct load_command {
-	ut32 cmd;		/* type of load command */
-	ut32 cmdsize;	/* total size of command in bytes */
+	ut32 cmd;     /* type of load command */
+	ut32 cmdsize; /* total size of command in bytes */
 };
 
 /*
  * After MacOS X 10.1 when a new load command is added that is required to be
  * understood by the dynamic linker for the image to execute properly the
  * LC_REQ_DYLD bit will be or'ed into the load command constant.  If the dynamic
- * linker sees such a load command it it does not understand will issue a
+ * linker sees such a load command it does not understand, it will issue a
  * "unknown load command required for execution" error and refuse to use the
  * image.  Other load commands without this bit that are not understood will
  * simply be ignored.
@@ -331,17 +334,17 @@ union lc_str {
  * reflected in cmdsize.
  */
 struct segment_command { /* for 32-bit architectures */
-	ut32	cmd;		/* LC_SEGMENT */
-	ut32	cmdsize;	/* includes sizeof section structs */
-	char		segname[16];	/* segment name */
-	ut32	vmaddr;		/* memory address of this segment */
-	ut32	vmsize;		/* memory size of this segment */
-	ut32	fileoff;	/* file offset of this segment */
-	ut32	filesize;	/* amount to map from the file */
-	vm_prot_t	maxprot;	/* maximum VM protection */
-	vm_prot_t	initprot;	/* initial VM protection */
-	ut32	nsects;		/* number of sections in segment */
-	ut32	flags;		/* flags */
+	ut32 cmd;	/* LC_SEGMENT */
+	ut32 cmdsize;    /* includes sizeof section structs */
+	char segname[16];   /* segment name */
+	ut32 vmaddr;	/* memory address of this segment */
+	ut32 vmsize;	/* memory size of this segment */
+	ut32 fileoff;       /* file offset of this segment */
+	ut32 filesize;      /* amount to map from the file */
+	vm_prot_t maxprot;  /* maximum VM protection */
+	vm_prot_t initprot; /* initial VM protection */
+	ut32 nsects;	/* number of sections in segment */
+	ut32 flags;	 /* flags */
 };
 
 /*
@@ -351,17 +354,17 @@ struct segment_command { /* for 32-bit architectures */
  * command and their size is reflected in cmdsize.
  */
 struct segment_command_64 { /* for 64-bit architectures */
-	ut32	cmd;		/* LC_SEGMENT_64 */
-	ut32	cmdsize;	/* includes sizeof section_64 structs */
-	char		segname[16];	/* segment name */
-	ut64	vmaddr;		/* memory address of this segment */
-	ut64	vmsize;		/* memory size of this segment */
-	ut64	fileoff;	/* file offset of this segment */
-	ut64	filesize;	/* amount to map from the file */
-	vm_prot_t	maxprot;	/* maximum VM protection */
-	vm_prot_t	initprot;	/* initial VM protection */
-	ut32	nsects;		/* number of sections in segment */
-	ut32	flags;		/* flags */
+	ut32 cmd;	   /* LC_SEGMENT_64 */
+	ut32 cmdsize;       /* includes sizeof section_64 structs */
+	char segname[16];   /* segment name */
+	ut64 vmaddr;	/* memory address of this segment */
+	ut64 vmsize;	/* memory size of this segment */
+	ut64 fileoff;       /* file offset of this segment */
+	ut64 filesize;      /* amount to map from the file */
+	vm_prot_t maxprot;  /* maximum VM protection */
+	vm_prot_t initprot; /* initial VM protection */
+	ut32 nsects;	/* number of sections in segment */
+	ut32 flags;	 /* flags */
 };
 
 /* Constants for the flags field of the segment_command */
@@ -408,32 +411,32 @@ struct segment_command_64 { /* for 64-bit architectures */
  * header file <reloc.h>.
  */
 struct section { /* for 32-bit architectures */
-	char		sectname[16];	/* name of this section */
-	char		segname[16];	/* segment this section goes in */
-	ut32	addr;		/* memory address of this section */
-	ut32	size;		/* size in bytes of this section */
-	ut32	offset;		/* file offset of this section */
-	ut32	align;		/* section alignment (power of 2) */
-	ut32	reloff;		/* file offset of relocation entries */
-	ut32	nreloc;		/* number of relocation entries */
-	ut32	flags;		/* flags (section type and attributes)*/
-	ut32	reserved1;	/* reserved (for offset or index) */
-	ut32	reserved2;	/* reserved (for count or sizeof) */
+	char sectname[16]; /* name of this section */
+	char segname[16];  /* segment this section goes in */
+	ut32 addr;	 /* memory address of this section */
+	ut32 size;	 /* size in bytes of this section */
+	ut32 offset;       /* file offset of this section */
+	ut32 align;	/* section alignment (power of 2) */
+	ut32 reloff;       /* file offset of relocation entries */
+	ut32 nreloc;       /* number of relocation entries */
+	ut32 flags;	/* flags (section type and attributes)*/
+	ut32 reserved1;    /* reserved (for offset or index) */
+	ut32 reserved2;    /* reserved (for count or sizeof) */
 };
 
 struct section_64 { /* for 64-bit architectures */
-	char		sectname[16];	/* name of this section */
-	char		segname[16];	/* segment this section goes in */
-	ut64	addr;		/* memory address of this section */
-	ut64	size;		/* size in bytes of this section */
-	ut32	offset;		/* file offset of this section */
-	ut32	align;		/* section alignment (power of 2) */
-	ut32	reloff;		/* file offset of relocation entries */
-	ut32	nreloc;		/* number of relocation entries */
-	ut32	flags;		/* flags (section type and attributes)*/
-	ut32	reserved1;	/* reserved (for offset or index) */
-	ut32	reserved2;	/* reserved (for count or sizeof) */
-	ut32	reserved3;	/* reserved */
+	char sectname[16]; /* name of this section */
+	char segname[16];  /* segment this section goes in */
+	ut64 addr;	 /* memory address of this section */
+	ut64 size;	 /* size in bytes of this section */
+	ut32 offset;       /* file offset of this section */
+	ut32 align;	/* section alignment (power of 2) */
+	ut32 reloff;       /* file offset of relocation entries */
+	ut32 nreloc;       /* number of relocation entries */
+	ut32 flags;	/* flags (section type and attributes)*/
+	ut32 reserved1;    /* reserved (for offset or index) */
+	ut32 reserved2;    /* reserved (for count or sizeof) */
+	ut32 reserved3;    /* reserved */
 };
 
 /*
@@ -610,9 +613,9 @@ struct section_64 { /* for 64-bit architectures */
  * header_addr. (THIS IS OBSOLETE and no longer supported).
  */
 struct fvmlib {
-	union lc_str	name;		/* library's target pathname */
-	ut32	minor_version;	/* library's minor version number */
-	ut32	header_addr;	/* library's header address */
+	union lc_str name;  /* library's target pathname */
+	ut32 minor_version; /* library's minor version number */
+	ut32 header_addr;   /* library's header address */
 };
 
 /*
@@ -623,9 +626,9 @@ struct fvmlib {
  * (THIS IS OBSOLETE and no longer supported).
  */
 struct fvmlib_command {
-	ut32	cmd;		/* LC_IDFVMLIB or LC_LOADFVMLIB */
-	ut32	cmdsize;	/* includes pathname string */
-	struct fvmlib	fvmlib;		/* the library identification */
+	ut32 cmd;	     /* LC_IDFVMLIB or LC_LOADFVMLIB */
+	ut32 cmdsize;	 /* includes pathname string */
+	struct fvmlib fvmlib; /* the library identification */
 };
 
 /*
@@ -652,10 +655,10 @@ struct dylib {
  * LC_REEXPORT_DYLIB) for each library it uses.
  */
 struct dylib_command {
-	ut32	cmd;		/* LC_ID_DYLIB, LC_LOAD_{,WEAK_}DYLIB,
-					   LC_REEXPORT_DYLIB */
-	ut32	cmdsize;	/* includes pathname string */
-	struct dylib	dylib;		/* the library identification */
+	ut32 cmd;	   /* LC_ID_DYLIB, LC_LOAD_{,WEAK_}DYLIB,
+				       LC_REEXPORT_DYLIB */
+	ut32 cmdsize;       /* includes pathname string */
+	struct dylib dylib; /* the library identification */
 };
 
 /*
@@ -669,9 +672,9 @@ struct dylib_command {
  * following structure.
  */
 struct sub_framework_command {
-	ut32	cmd;		/* LC_SUB_FRAMEWORK */
-	ut32	cmdsize;	/* includes umbrella string */
-	union lc_str 	umbrella;	/* the umbrella framework name */
+	ut32 cmd;	      /* LC_SUB_FRAMEWORK */
+	ut32 cmdsize;	  /* includes umbrella string */
+	union lc_str umbrella; /* the umbrella framework name */
 };
 
 /*
@@ -703,9 +706,9 @@ struct sub_client_command {
  * The name of a sub_umbrella framework is recorded in the following structure.
  */
 struct sub_umbrella_command {
-	ut32	cmd;		/* LC_SUB_UMBRELLA */
-	ut32	cmdsize;	/* includes sub_umbrella string */
-	union lc_str 	sub_umbrella;	/* the sub_umbrella framework name */
+	ut32 cmd;		   /* LC_SUB_UMBRELLA */
+	ut32 cmdsize;		   /* includes sub_umbrella string */
+	union lc_str sub_umbrella; /* the sub_umbrella framework name */
 };
 
 /*
@@ -724,9 +727,9 @@ struct sub_umbrella_command {
  * For example /usr/lib/libobjc_profile.A.dylib would be recorded as "libobjc".
  */
 struct sub_library_command {
-	ut32	cmd;		/* LC_SUB_LIBRARY */
-	ut32	cmdsize;	/* includes sub_library string */
-	union lc_str 	sub_library;	/* the sub_library name */
+	ut32 cmd;		  /* LC_SUB_LIBRARY */
+	ut32 cmdsize;		  /* includes sub_library string */
+	union lc_str sub_library; /* the sub_library name */
 };
 
 /*
@@ -739,11 +742,11 @@ struct sub_library_command {
  * (linked_modules[N/8] >> N%8) & 1
  */
 struct prebound_dylib_command {
-	ut32	cmd;		/* LC_PREBOUND_DYLIB */
-	ut32	cmdsize;	/* includes strings */
-	union lc_str	name;		/* library's path name */
-	ut32	nmodules;	/* number of modules in library */
-	union lc_str	linked_modules;	/* bit vector of linked modules */
+	ut32 cmd;		     /* LC_PREBOUND_DYLIB */
+	ut32 cmdsize;		     /* includes strings */
+	union lc_str name;	   /* library's path name */
+	ut32 nmodules;		     /* number of modules in library */
+	union lc_str linked_modules; /* bit vector of linked modules */
 };
 
 /*
@@ -755,10 +758,10 @@ struct prebound_dylib_command {
  * contains string for dyld to treat like environment variable.
  */
 struct dylinker_command {
-	ut32	cmd;		/* LC_ID_DYLINKER, LC_LOAD_DYLINKER or
-					   LC_DYLD_ENVIRONMENT */
-	ut32	cmdsize;	/* includes pathname string */
-	union lc_str    name;		/* dynamic linker's path name */
+	ut32 cmd;	  /* LC_ID_DYLINKER, LC_LOAD_DYLINKER or
+				      LC_DYLD_ENVIRONMENT */
+	ut32 cmdsize;      /* includes pathname string */
+	union lc_str name; /* dynamic linker's path name */
 };
 
 /*
@@ -783,10 +786,10 @@ struct dylinker_command {
  * and environment variables are copied onto that stack.
  */
 struct thread_command {
-	ut32	cmd;		/* LC_THREAD or  LC_UNIXTHREAD */
-	ut32	cmdsize;	/* total size of this command */
-	/* ut32	flavor;		   flavor of thread state */
-	/* ut32 count		   count of longs in thread state */
+	ut32 cmd;     /* LC_THREAD or  LC_UNIXTHREAD */
+	ut32 cmdsize; /* total size of this command */
+		      /* ut32	flavor;		   flavor of thread state */
+		      /* ut32 count		   count of longs in thread state */
 	/* struct XXX_thread_state state   thread state for this flavor */
 	/* ... */
 };
@@ -800,34 +803,34 @@ struct thread_command {
  * routines (used for C++ static constructors) in the library.
  */
 struct routines_command { /* for 32-bit architectures */
-	ut32	cmd;		/* LC_ROUTINES */
-	ut32	cmdsize;	/* total size of this command */
-	ut32	init_address;	/* address of initialization routine */
-	ut32	init_module;	/* index into the module table that */
-				        /*  the init routine is defined in */
-	ut32	reserved1;
-	ut32	reserved2;
-	ut32	reserved3;
-	ut32	reserved4;
-	ut32	reserved5;
-	ut32	reserved6;
+	ut32 cmd;	 /* LC_ROUTINES */
+	ut32 cmdsize;     /* total size of this command */
+	ut32 init_address; /* address of initialization routine */
+	ut32 init_module;  /* index into the module table that */
+			   /*  the init routine is defined in */
+	ut32 reserved1;
+	ut32 reserved2;
+	ut32 reserved3;
+	ut32 reserved4;
+	ut32 reserved5;
+	ut32 reserved6;
 };
 
 /*
  * The 64-bit routines command.  Same use as above.
  */
 struct routines_command_64 { /* for 64-bit architectures */
-	ut32	cmd;		/* LC_ROUTINES_64 */
-	ut32	cmdsize;	/* total size of this command */
-	ut64	init_address;	/* address of initialization routine */
-	ut64	init_module;	/* index into the module table that */
-					/*  the init routine is defined in */
-	ut64	reserved1;
-	ut64	reserved2;
-	ut64	reserved3;
-	ut64	reserved4;
-	ut64	reserved5;
-	ut64	reserved6;
+	ut32 cmd;	    /* LC_ROUTINES_64 */
+	ut32 cmdsize;	/* total size of this command */
+	ut64 init_address;   /* address of initialization routine */
+	ut64 init_module;    /* index into the module table that */
+			     /*  the init routine is defined in */
+	ut64 reserved1;
+	ut64 reserved2;
+	ut64 reserved3;
+	ut64 reserved4;
+	ut64 reserved5;
+	ut64 reserved6;
 };
 
 /*
@@ -836,12 +839,12 @@ struct routines_command_64 { /* for 64-bit architectures */
  * <nlist.h> and <stab.h>.
  */
 struct symtab_command {
-	ut32	cmd;		/* LC_SYMTAB */
-	ut32	cmdsize;	/* sizeof(struct symtab_command) */
-	ut32	symoff;		/* symbol table offset */
-	ut32	nsyms;		/* number of symbol table entries */
-	ut32	stroff;		/* string table offset */
-	ut32	strsize;	/* string table size in bytes */
+	ut32 cmd;     /* LC_SYMTAB */
+	ut32 cmdsize; /* sizeof(struct symtab_command) */
+	ut32 symoff;  /* symbol table offset */
+	ut32 nsyms;   /* number of symbol table entries */
+	ut32 stroff;  /* string table offset */
+	ut32 strsize; /* string table size in bytes */
 };
 
 /*
@@ -885,119 +888,139 @@ struct symtab_command {
  * off the section structures.
  */
 struct dysymtab_command {
-    ut32 cmd;	/* LC_DYSYMTAB */
-    ut32 cmdsize;	/* sizeof(struct dysymtab_command) */
+	ut32 cmd;     /* LC_DYSYMTAB */
+	ut32 cmdsize; /* sizeof(struct dysymtab_command) */
 
-    /*
-     * The symbols indicated by symoff and nsyms of the LC_SYMTAB load command
-     * are grouped into the following three groups:
-     *    local symbols (further grouped by the module they are from)
-     *    defined external symbols (further grouped by the module they are from)
-     *    undefined symbols
-     *
-     * The local symbols are used only for debugging.  The dynamic binding
-     * process may have to use them to indicate to the debugger the local
-     * symbols for a module that is being bound.
-     *
-     * The last two groups are used by the dynamic binding process to do the
-     * binding (indirectly through the module table and the reference symbol
-     * table when this is a dynamically linked shared library file).
-     */
-    ut32 ilocalsym;	/* index to local symbols */
-    ut32 nlocalsym;	/* number of local symbols */
+	/*
+	 * The symbols indicated by symoff and nsyms of the LC_SYMTAB load
+	 * command
+	 * are grouped into the following three groups:
+	 *    local symbols (further grouped by the module they are from)
+	 *    defined external symbols (further grouped by the module they are
+	 * from)
+	 *    undefined symbols
+	 *
+	 * The local symbols are used only for debugging.  The dynamic binding
+	 * process may have to use them to indicate to the debugger the local
+	 * symbols for a module that is being bound.
+	 *
+	 * The last two groups are used by the dynamic binding process to do the
+	 * binding (indirectly through the module table and the reference symbol
+	 * table when this is a dynamically linked shared library file).
+	 */
+	ut32 ilocalsym; /* index to local symbols */
+	ut32 nlocalsym; /* number of local symbols */
 
-    ut32 iextdefsym;/* index to externally defined symbols */
-    ut32 nextdefsym;/* number of externally defined symbols */
+	ut32 iextdefsym; /* index to externally defined symbols */
+	ut32 nextdefsym; /* number of externally defined symbols */
 
-    ut32 iundefsym;	/* index to undefined symbols */
-    ut32 nundefsym;	/* number of undefined symbols */
+	ut32 iundefsym; /* index to undefined symbols */
+	ut32 nundefsym; /* number of undefined symbols */
 
-    /*
-     * For the for the dynamic binding process to find which module a symbol
-     * is defined in the table of contents is used (analogous to the ranlib
-     * structure in an archive) which maps defined external symbols to modules
-     * they are defined in.  This exists only in a dynamically linked shared
-     * library file.  For executable and object modules the defined external
-     * symbols are sorted by name and is use as the table of contents.
-     */
-    ut32 tocoff;	/* file offset to table of contents */
-    ut32 ntoc;	/* number of entries in table of contents */
+	/*
+	 * For the for the dynamic binding process to find which module a symbol
+	 * is defined in the table of contents is used (analogous to the ranlib
+	 * structure in an archive) which maps defined external symbols to
+	 * modules
+	 * they are defined in.  This exists only in a dynamically linked shared
+	 * library file.  For executable and object modules the defined external
+	 * symbols are sorted by name and is use as the table of contents.
+	 */
+	ut32 tocoff; /* file offset to table of contents */
+	ut32 ntoc;   /* number of entries in table of contents */
 
-    /*
-     * To support dynamic binding of "modules" (whole object files) the symbol
-     * table must reflect the modules that the file was created from.  This is
-     * done by having a module table that has indexes and counts into the merged
-     * tables for each module.  The module structure that these two entries
-     * refer to is described below.  This exists only in a dynamically linked
-     * shared library file.  For executable and object modules the file only
-     * contains one module so everything in the file belongs to the module.
-     */
-    ut32 modtaboff;	/* file offset to module table */
-    ut32 nmodtab;	/* number of module table entries */
+	/*
+	 * To support dynamic binding of "modules" (whole object files) the
+	 * symbol
+	 * table must reflect the modules that the file was created from.  This
+	 * is
+	 * done by having a module table that has indexes and counts into the
+	 * merged
+	 * tables for each module.  The module structure that these two entries
+	 * refer to is described below.  This exists only in a dynamically
+	 * linked
+	 * shared library file.  For executable and object modules the file only
+	 * contains one module so everything in the file belongs to the module.
+	 */
+	ut32 modtaboff; /* file offset to module table */
+	ut32 nmodtab;   /* number of module table entries */
 
-    /*
-     * To support dynamic module binding the module structure for each module
-     * indicates the external references (defined and undefined) each module
-     * makes.  For each module there is an offset and a count into the
-     * reference symbol table for the symbols that the module references.
-     * This exists only in a dynamically linked shared library file.  For
-     * executable and object modules the defined external symbols and the
-     * undefined external symbols indicates the external references.
-     */
-    ut32 extrefsymoff;	/* offset to referenced symbol table */
-    ut32 nextrefsyms;	/* number of referenced symbol table entries */
+	/*
+	 * To support dynamic module binding the module structure for each
+	 * module
+	 * indicates the external references (defined and undefined) each module
+	 * makes.  For each module there is an offset and a count into the
+	 * reference symbol table for the symbols that the module references.
+	 * This exists only in a dynamically linked shared library file.  For
+	 * executable and object modules the defined external symbols and the
+	 * undefined external symbols indicates the external references.
+	 */
+	ut32 extrefsymoff; /* offset to referenced symbol table */
+	ut32 nextrefsyms;  /* number of referenced symbol table entries */
 
-    /*
-     * The sections that contain "symbol pointers" and "routine stubs" have
-     * indexes and (implied counts based on the size of the section and fixed
-     * size of the entry) into the "indirect symbol" table for each pointer
-     * and stub.  For every section of these two types the index into the
-     * indirect symbol table is stored in the section header in the field
-     * reserved1.  An indirect symbol table entry is simply a 32bit index into
-     * the symbol table to the symbol that the pointer or stub is referring to.
-     * The indirect symbol table is ordered to match the entries in the section.
-     */
-    ut32 indirectsymoff; /* file offset to the indirect symbol table */
-    ut32 nindirectsyms;  /* number of indirect symbol table entries */
+	/*
+	 * The sections that contain "symbol pointers" and "routine stubs" have
+	 * indexes and (implied counts based on the size of the section and
+	 * fixed
+	 * size of the entry) into the "indirect symbol" table for each pointer
+	 * and stub.  For every section of these two types the index into the
+	 * indirect symbol table is stored in the section header in the field
+	 * reserved1.  An indirect symbol table entry is simply a 32bit index
+	 * into
+	 * the symbol table to the symbol that the pointer or stub is referring
+	 * to.
+	 * The indirect symbol table is ordered to match the entries in the
+	 * section.
+	 */
+	ut32 indirectsymoff; /* file offset to the indirect symbol table */
+	ut32 nindirectsyms;  /* number of indirect symbol table entries */
 
-    /*
-     * To support relocating an individual module in a library file quickly the
-     * external relocation entries for each module in the library need to be
-     * accessed efficiently.  Since the relocation entries can't be accessed
-     * through the section headers for a library file they are separated into
-     * groups of local and external entries further grouped by module.  In this
-     * case the presents of this load command who's extreloff, nextrel,
-     * locreloff and nlocrel fields are non-zero indicates that the relocation
-     * entries of non-merged sections are not referenced through the section
-     * structures (and the reloff and nreloc fields in the section headers are
-     * set to zero).
-     *
-     * Since the relocation entries are not accessed through the section headers
-     * this requires the r_address field to be something other than a section
-     * offset to identify the item to be relocated.  In this case r_address is
-     * set to the offset from the vmaddr of the first LC_SEGMENT command.
-     * For MH_SPLIT_SEGS images r_address is set to the the offset from the
-     * vmaddr of the first read-write LC_SEGMENT command.
-     *
-     * The relocation entries are grouped by module and the module table
-     * entries have indexes and counts into them for the group of external
-     * relocation entries for that the module.
-     *
-     * For sections that are merged across modules there must not be any
-     * remaining external relocation entries for them (for merged sections
-     * remaining relocation entries must be local).
-     */
-    ut32 extreloff;	/* offset to external relocation entries */
-    ut32 nextrel;	/* number of external relocation entries */
+	/*
+	 * To support relocating an individual module in a library file quickly
+	 * the
+	 * external relocation entries for each module in the library need to be
+	 * accessed efficiently.  Since the relocation entries can't be accessed
+	 * through the section headers for a library file they are separated
+	 * into
+	 * groups of local and external entries further grouped by module.  In
+	 * this
+	 * case the presents of this load command who's extreloff, nextrel,
+	 * locreloff and nlocrel fields are non-zero indicates that the
+	 * relocation
+	 * entries of non-merged sections are not referenced through the section
+	 * structures (and the reloff and nreloc fields in the section headers
+	 * are
+	 * set to zero).
+	 *
+	 * Since the relocation entries are not accessed through the section
+	 * headers
+	 * this requires the r_address field to be something other than a
+	 * section
+	 * offset to identify the item to be relocated.  In this case r_address
+	 * is
+	 * set to the offset from the vmaddr of the first LC_SEGMENT command.
+	 * For MH_SPLIT_SEGS images r_address is set to the offset from the
+	 * vmaddr of the first read-write LC_SEGMENT command.
+	 *
+	 * The relocation entries are grouped by module and the module table
+	 * entries have indexes and counts into them for the group of external
+	 * relocation entries for that the module.
+	 *
+	 * For sections that are merged across modules there must not be any
+	 * remaining external relocation entries for them (for merged sections
+	 * remaining relocation entries must be local).
+	 */
+	ut32 extreloff; /* offset to external relocation entries */
+	ut32 nextrel;   /* number of external relocation entries */
 
-    /*
-     * All the local relocation entries are grouped together (they are not
-     * grouped by their module since they are only used if the object is moved
-     * from it staticly link edited address).
-     */
-    ut32 locreloff;	/* offset to local relocation entries */
-    ut32 nlocrel;	/* number of local relocation entries */
-
+	/*
+	 * All the local relocation entries are grouped together (they are not
+	 * grouped by their module since they are only used if the object is
+	 * moved
+	 * from it staticly link edited address).
+	 */
+	ut32 locreloff; /* offset to local relocation entries */
+	ut32 nlocrel;   /* number of local relocation entries */
 };
 
 /*
@@ -1013,64 +1036,68 @@ struct dysymtab_command {
 
 /* a table of contents entry */
 struct dylib_table_of_contents {
-    ut32 symbol_index;	/* the defined external symbol
-				   (index into the symbol table) */
-    ut32 module_index;	/* index into the module table this symbol
-				   is defined in */
+	ut32 symbol_index; /* the defined external symbol
+				      (index into the symbol table) */
+	ut32 module_index; /* index into the module table this symbol
+				      is defined in */
 };
 
 /* a module table entry */
 struct dylib_module {
-    ut32 module_name;	/* the module name (index into string table) */
+	ut32 module_name; /* the module name (index into string table) */
 
-    ut32 iextdefsym;	/* index into externally defined symbols */
-    ut32 nextdefsym;	/* number of externally defined symbols */
-    ut32 irefsym;		/* index into reference symbol table */
-    ut32 nrefsym;		/* number of reference symbol table entries */
-    ut32 ilocalsym;		/* index into symbols for local symbols */
-    ut32 nlocalsym;		/* number of local symbols */
+	ut32 iextdefsym; /* index into externally defined symbols */
+	ut32 nextdefsym; /* number of externally defined symbols */
+	ut32 irefsym;    /* index into reference symbol table */
+	ut32 nrefsym;    /* number of reference symbol table entries */
+	ut32 ilocalsym;  /* index into symbols for local symbols */
+	ut32 nlocalsym;  /* number of local symbols */
 
-    ut32 iextrel;		/* index into external relocation entries */
-    ut32 nextrel;		/* number of external relocation entries */
+	ut32 iextrel; /* index into external relocation entries */
+	ut32 nextrel; /* number of external relocation entries */
 
-    ut32 iinit_iterm;	/* low 16 bits are the index into the init
-				   section, high 16 bits are the index into
-			           the term section */
-    ut32 ninit_nterm;	/* low 16 bits are the number of init section
-				   entries, high 16 bits are the number of
-				   term section entries */
+	ut32 iinit_iterm; /* low 16 bits are the index into the init
+				     section, high 16 bits are the index into
+				     the term section */
+	ut32 ninit_nterm; /* low 16 bits are the number of init section
+				     entries, high 16 bits are the number of
+				     term section entries */
 
-    ut32			/* for this module address of the start of */
-	objc_module_info_addr;  /*  the (__OBJC,__module_info) section */
-    ut32			/* for this module size of */
-	objc_module_info_size;	/*  the (__OBJC,__module_info) section */
+	ut32 objc_module_info_addr;
+	/* for this module address of the start of */
+	/*  the (__OBJC,__module_info) section */
+	ut32 objc_module_info_size;
+	/* for this module size of */
+	/*  the (__OBJC,__module_info) section */
 };
 
 /* a 64-bit module table entry */
 struct dylib_module_64 {
-    ut32 module_name;	/* the module name (index into string table) */
+	ut32 module_name; /* the module name (index into string table) */
 
-    ut32 iextdefsym;	/* index into externally defined symbols */
-    ut32 nextdefsym;	/* number of externally defined symbols */
-    ut32 irefsym;		/* index into reference symbol table */
-    ut32 nrefsym;		/* number of reference symbol table entries */
-    ut32 ilocalsym;		/* index into symbols for local symbols */
-    ut32 nlocalsym;		/* number of local symbols */
+	ut32 iextdefsym; /* index into externally defined symbols */
+	ut32 nextdefsym; /* number of externally defined symbols */
+	ut32 irefsym;    /* index into reference symbol table */
+	ut32 nrefsym;    /* number of reference symbol table entries */
+	ut32 ilocalsym;  /* index into symbols for local symbols */
+	ut32 nlocalsym;  /* number of local symbols */
 
-    ut32 iextrel;		/* index into external relocation entries */
-    ut32 nextrel;		/* number of external relocation entries */
+	ut32 iextrel; /* index into external relocation entries */
+	ut32 nextrel; /* number of external relocation entries */
 
-    ut32 iinit_iterm;	/* low 16 bits are the index into the init
-				   section, high 16 bits are the index into
-				   the term section */
-    ut32 ninit_nterm;      /* low 16 bits are the number of init section
-				  entries, high 16 bits are the number of
-				  term section entries */
+	ut32 iinit_iterm; /* low 16 bits are the index into the init
+				     section, high 16 bits are the index into
+				     the term section */
+	ut32 ninit_nterm; /* low 16 bits are the number of init section
+				 entries, high 16 bits are the number of
+				 term section entries */
 
-    ut32			/* for this module size of */
-        objc_module_info_size;	/*  the (__OBJC,__module_info) section */
-    ut64			/* for this module address of the start of */
-        objc_module_info_addr;	/*  the (__OBJC,__module_info) section */
+	ut32 objc_module_info_size;
+	/* for this module size of */
+	/*  the (__OBJC,__module_info) section */
+	ut64 objc_module_info_addr;
+	/* for this module address of the start of */
+	/*  the (__OBJC,__module_info) section */
 };
 
 /*
@@ -1091,10 +1118,10 @@ struct dylib_reference {
  * two-level namespace lookup hints table.
  */
 struct twolevel_hints_command {
-    ut32 cmd;	/* LC_TWOLEVEL_HINTS */
-    ut32 cmdsize;	/* sizeof(struct twolevel_hints_command) */
-    ut32 offset;	/* offset to the hint table */
-    ut32 nhints;	/* number of hints in the hint table */
+	ut32 cmd;     /* LC_TWOLEVEL_HINTS */
+	ut32 cmdsize; /* sizeof(struct twolevel_hints_command) */
+	ut32 offset;  /* offset to the hint table */
+	ut32 nhints;  /* number of hints in the hint table */
 };
 
 /*
@@ -1104,7 +1131,7 @@ struct twolevel_hints_command {
  * isub_image field is an index into the sub-images (sub-frameworks and
  * sub-umbrellas list) that made up the two-level image that the undefined
  * symbol was found in when it was built by the static link editor.  If
- * isub-image is 0 the the symbol is expected to be defined in library and not
+ * isub-image is 0 the symbol is expected to be defined in library and not
  * in the sub-images.  If isub-image is non-zero it is an index into the array
  * of sub-images for the umbrella with the first index in the sub-images being
  * 1. The array of sub-images is the ordered list of sub-images of the umbrella
@@ -1130,9 +1157,9 @@ struct twolevel_hint {
  * input file.
  */
 struct prebind_cksum_command {
-    ut32 cmd;	/* LC_PREBIND_CKSUM */
-    ut32 cmdsize;	/* sizeof(struct prebind_cksum_command) */
-    ut32 cksum;	/* the check sum or zero */
+	ut32 cmd;     /* LC_PREBIND_CKSUM */
+	ut32 cmdsize; /* sizeof(struct prebind_cksum_command) */
+	ut32 cksum;   /* the check sum or zero */
 };
 
 /*
@@ -1140,9 +1167,9 @@ struct prebind_cksum_command {
  * identifies an object produced by the static link editor.
  */
 struct uuid_command {
-    ut32	cmd;		/* LC_UUID */
-    ut32	cmdsize;	/* sizeof(struct uuid_command) */
-    uint8_t	uuid[16];	/* the 128-bit uuid */
+	ut32 cmd;	 /* LC_UUID */
+	ut32 cmdsize;     /* sizeof(struct uuid_command) */
+	uint8_t uuid[16]; /* the 128-bit uuid */
 };
 
 /*
@@ -1150,9 +1177,9 @@ struct uuid_command {
  * the current run path used to find @rpath prefixed dylibs.
  */
 struct rpath_command {
-    ut32	 cmd;		/* LC_RPATH */
-    ut32	 cmdsize;	/* includes string */
-    union lc_str path;		/* path to add to run path */
+	ut32 cmd;	  /* LC_RPATH */
+	ut32 cmdsize;      /* includes string */
+	union lc_str path; /* path to add to run path */
 };
 
 /*
@@ -1160,12 +1187,12 @@ struct rpath_command {
  * of data in the __LINKEDIT segment.
  */
 struct linkedit_data_command {
-    ut32	cmd;		/* LC_CODE_SIGNATURE, LC_SEGMENT_SPLIT_INFO,
-                                   LC_FUNCTION_STARTS, LC_DATA_IN_CODE,
-				   or LC_DYLIB_CODE_SIGN_DRS */
-    ut32	cmdsize;	/* sizeof(struct linkedit_data_command) */
-    ut32	dataoff;	/* file offset of data in __LINKEDIT segment */
-    ut32	datasize;	/* file size of data in __LINKEDIT segment  */
+	ut32 cmd;      /* LC_CODE_SIGNATURE, LC_SEGMENT_SPLIT_INFO,
+			  LC_FUNCTION_STARTS, LC_DATA_IN_CODE,
+			  or LC_DYLIB_CODE_SIGN_DRS */
+	ut32 cmdsize;  /* sizeof(struct linkedit_data_command) */
+	ut32 dataoff;  /* file offset of data in __LINKEDIT segment */
+	ut32 datasize; /* file size of data in __LINKEDIT segment  */
 };
 
 /*
@@ -1173,12 +1200,23 @@ struct linkedit_data_command {
  * of an encrypted segment.
  */
 struct encryption_info_command {
-   ut32	cmd;		/* LC_ENCRYPTION_INFO */
-   ut32	cmdsize;	/* sizeof(struct encryption_info_command) */
-   ut32	cryptoff;	/* file offset of encrypted range */
-   ut32	cryptsize;	/* file size of encrypted range */
-   ut32	cryptid;	/* which enryption system,
+	ut32 cmd;       /* LC_ENCRYPTION_INFO */
+	ut32 cmdsize;   /* sizeof(struct encryption_info_command) */
+	ut32 cryptoff;  /* file offset of encrypted range */
+	ut32 cryptsize; /* file size of encrypted range */
+	ut32 cryptid;   /* which enryption system,
 				   0 means not-encrypted yet */
+};
+
+struct encryption_info_command_64 {
+	ut32 cmd;       /* LC_ENCRYPTION_INFO_64 */
+	ut32 cmdsize;   /* sizeof(struct encryption_info_command_64) */
+	ut32 cryptoff;  /* file offset of encrypted range */
+	ut32 cryptsize; /* file size of encrypted range */
+	ut32 cryptid;   /* which enryption system,
+			   0 means not-encrypted yet */
+	ut32 pad;       /* padding to make this struct's size a multiple
+				   of 8 bytes */
 };
 
 /*
@@ -1186,11 +1224,11 @@ struct encryption_info_command {
  * binary was built to run.
  */
 struct version_min_command {
-    ut32	cmd;		/* LC_VERSION_MIN_MACOSX or
-				   LC_VERSION_MIN_IPHONEOS  */
-    ut32	cmdsize;	/* sizeof(struct min_version_command) */
-    ut32	version;	/* X.Y.Z is encoded in nibbles xxxx.yy.zz */
-    ut32	sdk;		/* X.Y.Z is encoded in nibbles xxxx.yy.zz */
+	ut32 cmd;     /* LC_VERSION_MIN_MACOSX or
+			 LC_VERSION_MIN_IPHONEOS  */
+	ut32 cmdsize; /* sizeof(struct min_version_command) */
+	ut32 version; /* X.Y.Z is encoded in nibbles xxxx.yy.zz */
+	ut32 sdk;     /* X.Y.Z is encoded in nibbles xxxx.yy.zz */
 };
 
 /*
@@ -1202,106 +1240,110 @@ struct version_min_command {
  * to interpret it.
  */
 struct dyld_info_command {
-   ut32   cmd;		/* LC_DYLD_INFO or LC_DYLD_INFO_ONLY */
-   ut32   cmdsize;		/* sizeof(struct dyld_info_command) */
+	ut32 cmd;     /* LC_DYLD_INFO or LC_DYLD_INFO_ONLY */
+	ut32 cmdsize; /* sizeof(struct dyld_info_command) */
 
-    /*
-     * Dyld rebases an image whenever dyld loads it at an address different
-     * from its preferred address.  The rebase information is a stream
-     * of byte sized opcodes whose symbolic names start with REBASE_OPCODE_.
-     * Conceptually the rebase information is a table of tuples:
-     *    <seg-index, seg-offset, type>
-     * The opcodes are a compressed way to encode the table by only
-     * encoding when a column changes.  In addition simple patterns
-     * like "every n'th offset for m times" can be encoded in a few
-     * bytes.
-     */
-    ut32   rebase_off;	/* file offset to rebase info  */
-    ut32   rebase_size;	/* size of rebase info   */
+	/*
+	 * Dyld rebases an image whenever dyld loads it at an address different
+	 * from its preferred address.  The rebase information is a stream
+	 * of byte sized opcodes whose symbolic names start with REBASE_OPCODE_.
+	 * Conceptually the rebase information is a table of tuples:
+	 *    <seg-index, seg-offset, type>
+	 * The opcodes are a compressed way to encode the table by only
+	 * encoding when a column changes.  In addition simple patterns
+	 * like "every n'th offset for m times" can be encoded in a few
+	 * bytes.
+	 */
+	ut32 rebase_off;  /* file offset to rebase info  */
+	ut32 rebase_size; /* size of rebase info   */
 
-    /*
-     * Dyld binds an image during the loading process, if the image
-     * requires any pointers to be initialized to symbols in other images.
-     * The bind information is a stream of byte sized
-     * opcodes whose symbolic names start with BIND_OPCODE_.
-     * Conceptually the bind information is a table of tuples:
-     *    <seg-index, seg-offset, type, symbol-library-ordinal, symbol-name, addend>
-     * The opcodes are a compressed way to encode the table by only
-     * encoding when a column changes.  In addition simple patterns
-     * like for runs of pointers initialzed to the same value can be
-     * encoded in a few bytes.
-     */
-    ut32   bind_off;	/* file offset to binding info   */
-    ut32   bind_size;	/* size of binding info  */
+	/*
+	 * Dyld binds an image during the loading process, if the image
+	 * requires any pointers to be initialized to symbols in other images.
+	 * The bind information is a stream of byte sized
+	 * opcodes whose symbolic names start with BIND_OPCODE_.
+	 * Conceptually the bind information is a table of tuples:
+	 *    <seg-index, seg-offset, type, symbol-library-ordinal, symbol-name,
+	 * addend>
+	 * The opcodes are a compressed way to encode the table by only
+	 * encoding when a column changes.  In addition simple patterns
+	 * like for runs of pointers initialzed to the same value can be
+	 * encoded in a few bytes.
+	 */
+	ut32 bind_off;  /* file offset to binding info   */
+	ut32 bind_size; /* size of binding info  */
 
-    /*
-     * Some C++ programs require dyld to unique symbols so that all
-     * images in the process use the same copy of some code/data.
-     * This step is done after binding. The content of the weak_bind
-     * info is an opcode stream like the bind_info.  But it is sorted
-     * alphabetically by symbol name.  This enable dyld to walk
-     * all images with weak binding information in order and look
-     * for collisions.  If there are no collisions, dyld does
-     * no updating.  That means that some fixups are also encoded
-     * in the bind_info.  For instance, all calls to "operator new"
-     * are first bound to libstdc++.dylib using the information
-     * in bind_info.  Then if some image overrides operator new
-     * that is detected when the weak_bind information is processed
-     * and the call to operator new is then rebound.
-     */
-    ut32   weak_bind_off;	/* file offset to weak binding info   */
-    ut32   weak_bind_size;  /* size of weak binding info  */
+	/*
+	 * Some C++ programs require dyld to unique symbols so that all
+	 * images in the process use the same copy of some code/data.
+	 * This step is done after binding. The content of the weak_bind
+	 * info is an opcode stream like the bind_info.  But it is sorted
+	 * alphabetically by symbol name.  This enable dyld to walk
+	 * all images with weak binding information in order and look
+	 * for collisions.  If there are no collisions, dyld does
+	 * no updating.  That means that some fixups are also encoded
+	 * in the bind_info.  For instance, all calls to "operator new"
+	 * are first bound to libstdc++.dylib using the information
+	 * in bind_info.  Then if some image overrides operator new
+	 * that is detected when the weak_bind information is processed
+	 * and the call to operator new is then rebound.
+	 */
+	ut32 weak_bind_off;  /* file offset to weak binding info   */
+	ut32 weak_bind_size; /* size of weak binding info  */
 
-    /*
-     * Some uses of external symbols do not need to be bound immediately.
-     * Instead they can be lazily bound on first use.  The lazy_bind
-     * are contains a stream of BIND opcodes to bind all lazy symbols.
-     * Normal use is that dyld ignores the lazy_bind section when
-     * loading an image.  Instead the static linker arranged for the
-     * lazy pointer to initially point to a helper function which
-     * pushes the offset into the lazy_bind area for the symbol
-     * needing to be bound, then jumps to dyld which simply adds
-     * the offset to lazy_bind_off to get the information on what
-     * to bind.
-     */
-    ut32   lazy_bind_off;	/* file offset to lazy binding info */
-    ut32   lazy_bind_size;  /* size of lazy binding infs */
+	/*
+	 * Some uses of external symbols do not need to be bound immediately.
+	 * Instead they can be lazily bound on first use.  The lazy_bind
+	 * are contains a stream of BIND opcodes to bind all lazy symbols.
+	 * Normal use is that dyld ignores the lazy_bind section when
+	 * loading an image.  Instead the static linker arranged for the
+	 * lazy pointer to initially point to a helper function which
+	 * pushes the offset into the lazy_bind area for the symbol
+	 * needing to be bound, then jumps to dyld which simply adds
+	 * the offset to lazy_bind_off to get the information on what
+	 * to bind.
+	 */
+	ut32 lazy_bind_off;  /* file offset to lazy binding info */
+	ut32 lazy_bind_size; /* size of lazy binding infs */
 
-    /*
-     * The symbols exported by a dylib are encoded in a trie.  This
-     * is a compact representation that factors out common prefixes.
-     * It also reduces LINKEDIT pages in RAM because it encodes all
-     * information (name, address, flags) in one small, contiguous range.
-     * The export area is a stream of nodes.  The first node sequentially
-     * is the start node for the trie.
-     *
-     * Nodes for a symbol start with a uleb128 that is the length of
-     * the exported symbol information for the string so far.
-     * If there is no exported symbol, the node starts with a zero byte.
-     * If there is exported info, it follows the length.
+	/*
+	 * The symbols exported by a dylib are encoded in a trie.  This
+	 * is a compact representation that factors out common prefixes.
+	 * It also reduces LINKEDIT pages in RAM because it encodes all
+	 * information (name, address, flags) in one small, contiguous range.
+	 * The export area is a stream of nodes.  The first node sequentially
+	 * is the start node for the trie.
 	 *
-	 * First is a uleb128 containing flags. Normally, it is followed by
-     * a uleb128 encoded offset which is location of the content named
-     * by the symbol from the mach_header for the image.  If the flags
-     * is EXPORT_SYMBOL_FLAGS_REEXPORT, then following the flags is
-     * a uleb128 encoded library ordinal, then a zero terminated
-     * UTF8 string.  If the string is zero length, then the symbol
-     * is re-export from the specified dylib with the same name.
-	 * If the flags is EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER, then following
-	 * the flags is two uleb128s: the stub offset and the resolver offset.
-	 * The stub is used by non-lazy pointers.  The resolver is used
-	 * by lazy pointers and must be called to get the actual address to use.
-     *
-     * After the optional exported symbol information is a byte of
-     * how many edges (0-255) that this node has leaving it,
-     * followed by each edge.
-     * Each edge is a zero terminated UTF8 of the addition chars
-     * in the symbol, followed by a uleb128 offset for the node that
-     * edge points to.
-     *
-     */
-    ut32   export_off;	/* file offset to lazy binding info */
-    ut32   export_size;	/* size of lazy binding infs */
+	 * Nodes for a symbol start with a uleb128 that is the length of
+	 * the exported symbol information for the string so far.
+	 * If there is no exported symbol, the node starts with a zero byte.
+	 * If there is exported info, it follows the length.
+	     *
+	     * First is a uleb128 containing flags. Normally, it is followed by
+	 * a uleb128 encoded offset which is location of the content named
+	 * by the symbol from the mach_header for the image.  If the flags
+	 * is EXPORT_SYMBOL_FLAGS_REEXPORT, then following the flags is
+	 * a uleb128 encoded library ordinal, then a zero terminated
+	 * UTF8 string.  If the string is zero length, then the symbol
+	 * is re-export from the specified dylib with the same name.
+	     * If the flags is EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER, then
+	 * following
+	     * the flags is two uleb128s: the stub offset and the resolver
+	 * offset.
+	     * The stub is used by non-lazy pointers.  The resolver is used
+	     * by lazy pointers and must be called to get the actual address to
+	 * use.
+	 *
+	 * After the optional exported symbol information is a byte of
+	 * how many edges (0-255) that this node has leaving it,
+	 * followed by each edge.
+	 * Each edge is a zero terminated UTF8 of the addition chars
+	 * in the symbol, followed by a uleb128 offset for the node that
+	 * edge points to.
+	 *
+	 */
+	ut32 export_off;  /* file offset to lazy binding info */
+	ut32 export_size; /* size of lazy binding infs */
 };
 
 /*
@@ -1376,10 +1418,10 @@ struct dyld_info_command {
  * zeroed. (THIS IS OBSOLETE and no longer supported).
  */
 struct symseg_command {
-	ut32	cmd;		/* LC_SYMSEG */
-	ut32	cmdsize;	/* sizeof(struct symseg_command) */
-	ut32	offset;		/* symbol segment offset */
-	ut32	size;		/* symbol segment size in bytes */
+	ut32 cmd;     /* LC_SYMSEG */
+	ut32 cmdsize; /* sizeof(struct symseg_command) */
+	ut32 offset;  /* symbol segment offset */
+	ut32 size;    /* symbol segment size in bytes */
 };
 
 /*
@@ -1389,8 +1431,8 @@ struct symseg_command {
  * (THIS IS OBSOLETE and no longer supported).
  */
 struct ident_command {
-	ut32 cmd;		/* LC_IDENT */
-	ut32 cmdsize;	/* strings that follow this command */
+	ut32 cmd;     /* LC_IDENT */
+	ut32 cmdsize; /* strings that follow this command */
 };
 
 /*
@@ -1400,10 +1442,10 @@ struct ident_command {
  * memory).
  */
 struct fvmfile_command {
-	ut32 cmd;			/* LC_FVMFILE */
-	ut32 cmdsize;		/* includes pathname string */
-	union lc_str	name;		/* files pathname */
-	ut32	header_addr;	/* files virtual address */
+	ut32 cmd;	  /* LC_FVMFILE */
+	ut32 cmdsize;      /* includes pathname string */
+	union lc_str name; /* files pathname */
+	ut32 header_addr;  /* files virtual address */
 };
 
 
@@ -1414,10 +1456,10 @@ struct fvmfile_command {
  * field will contain the stack size need for the main thread.
  */
 struct entry_point_command {
-    ut32  cmd;	/* LC_MAIN only used in MH_EXECUTE filetypes */
-    ut32  cmdsize;	/* 24 */
-    ut64  entryoff;	/* file (__TEXT) offset of main() */
-    ut64  stacksize;/* if not zero, initial stack size */
+	ut32 cmd;       /* LC_MAIN only used in MH_EXECUTE filetypes */
+	ut32 cmdsize;   /* 24 */
+	ut64 entryoff;  /* file (__TEXT) offset of main() */
+	ut64 stacksize; /* if not zero, initial stack size */
 };
 
 
@@ -1426,9 +1468,9 @@ struct entry_point_command {
  * the version of the sources used to build the binary.
  */
 struct source_version_command {
-    ut32  cmd;	/* LC_SOURCE_VERSION */
-    ut32  cmdsize;	/* 16 */
-    ut64  version;	/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
+	ut32 cmd;     /* LC_SOURCE_VERSION */
+	ut32 cmdsize; /* 16 */
+	ut64 version; /* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
 };
 
 
@@ -1439,9 +1481,9 @@ struct source_version_command {
  * is only used in final linked images.
  */
 struct data_in_code_entry {
-    ut32	offset;  /* from mach_header to start of data range*/
-    ut16	length;  /* number of bytes in data range */
-    ut16	kind;    /* a DICE_KIND_* value  */
+	ut32 offset; /* from mach_header to start of data range*/
+	ut16 length; /* number of bytes in data range */
+	ut16 kind;   /* a DICE_KIND_* value  */
 };
 #define DICE_KIND_DATA              0x0001  /* L$start$data$...  label */
 #define DICE_KIND_JUMP_TABLE8       0x0002  /* L$start$jt8$...   label */

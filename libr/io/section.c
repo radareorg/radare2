@@ -1,15 +1,18 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake, nibble */
+/* radare2 - LGPL - Copyright 2008-2016 - pancake, nibble */
 
 #include "r_io.h"
-
-// no link dep
-#include <r_cons.h>
+// no link
+#include "r_cons.h"
 
 R_API void r_io_section_init(RIO *io) {
 	io->next_section_id = 0;
 	io->enforce_rwx = 0; // do not enforce RWX section permissions by default
 	io->enforce_seek = 0; // do not limit seeks out of the file by default
 	io->sections = r_list_new ();
+	if (!io->sections) {
+		return;
+	}
+	io->sections->free = r_io_section_free;
 }
 
 #if 0
@@ -24,8 +27,32 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
 	RIOSection *s;
 	if (name)
 	r_list_foreach (io->sections, iter, s) {
-		if (!strcmp (name, s->name))
+		if (!strcmp (name, s->name)) {
 			return s;
+		}
+	}
+	return NULL;
+}
+
+// update name and rwx, size is experimental
+static RIOSection *findMatching (RIO *io, ut64 paddr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name) {
+	RListIter *iter;
+	RIOSection *s;
+	r_list_foreach (io->sections, iter, s) {
+		if (s->offset != paddr) continue;
+		if (s->vaddr != vaddr) continue;
+#if 1
+		if (s->size != size) continue;
+		if (s->vsize != vsize) continue;
+#else
+		s->size = size;
+		s->vsize = vsize;
+#endif
+		s->rwx = rwx;
+		if (name && strcmp (name, s->name)) {
+			s->name = strdup (name);
+		}
+		return s;
 	}
 	return NULL;
 }
@@ -33,17 +60,25 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
 R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd) {
 	int update = 0;
 	RIOSection *s;
-	if (size==0 || size>0xf0000000) {
-		if (size>0 && size != UT64_MAX && size != UT32_MAX)
-			eprintf ("Invalid size (0x%08"PFMT64x") for section '%s' at 0x%08"PFMT64x"\n",
-			size, name, vaddr);
+	if (!size || size == UT64_MAX || size == UT32_MAX) { //hacky things which might give bad output in case size == UT32_MAX for 64bit elf. Check on basis of size, offset and file size would be a good idea.
+#if 0
+			eprintf ("Invalid size (0x%08" PFMT64x
+				 ") for section '%s' at 0x%08" PFMT64x "\n",
+				 size, name, vaddr);
+#endif
 		return NULL;
 	}
+	s = findMatching (io, offset, vaddr, size, vsize, rwx, name);
+	if (s) {
+		return s;
+	}
 	s = r_io_section_get_name (io, name);
-	if (s == NULL) {
-		s = R_NEW (RIOSection);
+	if (!s) {
+		s = R_NEW0 (RIOSection);
 		s->id = io->next_section_id++;
-	} else update = 1;
+	} else {
+		update = 1;
+	}
 	s->offset = offset;
 	s->vaddr = vaddr;
 	s->size = size;
@@ -53,8 +88,8 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, 
 	s->bin_id = bin_id;
 	s->fd = fd;
 	if (!update) {
-		if (name) strncpy (s->name, name, sizeof (s->name)-4);
-		else *s->name = '\0';
+		if (name) s->name = strdup (name);
+		else s->name = strdup ("");
 		r_list_append (io->sections, s);
 	}
 	return s;
@@ -63,6 +98,8 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, 
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
 	RListIter *iter;
 	RIOSection *s;
+	if (!io || !io->sections)
+		return NULL;
 	r_list_foreach (io->sections, iter, s) {
 		if (s->id == idx)
 			return s;
@@ -71,14 +108,26 @@ R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
 }
 
 R_API int r_io_section_rm(RIO *io, int idx) {
-	return r_list_del_n (io->sections, idx);
+	RListIter *iter;
+	RIOSection *s;
+	if (!io || !io->sections) {
+		return false;
+	}
+	r_list_foreach (io->sections, iter, s) {
+		if (s->id == idx) {
+			r_list_delete (io->sections, iter);
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API int r_io_section_rm_all (RIO *io, int fd) {
 	RIOSection *section;
 	RListIter *iter, *ator;
-	if (!io || !io->sections)
+	if (!io || !io->sections) {
 		return false;
+	}
 	r_list_foreach_safe (io->sections, iter, ator, section) {
 		if (section->fd == fd || fd == -1)
 			r_list_delete (io->sections, iter);
@@ -86,10 +135,21 @@ R_API int r_io_section_rm_all (RIO *io, int fd) {
 	return true;
 }
 
+R_API void r_io_section_free(void *ptr) {
+	RIOSection *s = (RIOSection*)ptr;
+	if (s) {
+		free (s->name);
+		free (s);
+	}
+}
+
 R_API void r_io_section_clear(RIO *io) {
 	r_list_free (io->sections);
 	io->sections = r_list_new ();
-	io->sections->free = free;
+	if (!io->sections) {
+		return;
+	}
+	io->sections->free = r_io_section_free;
 }
 
 // TODO: implement as callback
@@ -138,19 +198,20 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 		io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len); \
 	}
 
-
-static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_color) {
+static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_color, int cols) {
 	ut64 mul, min = -1, max = -1;
 	RListIter *iter;
 	RIOSection *s;
 	int j, i = 0;
-	int  width = r_cons_get_size (NULL) - 60;
+	int  width = cols - 60;
 	if (width < 1) width = 30;
 	r_list_foreach (io->sections, iter, s) {
-		if (min == -1 || s->vaddr < min)
+		if (min == -1 || s->vaddr < min) {
 			min = s->vaddr;
-		if (max == -1 || s->vaddr+s->size > max)
+		}
+		if (max == -1 || s->vaddr+s->size > max) {
 			max = s->vaddr+s->size;
+		}
 	}
 	mul = (max-min) / width;
 	if (min != -1 && mul != 0) {
@@ -188,17 +249,17 @@ static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_col
 				color, s->vaddr + s->size, color_end,
 				r_str_rwx_i (s->rwx), s->name, buf);
 			i++;
-			}
+		}
 		PRINT_CURRENT_SEEK;
 	}
 }
 
-static void list_section_visual_paddr (RIO *io, ut64 seek, ut64 len, int use_color) {
+static void list_section_visual_paddr (RIO *io, ut64 seek, ut64 len, int use_color, int cols) {
 	ut64 mul, min = -1, max = -1;
 	RListIter *iter;
 	RIOSection *s;
 	int j, i = 0;
-	int  width = r_cons_get_size (NULL) - 60;
+	int  width = cols - 60;
 	if (width < 1) width = 30;
 	seek = r_io_section_vaddr_to_maddr_try (io, seek);
 	r_list_foreach (io->sections, iter, s) {
@@ -249,9 +310,9 @@ static void list_section_visual_paddr (RIO *io, ut64 seek, ut64 len, int use_col
 }
 
 /* TODO: move to print ??? support pretty print of ranges following an array of offsetof */
-R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int use_color) {
-	if (io->va) list_section_visual_vaddr (io, seek, len, use_color);
-	else list_section_visual_paddr (io, seek, len, use_color);
+R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int use_color, int cols) {
+	if (io->va) list_section_visual_vaddr (io, seek, len, use_color, cols);
+	else list_section_visual_paddr (io, seek, len, use_color, cols);
 }
 
 R_API RIOSection *r_io_section_vget(RIO *io, ut64 vaddr) {
@@ -264,7 +325,8 @@ R_API RIOSection *r_io_section_vget(RIO *io, ut64 vaddr) {
 	return NULL;
 }
 
-R_API RIOSection *r_io_section_mget(RIO *io, ut64 maddr) {
+// maddr == section->offset
+R_API RIOSection *r_io_section_mget_in(RIO *io, ut64 maddr) {
 	RIOSection *s;
 	RListIter *iter;
 	r_list_foreach (io->sections, iter, s) {
@@ -286,19 +348,19 @@ R_API RIOSection *r_io_section_mget_prev(RIO *io, ut64 maddr) {
 
 // XXX: rename this
 R_API ut64 r_io_section_get_offset(RIO *io, ut64 maddr) {
-	RIOSection *s = r_io_section_mget (io, maddr);
+	RIOSection *s = r_io_section_mget_in (io, maddr);
 	return s? s->offset: UT64_MAX;
 }
 
 // XXX: must be renamed, this is confusing
 R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 maddr) {
-	RIOSection *s = r_io_section_mget (io, maddr);
+	RIOSection *s = r_io_section_mget_in (io, maddr);
 	return s? s->vaddr: UT64_MAX;
 }
 
 // TODO: deprecate
 R_API int r_io_section_get_rwx(RIO *io, ut64 offset) {
-	RIOSection *s = r_io_section_mget (io, offset);
+	RIOSection *s = r_io_section_mget_in (io, offset);
 	return s?s->rwx:R_IO_READ|R_IO_WRITE|R_IO_EXEC;
 }
 
@@ -360,60 +422,54 @@ R_API ut64 r_io_section_maddr_to_vaddr(RIO *io, ut64 offset) {
 
 // TODO: deprecate ?
 R_API int r_io_section_exists_for_paddr (RIO *io, ut64 paddr, int hasperm) {
-	RIOSection *s = r_io_section_mget (io, paddr);
-	if (!s) return false;
-	if (hasperm) return (s->rwx & hasperm)? true: false;
-	return true;
+	RIOSection *s = r_io_section_mget_in (io, paddr);
+	if (s) {
+		if (hasperm) {
+			return (s->rwx & hasperm);
+		}
+		return true;
+	}
+	return false;
 }
 
 // TODO: deprecate ?
 R_API int r_io_section_exists_for_vaddr (RIO *io, ut64 vaddr, int hasperm) {
 	RIOSection *s = r_io_section_vget (io, vaddr);
-	if (!s) return false;
-	if (hasperm) return (s->rwx & hasperm)? true: false;
-	return true;
+	if (s) {
+		if (hasperm) {
+			return (s->rwx & hasperm);
+		}
+		return true;
+	}
+	return false;
 }
 
 // dupped in vio.c
 R_API ut64 r_io_section_next(RIO *io, ut64 o) {
-	int oset = 0;
-	ut64 newsec = 0LL;
 	RListIter *iter;
 	RIOSection *s;
+	ut64 addr, newsec = UT64_MAX;
 
 	r_list_foreach (io->sections, iter, s) {
-		ut64 addr = s->vaddr;
-		if (!(s->rwx & R_IO_MAP)) continue;
-		if (o < addr) {
-			if (newsec) {
-				if (addr<newsec)
-					newsec = addr;//s->offset;//addr;
-			} else newsec = addr; //s->offset; //addr;
+		addr = s->vaddr;
+		if (s->vaddr > o && s->vaddr < newsec) {
+			newsec = s->vaddr;
 		}
-		if (o >= s->offset && o < (s->offset + s->size)) {
-			ut64 n = s->offset + s->size;
-			if (n>o) {
-				o = n;
-				oset = 1;
-			}
-		}
-		if (o >= s->vaddr && o < (s->vaddr + s->size)) {
-			ut64 n = s->vaddr + s->size;
-			if (n>o) {
-				o = n;
-				oset = 1;
-			}
+		addr = s->vaddr + s->vsize;
+		if (addr > o && addr < newsec) {
+			newsec = s->vaddr;
 		}
 	}
-	//eprintf ("Newsec %d %llx\n", oset, newsec);
-	if (oset) return o;
-	return newsec? newsec: o;
+
+	return newsec;
 }
 
 R_API RList *r_io_section_get_in_paddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOSection *s;
 	RListIter *iter;
 	RList *sections = r_list_new ();
+	if (!sections) return NULL;
+	sections->free = r_io_section_free;
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
 		if (!(s->rwx & R_IO_MAP)) continue;
@@ -430,14 +486,20 @@ R_API RList *r_io_section_get_in_vaddr_range(RIO *io, ut64 addr, ut64 endaddr) {
 	RIOSection *s;
 	RListIter *iter;
 	RList *sections = r_list_new ();
+	if (!sections) return NULL;
+	//Here section->free is not needed and wrong since we are appending into
+	//the list sections from io->sections that are widely used so just free the
+	//list but not the elements to avoid UAF. r_io_free will free sections for us
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
-		if (!(s->rwx & R_IO_MAP)) continue;
+		if (!(s->rwx & R_IO_MAP)) {
+			continue;
+		}
 		sec_from = s->vaddr;
 		sec_to = sec_from + s->vsize;
-		if (sec_from <= addr && addr < sec_to) r_list_append(sections, s);
-		if (sec_from < endaddr && endaddr < sec_to) r_list_append(sections, s);
-		if (addr <= sec_from && sec_to <= endaddr) r_list_append(sections, s);
+		if (sec_from <= addr && addr < sec_to) r_list_append (sections, s);
+		if (sec_from < endaddr && endaddr < sec_to) r_list_append (sections, s);
+		if (addr <= sec_from && sec_to <= endaddr) r_list_append (sections, s);
 	}
 	return sections;
 }
@@ -447,7 +509,9 @@ R_API RIOSection * r_io_section_get_first_in_paddr_range(RIO *io, ut64 addr, ut6
 	RListIter *iter;
 	ut64 sec_from, sec_to;
 	r_list_foreach (io->sections, iter, s) {
-		if (!(s->rwx & R_IO_MAP)) continue;
+		if (!(s->rwx & R_IO_MAP)) {
+			continue;
+		}
 		sec_to = s->offset + s->size;
 		sec_from = s->offset;
 		if (sec_from <= addr && addr < sec_to) break;
@@ -491,8 +555,12 @@ R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bi
 
 R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits) {
 	RIOSection *s = r_io_section_vget (io, addr);
-	if (!s || !s->bits || !s->arch) return NULL;
-	if (bits) *bits = s->bits;
+	if (!s || !s->bits || !s->arch) {
+		return NULL;
+	}
+	if (bits) {
+		*bits = s->bits;
+	}
 	return r_sys_arch_str (s->arch);
 }
 
@@ -500,23 +568,27 @@ R_API RIOSection *r_io_section_getv_bin_id(RIO *io, ut64 vaddr, ut32 bin_id) {
 	RListIter *iter;
 	RIOSection *s;
 	r_list_foreach (io->sections, iter, s) {
-		if (!(s->rwx & R_IO_MAP)) continue;
-		if (s->bin_id != bin_id) continue;
-		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
+		if (!(s->rwx & R_IO_MAP) || s->bin_id != bin_id) {
+			continue;
+		}
+		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
 			return s;
+		}
 	}
 	return NULL;
 }
 
 R_API int r_io_section_set_archbits_bin_id(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id) {
 	RIOSection *s = r_io_section_getv_bin_id (io, addr, bin_id);
-	if (!s) return false;
-	if (arch) {
-		s->arch = r_sys_arch_id (arch);
-		s->bits = bits;
-	} else {
-		s->arch = 0;
-		s->bits = 0;
+	if (s) {
+		if (arch) {
+			s->arch = r_sys_arch_id (arch);
+			s->bits = bits;
+		} else {
+			s->arch = 0;
+			s->bits = 0;
+		}
+		return true;
 	}
-	return true;
+	return false;
 }

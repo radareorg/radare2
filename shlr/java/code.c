@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -22,7 +22,7 @@
 #endif
 
 static void init_switch_op ();
-static int enter_switch_op (ut64 addr, const ut8 * bytes);
+static int enter_switch_op (ut64 addr, const ut8 * bytes, int len);
 static int update_switch_op (ut64 addr, const ut8 * bytes);
 static int update_bytes_consumed (int sz);
 static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen );
@@ -44,12 +44,14 @@ static void init_switch_op () {
 	memset (&SWITCH_OP, 0, sizeof(SWITCH_OP));
 }
 
-static int enter_switch_op (ut64 addr, const ut8* bytes) {
+static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
 #if 0
 	int sz = ((BYTES_CONSUMED+1) % 4)
 		? (1 + 4 - (BYTES_CONSUMED+1) % 4)
 		: 1; // + (BYTES_CONSUMED+1)  % 4;
 #endif
+	if (len < 16)
+		return 0;
 	int sz = 4;
 	int sz2 = (4 - (addr+1) % 4) + (addr+1)  % 4;
 	IFDBG eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04"PFMT64x", BYTES_CONSUMED%%4 = 0x%04x\n",
@@ -94,7 +96,7 @@ static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int out
 	return update_bytes_consumed(sz);
 }
 
-R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
+R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
 	int sz = 0;
 	ut32 val_one = 0,
@@ -139,7 +141,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 			free (arg);
-		}else {
+		} else {
 			snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 		}
 		output[outlen-1] = 0;
@@ -150,7 +152,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 			free (arg);
-		}else {
+		} else {
 			snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 		}
 		output[outlen-1] = 0;
@@ -187,7 +189,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		// XXX - Figure out what constitutes the [<high>] value
 	case 0xab: // tableswitch
 	case 0xaa: // tableswitch
-		sz = enter_switch_op (addr, bytes);
+		sz = enter_switch_op (addr, bytes, len);
 		snprintf (output, outlen, "%s default: 0x%04"PFMT64x,
 				JAVA_OPS[idx].name,
 				(ut64)(SWITCH_OP.def_jmp+SWITCH_OP.addr));
@@ -201,7 +203,20 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 			free (arg);
-		}else {
+		} else {
+			snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
+		}
+		output[outlen-1] = 0;
+		return update_bytes_consumed (JAVA_OPS[idx].size);
+	case 0xbb: // new
+	case 0xbd: // anewarray
+	case 0xc0: // checkcast
+	case 0xc1: // instance of
+		arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
+		if (arg) {
+			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
+			free (arg);
+		} else {
 			snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
 		}
 		output[outlen-1] = 0;
@@ -210,10 +225,6 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xb3: // putstatic
 	case 0xb4: // getfield
 	case 0xb5: // putfield
-	case 0xbb: // new
-	case 0xbd: // anewarray
-	case 0xc0: // checkcast
-	case 0xc1: // instance of
 		arg = r_bin_java_resolve_with_space (obj, (int)USHORT (bytes, 1));
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
@@ -251,9 +262,9 @@ R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
 	//BIN_OBJ = obj;
 }
 
-R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, char *output, int outlen) {
+R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
 	//r_cons_printf ("r_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
-	return java_print_opcode (obj, addr, bytes[0], bytes, output, outlen);
+	return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);
 }
 
 R_API int r_java_assemble(ut8 *bytes, const char *string) {

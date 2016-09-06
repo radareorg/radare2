@@ -1,4 +1,4 @@
-/* radare - Copyright 2012-2015 - pancake */
+/* radare - Copyright 2012-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -74,11 +74,13 @@ static struct {
 	{ NULL }
 };
 
-static int mips_r (ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
+static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 //^this will keep the below mips_r fuctions working
 // diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
 //static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
-	if (rs == -1 || rt == -1) return -1;
+	if (rs == -1 || rt == -1) {
+		return -1;
+	}
 	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3); // 2
 	b[2] = (rs<<5) | (rt&0x1f); // 1
 	b[1] = ((rd<<3)&0xff) | (sa>>2); // 0
@@ -86,8 +88,10 @@ static int mips_r (ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 	return 4;
 }
 
-static int mips_i (ut8 *b, int op, int rs, int rt, int imm) {
-	if (rs == -1 || rt == -1) return -1;
+static int mips_i(ut8 *b, int op, int rs, int rt, int imm) {
+	if (rs == -1 || rt == -1) {
+		return -1;
+	}
 	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3);
 	b[2] = (rs<<5) | (rt);
 	b[1] = (imm>>8) &0xff;
@@ -95,7 +99,7 @@ static int mips_i (ut8 *b, int op, int rs, int rt, int imm) {
 	return 4;
 }
 
-static int mips_j (ut8 *b, int op, int addr) {
+static int mips_j(ut8 *b, int op, int addr) {
 	addr /= 4;
 	b[3] = ((op<<2)&0xfc) | ((addr>>24)&3);
 	b[2] = (addr>>16)&0xff;
@@ -104,23 +108,29 @@ static int mips_j (ut8 *b, int op, int addr) {
 	return 4;
 }
 
-static int getreg (const char *p) {
+static int getreg(const char *p) {
 	int n;
 	if (!p || !*p) {
 		eprintf ("Missing argument\n");
 		return -1;
 	}
-	n = (int) r_num_get (NULL, p);
-	if (n != 0) {
+	/* check if it's a register */
+	for (n = 0; regs[n]; n++) {
+		if (!strcmp (p, regs[n])) {
+			return n;
+		}
+	}
+	/* try to convert it into a number */
+	if (p[0] == '-') {
+		n = (int) r_num_get (NULL, &p[1]);
+		n = -n;
+	} else {
+		n = (int) r_num_get (NULL, p);
+	}
+	if (n != 0 || p[0] == '0') {
 		return n;
 	}
-	if (strcmp (p, "0")) {
-		for (n=0; regs[n]; n++) {
-			if (!strcmp (p, regs[n]))
-				return n;
-		}
-		eprintf ("Invalid reg name (%s)\n", p);
-	}
+	eprintf ("Invalid reg name (%s) at pos %d\n", p, n);
 	return -1;
 }
 
@@ -174,12 +184,11 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				switch (ops[i].args) {
 				case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2)); break;
 				case 3: return mips_i (out, ops[i].n, getreg (w2), getreg (w1), getreg (w3)); break;
-                    case -2:
-                         if (ops[i].n > 0) {
-                              return mips_i (out, ops[i].n, getreg (w1), 0, getreg (w2)); break;
-                         }
-					else {
-                              return mips_i (out, (-1 * ops[i].n), getreg (w1), 1, getreg (w2)); break;
+				case -2:
+					if (ops[i].n > 0) {
+						return mips_i (out, ops[i].n, getreg (w1), 0, getreg (w2)); break;
+					} else {
+						return mips_i (out, (-1 * ops[i].n), getreg (w1), 1, getreg (w2)); break;
 					}
 				}
 				break;
@@ -190,7 +199,7 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 				break;
 			case 'N': // nop
 				memset (out, 0, 4);
-				break;
+				return 4;
 			}
 			return -1;
 		}

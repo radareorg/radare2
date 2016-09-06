@@ -111,10 +111,9 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 	.license = "BSD",
 	.arch = "x86",
 	.bits = 16|32|64,
-	.init = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
 	.disassemble = &disassemble,
-	.assemble = NULL,
 	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
 		"f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
 		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
@@ -142,7 +141,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 }
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_cs,
 	.version = R2_VERSION

@@ -1,11 +1,13 @@
-.Dd Sep 30, 2014
+.Dd May 17, 2016
 .Dt RARUN2 1
 .Sh NAME
 .Nm rarun2
 .Nd radare2 utility to run programs in exotic environments
 .Sh SYNOPSIS
 .Nm rarun2
-.Op [script.rr2]
+.Op [directives]
+.Op [script.rr2] 
+.Op [--] [program] [args]
 .Sh DESCRIPTION
 This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
 .Pp
@@ -54,6 +56,8 @@ set the niceness level of the process
 preload a library (not supported on Windows, only linux,osx,bsd)
 .It Ar program
 path to program to be executed
+.It Ar execve
+use execve instead of posix_spawn (osx tricks)
 .It Ar r2preload
 preload with libr2, kill -USR1 to get an r2 shell or -USR2 to spawn a webserver in a thread
 .It Ar r2preweb
@@ -78,8 +82,27 @@ select file to replace stdout file descriptor
 execute the given command
 .It Ar timeout
 set a timeout
+.It Ar timeoutsig
+signal to use when killing the child because the timeout happens
 .It Ar unsetenv
 unset one environment variable
+.El
+.Sh VALUE PREFIXES
+Every value in this configuration file can contain a special
+.Pp
+.Bl -tag -width Fl
+.It Ar @filename
+Slurp contents of file and put them inside the key
+.It Ar "text"
+Escape characters useful for hex chars
+.It Ar 'string'
+Escape characters useful for hex chars
+.It Ar !cmd
+Run command to store the output in the variable
+.It Ar :102030
+Parse hexpair string and store it in the variable
+.It Ar :!102030
+Parse hexpair string from output of command and store it in the variable
 .El
 .Sh EXAMPLES
 Sample rarun2 script
@@ -109,11 +132,16 @@ Debugging a program redirecting io to another terminal
   $ tty ; clear ; sleep 999999
   /dev/ttyS010
   ## in another terminal run r2
-  $ r2 \-d /bin/ls -e dbg.profile=foo.rr2
+  $ r2 \-e dbg.profile=foo.rr2 -d ls
+  ## or you can use -R option
+  $ r2 \-R foo.rr2 -d ls
   $ cat foo.rr2
   #!/usr/bin/rarun2
   stdio=/dev/ttys010
-
+.Pp
+You can also use the -- flag to specify program and arguments in a more natural way:
+.Pp
+  $ rarun2 timeout=2 -- sleep 4
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1) ,

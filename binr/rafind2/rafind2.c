@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,16 +32,42 @@ static struct r_print_t *pr = NULL;
 static RList *keywords;
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	int delta = addr-cur;
+	int delta = addr - cur;
+	if (delta < 0 || delta >= bsize) {
+		eprintf ("Invalid delta\n");
+		return 0;
+	}
 	if (rad) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
 		if (showstr) {
-			printf ("0x%"PFMT64x" %s\n", addr, buf+delta);
+			if (widestr) {
+				char *str = calloc (1, bsize);
+				int i, j = 0;
+				for (i = delta; buf[i] && i < bsize; i++) {
+					if (!IS_PRINTABLE (buf[i])) {
+						break;
+					}
+					str[j++] = buf[i++];
+					if (j > 80) {
+						strcpy (str + j, "...");
+						j += 3;
+						break;
+					}
+					if (buf[i]) {
+						break;
+					}
+				}
+				str[j] = 0;
+				printf ("0x%"PFMT64x" %s\n", addr, str);
+				free (str);
+			} else {
+				printf ("0x%"PFMT64x" %s\n", addr, buf + delta);
+			}
 		} else {
 			printf ("0x%"PFMT64x"\n", addr);
 			if (pr) {
-				r_print_hexdump (pr, addr, (ut8*)buf+delta, 78, 16, true);
+				r_print_hexdump (pr, addr, (ut8*)buf + delta, 78, 16, true);
 				r_cons_flush ();
 			}
 		}
@@ -50,7 +76,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-mXnzhv] [-a align] [-b sz] [-f/t from/to] [-[m|s|S|e] str] [-x hex] file ..\n", argv0);
+	printf ("Usage: %s [-mXnzZhv] [-a align] [-b sz] [-f/t from/to] [-[m|s|S|e] str] [-x hex] file ..\n", argv0);
 	if (line) return 0;
 	printf (
 	" -a [align] only accept aligned hits\n"
@@ -69,7 +95,7 @@ static int show_help(char *argv0, int line) {
 	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
 	" -X         show hexdump of search results\n"
 	" -z         search for zero-terminated strings\n"
-	" -Z         show zero-terminated strings of search results\n"
+	" -Z         show string found on each search hit\n"
 	);
 	return 0;
 }
@@ -89,6 +115,7 @@ static int rafind_open(char *file) {
 
 	r_cons_new ();
 	rs = r_search_new (mode);
+	if (!rs) return 1;
 	buf = calloc (1, bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);
@@ -96,10 +123,13 @@ static int rafind_open(char *file) {
 	}
 	rs->align = align;
 	r_search_set_callback (rs, &hit, buf);
-	if (to == -1)
+	if (to == -1) {
 		to = r_io_size(io);
+	}
 	if (mode == R_SEARCH_STRING) {
-		eprintf ("TODO: searchin stringz\n");
+		/* TODO: implement using api */
+		r_sys_cmdf ("rabin2 -qzzz '%s'", file);
+		return 0;
 	}
 	if (mode == R_SEARCH_MAGIC) {
 		char *tostr = (to && to != UT64_MAX)?
@@ -126,8 +156,7 @@ static int rafind_open(char *file) {
 			}
 		}
 	} else if (mode == R_SEARCH_STRING) {
-		r_search_kw_add (rs,
-				r_search_keyword_new_hexmask ("00", NULL)); //XXX
+		r_search_kw_add (rs, r_search_keyword_new_hexmask ("00", NULL)); //XXX
 	}
 
 	curfile = file;
@@ -135,24 +164,26 @@ static int rafind_open(char *file) {
 	r_io_seek (io, from, R_IO_SEEK_SET);
 	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
 	for (cur = from; !last && cur < to; cur += bsize) {
-		if ((cur+bsize)>to) {
-			bsize = to-cur;
+		if ((cur + bsize) > to) {
+			bsize = to - cur;
 			last = true;
 		}
 		ret = r_io_pread (io, cur, buf, bsize);
 		if (ret == 0) {
-			if (nonstop) continue;
-		//	fprintf(stderr, "Error reading at 0x%08"PFMT64x"\n", cur);
+			if (nonstop) {
+				continue;
+			}
+		//	eprintf ("Error reading at 0x%08"PFMT64x"\n", cur);
 			return 1;
 		}
-		if (ret != bsize)
+		if (ret != bsize && ret > 0) {
 			bsize = ret;
+		}
 
 		if (r_search_update (rs, &cur, buf, ret) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", cur);
 			break;
 		}
-
 	}
 	rs = r_search_free (rs);
 	free (buf);
@@ -163,7 +194,7 @@ int main(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt(argc, argv, "a:e:b:mM:s:S:x:Xzf:t:rnhvZ")) != -1) {
+	while ((c = getopt (argc, argv, "a:e:b:mM:s:S:x:Xzf:t:rnhvZ")) != -1) {
 		switch (c) {
 		case 'a':
 			align = r_num_math (NULL, optarg);
@@ -227,14 +258,15 @@ int main(int argc, char **argv) {
 		case 'Z':
 			showstr = 1;
 			break;
+		default:
+			return show_help (argv[0], 1);
 		}
 	}
-
-	if (optind == argc)
+	if (optind == argc) {
 		return show_help (argv[0], 1);
-
-	for (;optind < argc;optind++)
+	}
+	for (; optind < argc; optind++) {
 		rafind_open (argv[optind]);
-
+	}
 	return 0;
 }

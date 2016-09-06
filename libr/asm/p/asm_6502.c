@@ -9,7 +9,7 @@
 #include "../arch/6502/6502dis.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int dlen = _6502Disass (op, buf, len);
+	int dlen = _6502Disass (a->pc, op, buf, len);
 	if(dlen<0) dlen=0;
 	op->size = dlen;
 	return dlen;
@@ -20,6 +20,7 @@ RAsmPlugin r_asm_plugin_6502 = {
 	.desc = "6502/NES/C64/Tamagotchi/T-1000 CPU",
 	.arch = "6502",
 	.bits = 8|16,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.license = "LGPL3",
 	.disassemble = &disassemble,
 };

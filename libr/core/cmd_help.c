@@ -1,4 +1,9 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <stddef.h>
+
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_util.h"
 
 static const char* findBreakChar(const char *s) {
 	while (*s) {
@@ -8,6 +13,7 @@ static const char* findBreakChar(const char *s) {
 	}
 	return s;
 }
+
 static char *filter_flags(RCore *core, const char *msg) {
 	const char *dollar, *end;
 	char *word, *buf = NULL;
@@ -47,15 +53,39 @@ static char *filter_flags(RCore *core, const char *msg) {
 	return buf;
 }
 
+static void clippy(const char *msg) {
+	int msglen = strlen (msg);
+	char *l = strdup (r_str_pad ('-', msglen));
+	char *s = strdup (r_str_pad (' ', msglen));
+	r_cons_printf (
+" .--.     .-%s-.\n"
+" | _|     | %s |\n"
+" | O O   <  %s |\n"
+" |  |  |  | %s |\n"
+" || | /   `-%s-'\n"
+" |`-'|\n"
+" `---'\n", l, s, msg, s, l);
+	free (l);
+	free (s);
+}
+
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *k;
-	char *p, out[128];
+	char *p, out[128] = {0};
 	ut64 n, n2;
 	int i;
 	RList *tmp;
 
 	switch (input[0]) {
+	case '0':
+		core->curtab = 0;
+		break;
+	case '1':
+		if (core->curtab < 0)
+			core->curtab = 0;
+		core->curtab ++;
+		break;
 	case ':':
 		{
 		RListIter *iter;
@@ -104,7 +134,7 @@ static int cmd_help(void *data, const char *input) {
 			if (input[3] == '-')
 				r_base64_decode ((ut8*)buf, input+5, strlen (input+5));
 			else r_base64_encode (buf, (const ut8*)input+4, strlen (input+4));
-			r_cons_printf ("%s\n", buf);
+			r_cons_println (buf);
 			free (buf);
 		} else {
 			n = r_num_get (core->num, input+1);
@@ -121,11 +151,12 @@ static int cmd_help(void *data, const char *input) {
 	case 'd':
 		if (input[1]=='.'){
 			int cur = R_MAX(core->print->cur, 0);
+			// XXX: we need cmd_xxx.h (cmd_anal.h)
 			core_anal_bytes(core, core->block + cur, core->blocksize, 1, 'd');
 		} else if (input[1]==' '){
 			char *d = r_asm_describe (core->assembler, input+2);
 			if (d && *d) {
-				r_cons_printf ("%s\n", d);
+				r_cons_println (d);
 				free (d);
 			} else eprintf ("Unknown opcode\n");
 		} else eprintf ("Use: ?d[.] [opcode]    to get the description of the opcode\n");
@@ -157,8 +188,8 @@ static int cmd_help(void *data, const char *input) {
 			if (q) {
 				*q = 0;
 				n = r_num_get (core->num, p);
-				r_str_bits (out, (const ut8*)&n, sizeof (n), q+1);
-				r_cons_printf ("%s\n", out);
+				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q+1);
+				r_cons_println (out);
 			} else eprintf ("Usage: \"?b value bitstring\"\n");
 			free (p);
 		} else eprintf ("Whitespace expected after '?f'\n");
@@ -167,29 +198,35 @@ static int cmd_help(void *data, const char *input) {
 		n = r_num_math (core->num, input+1);
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
+	case 'T':
+		r_cons_printf("plug.init = %"PFMT64d"\n"
+			"plug.load = %"PFMT64d"\n"
+			"file.load = %"PFMT64d"\n",
+			core->times->loadlibs_init_time,
+			core->times->loadlibs_time,
+			core->times->file_open_time);
+		break;
 	case 'u':
 		{
 			char unit[32];
 			n = r_num_math (core->num, input+1);
 			r_num_units (unit, n);
-			r_cons_printf ("%s\n", unit);
+			r_cons_println (unit);
 		}
 		break;
 	case ' ':
 		{
 			char *asnum, unit[32];
-			ut32 n32, s, a;
+			ut32 s, a;
 			double d;
 			float f;
 
-			n = r_num_math (core->num, input+1);
+			n = r_num_math (core->num, input + 1);
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
 			asnum  = r_num_as_string (NULL, n);
-			n32 = (ut32)n;
-			memcpy (&f, &n32, sizeof (f));
-			memcpy (&d, &n, sizeof (d));
+
 			/* decimal, hexa, octal */
 			s = n>>16<<12;
 			a = n & 0x0fff;
@@ -204,28 +241,55 @@ static int cmd_help(void *data, const char *input) {
 				free (asnum);
 			}
 			/* binary and floating point */
-			r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
+			r_str_bits64 (out, n);
+			f = d = core->num->fvalue;
 			r_cons_printf ("%s %.01lf %ff %lf\n",
 				out, core->num->fvalue, f, d);
 		}
 		break;
 	case 'v':
-		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
+		{
+			const char *space = strchr (input, ' ');
+			if (space) {
+				n = r_num_math (core->num, space+1);
+			} else {
+				n = r_num_math (core->num, "$?");
+			}
+		}
 		if (core->num->dbz) {
 			eprintf ("RNum ERROR: Division by Zero\n");
 		}
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
+				"|?vi1 200    -> 1 byte size value (char)\n"
+				"|?vi2 0xffff -> 2 byte size value (short)\n"
+				"|?vi4 0xffff -> 4 byte size value (int)\n"
+				"|?vi8 0xffff -> 8 byte size value (st64)\n"
 				"| No argument shows $? value\n"
 				"|?vi will show in decimal instead of hex\n");
 			break;
 		case '\0':
-			r_cons_printf ("%d\n", core->num->value);
+		        r_cons_printf ("%d\n", (st32)n);
 			break;
-		case 'i':
-			if (n>>32) r_cons_printf ("%"PFMT64d"\n", (st64)n);
-			else r_cons_printf ("%d\n", (st32)n);
+		case 'i': // "?vi"
+			switch (input[2]) {
+			case '1': // byte
+				r_cons_printf ("%d\n", (st8)(n & UT8_MAX));
+				break;
+			case '2': // word
+				r_cons_printf ("%d\n", (st16)(n & UT16_MAX));
+				break;
+			case '4': // dword
+				r_cons_printf ("%d\n", (st32)(n & UT32_MAX));
+				break;
+			case '8': // qword
+				r_cons_printf ("%"PFMT64d"\n", (st64)(n & UT64_MAX));
+				break;
+			default:
+				r_cons_printf ("%"PFMT64d"\n", n);
+				break;
+			}
 			break;
 		case 'd':
 			r_cons_printf ("%"PFMT64d"\n", n);
@@ -252,10 +316,16 @@ static int cmd_help(void *data, const char *input) {
 			if (n<0) r_core_cmd (core, input+1, 0);
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
-	case '!': // ??
+	case '!': // "?!"
 		if (input[1]) {
-			if (!core->num->value)
-				r_core_cmd (core, input+1, 0);
+			if (!core->num->value) {
+				if (input[1] == '?') {
+					r_core_sysenv_help (core);
+					return 0;
+				} else {
+					return core->num->value = r_core_cmd (core, input+1, 0);
+				}
+			}
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '@':
@@ -280,18 +350,22 @@ static int cmd_help(void *data, const char *input) {
 			"~", "word", "grep for lines matching word",
 			"~", "!word", "grep for lines NOT matching word",
 			"~", "word[2]", "grep 3rd column of lines matching word",
-			"~", "word:3[0]", "grep 1st column from the 4th line matching mov",
-			"@", " 0x1024", "temporary seek to this address (sym.main+3",
+			"~", "word:3[0]", "grep 1st column from the 4th line matching word",
+			"@", " 0x1024", "temporary seek to this address (sym.main+3)",
 			"@", " addr[!blocksize]", "temporary set a new blocksize",
-			"@@=", "1 2 3", " run the previous command at offsets 1, 2 and 3",
-			"@@", " hit*", "run the command on every flag matching 'hit*'",
 			"@a:", "arch[:bits]", "temporary set arch and bits",
 			"@b:", "bits", "temporary set asm.bits",
 			"@e:", "k=v,k=v", "temporary change eval vars",
 			"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
 			"@f:", "file", "temporary replace block with file contents",
+			"@o:", "fd", "temporary switch to another fd",
 			"@s:", "string", "same as above but from a string",
 			"@x:", "909192", "from hex pairs string",
+			"@..", "from to", "temporary set from and to for commands supporting ranges",
+			"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
+			"@@", " hit*", "run the command on every flag matching 'hit*'",
+			"@@?", "[ktfb..]", "show help for the iterator operator",
+			"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
 			">", "file", "pipe output of command to file",
 			">>", "file", "append to file",
 			"`", "pdi~push:0[0]`",  "replace output of command inside the line",
@@ -307,19 +381,27 @@ static int cmd_help(void *data, const char *input) {
 			"$?", "", "last comparison value",
 			"$alias", "=value", "Alias commands (simple macros)",
 			"$b", "", "block size",
-			"$B", "", "begin of function",
+			"$B", "", "base address (aligned lowest map address)",
+			"$F", "", "current function size",
+			"$FB", "", "begin of function",
+			"$Fb", "", "address of the current basic block",
+			"$Fs", "", "size of the current basic block",
+			"$FE", "", "end of function",
+			"$FS", "", "function size",
+			"$FI", "", "function instructions",
 			"$c,$r", "", "get width and height of terminal",
 			"$Cn", "", "get nth call of function",
 			"$Dn", "", "get nth data reference in function",
+			"$D", "", "current debug map base address ?v $D @ rsp",
+			"$DD", "", "current debug map size",
 			"$e", "", "1 if end of block, else 0",
 			"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
-			"$F", "", "current function size",
-			"$I", "", "number of instructions of current function",
 			"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
 			"$Ja", "", "get nth jump of function",
 			"$Xn", "", "get nth xref of function",
 			"$l", "", "opcode length",
 			"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
+			"$M", "", "map address (lowest map address)",
 			"$o", "", "here (current disk io offset)",
 			"$p", "", "getpid()",
 			"$P", "", "pid of children (only in debug)",
@@ -336,15 +418,32 @@ static int cmd_help(void *data, const char *input) {
 		}
 		return true;
 	case 'V':
-		if (!input[1]){
-			if (!strcmp (R2_VERSION, R2_GITTAP))
+		switch (input[1]) {
+		case '?':
+			{
+				const char* help_msg[] = {
+					"Usage: ?V[jq]","","",
+					"?V", "", "show version information",
+					"?Vj", "", "same as above but in JSON",
+					"?Vq", "", "quiet mode, just show the version number",
+					NULL};
+				r_core_cmd_help (core, help_msg);
+			}
+			break;
+		case 0:
+			if (!strcmp (R2_VERSION, R2_GITTAP)) {
 				r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
-
-			else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
-		}	
-		if (input[1] == 'j' && !input[2]){
-			r_cons_printf ("{\"system\":\"%s-%s-%s\"", R_SYS_OS, R_SYS_ENDIAN, R_SYS_ARCH);
+			} else {
+				r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
+			}
+			break;
+		case 'j':
+			r_cons_printf ("{\"system\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
 			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
+			break;
+		case 'q':
+			r_cons_println (R2_VERSION);
+			break;
 		}
 		break;
 	case 'l':
@@ -362,7 +461,7 @@ static int cmd_help(void *data, const char *input) {
 			ut8 *out = malloc (strlen (input)+1);
 			int len = r_hex_str2bin (input+1, out);
 			out[len] = 0;
-			r_cons_printf ("%s\n", (const char*)out);
+			r_cons_println ((const char*)out);
 			free (out);
 		} else if (!strncmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
 			ut64 n = r_num_math (core->num, input);
@@ -376,13 +475,16 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_newline ();
 		}
 		break;
+	case 'E': // clippy echo
+		clippy (r_str_chop_ro (input+1));
+		break;
 	case 'e': // echo
 		{
 		const char *msg = r_str_chop_ro (input+1);
 		// TODO: replace all ${flagname} by its value in hexa
 		char *newmsg = filter_flags (core, msg);
 		r_str_unescape (newmsg);
-		r_cons_printf ("%s\n", newmsg);
+		r_cons_println (newmsg);
 		free (newmsg);
 		}
 		break;
@@ -430,22 +532,22 @@ static int cmd_help(void *data, const char *input) {
 		ut64 n = (input[0] && input[1])?
 			r_num_math (core->num, input+2): core->offset;
 		n = r_io_section_vaddr_to_maddr_try (core->io, n);
-		s = r_io_section_mget (core->io, n);
+		s = r_io_section_mget_in (core->io, n);
 		if (s && *(s->name)) {
-			r_cons_printf ("%s\n", s->name);
+			r_cons_println (s->name);
 		}
 		break;
 		}
 	case '_': // hud input
 		r_core_yank_hud_file (core, input+1);
 		break;
-	case 'i': // input num
+	case 'i': // "?i" input num
 		r_cons_set_raw(0);
 		if (!r_config_get_i (core->config, "scr.interactive")) {
 			eprintf ("Not running in interactive mode\n");
 		} else
 		switch (input[1]) {
-		case 'f':
+		case 'f': // "?if"
 			core->num->value = !r_num_conditional (core->num, input+2);
 			eprintf ("%s\n", r_str_bool (!core->num->value));
 			break;
@@ -455,15 +557,15 @@ static int cmd_help(void *data, const char *input) {
 		case 'p': {
 			core->num->value = r_core_yank_hud_path (core, input+2, 0) == true;
 			} break;
-		case 'k':
+		case 'k': // "?ik"
 			r_cons_any_key (NULL);
 			break;
-		case 'y':
+		case 'y': // "?iy"
 			for (input+=2; *input==' '; input++);
 			core->num->value =
 			r_cons_yesno (1, "%s? (Y/n)", input);
 			break;
-		case 'n':
+		case 'n': // "?in"
 			for (input+=2; *input==' '; input++);
 			core->num->value =
 			r_cons_yesno (0, "%s? (y/N)", input);
@@ -472,18 +574,24 @@ static int cmd_help(void *data, const char *input) {
 			char foo[1024];
 			r_cons_flush ();
 			for (input++; *input==' '; input++);
-			// TODO: use prompt input
-			snprintf (foo, sizeof (foo)-1, "%s: ", input);
+			// TODO: r_cons_input()
+			snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 			r_line_set_prompt (foo);
 			r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
 			foo[strlen (foo)] = 0;
-			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR,
-				foo, strlen (foo)+1);
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 			core->num->value = r_num_math (core->num, foo);
 			}
 			break;
 		}
 		r_cons_set_raw (0);
+		break;
+	case 'w':
+		{
+			ut64 addr = r_num_math (core->num, input + 1);
+			const char *rstr = core->print->hasrefs (core->print->user, addr);
+			r_cons_println (rstr);
+		}
 		break;
 	case 't': {
 		struct r_prof_t prof;
@@ -496,13 +604,13 @@ static int cmd_help(void *data, const char *input) {
 	case '?': // ???
 		if (input[1]=='?') {
 			if (input[2]=='?') {
-				r_cons_printf ("What are you doing?\n");
+				clippy ("What are you doing?");
 				return 0;
 			}
 			if (input[2]) {
 				if (core->num->value)
 					r_core_cmd (core, input+1, 0);
-				break;	
+				break;
 			}
 			const char* help_msg[] = {
 			"Usage: ?[?[?]] expression", "", "",
@@ -517,6 +625,7 @@ static int cmd_help(void *data, const char *input) {
 			"?B", " [elem]", "show range boundaries like 'e?search.in",
 			"?P", " paddr", "get virtual address for given physical one",
 			"?S", " addr", "return section name of given address",
+			"?T", "", "show loading times",
 			"?V", "", "show library version of r_core",
 			"?X", " num|expr", "returns the hexadecimal value numeric expr",
 			"?_", " hudfile", "load hud menu with given file",
@@ -540,6 +649,7 @@ static int cmd_help(void *data, const char *input) {
 			"?u", " num", "get value in human units (KB, MB, GB, TB)",
 			"?v", " eip-0x804800", "show hex value of math expr",
 			"?vi", " rsp-rbp", "show decimal value of math expr",
+			"?w", " addr", "show what's in this address (like pxr/pxq does)",
 			"?x", " num|str|-hexst", "returns the hexpair of number or string",
 			"?y", " [str]", "show contents of yank buffer, or set with string",
 			NULL};
@@ -547,7 +657,7 @@ static int cmd_help(void *data, const char *input) {
 			return 0;
 		} else if (input[1]) {
 			if (core->num->value) {
-				r_core_cmd (core, input+1, 0);
+				core->num->value = r_core_cmd (core, input+1, 0);
 			}
 		} else {
 			if (core->num->dbz) {

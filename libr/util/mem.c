@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2014 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 
 #include <r_util.h>
 #include <stdlib.h>
@@ -9,32 +9,44 @@
 // TODO: find better name (r_mem_length()); is this used somewhere?
 R_API int r_mem_count(const ut8 **addr) {
 	int i = 0;
-	while (*addr++)
+	while (*addr++) {
 		i++;
+	}
 	return i;
 }
 
 R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
 	register int i;
-	for (i=0; i<len; i++)
-		if (a[i] != b[i])
-			return R_FALSE;
-	return R_TRUE;
+	for (i = 0; i < len; i++) {
+		if (a[i] != b[i]) {
+			return false;
+		}
+	}
+	return true;
 }
 
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
-	int i=0, j;
-	while (i<dsize)
-		for (j=0; j<osize && i<dsize;j++)
+	int i = 0, j;
+	while (i < dsize) {
+		for (j = 0; j < osize && i < dsize; j++) {
 			dest[i++] = orig[j];
+		}
+	}
 }
 
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
 	int i, ret = -1;
 	ut8 *mdest, *morig;
 	mdest = malloc (len);
+	if (!mdest) {
+		return ret;
+	}
 	morig = malloc (len);
-	for (i=0; i<len; i++) {
+	if (!morig) {
+		free (mdest);
+		return ret;
+	}
+	for (i = 0; i < len; i++) {
 		mdest[i] = dest[i]&mask[i];
 		morig[i] = orig[i]&mask[i];
 	}
@@ -48,7 +60,6 @@ R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits) {
 	ut8 srcmask, dstmask;
 	int bytes = (int)(bits / 8);
 	bits = bits % 8;
-
 	memcpy (dst, src, bytes);
 	if (bits) {
 		srcmask = dstmask = 0;
@@ -108,85 +119,88 @@ src |__________|_________|
 	r_mem_copybits (dst, src, nbits);
 }
 
-R_API ut64 r_mem_get_num(const ut8 *b, int size, int endian) {
-        ut16 n16;
-        ut32 n32;
-        ut64 n64;
-        switch (size) {
-        case 1: return b[0];
-        case 2:
-                r_mem_copyendian ((ut8*)&n16, b, 2, endian);
-		return (ut64)n16;
-        case 4:
-                r_mem_copyendian ((ut8*)&n32, b, 4, endian);
-		return (ut64)n32;
-        case 8:
-                r_mem_copyendian ((ut8*)&n64, b, 8, endian);
-		return (ut64)n64;
-        }
+R_API ut64 r_mem_get_num(const ut8 *b, int size) {
+	// LITTLE ENDIAN is the default for streams
+	switch (size) {
+	case 1:
+		return r_read_le8 (b);
+	case 2:
+		return r_read_le16 (b);
+	case 4:
+		return r_read_le32 (b);
+	case 8:
+		return r_read_le64 (b);
+	}
 	return 0LL;
 }
 
 // TODO: SEE: R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) { .. dupped code?
-R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num, int endian) {
-	int num4;
-	short num2;
+R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num) {
+	// LITTLE ENDIAN is the default for streams
 	switch (dest_size) {
-	case 1: dest[0] = (ut8) num;
+	case 1:
+		r_write_le8 (dest, (ut8)(num & UT8_MAX));
 		break;
-	case 2: num2 = (short)num;
-		r_mem_copyendian (dest, (const ut8*)&num2, 2, endian);
+	case 2:
+		r_write_le16 (dest, (ut16)(num & UT16_MAX));
 		break;
-	case 4: num4 = (int)num;
-		r_mem_copyendian (dest, (const ut8*)&num4, 4, endian);
+	case 4:
+		r_write_le32 (dest, (ut32)(num & UT32_MAX));
 		break;
-	case 8: r_mem_copyendian (dest, (const ut8*)&num, 8, endian);
+	case 8:
+		r_write_le64 (dest, num);
 		break;
 	default:
-		return R_FALSE;
+		return false;
 	}
-	return R_TRUE;
+	return true;
 }
 
-/* XXX TODO check and use system endian */
-// TODO: rename to r_mem_swap() */
-R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
-	ut8 buffer[8];
-	if (endian) {
-		if (dest != orig)
-			memmove (dest, orig, size);
+// The default endian is LE for streams.
+// This function either swaps or copies len bytes depending on bool big_endian
+// TODO: Remove completely
+R_API void r_mem_swaporcopy(ut8* dest, const ut8* src, int len, bool big_endian) {
+	if (big_endian) {
+		r_mem_swapendian (dest, src, len);
 	} else {
-		switch (size) {
-		case 1:
-			*dest = *orig;
-			break;
-		case 2:
-			*buffer = *orig;
-			dest[0] = orig[1];
-			dest[1] = buffer[0];
-			break;
-		case 4:
-			memcpy (buffer, orig, 4);
-			dest[0] = buffer[3];
-			dest[1] = buffer[2];
-			dest[2] = buffer[1];
-			dest[3] = buffer[0];
-			break;
-		case 8:
-			memcpy (buffer, orig, 8);
-			dest[0] = buffer[7];
-			dest[1] = buffer[6];
-			dest[2] = buffer[5];
-			dest[3] = buffer[4];
-			dest[4] = buffer[3];
-			dest[5] = buffer[2];
-			dest[6] = buffer[1];
-			dest[7] = buffer[0];
-			break;
-		default:
-			if (dest != orig)
-				memmove (dest, orig, size);
-			//eprintf ("Invalid endian copy of size: %d\n", size);
+		memcpy (dest, src, len);
+	}
+}
+
+// This function unconditionally swaps endian of size bytes of orig -> dest
+// TODO: Remove completely
+R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
+	ut8 buffer[8];
+	switch (size) {
+	case 1:
+		*dest = *orig;
+		break;
+	case 2:
+		*buffer = *orig;
+		dest[0] = orig[1];
+		dest[1] = buffer[0];
+		break;
+	case 4:
+		memcpy (buffer, orig, 4);
+		dest[0] = buffer[3];
+		dest[1] = buffer[2];
+		dest[2] = buffer[1];
+		dest[3] = buffer[0];
+		break;
+	case 8:
+		memcpy (buffer, orig, 8);
+		dest[0] = buffer[7];
+		dest[1] = buffer[6];
+		dest[2] = buffer[5];
+		dest[3] = buffer[4];
+		dest[4] = buffer[3];
+		dest[5] = buffer[2];
+		dest[6] = buffer[1];
+		dest[7] = buffer[0];
+		break;
+	default:
+		if (dest != orig) {
+			memmove (dest, orig, size);
 		}
 	}
 }
@@ -204,15 +218,24 @@ R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int
 	return NULL;
 }
 
-// TODO: implement pack/unpack helpers use vararg or wtf?
-R_API int r_mem_pack() {
-	// TODO: copy this from r_buf??
-	return R_TRUE;
-}
-
-R_API int r_mem_unpack(const ut8 *buf) {
-	// TODO: copy this from r_buf??
-	return R_TRUE;
+// TODO: rename to r_mem_mem and refactor all calls to this function
+R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align) {
+	int i, until = hlen - nlen + 1;
+	if (align < 1) {
+		align = 1;
+	}
+	if (hlen < 1 || nlen < 1) {
+		return NULL;
+	}
+	if (align > 1) {
+		until -= (until % align);
+	}
+	for (i = 0; i < until; i += align) {
+		if (!memcmp (haystack+i, needle, nlen)) {
+			return haystack+i;
+		}
+	}
+	return NULL;
 }
 
 R_API int r_mem_protect(void *ptr, int size, const char *prot) {
@@ -222,28 +245,47 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 	if (strchr (prot, 'r')) p |= PROT_READ;
 	if (strchr (prot, 'w')) p |= PROT_WRITE;
 	if (mprotect (ptr, size, p)==-1)
-		return R_FALSE;
+		return false;
 #elif __WINDOWS__ || __CYGWIN__
 	int r, w, x;
 	DWORD p = PAGE_NOACCESS;
 	r = strchr (prot, 'r')? 1: 0;
 	w = strchr (prot, 'w')? 1: 0;
 	x = strchr (prot, 'x')? 1: 0;;
-	if (w && x) return R_FALSE;
-	if (x) p = PAGE_EXECUTE_READ;
-	else if (w) p = PAGE_READWRITE;
-	else if (r) p = PAGE_READONLY;
-	if (!VirtualProtect (ptr, size, p, NULL))
-		return R_FALSE;
+	if (w && x) {
+		return false;
+	}
+	if (x) {
+		p = PAGE_EXECUTE_READ;
+	} else if (w) {
+		p = PAGE_READWRITE;
+	} else if (r) {
+		p = PAGE_READONLY;
+	}
+	if (!VirtualProtect (ptr, size, p, NULL)) {
+		return false;
+	}
 #else
 	#warning Unknown platform
 #endif
-	return R_TRUE;
+	return true;
 }
 
 R_API void *r_mem_dup (void *s, int l) {
 	void *d = malloc (l);
-	if (!d) return NULL;
+	if (!d) {
+		return NULL;
+	}
 	memcpy (d, s, l);
 	return d;
+}
+
+R_API void r_mem_reverse(ut8 *b, int l) {
+	ut8 tmp;
+	int i, end = l / 2;
+	for (i = 0; i < end; i++) {
+		tmp = b[i];
+		b[i] = b[l - i - 1];
+		b[l - i - 1] = tmp;
+	}
 }

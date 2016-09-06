@@ -18,7 +18,7 @@ struct cdb_hplist {
 
 struct cdb_make {
 	char bspace[8192];
-	char final[2048];
+	char final[1024];
 	ut32 count[256];
 	ut32 start[256];
 	struct cdb_hplist *head;

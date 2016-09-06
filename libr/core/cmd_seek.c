@@ -1,17 +1,20 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
+#include "r_types.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_debug.h"
+#include "r_io.h"
 
 static void __init_seek_line (RCore *core) {
 	ut64 from, to;
-	int lines = 0;
 
 	r_config_bump (core->config, "lines.to");
 	from = r_config_get_i (core->config, "lines.from");
 	to = r_config_get_i (core->config, "lines.to");
-	lines = r_core_lines_initcache (core, from, to);
-	if (lines == -1) {
+	if (r_core_lines_initcache (core, from, to) == -1) {
 		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
-	} else {
-		eprintf ("Found %d lines\n", lines-1);
 	}
 }
 
@@ -69,6 +72,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 	int bsz = core->blocksize;
 	char *buf;
 	ut64 off = start_addr;
+	ut64 baddr; 
 	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
 		return -1;
 	}
@@ -79,7 +83,13 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
+	{
+		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
+		baddr = s ? s->offset : r_config_get_i (core->config, "bin.baddr");
+	}
+
 	line_count = start_addr ? 0 : 1;
+	core->print->lines_cache[0] = start_addr ? 0 : baddr;
 	r_cons_break (NULL, NULL);
 	buf = malloc (bsz);
 	if (!buf) return -1;
@@ -90,7 +100,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 		r_io_read_at (core->io, off, (ut8*)buf, bsz);
 		for (i=0; i<bsz; i++) {
 			if (buf[i] == '\n') {
-				core->print->lines_cache[line_count] = off+i+1;
+				core->print->lines_cache[line_count] = start_addr ? off+i+1 : off+i+1+baddr;
 				line_count++;
 				if (line_count % bsz == 0) {
 					ut64 *tmp = realloc (core->print->lines_cache,
@@ -120,27 +130,37 @@ static int cmd_seek(void *data, const char *input) {
 	char *cmd, *p;
 	ut64 off;
 
-	if (*input=='r') {
+	if (*input == 'r') {
 		if (input[1] && input[2]) {
 			if (core->io->debug) {
-				off = r_debug_reg_get (core->dbg, input+2);
-				r_io_sundo_push (core->io, core->offset);
+				off = r_debug_reg_get (core->dbg, input + 2);
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 				r_core_seek (core, off, 1);
 			} else {
 				RReg *orig = core->dbg->reg;
 				core->dbg->reg = core->anal->reg;
-				off = r_debug_reg_get (core->dbg, input+2);
+				off = r_debug_reg_get (core->dbg, input + 2);
 				core->dbg->reg = orig;
 				r_core_seek (core, off, 1);
 			}
 		} else eprintf ("|Usage| 'sr PC' seek to program counter register\n");
 	}
 	if (*input) {
+		char* ptr;
+		if ((ptr = strstr(input, "+.")) != NULL) {
+			char* dup = strdup(input);
+			dup[ptr - input] = '\x00';
+			off = r_num_math (core->num, dup + 1);
+			core->offset = off;
+			free (dup);
+		}
 		const char *inputnum = strchr (input, ' ');
 		int sign = 1;
-		inputnum = inputnum? inputnum+1: input+1;
-		off = r_num_math (core->num, inputnum);
-		if (*inputnum== '-') off = -off;
+		{
+			const char *u_num = inputnum? inputnum + 1: input + 1;
+			off = r_num_math (core->num, u_num);
+			if (*u_num == '-') off = -off;
+		}
 #if 0
 		if (input[0]!='/' && inputnum && isalpha (inputnum[0]) && off == 0) {
 			if (!r_flag_get (core->flags, inputnum)) {
@@ -204,9 +224,9 @@ static int cmd_seek(void *data, const char *input) {
 					break;
 				case 1:
 					off = cb.addr;
-					r_io_sundo_push (core->io, core->offset);
+					r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 					r_core_seek (core, off, 1);
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 					break;
 				default:
 					eprintf ("Too many results\n");
@@ -218,9 +238,9 @@ static int cmd_seek(void *data, const char *input) {
 				"sC const   seek to comment matching 'const'\n");
 			break;
 		case ' ':
-			r_io_sundo_push (core->io, core->offset);
-			r_core_seek (core, off*sign, 1);
-			r_core_block_read (core, 0);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			r_core_seek (core, off * sign, 1);
+			r_core_block_read (core);
 			break;
 		case '/':
 			{
@@ -268,37 +288,40 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_seek_base (core, input);
 			break;
 		case '*':
-			r_io_sundo_list (core->io);
+		case '=':
+		case 'j':
+			r_io_sundo_list (core->io, input[0]);
 			break;
 		case '+':
 			if (input[1]!='\0') {
 				int delta = (input[1]=='+')? core->blocksize: off;
-				r_io_sundo_push (core->io, core->offset);
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 				r_core_seek_delta (core, delta);
 			} else {
-				off = r_io_sundo_redo (core->io);
-				if (off != UT64_MAX)
-					r_core_seek (core, off, 0);
+				RIOUndos *undo = r_io_sundo_redo (core->io);
+				if (undo != NULL)
+					r_core_seek (core, undo->off, 0);
 			}
 			break;
 		case '-':
 			if (input[1]!='\0') {
 				int delta = (input[1]=='-') ? -core->blocksize: -off;
-				r_io_sundo_push (core->io, core->offset);
+				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 				r_core_seek_delta (core, delta);
 			} else {
-				off = r_io_sundo (core->io, core->offset);
-				if (off != UT64_MAX)
-					r_core_seek (core, off, 0);
+				RIOUndos *undo = r_io_sundo (core->io, core->offset);
+				if (undo) {
+					r_core_seek (core, undo->off, 0);
+					r_core_block_read (core);
+				}
 			}
-			r_core_block_read (core, 1);
 			break;
 		case 'n':
-			r_io_sundo_push (core->io, core->offset);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 			break;
 		case 'p':
-			r_io_sundo_push (core->io, core->offset);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 			break;
 		case 'a':
@@ -315,13 +338,13 @@ static int cmd_seek(void *data, const char *input) {
 				r_cmd_call (core->rcmd, cmd);
 				free (cmd);
 			}
-			r_io_sundo_push (core->io, core->offset);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_seek_align (core, off, 0);
 			break;
 		case 'b':
 			if (off == 0)
 				off = core->offset;
-			r_io_sundo_push (core->io, core->offset);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			r_core_anal_bb_seek (core, off);
 			break;
 		case 'f': // "sf"
@@ -334,7 +357,7 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
-				r_core_seek (core, fcn->addr+fcn->size, 1);
+				r_core_seek (core, fcn->addr + r_anal_fcn_size (fcn), 1);
 			}
 			break;
 		case 'o': // "so"
@@ -380,31 +403,42 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case 'l': // "sl"
 			{
-			int sl_arg = r_num_math (core->num, input+2);
+			int sl_arg = r_num_math (core->num, input+1);
 			const char *help_msg[] = {
 				"Usage:", "sl+ or sl- or slc", "",
 				"sl", " [line]", "Seek to absolute line",
 				"sl", "[+-][line]", "Seek to relative line",
 				"slc", "", "Clear line cache",
+				"sll", "", "Show total number of lines",
 				NULL };
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
 			switch (input[1]) {
 			case 0:
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
 				__get_current_line (core);
 				break;
 			case ' ':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
 				__seek_line_absolute (core, sl_arg);
 				break;
-			case '-':
-				__seek_line_relative (core, -sl_arg);
-				break;
 			case '+':
+			case '-':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
 				__seek_line_relative (core, sl_arg);
 				break;
 			case 'c':
 				__clean_lines_cache (core);
+				break;
+			case 'l':
+				if (!core->print->lines_cache) {
+					__init_seek_line (core);
+				}
+				eprintf ("%d lines\n", core->print->lines_cache_sz-1);
 				break;
 			case '?':
 				r_core_cmd_help (core, help_msg);
@@ -423,7 +457,7 @@ static int cmd_seek(void *data, const char *input) {
 			"s+", "", "Redo seek",
 			"s+", " n", "Seek n bytes forward",
 			"s++", "", "Seek blocksize bytes forward",
-			"s*", "", "List undo seek history",
+			"s[j*=]", "", "List undo seek history (JSON, =list, *r2)",
 			"s/", " DATA", "Search for next occurrence of 'DATA'",
 			"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
 			"s.", "hexoff", "Seek honoring a base from core->offset",

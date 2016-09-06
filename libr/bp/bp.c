@@ -12,6 +12,9 @@ static void r_bp_item_free (RBreakpointItem *b) {
 	free (b->name);
 	free (b->bbytes);
 	free (b->obytes);
+	free (b->module_name);
+	free (b->data);
+	free (b->cond);
 	free (b);
 }
 
@@ -41,6 +44,7 @@ R_API RBreakpoint *r_bp_free(RBreakpoint *bp) {
 	r_list_free (bp->bps);
 	r_list_free (bp->plugins);
 	r_list_free (bp->traces);
+	free (bp->bps_idx);
 	free (bp);
 	return NULL;
 }
@@ -90,15 +94,23 @@ R_API RBreakpointItem *r_bp_get_at(RBreakpoint *bp, ut64 addr) {
 	return NULL;
 }
 
+static inline bool inRange(RBreakpointItem *b, ut64 addr) {
+	return (addr >= b->addr && addr < (b->addr + b->size));
+}
+
+static inline bool matchProt(RBreakpointItem *b, int rwx) {
+	return (!rwx || (rwx && b->rwx));
+}
+
 R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
 	RBreakpointItem *b;
 	RListIter *iter;
 	r_list_foreach (bp->bps, iter, b) {
 		// eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->rwx);
 		// Check addr within range and provided rwx matches (or null)
-		if (addr >= b->addr && addr <= (b->addr+b->size) && \
-			(!rwx || rwx&b->rwx))
+		if (inRange (b, addr) && matchProt (b, rwx)) {
 			return b;
+		}
 	}
 	return NULL;
 }
@@ -130,7 +142,9 @@ R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
 static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
 	int ret;
 	RBreakpointItem *b;
-	if (addr == UT64_MAX || size < 1) return NULL;
+	if (addr == UT64_MAX || size < 1) {
+		return NULL;
+	}
 	if (r_bp_get_in (bp, addr, rwx)) {
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
@@ -141,6 +155,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	b->enabled = true;
 	b->rwx = rwx;
 	b->hw = hw;
+	// NOTE: for hw breakpoints there are no bytes to save/restore
 	if (!hw) {
 		b->bbytes = calloc (size + 16, 1);
 		if (obytes) {
@@ -150,10 +165,9 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 			b->obytes = NULL;
 		}
 		/* XXX: endian .. use bp->endian */
-		// XXX for hw breakpoints there are no bytes
 		ret = r_bp_get_bytes (bp, b->bbytes, size, 0, 0);
-		if (ret == 0) {
-			eprintf ("Cannot get breakpoint bytes. No r_bp_use()?\n");
+		if (ret != size) {
+			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
 			r_bp_item_free (b);
 			return NULL;
 		}
@@ -172,11 +186,16 @@ R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
 	RBreakpointItem *item;
 	ut8 *bytes;
-	if (size < 1) size = 1;
-	bytes = calloc (1, size);
-	if (bytes == NULL) return NULL;
-	if (bp->iob.read_at) bp->iob.read_at (bp->iob.io, addr, bytes, size);
-	else memset (bytes, 0, size);
+	if (size < 1) {
+		size = 1;
+	}
+	if (!(bytes = calloc (1, size))) {
+		return NULL;
+	}
+	memset (bytes, 0, size);
+	if (bp->iob.read_at) {
+		bp->iob.read_at (bp->iob.io, addr, bytes, size);
+	}
 	item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, rwx);
 	free (bytes);
 	return item;
@@ -187,10 +206,11 @@ R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx
 }
 
 R_API int r_bp_del_all(RBreakpoint *bp) {
-	if (r_list_empty (bp->bps))
-		return false;
-	r_list_purge (bp->bps);
-	return true;
+	if (!r_list_empty (bp->bps)) {
+		r_list_purge (bp->bps);
+		return true;
+	}
+	return false;
 }
 
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
@@ -234,8 +254,8 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		switch (rad) {
 		case 0:
 			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
-				"%d %c%c%c %s %s %s cmd=\"%s\" " \
-				"name=\"%s\"\n",
+				" %d %c%c%c %s %s %s cmd=\"%s\" cond=\"%s\" " \
+				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
 				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
 				(b->rwx & R_BP_PROT_WRITE) ? 'w' : '-',
@@ -243,23 +263,30 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->hw ? "hw": "sw",
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
-				b->data ? b->data : "",
-				b->name ? b->name : "");
+				r_str_get2 (b->data),
+				r_str_get2 (b->cond),
+				r_str_get2 (b->name),
+				r_str_get2 (b->module_name));
 			break;
 		case 1:
 		case 'r':
 		case '*':
 			// TODO: add command, tracing, enable, ..
-			bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
+			if (b->module_name) {
+			    	bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
+			} else { 
+				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
+			}
 			//b->trace? "trace": "break",
 			//b->enabled? "enabled": "disabled",
 			// b->data? b->data: "");
 			break;
 		case 'j':
-			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,\
-				\"prot\":\"%c%c%c\",\"hw\":%s,\
-				\"trace\":%s,\"enabled\":%s,\
-				\"data\":\"%s\"}",
+			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
+				"\"prot\":\"%c%c%c\",\"hw\":%s,"
+				"\"trace\":%s,\"enabled\":%s,"
+				"\"data\":\"%s\","
+				"\"cond\":\"%s\"}",
 				iter->p ? "," : "",
 				b->addr, b->size,
 				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
@@ -268,7 +295,8 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->hw ? "true" : "false",
 				b->trace ? "true" : "false",
 				b->enabled ? "true" : "false",
-				b->data ? b->data : "");
+				r_str_get2 (b->data),
+				r_str_get2 (b->cond));
 			break;
 		}
 		/* TODO: Show list of pids and trace points, conditionals */
@@ -290,19 +318,19 @@ R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp) {
 	}
 	/* allocate new slot */
 	bp->bps_idx_count += 16; // alocate space for 16 more bps
-	bp->bps_idx = realloc (bp->bps_idx,
-				bp->bps_idx_count * sizeof(RBreakpointItem*));
+	bp->bps_idx = realloc (bp->bps_idx, bp->bps_idx_count * sizeof(RBreakpointItem*));
 	for (j = i; j < bp->bps_idx_count; j++) {
 		bp->bps_idx[j] = NULL;
 	}
-	return_slot:
+return_slot:
 	/* empty slot */
 	return (bp->bps_idx[i] = R_NEW0 (RBreakpointItem));
 }
 
 R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx) {
-	if (idx >= 0 && idx < bp->bps_idx_count)
+	if (idx >= 0 && idx < bp->bps_idx_count) {
 		return bp->bps_idx[idx];
+	}
 	return NULL;
 }
 

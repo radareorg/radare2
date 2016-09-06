@@ -190,7 +190,7 @@ i~canary : check if the binary has canaries
 
 Get function address in GOT table:
 `pd 1 @ sym.imp<funct>`
-Returns a `jmp [addr]` where `addr` is the the address of function in the GOT. Similar to `objdump -R | grep <func>`
+Returns a `jmp [addr]` where `addr` is the address of function in the GOT. Similar to `objdump -R | grep <func>`
 
 # Print
 ```
@@ -198,9 +198,9 @@ psz n @ offset: Print n zero terminated String
 px n @ offset: Print hexdump (or just x) of n bytes
 pxw n @ offset: Print hexdump of n words
 	pxw size@offset  prints hexadecimal words at address
-pd n @ offset: Print n opcodes disassambled
+pd n @ offset: Print n opcodes disassembled
 pD n @ offset: Print n bytes disassembled
-pi n @ offset: Print n instructions disassambeled (no address, XREFs, etc. just instrunctions)
+pi n @ offset: Print n instructions disassembled (no address, XREFs, etc. just instructions)
 pdf @ offset: Print disassembled function
 	pdf~XREF (grep: XREFs)
 	pdf~call (grep: calls)
@@ -259,10 +259,10 @@ fs flagspace: Change to the specified flag space
 ## yank & paste
 ```
 y n: Copies n bytes from current position
-y: Shows yank buffer contentent with address and length where each entry was copied from
+y: Shows yank buffer content with address and length where each entry was copied from
 yp: Prints yank buffer
 yy offset: Paste the contents of the yank buffer at the specified offset
-yt n target @ source: Yank to. Copy n bytes fromsource to target address
+yt n target @ source: Yank to. Copy n bytes from source to target address
 ```
 
 ## Visual Mode:
@@ -320,7 +320,7 @@ m<char>: Define a bookmark
 	/Rl jmp eax,call ebx
 /a: Search assembly
 	/a jmp eax
-pda: Returns a library of gadgets that can be use. These gadgets are obtained by disassmbling byte per byte instead of obeying to opcode length
+pda: Returns a library of gadgets that can be use. These gadgets are obtained by disassembling byte per byte instead of obeying to opcode length
 ```
 Search depth can be configure with following properties:
 
@@ -363,7 +363,7 @@ Cd [size]: Define as data
 C- [size]: Define as code
 Cs [size]: Define as String
 Cf [size]: Define as struct
-	We can define structures to be shown in the disassmbly
+	We can define structures to be shown in the disassembly
 CC: List all comments or add a new comment in console mode
 	C* Show all comments/metadata
 	CC <comment> add new comment

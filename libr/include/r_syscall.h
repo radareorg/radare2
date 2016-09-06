@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #ifndef R2_SYSCALL_H
 #define R2_SYSCALL_H
@@ -82,6 +82,9 @@ R_API int r_syscall_get_num(RSyscall *ctx, const char *str);
 R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi);
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num);
 R_API RList *r_syscall_list(RSyscall *ctx);
+
+/* io */
+R_API const char *r_syscall_get_io(RSyscall *s, int ioport);
 #endif
 
 #ifdef __cplusplus

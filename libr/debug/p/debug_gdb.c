@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, defragger */
+/* radare - LGPL - Copyright 2009-2016 - pancake, defragger */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -19,7 +19,7 @@ static int support_sw_bp = UNKNOWN;
 static int support_hw_bp = UNKNOWN;
 
 static int r_debug_gdb_step(RDebug *dbg) {
-	gdbr_step(desc, -1); // TODO handle thread specific step?
+	gdbr_step (desc, -1); // TODO handle thread specific step?
 	return true;
 }
 
@@ -32,7 +32,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	// read the len of the current area
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
-	if (size<desc->data_len) {
+	if (size < desc->data_len) {
 		eprintf ("r_debug_gdb_reg_read: small buffer %d vs %d\n",
 			(int)size, (int)desc->data_len);
 		//	return -1;
@@ -82,7 +82,13 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	}
 	int buflen = 0;
 	int bits = dbg->anal->bits;
-	free(r_reg_get_bytes(dbg->reg, type, &buflen));
+	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
+	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
+	if (reg) {
+		if (dbg->anal->bits != reg->size)
+			bits = reg->size;
+	}
+	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
 	// so winedbg is not able to write registers through the <G> packet
 	// and also it does not return the whole gdb register profile after
@@ -130,15 +136,16 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 			support_sw_bp = UNKNOWN;
 			support_hw_bp = UNKNOWN;
 			int arch = r_sys_arch_id (dbg->arch);
+			int bits = dbg->anal->bits;
 			if (( desc = &g->desc ))
 			switch (arch) {
 			case R_SYS_ARCH_X86:
-				if (dbg->anal->bits == 16 || dbg->anal->bits == 32) {
-					gdbr_set_architecture(&g->desc, X86_32);
-				} else if (dbg->anal->bits == 64) {
-					gdbr_set_architecture(&g->desc, X86_64);
+				if (bits == 16 || bits == 32) {
+					gdbr_set_architecture (&g->desc, X86_32);
+				} else if (bits == 64) {
+					gdbr_set_architecture (&g->desc, X86_64);
 				} else {
-					eprintf("Not supported register profile\n");
+					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
@@ -146,28 +153,36 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				// TODO
 				break;
 			case R_SYS_ARCH_ARM:
-				if ( dbg->anal->bits == 32) {
-					gdbr_set_architecture(&g->desc, ARM_32);
-				} else if (dbg->anal->bits == 64) {
-					gdbr_set_architecture(&g->desc, ARM_64);
+				if (bits == 16 || bits == 32) {
+					gdbr_set_architecture (&g->desc, ARM_32);
+				} else if (bits == 64) {
+					gdbr_set_architecture (&g->desc, ARM_64);
 				} else {
-					eprintf("Not supported register profile\n");
+					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
+					return false;
+				}
+				break;
+			case R_SYS_ARCH_LM32:
+				if (bits == 32) {
+					gdbr_set_architecture(&g->desc, LM32);
+				} else {
+					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
 			case R_SYS_ARCH_MIPS:
-				if ( dbg->anal->bits == 32) {
-					gdbr_set_architecture(&g->desc, MIPS);
+				if (bits == 32 || bits == 64) {
+					gdbr_set_architecture (&g->desc, MIPS);
 				} else {
-					eprintf("Not supported register profile\n");
+					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
 			case R_SYS_ARCH_AVR:
-				if (dbg->anal->bits == 16) {
-					gdbr_set_architecture(&g->desc, AVR);
+				if (bits == 16) {
+					gdbr_set_architecture (&g->desc, AVR);
 				} else {
-					eprintf("Not supported register profile\n");
+					eprintf ("Not supported register profile\n");
 					return false;
 				}
 				break;
@@ -179,17 +194,18 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_gdb_detach(int pid) {
-	gdbr_disconnect(desc);
+static int r_debug_gdb_detach(RDebug *dbg, int pid) {
+	gdbr_disconnect (desc);
 	free (reg_buf);
 	return true;
 }
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
+	int bits = dbg->anal->bits;
 	switch (arch) {
 	case R_SYS_ARCH_X86:
-		if (dbg->anal->bits == 16 || dbg->anal->bits == 32) {
+		if (bits == 16 || bits == 32) {
 			return strdup (
 				"=PC	eip\n"
 				"=SP	esp\n"
@@ -253,6 +269,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 				"=A2	rcx\n"
 				"=A3	rdx\n"
 				"=SN	orax\n"
+				"gpr	fake	.64	795	0\n"
 				"gpr	rax	.64	0	0\n"
 				"gpr	rbx	.64	8	0\n"
 				"gpr	rcx	.64	16	0\n"
@@ -342,7 +359,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 		}
 		break;
 	case R_SYS_ARCH_ARM:
-		if (dbg->bits == R_SYS_BITS_64) {
+		if (bits == 64) {
 			return strdup (
 			"=PC	pc\n"
 			"=SP	sp\n"
@@ -387,6 +404,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			);
 		} else {
 			return strdup (
+#if 0
 			"=PC	r15\n"
 			"=SP	r14\n" // XXX
 			"=A0	r0\n"
@@ -421,6 +439,67 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	f7	.96	148	0\n"
 			"gpr	fps	.96	160	0\n"
 			"gpr	cpsr	.32	172	0\n"
+#else
+			"=PC	r15\n"
+			"=SP	r14\n" // XXX
+			"=A0	r0\n"
+			"=A1	r1\n"
+			"=A2	r2\n"
+			"=A3	r3\n"
+			"gpr	r0	.32	0	0\n"
+			"gpr	r1	.32	4	0\n"
+			"gpr	r2	.32	8	0\n"
+			"gpr	r3	.32	12	0\n"
+			"gpr	r4	.32	16	0\n"
+			"gpr	r5	.32	20	0\n"
+			"gpr	r6	.32	24	0\n"
+			"gpr	r7	.32	28	0\n"
+			"gpr	r8	.32	32	0\n"
+			"gpr	r9	.32	36	0\n"
+			"gpr	r10	.32	40	0\n"
+			"gpr	r11	.32	44	0\n"
+			"gpr	r12	.32	48	0\n"
+			"gpr	sp	.32	52	0\n" // r13
+			"gpr	lr	.32	56	0\n" // r14
+			"gpr	pc	.32	60	0\n" // r15
+			"gpr	r13	.32	52	0\n"
+			"gpr	r14	.32	56	0\n"
+			"gpr	r15	.32	60	0\n"
+			"gpr	cpsr	.96	64	0\n"
+			"mmx	d0	.64	68	0\n" // neon
+			"mmx	d1	.64	76	0\n" // neon
+			"mmx	d2	.64	84	0\n" // neon
+			"mmx	d3	.64	92	0\n" // neon
+			"mmx	d4	.64	100	0\n" // neon
+			"mmx	d5	.64	108	0\n" // neon
+			"mmx	d6	.64	116	0\n" // neon
+			"mmx	d7	.64	124	0\n" // neon
+			"mmx	d8	.64	132	0\n" // neon
+			"mmx	d9	.64	140	0\n" // neon
+			"mmx	d10	.64	148	0\n" // neon
+			"mmx	d11	.64	156	0\n" // neon
+			"mmx	d12	.64	164	0\n" // neon
+			"mmx	d13	.64	172	0\n" // neon
+			"mmx	d14	.64	180	0\n" // neon
+			"mmx	d15	.64	188	0\n" // neon
+			"mmx	d16	.64	196	0\n" // neon
+			"mmx	d17	.64	204	0\n" // neon
+			"mmx	d18	.64	212	0\n" // neon
+			"mmx	d19	.64	220	0\n" // neon
+			"mmx	d20	.64	228	0\n" // neon
+			"mmx	d21	.64	236	0\n" // neon
+			"mmx	d22	.64	244	0\n" // neon
+			"mmx	d23	.64	252	0\n" // neon
+			"mmx	d24	.64	260	0\n" // neon
+			"mmx	d25	.64	268	0\n" // neon
+			"mmx	d26	.64	276	0\n" // neon
+			"mmx	d27	.64	284	0\n" // neon
+			"mmx	d28	.64	292	0\n" // neon
+			"mmx	d29	.64	300	0\n" // neon
+			"mmx	d30	.64	308	0\n" // neon
+			"mmx	d31	.64	316	0\n" // neon
+			"mmx	fpscr	.32	324	0\n" // neon
+#endif
 			);
 		}
 	case R_SYS_ARCH_SH:
@@ -450,6 +529,51 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	gbr	.32	76	0\n"
 			"gpr	mach	.32	80	0\n"
 			"gpr	macl	.32	84	0\n"
+		);
+	case R_SYS_ARCH_LM32:
+		return strdup (
+			"=PC    PC\n"
+			"=SP    sp\n"
+			"=BP    gp\n"
+			"gpr	r0	.32	0	0\n"
+			"gpr	r1	.32	4	0\n"
+			"gpr	r2	.32	8	0\n"
+			"gpr	r3	.32	12	0\n"
+			"gpr	r4	.32	16	0\n"
+			"gpr	r5	.32	20	0\n"
+			"gpr	r6	.32	24	0\n"
+			"gpr	r7	.32	28	0\n"
+			"gpr	r8	.32	32	0\n"
+			"gpr	r9	.32	36	0\n"
+			"gpr	r10	.32	40	0\n"
+			"gpr	r11	.32	44	0\n"
+			"gpr	r12	.32	48	0\n"
+			"gpr	r13	.32	52	0\n"
+			"gpr	r14	.32	56	0\n"
+			"gpr	r15	.32	60	0\n"
+			"gpr	r16	.32	64	0\n"
+			"gpr	r17	.32	68	0\n"
+			"gpr	r18	.32	72	0\n"
+			"gpr	r19	.32	76	0\n"
+			"gpr	r20	.32	80	0\n"
+			"gpr	r21	.32	84	0\n"
+			"gpr	r22	.32	88	0\n"
+			"gpr	r23	.32	92	0\n"
+			"gpr	r24	.32	96	0\n"
+			"gpr	r25	.32	100	0\n"
+			"gpr	gp	.32	104	0\n"
+			"gpr	fp	.32	108	0\n"
+			"gpr	sp	.32	112	0\n"
+			"gpr	ra	.32	116	0\n"
+			"gpr	ea	.32	120	0\n"
+			"gpr	ba	.32	124	0\n"
+			"gpr	PC	.32	128	0\n"
+			"gpr	EID	.32	132	0\n"
+			"gpr	EBA	.32	136	0\n"
+			"gpr	DEBA	.32	140	0\n"
+			"gpr	IE	.32	144	0\n"
+			"gpr	IM	.32	148	0\n"
+			"gpr	IP	.32	152	0\n"
 		);
 	case R_SYS_ARCH_MIPS:
 		return strdup (
@@ -595,7 +719,7 @@ struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
-	.arch = "x86,arm,sh,mips,avr",
+	.arch = "x86,arm,sh,mips,avr,lm32",
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_gdb_step,
 	.cont = r_debug_gdb_continue,

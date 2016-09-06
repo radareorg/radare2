@@ -12,6 +12,11 @@
 #undef mips
 #define mips mips
 
+#if defined(__powerpc) || defined(__powerpc__)
+#undef __POWERPC__
+#define __POWERPC__ 1
+#endif
+
 #if __IPHONE_8_0 && TARGET_OS_IPHONE
 #define LIBC_HAVE_SYSTEM 0
 #else
@@ -22,6 +27,17 @@
 #define LIBC_HAVE_FORK 0
 #else
 #define LIBC_HAVE_FORK 1
+#endif
+
+#if defined(__OpenBSD__)
+#include <sys/param.h>
+#undef MAXCOMLEN	/* redefined in zipint.h */
+#endif
+
+#if (OpenBSD >= 201605) /* release >= 5.9 */
+#define LIBC_HAVE_PLEDGE 1
+#else
+#define LIBC_HAVE_PLEDGE 0
 #endif
 
 #ifdef __GNUC__
@@ -114,6 +130,7 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <fcntl.h> /* for O_RDONLY */
+#include <r_endian.h> /* needs size_t */
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,7 +141,7 @@ const char *x##_version()
 #define R_LIB_VERSION(x) \
 const char *x##_version () { return "" R2_GITTAP; }
 
-#define TODO(x) eprintf(__FUNCTION__"  " x)
+#define TODO(x) eprintf(__func__"  " x)
 
 // TODO: FS or R_SYS_DIR ??
 #undef FS
@@ -203,6 +220,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define IS_NUMBER(x) (x>='0'&&x<='9')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
+#define R_ARRAY_SIZE(x) (sizeof (x) / sizeof (x[0]))
 
 #define R_PTR_ALIGN(v,t) \
 	((char *)(((size_t)(v) ) \
@@ -216,6 +234,21 @@ typedef void (*PrintfCallback)(const char *str, ...);
 //#define R_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
 #define R_BIT_CHK(x,y) (*(x) & (1<<(y)))
 
+/* try for C99, but provide backwards compatibility */
+#if defined(_MSC_VER) && (_MSC_VER <= 1800)
+#define __func__ __FUNCTION__
+#endif
+
+/* make error messages useful by prepending file, line, and function name */
+#define _perror(str,file,line,func) \
+  { \
+	  char buf[256]; \
+	  snprintf(buf,sizeof(buf),"[%s:%d %s] %s",file,line,func,str); \
+	  r_sys_perror_str(buf); \
+  }
+#define perror(x) _perror(x,__FILE__,__LINE__,__func__)
+#define r_sys_perror(x) _perror(x,__FILE__,__LINE__,__func__)
+
 #if __UNIX__
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -223,11 +256,6 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #include <dirent.h>
 #endif
 #include <unistd.h>
-
-/* TODO: Move outside */
-#define _perror(str,file,line) \
-  { char buf[128];snprintf(buf,sizeof(buf),"%s:%d %s",file,line,str);perror(buf); }
-#define perror(x) _perror(x,__FILE__,__LINE__)
 
 #ifndef HAVE_EPRINTF
 #define eprintf(x,y...) fprintf(stderr,x,##y)
@@ -322,6 +350,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_SYS_BITS R_SYS_BITS_32
 #endif
 
+#define R_SYS_ENDIAN_NONE 0
+#define R_SYS_ENDIAN_LITTLE 1
+#define R_SYS_ENDIAN_BIG 2
+#define R_SYS_ENDIAN_BI 3
+
 enum {
 	R_SYS_ARCH_NONE = 0,
 	R_SYS_ARCH_X86 = 0x1,
@@ -331,7 +364,7 @@ enum {
 	R_SYS_ARCH_JAVA = 0x10,
 	R_SYS_ARCH_MIPS = 0x20,
 	R_SYS_ARCH_SPARC = 0x40,
-	R_SYS_ARCH_CSR = 0x80,
+	R_SYS_ARCH_XAP = 0x80,
 	R_SYS_ARCH_MSIL = 0x100,
 	R_SYS_ARCH_OBJD = 0x200,
 	R_SYS_ARCH_BF = 0x400,
@@ -355,6 +388,7 @@ enum {
 	R_SYS_ARCH_CRIS =  0x10000000, // 1<<28
 	R_SYS_ARCH_HPPA =  0x20000000, // 1<<29
 	R_SYS_ARCH_V810 =  0x40000000, // 1<<30
+	R_SYS_ARCH_LM32 =  0x80000000, // 1<<31
 };
 
 /* os */
@@ -376,13 +410,6 @@ enum {
 #define R_SYS_OS "freebsd"
 #else
 #define R_SYS_OS "unknown"
-#endif
-
-/* endian */
-#if LIL_ENDIAN
-#define R_SYS_ENDIAN "little"
-#else
-#define R_SYS_ENDIAN "big"
 #endif
 
 #ifdef __cplusplus

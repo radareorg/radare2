@@ -5,13 +5,13 @@
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl dDfBCLevw
-.Op Fl F Ar in:out
-.Op Fl o Ar offset
-.Op Fl O Ar ofile
+.Op Fl ABdDeEfCLvwq
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
+.Op Fl F Ar in:out
+.Op Fl o Ar offset
+.Op Fl O Ar ofile
 .Op Fl s Ar syntax
 .Op Fl i Ar int
 .Op Fl l Ar int
@@ -22,6 +22,8 @@ This tool uses r_asm to assemble and disassemble files or hexpair strings. It su
 .Bl -tag -width Fl
 .It Fl a Ar arch
 Set architecture plugin
+.It Fl A
+Show analysis information of given hexpair string
 .It Fl b Ar bits
 Set architecture bits
 .It Fl B
@@ -36,6 +38,8 @@ Disassemble hexpair bytes. rasm2 \-d 9090
 Disassemble showing hexpair and opcode
 .It Fl e
 Use big endian (or swap endianness if used more than once)
+.It Fl E
+Output disassembled instructions in ESIL format.
 .It Fl f
 Read data from file instead of ARG.
 .It Fl F Ar in:out
@@ -56,6 +60,38 @@ output to file, for example 'rasm2 \-BF a a.asm'
 Select syntax output (intel, att)
 .It Fl w
 Describe opcode (whats op)
+.It Fl q
+Quiet output (handy for -L, -v, ...)
+.El
+.Sh different than filename
+.Pp
+.Bl -tag -width Fl
+.It Fl .intel_syntax
+Use intel syntax rather than att:w
+.It Fl .att_syntax
+Use ATT syntax rather than flu :w
+dentify the region fof aslerrger
+.It Fl string
+dentify the region fof aslerrger
+.It Fl .ascii
+.It Fl .align
+.It Fl .arm
+.It Fl .thumb
+.It Fl .arch
+.It Fl .bits
+.It Fl .fill
+.It Fl .kernel
+.It Fl .os
+.It Fl .hex
+.It Fl .int16
+.It Fl .short
+.It Fl .int32
+.It Fl .int64
+.It Fl .glob
+.It Fl .equ
+.It Fl .org
+.It Fl .text
+.It Fl .data
 .El
 .Sh EXAMPLES
 .Pp

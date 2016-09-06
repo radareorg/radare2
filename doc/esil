@@ -47,7 +47,7 @@ zf,?{,eip,esp,=[],eax,eip,=,%r,esp,-=,}
 
 The whitespace, newlines and other chars are ignored in esil, so the first thing to do is:
 ```
-esil = r_str_replace (esil, " ", "", R_TRUE);
+esil = r_str_replace (esil, " ", "", true);
 ```
 Syscalls are specially handled by '$' at the beginning of the expression. After that char you have an optional numeric value that specifies the number of syscall. The emulator must handle those expressions and 'simulate' the syscalls. (r_esil_syscall)
 
@@ -211,6 +211,37 @@ Disassembly example:
     │└────> 0x100001143    488b4938     rcx,56,+,[8],rcx,=
     │ │││   0x100001147    48394a38     rdx,56,+,[8],rcx,==,cz,?=
 ```
+
+Radare anal ESIL code example
+==============================
+
+As an example implementation of ESIL analysis for the AVR family of microcontrollers there is
+a `avr_op` function in `/libr/anal/p/anal_avr.c` which contains information on how the 
+instructions are expressed in ESIL and other opcode information such as cycle counts per instruction:
+
+static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	  short ofst;
+		  int d, r, k;
+			(...)
+
+Variables d, r and k refer to "destination", "register" and "(k)onstant", respectively. They
+are used later on by ESIL string formatting function like for instance:
+
+    r_strbuf_setf (&op->esil, "0x%x,r%d,=", k, d);
+
+Which in this case corresponds to the LDI (LoaD with immediate) instruction in AVR. As an example,
+the above ESIL string template will translate into the following when reversing in radare:
+
+│           0x00000080      30e0           0x0,r19,=                   ; LDI Rd,K. load immediate
+
+Or in non-ESIL format:
+
+│           0x00000080      30e0           ldi r19, 0x00               ; LDI Rd,K. load immediate
+
+
+Looking at other architectures which already have mature ESIL support such as x86 can help 
+in understanding the syntax and conventions of radare's ESIL.
+
 
 Introspection
 =============

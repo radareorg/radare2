@@ -22,14 +22,14 @@ Your r2 was built 20h ago. TOO OLD!
 Use radare2! lemons included!
 rax2 -s 20e296b20ae296b220e296b20a
 Connection lost with the license server, your r2 session will terminate soon.
-This is amazing...
+This is amazing ...
 I love gradients.
-Wait a moment..
+Wait a moment ...
 Don't do this.
 No such file or directory.
 Default scripting languages are NodeJS and Python.
 -bash: r2: command not found
-Press any key to continue...
+Press any key to continue ...
 Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
 radare2 for FideOS, now with extra potato
 Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 numbers of your private bitcoin key.
@@ -48,7 +48,7 @@ EIP = 0x41414141
 /dev/brain: No such file or directory.
 Virtual machines are great, but you lose the ability to kick the hardware.
 Charlie! We are here.
-The door is everything..
+The door is everything ...
 The door controls time and space.
 The door can see into your soul.
 I am Pentium of Borg. Division is futile. You will be approximated.
@@ -79,15 +79,15 @@ One does not simply write documentation.
 We are bleeding edge here. Can't you feel the razors?
 There's a branch for that.
 Everything up-to-date.
-Sharing your latest session in Facebook...
+Sharing your latest session in Facebook ...
 This should be documented, since it's not that obvious.
 It's working! Look at the door!
 This is an unacceptable milion year dungeon.
 The Hard ROP Cafe
 Please remove pregnant women, pregnant children, and pregnant pets from the monitor.
-Wait a minute! I found a bug, self-fixing... OK
+Wait a minute! I found a bug, self-fixing ... OK
 Hold on, this should never happen!
-Well this is embarrasing...
+Well this is embarrasing ...
 THIS IS NOT FUNNY
 ♥ --
 Can you stand on your head?
@@ -95,7 +95,7 @@ May the segfault be with you.
 I script in C, because I can.
 EXPLICIT CONTENT
 Bindings are mostly powered by tears.
-In Soviet Russia, radare2 have documentation.
+In Soviet Russia, radare2 has documentation.
 Initial frame selected; you cannot go up.
 Unk, unk, unk, unk
 Experts agree, security holes suck, and we fixed some of them!
@@ -145,7 +145,7 @@ Too old to crash
 Finnished a beer
 ESIL ruined my life
 ESIL: The Aftersleep
-Insert coin to continue..
+Insert coin to continue ...
 See you in shell
 Mess with the best, Die like the rest
 Sarah Connor?
@@ -160,9 +160,9 @@ try pressing the pigeon-shaped button
 What has been executed cannot be unexecuted
 What about taking a break? Here, have this nice 0xCC.
 r2 is meant to be read by machines.
-prove you are a robot to continue...
+prove you are a robot to continue ...
 This is fine.
-Using radare2 to generate intelligence...
+Using radare2 to generate intelligence ...
 taking the file and moving it
 It's the year of desktop on radare2
 💺
@@ -180,3 +180,14 @@ scp ~/.idapro/ida.key radare.org:/var/www/radare.org/pub/losers/
 Too bad there is no gif support in r2. Yet. -- @r2gif
 Almost 5am, maybe you should go to bed.
 Jingle sploits, jingle sploits, ropchain all the way.
+Mind that the 'g' in radare is silent
+256 colors ought to be enough for anybody
+Hang in there, Baby!
+Run a command with unspecified long sequence of 'a', pancake will be summoned and do the analysis for you.
+In r2land usability is treated as a bug
+radare2 is WYSIWYF - what you see is what you fix
+Your endian swaps
+*(ut64*)buffer ought to be illegal
+MY ENDIAN IS HUUUGE
+enlarge your endian
+How about Global Thermonuclear War?

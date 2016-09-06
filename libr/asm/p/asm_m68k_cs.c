@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015 - pancake */
+/* radare2 - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -20,9 +20,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn = NULL;
-	cs_mode mode = 0;
 	int ret, n = 0;
-	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&cd);
 		cd = 0; // unnecessary
@@ -57,7 +56,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	n = cs_disasm (cd, buf, R_MIN (4, len),
+	n = cs_disasm (cd, buf, R_MIN (8, len),
 		a->pc, 1, &insn);
 	if (n<1) {
 		ret = -1;
@@ -85,7 +84,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		char *p = r_str_replace (strdup (op->buf_asm),
 			"$", "0x", true);
 		if (p) {
-			strcpy (op->buf_asm, p);
+			strncpy (op->buf_asm, p, R_ASM_BUFSIZE-1);
 			free (p);
 		}
 	}
@@ -95,6 +94,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!strncmp (op->buf_asm, "dc.w", 4)) {
 		strcpy (op->buf_asm, "invalid");
 	}
+	r_str_rmch (op->buf_asm, '#');
 	return op->size;
 }
 
@@ -105,8 +105,8 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.license = "BSD",
 	.arch = "m68k",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
-	.features = NULL
 };
 
 static bool check_features(RAsm *a, cs_insn *insn) {
@@ -129,6 +129,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.license = "BSD",
 	.arch = "m68k",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 };
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,

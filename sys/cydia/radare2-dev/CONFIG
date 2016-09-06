@@ -1,5 +1,4 @@
 PACKAGE=radare2-dev
-VERSION=0.10.0
 ARCH=iphoneos-arm
 SECTION=user/shell
 DEPENDS=radare2

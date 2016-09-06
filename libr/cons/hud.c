@@ -1,36 +1,26 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_cons.h>
 #include <ctype.h>
 
-#if 0
-TODO?
- - initial value
- - default value (if null, use this)
- - list of items filtered by user input
- - execute command with info from row (display disasm or hexdump from off)
- - we need a more complex data structure CSV?
-   - string, key, command
- - commands can be passed to the hud callback
- - commands: menu...
-#endif
-
-R_API char *r_cons_hud_file(const char *f) {
+// Display the content of a file in the hud
+R_API char *r_cons_hud_file(const char *f, const bool usecolor) {
 	char *s = r_file_slurp (f, NULL);
 	if (s) {
-		char *ret = r_cons_hud_string (s);
+		char *ret = r_cons_hud_string (s, usecolor);
 		free (s);
-		if (!ret)
-			ret = strdup ("");
 		return ret;
 	}
 	return NULL;
 }
 
-R_API char *r_cons_hud_string(const char *s) {
-	int i;
+// Display a buffer in the hud (splitting it line-by-line and ignoring 
+// the lines starting with # )
+R_API char *r_cons_hud_string(const char *s, const bool usecolor) {
 	char *os, *track, *ret, *o = strdup (s);
+	if (!o) return NULL;
 	RList *fl = r_list_new ();
+	int i;
 	if (!fl) {
 		free (o);
 		return NULL;
@@ -49,118 +39,206 @@ R_API char *r_cons_hud_string(const char *s) {
 			os = o + i + 1;
 		}
 	}
-	ret = r_cons_hud (fl, NULL);
+	ret = r_cons_hud (fl, NULL, usecolor);
 	free (o);
 	r_list_free (fl);
 	return ret;
 }
 
-static char *strmatch(char *pos, char *buf) {
-	char *p, *os = buf;
-	for (p = buf; *p; p++) {
-		if (*p == ' ') {
-			*p = 0;
-			if (!r_str_casestr (pos, os)) {
-				//r_cons_printf ("FAIL ((%s), %s)\n", pos, os);
-				*p = ' ';
-				return NULL;
+/* Match a filter on a line. A filter can contain multiple words
+   separated by spaces, which are all matched *in any order* over the target
+   entry. If all words are present, the function returns true.
+   The mask is a character buffer wich is filled by 'x' to mark those characters
+   that match the filter */
+static bool strmatch(char *entry, char *filter, char* mask, const int mask_size) {
+	char *p, *current_token = filter;
+	const char *filter_end = filter + strlen (filter);
+	// first we separate the filter in words (include the terminator char
+	// to avoid special handling of the last token)
+	for (p = filter; p <= filter_end; p++) {
+		if (*p == ' ' || *p == '\0') {
+			const char *next_match, *entry_ptr = entry;
+			char old_char = *p;
+			int token_len;
+
+			// Ignoring consecutive spaces
+			if (p == current_token) {
+				current_token++;
+				continue;
 			}
-			//r_cons_printf ("CHK (%s)\n", os);
-			*p = ' ';
-			os = p + 1;
+			*p = 0;
+			token_len = strlen (current_token);
+			// look for all matches of the current_token in this entry
+			while ((next_match = r_str_casestr (entry_ptr, current_token))) {
+				int i;
+				for (i = next_match - entry;
+					(i < next_match - entry + token_len) && i < mask_size;
+					i++) {
+					mask[i] = 'x';
+				}
+				entry_ptr += token_len;
+			}
+			*p = old_char;
+			if (entry_ptr == entry) {
+				// the word is not present in the target
+				return false;
+			}
+			current_token = p + 1;
 		}
 	}
-	return (char *)r_str_casestr (pos, os);
+	return true;
 }
 
-R_API char *r_cons_hud(RList *list, const char *prompt) {
+// Display a list of entries in the hud, filtered and emphasized based
+// on the user input.
+R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 	const int buf_size = 128;
-	int ch, nch, first, n, j, i = 0;
-	int choose = 0;
-	char *p, buf[buf_size];
+	int ch, nch, first_line, current_entry_n, j, i = 0;
+	char *p, *x, user_input[buf_size], mask[buf_size];
+	int last_color_change, top_entry_n = 0;
+	char *selected_entry = NULL;
+	char tmp, last_mask = 0;
+	void *current_entry;
 	RListIter *iter;
-	char *match = NULL;
-	void *pos;
-	buf[0] = 0;
+
+	user_input[0] = 0;
 	r_cons_clear ();
+	// Repeat until the user exits the hud
 	for (;;) {
-		first = 1;
+		first_line = 1;
 		r_cons_gotoxy (0, 0);
-		n = 0;
-		match = NULL;
-		if (prompt && *prompt)
-			r_cons_printf (">> %s\n", prompt);
-		r_cons_printf ("> %s|\n", buf);
-		r_list_foreach (list, iter, pos) {
-			if (!buf[0] || strmatch (pos, buf)) {
-				char *x = strchr (pos, '\t');
-				// remove \t.*
-				if (!choose || n >= choose) {
-					if (x) *x = 0;
-					p = strdup (pos);
-					for (j = 0; p[j]; j++) {
-						if (strchr (buf, p[j]))
-							p[j] = toupper ((unsigned char)p[j]);
-					}
-					r_cons_printf (" %c %s\n", first? '-': ' ', p);
-					free (p);
-					if (x) *x = '\t';
-					if (first) match = pos;
-					first = 0;
+		current_entry_n = 0;
+		selected_entry = NULL;
+		if (prompt && *prompt) {
+			r_cons_print (">> ");
+			r_cons_println (prompt);
+		}
+		r_cons_printf ("> %s|\n", user_input);
+		int counter = 0;
+		int rows = r_cons_get_size (NULL);
+		// Iterate over each entry in the list
+		r_list_foreach (list, iter, current_entry) {
+			memset (mask, 0, buf_size);
+			if (!user_input[0] || strmatch (current_entry, user_input, mask, buf_size)) {
+				counter++;
+				if (counter == rows) {
+					break;
 				}
-				n++;
+				// if the user scrolled down the list, do not print the first entries
+				if (!top_entry_n || current_entry_n >= top_entry_n) {
+					// remove everything after a tab (in ??, it contains the commands)
+					x = strchr (current_entry, '\t');
+					if (x) {
+						*x = 0;
+					}
+					p = strdup (current_entry);
+					// if the filter is empty, print the entry and move on
+					if (!user_input[0]) {
+						r_cons_printf (" %c %s\n", first_line? '-': ' ', current_entry);
+					} else {
+						// otherwise we need to emphasize the matching part
+						if (usecolor) {
+							last_color_change = 0;
+							last_mask = 0;
+							r_cons_printf (" %c ", first_line? '-': ' ');
+							// Instead of printing one char at the time
+							// (which would be slow), we group substrings of the same color
+							for (j = 0; p[j] && j < buf_size; j++) {
+								if (mask[j] != last_mask) {
+									tmp = p[j];
+									p[j] = 0;
+									if (mask[j]) {
+										r_cons_printf (Color_RESET"%s", p + last_color_change);
+									} else {
+										r_cons_printf (Color_GREEN"%s", p + last_color_change);
+									}
+									p[j] = tmp;
+									last_color_change = j;
+									last_mask = mask[j];
+								} 
+							}
+							if (last_mask) {
+								r_cons_printf (Color_GREEN"%s\n"Color_RESET, p + last_color_change);
+							} else {
+								r_cons_printf (Color_RESET"%s\n", p + last_color_change);
+							}
+						} else {
+							// Otherwise we print the matching characters uppercase
+							for (j = 0; p[j]; j++) {
+								if (mask[j])
+									p[j] = toupper ((unsigned char)p[j]);
+							}
+							r_cons_printf (" %c %s\n", first_line? '-': ' ', p);
+						}
+					}
+					// Clean up and restore the tab character (if any)
+					free (p);
+					if (x) {
+						*x = '\t';
+					}
+					if (first_line) {
+						selected_entry = current_entry;
+					}	
+					first_line = 0;
+				}
+				current_entry_n++;
 			}
 		}
+
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		nch = r_cons_arrow_to_hjkl (ch);
 		if (nch == 'j' && ch != 'j') {
-			if (choose + 1 < n)
-				choose++;
+			if (top_entry_n + 1 < current_entry_n) {
+				top_entry_n++;
+			}
 		} else if (nch == 'k' && ch != 'k') {
-			if (choose >= 0)
-				choose--;
+			if (top_entry_n >= 0) {
+				top_entry_n--;
+			}
 		} else switch (ch) {
 			case 9: // \t
-				if (choose + 1 < n)
-					choose++;
-				else choose = 0;
+				if (top_entry_n + 1 < current_entry_n) {
+					top_entry_n++;
+				} else {
+					top_entry_n = 0;
+				}
 				break;
 			case 10: // \n
 			case 13: // \r
-				choose = 0;
+				top_entry_n = 0;
 				//		if (!*buf)
 				//			return NULL;
-				if (n >= 1) {
+				if (current_entry_n >= 1) {
 					//eprintf ("%s\n", buf);
 					//i = buf[0] = 0;
-					return strdup (match);
+					return strdup (selected_entry);
 				} // no match!
 				break;
 			case 23: // ^w
-				choose = 0;
-				i = buf[0] = 0;
+				top_entry_n = 0;
+				i = user_input[0] = 0;
 				break;
 			case 0x1b: // ESC
 				return NULL;
 			case 8:   // bs
 			case 127: // bs
-				choose = 0;
+				top_entry_n = 0;
 				if (i < 1) return NULL;
-				buf[--i] = 0;
+				user_input[--i] = 0;
 				break;
 			default:
 				if (IS_PRINTABLE (ch)) {
 					if (i >= buf_size) {
 						break;
 					}
-					choose = 0;
+					top_entry_n = 0;
 					if (i + 1 >= buf_size) {
-						// tOO MANy
+						// too many
 						break;
 					}
-					buf[i++] = ch;
-					buf[i] = 0;
+					user_input[i++] = ch;
+					user_input[i] = 0;
 				}
 				break;
 			}
@@ -168,18 +246,19 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	return NULL;
 }
 
-R_API char *r_cons_hud_path(const char *path, int dir) {
-	char *tmp = NULL, *ret = NULL;
+// Display the list of files in a directory
+R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor) {
+	char *tmp, *ret = NULL;
 	RList *files;
 	if (path) {
-		while (*path == ' ')
-			path++;
-		tmp = (*path)? strdup (path): strdup ("./");
-	} else tmp = strdup ("./");
-
+		path = r_str_chop_ro (path);
+		tmp = strdup (*path? path: "./");
+	} else {
+		tmp = strdup ("./");
+	}
 	files = r_sys_dir (tmp);
 	if (files) {
-		ret = r_cons_hud (files, tmp);
+		ret = r_cons_hud (files, tmp, usecolor);
 		if (ret) {
 			tmp = r_str_concat (tmp, "/");
 			tmp = r_str_concat (tmp, ret);
@@ -187,13 +266,15 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 			free (tmp);
 			tmp = ret;
 			if (r_file_is_directory (tmp)) {
-				ret = r_cons_hud_path (tmp, dir);
+				ret = r_cons_hud_path (tmp, dir, usecolor);
 				free (tmp);
 				tmp = ret;
 			}
 		}
 		r_list_free (files);
-	} else eprintf ("No files found\n");
+	} else {
+		eprintf ("No files found\n");
+	}
 	if (!ret) {
 		free (tmp);
 		return NULL;
@@ -201,18 +282,14 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 	return tmp;
 }
 
-// TODO: Add fmt support
 R_API char *r_cons_message(const char *msg) {
-	int cols, rows;
 	int len = strlen (msg);
-	cols = r_cons_get_size (&rows);
-
+	int rows, cols = r_cons_get_size (&rows);
 	r_cons_clear ();
-	r_cons_gotoxy ((cols - len) / 2, rows / 2); // XXX
-	/// TODO: add square, or talking clip here
-	r_cons_printf ("%s\n", msg);
+	r_cons_gotoxy ((cols - len) / 2, rows / 2);
+	r_cons_println (msg);
 	r_cons_flush ();
-	r_cons_gotoxy (0, rows - 2); // XXX
+	r_cons_gotoxy (0, rows - 2);
 	r_cons_any_key (NULL);
 	return NULL;
 }
@@ -224,12 +301,11 @@ main () {
 	r_flist_set (fl, 0, "foo is pure cow");
 	r_flist_set (fl, 1, "bla is kinda crazy");
 	r_flist_set (fl, 2, "funny to see you here");
-
 	r_cons_new ();
-	res = r_cons_hud (fl, NULL);
+	res = r_cons_hud (fl, NULL, 0);
 	r_cons_clear ();
 	if (res) {
-		r_cons_printf ("%s\n", res);
+		r_cons_println (res);
 		free (res);
 	}
 	r_cons_flush ();

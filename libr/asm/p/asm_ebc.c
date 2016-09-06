@@ -32,11 +32,8 @@ RAsmPlugin r_asm_plugin_ebc = {
 	.desc = "EFI Bytecode",
 	.arch = "ebc",
 	.bits = 32|64,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL,
 };
 
 #ifndef CORELIB

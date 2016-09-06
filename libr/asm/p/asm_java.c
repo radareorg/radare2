@@ -22,7 +22,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 
-	op->size = r_java_disasm (obj, a->pc, buf,
+	op->size = r_java_disasm (obj, a->pc, buf, len,
 		op->buf_asm, sizeof (op->buf_asm));
 	return op->size;
 }
@@ -38,8 +38,7 @@ RAsmPlugin r_asm_plugin_java = {
 	.arch = "java",
 	.license = "Apache",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };

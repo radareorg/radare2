@@ -1,12 +1,13 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include "mach0/mach0.h"
-
 #include "objc/mach0_classes.h"
+
+extern RBinWrite r_bin_write_mach0;
 
 static int check(RBinFile *arch);
 static int check_bytes(const ut8 *buf, ut64 length);
@@ -17,6 +18,14 @@ static Sdb* get_sdb (RBinObject *o) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) o->bin_obj;
 	if (bin && bin->kv) return bin->kv;
 	return NULL;
+}
+
+static char *entitlements(RBinFile *arch) {
+	struct MACH0_(obj_t) *bin;
+	if (!arch || !arch->o)
+	    	return NULL;
+	bin = arch->o->bin_obj;
+	return (char *)bin->signature;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
@@ -71,11 +80,13 @@ static RList* entries(RBinFile *arch) {
 	RBinObject *obj = arch ? arch->o : NULL;
 	struct addr_t *entry = NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_new ()))
+	if (!obj || !obj->bin_obj || !(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(entry = MACH0_(get_entrypoint) (obj->bin_obj)))
+	if (!(entry = MACH0_(get_entrypoint) (obj->bin_obj))) {
 		return ret;
+	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->offset + obj->boffset;
 		ptr->vaddr = entry->addr; //
@@ -101,6 +112,15 @@ static RList* sections(RBinFile *arch) {
 		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+		if (strstr (ptr->name, "la_symbol_ptr")) {
+#ifndef R_BIN_MACH064
+			const int sz = 4;
+#else
+			const int sz = 8;
+#endif
+			int len = sections[i].size / sz;
+			ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
+		}
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].size;
@@ -144,11 +164,12 @@ static RList* symbols(RBinFile *arch) {
 		ptr->name = strdup ((char*)symbols[i].name);
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-			"LOCAL":"GLOBAL");
+			"LOCAL": "GLOBAL");
 		ptr->type = r_str_const ("FUNC");
 		ptr->vaddr = symbols[i].addr;
-		ptr->paddr = symbols[i].offset+obj->boffset;
+		ptr->paddr = symbols[i].offset + obj->boffset;
 		ptr->size = symbols[i].size;
+		ptr->bits = wordsize;
 		if (wordsize == 16) {
 			// if thumb, hint non-thumb symbols
 			if (!(ptr->paddr & 1)) {
@@ -167,7 +188,7 @@ static RList* symbols(RBinFile *arch) {
 		ut64 value = 0, address = 0;
 		const ut8* temp = bin->func_start;
 		const ut8* temp_end = bin->func_start + bin->func_size;
-		while (*temp && temp+3 < temp_end) {
+		while (temp+3 < temp_end && *temp) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
 			ptr = R_NEW0 (RBinSymbol);
@@ -327,15 +348,13 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->arch = MACH0_(get_cputype) (arch->o->bin_obj);
 	ret->machine = MACH0_(get_cpusubtype) (arch->o->bin_obj);
 	ret->type = MACH0_(get_filetype) (arch->o->bin_obj);
+	ret->big_endian = MACH0_(is_big_endian) (arch->o->bin_obj);
 	ret->bits = 32;
-	ret->big_endian = 0;
 	if (arch && arch->o && arch->o->bin_obj) {
 		ret->has_crypto = ((struct MACH0_(obj_t)*)
 			arch->o->bin_obj)->has_crypto;
 		ret->bits = MACH0_(get_bits) (arch->o->bin_obj);
-		ret->big_endian = MACH0_(is_big_endian) (arch->o->bin_obj);
 	}
-
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie) (arch->o->bin_obj);
 	return ret;
@@ -346,7 +365,6 @@ static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
-
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
@@ -547,7 +565,7 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 	return ret;
 }
 
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!arch->o->sections) {
@@ -564,6 +582,7 @@ static int size(RBinFile *arch) {
 	return off+len;
 }
 
+
 RBinPlugin r_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
@@ -577,6 +596,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
+	.signature = &entitlements,
 	.sections = &sections,
 	.symbols = &symbols,
 	.imports = &imports,
@@ -585,7 +605,8 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.create = &create,
-	.classes = &MACH0_(parse_classes)
+	.classes = &MACH0_(parse_classes),
+	.write = &r_bin_write_mach0,
 };
 
 #ifndef CORELIB

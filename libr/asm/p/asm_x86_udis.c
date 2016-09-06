@@ -77,11 +77,9 @@ RAsmPlugin r_asm_plugin_x86_udis = {
 	.arch = "x86",
 	.license = "BSD",
 	.bits = 16 | 32 | 64,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.modify = &modify,
-	.assemble = NULL,
 };
 
 #ifndef CORELIB

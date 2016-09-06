@@ -6,20 +6,29 @@ include ../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
 
+# Build against last capstone release or next
+CS_RELEASE=0
+
+GIT?=git
 WGET?=wget
-CS_VER=3.0
-CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
+
+ifeq ($(CS_RELEASE),1)
+CS_VER=3.0.4
+CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
+#CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
+CS_PATCHES=0
+else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20151224
+CS_UPD=20160828
 CS_BRA=next
-CS_TIP=f9f0c80febfc307f2318c9f5dd737145846a48ef
+CS_TIP=87a25bb543c8e4c09b48d4b4a6c7db31ce58df06
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
-#21b9b25e9dae4af0ef309d4089a54e53b8f5b479
 CS_PATCHES=1
+endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwind bochs
 
 HOST_CC?=gcc
 SHLR?=$(shell pwd)
@@ -30,6 +39,7 @@ ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
 MODS+=gdb
+MODS+=qnx
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
@@ -43,14 +53,14 @@ all:
 	exit 1
 endif
 
-preall: targets libwind capstone-build
+preall: targets libwind capstone-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 SDBFILES=sdb/src/.sdb${EXT_EXE} sdb/sdb${EXT_EXE} sdb/src/.sdb sdb/sdb
-PREMODS=capstone gdb wind sdb
+PREMODS=capstone gdb wind sdb bochs
 
 clean mrproper:
 	rm -f ${SDBFILES}
@@ -117,10 +127,13 @@ SYNCFILES=$(addprefix sdb.vc/,${F})
 I=../libr/include
 
 libgdbr:
-	cd gdb ; $(MAKE) all
+	$(MAKE) -C gdb all
 
 libwind:
-	cd wind ; $(MAKE) all
+	$(MAKE) -C wind all
+
+bochs:
+	$(MAKE) -C bochs all
 
 sdb-clean clean-sdb:
 	$(MAKE) -C sdb clean
@@ -156,21 +169,20 @@ tcc-clean tccclean:
 
 CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
 HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
-HFILES+=elf.h libtcc.h config.h i386-tok.h
+HFILES+=elf.h config.h i386-tok.h
 
 # TODO: use mob branch?
 
 .PHONY: sdb-sync sync-sdb sdbclean
 tcc-sync sync-tcc:
 	rm -rf _
-	git clone --depth 1 git://repo.or.cz/tinycc.git _
+	$(GIT) clone --depth 1 git://repo.or.cz/tinycc.git _
 	cd _ ; ./configure --prefix=${PREFIX}
 	mkdir -p tcc
 	for FILE in ${CFILES} ${HFILES} ; do cp -f _/$$FILE tcc ; done
 	cp -f _/VERSION _/COPYING _/stab.def tcc
-	git add tcc
+	$(GIT) add tcc
 	rm -rf _
-
 
 install:
 	#mkdir -p ${DESTDIR}${LIBDIR}
@@ -196,19 +208,7 @@ capstone-build:
 
 else
 
-ifeq ($(CS_TAR),)
-capstone: capstone-sync
-
-capstone-sync:
-	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
-ifeq ($(CS_PATCHES),1)
-	cd capstone ; git reset --hard
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
-endif
-
-.PHONY: capstone
-else
-
+ifeq ($(CS_RELEASE),1)
 capstone-sync: capstone
 
 capstone-clean:
@@ -218,10 +218,28 @@ capstone: capstone-$(CS_VER).tar.gz
 	tar xzvf capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
+ifeq ($(CS_PATCHES),1)
+	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
 	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+endif
+	mkdir -p capstone/include/capstone
+	cp -rf capstone/include/*.h capstone/include/capstone
 
 capstone-$(CS_VER).tar.gz:
 	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
+else
+
+capstone: capstone-sync
+
+capstone-sync:
+	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
+ifeq ($(CS_PATCHES),1)
+	-cd capstone ; $(GIT) reset --hard
+	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
+endif
+
+.PHONY: capstone
 endif
 
 CAPSTONE_CFLAGS=-g
@@ -240,3 +258,24 @@ ifneq (${EXT_AR},a)
 	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif
 endif
+
+www-sync-m:
+	cp -rf ../../radare2-webui/dist/m www/m.tmp
+	rm -rf www/m
+	mv www/m.tmp www/m
+	git add www/m
+
+www-sync-p:
+	cp -rf ../../radare2-webui/dist/p www/p.tmp
+	rm -rf www/p
+	mv www/p.tmp www/p
+	git add www/p
+
+www-sync-t:
+	cp -rf ../../radare2-webui/dist/t www/t.tmp
+	rm -rf www/t
+	mv www/t.tmp www/t
+	git add www/p
+
+www-sync: www-sync-m www-sync-p www-sync-t
+	@echo webui sync done

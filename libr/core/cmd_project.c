@@ -1,4 +1,8 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
+#include "r_config.h"
+#include "r_core.h"
+#include "r_print.h"
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -24,7 +28,7 @@ static int cmd_project(void *data, const char *input) {
 			r_core_project_open (core, file);
 		} else {
 			if (file && *file)
-				r_cons_printf ("%s\n", file);
+				r_cons_println (file);
 		}
 		break;
 	case 'l':
@@ -36,8 +40,13 @@ static int cmd_project(void *data, const char *input) {
 	case 's':
 		if (r_core_project_save (core, file)) {
 			r_config_set (core->config, "file.project", file);
-			r_cons_printf ("%s\n", file);
+			r_cons_println (file);
 		}
+		break;
+	case 'S':
+		if (input[1] == ' ') {
+			r_core_project_save_rdb (core, input+2, R_CORE_PRJ_ALL);
+		} else eprintf ("Usage: PS [file]\n");
 		break;
 	case 'n':
 		if (!fileproject || !*fileproject) {
@@ -108,7 +117,7 @@ static int cmd_project(void *data, const char *input) {
 					char *data = r_file_slurp (str, &len);
 					char *res = r_base64_encode_dyn (data, len);
 					if (res) {
-						r_cons_printf ("%s\n", res);
+						r_cons_println (res);
 						free (res);
 					}
 					free (data);
@@ -134,7 +143,7 @@ static int cmd_project(void *data, const char *input) {
 			char *str = r_core_project_notes_file (core, fileproject);
 			char *data = r_file_slurp (str, NULL);
 			if (data) {
-				r_cons_printf ("%s\n", data);
+				r_cons_println (data);
 				free (data);
 			}
 			free (str);
@@ -172,6 +181,7 @@ static int cmd_project(void *data, const char *input) {
 		"Pn", " -", "edit notes with cfg.editor",
 		"Po", " [file]", "open project",
 		"Ps", " [file]", "save project",
+		"PS", " [file]", "save script file",
 		"NOTE:", "", "See 'e file.project'",
 		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",
 		NULL};

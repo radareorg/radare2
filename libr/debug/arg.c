@@ -6,11 +6,11 @@ R_API ut64 r_debug_arg_get (RDebug *dbg, int cctype, int num) {
 	ut32 n32;
 	ut64 n64, sp;
 	char reg[32];
+	//TODO replace the hardcoded implementation with the sdb
 	switch (cctype) {
-	case R_ANAL_CC_TYPE_NONE:
 	case R_ANAL_CC_TYPE_SYSV:
 	case R_ANAL_CC_TYPE_FASTCALL:
-		snprintf (reg, 30, "SP%d", num);
+		snprintf (reg, sizeof (reg)-1, "A%d", num);
 		return r_debug_reg_get (dbg, reg);
 	case R_ANAL_CC_TYPE_STDCALL:
 	case R_ANAL_CC_TYPE_PASCAL:
@@ -30,15 +30,14 @@ R_API ut64 r_debug_arg_get (RDebug *dbg, int cctype, int num) {
 		}
 		break;
 	}
-	snprintf (reg, 30, "A%d", num);
+	snprintf (reg, sizeof (reg)-1, "A%d", num);
 	return r_debug_reg_get (dbg, reg);
 }
 
 R_API bool r_debug_arg_set (RDebug *dbg, int cctype, int num, ut64 val) {
-	// TODO
+	// TODO replace the hardcoded implementation with the sdb
 	char reg[32];
 	switch (cctype) {
-	case R_ANAL_CC_TYPE_NONE:
 	case R_ANAL_CC_TYPE_SYSV:
 	case R_ANAL_CC_TYPE_FASTCALL:
 		snprintf (reg, 30, "A%d", num);

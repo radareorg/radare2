@@ -21,11 +21,13 @@ static int bytes_size = 0;
 
 static int vax_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
-	if (delta<0) {
+	if (delta < 0) {
 		return -1; // disable backward reads
 	}
-	//if ((delta+length)>4) return -1;
-	memcpy (myaddr, bytes+delta, R_MIN (length, bytes_size));
+	if (delta > length) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, R_MIN (length, bytes_size));
 	return 0;
 }
 
@@ -54,6 +56,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	flen = strlen (format);
 	glen = strlen (buf_global);
 	tmp = malloc (flen + glen + 2);
+	if (!tmp) return 0;
 	memcpy (tmp, buf_global, glen);
 	memcpy (tmp+glen, format, flen);
 	tmp[flen+glen] = 0;
@@ -81,7 +84,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &print_address;
-	disasm_obj.endian = !a->big_endian;
+	disasm_obj.endian = BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
@@ -97,6 +100,7 @@ RAsmPlugin r_asm_plugin_vax = {
 	.arch = "vax",
 	.license = "GPL",
 	.bits = 8 | 32,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "VAX",
 	.disassemble = &disassemble
 };

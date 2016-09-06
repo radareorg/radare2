@@ -7,7 +7,7 @@
 #include "../arch/snes/snesdis.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int dlen = snesDisass(op,buf,len);
+	int dlen = snesDisass (a->bits, a->pc, op, buf, len);
 	if (dlen<0) dlen=0;
 	op->size = dlen;
 	return dlen;
@@ -18,12 +18,9 @@ RAsmPlugin r_asm_plugin_snes = {
 	.desc = "SuperNES CPU",
 	.arch = "snes",
 	.bits = 8|16,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.license = "LGPL3",
-	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

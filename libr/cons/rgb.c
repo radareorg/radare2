@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2015 - pancake */
+/* radare - LGPL - Copyright 2013-2016 - pancake */
 /* ansi 256 color extension for r_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
@@ -40,27 +40,26 @@ static void init_color_table () {
 }
 
 static int lookup_rgb (int r, int g, int b) {
-	int i;
-
-	int color = (r << 16) + (g << 8) + b;
-	for (i = 0; i < 256; ++i)
-		if (color_table[i] == color) return i;
-
+	int i, color = (r << 16) + (g << 8) + b;
+	// lookup extended colors only, coz non-extended can be changed by users.
+	for (i = 16; i < 256; ++i) {
+		if (color_table[i] == color) {
+			return i;
+		}
+	}
 	return -1;
 }
 
 static int approximate_rgb (int r, int g, int b) {
+	bool grey = (r > 0 && r < 255 && r == g && r == b);
 	const double k = (256.0 / 6.0);
-	int grey = 0;
-	if (r > 0 && r < 255 && r == g && r == b) grey = 1;
-	if (grey > 0) {
+	if (grey) {
 		return 232 + (double)r / (255 / 24.1);
-	} else {
-		r = R_DIM (r / k, 0, 6);
-		g = R_DIM (g / k, 0, 6);
-		b = R_DIM (b / k, 0, 6);
-		return 16 + (r * 36) + (g * 6) + b;
 	}
+	r = R_DIM (r / k, 0, 5);
+	g = R_DIM (g / k, 0, 5);
+	b = R_DIM (b / k, 0, 5);
+	return 16 + (r * 36) + (g * 6) + b;
 }
 
 static int rgb (int r, int g, int b) {
@@ -70,7 +69,6 @@ static int rgb (int r, int g, int b) {
 }
 
 static void unrgb (int color, int *r, int *g, int *b) {
-	if (color_table[255] == 0) init_color_table ();
 	int rgb = color_table[color];
 	*r = (rgb >> 16) & 0xff;
 	*g = (rgb >> 8) & 0xff;
@@ -88,6 +86,7 @@ static inline void rgbinit (int r, int g, int b) {
 }
 
 R_API void r_cons_rgb_init (void) {
+	if (color_table[255] == 0) init_color_table ();
 	int r, g, b;
 	for (r = 0; r < 6; r++)
 		for (g = 0; g < 6; g++)
@@ -95,31 +94,31 @@ R_API void r_cons_rgb_init (void) {
 				rgbinit (r, g, b);
 }
 
-R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
+R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 	const char *q = 0;
-	int isbg = 0, bold=127;
+	int isbg = 0, bold = 255; // 127; // 255 ?
 	//const double k = (256/6);
 	if (!p) return 0;
 	if (*p == 0x1b) p++;
 	//if (*p!='[') return 0;
 	if (*p != '[') p--;
 	switch (p[1]) {
-	case '1': bold = 255; p += 2; break;
+	case '1': bold = 255; break;
 	case '3': isbg = 0; break;
 	case '4': isbg = 1; break;
 	}
 #define SETRGB(x,y,z) if (r) *r = (x); if (g) *g = (y); if (b) *b = (z)
-	if (bold != 255 && strchr (p, ';')) {
+	//if (bold != 255 && strchr (p, ';')) {
+	if (strchr (p, ';')) {
 		if (p[4] == '5')  {
 			int x, y, z;
-			int n = atoi (p+6);
+			int n = atoi (p + 6);
 			unrgb (n, &x, &y, &z);
 			SETRGB (x, y, z);
 		} else {
 			/* truecolor */
-			p += 6;
 			/* complex rgb */
-			if (r) *r = atoi (p);
+			if (r) *r = atoi (p + 6);
 			q = strchr (p, ';');
 			if (!q) return 0;
 			if (g) *g = atoi (q + 1);
@@ -129,7 +128,7 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 		}
 		return 1;
 	} else {
-		/* plain ansi */
+		/* plain ansi escape codes */
 		if (is_bg) *is_bg = isbg;
 		switch (p[2]) {
 		case '0': SETRGB (0, 0, 0); break;
@@ -148,6 +147,7 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 	int fgbg = is_bg ? 48: 38;
 	if (!outstr) outstr = malloc (32);
+	if (!outstr) return NULL;
 
 	switch (r_cons_singleton ()->truecolor) {
 	case 1: // 256 color palette
@@ -182,4 +182,18 @@ R_API void r_cons_rgb (ut8 r, ut8 g, ut8 b, int is_bg) {
 R_API void r_cons_rgb_fgbg (ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B) {
 	r_cons_rgb (r, g, b, 0);
 	r_cons_rgb (R, G, B, 1);
+}
+
+R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
+	const char *str = NULL;
+	if (r == 0x00 && g == b && g == 0) str = "black";
+	if (r == 0xff && g == b && g == 0xff) str = "white";
+	if (r == 0xff && g == b && g == 0) str = "red";
+	if (g == 0xff && r == b && r == 0) str = "green";
+	if (b == 0xff && r == g && r == 0) str = "blue";
+	if (r == 0xff && g == 0xff && b == 0x00) str = "yellow";
+	if (r == 0x00 && g == 0xff && b == 0xff) str = "cyan";
+	if (r == 0xff && g == 0x00 && b == 0xff) str = "magenta";
+	if (str) return strdup (str);
+	return r_str_newf ("#%02x%02x%02x", r, g, b);
 }

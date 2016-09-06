@@ -353,36 +353,6 @@ static inline int cr16_print_reg_reg(struct cr16_cmd *cmd, ut8 src, ut8 dst)
 	return 0;
 }
 
-#if 0
-// This function is unused, shall we remove it?
-static int cr16_decode_stcbiti(const ut8 *instr, struct cr16_cmd *cmd)
-{
-	int ret = 2;
-	ut8 dstreg;
-	ut16 in;
-
-	r_mem_copyendian((ut8*)&in, instr, 2, LIL_ENDIAN);
-
-	if (cr16_print_biti_opcode(cmd, in)) {
-		return -1;
-	}
-
-	dstreg = cr16_get_dstreg(in);
-
-	if (cr16_check_reg_boundaries(dstreg)) {
-		return -1;
-	}
-
-	if (cr16_print_short_reg(cmd, (in >> 1) & 0xF, cr16_get_dstreg(in))) {
-		return -1;
-	}
-
-	cmd->type = CR16_TYPE_BIT;
-
-	return ret;
-}
-#endif
-
 static inline int cr16_print_4biti_opcode(struct cr16_cmd *cmd, ut16 instr)
 {
 	if (cr16_check_instrs_4bit_bndrs(cr16_get_opcode_low(instr))) {
@@ -451,7 +421,7 @@ static inline int cr16_decode_i_r(const ut8 *instr, struct cr16_cmd *cmd)
 	int ret = 2;
 	ut16 in, immed, dstreg;
 
-	r_mem_copyendian((ut8*)&in, instr, 2, LIL_ENDIAN);
+	in = r_read_le16 (instr);
 
 	if (in == 0x0200)
 		return -1;
@@ -470,8 +440,7 @@ static inline int cr16_decode_i_r(const ut8 *instr, struct cr16_cmd *cmd)
 	switch((in & 0x1F) ^ 0x11) {
 	case 0:
 		if ((in & 0x1) == 0x1) {
-			r_mem_copyendian((ut8*)&immed, instr + 2,
-					2, LIL_ENDIAN);
+			immed = r_read_at_le16 (instr, 2);
 			ret = 4;
 		} else {
 			immed = cr16_get_short_imm(in);
@@ -517,7 +486,7 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 	ut32 disp32;
 	ut16 c, disp16;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if (cr16_print_ld_sw_opcode(cmd, c)) {
 		return -1;
@@ -530,7 +499,7 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 			ret = -1;
 			break;
 		}
-		r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+		disp16 = r_read_at_le16 (instr, 2);
 
 		disp32 = disp16 | ((c & 0x0100) << 9) | ((c & 0x0020) << 11);
 
@@ -538,7 +507,7 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 		break;
 	case 0x05:
 		ret = 4;
-		r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+		disp16 = r_read_at_le16 (instr, 2);
 
 		if (cr16_print_short_reg_rel(cmd, cr16_get_srcreg(c),
 				disp16, cr16_get_dstreg(c) & 0x9)) {
@@ -571,7 +540,7 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 			ret = -1;
 			break;
 		}
-		r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+		disp16 = r_read_at_le16 (instr, 2);
 		disp32 = disp16 | (((c >> 9) & 0x3) << 16);
 
 		cr16_print_reg_rel_reg(cmd, disp32, cr16_get_srcreg(c),
@@ -580,7 +549,7 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 
 	case 0x13:
 		ret = 4;
-		r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+		disp16 = r_read_at_le16 (instr, 2);
 		disp32 = disp16 | (((c >> 9) & 0x3) << 16);
 
 		if (cr16_get_srcreg(c) == 0xF) {
@@ -592,7 +561,7 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 		break;
 	case 0x1B:
 		ret = 4;
-		r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+		disp16 = r_read_at_le16 (instr, 2);
 		disp32 = disp16 | (((c >> 9) & 0x3) << 16);
 
 		if (cr16_get_srcreg(c) == 0xF) {
@@ -604,7 +573,7 @@ static inline int cr16_decode_ld_st(const ut8 *instr, struct cr16_cmd *cmd)
 		break;
 	case 0x1A:
 		ret = 4;
-		r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+		disp16 = r_read_at_le16 (instr, 2);
 		disp32 = disp16 | (((c >> 9) & 0x3) << 16);
 
 		cr16_print_reg_rel_reg(cmd, disp32, cr16_get_srcreg(c),
@@ -643,7 +612,7 @@ static int cr16_decode_slpr(const ut8 *instr, struct cr16_cmd *cmd)
 	int ret = 2;
 	ut16 c;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "%s",
 			instrs_4bit[c >> 9]);
@@ -671,7 +640,7 @@ static int cr16_decode_r_r(const ut8 *instr, struct cr16_cmd *cmd)
 	int ret = 2;
 	ut16 c;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if (!(c & 0x1)) {
 		return -1;
@@ -705,7 +674,7 @@ static int cr16_decode_push_pop(const ut8 *instr, struct cr16_cmd *cmd)
 	int ret = 2;
 	ut16 c;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if ((c & 1)) {
 		return -1;
@@ -736,7 +705,7 @@ static int cr16_decode_jmp(const ut8 *instr, struct cr16_cmd *cmd)
 	ut16 c;
 	int ret = 2;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	switch (c >> 9) {
 	case CR16_JUMP:
@@ -794,7 +763,7 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd)
 	ut16 c, disp;
 	ut32 disp32;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if (c & 0x1)
 		return -1;
@@ -805,7 +774,7 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd)
 	if (((c >> 5) & 0xF) == 0xE) {
 		snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "br");
 		if (((c >> 1) & 0x7) == 0x7) {
-			r_mem_copyendian((ut8*)&disp, instr + 2, 2, LIL_ENDIAN);
+			disp = r_read_at_le16 (instr, 2);
 
 			disp32 = disp | (((c >> 4) & 0x1) << 16);
 			ret = 4;
@@ -821,7 +790,7 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd)
 		} else {
 			if (cr16_get_opcode_i(c)) {
 				ret = 4;
-				r_mem_copyendian((ut8*)&disp, instr + 2, 2, LIL_ENDIAN);
+				disp = r_read_at_le16 (instr, 2);
 				disp32 = disp | (((c >> 1) & 0x7) << 17) | (((c >> 4) & 1) << 16);
 				if (disp32 & 0x80000) {
 					disp32 |= 0xFFF00000;
@@ -851,7 +820,7 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd)
 			return -1;
 
 		if ((c >> 8) == CR16_BCOND_2) {
-			r_mem_copyendian((ut8*)&disp, instr + 2, 2, LIL_ENDIAN);
+			disp = r_read_at_le16 (instr, 2);
 			disp32 = disp | (GET_BIT(c, 4) << 16);
 			if (disp32 & 0x80000) {
 				disp32 |= 0xFFF00000;
@@ -885,7 +854,7 @@ static int cr16_decode_bcond01i(const ut8 *instr, struct cr16_cmd *cmd)
 	ut16 c;
 	int ret = 2;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if (!(c & 1))
 		return -1;
@@ -927,7 +896,7 @@ static int cr16_decode_misc(const ut8 *instr, struct cr16_cmd *cmd)
 	ut16 c;
 	int ret = 2;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	cmd->operands[0] = '\0';
 	switch (c) {
@@ -977,8 +946,8 @@ static int cr16_decode_bal(const ut8 *instr, struct cr16_cmd *cmd)
 	ut16 c, disp16;
 	ut32 disp32;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
-	r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
+	disp16 = r_read_at_le16 (instr, 2);
 
 	snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "bal");
 
@@ -1005,7 +974,7 @@ int cr16_decode_loadm_storm(const ut8 *instr, struct cr16_cmd *cmd)
 	int ret = 2;
 	ut16 c;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if ((c & 0x1F) != 4)
 		return -1;
@@ -1024,7 +993,7 @@ int cr16_decode_movz(const ut8 *instr, struct cr16_cmd *cmd)
 {
 	int ret = 2;
 	ut16 c;
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if (c & 1)
 		return -1;
@@ -1054,8 +1023,8 @@ int cr16_decode_movd(const ut8 *instr, struct cr16_cmd *cmd)
 	ut16 imm;
 	ut32 imm32;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
-	r_mem_copyendian((ut8*)&imm, instr + 2, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
+	imm = r_read_at_le16 (instr, 2);
 
 	if (c & 1)
 		return -1;
@@ -1074,7 +1043,7 @@ int cr16_decode_muls(const ut8 *instr, struct cr16_cmd *cmd)
 {
 	int ret = 2;
 	ut16 c;
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	switch (c >> 9) {
 	case CR16_MULSB:
@@ -1110,7 +1079,7 @@ int cr16_decode_scond(const ut8 *instr, struct cr16_cmd *cmd)
 	int ret = 2;
 	ut16 c;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if (c & 1)
 		return -1;
@@ -1132,7 +1101,7 @@ int cr16_decode_biti(const ut8 *instr, struct cr16_cmd *cmd)
 	ut16 c, disp16;
 	ut8 reg, position;
 
-	r_mem_copyendian((ut8*)&c, instr, 2, LIL_ENDIAN);
+	c = r_read_le16 (instr);
 
 	if (((c >> 6) & 0x3) == 0x3) {
 		return -1;
@@ -1152,7 +1121,7 @@ int cr16_decode_biti(const ut8 *instr, struct cr16_cmd *cmd)
 	switch (((c >> 13) & 0x2) | (c & 0x1)) {
 	case 0x0:
 		ret = 4;
-		r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+		disp16 = r_read_at_le16 (instr, 2);
 
 		abs18 = disp16 | ((reg & 0x1) << 16) | ((reg >> 3) << 17);
 
@@ -1163,7 +1132,7 @@ int cr16_decode_biti(const ut8 *instr, struct cr16_cmd *cmd)
 	case 0x1:
 		ret = 4;
 
-		r_mem_copyendian((ut8*)&disp16, instr + 2, 2, LIL_ENDIAN);
+		disp16 = r_read_at_le16 (instr, 2);
 
 		snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1,
 				"$0x%02x,0x%04x(%s)", position,
@@ -1187,7 +1156,7 @@ int cr16_decode_command(const ut8 *instr, struct cr16_cmd *cmd)
 {
 	int ret;
 	ut16 in;
-	r_mem_copyendian((ut8*)&in, instr, 2, LIL_ENDIAN);
+	in = r_read_le16 (instr);
 
 	switch (cr16_get_opcode_low(in)) {
 	case CR16_MOV:

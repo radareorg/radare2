@@ -9,6 +9,7 @@ export BUILD=1
 PREFIX="/usr"
 # PREFIX=/var/mobile
 
+[ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
 if [ ! -d sys/ios-include ]; then
 (
 	cd sys && \
@@ -32,14 +33,14 @@ if true ; then
 make clean
 cp -f plugins.tiny.cfg plugins.cfg
 ./configure --prefix=${PREFIX} --with-ostype=darwin \
-	--without-debugger --without-fork \
+	--without-fork \
 	--without-pic --with-nonpic \
 	--with-compiler=ios-sdk \
 	--target=arm-unknown-darwin
 fi
 
 if [ $? = 0 ]; then
-	time make -j4
+	time make -j${MAKE_JOBS}
 	if [ $? = 0 ]; then
 		( cd binr/radare2 ; make ios_sdk_sign )
 		rm -rf /tmp/r2ios

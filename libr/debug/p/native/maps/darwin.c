@@ -71,7 +71,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
 
 static RList *ios_dbg_maps(RDebug *dbg) {
-	boolt contiguous = R_FALSE;
+	bool contiguous = false;
 	ut32 oldprot = UT32_MAX;
 	char buf[1024];
 	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
@@ -118,20 +118,25 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 				if (oldprot != UT32_MAX && oldprot == info.protection) {
 					/* expand region */
 					mr->size += size;
-					contiguous = R_TRUE;
+					contiguous = true;
 				} else {
-					contiguous = R_FALSE;
+					contiguous = false;
 				}
 			} else {
-				contiguous = R_FALSE;
+				contiguous = false;
 			}
-		} else contiguous = R_FALSE;
+		} else contiguous = false;
 		oldprot = info.protection;
 		if (info.max_protection!=0 && !contiguous) {
 			char module_name[1024];
 			module_name[0] = 0;
+#ifndef __POWERPC__
 			int ret = proc_regionfilename (dbg->pid, address,
 				module_name, sizeof (module_name));
+#else
+#warning TODO: support proc_regionfilename on old OSX (ppc)
+			int ret = 0;
+#endif
 			module_name[ret] = 0;
 			#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 			// XXX: if its shared, it cannot be read?

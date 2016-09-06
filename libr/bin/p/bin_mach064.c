@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake, alvaro_fe */
 
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
@@ -44,7 +44,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	B ("\xcf\xfa\xed\xfe", 4); // header
 	D (7 | 0x01000000); // cpu type (x86) | ABI64
 	//D (3); // subtype (i386-all)
-	D(0x80000003); // unknown subtype issue
+	D(0x80000003); // x86-64 subtype
 	D (2); // filetype (executable)
 
 	ncmds = (data && datalen>0)? 3: 2;
@@ -189,8 +189,6 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.name = "mach064",
 	.desc = "mach064 bin plugin",
 	.license = "LGPL3",
-	.init = NULL,
-	.fini = NULL,
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
@@ -198,21 +196,18 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.check = &check,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
-	.boffset = NULL,
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = &sections,
+	.signature = &entitlements,
 	.symbols = &symbols,
 	.imports = &imports,
-	.strings = NULL,
 	.info = &info,
-	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.dbginfo = NULL,
-	.write = NULL,
 	.create = &create,
-	.classes = &MACH0_(parse_classes)
+	.classes = &MACH0_(parse_classes),
+	.write = &r_bin_write_mach0,
 };
 
 #ifndef CORELIB

@@ -15,6 +15,7 @@
 #define ARM_64 ARCH_ARM_64
 #define MIPS ARCH_MIPS
 #define AVR ARCH_AVR
+#define LM32 ARCH_LM32
 
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1
@@ -38,7 +39,6 @@ typedef struct libgdbr_t {
 	ssize_t send_len; // definses the maximal len for the given buffer
 	ssize_t send_max; // definses the maximal len for the given buffer
 	char* read_buff;
-	ssize_t read_len;
 	ssize_t read_max;
 
 	// is already handled (i.e. already send or ...)

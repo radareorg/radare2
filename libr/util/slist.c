@@ -6,7 +6,12 @@
 
 R_API RSList *r_slist_new() {
 	RSList *s = R_NEW0 (RSList);
+	if (!s) return NULL;
 	s->list = r_list_new ();
+	if (!s->list) {
+		r_slist_free (s);
+		return NULL;
+	}
 	return s;
 }
 
@@ -34,6 +39,7 @@ R_API RSList *r_slist_add(RSList *s, void *data, ut64 from, ut64 to) {
 	ut64 at = from;
 	int slot, lastslot;
 	RSListItem *item = get_new_item ();
+	if (!item) return NULL;
 	//RSListItem **items;
 	// append to list
 	item->from = from;
@@ -112,7 +118,7 @@ R_API void r_slist_optimize(RSList *s) {
 		}
 	}
 
-	eprintf ("MIN %d\nMAX %d\n", (int)min, (int)max);
+	//eprintf ("MIN %d\nMAX %d\n", (int)min, (int)max);
 
 	s->min = min;
 	s->max = max;

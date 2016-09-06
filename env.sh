@@ -7,7 +7,7 @@ getabsolutepath() {
 
 pfx=$(getabsolutepath "$1")
 
-if [ -z "$pfx" ]; then
+if [ -z "$1" ]; then
 	echo "Usage: ./env.sh [destdir|prefix] [program]"
 	exit 1
 fi
@@ -47,15 +47,16 @@ if [ -z "$*" ]; then
 	echo "==> Back to system shell..."
 	echo
 else
-	if [ $# -gt 1 ]; then 
+	if [ "$#" -gt 1 ]; then
 		par=""
-		if command -v seq >/dev/null; then
-                    for p in `seq 1 $(($#-1))`; do par=$par"\$$p "; done
-                elif
-                   command -v jot >/dev/null; then
-                    for p in `jot $(($#-1)) 1`; do par=$par"\$$p "; done
-                fi
-		eval $new_env $par "\"\$$#\""
+		p=0
+		while : ; do
+			p=$(($p+1))
+			[ $p -gt $# ] && break
+			a=`eval echo "\$\{$p\}"`
+			par="$par\"$a\" "
+		done
+		eval $new_env $par
 	else
 		eval $new_env $*
 	fi

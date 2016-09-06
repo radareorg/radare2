@@ -51,16 +51,15 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const int no_alias = 1;
 	struct riscv_opcode *o = NULL;
-	insn_t word = 0;
+	ut64 word = 0;
 	int xlen = anal->bits;
 
 	op->size = 4;
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
-	if (len>=sizeof (word))
-		r_mem_copyendian ((void*)&word, (const void*)data, sizeof (word), true);
-	else r_mem_copyendian ((void*)&word, (const void*)data, 2, true); //sizeof (word), true);
+	word = (len >= sizeof (ut64))? r_read_ble64 (data, anal->big_endian): r_read_ble16 (data, anal->big_endian);
+
 	o = get_opcode (word);
 	if (word == UT64_MAX) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -71,7 +70,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	for (; o < &riscv_opcodes[NUMOPCODES]; o++) {
 		// XXX ASAN segfault if ( !(o->match_func)(o, word) ) continue;
 		if ( no_alias && (o->pinfo & INSN_ALIAS) ) continue;
-		if ( isdigit (o->subset[0]) && atoi (o->subset) != xlen) continue;
+		if ( isdigit ((int)(o->subset[0])) && atoi (o->subset) != xlen) continue;
 		else {
 			break;
 		}

@@ -1,0 +1,15 @@
+15=@Borlndmm@HeapAddRef$qqrv
+14=@Borlndmm@HeapRelease$qqrv
+10=@Borlndmm@SysAllocMem$qqri
+12=@Borlndmm@SysFreeMem$qqrpv
+13=@Borlndmm@SysGetMem$qqri
+11=@Borlndmm@SysReallocMem$qqrpvi
+9=@Borlndmm@SysRegisterExpectedMemoryLeak$qqrpi
+8=@Borlndmm@SysUnregisterExpectedMemoryLeak$qqrpi
+4=DumpBlocks
+6=FreeMemory
+2=GetAllocMemCount
+1=GetAllocMemSize
+3=GetHeapStatus
+7=GetMemory
+5=ReallocMemory

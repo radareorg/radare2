@@ -13,14 +13,14 @@
 |----------|---------------------------------------------------------------------|
 | **Jenkins**  	| [![Build Status](http://ci.rada.re/buildStatus/icon?job=radare2)](http://ci.rada.re/job/radare2)|
 | **TravisCI** 	| [![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2)|
-| **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/github/radare/radare2?branch=master&svg=true)](https://ci.appveyor.com/project/radare/radare2)|
+| **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/v9bxvsb1p6c3cmf9/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2-shvdd)|
 | **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
 a set of libraries and tools to work with binary files.
 
-Radare project started as a forensics tool, an scriptable
+Radare project started as a forensics tool, a scriptable
 commandline hexadecimal editor able to open disk files,
 but later support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers, ..
@@ -28,7 +28,7 @@ code, debugging programs, attaching to remote gdb servers, ..
    radare2 is portable.
 
    * **Architectures:**
-	* 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
+        * 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, xap,
    dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, msil,
    msp430, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810,
    x86-64, zimg, risc-v.
@@ -36,7 +36,7 @@ code, debugging programs, attaching to remote gdb servers, ..
    * **File Formats:**
 	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
    mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache, Commodore VICE emulator, 
-   Gameboy and Nintendo DS ROMs
+   Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
 
    * **Operating Systems:**
 	* Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
@@ -75,6 +75,22 @@ version or remove all previous installations:
     $ make uninstall
     $ make purge
 
+# Package manager
+
+Radare2 has its own package manager - r2pm. It's packages 
+repository is on [GitHub too](https://github.com/radare/radare2-pm).
+To start to use it for the first time you need to initialize packages:
+
+    $ r2pm init
+
+And to refresh packages before installation/updating a new one:
+
+    $ r2pm refresh
+
+To install/update package use the command
+
+    $ r2pm install [package name]
+
 # Bindings
 
 All language bindings are under the r2-bindings directory.
@@ -86,7 +102,7 @@ to swig interfaces, nodejs-ffi or other and then compiled.
 
 The easiest way to install the python bindings is to run:
 
-    $ sys/python.sh
+    $ r2pm install python
 
 In addition there are `r2pipe` bindings, which are an API
 interface to interact with the prompt, passing commands

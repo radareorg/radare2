@@ -388,8 +388,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	RAsmLm32Instruction instr;
-	//lm32 is big endian
-	a->big_endian = 1;
 	instr.value = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
 	instr.addr = a->pc;
 	if (r_asm_lm32_decode (&instr)) {
@@ -412,8 +410,8 @@ RAsmPlugin r_asm_plugin_lm32 = {
 	.desc = "disassembly plugin for Lattice Micro 32 ISA",
 	.license = "BSD",
 	.bits = 32,
-	.disassemble = disassemble,
-	//.assemble = &assemble, TODO
+	.endian = R_SYS_ENDIAN_BIG,
+	.disassemble = &disassemble,
 };
 
 #ifndef CORELIB

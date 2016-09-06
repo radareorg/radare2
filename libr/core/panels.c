@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2015 - Author: pancake */
+/* Copyright radare2 2014-2016 - Author: pancake */
 
 // pls move the typedefs into roons and rename it -> RConsPanel
 
@@ -149,11 +149,11 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 				idx = sizeof (white)-1;
 			white[idx] = 0;
 			text = r_str_ansi_crop (foo,
-				0, delta_y, n->w+delta_x, n->h-2 + delta_y);
+				0, delta_y, n->w + delta_x, n->h - 2 + delta_y);
 			text = r_str_prefix_all (text, white);
 		} else {
 			text = r_str_ansi_crop (foo,
-				delta_x, delta_y, n->w+delta_x, n->h-2 + delta_y);
+				delta_x, delta_y, n->w + delta_x, n->h - 2 + delta_y);
 		}
 		if (text) {
 			W (text);
@@ -172,11 +172,6 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 			W (n->text);
 		}
 	}
-// glitch in menubar
-// 	if (G (n->x+1, n->y+1))
-//		W (title);
-	// TODO: check if node is traced or not and hsow proper color
-	// This info must be stored inside Panel* from RCore*
 	if (cur) {
 		B1 (n->x, n->y, n->w, n->h);
 	} else {
@@ -188,7 +183,7 @@ static void Layout_run(Panel *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
 	int colpos = w - COLW;
-	if (colpos<0) {
+	if (colpos < 0) {
 		COLW = w;
 		colpos = 0;
 	}
@@ -235,22 +230,22 @@ static void Layout_run(Panel *panels) {
 }
 
 static void delcurpanel() {
+	int i;
 	if (curnode>0 && n_panels>3) {
-		int i;
-		for (i=curnode; i<(n_panels-1); i++) {
-			panels[i] = panels[i+1];
+		for (i = curnode; i < (n_panels - 1); i++) {
+			panels[i] = panels[i + 1];
 		}
 		panels[i].text = 0;
 		n_panels--;
-		if (curnode>=n_panels) {
-			curnode = n_panels-1;
+		if (curnode >= n_panels) {
+			curnode = n_panels - 1;
 		}
 	}
 }
 
 static void zoom() {
-	if (n_panels>2) {
-		if (curnode <2) {
+	if (n_panels > 2) {
+		if (curnode < 2) {
 			curnode = 2;
 		}
 		Panel ocurnode = panels[curnode];
@@ -263,6 +258,7 @@ static void addPanelFrame (const char *title, const char *cmd, ut64 addr) {
 	int i = n_panels;
 	if (!panels) {
 		panels = calloc (sizeof (Panel), LIMIT);
+		if (!panels) return;
 		panels[0].text = strdup ("");
 		panels[0].addr = addr;
 		panels[0].type = PANEL_TYPE_FLOAT;
@@ -308,7 +304,7 @@ static void r_core_panels_refresh(RCore *core) {
 	r_cons_canvas_clear (can);
 	r_cons_flush ();
 	if (panels) {
-		if (menu_y>0) {
+		if (menu_y > 0) {
 			panels[menu_pos].x = menu_x * 6;
 		} else {
 			panels[menu_pos].x = w;
@@ -411,6 +407,7 @@ R_API int r_core_visual_panels(RCore *core) {
 	OS_INIT();
 	w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);
+	if (!can) return false;
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
 	if (!can) {
@@ -424,8 +421,8 @@ R_API int r_core_visual_panels(RCore *core) {
 		return false;
 	}
 
-	if (w<140) {
-		COLW = w/3;
+	if (w < 140) {
+		COLW = w / 3;
 	}
 
 	reloadPanels (core);
@@ -451,9 +448,6 @@ repeat:
 	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
-	if (okey == 27) {
-		key = 'K';
-	}
 
 	switch (key) {
 	case 'u':
@@ -523,49 +517,49 @@ repeat:
 			} else if (strstr (action, "ROP")) {
 				char *res = r_cons_input ("rop grep: ");
 				if (res) {
-					r_core_cmdf (core, "/R %s", res);
+					r_core_cmdf (core, "\"/R %s\"", res);
 					free (res);
 				}
 			} else if (strstr (action, "String")) {
 				char *res = r_cons_input ("search string: ");
 				if (res) {
-					r_core_cmdf (core, "/ %s", res);
+					r_core_cmdf (core, "\"/ %s\"", res);
 					free (res);
 				}
 			} else if (strstr (action, "Hexpairs")) {
 				char *res = r_cons_input ("search hexpairs: ");
 				if (res) {
-					r_core_cmdf (core, "/x %s", res);
+					r_core_cmdf (core, "\"/x %s\"", res);
 					free (res);
 				}
 			} else if (strstr (action, "Code")) {
 				char *res = r_cons_input ("search code: ");
 				if (res) {
-					r_core_cmdf (core, "/c %s", res);
+					r_core_cmdf (core, "\"/c %s\"", res);
 					free (res);
 				}
 			} else if (strstr (action, "Copy")) {
 				char *res = r_cons_input ("How many bytes? ");
 				if (res) {
-					r_core_cmdf (core, "y %s", res);
+					r_core_cmdf (core, "\"y %s\"", res);
 					free (res);
 				}
 			} else if (strstr (action, "Write String")) {
 				char *res = r_cons_input ("insert string: ");
 				if (res) {
-					r_core_cmdf (core, "w %s", res);
+					r_core_cmdf (core, "\"w %s\"", res);
 					free (res);
 				}
 			} else if (strstr (action, "Write Value")) {
 				char *res = r_cons_input ("insert number: ");
 				if (res) {
-					r_core_cmdf (core, "wv %s", res);
+					r_core_cmdf (core, "\"wv %s\"", res);
 					free (res);
 				}
 			} else if (strstr (action, "Write Hex")) {
 				char *res = r_cons_input ("insert hexpairs: ");
 				if (res) {
-					r_core_cmdf (core, "wx %s", res);
+					r_core_cmdf (core, "\"wx %s\"", res);
 					free (res);
 				}
 			} else if (strstr (action, "Calculator")) {
@@ -612,7 +606,7 @@ repeat:
 			} else if (strstr (action, "FcnInfo")) {
 				addPanelFrame ("FcnInfo", "afi", 0);
 			} else if (strstr (action, "Graph")) {
-				r_core_visual_graph (core, NULL, true);
+				r_core_visual_graph (core, NULL, NULL, true);
 			//	addPanelFrame ("Graph", "agf", 0);
 			} else if (strstr (action, "System Shell")) {
 				r_cons_set_raw (0);
@@ -623,7 +617,7 @@ repeat:
 				r_core_visual_prompt_input (core);
 				core->vmode = true;
 			} else if (!strcmp (action, "2048")) {
-				r_cons_2048 ();
+				r_cons_2048 (can->color);
 			} else if (strstr (action, "License")) {
 				r_cons_message ("Copyright 2006-2015 - pancake - LGPL");
 			} else if (strstr (action, "Fortune")) {
@@ -661,8 +655,8 @@ repeat:
 		" M    - open new custom frame\n"
 		" hl   - toggle scr.color\n"
 		" HL   - move vertical column split\n"
-		" JK   - select prev/next panels (same as TAB)\n"
 		" jk   - scroll/select menu\n"
+		" JK   - select prev/next panels (same as TAB)\n"
 		" sS   - step in / step over\n"
 		" uU   - undo / redo seek\n"
 		" np   - seek to next or previous scr.nkey\n"
@@ -820,7 +814,7 @@ repeat:
 				break;
 			}
 			ocolor = r_config_get_i (core->config, "scr.color");
-			r_core_visual_graph (core, NULL, true);
+			r_core_visual_graph (core, NULL, NULL, true);
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 		break;

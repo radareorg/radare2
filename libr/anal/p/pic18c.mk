@@ -1,0 +1,9 @@
+OBJ_PIC18C=anal_pic18c.o
+
+STATIC_OBJ+=$(OBJ_PIC18C)
+TARGET_PIC18C=anal_pic18c.$(EXT_SO)
+
+ALL_TARTGETS+=$(TARGET_PIC18C)
+
+$(TARGET_PIC18C): $(OBJ_PIC18C)
+	$(CC) $(call libname,anal_pic18c) ${LDFLAGS} ${CFLAGS} -o anal_pic18c.$(EXT_SO) $(OBJ_PIC18C)

@@ -20,7 +20,7 @@
 #include <transport.h>
 #include <wind.h>
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp (file, "windbg://", strlen ("windbg://"));
 }
 
@@ -95,7 +95,7 @@ RIOPlugin r_io_plugin_windbg = {
 	.close = __close,
 	.read = __read,
 	.write = __write,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.isdbg = true,
 };

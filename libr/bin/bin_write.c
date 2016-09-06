@@ -11,7 +11,7 @@ R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size) {
 	if (plugin && plugin->write && plugin->write->scn_resize) {
 		return plugin->write->scn_resize (bin->cur, name, size);
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms) {
@@ -34,7 +34,25 @@ R_API bool r_bin_wr_rpath_del(RBin *bin) {
 
 R_API int r_bin_wr_output(RBin *bin, const char *filename) {
 	RBinFile *binfile = r_bin_cur (bin);
-	if (!filename || !binfile || !binfile->buf) return R_FALSE;
+	if (!filename || !binfile || !binfile->buf) return false;
 	return r_file_dump (filename, binfile->buf->buf,
 			binfile->buf->length, 0);
+}
+
+R_API bool r_bin_wr_entry(RBin *bin, ut64 addr) {
+	RBinFile *binfile = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+	if (plugin && plugin->write && plugin->write->entry) {
+		return plugin->write->entry (bin->cur, addr);
+	}
+	return false;
+}
+
+R_API bool r_bin_wr_addlib(RBin *bin, const char *lib) {
+	RBinFile *binfile = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+	if (plugin && plugin->write && plugin->write->addlib) {
+		return plugin->write->addlib (bin->cur, lib);
+	}
+	return false;
 }

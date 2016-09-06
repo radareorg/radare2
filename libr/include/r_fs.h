@@ -54,7 +54,7 @@ typedef struct r_fs_plugin_t {
 	const char *desc;
 	RFSFile* (*slurp)(RFSRoot *root, const char *path);
 	RFSFile* (*open)(RFSRoot *root, const char *path);
-	boolt (*read)(RFSFile *fs, ut64 addr, int len);
+	bool (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
 	RList *(*dir)(RFSRoot *root, const char *path, int view);
 	void (*init)(void);
@@ -100,7 +100,7 @@ R_API void r_fs_free(RFS* fs);
 R_API void r_fs_add(RFS *fs, RFSPlugin *p);
 R_API void r_fs_del(RFS *fs, RFSPlugin *p);
 R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
-R_API boolt r_fs_umount(RFS* fs, const char *path);
+R_API bool r_fs_umount(RFS* fs, const char *path);
 R_API RList *r_fs_root(RFS *fs, const char *path);
 R_API RFSFile *r_fs_open(RFS* fs, const char *path);
 R_API void r_fs_close(RFS* fs, RFSFile *file);
@@ -148,6 +148,7 @@ extern RFSPlugin r_fs_plugin_xfs;
 extern RFSPlugin r_fs_plugin_fb;
 extern RFSPlugin r_fs_plugin_minix;
 extern RFSPlugin r_fs_plugin_posix;
+extern RFSPlugin r_fs_plugin_squash;
 #endif
 
 #ifdef __cplusplus

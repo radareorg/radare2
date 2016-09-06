@@ -18,24 +18,15 @@
 #	define R_REG_T arm_unified_thread_state_t
 #	define R_REG_STATE_T MACHINE_THREAD_STATE
 #	define R_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
-//TODO maybe these defines break the build header Xcode
-#	define R_DEBUG_REG_T arm_debug_state_t
-#	define R_DEBUG_STATE_T ARM_DEBUG_STATE
-#	define R_DEBUG_STATE_SZ ARM_DEBUG_STATE_COUNT
-
 #elif __x86_64__ || __i386__
 #	define R_REG_T x86_thread_state_t
 #	define R_REG_STATE_T MACHINE_THREAD_STATE
 #	define R_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
-#	define R_DEBUG_REG_T x86_debug_state_t
-#	define R_DEBUG_STATE_T x86_DEBUG_STATE
-#	define R_DEBUG_STATE_SZ x86_DEBUG_STATE_COUNT
 #endif
 
 #define RETURN_ON_MACH_ERROR(msg, retval)\
         if (kr != KERN_SUCCESS) {mach_error (msg, kr); return ((retval));}
 
-//FIXME include this in RDebug How?? sdb??
 typedef struct _exception_info {
 	exception_mask_t masks[EXC_TYPES_COUNT];
 	mach_port_t ports[EXC_TYPES_COUNT];
@@ -43,23 +34,53 @@ typedef struct _exception_info {
 	thread_state_flavor_t flavors[EXC_TYPES_COUNT];
 	mach_msg_type_number_t count;
 	pthread_t thread;
+	mach_port_t exception_port;
 } xnu_exception_info;
 
+
+//XXX use radare types
 typedef struct _xnu_thread {
-	thread_t tid; //mach_port // XXX bad naming here
+	thread_t port; //mach_port // XXX bad naming here
 	char *name; //name of thread
 	thread_basic_info_data_t basic_info; //need this?
-	int stepping; // thread is stepping or not //TODO implement stepping
+	ut8 stepping; // thread is stepping or not //TODO implement stepping
 	R_REG_T gpr; // type R_REG_T using unified API XXX bad naming
-	R_DEBUG_REG_T drx; // type R_DEBUG_REG_T using unified API
-	//task_t thtask;
 	void *state;
-	int state_size;
+	ut32 state_size;
 #if __arm || __arm64 || __aarch64
-	void *oldstate;
+	union {
+		arm_debug_state32_t drx32;
+		arm_debug_state_t drx;
+	} debug;
+#elif __x86_64__ || __i386__
+	x86_debug_state_t drx;
 #endif
-	int flavor;
-	unsigned int count;
+	ut16 flavor;
+	ut32 count;
 } xnu_thread_t;
+
+typedef struct _exc_msg {
+	mach_msg_header_t hdr;
+	/* start of the kernel processed data */
+	mach_msg_body_t msg_body;
+	mach_msg_port_descriptor_t thread;
+	mach_msg_port_descriptor_t task;
+	/* end of the kernel processed data */
+	NDR_record_t NDR;
+	exception_type_t exception;
+	mach_msg_type_number_t code_cnt;
+#if !__POWERPC__
+	mach_exception_data_t code;
+#endif
+	/* some times RCV_TO_LARGE probs */
+	char pad[512];
+} exc_msg;
+
+typedef struct _rep_msg {
+	mach_msg_header_t hdr;
+	NDR_record_t NDR;
+	kern_return_t ret_code;
+} rep_msg;
+
 
 #endif

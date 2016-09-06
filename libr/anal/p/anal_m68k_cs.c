@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015 - pancake */
+/* radare2 - LGPL - Copyright 2015-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -31,7 +31,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	cs_insn* insn;
 	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
-	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
+	//mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&handle);
 		handle = 0;
@@ -40,6 +40,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->delay = 0;
+	// replace this with the asm.features?
+	if (a->cpu && strstr (a->cpu, "68000"))
+		mode |= CS_MODE_M68K_000;
+	if (a->cpu && strstr (a->cpu, "68010"))
+		mode |= CS_MODE_M68K_010;
+	if (a->cpu && strstr (a->cpu, "68020"))
+		mode |= CS_MODE_M68K_020;
+	if (a->cpu && strstr (a->cpu, "68030"))
+		mode |= CS_MODE_M68K_030;
+	if (a->cpu && strstr (a->cpu, "68040"))
+		mode |= CS_MODE_M68K_040;
+	if (a->cpu && strstr (a->cpu, "68060"))
+		mode |= CS_MODE_M68K_060;
 	op->size = 4;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_M68K, mode, &handle);
@@ -102,15 +115,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = IMM(0) - 0x100; // XXX wtf capstone bug
+		op->jump = ((addr >>32)<<32) | (UT32_MAX & IMM(0));
 		op->fail = addr + 2;
 		break;
 	case M68K_INS_BRA:
 		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = ((addr >>32)<<32) | (UT32_MAX & IMM(0));
 		break;
 	case M68K_INS_BSR:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0) - 0x100; // XXX wtf capstone bug
+		op->jump = IMM(0);
 		op->fail = addr + 2;
 		break;
 	case M68K_INS_BCHG:
@@ -382,6 +396,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case M68K_INS_JSR:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = UT32_MAX & (ut64)IMM(0);
+		op->fail = addr + op->size;
 		break;
 	case M68K_INS_LINK:
 	case M68K_INS_LPSTOP:
@@ -586,7 +602,7 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 	.name = "m68k.cs (unsupported)",
 	.desc = "Capstone M68K analyzer (unsupported)",
 	.license = "BSD",
-	.arch = R_SYS_ARCH_M68K,
+	.arch = "m68k",
 	.bits = 32,
 };
 #endif

@@ -6,6 +6,10 @@ CS_REV="$4" # revert
 
 if [ -d capstone -a ! -d capstone/.git ]; then 
 	echo "[capstone] release with no git?"
+	cd capstone
+	for PATCH in ../capstone-patches/* ; do
+		patch -Rp1 < $PATCH
+	done
 else 
 	if [ ! -d capstone ]; then 
 		git clone "${CS_URL}" capstone || exit 1
@@ -24,7 +28,7 @@ else
 	echo "HEAD ${HEAD}"
 	echo "TIP ${CS_TIP}"
 
-	git reset --hard @^^^
+	git reset --hard HEAD^^^
 	git checkout "${CS_BRA}" || exit 1
 	git pull
 	if [ -n "${CS_TIP}" ]; then

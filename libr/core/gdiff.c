@@ -21,9 +21,8 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	return false;
 }
 
-/* Fingerprint functions and blocks, then diff.
- * If `anal_all` is 1 analyse all the symbols, if its 2 runs `aac` */
-R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
+/* Fingerprint functions and blocks, then diff. */
+R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	RCore *cores[2] = {c, c2};
 	RAnalFunction *fcn;
 	RAnalBlock *bb;
@@ -33,11 +32,13 @@ R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 	if (!c || !c2)
 		return false;
 	for (i = 0; i < 2; i++) {
-		if (anal_all>1)
-			r_core_cmd0 (cores[i], "aac");
-		if (anal_all>0)
-			r_core_anal_all (cores[i]);
-		/* Fingerprint fcn bbs (functions basic-blocs) */
+		/* remove strings */
+		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
+			if (!strncmp (fcn->name, "str.", 4)) {
+				r_list_delete (cores[i]->anal->fcns, iter);
+			}
+		}
+		/* Fingerprint fcn bbs (functions basic-blocks) */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
 			r_list_foreach (fcn->bbs, iter2, bb) {
 				r_anal_diff_fingerprint_bb (cores[i]->anal, bb);
@@ -45,7 +46,8 @@ R_API int r_core_gdiff(RCore *c, RCore *c2, int anal_all) {
 		}
 		/* Fingerprint fcn */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
-			fcn->size = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
+			int newsize = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
+			r_anal_fcn_set_size (fcn, newsize);
 		}
 	}
 	/* Diff functions */
@@ -85,15 +87,15 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
         r_list_foreach (fcns, iter, f) {
                 if (f->name && (len = strlen(f->name)) > maxnamelen)
                         maxnamelen = len;
-                if (f->size > maxsize)
-                        maxsize = f->size;
+                if (r_anal_fcn_size (f) > maxsize)
+                        maxsize = r_anal_fcn_size (f);
         }
         fcns = r_anal_get_fcns (c2->anal);
         r_list_foreach (fcns, iter, f) {
                 if (f->name && (len = strlen(f->name)) > maxnamelen)
                         maxnamelen = len;
-                if (f->size > maxsize)
-                        maxsize = f->size;
+                if (r_anal_fcn_size (f) > maxsize)
+                        maxsize = r_anal_fcn_size (f);
         }
         while (maxsize > 9) {
                 maxsize /= 10;
@@ -114,7 +116,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                         default:
                                 match = "NEW";
                         }
-                        diffrow (f->addr, f->name, f->size, maxnamelen,
+                        diffrow (f->addr, f->name, r_anal_fcn_size (f), maxnamelen,
 				digits, f->diff->addr, f->diff->name, f->diff->size,
 				match, f->diff->dist, bare);
                         break;
@@ -126,7 +128,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 case R_ANAL_FCN_TYPE_FCN:
                 case R_ANAL_FCN_TYPE_SYM:
                         if (f->diff->type == R_ANAL_DIFF_TYPE_NULL)
-                                diffrow (f->addr, f->name, f->size, maxnamelen,
+                                diffrow (f->addr, f->name, r_anal_fcn_size (f), maxnamelen,
 					digits, f->diff->addr, f->diff->name, f->diff->size,
 					"NEW", f->diff->dist, bare);
                 }

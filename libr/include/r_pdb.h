@@ -15,7 +15,7 @@ struct R_PDB;
 struct R_PDB7_ROOT_STREAM;
 
 typedef struct R_PDB {
-	int (*pdb_parse)(struct R_PDB *pdb);
+	bool (*pdb_parse)(struct R_PDB *pdb);
 	void (*finish_pdb_parse)(struct R_PDB *pdb);
 	void (*print_types)(struct R_PDB *pdb, int mode);
 //	FILE *fp;
@@ -30,7 +30,7 @@ typedef struct R_PDB {
 	void (*print_gvars)(struct R_PDB *pdb, ut64 img_base, int format);
 } R_PDB;
 
-int init_pdb_parser(R_PDB *pdb, const char *filename);
+bool init_pdb_parser(R_PDB *pdb, const char *filename);
 
 #ifdef __cplusplus
 }

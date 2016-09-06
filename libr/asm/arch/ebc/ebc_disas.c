@@ -100,8 +100,7 @@ static int decode_index32(const ut8 *data, ebc_index_t *index) {
 	ut32 tmp = *(ut32*)data;
 	index->type = EBC_INDEX32;
 	index->sign = tmp & EBC_NTH_BIT(31) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
-	//should be multiplied by 4 here but EbcDebugger does not do that
-	index->a_width = ((tmp >> 28) & EBC_N_BIT_MASK(2)) * 2;
+	index->a_width = ((tmp >> 28) & EBC_N_BIT_MASK(2)) * 4;
 	index->n = tmp & EBC_N_BIT_MASK(index->a_width);
 	index->c = (tmp >> index->a_width) & EBC_N_BIT_MASK(28 - index->a_width);
 	return 0;
@@ -111,7 +110,7 @@ static int decode_index64(const ut8 *data, ebc_index_t *index) {
 	ut64 tmp = *(ut64*)data;
 	index->type = EBC_INDEX64;
 	index->sign = tmp & EBC_NTH_BIT(63) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
-	index->a_width = ((tmp >> 60) & EBC_N_BIT_MASK(2)) * 2;
+	index->a_width = ((tmp >> 60) & EBC_N_BIT_MASK(2)) * 8;
 	index->n = tmp & EBC_N_BIT_MASK(index->a_width);
 	index->c = (tmp >> index->a_width) & EBC_N_BIT_MASK(60- index->a_width);
 	return 0;
@@ -186,6 +185,8 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 	ut8 op1 = bytes[1] & 0x7;
 	ut32 i1;
 	unsigned long i2;
+	ebc_index_t idx32;
+	char sign;
 
 	if (!TEST_BIT (bytes[0], 6)) {
 		//CALL32
@@ -195,10 +196,12 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 			//operand 1 indirect
 			if (TEST_BIT (bytes[0], 7)) {
 				// immediate data is present
-				i1 = *(ut32*)(bytes + 2);
-				// TODO: if operand is indirect immediate data is index
+				decode_index32(bytes + 2, &idx32);
+				sign = idx32.sign ? '+' : '-';
+
 				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
-						"@r%d(0x%x)", op1, i1);
+						"@r%d(%c%u, %c%u)",
+						op1, sign, idx32.n, sign, idx32.c);
 				ret = 6;
 			} else {
 				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
@@ -225,8 +228,9 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 		snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
 				"0x%lx", i2);
 	}
-	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s",
+	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s%s",
 			instr_names[EBC_CALL], bits,
+			TEST_BIT(bytes[1], 5) ? "ex" : "",
 			TEST_BIT(bytes[1], 4) ? "" : "a");
 	return ret;
 }
@@ -305,18 +309,13 @@ static int decode_cmpugte(const ut8 *bytes, ebc_command_t *cmd) {
 }
 
 static int decode_not(const ut8 *bytes, ebc_command_t *cmd) {
-	// TODO
-	return TEST_BIT (bytes[0], 7)? 4: 2;
-}
-
-static int decode_neg(const ut8 *bytes, ebc_command_t *cmd) {
 	int ret = 2;
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	unsigned op1, op2;
 	char index[32] = {0};
 	ut16 immed;
 
-	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%u", instr_names[EBC_NEG],
+	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%u", instr_names[EBC_NOT],
 			bits);
 
 	op1 = bytes[1] & 0x07;
@@ -340,6 +339,13 @@ static int decode_neg(const ut8 *bytes, ebc_command_t *cmd) {
 	snprintf (cmd->operands, EBC_OPERANDS_MAXLEN, "%sr%d, %sr%d%s",
 			TEST_BIT(bytes[1], 3) ? "@" : "", op1,
 			TEST_BIT(bytes[1], 7) ? "@" : "", op2, index);
+	return ret;
+}
+
+static int decode_neg(const ut8 *bytes, ebc_command_t *cmd) {
+	int ret = decode_not(bytes, cmd);
+	cmd->instr[1] = 'e';
+	cmd->instr[2] = 'g';
 	return ret;
 }
 

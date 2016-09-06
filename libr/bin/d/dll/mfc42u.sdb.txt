@@ -1,0 +1,6 @@
+5=?classCCachedDataPathProperty@CCachedDataPathProperty@@2UCRuntimeClass@@B
+6=?classCDataPathProperty@CDataPathProperty@@2UCRuntimeClass@@B
+7=DllCanUnloadNow
+8=DllGetClassObject
+9=DllRegisterServer
+10=DllUnregisterServer

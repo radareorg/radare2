@@ -14,8 +14,7 @@ static void cache_item_free(RIOCache *cache) {
 }
 
 R_API void r_io_cache_init(RIO *io) {
-	io->cache = r_list_new ();
-	io->cache->free = (RListFree)cache_item_free;
+	io->cache = r_list_newf ((RListFree)cache_item_free);
 	io->cached = false; // cache write ops
 	io->cached_read = false; // cached read ops
 }
@@ -34,7 +33,8 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 		if (c->from >= from && c->to <= to) {
 			if (!r_io_write_at (io, c->from, c->data, c->size))
 				eprintf ("Error writing change at 0x%08"PFMT64x"\n", c->from);
-			else c->written = true;
+			else 
+				c->written = true;
 			break;
 		}
 	}
@@ -74,29 +74,47 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 	int i, j = 0;
 	RListIter *iter;
 	RIOCache *c;
-
+	if (rad == 2) {
+		io->cb_printf ("[");
+	}
 	r_list_foreach (io->cache, iter, c) {
-		if (rad) {
+		if (rad == 1) {
 			io->cb_printf ("wx ");
-			for (i=0; i < c->size; i++)
+			for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", (ut8)(c->data[i] & 0xff));
+			}
 			io->cb_printf (" @ 0x%08"PFMT64x, c->from);
 			io->cb_printf (" # replaces: ");
-			for (i=0; i < c->size; i++)
+		  	for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", (ut8)(c->odata[i] & 0xff));
+			}
 			io->cb_printf ("\n");
-		} else {
-			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ",
-				j, c->from, c->size);
-			for (i=0; i < c->size; i++)
+		} else if (rad == 2) {
+			io->cb_printf ("{\"idx\":%"PFMT64d",\"addr\":%"PFMT64d",\"size\":%d,", j, c->from, c->size);
+			io->cb_printf ("\"before\":\"");
+		  	for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", c->odata[i]);
-			io->cb_printf (" -> ");
-			for (i=0; i < c->size; i++)
+			}
+			io->cb_printf ("\",\"after\":\"");
+		  	for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", c->data[i]);
+			}
+			io->cb_printf ("\",\"written\":%s}%s", c->written? "true": "false",iter->n? ",": "");
+		} else if (rad == 0) {
+			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ", j, c->from, c->size);
+			for (i = 0; i < c->size; i++) {
+				io->cb_printf ("%02x", c->odata[i]);
+			}
+			io->cb_printf (" -> ");
+			for (i = 0; i < c->size; i++) {
+				io->cb_printf ("%02x", c->data[i]);
+			}
 			io->cb_printf (" %s\n", c->written? "(written)": "(not written)");
 		}
 		j++;
 	}
+	if (rad == 2)
+		io->cb_printf ("]");
 	return false;
 }
 
@@ -106,6 +124,9 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (io->cached == 2) {
 		/* do not allow to use the cache write in debugger mode */
 		/* this is a hack to solve issues */
+		return 0;
+	}
+	if (len < 0) {
 		return 0;
 	}
 #if 0
@@ -143,6 +164,9 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int covered = 0;
 	RListIter *iter;
 	RIOCache *c;
+	if (len < 0) {
+		return 0;
+	}
 
 	r_list_foreach (io->cache, iter, c) {
 		if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {

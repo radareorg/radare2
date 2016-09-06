@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015 - pancake */
+/* radare - LGPL3 - 2015-2016 - pancake */
 
 #include <r_bin.h>
 
@@ -148,10 +148,10 @@ static void showstr(const char *str, const ut8 *s, int len) {
 
 static RList* symbols(RBinFile *arch) {
 	ut32 *vtable = (ut32*)arch->buf->buf;
+	RList *ret = NULL;
 	const char *name;
 	SMD_Header *hdr;
 	int i;
-	RList *ret = NULL;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -172,7 +172,7 @@ static RList* symbols(RBinFile *arch) {
 	showstr ("ModemCode", hdr->CountryCode, 12);
 	showstr ("CountryCode", hdr->CountryCode, 16);
 	/* parse vtable */
-	for (i=0; i<64; i++) {
+	for (i = 0; i<64; i++) {
 		switch (i) {
 		case 0: name = "SSP"; break;
 		case 1: name = "Reset"; break;
@@ -239,8 +239,12 @@ static RList* symbols(RBinFile *arch) {
 		case 62: name = "Reserv3F"; break;
 		default: name = NULL;
 		}
-		if (!name || !vtable[i]) continue;
-		addsym (ret, name, vtable[i]);
+		if (name && vtable[i]) {
+			ut32 addr = 0;
+			// XXX don't know if always LE
+			addr = r_read_le32 (&vtable[i]);
+			addsym (ret, name, addr);
+		}
 	}
 	return ret;
 }
@@ -298,7 +302,7 @@ static RList* entries(RBinFile *arch) { //Should be 3 offsets pointed by NMI, RE
 
 struct r_bin_plugin_t r_bin_plugin_smd = {
 	.name = "smd",
-	.desc = "SEGA Gesmdis/Megadrive",
+	.desc = "SEGA Genesis/Megadrive",
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
 	.check = &check,

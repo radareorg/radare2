@@ -14,66 +14,83 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
-R_API int r_strbuf_set(RStrBuf *sb, const char *s) {
+R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 	int l;
-	if (!sb)
-		return R_FALSE;
+	if (!sb) return false;
 	if (!s) {
 		r_strbuf_init (sb);
-		return R_TRUE;
+		return true;
 	}
 	l = strlen (s);
 	if (l >= sizeof (sb->buf)) {
-		char *ptr = malloc (l+1);
-		if (!ptr) return R_FALSE;
-		free (sb->ptr);
-		sb->ptr = ptr;
+		char *ptr = sb->ptr;
+		if (!ptr || l+1 > sb->ptrlen) {
+			ptr = malloc (l + 1);
+			if (!ptr) return false;
+			sb->ptrlen = l + 1;
+			sb->ptr = ptr;
+		}
 		memcpy (ptr, s, l+1);
 	} else {
 		sb->ptr = NULL;
 		memcpy (sb->buf, s, l+1);
 	}
 	sb->len = l;
-	return R_TRUE;
+	return true;
 }
 
-R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
-	int ret;
-	char string[4096];
+R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
+	int rc;
+	bool ret;
+	char string[1024];
 	va_list ap;
 
 	if (!sb || !fmt)
-		return 0;
+		return false;
 	va_start (ap, fmt);
-	ret = vsnprintf (string, sizeof (string), fmt, ap);
-	if (ret >= sizeof (string)) {
-		char *p = malloc (ret+2);
+	rc = vsnprintf (string, sizeof (string), fmt, ap);
+	if (rc >= sizeof (string)) {
+		char *p = malloc (rc + 2);
 		if (!p) {
 			va_end (ap);
-			return R_FALSE;
+			return false;
 		}
-		vsnprintf (p, ret+1, fmt, ap);
+		vsnprintf (p, rc + 1, fmt, ap);
 		ret = r_strbuf_set (sb, p);
 		free (p);
-	} else ret = r_strbuf_set (sb, string);
+	} else {
+		ret = r_strbuf_set (sb, string);
+	}
 	va_end (ap);
 	return ret;
 }
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 	int l = strlen (s);
-	if ((sb->len+l+1) < sizeof (sb->buf)) {
-		memcpy (sb->buf+sb->len, s, l+1);
-		sb->ptr = NULL;
+	if (l<1) return false;
+	if ((sb->len + l + 1) < sizeof (sb->buf)) {
+		memcpy (sb->buf + sb->len, s, l + 1);
+		R_FREE (sb->ptr);
 	} else {
-		char *d, *p;
-		d = sb->ptr?sb->ptr:sb->buf;
-		p = malloc (sb->len+l+1);
-		if (!p) return false;
-		memcpy (p, d, sb->len);
-		memcpy (p+sb->len, s, l+1);
-		free (sb->ptr);
-		sb->ptr = p;
+		int newlen = sb->len + l + 128;
+		char *p = sb->ptr;
+		bool allocated = true;
+		if (!sb->ptr) {
+			p = malloc (newlen);
+			if (p && sb->len > 0) {
+				memcpy (p, sb->buf, sb->len);
+			}
+		} else if (sb->len + l + 1 > sb->ptrlen) {
+			p = realloc (sb->ptr, newlen);
+		} else {
+			allocated = false;
+		}
+		if (allocated) {
+			if (!p) return false;
+			sb->ptr = p;
+			sb->ptrlen = newlen;
+		}
+		memcpy (p + sb->len, s, l + 1);
 	}
 	sb->len += l;
 	return true;
@@ -92,22 +109,27 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 			va_end (ap);
 			return false;
 		}
-		vsnprintf (p, ret+1, fmt, ap);
+		vsnprintf (p, ret + 1, fmt, ap);
 		ret = r_strbuf_append (sb, p);
 		free (p);
-	} else ret = r_strbuf_append (sb, string);
+	} else {
+		ret = r_strbuf_append (sb, string);
+	}
 	va_end (ap);
 	return ret;
 }
 
-// TODO: rename to tostring()
 R_API char *r_strbuf_get(RStrBuf *sb) {
+	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
+}
+
+R_API char *r_strbuf_drain(RStrBuf *sb) {
+	char *ret = NULL;
 	if (sb) {
-		if (sb->ptr)
-			return sb->ptr;
-		return sb->buf;
+		ret = sb->ptr? sb->ptr: strdup (sb->buf);
+		free (sb);
 	}
-	return NULL;
+	return ret;
 }
 
 R_API void r_strbuf_free(RStrBuf *sb) {
@@ -117,5 +139,5 @@ R_API void r_strbuf_free(RStrBuf *sb) {
 
 R_API void r_strbuf_fini(RStrBuf *sb) {
 	if (sb && sb->ptr)
-		free (sb->ptr);
+		R_FREE (sb->ptr);
 }

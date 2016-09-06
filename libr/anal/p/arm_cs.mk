@@ -1,7 +1,8 @@
 N=anal_arm_cs
 OBJ_ARM_CS=anal_arm_cs.o
 
-include p/capstone.mk
+include $(CURDIR)capstone.mk
+
 STATIC_OBJ+=${OBJ_ARM_CS}
 
 TARGET_ARM_CS=$(N).${EXT_SO}

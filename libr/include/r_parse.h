@@ -29,6 +29,7 @@ typedef struct r_parse_t {
 	RAnalHint *hint; // weak anal ref
 	RList *parsers;
 	RAnalVarList varlist;
+	RAnalBind analb;
 } RParse;
 
 typedef struct r_parse_plugin_t {
@@ -38,7 +39,7 @@ typedef struct r_parse_plugin_t {
 	int (*fini)(void *user);
 	int (*parse)(RParse *p, const char *data, char *str);
 	int (*assemble)(RParse *p, char *data, char *str);
-	int (*filter)(RParse *p, RFlag *f, char *data, char *str, int len);
+	int (*filter)(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian);
 	bool (*varsub)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 	int (*replace)(int argc, const char *argv[], char *newstr);
 	struct list_head list;
@@ -53,7 +54,7 @@ R_API int r_parse_list(RParse *p);
 R_API int r_parse_use(RParse *p, const char *name);
 R_API int r_parse_parse(RParse *p, const char *data, char *str);
 R_API int r_parse_assemble(RParse *p, char *data, char *str);
-R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len);
+R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_parse_c_string(const char *code);
 R_API char *r_parse_c_file(const char *path);
@@ -69,6 +70,7 @@ extern struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mreplace;
 extern struct r_parse_plugin_t r_parse_plugin_ppc_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_6502_pseudo;
+extern struct r_parse_plugin_t r_parse_plugin_m68k_pseudo;
 #endif
 
 #ifdef __cplusplus

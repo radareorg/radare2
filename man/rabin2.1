@@ -5,7 +5,7 @@
 .Nd Binary program info extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl AceghHiIsSMzlpRrLxvh
+.Op Fl AceghHiIsSMzlpRrLxvhqQV
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -19,6 +19,7 @@
 .Op Fl m Ar addr
 .Op Fl @ Ar addr
 .Op Fl n Ar str
+.Op Fl X Ar fmt file ...
 .Ar file
 .Sh DESCRIPTION
 This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
@@ -81,6 +82,8 @@ Perform binary operation on target binary (dump, resize, change sections, ...) s
 Disable VA. Show physical addresses
 .It Fl q
 Be quiet, just show fewer data
+.It Fl Q
+ show load address used by dlopen (non-aslr libs)
 .It Fl R
 Show realocations
 .It Fl r
@@ -91,8 +94,12 @@ Show exported symbols
 Show sections
 .It Fl v
 Show version information
+.It Fl V
+Show binary version information
 .It Fl x
 Extract all sub binaries from a fat binary (f.ex: fatmach0)
+.It Fl X Ar format file ...
+Package a fat or zip containing all the files passed (fat, zip)
 .It Fl z
 Show strings inside .data section (like gnu strings does)
 .It Fl Z

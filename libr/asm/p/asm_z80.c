@@ -24,10 +24,9 @@ RAsmPlugin r_asm_plugin_z80 = {
 	.license = "NC-GPL2", //NON-COMMERCIAL",
 	.arch = "z80",
 	.bits = 8,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = do_disassemble,
-	.assemble = &do_assemble, 
+	.endian = R_SYS_ENDIAN_NONE,
+	.disassemble = &do_disassemble,
+	.assemble = &do_assemble,
 };
 
 #ifndef CORELIB

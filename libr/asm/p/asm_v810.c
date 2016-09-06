@@ -14,7 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		.operands = ""
 	};
 	if (len < 2) return -1;
-	int ret = v810_decode_command (buf, &cmd);
+	int ret = v810_decode_command (buf, len, &cmd);
 	if (ret > 0) {
 		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s",
 			  cmd.instr, cmd.operands);
@@ -25,14 +25,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_v810 = {
 	.name = "v810",
 	.license = "LGPL3",
-	.desc = "V810 disassembly plugin",
+	.desc = "v810 disassembly plugin",
 	.arch = "v810",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL
+	.endian = R_SYS_ENDIAN_LITTLE,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

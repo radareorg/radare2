@@ -41,7 +41,7 @@ R_API void r_space_fini(RSpaces *f) {
 }
 
 R_API int r_space_push(RSpaces *f, const char *name) {
-	int ret = R_FALSE;
+	int ret = false;
 	if (name && *name) {
 		if (f->space_idx != -1 && f->spaces[f->space_idx]) {
 			r_list_push (f->spacestack, f->spaces[f->space_idx]);
@@ -49,7 +49,7 @@ R_API int r_space_push(RSpaces *f, const char *name) {
 			r_list_push (f->spacestack, "*");
 		}
 		r_space_set (f, name);
-		ret = R_TRUE;
+		ret = true;
 	}
 	return ret;
 }
@@ -60,9 +60,9 @@ R_API int r_space_pop(RSpaces *f) {
 		if (*p) {
 			r_space_set (f, p);
 		}
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_space_set(RSpaces *f, const char *name) {
@@ -164,18 +164,18 @@ R_API int r_space_rename (RSpaces *f, const char *oname, const char *nname) {
 	int i;
 	if (!oname) {
 		if (f->space_idx == -1)
-			return R_FALSE;
+			return false;
 		oname = f->spaces[f->space_idx];
 	}
-	if (!nname) return R_FALSE;
+	if (!nname) return false;
 	while (*oname==' ') oname++;
 	while (*nname==' ') nname++;
 	for (i=0; i<R_SPACES_MAX; i++) {
 		if (f->spaces[i]  && !strcmp (oname, f->spaces[i])) {
 			free (f->spaces[i]);
 			f->spaces[i] = strdup (nname);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }

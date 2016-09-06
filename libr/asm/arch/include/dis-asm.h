@@ -35,6 +35,11 @@ extern "C" {
 #include <stdio.h>
 #include "mybfd.h"
 
+#define bfd_zalloc calloc
+#define bfd_malloc malloc
+#define xmalloc malloc
+
+
   typedef int (*fprintf_ftype) (void *, const char*, ...) ATTRIBUTE_FPTR_PRINTF_2;
 
 enum dis_insn_type
@@ -220,6 +225,7 @@ typedef struct disassemble_info
    target address.  Return number of octets processed.  */
 typedef int (*disassembler_ftype) (bfd_vma, disassemble_info *);
 
+extern int print_insn_tricore           (bfd_vma, disassemble_info *);
 extern int print_insn_aarch64		(bfd_vma, disassemble_info *);
 extern int print_insn_alpha		(bfd_vma, disassemble_info *);
 extern int print_insn_avr		(bfd_vma, disassemble_info *);
@@ -273,6 +279,7 @@ extern int print_insn_mn10200		(bfd_vma, disassemble_info *);
 extern int print_insn_mn10300		(bfd_vma, disassemble_info *);
 extern int print_insn_moxie		(bfd_vma, disassemble_info *);
 extern int print_insn_msp430		(bfd_vma, disassemble_info *);
+extern int print_insn_lanai             (bfd_vma, disassemble_info *);
 extern int print_insn_mt                (bfd_vma, disassemble_info *);
 extern int print_insn_ns32k		(bfd_vma, disassemble_info *);
 extern int print_insn_openrisc		(bfd_vma, disassemble_info *);

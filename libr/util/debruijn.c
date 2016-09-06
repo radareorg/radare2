@@ -1,9 +1,6 @@
-/* radare - LGPL - Copyright 2014 - crowell */
+/* radare - LGPL - Copyright 2014-2016 - crowell, pancake */
 
 #include <r_util.h>
-
-// For information about the algorithm, see Joe Sawada and Frank Ruskey, "An
-// Efficient Algorithm for Generating Necklaces with Fixed Density"
 
 // The following two (commented out) lines are the character set used in peda.
 // You may use this charset instead of the A-Za-z0-9 charset normally used.
@@ -11,21 +8,20 @@
 //    "A%sB$nC-(D;)Ea0Fb1Gc2Hd3Ie4Jf5Kg6Lh7Mi8Nj9OkPlQmRnSoTpUqVrWsXtYuZvwxyz";
 
 //TODO(crowell): Make charset configurable, to allow banning characters.
-static const char* debruijn_charset = "ABCDEFGHIJKLMNOPQRSTUVWZYZabcdefghijklmnopqrstuvwxyz1234567890";
+static const char* debruijn_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
 
 // Generate a De Bruijn sequence.
 static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int order,
-		int maxlen, int size, int* prenecklace_a, char* sequence,
-		const char* charset) {
+		int maxlen, int size, int* prenecklace_a, char* sequence, const char* charset) {
 	int j;
-	if (strlen(sequence) == maxlen) {
+	if (!charset || !sequence || strlen (sequence) == maxlen) {
 		return;
 	}
 	if (prenecklace_len_t > order) {
 		if (order % lyndon_prefix_len_p == 0) {
 			for (j = 1; j <= lyndon_prefix_len_p; ++j) {
 				sequence[strlen(sequence)] = charset[prenecklace_a[j]];
-				if (strlen(sequence) == maxlen) {
+				if (strlen (sequence) == maxlen) {
 					return;
 				}
 			}
@@ -38,7 +34,7 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 		for (j = prenecklace_a[prenecklace_len_t - lyndon_prefix_len_p] + 1;
 				j < size; ++j) {
 			prenecklace_a[prenecklace_len_t] = j;
-			de_bruijn_seq(prenecklace_len_t + 1, prenecklace_len_t, order, maxlen,
+			de_bruijn_seq (prenecklace_len_t + 1, prenecklace_len_t, order, maxlen,
 					size, prenecklace_a, sequence, charset);
 		}
 	}
@@ -50,7 +46,12 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 static char* de_bruijn(const char* charset, int order, int maxlen) {
 	int size = strlen (charset);
 	int* prenecklace_a = calloc (size * order, sizeof(int));
+	if (!prenecklace_a) return NULL;
 	char* sequence = calloc (maxlen + 1, sizeof(char));
+	if (!sequence) {
+		free (prenecklace_a);
+		return NULL;
+	}
 	de_bruijn_seq (1, 1, order, maxlen, size, prenecklace_a, sequence, charset);
 	free (prenecklace_a);
 	return sequence;
@@ -62,79 +63,89 @@ static char* de_bruijn(const char* charset, int order, int maxlen) {
 // to free the memory.
 R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	char *pat, *pat2;
-	if (!charset)
+	ut64 len;
+	if (!charset) {
 		charset = debruijn_charset;
+	}
 	if (start >= size) {
 		return (char*)NULL;
 	}
-	pat = de_bruijn(charset, 3 /*subsequence length*/, size);
-	if (start == 0)
+	pat = de_bruijn (charset, 3 /*subsequence length*/, size);
+	if (!pat) {
+		return NULL;
+	}
+	if (start == 0) {
+		len = strlen (pat);
+		if (size != len) {
+			eprintf ("warning: requested pattern of length %d, "
+				 "generated length %"PFMT64d"\n", size, len);
+		}
 		return pat;
+	}
 	pat2 = calloc ((size - start) + 1, sizeof(char));
+	if (!pat2) {
+		free (pat);
+		return NULL;
+	}
 	strncpy (pat2, pat + start, size - start);
 	pat2[size-start] = 0;
 	free (pat);
-	return pat2;
-}
-
-// In-place reverse a string.
-static void reverse_string(char* str) {
-	char *start = str, *end, temp;
-	// Skip null and empty strings.
-	if (!str || !*str)
-		return;
-	end = start + strlen (str) - 1;
-	while (end > start) {
-		temp = *start;
-		*start = *end;
-		*end = temp;
-		++start;
-		--end;
+	len = strlen (pat2);
+	if (size != len) {
+		eprintf ("warning: requested pattern of length %d, "
+				 "generated length %"PFMT64d"\n",
+				 size, len);
 	}
-}
-
-// Generate a cyclic pattern of 0x10000 long.
-// The returned string is malloced, and it is the responsibility of the caller
-// to free the memory.
-static char* cyclic_pattern_long() {
-	// 0x10000 should be long enough. This is how peda works, and nobody
-	// complains.
-	return r_debruijn_pattern (0x10000, 0, debruijn_charset);
+	return pat2;
 }
 
 // Finds the offset of a given value in a cyclic pattern of an integer.
 // Guest endian = 1 if little, 0 if big.
 // Host endian = 1 if little, 0 if big.
-R_API int r_debruijn_offset(ut64 value, int guest_endian) {
-	ut64 needle_l[2];  // Hold the value as a string.
-	char* needle, *pattern;
-	int n, host_endian, retval;
+R_API int r_debruijn_offset(ut64 value, int big_endian) {
+	char* needle, *pattern, buf[9];
+	int n, retval;
 	char* pch;
 
-	if (value == 0)
+	if (value == 0) {
 		return -1;
-	pattern = cyclic_pattern_long();
+	}
+	// 0x10000 should be long enough. This is how peda works, and nobody complains
+	pattern = r_debruijn_pattern (0x10000, 0, debruijn_charset);
 
-	needle_l[0] = value;
-	needle_l[1] = 0;
-	needle = (char*)&needle_l;
-	// On little-endian systems with more bits than the binary being analyzed, we
-	// may need to find the begin of this.
-	while (!needle[0])
-		needle++;
-
-	// we should not guess the endian. its already handled by other functions 
+	if (big_endian) {
+		buf[7] = value & 0xff;
+		buf[6] = (value >> 8) & 0xff;
+		buf[5] = (value >> 16) & 0xff;
+		buf[4] = (value >> 24) & 0xff;
+		buf[3] = (value >> 32) & 0xff;
+		buf[2] = (value >> 40) & 0xff;
+		buf[1] = (value >> 48) & 0xff;
+		buf[0] = (value >> 56) & 0xff;
+		buf[8] = 0; // EOF
+	} else {
+		buf[0] = value & 0xff;
+		buf[1] = (value >> 8) & 0xff;
+		buf[2] = (value >> 16) & 0xff;
+		buf[3] = (value >> 24) & 0xff;
+		buf[4] = (value >> 32) & 0xff;
+		buf[5] = (value >> 40) & 0xff;
+		buf[6] = (value >> 48) & 0xff;
+		buf[7] = (value >> 56) & 0xff;
+		buf[8] = 0; // EOF
+	}
+	for (needle = buf; !*needle; needle++) {
+		/* do nothing here */
+	}
+	// we should not guess the endian. its already handled by other functions
 	// and configure by the user in cfg.bigendian
 	n = 1;
-	// little endian if true
-	host_endian = (*(char*)&n == 1) ? 1 : 0;
-	if (host_endian != guest_endian)
-		reverse_string (needle);
 
 	pch = strstr (pattern, needle);
 	retval = -1;
-	if (pch != NULL)
-		retval = (int)(pch - pattern);
+	if (pch) {
+		retval = (int)(size_t)(pch - pattern);
+	}
 	free (pattern);
 	return retval;
 }

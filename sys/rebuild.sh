@@ -60,14 +60,21 @@ RebuildBin() {
 	Rebuild libr/core
 }
 
+RebuildGdb() {
+	Rebuild shlr/gdb
+	Rebuild libr/io
+	Rebuild libr/debug
+}
+
 case "$1" in
 bin)    RebuildBin ; ;;
+gdb)    RebuildGdb ; ;;
 sdb)    RebuildSdb ; ;;
 bin)    RebuildBin ; ;;
 java)   RebuildJava ; ;;
 iosdbg) RebuildIOSDebug ; ;;
 capstone|cs) RebuildCapstone ; ;;
 *)
-	echo "Usage: sys/rebuild.sh [java|capstone|sdb|iosdbg|cs|sdb|bin]"
+	echo "Usage: sys/rebuild.sh [gdb|java|capstone|sdb|iosdbg|cs|sdb|bin]"
 	;;
 esac

@@ -5,6 +5,24 @@ F+= linux-x86-64
 F+= darwin-x86-64
 F+= windows-x86-32
 F+= windows-x86-64
+F+= types
+F+= types-x86-16
+F+= types-x86-32
+F+= types-x86-64
+F+= types-windows
+F+= types-x86-windows-32
+F+= types-x86-windows-64
+F+= types-x86-osx-64
+F+= cc-x86-64
+F+= cc-x86-32
+F+= cc-mips-32
+F+= cc-m68k-32
+F+= cc-sparc-32
+F+= cc-arm-64
+F+= cc-arm-32
+F+= cc-avr-8
+F+= cc-powerpc-32
+F+= cc-powerpc-64
 
 include $(TOP)/config-user.mk
 HOST_CC?=gcc

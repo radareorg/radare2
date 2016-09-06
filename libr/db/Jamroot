@@ -1,3 +1,0 @@
-OBJS = db.c table.c ;
-
-lib r_db : $(OBJS) : <include>../include <library>../util <library>../../shlr/sdb ;

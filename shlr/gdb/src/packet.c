@@ -1,119 +1,185 @@
-/* libgdbr - LGPL - Copyright 2014 - defragger */
+/* libgdbr - LGPL - Copyright 2014-2016 - defragger */
 
 #include "packet.h"
+#include "utils.h"
 
-char get_next_token(parsing_object_t* po) {
-	return po->buffer[po->position++];
-}
+#define READ_TIMEOUT (250 * 1000)
 
-void handle_escape(parsing_object_t* po) {
-	char token;
-	if (po->position >= po->length) return;
-	token = get_next_token (po);
-	if (token == '}') handle_data (po);
-	else handle_escape (po);
-}
+enum {
+	HEADER	= 1 << 0,
+	CHKSUM	= 1 << 1,
+	DUP	= 1 << 2,
+	ESC	= 1 << 3,
+};
 
-void handle_chk(parsing_object_t* po) {
-	char checksum[3];
-	if (po->position >= po->length) return;
-	checksum[0] = get_next_token (po);
-	checksum[1] = get_next_token (po);
-	checksum[2] = '\0';
-	po->checksum = (uint8_t) strtol (checksum, NULL, 16);
-}
+struct parse_ctx {
+	unsigned long flags;
+	unsigned char last;
+	unsigned char sum;
+	int chksum_nibble;
+};
 
-void handle_data(parsing_object_t* po) {
-	char token;
-	if (po->position >= po->length) return;
-	token = get_next_token (po);
-	if (token == '#') {
-		po->end = po->position - 1; // subtract 2 cause of # itself and the incremented position after getNextToken
-		handle_chk (po);
-	} else if (token == '{') {
-		handle_escape (po);
-	} else handle_data (po);
-}
+static int append(libgdbr_t *g, char ch) {
+	char *ptr;
 
-void handle_packet(parsing_object_t* po) {
-	char token;
-	if (po->position >= po->length) return;
-	token = get_next_token (po);
-	if (token == '$') {
-		po->start = po->position;
-		handle_data (po);
-	}
-	else if	(token == '+') {
-		po->acks++;
-		handle_packet (po);
-	}
-}
-
-/**
- * helper function that should unpack
- * run-length encoded streams of data
- */
-int unpack_data(char* dst, char* src, uint64_t len) {
-	int i = 0;
-	char last = 0;
-	int ret_len = 0;
-	char* p_dst = dst;
-	while ( i < len) {
-		if (src[i] == '*') {
-			if (++i >= len ) fprintf (stderr, "Runlength decoding error\n");
-			char size = src[i++];
-			uint8_t runlength = size - 29;
-			ret_len += runlength - 2;
-			while ( i < len && runlength-- > 0) {
-				*(p_dst++) = last;
-			}
-			continue;
+	if (g->data_len == g->data_max) {
+		ptr = realloc (g->data, g->data_max * 2);
+		if (!ptr) {
+			eprintf ("%s: Failed to reallocate buffer\n",
+				 __func__);
+			return -1;
 		}
-		last = src[i++];
-		*(p_dst++) = last;
-	}
-	return ret_len;
-}
 
-int parse_packet(libgdbr_t* g, int data_offset) {
-	int runlength;
-	uint64_t po_size, target_pos = 0;
-	parsing_object_t new;
-	memset (&new, 0, sizeof (parsing_object_t));
-	new.length = g->read_len;
-	new.buffer = g->read_buff;
-	while (new.position < new.length) {
-		handle_packet (&new);
-		new.start += data_offset;
-		po_size = new.end - new.start;
-		runlength = unpack_data (g->data + target_pos,
-			new.buffer + new.start, po_size);
-		target_pos += po_size + runlength;
+		g->data = ptr;
+		g->data_max *= 2;
 	}
-	g->data_len = target_pos; // setting the resulting length
-	g->read_len = 0; // reset the read_buf len
+
+	g->data[g->data_len++] = ch;
 	return 0;
 }
 
-int send_packet(libgdbr_t* g) {
-	if (!g) {
-		fprintf (stderr, "Initialize libgdbr_t first\n");
-		return -1;
+static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
+	int i = 0;
+	int j = 0;
+
+	for (i = 0; i < len; i++) {
+		char cur = g->read_buff[i];
+
+		if (ctx->flags & CHKSUM) {
+			ctx->sum -= hex2int (cur) << (ctx->chksum_nibble * 4);
+
+			if (!--ctx->chksum_nibble) {
+				continue;
+			}
+
+			if (i != len - 1) {
+				eprintf ("%s: Packet too long\n", __func__);
+				return -1;
+			}
+
+			if (ctx->sum != '#') {
+				eprintf ("%s: Invalid checksum\n", __func__);
+				return -1;
+			}
+
+			return 0;
+		}
+
+		ctx->sum += cur;
+
+		if (ctx->flags & ESC) {
+			if (append (g, cur ^ 0x20) < 0) {
+				return -1;
+			}
+
+			ctx->flags &= ~ESC;
+			continue;
+		}
+
+		if (ctx->flags & DUP) {
+			if (cur < 32 || cur > 126) {
+				eprintf ("%s: Invalid repeat count\n",
+					 __func__);
+				return -1;
+			}
+
+			for (j = cur - 29; j > 0; j--) {
+				if (append (g, ctx->last) < 0) {
+					return -1;
+				}
+			}
+
+			ctx->last = 0;
+			ctx->flags &= ~DUP;
+			continue;
+		}
+
+		switch (cur) {
+		case '$':
+			if (ctx->flags & HEADER) {
+				eprintf ("%s: More than one $\n", __func__);
+				return -1;
+			}
+
+			ctx->flags |= HEADER;
+			/* Disregard any characters preceding $ */
+			ctx->sum = 0;
+			break;
+
+		case '#':
+			ctx->flags |= CHKSUM;
+			ctx->chksum_nibble = 1;
+			break;
+
+		case '}':
+			ctx->flags |= ESC;
+			break;
+
+		case '*':
+			if (!ctx->last) {
+				eprintf ("%s: Invalid repeat\n", __func__);
+				return -1;
+			}
+
+			ctx->flags |= DUP;
+			break;
+
+		case '+':
+		case '-':
+			if (!(ctx->flags & HEADER)) {
+				/* TODO: Handle acks/nacks */
+				break;
+			}
+			/* Fall-through */
+		default:
+			if (append (g, cur) < 0) {
+				return -1;
+			}
+			ctx->last = cur;
+		}
 	}
-	return r_socket_write (g->sock, g->send_buff, g->send_len);
+
+	return 1;
 }
 
-int read_packet(libgdbr_t* g) {
-	int po_size = 0;
+int read_packet(libgdbr_t *g) {
+	struct parse_ctx ctx = {0};
+	int ret;
+
 	if (!g) {
-		fprintf (stderr, "Initialize libgdbr_t first\n");
+		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
 	}
-	while (r_socket_ready (g->sock, 0, 250 * 1000) > 0) {
-		po_size += r_socket_read (g->sock, (
-			(ut8*)g->read_buff + po_size),
-			(g->read_max - po_size));
+
+	g->data_len = 0;
+	while (r_socket_ready (g->sock, 0, READ_TIMEOUT) > 0) {
+		int sz;
+
+		sz = r_socket_read (g->sock, (void *)g->read_buff,
+				    g->read_max);
+		if (sz <= 0) {
+			eprintf ("%s: read failed\n", __func__);
+			return -1;
+		}
+
+		ret = unpack (g, &ctx, sz);
+		if (ret < 0) {
+			eprintf ("%s: unpack failed\n", __func__);
+			return -1;
+		}
+		if (!ret) {
+			return 0;
+		}
 	}
-	g->read_len = po_size;
-	return po_size;
+
+	return -1;
+}
+
+int send_packet(libgdbr_t *g) {
+	if (!g) {
+		eprintf ("Initialize libgdbr_t first\n");
+		return -1;
+	}
+
+	return r_socket_write (g->sock, g->send_buff, g->send_len);
 }

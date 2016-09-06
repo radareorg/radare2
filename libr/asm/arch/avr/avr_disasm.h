@@ -45,7 +45,7 @@ enum AVR_Operand_Types {
 	OPERAND_Z, OPERAND_ZP, OPERAND_MZ, OPERAND_ZPQ,
 };
 /* OPERAND_REGISTER_GHOST:
- * Some instructions, like clr, only have one one instruction when written in assembly,
+ * Some instructions, like clr, only have one instruction when written in assembly,
  * such as clr R16. However, when encoded, the instruction becomes eor R16, R16. So although
  * OPERAND_REGISTER_GHOST has an operand mask, the actual register value is never displayed
  * in disassembly. */

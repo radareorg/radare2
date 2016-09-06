@@ -175,7 +175,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				}
 				newstr[k]='\0';
 			}
-			return R_TRUE;
+			return true;
 		}
 	}
 
@@ -188,7 +188,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		}
 	}
 
-	return R_FALSE;
+	return false;
 }
 
 static int parse(RParse *p, const char *data, char *str) {
@@ -204,12 +204,12 @@ static int parse(RParse *p, const char *data, char *str) {
 	||  !strcmp (data, "nop")
 	||  !strcmp (data, "DEPRECATED")) {
 		str[0] = 0;
-		return R_TRUE;
+		return true;
 	}
 	
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
-		return R_FALSE;
+		return false;
 	memcpy (buf, data, len+1);
 
 	r_str_chop (buf);
@@ -302,7 +302,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 	}
 	free (buf);
-	return R_TRUE;
+	return true;
 }
 
 struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo = {

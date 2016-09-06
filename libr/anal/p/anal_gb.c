@@ -158,8 +158,8 @@ static inline void gb_anal_add_sp (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->dst->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
 	op->src[0]->imm = (st8)data;
 	if (data < 128)
-		r_strbuf_setf (&op->esil, "-0x%02x,sp,-=", data);		//sp-=0x90
-	else	r_strbuf_setf (&op->esil, "0x%02x,sp,+=", data - 128);		//sp+=0x90
+		r_strbuf_setf (&op->esil, "0x%02x,sp,+=", data);
+	else	r_strbuf_setf (&op->esil, "0x%02x,sp,-=", 0 - (st8)data);
 	r_strbuf_append (&op->esil, ",0,Z,=,0,N,=");
 }
 
@@ -195,8 +195,8 @@ static inline void gb_anal_mov_hl_sp (RReg *reg, RAnalOp *op, const ut8 data) {
 	op->src[0]->reg = r_reg_get (reg, regs_16[3], R_REG_TYPE_GPR);
 	op->src[1]->imm = (st8)data;
 	if (data < 128)
-		r_strbuf_setf (&op->esil, "0x%02x,sp,-,hl,=", data);		//hl=sp-0x90
-	else	r_strbuf_setf (&op->esil, "0x%02x,sp,+,hl,=", data - 128);	//hl=sp+0x90
+		r_strbuf_setf (&op->esil, "0x%02x,sp,+,hl,=", data);
+	else	r_strbuf_setf (&op->esil, "0x%02x,sp,-,hl,=", 0 - (st8)data);
 	r_strbuf_append (&op->esil, ",0,Z,=,0,N,=");
 }
 
@@ -401,7 +401,7 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 			if (data[0] == 0xce) {					//adc
 				op->src[1] = r_anal_value_new ();
 				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-				r_strbuf_append (&op->esil, "a,+=,C,DUP,$c7,C,=,$c3,H,=,a,+=,$c7,C,|=,$c3,H,|=,a,a,=,$z,Z,=,0,N,=");
+				r_strbuf_append (&op->esil, "a,+=,C,NUM,$c7,C,=,$c3,H,=,a,+=,$c7,C,|=,$c3,H,|=,a,a,=,$z,Z,=,0,N,=");
 			} else	r_strbuf_append (&op->esil, "a,+=,$c3,H,=,$c7,C,=,0,N,=,a,a,=,$z,Z,=");
 		break;
 		case R_ANAL_OP_TYPE_SUB:
@@ -409,7 +409,7 @@ static void gb_anal_xoaasc_imm (RReg *reg, RAnalOp *op, const ut8 *data)	//xor ,
 			if (data[0] == 0xde) {					//sbc
 				op->src[1] = r_anal_value_new ();
 				op->src[1]->reg = r_reg_get (reg, "C", R_REG_TYPE_GPR);
-				r_strbuf_append (&op->esil, "a,-=,C,DUP,$b8,C,=,$b4,H,=,a,-=,$b8,C,|=,$b4,H,|=,a,a,=,$z,Z,=,1,N,=");
+				r_strbuf_append (&op->esil, "a,-=,C,NUM,$b8,C,=,$b4,H,=,a,-=,$b8,C,|=,$b4,H,|=,a,a,=,$z,Z,=,1,N,=");
 			} else	r_strbuf_append (&op->esil, "a,-=,$b4,H,=,$b8,C,=,1,N,=,a,a,=,$z,Z,=");
 		break;
 		case R_ANAL_OP_TYPE_CMP:
@@ -427,46 +427,48 @@ static inline void gb_anal_load_hl (RReg *reg, RAnalOp *op, const ut8 data)	//lo
 	op->src[0]->absolute = true;
 	op->dst->reg = r_reg_get (reg, regs_8[((data & 0x38)>>3)], R_REG_TYPE_GPR);
 	r_strbuf_setf (&op->esil, "hl,[1],%s,=", regs_8[((data & 0x38)>>3)]);
-	if (data == 0x3a)
+	if (data == 0x3a) {
 		r_strbuf_append (&op->esil, ",1,hl,-=");
-	if (data == 0x2a)
+	}
+	if (data == 0x2a) {
 		r_strbuf_set (&op->esil, "hl,[1],a,=,1,hl,+=");			//hack in concept
+	}
 }
 
-static inline void gb_anal_load (RReg *reg, RAnalOp *op, const ut8 *data)
-{
+static inline void gb_anal_load (RReg *reg, RAnalOp *op, const ut8 *data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
 	op->src[0]->memref = 1;
 	switch (data[0]) {
-		case 0xf0:
-			op->src[0]->base = 0xff00 + data[1];
-			r_strbuf_setf (&op->esil, "0x%04x,[1],a,=", op->src[0]->base);
-			break;
-		case 0xf2:
-			op->src[0]->base = 0xff00;
-			op->src[0]->regdelta = r_reg_get (reg, "c", R_REG_TYPE_GPR);
-			r_strbuf_set (&op->esil, "0xff00,c,+,[1],a,=");
-			break;
-		case 0xfa:
-			op->src[0]->base = GB_SOFTCAST (data[1], data[2]);
-			if (op->src[0]->base < 0x4000)
-				op->ptr = op->src[0]->base;
-			else {
-				if (op->addr > 0x3fff && op->src[0]->base < 0x8000)
-					op->ptr = op->src[0]->base + (op->addr & 0xffffffffffff0000);					//hack
+	case 0xf0:
+		op->src[0]->base = 0xff00 + data[1];
+		r_strbuf_setf (&op->esil, "0x%04x,[1],a,=", op->src[0]->base);
+		break;
+	case 0xf2:
+		op->src[0]->base = 0xff00;
+		op->src[0]->regdelta = r_reg_get (reg, "c", R_REG_TYPE_GPR);
+		r_strbuf_set (&op->esil, "0xff00,c,+,[1],a,=");
+		break;
+	case 0xfa:
+		op->src[0]->base = GB_SOFTCAST (data[1], data[2]);
+		if (op->src[0]->base < 0x4000) {
+			op->ptr = op->src[0]->base;
+		} else {
+			if (op->addr > 0x3fff && op->src[0]->base < 0x8000) { /* hack */
+				op->ptr = op->src[0]->base + (op->addr & 0xffffffffffff0000LL);
 			}
-			r_strbuf_setf (&op->esil, "0x%04x,[1],a,=", op->src[0]->base);
-			break;
-		default:
-			op->src[0]->reg = r_reg_get (reg, regs_16[(data[0] & 0xf0)>>4], R_REG_TYPE_GPR);
-			r_strbuf_setf (&op->esil, "%s,[1],a,=", regs_16[(data[0] & 0xf0)>>4]);
+		}
+		r_strbuf_setf (&op->esil, "0x%04x,[1],a,=", op->src[0]->base);
+		break;
+	default:
+		op->src[0]->reg = r_reg_get (reg, regs_16[(data[0] & 0xf0) >> 4], R_REG_TYPE_GPR);
+		r_strbuf_setf (&op->esil, "%s,[1],a,=", regs_16[(data[0] & 0xf0) >> 4]);
+		break;
 	}
 }
 
-static inline void gb_anal_store_hl (RReg *reg, RAnalOp *op, const ut8 *data)
-{
+static inline void gb_anal_store_hl (RReg *reg, RAnalOp *op, const ut8 *data) {
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->dst->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
@@ -476,11 +478,11 @@ static inline void gb_anal_store_hl (RReg *reg, RAnalOp *op, const ut8 *data)
 		op->src[0]->imm = data[1];
 		r_strbuf_setf (&op->esil, "0x%02x,hl,=[1]", data[1]);
 	} else {
-		op->src[0]->reg = r_reg_get (reg, regs_8[((data[0] & 0x38)>>3)], R_REG_TYPE_GPR);
-		r_strbuf_setf (&op->esil, "%s,hl,=[1]", regs_8[(data[0] & 0x38)>>3]);
+		op->src[0]->reg = r_reg_get (reg, regs_8[data[0] & 0x07], R_REG_TYPE_GPR);
+		r_strbuf_setf (&op->esil, "%s,hl,=[1]", regs_8[data[0] & 0x07]);
 	}
 	if (data[0] == 0x32)
-		r_strbuf_append (&op->esil, ",1,hl,-=");
+		r_strbuf_set (&op->esil, "a,hl,=[1],1,hl,-=");
 	if (data[0] == 0x22)
 		r_strbuf_set (&op->esil, "a,hl,=[1],1,hl,+=");
 }
@@ -1032,7 +1034,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xd8:
 			gb_anal_cond (anal->reg, op, data[0]);
 			gb_anal_esil_cret (op, data[0]);
-			op->eob = 1;
+			op->eob = true;
 			op->cycles = 20;
 			op->failcycles = 8;
 			op->type = R_ANAL_OP_TYPE_CRET;
@@ -1041,7 +1043,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			gb_anal_mov_ime (anal->reg, op, data[0]);
 			op->type2 = R_ANAL_OP_TYPE_MOV;
 		case 0xc9:
-			op->eob = 1;
+			op->eob = true;
 			op->cycles = 16;
 			gb_anal_esil_ret (op);
 			op->stackop = R_ANAL_STACK_INC;
@@ -1099,7 +1101,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			} else {
 				op->type = R_ANAL_OP_TYPE_UJMP;
 			}
-			op->eob = 1;
+			op->eob = true;
 			op->cycles = 16;
 			op->fail = addr+ilen;
 			break;
@@ -1108,7 +1110,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->fail = addr + ilen;
 			gb_anal_esil_jmp (op);
 			op->cycles = 12;
-			op->eob = 1;
+			op->eob = true;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
 		case 0x20:
@@ -1121,7 +1123,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			gb_anal_esil_cjmp (op, data[0]);
 			op->cycles = 12;
 			op->failcycles = 8;
-			op->eob = 1;
+			op->eob = true;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			break;
 		case 0xc2:
@@ -1133,7 +1135,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			} else {
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 			}
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_cond (anal->reg, op, data[0]);
 			gb_anal_esil_cjmp (op, data[0]);
 			op->cycles = 16;
@@ -1142,13 +1144,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0xe9:
 			op->cycles = 4;
-			op->eob = 1;
+			op->eob = true;
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			gb_anal_jmp_hl (anal->reg, op);
 			break;
 		case 0x76:
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->eob = 1;			//halt migth wait for interrupts
+			op->eob = true;			//halt migth wait for interrupts
 			op->fail = addr + ilen;
 			if(len > 1)
 				op->jump = addr + gbOpLength (gb_op[data[1]].type) + ilen;
@@ -1158,7 +1160,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				op->type = R_ANAL_OP_TYPE_CALL;
 			else	op->type = R_ANAL_OP_TYPE_UCALL;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 24;
 			break;
@@ -1171,7 +1173,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				op->type = R_ANAL_OP_TYPE_CCALL;
 			else	op->type = R_ANAL_OP_TYPE_UCCALL;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_ccall (op, data[0]);
 			op->cycles = 24;
 			op->failcycles = 12;
@@ -1179,7 +1181,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
                 case 0xc7:				//rst 0
 			op->jump = 0x00;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -1187,7 +1189,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xcf:				//rst 8
                         op->jump = 0x08;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -1195,7 +1197,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xd7:				//rst 16
 			op->jump = 0x10;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -1203,7 +1205,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xdf:				//rst 24
 			op->jump = 0x18;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -1211,7 +1213,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xe7:				//rst 32
 			op->jump = 0x20;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -1219,7 +1221,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xef:				//rst 40
 			op->jump = 0x28;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -1227,7 +1229,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xf7:				//rst 48
 			op->jump = 0x30;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -1235,7 +1237,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xff:				//rst 56
 			op->jump = 0x38;
 			op->fail = addr + ilen;
-			op->eob = 1;
+			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;

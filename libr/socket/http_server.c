@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake */
+/* radare - LGPL - Copyright 2012-2016 - pancake */
 
 #include <r_socket.h>
 
@@ -13,6 +13,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
+	if (!hr) return NULL;
 	hr->s = r_socket_accept (s);
 	if (!hr->s) {
 		free (hr);
@@ -49,11 +50,14 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 				hr->path = strdup (p+1);
 			}
 		} else {
+			if (!hr->referer && !strncmp (buf, "Referer: ", 9)) {
+				hr->referer = strdup (buf + 9);
+			} else
 			if (!hr->agent && !strncmp (buf, "User-Agent: ", 12)) {
-				hr->agent = strdup (buf+12);
+				hr->agent = strdup (buf + 12);
 			} else
 			if (!hr->host && !strncmp (buf, "Host: ", 6)) {
-				hr->host = strdup (buf+6);
+				hr->host = strdup (buf + 6);
 			} else
 			if (!strncmp (buf, "Content-Length: ", 16)) {
 				content_length = atoi (buf+16);
@@ -131,7 +135,7 @@ R_API void r_socket_http_close (RSocketHTTPRequest *rs) {
 
 #if MAIN
 int main() {
-	RSocket *s = r_socket_new (R_FALSE);
+	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
 		eprintf ("Cannot listen here\n");
 		return 1;

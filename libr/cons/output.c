@@ -1,21 +1,20 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_cons.h>
 #define I r_cons_singleton()
 
 #if __WINDOWS__
 static void fill_tail (int cols, int lines) {
-	/* fill the rest of screen */
-	lines++; // hack
-	if (lines>0) {
+	lines++;
+	if (lines > 0) {
 		char white[1024];
 		memset (white, ' ', sizeof (white));
-		if (cols>sizeof (white))
-			cols = sizeof (white);
+		cols = R_MIN (cols, sizeof (white));
 		lines--;
 		white[cols]='\n';
-		while (lines-->0)
+		while (lines-- > 0) {
 			write (1, white, cols);
+		}
 	}
 }
 
@@ -24,8 +23,7 @@ static void w32_clear() {
 	static CONSOLE_SCREEN_BUFFER_INFO csbi;
 	const COORD startCoords = { 0, 0 };
 	DWORD dummy;
-
-	if (I->is_wine==1) {
+	if (I->is_wine == 1) {
 		write (1, "\x1b[0;0H", 6);
 		write (1, "\x1b[0m", 4);
 		write (1, "\x1b[2J", 4);
@@ -44,24 +42,22 @@ void w32_gotoxy(int x, int y) {
         COORD coord;
         coord.X = x;
         coord.Y = y;
-	if (I->is_wine==1) {
+	if (I->is_wine == 1) {
 		write (1, "\x1b[0;0H", 6);
 	}
-        if (!hStdout)
+        if (!hStdout) {
                 hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+	}
         SetConsoleCursorPosition (hStdout, coord);
 }
 
 static int wrapline (const char *s, int len) {
 	int l, n = 0;
-	for (; n<len; ) {
+	for (; n < len; ) {
 		l = r_str_len_utf8char (s+n, (len-n));
 		n += l;
 	}
-	if (n>len)
-		n -= l;
-	else n--;
-	return n;
+	return n - (n > len)? l: 1;
 }
 
 R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
@@ -76,28 +72,30 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 	if (I->is_wine==-1) {
 		I->is_wine = r_file_is_directory ("/proc")? 1: 0;
 	}
-
-	if (len<0)
+	if (len < 0) {
 		len = strlen ((const char *)ptr);
+	}
 	ptr_end = ptr + len;
 	if (ptr && hConsole)
-	for (; *ptr && ptr<ptr_end; ptr++) {
+	for (; *ptr && ptr < ptr_end; ptr++) {
 		if (ptr[0] == 0xa) {
-			int ll = (size_t)(ptr-str);
+			int ll = (size_t)(ptr - str);
 			lines--;
-			if (vmode && lines<0)
-				break; //return 0;
-			if (ll<1)
+			if (vmode && lines<0) {
+				break;
+			}
+			if (ll < 1) {
 				continue;
+			}
 			if (vmode) {
 				// TODO: Fix utf8 chop
 				/* only chop columns if necessary */
-				if (ll==linelen) {
-				} else 	if (ll+linelen >= cols) {
+				if (ll != linelen && ll+linelen >= cols) {
 					// chop line if too long
 					ll = (cols-linelen)-1;
-					if (ll<1)
+					if (ll < 1) {
 						continue;
+					}
 				}
 			}
 			write (1, str, ll);
@@ -105,9 +103,8 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			esc = 0;
 			str = ptr+1;
 			if (vmode) {
-				int wlen = cols-linelen;
+				int wlen = cols - linelen;
 				char white[1024];
-				//wlen = 5;
 				if (wlen>0 && wlen<sizeof (white)) {
 					memset (white, ' ', sizeof (white));
 					write (1, white, wlen-1);
@@ -162,48 +159,46 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			}
 			esc = 2;
 			continue;
-		} else
-		if (esc == 2) {
-			{
-				int x, y;
-				const char *ptr2 = NULL;
-				int i, state = 0;
-				for (i=0; ptr[i] && state>=0; i++) {
-					switch (state) {
-					case 0:
-						if (ptr[i]==';') {
-							y = atoi ((const char *)ptr);
-							state = 1;
-							ptr2 = (const char *)ptr+i+1;
-						} else
-						if (ptr[i] >='0' && ptr[i]<='9') {
-							// ok
-						} else state = -1; // END FAIL
-						break;
-					case 1:
-						if (ptr[i]=='H') {
-							x = atoi (ptr2);
-							state = -2; // END OK
-						} else
-						if (ptr[i] >='0' && ptr[i]<='9') {
-							// ok
-						} else state = -1; // END FAIL
-						break;
+		} else if (esc == 2) {
+			const char *ptr2 = NULL;
+			int x, y, i, state = 0;
+			for (i = 0; ptr[i] && state >= 0; i++) {
+				switch (state) {
+				case 0:
+					if (ptr[i] == ';') {
+						y = atoi ((const char *)ptr);
+						state = 1;
+						ptr2 = (const char *)ptr+i+1;
+					} else if (ptr[i] >='0' && ptr[i]<='9') {
+						// ok
+					} else {
+						state = -1; // END FAIL
 					}
+					break;
+				case 1:
+					if (ptr[i]=='H') {
+						x = atoi (ptr2);
+						state = -2; // END OK
+					} else if (ptr[i] >='0' && ptr[i]<='9') {
+						// ok
+					} else {
+						state = -1; // END FAIL
+					}
+					break;
 				}
-				if (state == -2) {
-					w32_gotoxy (x, y);
-					ptr += i;
-					str = ptr + 1;// + i-2;
-					continue;
-				}
+			}
+			if (state == -2) {
+				w32_gotoxy (x, y);
+				ptr += i;
+				str = ptr + 1;// + i-2;
+				continue;
 			}
 			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
 				// \x1b[0;0H
 				/** clear screen if gotoxy **/
 				if (vmode) {
 					// fill row here
-					fill_tail(cols, lines);
+					fill_tail (cols, lines);
 				}
 				w32_gotoxy (0, 0);
 				lines = 0;
@@ -211,16 +206,14 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				ptr += 3;
 				str = ptr + 1;
 				continue;
-			} else
-			if (ptr[0]=='2'&&ptr[1]=='J') {
+			} else if (ptr[0]=='2'&&ptr[1]=='J') {
 				//fill_tail(cols, lines);
 				w32_clear (); //r_cons_clear ();
 				esc = 0;
 				ptr = ptr + 1;
 				str = ptr + 1;
 				continue;
-			} else
-			if (ptr[0]=='0'&&(ptr[1]=='m' || ptr [1]=='K')) {
+			} else if (ptr[0]=='0'&&(ptr[1]=='m' || ptr [1]=='K')) {
 				SetConsoleTextAttribute (hConsole, 1|2|4|8);
 				fg = 1|2|4|8;
 				bg = 0;
@@ -230,8 +223,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				str = ptr + 1;
 				continue;
 				// reset color
-			} else
-			if (ptr[0]=='2'&&ptr[1]=='7'&&ptr[2]=='m') {
+			} else if (ptr[0]=='2'&&ptr[1]=='7'&&ptr[2]=='m') {
 				SetConsoleTextAttribute (hConsole, bg|fg);
 				inv = 0;
 				esc = 0;
@@ -239,8 +231,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				str = ptr + 1;
 				continue;
 				// invert off
-			} else
-			if (ptr[0]=='7'&&ptr[1]=='m') {
+			} else if (ptr[0]=='7'&&ptr[1]=='m') {
 				SetConsoleTextAttribute (hConsole, bg|fg|128);
 				inv = 128;
 				esc = 0;
@@ -248,8 +239,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				str = ptr + 1;
 				continue;
 				// invert
-			} else
-			if (ptr[0]=='3' && ptr[2]=='m') {
+			} else if (ptr[0]=='3' && ptr[2]=='m') {
 				// http://www.betarun.com/Pages/ConsoleColor/
 				switch (ptr[1]) {
 				case '0': // BLACK
@@ -287,8 +277,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				ptr = ptr + 2;
 				str = ptr + 1;
 				continue;
-			} else
-			if (ptr[0]=='4' && ptr[2]=='m') {
+			} else if (ptr[0]=='4' && ptr[2]=='m') {
 				/* background color */
 				switch (ptr[1]) {
 				case '0': // BLACK
@@ -334,16 +323,15 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 		int wlen = cols-linelen-1;
 		char white[1024];
 		//wlen = 5;
-		if (wlen>0) {
+		if (wlen > 0) {
 			memset (white, ' ', sizeof (white));
 			write (1, white, wlen);
 		}
 		/* fill tail */
-		fill_tail(cols, lines);
-	}
-	else {
+		fill_tail (cols, lines);
+	} else {
 		int ll = (size_t)(ptr-str);
-		if (ll>0) {
+		if (ll > 0) {
 			write (1, str, ll);
 			linelen += ll;
 		}

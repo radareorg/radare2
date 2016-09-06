@@ -1,9 +1,8 @@
 PACKAGE=radare2
-VERSION=0.10.0
 ARCH=iphoneos-arm
 SECTION=user/shell
 PRIORITY=optional
 MAINTAINER=pancake <pancake@nopcode.org>
 
-# override version
+# VERSION=... get version from config-user
 include ../../../config-user.mk

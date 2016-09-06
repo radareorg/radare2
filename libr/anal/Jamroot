@@ -66,9 +66,9 @@ ANAL_OBJS += p/anal_ppc.c
     ../asm/arch/ppc/gnu/ppc-opc.c
 ;
 
-# CSR
-ANAL_OBJS += p/anal_csr.c 
-    ../asm/arch/csr/dis.c
+# XAP
+ANAL_OBJS += p/anal_xap.c 
+    ../asm/arch/xap/dis.c
 ;
 
 # M68K

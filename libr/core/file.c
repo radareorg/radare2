@@ -1,8 +1,10 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define UPDATE_TIME(a) r->times->file_open_time = r_sys_now() - a
 
 static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *filenameuri);
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr);
@@ -13,8 +15,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	ut64 ofrom = 0, laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
 	RCoreFile *ofile = core->file;
-	RBinFile *bf = (ofile && ofile->desc) ?
-		r_bin_file_find_by_fd (core->bin, ofile->desc->fd) : NULL;
+	RBinFile *bf = (ofile && ofile->desc) 
+			? r_bin_file_find_by_fd (core->bin, ofile->desc->fd) 
+			: NULL;
 	RIODesc *odesc = ofile ? ofile->desc : NULL;
 	char *ofilepath = NULL, *obinfilepath = bf ? strdup (bf->file) : NULL;
 	int newpid, ret = false;
@@ -41,8 +44,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	newpid = odesc ? odesc->fd : -1;
 
 	if (isdebug) {
-		r_debug_kill (core->dbg, core->dbg->pid,
-			core->dbg->tid, 9); // KILL
+		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // KILL
 		perm = 7;
 	} else {
 		if (!perm) {
@@ -65,19 +67,23 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	// when the new memory maps are created.
 	path = strdup (ofilepath);
 	free (obinfilepath);
-	obinfilepath = strdup(ofilepath);
+	obinfilepath = strdup (ofilepath);
 
 	file = r_core_file_open (core, path, perm, laddr);
 	if (file) {
-		int had_rbin_info = 0;
+		bool had_rbin_info = false;
 
 		ofile->map->from = ofrom;
-		if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
-			had_rbin_info = 1;
+		if (ofile->desc) {
+			if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
+				had_rbin_info = true;
+			}
 		}
 		r_core_file_close (core, ofile);
 		r_core_file_set_by_file (core, file);
-		r_core_file_set_by_fd (core, file->desc->fd);
+		if (file->desc) {
+			r_core_file_set_by_fd (core, file->desc->fd);
+		}
 		ofile = NULL;
 		odesc = NULL;
 	//	core->file = file;
@@ -92,11 +98,10 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			}
 		}
 
-		/*
-		if (core->bin->cur && file->desc) {
-			core->bin->cur->fd = file->desc->fd;
-			ret = true;
-		}*/
+		if (core->bin->cur && file->desc && !loadbin) {
+		    	//force here NULL because is causing uaf look this better in future XXX @alvarofe
+			core->bin->cur = NULL;
+		}
 		// close old file
 	} else if (ofile) {
 		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
@@ -109,11 +114,20 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		eprintf ("Cannot reopen\n");
 	}
 	if (isdebug) {
+		int newtid = newpid;
 		// XXX - select the right backend
-		if (core->file && core->file->desc)
+		if (core->file && core->file->desc) {
 			newpid = core->file->desc->fd;
-		r_core_setup_debugger (core, "native");
-		r_debug_select (core->dbg, newpid, newpid);
+#if __WINDOWS__
+			newpid = core->io->winpid;
+			newtid = core->io->wintid;
+			r_debug_select (core->dbg, newpid, newtid);
+#endif
+		}
+		//reopen and attach
+		r_core_setup_debugger (core, "native", true);
+		r_debug_select (core->dbg, newpid, newtid);
+		//
 	}
 
 	if (core->file) {
@@ -124,7 +138,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			r_io_raise (core->io, desc->fd);
 			core->switch_file_view = 1;
 #endif
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		} else {
 			const char *name = (cf && cf->desc) ? cf->desc->name : "ERROR";
 			eprintf ("Error: Unable to switch the view to file: %s\n", name);
@@ -135,7 +149,14 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
 		r_core_cmd0 (core, "sr PC");
+	} else {
+		ut64 gp = r_num_math (core->num, "loc._gp");
+		if (gp && gp != UT64_MAX) {
+			r_config_set_i (core->config, "anal.gp", gp);
+		}
 	}
+	// update anal io bind
+	r_io_bind (core->io, &(core->anal->iob));
 	// This is done to ensure that the file is correctly
 	// loaded into the view
 	free (obinfilepath);
@@ -160,19 +181,19 @@ R_API void r_core_sysenv_help(const RCore* core) {
 	"!=!", "", "enable remotecmd mode",
 	"=!=", "", "disable remotecmd mode",
 	"\nEnvironment:", "", "",
-	"FILE", "", "file name",
+	"R2_FILE", "", "file name",
+	"R2_OFFSET", "", "10base offset 64bit value",
+	"R2_BYTES", "", "TODO: variable with bytes in curblock",
+	"R2_XOFFSET", "", "same as above, but in 16 base",
+	"R2_BSIZE", "", "block size",
+	"R2_ENDIAN", "", "'big' or 'little'",
+	"R2_IOVA", "", "is io.va true? virtual addressing (1,0)",
+	"R2_DEBUG", "", "debug mode enabled? (1,0)",
+	"R2_BLOCK", "", "TODO: dump current block to tmp file",
+	"R2_SIZE", "","file size",
+	"R2_ARCH", "", "value of asm.arch",
 	"RABIN2_LANG", "", "assume this lang to demangle",
 	"RABIN2_DEMANGLE", "", "demangle or not",
-	"SIZE", "","file size",
-	"OFFSET", "", "10base offset 64bit value",
-	"XOFFSET", "", "same as above, but in 16 base",
-	"BSIZE", "", "block size",
-	"ENDIAN", "", "'big' or 'little'",
-	"ARCH", "", "value of asm.arch",
-	"DEBUG", "", "debug mode enabled? (1,0)",
-	"IOVA", "", "is io.va true? virtual addressing (1,0)",
-	"BLOCK", "", "TODO: dump current block to tmp file",
-	"BYTES", "", "TODO: variable with bytes in curblock",
 	"PDB_SERVER", "", "e pdb.server",
 	NULL
 	};
@@ -181,63 +202,57 @@ R_API void r_core_sysenv_help(const RCore* core) {
 
 R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 	// TODO: remove tmpfilez
-	if (strstr (cmd, "BLOCK")) {
+	if (strstr (cmd, "R2_BLOCK")) {
 		// remove temporary BLOCK file
-		char *f = r_sys_getenv ("BLOCK");
+		char *f = r_sys_getenv ("R2_BLOCK");
 		if (f) {
 			r_file_rm (f);
-			r_sys_setenv ("BLOCK", NULL);
+			r_sys_setenv ("R2_BLOCK", NULL);
 			free (f);
 		}
 	}
-	r_sys_setenv ("BYTES", NULL);
-	r_sys_setenv ("OFFSET", NULL);
+	r_sys_setenv ("R2_FILE", NULL);
+	r_sys_setenv ("R2_BYTES", NULL);
+	r_sys_setenv ("R2_OFFSET", NULL);
 }
 
-R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
-	char buf[64], *ret, *f;
 #if DISCUSS
-	// EDITOR      cfg.editor (vim or so)
-	CURSOR      cursor position (offset from curseek)
-	COLOR       scr.color?1:0
-	VERBOSE     cfg.verbose
-	// only if cmd matches BYTES or BLOCK ?
-	BYTES       hexpairs of current block
-	BLOCK       temporally file with contents of current block
+	EDITOR   r_sys_setenv ("EDITOR", r_config_get (core->config, "cfg.editor"));
+	CURSOR   cursor position (offset from curseek)
+	VERBOSE  cfg.verbose
 #endif
-	ret = strdup (cmd);
-	if (strstr (cmd, "BYTES")) {
+R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
+	char *f, *ret = strdup (cmd);
+	if (strstr (cmd, "R2_BYTES")) {
 		char *s = r_hex_bin2strdup (core->block, core->blocksize);
-		r_sys_setenv ("BYTES", s);
+		r_sys_setenv ("R2_BYTES", s);
 		free (s);
 	}
 	r_sys_setenv ("PDB_SERVER", r_config_get (core->config, "pdb.server"));
 	if (core->file && core->file->desc && core->file->desc->name) {
-		r_sys_setenv ("FILE", core->file->desc->name);
-		snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size
-			(core->io, core->file->desc));
-		r_sys_setenv ("SIZE", buf);
-		if (strstr (cmd, "BLOCK")) {
+		r_sys_setenv ("R2_FILE", core->file->desc->name);
+		r_sys_setenv ("R2_SIZE", sdb_fmt (0, "%"PFMT64d,
+			r_io_desc_size (core->io, core->file->desc)));
+		if (strstr (cmd, "R2_BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = r_file_temp ("r2block"))) {
-				if (r_file_dump (f, core->block, core->blocksize, 0))
-					r_sys_setenv ("BLOCK", f);
+				if (r_file_dump (f, core->block, core->blocksize, 0)) {
+					r_sys_setenv ("R2_BLOCK", f);
+				}
 				free (f);
 			}
 		}
 	}
 	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
-	snprintf (buf, sizeof (buf), "%"PFMT64d, core->offset);
-	r_sys_setenv ("OFFSET", buf);
-	snprintf (buf, sizeof (buf), "0x%08"PFMT64x, core->offset);
-	r_sys_setenv ("XOFFSET", buf);
-	r_sys_setenv ("ENDIAN", core->assembler->big_endian?"big":"little");
-	snprintf (buf, sizeof (buf), "%d", core->blocksize);
-	r_sys_setenv ("BSIZE", buf);
-	r_sys_setenv ("ARCH", r_config_get (core->config, "asm.arch"));
-	r_sys_setenv ("DEBUG", r_config_get_i (core->config, "cfg.debug")?"1":"0");
-	r_sys_setenv ("IOVA", r_config_get_i (core->config, "io.va")?"1":"0");
+	r_sys_setenv ("R2_OFFSET", sdb_fmt (0, "%"PFMT64d, core->offset));
+	r_sys_setenv ("R2_XOFFSET", sdb_fmt (0, "0x%08"PFMT64x, core->offset));
+	r_sys_setenv ("R2_ENDIAN", core->assembler->big_endian? "big": "little");
+	r_sys_setenv ("R2_BSIZE", sdb_fmt (0, "%d", core->blocksize));
+	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
+	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color")? "1": "0");
+	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")?"1":"0");
+	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")?"1":"0");
 	return ret;
 }
 
@@ -249,7 +264,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 
 	r_debug_map_sync (core->dbg); // update process memory maps
 	r_list_foreach (core->dbg->maps, iter, map) {
-		if ((map->perm & 5)==5) {
+		if ((map->perm & 5) == 5) {
 			// TODO: make this more flexible
 			// XXX - why "copy/" here?
 			if (map->name && strstr (map->name, "copy/")) return map->addr;
@@ -268,7 +283,6 @@ R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinFile *bf = NULL;
-
 	if (desc) result = r_bin_reload (r->bin, desc, baseaddr);
 	bf = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, bf);
@@ -368,8 +382,6 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	if (plugin && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
-
-	if (r_config_get_i (r->config, "file.analyze")) r_core_cmd0 (r, "aa");
 	return true;
 }
 
@@ -417,10 +429,46 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	if (plugin && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
-
-	if (r_config_get_i (r->config, "file.analyze"))
-		r_core_cmd0 (r, "aa");
 	return true;
+}
+
+static int try_loadlib(RCore *core, const char *lib, ut64 addr) {
+	RCoreFile *cf = r_core_file_open (core, lib, 0, addr);
+	if (!cf) {
+		return false;
+	}
+	return true;
+}
+
+R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
+	const char *ldlibrarypath[] = {
+		"/usr/local/lib",
+		"/usr/lib",
+		"/lib",
+		"./",
+		NULL
+	};
+	const char **libpath = (const char **)&ldlibrarypath;
+
+	if (*lib == '/') {
+		if (try_loadlib (core, lib, libaddr)) {
+			return true;
+		}
+	} else {
+		while (*libpath) {
+			bool ret = false;
+			char *s = r_str_newf ("%s/%s", *libpath, lib);
+			if (try_loadlib (core, s, libaddr)) {
+				ret = true;
+			}
+			free (s);
+			if (ret) {
+				return true;
+			}
+			libpath++;
+		}
+	}
+	return false;
 }
 
 R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
@@ -429,7 +477,13 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	RBinFile *binfile = NULL;
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinPlugin *plugin = NULL;
-	int is_io_load = desc && desc->plugin;
+	int is_io_load;
+	// NULL deref guard
+	if (!desc) {
+		is_io_load = false;
+	} else {
+		is_io_load = desc && desc->plugin;
+	}
 
 	if (cf) {
 		if ((filenameuri == NULL || !*filenameuri)) {
@@ -457,8 +511,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// TODO? necessary to restore the desc back?
 		// RIODesc *oldesc = desc;
 		// Fix to select pid before trying to load the binary
-		if ( (desc->plugin && desc->plugin->isdbg) \
-				|| r_config_get_i (r->config, "cfg.debug")) {
+		if ( (desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
 			ut64 laddr = r_config_get_i (r->config, "bin.laddr");
@@ -499,8 +552,25 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ;"
 			" wx `#adler32 $s-12 @12` @8)\"\n");
 	}
-	if (r_config_get_i (r->config, "file.analyze")) {
-		r_core_cmd0 (r, "aa");
+	if (!r_config_get_i (r->config, "cfg.debug")) {
+		/* load GP for mips */
+		ut64 gp = r_num_math (r->num, "loc._gp");
+		if (gp && gp != UT64_MAX) {
+			r_config_set_i (r->config, "anal.gp", gp);
+		}
+	}
+	if (r_config_get_i (r->config, "bin.libs")) {
+		ut64 libaddr = (r->assembler->bits == 64)
+			? 0x00007fff00000000LL
+			: 0x7f000000;
+		const char *lib;
+		RListIter *iter;
+		RList *libs = r_bin_get_libs (r->bin);
+		r_list_foreach (libs, iter, lib) {
+			eprintf ("Opening %s\n", lib);
+			r_core_file_loadlib (r, lib, libaddr);
+			libaddr += 0x2000000;
+		}
 	}
 	return true;
 }
@@ -509,6 +579,7 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 	const char *loadmethod = r_config_get (core->config, "file.loadmethod");
 	const char *suppress_warning = r_config_get (core->config, "file.nowarn");
 	ut64 load_align = r_config_get_i (core->config, "file.loadalign");
+	if (!loadmethod || !suppress_warning) return NULL;
 	RIOMap *map = NULL;
 	if (!strcmp (loadmethod, "overwrite"))
 		map = r_io_map_new (core->io, fh->desc->fd, mode, 0, loadaddr, r_io_desc_size (core->io, fh->desc));
@@ -518,29 +589,29 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 		map = r_io_map_add_next_available (core->io, fh->desc->fd, mode, 0, loadaddr, r_io_desc_size (core->io, fh->desc), load_align);
 	}
 	if (!strcmp (suppress_warning, "false")) {
-		if (!map)
+		if (!map) {
 			eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x"\n", loadaddr);
-		else {
+		} else {
 			if (map->from != loadaddr)
 				eprintf ("r_core_file_get_next_map: Unable to load specified file to 0x%08"PFMT64x",\n"
 					 "but loaded to 0x%08"PFMT64x"\n", loadaddr, map->from);
 		}
 	}
-	r_io_sort_maps (core->io);				//necessary ???
+	r_io_sort_maps (core->io); //necessary ???
 	return map;
 }
 
 
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr) {
-	RIODesc *fd;
+	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
+	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
+	ut64 current_loadaddr = loadaddr;
+	RCoreFile *fh, *top_file = NULL;
+	RListIter *fd_iter, *iter2;
+	char *loadmethod = NULL;
 	RList *list_fds = NULL;
 	const char *cp = NULL;
-	char *loadmethod = NULL;
-	RListIter *fd_iter, *iter2;
-	RCoreFile *fh, *top_file = NULL;
-	ut64 current_loadaddr = loadaddr;
-	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
-	int openmany = r_config_get_i (r->config, "file.openmany"), opened_count = 0;
+	RIODesc *fd;
 
 	list_fds = r_io_open_many (r->io, file, flags, 0644);
 
@@ -578,8 +649,9 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 
 		if (!fh->map) {
 			r_core_file_free (fh);
-			if (!strcmp (suppress_warning, "false"))
-				eprintf("Unable to load file due to failed mapping.\n");
+			if (!strcmp (suppress_warning, "false")) {
+				eprintf ("Unable to load file due to failed mapping.\n");
+			}
 			continue;
 		}
 
@@ -598,7 +670,9 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		return top_file;
 	}
 	cp = r_config_get (r->config, "cmd.open");
-	if (cp && *cp) r_core_cmd (r, cp, 0);
+	if (cp && *cp) {
+		r_core_cmd (r, cp, 0);
+	}
 
 	r_config_set (r->config, "file.path", r_file_abspath (top_file->desc->name));
 	r_config_set_i (r->config, "zoom.to", top_file->map->from + r_io_desc_size (r->io, top_file->desc));
@@ -608,70 +682,92 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 	return top_file;
 }
 
-R_API RCoreFile *r_core_file_open (RCore *r, const char *file, int flags, ut64 loadaddr) {
+/* loadaddr is r2 -m (mapaddr */
+R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
+	ut64 prev = r_sys_now();
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
 	const char *cp;
-	RCoreFile *fh;
+	RCoreFile *fh = NULL;
 	RIODesc *fd;
 
-	if (!file || !*file)
-		return NULL;
+	if (!file || !*file) {
+		goto beach;
+	}
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
-		flags = 4|2;
+		flags = 4 | 2;
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open_nomap (r->io, file, flags, 0644);
 	if (fd == NULL && openmany > 2) {
 		// XXX - make this an actual option somewhere?
 		fh = r_core_file_open_many (r, file, flags, loadaddr);
-		if (fh) return fh;
+		if (fh) goto beach;
 	}
 	if (fd == NULL) {
 		if (flags & 2) {
-			if (!r_io_create (r->io, file, 0644, 0))
-				return NULL;
-			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644)))
-				return NULL;
-		} else return NULL;
+			if (!r_io_create (r->io, file, 0644, 0)) {
+				goto beach;
+			}
+			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644))) {
+				goto beach;
+			}
+		} else {
+			goto beach;
+		}
 	}
 	if (r_io_is_listener (r->io)) {
 		r_core_serve (r, fd);
-		return NULL;
+		goto beach;
 	}
 
 	fh = R_NEW0 (RCoreFile);
 	if (!fh) {
 		eprintf ("core/file.c: r_core_open failed to allocate RCoreFile.\n");
-		//r_io_close (r->io, fd);
-		return NULL;
+		goto beach;
 	}
 	fh->alive = 1;
 	fh->core = r;
 	fh->desc = fd;
 
 	cp = r_config_get (r->config, "cmd.open");
-	if (cp && *cp)
+	if (cp && *cp) {
 		r_core_cmd (r, cp, 0);
-	r_config_set (r->config, "file.path", r_file_abspath (file));
+	}
+	{
+		char *absfile = r_file_abspath (file);
+		r_config_set (r->config, "file.path", absfile);
+		free (absfile);
+	}
 	fh->map = r_core_file_get_next_map (r, fh, flags, loadaddr);
 	if (!fh->map) {
 		r_core_file_free (fh);
 		fh = NULL;
-		if (!strcmp (suppress_warning, "false"))
-			eprintf("Unable to load file due to failed mapping.\n");
-		return NULL;
+		if (!strcmp (suppress_warning, "false")) {
+			eprintf ("Unable to load file due to failed mapping.\n");
+		}
+		goto beach;
 	}
 	// check load addr to make sure its still valid
 	r_bin_bind (r->bin, &(fh->binb));
 	r_list_append (r->files, fh);
 	r_core_file_set_by_file (r, fh);
 	r_config_set_i (r->config, "zoom.to", fh->map->from + r_io_desc_size (r->io, fh->desc));
+
+	if (r_config_get_i (r->config, "cfg.debug")) {
+		bool swstep = true;
+		if (r->dbg->h && r->dbg->h->canstep) {
+			swstep = false;
+		}
+		r_config_set_i (r->config, "dbg.swstep", swstep);
+	}
+beach:
+	r->times->file_open_time = r_sys_now() - prev;
 	return fh;
 }
 
-R_API int r_core_files_free (const RCore *core, RCoreFile *cf) {
+R_API int r_core_files_free(const RCore *core, RCoreFile *cf) {
 	if (!core || !core->files || !cf) return false;
 	return r_list_delete_data (core->files, cf);
 }
@@ -799,11 +895,11 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			r_cons_printf ("o %s 0x%"PFMT64x"\n", f->desc->uri, (ut64)from);
 			break;
 		default:
-			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%d %s\n",
+			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64u" %s\n",
 					core->io->raised == f->desc->fd?'*':'-',
 					(int)f->desc->fd, f->desc->uri, (ut64)from,
 					f->desc->flags & R_IO_WRITE? "rw": "r",
-					(ut32)r_io_desc_size (core->io, f->desc),
+					r_io_desc_size (core->io, f->desc),
 					overlapped?"overlaps":"");
 			break;
 		}

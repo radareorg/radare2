@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -8,6 +8,7 @@
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
 #define OPERAND(x) insn->detail->mips.operands[x]
+#define REGID(x) insn->detail->mips.operands[x].reg
 #define REG(x) cs_reg_name (*handle, insn->detail->mips.operands[x].reg)
 #define IMM(x) insn->detail->mips.operands[x].imm
 #define MEMBASE(x) cs_reg_name(*handle, insn->detail->mips.operands[x].mem.base)
@@ -102,7 +103,10 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 				insn->detail->mips.operands[n].reg));
 		break;
 	case MIPS_OP_IMM:
-		sprintf (buf, "%"PFMT64u, (ut64)insn->detail->mips.operands[n].imm);
+		{
+			st64 x = (st64)insn->detail->mips.operands[n].imm;
+			sprintf (buf, "%"PFMT64d, x);
+		}
 		break;
 	case MIPS_OP_MEM:
 		{
@@ -113,10 +117,10 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 			cs_reg_name (*handle,
 				insn->detail->mips.operands[n].mem.base));
 		} else {
-		sprintf (buf, "%s,%"PFMT64d",+",
+		sprintf (buf, "0x%"PFMT64x",%s,+",
+			(ut64)insn->detail->mips.operands[n].mem.disp,
 			cs_reg_name (*handle,
-				insn->detail->mips.operands[n].mem.base),
-			(ut64)insn->detail->mips.operands[n].mem.disp);
+				insn->detail->mips.operands[n].mem.base));
 		}
 		}
 		break;
@@ -146,7 +150,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_setf (&op->esil, ",");
 		break;
 	case MIPS_INS_BREAK:
-		r_strbuf_setf (&op->esil, "%s,%s,TRAP", ARG (1), ARG (0));
+		r_strbuf_setf (&op->esil, "%s,%s,TRAP", ARG (0), ARG (0));
 		break;
 	case MIPS_INS_SW:
 	case MIPS_INS_SWL:
@@ -284,7 +288,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_BGTZC:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,%s,==,$z,?{,BREAK,},", ARG (0));
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J("%s")",}",
-			ARG (0), ARG (1));		
+			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BTEQZ:
 		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,t,==,$z,?{,"ES_J ("%s")",}", ARG (0));
@@ -313,20 +317,12 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_FSUB:
 	case MIPS_INS_SUB:
-		PROTECT_ZERO () {
-			r_strbuf_appendf(&op->esil, "%s,%s,>,?{,1,TRAP,}{,%s,%s,-,%s,=",
-				ARG (1), ARG (2), ARG (1), ARG (2), ARG (0));
-		}
-		break;
 	case MIPS_INS_SUBU:
 	case MIPS_INS_DSUB:
 	case MIPS_INS_DSUBU:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
-			arg2, arg1, arg0);
+		PROTECT_ZERO () {
+			r_strbuf_appendf(&op->esil, "%s,%s,-,%s,=",
+				ARG (2), ARG (1), ARG (0));
 		}
 		break;
 	case MIPS_INS_NEG:
@@ -339,16 +335,20 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_ADD:
 		{
 		PROTECT_ZERO () {
+			r_strbuf_appendf(&op->esil, "%s,%s,+,%s,=",
+				ARG (1), ARG (2), ARG (0));
+#if 0
 			r_strbuf_appendf (&op->esil,
 				"0,32,%s,%s,+,>>,>,?{,1,TRAP,}{,%s,%s,+,%s,=,}",
 				ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
+#endif
 		}
 		}
 		break;
 	case MIPS_INS_ADDI:
 		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "0,32,%s,0xffffffff,&,%s,+,>>,>,?{,1,TRAP,}{,%s,%s,+,%s,=,}",
-				ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
+			r_strbuf_appendf (&op->esil, "30,0x80000000,%s,%s,^,&,>>,31,0x80000000,%s,&,0x80000000,%s,%s,+,&,^,>>,|,1,==,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
+				ARG(2), ARG(1), ARG(2), ARG(2), ARG(1), ARG(2), ARG(1), ARG(0));
 		}
 		break;
 	case MIPS_INS_DADD:
@@ -362,8 +362,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		const char *arg1 = ARG(1);
 		const char *arg2 = ARG(2);
 		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
-					arg2, arg1, arg0);
+			if (*arg2 == '-') {
+				r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
+						arg2+1, arg1, arg0);
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
+						arg2, arg1, arg0);
+			}
 		}
 		}
 		break;
@@ -407,8 +412,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		const char *arg0 = ARG(0);
 		const char *arg1 = ARG(1);
 		const char *arg2 = ARG(2);
-		r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=",
-			arg2, arg1, arg0);
+		if (!strcmp (arg0, arg1)) {
+			r_strbuf_appendf (&op->esil, "%s,%s,&=", arg2, arg1);
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", arg2, arg1, arg0);
+		}
 		}
 		break;
 	case MIPS_INS_OR:
@@ -449,33 +457,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_SLT:
 	case MIPS_INS_SLTI:
 		if (OPCOUNT () < 3) {
-			r_strbuf_appendf (&op->esil,
-				ES_IS_NEGATIVE ("%s")","
-				ES_IS_NEGATIVE ("%s")","
-				"==,$z,?{,"
-					"%s,%s,<,t,=,"
-				"}{,"
-					"%s,%s,>=,t,=,"
-				"}",
-
-				ARG (1),
-				ARG (0),
-				ARG (1), ARG (0),
-				ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", ARG(1), ARG(0));
 		} else {
-			r_strbuf_appendf (&op->esil,
-				ES_IS_NEGATIVE ("%s")","
-				ES_IS_NEGATIVE ("%s")","
-				"==,$z,?{,"
-					"%s,%s,<,%s,=,"
-				"}{,"
-					"%s,%s,>=,%s,=,"
-				"}",
-
-				ARG (2),
-				ARG (1),
-				ARG (2), ARG (1), ARG (0),
-				ARG (2), ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG(2), ARG(1), ARG(0));
 		}
 		break;
 	case MIPS_INS_SLTU:
@@ -487,6 +471,15 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
 				ARG (2), ARG (1), ARG (0));
 		}
+		break;
+	case MIPS_INS_MUL:
+		r_strbuf_appendf (&op->esil,
+			"%s,%s,*,0xffffffff,&,lo,=,"
+			ES_SIGN_EXT64 ("lo")
+			",32,%s,%s,*,>>,0xffffffff,&,hi,=,"
+			ES_SIGN_EXT64 ("hi")
+			",lo,%s,=",
+			ARG (1), ARG (2), ARG (1), ARG (2), REG (0));
 		break;
 	case MIPS_INS_MULT:
 	case MIPS_INS_MULTU:
@@ -618,6 +611,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case MIPS_INS_SYSCALL:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		break;
 	case MIPS_INS_BREAK:
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
@@ -660,23 +655,26 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->fail = addr+8;
 			break;
 		}
-
 		break;
-
+	case MIPS_INS_LUI:
 	case MIPS_INS_MOVE:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		SET_SRC_DST_2_REGS (op);
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
+	case MIPS_INS_ADDU:
 	case MIPS_INS_ADDIU:
 	case MIPS_INS_DADD:
 	case MIPS_INS_DADDI:
 	case MIPS_INS_DADDIU:
-		SET_VAL (op,2);
+		SET_VAL (op, 2);
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_ADD;
-		
+		if (REGID(0) == MIPS_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM(2);
+		}
 		break;
 	case MIPS_INS_SUB:
 	case MIPS_INS_SUBV:
@@ -714,6 +712,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		SET_VAL (op,2);
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_AND;
+		if (REGID(0) == MIPS_REG_SP) {
+			op->stackop = R_ANAL_STACK_ALIGN;
+		}
 		break;
 	case MIPS_INS_NOT:
 		op->type = R_ANAL_OP_TYPE_NOT;
@@ -769,7 +770,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		} else {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 		}
-		
+
 		if (OPERAND(0).type == MIPS_OP_IMM) {
 			op->jump = IMM(0);
 		} else if (OPERAND(1).type == MIPS_OP_IMM) {
@@ -792,7 +793,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->fail = addr+8;
 			break;
 		}
-		
+
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
@@ -843,7 +844,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	return opsize;
 }
 
-static int set_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RAnal *anal) {
 	// XXX : 64bit profile
 	const char *p =
 		"=PC    pc\n"
@@ -852,6 +853,8 @@ static int set_reg_profile(RAnal *anal) {
 		"=A1    a1\n"
 		"=A2    a2\n"
 		"=A3    a3\n"
+		"=R0    v0\n"
+		"=R1    v1\n"
 		"gpr	zero	.32	0	0\n"
 		"gpr	at	.32	4	0\n"
 		"gpr	v0	.32	8	0\n"
@@ -888,7 +891,7 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	hi	.64	132	0\n"
 		"gpr	lo	.64	140	0\n"
 		"gpr	t	.32	148	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
 static int archinfo(RAnal *anal, int q) {
@@ -901,7 +904,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.license = "BSD",
 	.esil = true,
 	.arch = "mips",
-	.set_reg_profile = set_reg_profile,
+	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
 	.bits = 16|32|64,
 	.op = &analop,

@@ -6,8 +6,9 @@ IO_OBJS += map.c plugin.c section.c undo.c ;
 IO_OBJS +=
     p/io_bfdbg.c
     p/io_debug.c
- p/io_ewf.c
+    p/io_ewf.c
     p/io_gdb.c
+    p/io_qnx.c
     p/io_http.c
     p/io_ihex.c
     p/io_mach.c
@@ -20,6 +21,7 @@ IO_OBJS +=
     p/io_w32.c
     p/io_w32dbg.c
     p/io_zip.c
+    p/io_bochs.c
 ;
 
 IO_EXTRA +=

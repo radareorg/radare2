@@ -109,10 +109,10 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 		k(BIT_R "&,?{,%3$hhd,3,+,pc,+=,}"); break;
 	case 0x30: /* jnb  */
 		k(BIT_R "&,!,?{,%3$hhd,3,+,pc,+=,}"); break;
-	case 0x40: /* jc   */ emitf("C,!,?{,%hhd,2,+,pc,+=,}", buf[1]); break;
-	case 0x50: /* jnc  */ emitf("C,""?{,%hhd,2,+,pc,+=,}", buf[1]); break;
-	case 0x60: /* jz   */ emitf("A,!,?{,%hhd,2,+,pc,+=,}", buf[1]); break;
-	case 0x70: /* jnz  */ emitf("A,""?{,%hhd,2,+,pc,+=,}", buf[1]); break;
+	case 0x40: /* jc   */ emitf("C,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
+	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
+	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
+	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
 	case 0x80: /* sjmp */ j(ESX_L1 JMP("2")); break;
 	case 0x90: /* mov  */ emitf("%d,dptr,=", (buf[1]<<8) + buf[2]); break;
 	case 0xA0: /* orl  */ k(BIT_R "C,|="); break;
@@ -205,7 +205,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	OP_GROUP_INPLACE_LHS_4(0x90, A, ".")
 
 	case 0xA4:
-		/* mul */ emit("8,A,B,*,DUP,>>,DUP,!,!,OV,=,B,=,A,=,0,C,="); break;
+		/* mul */ emit("8,A,B,*,NUM,>>,NUM,!,!,OV,=,B,=,A,=,0,C,="); break;
 	case 0xA5: /* ??? */ emit("0,TRAP"); break;
 	case 0xA6: case 0xA7:
 		j (XR(IB1) XW(R0I)) break;
@@ -420,22 +420,27 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
 	return ret;
 }
 
+static bool i8051_is_init = false;
+
 static int esil_i8051_init (RAnalEsil *esil) {
-	if (esil->cb.user)
+	if (esil->cb.user) {
 		return true;
-
-	esil->cb.user = R_NEW0(struct r_i8051_user);
+	}
+	esil->cb.user = R_NEW0 (struct r_i8051_user);
 	ocbs = esil->cb;
-
 	esil->cb.hook_reg_read = i8051_hook_reg_read;
 	esil->cb.hook_reg_write = i8051_hook_reg_write;
-
+	i8051_is_init = true;
 	return true;
 }
 
 static int esil_i8051_fini (RAnalEsil *esil) {
+	if (!i8051_is_init) {
+		return false;
+	}
 	esil->cb = ocbs;
-	R_FREE(esil->cb.user);
+	R_FREE (esil->cb.user);
+	i8051_is_init = false;
 	return true;
 }
 

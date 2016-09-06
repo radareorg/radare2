@@ -21,7 +21,7 @@ R_API int r_search_get_encoding(const char *name) {
 	return ENCODING_ASCII;
 }
 
-static int is_encoded(int encoding, unsigned char c) {
+static bool is_encoded(int encoding, unsigned char c) {
 	switch (encoding) {
 	case ENCODING_ASCII:
 		break;
@@ -45,16 +45,15 @@ static int is_encoded(int encoding, unsigned char c) {
 		case 214: // I acute
 		case 224: // O acute
 		case 233: // U acute
-			return 1;
+			return true;
 		}
 		break;
 	}
-	return 0;
+	return false;
 }
 
 R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) {
 	RSearch *s = (RSearch *)_s;
-	const int enc = 0; // hardcoded
 	int i = 0;
 	int widechar = 0;
 	int matches = 0;
@@ -65,7 +64,8 @@ R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) 
 	r_list_foreach (s->kws, iter, kw) {
 	for (i=0; i<len; i++) {
 		char ch = buf[i];
-		if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded (enc, ch)) {
+		// non-cp850 encoded
+		if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded (0, ch)) {
 			str[matches] = ch;
 			if (matches < sizeof(str))
 				matches++;

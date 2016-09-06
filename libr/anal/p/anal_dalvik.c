@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 */
+/* radare - LGPL - Copyright 2010-2016 - pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -14,8 +14,13 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
+	op->ptr = UT64_MAX;
+	op->val = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->fail = UT64_MAX;
+	op->refptr = 0;
 	op->size = sz;
-	op->nopcode = 1; // Necesary??
+	op->nopcode = 1; // Necessary??
 
 	switch (data[0]) {
 		case 0xca: // rem-float:
@@ -34,7 +39,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x0a: //
 		case 0x0d: // move-exception
 		case 0x12: // const/4
-		case 0x13: // const
+		case 0x13: // const/16
 		case 0x14: // const
 		case 0x15: // const
 		case 0x16: // const
@@ -42,11 +47,21 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x42: // const
 		case 0x18: // const-wide
 		case 0x19: // const-wide
-		case 0x1a: // const-string
 		case 0x0c: // move-result-object // TODO: add MOVRET OP TYPE ??
 		case 0x0b: // move-result-wide
+			op->type = R_ANAL_OP_TYPE_MOV;
+			int vA = (int) -data[1];
+			op->stackop = R_ANAL_STACK_SET;
+			op->ptr = vA;
+			break;
+		case 0x1a: // const-string
 		case 0x1c: // const-class
 			op->type = R_ANAL_OP_TYPE_MOV;
+			{
+				ut32 vB = (data[3]<<8) | data[2];
+				ut64 offset = R_ANAL_GET_OFFSET(anal, 's', vB);
+				op->ptr = offset;
+			}
 			break;
 		case 0x85: // long-to-float
 		case 0x8e: // double-to-int
@@ -204,22 +219,22 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x11: // return-object
 		case 0xf1: // return-void-barrier
 			op->type = R_ANAL_OP_TYPE_RET;
-			op->eob  = 1;
+			op->eob = true;
 			break;
 		case 0x28: // goto
 			op->jump = addr + ((char)data[1])*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->eob  = 1;
+			op->eob = true;
 			break;
 		case 0x29: // goto/16
 			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->eob  = 1;
+			op->eob = true;
 			break;
 		case 0x2a: // goto/32
 			op->jump = addr + (int)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24))*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->eob  = 1;
+			op->eob = true;
 			break;
 		case 0x2c:
 		case 0x2b:
@@ -247,14 +262,17 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x3c: // if-gtz
 		case 0x3d: // if-lez
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
+			//XXX fix this better the check is to avoid an oob
+			op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
 			op->fail = addr + sz;
-			op->eob = 1;
+			op->eob = true;
 			break;
 		case 0xec: // breakpoint
 		case 0x1d: // monitor-enter
+			op->type = R_ANAL_OP_TYPE_UPUSH;
+			break;
 		case 0x1e: // monitor-exit /// wrong type?
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = R_ANAL_OP_TYPE_POP;
 			break;
 		case 0x6f: // invoke-super
 		case 0xfa: // invoke-super-quick
@@ -276,7 +294,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0xf9: // invoke-virtual-quick/range
 		case 0xfb: // invoke-super-quick/range
 			{
-			ut32 vB = (data[3]<<8) | data[2];
+			//XXX fix this better since the check avoid an oob
+			//but the jump will be incorrect
+			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
 			op->jump = anal->binb.get_offset (
 				anal->binb.bin, 'm', vB);
 			op->fail = addr + sz;

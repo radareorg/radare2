@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - shengdi */
+/* radare - LGPL - Copyright 2015-2016 - shengdi */
 
 #include <r_bin.h>
 
@@ -28,26 +28,29 @@ static int check(RBinFile *arch) {
 #define CMP8(o,x) strncmp((const char*)bs+o,x,8)
 #define CMP4(o,x) strncmp((const char*)bs+o,x,4)
 static int check_bytes(const ut8 *bs, ut64 length) {
-	if (length > 0x2000 && !CMP8(0x1ff0, "TMR SEGA"))
+	if (length > 0x2000 && !CMP8(0x1ff0, "TMR SEGA")) {
 		return true;
-	if (length > 0x4000 && !CMP8(0x3ff0, "TMR SEGA"))
+	}
+	if (length > 0x4000 && !CMP8(0x3ff0, "TMR SEGA")) {
 		return true;
-	if (length > 0x8000 && !CMP8(0x7ff0, "TMR SEGA"))
+	}
+	if (length > 0x8000 && !CMP8(0x7ff0, "TMR SEGA")) {
 		return true;
-	if (length > 0x9000 && !CMP8(0x8ff0, "TMR SEGA"))
+	}
+	if (length > 0x9000 && !CMP8(0x8ff0, "TMR SEGA")) {
 		return true;
-	if (length > 0x8000 && !CMP4(0x7fe0, "SDSC"))
+	}
+	if (length > 0x8000 && !CMP4(0x7fe0, "SDSC")) {
 		return true;
+	}
 	return false;
 }
 
 static RBinInfo* info(RBinFile *arch) {
 	const char *bs;
-	SMS_Header *hdr;
+	SMS_Header *hdr = NULL;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
-
-	if (!arch || !arch->buf) {
+	if (!ret || !arch || !arch->buf) {
 		free (ret);
 		return NULL;
 	}
@@ -61,14 +64,19 @@ static RBinInfo* info(RBinFile *arch) {
 	bs = (const char*)arch->buf->buf;
 	// TODO: figure out sections/symbols for this format and move this there
 	//       also add SDSC headers..and find entry
-	if (!CMP8(0x1ff0, "TMR SEGA"))
+	if (!CMP8(0x1ff0, "TMR SEGA")) {
 		hdr = (SMS_Header*)(bs + 0x1ff0);
-	if (!CMP8(0x3ff0, "TMR SEGA"))
+	} else if (!CMP8(0x3ff0, "TMR SEGA")) {
 		hdr = (SMS_Header*)(bs + 0x3ff0);
-	if (!CMP8(0x7ff0, "TMR SEGA"))
+	} else if (!CMP8(0x7ff0, "TMR SEGA")) {
 		hdr = (SMS_Header*)(bs + 0x7ff0);
-	if (!CMP8(0x8ff0, "TMR SEGA"))
+	} else if (!CMP8(0x8ff0, "TMR SEGA")) {
 		hdr = (SMS_Header*)(bs + 0x8ff0);
+	} else {
+		eprintf ("Cannot find magic SEGA copyright\n");
+		free (ret);
+		return NULL;
+	}
 
 	eprintf ("Checksum: 0x%04x\n", (ut32)hdr->CheckSum);
 	eprintf ("ProductCode: %02d%02X%02X\n", (hdr->Version >> 4), hdr->ProductCode[1],

@@ -56,6 +56,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 		flen = strlen (format);
 		glen = strlen (buf_global);
 		tmp = malloc (flen + glen + 2);
+		if (!tmp) return 0;
 		memcpy (tmp, buf_global, glen);
 		memcpy (tmp+glen, format, flen);
 		tmp[flen+glen] = 0;
@@ -126,11 +127,9 @@ RAsmPlugin r_asm_plugin_cris_gnu = {
 	.cpus = "v10,v32,v10+v32",
 	.license = "GPL3",
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "Axis Communications 32-bit embedded processor",
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.assemble = NULL
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

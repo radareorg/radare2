@@ -32,9 +32,9 @@ R_API void r_mixed_free (RMixed *m) {
 R_API int r_mixed_key_check(RMixed *m, int key, int sz) {
 	if (key>=0 && key<RMIXED_MAXKEYS) {
 		if (sz==1 || sz==2 || sz==4 || sz==8)
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 #define R_MIXED_KEY(m,x,y,z) r_mixed_key(m, r_offsetof(x,z), sizeof(y->z))
@@ -45,18 +45,18 @@ R_API int r_mixed_key(RMixed *m, int key, int size) {
 		} else {
 			m->keys[key] = R_NEW (RMixedData);
 			if (!m->keys[key])
-				return R_FALSE;
+				return false;
 			m->keys[key]->size = size;
 			switch (size) {
 			case 1: case 2: case 4:
 				m->keys[key]->hash.ht = r_hashtable_new ();
-				return R_TRUE;
+				return true;
 			case 8: m->keys[key]->hash.ht64 = r_hashtable64_new ();
-				return R_TRUE;
+				return true;
 			}
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 // static?
@@ -96,7 +96,7 @@ R_API int r_mixed_add (RMixed *m, void *p) {
 	RHashTable64 *ht64;
 	RList *list = NULL;
 	ut64 value;
-	int i, size, ret = R_FALSE;;
+	int i, size, ret = false;;
 	r_list_append (m->list, p);
 	for (i=0; i<RMIXED_MAXKEYS; i++) {
 		if (!m->keys[i])
@@ -112,7 +112,7 @@ R_API int r_mixed_add (RMixed *m, void *p) {
 				r_hashtable_insert (ht, (ut32)value, list);
 			}
 			r_list_append (list, p);
-			ret = R_TRUE;
+			ret = true;
 			break;
 		case 8:
 			ht64 = m->keys[i]->hash.ht64;
@@ -122,7 +122,7 @@ R_API int r_mixed_add (RMixed *m, void *p) {
 				r_hashtable64_insert (ht64, value, list);
 			}
 			r_list_append (list, p);
-			ret = R_TRUE;
+			ret = true;
 			break;
 		}
 	}
@@ -143,7 +143,7 @@ R_API int r_mixed_del (RMixed *m, void *p) {
 			break;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_mixed_change_begin(RMixed *m, void *p) {
@@ -155,7 +155,7 @@ R_API void r_mixed_change_begin(RMixed *m, void *p) {
 		}
 }
 
-R_API boolt r_mixed_change_end(RMixed *m, void *p) {
+R_API bool r_mixed_change_end(RMixed *m, void *p) {
 	int i;
 	void *q;
 	for (i=0; i<RMIXED_MAXKEYS; i++) {
@@ -169,7 +169,7 @@ R_API boolt r_mixed_change_end(RMixed *m, void *p) {
 				RList *list = r_mixed_get (m, i, m->state[i]);
 				if (list == NULL) {
 					eprintf ("RMixed internal corruption?\n");
-					return R_FALSE;
+					return false;
 				}
 				/* No _safe loop necessary because we return immediately after the delete. */
 				r_list_foreach (list, iter, q) {
@@ -210,7 +210,7 @@ R_API boolt r_mixed_change_end(RMixed *m, void *p) {
 			}
 		}
 	}
-	return R_TRUE;
+	return true;
 }
 
 #if TEST

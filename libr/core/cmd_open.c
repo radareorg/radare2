@@ -1,4 +1,9 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_list.h"
+#include "r_config.h"
+#include "r_core.h"
+#include "r_print.h"
+#include "r_bin.h"
 
 
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
@@ -116,7 +121,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			if (r_core_bin_delete (core, binfile_num, -1)){
 				if (!r_bin_file_delete (core->bin, fd))
-					eprintf ("Cant find an RBinFile associated with that fd.\n");
+					eprintf ("Cannot find an RBinFile associated with that fd.\n");
 			} else {
 				eprintf ("Couldn't erase because there must be 1 bin object loaded\n");
 			}
@@ -229,10 +234,10 @@ static void cmd_open_map (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		break;
 	}
-	r_core_block_read (core, 0);
+	r_core_block_read (core);
 }
 
-static void reopen_in_debug(RCore *core, const char *args) {
+R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = NULL;
 	char *binpath = NULL;
@@ -261,6 +266,7 @@ static void reopen_in_debug(RCore *core, const char *args) {
 	r_config_set_i (core->config, "cfg.debug", true);
 	newfile = newfile2;
 
+	//XXX: need cmd_debug.h for r_debug_get_baddr
 	ut64 new_baddr = r_debug_get_baddr (core, newfile);
 	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
 	if (old_baddr != new_baddr) {
@@ -280,12 +286,17 @@ static int cmd_open(void *data, const char *input) {
 		"o","","list opened files",
 		"o*","","list opened files in r2 commands",
 		"oa"," [addr]","Open bin info from the given address",
-		"oj","","list opened files in JSON format",
+		"ob","[lbdos] [...]","list open binary files backed by fd",
+		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"oc"," [file]","open core file, like relaunching r2",
-		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
+		"oj","","list opened files in JSON format",
+		"oL","","list all IO plugins registered",
+		"om","[?]","create, list, remove IO maps",
+		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 		"oo","","reopen current file (kill+fork in debugger)",
 		"oo","+","reopen current file in read-write",
 		"ood"," [args]","reopen in debugger mode (with args)",
+		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
 		"o"," 4","priorize io on fd 4 (bring to front)",
 		"o","-1","close file descriptor 1",
 		"o-","*","close all opened files",
@@ -293,10 +304,6 @@ static int cmd_open(void *data, const char *input) {
 		"o"," [file]","open [file] file in read-only",
 		"o","+[file]","open file in read-write mode",
 		"o"," [file] 0x4000","map file at 0x4000",
-		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-		"ob","[lbdos] [...]","list open binary files backed by fd",
-		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
-		"om","[?]","create, list, remove IO maps",
 		NULL
 	};
 	const char* help_msg_oo[] = {
@@ -326,11 +333,40 @@ static int cmd_open(void *data, const char *input) {
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		break;
 	case '\0':
-	case '*':
-	case 'j':
 		r_core_file_list (core, (int)(*input));
 		break;
+	case '*':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"Usage:", "o* [> files.r2]", "",
+				"o*", "", "list opened files in r2 commands", NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
+	case 'j':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"Usage:", "oj [~{}]", " # Use ~{} to indent the JSON",
+				"oj", "", "list opened files in JSON format", NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
+		r_core_file_list (core, (int)(*input));
+		break;
+	case 'L':
+		r_io_plugin_list (core->io);
+		break;
 	case 'a':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"Usage:", "oa [addr]", " #",
+				"oa", " [addr]", "Open bin info from the given address",NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
 		addr = core->offset;
 		if (input[1]) {
 			addr = r_num_math (core->num, input+1);
@@ -374,7 +410,7 @@ static int cmd_open(void *data, const char *input) {
 			num = atoi (ptr? ptr: input+1);
 			addr = 0LL;
 		}
-		if (num<=0) {
+		if (num <= 0) {
 			const char *fn = input+1; //(isn?2:1);
 			if (fn && *fn) {
 				if (isn) fn++;
@@ -402,7 +438,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 		}
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 		break;
 	case 'b':
 		cmd_open_bin (core, input);
@@ -438,7 +474,7 @@ static int cmd_open(void *data, const char *input) {
 		// hackaround to fix invalid read
 		//r_core_cmd0 (core, "oo");
 		// uninit deref
-		//r_core_block_read (core, 0);
+		//r_core_block_read (core);
 		break;
 	case 'm':
 		cmd_open_map (core, input);
@@ -446,24 +482,58 @@ static int cmd_open(void *data, const char *input) {
 	case 'o':
 		switch (input[1]) {
 		case 'd': // "ood" : reopen in debugger
-			reopen_in_debug (core, input + 2);
-			break;
-		case 'b': // "oob" : reopen with bin info
-			r_core_file_reopen (core, input + 2, 0, 2);
-			break;
-		case 'n':
-			if (input[2]=='n') {
-				perms = (input[3]=='+')? R_IO_READ|R_IO_WRITE: 0;
-				r_core_file_reopen (core, input + 4, perms, 0);
-				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+			if ('?' == input[2]) {
+				const char *help_msg[] = {
+					"ood"," [args]","reopen in debugger mode (with args)",NULL
+				};
+				r_core_cmd_help (core, help_msg);
 			} else {
-				perms = (input[2]=='+')? R_IO_READ|R_IO_WRITE: 0;
-				r_core_file_reopen (core, input + 3, perms, 0);
+				r_core_file_reopen_debug (core, input + 2);
 			}
 			break;
+		case 'b': // "oob" : reopen with bin info
+			if ('?' == input[2]) {
+				const char *help_msg[] = {
+					"oob", "", "reopen loading rbin info",NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			} else {
+				r_core_file_reopen (core, input + 2, 0, 2);
+			}
+			break;
+		case 'n':
+			if ('n' == input[2]) {
+				if ('?' == input[3]) {
+					const char *help_msg[] = {
+						"oonn", "", "reopen without loading rbin info, but with header flags",NULL
+					};
+					r_core_cmd_help (core, help_msg);
+					break;
+				}
+				perms = (input[3] == '+')? R_IO_READ|R_IO_WRITE: 0;
+				r_core_file_reopen (core, input + 4, perms, 0);
+				// TODO: Use API instead of !rabin2 -rk
+				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+			} else if ('?' == input[2]) {
+				const char *help_msg[] = {
+					"oon", "", "reopen without loading rbin info",NULL
+				};
+				r_core_cmd_help (core, help_msg);
+				break;
+			}
+
+			perms = ('+' == input[2])? R_IO_READ|R_IO_WRITE: 0;
+			r_core_file_reopen (core, input + 3, perms, 0);
+			break;
 		case '+':
-			r_core_file_reopen (core, input + 2,
-					R_IO_READ | R_IO_WRITE, 1);
+			if ('?' == input[2]) {
+				const char *help_msg[] = {
+					"oo+", "", "reopen in read-write",NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			} else {
+				r_core_file_reopen (core, input + 2, R_IO_READ | R_IO_WRITE, 1);
+			}
 			break;
 		case 0: // "oo"
 			r_core_file_reopen (core, input + 2, 0, 1);
@@ -475,6 +545,13 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'c':
+		if ('?' == input[1]) {
+			const char *help_msg[] = {
+				"oc"," [file]","open core file, like relaunching r2",NULL
+			};
+			r_core_cmd_help (core, help_msg);
+			break;
+		}
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;

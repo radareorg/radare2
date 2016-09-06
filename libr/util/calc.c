@@ -26,7 +26,13 @@ static inline RNumCalcValue Nxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; 
 static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n &= v.n; return n; }
 static inline RNumCalcValue Nadd(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n += v.n; return n; }
 static inline RNumCalcValue Nsub(RNumCalcValue n, RNumCalcValue v) { n.d -= v.d; n.n -= v.n; return n; }
-static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) { n.d *= v.d; n.n *= v.n; return n; }
+static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) {
+	n.d *= v.d;
+	n.n *= v.n;
+	return n;
+}
+static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n <<= v.n; return n; }
+static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
 	if (v.d) n.d = (n.d - (n.d/v.d)); else n.d = 0;
 	if (v.n) n.n %= v.n; else n.n = 0;
@@ -54,6 +60,8 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 	RNumCalcValue left = term (num, nc, get);
 	for (;;) {
 		switch (nc->curr_tok) {
+		case RNCSHL: left = Nshl (left, term (num, nc, 1)); break;
+		case RNCSHR: left = Nshr (left, term (num, nc, 1)); break;
 		case RNCPLUS: left = Nadd (left, term (num, nc, 1)); break;
 		case RNCMINUS: left = Nsub (left, term (num, nc, 1)); break;
 		case RNCXOR: left = Nxor (left, term (num, nc, 1)); break;
@@ -134,6 +142,8 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCPRINT:
 	case RNCASSIGN:
 	case RNCRIGHTP:
+	case RNCSHL:
+	case RNCSHR:
 		return v;
 	//default: error (num, nc, "primary expected");
 	}
@@ -249,6 +259,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case '/':
 	case '(':
 	case ')':
+	case '<':
+	case '>':
 	case '=':
 		return nc->curr_tok = (RNumCalcToken) ch;
 	case '0': case '1': case '2': case '3': case '4':
@@ -268,35 +280,36 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	default:
 		{
 			int i = 0;
-			nc->string_value[i++] = ch;
+#define stringValueAppend(x) { \
+	const size_t max = sizeof (nc->string_value) - 1; \
+	if (i < max) nc->string_value[i++] = x; \
+	else nc->string_value[max] = 0; \
+}
+			stringValueAppend(ch);
 			if (ch == '[') {
 				while (cin_get (num, nc, &ch) && ch!=']') {
 					if (i > R_NUMCALC_STRSZ - 1) {
 						error (num, nc, "string too long");
 						return 0;
 					}
-					nc->string_value[i++] = ch;
+					stringValueAppend(ch);
 				}
-				nc->string_value[i++] = ch;
+				stringValueAppend(ch);
 			} else {
 				while (cin_get (num, nc, &ch) && isvalidchar ((unsigned char)ch)) {
 					if (i>=R_NUMCALC_STRSZ) {
 						error (num, nc, "string too long");
 						return 0;
 					}
-					nc->string_value[i++] = ch;
+					stringValueAppend(ch);
 				}
 			}
-			nc->string_value[i] = 0;
-			if (ch!='\'')
+			stringValueAppend(0);
+			if (ch!='\'') {
 				cin_putback (num, nc, ch);
+			}
 			return nc->curr_tok = RNCNAME;
 		}
-/*
- * Unreacheable code:
-		error (num, nc, "bad token");
-		return nc->curr_tok = RNCPRINT;
-*/
 	}
 }
 
@@ -307,7 +320,7 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 	nc->calc_err = NULL;
 }
 
-R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
+R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
 	RNumCalc *nc, nc_local;
 	if (!str || !*str)
@@ -337,9 +350,14 @@ R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
 	//if (nc->curr_tok == RNCEND) return 0LL; // XXX: Error
 	//if (nc->curr_tok == RNCPRINT) //return 0LL; // XXX: the fuck
 	//	n = expr (num, nc, 0);
+#if 0
 	if (n.d != ((double)(ut64)n.d)) {
 		if (num) num->fvalue = n.d;
 	} else if (num) num->fvalue = (double)n.n;
+#endif
+	if (num) {
+		num->fvalue = n.d;
+	}
 	return n.n;
 }
 

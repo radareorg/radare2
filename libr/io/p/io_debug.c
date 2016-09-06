@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -7,8 +7,7 @@
 
 #define USE_RARUN 0
 
-#if __linux__ ||  __APPLE__ || __WINDOWS__ || \
-	__NetBSD__ || __KFBSD__ || __OpenBSD__
+#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
 #define DEBUGGER_SUPPORTED 1
 #else
 #define DEBUGGER_SUPPORTED 0
@@ -33,7 +32,9 @@ static void my_io_redirect (RIO *io, const char *ref, const char *file) {
 #endif
 
 #if __APPLE__
+#if !__POWERPC__
 #include <spawn.h>
+#endif
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
@@ -145,7 +146,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
         if (!CreateProcess (argv[0], cmdline, NULL, NULL, FALSE,
 			CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
 			NULL, NULL, &si, &pi)) {
-			r_sys_perror ("CreateProcess");
+		r_sys_perror ("CreateProcess");
 		return -1;
         }
 	free (cmdline);
@@ -153,37 +154,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
         /* get process id and thread id */
         pid = pi.dwProcessId;
         tid = pi.dwThreadId;
-
-#if 0
-        /* load thread list */
-	{
-		HANDLE h;
-		THREADENTRY32 te32;
-		HANDLE WINAPI (*win32_openthread)(DWORD, BOOL, DWORD) = NULL;
-		win32_openthread = (HANDLE WINAPI (*)(DWORD, BOOL, DWORD))
-			GetProcAddress (GetModuleHandle ("kernel32"), "OpenThread");
-
-		th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
-		if (th == INVALID_HANDLE_VALUE || !Thread32First(th, &te32))
-			r_sys_perror ("CreateToolhelp32Snapshot");
-
-		do {
-			if (te32.th32OwnerProcessID == pid) {
-				h = win32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-				if (h == NULL) r_sys_perror ("OpenThread");
-				else eprintf ("HANDLE=%p\n", h);
-			}
-		} while (Thread32Next (th, &te32));
-	}
-#endif
-
-#if 0
-	// Access denied here :?
-	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
-		r_sys_perror ("ContinueDebugEvent");
-		goto err_fork;
-	}
-#endif
 
         /* catch create process event */
         if (!WaitForDebugEvent (&de, 10000)) goto err_fork;
@@ -198,7 +168,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
 	io->winbase = de.u.CreateProcessInfo.lpBaseOfImage;
-        return pid;
+	io->wintid = tid;
+	io->winpid = pid;
+	return pid;
 
 err_fork:
 	eprintf ("ERRFORK\n");
@@ -228,20 +200,24 @@ static void trace_me () {
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	bool runprofile = io->runprofile && *(io->runprofile);
 	char **argv;
-#if __APPLE__
+#if __APPLE__ && !__POWERPC__
 	if (!runprofile) {
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 		posix_spawn_file_actions_t fileActions;
 		ut32 ps_flags = POSIX_SPAWN_SETSIGDEF |
 				POSIX_SPAWN_SETSIGMASK;
+   		sigset_t no_signals;
+    		sigset_t all_signals;
+    		sigemptyset (&no_signals);
+    		sigfillset (&all_signals);
 		posix_spawnattr_t attr = {0};
 		size_t copied = 1;
 		cpu_type_t cpu;
 		pid_t p = -1;
 		int ret, useASLR = io->aslr;
-		char *_cmd = io->args ?
-				r_str_concatf (strdup (cmd), " %s", io->args) :
-				strdup (cmd);
+		char *_cmd = io->args
+			? r_str_concatf (strdup (cmd), " %s", io->args)
+			: strdup (cmd);
 		argv = r_str_argv (_cmd, NULL);
 		if (!argv) {
 			free (_cmd);
@@ -255,7 +231,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		}
 		posix_spawnattr_init (&attr);
 		if (useASLR != -1) {
-			if (!useASLR) ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
+			if (!useASLR) {
+				ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
+			}
 		}
 
 		posix_spawn_file_actions_init (&fileActions);
@@ -265,24 +243,34 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 		ps_flags |= POSIX_SPAWN_START_SUSPENDED;
 
+   		posix_spawnattr_setsigmask(&attr, &no_signals);
+    		posix_spawnattr_setsigdefault(&attr, &all_signals);
+
 		(void)posix_spawnattr_setflags (&attr, ps_flags);
-#if __i386__ || __x86_64__
-		cpu = CPU_TYPE_I386;
-		if (bits == 64) cpu |= CPU_ARCH_ABI64;
-#else
 		cpu = CPU_TYPE_ANY;
+#if __x86_64__
+		if (bits == 32) {
+			cpu = CPU_TYPE_I386;
+			// cpu |= CPU_ARCH_ABI64;
+		}
 #endif
 		posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
+		{
+			char *dst = r_file_readlink (argv[0]);
+			if (dst) {
+				argv[0] = dst;
+			}
+		}
 		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
 		switch (ret) {
 		case 0:
-			eprintf ("Success\n");
+			// eprintf ("Success\n");
 			break;
 		case 22:
 			eprintf ("posix_spawnp: Invalid argument\n");
 			break;
 		case 86:
-			eprintf ("Unsupported architecture\n");
+			eprintf ("Unsupported architecture. Please specify -b 32\n");
 			break;
 		default:
 			eprintf ("posix_spawnp: unknown error %d\n", ret);
@@ -295,7 +283,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		return p;
 	}
 #endif
-
 	int ret, status, child_pid;
 
 	child_pid = r_sys_fork ();
@@ -322,11 +309,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 					exit (MAGIC_EXIT);
 				}
 			}
-			if (bits == 64) {
+			if (bits == 64)
 				r_run_parseline (rp, expr=strdup ("bits=64"));
-			} else if (bits == 32) {
+			else if (bits == 32)
 				r_run_parseline (rp, expr=strdup ("bits=32"));
-			}
 			free (expr);
 			if (r_run_config_env (rp)) {
 				eprintf ("Can't config the environment.\n");
@@ -350,9 +336,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			}
 			if (argv && *argv) {
 				int i;
-				for (i = 3; i < 1024; i++) {
+				for (i = 3; i < 1024; i++)
 					(void)close (i);
-				}
 				execvp (argv[0], argv);
 			} else {
 				eprintf ("Invalid execvp\n");
@@ -374,10 +359,12 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 					"different pid %d\n", ret);
 			}
 		} while (ret != child_pid);
-		if (WIFSTOPPED (status))
+		if (WIFSTOPPED (status)) {
 			eprintf ("Process with PID %d started...\n", (int)child_pid);
-		if (WEXITSTATUS (status) == MAGIC_EXIT)
+		}
+		if (WEXITSTATUS (status) == MAGIC_EXIT) {
 			child_pid = -1;
+		}
 		// XXX kill (pid, SIGSTOP);
 		break;
 	}
@@ -385,12 +372,61 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 }
 #endif
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
+	if (!strncmp (file, "waitfor://", 10)) {
+		return true;
+	}
+	if (!strncmp (file, "pidof://", 8)) {
+		return true;
+	}
 	return (!strncmp (file, "dbg://", 6) && file[6]);
+}
+
+#include <r_core.h>
+static int get_pid_of(RIO *io, const char *procname) {
+	RCore *c = io->user;
+	if (c && c->dbg && c->dbg->h) {
+		RListIter *iter;
+		RDebugPid *proc;
+		RDebug *d = c->dbg;
+		RList *pids = d->h->pids (0);
+		r_list_foreach (pids, iter, proc) {
+			if (strstr (proc->path, procname)) {
+				eprintf ("Matching PID %d %s\n", proc->pid, proc->path);
+				return proc->pid;
+			}
+		}
+	} else {
+		eprintf ("Cannot enumerate processes\n");
+	}
+	return -1;
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
+	if (!strncmp (file, "waitfor://", 10)) {
+		const char *procname = file + 10;
+		eprintf ("Waiting for %s\n", procname);
+		while (true) {
+			int target_pid = get_pid_of (io, procname);
+			if (target_pid != -1) {
+				snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
+				file = uri;
+				break;
+			}
+			r_sys_usleep (100);
+		}
+	} else if (!strncmp (file, "pidof://", 8)) {
+		const char *procname = file + 8;
+		int target_pid = get_pid_of (io, procname);
+		if (target_pid != -1) {
+			snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
+			file = uri;
+		} else {
+			eprintf ("Cannot find matching process for %s\n", file);
+			return NULL;
+		}
+	}
 	if (__plugin_open (io, file,  0)) {
 		const char *pidfile = file + 6;
 		char *endptr;
@@ -399,8 +435,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 		if (pid == -1) {
 			pid = fork_and_ptraceme (io, io->bits, file+6);
-			if (pid == -1)
+			if (pid == -1) {
 				return NULL;
+			}
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
 #elif __APPLE__
@@ -422,21 +459,21 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
-        .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
+        .desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof:// waitfor://)",
 	.license = "LGPL3",
         .open = __open,
-        .plugin_open = __plugin_open,
+        .check = __plugin_open,
 	.isdbg = true,
 };
 #else
-struct r_io_plugin_t r_io_plugin_debug = {
+RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
         .desc = "Debug a program or pid. (NOT SUPPORTED FOR THIS PLATFORM)",
 };
 #endif
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_debug,
 	.version = R2_VERSION

@@ -136,7 +136,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
+static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "bfdbg://", 8));
 }
 
@@ -150,9 +150,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOBind iob;
 		RIOBfdbg *mal = R_NEW0 (RIOBfdbg);
+		if (!mal) return NULL;
 		r_io_bind (io, &iob);
 		mal->fd = getmalfd (mal);
 		mal->bfvm = bfvm_new (&iob);
+		if (!mal->bfvm) {
+			free (mal);
+			return NULL;
+		}
 		out = r_file_slurp (pathname+8, &rlen);
 		if (!out || rlen < 1) {
 			free (mal);
@@ -182,7 +187,7 @@ RIOPlugin r_io_plugin_bfdbg = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 };

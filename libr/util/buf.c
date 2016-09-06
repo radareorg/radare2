@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_io.h>
 
-// TODO: Optimize to use memcpy when buffers are not in range.. check buf boundaries and offsets and use memcpy or memmove
+// TODO: Optimize to use memcpy when buffers are not in range..
+// check buf boundaries and offsets and use memcpy or memmove
 
 // copied from riocacheread
 // ret # of bytes copied
@@ -15,11 +16,11 @@ static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
 
         r_list_foreach (list, iter, c) {
                 if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
-                        if (ret>0) {
+                        if (ret > 0) {
                                 da = ret;
                                 db = 0;
                                 l = c->size;
-                        } else if (ret<0) {
+                        } else if (ret < 0) {
                                 da = 0;
                                 db = -ret;
                                 l = c->size-db;
@@ -28,31 +29,36 @@ static int sparse_read(RList *list, ut64 addr, ut8 *buf, int len) {
                                 db = 0;
                                 l = c->size;
                         }
-                        if ((l+da)>len) l = len-da;                                     //say hello to integer overflow, but this won't happen in realistic scenarios because malloc will fail befor
-                        if (l<1) l = 1; // XXX: fail
-                        else memcpy (buf+da, c->data+db, l);
+			// say hello to integer overflow, but this won't happen in
+			// realistic scenarios because malloc will fail befor
+                        if ((l + da) > len) {
+				l = len - da;
+			}
+			if (l > 0) {
+				memcpy (buf + da, c->data + db, l);
+			}
                 }
         }
         return len;
 }
 
 static RBufferSparse *sparse_append(RList *l, ut64 addr, const ut8 *data, int len) {
-// TODO: make it more smart to reuse the already sparse items
-	RBufferSparse *s = R_NEW0 (RBufferSparse);
-	if (!s) return NULL;
-	s->from = addr;
-	s->to = addr + len;
-	s->size = len;
-	s->odata = NULL;
-	s->data = calloc (1, len);
-	if (!data) {
-		free (s);
-		return NULL;
-	} else {
-		memcpy (s->data, data, len);
+	if (l && data && len > 0) {
+		RBufferSparse *s = R_NEW0 (RBufferSparse);
+		if (s) {
+			s->data = calloc (1, len);
+			if (s->data) {
+				s->from = addr;
+				s->to = addr + len;
+				s->size = len;
+				s->odata = NULL;
+				memcpy (s->data, data, len);
+				return r_list_append (l, s)? s: NULL;
+			}
+			free (s);
+		}
 	}
-	if (r_list_append (l, s) == NULL) return NULL;
-	return s;
+	return NULL;
 }
 
 //ret -1 if failed; # of bytes copied if success
@@ -62,13 +68,13 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 
 	r_list_foreach (l, iter, s) {
 		if (addr >= s->from && addr < s->to) {
-			int newlen = (addr+len) - s->to;
+			int newlen = addr + len - s->to;
 			int delta = addr - s->from;
-			if (newlen> 0) {
+			if (newlen > 0) {
 				// must realloc
 				ut8 *ndata = realloc (s->data, len + newlen);
 				if (ndata) {
-					s->data = ndata;	
+					s->data = ndata;
 				} else {
 					eprintf ("sparse write fail\n");
 					return -1;
@@ -79,30 +85,35 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 			return len;
 		}
 	}
-	if (sparse_append(l, addr, data, len) == NULL) return -1;
+	if (!sparse_append (l, addr, data, len)) {
+		return -1;
+	}
 	return len;
 }
 
-static int sparse_limits(RList *l, ut64 *min, ut64 *max) {
-	int set = R_FALSE;
+static bool sparse_limits(RList *l, ut64 *min, ut64 *max) {
+	bool set = false;
 	RBufferSparse *s;
 	RListIter *iter;
 
-	if (min) *min = UT64_MAX;
-	
+	if (min) {
+		*min = UT64_MAX;
+	}
 	r_list_foreach (l, iter, s) {
 		if (set) {
-			set = R_TRUE;
-			if (min) *min = s->from;
-			if (max) *max = s->to;
+			if (min && s->from < *min) {
+				*min = s->from;
+			}
+			if (max && s->to > *max) {
+				*max = s->to;
+			}
 		} else {
+			set = true;
 			if (min) {
-				if (s->from < *min)
-					*min = s->from;
+				*min = s->from;
 			}
 			if (max) {
-				if (s->to > *max)
-					*max = s->to;
+				*max = s->to;
 			}
 		}
 	}
@@ -111,6 +122,7 @@ static int sparse_limits(RList *l, ut64 *min, ut64 *max) {
 
 R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
+	if (!b) return NULL;
 	if (bytes && (len > 0 && len != UT64_MAX)) {
 		b->buf = (ut8*)bytes;
 		b->length = len;
@@ -122,6 +134,7 @@ R_API RBuffer *r_buf_new_with_pointers (const ut8 *bytes, ut64 len) {
 
 R_API RBuffer *r_buf_new_with_bytes (const ut8 *bytes, ut64 len) {
 	RBuffer *b = r_buf_new ();
+	if (!b) return NULL;
 	if (bytes && (len > 0 && len != UT64_MAX))
 		r_buf_set_bytes (b, bytes, len);
 	return b;
@@ -133,12 +146,17 @@ R_API RBuffer *r_buf_new_with_buf(RBuffer *b) {
 
 R_API RBuffer *r_buf_new_sparse() {
 	RBuffer *b = r_buf_new ();
+	if (!b) return NULL;
 	b->sparse = r_list_newf ((RListFree)free);
 	return b;
 }
 
 R_API RBuffer *r_buf_new() {
-	return R_NEW0 (RBuffer);
+	RBuffer *b = R_NEW0 (RBuffer);
+	if (b) {
+		b->fd = -1;
+	}
+	return b;
 }
 
 R_API const ut8 *r_buf_buffer (RBuffer *b) {
@@ -147,8 +165,12 @@ R_API const ut8 *r_buf_buffer (RBuffer *b) {
 
 R_API ut64 r_buf_size (RBuffer *b) {
 	if (!b) return 0LL;
+	if (b->fd != -1) {
+		return b->length;
+	}
 	if (b->sparse) {
 		ut64 max = 0LL;
+eprintf ("GETTING SIZE\n");
 		if (sparse_limits (b->sparse, NULL, &max)) {
 			return max; // -min
 		}
@@ -159,7 +181,7 @@ R_API ut64 r_buf_size (RBuffer *b) {
 
 // rename to new?
 R_API RBuffer *r_buf_mmap (const char *file, int flags) {
-	int rw = flags & R_IO_WRITE ? R_TRUE : R_FALSE;
+	int rw = flags & R_IO_WRITE ? true : false;
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
 	b->mmap = r_file_mmap (file, rw, 0);
@@ -173,24 +195,59 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 	return NULL; /* we just freed b, don't return it */
 }
 
+R_API RBuffer *r_buf_new_file(const char *file, bool newFile) {
+	const int mode = 0644;
+	int flags = O_RDWR;
+	if (newFile) {
+		flags |= O_CREAT;
+	}
+	int fd = r_sandbox_open (file, flags, mode);
+	if (fd != -1) {
+		RBuffer *b = r_buf_new ();
+		if (!b) {
+			r_sandbox_close (fd);
+			return NULL;
+		}
+		b->fd = fd;
+		return b;
+	}
+	return NULL; /* we just freed b, don't return it */
+}
+
 // TODO: rename to new_from_file ?
-R_API RBuffer *r_buf_file (const char *file) {
+R_API RBuffer *r_buf_new_slurp(const char *file) {
+	int len;
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
-	b->buf = (ut8*)r_file_slurp (file, &b->length);
-	if (b->buf) return b;
+	b->buf = (ut8*)r_file_slurp (file, &len);
+	b->length = len;
+	if (b->buf) {
+		return b;
+	}
 	r_buf_free (b);
 	return NULL; /* we just freed b, don't return it */
 }
 
+R_API bool r_buf_dump(RBuffer *b, const char *file) {
+	if (!b || !file) {
+		return false;
+	}
+	return r_file_dump (file, r_buf_get_at (b, 0, NULL), r_buf_size (b), 0);
+}
+
 R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
-	ut64 min, max = 0LL;
-	if (b->sparse) {
+	ut64 min = 0LL, max = 0LL;
+	if (b->fd != -1) {
+		if (r_sandbox_lseek (b->fd, addr, whence) == -1) {
+			// seek failed - print error here?
+			return -1;
+		}
+	} else if (b->sparse) {
 		sparse_limits (b->sparse, &min, &max);
 		switch (whence) {
 		case R_IO_SEEK_SET: b->cur = addr; break;
 		case R_IO_SEEK_CUR: b->cur = b->cur + addr; break;
-		case R_IO_SEEK_END: 
+		case R_IO_SEEK_END:
 			    if (sparse_limits (b->sparse, NULL, &max)) {
 				    return max; // -min
 			    }
@@ -207,38 +264,41 @@ R_API int r_buf_seek (RBuffer *b, st64 addr, int whence) {
 		}
 	}
 	/* avoid out-of-bounds */
-	if (b->cur < min)
+	if (b->cur < min) {
 		b->cur = min;
-	if (b->cur >= max)
+	}
+	if (b->cur >= max) {
 		b->cur = max;
+	}
 	return (int)b->cur;
 }
 
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 	// TODO: implement r_buf_set_bits
 	// TODO: get the implementation from reg/value.c ?
-	return R_FALSE;
+	return false;
 }
 
-R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length) {
-	if (length<=0 || !buf) return R_FALSE;
+R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
+	if (length <= 0 || !buf) return false;
 	free (b->buf);
 	if (!(b->buf = malloc (length)))
-		return R_FALSE;
+		return false;
 	memmove (b->buf, buf, length);
 	b->length = length;
 	b->empty = 0;
-	return R_TRUE;
+	return true;
 }
 
-R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
-	if (!(b->buf = realloc (b->buf, b->length+length)))
-		return R_FALSE;
-	memmove (b->buf+length, b->buf, b->length);
-	memmove (b->buf, buf, length);
-	b->length += length;
-	b->empty = 0;
-	return R_TRUE;
+R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
+	if ((b->buf = realloc (b->buf, b->length+length))) {
+		memmove (b->buf+length, b->buf, b->length);
+		memmove (b->buf, buf, length);
+		b->length += length;
+		b->empty = 0;
+		return true;
+	}
+	return false;
 }
 
 // TODO: R_API void r_buf_insert_bytes() // with shift
@@ -246,82 +306,126 @@ R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
 
 R_API char *r_buf_to_string(RBuffer *b) {
 	char *s;
-	if (!b) return strdup ("");
-	s = malloc (b->length+1);
-	memmove (s, b->buf, b->length);
-	s[b->length] = 0;
+	if (!b) {
+		return strdup ("");
+	}
+	s = malloc (b->length + 1);
+	if (s) {
+		memmove (s, b->buf, b->length);
+		s[b->length] = 0;
+	}
 	return s;
 }
 
-R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
-	if (!b) return R_FALSE;
+R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
+	if (!b) return false;
+	if (b->fd != -1) {
+		r_sandbox_lseek (b->fd, 0, SEEK_END);
+		r_sandbox_write (b->fd, buf, length);
+		return true;
+	}
 	if (b->empty) b->length = b->empty = 0;
-	if (!(b->buf = realloc (b->buf, 1+b->length+length))) {
-		return R_FALSE;
+	if (!(b->buf = realloc (b->buf, 1 + b->length + length))) {
+		return false;
 	}
 	memmove (b->buf+b->length, buf, length);
 	b->buf[b->length+length] = 0;
 	b->length += length;
-	return R_TRUE;
+	return true;
 }
 
-R_API int r_buf_append_nbytes(RBuffer *b, int length) {
-	if (!b) return R_FALSE;
+R_API bool r_buf_append_nbytes(RBuffer *b, int length) {
+	if (!b) return false;
+	if (b->fd != -1) {
+		ut8 *buf = calloc (1, length);
+		if (buf) {
+			r_sandbox_lseek (b->fd, 0, SEEK_END);
+			r_sandbox_write (b->fd, buf, length);
+			free (buf);
+			return true;
+		}
+		return false;
+	}
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+length)))
-		return R_FALSE;
+		return false;
 	memset (b->buf+b->length, 0, length);
 	b->length += length;
-	return R_TRUE;
+	return true;
 }
 
-R_API int r_buf_append_ut16(RBuffer *b, ut16 n) {
-	if (!b) return R_FALSE;
+R_API bool r_buf_append_ut16(RBuffer *b, ut16 n) {
+	if (!b) return false;
+	if (b->fd != -1) {
+		return r_buf_append_bytes (b, (const ut8*)&n, sizeof (n));
+	}
 	if (b->empty) b->length = b->empty = 0;
-	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
-		return R_FALSE;
+	if (!(b->buf = realloc (b->buf, b->length + sizeof (n))))
+		return false;
 	memmove (b->buf+b->length, &n, sizeof (n));
 	b->length += sizeof (n);
-	return R_TRUE;
+	return true;
 }
 
-R_API int r_buf_append_ut32(RBuffer *b, ut32 n) {
+R_API bool r_buf_append_ut32(RBuffer *b, ut32 n) {
 	if (b->empty) b->length = b->empty = 0;
+	if (b->fd != -1) {
+		return r_buf_append_bytes (b, (const ut8*)&n, sizeof (n));
+	}
 	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
-		return R_FALSE;
+		return false;
 	memmove (b->buf+b->length, &n, sizeof (n));
 	b->length += sizeof (n);
-	return R_TRUE;
+	return true;
 }
 
-R_API int r_buf_append_ut64(RBuffer *b, ut64 n) {
-	if (!b) return R_FALSE;
+R_API bool r_buf_append_ut64(RBuffer *b, ut64 n) {
+	if (!b) return false;
+	if (b->fd != -1) {
+		return r_buf_append_bytes (b, (const ut8*)&n, sizeof (n));
+	}
 	if (b->empty) b->length = b->empty = 0;
 	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
-		return R_FALSE;
+		return false;
 	memmove (b->buf+b->length, &n, sizeof (n));
 	b->length += sizeof (n);
-	return R_TRUE;
+	return true;
 }
 
-R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
-	if (!b) return R_FALSE;
+R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
+	if (!b) return false;
+	if (b->fd != -1) {
+		r_buf_append_bytes (b, a->buf, a->length);
+		return true;
+	}
 	if (b->empty) {
 		b->length = 0;
 		b->empty = 0;
 	}
-	if (!(b->buf = realloc (b->buf, b->length+a->length)))
-		return R_FALSE;
-	memmove (b->buf+b->length, a->buf, a->length);
-	b->length += a->length;
-	return R_TRUE;
+	if ((b->buf = realloc (b->buf, b->length + a->length))) {
+		memmove (b->buf+b->length, a->buf, a->length);
+		b->length += a->length;
+		return true;
+	}
+	return false;
 }
 
-//ret copied length if successful, -1 if failed
+// ret copied length if successful, -1 if failed
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
 	if (!b || b->empty)
 		return 0;
+	if (b->fd != -1) {
+		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
+			// seek failed - print error here?
+			// return 0;
+		}
+		if (write) {
+			return r_sandbox_write (b->fd, src, len);
+		}
+		memset (dst, 0, len);
+		return r_sandbox_read (b->fd, dst, len);
+	}
 	if (b->sparse) {
 		if (write) {
 			// create new with src + len
@@ -349,8 +453,12 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 
 static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n, int write) {
 	ut64 len, check_len;
-	int i, j, k, tsize, endian, m = 1;
+	int i, j, k, tsize, bigendian, m = 1;
 	if (!b || b->empty) return 0;
+	if (b->fd != -1) {
+		eprintf ("r_buf_fcpy_at not supported yet for r_buf_new_file\n");
+		return 0;
+	}
 	if (addr == R_BUF_CUR)
 		addr = b->cur;
 	else addr -= b->base;
@@ -364,13 +472,13 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 			if (m == 1)
 				m = r_num_get (NULL, &fmt[j]);
 			continue;
-		case 's': tsize = 2; endian = 1; break;
-		case 'S': tsize = 2; endian = 0; break;
-		case 'i': tsize = 4; endian = 1; break;
-		case 'I': tsize = 4; endian = 0; break;
-		case 'l': tsize = 8; endian = 1; break;
-		case 'L': tsize = 8; endian = 0; break;
-		case 'c': tsize = 1; endian = 1; break;
+		case 's': tsize = 2; bigendian = 0; break;
+		case 'S': tsize = 2; bigendian = 1; break;
+		case 'i': tsize = 4; bigendian = 0; break;
+		case 'I': tsize = 4; bigendian = 1; break;
+		case 'l': tsize = 8; bigendian = 0; break;
+		case 'L': tsize = 8; bigendian = 1; break;
+		case 'c': tsize = 1; bigendian = 0; break;
 		default: return -1;
 		}
 
@@ -388,19 +496,43 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		}
 
 		for (k = 0; k < m; k++) {
+			ut8* dest1 = &buf[addr+len+(k*tsize)];
+			ut8* src1 = &b->buf[len+(k*tsize)];
+			ut8* dest2 = &buf[len+(k*tsize)];
+			ut8* src2 = &b->buf[addr+len+(k*tsize)];
 			if (write) {
-				r_mem_copyendian (
-				(ut8*)&buf[addr+len+(k*tsize)],
-				(ut8*)&b->buf[len+(k*tsize)],
-				tsize, endian);
+				switch (tsize) {
+				case 1:
+					*dest1 = r_read_ble8 (src1);
+					break;
+				case 2:
+					*((ut16*)dest1) = r_read_ble16 (src1, bigendian);
+					break;
+				case 4:
+					*((ut32*)dest1) = r_read_ble32 (src1, bigendian);
+					break;
+				case 8:
+					*((ut64*)dest1) = r_read_ble64 (src1, bigendian);
+					break;
+				}
 			} else {
-				r_mem_copyendian (
-				(ut8*)&buf[len+(k*tsize)],
-				(ut8*)&b->buf[addr+len+(k*tsize)],
-				tsize, endian);
+				switch (tsize) {
+				case 1:
+					*dest2 = r_read_ble8 (src2);
+					break;
+				case 2:
+					*((ut16*)dest2) = r_read_ble16 (src2, bigendian);
+					break;
+				case 4:
+					*((ut32*)dest2) = r_read_ble32 (src2, bigendian);
+					break;
+				case 8:
+					*((ut64*)dest2) = r_read_ble64 (src2, bigendian);
+					break;
+				}
 			}
 		}
-		len += tsize*m;
+		len += tsize * m;
 		m = 1;
 	}
 	b->cur = addr + len;
@@ -409,25 +541,41 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 
 R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	if (b->empty) return 0;
-	if (addr == R_BUF_CUR)
+	if (b->fd != -1) {
+		eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
+		return 0;
+	}
+	if (addr == R_BUF_CUR) {
 		addr = b->cur;
-	else addr -= b->base;
-	if (addr == UT64_MAX || addr > b->length)
+	} else {
+		addr -= b->base;
+	}
+	if (addr == UT64_MAX || addr > b->length) {
 		return NULL;
-	if (left)
+	}
+	if (left) {
 		*left = b->length - addr;
+	}
 	return b->buf+addr;
 }
 
 //ret 0 if failed; ret copied length if successful
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	st64 pa;
-	if (!b || !buf || len<1) return 0;
+	if (!b || !buf || len < 1) {
+		return 0;
+	}
 #if R_BUF_CUR != UT64_MAX
 #error R_BUF_CUR must be UT64_MAX
 #endif
 	if (addr == R_BUF_CUR) {
 		addr = b->cur;
+	}
+	if (b->fd != -1) {
+		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
+			return 0;
+		}
+		return r_sandbox_read (b->fd, buf, len);
 	}
 	if (!b->sparse) {
 		if (addr < b->base || len<1)
@@ -436,36 +584,58 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 		if (pa+len > b->length) {
 			memset (buf, 0xff, len);
 			len = b->length - pa;
-			if (len<0)
+			if (len < 0) {
 				return 0;
+			}
 		}
 	}
 	// must be +pa, but maybe its missused?
-	//return r_buf_cpy (b, addr, buf, b->buf+pa, len, R_FALSE);
-	return r_buf_cpy (b, addr, buf, b->buf, len, R_FALSE);
+	//return r_buf_cpy (b, addr, buf, b->buf+pa, len, false);
+	return r_buf_cpy (b, addr, buf, b->buf, len, false);
 }
 
 R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
-	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_FALSE);
+	return r_buf_fcpy_at (b, addr, buf, fmt, n, false);
 }
 
 //ret 0 or -1 if failed; ret copied length if success
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
-	if (!b || !buf || len < 1) return 0;
+	if (!b || !buf || len < 1) {
+		return 0;
+	}
+	if (b->fd != -1) {
+		ut64 newlen = addr + len;
+		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
+			return 0;
+		}
+		if (newlen > b->length) {
+			b->length = newlen;
+			ftruncate (b->fd, newlen);
+		}
+		return r_sandbox_write (b->fd, buf, len);
+	}
+	if (b->sparse) {
+		return (sparse_write (b->sparse, addr, buf, len) < 0) ? -1 : len;
+	}
 	if (b->empty) {
 		b->empty = 0;
 		free (b->buf);
 		b->buf = (ut8 *) malloc (addr + len);
 	}
-	return r_buf_cpy (b, addr, b->buf, buf, len, R_TRUE);
+	return r_buf_cpy (b, addr, b->buf, buf, len, true);
 }
 
 R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
-	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_TRUE);
+	return r_buf_fcpy_at (b, addr, buf, fmt, n, true);
 }
 
 R_API void r_buf_deinit(RBuffer *b) {
 	if (!b) return;
+	if (b->fd != -1) {
+		r_sandbox_close (b->fd);
+		b->fd = -1;
+		return;
+	}
 	if (b->sparse) {
 		r_list_free (b->sparse);
 		b->sparse = NULL;
@@ -473,13 +643,13 @@ R_API void r_buf_deinit(RBuffer *b) {
 	if (b->mmap) {
 		r_file_mmap_free (b->mmap);
 		b->mmap = NULL;
-	} else free (b->buf);
+	} else R_FREE (b->buf);
 }
 
 R_API void r_buf_free(RBuffer *b) {
 	if (!b) return;
 	if (!b->ro) r_buf_deinit (b);
-	free (b);
+	R_FREE (b);
 }
 
 R_API int r_buf_append_string (RBuffer *b, const char *str) {

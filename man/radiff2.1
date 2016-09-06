@@ -1,11 +1,11 @@
-.Dd May 11, 2014
+.Dd May 26, 2016
 .Dt RADIFF2 1
 .Sh NAME
 .Nm RADIFF2
 .Nd unified binary diffing utility
 .Sh SYNOPSIS
 .Nm radiff2
-.Op Fl abcCOdrspvh
+.Op Fl AabcCdDhOrspxv
 .Op Fl t Ar 0-100
 .Op Fl g Ar sym
 .Ar file1
@@ -14,6 +14,8 @@
 radiff2 implements many binary diffing algorithms for data and code.
 .Pp
 .Bl -tag -width Fl
+.It Fl A
+Analyze binary after loading it with RCore (see -C) and use -AA to run aaaa instead of aaa.
 .It Fl a
 Specify architecture (x86, arm, ..)
 .It Fl b
@@ -21,11 +23,11 @@ Select register size bits for given arch
 .It Fl c
 Count number of differences.
 .It Fl C
-Code diffing using graphdiff algorithm. Output columns are: file-a-address, percentatge of most similar function in B file | file-b-address.
-.It Fl CC
-Perform a code diffing of all the functions. Run aac instead of just diffing the symbols.
+Code diffing using graphdiff algorithm. Output columns are: file-a-address, percentatge of most similar function in B file | file-b-address. (Use with -A to analyze the binaries to find more functions)
 .It Fl d
 Use delta diffing (slower).
+.It Fl D
+Show disasm instead of hexpairs (honors -a arch and -b bits)
 .It Fl g Ar sym | off1,off2
 Graph diff output of given symbol, or between two functions, at given offsets: one for each binary.
 .It Fl h
@@ -38,12 +40,16 @@ Do code diffing with all bytes instead of just the fixed opcode bytes
 Use physical addressing (io.va=0)
 .It Fl r
 Output in radare commands as a binary patch.
+.It Fl x
+Show two column hexdump diffing.
 .It Fl s
 Calculate text distance from two files.
 .It Fl t Ar 0\-100
 Choose matching threshold for binary code diffing
 .It Fl v
 Show version information.
+.It Fl V
+Be verbose sometimes
 .El
 .Sh SEE ALSO
 .Pp

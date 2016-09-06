@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2016 - nibble, pancake, alvarofe */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -70,22 +70,53 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 	return ret;
 }
 
-static RList* entries(RBinFile *arch) {
-	RList* ret;
+static void add_tls_callbacks(RBinFile *arch, RList* list) {
+	PE_DWord paddr, vaddr;
+	int count = 0;
 	RBinAddr *ptr = NULL;
-	struct r_bin_pe_addr_t *entry = NULL;
+	struct PE_(r_bin_pe_obj_t) *bin = (struct PE_(r_bin_pe_obj_t) *) (arch->o->bin_obj);
+	char *key;
 
-	if (!(ret = r_list_new ()))
+	do {
+		key =  sdb_fmt (0, "pe.tls_callback%d_paddr", count);
+		paddr = sdb_num_get (bin->kv, key, 0);
+		if (!paddr) break;
+
+		key =  sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
+		vaddr = sdb_num_get (bin->kv, key, 0);
+		if (!vaddr) break;
+
+		if ((ptr = R_NEW0 (RBinAddr))) {
+			ptr->paddr = paddr;
+			ptr->vaddr = vaddr;
+			ptr->type  = R_BIN_ENTRY_TYPE_TLS;
+			r_list_append (list, ptr);
+		}
+		count++;
+	} while (vaddr != 0);
+}
+
+static RList* entries(RBinFile *arch) {
+	struct r_bin_pe_addr_t *entry = NULL;
+	RBinAddr *ptr = NULL;
+	RList* ret;
+
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
-	ret->free = free;
-	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->o->bin_obj)))
+	}
+	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->o->bin_obj))) {
 		return ret;
-	if ((ptr = R_NEW (RBinAddr))) {
+	}
+	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->paddr;
 		ptr->vaddr = entry->vaddr;
+		ptr->type  = R_BIN_ENTRY_TYPE_PROGRAM;
 		r_list_append (ret, ptr);
 	}
 	free (entry);
+	// get TLS callback addresses
+	add_tls_callbacks (arch, ret);
+
 	return ret;
 }
 
@@ -98,18 +129,24 @@ static RList* sections(RBinFile *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = PE_(r_bin_pe_get_sections)(arch->o->bin_obj))){
+	if (!(sections = PE_(r_bin_pe_get_sections) (arch->o->bin_obj))){
 		r_list_free (ret);
 		return NULL;
 	}
+	PE_(r_bin_pe_check_sections) (arch->o->bin_obj, &sections);
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
-		if (sections[i].name[0])
+		}
+		if (sections[i].name[0]) {
 			strncpy (ptr->name, (char*)sections[i].name,
 				R_BIN_SIZEOF_STRINGS);
+		}
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
+		if (!ptr->vsize) {
+			ptr->vsize = sections[i].size;
+		}
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;
@@ -195,8 +232,12 @@ static RList* imports(RBinFile *arch) {
 
 	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
-	if (!(ret = r_list_new ()) || !(relocs = r_list_new ()))
+	if (!(ret = r_list_new ()))
 		return NULL;
+	if (!(relocs = r_list_new ())) {
+		free (ret);
+		return NULL;
+	}
 
 	ret->free = free;
 	relocs->free = free;
@@ -276,6 +317,21 @@ static int is_dot_net(RBinFile *arch) {
 	return false;
 }
 
+static int is_vb6(RBinFile *arch) {
+	struct r_bin_pe_lib_t *libs = NULL;
+	int i;
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
+		return false;
+	for (i = 0; !libs[i].last; i++) {
+		if (!strcmp (libs[i].name, "msvbvm60.dll")) {
+			free (libs);
+			return true;
+		}
+	}
+	free (libs);
+	return false;
+}
+
 static int has_canary(RBinFile *arch) {
 	const RList* imports_list = imports (arch);
 	RListIter *iter;
@@ -296,20 +352,25 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
-	if (!arch) return false;
+	if (!arch) 
+		return false;
 	buf = r_buf_buffer (arch->buf);
-	if (!buf) return false;
+	if (!buf) 
+		return false;
 	sz = r_buf_size (arch->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
-	if (sz < idx + 0x5E)
+	if (idx + 0x5E + 1 >= sz )
 		return false;
-	return ((*(ut16*)(buf + idx + 0x5E)) & \
-		dllCharacteristic);
+	//it's funny here idx+0x5E can be 158 and sz 159 but with
+	//the cast it reads two bytes until 160 
+	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
 }
 
 static RBinInfo* info(RBinFile *arch) {
 	SDebugInfo di = {{0}};
 	RBinInfo *ret = R_NEW0 (RBinInfo);
+	ut32 claimed_checksum, actual_checksum;
+
 	if (!ret) return NULL;
 	arch->file = strdup (arch->file);
 	ret->bclass = PE_(r_bin_pe_get_class) (arch->o->bin_obj);
@@ -321,15 +382,24 @@ static RBinInfo* info(RBinFile *arch) {
 	if (is_dot_net (arch)) {
 		ret->lang = "msil";
 	}
+	if (is_vb6 (arch)) {
+		ret->lang = "vb";
+	}
 	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
 		ret->type = strdup ("DLL (Dynamic Link Library)");
 	else ret->type = strdup ("EXEC (Executable file)");
+
+	claimed_checksum = PE_(bin_pe_get_claimed_checksum) (arch->o->bin_obj);
+	actual_checksum  = PE_(bin_pe_get_actual_checksum) (arch->o->bin_obj);
+
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_canary = has_canary (arch);
 	ret->has_nx = haschr (arch, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr (arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
+	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", claimed_checksum));
+	ret->actual_checksum  = strdup (sdb_fmt (1, "0x%08x", actual_checksum));
 
 	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
 	sdb_bool_set (arch->sdb, "pe.highva", haschr(arch, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
@@ -344,8 +414,11 @@ static RBinInfo* info(RBinFile *arch) {
 	sdb_bool_set (arch->sdb, "pe.guardcf", haschr(arch, IMAGE_DLLCHARACTERISTICS_GUARD_CF), 0);
 	sdb_bool_set (arch->sdb, "pe.terminalserveraware", haschr(arch, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE), 0);
 	sdb_num_set (arch->sdb, "pe.bits", ret->bits, 0);
+	sdb_set (arch->sdb, "pe.claimed_checksum", ret->claimed_checksum, 0);
+	sdb_set (arch->sdb, "pe.actual_checksum", ret->actual_checksum, 0);
 
 	ret->has_va = true;
+
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj))
@@ -356,12 +429,13 @@ static RBinInfo* info(RBinFile *arch) {
 		ret->dbg_info |= R_BIN_DBG_RELOCS;
 
 	if (PE_(r_bin_pe_get_debug_data)(arch->o->bin_obj, &di)) {
-		ret->guid = malloc (GUIDSTR_LEN+1);
-		strncpy (ret->guid, di.guidstr, GUIDSTR_LEN);
-		ret->guid[GUIDSTR_LEN] = 0;
-		ret->debug_file_name = malloc (DBG_FILE_NAME_LEN+1);
-		strncpy (ret->debug_file_name, di.file_name, DBG_FILE_NAME_LEN);
-		ret->debug_file_name[DBG_FILE_NAME_LEN] = 0;
+		ret->guid = r_str_ndup (di.guidstr, GUIDSTR_LEN);
+		if (ret->guid) {
+			ret->debug_file_name = r_str_ndup (di.file_name, DBG_FILE_NAME_LEN);
+			if (!ret->debug_file_name) {
+				R_FREE (ret->guid);
+			}
+		}
 	}
 
 	return ret;

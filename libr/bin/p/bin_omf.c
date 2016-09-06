@@ -1,29 +1,26 @@
-/* radare - LGPL - Copyright 2015 - ampotos */
+/* radare - LGPL - Copyright 2015-2016 - ampotos */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-
 #include "omf/omf.h"
 
 static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
-	if (!buf || !size || size == UT64_MAX)
+	if (!buf || !size || size == UT64_MAX) {
 		return NULL;
-	return r_bin_internal_omf_load((char *)buf, size);
+	}
+	return r_bin_internal_omf_load ((char *)buf, size);
 }
 
 static int load(RBinFile *arch) {
-	const ut8 *byte = arch ? r_buf_buffer(arch->buf) : NULL;
-	ut64 size = arch ? r_buf_size(arch->buf) : 0;
-
+	const ut8 *byte = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 size = arch ? r_buf_size (arch->buf) : 0;
 	if (!arch || !arch->o) {
 		return false;
 	}
-	if (!(arch->o->bin_obj = load_bytes(arch, byte, \
-			size, arch->o->loadaddr, arch->sdb)))
-		return false;
-	return true;
+	arch->o->bin_obj = load_bytes(arch, byte, size, arch->o->loadaddr, arch->sdb);
+	return arch->o->bin_obj != NULL;
 }
 
 static int destroy(RBinFile *arch) {
@@ -33,10 +30,25 @@ static int destroy(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if ((*buf == 0x80 || *buf == 0x82) && \
-			r_bin_checksum_omf_ok((char *)buf, length))
-		return true;
-	return false;
+	int i;
+	if (!buf) {
+		return false;
+	}
+	if ((*buf != 0x80 && *buf != 0x82) || length < 4) {
+		return false;
+	}
+	ut16 rec_size = ut8p_bw (buf + 1);
+	ut8 str_size = *(buf + 3);
+	if (str_size + 2 != rec_size || length < rec_size + 3) {
+		return false;
+	}
+	// check that the string is ASCII
+	for (i = 4; i < str_size + 4; ++i) {
+		if (buf[i] > 0x7f) {
+			return false;
+		}
+	}
+	return r_bin_checksum_omf_ok ((char *)buf, length);
 }
 
 static int check(RBinFile *arch) {
@@ -53,17 +65,18 @@ static RList *entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *addr;
 
-	if (!(ret = r_list_new()))
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
-	ret->free = free;
-
-	if (!(addr = R_NEW0(RBinAddr)))
-		return ret;
-
+	}
+	if (!(addr = R_NEW0 (RBinAddr))) {
+		r_list_free (ret);
+		return NULL;
+	}
 	if (!r_bin_omf_get_entry(arch->o->bin_obj, addr)) {
 		R_FREE (addr);
-	} else r_list_append(ret, addr);
-
+	} else {
+		r_list_append (ret, addr);
+	}
 	return ret;
 }
 

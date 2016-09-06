@@ -285,12 +285,12 @@ R_API int r_isprint (const RRune c) {
 	do {
 		mid = (low + hi) >> 1;
 		if (c >= nonprintable_ranges[mid].from && c <= nonprintable_ranges[mid].to)
-			return R_FALSE;
+			return false;
 		if (c > nonprintable_ranges[mid].to)
 			low = mid + 1;
 		if (c < nonprintable_ranges[mid].from)
 			hi = mid - 1;
 	} while (low <= hi);
 
-	return R_TRUE;
+	return true;
 }

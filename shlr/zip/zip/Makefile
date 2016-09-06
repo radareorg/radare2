@@ -10,7 +10,7 @@ SOVER=${EXT_SO}
 LDFLAGS+=-shared
 LDFLAGS_SHARED?=-shared
 else
-ifneq (,$(findstring mingw32,${OSTYPE})$(findstring mingw64,${OSTYPE})$(findstring msys,${OSTYPE}))
+ifneq (,$(findstring mingw,${OSTYPE})$(findstring msys,${OSTYPE}))
 CFLAGS+=-DMINGW32=1
 EXT_SO=dll
 SOVER=${EXT_SO}
@@ -31,7 +31,7 @@ ifeq (${OSTYPE},darwin)
 EXT_SO=dylib
 SOVER=${EXT_SO}
 LDFLAGS+=-dynamic
-LDFLAGS_SHARED?=-fPIC -shared
+LDFLAGS_SHARED?=-fPIC -dynamiclib
 # ifeq (${ARCH},i386)
    #CC+=-arch i386
 #   CC+=-arch x86_64
@@ -98,7 +98,6 @@ endif
 	${CC} $(CFLAGS) ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS} ${LINKFLAGS}
 
 ${LIBAR}: ${OFILES}
-	#${CC_AR} $(LIBAR) ${OFILES}
 	${CC_AR} ${OFILES}
 	${RANLIB} ${LIBAR}
 

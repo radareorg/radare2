@@ -10,14 +10,19 @@
 #include <string.h>
 
 #if USE_MALLOC
-R_API void r_initmem(char *p, size_t s) { }
-R_API void* r_malloc(size_t s) { return malloc (s); }
-R_API void r_free(void *p) { free (s); }
+R_API void r_initmem(char *p, size_t s) {
+}
+
+R_API void* r_malloc(size_t s) {
+	return malloc (s);
+}
+
+R_API void r_free(void *p) {
+	free (s);
+}
 #else
 
-typedef
-struct
-{
+typedef struct {
 	int is_available;
 	int size;
 } MCB, *MCB_P;
@@ -64,19 +69,19 @@ R_API void *r_malloc(int elem_size) {
 				break;
 			}
 		}
-		p_mcb = (MCB_P) ( (char *)p_mcb + p_mcb->size);
+		p_mcb = (MCB_P) ((char *)p_mcb + p_mcb->size);
 	}
 
 	if (flag != NO_MCB) {
 		p_mcb->is_available = 1;
 		if (flag == NEW_MCB) {
-			p_mcb->size = elem_size + sizeof(MCB);
-		} else if( flag == REUSE_MCB) {
-			elem_size = p_mcb->size - sizeof(MCB);
+			p_mcb->size = elem_size + sizeof (MCB);
+		} else if (flag == REUSE_MCB) {
+			elem_size = p_mcb->size - sizeof (MCB);
 		}
 		mcb_count++;
 		allocated_mem += elem_size;
-		return ( (char *) p_mcb + sz);
+		return ((char *) p_mcb + sz);
 	}
 	return NULL;
 }
@@ -89,7 +94,7 @@ void r_free(void *p) {
 	if (ptr->is_available != FREE) {
 		mcb_count--;
 		ptr->is_available = FREE;
-		allocated_mem -= (ptr->size - sizeof(MCB));
+		allocated_mem -= (ptr->size - sizeof (MCB));
 	 }
 }
 #endif

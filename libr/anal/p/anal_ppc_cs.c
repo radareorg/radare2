@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -16,12 +16,14 @@ struct Getarg {
 #define INSOP(n) insn->detail->ppc.operands[n]
 
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
-	csh handle = gop->handle;
 	cs_insn *insn = gop->insn;
-	cs_ppc_op op;
+	csh handle = gop->handle;
 	static char words[3][64];
-	if (n<0 || n>=3)
+	cs_ppc_op op;
+
+	if (n < 0 || n >= 3) {
 		return NULL;
+	}
 	op = INSOP (n);
 	switch (op.type) {
 	case PPC_OP_INVALID:
@@ -33,7 +35,7 @@ static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 		break;
 	case PPC_OP_IMM:
 		snprintf (words[n], sizeof (words[n]), 
-			"0x%"PFMT64x"%s", (ut64)(ut32)op.imm, setstr);
+			"0x%"PFMT64x"%s", (ut64)op.imm, setstr);
 		break;
 	case PPC_OP_MEM:
 		snprintf (words[n], sizeof (words[n]), 
@@ -47,6 +49,7 @@ static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 	}
 	return words[n];
 }
+
 #define ARG(n) getarg2(&gop, n, "")
 #define ARG2(n,m) getarg2(&gop, n, m)
 
@@ -137,7 +140,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
-	if (n<1) {
+	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
 		struct Getarg gop = {
@@ -283,14 +286,41 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_B:
 		case PPC_INS_BA:
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->jump = (ut64)(ut32)insn->detail->ppc.operands[0].imm;
+			op->jump = (ut64)insn->detail->ppc.operands[0].imm;
+			switch (insn->detail->ppc.bc) {
+#if 0
+			case PPC_BC_INVALID:
+				// non-conditional
+				op->type = R_ANAL_OP_TYPE_ILL;
+				break;
+#endif
+			case PPC_BC_LT:
+			case PPC_BC_LE:
+			case PPC_BC_EQ:
+			case PPC_BC_GE:
+			case PPC_BC_GT:
+			case PPC_BC_NE:
+			case PPC_BC_UN:
+			case PPC_BC_NU:
+			case PPC_BC_SO:
+			case PPC_BC_NS:
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->fail = addr + 4;
+				break;
+			default:
+				break;
+			}
 			switch (insn->detail->ppc.operands[0].type) {
 			case PPC_OP_CRX:
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				break;
 			case PPC_OP_REG:
-				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = (ut64)(ut32)insn->detail->ppc.operands[1].imm;
+				if (op->type == R_ANAL_OP_TYPE_CJMP) {
+					op->type = R_ANAL_OP_TYPE_UCJMP;
+				} else {
+					op->type = R_ANAL_OP_TYPE_CJMP;
+				}
+				op->jump = (ut64)insn->detail->ppc.operands[1].imm;
 				op->fail = addr+4;
 				//op->type = R_ANAL_OP_TYPE_UJMP;
 			default:
@@ -316,9 +346,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_BL:
 		case PPC_INS_BLA:
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = (ut64)(ut32)insn->detail->ppc.operands[0].imm;
-			op->fail = addr+4;
+			op->jump = (ut64)insn->detail->ppc.operands[0].imm;
+			op->fail = addr + 4;
 			esilprintf (op, "pc,lr,=,%s,pc,=", ARG(0));
+			break;
+		case PPC_INS_TRAP:
+			op->type = R_ANAL_OP_TYPE_TRAP;
 			break;
 		case PPC_INS_BLR:
 		case PPC_INS_BLRL:
@@ -345,12 +378,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4; /* :D */
+}
+
 RAnalPlugin r_anal_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone PowerPC analysis",
 	.license = "BSD",
 	.arch = "ppc",
 	.bits = 32|64,
+	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
 };

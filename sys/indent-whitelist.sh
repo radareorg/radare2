@@ -5,6 +5,7 @@ libr/include/r_reg.h
 libr/anal/cycles.c
 libr/anal/esil.c
 libr/anal/data.c
+libr/anal/p/anal_arc.c
 libr/config/config.c
 libr/config/callback.c
 libr/config/t/test.c
@@ -22,6 +23,7 @@ libr/bin/filter.c
 libr/bin/format/objc/mach0_classes.c
 libr/cons/hud.c
 libr/cons/2048.c
+libr/cons/utf8.c
 libr/cons/line.c
 libr/cons/canvas.c
 libr/cons/editor.c
@@ -31,6 +33,8 @@ libr/util/stack.c
 libr/util/slist.c
 libr/util/log.c
 libr/util/cache.c
+libr/core/file.c
+binr/rasm2/rasm2.c
 "
 case "$1" in
 "help"|-h)

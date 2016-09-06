@@ -74,6 +74,7 @@ This release comes with contributions from the following people:
  - ampotos
  - capi_x
  - cosarara
+ - damo22
  - dso (Adam Pridgen)
  - dunhame
  - dx

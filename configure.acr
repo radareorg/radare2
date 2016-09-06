@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.10.0-git
+VERSION 0.10.6-git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -9,7 +9,8 @@ ARG_DISABLE DEBUGGER debugger disable native debugger features ;
 (( -ldl -dynamic ... ))
 USE_DL
 
-CHECK_ENDIAN
+CHKPRG! PATCH patch
+CHKPRG GIT git
 CHKLIB magic
 ARG_WITH USE_MAGIC sysmagic force to use system's magic ;
 IFAND HAVE_LIB_MAGIC USE_MAGIC {
@@ -55,9 +56,9 @@ ARG_WITHOUT WITH_GPL gpl do not build GPL code (grub, cxx, ... ) ;
 CHKLIB gmp
 ARG_WITHOUT HAVE_GMP gmp disable GMP dependency ;
 IFNOT HAVE_GMP { HAVE_LIB_GMP = 0 ; }
+HAVE_GMP = 0 ;
 ))
 HAVE_LIB_GMP = 0 ;
-HAVE_GMP = 0 ;
 
 CHKLIB ssl
 PKGCFG SSL_CFLAGS SSL_LDFLAGS openssl
@@ -80,11 +81,6 @@ IFNULL SSL_LDFLAGS {
 }
 
 ARG_WITH USE_RPATH rpath use rpath to build ;
-
-ARG_WITH HAVE_LILEND little-endian force little endian ;
-IF HAVE_LILEND { LIL_ENDIAN = 1 ; }
-ARG_WITH HAVE_BIGEND big-endian force big endian ;
-IF HAVE_BIGEND { LIL_ENDIAN = 0 ; }
 
 CHKLIB lua5.1
 
@@ -138,13 +134,12 @@ IFEQ LIBVERSION xxx ; {
 
 REPORT PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK
 	VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC
-	USEROSTYPE LIL_ENDIAN LIBVERSION ;
+	USEROSTYPE LIBVERSION BUILD HOST TARGET ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk
 	libr/include/r_userconf.h
 	pkgcfg/r_io.pc
-	pkgcfg/r_db.pc
 	pkgcfg/r_magic.pc
 	pkgcfg/r_asm.pc
 	pkgcfg/r_bin.pc

@@ -560,30 +560,6 @@ extern int pexecute (const char *, char * const *, const char *,
 
 extern int pwait (int, int *, int);
 
-#if !HAVE_DECL_ASPRINTF
-/* Like sprintf but provides a pointer to malloc'd storage, which must
-   be freed by the caller.  */
-
-extern int asprintf (char **, const char *, ...) ATTRIBUTE_PRINTF_2;
-#endif
-
-#if !HAVE_DECL_VASPRINTF
-/* Like vsprintf but provides a pointer to malloc'd storage, which
-   must be freed by the caller.  */
-
-extern int vasprintf (char **, const char *, va_list) ATTRIBUTE_PRINTF(2,0);
-#endif
-
-#if defined(HAVE_DECL_SNPRINTF) && !HAVE_DECL_SNPRINTF
-/* Like sprintf but prints at most N characters.  */
-extern int snprintf (char *, size_t, const char *, ...) ATTRIBUTE_PRINTF_3;
-#endif
-
-#if defined(HAVE_DECL_VSNPRINTF) && !HAVE_DECL_VSNPRINTF
-/* Like vsprintf but prints at most N characters.  */
-extern int vsnprintf (char *, size_t, const char *, va_list) ATTRIBUTE_PRINTF(3,0);
-#endif
-
 #if defined(HAVE_DECL_STRVERSCMP) && !HAVE_DECL_STRVERSCMP
 /* Compare version strings.  */
 extern int strverscmp (const char *, const char *);

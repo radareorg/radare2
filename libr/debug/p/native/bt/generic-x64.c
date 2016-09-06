@@ -27,7 +27,7 @@ static RList *backtrace_x86_64(RDebug *dbg, ut64 at) {
 			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
 			r_list_purge (list);
 			free (list);
-			return R_FALSE;
+			return false;
 		}
 		frame = R_NEW0 (RDebugFrame);
 		frame->addr = ptr;

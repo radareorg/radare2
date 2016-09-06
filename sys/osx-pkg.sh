@@ -7,24 +7,29 @@
 # sudo pkgutil --forget org.radare.radare2
 
 SRC=/tmp/r2osx
+PREFIX=/usr/local
 DST="$(pwd)/sys/osx-pkg/radare2.unpkg"
-VERSION=0.9.9
+if [ -n "$1" ]; then
+	VERSION="$1"
+else
+	VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
+	[ -z "${VERSION}" ] && VERSION=0.10.5
+fi
+[ -z "${MAKE}" ] && MAKE=make
 
 rm -rf "${SRC}"
-make mrproper
-./configure --prefix=/usr || exit 1
-make -j4 || exit 1
+${MAKE} mrproper
+./configure --prefix="${PREFIX}" || exit 1
+${MAKE} -j4 || exit 1
 # TODO: run sys/install.sh
-make install PREFIX=/usr DESTDIR=${SRC} || exit 1
+${MAKE} install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
 if [ -d "${SRC}" ]; then
 	(
 		cd ${SRC} && \
 		find . | cpio -o --format odc | gzip -c > "${DST}/Payload"
 	)
 	mkbom ${SRC} "${DST}/Bom"
-
 	# Repackage
-
 	pkgutil --flatten "${DST}" "${DST}/../radare2-${VERSION}.pkg"
 else
 	echo "Failed install. DESTDIR is empty"

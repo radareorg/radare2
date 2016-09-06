@@ -21,6 +21,7 @@ LDFLAGS_SHARED?=-shared
 endif
 endif
 
+CFLAGS+=-fstrict-aliasing
 CFLAGS+=-I../../libr/include
 CFLAGS+=-Wall -g -ggdb
 LDFLAGS+=-shared

@@ -31,11 +31,10 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 	return re;
 }
 
-static int add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) {
+static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
 	RAnalRefline *item = R_NEW0 (RAnalRefline);
-	if (!item) return -1;
-
+	if (!item) return false;
 	item->from = addr;
 	item->to = to;
 	item->index = *idx;
@@ -44,24 +43,24 @@ static int add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) {
 	r_list_append (list, item);
 
 	re1 = refline_end_new (item->from, true, item);
-	if (!re1) goto re1_err;
+	if (!re1) {
+		free (item);
+		return false;
+	}
 	r_list_add_sorted (sten, re1, (RListComparator)cmp_asc);
 
 	re2 = refline_end_new (item->to, false, item);
-	if (!re2) goto re2_err;
+	if (!re2) {
+		free (re1);
+		free (item);
+		return false;
+	}
 	r_list_add_sorted (sten, re2, (RListComparator)cmp_asc);
-	return 0;
-re2_err:
-	free (re1);
-re1_err:
-	free (item);
-	return -1;
+	return true;
 }
 
 R_API void r_anal_reflines_free (RAnalRefline *rl) {
-	if (rl) {
-		free (rl);
-	}
+	free (rl);
 }
 
 /* returns a list of RAnalRefline for the code present in the buffer buf, of
@@ -97,6 +96,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 
 	list = r_list_new ();
 	if (!list) return NULL;
+	list->free = free;
 	sten = r_list_new ();
 	if (!sten) goto list_err;
 	sten->free = (RListFree)free;
@@ -106,6 +106,14 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		if (nlines != -1) {
 			nlines--;
 			if (nlines == 0) break;
+		}
+		{
+			const RAnalMetaItem *mi = r_meta_find (anal, addr, R_META_TYPE_ANY, 0);
+			if (mi) {
+				ptr += mi->size;
+				addr += mi->size;
+				continue;
+			}
 		}
 		if (anal->maxreflines && count > anal->maxreflines) {
 			break;
@@ -130,8 +138,10 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				op.jump == 0LL) {
 				break;
 			}
-			res = add_refline (list, sten, addr, op.jump, &count);
-			if (res < 0) goto sten_err;
+			if (!(res = add_refline (list, sten, addr, op.jump, &count))) {
+				r_anal_op_fini (&op);
+				goto sten_err;
+			}
 			break;
 		case R_ANAL_OP_TYPE_SWITCH:
 		{
@@ -145,9 +155,10 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					continue;
 				}
-				res = add_refline (list, sten, op.switch_op->addr,
-					caseop->jump, &count);
-				if (res < 0) goto sten_err;
+				if (!(res = add_refline (list, sten, op.switch_op->addr, caseop->jump, &count))) {
+					r_anal_op_fini (&op);
+					goto sten_err;
+				}
 			}
 			break;
 		}
@@ -187,9 +198,10 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	free (free_levels);
 	r_list_free (sten);
 	return list;
+
 sten_err:
-	r_list_free (sten);
 list_err:
+	r_list_free (sten);
 	r_list_free (list);
 	return NULL;
 }
@@ -283,10 +295,10 @@ R_API int r_anal_reflines_middle(RAnal *a, RList* /*<RAnalRefline>*/ list, ut64 
 		RListIter *iter;
 		r_list_foreach (list, iter, ref) {
 			if ((ref->to > addr) && (ref->to < addr+len))
-				return R_TRUE;
+				return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 static const char* get_corner_char(RAnalRefline *ref, ut64 addr, int is_middle) {
@@ -389,6 +401,10 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	add_spaces (b, 0, pos, wide);
 
 	str = r_buf_free_to_string (b);
+	if (!str) {
+		r_list_free (lvls);
+		return NULL;
+	}
 	if (core->anal->lineswidth > 0) {
 		int lw = core->anal->lineswidth;
 		l = strlen (str);
@@ -422,5 +438,6 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		str = r_str_replace (str, ".", c->vline[LUP_CORNER], 1);
 		str = r_str_replace (str, "`", c->vline[LDWN_CORNER], 1);
 	}
+	r_list_free (lvls);
 	return str;
 }

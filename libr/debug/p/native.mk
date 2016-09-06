@@ -11,8 +11,11 @@ endif
 
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 NATIVE_OBJS=native/linux/linux_debug.o
+NATIVE_OBJS+=native/procfs.o
 endif
-
+ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux))
+COREDUMP_OBJS=native/linux/linux_coredump.o
+endif
 
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
 	${CC} $(call libname,debug_native) ${CFLAGS} \
@@ -22,4 +25,5 @@ ${TARGET_PTRACE}: ${OBJ_PTRACE}
 		${LDFLAGS_LINKPATH}../../anal -L../../anal -lr_anal \
 		${LDFLAGS_LINKPATH}../../reg -L../../reg -lr_reg \
 		${LDFLAGS_LINKPATH}../../util -L../../util -lr_util \
+		${LDFLAGS_LINKPATH}../../syscall -L../../util -lr_syscall \
 		${OBJ_PTRACE}

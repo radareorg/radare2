@@ -34,22 +34,8 @@ static int assemble(RParse *p, char *data, char *str) {
 }
 
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-#if USE_VARSUBS
-	char *ptr, *ptr2;
-	int i;
-	strncpy (str, data, len);
-	for (i = 0; i < R_ANAL_VARSUBS; i++)
-		if (f->varsubs[i].pat[0] != '\0' && f->varsubs[i].sub[0] != '\0' &&
-			(ptr = strstr (data, f->varsubs[i].pat))) {
-				*ptr = '\0';
-				ptr2 = ptr + strlen (f->varsubs[i].pat);
-				snprintf (str, len, "%s%s%s", data, f->varsubs[i].sub, ptr2);
-		}
-	return true;
-#else
 	strncpy (str, data, len);
 	return false;
-#endif
 }
 
 RParsePlugin r_parse_plugin_mreplace = {

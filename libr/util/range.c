@@ -12,10 +12,14 @@
 //void (*ranges_new_callback)(struct range_t *r) = NULL;
 
 R_API RRange *r_range_new() {
-	RRange *r = R_NEW (RRange);
+	RRange *r = R_NEW0 (RRange);
 	if (r) {
 		r->count = r->changed = 0;
 		r->ranges = r_list_new ();
+		if (!r->ranges) {
+			r_range_free (r);
+			return NULL;
+		}
 		r->ranges->free = free;
 	}
 	return r;
@@ -43,6 +47,7 @@ R_API int r_range_set_data(RRange *rgs, ut64 addr, const ut8 *buf, int len) {
 	if (r == NULL)
 		return 0;
 	r->data = (ut8*)malloc (len);
+	if (!r->data) return 0;
 	r->datalen = len;
 	memcpy (r->data, buf, len);
 	return 1;
@@ -79,6 +84,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 	ut64 addr, addr2;
 	int i, len = strlen (string)+1;
 	char *str, *ostr = malloc (len);
+	if (!ostr) return 0;
 	char *p = str = ostr;
 	char *p2 = NULL;
 
@@ -111,7 +117,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 		addr = r_num_get (NULL, p);
 		addr2 = r_num_get (NULL, p2);
 		r_range_add (rgs, addr, addr2, 1);
-	} else 
+	} else
 	if (p) {
 		addr = r_num_get (NULL, p);
 		r_range_add (rgs, addr, addr+1, 1);
@@ -234,9 +240,9 @@ R_API int r_range_contains(RRange *rgs, ut64 addr) {
 	RListIter *iter;
 	r_list_foreach (rgs->ranges, iter, r) {
 		if (addr >= r->fr && addr <= r->to)
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API int r_range_sort(RRange *rgs) {
@@ -244,15 +250,15 @@ R_API int r_range_sort(RRange *rgs) {
 	RRangeItem *r, *r2;
 
 	if (!rgs->changed)
-		return R_FALSE;
-	rgs->changed = R_FALSE;
+		return false;
+	rgs->changed = false;
 
 	r_list_foreach (rgs->ranges, iter, r) {
 		r_list_foreach (rgs->ranges, iter2, r2) {
 			if ((r != r2) && (r->fr > r2->fr)) {
 				// TODO : IMPLEMENTED A FUCKING SWAP IN R_LIST!!!
 				// list_move (pos, pos2);
-				rgs->changed = R_TRUE;
+				rgs->changed = true;
 			}
 		}
 	}
@@ -330,7 +336,7 @@ int r_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
      .....|______________________|...
       |_____|  |____|  |_______|
     ---------------------------------
-            |__|    |__|       |_|      
+            |__|    |__|       |_|
 #endif
 RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	ut64 total = 0;
@@ -360,7 +366,7 @@ RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 
 /*
 	return true if overlap
-	in *d 
+	in *d
 */
 // TODO: make it a macro
 // TODO: move to num.c ?

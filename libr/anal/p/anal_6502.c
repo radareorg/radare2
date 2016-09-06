@@ -108,10 +108,9 @@ static void _6502_anal_esil_get_addr_pattern2(RAnalOp *op, const ut8* data, char
 }
 
 /* BIT, JMP, JMP(), STY, LDY, CPY, and CPX share this pattern */
-static void _6502_anal_esil_get_addr_pattern3(RAnalOp *op, const ut8* data, char* addrbuf, int addrsize, char reg)
-{
+static void _6502_anal_esil_get_addr_pattern3(RAnalOp *op, const ut8* data, char* addrbuf, int addrsize, char reg) {
 	// turn off bits 5, 6 and 7
-	switch(data[0] & 0x1f) { // 0x1f = b00111111
+	switch (data[0] & 0x1f) { // 0x1f = b00111111
 	case 0x00: // op #$ff
 		op->cycles = 2;
 		snprintf (addrbuf, addrsize, "0x%02x", data[1]);
@@ -292,7 +291,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	const int buffsize = sizeof(addrbuf)-1;
 
 	memset (op, '\0', sizeof (RAnalOp));
-	op->size = snes_op[data[0]].len;	//snes-arch is similiar to nes/6502
+	op->size = snes_op_get_size(8, &snes_op[data[0]]);	//snes-arch is similiar to nes/6502
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	r_strbuf_init (&op->esil);
@@ -454,8 +453,8 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_ADD;
 		_6502_anal_esil_get_addr_pattern1 (op, data, addrbuf, buffsize);
 		if (data[0] == 0x69) // immediate mode
-			r_strbuf_setf (&op->esil, "%s,a,+=,C,DUP,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
-		else	r_strbuf_setf (&op->esil, "%s,[1],a,+=,C,DUP,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
+			r_strbuf_setf (&op->esil, "%s,a,+=,C,NUM,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
+		else	r_strbuf_setf (&op->esil, "%s,[1],a,+=,C,NUM,$c7,C,=,a,+=,$c7,C,|=", addrbuf);
 		_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 		// fix Z
 		r_strbuf_append (&op->esil, ",a,a,=,$z,Z,=");
@@ -718,7 +717,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		break;
 	// RTS
 	case 0x60: // rts
-		op->eob = 1;
+		op->eob = true;
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = 6;
 		op->stackop = R_ANAL_STACK_INC;
@@ -729,7 +728,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		break;
 	// RTI
 	case 0x40: // rti
-		op->eob = 1;
+		op->eob = true;
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = 6;
 		op->stackop = R_ANAL_STACK_INC;

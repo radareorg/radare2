@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - earada, pancake */
+/* radare - LGPL - Copyright 2009-2016 - earada, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,12 +10,10 @@
 #include <dalvik/opcode.h>
 
 static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int i = (int) buf[0];
-	int vA, vB, vC;
+	int vA, vB, vC, payload = 0, i = (int) buf[0];
+	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm;
 	ut64 offset;
-	int size = dalvik_opcodes[i].len;
-	int payload = 0;
 
 	op->buf_asm[0] = 0;
 	if (buf[0] == 0x00) { /* nop */
@@ -27,11 +25,10 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			{
 				unsigned short array_size = buf[2]|(buf[3]<<8);
 				int first_key = buf[4]|(buf[5]<<8)|(buf[6]<<16)|(buf[7]<<24);
-
 				sprintf (op->buf_asm, "packed-switch-payload %d, %d",
 					array_size, first_key);
 				size = 8;
-				payload = 2 * (array_size*2);
+				payload = 2 * (array_size * 2);
 				len = 0;
 			}
 			break;
@@ -52,15 +49,16 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			// element_width = 2 bytes ushort little endian
 			// size = 4 bytes uint
 			// ([size*element_width+1)/2)+4
-			{
-				unsigned short elem_width = buf[2] | (buf[3]<<8);
+			if (len > 7) {
+				unsigned short elem_width = buf[2] | (buf[3] << 8);
 				unsigned int array_size = buf[4]|(buf[5]<<8)|(buf[6]<<16)|(buf[7]<<24);
-				sprintf (op->buf_asm, "fill-array-data-payload %d, %d",
+				snprintf (op->buf_asm, sizeof (op->buf_asm),
+					"fill-array-data-payload %d, %d",
 					elem_width, array_size);
-				size = 8;
 				payload = 2 * ((array_size * elem_width+1)/2);
-				len = 0;
 			}
+			size = 8;
+			len = 0;
 			break;
 		default:
 			/* nop */
@@ -203,22 +201,22 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[3]<<8) | buf[2];
 			*str = 0;
 			switch (vA) {
-				case 1:
-					sprintf (str, " {v%i}", buf[4] & 0x0f);
-					break;
-				case 2:
-					sprintf (str, " {v%i, v%i}", buf[4]&0x0f, (buf[4]&0xf0)>>4);
-					break;
-				case 3:
-					sprintf (str, " {v%i, v%i, v%i}", buf[4]&0x0f,
-							(buf[4]&0xf0)>>4, buf[5]&0x0f);
-					break;
-				case 4:
-					sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4]&0x0f,
-							(buf[4]&0xf0)>>4, buf[5]&0x0f, (buf[5]&0xf0)>>4);
-					break;
-				default:
-					sprintf (str, " {}");
+			case 1:
+				sprintf (str, " {v%i}", buf[4] & 0x0f);
+				break;
+			case 2:
+				sprintf (str, " {v%i, v%i}", buf[4]&0x0f, (buf[4]&0xf0)>>4);
+				break;
+			case 3:
+				sprintf (str, " {v%i, v%i, v%i}", buf[4]&0x0f,
+						(buf[4]&0xf0)>>4, buf[5]&0x0f);
+				break;
+			case 4:
+				sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4]&0x0f,
+						(buf[4]&0xf0)>>4, buf[5]&0x0f, (buf[5]&0xf0)>>4);
+				break;
+			default:
+				sprintf (str, " {}");
 			}
 			strasm = r_str_concat (strasm, str);
 			sprintf (str, ", [%04x]", vB);
@@ -236,48 +234,52 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vA = (int) (buf[1] & 0xf0)>>4;
 			vB = (buf[3]<<8) | buf[2];
 			switch (vA) {
-				case 1:
-					sprintf (str, " {v%i}", buf[4] & 0x0f);
-					break;
-				case 2:
-					sprintf (str, " {v%i, v%i}", buf[4]&0x0f, (buf[4]&0xf0)>>4);
-					break;
-				case 3:
-					sprintf (str, " {v%i, v%i, v%i}", buf[4]&0x0f,
-							(buf[4]&0xf0)>>4, buf[5]&0x0f);
-					break;
-				case 4:
-					sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4]&0x0f,
-							(buf[4]&0xf0)>>4, buf[5]&0x0f, (buf[5]&0xf0)>>4);
-					break;
-				default:
-					sprintf (str, " {}");
+			case 1:
+				sprintf (str, " {v%i}", buf[4] & 0x0f);
+				break;
+			case 2:
+				sprintf (str, " {v%i, v%i}", buf[4]&0x0f, (buf[4]&0xf0)>>4);
+				break;
+			case 3:
+				sprintf (str, " {v%i, v%i, v%i}", buf[4]&0x0f,
+						(buf[4]&0xf0)>>4, buf[5]&0x0f);
+				break;
+			case 4:
+				sprintf (str, " {v%i, v%i, v%i, v%i}", buf[4]&0x0f,
+						(buf[4]&0xf0)>>4, buf[5]&0x0f, (buf[5]&0xf0)>>4);
+				break;
+			default:
+				sprintf (str, " {}");
+				break;
 			}
 			strasm = r_str_concat (strasm, str);
 			sprintf (str, ", [%04x]", vB);
 			strasm = r_str_concat (strasm, str);
 			break;
-		case fmtopvAAtBBBB:
+		case fmtopvAAtBBBB: // "sput-*"
 			vA = (int) buf[1];
-			vB = (buf[3]<<8) | buf[2];
+			vB = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x1a) {
 				offset = R_ASM_GET_OFFSET(a, 's', vB);
-				if (offset == -1)
+				if (offset == -1) {
 					sprintf (str, " v%i, string+%i", vA, vB);
-				else
+				} else {
 					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+				}
 			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
 				offset = R_ASM_GET_OFFSET(a, 'c', vB);
-				if (offset == -1)
+				if (offset == -1) {
 					sprintf (str, " v%i, class+%i", vA, vB);
-				else
+				} else {
 					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+				}
 			} else {
 				offset = R_ASM_GET_OFFSET(a, 'f', vB);
-				if (offset == -1)
+				if (offset == -1) {
 					sprintf (str, " v%i, field+%i", vA, vB);
-				else
+				} else {
 					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+				}
 			}
 			strasm = r_str_concat (strasm, str);
 			break;
@@ -286,20 +288,22 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[1] & 0xf0)>>4;
 			vC = (buf[3]<<8) | buf[2];
 			offset = R_ASM_GET_OFFSET(a, 'o', vC);
-			if (offset == -1)
+			if (offset == -1) {
 				sprintf (str, " v%i, v%i, [obj+%04x]", vA, vB, vC);
-			else
+			} else {
 				sprintf (str, " v%i, v%i, [0x%"PFMT64x"]", vA, vB, offset);
+			}
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtopAAtBBBB:
 			vA = (int) buf[1];
-			vB = (buf[3]<<8) | buf[2];
+			vB = (buf[3] << 8) | buf[2];
 			offset = R_ASM_GET_OFFSET(a, 't', vB);
-			if (offset == -1)
+			if (offset == -1) {
 				sprintf (str, " v%i, thing+%i", vA, vB);
-			else
+			} else {
 				sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+			}
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtopvAvBtCCCC:
@@ -423,15 +427,18 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 //TODO
 static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int i;
-	char *p = strchr (buf,' ');
-	if (p) *p = 0;
+	char *p = strchr (buf, ' ');
+	if (p) {
+		*p = 0;
+	}
 	// TODO: use a hashtable here
-	for (i=0; i<256; i++)
+	for (i = 0; i < 256; i++) {
 		if (!strcmp (dalvik_opcodes[i].name, buf)) {
-			r_mem_copyendian (op->buf, (void*)&i, 4, a->big_endian);
+			r_write_ble32 (op->buf, i, a->big_endian);
 			op->size = dalvik_opcodes[i].len;
 			return op->size;
 		}
+	}
 	return 0;
 }
 
@@ -441,9 +448,9 @@ RAsmPlugin r_asm_plugin_dalvik = {
 	.license = "LGPL3",
 	.desc = "AndroidVM Dalvik",
 	.bits = 32 | 64,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &dalvik_disassemble,
 	.assemble = &dalvik_assemble,
-	0
 };
 
 #ifndef CORELIB

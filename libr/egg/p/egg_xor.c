@@ -1,21 +1,27 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2016 - pancake */
+
 /* based on @santitox patch */
 #include <r_egg.h>
+
+#define DEFAULT_XOR_KEY "0xFF"
 
 static RBuffer *build (REgg *egg) {
 	RBuffer *buf, *sc;
 	ut8 aux[32], nkey;
-	int i;
+	const char *default_key = DEFAULT_XOR_KEY;
 	char *key = r_egg_option_get (egg, "key");
+	int i;
 
 	if (!key || !*key) {
-		eprintf ("Invalid key (null)\n");
-		return R_FALSE;
+		free (key);
+		key = strdup (default_key);
+		eprintf ("XOR key not provided. Using (%s) as the key\n", key);
 	}
 	nkey = r_num_math (NULL, key);
 	if (nkey == 0) {
 		eprintf ("Invalid key (%s)\n", key);
-		return R_FALSE;
+		free (key);
+		return false;
 	}
 	if (nkey != (nkey & 0xff)) {
 		nkey &= 0xff;
@@ -23,6 +29,7 @@ static RBuffer *build (REgg *egg) {
 	}
 	if (egg->bin->length > 240) { // XXX
 		eprintf ("shellcode is too long :(\n");
+		free (key);
 		return NULL;
 	}
 	sc = egg->bin; // hack
@@ -30,6 +37,7 @@ static RBuffer *build (REgg *egg) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 		if ((sc->buf[i]^nkey)==0) {
 			eprintf ("This xor key generates null bytes. Try again.\n");
+			free (key);
 			return NULL;
 		}
 	}
@@ -69,6 +77,7 @@ static RBuffer *build (REgg *egg) {
 		r_buf_append_buf (buf, sc);
 	}
 	r_buf_free (sc);
+	free (key);
 	return buf;
 }
 

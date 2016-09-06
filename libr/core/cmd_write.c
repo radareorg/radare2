@@ -1,22 +1,91 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <stdbool.h>
+#include <string.h>
+
+#include "r_crypto.h"
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_io.h"
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	ut8 *buf = malloc (strlen (pairs) + 1);
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
-		if (len < 0)
-			len = -len + 1;
-		if (len<core->blocksize)
-			buf[len] = (core->block[len] & 0xf) | (buf[len] & 0xf0);
+		if (len < 0) {
+			len = -len;
+			if (len < core->blocksize) {
+				buf[len-1] |= core->block[len-1] & 0xf;
+			}
+		}
 		r_core_write_at (core, core->offset, buf, len);
-		if (r_config_get_i (core->config, "cfg.wseek"))
+		if (r_config_get_i (core->config, "cfg.wseek")) {
 			r_core_seek_delta (core, len);
-		r_core_block_read (core, 0);
-	} else
+		}
+		r_core_block_read (core);
+	} else {
 		eprintf ("Error: invalid hexpair string\n");
+	}
 	free (buf);
+	return len;
+}
 
-	return !!!len;
+static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
+	//TODO: generalise no_key_mode for all non key encoding/decoding.
+	int keylen = key ? strlen (key): 0;
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo);
+	if (no_key_mode || keylen > 0) {
+		RCrypto *cry = r_crypto_new ();
+		if (r_crypto_use (cry, algo)) {
+			ut8 *binkey = malloc (keylen + 1);
+			if (binkey) {
+				int len = no_key_mode ? 1 : r_hex_str2bin (key, binkey);
+				if (len < 1) {
+					len = keylen;
+					strcpy ((char *)binkey, key);
+				} else {
+					keylen = len;
+				}
+				if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
+					if (iv) {
+						ut8 *biniv = malloc (strlen (iv) + 1);
+						int ivlen = r_hex_str2bin (iv, biniv);
+						if (ivlen < 1) {
+							ivlen = strlen(iv);
+							strcpy ((char *)biniv, iv);
+						}
+						if (!r_crypto_set_iv (cry, biniv, ivlen)) {
+							eprintf ("Invalid IV.\n");
+							return 0;
+						}
+					}
+
+					r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
+					r_crypto_final (cry, NULL, 0);
+
+					int result_size = 0;
+					ut8 *result = r_crypto_get_output (cry, &result_size);
+					if (result) {
+						r_io_write_at (core->io, core->offset, result, result_size);
+						eprintf ("Written %d bytes\n", result_size);
+						free (result);
+					}
+				} else {
+					eprintf ("Invalid key\n");
+				}
+				free (binkey);
+				return 0;
+			} else {
+				eprintf ("Cannot allocate %d bytes\n", keylen);
+			}
+		} else {
+			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
+		}
+		r_crypto_free (cry);
+	} else {
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+	}
+	return 1;
 }
 
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
@@ -51,30 +120,37 @@ static void cmd_write_op (RCore *core, const char *input) {
 	int len;
 	const char* help_msg[] = {
 		"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
-		"wow"," [val]", "==  write looped value (alias for 'wb')",
+		"wo[aAdlmorwx24]","", "without hexpair values, clipboard is used",
 		"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-		"wos"," [val]", "-=  substraction",
-		"wom"," [val]", "*=  multiply",
-		"wod"," [val]", "/=  divide",
-		"woe"," [from to] [step] [wsz=1]","..  create sequence",
-		"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
-		"woo"," [val]","|=  or",
 		"woA"," [val]","&=  and",
-		"woR","","random bytes (alias for 'wr $b')",
-		"wor"," [val]", ">>= shift right",
+		"wod"," [val]", "/=  divide",
+		"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
+		"woe"," [from to] [step] [wsz=1]","..  create sequence",
+		"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
 		"wol"," [val]","<<= shift left",
+		"wom"," [val]", "*=  multiply",
+		"woo"," [val]","|=  or",
+		"wop[DO]"," [arg]","De Bruijn Patterns",
+		"wor"," [val]", ">>= shift right",
+		"woR","","random bytes (alias for 'wr $b')",
+		"wos"," [val]", "-=  substraction",
+		"wow"," [val]", "==  write looped value (alias for 'wb')",
+		"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
 		"wo2"," [val]","2=  2 byte endian swap",
 		"wo4"," [val]", "4=  4 byte endian swap",
-		"woD"," [len]","De Bruijn Pattern (syntax woD length @ addr)",
-		"woO"," [len]", "De Bruijn Pattern Offset (syntax: woO value)",
 		NULL
 	};
 	if (!input[0])
 		return;
 	switch (input[1]) {
+	case 'e':
+		if (input[2]!=' ') {
+			r_cons_printf ("Usage: 'woe from-to step'\n");
+			return;
+		}
+		/* fallthru */
 	case 'a':
 	case 's':
-	case 'e':
 	case 'A':
 	case 'x':
 	case 'r':
@@ -83,46 +159,121 @@ static void cmd_write_op (RCore *core, const char *input) {
 	case 'd':
 	case 'o':
 	case 'w':
-		if (input[2]!=' ') {
-			if (input[1]=='e')
-				r_cons_printf ("Usage: 'woe from-to step'\n");
-			else
-				r_cons_printf ("Usage: 'wo%c 00 11 22'\n", input[1]);
-			return;
-		}
-		/* fallthru */
 	case '2':
 	case '4':
-		if (input[2]) {
+		if (input[2]) {  // parse val from arg
 			r_core_write_op (core, input+3, input[1]);
-			r_core_block_read (core, 0);
-		} else eprintf ("Missing argument\n");
+			r_core_block_read (core);
+		} else {  // use clipboard instead of val
+			r_core_write_op (core, NULL, input[1]);
+			r_core_block_read (core);
+		}
 		break;
 	case 'R':
 		r_core_cmd0 (core, "wr $b");
 		break;
 	case 'n':
 		r_core_write_op (core, "ff", 'x');
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 		break;
-	case 'D':
-		len = (int)(input[2]==' ')?
-			r_num_math (core->num, input + 2): core->blocksize;
-		if (len > 0) {
-			buf = (ut8*)r_debruijn_pattern (len, 0, NULL); //debruijn_charset);
-			if (buf) {
-				r_core_write_at (core, core->offset, buf, len);
-				free (buf);
-			} else {
-				eprintf ("Couldn't generate pattern of length %d\n", len);
+	case 'E': // encrypt
+	case 'D': // decrypt
+		{
+			int direction = (input[1] == 'E') ? 0 : 1;
+			const char *algo = NULL;
+			const char *key = NULL;
+			const char *iv = NULL;
+			char *space, *args = strdup (r_str_chop_ro (input+2));
+			space = strchr (args, ' ');
+			if (space) {
+				*space++ = 0;
+				key = space;
+				space = strchr (key, ' ');
+				if (space) {
+					*space++ = 0;
+					iv = space;
+				}
 			}
+			algo = args;
+			if (algo && *algo) {
+				encrypt_or_decrypt_block (core, algo, key, direction, iv);
+			} else {
+				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
+				eprintf ("Currently supported hashes:\n");
+				ut64 bits;
+				int i;
+				for (i = 0; ; i++) {
+					bits = ((ut64)1) << i;
+					const char *name = r_hash_name (bits);
+					if (!name || !*name) break;
+					printf ("  %s\n", name);
+				}
+				eprintf ("Available Encoders/Decoders: \n");
+				// TODO: do not hardcode
+				eprintf ("  base64\n");
+				eprintf ("  base91\n");
+				eprintf ("  punycode\n");
+				eprintf ("Currently supported crypto algos:\n");
+				for (i = 0; ; i++) {
+					bits = ((ut64)1) << i;
+					const char *name = r_crypto_name (bits);
+					if (!name || !*name) break;
+					printf ("  %s\n", name);
+				}
+			}
+			free (args);
 		}
 		break;
-	case 'O':
-		len = (int)(input[2]==' ')?
-			r_num_math (core->num, input + 2): core->blocksize;
-		core->num->value = r_debruijn_offset (len, !core->assembler->big_endian);
-		r_cons_printf ("%d\n", core->num->value);
+	case 'p': // debrujin patterns
+		switch (input[2]) {
+		case 'D': // "wopD"
+			len = (int)(input[3]==' ')
+				? r_num_math (core->num, input + 3)
+				: core->blocksize;
+			if (len > 0) {
+				/* XXX This seems to fail at generating long patterns (wopD 512K) */
+				buf = (ut8*)r_debruijn_pattern (len, 0, NULL); //debruijn_charset);
+				if (buf) {
+					const ut8 *ptr = buf;
+					ut64 addr = core->offset;
+					while (true) {
+						int res = r_core_write_at (core, addr, ptr, len);
+						if (res < 1 || len == res) {
+							break;
+						}
+						if (res < len) {
+							ptr += res;
+							len -= res;
+							addr += res;
+						}
+					} 
+					free (buf);
+				} else {
+					eprintf ("Couldn't generate pattern of length %d\n", len);
+				}
+			}
+			break;
+		case 'O': // "wopO"
+			len = (int)(input[3]==' ')
+				? r_num_math (core->num, input + 3)
+				: core->blocksize;
+			core->num->value = r_debruijn_offset (len, r_config_get_i (core->config, "cfg.bigendian"));
+			r_cons_printf ("%"PFMT64d"\n", core->num->value);
+			break;
+		case '\0':
+		case '?':
+		default:
+			{
+				const char* wop_help_msg[] = {
+					"Usage:","wop[DO]"," len @ addr | value",
+					"wopD"," len [@ addr]","Write a De Bruijn Pattern of length 'len' at address 'addr'",
+					"wopO"," value", "Finds the given value into a De Bruijn Pattern at current offset",
+					NULL
+				};
+				r_core_cmd_help (core, wop_help_msg);
+				break;
+			}
+		}
 		break;
 	case '\0':
 	case '?':
@@ -135,10 +286,8 @@ static void cmd_write_op (RCore *core, const char *input) {
 #define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 static void cmd_write_value (RCore *core, const char *input) {
 	int type = 0;
-	ut8 addr1;
-	ut16 addr2;
-	ut32 addr4, addr4_;
-	ut64 addr8, off = 0LL;
+	ut64 off = 0LL;
+	ut8 buf[sizeof(ut64)];
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 
 	if (!input)
@@ -168,37 +317,33 @@ static void cmd_write_value (RCore *core, const char *input) {
 	if (core->file) {
 		r_io_use_desc (core->io, core->file->desc);
 	}
-	r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+	if (res == UT64_MAX) return;
 	if (type == 0)
 		type = (off&UT64_32U)? 8: 4;
 	switch (type) {
 	case 1:
-		addr1 = (ut8)off;
-		r_io_write (core->io, (const ut8 *)&addr1, 1);
+		r_write_ble8 (buf, (ut8)(off & UT8_MAX));
+		r_io_write (core->io, buf, 1);
 		WSEEK (core, 1);
 		break;
 	case 2:
-		addr2 = (ut16)off;
-		r_io_write (core->io, (const ut8 *)&addr2, 2);
+		r_write_le16 (buf, (ut16)(off & UT16_MAX));
+		r_io_write (core->io, buf, 2);
 		WSEEK (core, 2);
 		break;
 	case 4:
-		addr4_ = (ut32)off;
-		//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
-		//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
-		memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
-		r_io_write (core->io, (const ut8 *)&addr4, 4);
+		r_write_le32 (buf, (ut32)(off & UT32_MAX));
+		r_io_write (core->io, buf, 4);
 		WSEEK (core, 4);
 		break;
 	case 8:
-		/* 8 byte addr */
-		memcpy ((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
-		//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
-		r_io_write (core->io, (const ut8 *)&addr8, 8);
+		r_write_le64 (buf, off);
+		r_io_write (core->io, buf, 8);
 		WSEEK (core, 8);
 		break;
 	}
-	r_core_block_read (core, 0);
+	r_core_block_read (core);
 }
 
 static bool cmd_wf(RCore *core, const char *input) {
@@ -240,7 +385,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 		r_io_write_at (core->io, core->offset, buf + u_offset, u_size);
 		WSEEK (core, size);
 		free (buf);
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 	} else {
 		eprintf ("Cannot open file '%s'\n", arg);
 	}
@@ -274,7 +419,6 @@ static int cmd_write(void *data, const char *input) {
 		"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
 		"we","[nNsxX] [arg]","extend write operations (insert instead of replace)",
 		"wf"," -|file","write contents of file at current offset",
-		"wF"," -|file","write contents of hexpairs file here",
 		"wh"," r2","whereis/which shell command",
 		"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
 		"wo?"," hex","write in block with operation. 'wo?' fmi",
@@ -283,8 +427,9 @@ static int cmd_write(void *data, const char *input) {
 		"ws"," pstring","write 1 byte for length and then the string",
 		"wt"," file [sz]","write to file (from current seek, blocksize or sz bytes)",
 		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
-		"wx"," 9090","write two intel nops",
+		"wx[fs]"," 9090","write two intel nops (from wxfile or wxseek)",
 		"wv"," eip+34","write 32-64 bit value",
+		"wz"," string","write zero terminated string (like w + \\x00)",
 		NULL
 	};
 
@@ -368,15 +513,15 @@ static int cmd_write(void *data, const char *input) {
 				break;
 			case 'e':
 				{
-				ut8 *bin_buf = malloc(str_len);
-				const int bin_len = r_hex_str2bin(str, bin_buf);
-				if (bin_len == 0) {
+				ut8 *bin_buf = malloc (str_len);
+				const int bin_len = r_hex_str2bin (str, bin_buf);
+				if (bin_len <= 0) {
 					fail = 1;
 				} else {
-					buf = malloc(str_len * 4 + 1);
-					len = r_base64_encode((char *)buf, bin_buf, bin_len);
+					buf = calloc (str_len + 1, 4);
+					len = r_base64_encode ((char *)buf, bin_buf, bin_len);
 					if(len == 0) {
-						free(buf);
+						free (buf);
 						fail = 1;
 					}
 				}
@@ -388,11 +533,11 @@ static int cmd_write(void *data, const char *input) {
 				break;
 			}
 		}
-		if(!fail) {
+		if (!fail) {
 			r_core_write_at (core, core->offset, buf, len);
 			WSEEK (core, len);
-			r_core_block_read (core, 0);
-			free(buf);
+			r_core_block_read (core);
+			free (buf);
 		} else {
 			eprintf ("Usage: w6[de] base64/hex\n");
 		}
@@ -405,7 +550,7 @@ static int cmd_write(void *data, const char *input) {
 			while (*p==' ') p++;
 			p = r_file_path (p);
 			if (p) {
-				r_cons_printf ("%s\n", p);
+				r_cons_println (p);
 				free (p);
 			}
 		}
@@ -420,103 +565,103 @@ static int cmd_write(void *data, const char *input) {
 		char *input_shadow = NULL, *p = NULL;
 
 		switch (input[1]) {
-			case 'n':
-				if (input[2] == ' ') {
-					len = *input ? r_num_math (core->num, input+3) : 0;
-					if (len > 0){
-						const ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, core->offset, len);
-						core->offset = cur_off;
-						r_core_block_read (core, 0);
-					}
+		case 'n':
+			if (input[2] == ' ') {
+				len = *input ? r_num_math (core->num, input+3) : 0;
+				if (len > 0) {
+					const ut64 cur_off = core->offset;
+					cmd_suc = r_core_extend_at (core, core->offset, len);
+					core->offset = cur_off;
+					r_core_block_read (core);
 				}
-				break;
-			case 'N':
-				if (input[2] == ' ') {
-					input += 3;
-					while (*input && *input == ' ') input++;
-					addr = r_num_math (core->num, input);
-					while (*input && *input != ' ') input++;
-					input++;
-					len = *input ? r_num_math (core->num, input) : 0;
-					if (len > 0){
-						ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, addr, len);
-						cmd_suc = r_core_seek (core, cur_off, 1);
-						core->offset = addr;
-						r_core_block_read (core, 0);
-					}
-				}
-				break;
-			case 'x':
-				if (input[2] == ' ') {
-					input+=2;
-					len = *input ? strlen (input) : 0;
-					bytes = len > 1? malloc (len+1) : NULL;
-					len = bytes ? r_hex_str2bin (input, bytes) : 0;
-					if (len > 0) {
-						ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, cur_off, len);
-						if (cmd_suc) {
-							r_core_write_at (core, cur_off, bytes, len);
-						}
-						core->offset = cur_off;
-						r_core_block_read (core, 0);
-					}
-					free (bytes);
-				}
-				break;
-			case 'X':
-				if (input[2] == ' ') {
-					addr = r_num_math (core->num, input+3);
-					input += 3;
-					while (*input && *input != ' ') input++;
-					input++;
-					len = *input ? strlen (input) : 0;
-					bytes = len > 1? malloc (len+1) : NULL;
-					len = bytes ? r_hex_str2bin (input, bytes) : 0;
-					if (len > 0) {
-						//ut64 cur_off = core->offset;
-						cmd_suc = r_core_extend_at (core, addr, len);
-						if (cmd_suc) {
-							r_core_write_at (core, addr, bytes, len);
-						}
-						core->offset = addr;
-						r_core_block_read (core, 0);
-					}
-					free (bytes);
-				}
-				break;
-			case 's':
-				input +=  3;
+			}
+			break;
+		case 'N':
+			if (input[2] == ' ') {
+				input += 3;
 				while (*input && *input == ' ') input++;
-				len = strlen (input);
-				input_shadow = len > 0? malloc (len+1): 0;
-
-				// since the distance can be negative,
-				// the r_num_math will perform an unwanted operation
-				// the solution is to tokenize the string :/
-				if (input_shadow) {
-					strncpy (input_shadow, input, len+1);
-					p = strtok (input_shadow, " ");
-					addr = p && *p ? r_num_math (core->num, p) : 0;
-
-					p = strtok (NULL, " ");
-					dist = p && *p ? r_num_math (core->num, p) : 0;
-
-					p = strtok (NULL, " ");
-					b_size = p && *p ? r_num_math (core->num, p) : 0;
-					if (dist != 0){
-						r_core_shift_block (core, addr, b_size, dist);
-						r_core_seek (core, addr, 1);
-						cmd_suc = true;
-					}
+				addr = r_num_math (core->num, input);
+				while (*input && *input != ' ') input++;
+				input++;
+				len = *input ? r_num_math (core->num, input) : 0;
+				if (len > 0){
+					ut64 cur_off = core->offset;
+					cmd_suc = r_core_extend_at (core, addr, len);
+					cmd_suc = r_core_seek (core, cur_off, 1);
+					core->offset = addr;
+					r_core_block_read (core);
 				}
-				free (input_shadow);
-				break;
-			case '?':
-			default:
-				cmd_suc = false;
+			}
+			break;
+		case 'x':
+			if (input[2] == ' ') {
+				input += 2;
+				len = *input ? strlen (input) : 0;
+				bytes = len > 1? malloc (len+1) : NULL;
+				len = bytes ? r_hex_str2bin (input, bytes) : 0;
+				if (len > 0) {
+					ut64 cur_off = core->offset;
+					cmd_suc = r_core_extend_at (core, cur_off, len);
+					if (cmd_suc) {
+						r_core_write_at (core, cur_off, bytes, len);
+					}
+					core->offset = cur_off;
+					r_core_block_read (core);
+				}
+				free (bytes);
+			}
+			break;
+		case 'X':
+			if (input[2] == ' ') {
+				addr = r_num_math (core->num, input+3);
+				input += 3;
+				while (*input && *input != ' ') input++;
+				input++;
+				len = *input ? strlen (input) : 0;
+				bytes = len > 1? malloc (len+1) : NULL;
+				len = bytes ? r_hex_str2bin (input, bytes) : 0;
+				if (len > 0) {
+					//ut64 cur_off = core->offset;
+					cmd_suc = r_core_extend_at (core, addr, len);
+					if (cmd_suc) {
+						r_core_write_at (core, addr, bytes, len);
+					}
+					core->offset = addr;
+					r_core_block_read (core);
+				}
+				free (bytes);
+			}
+			break;
+		case 's':
+			input +=  3;
+			while (*input && *input == ' ') input++;
+			len = strlen (input);
+			input_shadow = len > 0? malloc (len+1): 0;
+
+			// since the distance can be negative,
+			// the r_num_math will perform an unwanted operation
+			// the solution is to tokenize the string :/
+			if (input_shadow) {
+				strncpy (input_shadow, input, len+1);
+				p = strtok (input_shadow, " ");
+				addr = p && *p ? r_num_math (core->num, p) : 0;
+
+				p = strtok (NULL, " ");
+				dist = p && *p ? r_num_math (core->num, p) : 0;
+
+				p = strtok (NULL, " ");
+				b_size = p && *p ? r_num_math (core->num, p) : 0;
+				if (dist != 0){
+					r_core_shift_block (core, addr, b_size, dist);
+					r_core_seek (core, addr, 1);
+					cmd_suc = true;
+				}
+			}
+			free (input_shadow);
+			break;
+		case '?':
+		default:
+			cmd_suc = false;
 		}
 
 
@@ -610,7 +755,7 @@ static int cmd_write(void *data, const char *input) {
 	case 'r': //wr
 		off = r_num_math (core->num, input+1);
 		len = (int)off;
-		if (len>0) {
+		if (len > 0) {
 			buf = malloc (len);
 			if (buf != NULL) {
 				r_num_irand ();
@@ -659,7 +804,7 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 		case 'i':
 			r_io_cache_commit (core->io, 0, UT64_MAX);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			break;
 		case 'r':
 			r_io_cache_reset (core->io, true);
@@ -667,7 +812,7 @@ static int cmd_write(void *data, const char *input) {
 			 * the cache wrote past the original EOF these changes are no
 			 * longer displayed. */
 			memset (core->block, 0xff, core->blocksize);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			break;
 		case '+':
 			if (input[2]=='*') {
@@ -718,7 +863,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 			/* See 'r' above. */
 			memset (core->block, 0xff, core->blocksize);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			break;
 		case '?':
 			{
@@ -732,20 +877,23 @@ static int cmd_write(void *data, const char *input) {
 					"wci","","commit write cache",
 					NULL
 				};
-				r_core_cmd_help(core, help_msg);
+				r_core_cmd_help (core, help_msg);
 			}
 			break;
 		case '*':
-			r_io_cache_list (core->io, true);
+			r_io_cache_list (core->io, 1);
+			break;
+		case 'j':
+			r_io_cache_list (core->io, 2);
 			break;
 		case '\0':
 			//if (!r_config_get_i (core->config, "io.cache"))
 			//	eprintf ("[warning] e io.cache must be true\n");
-			r_io_cache_list (core->io, false);
+			r_io_cache_list (core->io, 0);
 			break;
 		}
 		break;
-	case ' ':
+	case ' ': // "w"
 		/* write string */
 		len = r_str_unescape (str);
 		r_core_write_at (core, core->offset, (const ut8*)str, len);
@@ -754,7 +902,22 @@ static int cmd_write(void *data, const char *input) {
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 #endif
 		WSEEK (core, len);
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
+		break;
+	case 'z': // "wz"
+		/* write zero-terminated string */
+		len = r_str_unescape (str);
+		r_core_write_at (core, core->offset, (const ut8*)str + 1, len);
+		if (len > 0) {
+			core->num->value = len;
+		} else {
+			core->num->value = 0;
+		}
+#if 0
+		r_io_use_desc (core->io, core->file->desc);
+#endif
+		WSEEK (core, len + 1);
+		r_core_block_read (core);
 		break;
 	case 't': // "wt"
 		if (*str == '?' || *str == '\0') {
@@ -800,36 +963,10 @@ static int cmd_write(void *data, const char *input) {
 	case 'f':
 		cmd_wf (core, input);
 		break;
-	case 'F': // wF
-		arg = (const char *)(input+((input[1]==' ')?2:1));
-		if (!strcmp (arg, "-")) {
-			int len;
-			ut8 *out;
-			char *in = r_core_editor (core, NULL, NULL);
-			if (in) {
-				out = (ut8 *)strdup (in);
-				if (out) {
-					len = r_hex_str2bin (in, out);
-					if (len>0)
-						r_io_write_at (core->io, core->offset, out, len);
-					free (out);
-				}
-				free (in);
-			}
-		} else
-		if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-			r_io_use_desc (core->io, core->file->desc);
-			r_io_write_at (core->io, core->offset, buf, size);
-			WSEEK (core, size);
-			free (buf);
-			r_core_block_read (core, 0);
-		} else eprintf ("Cannot open file '%s'\n", arg);
-		break;
 	case 'w':
 		str++;
-		len = (len-1)<<1;
-		if (len>0) tmp = malloc (len+1);
-		else tmp = NULL;
+		len = (len - 1) << 1;
+		tmp = (len > 0) ? malloc (len + 1) : NULL;
 		if (tmp) {
 			for (i=0; i<len; i++) {
 				if (i%2) tmp[i] = 0;
@@ -839,12 +976,70 @@ static int cmd_write(void *data, const char *input) {
 			r_io_use_desc (core->io, core->file->desc);
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 			free (tmp);
-		} else eprintf ("Cannot malloc %d\n", len);
+		} else {
+			eprintf ("Cannot malloc %d\n", len);
+		}
 		break;
 	case 'x':
-		cmd_write_hexpair(core, input+1);
+		switch (input[1]) {
+		case 'f': // "wxf"
+			arg = (const char *)(input + ((input[2]==' ')? 3: 2));
+			if (!strcmp (arg, "-")) {
+				int len;
+				ut8 *out;
+				char *in = r_core_editor (core, NULL, NULL);
+				if (in) {
+					out = (ut8 *)strdup (in);
+					if (out) {
+						len = r_hex_str2bin (in, out);
+						if (len > 0) {
+							r_io_write_at (core->io, core->offset, out, len);
+							core->num->value = len;
+						} else {
+							core->num->value = 0;
+						}
+						free (out);
+					}
+					free (in);
+				}
+			} else if ((buf = r_file_slurp_hexpairs (arg, &size))) {
+				r_io_use_desc (core->io, core->file->desc);
+				if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
+					core->num->value = size;
+					WSEEK (core, size);
+				}
+				free (buf);
+				r_core_block_read (core);
+			} else eprintf ("Cannot open file '%s'\n", arg);
+			break;
+		case 's': // "wxs"
+			{
+				int len = cmd_write_hexpair (core, input + 1);
+				if (len > 0) {
+					r_core_seek_delta (core, len);
+					core->num->value = len;
+				} else {
+					core->num->value = 0;
+				}
+			}
+			break;
+		case ' ': // "wx ..."
+			cmd_write_hexpair (core, input + 1);
+			break;
+		default:
+			{
+			const char* help_msg[] = {
+				"Usage:", "wx[f] [arg]", "",
+				"wx", " 9090", "write two intel nops",
+				"wxf", " -|file", "write contents of hexpairs file here",
+				"wxs", " 9090", "write hexpairs and seek at the end",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			break;
+			}
+		}
 		break;
 	case 'a':
 		switch (input[1]) {
@@ -867,7 +1062,7 @@ static int cmd_write(void *data, const char *input) {
 						eprintf ("Written %d bytes (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
 					r_core_write_at (core, core->offset, acode->buf, acode->len);
 					WSEEK (core, acode->len);
-					r_core_block_read (core, 0);
+					r_core_block_read (core);
 				}
 				r_asm_code_free (acode);
 			}
@@ -886,7 +1081,7 @@ static int cmd_write(void *data, const char *input) {
 						eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
 						r_core_write_at (core, core->offset, acode->buf, acode->len);
 						WSEEK (core, acode->len);
-						r_core_block_read (core, 0);
+						r_core_block_read (core);
 					}
 					r_asm_code_free (acode);
 				} else eprintf ("Cannot assemble file\n");
@@ -917,7 +1112,7 @@ static int cmd_write(void *data, const char *input) {
 				r_mem_copyloop (core->block, buf, core->blocksize, len);
 				r_core_write_at (core, core->offset, core->block, core->blocksize);
 				WSEEK (core, core->blocksize);
-				r_core_block_read (core, 0);
+				r_core_block_read (core);
 			} else eprintf ("Wrong argument\n");
 			free (buf);
 		} else eprintf ("Cannot malloc %d\n", len+1);
@@ -981,7 +1176,7 @@ static int cmd_write(void *data, const char *input) {
 				r_core_write_at (core, core->offset, &ulen, 1);
 				r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
 				WSEEK (core, len);
-				r_core_block_read (core, 0);
+				r_core_block_read (core);
 			}
 		} else eprintf ("Too short.\n");
 		break;
@@ -992,7 +1187,7 @@ static int cmd_write(void *data, const char *input) {
 			r_io_use_desc (core->io, core->file->desc);
 			r_io_write (core->io, core->oobi, core->oobi_len);
 			WSEEK (core, core->oobi_len);
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		} else {
 			r_core_cmd_help (core, help_msg);
 		}

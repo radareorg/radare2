@@ -32,15 +32,18 @@ static BOOL bStopThread = FALSE;
 static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 4096
-DWORD WINAPI ThreadFunction( LPVOID lpParam )
-{
+DWORD WINAPI ThreadFunction(LPVOID lpParam) {
 	RLang * lang = lpParam;
 	CHAR buf[PIPE_BUF_SIZE];
 	BOOL bSuccess = FALSE;
 	int i, res = 0;
 	DWORD dwRead, dwWritten;
 	r_cons_break (NULL, NULL);
-	res = ConnectNamedPipe(hPipeInOut, NULL);
+	res = ConnectNamedPipe (hPipeInOut, NULL);
+	if (!res) {
+		eprintf ("ConnectNamedPipe failed\n");
+		return FALSE;
+	}
 	do {
 		if (r_cons_singleton ()->breaked) {
 			TerminateProcess(hproc,0);
@@ -71,7 +74,7 @@ DWORD WINAPI ThreadFunction( LPVOID lpParam )
 						i += dwWritten - 1;
 					} else {
 						/* send null termination // chop */
-						eprintf ("w32-lang-pipe: %x \n",GetLastError());
+						eprintf ("w32-lang-pipe: 0x%x\n", (ut32)GetLastError ());
 						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
 						//break;
 					}
@@ -169,30 +172,29 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	return true;
 #else
 #if __WINDOWS__
-	DWORD hThread = 0;
-	char buf[512];
-	sprintf(buf,"R2PIPE_IN%x",_getpid());
-	SetEnvironmentVariable("R2PIPE_PATH",buf);
-	sprintf(buf,"\\\\.\\pipe\\R2PIPE_IN%x",_getpid());
-	hPipeInOut = CreateNamedPipe(buf,
+	HANDLE hThread = 0;
+	char *r2pipe_var = r_str_newf ("R2PIPE_IN%x", _getpid ());
+	char *r2pipe_paz = r_str_newf ("\\\\.\\pipe\\%s", r2pipe_var);
+	SetEnvironmentVariable ("R2PIPE_PATH", r2pipe_var);
+	hPipeInOut = CreateNamedPipe (r2pipe_paz,
 			PIPE_ACCESS_DUPLEX,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
 			PIPE_BUF_SIZE,
 			PIPE_BUF_SIZE,
-			0,
-			NULL);
+			0, NULL);
 	hproc = myCreateChildProcess (code);
-	if (!hproc) {
-		return false;
+	if (hproc) {
+		bStopThread = FALSE;
+		hThread = CreateThread (NULL, 0, ThreadFunction, lang, 0,0);
+		WaitForSingleObject (hproc, INFINITE);
+		bStopThread = TRUE;
+		DeleteFile (r2pipe_paz);
+		WaitForSingleObject (hThread, INFINITE);
+		CloseHandle (hPipeInOut);
 	}
-	bStopThread=FALSE;
-	hThread = CreateThread (NULL, 0,ThreadFunction,lang, 0,0);
-	WaitForSingleObject (hproc, INFINITE );
-	bStopThread = TRUE;
-	DeleteFile (buf);
-	WaitForSingleObject (hThread, INFINITE);
-	CloseHandle (hPipeInOut);
-	return true;
+	free (r2pipe_var);
+	free (r2pipe_paz);
+	return hproc != NULL;
 #endif
 #endif
 }
@@ -200,6 +202,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 static struct r_lang_plugin_t r_lang_plugin_pipe = {
 	.name = "pipe",
 	.ext = "pipe",
+	.license = "LGPL",
 	.desc = "Use #!pipe node script.js",
 	.run = lang_pipe_run,
 	.run_file = (void*)lang_pipe_file,

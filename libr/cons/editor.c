@@ -1,15 +1,13 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_cons.h>
 #define I r_cons_singleton ()
 
 /* TODO: remove global vars */
+static char *lines = NULL;
 static char *path = NULL;
 static char prompt[32];
-static int _n;
-static char *lines = NULL;
-static int nlines;
-static int bytes;
+static int bytes, nlines, _n = 0;
 
 static void setnewline(int old) {
 	snprintf (prompt, sizeof (prompt), "%d: ", _n);
@@ -63,10 +61,11 @@ static void filesave() {
 				lines[i] = '\n';
 		}
 	}
-	if (r_file_dump (path, (const ut8 *)lines, bytes, 0))
+	if (r_file_dump (path, (const ut8 *)lines, bytes, 0)) {
 		eprintf ("File '%s' saved (%d bytes)\n", path, bytes);
-	else eprintf ("Cannot save file\n");
-	// restore back zeroes
+	} else {
+		eprintf ("Cannot save file\n");
+	}
 	nlines = r_str_split (lines, '\n');
 }
 
@@ -84,7 +83,9 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 		nlines = r_str_split (lines, '\n');
 		eprintf ("Loaded %d lines on %d bytes\n",
 			(nlines? (nlines - 1): 0), bytes);
-	} else path = NULL;
+	} else {
+		path = NULL;
+	}
 	I->line->hist_up = up;
 	I->line->hist_down = down;
 	I->line->contents = I->line->buffer.data;
@@ -95,7 +96,9 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 		line = r_line_readline ();
 		saveline (_n, line);
 		_n++;
-		if (!line) break;
+		if (!line) {
+			break;
+		}
 	}
 	filesave ();
 	I->line->hist_up = NULL;

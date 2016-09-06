@@ -245,8 +245,9 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 
 	RList *bb_list = r_anal_bb_list_new ();
 
-	if (state->done)
+	if (state->done) {
 		return bb_list;
+	}
 
 	state->current_bb_head = NULL;
 	state->current_bb = NULL;
