@@ -1581,7 +1581,7 @@ static void esil_callx(xtensa_isa isa, xtensa_opcode opcode,
 		);
 	}
 
-	r_strbuf_append (&op->esil, "pc" CM "=");
+	r_strbuf_append (&op->esil, "$jt" CM "=");
 }
 
 static void esil_set_shift_amount(xtensa_isa isa, xtensa_opcode opcode,
