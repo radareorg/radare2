@@ -3146,7 +3146,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					}
 					if ((target && dst == ntarget) || !target) {
 						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-							r_anal_ref_add (core->anal, dst, cur, 'c');
+							RAnalRefType ref = op.type == R_ANAL_OP_TYPE_UCALL
+								? R_ANAL_REF_TYPE_CALL
+								: R_ANAL_REF_TYPE_CODE;
+							r_anal_ref_add (core->anal, dst, cur, ref);
 						}
 					}
 				}
