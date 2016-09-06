@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, maijin */
+#include <time.h>
 
 #include "r_util.h"
 #include "r_core.h"
@@ -3078,6 +3079,8 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	RAnalOp op;
 	ut64 addr, addr_end;
 	int depth = r_config_get_i (core->config, "anal.depth");
+	int timeout = r_config_get_i (core->config, "anal.aactimeout");
+	time_t stop_time = time(NULL) + timeout;
 	ut64 len = r_num_math (core->num, input);
 	if (len > 0xffffff) {
 		eprintf ("Too big\n");
@@ -3127,8 +3130,14 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	if (!buf) return;
 	bufi = 0;
 	while (addr < addr_end) {
-		if (core->cons->breaked)
+		if (core->cons->breaked) {
 			break;
+		}
+		if (timeout > 0 && (stop_time - time(NULL)) < 0) {
+			core->cons->breaked = true;
+			r_cons_println ("timeout: aac");
+			break;
+		}
 		// TODO: too many ioreads here
 		if (bufi > 4000) {
 			bufi = 0;

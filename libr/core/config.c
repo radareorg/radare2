@@ -1515,6 +1515,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
 	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
 
+	SETI("anal.aactimeout", 0, "aac analysis timeout (disabled by default)");
+	SETI("anal.aaptimeout", 0, "aap analysis timeout (disabled by default)");
+
 	SETCB("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETCB("anal.afterjmp", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
 	SETI("anal.depth", 16, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
