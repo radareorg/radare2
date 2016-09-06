@@ -553,6 +553,8 @@ static int cb_bigendian(void *user, void *data) {
 	bool isbig = r_asm_set_big_endian (core->assembler, node->i_value);
 	// Set anal endianness the same as asm
 	r_anal_set_big_endian (core->anal, isbig);
+	// the big endian should also be assigned to dbg->bp->endian
+	core->dbg->bp->endian = isbig;
 	// Set printing endian to user's choice
 	core->print->big_endian = node->i_value;
 	return true;
