@@ -968,20 +968,28 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 	case 2: addr &= UT16_MAX; break;
 	case 4: addr &= UT32_MAX; break;
 	}
-	if (MUSTSEE)
-		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
-	if (p->get_enumname)
+	if (MUSTSEE && !SEEVALUE) {
+		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
+	}
+	if (p->get_enumname) {
 		enumvalue = p->get_enumname (p->user, fmtname, addr);
+	}
 	if (enumvalue && *enumvalue) {
 		if (mode & R_PRINT_DOT) {
 			p->cb_printf ("%s.%s", fmtname, enumvalue);
-		} else if (MUSTSEEJSON) p->cb_printf ("\"%s\"}", fmtname);
-		else if (MUSTSEE) p->cb_printf (" %s (enum) = 0x%"PFMT64x" ; %s\n",
-				fieldname, addr, enumvalue);
+		} else if (MUSTSEEJSON) {
+			p->cb_printf ("\"%s\"}", fmtname);
+		} else if (MUSTSEE) {
+			p->cb_printf ("%s (enum %s) = 0x%"PFMT64x" ; %s\n",
+				fieldname, fmtname, addr, enumvalue);
+		}
 	} else {
-		if (MUSTSEEJSON) p->cb_printf ("\"`te %s 0x%x`\"}", fmtname, addr);
-		else if (MUSTSEE) p->cb_printf (" %s (enum) = %s\n",//`te %s 0x%x`\n",
-				fieldname, enumvalue); //fmtname, addr);
+		if (MUSTSEEJSON) {
+			p->cb_printf ("\"`te %s 0x%x`\"}", fmtname, addr);
+		} else if (MUSTSEE) {
+			p->cb_printf ("%s (enum %s) = 0x%x\n",//`te %s 0x%x`\n",
+				fieldname, fmtname, addr); //enumvalue); //fmtname, addr);
+		}
 	}
 	free (enumvalue);
 }
