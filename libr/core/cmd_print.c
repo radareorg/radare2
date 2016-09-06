@@ -1835,6 +1835,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				 "p=", "d", "print different bytes from block",
 				 "p=", "e", "print entropy for each filesize/blocksize",
 				 "p=", "p", "print number of printable bytes for each filesize/blocksize",
+				 "p=", "0", "print number of 0x00 bytes for each filesize/blocksize",
+				 "p=", "F", "print number of 0xFF bytes for each filesize/blocksize",
 				 NULL};
 			 r_core_cmd_help (core, help_msg);
 		 }
@@ -1866,6 +1868,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			print_bars = true;
 		}
 		break;
+	 case '0': // 0x00 bytes
+	 case 'F': // 0xff bytes
 	 case 'p': // printable chars
 		 {
 			ut8 *p;
@@ -1885,7 +1889,17 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				ut64 off = (i + skipblocks) * blocksize;
 				r_core_read_at (core, off, p, blocksize);
 				for (j = k = 0; j < blocksize; j++) {
-					if (IS_PRINTABLE (p[j])) k++;
+					switch (mode) {
+					case '0':
+						if (!p[j]) k++;
+						break;
+					case 'f':
+						if (p[j] == 0xff) k++;
+						break;
+					case 'p':
+						if (IS_PRINTABLE (p[j])) k++;
+						break;
+					}
 				}
 				ptr[i] = 256 * k / blocksize;
 			}
