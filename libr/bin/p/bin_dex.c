@@ -200,7 +200,8 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 	ut16 type_idx;
 	char * buff;
 	int size = 1; // TODO: NOT_SURE_ABOUT_IT
-	for (int i = 0; i < list_size; i++) {		
+	int i;
+	for (i = 0; i < list_size; i++) {		
 		type_idx = r_read_le16 (bufptr + params_off + 4 + (i*2));
 		buff = getstr(bin, bin->types[type_idx].descriptor_id);
 		
@@ -393,6 +394,7 @@ out_error:
 	return NULL;
 }
 
+/*
 static char *get_string(RBinDexObj *bin, int cid, int idx) {
 	char *c_name, *m_name, *res;
 	if (idx < 0 || idx >= bin->header.strings_size) {
@@ -420,6 +422,7 @@ static char *get_string(RBinDexObj *bin, int cid, int idx) {
 	free (m_name);
 	return res;
 }
+*/
 
 /* TODO: check boundaries */
 static char *dex_method_name (RBinDexObj *bin, int idx) {
@@ -449,6 +452,7 @@ static char *dex_class_name_byid (RBinDexObj *bin, int cid) {
 	return getstr(bin, tid);
 }
 
+/*
 static char *getClassName(const char *name) {
 	const char *p;
 	if (!name) {
@@ -463,6 +467,7 @@ static char *getClassName(const char *name) {
 	}
 	return NULL;
 }
+*/
 
 static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
 	int cid, tid;
