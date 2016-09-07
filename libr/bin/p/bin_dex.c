@@ -204,13 +204,9 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 		type_idx = r_read_le16 (bufptr + params_off + 4 + (i*2));
 		buff = getstr(bin, bin->types[type_idx].descriptor_id);
 		
-		dprintf("---------------\n");
 		size += strlen(buff) * sizeof(char);
-		dprintf("%s %d %d\n", buff, size, strlen(buff));
 		signature = realloc(signature, size);
 		signature = strcat(signature, buff);
-		dprintf("SIG = %s %d\n", signature, size);
-		dprintf("---------------\n");
 	}
 
 	// TODO: check that
