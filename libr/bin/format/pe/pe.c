@@ -2433,7 +2433,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 			}
 			//look for other segment with x that is already mapped and hold entrypoint
 			for (j = 0; !sections[j].last; j++) {
-				if (!strstr ((const char*)sections[j].name, "text") && (sections[j].flags & PE_IMAGE_SCN_MEM_EXECUTE)) {
+				if (sections[j].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
 					addr_beg = sections[j].paddr;
 					addr_end = addr_beg + sections[j].size;
 					if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
