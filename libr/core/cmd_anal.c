@@ -4536,16 +4536,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	}
 	case 'e': // "aae"
-		if (input[1] == ' ') {
-			char *len = strdup (input + 2);
-			if (len) {
-				char *addr = strchr (len, ' ');
-				if (addr) {
-					*addr++ = 0;
-				}
-				r_core_anal_esil (core, len, addr);
-				free (len);
+		if (input[1]) {
+			cosnt char *len = (char *) input + 1;
+			char *addr = strchr (input + 2, ' ');
+			if (addr) {
+				*addr++ = 0;
 			}
+			r_core_anal_esil (core, len, addr);
 		} else {
 			ut64 at = core->offset;
 			ut64 from = r_num_get (core->num, "$S");
