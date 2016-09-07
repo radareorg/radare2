@@ -66,6 +66,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	dexhdr->data_size = r_read_le32 (bufptr + 104);
 	dexhdr->data_offset = r_read_le32 (bufptr + 108);
 
+#if DEBUG_PRINTF
 	dprintf ("DEX file header:\n");
 	dprintf ("magic               : 'dex\\n035\\0'\n");
 	dprintf ("checksum            : %x\n", dexhdr->checksum);
@@ -88,6 +89,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	dprintf ("class_defs_off      : %d (0x%06x)\n", dexhdr->class_offset, dexhdr->class_offset);
 	dprintf ("data_size           : %d\n", dexhdr->data_size);
 	dprintf ("data_off            : %d (0x%06x)\n\n", dexhdr->data_offset, dexhdr->data_offset);
+#endif
 
 	/* strings */
 	#define STRINGS_SIZE ((dexhdr->strings_size+1)*sizeof(ut32))
@@ -124,7 +126,6 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		bin->classes[i].class_data_offset = r_read_le32 (bufptr + offset + 24);
 		bin->classes[i].static_values_offset = r_read_le32 (bufptr + offset + 28);
 	}
-//{ ut8 *b = (ut8*)&bin->methods; eprintf ("CLASS %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]); }
 
 	/* methods */
 	int methods_size = dexhdr->method_size * sizeof (struct dex_method_t);
