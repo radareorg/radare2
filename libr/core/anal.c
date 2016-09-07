@@ -2959,6 +2959,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	RAsmOp asmop;
 	RAnalOp op = {0};
 	ut8 *buf = NULL;
+	bool end_address_set = false;
 	int i, iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	ut64 addr = core->offset;
@@ -2982,19 +2983,23 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (fcn) {
 			addr = fcn->addr;
 			end = fcn->addr + r_anal_fcn_size (fcn);
+			end_address_set = true;
 		}
 	}
-	if (str[0] == ' ') {
-		end = addr + r_num_math (core->num, str + 1);
-	} else {
-		RIOSection *sect = r_io_section_vget (core->io, addr);
-		if (sect) {
-			end = sect->vaddr + sect->size;
+
+	if (!end_address_set) {
+		if (str[0] == ' ') {
+			end = addr + r_num_math (core->num, str + 1);
 		} else {
-			if (!end)
+			RIOSection *sect = r_io_section_vget (core->io, addr);
+			if (sect) {
+				end = sect->vaddr + sect->size;
+			} else {
 				end = addr + core->blocksize;
+			}
 		}
 	}
+
 	iend = end - addr;
 	if (iend < 0) {
 		return;
