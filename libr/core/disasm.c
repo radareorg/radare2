@@ -1817,10 +1817,10 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 				RAnalValue *dst = ds->analop.dst;
 				if (dst && dst->reg && dst->reg->name)
-				if (!strcmp (src->reg->name, pc)) {
+				if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 					RFlagItem *item;
 					ut8 b[8];
-					ut64 ptr = idx+ds->addr+src->delta+ds->analop.size;
+					ut64 ptr = idx + ds->addr + src->delta + ds->analop.size;
 					ut64 off = 0LL;
 					r_core_read_at (core, ptr, b, src->memref);
 					off = r_mem_get_num (b, src->memref);
@@ -1838,7 +1838,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 		if (src && src->reg && core->anal->reg && *(core->anal->reg->name)) {
 			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 			RAnalValue *dst = ds->analop.dst;
-			if (dst && dst->reg && !strcmp (src->reg->name, pc)) {
+			if (dst && dst->reg && src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 				int index = 0;
 				int memref = core->assembler->bits/8;
 				RFlagItem *item;

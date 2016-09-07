@@ -1418,7 +1418,7 @@ static int parse_reg_name_mov(RRegItem *reg, csh *handle, cs_insn *insn, int reg
 
 	switch (INSOP (reg_num).type) {
 	case X86_OP_REG:
-		reg->name = cs_reg_name (*handle, INSOP (reg_num).reg);
+		reg->name = (char *)cs_reg_name (*handle, INSOP (reg_num).reg);
 		break;
 	default:
 		break;
@@ -1433,13 +1433,13 @@ static int parse_reg_name_lea(RRegItem *reg, csh *handle, cs_insn *insn, int reg
 
 	switch (INSOP (reg_num).type) {
 	case X86_OP_REG:
-		reg->name = cs_reg_name (*handle, INSOP(reg_num).reg);
+		reg->name = (char *)cs_reg_name (*handle, INSOP(reg_num).reg);
 		break;
 	case X86_OP_MEM:
 		if (INSOP (reg_num).mem.base != X86_REG_INVALID) {
-			reg->name = cs_reg_name (*handle, INSOP (reg_num).mem.base);
+			reg->name = (char *)cs_reg_name (*handle, INSOP (reg_num).mem.base);
 		} else if (INSOP (reg_num).mem.index != X86_REG_INVALID) {
-			reg->name = cs_reg_name (*handle, INSOP (reg_num).mem.index);
+			reg->name = (char *)cs_reg_name (*handle, INSOP (reg_num).mem.index);
 		}
 		break;
 	default:
@@ -1674,14 +1674,14 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->ptr = UT64_MAX;
 
 		op->src[0] = r_anal_value_new ();
-		op->src[0]->reg = r_reg_new ();
+		op->src[0]->reg = R_NEW0 (RRegItem);
 		op->dst = r_anal_value_new ();
 
 		parse_reg_name_mov (op->src[0]->reg, &gop.handle, insn, 1);
 
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
-			op->dst->reg = r_reg_new ();
+			op->dst->reg = R_NEW0 (RRegItem);
 			parse_reg_name_mov (op->dst->reg, &gop.handle, insn, 0);
 
 			op->ptr = INSOP(0).mem.disp;
@@ -1823,11 +1823,10 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		break;
 	case X86_INS_LEA:
 		op->type = R_ANAL_OP_TYPE_LEA;
-
 		op->src[0] = r_anal_value_new ();
-		op->src[0]->reg = r_reg_new ();
+		op->src[0]->reg = R_NEW0 (RRegItem);
 		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_new ();
+		op->dst->reg = R_NEW0 (RRegItem);
 
 		parse_reg_name_lea (op->src[0]->reg, &gop.handle, insn, 1);
 		parse_reg_name_mov (op->dst->reg, &gop.handle, insn, 0);
