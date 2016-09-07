@@ -276,6 +276,7 @@ typedef struct r_anal_type_function_t {
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
 	RList *locs; // list of local variables
+	RList *fcn_locs; //sorted list of a function *.loc refs
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
 	RList *vars;
@@ -1273,6 +1274,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 
 R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn);
 R_API void r_anal_fcn_set_size(RAnalFunction *fcn, ut32 size);
+R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn);
 R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn);
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);

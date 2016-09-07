@@ -25,6 +25,7 @@ typedef struct {
 } HintListState;
 
 static void add_string_ref (RCore *core, ut64 xref_to);
+static int cmpfcn (const void *_a, const void *_b);
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
@@ -533,6 +534,16 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				if (!ref) {
 					eprintf ("Error: new (xref)\n");
 					goto error;
+				}
+				if (fcn->type == R_ANAL_FCN_TYPE_LOC) {
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, from, -1);
+					if (f) {
+						if (!f->fcn_locs) {
+							f->fcn_locs = r_anal_fcn_list_new ();
+						}
+						r_list_append (f->fcn_locs, fcn);
+						r_list_sort (f->fcn_locs, &cmpfcn);
+					}
 				}
 				ref->addr = from;
 				ref->at = fcn->addr;

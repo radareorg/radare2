@@ -923,6 +923,14 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 	return false;
 }
 
+//TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
+static ut32 tmp_get_realsize (RAnalFunction *f)
+{
+	ut32 size = r_anal_fcn_realsize (f);
+	size = (size > 0) ? size : r_anal_fcn_size (f);
+	return (size < 0) ? 0 : size;
+}
+
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
@@ -988,12 +996,12 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_offset (ds);
 			r_cons_printf ("%s%s%s(%s) %s%s%s %d\n",
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
-					fcntype, fcn_name, cmt, COLOR_RESET (ds), r_anal_fcn_size (f));
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
 		} else {
 			r_cons_printf ("%s%s%s%s%s(%s) %s%s%s %d\n",
 					COLOR (ds, color_fline), ds->pre,
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
-					fcntype, fcn_name, cmt, COLOR_RESET (ds), r_anal_fcn_size (f));
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
 		}
 	}
 	if (sign)
