@@ -707,7 +707,7 @@ static void *get_ntfile_data(linux_map_entry_t *head) {
 	pp += sizeof (n_segments) + sizeof (n_pag);
 
 	for (p = head; p; p = p->n) {
-		if (!is_a_kernel_mapping (p->name)) {
+		if (p->file_backed && !is_a_kernel_mapping (p->name)) {
 			memcpy (pp, &p->start_addr, sizeof (p->start_addr));
 			pp += sizeof (p->start_addr);
 			memcpy (pp, &p->end_addr, sizeof (p->end_addr));
@@ -717,7 +717,7 @@ static void *get_ntfile_data(linux_map_entry_t *head) {
 		}
 	}
 	for (p = head; p; p = p->n) {
-		if (!is_a_kernel_mapping (p->name)) {
+		if (p->file_backed && !is_a_kernel_mapping (p->name)) {
 			strncpy (pp, p->name, size - (pp - maps_data));
 			pp += strlen (p->name) + 1;
 		}
