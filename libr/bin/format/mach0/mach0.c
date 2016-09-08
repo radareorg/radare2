@@ -386,8 +386,9 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 }
 
 static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
-    	int i, len;
+	int i, len;
 	ut32 count, data;
+	bin->signature = NULL;
 	struct linkedit_data_command link = {};
 	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
 		return false;
@@ -399,18 +400,21 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	}
 	data = link.dataoff;
 	if (data > bin->size || data + sizeof (struct super_blob_t) > bin->size) {
-		return false;
+		bin->signature = (ut8 *)strdup ("Malformed entitlement");
+		return true;
 	}
 	struct super_blob_t *super = (struct super_blob_t *) (bin->b->buf + data);
 	count = r_read_ble32 (&super->count, little_);
 	for (i = 0; i < count; ++i) {
 		if ((ut8 *)(super->index + i + 1) > (ut8 *)(bin->b->buf + bin->size)) {
+			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
 		}
 		//int slot = r_read_ble32 (&super->index[i].type, little_);
 		if (r_read_ble32 (&super->index[i].type, little_) == CSSLOT_ENTITLEMENTS) {
 			ut32 begin = r_read_ble32 (&super->index[i].offset, little_);
 			if (begin > bin->size || begin + sizeof (struct blob_t) > bin->size) {
+				bin->signature = (ut8 *)strdup ("Malformed entitlement");
 				break;
 			}
 			struct blob_t *entitlements = (struct blob_t *) ((ut8*)super + begin);
@@ -422,11 +426,16 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 					bin->signature[len] = '\0';
 					return true;
 				}
+			} else {
+				bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			}
 			break;
 		}
 	}
-	return false;
+	if (!bin->signature) {
+		bin->signature = (ut8 *)strdup ("No entitlement found");
+	}
+	return true;
 }
 
 static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64 off, bool is_first_thread) {
