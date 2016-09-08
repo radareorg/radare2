@@ -190,6 +190,7 @@ static int visual_help() {
 	" /        in cursor mode search in current block\n"
 	" :cmd     run radare command\n"
 	" ;[-]cmt  add/remove comment\n"
+	" ,file    add a link to the text file\n"
 	" /*+-[]   change block size, [] = resize hex.cols\n"
 	" >||<     seek aligned to block size\n"
 	" a/A      (a)ssemble code, visual (A)ssembler\n"
