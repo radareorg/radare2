@@ -177,21 +177,21 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	}
 
 	/* proto */
-    int protos_size = dexhdr->prototypes_size * sizeof (struct dex_proto_t);
-    if (dexhdr->prototypes_offset + protos_size >= bin->size) {
-        protos_size = bin->size - dexhdr->prototypes_offset;
-    }
-    if (protos_size < 0) {
-        protos_size = 0;
-    }
-    dexhdr->prototypes_size = protos_size / sizeof (struct dex_proto_t);
-    bin->protos = (struct dex_proto_t *) calloc (protos_size, 1);
-    for (i = 0; i < dexhdr->prototypes_size; i++) {
-        ut64 offset = dexhdr->prototypes_offset + i * sizeof (struct dex_proto_t);
-        bin->protos[i].shorty_id = r_read_le32 (bufptr + offset + 0);
-        bin->protos[i].return_type_id = r_read_le32 (bufptr + offset + 4);
-        bin->protos[i].parameters_off = r_read_le32 (bufptr + offset + 8);
-    }
+	int protos_size = dexhdr->prototypes_size * sizeof (struct dex_proto_t);
+	if (dexhdr->prototypes_offset + protos_size >= bin->size) {
+		protos_size = bin->size - dexhdr->prototypes_offset;
+	}
+	if (protos_size < 0) {
+		protos_size = 0;
+	}
+	dexhdr->prototypes_size = protos_size / sizeof (struct dex_proto_t);
+	bin->protos = (struct dex_proto_t *) calloc (protos_size, 1);
+	for (i = 0; i < dexhdr->prototypes_size; i++) {
+		ut64 offset = dexhdr->prototypes_offset + i * sizeof (struct dex_proto_t);
+		bin->protos[i].shorty_id = r_read_le32 (bufptr + offset + 0);
+		bin->protos[i].return_type_id = r_read_le32 (bufptr + offset + 4);
+		bin->protos[i].parameters_off = r_read_le32 (bufptr + offset + 8);
+	}
 
 	return bin;
 	

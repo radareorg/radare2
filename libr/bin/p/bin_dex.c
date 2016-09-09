@@ -30,8 +30,8 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	uleblen = r_uleb128 (buf, sizeof (buf), &len) - buf;
 
 	// TODO: improve this ugly fix
-	char c = "a";
-	while(c != 0) {
+	char c = 'a';
+	while (c) {
 		r_buf_read_at (bin->b, (bin->strings[idx]) + uleblen + len, (ut8*)&c, 1);
 		len++;
 	}
@@ -53,21 +53,21 @@ static char *getstr(RBinDexObj *bin, int idx) {
  * Count the number of '1' bits in a word.
  */
 static int countOnes(ut32 val) {
-    int count = 0;
+	int count = 0;
 
-    val = val - ((val >> 1) & 0x55555555);
-    val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
-    count = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+	val = val - ((val >> 1) & 0x55555555);
+	val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
+	count = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 
-    return count;
+	return count;
 }
 
 /*
  * Flag for use with createAccessFlagStr().
  */
 typedef enum {
-    kAccessForClass = 0, kAccessForMethod = 1, kAccessForField = 2,
-    kAccessForMAX
+	kAccessForClass = 0, kAccessForMethod = 1, kAccessForField = 2,
+	kAccessForMAX
 } AccessFor;
 
 /*
@@ -79,99 +79,99 @@ typedef enum {
 static char* createAccessFlagStr(ut32 flags, AccessFor forWhat)
 {
 #define NUM_FLAGS 18
-    static const char* kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
-        {
-            /* class, inner class */
-            "PUBLIC",           /* 0x0001 */
-            "PRIVATE",          /* 0x0002 */
-            "PROTECTED",        /* 0x0004 */
-            "STATIC",           /* 0x0008 */
-            "FINAL",            /* 0x0010 */
-            "?",                /* 0x0020 */
-            "?",                /* 0x0040 */
-            "?",                /* 0x0080 */
-            "?",                /* 0x0100 */
-            "INTERFACE",        /* 0x0200 */
-            "ABSTRACT",         /* 0x0400 */
-            "?",                /* 0x0800 */
-            "SYNTHETIC",        /* 0x1000 */
-            "ANNOTATION",       /* 0x2000 */
-            "ENUM",             /* 0x4000 */
-            "?",                /* 0x8000 */
-            "VERIFIED",         /* 0x10000 */
-            "OPTIMIZED",        /* 0x20000 */
-        },
-        {
-            /* method */
-            "PUBLIC",           /* 0x0001 */
-            "PRIVATE",          /* 0x0002 */
-            "PROTECTED",        /* 0x0004 */
-            "STATIC",           /* 0x0008 */
-            "FINAL",            /* 0x0010 */
-            "SYNCHRONIZED",     /* 0x0020 */
-            "BRIDGE",           /* 0x0040 */
-            "VARARGS",          /* 0x0080 */
-            "NATIVE",           /* 0x0100 */
-            "?",                /* 0x0200 */
-            "ABSTRACT",         /* 0x0400 */
-            "STRICT",           /* 0x0800 */
-            "SYNTHETIC",        /* 0x1000 */
-            "?",                /* 0x2000 */
-            "?",                /* 0x4000 */
-            "MIRANDA",          /* 0x8000 */
-            "CONSTRUCTOR",      /* 0x10000 */
-            "DECLARED_SYNCHRONIZED", /* 0x20000 */
-        },
-        {
-            /* field */
-            "PUBLIC",           /* 0x0001 */
-            "PRIVATE",          /* 0x0002 */
-            "PROTECTED",        /* 0x0004 */
-            "STATIC",           /* 0x0008 */
-            "FINAL",            /* 0x0010 */
-            "?",                /* 0x0020 */
-            "VOLATILE",         /* 0x0040 */
-            "TRANSIENT",        /* 0x0080 */
-            "?",                /* 0x0100 */
-            "?",                /* 0x0200 */
-            "?",                /* 0x0400 */
-            "?",                /* 0x0800 */
-            "SYNTHETIC",        /* 0x1000 */
-            "?",                /* 0x2000 */
-            "ENUM",             /* 0x4000 */
-            "?",                /* 0x8000 */
-            "?",                /* 0x10000 */
-            "?",                /* 0x20000 */
-        },
-    };
-    const int kLongest = 21;        /* strlen of longest string above */
-    int i, count;
-    char* str;
-    char* cp;
+	static const char* kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
+		{
+			/* class, inner class */
+			"PUBLIC",           /* 0x0001 */
+			"PRIVATE",          /* 0x0002 */
+			"PROTECTED",        /* 0x0004 */
+			"STATIC",           /* 0x0008 */
+			"FINAL",            /* 0x0010 */
+			"?",                /* 0x0020 */
+			"?",                /* 0x0040 */
+			"?",                /* 0x0080 */
+			"?",                /* 0x0100 */
+			"INTERFACE",        /* 0x0200 */
+			"ABSTRACT",         /* 0x0400 */
+			"?",                /* 0x0800 */
+			"SYNTHETIC",        /* 0x1000 */
+			"ANNOTATION",       /* 0x2000 */
+			"ENUM",             /* 0x4000 */
+			"?",                /* 0x8000 */
+			"VERIFIED",         /* 0x10000 */
+			"OPTIMIZED",        /* 0x20000 */
+		},
+		{
+			/* method */
+			"PUBLIC",           /* 0x0001 */
+			"PRIVATE",          /* 0x0002 */
+			"PROTECTED",        /* 0x0004 */
+			"STATIC",           /* 0x0008 */
+			"FINAL",            /* 0x0010 */
+			"SYNCHRONIZED",     /* 0x0020 */
+			"BRIDGE",           /* 0x0040 */
+			"VARARGS",          /* 0x0080 */
+			"NATIVE",           /* 0x0100 */
+			"?",                /* 0x0200 */
+			"ABSTRACT",         /* 0x0400 */
+			"STRICT",           /* 0x0800 */
+			"SYNTHETIC",        /* 0x1000 */
+			"?",                /* 0x2000 */
+			"?",                /* 0x4000 */
+			"MIRANDA",          /* 0x8000 */
+			"CONSTRUCTOR",      /* 0x10000 */
+			"DECLARED_SYNCHRONIZED", /* 0x20000 */
+		},
+		{
+			/* field */
+			"PUBLIC",           /* 0x0001 */
+			"PRIVATE",          /* 0x0002 */
+			"PROTECTED",        /* 0x0004 */
+			"STATIC",           /* 0x0008 */
+			"FINAL",            /* 0x0010 */
+			"?",                /* 0x0020 */
+			"VOLATILE",         /* 0x0040 */
+			"TRANSIENT",        /* 0x0080 */
+			"?",                /* 0x0100 */
+			"?",                /* 0x0200 */
+			"?",                /* 0x0400 */
+			"?",                /* 0x0800 */
+			"SYNTHETIC",        /* 0x1000 */
+			"?",                /* 0x2000 */
+			"ENUM",             /* 0x4000 */
+			"?",                /* 0x8000 */
+			"?",                /* 0x10000 */
+			"?",                /* 0x20000 */
+		},
+	};
+	const int kLongest = 21;        /* strlen of longest string above */
+	int i, count;
+	char* str;
+	char* cp;
 
-    /*
-     * Allocate enough storage to hold the expected number of strings,
-     * plus a space between each.  We over-allocate, using the longest
-     * string above as the base metric.
-     */
-    count = countOnes(flags);
-    cp = str = (char*) malloc(count * (kLongest+1) +1);
+	/*
+	 * Allocate enough storage to hold the expected number of strings,
+	 * plus a space between each.  We over-allocate, using the longest
+	 * string above as the base metric.
+	 */
+	count = countOnes(flags);
+	cp = str = (char*) malloc(count * (kLongest+1) +1);
 
-    for (i = 0; i < NUM_FLAGS; i++) {
-        if (flags & 0x01) {
-            const char* accessStr = kAccessStrings[forWhat][i];
-            int len = strlen(accessStr);
-            if (cp != str)
-                *cp++ = ' ';
+	for (i = 0; i < NUM_FLAGS; i++) {
+		if (flags & 0x01) {
+			const char* accessStr = kAccessStrings[forWhat][i];
+			int len = strlen(accessStr);
+			if (cp != str)
+				*cp++ = ' ';
 
-            memcpy(cp, accessStr, len);
-            cp += len;
-        }
-        flags >>= 1;
-    }
-    *cp = '\0';
+			memcpy(cp, accessStr, len);
+			cp += len;
+		}
+		flags >>= 1;
+	}
+	*cp = '\0';
 
-    return str;
+	return str;
 }
 
 
@@ -182,7 +182,7 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 	}
 
 	ut32 params_off = bin->protos[bin->methods[method_idx].proto_id].parameters_off;
-    char* return_type = getstr(bin, bin->types[bin->protos[bin->methods[method_idx].proto_id].return_type_id].descriptor_id);
+	char* return_type = getstr(bin, bin->types[bin->protos[bin->methods[method_idx].proto_id].return_type_id].descriptor_id);
 
 	if (params_off == 0) {
 		return r_str_newf("()%s", return_type);;
@@ -284,7 +284,6 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	}
 	return false;
 }
-
 
 static RBinInfo *info(RBinFile *arch) {
 	RBinHash *h;
@@ -634,7 +633,7 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 
 	dprintf ("  Direct methods    -\n");
 	/* direct methods (aka static) */
-    ut64 omi = 0;
+	ut64 omi = 0;
 	for (i = 0; i < DM; i++) {
 		char *method_name, *flag_name;
 		ut64 MI, MA, MC;
@@ -657,13 +656,13 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		}
 
 		method_name = dex_method_name (bin, MI);
-        char *signature = dex_method_signature(bin, MI);
+		char *signature = dex_method_signature(bin, MI);
 		
 		if (!method_name) {
 			method_name = strdup ("unknown");
 		}
 
-        flag_name = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
+		flag_name = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
 
 		if (!flag_name) {
 			continue;
@@ -724,15 +723,15 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 
 	/* virtual methods */
 	dprintf ("  Virtual methods   -\n");
-    omi = 0;
+	omi = 0;
 	for (i = 0; i < VM; i++) {
 		ut64 MI, MA, MC;
 		p = r_uleb128 (p, p_end-p, &MI);
 		p = r_uleb128 (p, p_end-p, &MA);
 		p = r_uleb128 (p, p_end-p, &MC);
 
-        MI += omi;
-        omi = MI;
+		MI += omi;
+		omi = MI;
 
 		if ((int)MI >= 0 && MI < bin->header.method_size) {
 			methods[MI] = 1;
@@ -744,7 +743,7 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 			bin->code_to = MC;
 		}
 		char *name = dex_method_name (bin, MI);
-        char *signature = dex_method_signature(bin, MI);
+		char *signature = dex_method_signature(bin, MI);
 
 		const char* accessStr = createAccessFlagStr(MA, kAccessForMethod);
 
@@ -807,7 +806,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	for (i = 0; i < bin->header.prototypes_size; i++) {
 		dprintf("PROTO[%d], %d, %d, %d\n", i, bin->protos[i].shorty_id, bin->protos[i].return_type_id, bin->protos[i].parameters_off );
 	}
-    */
+	*/
 	
 
 	/* debug strings */
@@ -815,7 +814,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	for (i = 0; i < bin->header.strings_size; i++) {
 		dprintf("STR[%d], %s\n", i, getstr(bin, i));
 	}
-    */
+	*/
 	
 
 	if (bin->classes) {
@@ -1032,7 +1031,7 @@ static RList* classes (RBinFile *arch) {
 			r_list_append (ret, class);
 
 		} else {
-            dprintf("INVALID CLASS NAME");
+			dprintf("INVALID CLASS NAME");
 			free (class->name);
 			free (class);
 		}
