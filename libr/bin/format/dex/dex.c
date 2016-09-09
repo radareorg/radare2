@@ -4,6 +4,14 @@
 #include <r_util.h>
 #include "dex.h"
 
+#define DEBUG_PRINTF 0
+
+#if DEBUG_PRINTF
+#define dprintf eprintf
+#else
+#define dprintf if (0)eprintf
+#endif
+
 char* r_bin_dex_get_version(RBinDexObj *bin) {
 	if (bin) {
 		ut8* version = calloc (1, 8);
@@ -58,8 +66,32 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	dexhdr->data_size = r_read_le32 (bufptr + 104);
 	dexhdr->data_offset = r_read_le32 (bufptr + 108);
 
+#if DEBUG_PRINTF
+	dprintf ("DEX file header:\n");
+	dprintf ("magic               : 'dex\\n035\\0'\n");
+	dprintf ("checksum            : %x\n", dexhdr->checksum);
+	dprintf ("signature           : %02x%02x...%02x%02x\n", dexhdr->signature[0], dexhdr->signature[1], dexhdr->signature[18], dexhdr->signature[19]);
+	dprintf ("file_size           : %d\n", dexhdr->size);
+	dprintf ("header_size         : %d\n", dexhdr->header_size);
+	dprintf ("link_size           : %d\n", dexhdr->linksection_size);
+	dprintf ("link_off            : %d (0x%06x)\n", dexhdr->linksection_offset, dexhdr->linksection_offset);
+	dprintf ("string_ids_size     : %d\n", dexhdr->strings_size);
+	dprintf ("string_ids_off      : %d (0x%06x)\n", dexhdr->strings_offset, dexhdr->strings_offset);
+	dprintf ("type_ids_size       : %d\n", dexhdr->types_size);
+	dprintf ("type_ids_off        : %d (0x%06x)\n", dexhdr->types_offset, dexhdr->types_offset);
+	dprintf ("proto_ids_size       : %d\n", dexhdr->prototypes_size);
+	dprintf ("proto_ids_off        : %d (0x%06x)\n", dexhdr->prototypes_offset, dexhdr->prototypes_offset);
+	dprintf ("field_ids_size      : %d\n", dexhdr->fields_size);
+	dprintf ("field_ids_off       : %d (0x%06x)\n", dexhdr->fields_offset, dexhdr->fields_offset);
+	dprintf ("method_ids_size     : %d\n", dexhdr->method_size);
+	dprintf ("method_ids_off      : %d (0x%06x)\n", dexhdr->method_offset, dexhdr->method_offset);
+	dprintf ("class_defs_size     : %d\n", dexhdr->class_size);
+	dprintf ("class_defs_off      : %d (0x%06x)\n", dexhdr->class_offset, dexhdr->class_offset);
+	dprintf ("data_size           : %d\n", dexhdr->data_size);
+	dprintf ("data_off            : %d (0x%06x)\n\n", dexhdr->data_offset, dexhdr->data_offset);
+#endif
+
 	/* strings */
-//eprintf ("strings size: %d\n", dexhdr->strings_size);
 	#define STRINGS_SIZE ((dexhdr->strings_size+1)*sizeof(ut32))
 	bin->strings = (ut32 *) calloc (dexhdr->strings_size + 1, sizeof (ut32));
 	if (!bin->strings) {
@@ -94,7 +126,6 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		bin->classes[i].class_data_offset = r_read_le32 (bufptr + offset + 24);
 		bin->classes[i].static_values_offset = r_read_le32 (bufptr + offset + 28);
 	}
-//{ ut8 *b = (ut8*)&bin->methods; eprintf ("CLASS %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]); }
 
 	/* methods */
 	int methods_size = dexhdr->method_size * sizeof (struct dex_method_t);
@@ -144,7 +175,26 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		bin->fields[i].type_id = r_read_le16 (bufptr + offset + 2);
 		bin->fields[i].name_id = r_read_le32 (bufptr + offset + 4);
 	}
+
+	/* proto */
+	int protos_size = dexhdr->prototypes_size * sizeof (struct dex_proto_t);
+	if (dexhdr->prototypes_offset + protos_size >= bin->size) {
+		protos_size = bin->size - dexhdr->prototypes_offset;
+	}
+	if (protos_size < 0) {
+		protos_size = 0;
+	}
+	dexhdr->prototypes_size = protos_size / sizeof (struct dex_proto_t);
+	bin->protos = (struct dex_proto_t *) calloc (protos_size, 1);
+	for (i = 0; i < dexhdr->prototypes_size; i++) {
+		ut64 offset = dexhdr->prototypes_offset + i * sizeof (struct dex_proto_t);
+		bin->protos[i].shorty_id = r_read_le32 (bufptr + offset + 0);
+		bin->protos[i].return_type_id = r_read_le32 (bufptr + offset + 4);
+		bin->protos[i].parameters_off = r_read_le32 (bufptr + offset + 8);
+	}
+
 	return bin;
+	
 fail:
 	if (bin) {
 		r_buf_free (bin->b);
