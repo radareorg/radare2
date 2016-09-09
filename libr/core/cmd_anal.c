@@ -4537,7 +4537,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	}
 	case 'e': // "aae"
 		if (input[1]) {
-			cosnt char *len = (char *) input + 1;
+			const char *len = (char *) input + 1;
 			char *addr = strchr (input + 2, ' ');
 			if (addr) {
 				*addr++ = 0;
