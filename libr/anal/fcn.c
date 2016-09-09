@@ -114,6 +114,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->refs = r_anal_ref_list_new ();
 	fcn->xrefs = r_anal_ref_list_new ();
 #endif
+	fcn->fcn_locs = NULL;
 	fcn->bbs = r_anal_bb_list_new ();
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
@@ -141,7 +142,8 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->refs);
 	r_list_free (fcn->xrefs);
 #endif
-	r_list_free (fcn->locs);
+	//all functions are freed in anal->fcns
+	fcn->fcn_locs = NULL;
 	if (fcn->bbs) {
 		fcn->bbs->free = (RListFree)r_anal_bb_free;
 		r_list_free (fcn->bbs);
@@ -1076,6 +1078,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
 		ut64 overlapped = -1;
+		ut64 prev_jump = UT64_MAX;
 		RAnalFunction *fcn1 = NULL;
 
 		// set function size as length of continuous sequence of bbs
@@ -1632,11 +1635,35 @@ R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn) {
  * basicblocks this function is composed of.
  * IMPORTANT: this will become, one day, the only size of a function */
 R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn) {
-	RListIter *iter;
+	RListIter *iter, *fiter;
 	RAnalBlock *bb;
+	RAnalFunction *f;
 	ut32 sz = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		sz += bb->size;
+	}
+	r_list_foreach (fcn->fcn_locs, fiter, f) {
+		r_list_foreach (f->bbs, iter, bb) {
+			sz += bb->size;
+		}
+	}
+	return sz;
+}
+
+//continious function size without loc.*
+R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn) {
+	RListIter *iter, *fiter;
+	RAnalBlock *bb;
+	RAnalFunction *f;
+	ut32 sz = 0;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		/* TODO: this if is an ugly hack and should be removed when r2 will be
+		 * able to handle BBs that comes before the function emtry point.
+		 * Another way to remove this is to throw away BBs before the function
+		 * entry point at the analysis time in the r_anal_fcn.   */
+		if(bb->addr >= fcn->addr) {
+			sz += bb->size;
+		}
 	}
 	return sz;
 }
