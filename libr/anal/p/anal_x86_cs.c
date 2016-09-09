@@ -169,18 +169,21 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 			strncpy (buf, buf_, sizeof (buf));
 		} else {
 			// Remove the trailing ',' from esil statement.
-			if (strlen(buf)) buf[strlen(buf) - 1] = '\0';
+			if (*buf) {
+				buf[strlen (buf) - 1] = 0;
+			}
 		}
 
 		// set = 2 is reserved for lea, where the operand is a memory address,
 		// but the corresponding memory is not loaded.
 		if (set == 1) {
 			snprintf (buf_, sizeof (buf), "%s,%s=[%d]", buf, setarg, op.size==10?8:op.size);
+			strncpy (buf, buf_, sizeof (buf));
 		} else if (set == 0) {
 			snprintf (buf_, sizeof (buf), "%s,[%d]", buf, op.size==10? 8: op.size);
+			strncpy (buf, buf_, sizeof (buf));
 		}
 
-		strncpy (buf, buf_, sizeof (buf));
 		buf[sizeof (buf) - 1] = 0;
 		}
 		return strdup (buf);
