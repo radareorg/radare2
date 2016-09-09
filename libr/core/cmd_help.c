@@ -633,6 +633,7 @@ static int cmd_help(void *data, const char *input) {
 			"?+", " [cmd]", "? > 0",
 			"?-", " [cmd]", "? < 0",
 			"?=", " eip-0x804800", "hex and dec result for this math expr",
+			"?$", "", "show value all the variables ($)",
 			"??", "", "show value of operation",
 			"??", " [cmd]", "? == 0 run command when math matches",
 			"?B", " [elem]", "show range boundaries like 'e?search.in",
