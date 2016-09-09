@@ -374,8 +374,9 @@ static int cmd_help(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		return 0;
 		}
-	case '$':{
-		const char* help_msg[] = {
+	case '$':
+		if (input[1] == '?') {
+			const char* help_msg[] = {
 			"Usage: ?v [$.]","","",
 			"$$", "", "here (current virtual seek)",
 			"$?", "", "last comparison value",
@@ -414,7 +415,19 @@ static int cmd_help(void *data, const char *input) {
 			"$k{kv}", "", "get value of an sdb query value",
 			"RNum", "", "$variables usable in math expressions",
 			NULL};
-		r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg);
+		} else {
+			int i = 0;
+			const char *vars[] = {
+				"$$", "$?", "$b", "$B", "$F", "$FB", "$Fb", "$Fs", "$FE", "$FS", "$FI",
+				"$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
+				"$p", "$P", "$s", "$S", "$SS", "$v", "$w", NULL
+			};
+			while (vars[i]) {
+				const char *pad = r_str_pad (' ', 6 - strlen (vars[i]));
+				eprintf ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+				i++;
+			}
 		}
 		return true;
 	case 'V':
