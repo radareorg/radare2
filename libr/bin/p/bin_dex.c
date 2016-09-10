@@ -177,12 +177,24 @@ static char* createAccessFlagStr(ut32 flags, AccessFor forWhat)
 
 static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 
-	if(method_idx >= bin->header.method_size) {
+	if (idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
 
-	ut32 params_off = bin->protos[bin->methods[method_idx].proto_id].parameters_off;
-	char* return_type = getstr(bin, bin->types[bin->protos[bin->methods[method_idx].proto_id].return_type_id].descriptor_id);
+	ut32 proto_id = bin->methods[method_idx].proto_id;
+
+	if (proto_id < 0 || proto_id >= bin->header.prototypes_size) {
+		return NULL;
+	}
+
+	ut32 params_off = bin->protos[proto_id].parameters_off;
+	ut32 type_id = bin->protos[bin->methods[method_idx].proto_id].return_type_id;
+
+	if (type_id < 0 || proto_id >= bin->header.types_size ) {
+		return NULL;
+	}
+
+	char* return_type = getstr(bin, bin->types[type_id].descriptor_id);
 
 	if (params_off == 0) {
 		return r_str_newf("()%s", return_type);;
@@ -410,11 +422,8 @@ static char *get_string(RBinDexObj *bin, int cid, int idx) {
 		res = r_str_newf ("%s", m_name);
 	} else {
 		if (c_name && m_name) {
-<<<<<<< HEAD
 			res = r_str_newf ("%s", m_name); 
-=======
 			res = r_str_newf ("%s", m_name);
->>>>>>> 3f2cb95869388837492bcb3582e65924e021c98e
 		} else {
 			if (c_name && m_name) {
 				res = r_str_newf ("unk.%s", c_name);
@@ -453,7 +462,7 @@ static char *dex_class_name_byid (RBinDexObj *bin, int cid) {
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
 	}
-	tid = bin->types [cid].descriptor_id;
+	tid = bin->types[cid].descriptor_id;
 	return getstr(bin, tid);
 }
 
@@ -483,7 +492,7 @@ static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
 	}
-	tid = bin->types [cid].descriptor_id;
+	tid = bin->types[cid].descriptor_id;
 	return getstr(bin, tid);
 }
 
@@ -496,7 +505,7 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
 	}
-	tid = bin->types [cid].descriptor_id;
+	tid = bin->types[cid].descriptor_id;
 	return getstr(bin, tid);
 }
 
@@ -565,12 +574,11 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		char *fieldName = getstr (bin, field.name_id);
 
 		const char* accessStr = createAccessFlagStr(accessFlags, kAccessForField);
-<<<<<<< HEAD
-=======
+
 		if (field.type_id < 0 || field.type_id >= bin->header.types_size) {
 			break;
 		}
->>>>>>> 3f2cb95869388837492bcb3582e65924e021c98e
+
 		int tid = bin->types[field.type_id].descriptor_id;
 		const char* type_str = getstr(bin, tid);//get_string(bin, field.type_id, tid);
 
@@ -622,12 +630,11 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 
 
 		const char* accessStr = createAccessFlagStr(accessFlags, kAccessForField);
-<<<<<<< HEAD
-=======
+
 		if (field.type_id < 0 || field.type_id >= bin->header.types_size) {
 			break;
 		}
->>>>>>> 3f2cb95869388837492bcb3582e65924e021c98e
+
 		int tid = bin->types[field.type_id].descriptor_id;
 		const char* type_str = getstr(bin, tid);
 
@@ -1087,11 +1094,7 @@ static RList* entries(RBinFile *arch) {
 	// TODO: entry point in dalvik? WTF!
 	// XXX: entry + main???
 	r_list_foreach (bin->methods_list, iter, m) {
-<<<<<<< HEAD
-		// LOOKING FOR ".method.main([Ljava/lang/String;)V" 
-=======
 		// LOOKING FOR ".method.main([Ljava/lang/String;)V"
->>>>>>> 3f2cb95869388837492bcb3582e65924e021c98e
 		if (strlen (m->name) > 26 && !strcmp (m->name + strlen (m->name) - 27, ".main([Ljava/lang/String;)V")) {
 			//dprintf ("ENTRY -> %s\n", m->name);
 			if (!already_entry (ret, m->paddr)) {
