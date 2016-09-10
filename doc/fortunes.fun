@@ -188,6 +188,6 @@ In r2land usability is treated as a bug
 radare2 is WYSIWYF - what you see is what you fix
 Your endian swaps
 *(ut64*)buffer ought to be illegal
-MY ENDIAN IS HUUUGE
-enlarge your endian
 How about Global Thermonuclear War?
+There is no F5 key in radare2 yet
+Did you know that r2 is 10 years old?
