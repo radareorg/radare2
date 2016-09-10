@@ -84,15 +84,17 @@ static int load(RBinFile *arch) {
 static int destroy(RBinFile *arch) {
 	int i;
 	ELFOBJ* eobj = arch->o->bin_obj;
-	for (i = 0; i < eobj->imports_by_ord_size; i++) {
-		RBinImport *imp = eobj->imports_by_ord[i];
-		if (imp) {
-			free (imp->name);
-			free (imp);
-			eobj->imports_by_ord[i] = NULL;
+	if (eobj && eobj->imports_by_ord) {
+		for (i = 0; i < eobj->imports_by_ord_size; i++) {
+			RBinImport *imp = eobj->imports_by_ord[i];
+			if (imp) {
+				free (imp->name);
+				free (imp);
+				eobj->imports_by_ord[i] = NULL;
+			}
 		}
+		R_FREE (eobj->imports_by_ord);
 	}
-	R_FREE (eobj->imports_by_ord);
 	//static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	Elf_(r_bin_elf_free) ((struct Elf_(r_bin_elf_obj_t)*)arch->o->bin_obj);
 	return true;
