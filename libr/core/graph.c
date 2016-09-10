@@ -2897,6 +2897,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				get_anode (g->curnode)->x -= movspeed;
 			}
 			break;
+		case 'v':
+			r_core_visual_anal (core);
+			break;
 		case 'L': get_anode (g->curnode)->x += movspeed; break;
 		case 'j': can->sy -= movspeed * (invscroll ? -1 : 1); break;
 		case 'k': can->sy += movspeed * (invscroll ? -1 : 1); break;
