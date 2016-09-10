@@ -421,7 +421,6 @@ static char *get_string(RBinDexObj *bin, int cid, int idx) {
 		res = r_str_newf ("%s", m_name);
 	} else {
 		if (c_name && m_name) {
-			res = r_str_newf ("%s", m_name); 
 			res = r_str_newf ("%s", m_name);
 		} else {
 			if (c_name && m_name) {
@@ -627,11 +626,9 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 
 
 		const char* accessStr = createAccessFlagStr(accessFlags, kAccessForField);
-
 		if (field.type_id < 0 || field.type_id >= bin->header.types_size) {
 			break;
 		}
-
 		int tid = bin->types[field.type_id].descriptor_id;
 		const char* type_str = getstr(bin, tid);
 
