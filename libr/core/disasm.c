@@ -762,6 +762,21 @@ static void ds_show_refs(RDisasmState *ds) {
 		if (cmt) {
 			r_cons_printf (" ; (%s)", cmt);
 		}
+		if (ref->type == R_ANAL_REF_TYPE_CALL) {
+			RAnalOp aop;
+			ut8 buf[12];
+			r_core_read_at (ds->core, ref->at, buf, 12);
+			r_anal_op (ds->core->anal, &aop, ref->at, buf, 12);
+			if (aop.type == R_ANAL_OP_TYPE_UCALL) {
+				RAnalFunction * fcn;
+				fcn = r_anal_get_fcn_at (ds->core->anal, ref->addr, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					r_cons_printf (" ; %s", fcn->name);
+				} else {
+					r_cons_printf (" ; 0x%" PFMT64x, ref->addr);
+				}
+			}
+		}
 		ds_print_color_reset (ds);
 	}
 }
