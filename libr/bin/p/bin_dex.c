@@ -200,21 +200,23 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 	ut16 type_idx;
 	char * buff;
 	int size = 1; // TODO: NOT_SURE_ABOUT_IT
+	int pos = 0;
 	int i;
 	for (i = 0; i < list_size; i++) {		
 		type_idx = r_read_le16 (bufptr + params_off + 4 + (i*2));
-		buff = getstr(bin, bin->types[type_idx].descriptor_id);
-		
-		size += strlen(buff) * sizeof(char);
-		signature = realloc(signature, size);
-		signature = strcat(signature, buff);
+		buff = getstr (bin, bin->types[type_idx].descriptor_id);
+		int buff_len = strlen (buff);
+		size += buff_len + 1;
+		signature = realloc (signature, size);
+		strcpy (signature + pos, buff);
+		pos += buff_len;
 	}
 
 	// TODO: check that
 	//free(bufptr);
-	free(buff);
-	char* r = r_str_newf("(%s)%s", signature, return_type); 
-	free(signature);
+	free (buff);
+	char* r = r_str_newf ("(%s)%s", signature, return_type);
+	free (signature);
 	return r;
 	
 }
@@ -408,7 +410,7 @@ static char *get_string(RBinDexObj *bin, int cid, int idx) {
 		res = r_str_newf ("%s", m_name);
 	} else {
 		if (c_name && m_name) {
-			res = r_str_newf ("%s", m_name); 
+			res = r_str_newf ("%s", m_name);
 		} else {
 			if (c_name && m_name) {
 				res = r_str_newf ("unk.%s", c_name);
@@ -559,6 +561,9 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		char *fieldName = getstr (bin, field.name_id);
 
 		const char* accessStr = createAccessFlagStr(accessFlags, kAccessForField);
+		if (field.type_id < 0 || field.type_id >= bin->header.types_size) {
+			break;
+		}
 		int tid = bin->types[field.type_id].descriptor_id;
 		const char* type_str = getstr(bin, tid);//get_string(bin, field.type_id, tid);
 
@@ -610,6 +615,9 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 
 
 		const char* accessStr = createAccessFlagStr(accessFlags, kAccessForField);
+		if (field.type_id < 0 || field.type_id >= bin->header.types_size) {
+			break;
+		}
 		int tid = bin->types[field.type_id].descriptor_id;
 		const char* type_str = getstr(bin, tid);
 
@@ -1069,7 +1077,7 @@ static RList* entries(RBinFile *arch) {
 	// TODO: entry point in dalvik? WTF!
 	// XXX: entry + main???
 	r_list_foreach (bin->methods_list, iter, m) {
-		// LOOKING FOR ".method.main([Ljava/lang/String;)V" 
+		// LOOKING FOR ".method.main([Ljava/lang/String;)V"
 		if (strlen (m->name) > 26 && !strcmp (m->name + strlen (m->name) - 27, ".main([Ljava/lang/String;)V")) {
 			//dprintf ("ENTRY -> %s\n", m->name);
 			if (!already_entry (ret, m->paddr)) {
