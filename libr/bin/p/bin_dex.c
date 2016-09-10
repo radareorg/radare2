@@ -182,7 +182,7 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 	}
 	ut32 proto_id = bin->methods[method_idx].proto_id;
 
-	if (proto_id < 0 || proto_id >= bin->header.prototypes_size) {
+	if (proto_id < 0 || proto_id >= bin->header.prototypes_size) {
 		return NULL;
 	}
 	ut32 params_off = bin->protos[proto_id].parameters_off;
