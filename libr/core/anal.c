@@ -271,9 +271,9 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				if (blacklisted_word (f->name)) {
     					break;
 				}
-				if (strstr (f->name, "isatty"))
+				if (strstr (f->name, ".isatty"))
 					use_isatty = 1;
-				if (strstr (f->name, "getopt"))
+				if (strstr (f->name, ".getopt"))
 					use_getopt = 1;
 				if (!strncmp (f->name, "sym.imp.", 8)) {
 					free (do_call);
