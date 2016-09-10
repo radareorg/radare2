@@ -661,10 +661,14 @@ static void type_to_str(char *buf, int buf_size,
         goto no_var;
     case VT_PTR:
         s = type->ref;
-        pstrcpy(buf1, sizeof(buf1), "*");
-        if (varstr)
-            pstrcat(buf1, sizeof(buf1), varstr);
-        type_to_str(buf, buf_size, &s->type, buf1);
+        if (t & VT_ARRAY) {
+            type_to_str(buf, buf_size, &s->type, NULL);
+        } else {
+            pstrcpy(buf1, sizeof(buf1), "*");
+            if (varstr)
+                pstrcat(buf1, sizeof(buf1), varstr);
+            type_to_str(buf, buf_size, &s->type, buf1);
+        }
         goto no_var;
     }
     if (varstr) {

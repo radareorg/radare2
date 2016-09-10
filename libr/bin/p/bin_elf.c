@@ -9,11 +9,9 @@
 #include <r_cons.h>
 #include "elf/elf.h"
 
-#define ELFOBJ struct Elf_(r_bin_elf_obj_t)
-
 //TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
 static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
-	if (! eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
+	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
 		return;
 	}
 	free (eobj->symbols_by_ord[ord]);
@@ -86,15 +84,17 @@ static int load(RBinFile *arch) {
 static int destroy(RBinFile *arch) {
 	int i;
 	ELFOBJ* eobj = arch->o->bin_obj;
-	for (i = 0; i < eobj->imports_by_ord_size; i++) {
-		RBinImport *imp = eobj->imports_by_ord[i];
-		if (imp) {
-			free (imp->name);
-			free (imp);
-			eobj->imports_by_ord[i] = NULL;
+	if (eobj && eobj->imports_by_ord) {
+		for (i = 0; i < eobj->imports_by_ord_size; i++) {
+			RBinImport *imp = eobj->imports_by_ord[i];
+			if (imp) {
+				free (imp->name);
+				free (imp);
+				eobj->imports_by_ord[i] = NULL;
+			}
 		}
+		R_FREE (eobj->imports_by_ord);
 	}
-	R_FREE (eobj->imports_by_ord);
 	//static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	Elf_(r_bin_elf_free) ((struct Elf_(r_bin_elf_obj_t)*)arch->o->bin_obj);
 	return true;
@@ -185,10 +185,9 @@ static RList* sections(RBinFile *arch) {
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
 
-	if (!obj || !(ret = r_list_new ())) {
+	if (!obj || !(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
@@ -212,7 +211,6 @@ static RList* sections(RBinFile *arch) {
 			}
 			r_list_append (ret, ptr);
 		}
-		free (section);
 	}
 
 	// program headers is another section
@@ -317,7 +315,7 @@ static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **
 	RBinSymbol *ptr = *sym;
 	if (ptr->name[0] == '$' && !ptr->name[2]) {
 		switch (ptr->name[1]) {
-		case 'a' : //arm 
+		case 'a' : //arm
 			ptr->bits = 32;
 			break;
 		case 't': //thumb
@@ -363,18 +361,16 @@ static RList* symbols(RBinFile *arch) {
 	}
 
 	bin = arch->o->bin_obj;
-	ret = r_list_new ();
+	ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_SYMBOLS)))
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin))) {
 		return ret;
+	}
 	for (i = 0; !symbol[i].last; i++) {
 		ut64 paddr = symbol[i].offset;
 		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
-
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			break;
 		}
@@ -387,14 +383,12 @@ static RList* symbols(RBinFile *arch) {
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		setsymord (bin, ptr->ordinal, ptr);
-
 		if (bin->ehdr.e_machine == EM_ARM) {
-			_set_arm_thumb_bits (bin, &ptr); 
+			_set_arm_thumb_bits (bin, &ptr);
 		}
 		r_list_append (ret, ptr);
 	}
-	free (symbol);
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin, R_BIN_ELF_IMPORTS))) {
+	if (!(symbol = Elf_(r_bin_elf_get_imports) (bin))) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
@@ -420,18 +414,16 @@ static RList* symbols(RBinFile *arch) {
 		setsymord (bin, ptr->ordinal, ptr);
 		/* detect thumb */
 		if (bin->ehdr.e_machine == EM_ARM) {
-			_set_arm_thumb_bits (bin, &ptr); 
+			_set_arm_thumb_bits (bin, &ptr);
 		}
 		r_list_append (ret, ptr);
 	}
-	free (symbol);
-
 	return ret;
 }
 
 static RList* imports(RBinFile *arch) {
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
-	struct r_bin_elf_symbol_t *import = NULL;
+	RBinElfSymbol *import = NULL;
 	RBinImport *ptr = NULL;
 	RList *ret = NULL;
 	int i;
@@ -443,7 +435,7 @@ static RList* imports(RBinFile *arch) {
 	if (!(ret = r_list_newf (r_bin_import_free))) {
 		return NULL;
 	}
-	if (!(import = Elf_(r_bin_elf_get_symbols) (arch->o->bin_obj, R_BIN_ELF_IMPORTS))) {
+	if (!(import = Elf_(r_bin_elf_get_imports) (bin))) {
 		r_list_free (ret);
 		return NULL;
 	}
@@ -458,7 +450,6 @@ static RList* imports(RBinFile *arch) {
 		(void)setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
-	free (import);
 	return ret;
 }
 
@@ -675,19 +666,21 @@ static RList* patch_relocs(RBin *b) {
 	RBinElfReloc *relcs = NULL;
 	int i;
 	ut64 n_off, n_vaddr, vaddr, size, sym_addr = 0, offset = 0;
-	if (!b) 
+	if (!b)
 		return NULL;
 	io = b->iob.get_io(&b->iob);
-	if (!io || !io->desc) 
+	if (!io || !io->desc)
 		return NULL;
 	obj = r_bin_cur_object (b);
-	if (!obj) 
-	    	return NULL;
+	if (!obj) {
+	   	return NULL;
+	}
 	bin = obj->bin_obj;
-	if (bin->ehdr.e_type != ET_REL)
+	if (bin->ehdr.e_type != ET_REL) {
 		return NULL;
+	}
 	if (!io->cached) {
-	    	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
 		return relocs (r_bin_cur (b));
 	}
 	r_list_foreach (io->sections, iter, s) {
@@ -703,10 +696,12 @@ static RList* patch_relocs(RBin *b) {
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd))
+	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd)) {
 		return NULL;
-	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin)))
+	}
+	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
 		return NULL;
+	}
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		free (relcs);
 		return NULL;
@@ -714,14 +709,16 @@ static RList* patch_relocs(RBin *b) {
 	vaddr = n_vaddr;
 	for (i = 0; !relcs[i].last; i++) {
 		if (relcs[i].sym) {
-			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym])
+			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
 				sym_addr = 0;
-			else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym])
+			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
 				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
+			}
 		}
 		__patch_reloc (&b->iob, &relcs[i], sym_addr ? sym_addr : vaddr);
-		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr)))
+		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
+		}
 		ptr->vaddr = sym_addr ? sym_addr : vaddr;
 		if (!sym_addr)
 			vaddr += 4;

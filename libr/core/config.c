@@ -121,6 +121,13 @@ static int cb_analnopskip (void *user, void *data) {
 	return true;
 }
 
+static int cb_analhpskip (void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.hpskip = node->i_value;
+	return true;
+}
+
 static int cb_analbbsplit (void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -400,6 +407,15 @@ static int cb_asmlineswidth(void *user, void *data) {
 	return true;
 }
 
+static int cb_emustr(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		r_config_set (core->config, "asm.emu", "true");
+	}
+	return true;
+}
+
 static int cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -537,6 +553,8 @@ static int cb_bigendian(void *user, void *data) {
 	bool isbig = r_asm_set_big_endian (core->assembler, node->i_value);
 	// Set anal endianness the same as asm
 	r_anal_set_big_endian (core->anal, isbig);
+	// the big endian should also be assigned to dbg->bp->endian
+	core->dbg->bp->endian = isbig;
 	// Set printing endian to user's choice
 	core->print->big_endian = node->i_value;
 	return true;
@@ -1456,6 +1474,25 @@ static int cb_linesabs(void *user, void *data) {
 	return true;
 }
 
+static char *getViewerPath() {
+	int i;
+	const char *viewers[] = {
+		"open",
+		"geeqie",
+		"gqview",
+		"eog",
+		"xdg-open"
+	};
+	for (i = 0; viewers[i]; i++) {
+		char *dotPath = r_file_path (viewers[i]);
+		if (dotPath && strcmp (dotPath, viewers[i])) {
+			return dotPath;
+		}
+		free (dotPath);
+	}
+	return NULL;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -1491,6 +1528,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.vinfun", "false",  "Search values in functions (aav) (false by default to only find on non-code)");
 	SETPREF("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
+	SETCB("anal.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
 	SETCB("anal.bbsplit", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
 	SETCB("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
@@ -1537,7 +1575,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
-	SETPREF("asm.leahints", "true", "Show LEA hints [numbers] in disasm");
+	SETPREF("asm.leahints", "false", "Show LEA hints [numbers] in disasm");
 	SETPREF("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETPREF("asm.flgoff", "false", "Show offset in flags");
@@ -1547,7 +1585,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
-	SETPREF("asm.emustr", "false", "Show only strings if any in the asm.emu output");
+	SETCB("asm.emustr", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
@@ -1581,7 +1619,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
-	SETPREF("asm.relsub", "false", "Substitute pc relative expressions in disasm");
+	SETPREF("asm.relsub", "true", "Substitute pc relative expressions in disasm");
 	SETPREF("asm.cmtfold", "false", "Fold comments, toggle with Vz");
 	SETPREF("asm.family", "false", "Show family name in disasm");
 	SETPREF("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
@@ -1650,6 +1688,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF("cfg.wseek", "false", "Seek after write");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+	SETI("cfg.minzlen", 2, "Minimum zignature length to filter in 'zg'");
 
 	/* diff */
 	SETI("diff.from", 0, "Set source diffing address for px (uses cc command)");
@@ -1717,19 +1756,28 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
 	/* cmd */
-	if (r_file_exists ("/usr/bin/xdot")) {
-		r_config_set (cfg, "cmd.graph", "!xdot a.dot");
-	} else if (r_file_exists ("/usr/bin/open")) {
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!open a.gif");
-	} else if (r_file_exists ("/usr/bin/gqview")) {
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
-	} else if (r_file_exists ("/usr/bin/eog")) {
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!eog a.gif");
-	} else if (r_file_exists ("/usr/bin/xdg-open")) {
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!xdg-open a.gif");
+	char *xdotPath = r_file_path ("xdot");
+	if (r_file_exists (xdotPath)) {
+		r_config_set (cfg, "cmd.graph", "ag $$ > a.dot;!xdot a.dot");
 	} else {
-		r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
+		char *dotPath = r_file_path ("dot");
+		if (r_file_exists (dotPath)) {
+			R_FREE (dotPath);
+			char *viewer = getViewerPath();
+			if (viewer) {
+				char *cmd = r_str_newf ("ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!%s a.gif", viewer);
+				r_config_set (cfg, "cmd.graph", cmd);
+				free (viewer);
+				free (cmd);
+			} else {
+				r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
+			}
+		} else {
+			r_config_set (cfg, "cmd.graph", "agf");
+		}
+		free (dotPath);
 	}
+	free (xdotPath);
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");

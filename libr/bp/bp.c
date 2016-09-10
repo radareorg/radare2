@@ -61,7 +61,7 @@ repeat:
 				if (bp->bits != bp->cur->bps[i].bits)
 					continue;
 			}
-			if (bp->cur->bps[i].length == len) {
+			if (bp->cur->bps[i].length == len && bp->cur->bps[i].endian == endian) {
 				memcpy (buf, b->bytes, b->length);
 				return b->length;
 			}
@@ -165,7 +165,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 			b->obytes = NULL;
 		}
 		/* XXX: endian .. use bp->endian */
-		ret = r_bp_get_bytes (bp, b->bbytes, size, 0, 0);
+		ret = r_bp_get_bytes (bp, b->bbytes, size, bp->endian, 0);
 		if (ret != size) {
 			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
 			r_bp_item_free (b);

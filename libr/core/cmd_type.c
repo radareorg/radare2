@@ -251,7 +251,7 @@ static int cmd_type(void *data, const char *input) {
 		if (p) {
 			*p++ = 0;
 			isenum = sdb_const_get (core->anal->sdb_types, s, 0);
-			if (isenum && !strcmp (isenum, "enum")) {
+			if (isenum && !strncmp (isenum, "enum", 4)) {
 				const char *q = sdb_fmt (0, "%s.0x%x", s, (ut32)r_num_math (core->num, p));
 				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
 				if (res)

@@ -77,7 +77,7 @@ w32:
 	sys/mingw32.sh
 
 depgraph.png:
-	cd libr ; perl depgraph.pl | dot -Tpng -odepgraph.png
+	cd libr ; perl depgraph.pl dot | dot -Tpng -o../depgraph.png
 
 android:
 	@if [ -z "$(NDK_ARCH)" ]; then echo "Set NDK_ARCH=[arm|arm64|mips|x86]" ; false; fi

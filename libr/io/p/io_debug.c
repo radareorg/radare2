@@ -215,9 +215,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		cpu_type_t cpu;
 		pid_t p = -1;
 		int ret, useASLR = io->aslr;
-		char *_cmd = io->args ?
-				r_str_concatf (strdup (cmd), " %s", io->args) :
-				strdup (cmd);
+		char *_cmd = io->args
+			? r_str_concatf (strdup (cmd), " %s", io->args)
+			: strdup (cmd);
 		argv = r_str_argv (_cmd, NULL);
 		if (!argv) {
 			free (_cmd);
@@ -231,7 +231,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		}
 		posix_spawnattr_init (&attr);
 		if (useASLR != -1) {
-			if (!useASLR) ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
+			if (!useASLR) {
+				ps_flags |= _POSIX_SPAWN_DISABLE_ASLR;
+			}
 		}
 
 		posix_spawn_file_actions_init (&fileActions);
@@ -245,13 +247,12 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
     		posix_spawnattr_setsigdefault(&attr, &all_signals);
 
 		(void)posix_spawnattr_setflags (&attr, ps_flags);
-#if __i386__ || __x86_64__
-		cpu = CPU_TYPE_I386;
-		if (bits == 64) {
-			cpu |= CPU_ARCH_ABI64;
-		}
-#else
 		cpu = CPU_TYPE_ANY;
+#if __x86_64__
+		if (bits == 32) {
+			cpu = CPU_TYPE_I386;
+			// cpu |= CPU_ARCH_ABI64;
+		}
 #endif
 		posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
 		{

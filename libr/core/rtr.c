@@ -386,7 +386,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 		port = path;
 		path = NULL;
 	} else {
-		if (core->file) {
+		if (core->file && (!path || !*path)) {
 			if (!strcmp (httpui, "p")
 			|| !strcmp (httpui, "m")
 			|| !strcmp (httpui, "enyo")
@@ -803,7 +803,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		eprintf ("sandbox: connect disabled\n");
 		return 1;
 	}
-	if (launch=='-') {
+	if (launch == '-') {
 		if (httpthread) {
 			eprintf ("Press ^C to stop the webserver\n");
 			r_th_free (httpthread);

@@ -1534,7 +1534,11 @@ static bool r_debug_gcore (RDebug *dbg, RBuffer *dest) {
 #if __APPLE__
 	return xnu_generate_corefile (dbg, dest);
 #elif __linux__ && (__x86_64__ || __i386__ || __arm__ || __arm64__)
+#  if __ANDROID__
+	return false;
+#  else
 	return linux_generate_corefile (dbg, dest);
+#  endif
 #else
 	return false;
 #endif

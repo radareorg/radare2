@@ -374,8 +374,9 @@ static int cmd_help(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		return 0;
 		}
-	case '$':{
-		const char* help_msg[] = {
+	case '$':
+		if (input[1] == '?') {
+			const char* help_msg[] = {
 			"Usage: ?v [$.]","","",
 			"$$", "", "here (current virtual seek)",
 			"$?", "", "last comparison value",
@@ -414,7 +415,19 @@ static int cmd_help(void *data, const char *input) {
 			"$k{kv}", "", "get value of an sdb query value",
 			"RNum", "", "$variables usable in math expressions",
 			NULL};
-		r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg);
+		} else {
+			int i = 0;
+			const char *vars[] = {
+				"$$", "$?", "$b", "$B", "$F", "$FB", "$Fb", "$Fs", "$FE", "$FS", "$FI",
+				"$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
+				"$p", "$P", "$s", "$S", "$SS", "$v", "$w", NULL
+			};
+			while (vars[i]) {
+				const char *pad = r_str_pad (' ', 6 - strlen (vars[i]));
+				eprintf ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+				i++;
+			}
 		}
 		return true;
 	case 'V':
@@ -586,6 +599,13 @@ static int cmd_help(void *data, const char *input) {
 		}
 		r_cons_set_raw (0);
 		break;
+	case 'w':
+		{
+			ut64 addr = r_num_math (core->num, input + 1);
+			const char *rstr = core->print->hasrefs (core->print->user, addr);
+			r_cons_println (rstr);
+		}
+		break;
 	case 't': {
 		struct r_prof_t prof;
 		r_prof_start (&prof);
@@ -613,6 +633,7 @@ static int cmd_help(void *data, const char *input) {
 			"?+", " [cmd]", "? > 0",
 			"?-", " [cmd]", "? < 0",
 			"?=", " eip-0x804800", "hex and dec result for this math expr",
+			"?$", "", "show value all the variables ($)",
 			"??", "", "show value of operation",
 			"??", " [cmd]", "? == 0 run command when math matches",
 			"?B", " [elem]", "show range boundaries like 'e?search.in",
@@ -642,6 +663,7 @@ static int cmd_help(void *data, const char *input) {
 			"?u", " num", "get value in human units (KB, MB, GB, TB)",
 			"?v", " eip-0x804800", "show hex value of math expr",
 			"?vi", " rsp-rbp", "show decimal value of math expr",
+			"?w", " addr", "show what's in this address (like pxr/pxq does)",
 			"?x", " num|str|-hexst", "returns the hexpair of number or string",
 			"?y", " [str]", "show contents of yank buffer, or set with string",
 			NULL};

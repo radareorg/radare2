@@ -223,16 +223,28 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		if (argc == 1) {
 			size_t (*cb)() = (size_t(*)())cbptr;
-			result = cb ();
+			if (cb) {
+				result = cb ();
+			} else {
+				eprintf ("No callback defined\n");
+			}
 		} else if (argc == 2) {
 			size_t (*cb)(size_t a0) = (size_t(*)(size_t))cbptr;
-			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
-			result = cb (a0);
+			if (cb) {
+				ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
+				result = cb (a0);
+			} else {
+				eprintf ("No callback defined\n");
+			}
 		} else if (argc == 3) {
 			size_t (*cb)(size_t a0, size_t a1) = (size_t(*)(size_t,size_t))cbptr;
 			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
-			result = cb (a0, a1);
+			if (cb) {
+				result = cb (a0, a1);
+			} else {
+				eprintf ("No callback defined\n");
+			}
 		} else if (argc == 4) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2) = \
 				(size_t(*)(size_t,size_t,size_t))cbptr;
@@ -247,7 +259,11 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
 			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
 			ut64 a3 = r_num_math (NULL, r_str_word_get0 (argv, 4));
-			result = cb (a0, a1, a2, a3);
+			if (cb) {
+				result = cb (a0, a1, a2, a3);
+			} else {
+				eprintf ("No callback defined\n");
+			}
 		} else if (argc == 6) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3, size_t a4) = \
 				(size_t(*)(size_t,size_t,size_t,size_t,size_t))cbptr;
@@ -256,7 +272,11 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
 			ut64 a3 = r_num_math (NULL, r_str_word_get0 (argv, 4));
 			ut64 a4 = r_num_math (NULL, r_str_word_get0 (argv, 5));
-			result = cb (a0, a1, a2, a3, a4);
+			if (cb) {
+				result = cb (a0, a1, a2, a3, a4);
+			} else {
+				eprintf ("No callback defined\n");
+			}
 		} else {
 			eprintf ("Unsupported number of arguments in call\n");
 		}
@@ -474,13 +494,13 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 #endif
 
 #else // DEBUGGER
-struct r_io_plugin_t r_io_plugin_self = {
+RIOPlugin r_io_plugin_self = {
 	.name = "self",
 	.desc = "read memory from myself using 'self://' (UNSUPPORTED)",
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION

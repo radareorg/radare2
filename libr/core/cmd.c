@@ -1213,12 +1213,17 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			if ((colon = strchr (cmd, ';')))
 				*colon = 0;
 		}
-	} else colon = NULL;
-	if (rep>0) {
-		while (*cmd >= '0' && *cmd <= '9')
+	} else {
+		colon = NULL;
+	}
+	if (rep > 0) {
+		while (*cmd >= '0' && *cmd <= '9') {
 			cmd++;
+		}
 		// do not repeat null cmd
-		if (!*cmd) goto beach;
+		if (!*cmd) {
+			goto beach;
+		}
 	}
 	if (rep<1) rep = 1;
 	// XXX if output is a pipe then we dont want to be interactive
@@ -1246,18 +1251,22 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			}
 		}
 		char *cr = strdup (cmdrep);
+		core->break_loop = false;
 		ret = r_core_cmd_subst_i (core, cmd, colon);
-		if (ret && *cmd=='q') {
+		if (ret && *cmd == 'q') {
 			free (cr);
 			goto beach;
 		}
+		if (core->break_loop) {
+			break;
+		}
 		if (cr && *cr) {
-			if (orep>1) {
+			if (orep > 1) {
 				// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
 				r_cons_flush ();
 				// XXX: we must inport register flags in C
-				r_core_cmd0 (core, ".dr*");
-				r_core_cmd0 (core, cr);
+				(void)r_core_cmd0 (core, ".dr*");
+				(void)r_core_cmd0 (core, cr);
 			}
 		}
 		free (cr);
@@ -1267,8 +1276,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		for (++colon; *colon==';'; colon++);
 		r_core_cmd_subst (core, colon);
 	} else {
-		if (!*icmd)
+		if (!*icmd) {
 			r_core_cmd_nullcallback (core);
+		}
 	}
 beach:
 	free (icmd);
@@ -2014,6 +2024,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
 		"x", " @@t", "\"\" on all threads (see dp)",
 		"x", " @@b", "\"\" on all basic blocks of current function (see afb)",
+		"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
 		"x", " @@f", "\"\" on all functions (see aflq)",
 		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 		// TODO: Add @@k sdb-query-expression-here
@@ -2037,6 +2048,26 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 			free (ostr);
 			r_core_block_size (core, bs);
+			return false;
+		}
+		break;
+	case 'i': // "@@i" - function instructions
+		{
+			RListIter *iter;
+			RAnalBlock *bb;
+			int i;
+			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+			if (fcn) {
+				r_list_sort (fcn->bbs, bb_cmp);
+				r_list_foreach (fcn->bbs, iter, bb) {
+					for (i = 0; i < bb->op_pos_size; i++) {
+						ut64 addr = bb->addr + bb->op_pos[i];
+						r_core_seek (core, addr, 1);
+						r_core_cmd (core, cmd, 0);
+					}
+				}
+			}
+			free (ostr);
 			return false;
 		}
 		break;

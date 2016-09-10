@@ -2020,24 +2020,23 @@ R_API ut8 r_str_contains_macro(const char *input_value) {
 }
 
 R_API void r_str_truncate_cmd(char *string) {
-	ut32 pos = 0, done = 0;
-	if (string) {
+	ut32 pos = 0;
+	if (string && *string) {
 		ut32 sz = strlen (string);
 		for (pos = 0; pos < sz; pos++) {
 			switch (string[pos]) {
-				case '!':
-				case ':':
-				case ';':
-				case '@':
-				case '~':
-				case '(':
-				case '[':
-				case '{':
-				case '?':
-					string[pos] = '\0';
-					done = 1;
+			case '!':
+			case ':':
+			case ';':
+			case '@':
+			case '~':
+			case '(':
+			case '[':
+			case '{':
+			case '?':
+				string[pos] = '\0';
+				return;
 			}
-			if (done) break;
 		}
 	}
 }
@@ -2045,9 +2044,11 @@ R_API void r_str_truncate_cmd(char *string) {
 R_API const char *r_str_closer_chr (const char *b, const char *s) {
 	const char *a;
 	while (*b) {
-		for (a=s;*a;a++)
-			if (*b==*a)
+		for (a = s; *a; a++) {
+			if (*b == *a) {
 				return b;
+			}
+		}
 		b++;
 	}
 	return NULL;
@@ -2115,8 +2116,9 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 		unsigned int x2, unsigned int y2) {
 	char *r, *ret;
 	unsigned int ch = 0, cw = 0;
-	if (x2<1 || y2<1 || !str)
+	if (x2 < 1 || y2 < 1 || !str) {
 		return strdup ("");
+	}
 	r = ret = strdup (str);
 	while (*str) {
 		/* crop height */
@@ -2126,24 +2128,25 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 		}
 
 		if (*str == '\n') {
-			if (ch >= y && ch < y2)
+			if (ch >= y && ch < y2) {
 				*r++ = *str;
+			}
 			str++;
 			ch++;
 			cw = 0;
 		} else {
-			if (ch >= y && ch < y2 && cw >= x && cw < x2)
+			if (ch >= y && ch < y2 && cw >= x && cw < x2) {
 				*r++ = *str;
-
+			}
 			/* crop width */
 			/* skip until newline */
 			if (cw >= x2) {
-				while (*str && *str != '\n')
+				while (*str && *str != '\n') {
 					str++;
+				}
 			} else {
 				str++;
 			}
-
 			cw++;
 		}
 	}
@@ -2217,10 +2220,28 @@ R_API void r_str_const_free() {
 
 R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffix) {
 	char *c0, *c1;
-	if (!cmt || !prefix || !suffix || !*cmt) return NULL;
+	if (!cmt || !prefix || !suffix || !*cmt) {
+		return NULL;
+	}
 	c0 = strstr (cmt, prefix);
-	if (!c0) return NULL;
-	c1 = strstr (c0 + strlen (prefix), suffix);
-	if (!c1) return NULL;
-	return r_str_ndup (c0 + strlen (prefix), (c1 - c0 - strlen (prefix)));
+	if (c0) {
+		c1 = strstr (c0 + strlen (prefix), suffix);
+		if (!c1) {
+			return r_str_ndup (c0 + strlen (prefix), (c1 - c0 - strlen (prefix)));
+		}
+	}
+	return NULL;
+}
+
+R_API bool r_str_startswith(const char *str, const char *needle) {
+	return !strncmp (str, needle, strlen (needle));
+}
+
+R_API bool r_str_endswith(const char *str, const char *needle) {
+	int slen = strlen (str);
+	int nlen = strlen (needle);
+	if (!slen || !nlen || slen < nlen) {
+		return false;
+	}
+	return !strcmp (str + (slen - nlen), needle);
 }

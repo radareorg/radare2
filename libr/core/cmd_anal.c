@@ -3,6 +3,9 @@
 #include "r_util.h"
 #include "r_core.h"
 
+/* hacky inclusion */
+#include "anal_vt.c"
+
 /* better aac for windows-x86-32 */
 #define JAYRO_03 0
 
@@ -202,15 +205,13 @@ static int var_cmd (RCore *core, const char *str) {
 	}
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
-	case 'a':
-		if (r_config_get_i (core->config, "anal.vars")) {
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
-			r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
-			fcn_callconv (core, fcn);
-		}
+	case 'a': // "afva"
+		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
+		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
+		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
+		fcn_callconv (core, fcn);
 		return true;
-	case 'n': {
+	case 'n': { // "afvn"
 		RAnalVar *v1;
 		char *str_dup = strdup (str);
 		char *old_name = r_str_trim_head (strchr (str_dup, ' '));
@@ -566,8 +567,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		} else if (fmt == 'j') {
 			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
-			if (hint && hint->opcode)
+			if (hint && hint->opcode) {
 				r_cons_printf ("\"ophint\": \"%s\",", hint->opcode);
+			}
 			r_cons_printf ("\"prefix\": %" PFMT64d ",", op.prefix);
 			r_cons_printf ("\"addr\": %" PFMT64d ",", core->offset + idx);
 			r_cons_printf ("\"bytes\": \"");
@@ -575,10 +577,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_printf ("%02x", buf[j + idx]);
 			}
 			r_cons_printf ("\",");
-			if (op.val != UT64_MAX)
+			if (op.val != UT64_MAX) {
 				r_cons_printf ("\"val\": %" PFMT64d ",", op.val);
-			if (op.ptr != UT64_MAX)
+			}
+			if (op.ptr != UT64_MAX) {
 				r_cons_printf ("\"ptr\": %" PFMT64d ",", op.ptr);
+			}
 			r_cons_printf ("\"size\": %d,", size);
 			r_cons_printf ("\"type\": \"%s\",",
 				r_anal_optype_to_string (op.type));
@@ -686,7 +690,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//free (hint);
 		r_anal_hint_free (hint);
 		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r')
-			r_cons_printf (",");
+			r_cons_print (",");
 	}
 
 	if (fmt == 'j') {
@@ -1025,7 +1029,6 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 	if (r_reg_get (core->anal->reg, name, -1)) {
 		name = r_str_newf ("fcn.%s", name);
 	}
-
 	fcn = r_anal_get_fcn_in (core->anal, off,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) return false;
@@ -1579,11 +1582,16 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
-		if (swapbits) {
-			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-			if (fcn) {
-				fcn->bits = core->assembler->bits;
-			}
+		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		if (fcn && swapbits) {
+			fcn->bits = core->assembler->bits;
+		}
+		if (fcn && r_config_get_i (core->config, "anal.vars")) {
+			fcn_callconv (core, fcn);
+		}
+		if (fcn) {
+			/* ensure we use a proper name */
+			setFunctionName (core, addr, fcn->name, false);
 		}
 		if (analyze_recursively) {
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
@@ -1612,10 +1620,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						r_list_foreach (f->refs, iter, ref) {
 							if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
 								continue;
-
 							}
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
-
 							// recursively follow fcn->refs again and again
 						}
 					} else {
@@ -3920,7 +3926,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		"agn", "[?] title body", "Add a node to the current graph",
 		"ags", " [addr]", "output simple graphviz call graph of function (only bb offset)",
 		"agt", " [addr]", "find paths from current offset to given address",
-		"agv", "[acdltfl] [a]", "view function using graphviz",
+		"agv", "", "Show function graph in web/png (see graph.web and cmd.graph) or agf for asciiart",
 		NULL };
 
 	switch (input[0]) {
@@ -3988,15 +3994,23 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 		break;
 	case 'v': // "agv"
-		r_core_cmd0 (core, "=H /graph/");
+		if (r_config_get_i (core->config, "graph.web")) {
+			r_core_cmd0 (core, "=H /graph/");
+		} else {
+			const char *cmd = r_config_get (core->config, "cmd.graph");
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			} else {
+				r_core_cmd0 (core, "agf");
+			}
+		}
 		break;
 	case '?': // "ag?"
 		r_core_cmd_help (core, help_msg);
 		break;
 	case ' ': // "ag"
 		arg = strchr (input, ' ');
-		if (arg) arg++;
-		r_core_anal_graph (core, r_num_math (core->num, arg),
+		r_core_anal_graph (core, r_num_math (core->num, arg? arg + 1: NULL),
 				R_CORE_ANAL_GRAPHBODY);
 		break;
 	case 0:
@@ -4522,16 +4536,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	}
 	case 'e': // "aae"
-		if (input[1] == ' ') {
-			char *len = strdup (input + 2);
-			if (len) {
-				char *addr = strchr (len, ' ');
-				if (addr) {
-					*addr++ = 0;
-				}
-				r_core_anal_esil (core, len, addr);
-				free (len);
+		if (input[1]) {
+			const char *len = (char *) input + 1;
+			char *addr = strchr (input + 2, ' ');
+			if (addr) {
+				*addr++ = 0;
 			}
+			r_core_anal_esil (core, len, addr);
 		} else {
 			ut64 at = core->offset;
 			ut64 from = r_num_get (core->num, "$S");

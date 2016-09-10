@@ -1015,11 +1015,11 @@ static char *getenumname(void *_core, const char *name, ut64 val) {
 	RCore *core = (RCore*)_core;
 
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
-	if (isenum && !strcmp (isenum, "enum")) {
+	if (isenum && !strncmp (isenum, "enum", 4)) {
 		const char *q = sdb_fmt (0, "%s.0x%x", name, val);
 		return sdb_get (core->anal->sdb_types, q, 0);
 	} else {
-		eprintf ("This is not an enum\n");
+		eprintf ("This is not an enum (%s)\n", name);
 	}
 	return NULL;
 }
@@ -1398,6 +1398,7 @@ R_API int r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->fs->iob));
 	r_io_bind (core->io, &(core->bin->iob));
 	r_flag_bind (core->flags, &(core->anal->flb));
+	r_anal_bind (core->anal, &(core->parser->analb));
 
 	core->file = NULL;
 	core->files = r_list_new ();

@@ -1012,7 +1012,7 @@ int main(int argc, char **argv, char **envp) {
 				}
 				else {
 					question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
-					if (prj && *prj && r_cons_yesno ('y', question)) {
+					if (prj && *prj && r_cons_yesno ('y', "%s", question)) {
 						r_core_project_save (&r, prj);
 					}
 					free (question);

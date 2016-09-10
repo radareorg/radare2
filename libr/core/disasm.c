@@ -923,6 +923,14 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 	return false;
 }
 
+//TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
+static ut32 tmp_get_realsize (RAnalFunction *f)
+{
+	ut32 size = r_anal_fcn_realsize (f);
+	size = (size > 0) ? size : r_anal_fcn_size (f);
+	return (size < 0) ? 0 : size;
+}
+
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
@@ -988,12 +996,12 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_offset (ds);
 			r_cons_printf ("%s%s%s(%s) %s%s%s %d\n",
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
-					fcntype, fcn_name, cmt, COLOR_RESET (ds), r_anal_fcn_size (f));
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
 		} else {
 			r_cons_printf ("%s%s%s%s%s(%s) %s%s%s %d\n",
 					COLOR (ds, color_fline), ds->pre,
 					space, COLOR_RESET (ds), COLOR (ds, color_fname),
-					fcntype, fcn_name, cmt, COLOR_RESET (ds), r_anal_fcn_size (f));
+					fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
 		}
 	}
 	if (sign)
@@ -1817,14 +1825,15 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 				RAnalValue *dst = ds->analop.dst;
 				if (dst && dst->reg && dst->reg->name)
-				if (!strcmp (src->reg->name, pc)) {
+				if (src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 					RFlagItem *item;
 					ut8 b[8];
-					ut64 ptr = idx+ds->addr+src->delta+ds->analop.size;
+					ut64 ptr = idx + ds->addr + src->delta + ds->analop.size;
 					ut64 off = 0LL;
 					r_core_read_at (core, ptr, b, src->memref);
 					off = r_mem_get_num (b, src->memref);
 					item = r_flag_get_i (core->flags, off);
+					//TODO: introduce env for this print?
 					r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
 							dst->reg->name, ptr, off, item?item->name: "");
 				}
@@ -1837,7 +1846,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 		if (src && src->reg && core->anal->reg && *(core->anal->reg->name)) {
 			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 			RAnalValue *dst = ds->analop.dst;
-			if (dst && dst->reg && !strcmp (src->reg->name, pc)) {
+			if (dst && dst->reg && src->reg->name && pc && !strcmp (src->reg->name, pc)) {
 				int index = 0;
 				int memref = core->assembler->bits/8;
 				RFlagItem *item;
@@ -1847,11 +1856,11 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				r_core_read_at (core, ptr, b, sizeof (b)); //memref);
 				off = r_mem_get_num (b, memref);
 				item = r_flag_get_i (core->flags, off);
-				{
-				char s[64];
-				r_str_ncpy (s, (const char *)b, sizeof (s));
-				r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
-						dst->reg->name, ptr, off, item?item->name: s);
+				if (ds->show_leahints) {
+					char s[64];
+					r_str_ncpy (s, (const char *)b, sizeof (s));
+					r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
+							dst->reg->name, ptr, off, item?item->name: s);
 				}
 			}
 		}

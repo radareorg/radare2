@@ -25,6 +25,7 @@ typedef struct {
 } HintListState;
 
 static void add_string_ref (RCore *core, ut64 xref_to);
+static int cmpfcn (const void *_a, const void *_b);
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
@@ -239,6 +240,18 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 		}
 	}
 }
+
+static bool blacklisted_word(char* name) {
+	const char * list[] = {
+		"__stack_chk_guard", "__stderrp", "__stdinp", "__stdoutp", "_DefaultRuneLocale"
+	};
+	int i;
+	for (i = 0; i < sizeof (list) / sizeof (list[0]); i++) {
+        	if (strstr (name, list[i])) { return true; }
+	}
+	return false;
+}
+
 /* suggest a name for the function at the address 'addr'.
  * If dump is true, every strings associated with the function is printed */
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
@@ -255,9 +268,12 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 				if (dump) {
 					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
 				}
-				if (strstr (f->name, "isatty"))
+				if (blacklisted_word (f->name)) {
+    					break;
+				}
+				if (strstr (f->name, ".isatty"))
 					use_isatty = 1;
-				if (strstr (f->name, "getopt"))
+				if (strstr (f->name, ".getopt"))
 					use_getopt = 1;
 				if (!strncmp (f->name, "sym.imp.", 8)) {
 					free (do_call);
@@ -336,7 +352,6 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 			}
 		}
 		r_core_anal_fcn (core, ref->addr, ref->at, ref->type, fcndepth-1);
-
 	} else {
 		ut64 offs, sz = core->anal->bits >> 3;
 		RAnalRef ref1;
@@ -519,6 +534,16 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				if (!ref) {
 					eprintf ("Error: new (xref)\n");
 					goto error;
+				}
+				if (fcn->type == R_ANAL_FCN_TYPE_LOC) {
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, from, -1);
+					if (f) {
+						if (!f->fcn_locs) {
+							f->fcn_locs = r_anal_fcn_list_new ();
+						}
+						r_list_append (f->fcn_locs, fcn);
+						r_list_sort (f->fcn_locs, &cmpfcn);
+					}
 				}
 				ref->addr = from;
 				ref->at = fcn->addr;
@@ -1152,6 +1177,10 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
  * If the function has been already analyzed, it adds a
  * reference to that fcn */
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+	if (from == UT64_MAX && r_anal_get_fcn_in (core->anal, at, 0)) {
+		return 0;
+	}
+
 	bool use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
 	RListIter *iter;
@@ -2941,6 +2970,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	RAsmOp asmop;
 	RAnalOp op = {0};
 	ut8 *buf = NULL;
+	bool end_address_set = false;
 	int i, iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	ut64 addr = core->offset;
@@ -2964,19 +2994,23 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (fcn) {
 			addr = fcn->addr;
 			end = fcn->addr + r_anal_fcn_size (fcn);
+			end_address_set = true;
 		}
 	}
-	if (str[0] == ' ') {
-		end = addr + r_num_math (core->num, str + 1);
-	} else {
-		RIOSection *sect = r_io_section_vget (core->io, addr);
-		if (sect) {
-			end = sect->vaddr + sect->size;
+
+	if (!end_address_set) {
+		if (str[0] == ' ') {
+			end = addr + r_num_math (core->num, str + 1);
 		} else {
-			if (!end)
+			RIOSection *sect = r_io_section_vget (core->io, addr);
+			if (sect) {
+				end = sect->vaddr + sect->size;
+			} else {
 				end = addr + core->blocksize;
+			}
 		}
 	}
+
 	iend = end - addr;
 	if (iend < 0) {
 		return;
@@ -3128,7 +3162,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					}
 					if ((target && dst == ntarget) || !target) {
 						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-							r_anal_ref_add (core->anal, dst, cur, 'c');
+							RAnalRefType ref = op.type == R_ANAL_OP_TYPE_UCALL
+								? R_ANAL_REF_TYPE_CALL
+								: R_ANAL_REF_TYPE_CODE;
+							r_anal_ref_add (core->anal, dst, cur, ref);
 						}
 					}
 				}
@@ -3139,182 +3176,4 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	free (buf);
 	free (op.mnemonic);
 	r_cons_break_end ();
-}
-
-#define VTABLE_BUFF_SIZE 10
-
-typedef struct vtable_info_t {
-	ut64 saddr; //starting address
-	int methods;
-	RList* funtions;
-} vtable_info;
-
-static RList* getVtableMethods(RCore *core, vtable_info *table) {
-	RList* vtableMethods = r_list_new ();
-	if (table && core && vtableMethods) {
-		int curMethod = 0;
-		int totalMethods = table->methods;
-		ut64 startAddress = table->saddr;
-		int bits = r_config_get_i (core->config, "asm.bits");
-		int wordSize = bits / 8;
-		while (curMethod < totalMethods) {
-			ut64 curAddressValue = r_io_read_i (core->io, startAddress, 8);
-			RAnalFunction *curFuntion = r_anal_get_fcn_in (core->anal, curAddressValue, 0);
-			r_list_append (vtableMethods, curFuntion);
-			startAddress += wordSize;
-			curMethod++;
-		}
-		table->funtions = vtableMethods;
-		return vtableMethods;
-	}
-	return NULL;
-}
-
-static int inTextSection(RCore *core, ut64 curAddress) {
-	//section of the curAddress
-	RBinSection* value = r_bin_get_section_at (core->bin->cur->o, curAddress, true);
-	//If the pointed value lies in .text section
-	return value && !strcmp (value->name, ".text");
-}
-
-static int valueInTextSection(RCore *core, ut64 curAddress) {
-	//value at the current address
-	ut64 curAddressValue = r_io_read_i (core->io, curAddress, 8);
-	//if the value is in text section
-	return inTextSection (core, curAddressValue);
-}
-
-static int isVtableStart(RCore *core, ut64 curAddress) {
-	RAsmOp asmop = {0};
-	RAnalRef *xref;
-	RListIter *xrefIter;
-	ut8 buf[VTABLE_BUFF_SIZE];
-	if (!curAddress || curAddress == UT64_MAX) {
-		return false;
-	}
-	if (valueInTextSection (core, curAddress)) {
-		// total xref's to curAddress
-		RList *xrefs = r_anal_xrefs_get (core->anal, curAddress);
-		if (!r_list_empty (xrefs)) {
-			r_list_foreach (xrefs, xrefIter, xref) {
-				// section in which currenct xref lies
-				if (inTextSection (core, xref->addr)) {
-					r_io_read_at (core->io, xref->addr, buf, VTABLE_BUFF_SIZE);
-					if (r_asm_disassemble (core->assembler, &asmop, buf, VTABLE_BUFF_SIZE) > 0) {
-						if ((!strncmp (asmop.buf_asm, "mov", 3)) ||
-						    (!strncmp (asmop.buf_asm, "lea", 3))) {
-							return true;
-						}
-					}
-				}
-			}
-		}
-	}
-	return false;
-}
-
-RList* search_virtual_tables(RCore *core){
-	if (!core) {
-		return NULL;
-	}
-	ut64 startAddress;
-	ut64 endAddress;
-	RListIter * iter;
-	RIOSection *section;
-	RList *vtables = r_list_new();
-	ut64 bits = r_config_get_i (core->config, "asm.bits");
-	int wordSize = bits / 8;
-	if (!vtables) {
-		return NULL;
-	}
-	r_list_foreach (core->io->sections, iter, section) {
-		if (!strcmp (section->name, ".rodata")) {
-			ut8 *segBuff = calloc (1, section->size);
-			r_io_read_at( core->io, section->offset, segBuff, section->size);
-			startAddress = section->vaddr;
-			endAddress = startAddress + (section->size) - (bits/8);
-			while (startAddress <= endAddress) {
-				if (isVtableStart (core, startAddress)) {
-					vtable_info *vtable = calloc (1, sizeof(vtable_info));
-					vtable->saddr = startAddress;
-					int noOfMethods = 0;
-					while (valueInTextSection (core, startAddress)) {
-						noOfMethods++;
-						startAddress += wordSize;
-					}
-					vtable->methods = noOfMethods;
-					r_list_append (vtables, vtable);
-					continue;
-				}
-				startAddress += 1;
-			}
-		}
-	}
-	if (r_list_empty (vtables)) {
-		// stripped binary?
-		eprintf ("No virtual tables found\n");
-		r_list_free (vtables);
-		return NULL;
-	}
-	return vtables;
-}
-
-R_API void r_core_anal_list_vtables(void *core, bool printJson) {
-	ut64 bits = r_config_get_i (((RCore *)core)->config, "asm.bits");
-	RList* vtables = search_virtual_tables ((RCore *)core);
-	const char *noMethodName = "No Name found";
-	RListIter* vtableMethodNameIter;
-	RAnalFunction *curMethod;
-	int wordSize = bits / 8;
-	RListIter* vtableIter;
-	vtable_info* table;
-
-	if (vtables) {
-		if (printJson) {
-			bool isFirstElement = true;
-			r_cons_print ("[");
-			r_list_foreach (vtables, vtableIter, table) {
-				if (!isFirstElement) {
-					r_cons_print (",");
-				}
-				r_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":%d}",
-					table->saddr, table->methods);
-				isFirstElement = false;
-			}
-			r_cons_println ("]");
-		} else {
-			r_list_foreach (vtables, vtableIter, table) {
-				ut64 vtableStartAddress = table->saddr;
-				RList *vtableMethods = getVtableMethods ((RCore *)core, table);
-				if (vtableMethods) {
-					r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
-					r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
-						if (curMethod->name) {
-							r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, curMethod->name);
-						} else {
-							r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, noMethodName);
-						}
-						vtableStartAddress += wordSize;
-					}
-					r_cons_newline ();
-				}
-			}
-		}
-	}
-}
-
-R_API void r_core_anal_list_vtables_all(void *core){
-	RList* vtables = search_virtual_tables ((RCore *)core);
-	RListIter* vtableIter;
-	RListIter* vtableMethodNameIter;
-	RAnalFunction* function;
-	vtable_info* table;
-
-	r_list_foreach (vtables, vtableIter, table) {
-		RList *vtableMethods = getVtableMethods ((RCore *)core, table);
-		r_list_foreach (vtableMethods, vtableMethodNameIter, function) {
-			// char *ret = r_str_newf ("vtable.%s", table->funtio);
-			r_cons_printf ("f %s=0x%08"PFMT64x"\n", function->name, function->addr);
-		}
-	}
 }
