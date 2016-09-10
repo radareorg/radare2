@@ -180,7 +180,6 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 	if (idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
-
 	ut32 proto_id = bin->methods[method_idx].proto_id;
 
 	if (proto_id < 0 || proto_id >= bin->header.prototypes_size) {
@@ -574,11 +573,9 @@ static int *parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, RBi
 		char *fieldName = getstr (bin, field.name_id);
 
 		const char* accessStr = createAccessFlagStr(accessFlags, kAccessForField);
-
 		if (field.type_id < 0 || field.type_id >= bin->header.types_size) {
 			break;
 		}
-
 		int tid = bin->types[field.type_id].descriptor_id;
 		const char* type_str = getstr(bin, tid);//get_string(bin, field.type_id, tid);
 
