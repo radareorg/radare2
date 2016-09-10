@@ -177,7 +177,7 @@ static char* createAccessFlagStr(ut32 flags, AccessFor forWhat)
 
 static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 
-	if (idx < 0 || method_idx >= bin->header.method_size) {
+	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
 	ut32 proto_id = bin->methods[method_idx].proto_id;
