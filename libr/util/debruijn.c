@@ -104,7 +104,7 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 // Host endian = 1 if little, 0 if big.
 R_API int r_debruijn_offset(ut64 value, int big_endian) {
 	char* needle, *pattern, buf[9];
-	int n, retval;
+	int retval;
 	char* pch;
 
 	if (value == 0) {
@@ -137,9 +137,6 @@ R_API int r_debruijn_offset(ut64 value, int big_endian) {
 	for (needle = buf; !*needle; needle++) {
 		/* do nothing here */
 	}
-	// we should not guess the endian. its already handled by other functions
-	// and configure by the user in cfg.bigendian
-	n = 1;
 
 	pch = strstr (pattern, needle);
 	retval = -1;
