@@ -432,7 +432,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 	return count[type];
 }
 
-R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
+static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dynamicVars) {
 	char *varlist;
 	RList *list = NULL;
 	if (!a || !fcn) {
@@ -479,6 +479,47 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 					av->size = vt.size;
 					av->type = strdup (vt.type);
 					r_list_append (list, av);
+					if (dynamicVars) { // make dynamic variables like structure fields
+						Sdb *TDB = a->sdb_types;
+						const char *type_kind = sdb_const_get (TDB, av->type, 0);
+						if (type_kind && !strncmp (type_kind, "struct", strlen ("struct"))) {
+							/* update following vars */
+							char type_key[128], *field_name, field_key[128], *field_type;
+							int field_n, field_offset, field_count, field_size;
+
+							snprintf (type_key, sizeof (type_key), "%s.%s", type_kind, av->type);
+							for (field_n = 0;
+								(field_name = sdb_array_get (TDB, type_key, field_n, NULL));
+								field_n++) {
+								snprintf (field_key, sizeof (field_key), "%s.%s", type_key, field_name);
+								field_type = sdb_array_get (TDB, field_key, 0, NULL);
+								field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
+								field_count = sdb_array_get_num (TDB, field_key, 2, NULL);
+								field_size = r_anal_type_get_size (a, field_type) * (field_count ? field_count : 1);
+
+								char *new_name = malloc (256);
+								snprintf (new_name, 256, "%s.%s", vt.name, field_name);
+								if (field_offset == 0) {
+									free (av->name);
+									av->name = new_name;
+								} else {
+									RAnalVar *fav;
+									fav = R_NEW0 (RAnalVar);
+									if (!fav) {
+										free (new_name);
+										continue;
+									}
+
+									fav->delta = delta + field_offset;
+									fav->kind = kind;
+									fav->name = new_name;
+									fav->size = field_size;
+									fav->type = strdup (field_type);
+									r_list_append (list, fav);
+								}
+							}
+						}
+					}
 					sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 				} else {
 					// eprintf ("Cannot find var definition for '%s'\n", word);
@@ -490,6 +531,14 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 	free (varlist);
 	list->free = (RListFree)r_anal_var_free;
 	return list;
+}
+
+R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
+	return var_generate_list(a, fcn, kind, false);
+}
+
+R_API RList *r_anal_var_list_dynamic(RAnal *a, RAnalFunction *fcn, int kind) {
+	return var_generate_list(a, fcn, kind, true);
 }
 
 static int var_comparator (const RAnalVar *a, const RAnalVar *b){
