@@ -76,6 +76,11 @@ static void xtensa_store_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 
 static void xtensa_add_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->type = R_ANAL_OP_TYPE_ADD;
+	if ((buf[0] >> 4) && (buf[1] & 0xf) && buf[2] > 0x7f) {
+		op->val = (ut8) ~buf[2] + 1;
+		op->stackop = R_ANAL_STACK_INC;
+		//save stack frame size whenever adding to stack frame
+	}
 }
 
 static void xtensa_sub_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
