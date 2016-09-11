@@ -125,6 +125,28 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 			delta = -delta;
 		}
 		sdb_set (DB, name_key, name_val, 0);
+
+		Sdb *TDB = a->sdb_types;
+		const char* type_kind = sdb_const_get (TDB, type, 0);
+		if (type_kind && !strncmp (type_kind, "struct", strlen ("struct"))) {
+			/* update following vars */
+			char type_key[128], *field, field_key[128], *field_type;
+			int field_n, field_offset;
+
+
+			snprintf (type_key, sizeof (type_key), "%s.%s", type_kind, type);
+			for (field_n = 0;
+				(field = sdb_array_get (TDB, type_key, field_n, NULL));
+				field_n++) {
+				snprintf (field_key, sizeof (field_key), "%s.%s", type_key, field);
+				field_type = sdb_array_get (TDB, field_key, 0, NULL);
+				field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
+
+				if (field_offset != 0) { // delete variables which are overlayed by structure
+					r_anal_var_delete (a, addr, kind, scope, delta + field_offset);
+				}
+			}
+		}
 	} else {
 		/* global variable */
 		const char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, fcn->addr);
