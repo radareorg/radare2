@@ -294,7 +294,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_FXCH:
 		break;
 	case X86_INS_FTST:
-	//case X86_INS_FUCOMPI:
+	case X86_INS_FUCOMPI:
 	case X86_INS_FUCOMI:
 	case X86_INS_FUCOMPP:
 	case X86_INS_FUCOMP:
@@ -1514,7 +1514,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->type = R_ANAL_OP_TYPE_STORE;
 		break;
 	case X86_INS_FTST:
-	//case X86_INS_FUCOMPI:
+	case X86_INS_FUCOMPI:
 	case X86_INS_FUCOMI:
 	case X86_INS_FUCOMPP:
 	case X86_INS_FUCOMP:
