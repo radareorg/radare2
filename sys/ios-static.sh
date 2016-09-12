@@ -1,5 +1,14 @@
 #!/bin/sh
 
+if [ "$1" = "-h" ]; then
+	echo "Usage: sys/ios-static.sh [armv7|arm64]"
+	exit 0
+fi
+
+if [ -n "$1"]; then
+	export CPU="$1"
+fi
+
 if [ -z "${CPU}" ]; then
 	export CPU=arm64
 	export CPU=armv7
