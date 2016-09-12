@@ -177,12 +177,22 @@ static char* createAccessFlagStr(ut32 flags, AccessFor forWhat)
 
 static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 
-	if(method_idx >= bin->header.method_size) {
+	if (method_idx < 0 || method_idx >= bin->header.method_size) {
+		return NULL;
+	}
+	ut32 proto_id = bin->methods[method_idx].proto_id;
+
+	if (proto_id < 0 || proto_id >= bin->header.prototypes_size) {
+		return NULL;
+	}
+	ut32 params_off = bin->protos[proto_id].parameters_off;
+	ut32 type_id = bin->protos[bin->methods[method_idx].proto_id].return_type_id;
+
+	if (type_id < 0 || proto_id >= bin->header.types_size ) {
 		return NULL;
 	}
 
-	ut32 params_off = bin->protos[bin->methods[method_idx].proto_id].parameters_off;
-	char* return_type = getstr(bin, bin->types[bin->protos[bin->methods[method_idx].proto_id].return_type_id].descriptor_id);
+	char* return_type = getstr(bin, bin->types[type_id].descriptor_id);
 
 	if (params_off == 0) {
 		return r_str_newf("()%s", return_type);;
@@ -449,7 +459,7 @@ static char *dex_class_name_byid (RBinDexObj *bin, int cid) {
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
 	}
-	tid = bin->types [cid].descriptor_id;
+	tid = bin->types[cid].descriptor_id;
 	return getstr(bin, tid);
 }
 
@@ -479,7 +489,7 @@ static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
 	}
-	tid = bin->types [cid].descriptor_id;
+	tid = bin->types[cid].descriptor_id;
 	return getstr(bin, tid);
 }
 
@@ -492,7 +502,7 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
 	}
-	tid = bin->types [cid].descriptor_id;
+	tid = bin->types[cid].descriptor_id;
 	return getstr(bin, tid);
 }
 
