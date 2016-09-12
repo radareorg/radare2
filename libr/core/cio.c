@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2015 - pancake */
+/* radare2 - LGPL - Copyright 2009-2016 - pancake */
 
 #include "r_core.h"
 
@@ -17,14 +17,16 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 
 	pid = *p; // 1st element in debugger's struct must be int
 	r_config_set (r->config, "io.ff", "true");
-	if (is_gdb)
+	if (is_gdb) {
 		r_core_cmd (r, "dh gdb", 0);
-	else
+	} else {
 		r_core_cmdf (r, "dh %s", debugbackend);
+	}
 	//this makes to attach twice showing warnings in the output
 	//we get "resource busy" so it seems isn't an issue
-	if (attach)
+	if (attach) {
 		r_core_cmdf (r, "dpa %d", pid);
+	}
 	r_core_cmdf (r, "dp=%d", pid);
 	r_core_cmd (r, ".dr*", 0);
 	/* honor dbg.bep */
@@ -45,10 +47,11 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	/* set the prompt if it's not been set already by the callbacks */
 	prompt = r_config_get (r->config, "cmd.prompt");
 	if (prompt && !strcmp (prompt, "")) {
-		if (r_config_get_i (r->config, "dbg.status"))
+		if (r_config_get_i (r->config, "dbg.status")) {
 			r_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
-		else
+		} else {
 			r_config_set (r->config, "cmd.prompt", ".dr*");
+		}
 	}
 	r_config_set (r->config, "cmd.vprompt", ".dr*");
 	return true;

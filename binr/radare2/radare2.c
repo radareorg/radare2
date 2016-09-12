@@ -709,10 +709,12 @@ int main(int argc, char **argv, char **envp) {
 						eprintf ("bin.baddr 0x%08"PFMT64x"\n", baddr);
 						va = 2;
 					}
-					if (r_core_bin_load (&r, diskfile, baddr)) {
-						RBinObject *obj = r_bin_get_object (r.bin);
-						if (obj && obj->info)
-							eprintf ("asm.bits %d\n", obj->info->bits);
+					if (run_anal > 0) {
+						if (r_core_bin_load (&r, diskfile, baddr)) {
+							RBinObject *obj = r_bin_get_object (r.bin);
+							if (obj && obj->info)
+								eprintf ("asm.bits %d\n", obj->info->bits);
+						}
 					}
 					r_core_cmd0 (&r, ".dm*");
 					// Set Thumb Mode if necessary
@@ -775,18 +777,25 @@ int main(int argc, char **argv, char **envp) {
 				}
 			}
 		}
-		if (!pfile) pfile = file;
-		if (fh == NULL) {
+		if (!pfile) {
+			pfile = file;
+		}
+		if (!fh) {
 			if (pfile && *pfile) {
 				r_cons_flush ();
-				if (perms & R_IO_WRITE)
+				if (perms & R_IO_WRITE) {
 					eprintf ("Cannot open '%s' for writing.\n", pfile);
-				else eprintf ("Cannot open '%s'\n", pfile);
-			} else eprintf ("Missing file to open\n");
+				} else {
+					eprintf ("Cannot open '%s'\n", pfile);
+				}
+			} else {
+				eprintf ("Missing file to open\n");
+			}
 			return 1;
 		}
-		if (r.file == NULL) // no given file
+		if (!r.file) { // no given file
 			return 1;
+		}
 #if USE_THREADS
 		if (run_anal > 0 && threaded) {
 			// XXX: if no rabin2 in path that may fail
@@ -806,7 +815,6 @@ int main(int argc, char **argv, char **envp) {
 			r_config_eval (r.config, cmdn);
 			r_cons_flush ();
 		}
-
 #if 0
 // Do not autodetect utf8 terminals to avoid problems on initial
 // stdin buffer and some terminals that just hang (android/ios)
@@ -823,20 +831,25 @@ int main(int argc, char **argv, char **envp) {
 		debug = r.file && r.file->desc && r.file->desc->plugin && \
 			r.file->desc->plugin->isdbg;
 		if (debug) {
-			if (baddr != UT64_MAX)
+			if (baddr != UT64_MAX) {
 				//setup without attach again because there is dpa call
 				//producing two attach and it's annoying
 				r_core_setup_debugger (&r, debugbackend, false);
-			else
+			} else {
 				r_core_setup_debugger (&r, debugbackend, true);
+			}
 		}
 
-		if (!debug && r_flag_get (r.flags, "entry0"))
+		if (!debug && r_flag_get (r.flags, "entry0")) {
 			r_core_cmd0 (&r, "s entry0");
-		if (seek != UT64_MAX)
+		}
+		if (seek != UT64_MAX) {
 			r_core_seek (&r, seek, 1);
+		}
 
-		if (fullfile) r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+		if (fullfile) {
+			r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+		}
 
 		r_core_seek (&r, r.offset, 1); // read current block
 
