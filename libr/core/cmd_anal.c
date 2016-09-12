@@ -3309,6 +3309,17 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 	}
 }
 
+static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
+	RAnalFunction * fcn;
+	fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+
+	if (fcn) {
+		r_cons_printf (" ; %s", fcn->name);
+	} else {
+		r_cons_printf (" ; 0x%" PFMT64x, addr);
+	}
+}
+
 static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	const char *help_msg[] = {
@@ -3487,8 +3498,18 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
 									core->cons->pal.num);
-					r_cons_printf ("%c 0x%" PFMT64x " %s\n",
+					r_cons_printf ("%c 0x%" PFMT64x " %s",
 						ref->type, ref->at, buf_asm);
+
+					if (ref->type == R_ANAL_REF_TYPE_CALL) {
+						RAnalOp aop;
+						r_anal_op (core->anal, &aop, ref->at, buf, 12);
+						if (aop.type == R_ANAL_OP_TYPE_UCALL) {
+							cmd_anal_ucall_ref (core, ref->addr);
+						}
+					}
+
+					r_cons_printf ("\n");
 					free (buf_asm);
 				}
 			}
