@@ -9,7 +9,7 @@
 
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int sz = dalvik_opcodes[data[0]].len;
-	if (op == NULL)
+	if (!op)
 		return sz;
 
 	memset (op, '\0', sizeof (RAnalOp));

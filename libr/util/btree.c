@@ -147,7 +147,7 @@ struct mydata {
 };
 
 int shownode(char *str, struct mydata *m) {
-	if (m == NULL)
+	if (!m)
 		printf ("==> not found\n");
 	else printf ("==> %s: %s, %"PFMT64d"\n", str, m->str, m->addr);
 	return 0;
@@ -156,7 +156,7 @@ int shownode(char *str, struct mydata *m) {
 int mycmp(const void *a, const void *b) {
 	struct mydata *ma = (struct mydata *)a;
 	struct mydata *mb = (struct mydata *)b;
-	if (a==NULL || b == NULL)
+	if (a==NULL || !b)
 		return 0;
 	return (int)(ma->addr-mb->addr);
 }

@@ -144,7 +144,7 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 
 R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const char *desc) {
 	RCmdLongItem *item = R_NEW (RCmdLongItem);
-	if (item == NULL)
+	if (!item)
 		return false;
 	strncpy (item->cmd, lcmd, sizeof (item->cmd)-1);
 	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
@@ -162,7 +162,7 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 	int idx = (ut8)cmd[0];
 
 	item = c->cmds[idx];
-	if (item == NULL) {
+	if (!item) {
 		item = R_NEW (RCmdItem);
 		c->cmds[idx] = item;
 	}
@@ -226,7 +226,7 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
 			int linp = strlen (input+c->cmd_len);
 			/// SLOW malloc on most situations. use stack
 			inp = malloc (lcmd+linp+2); // TODO: use static buffer with R_CMD_MAXLEN
-			if (inp == NULL)
+			if (!inp)
 				return -1;
 			memcpy (inp, c->cmd_short, lcmd);
 			memcpy (inp+lcmd, input+c->cmd_len, linp+1);
@@ -276,7 +276,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	}
 
 	name = strdup (oname);
-	if (name == NULL) {
+	if (!name) {
 		perror ("strdup");
 		return 0;
 	}
@@ -316,7 +316,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	}
 	if (ptr)
 		*ptr = ' ';
-	if (macro == NULL) {
+	if (!macro) {
 		macro = (struct r_cmd_macro_item_t *)malloc (
 			sizeof (struct r_cmd_macro_item_t));
 		macro->name = strdup (name);
@@ -326,7 +326,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	macro->code = (char *)malloc (macro->codelen);
 	*macro->code = '\0';
 	macro->nargs = 0;
-	if (args == NULL)
+	if (!args)
 		args = "";
 	macro->args = strdup (args);
 	ptr = strchr (macro->name, ' ');
@@ -579,12 +579,12 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	struct r_cmd_macro_label_t labels[MACRO_LABELS];
 
 	str = strdup (name);
-	if (str == NULL) {
+	if (!str) {
 		perror ("strdup");
 		return false;
 	}
 	ptr = strchr (str, ')');
-	if (ptr == NULL) {
+	if (!ptr) {
 		eprintf ("Missing end ')' parenthesis.\n");
 		free (str);
 		return false;
@@ -635,7 +635,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 
 				/* Label handling */
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
-				if (ptr2 == NULL) {
+				if (!ptr2) {
 					eprintf ("Oops. invalid label name\n");
 					break;
 				} else

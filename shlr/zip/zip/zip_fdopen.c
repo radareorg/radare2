@@ -65,7 +65,7 @@ zip_fdopen(int fd_orig, int _flags, int *zep)
 	return NULL;
     }
 
-    if ((fp=fdopen(fd, "rb")) == NULL) {
+    if (!(fp=fdopen(fd, "rb"))) {
 	close(fd);
 	*zep = ZIP_ER_OPEN;
 	return NULL;

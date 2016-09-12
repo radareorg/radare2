@@ -653,7 +653,7 @@ static mpc_err_t *mpc_err_file(const char *filename, const char *failure) {
 
 static void mpc_err_delete_internal(mpc_input_t *i, mpc_err_t *x) {
   int j;
-  if (x == NULL) { return; }
+  if (!x) { return; }
   for (j = 0; j < x->expected_num; j++) { mpc_free(i, x->expected[j]); }
   mpc_free(i, x->expected);
   mpc_free(i, x->filename);
@@ -710,12 +710,12 @@ static mpc_err_t *mpc_err_or(mpc_input_t *i, mpc_err_t** x, int n) {
   strcpy(e->filename, x[fst]->filename);
   
   for (j = 0; j < n; j++) {
-    if (x[j] == NULL) { continue; }
+    if (!x[j]) { continue; }
     if (x[j]->state.pos > e->state.pos) { e->state = x[j]->state; }
   }
   
   for (j = 0; j < n; j++) {
-    if (x[j] == NULL) { continue; }
+    if (!x[j]) { continue; }
     if (x[j]->state.pos < e->state.pos) { continue; }
     
     if (x[j]->failure) {
@@ -734,7 +734,7 @@ static mpc_err_t *mpc_err_or(mpc_input_t *i, mpc_err_t** x, int n) {
   }
   
   for (j = 0; j < n; j++) {
-    if (x[j] == NULL) { continue; }
+    if (!x[j]) { continue; }
     mpc_err_delete_internal(i, x[j]);
   }
   
@@ -747,7 +747,7 @@ static mpc_err_t *mpc_err_repeat(mpc_input_t *i, mpc_err_t *x, const char *prefi
   size_t l = 0;
   char *expect = NULL;
   
-  if (x == NULL) { return NULL; }
+  if (!x) { return NULL; }
   
   if (x->expected_num == 0) {
     expect = mpc_calloc(i, 1, 1);
@@ -1244,7 +1244,7 @@ int mpc_parse_contents(const char *filename, mpc_parser_t *p, mpc_result_t *r) {
   FILE *f = fopen(filename, "rb");
   int res;
   
-  if (f == NULL) {
+  if (!f) {
     r->output = NULL;
     r->error = mpc_err_file(filename, "Unable to open file!");
     return 0;
@@ -1965,7 +1965,7 @@ mpc_parser_t *mpc_tok_squares(mpc_parser_t *a, mpc_dtor_t ad)  { return mpc_tok_
 
 static mpc_val_t *mpcf_re_or(int n, mpc_val_t **xs) {
   (void) n;
-  if (xs[1] == NULL) { return xs[0]; }
+  if (!xs[1]) { return xs[0]; }
   else { return mpc_or(2, xs[0], xs[1]); }
 }
 
@@ -1981,7 +1981,7 @@ static mpc_val_t *mpcf_re_and(int n, mpc_val_t **xs) {
 static mpc_val_t *mpcf_re_repeat(int n, mpc_val_t **xs) {
   int num;
   (void) n;
-  if (xs[1] == NULL) { return xs[0]; }
+  if (!xs[1]) { return xs[0]; }
   if (strcmp(xs[1], "*") == 0) { free(xs[1]); return mpc_many(mpcf_strfold, xs[0]); }
   if (strcmp(xs[1], "+") == 0) { free(xs[1]); return mpc_many1(mpcf_strfold, xs[0]); }
   if (strcmp(xs[1], "?") == 0) { free(xs[1]); return mpc_maybe_lift(xs[0], mpcf_ctor_str); }
@@ -2026,7 +2026,7 @@ static mpc_val_t *mpcf_re_escape(mpc_val_t *x) {
   /* Regex Escape */
   if (s[0] == '\\') {
     p = mpc_re_escape_char(s[1]);
-    p = (p == NULL) ? mpc_char(s[1]) : p;
+    p = (!p) ? mpc_char(s[1]) : p;
     free(s);
     return p;
   }
@@ -2630,7 +2630,7 @@ void mpc_ast_delete(mpc_ast_t *a) {
   
   int i;
   
-  if (a == NULL) { return; }
+  if (!a) { return; }
   
   for (i = 0; i < a->children_num; i++) {
     mpc_ast_delete(a->children[i]);
@@ -2690,7 +2690,7 @@ mpc_ast_t *mpc_ast_add_root(mpc_ast_t *a) {
 
   mpc_ast_t *r;
 
-  if (a == NULL) { return a; }
+  if (!a) { return a; }
   if (a->children_num == 0) { return a; }
   if (a->children_num == 1) { return a; }
 
@@ -2722,7 +2722,7 @@ mpc_ast_t *mpc_ast_add_child(mpc_ast_t *r, mpc_ast_t *a) {
 }
 
 mpc_ast_t *mpc_ast_add_tag(mpc_ast_t *a, const char *t) {
-  if (a == NULL) { return a; }
+  if (!a) { return a; }
   a->tag = realloc(a->tag, strlen(t) + 1 + strlen(a->tag) + 1);
   memmove(a->tag + strlen(t) + 1, a->tag, strlen(a->tag)+1);
   memmove(a->tag, t, strlen(t));
@@ -2737,7 +2737,7 @@ mpc_ast_t *mpc_ast_tag(mpc_ast_t *a, const char *t) {
 }
 
 mpc_ast_t *mpc_ast_state(mpc_ast_t *a, mpc_state_t s) {
-  if (a == NULL) { return a; }
+  if (!a) { return a; }
   a->state = s;
   return a;
 }
@@ -2746,7 +2746,7 @@ static void mpc_ast_print_depth(mpc_ast_t *a, int d, FILE *fp) {
   
   int i;
   
-  if (a == NULL) {
+  if (!a) {
     fprintf(fp, "NULL\n");
     return;
   }
@@ -2784,14 +2784,14 @@ mpc_val_t *mpcf_fold_ast(int n, mpc_val_t **xs) {
   
   if (n == 0) { return NULL; }
   if (n == 1) { return xs[0]; }
-  if (n == 2 && xs[1] == NULL) { return xs[0]; }
-  if (n == 2 && xs[0] == NULL) { return xs[1]; }
+  if (n == 2 && !xs[1]) { return xs[0]; }
+  if (n == 2 && !xs[0]) { return xs[1]; }
   
   r = mpc_ast_new(">", "");
   
   for (i = 0; i < n; i++) {
     
-    if (as[i] == NULL) { continue; }
+    if (!as[i]) { continue; }
     
     if (as[i] && as[i]->children_num > 0) {
       
@@ -2952,7 +2952,7 @@ typedef struct {
 
 static mpc_val_t *mpcaf_grammar_or(int n, mpc_val_t **xs) {
   (void) n;
-  if (xs[1] == NULL) { return xs[0]; }
+  if (!xs[1]) { return xs[0]; }
   else { return mpca_or(2, xs[0], xs[1]); }
 }
 
@@ -2968,7 +2968,7 @@ static mpc_val_t *mpcaf_grammar_and(int n, mpc_val_t **xs) {
 static mpc_val_t *mpcaf_grammar_repeat(int n, mpc_val_t **xs) { 
   int num;
   (void) n;
-  if (xs[1] == NULL) { return xs[0]; }  
+  if (!xs[1]) { return xs[0]; }  
   if (strcmp(xs[1], "*") == 0) { free(xs[1]); return mpca_many(xs[0]); }
   if (strcmp(xs[1], "+") == 0) { free(xs[1]); return mpca_many1(xs[0]); }
   if (strcmp(xs[1], "?") == 0) { free(xs[1]); return mpca_maybe(xs[0]); }
@@ -3023,7 +3023,7 @@ static mpc_parser_t *mpca_grammar_find_parser(char *x, mpca_grammar_st_t *st) {
       st->parsers_num++;
       st->parsers = realloc(st->parsers, sizeof(mpc_parser_t*) * st->parsers_num);
       st->parsers[st->parsers_num-1] = va_arg(*st->va, mpc_parser_t*);
-      if (st->parsers[st->parsers_num-1] == NULL) {
+      if (!st->parsers[st->parsers_num-1]) {
         return mpc_failf("No Parser in position %i! Only supplied %i Parsers!", i, st->parsers_num);
       }
     }
@@ -3036,7 +3036,7 @@ static mpc_parser_t *mpca_grammar_find_parser(char *x, mpca_grammar_st_t *st) {
     /* Search Existing Parsers */
     for (i = 0; i < st->parsers_num; i++) {
       mpc_parser_t *q = st->parsers[i];
-      if (q == NULL) { return mpc_failf("Unknown Parser '%s'!", x); }
+      if (!q) { return mpc_failf("Unknown Parser '%s'!", x); }
       if (q->name && strcmp(q->name, x) == 0) { return q; }
     }
     
@@ -3049,7 +3049,7 @@ static mpc_parser_t *mpca_grammar_find_parser(char *x, mpca_grammar_st_t *st) {
       st->parsers = realloc(st->parsers, sizeof(mpc_parser_t*) * st->parsers_num);
       st->parsers[st->parsers_num-1] = p;
       
-      if (p == NULL) { return mpc_failf("Unknown Parser '%s'!", x); }
+      if (!p) { return mpc_failf("Unknown Parser '%s'!", x); }
       if (p->name && strcmp(p->name, x) == 0) { return p; }
       
     }
@@ -3373,7 +3373,7 @@ mpc_err_t *mpca_lang_contents(int flags, const char *filename, ...) {
 
   FILE *f = fopen(filename, "rb");
   
-  if (f == NULL) {
+  if (!f) {
     err = mpc_err_file(filename, "Unable to open file!");
     return err;
   }

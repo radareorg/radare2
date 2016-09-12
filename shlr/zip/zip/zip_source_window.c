@@ -55,12 +55,12 @@ zip_source_window(struct zip *za, struct zip_source *src, zip_uint64_t start, zi
 {
     struct window *ctx;
 
-    if (src == NULL) {
+    if (!src) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }
 
-    if ((ctx=(struct window *)malloc(sizeof(*ctx))) == NULL) {
+    if (!(ctx=(struct window *)malloc(sizeof(*ctx)))) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	return NULL;
     }

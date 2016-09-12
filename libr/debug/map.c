@@ -155,7 +155,7 @@ R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, int use_color, int co
 R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	RDebugMap *map;
 	/* range could be 0k on OpenBSD, it's a honeypot */
-	if (name == NULL || addr > addr_end) {
+	if (!name || addr > addr_end) {
 		eprintf ("r_debug_map_new: error assert(\
 			%"PFMT64x">%"PFMT64x")\n", addr, addr_end);
 		return NULL;

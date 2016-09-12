@@ -12,7 +12,7 @@ typedef struct {
 #define RIOW32_HANDLE(x) (((RIOW32*)x)->hnd)
 
 static int w32__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	return WriteFile (RIOW32_HANDLE (fd), buf, count, NULL, NULL);
 }

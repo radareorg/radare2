@@ -67,7 +67,7 @@ R_API int r_space_pop(RSpaces *f) {
 
 R_API int r_space_set(RSpaces *f, const char *name) {
 	int i;
-	if (name == NULL || *name == '*') {
+	if (!name || *name == '*') {
 		f->space_idx = -1;
 		return f->space_idx;
 	}
@@ -81,7 +81,7 @@ R_API int r_space_set(RSpaces *f, const char *name) {
 	}
 	/* not found */
 	for (i=0; i<R_SPACES_MAX; i++) {
-		if (f->spaces[i] == NULL) {
+		if (!f->spaces[i]) {
 			f->spaces[i] = strdup (name);
 			f->space_idx = i;
 			break;

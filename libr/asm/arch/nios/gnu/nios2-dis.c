@@ -81,7 +81,7 @@ nios2_init_opcode_hash (void)
 	  {
 	    new_hash =
 	      (nios2_opcode_hash *) malloc (sizeof (nios2_opcode_hash));
-	    if (new_hash == NULL)
+	    if (!new_hash)
 	      {
 		fprintf (stderr,
 			 "error allocating memory...broken disassembler\n");

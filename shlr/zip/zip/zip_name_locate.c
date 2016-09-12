@@ -58,10 +58,10 @@ _zip_name_locate(struct zip *za, const char *fname, zip_flags_t flags, struct zi
     const char *fn, *p;
     zip_uint64_t i;
 
-    if (za == NULL)
+    if (!za)
 	return -1;
 
-    if (fname == NULL) {
+    if (!fname) {
 	_zip_error_set(error, ZIP_ER_INVAL, 0);
 	return -1;
     }
@@ -72,7 +72,7 @@ _zip_name_locate(struct zip *za, const char *fname, zip_flags_t flags, struct zi
 	fn = _zip_get_name(za, i, flags, error);
 
 	/* newly added (partially filled) entry or error */
-	if (fn == NULL)
+	if (!fn)
 	    continue;
 	
 	if (flags & ZIP_FL_NODIR) {

@@ -88,7 +88,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	tokens[0] = NULL;
 	for (tokcount=0; tokcount<(sizeof (tokens) / sizeof (char*)) - 1; tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ";");
-		if (tok == NULL)
+		if (!tok)
 			break;
 		tokens[tokcount] = r_str_trim_head_tail (tok);
 	}
@@ -225,7 +225,7 @@ static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
 	RCoreAsmHit *to_check_hit;
 	int result = 0;
 	ut64 start_range, end_range;
-	if (hit == NULL || hits == NULL) return 0;
+	if (!hit || !hits) return 0;
 	start_range = hit->addr;
 	end_range =  hit->addr +  hit->len;
 	r_list_foreach_safe (hits, iter, iter_tmp, to_check_hit){
@@ -393,7 +393,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 	}
 
 	buf = (ut8 *)malloc (len);
-	if (hits == NULL || buf == NULL ){
+	if (!hits || !buf ){
 		if (hits) {
 			r_list_free (hits);
 		}
@@ -453,7 +453,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
 
-	if (hits == NULL || buf == NULL ){
+	if (!hits || !buf ){
 		if (hits) {
 			r_list_purge (hits);
 			free (hits);
@@ -516,7 +516,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 	hits = r_core_asm_hit_list_new ();
 	buf = malloc (len + extra_padding);
 
-	if (hits == NULL || buf == NULL ){
+	if (!hits || !buf ){
 		if (hits) {
 			r_list_purge (hits);
 			free (hits);

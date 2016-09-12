@@ -515,7 +515,7 @@ static void own(struct state *s)
 		}
 
 		if (s->s_nop) {
-			assert(s->s_nopd == NULL);
+			assert(!s->s_nopd);
 			s->s_nopd = d;
 		} else {
 			last->d_next = d;
@@ -555,7 +555,7 @@ static void own(struct state *s)
 	}
 	if (l) {
 		print_label(s, l);
-		assert(l->l_next == NULL);
+		assert(!l->l_next);
 	}
 
 	output(s, "\n\tENDMOD\n");

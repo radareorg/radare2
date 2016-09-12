@@ -163,7 +163,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	ut32* code = (ut32 *)data;
 	struct winedbg_arm_insn *arminsn;
 
-	if (data == NULL)
+	if (!data)
 		return 0;
 	memset (op, '\0', sizeof (RAnalOp));
 	arminsn = arm_new();

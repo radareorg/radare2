@@ -43,7 +43,7 @@ int read_fragment_table_4()
 
 	fragment_table = malloc(sBlk.s.fragments *
 		sizeof(struct squashfs_fragment_entry));
-	if(fragment_table == NULL)
+	if(!fragment_table)
 		EXIT_UNSQUASH("read_fragment_table: failed to allocate "
 			"fragment table\n");
 
@@ -182,7 +182,7 @@ struct inode *read_inode_4(unsigned int start_block, unsigned int offset)
 			SQUASHFS_SWAP_SYMLINK_INODE_HEADER(inode, block_ptr);
 
 			i.symlink = malloc(inode->symlink_size + 1);
-			if(i.symlink == NULL)
+			if(!i.symlink)
 				EXIT_UNSQUASH("read_inode: failed to malloc "
 					"symlink data\n");
 			strncpy(i.symlink, block_ptr +
@@ -261,7 +261,7 @@ struct dir *squashfs_opendir_4(unsigned int block_start, unsigned int offset,
 	*i = s_ops.read_inode(block_start, offset);
 
 	dir = malloc(sizeof(struct dir));
-	if(dir == NULL)
+	if(!dir)
 		EXIT_UNSQUASH("squashfs_opendir: malloc failed!\n");
 
 	dir->dir_count = 0;
@@ -322,7 +322,7 @@ struct dir *squashfs_opendir_4(unsigned int block_start, unsigned int offset,
 			if((dir->dir_count % DIR_ENT_SIZE) == 0) {
 				new_dir = realloc(dir->dirs, (dir->dir_count +
 					DIR_ENT_SIZE) * sizeof(struct dir_ent));
-				if(new_dir == NULL)
+				if(!new_dir)
 					EXIT_UNSQUASH("squashfs_opendir: "
 						"realloc failed!\n");
 				dir->dirs = new_dir;
@@ -354,7 +354,7 @@ int read_uids_guids_4()
 	TRACE("read_uids_guids: no_ids %d\n", sBlk.s.no_ids);
 
 	id_table = malloc(SQUASHFS_ID_BYTES(sBlk.s.no_ids));
-	if(id_table == NULL) {
+	if(!id_table) {
 		ERROR("read_uids_guids: failed to allocate id table\n");
 		return FALSE;
 	}

@@ -66,7 +66,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 		return NULL;
 	}
 	ret = DLOPEN (libname);
-	if (__has_debug && ret == NULL) {
+	if (__has_debug && !ret) {
 #if __UNIX__
 		eprintf ("dlerror(%s): %s\n", libname, dlerror ());
 #else
@@ -185,7 +185,7 @@ R_API R_API int r_lib_close(RLib *lib, const char *file) {
 			}
 		}
 	}
-	if (file == NULL) {
+	if (!file) {
 		return 0;
 	}
 	// delete similar plugin name
@@ -246,13 +246,13 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	}
 
 	handler = r_lib_dl_open (file);
-	if (handler == NULL) {
+	if (!handler) {
 		IFDBG eprintf ("Cannot open library: '%s'\n", file);
 		return R_FAIL;
 	}
 
 	stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
-	if (stru == NULL) {
+	if (!stru) {
 		IFDBG eprintf ("Cannot find symbol '%s' in library '%s'\n",
 			lib->symname, file);
 		r_lib_dl_close (handler);
@@ -309,14 +309,14 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	DIR *dh;
 
 #ifdef LIBR_PLUGINS
-	if (path == NULL)
+	if (!path)
 		path = LIBR_PLUGINS;
 #endif
-	if (path == NULL)
+	if (!path)
 		return false;
 
 	dh = opendir (path);
-	if (dh == NULL) {
+	if (!dh) {
 		IFDBG eprintf ("Cannot open directory '%s'\n", path);
 		return false;
 	}
@@ -349,9 +349,9 @@ R_API int r_lib_add_handler(RLib *lib,
 			break;
 		}
 	}
-	if (handler == NULL) {
+	if (!handler) {
 		handler = R_NEW (RLibHandler);
-		if (handler == NULL)
+		if (!handler)
 			return false;
 		handler->type = type;
 		r_list_append (lib->handlers, handler);

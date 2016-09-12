@@ -255,7 +255,7 @@ UDis86Esil udis86_esil_callback_table[ UD_MAX_MNEMONIC_CODE ] = {
 };
 
 UDis86Esil * udis86_esil_get_handler (enum ud_mnemonic_code code) {
-	if (udis86_esil_callback_table[code].callback == NULL)
+	if (!udis86_esil_callback_table[code].callback)
 		return NULL;
 	return udis86_esil_callback_table + code;
 }

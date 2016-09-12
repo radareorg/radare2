@@ -1402,7 +1402,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	bracket = strchr (arg,'{');
 	if (bracket) {
 		char *end = strchr (arg, '}');
-		if (end == NULL) {
+		if (!end) {
 			eprintf ("No end bracket. Try pf {ecx}b @ esi\n");
 			goto beach;
 		}
@@ -1520,7 +1520,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 			tmp = *arg;
 
-			if (args == NULL) {
+			if (!args) {
 				mode |= R_PRINT_ISFIELD;
 			}
 			if (mode & R_PRINT_MUSTSEE && otimes > 1) {

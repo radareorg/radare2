@@ -41,7 +41,7 @@
 ZIP_EXTERN int
 zip_get_num_files(struct zip *za)
 {
-    if (za == NULL)
+    if (!za)
 	return -1;
 
     /* XXX: check for overflow */

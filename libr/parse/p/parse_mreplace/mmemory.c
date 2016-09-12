@@ -54,7 +54,7 @@ memChunk *memReserve(long size) {
 	static memChunk *buffer;
 	memCheckState ();
 	buffer = (memChunk*)malloc (sizeof (memChunk));
-	if (!buffer || (buffer->address = (char*)malloc (size)) == NULL) {
+	if (!buffer || !(buffer->address = (char*)malloc (size))) {
 		perror ("memReserve");
 		exit (0);
   	}

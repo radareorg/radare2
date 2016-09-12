@@ -53,10 +53,10 @@ _zip_get_name(struct zip *za, zip_uint64_t idx, zip_flags_t flags, struct zip_er
     struct zip_dirent *de;
     const zip_uint8_t *str;
 
-    if ((de=_zip_get_dirent(za, idx, flags, error)) == NULL)
+    if (!(de=_zip_get_dirent(za, idx, flags, error)))
 	return NULL;
 
-    if ((str=_zip_string_get(de->filename, NULL, flags, error)) == NULL)
+    if (!(str=_zip_string_get(de->filename, NULL, flags, error)))
 	return NULL;
 
     return (const char *)str;

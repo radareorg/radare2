@@ -328,7 +328,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 		must_free = true;
 		e = r_sys_getenv (e);
 	}
-	if (e == NULL) return 0;
+	if (!e) return 0;
 	if (!strcmp (b, "program")) p->_args[0] = p->_program = strdup (e);
 	else if (!strcmp (b, "system")) p->_system = strdup (e);
 	else if (!strcmp (b, "aslr")) p->_aslr = parseBool (e);

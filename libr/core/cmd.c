@@ -66,7 +66,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	ut8 buf[128];
 	static RBuffer *b = NULL; // XXX: never freed and non-thread safe. move to RCore
 	RAsmOp *op;
-	if (b == NULL) {
+	if (!b) {
 		b = r_buf_new ();
 		if (!b) return NULL;
 		if (!r_core_read_at (core, addr, buf, sizeof (buf)))
@@ -1471,7 +1471,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				eprintf ("Slurping file '%s'\n", str);
 				free (core->oobi);
 				core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
-				if (core->oobi == NULL)
+				if (!core->oobi)
 					eprintf ("cannot open file\n");
 				else if (ptr == cmd)
 					return r_core_cmd_buffer (core, (const char *)core->oobi);
@@ -1912,7 +1912,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 			int origpid = dbg->pid;
 			RDebugPid *p;
 			list = dbg->h->threads (dbg, dbg->pid);
-			if (list == NULL)
+			if (!list)
 				return false;
 			r_list_foreach (list, iter, p) {
 				r_core_cmdf (core, "dp %d", p->pid);
@@ -2190,7 +2190,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				if (r_cons_singleton ()->breaked)
 					break;
 				r_cmd_macro_call (&core->rcmd->macro, each+2);
-				if (core->rcmd->macro.brk_value == NULL)
+				if (!core->rcmd->macro.brk_value)
 					break;
 
 				addr = core->rcmd->macro._brk_value;
@@ -2209,7 +2209,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				core->rcmd->macro.counter=0;
 				while (!feof (fd)) {
 					buf[0] = '\0';
-					if (fgets (buf, sizeof (buf), fd) == NULL)
+					if (!fgets (buf, sizeof (buf), fd))
 						break;
 					addr = r_num_math (core->num, buf);
 					eprintf ("0x%08"PFMT64x": %s\n", addr, cmd);
@@ -2234,7 +2234,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			ch = str[i];
 			str[i] = '\0';
 			word = strdup (str + j);
-			if (word == NULL)
+			if (!word)
 				break;
 			str[i] = ch;
 			{
@@ -2412,7 +2412,7 @@ R_API int r_core_cmd_command(RCore *core, const char *command) {
 	char *buf, *rcmd, *ptr;
 	char *cmd = r_core_sysenv_begin (core, command);
 	rcmd = ptr = buf = r_sys_cmd_str (cmd, 0, &len);
-	if (buf == NULL) {
+	if (!buf) {
 		free (cmd);
 		return -1;
 	}

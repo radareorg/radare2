@@ -340,7 +340,7 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
 	int fd, fdold, tmp;
 
-	if (file == NULL || *file == '\0')
+	if (!file || *file == '\0')
 		return false;
 
 	filename = r_str_word_get_first (file);

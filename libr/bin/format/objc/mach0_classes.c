@@ -118,9 +118,9 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch
 	RListIter *iter = NULL;
 	RBinSection *s = NULL;
 
-	if (sctns == NULL) {
+	if (!sctns) {
 		sctns = r_bin_plugin_mach.sections (arch);
-		if (sctns == NULL) {
+		if (!sctns) {
 			// retain just for debug
 			// eprintf ("there is no sections\n");
 			return 0;

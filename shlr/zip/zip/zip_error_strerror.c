@@ -72,11 +72,11 @@ _zip_error_strerror(struct zip_error *err)
 	}
     }
 
-    if (ss == NULL)
+    if (!ss)
 	return zs;
     else {
 	if ((s=(char *)malloc(strlen(ss)
-			      + (zs ? strlen(zs)+2 : 0) + 1)) == NULL)
+			      + (!zs ? strlen(zs)+2 : 0) + 1)))
 	    return _zip_err_str[ZIP_ER_MEMORY];
 	
 	sprintf(s, "%s%s%s",

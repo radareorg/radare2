@@ -460,7 +460,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 }
 
 R_API int r_core_block_read(RCore *core) {
-	if (core->file == NULL && r_core_file_set_first_valid(core) == NULL) {
+	if (!core->file && !r_core_file_set_first_valid(core)) {
 		memset (core->block, core->io->Oxff, core->blocksize);
 		return -1;
 	}

@@ -167,7 +167,7 @@ R_API bool r_mixed_change_end(RMixed *m, void *p) {
 				// rehash this pointer
 				RListIter *iter;
 				RList *list = r_mixed_get (m, i, m->state[i]);
-				if (list == NULL) {
+				if (!list) {
 					eprintf ("RMixed internal corruption?\n");
 					return false;
 				}

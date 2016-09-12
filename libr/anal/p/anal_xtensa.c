@@ -1914,7 +1914,7 @@ static void analop_esil (RAnal *a, RAnalOp *op, ut64 addr, ut8 *buffer, size_t l
 }
 
 static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	if (op == NULL)
+	if (!op)
 		return 1;
 	memset (op, 0, sizeof (RAnalOp));
 	r_strbuf_init (&op->esil);

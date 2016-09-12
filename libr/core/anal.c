@@ -2532,7 +2532,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 
 	count = R_MIN (count, len);
 	buf = malloc (len);
-	if (buf == NULL)
+	if (!buf)
 		return false;
 	memset (buf, 0xff, len);
 	r_io_read_at (core->io, addr, buf, len);
@@ -3027,7 +3027,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		return;
 	}
 	buf = malloc (iend + 2);
-	if (buf == NULL) {
+	if (!buf) {
 		perror ("malloc");
 		return;
 	}

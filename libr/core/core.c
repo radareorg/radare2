@@ -351,7 +351,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			bptr = strdup (str+3);
 			ptr = strchr (bptr, '}');
-			if (ptr == NULL) {
+			if (!ptr) {
 				// invalid json
 				free (bptr);
 				break;
@@ -936,7 +936,7 @@ R_API int r_core_fgets(char *buf, int len) {
 	rli->completion.argv = radare_argv;
 	rli->completion.run = autocomplete;
 	ptr = r_line_readline ();
-	if (ptr == NULL)
+	if (!ptr)
 		return -1;
 	strncpy (buf, ptr, len);
 	buf[len-1] = 0;
@@ -1253,7 +1253,7 @@ static void r_core_setenv (RCore *core) {
 R_API int r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE+1);
-	if (core->block == NULL) {
+	if (!core->block) {
 		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
 		/* XXX memory leak */
 		return false;
@@ -1680,7 +1680,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		bsize = core->blocksize_max;
 	}
 	bump = realloc (core->block, bsize+1);
-	if (bump == NULL) {
+	if (!bump) {
 		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
 		ret = false;
 	} else {
@@ -1753,7 +1753,7 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut64 x;
 
 	rior = (RIORap *)file->data;
-	if (rior == NULL|| rior->fd == NULL) {
+	if (!rior|| !rior->fd) {
 		eprintf ("rap: cannot listen.\n");
 		return -1;
 	}
@@ -1771,7 +1771,7 @@ reaccept:
 		if (core->cons->breaked) {
 			return -1;
 		}
-		if (c == NULL) {
+		if (!c) {
 			eprintf ("rap: cannot accept\n");
 			/*r_socket_close (c);*/
 			r_socket_free (c);
@@ -1798,7 +1798,7 @@ reaccept:
 				pipefd = -1;
 				ptr = malloc (cmd + 1);
 				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX)
-				if (ptr == NULL) {
+				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
 					RCoreFile *file;
@@ -2056,7 +2056,7 @@ reaccept:
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb) {
 	int ret, len = core->blocksize;
 	ut8 *buf;
-	if ((buf = malloc (len)) == NULL)
+	if (!(buf = malloc (len)))
 		eprintf ("Cannot allocate blocksize\n");
 	else while (from<to) {
 		ut64 delta = to-from;

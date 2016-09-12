@@ -427,7 +427,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 	if (ripc) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 		orig = r_reg_get_bytes (dbg->reg, -1, &orig_sz);
-		if (orig == NULL) {
+		if (!orig) {
 			eprintf ("Cannot get register arena bytes\n");
 			return 0LL;
 		}
@@ -435,7 +435,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		rsp = r_reg_get_value (dbg->reg, risp);
 
 		backup = malloc (len);
-		if (backup == NULL) {
+		if (!backup) {
 			free (orig);
 			return 0LL;
 		}

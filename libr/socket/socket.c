@@ -248,7 +248,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			s->fd = -1;
 		}
 		freeaddrinfo (res);
-		if (rp == NULL) {
+		if (!rp) {
 			eprintf ("Could not resolve address '%s'\n", host);
 			return false;
 		}
@@ -257,7 +257,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		s->ctx = SSL_CTX_new (SSLv23_client_method ());
-		if (s->ctx == NULL) {
+		if (!s->ctx) {
 			r_socket_free (s);
 			return false;
 		}
@@ -384,7 +384,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
 		s->ctx = SSL_CTX_new (SSLv23_method ());
-		if (s->ctx == NULL) {
+		if (!s->ctx) {
 			r_socket_free (s);
 			return false;
 		}

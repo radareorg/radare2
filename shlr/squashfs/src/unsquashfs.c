@@ -142,11 +142,11 @@ struct queue *queue_init(int size)
 {
 	struct queue *queue = malloc(sizeof(struct queue));
 
-	if(queue == NULL)
+	if(!queue)
 		EXIT_UNSQUASH("Out of memory in queue_init\n");
 
 	queue->data = malloc(sizeof(void *) * (size + 1));
-	if(queue->data == NULL)
+	if(!queue->data)
 		EXIT_UNSQUASH("Out of memory in queue_init\n");
 
 	queue->size = size + 1;
@@ -238,7 +238,7 @@ void insert_free_list(struct cache *cache, struct cache_entry *entry)
 /* Called with the cache mutex held */
 void remove_free_list(struct cache *cache, struct cache_entry *entry)
 {
-	if(entry->free_prev == NULL && entry->free_next == NULL)
+	if(!entry->free_prev && !entry->free_next)
 		/* not in free list */
 		return;
 	else if(entry->free_prev == entry && entry->free_next == entry) {
@@ -260,7 +260,7 @@ struct cache *cache_init(int buffer_size, int max_buffers)
 {
 	struct cache *cache = malloc(sizeof(struct cache));
 
-	if(cache == NULL)
+	if(!cache)
 		EXIT_UNSQUASH("Out of memory in cache_init\n");
 
 	cache->max_buffers = max_buffers;
@@ -312,10 +312,10 @@ struct cache_entry *cache_get(struct cache *cache, long long block, int size)
 		 */
 		if(cache->count < cache->max_buffers) {
 			entry = malloc(sizeof(struct cache_entry));
-			if(entry == NULL)
+			if(!entry)
 				EXIT_UNSQUASH("Out of memory in cache_get\n");
 			entry->data = malloc(cache->buffer_size);
-			if(entry->data == NULL)
+			if(!entry->data)
 				EXIT_UNSQUASH("Out of memory in cache_get\n");
 			entry->cache = cache;
 			entry->free_prev = entry->free_next = NULL;
@@ -324,7 +324,7 @@ struct cache_entry *cache_get(struct cache *cache, long long block, int size)
 			/*
 			 * try to get from free list
 			 */
-			while(cache->free_list == NULL) {
+			while(!cache->free_list) {
 				cache->wait_free = TRUE;
 				pthread_cond_wait(&cache->wait_for_free,
 					&cache->mutex);
@@ -459,14 +459,14 @@ int print_filename(char *pathname, struct inode *inode)
 printf ("0x%08llx ", inode->data);
 
 	user = getpwuid(inode->uid);
-	if(user == NULL) {
+	if(!user) {
 		sprintf(dummy, "%d", inode->uid);
 		userstr = dummy;
 	} else
 		userstr = user->pw_name;
 		 
 	group = getgrgid(inode->gid);
-	if(group == NULL) {
+	if(!group) {
 		sprintf(dummy2, "%d", inode->gid);
 		groupstr = dummy2;
 	} else
@@ -516,7 +516,7 @@ void add_entry(struct hash_table_entry *hash_table[], long long start,
 	struct hash_table_entry *hash_table_entry;
 
 	hash_table_entry = malloc(sizeof(struct hash_table_entry));
-	if(hash_table_entry == NULL)
+	if(!hash_table_entry)
 		EXIT_UNSQUASH("Out of memory in add_entry\n");
 
 	hash_table_entry->start = start;
@@ -673,7 +673,7 @@ void uncompress_inode_table(long long start, long long end)
 		if(size - bytes < SQUASHFS_METADATA_SIZE) {
 			inode_table = realloc(inode_table, size +=
 				SQUASHFS_METADATA_SIZE);
-			if(inode_table == NULL)
+			if(!inode_table)
 				EXIT_UNSQUASH("Out of memory in "
 					"uncompress_inode_table");
 		}
@@ -760,8 +760,8 @@ int write_block(int file_fd, char *buffer, int size, long long hole, int sparse)
 				lseek_broken = TRUE;
 		}
 
-		if((sparse == FALSE || lseek_broken) && zero_data == NULL) {
-			if((zero_data = malloc(block_size)) == NULL)
+		if((sparse == FALSE || lseek_broken) && !zero_data) {
+			if(!(zero_data = malloc(block_size)))
 				EXIT_UNSQUASH("write_block: failed to alloc "
 					"zero data block\n");
 			memset(zero_data, 0, block_size);
@@ -814,13 +814,13 @@ int write_file(struct inode *inode, char *pathname)
 
 printf ("START %llx\n", start);
 	block_list = malloc(inode->blocks * sizeof(unsigned int));
-	if(block_list == NULL)
+	if(!block_list)
 		EXIT_UNSQUASH("write_file: unable to malloc block list\n");
 
 	s_ops.read_block_list(block_list, inode->block_ptr, inode->blocks);
 
 	file = malloc(sizeof(struct squashfs_file));
-	if(file == NULL)
+	if(!file)
 		EXIT_UNSQUASH("write_file: unable to malloc file\n");
 
 	/*
@@ -844,7 +844,7 @@ printf ("START %llx\n", start);
 		int c_byte = SQUASHFS_COMPRESSED_SIZE_BLOCK(block_list[i]);
 		struct file_entry *block = malloc(sizeof(struct file_entry));
 
-		if(block == NULL)
+		if(!block)
 			EXIT_UNSQUASH("write_file: unable to malloc file\n");
 		block->offset = 0;
 		block->size = i == file_end ? inode->data & (block_size - 1) :
@@ -864,7 +864,7 @@ printf ("START %llx\n", start);
 		long long start;
 		struct file_entry *block = malloc(sizeof(struct file_entry));
 
-		if(block == NULL)
+		if(!block)
 			EXIT_UNSQUASH("write_file: unable to malloc file\n");
 		s_ops.read_fragment(inode->fragment, &start, &size);
 		block->buffer = cache_get(fragment_cache, start, size);
@@ -1006,7 +1006,7 @@ void uncompress_directory_table(long long start, long long end)
 		if(size - bytes < SQUASHFS_METADATA_SIZE) {
 			directory_table = realloc(directory_table, size +=
 				SQUASHFS_METADATA_SIZE);
-			if(directory_table == NULL)
+			if(!directory_table)
 				EXIT_UNSQUASH("Out of memory in "
 					"uncompress_directory_table\n");
 		}
@@ -1086,9 +1086,9 @@ struct pathname *add_path(struct pathname *paths, char *target, char *alltarget)
 
 	target = get_component(target, targname);
 
-	if(paths == NULL) {
+	if(!paths) {
 		paths = malloc(sizeof(struct pathname));
-		if(paths == NULL)
+		if(!paths)
 			EXIT_UNSQUASH("failed to allocate paths\n");
 
 		paths->names = 0;
@@ -1106,13 +1106,13 @@ struct pathname *add_path(struct pathname *paths, char *target, char *alltarget)
 		paths->names ++;
 		paths->name = realloc(paths->name, (i + 1) *
 			sizeof(struct path_entry));
-		if(paths->name == NULL)
+		if(!paths->name)
 			EXIT_UNSQUASH("Out of memory in add_path\n");	
 		paths->name[i].name = strdup(targname);
 		paths->name[i].paths = NULL;
 		if(use_regex) {
 			paths->name[i].preg = malloc(sizeof(regex_t));
-			if(paths->name[i].preg == NULL)
+			if(!paths->name[i].preg)
 				EXIT_UNSQUASH("Out of memory in add_path\n");
 			error = regcomp(paths->name[i].preg, targname,
 				REG_EXTENDED|REG_NOSUB);
@@ -1141,7 +1141,7 @@ struct pathname *add_path(struct pathname *paths, char *target, char *alltarget)
 		/*
 		 * existing matching entry
 		 */
-		if(paths->name[i].paths == NULL) {
+		if(!paths->name[i].paths) {
 			/*
 			 * No sub-directory which means this is the leaf
 			 * component of a pre-existing extract which subsumes
@@ -1170,7 +1170,7 @@ struct pathname *add_path(struct pathname *paths, char *target, char *alltarget)
 struct pathnames *init_subdir()
 {
 	struct pathnames *new = malloc(sizeof(struct pathnames));
-	if(new == NULL)
+	if(!new)
 		EXIT_UNSQUASH("Out of memory in init_subdir\n");
 	new->count = 0;
 	return new;
@@ -1183,7 +1183,7 @@ struct pathnames *add_subdir(struct pathnames *paths, struct pathname *path)
 		paths = realloc(paths, sizeof(struct pathnames *) +
 			(paths->count + PATHS_ALLOC_SIZE) *
 			sizeof(struct pathname *));
-		if(paths == NULL)
+		if(!paths)
 			EXIT_UNSQUASH("Out of memory in add_subdir\n");
 	}
 
@@ -1202,7 +1202,7 @@ int matches(struct pathnames *paths, char *name, struct pathnames **new)
 {
 	int i, n;
 
-	if(paths == NULL) {
+	if(!paths) {
 		*new = NULL;
 		return TRUE;
 	}
@@ -1217,7 +1217,7 @@ int matches(struct pathnames *paths, char *name, struct pathnames **new)
 				NULL, 0) == 0 : fnmatch(path->name[i].name,
 				name, FNM_PATHNAME|FNM_PERIOD) == //|FNM_EXTMATCH) ==
 				0;
-			if(match && path->name[i].paths == NULL)
+			if(match && !path->name[i].paths)
 				/*
 				 * match on a leaf component, any subdirectories
 				 * will implicitly match, therefore return an
@@ -1270,7 +1270,7 @@ void pre_scan(char *parent_name, unsigned int start_block, unsigned int offset,
 	struct inode *i;
 	struct dir *dir = s_ops.squashfs_opendir(start_block, offset, &i);
 
-	if(dir == NULL)
+	if(!dir)
 		return;
 
 	while(squashfs_readdir(dir, &name, &start_block, &offset, &type)) {
@@ -1286,11 +1286,11 @@ void pre_scan(char *parent_name, unsigned int start_block, unsigned int offset,
 
 		if(type == SQUASHFS_DIR_TYPE)
 			pre_scan(parent_name, start_block, offset, new);
-		else if(new == NULL) {
+		else if(!new) {
 			if(type == SQUASHFS_FILE_TYPE ||
 					type == SQUASHFS_LREG_TYPE) {
 				i = s_ops.read_inode(start_block, offset);
-				if(created_inode[i->inode_number - 1] == NULL) {
+				if(!created_inode[i->inode_number - 1]) {
 					created_inode[i->inode_number - 1] =
 						(char *) i;
 					total_blocks += (i->data +
@@ -1317,7 +1317,7 @@ void dir_scan(char *parent_name, unsigned int start_block, unsigned int offset,
 	struct inode *i;
 	struct dir *dir = s_ops.squashfs_opendir(start_block, offset, &i);
 
-	if(dir == NULL) {
+	if(!dir) {
 		ERROR("dir_scan: failed to read directory %s, skipping\n",
 			parent_name);
 		return;
@@ -1348,7 +1348,7 @@ if (!use_out) {
 
 		if(type == SQUASHFS_DIR_TYPE)
 			dir_scan(pathname, start_block, offset, new);
-		else if(new == NULL) {
+		else if(!new) {
 			i = s_ops.read_inode(start_block, offset);
 
 			if(lsonly || info)
@@ -1610,7 +1610,7 @@ struct pathname *process_extract_files(struct pathname *path, char *filename)
 	char name[16384];
 
 	fd = fopen(filename, "r");
-	if(fd == NULL)
+	if(!fd)
 		EXIT_UNSQUASH("Could not open %s, because %s\n", filename,
 			strerror(errno));
 
@@ -1667,7 +1667,7 @@ void *writer(void *arg)
 		int failed = FALSE;
 		int error;
 
-		if(file == NULL) {
+		if(!file) {
 			queue_put(from_writer, NULL);
 			continue;
 		}
@@ -1862,7 +1862,7 @@ void initialise_threads(int fragment_buffer_size, int data_buffer_size)
 	processors = 1;
 
 	thread = malloc((3 + processors) * sizeof(pthread_t));
-	if(thread == NULL)
+	if(!thread)
 		EXIT_UNSQUASH("Out of memory allocating thread descriptors\n");
 	deflator_thread = &thread[3];
 
@@ -2196,19 +2196,19 @@ options:
 	initialise_threads(fragment_buffer_size, data_buffer_size);
 
 	fragment_data = malloc(block_size);
-	if(fragment_data == NULL)
+	if(!fragment_data)
 		EXIT_UNSQUASH("failed to allocate fragment_data\n");
 
 	file_data = malloc(block_size);
-	if(file_data == NULL)
+	if(!file_data)
 		EXIT_UNSQUASH("failed to allocate file_data");
 
 	data = malloc(block_size);
-	if(data == NULL)
+	if(!data)
 		EXIT_UNSQUASH("failed to allocate data\n");
 
 	created_inode = malloc(sBlk.s.inodes * sizeof(char *));
-	if(created_inode == NULL)
+	if(!created_inode)
 		EXIT_UNSQUASH("failed to allocate created_inode\n");
 
 	memset(created_inode, 0, sBlk.s.inodes * sizeof(char *));

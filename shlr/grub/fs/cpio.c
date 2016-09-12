@@ -112,7 +112,7 @@ grub_cpio_find_file (struct grub_cpio_data *data, char **name,
       if (hd.namesize & 1)
 	hd.namesize++;
 
-      if ((*name = grub_malloc (hd.namesize)) == NULL)
+      if (!(*name = grub_malloc (hd.namesize)))
 	return grub_errno;
 
       if (grub_disk_read (data->disk, 0, data->hofs + sizeof (hd),
@@ -149,7 +149,7 @@ grub_cpio_find_file (struct grub_cpio_data *data, char **name,
       if (grub_memcmp (hd.magic, MAGIC_USTAR, sizeof (MAGIC_USTAR) - 1))
 	return grub_error (GRUB_ERR_BAD_FS, "invalid tar archive");
 
-      if ((*name = grub_strdup (hd.name)) == NULL)
+      if (!(*name = grub_strdup (hd.name)))
 	return grub_errno;
 
       data->size = grub_strtoul (hd.size, NULL, 8);

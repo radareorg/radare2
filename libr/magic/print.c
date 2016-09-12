@@ -208,7 +208,7 @@ const char *file_fmttime(ut32 v, int local) {
 			struct tm *tm1;
 			(void)time(&now);
 			tm1 = localtime(&now);
-			if (tm1 == NULL)
+			if (!tm1)
 				return "*Invalid time*";
 			daylight = tm1->tm_isdst;
 		}
@@ -217,7 +217,7 @@ const char *file_fmttime(ut32 v, int local) {
 		if (daylight)
 			t += 3600;
 		tm = gmtime(&t);
-		if (tm == NULL)
+		if (!tm)
 			return "*Invalid time*";
 		pp = asctime (tm);
 	}

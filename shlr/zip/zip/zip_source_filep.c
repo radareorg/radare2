@@ -62,10 +62,10 @@ ZIP_EXTERN struct zip_source *
 zip_source_filep(struct zip *za, FILE *file, zip_uint64_t start,
 		 zip_int64_t len)
 {
-    if (za == NULL)
+    if (!za)
 	return NULL;
 
-    if (file == NULL || len < -1) {
+    if (!file || len < -1) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }
@@ -83,19 +83,19 @@ _zip_source_file_or_p(struct zip *za, const char *fname, FILE *file,
     struct read_file *f;
     struct zip_source *zs;
 
-    if (file == NULL && fname == NULL) {
+    if (!file && !fname) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }
 
-    if ((f=(struct read_file *)malloc(sizeof(struct read_file))) == NULL) {
+    if (!(f=(struct read_file *)malloc(sizeof(struct read_file)))) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	return NULL;
     }
 
     f->fname = NULL;
     if (fname) {
-	if ((f->fname=strdup(fname)) == NULL) {
+	if (!(f->fname=strdup(fname))) {
 	    _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	    free(f);
 	    return NULL;
@@ -110,7 +110,7 @@ _zip_source_file_or_p(struct zip *za, const char *fname, FILE *file,
     else
 	zip_stat_init(&f->st);
 
-    if ((zs=zip_source_function(za, read_file, f)) == NULL) {
+    if (!(zs=zip_source_function(za, read_file, f))) {
 	free(f);
 	return NULL;
     }
@@ -133,7 +133,7 @@ read_file(void *state, void *data, zip_uint64_t len, enum zip_source_cmd cmd)
     switch (cmd) {
     case ZIP_SOURCE_OPEN:
 	if (z->fname) {
-	    if ((z->f=fopen(z->fname, "rb")) == NULL) {
+	    if (!(z->f=fopen(z->fname, "rb"))) {
 		z->e[0] = ZIP_ER_OPEN;
 		z->e[1] = errno;
 		return -1;

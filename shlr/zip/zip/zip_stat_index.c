@@ -44,10 +44,10 @@ zip_stat_index(struct zip *za, zip_uint64_t index, zip_flags_t flags,
     const char *name;
     struct zip_dirent *de;
 
-    if ((de=_zip_get_dirent(za, index, flags, NULL)) == NULL)
+    if (!(de=_zip_get_dirent(za, index, flags, NULL)))
 	return -1;
 
-    if ((name=zip_get_name(za, index, flags)) == NULL)
+    if (!(name=zip_get_name(za, index, flags)))
 	return -1;
     
 

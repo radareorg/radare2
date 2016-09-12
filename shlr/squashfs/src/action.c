@@ -118,11 +118,11 @@ static struct expr *create_expr(struct expr *lhs, int op, struct expr *rhs)
 {
 	struct expr *expr;
 
-	if (rhs == NULL)
+	if (!rhs)
 		return NULL;
 
 	expr = malloc(sizeof(*expr));
-	if (expr == NULL)
+	if (!expr)
 		return NULL;
 
 	expr->type = OP_TYPE;
@@ -138,11 +138,11 @@ static struct expr *create_unary_op(struct expr *lhs, int op)
 {
 	struct expr *expr;
 
-	if (lhs == NULL)
+	if (!lhs)
 		return NULL;
 
 	expr = malloc(sizeof(*expr));
-	if (expr == NULL)
+	if (!expr)
 		return NULL;
 
 	expr->type = UNARY_TYPE;
@@ -352,7 +352,7 @@ int parse_action(char *s)
 		}
 
 		argv = realloc(argv, (args + 1) * sizeof(char *));
-		if (argv == NULL) {
+		if (!argv) {
 			printf("Realloc failed in parse_action\n");
 			goto failed;
 		}
@@ -399,7 +399,7 @@ skip_args:
 	
 	expr = parse_expr(0);
 
-	if (expr == NULL)
+	if (!expr)
 		goto failed;
 
 	spec_list = realloc(spec_list, (spec_count + 1) *
@@ -513,7 +513,7 @@ void eval_actions(struct dir_ent *dir_ent)
 	for (i = 0; i < spec_count; i++) {
 		struct action *action = &spec_list[i];
 
-		if (action->action->run_action == NULL)
+		if (!action->action->run_action)
 			/* specialised action handler exists */
 			continue;
 
@@ -561,7 +561,7 @@ void *get_frag_action(void *fragment)
 	struct action *spec_list_end = &spec_list[spec_count];
 	struct action *action;
 
-	if (fragment == NULL)
+	if (!fragment)
 		return &def_fragment;
 
 	if (spec_count == 0)
@@ -717,7 +717,7 @@ int parse_uid_args(struct action_entry *action, int args, char **argv,
 		return 0;
 
 	uid_info = malloc(sizeof(struct uid_info));
-	if (uid_info == NULL) {
+	if (!uid_info) {
 		printf("Out of memory in action uid\n");
 		return 0;
 	}
@@ -740,7 +740,7 @@ int parse_gid_args(struct action_entry *action, int args, char **argv,
 		return 0;
 
 	gid_info = malloc(sizeof(struct gid_info));
-	if (gid_info == NULL) {
+	if (!gid_info) {
 		printf("Out of memory in action gid\n");
 		return 0;
 	}
@@ -767,7 +767,7 @@ int parse_guid_args(struct action_entry *action, int args, char **argv,
 		return 0;
 
 	guid_info = malloc(sizeof(struct guid_info));
-	if (guid_info == NULL) {
+	if (!guid_info) {
 		printf("Out of memory in action guid\n");
 		return 0;
 	}
@@ -836,7 +836,7 @@ int parse_octal_mode_args(unsigned int mode, int bytes, int args, char **argv,
 	}
 
 	mode_data = malloc(sizeof(struct mode_data));
-	if (mode_data == NULL) {
+	if (!mode_data) {
 		printf("Out of memory in action mode\n");
 		return 0;
 	}
@@ -862,7 +862,7 @@ struct mode_data *parse_sym_mode_arg(char *arg)
 	int op;
 	char X = 0;
 
-	if (mode_data == NULL)
+	if (!mode_data)
 		return NULL;
 
 	if (arg[0] != 'u' && arg[0] != 'g' && arg[0] != 'o' && arg[0] != 'a') {
@@ -976,7 +976,7 @@ int parse_sym_mode_args(struct action_entry *action, int args, char **argv,
 	for (i = 0; i < args; i++) {
 		struct mode_data *entry = parse_sym_mode_arg(argv[i]);
 
-		if (entry == NULL) {
+		if (!entry) {
 			printf("Out of memory in action mode\n");
 			return 0;
 		}
@@ -1091,7 +1091,7 @@ int parse_empty_args(struct action_entry *action, int args, char **argv,
 	}
 
 	empty_data = malloc(sizeof(*empty_data));
-	if (empty_data == NULL) {
+	if (!empty_data) {
 		printf("Out of memory in action empty\n");
 		return 0;
 	}
@@ -1203,7 +1203,7 @@ int parse_number_arg(struct test_entry *test, struct atom *atom)
 		return 0;
 
 	number = malloc(sizeof(*number));
-	if (number == NULL) {
+	if (!number) {
 		printf("Out of memory in parse test\n");
 		return 0;
 	}
@@ -1233,7 +1233,7 @@ int parse_range_args(struct test_entry *test, struct atom *atom)
 		return 0;
 
 	range = malloc(sizeof(*range));
-	if (range == NULL) {
+	if (!range) {
 		printf("Out of memory in parse test\n");
 		return 0;
 	}

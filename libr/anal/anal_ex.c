@@ -131,14 +131,14 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (current_op) return current_op;
 	IFDBG eprintf("[==] r_anal_ex_get_op: Parsing op @ 0x%04"PFMT64x"\n", addr);
 
-	if (anal->cur == NULL ||
-		(anal->cur->op_from_buffer == NULL && anal->cur->op == NULL) ) {
+	if (!anal->cur ||
+		(!anal->cur->op_from_buffer && !anal->cur->op) ) {
 		return NULL;
 	}
 
 
 	if (!r_anal_state_addr_is_valid(state, addr) ||
-		(anal->cur && (anal->cur->op == NULL && anal->cur->op_from_buffer == NULL))) {
+		(anal->cur && (!anal->cur->op && !anal->cur->op_from_buffer))) {
 		state->done = 1;
 		return NULL;
 	}
@@ -165,10 +165,10 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (current_bb) return current_bb;
 	IFDBG eprintf("[==] r_anal_ex_get_bb: Parsing op @ 0x%04"PFMT64x"\n", addr);
 
-	if (r_anal_state_addr_is_valid(state, addr) && op == NULL)
+	if (r_anal_state_addr_is_valid(state, addr) && !op)
 		op = r_anal_ex_get_op(anal, state, addr);
 
-	if (op == NULL || !r_anal_state_addr_is_valid(state, addr)) {
+	if (!op || !r_anal_state_addr_is_valid (state, addr)) {
 		return NULL;
 	}
 	current_bb = r_anal_bb_new ();
@@ -180,7 +180,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (r_anal_op_is_eob (op))
 		current_bb->type |= R_ANAL_BB_TYPE_LAST;
 
-	if (current_bb->op_bytes == NULL) {
+	if (!current_bb->op_bytes) {
 		current_bb->op_sz = state->current_op->size;
 		current_bb->op_bytes = malloc(current_bb->op_sz);
 		if (current_bb->op_bytes) {
@@ -287,7 +287,7 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 		r_anal_ex_get_bb (anal, state, state->current_addr);
 
 
-		if ( state->current_bb_head == NULL ) {
+		if (!state->current_bb_head ) {
 			state->current_bb_head = state->current_bb;
 			if (state->current_bb_head) {
 				state->current_bb_head->type |= R_ANAL_BB_TYPE_HEAD;

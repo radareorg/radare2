@@ -2072,7 +2072,7 @@ extern bfd_boolean _sh_elf_set_mach_from_flags
     {									\
       /* It seems this can happen with erroneous or unsupported		\
 	 input (mixing a.out and elf in an archive, for example.)  */	\
-      if (sym_hashes == NULL)						\
+      if (!sym_hashes)						\
 	return FALSE;							\
 									\
       h = sym_hashes[r_symndx - symtab_hdr->sh_info];			\
@@ -2088,8 +2088,8 @@ extern bfd_boolean _sh_elf_set_mach_from_flags
 	  || h->root.type == bfd_link_hash_defweak)			\
 	{								\
 	  sec = h->root.u.def.section;					\
-	  if (sec == NULL						\
-	      || sec->output_section == NULL)				\
+	  if (!sec						\
+	      || !sec->output_section)				\
 	    /* Set a flag that will be cleared later if we find a	\
 	       relocation value for this symbol.  output_section	\
 	       is typically NULL for symbols satisfied by a shared	\

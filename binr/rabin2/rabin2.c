@@ -245,7 +245,7 @@ static int rabin_dump_symbols(int len) {
 	char *ret;
 	int olen = len;
 
-	if ((symbols = r_bin_get_symbols (bin)) == NULL)
+	if (!(symbols = r_bin_get_symbols (bin)))
 		return false;
 
 	r_list_foreach (symbols, iter, symbol) {
@@ -278,7 +278,7 @@ static int rabin_dump_sections(char *scnname) {
 	char *ret;
 	int r;
 
-	if ((sections = r_bin_get_sections (bin)) == NULL)
+	if (!(sections = r_bin_get_sections (bin)))
 		return false;
 
 	r_list_foreach (sections, iter, section) {

@@ -40,7 +40,7 @@
 ZIP_EXTERN int
 zip_file_replace(struct zip *za, zip_uint64_t idx, struct zip_source *source, zip_flags_t flags)
 {
-    if (idx >= za->nentry || source == NULL) {
+    if (idx >= za->nentry || !source) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return -1;
     }
@@ -93,9 +93,9 @@ _zip_file_replace(struct zip *za, zip_uint64_t idx, const char *name, struct zip
      * needed for a double add of the same file name */
     _zip_unchange_data(za->entry+idx);
 
-    if (za->entry[idx].orig != NULL && (za->entry[idx].changes == NULL || (za->entry[idx].changes->changed & ZIP_DIRENT_COMP_METHOD) == 0)) {
-        if (za->entry[idx].changes == NULL) {
-            if ((za->entry[idx].changes=_zip_dirent_clone(za->entry[idx].orig)) == NULL) {
+    if (za->entry[idx].orig != NULL && (!za->entry[idx].changes || (za->entry[idx].changes->changed & ZIP_DIRENT_COMP_METHOD) == 0)) {
+        if (!za->entry[idx].changes) {
+            if (!(za->entry[idx].changes=_zip_dirent_clone(za->entry[idx].orig))) {
                 _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
                 return -1;
             }

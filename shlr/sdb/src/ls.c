@@ -79,7 +79,7 @@ SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
 	it->p = list->tail;
 	it->n = NULL;
 	list->tail = it;
-	if (list->head == NULL)
+	if (!list->head)
 		list->head = it;
 	list->length++;
 	return it;
@@ -94,7 +94,7 @@ SDB_API SdbListIter *ls_prepend(SdbList *list, void *data) {
 	it->n = list->head;
 	it->p = NULL;
 	list->head = it;
-	if (list->tail == NULL)
+	if (!list->tail)
 		list->tail = it;
 	list->length++;
 	return it;

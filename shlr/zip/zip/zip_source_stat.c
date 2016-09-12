@@ -42,12 +42,12 @@ zip_source_stat(struct zip_source *src, struct zip_stat *st)
 {
     zip_int64_t ret;
 
-    if (st == NULL) {
+    if (!st) {
 	src->error_source = ZIP_LES_INVAL;
 	return -1;
     }
 
-    if (src->src == NULL) {
+    if (!src->src) {
 	if (src->cb.f(src->ud, st, sizeof(*st), ZIP_SOURCE_STAT) < 0)
 	    return -1;
 	return 0;

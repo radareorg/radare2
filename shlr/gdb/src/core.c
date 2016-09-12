@@ -630,7 +630,7 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 	reg = strtok (buff, ",");
 	while ( reg != NULL ) {
 		char* name_end = strchr (reg, '=');
-		if (name_end == NULL) {
+		if (!name_end) {
 			eprintf ("Malformed argument: %s\n", reg);
 			free (buff);
 			return -1;

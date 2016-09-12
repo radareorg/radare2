@@ -173,7 +173,7 @@ find_attr (struct grub_ntfs_attr *at, unsigned char attr)
       char *pa;
 
       at->emft_buf = grub_malloc (at->mft->data->mft_size << BLK_SHR);
-      if (at->emft_buf == NULL)
+      if (!at->emft_buf)
 	return NULL;
 
       pa = at->attr_end;
@@ -245,13 +245,13 @@ locate_attr (struct grub_ntfs_attr *at, struct grub_ntfs_file *mft,
   char *pa;
 
   init_attr (at, mft);
-  if ((pa = find_attr (at, attr)) == NULL)
+  if (!(pa = find_attr (at, attr)))
     return NULL;
   if ((at->flags & AF_ALST) == 0)
     {
       while (1)
 	{
-	  if ((pa = find_attr (at, attr)) == NULL)
+	  if (!(pa = find_attr (at, attr)))
 	    break;
 	  if (at->flags & AF_ALST)
 	    return pa;
@@ -427,7 +427,7 @@ read_data (struct grub_ntfs_attr *at, char *pa, char *dest,
       else
 	{
 	  at->sbuf = grub_malloc (COM_LEN);
-	  if (at->sbuf == NULL)
+	  if (!at->sbuf)
 	    return grub_errno;
 	  at->save_pos = 1;
 	}
@@ -563,7 +563,7 @@ init_file (struct grub_ntfs_file *mft, grub_uint32_t mftno)
   mft->inode_read = 1;
 
   mft->buf = grub_malloc (mft->data->mft_size << BLK_SHR);
-  if (mft->buf == NULL)
+  if (!mft->buf)
     return grub_errno;
 
   if (read_mft (mft->data, mft->buf, mftno, &mft->sector))
@@ -578,7 +578,7 @@ init_file (struct grub_ntfs_file *mft, grub_uint32_t mftno)
       char *pa;
 
       pa = locate_attr (&mft->attr, mft, AT_DATA);
-      if (pa == NULL)
+      if (!pa)
 	return grub_error (GRUB_ERR_BAD_FS, "no $DATA in MFT 0x%X", mftno);
 
       if (!pa[8])
@@ -652,7 +652,7 @@ list_file (struct grub_ntfs_file *diro, char *pos,
 	  fdiro->ino = u32at (pos, 0);
 
 	  ustr = grub_malloc (ns * 4 + 1);
-	  if (ustr == NULL){
+	  if (!ustr){
 		  grub_free(fdiro);
 	    return 0;
 	  }
@@ -705,7 +705,7 @@ grub_ntfs_iterate_dir (grub_fshelp_node_t dir,
   init_attr (at, mft);
   while (1)
     {
-      if ((cur_pos = find_attr (at, AT_INDEX_ROOT)) == NULL)
+      if (!(cur_pos = find_attr (at, AT_INDEX_ROOT)))
 	{
 	  grub_error (GRUB_ERR_BAD_FS, "no $INDEX_ROOT");
 	  goto done;
@@ -747,7 +747,7 @@ grub_ntfs_iterate_dir (grub_fshelp_node_t dir,
                         u32at (cur_pos, 0x28));
 
           bmp = grub_malloc (bitmap_len);
-          if (bmp == NULL)
+          if (!bmp)
             goto done;
 
 	  if (is_resident)
@@ -794,7 +794,7 @@ grub_ntfs_iterate_dir (grub_fshelp_node_t dir,
       grub_disk_addr_t v, i;
 
       indx = grub_malloc (mft->data->idx_size << BLK_SHR);
-      if (indx == NULL)
+      if (!indx)
 	goto done;
 
       v = 1;
@@ -1080,7 +1080,7 @@ grub_ntfs_label (grub_device_t device, char **label)
   if (!mft->inode_read)
     {
       mft->buf = grub_malloc (mft->data->mft_size << BLK_SHR);
-      if (mft->buf == NULL)
+      if (!mft->buf)
 	goto fail;
 
       if (read_mft (mft->data, mft->buf, mft->ino, &mft->sector))

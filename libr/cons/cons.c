@@ -297,7 +297,7 @@ static void palloc(int moar) {
 	if (moar <= 0) {
 		return;
 	}
-	if (I.buffer == NULL) {
+	if (!I.buffer) {
 		int new_sz;
 		if ((INT_MAX - MOAR) < moar) {
 			return;

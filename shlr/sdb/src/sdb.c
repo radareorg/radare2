@@ -753,7 +753,7 @@ SDB_API int sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas) {
 	char *buf;
 	ut32 hash, pos, len;
 	SdbKv *kv;
-	if (key == NULL) {
+	if (!key) {
 		s->expire = parse_expire (expire);
 		return 1;
 	}

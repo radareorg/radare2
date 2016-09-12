@@ -393,7 +393,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	item->size = size;
 
 	list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
-	if (list == NULL) {
+	if (!list) {
 		list = r_list_new ();
 		r_hashtable64_insert (f->ht_off, XOROFF(off), list);
 	}

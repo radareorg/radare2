@@ -43,7 +43,7 @@ zip_source_close(struct zip_source *src)
     if (!src->is_open)
 	return;
 
-    if (src->src == NULL)
+    if (!src->src)
 	(void)src->cb.f(src->ud, NULL, 0, ZIP_SOURCE_CLOSE);
     else {
 	(void)src->cb.l(src->src, src->ud, NULL, 0, ZIP_SOURCE_CLOSE);

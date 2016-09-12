@@ -31,7 +31,7 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 	}
         if (n<0 || n>15)
                 return NULL;
-	if (fmt == NULL)
+	if (!fmt)
 		return Key[n];
 	va_start (ap, fmt);
 	*Key[n] = 0;

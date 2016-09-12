@@ -141,7 +141,7 @@ static int read_xattrs_from_system(char *filename, struct xattr_list **xattrs)
 		}
 
 		xattr_names = malloc(size);
-		if(xattr_names == NULL) {
+		if(!xattr_names) {
 			ERROR("Out of memory in read_attrs\n");
 			return 0;
 		}
@@ -169,7 +169,7 @@ static int read_xattrs_from_system(char *filename, struct xattr_list **xattrs)
 	for(i = 0, p = xattr_names; p < xattr_names + size; i++) {
 		struct xattr_list *x = realloc(xattr_list, (i + 1) *
 						sizeof(struct xattr_list));
-		if(x == NULL) {
+		if(!x) {
 			ERROR("Out of memory in read_attrs\n");
 			goto failed;
 		} else
@@ -198,7 +198,7 @@ static int read_xattrs_from_system(char *filename, struct xattr_list **xattrs)
 			}
 
 			xattr_list[i].value = malloc(vsize);
-			if(xattr_list[i].value == NULL) {
+			if(!xattr_list[i].value) {
 				ERROR("Out of memory in read_attrs\n");
 				free(xattr_list[i].full_name);
 				goto failed;
@@ -273,7 +273,7 @@ static void *get_xattr_space(unsigned int req_size, long long *disk)
 				((SQUASHFS_METADATA_SIZE << 1)) + 2) {
 			xattr_table = realloc(xattr_table, xattr_size +
 				(SQUASHFS_METADATA_SIZE << 1) + 2);
-			if(xattr_table == NULL) {
+			if(!xattr_table) {
 				goto failed;
 			}
 			xattr_size += (SQUASHFS_METADATA_SIZE << 1) + 2;
@@ -298,7 +298,7 @@ static void *get_xattr_space(unsigned int req_size, long long *disk)
 			int realloc_size = req_size - data_space;
 			data_cache = realloc(data_cache, cache_size +
 				realloc_size);
-			if(data_cache == NULL) {
+			if(!data_cache) {
 				goto failed;
 			}
 			cache_size += realloc_size;
@@ -350,10 +350,10 @@ static struct dupl_id *check_id_dupl(struct xattr_list *xattr_list, int xattrs)
 			break;
 	}
 
-	if(entry == NULL) {
+	if(!entry) {
 		/* no duplicate exists */
 		entry = malloc(sizeof(*entry));
-		if(entry == NULL) {
+		if(!entry) {
 			ERROR("malloc failed in check_ip_dupl\n");
 			return NULL;
 		}
@@ -385,7 +385,7 @@ static void check_value_dupl(struct xattr_list *xattr)
 			break;
 	}
 
-	if(entry == NULL) {
+	if(!entry) {
 		/*
 		 * No duplicate exists, add to hash table, and mark as
 		 * requiring writing
@@ -418,7 +418,7 @@ static int get_xattr_id(int xattrs, struct xattr_list *xattr_list,
 
 	xattr_id_table = realloc(xattr_id_table, (xattr_ids + 1) *
 		sizeof(struct squashfs_xattr_id));
-	if(xattr_id_table == NULL) {
+	if(!xattr_id_table) {
 		ERROR("Out of memory in xattr_id_table reallocation!\n");
 		return -1;
 	}
@@ -463,7 +463,7 @@ long long write_xattrs()
 				((SQUASHFS_METADATA_SIZE << 1)) + 2) {
 			xattr_table = realloc(xattr_table, xattr_size +
 				(SQUASHFS_METADATA_SIZE << 1) + 2);
-			if(xattr_table == NULL) {
+			if(!xattr_table) {
 				goto failed;
 			}
 			xattr_size += (SQUASHFS_METADATA_SIZE << 1) + 2;
@@ -518,7 +518,7 @@ int generate_xattrs(int xattrs, struct xattr_list *xattr_list)
 	 * id
 	 */
 	xattr_dupl = check_id_dupl(xattr_list, xattrs);
-	if (xattr_dupl == NULL)
+	if (!xattr_dupl)
 		return SQUASHFS_INVALID_XATTR;
 	if(xattr_dupl->xattr_id != SQUASHFS_INVALID_XATTR)
 		return xattr_dupl->xattr_id;
@@ -684,7 +684,7 @@ int get_xattrs(int fd, struct squashfs_super_block *sBlk)
 	 */
 	for(i = 0; i < ids; i++) {
 		struct xattr_list *xattr_list = get_xattr(i, &count);
-		if(xattr_list == NULL) {
+		if(!xattr_list) {
 			res = 0;
 			goto done;
 		}
@@ -722,7 +722,7 @@ int save_xattrs()
 	 * operations will delete the current contents
 	 */
 	sdata_cache = malloc(cache_bytes);
-	if(sdata_cache == NULL)
+	if(!sdata_cache)
 		goto failed;
 
 	memcpy(sdata_cache, data_cache, cache_bytes);

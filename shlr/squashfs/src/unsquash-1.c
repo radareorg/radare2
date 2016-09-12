@@ -161,7 +161,7 @@ struct inode *read_inode_1(unsigned int start_block, unsigned int offset)
 				memcpy(inodep, block_ptr, sizeof(*inodep));
 
 			i.symlink = malloc(inodep->symlink_size + 1);
-			if(i.symlink == NULL)
+			if(!i.symlink)
 				EXIT_UNSQUASH("read_inode: failed to malloc "
 					"symlink data\n");
 			strncpy(i.symlink, block_ptr +
@@ -219,7 +219,7 @@ struct dir *squashfs_opendir_1(unsigned int block_start, unsigned int offset,
 	*i = s_ops.read_inode(block_start, offset);
 
 	dir = malloc(sizeof(struct dir));
-	if(dir == NULL)
+	if(!dir)
 		EXIT_UNSQUASH("squashfs_opendir: malloc failed!\n");
 
 	dir->dir_count = 0;
@@ -290,7 +290,7 @@ struct dir *squashfs_opendir_1(unsigned int block_start, unsigned int offset,
 			if((dir->dir_count % DIR_ENT_SIZE) == 0) {
 				new_dir = realloc(dir->dirs, (dir->dir_count +
 					DIR_ENT_SIZE) * sizeof(struct dir_ent));
-				if(new_dir == NULL)
+				if(!new_dir)
 					EXIT_UNSQUASH("squashfs_opendir: "
 						"realloc failed!\n");
 				dir->dirs = new_dir;
@@ -323,7 +323,7 @@ int read_uids_guids_1()
 
 	uid_table = malloc((sBlk.no_uids + sBlk.no_guids) *
 		sizeof(unsigned int));
-	if(uid_table == NULL) {
+	if(!uid_table) {
 		ERROR("read_uids_guids: failed to allocate uid/gid table\n");
 		return FALSE;
 	}

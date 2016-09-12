@@ -140,7 +140,7 @@ int scan_inode_table(int fd, long long start, long long end,
 		if(size - bytes < SQUASHFS_METADATA_SIZE) {
 			*inode_table = realloc(*inode_table, size
 				+= SQUASHFS_METADATA_SIZE);
-			if(*inode_table == NULL)
+			if(!*inode_table)
 				return FALSE;
 		}
 		TRACE("scan_inode_table: reading block 0x%llx\n", start);
@@ -208,7 +208,7 @@ int scan_inode_table(int fd, long long start, long long end,
 
 				block_list = malloc(blocks *
 					sizeof(unsigned int));
-				if(block_list == NULL) {
+				if(!block_list) {
 					ERROR("Out of memory in block list "
 						"malloc\n");
 					goto failed;
@@ -258,7 +258,7 @@ int scan_inode_table(int fd, long long start, long long end,
 
 				block_list = malloc(blocks *
 					sizeof(unsigned int));
-				if(block_list == NULL) {
+				if(!block_list) {
 					ERROR("Out of memory in block list "
 						"malloc\n");
 					goto failed;
@@ -503,7 +503,7 @@ unsigned char *squashfs_readdir(int fd, int root_entries,
 	size += offset;
 	directory_table = malloc((size + SQUASHFS_METADATA_SIZE * 2 - 1) &
 		~(SQUASHFS_METADATA_SIZE - 1));
-	if(directory_table == NULL)
+	if(!directory_table)
 		return NULL;
 	while(bytes < size) {
 		TRACE("squashfs_readdir: reading block 0x%llx, bytes read so "
@@ -563,7 +563,7 @@ unsigned int *read_id_table(int fd, struct squashfs_super_block *sBlk)
 	int res, i;
 
 	id_table = malloc(bytes);
-	if(id_table == NULL) {
+	if(!id_table) {
 		ERROR("Failed to allocate id table\n");
 		return NULL;
 	}
@@ -616,7 +616,7 @@ int read_fragment_table(int fd, struct squashfs_super_block *sBlk,
 
 	*fragment_table = malloc(sBlk->fragments *
 		sizeof(struct squashfs_fragment_entry));
-	if(*fragment_table == NULL) {
+	if(!*fragment_table) {
 		ERROR("Failed to allocate fragment table\n");
 		return 0;
 	}
@@ -665,7 +665,7 @@ int read_inode_lookup_table(int fd, struct squashfs_super_block *sBlk,
 		return 1;
 
 	*inode_lookup_table = malloc(lookup_bytes);
-	if(*inode_lookup_table == NULL) {
+	if(!*inode_lookup_table) {
 		ERROR("Failed to allocate inode lookup table\n");
 		return 0;
 	}
@@ -738,7 +738,7 @@ long long read_filesystem(char *root_name, int fd, struct squashfs_super_block *
 		goto error;
 
 	id_table = read_id_table(fd, sBlk);
-	if(id_table == NULL)
+	if(!id_table)
 		goto error;
 
 	res = scan_inode_table(fd, start, end, root_inode_start,
@@ -773,7 +773,7 @@ long long read_filesystem(char *root_name, int fd, struct squashfs_super_block *
 			*inode_dir_start_block, *inode_dir_offset,
 			*inode_dir_file_size, last_directory_block, sBlk,
 			push_directory_entry);
-		if(directory_table == NULL) {
+		if(!directory_table) {
 			ERROR("read_filesystem: Could not read root directory"
 				"\n");
 			goto error;
@@ -781,7 +781,7 @@ long long read_filesystem(char *root_name, int fd, struct squashfs_super_block *
 
 		root_inode_start -= start;
 		*cinode_table = malloc(root_inode_start);
-		if(*cinode_table == NULL) {
+		if(!*cinode_table) {
 			ERROR("read_filesystem: failed to alloc space for "
 				"existing filesystem inode table\n");
 			goto error;
@@ -791,7 +791,7 @@ long long read_filesystem(char *root_name, int fd, struct squashfs_super_block *
 			goto error;
 
 		*cdirectory_table = malloc(*last_directory_block);
-		if(*cdirectory_table == NULL) {
+		if(!*cdirectory_table) {
 			ERROR("read_filesystem: failed to alloc space for "
 				"existing filesystem directory table\n");
 			goto error;
@@ -802,7 +802,7 @@ long long read_filesystem(char *root_name, int fd, struct squashfs_super_block *
 			goto error;
 
 		*data_cache = malloc(root_inode_offset + *root_inode_size);
-		if(*data_cache == NULL) {
+		if(!*data_cache) {
 			ERROR("read_filesystem: failed to alloc inode cache\n");
 			goto error;
 		}
@@ -811,7 +811,7 @@ long long read_filesystem(char *root_name, int fd, struct squashfs_super_block *
 
 		*directory_data_cache = malloc(*inode_dir_offset +
 			*inode_dir_file_size);
-		if(*directory_data_cache == NULL) {
+		if(!*directory_data_cache) {
 			ERROR("read_filesystem: failed to alloc directory "
 				"cache\n");
 			goto error;

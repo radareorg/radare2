@@ -48,7 +48,7 @@ zip_discard(struct zip *za)
 {
     zip_uint64_t i;
 
-    if (za == NULL)
+    if (!za)
 	return;
 
     if (za->zn)

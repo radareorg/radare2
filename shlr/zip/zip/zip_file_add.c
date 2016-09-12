@@ -46,7 +46,7 @@
 ZIP_EXTERN zip_int64_t
 zip_file_add(struct zip *za, const char *name, struct zip_source *source, zip_flags_t flags)
 {
-    if (name == NULL || source == NULL) {
+    if (!name || !source) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return -1;
     }

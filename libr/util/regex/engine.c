@@ -182,7 +182,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 	/* this loop does only one repetition except for backrefs */
 	for (;;) {
 		endp = fast(m, start, stop, gf, gl);
-		if (endp == NULL) {		/* a miss */
+		if (!endp) {		/* a miss */
 			free(m->pmatch);
 			free(m->lastpos);
 			STATETEARDOWN(m);
@@ -205,14 +205,14 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 			break;		/* no further info needed */
 
 		/* oh my, he wants the subexpressions... */
-		if (m->pmatch == NULL) {
+		if (!m->pmatch) {
 			if ((m->g->nsub + 1) * sizeof(RRegexMatch) < m->g->nsub) {
 				return R_REGEX_ESPACE;
 			}
 			m->pmatch = (RRegexMatch *)malloc((m->g->nsub + 1) *
 							sizeof(RRegexMatch));
 		}
-		if (m->pmatch == NULL) {
+		if (!m->pmatch) {
 			STATETEARDOWN(m);
 			return(R_REGEX_ESPACE);
 		}
@@ -222,7 +222,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 			NOTE("dissecting");
 			dp = dissect(m, m->coldp, endp, gf, gl);
 		} else {
-			if (g->nplus > 0 && m->lastpos == NULL) {
+			if (g->nplus > 0 && !m->lastpos) {
 				if ((g->nplus + 1) * sizeof(char *) < g->nplus) {
 					free (m->pmatch);
 					STATETEARDOWN(m);
@@ -231,7 +231,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 				m->lastpos = (char **)malloc((g->nplus+1) *
 							sizeof(char *));
 			}
-			if (g->nplus > 0 && m->lastpos == NULL) {
+			if (g->nplus > 0 && !m->lastpos) {
 				free(m->pmatch);
 				STATETEARDOWN(m);
 				return(R_REGEX_ESPACE);
@@ -250,7 +250,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 				break;		/* defeat */
 			NOTE("backoff");
 			endp = slow(m, m->coldp, endp-1, gf, gl);
-			if (endp == NULL)
+			if (!endp)
 				break;		/* defeat */
 			/* try it on a shorter possibility */
 #ifndef NDEBUG
@@ -262,7 +262,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch pmatch[],
 			NOTE("backoff dissect");
 			dp = backref(m, m->coldp, endp, gf, gl, (sopno)0, 0);
 		}
-		assert(dp == NULL || dp == endp);
+		assert(!dp || dp == endp);
 		if (dp != NULL)		/* found a shorter one */
 			break;
 
@@ -399,12 +399,12 @@ dissect(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 			oldssp = ssp;
 			for (;;) {	/* find last match of innards */
 				sep = slow(m, ssp, rest, ssub, esub);
-				if (sep == NULL || sep == ssp)
+				if (!sep || sep == ssp)
 					break;	/* failed or matched null */
 				oldssp = ssp;	/* on to next try */
 				ssp = sep;
 			}
-			if (sep == NULL) {
+			if (!sep) {
 				/* last successful match */
 				sep = ssp;
 				ssp = oldssp;
@@ -618,7 +618,7 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 		/* try another pass */
 		m->lastpos[lev] = sp;
 		dp = backref(m, sp, stop, ss-OPND(s)+1, stopst, lev, rec);
-		if (dp == NULL)
+		if (!dp)
 			return(backref(m, sp, stop, ss+1, stopst, lev-1, rec));
 		else
 			return(dp);

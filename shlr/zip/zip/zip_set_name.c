@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -60,7 +60,7 @@ _zip_set_name(struct zip *za, zip_uint64_t idx, const char *name, zip_flags_t fl
 
     if (name && strlen(name) > 0) {
         /* XXX: check for string too long */
-	if ((str=_zip_string_new((const zip_uint8_t *)name, (zip_uint16_t)strlen(name), flags, &za->error)) == NULL)
+	if (!(str = _zip_string_new ((const zip_uint8_t *)name, (zip_uint16_t)strlen(name), flags, &za->error)))
 	    return -1;
 	if ((flags & ZIP_FL_ENCODING_ALL) == ZIP_FL_ENC_GUESS && _zip_guess_encoding(str, ZIP_ENCODING_UNKNOWN) == ZIP_ENCODING_UTF8_GUESSED)
 	    str->encoding = ZIP_ENCODING_UTF8_KNOWN;
@@ -93,10 +93,10 @@ _zip_set_name(struct zip *za, zip_uint64_t idx, const char *name, zip_flags_t fl
 	changed = !_zip_string_equal(e->orig->filename, str);
     else
 	changed = 1;
-	
+
     if (changed) {
-        if (e->changes == NULL) {
-            if ((e->changes=_zip_dirent_clone(e->orig)) == NULL) {
+        if (!e->changes) {
+            if (!(e->changes=_zip_dirent_clone(e->orig))) {
                 _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 		_zip_string_free(str);
                 return -1;

@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -46,12 +46,12 @@ zip_get_archive_comment(struct zip *za, int *lenp, zip_flags_t flags)
     zip_uint32_t len;
     const zip_uint8_t *str;
 
-    if ((flags & ZIP_FL_UNCHANGED) || (za->comment_changes == NULL))
+    if ((flags & ZIP_FL_UNCHANGED) || (!za->comment_changes))
 	comment = za->comment_orig;
     else
 	comment = za->comment_changes;
 
-    if ((str=_zip_string_get(comment, &len, flags, &za->error)) == NULL)
+    if (!(str = _zip_string_get (comment, &len, flags, &za->error)) )
 	return NULL;
 
     if (lenp)

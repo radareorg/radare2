@@ -4549,7 +4549,7 @@ arm_symbol_is_valid (asymbol * sym,
 {
   const char * name;
   
-  if (sym == NULL)
+  if (!sym)
     return FALSE;
 
   name = bfd_asymbol_name (sym);
@@ -4562,7 +4562,7 @@ arm_symbol_is_valid (asymbol * sym,
 void
 parse_arm_disassembler_option (char *option)
 {
-  if (option == NULL)
+  if (!option)
     return;
 
   if (CONST_STRNEQ (option, "reg-names-"))
@@ -4601,7 +4601,7 @@ parse_arm_disassembler_option (char *option)
 static void
 parse_disassembler_options (char *options)
 {
-  if (options == NULL)
+  if (!options)
     return;
 
   while (*options)
@@ -4834,7 +4834,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
     }
 
   /* PR 10288: Control which instructions will be disassembled.  */
-  if (info->private_data == NULL)
+  if (!info->private_data)
     {
       static struct arm_private_data private;
 
@@ -5014,7 +5014,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	    {
 	      addr = bfd_asymbol_value (info->symtab[n]);
 	      if (addr > pc
-		  && (info->section == NULL
+		  && (!info->section
 		      || info->section == info->symtab[n]->section))
 		{
 		  if (addr - pc < size)

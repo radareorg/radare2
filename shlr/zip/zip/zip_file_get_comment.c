@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -45,10 +45,10 @@ zip_file_get_comment(struct zip *za, zip_uint64_t idx, zip_uint32_t *lenp, zip_f
     zip_uint32_t len;
     const zip_uint8_t *str;
 
-    if ((de=_zip_get_dirent(za, idx, flags, NULL)) == NULL)
+    if (!(de=_zip_get_dirent(za, idx, flags, NULL)))
 	return NULL;
 
-    if ((str=_zip_string_get(de->comment, &len, flags, &za->error)) == NULL)
+    if (!(str = _zip_string_get (de->comment, &len, flags, &za->error)))
 	return NULL;
 
     if (lenp)

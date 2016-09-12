@@ -55,7 +55,7 @@ zip_dir_add(struct zip *za, const char *name, zip_flags_t flags)
 	return -1;
     }
 
-    if (name == NULL) {
+    if (!name) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return -1;
     }
@@ -64,7 +64,7 @@ zip_dir_add(struct zip *za, const char *name, zip_flags_t flags)
     len = strlen(name);
 
     if (name[len-1] != '/') {
-	if ((s=(char *)malloc(len+2)) == NULL) {
+	if (!(s=(char *)malloc(len+2))) {
 	    _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	    return -1;
 	}
@@ -73,7 +73,7 @@ zip_dir_add(struct zip *za, const char *name, zip_flags_t flags)
 	s[len+1] = '\0';
     }
 
-    if ((source=zip_source_buffer(za, NULL, 0, 0)) == NULL) {
+    if (!(source=zip_source_buffer(za, NULL, 0, 0))) {
 	free(s);
 	return -1;
     }

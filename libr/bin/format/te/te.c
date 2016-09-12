@@ -173,7 +173,7 @@ RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 
 	if (!bin || !bin->header)
 		return NULL;
-	if ((entry = malloc(sizeof(RBinAddr))) == NULL) {
+	if (!(entry = malloc(sizeof(RBinAddr)))) {
 		perror("malloc (entrypoint)");
 		return NULL;
 	}
@@ -325,7 +325,7 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 	shdr = bin->section_header;
 	sections_count = bin->header->NumberOfSections;
 
-	if ((sections = calloc((sections_count + 1), sizeof(struct r_bin_te_section_t))) == NULL) {
+	if (!(sections = calloc((sections_count + 1), sizeof(struct r_bin_te_section_t)))) {
 		perror ("malloc (sections)");
 		return NULL;
 	}

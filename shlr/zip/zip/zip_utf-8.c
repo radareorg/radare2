@@ -123,7 +123,7 @@ _zip_guess_encoding(struct zip_string *str, enum zip_encoding_type expected_enco
     const zip_uint8_t *name;
     zip_uint32_t i, j, ulen;
 
-    if (str == NULL)
+    if (!str)
 	return ZIP_ENCODING_ASCII;
 
     name = str->raw;
@@ -238,7 +238,7 @@ _zip_cp437_to_utf8(const zip_uint8_t * const _cp437buf, zip_uint32_t len,
     for (i=0; i<len; i++)
 	buflen += _zip_unicode_to_utf8_len(_cp437_to_unicode[cp437buf[i]]);
 
-    if ((utf8buf=(zip_uint8_t*)malloc(buflen)) == NULL) {
+    if (!(utf8buf=(zip_uint8_t*)malloc(buflen))) {
 	_zip_error_set(error, ZIP_ER_MEMORY, 0);
 	return NULL;
     }

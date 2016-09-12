@@ -45,13 +45,13 @@ static int squashfs_lzo_init(void **strm, int block_size, int flags)
 {
 	struct lzo_stream *stream;
 
-	if((stream = *strm = malloc(sizeof(struct lzo_stream))) == NULL)
+	if(!(stream = *strm = malloc(sizeof(struct lzo_stream))))
 		goto failed;
 	/* work memory for compression */
-	if((stream->wrkmem = malloc(LZO1X_999_MEM_COMPRESS)) == NULL)
+	if(!(stream->wrkmem = malloc(LZO1X_999_MEM_COMPRESS)))
 		goto failed2;
 	/* temporal output buffer */
-	if((stream->out = malloc(LZO_OUTPUT_BUFFER_SIZE(block_size))) == NULL)
+	if(!(stream->out = malloc(LZO_OUTPUT_BUFFER_SIZE(block_size))))
 		goto failed3;
 
 	return 0;

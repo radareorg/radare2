@@ -54,7 +54,7 @@ int read_fragment_table_2()
 
 	fragment_table = malloc(sBlk.s.fragments *
 		sizeof(squashfs_fragment_entry_2));
-	if(fragment_table == NULL)
+	if(!fragment_table)
 		EXIT_UNSQUASH("read_fragment_table: failed to allocate "
 			"fragment table\n");
 
@@ -226,7 +226,7 @@ struct inode *read_inode_2(unsigned int start_block, unsigned int offset)
 				memcpy(inodep, block_ptr, sizeof(*inodep));
 
 			i.symlink = malloc(inodep->symlink_size + 1);
-			if(i.symlink == NULL)
+			if(!i.symlink)
 				EXIT_UNSQUASH("read_inode: failed to malloc "
 					"symlink data\n");
 			strncpy(i.symlink, block_ptr +

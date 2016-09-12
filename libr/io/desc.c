@@ -37,7 +37,7 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 	if (fd==-1) eprintf ("WARNING: r_io_desc_new with fd = -1\n");
 	desc->state = R_IO_DESC_TYPE_OPENED;
 	desc->name = strdup (name);
-	if (desc->name == NULL) {
+	if (!desc->name) {
 		free (desc);
 		return NULL;
 	}

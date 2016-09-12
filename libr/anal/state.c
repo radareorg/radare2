@@ -41,7 +41,7 @@ R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth) {
 R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
 	if (!state || !bb)
 		return;
-	if (r_anal_state_search_bb (state, bb->addr) == NULL &&
+	if (!r_anal_state_search_bb (state, bb->addr) &&
 		state->current_fcn) {
 		RAnalBlock *tmp_bb;
 		IFDBG eprintf ("Inserting bb 0x%04"PFMT64x" into hash table\n", bb->addr);

@@ -33,7 +33,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[32];
-	if (buf_global == NULL)
+	if (!buf_global)
 		return;
 	sprintf (tmp, "0x%08"PFMT64x, (ut64)address);
 	strcat (buf_global, tmp);
@@ -42,11 +42,11 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
 	char *tmp;
-	if (buf_global == NULL || format == NULL)
+	if (!buf_global || !format)
 		return false;
 	va_start (ap, format);
  	tmp = malloc (strlen (format)+strlen (buf_global)+2);
-	if (tmp == NULL) {
+	if (!tmp) {
 		va_end (ap);
 		return false;
 	}

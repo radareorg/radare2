@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -45,17 +45,17 @@ struct zip_extra_field *
 _zip_ef_clone(const struct zip_extra_field *ef, struct zip_error *error)
 {
     struct zip_extra_field *head, *prev, *def;
-    
+
     head = prev = NULL;
-    
+
     while (ef) {
-        if ((def=_zip_ef_new(ef->id, ef->size, ef->data, ef->flags)) == NULL) {
+        if (!(def=_zip_ef_new(ef->id, ef->size, ef->data, ef->flags))) {
             _zip_error_set(error, ZIP_ER_MEMORY, 0);
             _zip_ef_free(head);
             return NULL;
         }
-        
-        if (head == NULL)
+
+        if (!head)
             head = def;
         if (prev)
             prev->next = def;
@@ -63,7 +63,7 @@ _zip_ef_clone(const struct zip_extra_field *ef, struct zip_error *error)
 
 	ef = ef->next;
     }
-    
+
     return head;
 }
 
@@ -93,7 +93,7 @@ _zip_ef_delete_by_id(struct zip_extra_field *ef, zip_uint16_t id, zip_uint16_t i
 			continue;
 		}
 	    }
-	    
+
 	    i++;
 	    if (i > id_idx)
 		break;
@@ -126,7 +126,7 @@ const zip_uint8_t *
 _zip_ef_get_by_id(const struct zip_extra_field *ef, zip_uint16_t *lenp, zip_uint16_t id, zip_uint16_t id_idx, zip_flags_t flags, struct zip_error *error)
 {
     static const zip_uint8_t empty[1] = { '\0' };
-    
+
     int i;
 
     i = 0;
@@ -158,7 +158,7 @@ _zip_ef_merge(struct zip_extra_field *to, struct zip_extra_field *from)
     struct zip_extra_field *ef2, *tt, *tail;
     int duplicate;
 
-    if (to == NULL)
+    if (!to)
 	return from;
 
     for (tail=to; tail->next; tail=tail->next)
@@ -193,7 +193,7 @@ _zip_ef_new(zip_uint16_t id, zip_uint16_t size, const zip_uint8_t *data, zip_fla
 {
     struct zip_extra_field *ef;
 
-    if ((ef=(struct zip_extra_field *)malloc(sizeof(*ef))) == NULL)
+    if (!(ef=(struct zip_extra_field *)malloc(sizeof(*ef))))
 	return NULL;
 
     ef->next = NULL;
@@ -201,7 +201,7 @@ _zip_ef_new(zip_uint16_t id, zip_uint16_t size, const zip_uint8_t *data, zip_fla
     ef->id = id;
     ef->size = size;
     if (size > 0) {
-	if ((ef->data=(zip_uint8_t *)_zip_memdup(data, size, NULL)) == NULL) {
+	if (!(ef->data=(zip_uint8_t *)_zip_memdup(data, size, NULL))) {
 	    free(ef);
 	    return NULL;
 	}
@@ -238,7 +238,7 @@ _zip_ef_parse(const zip_uint8_t *data, zip_uint16_t len, zip_flags_t flags, stru
 	    return NULL;
 	}
 
-	if ((ef2=_zip_ef_new(fid, flen, p, flags)) == NULL) {
+	if (!(ef2=_zip_ef_new(fid, flen, p, flags))) {
 	    _zip_error_set(error, ZIP_ER_MEMORY, 0);
 	    _zip_ef_free(ef_head);
 	    return NULL;
@@ -262,10 +262,10 @@ _zip_ef_remove_internal(struct zip_extra_field *ef)
 {
     struct zip_extra_field *ef_head;
     struct zip_extra_field *prev, *next;
-    
+
     ef_head = ef;
     prev = NULL;
-    
+
     while (ef) {
         if (ZIP_EF_IS_INTERNAL(ef->id)) {
             next = ef->next;
@@ -282,7 +282,7 @@ _zip_ef_remove_internal(struct zip_extra_field *ef)
             ef = ef->next;
         }
     }
-    
+
     return ef_head;
 }
 
@@ -333,7 +333,7 @@ _zip_read_local_ef(struct zip *za, zip_uint64_t idx)
 
     e = za->entry+idx;
 
-    if (e->orig == NULL || e->orig->local_extra_fields_read)
+    if (!e->orig || e->orig->local_extra_fields_read)
 	return 0;
 
 
@@ -362,21 +362,21 @@ _zip_read_local_ef(struct zip *za, zip_uint64_t idx)
 
 	ef_raw = _zip_read_data(NULL, za->zp, ef_len, 0, &za->error);
 
-	if (ef_raw == NULL)
+	if (!ef_raw)
 	    return -1;
 
-	if ((ef=_zip_ef_parse(ef_raw, ef_len, ZIP_EF_LOCAL, &za->error)) == NULL) {
+	if (!(ef = _zip_ef_parse(ef_raw, ef_len, ZIP_EF_LOCAL, &za->error))) {
 	    free(ef_raw);
 	    return -1;
 	}
 	free(ef_raw);
-	
+
         ef = _zip_ef_remove_internal(ef);
 	e->orig->extra_fields = _zip_ef_merge(e->orig->extra_fields, ef);
     }
 
     e->orig->local_extra_fields_read = 1;
-    
+
     if (e->changes && e->changes->local_extra_fields_read == 0) {
 	e->changes->extra_fields = e->orig->extra_fields;
 	e->changes->local_extra_fields_read = 1;

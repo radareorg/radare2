@@ -206,12 +206,12 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 
 	mapped = rv;
 
-	if (magic == NULL) {
+	if (!magic) {
 		file_delmagic (magic, mapped, nmagic);
 		return -1;
 	}
 
-	if ((ml = malloc (sizeof (*ml))) == NULL) {
+	if (!(ml = malloc (sizeof (*ml)))) {
 		file_delmagic (magic, mapped, nmagic);
 		file_oomem (ms, sizeof(*ml));
 		return -1;
@@ -260,13 +260,13 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
 	if (!fn) fn = getenv ("MAGIC");
 	if (!fn) fn = MAGICFILE;
 
-	if ((mfn = strdup (fn)) == NULL) {
+	if (!(mfn = strdup (fn))) {
 		file_oomem (ms, strlen (fn));
 		return NULL;
 	}
 	fn = mfn;
 
-	if ((mlist = malloc (sizeof (*mlist))) == NULL) {
+	if (!(mlist = malloc (sizeof (*mlist)))) {
 		free (mfn);
 		file_oomem (ms, sizeof (*mlist));
 		return NULL;
@@ -461,7 +461,7 @@ static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r
 	char line[BUFSIZ];
 	size_t lineno = 0;
 	FILE *f = r_sandbox_fopen (ms->file = file, "r");
-	if (f == NULL) {
+	if (!f) {
 		if (errno != ENOENT)
 			file_error (ms, errno, "cannot read magic file `%s'", file);
 		(*errs)++;
@@ -510,7 +510,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	ms->flags |= R_MAGIC_CHECK;	/* Enable checks for parsed files */
 
         maxmagic = MAXMAGIS;
-	if ((marray = calloc (maxmagic, sizeof(*marray))) == NULL) {
+	if (!(marray = calloc (maxmagic, sizeof(*marray)))) {
 		file_oomem (ms, maxmagic * sizeof(*marray));
 		return -1;
 	}
@@ -596,7 +596,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	for (i = 0; i < marraycount; i++)
 		mentrycount += marray[i].cont_count;
 
-	if ((*magicp = malloc (1+(sizeof(**magicp) * mentrycount))) == NULL) {
+	if (!(*magicp = malloc (1+(sizeof(**magicp) * mentrycount)))) {
 		file_oomem (ms, sizeof(**magicp) * mentrycount);
 		errs++;
 		goto out;
@@ -844,7 +844,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		if (me->cont_count == me->max_count) {
 			struct r_magic *nm;
 			size_t cnt = me->max_count + ALLOC_CHUNK;
-			if ((nm = realloc(me->mp, sizeof(*nm) * cnt)) == NULL) {
+			if (!(nm = realloc(me->mp, sizeof(*nm) * cnt))) {
 				file_oomem(ms, sizeof(*nm) * cnt);
 				return -1;
 			}
@@ -868,8 +868,8 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 			*mentryp = mp;
 		}
 		me = &(*mentryp)[*nmentryp];
-		if (me->mp == NULL) {
-			if ((m = malloc(sizeof(*m) * ALLOC_CHUNK)) == NULL) {
+		if (!me->mp) {
+			if (!(m = malloc(sizeof(*m) * ALLOC_CHUNK))) {
 				file_oomem(ms, sizeof(*m) * ALLOC_CHUNK);
 				return -1;
 			}
@@ -1383,7 +1383,7 @@ static int getvalue(RMagic *ms, struct r_magic *m, const char **p, int action) {
 	case FILE_REGEX:
 	case FILE_SEARCH:
 		*p = getstr(ms, *p, m->value.s, sizeof(m->value.s), &slen, action);
-		if (*p == NULL) {
+		if (!*p) {
 			if (ms->flags & R_MAGIC_CHECK)
 				file_magwarn(ms, "cannot get string from `%s'",
 				    m->value.s);
@@ -1624,7 +1624,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	void *mm = NULL;
 
 	dbname = mkdbname (fn, 0);
-	if (dbname == NULL)
+	if (!dbname)
 		goto error2;
 
 	if ((fd = r_sandbox_open (dbname, O_RDONLY|O_BINARY, 0)) == -1)
@@ -1647,7 +1647,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	}
 #define RET	2
 #else
-	if ((mm = malloc ((size_t)st.st_size)) == NULL) {
+	if (!(mm = malloc ((size_t)st.st_size))) {
 		file_oomem(ms, (size_t)st.st_size);
 		goto error1;
 	}
@@ -1719,7 +1719,7 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 
 	dbname = mkdbname(fn, 1);
 
-	if (dbname == NULL) 
+	if (!dbname) 
 		goto out;
 
 	if ((fd = r_sandbox_open(dbname, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644)) == -1) {

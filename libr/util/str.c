@@ -266,13 +266,13 @@ R_API void r_str_case(char *str, bool up) {
 R_API char *r_str_home(const char *str) {
 	char *dst, *home = r_sys_getenv (R_SYS_HOME);
 	size_t length;
-	if (home == NULL)
+	if (!home)
 		return NULL;
 	length = strlen (home) + 1;
 	if (str)
 		length += strlen (R_SYS_DIR) + strlen (str);
 	dst = (char *)malloc (length);
-	if (dst == NULL)
+	if (!dst)
 		goto fail;
 	strcpy (dst, home);
 	if (str) {
@@ -491,7 +491,7 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 R_API const char *r_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
-	if (ptr == NULL || idx < 0 /* prevent crashes with negative index */)
+	if (!ptr || idx < 0 /* prevent crashes with negative index */)
 		return (char *)nullstr;
 	for (i=0; *ptr && i != idx; i++)
 		ptr += strlen (ptr) + 1;
@@ -768,7 +768,7 @@ R_API char *r_str_word_get_first(const char *text) {
 	/* strdup */
 	len = strlen (text);
 	ret = (char *)malloc (len+1);
-	if (ret == NULL) {
+	if (!ret) {
 		eprintf ("Cannot allocate %d bytes.\n", len+1);
 		exit (1);
 	}
@@ -820,14 +820,14 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
 
 R_API char *r_str_prefix(char *ptr, const char *string) {
 	int slen, plen;
-	if (ptr == NULL)
+	if (!ptr)
 		return strdup (string);
 	//plen = r_str_len_utf8 (ptr);
 	//slen = r_str_len_utf8 (string);
 	plen = strlen (ptr);
 	slen = strlen (string);
 	ptr = realloc (ptr, slen + plen + 1);
-	if (ptr == NULL)
+	if (!ptr)
 		return NULL;
 	memmove (ptr+slen, ptr, plen+1);
 	memmove (ptr, string, slen);
@@ -854,7 +854,7 @@ R_API char *r_str_concat(char *ptr, const char *string) {
 	plen = strlen (ptr);
 	slen = strlen (string);
 	ptr = realloc (ptr, slen + plen + 1);
-	if (ptr == NULL) return NULL;
+	if (!ptr) return NULL;
 	memcpy (ptr+plen, string, slen+1);
 	return ptr;
 }
@@ -1875,7 +1875,7 @@ R_API int r_print_format_length (const char *fmt) {
 	bracket = strchr (arg,'{');
 	if (bracket) {
 		char *end = strchr (arg,'}');
-		if (end == NULL) {
+		if (!end) {
 			eprintf ("No end bracket. Try pm {ecx}b @ esi\n");
 			return 0;
 		}

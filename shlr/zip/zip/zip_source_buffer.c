@@ -54,15 +54,15 @@ zip_source_buffer(struct zip *za, const void *data, zip_uint64_t len, int freep)
     struct read_data *f;
     struct zip_source *zs;
 
-    if (za == NULL)
+    if (!za)
 	return NULL;
 
-    if (data == NULL && len > 0) {
+    if (!data && len > 0) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }
 
-    if ((f=(struct read_data *)malloc(sizeof(*f))) == NULL) {
+    if (!(f=(struct read_data *)malloc(sizeof(*f)))) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	return NULL;
     }
@@ -72,7 +72,7 @@ zip_source_buffer(struct zip *za, const void *data, zip_uint64_t len, int freep)
     f->freep = freep;
     f->mtime = time(NULL);
     
-    if ((zs=zip_source_function(za, read_data, f)) == NULL) {
+    if (!(zs=zip_source_function(za, read_data, f))) {
 	free(f);
 	return NULL;
     }
