@@ -747,21 +747,24 @@ static void esil_load_relative(xtensa_isa isa, xtensa_opcode opcode, xtensa_form
 	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
 
 	// example: l32r a2, 0x10
-	//          0x10,pc,-, // address on stack
-	//			0xFFFFFFFC,& // clear 3 lsb
+	//          0x10,$$,3,+ // l32r address + 3 on stack
+	//          0xFFFFFFFC,&, // clear 2 lsb
+	//          -, // subtract offset
 	//          [4], // read data
-	//			a2, // push data reg
-	//			= // assign to data reg
+	//          a2, // push data reg
+	//          = // assign to data reg
 
 	offset = - ((offset | 0xFFFF0000) << 2);
 
 	r_strbuf_appendf (
 		&op->esil,
 			"0x%x" 		CM
-			"pc"   		CM
-			"-"    		CM
+			"$$"   		CM
+			"3"		CM
+			"+"		CM
 			"0xFFFFFFFC"	CM
 			"&" 		CM
+			"-"    		CM
 			"[4]"		CM
 			"%s%d" 		CM
 			"=",
