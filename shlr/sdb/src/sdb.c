@@ -251,9 +251,8 @@ SDB_API int sdb_remove(Sdb *s, const char *key) {
 }
 
 // alias for '-key=str'.. '+key=str' concats
-SDB_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas) {
+SDB_API int sdb_uncat(Sdb *s, const char *key, const char *value) {
 	// remove 'value' from current key value.
-	// TODO: cas is ignored here
 	int vlen = 0;
 	char *p, *v = sdb_get_len (s, key, &vlen, NULL);
 	int mod = 0;

@@ -402,7 +402,7 @@ next_quote:
 				if (*cmd=='+') {
 					sdb_concat (s, cmd+1, val, 0);
 				} else {
-					sdb_uncat (s, cmd+1, val, 0);
+					sdb_uncat (s, cmd+1, val);
 				}
 			}
 		} else {
