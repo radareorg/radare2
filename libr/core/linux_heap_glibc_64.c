@@ -1037,8 +1037,7 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 				RHeap_MallocState64 *malloc_state = R_NEW0 (RHeap_MallocState64);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState64));
 				print_main_arena_64 (core, m_state, malloc_state, *input);
-				
-				free(malloc_state);
+				free (malloc_state);
 			}
 		}
 		break;
@@ -1056,8 +1055,7 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 				RHeap_MallocState64 *malloc_state = R_NEW0 (RHeap_MallocState64);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState64));
 				print_heap_bin_64 (core, m_state, malloc_state, bin); 
-				
-				free(malloc_state);
+				free (malloc_state);
 			}
 		}
 		break;
@@ -1080,8 +1078,7 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 				RHeap_MallocState64 *malloc_state = R_NEW0 (RHeap_MallocState64);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState64));
 				print_heap_fastbin_64 (core, m_state, malloc_state, bin); 
-					
-				free(malloc_state);
+				free (malloc_state);
 			}
 		}
 		break;
@@ -1098,8 +1095,7 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 					RHeap_MallocState64 *malloc_state = R_NEW0 (RHeap_MallocState64);
 					r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState64));
 					print_mmap_graph_64 (core, malloc_state, m_state);
-					
-					free(malloc_state);
+					free (malloc_state);
 				}
 			}
 		}
