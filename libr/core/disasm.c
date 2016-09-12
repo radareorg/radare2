@@ -2395,6 +2395,7 @@ static void ds_comment_newline(RDisasmState *ds) {
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
 	ut64 p = ds->analop.ptr;
+	ut64 v = ds->analop.val;
 	int aligned = 0;
 #define DOALIGN() \
 	if (!aligned) { \
@@ -2407,6 +2408,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		return;
 	if (!ds->show_slow) {
 		return;
+	}
+	if (((char)v > 0) && v>='!' && v<='~') {
+		char ch = v;
+		DOALIGN();
+		r_cons_printf (" ; '%c'", ch);
 	}
 	if (p == UT64_MAX) {
 		/* do nothing */
