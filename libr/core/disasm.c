@@ -604,7 +604,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
 			ds->at, R_ANAL_FCN_TYPE_NULL);
 		//if (f) {
-			core->parser->varlist = r_anal_var_list;
+			core->parser->varlist = r_anal_var_list_dynamic;
 			r_parse_varsub (core->parser, f, ds->at, ds->analop.size,
 				ds->opstr, ds->strsub, sizeof (ds->strsub));
 			if (*ds->strsub) {
@@ -3567,18 +3567,18 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			j++;
 			continue;
 		}
-		
+
 		ds = ds_init (core);
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
 		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i);
-		
+
 		if (ds->pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		}
 		f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
-			core->parser->varlist = r_anal_var_list;
+			core->parser->varlist = r_anal_var_list_dynamic;
 			r_parse_varsub (core->parser, f, at, ds->analop.size,
 				asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
 		}
