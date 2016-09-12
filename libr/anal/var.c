@@ -453,13 +453,14 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 	return count[type];
 }
 
-static void var_add_structure_fields_to_list(RAnal *a, const char *var_type, int delta, RList *list) {
+static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char* base_name, int delta, RList *list) {
+	/* ATTENTION: av->name might be freed and reassigned */
 	Sdb *TDB = a->sdb_types;
-	const char *type_kind = sdb_const_get (TDB, var_type, 0);
+	const char *type_kind = sdb_const_get (TDB, av->type, 0);
 	if (type_kind && r_str_startswith (type_kind, "struct")) {
 		char *field_name, *field_key, *field_type, *new_name;
 		int field_n, field_offset, field_count, field_size;
-		char *type_key = r_str_newf ("%s.%s", type_kind, var_type);
+		char *type_key = r_str_newf ("%s.%s", type_kind, av->type);
 		for (field_n = 0;
 			(field_name = sdb_array_get (TDB, type_key, field_n, NULL));
 			field_n++) {
@@ -468,7 +469,7 @@ static void var_add_structure_fields_to_list(RAnal *a, const char *var_type, int
 			field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
 			field_count = sdb_array_get_num (TDB, field_key, 2, NULL);
 			field_size = r_anal_type_get_size (a, field_type) * (field_count ? field_count : 1);
-			new_name = r_str_newf ( "%s.%s", vt.name, field_name);
+			new_name = r_str_newf ( "%s.%s", base_name, field_name);
 			if (field_offset == 0) {
 				free (av->name);
 				av->name = new_name;
@@ -480,7 +481,7 @@ static void var_add_structure_fields_to_list(RAnal *a, const char *var_type, int
 					continue;
 				}
 				fav->delta = delta + field_offset;
-				fav->kind = kind;
+				fav->kind = av->kind;
 				fav->name = new_name;
 				fav->size = field_size;
 				fav->type = strdup (field_type);
@@ -542,7 +543,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 					av->type = strdup (vt.type);
 					r_list_append (list, av);
 					if (dynamicVars) { // make dynamic variables like structure fields
-						var_add_structure_fields_to_list (a, av->type, delta, list);
+						var_add_structure_fields_to_list (a, av, vt.name, delta, list);
 					}
 					sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 				} else {
