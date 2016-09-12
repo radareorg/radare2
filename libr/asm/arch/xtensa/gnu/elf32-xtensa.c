@@ -19,9 +19,7 @@
    02110-1301, USA.  */
 
 #include "sysdep.h"
-//#include "bfd.h"
-
-#include <dis-asm.h>
+#include "dis-asm.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <strings.h>

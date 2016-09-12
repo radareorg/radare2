@@ -1,6 +1,7 @@
 include ../../config.mk
 include ../../../mk/platform.mk
 
+LINK+=-L../../util -lr_util
 LDFLAGS+=${LINK}
 
 nop:
@@ -8,6 +9,7 @@ nop:
 foo: all
 
 ALL_TARGETS=
+CFLAGS+=-I../../include
 ALGOS=aes.mk aes_cbc.mk
 include $(ALGOS)
 

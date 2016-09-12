@@ -2000,9 +2000,8 @@ static void _pointer_table (RCore *core, ut64 origin, ut64 offset, const ut8 *bu
 }
 
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
-static ut32 tmp_get_contsize (RAnalFunction *f)
-{
-	ut32 size = r_anal_fcn_contsize (f);
+static ut32 tmp_get_contsize (RAnalFunction *f) {
+	int size = r_anal_fcn_contsize (f);
 	size = (size > 0) ? size : r_anal_fcn_size (f);
 	return (size < 0) ? 0 : size;
 }

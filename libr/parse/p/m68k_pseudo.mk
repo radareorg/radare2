@@ -5,6 +5,7 @@ ALL_TARGETS+=${TARGET_M68KPSEUDO}
 STATIC_OBJ+=${OBJ_M68KPSEUDO}
 LIBDEPS=-L../../util -lr_util
 LIBDEPS+=-L../../flags -lr_flags
+LIBDEPS+=$(STOP)/zip/librz.a
 
 ${TARGET_M68KPSEUDO}: ${OBJ_M68KPSEUDO}
 	${CC} $(call libname,parse_m68k_pseudo) ${LIBDEPS} \

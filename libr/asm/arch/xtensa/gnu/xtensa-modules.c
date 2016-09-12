@@ -18,9 +18,12 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.  */
 
-#include "ansidecl.h"
-#include <xtensa-isa.h>
-#include "xtensa-isa-internal.h"
+#ifndef ATTRIBUTE_UNUSED
+#define ATTRIBUTE_UNUSED
+#endif
+//#include "ansidecl.h"
+#include "../../include/xtensa-isa.h"
+#include "../../include/xtensa-isa-internal.h"
 
 
 /* Sysregs.  */

@@ -1,6 +1,6 @@
 include ../../config.mk
 include ../../../mk/platform.mk
-include ../../util/deps.mk
+include ../../../shlr/zip/deps.mk
 
 CFLAGS+=-I../../include -Wall ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # -D__UNIX__

@@ -6,6 +6,7 @@ EXTRA_CLEAN=doclean
 NAME=r_anal
 DEPS=r_util r_reg r_syscall
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
+CFLAGS+=-I$(LTOP)/asm/arch/include
 
 LDFLAGS+=${BN_LIBS}
 
