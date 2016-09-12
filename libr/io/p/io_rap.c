@@ -118,7 +118,7 @@ static ut64 rap__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 		eprintf ("Unexpected lseek reply\n");
 		return -1;
 	}
-	offset = r_read_at_be64 (tmp + 1, 1);
+	offset = r_read_at_be64 (tmp, 1);
 	return offset;
 }
 

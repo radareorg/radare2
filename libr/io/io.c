@@ -993,7 +993,6 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 	if (!io || !desc || !out_sz) {
 		return NULL;
 	}
-
 	if (*out_sz == UT64_MAX) {
 		*out_sz = r_io_desc_size (io, desc);
 	}
