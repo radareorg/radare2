@@ -9,7 +9,9 @@ fi
 [ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
 
 # if set to 1 build without fork or debugger support
-APPSTORE_FRIENDLY=0
+if [ -z "${APPSTORE_FRIENDLY}" ]; then
+	APPSTORE_FRIENDLY=0
+fi
 
 export BUILD=1
 PREFIX="/usr"
