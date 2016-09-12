@@ -172,6 +172,7 @@ R2PM_FAIL() {
 R2PM_BEGIN() {
 	echo "Processing ${NAME} ..."
 	R2PM_GIT=""
+	R2PM_DEPS=""
 }
 
 R2PM_Info() {
@@ -198,6 +199,23 @@ R2PM_END() {
 	echo "${ACTION} Done For ${NAME}"
 }
 
+R2PM_DEPS() {
+	if [ -n "${R2PM_IGNORE_DEPS}" ]; then
+		return
+	fi
+	for a in $@ ; do
+		echo "DEPENDS: $a"
+		r2pm -w "$a"
+		doInstall=$?
+		if [ "${R2PM_UPGRADE}" ]; then
+			doInstall=1
+		fi
+		if [ $doInstall = 1 ]; then
+			r2pm -i "$a" || exit 1
+		fi
+	done
+}
+
 r2pm_install() {
 	if [ -z "$2" ]; then
 		R2PM_Info
@@ -210,7 +228,8 @@ r2pm_install() {
 			R2PM_INSTALL
 			R2PM_REGISTER
 		else
-			echo "Cannot find file"
+			echo "Cannot find $FILE"
+			exit 1
 		fi
 	fi
 }
@@ -313,6 +332,14 @@ case "$1" in
 		exit 1
 	fi
 	;;
+what|-w)
+	if [ -n "$2" ]; then
+		exec cat "${R2PM_USRDIR}/pkg/$2" 2> /dev/null
+	else
+		cd "${R2PM_USRDIR}/pkg/" 2> /dev/null
+		ls
+	fi
+	;;
 *|help|-h)
 	echo "Usage: r2pm [init|update|cmd] [...]"
 	echo "Commands:"
@@ -329,6 +356,7 @@ case "$1" in
 	echo " -v,version                  show version"
 	echo " -h,help                     show this message"
 	echo " -c,clean                    clear source cache"
+	echo " -w <pkgname>                what/where is installed"
 	echo " init | update ..            initialize/update database"
 	echo "Environment:"
 	echo "SUDO=sudo                    use this tool as sudo"
