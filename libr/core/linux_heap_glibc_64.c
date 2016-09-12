@@ -922,18 +922,18 @@ void print_malloc_states64( RCore *core, ut64 m_arena, RHeap_MallocState64 *main
 	PRINT_YA ("main_arena @ ");
 	PRINTF_BA ("0x%"PFMT64x"\n", m_arena);	
 
-	if (main_arena->next == m_arena) return;
-	else {
-		ta->next = main_arena->next;
-		while (ta->next != UT64_MAX && ta->next != m_arena) {
-			PRINT_YA ("thread arena @ ");
-			PRINTF_BA ("0x%"PFMT64x"\n", ta->next);
-			r_core_read_at (core, ta->next, (ut8 *)ta, sizeof (RHeap_MallocState64));
-		}
+	if (main_arena->next == m_arena) {
+		return;
+	}
+	ta->next = main_arena->next;
+	while (ta->next != UT64_MAX && ta->next != m_arena) {
+		PRINT_YA ("thread arena @ ");
+		PRINTF_BA ("0x%"PFMT64x"\n", ta->next);
+		r_core_read_at (core, ta->next, (ut8 *)ta, sizeof (RHeap_MallocState64));
 	}
 	free(ta);
-	return;
 }
+
 void print_inst_minfo64(RHeapInfo64 *heap_info, ut64 hinfo) {
 	PRINT_YA ("malloc_info @ ");
 	PRINTF_BA ("0x%"PFMT64x, hinfo);
@@ -952,8 +952,9 @@ void print_inst_minfo64(RHeapInfo64 *heap_info, ut64 hinfo) {
 void print_malloc_info64 (RCore *core, ut64 m_state) {
 	ut64 malloc_state = core->offset, h_info;
 	
-	if (malloc_state == m_state) PRINT_RA ("main_arena does not have an instance of malloc_info\n");
-	else {
+	if (malloc_state == m_state) {
+		PRINT_RA ("main_arena does not have an instance of malloc_info\n");
+	} else {
 		h_info = (malloc_state >> 16) << 16;
 		RHeapInfo64 *heap_info = R_NEW0 (RHeapInfo64);
 		r_core_read_at (core, h_info, (ut8*)heap_info, sizeof (RHeapInfo64));
@@ -1029,8 +1030,9 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 	case 'm': // "dmhm"	
 		if (r_resolve_main_arena_64 (core, &m_arena, main_arena)) {
 			input += 1;
-			if(!strcmp(input,"\0")) print_main_arena_64 (core, m_arena, main_arena, *input);
-			else {
+			if (!strcmp (input,"\0")) {
+				 print_main_arena_64 (core, m_arena, main_arena, *input);
+			} else {
 				ut64 m_state = strstr(input, "0x") ? (ut64)strtol (input, NULL, 0) : (ut64)strtol (input, NULL, 16); 
 				RHeap_MallocState64 *malloc_state = R_NEW0 (RHeap_MallocState64);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState64));
@@ -1043,8 +1045,9 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 	case 'b': // "dmhb"
 		if (r_resolve_main_arena_64 (core, &m_arena, main_arena)) {
 
-			if (!strstr (input+1, ":")) print_heap_bin_64 (core, m_arena, main_arena, input+1);
-			else {
+			if (!strstr (input+1, ":")) {
+				print_heap_bin_64 (core, m_arena, main_arena, input+1);
+			} else {
 				char *m_state_str, *bin, *dup = strdup (input+1);
 				bin = strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
@@ -1066,8 +1069,9 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 	case 'f': // "dmhf"
 		if (r_resolve_main_arena_64 (core, &m_arena, main_arena)) {
 
-			if (!strstr (input+1, ":")) print_heap_fastbin_64 (core, m_arena, main_arena, input+1);
-			else {
+			if (!strstr (input+1, ":")) {
+				print_heap_fastbin_64 (core, m_arena, main_arena, input+1);
+			} else {
 				char *m_state_str, *bin,  *dup = strdup (input+1);
 				bin = strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
@@ -1084,11 +1088,13 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 	case 'g': // "dmhg"
 		if (r_resolve_main_arena_64 (core, &m_arena, main_arena)) {
 			input += 1;
-			if(!strcmp (input, "\0")) print_heap_graph_64 (core, main_arena, &initial_brk);
-			else {
+			if (!strcmp (input, "\0")) {
+				 print_heap_graph_64 (core, main_arena, &initial_brk);
+			} else {
 				ut64 m_state = strstr (input, "0x") ? (ut64)strtol (input, NULL, 0) : (ut64)strtol (input, NULL, 16);
-				if (m_state == m_arena) print_heap_graph_64 (core, main_arena, &initial_brk);
-				else {
+				if (m_state == m_arena) {
+					print_heap_graph_64 (core, main_arena, &initial_brk);
+				} else {
 					RHeap_MallocState64 *malloc_state = R_NEW0 (RHeap_MallocState64);
 					r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState64));
 					print_mmap_graph_64 (core, malloc_state, m_state);

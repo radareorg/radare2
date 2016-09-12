@@ -1028,13 +1028,13 @@ static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input) {
 	case 'm': // "dmhm"	
 		if (r_resolve_main_arena_32 (core, &m_arena, main_arena)) {
 			input += 1;
-			if(!strcmp(input,"\0")) print_main_arena_32 (core, m_arena, main_arena, *input);
-			else {
+			if (!strcmp (input,"\0")) {
+				 print_main_arena_32 (core, m_arena, main_arena, *input);
+			} else {
 				ut32 m_state = strstr(input, "0x") ? (ut32)strtol (input, NULL, 0) : (ut32)strtol (input, NULL, 16); 
 				RHeap_MallocState32 *malloc_state = R_NEW0 (RHeap_MallocState32);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState32));
 				print_main_arena_32 (core, m_state, malloc_state, *input);
-				
 				free(malloc_state);
 			}
 		}
@@ -1042,8 +1042,9 @@ static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input) {
 	case 'b': // "dmhb"
 		if (r_resolve_main_arena_32 (core, &m_arena, main_arena)) {
 
-			if (!strstr (input+1, ":")) print_heap_bin_32 (core, m_arena, main_arena, input+1);
-			else {
+			if (!strstr (input+1, ":")) {
+				print_heap_bin_32 (core, m_arena, main_arena, input+1);
+			} else {
 				char *m_state_str, *bin, *dup = strdup (input+1);
 				bin = strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
@@ -1052,7 +1053,6 @@ static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input) {
 				RHeap_MallocState32 *malloc_state = R_NEW0 (RHeap_MallocState32);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState32));
 				print_heap_bin_32 (core, m_state, malloc_state, bin); 
-				
 				free(malloc_state);
 			}
 		}
@@ -1065,8 +1065,9 @@ static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input) {
 	case 'f': // "dmhf"
 		if (r_resolve_main_arena_32 (core, &m_arena, main_arena)) {
 
-			if (!strstr (input+1, ":")) print_heap_fastbin_32 (core, m_arena, main_arena, input+1);
-			else {
+			if (!strstr (input+1, ":")) {
+				print_heap_fastbin_32 (core, m_arena, main_arena, input+1);
+			} else {
 				char *m_state_str, *bin, *dup = strdup (input+1);
 				bin = strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
@@ -1075,7 +1076,6 @@ static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input) {
 				RHeap_MallocState32 *malloc_state = R_NEW0 (RHeap_MallocState32);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState32));
 				print_heap_fastbin_32 (core, m_state, malloc_state, bin); 
-					
 				free(malloc_state);
 			}
 		}
@@ -1083,15 +1083,15 @@ static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input) {
 	case 'g': // "dmhg"
 		if (r_resolve_main_arena_32 (core, &m_arena, main_arena)) {
 			input += 1;
-			if (!strcmp (input, "\0")) print_heap_graph_32 (core, main_arena, &initial_brk);
-			else {
+			if (!strcmp (input, "\0")) {
+				print_heap_graph_32 (core, main_arena, &initial_brk);
+			} else {
 				ut32 m_state = strstr (input, "0x") ? (ut32)strtol (input, NULL, 0) : (ut32)strtol (input, NULL, 16);
 				if (m_state == m_arena) print_heap_graph_32 (core, main_arena, &initial_brk);
 				else {
 					RHeap_MallocState32 *malloc_state = R_NEW0 (RHeap_MallocState32);
 					r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState32));
 					print_mmap_graph_32 (core, malloc_state, m_state);
-					
 					free (malloc_state);
 				}
 			}
