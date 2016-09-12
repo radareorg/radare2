@@ -124,7 +124,7 @@ char *sdb_querys (Sdb* s, char *buf, size_t len, const char *cmd);
 char *sdb_querysf (Sdb* s, char *buf, size_t buflen, const char *fmt, ...);
 int  sdb_query_file(Sdb *s, const char* file);
 int  sdb_exists (Sdb*, const char *key);
-int  sdb_remove (Sdb*, const char *key, ut32 cas);
+int  sdb_remove (Sdb*, const char *key);
 int  sdb_unset (Sdb*, const char *key, ut32 cas);
 int  sdb_unset_like(Sdb *s, const char *k);
 char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb);

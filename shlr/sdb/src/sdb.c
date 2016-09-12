@@ -238,7 +238,7 @@ SDB_API int sdb_unset (Sdb* s, const char *key, ut32 cas) {
 }
 
 /* remove from memory */
-SDB_API int sdb_remove(Sdb *s, const char *key, ut32 cas) {
+SDB_API int sdb_remove(Sdb *s, const char *key) {
 	SdbHashEntry *e;
 	ut32 hash = sdb_hash (key);
 	e = ht_search (s->ht, hash);
@@ -604,7 +604,7 @@ SDB_API int sdb_sync (Sdb* s) {
 			if (sdb_disk_insert (s, kv->key, kv->value)) {
 				it.n = iter->n;
 				//sdb_unset (s, kv->key, 0);
-				sdb_remove (s, kv->key, 0);
+				sdb_remove (s, kv->key);
 				iter = &it;
 			}
 		}

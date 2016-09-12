@@ -92,7 +92,7 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 	RBinXtrData *data = data_;
 	if (data) {
-		sdb_remove (data->sdb, sdb_fmt (0, "%d", data->offset), 0);
+		sdb_remove (data->sdb, sdb_fmt (0, "%d", data->offset));
 		if (data->metadata) {
 			free (data->metadata->libname);
 			free (data->metadata->arch);
