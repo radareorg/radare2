@@ -1509,7 +1509,7 @@ z_streamp strm;
     struct inflate_state FAR *state;
 
     if (strm == Z_NULL || strm->state == Z_NULL) {
-        return UT64_MAX << 16;
+        return (long)(UT64_MAX << 16);
     }
     state = (struct inflate_state FAR *)strm->state;
     return ((long)(state->back) << 16) +

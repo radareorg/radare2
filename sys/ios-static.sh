@@ -17,7 +17,7 @@ export BUILD=1
 PREFIX="/usr"
 # PREFIX=/var/mobile
 
-if [ ! -d sys/ios-include ]; then
+if [ ! -f sys/ios-include/mach/mach_vm.h ]; then
 (
 	cd sys && \
 	wget http://lolcathost.org/b/ios-include.tar.gz && \
@@ -59,10 +59,22 @@ if [ $? = 0 ]; then
 		rm -rf /tmp/r2ios
 		${MAKE} install DESTDIR=/tmp/r2ios
 		rm -rf /tmp/r2ios/usr/share/radare2/*/www/enyo/node_modules
-		( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz ./* )
+		( cd /tmp/r2ios && tar czvf ../r2ios-static-${CPU}.tar.gz ./* )
 		rm -rf sys/cydia/radare2/root
 		mkdir -p sys/cydia/radare2/root
-		sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
-		( cd sys/cydia/radare2 ; sudo ${MAKE} clean ; sudo ${MAKE} )
+		sudo tar xpzvf /tmp/r2ios-static-${CPU}.tar.gz -C sys/cydia/radare2/root
+#		( cd sys/cydia/radare2 ; sudo ${MAKE} clean ; sudo ${MAKE} )
+
+		# Creating tarball
+		export D=radare2-ios-${CPU}
+		rm -rf $D
+		mkdir -p $D/bin
+		for a in radare2 rabin2 rasm2 r2pm r2agent radiff2 rafind2 ragg2 rahash2 rarun2 rasm2 rax2 ; do
+			cp -f binr/$a/$a $D/bin
+		done
+		mkdir -p $D/lib
+		cp -f libr/libr.a $D/lib
+		cp -f binr/preload/libr2.dylib $D/lib
+		tar czvf $D.tar.gz $D
 	fi
 fi
