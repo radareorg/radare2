@@ -510,7 +510,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 						const char *type_kind = sdb_const_get (TDB, av->type, 0);
 						if (type_kind && !strncmp (type_kind, "struct", strlen ("struct"))) {
 							/* update following vars */
-							char *type_key, *field_name, *field_key, *field_type;
+							char *type_key, *field_name, *field_key, *field_type, *new_name;
 							int field_n, field_offset, field_count, field_size;
 
 							type_key = r_str_newf ("%s.%s", type_kind, av->type);
@@ -545,7 +545,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 								}
 								free (field_type);
 								free (field_key);
-								free (field);
+								free (field_name);
 							}
 							free (type_key);
 						}
