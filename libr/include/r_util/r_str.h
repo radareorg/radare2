@@ -127,5 +127,7 @@ R_API char *r_hex_from_c(const char *code);
 R_API bool r_str_glob(const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
 R_API char *r_str_between(const char *str, const char *prefix, const char *suffix);
+R_API bool r_str_startswith(const char *str, const char *needle);
+R_API bool r_str_endswith(const char *str, const char *needle);
 
 #endif //  R_STR_H
