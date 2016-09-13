@@ -138,12 +138,14 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 needle = from, str_start;
 	int count = 0, i, rc, runes, str_type = R_STRING_TYPE_DETECT;
-	if (type == -1)
+
+	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
+	}
 
-	if (!buf || !min)
+	if (!buf || !min) {
 		return -1;
-
+	}
 	while (needle < to) {
 		rc = r_utf8_decode (buf + needle, to - needle, NULL);
 		if (!rc) {
@@ -155,8 +157,12 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 
 		if (str_type == R_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc;
-			bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
-			str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
+			if ((to - needle) > 2) {
+				bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
+				str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
+			} else {
+				str_type = R_STRING_TYPE_ASCII;
+			}
 		}
 
 		runes = 0;
@@ -189,9 +195,8 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 			if (r_isprint (r)) {
 				rc = r_utf8_encode (&tmp[i], r);
 				runes++;
-			}
-			/* Print the escape code */
-			else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\e", (char)r)) {
+				/* Print the escape code */
+			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\e", (char)r)) {
 				if ((i + 32) < sizeof (tmp) && r < 28) {
 					tmp[i + 0] = '\\';
 					tmp[i + 1] = "       abtnvfr             e"[r];
@@ -201,9 +206,10 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 				}
 				rc = 2;
 				runes++;
+			} else {
+				/* \0 marks the end of C-strings */
+				break;
 			}
-			/* \0 marks the end of C-strings */
-			else break;
 		}
 
 		tmp[i++] = '\0';
@@ -224,7 +230,6 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 			}
 		}
 	}
-
 	return count;
 }
 

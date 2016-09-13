@@ -37,7 +37,7 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 	if (sz < 1 || addr >= UT64_MAX) return -1;
 	for (x = 0; x < packets; x++) {
 		gdbr_read_memory (desc, addr + x * size_max, size_max);
-		memcpy ((buf + x * size_max), desc->data + x * size_max, size_max);
+		memcpy ((buf + x * size_max), desc->data + x * size_max, R_MIN (sz, size_max));
 	}
 	if (last) {
 		gdbr_read_memory (desc, addr + x * size_max, last);

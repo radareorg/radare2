@@ -40,18 +40,20 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	copy_size = R_MIN (desc->data_len, size);
 	buflen = R_MAX (desc->data_len, buflen);
 	if (reg_buf) {
-		if (buf_size < copy_size) { //desc->data_len) {
-			ut8* new_buf = realloc (reg_buf, copy_size);
-			if (!new_buf)
+		// if (buf_size < copy_size) { //desc->data_len) {
+		if (buflen > buf_size) { //copy_size) {
+			ut8* new_buf = realloc (reg_buf, buflen);
+			if (!new_buf) {
 				return -1;
+			}
 			reg_buf = new_buf;
-			buflen = copy_size;
-			buf_size = desc->data_len;
+			buf_size = buflen;
 		}
 	} else {
 		reg_buf = calloc (buflen, 1);
-		if (!reg_buf)
+		if (!reg_buf) {
 			return -1;
+		}
 		buf_size = buflen;
 	}
 	memset ((void*)(volatile void*)buf, 0, size);
