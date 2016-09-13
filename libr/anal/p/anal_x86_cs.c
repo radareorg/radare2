@@ -1222,6 +1222,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			}
 			free (a0);
 			free (a1);
+			free (a2);
 		}
 		break;
 	case X86_INS_MUL:
