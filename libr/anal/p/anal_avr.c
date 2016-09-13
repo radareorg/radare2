@@ -70,6 +70,17 @@ INST_HANDLER (movw) {
 	r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r + 1, d + 1);
 }
 
+// ALIAS: Opcode (clr) when Rra and Rrb are the same
+INST_HANDLER (eor) {
+	op->type = R_ANAL_OP_TYPE_XOR;
+	op->cycles = 1;
+
+	int d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
+	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+
+	r_strbuf_setf (&op->esil, "r%d,r%d,^=,$z,zf,=,r%d,0x80,&,!,!,nf,=,nf,sf,=,0,vf,=", r, d, d);
+}
+
 INST_HANDLER (nop) {
 	op->type = R_ANAL_OP_TYPE_NOP;
 }
@@ -135,6 +146,7 @@ INST_HANDLER (st) {
 }
 
 OPCODE opcodes[] = {
+	INST_DECL (eor,  0xfc00, 0x2400),
 	INST_DECL (movw, 0xff00, 0x0100),
 	INST_DECL (nop,  0xffff, 0x0000),
 	INST_DECL (out,  0xf800, 0xb800),
@@ -244,7 +256,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if ((buf[1] & 0xf0) == 0x30) {		//CPI
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "0x%x,r%d,==,$z,ZF,=,$b3,HF,=,$b8,CF,=$o,VF,=,0x%x,r%d,-,0x80,&,!,!,NF,=,VF,NF,^,SF,=", k, d, k, d);		//check VF here
+		r_strbuf_setf (&op->esil, "0x%x,r%d,==,$z,zf,=,$b3,HF,=,$b8,CF,=$o,VF,=,0x%x,r%d,-,0x80,&,!,!,NF,=,VF,NF,^,SF,=", k, d, k, d);		//check VF here
 	}
 	d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
@@ -252,22 +264,22 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->cycles = 1;
 		if (buf[1] & 0x10)
-			r_strbuf_setf (&op->esil, "r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
-		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,CF,+=,r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
+			r_strbuf_setf (&op->esil, "r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
+		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,CF,+=,r%d,r%d,+=,$c7,CF,=,$c3,HF,=,$o,VF,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
 	}
 	if ((buf[1] & 0xec) == 8) {             //SUB + SBC
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->cycles = 1;
 		if (buf[1] & 0x10)
-			r_strbuf_setf (&op->esil, "r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
-		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,CF,+=,r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
+			r_strbuf_setf (&op->esil, "r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
+		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,CF,+=,r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
 	}
 	if ((buf[1] & 0xec) == 4) {		//CP + CPC
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->cycles = 1;
 		if (buf[1] & 0xf0)		//CP
-			r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,ZF,=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,-,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, r, d);	//check VF here
-		else	r_strbuf_setf (&op->esil, "r%d,CF,r%d,-,0xff,&,-,0x80,&,!,!,NF,=,r%d,CF,r%d,-,0xff,&,==,$z,ZF,=,$b8,CF,=,$b3,HF,=,$o,VF,=,VF,NF,^,SF,=", r, d, r, d);
+			r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,zf,=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,-,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, r, d);	//check VF here
+		else	r_strbuf_setf (&op->esil, "r%d,CF,r%d,-,0xff,&,-,0x80,&,!,!,NF,=,r%d,CF,r%d,-,0xff,&,==,$z,zf,=,$b8,CF,=,$b3,HF,=,$o,VF,=,VF,NF,^,SF,=", r, d, r, d);
 	}
 	switch (buf[1] & 0xfc) {
 	case 0x10:	//CPSE
@@ -283,17 +295,12 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case 0x20:	//AND
 		op->type = R_ANAL_OP_TYPE_AND;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,&=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
-		break;
-	case 0x24:	//EOR + CLR
-		op->type = R_ANAL_OP_TYPE_XOR;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,^=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
+		r_strbuf_setf (&op->esil, "r%d,r%d,&=,$z,zf,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
 		break;
 	case 0x28:	//OR
 		op->type = R_ANAL_OP_TYPE_OR;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,|=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
+		r_strbuf_setf (&op->esil, "r%d,r%d,|=,$z,zf,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
 		break;
 	case 0x2c:	//MOV
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -330,12 +337,12 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		case 0:		//COM
 			op->type = R_ANAL_OP_TYPE_CPL;
 			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,0xff,-,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=,1,CF,=", d, d, d);
+			r_strbuf_setf (&op->esil, "r%d,0xff,-,r%d,=,$z,zf,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=,1,CF,=", d, d, d);
 			break;
 		case 1:		//NEG
 			op->type = R_ANAL_OP_TYPE_CPL;
 			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,NUM,0,r%d,=,r%d,-=,$b3,HF,=,$b8,CF,=,CF,!,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);	//Hack for accessing internal vars
+			r_strbuf_setf (&op->esil, "r%d,NUM,0,r%d,=,r%d,-=,$b3,HF,=,$b8,CF,=,CF,!,zf,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);	//Hack for accessing internal vars
 			break;
 		case 2:		//SWAP
 			op->type = R_ANAL_OP_TYPE_ROL;
@@ -345,27 +352,27 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		case 3:		//INC
 			op->type = R_ANAL_OP_TYPE_ADD;
 			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,1,+,0xff,&,r%d,=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);
+			r_strbuf_setf (&op->esil, "r%d,1,+,0xff,&,r%d,=,$z,zf,=,r%d,0x80,&,!,!,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d, d);
 			break;
 		case 5:		//ASR
 			op->type = R_ANAL_OP_TYPE_SAR;
 			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>,0x80,r%d,&,|,r%d,=,$z,ZF,=,r%d,0x80,&,NF,=,CF,NF,^,VF,=,NF,VF,^,SF,=", d, d, d, d, d);
+			r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>,0x80,r%d,&,|,r%d,=,$z,zf,=,r%d,0x80,&,NF,=,CF,NF,^,VF,=,NF,VF,^,SF,=", d, d, d, d, d);
 			break;
 		case 6: 	//LSR
 			op->type = R_ANAL_OP_TYPE_SHR;
 			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>=,$z,ZF,=,0,NF,=,CF,VF,=,CF,SF,=", d, d);
+			r_strbuf_setf (&op->esil, "r%d,1,&,CF,=,1,r%d,>>=,$z,zf,=,0,NF,=,CF,VF,=,CF,SF,=", d, d);
 			break;
 		case 7:		//ROR
 			op->type = R_ANAL_OP_TYPE_ROR;
 			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "CF,NF,=,r%d,1,&,7,CF,<<,1,r%d,>>,|,r%d,=,$z,ZF,=,CF,=,NF,CF,^,VF,=,NF,VF,^,SF,=", d, d, d);
+			r_strbuf_setf (&op->esil, "CF,NF,=,r%d,1,&,7,CF,<<,1,r%d,>>,|,r%d,=,$z,zf,=,CF,=,NF,CF,^,VF,=,NF,VF,^,SF,=", d, d, d);
 			break;
 		case 10:	//DEC
 			op->type = R_ANAL_OP_TYPE_SUB;
 			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "1,r%d,-=,$z,ZF,=,r%d,0x80,&,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d);
+			r_strbuf_setf (&op->esil, "1,r%d,-=,$z,zf,=,r%d,0x80,&,NF,=,r%d,0x80,==,$z,VF,=,NF,VF,^,SF,=", d, d, d);
 			break;
 		case 11:
 			if (d < 16) {	//DES
@@ -593,7 +600,7 @@ C Carry flag. This is a borrow flag on subtracts.
 Z Zero flag. Set to 1 when an arithmetic result is zero.
 N Negative flag. Set to a copy of the most significant bit of an arithmetic result.
 V Overflow flag. Set in case of two's complement overflow.
-S Sign flag. Unique to AVR, this is always N⊕V, and shows the true sign of a comparison.
+S Sign flag. Unique to AVR, this is always (N ^ V) (xor), and shows the true sign of a comparison.
 H Half carry. This is an internal carry from additions and is used to support BCD arithmetic.
 T Bit copy. Special bit load and bit store instructions use this bit.
 I Interrupt flag. Set when interrupts are enabled.
