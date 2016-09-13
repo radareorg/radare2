@@ -17,6 +17,24 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 #define	AVR_SOFTCAST(x,y) (x+(y*0x100))
 
+#define MASK(bits)	(~((~0) << (bits)))
+
+struct __cpu_models_tag {
+	char *model;
+	int   pc_bits;
+} cpu_models[] = {
+	{ "ATmega48",   11 },
+	{ "ATmega8",    12 },
+	{ "ATmega88",   12 },
+	{ "ATmega168",  13 },
+	{ "ATmega640",  16 },
+	{ "ATmega1280", 16 },
+	{ "ATmega1281", 16 },
+	{ "ATmega2560", 22 },
+	{ "ATmega2561", 22 },
+	{ (char *) 0,    0 }
+};
+
 static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 	uint16_t data = (b[0] + (b[1] << 8)) & 0xfff;
 	int32_t op = data;
@@ -31,6 +49,7 @@ static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	short ofst;
 	int imm = 0, imm2 = 0, d, r, k;
+	int pc_bits, pc_size, pc_mask;
 	ut8 kbuf[4];
 	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
 	char *arg, str[32];
@@ -47,6 +66,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	op->nopcode = 1; // Necessary??
 	op->size = 2;    // by default most opcodes are 2 bytes len
 	op->cycles = 1;  // by default most opcodes only use 1 cpu cycle
+	op->family = R_ANAL_OP_FAMILY_CPU;
 	r_strbuf_init (&op->esil);
 	arg = strchr (str, ' ');
 	if (arg) {
@@ -61,13 +81,52 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	op->delay = 0;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
-	if(ins == 0x0000) {		// nop
+	// configure cpu parameters
+	pc_bits = 0;
+	for (struct __cpu_models_tag *cc; cc->model; cc++) {
+		if (!strcasecmp (anal->cpu, cc->model)) {
+			pc_bits = cc->pc_bits;
+			break;
+		}
+	}
+	if (!pc_bits) {
+		// unknown cpu model
+		pc_bits = 16;
+	}
+	// do cpu math
+	pc_mask = MASK(pc_bits);
+	pc_size = (pc_bits >> 3) + ((pc_bits & 0x07) ? 1 : 0);
+
+	if (ins == 0x0000) {		// nop
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else
-	if((buf[1] & 0xF0) == 0x90) {	// st rx, X
-		// instruction checks...
-		if((buf[0] & 0xc) != 0xc
-		|| (buf[0] & 0xf) == 0xf)
+	if (ins == 0x9508		// ret
+	 || ins == 0x9518) {		// reti
+		op->type = R_ANAL_OP_TYPE_RET;
+		op->cycles = pc_size > 2 ? 5 : 4; // 5 for 22-bit bus
+		op->eob = true;
+
+		r_strbuf_setf (
+			&op->esil,
+			"sp,"			// load stack pointer
+			"[%d],"			// read ret@ from the stack
+			"pc,="			// update PC with [SP]
+			"sp,%d,+,"		// increment stack pointer
+			"sp,=,",		// store incremented SP
+			pc_size, pc_size);
+
+		//XXX: There are not privileged instructions in ATMEL/AVR
+		//if (ins == 0x9518) op->family = R_ANAL_OP_FAMILY_PRIV;
+
+		// RETI: The I-bit is cleared by hardware after an interrupt
+		// has occurred, and is set by the RETI instruction to enable
+		// subsequent interrupts
+		if (ins == 0x9518)
+			r_strbuf_appendf (&op->esil, ",1,if,=");
+	} else
+	if ((buf[1] & 0xF0) == 0x90) {	// st rx, X
+		// check instruction
+		if((buf[0] & 0xc) != 0xc || (buf[0] & 0xf) == 0xf)
 			goto INVALID_OP;
 
 		// fill op info and exec
@@ -348,15 +407,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->jump = addr + ofst + 2;
 			//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 		}
-		if (ins == 0x9508 || ins == 0x9518) { // ret || reti
-			op->type = R_ANAL_OP_TYPE_RET;
-			if (ins == 0x9518) {
-				/* reti */
-				op->family = R_ANAL_OP_FAMILY_PRIV;
-			}
-			op->cycles = 4;			//5 for 22-bit bus
-			op->eob = true;
-		}
 	}
 
 	return op->size;
@@ -471,16 +521,19 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	x	.16	26	0\n"
 		"gpr	y	.16	28	0\n"
 		"gpr	z	.16	30	0\n"
+// program counter
+// NOTE: program counter size in AVR depends on the CPU model. It seems that
+// the PC may range from 16 bits to 22 bits.
+		"gpr	pc	.32	32	0\n"
 // special purpose registers
-		"gpr	pc	.16	32	0\n"
-		"gpr	sp	.16	34	0\n"
-		"gpr	sreg	.8	36	0\n"
+		"gpr	sp	.16	36	0\n"
+		"gpr	sreg	.8	38	0\n"
 // 8bit segment registers to be added to X, Y, Z to get 24bit offsets
-		"gpr	rampx	.8	37	0\n"
-		"gpr	rampy	.8	38	0\n"
-		"gpr	rampz	.8	39	0\n"
-		"gpr	rampd	.8	40	0\n"
-		"gpr	eind	.8	41	0\n"
+		"gpr	rampx	.8	39	0\n"
+		"gpr	rampy	.8	40	0\n"
+		"gpr	rampz	.8	41	0\n"
+		"gpr	rampd	.8	42	0\n"
+		"gpr	eind	.8	43	0\n"
 // status bit register stored in SREG
 /*
 C Carry flag. This is a borrow flag on subtracts.
@@ -492,14 +545,14 @@ H Half carry. This is an internal carry from additions and is used to support BC
 T Bit copy. Special bit load and bit store instructions use this bit.
 I Interrupt flag. Set when interrupts are enabled.
 */
-		"gpr	cf	.1	288	0\n" // 288 = (offsetof(SREG))*8= 36 * 8
-		"gpr	zf	.1	289	0\n"
-		"gpr	nf	.1	290	0\n"
-		"gpr	vf	.1	291	0\n"
-		"gpr	sf	.1	292	0\n"
-		"gpr	hf	.1	293	0\n"
-		"gpr	tf	.1	294	0\n"
-		"gpr	if	.1	295	0\n"
+		"gpr	cf	.1	304	0\n" // 288 = (offsetof(SREG))*8= 38 * 8
+		"gpr	zf	.1	305	0\n"
+		"gpr	nf	.1	306	0\n"
+		"gpr	vf	.1	307	0\n"
+		"gpr	sf	.1	308	0\n"
+		"gpr	hf	.1	309	0\n"
+		"gpr	tf	.1	310	0\n"
+		"gpr	if	.1	311	0\n"
 		;
 
 	return r_reg_set_profile_string (anal->reg, p);
