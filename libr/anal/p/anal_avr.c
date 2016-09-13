@@ -60,6 +60,16 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ("ATmega2561", 22),
 	CPU_MODEL_DECL ((char *) 0,   16) };
 
+INST_HANDLER (movw) {
+	op->type = R_ANAL_OP_TYPE_MOV;
+	op->cycles = 1;
+
+	int d = (buf[0] & 0xf0) >> 3;
+	int r = (buf[0] & 0x0f) << 1;
+
+	r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r + 1, d + 1);
+}
+
 INST_HANDLER (nop) {
 	op->type = R_ANAL_OP_TYPE_NOP;
 }
@@ -125,6 +135,7 @@ INST_HANDLER (st) {
 }
 
 OPCODE opcodes[] = {
+	INST_DECL (movw, 0xff00, 0x0100),
 	INST_DECL (nop,  0xffff, 0x0000),
 	INST_DECL (out,  0xf800, 0xb800),
 	INST_DECL (ret,  0xffff, 0x9508),
@@ -222,13 +233,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->val = imm2;
 	} else if (!strncmp (str, "push ", 5)) {
 		op->type = R_ANAL_OP_TYPE_PUSH;
-	}
-	if (buf[1] == 1) {			//MOVW
-		d = (buf[0] & 0xf0) >> 3;
-		r = (buf[0] & 0x0f) << 1;
-		op->type = R_ANAL_OP_TYPE_MOV;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r+1, d+1);
 	}
 	k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
 	d = ((buf[0] & 0xf0) >> 4) + 16;
