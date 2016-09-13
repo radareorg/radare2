@@ -22,7 +22,7 @@
 #define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
 #define INSOP(n) insn->detail->x86.operands[n]
 #define INSOPS insn->detail->x86.op_count
-#define ISIMM(x) insn->detail->x86.operands[x].type == ARM_OP_IMM
+#define ISIMM(x) insn->detail->x86.operands[x].type == X86_OP_IMM
 
 struct Getarg {
 	csh handle;
