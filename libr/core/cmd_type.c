@@ -179,7 +179,9 @@ static int cmd_type(void *data, const char *input) {
 		res = (input[1] == ' ')
 			? sdb_querys (core->anal->sdb_types, NULL, -1, input + 2)
 			: sdb_querys (core->anal->sdb_types, NULL, -1, "*");
-		r_cons_println (res);
+		if (res) {
+			r_cons_print (res);
+		}
 		break;
 	case 's': // "ts"
 		switch (input[1]) {

@@ -120,7 +120,7 @@ R_API void r_cons_color (int fg, int r, int g, int b) {
 
 R_API void r_cons_println(const char* str) {
 	r_cons_print (str);
-	r_cons_print ("\n");
+	r_cons_newline ();
 }
 
 R_API void r_cons_strcat_justify (const char *str, int j, char c) {
