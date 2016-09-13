@@ -128,8 +128,6 @@ static void var_help(RCore *core, char ch) {
 		"afvs", "", "list stack based arguments and locals",
 		"afvs*", "", "same as afvs but in r2 commands",
 		"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
-		"afvsd", " name", "Displays the value of stack pointer args and locals in the debugger",
-		"afvst", " [name] [new_type]", "change type for given argument or locals",
 		"afvsj", "", "return list of stack based arguments and locals in JSON format",
 		"afvs-", " [name]", "delete stack based argument or locals with the given name",
 		"afvsg", " [idx] [addr]", "define var get reference",
@@ -141,8 +139,6 @@ static void var_help(RCore *core, char ch) {
 		"afvb", "", "list base pointer based arguments, locals",
 		"afvb*", "", "same as afvb but in r2 commands",
 		"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
-		"afvbd", " name", "Displays the value of base pointer args and locals in the debugger",
-		"afvbt", " [name] [new_type]", "change type for given base pointer based argument or locals",
 		"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
 		"afvb-", " [name]", "delete argument/locals at the given name",
 		"afvbg", " [idx] [addr]", "define var get reference",
@@ -154,8 +150,6 @@ static void var_help(RCore *core, char ch) {
 		"afvr", "", "list register based arguments",
 		"afvr*", "", "same as afvr but in r2 commands",
 		"afvr", " [reg] [name] ([type])", "define register arguments",
-		"afvrd", " name", "Displays the value of register based args in the debugger",
-				"afvrt", " [name] [new_type]", "change type for given argument",
 		"afvrj", "", "return list of register arguments in JSON format",
 		"afvr-", " [name]", "delete register arguments at the given index",
 		"afvrg", " [reg] [addr]", "define argument get reference",
@@ -163,12 +157,14 @@ static void var_help(RCore *core, char ch) {
 		NULL
 	};
 	const char *help_general[] = {
-		"Usage:", "afv","[rbsa]",
+		"Usage:", "afv","[rbs]",
 		"afvr", "?", "manipulate register based arguments",
 		"afvb", "?", "manipulate bp based arguments/locals",
 		"afvs", "?", "manipulate sp based arguments/locals",
-		"afvn", " [old_name] [new_name]", "rename arguments/locals",
 		"afva", "", "analyze function arguments/locals",
+		"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
+		"afvn", " [old_name] [new_name]", "rename argument/local",
+		"afvt", " [name] [new_type]", "change type for given argument/local",
 		NULL
 	};
 	switch (ch) {
@@ -192,9 +188,9 @@ static void var_help(RCore *core, char ch) {
 static int var_cmd (RCore *core, const char *str) {
 	char *p, *ostr;
 	int delta, type = *str, res = true;
+	RAnalVar *v1;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	ostr = p = strdup (str);
-	str = (const char *)ostr;
 	if (!str[0] || str[1] == '?'|| str[0] == '?') {
 		var_help (core, *str);
 		return res;
@@ -212,15 +208,15 @@ static int var_cmd (RCore *core, const char *str) {
 		fcn_callconv (core, fcn);
 		return true;
 	case 'n': { // "afvn"
-		RAnalVar *v1;
-		char *str_dup = strdup (str);
-		char *old_name = r_str_trim_head (strchr (str_dup, ' '));
+		char *old_name = r_str_trim_head (strchr (ostr, ' '));
 		if (!old_name) {
-			goto failed;
+			free (ostr);
+			return false;
 		}
 		char *new_name = strchr (old_name, ' ');
 		if (!new_name) {
-			goto failed;
+			free (ostr);
+			return false;
 		}
 		*new_name++ = 0;
 		r_str_chop (new_name);
@@ -230,12 +226,47 @@ static int var_cmd (RCore *core, const char *str) {
 				v1->kind, old_name, new_name);
 			r_anal_var_free (v1);
 		}
-		free (str_dup);
+		free (ostr);
 		return true;
-	failed:
-		free (str_dup);
-		var_help (core, '?');
-		return false;
+	}
+	case 'd': //afvd
+		p = r_str_chop (strchr (ostr, ' '));
+		if (!p) {
+			free (ostr);
+			return false;
+		}
+		v1 = r_anal_var_get_byname (core->anal, fcn, p);
+		if (!v1) {
+			free (ostr);
+			return false;
+		}
+		r_anal_var_display (core->anal, v1->delta, v1->kind, v1->type);
+		r_anal_var_free (v1);
+		free (ostr);
+		return true;
+	case 't':{ //afvt:
+		p = strchr (ostr, ' ');
+		if (!p++) {
+			free (ostr);
+			return false;
+		}
+
+		char *type = strchr (p, ' ');
+		if (!type) {
+			free (ostr);
+			return false;
+		}
+		*type++ = 0;
+		v1 = r_anal_var_get_byname (core->anal, fcn, p);
+		if (!v1) {
+			free (ostr);
+			return false;
+		}
+		r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, p);
+		r_anal_var_free (v1);
+		free (ostr);
+		return true;
+
 	}
 	}
 	switch (str[1]) {
@@ -261,70 +292,12 @@ static int var_cmd (RCore *core, const char *str) {
 			}
 		}
 		break;
-	case 'd': {
-		char *name = r_str_chop(strdup(str+2));
-		r_core_cmd0 (core, ".dr*");
-		RAnalVar *v = r_anal_var_get_byname (core->anal, fcn, name);
-		if (!v) {
-			eprintf ("no arg/local with this name exists\n");
-			free (name);
-			break;
-		}
-		char *fmt = r_anal_type_format (core->anal, v->type);
-		if (!fmt) {
-			 eprintf ("type:%s doesn't exist\n", v->type);
-			 break;
-		}
-		switch (type) {
-		case 'r':{
-				RRegItem *i = r_reg_index_get (core->anal->reg, v->delta);
-				if (i) {
-					r_cons_printf ("pf r (%s)\n", i->name);
-				} else {
-					eprintf ("register not found\n");
-					break;
-				}
-			}
-			break;
-		case 'b':
-			if (v->delta > 0) {
-				 r_cons_printf ("pf %s @%s+0x%x\n", fmt,
-					core->anal->reg->name[R_REG_NAME_BP],
-					v->delta);
-			} else {
-				r_cons_printf ("pf %s @%s-0x%x\n", fmt,
-					core->anal->reg->name[R_REG_NAME_BP],
-					-v->delta);
-
-			}
-			break;
-		case 's':
-			r_cons_printf ("pf %s @ %s+0x%x\n", fmt,
-				core->anal->reg->name[R_REG_NAME_SP], v->delta);
-			break;
-		};
-		free (v->name);
-		free (v->type);
-		r_list_free (v->accesses);
-		free (v->stores);
-		free (v);
-		free (name);
-	}
-		 break;
-	case 't': {
-		//should we read types from t
-		const char *name = str + 1;
-		for (name++; *name == ' ';) name++;
-		char *new_type = strchr (name, ' ');
-		if (!new_type) {
-			var_help (core, type);
-			break;
-		}
-		*new_type++ = 0;
-		r_anal_var_retype (core->anal, fcn->addr,
-				R_ANAL_VAR_SCOPE_LOCAL, -1, (char)str[0],
-				new_type, -1, name);
-	} break;
+	case 'd':
+		eprintf ("This command is deprecated, use afvd instead\n");
+		break;
+	case 't':
+		eprintf ("This command is deprecated use afvt instead\n");
+		break;
 	case 's':
 	case 'g':
 		if (str[2] != '\0') {
