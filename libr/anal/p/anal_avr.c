@@ -83,7 +83,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 
 	// configure cpu parameters
 	pc_bits = 0;
-	for (struct __cpu_models_tag *cc; cc->model; cc++) {
+	for (struct __cpu_models_tag *cc = cpu_models; cc->model; cc++) {
 		if (!strcasecmp (anal->cpu, cc->model)) {
 			pc_bits = cc->pc_bits;
 			break;
@@ -97,11 +97,11 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	pc_mask = MASK(pc_bits);
 	pc_size = (pc_bits >> 3) + ((pc_bits & 0x07) ? 1 : 0);
 
-	if (ins == 0x0000) {		// nop
+	if (ins == 0x0000) {		// NOP
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else
-	if (ins == 0x9508		// ret
-	 || ins == 0x9518) {		// reti
+	if (ins == 0x9508		// RET
+	 || ins == 0x9518) {		// RETI
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = pc_size > 2 ? 5 : 4; // 5 for 22-bit bus
 		op->eob = true;
@@ -109,9 +109,10 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		r_strbuf_setf (
 			&op->esil,
 			"sp,"			// load stack pointer
+			"sp,1,+,"		//   and inc by 1 SP
 			"[%d],"			// read ret@ from the stack
 			"pc,="			// update PC with [SP]
-			"sp,%d,+,"		// increment stack pointer
+			"sp,%d,+,"		// post increment stack pointer
 			"sp,=,",		// store incremented SP
 			pc_size, pc_size);
 
@@ -122,9 +123,9 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		// has occurred, and is set by the RETI instruction to enable
 		// subsequent interrupts
 		if (ins == 0x9518)
-			r_strbuf_appendf (&op->esil, ",1,if,=");
+			r_strbuf_append (&op->esil, ",1,if,=");
 	} else
-	if ((buf[1] & 0xF0) == 0x90) {	// st rx, X
+	if ((buf[1] & 0xF0) == 0x90) {	// ST Rr, +X+
 		// check instruction
 		if((buf[0] & 0xc) != 0xc || (buf[0] & 0xf) == 0xf)
 			goto INVALID_OP;
@@ -142,6 +143,15 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			&op->esil, "x,=[1]");	// pointed by X
 		if((buf[0] & 0xf) == 0xd)	// do I need to postinc X?
 			r_strbuf_appendf (&op->esil, ",1,x,+,x,=");
+	} else
+	if ((buf[1] & 0xf8) == 0xb8) { // OUT A, Rr
+		op->type = R_ANAL_OP_TYPE_IO;
+		op->type2 = 1;
+		op->val = (buf[0] & 0x0f) | (((buf[1] >> 1) & 0x03) << 4);
+		op->cycles = 1;
+
+		// launch esil trap (communicate upper layers about this I/O)
+		r_strbuf_setf (&op->esil, "2,$");
 	} else {
 		// old and slow implementation
 		// NOTE: This block should collapse along time... it depends on
@@ -160,12 +170,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->type = R_ANAL_OP_TYPE_AND;
 		} else if (!strncmp (str, "mul", 3)) {
 			op->type = R_ANAL_OP_TYPE_MUL;
-		} else if (!strncmp (str, "out ", 4)) {
-			op->type = R_ANAL_OP_TYPE_IO;
-			r_strbuf_setf (&op->esil, "[]");
-			op->type2 = 1;
-			op->val = imm;
-			op->cycles = 1;
 		} else if (!strncmp (str, "in ", 3)) {
 			op->type = R_ANAL_OP_TYPE_IO;
 			op->type2 = 0;
@@ -231,7 +235,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->cycles = 1;
 			r_strbuf_setf (&op->esil, "r%d,r%d,&=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
 			break;
-		case 0x24:	//EOR
+		case 0x24:	//EOR + CLR
 			op->type = R_ANAL_OP_TYPE_XOR;
 			op->cycles = 1;
 			r_strbuf_setf (&op->esil, "r%d,r%d,^=,$z,ZF,=,r%d,0x80,&,!,!,NF,=,NF,SF,=,0,VF,=", r, d, d);
