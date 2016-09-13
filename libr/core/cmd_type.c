@@ -155,29 +155,31 @@ static int typelist (void *p, const char *k, const char *v) {
 
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	char *res;
+	const char *help_message[] = {
+		"USAGE tu[...]", "", "",
+		"tu", "", "List all loaded unions",
+		"tu?", "", "show this help",
+		NULL
+	};
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
 	case 'u': // "tu"
 		switch (input[1]) {
-		case '?': {
-			const char *help_message[] = {
-				"USAGE tu[...]", "", "",
-				"tu", "", "List all loaded unions",
-				"tu?", "", "show this help",
-				NULL };
+		case '?':
 			r_core_cmd_help (core, help_message);
-		} break;
+			break;
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifunion, core);
 			break;
 		}
 		break;
 	case 'k': // "tk"
-		if (input[1] == ' ') {
-			sdb_query (core->anal->sdb_types, input + 2);
-		} else sdb_query (core->anal->sdb_types, "*");
-		fflush (stdout);
+		res = (input[1] == ' ')
+			? sdb_querys (core->anal->sdb_types, NULL, -1, input + 2)
+			: sdb_querys (core->anal->sdb_types, NULL, -1, "*");
+		r_cons_println (res);
 		break;
 	case 's': // "ts"
 		switch (input[1]) {
