@@ -46,6 +46,7 @@ typedef struct _opcodes_tag_ {
 
 #define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, addr, buf, len, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
+#define INST_ASSERT(x)			{ if(!(x)) { INST_INVALID; } }
 
 CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL("ATmega48",   11),
@@ -103,8 +104,8 @@ INST_HANDLER(reti) {
 }
 
 INST_HANDLER(st) {
-	if((buf[0] & 0xf) == 0xf)
-		INST_INVALID;
+	// check op
+	INST_ASSERT((buf[0] & 0xf) != 0xf);
 
 	// fill op info and exec
 	op->type = R_ANAL_OP_TYPE_STORE;
@@ -115,11 +116,13 @@ INST_HANDLER(st) {
 	r_strbuf_setf (				// leave on stack the target
 		&op->esil, "r%d,",		// register
 		((buf[1] & 0x01) << 4) | ((buf[0] >> 4) & 0x0f));
-	if((buf[0] & 0xf) == 0xe)		// do I need to preincrement X?
+	if ((buf[0] & 0xf) == 0xe) {		// do I need to preincrement X?
 		r_strbuf_appendf ( &op->esil, "1,x,+,x,=,");
+	}
 	r_strbuf_appendf (&op->esil, "x,=[1]");	// write byte @X
-	if((buf[0] & 0xf) == 0xd)		// do I need to postinc X?
+	if ((buf[0] & 0xf) == 0xd) {		// do I need to postinc X?
 		r_strbuf_appendf (&op->esil, ",1,x,+,x,=");
+	}
 }
 
 OPCODE opcodes[] = {
@@ -180,17 +183,19 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 
 	// select cpu info
 	for (cpu = cpu_models; cpu->model; cpu++) {
-		if (!strcasecmp (anal->cpu, cpu->model))
+		if (!strcasecmp (anal->cpu, cpu->model)) {
 			break;
+		}
 	}
 
-	for(OPCODE *opcode_handler = opcodes; opcode_handler->handler; opcode_handler++) {
-		if((ins & opcode_handler->mask) == opcode_handler->selector) {
+	for (OPCODE *opcode_handler = opcodes; opcode_handler->handler; opcode_handler++) {
+		if ((ins & opcode_handler->mask) == opcode_handler->selector) {
 			int fail = 0;
 
-			opcode_handler->handler(anal, op, addr, buf, len, &fail, cpu);
-			if(fail)
+			opcode_handler->handler (anal, op, addr, buf, len, &fail, cpu);
+			if (fail) {
 				goto INVALID_OP;
+			}
 			return op->size;
 		}
 	}
