@@ -24,7 +24,7 @@ typedef struct _cpu_models_tag_ {
 	int	pc_size;
 } CPU_MODEL;
 
-typedef void (*inst_handler_t)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
+typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
 	char		*name;
@@ -49,23 +49,22 @@ typedef struct _opcodes_tag_ {
 #define INST_ASSERT(x)			{ if(!(x)) { INST_INVALID; } }
 
 CPU_MODEL cpu_models[] = {
-	CPU_MODEL_DECL("ATmega48",   11),
-	CPU_MODEL_DECL("ATmega8",    12),
-	CPU_MODEL_DECL("ATmega88",   12),
-	CPU_MODEL_DECL("ATmega168",  13),
-	CPU_MODEL_DECL("ATmega640",  16),
-	CPU_MODEL_DECL("ATmega1280", 16),
-	CPU_MODEL_DECL("ATmega1281", 16),
-	CPU_MODEL_DECL("ATmega2560", 22),
-	CPU_MODEL_DECL("ATmega2561", 22),
-	CPU_MODEL_DECL((char *) 0,   16)
-};
+	CPU_MODEL_DECL ("ATmega48",   11),
+	CPU_MODEL_DECL ("ATmega8",    12),
+	CPU_MODEL_DECL ("ATmega88",   12),
+	CPU_MODEL_DECL ("ATmega168",  13),
+	CPU_MODEL_DECL ("ATmega640",  16),
+	CPU_MODEL_DECL ("ATmega1280", 16),
+	CPU_MODEL_DECL ("ATmega1281", 16),
+	CPU_MODEL_DECL ("ATmega2560", 22),
+	CPU_MODEL_DECL ("ATmega2561", 22),
+	CPU_MODEL_DECL ((char *) 0,   16) };
 
-INST_HANDLER(nop) {
+INST_HANDLER (nop) {
 	op->type = R_ANAL_OP_TYPE_NOP;
 }
 
-INST_HANDLER(out) {
+INST_HANDLER (out) {
 	op->type = R_ANAL_OP_TYPE_IO;
 	op->type2 = 1;
 	op->val = (buf[0] & 0x0f) | (((buf[1] >> 1) & 0x03) << 4);
@@ -75,7 +74,7 @@ INST_HANDLER(out) {
 	r_strbuf_setf (&op->esil, "2,$");
 }
 
-INST_HANDLER(ret) {
+INST_HANDLER (ret) {
 	op->type = R_ANAL_OP_TYPE_RET;
 	op->cycles = cpu->pc_size > 2 ? 5 : 4; // 5 for 22-bit bus
 	op->eob = true;
@@ -91,8 +90,8 @@ INST_HANDLER(ret) {
 		cpu->pc_size, cpu->pc_size);
 }
 
-INST_HANDLER(reti) {
-	INST_CALL(ret);
+INST_HANDLER (reti) {
+	INST_CALL (ret);
 
 	//XXX: There are not privileged instructions in ATMEL/AVR
 	// op->family = R_ANAL_OP_FAMILY_PRIV;
@@ -103,14 +102,14 @@ INST_HANDLER(reti) {
 	r_strbuf_append (&op->esil, ",1,if,=");
 }
 
-INST_HANDLER(st) {
+INST_HANDLER (st) {
 	// check op
-	INST_ASSERT((buf[0] & 0xf) != 0xf);
+	INST_ASSERT ((buf[0] & 0xf) != 0xf);
 
 	// fill op info and exec
 	op->type = R_ANAL_OP_TYPE_STORE;
 	op->cycles = 2;
-	op->size   = 2;
+	op->size = 2;
 
 	// esil
 	r_strbuf_setf (				// leave on stack the target
@@ -126,11 +125,11 @@ INST_HANDLER(st) {
 }
 
 OPCODE opcodes[] = {
-	INST_DECL(nop,  0xffff, 0x0000),
-	INST_DECL(out,  0xf800, 0xb800),
-	INST_DECL(ret,  0xffff, 0x9508),
-	INST_DECL(reti, 0xffff, 0x9518),
-	INST_DECL(st,   0xf00c, 0x900c),
+	INST_DECL (nop,  0xffff, 0x0000),
+	INST_DECL (out,  0xf800, 0xb800),
+	INST_DECL (ret,  0xffff, 0x9508),
+	INST_DECL (reti, 0xffff, 0x9518),
+	INST_DECL (st,   0xf00c, 0x900c),
 	INST_LAST
 };
 
@@ -140,7 +139,7 @@ static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 	op <<= 1;
 	if (op & 0x1000) {
 		short val = (~op) & 0xfff;
-		return (ut64)(addr - val + 1);
+		return (ut64) (addr - val + 1);
 	}
 	return addr + op + 2;
 }
@@ -421,7 +420,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			memcpy (kbuf, buf+2, 2);
 			op->size = 4;
 			//anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
-			op->jump = AVR_SOFTCAST(kbuf[0],kbuf[1])*2;
+			op->jump = AVR_SOFTCAST (kbuf[0],kbuf[1])*2;
 		} else {
 			op->size = 0;
 			return -1;
@@ -445,7 +444,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->fail = op->addr + 4;
 		anal->iob.read_at (anal->iob.io, addr + 2, kbuf, 2);
 		// TODO: check return value
-		op->jump = AVR_SOFTCAST(kbuf[0], kbuf[1]) * 2;
+		op->jump = AVR_SOFTCAST (kbuf[0], kbuf[1]) * 2;
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	}
 	if ((buf[1] & 0xf0) == 0xc0) { // rjmp (relative)
