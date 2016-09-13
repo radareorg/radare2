@@ -435,7 +435,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	z	.16	30	0\n"
 // special purpose registers
 		"gpr	pc	.16	32	0\n"
-		"gpr	sp	.16	34	0\n"
+		"gpr	sp	.8	34	0\n"
 		"gpr	sreg	.8	36	0\n"
 // 8bit segment registers to be added to X, Y, Z to get 24bit offsets
 		"gpr	rampx	.8	37	0\n"

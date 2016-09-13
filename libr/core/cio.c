@@ -4,7 +4,7 @@
 
 R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
-	ut8 is_gdb = (strcmp (debugbackend, "gdb") == 0);
+	bool is_gdb = !strcmp (debugbackend, "gdb");
 	RIODesc * fd = r->file ? r->file->desc : NULL;
 	const char *prompt = NULL;
 
@@ -15,19 +15,17 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 		return false;
 	}
 
-	pid = *p; // 1st element in debugger's struct must be int
 	r_config_set (r->config, "io.ff", "true");
-	if (is_gdb) {
-		r_core_cmd (r, "dh gdb", 0);
-	} else {
-		r_core_cmdf (r, "dh %s", debugbackend);
+	r_core_cmdf (r, "dh %s", debugbackend);
+	if (!is_gdb) {
+		pid = *p; // 1st element in debugger's struct must be int
+		r_core_cmdf (r, "dp=%d", pid);
+		if (attach) {
+			r_core_cmdf (r, "dpa %d", pid);
+		}
 	}
 	//this makes to attach twice showing warnings in the output
 	//we get "resource busy" so it seems isn't an issue
-	if (attach) {
-		r_core_cmdf (r, "dpa %d", pid);
-	}
-	r_core_cmdf (r, "dp=%d", pid);
 	r_core_cmd (r, ".dr*", 0);
 	/* honor dbg.bep */
 	{

@@ -587,89 +587,112 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		NULL
 	};
 	switch (*input) {
-		case 'f':
-			{
-				char *file;
-				RDebugSnap *snap;
-				if (input[1] == ' ') {
-					file = strdup (input + 2);
-				} else {
-					file = r_str_newf ("0x%08"PFMT64x".dump", core->offset);
-				}
-				snap = r_debug_snap_get (core->dbg, core->offset);
-				if (!snap) {
-					r_debug_snap (core->dbg, core->offset);
-					snap = r_debug_snap_get (core->dbg, core->offset);
-				}
-				if (snap) {
-					int fsz = 0;
-					char *data = r_file_slurp (file, &fsz);
-					if (data) {
-						if (fsz >= snap->size) {
-							memcpy (snap->data, data, snap->size);
-						} else {
-							eprintf ("This file is smaller than the snapshot size\n");
-						}
-						free (data);
-					} else eprintf ("Cannot slurp '%s'\n", file);
-				} else {
-					eprintf ("Unable to find a snapshot for 0x%08"PFMT64x"\n", core->offset);
-				}
-				free (file);
-			}
-			break;
-		case 't':
-			{
-				char *file;
-				RDebugSnap *snap;
-				if (input[1] == ' ') {
-					file = strdup (input + 2);
-				} else {
-					file = r_str_newf ("0x%08"PFMT64x".dump", core->offset);
-				}
-				snap = r_debug_snap_get (core->dbg, core->offset);
-				if (snap) {
-					if (!r_file_dump (file, snap->data, snap->size, 0)) {
-						eprintf ("Cannot slurp '%s'\n", file);
-					}
-				} else {
-					eprintf ("Unable to find a snapshot for 0x%08"PFMT64x"\n", core->offset);
-				}
-				free (file);
-			}
-			break;
-		case '?':
-			r_core_cmd_help (core, help_msg);
-			break;
-		case '-':
-			if (input[1]=='*') {
-				r_debug_snap_delete (core->dbg, -1);
+	case 'f':
+		{
+			char *file;
+			RDebugSnap *snap;
+			if (input[1] == ' ') {
+				file = strdup (input + 2);
 			} else {
-				r_debug_snap_delete (core->dbg, r_num_math (core->num, input + 1));
+				file = r_str_newf ("0x%08"PFMT64x".dump", core->offset);
 			}
-			break;
-		case ' ':
-			r_debug_snap (core->dbg, r_num_math (core->num, input + 1));
-			break;
-		case 'C':
-			r_debug_snap_comment (core->dbg, atoi (input + 1), strchr (input, ' '));
-			break;
-		case 'd':
-			__r_debug_snap_diff (core, atoi (input + 1));
-			break;
-		case 'a':
-			r_debug_snap_all (core->dbg, 0);
-			break;
-		case 'w':
-			r_debug_snap_all (core->dbg, R_IO_RW);
-			break;
-		case 0:
-		case 'j':
-		case '*':
-			r_debug_snap_list (core->dbg, -1, input[0]);
-			break;
+			snap = r_debug_snap_get (core->dbg, core->offset);
+			if (!snap) {
+				r_debug_snap (core->dbg, core->offset);
+				snap = r_debug_snap_get (core->dbg, core->offset);
+			}
+			if (snap) {
+				int fsz = 0;
+				char *data = r_file_slurp (file, &fsz);
+				if (data) {
+					if (fsz >= snap->size) {
+						memcpy (snap->data, data, snap->size);
+					} else {
+						eprintf ("This file is smaller than the snapshot size\n");
+					}
+					free (data);
+				} else eprintf ("Cannot slurp '%s'\n", file);
+			} else {
+				eprintf ("Unable to find a snapshot for 0x%08"PFMT64x"\n", core->offset);
+			}
+			free (file);
+		}
+		break;
+	case 't':
+		{
+			char *file;
+			RDebugSnap *snap;
+			if (input[1] == ' ') {
+				file = strdup (input + 2);
+			} else {
+				file = r_str_newf ("0x%08"PFMT64x".dump", core->offset);
+			}
+			snap = r_debug_snap_get (core->dbg, core->offset);
+			if (snap) {
+				if (!r_file_dump (file, snap->data, snap->size, 0)) {
+					eprintf ("Cannot slurp '%s'\n", file);
+				}
+			} else {
+				eprintf ("Unable to find a snapshot for 0x%08"PFMT64x"\n", core->offset);
+			}
+			free (file);
+		}
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg);
+		break;
+	case '-':
+		if (input[1]=='*') {
+			r_debug_snap_delete (core->dbg, -1);
+		} else {
+			r_debug_snap_delete (core->dbg, r_num_math (core->num, input + 1));
+		}
+		break;
+	case ' ':
+		r_debug_snap (core->dbg, r_num_math (core->num, input + 1));
+		break;
+	case 'C':
+		r_debug_snap_comment (core->dbg, atoi (input + 1), strchr (input, ' '));
+		break;
+	case 'd':
+		__r_debug_snap_diff (core, atoi (input + 1));
+		break;
+	case 'a':
+		r_debug_snap_all (core->dbg, 0);
+		break;
+	case 'w':
+		r_debug_snap_all (core->dbg, R_IO_RW);
+		break;
+	case 0:
+	case 'j':
+	case '*':
+		r_debug_snap_list (core->dbg, -1, input[0]);
+		break;
 	}
 	return 0;
+}
+
+static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
+	int pcbits = atoi (arg);
+	if (pcbits2) {
+		*pcbits2 = 0;
+	}
+	if (pcbits < 1) {
+		if (!strcmp (r_config_get (core->config, "asm.arch"), "avr")) {
+			pcbits = 8;
+			if (pcbits2) {
+				*pcbits2 = 32;
+			}
+		} else {
+			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
+			if (reg) {
+				if (core->assembler->bits != reg->size)
+					pcbits = reg->size;
+			}
+		}
+	}
+	return pcbits ? pcbits : core->anal->bits;
 }
 
 #define MAX_MAP_SIZE 1024*1024*512
@@ -1637,20 +1660,16 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			break;
 		case '=': // "dr="
 			{
-				int pcbits = 0;
-				{
-					const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-					RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
-					if (reg) {
-						if (core->assembler->bits != reg->size)
-							pcbits = reg->size;
-					}
-				}
+				int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
 				if (r_config_get_i (core->config, "cfg.debug")) {
 					if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
-						if (pcbits && pcbits != bits)
+						if (pcbits && pcbits != bits) {
 							r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
+						}
 						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2, use_color); // XXX detect which one is current usage
+						if (pcbits2) {
+							r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, 2, use_color); // XXX detect which one is current usage
+						}
 					} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 				} else {
 					RReg *orig = core->dbg->reg;
@@ -1664,15 +1683,12 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			break;
 		case '*':
 			if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
-				int pcbits = core->anal->bits;
-				const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-				RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
-				if (reg) {
-					if (core->assembler->bits != reg->size)
-						pcbits = reg->size;
-				}
+				int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
 				r_cons_printf ("fs+regs\n");
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, '*', use_color);
+				if (pcbits2) {
+					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, '*', use_color);
+				}
 				r_flag_space_pop (core->flags);
 				r_cons_printf ("fs-\n");
 			}

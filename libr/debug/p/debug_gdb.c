@@ -184,8 +184,9 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				if (bits == 16) {
 					gdbr_set_architecture (&g->desc, AVR);
 				} else {
-					eprintf ("Not supported register profile\n");
-					return false;
+					gdbr_set_architecture (&g->desc, AVR);
+					//eprintf ("Not supported register profile\n");
+					//return false;
 				}
 				break;
 			}
@@ -694,6 +695,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	r31	.8	31	0\n"
 			"gpr	sreg	.8	32	0\n"
 			"gpr	sp	.16	33	0\n"
+			"gpr	pc2	.32	34	0\n"
 			"gpr	pc	.32	35	0\n"
 	/*		"gpr	pc	.32	39	0\n" */
 	);

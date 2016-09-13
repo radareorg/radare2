@@ -486,8 +486,9 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	}
 
 	if (pid != -1 && tid != -1) {
-		if (pid != dbg->pid || tid != dbg->tid)
-			eprintf ("attach %d %d\n", pid, tid);
+		if (pid != dbg->pid || tid != dbg->tid) {
+			eprintf ("= attach %d %d\n", pid, tid);
+		}
 	} else {
 		if (dbg->pid != -1)
 			eprintf ("Child %d is dead\n", dbg->pid);
