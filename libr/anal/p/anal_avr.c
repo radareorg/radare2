@@ -183,13 +183,10 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		if (!strcasecmp (anal->cpu, cpu->model))
 			break;
 	}
-	fprintf(stderr, "selected cpu [%s]\n", cpu->model ? cpu->model : "unknown");
 
 	for(OPCODE *opcode_handler = opcodes; opcode_handler->handler; opcode_handler++) {
 		if((ins & opcode_handler->mask) == opcode_handler->selector) {
 			int fail = 0;
-
-			fprintf(stderr, "selected opcode [%s]\n", opcode_handler->name);
 
 			opcode_handler->handler(anal, op, addr, buf, len, &fail, cpu);
 			if(fail)
@@ -197,7 +194,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			return op->size;
 		}
 	}
-	fprintf(stderr, "no opcode selected :(\n");
 
 	// old and slow implementation
 	// NOTE: This block should collapse along time... it depends on
