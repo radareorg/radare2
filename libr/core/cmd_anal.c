@@ -782,7 +782,14 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 			if (b->fail != UT64_MAX) {
 				outputs ++;
 			}
-			r_cons_printf ("{\"addr\":%" PFMT64d ",\"size\":%d,\"inputs\":%d,\"outputs\":%d,\"ninstr\":%d,\"traced\":%s}%s",
+			r_cons_print ("{");
+			if (b->jump != UT64_MAX) {
+				r_cons_printf ("\"jump\":%"PFMT64d",", b->jump);
+			}
+			if (b->fail != UT64_MAX) {
+				r_cons_printf ("\"fail\":%"PFMT64d",", b->fail);
+			}
+			r_cons_printf ("\"addr\":%" PFMT64d ",\"size\":%d,\"inputs\":%d,\"outputs\":%d,\"ninstr\":%d,\"traced\":%s}%s",
 				b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced), iter->n? ",":"");
 			//%s", b->addr, iter->n? ",": "");
 			}
