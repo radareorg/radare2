@@ -2834,12 +2834,16 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 		r_cons_strcat (ds->pal_comment);
 	}
 	ds_align_comment (ds);
-	r_cons_printf ("; %s %s(", r_anal_type_func_ret (anal, name), name);
+	const char *fcn_type = r_anal_type_func_ret (anal, name);
+	r_cons_printf ("; %s%s%s(", fcn_type, fcn_type[strlen (fcn_type) - 1] == '*' ? "": " ", name);
 	int i, arg_max = r_anal_type_func_args_count (anal, name);
 	for (i = 0; i < arg_max; i++) {
-		r_cons_printf (" %s %s%s", r_anal_type_func_args_type (anal, name, i),
+		char *type = r_anal_type_func_args_type (anal, name, i);
+		r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
+			type[strlen (type) -1] == '*' ? "": " ",
 			r_anal_type_func_args_name (anal, name, i),
 			i == arg_max - 1 ? ");\n": ",");
+		free (type);
 	}
 	free (name);
 }
