@@ -60,16 +60,6 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ("ATmega2561", 22),
 	CPU_MODEL_DECL ((char *) 0,   16) };
 
-INST_HANDLER (movw) {
-	op->type = R_ANAL_OP_TYPE_MOV;
-	op->cycles = 1;
-
-	int d = (buf[0] & 0xf0) >> 3;
-	int r = (buf[0] & 0x0f) << 1;
-
-	r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r + 1, d + 1);
-}
-
 // ALIAS: Opcode (clr) when Rra and Rrb are the same
 INST_HANDLER (eor) {
 	op->type = R_ANAL_OP_TYPE_XOR;
@@ -79,6 +69,16 @@ INST_HANDLER (eor) {
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 
 	r_strbuf_setf (&op->esil, "r%d,r%d,^=,$z,zf,=,r%d,0x80,&,!,!,nf,=,nf,sf,=,0,vf,=", r, d, d);
+}
+
+INST_HANDLER (movw) {
+	op->type = R_ANAL_OP_TYPE_MOV;
+	op->cycles = 1;
+
+	int d = (buf[0] & 0xf0) >> 3;
+	int r = (buf[0] & 0x0f) << 1;
+
+	r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r + 1, d + 1);
 }
 
 INST_HANDLER (nop) {
@@ -123,6 +123,22 @@ INST_HANDLER (reti) {
 	r_strbuf_append (&op->esil, ",1,if,=");
 }
 
+INST_HANDLER (rjmp) {
+	register int32_t offset;
+
+	op->type = R_ANAL_OP_TYPE_JMP;
+	op->fail = 0;
+
+	offset = (buf[0] + (buf[1] << 8)) & 0xfff;
+	if(offset & 0x800)
+		offset |= 0xfffff000;
+	offset++;
+	offset <<= 1;
+	op->jump = op->addr + offset;
+
+	r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", op->jump);
+}
+
 INST_HANDLER (st) {
 	// check op
 	INST_ASSERT ((buf[0] & 0xf) != 0xf);
@@ -152,6 +168,7 @@ OPCODE opcodes[] = {
 	INST_DECL (out,  0xf800, 0xb800),
 	INST_DECL (ret,  0xffff, 0x9508),
 	INST_DECL (reti, 0xffff, 0x9518),
+	INST_DECL (rjmp, 0xf000, 0xc000),
 	INST_DECL (st,   0xf00c, 0x900c),
 	INST_LAST
 };
@@ -179,6 +196,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		return 2;
 	}
 	memset (op, '\0', sizeof (RAnalOp));
+	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->ptr = UT64_MAX;
 	op->val = UT64_MAX;
@@ -457,16 +475,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		// TODO: check return value
 		op->jump = AVR_SOFTCAST (kbuf[0], kbuf[1]) * 2;
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
-	}
-	if ((buf[1] & 0xf0) == 0xc0) { // rjmp (relative)
-		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->fail = (op->addr) + 2;
-		ofst = ins << 4;
-		ofst >>= 4;
-		ofst *= 2;
-		op->jump = addr + ofst + 2;
-		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
 	}
 
 	return op->size;
