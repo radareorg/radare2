@@ -1036,13 +1036,44 @@ static void ds_show_functions(RDisasmState *ds) {
 		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
 		if (call) {
-			//XXX probably broken
 			r_cons_printf ("%s%s%s %s %s%s (",
 				COLOR (ds, color_fline), ds->pre,
 				COLOR_RESET (ds), COLOR (ds, color_fname),
 				fcn_name, COLOR_RESET (ds));
+			bool comma = true;
+			bool arg_bp = false;
+			int tmp_len;
+			r_list_foreach (regs, iter, var) {
+				tmp_len = strlen (var->type);
+				r_cons_printf ("%s%s%s%s", var->type,
+					tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
+					var->name, iter->n ? ", " : "");
+			}
 			r_list_foreach (args, iter, var) {
-				r_cons_printf ("%s %s%s", var->type, var->name, iter->n ? ", " : "");
+				if (var->delta > 0) {
+					if (!r_list_empty (regs) && comma) {
+						r_cons_printf (", ");
+						comma = false;
+					}
+					arg_bp = true;
+					tmp_len = strlen (var->type);
+					r_cons_printf ("%s%s%s%s", var->type,
+						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
+						var->name, iter->n ? ", " : "");
+				}
+			}
+			comma = true;
+			r_list_foreach (sp_vars, iter, var) {
+				if (var->delta > f->stack) {
+					if ( (arg_bp || !r_list_empty (regs)) && comma) {
+						comma = false;
+						r_cons_printf (", ");
+					}
+					tmp_len = strlen (var->type);
+					r_cons_printf ("%s%s%s%s", var->type,
+						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
+						var->name, iter->n ? ", " : "");
+				}
 			}
 			r_cons_printf (");\n");
 		}
