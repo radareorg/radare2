@@ -286,22 +286,22 @@ R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name) {
 }
 
 R_API const char *r_anal_type_func_ret(RAnal *anal, const char *func_name){
-	char *query = sdb_fmt (-1, "func.%s.ret", func_name);
+	const char *query = sdb_fmt (-1, "func.%s.ret", func_name);
 	return sdb_const_get (anal->sdb_types, query, 0);
 }
 
 R_API const char *r_anal_type_func_cc(RAnal *anal, const char *func_name) {
-	char *query = sdb_fmt (-1, "func.%s.cc", func_name);
+	const char *query = sdb_fmt (-1, "func.%s.cc", func_name);
 	return sdb_const_get (anal->sdb_types, query, 0);
 }
 
 R_API int r_anal_type_func_args_count(RAnal *anal, const char *func_name) {
-	char *query = sdb_fmt (-1, "func.%s.args", func_name);
+	const char *query = sdb_fmt (-1, "func.%s.args", func_name);
 	return sdb_num_get (anal->sdb_types, query, 0);
 }
 
 R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i) {
-	char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
+	const char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get (anal->sdb_types, query, 0);
 	char *comma = strchr (ret, ',');
 	if (comma) {
@@ -313,7 +313,7 @@ R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i
 }
 
 R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i) {
-	char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
+	const char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get (anal->sdb_types, query, 0);
 	char *ret = strchr (get, ',');
 	return ret == 0 ? ret : ret + 1;

@@ -1571,7 +1571,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
 	SETICB("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
-	SETPREF("asm.calls", "false", "Show calling convention calls as comments in disasm");
+	SETPREF("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETPREF("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
