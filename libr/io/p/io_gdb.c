@@ -34,14 +34,16 @@ static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
 		memcpy (buf, c_buff, sz);
 		return sz;
 	}
-	if (sz < 1 || addr >= UT64_MAX) return -1;
+	if (sz < 1 || addr >= UT64_MAX) {
+		return -1;
+	}
 	for (x = 0; x < packets; x++) {
-		gdbr_read_memory (desc, addr + x * size_max, size_max);
-		memcpy ((buf + x * size_max), desc->data + x * size_max, R_MIN (sz, size_max));
+		gdbr_read_memory (desc, addr + (x * size_max), size_max);
+		memcpy ((buf + (x * size_max)), desc->data + (x * size_max), R_MIN (sz, size_max));
 	}
 	if (last) {
 		gdbr_read_memory (desc, addr + x * size_max, last);
-		memcpy ((buf + x * size_max), desc->data + x * size_max, last);
+		memcpy ((buf + x * size_max), desc->data + (x * size_max), last);
 	}
 	c_addr = addr;
 	c_size = sz;
@@ -137,19 +139,29 @@ static int __close(RIODesc *fd) {
 	return -1;
 }
 
+int send_command(libgdbr_t* g, const char* command);
+int read_packet(libgdbr_t* instance);
+
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
         //printf("ptrace io command (%s)\n", cmd);
         /* XXX ugly hack for testing purposes */
-        if (!strcmp (cmd, "help")) {
+        if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
                 eprintf ("Usage: =!cmd args\n"
-                        " =!pid      - show targeted pid\n");
+                        " =!pid      - show targeted pid\n"
+                        " =!pkt s    - send packet 's'\n");
+	} else if (!strncmp (cmd, "pkt ", 4)) {
+		send_command (desc, cmd + 4);
+		int r = read_packet (desc);
+		eprintf ("r = %d\n", r);
 	} else if (!strncmp (cmd, "pid", 3)) {
 		int pid = 1234;
 		if (!cmd[3]) {
 			io->cb_printf ("%d\n", pid);
 		}
 		return pid;
-	} else eprintf ("Try: '=!pid'\n");
+	} else {
+		eprintf ("Try: '=!?'\n");
+	}
         return true;
 }
 

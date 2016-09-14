@@ -57,7 +57,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		buf_size = buflen;
 	}
 	memset ((void*)(volatile void*)buf, 0, size);
-	memcpy ((void*)(volatile void*)buf, desc->data, copy_size);
+	memcpy ((void*)(volatile void*)buf, desc->data, R_MIN (copy_size, size));
 	memset ((void*)(volatile void*)reg_buf, 0, buflen);
 	memcpy ((void*)(volatile void*)reg_buf, desc->data, copy_size);
 #if 0
