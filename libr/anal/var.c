@@ -20,7 +20,35 @@ struct VarType {
 #define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x, ##y);
 #define SETKEY2(x,y...) snprintf (key2, sizeof (key)-1, x, ##y);
 #define SETVAL(x,y...) snprintf (val, sizeof (val)-1, x, ##y);
-
+R_API int r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
+	char *fmt = r_anal_type_format (anal, type);
+	RRegItem *i;
+	if (!fmt) {
+		eprintf ("type:%s doesn't exist\n", type);
+		return false;
+	}
+	switch (kind) {
+	case R_ANAL_VAR_KIND_REG:
+		i = r_reg_index_get (anal->reg, delta);
+		if (i) {
+			anal->cb_printf ("pf r (%s)\n", i->name);
+		} else {
+			eprintf ("register not found\n");
+		}
+		break;
+	case R_ANAL_VAR_KIND_BPV:
+		if (delta > 0) {
+			anal->cb_printf ("pf %s @%s+0x%x\n", fmt,	anal->reg->name[R_REG_NAME_BP], delta);
+		} else {
+			anal->cb_printf ("pf %s @%s-0x%x\n", fmt, anal->reg->name[R_REG_NAME_BP], -delta);
+		}
+		break;
+	case R_ANAL_VAR_KIND_SPV:
+		anal->cb_printf ("pf %s @ %s+0x%x\n", fmt, anal->reg->name[R_REG_NAME_SP], delta);
+		break;
+	}
+	free (fmt);
+}
 R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
 	if (!kind) {

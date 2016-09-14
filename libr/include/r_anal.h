@@ -1271,7 +1271,7 @@ R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind,
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 
 /* vars // globals. not here  */
-
+R_API int r_anal_var_display(RAnal *anal, int delta, char kind, const char *type);
 R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn);
 R_API void r_anal_fcn_set_size(RAnalFunction *fcn, ut32 size);
 R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn);

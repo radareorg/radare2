@@ -22,7 +22,7 @@
 #define esilprintf(op, fmt, arg...) r_strbuf_setf (&op->esil, fmt, ##arg)
 #define INSOP(n) insn->detail->x86.operands[n]
 #define INSOPS insn->detail->x86.op_count
-#define ISIMM(x) insn->detail->x86.operands[x].type == ARM_OP_IMM
+#define ISIMM(x) insn->detail->x86.operands[x].type == X86_OP_IMM
 
 struct Getarg {
 	csh handle;
@@ -1620,7 +1620,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_FCMOVNU:
 	case X86_INS_FCMOVU:
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ANAL_OP_TYPE_CMOV;
 		break;
 	case X86_INS_CMOVA:
 	case X86_INS_CMOVAE:

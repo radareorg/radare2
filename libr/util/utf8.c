@@ -278,7 +278,7 @@ R_API int r_utf8_strlen (const ut8 *str) {
 }
 
 R_API int r_isprint (const RRune c) {
-	const last = nonprintable_ranges_count;
+	const int last = nonprintable_ranges_count;
 	int low, hi, mid;
 
 	low = 0;
