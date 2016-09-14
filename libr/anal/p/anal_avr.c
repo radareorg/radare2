@@ -526,7 +526,7 @@ static int esil_avr_fini (RAnalEsil *esil) {
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p =
-		"=PC	pc\n"
+		"=PC	pcl\n"
 		"=SP	sp\n"
 // explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
 // and http://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
@@ -585,6 +585,8 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 // NOTE: program counter size in AVR depends on the CPU model. It seems that
 // the PC may range from 16 bits to 22 bits.
 		"gpr	pc	.32	32	0\n"
+		"gpr	pcl	.16	32	0\n"
+		"gpr	pch	.16	34	0\n"
 // special purpose registers
 		"gpr	sp	.16	36	0\n"
 		"gpr	sreg	.8	38	0\n"
@@ -635,7 +637,7 @@ RAnalPlugin r_anal_plugin_avr = {
 	.arch = "avr",
 	.esil = true,
 	.archinfo = archinfo,
-	.bits = 8 | 16, // 24 big regs conflicts
+	.bits = 8 | 16 | 32 | 64, // 24 big regs conflicts
 	.op = &avr_op,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_avr_init,
