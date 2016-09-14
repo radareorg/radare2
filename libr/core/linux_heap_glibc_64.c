@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2016 - n4x0r, soez */
+
 static void update_main_arena_64(RCore *core, ut64 m_arena, RHeap_MallocState64 *main_arena) {
 	r_core_read_at (core, m_arena, (ut8 *)main_arena, sizeof (RHeap_MallocState64));
 }
@@ -601,6 +603,11 @@ static void print_heap_fastbin_64(RCore *core, ut64 m_arena, RHeap_MallocState64
 static void print_mmap_graph_64(RCore *core, RHeap_MallocState64 *malloc_state, ut64 m_state) {
 	int w, h;
 	ut64 top_size = UT64_MAX;
+
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return;
+	}
+
 	w = r_cons_get_size (&h);
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	can->color = r_config_get_i (core->config, "scr.color");
@@ -609,6 +616,8 @@ static void print_mmap_graph_64(RCore *core, RHeap_MallocState64 *malloc_state, 
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64), *prev_c = R_NEW0 (RHeapChunk64);
 	
 	if (!cnk || !prev_c) {
+		free (cnk);
+		free (prev_c);
 		return;
 	}
 
@@ -618,10 +627,6 @@ static void print_mmap_graph_64(RCore *core, RHeap_MallocState64 *malloc_state, 
 
 	r_agraph_set_title (g, "Mmmaped Heap");
 	top_title = r_str_newf ("Top chunk @ 0x%"PFMT64x"\n", malloc_state->top);
-
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return;
-	}
 
 	ut64 start_mmap = m_state + sizeof(RHeap_MallocState64) + SZ; //0x8b0;
 	r_core_read_at (core, malloc_state->top, (ut8*)cnk, sizeof (RHeapChunk64));
@@ -829,16 +834,17 @@ static void print_heap_segment64(RCore *core, RHeap_MallocState64 *main_arena, u
 static void print_heap_mmaped64(RCore *core, ut64 malloc_state) {
 	ut64 mmap_start = UT64_MAX, mmap_end = UT64_MAX, size_tmp;
 	ut64 top_size = UT64_MAX;
+
+	if (!core || !core->dbg || !core->dbg->maps){
+		return;
+	}
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64);
-	RHeap_MallocState64 *ms = R_NEW0 (RHeap_MallocState64);
 	
 	if (!cnk) {
 		return;
 	}
 
-	if (!core || !core->dbg || !core->dbg->maps){
-		return;
-	}
+	RHeap_MallocState64 *ms = R_NEW0 (RHeap_MallocState64);
 	mmap_start = malloc_state + sizeof(RHeap_MallocState64) + SZ; //0x8b0;
 	r_core_read_at (core, malloc_state, (ut8*)ms, sizeof (RHeap_MallocState64));
 	mmap_end = ms->top;
