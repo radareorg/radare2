@@ -2818,7 +2818,31 @@ beach:
 		}
 	}
 }
-
+static void ds_print_calls_hints(RDisasmState *ds) {
+	RAnal *anal = ds->core->anal;
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
+	char *name;
+	if (!fcn) {
+		return;
+	}
+	if (r_anal_type_func_exist (anal, fcn->name)) {
+		name = strdup (fcn->name);
+	} else if (!(name = r_anal_type_func_guess (anal, fcn->name))) {
+		return;
+	}
+	if (ds->show_color) {
+		r_cons_strcat (ds->pal_comment);
+	}
+	ds_align_comment (ds);
+	r_cons_printf ("; %s %s(", r_anal_type_func_ret (anal, name), name);
+	int i, arg_max = r_anal_type_func_args_count (anal, name);
+	for (i = 0; i < arg_max; i++) {
+		r_cons_printf (" %s %s%s", r_anal_type_func_args_type (anal, name, i),
+			r_anal_type_func_args_name (anal, name, i),
+			i == arg_max - 1 ? ");\n": ",");
+	}
+	free (name);
+}
 static void ds_print_comments_right(RDisasmState *ds) {
 	char *desc = NULL;
 	RCore *core = ds->core;
@@ -2862,6 +2886,9 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		}
 	}
 	free (desc);
+	if (ds->analop.type == R_ANAL_OP_TYPE_CALL && ds->show_calls) {
+		ds_print_calls_hints (ds);
+	}
 }
 
 #if 0

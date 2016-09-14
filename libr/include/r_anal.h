@@ -1135,6 +1135,7 @@ R_API char *r_anal_type_format (RAnal *anal, const char *t);
 R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val);
 R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name);
 R_API const char *r_anal_type_func_cc(RAnal *anal, const char *func_name);
+ R_API const char *r_anal_type_func_ret(RAnal *anal, const char *func_name);
 R_API int r_anal_type_func_args_count(RAnal *anal, const char *func_name);
 R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i);
 R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i);

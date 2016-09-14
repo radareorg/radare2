@@ -285,6 +285,11 @@ R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name) {
 	return fcn && !strcmp (fcn, "func");
 }
 
+R_API const char *r_anal_type_func_ret(RAnal *anal, const char *func_name){
+	char *query = sdb_fmt (-1, "func.%s.ret", func_name);
+	return sdb_const_get (anal->sdb_types, query, 0);
+}
+
 R_API const char *r_anal_type_func_cc(RAnal *anal, const char *func_name) {
 	char *query = sdb_fmt (-1, "func.%s.cc", func_name);
 	return sdb_const_get (anal->sdb_types, query, 0);
