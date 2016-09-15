@@ -55,7 +55,7 @@ zip_file_rename(struct zip *za, zip_uint64_t idx, const char *name, zip_flags_t 
 	return -1;
     }
 
-    if (!(old_name=zip_get_name(za, idx, 0)))
+    if ((old_name=zip_get_name(za, idx, 0)) == NULL)
 	return -1;
 								    
     new_is_dir = (name != NULL && name[strlen(name)-1] == '/');

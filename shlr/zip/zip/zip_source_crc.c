@@ -56,12 +56,12 @@ zip_source_crc(struct zip *za, struct zip_source *src, int validate)
 {
     struct crc_context *ctx;
 
-    if (!src) {
+    if (src == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }
 
-    if (!(ctx=(struct crc_context *)malloc(sizeof(*ctx)))) {
+    if ((ctx=(struct crc_context *)malloc(sizeof(*ctx))) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	return NULL;
     }

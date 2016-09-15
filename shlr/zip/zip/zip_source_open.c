@@ -47,7 +47,7 @@ zip_source_open(struct zip_source *src)
 	return -1;
     }
 
-    if (!src->src) {
+    if (src->src == NULL) {
 	if (src->cb.f(src->ud, NULL, 0, ZIP_SOURCE_OPEN) < 0)
 	    return -1;
     }

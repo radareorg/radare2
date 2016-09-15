@@ -94,7 +94,7 @@ static int save_xattr_block(long long start, int offset)
 
 	TRACE("save_xattr_block: start %lld, offset %d\n", start, offset);
 
-	if(!hash_entry) {
+	if(hash_entry == NULL) {
 		ERROR("Failed to allocate hash entry\n");
 		return -1;
 	}
@@ -148,7 +148,7 @@ int read_xattr_entry(struct xattr_list *xattr,
 
 	len = strlen(prefix_table[i].prefix);
 	xattr->full_name = malloc(len + entry->size + 1);
-	if(!xattr->full_name) {
+	if(xattr->full_name == NULL) {
 		ERROR("Out of memory in read_xattr_entry\n");
 		return -1;
 	}
@@ -198,7 +198,7 @@ int read_xattrs_from_disk(int fd, struct squashfs_super_block *sBlk)
 	index_bytes = SQUASHFS_XATTR_BLOCK_BYTES(ids);
 	indexes = SQUASHFS_XATTR_BLOCKS(ids);
 	index = malloc(index_bytes);
-	if(!index) {
+	if(index == NULL) {
 		ERROR("Failed to allocate index array\n");
 		return 0;
 	}
@@ -216,7 +216,7 @@ int read_xattrs_from_disk(int fd, struct squashfs_super_block *sBlk)
 	 */
 	bytes = SQUASHFS_XATTR_BYTES(ids);
 	xattr_ids = malloc(bytes);
-	if(!xattr_ids) {
+	if(xattr_ids == NULL) {
 		ERROR("Failed to allocate xattr id table\n");
 		goto failed1;
 	}
@@ -247,7 +247,7 @@ int read_xattrs_from_disk(int fd, struct squashfs_super_block *sBlk)
 	for(i = 0; start < end; i++) {
 		int length;
 		void *x = realloc(xattrs, (i + 1) * SQUASHFS_METADATA_SIZE);
-		if(!x) {
+		if(x == NULL) {
 			ERROR("Failed to realloc xattr data\n");
 			goto failed3;
 		}
@@ -317,7 +317,7 @@ struct xattr_list *get_xattr(int i, unsigned int *count)
 
 		xattr_list = realloc(xattr_list, (j + 1) *
 						sizeof(struct xattr_list));
-		if(!xattr_list) {
+		if(xattr_list == NULL) {
 			ERROR("Out of memory in get_xattrs\n");
 			goto failed;
 		}

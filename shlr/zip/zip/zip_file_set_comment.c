@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
-
+ 
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -47,7 +47,7 @@ zip_file_set_comment(struct zip *za, zip_uint64_t idx,
     struct zip_string *cstr;
     int changed;
 
-    if (!_zip_get_dirent(za, idx, 0, NULL))
+    if (_zip_get_dirent(za, idx, 0, NULL) == NULL)
 	return -1;
 
     if (ZIP_IS_RDONLY(za)) {
@@ -55,13 +55,13 @@ zip_file_set_comment(struct zip *za, zip_uint64_t idx,
 	return -1;
     }
 
-    if (len > 0 && !comment) {
+    if (len > 0 && comment == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return -1;
     }
 
     if (len > 0) {
-	if (!(cstr = _zip_string_new ((const zip_uint8_t *)comment, len, flags, &za->error)))
+	if ((cstr=_zip_string_new((const zip_uint8_t *)comment, len, flags, &za->error)) == NULL)
 	    return -1;
 	if ((flags & ZIP_FL_ENCODING_ALL) == ZIP_FL_ENC_GUESS && _zip_guess_encoding(cstr, ZIP_ENCODING_UNKNOWN) == ZIP_ENCODING_UTF8_GUESSED)
 	    cstr->encoding = ZIP_ENCODING_UTF8_KNOWN;
@@ -81,10 +81,10 @@ zip_file_set_comment(struct zip *za, zip_uint64_t idx,
 	changed = !_zip_string_equal(e->orig->comment, cstr);
     else
 	changed = (cstr != NULL);
-
+	
     if (changed) {
-        if (!e->changes) {
-            if (!(e->changes=_zip_dirent_clone(e->orig))) {
+        if (e->changes == NULL) {
+            if ((e->changes=_zip_dirent_clone(e->orig)) == NULL) {
                 _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 		_zip_string_free(cstr);
                 return -1;

@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
-
+ 
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -67,12 +67,12 @@ zip_source_deflate(struct zip *za, struct zip_source *src,
     struct deflate *ctx;
     struct zip_source *s2;
 
-    if (!src || (cm != ZIP_CM_DEFLATE && !ZIP_CM_IS_DEFAULT(cm))) {
+    if (src == NULL || (cm != ZIP_CM_DEFLATE && !ZIP_CM_IS_DEFAULT(cm))) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }
 
-    if (!(ctx=(struct deflate *)malloc(sizeof(*ctx)))) {
+    if ((ctx=(struct deflate *)malloc(sizeof(*ctx))) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	return NULL;
     }
@@ -86,10 +86,10 @@ zip_source_deflate(struct zip *za, struct zip_source *src,
 	    ctx->mem_level = MAX_MEM_LEVEL;
     }
 
-    if (!(s2 = zip_source_layered (za, src,
+    if ((s2=zip_source_layered(za, src,
 			       ((flags & ZIP_CODEC_ENCODE)
 				? deflate_compress : deflate_decompress),
-			       ctx))) {
+			       ctx)) == NULL) {
 	deflate_free(ctx);
 	return NULL;
     }
@@ -108,10 +108,10 @@ compress_read(struct zip_source *src, struct deflate *ctx,
 
     if (ctx->e[0] != 0)
 	return -1;
-
+    
     if (len == 0)
 	return 0;
-
+	
     ctx->zstr.next_out = (Bytef *)data;
     ctx->zstr.avail_out = (uInt)len; /* XXX: check for overflow */
 
@@ -182,10 +182,10 @@ decompress_read(struct zip_source *src, struct deflate *ctx,
 
     if (ctx->e[0] != 0)
 	return -1;
-
+    
     if (len == 0)
 	return 0;
-
+	
     ctx->zstr.next_out = (Bytef *)data;
     ctx->zstr.avail_out = (uInt)len; /* XXX: check for overflow */
 
@@ -196,7 +196,7 @@ decompress_read(struct zip_source *src, struct deflate *ctx,
 	switch (ret) {
 	case Z_OK:
 	    break;
-
+	    
 	case Z_STREAM_END:
 	    ctx->eof = 1;
 	    end = 1;
@@ -379,7 +379,7 @@ deflate_decompress(struct zip_source *src, void *ud, void *data,
 	ctx->e[1] = 0;
 	return -1;
     }
-
+    
 }
 
 

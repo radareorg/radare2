@@ -74,7 +74,7 @@ static int xz_options(char *argv[], int argc)
 					break;
 				}
 			}
-			if(!bcj[i].name) {
+			if(bcj[i].name == NULL) {
 				fprintf(stderr, "xz: -Xbcj unrecognised "
 					"filter\n");
 				goto failed;
@@ -269,11 +269,11 @@ static int xz_init(void **strm, int block_size, int datablock)
 	struct filter *filter = malloc(filters * sizeof(struct filter));
 	struct xz_stream *stream;
 
-	if(!filter)
+	if(filter == NULL)
 		goto failed;
 
 	stream = *strm = malloc(sizeof(struct xz_stream));
-	if(!stream)
+	if(stream == NULL)
 		goto failed2;
 
 	stream->filter = filter;
@@ -291,7 +291,7 @@ static int xz_init(void **strm, int block_size, int datablock)
 	for(i = 0, j = 1; datablock && bcj[i].name; i++) {
 		if(bcj[i].selected) {
 			filter[j].buffer = malloc(block_size);
-			if(!filter[j].buffer)
+			if(filter[j].buffer == NULL)
 				goto failed3;
 			filter[j].filter[0].id = bcj[i].id;
 			filter[j].filter[1].id = LZMA_FILTER_LZMA2;

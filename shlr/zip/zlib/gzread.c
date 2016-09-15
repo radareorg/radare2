@@ -93,7 +93,7 @@ local int gz_look(state)
         /* allocate buffers */
         state->in = (unsigned char *)malloc(state->want);
         state->out = (unsigned char *)malloc(state->want << 1);
-        if (!state->in || !state->out) {
+        if (state->in == NULL || state->out == NULL) {
             if (state->out != NULL)
                 free(state->out);
             if (state->in != NULL)
@@ -200,7 +200,7 @@ local int gz_decomp(state)
         }
         if (ret == Z_DATA_ERROR) {              /* deflate stream invalid */
             gz_error(state, Z_DATA_ERROR,
-                     !strm->msg ? "compressed data error" : strm->msg);
+                     strm->msg == NULL ? "compressed data error" : strm->msg);
             return -1;
         }
     } while (strm->avail_out && ret != Z_STREAM_END);
@@ -295,7 +295,7 @@ int ZEXPORT gzread(file, buf, len)
     z_streamp strm;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return -1;
     state = (gz_statep)file;
     strm = &(state->strm);
@@ -392,7 +392,7 @@ int ZEXPORT gzgetc(file)
     gz_statep state;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return -1;
     state = (gz_statep)file;
 
@@ -427,7 +427,7 @@ int ZEXPORT gzungetc(c, file)
     gz_statep state;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return -1;
     state = (gz_statep)file;
 
@@ -491,7 +491,7 @@ char * ZEXPORT gzgets(file, buf, len)
     gz_statep state;
 
     /* check parameters and get internal structure */
-    if (!file || !buf || len < 1)
+    if (file == NULL || buf == NULL || len < 1)
         return NULL;
     state = (gz_statep)file;
 
@@ -534,7 +534,7 @@ char * ZEXPORT gzgets(file, buf, len)
         state->x.pos += n;
         left -= n;
         buf += n;
-    } while (left && !eol);
+    } while (left && eol == NULL);
 
     /* return terminated string, or if nothing, end of file */
     if (buf == str)
@@ -550,7 +550,7 @@ int ZEXPORT gzdirect(file)
     gz_statep state;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return 0;
     state = (gz_statep)file;
 
@@ -571,7 +571,7 @@ int ZEXPORT gzclose_r(file)
     gz_statep state;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return Z_STREAM_ERROR;
     state = (gz_statep)file;
 

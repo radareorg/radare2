@@ -810,7 +810,7 @@ list_nodes (void *record, void *closure)
       node->size = grub_be_to_cpu64 (fileinfo->data.size);
       node->fileid = grub_be_to_cpu32 (fileinfo->fileid);
 
-      if (!c->hook)
+      if (c->hook == NULL)
         c->ret = 0;
       else
         c->ret = c->hook (filename, type, node, c->closure);

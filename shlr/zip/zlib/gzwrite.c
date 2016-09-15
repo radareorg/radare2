@@ -20,7 +20,7 @@ local int gz_init(state)
 
     /* allocate input buffer */
     state->in = (unsigned char *)malloc(state->want);
-    if (!state->in) {
+    if (state->in == NULL) {
         gz_error(state, Z_MEM_ERROR, "out of memory");
         return -1;
     }
@@ -29,7 +29,7 @@ local int gz_init(state)
     if (!state->direct) {
         /* allocate output buffer */
         state->out = (unsigned char *)malloc(state->want);
-        if (!state->out) {
+        if (state->out == NULL) {
             free(state->in);
             gz_error(state, Z_MEM_ERROR, "out of memory");
             return -1;
@@ -172,7 +172,7 @@ int ZEXPORT gzwrite(file, buf, len)
     z_streamp strm;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return 0;
     state = (gz_statep)file;
     strm = &(state->strm);
@@ -252,7 +252,7 @@ int ZEXPORT gzputc(file, c)
     z_streamp strm;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return -1;
     state = (gz_statep)file;
     strm = &(state->strm);
@@ -314,7 +314,7 @@ int ZEXPORTVA gzvprintf(gzFile file, const char *format, va_list va)
     z_streamp strm;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return -1;
     state = (gz_statep)file;
     strm = &(state->strm);
@@ -395,7 +395,7 @@ int ZEXPORTVA gzprintf (file, format, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
     z_streamp strm;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return -1;
     state = (gz_statep)file;
     strm = &(state->strm);
@@ -469,7 +469,7 @@ int ZEXPORT gzflush(file, flush)
     gz_statep state;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return -1;
     state = (gz_statep)file;
 
@@ -503,7 +503,7 @@ int ZEXPORT gzsetparams(file, level, strategy)
     z_streamp strm;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return Z_STREAM_ERROR;
     state = (gz_statep)file;
     strm = &(state->strm);
@@ -543,7 +543,7 @@ int ZEXPORT gzclose_w(file)
     gz_statep state;
 
     /* get internal structure */
-    if (!file)
+    if (file == NULL)
         return Z_STREAM_ERROR;
     state = (gz_statep)file;
 

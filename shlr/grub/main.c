@@ -64,7 +64,7 @@ grub_file_t openimage(grub_fs_t fs, const char *str) {
 	file->data = malloc (file->size);
 	{
 		FILE *fd = fopen(IMGFILE, "rb");
-		if (!fd) {
+		if (fd == NULL) {
 			printf ("Cannot open fs image\n");
 			return NULL;
 		}
@@ -90,7 +90,7 @@ int do_main() {
 
 	e2 = &grub_ext2_fs;
 	file = openimage (e2, IMGFILE);
-	if (!file) {
+	if (file == NULL) {
 		printf ("oops\n");
 		return 0;
 	}

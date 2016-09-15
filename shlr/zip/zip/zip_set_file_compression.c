@@ -61,7 +61,7 @@ zip_set_file_compression(struct zip *za, zip_uint64_t idx,
 
     e = za->entry+idx;
     
-    old_method = (!e->orig ? ZIP_CM_DEFAULT : e->orig->comp_method);
+    old_method = (e->orig == NULL ? ZIP_CM_DEFAULT : e->orig->comp_method);
     
     /* XXX: revisit this when flags are supported, since they may require a recompression */
     
@@ -75,8 +75,8 @@ zip_set_file_compression(struct zip *za, zip_uint64_t idx,
 	}
     }
     else {
-        if (!e->changes) {
-            if (!(e->changes=_zip_dirent_clone(e->orig))) {
+        if (e->changes == NULL) {
+            if ((e->changes=_zip_dirent_clone(e->orig)) == NULL) {
                 _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
                 return -1;
             }

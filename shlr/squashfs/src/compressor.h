@@ -42,7 +42,7 @@ extern void display_compressor_usage(char *);
 static inline int compressor_init(struct compressor *comp, void **stream,
 	int block_size, int datablock)
 {
-	if(!comp->init)
+	if(comp->init == NULL)
 		return 0;
 	return comp->init(stream, block_size, datablock);
 }
@@ -65,7 +65,7 @@ static inline int compressor_uncompress(struct compressor *comp, void *dest,
 static inline int compressor_options(struct compressor *comp, char *argv[],
 	int argc)
 {
-	if(!comp->options)
+	if(comp->options == NULL)
 		return -1;
 
 	return comp->options(argv, argc);
@@ -74,7 +74,7 @@ static inline int compressor_options(struct compressor *comp, char *argv[],
 
 static inline int compressor_options_post(struct compressor *comp, int block_size)
 {
-	if(!comp->options_post)
+	if(comp->options_post == NULL)
 		return 0;
 	return comp->options_post(block_size);
 }
@@ -83,7 +83,7 @@ static inline int compressor_options_post(struct compressor *comp, int block_siz
 static inline void *compressor_dump_options(struct compressor *comp,
 	int block_size, int *size)
 {
-	if(!comp->dump_options)
+	if(comp->dump_options == NULL)
 		return NULL;
 	return comp->dump_options(block_size, size);
 }
@@ -92,7 +92,7 @@ static inline void *compressor_dump_options(struct compressor *comp,
 static inline int compressor_extract_options(struct compressor *comp,
 	int block_size, void *buffer, int size)
 {
-	if(!comp->extract_options)
+	if(comp->extract_options == NULL)
 		return size ? -1 : 0;
 	return comp->extract_options(block_size, buffer, size);
 }

@@ -14,7 +14,7 @@ int ZEXPORT gzclose(file)
 #ifndef NO_GZCOMPRESS
     gz_statep state;
 
-    if (!file)
+    if (file == NULL)
         return Z_STREAM_ERROR;
     state = (gz_statep)file;
 

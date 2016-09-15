@@ -2916,7 +2916,7 @@ static void macro_subst(TokenString *tok_str, Sym **nested_list,
     while (1) {
         /* NOTE: ptr == NULL can only happen if tokens are read from
            file stream due to a macro function call */
-        if (!ptr)
+        if (ptr == NULL)
             break;
         TOK_GET(&t, &ptr, &cval);
         if (t == 0)

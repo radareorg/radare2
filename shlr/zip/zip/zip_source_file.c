@@ -44,10 +44,10 @@ ZIP_EXTERN struct zip_source *
 zip_source_file(struct zip *za, const char *fname, zip_uint64_t start,
 		zip_int64_t len)
 {
-    if (!za)
+    if (za == NULL)
 	return NULL;
 
-    if (!fname || len < -1) {
+    if (fname == NULL || len < -1) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }

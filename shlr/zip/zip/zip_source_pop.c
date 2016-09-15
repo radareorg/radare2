@@ -44,12 +44,12 @@ zip_source_pop(struct zip_source *src)
 {
     struct zip_source *lower;
 
-    if (!src)
+    if (src == NULL)
 	return NULL;
 
     lower = src->src;
 
-    if (!lower)
+    if (lower == NULL)
 	zip_source_free(src);
     else {
 	if (src->is_open)

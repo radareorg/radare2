@@ -45,10 +45,10 @@ zip_source_layered(struct zip *za, struct zip_source *src,
 {
     struct zip_source *zs;
 
-    if (!za)
+    if (za == NULL)
 	return NULL;
 
-    if (!(zs=_zip_source_new(za)))
+    if ((zs=_zip_source_new(za)) == NULL)
 	return NULL;
 
     zs->src = src;

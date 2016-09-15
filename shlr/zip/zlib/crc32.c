@@ -143,7 +143,7 @@ local void make_crc_table()
         FILE *out;
 
         out = fopen("crc32.h", "w");
-        if (!out) return;
+        if (out == NULL) return;
         fprintf(out, "/* crc32.h -- tables for rapid CRC calculation\n");
         fprintf(out, " * Generated automatically by crc32.c\n */\n\n");
         fprintf(out, "local const z_crc_t FAR ");

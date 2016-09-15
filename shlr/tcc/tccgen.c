@@ -518,7 +518,7 @@ static int is_compatible_func(CType *type1, CType *type2)
     if (s1->c != s2->c)
         return 0;
     while (s1 != NULL) {
-        if (!s2)
+        if (s2 == NULL)
             return 0;
         if (!is_compatible_parameter_types(&s1->type, &s2->type))
             return 0;
@@ -2484,7 +2484,7 @@ static void decl_initializer(CType *type, unsigned long c,
             }
 
             f = f->next;
-            if (no_oblock && !f)
+            if (no_oblock && f == NULL)
                 break;
             if (tok == '}')
                 break;

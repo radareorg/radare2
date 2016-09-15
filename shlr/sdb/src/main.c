@@ -51,7 +51,7 @@ static char *stdin_slurp(int *sz) {
 	}
 #endif
 	buf = calloc (BS+1, 1);
-	if (!buf) {
+	if (buf == NULL) {
 		return NULL;
 	}
 

@@ -188,7 +188,7 @@ ud_insn_hex(struct ud* u)
 extern const uint8_t*
 ud_insn_ptr(const struct ud* u)
 {
-  return (!u->inp_buf) ?
+  return (u->inp_buf == NULL) ?
             u->inp_sess : u->inp_buf + (u->inp_buf_index - u->inp_ctr);
 }
 
@@ -280,7 +280,7 @@ ud_get_user_opaque_data(const struct ud *u)
 void
 ud_set_asm_buffer(struct ud *u, char *buf, size_t size)
 {
-  if (!buf) {
+  if (buf == NULL) {
     ud_set_asm_buffer(u, u->asm_buf_int, sizeof(u->asm_buf_int));
   } else {
     u->asm_buf = buf;
@@ -350,7 +350,7 @@ ud_lookup_mnemonic(enum ud_mnemonic_code c)
 const struct ud_eflags*
 ud_lookup_eflags(struct ud *u)
 {
-  if (!u || !u->itab_entry) {
+  if (u == NULL || u->itab_entry == NULL) {
     return NULL;
   } else {
     return &u->itab_entry->eflags;
@@ -366,7 +366,7 @@ ud_lookup_eflags(struct ud *u)
  */
 const enum ud_type*
 ud_lookup_implicit_reg_used_list(struct ud *u) {
-  if (!u || !u->itab_entry) {
+  if (u == NULL || u->itab_entry == NULL) {
     return NULL;
   } else {
     return u->itab_entry->implicit_register_uses;
@@ -382,7 +382,7 @@ ud_lookup_implicit_reg_used_list(struct ud *u) {
  */
 const enum ud_type*
 ud_lookup_implicit_reg_defined_list(struct ud *u) {
-  if (!u || !u->itab_entry) {
+  if (u == NULL || u->itab_entry == NULL) {
     return NULL;
   } else {
     return u->itab_entry->implicit_register_defs;
@@ -468,7 +468,7 @@ ud_input_skip(struct ud* u, size_t n)
   if (u->inp_end) {
     return;
   }
-  if (!u->inp_buf) {
+  if (u->inp_buf == NULL) {
     while (n--) {
       int c = u->inp_hook(u);
       if (c == UD_EOI) {

@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
-
+ 
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -49,13 +49,13 @@ zip_set_archive_comment(struct zip *za, const char *comment, zip_uint16_t len)
 	return -1;
     }
 
-    if (len > 0 && !comment) {
+    if (len > 0 && comment == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return -1;
     }
 
     if (len > 0) {
-	if (!(cstr = _zip_string_new ((const zip_uint8_t *)comment, len, ZIP_FL_ENC_GUESS, &za->error)))
+	if ((cstr=_zip_string_new((const zip_uint8_t *)comment, len, ZIP_FL_ENC_GUESS, &za->error)) == NULL)
 	    return -1;
 
 	if (_zip_guess_encoding(cstr, ZIP_ENCODING_UNKNOWN) == ZIP_ENCODING_CP437) {
@@ -71,7 +71,7 @@ zip_set_archive_comment(struct zip *za, const char *comment, zip_uint16_t len)
     za->comment_changes = NULL;
 
     if (((za->comment_orig && _zip_string_equal(za->comment_orig, cstr))
-	 || (!za->comment_orig && !cstr))) {
+	 || (za->comment_orig == NULL && cstr == NULL))) {
 	_zip_string_free(cstr);
 	za->comment_changed = 0;
     }
@@ -79,6 +79,6 @@ zip_set_archive_comment(struct zip *za, const char *comment, zip_uint16_t len)
 	za->comment_changes = cstr;
 	za->comment_changed = 1;
     }
-
+    
     return 0;
 }

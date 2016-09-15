@@ -77,7 +77,7 @@ static void dump_pseudo(struct pseudo *pseudo, char *string)
 			strcat(strcat(strcpy(path, string), "/"), entry->name);
 		else
 			strcpy(path, entry->name);
-		if(!entry->pseudo)
+		if(entry->pseudo == NULL)
 			ERROR("%s %c %o %d %d %d %d\n", path, entry->dev->type,
 				entry->dev->mode, entry->dev->uid,
 				entry->dev->gid, entry->dev->major,
@@ -114,8 +114,8 @@ struct pseudo *add_pseudo(struct pseudo *pseudo, struct pseudo_dev *pseudo_dev,
 
 	target = get_component(target, targname);
 
-	if(!pseudo) {
-		if(!(pseudo = malloc(sizeof(struct pseudo))))
+	if(pseudo == NULL) {
+		if((pseudo = malloc(sizeof(struct pseudo))) == NULL)
 			BAD_ERROR("failed to allocate pseudo file\n");
 
 		pseudo->names = 0;
@@ -132,7 +132,7 @@ struct pseudo *add_pseudo(struct pseudo *pseudo, struct pseudo_dev *pseudo_dev,
 		pseudo->names ++;
 		pseudo->name = realloc(pseudo->name, (i + 1) *
 			sizeof(struct pseudo_entry));
-		if(!pseudo->name)
+		if(pseudo->name == NULL)
 			BAD_ERROR("failed to allocate pseudo file\n");
 		pseudo->name[i].name = strdup(targname);
 
@@ -149,7 +149,7 @@ struct pseudo *add_pseudo(struct pseudo *pseudo, struct pseudo_dev *pseudo_dev,
 		}
 	} else {
 		/* existing matching entry */
-		if(!pseudo->name[i].pseudo) {
+		if(pseudo->name[i].pseudo == NULL) {
 			/* No sub-directory which means this is the leaf
 			 * component of a pre-existing pseudo file.
 			 */
@@ -174,7 +174,7 @@ struct pseudo *add_pseudo(struct pseudo *pseudo, struct pseudo_dev *pseudo_dev,
 			/* sub-directory exists which means this can only be a
 			 * 'd' type pseudo file */
 			if(target[0] == '\0') {
-				if(!pseudo->name[i].dev &&
+				if(pseudo->name[i].dev == NULL &&
 						pseudo_dev->type == 'd') {
 					pseudo->name[i].pathname =
 						strdup(alltarget);
@@ -203,7 +203,7 @@ struct pseudo *pseudo_subdir(char *filename, struct pseudo *pseudo)
 {
 	int i;
 
-	if(!pseudo)
+	if(pseudo == NULL)
 		return NULL;
 
 	for(i = 0; i < pseudo->names; i++)
@@ -216,7 +216,7 @@ struct pseudo *pseudo_subdir(char *filename, struct pseudo *pseudo)
 
 struct pseudo_entry *pseudo_readdir(struct pseudo *pseudo)
 {
-	if(!pseudo)
+	if(pseudo == NULL)
 		return NULL;
 
 	while(pseudo->count < pseudo->names) {
@@ -302,7 +302,7 @@ void add_pseudo_file(struct pseudo_dev *dev)
 {
 	pseudo_file = realloc(pseudo_file, (pseudo_count + 1) *
 		sizeof(struct pseudo_dev *));
-	if(!pseudo_file)
+	if(pseudo_file == NULL)
 		BAD_ERROR("Failed to realloc pseudo_file\n");
 
 	dev->pseudo_id = pseudo_count;
@@ -434,7 +434,7 @@ int read_pseudo_def(struct pseudo **pseudo, char *def)
 	}
 
 	dev = malloc(sizeof(struct pseudo_dev));
-	if(!dev)
+	if(dev == NULL)
 		BAD_ERROR("Failed to create pseudo_dev\n");
 
 	dev->type = type;
@@ -479,7 +479,7 @@ int read_pseudo_file(struct pseudo **pseudo, char *filename)
 	int res = TRUE;
 
 	fd = fopen(filename, "r");
-	if(!fd) {
+	if(fd == NULL) {
 		ERROR("Could not open pseudo device file \"%s\" because %s\n",
 				filename, strerror(errno));
 		return FALSE;
@@ -493,7 +493,7 @@ int read_pseudo_file(struct pseudo **pseudo, char *filename)
 
 			if(total + MAX_LINE > size) {
 				line = realloc(line, size += MAX_LINE);
-				if(!line) {
+				if(line == NULL) {
 					ERROR("No space in read_pseudo_file\n");
 					return FALSE;
 				}

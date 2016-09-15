@@ -40,7 +40,7 @@ void write_xattr(char *pathname, unsigned int xattr)
 		return;
 
 	xattr_list = get_xattr(xattr, &count);
-	if(!xattr_list) {
+	if(xattr_list == NULL) {
 		ERROR("Failed to read xattrs for file %s\n", pathname);
 		return;
 	}

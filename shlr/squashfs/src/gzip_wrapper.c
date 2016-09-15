@@ -31,7 +31,7 @@ static int gzip_init(void **strm, int block_size, int flags)
 	z_stream *stream;
 
 	stream = *strm = malloc(sizeof(z_stream));
-	if(!stream)
+	if(stream == NULL)
 		goto failed;
 
 	stream->zalloc = Z_NULL;

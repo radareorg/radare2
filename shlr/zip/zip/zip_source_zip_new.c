@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
-
+ 
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -49,10 +49,10 @@ _zip_source_zip_new(struct zip *za, struct zip *srcza, zip_uint64_t srcidx, zip_
     zip_uint64_t offset;
     struct zip_stat st;
 
-    if (!za)
+    if (za == NULL)
 	return NULL;
 
-    if (!srcza ||  srcidx >= srcza->nentry) {
+    if (srcza == NULL ||  srcidx >= srcza->nentry) {
 	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }
@@ -84,11 +84,11 @@ _zip_source_zip_new(struct zip *za, struct zip *srcza, zip_uint64_t srcidx, zip_
 
     enc_impl = NULL;
     if (((flags & ZIP_FL_ENCRYPTED) == 0) && (st.encryption_method != ZIP_EM_NONE)) {
-	if (!password) {
+	if (password == NULL) {
 	    _zip_error_set(&za->error, ZIP_ER_NOPASSWD, 0);
 	    return NULL;
 	}
-	if (!(enc_impl=_zip_get_encryption_implementation(st.encryption_method))) {
+	if ((enc_impl=_zip_get_encryption_implementation(st.encryption_method)) == NULL) {
 	    _zip_error_set(&za->error, ZIP_ER_ENCRNOTSUPP, 0);
 	    return NULL;
 	}
@@ -97,7 +97,7 @@ _zip_source_zip_new(struct zip *za, struct zip *srcza, zip_uint64_t srcidx, zip_
     comp_impl = NULL;
     if ((flags & ZIP_FL_COMPRESSED) == 0) {
 	if (st.comp_method != ZIP_CM_STORE) {
-	    if (!(comp_impl=_zip_get_compression_implementation(st.comp_method))) {
+	    if ((comp_impl=_zip_get_compression_implementation(st.comp_method)) == NULL) {
 		_zip_error_set(&za->error, ZIP_ER_COMPNOTSUPP, 0);
 		return NULL;
 	    }
@@ -108,11 +108,11 @@ _zip_source_zip_new(struct zip *za, struct zip *srcza, zip_uint64_t srcidx, zip_
 	return NULL;
 
     if (st.comp_size == 0) {
-	if (!(src=zip_source_buffer(za, NULL, 0, 0)))
+	if ((src=zip_source_buffer(za, NULL, 0, 0)) == NULL)
 	    return NULL;
     }
     else {
-	if (start+len > 0 && !enc_impl && !comp_impl) {
+	if (start+len > 0 && enc_impl == NULL && comp_impl == NULL) {
 	    struct zip_stat st2;
 
 	    st2.size = len ? len : st.size-start;
@@ -122,17 +122,17 @@ _zip_source_zip_new(struct zip *za, struct zip *srcza, zip_uint64_t srcidx, zip_
 	    st2.valid = ZIP_STAT_SIZE|ZIP_STAT_COMP_SIZE|ZIP_STAT_COMP_METHOD|ZIP_STAT_MTIME;
 
             /* XXX: check for overflow of st2.size */
-	    if (!(src = _zip_source_file_or_p (za, NULL, srcza->zp, offset+start, (zip_int64_t)st2.size, 0, &st2)))
+	    if ((src=_zip_source_file_or_p(za, NULL, srcza->zp, offset+start, (zip_int64_t)st2.size, 0, &st2)) == NULL)
 		return NULL;
 	}
 	else {
             /* XXX: check for overflow of st.comp_size */
-	    if (!(src = _zip_source_file_or_p (za, NULL, srcza->zp, offset, (zip_int64_t)st.comp_size, 0, &st)))
+	    if ((src=_zip_source_file_or_p(za, NULL, srcza->zp, offset, (zip_int64_t)st.comp_size, 0, &st)) == NULL)
 		return NULL;
 	}
-
+	
 	if (enc_impl) {
-	    if (!(s2=enc_impl(za, src, st.encryption_method, 0, password))) {
+	    if ((s2=enc_impl(za, src, st.encryption_method, 0, password)) == NULL) {
 		zip_source_free(src);
 		/* XXX: set error (how?) */
 		return NULL;
@@ -140,7 +140,7 @@ _zip_source_zip_new(struct zip *za, struct zip *srcza, zip_uint64_t srcidx, zip_
 	    src = s2;
 	}
 	if (comp_impl) {
-	    if (!(s2=comp_impl(za, src, st.comp_method, 0))) {
+	    if ((s2=comp_impl(za, src, st.comp_method, 0)) == NULL) {
 		zip_source_free(src);
 		/* XXX: set error (how?) */
 		return NULL;
@@ -150,7 +150,7 @@ _zip_source_zip_new(struct zip *za, struct zip *srcza, zip_uint64_t srcidx, zip_
 	if (((flags & ZIP_FL_COMPRESSED) == 0 || st.comp_method == ZIP_CM_STORE)
 	    && (len == 0 || len == st.comp_size)) {
 	    /* when reading the whole file, check for crc errors */
-	    if (!(s2=zip_source_crc(za, src, 1))) {
+	    if ((s2=zip_source_crc(za, src, 1)) == NULL) {
 		zip_source_free(src);
 		/* XXX: set error (how?) */
 		return NULL;
@@ -159,7 +159,7 @@ _zip_source_zip_new(struct zip *za, struct zip *srcza, zip_uint64_t srcidx, zip_
 	}
 
 	if (start+len > 0 && (comp_impl || enc_impl)) {
-	    if (!(s2=zip_source_window(za, src, start, len ? len : st.size-start))) {
+	    if ((s2=zip_source_window(za, src, start, len ? len : st.size-start)) == NULL) {
 		zip_source_free(src);
 		/* XXX: set error (how?) (why?) */
 		return NULL;

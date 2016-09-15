@@ -44,10 +44,10 @@ zip_source_function(struct zip *za, zip_source_callback zcb, void *ud)
 {
     struct zip_source *zs;
 
-    if (!za)
+    if (za == NULL)
 	return NULL;
 
-    if (!(zs=_zip_source_new(za)))
+    if ((zs=_zip_source_new(za)) == NULL)
 	return NULL;
 
     zs->cb.f = zcb;
@@ -63,7 +63,7 @@ _zip_source_new(struct zip *za)
 {
     struct zip_source *src;
 
-    if (!(src=(struct zip_source *)malloc(sizeof(*src)))) {
+    if ((src=(struct zip_source *)malloc(sizeof(*src))) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	return NULL;
     }
