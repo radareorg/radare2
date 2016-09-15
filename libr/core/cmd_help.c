@@ -494,20 +494,20 @@ static int cmd_help(void *data, const char *input) {
 	case 'e': // echo
 		{
 		if (input[1] == 'n') { // mimic echo -n
-                    const char *msg = r_str_chop_ro (input+2);
-                    // TODO: replace all ${flagname} by its value in hexa
-                    char *newmsg = filter_flags (core, msg);
-                    r_str_unescape (newmsg);
-                    r_cons_print (newmsg);
-                    free (newmsg);
-                } echo {
-        	    const char *msg = r_str_chop_ro (input+1);
-                    // TODO: replace all ${flagname} by its value in hexa
-                    char *newmsg = filter_flags (core, msg);
-                    r_str_unescape (newmsg);
-                    r_cons_println (newmsg);
-                    free (newmsg);
-                }
+			const char *msg = r_str_chop_ro (input+2);
+			// TODO: replace all ${flagname} by its value in hexa
+			char *newmsg = filter_flags (core, msg);
+			r_str_unescape (newmsg);
+			r_cons_print (newmsg);
+			free (newmsg);
+		} echo {
+			const char *msg = r_str_chop_ro (input+1);
+			// TODO: replace all ${flagname} by its value in hexa
+			char *newmsg = filter_flags (core, msg);
+			r_str_unescape (newmsg);
+			r_cons_println (newmsg);
+			free (newmsg);
+		}
 		}
 		break;
 	case 's': // sequence from to step
