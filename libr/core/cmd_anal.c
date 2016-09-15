@@ -4642,8 +4642,14 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 }
 
 static void r_anal_virtual_functions(void *core, const char* input) {
-	const char *curArch = ((RCore *)core)->bin->cur->o->info->arch;
-	if (!strcmp (curArch, "x86")) {
+	const char *curArch = NULL;
+	if (core) {
+		RCore *c = (RCore*)core;
+		if (c->bin && c->bin->cur && c->bin->cur->o && c->bin->cur->o->info) {
+			curArch = c->bin->cur->o->info->arch;
+		}
+	}
+	if (curArch && !strcmp (curArch, "x86")) {
 		const char * help_msg[] = {
 			"Usage:", "av ", "analyze the .rodata section and list virtual function present",
 			NULL};
