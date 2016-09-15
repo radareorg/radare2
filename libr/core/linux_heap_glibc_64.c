@@ -425,13 +425,15 @@ static int print_double_linked_list_bin_graph_64(RCore *core, ut64 bin, RHeap_Ma
 }
 
 static int print_double_linked_list_bin_64(RCore *core,  RHeap_MallocState64 *main_arena, ut64 m_arena, ut64 offset, ut64 num_bin, int graph) {
-
 	if (!core || !core->dbg || !core->dbg->maps) {
                 return -1;
 	}
 
 	int ret = 0;
 	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX;
+	if (num_bin > 126 || num_bin < 0) {
+		return;
+	}
 	ut64 bin = main_arena->bins[num_bin];
 	
 	if (!bin) {
@@ -508,8 +510,7 @@ static int print_single_linked_list_bin_64(RCore *core, RHeap_MallocState64 *mai
 	}	
 
 	ut64 next = UT64_MAX, brk_start = UT64_MAX, brk_end = UT64_MAX;
-	ut64 bin = main_arena->fastbinsY[bin_num];
-	
+	ut64 bin = main_arena->fastbinsY[bin_num];	
 	if (!bin) {
 		return 0;
 	}
@@ -829,8 +830,7 @@ static void print_heap_segment64(RCore *core, RHeap_MallocState64 *main_arena, u
        		next_chunk += size_tmp;
        		prev_chunk = next_chunk;
        		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (RHeapChunk64));
-       	
-		if (is_free) {
+       		if (is_free) {
        			PRINT_GA ("[free]");
        		} else  {
        			if (cnk->size % 2 == 0) {

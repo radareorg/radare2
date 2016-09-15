@@ -190,7 +190,7 @@ static bool r_resolve_main_arena_32(RCore *core, ut32 *m_arena, RHeap_MallocStat
 	RDebugMap *map;
 
 	if (!core || !core->dbg || !core->dbg->maps){
-			return false;
+		return false;
 	}
 
 	if (*m_arena == UT32_MAX) {
@@ -425,13 +425,15 @@ static int print_double_linked_list_bin_graph_32(RCore *core, ut32 bin, RHeap_Ma
 	return 0;
 }
 
-static int print_double_linked_list_bin_32(RCore *core,  RHeap_MallocState32 *main_arena, ut32 m_arena, ut32 offset, ut32 num_bin, int graph) {
-	
+static int print_double_linked_list_bin_32(RCore *core,  RHeap_MallocState32 *main_arena, ut32 m_arena, ut32 offset, ut32 num_bin, int graph) {	
 	if (!core || !core->dbg || !core->dbg->maps) {
                 return -1;
 	}
 	int ret = 0;	
 	ut32 brk_start = UT32_MAX, brk_end = UT32_MAX;
+	if (num_bin < 0 || num_bin > 126) {
+		return -1;
+	}
 	ut32 bin = main_arena->bins[num_bin];
 	
 	if (!bin) {
@@ -508,7 +510,6 @@ static int print_single_linked_list_bin_32(RCore *core, RHeap_MallocState32 *mai
 	}
 	ut32 next = UT32_MAX, brk_start = UT32_MAX, brk_end = UT32_MAX;
 	ut32 bin = main_arena->fastbinsY[bin_num];
-
 	if (!bin) {
 		return -1;
 	}
