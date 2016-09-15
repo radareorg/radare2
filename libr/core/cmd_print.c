@@ -3556,7 +3556,7 @@ static int cmd_print(void *data, const char *input) {
 				core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SPARSE));
 			}
 			break;
-		case 'e':
+		case 'e': // "pxe"
 			if (l != 0) {
 				int j;
 				char emoji[] = {'\x8c','\x80','\x8c','\x82','\x8c','\x85','\x8c','\x88',
@@ -3623,26 +3623,32 @@ static int cmd_print(void *data, const char *input) {
 					'\x91','\xba','\x91','\xbb','\x91','\xbc','\x91','\xbd',
 					'\x91','\xbe','\x91','\xbf','\x92','\x80','\x92','\x81',
 					'\x92','\x82','\x92','\x83','\x92','\x84','\x92','\x85'};
-				for (i=0; i<len; i+=16) {
+				int cols = core->print->cols;
+				if (cols < 1) {
+					cols = 1;
+				}
+				for (i = 0; i < len; i += cols) {
 					r_print_addr (core->print, core->offset+i);
-					for (j=i; j<i+16; j+=1) {
-						ut8 *p = (ut8*)core->block+j;
-						if (j<len)
+					for (j = i; j < i + cols; j += 1) {
+						ut8 *p = (ut8*)core->block + j;
+						if (j<len) {
 							r_cons_printf ("\xf0\x9f%c%c  ", emoji[*p*2], emoji[*p*2+1]);
-						else
-							r_cons_printf ("   ");
+						} else {
+							r_cons_print ("   ");
+						}
 					}
-					r_cons_printf (" ");
-					for (j=i; j<len && j<i+16; j+=1) {
-						ut8 *p = (ut8*)core->block+j;
+					r_cons_print (" ");
+					for (j = i; j < len && j < i + cols; j += 1) {
+						ut8 *p = (ut8*)core->block + j;
 						r_print_byte (core->print, "%c", j, *p);
 					}
-					r_cons_printf ("\n");
+					r_cons_newline ();
 				}
 			}
 			break;
 		case 'l':
 			len = core->print->cols*len;
+			/* faltrhou */
 		default:
 			if (l != 0) {
 				int restore_block_size = 0;
