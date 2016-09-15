@@ -493,15 +493,12 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // echo
 		{
-		if (input[1] == 'n') {
-                // mimic echo -n
-                // TODO: doesn't show output unless more output follows (e.g. ?en test;px;)
+		if (input[1] == 'n') { // mimic echo -n
                     const char *msg = r_str_chop_ro (input+2);
                     // TODO: replace all ${flagname} by its value in hexa
                     char *newmsg = filter_flags (core, msg);
                     r_str_unescape (newmsg);
                     r_cons_print (newmsg);
-                    //fflush (stdout); doesn't work
                     free (newmsg);
                 } echo {
         	    const char *msg = r_str_chop_ro (input+1);
