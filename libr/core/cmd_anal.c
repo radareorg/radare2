@@ -4529,10 +4529,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		ut64 cur = core->offset;
 		RIOSection *s = r_io_section_vget (core->io, cur);
 		if (s) {
-			int hasnext = r_config_get_i (core->config, "anal.hasnext");
+			bool hasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_core_seek (core, s->vaddr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);
-			(void)cmd_anal_fcn (core, "af"); //af oob read if we pass ""
+			r_core_cmd0 (core, "afr");
 			r_config_set_i (core->config, "anal.hasnext", hasnext);
 		} else {
 			// TODO: honor search.in? support dbg.maps?
