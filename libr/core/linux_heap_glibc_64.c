@@ -270,6 +270,7 @@ arena:
 		}	
 not_arena:
 		eprintf ("Warning: glibc library with symbol main_arena could not be found. Is libc6-dbg installed?\n");
+		free (path);
 		return false;
 	} else {
 		update_main_arena_64 (core, *m_arena, main_arena);
@@ -316,7 +317,7 @@ static void print_heap_chunk_64(RCore *core) {
 
 	PRINT_GA (",\n}\n");
 	ut64 size = ((cnk->size >> 3) << 3) - SZ * 2;
-	if (size > SZ * 128) {
+	if (size > (unsigned long long)SZ * 128) {
 		PRINT_GA ("chunk too big to be displayed\n");
 		size = SZ * 128;
 	}
@@ -383,7 +384,13 @@ static int print_double_linked_list_bin_graph_64(RCore *core, ut64 bin, RHeap_Ma
 	RANode *bin_node = NULL, *prev_node = NULL, *next_node = NULL;	
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64);
 
-	if (!cnk) {
+	if (!cnk || !g) {
+		if (cnk) {
+			free (cnk);
+		}
+		if (g) {
+			free (g);
+		}
 		return -1;
 	}
 
@@ -497,20 +504,22 @@ static void print_heap_bin_64(RCore *core, ut64 m_arena, RHeap_MallocState64 *ma
 }
 
 static int print_single_linked_list_bin_64(RCore *core, RHeap_MallocState64 *main_arena, ut64 m_arena, ut64 offset, ut64 bin_num) {
+	if (!core || !core->dbg || !core->dbg->maps) {
+                return 0;
+	}	
+
 	ut64 next = UT64_MAX, brk_start = UT64_MAX, brk_end = UT64_MAX;
 	ut64 bin = main_arena->fastbinsY[bin_num];
+	
 	if (!bin) {
 		return 0;
 	}
 
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64);
+	
 	if (!cnk) {
 		return 0;
 	}
-
-	if (!core || !core->dbg || !core->dbg->maps) {
-                return 0;
-	}	
 
 	bin = m_arena + offset + SZ * bin_num;
 	r_core_read_at (core, bin, (ut8 *)&next, SZ);
@@ -518,6 +527,7 @@ static int print_single_linked_list_bin_64(RCore *core, RHeap_MallocState64 *mai
         get_brks_64 (core, &brk_start, &brk_end);
 	if (brk_start == UT64_MAX || brk_end == UT64_MAX) {
 		eprintf ("No Heap section\n");
+		free (cnk);
 		return 0;		
 	}
 
@@ -546,6 +556,7 @@ static int print_single_linked_list_bin_64(RCore *core, RHeap_MallocState64 *mai
 			PRINTF_RA (" 0x%"PFMT64x, next);
 			PRINT_RA (" Linked list corrupted\n");
 			PRINT_GA ("\n  }\n");
+			free (cnk);
 			return -1;	
 		}
 
@@ -554,6 +565,7 @@ static int print_single_linked_list_bin_64(RCore *core, RHeap_MallocState64 *mai
 			PRINTF_RA ("0x%"PFMT64x, next);
 			PRINT_RA (" Double free detected\n");
 			PRINT_GA ("\n  }\n");
+			free (cnk);
 			return -1;
 		}
 	}
@@ -562,11 +574,13 @@ static int print_single_linked_list_bin_64(RCore *core, RHeap_MallocState64 *mai
 		PRINTF_RA ("0x%"PFMT64x, next);
 		PRINT_RA (" Linked list corrupted\n");
 		PRINT_GA ("\n  }\n");
-		return 1;
+		free (cnk);
+		return -1;
 	} 
 		
 	PRINT_GA ("\n  }\n");
-	return -1;
+	free (cnk);
+	return 0;
 }
 
 static void print_heap_fastbin_64(RCore *core, ut64 m_arena, RHeap_MallocState64 *main_arena, const char *input) {
@@ -601,13 +615,12 @@ static void print_heap_fastbin_64(RCore *core, ut64 m_arena, RHeap_MallocState64
 }
 
 static void print_mmap_graph_64(RCore *core, RHeap_MallocState64 *malloc_state, ut64 m_state) {
-	int w, h;
-	ut64 top_size = UT64_MAX;
-
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return;
 	}
-
+	
+	int w, h;
+	ut64 top_size = UT64_MAX;
 	w = r_cons_get_size (&h);
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	can->color = r_config_get_i (core->config, "scr.color");
@@ -615,9 +628,20 @@ static void print_mmap_graph_64(RCore *core, RHeap_MallocState64 *malloc_state, 
 	RANode *top = {0}, *chunk_node = {0}, *prev_node = {0};
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64), *prev_c = R_NEW0 (RHeapChunk64);
 	
-	if (!cnk || !prev_c) {
-		free (cnk);
-		free (prev_c);
+	if (!cnk || !prev_c || !can || !g) {
+		if (cnk) {
+			free (cnk);
+		}
+		if (prev_c) {
+			free (prev_c);
+		}
+		if (can) {
+			free (can);
+		}
+		if (g) {
+			free (g);
+
+		}
 		return;
 	}
 
@@ -665,14 +689,19 @@ static void print_mmap_graph_64(RCore *core, RHeap_MallocState64 *malloc_state, 
 		free (node_title);
 	}
 	r_agraph_print (g);
-
+	
+	free (g);
 	free (cnk);
+	free (can);
 	free (prev_c);
 	free (top_data);
 	free (top_title);
 }
 
-static void print_heap_graph_64(RCore *core, RHeap_MallocState64 *main_arena, ut64 *initial_brk) {
+static void print_heap_graph_64(RCore *core, RHeap_MallocState64 *main_arena, ut64 *initial_brk) {	
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return;
+	}
 	int w, h;
 	ut64 top_size = UT64_MAX;
 	w = r_cons_get_size (&h);
@@ -682,7 +711,19 @@ static void print_heap_graph_64(RCore *core, RHeap_MallocState64 *main_arena, ut
 	RANode *top = {0}, *chunk_node = {0}, *prev_node = {0};
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64), *prev_c = R_NEW0 (RHeapChunk64);
 	
-	if (!cnk || !prev_c) {
+	if (!cnk || !prev_c || !can || !g) {
+		if (cnk) {
+			free (cnk);
+		}
+		if (prev_c) {
+			free (prev_c);
+		}
+		if (can) {
+			free (can);
+		}
+		if (g) {
+			free (g);
+		}
 		return;
 	}
 
@@ -693,14 +734,25 @@ static void print_heap_graph_64(RCore *core, RHeap_MallocState64 *main_arena, ut
 	r_agraph_set_title (g, "Heap Layout");
 	top_title = r_str_newf ("Top chunk @ 0x%"PFMT64x"\n", main_arena->top);
 
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return;
-	}
-
 	get_brks_64 (core, &brk_start, &brk_end);
 	*initial_brk = (brk_start >> 12) << 12;
 	if (brk_start == UT64_MAX || brk_end == UT64_MAX || *initial_brk == UT64_MAX) {
 		eprintf ("No Heap section\n");
+		if (cnk) {
+			free (cnk);
+		}
+		if (prev_c) {
+			free (prev_c);
+		}
+		if (can) {
+			free (can);
+		}
+		if (g) {
+			free (g);	
+		}
+		if (top_title) {
+			free (top_title);
+		}
 		return;
 	}
 
@@ -738,35 +790,36 @@ static void print_heap_graph_64(RCore *core, RHeap_MallocState64 *main_arena, ut
 		free (node_title);
 	}
 	r_agraph_print (g);
-
+	free (g);
 	free (cnk);
+	free (can);
 	free (prev_c);
 	free (top_data);
 	free (top_title);
 }
 
 static void print_heap_segment64(RCore *core, RHeap_MallocState64 *main_arena, ut64 *initial_brk) {
-       	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX, size_tmp;
+       	if (!core || !core->dbg || !core->dbg->maps){
+       		return;
+       	}	
+	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX, size_tmp;
        	ut64 top_size = UT64_MAX;
        	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64);
 
        	if (!cnk) {
        		return;
        	}
-
-       	if (!core || !core->dbg || !core->dbg->maps){
-       		return;
-       	}
        	get_brks_64 (core, &brk_start, &brk_end);
 	*initial_brk = (brk_start >> 12) << 12;
-       	if (brk_start == UT64_MAX || brk_end == UT64_MAX || *initial_brk == UT64_MAX) {
+       	
+	if (brk_start == UT64_MAX || brk_end == UT64_MAX || *initial_brk == UT64_MAX) {
        		eprintf ("No Heap section\n");
+		free (cnk);
        		return;
        	}
 
        	ut64 next_chunk = *initial_brk, prev_chunk = next_chunk;
        	top_size = main_arena->top - brk_start;
-       	bool list_corrupted = false;
        	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
        		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (RHeapChunk64));
        		size_tmp = (cnk->size >> 3) << 3;
@@ -780,7 +833,6 @@ static void print_heap_segment64(RCore *core, RHeap_MallocState64 *main_arena, u
        		PRINT_YA ("\n  Malloc chunk @ ");
        		PRINTF_BA ("0x%"PFMT64x" ", prev_chunk);
 
-       		bool is_free = false;
        		ut64 double_free = UT64_MAX;
        		if (size_tmp >= SZ * 4 && size_tmp <= SZ * 24) {
        			int i = (size_tmp / (SZ * 2)) - 2;
@@ -800,10 +852,6 @@ static void print_heap_segment64(RCore *core, RHeap_MallocState64 *main_arena, u
        					break;
        				}
        			}
-       		}
-
-       		if (list_corrupted)  {
-       			break;
        		}
 
        		next_chunk += size_tmp;
@@ -832,12 +880,11 @@ static void print_heap_segment64(RCore *core, RHeap_MallocState64 *main_arena, u
 }
 
 static void print_heap_mmaped64(RCore *core, ut64 malloc_state) {
-	ut64 mmap_start = UT64_MAX, mmap_end = UT64_MAX, size_tmp;
-	ut64 top_size = UT64_MAX;
-
 	if (!core || !core->dbg || !core->dbg->maps){
 		return;
 	}
+	ut64 mmap_start = UT64_MAX, mmap_end = UT64_MAX, size_tmp;
+	ut64 top_size = UT64_MAX;
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64);
 	
 	if (!cnk) {
@@ -854,7 +901,6 @@ static void print_heap_mmaped64(RCore *core, ut64 malloc_state) {
 	r_core_read_at (core, ms->top, (ut8*)cnk, sizeof (RHeapChunk64));
 	top_size = (cnk->size >> 3) << 3;
 	
-	bool list_corrupted = false;
 
 	while ( next_chunk && next_chunk >= mmap_start && next_chunk < ms->top) {
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (RHeapChunk64));
@@ -872,7 +918,7 @@ static void print_heap_mmaped64(RCore *core, ut64 malloc_state) {
 		
 		bool is_free = false;
 		ut64 double_free = UT64_MAX;
-		if (size_tmp >= SZ * 4 && size_tmp <= SZ * 24) {
+		if (size_tmp >= (unsigned long long)SZ * 4 && size_tmp <= SZ * 24) {
 			int i = (size_tmp / (SZ * 2)) - 2;
 			ut64 next = ms->fastbinsY[i];
 			double_free = next;
@@ -890,10 +936,6 @@ static void print_heap_mmaped64(RCore *core, ut64 malloc_state) {
 					break;			
 				}
 			}
-		}
-
-		if (list_corrupted)  {
-			break;		
 		}
 
 		next_chunk += size_tmp;
@@ -925,10 +967,14 @@ static void print_heap_mmaped64(RCore *core, ut64 malloc_state) {
 
 void print_malloc_states64( RCore *core, ut64 m_arena, RHeap_MallocState64 *main_arena) {
 	RHeap_MallocState64 *ta = R_NEW0 (RHeap_MallocState64);
+	if (!ta) {
+		return;
+	}
 	PRINT_YA ("main_arena @ ");
 	PRINTF_BA ("0x%"PFMT64x"\n", m_arena);	
 
 	if (main_arena->next == m_arena) {
+		free (ta);
 		return;
 	}
 	ta->next = main_arena->next;
@@ -1062,6 +1108,7 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState64));
 				print_heap_bin_64 (core, m_state, malloc_state, bin); 
 				free (malloc_state);
+				free (dup);
 			}
 		}
 		break;
@@ -1085,6 +1132,7 @@ static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input) {
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState64));
 				print_heap_fastbin_64 (core, m_state, malloc_state, bin); 
 				free (malloc_state);
+				free (dup);
 			}
 		}
 		break;
