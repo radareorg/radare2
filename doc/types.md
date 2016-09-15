@@ -126,6 +126,12 @@ func.strcasecmp.ret=int
 func.strcasecmp.cc=cdecl
 ```
 
+Their is one extra optional key
+
+```
+func.x.noreturn=true/false
+```
+This key is used to mark functions that will not return once called like `exit` and `_exit`.
 ## Integrating with r2 source
 
 in order to add definitions to r2 source there is very flexible naming convention. First the file should be located in `path/to/r2/libr/anal/d`. Then you should add an entry for it in `Makefile` that exist at the same directory. Make sure that the name follow this convention:

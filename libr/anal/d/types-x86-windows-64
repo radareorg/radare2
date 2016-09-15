@@ -44,6 +44,7 @@ type.LPTSTR.size=64
 type.PVOID.size=64
 func.DecodePointer.cc=ms
 func.EncodePointer.cc=ms
+func.ExitProcess.cc=ms
 func.GetCurrentProcessId.cc=ms
 func.GetAtomName.cc=ms
 func.GetModuleFileName.cc=ms
