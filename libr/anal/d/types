@@ -71,3 +71,36 @@ type.int64_t.size=64
 uid_t=type
 type.uid_t=i
 type.uid_t.size=64
+
+getenv=func
+func.getenv.args=1
+func.getenv.arg.0=const char *,name
+func.getenv.ret=char *
+
+getopt=func
+func.getopt.args=3
+func.getopt.arg.0=int,argc
+func.getopt.arg.1=const char **,argv
+func.getopt.arg.2=const char *,optstring
+func.getopt.ret=int
+
+getuid=func
+func.getuid.args=0
+func.getuid.ret=uid_t
+
+ioctl=func
+func.ioctl.args=2
+func.ioctl.arg.0=int,fd
+func.ioctl.arg.1=unsigned long,request
+func.ioctl.ret=int
+
+isatty=func
+func.isatty.args=1
+func.isatty.arg.0=int,fd
+func.isatty.ret=int
+
+setlocale=func
+func.setlocale.args=2
+func.setlocale.arg.0=int,category
+func.setlocale.arg.1=const char *,locale
+func.setlocale.ret=char *

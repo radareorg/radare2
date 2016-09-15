@@ -1,2 +1,9 @@
 type.void *.size=32
 type.char *.size=32
+
+func.getenv.cc=cdecl
+func.getopt.cc=cdecl
+func.getuid.cc=cdecl
+func.ioctl.cc=cdecl
+func.isatty.cc=cdecl
+func.setlocale.cc=cdecl
