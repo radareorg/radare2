@@ -2883,8 +2883,10 @@ static ut64 ntarget = UT64_MAX;
 static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	ut8 str[128];
 	char cmd[128];
-	esilbreak_last_read = UT64_MAX;
+
 	if (ntarget == UT64_MAX || ntarget == addr) {
+		esilbreak_last_read = addr;
+
 		if (myvalid (addr) && r_io_is_valid_offset (mycore->io, addr, 0)) {
 			ut8 buf[4];
 			ut64 refptr;
@@ -2896,7 +2898,6 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 			}
 
 			if (myvalid (refptr) && r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
-				esilbreak_last_read = addr;
 				snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
 						(ut64)refptr, esil->address);
 				str[0] = 0;
@@ -3020,6 +3021,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		perror ("malloc");
 		return;
 	}
+	esilbreak_last_read = UT64_MAX;
 	r_io_read_at (core->io, addr, buf, iend + 1);
 	if (!ESIL) {
 		r_core_cmd0 (core, "aei");
