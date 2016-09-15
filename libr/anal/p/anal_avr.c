@@ -53,7 +53,7 @@ typedef struct _opcodes_tag_ {
 
 #define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, addr, buf, len, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
-#define INST_ASSERT(x)			{ if(!(x)) { INST_INVALID; } }
+#define INST_ASSERT(x)			{ if (!(x)) { INST_INVALID; } }
 
 CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ("ATmega48",   11, 512),
@@ -133,7 +133,7 @@ INST_HANDLER (out) {
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 
 	// launch esil trap (communicate upper layers about this I/O)
-	switch(op->val) {
+	switch (op->val) {
 	case 0x3f: /* SREG */ r_strbuf_setf (&op->esil, "r%d,sreg,=", r); break;
 	case 0x3e: /* SPH  */ r_strbuf_setf (&op->esil, "r%d,sph,=",  r); break;
 	case 0x3d: /* SPL  */ r_strbuf_setf (&op->esil, "r%d,spl,=",  r); break;
@@ -147,7 +147,7 @@ INST_HANDLER (rcall) {
 
 	// target offset
 	offset = ((((buf[1] & 0xf) << 8) | buf[0]) + 1) << 1;
-	if(offset & 0x100)
+	if (offset & 0x100)
 		offset |= 0xfffff000;
 	op->jump = op->addr + offset;
 	op->fail = 0;
@@ -164,7 +164,8 @@ INST_HANDLER (rcall) {
 
 	r_strbuf_setf (
 		&op->esil,
-		"pc,2,+,"		// point to next instruction (@ret)
+		"pc,"			// esil is already pointing to the
+					// next instruction (@ret)
 		"sp,-%d,+,"		//   and dec by (PC_SIZE-1) SP
 		"_sram,+,"              //   and point to the SRAM!
 		"=[%d],"		// store ret@ in stack
@@ -176,7 +177,7 @@ INST_HANDLER (rcall) {
 }
 
 INST_HANDLER (ret) {
-	if(cpu->pc_size > 2)	// if we have a bus bigger than 16 bit
+	if (cpu->pc_size > 2)	// if we have a bus bigger than 16 bit
 		op->cycles++;	// (i.e. a 22-bit bus), add one extra cycle
 	op->eob = true;
 
@@ -187,7 +188,6 @@ INST_HANDLER (ret) {
 		"_sram,+,"              //   and point to the SRAM!
 		"[%d],"			// read ret@ from the stack
 		"pc,=,"			// update PC with [SP]
-		//"5,pcl,=,"			// update PC with [SP]
 		"sp,%d,+,"		// post increment stack pointer
 		"sp,=,",		// store incremented SP
 		cpu->pc_size, cpu->pc_size);
@@ -211,8 +211,9 @@ INST_HANDLER (rjmp) {
 	op->fail = 0;
 
 	offset = (buf[0] + (buf[1] << 8)) & 0xfff;
-	if(offset & 0x800)
+	if (offset & 0x800) {
 		offset |= 0xfffff000;
+	}
 	offset++;
 	offset <<= 1;
 	op->jump = op->addr + offset;
@@ -309,9 +310,9 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 
 	// set memory layout registers
-	if(anal->esil) {
-		r_anal_esil_reg_write(anal->esil, "_eeprom", (1 << cpu->pc_bits));
-		r_anal_esil_reg_write(anal->esil, "_sram",   (1 << cpu->pc_bits) + cpu->eeprom_size);
+	if (anal->esil) {
+		r_anal_esil_reg_write (anal->esil, "_eeprom", (1 << cpu->pc_bits));
+		r_anal_esil_reg_write (anal->esil, "_sram",   (1 << cpu->pc_bits) + cpu->eeprom_size);
 	}
 
 	// process opcode
@@ -328,8 +329,8 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			if (fail) {
 				goto INVALID_OP;
 			}
-			if(op->cycles <= 0) {
-				eprintf("opcode %s @%llx returned 0 cycles.\n", opcode_desc->name, op->addr);
+			if (op->cycles <= 0) {
+				eprintf ("opcode %s @%llx returned 0 cycles.\n", opcode_desc->name, op->addr);
 			}
 
 			return op->size;
