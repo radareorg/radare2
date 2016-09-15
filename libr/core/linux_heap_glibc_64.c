@@ -316,7 +316,7 @@ static void print_heap_chunk_64(RCore *core) {
 
 	PRINT_GA (",\n}\n");
 	ut64 size = ((cnk->size >> 3) << 3) - SZ * 2;
-	if (size > (unsigned long long)SZ * 128) {
+	if (size > (ut64)SZ * 128) {
 		PRINT_GA ("chunk too big to be displayed\n");
 		size = SZ * 128;
 	}
