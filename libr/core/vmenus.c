@@ -1913,7 +1913,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	case 0:
 		r_cons_printf ("-[ functions ]---------------- \n"
 			"(a) add     (x)xrefs     (q)quit \n"
-			"(m) modify  (c)calls     (g)go \n"
+			"(r) rename  (c)calls     (g)go \n"
 			"(d) delete  (v)variables (?)help \n");
 		addr = var_functions_show (core, option, 1);
 		break;
@@ -1921,7 +1921,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		r_cons_printf (
 			"-[ variables ]----- 0x%08"PFMT64x"\n"
 			"(a) add     (x)xrefs  \n"
-			"(m) modify  (g)go     \n"
+			"(r) rename  (g)go     \n"
 			"(d) delete  (q)quit   \n", addr);
 		addr = var_variables_show (core, option, 1);
 		// var_index_show (core->anal, fcn, addr, option);
@@ -2021,7 +2021,7 @@ R_API void r_core_visual_anal(RCore *core) {
 				break;
 			}
 			break;
-		case 'm':
+		case 'r':
 			r_cons_show_cursor (true);
 			r_cons_set_raw (false);
 			r_line_set_prompt ("New name: ");
