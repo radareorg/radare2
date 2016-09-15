@@ -18,34 +18,33 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #define	AVR_SOFTCAST(x,y) (x+(y*0x100))
 
 typedef struct _cpu_models_tag_ {
-	char	*model;
-	int	pc_bits;
-	int	pc_mask;
-	int	pc_size;
-
-	int	eeprom_size;
+	char *model;
+	int pc_bits;
+	int pc_mask;
+	int pc_size;
+	int eeprom_size;
 } CPU_MODEL;
 
 typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
-	char		*name;
-	int		mask;
-	int		selector;
-	inst_handler_t	handler;
-	int		cycles;
-	int		size;
-	int		type;
+	char *name;
+	int mask;
+	int selector;
+	inst_handler_t handler;
+	int cycles;
+	int size;
+	int type;
 } OPCODE_DESC;
 
-#define CPU_MODEL_DECL(model, pc_bits, eeprom_sz)						\
-					{							\
-						model,						\
-						(pc_bits),					\
-						(~((~0) << (pc_bits))), 			\
-						((pc_bits) >> 3) + (((pc_bits) & 0x07) ? 1 : 0),\
-						eeprom_sz					\
-					}
+#define CPU_MODEL_DECL(model, pc_bits, eeprom_sz)			\
+	{								\
+		model,							\
+		(pc_bits),						\
+		(~((~0) << (pc_bits))), 				\
+		((pc_bits) >> 3) + (((pc_bits) & 0x07) ? 1 : 0),	\
+		eeprom_sz						\
+	}
 
 #define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
@@ -65,13 +64,13 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ("ATmega1281", 16, 512),
 	CPU_MODEL_DECL ("ATmega2560", 22, 512),
 	CPU_MODEL_DECL ("ATmega2561", 22, 512),
-	CPU_MODEL_DECL ((char *) 0,   16, 512) };
+	CPU_MODEL_DECL ((char *) 0,   16, 512)
+};
 
 INST_HANDLER (cp) {
 	// CP Rd, Rr
 	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
 	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
-
 	r_strbuf_setf (
 		&op->esil,
 		"r%d,r%d,==,"			// compare Rr vs Rd
@@ -94,7 +93,6 @@ INST_HANDLER (cp) {
 INST_HANDLER (cpc) {
 	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
 	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
-
 	r_strbuf_setf (
 		&op->esil,
 		"r%d,cf,r%d,-,0xff,&,-,"	// ((Rd - C) & 0xff) - Rr
@@ -112,14 +110,12 @@ INST_HANDLER (cpc) {
 INST_HANDLER (eor) {
 	int d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
-
 	r_strbuf_setf (&op->esil, "r%d,r%d,^=,$z,zf,=,r%d,0x80,&,!,!,nf,=,nf,sf,=,0,vf,=", r, d, d);
 }
 
 INST_HANDLER (movw) {
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
-
 	r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r + 1, d + 1);
 }
 
@@ -127,13 +123,11 @@ INST_HANDLER (nop) {
 }
 
 INST_HANDLER (out) {
-	op->type2 = 1;
-	op->val = (buf[0] & 0x0f) | (((buf[1] >> 1) & 0x03) << 4);
-	
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
-
-	// launch esil trap (communicate upper layers about this I/O)
-	switch (op->val) {
+	int v = (buf[0] & 0x0f) | (((buf[1] >> 1) & 0x03) << 4);
+	op->type2 = 1;
+	op->val = v;
+	switch (v) {
 	case 0x3f: /* SREG */ r_strbuf_setf (&op->esil, "r%d,sreg,=", r); break;
 	case 0x3e: /* SPH  */ r_strbuf_setf (&op->esil, "r%d,sph,=",  r); break;
 	case 0x3d: /* SPL  */ r_strbuf_setf (&op->esil, "r%d,spl,=",  r); break;
@@ -143,7 +137,7 @@ INST_HANDLER (out) {
 }
 
 INST_HANDLER (rcall) {
-	register int32_t offset;
+	ut32 offset;
 
 	// target offset
 	offset = ((((buf[1] & 0xf) << 8) | buf[0]) + 1) << 1;
@@ -153,7 +147,7 @@ INST_HANDLER (rcall) {
 	op->fail = 0;
 
 	// cycles!
-	if (strncasecmp (anal->cpu, "ATtiny", 6)) {
+	if (!strncasecmp (anal->cpu, "ATtiny", 6)) {
 		op->cycles = 4;	// ATtiny is always slow
 	} else {
 		// PC size decides required runtime!
@@ -177,8 +171,9 @@ INST_HANDLER (rcall) {
 }
 
 INST_HANDLER (ret) {
-	if (cpu->pc_size > 2)	// if we have a bus bigger than 16 bit
+	if (cpu->pc_size > 2) {	// if we have a bus bigger than 16 bit
 		op->cycles++;	// (i.e. a 22-bit bus), add one extra cycle
+	}
 	op->eob = true;
 
 	r_strbuf_setf (
@@ -206,7 +201,7 @@ INST_HANDLER (reti) {
 }
 
 INST_HANDLER (rjmp) {
-	register int32_t offset;
+	ut32 offset;
 
 	op->fail = 0;
 
@@ -257,7 +252,7 @@ OPCODE_DESC opcodes[] = {
 
 static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 	uint16_t data = (b[0] + (b[1] << 8)) & 0xfff;
-	int32_t op = data;
+	ut32 op = data;
 	op <<= 1;
 	if (op & 0x1000) {
 		short val = (~op) & 0xfff;
@@ -272,6 +267,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
 	char *arg, str[32];
 	CPU_MODEL *cpu;
+	OPCODE_DESC *opcode_desc;
 
 	if (!op) {
 		return 2;
@@ -316,7 +312,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 
 	// process opcode
-	for (OPCODE_DESC *opcode_desc = opcodes; opcode_desc->handler; opcode_desc++) {
+	for (opcode_desc = opcodes; opcode_desc->handler; opcode_desc++) {
 		if ((ins & opcode_desc->mask) == opcode_desc->selector) {
 			int fail = 0;
 
@@ -330,7 +326,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 				goto INVALID_OP;
 			}
 			if (op->cycles <= 0) {
-				eprintf ("opcode %s @%llx returned 0 cycles.\n", opcode_desc->name, op->addr);
+				eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
 			}
 
 			return op->size;
@@ -731,7 +727,7 @@ RAnalPlugin r_anal_plugin_avr = {
 	.arch = "avr",
 	.esil = true,
 	.archinfo = archinfo,
-	.bits = 8 | 16 | 32 | 64, // 24 big regs conflicts
+	.bits = 8 | 16, // 24 big regs conflicts
 	.op = &avr_op,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_avr_init,
