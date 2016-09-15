@@ -189,6 +189,10 @@ static bool r_resolve_main_arena_32(RCore *core, ut32 *m_arena, RHeap_MallocStat
 	RListIter *iter;
 	RDebugMap *map;
 
+	if (!core || !core->dbg || !core->dbg->maps){
+			return false;
+	}
+
 	if (*m_arena == UT32_MAX) {
 		const char *dir_dbg = "/usr/lib/debug";
 		const char *dir_build_id = "/.build-id";
@@ -198,9 +202,6 @@ static bool r_resolve_main_arena_32(RCore *core, ut32 *m_arena, RHeap_MallocStat
 		bool is_debug_file[4];
 		ut32 libc_addr = UT32_MAX, vaddr = UT32_MAX;
 
-		if (!core || !core->dbg || !core->dbg->maps){
-			return false;
-		}
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (strstr (map->name, "/libc-")) {
@@ -269,11 +270,11 @@ arena:
 		}	
 not_arena:
 		eprintf ("Warning: glibc library with symbol main_arena could not be found. Is libc6-dbg installed?\n");
+		free (path);
 		return false;
 	} else {
 		update_main_arena_32 (core, *m_arena, main_arena);
 	}
-
 	return true;
 }
 
@@ -382,7 +383,13 @@ static int print_double_linked_list_bin_graph_32(RCore *core, ut32 bin, RHeap_Ma
 	RANode *bin_node = NULL, *prev_node = NULL, *next_node = NULL;	
 	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32);
 
-	if (!cnk) {
+	if (!cnk || !g) {
+		if (cnk) {
+			free (cnk);
+		}
+		if (g) {
+			free (g);
+		}
 		return -1;
 	}
 
@@ -498,17 +505,17 @@ static void print_heap_bin_32(RCore *core, ut32 m_arena, RHeap_MallocState32 *ma
 static int print_single_linked_list_bin_32(RCore *core, RHeap_MallocState32 *main_arena, ut32 m_arena, ut32 offset, ut32 bin_num) {
 	ut32 next = UT32_MAX, brk_start = UT32_MAX, brk_end = UT32_MAX;
 	ut32 bin = main_arena->fastbinsY[bin_num];
+	if (!core || !core->dbg || !core->dbg->maps) {
+                return 0;
+	}
 	if (!bin) {
 		return 0;
 	}
-
+	
 	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32);
+	
 	if (!cnk) {
 		return 0;
-	}
-
-	if (!core || !core->dbg || !core->dbg->maps) {
-                return 0;
 	}
 
 	bin = m_arena + offset + SZ * bin_num;
@@ -517,6 +524,7 @@ static int print_single_linked_list_bin_32(RCore *core, RHeap_MallocState32 *mai
         get_brks_32 (core, &brk_start, &brk_end);
 	if (brk_start == UT32_MAX || brk_end == UT32_MAX) {
 		eprintf ("No Heap section\n");
+		free (cnk);
 		return 0;		
 	}
 
@@ -545,6 +553,7 @@ static int print_single_linked_list_bin_32(RCore *core, RHeap_MallocState32 *mai
 			PRINTF_RA (" 0x%"PFMT32x, next);
 			PRINT_RA (" Linked list corrupted\n");
 			PRINT_GA ("\n  }\n");
+			free (cnk);
 			return -1;	
 		}
 
@@ -553,6 +562,7 @@ static int print_single_linked_list_bin_32(RCore *core, RHeap_MallocState32 *mai
 			PRINTF_RA ("0x%"PFMT32x, next);
 			PRINT_RA (" Double free detected\n");
 			PRINT_GA ("\n  }\n");
+			free (cnk);
 			return -1;
 		}
 	}
@@ -561,11 +571,13 @@ static int print_single_linked_list_bin_32(RCore *core, RHeap_MallocState32 *mai
 		PRINTF_RA ("0x%"PFMT32x, next);
 		PRINT_RA (" Linked list corrupted\n");
 		PRINT_GA ("\n  }\n");
-		return 1;
+		free (cnk);
+		return -1;
 	}
 		
 	PRINT_GA ("\n  }\n");
-	return -1;
+	free (cnk);
+	return 0;
 }
 
 void print_heap_fastbin_32(RCore *core, ut32 m_arena, RHeap_MallocState32 *main_arena, const char *input) {
@@ -600,24 +612,32 @@ void print_heap_fastbin_32(RCore *core, ut32 m_arena, RHeap_MallocState32 *main_
 }
 
 static void print_mmap_graph_32(RCore *core, RHeap_MallocState32 *malloc_state, ut32 m_state) {
-	int w, h;
-	ut32 top_size = UT32_MAX;
-
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return;
 	}
-
+	
+	int w, h;
+	ut32 top_size = UT32_MAX;
 	w = r_cons_get_size (&h);
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	can->color = r_config_get_i (core->config, "scr.color");
 	RAGraph *g = r_agraph_new (can);
 	RANode *top = {0}, *chunk_node = {0}, *prev_node = {0};
-	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32),
-	             *prev_c = R_NEW0 (RHeapChunk32);
+	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32),*prev_c = R_NEW0 (RHeapChunk32);
 	
-	if (!cnk || !prev_c) {
-		free (cnk);
-		free (prev_c);
+	if (!cnk || !prev_c || !g || !can) {
+		if (cnk) {
+			free (cnk);
+		}
+		if (prev_c) {
+			free (prev_c);
+		}
+		if (can) {
+			free (can);
+		}
+		if (g) {
+			free (g);
+		}
 		return;
 	}
 
@@ -640,7 +660,7 @@ static void print_mmap_graph_32(RCore *core, RHeap_MallocState32 *malloc_state, 
 		r_core_read_at (core, next_chunk_ref, (ut8 *)prev_c, sizeof (RHeapChunk32));
 	       	node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT32x" ", prev_chunk_ref);
 		size_tmp = (prev_c->size >> 3) << 3;
-		if (top_size != UT64_MAX && (size_tmp > top_size  || next_chunk_ref + size_tmp > malloc_state->top)) {
+		if (size_tmp > top_size  || next_chunk_ref + size_tmp > malloc_state->top) {
 			node_data = r_str_newf ("[corrupted] size: 0x%x\n fd: 0x%"PFMT32x", bk: 0x%"PFMT64x"\nHeap graph could not be recovered\n", prev_c->size, prev_c->fd, prev_c->bk) ;
 			r_agraph_add_node (g, node_title, node_data);
 			if (first_node) first_node = false;
@@ -665,14 +685,19 @@ static void print_mmap_graph_32(RCore *core, RHeap_MallocState32 *malloc_state, 
 		free (node_title);
 	}
 	r_agraph_print (g);
-
+	free (g);
 	free (cnk);
+	free (can);
 	free (prev_c);
 	free (top_data);
 	free (top_title);
 }
 
 static void print_heap_graph_32(RCore *core, RHeap_MallocState32 *main_arena, ut32 *initial_brk) {
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return;
+	}
+
 	int w, h;
 	ut32 top_size = UT32_MAX;
 	w = r_cons_get_size (&h);
@@ -683,6 +708,18 @@ static void print_heap_graph_32(RCore *core, RHeap_MallocState32 *main_arena, ut
 	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32), *prev_c = R_NEW0 (RHeapChunk32);
 
 	if (!cnk || !prev_c) {
+		if (can) {
+			free (can);
+		}
+		if (cnk) {
+			free (cnk);
+		}
+		if (prev_c) {
+			free (prev_c);
+		}
+		if (g) {
+			free (g);
+		}
 		return;
 	}
 
@@ -693,14 +730,27 @@ static void print_heap_graph_32(RCore *core, RHeap_MallocState32 *main_arena, ut
 	r_agraph_set_title (g, "Heap Layout");
 	top_title = r_str_newf ("Top chunk @ 0x%"PFMT32x"\n", main_arena->top);
 
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return;
-	}
+
 
 	get_brks_32 (core, &brk_start, &brk_end);
 	*initial_brk = (brk_start >> 12) << 12;
 	if (brk_start == UT32_MAX || brk_end == UT32_MAX || *initial_brk == UT32_MAX) {
 		eprintf ("No Heap section\n");
+		if (can) {
+			free (can);
+		}
+		if (cnk) {
+			free (cnk);
+		}
+		if (prev_c) {
+			free (prev_c);
+		}
+		if (g) {
+			free (g);
+		}
+		if (top_title) {
+			free (top_title);
+		}
 		return;
 	}
 
@@ -738,39 +788,44 @@ static void print_heap_graph_32(RCore *core, RHeap_MallocState32 *main_arena, ut
 		free (node_title);
 	}
 	r_agraph_print (g);
-
 	free (cnk);
+	free (g);
+	free (can);
 	free (prev_c);
 	free (top_data);
 	free (top_title);
 }
 
 static void print_heap_segment32(RCore *core, RHeap_MallocState32 *main_arena, ut32 *initial_brk) {
+	if (!core || !core->dbg || !core->dbg->maps){
+		return;
+	}
+	
 	ut32 brk_start = UT32_MAX, brk_end = UT32_MAX, size_tmp, top_size = UT32_MAX;
 	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32);
 
 	if (!cnk) {
 		return;
 	}
-
-	if (!core || !core->dbg || !core->dbg->maps){
-		return;
-	}
-
+	
 	get_brks_32 (core, &brk_start, &brk_end);
 	*initial_brk = (brk_start >> 12) << 12;
+	
 	if (brk_start == UT32_MAX || brk_end == UT32_MAX || *initial_brk == UT32_MAX) {
 		eprintf ("No Heap section\n");
+		if (cnk) {
+			free (cnk);
+		}
 		return;
 	}
 
 	ut32 next_chunk = *initial_brk, prev_chunk = next_chunk;
 	top_size = main_arena->top - brk_start;
-	bool list_corrupted = false;
+	
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (RHeapChunk32));
 		size_tmp = (cnk->size >> 3) << 3;
-		if (top_size != UT32_MAX && (size_tmp > top_size || next_chunk + size_tmp > main_arena->top)) {
+		if  (size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
 			PRINT_YA ("\n  Malloc chunk @ ");
 			PRINTF_BA ("0x%"PFMT32x" ", next_chunk);
 			PRINT_RA ("[corrupted]\n");
@@ -801,11 +856,6 @@ static void print_heap_segment32(RCore *core, RHeap_MallocState32 *main_arena, u
 				}
 			}
 		}
-
-		if (list_corrupted)  {
-			break;		
-		}
-
 		next_chunk += size_tmp;
 		prev_chunk = next_chunk;
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (RHeapChunk32));
@@ -832,16 +882,22 @@ static void print_heap_segment32(RCore *core, RHeap_MallocState32 *main_arena, u
 }
 
 static void print_heap_mmaped32(RCore *core, ut32 malloc_state) {
+	if (!core || !core->dbg || !core->dbg->maps){
+		return;
+	}
+
 	ut32 mmap_start = UT32_MAX, mmap_end = UT32_MAX, size_tmp;
 	ut32 top_size = UT32_MAX;
 	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32);
 	RHeap_MallocState32 *ms = R_NEW0 (RHeap_MallocState32);
 	
-	if (!cnk) {
-		return;
-	}
-
-	if (!core || !core->dbg || !core->dbg->maps){
+	if (!cnk || !ms) {
+		if (cnk) {
+			free (cnk);
+		}
+		if (ms) {
+			free (ms);
+		}
 		return;
 	}
 
@@ -855,7 +911,6 @@ static void print_heap_mmaped32(RCore *core, ut32 malloc_state) {
 	r_core_read_at (core, ms->top, (ut8*)cnk, sizeof (RHeapChunk32));
 	top_size = (cnk->size >> 3) << 3;
 	
-	bool list_corrupted = false;
 	while (next_chunk && next_chunk >= mmap_start && next_chunk < ms->top) {
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (RHeapChunk32));
 		size_tmp = (cnk->size >> 3) << 3;
@@ -891,10 +946,6 @@ static void print_heap_mmaped32(RCore *core, ut32 malloc_state) {
 			}
 		}
 
-		if (list_corrupted)  {
-			break;		
-		}
-
 		next_chunk += size_tmp;
 		prev_chunk = next_chunk;
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (RHeapChunk32));
@@ -924,10 +975,19 @@ static void print_heap_mmaped32(RCore *core, ut32 malloc_state) {
 
 void print_malloc_states32 ( RCore *core, ut32 m_arena, RHeap_MallocState32 *main_arena) {
 	RHeap_MallocState32 *ta = R_NEW0 (RHeap_MallocState32);
+	if (!ta) {
+		return;
+	}
+
 	PRINT_YA ("main_arena @ ");
 	PRINTF_BA ("0x%"PFMT32x"\n", m_arena);	
 
-	if (main_arena->next == m_arena) return;
+	if (main_arena->next == m_arena) {
+		if (ta) {
+			free (ta);
+		}
+		return;
+	}
 	else {
 		ta->next = main_arena->next;
 		while (ta->next != UT32_MAX && ta->next != m_arena) {
@@ -1059,7 +1119,8 @@ static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input) {
 				RHeap_MallocState32 *malloc_state = R_NEW0 (RHeap_MallocState32);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState32));
 				print_heap_bin_32 (core, m_state, malloc_state, bin); 
-				free(malloc_state);
+				free (malloc_state);
+				free (dup);
 			}
 		}
 		break;
@@ -1082,7 +1143,8 @@ static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input) {
 				RHeap_MallocState32 *malloc_state = R_NEW0 (RHeap_MallocState32);
 				r_core_read_at (core, m_state, (ut8*)malloc_state, sizeof (RHeap_MallocState32));
 				print_heap_fastbin_32 (core, m_state, malloc_state, bin); 
-				free(malloc_state);
+				free (malloc_state);
+				free (dup);
 			}
 		}
 		break;
