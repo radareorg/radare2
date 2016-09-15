@@ -287,7 +287,7 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 		r_anal_ex_get_bb (anal, state, state->current_addr);
 
 
-		if (!state->current_bb_head ) {
+		if (!state->current_bb_head) {
 			state->current_bb_head = state->current_bb;
 			if (state->current_bb_head) {
 				state->current_bb_head->type |= R_ANAL_BB_TYPE_HEAD;
