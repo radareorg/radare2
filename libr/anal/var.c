@@ -20,7 +20,7 @@ struct VarType {
 #define SETKEY(x,y...) snprintf (key, sizeof (key)-1, x, ##y);
 #define SETKEY2(x,y...) snprintf (key2, sizeof (key)-1, x, ##y);
 #define SETVAL(x,y...) snprintf (val, sizeof (val)-1, x, ##y);
-R_API int r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
+R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
 	char *fmt = r_anal_type_format (anal, type);
 	RRegItem *i;
 	if (!fmt) {
@@ -48,7 +48,9 @@ R_API int r_anal_var_display(RAnal *anal, int delta, char kind, const char *type
 		break;
 	}
 	free (fmt);
+	return true;
 }
+
 R_API int r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
 	char *var_def;
 	if (!kind) {

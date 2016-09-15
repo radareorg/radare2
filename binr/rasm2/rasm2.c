@@ -616,11 +616,13 @@ int main (int argc, char *argv[]) {
 			do {
 				length = read (0, buf, sizeof (buf) - 1);
 				if (length < 1) break;
-				if (len > 0 && len < length)
+				if (len > 0 && len < length) {
 					length = len;
+				}
 				buf[length] = 0;
-				if ((!bin || !dis) && feof (stdin))
+				if ((!bin || !dis) && feof (stdin)) {
 					break;
+				}
 				if (skip && length > skip) {
 					if (bin) {
 						memmove (buf, buf + skip, length - skip + 1);
@@ -658,8 +660,9 @@ int main (int argc, char *argv[]) {
 				len -= skip;
 				buf[len] = 0;
 			}
-			if (!strncmp (buf, "0x", 2))
+			if (!strncmp (buf, "0x", 2)) {
 				buf += 2;
+			}
 			ret = rasm_disasm ((char *)buf, offset, len,
 					a->bits, ascii, bin, dis - 1);
 		} else if (analinfo) {

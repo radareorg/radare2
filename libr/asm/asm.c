@@ -133,11 +133,13 @@ static void plugin_free(RAsmPlugin *p) {
 R_API RAsm *r_asm_new() {
 	int i;
 	RAsm *a = R_NEW0 (RAsm);
-	if (!a) return NULL;
+	if (!a) {
+		return NULL;
+	}
 	a->bits = 32;
 	a->syntax = R_ASM_SYNTAX_INTEL;
 	a->plugins = r_list_newf ((RListFree)plugin_free);
-	if (!a->plugins){
+	if (!a->plugins) {
 		free (a);
 		return NULL;
 	}
@@ -156,8 +158,9 @@ R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian) {
 
 // TODO: spagueti
 R_API int r_asm_filter_input(RAsm *a, const char *f) {
-	if (!a->ifilter)
+	if (!a->ifilter) {
 		a->ifilter = r_parse_new ();
+	}
 	if (!r_parse_use (a->ifilter, f)) {
 		r_parse_free (a->ifilter);
 		a->ifilter = NULL;
@@ -202,13 +205,17 @@ R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo) {
 	RListIter *iter;
 	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
-	if (!foo->name)
+	if (!foo->name) {
 		return false;
-	if (foo->init)
+	}
+	if (foo->init) {
 		foo->init (a->user);
-	r_list_foreach (a->plugins, iter, h)
-		if (!strcmp (h->name, foo->name))
+	}
+	r_list_foreach (a->plugins, iter, h) {
+		if (!strcmp (h->name, foo->name)) {
 			return false;
+		}
+	}
 	r_list_append (a->plugins, foo);
 	return true;
 }
@@ -222,11 +229,13 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (!name || !*name)
+	if (!name || !*name) {
 		return false;
+	}
 	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, name))
+		if (!strcmp (h->name, name)) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -348,12 +357,13 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->buf_asm[0] = '\0';
 	if (a->pcalign) {
-		if (a->pc % a->pcalign) {
-			op->size = a->pcalign - (a->pc % a->pcalign);
+		const mod = a->pc % a->pcalign;
+		if (mod) {
+			op->size = a->pcalign - mod;
 			strcpy (op->buf_asm, "unaligned");
 			*op->buf_hex = 0;
 			if ((op->size * 4) >= sizeof (op->buf_hex)) {
-				oplen = (sizeof (op->buf_hex)/4)-1;
+				oplen = (sizeof (op->buf_hex) / 4) - 1;
 			}
 			r_hex_bin2str (buf, op->size, op->buf_hex);
 			return -1;
@@ -365,13 +375,15 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (ret < 0) {
 		ret = 0;
 	}
-	// WAT
 	oplen = r_asm_op_get_size (op);
 	oplen = op->size;
-	if (oplen>len) oplen = len;
-	if (oplen<1) oplen = 1;
-
-	if (!op->buf_asm[0] || op->size <1 || !strcmp (op->buf_asm, "invalid")) {
+	if (oplen > len) {
+		oplen = len;
+	}
+	if (oplen < 1) {
+		oplen = 1;
+	}
+	if (!op->buf_asm[0] || op->size < 1 || !strcmp (op->buf_asm, "invalid")) {
 		if (a->invhex) {
 			if (a->bits == 16) {
 				ut16 b = r_read_le16 (buf);
@@ -385,12 +397,14 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			strcpy (op->buf_asm, "invalid");
 		}
 	}
-	if (a->ofilter)
+	if (a->ofilter) {
 		r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
+	}
 	memcpy (op->buf, buf, oplen);
 	*op->buf_hex = 0;
-	if ((oplen*4) >= sizeof (op->buf_hex))
-		oplen = (sizeof (op->buf_hex)/4)-1;
+	if ((oplen*4) >= sizeof (op->buf_hex)) {
+		oplen = (sizeof (op->buf_hex) / 4) - 1;
+	}
 	r_hex_bin2str (buf, oplen, op->buf_hex);
 	return ret;
 }
@@ -465,29 +479,34 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	RStrBuf *buf_asm;
 	RAsmCode *acode;
 	int ret, slen;
+	ut64 pc = a->pc;
 	RAsmOp op;
 	ut64 idx;
 
-	if (!(acode = r_asm_code_new ()))
+	if (!(acode = r_asm_code_new ())) {
 		return NULL;
-	if (!(acode->buf = malloc (1+len)))
+	}
+	if (!(acode->buf = malloc (1 + len))) {
 		return r_asm_code_free (acode);
+	}
 	memcpy (acode->buf, buf, len);
-	if (!(acode->buf_hex = malloc (2 * len+1)))
+	if (!(acode->buf_hex = malloc (2 * len+1))) {
 		return r_asm_code_free (acode);
+	}
 	r_hex_bin2str (buf, len, acode->buf_hex);
-	if (!(acode->buf_asm = malloc (4)))
+	if (!(acode->buf_asm = malloc (4))) {
 		return r_asm_code_free (acode);
-
+	}
 	buf_asm = r_strbuf_new (NULL);
-	for (idx = ret = slen = 0, acode->buf_asm[0] = '\0'; idx < len; idx+=ret) {
-		r_asm_set_pc (a, a->pc + ret);
-		ret = r_asm_disassemble (a, &op, buf+idx, len-idx);
-		if (ret<1) {
+	for (idx = ret = slen = 0, acode->buf_asm[0] = '\0'; idx < len; idx += ret) {
+		r_asm_set_pc (a, pc + idx);
+		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
+		if (ret < 1) {
 			ret = 1;
 		}
-		if (a->ofilter)
+		if (a->ofilter) {
 			r_parse_parse (a->ofilter, op.buf_asm, op.buf_asm);
+		}
 		r_strbuf_append (buf_asm, op.buf_asm);
 		r_strbuf_append (buf_asm, "\n");
 	}

@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2016 - n4x0r, soez */
+
 static void update_main_arena_32(RCore *core, ut32 m_arena, RHeap_MallocState32 *main_arena) {
 	r_core_read_at (core, m_arena, (ut8 *)main_arena, sizeof (RHeap_MallocState32));
 }
@@ -600,14 +602,22 @@ void print_heap_fastbin_32(RCore *core, ut32 m_arena, RHeap_MallocState32 *main_
 static void print_mmap_graph_32(RCore *core, RHeap_MallocState32 *malloc_state, ut32 m_state) {
 	int w, h;
 	ut32 top_size = UT32_MAX;
+
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return;
+	}
+
 	w = r_cons_get_size (&h);
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	can->color = r_config_get_i (core->config, "scr.color");
 	RAGraph *g = r_agraph_new (can);
 	RANode *top = {0}, *chunk_node = {0}, *prev_node = {0};
-	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32), *prev_c = R_NEW0 (RHeapChunk32);
+	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32),
+	             *prev_c = R_NEW0 (RHeapChunk32);
 	
 	if (!cnk || !prev_c) {
+		free (cnk);
+		free (prev_c);
 		return;
 	}
 
@@ -617,10 +627,6 @@ static void print_mmap_graph_32(RCore *core, RHeap_MallocState32 *malloc_state, 
 
 	r_agraph_set_title (g, "Mmmaped Heap");
 	top_title = r_str_newf ("Top chunk @ 0x%"PFMT32x"\n", malloc_state->top);
-
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return;
-	}
 
 	ut32 start_mmap = m_state + sizeof(RHeap_MallocState32); //0x8b0;
 	r_core_read_at (core, malloc_state->top, (ut8*)cnk, sizeof (RHeapChunk32));

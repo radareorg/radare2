@@ -41,6 +41,8 @@ export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 export CFLAGS="-I${R2PM_HOMEPREFIX}/include/"
 export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib/"
 
+export R2PM_PYPATH="${R2PM_PREFIX}/python"
+
 # Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
@@ -255,6 +257,8 @@ r2pm_uninstall() {
 		fi
 	fi
 }
+
+export PYTHON_PATH="${R2PM_PYPATH}:${PYTHON_PATH}"
 
 case "$1" in
 -i|install)

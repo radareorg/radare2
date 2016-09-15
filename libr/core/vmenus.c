@@ -1355,6 +1355,10 @@ R_API void r_core_visual_config(RCore *core) {
 			menu--;
 			option = _option;
 			break;
+		case '$':
+			r_core_cmd0 (core, "?$");
+			r_cons_any_key (NULL);
+			break;
 		case '*':
 		case '+':
 			fs2 ? config_visual_hit_i (core, fs2, +1) : 0;
@@ -1383,6 +1387,7 @@ R_API void r_core_visual_config(RCore *core) {
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
+			" $     - same as ?$ - show values of vars\n"
 			" e/' ' - edit/toggle current variable\n"
 			" E     - edit variable with 'cfg.editor' (vi?)\n"
 			" +/-   - increase/decrease numeric value (* and /, too)\n"
@@ -1407,7 +1412,7 @@ R_API void r_core_visual_config(RCore *core) {
 	}
 }
 
-R_API void r_core_visual_mounts (RCore *core) {
+R_API void r_core_visual_mounts(RCore *core) {
 	RList *list = NULL;
 	RFSRoot *fsroot = NULL;
 	RListIter *iter;
@@ -1908,7 +1913,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	case 0:
 		r_cons_printf ("-[ functions ]---------------- \n"
 			"(a) add     (x)xrefs     (q)quit \n"
-			"(m) modify  (c)calls     (g)go \n"
+			"(r) rename  (c)calls     (g)go \n"
 			"(d) delete  (v)variables (?)help \n");
 		addr = var_functions_show (core, option, 1);
 		break;
@@ -1916,7 +1921,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		r_cons_printf (
 			"-[ variables ]----- 0x%08"PFMT64x"\n"
 			"(a) add     (x)xrefs  \n"
-			"(m) modify  (g)go     \n"
+			"(r) rename  (g)go     \n"
 			"(d) delete  (q)quit   \n", addr);
 		addr = var_variables_show (core, option, 1);
 		// var_index_show (core->anal, fcn, addr, option);
@@ -2016,7 +2021,7 @@ R_API void r_core_visual_anal(RCore *core) {
 				break;
 			}
 			break;
-		case 'm':
+		case 'r':
 			r_cons_show_cursor (true);
 			r_cons_set_raw (false);
 			r_line_set_prompt ("New name: ");

@@ -686,21 +686,21 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 	RListIter *iter;
 	RAnalBlock *b;
 	int mode = 0;
-	ut64 addr;
+	ut64 addr, bbaddr = UT64_MAX;
 
 	if (*input) {
 		mode = *input;
 		input++;
 	}
-	const char *space = strchr (input, ' ');
-	if (space) {
-		addr = r_num_math (core->num, space + 1);
+	if (input && *input) {
+		addr = bbaddr = r_num_math (core->num, input);
 	} else {
 		addr = core->offset;
 	}
 	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-	if (!fcn)
+	if (!fcn) {
 		return false;
+	}
 	switch (mode) {
 	case 'j':
 		r_cons_printf ("[");
@@ -711,6 +711,9 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 	}
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
+		if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
+			continue;
+		}
 		switch (mode) {
 		case 'r':
 			if (b->jump == UT64_MAX) {
@@ -1278,10 +1281,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'B': // "afB" // set function bits
 		if (input[2] == ' ') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
-								R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-			if (fcn)
+					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+			if (fcn) {
 				fcn->bits = atoi (input + 3);
-			else eprintf ("Cannot find function to set bits\n");
+			} else {
+				eprintf ("Cannot find function to set bits\n");
+			}
 		} else {
 			eprintf ("Usage: afB [bits]\n");
 		}
@@ -4524,10 +4529,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		ut64 cur = core->offset;
 		RIOSection *s = r_io_section_vget (core->io, cur);
 		if (s) {
-			int hasnext = r_config_get_i (core->config, "anal.hasnext");
+			bool hasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_core_seek (core, s->vaddr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);
-			(void)cmd_anal_fcn (core, "af"); //af oob read if we pass ""
+			r_core_cmd0 (core, "afr");
 			r_config_set_i (core->config, "anal.hasnext", hasnext);
 		} else {
 			// TODO: honor search.in? support dbg.maps?

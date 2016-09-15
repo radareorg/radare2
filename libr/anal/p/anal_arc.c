@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake */
+/* radare - LGPL - Copyright 2012-2016 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -1060,7 +1060,6 @@ static int archinfo(RAnal *anal, int query) {
 	if (anal->bits != 16) {
 		return -1;
 	}
-
 	switch (query) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 2;
@@ -1129,7 +1128,7 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p16);
 }
 
-struct r_anal_plugin_t r_anal_plugin_arc = {
+RAnalPlugin r_anal_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
 	.license = "LGPL3",
@@ -1141,7 +1140,7 @@ struct r_anal_plugin_t r_anal_plugin_arc = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_arc,
 	.version = R2_VERSION,

@@ -29,7 +29,6 @@ static int append(libgdbr_t *g, char ch) {
 				 __func__);
 			return -1;
 		}
-
 		g->data = ptr;
 		g->data_max *= 2;
 	}
@@ -143,25 +142,20 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 }
 
 int read_packet(libgdbr_t *g) {
-	struct parse_ctx ctx = {0};
+	struct parse_ctx ctx = { 0 };
 	int ret;
 
 	if (!g) {
 		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
 	}
-
 	g->data_len = 0;
 	while (r_socket_ready (g->sock, 0, READ_TIMEOUT) > 0) {
-		int sz;
-
-		sz = r_socket_read (g->sock, (void *)g->read_buff,
-				    g->read_max);
+		int sz = r_socket_read (g->sock, (void *)g->read_buff, g->read_max);
 		if (sz <= 0) {
 			eprintf ("%s: read failed\n", __func__);
 			return -1;
 		}
-
 		ret = unpack (g, &ctx, sz);
 		if (ret < 0) {
 			eprintf ("%s: unpack failed\n", __func__);
@@ -171,7 +165,6 @@ int read_packet(libgdbr_t *g) {
 			return 0;
 		}
 	}
-
 	return -1;
 }
 
@@ -180,6 +173,5 @@ int send_packet(libgdbr_t *g) {
 		eprintf ("Initialize libgdbr_t first\n");
 		return -1;
 	}
-
 	return r_socket_write (g->sock, g->send_buff, g->send_len);
 }

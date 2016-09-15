@@ -62,7 +62,7 @@ static RList* sections(RBinFile *arch) {
 	}
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		r_list_free (ret);
-		return ret;
+		return NULL;
 	}
 	strcpy (ptr->name, "RAM");
 	ptr->paddr = RAM_START_ADDRESS;

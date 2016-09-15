@@ -493,12 +493,21 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // echo
 		{
-		const char *msg = r_str_chop_ro (input+1);
-		// TODO: replace all ${flagname} by its value in hexa
-		char *newmsg = filter_flags (core, msg);
-		r_str_unescape (newmsg);
-		r_cons_println (newmsg);
-		free (newmsg);
+		if (input[1] == 'n') { // mimic echo -n
+			const char *msg = r_str_chop_ro (input+2);
+			// TODO: replace all ${flagname} by its value in hexa
+			char *newmsg = filter_flags (core, msg);
+			r_str_unescape (newmsg);
+			r_cons_print (newmsg);
+			free (newmsg);
+		} else {
+			const char *msg = r_str_chop_ro (input+1);
+			// TODO: replace all ${flagname} by its value in hexa
+			char *newmsg = filter_flags (core, msg);
+			r_str_unescape (newmsg);
+			r_cons_println (newmsg);
+			free (newmsg);
+		}
 		}
 		break;
 	case 's': // sequence from to step
@@ -646,7 +655,7 @@ static int cmd_help(void *data, const char *input) {
 			"?b", " [num]", "show binary value of number",
 			"?b64[-]", " [str]", "encode/decode in base64",
 			"?d[.]", " opcode", "describe opcode for asm.arch",
-			"?e", " string", "echo string",
+			"?e[n]", " string", "echo string, optionally without trailing newline",
 			"?f", " [num] [str]", "map each bit of the number as flag string index",
 			"?h", " [str]", "calculate hash for given string",
 			"?i", "[ynmkp] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",

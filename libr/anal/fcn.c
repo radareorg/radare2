@@ -1652,16 +1652,15 @@ R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn) {
 
 //continious function size without loc.*
 R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn) {
-	RListIter *iter, *fiter;
+	RListIter *iter;
 	RAnalBlock *bb;
-	RAnalFunction *f;
 	ut32 sz = 0;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		/* TODO: this if is an ugly hack and should be removed when r2 will be
 		 * able to handle BBs that comes before the function emtry point.
 		 * Another way to remove this is to throw away BBs before the function
 		 * entry point at the analysis time in the r_anal_fcn.   */
-		if(bb->addr >= fcn->addr) {
+		if (bb->addr >= fcn->addr) {
 			sz += bb->size;
 		}
 	}

@@ -67,18 +67,19 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 	/* disk write : process each sparse chunk */
 	//TODO : sort addresses + check overlap?
-	r_list_foreach(rih->rbuf->sparse, iter, rbs) {
+	r_list_foreach (rih->rbuf->sparse, iter, rbs) {
 		ut16 addl0 = rbs->from & 0xffff;
-		ut16 addh0 = rbs->from >>16;
-		ut16 addh1 = rbs->to >>16;
+		ut16 addh0 = rbs->from >> 16;
+		ut16 addh1 = rbs->to >> 16;
 		ut16 tsiz =0;
-		if (rbs->size == 0)
+		if (rbs->size == 0) {
 			continue;
+		}
 
 		if (addh0 != addh1) {
 			//we cross a 64k boundary, so write in two steps
 			//04 record (ext address)
-			if (fw04b(out, addh0) < 0) {
+			if (fw04b (out, addh0) < 0) {
 				eprintf("ihex:write: file error\n");
 				fclose (out);
 				return -1;
@@ -86,7 +87,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			//00 records (data)
 			tsiz = -addl0;
 			addl0 = 0;
-			if (fwblock(out, rbs->data, rbs->from, tsiz)) {
+			if (fwblock (out, rbs->data, rbs->from, tsiz)) {
 				eprintf("ihex:fwblock error\n");
 				fclose (out);
 				return -1;
@@ -196,7 +197,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 		return -1;
 	}
 	rih = fd->data;
-	return r_buf_seek(rih->rbuf, offset, whence);
+	return r_buf_seek (rih->rbuf, offset, whence);
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
@@ -368,7 +369,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		str = r_file_slurp (pathname + 7, NULL);
 		if (!str) return NULL;
-		mal= R_NEW (Rihex);
+		mal= R_NEW0 (Rihex);
 		if (!mal) {
 			free (str);
 			return NULL;
@@ -394,6 +395,11 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
+static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
+	Rihex *rih = fd->data;
+	return r_buf_resize (rih->rbuf, size);
+}
+
 RIOPlugin r_io_plugin_ihex = {
 	.name = "ihex",
         .desc = "Intel HEX file (ihex://eeproms.hex)",
@@ -404,6 +410,7 @@ RIOPlugin r_io_plugin_ihex = {
         .check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
+	.resize = __resize
 };
 
 #ifndef CORELIB

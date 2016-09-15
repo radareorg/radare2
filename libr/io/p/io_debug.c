@@ -434,7 +434,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (endptr == pidfile || pid < 0) pid = -1;
 
 		if (pid == -1) {
-			pid = fork_and_ptraceme (io, io->bits, file+6);
+			pid = fork_and_ptraceme (io, io->bits, file + 6);
 			if (pid == -1) {
 				return NULL;
 			}

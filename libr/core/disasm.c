@@ -1036,13 +1036,44 @@ static void ds_show_functions(RDisasmState *ds) {
 		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
 		if (call) {
-			//XXX probably broken
 			r_cons_printf ("%s%s%s %s %s%s (",
 				COLOR (ds, color_fline), ds->pre,
 				COLOR_RESET (ds), COLOR (ds, color_fname),
 				fcn_name, COLOR_RESET (ds));
+			bool comma = true;
+			bool arg_bp = false;
+			int tmp_len;
+			r_list_foreach (regs, iter, var) {
+				tmp_len = strlen (var->type);
+				r_cons_printf ("%s%s%s%s", var->type,
+					tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
+					var->name, iter->n ? ", " : "");
+			}
 			r_list_foreach (args, iter, var) {
-				r_cons_printf ("%s %s%s", var->type, var->name, iter->n ? ", " : "");
+				if (var->delta > 0) {
+					if (!r_list_empty (regs) && comma) {
+						r_cons_printf (", ");
+						comma = false;
+					}
+					arg_bp = true;
+					tmp_len = strlen (var->type);
+					r_cons_printf ("%s%s%s%s", var->type,
+						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
+						var->name, iter->n ? ", " : "");
+				}
+			}
+			comma = true;
+			r_list_foreach (sp_vars, iter, var) {
+				if (var->delta > f->stack) {
+					if ( (arg_bp || !r_list_empty (regs)) && comma) {
+						comma = false;
+						r_cons_printf (", ");
+					}
+					tmp_len = strlen (var->type);
+					r_cons_printf ("%s%s%s%s", var->type,
+						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
+						var->name, iter->n ? ", " : "");
+				}
 			}
 			r_cons_printf (");\n");
 		}
@@ -2818,7 +2849,39 @@ beach:
 		}
 	}
 }
-
+static void ds_print_calls_hints(RDisasmState *ds) {
+	RAnal *anal = ds->core->anal;
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
+	char *name;
+	if (!fcn) {
+		return;
+	}
+	if (r_anal_type_func_exist (anal, fcn->name)) {
+		name = strdup (fcn->name);
+	} else if (!(name = r_anal_type_func_guess (anal, fcn->name))) {
+		return;
+	}
+	if (ds->show_color) {
+		r_cons_strcat (ds->pal_comment);
+	}
+	ds_align_comment (ds);
+	const char *fcn_type = r_anal_type_func_ret (anal, name);
+	r_cons_printf ("; %s%s%s(", fcn_type, fcn_type[strlen (fcn_type) - 1] == '*' ? "": " ", name);
+	int i, arg_max = r_anal_type_func_args_count (anal, name);
+	if (arg_max == 0) {
+		r_cons_printf ("void);");
+	} else {
+		for (i = 0; i < arg_max; i++) {
+			char *type = r_anal_type_func_args_type (anal, name, i);
+			r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
+				type[strlen (type) -1] == '*' ? "": " ",
+				r_anal_type_func_args_name (anal, name, i),
+				i == arg_max - 1 ? ");": ",");
+			free (type);
+		}
+	}
+	free (name);
+}
 static void ds_print_comments_right(RDisasmState *ds) {
 	char *desc = NULL;
 	RCore *core = ds->core;
@@ -2862,6 +2925,9 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		}
 	}
 	free (desc);
+	if (ds->analop.type == R_ANAL_OP_TYPE_CALL && ds->show_calls) {
+		ds_print_calls_hints (ds);
+	}
 }
 
 #if 0

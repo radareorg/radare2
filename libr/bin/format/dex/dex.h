@@ -82,6 +82,7 @@ typedef struct r_bin_dex_obj_t {
 	struct dex_class_t *classes;
 	RList *methods_list;
 	RList *imports_list;
+	RList *classes_list;
 	ut64 code_from;
 	ut64 code_to;
 	Sdb *kv;
