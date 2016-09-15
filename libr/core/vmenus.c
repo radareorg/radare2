@@ -1355,6 +1355,10 @@ R_API void r_core_visual_config(RCore *core) {
 			menu--;
 			option = _option;
 			break;
+		case '$':
+			r_core_cmd0 (core, "?$");
+			r_cons_any_key (NULL);
+			break;
 		case '*':
 		case '+':
 			fs2 ? config_visual_hit_i (core, fs2, +1) : 0;
@@ -1383,6 +1387,7 @@ R_API void r_core_visual_config(RCore *core) {
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
+			" $     - same as ?$ - show values of vars\n"
 			" e/' ' - edit/toggle current variable\n"
 			" E     - edit variable with 'cfg.editor' (vi?)\n"
 			" +/-   - increase/decrease numeric value (* and /, too)\n"
@@ -1407,7 +1412,7 @@ R_API void r_core_visual_config(RCore *core) {
 	}
 }
 
-R_API void r_core_visual_mounts (RCore *core) {
+R_API void r_core_visual_mounts(RCore *core) {
 	RList *list = NULL;
 	RFSRoot *fsroot = NULL;
 	RListIter *iter;

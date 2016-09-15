@@ -1494,7 +1494,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_colors (core);
 		break;
 	case 'M':
-		r_core_visual_mounts (core);
+		if (!r_list_empty (core->fs->roots)) {
+			r_core_visual_mounts (core);
+		}
 		break;
 	case '&':
 		toggle_bits (core);
