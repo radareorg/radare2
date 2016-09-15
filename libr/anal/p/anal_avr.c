@@ -22,6 +22,8 @@ typedef struct _cpu_models_tag_ {
 	int	pc_bits;
 	int	pc_mask;
 	int	pc_size;
+
+	int	eeprom_size;
 } CPU_MODEL;
 
 typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
@@ -31,40 +33,83 @@ typedef struct _opcodes_tag_ {
 	int		mask;
 	int		selector;
 	inst_handler_t	handler;
-} OPCODE;
+	int		cycles;
+	int		size;
+	int		type;
+} OPCODE_DESC;
 
-#define CPU_MODEL_DECL(model, pc_bits)	{							\
+#define CPU_MODEL_DECL(model, pc_bits, eeprom_sz)						\
+					{							\
 						model,						\
 						(pc_bits),					\
 						(~((~0) << (pc_bits))), 			\
-						((pc_bits) >> 3) + (((pc_bits) & 0x07) ? 1 : 0)	\
+						((pc_bits) >> 3) + (((pc_bits) & 0x07) ? 1 : 0),\
+						eeprom_sz					\
 					}
 
 #define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
-#define INST_DECL(OPCODE_NAME, M, S)	{ #OPCODE_NAME, (M), (S), _inst__ ## OPCODE_NAME }
-#define INST_LAST			{ "unknown",      0,   0, (void *) 0             }
+#define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
+#define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ANAL_OP_TYPE_UNK      }
 
 #define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, addr, buf, len, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
 #define INST_ASSERT(x)			{ if(!(x)) { INST_INVALID; } }
 
 CPU_MODEL cpu_models[] = {
-	CPU_MODEL_DECL ("ATmega48",   11),
-	CPU_MODEL_DECL ("ATmega8",    12),
-	CPU_MODEL_DECL ("ATmega88",   12),
-	CPU_MODEL_DECL ("ATmega168",  13),
-	CPU_MODEL_DECL ("ATmega640",  16),
-	CPU_MODEL_DECL ("ATmega1280", 16),
-	CPU_MODEL_DECL ("ATmega1281", 16),
-	CPU_MODEL_DECL ("ATmega2560", 22),
-	CPU_MODEL_DECL ("ATmega2561", 22),
-	CPU_MODEL_DECL ((char *) 0,   16) };
+	CPU_MODEL_DECL ("ATmega48",   11, 512),
+	CPU_MODEL_DECL ("ATmega8",    12, 512),
+	CPU_MODEL_DECL ("ATmega88",   12, 512),
+	CPU_MODEL_DECL ("ATmega168",  13, 512),
+	CPU_MODEL_DECL ("ATmega640",  16, 512),
+	CPU_MODEL_DECL ("ATmega1280", 16, 512),
+	CPU_MODEL_DECL ("ATmega1281", 16, 512),
+	CPU_MODEL_DECL ("ATmega2560", 22, 512),
+	CPU_MODEL_DECL ("ATmega2561", 22, 512),
+	CPU_MODEL_DECL ((char *) 0,   16, 512) };
+
+INST_HANDLER (cp) {
+	// CP Rd, Rr
+	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
+	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
+
+	r_strbuf_setf (
+		&op->esil,
+		"r%d,r%d,==,"			// compare Rr vs Rd
+		"$z,zf,=,"			// zero flag (zf)
+		"r%d,r%d,^,0x08,!,!,hf,"	// half carry flag (hf)
+		"r%d,r%d,^,0x80,!,!,cf,"	// carry flag (cf)
+		"$o,vf,=,"			// overflow flag (vf)
+		"r%d,r%d,-,0x80,&,!,!,nf,=,"	// neg flg: result's MSB is set
+		"vf,nf,^,sf,=",			// sign flag: xor(vf, nf)
+		r, d, r, d, r, d, r, d);
+		//"r%d,r%d,==,"			// compare Rr vs Rd
+		//"$z,zf,=,"			// zero flag (zf)
+		//"$b3,hf,=,"			// half carry flag (hf)
+		//"$b8,cf,=,"			// carry flag (cf)
+		//"$o,vf,=,"			// overflow flag (vf)
+		//"r%d,r%d,-,0x80,&,!,!,nf,=,"	// neg flg: result's MSB is set
+		//"vf,nf,^,sf,=",			// sign flag: xor(vf, nf)
+}
+
+INST_HANDLER (cpc) {
+	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
+	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
+
+	r_strbuf_setf (
+		&op->esil,
+		"r%d,cf,r%d,-,0xff,&,-,"	// ((Rd - C) & 0xff) - Rr
+		"0x80,&,!,!,nf,=,"		// nef flg: result's MSB is set
+		"r%d,cf,r%d,-,0xff,&,==,"	// ((Rd - C) & 0xff) == Rr
+		"$z,zf,=,"			// zero flag
+		"$b8,cf,=,"			// carry flag
+		"$b3,hf,=,"			// half carry flag
+		"$o,vf,=,"			// overflow flag
+		"vf,nf,^,sf,=",			// sign flag : xor(vf, nf)
+		r, d, r, d);
+}
 
 // ALIAS: Opcode (clr) when Rra and Rrb are the same
 INST_HANDLER (eor) {
-	op->type = R_ANAL_OP_TYPE_XOR;
-	op->cycles = 1;
-
 	int d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 
@@ -72,9 +117,6 @@ INST_HANDLER (eor) {
 }
 
 INST_HANDLER (movw) {
-	op->type = R_ANAL_OP_TYPE_MOV;
-	op->cycles = 1;
-
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
 
@@ -82,30 +124,70 @@ INST_HANDLER (movw) {
 }
 
 INST_HANDLER (nop) {
-	op->type = R_ANAL_OP_TYPE_NOP;
 }
 
 INST_HANDLER (out) {
-	op->type = R_ANAL_OP_TYPE_IO;
 	op->type2 = 1;
 	op->val = (buf[0] & 0x0f) | (((buf[1] >> 1) & 0x03) << 4);
-	op->cycles = 1;
+	
+	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 
 	// launch esil trap (communicate upper layers about this I/O)
-	r_strbuf_setf (&op->esil, "2,$");
+	switch(op->val) {
+	case 0x3f: /* SREG */ r_strbuf_setf (&op->esil, "r%d,sreg,=", r); break;
+	case 0x3e: /* SPH  */ r_strbuf_setf (&op->esil, "r%d,sph,=",  r); break;
+	case 0x3d: /* SPL  */ r_strbuf_setf (&op->esil, "r%d,spl,=",  r); break;
+	default:
+		r_strbuf_setf (&op->esil, "2,$");
+	}
+}
+
+INST_HANDLER (rcall) {
+	register int32_t offset;
+
+	// target offset
+	offset = ((((buf[1] & 0xf) << 8) | buf[0]) + 1) << 1;
+	if(offset & 0x100)
+		offset |= 0xfffff000;
+	op->jump = op->addr + offset;
+	op->fail = 0;
+
+	// cycles!
+	if (strncasecmp (anal->cpu, "ATtiny", 6)) {
+		op->cycles = 4;	// ATtiny is always slow
+	} else {
+		// PC size decides required runtime!
+		op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
+		if (strncasecmp (anal->cpu, "ATxmega", 7))
+			op->cycles--;	// ATxmega optimizes one cycle
+	}
+
+	r_strbuf_setf (
+		&op->esil,
+		"pc,2,+,"		// point to next instruction (@ret)
+		"sp,-%d,+,"		//   and dec by (PC_SIZE-1) SP
+		"_sram,+,"              //   and point to the SRAM!
+		"=[%d],"		// store ret@ in stack
+		"sp,-%d,+,"		// decrement stack pointer
+		"sp,=,"			// store SP
+		"%d,pc,=",		// jump!
+		cpu->pc_size - 1, cpu->pc_size,
+		cpu->pc_size, op->jump);
 }
 
 INST_HANDLER (ret) {
-	op->type = R_ANAL_OP_TYPE_RET;
-	op->cycles = cpu->pc_size > 2 ? 5 : 4; // 5 for 22-bit bus
+	if(cpu->pc_size > 2)	// if we have a bus bigger than 16 bit
+		op->cycles++;	// (i.e. a 22-bit bus), add one extra cycle
 	op->eob = true;
 
 	r_strbuf_setf (
 		&op->esil,
 		"sp,"			// load stack pointer
 		"sp,1,+,"		//   and inc by 1 SP
+		"_sram,+,"              //   and point to the SRAM!
 		"[%d],"			// read ret@ from the stack
-		"pc,="			// update PC with [SP]
+		"pc,=,"			// update PC with [SP]
+		//"5,pcl,=,"			// update PC with [SP]
 		"sp,%d,+,"		// post increment stack pointer
 		"sp,=,",		// store incremented SP
 		cpu->pc_size, cpu->pc_size);
@@ -126,7 +208,6 @@ INST_HANDLER (reti) {
 INST_HANDLER (rjmp) {
 	register int32_t offset;
 
-	op->type = R_ANAL_OP_TYPE_JMP;
 	op->fail = 0;
 
 	offset = (buf[0] + (buf[1] << 8)) & 0xfff;
@@ -143,11 +224,6 @@ INST_HANDLER (st) {
 	// check op
 	INST_ASSERT ((buf[0] & 0xf) != 0xf);
 
-	// fill op info and exec
-	op->type = R_ANAL_OP_TYPE_STORE;
-	op->cycles = 2;
-	op->size = 2;
-
 	// esil
 	r_strbuf_setf (				// leave on stack the target
 		&op->esil, "r%d,",		// register
@@ -155,21 +231,26 @@ INST_HANDLER (st) {
 	if ((buf[0] & 0xf) == 0xe) {		// do I need to preincrement X?
 		r_strbuf_appendf ( &op->esil, "1,x,+,x,=,");
 	}
-	r_strbuf_appendf (&op->esil, "x,=[1]");	// write byte @X
+	r_strbuf_appendf (
+		&op->esil, "x,_sram,+,=[1]");	// write byte @X
 	if ((buf[0] & 0xf) == 0xd) {		// do I need to postinc X?
 		r_strbuf_appendf (&op->esil, ",1,x,+,x,=");
 	}
 }
 
-OPCODE opcodes[] = {
-	INST_DECL (eor,  0xfc00, 0x2400),
-	INST_DECL (movw, 0xff00, 0x0100),
-	INST_DECL (nop,  0xffff, 0x0000),
-	INST_DECL (out,  0xf800, 0xb800),
-	INST_DECL (ret,  0xffff, 0x9508),
-	INST_DECL (reti, 0xffff, 0x9518),
-	INST_DECL (rjmp, 0xf000, 0xc000),
-	INST_DECL (st,   0xf00c, 0x900c),
+OPCODE_DESC opcodes[] = {
+	//         op     mask    select  cycles  size type
+	INST_DECL (cp,    0xfc00, 0x1400, 1,      2,   CMP   ),
+	INST_DECL (cpc,   0xfc00, 0x0400, 1,      2,   CMP   ),
+	INST_DECL (eor,   0xfc00, 0x2400, 1,      2,   XOR   ),
+	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ),
+	INST_DECL (nop,   0xffff, 0x0000, 1,      2,   NOP   ),
+	INST_DECL (out,   0xf800, 0xb800, 1,      2,   IO    ),
+	INST_DECL (rcall, 0xf000, 0xd000, 0,      2,   CALL  ),
+	INST_DECL (ret,   0xffff, 0x9508, 4,      2,   RET   ),
+	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ),
+	INST_DECL (rjmp,  0xf000, 0xc000, 2,      2,   JMP   ),
+	INST_DECL (st,    0xf00c, 0x900c, 2,      2,   STORE ),
 	INST_LAST
 };
 
@@ -185,7 +266,6 @@ static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 }
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	short ofst;
 	int imm = 0, imm2 = 0, d, r, k;
 	ut8 kbuf[4];
 	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
@@ -228,14 +308,30 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		}
 	}
 
-	for (OPCODE *opcode_handler = opcodes; opcode_handler->handler; opcode_handler++) {
-		if ((ins & opcode_handler->mask) == opcode_handler->selector) {
+	// set memory layout registers
+	if(anal->esil) {
+		r_anal_esil_reg_write(anal->esil, "_eeprom", (1 << cpu->pc_bits));
+		r_anal_esil_reg_write(anal->esil, "_sram",   (1 << cpu->pc_bits) + cpu->eeprom_size);
+	}
+
+	// process opcode
+	for (OPCODE_DESC *opcode_desc = opcodes; opcode_desc->handler; opcode_desc++) {
+		if ((ins & opcode_desc->mask) == opcode_desc->selector) {
 			int fail = 0;
 
-			opcode_handler->handler (anal, op, addr, buf, len, &fail, cpu);
+			// copy default cycles/size values
+			op->cycles = opcode_desc->cycles;
+			op->size = opcode_desc->size;
+
+			// handle opcode
+			opcode_desc->handler (anal, op, addr, buf, len, &fail, cpu);
 			if (fail) {
 				goto INVALID_OP;
 			}
+			if(op->cycles <= 0) {
+				eprintf("opcode %s @%llx returned 0 cycles.\n", opcode_desc->name, op->addr);
+			}
+
 			return op->size;
 		}
 	}
@@ -291,13 +387,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		if (buf[1] & 0x10)
 			r_strbuf_setf (&op->esil, "r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, d, d, d);
 		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,CF,+=,r%d,r%d,-=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,NF,=,VF,NF,^,SF,=,r%d,=", r, r, r, d, d, d, r);
-	}
-	if ((buf[1] & 0xec) == 4) {		//CP + CPC
-		op->type = R_ANAL_OP_TYPE_CMP;
-		op->cycles = 1;
-		if (buf[1] & 0xf0)		//CP
-			r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,zf,=,$b8,CF,=,$b3,HF,=,$o,VF,=,r%d,r%d,-,0x80,&,!,!,NF,=,VF,NF,^,SF,=", r, d, r, d);	//check VF here
-		else	r_strbuf_setf (&op->esil, "r%d,CF,r%d,-,0xff,&,-,0x80,&,!,!,NF,=,r%d,CF,r%d,-,0xff,&,==,$z,zf,=,$b8,CF,=,$b3,HF,=,$o,VF,=,VF,NF,^,SF,=", r, d, r, d);
 	}
 	switch (buf[1] & 0xfc) {
 	case 0x10:	//CPSE
@@ -457,16 +546,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		}
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	}
-	if ((buf[1] & 0xf0) == 0xd0) {
-		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_CALL; // rcall (relative)
-		op->fail = (op->addr)+2;
-		ofst = ins << 4;
-		ofst >>= 4;
-		ofst *= 2;
-		op->jump = addr + ofst + 2;
-		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
-	}
 	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e) == 0x0c)) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CJMP; // breq, jmp (absolute)
@@ -525,6 +604,7 @@ static int esil_avr_init (RAnalEsil *esil) {
 	if (!esil)
 		return false;
 	r_anal_esil_set_op (esil, "des", avr_custom_des);
+
 	return true;
 }
 
@@ -597,6 +677,8 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	pch	.16	34	0\n"
 // special purpose registers
 		"gpr	sp	.16	36	0\n"
+		"gpr	spl	.8	36	0\n"
+		"gpr	sph	.8	37	0\n"
 		"gpr	sreg	.8	38	0\n"
 // 8bit segment registers to be added to X, Y, Z to get 24bit offsets
 		"gpr	rampx	.8	39	0\n"
@@ -623,6 +705,9 @@ I Interrupt flag. Set when interrupts are enabled.
 		"gpr	hf	.1	309	0\n"
 		"gpr	tf	.1	310	0\n"
 		"gpr	if	.1	311	0\n"
+
+		"gpr	_eeprom	.32	44	0\n"
+		"gpr	_sram	.32	48	0\n"
 		;
 
 	return r_reg_set_profile_string (anal->reg, p);
