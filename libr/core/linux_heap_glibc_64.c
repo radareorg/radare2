@@ -275,7 +275,6 @@ not_arena:
 	} else {
 		update_main_arena_64 (core, *m_arena, main_arena);
 	}
-
 	return true;
 }
 
@@ -388,12 +387,8 @@ static int print_double_linked_list_bin_graph_64(RCore *core, ut64 bin, RHeap_Ma
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64);
 
 	if (!cnk || !g) {
-		if (cnk) {
-			free (cnk);
-		}
-		if (g) {
-			free (g);
-		}
+		free (cnk);
+		free (g);
 		return -1;
 	}
 
@@ -424,7 +419,6 @@ static int print_double_linked_list_bin_graph_64(RCore *core, ut64 bin, RHeap_Ma
 	r_agraph_add_edge (g, prev_node, bin_node);
 	r_agraph_add_edge (g, bin_node, prev_node);
 	r_agraph_print (g);
-
 	free (cnk);
 	r_agraph_free (g);
 	return 0;
@@ -634,19 +628,10 @@ static void print_mmap_graph_64(RCore *core, RHeap_MallocState64 *malloc_state, 
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64), *prev_c = R_NEW0 (RHeapChunk64);
 	
 	if (!cnk || !prev_c || !can || !g) {
-		if (cnk) {
-			free (cnk);
-		}
-		if (prev_c) {
-			free (prev_c);
-		}
-		if (can) {
-			free (can);
-		}
-		if (g) {
-			free (g);
-
-		}
+		free (cnk);
+		free (prev_c);
+		free (can);
+		free (g);
 		return;
 	}
 
@@ -717,18 +702,10 @@ static void print_heap_graph_64(RCore *core, RHeap_MallocState64 *main_arena, ut
 	RHeapChunk64 *cnk = R_NEW0 (RHeapChunk64), *prev_c = R_NEW0 (RHeapChunk64);
 	
 	if (!cnk || !prev_c || !can || !g) {
-		if (cnk) {
-			free (cnk);
-		}
-		if (prev_c) {
-			free (prev_c);
-		}
-		if (can) {
-			free (can);
-		}
-		if (g) {
-			free (g);
-		}
+		free (cnk);
+		free (prev_c);
+		free (can);
+		free (g);
 		return;
 	}
 
@@ -747,9 +724,7 @@ static void print_heap_graph_64(RCore *core, RHeap_MallocState64 *main_arena, ut
 		free (prev_c);
 		free (can);
 		free (g);
-		if (top_title) {
-			free (top_title);
-		}
+		free (top_title);
 		return;
 	}
 
@@ -916,7 +891,7 @@ static void print_heap_mmaped64(RCore *core, ut64 malloc_state) {
 		
 		bool is_free = false;
 		ut64 double_free = UT64_MAX;
-		if (size_tmp >= (unsigned long long)SZ * 4 && size_tmp <= SZ * 24) {
+		if (size_tmp >= (ut64)SZ * 4 && size_tmp <= SZ * 24) {
 			int i = (size_tmp / (SZ * 2)) - 2;
 			ut64 next = ms->fastbinsY[i];
 			double_free = next;

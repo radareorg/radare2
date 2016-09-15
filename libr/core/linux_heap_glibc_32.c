@@ -387,12 +387,8 @@ static int print_double_linked_list_bin_graph_32(RCore *core, ut32 bin, RHeap_Ma
 	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32);
 
 	if (!cnk || !g) {
-		if (cnk) {
-			free (cnk);
-		}
-		if (g) {
-			free (g);
-		}
+		free (cnk);
+		free (g);
 		return -1;
 	}
 
@@ -629,18 +625,10 @@ static void print_mmap_graph_32(RCore *core, RHeap_MallocState32 *malloc_state, 
 	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32),*prev_c = R_NEW0 (RHeapChunk32);
 	
 	if (!cnk || !prev_c || !g || !can) {
-		if (cnk) {
-			free (cnk);
-		}
-		if (prev_c) {
-			free (prev_c);
-		}
-		if (can) {
-			free (can);
-		}
-		if (g) {
-			free (g);
-		}
+		free (cnk);
+		free (prev_c);
+		free (can);
+		free (g);
 		return;
 	}
 
@@ -711,18 +699,10 @@ static void print_heap_graph_32(RCore *core, RHeap_MallocState32 *main_arena, ut
 	RHeapChunk32 *cnk = R_NEW0 (RHeapChunk32), *prev_c = R_NEW0 (RHeapChunk32);
 
 	if (!cnk || !prev_c) {
-		if (can) {
-			free (can);
-		}
-		if (cnk) {
-			free (cnk);
-		}
-		if (prev_c) {
-			free (prev_c);
-		}
-		if (g) {
-			free (g);
-		}
+		free (can);
+		free (cnk);
+		free (prev_c);
+		free (g);
 		return;
 	}
 
@@ -741,10 +721,7 @@ static void print_heap_graph_32(RCore *core, RHeap_MallocState32 *main_arena, ut
 		free (cnk);
 		free (prev_c);
 		free (g);
-
-		if (top_title) {
-			free (top_title);
-		}
+		free (top_title);
 		return;
 	}
 
@@ -817,7 +794,7 @@ static void print_heap_segment32(RCore *core, RHeap_MallocState32 *main_arena, u
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
 		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (RHeapChunk32));
 		size_tmp = (cnk->size >> 3) << 3;
-		if  (size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
+		if (size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
 			PRINT_YA ("\n  Malloc chunk @ ");
 			PRINTF_BA ("0x%"PFMT32x" ", next_chunk);
 			PRINT_RA ("[corrupted]\n");
@@ -884,12 +861,8 @@ static void print_heap_mmaped32(RCore *core, ut32 malloc_state) {
 	RHeap_MallocState32 *ms = R_NEW0 (RHeap_MallocState32);
 	
 	if (!cnk || !ms) {
-		if (cnk) {
-			free (cnk);
-		}
-		if (ms) {
-			free (ms);
-		}
+		free (cnk);
+		free (ms);
 		return;
 	}
 
