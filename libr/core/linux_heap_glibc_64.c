@@ -432,7 +432,7 @@ static int print_double_linked_list_bin_64(RCore *core,  RHeap_MallocState64 *ma
 	int ret = 0;
 	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX;
 	if (num_bin > 126 || num_bin < 0) {
-		return;
+		return -1;
 	}
 	ut64 bin = main_arena->bins[num_bin];
 	
