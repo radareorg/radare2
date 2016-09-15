@@ -224,7 +224,7 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 	// TODO: r_strbuf_append
 	//dprintf("Parsing Signature List with %d items\n", list_size);
 	ut16 type_idx;
-	char * buff;
+	char *buff = NULL;
 	int size = 1; // TODO: NOT_SURE_ABOUT_IT
 	int pos = 0;
 	int i;
@@ -909,7 +909,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			}
 
 			// TODO: move to a function
-			if (bin->methods[i].class_id < 0  || bin->methods[i].class_id > bin->header.types_size) {
+			if (bin->methods[i].class_id > bin->header.types_size) {
 				continue;
 			}
 			// TODO: improve this
@@ -928,10 +928,10 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			char *signature = dex_method_signature(bin, i);
 			if (method_name && *method_name) {
 				// imports
-				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				sym->name = r_str_newf ("imp.%s.method.%s%s", class_name, method_name, signature);
-				sym->type = r_str_const ("IMPORT");
-				sym->bind = r_str_const ("NONE");
+				//RBinSymbol *sym = R_NEW0 (RBinSymbol);
+				//sym->name = r_str_newf ("imp.%s.method.%s%s", class_name, method_name, signature);
+				//sym->type = r_str_const ("IMPORT");
+				//sym->bind = r_str_const ("NONE");
 				//r_list_append (bin->methods_list, sym);
 
 				RBinImport *imp = R_NEW0 (RBinImport);
@@ -943,6 +943,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				r_list_append (bin->imports_list, imp);
 			}
 			free (method_name);
+			free (signature);
 			free (class_name);
 		}
 		free (methods);
