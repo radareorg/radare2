@@ -927,13 +927,6 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			char *method_name = dex_method_name (bin, i);
 			char *signature = dex_method_signature(bin, i);
 			if (method_name && *method_name) {
-				// imports
-				//RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				//sym->name = r_str_newf ("imp.%s.method.%s%s", class_name, method_name, signature);
-				//sym->type = r_str_const ("IMPORT");
-				//sym->bind = r_str_const ("NONE");
-				//r_list_append (bin->methods_list, sym);
-
 				RBinImport *imp = R_NEW0 (RBinImport);
 				imp->name = r_str_newf ("imp.%s.method.%s%s", class_name, method_name, signature);
 				// TODO: filter more chars that can be trash
