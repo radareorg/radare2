@@ -144,7 +144,7 @@ static int main_help(int line) {
 		" -f           block size = file size\n"
 		" -F [binplug] force to use that rbin plugin\n"
 		" -h, -hh      show help message, -hh for long\n"
-		" -H, H [var]  display variable\n"
+		" -H ([var])   display variable\n"
 		" -i [file]    run script file\n"
 		" -I [file]    run script file before the file is opened\n"
 		" -k [k=v]     perform sdb query into core->sdb\n"
@@ -216,15 +216,15 @@ static int main_print_var(const char *var_name) {
 	};
 
 	if (var_name) {
-		while ( r2_vars[i].name ) {
-			if ( !strcmp (r2_vars[i].name, var_name) ) {
+		while (r2_vars[i].name) {
+			if (!strcmp (r2_vars[i].name, var_name)) {
 				printf ("%s\n", r2_vars[i].value);
 				break;
 			}
 			i++;
 		}
 	} else {
-		while ( r2_vars[i].name ) {
+		while (r2_vars[i].name) {
 			printf ("%s=%s\n", r2_vars[i].name, r2_vars[i].value);
 			i++;
 		}
@@ -476,7 +476,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'f': fullfile = 1; break;
 		case 'F': forcebin = optarg; break;
 		case 'h': help++; break;
-		case 'H': main_print_var(optarg); return 0; break;
+		case 'H': main_print_var (optarg); return 0; break;
 		case 'i':
 			r_list_append (files, optarg);
 			break;
@@ -1048,7 +1048,7 @@ int main(int argc, char **argv, char **envp) {
 					if (no_question_debug) {
 						if (r_config_get_i (r.config, "dbg.exitkills") && y_kill_debug){
 							r_debug_kill (r.dbg, 0, false, 9); // KILL
-						} 
+						}
 					} else {
 						if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 							if (r_config_get_i (r.config, "dbg.exitkills") &&
@@ -1063,7 +1063,7 @@ int main(int argc, char **argv, char **envp) {
 				if (no_question_save) {
 					if (prj && *prj && y_save_project){
 						r_core_project_save (&r, prj);
-					} 
+					}
 				}
 				else {
 					question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
