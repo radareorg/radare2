@@ -68,10 +68,11 @@ CPU_MODEL cpu_models[] = {
 };
 
 INST_HANDLER (call) {
-	op->jump = op->addr
-		+ (buf[3] << 1)
-		| (buf[2] << 9)
-		| (((buf[0] & 0x1) | ((buf[2] >> 3) & 0x3e)) << 17);
+	op->jump = (buf[2] << 1)
+		 | (buf[3] << 9)
+		 | (buf[1] & 0x01) << 23
+		 | (buf[0] & 0x01) << 17
+		 | (buf[0] & 0xf0) << 14;
 	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
 	if (!strncasecmp (anal->cpu, "ATxmega", 7)) {
 		op->cycles--;	// ATxmega optimizes one cycle
