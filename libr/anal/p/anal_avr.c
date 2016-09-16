@@ -67,6 +67,34 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ((char *) 0,   16, 512)
 };
 
+INST_HANDLER (call) {
+	// jump and inst size
+	op->jump = op->addr
+		+ (buf[0] << 1)
+		| (buf[1] << 9)
+		| (((buf[2] & 0x1) | ((buf[2] >> 3) & 0x3e)) << 17);
+	op->size = 4;
+
+	// cycles! (PC size decides required runtime)
+	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
+	if (!strncasecmp (anal->cpu, "ATxmega", 7)) {
+		op->cycles--;	// ATxmega optimizes one cycle
+	}
+
+	r_strbuf_setf (
+		&op->esil,
+		"pc,"			// esil is already pointing to the
+					// next instruction (@ret)
+		"sp,-%d,+,"		//   and dec by (PC_SIZE-1) SP
+		"_sram,+,"              //   and point to the SRAM!
+		"=[%d],"		// store ret@ in stack
+		"sp,-%d,+,"		// decrement stack pointer
+		"sp,=,"			// store SP
+		"%d,pc,=",		// jump!
+		cpu->pc_size - 1, cpu->pc_size,
+		cpu->pc_size, op->jump);
+}
+
 INST_HANDLER (cp) {
 	// CP Rd, Rr
 	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
@@ -82,13 +110,6 @@ INST_HANDLER (cp) {
 		"r%d,r%d,-,0x80,&,!,!,nf,=,"	// neg flg: result's MSB is set
 		"vf,nf,^,sf,=",			// sign flag: xor(vf, nf)
 		r, d, r, d, r, d, r, d);
-		//"r%d,r%d,==,"			// compare Rr vs Rd
-		//"$z,zf,=,"			// zero flag (zf)
-		//"$b3,hf,=,"			// half carry flag (hf)
-		//"$b8,cf,=,"			// carry flag (cf)
-		//"$o,vf,=,"			// overflow flag (vf)
-		//"r%d,r%d,-,0x80,&,!,!,nf,=,"	// neg flg: result's MSB is set
-		//"vf,nf,^,sf,=",			// sign flag: xor(vf, nf)
 }
 
 INST_HANDLER (cpc) {
@@ -143,7 +164,6 @@ INST_HANDLER (rcall) {
 		offset |= 0xfffff000;
 	}
 	op->jump = op->addr + offset;
-	op->fail = 0;
 
 	// cycles!
 	if (!strncasecmp (anal->cpu, "ATtiny", 6)) {
@@ -208,7 +228,6 @@ INST_HANDLER (rjmp) {
 	offset++;
 	offset <<= 1;
 	op->jump = op->addr + offset;
-	op->fail = 0;
 
 	r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", op->jump);
 }
@@ -233,15 +252,16 @@ INST_HANDLER (st) {
 
 OPCODE_DESC opcodes[] = {
 	//         op     mask    select  cycles  size type
+	INST_DECL (nop,   0xffff, 0x0000, 1,      2,   NOP   ),
+	INST_DECL (ret,   0xffff, 0x9508, 4,      2,   RET   ),
+	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ),
+	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ),
+	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ),
 	INST_DECL (cp,    0xfc00, 0x1400, 1,      2,   CMP   ),
 	INST_DECL (cpc,   0xfc00, 0x0400, 1,      2,   CMP   ),
 	INST_DECL (eor,   0xfc00, 0x2400, 1,      2,   XOR   ),
-	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ),
-	INST_DECL (nop,   0xffff, 0x0000, 1,      2,   NOP   ),
 	INST_DECL (out,   0xf800, 0xb800, 1,      2,   IO    ),
 	INST_DECL (rcall, 0xf000, 0xd000, 0,      2,   CALL  ),
-	INST_DECL (ret,   0xffff, 0x9508, 4,      2,   RET   ),
-	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ),
 	INST_DECL (rjmp,  0xf000, 0xc000, 2,      2,   JMP   ),
 	INST_DECL (st,    0xf00c, 0x900c, 2,      2,   STORE ),
 	INST_LAST
@@ -325,7 +345,9 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			if (op->cycles <= 0) {
 				eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
 			}
-
+			if (op->fail <= 0) {
+				op->fail = addr + op->size;
+			}
 			return op->size;
 		}
 	}
@@ -521,24 +543,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->type2 = R_ANAL_OP_TYPE_CJMP;
 		op->failcycles = 1;
 		break;
-	}
-	if (!memcmp (buf, "\x0e\x94", 2)) {
-		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
-		op->fail = (op->addr)+4;
-		// override even if len<4 wtf
-		len = 4;
-		if (len>3) {
-			memcpy (kbuf, buf+2, 2);
-			op->size = 4;
-			//anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
-			op->jump = AVR_SOFTCAST (kbuf[0],kbuf[1])*2;
-		} else {
-			op->size = 0;
-			return -1;
-			return op->size;		//WTF
-		}
-		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	}
 	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e) == 0x0c)) {
 		op->addr = addr;
