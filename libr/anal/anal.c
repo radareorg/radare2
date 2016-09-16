@@ -44,7 +44,6 @@ R_API RAnal *r_anal_new() {
 		return NULL;
 	}
 	anal->os = strdup (R_SYS_OS);
-	anal->noreturn = r_list_newf ((RListFree)&r_anal_noreturn_free);
 	anal->reflines = anal->reflines2 = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->limit = NULL;
@@ -102,7 +101,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	R_FREE (a->cpu);
 	R_FREE (a->os);
 	r_list_free (a->plugins);
-	r_list_free (a->noreturn);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
 	r_space_fini (&a->meta_spaces);
@@ -380,94 +378,132 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 	return -1;
 }
 
-R_API void r_anal_noreturn_free(RAnalNoreturn *nr) {
-	free (nr->name);
-	free (nr);
+static int nonreturn_print_commands(void *p, const char *k, const char *v) {
+	RAnal *anal = (RAnal *)p;
+	if (!strncmp (v, "func", strlen ("func") + 1)) {
+		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
+		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
+			anal->cb_printf ("ann %s\n", k);
+		}
+	}
+	return 1;
+}
+
+static int nonreturn_print(void *p, const char *k, const char *v) {
+	RAnal *anal = (RAnal *)p;
+	if (!strncmp (v, "func", strlen ("func") + 1)) {
+		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
+		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
+			anal->cb_printf ("%s\n", k);
+		}
+	}
+	return 1;
 }
 
 R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
-	RListIter *iter;
-	RAnalNoreturn *nr;
-	r_list_foreach (anal->noreturn, iter, nr) {
-		switch (mode) {
-		case 1:
-		case '*':
-		case 'r':
-			if (nr->name) anal->cb_printf ("ann %s\n", nr->name);
-			else anal->cb_printf ("0x%08"PFMT64x"\n", nr->addr);
-			break;
-		default:
-			if (nr->name) anal->cb_printf ("%s\n", nr->name);
-			else anal->cb_printf ("0x%08"PFMT64x"\n", nr->addr);
-			break;
-		}
+	switch (mode) {
+	case 1:
+	case '*':
+	case 'r':
+		sdb_foreach (anal->sdb_types, nonreturn_print_commands, anal);
+		break;
+	default:
+		sdb_foreach (anal->sdb_types, nonreturn_print, anal);
+		break;
 	}
 }
 
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
-	RAnalNoreturn *nr = R_NEW0(RAnalNoreturn);
-	if (!nr) return false;
-	if (name && *name) nr->name = strdup (name);
-	nr->addr = addr;
-	if (!nr->name && !nr->addr) {
-		free (nr);
+	const char *tmp_name = NULL;
+	char *fnl_name = NULL;
+	if (name && *name) {
+		tmp_name = name;
+	} else {
+		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, -1);
+		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
+		if (!fcn && !fi) {
+			eprintf ("Cant find Function at given address\n");
+			return false;
+		}
+		tmp_name =fcn ? fcn->name: fi->name;
+	}
+	if (r_anal_type_func_exist (anal, tmp_name)) {
+		fnl_name = strdup (tmp_name);
+	} else if (!(fnl_name = r_anal_type_func_guess (anal, (char *)tmp_name))) {
+		eprintf ("Cant find prototype for %s in types databse\n", tmp_name);
 		return false;
 	}
-	r_list_append (anal->noreturn, nr);
+	sdb_bool_set (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", fnl_name), true, 0);
+	free (fnl_name);
 	return true;
 }
 
+static int noreturn_dropall(void *p, const char *k, const char *v) {
+	RAnal *anal = (RAnal *)p;
+	if (!strcmp (v, "func")) {
+		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
+		sdb_unset (anal->sdb_types, query, 0);
+	}
+	return 1;
+}
+
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
-	bool ret = false;
 	if (!strcmp (expr, "*")) {
-		if (!r_list_empty (anal->noreturn)) {
-			r_list_free (anal->noreturn);
-			anal->noreturn = r_list_newf ((RListFree)&r_anal_noreturn_free);
-			ret = true;
-		}
+		sdb_foreach (anal->sdb_types, noreturn_dropall, anal);
+		return true;
 	} else {
-		RListIter *iter, *iter2;
-		RAnalNoreturn *nr;
+		const char *fcnname = NULL;
+		char *tmp;
 		if (!strncmp (expr, "0x", 2)) {
 			ut64 n = r_num_math (NULL, expr);
-			r_list_foreach_safe (anal->noreturn, iter, iter2, nr) {
-				if (nr->addr == n) {
-					r_list_delete (anal->noreturn, iter);
-					ret = true;
-				}
+			RAnalFunction *fcn = r_anal_get_fcn_in (anal, n, -1);
+			if (!fcn) {
+				eprintf ("can't find function at 0x%"PFMT64x"\n", n);
+				return false;
 			}
+			fcnname = fcn->name;
 		} else {
-			r_list_foreach_safe (anal->noreturn, iter, iter2, nr) {
-				if (r_str_glob (nr->name, expr)) {
-					r_list_delete (anal->noreturn, iter);
-					ret = true;
-				}
-			}
+			fcnname = expr;
+		}
+		if (r_anal_type_func_exist (anal, fcnname)) {
+			char *query = sdb_fmt (-1, "func.%s.noreturn", fcnname);
+			sdb_unset (anal->sdb_types, query, 0);
+			return true;
+		} else if ((tmp = r_anal_type_func_guess (anal, (char *)fcnname))) {
+			char *query = sdb_fmt (-1, "func.%s.noreturn", tmp);
+			sdb_unset (anal->sdb_types, query, 0);
+			free (tmp);
+			return true;
+		} else {
+			eprintf ("Cant find prototype for %s in types databse", fcnname);
+			return false;
 		}
 	}
-	return ret;
+}
+static bool r_anal_noreturn_at_name (RAnal *anal, const char *name) {
+	if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", name), NULL)) {
+		return true;
+	}
+	char *tmp = r_anal_type_func_guess (anal, (char *)name);
+	if (tmp) {
+		if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", tmp), NULL)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
-	RListIter *iter;
-	RAnalNoreturn *nr;
 	RAnalFunction *f = r_anal_get_fcn_at (anal, addr, 0);
-	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
-	r_list_foreach (anal->noreturn, iter, nr) {
-		if (addr == nr->addr) {
+	if (f) {
+		if (r_anal_noreturn_at_name (anal, f->name)) {
 			return true;
 		}
-		if (nr->name) {
-			RFlagItem *fi2 = anal->flb.get (anal->flb.f, nr->name);
-			if (fi2 && fi2->offset == addr) {
-				return true;
-			}
-			if (f && !strcmp (f->name, nr->name)) {
-				return true;
-			}
-			if (fi && fi->name && !strcmp (fi->name, nr->name)) {
-				return true;
-			}
+	}
+	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
+	if (fi) {
+		if (r_anal_noreturn_at_name (anal, fi->name)) {
+			return true;
 		}
 	}
 	return false;
