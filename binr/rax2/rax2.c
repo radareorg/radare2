@@ -17,9 +17,9 @@ static int rax(char *str, int len, int last);
 static int format_output (char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
 	char strbits[65];
-
-	if (force_mode) mode = force_mode;
-
+	if (force_mode) {
+		mode = force_mode;
+	}
 	if (flags & 2) {
 		ut64 n2 = n;
 		r_mem_swapendian ((ut8*)&n, (ut8*)&n2, (n >> 32) ? 8 : 4);
@@ -430,8 +430,9 @@ static int rax (char *str, int len, int last) {
 		format_output (out_mode, str);
 		str = p + 1;
 	}
-	if (*str)
+	if (*str) {
 		format_output (out_mode, str);
+	}
 	return true;
 }
 
