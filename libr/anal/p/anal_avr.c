@@ -18,7 +18,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #define	AVR_SOFTCAST(x,y) (x+(y*0x100))
 
 typedef struct _cpu_models_tag_ {
-	char *model;
+	const char const *model;
 	int pc_bits;
 	int pc_mask;
 	int pc_size;
@@ -28,7 +28,7 @@ typedef struct _cpu_models_tag_ {
 typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
-	char *name;
+	const char const *name;
 	int mask;
 	int selector;
 	inst_handler_t handler;
@@ -138,12 +138,10 @@ INST_HANDLER (out) {
 }
 
 INST_HANDLER (rcall) {
-	ut32 offset;
-
-	// target offset
-	offset = ((((buf[1] & 0xf) << 8) | buf[0]) + 1) << 1;
-	if (offset & 0x100)
+	ut32 offset = ((((buf[1] & 0xf) << 8) | buf[0]) + 1) << 1;
+	if (offset & 0x100) {
 		offset |= 0xfffff000;
+	}
 	op->jump = op->addr + offset;
 	op->fail = 0;
 
@@ -153,8 +151,9 @@ INST_HANDLER (rcall) {
 	} else {
 		// PC size decides required runtime!
 		op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
-		if (strncasecmp (anal->cpu, "ATxmega", 7))
+		if (!strncasecmp (anal->cpu, "ATxmega", 7)) {
 			op->cycles--;	// ATxmega optimizes one cycle
+		}
 	}
 
 	r_strbuf_setf (
@@ -202,17 +201,14 @@ INST_HANDLER (reti) {
 }
 
 INST_HANDLER (rjmp) {
-	ut32 offset;
-
-	op->fail = 0;
-
-	offset = (buf[0] + (buf[1] << 8)) & 0xfff;
+	ut32 offset = (buf[0] + (buf[1] << 8)) & 0xfff;
 	if (offset & 0x800) {
 		offset |= 0xfffff000;
 	}
 	offset++;
 	offset <<= 1;
 	op->jump = op->addr + offset;
+	op->fail = 0;
 
 	r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", op->jump);
 }
