@@ -677,7 +677,16 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	sp	.16	36	0\n"
 		"gpr	spl	.8	36	0\n"
 		"gpr	sph	.8	37	0\n"
+// status bit register (SREG)
 		"gpr	sreg	.8	38	0\n"
+		"gpr	cf	.1	38.0	0\n" // Carry. This is a borrow flag on subtracts.
+		"gpr	zf	.1	38.1	0\n" // Zero. Set to 1 when an arithmetic result is zero.
+		"gpr	nf	.1	38.2	0\n" // Negative. Set to a copy of the most significant bit of an arithmetic result.
+		"gpr	vf	.1	38.3	0\n" // Overflow flag. Set in case of two's complement overflow.
+		"gpr	sf	.1	38.4	0\n" // Sign flag. Unique to AVR, this is always (N ^ V) (xor), and shows the true sign of a comparison.
+		"gpr	hf	.1	38.5	0\n" // Half carry. This is an internal carry from additions and is used to support BCD arithmetic.
+		"gpr	tf	.1	38.6	0\n" // Bit copy. Special bit load and bit store instructions use this bit.
+		"gpr	if	.1	38.7	0\n" // Interrupt flag. Set when interrupts are enabled.
 // 8bit segment registers to be added to X, Y, Z to get 24bit offsets
 		"gpr	rampx	.8	39	0\n"
 		"gpr	rampy	.8	40	0\n"
@@ -687,25 +696,6 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 // memory mapping emulator registers
 		"gpr	_eeprom	.32	44	0\n"
 		"gpr	_sram	.32	48	0\n"
-// status bit register stored in SREG
-/*
-C Carry flag. This is a borrow flag on subtracts.
-Z Zero flag. Set to 1 when an arithmetic result is zero.
-N Negative flag. Set to a copy of the most significant bit of an arithmetic result.
-V Overflow flag. Set in case of two's complement overflow.
-S Sign flag. Unique to AVR, this is always (N ^ V) (xor), and shows the true sign of a comparison.
-H Half carry. This is an internal carry from additions and is used to support BCD arithmetic.
-T Bit copy. Special bit load and bit store instructions use this bit.
-I Interrupt flag. Set when interrupts are enabled.
-*/
-		"gpr	cf	.1	304	0\n" // 304 = (offsetof(SREG))*8 = 38 * 8
-		"gpr	zf	.1	305	0\n"
-		"gpr	nf	.1	306	0\n"
-		"gpr	vf	.1	307	0\n"
-		"gpr	sf	.1	308	0\n"
-		"gpr	hf	.1	309	0\n"
-		"gpr	tf	.1	310	0\n"
-		"gpr	if	.1	311	0\n"
 		;
 
 	return r_reg_set_profile_string (anal->reg, p);
