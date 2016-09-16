@@ -416,7 +416,14 @@ RAsmPlugin r_asm_plugin_avr = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "AVR Atmel",
 	.disassemble = &disassemble,
-	.assemble = &assemble
+	.assemble = &assemble,
+	.cpus = "ATmega168,"
+		"ATmega328p,"
+		"ATmega32u4,"
+	        "ATmega1280,"
+	        "ATmega2560,"
+		"ATmega48",
+		"ATmega8"
 };
 
 #ifndef CORELIB
