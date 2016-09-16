@@ -2519,23 +2519,21 @@ repeat:
 		break;
 	case 'f':
 		{
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn)
-				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
-		}
-		{
 			int funsize = 0;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (fcn) {
+				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
+			}
 			//int depth = r_config_get_i (core->config, "anal.depth");
 			if (core->print->cur_enabled) {
 				if (core->print->ocur != -1) {
-					funsize = 1+ R_ABS (core->print->cur - core->print->ocur);
+					funsize = 1 + R_ABS (core->print->cur - core->print->ocur);
 				}
 				//depth = 0;
 			}
 			r_cons_break (NULL, NULL);
-			r_core_cmd0 (core, "af"); // required for thumb autodetection
-			//r_core_anal_fcn (core, off, UT64_MAX,
-			//	R_ANAL_REF_TYPE_NULL, depth);
+			r_core_cmdf (core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection
+			//r_core_anal_fcn (core, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 			r_cons_break_end ();
 			if (funsize) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
