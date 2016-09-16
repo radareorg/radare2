@@ -144,6 +144,7 @@ static int main_help(int line) {
 		" -f           block size = file size\n"
 		" -F [binplug] force to use that rbin plugin\n"
 		" -h, -hh      show help message, -hh for long\n"
+		" -H ([var])   display variable\n"
 		" -i [file]    run script file\n"
 		" -I [file]    run script file before the file is opened\n"
 		" -k [k=v]     perform sdb query into core->sdb\n"
@@ -193,6 +194,40 @@ static int main_help(int line) {
 		" LIBEXT       "R_LIB_EXT"\n"
 		, homedir);
 		free (homedir);
+	}
+	return 0;
+}
+
+static int main_print_var(const char *var_name) {
+	int i = 0;
+	struct radare2_var_t {
+		const char *name;
+		const char *value;
+	} r2_vars[] = {
+		{ "R2_PREFIX", R2_PREFIX },
+		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
+		{ "MAGICPATH", R_MAGIC_PATH },
+		{ "PREFIX", R2_PREFIX },
+		{ "INCDIR", R2_INCDIR },
+		{ "LIBDIR", R2_LIBDIR },
+		{ "LIBEXT", R_LIB_EXT },
+		{ "RHOMEDIR", R2_HOMEDIR },
+		{ NULL, NULL }
+	};
+
+	if (var_name) {
+		while (r2_vars[i].name) {
+			if (!strcmp (r2_vars[i].name, var_name)) {
+				printf ("%s\n", r2_vars[i].value);
+				break;
+			}
+			i++;
+		}
+	} else {
+		while (r2_vars[i].name) {
+			printf ("%s=%s\n", r2_vars[i].name, r2_vars[i].value);
+			i++;
+		}
 	}
 	return 0;
 }
@@ -383,7 +418,13 @@ int main(int argc, char **argv, char **envp) {
 		prefile = 0;
 	}
 
-	while ((c = getopt (argc, argv, "=0AMCwfF:hm:e:nk:o:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
+	// -H option without argument
+	if (argc == 2 && !strcmp (argv[1], "-H")) {
+		main_print_var (NULL);
+		return 0;
+	}
+
+	while ((c = getopt (argc, argv, "=0AMCwfF:hH:m:e:nk:o:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -435,6 +476,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'f': fullfile = 1; break;
 		case 'F': forcebin = optarg; break;
 		case 'h': help++; break;
+		case 'H': main_print_var (optarg); return 0; break;
 		case 'i':
 			r_list_append (files, optarg);
 			break;
@@ -1006,7 +1048,7 @@ int main(int argc, char **argv, char **envp) {
 					if (no_question_debug) {
 						if (r_config_get_i (r.config, "dbg.exitkills") && y_kill_debug){
 							r_debug_kill (r.dbg, 0, false, 9); // KILL
-						} 
+						}
 					} else {
 						if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 							if (r_config_get_i (r.config, "dbg.exitkills") &&
@@ -1021,7 +1063,7 @@ int main(int argc, char **argv, char **envp) {
 				if (no_question_save) {
 					if (prj && *prj && y_save_project){
 						r_core_project_save (&r, prj);
-					} 
+					}
 				}
 				else {
 					question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
