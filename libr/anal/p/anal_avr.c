@@ -74,9 +74,10 @@ INST_HANDLER (cp) {
 	r_strbuf_setf (
 		&op->esil,
 		"r%d,r%d,==,"			// compare Rr vs Rd
+		","				// clean stack result
 		"$z,zf,=,"			// zero flag (zf)
-		"r%d,r%d,^,0x08,!,!,hf,"	// half carry flag (hf)
-		"r%d,r%d,^,0x80,!,!,cf,"	// carry flag (cf)
+		"r%d,r%d,^,0x08,&,!,!,hf,=,"	// half carry flag (hf)
+		"r%d,r%d,^,0x80,&,!,!,cf,=,"	// carry flag (cf)
 		"$o,vf,=,"			// overflow flag (vf)
 		"r%d,r%d,-,0x80,&,!,!,nf,=,"	// neg flg: result's MSB is set
 		"vf,nf,^,sf,=",			// sign flag: xor(vf, nf)
@@ -683,6 +684,9 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	rampz	.8	41	0\n"
 		"gpr	rampd	.8	42	0\n"
 		"gpr	eind	.8	43	0\n"
+// memory mapping emulator registers
+		"gpr	_eeprom	.32	44	0\n"
+		"gpr	_sram	.32	48	0\n"
 // status bit register stored in SREG
 /*
 C Carry flag. This is a borrow flag on subtracts.
@@ -694,7 +698,7 @@ H Half carry. This is an internal carry from additions and is used to support BC
 T Bit copy. Special bit load and bit store instructions use this bit.
 I Interrupt flag. Set when interrupts are enabled.
 */
-		"gpr	cf	.1	304	0\n" // 288 = (offsetof(SREG))*8= 38 * 8
+		"gpr	cf	.1	304	0\n" // 304 = (offsetof(SREG))*8 = 38 * 8
 		"gpr	zf	.1	305	0\n"
 		"gpr	nf	.1	306	0\n"
 		"gpr	vf	.1	307	0\n"
@@ -702,9 +706,6 @@ I Interrupt flag. Set when interrupts are enabled.
 		"gpr	hf	.1	309	0\n"
 		"gpr	tf	.1	310	0\n"
 		"gpr	if	.1	311	0\n"
-
-		"gpr	_eeprom	.32	44	0\n"
-		"gpr	_sram	.32	48	0\n"
 		;
 
 	return r_reg_set_profile_string (anal->reg, p);
