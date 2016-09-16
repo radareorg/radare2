@@ -68,19 +68,14 @@ CPU_MODEL cpu_models[] = {
 };
 
 INST_HANDLER (call) {
-	// jump and inst size
 	op->jump = op->addr
-		+ (buf[0] << 1)
-		| (buf[1] << 9)
-		| (((buf[2] & 0x1) | ((buf[2] >> 3) & 0x3e)) << 17);
-	op->size = 4;
-
-	// cycles! (PC size decides required runtime)
+		+ (buf[3] << 1)
+		| (buf[2] << 9)
+		| (((buf[0] & 0x1) | ((buf[2] >> 3) & 0x3e)) << 17);
 	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
 	if (!strncasecmp (anal->cpu, "ATxmega", 7)) {
 		op->cycles--;	// ATxmega optimizes one cycle
 	}
-
 	r_strbuf_setf (
 		&op->esil,
 		"pc,"			// esil is already pointing to the
