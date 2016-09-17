@@ -467,7 +467,7 @@ R_API void r_cons_flush() {
 		return;
 	}
 	r_cons_filter ();
-	if (I.is_interactive) {
+	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (I.pager && *I.pager && I.buffer_len > 0
 				&& r_str_char_count (I.buffer, '\n') >= I.rows) {
