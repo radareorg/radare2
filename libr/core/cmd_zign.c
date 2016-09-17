@@ -146,7 +146,7 @@ static int cmd_zign(void *data, const char *input) {
 							}
 							r_cons_newline ();
 						} else {
-							fprintf (stderr, "%s zignature is too small\n", name);
+							eprintf ("%s zignature is too small\n", name);
 						}
 					} else {
 						eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
