@@ -124,6 +124,16 @@ INST_HANDLER (call) {
 		cpu->pc_size, op->jump);
 }
 
+INST_HANDLER (jmp) {
+	op->jump = (buf[2] << 1)
+		 | (buf[3] << 9)
+		 | (buf[1] & 0x01) << 23
+		 | (buf[0] & 0x01) << 17
+		 | (buf[0] & 0xf0) << 14;
+	op->cycles = 3;
+	r_strbuf_setf (&op->esil, "%d,pc,=", op->jump);	// jump!
+}
+
 INST_HANDLER (cp) {
 	// CP Rd, Rr
 	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
@@ -248,8 +258,8 @@ INST_HANDLER (reti) {
 
 INST_HANDLER (rjmp) {
 	op->jump = op->addr
-		+ ((((buf[0] + (buf[1] << 8)) & 0xfff) << 1)
-			| (buf[1] & 0x08 ? ~((int) 0x1fff) : 0))
+		+ (((typeof(op->jump)) (((buf[1] & 0xf) << 9) | (buf[0] << 1)))
+			| (buf[1] & 0x8 ? ~((typeof(op->jump)) 0x1fff) : 0))
 		+ 2;
 	r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", op->jump);
 }
@@ -279,6 +289,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ),
 	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ),
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ),
+	INST_DECL (jmp,   0xfe0e, 0x940c, 2,      4,   JMP   ),
 	INST_DECL (breq,  0xfc07, 0xf001, 0,      2,   CJMP  ),
 	INST_DECL (brge,  0xfc07, 0xf404, 0,      2,   CJMP  ),
 	INST_DECL (brhc,  0xfc07, 0xf405, 0,      2,   CJMP  ),
