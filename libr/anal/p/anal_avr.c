@@ -67,6 +67,39 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ((char *) 0,   16, 512)
 };
 
+void __generic_brxx_handler(RAnalOp *op, const ut8 *buf, const char const *eval) {
+	op->jump = op->addr
+		+ ((((buf[0] & 0xf8) >> 2) | (buf[1] & 0x03) << 6)
+			| (buf[1] & 0x2 ? ~((int) 0x7f) : 0))
+		+ 2;
+	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to true, this instruction
+			// needs 2 cycles, elsewhere it needs only 1 cycle.
+	r_strbuf_setf (
+		&op->esil,
+		"%s,?{%d,pc,=}",	// if eval is true, then jump
+		eval, op->jump);
+}
+
+INST_HANDLER (breq) { __generic_brxx_handler (op, buf, "zf");        }
+INST_HANDLER (brge) { __generic_brxx_handler (op, buf, "nf,vf,^,!"); }
+INST_HANDLER (brhc) { __generic_brxx_handler (op, buf, "hf,!");      }
+INST_HANDLER (brhs) { __generic_brxx_handler (op, buf, "hf");        }
+INST_HANDLER (brid) { __generic_brxx_handler (op, buf, "if,!");      }
+INST_HANDLER (brie) { __generic_brxx_handler (op, buf, "if");        }
+INST_HANDLER (brlo) { __generic_brxx_handler (op, buf, "cf");        }
+INST_HANDLER (brlt) { __generic_brxx_handler (op, buf, "nf,vf,^");   }
+INST_HANDLER (brmi) { __generic_brxx_handler (op, buf, "nf");        }
+INST_HANDLER (brne) { __generic_brxx_handler (op, buf, "zf,!");      }
+INST_HANDLER (brpl) { __generic_brxx_handler (op, buf, "nf,!");      }
+INST_HANDLER (brsh) { __generic_brxx_handler (op, buf, "cf,!");      }
+INST_HANDLER (brtc) { __generic_brxx_handler (op, buf, "tf,!");      }
+INST_HANDLER (brts) { __generic_brxx_handler (op, buf, "tf");        }
+INST_HANDLER (brvc) { __generic_brxx_handler (op, buf, "vf,!");      }
+INST_HANDLER (brvs) { __generic_brxx_handler (op, buf, "vf");        }
+
 INST_HANDLER (call) {
 	op->jump = (buf[2] << 1)
 		 | (buf[3] << 9)
@@ -155,13 +188,10 @@ INST_HANDLER (out) {
 }
 
 INST_HANDLER (rcall) {
-	ut32 offset = ((((buf[1] & 0xf) << 8) | buf[0]) + 1) << 1;
-	if (offset & 0x100) {
-		offset |= 0xfffff000;
-	}
-	op->jump = op->addr + offset;
-
-	// cycles!
+	op->jump = op->addr
+		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
+			| (((buf[1] & 0x8) ? ~((int) 0x1ff) : 0)))
+		+ 2;
 	if (!strncasecmp (anal->cpu, "ATtiny", 6)) {
 		op->cycles = 4;	// ATtiny is always slow
 	} else {
@@ -217,14 +247,10 @@ INST_HANDLER (reti) {
 }
 
 INST_HANDLER (rjmp) {
-	ut32 offset = (buf[0] + (buf[1] << 8)) & 0xfff;
-	if (offset & 0x800) {
-		offset |= 0xfffff000;
-	}
-	offset++;
-	offset <<= 1;
-	op->jump = op->addr + offset;
-
+	op->jump = op->addr
+		+ ((((buf[0] + (buf[1] << 8)) & 0xfff) << 1)
+			| (buf[1] & 0x08 ? ~((int) 0x1fff) : 0))
+		+ 2;
 	r_strbuf_setf (&op->esil, "%"PFMT64d",pc,=", op->jump);
 }
 
@@ -253,6 +279,23 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ),
 	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ),
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ),
+	INST_DECL (breq,  0xfc07, 0xf001, 0,      2,   CJMP  ),
+	INST_DECL (brge,  0xfc07, 0xf404, 0,      2,   CJMP  ),
+	INST_DECL (brhc,  0xfc07, 0xf405, 0,      2,   CJMP  ),
+	INST_DECL (brhs,  0xfc07, 0xf005, 0,      2,   CJMP  ),
+	INST_DECL (brid,  0xfc07, 0xf407, 0,      2,   CJMP  ),
+	INST_DECL (brie,  0xfc07, 0xf007, 0,      2,   CJMP  ),
+	INST_DECL (brlo,  0xfc07, 0xf000, 0,      2,   CJMP  ),
+	INST_DECL (brlt,  0xfc07, 0xf008, 0,      2,   CJMP  ),
+	INST_DECL (brmi,  0xfc07, 0xf002, 0,      2,   CJMP  ),
+	INST_DECL (brne,  0xfc07, 0xf401, 0,      2,   CJMP  ),
+	INST_DECL (brpl,  0xfc07, 0xf402, 0,      2,   CJMP  ),
+	INST_DECL (brsh,  0xfc07, 0xf400, 0,      2,   CJMP  ),
+	INST_DECL (brtc,  0xfc07, 0xf405, 0,      2,   CJMP  ),
+	INST_DECL (brts,  0xfc07, 0xf005, 0,      2,   CJMP  ),
+	INST_DECL (brvc,  0xfc07, 0xf403, 0,      2,   CJMP  ),
+	INST_DECL (brvs,  0xfc07, 0xf003, 0,      2,   CJMP  ),
+	INST_DECL (brvs,  0xfc07, 0xf003, 0,      2,   CJMP  ),
 	INST_DECL (cp,    0xfc00, 0x1400, 1,      2,   CMP   ),
 	INST_DECL (cpc,   0xfc00, 0x0400, 1,      2,   CMP   ),
 	INST_DECL (eor,   0xfc00, 0x2400, 1,      2,   XOR   ),
@@ -352,6 +395,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	// NOTE: This block should collapse along time... it depends on
 	// avrdis which does not seem the most efficient and easy way
 	// to emulate the CPU details :P
+	eprintf ("opcode %s @%"PFMT64x" sent to old anal.\n", opcode_desc->name, op->addr);
 	op->size = avrdis (str, addr, buf, len);
 	if (str[0] == 'l') {
 		op->type = R_ANAL_OP_TYPE_LOAD;
