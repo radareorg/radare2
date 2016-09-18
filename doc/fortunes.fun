@@ -154,7 +154,7 @@ phrack, better than java in the browser -- jvoisin
 Did you know that radare2 can decompile to assembly?
 Are you still there?
 Follow the white rabbit
-Do not try to sploit that binary - that's impossible. Instead, only try to realize the truth: the is no binary.
+Do not try to sploit that binary - that's impossible. Instead, only try to realize the truth: there is no binary.
 Hello Mr. Anderson
 try pressing the pigeon-shaped button
 What has been executed cannot be unexecuted
