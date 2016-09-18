@@ -205,6 +205,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
+	t &= 0xffff; // ignore the modifier bits
 	switch (t) {
 	case R_ANAL_OP_TYPE_IO    : return "io";
 	case R_ANAL_OP_TYPE_ACMP  : return "acmp";

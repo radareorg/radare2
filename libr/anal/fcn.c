@@ -623,7 +623,7 @@ repeat:
 			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
 
-		switch (op.type) {
+		switch (op.type & 0xFFFF) {
 		case R_ANAL_OP_TYPE_MOV:
 			//skip mov reg,reg
 			if (anal->opt.hpskip && regs_exist(op.src[0], op.dst)
@@ -716,6 +716,11 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
+			if (op.jump == UT64_MAX) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
 			if (anal->opt.jmpref) {
 				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
