@@ -427,7 +427,7 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 	//this step is required in order to prevent infinite recursion in some cases
 	if ((addr + un_idx - oplen) == fcn->addr) {
 		if (!anal->flb.exist_at (anal->flb.f, "skip", 4, op->addr)) {
-			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE, PFMT64u"\0", op->addr); //"\0" just in case
+			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE - 6, "%"PFMT64u, op->addr);
 			anal->flb.set (anal->flb.f, tmp_buf, op->addr, oplen);
 			fcn->addr += oplen;
 			bb->size -= oplen;
@@ -1078,7 +1078,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
 		ut64 overlapped = -1;
-		ut64 prev_jump = UT64_MAX;
 		RAnalFunction *fcn1 = NULL;
 
 		// set function size as length of continuous sequence of bbs
