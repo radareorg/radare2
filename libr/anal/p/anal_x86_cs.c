@@ -1978,13 +1978,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->jump = UT64_MAX;
 			op->ptr = INSOP (0).mem.disp;
 			op->disp = INSOP (0).mem.disp;
-			op->reg = NULL;
-			op->ireg = NULL;
 			if (INSOP (0).mem.index == X86_REG_INVALID) {
-				if (INSOP (0).mem.base != X86_REG_INVALID) {
-					op->reg = cs_reg_name (*handle, INSOP (0).mem.base);
-					op->type = R_ANAL_OP_TYPE_IRCALL;
-				}
+				op->ireg = NULL;
 			} else {
 				op->ireg = cs_reg_name (*handle, INSOP (0).mem.index);
 				op->scale = INSOP(0).mem.scale;
@@ -1993,11 +1988,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				op->ptr += addr + insn->size;
 				op->refptr = 8;
 			}
-			break;
-		case X86_OP_REG:
-			op->reg = cs_reg_name (*handle, INSOP (0).reg);
-			op->type = R_ANAL_OP_TYPE_RCALL;
-			op->ptr = UT64_MAX;
 			break;
 		default:
 			op->type = R_ANAL_OP_TYPE_UCALL;
@@ -2018,13 +2008,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->type = R_ANAL_OP_TYPE_MJMP;
 			op->ptr = INSOP (0).mem.disp;
 			op->disp = INSOP (0).mem.disp;
-			op->reg = NULL;
-			op->ireg = NULL;
 			if (INSOP (0).mem.index == X86_REG_INVALID) {
-				if (INSOP (0).mem.base != X86_REG_INVALID) {
-					op->reg = cs_reg_name (*handle, INSOP (0).mem.base);
-					op->type = R_ANAL_OP_TYPE_IRJMP;
-				}
+				op->ireg = NULL;
 			} else {
 				op->ireg = cs_reg_name (*handle, INSOP (0).mem.index);
 				op->scale = INSOP (0).mem.scale;
@@ -2037,7 +2022,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		case X86_OP_REG:
 			{
 			op->reg = cs_reg_name (gop.handle, INSOP(0).reg);
-			op->type = R_ANAL_OP_TYPE_RJMP;
+			op->type = R_ANAL_OP_TYPE_UJMP;
 			op->ptr = UT64_MAX;
 			}
 			break;

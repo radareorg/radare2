@@ -682,8 +682,18 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		next[1] = op.fail;
 		br = 2;
 		break;
-	case R_ANAL_OP_TYPE_UJMP:
-		next[0] = op.addr + op.size;
+	case R_ANAL_OP_TYPE_MJMP:
+		if (!op.ireg) {
+			next[0] = op.jump;
+		} else {
+			r = r_debug_reg_get (dbg,op.ireg);
+			if (dbg->iob.read_at (dbg->iob.io,
+			      r*op.scale + op.disp, (ut8*)&memval, 8) <0 ) {
+				next[0] = op.addr + op.size;
+			} else {
+				next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
+			}
+		}
 		br = 1;
 		break;
 	case R_ANAL_OP_TYPE_CALL:
@@ -691,24 +701,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		next[0] = op.jump;
 		br = 1;
 		break;
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_RCALL:
-		r = r_debug_reg_get (dbg,op.reg);
-		next[0] = r;
-		br = 1;
-		break;
-	case R_ANAL_OP_TYPE_IRCALL:
-	case R_ANAL_OP_TYPE_IRJMP:
-		r = r_debug_reg_get (dbg,op.reg);
-		if (dbg->iob.read_at (dbg->iob.io, r, (ut8*)&memval, 8) <0 ) {
-			next[0] = op.addr + op.size;
-		} else {
-			next[0] = (dbg->bits == R_SYS_BITS_32) ? memval.r32[0] : memval.r64;
-		}
-		br = 1;
-		break;
 	case R_ANAL_OP_TYPE_UCALL:
-	case R_ANAL_OP_TYPE_MJMP:
 		if (op.ireg) {
 			r = r_debug_reg_get (dbg,op.ireg);
 		} else {
@@ -867,7 +860,10 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			ins_size = op.fail;
 		}
 		// Skip over all the subroutine calls
-		if (op.type & R_ANAL_OP_TYPE_CALL == R_ANAL_OP_TYPE_CALL) {
+		if (op.type == R_ANAL_OP_TYPE_CALL  ||
+			op.type == R_ANAL_OP_TYPE_CCALL ||
+			op.type == R_ANAL_OP_TYPE_UCALL ||
+			op.type == R_ANAL_OP_TYPE_UCCALL) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return steps_taken;
