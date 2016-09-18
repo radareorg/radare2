@@ -1848,7 +1848,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		 {
 			ut8 *p;
 			int i = 0;
-			ptr = malloc (nblocks);
+			ptr = calloc (1, nblocks);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
@@ -1874,12 +1874,12 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		 {
 			ut8 *p;
 			int i, j, k;
-			ptr = malloc (nblocks);
+			ptr = calloc (1, nblocks);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
 			}
-			p = malloc (blocksize);
+			p = calloc (1, blocksize);
 			if (!p) {
 				R_FREE (ptr);
 				eprintf ("Error: failed to malloc memory");
@@ -1909,8 +1909,11 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		break;
 	case 'b': // bytes
 	case '\0':
+		ptr = calloc (1, nblocks);
+		r_core_read_at (core, core->offset, ptr, nblocks);
 		// TODO: support print_bars
 		r_print_fill (core->print, ptr, nblocks, core->offset, blocksize);
+		R_FREE (ptr);
 		break;
 	}
 	if (print_bars) {
