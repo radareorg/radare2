@@ -72,7 +72,7 @@ SDB_API int sdb_bool_set(Sdb *db, const char *str, bool v, ut32 cas) {
 
 SDB_API bool sdb_bool_get(Sdb *db, const char *str, ut32 *cas) {
 	const char *b = sdb_const_get (db, str, cas);
-	return (!strcmp (b, "1") || !strcmp (b, "true"));
+	return b && (!strcmp (b, "1") || !strcmp (b, "true"));
 }
 
 /* pointers */
