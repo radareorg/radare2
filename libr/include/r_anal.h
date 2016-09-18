@@ -357,6 +357,7 @@ On x86 acording to Wikipedia
 	} RAnalOpPrefix;
 
 // XXX: this definition is plain wrong. use enum or empower bits
+#define R_ANAL_OP_TYPE_MASK 0x8000ffff
 typedef enum {
 	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
 	//TODO: MOVE TO PREFIX .. it is used by anal_ex.. must be updated

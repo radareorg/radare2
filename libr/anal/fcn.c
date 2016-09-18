@@ -623,7 +623,7 @@ repeat:
 			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
 
-		switch (op.type & 0xFFFF) {
+		switch (op.type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_MOV:
 			//skip mov reg,reg
 			if (anal->opt.hpskip && regs_exist(op.src[0], op.dst)
