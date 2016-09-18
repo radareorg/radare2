@@ -403,7 +403,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				wrd = r_str_utf16_encode (buf + ctx, len);
 				pos = getstring (buf + ctx + len, ctx);
 				free (buf);
-				if (use_color) {
+				if (json) {
+					char *msg = r_str_newf (".%s%s%s.", pre, wrd, pos);
+					s = r_base64_encode_dyn (msg, -1);
+				} else if (use_color) {
 					s = r_str_newf (".%s"Color_YELLOW"%s"Color_RESET"%s.", pre, wrd, pos);
 				} else {
 					// s = r_str_newf ("\"%s"Color_INVERT"%s"Color_RESET"%s\"", pre, wrd, pos);
