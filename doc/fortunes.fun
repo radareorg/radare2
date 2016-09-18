@@ -191,3 +191,5 @@ Your endian swaps
 How about Global Thermonuclear War?
 There is no F5 key in radare2 yet
 Did you know that r2 is 10 years old?
+Beer in mind.
+r2 -- leading options since 2006
