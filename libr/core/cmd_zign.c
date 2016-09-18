@@ -88,6 +88,8 @@ static int cmd_zign(void *data, const char *input) {
 		if (input[1]==' ' && input[2]) {
 			int fdold = r_cons_singleton ()->fdout;
 			int minzlen = r_config_get_i (core->config, "cfg.minzlen");
+			int maxzlen = r_config_get_i (core->config, "cfg.maxzlen");
+			eprintf ("maxzlen: %d\n", maxzlen);
 			ptr = strchr (input + 2, ' ');
 			if (ptr) {
 				*ptr = '\0';
@@ -105,7 +107,7 @@ static int cmd_zign(void *data, const char *input) {
 				int zlen, len, oplen, idx = 0;
 				ut8 *buf;
 
-				len = r_anal_fcn_size (fcni);
+				len = r_anal_fcn_realsize (fcni);
 				if (!(buf = calloc (1, len))) {
 					return false;
 				}
@@ -134,7 +136,7 @@ static int cmd_zign(void *data, const char *input) {
 								idx += oplen;
 							}
 						}
-						if (zlen > minzlen) {
+						if (zlen > minzlen && maxzlen > zlen) {
 							r_cons_printf ("zb %s ", name);
 							for (i = 0; i < len; i++) {
 								/* XXX assuming buf[i] == 0 is wrong because mask != data */
@@ -146,7 +148,11 @@ static int cmd_zign(void *data, const char *input) {
 							}
 							r_cons_newline ();
 						} else {
-							eprintf ("%s zignature is too small\n", name);
+							if (zlen <= minzlen) {
+								eprintf ("Omitting %s zignature is too small. Length is %d. Check cfg.minzlen.\n", name, zlen);
+							} else {
+								eprintf ("Omitting %s zignature is too big. Length is %d. Check cfg.maxzlen.\n", name, zlen);
+							}
 						}
 					} else {
 						eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
@@ -315,7 +321,7 @@ static int cmd_zign(void *data, const char *input) {
 			fcni = (RAnalFunction*)it->data;
 			if (r_cons_singleton ()->breaked)
 				break;
-			len = r_anal_fcn_size (fcni);
+			len = r_anal_fcn_realsize (fcni);
 			if (!(buf = malloc (len))) {
 				return false;
 			}
