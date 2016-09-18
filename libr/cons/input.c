@@ -473,10 +473,6 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 		key = 'y';
 	r_cons_set_raw (0);
 	if (key=='\n' || key=='\r')
-		/* I don't know why but with this eprintf
-		 * the Y/N functionality works properly at MIPS
-		 */
-		eprintf("");
 		key = def;
 	return key=='y';
 }

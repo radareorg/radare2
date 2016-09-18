@@ -20,7 +20,7 @@ const char *linux_reg_profile (RDebug *dbg) {
 #elif __arm64__ || __aarch64__
 #include "reg/linux-arm64.h"
 #elif __MIPS__ || __mips__
-	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == R_TRUE)) {
+	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == true)) {
 #include "reg/linux-mips.h"
 	} else {
 #include "reg/linux-mips64.h"

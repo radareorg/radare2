@@ -69,7 +69,13 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	}
 
 	/* The MIPS ptrace has a different behaviour */
-# if !(__MIPS__ || __mips__)
+# if __mips__
+	/* see if we really have a breakpoint here... */
+	b = r_bp_get_at (dbg->bp, pc);
+	if (!b) { /* we don't. nothing left to do */
+		return true;
+	}
+# else
 	/* see if we really have a breakpoint here... */
 	b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
 	if (!b) { /* we don't. nothing left to do */
@@ -85,12 +91,6 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
 		eprintf ("cannot set registers!\n");
 		return false;
-	}
-# else
-	/* see if we really have a breakpoint here... */
-	b = r_bp_get_at (dbg->bp, pc);
-	if (!b) { /* we don't. nothing left to do */
-		return true;
 	}
 # endif
 
