@@ -440,7 +440,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	fcn->addr = at;
 	r_anal_fcn_set_size (fcn, 0);
 	RFlagItem *fi = r_flag_get_at (core->flags, at);
-	if (fi) {
+	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
 		fcn->name = strdup (fi->name);
 	} else {
 		fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
@@ -490,11 +490,11 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		}
 		f = r_flag_get_i2 (core->flags, fcn->addr);
 		free (fcn->name);
-		if (f && *f->name) {
+		if (f && *f->name && strncmp (f->name, "sect", 4)) {
 			fcn->name = strdup (f->name);
 		} else {
 			f = r_flag_get_i (core->flags, fcn->addr);
-			if (f && *f->name) {
+			if (f && *f->name && strncmp (f->name, "sect", 4)) {
 				fcn->name = strdup (f->name);
 			} else {
 				fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
@@ -513,7 +513,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				fcn->name = strdup (f->name);
 			} else {
 				f = r_flag_get_i (core->flags, fcn->addr);
-				if (f && *f->name) {
+				if (f && *f->name && strncmp (f->name, "sect", 4)) {
 					fcn->name = strdup (f->name);
 				} else {
 					fcn->name = r_str_newf ("%s.%08"PFMT64x,
