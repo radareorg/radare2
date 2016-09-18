@@ -89,7 +89,6 @@ static int cmd_zign(void *data, const char *input) {
 			int fdold = r_cons_singleton ()->fdout;
 			int minzlen = r_config_get_i (core->config, "cfg.minzlen");
 			int maxzlen = r_config_get_i (core->config, "cfg.maxzlen");
-			eprintf ("maxzlen: %d\n", maxzlen);
 			ptr = strchr (input + 2, ' ');
 			if (ptr) {
 				*ptr = '\0';
