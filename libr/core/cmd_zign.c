@@ -200,6 +200,7 @@ static int cmd_zign(void *data, const char *input) {
 			r_cons_printf ("%d zignatures removed\n", i);
 		}
 		break;
+	case 's':
 	case '/':
 		{
 			// TODO: parse arg0 and arg1
@@ -343,7 +344,7 @@ static int cmd_zign(void *data, const char *input) {
 			"z*", "", "display all zignatures",
 			"z-", " namespace", "unload zignatures in namespace",
 			"z-*", "", "unload all zignatures",
-			"z/", " [ini] [end]", "search zignatures between these regions",
+			"z/", " [ini] [end]", "search zignatures between these regions (alias for zs)",
 			"z.", " [@addr]", "match zignatures by function at address",
 			"za", " ...", "define new zignature for analysis",
 			"zb", " name bytes", "define zignature for bytes",
