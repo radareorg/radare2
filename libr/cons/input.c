@@ -461,7 +461,7 @@ ignore:
 
 R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	va_list ap;
-	int key = def;
+	ut8 key = (ut8)def;
 	va_start (ap, fmt);
 	vfprintf (stderr, fmt, ap);
 	va_end (ap);
@@ -469,12 +469,14 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	r_cons_set_raw (1);
 	(void)read (0, &key, 1);
 	write (2, "\n", 1);
-	if (key == 'Y')
+	if (key == 'Y') {
 		key = 'y';
+	}
 	r_cons_set_raw (0);
-	if (key=='\n' || key=='\r')
+	if (key == '\n' || key == '\r') {
 		key = def;
-	return key=='y';
+	}
+	return key == 'y';
 }
 
 R_API char *r_cons_input(const char *msg) {
