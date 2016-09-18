@@ -2213,7 +2213,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret[ret_ctr].offset = tmp_offset; 
 		ret[ret_ctr].size = tsize;
 		{
-		   int rest = R_MIN (ELF_STRING_LENGTH,128)-1;
+		   int rest = ELF_STRING_LENGTH - 1;
 		   int st_name = sym[k].st_name;
 		   int maxsize = R_MIN (bin->size, bin->strtab_size);
 		   if (st_name < 0 || st_name >= maxsize) {
@@ -2464,7 +2464,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					goto beach;
 				}
 				{
-					int rest = R_MIN (ELF_STRING_LENGTH, 128) - 1; //strtab_section->sh_size - sym[k].st_name;
+					int rest = ELF_STRING_LENGTH - 1;
 					int st_name = sym[k].st_name;
 					int maxsize = R_MIN (bin->b->length, strtab_section->sh_size);
 					if (st_name < 0 || st_name >= maxsize) {
