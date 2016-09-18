@@ -2008,9 +2008,13 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->type = R_ANAL_OP_TYPE_MJMP;
 			op->ptr = INSOP (0).mem.disp;
 			op->disp = INSOP (0).mem.disp;
+			if (INSOP(0).mem.base != X86_REG_INVALID) {
+				op->type = R_ANAL_OP_TYPE_UJMP;
+			}
 			if (INSOP (0).mem.index == X86_REG_INVALID) {
 				op->ireg = NULL;
 			} else {
+				op->type = R_ANAL_OP_TYPE_UJMP;
 				op->ireg = cs_reg_name (*handle, INSOP (0).mem.index);
 				op->scale = INSOP (0).mem.scale;
 			}
