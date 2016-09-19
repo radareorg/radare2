@@ -874,7 +874,8 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			ins_size = op.fail;
 		}
 		// Skip over all the subroutine calls
-		if (op.type & R_ANAL_OP_TYPE_CALL == R_ANAL_OP_TYPE_CALL) {
+		if (op.type & R_ANAL_OP_TYPE_MASK == R_ANAL_OP_TYPE_CALL ||
+			op.type & R_ANAL_OP_TYPE_MASK == R_ANAL_OP_TYPE_UCALL) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return steps_taken;
