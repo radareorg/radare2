@@ -166,7 +166,9 @@ static int init_shdr(ELFOBJ *bin) {
 	ut32 shdr_size;
 	int len;
 
-	if (!bin || bin->shdr) return true;
+	if (!bin || bin->shdr) {
+		return true;
+	}
 	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
 		return false;
 	}
@@ -684,18 +686,21 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 		return NULL;
 	}
 	sdb = sdb_new0 ();
-	if (!sdb) return NULL;
+	if (!sdb) {
+		return NULL;
+	}
 	link_shdr = &bin->shdr[shdr->sh_link];
-	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size)
+	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
 		section_name = &bin->shstrtab[shdr->sh_name];
-	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size)
+	}
+	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
+	}
 	if (!(need = calloc (shdr->sh_size, sizeof (char)))) {
 		eprintf ("Warning: Cannot allocate memory for Elf_(Verneed)\n");
 		goto beach;
 	}
 	end = need + shdr->sh_size;
-
 	sdb_set (sdb, "section_name", section_name, 0);
 	sdb_num_set (sdb, "num_entries", shdr->sh_info, 0);
 	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
@@ -703,10 +708,12 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	sdb_num_set (sdb, "link", shdr->sh_link, 0);
 	sdb_set (sdb, "link_section_name", link_section_name, 0);
 
-	if (shdr->sh_offset > bin->size || shdr->sh_offset + shdr->sh_size > bin->size)
+	if (shdr->sh_offset > bin->size || shdr->sh_offset + shdr->sh_size > bin->size) {
 		goto beach;
-	if (shdr->sh_offset + shdr->sh_size < shdr->sh_size)
+	}
+	if (shdr->sh_offset + shdr->sh_size < shdr->sh_size) {
 		goto beach;
+	}
 	i = r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
 	if (i < 0)
 		goto beach;
@@ -715,8 +722,9 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; ++cnt) {
 		int j, isum;
 		ut8 *vstart = need + i;
-		if (vstart + sizeof (Elf_(Verneed)) > end)
+		if (vstart + sizeof (Elf_(Verneed)) > end) {
 			goto beach;
+		}
 		Elf_(Verneed) *entry = (Elf_(Verneed)*)(vstart);
 		char key[32] = {0};
 		sdb_version = sdb_new0 ();
@@ -800,10 +808,6 @@ static Sdb *store_versioninfo(ELFOBJ *bin) {
 		if (size - (i*sizeof(Elf_(Shdr)) > bin->size)) {
 			size = bin->size - (i*sizeof(Elf_(Shdr)));
 		}
-		if (bin->shdr[i].sh_offset + ((i + 1) * sizeof (Elf_(Shdr))) > bin->size) {
-			eprintf ("Warning: Too big version info field %d (%d)\n", i, size);
-			break;
-		}
 		int left = size - (i * sizeof (Elf_(Shdr)));
 		left = R_MIN (left, bin->shdr[i].sh_size);
 		if (left < 0) {
@@ -834,23 +838,31 @@ static Sdb *store_versioninfo(ELFOBJ *bin) {
 static bool init_dynstr(ELFOBJ *bin) {
 	int i, r;
 	const char *section_name = NULL;
-	if (!bin || !bin->shdr) return false;
-	if (!bin->shstrtab) return false;
+	if (!bin || !bin->shdr) {
+		return false;
+	}
+	if (!bin->shstrtab) {
+		return false;
+	}
 	for (i = 0; i < bin->ehdr.e_shnum; ++i) {
-		if (bin->shdr[i].sh_name > bin->shstrtab_size)
+		if (bin->shdr[i].sh_name > bin->shstrtab_size) {
 			return false;
+		}
 		section_name = &bin->shstrtab[bin->shdr[i].sh_name];
 		if (bin->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
 			if (!(bin->dynstr = calloc (bin->shdr[i].sh_size + 1, sizeof (char)))) {
 				eprintf("Warning: Cannot allocate memory for dynamic strings\n");
 				return false;
 			}
-			if (bin->shdr[i].sh_offset > bin->size)
+			if (bin->shdr[i].sh_offset > bin->size) {
 				return false;
-			if (bin->shdr[i].sh_offset + bin->shdr[i].sh_size > bin->size)
+			}
+			if (bin->shdr[i].sh_offset + bin->shdr[i].sh_size > bin->size) {
 				return false;
-			if (bin->shdr[i].sh_offset + bin->shdr[i].sh_size < bin->shdr[i].sh_size)
+			}
+			if (bin->shdr[i].sh_offset + bin->shdr[i].sh_size < bin->shdr[i].sh_size) {
 				return false;
+			}
 			r = r_buf_read_at (bin->b, bin->shdr[i].sh_offset, (ut8*)bin->dynstr, bin->shdr[i].sh_size);
 			if (r < 1) {
 				R_FREE (bin->dynstr);
