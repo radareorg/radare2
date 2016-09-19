@@ -2142,20 +2142,17 @@ static int __esil_generic_pick(RAnalEsil *esil, int rev) {
 		goto end;
 	}
 	ret = true;
-
 end:
-	if (idx) {
-		free (idx);
-	}
+	free (idx);
 	return ret;
 }
 
 static int esil_pick(RAnalEsil *esil) {
-	return __esil_generic_pick(esil, 0);
+	return __esil_generic_pick (esil, 0);
 }
 
 static int esil_rpick(RAnalEsil *esil) {
-	return __esil_generic_pick(esil, 1);
+	return __esil_generic_pick (esil, 1);
 }
 
 // NOTE on following comparison functions:
