@@ -68,7 +68,7 @@ static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 
 R_API int r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
-		r_core_bin_set_cur (core, r_core_bin_cur(core));
+		r_core_bin_set_cur (core, r_core_bin_cur (core));
 		return true;
 	}
 	return false;

@@ -611,7 +611,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 			break;
 		}
 		int tid = bin->types[field.type_id].descriptor_id;
-		const char* type_str = getstr(bin, tid);//get_string(bin, field.type_id, tid);
+		const char* type_str = getstr (bin, tid);//get_string(bin, field.type_id, tid);
 
 		if (1) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
