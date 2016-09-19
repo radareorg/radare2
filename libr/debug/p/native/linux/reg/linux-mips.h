@@ -28,51 +28,65 @@ PC = 272
 #endif
 
 #endif
+
+/* IMPORTANT - MIPS ptrace always returns the registers in 64bits format,
+   so this register table has been modified from 64 bits to 32 bits.
+   Example:
+	Originals (64 bits):
+	  "gpr    at      .64     8       0\n"
+	  "gpr    v0      .64     16      0\n"
+	Modified to (32 bits):
+          "gpr    at      .32     12      0\n"
+          "gpr    v0      .32     20      0\n"
+
+   It is using the same arena->size, but we are only using the last 4 bytes
+   (LITTLE ENDIAN PROBLEMS?)
+*/
 	return strdup (
-	"=PC	pc\n"
-	"=SP	sp\n"
-	"=BP	fp\n"
-	"=A0	a0\n"
-	"=A1	a1\n"
-	"=A2	a2\n"
-	"=A3	a3\n"
-	"gpr	zero	.64	0	0\n"
-	// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
-	"gpr	at	.64	8	0\n"
-	"gpr	v0	.64	16	0\n"
-	"gpr	v1	.64	24	0\n"
-	/* args */
-	"gpr	a0	.64	32	0\n"
-	"gpr	a1	.64	40	0\n"
-	"gpr	a2	.64	48	0\n"
-	"gpr	a3	.64	56	0\n"
-	/* tmp */
-	"gpr	t0	.64	64	0\n"
-	"gpr	t1	.64	72	0\n"
-	"gpr	t2	.64	80	0\n"
-	"gpr	t3	.64	88	0\n"
-	"gpr	t4	.64	96	0\n"
-	"gpr	t5	.64	104	0\n"
-	"gpr	t6	.64	112	0\n"
-	"gpr	t7	.64	120	0\n"
-	/* saved */
-	"gpr	s0	.64	128	0\n"
-	"gpr	s1	.64	136	0\n"
-	"gpr	s2	.64	144	0\n"
-	"gpr	s3	.64	152	0\n"
-	"gpr	s4	.64	160	0\n"
-	"gpr	s5	.64	168	0\n"
-	"gpr	s6	.64	176	0\n"
-	"gpr	s7	.64	184	0\n"
-	"gpr	s8	.64	192	0\n"
-	"gpr	s9	.64	200	0\n"
-	/* special */
-	"gpr	k0	.64	208	0\n"
-	"gpr	k1	.64	216	0\n"
-	"gpr	gp	.64	224	0\n"
-	"gpr	sp	.64	232	0\n"
-	"gpr	fp	.64	240	0\n"
-	"gpr	ra	.64	248	0\n"
-	/* extra */
-	"gpr	pc	.64	272	0\n"
+        "=PC    pc\n"
+        "=SP    sp\n"
+        "=BP    fp\n"
+        "=A0    a0\n"
+        "=A1    a1\n"
+        "=A2    a2\n"
+        "=A3    a3\n"
+        "gpr    zero    .32     4       0\n"
+        // XXX DUPPED CAUSES FAILURE "gpr       at      .32     8       0\n"
+        "gpr    at      .32     12      0\n"
+        "gpr    v0      .32     20      0\n"
+        "gpr    v1      .32     28      0\n"
+        /* args */
+        "gpr    a0      .32     36      0\n"
+        "gpr    a1      .32     44      0\n"
+        "gpr    a2      .32     52      0\n"
+        "gpr    a3      .32     60      0\n"
+        /* tmp */
+        "gpr    t0      .32     68      0\n"
+        "gpr    t1      .32     76      0\n"
+        "gpr    t2      .32     84      0\n"
+        "gpr    t3      .32     92      0\n"
+        "gpr    t4      .32     100     0\n"
+        "gpr    t5      .32     108     0\n"
+        "gpr    t6      .32     116     0\n"
+        "gpr    t7      .32     124     0\n"
+        /* saved */
+        "gpr    s0      .32     132     0\n"
+        "gpr    s1      .32     140     0\n"
+        "gpr    s2      .32     148     0\n"
+        "gpr    s3      .32     156     0\n"
+        "gpr    s4      .32     164     0\n"
+        "gpr    s5      .32     172     0\n"
+        "gpr    s6      .32     180     0\n"
+        "gpr    s7      .32     188     0\n"
+        "gpr    s8      .32     196     0\n"
+        "gpr    s9      .32     204     0\n"
+        /* special */
+        "gpr    k0      .32     212     0\n"
+        "gpr    k1      .32     220     0\n"
+        "gpr    gp      .32     228     0\n"
+        "gpr    sp      .32     236     0\n"
+        "gpr    fp      .32     244     0\n"
+        "gpr    ra      .32     252     0\n"
+        /* extra */
+        "gpr    pc      .32     276     0\n"
 	);
