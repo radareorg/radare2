@@ -725,6 +725,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		}
 		br = 1;
 		break;
+	case R_ANAL_OP_TYPE_UJMP:
 	default:
 		next[0] = op.addr + op.size;
 		br = 1;
