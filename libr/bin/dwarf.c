@@ -942,8 +942,9 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	size_t i;
 	if (!da) return;
-	for (i = 0; i < da->length; i++)
+	for (i = 0; i < da->length; i++) {
 		R_FREE (da->decls[i].specs);
+	}
 	R_FREE (da->decls);
 }
 
@@ -1105,12 +1106,14 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	const ut8 *buf_end = obuf + obuf_len;
 	size_t j;
 
-	if (!spec || !value || !hdr || !obuf || obuf_len < 0) {
-		return NULL;
-	}
 	value->form = spec->attr_form;
 	value->name = spec->attr_name;
 	value->encoding.block.data = NULL;
+	value->encoding.str_struct.string = NULL;
+
+	if (!spec || !value || !hdr || !obuf || obuf_len < 0) {
+		return NULL;
+	}
 
 	switch (spec->attr_form) {
 	case DW_FORM_addr:
