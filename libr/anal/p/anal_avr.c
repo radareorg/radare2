@@ -79,7 +79,7 @@ void __generic_brxx(RAnalOp *op, const ut8 *buf, const char const *eval) {
 			// instruction is executed by the ESIL interpreter!!!
 			// In case of evaluating to true, this instruction
 			// needs 2 cycles, elsewhere it needs only 1 cycle.
-	ESIL_A ("%s,?{%"PFMT64d",pc,=}", eval, op->jump); // if eval => jump
+	ESIL_A ("%s,?{,%"PFMT64d",pc,=,}", eval, op->jump); // if eval => jump
 }
 
 INST_HANDLER (adc) {	// ADC Rd, Rr
@@ -134,6 +134,23 @@ INST_HANDLER (add) {	// ADD Rd, Rr
 		d, r, r, d);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 	ESIL_A ("r%d,=,", d);					// Rd = result
+}
+
+INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
+	int d = ((buf[0] & 0x30) >> 3) + 24;
+	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
+	ESIL_A ("r%d:r%d,%d,+,", d + 1, d, k);			// Rd+1:Rd + Rr
+								// FLAGS:
+	ESIL_A ("r%d,0x80,&,!,"					// V
+		"0,RPICK,0x8000,&,!,!,"
+		"&,", d + 1);
+	ESIL_A ("0,RPICK,0x8000,&,!,!,nf,=,");			// N
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("r%d,0x80,&,!,!,"				// C
+		"0,RPICK,0x8000,&,!,"
+		"&,", d + 1);
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d:r%d,=,", d + 1, d);			// Rd = result
 }
 
 INST_HANDLER (breq) { __generic_brxx (op, buf, "zf");        } // BREQ raddr
@@ -287,6 +304,20 @@ INST_HANDLER (ldi) {	// LDI Rd, K
 	ESIL_A ("0x%x,r%d,=,", k, d);
 }
 
+INST_HANDLER (in) {	// IN Rd, A
+	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
+	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
+	op->type2 = 0;
+	op->val = a;
+	switch (a) {
+	case 0x3f: /* SREG */ ESIL_A ("sreg," "r%d," "=,", r); break;
+	case 0x3e: /* SPH  */ ESIL_A ("sph,"  "r%d," "=,", r); break;
+	case 0x3d: /* SPL  */ ESIL_A ("spl,"  "r%d," "=,", r); break;
+	default:
+		ESIL_A ("2,$,");
+	}
+}
+
 INST_HANDLER (movw) {	// // MOVW Rd+1:Rd, Rr+1Rrd
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
@@ -298,13 +329,13 @@ INST_HANDLER (nop) {	// NOP
 
 INST_HANDLER (out) {	// OUT A, Rr
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
-	int a = (buf[0] & 0x0f) | (((buf[1] >> 1) & 0x03) << 4);
+	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
 	op->type2 = 1;
 	op->val = a;
 	switch (a) {
-	case 0x3f: /* SREG */ ESIL_A ("r%d,sreg,=,", r); break;
-	case 0x3e: /* SPH  */ ESIL_A ("r%d,sph,=,",  r); break;
-	case 0x3d: /* SPL  */ ESIL_A ("r%d,spl,=,",  r); break;
+	case 0x3f: /* SREG */ ESIL_A ("r%d," "sreg," "=,", r); break;
+	case 0x3e: /* SPH  */ ESIL_A ("r%d," "sph,"  "=,", r); break;
+	case 0x3d: /* SPL  */ ESIL_A ("r%d," "spl,"  "=,", r); break;
 	default:
 		ESIL_A ("2,$,");
 	}
@@ -432,6 +463,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ), // RETI
 	INST_DECL (sec,   0xffff, 0x9408, 1,      2,   SWI   ), // SEC
 	INST_DECL (sei,   0xffff, 0x9478, 1,      2,   SWI   ), // SEI
+	INST_DECL (adiw,  0xff00, 0x9600, 2,      2,   ADD   ), // ADIW Rd+1:Rd, K
 	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ), // MOVW Rd+1:Rd, Rr+1Rrd
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ), // CALL addr
 	INST_DECL (jmp,   0xfe0e, 0x940c, 2,      4,   JMP   ), // JMP addr
@@ -457,6 +489,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (cpc,   0xfc00, 0x0400, 1,      2,   CMP   ), // CPC Rd, Rr
 	INST_DECL (eor,   0xfc00, 0x2400, 1,      2,   XOR   ),	// EOR Rd, Rr
 	INST_DECL (sbc,   0xfc00, 0x0800, 1,      2,   SUB   ), // SBC Rd, Rr
+	INST_DECL (in,    0xf800, 0xb000, 1,      2,   IO    ), // IN Rd, A
 	INST_DECL (out,   0xf800, 0xb800, 1,      2,   IO    ), // OUT A, Rr
 	INST_DECL (st,    0xf00f, 0x900c, 2,      2,   STORE ), // ST X, Rr
 	INST_DECL (st,    0xf00c, 0x900d, 2,      2,   STORE ), // ST X+, Rr
@@ -954,6 +987,12 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r29	.8	29	0\n"
 		"gpr	r30	.8	30	0\n"
 		"gpr	r31	.8	31	0\n"
+
+// 16 bit overlapped registers for 16 bit math
+		"gpr	r25:r24	.16	24	0\n"
+		"gpr	r27:r26	.16	26	0\n"
+		"gpr	r29:r28	.16	28	0\n"
+		"gpr	r31:r30	.16	30	0\n"
 
 // 16 bit overlapped registers for memory addressing
 		"gpr	x	.16	26	0\n"
