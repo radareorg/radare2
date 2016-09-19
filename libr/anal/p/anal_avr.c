@@ -154,8 +154,17 @@ INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 }
 
 INST_HANDLER (bclr) {	// BCLR s
+			// CLC
+			// CLH
+			// CLI
+			// CLN
+			// CLR
+			// CLS
+			// CLT
+			// CLV
+			// CLZ
 	int s = (buf[0] >> 4) & 0x7;
-	ESIL_A ("0xff,%d,1,<<,^,sreg,&=");
+	ESIL_A ("0xff,%d,1,<<,^,sreg,&=", s);
 }
 
 INST_HANDLER (breq) { __generic_brxx (op, buf, "zf");        } // BREQ raddr
@@ -193,14 +202,6 @@ INST_HANDLER (call) {	// CALL addr
 	ESIL_A ("sp,-%d,+,", cpu->pc_size);	// decrement stack pointer
 	ESIL_A ("sp,=,");			// store SP
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
-}
-
-INST_HANDLER (clc) {	// CLC
-	ESIL_A ("0,cf,=,");
-}
-
-INST_HANDLER (cli) {	// CLI
-	ESIL_A ("0,if,=,");
 }
 
 INST_HANDLER (cp) {	// CP Rd, Rr
@@ -461,14 +462,12 @@ INST_HANDLER (st) {	// ST X, Rr
 
 OPCODE_DESC opcodes[] = {
 	//         op     mask    select  cycles  size type
-	INST_DECL (clc,   0xffff, 0x9488, 1,      2,   SWI   ), // CLC
-	INST_DECL (cli,   0xffff, 0x94f8, 1,      2,   SWI   ), // CLI
 	INST_DECL (nop,   0xffff, 0x0000, 1,      2,   NOP   ), // NOP
 	INST_DECL (ret,   0xffff, 0x9508, 4,      2,   RET   ), // RET
 	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ), // RETI
 	INST_DECL (sec,   0xffff, 0x9408, 1,      2,   SWI   ), // SEC
 	INST_DECL (sei,   0xffff, 0x9478, 1,      2,   SWI   ), // SEI
-	INST_DECL (bclr,  0xff8f, 0x9444, 0,      2,   SWI   ), // BCLR s
+	INST_DECL (bclr,  0xff8f, 0x9488, 1,      2,   SWI   ), // BCLR s
 	INST_DECL (adiw,  0xff00, 0x9600, 2,      2,   ADD   ), // ADIW Rd+1:Rd, K
 	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ), // MOVW Rd+1:Rd, Rr+1Rrd
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ), // CALL addr
