@@ -623,10 +623,12 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 	// TODO: add command to list all namespaces // sdb_ns_foreach ?
 	case 's':
-		if (core->http_up)
+		if (core->http_up) {
 			return false;
-		if (!r_config_get_i (core->config, "scr.interactive"))
+		}
+		if (!r_config_get_i (core->config, "scr.interactive")) {
 			return false;
+		}
 		if (input[1]==' ') {
 			char *n, *o, *p = strdup (input+2);
 			// TODO: slash split here? or inside sdb_ns ?
@@ -723,11 +725,12 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 	}
 
-	if (input[0] == '\0')
+	if (input[0] == '\0') {
 		/* nothing more to do, the command has been parsed. */
 		return 0;
+	}
 
-	sp = strchr (input+1, ' ');
+	sp = strchr (input + 1, ' ');
 	if (sp) {
 		char *inp = strdup (input);
 		inp [(size_t)(sp-input)] = 0;
@@ -764,10 +767,14 @@ static int cmd_bsize(void *data, const char *input) {
 	case 'f':
 		if (input[1]==' ') {
 			flag = r_flag_get (core->flags, input+2);
-			if (flag)
+			if (flag) {
 				r_core_block_size (core, flag->size);
-			else eprintf ("bf: cannot find flag named '%s'\n", input+2);
-		} else eprintf ("Usage: bf [flagname]\n");
+			} else {
+				eprintf ("bf: cannot find flag named '%s'\n", input+2);
+			}
+		} else {
+			eprintf ("Usage: bf [flagname]\n");
+		}
 		break;
 	case '\0':
 		r_cons_printf ("0x%x\n", core->blocksize);
@@ -782,8 +789,9 @@ static int cmd_bsize(void *data, const char *input) {
 			"b", " eip+4", "numeric argument can be an expression",
 			"bf", " foo", "set block size to flag size",
 			"bm", " 1M", "set max block size",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			NULL
+		};
+		r_core_cmd_help (core, help_msg);
 		}
 		break;
 	default:
@@ -1335,9 +1343,13 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				} else p = NULL;
 			}
 			if (p && *p && p[1]=='>') {
-				str = p+2;
-				while (*str=='>') str++;
-				while (IS_WHITESPACE (*str)) str++;
+				str = p + 2;
+				while (*str=='>') {
+					str++;
+				}
+				while (IS_WHITESPACE (*str)) {
+					str++;
+				}
 				r_cons_flush ();
 				pipefd = r_cons_pipe_open (str, 1, p[2]=='>');
 			}
@@ -1483,25 +1495,25 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	}
 next:
 
-// TODO must honor " and `
+	// TODO must honor " and `
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
 	if (ptr) {
 		int fdn = 1;
 		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
 		int use_editor = false;
-		//int scrint = r_cons_singleton()->is_interactive;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
-		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
+		str = r_str_trim_head_tail (ptr + 1 + (ptr[1] == '>'));
 		if (!*str) goto next2;
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
-		if (ptr>cmd) {
+		if (ptr > cmd) {
 			char *fdnum = ptr-1;
-			if (*fdnum >= '0' && *fdnum <= '9')
+			if (*fdnum >= '0' && *fdnum <= '9') {
 				fdn = *fdnum - '0';
+			}
 			*fdnum = 0;
 		}
 		r_cons_set_interactive (false);
@@ -1510,24 +1522,29 @@ next:
 			str = r_file_temp ("dumpedit");
 			r_config_set (core->config, "scr.color", "false");
 		}
-		pipefd = r_cons_pipe_open (str, fdn, ptr[1]=='>');
-		if (pipefd != -1) {
-			if (!pipecolor)
-				r_config_set_i (core->config, "scr.color", 0);
-
-			ret = r_core_cmd_subst (core, cmd);
-			r_cons_flush ();
-			r_cons_pipe_close (pipefd);
+		if (fdn > 0) {
+			pipefd = r_cons_pipe_open (str, fdn, ptr[1] == '>');
+			if (pipefd != -1) {
+				if (!pipecolor) {
+					r_config_set_i (core->config, "scr.color", 0);
+				}
+				ret = r_core_cmd_subst (core, cmd);
+				r_cons_flush ();
+				r_cons_pipe_close (pipefd);
+			}
 		}
 		r_cons_set_last_interactive ();
-		if (!pipecolor)
+		if (!pipecolor) {
 			r_config_set_i (core->config, "scr.color", ocolor);
+		}
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
 			if (editor && *editor) {
 				r_sys_cmdf ("%s '%s'", editor, str);
 				r_file_rm (str);
-			} else eprintf ("No cfg.editor configured\n");
+			} else {
+				eprintf ("No cfg.editor configured\n");
+			}
 			r_config_set_i (core->config, "scr.color", ocolor);
 			free (str);
 		}
@@ -1540,15 +1557,14 @@ next2:
 		int empty = 0;
 		int oneline = 1;
 		if (ptr[1]=='`') {
-			memmove (ptr, ptr+1, strlen (ptr));
+			memmove (ptr, ptr + 1, strlen (ptr));
 			oneline = 0;
 			empty = 1;
 		}
 		ptr2 = strchr (ptr+1, '`');
 		if (empty) {
 			/* do nothing */
-		} else
-		if (!ptr2) {
+		} else if (!ptr2) {
 			eprintf ("parse: Missing backtick in expression.\n");
 			return -1;
 		} else {
@@ -1568,10 +1584,13 @@ next2:
 				free (str);
 				return -1;
 			}
-			if (oneline && str)
-				for (i=0; str[i]; i++)
-					if (str[i]=='\n')
-						str[i]=' ';
+			if (oneline && str) {
+				for (i = 0; str[i]; i++) {
+					if (str[i] == '\n') {
+						str[i] = ' ';
+					}
+				}
+			}
 			str = r_str_concat (str, ptr2+1);
 			cmd = r_str_concat (strdup (cmd), str);
 			core->num->value = value;
@@ -1593,7 +1612,7 @@ next2:
 			ptr = NULL;
 		}
 	}
-	if (ptr && *cmd!='.') {
+	if (ptr && *cmd != '.') {
 		*ptr = '\0';
 		ptr++;
 		cmd = r_str_chop (cmd);

@@ -936,8 +936,9 @@ R_API int r_core_fgets(char *buf, int len) {
 	rli->completion.argv = radare_argv;
 	rli->completion.run = autocomplete;
 	ptr = r_line_readline ();
-	if (!ptr)
+	if (!ptr) {
 		return -1;
+	}
 	strncpy (buf, ptr, len);
 	buf[len-1] = 0;
 	return strlen (buf)+1;
@@ -1502,11 +1503,13 @@ R_API RCore *r_core_free(RCore *c) {
 R_API void r_core_prompt_loop(RCore *r) {
 	int ret;
 	do {
-		if (r_core_prompt (r, false)<1)
+		if (r_core_prompt (r, false)<1) {
 			break;
+		}
 //			if (lock) r_th_lock_enter (lock);
-		if ((ret = r_core_prompt_exec (r))==-1)
+		if ((ret = r_core_prompt_exec (r))==-1) {
 			eprintf ("Invalid command\n");
+		}
 /*			if (lock) r_th_lock_leave (lock);
 		if (rabin_th && !r_th_wait_async (rabin_th)) {
 			eprintf ("rabin thread end \n");
@@ -1650,17 +1653,21 @@ R_API int r_core_prompt(RCore *r, int sync) {
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
 	r_cons_flush ();
-	if (r->cons && r->cons->line && r->cons->line->zerosep)
+	if (r->cons && r->cons->line && r->cons->line->zerosep) {
 		r_cons_zero ();
+	}
 	return ret;
 }
 
 R_API int r_core_block_size(RCore *core, int bsize) {
 	ut8 *bump;
 	int ret = false;
-	if (bsize<0) return false;
-	if (bsize == core->blocksize)
+	if (bsize < 0) {
+		return false;
+	}
+	if (bsize == core->blocksize) {
 		return true;
+	}
 	if (r_sandbox_enable (0)) {
 		// TODO : restrict to filesize?
 		if (bsize > 1024*32) {

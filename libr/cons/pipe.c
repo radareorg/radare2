@@ -14,6 +14,9 @@ static int backup_fdn = 1;
 #endif
 
 R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
+	if (fdn < 1) {
+		return -1;
+	}
 	int fd = r_sandbox_open (file,
 		O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC), 0644);
 	if (fd==-1) {
