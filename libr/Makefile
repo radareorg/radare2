@@ -12,7 +12,7 @@ PREFIX?=${PWD}/../prefix
 PWD=$(shell pwd)
 
 LIBS0=util hash
-LIBS1=socket reg cons db magic bp search config
+LIBS1=socket reg cons magic bp search config
 LIBS2=syscall lang io crypto flags
 LIBS3=fs anal bin
 LIBS4=parse
@@ -108,6 +108,10 @@ install-includes:
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/sdb"
 	(cd include/sdb && for FILE in * ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
+	done)
+	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
+	(cd include/r_util && for FILE in * ; do \
+		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_util/$$FILE" ; \
 	done)
 
 symstall install-symlink:

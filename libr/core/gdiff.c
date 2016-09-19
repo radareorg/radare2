@@ -46,7 +46,8 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 		}
 		/* Fingerprint fcn */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
-			fcn->size = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
+			int newsize = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
+			r_anal_fcn_set_size (fcn, newsize);
 		}
 	}
 	/* Diff functions */
@@ -86,15 +87,15 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
         r_list_foreach (fcns, iter, f) {
                 if (f->name && (len = strlen(f->name)) > maxnamelen)
                         maxnamelen = len;
-                if (f->size > maxsize)
-                        maxsize = f->size;
+                if (r_anal_fcn_size (f) > maxsize)
+                        maxsize = r_anal_fcn_size (f);
         }
         fcns = r_anal_get_fcns (c2->anal);
         r_list_foreach (fcns, iter, f) {
                 if (f->name && (len = strlen(f->name)) > maxnamelen)
                         maxnamelen = len;
-                if (f->size > maxsize)
-                        maxsize = f->size;
+                if (r_anal_fcn_size (f) > maxsize)
+                        maxsize = r_anal_fcn_size (f);
         }
         while (maxsize > 9) {
                 maxsize /= 10;
@@ -115,7 +116,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                         default:
                                 match = "NEW";
                         }
-                        diffrow (f->addr, f->name, f->size, maxnamelen,
+                        diffrow (f->addr, f->name, r_anal_fcn_size (f), maxnamelen,
 				digits, f->diff->addr, f->diff->name, f->diff->size,
 				match, f->diff->dist, bare);
                         break;
@@ -127,7 +128,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 case R_ANAL_FCN_TYPE_FCN:
                 case R_ANAL_FCN_TYPE_SYM:
                         if (f->diff->type == R_ANAL_DIFF_TYPE_NULL)
-                                diffrow (f->addr, f->name, f->size, maxnamelen,
+                                diffrow (f->addr, f->name, r_anal_fcn_size (f), maxnamelen,
 					digits, f->diff->addr, f->diff->name, f->diff->size,
 					"NEW", f->diff->dist, bare);
                 }

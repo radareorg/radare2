@@ -2,7 +2,7 @@ OBJ_MBN=bin_mbn.o
 
 STATIC_OBJ+=${OBJ_MBN}
 TARGET_MBN=bin_mbn.${EXT_SO}
-LINK+=-L../../db -lr_db
+#LINK+=-L../../util -lr_util $(SHLR)/sdb/src/libsdb.a
 
 ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_MBN}

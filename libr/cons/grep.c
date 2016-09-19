@@ -40,13 +40,12 @@ R_API void r_cons_grep(const char *str) {
 	char buf[R_CONS_GREP_BUFSIZE];
 	char *ptr, *optr, *ptr2, *ptr3;
 
-	if (!str || !*str)
+	if (!str || !*str) {
 		return;
-
+	}
 	cons = r_cons_singleton ();
 	memset (&(cons->grep), 0, sizeof (cons->grep));
 	cons->grep.line = -1;
-
 	while (*str) {
 		switch (*str) {
 		case '.':
@@ -107,7 +106,6 @@ R_API void r_cons_grep(const char *str) {
 	if (ptr2 && ptr3) {
 		ptr2[0] = '\0';
 		ptr2++;
-
 		for (; ptr2 <= ptr3; ++ptr2) {
 			if (fail) {
 				memset (cons->grep.tokens, 0, R_CONS_GREP_TOKENS);
@@ -115,7 +113,6 @@ R_API void r_cons_grep(const char *str) {
 				fail = 0;
 				break;
 			}
-
 			switch (*ptr2) {
 			case '-':
 				is_range = 1;
@@ -280,7 +277,12 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	size_t i;
 
 	in = calloc (1, len + 1);
+	if (!in) return 0;
 	out = calloc (1, len + 2);
+	if (!out) {
+		free (in);
+		return 0;
+	}
 	memcpy (in, buf, len);
 
 	if (cons->grep.nstrings > 0) {
@@ -382,7 +384,7 @@ R_API int r_cons_html_print(const char *ptr) {
 	int len = 0;
 	int inv = 0;
 	int tmp;
-	int tag_font = 0;
+	bool tag_font = false;
 
 	if (!ptr)
 		return 0;
@@ -411,12 +413,13 @@ R_API int r_cons_html_print(const char *ptr) {
 		if (ptr[0] == 0x1b) {
 			esc = 1;
 			tmp = (int) (size_t) (ptr-str);
-			if (write (1, str, tmp) != tmp)
+			if (write (1, str, tmp) != tmp) {
 				eprintf ("r_cons_html_print: write: error\n");
+			}
 			if (tag_font) {
 				printf ("</font>");
-				fflush(stdout);
-				tag_font = 0;
+				fflush (stdout);
+				tag_font = false;
 			}
 			str = ptr + 1;
 			continue;
@@ -436,7 +439,7 @@ R_API int r_cons_html_print(const char *ptr) {
 			// TODO: use dword comparison here
 			if (ptr[0] == '2' && ptr[1] == 'J') {
 				printf ("<hr />\n");
-				fflush(stdout);
+				fflush (stdout);
 				ptr++;
 				esc = 0;
 				str = ptr;
@@ -446,7 +449,7 @@ R_API int r_cons_html_print(const char *ptr) {
 				char *end = strchr (ptr, 'm');
 				printf ("<font color='%s'>", gethtmlrgb (ptr));
 				fflush (stdout);
-				tag_font = 1;
+				tag_font = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
@@ -474,7 +477,7 @@ R_API int r_cons_html_print(const char *ptr) {
 			if (ptr[0] == '3' && ptr[2] == 'm') {
 				printf ("<font color='%s'>", gethtmlcolor (ptr[1], inv ? "#fff" : "#000"));
 				fflush (stdout);
-				tag_font = 1;
+				tag_font = true;
 				ptr = ptr + 1;
 				str = ptr + 2;
 				esc = 0;
@@ -484,7 +487,7 @@ R_API int r_cons_html_print(const char *ptr) {
 				printf ("<font style='background-color:%s'>",
 						gethtmlcolor (ptr[1], inv ? "#000" : "#fff"));
 				fflush (stdout);
-				tag_font = 1;
+				tag_font = true;
 				ptr = ptr + 1;
 				str = ptr + 2;
 				esc = 0;
@@ -492,6 +495,11 @@ R_API int r_cons_html_print(const char *ptr) {
 			}
 		}
 		len++;
+	}
+	if (tag_font) {
+		printf ("</font>");
+		fflush (stdout);
+		tag_font = false;
 	}
 	write (1, str, ptr - str);
 	return len;

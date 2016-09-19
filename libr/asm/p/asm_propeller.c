@@ -32,11 +32,8 @@ RAsmPlugin r_asm_plugin_propeller = {
 	.desc = "propeller disassembly plugin",
 	.arch = "propeller",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
-	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL,
+	.endian = R_SYS_ENDIAN_BIG,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

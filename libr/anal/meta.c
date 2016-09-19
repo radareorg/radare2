@@ -118,10 +118,47 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 	return ret;
 }
 
+R_API int r_meta_set_var_comment (RAnal *a, int type, ut64 idx, ut64 addr, const char *s) {
+	char key[100], val[2048], *e_str;
+	int ret;
+	ut64 size;
+	int space_idx = a->meta_spaces.space_idx;
+	meta_type_add (a, type, addr);
+
+	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x".0x%"PFMT64x, type, addr, idx);
+	size = sdb_array_get_num (DB, key, 0, 0);
+	if (!size) {
+		size = strlen (s);
+		meta_inrange_add (a, addr, size);
+		ret = true;
+	} else ret = false;
+	e_str = sdb_encode ((const void*)s, -1);
+	snprintf (val, sizeof (val)-1, "%d,%d,%s", (int)size, space_idx, e_str);
+	sdb_set (DB, key, val, 0);
+	free ((void*)e_str);
+	return ret;
+}
+
 R_API char *r_meta_get_string(RAnal *a, int type, ut64 addr) {
 	char key[100];
 	const char *k, *p, *p2;
-	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, 'C', addr);
+	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
+	k = sdb_const_get (DB, key, NULL);
+	if (!k) return NULL;
+	p = strchr (k, SDB_RS);
+	if (!p) return NULL;
+	k = p+1;
+	p2 = strchr (k, SDB_RS);
+	if (!p2) {
+		return (char *)sdb_decode (k, NULL);
+	}
+	return (char *)sdb_decode (p2+1, NULL);
+}
+
+R_API char *r_meta_get_var_comment (RAnal *a, int type, ut64 idx, ut64 addr) {
+	char key[100];
+	const char *k, *p, *p2;
+	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x".0x%"PFMT64x, type, addr, idx);
 	k = sdb_const_get (DB, key, NULL);
 	if (!k) return NULL;
 	p = strchr (k, SDB_RS);
@@ -187,6 +224,12 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 	sdb_unset (DB, key, 0);
 	return false;
 }
+R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr) {
+	char *key;
+	key = r_str_newf ("meta.%c.0x%"PFMT64x"0x%"PFMT64x, type, addr, idx);
+	sdb_unset (DB, key, 0);
+	return 0;
+}
 
 R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
 	return r_meta_del (a, R_META_TYPE_ANY, from, (to-from), NULL);
@@ -210,7 +253,7 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	if (from > to)
 		return false;
 	if (from == to)
-		to = from+1;
+		to = from + 1;
 	if (type == 100 && (to-from)<1) {
 		return false;
 	}
@@ -332,6 +375,11 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 		case '*':
 		default:
 			switch (d->type) {
+			case 'a': //var and arg comments
+			case 'v':
+			case 'e':
+				//XXX I think they do not belong to here
+				break;
 			case 'C':
 				{
 				const char *type = r_meta_type_to_string (d->type);
@@ -402,7 +450,7 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 				} else {
 					// TODO: use b64 here
 					a->cb_printf ("0x%08"PFMT64x" array[%d] %s %s\n",
-						d->from, (int)d->size, 
+						d->from, (int)d->size,
 						r_meta_type_to_string (d->type), pstr);
 				}
 				break;
@@ -434,7 +482,10 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	it.str = strchr (v2+1, ',');
 	if (it.str)
 		it.str = (char *)sdb_decode ((const char*)it.str+1, 0);
-	else it.str = strdup (it.str? it.str: ""); // don't break in free
+	else {
+		it.str = strdup (it.str? it.str: ""); // don't break in free
+		if (!it.str) goto beach;
+	}
 	printmetaitem (ui->anal, &it, ui->rad);
 	free (it.str);
 beach:
@@ -475,14 +526,18 @@ static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 	it->to = it->from + it->size;
 	v2 = strchr (v, ',');
 	if (!v2) {
-		free (it); 
+		free (it);
 		goto beach;
 	}
 	it->space = atoi (v2+1);
 	it->str = strchr (v2+1, ',');
 
-	if (it->str)
+	if (it->str) {
 		it->str = (char *)sdb_decode ((const char*)it->str+1, 0);
+	} else {
+		free(it);
+		goto beach;
+	}
 	//printmetaitem (ui->anal, &it, ui->rad);
 	r_list_append (list, it);
 beach:

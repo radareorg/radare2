@@ -13,6 +13,7 @@ CFLAGS+=-Wall -DCORELIB
 include ../socket/deps.mk
 include $(SHLR)/zip/deps.mk
 include $(SHLR)/gdb/deps.mk
+include $(SHLR)/qnx/deps.mk
 
 .PHONY: pre
 pre: libr_io.${EXT_SO} libr_io.${EXT_AR}

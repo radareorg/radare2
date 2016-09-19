@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_reg.h>
 
@@ -27,18 +27,22 @@ R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
 			memcpy (buf + osize, arena->bytes, arena->size);
 			osize = sz;
 		}
-		if (size) *size = sz;
+		if (size) {
+			*size = sz;
+		}
 		return buf;
 	}
-	if (type < 0 || type > (R_REG_TYPE_LAST - 1))
+	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
+	}
 	sz = reg->regset[type].arena->size;
-	if (size)
+	if (size) {
 		*size = sz;
+	}
 	buf = malloc (sz);
-	if (buf == NULL)
-		return NULL;
-	memcpy (buf, reg->regset[type].arena->bytes, sz);
+	if (buf) {
+		memcpy (buf, reg->regset[type].arena->bytes, sz);
+	}
 	return buf;
 }
 
@@ -51,9 +55,16 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 		if (reg->regset[i].arena) {
 			arena = reg->regset[i].arena;
 		} else {
-			arena = reg->regset[i].arena = R_NEW (RRegArena);
+			arena = reg->regset[i].arena = R_NEW0 (RRegArena);
+			if (!arena) {
+				return false;
+			}
 			arena->size = len;
-			arena->bytes = malloc (len);
+			arena->bytes = calloc (1, len);
+			if (!arena->bytes) {
+				r_reg_arena_free (arena);
+				return false;
+			}
 		}
 		if (!arena->bytes) {
 			arena->size = 0;
@@ -140,7 +151,7 @@ R_API int r_reg_fit_arena(RReg *reg) {
 }
 
 R_API RRegArena *r_reg_arena_new(int size) {
-	RRegArena *arena = R_NEW (RRegArena);
+	RRegArena *arena = R_NEW0 (RRegArena);
 	if (arena) {
 		if (size < 1)
 			size = 1;
@@ -156,8 +167,10 @@ R_API RRegArena *r_reg_arena_new(int size) {
 }
 
 R_API void r_reg_arena_free(RRegArena *ra) {
-	free (ra->bytes);
-	free (ra);
+	if (ra) {
+		free (ra->bytes);
+		free (ra);
+	}
 }
 
 R_API void r_reg_arena_swap(RReg *reg, int copy) {
@@ -198,15 +211,13 @@ R_API void r_reg_arena_pop(RReg *reg) {
 R_API int r_reg_arena_push(RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RRegArena *a = reg->regset[i].arena;      // current arena
+		RRegArena *a = reg->regset[i].arena; // current arena
 		if (!a) continue;
 		RRegArena *b = r_reg_arena_new (a->size); // new arena
 		if (!b) continue;
-		// if (!i) {    r_print_hexdump (NULL, 0, a->bytes, a->size, 16, 16);    }
 		if (a->size >= b->size) {
 			memcpy (b->bytes, a->bytes, b->size);
-		}
-		else {
+		} else {
 			memcpy (b->bytes, a->bytes, a->size);
 			memset (b->bytes + a->size, 0, b->size - a->size);
 		}
@@ -220,15 +231,17 @@ R_API void r_reg_arena_zero(RReg *reg) {
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = reg->regset[i].arena;
-		if (a->size > 0)
+		if (a->size > 0) {
 			memset (reg->regset[i].arena->bytes, 0, a->size);
+		}
 	}
 }
 
 R_API ut8 *r_reg_arena_peek(RReg *reg) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
-	if (!reg || !regset || !regset->arena || regset->arena->size < 1)
+	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
+	}
 	ut8 *ret = malloc (regset->arena->size);
 	if (!ret) return NULL;
 	memcpy (ret, regset->arena->bytes, regset->arena->size);
@@ -244,16 +257,17 @@ R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret) {
 
 
 R_API int r_reg_arena_set_bytes(RReg *reg, const char* str) {
-	while (*str == ' ') str++;
-
+	while (IS_WHITESPACE (*str)) {
+		str++;
+	}
 	int len = r_hex_str_is_valid (str);
 	if (len == -1) {
-		eprintf("Invalid input\n");
+		eprintf ("Invalid input\n");
 		return -1;
 	}
 	int bin_str_len = (len + 1) / 2; //2 hex chrs for 1 byte
 	ut8* bin_str = malloc (bin_str_len);
-	if (bin_str == NULL) {
+	if (!bin_str) {
 		eprintf ("Failed to decode hex str.\n");
 		return -1;
 	}

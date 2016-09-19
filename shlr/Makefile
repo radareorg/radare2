@@ -20,9 +20,9 @@ CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20160405
+CS_UPD=20160828
 CS_BRA=next
-CS_TIP=31b4214c46a609062a6e4d23e8841e5f6a3efb15
+CS_TIP=87a25bb543c8e4c09b48d4b4a6c7db31ce58df06
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -39,6 +39,7 @@ ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
 MODS+=gdb
+MODS+=qnx
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 PWD=$(shell pwd)
@@ -102,7 +103,7 @@ ${SDB_TARGETS}:
 	@echo
 	$(MAKE) -C sdb clean
 	$(MAKE) -C sdb src/sdb_version.h
-	$(MAKE) -C sdb/src CC=${HOST_CC} CFLAGS='${HOST_CFLAGS} -fPIC' bin
+	$(MAKE) -C sdb/src CC=${HOST_CC} LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} -fPIC' bin
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
 	@echo
 	@echo ">>>>>>>>>>>>>>>>"
@@ -168,7 +169,7 @@ tcc-clean tccclean:
 
 CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
 HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
-HFILES+=elf.h libtcc.h config.h i386-tok.h
+HFILES+=elf.h config.h i386-tok.h
 
 # TODO: use mob branch?
 
@@ -218,7 +219,8 @@ capstone: capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
+	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 endif
 	mkdir -p capstone/include/capstone
 	cp -rf capstone/include/*.h capstone/include/capstone
@@ -233,7 +235,8 @@ capstone-sync:
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}"
 ifeq ($(CS_PATCHES),1)
 	-cd capstone ; $(GIT) reset --hard
-	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
+	#cd capstone ; for PATCH in ../capstone-patches/* ; do patch -tp1 < $$PATCH ; done
+	cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done
 endif
 
 .PHONY: capstone
@@ -255,3 +258,24 @@ ifneq (${EXT_AR},a)
 	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif
 endif
+
+www-sync-m:
+	cp -rf ../../radare2-webui/dist/m www/m.tmp
+	rm -rf www/m
+	mv www/m.tmp www/m
+	git add www/m
+
+www-sync-p:
+	cp -rf ../../radare2-webui/dist/p www/p.tmp
+	rm -rf www/p
+	mv www/p.tmp www/p
+	git add www/p
+
+www-sync-t:
+	cp -rf ../../radare2-webui/dist/t www/t.tmp
+	rm -rf www/t
+	mv www/t.tmp www/t
+	git add www/p
+
+www-sync: www-sync-m www-sync-p www-sync-t
+	@echo webui sync done

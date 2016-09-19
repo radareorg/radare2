@@ -6,10 +6,15 @@
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
 R_API int r_hex_to_byte(ut8 *val, ut8 c) {
-	if ('0' <= c && c <= '9')      *val = (ut8)(*val) * 16 + (c-'0');
-	else if (c >= 'A' && c <= 'F') *val = (ut8)(*val) * 16 + (c-'A'+10);
-	else if (c >= 'a' && c <= 'f') *val = (ut8)(*val) * 16 + (c-'a'+10);
-	else return 1;
+	if (c >= '0' && c <= '9') {
+		*val = (ut8)(*val) * 16 + (c - '0');
+	} else if (c >= 'A' && c <= 'F') {
+		*val = (ut8)(*val) * 16 + (c - 'A' + 10);
+	} else if (c >= 'a' && c <= 'f') {
+		*val = (ut8)(*val) * 16 + (c - 'a' + 10);
+	} else {
+		return 1;
+	}
 	return 0;
 }
 
@@ -30,6 +35,7 @@ R_API char *r_hex_from_c(const char *code) {
 	} else {
 		ret = malloc (3);
 	}
+	if (!ret) return NULL;
 	*ret = 0;
 	out = ret;
 	if (code) {

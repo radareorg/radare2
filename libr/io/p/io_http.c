@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -17,31 +17,37 @@ typedef struct {
 #define RIOHTTP_BUF(x) (((RIOMalloc*)x->data)->buf)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data) {
 		return -1;
-	if (io->off+count >= RIOHTTP_SZ (fd))
+	}
+	if (io->off + count >= RIOHTTP_SZ (fd)) {
 		return -1;
+	}
 	memcpy (RIOHTTP_BUF (fd)+io->off, buf, count);
 	return count;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	unsigned int sz;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	sz = RIOHTTP_SZ (fd);
-	if (io->off >= sz)
+	if (io->off >= sz) {
 		return -1;
-	if (io->off + count >= sz)
+	}
+	if (io->off + count >= sz) {
 		count = sz - io->off;
+	}
 	memcpy (buf, RIOHTTP_BUF (fd) + io->off, count);
 	return count;
 }
 
 static int __close(RIODesc *fd) {
 	RIOMalloc *riom;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	riom = fd->data;
 	free (riom->buf);
 	riom->buf = NULL;
@@ -60,12 +66,12 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
+static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "http://", 7));
 }
 
 static inline int getmalfd (RIOMalloc *mal) {
-	return (UT32_MAX>>1) & (int)(size_t)mal->buf;
+	return (UT32_MAX >> 1) & (int)(size_t)mal->buf;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -75,8 +81,13 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		out = r_socket_http_get (pathname, &code, &rlen);
 		if (out && rlen>0) {
 			RIOMalloc *mal = R_NEW0 (RIOMalloc);
+			if (!mal) return NULL;
 			mal->size = rlen;
 			mal->buf = malloc (mal->size+1);
+			if (!mal->buf) {
+				free (mal);
+				return NULL;
+			}
 			if (mal->buf != NULL) {
 				mal->fd = getmalfd (mal);
 				memcpy (mal->buf, out, mal->size);
@@ -99,13 +110,13 @@ RIOPlugin r_io_plugin_http = {
         .open = __open,
         .close = __close,
 	.read = __read,
-        .plugin_open = __plugin_open,
+        .check = __plugin_open,
 	.lseek = __lseek,
 	.write = __write,
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_http,
 	.version = R2_VERSION

@@ -1,6 +1,7 @@
-/* radare - LGPL3 - 2015 - maijin */
+/* radare - LGPL3 - 2015-2016 - maijin */
 
 #include <r_bin.h>
+#include <r_lib.h>
 #include "nes/nes_specs.h"
 
 static int check(RBinFile *arch);
@@ -179,17 +180,19 @@ static RList *mem (RBinFile *arch) {
 static RList* entries(RBinFile *arch) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
-	if (!(ptr = R_NEW0 (RBinAddr)))
+	}
+	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
+	}
 	ptr->paddr = INES_HDR_SIZE;
 	ptr->vaddr = ROM_START_ADDRESS;
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_nes = {
+RBinPlugin r_bin_plugin_nes = {
 	.name = "nes",
 	.desc = "NES",
 	.license = "LGPL3",
@@ -204,7 +207,7 @@ struct r_bin_plugin_t r_bin_plugin_nes = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nes,
 	.version = R2_VERSION

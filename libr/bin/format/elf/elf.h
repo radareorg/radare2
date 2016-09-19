@@ -14,6 +14,7 @@
 
 #define R_BIN_ELF_SYMBOLS 0x0
 #define R_BIN_ELF_IMPORTS 0x1
+#define ELFOBJ struct Elf_(r_bin_elf_obj_t)
 
 typedef struct r_bin_elf_section_t {
 	ut64 offset;
@@ -35,6 +36,7 @@ typedef struct r_bin_elf_symbol_t {
 	const char *type;
 	char name[ELF_STRING_LENGTH];
 	int last;
+	bool in_shdr;
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {
@@ -97,13 +99,19 @@ struct Elf_(r_bin_elf_obj_t) {
 	size_t symbols_by_ord_size;
 
 	int bss;
-	int size;
+	ut64 size;
 	ut64 baddr;
 	ut64 boffset;
 	int endian;
 	const char* file;
 	RBuffer *b;
 	Sdb *kv;
+	/*cache purpose*/
+	RBinElfSection *g_sections;
+	RBinElfSymbol *g_symbols;
+	RBinElfSymbol *g_imports;
+	RBinElfSymbol *phdr_symbols;
+	RBinElfSymbol *phdr_imports;
 };
 
 int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin);
@@ -128,10 +136,11 @@ char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_is_big_endian)(struct Elf_(r_bin_elf_obj_t) *bin);
-struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin);
-struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin);
-struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin);
-struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type);
+RBinElfReloc* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin);
+RBinElfLib* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *bin);
+RBinElfSection* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin);
+RBinElfSymbol* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin);
+RBinElfSymbol* Elf_(r_bin_elf_get_imports)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin);
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
 void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin);
@@ -143,6 +152,7 @@ bool Elf_(r_bin_elf_entry_write)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 addr);
 int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin);
+ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len);
 
 #endif
 

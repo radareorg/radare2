@@ -103,8 +103,9 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 
 static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print, int le) {
 	int dlen;
-	if (len < 0)
+	if (len < 0) {
 		return 0;
+	}
 	dlen = r_hash_calculate (ctx, hash, buf, len);
 	if (!dlen) return 0;
 	if (!print) return 1;
@@ -152,10 +153,10 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		eprintf ("rahash2: Unknown file size\n");
 		return 1;
 	}
-	buf = malloc (bsize + 1);
+	buf = calloc (1, bsize + 1);
 	if (!buf)
 		return 1;
-	ctx = r_hash_new (R_TRUE, algobit);
+	ctx = r_hash_new (true, algobit);
 
 	if (rad == 'j')
 		printf ("[");
@@ -202,8 +203,9 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				}
 			}
 		}
-		if (_s)
+		if (_s) {
 			free (_s->buf);
+		}
 	} else {
 		/* iterate over all algorithm bits */
 		if (s.buf)
@@ -248,10 +250,11 @@ static int do_help(int line) {
 	" -B          show per-block hash\n"
 	" -c hash     compare with this hash\n"
 	" -e          swap endian (use little endian)\n"
-	" -E algo     encrypt (rc4 for now). Use -S to set key\n"
-	" -d / -D     encode/decode base64 string (-s) or file to stdout\n"
+	" -E algo     encrypt. Use -S to set key and -I to set IV\n"
+	" -D algo     decrypt. Use -S to set key and -I to set IV\n"
 	" -f from     start hashing at given address\n"
 	" -i num      repeat hash N iterations\n"
+	" -I iv       use give initialization vector (IV) (hexa or s:string)\n"
 	" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
 	" -k          show hash using the openssh's randomkey algorithm\n"
 	" -q          run in quiet mode (-qq to show only the hash)\n"
@@ -267,11 +270,27 @@ static int do_help(int line) {
 static void algolist() {
 	ut64 bits;
 	int i;
+	eprintf ("Available Hashes: \n");
+	for (i = 0; i < R_HASH_NBITS; i++) {
+		bits = 1ULL << i;
+		const char *name = r_hash_name (bits);
+		if (name && *name) {
+			 printf ("  %s\n", name);
+		}
+	}
+	eprintf ("\n");
+	eprintf ("Available Encoders/Decoders: \n");
+	// TODO: do not hardcode
+	eprintf ("  base64\n");
+	eprintf ("  base91\n");
+	eprintf ("  punycode\n");
+	eprintf ("\n");
+	eprintf ("Available Crypto Algos: \n");
 	for (i = 0; ; i++) {
 		bits = ((ut64)1) << i;
-		const char *name = r_hash_name (bits);
+		const char *name = r_crypto_name (bits);
 		if (!name || !*name) break;
-		printf ("%s\n", name);
+		printf ("  %s\n", name);
 	}
 }
 
@@ -284,16 +303,101 @@ static void algolist() {
 	hashstr = x;\
 }
 
-int is_power_of_two(const ut64 x) {
+static bool is_power_of_two(const ut64 x) {
 	return x && !(x & (x - 1));
 }
 
+//direction: 0 => encrypt, 1 => decrypt
+static int encrypt_or_decrypt(const char *algo, int direction, const char *hashstr, int hashstr_len, const ut8 *iv, int ivlen, int mode) {
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); //TODO: generalise this for all non key encoding/decoding.
+	if (no_key_mode || s.len > 0) {
+		RCrypto *cry = r_crypto_new ();
+		if (r_crypto_use (cry, algo)) {
+			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
+				const char *buf = hashstr;
+				int buflen = hashstr_len;
+
+				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
+					eprintf ("Invalid IV.\n");
+					return 0;
+				}
+
+				r_crypto_update (cry, (const ut8*)buf, buflen);
+				r_crypto_final (cry, NULL, 0);
+
+				int result_size = 0;
+				ut8 *result = r_crypto_get_output (cry, &result_size);
+				if (result) {
+					write (1, result, result_size);
+					free (result);
+				}
+			} else {
+				eprintf ("Invalid key\n");
+			}
+			return 0;
+		} else {
+			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
+		}
+		r_crypto_free (cry);
+	} else {
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+	}
+	return 1;
+}
+
+static int encrypt_or_decrypt_file (const char *algo, int direction, char *filename, const ut8 *iv, int ivlen, int mode) {
+	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); //TODO: generalise this for all non key encoding/decoding.
+	if (no_key_mode || s.len > 0) {
+		RCrypto *cry = r_crypto_new ();
+		if (r_crypto_use (cry, algo)) {
+			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
+				int file_size;
+				ut8 *buf = (ut8*)r_file_slurp (filename, &file_size);
+				if (!buf) {
+					eprintf ("rahash2: Cannot open file\n");
+					return -1;
+				}
+
+				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
+					eprintf ("Invalid IV.\n");
+					free (buf);
+					return 0;
+				}
+
+				r_crypto_update (cry, buf, file_size);
+				r_crypto_final (cry, NULL, 0);
+
+				int result_size = 0;
+				ut8 *result = r_crypto_get_output (cry, &result_size);
+				if (result) {
+					write (1, result, result_size);
+					free (result);
+				}
+				free (buf);
+			} else {
+				eprintf ("Invalid key\n");
+			}
+			return 0;
+		} else {
+			eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
+		}
+		r_crypto_free (cry);
+	} else {
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+	}
+	return 1;
+}
+
 int main(int argc, char **argv) {
-	int i, ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0, b64mode = 0;
+	int i, ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
+	const char *decrypt = NULL;
 	const char *encrypt = NULL;
 	char *hashstr = NULL;
+	ut8 *iv = NULL;
+	int ivlen = -1;
+	char *ivseed = NULL;
 	const char *compareStr = NULL;
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
@@ -303,7 +407,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jdDrveE:a:i:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = getopt (argc, argv, "jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet ++; break;
 		case 'i':
@@ -315,9 +419,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'j': rad = 'j'; break;
 		case 'S': seed = optarg; break;
+		case 'I': ivseed = optarg; break;
 		case 'n': numblocks = 1; break;
-		case 'd': b64mode = 1; break;
-		case 'D': b64mode = 2; break;
+		case 'D': decrypt = optarg; break;
 		case 'E': encrypt = optarg; break;
 		case 'L': algolist (); return 0;
 		case 'e': ule = 1; break;
@@ -336,17 +440,27 @@ int main(int argc, char **argv) {
 		default: return do_help(0);
 		}
 	}
+	if (encrypt && decrypt) {
+		eprintf ("rahash2: Option -E and -D are incompatible with each other.\n");
+		return 1;
+	}
 	if (compareStr) {
 		int compareBin_len;
 		if (bsize && !incremental) {
 			eprintf ("rahash2: Option -c incompatible with -b and -B options.\n");
 			return 1;
 		}
-		if (b64mode) {
-			eprintf ("rahash2: Option -c incompatible with -d or -D options.\n");
+		bool flag = false;
+		if (encrypt) {
+			flag = !strcmp (encrypt, "base64") || !strcmp (encrypt, "base91");
+		} else if (decrypt) {
+			flag = !strcmp (decrypt, "base64") || !strcmp (decrypt, "base91");
+		}
+		if (flag) {
+			eprintf ("rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.\n");
 			return 1;
 		}
-		algobit = r_hash_name_to_bits(algo);
+		algobit = r_hash_name_to_bits (algo);
 		// if algobit represents a single algorithm then it's a power of 2
 		if (!is_power_of_two (algobit)) {
 			eprintf ("rahash2: Option -c incompatible with multiple algorithms in -a.\n");
@@ -377,6 +491,20 @@ int main(int argc, char **argv) {
 		if (to && from >= to) {
 			eprintf ("Invalid -f or -t offsets\n");
 			return 1;
+		}
+	}
+	 // convert iv to hex or string.
+	if (ivseed) {
+		iv = (ut8*)malloc (strlen (ivseed) + 128);
+		if (!strncmp (ivseed, "s:", 2)) {
+			strcpy ((char*)iv, ivseed + 2);
+			ivlen = strlen (ivseed + 2);
+		} else {
+			ivlen = r_hex_str2bin (ivseed, iv);
+			if (ivlen < 1) {
+				strcpy ((char*)iv, ivseed);
+				ivlen = strlen (ivseed);
+			}
 		}
 	}
 	do_hash_seed (seed);
@@ -424,114 +552,53 @@ int main(int argc, char **argv) {
 		hashstr = hashstr + from;
 		hashstr_len = to - from;
 		hashstr[hashstr_len] = '\0';
-		if (!bytes_read) {
+		if (!bytes_read && !hashstr_hex) {
 			hashstr_len = r_str_unescape (hashstr);
 		}
 		if (encrypt) {
-			int seedlen = seed? strlen (seed): 0;
-			if (seedlen > 0) {
-				RCrypto *cry = r_crypto_new ();
-				if (r_crypto_use (cry, encrypt)) {
-					ut8 *binseed = malloc (seedlen + 1);
-					if (binseed) {
-						int len = r_hex_str2bin (seed, binseed);
-						if (len <1) {
-							len = seedlen;
-							strcpy ((char *)binseed, seed);
-						} else {
-							seedlen = len;
-						}
-						if (r_crypto_set_key (cry, binseed, seedlen, 0, 0)) {
-							const char *buf = hashstr;
-							int buflen = hashstr_len;
-
-							r_crypto_update (cry, (const ut8*)buf, buflen);
-							r_crypto_final (cry, NULL, 0);
-
-							int result_size = 0;
-							ut8 *result = r_crypto_get_output (cry, &result_size);
-							if (result) {
-								write (1, result, result_size);
-								free (result);
-							}
-						} else {
-							eprintf ("Invalid key\n");
-						}
-						free (binseed);
-						return 0;
-					} else {
-						eprintf ("Cannot allocate %d bytes\n", seedlen);
-					}
+			return encrypt_or_decrypt (encrypt, 0, hashstr, hashstr_len, iv, ivlen, 0);
+		} else if (decrypt) {
+			return encrypt_or_decrypt (decrypt, 1, hashstr, hashstr_len, iv, ivlen, 0);
+		} else {
+			char *str = (char *)hashstr;
+			int strsz = hashstr_len;
+			if (_s) {
+				// alloc/concat/resize
+				str = malloc (strsz + s.len);
+				if (s.prefix) {
+					memcpy (str, s.buf, s.len);
+					memcpy (str+s.len, hashstr, hashstr_len);
 				} else {
-					eprintf ("Unknown encryption algorithm '%s'\n", encrypt);
+					memcpy (str, hashstr, hashstr_len);
+					memcpy (str+strsz, s.buf, s.len);
 				}
-				r_crypto_free (cry);
-			} else {
-				eprintf ("Encryption key not defined. Use -S [key]\n");
+				strsz += s.len;
+				str[strsz] = 0;
 			}
-			return 1;
-		} else
-		switch (b64mode) {
-		case 1: // encode
-			{
-			char *out = malloc ((((hashstr_len + 1) * 4) / 3) + 1);
-			if (out) {
-				r_base64_encode (out, (const ut8*)hashstr, hashstr_len);
-				printf ("%s\n", out);
-				fflush (stdout);
-				free (out);
+			algobit = r_hash_name_to_bits (algo);
+			if (algobit == 0) {
+				eprintf ("Invalid algorithm. See -E, -D maybe?\n");
+				return 1;
 			}
-			}
-			break;
-		case 2: // decode
-			{
-			ut8 *out = malloc (INSIZE);
-			if (out) {
-				int outlen = r_base64_decode (out,
-					(const char *)hashstr, hashstr_len);
-				write (1, out, outlen);
-				free (out);
-			}
-			}
-			break;
-		default:
-			{
-				char *str = (char *)hashstr;
-				int strsz = hashstr_len;
-				if (_s) {
-					// alloc/concat/resize
-					str = malloc (strsz + s.len);
-					if (s.prefix) {
-						memcpy (str, s.buf, s.len);
-						memcpy (str+s.len, hashstr, hashstr_len);
-					} else {
-						memcpy (str, hashstr, hashstr_len);
-						memcpy (str+strsz, s.buf, s.len);
-					}
-					strsz += s.len;
-					str[strsz] = 0;
-				}
-				algobit = r_hash_name_to_bits (algo);
-				for (i = 1; i < 0x800000; i <<= 1) {
-					if (algobit & i) {
-						int hashbit = i & algobit;
-						ctx = r_hash_new (R_TRUE, hashbit);
-						from = 0;
-						to = strsz;
-						do_hash_internal (ctx, hashbit,
-							(const ut8*)str, strsz, rad, 1, ule);
-						compare_hashes (ctx, compareBin,
-							r_hash_size (algobit), &ret);
-						r_hash_free (ctx);
-					}
-				}
-				if (_s) {
-					free (str);
-					free (s.buf);
+			for (i = 1; i < 0x800000; i <<= 1) {
+				if (algobit & i) {
+					int hashbit = i & algobit;
+					ctx = r_hash_new (true, hashbit);
+					from = 0;
+					to = strsz;
+					do_hash_internal (ctx, hashbit,
+						(const ut8*)str, strsz, rad, 1, ule);
+					compare_hashes (ctx, compareBin,
+						r_hash_size (algobit), &ret);
+					r_hash_free (ctx);
 				}
 			}
+			if (_s) {
+				free (str);
+				free (s.buf);
+			}
+			return ret;
 		}
-		return ret;
 	}
 	if (optind >= argc)
 		return do_help (1);
@@ -545,114 +612,37 @@ int main(int argc, char **argv) {
 	io = r_io_new ();
 	for (ret = 0, i = optind; i < argc; i++) {
 		if (encrypt) {//for encrytion when files are provided 
-			int seedlen = seed? strlen (seed): 0;
-			if (seedlen > 0) {
-				RCrypto *cry = r_crypto_new ();
-				if (r_crypto_use (cry, encrypt)) {
-					ut8 *binseed = malloc (seedlen + 1);
-					if (binseed) {
-						int len = r_hex_str2bin (seed, binseed);
-						if (len <1) {
-							len = seedlen;
-							strcpy ((char *)binseed, seed);
-						} else {
-							seedlen = len;
-						}
-						if (r_crypto_set_key (cry, binseed, seedlen, 0, 0)) {
-							int file_size;
-							ut8 *buf = (ut8*)r_file_slurp (argv[i], &file_size);
-							if (!buf) {
-								eprintf ("rahash2: Cannot open file\n");
-								continue;
-							}
-							r_crypto_update (cry, buf, file_size);
-							r_crypto_final (cry, NULL, 0);
-							int result_size = 0;
-							ut8 *result = r_crypto_get_output (cry, &result_size);
-							if (result) {
-								write (1, result, result_size);
-								free (result);
-							}
-							free(buf);
-						} else {
-							eprintf ("Invalid key\n");
-						}
-						free (binseed);
-						return 0;
-					} else {
-						eprintf ("Cannot allocate %d bytes\n", seedlen);
-					}
-				} else {
-					eprintf ("Unknown encryption algorithm '%s'\n", encrypt);
-				}
-				r_crypto_free (cry);
-			} else {
-				eprintf ("Encryption key not defined. Use -S [key]\n");
-			}
-			return 1;
+			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
+			if (rt == -1) continue;
+			else return rt;
+		} else if (decrypt) {
+			int rt = encrypt_or_decrypt_file (decrypt, 1, argv[i], iv, ivlen, 0);
+			if (rt == -1) continue;
+			else return rt;
 		} else {
-		switch (b64mode) {
-			case 1: // encode
-				{
-				int binlen;
-				char *out;
-				ut8 *bin = (ut8*)r_file_slurp (argv[i], &binlen);
-				if (!bin) {
-					eprintf ("Cannot open file\n");
-					continue;
-				}
-				out = malloc (((binlen + 1) * 4) / 3);
-				if (out) {
-					r_base64_encode (out, bin, binlen);
-					printf ("%s\n", out);
-					fflush (stdout);
-					free (out);
-				}
-				free (bin);
-				}
-				break;
-			case 2: // decode
-				{
-				int binlen, outlen;
-				ut8 *out, *bin = (ut8*)r_file_slurp (argv[i], &binlen);
-				if (!bin) {
-					eprintf ("Cannot open file\n");
-					continue;
-				}
-				out = malloc (binlen + 1);
-				if (out) {
-					outlen = r_base64_decode (out, (const char*)bin, binlen);
-					write (1, out, outlen);
-					free (out);
-				}
-				free (bin);
-				}
-				break;
-			default:
-				if (!strcmp (argv[i], "-")) {
-					int sz = 0;
-					ut8 *buf = (ut8*)r_stdin_slurp (&sz);
-					char *uri = r_str_newf ("malloc://%d", sz);
-					if (sz > 0) {
-						if (!r_io_open_nomap (io, uri, 0, 0)) {
-							eprintf ("rahash2: Cannot open malloc://1024\n");
-							return 1;
-						}
-						r_io_pwrite (io, 0, buf, sz);
-					}
-					free (uri);
-				} else {
-					if (r_file_is_directory (argv[i])) {
-						eprintf ("rahash2: Cannot hash directories\n");
+			if (!strcmp (argv[i], "-")) {
+				int sz = 0;
+				ut8 *buf = (ut8*)r_stdin_slurp (&sz);
+				char *uri = r_str_newf ("malloc://%d", sz);
+				if (sz > 0) {
+					if (!r_io_open_nomap (io, uri, 0, 0)) {
+						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
-					if (!r_io_open_nomap (io, argv[i], 0, 0)) {
-						eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
-						return 1;
-					}
+					r_io_pwrite (io, 0, buf, sz);
 				}
-				ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
+				free (uri);
+			} else {
+				if (r_file_is_directory (argv[i])) {
+					eprintf ("rahash2: Cannot hash directories\n");
+					return 1;
+				}
+				if (!r_io_open_nomap (io, argv[i], 0, 0)) {
+					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+					return 1;
+				}
 			}
+			ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
 		}
 	}
 	free (hashstr);

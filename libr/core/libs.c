@@ -12,9 +12,21 @@ static int __lib_##x##_cb(RLibPlugin *pl, void *user, void *data) { \
 }\
 static int __lib_##x##_dt(RLibPlugin *pl, void *p, void *u) { return true; }
 
+#define CB_COPY(x,y) \
+static int __lib_##x##_cb(RLibPlugin *pl, void *user, void *data) { \
+	struct r_##x##_plugin_t *hand = (struct r_##x##_plugin_t *)data; \
+	struct r_##x##_plugin_t *instance; \
+	RCore *core = (RCore *)user; \
+	instance = R_NEW (struct r_##x##_plugin_t); \
+	memcpy (instance, hand, sizeof (struct r_##x##_plugin_t)); \
+	r_##x##_add (core->y, instance); \
+	return true; \
+}\
+static int __lib_##x##_dt(RLibPlugin *pl, void *p, void *u) { return true; }
+
 // XXX api consistency issues
 #define r_io_add r_io_plugin_add
-CB (io, io)
+CB_COPY (io, io)
 #define r_core_add r_core_plugin_add
 CB (core, rcmd)
 #define r_debug_add r_debug_plugin_add
@@ -48,6 +60,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 }
 
 R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
+	char *p = NULL;
 	ut64 prev = r_sys_now();
 #if R2_LOADLIBS
 	/* TODO: all those default plugin paths should be defined in r_lib */
@@ -61,9 +74,10 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));
 	}
 	if (where & R_CORE_LOADLIBS_ENV) {
-		path = r_sys_getenv (R_LIB_ENV);
-		if (path && *path)
-			r_lib_opendir (core->lib, path);
+		p = r_sys_getenv (R_LIB_ENV);
+		if (p && *p)
+			r_lib_opendir (core->lib, p);
+		free (p);
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
 		char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");

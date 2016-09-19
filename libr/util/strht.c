@@ -16,11 +16,15 @@ static void r_strht_fini(RStrHT *s) {
 
 R_API RStrHT *r_strht_new() {
 	RStrHT *s = R_NEW0 (RStrHT);
+	if (!s)
+		return NULL;
 	r_strht_init (s);
 	return s;
 }
 
 R_API void r_strht_free(RStrHT *s) {
+	if (!s)
+		return;
 	r_strht_fini (s);
 	free (s);
 }
@@ -34,6 +38,7 @@ R_API void r_strht_del(RStrHT *s, const char *key) {
 	r_list_foreach (s->ls, iter, _i) {
 		i = (int)(size_t)_i;
 		k = r_strpool_get (s->sp, i);
+		if (!k) continue;
 		if (!strcmp (key, k)) {
 			r_list_delete (s->ls, iter);
 			break;
@@ -58,7 +63,7 @@ R_API int r_strht_set(RStrHT *s, const char *key, const char *val) {
 	r_hashtable_remove (s->ht, h);
 	v = r_strpool_append (s->sp, val);
 	r_hashtable_insert (s->ht, h, (void*)(size_t)v+1);
-	return R_TRUE;
+	return true;
 }
 
 R_API void r_strht_clear(RStrHT *s) {

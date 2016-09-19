@@ -1,12 +1,18 @@
-/* Copyright radare2 - 2014-2015 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2016 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
 #include <ctype.h>
 #include <limits.h>
 
-static const char *mousemodes[] = { "canvas-y", "canvas-x", "node-y", "node-x", NULL };
 static int mousemode = 0;
+static const char *mousemodes[] = {
+	"canvas-y",
+	"canvas-x",
+	"node-y",
+	"node-x",
+	NULL
+};
 
 #define BORDER 3
 #define BORDER_WIDTH 4
@@ -15,7 +21,7 @@ static int mousemode = 0;
 #define MARGIN_TEXT_Y 2
 #define HORIZONTAL_NODE_SPACING 6
 #define VERTICAL_NODE_SPACING 4
-#define MIN_NODE_WIDTH 18
+#define MIN_NODE_WIDTH 22
 #define MIN_NODE_HEIGTH BORDER_HEIGHT
 #define TITLE_LEN 128
 #define DEFAULT_SPEED 1
@@ -27,6 +33,9 @@ static int mousemode = 0;
 
 #define ZOOM_STEP 10
 #define ZOOM_DEFAULT 100
+
+#define BODY_OFFSETS	0x1
+#define BODY_SUMMARY	0x2
 
 #define hash_set(sdb,k,v) (sdb_num_set (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), (ut64)(size_t)v, 0))
 #define hash_get(sdb,k) (sdb_num_get (sdb, sdb_fmt (0, "%"PFMT64u, (ut64)(size_t)k), NULL))
@@ -86,13 +95,13 @@ struct agraph_refresh_data {
 #define F(x,y,x2,y2,c) r_cons_canvas_fill(g->can, x,y,x2,y2,c,0)
 
 static bool is_offset(const RAGraph *g) {
-	return g->mode == R_AGRAPH_MODE_OFFSET || g->mode == R_AGRAPH_MODE_ESIL_OFFSET;
+	return g->mode == R_AGRAPH_MODE_OFFSET;
 }
 static bool is_mini(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_MINI;
 }
-static bool is_esil(const RAGraph *g) {
-	return g->mode == R_AGRAPH_MODE_ESIL || g->mode == R_AGRAPH_MODE_ESIL_OFFSET;
+static bool is_summary(const RAGraph *g) {
+	return g->mode == R_AGRAPH_MODE_SUMMARY;
 }
 static int next_mode(int mode) {
 	return (mode + 1) % R_AGRAPH_MODE_MAX;
@@ -105,13 +114,19 @@ static const char *mode2str(const RAGraph *g, const char *prefix) {
 	const char *submode;
 
 	if (is_mini (g)) submode = "SMALL";
-	else if (is_esil (g) && is_offset (g)) submode = "ESIL-OFF";
-	else if (is_esil (g)) submode = "ESIL";
 	else if (is_offset (g)) submode = "OFF";
+	else if (is_summary (g)) submode = "SUMM";
 	else submode = "NORM";
 
 	snprintf(m, sizeof (m), "%s-%s", prefix, submode);
 	return m;
+}
+
+static int mode2opts(const RAGraph *g) {
+	int opts = 0;
+	if (is_offset (g)) opts |= BODY_OFFSETS;
+	if (is_summary (g)) opts |= BODY_SUMMARY;
+	return opts;
 }
 
 static char *get_title (ut64 addr) {
@@ -187,6 +202,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char title[TITLE_LEN];
 	char *body;
 	int x, y;
+	char *shortcut;
 
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
@@ -197,16 +213,21 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	if (y < -1)
 		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
 
+	shortcut = sdb_get (g->db, sdb_fmt (2, "agraph.nodes.%s.shortcut", n->title), 0);
 	/* print the title */
 	if (cur) {
-		snprintf (title, sizeof (title)-1,
-				"[%s]", n->title);
+		snprintf (title, sizeof (title)-1, "[%s]", n->title);
 	} else {
-		snprintf (title, sizeof (title)-1,
-				" %s ", n->title);
+		snprintf (title, sizeof (title)-1, " %s", n->title);
 	}
-	if (delta_x < strlen(title) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1))
+	if (shortcut) {
+		strncat (title, sdb_fmt (2, " ;[%s]", shortcut), sizeof (title) - strlen (title) - 1);
+		free (shortcut);
+	}
+
+	if ((delta_x < strlen (title)) && G(n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
 		W(title + delta_x);
+	}
 
 	/* print the body */
 	if (g->zoom > ZOOM_DEFAULT) {
@@ -284,6 +305,9 @@ static int **get_crossing_matrix (const RGraph *g,
 
 			r_list_foreach (neigh, itk, gk) {
 				int s;
+				// skip self-loop
+				if (gj == gk) continue;
+
 				for (s = 0; s < j; ++s) {
 					const RGraphNode *gs = layers[i - 1].nodes[s];
 					const RList *neigh_s = r_graph_get_neighbours (g, gs);
@@ -294,15 +318,18 @@ static int **get_crossing_matrix (const RGraph *g,
 						const RANode *ak, *at; /* k and t should be "indexes" on layer i */
 
 						if (gt == gk) continue;
+						// skip self-loop
+						if (gt == gs) continue;
+
 						ak = get_anode (gk);
 						at = get_anode (gt);
 						if (ak->layer != i || at->layer != i) {
-							 /* eprintf("\"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n", */
-									 /* ak->title, ak->layer, */
-									 /* at->title, at->layer, */
-									 /* i); */
-
-							 continue;
+							// this should never happen
+							eprintf("(WARNING) \"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
+								ak->title, ak->layer,
+								at->title, at->layer,
+								i);
+							continue;
 						}
 						m[ak->pos_in_layer][at->pos_in_layer]++;
 					}
@@ -398,40 +425,25 @@ static int layer_sweep (const RGraph *g, const struct layer_t layers[],
 
 static void view_cyclic_edge (const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RAGraph *g = (RAGraph *)vis->data;
-	RGraphEdge *new_e = R_NEW (RGraphEdge);
-
+	RGraphEdge *new_e = R_NEW0 (RGraphEdge);
+	if (!new_e) return;
 	new_e->from = e->from;
 	new_e->to = e->to;
 	new_e->nth = e->nth;
 	r_list_append (g->back_edges, new_e);
 }
 
-static int get_depth (Sdb *path, const RGraphNode *n) {
-	int res = 0;
-	while ((n = hash_get_rnode (path, n)) != NULL) {
-		res++;
-	}
-	return res;
-}
-
-static void set_layer (const RGraphEdge *e, const RGraphVisitor *vis) {
-	Sdb *path = (Sdb *)vis->data;
-	int bdepth, adepth;
-
-	adepth = get_depth (path, e->from);
-	bdepth = get_depth (path, e->to);
-
-	if (adepth + 1 > bdepth)
-		hash_set (path, e->to, e->from);
-}
-
 static void view_dummy (const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RANode *a = get_anode (e->from);
 	const RANode *b = get_anode (e->to);
 	RList *long_edges = (RList *)vis->data;
+	if (!a || !b) {
+		return;
+	}
 
 	if (R_ABS (a->layer - b->layer) > 1) {
-		RGraphEdge *new_e = R_NEW (RGraphEdge);
+		RGraphEdge *new_e = R_NEW0 (RGraphEdge);
+		if (!new_e) return;
 		new_e->from = e->from;
 		new_e->to = e->to;
 		new_e->nth = e->nth;
@@ -460,24 +472,43 @@ static void remove_cycles (RAGraph *g) {
 	}
 }
 
-/* assign a layer to each node of the graph */
+static void add_sorted(RGraphNode *n, RGraphVisitor *vis) {
+	RList *l = (RList *)vis->data;
+	r_list_prepend (l, n);
+}
+
+/* assign a layer to each node of the graph.
+ *
+ * It visits the nodes of the graph in the topological sort, so that every time
+ * you visit a node, you can be sure that you have already visited all nodes
+ * that can lead to that node and thus you can easily compute the layer based
+ * on the layer of these "parent" nodes. */
 static void assign_layers (const RAGraph *g) {
 	RGraphVisitor layer_vis = { NULL, NULL, NULL, NULL, NULL, NULL };
-	Sdb *path_layers = sdb_new0 ();
 	const RGraphNode *gn;
 	const RListIter *it;
 	RANode *n;
+	RList *topological_sort = r_list_new ();
 
-	layer_vis.data = path_layers;
-	layer_vis.tree_edge = (RGraphEdgeCallback)set_layer;
-	layer_vis.fcross_edge = (RGraphEdgeCallback)set_layer;
+	layer_vis.data = topological_sort;
+	layer_vis.finish_node = (RGraphNodeCallback)add_sorted;
 	r_graph_dfs (g->graph, &layer_vis);
 
-	graph_foreach_anode (r_graph_get_nodes (g->graph), it, gn, n) {
-		n->layer = get_depth (path_layers, gn);
+	graph_foreach_anode (topological_sort, it, gn, n) {
+		const RList *innodes = r_graph_innodes (g->graph, gn);
+		RListIter *it;
+		RGraphNode *prev;
+		RANode *preva;
+
+		n->layer = 0;
+		graph_foreach_anode (innodes, it, prev, preva) {
+			if (preva->layer + 1 > n->layer) {
+				n->layer = preva->layer + 1;
+			}
+		}
 	}
 
-	sdb_free (path_layers);
+	r_list_free (topological_sort);
 }
 
 static int find_edge (const RGraphEdge *a, const RGraphEdge *b) {
@@ -535,8 +566,9 @@ static void create_layers (RAGraph *g) {
 	/* identify max layer */
 	g->n_layers = 0;
 	graph_foreach_anode (nodes, it, gn, n) {
-		if (n->layer > g->n_layers)
+		if (n->layer > g->n_layers) {
 			g->n_layers = n->layer;
+		}
 	}
 
 	/* create a starting ordering of nodes for each layer */
@@ -544,12 +576,12 @@ static void create_layers (RAGraph *g) {
 	if (sizeof (struct layer_t) * g->n_layers < g->n_layers) return;
 	g->layers = R_NEWS0 (struct layer_t, g->n_layers);
 
-	graph_foreach_anode (nodes, it, gn, n)
+	graph_foreach_anode (nodes, it, gn, n) {
 		g->layers[n->layer].n_nodes++;
+	}
 
 	for (i = 0; i < g->n_layers; ++i) {
 		if (sizeof(RGraphNode*) * g->layers[i].n_nodes < g->layers[i].n_nodes) {
-			//FIXME how to handle properly this error ret2libc?
 			continue;
 		}
 		g->layers[i].nodes = R_NEWS0 (RGraphNode *,
@@ -949,11 +981,13 @@ xminus_err:
 
 static RGraphNode *get_right_dummy (const RAGraph *g, const RGraphNode *n) {
 	const RANode *an = get_anode (n);
+	if (!an) return NULL;
 	int k, layer = an->layer;
 
 	for (k = an->pos_in_layer + 1; k < g->layers[layer].n_nodes; ++k) {
 		RGraphNode *gk = g->layers[layer].nodes[k];
 		const RANode *ak = get_anode (gk);
+		if (!ak) break;
 
 		if (ak->is_dummy)
 			return gk;
@@ -1052,15 +1086,15 @@ static void place_single (const RAGraph *g, int l, const RGraphNode *bm,
 	}
 }
 
-static int RM_listcmp (const struct len_pos_t *a, const struct len_pos_t *b) {
+static int RM_listcmp(const struct len_pos_t *a, const struct len_pos_t *b) {
 	return a->pos < b->pos;
 }
 
-static int RP_listcmp (const struct len_pos_t *a, const struct len_pos_t *b) {
+static int RP_listcmp(const struct len_pos_t *a, const struct len_pos_t *b) {
 	return a->pos >= b->pos;
 }
 
-static void collect_changes (const RAGraph *g, int l, const RGraphNode *b, int from_up, int s, int e, RList *list, int is_left) {
+static void collect_changes(const RAGraph *g, int l, const RGraphNode *b, int from_up, int s, int e, RList *list, int is_left) {
 	const RGraphNode *vt = g->layers[l].nodes[e - 1];
 	const RGraphNode *vtp = g->layers[l].nodes[s];
 	RListComparator lcmp;
@@ -1088,7 +1122,6 @@ static void collect_changes (const RAGraph *g, int l, const RGraphNode *b, int f
 				c++;
 			} else {
 				cx = R_NEW (struct len_pos_t);
-
 				c--;
 				cx->len = 2;
 				cx->pos = av->x;
@@ -1125,6 +1158,8 @@ static void combine_sequences (const RAGraph *g, int l, const RGraphNode *bm, co
 	const RGraphNode *vt, *vtp;
 	RANode *at, *atp;
 	int rm, rp, t, m, i;
+	Rm->free = (RListFree)free;
+	Rp->free = (RListFree)free;
 
 	t = (a + r) / 2;
 	vt = g->layers[l].nodes[t - 1];
@@ -1278,9 +1313,18 @@ static void place_original (RAGraph *g) {
 	const RANode *an;
 
 	D = sdb_new0 ();
+	if (!D) return;
 	P = sdb_new0 ();
-	g->dists = r_list_new ();
-	g->dists->free = (RListFree)free;
+	if (!P) {
+		sdb_free (D);
+		return;
+	}
+	g->dists = r_list_newf ((RListFree) free);
+	if (!g->dists) {
+		sdb_free (D);
+		sdb_free (P);
+		return;
+	}
 
 	graph_foreach_anode (nodes, itn, gn, an) {
 		if (!an->is_dummy) continue;
@@ -1329,7 +1373,7 @@ static void create_edge_from_dummies (const RAGraph *g, RANode *an, RList *torem
 	RANode *a_from = get_anode (from);
 	RListIter *(*add_to_list)(RList *, void *) = NULL;
 	AEdge *e = R_NEW0 (AEdge);
-
+	if (!e) return;
 	e->x = r_list_new ();
 	e->y = r_list_new ();
 	e->is_reversed = an->is_reversed;
@@ -1383,6 +1427,7 @@ static void analyze_back_edges (const RAGraph *g, RANode *an) {
 		i++;
 		if (ak->layer > an->layer) continue;
 		e = R_NEW0 (AEdge);
+		if (!e) return;
 		e->is_reversed = true;
 		e->from = an;
 		e->to = ak;
@@ -1503,8 +1548,7 @@ static void set_layout(RAGraph *g) {
 	r_list_free (g->back_edges);
 }
 
-static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
-		bool is_esil, bool disasm_insts) {
+static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	char *body;
 	int o_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
 	int o_lines = r_config_get_i (core->config, "asm.lines");
@@ -1512,18 +1556,18 @@ static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
 	int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	int o_marks = r_config_get_i (core->config, "asm.marks");
 	int o_offset = r_config_get_i (core->config, "asm.offset");
-	int o_esil = r_config_get_i (core->config, "asm.esil");
 	int o_cursor = core->print->cur_enabled;
-	const char *cmd = disasm_insts ? "pd" : "pD";
+
+	const char *cmd = (opts & BODY_SUMMARY) ? "pds" : "pD";
+
 	// configure options
 	r_config_set_i (core->config, "asm.fcnlines", false);
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmtcol", 0);
 	r_config_set_i (core->config, "asm.marks", false);
-	r_config_set_i (core->config, "asm.esil", is_esil);
 	core->print->cur_enabled = false;
 
-	if (with_offset) {
+	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY) {
 		r_config_set_i (core->config, "asm.offset", true);
 		r_config_set_i (core->config, "asm.bytes", true);
 	} else {
@@ -1532,9 +1576,9 @@ static char *get_body (RCore *core, ut64 addr, int size, bool with_offset,
 	}
 	body = r_core_cmd_strf (core,
 		"%s %d @ 0x%08"PFMT64x, cmd, size, addr);
+
 	// restore original options
 	core->print->cur_enabled = o_cursor;
-	r_config_set_i (core->config, "asm.esil", o_esil);
 	r_config_set_i (core->config, "asm.fcnlines", o_fcnlines);
 	r_config_set_i (core->config, "asm.lines", o_lines);
 	r_config_set_i (core->config, "asm.bytes", o_bytes);
@@ -1555,8 +1599,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		body = get_body (core, bb->addr, bb->size, is_offset (g),
-			is_esil (g), false);
+		body = get_body (core, bb->addr, bb->size, mode2opts (g));
 		title = get_title (bb->addr);
 		node = r_agraph_get_node (g, title);
 		if (node) {
@@ -1574,6 +1617,8 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
+	char *shortcut = NULL;
+	int shortcuts = 0;
 
 	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1582,11 +1627,19 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		if (bb->addr == UT64_MAX) continue;
 
-		body = get_body (core, bb->addr, bb->size, is_offset (g),
-			is_esil (g), false);
+		body = get_body (core, bb->addr, bb->size, mode2opts (g));
 		title = get_title (bb->addr);
 
 		node = r_agraph_add_node (g, title, body);
+		shortcuts = r_config_get_i (core->config, "graph.nodejmps");
+
+		if (shortcuts) {
+			shortcut = r_core_add_asmqjmp (core, bb->addr);
+			if (shortcut) {
+				sdb_set (g->db, sdb_fmt (2, "agraph.nodes.%s.shortcut", title), shortcut, 0);
+				free (shortcut);
+			}
+		}
 		free (body);
 		free (title);
 		if (!node) return false;
@@ -1654,9 +1707,11 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 				continue;
 		free (title);
 
-		body = get_body (core, ref->addr, 4, is_offset (g),
-			is_esil (g), true);
-		body = r_str_concat (body, "...\n");
+		int size = 0;
+		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, ref->addr);
+		if (bb) size = bb->size;
+
+		body = get_body (core, ref->addr, size, mode2opts (g));
 		title = get_title (ref->addr);
 
 		node = r_agraph_add_node (g, title, body);
@@ -2029,8 +2084,8 @@ static void agraph_prev_node(RAGraph *g) {
 }
 
 static void agraph_update_title (RAGraph *g, RAnalFunction *fcn) {
-	const char *mode_str = g->is_callgraph ? mode2str(g, "CG") : mode2str (g, "BB");
-	char *new_title = r_str_newf(
+	const char *mode_str = g->is_callgraph ? mode2str (g, "CG") : mode2str (g, "BB");
+	char *new_title = r_str_newf (
 			"[0x%08"PFMT64x"]> VV @ %s (nodes %d edges %d zoom %d%%) %s mouse:%s movements-speed:%d",
 			fcn->addr, fcn->name, g->graph->n_nodes, g->graph->n_edges,
 			g->zoom, mode_str, mousemodes[mousemode], g->movspeed);
@@ -2208,6 +2263,7 @@ static void free_anode (RANode *n) {
 
 static int free_anode_cb (void *user UNUSED, const char *k UNUSED, const char *v) {
 	RANode *n = (RANode *)(size_t)sdb_atoi(v);
+	if (!n) return 0;
 	free_anode (n);
 	return 1;
 }
@@ -2328,6 +2384,7 @@ static int user_edge_cb(struct g_cb *user, const char *k UNUSED, const char *v) 
 	RAGraph *g = user->graph;
 	void *user_data = user->data;
 	RANode *an, *n = (RANode *)(size_t)sdb_atoi (v);
+	if (!n) return 0;
 	const RList *neigh = r_graph_get_neighbours (g->graph, n->gnode);
 	RListIter *it;
 	RGraphNode *gn;
@@ -2471,7 +2528,7 @@ static void goto_asmqjmps(RAGraph *g, RCore *core) {
 			r_agraph_set_curnode (g, addr_node);
 			agraph_update_seek (g, addr_node, true);
 		} else {
-			r_io_sundo_push (core->io, core->offset);
+			r_io_sundo_push (core->io, core->offset, 0);
 			r_core_seek (core, addr, 0);
 		}
 	}
@@ -2614,8 +2671,17 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_config_set (core->config, "cmd.gprompt", buf);
 			}
 			break;
+		case '>':
+			r_core_cmd0 (core, "ag-;.agc* $$;aggi");
+			break;
+		case '<':
+			r_core_cmd0 (core, "ag-;.agc*;aggi");
+			break;
+		case 'G':
+			r_core_cmd0 (core, "ag-;.dtg*;aggi");
+			break;
 		case 'V':
-			if (fcn) agraph_toggle_callgraph(g);
+			if (fcn) agraph_toggle_callgraph (g);
 			break;
 		case 'Z':
 			if (okey == 27) agraph_prev_node (g);
@@ -2662,31 +2728,45 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '?':
 			r_cons_clear00 ();
 			r_cons_printf ("Visual Ascii Art graph keybindings:\n"
+					" +/-/0        - zoom in/out/default\n"
+					" ;            - add comment in current basic block\n"
 					" .            - center graph to the current node\n"
 					" :cmd         - run radare command\n"
 					" '            - toggle asm.comments\n"
-					" ;            - add comment in current basic block\n"
+					" \"            - toggle graph.refs\n"
 					" /            - highlight text\n"
-					" Page-UP/DOWN - go to the top/bottom of the canvas\n"
+					" |            - set cmd.gprompt\n"
+					" >            - show function callgraph (see graph.refs)\n"
+					" <            - show program callgraph (see graph.refs)\n"
+					" Home/End     - go to the top/bottom of the canvas\n"
+					" Page-UP/DOWN - scroll canvas up/down\n"
 					" C            - toggle scr.colors\n"
 					" hjkl         - scroll canvas\n"
 					" HJKL         - move node\n"
+					" m/M          - change mouse modes\n"
 					" tab          - select next node\n"
 					" TAB          - select previous node\n"
 					" t/f          - follow true/false edges\n"
 					" g([A-Za-z]*) - follow jmp/call identified by shortcut\n"
+					" G            - debug trace callgraph (generated with dtc)\n"
+					" n            - rename function\n"
+					" F            - enter flag selector\n"
+					" _            - enter hud selector\n"
+					" o            - go/seek to given offset\n"
 					" r            - refresh graph\n"
 					" R            - randomize colors\n"
-					" o            - go/seek to given offset\n"
 					" u/U          - undo/redo seek\n"
-					" p/P          - rotate graph modes (normal, display offsets, esil, minigraph)\n"
+					" p/P          - rotate graph modes (normal, display offsets, minigraph, summary)\n"
 					" s/S          - step / step over\n"
 					" V            - toggle basicblock / call graphs\n"
 					" w            - toggle between movements speed 1 and graph.scroll\n"
 					" x/X          - jump to xref/ref\n"
-					" +/-/0        - zoom in/out/default\n");
+					" Z            - follow parent node");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
+			break;
+		case '"':
+			r_config_toggle (core->config, "graph.refs");
 			break;
 		case 'p':
 			if (!fcn) break;
@@ -2707,16 +2787,19 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'u':
 		{
 			if (!fcn) break;
-			ut64 off = r_io_sundo (core->io, core->offset);
-			if (off != UT64_MAX) r_core_seek (core, off, 0);
-			else eprintf ("Can not undo\n");
+			RIOUndos *undo = r_io_sundo (core->io, core->offset);
+			if (undo) {
+				r_core_seek (core, undo->off, 0);
+			} else {
+				eprintf ("Cannot undo\n");
+			}
 			break;
 		}
 		case 'U':
 		{
 			if (!fcn) break;
-			ut64 off = r_io_sundo_redo (core->io);
-			if (off != UT64_MAX) r_core_seek (core, off, 0);
+			RIOUndos *undo = r_io_sundo_redo (core->io);
+			if (undo != NULL) r_core_seek (core, undo->off, 0);
 			else eprintf ("Cannot redo\n");
 			break;
 		}
@@ -2758,20 +2841,34 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'm':
 			mousemode++;
-			if (!mousemodes[mousemode])
+			if (!mousemodes[mousemode]) {
 				mousemode = 0;
+			}
 			break;
 		case 'M':
 			mousemode--;
-			if (mousemode<0)
+			if (mousemode < 0) {
 				mousemode = 3;
+			}
+			break;
+		case 'n':
+			{
+				char *newname = r_cons_input ("New function name:");
+				if (newname) {
+					if (*newname) {
+						r_core_cmdf (core, "\"afn %s\"", newname);
+						get_bbupdate (g, core, fcn);
+					}
+					free (newname);
+				}
+			}
 			break;
 		case 'J':
 			if (okey == 27 && r_cons_readchar () == 126) {
 				// handle page down key
 				can->sy -= PAGEKEY_SPEED * (invscroll ? -1 : 1);
 			} else {
-				get_anode(g->curnode)->y += movspeed;
+				get_anode (g->curnode)->y += movspeed;
 			}
 			break;
 		case 'K':
@@ -2779,7 +2876,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				// handle page up key
 				can->sy += PAGEKEY_SPEED * (invscroll ? -1 : 1);
 			} else {
-				get_anode(g->curnode)->y -= movspeed;
+				get_anode (g->curnode)->y -= movspeed;
 			}
 			break;
 		case 'F':
@@ -2787,6 +2884,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				// handle end key
 				const RGraphNode *gn = find_near_of (g, NULL, false);
 				g->update_seek_on = get_anode (gn);
+			} else {
+				r_core_visual_trackflags (core);
 			}
 			break;
 		case 'H':
@@ -2795,10 +2894,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				const RGraphNode *gn = find_near_of (g, NULL, true);
 				g->update_seek_on = get_anode (gn);
 			} else {
-				get_anode(g->curnode)->x -= movspeed;
+				get_anode (g->curnode)->x -= movspeed;
 			}
 			break;
-		case 'L': get_anode(g->curnode)->x += movspeed; break;
+		case 'v':
+			r_core_visual_anal (core);
+			break;
+		case 'L': get_anode (g->curnode)->x += movspeed; break;
 		case 'j': can->sy -= movspeed * (invscroll ? -1 : 1); break;
 		case 'k': can->sy += movspeed * (invscroll ? -1 : 1); break;
 		case 'l': can->sx -= movspeed * (invscroll ? -1 : 1); break;
@@ -2823,6 +2925,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'w':
 			agraph_toggle_speed (g, core);
+			break;
+		case '_':
+			r_core_visual_hudstuff (core);
 			break;
 		case -1: // EOF
 		case ' ':

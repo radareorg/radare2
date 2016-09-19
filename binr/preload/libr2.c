@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2014-2016 - pancake */
+
 #include <r_core.h>
 
 #if __WINDOWS__
@@ -13,7 +15,7 @@ static RCoreFile *openself(void) {
 	RCoreFile *fd = NULL;
 	char *out = r_core_cmd_str (core, "o");
 	if (out) {
-		if (!strstr(out, "self://")) {
+		if (!strstr (out, "self://")) {
 			fd = r_core_file_open (core, "self://", R_IO_RW, 0);
 		}
 		free (out);
@@ -22,7 +24,7 @@ static RCoreFile *openself(void) {
 }
 
 static void sigusr1(int s) {
-	RCoreFile *fd = openself();
+	RCoreFile *fd = openself ();
 	r_core_prompt_loop (core);
 	r_core_file_close (core, fd);
 }
@@ -37,7 +39,8 @@ static void _libwrap_init() {
 	signal (SIGUSR1, sigusr1);
 	signal (SIGUSR2, sigusr2);
 	printf ("libr2 initialized. send SIGUSR1 to %d in order to reach the r2 prompt\n", getpid ());
-	printf ("kill -USR1 %d\n", getpid());
+	printf ("kill -USR1 %d\n", getpid ());
+	fflush (stdout);
 	web = r_sys_getenv ("RARUN2_WEB");
 	core = r_core_new ();
 	r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
@@ -52,22 +55,22 @@ static void _libwrap_init() {
 #elif __WINDOWS__
 void alloc_console() {
 	CONSOLE_SCREEN_BUFFER_INFO coninfo;
-	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	HANDLE hStdin = GetStdHandle (STD_INPUT_HANDLE);
 	DWORD lpMode;
 
-	AllocConsole();
-	GetConsoleMode(hStdin, &lpMode);
-	SetConsoleMode(hStdin, lpMode & (~ENABLE_MOUSE_INPUT | ENABLE_PROCESSED_INPUT));
-	GetConsoleScreenBufferInfo(hStdin, &coninfo);
+	AllocConsole ();
+	GetConsoleMode (hStdin, &lpMode);
+	SetConsoleMode (hStdin, lpMode & (~ENABLE_MOUSE_INPUT | ENABLE_PROCESSED_INPUT));
+	GetConsoleScreenBufferInfo (hStdin, &coninfo);
 	coninfo.dwSize.Y = 4096;
-	SetConsoleScreenBufferSize(hStdin, coninfo.dwSize);
+	SetConsoleScreenBufferSize (hStdin, coninfo.dwSize);
 
-	freopen("conin$", "r", stdin);
-	freopen("conout$", "w", stdout);
-	freopen("conout$", "w", stderr);
+	freopen ("conin$", "r", stdin);
+	freopen ("conout$", "w", stdout);
+	freopen ("conout$", "w", stderr);
 }
 
-void start_r2() {
+static void start_r2() {
 	core = r_core_new ();
 	r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
 	RCoreFile *fd = r_core_file_open (core, "self://", R_IO_RW, 0);
@@ -82,16 +85,17 @@ void start_r2() {
  * TODO: implement all injecting methods
  */
 void rundll_inject(HWND hwnd, HINSTANCE hinst, LPWSTR lpszCmdLine, int nCmdShow) {
+	/* do something here */
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD result, LPVOID lpReserved) {
 	switch (result) {
-		case DLL_PROCESS_DETACH:
-			break;
-		case DLL_PROCESS_ATTACH:
-			alloc_console();
-			start_r2();
-			break;
+	case DLL_PROCESS_DETACH:
+		break;
+	case DLL_PROCESS_ATTACH:
+		alloc_console ();
+		start_r2 ();
+		break;
 	}
 	return 1;
 }

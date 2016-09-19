@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2016 - pancake */
 
 #include <r_debug.h>
 
@@ -64,10 +64,9 @@ R_API void r_debug_signal_init(RDebug *dbg) {
 static int siglistcb (void *p, const char *k, const char *v) {
 	static char key[32] = "cfg.";
 	RDebug *dbg = (RDebug *)p;
-	int mode = dbg->_mode;
-	int opt;
-	if (atoi (k)>0) {
-		strcpy (key+4, k);
+	int opt, mode = dbg->_mode;
+	if (atoi (k) > 0) {
+		strncpy (key + 4, k, 20);
 		opt = sdb_num_get (DB, key, 0);
 		if (opt) {
 			r_cons_printf ("%s %s", k, v);
@@ -77,8 +76,9 @@ static int siglistcb (void *p, const char *k, const char *v) {
 				r_cons_strcat (" skip");
 			r_cons_newline ();
 		} else {
-			if (mode == 0)
+			if (mode == 0) {
 				r_cons_printf ("%s %s\n", k, v);
+			}
 		}
 	}
 	return 1;
@@ -89,14 +89,14 @@ static int siglistjsoncb (void *p, const char *k, const char *v) {
 	RDebug *dbg = (RDebug *)p;
 	int opt;
 	if (atoi (k)>0) {
-		strcpy (key+4, k);
+		strncpy (key + 4, k, 20);
 		opt = (int)sdb_num_get (DB, key, 0);
 		if (dbg->_mode == 2) {
 			dbg->_mode = 0;
-		} else r_cons_strcat (",");
-
-		r_cons_printf ("{\"signum\":\"%s\",\"name\":\"%s\","
-			"\"option\":", k, v);
+		} else {
+			r_cons_strcat (",");
+		}
+		r_cons_printf ("{\"signum\":\"%s\",\"name\":\"%s\",\"option\":", k, v);
 		if (opt & R_DBG_SIGNAL_CONT) {
 			r_cons_strcat ("\"cont\"");
 		} else if (opt & R_DBG_SIGNAL_SKIP) {
@@ -132,6 +132,7 @@ R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame) {
 	if (strchr (signame, '.'))
 		return 0;
 	name = strdup (signame);
+	if (!name) return 0;
 	r_str_case (name, true);
 	if (strncmp (name, "SIG", 3))
 		name = r_str_prefix (name, "SIG");

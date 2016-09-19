@@ -1,9 +1,7 @@
 /* radare2 - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_cons.h>
-// TWOK is a C implemnetation of 2048 game
 
-#define ut8 unsigned char
 static ut8 twok_buf[4][4];
 static int score = 0;
 static int moves = 0;
@@ -74,40 +72,68 @@ static void twok_move(int u, int v) {
 	}
 }
 
-static void getval(char *val0, int i, int x) {
+static void getval(bool color, char *val0, int i, int x) {
+	const char * colorarray[] = {
+		Color_WHITE,
+		Color_RED,
+		Color_GREEN,
+		Color_MAGENTA,
+		Color_YELLOW,
+		Color_CYAN,
+		Color_BLUE,
+		Color_GRAY
+	};
 	if (twok_buf[i][x]) {
-		sprintf (val0, "%4d", 1 << twok_buf[i][x]);
+		if (color) {
+			snprintf (val0,31, "%s%4d"Color_RESET, colorarray [twok_buf [i][x] % 8 ], 1 << twok_buf[i][x]);
+		} else {
+			snprintf (val0,31, "%4d", 1 << twok_buf[i][x]);
+		}
 	} else {
 		strcpy (val0, "    ");
 	}
 }
 
-static void twok_print() {
+static void twok_print(bool color) {
 	char val0[32];
 	char val1[32];
 	char val2[32];
 	char val3[32];
 	int i;
-	printf ("  +------+------+------+------+\n");
-	for (i = 0; i < 4; i++) {
-		getval (val0, i, 0);
-		getval (val1, i, 1);
-		getval (val2, i, 2);
-		getval (val3, i, 3);
-		printf ("  |      |      |      |      |\n");
-		printf ("  | %s | %s | %s | %s |\n",
-			val0, val1, val2, val3);
-		printf ("  |      |      |      |      |\n");
+	if (color) {
+		printf (Color_BBLUE"  +------+------+------+------+\n");
+	} else {
 		printf ("  +------+------+------+------+\n");
 	}
+	for (i = 0; i < 4; i++) {
+		getval (color, val0, i, 0);
+		getval (color, val1, i, 1);
+		getval (color, val2, i, 2);
+		getval (color, val3, i, 3);
+		if (color) {
+			printf (Color_BBLUE"  |      |      |      |      |\n");
+			printf ("  |"Color_RESET" %s "Color_BBLUE"|"Color_RESET" %s "
+				Color_BBLUE"|"Color_RESET" %s "Color_BBLUE"|"Color_RESET" %s "Color_BBLUE"|\n",
+				val0, val1, val2, val3);
+			printf ("  |      |      |      |      |\n");
+			printf ("  +------+------+------+------+\n"Color_RESET);
+		} else {
+			printf ("  |      |      |      |      |\n");
+			printf ("  | %s | %s | %s | %s |\n",
+				val0, val1, val2, val3);
+			printf ("  |      |      |      |      |\n");
+			printf ("  +------+------+------+------+\n");
+		}
+	}
 	printf ("Hexboard:     'hjkl' and 'q'uit\n");
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
 		printf ("  %02x %02x %02x %02x\n",
 			twok_buf[i][0], twok_buf[i][1],
 			twok_buf[i][2], twok_buf[i][3]);
+	}
 }
 
-R_API void r_cons_2048() {
+R_API void r_cons_2048(bool color) {
 	int ch;
 	r_cons_set_raw (1);
 	twok_init ();
@@ -115,9 +141,13 @@ R_API void r_cons_2048() {
 	twok_add ();
 	while (twok_fin ()) {
 		r_cons_clear00 ();
-		r_cons_printf ("[r2048] score: %d   moves: %d\n", score, moves);
+		if (color) {
+			r_cons_printf (Color_GREEN"[r2048]"Color_BYELLOW" score: %d   moves: %d\n"Color_RESET, score, moves);
+		} else {
+			r_cons_printf ("[r2048] score: %d   moves: %d\n", score, moves);
+		}
 		r_cons_flush ();
-		twok_print ();
+		twok_print (color);
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
@@ -139,7 +169,8 @@ R_API void r_cons_2048() {
 	r_cons_clear00 ();
 	r_cons_printf ("[r2048] score: %d\n", score);
 	r_cons_flush ();
-	twok_print ();
+	twok_print (color);
+
 	r_cons_printf ("\n  [r2048.score] %d\n", score);
 	do {
 		ch = r_cons_any_key ("Press 'q' to quit.");

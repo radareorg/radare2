@@ -27,12 +27,12 @@ R_API int r_stack_push(RStack *s, void *el) {
 		s->n_elems *= 2;
 		s->elems = realloc (s->elems, s->n_elems * sizeof (void *));
 		if (!s->elems)
-			return R_FALSE;
+			return false;
 	}
 
 	s->top++;
 	s->elems[s->top] = el;
-	return R_TRUE;
+	return true;
 }
 
 R_API void *r_stack_pop(RStack *s) {

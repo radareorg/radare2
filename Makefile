@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=0.10.1
+PREVIOUS_RELEASE=0.10.4
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
@@ -77,7 +77,7 @@ w32:
 	sys/mingw32.sh
 
 depgraph.png:
-	cd libr ; perl depgraph.pl | dot -Tpng -odepgraph.png
+	cd libr ; perl depgraph.pl dot | dot -Tpng -o../depgraph.png
 
 android:
 	@if [ -z "$(NDK_ARCH)" ]; then echo "Set NDK_ARCH=[arm|arm64|mips|x86]" ; false; fi
@@ -123,13 +123,19 @@ windist:
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/doc/radare2"
 	mkdir -p "${WINDIST}/include/libr/sdb"
+	mkdir -p "${WINDIST}/include/libr/r_util"
 	@echo "${C}[WINDIST] Copying development files${R}"
 	cp -f libr/include/sdb/*.h "${WINDIST}/include/libr/sdb/"
+	cp -f libr/include/r_util/*.h "${WINDIST}/include/libr/r_util/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
 	#mkdir -p "${WINDIST}/include/libr/sflib"
 	@cp -f doc/fortunes.* "${WINDIST}/share/doc/radare2"
 	@mkdir -p "${WINDIST}/share/radare2/${VERSION}/format/dll"
-	@cp -f libr/bin/d/{elf,pe}* "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/elf32 "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/elf64 "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/elf_enums "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/pe32 "${WINDIST}/share/radare2/${VERSION}/format"
+	@cp -f libr/bin/d/trx "${WINDIST}/share/radare2/${VERSION}/format"
 	@cp -f libr/bin/d/dll/*.sdb "${WINDIST}/share/radare2/${VERSION}/format/dll"
 	@mkdir -p "${WINDIST}/share/radare2/${VERSION}/cons"
 	@cp -f libr/cons/d/* "${WINDIST}/share/radare2/${VERSION}/cons"
@@ -196,6 +202,7 @@ install love: install-doc install-man install-www
 	cp -f doc/hud "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	sys/ldconfig.sh
+	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 # Remove make .d files. fixes build when .c files are removed
 rmd:
@@ -239,6 +246,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	sys/ldconfig.sh
+	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1
@@ -338,6 +346,9 @@ osx-sign:
 
 osx-sign-libs:
 	$(MAKE) -C binr/radare2 osx-sign-libs
+
+osx-pkg:
+	sys/osx-pkg.sh $(VERSION)
 
 quality:
 	./sys/shellcheck.sh

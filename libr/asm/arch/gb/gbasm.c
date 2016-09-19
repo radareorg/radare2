@@ -20,8 +20,8 @@ static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 		return false;
 	buf[0] = base;
 	i = strlen (&buf_asm[minlen - 1]);
-	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, "[ ", "[", R_TRUE);
-	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, " ]", "]", R_TRUE);
+	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, "[ ", "[", true);
+	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, " ]", "]", true);
 	r_str_do_until_token (str_op, buf_asm, ' ');
 	i = gb_reg_idx (buf_asm[minlen-1]);
 	if (i != (-1)) {
@@ -42,9 +42,9 @@ static bool gb_parse_cb2 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	char *p, *q;
 	if ((i = strlen (buf_asm)) < minlen)
 		return false;
-	r_str_replace_in (buf_asm, (ut32)i, "[ ", "[", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, " ]", "]", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, ", ", ",", R_TRUE);
+	r_str_replace_in (buf_asm, (ut32)i, "[ ", "[", true);
+	r_str_replace_in (buf_asm, (ut32)i, " ]", "]", true);
+	r_str_replace_in (buf_asm, (ut32)i, ", ", ",", true);
 	p = strchr (buf_asm, (int)' ');
 	if (!p) return false;
 	q = strchr (p, (int)',');
@@ -82,8 +82,8 @@ static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 		return 0;
 	buf[0] = base;
 	i = strlen (&buf_asm[minlen - 1]);
-	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, "[ ", "[", R_TRUE);
-	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, " ]", "]", R_TRUE);
+	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, "[ ", "[", true);
+	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, " ]", "]", true);
 	r_str_do_until_token (str_op, buf_asm, ' ');
 	i = gb_reg_idx (buf_asm[minlen-1]);
 	if (i != (-1))
@@ -104,7 +104,7 @@ static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 
 static bool gb_parse_ld1 (ut8 *buf, const int minlen, char *buf_asm) {
 	int i;
-	r_str_replace_in (buf_asm, strlen(buf_asm), ", ", ",", R_TRUE);
+	r_str_replace_in (buf_asm, strlen(buf_asm), ", ", ",", true);
 	if ((i = strlen(buf_asm)) < minlen)
 		return false;
 	r_str_do_until_token (str_op, buf_asm, '\0');
@@ -164,8 +164,8 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	op->buf_asm[R_ASM_BUFSIZE-1] = 0;
 	i = strlen (op->buf_asm);
 	while (strstr (op->buf_asm, "  "))
-		r_str_replace_in (op->buf_asm, (ut32)i, "  ", " ", R_TRUE);
-	r_str_replace_in (op->buf_asm, (ut32)i, " ,", ",", R_TRUE);
+		r_str_replace_in (op->buf_asm, (ut32)i, "  ", " ", true);
+	r_str_replace_in (op->buf_asm, (ut32)i, " ,", ",", true);
 	mn_len = r_str_do_until_token (str_op, op->buf_asm, ' ');
 	if (mn_len < 2 || mn_len > 4)
 		return 0;
@@ -178,8 +178,8 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		case 0x696e63:			//inc
 			if ((i = strlen (op->buf_asm)) < 5)
 				return op->size = 0;
-			r_str_replace_in (op->buf_asm, (ut32)i, "[ ", "[", R_TRUE);
-			r_str_replace_in (op->buf_asm, (ut32)i, " ]", "]", R_TRUE);
+			r_str_replace_in (op->buf_asm, (ut32)i, "[ ", "[", true);
+			r_str_replace_in (op->buf_asm, (ut32)i, " ]", "]", true);
 			r_str_do_until_token (str_op, &op->buf_asm[4], '\0');
 			if (op->buf_asm[4] == 'b') {
 				if (op->buf_asm[5] == 'c')
@@ -214,8 +214,8 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		case 0x646563:			//dec
 			if ((i = strlen (op->buf_asm)) < 5)
 				return op->size = 0;
-			r_str_replace_in (op->buf_asm, (ut32)i, "[ ", "[", R_TRUE);
-			r_str_replace_in (op->buf_asm, (ut32)i, " ]", "]", R_TRUE);
+			r_str_replace_in (op->buf_asm, (ut32)i, "[ ", "[", true);
+			r_str_replace_in (op->buf_asm, (ut32)i, " ]", "]", true);
 			r_str_do_until_token (str_op, &op->buf_asm[4], '\0');
 			if (op->buf_asm[4] == 'b') {
 				if (op->buf_asm[5] == 'c')
@@ -269,7 +269,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			op->buf[0] = 0x2f;
 			break;
 		case 0x616464:			//add
-			r_str_replace_in (op->buf_asm, strlen(op->buf_asm), ", ", ",", R_TRUE);
+			r_str_replace_in (op->buf_asm, strlen(op->buf_asm), ", ", ",", true);
 			if (strlen(op->buf_asm) < 5)
 				return op->size = 0;
 			if (op->buf_asm[4] == 's'
@@ -430,7 +430,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 							op->buf[0] = 0xda;
 						else	return op->size = 0;
 					} else	return op->size = 0;
-					r_str_replace_in (p, strlen(p), ", ", ",", R_TRUE);
+					r_str_replace_in (p, strlen(p), ", ", ",", true);
 					if (p[1] == '\0')
 						return op->size = 0;
 					num = r_num_get (NULL, p + 1);
@@ -466,7 +466,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 							op->buf[0] = 0x38;
 						else	return op->size = 0;
 					} else	return op->size = 0;
-					r_str_replace_in (p, strlen(p), ", ", ",", R_TRUE);
+					r_str_replace_in (p, strlen(p), ", ", ",", true);
 					if (p[1] == '\0')
 						return op->size = 0;
 					num = r_num_get (NULL, p + 1);
@@ -502,7 +502,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 							op->buf[0] = 0xdc;
 						else	return op->size = 0;
 					} else	return op->size = 0;
-					r_str_replace_in (p, strlen(p), ", ", ",", R_TRUE);
+					r_str_replace_in (p, strlen(p), ", ", ",", true);
 					if (p[1] == '\0')
 						return op->size = 0;
 					num = r_num_get (NULL, p + 1);

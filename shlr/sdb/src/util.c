@@ -24,16 +24,33 @@ SDB_API int sdb_check_value(const char *s) {
 	return 1;
 }
 
-SDB_API int sdb_check_key(const char *s) {
-	const char *special_chars = "\"+-=[]:$;";
-	if (!s || !*s)
-		return 0;
-	if (strlen (s) >= SDB_KSZ)
-		return 0;
-	for (; *s; s++)
-		if (strchr (special_chars, *s))
-			return 0;
-	return 1;
+SDB_API bool sdb_check_key(const char *s) {
+	if (!s || !*s) {
+		return false;
+	}
+	const char *last = s + SDB_KSZ - 1;
+	for (; *s; s++) {
+		char c = *s;
+		if (!c) {
+			return true;
+		}
+		if (s == last) {
+			return false;
+		}
+		switch (c) {
+		case '"':
+		case '+':
+		case '-':
+		case '=':
+		case '[':
+		case ']':
+		case ':':
+		case '$':
+		case ';':
+			return false;
+		}
+	}
+	return true;
 }
 
 SDB_API ut32 sdb_hash(const char *s) {
@@ -41,6 +58,21 @@ SDB_API ut32 sdb_hash(const char *s) {
 	if (s)
 		while (*s)
 			h = (h + (h << 5)) ^* s++;
+	return h;
+}
+
+SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
+	ut32 h = CDB_HASHSTART;
+	ut32 count = 0;
+	if (s) {
+		while (*s) {
+			h = (h + (h << 5)) ^* s++;
+			count++;
+		}
+	}
+	if (len) {
+		*len = count;
+	}
 	return h;
 }
 

@@ -13,8 +13,9 @@ static RCorePlugin *cmd_static_plugins[] = { R_CORE_STATIC_PLUGINS };
 R_API int r_core_plugin_deinit(RCmd *cmd) {
 	RListIter *iter;
 	RCorePlugin *plugin;
-	if (!cmd->plist)
+	if (!cmd->plist) {
 		return false;
+	}
 	r_list_foreach (cmd->plist, iter, plugin) {
 		if (plugin && plugin->deinit) {
 			plugin->deinit (cmd, NULL);
@@ -27,8 +28,9 @@ R_API int r_core_plugin_deinit(RCmd *cmd) {
 }
 
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
-	if (plugin->init && !plugin->init (cmd, NULL))
+	if (plugin->init && !plugin->init (cmd, NULL)) {
 		return false;
+	}
 	r_list_append (cmd->plist, plugin);
 	return true;
 }
@@ -49,8 +51,9 @@ R_API int r_core_plugin_check(RCmd *cmd, const char *a0) {
 	RListIter *iter;
 	RCorePlugin *cp;
 	r_list_foreach (cmd->plist, iter, cp) {
-		if (cp->call (NULL, a0))
+		if (cp->call (NULL, a0)) {
 			return true;
+		}
 	}
 	return false;
 }

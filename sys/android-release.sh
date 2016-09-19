@@ -5,7 +5,8 @@ R2B="${PWD}/../radare2-bin"
 R2T="${PWD}"
 
 ARCHS="arm mips aarch64 x86"
-v=0.10.2-git
+v="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
+[ -z "${v}" ] && v=0.10.4
 
 if [ -n "$1" ]; then
 	ARCHS="$@"

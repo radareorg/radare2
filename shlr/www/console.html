@@ -1,0 +1,79 @@
+<html>
+<head>
+<style>
+html {
+	background-color: #c0c0c0;
+}
+.terminal {
+	left: auto;
+	margin: auto;
+	border-radius: 10px;
+	background-color:black;
+	font-family: monospace;
+	color:white;
+}
+.output {
+	background-color: black;
+	border-radius: 10px;
+	font-family: monospace;
+	color: white;
+	white-space: pre-wrap;
+}
+.input {
+	color: white;
+}
+.prompt {
+	overflow:hidden;
+}
+input {
+	color: white;
+	border: none;
+	position:absolute;
+	background: transparent;
+	padding-left:20px;
+	width:100%;
+	margin-left:-20px;
+	overflow:hidden;
+	font-family: monospace;
+}
+</style>
+<script type="application/javascript" src="m/r2.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', ready, false);
+function submit(cmd) {
+	var output = document.getElementById('output');
+	var input = document.getElementById('input');
+	if (cmd === 'clear') {
+		output.innerHTML = '';
+		input.value = '';
+		return;
+	}
+	r2.cmd(cmd, function(res) {
+		output.innerHTML += ' > '
+			+ cmd + '\n' + res;
+		input.value = '';
+		window.scrollTo(0, document.body.scrollHeight);
+
+	});
+}
+function ready() {
+	r2.cmd("e scr.color=true");
+	var input = document.getElementById('input');
+	input.focus();
+	input.onkeypress = function(e){
+	    if (e.keyCode == 13) {
+		submit(input.value);
+	    }
+	}
+}
+</script>
+</head>
+<body>
+<div id="terminal" class="terminal">
+<div id='output' class=output></div>
+<div id='prompt' class=prompt>
+&nbsp;&gt;&nbsp;<input id='input'></input>
+</div>
+</div>
+</body>
+</html>

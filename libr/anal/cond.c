@@ -44,6 +44,7 @@ R_API void r_anal_cond_free (RAnalCond *c) {
 // XXX?
 R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 	RAnalCond *c = R_NEW (RAnalCond);
+	if (!c) return NULL;
 	memcpy (c, cond, sizeof (RAnalCond));
 	return c;
 }
@@ -83,7 +84,7 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 		case R_ANAL_COND_LE: return arg0<=0;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 // XXX conflict naming with tostring()

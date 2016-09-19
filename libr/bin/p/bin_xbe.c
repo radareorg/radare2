@@ -102,48 +102,49 @@ static RList* entries(RBinFile *arch) {
 }
 
 static RList* sections(RBinFile *arch) {
-	xbe_section *sect;
-	r_bin_xbe_obj_t *obj;
-	RList *ret;
-	int i;
+	xbe_section *sect = NULL;
+	r_bin_xbe_obj_t *obj = NULL;
+	xbe_header *h = NULL;
+	RList *ret = NULL;
+	char tmp[0x100];
+	int i, r;
+	ut32 addr;
 
-	if (!arch || !arch->o)
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->buf) 
 		return NULL;
-
 	obj = arch->o->bin_obj;
-	if (obj->header->sections < 1)
+	h = obj->header;
+	if (h->sections < 1)
 		return NULL;
-
 	ret = r_list_new ();
 	if (!ret)
 		return NULL;
-
-	if (!arch->buf) {
-		free (ret);
-		return NULL;
-	}
-
 	ret->free = free;
-
-	if (obj->header->sections < 1 || obj->header->sections>255) {
-		free (ret);
-		return NULL;
-	}
-	sect = calloc (obj->header->sections, sizeof (xbe_section));
-	if (!sect) {
-		free (ret);
-		return NULL;
-	}
-
-	r_buf_read_at (arch->buf, obj->header->sechdr_addr - obj->header->base,
-		(ut8 *)sect, sizeof (xbe_section)*obj->header->sections);
-
-	for (i = 0; i < obj->header->sections; i++) {
+	if (h->sections < 1 || h->sections > 255)
+		goto out_error;
+	sect = calloc (h->sections, sizeof (xbe_section));
+	if (!sect)
+		goto out_error;
+	addr = h->sechdr_addr - h->base;
+	if (addr > arch->size || addr + (sizeof(xbe_section) * h->sections) > arch->size)
+		goto out_error;
+	r = r_buf_read_at (arch->buf, addr, (ut8 *)sect, sizeof(xbe_section) * h->sections);
+	if (r < 1)
+		goto out_error;
+	for (i = 0; i < h->sections; i++) {
 		RBinSection *item = R_NEW0(RBinSection);
-		char tmp[0x100];
-
-		r_buf_read_at (arch->buf, sect[i].name_addr - obj->header->base, (ut8 *)tmp, sizeof(tmp));
-
+		addr = sect[i].name_addr - h->base;
+		tmp[0] = 0;
+		if (addr > arch->size || addr + sizeof (tmp) > arch->size) {
+			free (item);
+			goto out_error;
+		}
+		r = r_buf_read_at (arch->buf, addr, (ut8 *)tmp, sizeof (tmp));
+		if (r < 1) {
+			free (item);
+			goto out_error;
+		}
+		tmp[sizeof (tmp) - 1] = 0;
 		snprintf (item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
@@ -159,121 +160,142 @@ static RList* sections(RBinFile *arch) {
 		r_list_append (ret, item);
 	}
 	free (sect);
-
 	return ret;
+out_error:
+	r_list_free (ret);
+	free (sect);
+	return NULL;
 }
 
 static RList* libs(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj;
+	xbe_header *h = NULL;
 	int i, off, libs, r;
 	xbe_lib lib;
 	RList *ret;
 	char *s;
+	ut32 addr;
 
-	if (!arch || !arch->o)
+	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
 	obj = arch->o->bin_obj;
+	h = obj->header;
 	ret = r_list_new ();
-	if (!ret) return NULL;
+	if (!ret)
+		return NULL;
 	ret->free = free;
-	if ( obj->header->kernel_lib_addr < obj->header->base) {
+	if (h->kernel_lib_addr < h->base)
 		off = 0;
-	} else {
-		off = obj->header->kernel_lib_addr - obj->header->base;
-	}
+	else
+		off = h->kernel_lib_addr - h->base;
+	if (off > arch->size || off + sizeof(xbe_lib) > arch->size)
+		goto out_error;
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
-	if (r == 0 || r == -1) return NULL;
+	if (r < 1)
+		goto out_error;
+	lib.name[7] = 0;
 	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
-	if (s) r_list_append (ret, s);
-
-	if (obj->header->xapi_lib_addr < obj->header->base) {
+	if (s)
+		r_list_append (ret, s);
+	if (h->xapi_lib_addr < h->base)
 		off = 0;
-	} else {
-		off = obj->header->xapi_lib_addr - obj->header->base;
-	}
+	else
+		off = h->xapi_lib_addr - h->base;
+	if (off > arch->size || off + sizeof(xbe_lib) > arch->size)
+		goto out_error;
 	r = r_buf_read_at (arch->buf, off, (ut8 *)&lib, sizeof(xbe_lib));
-	if (r == 0 || r == -1) return NULL;
-	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
-	if (s) r_list_append (ret, s);
+	if (r < 1)
+		goto out_error;
 
-	libs = obj->header->lib_versions;
-	if (libs<1) libs = 0;
+	lib.name[7] = 0;
+	s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+	if (s)
+		r_list_append (ret, s);
+	libs = h->lib_versions;
+	if (libs < 1)
+		goto out_error;
 	for (i = 0; i < libs; i++) {
-		r = r_buf_read_at (arch->buf, obj->header->lib_versions_addr - \
-			obj->header->base + (i * sizeof (xbe_lib)),
-			(ut8 *)&lib, sizeof (xbe_lib));
-
-		if (r == 0 || r == -1) continue;
-		s = r_str_newf ("%s %i.%i.%i", lib.name,
-			lib.major, lib.minor, lib.build);
-		if (s) r_list_append(ret, s);
+		addr = h->lib_versions_addr - h->base + (i * sizeof (xbe_lib));
+		if (addr > arch->size || addr + sizeof (xbe_lib) > arch->size)
+			goto out_error;
+		r = r_buf_read_at (arch->buf, addr, (ut8 *)&lib, sizeof (xbe_lib));
+		if (r < 1)
+			goto out_error;
+		//make sure it ends with 0
+		lib.name[7] = '\0';
+		s = r_str_newf ("%s %i.%i.%i", lib.name, lib.major, lib.minor, lib.build);
+		if (s)
+			r_list_append(ret, s);
 	}
 
 	return ret;
+out_error:
+	r_list_free (ret);
+	return NULL;
 }
 
 static RList* symbols(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj;
+	xbe_header *h;
 	RList *ret;
 	int i, found = false;
 	ut32 thunk_addr[XBE_MAX_THUNK];
 	ut32 kt_addr;
 	xbe_section sect;
+	ut32 addr;
 
-	if (!arch || !arch->o)
+	if (!arch || !arch->o || !arch->o->bin_obj)
 		return NULL;
 
 	obj = arch->o->bin_obj;
-	kt_addr = obj->header->kernel_thunk_addr ^ obj->kt_key;
+	h = obj->header;
+	kt_addr = h->kernel_thunk_addr ^ obj->kt_key;
 	ret = r_list_new();
+	if (!ret)
+		return NULL;
 	ret->free = free;
-
-//eprintf ("VA %llx  %llx\n", sym->paddr, sym->vaddr);
-	// PA -> VA translation
-	eprintf ("sections %d\n", obj->header->sections);
-	int limit = obj->header->sections;
-	if (limit * (sizeof(xbe_section)) >= arch->buf->length - obj->header->sechdr_addr)
-		limit = arch->buf->length;
+	eprintf ("sections %d\n", h->sections);
+	int limit = h->sections;
+	if (limit * (sizeof(xbe_section)) >= arch->size - h->sechdr_addr)
+		goto out_error;
 	for (i = 0; found == false && i < limit; i++) {
-		r_buf_read_at (arch->buf, obj->header->sechdr_addr - \
-			obj->header->base + (sizeof (xbe_section) * i), \
-			(ut8 *)&sect, sizeof(sect));
+		addr = h->sechdr_addr - h->base + (sizeof (xbe_section) * i);
+		if (addr > arch->size || addr + sizeof(sect) > arch->size)
+			goto out_error;
+		r_buf_read_at (arch->buf, addr, (ut8 *)&sect, sizeof(sect));
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize)
 			found = true;
 	}
-
-	if (found == false) {
-		free (ret);
-		return NULL;
-	}
-
-	i = r_buf_read_at (arch->buf, sect.offset + (kt_addr - sect.vaddr), \
-		(ut8 *)&thunk_addr, sizeof (thunk_addr));
-	if (i != sizeof (thunk_addr)) {
-		free (ret);
-		return NULL;
-	}
-	for (i = 0; thunk_addr[i]; i++) {
+	if (!found)
+		goto out_error;
+	addr = sect.offset + (kt_addr - sect.vaddr);
+	if (addr > arch->size || addr + sizeof(thunk_addr) > arch->size)
+		goto out_error;
+	i = r_buf_read_at (arch->buf, addr, (ut8 *)&thunk_addr, sizeof (thunk_addr));
+	if (i != sizeof (thunk_addr))
+		goto out_error;
+	for (i = 0; i < XBE_MAX_THUNK && thunk_addr[i]; i++) {
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
-			ret->free (sym);
-			free (ret);
-			return NULL;
-		}
-
+		if (!sym)
+			goto out_error;
 		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
-
 		// Basic sanity checks
-		if (thunk_addr[i]&0x80000000 && thunk_index < XBE_MAX_THUNK) {
+		if (thunk_addr[i] & 0x80000000 && thunk_index < XBE_MAX_THUNK) {
+			eprintf ("%d\n", thunk_index);
 			sym->name = r_str_newf ("kt.%s", kt_name[thunk_index]);
-			sym->vaddr = (obj->header->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
-			sym->paddr = sym->vaddr - obj->header->base;
+			sym->vaddr = (h->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
+			sym->paddr = sym->vaddr - h->base;
 			sym->size = 4;
 			sym->ordinal = i;
 			r_list_append (ret, sym);
-		} else free (sym);
+		} else {
+			free (sym);
+		}
 	}
 	return ret;
+out_error:
+	r_list_free (ret);
+	return NULL;
 }
 
 static RBinInfo* info(RBinFile *arch) {

@@ -10,8 +10,8 @@
 
 #define EXCEPTION_PORT 0
 
+// NOTE: mach/mach_vm is not available for iOS
 #include <mach/exception_types.h>
-//no available for ios #include <mach/mach_vm.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>
 #include <mach/mach_init.h>
@@ -59,7 +59,6 @@ static task_t task_for_pid_workaround(int pid) {
 	if (pid == -1) {
 		return MACH_PORT_NULL;
 	}
-
 	kr = processor_set_default (myhost, &psDefault);
 	if (kr != KERN_SUCCESS) {
 		return MACH_PORT_NULL;
@@ -70,7 +69,6 @@ static task_t task_for_pid_workaround(int pid) {
 		//mach_error ("host_processor_set_priv",kr);
 		return MACH_PORT_NULL;
 	}
-
 	numTasks = 0;
 	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
@@ -85,7 +83,7 @@ static task_t task_for_pid_workaround(int pid) {
 		int pid2 = -1;
 		pid_for_task (i, &pid2);
 		if (pid == pid2) {
-			return (tasks[i]);
+			return tasks[i];
 		}
 	}
 	return MACH_PORT_NULL;
@@ -132,12 +130,12 @@ static task_t pid_to_task(int pid) {
 
 static bool task_is_dead (int pid) {
 	unsigned int count = 0;
-	kern_return_t kr = mach_port_get_refs (mach_task_self(),
+	kern_return_t kr = mach_port_get_refs (mach_task_self (),
 		pid_to_task (pid), MACH_PORT_RIGHT_SEND, &count);
 	return (kr != KERN_SUCCESS || !count);
 }
 
-static ut64 the_lower = 0LL;
+static ut64 the_lower = UT64_MAX;
 
 static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	struct vm_region_submap_info_64 info;
@@ -154,10 +152,8 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 #else
 	size = osize = 4096;
 #endif
-	if (the_lower) {
-		if (addr < the_lower)
-			return the_lower;
-		return addr;
+	if (the_lower != UT64_MAX) {
+		return R_MAX (addr, the_lower);
 	}
 
 	for (;;) {
@@ -198,15 +194,15 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	int blocksize = 32;
 	RIOMach *riom = (RIOMach *)fd->data;
 
-	if (task_is_dead (riom->pid))
+	if (task_is_dead (riom->pid)) {
 		return -1;
-
+	}
 	memset (buf, 0xff, len);
 	if (RIOMACH_PID (fd->data) == 0) {
-		if (io->off < 4096)
+		if (io->off < 4096) {
 			return len;
+		}
 	}
-
 	copied = getNextValid (io, fd, io->off) - io->off;
 	if (copied < 0) copied = 0;
 
@@ -259,15 +255,11 @@ static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 }
 
 static int tsk_pagesize(RIOMach *riom) {
-	//cache the pagesize
+#define GetPageSize(x) (host_page_size (riom->task, x) == KERN_SUCCESS)
 	static vm_size_t pagesize = 0;
-	kern_return_t kr;
-	if (pagesize)
-		return pagesize;
-	kr = host_page_size (mach_host_self (), &pagesize);
-	if (kr != KERN_SUCCESS)
-		pagesize = 4096;
-	return pagesize;
+	return pagesize ? pagesize
+		: GetPageSize (&pagesize)
+			? pagesize : 4096;
 }
 
 static vm_address_t tsk_getpagebase(RIOMach *riom, ut64 addr) {
@@ -289,8 +281,6 @@ static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int pe
 static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
 	kern_return_t kr = vm_write (task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
 	if (kr != KERN_SUCCESS) {
-		// perror ("vm_write");
-		//the memory is not mapped
 		return false;
 	}
 	return true;
@@ -303,21 +293,18 @@ static int mach_write_at(RIO *io, RIOMach *riom, const void *buf, int len, ut64 
 	vm_size_t total_size;
 	int operms = 0;
 	task_t task;
-
-	if (!riom || len < 1)
+	if (!riom || len < 1 || task_is_dead (riom->pid)) {
 		return 0;
-	if (task_is_dead (riom->pid))
-		return 0;
+	}
 	task = riom->task;
 	pageaddr = tsk_getpagebase (riom, addr);
 	pagesize = tsk_pagesize (riom);
-	if (len > pagesize)
-		total_size = pagesize * (1 + (len / pagesize));
-	else
-		total_size = pagesize;
-
-	if (tsk_write (task, vaddr, buf, len))
+	total_size = (len > pagesize)
+		? pagesize * (1 + (len / pagesize))
+		: pagesize;
+	if (tsk_write (task, vaddr, buf, len)) {
 		return len;
+	}
 	operms = tsk_getperm (io, task, pageaddr);
 	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
 		eprintf ("io.mach: Cannot set page perms for %d bytes at 0x%08"
@@ -341,18 +328,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return mach_write_at (io, (RIOMach*)fd->data, buf, len, io->off);
 }
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return (!strncmp (file, "attach://", 9) \
-		|| !strncmp (file, "mach://", 7));
-}
-
-// s/inferior_task/port/
-static unsigned int debug_attach(int pid) {
-	task_t task = pid_to_task (pid);
-	if (!task)
-		return 0;
-	//eprintf ("pid: %d\ntask: %d\n", pid, task);
-	return task;
+static bool __plugin_open(RIO *io, const char *file, bool many) {
+	return (!strncmp (file, "attach://", 9) || !strncmp (file, "mach://", 7));
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -362,14 +339,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char *pidpath, *endptr;
 	int pid;
 	task_t task;
-	if (!__plugin_open (io, file, 0))
+	if (!__plugin_open (io, file, 0)) {
 		return NULL;
-	pidfile = file + (file[0] == 'a' ? 9:7);
+	}
+	pidfile = file + (file[0] == 'a' ? 9 : 7);
 	pid = (int)strtol (pidfile, &endptr, 10);
-	if (endptr == pidfile || pid < 0)
+	if (endptr == pidfile || pid < 0) {
 		return NULL;
-
-	task = debug_attach (pid);
+	}
+	task = pid_to_task (pid);
 	if (task == -1) {
 		return NULL;
 	}
@@ -384,6 +362,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			break;
 		case EINVAL:
 			perror ("ptrace: Cannot attach");
+			eprintf ("Possibly unsigned r2. Please see doc/osx.md\n");
 			eprintf ("ERRNO: %d (EINVAL)\n", errno);
 			break;
 		default:
@@ -396,12 +375,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	riom->pid = pid;
 	riom->task = task;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
-	if (!pid)
-		pidpath = strdup ("kernel");
-	else
-		pidpath = r_sys_pid_to_path (pid);
+	pidpath = pid
+		? r_sys_pid_to_path (pid)
+		: strdup ("kernel");
 	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
-			    pidpath, rw | R_IO_EXEC, mode, riom);
+		pidpath, rw | R_IO_EXEC, mode, riom);
 	free (pidpath);
 	return ret;
 }
@@ -434,7 +412,11 @@ static int __close(RIODesc *fd) {
 }
 
 static int __system(RIO *io, RIODesc *fd, const char *cmd) {
-	RIOMach *riom = (RIOMach*)fd->data;
+	RIOMach *riom;
+	if (!io || !fd || cmd || !fd->data) {
+		return 0;
+	}
+	riom = (RIOMach*)fd->data;
 	/* XXX ugly hack for testing purposes */
 	if (!strncmp (cmd, "perm", 4)) {
 		int perm = r_str_rwx (cmd + 4);
@@ -447,9 +429,9 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		return 0;
 	}
 	if (!strncmp (cmd, "pid", 3)) {
-		const char *pidstr = cmd + 4;
+		const char *pidstr = cmd + 3;
 		int pid = -1;
-		if (!cmd[3]) {
+		if (*pidstr) {
 			int pid = RIOMACH_PID (fd->data);
 			eprintf ("%d\n", pid);
 			return 0;
@@ -457,7 +439,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (!strcmp (pidstr, "0")) {
 			pid = 0;
 		} else {
-			pid = atoi (cmd+4);
+			pid = atoi (pidstr);
 			if (!pid) pid = -1;
 		}
 		if (pid != -1) {
@@ -484,7 +466,7 @@ RIOPlugin r_io_plugin_mach = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,

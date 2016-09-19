@@ -69,7 +69,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			   op->type = R_ANAL_OP_TYPE_CJMP;
 			   op->jump = addr + 2 + off;
 			   op->fail = addr + op->size;
-			   op->eob = 1;
+			   op->eob = true;
 		   } break;
 	case 0x30:
 		  op->type = R_ANAL_OP_TYPE_MOV;
@@ -80,7 +80,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	case 0x4e:
 		if (b[1]==0x75){
 			op->type = R_ANAL_OP_TYPE_RET;
-			op->eob = 1;
+			op->eob = true;
 			break;
 		}
 		if (b[1]==0x71){
@@ -98,7 +98,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 
 			op->jump += off;
 			op->fail = addr + op->size;
-			op->eob = 1;
+			op->eob = true;
 			break;
 		}
 		break;

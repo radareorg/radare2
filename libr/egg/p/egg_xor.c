@@ -21,7 +21,7 @@ static RBuffer *build (REgg *egg) {
 	if (nkey == 0) {
 		eprintf ("Invalid key (%s)\n", key);
 		free (key);
-		return R_FALSE;
+		return false;
 	}
 	if (nkey != (nkey & 0xff)) {
 		nkey &= 0xff;

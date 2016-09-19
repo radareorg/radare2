@@ -75,7 +75,7 @@ R_API void r_list_purge (RList *list) {
 R_API void r_list_free (RList *list) {
 	if (list) {
 		r_list_purge (list);
-		free (list);
+		R_FREE (list);
 	}
 }
 
@@ -267,7 +267,7 @@ R_API int r_list_del_n(RList *list, int n) {
 	int i;
 
 	if (!list)
-		return R_FALSE;
+		return false;
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++)
 		if (i == n) {
 			if (it->p == NULL && it->n == NULL) {
@@ -283,9 +283,9 @@ R_API int r_list_del_n(RList *list, int n) {
 				it->n->p = it->p;
 			}
 			free (it);
-			return R_TRUE;
+			return true;
 		}
-	return R_FALSE;
+	return false;
 }
 
 R_API void *r_list_get_top(const RList *list) {
@@ -321,6 +321,7 @@ R_API RList *r_list_clone (RList *list) {
 
 	if (list) {
 		l = r_list_new ();
+		if (!l) return NULL;
 		l->free = NULL;
 		r_list_foreach (list, iter, data)
 			r_list_append (l, data);
@@ -349,7 +350,8 @@ R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp)
 	if (list && data && cmp) {
 		for (it = list->head; it && it->data && cmp (data, it->data)>0; it = it->n) ;
 		if (it) {
-			new = R_NEW (RListIter);
+			new = R_NEW0 (RListIter);
+			if (!new) return NULL;
 			new->n = it;
 			new->p = it->p;
 			new->data = data;
@@ -372,10 +374,10 @@ R_API int r_list_set_n(RList *list, int n, void *p) {
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
 		if (i == n) {
 			it->data = p;
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void *r_list_get_n(const RList *list, int n) {

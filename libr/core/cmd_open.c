@@ -1,4 +1,9 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include "r_list.h"
+#include "r_config.h"
+#include "r_core.h"
+#include "r_print.h"
+#include "r_bin.h"
 
 
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
@@ -229,7 +234,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		break;
 	}
-	r_core_block_read (core, 0);
+	r_core_block_read (core);
 }
 
 R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
@@ -261,6 +266,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	r_config_set_i (core->config, "cfg.debug", true);
 	newfile = newfile2;
 
+	//XXX: need cmd_debug.h for r_debug_get_baddr
 	ut64 new_baddr = r_debug_get_baddr (core, newfile);
 	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
 	if (old_baddr != new_baddr) {
@@ -280,12 +286,17 @@ static int cmd_open(void *data, const char *input) {
 		"o","","list opened files",
 		"o*","","list opened files in r2 commands",
 		"oa"," [addr]","Open bin info from the given address",
-		"oj","","list opened files in JSON format",
+		"ob","[lbdos] [...]","list open binary files backed by fd",
+		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"oc"," [file]","open core file, like relaunching r2",
-		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
+		"oj","","list opened files in JSON format",
+		"oL","","list all IO plugins registered",
+		"om","[?]","create, list, remove IO maps",
+		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 		"oo","","reopen current file (kill+fork in debugger)",
 		"oo","+","reopen current file in read-write",
 		"ood"," [args]","reopen in debugger mode (with args)",
+		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
 		"o"," 4","priorize io on fd 4 (bring to front)",
 		"o","-1","close file descriptor 1",
 		"o-","*","close all opened files",
@@ -293,10 +304,6 @@ static int cmd_open(void *data, const char *input) {
 		"o"," [file]","open [file] file in read-only",
 		"o","+[file]","open file in read-write mode",
 		"o"," [file] 0x4000","map file at 0x4000",
-		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-		"ob","[lbdos] [...]","list open binary files backed by fd",
-		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
-		"om","[?]","create, list, remove IO maps",
 		NULL
 	};
 	const char* help_msg_oo[] = {
@@ -348,23 +355,52 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_core_file_list (core, (int)(*input));
 		break;
+	case 'L':
+		r_io_plugin_list (core->io);
+		break;
 	case 'a':
 		if ('?' == input[1]) {
 			const char *help_msg[] = {
-				"Usage:", "oa [addr]", " #",
-				"oa", " [addr]", "Open bin info from the given address",NULL
+				"Usage:", "oa [addr] ([filename])", " # load bininfo and update flags",
+				"oa", " [addr]", "Open bin info from the given address",
+				"oa", " [addr] [filename]", "Open file and load bin info at given address",NULL
 			};
 			r_core_cmd_help (core, help_msg);
 			break;
 		}
 		addr = core->offset;
 		if (input[1]) {
-			addr = r_num_math (core->num, input+1);
-		}
-		r_list_foreach (core->files, iter, file) {
-			r_bin_load_io (
-				core->bin, file->desc, //r_core_file_cur (core)->desc, //core->file->desc,
-				addr, 0, 0); //, addr, "membin");
+			char *arg = strdup (input + 2);
+			char *filename = strchr (arg, ' ');
+			if (filename) {
+				RIODesc *desc = r_io_open (core->io, filename + 1, R_IO_READ, 0);
+				if (desc) {
+					*filename = 0;
+					addr = r_num_math (core->num, arg);
+					r_bin_load_io (core->bin, desc, addr, 0, 0);
+					r_io_close (core->io, desc);
+					r_core_cmd0 (core, ".is*");
+				} else {
+					eprintf ("Cannot open %s\n", filename + 1);
+				}
+			} else {
+				addr = r_num_math (core->num, input + 1);
+				RCoreFile *cf = r_core_file_cur (core);
+				if (cf && cf->desc) {
+					r_bin_load_io (core->bin, cf->desc, addr, 0, 0);
+					r_core_cmd0 (core, ".is*");
+				} else {
+					eprintf ("No file to load bin from?\n");
+				}
+			}
+			free (arg);
+		} else {
+			/* reload all bininfo */
+			r_list_foreach (core->files, iter, file) {
+				r_bin_load_io (core->bin, file->desc, addr, 0, 0);
+				r_core_cmd0 (core, ".is*");
+				break;
+			}
 		}
 		//r_bin_load_io_at_offset_as (core->bin, core->file->desc,
 		break;
@@ -400,7 +436,7 @@ static int cmd_open(void *data, const char *input) {
 			num = atoi (ptr? ptr: input+1);
 			addr = 0LL;
 		}
-		if (num<=0) {
+		if (num <= 0) {
 			const char *fn = input+1; //(isn?2:1);
 			if (fn && *fn) {
 				if (isn) fn++;
@@ -428,7 +464,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 		}
-		r_core_block_read (core, 0);
+		r_core_block_read (core);
 		break;
 	case 'b':
 		cmd_open_bin (core, input);
@@ -464,7 +500,7 @@ static int cmd_open(void *data, const char *input) {
 		// hackaround to fix invalid read
 		//r_core_cmd0 (core, "oo");
 		// uninit deref
-		//r_core_block_read (core, 0);
+		//r_core_block_read (core);
 		break;
 	case 'm':
 		cmd_open_map (core, input);

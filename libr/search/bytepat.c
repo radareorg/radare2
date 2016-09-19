@@ -19,6 +19,7 @@ typedef struct _fnditem {
 static fnditem* init_fi() {
 	fnditem* n;
 	n = (fnditem*) malloc (sizeof (fnditem));
+	if (!n) return NULL;
 	n->next = NULL;
 	return n;
 }

@@ -7,5 +7,5 @@ Name: r_debug
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lr_debug -lr_reg -lr_anal -lr_bp -lr_util -lr_io -lr_parse -lr_cons -lr_db
+Libs: -L${libdir} -lr_debug -lr_reg -lr_anal -lr_bp -lr_io -lr_parse -lr_cons -lr_syscall -lr_hash -lr_flags -lr_util -lr_socket
 Cflags: -I${includedir}/libr

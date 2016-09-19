@@ -47,6 +47,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	flen = strlen (format);
 	glen = strlen (buf_global);
 	tmp = malloc (flen + glen + 2);
+	if (!tmp) return 0;
 	memcpy (tmp, buf_global, glen);
 	memcpy (tmp+glen, format, flen);
 	tmp[flen+glen] = 0;
@@ -79,8 +80,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 
 	if (a->big_endian)
-		op->size = print_insn_big_powerpc((bfd_vma)Offset, &disasm_obj);
-	else op->size = print_insn_little_powerpc((bfd_vma)Offset, &disasm_obj);
+		op->size = print_insn_big_powerpc ((bfd_vma)Offset, &disasm_obj);
+	else op->size = print_insn_little_powerpc ((bfd_vma)Offset, &disasm_obj);
 
 	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
@@ -93,10 +94,9 @@ RAsmPlugin r_asm_plugin_ppc_gnu = {
 	.arch = "ppc",
 	.license = "GPL3",
 	.bits = 32 | 64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "PowerPC",
-	.disassemble = &disassemble,
-	.assemble = NULL,
-	0
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

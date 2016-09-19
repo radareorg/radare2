@@ -36,6 +36,34 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_SIZEOF_STRINGS 512
 #define R_BIN_MAX_ARCH 1024
 
+#define R_BIN_REQ_ALL       UT64_MAX
+#define R_BIN_REQ_UNK       0x000000
+#define R_BIN_REQ_ENTRIES   0x000001
+#define R_BIN_REQ_IMPORTS   0x000002
+#define R_BIN_REQ_SYMBOLS   0x000004
+#define R_BIN_REQ_SECTIONS  0x000008
+#define R_BIN_REQ_INFO      0x000010
+#define R_BIN_REQ_OPERATION 0x000020
+#define R_BIN_REQ_HELP      0x000040
+#define R_BIN_REQ_STRINGS   0x000080
+#define R_BIN_REQ_FIELDS    0x000100
+#define R_BIN_REQ_LIBS      0x000200
+#define R_BIN_REQ_SRCLINE   0x000400
+#define R_BIN_REQ_MAIN      0x000800
+#define R_BIN_REQ_EXTRACT   0x001000
+#define R_BIN_REQ_RELOCS    0x002000
+#define R_BIN_REQ_LISTARCHS 0x004000
+#define R_BIN_REQ_CREATE    0x008000
+#define R_BIN_REQ_CLASSES   0x010000
+#define R_BIN_REQ_DWARF     0x020000
+#define R_BIN_REQ_SIZE      0x040000
+#define R_BIN_REQ_PDB       0x080000
+#define R_BIN_REQ_PDB_DWNLD 0x100000
+#define R_BIN_REQ_DLOPEN    0x200000
+#define R_BIN_REQ_EXPORTS   0x400000
+#define R_BIN_REQ_VERSIONINFO 0x800000
+#define R_BIN_REQ_PACKAGE     0x1000000
+
 enum {
 	R_BIN_SYM_ENTRY,
 	R_BIN_SYM_INIT,
@@ -76,6 +104,7 @@ typedef struct r_bin_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
 	int type;
+	int bits;
 } RBinAddr;
 
 typedef struct r_bin_hash_t {
@@ -130,7 +159,7 @@ typedef struct r_bin_object_t {
 	ut64 baddr_shift;
 	ut64 loadaddr;
 	ut64 boffset;
-	int size;
+	ut64 size;
 	ut64 obj_size;
 	RList/*<RBinSection>*/ *sections;
 	RList/*<RBinImport>*/ *imports;
@@ -171,6 +200,7 @@ typedef struct r_bin_file_t {
 	struct r_bin_xtr_plugin_t *curxtr;
 	struct r_bin_plugin_t *curplugin;
 	RList *objs;
+	RList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
@@ -201,20 +231,30 @@ typedef struct r_bin_t {
 	int strpurge; // purge false positive strings
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
+	ut64 filter_rules;
+	bool demanglercmd;
 } RBin;
+
+typedef struct r_bin_xtr_metadata_t {
+	char *arch;
+	int bits;
+	char *libname;
+	char *machine;
+	char *type;
+} RBinXtrMetadata;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
 typedef struct r_bin_xtr_extract_t {
 	char *file;
-	RBuffer *buf;
+	Sdb *sdb;
 	ut64 size;
 	ut64 offset;
 	int file_count;
-	void *xtr_obj;
-	FREE_XTR free_xtr;
+	int loaded;
+	RBinXtrMetadata *metadata;
 } RBinXtrData;
 
-R_API RBinXtrData * r_bin_xtrdata_new (void *xtr_obj, FREE_XTR free_xtr, RBuffer *buf, ut64 offset, ut64 size, ut32 file_count);
+R_API RBinXtrData * r_bin_xtrdata_new (RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata, Sdb *sdb);
 R_API void r_bin_xtrdata_free (void /*RBinXtrData*/ *data);
 R_API void r_bin_info_free (RBinInfo *rb);
 R_API void r_bin_import_free(void *_imp);
@@ -250,26 +290,27 @@ typedef struct r_bin_plugin_t {
 	Sdb * (*get_sdb)(RBinObject *obj);
 	int (*load)(RBinFile *arch);
 	void *(*load_bytes)(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
-	int (*size)(RBinFile *bin); // return ut64 maybe? meh
+	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	int (*destroy)(RBinFile *arch);
 	int (*check)(RBinFile *arch);
 	int (*check_bytes)(const ut8 *buf, ut64 length);
 	ut64 (*baddr)(RBinFile *arch);
 	ut64 (*boffset)(RBinFile *arch);
 	RBinAddr* (*binsym)(RBinFile *arch, int num);
-	RList* (*entries)(RBinFile *arch);
-	RList* (*sections)(RBinFile *arch);
-	RList* (*lines)(RBinFile *arch);
-	RList* (*symbols)(RBinFile *arch);
-	RList* (*imports)(RBinFile *arch);
-	RList* (*strings)(RBinFile *arch);
-	RBinInfo* (*info)(RBinFile *arch);
-	RList* (*fields)(RBinFile *arch);
-	RList* (*libs)(RBinFile *arch);
-	RList* (*relocs)(RBinFile *arch);
-	RList* (*classes)(RBinFile *arch);
-	RList* (*mem)(RBinFile *arch);
-	RList* (*patch_relocs)(RBin *bin);
+	RList/*<RBinAddr>*/* (*entries)(RBinFile *arch);
+	RList/*<RBinSection>*/* (*sections)(RBinFile *arch);
+	RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *arch);
+	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *arch);
+	RList/*<RBinImport>*/* (*imports)(RBinFile *arch);
+	RList/*<RBinString>*/* (*strings)(RBinFile *arch);
+	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *arch);
+	RList/*<RBinField>*/* (*fields)(RBinFile *arch);
+	RList/*<char *>*/* (*libs)(RBinFile *arch);
+	RList/*<RBinReloc>*/* (*relocs)(RBinFile *arch);
+	RList/*<RBinClass>*/* (*classes)(RBinFile *arch);
+	RList/*<RBinMem>*/* (*mem)(RBinFile *arch);
+	RList/*<RBinReloc>*/* (*patch_relocs)(RBin *bin);
+	char* (*signature)(RBinFile *arch);
 	int (*demangle_type)(const char *str);
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
@@ -300,6 +341,7 @@ typedef struct r_bin_section_t {
 
 typedef struct r_bin_class_t {
 	char *name;
+	// TODO: char *module;
 	char *super;
 	char *visibility_str;
 	int index;
@@ -418,6 +460,7 @@ typedef struct r_bin_bind_t {
 #define r_bin_class_free(x) { free(x->name);free(x->super);free (x); }
 
 /* bin.c */
+R_API void r_bin_load_filter(RBin *bin, ut64 rules);
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
 R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr);
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr, int fileoffset, const char *name);
@@ -454,7 +497,7 @@ R_API int r_bin_demangle_type (const char *str);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(const char *str);
 R_API char *r_bin_demangle_msvc(const char *str);
-R_API char *r_bin_demangle_swift(const char *s);
+R_API char *r_bin_demangle_swift(const char *s, bool syscmd);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
 R_API bool r_bin_lang_objc(RBinFile *binfile);
@@ -485,17 +528,19 @@ R_API RList* r_bin_get_strings(RBin *bin);
 R_API int r_bin_is_string(RBin *bin, ut64 va);
 R_API RList* r_bin_reset_strings(RBin *bin);
 R_API RList* r_bin_get_symbols(RBin *bin);
-R_API int r_bin_is_big_endian (RBin *bin);
-R_API int r_bin_is_stripped (RBin *bin);
-R_API int r_bin_is_static (RBin *bin);
-R_API int r_bin_has_dbg_linenums (RBin *bin);
-R_API int r_bin_has_dbg_syms (RBin *bin);
-R_API int r_bin_has_dbg_relocs (RBin *bin);
+R_API RBinSymbol *r_bin_get_symbol_at_vaddr(RBin *bin, ut64 addr);
+R_API RBinSymbol *r_bin_get_symbol_at_paddr(RBin *bin, ut64 addr);
+R_API int r_bin_is_big_endian(RBin *bin);
+R_API int r_bin_is_stripped(RBin *bin);
+R_API int r_bin_is_static(RBin *bin);
+R_API int r_bin_has_dbg_linenums(RBin *bin);
+R_API int r_bin_has_dbg_syms(RBin *bin);
+R_API int r_bin_has_dbg_relocs(RBin *bin);
 R_API RBin* r_bin_new(void);
 R_API void r_bin_iobind(RBin *bin, RIO *io);
-R_API RBinFile * r_bin_cur (RBin *bin);
-R_API RBinObject * r_bin_cur_object (RBin *bin);
-R_API int r_bin_file_set_cur_binfile_obj (RBin * bin, RBinFile *bf, RBinObject *obj);
+R_API RBinFile * r_bin_cur(RBin *bin);
+R_API RBinObject * r_bin_cur_object(RBin *bin);
+R_API int r_bin_file_set_cur_binfile_obj(RBin * bin, RBinFile *bf, RBinObject *obj);
 R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int dummy);
 
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
@@ -508,6 +553,7 @@ R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char
 R_API void r_bin_list_archs(RBin *bin, int mode);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
+R_API RBuffer *r_bin_package (RBin *bin, const char *type, const char *file, RList *files);
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 paddr, ut64 vaddr);
 R_API ut64 r_bin_a2b (RBin *bin, ut64 addr);
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);
@@ -523,7 +569,7 @@ R_API void r_bin_force_plugin (RBin *bin, const char *pname);
 
 /* dbginfo.c */
 R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line);
-R_API char *r_bin_addr2text(RBin *bin, ut64 addr);
+R_API char *r_bin_addr2text(RBin *bin, ut64 addr, bool origin);
 R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
 /* bin_write.c */
 R_API bool r_bin_wr_addlib(RBin *bin, const char *lib);
@@ -591,6 +637,7 @@ extern RBinPlugin r_bin_plugin_psxexe;
 extern RBinPlugin r_bin_plugin_spc700;
 extern RBinPlugin r_bin_plugin_vsf;
 extern RBinPlugin r_bin_plugin_dyldcache;
+extern RBinPlugin r_bin_plugin_avr;
 
 #ifdef __cplusplus
 }

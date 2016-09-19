@@ -8,7 +8,7 @@
 	accessed, or a register. Those esil conditionals must be evaluated
 	every iteration to ensure the register values are updated. Think
 	in DebugESIL as software-watchpoints.
-	
+
 	[read|write|exec]-[reg|mem] [expression]
 
 	de rw reg eax
@@ -16,7 +16,7 @@
 
 	# expression can be a number or a range (if .. is found)
 	# The <=, >=, ==, <, > comparisons are also supported
-	
+
 #endif
 
 typedef struct {
@@ -36,6 +36,7 @@ RList *esil_watchpoints = NULL;
 
 static int exprmatch (RDebug *dbg, ut64 addr, const char *expr) {
 	char *e = strdup (expr);
+	if (!e) return 0;
 	char *p = strstr (e, "..");
 	ut64 a,b;
 	int ret = 0;
@@ -45,10 +46,10 @@ static int exprmatch (RDebug *dbg, ut64 addr, const char *expr) {
 		a = r_num_math (dbg->num, e);
 		b = r_num_math (dbg->num, p);
 		if (a<b) {
-			if (addr >=a && addr <= b) 
+			if (addr >=a && addr <= b)
 				ret = 1;
 		} else {
-			if (addr >=b && addr <= a) 
+			if (addr >=b && addr <= a)
 				ret = 1;
 		}
 	} else {
@@ -141,10 +142,11 @@ static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
 	int ret = 0;
 	char *p;
 	char *s = strdup (expr);
+	if (!s) return 0;
 	if (!strcmp (regname, s)) {
 		ret = 1;
 	} else {
-#define CURVAL 0){}r_str_trim(s);if (!strcmp(regname,s) && regval
+#define CURVAL 0){}r_str_trim_head_tail (s);if (!strcmp(regname,s) && regval
 		ut64 regval = r_debug_reg_get_err (dbg, regname, NULL);
 		if (exprtoken (dbg, s, ">=", &p)) {
 			if (CURVAL >= r_num_math (dbg->num, p))
@@ -162,7 +164,7 @@ static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
 			if (CURVAL > r_num_math (dbg->num, p))
 				ret = 1;
 		} else if (exprtoken (dbg, s, " ", &p)) {
-			r_str_trim (s);
+			r_str_trim_head_tail (s);
 			if (!strcmp (regname, s)) {
 				ut64 num = r_num_math (dbg->num, p);
 				ret = exprmatch (dbg, num, s);
@@ -208,13 +210,13 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 	int ret = 1;
 	dbg = d;
 	if (!ESIL) {
-		ESIL = r_anal_esil_new (32, R_TRUE);
+		ESIL = r_anal_esil_new (32, true);
 		// TODO setup something?
 	}
 	if (!ESIL)
 		return 0;
 
-	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	opc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, opc, obuf, sizeof (obuf));
 
@@ -233,7 +235,7 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 			eprintf ("Step failed\n");
 			return 0;
 		}
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 		//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	}
 
@@ -256,7 +258,7 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 				eprintf ("Step failed\n");
 				return 0;
 			}
-			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
+			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 			//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		}
 	}
@@ -303,9 +305,14 @@ R_API int r_debug_esil_watch_empty(RDebug *dbg) {
 R_API void r_debug_esil_watch(RDebug *dbg, int rwx, int dev, const char *expr) {
 	if (!EWPS) {
 		EWPS = r_list_new ();
+		if (!EWPS) return;
 		EWPS->free = (RListFree)ewps_free;
 	}
 	EsilBreak *ew = R_NEW0 (EsilBreak);
+	if (!ew) {
+		R_FREE (EWPS);
+		return;
+	}
 	ew->rwx = rwx;
 	ew->dev = dev;
 	ew->expr = strdup (expr);

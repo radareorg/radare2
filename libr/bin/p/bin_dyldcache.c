@@ -71,7 +71,7 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 #if 0
-static int size(RBinFile *arch) {
+static ut64 size(RBinFile *arch) {
 	ut64 text, data, syms, spsz;
 	int big_endian;
 	if (!arch->o->info)

@@ -28,7 +28,7 @@ code, debugging programs, attaching to remote gdb servers, ..
    radare2 is portable.
 
    * **Architectures:**
-	* 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, csr,
+        * 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, xap,
    dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, msil,
    msp430, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810,
    x86-64, zimg, risc-v.
@@ -75,6 +75,22 @@ version or remove all previous installations:
     $ make uninstall
     $ make purge
 
+# Package manager
+
+Radare2 has its own package manager - r2pm. It's packages 
+repository is on [GitHub too](https://github.com/radare/radare2-pm).
+To start to use it for the first time you need to initialize packages:
+
+    $ r2pm init
+
+And to refresh packages before installation/updating a new one:
+
+    $ r2pm refresh
+
+To install/update package use the command
+
+    $ r2pm install [package name]
+
 # Bindings
 
 All language bindings are under the r2-bindings directory.
@@ -86,7 +102,7 @@ to swig interfaces, nodejs-ffi or other and then compiled.
 
 The easiest way to install the python bindings is to run:
 
-    $ sys/python.sh
+    $ r2pm install python
 
 In addition there are `r2pipe` bindings, which are an API
 interface to interact with the prompt, passing commands

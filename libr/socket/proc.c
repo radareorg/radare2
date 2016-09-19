@@ -57,7 +57,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 		perror ("fork");
 		r_socket_proc_close (sp);
 		goto error;
-		//r_socket_block_time (sp, R_FALSE, 0);
+		//r_socket_block_time (sp, false, 0);
 	}
 	return sp;
 error:
@@ -85,21 +85,21 @@ R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 
 R_API int r_socket_proc_read (RSocketProc *sp, unsigned char *buf, int len) {
 	RSocket s;
-	s.is_ssl = R_FALSE;
+	s.is_ssl = false;
 	s.fd = sp->fd1[0];
 	return r_socket_read (&s, buf, len);
 }
 
 R_API int r_socket_proc_gets (RSocketProc *sp, char *buf, int size) {
 	RSocket s;
-	s.is_ssl = R_FALSE;
+	s.is_ssl = false;
 	s.fd = sp->fd1[0];
 	return r_socket_gets (&s, buf, size);
 }
 
 R_API int r_socket_proc_write (RSocketProc *sp, void *buf, int len) {
 	RSocket s;
-	s.is_ssl = R_FALSE;
+	s.is_ssl = false;
 	s.fd = sp->fd0[1];
 	return r_socket_write (&s, buf, len);
 }
@@ -108,7 +108,7 @@ R_API void r_socket_proc_printf (RSocketProc *sp, const char *fmt, ...) {
 	RSocket s;
 	char buf[BUFFER_SIZE];
 	va_list ap;
-	s.is_ssl = R_FALSE;
+	s.is_ssl = false;
 	s.fd = sp->fd0[1];
 	if (s.fd >= 0) {
 		va_start (ap, fmt);
@@ -120,7 +120,7 @@ R_API void r_socket_proc_printf (RSocketProc *sp, const char *fmt, ...) {
 
 R_API int r_socket_proc_ready (RSocketProc *sp, int secs, int usecs) {
 	RSocket s;
-	s.is_ssl = R_FALSE;
+	s.is_ssl = false;
 	s.fd = sp->fd1[0];
 	return r_socket_ready (&s, secs, usecs);
 }

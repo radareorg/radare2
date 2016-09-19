@@ -95,7 +95,7 @@ May the segfault be with you.
 I script in C, because I can.
 EXPLICIT CONTENT
 Bindings are mostly powered by tears.
-In Soviet Russia, radare2 have documentation.
+In Soviet Russia, radare2 has documentation.
 Initial frame selected; you cannot go up.
 Unk, unk, unk, unk
 Experts agree, security holes suck, and we fixed some of them!
@@ -154,7 +154,7 @@ phrack, better than java in the browser -- jvoisin
 Did you know that radare2 can decompile to assembly?
 Are you still there?
 Follow the white rabbit
-Do not try to sploit that binary - that's impossible. Instead, only try to realize the truth: the is no binary.
+Do not try to sploit that binary - that's impossible. Instead, only try to realize the truth: there is no binary.
 Hello Mr. Anderson
 try pressing the pigeon-shaped button
 What has been executed cannot be unexecuted
@@ -184,3 +184,12 @@ Mind that the 'g' in radare is silent
 256 colors ought to be enough for anybody
 Hang in there, Baby!
 Run a command with unspecified long sequence of 'a', pancake will be summoned and do the analysis for you.
+In r2land usability is treated as a bug
+radare2 is WYSIWYF - what you see is what you fix
+Your endian swaps
+*(ut64*)buffer ought to be illegal
+How about Global Thermonuclear War?
+There is no F5 key in radare2 yet
+Did you know that r2 is 10 years old?
+Beer in mind.
+r2 -- leading options since 2006

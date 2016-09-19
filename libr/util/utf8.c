@@ -192,9 +192,10 @@ static const int nonprintable_ranges_count = sizeof (nonprintable_ranges) / size
 
 /* Convert an UTF-8 buf into a unicode RRune */
 R_API int r_utf8_decode (const ut8 *ptr, int ptrlen, RRune *ch) {
-	if (ptrlen<1)
+	if (ptrlen < 1) {
 		return 0;
-	if (ptrlen>0 && ptr[0] < 0x80) {
+	}
+	if (ptrlen > 0 && ptr[0] < 0x80) {
 		if (ch) *ch = (ut32)ptr[0];
 		return 1;
 	} else if (ptrlen>1 && (ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
@@ -277,20 +278,24 @@ R_API int r_utf8_strlen (const ut8 *str) {
 }
 
 R_API int r_isprint (const RRune c) {
+	const int last = nonprintable_ranges_count;
 	int low, hi, mid;
 
 	low = 0;
-	hi = nonprintable_ranges_count - 1;
+	hi = last - 1;
 
 	do {
 		mid = (low + hi) >> 1;
-		if (c >= nonprintable_ranges[mid].from && c <= nonprintable_ranges[mid].to)
-			return R_FALSE;
-		if (c > nonprintable_ranges[mid].to)
+		if (c >= nonprintable_ranges[mid].from && c <= nonprintable_ranges[mid].to) {
+			return false;
+		}
+		if (mid < last && c > nonprintable_ranges[mid].to) {
 			low = mid + 1;
-		if (c < nonprintable_ranges[mid].from)
+		}
+		if (mid < last && c < nonprintable_ranges[mid].from) {
 			hi = mid - 1;
+		}
 	} while (low <= hi);
 
-	return R_TRUE;
+	return true;
 }

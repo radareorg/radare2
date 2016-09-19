@@ -1,4 +1,4 @@
-/* radare - Copyright 2008-2014 - LGPL -- pancake */
+/* radare - Copyright 2008-2016 - LGPL -- pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,6 +11,7 @@
 R_LIB_VERSION (r_syscall);
 
 extern RSyscallPort sysport_x86[];
+extern RSyscallPort sysport_avr[];
 
 R_API RSyscall* r_syscall_new() {
 	RSyscall *rs = R_NEW0 (RSyscall);
@@ -45,16 +46,19 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 	free (s->os);
 	s->os = strdup (os);
 
-	if (!strcmp (os, "any")) // ignored
+	if (!strcmp (os, "any")) { // ignored
 		return true;
-
-	if (!strcmp (arch, "mips"))
+	}
+	if (!strcmp (arch, "mips")) {
 		s->regs = fastcall_mips;
-	else if (!strcmp (arch,"sh"))
+	} else if (!strcmp (arch,"avr")) {
+		s->sysport = sysport_avr;
+	} else if (!strcmp (arch,"sh")) {
 		s->regs = fastcall_sh;
-	else if (!strcmp (arch, "arm"))
+	} else if (!strcmp (arch, "arm")) {
 		s->regs = fastcall_arm;
-	else if (!strcmp (arch, "x86")) {
+	} else if (!strcmp (arch, "x86")) {
+		s->sysport = sysport_x86;
 		switch (bits) {
 		case 8:
 			s->regs = fastcall_x86_8;
@@ -73,7 +77,7 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 		SYSCALLPATH, os, arch, bits);
 	if (!r_file_exists (file)) {
 		//eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
-		return R_FALSE;
+		return false;
 	}
 
 	//eprintf ("DBG098: syscall->db must be reindexed for k\n");
@@ -110,6 +114,7 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	char *o;
 	if (!name || !s) return NULL;
 	si = R_NEW0 (RSyscallItem);
+	if (!si) return NULL;
 	o = strdup (s);
 	r_str_split (o, ',');
 	si->name = strdup (name);
@@ -170,20 +175,11 @@ R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
 	return sdb_const_get (s->db, foo, 0);
 }
 
-R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
-	int i;
-	if (!s) return NULL;
-	for (i=0; s->sysport[i].name; i++) {
-		if (ioport == s->sysport[i].port)
-			return s->sysport[i].name;
-	}
-	return NULL;
-}
-
 static int callback_list(void *u, const char *k, const char *v) {
 	RList *list = (RList*)u;
 	if (!strchr (k, '.')) {
 		RSyscallItem *si = r_syscall_item_new_from_string (k, v);
+		if (!si) return 0;
 		if (!strchr (si->name, '.'))
 			r_list_append (list, si);
 	}
@@ -199,3 +195,15 @@ R_API RList *r_syscall_list(RSyscall *s) {
 	sdb_foreach (s->db, callback_list, list);
 	return list;
 }
+
+/* io */
+R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
+	int i;
+	if (!s) return NULL;
+	for (i=0; s->sysport[i].name; i++) {
+		if (ioport == s->sysport[i].port)
+			return s->sysport[i].name;
+	}
+	return NULL;
+}
+

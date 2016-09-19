@@ -5,4 +5,5 @@ ALL_TARGETS+=${TARGET_DALVIKPSEUDO}
 STATIC_OBJ+=${OBJ_DALVIKPSEUDO}
 
 ${TARGET_DALVIKPSEUDO}: ${OBJ_DALVIKPSEUDO}
-	${CC} $(call libname,parse_dalvik_pseudo) -L../../util -lr_util -shared ${CFLAGS} -o ${TARGET_DALVIKPSEUDO} ${OBJ_DALVIKPSEUDO}
+	${CC} $(call libname,parse_dalvik_pseudo) -L../../util -lr_util \
+	$(LDFLAGS_SHARED) ${CFLAGS} -o ${TARGET_DALVIKPSEUDO} ${OBJ_DALVIKPSEUDO}

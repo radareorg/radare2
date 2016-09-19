@@ -29,37 +29,41 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 				return false;
 			}
 		} else {
-			//int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
+			// int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
-			if (bufsize>0) {
+			//int bufsize = dbg->reg->regset[i].arena->size;
+			if (bufsize > 0) {
 				ut8 *buf = calloc (1, bufsize);
-				if (!buf) return false;
+				if (!buf) {
+					return false;
+				}
 				//we have already checked dbg->h and dbg->h->reg_read above
 				size = dbg->h->reg_read (dbg, i, buf, bufsize);
 				// we need to check against zero because reg_read can return false
-				if (!size) {
-					eprintf ("r_debug_reg: error reading registers\n");
-					free (buf);
-					return false;
-				} else r_reg_set_bytes (dbg->reg, i, buf, R_MIN (size, bufsize));
+				if (size > 0) {
+					r_reg_set_bytes (dbg->reg, i, buf, R_MIN (size, bufsize));
+			//		free (buf);
+			//		return true;
+				}
 				free (buf);
 			}
 		}
 		// DO NOT BREAK R_REG_TYPE_ALL PLEASE
 		//   break;
 		// Continue the syncronization or just stop if it was asked only for a single type of regs
-	} while ((type == R_REG_TYPE_ALL) && (i++ < R_REG_TYPE_LAST));
+		i++;
+	} while ((type == R_REG_TYPE_ALL) && (i < R_REG_TYPE_LAST));
 	return true;
 }
 
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color) {
 	int i, delta, from, to, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
+	RPrint *pr = NULL;
 	int colwidth = 20;
 	RListIter *iter;
 	RRegItem *item;
 	RList *head;
-	RPrint *pr = NULL;
 	ut64 diff;
 
 	if (!dbg || !dbg->reg) {
@@ -90,25 +94,33 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->regcols) {
 		cols = dbg->regcols;
 	}
-	if (rad == 'j')
+	if (rad == 'j') {
 		dbg->cb_printf ("{");
+	}
 	if (type == -1) {
 		from = 0;
 		to = R_REG_TYPE_LAST;
 	} else {
 		from = type;
-		to = from +1;
+		to = from + 1;
 	}
 
-	bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
+	to = R_MAX (to, R_REG_TYPE_FLG + 1);
+
 	int itmidx = -1;
 	dbg->creg = NULL;
 	for (i = from; i < to; i++) {
 		head = r_reg_get_list (dbg->reg, i);
-		if (!head) continue;
+		if (!head) {
+			continue;
+		}
 		r_list_foreach (head, iter, item) {
 			ut64 value;
+#if 0
+			bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
 
+			/* the thumb flag in the cpsr register shouldnt forbid us to switch between arm or thumb */
+			/* this code must run only after a step maybe ... need some discussion, disabling for now */
 			if (is_arm && (rad == 1 || rad == '*') && item->size == 1) {
 				if (!strcmp (item->name, "tf")) {
 					bool is_thumb = r_reg_get_value (dbg->reg, item);
@@ -118,9 +130,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				}
 				continue;
 			}
-
+#endif
 			if (type != -1) {
-				if (type != item->type) continue;
+				if (type != item->type && R_REG_TYPE_FLG != item->type) continue;
 				if (size != 0 && size != item->size) continue;
 			}
 			value = r_reg_get_value (dbg->reg, item);
@@ -146,7 +158,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			case 'd':
 			case 2:
 				{
-					int len, highlight = use_color && pr->cur_enabled && itmidx == pr->cur;
+					int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
 					char *str, whites[32], content[128];
 					const char *a = "", *b = "";
 					if (highlight) {
@@ -204,23 +216,27 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			n++;
 		}
 	}
-	if (rad == 'j') dbg->cb_printf ("}\n");
-	else if (n > 0 && rad == 2 && ((n%cols)))
+	if (rad == 'j') {
+		dbg->cb_printf ("}\n");
+	} else if (n > 0 && rad == 2 && ((n%cols))) {
 		dbg->cb_printf ("\n");
+	}
 	return n;
 }
 
 R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
 	RRegItem *ri;
 	int role = r_reg_get_name_idx (name);
-	if (!dbg || !dbg->reg)
+	if (!dbg || !dbg->reg) {
 		return false;
-	if (role != -1)
+	}
+	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
-	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);
+	}
+	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
 		r_reg_set_value (dbg->reg, ri, num);
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
+		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
 	}
 	return (ri != NULL);
 }
@@ -248,9 +264,9 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err) {
 			return UT64_MAX;
 		}
 	}
-	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_GPR);
+	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
 		ret = r_reg_get_value (dbg->reg, ri);
 	}
 	return ret;

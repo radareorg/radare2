@@ -1,5 +1,13 @@
 /* radare2 - LGPL - Copyright 2009-2016 - pancake */
 
+#include "r_anal.h"
+#include "r_bin.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_print.h"
+#include "r_types.h"
+#include "sdb/sdb.h"
+
 static int remove_meta_offset(RCore *core, ut64 offset) {
 	char aoffset[64];
 	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
@@ -254,7 +262,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			  char *comment = r_meta_get_string (
 					  core->anal, R_META_TYPE_COMMENT, addr);
 			  if (comment) {
-				  r_cons_printf ("%s\n", comment);
+				  r_cons_println (comment);
 				  free (comment);
 			  }
 		  }
@@ -284,12 +292,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case '+':
 	case ' ':
 		{
-		const char* newcomment = input+2;
-		char *text, *nc;
-		while (*newcomment==' ') newcomment++;
-		char *comment = r_meta_get_string (
-				core->anal, R_META_TYPE_COMMENT, addr);
-		nc = strdup (newcomment);
+		const char* newcomment = r_str_chop_ro (input + 2);
+		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
 		if (comment) {
 			text = malloc (strlen (comment)+strlen (newcomment)+2);
@@ -299,7 +304,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
 				free (text);
-			} else perror ("malloc");
+			} else {
+				r_sys_perror ("malloc");
+			}
 		} else {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
 		}
@@ -371,7 +378,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 						core->anal, R_META_TYPE_COMMENT,
 						addr);
 				if (comment) {
-					char* text = r_str_newf("%s\n%s", comment, p);
+					char* text = r_str_newf ("%s\n%s", comment, p);
 					r_meta_add (core->anal,
 							R_META_TYPE_COMMENT,
 							addr, addr+1, text);
@@ -395,7 +402,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_meta_hsdmf (RCore *core, const char *input) {
+static int cmd_meta_hsdmf(RCore *core, const char *input) {
 	int n, type = input[0];
 	char *t = 0, *p, name[256];
 	int repeat = 1;
@@ -432,8 +439,7 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
-				r_meta_set_string (core->anal,
-						R_META_TYPE_COMMENT, addr, out);
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
 			free (comment);
@@ -441,23 +447,24 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 		break;
 	case ' ':
 	case '\0':
-		if (type!='z' && !input[1]) {
+		if (type!='z' && input[1] == '*') {
 			r_meta_list (core->anal, type, 0);
 			break;
 		}
-		if (type == 'z')
+		if (type == 'z') {
 			type = 's';
+		}
 		if (strlen (input) > 2) {
 			char *rep = strchr (input + 2, '[');
 			if (!rep) rep = strchr (input + 2, ' ');
 			if (rep) {
-				repeat = r_num_get (core->num, rep+1);
+				repeat = r_num_get (core->num, rep + 1);
 			}
 		}
 		int repcnt = 0;
 		if (repeat < 1) repeat = 1;
 		while (repcnt < repeat) {
-			t = strdup (input+2);
+			t = strdup (r_str_chop_ro (input + 1));
 			p = NULL;
 			n = 0;
 			strncpy (name, t, sizeof (name) - 1);
@@ -467,54 +474,35 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 					p = strchr (t, ' ');
 					if (p) {
 						n = r_print_format (core->print, addr, core->block,
-								core->blocksize, p+1, 0, NULL, NULL);
+							core->blocksize, p + 1, 0, NULL, NULL);
 					}
 				}
 				if (type == 's') {
-					/* This is kept for compatibility with old projects.
-					 * Somewhat broken, but project will get corrected on
-					 * save and reload.
-					 */
-					p = strchr (t, ' ');
-					if (p) addr = r_num_math (core->num, p + 1);
-					if (!addr) {
-						addr = 128;
+					strncpy (name, t, sizeof (name) - 1);
+					(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
+					name[sizeof (name) - 1] = '\0';
+					int name_len = strlen (name);
+					if (n == 0) {
+						n = name_len + 1;
+					} else {
+						if (n > 0 && n < name_len) {
+							name[n] = 0;
+						}
 					}
-					free (t);
-					t = strdup ("");
-					n = 250;
 				}
 				if (!*t || n > 0) {
 					RFlagItem *fi;
 					p = strchr (t, ' ');
 					if (p) {
 						*p = '\0';
-						strncpy (name, p+1, sizeof (name)-1);
+						strncpy (name, p + 1, sizeof (name)-1);
 					} else {
-						switch (type) {
-						case 'z':
-							type = 's';
-							/* fallthrough */
-						case 's':
-							// TODO: filter \n and so on :)
-							strncpy (name, t, sizeof (name)-1);
-							name[sizeof (name)-1] = '\0';
-							(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
-							name[sizeof (name)-1] = '\0';
-							n = strlen (name) + 1;
-							//eprintf ("NAME (%s) %d\n", name, rc);
-#if 0
-							if (n < sizeof (name)) {
-								name[n] = '\0';
-							} else name[sizeof (name)-1] = '\0';
-#endif
-							break;
-						default:
+						if (type != 's') {
 							fi = r_flag_get_i (core->flags, addr);
 							if (fi) strncpy (name, fi->name, sizeof (name)-1);
 						}
 					}
-				} else if (n<1) {
+				} else if (n < 1) {
 					eprintf ("Invalid length %d\n", n);
 					return false;
 				}
@@ -535,6 +523,180 @@ static int cmd_meta_hsdmf (RCore *core, const char *input) {
 
 	return true;
 }
+void r_comment_var_help(RCore *core, char type) {
+	const char *help_bp[] = {
+		"Usage:", "Cvb", "[name] [comment]",
+		"Cvb?", "", "show this help",
+		"Cvb", "", "list all base pointer args/vars comments in human friendly format",
+		"Cvb*", "", "list all base pointer args/vars comments in r2 format",
+		"Cvb-", "[name]", "delete comments for var/arg at current offset for base pointer",
+		"Cvb", " [name]", "Show comments for var/arg at current offset for base pointer",
+		"Cvb", " [name] [comment]", "add/append comment for the variable with the current name",
+		"Cvb!", "[name]", "edit comment using cfg editor",
+		NULL
+	};
+	const char *help_sp[] = {
+		"Usage:", "Cvs", "[name] [comment]",
+		"Cvs?", "", "show this help",
+		"Cvs", "", "list all stack based args/vars comments in human friendly format",
+		"Cvs*", "", "list all stack based args/vars comments in r2 format",
+		"Cvs-", "[name]", "delete comments for stack pointer var/arg with that name",
+		"Cvs", "[name]", "Show comments for stack pointer var/arg with that name",
+		"Cvs", "[name] [comment]", "add/append comment for the variable",
+		"Cvs!", "[name]", "edit comment using cfg editor",
+		NULL
+	};
+	const char *help_reg[] = {
+		"Usage:", "Cvr", "[name] [comment]",
+		"Cvr?", "", "show this help",
+		"Cvr", "", "list all register based args comments in human friendly format",
+		"Cvr*", "", "list all register based args comments in r2 format",
+		"Cvr-", "[name]", "delete comments for register based arg for that name",
+		"Cvr", "[name]", "Show comments for register based arg for that name",
+		"Cvr", "[name] [comment]", "add/append comment for the variable",
+		"Cvr!", "[name]", "edit comment using cfg editor",
+		NULL
+	};
+
+	switch (type) {
+	case 'b':
+		r_core_cmd_help (core, help_bp);
+		break;
+	case 's':
+		r_core_cmd_help (core, help_sp);
+		break;
+	case 'r':
+		r_core_cmd_help (core, help_reg);
+		break;
+	default:
+		r_cons_printf("See Cvb, Cvs and Cvr\n");
+	}
+}
+void r_comment_vars(RCore *core, const char *input) {
+	//TODO enable base64 and make it the default for C*
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	int idx;
+	char *oname = NULL, *name = NULL;
+	char *oldcomment = NULL;
+	char *heap_comment = NULL;
+	RAnalVar *var;
+
+	if (input[1] == '?' || (input[0] != 'b' && input[0] != 'r' && input[0] != 's') ) {
+		r_comment_var_help (core, input[0]);
+		return;
+	}
+	if (!fcn) {
+		eprintf ("Cant find function here\n");
+		return;
+	}
+	oname = name = strdup (input + 2);
+	while (*name == ' ') {
+		name++;
+	}
+	switch (input[1]) {
+	case '*':
+	case '\0': {
+		RList *var_list;
+		RListIter *iter;
+		var_list = r_anal_var_list (core->anal, fcn, input[0]);
+		r_list_foreach (var_list, iter, var) {
+			oldcomment = r_meta_get_var_comment (core->anal, input[0], var->delta, fcn->addr);
+			if (!oldcomment) {
+				continue;
+			}
+			if (!input[1]) {
+				r_cons_printf ("%s : %s\n", var->name, oldcomment);
+			} else {
+				r_cons_printf ("\"Cv%c %s base64:%s @ 0x%08"PFMT64x"\"\n", input[0], var->name,
+					sdb_encode ((const ut8 *) oldcomment, strlen(oldcomment)), fcn->addr);
+			}
+		}
+		}
+		break;
+	case ' ': {
+		// TODO check that idx exist
+		char *comment = strstr (name, " ");
+		if (comment) { // new comment given
+			if (*comment) {
+				*comment++ = 0;
+			}
+			if (!strncmp (comment, "base64:", 7)) {
+				heap_comment = (char *)sdb_decode (comment + 7, NULL);
+				comment = heap_comment;
+			}
+		}
+		var = r_anal_var_get_byname (core->anal, fcn, name);
+		if (var) {
+			idx = var->delta;
+		} else if (!strncmp (name, "0x", 2))  {
+			idx = (int) r_num_get (NULL, name);
+		} else if (!strncmp (name, "-0x", 3)) {
+			idx = -(int) r_num_get (NULL, name+1);
+		} else {
+			eprintf ("cant find variable named `%s`\n",name);
+			free (heap_comment);
+			break;
+		}
+		r_anal_var_free (var);
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0], 1, idx)) {
+			eprintf ("cant find variable at given offset\n");
+		} else {
+			oldcomment = r_meta_get_var_comment (core->anal, input[0], idx, fcn->addr);
+			if (oldcomment) {
+				if (comment && *comment) {
+					char *text = r_str_newf ("%s\n%s", oldcomment, comment);
+					r_meta_set_var_comment (core->anal, input[0], idx, fcn->addr, text);
+					free (text);
+				} else {
+					r_cons_println (oldcomment);
+				}
+			} else {
+				r_meta_set_var_comment (core->anal, input[0], idx, fcn->addr, comment);
+			}
+		}
+		free (heap_comment);
+		}
+		break;
+	case '-':
+		var = r_anal_var_get_byname (core->anal,fcn, name);
+		if (var) {
+			idx = var->delta;
+		} else if (!strncmp (name, "0x", 2)) {
+			idx = (int) r_num_get (NULL, name);
+		} else if (!strncmp (name, "-0x", 3)) {
+			idx = -(int) r_num_get (NULL, name+1);
+		 }else {
+			eprintf ("cant find variable named `%s`\n",name);
+			break;
+		}
+		r_anal_var_free (var);
+		//XXX TODO here we leak a var
+		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1,idx)) {
+			eprintf ("cant find variable at given offset\n");
+			break;
+		}
+		r_meta_var_comment_del (core->anal, input[0], idx, fcn->addr);
+		break;
+	case '!': {
+		char *comment;
+		var = r_anal_var_get_byname (core->anal,fcn, name);
+		if (!var) {
+			eprintf ("cant find variable named `%s`\n",name);
+			break;
+		}
+		oldcomment = r_meta_get_var_comment (core->anal, input[0], var->delta, fcn->addr);
+		comment = r_core_editor (core, NULL, oldcomment);
+		if (comment) {
+			r_meta_var_comment_del (core->anal, input[0], var->delta, fcn->addr);
+			r_meta_set_var_comment (core->anal, input[0], var->delta, fcn->addr, comment);
+			free (comment);
+		}
+		r_anal_var_free (var);
+		}
+		break;
+	}
+	free (oname);
+}
 
 static int cmd_meta(void *data, const char *input) {
 	RCore *core = (RCore*)data;
@@ -543,6 +705,9 @@ static int cmd_meta(void *data, const char *input) {
 	int i;
 
 	switch (*input) {
+	case 'v': // Cr
+		r_comment_vars (core, input + 1);
+		break;
 	case 'j':
 	case '*':
 		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
@@ -570,7 +735,7 @@ static int cmd_meta(void *data, const char *input) {
 	case '\0':
 	case '?':{
 			const char* help_msg[] = {
-				"Usage:", "C[-LCvsdfm?] [...]", " # Metadata management",
+				"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 				"C*", "", "list meta info in r2 commands",
 				"C-", " [len] [[@]addr]", "delete metadata at given address range",
 				"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
@@ -579,6 +744,9 @@ static int cmd_meta(void *data, const char *input) {
 				"CC!", " [@addr]", "edit comment with $EDITOR",
 				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
 				"CCu", " [comment-text] [@addr]", "add unique comment",
+				"Ca", "[?]", "add comments to base pointer bases args/vars",
+				"Ce", "[?]", "add comments to stack pointer based args/vars",
+				"Cv", "[?]", "add comments to register based args",
 				"Cs", "[-] [size] [@addr]", "add string",
 				"Cz", "[@addr]", "add zero-terminated string",
 				"Ch", "[-] [size] [@addr]", "hide data",
@@ -641,7 +809,7 @@ static int cmd_meta(void *data, const char *input) {
 			r_space_list (ms, input[1]);
 			break;
 		case ' ':
-			r_space_set (ms, input+2);
+			r_space_set (ms, input + 2);
 			break;
 #if 0
 		case 'm':
@@ -658,10 +826,10 @@ static int cmd_meta(void *data, const char *input) {
 #endif
 		default: {
 				 int i, j = 0;
-				 for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+				 for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 					 if (!ms->spaces[i]) continue;
 					 r_cons_printf ("%02d %c %s\n", j++,
-						 (i==ms->space_idx)?'*':' ',
+						 (i == ms->space_idx)?'*':' ',
 						 ms->spaces[i]);
 				 }
 			 } break;

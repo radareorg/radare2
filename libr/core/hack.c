@@ -194,6 +194,7 @@ R_API int r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 R_API int r_core_hack(RCore *core, const char *op) {
 	int (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
+	if (!asmarch) return false;
 	RAnalOp analop;
 
 	if (strstr (asmarch, "x86")) {

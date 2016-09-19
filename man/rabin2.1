@@ -19,6 +19,7 @@
 .Op Fl m Ar addr
 .Op Fl @ Ar addr
 .Op Fl n Ar str
+.Op Fl X Ar fmt file ...
 .Ar file
 .Sh DESCRIPTION
 This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
@@ -97,6 +98,8 @@ Show version information
 Show binary version information
 .It Fl x
 Extract all sub binaries from a fat binary (f.ex: fatmach0)
+.It Fl X Ar format file ...
+Package a fat or zip containing all the files passed (fat, zip)
 .It Fl z
 Show strings inside .data section (like gnu strings does)
 .It Fl Z

@@ -1,4 +1,10 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+#include <stddef.h>
+
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_hash.h"
+#include "r_types_base.h"
 
 typedef void (*HashHandler)(const ut8 *block, int len);
 
@@ -15,6 +21,7 @@ static void handle_entropy (const ut8 *block, int len);
 static void handle_hamdist (const ut8 *block, int len);
 static void handle_parity (const ut8 *block, int len);
 static void handle_pcprint (const ut8 *input, int len);
+static void handle_luhn (const ut8 *input, int len);
 
 typedef struct {
 	const char *name;
@@ -35,6 +42,7 @@ static RHashHashHandlers hash_handlers[] = {
 	{"parity", handle_parity},
 	{"hamdist", handle_hamdist},
 	{"pcprint", handle_pcprint},
+	{"luhn", handle_luhn},
 	{NULL, NULL},
 };
 
@@ -78,7 +86,7 @@ static void handle_sha512 (const ut8 *block, int len) {
 	int i = 0;
 	RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 	const ut8 *c = r_hash_do_sha512 (ctx, block, len);
-	for (i=0; i<R_HASH_SIZE_SHA512; i++) r_cons_printf ("%02x", c[i]);
+	for (i = 0; i < R_HASH_SIZE_SHA512; i++) r_cons_printf ("%02x", c[i]);
 	r_cons_newline ();
 	r_hash_free (ctx);
 }
@@ -90,7 +98,7 @@ static void handle_adler32 (const ut8 *block, int len) {
 }
 
 static void handle_crc32 (const ut8 *block, int len) {
-	r_cons_printf ("%04x\n", r_hash_crc32 (block, len));
+	r_cons_printf ("%08x\n", r_hash_crc32 (block, len));
 }
 
 static void handle_crc16 (const ut8 *block, int len) {
@@ -118,23 +126,8 @@ static void handle_pcprint (const ut8 *block, int len) {
 	//r_cons_printf ("%02x\n", r_hash_pcprint (block, len));
 }
 
-static void algolist(int mode) {
-	const char *name;
-	ut64 bits;
-	int i;
-	r_cons_printf ("| ");
-	for (i=0; ; i++) {
-		bits = ((ut64)1)<<i;
-		name = r_hash_name (bits);
-		if (!name||!*name) break;
-		if (mode) {
-			r_cons_printf ("%s\n| ", name);
-		} else {
-			r_cons_printf (" #%s", name);
-			if (!((i+1)%6)) r_cons_printf ("\n| ");
-		}
-	}
-	if (!mode) r_cons_newline ();
+static void handle_luhn (const ut8 *block, int len) {
+	r_cons_printf ("%d\n", r_hash_luhn (block, len));
 }
 
 static int cmd_hash_bang (RCore *core, const char *input) {
@@ -181,79 +174,24 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 }
 
 static int cmd_hash(void *data, const char *input) {
-	char algo[32];
 	RCore *core = (RCore *)data;
-	ut32 osize = 0, len = core->blocksize;
-	const char *ptr;
-	int pos = 0, handled_cmd = false;
 
-	switch (*input) {
-	case '\t':
-	case ' ':
-		return 0;
-	case '#':
-		if (!input[1]) {
-			algolist (1);
-			return true;
-		}
-	case '!':
+	if (*input == '!') {
 		return cmd_hash_bang (core, input);
 	}
-
-	ptr = strchr (input, ' ');
-	sscanf (input, "%31s", algo);
-	if (ptr && *(ptr+1) && r_num_is_valid_input (core->num, ptr+1)) {
-		int nlen = r_num_math (core->num, ptr+1);
-		if (nlen>0) len = nlen;
-		osize = core->blocksize;
-		if (nlen>core->blocksize) {
-			r_core_block_size (core, nlen);
-			if (nlen != core->blocksize) {
-				eprintf ("Invalid block size\n");
-				r_core_block_size (core, osize);
-				return true;
-			}
-		}
-	} else if (!ptr || !*(ptr+1)) osize = len;
-	/* TODO: Simplify this spaguetti monster */
-
-	while (osize > 0 && hash_handlers[pos].name != NULL) {
-		if (!r_str_ccmp (input, hash_handlers[pos].name, ' ')) {
-			hash_handlers[pos].handler (core->block, len);
-			handled_cmd = true;
-			break;
-		}
-		pos++;
-	}
-
-	if (!osize) {
-		eprintf ("Error: provided size must be size > 0\n");
-	}
-
 	if (*input == '?') {
-		const char *helpmsg[] = {
-		"Usage: #algo <size> @ addr", "", "",
-		" #"," comment","note the space after the sharp sign",
-		" ##","","List hash/checksum algorithms.",
-		" #sha256", " 10K @ 33","calculate sha256 of 10K at 33",
-		NULL
-		};
-		const char *helpmsg2[] = {
-		"Hashes:","","", NULL };
 		const char *helpmsg3[] = {
 		"Usage #!interpreter [<args>] [<file] [<<eof]","","",
+		" #", "", "comment - do nothing",
 		" #!","","list all available interpreters",
 		" #!python","","run python commandline",
 		" #!python"," foo.py","run foo.py python script (same as '. foo.py')",
 		//" #!python <<EOF        get python code until 'EOF' mark\n"
 		" #!python"," arg0 a1 <<q","set arg0 and arg1 and read until 'q'",
 		NULL};
-		r_core_cmd_help (core, helpmsg);
-		r_core_cmd_help (core, helpmsg2);
-		algolist (0);
 		r_core_cmd_help (core, helpmsg3);
+		return false;
 	}
-	if (osize)
-		r_core_block_size (core, osize);
-	return handled_cmd;
+	/* this is a comment - captain obvious */
+	return 0;
 }

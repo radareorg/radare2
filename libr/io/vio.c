@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2016 - pancake, condret */
 
 #include <r_io.h>
 
@@ -16,7 +16,7 @@ virtual addresses are used when io.va is enabled
 and it checks for sections in order to find an address
 inside a mapped range.
 
-If a virtual address is not found in any section, 
+If a virtual address is not found in any section,
 then it looks into the map addresses.
 
 mapped addresses are used to map an RIODesc at a
@@ -62,25 +62,32 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 	}
 	sections = r_io_section_get_in_vaddr_range (io, vaddr, vaddr+len);
 	if (!r_list_empty (sections)) {						//check if there is any section
-		ranges = r_list_new();
-		ranges->free = free;
+		ranges = r_list_newf (free);
+		if (!ranges) {
+			r_list_free (sections);
+			return false;
+		}
 		r_list_foreach (sections, iter, section) {
-			if (section->vaddr==0)
-				continue;
+			if (!section->vaddr) continue; 
 			if (section->vaddr > tmp_vaddr) {
-				range = r_io_range_new();			//create a new range
+				range = r_io_range_new ();			//create a new range
+				if (!range) {
+					r_list_free (ranges);
+					r_list_free (sections);
+					return false;
+				}
 				range->from = tmp_vaddr;			//record unsectioned area
 				range->to = section->vaddr;
-				r_list_append (ranges, range);			//store the range
+				r_list_append (ranges, range);		//store the range
 				tmp_vaddr = section->vaddr;			//prepare for resolving the maddr
 				tmp_len -= (tmp_vaddr - vaddr);
-				tmp_buf += (tmp_vaddr - vaddr);			//adjust buffer
+				tmp_buf += (tmp_vaddr - vaddr);		//adjust buffer
 			}
-			vendaddr = tmp_vaddr + tmp_len;				//calculate the virtual end address
-			if (vendaddr > (section->vaddr + section->vsize))	//check if the virual end address is in the section too
-				vendaddr = section->vaddr + section->vsize;	//if not, size it down
+			vendaddr = tmp_vaddr + tmp_len;				            //calculate the virtual end address
+			if (vendaddr > (section->vaddr + section->vsize))	    //check if the virtual end address is in the section too
+				vendaddr = section->vaddr + section->vsize;	        //if not, size it down
 			maddr = tmp_vaddr - section->vaddr + section->offset;	//calculate the map address (address inside the map)
-			if (maddr > ( section->offset + section->size)) {	//check if the maddr is inside the physical section, if not, skip some things
+			if (maddr > (section->offset + section->size)) {	    //check if the maddr is inside the physical section, if not, skip some things
 			} else {
 				if ((vendaddr - section->vaddr + section->offset) > (section->offset + section->size)) {	//check if the virtual part of the section fits into the physical part
 					r_io_mread (io, section->fd, maddr, tmp_buf, (section->offset + section->size) - maddr);//if not, read as far as possible
@@ -88,8 +95,8 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 					r_io_mread (io, section->fd, maddr, tmp_buf, vendaddr - tmp_vaddr);	//read from the sections fd
 				}
 			}
-			tmp_buf += (vendaddr - tmp_vaddr);			//adjust buffer
-			tmp_len -= (vendaddr - tmp_vaddr);			//adjust length
+			tmp_buf += (vendaddr - tmp_vaddr);		//adjust buffer
+			tmp_len -= (vendaddr - tmp_vaddr);		//adjust length
 			tmp_vaddr = vendaddr;					//adjust address
 		}
 	}
@@ -99,7 +106,7 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 			maps = r_io_map_get_maps_in_range (io, range->from, range->to - range->from);	//get all maps in the range
 			tmp_vaddr = range->from;
 			tmp_len = range->to - range->from;			//adjust length
-			tmp_buf = buf + (tmp_vaddr - vaddr);			//adjust pointer
+			tmp_buf = buf + (tmp_vaddr - vaddr);		//adjust pointer
 			r_list_foreach (maps, ator, map) {			//start filling the gaps
 				r_io_mread (io, map->fd, tmp_vaddr, tmp_buf, tmp_len);	//read from maps, the ranges will adjusted in mread
 			}
@@ -112,8 +119,8 @@ R_API int r_io_vread (RIO *io, ut64 vaddr, ut8 *buf, int len) {
 		r_list_foreach (maps, iter, map) {
 			r_io_mread (io, map->fd, vaddr, buf, len);		//read from the maps, the ranges will be adjusted in mread
 		}
-		r_list_free (maps);						//free the list
-		r_io_mread (io, io->desc->fd, vaddr, buf, len);			//ensure that io->desc is always on the top
+		r_list_free (maps);						            //free the list
+		r_io_mread (io, io->desc->fd, vaddr, buf, len);		//ensure that io->desc is always on the top
 	}
 	return true;
 }
@@ -182,7 +189,7 @@ R_API int r_io_pread (RIO *io, ut64 paddr, ut8 *buf, int len) {
 		r_sys_backtrace();
 #endif
 		return 0;
-	} 
+	}
 	if (paddr == UT64_MAX) {
 		if (io->ff) {
 			memset (buf, 0xff, len);

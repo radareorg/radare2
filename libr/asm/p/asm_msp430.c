@@ -32,11 +32,8 @@ RAsmPlugin r_asm_plugin_msp430 = {
 	.desc = "msp430 disassembly plugin",
 	.arch = "msp430",
 	.bits = 16,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL,
 };
 
 #ifndef CORELIB

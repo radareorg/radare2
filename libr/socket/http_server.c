@@ -13,6 +13,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
+	if (!hr) return NULL;
 	hr->s = r_socket_accept (s);
 	if (!hr->s) {
 		free (hr);
@@ -134,7 +135,7 @@ R_API void r_socket_http_close (RSocketHTTPRequest *rs) {
 
 #if MAIN
 int main() {
-	RSocket *s = r_socket_new (R_FALSE);
+	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
 		eprintf ("Cannot listen here\n");
 		return 1;

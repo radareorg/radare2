@@ -47,8 +47,7 @@ RAsmPlugin r_asm_plugin_x86_olly = {
 	.desc = "OllyDBG X86 disassembler",
 	.arch = "x86",
 	.bits = 32,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
 };

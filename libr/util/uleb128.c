@@ -9,22 +9,24 @@ R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v) {
 	ut64 s, sum = 0;
 	const ut8 *data_end;
 	if (v) *v = 0LL;
-	if (datalen==ST32_MAX) {
+	if (datalen == ST32_MAX) {
 		// WARNING; possible overflow
 		datalen = 0xffff;
-	} else
-	if (datalen<0) {
+	} 
+	if (datalen < 0) {
 		return NULL;
 	}
 	data_end = data + datalen;
-	if (data && datalen>0) {
+	if (data && datalen > 0) {
 		if (*data) {
-			for (s = 0; data<data_end; s += 7) {
+			for (s = 0; data < data_end; s += 7) {
 				c = *(data++) & 0xff;
-				sum |= ((ut32) (c&0x7f) << s);
-				if (!(c&0x80)) break;
+				sum |= ((ut32) (c & 0x7f) << s);
+				if (!(c & 0x80)) break;
 			}
-		} else data++;
+		} else {
+			data++;
+		}
 	}
 	if (v) *v = sum;
 	return data;

@@ -108,10 +108,9 @@ static void _6502_anal_esil_get_addr_pattern2(RAnalOp *op, const ut8* data, char
 }
 
 /* BIT, JMP, JMP(), STY, LDY, CPY, and CPX share this pattern */
-static void _6502_anal_esil_get_addr_pattern3(RAnalOp *op, const ut8* data, char* addrbuf, int addrsize, char reg)
-{
+static void _6502_anal_esil_get_addr_pattern3(RAnalOp *op, const ut8* data, char* addrbuf, int addrsize, char reg) {
 	// turn off bits 5, 6 and 7
-	switch(data[0] & 0x1f) { // 0x1f = b00111111
+	switch (data[0] & 0x1f) { // 0x1f = b00111111
 	case 0x00: // op #$ff
 		op->cycles = 2;
 		snprintf (addrbuf, addrsize, "0x%02x", data[1]);
@@ -718,7 +717,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		break;
 	// RTS
 	case 0x60: // rts
-		op->eob = 1;
+		op->eob = true;
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = 6;
 		op->stackop = R_ANAL_STACK_INC;
@@ -729,7 +728,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		break;
 	// RTI
 	case 0x40: // rti
-		op->eob = 1;
+		op->eob = true;
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = 6;
 		op->stackop = R_ANAL_STACK_INC;

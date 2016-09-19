@@ -80,9 +80,11 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	disasm_obj.stream = stdout;
 
 	op->buf_asm[0] = '\0';
-	if (a->big_endian)
+	if (disasm_obj.endian == BFD_ENDIAN_LITTLE) {
+		op->size = print_insn_little_mips ((bfd_vma)Offset, &disasm_obj);
+	} else {
 		op->size = print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
-	else op->size = print_insn_little_mips ((bfd_vma)Offset, &disasm_obj);
+	}
 	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
 	return op->size;
@@ -90,7 +92,14 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 	int ret = mips_assemble (str, a->pc, op->buf);
-	r_mem_copyendian (op->buf, op->buf, 4, !a->big_endian);
+	if (a->big_endian) {
+		ut8 tmp = op->buf[0];
+		op->buf[0] = op->buf[3];
+		op->buf[3] = tmp;
+		tmp = op->buf[1];
+		op->buf[1] = op->buf[2];
+		op->buf[2] = tmp;
+	}
 	return ret;
 }
 
@@ -99,11 +108,10 @@ RAsmPlugin r_asm_plugin_mips_gnu = {
 	.arch = "mips",
 	.license = "GPL3",
 	.bits = 32|64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "MIPS CPU",
-	.init = NULL,
-	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = &assemble,
+	.assemble = &assemble
 };
 
 #ifndef CORELIB

@@ -535,7 +535,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 	/* handle debug events */
 	do {
 		/* do not continue when already exited but still open for examination */
-		if (exited_already) {
+		if (exited_already == pid) {
 			return -1;
 		}
 		if (WaitForDebugEvent (&de, INFINITE) == 0) {
@@ -563,7 +563,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 				(int)de.u.ExitProcess.dwExitCode);
 			//debug_load();
 			next_event = 0;
-			exited_already = 1;
+			exited_already = pid;
 			ret = R_DEBUG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
@@ -587,13 +587,8 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			if (dllname) {
 				free (dllname);
 			}
-			next_event = 1;
-		        return R_DEBUG_REASON_NEW_LIB;
-			/*
-			r_debug_native_continue (dbg, pid, tid, -1);
-			next_event = 1;
+			next_event = 0;
 			ret = R_DEBUG_REASON_NEW_LIB;
-			*/
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
 			//eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
@@ -605,13 +600,8 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 				if (dllname)
 					free(dllname);
 			}
-			next_event = 1;
-			return R_DEBUG_REASON_EXIT_LIB;
-                        /*
-			r_debug_native_continue (dbg, pid, tid, -1);
-			next_event = 1;
+			next_event = 0;
 			ret = R_DEBUG_REASON_EXIT_LIB;
-			*/
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			eprintf ("(%d) Debug string\n", pid);
@@ -625,11 +615,25 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			// XXX unknown ret = R_DEBUG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
-			next_event = debug_exception_event (&de);
-			if (!next_event) {
-				return R_DEBUG_REASON_TRAP;
-			} else {
-				r_debug_native_continue (dbg, pid, tid, -1);
+			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
+			case EXCEPTION_BREAKPOINT:
+				ret = R_DEBUG_REASON_BREAKPOINT;
+				next_event = 0;
+				break;
+			case EXCEPTION_SINGLE_STEP:
+				ret = R_DEBUG_REASON_STEP;
+				next_event = 0;
+				break;
+			default:
+				if (!debug_exception_event (&de)) {
+					ret = R_DEBUG_REASON_TRAP;
+					next_event = 0;
+				}
+				else {
+					next_event = 1;
+					r_debug_native_continue (dbg, pid, tid, -1);
+				}
+
 			}
 			break;
 		default:
@@ -637,7 +641,6 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			return -1;
 		}
 	} while (next_event);
-
 	return ret;
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2014 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2016 - pancake, nibble */
 
 #include <r_bin.h>
 #include <r_types.h>
@@ -8,6 +8,15 @@
 #define _INCLUDE_R_BIN_MACH0_H_
 
 #define R_BIN_MACH0_STRING_LENGTH 256
+
+
+#define CSMAGIC_CODEDIRECTORY      0xfade0c02
+#define CSMAGIC_EMBEDDED_SIGNATURE 0xfade0cc0
+#define CSMAGIC_ENTITLEMENTS       0xfade7171
+
+#define CSSLOT_CODEDIRECTORY 0
+#define CSSLOT_REQUIREMENTS  2
+#define CSSLOT_ENTITLEMENTS  5
 
 struct section_t {
 	ut64 offset;
@@ -55,6 +64,23 @@ struct lib_t {
 	int last;
 };
 
+
+struct blob_index_t {
+    ut32 type;
+    ut32 offset;
+}; 
+
+struct blob_t {
+    ut32 magic;
+    ut32 length;
+};
+
+struct super_blob_t {
+    struct blob_t blob;
+    ut32 count;
+    struct blob_index_t index[];
+}; 
+
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
 	struct MACH0_(segment_command)* segs;
@@ -81,6 +107,7 @@ struct MACH0_(obj_t) {
 	struct MACH0_(dylib_module)* modtab;
 	int nmodtab;
 	struct thread_command thread;
+	ut8* signature;
 	union {
 		struct x86_thread_state32 x86_32;
 		struct x86_thread_state64 x86_64;
@@ -94,7 +121,7 @@ struct MACH0_(obj_t) {
 	int size;
 	ut64 baddr;
 	ut64 entry;
-	int endian;
+	bool big_endian;
 	const char* file;
 	RBuffer* b;
 	int os;
@@ -119,26 +146,17 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_class)(struct MACH0_(obj_t)* bin);
 int MACH0_(get_bits)(struct MACH0_(obj_t)* bin);
-int MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin);
+bool MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin);
 int MACH0_(is_pie)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin);
+char* MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr);
 char* MACH0_(get_filetype)(struct MACH0_(obj_t)* bin);
+char* MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr);
 ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin);
-
-#if 0
-int r_bin_mach0_get_file_alignment(r_bin_mach0_obj*);
-int r_bin_mach0_get_image_size(r_bin_mach0_obj*);
-int r_bin_mach0_get_os(r_bin_mach0_obj*, char*);
-int r_bin_mach0_get_subsystem(r_bin_mach0_obj*, char*);
-int r_bin_mach0_get_section_alignment(r_bin_mach0_obj*);
-int r_bin_mach0_get_strings(r_bin_mach0_obj*, int, int, r_bin_mach0_string*);
-int r_bin_mach0_is_stripped_relocs(r_bin_mach0_obj*);
-int r_bin_mach0_is_stripped_line_nums(r_bin_mach0_obj*);
-int r_bin_mach0_is_stripped_local_syms(r_bin_mach0_obj*);
-int r_bin_mach0_is_stripped_debug(r_bin_mach0_obj*);
-#endif
-
+char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
+int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr);
+struct MACH0_(mach_header)* MACH0_(get_hdr_from_bytes)(RBuffer *buf);
 #endif

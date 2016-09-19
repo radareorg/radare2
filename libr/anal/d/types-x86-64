@@ -1,0 +1,9 @@
+type.void *.size=64
+type.char *.size=64
+
+func.getenv.cc=amd64
+func.getopt.cc=amd64
+func.getuid.cc=amd64
+func.ioctl.cc=amd64
+func.isatty.cc=amd64
+func.setlocale.cc=amd64

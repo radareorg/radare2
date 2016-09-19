@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -8,42 +8,9 @@
 
 R_LIB_VERSION(r_anal);
 
-static RAnalPlugin *anal_static_plugins[] =
-	{ R_ANAL_STATIC_PLUGINS };
-
-static void r_anal_type_init(RAnal *anal) {
-	Sdb *D = anal->sdb_types;
-	sdb_set (D, "unsigned int", "type", 0);
-	sdb_set (D, "unsigned char", "type", 0);
-	sdb_set (D, "unsigned short", "type", 0);
-	sdb_set (D, "short", "type", 0);
-	sdb_set (D, "int", "type", 0);
-	sdb_set (D, "long", "type", 0);
-	sdb_set (D, "long long", "type", 0);
-	sdb_set (D, "void *", "type", 0);
-	sdb_set (D, "char", "type", 0);
-	sdb_set (D, "char *", "type", 0);
-	sdb_set (D, "const char*", "type", 0);
-	sdb_set (D, "uint8_t", "type", 0);
-	sdb_set (D, "uint16_t", "type", 0);
-	sdb_set (D, "uint32_t", "type", 0);
-	sdb_set (D, "uint64_t", "type", 0);
-	sdb_set (D, "type.unsigned int", "i", 0);
-	sdb_set (D, "type.unsigned char", "b", 0);
-	sdb_set (D, "type.unsigned short", "w", 0);
-	sdb_set (D, "type.short", "w", 0);
-	sdb_set (D, "type.int", "d", 0);
-	sdb_set (D, "type.long", "x", 0);
-	sdb_set (D, "type.long long", "q", 0);
-	sdb_set (D, "type.void *", "p", 0);
-	sdb_set (D, "type.char", "b", 0);
-	sdb_set (D, "type.char *", "*z", 0);
-	sdb_set (D, "type.const char*", "*z", 0);
-	sdb_set (D, "type.uint8_t", "b", 0);
-	sdb_set (D, "type.uint16_t", "w", 0);
-	sdb_set (D, "type.uint32_t", "d", 0);
-	sdb_set (D, "type.uint64_t", "q", 0);
-}
+static RAnalPlugin *anal_static_plugins[] = {
+	R_ANAL_STATIC_PLUGINS
+};
 
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
@@ -55,8 +22,7 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 }
 
 R_API void r_anal_unset_limits(RAnal *anal) {
-	free (anal->limit);
-	anal->limit = NULL;
+	R_FREE (anal->limit);
 }
 
 static void meta_unset_for(void *user, int idx) {
@@ -66,24 +32,24 @@ static void meta_unset_for(void *user, int idx) {
 }
 
 static int meta_count_for(void *user, int idx) {
-	int ret;
 	RSpaces *s = (RSpaces*)user;
 	RAnal *anal = (RAnal*)s->user;
-	ret = r_meta_space_count_for (anal, idx);
-	return ret;
+	return r_meta_space_count_for (anal, idx);
 }
 
 R_API RAnal *r_anal_new() {
 	int i;
-	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
-	if (!anal) return NULL;
+	if (!anal) {
+		return NULL;
+	}
 	anal->os = strdup (R_SYS_OS);
 	anal->noreturn = r_list_newf ((RListFree)&r_anal_noreturn_free);
 	anal->reflines = anal->reflines2 = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->limit = NULL;
 	anal->opt.nopskip = true; // skip nops in code analysis
+	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->decode = true; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
@@ -95,10 +61,10 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
+	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
 	anal->cb_printf = (PrintfCallback) printf;
-	r_anal_pin_init (anal);
-	r_anal_type_init (anal);
-	r_anal_xrefs_init (anal);
+	(void)r_anal_pin_init (anal);
+	(void)r_anal_xrefs_init (anal);
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
 	anal->split = true; // used from core
@@ -106,6 +72,7 @@ R_API RAnal *r_anal_new() {
 	r_io_bind_init (anal->iob);
 	r_flag_bind_init (anal->flb);
 	anal->reg = r_reg_new ();
+	anal->bits_ranges = r_list_newf (free);
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
 #if USE_NEW_FCN_STORE
@@ -114,13 +81,10 @@ R_API RAnal *r_anal_new() {
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
-	r_anal_set_big_endian (anal, false);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
-		for (i=0; anal_static_plugins[i]; i++) {
-			static_plugin = R_NEW (RAnalPlugin);
-			*static_plugin = *anal_static_plugins[i];
-			r_anal_add (anal, static_plugin);
+		for (i = 0; anal_static_plugins[i]; i++) {
+			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
 	return anal;
@@ -128,7 +92,7 @@ R_API RAnal *r_anal_new() {
 
 R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	if (p && p->fini) {
-		p->fini (p);
+		p->fini (NULL);
 	}
 }
 
@@ -164,8 +128,9 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 }
 
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
-	if (foo->init)
+	if (foo->init) {
 		foo->init (anal->user);
+	}
 	r_list_append (anal->plugins, foo);
 	return true;
 }
@@ -198,9 +163,8 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 }
 
 R_API char *r_anal_get_reg_profile(RAnal *anal) {
-	if (anal && anal->cur && anal->cur->get_reg_profile)
-		return anal->cur->get_reg_profile (anal);
-	return NULL;
+	return (anal && anal->cur && anal->cur->get_reg_profile)
+		? anal->cur->get_reg_profile (anal) : NULL;
 }
 
 // deprecate.. or at least reuse get_reg_profile...
@@ -216,19 +180,13 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 		}
 		free (p);
 	}
-	return false;
+	return ret;
 }
 
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 #define FCNSIGNPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
 	char *file = NULL;
-	const char *arch;
-	if (anal->cur && anal->cur->arch) {
-		arch = anal->cur->arch;
-	} else arch = R_SYS_ARCH;
-	if (!arch) {
-		return false;
-	}
+	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
 	if (name && *name) {
 		file = sdb_fmt (0, "%s/%s.sdb", FCNSIGNPATH, name);
 	} else {
@@ -289,15 +247,17 @@ R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
 }
 
 R_API char *r_anal_strmask (RAnal *anal, const char *data) {
-	RAnalOp *op;
-	ut8 *buf;
+	RAnalOp *op = NULL;
+	ut8 *buf = NULL;
 	char *ret = NULL;
 	int oplen, len, idx = 0;
 
-	ret = strdup (data);
-	buf = malloc (1+strlen (data));
-	op = r_anal_op_new ();
-	if (op == NULL || ret == NULL || buf == NULL) {
+	if (data && *data) {
+		ret = strdup (data);
+		buf = malloc (1 + strlen (data));
+		op = r_anal_op_new ();
+	}
+	if (!op || !ret || !buf) {
 		free (op);
 		free (buf);
 		free (ret);
@@ -305,17 +265,19 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 	}
 	len = r_hex_str2bin (data, buf);
 	while (idx < len) {
-		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) <1)
+		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) < 1) {
 			break;
+		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_UJMP:
-			if (op->nopcode != 0)
-				memset (ret+(idx+op->nopcode)*2,
-					'.', (oplen-op->nopcode)*2);
+			if (op->nopcode != 0) {
+				memset (ret + (idx + op->nopcode) * 2,
+					'.', (oplen - op->nopcode) * 2);
+			}
 		}
 		idx += oplen;
 	}
@@ -328,28 +290,15 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFunction *fcni;
 	RListIter *iter2;
-#define OLD 0
-#if OLD
-	RListIter *iter;
-	r_list_foreach (anal->fcns, iter, fcni) {
-		r_list_foreach (fcni->bbs, iter2, bbi) {
-			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
-				bbi->traced = true;
-				break;
-			}
-		}
-	}
-#else
 	fcni = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
-			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
+			if (addr >= bbi->addr && addr < (bbi->addr + bbi->size)) {
 				bbi->traced = true;
 				break;
 			}
 		}
 	}
-#endif
 }
 
 R_API RList* r_anal_get_fcns (RAnal *anal) {
@@ -358,35 +307,35 @@ R_API RList* r_anal_get_fcns (RAnal *anal) {
 	return anal->fcns;
 }
 
-R_API int r_anal_project_load(RAnal *anal, const char *prjfile) {
-	if (prjfile && *prjfile)
-		return r_anal_xrefs_load (anal, prjfile);
+R_API bool r_anal_project_save(RAnal *anal, const char *prjfile) {
+	if (prjfile && *prjfile) {
+		return r_anal_xrefs_save (anal, prjfile);
+	}
 	return false;
-}
-
-R_API int r_anal_project_save(RAnal *anal, const char *prjfile) {
-	if (!prjfile || !*prjfile)
-		return false;
-	r_anal_xrefs_save (anal, prjfile);
-	return true;
 }
 
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	int len;
 	ut8 *buf;
 	RAnalOp *op = R_NEW0 (RAnalOp);
-	if (!op) return NULL;
-	buf = malloc (strlen (str)+1);
+	if (!op) {
+		return NULL;
+	}
+	buf = calloc (1, strlen (str) + 1);
 	if (!buf) {
 		free (op);
 		return NULL;
 	}
 	len = r_hex_str2bin (str, buf);
 	r_anal_op (anal, op, addr, buf, len);
+	free (buf);
 	return op;
 }
 
 R_API bool r_anal_op_is_eob (RAnalOp *op) {
+	if (op->eob) {
+		return true;
+	}
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
@@ -505,18 +454,68 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 	RAnalFunction *f = r_anal_get_fcn_at (anal, addr, 0);
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
 	r_list_foreach (anal->noreturn, iter, nr) {
+		if (addr == nr->addr) {
+			return true;
+		}
 		if (nr->name) {
 			RFlagItem *fi2 = anal->flb.get (anal->flb.f, nr->name);
-			if (fi2 && fi2->offset == addr)
+			if (fi2 && fi2->offset == addr) {
 				return true;
-			if (f && !strcmp (f->name, nr->name))
+			}
+			if (f && !strcmp (f->name, nr->name)) {
 				return true;
-			if (fi && fi->name && !strcmp (fi->name, nr->name))
+			}
+			if (fi && fi->name && !strcmp (fi->name, nr->name)) {
 				return true;
-		} else {
-			if (addr == nr->addr)
-				return true;
+			}
 		}
 	}
 	return false;
+}
+
+static int cmp_range(const void *a, const void *b) {
+	RAnalRange *ra = (RAnalRange *)a;
+	RAnalRange *rb = (RAnalRange *)b;
+	return (a && b)? (ra->from > rb->from): 0;
+}
+
+static int build_range(void *p, const char *k, const char *v) {
+	RAnal *a = (RAnal *)p;
+	RList *list_range = a->bits_ranges;
+	RAnalHint *hint;
+	hint = r_anal_hint_from_string (a, sdb_atoi (k + 5), v);
+	if (hint->bits) {
+		RAnalRange *range = R_NEW0 (RAnalRange);
+		if (range) {
+			range->bits = hint->bits;
+			range->from = hint->addr;
+			r_list_append (list_range, range);
+		}
+	}
+	return 1;
+}
+
+// based on anal hint we construct a list of RAnalRange to handle
+// better arm/thumb though maybe handy in other contexts
+R_API void r_anal_build_range_on_hints(RAnal *a) {
+	RListIter *iter;
+	RAnalRange *range;
+	// construct again the range from hint to handle properly arm/thumb
+	r_list_free (a->bits_ranges);
+	a->bits_ranges = r_list_new ();
+	a->bits_ranges->free = free;
+	sdb_foreach (a->sdb_hints, build_range, a);
+	r_list_sort (a->bits_ranges, cmp_range);
+	r_list_foreach (a->bits_ranges, iter, range) {
+		if (iter->n && !range->to) {
+			range->to = ((RAnalRange *)(iter->n->data))->from;
+		}
+	}
+}
+
+R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
+	if (b) {
+		b->anal = anal;
+		b->get_fcn_in = r_anal_get_fcn_in;
+	}
 }

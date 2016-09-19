@@ -1,3 +1,4 @@
+clang-log/
 *._d
 *._o
 *.[ado]
@@ -43,6 +44,7 @@ libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
+shlr/grub/libgrubfs.lib
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb
@@ -55,8 +57,17 @@ shlr/sdb/src/sdb-version.h
 shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
 shlr/capstone/
+sys/.mark_python-deps
+sys/.mark_swig
+sys/_work
+radare2-bindings
+radare2-regressions
 radare2-w32-*
 radare2-regressions
 tags
 .lvimrc
 .nconfig.tmp
+.ycm_extra_conf.py
+.ycm_extra_conf.pyc
+.kdev4/*
+*.kdev4

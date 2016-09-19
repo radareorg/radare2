@@ -647,7 +647,12 @@ floatformat_from_double (const struct floatformat *fmt,
       return;
     }
 
+#if __ANDROID__
+  mant = 0;
+  exponent = 0;
+#else
   mant = frexp (dfrom, &exponent);
+#endif
   if (exponent + fmt->exp_bias - 1 > 0)
     put_field (uto, fmt->byteorder, fmt->totalsize, fmt->exp_start,
 	       fmt->exp_len, exponent + fmt->exp_bias - 1);

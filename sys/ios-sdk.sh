@@ -54,7 +54,7 @@ echo "BUILDING R2 FOR iOS CPU = $CPU"
 echo
 sleep 1
 
-if true ; then
+if false ; then
 	make clean
 	cp -f plugins.tiny.cfg plugins.cfg
 	./configure --prefix=${PREFIX} --with-ostype=darwin \
@@ -73,6 +73,8 @@ if [ $? = 0 ]; then
 	( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz * )
 	# Prepare radare2
 	rm -rf sys/cydia/radare2/root
+	rm -rf sys/cydia/radare2/root/usr/lib/*.dSYM
+	rm -rf sys/cydia/radare2/root/usr/lib/*.a
 	mkdir -p sys/cydia/radare2/root
 	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
 	rm -rf sys/cydia/radare2-dev/root

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2015 - nibble, pancake, alvaro_fe */
 
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
@@ -199,6 +199,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = &sections,
+	.signature = &entitlements,
 	.symbols = &symbols,
 	.imports = &imports,
 	.info = &info,

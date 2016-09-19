@@ -19,7 +19,9 @@
 #endif
 #if __APPLE__
 #include <errno.h>
+#if !__POWERPC__
 #include <execinfo.h>
+#endif
 // iOS dont have this we cant hardcode
 // #include <crt_externs.h>
 extern char ***_NSGetEnviron(void);
@@ -56,7 +58,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"java", R_SYS_ARCH_JAVA},
     {"mips", R_SYS_ARCH_MIPS},
     {"sparc", R_SYS_ARCH_SPARC},
-    {"csr", R_SYS_ARCH_CSR},
+    {"xap", R_SYS_ARCH_XAP},
     {"tms320", R_SYS_ARCH_TMS320},
     {"msil", R_SYS_ARCH_MSIL},
     {"objd", R_SYS_ARCH_OBJD},
@@ -68,6 +70,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"arc", R_SYS_ARCH_ARC},
     {"i8080", R_SYS_ARCH_I8080},
     {"rar", R_SYS_ARCH_RAR},
+    {"lm32", R_SYS_ARCH_LM32},
     {NULL, 0}
 };
 
@@ -99,12 +102,14 @@ R_API ut64 r_sys_now(void) {
 R_API int r_sys_truncate(const char *file, int sz) {
 #if __WINDOWS__ && !__CYGWIN__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
-	if (!fd) return R_FALSE;
+	if (fd != -1) return false;
 	ftruncate (fd, sz);
 	close (fd);
-	return R_TRUE;
+	return true;
 #else
-	return truncate (file, sz)? R_FALSE: R_TRUE;
+	if (r_sandbox_enable (0))
+		return false;
+	return truncate (file, sz)? false: true;
 #endif
 }
 
@@ -142,15 +147,16 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 #define APPLE_WITH_BACKTRACE 1
 #endif
 
-R_API void r_sys_backtrace(void) {
 #if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || defined(NETBSD_WITH_BACKTRACE)
-        void *array[10];
-        size_t i, size = backtrace (array, 10);
-        char **strings = (char **)(size_t)backtrace_symbols (array, size);
-        printf ("Backtrace %zd stack frames.\n", size);
-        for (i = 0; i < size; i++)
-                printf ("%s\n", strings[i]);
-        free (strings);
+#define HAVE_BACKTRACE 1
+#endif
+
+R_API void r_sys_backtrace(void) {
+#ifdef HAVE_BACKTRACE
+	void *array[10];
+	size_t size = backtrace (array, 10);
+	printf ("Backtrace %zd stack frames.\n", size);
+	backtrace_symbols_fd (array, size, 2);
 #elif __APPLE__
 	void **fp = (void **) __builtin_frame_address (0);
 	void *saved_pc = __builtin_return_address (0);
@@ -195,12 +201,16 @@ R_API int r_sys_usleep(int usecs) {
 
 R_API int r_sys_clearenv(void) {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#if __APPLE__ && __POWERPC__
+	/* do nothing */
+#else
 	if (environ == NULL) {
 		return 0;
 	}
 	while (*environ != NULL) {
 		*environ++ = NULL;
 	}
+#endif
 	return 0;
 #else
 #warning r_sys_clearenv : unimplemented for this platform
@@ -229,13 +239,10 @@ static char *crash_handler_cmd = NULL;
 
 #if __UNIX__
 static void signal_handler(int signum) {
-	int len;
-	char *cmd;
+	char cmd[1024];
 	if (!crash_handler_cmd)
 		return;
-	len = strlen (crash_handler_cmd)+32;
-	cmd = malloc (len);
-	snprintf (cmd, len, crash_handler_cmd, getpid ());
+	snprintf (cmd, sizeof(cmd) - 1, crash_handler_cmd, getpid ());
 	r_sys_backtrace ();
 	exit (r_sys_cmd (cmd));
 }
@@ -255,8 +262,15 @@ static int checkcmd(const char *c) {
 R_API int r_sys_crash_handler(const char *cmd) {
 #if __UNIX__
 	struct sigaction sigact;
+	void *array[1];
+
 	if (!checkcmd (cmd))
-		return R_FALSE;
+		return false;
+#ifdef HAVE_BACKTRACE
+	/* call this outside of the signal handler to init it safely */
+	backtrace (array, 1);
+#endif
+
 	free (crash_handler_cmd);
 	crash_handler_cmd = strdup (cmd);
 	sigact.sa_handler = signal_handler;
@@ -278,9 +292,9 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 	sigaddset (&sigact.sa_mask, SIGKILL);
 	sigaction (SIGKILL, &sigact, (struct sigaction *)NULL);
-	return R_TRUE;
+	return true;
 #else
-	return R_FALSE;
+	return false;
 #endif
 }
 
@@ -326,25 +340,25 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 
 	if (len) *len = 0;
 	if (pipe (sh_in))
-		return R_FALSE;
+		return false;
 	if (output) {
 		if (pipe (sh_out)) {
 			close (sh_in[0]);
 			close (sh_in[1]);
 			close (sh_out[0]);
 			close (sh_out[1]);
-			return R_FALSE;
+			return false;
 		}
 	}
 	if (pipe (sh_err)) {
 		close (sh_in[0]);
 		close (sh_in[1]);
-		return R_FALSE;
+		return false;
 	}
 
 	switch ((pid = r_sys_fork ())) {
 	case -1:
-		return R_FALSE;
+		return false;
 	case 0:
 		dup2 (sh_in[0], 0);
 		close (sh_in[0]);
@@ -360,12 +374,12 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	default:
 		outputptr = strdup ("");
 		if (!outputptr)
-			return R_FALSE;
+			return false;
 		if (sterr) {
 			*sterr = strdup ("");
 			if (!*sterr) {
 				free (outputptr);
-				return R_FALSE;
+				return false;
 			}
 		}
 		if (output) close (sh_out[1]);
@@ -425,14 +439,14 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			char *escmd = r_str_escape (cmd);
 			eprintf ("%s: failed command '%s'\n", __func__, escmd);
 			free (escmd);
-			return R_FALSE;
+			return false;
 		}
 
 		if (output) *output = outputptr;
 		else free (outputptr);
-		return R_TRUE;
+		return true;
 	}
-	return R_FALSE;
+	return false;
 }
 #elif __WINDOWS__
 // TODO: fully implement the rest
@@ -440,13 +454,13 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	char *result = r_sys_cmd_str_w32 (cmd);
 	if (len) *len = 0;
 	if (output) *output = result;
-	if (result) return R_TRUE;
-	return R_FALSE;
+	if (result) return true;
+	return false;
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	eprintf ("r_sys_cmd_str: not yet implemented for this platform\n");
-	return R_FALSE;
+	return false;
 }
 #endif
 
@@ -508,10 +522,25 @@ R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	return NULL;
 }
 
+R_API bool r_sys_mkdir(const char *dir) {
+	if (r_sandbox_enable (0))
+		return false;
+
+#if __WINDOWS__ && !defined(__CYGWIN__)
+	return CreateDirectory (dir, NULL) != 0;
+#else
+	return mkdir (dir, 0755) != -1;
+#endif
+}
+
 R_API bool r_sys_mkdirp(const char *dir) {
 	bool ret = true;
 	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
+	if (!path) {
+		eprintf ("r_sys_mkdirp: Unable to allocate memory\n");
+		return false;
+	}
 	if (*ptr == slash) ptr++;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	{
@@ -543,9 +572,12 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	return ret;
 }
 
-R_API void r_sys_perror(const char *fun) {
+R_API void r_sys_perror_str(const char *fun) {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+#pragma push_macro("perror")
+#undef perror
 	perror (fun);
+#pragma pop_macro("perror")
 #elif __WINDOWS__
 	char *lpMsgBuf;
 	LPVOID lpDisplayBuf;
@@ -587,7 +619,7 @@ R_API bool r_sys_arch_match(const char *archstr, const char *arch) {
 
 R_API int r_sys_arch_id(const char *arch) {
 	int i;
-	for (i=0; arch_bit_array[i].name; i++)
+	for (i = 0; arch_bit_array[i].name; i++)
 		if (!strcmp (arch, arch_bit_array[i].name))
 			return arch_bit_array[i].bit;
 	return 0;
@@ -595,9 +627,11 @@ R_API int r_sys_arch_id(const char *arch) {
 
 R_API const char *r_sys_arch_str(int arch) {
 	int i;
-	for (i=0; arch_bit_array[i].name; i++)
-		if (arch & arch_bit_array[i].bit)
+	for (i = 0; arch_bit_array[i].name; i++) {
+		if (arch & arch_bit_array[i].bit) {
 			return arch_bit_array[i].name;
+		}
+	}
 	return "none";
 }
 
@@ -617,7 +651,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	if (!ptr || !buf) {
 		eprintf ("r_sys_run: Cannot run empty buffer\n");
 		free (p);
-		return R_FALSE;
+		return false;
 	}
 	memcpy (ptr, buf, sz);
 	r_mem_protect (ptr, sz, "rx");
@@ -658,10 +692,10 @@ R_API int r_is_heap (void *p) {
 	void *q = malloc (8);
 	ut64 mask = UT64_MAX;
 	ut64 addr = (ut64)(size_t)q;
-	addr>>=16;
-	addr<<=16;
-	mask>>=16;
-	mask<<=16;
+	addr >>= 16;
+	addr <<= 16;
+	mask >>= 16;
+	mask <<= 16;
 	free (q);
 	return (((ut64)(size_t)p) == mask);
 }
@@ -712,12 +746,17 @@ R_API char *r_sys_pid_to_path(int pid) {
 	}
 	return NULL;
 #elif __APPLE__
+#if __POWERPC__
+#warning TODO getpidproc
+	return NULL;
+#else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pathbuf[0] = 0;
 	int ret = proc_pidpath (pid, pathbuf, sizeof (pathbuf));
 	if (ret <= 0)
 		return NULL;
 	return strdup (pathbuf);
+#endif
 #else
 	int ret;
 	char buf[128], pathbuf[1024];
@@ -737,7 +776,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 static char** env = NULL;
 
 R_API char **r_sys_get_environ () {
-#if __APPLE__
+#if __APPLE__ && !__POWERPC__
 	env = *_NSGetEnviron();
 #endif
 	// return environ if available??

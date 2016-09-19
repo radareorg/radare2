@@ -6,7 +6,7 @@
 #define R_BIN_DEX_MAXSTR 256
 
 #pragma pack(4)
-struct dex_header_t {
+typedef struct dex_header_t {
 	ut8 magic[8];
 	ut32 checksum;
 	ut8 signature[20];
@@ -30,33 +30,26 @@ struct dex_header_t {
 	ut32 class_offset;
 	ut32 data_size;
 	ut32 data_offset;
-};
+} DexHeader;
 
 #pragma pack(4)
-struct dex_proto_t {
+typedef struct dex_proto_t {
 	ut32 shorty_id;
 	ut32 return_type_id;
-	ut32 params_id;
-};
+	ut32 parameters_off;
+} DexProto;
 
-struct dex_type_t {
+typedef struct dex_type_t {
 	ut32 descriptor_id;
-};
+} DexType;
 
-#pragma pack(4)
-struct dex_field_t {
+// #pragma pack(1)
+typedef struct dex_field_t {
 	ut16 class_id;
 	ut16 type_id;
 	ut32 name_id;
-};
+} DexField;
 
-#if 0
-struct dex_method_t {
-	ut8 class_id;
-	ut8 proto_id;
-	ut32 name_id;
-};
-#endif
 #pragma pack(1)
 typedef struct dex_method_t {
         ut16 class_id;
@@ -79,15 +72,17 @@ typedef struct dex_class_t {
 typedef struct r_bin_dex_obj_t {
 	int size;
 	const char *file;
-	struct r_buf_t *b;
+	RBuffer *b;
 	struct dex_header_t header;
 	ut32 *strings;
-	struct dex_class_t *classes;
-	struct dex_method_t *methods;
 	struct dex_type_t *types;
+	struct dex_proto_t *protos;
 	struct dex_field_t *fields;
+	struct dex_method_t *methods;
+	struct dex_class_t *classes;
 	RList *methods_list;
 	RList *imports_list;
+	RList *classes_list;
 	ut64 code_from;
 	ut64 code_to;
 	Sdb *kv;

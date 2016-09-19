@@ -1,4 +1,9 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+#include <stddef.h>
+
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_util.h"
 
 static const char* findBreakChar(const char *s) {
 	while (*s) {
@@ -67,7 +72,7 @@ static void clippy(const char *msg) {
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *k;
-	char *p, out[128];
+	char *p, out[128] = {0};
 	ut64 n, n2;
 	int i;
 	RList *tmp;
@@ -129,7 +134,7 @@ static int cmd_help(void *data, const char *input) {
 			if (input[3] == '-')
 				r_base64_decode ((ut8*)buf, input+5, strlen (input+5));
 			else r_base64_encode (buf, (const ut8*)input+4, strlen (input+4));
-			r_cons_printf ("%s\n", buf);
+			r_cons_println (buf);
 			free (buf);
 		} else {
 			n = r_num_get (core->num, input+1);
@@ -146,11 +151,12 @@ static int cmd_help(void *data, const char *input) {
 	case 'd':
 		if (input[1]=='.'){
 			int cur = R_MAX(core->print->cur, 0);
+			// XXX: we need cmd_xxx.h (cmd_anal.h)
 			core_anal_bytes(core, core->block + cur, core->blocksize, 1, 'd');
 		} else if (input[1]==' '){
 			char *d = r_asm_describe (core->assembler, input+2);
 			if (d && *d) {
-				r_cons_printf ("%s\n", d);
+				r_cons_println (d);
 				free (d);
 			} else eprintf ("Unknown opcode\n");
 		} else eprintf ("Use: ?d[.] [opcode]    to get the description of the opcode\n");
@@ -182,8 +188,8 @@ static int cmd_help(void *data, const char *input) {
 			if (q) {
 				*q = 0;
 				n = r_num_get (core->num, p);
-				r_str_bits (out, (const ut8*)&n, sizeof (n), q+1);
-				r_cons_printf ("%s\n", out);
+				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q+1);
+				r_cons_println (out);
 			} else eprintf ("Usage: \"?b value bitstring\"\n");
 			free (p);
 		} else eprintf ("Whitespace expected after '?f'\n");
@@ -205,29 +211,21 @@ static int cmd_help(void *data, const char *input) {
 			char unit[32];
 			n = r_num_math (core->num, input+1);
 			r_num_units (unit, n);
-			r_cons_printf ("%s\n", unit);
+			r_cons_println (unit);
 		}
 		break;
 	case ' ':
 		{
 			char *asnum, unit[32];
-			ut32 n32, s, a;
+			ut32 s, a;
 			double d;
 			float f;
 
-			n = r_num_math (core->num, input+1);
+			n = r_num_math (core->num, input + 1);
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
-			n32 = (ut32)n;
-			{
-				ut64 nn;
-				int be = core->assembler->big_endian;
-				r_mem_copyendian ((ut8*)&nn, (ut8*)&n, sizeof(n), !be);
-				asnum  = r_num_as_string (NULL, nn);
-			}
-			memcpy (&f, &n32, sizeof (f));
-			memcpy (&d, &n, sizeof (d));
+			asnum  = r_num_as_string (NULL, n);
 
 			/* decimal, hexa, octal */
 			s = n>>16<<12;
@@ -243,7 +241,8 @@ static int cmd_help(void *data, const char *input) {
 				free (asnum);
 			}
 			/* binary and floating point */
-			r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
+			r_str_bits64 (out, n);
+			f = d = core->num->fvalue;
 			r_cons_printf ("%s %.01lf %ff %lf\n",
 				out, core->num->fvalue, f, d);
 		}
@@ -319,8 +318,14 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '!': // "?!"
 		if (input[1]) {
-			if (!core->num->value)
-				return core->num->value = r_core_cmd (core, input+1, 0);
+			if (!core->num->value) {
+				if (input[1] == '?') {
+					r_core_sysenv_help (core);
+					return 0;
+				} else {
+					return core->num->value = r_core_cmd (core, input+1, 0);
+				}
+			}
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '@':
@@ -345,18 +350,21 @@ static int cmd_help(void *data, const char *input) {
 			"~", "word", "grep for lines matching word",
 			"~", "!word", "grep for lines NOT matching word",
 			"~", "word[2]", "grep 3rd column of lines matching word",
-			"~", "word:3[0]", "grep 1st column from the 4th line matching mov",
-			"@", " 0x1024", "temporary seek to this address (sym.main+3",
+			"~", "word:3[0]", "grep 1st column from the 4th line matching word",
+			"@", " 0x1024", "temporary seek to this address (sym.main+3)",
 			"@", " addr[!blocksize]", "temporary set a new blocksize",
 			"@a:", "arch[:bits]", "temporary set arch and bits",
 			"@b:", "bits", "temporary set asm.bits",
 			"@e:", "k=v,k=v", "temporary change eval vars",
 			"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
 			"@f:", "file", "temporary replace block with file contents",
+			"@o:", "fd", "temporary switch to another fd",
 			"@s:", "string", "same as above but from a string",
 			"@x:", "909192", "from hex pairs string",
-			"@@=", "1 2 3", " run the previous command at offsets 1, 2 and 3",
+			"@..", "from to", "temporary set from and to for commands supporting ranges",
+			"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
 			"@@", " hit*", "run the command on every flag matching 'hit*'",
+			"@@?", "[ktfb..]", "show help for the iterator operator",
 			"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
 			">", "file", "pipe output of command to file",
 			">>", "file", "append to file",
@@ -366,27 +374,35 @@ static int cmd_help(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		return 0;
 		}
-	case '$':{
-		const char* help_msg[] = {
+	case '$':
+		if (input[1] == '?') {
+			const char* help_msg[] = {
 			"Usage: ?v [$.]","","",
 			"$$", "", "here (current virtual seek)",
 			"$?", "", "last comparison value",
 			"$alias", "=value", "Alias commands (simple macros)",
 			"$b", "", "block size",
-			"$B", "", "begin of function",
+			"$B", "", "base address (aligned lowest map address)",
+			"$F", "", "current function size",
+			"$FB", "", "begin of function",
+			"$Fb", "", "address of the current basic block",
+			"$Fs", "", "size of the current basic block",
+			"$FE", "", "end of function",
+			"$FS", "", "function size",
+			"$FI", "", "function instructions",
 			"$c,$r", "", "get width and height of terminal",
 			"$Cn", "", "get nth call of function",
 			"$Dn", "", "get nth data reference in function",
+			"$D", "", "current debug map base address ?v $D @ rsp",
+			"$DD", "", "current debug map size",
 			"$e", "", "1 if end of block, else 0",
 			"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
-			"$F", "", "current function size",
-			"$I", "", "number of instructions of current function",
 			"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
 			"$Ja", "", "get nth jump of function",
 			"$Xn", "", "get nth xref of function",
 			"$l", "", "opcode length",
 			"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
-			"$M", "", "address where the binary is mapped (base address)",
+			"$M", "", "map address (lowest map address)",
 			"$o", "", "here (current disk io offset)",
 			"$p", "", "getpid()",
 			"$P", "", "pid of children (only in debug)",
@@ -399,19 +415,48 @@ static int cmd_help(void *data, const char *input) {
 			"$k{kv}", "", "get value of an sdb query value",
 			"RNum", "", "$variables usable in math expressions",
 			NULL};
-		r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg);
+		} else {
+			int i = 0;
+			const char *vars[] = {
+				"$$", "$?", "$b", "$B", "$F", "$FB", "$Fb", "$Fs", "$FE", "$FS", "$FI",
+				"$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
+				"$p", "$P", "$s", "$S", "$SS", "$v", "$w", NULL
+			};
+			while (vars[i]) {
+				const char *pad = r_str_pad (' ', 6 - strlen (vars[i]));
+				eprintf ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+				i++;
+			}
 		}
 		return true;
 	case 'V':
-		if (!input[1]){
-			if (!strcmp (R2_VERSION, R2_GITTAP))
+		switch (input[1]) {
+		case '?':
+			{
+				const char* help_msg[] = {
+					"Usage: ?V[jq]","","",
+					"?V", "", "show version information",
+					"?Vj", "", "same as above but in JSON",
+					"?Vq", "", "quiet mode, just show the version number",
+					NULL};
+				r_core_cmd_help (core, help_msg);
+			}
+			break;
+		case 0:
+			if (!strcmp (R2_VERSION, R2_GITTAP)) {
 				r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
-
-			else r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
-		}
-		if (input[1] == 'j' && !input[2]){
-			r_cons_printf ("{\"system\":\"%s-%s-%s\"", R_SYS_OS, R_SYS_ENDIAN, R_SYS_ARCH);
+			} else {
+				r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
+			}
+			break;
+		case 'j':
+			r_cons_printf ("{\"system\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);
 			r_cons_printf (",\"version\":\"%s\"}\n",  R2_VERSION);
+			break;
+		case 'q':
+			r_cons_println (R2_VERSION);
+			break;
 		}
 		break;
 	case 'l':
@@ -429,7 +474,7 @@ static int cmd_help(void *data, const char *input) {
 			ut8 *out = malloc (strlen (input)+1);
 			int len = r_hex_str2bin (input+1, out);
 			out[len] = 0;
-			r_cons_printf ("%s\n", (const char*)out);
+			r_cons_println ((const char*)out);
 			free (out);
 		} else if (!strncmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
 			ut64 n = r_num_math (core->num, input);
@@ -448,12 +493,21 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // echo
 		{
-		const char *msg = r_str_chop_ro (input+1);
-		// TODO: replace all ${flagname} by its value in hexa
-		char *newmsg = filter_flags (core, msg);
-		r_str_unescape (newmsg);
-		r_cons_printf ("%s\n", newmsg);
-		free (newmsg);
+		if (input[1] == 'n') { // mimic echo -n
+			const char *msg = r_str_chop_ro (input+2);
+			// TODO: replace all ${flagname} by its value in hexa
+			char *newmsg = filter_flags (core, msg);
+			r_str_unescape (newmsg);
+			r_cons_print (newmsg);
+			free (newmsg);
+		} else {
+			const char *msg = r_str_chop_ro (input+1);
+			// TODO: replace all ${flagname} by its value in hexa
+			char *newmsg = filter_flags (core, msg);
+			r_str_unescape (newmsg);
+			r_cons_println (newmsg);
+			free (newmsg);
+		}
 		}
 		break;
 	case 's': // sequence from to step
@@ -502,7 +556,7 @@ static int cmd_help(void *data, const char *input) {
 		n = r_io_section_vaddr_to_maddr_try (core->io, n);
 		s = r_io_section_mget_in (core->io, n);
 		if (s && *(s->name)) {
-			r_cons_printf ("%s\n", s->name);
+			r_cons_println (s->name);
 		}
 		break;
 		}
@@ -542,18 +596,24 @@ static int cmd_help(void *data, const char *input) {
 			char foo[1024];
 			r_cons_flush ();
 			for (input++; *input==' '; input++);
-			// TODO: use prompt input
-			snprintf (foo, sizeof (foo)-1, "%s: ", input);
+			// TODO: r_cons_input()
+			snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 			r_line_set_prompt (foo);
 			r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
 			foo[strlen (foo)] = 0;
-			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR,
-				foo, strlen (foo)+1);
+			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 			core->num->value = r_num_math (core->num, foo);
 			}
 			break;
 		}
 		r_cons_set_raw (0);
+		break;
+	case 'w':
+		{
+			ut64 addr = r_num_math (core->num, input + 1);
+			const char *rstr = core->print->hasrefs (core->print->user, addr);
+			r_cons_println (rstr);
+		}
 		break;
 	case 't': {
 		struct r_prof_t prof;
@@ -582,6 +642,7 @@ static int cmd_help(void *data, const char *input) {
 			"?+", " [cmd]", "? > 0",
 			"?-", " [cmd]", "? < 0",
 			"?=", " eip-0x804800", "hex and dec result for this math expr",
+			"?$", "", "show value all the variables ($)",
 			"??", "", "show value of operation",
 			"??", " [cmd]", "? == 0 run command when math matches",
 			"?B", " [elem]", "show range boundaries like 'e?search.in",
@@ -594,7 +655,7 @@ static int cmd_help(void *data, const char *input) {
 			"?b", " [num]", "show binary value of number",
 			"?b64[-]", " [str]", "encode/decode in base64",
 			"?d[.]", " opcode", "describe opcode for asm.arch",
-			"?e", " string", "echo string",
+			"?e[n]", " string", "echo string, optionally without trailing newline",
 			"?f", " [num] [str]", "map each bit of the number as flag string index",
 			"?h", " [str]", "calculate hash for given string",
 			"?i", "[ynmkp] arg", "prompt for number or Yes,No,Msg,Key,Path and store in $$?",
@@ -611,6 +672,7 @@ static int cmd_help(void *data, const char *input) {
 			"?u", " num", "get value in human units (KB, MB, GB, TB)",
 			"?v", " eip-0x804800", "show hex value of math expr",
 			"?vi", " rsp-rbp", "show decimal value of math expr",
+			"?w", " addr", "show what's in this address (like pxr/pxq does)",
 			"?x", " num|str|-hexst", "returns the hexpair of number or string",
 			"?y", " [str]", "show contents of yank buffer, or set with string",
 			NULL};

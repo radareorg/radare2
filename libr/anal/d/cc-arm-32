@@ -1,0 +1,10 @@
+default.cc=arm32
+
+arm32=cc
+cc.arm32.name=arm32
+cc.arm32.arg1=r0
+cc.arm32.arg2=r1
+cc.arm32.arg3=r2
+cc.arm32.arg4=r3
+cc.arm32.argn=stack
+cc.arm32.ret=r0

@@ -14,18 +14,18 @@ static RParsePlugin *parse_static_plugins[] =
 
 R_API RParse *r_parse_new() {
 	int i;
-	RParsePlugin *static_plugin;
 	RParse *p = R_NEW0 (RParse);
 	if (!p) return NULL;
 	p->parsers = r_list_new ();
+	if (!p->parsers) {
+		r_parse_free (p);
+		return NULL;
+	}
 	p->parsers->free = NULL; // memleak
 	p->notin_flagspace = -1;
 	p->flagspace = -1;
 	for (i=0; parse_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RParsePlugin);
-		memcpy (static_plugin, parse_static_plugins[i],
-			sizeof (RParsePlugin));
-		r_parse_add (p, static_plugin);
+		r_parse_add (p, parse_static_plugins[i]);
 	}
 	return p;
 }
@@ -92,7 +92,12 @@ R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 	(x)=='('||(x)==')'||(x)=='{'||(x)=='}'||(x)=='\x1b')
 
 static bool isvalidflag(RFlagItem *flag) {
-	return (flag && strchr (flag->name, '.'));
+	if (flag) {
+		if (strchr (flag->name, '.')) {
+			return strncmp (flag->name, "section.", 8);
+		}
+	}
+	return false;
 }
 
 static char *findNextNumber(char *op) {
@@ -134,41 +139,46 @@ static char *findNextNumber(char *op) {
 	return NULL;
 }
 
-static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
+static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
 	bool x86 = false;
-	if (p&&p->cur&&p->cur->name) {
+	if (p && p->cur && p->cur->name) {
 		if (strstr (p->cur->name, "x86")) x86 = true;
 		if (strstr (p->cur->name, "m68k")) x86 = true;
 	}
-	if (!data || !p) return 0;
+	if (!data || !p) {
+		return 0;
+	}
 #if FILTER_DWORD
 	ptr2 = strstr (ptr, "dword ");
-	if (ptr2)
-		memmove (ptr2, ptr2 + 6, strlen (ptr2+  6) + 1);
+	if (ptr2) {
+		memmove (ptr2, ptr2 + 6, strlen (ptr2 + 6) + 1);
+	}
 #endif
 	ptr2 = NULL;
 	// remove "dword" 2
 	while ((ptr = findNextNumber (ptr))) {
-		if (x86) for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
-		else for (ptr2 = ptr; *ptr2 && (*ptr2!=']' || (*ptr2=='\x1b') || !isseparator (*ptr2)); ptr2++);
+		if (x86) {
+			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
+		} else {
+			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !isseparator (*ptr2)); ptr2++);
+		}
 		off = r_num_math (NULL, ptr);
 		if (off > 0xff) {
-			fcn = r_anal_get_fcn_in (p->anal, off, 0);
-			if (fcn) {
-				if (fcn->addr == off) {
-					*ptr = 0;
-					// hack to realign pointer for colours
-					ptr2--;
-					if (*ptr2 != 0x1b)
-						ptr2++;
-					snprintf (str, len, "%s%s%s", data, fcn->name,
-							(ptr!=ptr2)? ptr2: "");
-					return true;
+			fcn = p->analb.get_fcn_in (p->anal, off, 0);
+			if (fcn && fcn->addr == off) {
+				*ptr = 0;
+				// hack to realign pointer for colours
+				ptr2--;
+				if (*ptr2 != 0x1b) {
+					ptr2++;
 				}
+				snprintf (str, len, "%s%s%s", data, fcn->name,
+					(ptr != ptr2)? ptr2: "");
+				return true;
 			}
 			if (f) {
 				flag = r_flag_get_i2 (f, off);
@@ -177,8 +187,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				}
 				if (isvalidflag (flag)) {
 					if (p->notin_flagspace != -1) {
-						if (p->flagspace == flag->space)
+						if (p->flagspace == flag->space) {
 							continue;
+						}
 					} else if (p->flagspace != -1 && (p->flagspace != flag->space)) {
 						ptr = ptr2;
 						continue;
@@ -186,17 +197,17 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 					*ptr = 0;
 					// hack to realign pointer for colours
 					ptr2--;
-					if (*ptr2 != 0x1b)
+					if (*ptr2 != 0x1b) {
 						ptr2++;
+					}
 					snprintf (str, len, "%s%s%s", data, flag->name,
-							(ptr != ptr2)? ptr2: "");
+							(ptr != ptr2) ? ptr2 : "");
 					return true;
 				}
 			}
 		}
 		if (p->hint) {
 			int pnumleft, immbase = p->hint->immbase;
-			bool big_endian = false;
 			char num[256], *pnum;
 			bool is_hex = false;
 			strncpy (num, ptr, sizeof (num)-2);
@@ -211,8 +222,6 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 				break;
 			}
 			*pnum = 0;
-			if (p->anal && p->anal->big_endian)
-				big_endian = true;
 			switch (immbase) {
 			case 0:
 				// do nothing
@@ -294,10 +303,10 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	return false;
 }
 
-R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len) {
-	filter (p, f, data, str, len);
+R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
+	filter (p, f, data, str, len, big_endian);
 	if (p->cur && p->cur->filter)
-		return p->cur->filter (p, f, data, str, len);
+		return p->cur->filter (p, f, data, str, len, big_endian);
 	return false;
 }
 

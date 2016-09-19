@@ -13,7 +13,7 @@ static libbochs_t *desc = NULL;
 static RIODesc *riobochs = NULL;
 extern RIOPlugin r_io_plugin_bochs; // forward declaration
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp (file, "bochs://", strlen ("bochs://"));
 }
 
@@ -116,7 +116,7 @@ RIOPlugin r_io_plugin_bochs = {
 	.close = __close,
 	.read = __read,
 	.write = __write,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.isdbg = true

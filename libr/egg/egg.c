@@ -17,22 +17,34 @@ static REggPlugin *egg_static_plugins[] =
 R_API REgg *r_egg_new () {
 	int i;
 	REgg *egg = R_NEW0 (REgg);
+	if (!egg) return NULL;
 	egg->src = r_buf_new ();
+	if (!egg->src) goto beach;
 	egg->buf = r_buf_new ();
+	if (!egg->buf) goto beach;
 	egg->bin = r_buf_new ();
+	if (!egg->bin) goto beach;
 	egg->remit = &emit_x86;
 	egg->syscall = r_syscall_new ();
+	if (!egg->syscall) goto beach;
 	egg->rasm = r_asm_new ();
+	if (!egg->rasm) goto beach;
 	egg->bits = 0;
 	egg->endian = 0;
 	egg->db = sdb_new (NULL, NULL, 0);
+	if (!egg->db) goto beach;
 	egg->patches = r_list_new ();
+	if (!egg->patches) goto beach;
 	egg->patches->free = (RListFree)r_buf_free;
 	egg->plugins = r_list_new ();
 	for (i=0; egg_static_plugins[i]; i++) {
 		r_egg_add (egg, egg_static_plugins[i]);
 	}
 	return egg;
+
+beach:
+	r_egg_free (egg);
+	return NULL;
 }
 
 R_API int r_egg_add (REgg *a, REggPlugin *foo) {
@@ -245,7 +257,7 @@ R_API int r_egg_assemble(REgg *egg) {
 	if (egg->remit == &emit_x86 || egg->remit == &emit_x64) {
 		r_asm_use (egg->rasm, "x86.nz");
 		r_asm_set_bits (egg->rasm, egg->bits);
-		r_asm_set_big_endian (egg->rasm, 0);
+		r_asm_set_big_endian (egg->rasm, egg->endian);
 		r_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
 
 		code = r_buf_to_string (egg->buf);
@@ -259,7 +271,7 @@ R_API int r_egg_assemble(REgg *egg) {
 	if (egg->remit == &emit_arm) {
 		r_asm_use (egg->rasm, "arm");
 		r_asm_set_bits (egg->rasm, egg->bits);
-		r_asm_set_big_endian (egg->rasm, egg->endian); // XXX
+		r_asm_set_big_endian (egg->rasm, egg->endian);
 		r_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
 
 		code = r_buf_to_string (egg->buf);

@@ -22,12 +22,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "dis-asm.h"
-#include "sysdep.h"
+#include "../../include/dis-asm.h"
+#include "../../include/sysdep.h"
 //#include "bfd.h"
 //#include "libbfd.h"
-#include "xtensa-isa.h"
-#include "xtensa-isa-internal.h"
+#include "../../include/xtensa-isa.h"
+#include "../../include/xtensa-isa-internal.h"
 
 extern int filename_cmp (const char *s1, const char *s2);
 xtensa_isa_status xtisa_errno;

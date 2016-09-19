@@ -27,6 +27,7 @@ RAsmPlugin r_asm_plugin_dcpu16 = {
 	.name = "dcpu16",
 	.arch = "dpcu",
 	.bits = 16,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "Mojang's DCPU-16",
 	.license = "PD",
 	.disassemble = &disassemble,

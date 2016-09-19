@@ -18,12 +18,9 @@ RAsmPlugin r_asm_plugin_snes = {
 	.desc = "SuperNES CPU",
 	.arch = "snes",
 	.bits = 8|16,
-	.init = NULL,
-	.fini = NULL,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.license = "LGPL3",
-	.disassemble = &disassemble,
-	.modify = NULL,
-	.assemble = NULL,
+	.disassemble = &disassemble
 };
 
 #ifndef CORELIB

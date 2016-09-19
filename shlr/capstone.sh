@@ -6,6 +6,10 @@ CS_REV="$4" # revert
 
 if [ -d capstone -a ! -d capstone/.git ]; then 
 	echo "[capstone] release with no git?"
+	cd capstone
+	for PATCH in ../capstone-patches/* ; do
+		patch -Rp1 < $PATCH
+	done
 else 
 	if [ ! -d capstone ]; then 
 		git clone "${CS_URL}" capstone || exit 1

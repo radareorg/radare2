@@ -12,6 +12,7 @@ static void appendstring(const char *msg, char **s) {
 	else
 	if (*s) {
 		char *p = malloc (strlen (msg) + strlen (*s)+1);
+		if (!p) return;
 		strcpy (p, *s);
 		free (*s);
 		*s = p;
@@ -47,7 +48,7 @@ R_API int r_parse_is_c_file (const char *file) {
 		if (!strcmp (ext, "cparse")
 		||  !strcmp (ext, "c")
 		||  !strcmp (ext, "h"))
-			return R_TRUE;
+			return true;
 	}
-	return R_FALSE;
+	return false;
 }

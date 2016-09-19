@@ -74,29 +74,47 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 	int i, j = 0;
 	RListIter *iter;
 	RIOCache *c;
-
+	if (rad == 2) {
+		io->cb_printf ("[");
+	}
 	r_list_foreach (io->cache, iter, c) {
-		if (rad) {
+		if (rad == 1) {
 			io->cb_printf ("wx ");
-			for (i=0; i < c->size; i++)
+			for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", (ut8)(c->data[i] & 0xff));
+			}
 			io->cb_printf (" @ 0x%08"PFMT64x, c->from);
 			io->cb_printf (" # replaces: ");
-			for (i=0; i < c->size; i++)
+		  	for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", (ut8)(c->odata[i] & 0xff));
+			}
 			io->cb_printf ("\n");
-		} else {
-			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ",
-				j, c->from, c->size);
-			for (i=0; i < c->size; i++)
+		} else if (rad == 2) {
+			io->cb_printf ("{\"idx\":%"PFMT64d",\"addr\":%"PFMT64d",\"size\":%d,", j, c->from, c->size);
+			io->cb_printf ("\"before\":\"");
+		  	for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", c->odata[i]);
-			io->cb_printf (" -> ");
-			for (i=0; i < c->size; i++)
+			}
+			io->cb_printf ("\",\"after\":\"");
+		  	for (i = 0; i < c->size; i++) {
 				io->cb_printf ("%02x", c->data[i]);
+			}
+			io->cb_printf ("\",\"written\":%s}%s", c->written? "true": "false",iter->n? ",": "");
+		} else if (rad == 0) {
+			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ", j, c->from, c->size);
+			for (i = 0; i < c->size; i++) {
+				io->cb_printf ("%02x", c->odata[i]);
+			}
+			io->cb_printf (" -> ");
+			for (i = 0; i < c->size; i++) {
+				io->cb_printf ("%02x", c->data[i]);
+			}
 			io->cb_printf (" %s\n", c->written? "(written)": "(not written)");
 		}
 		j++;
 	}
+	if (rad == 2)
+		io->cb_printf ("]");
 	return false;
 }
 

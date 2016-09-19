@@ -69,7 +69,9 @@ typedef struct _exc_msg {
 	NDR_record_t NDR;
 	exception_type_t exception;
 	mach_msg_type_number_t code_cnt;
+#if !__POWERPC__
 	mach_exception_data_t code;
+#endif
 	/* some times RCV_TO_LARGE probs */
 	char pad[512];
 } exc_msg;

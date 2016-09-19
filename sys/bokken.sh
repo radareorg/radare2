@@ -2,7 +2,9 @@
 # find root
 cd `dirname $PWD/$0`
 
-mkdir  _work
+if [ ! -d _work ]; then
+	mkdir _work
+fi
 cd _work || exit 1
 if [ -d bokken ]; then
 	cd bokken

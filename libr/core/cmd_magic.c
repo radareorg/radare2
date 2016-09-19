@@ -1,4 +1,11 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
+#include <stddef.h>
+
+#include "r_config.h"
+#include "r_cons.h"
+#include "r_core.h"
+#include "r_magic.h"
+#include "r_types.h"
 
 /* ugly global vars */
 static int magicdepth = 99; //XXX: do not use global var here
@@ -9,11 +16,13 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	const char *fmt;
 	char *q, *p;
 	const char *str;
-	int found = 0, delta = 0, adelta = 0;
+	int found = 0, delta = 0, adelta = 0, ret;
+	ut64 curoffset = core->offset;
 #define NAH 32
 
 	if (--depth<0) {
-		 return 0;
+		ret = 0;
+		goto seek_exit;
 	}
 	if (addr != core->offset) {
 #if 1
@@ -28,7 +37,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		int mod = addr % core->search->align;
 		if (mod) {
 			eprintf ("Unaligned search at %d\n", mod);
-			return mod;
+			ret = mod;
+			goto seek_exit;
 		}
 	}
 	if (((addr&7)==0) && ((addr&(7<<8))==0))
@@ -54,14 +64,16 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			if (r_magic_load (ck, file) == -1) {
 				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
 				ck = NULL;
-				return -1;
+				ret = -1;
+				goto seek_exit;
 			}
 		} else {
 			const char *magicpath = r_config_get (core->config, "dir.magic");
 			if (r_magic_load (ck, magicpath) == -1) {
 				ck = NULL;
 				eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
-				return -1;
+				ret = -1;
+				goto seek_exit;
 			}
 		}
 	}
@@ -69,7 +81,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	if (delta+2>core->blocksize) {
 		eprintf ("EOB\n");
-		return -1;
+		ret = -1;
+		goto seek_exit;
 	}
 	str = r_magic_buffer (ck, core->block+delta, core->blocksize-delta);
 	if (str) {
@@ -84,7 +97,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			//r_magic_free (ck);
 			//ck = NULL;
 			//return -1;
-			return mod+1;
+			ret = mod + 1;
+			goto seek_exit;
 		}
 		p = strdup (str);
 		fmt = p;
@@ -144,10 +158,15 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 {
 	int mod = core->search->align;
 	if (mod) {
-		return mod; //adelta%addr + deR_ABS(mod-adelta)+1;
+		ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
+		goto seek_exit;
 	}
 }
-	return adelta; //found;
+	ret = adelta; //found;
+
+seek_exit:
+	r_core_seek (core, curoffset, true);
+	return ret;
 }
 
 static void r_core_magic(RCore *core, const char *file, int v) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -66,7 +66,7 @@ static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
 		lr = (ut32)debug_read_raw (pid, at);
 		memcpy (buf+x, &lr, last) ;
 	}
-	return sz; 
+	return sz;
 }
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
@@ -104,24 +104,31 @@ static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
 	ptrace_word *buf = (ptrace_word*)pbuf;
 	ut32 words = sz / sizeof (ptrace_word);
 	ut32 last = sz % sizeof (ptrace_word);
-	ut64 x, *at = (ut64 *)(size_t)addr;
+	ptrace_word x, *at = (ptrace_word *)(size_t)addr;
 	ptrace_word lr;
-	if (sz<1 || addr==UT64_MAX)
+	if (sz < 1 || addr == UT64_MAX) {
 		return -1;
-	for (x=0; x<words; x++)
-		debug_write_raw (pid, (ut32*)(at++), buf[x]);
+	}
+	for (x = 0; x < words; x++) {
+		int rc = debug_write_raw (pid, at++, buf[x]); //((ut32*)(at)), buf[x]);
+		if (rc) {
+			return -1;
+		}
+	}
 	if (last) {
 		lr = debug_read_raw (pid, (void*)at);
-		memcpy (&lr, buf+x, last);
-		if (debug_write_raw (pid, (void*)at, lr))
-			return sz-last;
+		memcpy (&lr, buf + x, last);
+		if (debug_write_raw (pid, (void*)at, lr)) {
+			return sz - last;
+		}
 	}
-	return sz; 
+	return sz;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	return ptrace_write_at (RIOPTRACE_PID (fd), buf, len, io->off);
 }
 
@@ -149,11 +156,13 @@ static void close_pidmem(RIOPtrace *iop) {
 	}
 }
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	if (!strncmp (file, "ptrace://", 9))
+static bool __plugin_open(RIO *io, const char *file, bool many) {
+	if (!strncmp (file, "ptrace://", 9)) {
 		return true;
-	if (!strncmp (file, "attach://", 9))
+	}
+	if (!strncmp (file, "attach://", 9)) {
 		return true;
+	}
 	return false;
 }
 
@@ -185,6 +194,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (ret != -1) {
 			RIODesc *desc;
 			RIOPtrace *riop = R_NEW0 (RIOPtrace);
+			if (!riop) return NULL;
 			riop->pid = riop->tid = pid;
 			open_pidmem (riop);
 #if 1
@@ -218,7 +228,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				free (pidpath);
 			}
 #else
-			{	
+			{
 				char *pidpath = strdup ("/bin/ls"); //io->referer); //filer_sys_pid_to_path (pid);
 				desc = r_io_desc_new (&r_io_plugin_ptrace, pid,
 						pidpath, rw | R_IO_EXEC, mode, riop);
@@ -279,7 +289,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		int pid = iop->pid;
 		if (cmd[3] == ' ') {
 			pid = atoi (cmd+4);
-			if (pid != 0) {
+			if (pid > 0 && pid != iop->pid) {
 				(void)ptrace (PTRACE_ATTACH, pid, 0, 0);
 				// TODO: do not set pid if attach fails?
 				iop->pid = iop->tid = pid;
@@ -300,7 +310,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.plugin_open = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,

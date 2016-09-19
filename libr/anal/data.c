@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake */
+/* radare - LGPL - Copyright 2012-2016 - pancake */
 
 #include <r_anal.h>
 
@@ -31,8 +31,8 @@ static int is_string(const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
-static int is_number(const ut8 *buf, int endian, int size) {
-	ut64 n = r_mem_get_num (buf, size, endian);
+static int is_number(const ut8 *buf, int size) {
+	ut64 n = r_mem_get_num (buf, size);
 	return (n < UT32_MAX)? (int)n: 0;
 }
 
@@ -48,12 +48,13 @@ static int is_invalid(const ut8 *buf, int size) {
 }
 
 #define USE_IS_VALID_OFFSET 1
-static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
+static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 	ut64 n;
 	ut8 buf2[32];
+	RIOBind *iob = &anal->iob;
 	if (size > sizeof (buf2))
 		size = sizeof (buf2);
-	n = r_mem_get_num (buf, size, endian);
+	n = r_mem_get_num (buf, size);
 	if (!n) return 1; // null pointer
 #if USE_IS_VALID_OFFSET
 	int r = iob->is_valid_offset (iob->io, n, 0);
@@ -93,6 +94,10 @@ R_API char *r_anal_data_to_string(RAnalData *d) {
 	if (!d) return NULL;
 
 	line = malloc (mallocsz);
+	if (!line) {
+		eprintf ("Cannot allocate %d bytes\n", mallocsz);
+		return NULL;
+	}
 	snprintf (line, mallocsz, "0x%08" PFMT64x "  ", d->addr);
 	n32 = (ut32)d->ptr;
 	len = R_MIN (d->len, 8);
@@ -172,12 +177,17 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 	} else {
 		ad->str = malloc (len + 1);
 		if (!ad->str) {
-			free (ad);
+			r_anal_data_free (ad);
 			return NULL;
 		}
 		memcpy (ad->str, p, len);
 		ad->str[len] = 0;
 		ad->buf = malloc (len + 1);
+		if (!ad->buf) {
+			r_anal_data_free (ad);
+			eprintf ("Cannot allocate %d bytes\n", len + 1);
+			return NULL;
+		}
 		memcpy (ad->buf, ad->str, len + 1);
 		ad->len = len + 1; // string length + \x00
 	}
@@ -227,7 +237,6 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->bits;
-	int endi = !anal->big_endian;
 	int word = R_MIN (8, bits / 8);
 
 	if (size < 4)
@@ -266,7 +275,7 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1,
 					buf, word);
 	if (size >= word) {
-		dst = is_pointer (&anal->iob, buf, endi, word);
+		dst = is_pointer (anal, buf, word);
 		if (dst) return r_anal_data_new (addr,
 						R_ANAL_DATA_TYPE_POINTER, dst, buf, word);
 	}
@@ -277,7 +286,7 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 					nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
 	}
 	if (size >= word) {
-		n = is_number (buf, endi, word);
+		n = is_number (buf, word);
 		if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER,
 					n, buf, word);
 	}

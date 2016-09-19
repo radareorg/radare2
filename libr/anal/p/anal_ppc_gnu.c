@@ -7,11 +7,8 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_bytes, int len) {
+static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len) {
 //int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
-// TODO swap endian here??
-	char bytes[1024];
-	r_mem_copyendian ((ut8*)bytes, _bytes, 4, 1);
 	// XXX hack
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
 	short baddr = ((bytes[2]<<8) | (bytes[3]&0xfc));// 16-29
@@ -138,11 +135,16 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4; /* :D */
+}
+
 struct r_anal_plugin_t r_anal_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.desc = "PowerPC analysis plugin",
 	.license = "LGPL3",
 	.arch = "ppc",
+	.archinfo = archinfo,
 	.bits = 32|64,
 	.op = &ppc_op,
 	.set_reg_profile = &set_reg_profile,

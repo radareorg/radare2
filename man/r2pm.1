@@ -1,11 +1,11 @@
-.Dd Oct 1, 2015
+.Dd Jun 7, 2016
 .Dt R2PM 1
 .Sh NAME
 .Nm R2PM
 .Nd radare2 package manager
 .Sh SYNOPSIS
 .Nm r2pm
-.Op cmd
+.Op init|update|cmd
 .Op ...
 .Sh DESCRIPTION
 Allows to install, update, uninstall and discover plugins and tools that can be used with radare2.
@@ -14,22 +14,35 @@ Allows to install, update, uninstall and discover plugins and tools that can be 
 Show information about repository and installed packages
 .It Fl i, Cm install Ar pkgname
 Install a package
+.It Fl gi, Cm global-install Ar pkgname
+Install a package in the system directory
 .It Fl t, Cm test [OK|FX|BR|XX] Cm [build-id]
 Show last build + testsuite run from travis, greps for errors
 .It Fl u, Cm uninstall Ar pkgname
 Uninstall a package
+.It Fl gu, Cm global-install Ar pkgname
+Uninstall a package from the system directory
 .It Fl l, Cm list
 List installed packages
 .It Fl s, Cm search Ar keyword
 Search in database for packages matching keyword
+.It Fl r, Cm run Ar command ...args
+Run command with R2PM_BINDIR in PATH
 .It Fl v, Cm version
 Show version information
 .It Fl h, Cm help
 Show usage help message
 .It Fl c, Cm clean
 Clean the source cache
+.It Fl w, Cm when
+Show when a package was installed or exit 1 if pkg does not exist
 .El
 .Sh EXAMPLES
+.Pp
+Initialize and update the package database
+.Pp
+  $ r2pm init
+  $ r2pm update
 .Pp
 Install a package
 .Pp

@@ -35,7 +35,7 @@ ASM_OBJS += arch/arm/aarch64/aarch64-opc.c ;
 ASM_EXTRA += <include>arch/arm/aarch64/ ;
 
 ASM_OBJS += p/asm_8051.c p/asm_tms320.c p/asm_gb.c p/asm_ppc.c p/asm_x86.c ;
-ASM_OBJS += p/asm_arc.c p/asm_csr.c p/asm_i8080.c p/asm_x86_as.c ;
+ASM_OBJS += p/asm_arc.c p/asm_xap.c p/asm_i8080.c p/asm_x86_as.c ;
 ASM_OBJS += p/asm_arm_cs.c p/asm_arm_gnu.c p/asm_dalvik.c p/asm_java.c p/asm_rar.c p/asm_x86_nasm.c ;
 ASM_OBJS += p/asm_arm_winedbg.c	p/asm_dcpu16.c p/asm_m68k.c p/asm_sh.c p/asm_x86_nz.c p/asm_x86_tab.c ;
 ASM_OBJS += p/asm_avr.c p/asm_ebc.c p/asm_mips_gnu.c p/asm_mips_cs.c p/asm_snes.c p/asm_x86_olly.c ;

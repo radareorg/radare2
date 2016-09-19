@@ -1,10 +1,10 @@
 include ../config.mk
 
 NAME=r_syscall
-DEPS=r_util r_db
+DEPS=r_util
 
 OBJS=syscall.o ioports.o
-CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -Wall
+CFLAGS+=-D__UNIX__ -Wall
 
 EXTRA_TARGETS+=do
 EXTRA_CLEAN=doclean

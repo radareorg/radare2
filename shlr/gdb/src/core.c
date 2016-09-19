@@ -1,4 +1,4 @@
-/* libgdbr - LGPL - Copyright 2014 - defragger */
+/* libgdbr - LGPL - Copyright 2014-2016 - defragger */
 
 #include "libgdbr.h"
 #include "core.h"
@@ -144,7 +144,6 @@ static registers_t arm32[] = {
 	{"",	0,	0}
 };
 
-
 static registers_t aarch64[] = {
 	{"x0",	0,	8},
 	{"x1",	8,	8},
@@ -216,85 +215,129 @@ static registers_t aarch64[] = {
 	{"fpcr",	784,	4},
 	{"",	0,	0}
 };
+
+static registers_t lm32[] = {
+	{"r0",	0,	4},
+	{"r1",	4,	4},
+	{"r2",	8,	4},
+	{"r3",	12,	4},
+	{"r4",	16,	4},
+	{"r5",	20,	4},
+	{"r6",	24,	4},
+	{"r7",	28,	4},
+	{"r8",	32,	4},
+	{"r9",	36,	4},
+	{"r10",	40,	4},
+	{"r11",	44,	4},
+	{"r12",	48,	4},
+	{"r13",	52,	4},
+	{"r14",	56,	4},
+	{"r15",	60,	4},
+	{"r16",	64,	4},
+	{"r17",	68,	4},
+	{"r18",	72,	4},
+	{"r19",	76,	4},
+	{"r20",	80,	4},
+	{"r21",	84,	4},
+	{"r22",	88,	4},
+	{"r23",	92,	4},
+	{"r24",	96,	4},
+	{"r25",	100,	4},
+	{"gp",	104,	4},
+	{"fp",	108,	4},
+	{"sp",	112,	4},
+	{"ra",	116,	4},
+	{"ea",	120,	4},
+	{"ba",	124,	4},
+	{"PC",	128,	4},
+	{"EID",	132,	4},
+	{"EBA",	136,	4},
+	{"DEBA",140,	4},
+	{"IE",	144,	4},
+	{"IM",	148,	4},
+	{"IP",	152,	4},
+	{"",	0,	0}
+};
+
 static registers_t mips[] = {
-    {"zero", 0,	0},
-    {"at", 4,	0},
-    {"v0", 8,	0},
-    {"v1", 12,	8},
-    {"a0", 16,	8},
-    {"a1", 20,	8},
-    {"a2", 24,	8},
-    {"a3", 28,	8},
-    {"t0", 32,	8},
-    {"t1", 36,	8},
-    {"t2", 40,	8},
-    {"t3", 44,	8},
-    {"t4", 48,	8},
-    {"t5", 52,	8},
-    {"t6", 56,	8},
-    {"t7", 60,	8},
-    {"s0", 64,	8},
-    {"s1", 68,	8},
-    {"s2", 72,	8},
-    {"s3", 76,	8},
-    {"s4", 80,	8},
-    {"s5", 84,	8},
-    {"s6", 88,	8},
-    {"s7", 92,	8},
-    {"t8", 96,	8},
-    {"t9", 100,	8},
-    {"k0", 104,	8},
-    {"k1", 108,	8},
-    {"gp", 112,	8},
-    {"sp", 116,	8},
-    {"s8", 120,	8},
-    {"ra", 124,	8},
-    {"sr", 128,	8},
-    {"lo", 132,	8},
-    {"hi", 134,	8},
-    {"bad", 140,	8},
-    {"cause", 144,	8},
-    {"pc", 148,	8},
-    {"f0", 152,	8},
-    {"f1", 156,	8},
-    {"f2", 160,	8},
-    {"f3", 164,	8},
-    {"f4", 168,	8},
-    {"f5", 172,	8},
-    {"f6", 176,	8},
-    {"f7", 180,	8},
-    {"f8", 184,	8},
-    {"f9", 188,	8},
-    {"f10", 192,	8},
-    {"f11", 196,	8},
-    {"f12", 200,	8},
-    {"f13", 204,	8},
-    {"f14", 208,	8},
-    {"f15", 212,	8},
-    {"f16", 216,	8},
-    {"f17", 220,	8},
-    {"f18", 224,	8},
-    {"f19", 228,	8},
-    {"f20", 232,	8},
-    {"f21", 236,	8},
-    {"f22", 240,	8},
-    {"f23", 244,	8},
-    {"f24", 248,	8},
-    {"f25", 252,	8},
-    {"f26", 256,	8},
-    {"f27", 260,	8},
-    {"f28", 264,	8},
-    {"f29", 268,	8},
-    {"f30", 272,	8},
-    {"f31", 276,	8},
-    {"fsr", 280,	8},
-    {"fir", 284,	8},
-    {"unknw", 288,	8},
+	{"zero", 0,	0},
+	{"at", 4,	0},
+	{"v0", 8,	0},
+	{"v1", 12,	8},
+	{"a0", 16,	8},
+	{"a1", 20,	8},
+	{"a2", 24,	8},
+	{"a3", 28,	8},
+	{"t0", 32,	8},
+	{"t1", 36,	8},
+	{"t2", 40,	8},
+	{"t3", 44,	8},
+	{"t4", 48,	8},
+	{"t5", 52,	8},
+	{"t6", 56,	8},
+	{"t7", 60,	8},
+	{"s0", 64,	8},
+	{"s1", 68,	8},
+	{"s2", 72,	8},
+	{"s3", 76,	8},
+	{"s4", 80,	8},
+	{"s5", 84,	8},
+	{"s6", 88,	8},
+	{"s7", 92,	8},
+	{"t8", 96,	8},
+	{"t9", 100,	8},
+	{"k0", 104,	8},
+	{"k1", 108,	8},
+	{"gp", 112,	8},
+	{"sp", 116,	8},
+	{"s8", 120,	8},
+	{"ra", 124,	8},
+	{"sr", 128,	8},
+	{"lo", 132,	8},
+	{"hi", 134,	8},
+	{"bad", 140,	8},
+	{"cause", 144,	8},
+	{"pc", 148,	8},
+	{"f0", 152,	8},
+	{"f1", 156,	8},
+	{"f2", 160,	8},
+	{"f3", 164,	8},
+	{"f4", 168,	8},
+	{"f5", 172,	8},
+	{"f6", 176,	8},
+	{"f7", 180,	8},
+	{"f8", 184,	8},
+	{"f9", 188,	8},
+	{"f10", 192,	8},
+	{"f11", 196,	8},
+	{"f12", 200,	8},
+	{"f13", 204,	8},
+	{"f14", 208,	8},
+	{"f15", 212,	8},
+	{"f16", 216,	8},
+	{"f17", 220,	8},
+	{"f18", 224,	8},
+	{"f19", 228,	8},
+	{"f20", 232,	8},
+	{"f21", 236,	8},
+	{"f22", 240,	8},
+	{"f23", 244,	8},
+	{"f24", 248,	8},
+	{"f25", 252,	8},
+	{"f26", 256,	8},
+	{"f27", 260,	8},
+	{"f28", 264,	8},
+	{"f29", 268,	8},
+	{"f30", 272,	8},
+	{"f31", 276,	8},
+	{"fsr", 280,	8},
+	{"fir", 284,	8},
+	{"unknw", 288,	8},
 	{"",	0,	0}
 };
 
 static registers_t avr[] = {
-    {"r0", 0, 1},
+	{"r0", 0, 1},
 	{"r1", 1, 1},
 	{"r2", 2, 1},
 	{"r3", 3, 1},
@@ -328,7 +371,7 @@ static registers_t avr[] = {
 	{"r31", 31, 1},
 	{"sreg", 32, 1},
 	{"sp", 33, 2},
-	//{"pc2", 35, 4},
+	{"pc2", 35, 4},
 	{"pc", 39, 4},
 	{"", 0, 0}
 };
@@ -381,6 +424,9 @@ int gdbr_set_architecture(libgdbr_t* g, uint8_t architecture) {
 		break;
 	case ARCH_AVR:
 		g->registers = avr;
+		break;
+	case ARCH_LM32:
+		g->registers = lm32;
 		break;
 	default:
 		eprintf ("Error unknown architecture set\n");
@@ -652,9 +698,9 @@ int send_vcont(libgdbr_t* g, const char* command, int thread_id) {
 	int ret;
 	if (!g) return -1;
 	if (thread_id < 0) {
-		ret = snprintf (tmp, 255, "%s;%s", CMD_C, command);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s", CMD_C, command);
 	} else {
-		ret = snprintf (tmp, 255, "%s;%s:%x", CMD_C, command, thread_id);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s:%x", CMD_C, command, thread_id);
 	}
 	if (ret < 0) return ret;
 	ret = send_command (g, tmp);
@@ -733,10 +779,13 @@ int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type) {
 	default:
 		break;
 	}
-	if (ret < 0) return ret;
+	if (ret < 0) {
+		return ret;
+	}
 	ret = send_command (g, tmp);
-	if (ret < 0) return ret;
-
+	if (ret < 0) {
+		return ret;
+	}
 	if (read_packet (g) >= 0) {
 		return handle_removebp (g);
 	}
@@ -744,22 +793,24 @@ int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type) {
 }
 
 int send_ack(libgdbr_t* g) {
-	if (!g) return -1;
-	g->send_buff[0] = '+';
-	g->send_len = 1;
-	send_packet (g);
-	return 0;
+	if (g) {
+		g->send_buff[0] = '+';
+		g->send_len = 1;
+		send_packet (g);
+		return 0;
+	}
+	return -1;
 }
 
 int send_command(libgdbr_t* g, const char* command) {
 	uint8_t checksum;
 	int ret;
 
-	if (!g || !command)
+	if (!g || !command) {
 		return -1;
-
+	}
 	checksum = cmd_checksum (command);
-	ret = snprintf(g->send_buff, g->send_max,
+	ret = snprintf (g->send_buff, g->send_max,
 		"$%s#%.2x", command, checksum);
 	if (ret >= 0) {
 		g->send_len = ret;

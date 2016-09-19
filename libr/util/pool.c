@@ -64,7 +64,7 @@ R_API void* r_mem_pool_alloc(RMemoryPool *pool) {
 
 // TODO: not implemented
 R_API int r_mem_pool_dealloc(RMemoryPool *pool, void *p) {
-	return R_FALSE;
+	return false;
 }
 
 /* poolfactory */
@@ -80,16 +80,21 @@ R_API void r_poolfactory_init (int limit) {
 	single_pf.limit = limit+1;
 	free (single_pf.pools);
 	single_pf.pools = malloc (size);
+	if (!single_pf.pools) return;
 	memset (single_pf.pools, 0, size);
 }
 
 R_API RPoolFactory* r_poolfactory_new(int limit) {
-	if (limit>0) {
+	if (limit > 0) {
 		int size = sizeof (RMemoryPool*) * limit;
 		RPoolFactory *pf = R_NEW0 (RPoolFactory);
 		if (!pf) return NULL;
-		pf->limit = limit+1;
+		pf->limit = limit + 1;
 		pf->pools = malloc (size);
+		if (!pf->pools) {
+			r_poolfactory_free (pf);
+			return NULL;
+		}
 		memset (pf->pools, 0, size);
 		return pf;
 	}
@@ -107,7 +112,7 @@ R_API void *r_poolfactory_alloc(RPoolFactory *pf, int nodesize) {
 
 // TODO: not implemented
 R_API int r_poolfactory_dealloc(RPoolFactory *pool, void *p) {
-	return R_FALSE;
+	return false;
 }
 // TODO: add support for ranged limits, from-to
 R_API void r_poolfactory_stats(RPoolFactory *pf) {

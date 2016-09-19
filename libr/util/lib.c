@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -39,31 +39,40 @@ static int __has_debug = 0;
 
 /* XXX: Rename this helper function */
 R_API const char *r_lib_types_get(int idx) {
-	if (idx < 0 || idx > R_LIB_TYPE_LAST-1)
+	if (idx < 0 || idx > R_LIB_TYPE_LAST - 1) {
 		return "unk";
+	}
 	return r_lib_types[idx];
 }
 
 R_API int r_lib_types_get_i(const char *str) {
 	int i;
-	for (i=0; r_lib_types[i]; i++) {
-		if (!strcmp (str, r_lib_types[i])) 
+	for (i = 0; r_lib_types[i]; i++) {
+		if (!strcmp (str, r_lib_types[i])) {
 			return i;
+		}
 	}
 	return -1;
 }
 
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret;
-	if (!libname || !*libname)
+#if __UNIX__
+	if (!libname) {
+		return dlopen (NULL, RTLD_NOW);
+	}
+#endif
+	if (!libname || !*libname) {
 		return NULL;
+	}
 	ret = DLOPEN (libname);
-	if (__has_debug && ret == NULL)
+	if (__has_debug && ret == NULL) {
 #if __UNIX__
 		eprintf ("dlerror(%s): %s\n", libname, dlerror ());
 #else
 		eprintf ("r_lib_dl_open: Cannot open '%s'\n", libname);
 #endif
+	}
 	return ret;
 }
 
@@ -113,7 +122,7 @@ R_API RLib *r_lib_new(const char *symname) {
 	char *env_debug;
 	if (lib) {
 		env_debug = r_sys_getenv ("R_DEBUG");
-		__has_debug = env_debug ? R_TRUE : R_FALSE;
+		__has_debug = env_debug ? true : false;
 		if (env_debug) {
 			free (env_debug);
 		}
@@ -135,9 +144,7 @@ R_API RLib *r_lib_free(RLib *lib) {
 
 /* THIS IS WRONG */
 R_API int r_lib_dl_check_filename(const char *file) {
-	if (strstr (file, "."R_LIB_EXT))
-		return R_TRUE;
-	return R_FALSE;
+	return (strstr (file, "."R_LIB_EXT)) != NULL;
 }
 
 /* high level api */
@@ -203,7 +210,7 @@ static int samefile(const char *a, const char *b) {
 	char *sa = strdup (a);
 	char *sb = strdup (b);
 	char *ptr;
-	int len, ret = R_FALSE;
+	int len, ret = false;
 
 	if (sa != NULL && sb != NULL) {
 		do {
@@ -220,7 +227,7 @@ static int samefile(const char *a, const char *b) {
 				memmove (ptr, ptr+1, len);
 			}
 		} while (ptr);
-		ret = strcmp (sa,sb)? R_FALSE: R_TRUE;
+		ret = strcmp (sa,sb)? false: true;
 	}
 
 	free (sa);
@@ -258,7 +265,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct *stru) {
 	RLibPlugin *p;
 	RListIter *iter;
-	int ret = R_FALSE;
+	int ret = false;
 
 	if (stru->version) {
 		if (strcmp (stru->version, R2_VERSION)) {
@@ -306,20 +313,23 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 		path = LIBR_PLUGINS;
 #endif
 	if (path == NULL)
-		return R_FALSE;
+		return false;
 
 	dh = opendir (path);
 	if (dh == NULL) {
 		IFDBG eprintf ("Cannot open directory '%s'\n", path);
-		return R_FALSE;
+		return false;
 	}
 	while ((de = (struct dirent *)readdir (dh))) {
 		snprintf (file, sizeof (file), "%s/%s", path, de->d_name);
-		if (r_lib_dl_check_filename (file))
+		if (r_lib_dl_check_filename (file)) {
 			r_lib_open (lib, file);
+		} else {
+			IFDBG eprintf ("Cannot open %s\n", file);
+		}
 	}
 	closedir (dh);
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_lib_add_handler(RLib *lib,
@@ -342,7 +352,7 @@ R_API int r_lib_add_handler(RLib *lib,
 	if (handler == NULL) {
 		handler = R_NEW (RLibHandler);
 		if (handler == NULL)
-			return R_FALSE;
+			return false;
 		handler->type = type;
 		r_list_append (lib->handlers, handler);
 	}
@@ -351,7 +361,7 @@ R_API int r_lib_add_handler(RLib *lib,
 	handler->constructor = cb;
 	handler->destructor = dt;
 
-	return R_TRUE;
+	return true;
 }
 
 R_API int r_lib_del_handler(RLib *lib, int type) {
@@ -362,10 +372,10 @@ R_API int r_lib_del_handler(RLib *lib, int type) {
 	r_list_foreach (lib->handlers, iter, h) {
 		if (type == h->type) {
 			r_list_delete (lib->handlers, iter);
-			return R_TRUE;
+			return true;
 		}
 	}
-	return R_FALSE;
+	return false;
 }
 
 R_API void r_lib_list(RLib *lib) {

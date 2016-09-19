@@ -7,7 +7,11 @@
 
 R_LIB_VERSION_HEADER (r_reg);
 
-enum {
+/*
+ * various CPUs have registers within various types/classes
+ * this enum aims to cover them all.
+ */
+typedef enum {
 	R_REG_TYPE_GPR,
 	R_REG_TYPE_DRX,
 	R_REG_TYPE_FPU,
@@ -17,9 +21,13 @@ enum {
 	R_REG_TYPE_SEG,
 	R_REG_TYPE_LAST,
 	R_REG_TYPE_ALL = -1, // TODO; rename to ANY
-};
+} RRegisterType;
 
-enum {
+/*
+ * pretty much all CPUs share some common registers
+ * this enum aims to create an abstraction to ease cross-arch handling.
+ */
+typedef enum {
 	R_REG_NAME_PC, // program counter
 	R_REG_NAME_SP, // stack pointer
 	R_REG_NAME_SR, // status register
@@ -46,7 +54,7 @@ enum {
 	/* syscall number (orig_eax,rax,r0,x0) */
 	R_REG_NAME_SN,
 	R_REG_NAME_LAST,
-};
+} RRegisterId;
 
 // TODO: use enum here?
 #define R_REG_COND_EQ 0
@@ -71,12 +79,13 @@ enum {
 
 typedef struct r_reg_item_t {
 	char *name;
-	int type;
-	int size;	/* 8,16,32,64 ... 128/256 ??? */
-	int offset;      // offset in data structure
+	int /*RRegisterType*/ type;
+	int size; /* 8,16,32,64 ... 128/256 ??? */
+	int offset; /* offset in data structure */
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	bool is_float;
 	char *flags;
+	int index;
 } RRegItem;
 
 typedef struct r_reg_arena_t {
@@ -96,6 +105,7 @@ typedef struct r_reg_t {
 	char *reg_profile_str;
 	char *name[R_REG_NAME_LAST];
 	RRegSet regset[R_REG_TYPE_LAST];
+	RList *allregs;
 	int iters;
 	int arch;
 	int bits;
@@ -124,6 +134,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile);
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
 R_API ut64 r_reg_getv(RReg *reg, const char *name);
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val);
+R_API const char *r_reg_32_to_64(RReg* reg, const char* rreg32);
 R_API const char *r_reg_get_type(int idx);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
 R_API const char *r_reg_get_role(int role);
@@ -131,6 +142,9 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
 R_API RList *r_reg_get_list(RReg *reg, int type);
 R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta);
 R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen, RRegItem *prev_ri, int regsize);
+
+R_API void r_reg_reindex(RReg *reg);
+R_API RRegItem *r_reg_index_get(RReg *reg, int idx);
 
 /* Item */
 R_API void r_reg_item_free(RRegItem *item);

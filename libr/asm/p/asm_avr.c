@@ -62,8 +62,13 @@ static int parse_specialreg(const char *reg) {
 			else if (reg[0] == 'z' && len > 2)
 				found = OPERAND_ZPQ;
 		}
+		if (found == -1 && reg[2] == '+') {
+			if (reg[0] == 'y' && len > 2)
+				found = OPERAND_YPQ;
+			else if (reg[0] == 'z' && len > 2)
+				found = OPERAND_ZPQ;
+		}
 	}
-
 	return found;	
 }
 
@@ -220,8 +225,9 @@ static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *re
 	switch (type) {
 	case OPERAND_REGISTER_EVEN_PAIR:
 		*res = parse_registerpair(operand);
-		if (*res > 0)
+		if (*res > 0) {
 			ret = 0;
+		}
 		break;
 	case OPERAND_REGISTER_EVEN_PAIR_STARTR24:
 		*res = parse_registerpair(operand);
@@ -395,8 +401,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	}
 
 	// copying result to radare struct
-	if (len > 0)
-		memcpy(ao->buf, &coded, len);
+	if (len > 0) {
+		memcpy (ao->buf, &coded, len);
+	}
 	return len;
 }
 
@@ -406,6 +413,7 @@ RAsmPlugin r_asm_plugin_avr = {
 	.arch = "avr",
 	.license = "GPL",
 	.bits = 8|16,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "AVR Atmel",
 	.disassemble = &disassemble,
 	.assemble = &assemble

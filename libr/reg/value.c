@@ -5,9 +5,6 @@
 
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	RRegSet *regset;
-	ut32 v32;
-	ut16 v16;
-	ut8 v8;
 	int off;
 	ut64 ret = 0LL;
 	if (!reg || !item)
@@ -27,34 +24,28 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		break;
 	case 4:
 		if (regset->arena->size - off - 1 >= 0) {
-			memcpy (&v8, regset->arena->bytes + off, 1);
-			ret = v8 & 0xF;
+			ret = (r_read_at_ble8 (regset->arena->bytes, off)) & 0xF;
 		}
 		break;
 	case 8:
 		if (regset->arena->size - off - 1 >= 0) {
-			memcpy (&v8, regset->arena->bytes + off, 1);
-			ret = v8;
+			ret = r_read_at_ble8 (regset->arena->bytes, off);
 		}
 		break;
 	case 16:
 		if (regset->arena->size - off - 2 >= 0) {
-			r_mem_copyendian ((ut8 *)&v16, (ut8 *)regset->arena->bytes + off, 2, !reg->big_endian);
-			ret = v16;
+			ret = r_read_ble16 (regset->arena->bytes + off, reg->big_endian);
 		}
 		break;
 	case 32:
 		if (off + 4 <= regset->arena->size) {
-			r_mem_copyendian ((ut8 *)&v32,
-					(ut8 *)regset->arena->bytes + off,
-					sizeof (ut32), !reg->big_endian);
-			ret = v32;
+			ret = r_read_ble32 (regset->arena->bytes + off, reg->big_endian);
 		} else eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
-		if (regset->arena->bytes && (off + 8 <= regset->arena->size))
-			r_mem_copyendian ((ut8 *)&ret, (ut8 *)regset->arena->bytes + off, 8, !reg->big_endian);
-		else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		if (regset->arena->bytes && (off + 8 <= regset->arena->size)) {
+			ret = r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
+		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
 	case 96: // long floating value
@@ -69,11 +60,9 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 }
 
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
-	ut64 v64;
-	ut32 v32;
-	ut16 v16;
 	int fits_in_arena;
-	ut8 v8, *src = NULL;
+	ut8 bytes[12];
+	ut8 *src = bytes;
 
 	if (!item) {
 		eprintf ("r_reg_set_value: item is NULL\n");
@@ -85,20 +74,25 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		r_reg_set_longdouble (reg, item, (long double)value);
 		break;
 	case 64:
-		r_mem_copyendian ((ut8 *)&v64, (ut8 *)&value, 8, !reg->big_endian);
-		src = (ut8 *)&v64;
+		if (reg->big_endian)
+			r_write_be64(src, value);
+		else
+			r_write_le64(src, value);
 		break;
 	case 32:
-		r_mem_copyendian ((ut8 *)&v32, (ut8 *)&value, 4, !reg->big_endian);
-		src = (ut8 *)&v32;
+		if (reg->big_endian)
+			r_write_be32(src, value);
+		else
+			r_write_le32(src, value);
 		break;
 	case 16:
-		r_mem_copyendian ((ut8 *)&v16, (ut8 *)&value, 2, !reg->big_endian);
-		src = (ut8 *)&v16;
+		if (reg->big_endian)
+			r_write_be16(src, value);
+		else
+			r_write_le16(src, value);
 		break;
 	case 8:
-		v8 = (ut8)value;
-		src = (ut8 *)&v8;
+		r_write_ble8(src, (ut8)(value & UT8_MAX));
 		break;
 	case 1:
 		if (value) {

@@ -1,0 +1,106 @@
+unsigned int=type
+type.unsigned int=i
+type.unsigned int.size=32
+
+unsigned char=type
+type.unsigned char=b
+type.unsigned char.size=8
+
+unsigned short=type
+type.unsigned short=w
+type.unsigned short.size=16
+
+short=type
+type.short=w
+type.short.size=16
+
+int=type
+type.int=d
+type.int.size=32
+
+long=type
+type.long=x
+type.long.size=64
+
+long long=type
+type.long long=q
+type.long long.size=64
+
+void *=type
+type.void *=p
+
+char=type
+type.char=c
+type.char.size=8
+
+char *=type
+type.char *=*z
+
+uint8_t=type
+type.uint8_t=b
+type.uint8_t.size=8
+
+uint16_t=type
+type.uint16_t=w
+type.uint16_t.size=16
+
+uint32_t=type
+type.uint32_t=d
+type.uint32_t.size=32
+
+uint64_t=type
+type.uint64_t=q
+type.uint64_t.size=64
+
+int8_t=type
+type.int8_t=b
+type.int8_t.size=8
+
+int16_t=type
+type.int16_t=w
+type.int16_t.size=16
+
+int32_t=type
+type.int32_t=d
+type.int32_t.size=32
+
+int64_t=type
+type.int64_t=q
+type.int64_t.size=64
+
+uid_t=type
+type.uid_t=i
+type.uid_t.size=64
+
+getenv=func
+func.getenv.args=1
+func.getenv.arg.0=const char *,name
+func.getenv.ret=char *
+
+getopt=func
+func.getopt.args=3
+func.getopt.arg.0=int,argc
+func.getopt.arg.1=const char **,argv
+func.getopt.arg.2=const char *,optstring
+func.getopt.ret=int
+
+getuid=func
+func.getuid.args=0
+func.getuid.ret=uid_t
+
+ioctl=func
+func.ioctl.args=2
+func.ioctl.arg.0=int,fd
+func.ioctl.arg.1=unsigned long,request
+func.ioctl.ret=int
+
+isatty=func
+func.isatty.args=1
+func.isatty.arg.0=int,fd
+func.isatty.ret=int
+
+setlocale=func
+func.setlocale.args=2
+func.setlocale.arg.0=int,category
+func.setlocale.arg.1=const char *,locale
+func.setlocale.ret=char *

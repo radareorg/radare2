@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_sign.h>
 #include <r_anal.h>
@@ -24,7 +24,9 @@ R_API void r_sign_ns(RSign *sig, const char *str) {
 	if (str) {
 		free (sig->ns);
 		sig->ns = strdup (str);
-	} else sig->ns = NULL;
+	} else {
+		sig->ns = NULL;
+	}
 }
 
 R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
@@ -32,10 +34,12 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 	char *data = NULL, *ptr;
 	RSignItem *si; // TODO: like in r_search.. we need r_sign_item_new ()
 			// TODO: but..we need to use a pool here..
-	if (!name || !arg || !anal)
+	if (!name || !arg || !anal) {
 		return false;
-	if (!(si = R_NEW0 (RSignItem)))
+	}
+	if (!(si = R_NEW0 (RSignItem))) {
 		return false;
+	}
 	si->type = type;
 	si->name = r_str_newf ("%s.%c.%s", sig->ns? sig->ns: "sys", type, name);
 
@@ -48,7 +52,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 		//	sig->addr =
 		}
 		sig->s_func++;
-		if (!r_list_append (sig->items, si)){
+		if (!r_list_append (sig->items, si)) {
 			r_sign_item_free (si);
 		}
 		break;
@@ -72,9 +76,9 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 			r_sign_item_free (si);
 		} else {
 			r_list_append (sig->items, si);
-			if (type==R_SIGN_HEAD)
+			if (type == R_SIGN_HEAD)
 				sig->s_head++;
-			else if (type==R_SIGN_BYTE)
+			else if (type == R_SIGN_BYTE)
 				sig->s_byte++;
 			else if(type == R_SIGN_BODY)
 				sig->s_func++;
@@ -139,9 +143,9 @@ R_API int r_sign_remove_ns(RSign* sig, const char* ns) {
 	RSignItem* si;
 	int plen, i = 0;
 
-	if (!sig || !ns)
+	if (!sig || !ns) {
 		return -1;
-
+	}
 	plen = strlen (ns);
 	r_list_foreach_safe (sig->items, iter, iter2, si) {
 		if (!strncmp (si->name, ns, plen)) {
@@ -159,10 +163,11 @@ R_API int r_sign_remove_ns(RSign* sig, const char* ns) {
 }
 
 R_API RSign *r_sign_free(RSign *sig) {
-	if (!sig) return NULL;
-	r_list_free (sig->items);
-	free (sig->ns);
-	free (sig);
+	if (sig) {
+		r_list_free (sig->items);
+		free (sig->ns);
+		free (sig);
+	}
 	return NULL;
 }
 
@@ -180,9 +185,9 @@ R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
 	RListIter *iter;
 	RSignItem *si;
 
-	if (!sig || !buf)
+	if (!sig || !buf) {
 		return NULL;
-
+	}
 	r_list_foreach (sig->items, iter, si) {
 		if ((si->type == R_SIGN_BYTE) || (si->type == R_SIGN_BODY)) {
 			int l = (len>si->size)?si->size:len;
