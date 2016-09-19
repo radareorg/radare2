@@ -544,7 +544,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	// NOTE: This block should collapse along time... it depends on
 	// avrdis which does not seem the most efficient and easy way
 	// to emulate the CPU details :P
-//eprintf ("opcode %04x @%"PFMT64x" sent to old anal.\n", ins, op->addr);
 	op->size = avrdis (str, addr, buf, len);
 	r_strbuf_init (&op->esil);
 	arg = strchr (str, ' ');
