@@ -406,6 +406,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				if (json) {
 					char *msg = r_str_newf (".%s%s%s.", pre, wrd, pos);
 					s = r_base64_encode_dyn (msg, -1);
+					free (msg);
 				} else if (use_color) {
 					s = r_str_newf (".%s"Color_YELLOW"%s"Color_RESET"%s.", pre, wrd, pos);
 				} else {
