@@ -1048,9 +1048,14 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = MEMDISP64(1);
 		} else {
-			int d = (int)MEMDISP64(1);
-			op->ptr = (d < 0)? -d: d;
-			op->refptr = 4;
+			if (ISIMM64(1)) {
+				op->ptr = IMM64(1);
+				op->refptr = 8;
+			} else {
+				int d = (int)MEMDISP64(1);
+				op->ptr = (d < 0)? -d: d;
+				op->refptr = 4;
+			}
 		}
 		break;
 	case ARM64_INS_RET:
