@@ -144,6 +144,20 @@ a = (b << 3) * 5;
  }
 ```
 
+* Why return int vs enum
+
+The reason why many places in r2land functions return int instead of an enum type is because enums cant be OR'ed because it breaks the usage within a switch statement and also because swig cant handle that stuff.
+
+```
+r_core_wrap.cxx:28612:60: error: assigning to 'RRegisterType' from incompatible type 'long'
+  arg2 = static_cast< long >(val2); if (arg1) (arg1)->type = arg2; resultobj = SWIG_Py_Void(); return resultobj; fail:
+                                                           ^ ~~~~
+r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatible type 'int'
+    arg2 = static_cast< int >(val2); if (arg1) (arg1)->type = arg2; resultobj = SWIG_Py_Void(); return resultobj; fail:
+                                                            ^ ~~~~
+3 warnings and 2 errors generated.
+````
+
 * Do not leave trailing whitespaces at the end of line
 
 * Do not use C99 variable declaration
