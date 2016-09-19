@@ -102,10 +102,11 @@ INST_HANDLER (adc) {	// ADC Rd, Rr
 	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z (C)
 	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&," 	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
-		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,"   "&,"
+		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"|,|,cf,=,",
 		d, r, r, d);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = result
 }
 
 INST_HANDLER (add) {	// ADD Rd, Rr
@@ -128,10 +129,11 @@ INST_HANDLER (add) {	// ADD Rd, Rr
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&," 	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
-		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,"   "&,"
+		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"|,|,cf,=,",
 		d, r, r, d);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = result
 }
 
 INST_HANDLER (breq) { __generic_brxx (op, buf, "zf");        } // BREQ raddr
@@ -169,6 +171,10 @@ INST_HANDLER (call) {	// CALL addr
 	ESIL_A ("sp,-%d,+,", cpu->pc_size);	// decrement stack pointer
 	ESIL_A ("sp,=,");			// store SP
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
+}
+
+INST_HANDLER (clc) {	// CLC
+	ESIL_A ("0,cf,=,");
 }
 
 INST_HANDLER (cli) {	// CLI
@@ -262,7 +268,7 @@ INST_HANDLER (eor) {	// EOR Rd, Rr
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,");					// Rd = R
+	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
 INST_HANDLER (jmp) {	// JMP addr
@@ -392,6 +398,11 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 		"|,|,cf,=,",
 		d, r, d, r);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = Result
+}
+
+INST_HANDLER (sec) {	// SEC
+	ESIL_A ("1,cf,=,");
 }
 
 INST_HANDLER (sei) {	// SEI
@@ -414,10 +425,12 @@ INST_HANDLER (st) {	// ST X, Rr
 
 OPCODE_DESC opcodes[] = {
 	//         op     mask    select  cycles  size type
+	INST_DECL (clc,   0xffff, 0x9488, 1,      2,   SWI   ), // CLC
 	INST_DECL (cli,   0xffff, 0x94f8, 1,      2,   SWI   ), // CLI
 	INST_DECL (nop,   0xffff, 0x0000, 1,      2,   NOP   ), // NOP
 	INST_DECL (ret,   0xffff, 0x9508, 4,      2,   RET   ), // RET
 	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ), // RETI
+	INST_DECL (sec,   0xffff, 0x9408, 1,      2,   SWI   ), // SEC
 	INST_DECL (sei,   0xffff, 0x9478, 1,      2,   SWI   ), // SEI
 	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ), // MOVW Rd+1:Rd, Rr+1Rrd
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ), // CALL addr
