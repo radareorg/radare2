@@ -6,12 +6,24 @@ F+= darwin-x86-64
 F+= windows-x86-32
 F+= windows-x86-64
 F+= types
-F+= types-x86-16
+F+= types-16
+F+= types-32
+F+= types-64
 F+= types-x86-32
 F+= types-x86-64
 F+= types-windows
 F+= types-x86-windows-32
 F+= types-x86-windows-64
+F+= types-linux
+F+= types-x86-linux-32
+F+= types-x86-linux-64
+F+= types-x86-osx-64
+F+= types-arm-linux-32
+F+= types-arm-linux-64
+F+= types-arm-32
+F+= types-arm-64
+F+= types-riscv-64
+F+= types-riscv-linux-64
 F+= cc-x86-64
 F+= cc-x86-32
 F+= cc-mips-32
@@ -24,6 +36,7 @@ F+= cc-powerpc-32
 F+= cc-powerpc-64
 F+= cc-xtensa-32
 F+= cc-riscv-64
+
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
 

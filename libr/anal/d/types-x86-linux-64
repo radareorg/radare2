@@ -1,0 +1,9 @@
+func.__assert_fail.cc=amd64
+func._exit.cc=amd64
+func._Exit.cc=amd64
+func.__libc_init.cc=amd64
+func.__libc_init_array.cc=amd64
+func.__libc_start_main.cc=amd64
+func.abort.cc=amd64
+func.atexit.cc=amd64
+func.exit.cc=amd64
