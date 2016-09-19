@@ -19,7 +19,7 @@
 typedef struct _Main Main;
 typedef struct _MainClass MainClass;
 typedef struct _MainPrivate MainPrivate;
-#define _g_object_unref0(!var) ((var) ? NULL : (var = (g_object_unref (var), NULL)))
+#define _g_object_unref0(var) ((var == NULL) ? NULL : (var = (g_object_unref (var), NULL)))
 
 struct _Main {
 	GtkWindow parent_instance;

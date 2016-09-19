@@ -558,7 +558,7 @@ write_instr_name_(struct arcDisState *state,
     }
   if (flag) strcat(state->instrBuffer, ".f");
   if (state->nullifyMode)
-    if (!strstr(state->instrBuffer, ".d"))
+    if (strstr(state->instrBuffer, ".d") == NULL)
       strcat(state->instrBuffer, ".d");
   if (signExtend)    strcat(state->instrBuffer, ".x");
   switch (addrWriteBack)

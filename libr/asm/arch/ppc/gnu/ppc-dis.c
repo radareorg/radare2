@@ -76,7 +76,7 @@ powerpc_init_dialect (struct disassemble_info *info)
   ppc_cpu_t dialect = PPC_OPCODE_PPC;
   struct dis_private *priv = calloc (sizeof (*priv), 1);
 
-  if (!priv)
+  if (priv == NULL)
     return FALSE;
 
   if (BFD_DEFAULT_TARGET_SIZE == 64)
@@ -166,7 +166,7 @@ powerpc_init_dialect (struct disassemble_info *info)
 int
 print_insn_big_powerpc (bfd_vma memaddr, struct disassemble_info *info)
 {
-  if (!info->private_data && !powerpc_init_dialect (info))
+  if (info->private_data == NULL && !powerpc_init_dialect (info))
     return -1;
   return print_insn_powerpc (memaddr, info, 1, POWERPC_DIALECT(info));
 }
@@ -176,7 +176,7 @@ print_insn_big_powerpc (bfd_vma memaddr, struct disassemble_info *info)
 int
 print_insn_little_powerpc (bfd_vma memaddr, struct disassemble_info *info)
 {
-  if (!info->private_data && !powerpc_init_dialect (info))
+  if (info->private_data == NULL && !powerpc_init_dialect (info))
     return -1;
   return print_insn_powerpc (memaddr, info, 0, POWERPC_DIALECT(info));
 }
