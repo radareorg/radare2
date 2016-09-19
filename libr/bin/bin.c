@@ -335,6 +335,45 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 						section->paddr + section->size);
 			}
 		}
+		r_list_foreach (o->sections, iter, section) {
+			/* load objc/swift strings */
+			if (strstr (section->name, "__cfstring")) {
+				int i;
+				ut8 *p;
+				for (i = 0; i < section->size; i += 32) {
+					p = a->buf->buf + section->paddr + i;
+					p += 16;
+					ut64 cfstr_vaddr = section->vaddr + i;
+					ut64 cstr_vaddr = r_read_le64 (p);
+					RBinString *s;
+					RListIter *iter2;
+					r_list_foreach (ret, iter2, s) {
+						if (s->vaddr == cstr_vaddr) {
+#if 0
+							s->vaddr = cstr_vaddr;
+#else
+							RBinString *new = R_NEW0 (RBinString);
+							new->type = s->type;
+							new->length = s->length;
+							new->size = s->size;
+							new->ordinal = s->ordinal;
+							new->paddr = new->vaddr = cfstr_vaddr;
+							new->string = r_str_newf ("cstr.%s", s->string);
+							r_list_append (ret, new);
+#endif
+							break;
+						}
+					}
+				}
+			}
+/*
+			if (is_data_section (a, section)) {
+				get_strings_range (a, ret, min,
+						section->paddr,
+						section->paddr + section->size);
+			}
+*/
+		}
 	} else {
 		get_strings_range (a, ret, min, 0, a->size);
 	}
