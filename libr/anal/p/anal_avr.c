@@ -99,7 +99,7 @@ INST_HANDLER (adc) {	// ADC Rd, Rr
 		"|,vf,=,",
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z (C)
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&," 	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
@@ -151,6 +151,11 @@ INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 		"&,", d + 1);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 	ESIL_A ("r%d:r%d,=,", d + 1, d);			// Rd = result
+}
+
+INST_HANDLER (bclr) {	// BCLR s
+	int s = (buf[0] >> 4) & 0x7;
+	ESIL_A ("0xff,%d,1,<<,^,sreg,&=");
 }
 
 INST_HANDLER (breq) { __generic_brxx (op, buf, "zf");        } // BREQ raddr
@@ -463,6 +468,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ), // RETI
 	INST_DECL (sec,   0xffff, 0x9408, 1,      2,   SWI   ), // SEC
 	INST_DECL (sei,   0xffff, 0x9478, 1,      2,   SWI   ), // SEI
+	INST_DECL (bclr,  0xff8f, 0x9444, 0,      2,   SWI   ), // BCLR s
 	INST_DECL (adiw,  0xff00, 0x9600, 2,      2,   ADD   ), // ADIW Rd+1:Rd, K
 	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ), // MOVW Rd+1:Rd, Rr+1Rrd
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ), // CALL addr
