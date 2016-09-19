@@ -989,11 +989,9 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		if (rel_sec->offset + j > bin->size) goto out;
 		if (rel_sec->offset + j + tsize > bin->size) goto out;
 #if R_BIN_ELF64
-		len = r_buf_fread_at (bin->b, rel_sec->offset + j, REL_BUF,
-					bin->endian ? "2L" : "2l", 1);
+		len = r_buf_fread_at (bin->b, rel_sec->offset + j, REL_BUF, bin->endian ? "2L" : "2l", 1);
 #else
-		len = r_buf_fread_at (bin->b, rel_sec->offset + j, REL_BUF,
-					bin->endian ? "2I" : "2i", 1);
+		len = r_buf_fread_at (bin->b, rel_sec->offset + j, REL_BUF, bin->endian ? "2I" : "2i", 1);
 #endif
 		if (len < 1) goto out;
 		int reloc_type = ELF_R_TYPE (REL_TYPE);
@@ -1807,11 +1805,9 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	if (is_rela == DT_RELA) {
 		Elf_(Rela) rela;
 #if R_BIN_ELF64
-		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rela,
-					bin->endian ? "3L" : "3l", 1);
+		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rela, bin->endian ? "3L" : "3l", 1);
 #else
-		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rela,
-					bin->endian ? "3I" : "3i", 1);
+		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rela, bin->endian ? "3I" : "3i", 1);
 
 #endif
 		if (len < 1) {
@@ -1827,11 +1823,9 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	} else {
 		Elf_(Rel) rel;
 #if R_BIN_ELF64
-		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rel,
-					bin->endian ? "2L" : "2l", 1);
+		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rel, bin->endian ? "2L" : "2l", 1);
 #else
-		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rel,
-					bin->endian ? "2I" : "2i", 1);
+		len = r_buf_fread_at (bin->b, offset, (ut8 *)&rel, bin->endian ? "2I" : "2i", 1);
 
 #endif
 		if (len < 1) {
@@ -2171,11 +2165,9 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		goto beach;
 	}
 #if R_BIN_ELF64
-	r = r_buf_fread_at (bin->b, addr_sym_table, (ut8*)sym,
-			bin->endian ? "I2cS2L": "i2cs2l", nsym);
+	r = r_buf_fread_at (bin->b, addr_sym_table, (ut8*)sym, bin->endian ? "I2cS2L": "i2cs2l", nsym);
 #else
-	r = r_buf_fread_at (bin->b, addr_sym_table, (ut8*)sym,
-			bin->endian ? "3I2cS" : "3i2cs", nsym);
+	r = r_buf_fread_at (bin->b, addr_sym_table, (ut8*)sym, bin->endian ? "3I2cS" : "3i2cs", nsym);
 
 #endif
 	if (r < 1) {
@@ -2183,10 +2175,12 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	}
 	for (k = 1, ret_ctr = 0 ; k < nsym; k++) {
 		if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
-			if (sym[k].st_value)
+			if (sym[k].st_value) {
 				toffset = sym[k].st_value;
-			else if ((toffset = get_import_addr (bin, k)) == -1)
+			}
+			else if ((toffset = get_import_addr (bin, k)) == -1) {
 				toffset = 0;
+			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_SYMBOLS &&
 			   sym[k].st_shndx != STN_UNDEF &&
@@ -2224,6 +2218,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		   }
 		}
 		ret[ret_ctr].ordinal = k;
+		ret[ret_ctr].in_shdr = false;
 		ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
 		fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
 		ret[ret_ctr].last = 0;
@@ -2281,7 +2276,7 @@ static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_imports)(ELFOBJ *bin) {
 }
 
 
-static bool Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sym) {
+static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sym) {
 	int count = 0;
 	RBinElfSymbol *ret = *sym;
 	RBinElfSymbol *phdr_symbols = (type == R_BIN_ELF_SYMBOLS)
@@ -2312,28 +2307,29 @@ static bool Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **s
 			}
 			p++;
 		}
-		/*what happens if a shdr says it has only one symbol? we should look anyway into phdr*/
-		tmp = (RBinElfSymbol*)realloc (ret, (nsym + count + 1) * sizeof (RBinElfSymbol));
-		if (!tmp) {
-			return true;
-		}
-		ret = tmp;
 		/*Take those symbols that are not present in the shdr but yes in phdr*/
 		/*This should only should happen with fucked up binaries*/
 		if (count > 0) {
-			p = phdr_symbols;
+			/*what happens if a shdr says it has only one symbol? we should look anyway into phdr*/
+			tmp = (RBinElfSymbol*)realloc (ret, (nsym + count + 1) * sizeof (RBinElfSymbol));
+			if (!tmp) {
+				return -1;
+			}
+			ret = tmp;
 			ret[nsym--].last = 0;
+			p = phdr_symbols;
 			while (!p->last) {
 				if (!p->in_shdr) {
 					memcpy (&ret[++nsym], p, sizeof (RBinElfSymbol));
 				}
 				p++;
 			}
-			ret[nsym+1].last = 1;
+			ret[nsym + 1].last = 1;
 		}
+		*sym = ret;
+		return nsym + 1;
 	}
-	*sym = ret;
-	return false;
+	return nsym;
 }
 
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
@@ -2345,7 +2341,6 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	Elf_(Shdr) *strtab_section = NULL;
 	Elf_(Sym) *sym = NULL;
 	char *strtab = NULL;
-	bool check;
 
 	if (!bin || !bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
 		return (type == R_BIN_ELF_SYMBOLS)
@@ -2399,7 +2394,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				goto beach;
 			}
 			nsym = (int)(bin->shdr[i].sh_size / sizeof (Elf_(Sym)));
-			if (nsym < 1) {
+			if (nsym < 0) {
 				goto beach;
 			}
 			if (!(sym = (Elf_(Sym) *)calloc (nsym, sizeof (Elf_(Sym))))) {
@@ -2450,14 +2445,12 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				} else {
 					continue;
 				}
-
 				if (bin->ehdr.e_type == ET_REL) {
 					if (sym[k].st_shndx < bin->ehdr.e_shnum)
 						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
 				} else {
 					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 				}
-
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 2 > strtab_section->sh_size) {
 					eprintf ("Warning: index out of strtab range\n");
@@ -2483,27 +2476,35 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			ret[ret_ctr].last = 1; // ugly dirty hack :D
 			R_FREE (strtab);
 			R_FREE (sym);
-			if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
-				bin->imports_by_ord_size = nsym;
-				bin->imports_by_ord = (RBinImport**)calloc (nsym, sizeof (RBinImport*));
-			} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size && nsym) {
-				bin->symbols_by_ord_size = nsym;
-				bin->symbols_by_ord = (RBinSymbol**)calloc (nsym, sizeof (RBinSymbol*));
-			} else {
-				break;
-			}
 		}
 	}
 	if (ret) {
-		check = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
-		if (check) {
+		int max = -1;
+		RBinElfSymbol *aux = NULL;
+		nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
+		if (nsym == -1) {
 			goto beach;
 		}
+		aux = ret;
+		while (!aux->last) {
+			if ((int)aux->ordinal > max) {
+				max = aux->ordinal;
+			}
+			aux++;
+		}
+		nsym = max;
+		if (type == R_BIN_ELF_IMPORTS) {
+			free (bin->imports_by_ord);
+			bin->imports_by_ord_size = nsym + 1;
+			bin->imports_by_ord = (RBinImport**)calloc (nsym + 1, sizeof (RBinImport*));
+		} else if (type == R_BIN_ELF_SYMBOLS) {
+			free (bin->symbols_by_ord);
+			bin->symbols_by_ord_size = nsym + 1;
+			bin->symbols_by_ord = (RBinSymbol**)calloc (nsym + 1, sizeof (RBinSymbol*));
+		} 
 		return ret;
 	}
 	return NULL;
-	// maybe it had some section header but not the symtab
-	// return ret? ret: get_symbols_from_phdr (bin, type);
 beach:
 	free (ret);
 	free (sym);

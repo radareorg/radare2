@@ -10,7 +10,7 @@
 #include "elf/elf.h"
 
 //TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
-static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
+static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
 		return;
 	}
@@ -18,7 +18,7 @@ static void setsymord (ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	eobj->symbols_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinSymbol));
 }
 
-static inline bool setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
+static inline bool setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
 		return false;
 	}
@@ -31,7 +31,7 @@ static inline bool setimpord (ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	return true;
 }
 
-static Sdb* get_sdb (RBinObject *o) {
+static Sdb* get_sdb(RBinObject *o) {
 	if (o && o->bin_obj) {
 		struct Elf_(r_bin_elf_obj_t) *bin = (struct Elf_(r_bin_elf_obj_t) *) o->bin_obj;
 		return bin->kv;
@@ -44,7 +44,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	char *elf_type;
 	RBuffer *tbuf;
 
-	if (!buf || sz == 0 || sz == UT64_MAX) {
+	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
 	tbuf = r_buf_new ();
