@@ -355,12 +355,20 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	int middle = opts & R_ANAL_REFLINE_TYPE_MIDDLE;
 	char *str = NULL;
 
-	if (!anal || !anal->reflines) return NULL;
+	if (!anal || !anal->reflines) {
+		return NULL;
+	}
 
 	RList *lvls = r_list_new ();
-	if (!lvls) return NULL;
+	if (!lvls) {
+		return NULL;
+	}
 
 	r_list_foreach (anal->reflines, iter, ref) {
+		if (core && core->cons && core->cons->breaked) {
+			r_list_free (lvls);
+			return NULL;
+		}
 		if (in_refline (addr, ref)) {
 			r_list_add_sorted (lvls, (void *)ref, (RListComparator)cmp_by_ref_lvl);
 		}
@@ -370,6 +378,10 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	b = r_buf_new ();
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
+		if (core && core->cons && core->cons->breaked) {
+			r_list_free (lvls);
+			return NULL;
+		}
 		if (ref->from == addr || ref->to == addr) {
 			const char *corner = get_corner_char (ref, addr, middle);
 			const char ch = ref->from == addr ? '=' : '-';

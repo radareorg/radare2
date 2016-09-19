@@ -2515,16 +2515,20 @@ static int cmd_print(void *data, const char *input) {
 
 		// get to the space
 		if (input[0]) {
-			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
-				if (input[pos] == ' ') break;
+			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++) {
+				if (input[pos] == ' ') {
+					break;
+				}
+			}
 		}
 
 		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits)) {
 			// XXX - print help message
 			//return false;
 		}
-		if (!use_blocksize)
+		if (!use_blocksize) {
 			use_blocksize = core->blocksize;
+		}
 
 		if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
 			eprintf ("This block size is too big (%"PFMT64d"<%"PFMT64d"). Did you mean 'p%c @ 0x%08"PFMT64x"' instead?\n",
@@ -2548,7 +2552,7 @@ static int cmd_print(void *data, const char *input) {
 
 		switch (input[1]) {
 		case 'c': // "pdc" // "pDc"
-			r_core_pseudo_code (core, input+2);
+			r_core_pseudo_code (core, input + 2);
 			pd_result = 0;
 			processed_cmd = true;
 			break;
@@ -2827,7 +2831,7 @@ static int cmd_print(void *data, const char *input) {
 		case 0:
 			/* "pd" -> will disassemble blocksize/4 instructions */
 			if (*input=='d') {
-				l/=4;
+				l /= 4;
 			}
 			break;
 		case '?': // "pd?"
@@ -2887,7 +2891,7 @@ static int cmd_print(void *data, const char *input) {
 						r_core_read_at (core, addr+bs, block+bs, instr_len-bs); //core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
 								core, addr, block, instr_len, l, 0, 1);
-						r_core_seek(core, prevaddr, true);
+						r_core_seek (core, prevaddr, true);
 					}
 				}
 			} else {
@@ -3256,6 +3260,7 @@ static int cmd_print(void *data, const char *input) {
 			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 		}
 		}
+		r_cons_break (NULL, NULL);
 		switch (input[1]) {
 		case '/':
 			r_core_print_examine (core, input+2);
@@ -3473,9 +3478,11 @@ static int cmd_print(void *data, const char *input) {
 					if (bitsize == 16) bitsize = 32;
 					core->print->cols = 1;
 					core->print->flags |= R_PRINT_FLAGS_REFS;
+					r_cons_break (NULL, NULL);
 					r_print_hexdump (core->print, core->offset,
 							core->block, len,
 							bitsize, bitsize / 8);
+					r_cons_break_end ();
 					core->print->flags &= ~R_PRINT_FLAGS_REFS;
 					core->print->cols = ocols;
 				}
@@ -3678,6 +3685,7 @@ static int cmd_print(void *data, const char *input) {
 			 }
 			break;
 		}
+		r_cons_break_end ();
 		break;
 	case '2': // "p2"
 		if (l != 0) {

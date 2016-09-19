@@ -3074,9 +3074,9 @@ toro:
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l;
 			idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
-		if (r_cons_singleton ()->breaked) {
+		if (core->cons && core->cons->breaked) {
 			dorepeat = 0;
-			break;
+			return 0; //break;
 		}
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->has_description = false;

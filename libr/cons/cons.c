@@ -664,6 +664,9 @@ R_API void r_cons_memcat(const char *str, int len) {
 		I.buffer_len += len;
 		I.buffer[I.buffer_len] = 0;
 	}
+	if (I.flush) {
+		r_cons_flush ();
+	}
 }
 
 R_API void r_cons_memset(char ch, int len) {
