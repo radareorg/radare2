@@ -430,7 +430,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			if (ret1 != 0) return false;
 			if (sizeof(fpregs) < size) size = sizeof(fpregs);
 			memcpy (buf, &fpregs, size);
-			return sizeof(fpregs)
+			return sizeof(fpregs);
 #endif // !__ANDROID__
 #elif __i386__
 #if !__ANDROID__
