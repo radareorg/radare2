@@ -11,6 +11,7 @@ bool r_coff_supported_arch(const ut8 *buf) {
 	case COFF_FILE_MACHINE_I386:
 	case COFF_FILE_MACHINE_H8300:
 	case COFF_FILE_TI_COFF:
+	case COFF_FILE_MACHINE_R4000:
 		return true;
 	default:
 		return false;
@@ -155,7 +156,7 @@ static bool r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
 static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 	int ret, size;
 	ut64 offset = obj->hdr.f_symptr;
-	if (obj->hdr.f_nsyms >= 0xffff) { // too much symbols, probably not allocatable
+	if (obj->hdr.f_nsyms >= 0xffff || !obj->hdr.f_nsyms) { // too much symbols, probably not allocatable
 		return false;
 	}
 	size = obj->hdr.f_nsyms * sizeof (struct coff_symbol);

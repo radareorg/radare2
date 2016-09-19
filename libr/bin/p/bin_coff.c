@@ -108,13 +108,11 @@ static RList *entries(RBinFile *arch) {
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 	RList *ret;
 	RBinAddr *ptr = NULL;
-
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 	ptr = r_coff_get_entry(obj);
 	r_list_append(ret, ptr);
-
 	return ret;
 }
 
@@ -136,7 +134,6 @@ static RList *sections(RBinFile *arch) {
 				r_list_free (ret);
 				return NULL;
 			}
-
 			ptr = R_NEW0 (RBinSection);
 			if (!ptr) {
 				return ret;
@@ -167,7 +164,6 @@ static RList *symbols(RBinFile *arch) {
 	int i;
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
-
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
 	if (!(ret = r_list_new ())) {
 		return ret;
