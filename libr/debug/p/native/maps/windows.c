@@ -9,7 +9,7 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 	RList *list = r_list_new ();
 
 	hModuleSnap = CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, pid );
-	if( hModuleSnap == NULL ) {
+	if(!hModuleSnap ) {
 		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
 		CloseHandle( hModuleSnap );
 		return NULL;
@@ -57,7 +57,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	if (!list) return NULL;
 
 	hModuleSnap = CreateToolhelp32Snapshot (TH32CS_SNAPMODULE, pid);
-	if( hModuleSnap == NULL ) {
+	if(!hModuleSnap ) {
 		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
 		CloseHandle( hModuleSnap );
 		return NULL;
@@ -123,11 +123,11 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	MEMORY_BASIC_INFORMATION mbi;
 	memset (&SysInfo, 0, sizeof (SysInfo));
 	GetSystemInfo (&SysInfo); // TODO: check return value
-	if (gmi == NULL) {
+	if (!gmi) {
 		eprintf ("w32dbg: no gmi\n");
 		return 0;
 	}
-	if (gmbn == NULL) {
+	if (!gmbn) {
 		eprintf ("w32dbg: no gmn\n");
 		return 0;
 	}
@@ -148,11 +148,11 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 
 			if (ret_len == sizeof (PeHeader) && CheckValidPE (PeHeader)) {
 				dos_header = (IMAGE_DOS_HEADER *)PeHeader;
-				if (dos_header == NULL)
+				if (!dos_header)
 					break;
 				nt_headers = (IMAGE_NT_HEADERS *)((char *)dos_header
 						+ dos_header->e_lfanew);
-				if (nt_headers == NULL) {
+				if (!nt_headers) {
 					// skip before failing
 					break;
 				}
@@ -174,7 +174,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 							(ut64)(size_t) (SectionHeader->VirtualAddress + page + SectionHeader->Misc.VirtualSize),
 							SectionHeader->Characteristics, // XXX?
 							0);
-						if (mr == NULL)
+						if (!mr)
 							return NULL;
 						r_list_append (list, mr);
 						SectionHeader++;
@@ -203,7 +203,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 		} else {
 			mr = r_debug_map_new ("unk", (ut64)(size_t)(page),
 				(ut64)(size_t)(page+mbi.RegionSize), mbi.Protect, 0);
-			if (mr == NULL) {
+			if (!mr) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				// XXX leak
 				return NULL;

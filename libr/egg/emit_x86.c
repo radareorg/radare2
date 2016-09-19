@@ -329,7 +329,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		}
 		arg = g+1;
 	}
-	if (arg == NULL) {
+	if (!arg) {
 		if (e) {
 			arg = e+1;
 			op = "jne";
@@ -399,12 +399,12 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	default:  op = "mov"; break;
 	}
 	if (attsyntax) {
-		if (eq == NULL) eq = "%"R_AX;
-		if (p == NULL) p = "%"R_AX;
+		if (!eq) eq = "%"R_AX;
+		if (!p) p = "%"R_AX;
 		r_egg_printf (egg, "  %s%c %c%s, %s\n", op, vs, type, eq, p);
 	} else {
-		if (eq == NULL) eq = R_AX;
-		if (p == NULL) p = R_AX;
+		if (!eq) eq = R_AX;
+		if (!p) p = R_AX;
 	// TODO:
 #if 0
 		eprintf ("TYPE = %c\n", type);

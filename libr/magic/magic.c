@@ -127,7 +127,7 @@ R_API int r_magic_errno(RMagic* m) {
 
 static void free_mlist(struct mlist *mlist) {
 	struct mlist *ml;
-	if (mlist == NULL)
+	if (!mlist)
 		return;
 	for (ml = mlist->next; ml != mlist;) {
 		struct mlist *next = ml->next;
@@ -171,7 +171,7 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 	 * some overlapping space for matches near EOF
 	 */
 #define SLOP (1 + sizeof(union VALUETYPE))
-	if ((buf = malloc (HOWMANY + SLOP)) == NULL)
+	if (!(buf = malloc (HOWMANY + SLOP)))
 		return NULL;
 
 	if (file_reset (ms) == -1)
@@ -183,7 +183,7 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 	default: rv = 0; goto done;	/* matched it and printed type */
 	}
 
-	if (inname == NULL) {
+	if (!inname) {
 		if (fstat (fd, &sb) == 0 && S_ISFIFO (sb.st_mode))
 			ispipe = 1;
 	} else {
@@ -261,7 +261,7 @@ R_API RMagic* r_magic_new(int flags) {
 	r_magic_setflags (ms, flags);
 	ms->o.buf = ms->o.pbuf = NULL;
 	ms->c.li = malloc ((ms->c.len = 10) * sizeof (*ms->c.li));
-	if (ms->c.li == NULL) {
+	if (!ms->c.li) {
 		free (ms);
 		return NULL;
 	}

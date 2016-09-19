@@ -110,12 +110,12 @@ cris_parse_disassembler_options (disassemble_info *info,
 
   info->private_data = calloc (1, sizeof (struct cris_disasm_data));
   disdata = (struct cris_disasm_data *) info->private_data;
-  if (disdata == NULL)
+  if (!disdata)
     return FALSE;
 
   /* Default true.  */
   disdata->trace_case
-    = (info->disassembler_options == NULL
+    = (!info->disassembler_options
        || (strcmp (info->disassembler_options, "nocase") != 0));
 
   disdata->distype = distype;
@@ -141,7 +141,7 @@ spec_reg_info (unsigned int sreg, enum cris_disass_family distype)
 	      case cris_ver_v10p:
 	      case cris_ver_v32p:
 		/* No ambiguous sizes or register names with CRISv32.  */
-		if (cris_spec_regs[i].warning == NULL)
+		if (!cris_spec_regs[i].warning)
 		  return &cris_spec_regs[i];
 	      default:
 		;
@@ -189,45 +189,45 @@ get_opcode_entry (unsigned int insn,
   static const struct cris_opcode **rest_prefixes = NULL;
 
   /* Allocate and clear the opcode-table.  */
-  if (opc_table == NULL)
+  if (!opc_table)
     {
       opc_table = malloc (65536 * sizeof (opc_table[0]));
-      if (opc_table == NULL)
+      if (!opc_table)
 	return NULL;
 
       memset (opc_table, 0, 65536 * sizeof (const struct cris_opcode *));
 
       dip_prefixes
 	= malloc (65536 * sizeof (const struct cris_opcode **));
-      if (dip_prefixes == NULL)
+      if (!dip_prefixes)
 	return NULL;
 
       memset (dip_prefixes, 0, 65536 * sizeof (dip_prefixes[0]));
 
       bdapq_m1_prefixes
 	= malloc (65536 * sizeof (const struct cris_opcode **));
-      if (bdapq_m1_prefixes == NULL)
+      if (!bdapq_m1_prefixes)
 	return NULL;
 
       memset (bdapq_m1_prefixes, 0, 65536 * sizeof (bdapq_m1_prefixes[0]));
 
       bdapq_m2_prefixes
 	= malloc (65536 * sizeof (const struct cris_opcode **));
-      if (bdapq_m2_prefixes == NULL)
+      if (!bdapq_m2_prefixes)
 	return NULL;
 
       memset (bdapq_m2_prefixes, 0, 65536 * sizeof (bdapq_m2_prefixes[0]));
 
       bdapq_m4_prefixes
 	= malloc (65536 * sizeof (const struct cris_opcode **));
-      if (bdapq_m4_prefixes == NULL)
+      if (!bdapq_m4_prefixes)
 	return NULL;
 
       memset (bdapq_m4_prefixes, 0, 65536 * sizeof (bdapq_m4_prefixes[0]));
 
       rest_prefixes
 	= malloc (65536 * sizeof (const struct cris_opcode **));
-      if (rest_prefixes == NULL)
+      if (!rest_prefixes)
 	return NULL;
 
       memset (rest_prefixes, 0, 65536 * sizeof (rest_prefixes[0]));
@@ -246,7 +246,7 @@ get_opcode_entry (unsigned int insn,
 	   ? opc_table[prefix_insn]
 	   : get_opcode_entry (prefix_insn, NO_CRIS_PREFIX, disdata));
 
-      if (popcodep == NULL)
+      if (!popcodep)
 	return NULL;
 
       if (popcodep->match == BDAP_QUICK_OPCODE)
@@ -665,7 +665,7 @@ bytes_to_skip (unsigned int insn,
   for (s = template; *s; s++)
     if ((*s == 's' || *s == 'N' || *s == 'Y')
 	&& (insn & 0x400) && (insn & 15) == 15
-	&& prefix_matchedp == NULL)
+	&& !prefix_matchedp)
       {
 	/* Immediate via [pc+], so we have to check the size of the
 	   operand.  */
@@ -680,7 +680,7 @@ bytes_to_skip (unsigned int insn,
 
 	    /* FIXME: Improve error handling; should have been caught
 	       earlier.  */
-	    if (sregp == NULL)
+	    if (!sregp)
 	      return 2;
 
 	    /* PC is incremented by two, not one, for a byte.  Except on
@@ -886,7 +886,7 @@ print_with_operands (const struct cris_opcode *opcodep,
       case 'S':
       case 's':
 	/* Any "normal" memory operand.  */
-	if ((insn & 0x400) && (insn & 15) == 15 && prefix_opcodep == NULL)
+	if ((insn & 0x400) && (insn & 15) == 15 && !prefix_opcodep)
 	  {
 	    /* We're looking at [pc+], i.e. we need to output an immediate
 	       number, where the size can depend on different things.  */
@@ -906,7 +906,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 		/* A NULL return should have been as a non-match earlier,
 		   so catch it as an internal error in the error-case
 		   below.  */
-		if (sregp == NULL)
+		if (!sregp)
 		  /* Whatever non-valid size.  */
 		  nbytes = 42;
 		else
@@ -1007,7 +1007,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 
 		    /* FIXME: Improve error handling; should have been caught
 		       earlier.  */
-		    if (sregp == NULL)
+		    if (!sregp)
 		      size = 4;
 		    else
 		      size = sregp->reg_size;
@@ -1333,7 +1333,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	  = spec_reg_info ((insn >> 12) & 15, disdata->distype);
 
 if (sregp) {
-	if (sregp->name == NULL)
+	if (!sregp->name)
 	  /* Should have been caught as a non-match eariler.  */
 	  *tp++ = '?';
 	else
@@ -1526,7 +1526,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 		}
 	    }
 
-	  if (matchedp == NULL)
+	  if (!matchedp)
 	    {
 	      (*info->fprintf_func) (info->stream, "??0x%x", insn);
 	      advance += 2;
@@ -1584,7 +1584,7 @@ static int
 print_insn_cris_with_register_prefix (bfd_vma vma,
 				      disassemble_info *info)
 {
-  if (info->private_data == NULL
+  if (!info->private_data
       && !cris_parse_disassembler_options (info, cris_dis_v0_v10))
     return -1;
   return print_insn_cris_generic (vma, info, TRUE);
@@ -1596,7 +1596,7 @@ static int
 print_insn_crisv32_with_register_prefix (bfd_vma vma,
 					 disassemble_info *info)
 {
-  if (info->private_data == NULL
+  if (!info->private_data
       && !cris_parse_disassembler_options (info, cris_dis_v32))
     return -1;
   return print_insn_cris_generic (vma, info, TRUE);
@@ -1609,7 +1609,7 @@ int
 print_insn_crisv10_v32_with_register_prefix (bfd_vma vma,
 					     disassemble_info *info)
 {
-  if (info->private_data == NULL
+  if (!info->private_data
       && !cris_parse_disassembler_options (info, cris_dis_common_v10_v32))
     return -1;
   return print_insn_cris_generic (vma, info, TRUE);
@@ -1621,7 +1621,7 @@ static int
 print_insn_cris_without_register_prefix (bfd_vma vma,
 					 disassemble_info *info)
 {
-  if (info->private_data == NULL
+  if (!info->private_data
       && !cris_parse_disassembler_options (info, cris_dis_v0_v10))
     return -1;
   return print_insn_cris_generic (vma, info, FALSE);
@@ -1633,7 +1633,7 @@ int
 print_insn_crisv32_without_register_prefix (bfd_vma vma,
 					    disassemble_info *info)
 {
-  if (info->private_data == NULL
+  if (!info->private_data
       && !cris_parse_disassembler_options (info, cris_dis_v32))
     return -1;
   return print_insn_cris_generic (vma, info, FALSE);
@@ -1646,7 +1646,7 @@ int
 print_insn_crisv10_v32_without_register_prefix (bfd_vma vma,
 						disassemble_info *info)
 {
-  if (info->private_data == NULL
+  if (!info->private_data
       && !cris_parse_disassembler_options (info, cris_dis_common_v10_v32))
     return -1;
   return print_insn_cris_generic (vma, info, FALSE);
@@ -1664,7 +1664,7 @@ const int mode = 0; // V32 by default
   /* If there's no bfd in sight, we return what is valid as input in all
      contexts if fed back to the assembler: disassembly *with* register
      prefix.  Unfortunately this will be totally wrong for v32.  */
-  if (abfd == NULL)
+  if (!abfd)
     return print_insn_cris_with_register_prefix;
 
   if (bfd_get_symbol_leading_char (abfd) == 0)

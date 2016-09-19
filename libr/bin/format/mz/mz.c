@@ -22,7 +22,7 @@ int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin)
 int cmp_segs (const void *a, const void *b) {
 	const ut16 * const ma = (const ut16 * const)a;
 	const ut16 * const mb = (const ut16 * const)b;
-	if (ma == NULL || mb == NULL) return 0;
+	if (!ma || !mb) return 0;
 	return (int)(*ma-*mb);
 }
 
@@ -80,7 +80,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments (
 		return NULL;
 	}
 	segments = calloc (num_relocs, sizeof(*segments));
-	if (segments == NULL) {
+	if (!segments) {
 		eprintf ("Error: calloc (segments)\n");
 		btree_cleartree (tree, NULL);
 		return NULL;
@@ -91,7 +91,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments (
 
 	num_segs = curr_seg - segments;
 	ret = calloc (num_segs + 1, sizeof(struct r_bin_mz_segment_t));
-	if (ret == NULL) {
+	if (!ret) {
 		free (segments);
 		btree_cleartree (tree, NULL);
 		eprintf ("Error: calloc (struct r_bin_mz_segment_t)\n");
@@ -121,7 +121,7 @@ struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin)
 		bin->relocation_entries;
 
 	relocs = calloc (num_relocs + 1, sizeof(*relocs));
-	if (relocs == NULL) {
+	if (!relocs) {
 		eprintf ("Error: calloc (struct r_bin_mz_reloc_t)\n");
 		return NULL;
 	}

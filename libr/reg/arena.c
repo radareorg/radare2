@@ -90,7 +90,7 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
 	regset = &reg->regset[type];
 	arena = regset->arena;
 	maxsz = R_MAX (arena->size, len);
-	if ((arena->size != len) || (arena->bytes == NULL)) {
+	if ((arena->size != len) || (!arena->bytes)) {
 		arena->bytes = calloc (1, maxsz);
 		if (!arena->bytes) {
 			arena->size = 0;

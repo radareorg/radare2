@@ -539,7 +539,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	ut8 opcode = buf[0];
 	struct h8300_cmd cmd;
 
-	if (op == NULL)
+	if (!op)
 		return 2;
 
 	memset(op, 0, sizeof (RAnalOp));

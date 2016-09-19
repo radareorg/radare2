@@ -1107,7 +1107,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			cmd_dbg_map_heap_glibc_32 (core, input + 1);
 		} else {
 #define GLIBC_BITS_64 1
-			cmd_dbg_map_heap_glibc_64 (core, input + 1);			
+			cmd_dbg_map_heap_glibc_64 (core, input + 1);
 		}
 #else
 		eprintf ("MALLOC algorithm not supported\n");
@@ -1759,7 +1759,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				off = r_debug_reg_get (core->dbg, str + 1);
 				//		r = r_reg_get (core->dbg->reg, str+1, 0);
-				//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
+				//		if (!r) eprintf ("Unknown register (%s)\n", str+1);
 				r_cons_printf ("0x%08"PFMT64x"\n", off);
 				core->num->value = off;
 			}

@@ -215,7 +215,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 			free (node->value);
 			node->value = strdup (r_str_bool (b));
 		} else {
-			if (value == NULL) {
+			if (!value) {
 				free (node->value);
 				node->value = strdup ("");
 				node->i_value = 0;
@@ -367,7 +367,7 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 	memcpy (name, str, len);
 	str = r_str_chop (name);
 
-	if (str == NULL) return false;
+	if (!str) return false;
 
 	if (str[0] == '\0' || !strcmp (str, "help")) {
 		r_config_list (cfg, NULL, 0);

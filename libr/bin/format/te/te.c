@@ -17,11 +17,11 @@ ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
 static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
 	if (!bin)
 		return false;
-	if (!(bin->header = malloc(sizeof(TE_image_file_header)))) {
+	if (!(bin->header = malloc (sizeof(TE_image_file_header)))) {
 		r_sys_perror ("malloc (header)");
 		return false;
 	}
-	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof(TE_image_file_header)) == -1) {
+	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof (TE_image_file_header)) == -1) {
 		eprintf("Error: read (header)\n");
 		return false;
 	}
@@ -121,11 +121,11 @@ static int r_bin_te_init(struct r_bin_te_obj_t* bin) {
 	bin->header = NULL;
 	bin->section_header = NULL;
 	bin->endian = 0;
-	if (!r_bin_te_init_hdr(bin)) {
+	if (!r_bin_te_init_hdr (bin)) {
 		eprintf("Warning: File is not TE\n");
 		return false;
 	}
-	if (!r_bin_te_init_sections(bin)) {
+	if (!r_bin_te_init_sections (bin)) {
 		eprintf("Warning: Cannot initialize sections\n");
 		return false;
 	}
@@ -138,27 +138,27 @@ char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
 	switch (bin->header->Machine) {
 	case TE_IMAGE_FILE_MACHINE_ALPHA:
 	case TE_IMAGE_FILE_MACHINE_ALPHA64:
-		arch = strdup("alpha");
+		arch = strdup ("alpha");
 		break;
 	case TE_IMAGE_FILE_MACHINE_ARM:
 	case TE_IMAGE_FILE_MACHINE_THUMB:
-		arch = strdup("arm");
+		arch = strdup ("arm");
 		break;
 	case TE_IMAGE_FILE_MACHINE_M68K:
-		arch = strdup("m68k");
+		arch = strdup ("m68k");
 		break;
 	case TE_IMAGE_FILE_MACHINE_MIPS16:
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU:
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU16:
 	case TE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		arch = strdup("mips");
+		arch = strdup ("mips");
 		break;
 	case TE_IMAGE_FILE_MACHINE_POWERPC:
 	case TE_IMAGE_FILE_MACHINE_POWERPCFP:
-		arch = strdup("ppc");
+		arch = strdup ("ppc");
 		break;
 	default:
-		arch = strdup("x86");
+		arch = strdup ("x86");
 	}
 	return arch;
 }
@@ -173,14 +173,14 @@ RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 
 	if (!bin || !bin->header)
 		return NULL;
-	if ((entry = malloc(sizeof(RBinAddr))) == NULL) {
+	if (!(entry = malloc (sizeof (RBinAddr)))) {
 		perror("malloc (entrypoint)");
 		return NULL;
 	}
-	entry->vaddr = bin->header->AddressOfEntryPoint - r_bin_te_get_stripped_delta(bin);
+	entry->vaddr = bin->header->AddressOfEntryPoint - r_bin_te_get_stripped_delta (bin);
 	if (entry->vaddr == 0) // in TE if EP = 0 then EP = baddr
 		entry->vaddr = bin->header->ImageBase;
-	entry->paddr = r_bin_te_vaddr_to_paddr(bin, entry->vaddr);
+	entry->paddr = r_bin_te_vaddr_to_paddr (bin, entry->vaddr);
 	return entry;
 }
 
@@ -196,91 +196,91 @@ char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin) {
 	if (!bin) return NULL;
 	switch (bin->header->Machine) {
 	case TE_IMAGE_FILE_MACHINE_ALPHA:
-		machine = strdup("Alpha");
+		machine = strdup ("Alpha");
 		break;
 	case TE_IMAGE_FILE_MACHINE_ALPHA64:
-		machine = strdup("Alpha 64");
+		machine = strdup ("Alpha 64");
 		break;
 	case TE_IMAGE_FILE_MACHINE_AM33:
-		machine = strdup("AM33");
+		machine = strdup ("AM33");
 		break;
 	case TE_IMAGE_FILE_MACHINE_AMD64:
-		machine = strdup("AMD 64");
+		machine = strdup ("AMD 64");
 		break;
 	case TE_IMAGE_FILE_MACHINE_ARM:
-		machine = strdup("ARM");
+		machine = strdup ("ARM");
 		break;
 	case TE_IMAGE_FILE_MACHINE_CEE:
-		machine = strdup("CEE");
+		machine = strdup ("CEE");
 		break;
 	case TE_IMAGE_FILE_MACHINE_CEF:
-		machine = strdup("CEF");
+		machine = strdup ("CEF");
 		break;
 	case TE_IMAGE_FILE_MACHINE_EBC:
-		machine = strdup("EBC");
+		machine = strdup ("EBC");
 		break;
 	case TE_IMAGE_FILE_MACHINE_I386:
-		machine = strdup("i386");
+		machine = strdup ("i386");
 		break;
 	case TE_IMAGE_FILE_MACHINE_IA64:
-		machine = strdup("ia64");
+		machine = strdup ("ia64");
 		break;
 	case TE_IMAGE_FILE_MACHINE_M32R:
-		machine = strdup("M32R");
+		machine = strdup ("M32R");
 		break;
 	case TE_IMAGE_FILE_MACHINE_M68K:
-		machine = strdup("M68K");
+		machine = strdup ("M68K");
 		break;
 	case TE_IMAGE_FILE_MACHINE_MIPS16:
-		machine = strdup("Mips 16");
+		machine = strdup ("Mips 16");
 		break;
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU:
-		machine = strdup("Mips FPU");
+		machine = strdup ("Mips FPU");
 		break;
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU16:
-		machine = strdup("Mips FPU 16");
+		machine = strdup ("Mips FPU 16");
 		break;
 	case TE_IMAGE_FILE_MACHINE_POWERPC:
-		machine = strdup("PowerPC");
+		machine = strdup ("PowerPC");
 		break;
 	case TE_IMAGE_FILE_MACHINE_POWERPCFP:
-		machine = strdup("PowerPC FP");
+		machine = strdup ("PowerPC FP");
 		break;
 	case TE_IMAGE_FILE_MACHINE_R10000:
-		machine = strdup("R10000");
+		machine = strdup ("R10000");
 		break;
 	case TE_IMAGE_FILE_MACHINE_R3000:
-		machine = strdup("R3000");
+		machine = strdup ("R3000");
 		break;
 	case TE_IMAGE_FILE_MACHINE_R4000:
-		machine = strdup("R4000");
+		machine = strdup ("R4000");
 		break;
 	case TE_IMAGE_FILE_MACHINE_SH3:
-		machine = strdup("SH3");
+		machine = strdup ("SH3");
 		break;
 	case TE_IMAGE_FILE_MACHINE_SH3DSP:
-		machine = strdup("SH3DSP");
+		machine = strdup ("SH3DSP");
 		break;
 	case TE_IMAGE_FILE_MACHINE_SH3E:
-		machine = strdup("SH3E");
+		machine = strdup ("SH3E");
 		break;
 	case TE_IMAGE_FILE_MACHINE_SH4:
-		machine = strdup("SH4");
+		machine = strdup ("SH4");
 		break;
 	case TE_IMAGE_FILE_MACHINE_SH5:
-		machine = strdup("SH5");
+		machine = strdup ("SH5");
 		break;
 	case TE_IMAGE_FILE_MACHINE_THUMB:
-		machine = strdup("Thumb");
+		machine = strdup ("Thumb");
 		break;
 	case TE_IMAGE_FILE_MACHINE_TRICORE:
-		machine = strdup("Tricore");
+		machine = strdup ("Tricore");
 		break;
 	case TE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		machine = strdup("WCE Mips V2");
+		machine = strdup ("WCE Mips V2");
 		break;
 	default:
-		machine = strdup("unknown");
+		machine = strdup ("unknown");
 	}
 	return machine;
 }
@@ -291,7 +291,7 @@ char* r_bin_te_get_os(struct r_bin_te_obj_t* bin) {
 
 	switch (bin->header->Subsystem) {
 	case TE_IMAGE_SUBSYSTEM_NATIVE:
-		os = strdup("native");
+		os = strdup ("native");
 		break;
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
@@ -325,7 +325,7 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 	shdr = bin->section_header;
 	sections_count = bin->header->NumberOfSections;
 
-	if ((sections = calloc((sections_count + 1), sizeof(struct r_bin_te_section_t))) == NULL) {
+	if (!(sections = calloc ((sections_count + 1), sizeof (struct r_bin_te_section_t)))) {
 		perror ("malloc (sections)");
 		return NULL;
 	}
@@ -333,10 +333,10 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 		memcpy (sections[i].name, shdr[i].Name, TE_IMAGE_SIZEOF_NAME);
 		// not a null terminated string if len==buflen
 		//sections[i].name[TE_IMAGE_SIZEOF_NAME] = '\0';
-		sections[i].vaddr = shdr[i].VirtualAddress - r_bin_te_get_stripped_delta(bin);
+		sections[i].vaddr = shdr[i].VirtualAddress - r_bin_te_get_stripped_delta (bin);
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].VirtualSize;
-		sections[i].paddr = shdr[i].PointerToRawData - r_bin_te_get_stripped_delta(bin);
+		sections[i].paddr = shdr[i].PointerToRawData - r_bin_te_get_stripped_delta (bin);
 		sections[i].flags = shdr[i].Characteristics;
 		sections[i].last = 0;
 	}
@@ -350,37 +350,37 @@ char* r_bin_te_get_subsystem(struct r_bin_te_obj_t* bin) {
 	if (!bin) return NULL;
 	switch (bin->header->Subsystem) {
 	case TE_IMAGE_SUBSYSTEM_NATIVE:
-		subsystem = strdup("Native");
+		subsystem = strdup ("Native");
 		break;
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
-		subsystem = strdup("Windows GUI");
+		subsystem = strdup ("Windows GUI");
 		break;
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
-		subsystem = strdup("Windows CUI");
+		subsystem = strdup ("Windows CUI");
 		break;
 	case TE_IMAGE_SUBSYSTEM_POSIX_CUI:
-		subsystem = strdup("POSIX CUI");
+		subsystem = strdup ("POSIX CUI");
 		break;
 	case TE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-		subsystem = strdup("Windows CE GUI");
+		subsystem = strdup ("Windows CE GUI");
 		break;
 	case TE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
-		subsystem = strdup("EFI Application");
+		subsystem = strdup ("EFI Application");
 		break;
 	case TE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
-		subsystem = strdup("EFI Boot Service Driver");
+		subsystem = strdup ("EFI Boot Service Driver");
 		break;
 	case TE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
-		subsystem = strdup("EFI Runtime Driver");
+		subsystem = strdup ("EFI Runtime Driver");
 		break;
 	case TE_IMAGE_SUBSYSTEM_EFI_ROM:
-		subsystem = strdup("EFI ROM");
+		subsystem = strdup ("EFI ROM");
 		break;
 	case TE_IMAGE_SUBSYSTEM_XBOX:
-		subsystem = strdup("XBOX");
+		subsystem = strdup ("XBOX");
 		break;
 	default:
-		subsystem = strdup("Unknown");
+		subsystem = strdup ("Unknown");
 	}
 	return subsystem;
 }
@@ -399,16 +399,16 @@ struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
 	struct r_bin_te_obj_t *bin = R_NEW0 (struct r_bin_te_obj_t);
 	if (!bin) return NULL;
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp(file, &bin->size)))
-		return r_bin_te_free(bin);
+	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
+		return r_bin_te_free (bin);
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf, bin->size)) {
 		free (buf);
-		return r_bin_te_free(bin);
+		return r_bin_te_free (bin);
 	}
 	free (buf);
-	if (!r_bin_te_init(bin))
-		return r_bin_te_free(bin);
+	if (!r_bin_te_init (bin))
+		return r_bin_te_free (bin);
 	return bin;
 }
 
@@ -419,9 +419,9 @@ struct r_bin_te_obj_t* r_bin_te_new_buf(struct r_buf_t *buf) {
 	bin->b = r_buf_new ();
 	bin->size = buf->length;
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
-		return r_bin_te_free(bin);
+		return r_bin_te_free (bin);
 	}
-	if (!r_bin_te_init(bin))
-		return r_bin_te_free(bin);
+	if (!r_bin_te_init (bin))
+		return r_bin_te_free (bin);
 	return bin;
 }

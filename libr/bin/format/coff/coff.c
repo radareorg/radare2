@@ -122,7 +122,7 @@ static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 	if (obj->hdr.f_nsyms >= 0xffff) // too much symbols, probably not allocatable
 		return 0;
 	obj->symbols = calloc (obj->hdr.f_nsyms, sizeof(struct coff_symbol));
-	if (obj->symbols == NULL)
+	if (!obj->symbols)
 		return 0;
 	(void)r_buf_fread_at (obj->b, obj->hdr.f_symptr, (ut8 *)obj->symbols,
 		obj->endian? "8c1I2S2c": "8c1i2s2c", obj->hdr.f_nsyms);

@@ -1038,9 +1038,9 @@ R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from
 	} else {
 		mode = p->zoom->mode;
 		bufz = (ut8 *) malloc (len);
-		if (bufz == NULL) return;
+		if (!bufz) return;
 		bufz2 = (ut8 *) malloc (size);
-		if (bufz2 == NULL) {
+		if (!bufz2) {
 			free (bufz);
 			return;
 		}

@@ -168,7 +168,7 @@ R_API void r_sys_backtrace(void) {
 	while (fp != NULL) {
 		saved_fp = *fp;
 		fp = saved_fp;
-		if (*fp == NULL)
+		if (!*fp)
 			break;
 		saved_pc = *(fp + 2);
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
@@ -204,7 +204,7 @@ R_API int r_sys_clearenv(void) {
 #if __APPLE__ && __POWERPC__
 	/* do nothing */
 #else
-	if (environ == NULL) {
+	if (!environ) {
 		return 0;
 	}
 	while (*environ != NULL) {
@@ -221,7 +221,7 @@ R_API int r_sys_clearenv(void) {
 R_API int r_sys_setenv(const char *key, const char *value) {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	if (!key) return 0;
-	if (value == NULL) {
+	if (!value) {
 		unsetenv (key);
 		return 0;
 	}

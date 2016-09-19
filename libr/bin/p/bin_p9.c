@@ -164,7 +164,7 @@ static RBinInfo* info(RBinFile *arch) {
 
 	if (!(bina = r_bin_p9_get_arch (arch->buf->buf, &bits, &big_endian)))
 		return NULL;
-	if ((ret = R_NEW0 (RBinInfo)) == NULL)
+	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 	ret->file = strdup (arch->file);
 	ret->bclass = strdup ("program");

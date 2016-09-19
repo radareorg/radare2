@@ -232,7 +232,7 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 			fwrite (p, len, 1, stdout);
 		fflush (stdout);
 	}
-	if (fgets (buf, len, cons->fdin) == NULL) {
+	if (!fgets (buf, len, cons->fdin)) {
 		if (color) {
 			printf (Color_RESET);
 			fflush (stdout);

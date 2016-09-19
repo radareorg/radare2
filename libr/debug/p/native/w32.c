@@ -184,7 +184,7 @@ static bool w32dbg_SeDebugPrivilege() {
 	if (!OpenProcessToken (GetCurrentProcess (),
 			TOKEN_ADJUST_PRIVILEGES, &hToken))
 		return false;
-		
+
 	if (!LookupPrivilegeValue (NULL, SE_DEBUG_NAME, &luidDebug)) {
 		CloseHandle (hToken);
 		return false;
@@ -250,7 +250,7 @@ static int w32_dbg_init() {
 		GetProcAddress (GetModuleHandle ("kernel32"), "QueryFullProcessImageNameA");
 
 	lib = LoadLibrary ("psapi.dll");
-	if(lib == NULL) {
+	if(!lib) {
 		eprintf ("Cannot load psapi.dll. Aborting\n");
 		return false;
 	}
@@ -269,8 +269,8 @@ static int w32_dbg_init() {
 	w32_ntqueryobject = (NTSTATUS WINAPI (*)(HANDLE, ULONG, PVOID, ULONG, PULONG))
 		GetProcAddress(lib,"NtQueryObject");
 
-	if (w32_detach == NULL || w32_openthread == NULL || w32_dbgbreak == NULL ||
-	   gmbn == NULL || gmi == NULL) {
+	if (!w32_detach || !w32_openthread || !w32_dbgbreak ||
+	    !gmbn || !gmi) {
 		// OOPS!
 		eprintf ("debug_init_calls:\n"
 			"DebugActiveProcessStop: 0x%p\n"
@@ -294,12 +294,12 @@ static HANDLE w32_open_process (DWORD access, BOOL inherit, DWORD pid) {
 #if 0
 static HANDLE w32_t2h(pid_t tid) {
 	TH_INFO *th = get_th (tid);
-	if(th == NULL) {
+	if(!th) {
 		/* refresh thread list */
 		w32_dbg_threads (tid);
 
 		/* try to search thread */
-		if((th = get_th (tid)) == NULL)
+		if(!(th = get_th (tid)))
 			return NULL;
 	}
 	return th->ht;
@@ -324,7 +324,7 @@ static int w32_first_thread(int pid) {
 	THREADENTRY32 te32;
 	te32.dwSize = sizeof (THREADENTRY32);
 
-	if (w32_openthread == NULL) {
+	if (!w32_openthread) {
 		eprintf("w32_thread_list: no w32_openthread?\n");
 		return -1;
 	}
@@ -342,7 +342,7 @@ static int w32_first_thread(int pid) {
 		/* get all threads of process */
 		if (te32.th32OwnerProcessID == pid) {
 			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-			if (thid == NULL) {
+			if (!thid) {
 				print_lasterr ((char *)__FUNCTION__, "OpenThread");
 				goto err_load_th;
 			}
@@ -438,7 +438,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 		CloseHandle (handle_file_map);
 		return NULL;
 	}
-		
+
 	TCHAR name[MAX_PATH];
 	TCHAR drive[3] = TEXT (" :");
 	BOOL found = FALSE;
@@ -493,7 +493,7 @@ static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * 
 		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
 	lstLibPtr = (PLIB_ITEM)lstLib;
 	for (x=0; x<PLIB_MAX; x++) {
-		if (lstLibPtr->hFile == NULL) {
+		if (!lstLibPtr->hFile) {
 			lstLibPtr->pid = pid;
 			lstLibPtr->hFile = hFile; //DBGEvent->u.LoadDll.hFile;
 			lstLibPtr->BaseOfDll = lpBaseOfDll;//DBGEvent->u.LoadDll.lpBaseOfDll;
@@ -672,7 +672,7 @@ RList *w32_thread_list (int pid, RList *list) {
 
         te32.dwSize = sizeof(THREADENTRY32);
 
-	if (w32_openthread == NULL) {
+	if (!w32_openthread) {
 		eprintf("w32_thread_list: no w32_openthread?\n");
 		return list;
 	}
@@ -696,7 +696,7 @@ RList *w32_thread_list (int pid, RList *list) {
  82         DWORD dwFlags;
 #endif
 			thid = w32_openthread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
-			if (thid == NULL) {
+			if (!thid) {
 				print_lasterr((char *)__FUNCTION__, "OpenThread");
                                 goto err_load_th;
 			}
@@ -713,7 +713,7 @@ static RDebugPid *build_debug_pid(PROCESSENTRY32 *pe) {
 	HANDLE process = w32_open_process (0x1000, //PROCESS_QUERY_LIMITED_INFORMATION,
 		FALSE, pe->th32ProcessID);
 
-	if (process == INVALID_HANDLE_VALUE || w32_queryfullprocessimagename == NULL) {
+	if (process == INVALID_HANDLE_VALUE || !w32_queryfullprocessimagename) {
 		return r_debug_pid_new (pe->szExeFile, pe->th32ProcessID, 's', 0);
 	}
 
@@ -751,7 +751,7 @@ RList *w32_pids (int pid, RList *list) {
 		if (show_all_pids ||
 			pe.th32ProcessID == pid ||
 			pe.th32ParentProcessID == pid) {
-	
+
 			RDebugPid *debug_pid = build_debug_pid (&pe);
 			if (debug_pid) {
 				r_list_append (list, debug_pid);
@@ -805,7 +805,7 @@ void w32_break_process (void *d) {
 		return;
 	}
 	lib = LoadLibrary ("kernel32.dll");
-	if (lib == NULL) {
+	if (!lib) {
 		print_lasterr ((char *)__FUNCTION__, "LoadLibrary");
 		CloseHandle (process);
 		return;

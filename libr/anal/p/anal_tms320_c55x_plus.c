@@ -12,7 +12,7 @@ int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 	ut16 *ins = (ut16*)buf;
 	ut32 ins_len;
 
-	if (buf == NULL || len <= 0)
+	if (!buf || len <= 0)
 		return 0;
 
 	ins_len = get_ins_len(buf[0]);

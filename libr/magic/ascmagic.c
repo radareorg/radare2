@@ -101,9 +101,9 @@ return 0;
 	while (nbytes > 1 && buf[nbytes - 1] == '\0')
 		nbytes--;
 
-	if ((nbuf = calloc(1, (nbytes + 1) * sizeof(nbuf[0]))) == NULL)
+	if (!(nbuf = calloc(1, (nbytes + 1) * sizeof(nbuf[0]))))
 		goto done;
-	if ((ubuf = calloc(1, (nbytes + 1) * sizeof(ubuf[0]))) == NULL)
+	if (!(ubuf = calloc(1, (nbytes + 1) * sizeof(ubuf[0]))))
 		goto done;
 
 	/*
@@ -173,11 +173,11 @@ return 0;
 	   re-converting improved, or at least realloced after
 	   re-converting conversion. */
 	mlen = ulen * 6;
-	if ((utf8_buf = malloc(mlen)) == NULL) {
+	if (!(utf8_buf = malloc(mlen))) {
 		file_oomem(ms, mlen);
 		goto done;
 	}
-	if ((utf8_end = encode_utf8(utf8_buf, mlen, ubuf, ulen)) == NULL)
+	if (!(utf8_end = encode_utf8(utf8_buf, mlen, ubuf, ulen)))
 		goto done;
 	if (file_softmagic(ms, utf8_buf, utf8_end - utf8_buf, TEXTTEST) != 0) {
 		rv = 1;

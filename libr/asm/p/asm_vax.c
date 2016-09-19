@@ -50,7 +50,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	int flen, glen;
 	va_list ap;
 	char *tmp;
-	if (buf_global == NULL)
+	if (!buf_global)
 		return 0;
 	va_start (ap, format);
 	flen = strlen (format);

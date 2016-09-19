@@ -58,7 +58,7 @@ static int lookupInstruction(uint16_t opcode, int offset);
 static int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction) {
 	int insidx, i;
 	
-	if (dInstruction == NULL)
+	if (!dInstruction)
 		return ERROR_INVALID_ARGUMENTS;
 	
 	
@@ -201,9 +201,9 @@ static int disassembleOperands(disassembledInstruction *dInstruction) {
 	int i;
 	
 	/* This should never happen */
-	if (dInstruction == NULL)
+	if (!dInstruction)
 		return ERROR_INVALID_ARGUMENTS;
-	if (dInstruction->instruction == NULL)
+	if (!dInstruction->instruction)
 		return ERROR_INVALID_ARGUMENTS;
 	
 	/* For each operand, decode its original value. */

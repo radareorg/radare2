@@ -31,7 +31,7 @@ static int instlen(const ut8 *buf, int len) {
 
 static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	int sz = 2;
-	if (op == NULL)
+	if (!op)
 		return sz;
 	memset (op, 0, sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_NULL;

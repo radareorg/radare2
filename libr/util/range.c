@@ -34,7 +34,7 @@ R_API RRange *r_range_free(RRange *r) {
 // TODO: optimize by just returning the pointers to the internal foo?
 R_API int r_range_get_data(RRange *rgs, ut64 addr, ut8 *buf, int len) {
 	RRangeItem *r = r_range_item_get (rgs, addr);
-	if (r == NULL)
+	if (!r)
 		return 0;
 	if (r->datalen < len)
 		len = r->datalen;
@@ -44,7 +44,7 @@ R_API int r_range_get_data(RRange *rgs, ut64 addr, ut8 *buf, int len) {
 
 R_API int r_range_set_data(RRange *rgs, ut64 addr, const ut8 *buf, int len) {
 	RRangeItem *r = r_range_item_get (rgs, addr);
-	if (r == NULL)
+	if (!r)
 		return 0;
 	r->data = (ut8*)malloc (len);
 	if (!r->data) return 0;

@@ -34,7 +34,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[64];
-	if (buf_global == NULL) {
+	if (!buf_global) {
 		return;
 	}
 	sprintf (tmp, "0x%08" PFMT64x, (ut64) address);
@@ -47,7 +47,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
 	char *tmp = NULL;
 	va_start (ap, format);
-	if (buf_global == NULL) {
+	if (!buf_global) {
 		return 0;
 	}
 	flen = strlen (format);

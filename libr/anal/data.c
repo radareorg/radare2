@@ -306,7 +306,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 		if (str && !buf[i])
 			str++;
 		data = r_anal_data (a, addr + i, buf + i, len - i);
-		if (data == NULL) {
+		if (!data) {
 			i += word;
 			continue;
 		}

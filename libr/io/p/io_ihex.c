@@ -49,7 +49,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RBufferSparse *rbs;
 	RListIter *iter;
 
-	if (fd == NULL || fd->data == NULL || (fd->flags & R_IO_WRITE) == 0 ||(count<=0))
+	if (!fd || !fd->data || (fd->flags & R_IO_WRITE) == 0 ||(count<=0))
 		return -1;
 	rih = fd->data;
 	pathname = fd->name + 7;
@@ -169,7 +169,7 @@ static int fw04b(FILE *fd, ut16 eaddr) {
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	Rihex *rih;
-	if (fd == NULL || fd->data == NULL || (count<=0))
+	if (!fd || !fd->data || (count<=0))
 		return -1;
 	rih=fd->data;
 	if (r_buf_read_at (rih->rbuf, io->off, buf, count) != count) {

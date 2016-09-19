@@ -17,7 +17,7 @@ typedef struct {
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	int code, rlen;
 	char *out, *url, *hexbuf;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	if (count * 3 < count) return -1;
 	hexbuf = malloc (count * 3);
@@ -37,7 +37,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	int code, rlen;
 	char *out, *url;
 	int ret = 0;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	url = r_str_newf ("%s/p8%%20%d@%"PFMT64d,
 		rURL(fd), count, io->off);
@@ -59,7 +59,7 @@ beach:
 
 static int __close(RIODesc *fd) {
 	RIOR2Web *riom;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	riom = fd->data;
 	free (riom->url);

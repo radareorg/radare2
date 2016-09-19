@@ -59,7 +59,7 @@ R_API const ut8 *r_uleb128_encode (const ut64 s, int *len) {
 	ut64 source = s;
 	do {
 		l++;
-		if ((otarget = realloc (otarget, l)) == NULL) {
+		if (!(otarget = realloc (otarget, l))) {
 			l = 0;
 			break;
 		}

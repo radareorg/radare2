@@ -19,7 +19,7 @@ RListIter *r_list_iter_get_next(RListIter *list) {
 }
 
 void *r_list_iter_get_data(RListIter *list) {
-	if (list == NULL) return NULL;
+	if (!list) return NULL;
 	return list->data;
 }
 
@@ -124,7 +124,7 @@ R_API void r_list_split_iter (RList *list, RListIter *iter) {
 }
 
 //Warning: free functions must be compatible
-#define r_list_empty(x) (x == NULL || (x->head == NULL && x->tail == NULL))
+#define r_list_empty(x) (!x || (!(x->head) && !(x->tail)))
 R_API int r_list_join (RList *list1, RList *list2) {
 	if (!list1 || !list2)
 		return 0;
@@ -133,7 +133,7 @@ R_API int r_list_join (RList *list1, RList *list2) {
 	if (r_list_empty (list1)) {
 		list1->head = list2->head;
 		list1->tail = list2->tail;
-	} else if (list1->tail == NULL) {
+	} else if (!list1->tail) {
 		list1->tail = list2->head;
 	} else if (list2->head != NULL) {
 		list1->tail->n = list2->head;
@@ -168,14 +168,14 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 	RListIter *new = NULL;
 	if (list && data) {
 		new = R_NEW (RListIter);
-		if (new == NULL) return new;
+		if (!new) return new;
 		if (list->tail)
 			list->tail->n = new;
 		new->data = data;
 		new->p = list->tail;
 		new->n = NULL;
 		list->tail = new;
-		if (list->head == NULL)
+		if (!list->head)
 			list->head = new;
 	}
 	return new;
@@ -191,7 +191,7 @@ R_API RListIter *r_list_prepend(RList *list, void *data) {
 		new->n = list->head;
 		new->p = NULL;
 		list->head = new;
-		if (list->tail == NULL)
+		if (!list->tail)
 			list->tail = new;
 		return new;
 	}
@@ -270,12 +270,12 @@ R_API int r_list_del_n(RList *list, int n) {
 		return false;
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++)
 		if (i == n) {
-			if (it->p == NULL && it->n == NULL) {
+			if (!it->p && !it->n) {
 				list->head = list->tail = NULL;
-			} else if (it->p == NULL) {
+			} else if (!it->p) {
 				it->n->p = NULL;
 				list->head = it->n;
-			} else if (it->n == NULL) {
+			} else if (!it->n) {
 				it->p->n = NULL;
 				list->tail = it->p;
 			} else {
@@ -356,7 +356,7 @@ R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp)
 			new->p = it->p;
 			new->data = data;
 			new->n->p = new;
-			if (new->p == NULL)
+			if (!new->p)
 				list->head = new;
 			else new->p->n = new;
 		} else {

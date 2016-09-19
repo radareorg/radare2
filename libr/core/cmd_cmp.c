@@ -59,7 +59,7 @@ R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd
 	snprintf (cmpw->cmd, sizeof (cmpw->cmd), "%s", cmd);
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
-	if (cmpw->ndata == NULL) {
+	if (!cmpw->ndata) {
 		free (cmpw);
 		return false;
 	}
@@ -115,7 +115,7 @@ R_API int r_core_cmpwatch_update (RCore *core, ut64 addr) {
 		free (w->odata);
 		w->odata = w->ndata;
 		w->ndata = malloc (w->size);
-		if (w->ndata == NULL)
+		if (!w->ndata)
 			return false;
 		r_io_read_at (core->io, w->addr, w->ndata, w->size);
 	}
@@ -145,10 +145,10 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 	if (len<1)
 		return false;
 	f = malloc (len);
-	if (f == NULL)
+	if (!f)
 		return false;
 	d = malloc (len);
-	if (d == NULL) {
+	if (!d) {
 		free (f);
 		return false;
 	}
@@ -412,13 +412,13 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 
 		filled = (char*) malloc (strlen (input) + 1);
-		if (filled == NULL)
+		if (!filled)
 			return false;
 
 		memcpy (filled, input, strlen (input) + 1);
 
 		buf = (ut8*)malloc (strlen (input) + 1);
-		if (buf == NULL)
+		if (!buf)
 			return false;
 
 		ret = r_hex_bin2str (core->block, strlen (input) / 2, (char *)buf);
@@ -449,7 +449,7 @@ static int cmd_cmp(void *data, const char *input) {
 			return 0;
 		}
 		fd = r_sandbox_fopen (input+2, "rb");
-		if (fd == NULL) {
+		if (!fd) {
 			eprintf ("Cannot open file '%s'\n", input+2);
 			return 0;
 		}

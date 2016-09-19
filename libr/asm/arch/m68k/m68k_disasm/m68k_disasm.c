@@ -2997,7 +2997,7 @@ static void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd) {
 	ut32 nv = 0;
 	ut32i diff = INT_MAX;
 
-	if (dbuf == NULL)
+	if (!dbuf)
 		return;
 
 	if (sz == SIZE_WORD)

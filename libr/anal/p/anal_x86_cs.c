@@ -2296,7 +2296,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	{
 		ut64 naddr = addr;
 		size_t size = len;
-		if (insn == NULL)
+		if (!insn)
 			insn = cs_malloc (handle);
 		n = cs_disasm_iter (handle, (const uint8_t**)&buf,
 			&size, (uint64_t*)&naddr, insn);

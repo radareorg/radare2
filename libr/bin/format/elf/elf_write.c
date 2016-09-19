@@ -56,7 +56,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 		if (!strcmp (&strtab[shdrp->sh_name], ".rel.plt")) {
 			Elf_(Rel) *rel, *relp;
 			rel = (Elf_(Rel) *)malloc (1+shdrp->sh_size);
-			if (rel == NULL) {
+			if (!rel) {
 				perror ("malloc");
 				return 0;
 			}
@@ -77,7 +77,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 		} else if (!strcmp (&strtab[shdrp->sh_name], ".rela.plt")) {
 			Elf_(Rela) *rel, *relp;
 			rel = (Elf_(Rela) *)malloc (1+shdrp->sh_size);
-			if (rel == NULL) {
+			if (!rel) {
 				perror("malloc");
 				return 0;
 			}

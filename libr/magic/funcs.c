@@ -201,7 +201,7 @@ int file_reset(RMagic *ms) {
 	ms->o.buf = NULL;
 	ms->haderr = 0;
 	ms->error = -1;
-	if (ms->mlist == NULL) {
+	if (!ms->mlist) {
 		file_error (ms, 0, "no magic files loaded! ");
 		return -1;
 	}
@@ -226,7 +226,7 @@ const char *file_getbuffer(RMagic *ms) {
 	if (ms->flags & R_MAGIC_RAW)
 		return ms->o.buf;
 
-	if (ms->o.buf == NULL) {
+	if (!ms->o.buf) {
 		eprintf ("ms->o.buf = NULL\n");
 		return NULL;
 	}
@@ -238,7 +238,7 @@ const char *file_getbuffer(RMagic *ms) {
 		return NULL;
 	}
 	psize = len * 4 + 1;
-	if ((pbuf = realloc (ms->o.pbuf, psize)) == NULL) {
+	if (!(pbuf = realloc (ms->o.pbuf, psize))) {
 		file_oomem (ms, psize);
 		return NULL;
 	}
@@ -297,9 +297,9 @@ const char *file_getbuffer(RMagic *ms) {
 int file_check_mem(RMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
 		size_t len = (ms->c.len += 20) * sizeof (*ms->c.li);
-		ms->c.li = (ms->c.li == NULL) ? malloc (len) :
+		ms->c.li = (!ms->c.li) ? malloc (len) :
 		    realloc (ms->c.li, len);
-		if (ms->c.li == NULL) {
+		if (!ms->c.li) {
 			file_oomem (ms, len);
 			return -1;
 		}

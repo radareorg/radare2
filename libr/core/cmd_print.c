@@ -218,7 +218,7 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, 
 	char *str_clone = NULL,
 		 *trimmed_clone = NULL;
 
-	if (input == NULL || hex == NULL || asm_arch == NULL || bits == NULL) {
+	if (!input || !hex || !asm_arch || !bits) {
 		return false;
 	}
 
@@ -547,7 +547,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			}
 
 			/* store a new format */
-			if (space && (eq == NULL || space < eq)) {
+			if (space && (!eq || space < eq)) {
 				char *fields = NULL;
 				*space++ = 0;
 				fields = strchr (space, ' ');
@@ -561,7 +561,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				return;
 			}
 
-			if (strchr (name, '.') == NULL && r_strht_get (core->print->formats, name) == NULL) {
+			if (!strchr (name, '.') && !r_strht_get (core->print->formats, name)) {
 				eprintf ("Cannot find '%s' format.\n", name);
 				free (name);
 				free (input);
@@ -2283,7 +2283,7 @@ static int cmd_print(void *data, const char *input) {
 				//return false;
 			}
 
-			if (new_arch == NULL) new_arch = strdup (old_arch);
+			if (!new_arch) new_arch = strdup (old_arch);
 			if (new_bits == -1) new_bits = old_bits;
 
 			if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
@@ -2538,7 +2538,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		l = use_blocksize;
 
-		if (new_arch == NULL) new_arch = strdup (old_arch);
+		if (!new_arch) new_arch = strdup (old_arch);
 		if (new_bits == -1) new_bits = old_bits;
 
 		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){

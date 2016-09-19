@@ -404,7 +404,7 @@ R_API int r_anal_var_rename(RAnal *a, ut64 var_addr, int scope, char kind, const
 			eprintf ("Cannot find key in storage.\n");
 			return 0;
 		}
-		if (old_name == NULL) {
+		if (!old_name) {
 			old_name = stored_name;
 		} else if (strcmp (stored_name, old_name)) {
 			eprintf ("Old name missmatch %s vs %s.\n", stored_name, old_name);

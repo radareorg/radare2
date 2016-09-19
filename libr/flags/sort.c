@@ -29,7 +29,7 @@ R_API int r_flag_sort(RFlag *f, int namesort) {
 		changes = 0;
 		fi = NULL;
 		r_list_foreach (f->flags, iter, flag) {
-			if (fi == NULL) {
+			if (!fi) {
 				fi = flag;
 				it_elem = iter;
 				changes = 1;

@@ -1603,7 +1603,7 @@ decode_pcp_insn (memaddr, buffer, info)
       break;
     }
 
-  if (pop == NULL)
+  if (!pop)
     {
       /* No valid instruction was found; print it as a 16-bit word.  */
       DPRINT (DFILE, ".hword 0x%04lx", (insn & 0xffff));

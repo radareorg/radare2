@@ -21,7 +21,7 @@ typedef struct {
 #define RIOMALLOC_OFF(x) (((RIOGzip*)x->data)->offset)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (fd == NULL || fd->data == NULL) {
+	if (!fd || !fd->data) {
 		return -1;
 	}
 	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd)) {
@@ -61,7 +61,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	if (RIOMALLOC_OFF (fd) > RIOMALLOC_SZ (fd))
 		return -1;
@@ -73,7 +73,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 static int __close(RIODesc *fd) {
 	RIOGzip *riom;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	eprintf ("TODO: Writing changes into gzipped files is not yet supported\n");
 	riom = fd->data;

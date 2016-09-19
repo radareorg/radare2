@@ -550,7 +550,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	RAsmCode *acode = NULL;
 	RAsmOp op = {0};
 	ut64 off, pc;
-	if (buf == NULL)
+	if (!buf)
 		return NULL;
 	if (!(acode = r_asm_code_new ()))
 		return NULL;

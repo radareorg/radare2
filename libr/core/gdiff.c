@@ -61,12 +61,12 @@ static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 		int digits, ut64 addr2, const char *name2, ut32 size2,
 		const char *match, double dist, int bare) {
 	if (bare) {
-		if (addr2 == UT64_MAX || name2 == NULL)
+		if (addr2 == UT64_MAX || !name2)
 			printf ("0x%016"PFMT64x" |%8s  (%f)\n", addr, match, dist);
 		else printf ("0x%016"PFMT64x" |%8s  (%f) | 0x%016"PFMT64x"\n", addr, match, dist, addr2);
 		return;
 	}
-	if (addr2 == UT64_MAX || name2 == NULL)
+	if (addr2 == UT64_MAX || !name2)
 		printf ("%*s %*d 0x%"PFMT64x" |%8s  (%f)\n",
 			maxnamelen, name, digits, size, addr, match, dist);
 	else printf ("%*s %*d 0x%"PFMT64x" |%8s  (%f) | 0x%"PFMT64x"  %*d %s\n",

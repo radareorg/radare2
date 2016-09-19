@@ -1108,7 +1108,7 @@ insert_reg (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
 {
   static char buf[100];
   enum operand op_type = OP_NONE;
-  if (reg == NULL)
+  if (!reg)
     {
       /* We have a constant that also requires a value stored in a register
 	 field.  Handle these by updating the register field and saving the
@@ -2134,7 +2134,7 @@ insert_absaddr (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
    The suffix extraction functions' return value is redundant since it can be
    obtained from (*OPVAL)->value.  However, the boolean suffixes don't have
    a suffix table entry for the "false" case, so values of zero must be
-   obtained from the return value (*OPVAL == NULL).  */
+   obtained from the return value (!*OPVAL).  */
 
 /* Called by the disassembler before printing an instruction.  */
 
@@ -2244,7 +2244,7 @@ extract_reg (arc_insn *insn,
 
       op_type = OP_REG;
 
-      if (reg == NULL)
+      if (!reg)
 	return 0;
       if (opval != NULL)
 	*opval = reg;

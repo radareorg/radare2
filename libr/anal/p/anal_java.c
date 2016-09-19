@@ -207,7 +207,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 
 	ut64 addr = 0;
 	int result = 0;
-	if (bb == NULL) {
+	if (!bb) {
 		eprintf ("Error: unable to handle basic block @ 0x%08"PFMT64x"\n", addr);
 		return R_ANAL_RET_ERROR;
 	} else if (state->max_depth <= state->current_depth) {
@@ -232,7 +232,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 				IFDBG eprintf (" - Handling a jmp @ 0x%04"PFMT64x" to 0x%04"PFMT64x".\n", addr, bb->jump);
 
 				// visited some other time
-				if (r_anal_state_search_bb (state, bb->jump) == NULL) {
+				if (!r_anal_state_search_bb (state, bb->jump)) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 					if (jmp_list)
 						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
@@ -257,7 +257,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 				IFDBG eprintf (" - Handling a cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
 				IFDBG eprintf (" - Handling jmp to 0x%04"PFMT64x".\n", bb->jump);
 				// visited some other time
-				if (r_anal_state_search_bb (state, bb->jump) == NULL) {
+				if (!r_anal_state_search_bb (state, bb->jump)) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
 					if (jmp_list)
 						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
@@ -275,7 +275,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					encountered_stop = 1;
 				}
 
-				if (r_anal_state_search_bb (state, bb->fail) == NULL) {
+				if (!r_anal_state_search_bb (state, bb->fail)) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );
 					if (jmp_list)
 						bb->failbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
@@ -351,7 +351,7 @@ static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr
 	ut64 *paddr64;
 
 	state->done = 0;
-	if (nodes == NULL || nodes->cfg_node_addrs == NULL) {
+	if (!nodes || !nodes->cfg_node_addrs) {
 		state->done = 1;
 		return R_ANAL_RET_ERROR;
 	}
@@ -359,7 +359,7 @@ static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr
 	while (r_list_length (nodes->cfg_node_addrs) > 0) {
 		paddr64 = r_list_get_n (nodes->cfg_node_addrs, 0);
 		r_list_del_n (nodes->cfg_node_addrs, 0);
-		if (paddr64 && r_anal_state_search_bb (state, *paddr64) == NULL) {
+		if (paddr64 && !r_anal_state_search_bb (state, *paddr64)) {
 			ut64 list_length = 0;
 			IFDBG eprintf (" - Visiting 0x%04"PFMT64x" for analysis.\n", *paddr64);
 			jmp_list = r_anal_ex_perform_analysis ( anal, state, *paddr64 );
@@ -380,14 +380,14 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 	RAnalBlock *bb = state->current_bb;
 	RAnalJavaLinearSweep *nodes = state->user_state;
 
-	if (nodes == NULL || nodes->cfg_node_addrs == NULL) {
+	if (!nodes || !nodes->cfg_node_addrs) {
 		state->done = 1;
 		return R_ANAL_RET_ERROR;
 	}
 
 	ut64 addr = 0;
 	int result = 0;
-	if (bb == NULL) {
+	if (!bb) {
 		eprintf ("Error: unable to handle basic block @ 0x%08"PFMT64x"\n", addr);
 		return R_ANAL_RET_ERROR;
 	} else if (state->max_depth <= state->current_depth) {
@@ -590,7 +590,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 
 
 	buffer = malloc (buf_len);
-	if (buffer == NULL) return R_ANAL_RET_ERROR;
+	if (!buffer) return R_ANAL_RET_ERROR;
 
 
 	anal->iob.read_at (anal->iob.io, addr, buffer, buf_len);
@@ -631,7 +631,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 
 	if (end == UT64_MAX) analyze_all = 1;
 
-	if (bin_objs_list == NULL || r_list_length (bin_objs_list) == 0) {
+	if (!bin_objs_list || r_list_empty (bin_objs_list)) {
 		r_list_free (bin_objs_list);
 		return java_analyze_fns_from_buffer (anal, start, end, reftype, depth);
 	}
@@ -644,7 +644,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 			ut64 loadaddr = bin->loadaddr;
 			const char * bin_name = bin && bin->file ? bin->file : anal->iob.io->desc->name;
 			IFDBG eprintf ("Analyzing java functions for %s\n", bin_name);
-			IFDBG eprintf ("Analyzing functions.  binobj = %p, methods_list = %p, Analysing from buffer? %d\n", bin, methods_list, methods_list == NULL);
+			IFDBG eprintf ("Analyzing functions.  binobj = %p, methods_list = %p, Analysing from buffer? %d\n", bin, methods_list, !methods_list);
 			// loop over all methods in the binary object and analyse
 			// the functions
 			r_list_foreach ( methods_list, methods_iter, method ) {
@@ -732,7 +732,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	//ut8 op_byte = data[0];
 	ut8 op_byte = data[0];
 	sz = JAVA_OPS[op_byte].size;
-	if (op == NULL)	return sz;
+	if (!op)	return sz;
 
 	memset (op, '\0', sizeof (RAnalOp));
 
@@ -802,7 +802,7 @@ static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) 
 
 	RAnalOp *op = r_anal_op_new ();
 	//  get opcode size 
-	if (op == NULL) return 0;
+	if (!op) return 0;
 	memset (op, '\0', sizeof (RAnalOp));
 	java_op (anal, op, addr, state->buffer, state->len - (addr - state->start) );
 	return op;

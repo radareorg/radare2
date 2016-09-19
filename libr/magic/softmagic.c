@@ -258,7 +258,7 @@ static int check_fmt(RMagic *ms, struct r_magic *m) {
 	RRegex rx;
 	int rc;
 
-	if (strchr (R_MAGIC_DESC, '%') == NULL)
+	if (!strchr (R_MAGIC_DESC, '%'))
 		return 0;
 
 	rc = r_regex_comp (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED|R_REGEX_NOSUB);
@@ -280,7 +280,7 @@ char * strdupn(const char *str, size_t n) {
 
 	for (len = 0; len < n && str[len]; len++)
 		continue;
-	if ((copy = malloc (len + 1)) == NULL)
+	if (!(copy = malloc (len + 1)))
 		return NULL;
 	(void)memcpy (copy, str, len);
 	copy[len] = '\0';
@@ -485,7 +485,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		int rval;
 
 		cp = strdupn((const char *)ms->search.s, ms->search.rm_len);
-		if (cp == NULL) {
+		if (!cp) {
 			file_oomem(ms, ms->search.rm_len);
 			return -1;
 		}
@@ -760,7 +760,7 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 			const char *buf;	/* start of search region */
 			size_t lines;
 
-			if (s == NULL) {
+			if (!s) {
 				ms->search.s_len = 0;
 				ms->search.s = NULL;
 				return 0;
@@ -1305,7 +1305,7 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	case FILE_SEARCH: { /* search ms->search.s for the string m->value.s */
 		size_t slen, idx;
 
-		if (ms->search.s == NULL)
+		if (!ms->search.s)
 			return 0;
 
 		slen = R_MIN (m->vallen, sizeof (m->value.s));
@@ -1330,7 +1330,7 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 		RRegex rx;
 		char errmsg[512];
 
-		if (ms->search.s == NULL)
+		if (!ms->search.s)
 			return 0;
 
 		l = 0;

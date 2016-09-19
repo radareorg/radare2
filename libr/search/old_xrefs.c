@@ -353,7 +353,7 @@ int main(int argc, char **argv)
 #else
 	fprintf(stderr, "No MMAP for this platform? report it!\n");
 #endif
-	if (ma == NULL) {
+	if (!ma) {
 		perror("Error mmaping");
 		fprintf(stderr, "cannot open %s\n", argv[optind]);
 		return 1;

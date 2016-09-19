@@ -447,7 +447,7 @@ static RList *r_debug_native_pids (int pid) {
 
 		/* list parents */
 		dh = opendir ("/proc");
-		if (dh == NULL) {
+		if (!dh) {
 			r_sys_perror ("opendir /proc");
 			r_list_free (list);
 			return NULL;
@@ -571,7 +571,7 @@ static RList *r_debug_native_pids (int pid) {
 
 static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
-	if (list == NULL) {
+	if (!list) {
 		eprintf ("No list?\n");
 		return NULL;
 	}
@@ -804,8 +804,8 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 	if (sysctl (mib, 4, NULL, &len, NULL, 0) != 0) return NULL;
 	len = len * 4 / 3;
 	buf = malloc(len);
-	if (buf == NULL) return (NULL);
-	if (sysctl(mib, 4, buf, &len, NULL, 0) != 0) {
+	if (!buf) {return NULL};
+	if (sysctl (mib, 4, buf, &len, NULL, 0) != 0) {
 		free (buf);
 		return NULL;
 	}
@@ -820,7 +820,7 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 		kve = (struct kinfo_vmentry *)(uintptr_t)bp;
 		map = r_debug_map_new (kve->kve_path, kve->kve_start,
 					kve->kve_end, kve->kve_protection, 0);
-		if (map == NULL) break;
+		if (!map) break;
 		r_list_append (list, map);
 		bp += kve->kve_structsize;
 	}
@@ -1425,7 +1425,7 @@ static RList *r_debug_desc_native_list (int pid) {
 	if (sysctl (mib, 4, NULL, &len, NULL, 0) != 0) return NULL;
 	len = len * 4 / 3;
 	buf = malloc(len);
-	if (buf == NULL) return (NULL);
+	if (!buf) {return NULL};
 	if (sysctl (mib, 4, buf, &len, NULL, 0) != 0) {
 		free (buf);
 		return NULL;
@@ -1478,7 +1478,7 @@ static RList *r_debug_desc_native_list (int pid) {
 		perm |= (kve->kf_flags & KF_FLAG_WRITE)?R_IO_WRITE:0;
 		desc = r_debug_desc_new (kve->kf_fd, str, perm, type,
 					kve->kf_offset);
-		if (desc == NULL) break;
+		if (!desc) break;
 		r_list_append (ret, desc);
 	}
 

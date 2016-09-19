@@ -62,7 +62,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 #if USE_ITER_API
 	{
 		size_t size = len;
-		if (insn == NULL)
+		if (!insn)
 			insn = cs_malloc (cd);
 		insn->size = 1;
 		memset (insn, 0, insn->size);

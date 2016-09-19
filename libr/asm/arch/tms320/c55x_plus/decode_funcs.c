@@ -60,7 +60,7 @@ st8 *get_trans_reg(ut32 ins_bits) {
 st8 *get_AR_regs_class1(ut32 ins_bits) {
 	ut32 op = (ins_bits >> 4) & 7;
 	st8 *res = (st8 *)malloc(50);
-	if (res == NULL)
+	if (!res)
 		return NULL;
 	memset (res, 0, 50);
 	switch (op) {
@@ -1153,7 +1153,7 @@ st8 *get_sim_reg(st8 *reg_arg, ut32 ins_bits) {
 		break;
 	case 2:
 		aux = (st8 *)malloc(50);
-		if(aux == NULL)
+		if(!aux)
 			return NULL;
 
 		sprintf(aux, "@#0x%x", code);

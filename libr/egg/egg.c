@@ -421,7 +421,7 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
-			if (b == NULL) {
+			if (!b) {
 				eprintf ("%s Encoder has failed\n", p->name);
 				return false;
 			}
