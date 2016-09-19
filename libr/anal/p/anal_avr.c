@@ -167,6 +167,20 @@ INST_HANDLER (bclr) {	// BCLR s
 	ESIL_A ("0xff,%d,1,<<,^,sreg,&=", s);
 }
 
+INST_HANDLER (bset) {	// BSET s
+			// SEC
+			// SEH
+			// SEI
+			// SEN
+			// SER
+			// SES
+			// SET
+			// SEV
+			// SEZ
+	int s = (buf[0] >> 4) & 0x7;
+	ESIL_A ("%d,1,<<,sreg,|=", s);
+}
+
 INST_HANDLER (breq) { __generic_brxx (op, buf, "zf");        } // BREQ raddr
 INST_HANDLER (brge) { __generic_brxx (op, buf, "nf,vf,^,!"); } // BRGE raddr
 INST_HANDLER (brhc) { __generic_brxx (op, buf, "hf,!");      } // BRHC raddr
@@ -347,6 +361,26 @@ INST_HANDLER (out) {	// OUT A, Rr
 	}
 }
 
+INST_HANDLER (pop) {	// POP Rd
+	int d = ((buf[1] & 0x1) << 4) | ((buf[0] & 0xf0) >> 4);
+	ESIL_A ("1,sp,+=,"		// increment stack pointer
+		"sp,_sram,+,[1],"	// load SRAM[sp]
+		"r%d,=,",		// store in Rd
+		d);
+}
+
+INST_HANDLER (push) {	// PUSH Rr
+	int r = ((buf[1] & 0x1) << 4) | ((buf[0] & 0xf0) >> 4);
+	op->cycles = !strncasecmp (anal->cpu, "ATxmega", 7)
+			? 1	// ATxmega optimizes one cycle
+			: 2;
+	ESIL_A ("r%d,"			// load Rr
+		"sp,_sram,+,"		// calc SRAM[sp]
+		"=[1],"			// store Rr in stack
+		"-1,sp,+=,",		// decrement stack pointer
+		r);
+}
+
 INST_HANDLER (rcall) {	// RCALL addr
 	op->jump = op->addr
 		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
@@ -438,14 +472,6 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
-INST_HANDLER (sec) {	// SEC
-	ESIL_A ("1,cf,=,");
-}
-
-INST_HANDLER (sei) {	// SEI
-	ESIL_A ("1,if,=,");
-}
-
 INST_HANDLER (st) {	// ST X, Rr
 			// ST X+, Rr
 			// ST -X, Rr
@@ -465,11 +491,12 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (nop,   0xffff, 0x0000, 1,      2,   NOP   ), // NOP
 	INST_DECL (ret,   0xffff, 0x9508, 4,      2,   RET   ), // RET
 	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ), // RETI
-	INST_DECL (sec,   0xffff, 0x9408, 1,      2,   SWI   ), // SEC
-	INST_DECL (sei,   0xffff, 0x9478, 1,      2,   SWI   ), // SEI
 	INST_DECL (bclr,  0xff8f, 0x9488, 1,      2,   SWI   ), // BCLR s
+	INST_DECL (bset,  0xff8f, 0x9408, 1,      2,   SWI   ), // BSET s
 	INST_DECL (adiw,  0xff00, 0x9600, 2,      2,   ADD   ), // ADIW Rd+1:Rd, K
 	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ), // MOVW Rd+1:Rd, Rr+1Rrd
+	INST_DECL (pop,   0xfe0f, 0x900f, 2,      2,   POP   ), // PUSH Rr
+	INST_DECL (push,  0xfe0f, 0x920f, 0,      2,   PUSH  ), // PUSH Rr
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ), // CALL addr
 	INST_DECL (jmp,   0xfe0e, 0x940c, 2,      4,   JMP   ), // JMP addr
 	INST_DECL (breq,  0xfc07, 0xf001, 0,      2,   CJMP  ), // BREQ addr
