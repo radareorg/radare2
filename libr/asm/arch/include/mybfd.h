@@ -1584,7 +1584,7 @@ extern const struct bfd_symbol * const bfd_ind_symbol;
     }                                                  \
   while (0)
 #define bfd_section_removed_from_list(ABFD, S) \
-  (!(S)->next ? (ABFD)->section_last != (S) : (S)->next->prev != (S))
+  ((S)->next ? (S)->next->prev != (S) : (ABFD)->section_last != (S))
 
 #define BFD_FAKE_SECTION(SEC, FLAGS, SYM, SYM_PTR, NAME, IDX)          \
   /* name, id,  index, next, prev, flags, user_set_vma,            */  \

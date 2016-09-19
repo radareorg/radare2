@@ -359,7 +359,7 @@ static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr
 	while (r_list_length (nodes->cfg_node_addrs) > 0) {
 		paddr64 = r_list_get_n (nodes->cfg_node_addrs, 0);
 		r_list_del_n (nodes->cfg_node_addrs, 0);
-		if (paddr64 && !(r_anal_state_search_bb (state, *paddr64))) {
+		if (paddr64 && !r_anal_state_search_bb (state, *paddr64)) {
 			ut64 list_length = 0;
 			IFDBG eprintf (" - Visiting 0x%04"PFMT64x" for analysis.\n", *paddr64);
 			jmp_list = r_anal_ex_perform_analysis ( anal, state, *paddr64 );
@@ -631,7 +631,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 
 	if (end == UT64_MAX) analyze_all = 1;
 
-	if (!bin_objs_list || r_list_length (bin_objs_list) == 0) {
+	if (!bin_objs_list || r_list_empty (bin_objs_list)) {
 		r_list_free (bin_objs_list);
 		return java_analyze_fns_from_buffer (anal, start, end, reftype, depth);
 	}

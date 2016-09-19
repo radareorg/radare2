@@ -32,7 +32,7 @@ R_API struct btree_node *btree_remove(struct btree_node *p, BTREE_DEL(del)) {
 R_API void *btree_search(struct btree_node *root, void *x, BTREE_CMP(cmp), int parent) {
 	struct btree_node *p = NULL;
 
-	if (root!=NULL) {
+	if (root) {
 		if (cmp (x, root->data)<0)
 			p = btree_search (root->left, x, cmp, parent);
 		else if (cmp(x, root->data)>0)
@@ -48,7 +48,7 @@ R_API void *btree_search(struct btree_node *root, void *x, BTREE_CMP(cmp), int p
 }
 
 R_API void btree_traverse(struct btree_node *root, int reverse, void *context, BTREE_TRV(trv)) {
-	if (root!=NULL) {
+	if (root) {
 		if (reverse) {
 			btree_traverse (root->right, reverse, context, trv);
 			trv(root->data, context);
@@ -82,7 +82,7 @@ R_API void *btree_get(struct btree_node *proot, void *x, BTREE_CMP(cmp)) {
 }
 
 R_API void btree_cleartree(struct btree_node *proot, BTREE_DEL(del)) {
-	if (proot!=NULL) {
+	if (proot) {
 		btree_cleartree (proot->left, del);
 		btree_cleartree (proot->right, del);
 		if (del) del (proot->data);
@@ -107,7 +107,7 @@ R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp)) {
 	p->data = e;
 	p->hits = 0;
 	p->left = p->right = NULL;
-	if (*T==NULL) *T = p;
+	if (!*T) *T = p;
 	else btree_insert (T, p, cmp);
 }
 
@@ -118,7 +118,7 @@ R_API int btree_empty(struct btree_node **T) {
 
 R_API struct btree_node *btree_hittest(struct btree_node *root, struct btree_node *hn) {
 	struct btree_node *p = root;
-	if (root != NULL) {
+	if (root) {
 		struct btree_node *ml = btree_hittest(root->left, root);
 		struct btree_node *mr = btree_hittest(root->right, root);
 		if (ml && ml->hits > p->hits) p = ml;
@@ -156,8 +156,7 @@ int shownode(char *str, struct mydata *m) {
 int mycmp(const void *a, const void *b) {
 	struct mydata *ma = (struct mydata *)a;
 	struct mydata *mb = (struct mydata *)b;
-	if (a==NULL || !b)
-		return 0;
+	if (!a || !b) return 0;
 	return (int)(ma->addr-mb->addr);
 }
 

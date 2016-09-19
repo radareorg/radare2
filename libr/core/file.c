@@ -486,7 +486,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	if (cf) {
-		if (!(filenameuri || !*filenameuri)) {
+		if (!filenameuri || !*filenameuri) {
 			filenameuri = cf->desc->name;
 		} else if (cf->desc->name && strcmp (filenameuri, cf->desc->name)) {
 			// XXX - this needs to be handled appropriately

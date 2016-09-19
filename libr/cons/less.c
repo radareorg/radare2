@@ -159,7 +159,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	const char *sreg;
 	RList **mla;
 
-	if (!str || str[0] == '\0') return 0;
+	if (!str || !*str) return 0;
 	char *p = strdup (str);
 	if (!p) return 0;
 	int *lines = splitlines (p, &lines_count);
