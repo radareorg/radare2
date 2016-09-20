@@ -11,8 +11,13 @@ fi
 
 if [ -z "${CPU}" ]; then
 	export CPU=arm64
-	export CPU=armv7
+#	export CPU=armv7
 fi
+
+CAPSTONE_ARCHS="arm aarch64"
+#export CAPSTONE_MAKEFLAGS="CAPSTONE_ARCHS=\"arm aarch64\""
+# Build all archs for capstone, not just ARM/ARM64
+# export CAPSTONE_MAKEFLAGS=""
 
 [ -z "${MAKE}" ] && MAKE=make
 [ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
@@ -41,7 +46,9 @@ export CC=$(pwd)/sys/ios-sdk-gcc
 # select ios sdk version
 export IOSVER=9.3
 export IOSINC=$(pwd)/sys/ios-include
-export CFLAGS=-O2
+#export CFLAGS=-O2
+export CFLAGS="-Os -flto"
+export LDFLAGS="-flto"
 export USE_SIMULATOR=0
 
 if [ "${APPSTORE_FRIENDLY}" = 1 ]; then
@@ -53,6 +60,7 @@ fi
 if true ; then
 ${MAKE} clean
 cp -f plugins.tiny.cfg plugins.cfg
+cp -f plugins.ios.cfg plugins.cfg
 ./configure --prefix="${PREFIX}" \
 	${CFGFLAGS} \
 	--with-ostype=darwin \
@@ -62,7 +70,8 @@ cp -f plugins.tiny.cfg plugins.cfg
 fi
 
 if [ $? = 0 ]; then
-	time ${MAKE} -j${MAKE_JOBS}
+	time ${MAKE} -j${MAKE_JOBS} CAPSTONE_ARCHS="${CAPSTONE_ARCHS}"
+	#time ${MAKE} -j${MAKE_JOBS}
 	if [ $? = 0 ]; then
 		( cd binr/radare2 ; ${MAKE} ios_sdk_sign )
 		rm -rf /tmp/r2ios
@@ -79,11 +88,16 @@ if [ $? = 0 ]; then
 		rm -rf $D
 		mkdir -p $D/bin
 		for a in radare2 rabin2 rasm2 r2pm r2agent radiff2 rafind2 ragg2 rahash2 rarun2 rasm2 rax2 ; do
-			cp -f binr/$a/$a $D/bin
+			cp -f binr/$a/$a "$D/bin"
 		done
+		mkdir -p "$D/include"
+		cp -rf sys/cydia/radare2/root/usr/include/* $D/include
 		mkdir -p $D/lib
 		cp -f libr/libr.a $D/lib
 		cp -f binr/preload/libr2.dylib $D/lib
+		for a in $D/bin/* ; do
+			strip $a
+		done
 		tar czvf $D.tar.gz $D
 	fi
 fi

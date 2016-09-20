@@ -10,6 +10,8 @@ BUNDLE=org.radare.radare2
 MACSDK=macosx10.10
 ENTITL=radare2.xcent
 #ENTITL=radare2.xml
+#CFLAGS+=-flto
+#LDFLAGS+=-flto
 
 FOOD_LIBS=$(addprefix ../../libr/,$(subst r_,,$(BINDEPS)))
 SIGN_LIBS=$(addsuffix /libr_*.dylib,$(FOOD_LIBS))
