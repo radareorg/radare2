@@ -446,7 +446,7 @@ INST_HANDLER (ret) {	// RET
 
 INST_HANDLER (reti) {	// RETI
 	//XXX: There are not privileged instructions in ATMEL/AVR
-	// op->family = R_ANAL_OP_FAMILY_PRIV;
+	op->family = R_ANAL_OP_FAMILY_PRIV;
 
 	// first perform a standard 'ret'
 	INST_CALL (ret);
