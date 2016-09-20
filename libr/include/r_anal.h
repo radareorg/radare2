@@ -614,6 +614,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_vars; // globals?
 #endif
 	Sdb *sdb_hints; // OK
+	bool sdb_hints_changed;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
 	//RList *hints; // XXX use better data structure here (slist?)

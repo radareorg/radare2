@@ -11,11 +11,12 @@ R_API void r_anal_hint_clear (RAnal *a) {
 
 R_API void r_anal_hint_del (RAnal *a, ut64 addr, int size) {
 	char key[128];
-	if (size>1) {
+	if (size > 1) {
 		eprintf ("TODO: r_anal_hint_del: in range\n");
 	} else {
 		setf (key, "hint.0x%08"PFMT64x, addr);
 		sdb_unset (a->sdb_hints, key, 0);
+		a->sdb_hints_changed = true;
 	}
 }
 
@@ -27,6 +28,7 @@ static void unsetHint (RAnal *a, const char *type, ut64 addr) {
 	if (idx != -1) {
 		sdb_array_delete (DB, key, idx, 0);
 		sdb_array_delete (DB, key, idx, 0);
+		a->sdb_hints_changed = true;
 	}
 }
 
@@ -39,12 +41,15 @@ static void setHint (RAnal *a, const char *type, ut64 addr, const char *s, ut64 
 	else nval = sdb_itoa (ptr, val, 16);
 	if (idx != -1) {
 		if (!s) nval = sdb_itoa (ptr, val, 16);
-		sdb_array_set (DB, key, idx+1, nval, 0);
+		sdb_array_set (DB, key, idx + 1, nval, 0);
 	} else {
 		sdb_array_push (DB, key, nval, 0);
 		sdb_array_push (DB, key, type, 0);
 	}
-	if (s) free (nval);
+	a->sdb_hints_changed = true;
+	if (s) {
+		free (nval);
+	}
 }
 
 R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr) {
@@ -92,12 +97,13 @@ R_API void r_anal_hint_set_size (RAnal *a, ut64 addr, int size) {
 }
 
 R_API void r_anal_hint_free (RAnalHint *h) {
-	if (!h) return;
-	free (h->arch);
-	free (h->esil);
-	free (h->opcode);
-	free (h->syntax);
-	free (h);
+	if (h) {
+		free (h->arch);
+		free (h->esil);
+		free (h->opcode);
+		free (h->syntax);
+		free (h);
+	}
 }
 
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
@@ -105,15 +111,14 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	int token = 0;
 	RAnalHint *hint = R_NEW0 (RAnalHint);
 	char *s;
-	if (!hint)
-		return NULL;
-	
-	s = strdup (str);
-	if (!s) {
-		R_FREE (hint);
+	if (!hint) {
 		return NULL;
 	}
-
+	s = strdup (str);
+	if (!s) {
+		free (hint);
+		return NULL;
+	}
 	hint->addr = addr;
 	for (r = s; ; r = nxt) {
 		r = sdb_anext (r, &nxt);
@@ -131,9 +136,12 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'a': hint->arch = (char*)sdb_decode (r, 0); break;
 			}
 			token = 0;
-		} else token = *r;
-		if (!nxt)
+		} else {
+			token = *r;
+		}
+		if (!nxt) {
 			break;
+		}
 	}
 	free (s);
 	return hint;

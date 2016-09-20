@@ -180,13 +180,13 @@ static int cmd_section(void *data, const char *input) {
 	case 'r':
 		if (input[1] == ' ') {
 			RIOSection *s;
-			int len = 0;
+			// int len = 0;
 			ut64 vaddr;
 			char *p = strchr (input + 2, ' ');
 			if (p) {
 				*p = 0;
 				vaddr = r_num_math (core->num, p + 1);
-				len = (int)(size_t)(p-input + 2);
+			//	len = (int)(size_t)(p-input + 2);
 			} else {
 				vaddr = core->offset;
 			}

@@ -548,9 +548,9 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 
 			/* store a new format */
 			if (space && (!eq || space < eq)) {
-				char *fields = NULL;
+				//char *fields = NULL;
 				*space++ = 0;
-				fields = strchr (space, ' ');
+				// fields = strchr (space, ' ');
 				if (strchr (name, '.') != NULL) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
