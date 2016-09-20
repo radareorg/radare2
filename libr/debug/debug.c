@@ -963,7 +963,7 @@ repeat:
 
 		/* handle general signals here based on the return from the wait
 		 * function */
-		if (reason == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
+		if (dbg->reason.signum != -1) {
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 			if (what & R_DBG_SIGNAL_CONT) {
 				sig = dbg->reason.signum;
