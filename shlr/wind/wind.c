@@ -76,6 +76,7 @@ Profile *p_table[] = {
 	&WIN2003_SP1_X64,
 	&WIN2003_SP2_X86,
 	&WIN2003_SP2_X64,
+	&WIN10_SP0_X64,
 	NULL,
 };
 
