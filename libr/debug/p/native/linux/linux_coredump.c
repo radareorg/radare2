@@ -1470,6 +1470,7 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	bool error = false;
 	size_t note_section_size, maps_size = 0;
 	int n_segments;
+	int n_threads;
 	ut32 hdr_size;
 	elf_offset_t offset = 0;
 
@@ -1485,6 +1486,10 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	proc_data->per_process = get_proc_process_content (dbg);
 	if (!proc_data) {
 		free (elf_proc_note);
+		return false;
+	}
+	if (!elf_proc_note->n_threads || elf_proc_note->n_threads < 1 ) {
+		eprintf ("problem in elf_proc_note\n");
 		return false;
 	}
 	elf_proc_note->n_threads = proc_data->per_process->num_threads;
