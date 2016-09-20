@@ -82,6 +82,13 @@ void __generic_brxx(RAnalOp *op, const ut8 *buf, const char const *eval) {
 	ESIL_A ("%s,?{,%"PFMT64d",pc,=,}", eval, op->jump); // if eval => jump
 }
 
+void __generic_bitop_flags(RAnalOp *op) {
+	ESIL_A ("0,vf,=,");					// V
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+}
+
 INST_HANDLER (adc) {	// ADC Rd, Rr
 	int d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
@@ -151,6 +158,22 @@ INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 		"&,", d + 1);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 	ESIL_A ("r%d:r%d,=,", d + 1, d);			// Rd = result
+}
+
+INST_HANDLER (and) {	// AND Rd, Rr
+	int d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
+	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+	ESIL_A ("r%d,r%d,&,", r, d);				// 0: Rd & Rr
+	__generic_bitop_flags(op);				// up flags
+	ESIL_A ("r%d,=,", d);					// Rd = Result
+}
+
+INST_HANDLER (andi) {	// ANDI Rd, K
+	int d = ((buf[0] & 0xf0) >> 4) + 16;
+	int k = (buf[1] & 0xf0) | (buf[0] & 0x0f);
+	ESIL_A ("%d,r%d,&,", k, d);				// 0: Rd & Rr
+	__generic_bitop_flags(op);				// up flags
+	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
 INST_HANDLER (bclr) {	// BCLR s
@@ -301,10 +324,7 @@ INST_HANDLER (eor) {	// EOR Rd, Rr
 	int d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,r%d,^,", r, d);				// 0: Rd ^ Rr
-	ESIL_A ("0,vf,=,");					// V
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("vf,nf,^,sf,=,");				// S
+	__generic_bitop_flags(op);				// up flags
 	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
@@ -519,6 +539,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (add,   0xfc00, 0x0c00, 1,      2,   ADD   ), // ADD Rd, Rr
 	INST_DECL (cp,    0xfc00, 0x1400, 1,      2,   CMP   ), // CP Rd, Rr
 	INST_DECL (cpc,   0xfc00, 0x0400, 1,      2,   CMP   ), // CPC Rd, Rr
+	INST_DECL (and,   0xfc00, 0x2000, 1,      2,   AND   ),	// AND Rd, Rr
+	INST_DECL (andi,  0xf000, 0x7000, 1,      2,   AND   ),	// ANDI Rd, K
 	INST_DECL (eor,   0xfc00, 0x2400, 1,      2,   XOR   ),	// EOR Rd, Rr
 	INST_DECL (sbc,   0xfc00, 0x0800, 1,      2,   SUB   ), // SBC Rd, Rr
 	INST_DECL (in,    0xf800, 0xb000, 1,      2,   IO    ), // IN Rd, A
