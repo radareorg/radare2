@@ -176,6 +176,17 @@ INST_HANDLER (andi) {	// ANDI Rd, K
 	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
+INST_HANDLER (asr) {	// ASR Rd
+	int d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
+	ESIL_A ("1,r%d,>>,r%d,0x80,&,|,", d, d);		// 0: R=(Rd >> 1) | Rd7
+	ESIL_A ("r%d,0x1,&,!,!,cf,=,", d);			// C = Rd0
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("nf,cf,^,vf,=,");				// V
+	ESIL_A ("nf,vf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = R
+}
+
 INST_HANDLER (bclr) {	// BCLR s
 			// CLC
 			// CLH
@@ -515,6 +526,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (bset,  0xff8f, 0x9408, 1,      2,   SWI   ), // BSET s
 	INST_DECL (adiw,  0xff00, 0x9600, 2,      2,   ADD   ), // ADIW Rd+1:Rd, K
 	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ), // MOVW Rd+1:Rd, Rr+1Rrd
+	INST_DECL (asr,   0xfc0f, 0x9405, 1,      2,   AND   ),	// ASR Rd
 	INST_DECL (pop,   0xfe0f, 0x900f, 2,      2,   POP   ), // PUSH Rr
 	INST_DECL (push,  0xfe0f, 0x920f, 0,      2,   PUSH  ), // PUSH Rr
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ), // CALL addr
@@ -635,7 +647,10 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			// remove trailing coma (COMETE LA COMA)
 			t = r_strbuf_get (&op->esil);
 			if (t && strlen (t) > 0) {
-				t[strlen(t) - 1] = '\0';
+				t += strlen (t) - 1;
+				if (*t == ',') {
+					*t = '\0';
+				}
 			}
 
 			return op->size;
