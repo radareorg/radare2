@@ -571,7 +571,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	int imm = 0, imm2 = 0, d, r, k;
 	ut8 kbuf[4];
 	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
-	char *arg, str[32];
+	char *arg, str[32], *t;
 	CPU_MODEL *cpu;
 	OPCODE_DESC *opcode_desc;
 
@@ -631,6 +631,13 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			if (op->fail <= 0) {
 				op->fail = addr + op->size;
 			}
+
+			// remove trailing coma (COMETE LA COMA)
+			t = r_strbuf_get (&op->esil);
+			if (t && strlen (t) > 0) {
+				t[strlen(t) - 1] = '\0';
+			}
+
 			return op->size;
 		}
 	}
