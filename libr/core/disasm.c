@@ -1727,7 +1727,7 @@ static bool ds_print_data_type(RCore *core, const ut8 *buf, int ib, int size) {
 			r_cons_printf ("%s 0x%08x", type, n);
 			break;
 		case 8:
-			r_cons_printf ("%s 0x%016x", type, n);
+			r_cons_printf ("%s 0x%016" PFMT64x, type, n);
 			break;
 		default:
 			return false;
