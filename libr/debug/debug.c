@@ -68,12 +68,19 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 		return true;
 	}
 
+	/* The MIPS ptrace has a different behaviour */
+# if __mips__
+	/* see if we really have a breakpoint here... */
+	b = r_bp_get_at (dbg->bp, pc);
+	if (!b) { /* we don't. nothing left to do */
+		return true;
+	}
+# else
 	/* see if we really have a breakpoint here... */
 	b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
 	if (!b) { /* we don't. nothing left to do */
 		return true;
 	}
-	*pb = b;
 
 	/* set the pc value back */
 	pc -= b->size;
@@ -85,6 +92,9 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 		eprintf ("cannot set registers!\n");
 		return false;
 	}
+# endif
+
+	*pb = b;
 
 	/* if we are on a software stepping breakpoint, we hide what is going on... */
 	if (b->swstep) {
@@ -417,7 +427,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 	if (ripc) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 		orig = r_reg_get_bytes (dbg->reg, -1, &orig_sz);
-		if (orig == NULL) {
+		if (!orig) {
 			eprintf ("Cannot get register arena bytes\n");
 			return 0LL;
 		}
@@ -425,7 +435,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		rsp = r_reg_get_value (dbg->reg, risp);
 
 		backup = malloc (len);
-		if (backup == NULL) {
+		if (!backup) {
 			free (orig);
 			return 0LL;
 		}
@@ -953,7 +963,7 @@ repeat:
 
 		/* handle general signals here based on the return from the wait
 		 * function */
-		if (reason == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
+		if (dbg->reason.signum != -1) {
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 			if (what & R_DBG_SIGNAL_CONT) {
 				sig = dbg->reason.signum;

@@ -66,7 +66,7 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 	}
 	/* not found */
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
-		if (f->spaces[i] == NULL) {
+		if (!f->spaces[i]) {
 			f->spaces[i] = strdup (name);
 			f->space_idx = i;
 			break;

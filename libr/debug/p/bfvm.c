@@ -42,7 +42,7 @@ R_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 
 	/* data */
 	c->mem = (ut8 *)malloc (size);
-	if (c->mem == NULL)
+	if (!c->mem)
 		return 0;
 	memset (c->mem, '\0', size);
 
@@ -112,7 +112,7 @@ R_API void bfvm_dec(BfvmCPU *c) {
 
 R_API int bfvm_reg_set(BfvmCPU *c, const char *str) {
 	char *ptr = strchr (str, ' ');
-	if (ptr == NULL)
+	if (!ptr)
 		return 0;
 	if (strstr (str, "eip"))
 		c->eip = r_num_math (NULL, ptr+1);

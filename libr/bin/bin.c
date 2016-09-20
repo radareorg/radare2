@@ -109,8 +109,9 @@ R_API RBinObject *r_bin_file_object_get_cur(RBinFile *binfile) {
 }
 
 R_API RBinObject *r_bin_object_get_cur(RBin *bin) {
-	if (!bin) return NULL;
-	return r_bin_file_object_get_cur (r_bin_cur (bin));
+	return bin
+		? r_bin_file_object_get_cur (r_bin_cur (bin))
+		: NULL;
 }
 
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile) {
@@ -238,27 +239,31 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	RBinString *ptr;
 	RListIter *it;
 
-	if (!arch || !arch->buf || !arch->buf->buf)
+	if (!arch || !arch->buf || !arch->buf->buf) {
 		return;
-
-	if (!arch->rawstr)
-		if (!plugin || !plugin->info)
+	}
+	if (!arch->rawstr) {
+		if (!plugin || !plugin->info) {
 			return;
-	if (min == 0)
+		}
+	}
+	if (min == 0) {
 		min = plugin? plugin->minstrlen: 4;
+	}
 #if 0
 	if (arch->rawstr == true)
 		min = 1;
 #endif
 	/* Some plugins return zero, fix it up */
-	if (min == 0)
+	if (min == 0) {
 		min = 4;
-	if (min < 0)
+	}
+	if (min < 0) {
 		return;
-
-	if (!to || to > arch->buf->length)
+	}
+	if (!to || to > arch->buf->length) {
 		to = arch->buf->length;
-
+	}
 	if (arch->rawstr != 2) {
 		ut64 size = to - from;
 		// in case of dump ignore here
@@ -268,40 +273,47 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		}
 	}
 
-	if (string_scan_range (list, arch->buf->buf, min, from, to, -1) < 0)
+	if (string_scan_range (list, arch->buf->buf, min, from, to, -1) < 0) {
 		return;
-
+	}
 	r_list_foreach (list, it, ptr) {
 		RBinSection *s = r_bin_get_section_at (arch->o, ptr->paddr, false);
 		if (s) ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
 	}
 }
 
+//TODO add this info into RBinSection since can get out of control 
 static int is_data_section(RBinFile *a, RBinSection *s) {
 	RBinObject *o = a->o;
 	if (s->has_strings) {
 		return true;
 	}
 	if (o && o->info && o->info->bclass && *o->info->bclass) {
-		if (strstr (o->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
+		if (strstr (o->info->bclass, "MACH0") && strstr (s->name, "_cstring")) { // OSX
 			return true;
-		if (strstr (o->info->bclass, "ELF") && strstr (s->name, "data") && !strstr (s->name, "rel")) // LINUX
+		}
+		if (strstr (o->info->bclass, "ELF") && strstr (s->name, "data") && !strstr (s->name, "rel")) { // LINUX
 			return true;
+		}
+		if (strstr (o->info->bclass, "coff") && strstr (s->name, "data")) {
+			return true;
+		}
 #define X 1
 #define ROW (4 | 2)
 		/* probably too much false positives in here, or thats fine? */
 		if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx & X) && s->size > 0) {
-			if (!strcmp (s->name, ".rsrc"))
+			if (!strcmp (s->name, ".rsrc")) {
 				return true;
-			if (!strcmp (s->name, ".data"))
+			}
+			if (!strcmp (s->name, ".data")) {
 				return true;
-			if (!strcmp (s->name, ".rdata"))
+			}
+			if (!strcmp (s->name, ".rdata")) {
 				return true;
+			}
 		}
 	}
-	if (strstr (s->name, "_const")) // Rust
-		return true;
-	return false;
+	return (strstr (s->name, "_const") != NULL); // Rust
 }
 
 static RList *get_strings(RBinFile *a, int min, int dump) {
@@ -309,7 +321,10 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 	RBinSection *section;
 	RBinObject *o = a? a->o: NULL;
 	RList *ret;
-	if (!o) return NULL;
+
+	if (!o) {
+		return NULL;
+	}
 	if (dump) {
 		/* dump to stdout, not stored in list */
 		ret = NULL;
@@ -325,6 +340,50 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 						section->paddr,
 						section->paddr + section->size);
 			}
+		}
+		r_list_foreach (o->sections, iter, section) {
+			RBinString *s;
+			RListIter *iter2;
+			/* load objc/swift strings */
+			const int bits = (a && a->o && a->o->info) ? a->o->info->bits : 32;
+			const int cfstr_size = (bits == 64) ? 32 : 16;
+			const int cfstr_offs = (bits == 64) ? 16 :  8;
+			if (strstr (section->name, "__cfstring")) {
+				int i;
+				ut8 *p;
+				for (i = 0; i < section->size; i += cfstr_size) {
+					p = a->buf->buf + section->paddr + i;
+					p += cfstr_offs;
+					ut64 cfstr_vaddr = section->vaddr + i;
+					ut64 cstr_vaddr = (bits == 64)
+						? r_read_le64 (p)
+						: r_read_le32 (p);
+					r_list_foreach (ret, iter2, s) {
+						if (s->vaddr == cstr_vaddr) {
+#if 0
+							s->vaddr = cstr_vaddr;
+#else
+							RBinString *new = R_NEW0 (RBinString);
+							new->type = s->type;
+							new->length = s->length;
+							new->size = s->size;
+							new->ordinal = s->ordinal;
+							new->paddr = new->vaddr = cfstr_vaddr;
+							new->string = r_str_newf ("cstr.%s", s->string);
+							r_list_append (ret, new);
+#endif
+							break;
+						}
+					}
+				}
+			}
+/*
+			if (is_data_section (a, section)) {
+				get_strings_range (a, ret, min,
+						section->paddr,
+						section->paddr + section->size);
+			}
+*/
 		}
 	} else {
 		get_strings_range (a, ret, min, 0, a->size);
@@ -460,8 +519,9 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	int i, minlen;
 	RBin *bin;
 
-	if (!binfile || !o || !o->plugin)
+	if (!binfile || !o || !o->plugin) {
 		return false;
+	}
 
 	bin = binfile->rbin;
 	old_o = binfile->o;
@@ -1416,7 +1476,7 @@ R_API int r_bin_is_string(RBin *bin, ut64 va) {
 	RBinString *string;
 	RListIter *iter;
 	RList *list;
-	if ((list = r_bin_get_strings (bin)) == NULL) return false;
+	if (!(list = r_bin_get_strings (bin))) return false;
 	r_list_foreach (list, iter, string) {
 		if (string->vaddr == va)
 			return true;

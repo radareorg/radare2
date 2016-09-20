@@ -424,7 +424,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=0AMCwfF:hH:m:e:nk:o:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=0AMCwfF:hH::m:e:nk:o:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -1064,21 +1064,19 @@ int main(int argc, char **argv, char **envp) {
 					if (prj && *prj && y_save_project){
 						r_core_project_save (&r, prj);
 					}
-				}
-				else {
+				} else {
 					question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
 					if (prj && *prj && r_cons_yesno ('y', "%s", question)) {
 						r_core_project_save (&r, prj);
 					}
 					free (question);
 				}
-				
 			} else {
 				// r_core_project_save (&r, prj);
 				if (debug && r_config_get_i (r.config, "dbg.exitkills")) {
 					r_debug_kill (r.dbg, 0, false, 9); // KILL
 				}
-				
+
 			}
 			break;
 		}

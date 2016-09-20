@@ -258,7 +258,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err) {
 	}
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
-		if (name == NULL || *name == '\0') {
+		if (!name || *name == '\0') {
 			eprintf ("No debug register profile defined for '%s'.\n", pname);
 			if (err) *err = 1;
 			return UT64_MAX;

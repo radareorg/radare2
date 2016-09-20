@@ -357,7 +357,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->buf_asm[0] = '\0';
 	if (a->pcalign) {
-		const mod = a->pc % a->pcalign;
+		const int mod = a->pc % a->pcalign;
 		if (mod) {
 			op->size = a->pcalign - mod;
 			strcpy (op->buf_asm, "unaligned");
@@ -550,7 +550,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	RAsmCode *acode = NULL;
 	RAsmOp op = {0};
 	ut64 off, pc;
-	if (buf == NULL)
+	if (!buf)
 		return NULL;
 	if (!(acode = r_asm_code_new ()))
 		return NULL;

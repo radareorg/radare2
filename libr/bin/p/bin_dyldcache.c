@@ -52,7 +52,7 @@ static RList* entries(RBinFile *arch) {
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	bool big_endian = 0;
-	if ((ret = R_NEW0 (RBinInfo)) == NULL)
+	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 	ret->file = strdup (arch->file);
 	ret->bclass = strdup ("dyldcache");

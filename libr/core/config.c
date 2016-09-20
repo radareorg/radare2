@@ -1088,6 +1088,12 @@ static int cb_screcho(void *user, void *data) {
 	return true;
 }
 
+static int cb_scrflush(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->flush = node->i_value;
+	return true;
+}
+
 static int cb_exectrap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore*) user;
@@ -1689,6 +1695,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cfg.wseek", "false", "Seek after write");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	SETI("cfg.minzlen", 2, "Minimum zignature length to filter in 'zg'");
+	SETI("cfg.maxzlen", 500, "Maximum zignature length to filter in 'zg'");
 
 	/* diff */
 	SETI("diff.from", 0, "Set source diffing address for px (uses cc command)");
@@ -1889,6 +1896,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
+	SETCB("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
 	/* TODO: rename to asm.color.ops ? */
 	SETPREF("scr.color.ops", "true", "Colorize numbers and registers in opcodes");
 	SETPREF("scr.color.bytes", "true", "Colorize bytes that represent the opcodes of the instruction");

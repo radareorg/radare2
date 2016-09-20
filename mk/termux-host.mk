@@ -2,10 +2,6 @@
 #CC=gcc -fPIC -fPIE
 #RANLIB=ndk-ranlib
 USERCC=gcc -fPIC -fPIE
-ARCH=arm
-
-RANLIB=aarch64-linux-android-ranlib
-AR=aarch64-linux-android-ar
 CC_AR=${AR} -r ${LIBAR}
 
 ONELIB=0

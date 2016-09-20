@@ -153,7 +153,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 				//""); //module_name);
 			mr = r_debug_map_new (buf, address, address+size,
 					xwr2rwx (info.protection), 0);
-			if (mr == NULL) {
+			if (!mr) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}
@@ -258,7 +258,7 @@ static RList *osx_dbg_maps (RDebug *dbg) {
 			// :: prev_info.max_protection
 			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size,
 				xwr2rwx (prev_info.protection), 0);
-			if (mr == NULL) {
+			if (!mr) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
 			}

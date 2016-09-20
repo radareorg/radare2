@@ -111,7 +111,7 @@ static const struct {
  */
 static RHTE* ht_(search)(RHT *ht, utH hash) {
 	utH double_hash, hash_address;
-	if (ht == NULL)
+	if (!ht)
 		return NULL;
 	hash_address = hash % ht->size;
 	do {

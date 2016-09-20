@@ -878,7 +878,7 @@ RDebugPid *xnu_get_pid (int pid) {
 #endif
 	/* Allocate space for the arguments. */
 	procargs = (char *)malloc (argmax);
-	if (procargs == NULL) {
+	if (!procargs) {
 		eprintf ("getcmdargs(): insufficient memory for procargs %d\n",
 			(int)(size_t)argmax);
 		return NULL;

@@ -237,7 +237,7 @@ static int r_line_hist_down() {
 	if (I.history.index<I.history.size
 	    && I.history.data[I.history.index]) {
 		I.history.index++;
-		if (I.history.data[I.history.index] == NULL) {
+		if (!I.history.data[I.history.index]) {
 			I.buffer.data[0]='\0';
 			I.buffer.index = I.buffer.length = 0;
 			return 0;
@@ -287,7 +287,7 @@ R_API int r_line_hist_load(const char *file) {
 	FILE *fd;
 	char buf[R_LINE_BUFSIZE],
 		*path = r_str_home (file);
-	if (path == NULL)
+	if (!path)
 		return false;
 	if (!(fd = fopen (path, "r"))) {
 		free (path);
@@ -789,7 +789,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				//	gcomp = 0;
 				if (I.history.data != NULL)
 				for (i=0; i<I.history.size; i++) {
-					if (I.history.data[i] == NULL)
+					if (!I.history.data[i])
 						break;
 					if (strstr (I.history.data[i], I.buffer.data)) {
 						gcomp_line = I.history.data[i];
@@ -1316,7 +1316,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				gcomp_line = "";
 				if (I.history.data != NULL)
 				for (i=0; i<I.history.size; i++) {
-					if (I.history.data[i] == NULL)
+					if (!I.history.data[i])
 						break;
 					if (strstr (I.history.data[i], I.buffer.data)) {
 						gcomp_line = I.history.data[i];

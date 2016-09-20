@@ -1073,7 +1073,7 @@ aarch64_logical_immediate_p (uint64_t value, int is32, aarch64_insn *encoding)
   imm_encoding = (const simd_imm_encoding *)
     bsearch(&imm_enc, simd_immediates, TOTAL_IMM_NB,
             sizeof(simd_immediates[0]), simd_imm_encoding_cmp);
-  if (imm_encoding == NULL)
+  if (!imm_encoding)
     {
       DEBUG_TRACE ("exit with FALSE");
       return FALSE;
@@ -1113,7 +1113,7 @@ set_error (aarch64_operand_error *mismatch_detail,
 	   enum aarch64_operand_error_kind kind, int idx,
 	   const char* error)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   mismatch_detail->kind = kind;
   mismatch_detail->index = idx;
@@ -1125,7 +1125,7 @@ set_out_of_range_error (aarch64_operand_error *mismatch_detail,
 			int idx, int lower_bound, int upper_bound,
 			const char* error)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_error (mismatch_detail, AARCH64_OPDE_OUT_OF_RANGE, idx, error);
   mismatch_detail->data[0] = lower_bound;
@@ -1136,7 +1136,7 @@ static inline void
 set_imm_out_of_range_error (aarch64_operand_error *mismatch_detail,
 			    int idx, int lower_bound, int upper_bound)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
 			  _("immediate value"));
@@ -1146,7 +1146,7 @@ static inline void
 set_offset_out_of_range_error (aarch64_operand_error *mismatch_detail,
 			       int idx, int lower_bound, int upper_bound)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
 			  _("immediate offset"));
@@ -1156,7 +1156,7 @@ static inline void
 set_regno_out_of_range_error (aarch64_operand_error *mismatch_detail,
 			      int idx, int lower_bound, int upper_bound)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
 			  _("register number"));
@@ -1166,7 +1166,7 @@ static inline void
 set_elem_idx_out_of_range_error (aarch64_operand_error *mismatch_detail,
 				 int idx, int lower_bound, int upper_bound)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
 			  _("register element index"));
@@ -1176,7 +1176,7 @@ static inline void
 set_sft_amount_out_of_range_error (aarch64_operand_error *mismatch_detail,
 				   int idx, int lower_bound, int upper_bound)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
 			  _("shift amount"));
@@ -1186,7 +1186,7 @@ static inline void
 set_unaligned_error (aarch64_operand_error *mismatch_detail, int idx,
 		     int alignment)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_error (mismatch_detail, AARCH64_OPDE_UNALIGNED, idx, NULL);
   mismatch_detail->data[0] = alignment;
@@ -1196,7 +1196,7 @@ static inline void
 set_reg_list_error (aarch64_operand_error *mismatch_detail, int idx,
 		    int expected_num)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_error (mismatch_detail, AARCH64_OPDE_REG_LIST, idx, NULL);
   mismatch_detail->data[0] = expected_num;
@@ -1206,7 +1206,7 @@ static inline void
 set_other_error (aarch64_operand_error *mismatch_detail, int idx,
 		 const char* error)
 {
-  if (mismatch_detail == NULL)
+  if (!mismatch_detail)
     return;
   set_error (mismatch_detail, AARCH64_OPDE_OTHER_ERROR, idx, error);
 }

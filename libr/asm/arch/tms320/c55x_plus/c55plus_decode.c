@@ -232,7 +232,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 	ins_len = get_ins_len(get_ins_part(ins_pos + ins_off, 1));
 	// get pseudo instruction
 	ins = ins_str[1 + 2 + hash_code * 4];
-	if (ins == NULL /*|| ins_str[4 * hash_code] == 0*/) {
+	if (!ins /*|| ins_str[4 * hash_code] == 0*/) {
 		fprintf(stderr, "Invalid instruction %s /hash %x\n", ins, hash_code);
 		*err_code = -1;
 		return NULL;
@@ -256,7 +256,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 		if (*pos == '`') {
 			pos++;
 			aux = strchr(pos, '`');
-			if (aux == NULL || pos == aux) {
+			if (!aux || pos == aux) {
 				fprintf(stderr, "Invalid instruction %s\n", ins);
 				free (res_decode);
 				*err_code = -1;
@@ -551,7 +551,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 	case 63:
 	case 64:
 	case 65:
-		if (reg_arg == NULL || *reg_arg == '\0') {
+		if (!reg_arg || *reg_arg == '\0') {
 			res = strdup("<register>");
 			goto ret_decode;
 		}
@@ -691,7 +691,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 		break;
 	case 79:
 		res = get_trans_reg(ins_bits);
-		if (res == NULL) {
+		if (!res) {
 			*err_code = -1;
 		}
 		break;
@@ -702,7 +702,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 			} else if (*reg_arg == '2')
 				res = get_tc2_tc1(ins_bits & 1);
 		} else res = get_tc2_tc1(ins_bits);
-		if (res == NULL) {
+		if (!res) {
 			*err_code = -1;
 			return NULL;
 		}

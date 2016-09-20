@@ -85,7 +85,7 @@ parse_aarch64_dis_options (const char *options)
 {
   const char *option_end;
 
-  if (options == NULL)
+  if (!options)
     return;
 
   while (*options != '\0')
@@ -2184,7 +2184,7 @@ aarch64_symbol_is_valid (asymbol * sym,
 {
   const char * name;
 
-  if (sym == NULL)
+  if (!sym)
     return FALSE;
 
   name = bfd_asymbol_name (sym);
@@ -2303,7 +2303,7 @@ print_insn_aarch64 (bfd_vma pc,
 	  addr = bfd_asymbol_value (info->symtab[n]);
 	  if (addr > pc)
 	    break;
-	  if ((info->section == NULL
+	  if ((!info->section
 	       || info->section == info->symtab[n]->section)
 	      && get_sym_code_type (info, n, &type))
 	    {

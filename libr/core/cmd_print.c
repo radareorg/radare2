@@ -218,7 +218,7 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, 
 	char *str_clone = NULL,
 		 *trimmed_clone = NULL;
 
-	if (input == NULL || hex == NULL || asm_arch == NULL || bits == NULL) {
+	if (!input || !hex || !asm_arch || !bits) {
 		return false;
 	}
 
@@ -547,10 +547,10 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			}
 
 			/* store a new format */
-			if (space && (eq == NULL || space < eq)) {
-				char *fields = NULL;
+			if (space && (!eq || space < eq)) {
+				//char *fields = NULL;
 				*space++ = 0;
-				fields = strchr (space, ' ');
+				// fields = strchr (space, ' ');
 				if (strchr (name, '.') != NULL) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
@@ -561,7 +561,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				return;
 			}
 
-			if (strchr (name, '.') == NULL && r_strht_get (core->print->formats, name) == NULL) {
+			if (!strchr (name, '.') && !r_strht_get (core->print->formats, name)) {
 				eprintf ("Cannot find '%s' format.\n", name);
 				free (name);
 				free (input);
@@ -1848,7 +1848,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		 {
 			ut8 *p;
 			int i = 0;
-			ptr = malloc (nblocks);
+			ptr = calloc (1, nblocks);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
@@ -1874,12 +1874,12 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		 {
 			ut8 *p;
 			int i, j, k;
-			ptr = malloc (nblocks);
+			ptr = calloc (1, nblocks);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
 			}
-			p = malloc (blocksize);
+			p = calloc (1, blocksize);
 			if (!p) {
 				R_FREE (ptr);
 				eprintf ("Error: failed to malloc memory");
@@ -1909,8 +1909,11 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		break;
 	case 'b': // bytes
 	case '\0':
+		ptr = calloc (1, nblocks);
+		r_core_read_at (core, core->offset, ptr, nblocks);
 		// TODO: support print_bars
 		r_print_fill (core->print, ptr, nblocks, core->offset, blocksize);
+		R_FREE (ptr);
 		break;
 	}
 	if (print_bars) {
@@ -2280,7 +2283,7 @@ static int cmd_print(void *data, const char *input) {
 				//return false;
 			}
 
-			if (new_arch == NULL) new_arch = strdup (old_arch);
+			if (!new_arch) new_arch = strdup (old_arch);
 			if (new_bits == -1) new_bits = old_bits;
 
 			if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
@@ -2512,16 +2515,20 @@ static int cmd_print(void *data, const char *input) {
 
 		// get to the space
 		if (input[0]) {
-			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
-				if (input[pos] == ' ') break;
+			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++) {
+				if (input[pos] == ' ') {
+					break;
+				}
+			}
 		}
 
 		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits)) {
 			// XXX - print help message
 			//return false;
 		}
-		if (!use_blocksize)
+		if (!use_blocksize) {
 			use_blocksize = core->blocksize;
+		}
 
 		if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
 			eprintf ("This block size is too big (%"PFMT64d"<%"PFMT64d"). Did you mean 'p%c @ 0x%08"PFMT64x"' instead?\n",
@@ -2535,7 +2542,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		l = use_blocksize;
 
-		if (new_arch == NULL) new_arch = strdup (old_arch);
+		if (!new_arch) new_arch = strdup (old_arch);
 		if (new_bits == -1) new_bits = old_bits;
 
 		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
@@ -2545,7 +2552,7 @@ static int cmd_print(void *data, const char *input) {
 
 		switch (input[1]) {
 		case 'c': // "pdc" // "pDc"
-			r_core_pseudo_code (core, input+2);
+			r_core_pseudo_code (core, input + 2);
 			pd_result = 0;
 			processed_cmd = true;
 			break;
@@ -2824,7 +2831,7 @@ static int cmd_print(void *data, const char *input) {
 		case 0:
 			/* "pd" -> will disassemble blocksize/4 instructions */
 			if (*input=='d') {
-				l/=4;
+				l /= 4;
 			}
 			break;
 		case '?': // "pd?"
@@ -2884,7 +2891,7 @@ static int cmd_print(void *data, const char *input) {
 						r_core_read_at (core, addr+bs, block+bs, instr_len-bs); //core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
 								core, addr, block, instr_len, l, 0, 1);
-						r_core_seek(core, prevaddr, true);
+						r_core_seek (core, prevaddr, true);
 					}
 				}
 			} else {
@@ -3253,6 +3260,7 @@ static int cmd_print(void *data, const char *input) {
 			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 		}
 		}
+		r_cons_break (NULL, NULL);
 		switch (input[1]) {
 		case '/':
 			r_core_print_examine (core, input+2);
@@ -3470,9 +3478,11 @@ static int cmd_print(void *data, const char *input) {
 					if (bitsize == 16) bitsize = 32;
 					core->print->cols = 1;
 					core->print->flags |= R_PRINT_FLAGS_REFS;
+					r_cons_break (NULL, NULL);
 					r_print_hexdump (core->print, core->offset,
 							core->block, len,
 							bitsize, bitsize / 8);
+					r_cons_break_end ();
 					core->print->flags &= ~R_PRINT_FLAGS_REFS;
 					core->print->cols = ocols;
 				}
@@ -3675,6 +3685,7 @@ static int cmd_print(void *data, const char *input) {
 			 }
 			break;
 		}
+		r_cons_break_end ();
 		break;
 	case '2': // "p2"
 		if (l != 0) {

@@ -76,16 +76,16 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	if (len >= ST32_MAX)
 		return false;
 	buf = (ut8*) malloc ((int)len);
-	if (buf == NULL)
+	if (!buf)
 		return false;
 	trap = (ut8*) malloc ((int)len+4);
-	if (trap == NULL) {
+	if (!trap) {
 		free (buf);
 		return false;
 	}
 	bitlen = (len>>4)+1;
 	bits = malloc (bitlen);
-	if (bits == NULL) {
+	if (!bits) {
 		free (buf);
 		free (trap);
 		return false;

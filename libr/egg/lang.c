@@ -238,7 +238,7 @@ static void rcc_element(REgg *egg, char *str) {
 		else
 		if (mode == NORMAL) {
 			if (!atoi (str)) {
-				if (dstvar == NULL) /* return string */
+				if (!dstvar) /* return string */
 					dstvar = strdup (".fix0");
 				rcc_pushstr (egg, str, 1);
 			}
@@ -316,7 +316,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	char *oldstr = NULL, *str = NULL, foo[32], *q, *ret = NULL;
 
 	delta += stackfixed; // XXX can be problematic
-	if (_str == NULL)
+	if (!_str)
 		return NULL; /* fix segfault, but not badparsing */
 	/* XXX memory leak */
 	ret = str = oldstr = strdup (skipspaces (_str));
@@ -685,7 +685,7 @@ static int parseinlinechar(REgg *egg, char c) {
 			slurp = 0;
 			mode = NORMAL;
 			inlinectr = 0;
-			if (dstvar == NULL && dstval == syscallbody) {
+			if (!dstvar && dstval == syscallbody) {
 				dstval = NULL;
 				return 1;
 			} else

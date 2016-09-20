@@ -68,7 +68,7 @@ static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 
 R_API int r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
-		r_core_bin_set_cur (core, r_core_bin_cur(core));
+		r_core_bin_set_cur (core, r_core_bin_cur (core));
 		return true;
 	}
 	return false;
@@ -889,9 +889,16 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
 	if (reloc->import) {
-		reloc_name = r_str_newf ("reloc.%s_%d",
-				reloc->import->name, (int)(addr & 0xff));
-		if (!reloc_name) return NULL;
+		reloc_name = r_str_newf ("reloc.%s_%d", reloc->import->name, (int)(addr & 0xff));
+		if (!reloc_name) {
+			return NULL;
+		}
+		r_str_replace_char (reloc_name, '$', '_');
+	} else if (reloc->symbol) {
+		reloc_name = r_str_newf ("reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
+		if (!reloc_name) {
+			return NULL;
+		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->is_ifunc) {
 		// addend is the function pointer for the resolving ifunc
@@ -902,10 +909,10 @@ static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	return reloc_name;
 }
 
-static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
+static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	const char *lang = r_config_get (r->config, "bin.lang");
-	char *demname = NULL;
+	char *reloc_name, *demname = NULL;
 	bool is_pe = true;
 	int is_sandbox = r_sandbox_enable (0);
 
@@ -964,14 +971,11 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 			r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
 			r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 		}
+		reloc_name = reloc->import ? reloc->import->name : (reloc->symbol ? reloc->symbol->name : NULL);
 		if (r->bin->prefix) {
-			snprintf (str, R_FLAG_NAME_SIZE,
-				"%s.reloc.%s_%d", r->bin->prefix,
-				reloc->import->name, (int)(addr&0xff));
+			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s_%d", r->bin->prefix, reloc_name, (int)(addr&0xff));
 		} else {
-			snprintf (str, R_FLAG_NAME_SIZE,
-				"reloc.%s_%d", reloc->import->name,
-				(int)(addr&0xff));
+			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s_%d", reloc_name, (int)(addr&0xff));
 		}
 		if (bin_demangle) {
 			demname = r_bin_demangle (r->bin->cur, lang, str);
@@ -981,8 +985,7 @@ static void set_bin_relocs (RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 		if (demname) {
 			char *realname;
 			if (r->bin->prefix) {
-				realname = sdb_fmt (0, "%s.reloc.%s",
-					r->bin->prefix, demname);
+				realname = sdb_fmt (0, "%s.reloc.%s", r->bin->prefix, demname);
 			} else {
 				realname = sdb_fmt (0, "reloc.%s", demname);
 			}
@@ -1031,8 +1034,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
-			//char *reloc_name = get_reloc_name (reloc, addr);
-			char *name = reloc->import ? strdup (reloc->import->name): NULL;
+			char *name = reloc->import 
+						? strdup (reloc->import->name) 
+						: (reloc->symbol ? strdup (reloc->symbol->name) : NULL);
 			if (name && bin_demangle) {
 				char *mn = r_bin_demangle (r->bin->cur, NULL, name);
 				if (mn) {
@@ -1048,9 +1052,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			const char *comma = iter->p? ",":"";
-			const char *reloc_name = reloc->import ?
-				sdb_fmt (0, "\"%s\"", reloc->import->name) :
-				"null";
+			const char *reloc_name = reloc->import 
+									 ? sdb_fmt (0, "\"%s\"", reloc->import->name)
+									 : reloc->symbol ? sdb_fmt (0, "\"%s\"", reloc->symbol->name) : "null";
 			r_cons_printf ("%s{\"name\":%s,"
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
@@ -1061,8 +1065,11 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				reloc->vaddr, reloc->paddr,
 				r_str_bool (reloc->is_ifunc));
 		} else if (IS_MODE_NORMAL (mode)) {
-			char *name = strdup (reloc->import ?
-					reloc->import->name: "null");
+			char *name = reloc->import 
+						 ? strdup (reloc->import->name) 
+						 : reloc->symbol 
+							? strdup (reloc->symbol->name) 
+						  	: strdup ("null");
 			if (bin_demangle) {
 				char *mn = r_bin_demangle (r->bin->cur, NULL, name);
 				if (mn && *mn) {
@@ -2220,7 +2227,7 @@ static void bin_elf_versioninfo(RCore *r) {
 		const char *section_name = sdb_const_get (sdb, "section_name", 0);
 		const char *link_section_name = sdb_const_get (sdb, "link_section_name", 0);
 
-		r_cons_printf ("Version symbols section '%s' contains %d entries:\n", section_name, num_entries);
+		r_cons_printf ("Version symbols section '%s' contains %"PFMT64u" entries:\n", section_name, num_entries);
 		r_cons_printf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
 			(ut64)addr, (ut64)offset, (ut32)link, link_section_name);
 

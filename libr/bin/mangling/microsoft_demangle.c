@@ -130,7 +130,7 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 				((type_code_str->type_str_len +  str_for_copy_len) << 1) + 1;
 		type_code_str->type_str = (char *) realloc(	type_code_str->type_str,
 													type_code_str->type_str_len);
-		if (type_code_str->type_str == NULL) {
+		if (!type_code_str->type_str) {
 			res = 0;
 			goto copy_string_err;
 		}
@@ -1342,7 +1342,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 
 	if (access_modifier) {
 		copy_string(&func_str, access_modifier, 0);
-		if (strstr(access_modifier, "static") == NULL) {
+		if (!strstr(access_modifier, "static")) {
 			copy_string(&func_str, ": ", 0);
 		} else {
 			copy_string(&func_str, " ", 0);

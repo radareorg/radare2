@@ -86,7 +86,7 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 	int nch;
 	struct stat tstatbuf;
 #endif
-	if (fn == NULL)
+	if (!fn)
 		return 0;
 	/*
 	 * Fstat is cheaper but fails for files you don't have read perms on.
@@ -229,7 +229,7 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 			char *tmp;
 			char buf2[BUFSIZ+BUFSIZ+4];
 
-			if ((tmp = strrchr(fn,  '/')) == NULL) {
+			if (!(tmp = strrchr(fn,  '/'))) {
 				tmp = buf; /* in current directory anyway */
 			} else {
 				if (tmp - fn + 1 > BUFSIZ) {

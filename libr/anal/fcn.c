@@ -427,7 +427,7 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 	//this step is required in order to prevent infinite recursion in some cases
 	if ((addr + un_idx - oplen) == fcn->addr) {
 		if (!anal->flb.exist_at (anal->flb.f, "skip", 4, op->addr)) {
-			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE, PFMT64u"\0", op->addr); //"\0" just in case
+			snprintf (tmp_buf + 5, MAX_FLG_NAME_SIZE - 6, "%"PFMT64u, op->addr);
 			anal->flb.set (anal->flb.f, tmp_buf, op->addr, oplen);
 			fcn->addr += oplen;
 			bb->size -= oplen;
@@ -623,7 +623,7 @@ repeat:
 			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
 
-		switch (op.type) {
+		switch (op.type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_MOV:
 			//skip mov reg,reg
 			if (anal->opt.hpskip && regs_exist(op.src[0], op.dst)
@@ -716,6 +716,11 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
+			if (op.jump == UT64_MAX) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
 			if (anal->opt.jmpref) {
 				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
@@ -1078,7 +1083,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
 		ut64 overlapped = -1;
-		ut64 prev_jump = UT64_MAX;
 		RAnalFunction *fcn1 = NULL;
 
 		// set function size as length of continuous sequence of bbs
@@ -1345,7 +1349,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			bbi->size = addr - (bbi->addr);
 		}
 	}
-	if (bb == NULL) {
+	if (!bb) {
 		bb = appendBasicBlock (anal, fcn, addr);
 		if (!bb) {
 			eprintf ("appendBasicBlock failed\n");

@@ -103,7 +103,7 @@ R_API int r_syscall_setup_file(RSyscall *s, const char *path) {
 	if (s->fd)
 		fclose (s->fd);
 	s->fd = r_sandbox_fopen (path, "r");
-	if (s->fd == NULL)
+	if (!s->fd)
 		return false;
 	/* TODO: load info from file */
 	return true;
@@ -150,10 +150,10 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	swi = getswi (s->db, swi);
 	key = sdb_fmt (0, "0x%02x.%d", swi, num);
 	ret = sdb_const_get (s->db, key, 0);
-	if (ret == NULL)
+	if (!ret)
 		return NULL;
 	ret2 = sdb_const_get (s->db, ret, 0);
-	if (ret2 == NULL) {
+	if (!ret2) {
 		return NULL;
 	}
 	si = r_syscall_item_new_from_string (ret, ret2);

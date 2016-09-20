@@ -88,6 +88,7 @@ static int cmd_zign(void *data, const char *input) {
 		if (input[1]==' ' && input[2]) {
 			int fdold = r_cons_singleton ()->fdout;
 			int minzlen = r_config_get_i (core->config, "cfg.minzlen");
+			int maxzlen = r_config_get_i (core->config, "cfg.maxzlen");
 			ptr = strchr (input + 2, ' ');
 			if (ptr) {
 				*ptr = '\0';
@@ -105,7 +106,7 @@ static int cmd_zign(void *data, const char *input) {
 				int zlen, len, oplen, idx = 0;
 				ut8 *buf;
 
-				len = r_anal_fcn_size (fcni);
+				len = r_anal_fcn_realsize (fcni);
 				if (!(buf = calloc (1, len))) {
 					return false;
 				}
@@ -134,7 +135,7 @@ static int cmd_zign(void *data, const char *input) {
 								idx += oplen;
 							}
 						}
-						if (zlen > minzlen) {
+						if (zlen > minzlen && maxzlen > zlen) {
 							r_cons_printf ("zb %s ", name);
 							for (i = 0; i < len; i++) {
 								/* XXX assuming buf[i] == 0 is wrong because mask != data */
@@ -146,7 +147,11 @@ static int cmd_zign(void *data, const char *input) {
 							}
 							r_cons_newline ();
 						} else {
-							r_cons_printf ("%s zignature is too small\n", name);
+							if (zlen <= minzlen) {
+								eprintf ("Omitting %s zignature is too small. Length is %d. Check cfg.minzlen.\n", name, zlen);
+							} else {
+								eprintf ("Omitting %s zignature is too big. Length is %d. Check cfg.maxzlen.\n", name, zlen);
+							}
 						}
 					} else {
 						eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
@@ -200,11 +205,12 @@ static int cmd_zign(void *data, const char *input) {
 			r_cons_printf ("%d zignatures removed\n", i);
 		}
 		break;
+	case 's':
 	case '/':
 		{
 			// TODO: parse arg0 and arg1
 			ut8 *buf;
-			int len, idx;
+			int len, idx, old_fs;
 			ut64 ini, fin;
 			RSignItem *si;
 			RIOSection *s;
@@ -242,6 +248,7 @@ static int cmd_zign(void *data, const char *input) {
 			if (buf != NULL) {
 				int count = 0;
 				eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
+				old_fs = core->flags->space_idx;
 				r_cons_printf ("fs sign\n");
 				r_cons_break (NULL, NULL);
 				if (r_io_read_at (core->io, ini, buf, len) == len) {
@@ -256,6 +263,7 @@ static int cmd_zign(void *data, const char *input) {
 						}
 					}
 				} else eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
+				r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
 				r_cons_break_end ();
 				free (buf);
 				core->sign->matches = count;
@@ -299,6 +307,7 @@ static int cmd_zign(void *data, const char *input) {
 			RSignItem *si;
 			int len = 0;
 			int count = 0;
+			int old_fs;
 			RListIter *it;
 			ut8 *buf;
 
@@ -312,7 +321,7 @@ static int cmd_zign(void *data, const char *input) {
 			fcni = (RAnalFunction*)it->data;
 			if (r_cons_singleton ()->breaked)
 				break;
-			len = r_anal_fcn_size (fcni);
+			len = r_anal_fcn_realsize (fcni);
 			if (!(buf = malloc (len))) {
 				return false;
 			}
@@ -320,9 +329,11 @@ static int cmd_zign(void *data, const char *input) {
 					len) == len) {
 				si = r_sign_check (core->sign, buf, len);
 				if (si) {
+					old_fs = core->flags->space_idx;
 					r_cons_printf ("fs sign\n");
 					count++;
 					fcn_zig_add (si, count, (unsigned char *)fcni->addr);
+					r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
 				}
 			}
 			free (buf);
@@ -338,7 +349,7 @@ static int cmd_zign(void *data, const char *input) {
 			"z*", "", "display all zignatures",
 			"z-", " namespace", "unload zignatures in namespace",
 			"z-*", "", "unload all zignatures",
-			"z/", " [ini] [end]", "search zignatures between these regions",
+			"z/", " [ini] [end]", "search zignatures between these regions (alias for zs)",
 			"z.", " [@addr]", "match zignatures by function at address",
 			"za", " ...", "define new zignature for analysis",
 			"zb", " name bytes", "define zignature for bytes",

@@ -100,7 +100,7 @@ R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, i
 	int urilen, hlen = strlen (urihandler);
 	urilen = hlen + strlen (file) + 5;
 	uri = malloc (urilen);
-	if (uri == NULL)
+	if (!uri)
 		return NULL;
 	if (hlen > 0)
 		snprintf (uri, urilen, "%s://%s", urihandler, file);
@@ -868,7 +868,7 @@ R_API int r_io_plugin_close(RIO *io, RIODesc *desc) {
 
 R_API int r_io_close(RIO *io, RIODesc *d) {
 	RIODesc *cur = NULL;
-	if (io == NULL || d == NULL) {
+	if (!io || !d) {
 		return -1;
 	}
 	if (d != io->desc) {

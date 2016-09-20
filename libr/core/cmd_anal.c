@@ -403,7 +403,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 		}
 	}
 	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, -1);
-	if (item == NULL) {
+	if (!item) {
 		res = r_str_concatf (res, "%d = unknown ()", n);
 		return res;
 	}

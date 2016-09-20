@@ -297,7 +297,7 @@ static void palloc(int moar) {
 	if (moar <= 0) {
 		return;
 	}
-	if (I.buffer == NULL) {
+	if (!I.buffer) {
 		int new_sz;
 		if ((INT_MAX - MOAR) < moar) {
 			return;
@@ -467,7 +467,7 @@ R_API void r_cons_flush() {
 		return;
 	}
 	r_cons_filter ();
-	if (I.is_interactive) {
+	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (I.pager && *I.pager && I.buffer_len > 0
 				&& r_str_char_count (I.buffer, '\n') >= I.rows) {
@@ -663,6 +663,9 @@ R_API void r_cons_memcat(const char *str, int len) {
 		memcpy (I.buffer + I.buffer_len, str, len);
 		I.buffer_len += len;
 		I.buffer[I.buffer_len] = 0;
+	}
+	if (I.flush) {
+		r_cons_flush ();
 	}
 }
 

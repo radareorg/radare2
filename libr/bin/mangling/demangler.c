@@ -42,7 +42,7 @@ EDemanglerErr create_demangler(SDemangler **demangler)
 
 	*demangler = (SDemangler *) malloc(sizeof(SDemangler));
 
-	if (*demangler == NULL) {
+	if (!*demangler) {
 		err = eDemanglerErrMemoryAllocation;
 		goto create_demagler_err;
 	}

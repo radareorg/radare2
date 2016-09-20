@@ -917,6 +917,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_ADRP:
 	case ARM64_INS_ADR:
 		op->type = R_ANAL_OP_TYPE_LEA;
+		op->ptr = IMM64(1);
 		break;
 	case ARM64_INS_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -935,8 +936,8 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 			}
 			op->val = op->stackptr;
 		} else {
-				op->stackop = R_ANAL_STACK_RESET;
-				op->stackptr = 0;
+			op->stackop = R_ANAL_STACK_RESET;
+			op->stackptr = 0;
 		}
 		break;
 	case ARM64_INS_FDIV:
@@ -1047,9 +1048,14 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = MEMDISP64(1);
 		} else {
-			int d = (int)MEMDISP64(1);
-			op->ptr = (d < 0)? -d: d;
-			op->refptr = 4;
+			if (ISIMM64(1)) {
+				op->ptr = IMM64(1);
+				op->refptr = 8;
+			} else {
+				int d = (int)MEMDISP64(1);
+				op->ptr = (d < 0)? -d: d;
+				op->refptr = 4;
+			}
 		}
 		break;
 	case ARM64_INS_RET:

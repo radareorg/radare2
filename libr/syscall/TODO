@@ -1,9 +1,0 @@
-* Same for IO ports
-  - 0x378  :  lp1
-    example:  outb(lp1,33); lp1<=33   lp1=>eax
-   /dev/port: lseek 33, write 20
-* Add w32 0x2e syscall support
-* Added documentation string per-syscall in r_syscall_list_t
-* Merge it into r_debug .. aka r_debug_syscall
-* to construct syscall trampolines we can just build the assembly snippet in runtime
-  - r_syscall_assemble(sc, Num, arg0, arg1, arg2, ...);

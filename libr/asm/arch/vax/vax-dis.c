@@ -332,7 +332,7 @@ print_insn_vax (bfd_vma memaddr, disassemble_info *info)
 	  break;
 	}
     }
-  if (argp == NULL)
+  if (!argp)
     {
       /* Handle undefined instructions. */
       (*info->fprintf_func) (info->stream, ".word 0x%x",

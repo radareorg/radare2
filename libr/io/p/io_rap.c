@@ -167,7 +167,7 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 		rior = R_NEW0 (RIORap);
 		rior->listener = true;
 		rior->client = rior->fd = r_socket_new (is_ssl);
-		if (rior->fd == NULL) {
+		if (!rior->fd) {
 			free (rior);
 			return NULL;
 		}
@@ -188,7 +188,7 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
 			pathname, rw, mode, rior);
 	}
-	if ((rap_fd = r_socket_new (is_ssl)) == NULL) {
+	if (!(rap_fd = r_socket_new (is_ssl))) {
 		eprintf ("Cannot create new socket\n");
 		return NULL;
 	}

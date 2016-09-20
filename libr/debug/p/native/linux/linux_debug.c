@@ -20,7 +20,11 @@ const char *linux_reg_profile (RDebug *dbg) {
 #elif __arm64__ || __aarch64__
 #include "reg/linux-arm64.h"
 #elif __MIPS__ || __mips__
+	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == 1)) {
 #include "reg/linux-mips.h"
+	} else {
+#include "reg/linux-mips64.h"
+	}
 #elif (__i386__ || __x86_64__)
 	if (dbg->bits & R_SYS_BITS_32) {
 #if __x86_64__
@@ -426,7 +430,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			if (ret1 != 0) return false;
 			if (sizeof(fpregs) < size) size = sizeof(fpregs);
 			memcpy (buf, &fpregs, size);
-			return sizeof(fpregs)
+			return sizeof(fpregs);
 #endif // !__ANDROID__
 #elif __i386__
 #if !__ANDROID__

@@ -159,7 +159,7 @@ static RList* sections(RBinFile *arch) {
 static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	const int bits = 16;
-	if ((ret = R_NEW0 (RBinInfo)) == NULL)
+	if (!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
 	ret->file = strdup (arch->file);
 	ret->bclass = strdup ("bootloader");

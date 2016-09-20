@@ -457,7 +457,7 @@ choose_abi_by_name (const char *name, unsigned int namelen)
   const struct mips_abi_choice *c;
   unsigned int i;
 
-  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_abi_choices) && c == NULL; i++)
+  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_abi_choices) && !c; i++)
     if (strncmp (mips_abi_choices[i].name, name, namelen) == 0
 	&& strlen (mips_abi_choices[i].name) == namelen)
       c = &mips_abi_choices[i];
@@ -471,7 +471,7 @@ choose_arch_by_name (const char *name, unsigned int namelen)
   const struct mips_arch_choice *c = NULL;
   unsigned int i;
 
-  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_arch_choices) && c == NULL; i++)
+  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_arch_choices) && !c; i++)
     if (strncmp (mips_arch_choices[i].name, name, namelen) == 0
 	&& strlen (mips_arch_choices[i].name) == namelen)
       c = &mips_arch_choices[i];
@@ -494,7 +494,7 @@ choose_arch_by_number (unsigned long mach)
       && hint_arch_choice->bfd_mach == hint_bfd_mach)
     return hint_arch_choice;
 
-  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_arch_choices) && c == NULL; i++)
+  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_arch_choices) && !c; i++)
     {
       if (mips_arch_choices[i].bfd_mach_valid
 	  && mips_arch_choices[i].bfd_mach == mach)
@@ -673,7 +673,7 @@ parse_mips_dis_options (const char *options)
 {
   const char *option_end;
 
-  if (options == NULL)
+  if (!options)
     return;
 
   while (*options != '\0')

@@ -163,72 +163,63 @@ static char* createAccessFlagStr(ut32 flags, AccessFor forWhat)
 	 */
 	count = countOnes(flags);
 	cp = str = (char*) malloc(count * (kLongest+1) +1);
-
 	for (i = 0; i < NUM_FLAGS; i++) {
 		if (flags & 0x01) {
 			const char* accessStr = kAccessStrings[forWhat][i];
 			int len = strlen(accessStr);
-			if (cp != str)
+			if (cp != str) {
 				*cp++ = ' ';
-
+			}
 			memcpy(cp, accessStr, len);
 			cp += len;
 		}
 		flags >>= 1;
 	}
 	*cp = '\0';
-
 	return str;
 }
 
 
 static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
+	ut32 proto_id, params_off, type_id, list_size;
+	char *r, *return_type = NULL, *signature = NULL, *buff = NULL; 
+	ut8 *bufptr;
+	ut16 type_idx;
+	int pos = 0, i, size = 1;
 
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
-	ut32 proto_id = bin->methods[method_idx].proto_id;
-
+	proto_id = bin->methods[method_idx].proto_id;
 	if (proto_id >= bin->header.prototypes_size) {
 		return NULL;
 	}
-	ut32 params_off = bin->protos[proto_id].parameters_off;
-
+	params_off = bin->protos[proto_id].parameters_off;
 	if (params_off  >= bin->size) {
 		return NULL;
 	}
-
-	ut32 type_id = bin->protos[proto_id].return_type_id;
-
+	type_id = bin->protos[proto_id].return_type_id;
 	if (type_id >= bin->header.types_size ) {
 		return NULL;
 	}
-
-	char* return_type = getstr(bin, bin->types[type_id].descriptor_id);
-
+	return_type = getstr (bin, bin->types[type_id].descriptor_id);
 	if (!return_type) {
 		return NULL;
 	}
-
-	if (params_off == 0) {
-		return r_str_newf("()%s", return_type);;
+	if (!params_off) {
+		return r_str_newf ("()%s", return_type);;
 	}
-
-	ut8 *bufptr;
 	bufptr = bin->b->buf;
-	ut32 list_size = r_read_le32 (bufptr + params_off); // size of the list, in entries
-
-	char *signature = calloc(0, sizeof(char));
-
+	list_size = r_read_le32 (bufptr + params_off); // size of the list, in entries
+	signature = calloc (0, sizeof(char));
+	if (!signature) {
+		return NULL;
+	}
 	// TODO: improve performance on this fucking shit
 	// TODO: r_strbuf_append
 	//dprintf("Parsing Signature List with %d items\n", list_size);
-	ut16 type_idx;
-	char *buff = NULL;
-	int size = 1; // TODO: NOT_SURE_ABOUT_IT
-	int pos = 0;
-	int i;
 	for (i = 0; i < list_size; i++) {
+		int buff_len = 0;
 		if (params_off + 4 + (i*2) >= bin->size) {
 			continue;
 		}
@@ -240,17 +231,16 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 		if (!buff) {
 			continue;
 		}
-		int buff_len = strlen (buff);
+		buff_len = strlen (buff);
 		size += buff_len + 1;
 		signature = realloc (signature, size);
 		strcpy (signature + pos, buff);
 		pos += buff_len;
 	}
-
 	// TODO: check that
 	//free(bufptr);
 	free (buff);
-	char* r = r_str_newf ("(%s)%s", signature, return_type);
+	r = r_str_newf ("(%s)%s", signature, return_type);
 	free (signature);
 	return r;
 	
@@ -262,14 +252,18 @@ static int check_bytes(const ut8 *buf, ut64 length);
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o || !o->bin_obj) return NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) o->bin_obj;
-	if (bin->kv) return bin->kv;
+	if (bin->kv) {
+		return bin->kv;
+	}
 	return NULL;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
-	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
+	if (!buf || !sz || sz == UT64_MAX) {
+		return NULL;
+	}
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_dex_new_buf (tbuf);
@@ -281,7 +275,9 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return false;
+	if (!arch || !arch->o) {
+		return false;
+	}
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj ? true: false;
 }
@@ -297,8 +293,9 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 8)
+	if (!buf || length < 8) {
 		return false;
+	}
 	// Non-extended opcode dex file
 	if (!memcmp (buf, "dex\n035\0", 8)) {
 		return true;
@@ -325,7 +322,9 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 static RBinInfo *info(RBinFile *arch) {
 	RBinHash *h;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	ret->file = arch->file? strdup (arch->file): NULL;
 	ret->type = strdup ("DEX CLASS");
 	ret->has_va = false;
@@ -334,7 +333,6 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->os = strdup ("linux");
 	ret->subsystem = strdup ("any");
 	ret->machine = strdup ("Dalvik VM");
-
 	h = &ret->sum[0];
 	h->type = "sha1";
 	h->len = 20;
@@ -342,28 +340,23 @@ static RBinInfo *info(RBinFile *arch) {
 	h->from = 12;
 	h->to = arch->buf->length-32;
 	memcpy (h->buf, arch->buf->buf+12, 20);
-
 	h = &ret->sum[1];
 	h->type = "adler32";
 	h->len = 4;
 	h->addr = 0x8;
 	h->from = 12;
 	h->to = arch->buf->length-h->from;
-
 	h = &ret->sum[2];
 	h->type = 0;
-
 	memcpy (h->buf, arch->buf->buf + 8, 4);
 	{
 		ut32 *fc = (ut32 *)(arch->buf->buf + 8);
 		ut32  cc = __adler32 (arch->buf->buf + 12, arch->buf->length - 12);
-
 		if (*fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
 			eprintf ("wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8\n");
 		}
 	}
-
 	ret->arch = strdup ("dalvik");
 	ret->lang = "dalvik";
 	ret->bits = 32;
@@ -379,19 +372,20 @@ static RList* strings (RBinFile *arch) {
 	int i, len;
 	ut8 buf[6];
 	ut64 off;
-
-	if (!arch || !arch->o)
+	if (!arch || !arch->o) {
 		return NULL;
+	}
 	bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
-	if (!bin || !bin->strings)
+	if (!bin || !bin->strings) {
 		return NULL;
+	}
 	if (bin->header.strings_size > bin->size) {
 		bin->strings = NULL;
 		return NULL;
 	}
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
-	ret->free = free;
+	}
 	for (i = 0; i < bin->header.strings_size; i++) {
 		if (!(ptr = R_NEW0 (RBinString))) {
 			break;
@@ -404,8 +398,9 @@ static RList* strings (RBinFile *arch) {
 
 		if (len > 1 && len < R_BIN_SIZEOF_STRINGS) {
 			ptr->string = malloc (len + 1);
-			if (!ptr->string)
+			if (!ptr->string) {
 				goto out_error;
+			}
 			off = bin->strings[i] + dex_uleb128_len (buf);
 			if (off > bin->size || off + len > bin->size) {
 				free (ptr->string);
@@ -616,7 +611,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 			break;
 		}
 		int tid = bin->types[field.type_id].descriptor_id;
-		const char* type_str = getstr(bin, tid);//get_string(bin, field.type_id, tid);
+		const char* type_str = getstr (bin, tid);//get_string(bin, field.type_id, tid);
 
 		if (1) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
@@ -887,7 +882,6 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 	if (bin->classes) {
 		methods = calloc (sizeof (int), bin->header.method_size);
-
 		for (i = 0; i < bin->header.class_size; i++) {
 			char *super_name, *class_name;
 			struct dex_class_t *c = &bin->classes[i];
@@ -903,27 +897,24 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	if (methods) {
 		//dprintf ("imports: \n");
 		for (i = 0; i < bin->header.method_size; i++) {
-
+			int len = 0;
 			if (methods[i]) {
 				continue;
 			}
-
 			// TODO: move to a function
-			if (bin->methods[i].class_id > bin->header.types_size) {
+			if (bin->methods[i].class_id > bin->header.types_size - 1) {
 				continue;
 			}
-			// TODO: improve this
-			char *class_name = getstr(bin, bin->types[bin->methods[i].class_id].descriptor_id);
+			char *class_name = getstr (bin, bin->types[bin->methods[i].class_id].descriptor_id);
 			if (!class_name) {
 				free (class_name);
 				continue;
 			}
-			int len = strlen(class_name);
+			len = strlen(class_name);
 			if (len < 1) {
 				continue;
 			}
 			class_name[len-1] = 0; // remove last char ";"
-
 			char *method_name = dex_method_name (bin, i);
 			char *signature = dex_method_signature(bin, i);
 			if (method_name && *method_name) {
@@ -1223,7 +1214,7 @@ static RList* sections(RBinFile *arch) {
 	int fsym = 0;
 
 	r_list_foreach (ml, iter, m) {
-		if (fsym == 0 || m->paddr<fsym) {
+		if (!fsym || m->paddr < fsym) {
 			fsym = m->paddr;
 		}
 		ns = m->paddr + m->size;
@@ -1234,7 +1225,7 @@ static RList* sections(RBinFile *arch) {
 			fsymsz = ns;
 		}
 	}
-	if (fsym == 0) {
+	if (!fsym) {
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {
@@ -1293,13 +1284,14 @@ static ut64 size(RBinFile *arch) {
 	ut8 u32s[sizeof (ut32)] = {0};
 
 	ret = r_buf_read_at (arch->buf, 108, u32s, 4);
-	if (ret != 4)
+	if (ret != 4) {
 		return 0;
+	}
 	off = r_read_le32 (u32s);
-
 	ret = r_buf_read_at (arch->buf, 104, u32s, 4);
-	if (ret != 4)
+	if (ret != 4) {
 		return 0;
+	}
 	len = r_read_le32 (u32s);
 	return off + len;
 }

@@ -219,6 +219,7 @@ typedef struct r_cons_t {
 #if __WINDOWS__ && !__CYGWIN__
 	bool ansicon;
 #endif
+	bool flush;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */

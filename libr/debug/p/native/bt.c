@@ -35,7 +35,7 @@ static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 			}
 		}
 	}
-	if (cb == NULL) {
+	if (!cb) {
 		if (dbg->bits == R_SYS_BITS_64) {
 			cb = backtrace_x86_64;
 		} else {

@@ -357,6 +357,7 @@ On x86 acording to Wikipedia
 	} RAnalOpPrefix;
 
 // XXX: this definition is plain wrong. use enum or empower bits
+#define R_ANAL_OP_TYPE_MASK 0x8000ffff
 typedef enum {
 	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
 	//TODO: MOVE TO PREFIX .. it is used by anal_ex.. must be updated
@@ -613,6 +614,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_vars; // globals?
 #endif
 	Sdb *sdb_hints; // OK
+	bool sdb_hints_changed;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
 	//RList *hints; // XXX use better data structure here (slist?)

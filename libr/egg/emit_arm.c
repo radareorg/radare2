@@ -195,7 +195,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		op = e?"ble":"blt";
 		arg = g+1;
 	}
-	if (arg == NULL) {
+	if (!arg) {
 		if (e) {
 			arg = e+1;
 			op = "bne";
@@ -243,8 +243,8 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '/': op = "div"; break;
 	default:  op = "mov"; break;
 	}
-	if (eq == NULL) eq = R_AX;
-	if (p == NULL) p = R_AX;
+	if (!eq) eq = R_AX;
+	if (!p) p = R_AX;
 #if 0
 	// TODO:
 	eprintf ("TYPE = %c\n", type);

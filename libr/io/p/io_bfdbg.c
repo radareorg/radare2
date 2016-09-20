@@ -36,7 +36,7 @@ static inline int is_in_base(ut64 off, BfvmCPU *c) {
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOBfdbg *riom;
 	int sz;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	riom = fd->data;
 	/* data base buffer */
@@ -76,7 +76,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOBfdbg *riom;
 	int sz;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	riom = fd->data;
 	/* data base buffer */
@@ -115,7 +115,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 static int __close(RIODesc *fd) {
 	RIOBfdbg *riom;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	riom = fd->data;
 	bfvm_free (riom->bfvm);

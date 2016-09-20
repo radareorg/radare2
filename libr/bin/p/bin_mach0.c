@@ -22,8 +22,9 @@ static Sdb* get_sdb (RBinObject *o) {
 
 static char *entitlements(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin;
-	if (!arch || !arch->o)
+	if (!arch || !arch->o) {
 	    	return NULL;
+	}
 	bin = arch->o->bin_obj;
 	return (char *)bin->signature;
 }
@@ -610,7 +611,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mach0,
 	.version = R2_VERSION

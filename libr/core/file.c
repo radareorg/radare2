@@ -486,7 +486,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	if (cf) {
-		if ((filenameuri == NULL || !*filenameuri)) {
+		if (!filenameuri || !*filenameuri) {
 			filenameuri = cf->desc->name;
 		} else if (cf->desc->name && strcmp (filenameuri, cf->desc->name)) {
 			// XXX - this needs to be handled appropriately
@@ -700,12 +700,12 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open_nomap (r->io, file, flags, 0644);
-	if (fd == NULL && openmany > 2) {
+	if (!fd && openmany > 2) {
 		// XXX - make this an actual option somewhere?
 		fh = r_core_file_open_many (r, file, flags, loadaddr);
 		if (fh) goto beach;
 	}
-	if (fd == NULL) {
+	if (!fd) {
 		if (flags & 2) {
 			if (!r_io_create (r->io, file, 0644, 0)) {
 				goto beach;

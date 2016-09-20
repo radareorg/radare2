@@ -172,4 +172,11 @@ struct coff_symbol {
 	ut8 n_numaux;	/* Auxiliary Count */
 } __attribute__((packed));
 
+
+struct coff_reloc {
+	ut32 r_vaddr;	/* Reference Address */
+	ut32 r_symndx;	/* Symbol index */
+	ut16 r_type;	/* Type of relocation */
+} __attribute__((packed));
+
 #endif /* COFF_SPECS_H */

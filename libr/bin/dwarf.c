@@ -942,8 +942,9 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	size_t i;
 	if (!da) return;
-	for (i = 0; i < da->length; i++)
+	for (i = 0; i < da->length; i++) {
 		R_FREE (da->decls[i].specs);
+	}
 	R_FREE (da->decls);
 }
 
@@ -1105,12 +1106,14 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	const ut8 *buf_end = obuf + obuf_len;
 	size_t j;
 
-	if (!spec || !value || !hdr || !obuf) {
-		return NULL;
-	}
 	value->form = spec->attr_form;
 	value->name = spec->attr_name;
 	value->encoding.block.data = NULL;
+	value->encoding.str_struct.string = NULL;
+
+	if (!spec || !value || !hdr || !obuf || obuf_len < 0) {
+		return NULL;
+	}
 
 	switch (spec->attr_form) {
 	case DW_FORM_addr:
@@ -1161,7 +1164,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.data = READ (buf, ut64);
 		break;
 	case DW_FORM_string:
-		value->encoding.str_struct.string = *buf? strdup((const char*)buf) : NULL;
+		value->encoding.str_struct.string = *buf? strdup ((const char*)buf) : NULL;
 		buf += (strlen((const char*)buf) + 1);
 		break;
 	case DW_FORM_block:
@@ -1181,19 +1184,15 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->encoding.block.data[j] = READ (buf, ut8);
 		}
 		break;
-
 	case DW_FORM_flag:
 		value->encoding.flag = READ (buf, ut8);
 		break;
-
 	case DW_FORM_sdata:
 		buf = r_leb128 (buf, &value->encoding.sdata);
 		break;
-
 	case DW_FORM_strp:
 		value->encoding.str_struct.offset = READ (buf, ut32);
-		if (debug_str && value->encoding.str_struct.offset
-				< debug_str_len) {
+		if (debug_str && value->encoding.str_struct.offset < debug_str_len) {
 			value->encoding.str_struct.string = strdup (
 				(const char *)(debug_str +
 					value->encoding.str_struct.offset));
@@ -1201,39 +1200,30 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->encoding.str_struct.string = NULL;
 		}
 		break;
-
 	case DW_FORM_udata:
 		buf = r_uleb128 (buf, buf_end - buf, &value->encoding.data);
 		break;
-
 	case DW_FORM_ref_addr:
 		value->encoding.reference = READ (buf, ut64); // addr size of machine
 		break;
-
 	case DW_FORM_ref1:
 		value->encoding.reference = READ (buf, ut8);
 		break;
-
 	case DW_FORM_ref2:
 		value->encoding.reference = READ (buf, ut16);
 		break;
-
 	case DW_FORM_ref4:
 		value->encoding.reference = READ (buf, ut32);
 		break;
-
 	case DW_FORM_ref8:
 		value->encoding.reference = READ (buf, ut64);
 		break;
-
 	case DW_FORM_data1:
 		value->encoding.data = READ (buf, ut8);
 		break;
-
 	default:
 		return buf;
 	}
-
 	return buf;
 }
 
@@ -1282,8 +1272,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 					&cu->dies[cu->length].attr_values[i],
 					&cu->hdr, debug_str, debug_str_len);
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
-				ut64 comp_dir = (ut64)(size_t)
-					cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
+				ut64 comp_dir = (ut64)(size_t)cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
 				if (s) {
 					sdb_num_add (s, "DW_AT_comp_dir", comp_dir, 0);
 				}
@@ -1292,7 +1281,6 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 		}
 		cu->length++;
 	}
-
 	return buf;
 }
 

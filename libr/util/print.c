@@ -719,6 +719,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	//for (i=j=0; (p&&!p->interrupt) && i<len; i+=(stride?stride:inc), j+=(stride?stride:0)) {
 	for (i=j=0; i<len; i+=(stride?stride:inc), j+=(stride?stride:0)) {
 		r_print_set_screenbounds (p, addr + i);
+		if (p && p->cons && p->cons->breaked) {
+			break;
+		}
 		if (use_sparse) {
 			if (check_sparse (buf+i, inc, sparse_char)) {
 				if (i+inc>=len || check_sparse (buf+i+inc, inc, sparse_char)) {
@@ -1038,9 +1041,9 @@ R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from
 	} else {
 		mode = p->zoom->mode;
 		bufz = (ut8 *) malloc (len);
-		if (bufz == NULL) return;
+		if (!bufz) return;
 		bufz2 = (ut8 *) malloc (size);
-		if (bufz2 == NULL) {
+		if (!bufz2) {
 			free (bufz);
 			return;
 		}

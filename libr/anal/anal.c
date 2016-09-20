@@ -500,16 +500,19 @@ static int build_range(void *p, const char *k, const char *v) {
 R_API void r_anal_build_range_on_hints(RAnal *a) {
 	RListIter *iter;
 	RAnalRange *range;
-	// construct again the range from hint to handle properly arm/thumb
-	r_list_free (a->bits_ranges);
-	a->bits_ranges = r_list_new ();
-	a->bits_ranges->free = free;
-	sdb_foreach (a->sdb_hints, build_range, a);
-	r_list_sort (a->bits_ranges, cmp_range);
-	r_list_foreach (a->bits_ranges, iter, range) {
-		if (iter->n && !range->to) {
-			range->to = ((RAnalRange *)(iter->n->data))->from;
+	if (a->sdb_hints_changed) {
+		// construct again the range from hint to handle properly arm/thumb
+		r_list_free (a->bits_ranges);
+		a->bits_ranges = r_list_new ();
+		a->bits_ranges->free = free;
+		sdb_foreach (a->sdb_hints, build_range, a);
+		r_list_sort (a->bits_ranges, cmp_range);
+		r_list_foreach (a->bits_ranges, iter, range) {
+			if (iter->n && !range->to) {
+				range->to = ((RAnalRange *)(iter->n->data))->from;
+			}
 		}
+		a->sdb_hints_changed = false;
 	}
 }
 

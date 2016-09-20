@@ -177,7 +177,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	/* Compare functions with the same name */
 	if (fcns) {
 		r_list_foreach (fcns, iter, fcn) {
-			if (fcn->type != R_ANAL_FCN_TYPE_SYM || fcn->name == NULL) {
+			if (fcn->type != R_ANAL_FCN_TYPE_SYM || !fcn->name) {
 				continue;
 			}
 			r_list_foreach (fcns2, iter2, fcn2) {

@@ -114,7 +114,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 
 	// malloc can be slow here :?
-	if ((buf = malloc (len + 1)) == NULL) {
+	if (!(buf = malloc (len + 1))) {
 		return false;
 	}
 	memcpy (buf, data, len+1);
@@ -132,7 +132,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		w3[0]='\0';
 		w4[0]='\0';
 		ptr = strchr (buf, ' ');
-		if (ptr == NULL)
+		if (!ptr)
 			ptr = strchr (buf, '\t');
 		if (ptr) {
 			*ptr = '\0';

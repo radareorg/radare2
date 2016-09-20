@@ -20,7 +20,7 @@ typedef struct {
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	ut64 o;
 	RBuffer *b;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	b = RIOSPARSE_BUF(fd);
 	o = RIOSPARSE_OFF(fd);
@@ -30,7 +30,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	ut64 o;
 	RBuffer *b;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	b = RIOSPARSE_BUF(fd);
 	o = RIOSPARSE_OFF(fd);
@@ -40,7 +40,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 static int __close(RIODesc *fd) {
 	RIOSparse *riom;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	riom = fd->data;
 	free (riom->buf);

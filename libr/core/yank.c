@@ -224,7 +224,7 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 		free (arg);
 		return res;
 	}
-	if ((str == NULL) || (pos == -1) || (len == 0)) {
+	if (!str || pos == -1 || len == 0) {
 		eprintf ("Usage: yt [len] [dst-addr]\n");
 		free (arg);
 		return res;

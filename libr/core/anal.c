@@ -439,7 +439,12 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	}
 	fcn->addr = at;
 	r_anal_fcn_set_size (fcn, 0);
-	fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
+	RFlagItem *fi = r_flag_get_at (core->flags, at);
+	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
+		fcn->name = strdup (fi->name);
+	} else {
+		fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
+	}
 	buf = malloc (core->anal->opt.bb_max_size);
 	if (!buf) {
 		eprintf ("Error: malloc (buf)\n");
@@ -485,11 +490,11 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		}
 		f = r_flag_get_i2 (core->flags, fcn->addr);
 		free (fcn->name);
-		if (f && *f->name) {
+		if (f && *f->name && strncmp (f->name, "sect", 4)) {
 			fcn->name = strdup (f->name);
 		} else {
 			f = r_flag_get_i (core->flags, fcn->addr);
-			if (f && *f->name) {
+			if (f && *f->name && strncmp (f->name, "sect", 4)) {
 				fcn->name = strdup (f->name);
 			} else {
 				fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
@@ -507,8 +512,13 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			if (f && f->name) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name);
 			} else {
-				fcn->name = r_str_newf ("%s.%08"PFMT64x,
+				f = r_flag_get_i (core->flags, fcn->addr);
+				if (f && *f->name && strncmp (f->name, "sect", 4)) {
+					fcn->name = strdup (f->name);
+				} else {
+					fcn->name = r_str_newf ("%s.%08"PFMT64x,
 						r_anal_fcn_type_tostring (fcn->type), fcn->addr);
+				}
 				/* Add flag */
 				r_flag_space_push (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name,
@@ -2522,7 +2532,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 
 	count = R_MIN (count, len);
 	buf = malloc (len);
-	if (buf == NULL)
+	if (!buf)
 		return false;
 	memset (buf, 0xff, len);
 	r_io_read_at (core->io, addr, buf, len);
@@ -3017,7 +3027,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		return;
 	}
 	buf = malloc (iend + 2);
-	if (buf == NULL) {
+	if (!buf) {
 		perror ("malloc");
 		return;
 	}

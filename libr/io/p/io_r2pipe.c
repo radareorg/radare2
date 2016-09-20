@@ -17,7 +17,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	char *bufn, bufnum[4096];
 	int i, rv, rescount = -1;
 	char *res, *r;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	bufn = bufnum;
 	*bufn = 0;
@@ -141,7 +141,7 @@ static int __system(RIO *io, RIODesc *fd, const char *msg) {
 	char fmt[4096];
 	int rv, rescount = -1;
 	char *res, *r;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	snprintf (fmt, sizeof (fmt),
 		"{\"op\":\"system\",\"cmd\":\"%s\"}", msg);

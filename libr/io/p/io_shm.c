@@ -25,7 +25,7 @@ typedef struct {
 
 static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOShm *shm;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	shm = fd->data;
 	if (shm->buf != NULL) {
@@ -37,7 +37,7 @@ static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOShm *shm;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	shm = fd->data;
 	if (io->off+count >= shm->size) {
@@ -53,7 +53,7 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 static int shm__close(RIODesc *fd) {
 	int ret;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	ret = shmdt (((RIOShm*)(fd->data))->buf);
 	free (fd->data);
@@ -63,7 +63,7 @@ static int shm__close(RIODesc *fd) {
 
 static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RIOShm *shm;
-	if (fd == NULL || fd->data == NULL)
+	if (!fd || !fd->data)
 		return -1;
 	shm = fd->data;
 	switch (whence) {
