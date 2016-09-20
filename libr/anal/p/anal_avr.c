@@ -69,19 +69,6 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ((char *) 0,   16, 512)
 };
 
-void __generic_brxx(RAnalOp *op, const ut8 *buf, const char const *eval) {
-	op->jump = op->addr
-		+ ((((buf[0] & 0xf8) >> 2) | (buf[1] & 0x03) << 6)
-			| (buf[1] & 0x2 ? ~((int) 0x7f) : 0))
-		+ 2;
-	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
-			// so it cannot be really be known until this
-			// instruction is executed by the ESIL interpreter!!!
-			// In case of evaluating to true, this instruction
-			// needs 2 cycles, elsewhere it needs only 1 cycle.
-	ESIL_A ("%s,?{,%"PFMT64d",pc,=,}", eval, op->jump); // if eval => jump
-}
-
 void __generic_bitop_flags(RAnalOp *op) {
 	ESIL_A ("0,vf,=,");					// V
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
@@ -198,7 +185,7 @@ INST_HANDLER (bclr) {	// BCLR s
 			// CLV
 			// CLZ
 	int s = (buf[0] >> 4) & 0x7;
-	ESIL_A ("0xff,%d,1,<<,^,sreg,&=", s);
+	ESIL_A ("0xff,%d,1,<<,^,sreg,&=,", s);
 }
 
 INST_HANDLER (bset) {	// BSET s
@@ -212,25 +199,47 @@ INST_HANDLER (bset) {	// BSET s
 			// SEV
 			// SEZ
 	int s = (buf[0] >> 4) & 0x7;
-	ESIL_A ("%d,1,<<,sreg,|=", s);
+	ESIL_A ("%d,1,<<,sreg,|=,", s);
 }
 
-INST_HANDLER (breq) { __generic_brxx (op, buf, "zf");        } // BREQ raddr
-INST_HANDLER (brge) { __generic_brxx (op, buf, "nf,vf,^,!"); } // BRGE raddr
-INST_HANDLER (brhc) { __generic_brxx (op, buf, "hf,!");      } // BRHC raddr
-INST_HANDLER (brhs) { __generic_brxx (op, buf, "hf");        } // BRHS raddr
-INST_HANDLER (brid) { __generic_brxx (op, buf, "if,!");      } // BRID raddr
-INST_HANDLER (brie) { __generic_brxx (op, buf, "if");        } // BRIE raddr
-INST_HANDLER (brlo) { __generic_brxx (op, buf, "cf");        } // BRLO raddr
-INST_HANDLER (brlt) { __generic_brxx (op, buf, "nf,vf,^");   } // BRLT raddr
-INST_HANDLER (brmi) { __generic_brxx (op, buf, "nf");        } // BRMI raddr
-INST_HANDLER (brne) { __generic_brxx (op, buf, "zf,!");      } // BRNE raddr
-INST_HANDLER (brpl) { __generic_brxx (op, buf, "nf,!");      } // BRPL raddr
-INST_HANDLER (brsh) { __generic_brxx (op, buf, "cf,!");      } // BRSH raddr
-INST_HANDLER (brtc) { __generic_brxx (op, buf, "tf,!");      } // BRTC raddr
-INST_HANDLER (brts) { __generic_brxx (op, buf, "tf");        } // BRTS raddr
-INST_HANDLER (brvc) { __generic_brxx (op, buf, "vf,!");      } // BRVC raddr
-INST_HANDLER (brvs) { __generic_brxx (op, buf, "vf");        } // BRVS raddr
+INST_HANDLER (bld) {	// BLD Rd, b
+	int d = ((buf[1] & 0x01) << 4) | ((buf[0] & 0xf0) >> 4);
+	int b = buf[0] & 0x7;
+	ESIL_A ("r%d,%d,1,<<,0xff,^,&,", d, b);			// Rd/b = 0
+	ESIL_A ("%d,tf,<<,|,r%d,=,", b, d);			// Rd/b |= T<<b
+}
+
+INST_HANDLER (brbx) {	// BRBC s, k
+			// BRBS s, k
+			// BRBC/S 0:		BRCC		BRCS
+			//			BRSH		BRLO
+			// BRBC/S 1:		BREQ		BRNE
+			// BRBC/S 2:		BRPL		BRMI
+			// BRBC/S 3:		BRVC		BRVS
+			// BRBC/S 4:		BRGE		BRLT
+			// BRBC/S 5:		BRHC		BRHS
+			// BRBC/S 6:		BRTC		BRTS
+			// BRBC/S 7:		BRID		BRIE
+	int s = buf[0] & 0x7;
+	op->jump = op->addr
+		+ ((((buf[1] & 0x03) << 6) | ((buf[0] & 0xf8) >> 2))
+			| (buf[1] & 0x2 ? ~((int) 0x7f) : 0))
+		+ 2;
+	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to true, this instruction
+			// needs 2 cycles, elsewhere it needs only 1 cycle.
+	ESIL_A ("%d,1,<<,sreg,&,", s);				// SREG(s)
+	ESIL_A (buf[1] & 0x4
+			? "!,"		// BRBC => branch if cleared
+			: "!,!,");	// BRBS => branch if set
+	ESIL_A ("?{,%"PFMT64d",pc,=,},", op->jump);	// ?true => jmp
+}
+
+INST_HANDLER (break) {	// BREAK
+	ESIL_A ("TODO");
+}
 
 INST_HANDLER (call) {	// CALL addr
 	op->jump = (buf[2] << 1)
@@ -519,6 +528,7 @@ INST_HANDLER (st) {	// ST X, Rr
 
 OPCODE_DESC opcodes[] = {
 	//         op     mask    select  cycles  size type
+//	INST_DECL (break, 0xffff, 0x9698, 1,      2,   PRIV  ), // BREAK
 	INST_DECL (nop,   0xffff, 0x0000, 1,      2,   NOP   ), // NOP
 	INST_DECL (ret,   0xffff, 0x9508, 4,      2,   RET   ), // RET
 	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ), // RETI
@@ -531,22 +541,11 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (push,  0xfe0f, 0x920f, 0,      2,   PUSH  ), // PUSH Rr
 	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ), // CALL addr
 	INST_DECL (jmp,   0xfe0e, 0x940c, 2,      4,   JMP   ), // JMP addr
-	INST_DECL (breq,  0xfc07, 0xf001, 0,      2,   CJMP  ), // BREQ addr
-	INST_DECL (brge,  0xfc07, 0xf404, 0,      2,   CJMP  ), // BRGE addr
-	INST_DECL (brhc,  0xfc07, 0xf405, 0,      2,   CJMP  ), // BRHC addr
-	INST_DECL (brhs,  0xfc07, 0xf005, 0,      2,   CJMP  ), // BRHS addr
-	INST_DECL (brid,  0xfc07, 0xf407, 0,      2,   CJMP  ), // BRID addr
-	INST_DECL (brie,  0xfc07, 0xf007, 0,      2,   CJMP  ), // BRIE addr
-	INST_DECL (brlo,  0xfc07, 0xf000, 0,      2,   CJMP  ), // BRLO addr
-	INST_DECL (brlt,  0xfc07, 0xf008, 0,      2,   CJMP  ), // BRLT addr
-	INST_DECL (brmi,  0xfc07, 0xf002, 0,      2,   CJMP  ), // BRMI addr
-	INST_DECL (brne,  0xfc07, 0xf401, 0,      2,   CJMP  ), // BRNE addr
-	INST_DECL (brpl,  0xfc07, 0xf402, 0,      2,   CJMP  ), // BRPL addr
-	INST_DECL (brsh,  0xfc07, 0xf400, 0,      2,   CJMP  ), // BRSH addr
-	INST_DECL (brtc,  0xfc07, 0xf405, 0,      2,   CJMP  ), // BRTC addr
-	INST_DECL (brts,  0xfc07, 0xf005, 0,      2,   CJMP  ), // BRTS addr
-	INST_DECL (brvc,  0xfc07, 0xf403, 0,      2,   CJMP  ), // BRVC addr
-	INST_DECL (brvs,  0xfc07, 0xf003, 0,      2,   CJMP  ), // BRVS addr
+	INST_DECL (bld,   0xfe08, 0xf800, 1,      2,   MOV   ), // BLD Rd, B
+
+	INST_DECL (brbx,  0xfc07, 0xf401, 0,      2,   CJMP  ), // BRBC s, k
+	INST_DECL (brbx,  0xfc07, 0xf001, 0,      2,   CJMP  ), // BRBS s, k
+
 	INST_DECL (adc,   0xfc00, 0x1c00, 1,      2,   ADD   ), // ADC Rd, Rr
 	INST_DECL (add,   0xfc00, 0x0c00, 1,      2,   ADD   ), // ADD Rd, Rr
 	INST_DECL (cp,    0xfc00, 0x1400, 1,      2,   CMP   ), // CP Rd, Rr
