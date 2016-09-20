@@ -188,7 +188,17 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		nch = r_cons_arrow_to_hjkl (ch);
-		if (nch == 'j' && ch != 'j') {
+		if (nch == 'J' && ch != 'J') {
+			top_entry_n += 10;
+			if (top_entry_n + 1 >= current_entry_n) {
+				top_entry_n = current_entry_n;
+			}
+		} else if (nch == 'K' && ch != 'K') {
+			top_entry_n -= 10;
+			if (top_entry_n < 0) {
+				top_entry_n = 0;
+			}
+		} else if (nch == 'j' && ch != 'j') {
 			if (top_entry_n + 1 < current_entry_n) {
 				top_entry_n++;
 			}
@@ -196,7 +206,8 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 			if (top_entry_n >= 0) {
 				top_entry_n--;
 			}
-		} else switch (ch) {
+		} else {
+			switch (ch) {
 			case 9: // \t
 				if (top_entry_n + 1 < current_entry_n) {
 					top_entry_n++;
@@ -242,6 +253,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 				}
 				break;
 			}
+		}
 	}
 	return NULL;
 }

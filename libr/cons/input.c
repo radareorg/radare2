@@ -192,8 +192,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				break;
 			} // F9-F12 not yet supported!!
 			break;
-		case '5': ch = 'K'; break; // repag
-		case '6': ch = 'J'; break; // avpag
+		case '5': ch = 'K'; r_cons_readchar(); break; // repag
+		case '6': ch = 'J'; r_cons_readchar(); break; // avpag
 		/* arrow keys */
 		case 'A': ch = 'k'; break; // up
 		case 'B': ch = 'j'; break; // down
