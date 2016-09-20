@@ -1,0 +1,2 @@
+type.void *.size=64
+type.char *.size=64

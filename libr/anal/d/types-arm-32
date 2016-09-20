@@ -1,0 +1,6 @@
+func.getenv.cc=arm32
+func.getopt.cc=arm32
+func.getuid.cc=arm32
+func.ioctl.cc=arm32
+func.isatty.cc=arm32
+func.setlocale.cc=arm32

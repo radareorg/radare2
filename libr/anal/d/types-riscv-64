@@ -1,0 +1,6 @@
+func.getenv.cc=rvg
+func.getopt.cc=rvg
+func.getuid.cc=rvg
+func.ioctl.cc=rvg
+func.isatty.cc=rvg
+func.setlocale.cc=rvg

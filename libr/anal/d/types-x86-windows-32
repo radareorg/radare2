@@ -44,6 +44,7 @@ type.LPFILETIME.size=32
 type.PVOID.size=32
 func.DecodePointer.cc=stdcall
 func.EncodePointer.cc=stdcall
+func.ExitProcess.cc=stdcall
 func.GetCurrentProcessId.cc=stdcall
 func.GetAtomName.cc=stdcall
 func.GetModuleFileName.cc=stdcall

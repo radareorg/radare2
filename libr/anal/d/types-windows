@@ -207,6 +207,12 @@ func.EncodePointer.args=1
 func.EncodePointer.arg.0=PVOID,Ptr
 func.EncodePointer.ret=PVOID
 
+ExitProcess=func
+func.ExitProcess.args=1
+func.ExitProcess.arg.0=UINT,uExitCode
+func.ExitProcess.noreturn=true
+func.ExitProcess.ret=void
+
 GetCurrentProcessId=func
 func.GetCurrentProcessId.args=0
 func.memcpy.ret=DWORD

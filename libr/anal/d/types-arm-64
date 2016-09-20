@@ -1,0 +1,6 @@
+func.getenv.cc=arm64
+func.getopt.cc=arm64
+func.getuid.cc=arm64
+func.ioctl.cc=arm64
+func.isatty.cc=arm64
+func.setlocale.cc=arm64
