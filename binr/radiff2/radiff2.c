@@ -166,6 +166,7 @@ static int show_help(int v) {
 		"  -r         output in radare commands\n"
 		"  -s         compute text distance\n"
 		"  -ss        compute text distance (using levenstein algorithm)\n"
+		"  -S [column_name]	Sort by <column_name>\n"
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
 		"  -v         show version information\n"
