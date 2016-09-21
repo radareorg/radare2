@@ -1701,6 +1701,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("diff.from", 0, "Set source diffing address for px (uses cc command)");
 	SETI("diff.to", 0, "Set destination diffing address for px (uses cc command)");
 	SETPREF("diff.bare", "false", "Never show function names in diff output");
+	SETPREF("diff.levenstein", "false", "Use faster (and buggy) levenstein algorithm for buffer distance diffing");
 
 	/* dir */
 	SETPREF("dir.magic", R_MAGIC_PATH, "Path to r_magic files");

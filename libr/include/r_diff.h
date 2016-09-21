@@ -30,6 +30,7 @@ typedef struct r_diff_t {
 	int delta;
 	void *user;
 	bool verbose;
+	bool levenstein;
 	int (*callback)(struct r_diff_t *diff, void *user, RDiffOp *op);
 } RDiff;
 

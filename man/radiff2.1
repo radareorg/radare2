@@ -1,4 +1,4 @@
-.Dd May 26, 2016
+.Dd Sep 21, 2016
 .Dt RADIFF2 1
 .Sh NAME
 .Nm RADIFF2
@@ -44,6 +44,8 @@ Output in radare commands as a binary patch.
 Show two column hexdump diffing.
 .It Fl s
 Calculate text distance from two files.
+.It Fl ss
+Same as before but using the Levenstein algorithm (faster but sometimes buggy)
 .It Fl t Ar 0\-100
 Choose matching threshold for binary code diffing
 .It Fl v

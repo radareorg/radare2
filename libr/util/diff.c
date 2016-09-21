@@ -195,8 +195,7 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 	return r_diff_buffers_static (d, a, la, b, lb);
 }
 
-/* TODO: Move into r_util maybe? */
-R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
 	const bool verbose = d? d->verbose: false;
 	/*
 	More memory efficient version on Levenshtein Distance from:
@@ -400,4 +399,75 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 	free (v0);
 	free (v1);
 	return true;
+}
+
+R_API bool r_diff_buffers_distance_original(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	int i, j, tmin, **m;
+	ut64 totalsz = 0;
+
+	if (!a || !b || la < 1 || lb < 1)
+		return false;
+
+	if (la == lb && !memcmp (a, b, la)) {
+		if (distance != NULL)
+			*distance = 0;
+		if (similarity != NULL)
+			*similarity = 1.0;
+		return true;
+	}
+	totalsz = sizeof(int*) * (lb+1);
+	for(i = 0; i <= la; i++) {
+		totalsz += ((lb+1) * sizeof(int));
+	}
+	if (totalsz >= 1024 * 1024 * 1024) { // 1 GB of ram
+		char *szstr = r_num_units (NULL, totalsz);
+		eprintf ("Too much memory required (%s) to run distance diff, Use -c.\n", szstr);
+		free (szstr);
+		return false;
+	}
+	if ((m = malloc ((la+1) * sizeof(int*))) == NULL)
+		return false;
+	for(i = 0; i <= la; i++) {
+		if ((m[i] = malloc ((lb+1) * sizeof(int))) == NULL) {
+			eprintf ("Allocation failed\n");
+			while (i--)
+				free (m[i]);
+			free (m);
+			return false;
+		}
+	}
+
+	for (i = 0; i <= la; i++)
+		m[i][0] = i;
+	for (j = 0; j <= lb; j++)
+		m[0][j] = j;
+
+	for (i = 1; i <= la; i++) {
+		for (j = 1; j <= lb; j++) {
+			int cost = (a[i-1] != b[j-1])? 1: 0;
+			tmin = R_MIN (m[i-1][j] + 1, m[i][j-1] + 1);
+			m[i][j] = R_MIN (tmin, m[i-1][j-1] + cost);
+		}
+	}
+
+	if (distance) {
+		*distance = m[la][lb];
+	}
+	if (similarity) {
+		*similarity = (double)1 - (double)(m[la][lb])/(double)(R_MAX(la, lb));
+	}
+
+	for(i = 0; i <= la; i++) {
+		free (m[i]);
+	}
+	free (m);
+
+	return true;
+}
+
+R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	if (d && d->levenstein) {
+		return r_diff_buffers_distance_levenstein (d, a, la, b, lb, distance, similarity);
+	}
+	return r_diff_buffers_distance_original (d, a, la, b, lb, distance, similarity);
 }

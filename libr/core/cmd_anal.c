@@ -840,20 +840,17 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 			free (ptr);
 			return false;
 		}
-		if (ptr2[0] == 'm')
+		if (ptr2[0] == 'm') {
 			diff->type = R_ANAL_DIFF_TYPE_MATCH;
-		else if (ptr2[0] == 'u')
+		} else if (ptr2[0] == 'u') {
 			diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+		}
 	case 6:
 		ptr2 = r_str_word_get0 (ptr, 5);
-		if (strchr (ptr2, 'h'))
-			type |= R_ANAL_BB_TYPE_HEAD;
-		if (strchr (ptr2, 'b'))
-			type |= R_ANAL_BB_TYPE_BODY;
-		if (strchr (ptr2, 'l'))
-			type |= R_ANAL_BB_TYPE_LAST;
-		if (strchr (ptr2, 'f'))
-			type |= R_ANAL_BB_TYPE_FOOT;
+		if (strchr (ptr2, 'h')) type |= R_ANAL_BB_TYPE_HEAD;
+		if (strchr (ptr2, 'b')) type |= R_ANAL_BB_TYPE_BODY;
+		if (strchr (ptr2, 'l')) type |= R_ANAL_BB_TYPE_LAST;
+		if (strchr (ptr2, 'f')) type |= R_ANAL_BB_TYPE_FOOT;
 	case 5: // get fail
 		fail = r_num_math (core->num, r_str_word_get0 (ptr, 4));
 	case 4: // get jump
@@ -867,8 +864,7 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	}
 	fcn = r_anal_get_fcn_in (core->anal, fcnaddr, 0);
 	if (fcn) {
-		int ret = r_anal_fcn_add_bb (core->anal, fcn, addr,
-					size, jump, fail, type, diff);
+		int ret = r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, type, diff);
 		if (!ret) {
 			eprintf ("Cannot add basic block\n");
 		}
@@ -1099,10 +1095,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					free (ptr);
 					return false;
 				}
-				if (ptr2[0] == 'm')
+				if (ptr2[0] == 'm') {
 					diff->type = R_ANAL_DIFF_TYPE_MATCH;
-				else if (ptr2[0] == 'u')
+				} else if (ptr2[0] == 'u') {
 					diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+				}
 			case 4:
 				ptr2 = r_str_word_get0 (ptr, 3);
 				if (strchr (ptr2, 'l'))

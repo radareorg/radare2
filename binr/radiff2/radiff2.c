@@ -10,6 +10,7 @@
 enum {
 	MODE_DIFF,
 	MODE_DIST,
+	MODE_DIST_LEVENSTEIN,
 	MODE_CODE,
 	MODE_GRAPH,
 	MODE_COLS
@@ -164,6 +165,7 @@ static int show_help(int v) {
 		"  -p         use physical addressing (io.va=0)\n"
 		"  -r         output in radare commands\n"
 		"  -s         compute text distance\n"
+		"  -ss        compute text distance (using levenstein algorithm)\n"
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
 		"  -v         show version information\n"
@@ -345,7 +347,11 @@ int main(int argc, char **argv) {
 		case 'h':
 			return show_help (1);
 		case 's':
-			mode = MODE_DIST;
+			if (mode == MODE_DIST) {
+				mode = MODE_DIST_LEVENSTEIN;
+			} else {
+				mode = MODE_DIST;
+			}
 			break;
 		case 'x':
 			mode = MODE_COLS;
@@ -474,9 +480,11 @@ int main(int argc, char **argv) {
 		r_diff_free (d);
 		break;
 	case MODE_DIST:
+	case MODE_DIST_LEVENSTEIN:
 		{
 			RDiff *d = r_diff_new ();
 			d->verbose = verbose;
+			d->levenstein = (mode == MODE_DIST_LEVENSTEIN);
 			r_diff_buffers_distance (d, bufa, sza, bufb, szb, &count, &sim);
 			r_diff_free (d);
 		}
