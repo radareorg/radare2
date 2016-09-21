@@ -345,7 +345,7 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 			RBinString *s;
 			RListIter *iter2;
 			/* load objc/swift strings */
-			const int bits = (a && a->o && a->o->info) ? a->o->info->bits : 32;
+			const int bits = (a->o && a->o->info) ? a->o->info->bits : 32;
 			const int cfstr_size = (bits == 64) ? 32 : 16;
 			const int cfstr_offs = (bits == 64) ? 16 :  8;
 			if (strstr (section->name, "__cfstring")) {

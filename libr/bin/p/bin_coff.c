@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2016 - Fedor Sakharov */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -117,7 +117,7 @@ static RList *entries(RBinFile *arch) {
 }
 
 static RList *sections(RBinFile *arch) {
-	const char *coffname;
+	const char *coffname = NULL;
 	size_t i;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
@@ -129,6 +129,7 @@ static RList *sections(RBinFile *arch) {
 	}
 	if (obj && obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
+			free (coffname);
 			coffname = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
 			if (!coffname) {
 				r_list_free (ret);
@@ -136,6 +137,7 @@ static RList *sections(RBinFile *arch) {
 			}
 			ptr = R_NEW0 (RBinSection);
 			if (!ptr) {
+				free (coffname);
 				return ret;
 			}
 			strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
@@ -156,7 +158,7 @@ static RList *sections(RBinFile *arch) {
 			r_list_append (ret, ptr);
 		}
 	}
-
+	free (coffname);
 	return ret;
 }
 
@@ -199,6 +201,7 @@ static RList *relocs(RBinFile *arch) {
 	RList *list_rel;
 	list_rel = r_list_new ();
 	if (!list_rel || !bin || !bin->scn_hdrs) {
+		r_list_free (list_rel);
 		return NULL;
 	}
 	for (i = 0; i < bin->hdr.f_nscns; i++) {
@@ -213,6 +216,7 @@ static RList *relocs(RBinFile *arch) {
 			}
 			if (bin->scn_hdrs[i].s_relptr > bin->size ||
 				bin->scn_hdrs[i].s_relptr + size > bin->size) {
+				free (rel);
 				return list_rel;
 			}
 			len = r_buf_read_at (bin->b, bin->scn_hdrs[i].s_relptr, (ut8*)rel, size);

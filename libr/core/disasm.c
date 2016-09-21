@@ -2574,8 +2574,12 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 		free (msg);
-	} else ds_print_as_string (ds);
-	if (aligned && ds->show_color) r_cons_printf (Color_RESET);
+	} else {
+		ds_print_as_string (ds);
+	}
+	if (aligned && ds->show_color) {
+		r_cons_printf (Color_RESET);
+	}
 }
 
 // TODO: Use sdb in rbin to accelerate this
@@ -2849,6 +2853,7 @@ beach:
 		}
 	}
 }
+
 static void ds_print_calls_hints(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
@@ -2882,6 +2887,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	}
 	free (name);
 }
+
 static void ds_print_comments_right(RDisasmState *ds) {
 	char *desc = NULL;
 	RCore *core = ds->core;
@@ -3089,7 +3095,7 @@ toro:
 			int delta = (ds->at <= f->addr)? (ds->at - f->addr + r_anal_fcn_size (f)): 0;
 			if (of != f) {
 				char cmt[32];
-				get_bits_comment(core, f, cmt, sizeof (cmt));
+				get_bits_comment (core, f, cmt, sizeof (cmt));
 				ds_show_comments_right (ds);
 				r_cons_printf ("%s%s%s (fcn) %s%s%s\n",
 					COLOR (ds, color_fline), core->cons->vline[RUP_CORNER],

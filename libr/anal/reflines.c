@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -346,6 +346,7 @@ static void fill_level(RBuffer *b, int pos, char ch, RAnalRefline *r, int wide) 
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RCore *core = _core;
+	RCons *c = core->cons;
 	RAnal *anal = core->anal;
 	RBuffer *b;
 	RListIter *iter;
@@ -355,7 +356,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	int middle = opts & R_ANAL_REFLINE_TYPE_MIDDLE;
 	char *str = NULL;
 
-	if (!anal || !anal->reflines) {
+	if (!c || !anal || !anal->reflines) {
 		return NULL;
 	}
 
@@ -365,7 +366,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	}
 
 	r_list_foreach (anal->reflines, iter, ref) {
-		if (core && core->cons && core->cons->breaked) {
+		if (core->cons && core->cons->breaked) {
 			r_list_free (lvls);
 			return NULL;
 		}
@@ -378,8 +379,9 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	b = r_buf_new ();
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
-		if (core && core->cons && core->cons->breaked) {
+		if (core->cons && core->cons->breaked) {
 			r_list_free (lvls);
+			r_buf_free (b);
 			return NULL;
 		}
 		if (ref->from == addr || ref->to == addr) {
@@ -403,7 +405,9 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			}
 			pos = middle ? ref->level : 0;
 		} else {
-			if (pos == 0) continue;
+			if (pos == 0) {
+				continue;
+			}
 			add_spaces (b, ref->level, pos, wide);
 			r_buf_append_string (b, "|");
 			pos = ref->level;
@@ -415,6 +419,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	str = r_buf_free_to_string (b);
 	if (!str) {
 		r_list_free (lvls);
+		r_buf_free (b);
 		return NULL;
 	}
 	if (core->anal->lineswidth > 0) {
@@ -439,7 +444,6 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		: (dir == 2) ? "=< " : "   ");
 
 	if (core->utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {
-		RCons *c = core->cons;
 		str = r_str_replace (str, "<", c->vline[ARROW_LEFT], 1);
 		str = r_str_replace (str, ">", c->vline[ARROW_RIGHT], 1);
 		str = r_str_replace (str, "!", c->vline[LINE_UP], 1);

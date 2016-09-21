@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2016 pancake, inisider */
 
 #include <r_util.h>
 
@@ -47,6 +47,8 @@ char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 	if (len < 1) {
 		return NULL;
 	}
+	/* ensure null terminated string */
+	n[sizeof (n) - 1] = 0;
 	return strdup (n);
 }
 

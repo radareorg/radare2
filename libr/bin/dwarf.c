@@ -1106,14 +1106,14 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	const ut8 *buf_end = obuf + obuf_len;
 	size_t j;
 
+	if (!spec || !value || !hdr || !obuf || obuf_len < 0) {
+		return NULL;
+	}
+
 	value->form = spec->attr_form;
 	value->name = spec->attr_name;
 	value->encoding.block.data = NULL;
 	value->encoding.str_struct.string = NULL;
-
-	if (!spec || !value || !hdr || !obuf || obuf_len < 0) {
-		return NULL;
-	}
 
 	switch (spec->attr_form) {
 	case DW_FORM_addr:

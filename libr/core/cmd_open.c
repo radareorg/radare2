@@ -258,6 +258,7 @@ R_API void r_core_file_reopen_in_malloc(RCore *core) {
 			eprintf ("Cannot open %s\n", url);
 		}
 		free (buf);
+		free (url);
 		break;
 	}
 }
