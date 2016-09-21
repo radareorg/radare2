@@ -18,6 +18,7 @@ enum {
 
 static char *file = NULL;
 static char *file2 = NULL;
+static char *column = NULL;
 static ut32 count = 0;
 static int showcount = 0;
 static int useva = true;
@@ -353,6 +354,10 @@ int main(int argc, char **argv) {
 			} else {
 				mode = MODE_DIST;
 			}
+			break;
+		case 'S':
+			strcpy(column,optarg);
+			r_config_set_sort_column(column);
 			break;
 		case 'x':
 			mode = MODE_COLS;
