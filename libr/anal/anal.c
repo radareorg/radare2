@@ -567,24 +567,3 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->get_fcn_in = r_anal_get_fcn_in;
 	}
 }
-
-/*------------------------------------------------------------------------------------------*/
-
-R_API int compareName(const RAnalFunction *a, const RAnalFunction *b){
-	return a && b && a->name && b->name && strcmp (a->name, b->name);
-}
-R_API int compareAddress(const RAnalFunction *a, const RAnalFunction *b){
-	return a && b && a->addr && b->addr && a->addr > b->addr;
-}
-R_API int compareType(const RAnalFunction *a, const RAnalFunction *b){
-	return a && b && a->diff->type && b->diff->type && a->diff->type > b->diff->type;
-}
-R_API int compareSize(const RAnalFunction *a, const RAnalFunction *b){
-	return a && b && a->size && b->size && a->size > b->size;
-}
-R_API int compareDist(const RAnalFunction *a, const RAnalFunction *b){
-        return a && b && a->diff->dist && b->diff->dist && a->diff->dist > b->diff->dist;
-}
-
-/*------------------------------------------------------------------------------------------*/
-

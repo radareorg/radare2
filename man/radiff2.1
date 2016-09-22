@@ -8,6 +8,7 @@
 .Op Fl AabcCdDhOrspxv
 .Op Fl t Ar 0-100
 .Op Fl g Ar sym
+.Op Fl S Ar algo
 .Ar file1
 .Ar file2
 .Sh DESCRIPTION
@@ -46,6 +47,8 @@ Show two column hexdump diffing.
 Calculate text distance from two files.
 .It Fl ss
 Same as before but using the Levenstein algorithm (faster but sometimes buggy)
+.It Fl S Ar [name, namelen, dist, size, ...]
+Specify which column of the code diffing algo use for diffing
 .It Fl t Ar 0\-100
 Choose matching threshold for binary code diffing
 .It Fl v

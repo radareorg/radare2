@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
+
 #include <r_core.h>
 
 #define SETI(x,y,z) r_config_node_desc(r_config_set_i(cfg,x,y), z);
@@ -6,29 +7,60 @@
 #define SETPREF(x,y,z) r_config_node_desc(r_config_set(cfg,x,y), z);
 #define SETCB(w,x,y,z) r_config_node_desc(r_config_set_cb(cfg,w,x,y), z);
 
+/* TODO: use loop here */
 /*------------------------------------------------------------------------------------------*/
 
-R_API void r_config_set_sort_column(char *column){
-	if (!column) {
-		r_anal_compare = &compareName;
-	}
-        if (!strcmpi (column,"name")) {
-                r_anal_compare = &compareName;
-	}else if (!strcmpi (column,"address")) {
-                r_anal_compare = &compareAddress;
-	}else if (!strcmpi (column,"type")) {
-                r_anal_compare = &compareType;
-	}else if (!strcmpi (column,"size")) {
-                r_anal_compare = &compareSize;
-	}else if (!strcmpi (column,"dist")){
-                r_anal_compare = &compareDist;
-	}else{
-		r_anal_compare = &compareName;
-	}
-	return;
+static int compareName(const RAnalFunction *a, const RAnalFunction *b) {
+	return a && b && a->name && b->name && strcmp (a->name, b->name);
 }
 
-/*------------------------------------------------------------------------------------------*/
+static int compareNameLen(const RAnalFunction *a, const RAnalFunction *b) {
+	return a && b && a->name && b->name && strlen (a->name) > strlen (b->name);
+}
+
+static int compareAddress(const RAnalFunction *a, const RAnalFunction *b) {
+	return a && b && a->addr && b->addr && a->addr > b->addr;
+}
+
+static int compareType(const RAnalFunction *a, const RAnalFunction *b) {
+	return a && b && a->diff->type && b->diff->type && a->diff->type > b->diff->type;
+}
+
+static int compareSize(const RAnalFunction *a, const RAnalFunction *b) {
+	// return a && b && a->_size < b->_size;
+	return a && b && r_anal_fcn_realsize (a) > r_anal_fcn_realsize (b);
+}
+
+static int compareDist(const RAnalFunction *a, const RAnalFunction *b) {
+	return a && b && a->diff->dist && b->diff->dist && a->diff->dist > b->diff->dist;
+}
+
+static int cb_diff_sort(void *_core, void *_node) {
+	RConfigNode *node = _node;
+	const char *column = node->value;
+	RCore *core = _core;
+	if (column && strcmp (column, "?")) {
+		if (!strcmp (column, "name")) {
+			core->anal->columnSort = (RListComparator)compareName;
+		} else if (!strcmp (column, "namelen")) {
+			core->anal->columnSort = (RListComparator)compareNameLen;
+		} else if (!strcmp (column, "addr")) {
+			core->anal->columnSort = (RListComparator)compareAddress;
+		} else if (!strcmp (column, "type")) {
+			core->anal->columnSort = (RListComparator)compareType;
+		} else if (!strcmp (column, "size")) {
+			core->anal->columnSort = (RListComparator)compareSize;
+		} else if (!strcmp (column, "dist")) {
+			core->anal->columnSort = (RListComparator)compareDist;
+		} else {
+			goto fail;
+		}
+		return true;
+	}
+fail:
+	eprintf ("e diff.sort = [name, namelen, addr, type, size, dist]\n");
+	return false;
+}
 
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
@@ -51,14 +83,14 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (fmt == 'j') {
-		r_cons_printf ("{");
+		r_cons_print ("{");
 	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (arch && *arch) {
 			if (h->cpus && !strcmp (arch, h->name)) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
-				for (i=0;i<n;i++) {
+				for (i = 0; i < n; i++) {
 					r_cons_println (r_str_word_get0 (c, i));
 				}
 				free (c);
@@ -93,7 +125,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 		}
 	}
 	if (fmt == 'j') {
-		r_cons_printf ("}\n");
+		r_cons_print ("}\n");
 	}
 }
 
@@ -1721,6 +1753,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("cfg.maxzlen", 500, "Maximum zignature length to filter in 'zg'");
 
 	/* diff */
+	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
 	SETI("diff.from", 0, "Set source diffing address for px (uses cc command)");
 	SETI("diff.to", 0, "Set destination diffing address for px (uses cc command)");
 	SETPREF("diff.bare", "false", "Never show function names in diff output");

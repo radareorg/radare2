@@ -345,7 +345,6 @@ On x86 acording to Wikipedia
 	Prefix group 4
 	0x67: Address-size override prefix
 #endif
-
 	typedef enum {
 		R_ANAL_OP_PREFIX_COND     = 1,
 		R_ANAL_OP_PREFIX_REP      = 1<<1,
@@ -632,6 +631,7 @@ typedef struct r_anal_t {
 	RList *reflines2;
 	//RList *noreturn;
 	RList /*RAnalRange*/ *bits_ranges;
+	RListComparator columnSort;
 } RAnal;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
@@ -1168,14 +1168,6 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcn_type_tostring(int type);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
-
-/*----------------------------------------------------------------------------------------------*/
-R_API int compareName(const RAnalFunction *a, const RAnalFunction *b);
-R_API int compareAddress(const RAnalFunction *a, const RAnalFunction *b);
-R_API int compareType(const RAnalFunction *a, const RAnalFunction *b);
-R_API int compareSize(const RAnalFunction *a, const RAnalFunction *b);
-R_API int compareDist(const RAnalFunction *a, const RAnalFunction *b);
-/*----------------------------------------------------------------------------------------------*/
 
 /* fcnsign */
 R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
