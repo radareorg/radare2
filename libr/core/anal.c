@@ -2201,6 +2201,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 					break;
 				case R_ANAL_OP_TYPE_UCJMP:
 				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_IJMP:
+				case R_ANAL_OP_TYPE_RJMP:
+				case R_ANAL_OP_TYPE_IRJMP:
 				case R_ANAL_OP_TYPE_MJMP:
 					if (op.ptr != -1 &&
 						core_anal_followptr (core, 'c',
@@ -2210,6 +2213,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 					}
 					break;
 				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_ICALL:
+				case R_ANAL_OP_TYPE_RCALL:
+				case R_ANAL_OP_TYPE_IRCALL:
 				case R_ANAL_OP_TYPE_UCCALL:
 					if (op.ptr != -1 &&
 						core_anal_followptr (core, 'C',
@@ -2319,12 +2325,18 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				xref_to = op.jump;
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
+			case R_ANAL_OP_TYPE_IJMP:
+			case R_ANAL_OP_TYPE_RJMP:
+			case R_ANAL_OP_TYPE_IRJMP:
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
 				type = R_ANAL_REF_TYPE_CODE;
 				xref_to = op.ptr;
 				break;
 			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_ICALL:
+			case R_ANAL_OP_TYPE_RCALL:
+			case R_ANAL_OP_TYPE_IRCALL:
 			case R_ANAL_OP_TYPE_UCCALL:
 				type = R_ANAL_REF_TYPE_CALL;
 				xref_to = op.ptr;
@@ -2649,6 +2661,9 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 			case R_ANAL_OP_TYPE_UJMP:
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_ICALL:
+			case R_ANAL_OP_TYPE_RCALL:
+			case R_ANAL_OP_TYPE_IRCALL:
 				ch = R_NEW0 (RAnalCycleHook);
 				ch->addr = op->addr;
 				eprintf ("0x%08"PFMT64x" > ?\r", op->addr);
@@ -3168,6 +3183,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
 			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_ICALL:
+			case R_ANAL_OP_TYPE_RCALL:
+			case R_ANAL_OP_TYPE_IRCALL:
 			case R_ANAL_OP_TYPE_MJMP:
 				{
 					ut64 dst = core->anal->esil->jump_target;
@@ -3176,7 +3194,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					}
 					if ((target && dst == ntarget) || !target) {
 						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
-							RAnalRefType ref = op.type == R_ANAL_OP_TYPE_UCALL
+							RAnalRefType ref =
+								op.type & R_ANAL_OP_TYPE_MASK == R_ANAL_OP_TYPE_UCALL
 								? R_ANAL_REF_TYPE_CALL
 								: R_ANAL_REF_TYPE_CODE;
 							r_anal_ref_add (core->anal, dst, cur, ref);

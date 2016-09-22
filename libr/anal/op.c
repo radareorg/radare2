@@ -150,6 +150,9 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			break;
 		case R_ANAL_OP_TYPE_ADD:
@@ -247,9 +250,15 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
+	case R_ANAL_OP_TYPE_RCALL : return "ucall"; // needs to be changed
+	case R_ANAL_OP_TYPE_ICALL : return "ucall"; // needs to be changed
+	case R_ANAL_OP_TYPE_IRCALL: return "ucall"; // needs to be changed
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
+	case R_ANAL_OP_TYPE_RJMP  : return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_IJMP  : return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_IRJMP : return "ujmp"; // needs to be changed
 	case R_ANAL_OP_TYPE_UNK   : return "unk";
 	case R_ANAL_OP_TYPE_UPUSH : return "upush";
 	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
@@ -295,6 +304,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		snprintf (ret, sizeof (ret), "goto 0x%"PFMT64x, op->jump);
 		break;
 	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_IJMP:
+	case R_ANAL_OP_TYPE_IRJMP:
 		snprintf (ret, sizeof (ret), "goto %s", r0);
 		break;
 	case R_ANAL_OP_TYPE_PUSH:
@@ -305,6 +317,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		snprintf (ret, sizeof (ret), "pop %s", r0);
 		break;
 	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_ICALL:
+	case R_ANAL_OP_TYPE_IRCALL:
 		snprintf (ret, sizeof (ret), "%s()", r0);
 		break;
 	case R_ANAL_OP_TYPE_CALL:

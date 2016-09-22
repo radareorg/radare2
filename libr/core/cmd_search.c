@@ -761,8 +761,14 @@ static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {
 				case R_ANAL_OP_TYPE_TRAP:
 				case R_ANAL_OP_TYPE_RET:
 				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_RCALL:
+				case R_ANAL_OP_TYPE_ICALL:
+				case R_ANAL_OP_TYPE_IRCALL:
 				case R_ANAL_OP_TYPE_CJMP:
 				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_RJMP:
+				case R_ANAL_OP_TYPE_IJMP:
+				case R_ANAL_OP_TYPE_IRJMP:
 				case R_ANAL_OP_TYPE_JMP:
 				case R_ANAL_OP_TYPE_CALL:
 					return UT64_MAX;
@@ -779,7 +785,13 @@ static bool is_end_gadget(const RAnalOp* aop, const ut8 crop) {
 	case R_ANAL_OP_TYPE_TRAP:
 	case R_ANAL_OP_TYPE_RET:
 	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_ICALL:
+	case R_ANAL_OP_TYPE_IRCALL:
 	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_IJMP:
+	case R_ANAL_OP_TYPE_IRJMP:
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_CALL:
 		return true;
