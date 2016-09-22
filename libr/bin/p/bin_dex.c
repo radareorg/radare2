@@ -202,7 +202,7 @@ static char* dex_method_signature(RBinDexObj *bin, int method_idx) {
 	if (type_id >= bin->header.types_size ) {
 		return NULL;
 	}
-	char* return_type = getstr (bin, bin->types[type_id].descriptor_id);
+	return_type = getstr (bin, bin->types[type_id].descriptor_id);
 	if (!return_type) {
 		return NULL;
 	}
