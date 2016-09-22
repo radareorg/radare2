@@ -8,9 +8,8 @@
 
 R_LIB_VERSION(r_anal);
 
-static RAnalPlugin *anal_static_plugins[] = {
-	R_ANAL_STATIC_PLUGINS
-};
+static RAnalPlugin *anal_static_plugins[] =
+	{ R_ANAL_STATIC_PLUGINS };
 
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
@@ -32,9 +31,11 @@ static void meta_unset_for(void *user, int idx) {
 }
 
 static int meta_count_for(void *user, int idx) {
+	int ret;
 	RSpaces *s = (RSpaces*)user;
 	RAnal *anal = (RAnal*)s->user;
-	return r_meta_space_count_for (anal, idx);
+	ret = r_meta_space_count_for (anal, idx);
+	return ret;
 }
 
 R_API RAnal *r_anal_new() {
@@ -44,11 +45,11 @@ R_API RAnal *r_anal_new() {
 		return NULL;
 	}
 	anal->os = strdup (R_SYS_OS);
+	anal->noreturn = r_list_newf ((RListFree)&r_anal_noreturn_free);
 	anal->reflines = anal->reflines2 = NULL;
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->limit = NULL;
 	anal->opt.nopskip = true; // skip nops in code analysis
-	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->decode = true; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
@@ -101,6 +102,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	R_FREE (a->cpu);
 	R_FREE (a->os);
 	r_list_free (a->plugins);
+	r_list_free (a->noreturn);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
 	r_space_fini (&a->meta_spaces);
@@ -161,8 +163,9 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 }
 
 R_API char *r_anal_get_reg_profile(RAnal *anal) {
-	return (anal && anal->cur && anal->cur->get_reg_profile)
-		? anal->cur->get_reg_profile (anal) : NULL;
+	if (anal && anal->cur && anal->cur->get_reg_profile)
+		return anal->cur->get_reg_profile (anal);
+	return NULL;
 }
 
 // deprecate.. or at least reuse get_reg_profile...
@@ -184,7 +187,13 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 #define FCNSIGNPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
 	char *file = NULL;
-	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
+	const char *arch;
+	if (anal->cur && anal->cur->arch) {
+		arch = anal->cur->arch;
+	} else arch = R_SYS_ARCH;
+	if (!arch) {
+		return false;
+	}
 	if (name && *name) {
 		file = sdb_fmt (0, "%s/%s.sdb", FCNSIGNPATH, name);
 	} else {
@@ -263,19 +272,17 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 	}
 	len = r_hex_str2bin (data, buf);
 	while (idx < len) {
-		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) < 1) {
+		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) <1)
 			break;
-		}
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_UJMP:
-			if (op->nopcode != 0) {
-				memset (ret + (idx + op->nopcode) * 2,
-					'.', (oplen - op->nopcode) * 2);
-			}
+			if (op->nopcode != 0)
+				memset (ret+(idx+op->nopcode)*2,
+					'.', (oplen-op->nopcode)*2);
 		}
 		idx += oplen;
 	}
@@ -288,6 +295,18 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFunction *fcni;
 	RListIter *iter2;
+#define OLD 0
+#if OLD
+	RListIter *iter;
+	r_list_foreach (anal->fcns, iter, fcni) {
+		r_list_foreach (fcni->bbs, iter2, bbi) {
+			if (addr>=bbi->addr && addr<(bbi->addr+bbi->size)) {
+				bbi->traced = true;
+				break;
+			}
+		}
+	}
+#else
 	fcni = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
@@ -297,6 +316,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 			}
 		}
 	}
+#endif
 }
 
 R_API RList* r_anal_get_fcns (RAnal *anal) {
@@ -304,6 +324,7 @@ R_API RList* r_anal_get_fcns (RAnal *anal) {
 	anal->fcns->free = NULL;
 	return anal->fcns;
 }
+
 
 R_API bool r_anal_project_save(RAnal *anal, const char *prjfile) {
 	if (prjfile && *prjfile) {
@@ -378,141 +399,100 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 	return -1;
 }
 
-static int nonreturn_print_commands(void *p, const char *k, const char *v) {
-	RAnal *anal = (RAnal *)p;
-	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
-		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
-			anal->cb_printf ("ann %s\n", k);
-		}
-	}
-	return 1;
-}
-
-static int nonreturn_print(void *p, const char *k, const char *v) {
-	RAnal *anal = (RAnal *)p;
-	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
-		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
-			anal->cb_printf ("%s\n", k);
-		}
-	}
-	return 1;
+R_API void r_anal_noreturn_free(RAnalNoreturn *nr) {
+	free (nr->name);
+	free (nr);
 }
 
 R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
-	switch (mode) {
-	case 1:
-	case '*':
-	case 'r':
-		sdb_foreach (anal->sdb_types, nonreturn_print_commands, anal);
-		break;
-	default:
-		sdb_foreach (anal->sdb_types, nonreturn_print, anal);
-		break;
+	RListIter *iter;
+	RAnalNoreturn *nr;
+	r_list_foreach (anal->noreturn, iter, nr) {
+		switch (mode) {
+		case 1:
+		case '*':
+		case 'r':
+			if (nr->name) anal->cb_printf ("ann %s\n", nr->name);
+			else anal->cb_printf ("0x%08"PFMT64x"\n", nr->addr);
+			break;
+		default:
+			if (nr->name) anal->cb_printf ("%s\n", nr->name);
+			else anal->cb_printf ("0x%08"PFMT64x"\n", nr->addr);
+			break;
+		}
 	}
 }
 
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
-	const char *tmp_name = NULL;
-	char *fnl_name = NULL;
-	if (name && *name) {
-		tmp_name = name;
-	} else {
-		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, -1);
-		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
-		if (!fcn && !fi) {
-			eprintf ("Cant find Function at given address\n");
-			return false;
-		}
-		tmp_name =fcn ? fcn->name: fi->name;
-	}
-	if (r_anal_type_func_exist (anal, tmp_name)) {
-		fnl_name = strdup (tmp_name);
-	} else if (!(fnl_name = r_anal_type_func_guess (anal, (char *)tmp_name))) {
-		eprintf ("Cant find prototype for %s in types databse\n", tmp_name);
+	RAnalNoreturn *nr = R_NEW0(RAnalNoreturn);
+	if (!nr) return false;
+	if (name && *name) nr->name = strdup (name);
+	nr->addr = addr;
+	if (!nr->name && !nr->addr) {
+		free (nr);
 		return false;
 	}
-	sdb_bool_set (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", fnl_name), true, 0);
-	free (fnl_name);
+	r_list_append (anal->noreturn, nr);
 	return true;
 }
 
-static int noreturn_dropall(void *p, const char *k, const char *v) {
-	RAnal *anal = (RAnal *)p;
-	if (!strcmp (v, "func")) {
-		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
-		sdb_unset (anal->sdb_types, query, 0);
-	}
-	return 1;
-}
-
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
+	bool ret = false;
 	if (!strcmp (expr, "*")) {
-		sdb_foreach (anal->sdb_types, noreturn_dropall, anal);
-		return true;
+		if (!r_list_empty (anal->noreturn)) {
+			r_list_free (anal->noreturn);
+			anal->noreturn = r_list_newf ((RListFree)&r_anal_noreturn_free);
+			ret = true;
+		}
 	} else {
-		const char *fcnname = NULL;
-		char *tmp;
+		RListIter *iter, *iter2;
+		RAnalNoreturn *nr;
 		if (!strncmp (expr, "0x", 2)) {
 			ut64 n = r_num_math (NULL, expr);
-			RAnalFunction *fcn = r_anal_get_fcn_in (anal, n, -1);
-			if (!fcn) {
-				eprintf ("can't find function at 0x%"PFMT64x"\n", n);
-				return false;
+			r_list_foreach_safe (anal->noreturn, iter, iter2, nr) {
+				if (nr->addr == n) {
+					r_list_delete (anal->noreturn, iter);
+					ret = true;
+				}
 			}
-			fcnname = fcn->name;
 		} else {
-			fcnname = expr;
-		}
-		if (r_anal_type_func_exist (anal, fcnname)) {
-			char *query = sdb_fmt (-1, "func.%s.noreturn", fcnname);
-			sdb_unset (anal->sdb_types, query, 0);
-			return true;
-		} else if ((tmp = r_anal_type_func_guess (anal, (char *)fcnname))) {
-			char *query = sdb_fmt (-1, "func.%s.noreturn", tmp);
-			sdb_unset (anal->sdb_types, query, 0);
-			free (tmp);
-			return true;
-		} else {
-			eprintf ("Cant find prototype for %s in types databse", fcnname);
-			return false;
+			r_list_foreach_safe (anal->noreturn, iter, iter2, nr) {
+				if (r_str_glob (nr->name, expr)) {
+					r_list_delete (anal->noreturn, iter);
+					ret = true;
+				}
+			}
 		}
 	}
-}
-static bool r_anal_noreturn_at_name (RAnal *anal, const char *name) {
-	if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", name), NULL)) {
-		return true;
-	}
-	char *tmp = r_anal_type_func_guess (anal, (char *)name);
-	if (tmp) {
-		if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", tmp), NULL)) {
-			return true;
-		}
-	}
-	return false;
+	return ret;
 }
 
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
+	RListIter *iter;
+	RAnalNoreturn *nr;
 	RAnalFunction *f = r_anal_get_fcn_at (anal, addr, 0);
-	if (f) {
-		if (r_anal_noreturn_at_name (anal, f->name)) {
-			return true;
-		}
-	}
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
-	if (fi) {
-		if (r_anal_noreturn_at_name (anal, fi->name)) {
-			return true;
+	r_list_foreach (anal->noreturn, iter, nr) {
+		if (nr->name) {
+			RFlagItem *fi2 = anal->flb.get (anal->flb.f, nr->name);
+			if (fi2 && fi2->offset == addr)
+				return true;
+			if (f && !strcmp (f->name, nr->name))
+				return true;
+			if (fi && fi->name && !strcmp (fi->name, nr->name))
+				return true;
+		} else {
+			if (addr == nr->addr)
+				return true;
 		}
 	}
 	return false;
 }
 
 static int cmp_range(const void *a, const void *b) {
-	RAnalRange *ra = (RAnalRange *)a;
-	RAnalRange *rb = (RAnalRange *)b;
-	return (a && b)? (ra->from > rb->from): 0;
+	RAnalRange *range_a = (RAnalRange *)a;
+	RAnalRange *range_b = (RAnalRange *)b;
+	return range_a->from > range_b->from;
 }
 
 static int build_range(void *p, const char *k, const char *v) {
@@ -522,39 +502,51 @@ static int build_range(void *p, const char *k, const char *v) {
 	hint = r_anal_hint_from_string (a, sdb_atoi (k + 5), v);
 	if (hint->bits) {
 		RAnalRange *range = R_NEW0 (RAnalRange);
-		if (range) {
-			range->bits = hint->bits;
-			range->from = hint->addr;
-			r_list_append (list_range, range);
+		if (!range) {
+			return 0;	
 		}
+		range->bits = hint->bits;
+		range->from = hint->addr;
+		r_list_append (list_range, range);
 	}
 	return 1;
 }
 
-// based on anal hint we construct a list of RAnalRange to handle
-// better arm/thumb though maybe handy in other contexts
+
+//based on anal hint we construct a list of RAnalRange to handle
+//better arm/thumb though maybe handy in other contexts
 R_API void r_anal_build_range_on_hints(RAnal *a) {
 	RListIter *iter;
 	RAnalRange *range;
-	if (a->sdb_hints_changed) {
-		// construct again the range from hint to handle properly arm/thumb
-		r_list_free (a->bits_ranges);
-		a->bits_ranges = r_list_new ();
-		a->bits_ranges->free = free;
-		sdb_foreach (a->sdb_hints, build_range, a);
-		r_list_sort (a->bits_ranges, cmp_range);
-		r_list_foreach (a->bits_ranges, iter, range) {
-			if (iter->n && !range->to) {
-				range->to = ((RAnalRange *)(iter->n->data))->from;
-			}
+	//construct again the range from hint to handle properly arm/thumb
+	r_list_free (a->bits_ranges);
+	a->bits_ranges = r_list_new ();
+	a->bits_ranges->free = free;
+	sdb_foreach (a->sdb_hints, build_range, a);
+	r_list_sort (a->bits_ranges, cmp_range);
+	r_list_foreach (a->bits_ranges, iter, range) {
+		if (iter->n && !range->to) {
+			range->to = ((RAnalRange *)(iter->n->data))->from;
 		}
-		a->sdb_hints_changed = false;
 	}
 }
 
-R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
-	if (b) {
-		b->anal = anal;
-		b->get_fcn_in = r_anal_get_fcn_in;
-	}
+/*------------------------------------------------------------------------------------------*/
+
+static int compareName(const RAnalFunction *a, const RAnalFunction *b){
+        return (a && b)? strcmp(a->name,b->name):false;
 }
+static int compareAddress(const RAnalFunction *a, const RAnalFunction *b){
+        return (a && b)? a->addr > b->addr:false;
+}
+static int compareType(const RAnalFunction *a, const RAnalFunction *b){
+        return (a && b)? a->diff->type > b->diff->type:false;
+}
+static int compareSize(const RAnalFunction *a, const RAnalFunction *b){
+        return (a && b)? a->_size > b->_size:false;
+}
+static int compareDist(const RAnalFunction *a, const RAnalFunction *b){
+        return (a && b)? a->diff->dist > b->diff->dist:false;
+}
+
+/*------------------------------------------------------------------------------------------*/

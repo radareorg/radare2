@@ -61,12 +61,12 @@ static void diffrow(ut64 addr, const char *name, ut32 size, int maxnamelen,
 		int digits, ut64 addr2, const char *name2, ut32 size2,
 		const char *match, double dist, int bare) {
 	if (bare) {
-		if (addr2 == UT64_MAX || !name2)
+		if (addr2 == UT64_MAX || name2 == NULL)
 			printf ("0x%016"PFMT64x" |%8s  (%f)\n", addr, match, dist);
 		else printf ("0x%016"PFMT64x" |%8s  (%f) | 0x%016"PFMT64x"\n", addr, match, dist, addr2);
 		return;
 	}
-	if (addr2 == UT64_MAX || !name2)
+	if (addr2 == UT64_MAX || name2 == NULL)
 		printf ("%*s %*d 0x%"PFMT64x" |%8s  (%f)\n",
 			maxnamelen, name, digits, size, addr, match, dist);
 	else printf ("%*s %*d 0x%"PFMT64x" |%8s  (%f) | 0x%"PFMT64x"  %*d %s\n",
@@ -102,6 +102,9 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 digits++;
         }
         fcns = r_anal_get_fcns (c->anal);
+/*------------------------------------------------------------------------------------------*/
+	r_list_sort(fcns,(RListComparator)r_anal_compare);
+/*------------------------------------------------------------------------------------------*/
         r_list_foreach (fcns, iter, f) {
                 switch (f->type) {
                 case R_ANAL_FCN_TYPE_FCN:
