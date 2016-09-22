@@ -18,7 +18,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #define	AVR_SOFTCAST(x,y) (x+(y*0x100))
 
 typedef struct _cpu_models_tag_ {
-	const char const *model;
+	const char * const model;
 	int pc_bits;
 	int pc_mask;
 	int pc_size;
@@ -29,7 +29,7 @@ typedef struct _cpu_models_tag_ {
 typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
-	const char const *name;
+	const char * const name;
 	int mask;
 	int selector;
 	inst_handler_t handler;
@@ -44,7 +44,7 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 	{								\
 		model,							\
 		(pc_bits),						\
-		(~((~0) << (pc_bits))), 				\
+		~(~((unsigned) 0) << (pc_bits)),			\
 		((pc_bits) >> 3) + (((pc_bits) & 0x07) ? 1 : 0),	\
 		eeprom_sz,						\
 		io_sz							\
@@ -471,7 +471,7 @@ INST_HANDLER (des) {	// DES k
 #warning "TODO"
 }
 
-INST_HANDLER (eicall) {	// EICALL
+INST_HANDLER (eijmp) {	// EIJMP
 	ut64 z, eind;
 	// read z and eind for calculating jump address on runtime
 	r_anal_esil_reg_read (anal->esil, "z",    &z,    NULL);
@@ -479,13 +479,27 @@ INST_HANDLER (eicall) {	// EICALL
 	// real target address may change during execution, so this value will
 	// be changing all the time
 	op->jump = (eind << 16) + z;
-	// push @ret address
+	// jump
+	ESIL_A ("z,16,eind,<<,+,pc,=,");
+	// cycles
+	op->cycles = 2;
+}
+
+INST_HANDLER (eicall) {	// EICALL
+	// push pc in stack
 	ESIL_A ("pc,");				// esil is already pointing to
 						// next instruction (@ret)
 	__generic_push(op, cpu->pc_size);	// push @ret in stack
-	ESIL_A ("z,16,eind,<<,+,pc,=,");	// jump
-	// cycles
+	// do a standard EIJMP
+	INST_CALL (eijmp);
+	// fix cycles
 	op->cycles = !strcasestr (cpu->model, "xmega") ? 3 : 4;
+}
+
+INST_HANDLER (elpm) {	// ELPM
+			// ELPM Rd
+			// ELPM Rd, Z+
+#warning TODO
 }
 
 INST_HANDLER (eor) {	// EOR Rd, Rr
