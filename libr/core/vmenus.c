@@ -56,11 +56,62 @@ static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 	return sdb_get (vt->core->anal->sdb_types,
 		sdb_fmt (0, "type.%s", k), 0);
 }
+static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
+	char *spacer = NULL;
+	char *source = (char*)buf_asm;
+	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	const char *color_num = core->cons->pal.num;
+	const char *color_reg = core->cons->pal.reg;
+
+	if (!use_color) {
+		return strdup (source);
+	}
+
+	// workaround dummy colorizer in case of paired commands (tms320 & friends)
+
+	spacer = strstr (source, "||");
+	if (spacer) {
+		char *scol1, *s1 = r_str_ndup (source, spacer - source);
+		char *scol2, *s2 = strdup (spacer + 2);
+
+		scol1 = r_print_colorize_opcode (s1, color_reg, color_num);
+		free (s1);
+		scol2 = r_print_colorize_opcode (s2, color_reg, color_num);
+		free (s2);
+		if (!scol1) {
+			scol1 = strdup ("");
+		}
+		if (!scol2) {
+			scol2 = strdup ("");
+		}
+		source = malloc (strlen(scol1) + strlen(scol2) + 2 + 1); // reuse source variable
+		sprintf (source, "%s||%s", scol1, scol2);
+		free (scol1);
+		free (scol2);
+		return source;
+	}
+	char *res = strdup("");
+	res = r_str_concat (res, r_print_color_op_type (core->print, optype));
+	res = r_str_concat (res, r_print_colorize_opcode (source, color_reg, color_num));
+	return res;
+}
+
+static int rotate_nibble (const ut8 b, int dir) {
+	if (dir > 0) {
+		bool high = b >> 7;
+		return (b << 1) | high;
+	}
+	bool lower = b & 1;
+	return (b >> 1) | (lower << 7);
+}
 
 static bool edit_bits (RCore *core) {
 	const int nbits = sizeof (ut64) * 8;
+	bool colorBits = false;
+	int analopType;
 	int i, j, x = 0;
 	RAsmOp asmop;
+	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
 
 	if (core->blocksize < sizeof (ut64)) {
@@ -68,32 +119,59 @@ static bool edit_bits (RCore *core) {
 	}
 	memcpy (buf, core->block, sizeof (ut64));
 	for (;;) {
-		(void) r_asm_disassemble (core->assembler,
-			&asmop, buf, sizeof (ut64));
 		r_cons_clear00 ();
+		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+		(void) r_asm_disassemble (core->assembler, &asmop, buf, sizeof (ut64));
+		analop.type = -1;
+		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64));
+		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		r_cons_printf ("r2's bit editor:\n\n");
-		r_cons_printf ("hex: %s\n", asmop.buf_hex);
+		{
+			char *res = r_print_hexpair (core->print, asmop.buf_hex, -1);
+			r_cons_printf ("hex: %s\n"Color_RESET, res);
+			free (res);
+		}
 		r_cons_printf ("len: %d\n", asmop.size);
-		r_cons_printf ("asm: %s\n", asmop.buf_asm);
+		{
+			char *op = colorize_asm_string (core, asmop.buf_asm, analopType);
+			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
+			free (op);
+		}
+		{
+			r_cons_printf (Color_RESET"esl: %s\n"Color_RESET, r_strbuf_get (&analop.esil));
+		}
+		r_anal_op_fini (&analop);
 		r_cons_printf ("chr:");
 		for (i = 0; i < 8; i++) {
-			ut8 *byte = buf + i;
-			char ch = IS_PRINTABLE(*byte)? *byte: '?';
-			r_cons_printf (" %5s'%c'", " ", ch);
+			const ut8 *byte = buf + i;
+			char ch = IS_PRINTABLE (*byte)? *byte: '?';
+			if (use_color) {
+				r_cons_printf (" %5s'%s%c"Color_RESET"'", " ", core->cons->pal.btext, ch);
+			} else {
+				r_cons_printf (" %5s'%c'", " ", ch);
+			}
 		}
 		r_cons_printf ("\ndec:");
 		for (i = 0; i < 8; i++) {
-			ut8 *byte = buf + i;
+			const ut8 *byte = buf + i;
 			r_cons_printf (" %8d", *byte);
 		}
 		r_cons_printf ("\nhex:");
 		for (i = 0; i < 8; i++) {
-			ut8 *byte = buf + i;
+			const ut8 *byte = buf + i;
 			r_cons_printf ("     0x%02x", *byte);
 		}
 		r_cons_printf ("\nbit: ");
+		if (use_color) {
+			r_cons_print (core->cons->pal.b0x7f);
+			colorBits = true;
+		}
 		for (i = 0; i < 8; i++) {
 			ut8 *byte = buf + i;
+			if (colorBits && i >= asmop.size) {
+				r_cons_print (Color_RESET);
+				colorBits = false;
+			}
 			for (j = 0; j < 8; j++) {
 				bool bit = R_BIT_CHK (byte, 7 - j);
 				r_cons_printf ("%d", bit? 1: 0);
@@ -140,6 +218,29 @@ static bool edit_bits (RCore *core) {
 				}
 			}
 			break;
+		case '>':
+			buf[x/8] = rotate_nibble (buf [(x / 8)], -1);
+			break;
+		case '<':
+			buf[x/8] = rotate_nibble (buf [(x / 8)], 1);
+			break;
+		case 'i':
+			{
+				r_line_set_prompt ("> ");
+				const char *line = r_line_readline ();
+				ut64 num = r_num_math (core->num, line);
+				if (num || (!num && *line == '0')) {
+					buf[x/8] = num;
+				}
+			}
+			break;
+		case 'R':
+			if (r_config_get_i (core->config, "scr.randpal")) {
+				r_core_cmd0 (core, "ecr");
+			} else {
+				r_core_cmd0 (core, "ecn");
+			}
+			break;
 		case '+':
 			buf[(x/8)]++;
 			break;
@@ -151,6 +252,21 @@ static bool edit_bits (RCore *core) {
 			break;
 		case 'l':
 			x = R_MIN (x + 1, nbits - 1);
+			break;
+		case '?':
+			r_cons_clear00 ();
+			r_cons_printf (
+			"Vd1?: Visual Bit Editor Help:\n\n"
+			" q     - quit the bit editor\n"
+			" R     - randomize color palette\n"
+			" j/k   - toggle bit value (same as space key)\n"
+			" h/l   - select next/previous bit\n"
+			" +/-   - increment or decrement byte value\n"
+			" </>   - rotate left/right byte value\n"
+			" i     - insert numeric value of byte\n"
+			" :     - enter command\n");
+			r_cons_flush ();
+			r_cons_any_key (NULL);
 			break;
 		case ':': // TODO: move this into a separate helper function
 			{
@@ -180,7 +296,7 @@ static bool edit_bits (RCore *core) {
 static int sdbforcb (void *p, const char *k, const char *v) {
 	const char *pre = " ";
 	RCoreVisualTypes *vt = (RCoreVisualTypes*)p;
-	int use_color = vt->core->print->flags & R_PRINT_FLAGS_COLOR;
+	bool use_color = vt->core->print->flags & R_PRINT_FLAGS_COLOR;
 	if (vt->optword) {
 		if (!strcmp (vt->type, "struct")) {
 			char *s = r_str_newf ("struct.%s.", vt->optword);

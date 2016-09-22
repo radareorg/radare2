@@ -559,6 +559,7 @@ static void ds_set_pre(RDisasmState *ds, const char * str) {
 	ds->pre = strdup (str);
 }
 
+/* XXX move to r_print */
 static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	char *spacer = NULL;
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
