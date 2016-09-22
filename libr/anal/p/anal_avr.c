@@ -803,59 +803,59 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 
 OPCODE_DESC opcodes[] = {
 	//         op     mask    select  cycles  size type
-	INST_DECL (break, 0xffff, 0x9698, 1,      2,   TRAP  ), // BREAK
-	INST_DECL (eicall, 0xffff, 0x9519, 0,      2,   CALL  ), // EICALL
-	INST_DECL (nop,   0xffff, 0x0000, 1,      2,   NOP   ), // NOP
-	INST_DECL (ret,   0xffff, 0x9508, 4,      2,   RET   ), // RET
-	INST_DECL (reti,  0xffff, 0x9518, 4,      2,   RET   ), // RETI
-	INST_DECL (sleep, 0xffff, 0x9588, 1,      2,   NOP   ), // SLEEP
-	INST_DECL (bclr,  0xff8f, 0x9488, 1,      2,   SWI   ), // BCLR s
-	INST_DECL (bset,  0xff8f, 0x9408, 1,      2,   SWI   ), // BSET s
-	INST_DECL (des,   0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
-	INST_DECL (adiw,  0xff00, 0x9600, 2,      2,   ADD   ), // ADIW Rd+1:Rd, K
-	INST_DECL (cbi,   0xff00, 0x9800, 1,      2,   IO    ), // CBI A, K
-	INST_DECL (movw,  0xff00, 0x0100, 1,      2,   MOV   ), // MOVW Rd+1:Rd, Rr+1Rrd
-	INST_DECL (asr,   0xfe0f, 0x9405, 1,      2,   AND   ),	// ASR Rd
-	INST_DECL (com,   0xfe0f, 0x9400, 1,      2,   SWI   ), // BLD Rd, b
-	INST_DECL (dec,   0xfe0f, 0x940a, 1,      2,   SUB   ),	// DEC Rd
-	INST_DECL (inc,   0xfe0f, 0x9403, 1,      2,   ADD   ),	// INC Rd
-	INST_DECL (ld,    0xfe0f, 0x900c, 0,      2,   LOAD  ), // LD Rd, X
-	INST_DECL (ld,    0xfe0f, 0x900d, 0,      2,   LOAD  ), // LD Rd, X+
-	INST_DECL (ld,    0xfe0f, 0x900e, 0,      2,   LOAD  ), // LD Rd, -X
-	INST_DECL (ldd,   0xfe07, 0x9001, 0,      2,   LOAD  ), // LD Rd, Y/Z+
-	INST_DECL (ldd,   0xfe07, 0x9002, 0,      2,   LOAD  ), // LD Rd, -Y/Z
-	INST_DECL (ldd,   0xd200, 0x8000, 0,      2,   LOAD  ), // LD Rd, Y/Z+q
-	INST_DECL (pop,   0xfe0f, 0x900f, 2,      2,   POP   ), // PUSH Rr
-	INST_DECL (push,  0xfe0f, 0x920f, 0,      2,   PUSH  ), // PUSH Rr
-	INST_DECL (st,    0xfe0f, 0x920c, 2,      2,   STORE ), // ST X, Rr
-	INST_DECL (st,    0xfe0f, 0x920d, 0,      2,   STORE ), // ST X+, Rr
-	INST_DECL (st,    0xfe0f, 0x920e, 0,      2,   STORE ), // ST -X, Rr
-	INST_DECL (std,   0xfe07, 0x9201, 0,      2,   STORE ), // LD Y/Z+, Rr
-	INST_DECL (std,   0xfe07, 0x9202, 0,      2,   STORE ), // LD -Y/Z, Rr
-	INST_DECL (std,   0xd200, 0x8200, 0,      2,   STORE ), // LD Y/Z+q, Rr
-	INST_DECL (call,  0xfe0e, 0x940e, 0,      4,   CALL  ), // CALL k
-	INST_DECL (jmp,   0xfe0e, 0x940c, 2,      4,   JMP   ), // JMP k
-	INST_DECL (bld,   0xfe08, 0xf800, 1,      2,   SWI   ), // BLD Rd, b
-	INST_DECL (bst,   0xfe08, 0xfa00, 1,      2,   SWI   ), // BST Rd, b
-	INST_DECL (sbrx,  0xfe08, 0xfc00, 2,      2,   CJMP  ), // SBRC Rr, b
-	INST_DECL (sbrx,  0xfe08, 0xfe00, 2,      2,   CJMP  ), // SBRS Rr, b
-	INST_DECL (brbx,  0xfc00, 0xf400, 0,      2,   CJMP  ), // BRBC s, k
-	INST_DECL (brbx,  0xfc00, 0xf000, 0,      2,   CJMP  ), // BRBS s, k
-	INST_DECL (adc,   0xfc00, 0x1c00, 1,      2,   ADD   ), // ADC Rd, Rr
-	INST_DECL (add,   0xfc00, 0x0c00, 1,      2,   ADD   ), // ADD Rd, Rr
-	INST_DECL (cp,    0xfc00, 0x1400, 1,      2,   CMP   ), // CP Rd, Rr
-	INST_DECL (cpc,   0xfc00, 0x0400, 1,      2,   CMP   ), // CPC Rd, Rr
-	INST_DECL (cpse,  0xfc00, 0x1000, 0,      2,   CJMP  ), // CPSE Rd, Rr
-	INST_DECL (and,   0xfc00, 0x2000, 1,      2,   AND   ), // AND Rd, Rr
-	INST_DECL (andi,  0xf000, 0x7000, 1,      2,   AND   ), // ANDI Rd, K
-	INST_DECL (eor,   0xfc00, 0x2400, 1,      2,   XOR   ), // EOR Rd, Rr
-	INST_DECL (sbc,   0xfc00, 0x0800, 1,      2,   SUB   ), // SBC Rd, Rr
-	INST_DECL (in,    0xf800, 0xb000, 1,      2,   IO    ), // IN Rd, A
-	INST_DECL (out,   0xf800, 0xb800, 1,      2,   IO    ), // OUT A, Rr
-	INST_DECL (cpi,   0xf000, 0x3000, 1,      2,   CMP   ), // CPI Rd, K
-	INST_DECL (rcall, 0xf000, 0xd000, 0,      2,   CALL  ), // RCALL k
-	INST_DECL (rjmp,  0xf000, 0xc000, 2,      2,   JMP   ), // RJMP k
-	INST_DECL (ldi,   0xf000, 0xe000, 1,      2,   LOAD  ), // LDI Rd, K
+	INST_DECL (break,  0xffff, 0x9698, 1,      2,   TRAP   ), // BREAK
+	INST_DECL (eicall, 0xffff, 0x9519, 0,      2,   CALL   ), // EICALL
+	INST_DECL (nop,    0xffff, 0x0000, 1,      2,   NOP    ), // NOP
+	INST_DECL (ret,    0xffff, 0x9508, 4,      2,   RET    ), // RET
+	INST_DECL (reti,   0xffff, 0x9518, 4,      2,   RET    ), // RETI
+	INST_DECL (sleep,  0xffff, 0x9588, 1,      2,   NOP    ), // SLEEP
+	INST_DECL (bclr,   0xff8f, 0x9488, 1,      2,   SWI    ), // BCLR s
+	INST_DECL (bset,   0xff8f, 0x9408, 1,      2,   SWI    ), // BSET s
+	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
+	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
+	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
+	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1Rrd
+	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   AND    ), // ASR Rd
+	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   SWI    ), // BLD Rd, b
+	INST_DECL (dec,    0xfe0f, 0x940a, 1,      2,   SUB    ), // DEC Rd
+	INST_DECL (inc,    0xfe0f, 0x9403, 1,      2,   ADD    ), // INC Rd
+	INST_DECL (ld,     0xfe0f, 0x900c, 0,      2,   LOAD   ), // LD Rd, X
+	INST_DECL (ld,     0xfe0f, 0x900d, 0,      2,   LOAD   ), // LD Rd, X+
+	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
+	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
+	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
+	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
+	INST_DECL (pop,    0xfe0f, 0x900f, 2,      2,   POP    ), // PUSH Rr
+	INST_DECL (push,   0xfe0f, 0x920f, 0,      2,   PUSH   ), // PUSH Rr
+	INST_DECL (st,     0xfe0f, 0x920c, 2,      2,   STORE  ), // ST X, Rr
+	INST_DECL (st,     0xfe0f, 0x920d, 0,      2,   STORE  ), // ST X+, Rr
+	INST_DECL (st,     0xfe0f, 0x920e, 0,      2,   STORE  ), // ST -X, Rr
+	INST_DECL (std,    0xfe07, 0x9201, 0,      2,   STORE  ), // LD Y/Z+, Rr
+	INST_DECL (std,    0xfe07, 0x9202, 0,      2,   STORE  ), // LD -Y/Z, Rr
+	INST_DECL (std,    0xd200, 0x8200, 0,      2,   STORE  ), // LD Y/Z+q, Rr
+	INST_DECL (call,   0xfe0e, 0x940e, 0,      4,   CALL   ), // CALL k
+	INST_DECL (jmp,    0xfe0e, 0x940c, 2,      4,   JMP    ), // JMP k
+	INST_DECL (bld,    0xfe08, 0xf800, 1,      2,   SWI    ), // BLD Rd, b
+	INST_DECL (bst,    0xfe08, 0xfa00, 1,      2,   SWI    ), // BST Rd, b
+	INST_DECL (sbrx,   0xfe08, 0xfc00, 2,      2,   CJMP   ), // SBRC Rr, b
+	INST_DECL (sbrx,   0xfe08, 0xfe00, 2,      2,   CJMP   ), // SBRS Rr, b
+	INST_DECL (brbx,   0xfc00, 0xf400, 0,      2,   CJMP   ), // BRBC s, k
+	INST_DECL (brbx,   0xfc00, 0xf000, 0,      2,   CJMP   ), // BRBS s, k
+	INST_DECL (adc,    0xfc00, 0x1c00, 1,      2,   ADD    ), // ADC Rd, Rr
+	INST_DECL (add,    0xfc00, 0x0c00, 1,      2,   ADD    ), // ADD Rd, Rr
+	INST_DECL (cp,     0xfc00, 0x1400, 1,      2,   CMP    ), // CP Rd, Rr
+	INST_DECL (cpc,    0xfc00, 0x0400, 1,      2,   CMP    ), // CPC Rd, Rr
+	INST_DECL (cpse,   0xfc00, 0x1000, 0,      2,   CJMP   ), // CPSE Rd, Rr
+	INST_DECL (and,    0xfc00, 0x2000, 1,      2,   AND    ), // AND Rd, Rr
+	INST_DECL (andi,   0xf000, 0x7000, 1,      2,   AND    ), // ANDI Rd, K
+	INST_DECL (eor,    0xfc00, 0x2400, 1,      2,   XOR    ), // EOR Rd, Rr
+	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
+	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
+	INST_DECL (out,    0xf800, 0xb800, 1,      2,   IO     ), // OUT A, Rr
+	INST_DECL (cpi,    0xf000, 0x3000, 1,      2,   CMP    ), // CPI Rd, K
+	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
+	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
+	INST_DECL (ldi,    0xf000, 0xe000, 1,      2,   LOAD   ), // LDI Rd, K
 	INST_LAST
 };
 
