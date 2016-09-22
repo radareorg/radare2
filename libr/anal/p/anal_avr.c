@@ -499,7 +499,14 @@ INST_HANDLER (eicall) {	// EICALL
 INST_HANDLER (elpm) {	// ELPM
 			// ELPM Rd
 			// ELPM Rd, Z+
-#warning TODO
+	int d = ((buf[1] & 0xfe) == 0x90)
+			? ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf)	// Rd
+			: 0;						// R0
+	ESIL_A ("16,rampz,<<,z,+,_prog,+,[1],");	// read RAMPZ:Z
+	ESIL_A ("r%d,=,", d);				// Rd = [1]
+	if ((buf[1] & 0xfe) == 0x90 && (buf[0] & 0xf) == 0x7) {
+		ESIL_A ("16,1,z,+,DUP,z,=,>>,1,&,rampz,+=,");	// ++(rampz:z)
+	}
 }
 
 INST_HANDLER (eor) {	// EOR Rd, Rr
@@ -836,7 +843,8 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 OPCODE_DESC opcodes[] = {
 	//         op     mask    select  cycles  size type
 	INST_DECL (break,  0xffff, 0x9698, 1,      2,   TRAP   ), // BREAK
-	INST_DECL (eicall, 0xffff, 0x9519, 0,      2,   CALL   ), // EICALL
+	INST_DECL (eicall, 0xffff, 0x9519, 0,      2,   UCALL  ), // EICALL
+	INST_DECL (eijmp,  0xffff, 0x9419, 0,      2,   UJMP   ), // EIJMP
 	INST_DECL (nop,    0xffff, 0x0000, 1,      2,   NOP    ), // NOP
 	INST_DECL (ret,    0xffff, 0x9508, 4,      2,   RET    ), // RET
 	INST_DECL (reti,   0xffff, 0x9518, 4,      2,   RET    ), // RETI
@@ -856,7 +864,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
 	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
 	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
-	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
+	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
+	INST_DECL (elpm,   0xfe0f, 0x9007, 0,      2,   LOAD   ), // ELPM Rd, Z+
 	INST_DECL (pop,    0xfe0f, 0x900f, 2,      2,   POP    ), // PUSH Rr
 	INST_DECL (push,   0xfe0f, 0x920f, 0,      2,   PUSH   ), // PUSH Rr
 	INST_DECL (st,     0xfe0f, 0x920c, 2,      2,   STORE  ), // ST X, Rr
@@ -864,7 +873,6 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (st,     0xfe0f, 0x920e, 0,      2,   STORE  ), // ST -X, Rr
 	INST_DECL (std,    0xfe07, 0x9201, 0,      2,   STORE  ), // LD Y/Z+, Rr
 	INST_DECL (std,    0xfe07, 0x9202, 0,      2,   STORE  ), // LD -Y/Z, Rr
-	INST_DECL (std,    0xd200, 0x8200, 0,      2,   STORE  ), // LD Y/Z+q, Rr
 	INST_DECL (call,   0xfe0e, 0x940e, 0,      4,   CALL   ), // CALL k
 	INST_DECL (jmp,    0xfe0e, 0x940c, 2,      4,   JMP    ), // JMP k
 	INST_DECL (bld,    0xfe08, 0xf800, 1,      2,   SWI    ), // BLD Rd, b
@@ -888,6 +896,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
 	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
 	INST_DECL (ldi,    0xf000, 0xe000, 1,      2,   LOAD   ), // LDI Rd, K
+	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
+	INST_DECL (std,    0xd200, 0x8200, 0,      2,   STORE  ), // LD Y/Z+q, Rr
 	INST_LAST
 };
 
@@ -1003,6 +1013,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 
 	// set memory layout registers
 	if (anal->esil) {
+		r_anal_esil_reg_write (anal->esil, "_prog",   0);
 		r_anal_esil_reg_write (anal->esil, "_eeprom", (1 << cpu->pc_bits));
 		r_anal_esil_reg_write (anal->esil, "_io",     (1 << cpu->pc_bits) + cpu->eeprom_size);
 		r_anal_esil_reg_write (anal->esil, "_sram",   (1 << cpu->pc_bits) + cpu->eeprom_size + cpu->io_size);
@@ -1439,9 +1450,10 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	rampd	.8	42	0\n"
 		"gpr	eind	.8	43	0\n"
 // memory mapping emulator registers
-		"gpr	_eeprom	.32	44	0\n"
-		"gpr	_io	.32	48	0\n"
-		"gpr	_sram	.32	52	0\n"
+		"gpr	_prog	.32	44	0\n"
+		"gpr	_eeprom	.32	48	0\n"
+		"gpr	_io	.32	52	0\n"
+		"gpr	_sram	.32	56	0\n"
 		;
 
 	return r_reg_set_profile_string (anal->reg, p);
