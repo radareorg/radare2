@@ -7,6 +7,36 @@
 #define SETPREF(x,y,z) r_config_node_desc(r_config_set(cfg,x,y), z);
 #define SETCB(w,x,y,z) r_config_node_desc(r_config_set_cb(cfg,w,x,y), z);
 
+/*------------------------------------------------------------------------------------------*/
+
+static void r_config_set_sort_column(char *column){
+	if(!column){
+		r_anal_compare=&compareName;
+		return;
+	}
+        if(!strcmpi(column,"name")){
+                r_anal_compare=&compareName;
+		return;
+	}
+        else if(!strcmpi(column,"address")){
+                r_anal_compare=&compareAddress;
+		return;
+	}
+        else if(!strcmpi(column,"type")){
+                r_anal_compare=&compareType;
+		return;
+	}
+        else if (!strcmpi(column,"size")){
+                r_anal_compare=&compareSize;
+		return;
+	}
+        else if (!strcmpi(column,"dist"))
+                r_anal_compare=&compareDist;
+	return;
+}
+
+/*------------------------------------------------------------------------------------------*/
+
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *h;

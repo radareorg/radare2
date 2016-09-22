@@ -166,6 +166,7 @@ static int show_help(int v) {
 		"  -r         output in radare commands\n"
 		"  -s         compute text distance\n"
 		"  -ss        compute text distance (using levenstein algorithm)\n"
+		"  -S  [name] sort code diff\n"
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
 		"  -v         show version information\n"
@@ -352,6 +353,9 @@ int main(int argc, char **argv) {
 			} else {
 				mode = MODE_DIST;
 			}
+			break;
+		case 'S':
+			r_config_set_column(optarg);
 			break;
 		case 'x':
 			mode = MODE_COLS;
