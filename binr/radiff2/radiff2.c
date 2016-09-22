@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsVvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsS:Vvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -355,7 +355,7 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case 'S':
-			r_config_set_column(optarg);
+			r_config_set_column (optarg);
 			break;
 		case 'x':
 			mode = MODE_COLS;
