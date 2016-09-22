@@ -2315,7 +2315,7 @@ static int cmd_print(void *data, const char *input) {
 				r_anal_op_fini (&aop);
 			}
 		} else if (input[1] == 'D') {
-			if (input[2]=='?') {
+			if (input[2] == '?') {
 				r_cons_printf ("|Usage: paD [asm]       disasm like in pdi\n");
 			} else {
 				r_core_cmdf (core, "pdi@x:%s", input+2);
@@ -2928,8 +2928,7 @@ static int cmd_print(void *data, const char *input) {
 					block = malloc (R_MAX(l*10, bs));
 					memcpy (block, core->block, bs);
 					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
-					core->num->value = r_core_print_disasm (core->print,
-							core, addr, block, l*10, l, 0, 0);
+					core->num->value = r_core_print_disasm (core->print, core, addr, block, l*10, l, 0, 0);
 				}
 			}
 			free (block);
