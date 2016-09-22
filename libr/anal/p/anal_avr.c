@@ -26,7 +26,7 @@ typedef struct _cpu_models_tag_ {
 	int io_size;
 } CPU_MODEL;
 
-typedef void (*inst_handler_t) (RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu);
+typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
 	const char const *name;
@@ -38,7 +38,7 @@ typedef struct _opcodes_tag_ {
 	int type;
 } OPCODE_DESC;
 
-static int avr_op_analyze(RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu);
+static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu);
 
 #define CPU_MODEL_DECL(model, pc_bits, eeprom_sz, io_sz)		\
 	{								\
@@ -50,11 +50,11 @@ static int avr_op_analyze(RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu
 		io_sz							\
 	}
 
-#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu)
+#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
 #define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ANAL_OP_TYPE_UNK      }
 
-#define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (op, buf, fail, cpu)
+#define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, buf, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
 #define INST_ASSERT(x)			{ if (!(x)) { INST_INVALID; } }
 
@@ -110,6 +110,26 @@ void __generic_ld_st(RAnalOp *op, char *ireg, int prepostdec, int offset, int st
 	if (prepostdec > 0) {
 		ESIL_A ("1,%s,+,%s,=,", ireg, ireg);
 	}
+}
+
+void __generic_pop(RAnalOp *op, int sz) {
+	if (sz > 1) {
+		ESIL_A ("1,sp,+,_sram,+,");	// calc SRAM(sp+1)
+		ESIL_A ("[%d],", sz);		// read value
+		ESIL_A ("%d,sp,+=,", sz);	// sp += item_size
+	} else {
+		ESIL_A ("1,sp,+=,"		// increment stack pointer
+			"sp,_sram,+,[1],");	// load SRAM[sp]
+	}
+}
+
+void __generic_push(RAnalOp *op, int sz) {
+	ESIL_A ("sp,_sram,+,");			// calc pointer SRAM(sp)
+	if (sz > 1) {
+		ESIL_A ("-%d,+,", sz - 1);	// dec SP by 'sz'
+	}
+	ESIL_A ("=[%d],", sz);			// store value in stack
+	ESIL_A ("-%d,sp,+=,", sz);		// decrement stack pointer
 }
 
 INST_HANDLER (adc) {	// ADC Rd, Rr
@@ -292,16 +312,12 @@ INST_HANDLER (call) {	// CALL k
 		 | (buf[0] & 0x01) << 17
 		 | (buf[0] & 0xf0) << 14;
 	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
-	if (!strcasestr (cpu->model, "mega")) {
+	if (!strcasestr (cpu->model, "xmega")) {
 		op->cycles--;	// AT*mega optimizes one cycle
 	}
 	ESIL_A ("pc,");				// esil is already pointing to
 						// next instruction (@ret)
-	ESIL_A ("sp,-%d,+,", cpu->pc_size - 1);	//   and dec by (PC_SIZE-1) SP
-	ESIL_A ("_sram,+,");			//   and point to the SRAM!
-	ESIL_A ("=[%d],", cpu->pc_size);	// store ret@ in stack
-	ESIL_A ("sp,-%d,+,", cpu->pc_size);	// decrement stack pointer
-	ESIL_A ("sp,=,");			// store SP
+	__generic_push(op, cpu->pc_size);	// push @ret in stack
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
 }
 
@@ -386,7 +402,6 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 }
 
 INST_HANDLER (cpi) { // CPI Rd, K
-#warning "esil_and: empty stack"
 	int d = (buf[1] & 0xf) >> 4;
 	int k = ((buf[0] & 0xf) << 4) | (buf[1] & 0xf);
 	ESIL_A ("%d,r%d,-,", k, d);				// Rd - k
@@ -422,7 +437,8 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 	r_strbuf_init (&next_op.esil);
 
 	// calculate next instruction size (call recursively avr_op_analyze)
-	avr_op_analyze (&next_op,
+	avr_op_analyze (anal,
+			&next_op,
 			op->addr + op->size, buf + op->size,
 			cpu);
 	op->jump = op->addr + next_op.size + 2;
@@ -456,7 +472,20 @@ INST_HANDLER (des) {	// DES k
 }
 
 INST_HANDLER (eicall) {	// EICALL
-#warning "TODO"
+	ut64 z, eind;
+	// read z and eind for calculating jump address on runtime
+	r_anal_esil_reg_read (anal->esil, "z",    &z,    NULL);
+	r_anal_esil_reg_read (anal->esil, "eind", &eind, NULL);
+	// real target address may change during execution, so this value will
+	// be changing all the time
+	op->jump = (eind << 16) + z;
+	// push @ret address
+	ESIL_A ("pc,");				// esil is already pointing to
+						// next instruction (@ret)
+	__generic_push(op, cpu->pc_size);	// push @ret in stack
+	ESIL_A ("z,16,eind,<<,+,pc,=,");	// jump
+	// cycles
+	op->cycles = !strcasestr (cpu->model, "xmega") ? 3 : 4;
 }
 
 INST_HANDLER (eor) {	// EOR Rd, Rr
@@ -495,12 +524,12 @@ INST_HANDLER (ld) {	// LD Rd, X
 	// load register
 	ESIL_A ("r%d,=,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// cycles
-	op->cycles = buf[0] & 0x3 == 0
+	op->cycles = (buf[0] & 0x3) == 0
 			? 2			// LD Rd, X
-			: buf[0] & 0x3 == 1
+			: (buf[0] & 0x3) == 1
 				? 2		// LD Rd, X+
 				: 3;		// LD Rd, -X
-	if (!strcasestr (cpu->model, "mega") && op->cycles > 1) {
+	if (!strcasestr (cpu->model, "xmega") && op->cycles > 1) {
 		// AT*mega optimizes 1 cycle!
 		op->cycles--;
 	}
@@ -530,14 +559,14 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 	ESIL_A ("r%d,=,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// cycles
 	op->cycles = 
-		buf[1] & 0x1 == 0
+		(buf[1] & 0x1) == 0
 			? !(offset ? 1 : 3)		// LDD
-			: buf[0] & 0x3 == 0
+			: (buf[0] & 0x3) == 0
 				? 1			// LD Rd, X
-				: buf[0] & 0x3 == 1
+				: (buf[0] & 0x3) == 1
 					? 2		// LD Rd, X+
 					: 3;		// LD Rd, -X
-	if (!strcasestr (cpu->model, "mega") && op->cycles > 1) {
+	if (!strcasestr (cpu->model, "xmega") && op->cycles > 1) {
 		// AT*mega optimizes 1 cycle!
 		op->cycles--;
 	}
@@ -586,71 +615,59 @@ INST_HANDLER (out) {	// OUT A, Rr
 	RStrBuf *io_dst = __generic_io_dest (a, 1);
 	op->type2 = 1;
 	op->val = a;
-	ESIL_A ("r%d,%s,", r, r_strbuf_get (io_dst));
+	ESIL_A ("r%d,%s,=,", r, r_strbuf_get (io_dst));
 	r_strbuf_free (io_dst);
 }
 
 INST_HANDLER (pop) {	// POP Rd
 	int d = ((buf[1] & 0x1) << 4) | ((buf[0] >> 4) & 0xf);
-	ESIL_A ("1,sp,+=,"		// increment stack pointer
-		"sp,_sram,+,[1],"	// load SRAM[sp]
-		"r%d,=,",		// store in Rd
-		d);
+	__generic_pop (op, 1);
+	ESIL_A ("r%d,=,", d);	// store in Rd
+		
 }
 
 INST_HANDLER (push) {	// PUSH Rr
 	int r = ((buf[1] & 0x1) << 4) | ((buf[0] >> 4) & 0xf);
-	op->cycles = !strcasestr (cpu->model, "mega")
+	ESIL_A ("r%d,", r);	// load Rr
+	__generic_push(op, 1);	// push it into stack
+	// cycles
+	op->cycles = !strcasestr (cpu->model, "xmega")
 			? 1	// AT*mega optimizes one cycle
 			: 2;
-	ESIL_A ("r%d,"			// load Rr
-		"sp,_sram,+,"		// calc SRAM[sp]
-		"=[1],"			// store Rr in stack
-		"-1,sp,+=,",		// decrement stack pointer
-		r);
 }
 
 INST_HANDLER (rcall) {	// RCALL k
+	// target address
 	op->jump = op->addr
 		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
 			| (((buf[1] & 0x8) ? ~((int) 0x1ff) : 0)))
 		+ 2;
+	// esil
+	ESIL_A ("pc,");				// esil already points to next
+						// instruction (@ret)
+	__generic_push(op, cpu->pc_size);	// push @ret addr
+	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
+	// cycles
 	if (!strncasecmp (cpu->model, "ATtiny", 6)) {
 		op->cycles = 4;	// ATtiny is always slow
 	} else {
 		// PC size decides required runtime!
 		op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
-		if (!strcasestr (cpu->model, "mega")) {
+		if (!strcasestr (cpu->model, "xmega")) {
 			op->cycles--;	// ATxmega optimizes one cycle
 		}
 	}
-
-	ESIL_A ("pc,"			// esil is already pointing to the
-					// next instruction (@ret)
-		"sp,-%d,+,"		//   and dec by (PC_SIZE-1) SP
-		"_sram,+,"              //   and point to the SRAM!
-		"=[%d],"		// store ret@ in stack
-		"sp,-%d,+,"		// decrement stack pointer
-		"sp,=,"			// store SP
-		"%"PFMT64d",pc,=,",	// jump!
-		cpu->pc_size - 1, cpu->pc_size,
-		cpu->pc_size, op->jump);
 }
 
 INST_HANDLER (ret) {	// RET
+	op->eob = true;
+	// esil
+	__generic_pop (op, cpu->pc_size);
+	ESIL_A ("pc,=,");	// jump!
+	// cycles
 	if (cpu->pc_size > 2) {	// if we have a bus bigger than 16 bit
 		op->cycles++;	// (i.e. a 22-bit bus), add one extra cycle
 	}
-	op->eob = true;
-
-	ESIL_A ("sp,"			// load stack pointer
-		"sp,1,+,"		//   and inc by 1 SP
-		"_sram,+,"              //   and point to the SRAM!
-		"[%d],"			// read ret@ from the stack
-		"pc,=,"			// update PC with [SP]
-		"sp,%d,+,"		// post increment stack pointer
-		"sp,=,",		// store incremented SP
-		cpu->pc_size, cpu->pc_size);
 }
 
 INST_HANDLER (reti) {	// RETI
@@ -712,7 +729,8 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 	r_strbuf_init (&next_op.esil);
 
 	// calculate next instruction size (call recursively avr_op_analyze)
-	avr_op_analyze (&next_op,
+	avr_op_analyze (anal,
+			&next_op,
 			op->addr + op->size, buf + op->size,
 			cpu);
 	op->jump = op->addr + next_op.size + 2;
@@ -759,7 +777,7 @@ INST_HANDLER (st) {	// ST X, Rr
 //			: buf[0] & 0x3 == 1
 //				? 2		// LD Rd, X+
 //				: 3;		// LD Rd, -X
-//	if (!strcasestr (cpu->model, "mega") && op->cycles > 1) {
+//	if (!strcasestr (cpu->model, "xmega") && op->cycles > 1) {
 //		// AT*mega optimizes 1 cycle!
 //		op->cycles--;
 //	}
@@ -795,7 +813,7 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 //				: buf[0] & 0x3 == 1
 //					? 2		// LD Rd, X+
 //					: 3;		// LD Rd, -X
-//	if (!strcasestr (cpu->model, "mega") && op->cycles > 1) {
+//	if (!strcasestr (cpu->model, "xmega") && op->cycles > 1) {
 //		// AT*mega optimizes 1 cycle!
 //		op->cycles--;
 //	}
@@ -859,7 +877,7 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
-static int avr_op_analyze(RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu) {
+static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	ut16 ins = (buf[1] << 8) | buf[0];
 	int fail;
@@ -882,7 +900,7 @@ static int avr_op_analyze(RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu
 			r_strbuf_setf (&op->esil, "");
 
 			// handle opcode
-			opcode_desc->handler (op, buf, &fail, cpu);
+			opcode_desc->handler (anal, op, buf, &fail, cpu);
 			if (fail) {
 				goto INVALID_OP;
 			}
@@ -977,7 +995,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 
 	// process opcode
-	if (avr_op_analyze (op, addr, buf, cpu)) {
+	if (avr_op_analyze (anal, op, addr, buf, cpu)) {
 		return op->size;
 	}
 
