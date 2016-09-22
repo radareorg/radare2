@@ -874,6 +874,9 @@ repeat:
 			// For some reason, branch delayed code (MIPS) needs to continue
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_RCALL:
+		case R_ANAL_OP_TYPE_ICALL:
+		case R_ANAL_OP_TYPE_IRCALL:
 			/* call [dst] */
 			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
 				FITFCNSZ ();
@@ -898,6 +901,9 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_MJMP:
 		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
 			// switch statement
 			if (anal->opt.jmptbl) {
 				if (fcn->refs->tail) {

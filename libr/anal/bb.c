@@ -98,6 +98,9 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			bb->type |= R_ANAL_BB_TYPE_BODY;
 			goto beach;
 		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
 			bb->type |= R_ANAL_BB_TYPE_FOOT;
 			goto beach;
 		case R_ANAL_OP_TYPE_RET:
