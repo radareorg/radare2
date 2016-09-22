@@ -11,12 +11,17 @@
 
 #include "dis-asm.h"
 
+#define INSN_BUFFER_SIZE 4
 
-static unsigned long Offset = 0;
+static ut64 offset = 0;
 static char *buf_global = NULL;
-static unsigned char bytes[4];
+static ut8 bytes[INSN_BUFFER_SIZE];
 
 static int xtensa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+	if (length > INSN_BUFFER_SIZE) {
+		length = INSN_BUFFER_SIZE;
+	}
+
 	memcpy (myaddr, bytes, length);
 	return 0;
 }
@@ -62,13 +67,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	op->buf_asm[0]='\0';
 	buf_global = op->buf_asm;
-	Offset = a->pc;
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	offset = a->pc;
+	if (len > INSN_BUFFER_SIZE) {
+		len = INSN_BUFFER_SIZE;
+	}
+	memcpy (bytes, buf, len); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.disassembler_options=(a->bits==64)?"64":"";
 	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_length = len;
 	disasm_obj.read_memory_func = &xtensa_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
@@ -77,7 +86,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-	op->size = print_insn_xtensa ((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_xtensa ((bfd_vma)offset, &disasm_obj);
 	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
 

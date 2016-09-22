@@ -332,6 +332,9 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
 		case R_ANAL_OP_TYPE_RET:
 		case R_ANAL_OP_TYPE_ILL:
 			IFDBG eprintf (" - Handling an ret @ 0x%04"PFMT64x".\n", addr);
@@ -444,6 +447,9 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 			break;
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
 		case R_ANAL_OP_TYPE_RET:
 			IFDBG eprintf (" - Handling an ret @ 0x%04"PFMT64x".\n", addr);
 			state->done = 1;

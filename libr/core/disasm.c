@@ -559,6 +559,7 @@ static void ds_set_pre(RDisasmState *ds, const char * str) {
 	ds->pre = strdup (str);
 }
 
+/* XXX move to r_print */
 static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 	char *spacer = NULL;
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
@@ -767,7 +768,7 @@ static void ds_show_refs(RDisasmState *ds) {
 			ut8 buf[12];
 			r_core_read_at (ds->core, ref->at, buf, 12);
 			r_anal_op (ds->core->anal, &aop, ref->at, buf, 12);
-			if (aop.type == R_ANAL_OP_TYPE_UCALL) {
+			if (aop.type & R_ANAL_OP_TYPE_MASK  == R_ANAL_OP_TYPE_UCALL) {
 				RAnalFunction * fcn;
 				fcn = r_anal_get_fcn_at (ds->core->anal, ref->addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
@@ -2799,6 +2800,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		}
 		break;
 	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_ICALL:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_IRCALL:
 	case R_ANAL_OP_TYPE_CALL:
 		{
 			RAnalFunction *fcn;
@@ -2845,6 +2849,9 @@ beach:
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_MJMP:
 		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_RET:

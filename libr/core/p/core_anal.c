@@ -129,6 +129,9 @@ ut64 analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 			// add call reference
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_ICALL:
+		case R_ANAL_OP_TYPE_RCALL:
+		case R_ANAL_OP_TYPE_IRCALL:
 			/* unknown calls depend on ESIL or DEBUG tracing
 			 * information to know the destination, we can mark
 			 * those 'calls' for later adding tracepoints in
@@ -136,6 +139,9 @@ ut64 analyzeIterative (RCore *core, Sdb *db, ut64 addr) {
 			addUcall (addr+cur);
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
+		case R_ANAL_OP_TYPE_RJMP:
+		case R_ANAL_OP_TYPE_IJMP:
+		case R_ANAL_OP_TYPE_IRJMP:
 			/* an unknown jump use to go into computed destinations
 			 * outside the current function, but it may result
 			 * on an antidisasm trick */ 

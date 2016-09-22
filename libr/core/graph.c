@@ -2805,7 +2805,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		}
 		case 'R':
 			if (!fcn) break;
-			r_core_cmd0 (core, "ecr");
+			if (r_config_get_i (core->config, "scr.randpal")) {
+				r_core_cmd0 (core, "ecr");
+			} else {
+				r_core_cmd0 (core, "ecn");
+			}
 			g->color_box = core->cons->pal.graph_box;
 			g->color_box2 = core->cons->pal.graph_box2;
 			g->color_box3 = core->cons->pal.graph_box3;
