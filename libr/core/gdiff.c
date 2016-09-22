@@ -102,6 +102,9 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
                 digits++;
         }
         fcns = r_anal_get_fcns (c->anal);
+/*------------------------------------------------------------------------------------------*/
+        r_list_sort(fcns,(RListComparator)r_anal_compare);
+/*------------------------------------------------------------------------------------------*/
         r_list_foreach (fcns, iter, f) {
                 switch (f->type) {
                 case R_ANAL_FCN_TYPE_FCN:

@@ -1105,6 +1105,9 @@ typedef struct r_anal_plugin_t {
 	RAnalEsilCB esil_fini; // deinitialize
 } RAnalPlugin;
 
+/*----------------------------------------------------------------------------------------------*/
+int *(r_anal_compare)(RAnalFunction *a, RAnalFunction *b);
+/*----------------------------------------------------------------------------------------------*/
 
 #ifdef R_API
 /* --------- */ /* REFACTOR */ /* ---------- */
@@ -1165,6 +1168,14 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcn_type_tostring(int type);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
+
+/*----------------------------------------------------------------------------------------------*/
+R_API static int compareName(const RAnalFunction *a, const RAnalFunction *b);
+R_API static int compareAddress(const RAnalFunction *a, const RAnalFunction *b);
+R_API static int compareType(const RAnalFunction *a, const RAnalFunction *b);
+R_API static int compareSize(const RAnalFunction *a, const RAnalFunction *b);
+R_API static int compareDist(const RAnalFunction *a, const RAnalFunction *b);
+/*----------------------------------------------------------------------------------------------*/
 
 /* fcnsign */
 R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
