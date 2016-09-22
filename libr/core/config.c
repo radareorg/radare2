@@ -1,11 +1,34 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
-
 #include <r_core.h>
 
 #define SETI(x,y,z) r_config_node_desc(r_config_set_i(cfg,x,y), z);
 #define SETICB(w,x,y,z) r_config_node_desc(r_config_set_i_cb(cfg,w,x,y), z);
 #define SETPREF(x,y,z) r_config_node_desc(r_config_set(cfg,x,y), z);
 #define SETCB(w,x,y,z) r_config_node_desc(r_config_set_cb(cfg,w,x,y), z);
+
+/*------------------------------------------------------------------------------------------*/
+
+R_API void r_config_set_sort_column(char *column){
+	if (!column) {
+		r_anal_compare = &compareName;
+	}
+        if (!strcmpi (column,"name")) {
+                r_anal_compare = &compareName;
+	}else if (!strcmpi (column,"address")) {
+                r_anal_compare = &compareAddress;
+	}else if (!strcmpi (column,"type")) {
+                r_anal_compare = &compareType;
+	}else if (!strcmpi (column,"size")) {
+                r_anal_compare = &compareSize;
+	}else if (!strcmpi (column,"dist")){
+                r_anal_compare = &compareDist;
+	}else{
+		r_anal_compare = &compareName;
+	}
+	return;
+}
+
+/*------------------------------------------------------------------------------------------*/
 
 static const char *has_esil(RCore *core, const char *name) {
 	RListIter *iter;
