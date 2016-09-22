@@ -768,7 +768,7 @@ static void ds_show_refs(RDisasmState *ds) {
 			ut8 buf[12];
 			r_core_read_at (ds->core, ref->at, buf, 12);
 			r_anal_op (ds->core->anal, &aop, ref->at, buf, 12);
-			if (aop.type & R_ANAL_OP_TYPE_MASK  == R_ANAL_OP_TYPE_UCALL) {
+			if ((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
 				RAnalFunction * fcn;
 				fcn = r_anal_get_fcn_at (ds->core->anal, ref->addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
@@ -1737,7 +1737,9 @@ static bool ds_print_data_type(RCore *core, const ut8 *buf, int ib, int size) {
 
 	if (size == 4 || size == 8) {
 		RFlagItem *fi = r_flag_get_i (core->flags, n);
-		if (fi) r_cons_printf (" ; %s", fi->name);
+		if (fi) {
+			r_cons_printf (" ; %s", fi->name);
+		}
 	}
 	return true;
 }
@@ -1752,104 +1754,100 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, ds->at);
 	infos = sdb_const_get (s, key, 0);
-	if (infos)
-	for (;*infos; infos++) {
-		/* XXX wtf, must use anal.meta.deserialize() */
-		char *p, *q;
-		if (*infos == ',') {
-			continue;
-		}
-		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, *infos, ds->at);
-		metas = sdb_const_get (s, key, 0);
-		MI.size = sdb_array_get_num (s, key, 0, 0);
-		MI.type = *infos;
-		MI.from = ds->at;
-		MI.to = ds->at + MI.size;
-		if (metas) {
-			p = strchr (metas, ',');
-			if (!p) {
+
+	ds->mi_found = 0;
+	if (infos) {
+		for (;*infos; infos++) {
+			/* XXX wtf, must use anal.meta.deserialize() */
+			char *p, *q;
+			if (*infos == ',') {
 				continue;
 			}
-			MI.space = atoi (p + 1);
-			q = strchr (p + 1, ',');
-			if (!q) {
-				continue;
-			}
-			MI.str = (char*)sdb_decode (q + 1, 0);
-		} else MI.str = NULL;
-		// sdb-get blah
-		// TODO: implement ranged meta find (if not at the begging of function..
-#if 0
-		RAnalMetaItem *mi = r_meta_find (core->anal, ds->at,
-			R_META_TYPE_ANY, R_META_WHERE_HERE);
-#endif
-		char *out = NULL;
-		int hexlen;
-		int delta;
-		ds->mi_found = 0;
-		if (mi) {
-			switch (mi->type) {
-			case R_META_TYPE_STRING:
-			{
-				out = r_str_escape (mi->str);
-				r_cons_printf ("    .string %s\"%s\"%s ; len=%"PFMT64d,
-					COLOR_CONST (ds, YELLOW), out, COLOR_RESET (ds),
-					mi->size);
-				free (out);
-				delta = ds->at-mi->from;
-				ds->oplen = mi->size-delta;
-				ds->asmop.size = (int)mi->size;
-				//i += mi->size-1; // wtf?
-				R_FREE (ds->line);
-				R_FREE (ds->refline);
-				R_FREE (ds->refline2);
-				ds->mi_found = 1;
-				break;
-			}
-			case R_META_TYPE_HIDE:
-				r_cons_printf ("(%d bytes hidden)", mi->size);
-				ds->asmop.size = mi->size;
-				ds->oplen = mi->size;
-				ds->mi_found = 1;
-				break;
-			case R_META_TYPE_DATA:
-				hexlen = len - idx;
-				delta = ds->at-mi->from;
-				if (mi->size < hexlen) {
-					hexlen = mi->size;
+			snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, *infos, ds->at);
+			metas = sdb_const_get (s, key, 0);
+			MI.size = sdb_array_get_num (s, key, 0, 0);
+			MI.type = *infos;
+			MI.from = ds->at;
+			MI.to = ds->at + MI.size;
+			if (metas) {
+				p = strchr (metas, ',');
+				if (!p) {
+					continue;
 				}
-				ds->oplen = mi->size;
-				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-
-				if (!ds_print_data_type (core, buf + idx,
-					ds->hint? ds->hint->immbase: 0, mi->size)) {
-					r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", mi->size , delta);
-					r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1);
+				MI.space = atoi (p + 1);
+				q = strchr (p + 1, ',');
+				if (!q) {
+					continue;
 				}
-
-				core->inc = 16;
-				core->print->flags |= R_PRINT_FLAGS_HEADER;
-				ds->asmop.size = ret = (int)mi->size; //-delta;
-				R_FREE (ds->line);
-				R_FREE (ds->refline);
-				R_FREE (ds->refline2);
-				ds->mi_found = 1;
-				break;
-			case R_META_TYPE_FORMAT:
-				r_cons_printf ("format %s {\n", mi->str);
-				r_print_format (core->print, ds->at, buf+idx, len-idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
-				r_cons_printf ("} %d", mi->size);
-				ds->oplen = ds->asmop.size = ret = (int)mi->size;
-				R_FREE (ds->line);
-				R_FREE (ds->refline);
-				R_FREE (ds->refline2);
-				ds->mi_found = 1;
-				break;
+				MI.str = (char*)sdb_decode (q + 1, 0);
+			} else {
+				MI.str = NULL;
 			}
-		}
-		if (MI.str) {
-			free (MI.str);
-			MI.str = NULL;
+			// TODO: implement ranged meta find (if not at the begging of function..
+			char *out = NULL;
+			int hexlen;
+			int delta;
+			if (mi) {
+				switch (mi->type) {
+				case R_META_TYPE_STRING:
+				{
+					out = r_str_escape (mi->str);
+					r_cons_printf ("    .string %s\"%s\"%s ; len=%"PFMT64d,
+							COLOR_CONST (ds, YELLOW), out, COLOR_RESET (ds),
+							mi->size);
+					free (out);
+					delta = ds->at - mi->from;
+					ds->oplen = mi->size - delta;
+					ds->asmop.size = (int)mi->size;
+					//i += mi->size-1; // wtf?
+					R_FREE (ds->line);
+					R_FREE (ds->refline);
+					R_FREE (ds->refline2);
+					ds->mi_found = 1;
+					break;
+				}
+				case R_META_TYPE_HIDE:
+					r_cons_printf ("(%d bytes hidden)", mi->size);
+					ds->asmop.size = mi->size;
+					ds->oplen = mi->size;
+					ds->mi_found = 1;
+					break;
+				case R_META_TYPE_DATA:
+					hexlen = len - idx;
+					delta = ds->at-mi->from;
+					if (mi->size < hexlen) {
+						hexlen = mi->size;
+					}
+					ds->oplen = mi->size;
+					core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+					if (!ds_print_data_type (core, buf + idx, ds->hint? ds->hint->immbase: 0, mi->size)) {
+						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", mi->size , delta);
+						r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1);
+					}
+					core->inc = 16;
+					core->print->flags |= R_PRINT_FLAGS_HEADER;
+					ds->asmop.size = ret = (int)mi->size; //-delta;
+					R_FREE (ds->line);
+					R_FREE (ds->refline);
+					R_FREE (ds->refline2);
+					ds->mi_found = 1;
+					break;
+				case R_META_TYPE_FORMAT:
+					r_cons_printf ("format %s {\n", mi->str);
+					r_print_format (core->print, ds->at, buf+idx, len-idx, mi->str, R_PRINT_MUSTSEE, NULL, NULL);
+					r_cons_printf ("} %d", mi->size);
+					ds->oplen = ds->asmop.size = ret = (int)mi->size;
+					R_FREE (ds->line);
+					R_FREE (ds->refline);
+					R_FREE (ds->refline2);
+					ds->mi_found = 1;
+					break;
+				}
+			}
+			if (MI.str) {
+				free (MI.str);
+				MI.str = NULL;
+			}
 		}
 	}
 	return ret;
@@ -2506,14 +2504,15 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 #if 1
-		if (!IS_PRINTABLE (*msg))
+		if (!IS_PRINTABLE (*msg)) {
 			*msg = 0;
-		else msg[len-1] = 0;
+		} else {
+			msg[len-1] = 0;
+		}
 #endif
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);
-
 			ds_comment_newline (ds);
 
 			DOALIGN();
@@ -2527,12 +2526,12 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (p == UT64_MAX || p == UT32_MAX) {
 				DOALIGN();
 				r_cons_printf (" ; -1", p);
-			} else if (((char)p>0) && p>='!' && p<='~') {
+			} else if (((char)p > 0) && p >= '!' && p <= '~') {
 				char ch = p;
 				DOALIGN();
 				r_cons_printf (" ; '%c'", ch);
 			} else if (p > 10) {
-				if ((st64)p<0) {
+				if ((st64)p < 0) {
 					// resolve local var if possible
 					RAnalVar *v = r_anal_var_get (core->anal, ds->at, 'v', 1, (int)p);
 					DOALIGN();
@@ -3056,7 +3055,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	}
 toro:
 	// uhm... is this necesary? imho can be removed
-	r_asm_set_pc (core->assembler, ds->addr+idx);
+	r_asm_set_pc (core->assembler, ds->addr + idx);
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? r_vline_u : r_vline_a;
 
 	if (core->print->cur_enabled) {
@@ -3084,8 +3083,7 @@ toro:
 	}
 
 	r_anal_build_range_on_hints (core->anal);
-	for (i = idx = ret = 0; idx < len && ds->lines < ds->l;
-			idx += inc, i++, ds->index += inc, ds->lines++) {
+	for (i = idx = ret = 0; idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (core->cons && core->cons->breaked) {
 			dorepeat = 0;
@@ -3184,7 +3182,7 @@ toro:
 		}
 		ds_atabs_option (ds);
 		// TODO: store previous oplen in core->dec
-		if (core->inc == 0) {
+		if (!core->inc) {
 			core->inc = ds->oplen;
 		}
 		if (ds->analop.mnemonic || !ds->lastfail) {
@@ -3314,7 +3312,8 @@ toro:
 	r_cons_break_end ();
 
 #if HASRETRY
-	if (!ds->cbytes && ds->lines<ds->l && dorepeat) {
+	if (!ds->cbytes && ds->lines < ds->l && dorepeat) {
+		ds->addr = ds->at + inc;
 	retry:
 		if (len < 4) {
 			len = 4;
@@ -3884,12 +3883,15 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	RDisasmState *ds;
 	RList *bb_list = NULL;
 
-	if (!fcn)
+	if (!fcn) {
 		return -1;
+	}
 
 	cur_buf_sz = r_anal_fcn_size (fcn) + 1;
 	buf = malloc (cur_buf_sz);
-	if (!buf) return -1;
+	if (!buf) {
+		return -1;
+	}
 	len = r_anal_fcn_size (fcn);
 	bb_list = r_list_new();
 	if (!bb_list) {
@@ -3924,25 +3926,24 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	}
 	// Premptively read the bb data locs for ref lines
 	r_list_foreach (bb_list, bb_iter, bb) {
-		if (idx >= cur_buf_sz) break;
+		if (idx >= cur_buf_sz) {
+			break;
+		}
 		r_core_read_at (core, bb->addr, buf+idx, bb->size);
 		//ret = r_asm_disassemble (core->assembler, &ds->asmop, buf+idx, bb->size);
 		//if (ret > 0) eprintf ("%s\n",ds->asmop.buf_asm);
 		idx += bb->size;
 	}
-
 	ds_reflines_fcn_init (ds, fcn, buf);
 	core->inc = 0;
-
-	core->cons->vline = r_config_get_i (core->config, "scr.utf8")?
-			r_vline_u: r_vline_a;
-	i = 0;
-	idx = 0;
+	core->cons->vline = r_config_get_i (core->config, "scr.utf8")? r_vline_u: r_vline_a;
+	i = idx = 0;
 	r_cons_break (NULL, NULL);
 	ds_print_esil_anal_init (ds);
 
-	if (core->io && core->io->debug)
+	if (core->io && core->io->debug) {
 		r_debug_map_sync (core->dbg);
+	}
 	r_list_foreach (bb_list, bb_iter, bb) {
 		ut32 bb_size_consumed = 0;
 		// internal loop to consume bb that contain case-like operations
