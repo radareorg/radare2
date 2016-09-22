@@ -5,7 +5,7 @@ In soviet russia, radare2 debugs you!
 What do you want to debug today?
 I love the smell of bugs in the morning.
 I'm in your source securing your bits.
-radare2 contributes to the One Byte Per Child fundation.
+radare2 contributes to the One Byte Per Child foundation.
 3nl4r9e y0\/r r4d4r3
 I did it for the pwnz.
 If you send the program you are debugging to 15 friends before 143 minutes and then step three times on the same opcode you will get the name of the person who loves you.
