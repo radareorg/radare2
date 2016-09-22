@@ -71,7 +71,7 @@ R_API int r_config_toggle(RConfig *cfg, const char *name);
 R_API int r_config_readonly (RConfig *cfg, const char *key);
 
 /*----------------------------------------------------------------------------------------------*/
-R_API void r_config_set_sort_column(char *column);
+R_API void r_config_set_sort_column (char *column);
 /*----------------------------------------------------------------------------------------------*/
 
 R_API int r_config_set_setter (RConfig *cfg, const char *key, RConfigCallback cb);
