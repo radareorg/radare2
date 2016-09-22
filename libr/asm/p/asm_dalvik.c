@@ -14,6 +14,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm;
 	ut64 offset;
+	char *flag_str; 
 
 	op->buf_asm[0] = 0;
 	if (buf[0] == 0x00) { /* nop */
@@ -260,25 +261,25 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x1a) {
-				offset = R_ASM_GET_OFFSET(a, 's', vB);
+				offset = R_ASM_GET_OFFSET (a, 's', vB);
 				if (offset == -1) {
 					sprintf (str, " v%i, string+%i", vA, vB);
 				} else {
 					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
 				}
 			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
-				offset = R_ASM_GET_OFFSET(a, 'c', vB);
-				if (offset == -1) {
+				flag_str = R_ASM_GET_NAME (a, 'c', vB);
+				if (!flag_str) {
 					sprintf (str, " v%i, class+%i", vA, vB);
 				} else {
-					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+					sprintf (str, " v%i, %s", vA, flag_str);
 				}
 			} else {
-				offset = R_ASM_GET_OFFSET(a, 'f', vB);
-				if (offset == -1) {
+				flag_str = R_ASM_GET_NAME (a, 'f', vB);
+				if (!flag_str) {
 					sprintf (str, " v%i, field+%i", vA, vB);
 				} else {
-					sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+					sprintf (str, " v%i, %s", vA, flag_str);
 				}
 			}
 			strasm = r_str_concat (strasm, str);
@@ -287,7 +288,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vA = (buf[1] & 0x0f);
 			vB = (buf[1] & 0xf0)>>4;
 			vC = (buf[3]<<8) | buf[2];
-			offset = R_ASM_GET_OFFSET(a, 'o', vC);
+			offset = R_ASM_GET_OFFSET (a, 'o', vC);
 			if (offset == -1) {
 				sprintf (str, " v%i, v%i, [obj+%04x]", vA, vB, vC);
 			} else {
@@ -298,7 +299,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		case fmtopAAtBBBB:
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
-			offset = R_ASM_GET_OFFSET(a, 't', vB);
+			offset = R_ASM_GET_OFFSET (a, 't', vB);
 			if (offset == -1) {
 				sprintf (str, " v%i, thing+%i", vA, vB);
 			} else {
@@ -311,28 +312,34 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[1] & 0xf0)>>4;
 			vC = (buf[3]<<8) | buf[2];
 			if (buf[0] == 0x20 || buf[0] == 0x23) { //instance-of & new-array
-				offset = R_ASM_GET_OFFSET(a, 'c', vC);
-				if (offset == -1)
+				flag_str = R_ASM_GET_NAME (a, 'c', vC);
+				if (flag_str) {
+					sprintf (str, " v%i, v%i, %s", vA, vB, flag_str);
+				}
+				else {
 					sprintf (str, " v%i, v%i, class+%i", vA, vB, vC);
-				else
-					sprintf (str, " v%i, v%i, 0x%"PFMT64x, vA, vB, offset);
+				}
 			} else {
-				offset = R_ASM_GET_OFFSET(a, 'f', vC);
-				if (offset == -1)
+				flag_str = R_ASM_GET_NAME (a, 'f', vC);
+				if (flag_str) {
+					sprintf (str, " v%i, v%i, %s", vA, vB, flag_str);
+				}
+				else {
 					sprintf (str, " v%i, v%i, field+%i", vA, vB, vC);
-				else
-					sprintf (str, " v%i, v%i, 0x%"PFMT64x, vA, vB, offset);
+				}
 			}
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtopvAAtBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (int) (buf[5]|(buf[4]<<8)|(buf[3]<<16)|(buf[2]<<24));
-			offset = R_ASM_GET_OFFSET(a, 's', vB);
-			if (offset == -1)
+			offset = R_ASM_GET_OFFSET (a, 's', vB);
+			if (offset == -1) {
 				sprintf (str, " v%i, string+%i", vA, vB);
-			else
+			}
+			else {
 				sprintf (str, " v%i, 0x%"PFMT64x, vA, offset);
+			}
 			strasm = r_str_concat (strasm, str);
 			break;
 		case fmtopvCCCCmBBBB:
@@ -340,17 +347,20 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vB = (buf[3]<<8) | buf[2];
 			vC = (buf[5]<<8) | buf[4];
 			if (buf[0] == 0x25) { // filled-new-array/range
-				offset = R_ASM_GET_OFFSET(a, 'c', vB);
-				if (offset == UT64_MAX)
-					sprintf (str, " {v%i..v%i}, class+%i", vC, vC+vA-1, vB);
-				else
-					sprintf (str, " {v%i..v%i}, 0x%"PFMT64x, vC, vC+vA-1, offset);
-			} else {
-				offset = R_ASM_GET_OFFSET(a, 'm', vB);
-				if (offset == UT64_MAX)
-					sprintf (str, " {v%i..v%i}, method+%i", vC, vC+vA-1, vB);
+				flag_str = R_ASM_GET_NAME (a, 'c', vB);
+				if (flag_str) {
+					sprintf (str, " {v%i..v%i}, %s", vC, vC+vA-1, flag_str);
+				}
 				else {
-					sprintf (str, " {v%i..v%i}, 0x%"PFMT64x, vC, vC+vA-1, offset);
+					sprintf (str, " {v%i..v%i}, class+%i", vC, vC+vA-1, vB);
+				}
+			} else {
+				flag_str = R_ASM_GET_NAME (a, 'm', vB);
+				if (flag_str) {
+					sprintf (str, " {v%i..v%i}, %s", vC, vC+vA-1, flag_str);
+				}
+				else {
+					sprintf (str, " {v%i..v%i}, method+%i", vC, vC+vA-1, vB);
 				}
 			}
 			strasm = r_str_concat (strasm, str);
@@ -378,18 +388,18 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			}
 			strasm = r_str_concat (strasm, str);
 			if (buf[0] == 0x24) { // filled-new-array
-				offset = R_ASM_GET_OFFSET(a, 'c', vB);
-				if (offset == UT64_MAX) {
-					sprintf (str, ", class+%i", vB);
+				flag_str = R_ASM_GET_NAME (a, 'c', vB);
+				if (flag_str) {
+					sprintf (str, ", %s ; 0x%x", flag_str, vB);
 				} else {
-					sprintf (str, ", 0x%"PFMT64x" ; 0x%x", offset, vB);
+					sprintf (str, ", class+%i", vB);
 				}
 			} else {
-				offset = R_ASM_GET_OFFSET(a, 'm', vB);
-				if (offset == UT64_MAX) {
-					sprintf (str, ", method+%i", vB);
+				flag_str = R_ASM_GET_NAME (a, 'm', vB);
+				if (flag_str) {
+					sprintf (str, ", %s ; 0x%x", flag_str, vB);
 				} else {
-					sprintf (str, ", 0x%"PFMT64x" ; 0x%x", offset, vB);
+					sprintf (str, ", method+%i", vB);
 				}
 
 			}
