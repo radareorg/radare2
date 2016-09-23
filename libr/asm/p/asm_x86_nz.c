@@ -821,48 +821,48 @@ static int opjc(RAsm *a, ut8 *data, const Opcode op) {
 		!strcmp (op.mnemonic, "jnbe")) {
 		data[l++] = 0x87;
 	} else if (!strcmp (op.mnemonic, "jae") ||
-			   !strcmp (op.mnemonic, "jnb") ||
-			   !strcmp (op.mnemonic, "jnc")) {
+				!strcmp (op.mnemonic, "jnb") ||
+				!strcmp (op.mnemonic, "jnc")) {
 		data[l++] = 0x83;
 	} else if (!strcmp (op.mnemonic, "jz") ||
-			   !strcmp (op.mnemonic, "je")) {
+				!strcmp (op.mnemonic, "je")) {
 		data[l++] = 0x84;
 	} else if (!strcmp (op.mnemonic, "jb") ||
-			   !strcmp (op.mnemonic, "jnae") ||
-			   !strcmp (op.mnemonic, "jc")) {
+				!strcmp (op.mnemonic, "jnae") ||
+				!strcmp (op.mnemonic, "jc")) {
 		data[l++] = 0x82;
 	} else if (!strcmp (op.mnemonic, "jbe") ||
-			   !strcmp (op.mnemonic, "jna")) {
+				!strcmp (op.mnemonic, "jna")) {
 		data[l++] = 0x86;
 	} else if (!strcmp (op.mnemonic, "jg") ||
-			   !strcmp (op.mnemonic, "jnle")) {
+				!strcmp (op.mnemonic, "jnle")) {
 		data[l++] = 0x8f;
 	} else if (!strcmp (op.mnemonic, "jge") ||
-			   !strcmp (op.mnemonic, "jnl")) {
+				!strcmp (op.mnemonic, "jnl")) {
 		data[l++] = 0x8d;
 	} else if (!strcmp (op.mnemonic, "jl") ||
-			   !strcmp (op.mnemonic, "jnge")) {
+				!strcmp (op.mnemonic, "jnge")) {
 		data[l++] = 0x8c;
 	} else if (!strcmp (op.mnemonic, "jle") ||
-			   !strcmp (op.mnemonic, "jng")) {
+				!strcmp (op.mnemonic, "jng")) {
 		data[l++] = 0x8e;
 	} else if (!strcmp (op.mnemonic, "jne") ||
-			   !strcmp (op.mnemonic, "jnz")) {
+				!strcmp (op.mnemonic, "jnz")) {
 		data[l++] = 0x85;
 	} else if (!strcmp (op.mnemonic, "jno")) {
 		data[l++] = 0x81;
 	} else if (!strcmp (op.mnemonic, "jnp") ||
-			   !strcmp (op.mnemonic, "jpo")) {
+				!strcmp (op.mnemonic, "jpo")) {
 		data[l++] = 0x8b;
 	} else if (!strcmp (op.mnemonic, "jns")) {
 		data[l++] = 0x89;
 	} else if (!strcmp (op.mnemonic, "jo")) {
 		data[l++] = 0x80;
 	} else if (!strcmp (op.mnemonic, "jp") ||
-			   !strcmp(op.mnemonic, "jpe")) {
+				!strcmp(op.mnemonic, "jpe")) {
 		data[l++] = 0x8a;
 	} else if (!strcmp (op.mnemonic, "js") ||
-			   !strcmp (op.mnemonic, "jz")) {
+				!strcmp (op.mnemonic, "jz")) {
 		data[l++] = 0x88;
 	}
 	if (op.is_short) {
@@ -1540,7 +1540,7 @@ LookupTable oplookup[] = {
 	{"jae", &opjc, 0},
 	{"jb", &opjc, 0},
 	{"jbe", &opjc, 0},
-	{"jc", &opjc, 0},	
+	{"jc", &opjc, 0},
 	{"je", &opjc, 0},
 	{"jg", &opjc, 0},
 	{"jge", &opjc, 0},
@@ -1549,7 +1549,7 @@ LookupTable oplookup[] = {
 	{"jmp", &opjc, 0},
 	{"jna", &opjc, 0},
 	{"jnae", &opjc, 0},
-	{"jnb", &opjc, 0},	
+	{"jnb", &opjc, 0},
 	{"jnbe", &opjc, 0},
 	{"jnc", &opjc, 0},
 	{"jne", &opjc, 0},
@@ -2006,15 +2006,17 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 	out->operands[0].sign = out->operands[1].sign = 1;
 	out->operands[0].is_good_flag = out->operands[1].is_good_flag = true;
 	out->is_short = false;
-	if (strcasestr (op, "short")) {
-		out->is_short = true;
-		args += 5;
-	}
 	if (args) {
 		args++;
 	} else {
 		return 1;
 	}
+
+	if (!strncasecmp (args, "short", 5)) {
+		out->is_short = true;
+		args += 5;
+	}
+
 	parseOperand (a, args, &(out->operands[0]));
 	args = strchr (args, ',');
 	if (args) {
@@ -2080,7 +2082,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				}
 				break;
 			}
-		} 
+		}
 	}
 	//eprintf ("Error: Unknown instruction (%s)\n", instr.mnemonic);
 	return -1;
