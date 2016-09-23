@@ -930,6 +930,7 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 			}
 			if (op->cycles <= 0) {
 				eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
+				op->cycles = 2;
 			}
 			if (op->fail <= 0) {
 				op->fail = addr + op->size;
