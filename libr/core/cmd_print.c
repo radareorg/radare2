@@ -1536,6 +1536,12 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 		}
 		if (str) {
+			char *qoe = strstr (str, ";");
+			if (qoe) {
+				str = r_str_ndup (str, qoe - str);
+			}
+		}
+		if (str) {
 			string2 = strdup (str);
 			linecolor = MYPAL(call);
 		}
