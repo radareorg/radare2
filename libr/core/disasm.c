@@ -548,7 +548,7 @@ static void ds_free(RDisasmState *ds) {
 	free (ds->pre);
 	free (ds->line);
 	free (ds->refline);
-	free (ds->refline2);
+	free (ds->refline2) ;
 	free (ds->opstr);
 	free (ds->osl);
 	free (ds->sl);
