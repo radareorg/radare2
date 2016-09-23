@@ -800,6 +800,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 
 				// TODO: parse debug info
 				if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
+					free (sym);
 					continue;
 				}
 				ut16 regsz = r_read_le16 (ff2);
