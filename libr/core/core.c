@@ -1409,11 +1409,12 @@ R_API int r_core_init(RCore *core) {
 	// TODO: get arch from r_bin or from native arch
 	r_asm_use (core->assembler, R_SYS_ARCH);
 	r_anal_use (core->anal, R_SYS_ARCH);
-	if (R_SYS_BITS & R_SYS_BITS_64)
+	if (R_SYS_BITS & R_SYS_BITS_64) {
 		r_config_set_i (core->config, "asm.bits", 64);
-	else
-	if (R_SYS_BITS & R_SYS_BITS_32)
+	}
+	if (R_SYS_BITS & R_SYS_BITS_32) {
 		r_config_set_i (core->config, "asm.bits", 32);
+	}
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
 	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->bits);
 	update_sdb (core);
@@ -1509,8 +1510,7 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	if (!f) return false;
 
 	if (f->offset < r->offset) {
-		snprintf (s, maxlen, "%s + %" PFMT64u, f->name,
-			r->offset - f->offset);
+		snprintf (s, maxlen, "%s + %" PFMT64u, f->name, r->offset - f->offset);
 	} else {
 		snprintf (s, maxlen, "%s", f->name);
 	}
@@ -1523,8 +1523,9 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 
 static void prompt_sec(RCore *r, char *s, size_t maxlen) {
 	const RIOSection *sec = r_io_section_vget (r->io, r->offset);
-	if (!sec) return;
-
+	if (!sec) {
+		return;
+	}
 	snprintf (s, maxlen, "%s:", sec->name);
 }
 
@@ -1620,8 +1621,12 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	set_prompt (r);
 
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
-	if (ret == -2) return R_CORE_CMD_EXIT; // ^D
-	if (ret == -1) return false; // FD READ ERROR
+	if (ret == -2) {
+		return R_CORE_CMD_EXIT; // ^D
+	}
+	if (ret == -1) {
+		return false; // FD READ ERROR
+	}
 	r->num->value = rnv;
 	if (sync) {
 		return r_core_prompt_exec (r);
@@ -1660,14 +1665,14 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return false;
 	}
-	if (bsize<1) {
+	if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize>core->blocksize_max) {
 		eprintf ("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x\n",
 			bsize, core->blocksize_max);
 		bsize = core->blocksize_max;
 	}
-	bump = realloc (core->block, bsize+1);
+	bump = realloc (core->block, bsize + 1);
 	if (!bump) {
 		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
 		ret = false;
@@ -1688,12 +1693,17 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 		return false;
 	}
 	diff = core->offset%align;
-	if (times == 0) {
+	if (!times) {
 		diff = -diff;
 	} else if (diff) {
-		if (inc>0) diff += align-diff;
-		else diff = -diff;
-		if (times) times -= inc;
+		if (inc > 0) {
+			diff += align-diff;
+		} else {
+			diff = -diff;
+		}
+		if (times) {
+			times -= inc;
+		}
 	}
 	while ((times*inc) > 0) {
 		times -= inc;
@@ -1918,7 +1928,7 @@ reaccept:
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
 				i = r_read_be32 (bufr);
-				if (i>0 && i < RMT_MAX) {
+				if (i > 0 && i < RMT_MAX) {
 					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
@@ -2044,25 +2054,29 @@ reaccept:
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb) {
 	int ret, len = core->blocksize;
 	ut8 *buf;
-	if (!(buf = malloc (len)))
+	if (!(buf = malloc (len))) {
 		eprintf ("Cannot allocate blocksize\n");
-	else while (from<to) {
-		ut64 delta = to-from;
-		if (delta<len)
-			len = (int)delta;
-		if (!r_io_read_at (core->io, from, buf, len)) {
-			eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
-			break;
-		}
-		for (ret=0; ret<len;) {
-			int done = cb (core, from, buf+ret, len-ret);
-			if (done<1) { /* interrupted */
-				free (buf);
-				return false;
+	}
+	else {
+		while (from < to) {
+			ut64 delta = to-from;
+			if (delta < len) {
+				len = (int)delta;
 			}
-			ret += done;
+			if (!r_io_read_at (core->io, from, buf, len)) {
+				eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
+				break;
+			}
+			for (ret = 0; ret < len;) {
+				int done = cb (core, from, buf+ret, len-ret);
+				if (done < 1) { /* interrupted */
+					free (buf);
+					return false;
+				}
+				ret += done;
+			}
+			from += len;
 		}
-		from += len;
 	}
 	free (buf);
 	return true;
