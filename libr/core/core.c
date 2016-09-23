@@ -1411,9 +1411,10 @@ R_API int r_core_init(RCore *core) {
 	r_anal_use (core->anal, R_SYS_ARCH);
 	if (R_SYS_BITS & R_SYS_BITS_64) {
 		r_config_set_i (core->config, "asm.bits", 64);
-	}
-	if (R_SYS_BITS & R_SYS_BITS_32) {
-		r_config_set_i (core->config, "asm.bits", 32);
+	} else {
+		if (R_SYS_BITS & R_SYS_BITS_32) {
+			r_config_set_i (core->config, "asm.bits", 32);
+		}
 	}
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
 	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->bits);
