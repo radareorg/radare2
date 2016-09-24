@@ -11,7 +11,6 @@
 
 static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int vA, vB, vC, payload = 0, i = (int) buf[0];
-	short sB = 0;
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm;
 	ut64 offset;
@@ -105,21 +104,19 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case fmtopvAAcBBBB:
 			vA = (int) buf[1];
-			sB = (buf[3]<<8) | buf[2];
-			sprintf (str, " v%i, %#04hx", vA, sB);
-			strasm = r_str_concat (strasm, str);
+			{
+				short sB = (buf[3]<<8) | buf[2];
+				sprintf (str, " v%i, %#04hx", vA, sB);
+				strasm = r_str_concat (strasm, str);
+			}
 			break;
 		case fmtopvAAcBBBBBBBB:
 			vA = (int) buf[1];
 			vB = buf[2]|(buf[3]<<8)|(buf[4]<<16)|(buf[5]<<24);
-			{
-				if (buf[0] == 0x17) { //const-wide/32
-					snprintf (str, sizeof (str), " v%i:v%i, 0x%08x ; %lil", vA, vA + 1, vB, (long)vB);
-				} else { //const
-					float f;
-					memcpy (&f, &vB, sizeof (float));
-					snprintf (str, sizeof (str), " v%i, 0x%08x ; %ff", vA, vB, f);
-				}
+			if (buf[0] == 0x17) { //const-wide/32
+				snprintf (str, sizeof (str), " v%i:v%i, 0x%08x", vA, vA + 1, vB);
+			} else { //const
+				snprintf (str, sizeof (str), " v%i, 0x%08x", vA, vB);
 			}
 			strasm = r_str_concat (strasm, str);
 			break;
@@ -127,11 +124,10 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			vA = (int) buf[1];
 			// vB = 0|(buf[3]<<16)|(buf[2]<<24);
 			vB = 0|(buf[2]<<16)|(buf[3]<<24);
-			sB = (buf[3]<<8) | buf[2];
 			if (buf[0] == 0x19) { // const-wide/high16
-				snprintf (str, sizeof (str), " v%i:v%i, 0x%08x ; %his", vA, vA + 1, vB, sB);
+				snprintf (str, sizeof (str), " v%i:v%i, 0x%08x", vA, vA + 1, vB);
 			} else {
-				snprintf (str, sizeof (str), " v%i, 0x%08x ; %his", vA, vB, sB);
+				snprintf (str, sizeof (str), " v%i, 0x%08x", vA, vB);
 			}
 			strasm = r_str_concat (strasm, str);
 			break;
