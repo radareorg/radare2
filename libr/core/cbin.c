@@ -888,21 +888,21 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 
 static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
-	if (reloc->import) {
-		reloc_name = r_str_newf ("reloc.%s_%d", reloc->import->name, (int)(addr & 0xff));
+	if (reloc->import && reloc->import->name) {
+		reloc_name = sdb_fmt (-1, "reloc.%s_%d", reloc->import->name, (int)(addr & 0xff));
 		if (!reloc_name) {
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
-	} else if (reloc->symbol) {
-		reloc_name = r_str_newf ("reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
+	} else if (reloc->symbol && reloc->symbol->name) {
+		reloc_name = sdb_fmt (-1, "reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
 		if (!reloc_name) {
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->is_ifunc) {
 		// addend is the function pointer for the resolving ifunc
-		reloc_name = r_str_newf ("reloc.ifunc_%"PFMT64x, reloc->addend);
+		reloc_name = sdb_fmt (-1, "reloc.ifunc_%"PFMT64x, reloc->addend);
 	} else {
 		// TODO(eddyb) implement constant relocs.
 	}
@@ -971,7 +971,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
 			r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 		}
-		reloc_name = reloc->import ? reloc->import->name : (reloc->symbol ? reloc->symbol->name : NULL);
+		reloc_name = reloc->import->name;
 		if (r->bin->prefix) {
 			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s_%d", r->bin->prefix, reloc_name, (int)(addr&0xff));
 		} else {
@@ -993,10 +993,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		}
 	} else {
 		char *reloc_name = get_reloc_name (reloc, addr);
-		if (reloc_name) {
-			r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
-			free (reloc_name);
-		}
+		r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
 	}
 }
 
@@ -1507,7 +1504,9 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				if (fi) {
 					r_flag_item_set_realname (fi, n);
 				} else {
-					if (fn) eprintf ("[Warning] Can't find flag (%s)\n", fn);
+					if (fn) {
+						eprintf ("[Warning] Can't find flag (%s)\n", fn);
+					}
 				}
 				free (fnp);
 			}
