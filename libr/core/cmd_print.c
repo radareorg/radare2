@@ -2771,11 +2771,11 @@ static int cmd_print(void *data, const char *input) {
 				RListIter *locs_it = NULL;
 				if (f && f->fcn_locs) {
 					locs_it = f->fcn_locs->head;
-					cont_size = tmp_get_contsize (f);
 				}
 				if (f && input[2] == 'j') { // "pdfj"
 					ut8 *func_buf = NULL, *loc_buf = NULL;
 					ut32 fcn_size = r_anal_fcn_realsize (f);
+					cont_size = tmp_get_contsize (f);
 					r_cons_printf ("{");
 					r_cons_printf ("\"name\":\"%s\"", f->name);
 					r_cons_printf (",\"size\":%d", fcn_size);
