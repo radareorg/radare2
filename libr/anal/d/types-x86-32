@@ -1,6 +1,17 @@
+func.calloc.cc=cdecl
+func.fgetc.cc=cdecl
+func.fgets.cc=cdecl
+func.free.cc=cdecl
+func.getc.cc=cdecl
+func.getchar.cc=cdecl
 func.getenv.cc=cdecl
 func.getopt.cc=cdecl
 func.getuid.cc=cdecl
 func.ioctl.cc=cdecl
 func.isatty.cc=cdecl
+func.malloc.cc=cdecl
+func.realloc.cc=cdecl
 func.setlocale.cc=cdecl
+func.strcpy.cc=cdecl
+func.strncpycc=cdecl
+func.ungetc.cc=cdecl
