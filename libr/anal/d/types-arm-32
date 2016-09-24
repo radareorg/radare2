@@ -1,6 +1,17 @@
+func.calloc.cc=arm32
+func.fgetc.cc=arm32
+func.fgets.cc=arm32
+func.free.cc=arm32
+func.getc.cc=arm32
+func.getchar.cc=arm32
 func.getenv.cc=arm32
 func.getopt.cc=arm32
 func.getuid.cc=arm32
 func.ioctl.cc=arm32
 func.isatty.cc=arm32
+func.malloc.cc=arm32
+func.realloc.cc=arm32
 func.setlocale.cc=arm32
+func.strcpy.cc=arm32
+func.strncpycc=arm32
+func.ungetc.cc=arm32
