@@ -386,7 +386,7 @@ static int cmd_open(void *data, const char *input) {
 	case 'L':
 		r_io_plugin_list (core->io);
 		break;
-	case 'a':
+	case 'a': // "oa"
 		if ('?' == input[1]) {
 			const char *help_msg[] = {
 				"Usage:", "oa [addr] ([filename])", " # load bininfo and update flags",

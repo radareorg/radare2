@@ -739,14 +739,18 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	RBinFile *binfile = NULL;
 	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
 
-	if (!io || !desc) return false;
-	if (loadaddr == UT64_MAX) loadaddr = 0;
-
+	if (!io || !desc) {
+		return false;
+	}
+	if (loadaddr == UT64_MAX) {
+		loadaddr = 0;
+	}
 	file_sz = iob->desc_size (io, desc);
 #if __APPLE__
 	/* Fix OSX/iOS debugger -- needs review for proper fix */
-	if (!file_sz || file_sz == UT64_MAX)
-		file_sz = 2 * 1024 * 1024; // 2MB
+	if (!file_sz || file_sz == UT64_MAX) {
+		file_sz = 1 * 1024 * 1024; // 1MB
+	}
 #endif
 	if (sz == 0) {
 		sz = file_sz;
@@ -777,7 +781,9 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 				}
 				iob->desc_close (io, tdesc);
 			}
-			if (fail) return false;
+			if (fail) {
+				return false;
+			}
 		}
 	} else if (sz == UT64_MAX) {
 		return false;
@@ -785,7 +791,40 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-		if (seekaddr == UT64_MAX) seekaddr = 0;
+		if (seekaddr == 0) {
+			seekaddr = baseaddr;
+		}
+		if (seekaddr == UT64_MAX) {
+			seekaddr = 0;
+		}
+		int i, totalsz = 0;
+		ut8 *buf;
+		const blksz = 4096;
+		buf_bytes = malloc (blksz);
+		ut64 maxsz = 2 * 1024 * 1024;
+		while (totalsz < maxsz) {
+			sz = 4096;
+			iob->desc_seek (io, desc, seekaddr + totalsz);
+			buf = iob->desc_read (io, desc, &sz);
+			if (buf) {
+				char *out = realloc (buf_bytes, totalsz + blksz);
+				if (!out) {
+					eprintf ("out of memory\n");
+					break;
+				}
+				buf_bytes = out;
+				memcpy (buf_bytes + totalsz, buf, blksz);
+				free (buf);
+			}
+			if (!buf || sz != blksz) {
+				// sz = 0;
+				break;
+			}
+			totalsz += sz;
+		}
+		sz = totalsz;
+	} else {
+		ut64 seekaddr = baseaddr;
 		iob->desc_seek (io, desc, seekaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	}

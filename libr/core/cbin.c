@@ -1848,10 +1848,19 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
-				if (!arch) arch = info->arch;
-				if (!bits) bits = info->bits;
+				if (!arch) {
+					arch = info->arch;
+					if (!arch) {
+						arch = r_config_get (r->config, "asm.arch");
+					}
+				}
+				if (!bits) {
+					bits = info->bits;
+				}
 				snprintf (str, sizeof (str), "arch=%s bits=%d ", arch, bits);
-			} else str[0] = 0;
+			} else {
+				str[0] = 0;
+			}
 			r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 				"perm=%s %s%sname=%s\n",
 				i, addr, section->paddr, section->size, section->vsize,
@@ -2468,6 +2477,9 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *arch = info ? info->arch : "unknown";
+			if (!arch) {
+				arch = r_config_get (core->config, "asm.arch");
+			}
 			r_cons_printf ("id=%d arch=%s bits=%d boffset=0x%04"PFMT64x" size=0x%04"PFMT64x"\n",
 					obj->id, arch, bits, obj->boffset, obj->obj_size );
 		}
