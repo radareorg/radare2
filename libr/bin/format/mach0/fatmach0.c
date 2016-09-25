@@ -17,12 +17,12 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	bin->hdr.magic = r_read_be32 (&hdrbytes[0]);
 	bin->hdr.nfat_arch = r_read_be32 (&hdrbytes[4]);
 	bin->nfat_arch = bin->hdr.nfat_arch;
-	if (sizeof(struct fat_header) + bin->nfat_arch *
-		sizeof(struct fat_arch) > bin->size) {
+	if (sizeof (struct fat_header) + bin->nfat_arch *
+		sizeof (struct fat_arch) > bin->size) {
 		return false;
 	}
 	if (bin->hdr.magic != FAT_MAGIC || !bin->nfat_arch || bin->nfat_arch < 1) {
-		eprintf("Endian FAT_MAGIC failed (?)\n");
+		eprintf ("Endian FAT_MAGIC failed (?)\n");
 		return false;
 	}
 	size = bin->nfat_arch * sizeof (struct fat_arch);
