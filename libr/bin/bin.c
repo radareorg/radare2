@@ -797,32 +797,36 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		if (seekaddr == UT64_MAX) {
 			seekaddr = 0;
 		}
-		int i, totalsz = 0;
-		ut8 *buf;
-		const blksz = 4096;
-		buf_bytes = malloc (blksz);
-		ut64 maxsz = 2 * 1024 * 1024;
-		while (totalsz < maxsz) {
-			sz = 4096;
-			iob->desc_seek (io, desc, seekaddr + totalsz);
-			buf = iob->desc_read (io, desc, &sz);
-			if (buf) {
-				char *out = realloc (buf_bytes, totalsz + blksz);
-				if (!out) {
-					eprintf ("out of memory\n");
+		iob->desc_seek (io, desc, seekaddr);
+		buf_bytes = iob->desc_read (io, desc, &sz);
+		if (!buf_bytes) {
+			int i, totalsz = 0;
+			ut8 *buf;
+			const blksz = 4096;
+			buf_bytes = malloc (blksz);
+			ut64 maxsz = 2 * 1024 * 1024;
+			while (totalsz < maxsz) {
+				sz = 4096;
+				iob->desc_seek (io, desc, seekaddr + totalsz);
+				buf = iob->desc_read (io, desc, &sz);
+				if (buf) {
+					char *out = realloc (buf_bytes, totalsz + blksz);
+					if (!out) {
+						eprintf ("out of memory\n");
+						break;
+					}
+					buf_bytes = out;
+					memcpy (buf_bytes + totalsz, buf, blksz);
+					free (buf);
+				}
+				if (!buf || sz != blksz) {
+					// sz = 0;
 					break;
 				}
-				buf_bytes = out;
-				memcpy (buf_bytes + totalsz, buf, blksz);
-				free (buf);
+				totalsz += sz;
 			}
-			if (!buf || sz != blksz) {
-				// sz = 0;
-				break;
-			}
-			totalsz += sz;
+			sz = totalsz;
 		}
-		sz = totalsz;
 	} else {
 		ut64 seekaddr = baseaddr;
 		iob->desc_seek (io, desc, seekaddr);
