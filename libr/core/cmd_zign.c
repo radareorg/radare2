@@ -19,6 +19,48 @@ static void fcn_zig_add(RSignItem *si, int pref, ut8 *addr) {
 	}
 }
 
+static void fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
+	int idx, old_fs;
+	ut64 len = fin - ini;
+	RSignItem *si;
+
+
+	ut8 *buf = malloc (len);
+	if (buf) {
+		int count = 0;
+		eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
+		old_fs = core->flags->space_idx;
+		r_cons_printf ("fs sign\n");
+		r_cons_break (NULL, NULL);
+		if (r_io_read_at (core->io, ini, buf, len) == len) {
+			ut64 align = r_config_get_i (core->config, "search.align");
+			for (idx = 0; idx < len; idx++) {
+				if (align != 0 && (ini + idx) % align != 0) {
+					continue;
+				}
+				if (r_cons_is_breaked()) {
+					break;
+				}
+				si = r_sign_check (core->sign, buf+idx, len-idx);
+				if (si) {
+					count++;
+					fcn_zig_add (si, idx, (ut8 *)ini + idx);
+					eprintf ("- Found %d matching function signatures\r", count);
+				}
+			}
+		} else {
+			eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
+		}
+		r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
+		r_cons_break_end ();
+		free (buf);
+		core->sign->matches = count;
+	} else {
+		eprintf ("Cannot alloc %d bytes\n", len);
+		core->sign->matches = 0;
+	}
+}
+
 static int fcn_offset_cmp(ut64 offset, const RAnalFunction *fcn) {
 	return fcn->addr == offset ? 0 : -1;
 }
@@ -209,11 +251,11 @@ static int cmd_zign(void *data, const char *input) {
 	case '/':
 		{
 			// TODO: parse arg0 and arg1
-			ut8 *buf;
-			int len, idx, old_fs;
 			ut64 ini, fin;
-			RSignItem *si;
-			RIOSection *s;
+			RList *list;
+			RListIter *iter;
+			RIOMap *map;
+
 			if (input[1]) {
 				if(input[1] != ' ') {
 					eprintf ("Usage: z%c [ini] [end]\n", *input);
@@ -229,47 +271,21 @@ static int cmd_zign(void *data, const char *input) {
 					ini = core->offset;
 					fin = ini+r_num_math (core->num, input+2);
 				}
-			} else {
-				s = r_io_section_vget (core->io, core->io->off);
-				if (s) {
-					ini = core->io->va?s->vaddr:s->offset;
-					fin = ini + (core->io->va?s->vsize:s->size);
-				} else {
-					eprintf ("No section identified, please provide range.\n");
+
+				if (ini >= fin) {
+					eprintf ("Invalid range (0x%"PFMT64x"-0x%"PFMT64x").\n", ini, fin);
 					return false;
 				}
-			}
-			if (ini>=fin) {
-				eprintf ("Invalid range (0x%"PFMT64x"-0x%"PFMT64x").\n", ini, fin);
-				return false;
-			}
-			len = fin-ini;
-			buf = malloc (len);
-			if (buf != NULL) {
-				int count = 0;
-				eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
-				old_fs = core->flags->space_idx;
-				r_cons_printf ("fs sign\n");
-				r_cons_break (NULL, NULL);
-				if (r_io_read_at (core->io, ini, buf, len) == len) {
-					for (idx=0; idx<len; idx++) {
-						if (r_cons_singleton ()->breaked)
-							break;
-						si = r_sign_check (core->sign, buf+idx, len-idx);
-						if (si) {
-							count++;
-							fcn_zig_add (si, idx, (unsigned char *)ini+idx);
-							eprintf ("- Found %d matching function signatures\r", count);
-						}
-					}
-				} else eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
-				r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
-				r_cons_break_end ();
-				free (buf);
-				core->sign->matches = count;
+				fcn_zig_search (core, ini, fin);
 			} else {
-				eprintf ("Cannot alloc %d bytes\n", len);
-				core->sign->matches = 0;
+				list = r_core_get_boundaries_ok (core);
+				if (!list) {
+					eprintf ("Invalid boundaries\n");
+					return false;
+				}
+				r_list_foreach (list, iter, map) {
+					fcn_zig_search (core, map->from, map->to);
+				}
 			}
 		}
 		break;
@@ -332,7 +348,7 @@ static int cmd_zign(void *data, const char *input) {
 					old_fs = core->flags->space_idx;
 					r_cons_printf ("fs sign\n");
 					count++;
-					fcn_zig_add (si, count, (unsigned char *)fcni->addr);
+					fcn_zig_add (si, count, (ut8 *)fcni->addr);
 					r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
 				}
 			}
