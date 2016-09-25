@@ -9,6 +9,8 @@ typedef struct _ulebr {
 	ut8 *p;
 } ulebr;
 
+static bool little_;
+
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 result = 0;
 	int bit = 0;
@@ -531,7 +533,7 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 }
 
 static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
-	int i, len;
+	int i,len;
 	ut32 data;
 	bin->signature = NULL;
 	struct linkedit_data_command link = {};
@@ -557,34 +559,37 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		bin->signature = (ut8 *)strdup ("Malformed entitlement");
 		return true;
 	}
-	super.blob.magic = r_read_ble32 (bin->b->buf + data, bin->big_endian);
-	super.blob.length = r_read_ble32 (bin->b->buf + data + 4, bin->big_endian);
-	super.count = r_read_ble32 (bin->b->buf + data + 8, bin->big_endian);
+	super.blob.magic = r_read_ble32 (bin->b->buf + data, little_);
+	super.blob.length = r_read_ble32 (bin->b->buf + data + 4, little_);
+	super.count = r_read_ble32 (bin->b->buf + data + 8, little_);
 	for (i = 0; i < super.count; ++i) {
 		if ((ut8 *)(bin->b->buf + data + i) > (ut8 *)(bin->b->buf + bin->size)) {
+			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
 		}
 		struct blob_index_t *bi = (struct blob_index_t *)(bin->b->buf + data + 12);
-		idx.type = r_read_ble32 (&bi[i].type, bin->big_endian);
-		idx.offset = r_read_ble32 (&bi[i].offset, bin->big_endian);
+		idx.type = r_read_ble32 (&bi[i].type, little_);
+		idx.offset = r_read_ble32 (&bi[i].offset, little_);
 		if (idx.type == CSSLOT_ENTITLEMENTS) {
-			ut32 begin = idx.offset;
-			if (begin > bin->size || begin + sizeof (struct blob_t) > bin->size) {
+			if (idx.offset > bin->size || idx.offset + sizeof (struct blob_t) > bin->size) {
 				bin->signature = (ut8 *)strdup ("Malformed entitlement");
 				break;
 			}
-			len = r_read_ble32 (bin->b->buf + data + begin + 4, bin->big_endian) - sizeof (struct blob_t);
+			struct blob_t entitlements = {}; 
+			entitlements.magic = r_read_ble32 (bin->b->buf + data + idx.offset, little_);
+			entitlements.length = r_read_ble32 (bin->b->buf + data + idx.offset + 4, little_);
+			len = entitlements.length - sizeof(struct blob_t);
 			if (len <= bin->size && len > 1) {
 				bin->signature = calloc (1, len + 1);
 				if (bin->signature) {
-					memcpy (bin->signature, bin->b->buf + data + begin, len);
+					ut8 *src = bin->b->buf + data + idx.offset + sizeof (struct blob_t);
+					memcpy (bin->signature, src, len);
 					bin->signature[len] = '\0';
 					return true;
 				}
 			} else {
 				bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			}
-			break;
 		}
 	}
 	if (!bin->signature) {
@@ -1116,6 +1121,11 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 }
 
 static int init(struct MACH0_(obj_t)* bin) {
+	union {
+		ut16 word;
+		ut8 byte[2];
+	} endian = { 1 };
+	little_ = endian.byte[0];
 	if (!init_hdr(bin)) {
 		eprintf ("Warning: File is not MACH0\n");
 		return false;
@@ -1269,8 +1279,9 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	int i, j, nsyms, stridx;
 	const char *symstr;
 
-	if (idx<0)
+	if (idx < 0) {
 		return 0;
+	}
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
 	symbol->name[0] = '\0';
@@ -1546,24 +1557,27 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 
 	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
 		return NULL;
-	if (bin->dysymtab.nundefsym<1 || bin->dysymtab.nundefsym>0xfffff) {
+	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
 		return NULL;
 	}
 	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct import_t))))
 		return NULL;
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
 		idx = bin->dysymtab.iundefsym +i;
-		if (idx<0 || idx>=bin->nsymtab) {
+		if (idx < 0 || idx >= bin->nsymtab) {
 			eprintf ("WARNING: Imports index out of bounds. Ignoring relocs\n");
 			free (imports);
 			return NULL;
 		}
 		stridx = bin->symtab[idx].n_un.n_strx;
-		if (stridx >= 0 && stridx < bin->symstrlen)
+		if (stridx >= 0 && stridx < bin->symstrlen) {
 			symstr = (char *)bin->symstr + stridx;
-		else symstr = "";
-		if (!*symstr)
+		} else {
+			symstr = "";
+		}
+		if (!*symstr) {
 			continue;
+		}
 		{
 			int i = 0;
 			int len = 0;

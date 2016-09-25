@@ -14,16 +14,20 @@ static int check_bytes(const ut8 *buf, ut64 length);
 static RBinInfo* info(RBinFile *arch);
 
 static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
+	if (!o) {
+		return NULL;
+	}
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) o->bin_obj;
-	if (bin && bin->kv) return bin->kv;
+	if (bin && bin->kv) {
+		return bin->kv;
+	}
 	return NULL;
 }
 
 static char *entitlements(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin;
 	if (!arch || !arch->o) {
-	    	return NULL;
+	    return NULL;
 	}
 	bin = arch->o->bin_obj;
 	return (char *)bin->signature;
@@ -32,7 +36,9 @@ static char *entitlements(RBinFile *arch) {
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
-	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
+	if (!buf || !sz || sz == UT64_MAX) {
+		return NULL;
+	}
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = MACH0_(new_buf) (tbuf);
