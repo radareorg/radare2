@@ -76,11 +76,6 @@ static void xtensa_store_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 
 static void xtensa_add_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->type = R_ANAL_OP_TYPE_ADD;
-	if ((buf[0] >> 4) && (buf[1] & 0xf) && buf[2] > 0x7f) {
-		op->val = (ut8) ~buf[2] + 1;
-		op->stackop = R_ANAL_STACK_INC;
-		//save stack frame size whenever adding to stack frame
-	}
 }
 
 static void xtensa_sub_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
@@ -624,6 +619,34 @@ static XtensaOpFn xtensa_op0_fns[] = {
 	xtensa_null_op  /*xtensa_xt_format2_op*/ /*TODO*/
 };
 
+static inline void sign_extend(st32 *value, ut8 bit) {
+	if (* value & (1 << bit)) {
+		* value |= 0xFFFFFFFF << bit;
+	}
+}
+
+static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+	st32 imm;
+	ut32 dst;
+	ut32 src;
+
+	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &dst);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &src);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm);
+
+	// wide form of addi requires sign extension
+	if (opcode == 39) {
+		sign_extend (&imm, 7);
+	}
+
+	// a1 = stack
+	if (dst == 1 && src == 1) {
+		op->val = imm;
+		op->stackop = R_ANAL_STACK_INC;
+	}
+}
+
 static void esil_push_signed_imm(RStrBuf * esil, st32 imm) {
 	if (imm >= 0) {
 		r_strbuf_appendf (esil, "0x%x" CM, imm);
@@ -658,12 +681,6 @@ static void esil_sign_extend(RStrBuf *esil, ut8 bit) {
 		bit_mask,
 		extend_mask
 	);
-}
-
-static inline void sign_extend(st32 *value, ut8 bit) {
-	if (* value & (1 << bit)) {
-		* value |= 0xFFFFFFFF << bit;
-	}
 }
 
 static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
@@ -1803,6 +1820,7 @@ static void analop_esil (RAnal *a, RAnalOp *op, ut64 addr, ut8 *buffer, size_t l
 			break;
 		case 27: /* addi.n */
 		case 39: /* addi */
+			xtensa_check_stack_op (isa, opcode, format, i, slot_buffer, op);
 			esil_add_imm (isa, opcode, format, i, slot_buffer, op);
 			break;
 		case 98: /* ret */
