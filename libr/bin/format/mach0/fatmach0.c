@@ -47,7 +47,6 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 		bin->archs[i].size = r_read_be32 (&archbytes[12]);
 		bin->archs[i].align = r_read_be32 (&archbytes[16]);
 	}
-	eprintf("fatmach init worked\n");
 	return true;
 }
 
