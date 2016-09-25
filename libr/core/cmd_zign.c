@@ -20,31 +20,37 @@ static void fcn_zig_add(RSignItem *si, int pref, ut8 *addr) {
 }
 
 static void fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
-	ut8 *buf;
-	int len, idx, old_fs;
+	int idx, old_fs;
+	ut64 len = fin - ini;
 	RSignItem *si;
 
-	len = fin-ini;
-	buf = malloc (len);
-	//ut64 align = r_config_get_i (core->config, "search.algin");
-	if (buf != NULL) {
+
+	ut8 *buf = malloc (len);
+	if (buf) {
 		int count = 0;
 		eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
 		old_fs = core->flags->space_idx;
 		r_cons_printf ("fs sign\n");
 		r_cons_break (NULL, NULL);
 		if (r_io_read_at (core->io, ini, buf, len) == len) {
-			for (idx=0; idx<len; idx++) {
-				if (r_cons_singleton ()->breaked)
+			ut64 align = r_config_get_i (core->config, "search.align");
+			for (idx = 0; idx < len; idx++) {
+				if (align != 0 && (ini + idx) % align != 0) {
+					continue;
+				}
+				if (r_cons_is_breaked()) {
 					break;
+				}
 				si = r_sign_check (core->sign, buf+idx, len-idx);
 				if (si) {
 					count++;
-					fcn_zig_add (si, idx, (unsigned char *)ini+idx);
+					fcn_zig_add (si, idx, (ut8 *)ini + idx);
 					eprintf ("- Found %d matching function signatures\r", count);
 				}
 			}
-		} else eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
+		} else {
+			eprintf ("Cannot read %d bytes at 0x%08"PFMT64x"\n", len, ini);
+		}
 		r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
 		r_cons_break_end ();
 		free (buf);
@@ -266,7 +272,7 @@ static int cmd_zign(void *data, const char *input) {
 					fin = ini+r_num_math (core->num, input+2);
 				}
 
-				if (ini>=fin) {
+				if (ini >= fin) {
 					eprintf ("Invalid range (0x%"PFMT64x"-0x%"PFMT64x").\n", ini, fin);
 					return false;
 				}
@@ -278,9 +284,7 @@ static int cmd_zign(void *data, const char *input) {
 					return false;
 				}
 				r_list_foreach (list, iter, map) {
-					ut64 ini = map->from;
-					ut64 fin = map->to;
-					fcn_zig_search (core, ini, fin);
+					fcn_zig_search (core, map->from, map->to);
 				}
 			}
 		}
@@ -344,7 +348,7 @@ static int cmd_zign(void *data, const char *input) {
 					old_fs = core->flags->space_idx;
 					r_cons_printf ("fs sign\n");
 					count++;
-					fcn_zig_add (si, count, (unsigned char *)fcni->addr);
+					fcn_zig_add (si, count, (ut8 *)fcni->addr);
 					r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
 				}
 			}
