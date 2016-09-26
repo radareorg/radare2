@@ -839,10 +839,12 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 			iob->desc_seek (io, desc, seekaddr);
 			buf_bytes = iob->desc_read (io, desc, &sz);
 		}
+#if 0
 	} else {
 		ut64 seekaddr = baseaddr;
 		iob->desc_seek (io, desc, seekaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
+#endif
 	}
 
 	if (!name) {
