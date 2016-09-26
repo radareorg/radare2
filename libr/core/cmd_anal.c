@@ -3409,7 +3409,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 				r_list_foreach (list, iter, ref) {
 					r_core_read_at (core, ref->addr, buf, size);
-					r_asm_set_pc (core->assembler, ref->at);
+					r_asm_set_pc (core->assembler, ref->addr);
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
