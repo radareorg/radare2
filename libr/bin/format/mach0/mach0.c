@@ -569,9 +569,13 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
 		}
-		struct blob_index_t *bi = (struct blob_index_t *)(bin->b->buf + data + 12);
-		idx.type = r_read_ble32 (&bi[i].type, little_);
-		idx.offset = r_read_ble32 (&bi[i].offset, little_);
+		struct blob_index_t bi; //  = (struct blob_index_t *)(bin->b->buf + data + 12);
+		if (r_buf_read_at (bin->b, data + 12 + (i * sizeof (struct blob_index_t)),
+			&bi, sizeof (struct blob_index_t)) < sizeof (struct blob_index_t)) {
+			break;
+		}
+		idx.type = r_read_ble32 (&bi.type, little_);
+		idx.offset = r_read_ble32 (&bi.offset, little_);
 		if (idx.type == CSSLOT_ENTITLEMENTS) {
 			if (idx.offset > bin->size || idx.offset + sizeof (struct blob_t) > bin->size) {
 				bin->signature = (ut8 *)strdup ("Malformed entitlement");
