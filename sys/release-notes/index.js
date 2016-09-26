@@ -8,7 +8,7 @@ const AsciiTable = require('ascii-table');
 const lastTag = '0.10.5';
 const curVersion = '@'; //0.10.4';
 const showOnlyFinalReport = true;
-const codeName = 'PreOne';
+const codeName = 'Sleepy Autumn';
 const topTen = 0;
 const topFive = 999;
 
@@ -230,18 +230,23 @@ String.prototype.repeat = function(times) {
   return (new Array(times + 1)).join(this);
 };
 
-function printMdList(mdList, listLevel) {
+function printMdList(mdList, listLevel, total) {
   const elems = Object.keys(mdList);
   elems.forEach(function(elem) {
     if (elem === 'priv' || elem == 'path') {
       return;
+    }
+    let pc = '';
+    if (total !== undefined) {
+      const a = mdList[elem].split(' ')[0].trim();
+      pc = [(100 * a / total)|0, '%'].join('');
     }
     if (typeof mdList[elem] === 'object') {
       console.log('\t'.repeat(listLevel) + '- ' + elem + ':');
       return printMdList(mdList[elem], listLevel + 1);
     } else {
       const elemName = isNaN(elem) ? (elem + ': ') : '';
-      console.log ('\t'.repeat(listLevel) + '- ' + elemName + mdList[elem]);
+      console.log (pc, '\t'.repeat(listLevel) + '- ' + elemName + mdList[elem]);
     }
   });
 }
@@ -362,7 +367,7 @@ function main() {
           }
           for (let oneDoner of doner) {
             if (oneDoner.path == '') {
-              console.log('radare2 '+curVersion+' comes with '+oneDoner.diff.diff+'new lines of new features,'+
+              console.log('radare2 '+curVersion+' comes with '+oneDoner.diff.diff+' new lines of new features,'+
                   ' bug fixes and enhancements. Here some of the most important highlights:');
               console.log();
               console.log('Numbers:');
@@ -376,10 +381,11 @@ function main() {
               oneDoner.repairs = f;
               printFinalReportTable(doner);
               console.log();
-              console.log('Contributors:', oneDoner.ranking.authors.length);
+              console.log('Contributors:', o.commits.length, '/', oneDoner.ranking.authors.length, '= ~',
+                o.commits.length / oneDoner.ranking.authors.length);
               console.log('-------------');
               console.log();
-              printMdList(oneDoner.ranking.authors, 0);
+              printMdList(oneDoner.ranking.authors, 0, o.commits.length);
               console.log();
               console.log('Fixes:');
               console.log('--------');
