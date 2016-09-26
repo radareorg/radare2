@@ -3412,7 +3412,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 
-					fcn = r_anal_get_fcn_in (core->anal, ref->at, 0);
+					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					if (asm_varsub) {
 						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
 								asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
