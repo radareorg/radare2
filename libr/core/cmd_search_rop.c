@@ -415,7 +415,8 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 				// r_cons_printf ("Checking mov %s = %s\n", item_dst->name, item_src->name);
 				// r_cons_printf ("Current values %llu, %llu\n", value_dst, value_src);
 				if (value_dst == value_src && value_dst != diff_dst) {
-					mov = r_str_concatf (mov, "%s <-- %s;", item_dst->name, item_src->name);
+					mov = r_str_concatf (mov, "%s <-- %s;",
+						item_dst->name, item_src->name);
 				}
 			}
 		}

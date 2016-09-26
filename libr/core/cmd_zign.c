@@ -49,14 +49,14 @@ static void fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
 				}
 			}
 		} else {
-			eprintf ("Cannot read %llu bytes at 0x%08"PFMT64x"\n", len, ini);
+			eprintf ("Cannot read %"PFMT64d" bytes at 0x%08"PFMT64x"\n", len, ini);
 		}
 		r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
 		r_cons_break_end ();
 		free (buf);
 		core->sign->matches = count;
 	} else {
-		eprintf ("Cannot alloc %llu bytes\n", len);
+		eprintf ("Cannot alloc %"PFMT64d" bytes\n", len);
 		core->sign->matches = 0;
 	}
 }

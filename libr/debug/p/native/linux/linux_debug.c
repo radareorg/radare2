@@ -180,6 +180,8 @@ int linux_attach (RDebug *dbg, int pid) {
 		traceflags |= PTRACE_O_TRACEEXEC;
 	}
 	traceflags |= PTRACE_O_TRACEEXIT;
+	/* SIGTRAP | 0x80 on signal handler .. not supported on all archs */
+	traceflags |= PTRACE_O_TRACESYSGOOD;
 	if (ptrace (PTRACE_SETOPTIONS, pid, 0, traceflags) == -1) {
 		/* ignore ptrace-options errors */
 	}
