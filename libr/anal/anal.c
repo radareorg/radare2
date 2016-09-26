@@ -488,7 +488,6 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 		} else if ((tmp = r_anal_type_func_guess (anal, (char *)fcnname))) {
 			char *query = sdb_fmt (-1, "func.%s.noreturn", tmp);
 			sdb_unset (anal->sdb_types, query, 0);
-	}
 			free (tmp);
 			return true;
 		} else {
