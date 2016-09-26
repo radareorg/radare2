@@ -538,11 +538,14 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		o->baddr = cp->baddr (binfile);
 		binobj_set_baddr (o, old_baddr);
 	}
-	if (cp->boffset) o->boffset = cp->boffset (binfile);
+	if (cp->boffset) {
+		o->boffset = cp->boffset (binfile);
+	}
 	// XXX: no way to get info from xtr pluginz?
 	// Note, object size can not be set from here due to potential inconsistencies
-	if (cp->size)
+	if (cp->size) {
 		o->size = cp->size (binfile);
+	}
 	if (cp->binsym) {
 		for (i = 0; i < R_BIN_SYM_LAST; i++) {
 			o->binsym[i] = cp->binsym (binfile, i);
@@ -581,7 +584,9 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		}
 	//}
 	o->info = cp->info? cp->info (binfile): NULL;
-	if (cp->libs) o->libs = cp->libs (binfile);
+	if (cp->libs) {
+		o->libs = cp->libs (binfile);
+	}
 	if (cp->sections) {
 		// XXX sections are populated by call to size
 		if (!o->sections) o->sections = cp->sections (binfile);
@@ -645,13 +650,15 @@ R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadadd
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->get_io (iob): NULL;
 	RIODesc *desc = NULL;
-	if (!io) return false;
-
+	if (!io) {
+		return false;
+	}
 	desc = fd == -1 ?
 		iob->desc_open (io, file, O_RDONLY, 0644) :
 		iob->desc_get_by_fd (io, fd);
-	if (!desc) return false;
-	return r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr, xtr_idx, fileoffset, name);
+	return desc
+		? r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr, xtr_idx, fileoffset, name)
+		: false;
 }
 
 R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
@@ -791,15 +798,16 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
+
+		iob->desc_seek (io, desc, seekaddr);
+		buf_bytes = iob->desc_read (io, desc, &sz);
+		if (!buf_bytes) {
 		if (seekaddr == 0) {
 			seekaddr = baseaddr;
 		}
 		if (seekaddr == UT64_MAX) {
 			seekaddr = 0;
 		}
-		iob->desc_seek (io, desc, seekaddr);
-		buf_bytes = iob->desc_read (io, desc, &sz);
-		if (!buf_bytes) {
 			int i, totalsz = 0;
 			ut8 *buf;
 			const blksz = 4096;
@@ -826,6 +834,10 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 				totalsz += sz;
 			}
 			sz = totalsz;
+		} else {
+			free (buf_bytes);
+			iob->desc_seek (io, desc, seekaddr);
+			buf_bytes = iob->desc_read (io, desc, &sz);
 		}
 	} else {
 		ut64 seekaddr = baseaddr;
