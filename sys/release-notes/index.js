@@ -5,10 +5,10 @@ const exec = require('child_process').exec;
 const spawn = require('child_process').spawn;
 const AsciiTable = require('ascii-table');
 
-const lastTag = '0.10.4';
+const lastTag = '0.10.5';
 const curVersion = '@'; //0.10.4';
 const showOnlyFinalReport = true;
-const codeName = 'PreCon';
+const codeName = 'PreOne';
 const topTen = 0;
 const topFive = 999;
 
@@ -37,11 +37,10 @@ const authorAlias = {
   'incredible.angst': 'kolen',
 };
 
-const columns = [ 'name', 'commits', 'fix', 'add', 'leak', 'update', 'r2pm', 'clean', 'esil', 'endian', 'commits', 'authors' ];
+const columns = [ 'name', 'commits', 'fix', 'add', 'leak', 'update', 'clean', 'esil', 'endian', 'commits', 'authors' ];
 
 const paths = [
   '', // total
-  'binr/r2pm/d',
   'binr/radare2',
   'binr/rabin2',
   'binr/radiff2',
@@ -63,8 +62,8 @@ const paths = [
    'libr/diff',
    'libr/search',
    'shlr/sdb',
-   */
   'shlr/tcc',
+   */
   'shlr/bochs',
   'man',
 ];
@@ -187,7 +186,6 @@ function computeStats(o) {
     oob: countWord(o.commits, /oob/i),
     honor: countWord(o.commits, /honor/i),
     update: countWord(o.commits, /update/i),
-    r2pm: countWord(o.commits, /r2pm/i),
     clean: countWord(o.commits, /clean/i),
     'import': countWord(o.commits, /import/i),
     endian: countWord(o.commits, /endian/i),
@@ -378,7 +376,7 @@ function main() {
               oneDoner.repairs = f;
               printFinalReportTable(doner);
               console.log();
-              console.log('Contributors:');
+              console.log('Contributors:', oneDoner.ranking.authors.length);
               console.log('-------------');
               console.log();
               printMdList(oneDoner.ranking.authors, 0);
