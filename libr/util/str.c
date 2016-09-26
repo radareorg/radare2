@@ -199,8 +199,8 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 				//		printf ("---> j=%d (%c) (%02x)\n", j, str[j], str[j]);
 				if (str[j] == '1') {
 					ret|=1 << k;
-				} else if {
-					(str[j] != '0') return n;
+				} else if (str[j] != '0') {
+					return n;
 				}
 			}
 		}
@@ -1730,7 +1730,7 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 	for (p = s; *p; p++) {
 		isbut = strchr (but, *p);
 		if (isbut) {
-			idx = (int)(size_t)(isbut -b ut);
+			idx = (int)(size_t)(isbut - but);
 			_b = R_BIT_CHK (b, idx)?
 				R_BIT_UNSET (b, idx):
 				R_BIT_SET (b, idx);
@@ -2046,7 +2046,7 @@ R_API int r_print_format_length (const char *fmt) {
 		argend = args;
 		args = strdup (args+1);
 		nargs = r_str_word_set0 (args+1);
-		if (!nargs) {
+		if (!nargs) {
 			R_FREE (args);
 		}
 		for (i = 0; i<nargs; i++) {
@@ -2145,7 +2145,7 @@ R_API char *r_str_prefix_all (char *s, const char *pfx) {
 		if (pfx) {
 			plen = strlen (pfx);
 		}
-		for (p = s; *px ; p++)  {
+		for (p = s; *p; p++)  {
 			if (*p == '\n') {
 				newlines++;
 			}
