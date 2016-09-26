@@ -873,24 +873,25 @@ static void ds_atabs_option(RDisasmState *ds) {
 	if (!ds || !ds->atabs) {
 		return;
 	}
-	size = strlen (ds->asmop.buf_asm)* (ds->atabs + 1) * 4; 
-	if (size < 1) {
+	size = strlen (ds->asmop.buf_asm) * (ds->atabs + 1) * 4; 
+	if (size < 1 || size < strlen (ds->asmop.buf_asm)) {
 		return;
 	}
 	free (ds->opstr);
-	ds->opstr = b = malloc (size);
-	strcpy (b, ds->asmop.buf_asm);
+	ds->opstr = b = malloc (size + 1);
+	strncpy (b, ds->asmop.buf_asm, R_MIN (size, R_ASM_BUFSIZE));
+	b[size] = 0;
 	for (; *b; b++, i++) {
-		if (*b=='(' || *b=='[') {
+		if (*b == '(' || *b == '[') {
 			brackets++;
 		}
-		if (*b==')' || *b==']') {
+		if (*b == ')' || *b == ']') {
 			brackets--;
 		}
-		if (*b==',') {
+		if (*b == ',') {
 			comma = 1;
 		}
-		if (*b!=' ') {
+		if (*b != ' ') {
 			continue;
 		}
 		if (word > 0 && !comma) {
@@ -902,7 +903,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 		comma = 0;
 		brackets = 0;
 		n = (ds->atabs-i);
-		t = strdup (b+1); //XXX slow!
+		t = strdup (b + 1); //XXX slow!
 		if (n < 1) {
 			n = 1;
 		}
