@@ -802,15 +802,15 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 		iob->desc_seek (io, desc, seekaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
 		if (!buf_bytes) {
-		if (seekaddr == 0) {
-			seekaddr = baseaddr;
-		}
-		if (seekaddr == UT64_MAX) {
-			seekaddr = 0;
-		}
-			int i, totalsz = 0;
+			if (!seekaddr) {
+				seekaddr = baseaddr;
+			}
+			if (seekaddr == UT64_MAX) {
+				seekaddr = 0;
+			}
+			int totalsz = 0;
 			ut8 *buf;
-			const blksz = 4096;
+			const int blksz = 4096;
 			buf_bytes = malloc (blksz);
 			ut64 maxsz = 2 * 1024 * 1024;
 			while (totalsz < maxsz) {
@@ -818,7 +818,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 				iob->desc_seek (io, desc, seekaddr + totalsz);
 				buf = iob->desc_read (io, desc, &sz);
 				if (buf) {
-					char *out = realloc (buf_bytes, totalsz + blksz);
+					ut8 *out = realloc (buf_bytes, totalsz + blksz);
 					if (!out) {
 						eprintf ("out of memory\n");
 						break;

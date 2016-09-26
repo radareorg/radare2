@@ -18,7 +18,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #define	AVR_SOFTCAST(x,y) (x+(y*0x100))
 
 typedef struct _cpu_models_tag_ {
-	const char const *model;
+	const char *const model;
 	int pc_bits;
 	int pc_mask;
 	int pc_size;
@@ -28,7 +28,7 @@ typedef struct _cpu_models_tag_ {
 typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
-	const char const *name;
+	const char *const name;
 	int mask;
 	int selector;
 	inst_handler_t handler;
@@ -41,7 +41,7 @@ typedef struct _opcodes_tag_ {
 	{								\
 		model,							\
 		(pc_bits),						\
-		(~((~0) << (pc_bits))), 				\
+		(~((unsigned int)(~0) << (pc_bits))), 				\
 		((pc_bits) >> 3) + (((pc_bits) & 0x07) ? 1 : 0),	\
 		eeprom_sz						\
 	}
@@ -69,7 +69,7 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ((char *) 0,   16, 512)
 };
 
-void __generic_brxx(RAnalOp *op, const ut8 *buf, const char const *eval) {
+void __generic_brxx(RAnalOp *op, const ut8 *buf, const char *const eval) {
 	op->jump = op->addr
 		+ ((((buf[0] & 0xf8) >> 2) | (buf[1] & 0x03) << 6)
 			| (buf[1] & 0x2 ? ~((int) 0x7f) : 0))

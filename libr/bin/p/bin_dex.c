@@ -803,18 +803,17 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 					free (sym);
 					continue;
 				}
-				ut16 regsz = r_read_le16 (ff2);
-				ut16 ins_size = r_read_le16 (ff2 + 2);
-				ut16 outs_size = r_read_le16 (ff2 + 4);
+				//ut16 regsz = r_read_le16 (ff2);
+				//ut16 ins_size = r_read_le16 (ff2 + 2);
+				//ut16 outs_size = r_read_le16 (ff2 + 4);
 				ut16 tries_size = r_read_le16 (ff2 + 6);
-				ut32 debug_info_off = r_read_le32 (ff2 + 8);
+				//ut32 debug_info_off = r_read_le32 (ff2 + 8);
 				ut32 insns_size = r_read_le32 (ff2 + 12);
 
-				ut64 prolog_size = 2+2+2+2+4+4;
+				ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
 				if (tries_size > 0) {
 					//prolog_size += 2 + 8*tries_size; // we need to parse all so the catch info...
 				}
-
 				// TODO: prolog_size
 				sym->paddr = MC + prolog_size;// + 0x10;
 				sym->vaddr = MC + prolog_size;// + 0x10;
