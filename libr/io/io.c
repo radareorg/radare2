@@ -940,8 +940,9 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 }
 
 R_API int r_io_accept(RIO *io, int fd) {
-	if (r_io_is_listener (io) && io->plugin && io->plugin->accept)
+	if (r_io_is_listener (io) && io->plugin && io->plugin->accept) {
 		return io->plugin->accept (io, io->desc, fd);
+	}
 	return false;
 }
 
@@ -953,12 +954,14 @@ R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 	if (!shiftsize || (end - start) <= shiftsize) return false;
 	rest = (end - start) - shiftsize;
 
-	if (!(buf = malloc (chunksize))) return false;
-
-	if (move > 0)
+	if (!(buf = malloc (chunksize))) {
+		return false;
+	}
+	if (move > 0) {
 		src = end - shiftsize;
-	else src = start + shiftsize;
-
+	} else {
+		src = start + shiftsize;
+	}
 	while (rest > 0) {
 		if (chunksize > rest) chunksize = rest;
 		if (move > 0) src -= chunksize;
@@ -974,10 +977,12 @@ R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 }
 
 R_API int r_io_create(RIO *io, const char *file, int mode, int type) {
-	if (io->plugin && io->plugin->create)
+	if (io->plugin && io->plugin->create) {
 		return io->plugin->create (io, file, mode, type);
-	if (type == 'd' || type == 1)
+	}
+	if (type == 'd' || type == 1) {
 		return r_sys_mkdir (file);
+	}
 	return r_sandbox_creat (file, mode);
 }
 

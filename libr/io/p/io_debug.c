@@ -243,8 +243,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		ps_flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 		ps_flags |= POSIX_SPAWN_START_SUSPENDED;
 
-   		posix_spawnattr_setsigmask(&attr, &no_signals);
-    		posix_spawnattr_setsigdefault(&attr, &all_signals);
+   		posix_spawnattr_setsigmask (&attr, &no_signals);
+    		posix_spawnattr_setsigdefault (&attr, &all_signals);
 
 		(void)posix_spawnattr_setflags (&attr, ps_flags);
 		cpu = CPU_TYPE_ANY;
@@ -419,20 +419,20 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	} else if (!strncmp (file, "pidof://", 8)) {
 		const char *procname = file + 8;
 		int target_pid = get_pid_of (io, procname);
-		if (target_pid != -1) {
-			snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
-			file = uri;
-		} else {
+		if (target_pid == -1) {
 			eprintf ("Cannot find matching process for %s\n", file);
 			return NULL;
 		}
+		snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
+		file = uri;
 	}
 	if (__plugin_open (io, file,  0)) {
 		const char *pidfile = file + 6;
 		char *endptr;
 		int pid = (int)strtol (pidfile, &endptr, 10);
-		if (endptr == pidfile || pid < 0) pid = -1;
-
+		if (endptr == pidfile || pid < 0) {
+			pid = -1;
+		}
 		if (pid == -1) {
 			pid = fork_and_ptraceme (io, io->bits, file + 6);
 			if (pid == -1) {

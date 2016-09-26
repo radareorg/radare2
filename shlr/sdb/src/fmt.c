@@ -20,19 +20,22 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 	static char Key[16][256];
 	static int cyclic_n = 0;
 	va_list ap;
-	if (n==-1) {
+	if (n == -1) {
 		if (fmt) {
 			n = cyclic_n++;
-			if (cyclic_n>15)
+			if (cyclic_n > 15) {
 				cyclic_n = 0;
+			}
 		} else {
 			n = cyclic_n;
 		}
 	}
-        if (n<0 || n>15)
-                return NULL;
-	if (fmt == NULL)
+	if (n < 0 || n > 15) {
+		return NULL;
+	}
+	if (!fmt) {
 		return Key[n];
+	}
 	va_start (ap, fmt);
 	*Key[n] = 0;
 	vsnprintf (Key[n], sizeof (Key[n]), fmt, ap);

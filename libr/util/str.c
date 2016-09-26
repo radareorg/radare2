@@ -79,10 +79,11 @@ R_API int r_str_replace_char_once(char *s, int a, int b) {
 R_API int r_str_replace_char(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
-	if (a==b)
+	if (a == b) {
 		return 0;
+	}
 	for (; *o; s++, o++) {
-		if (*o==a) {
+		if (*o == a) {
 			ret++;
 			if (b) {
 				*s = b;
@@ -90,7 +91,9 @@ R_API int r_str_replace_char(char *s, int a, int b) {
 				/* remove char */
 				s--;
 			}
-		} else *s = *o;
+		} else {
+			*s = *o;
+		}
 	}
 	*s = 0;
 	return ret;
@@ -588,7 +591,9 @@ R_API const char *r_str_chop_ro(const char *str) {
 
 // Returns a new heap-allocated copy of str.
 R_API char *r_str_new(const char *str) {
-	if (!str) return NULL;
+	if (!str) {
+		return NULL;
+	}
 	return strdup (str);
 }
 
@@ -596,10 +601,13 @@ R_API char *r_str_new(const char *str) {
 // If the input str is longer than len, it will be truncated.
 R_API char *r_str_newlen(const char *str, int len) {
 	char *buf;
-	if (len < 1)
+	if (len < 1) {
 		return NULL;
+	}
 	buf = malloc (len + 1);
-	if (!buf) return NULL;
+	if (!buf) {
+		return NULL;
+	}
 	memcpy (buf, str, len);
 	buf[len] = 0;
 	return buf;
@@ -788,7 +796,9 @@ R_API const char *r_str_get2(const char *str) {
 
 R_API char *r_str_ndup(const char *ptr, int len) {
 	char *out = malloc (len+1);
-	if (!out) return NULL;
+	if (!out) {
+		return NULL;
+	}
 	strncpy (out, ptr, len);
 	out[len] = 0;
 	return out;

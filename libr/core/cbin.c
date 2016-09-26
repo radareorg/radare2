@@ -888,21 +888,21 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 
 static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
-	if (reloc->import) {
-		reloc_name = r_str_newf ("reloc.%s_%d", reloc->import->name, (int)(addr & 0xff));
+	if (reloc->import && reloc->import->name) {
+		reloc_name = sdb_fmt (-1, "reloc.%s_%d", reloc->import->name, (int)(addr & 0xff));
 		if (!reloc_name) {
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
-	} else if (reloc->symbol) {
-		reloc_name = r_str_newf ("reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
+	} else if (reloc->symbol && reloc->symbol->name) {
+		reloc_name = sdb_fmt (-1, "reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
 		if (!reloc_name) {
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->is_ifunc) {
 		// addend is the function pointer for the resolving ifunc
-		reloc_name = r_str_newf ("reloc.ifunc_%"PFMT64x, reloc->addend);
+		reloc_name = sdb_fmt (-1, "reloc.ifunc_%"PFMT64x, reloc->addend);
 	} else {
 		// TODO(eddyb) implement constant relocs.
 	}
@@ -971,7 +971,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
 			r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr+4, NULL);
 		}
-		reloc_name = reloc->import ? reloc->import->name : (reloc->symbol ? reloc->symbol->name : NULL);
+		reloc_name = reloc->import->name;
 		if (r->bin->prefix) {
 			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s_%d", r->bin->prefix, reloc_name, (int)(addr&0xff));
 		} else {
@@ -993,10 +993,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		}
 	} else {
 		char *reloc_name = get_reloc_name (reloc, addr);
-		if (reloc_name) {
-			r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
-			free (reloc_name);
-		}
+		r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
 	}
 }
 
@@ -1507,7 +1504,9 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				if (fi) {
 					r_flag_item_set_realname (fi, n);
 				} else {
-					if (fn) eprintf ("[Warning] Can't find flag (%s)\n", fn);
+					if (fn) {
+						eprintf ("[Warning] Can't find flag (%s)\n", fn);
+					}
 				}
 				free (fnp);
 			}
@@ -1849,10 +1848,19 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
-				if (!arch) arch = info->arch;
-				if (!bits) bits = info->bits;
+				if (!arch) {
+					arch = info->arch;
+					if (!arch) {
+						arch = r_config_get (r->config, "asm.arch");
+					}
+				}
+				if (!bits) {
+					bits = info->bits;
+				}
 				snprintf (str, sizeof (str), "arch=%s bits=%d ", arch, bits);
-			} else str[0] = 0;
+			} else {
+				str[0] = 0;
+			}
 			r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 				"perm=%s %s%sname=%s\n",
 				i, addr, section->paddr, section->size, section->vsize,
@@ -2323,7 +2331,7 @@ static int bin_versioninfo(RCore *r, int mode) {
 }
 
 static int bin_signature(RCore *r, int mode) {
-    	RBinFile *cur = r_bin_cur (r->bin);
+	RBinFile *cur = r_bin_cur (r->bin);
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 	if (plg && plg->signature) {
 		const char *signature = plg->signature (cur);
@@ -2469,6 +2477,9 @@ static int r_core_bin_file_print(RCore *core, RBinFile *binfile, int mode) {
 			RBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *arch = info ? info->arch : "unknown";
+			if (!arch) {
+				arch = r_config_get (core->config, "asm.arch");
+			}
 			r_cons_printf ("id=%d arch=%s bits=%d boffset=0x%04"PFMT64x" size=0x%04"PFMT64x"\n",
 					obj->id, arch, bits, obj->boffset, obj->obj_size );
 		}

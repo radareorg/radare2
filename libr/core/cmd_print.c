@@ -1402,9 +1402,11 @@ static void printraw (RCore *core, int len, int mode) {
 	int obsz = core->blocksize;
 	int restore_obsz = 0;
 	if (len != obsz) {
-		if (!r_core_block_size (core, len))
+		if (!r_core_block_size (core, len)) {
 			len = core->blocksize;
-		else restore_obsz = 1;
+		} else {
+			restore_obsz = 1;
+		}
 	}
 	r_print_raw (core->print, core->offset, core->block, len, mode);
 	if (restore_obsz) {
@@ -1413,15 +1415,40 @@ static void printraw (RCore *core, int len, int mode) {
 	core->cons->newline = true;
 }
 
+
+static void _handle_call(RCore *core, char * line, char **str) {
+	if (!core || !core->assembler || !core->assembler->cur) {
+		*str = NULL;
+		return;
+	}
+	if (strstr (core->assembler->cur->arch, "x86")) {
+		*str = strstr (line , "call ");
+	} else if (strstr (core->assembler->cur->arch, "arm")) {
+		*str = strstr (line, " b ");
+		if (!*str) {
+			*str = strstr (line, "bl ");
+			if (!*str) { // does it come with color?
+				*str = strstr (line, "bl\x1b");
+			}
+		}
+		if (!*str) {
+			*str = strstr (line, "bx ");
+			if (!*str) { //does it come with color?
+				*str = strstr (line, "bx\x1b");
+			}
+		}
+	}
+}
+
 // TODO: this is just a PoC, the disasm loop should be rewritten
+// TODO: this is based on string matching, it should be written upon RAnalOp to know 
+// when we have a call and such
 static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 #define MYPAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x: ""
 	const char *linecolor = NULL;
 	char *ox, *qo, *string = NULL;
-	char *line, *s, *str;
-	char *string2 = NULL;
-	int i, count;
-	int use_color = r_config_get_i (core->config, "scr.color");
+	char *line, *s, *str, *string2 = NULL;
+	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 
 	if (!strncmp (input, "dsf", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -1439,7 +1466,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		line = s = r_core_cmd_str (core, "pd");
 	}
 	count = r_str_split (s, '\n');
-	if (!line || !*line || count <1) {
+	if (!line || !*line || count < 1) {
 		free (line);
 		return;
 	}
@@ -1452,22 +1479,26 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			addr = r_num_get (NULL, ox);
 		}
 		if (qo) {
-			char *qoe = strchr (qo+1, '"');
+			char *qoe = strchr (qo + 1, '"');
 			if (qoe) {
 				int len = qoe - qo - 1;
-				if (len>2) {
+				if (len > 2) {
 					string = r_str_ndup (qo, len+2);
 				}
 				linecolor = MYPAL (comment);
 			}
 		}
 		ox = strstr (line, "; 0x");
-		if (!ox) ox = strstr (line, "@ 0x");
+		if (!ox) {
+			ox = strstr (line, "@ 0x");
+		}
 		if (ox) {
-			char *qoe = strchr (ox+3, ' ');
-			if (!qoe) qoe = strchr(ox+3, '\x1b');
-			int len = qoe? qoe-ox: strlen (ox+3);
-			string2 = r_str_ndup (ox+2, len-1);
+			char *qoe = strchr (ox + 3, ' ');
+			if (!qoe) {
+				qoe = strchr (ox + 3, '\x1b');
+			}
+			int len = qoe? qoe - ox: strlen (ox + 3);
+			string2 = r_str_ndup (ox + 2, len - 1);
 			if (r_num_get (NULL, string2) < 0x100) {
 				R_FREE (string2);
 			}
@@ -1475,43 +1506,43 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		str = strstr (line, " str.");
 		if (str) {
 			char *qoe = NULL;
-			if (!qoe) qoe = strchr (str+1, '\x1b');
-			if (!qoe) qoe = strchr (str+1, ';');
-			if (!qoe) qoe = strchr (str+1, ' ');
+			if (!qoe) {
+				qoe = strchr (str + 1, '\x1b');
+			}
+			if (!qoe) {
+				qoe = strchr (str + 1, ';');
+			}
+			if (!qoe) {
+				qoe = strchr (str + 1, ' ');
+			}
 			if (qoe) {
-				string2 = r_str_ndup (str+1, qoe-str-1);
+				string2 = r_str_ndup (str + 1, qoe - str - 1);
 			} else {
-				string2 = strdup (str+1);
+				string2 = strdup (str + 1);
 			}
 			if (!string && string2) {
 				string = string2;
 				string2 = NULL;
 			}
-#if 0
-			if (string && string2 && !strcmp (string, string2)) {
-			}
-#endif
 		}
 		if (string2) {
 			R_FREE (string2);
 		}
-		str = strstr (line, "sym.");
+		_handle_call (core, line, &str);
 		if (!str) {
-			str = strstr (line, "fcn.");
+			str = strstr (line, "sym.");
+			if (!str) {
+				str = strstr (line, "fcn.");
+			}
 		}
 		if (str) {
-			char *qoe = strchr (str, ' ');
+			char *qoe = strstr (str, ";");
 			if (qoe) {
-				string2 = r_str_ndup (str, qoe - str);
-			} else {
-				qoe = strchr (str, ')');
-				if (!qoe) qoe = strchr (str, '(');
-				if (qoe) {
-					string2 = r_str_ndup (str, qoe - str);
-				} else {
-					string2 = strdup (str);
-				}
+				str = r_str_ndup (str, qoe - str);
 			}
+		}
+		if (str) {
+			string2 = strdup (str);
 			linecolor = MYPAL(call);
 		}
 		if (!string && string2) {
@@ -1557,9 +1588,12 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				}
 			}
 			if (string && *string) {
-				if (string && !strncmp (string, "0x", 2)) str = string;
-				if (string2 && !strncmp (string2, "0x", 2)) str = string2;
-
+				if (string && !strncmp (string, "0x", 2)) {
+					str = string;
+				}
+				if (string2 && !strncmp (string2, "0x", 2)) {
+					str = string2;
+				}
 				ut64 ptr = r_num_math (NULL, str);
 				RFlagItem *flag = NULL;
 				if (str) {
@@ -1578,11 +1612,11 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 						r_cons_printf ("%s0x%08"PFMT64x"%s %s%s%s%s%s%s%s\n",
 								MYPAL(offset), addr, Color_RESET,
 								linecolor? linecolor: "",
-								string2? string2: "", string2? " ":"", string,
+								string2? string2: "", string2?" ":"", string,
 								flag?" ":"", flag?flag->name:"", Color_RESET);
 					} else {
 						r_cons_printf ("0x%08"PFMT64x" %s%s%s%s%s\n", addr,
-								string2?string2:"", string2?" ":"", string,
+								string2? string2 :"", string2? " ":"", string,
 								flag?" ":"", flag?flag->name:"");
 					}
 				}
@@ -2315,7 +2349,7 @@ static int cmd_print(void *data, const char *input) {
 				r_anal_op_fini (&aop);
 			}
 		} else if (input[1] == 'D') {
-			if (input[2]=='?') {
+			if (input[2] == '?') {
 				r_cons_printf ("|Usage: paD [asm]       disasm like in pdi\n");
 			} else {
 				r_core_cmdf (core, "pdi@x:%s", input+2);
@@ -2743,11 +2777,11 @@ static int cmd_print(void *data, const char *input) {
 				RListIter *locs_it = NULL;
 				if (f && f->fcn_locs) {
 					locs_it = f->fcn_locs->head;
-					cont_size = tmp_get_contsize (f);
 				}
 				if (f && input[2] == 'j') { // "pdfj"
 					ut8 *func_buf = NULL, *loc_buf = NULL;
 					ut32 fcn_size = r_anal_fcn_realsize (f);
+					cont_size = tmp_get_contsize (f);
 					r_cons_printf ("{");
 					r_cons_printf ("\"name\":\"%s\"", f->name);
 					r_cons_printf (",\"size\":%d", fcn_size);
@@ -2928,8 +2962,7 @@ static int cmd_print(void *data, const char *input) {
 					block = malloc (R_MAX(l*10, bs));
 					memcpy (block, core->block, bs);
 					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
-					core->num->value = r_core_print_disasm (core->print,
-							core, addr, block, l*10, l, 0, 0);
+					core->num->value = r_core_print_disasm (core->print, core, addr, block, l*10, l, 0, 0);
 				}
 			}
 			free (block);

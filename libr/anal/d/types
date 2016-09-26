@@ -72,6 +72,38 @@ uid_t=type
 type.uid_t=i
 type.uid_t.size=64
 
+calloc=func
+func.calloc.args=2
+func.calloc.arg.0=size_t,nmeb
+func.calloc.arg.1=size_t,size
+func.calloc.ret=void *
+
+fgetc=func
+func.fgetc.args=1
+func.fgetc.arg.0=FILE *,steam
+func.fgetc.ret=int
+
+fgets=func
+func.fgets.args=3
+func.fgets.arg.0=char *,s
+func.fgets.arg.1=int,size
+func.fgets.arg.2=FILE *,stream
+func.fgets.ret=char *
+
+free=func
+func.free.args=1
+func.free.arg.0=void *,ptr
+func.free.ret=void
+
+getc=func
+func.getc.args=1
+func.getc.arg.0=FILE *,steam
+func.getc.ret=int
+
+getchar=func
+func.getchar.args=0
+func.getchar.ret=int
+
 getenv=func
 func.getenv.args=1
 func.getenv.arg.0=const char *,name
@@ -99,8 +131,38 @@ func.isatty.args=1
 func.isatty.arg.0=int,fd
 func.isatty.ret=int
 
+malloc=func
+func.malloc.args=1
+func.malloc.arg.0=size_t,size
+func.malloc.ret= void *
+
+realloc=func
+func.realloc.args=2
+func.realloc.arg.0=void *,ptr
+func.realloc.arg.1=size_t,size
+func.realloc.ret=void *
+
 setlocale=func
 func.setlocale.args=2
 func.setlocale.arg.0=int,category
 func.setlocale.arg.1=const char *,locale
 func.setlocale.ret=char *
+
+strcpy=func
+func.strcpy.args=2
+func.strcpy.arg.0=char *,dest
+func.strcpy.arg.1=const char *,src
+func.strcpy.ret=char *
+
+strncpy=func
+func.strncpy.args=3
+func.strncpy.arg.0=char *,dest
+func.strncpy.arg.1=const char *,src
+func.strncpy.arg.2=size_t, n
+func.strncpy.ret=char *
+
+ungetc=func
+func.ungetc.args=2
+func.ungetc.arg.0=int,c
+func.ungetc.arg.1=FILE *,stream
+func.ungetc.ret=int

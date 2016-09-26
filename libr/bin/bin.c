@@ -56,7 +56,7 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 
 static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb);
 static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset);
 static int getoffset(RBin *bin, int type, int idx);
-static const char *getname(RBin *bin, int off);
+static const char *getname(RBin *bin, int type, int idx);
 static int r_bin_file_object_add(RBinFile *binfile, RBinObject *o);
 static void binobj_set_baddr(RBinObject *o, ut64 baddr);
 static ut64 binobj_a2b(RBinObject *o, ut64 addr);
@@ -739,14 +739,18 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	RBinFile *binfile = NULL;
 	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
 
-	if (!io || !desc) return false;
-	if (loadaddr == UT64_MAX) loadaddr = 0;
-
+	if (!io || !desc) {
+		return false;
+	}
+	if (loadaddr == UT64_MAX) {
+		loadaddr = 0;
+	}
 	file_sz = iob->desc_size (io, desc);
 #if __APPLE__
 	/* Fix OSX/iOS debugger -- needs review for proper fix */
-	if (!file_sz || file_sz == UT64_MAX)
-		file_sz = 2 * 1024 * 1024; // 2MB
+	if (!file_sz || file_sz == UT64_MAX) {
+		file_sz = 1 * 1024 * 1024; // 1MB
+	}
 #endif
 	if (sz == 0) {
 		sz = file_sz;
@@ -777,7 +781,9 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 				}
 				iob->desc_close (io, tdesc);
 			}
-			if (fail) return false;
+			if (fail) {
+				return false;
+			}
 		}
 	} else if (sz == UT64_MAX) {
 		return false;
@@ -785,7 +791,44 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-		if (seekaddr == UT64_MAX) seekaddr = 0;
+		if (seekaddr == 0) {
+			seekaddr = baseaddr;
+		}
+		if (seekaddr == UT64_MAX) {
+			seekaddr = 0;
+		}
+		iob->desc_seek (io, desc, seekaddr);
+		buf_bytes = iob->desc_read (io, desc, &sz);
+		if (!buf_bytes) {
+			int i, totalsz = 0;
+			ut8 *buf;
+			const blksz = 4096;
+			buf_bytes = malloc (blksz);
+			ut64 maxsz = 2 * 1024 * 1024;
+			while (totalsz < maxsz) {
+				sz = 4096;
+				iob->desc_seek (io, desc, seekaddr + totalsz);
+				buf = iob->desc_read (io, desc, &sz);
+				if (buf) {
+					char *out = realloc (buf_bytes, totalsz + blksz);
+					if (!out) {
+						eprintf ("out of memory\n");
+						break;
+					}
+					buf_bytes = out;
+					memcpy (buf_bytes + totalsz, buf, blksz);
+					free (buf);
+				}
+				if (!buf || sz != blksz) {
+					// sz = 0;
+					break;
+				}
+				totalsz += sz;
+			}
+			sz = totalsz;
+		}
+	} else {
+		ut64 seekaddr = baseaddr;
 		iob->desc_seek (io, desc, seekaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	}
@@ -1914,8 +1957,12 @@ static int getoffset(RBin *bin, int type, int idx) {
 	return -1;
 }
 
-static const char *getname(RBin *bin, int off) {
-	// walk symbols, find index, return name, ignore offset wtf
+static const char *getname(RBin *bin, int type, int idx) {
+	RBinFile *a = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
+	if (plugin && plugin->get_name) {
+		return plugin->get_name (a, type, idx);
+	}
 	return NULL;
 }
 

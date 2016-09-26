@@ -44,7 +44,7 @@ code, debugging programs, attaching to remote gdb servers, ..
 
    * **Bindings:**
 	* Vala/Genie, Python (2, 3), NodeJS, LUA, Go, Perl,
-   Guile, php5, newlisp, Ruby, Java, OCAML, ...
+   Guile, php5, newlisp, Ruby, Java, OCaml, ...
 
 # Dependencies
 
@@ -113,9 +113,10 @@ in order to deserialize it into native objects.
     $ npm install r2pipe   # NodeJS
     $ gem install r2pipe   # Ruby
     $ pip install r2pipe   # Python
+    $ opam install radare2 # OCaml
 
 And also for Go, Rust, Swift, D, .NET, Java, NewLisp, Perl, Haskell,
-Vala, Ocaml, and many more to come!
+Vala, OCaml, and many more to come!
 
 # Regression Testsuite
 

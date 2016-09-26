@@ -2720,11 +2720,11 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		}
 		nsym = max;
 		if (type == R_BIN_ELF_IMPORTS) {
-			free (bin->imports_by_ord);
+			R_FREE (bin->imports_by_ord);
 			bin->imports_by_ord_size = nsym + 1;
 			bin->imports_by_ord = (RBinImport**)calloc (nsym + 1, sizeof (RBinImport*));
 		} else if (type == R_BIN_ELF_SYMBOLS) {
-			free (bin->symbols_by_ord);
+			R_FREE (bin->symbols_by_ord);
 			bin->symbols_by_ord_size = nsym + 1;
 			bin->symbols_by_ord = (RBinSymbol**)calloc (nsym + 1, sizeof (RBinSymbol*));
 		}

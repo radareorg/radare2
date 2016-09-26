@@ -71,19 +71,21 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		}
 		if (op->a_len == op->b_len) {
 			printf ("wx ");
-			for (i = 0; i < op->b_len; i++)
+			for (i = 0; i < op->b_len; i++) {
 				printf ("%02x", op->b_buf[i]);
+			}
 			printf (" @ 0x%08"PFMT64x"\n", op->b_off);
 		} else {
-			if ((op->a_len) > 0)
+			if (op->a_len > 0)
 				printf ("r-%d @ 0x%08"PFMT64x"\n",
 					op->a_len, op->a_off + delta);
-			if (op->b_len> 0) {
+			if (op->b_len > 0) {
 				printf ("r+%d @ 0x%08"PFMT64x"\n",
 					op->b_len, op->b_off + delta);
 				printf ("wx ");
-				for (i = 0; i < op->b_len; i++)
+				for (i = 0; i < op->b_len; i++) {
 					printf ("%02x", op->b_buf[i]);
+				}
 				printf (" @ 0x%08"PFMT64x"\n", op->b_off+delta);
 			}
 			delta += (op->b_off - op->a_off);
@@ -93,16 +95,19 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		if (disasm) {
 			eprintf ("JSON (-j) + disasm (-D) not yet implemented\n");
 		}
-		if (json_started)
-			printf(",\n");
+		if (json_started) {
+			printf (",\n");
+		}
 		json_started = 1;
 		printf ("{\"offset\":%"PFMT64d",", op->a_off);
 		printf("\"from\":\"");
-		for (i = 0; i < op->a_len; i++)
+		for (i = 0; i < op->a_len; i++) {
 			printf ("%02x", op->a_buf[i]);
+		}
 		printf ("\", \"to\":\"");
-		for (i = 0; i < op->b_len; i++)
+		for (i = 0; i < op->b_len; i++) {
 			printf ("%02x", op->b_buf[i]);
+		}
 		printf ("\"}"); //,\n");
 		return 1;
 	case 0:
@@ -125,8 +130,9 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			}
 		} else {
 			printf ("0x%08"PFMT64x" ", op->a_off);
-			for (i = 0; i < op->a_len; i++)
+			for (i = 0; i < op->a_len; i++) {
 				printf ("%02x", op->a_buf[i]);
+			}
 		}
 		if (disasm) {
 			printf ("+++ 0x%08"PFMT64x"\n", op->b_off);
@@ -140,8 +146,9 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			}
 		} else {
 			printf (" => ");
-			for (i = 0; i < op->b_len; i++)
+			for (i = 0; i < op->b_len; i++) {
 				printf ("%02x", op->b_buf[i]);
+			}
 			printf (" 0x%08"PFMT64x"\n", op->b_off);
 		}
 		return 1;
@@ -150,7 +157,8 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 
 static int show_help(int v) {
 	printf ("Usage: radiff2 [-abcCdjrspOxvV] [-g sym] [-t %%] [file] [file]\n");
-	if (v) printf (
+	if (v) {
+		printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 		"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
 		"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
@@ -166,10 +174,12 @@ static int show_help(int v) {
 		"  -r         output in radare commands\n"
 		"  -s         compute text distance\n"
 		"  -ss        compute text distance (using levenstein algorithm)\n"
+		"  -S [name]  sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)\n"
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
 		"  -v         show version information\n"
 		"  -V         be verbose (current only for -s)\n");
+	}
 	return 1;
 }
 
@@ -291,6 +301,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 }
 
 int main(int argc, char **argv) {
+	const char *columnSort = NULL;
 	const char *addr = NULL;
 	RCore *c, *c2;
 	RDiff *d;
@@ -301,7 +312,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsVvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsS:Vvxt:")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -353,6 +364,9 @@ int main(int argc, char **argv) {
 				mode = MODE_DIST;
 			}
 			break;
+		case 'S':
+			columnSort = optarg;
+			break;
 		case 'x':
 			mode = MODE_COLS;
 			break;
@@ -370,9 +384,9 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (argc < 3 || optind + 2 > argc)
+	if (argc < 3 || optind + 2 > argc) {
 		return show_help (0);
-
+	}
 	if (optind < argc) {
 		file = argv[optind];
 	} else {
@@ -389,7 +403,9 @@ int main(int argc, char **argv) {
 	case MODE_GRAPH:
 	case MODE_CODE:
 		c = opencore (file);
-		if (!c) eprintf ("Cannot open '%s'\n", r_str_get (file));
+		if (!c) {
+			eprintf ("Cannot open '%s'\n", r_str_get (file));
+		}
 		c2 = opencore (file2);
 		if (!c || !c2) {
 			eprintf ("Cannot open '%s'\n", r_str_get (file2));
@@ -402,6 +418,10 @@ int main(int argc, char **argv) {
 		if (bits) {
 			r_config_set_i (c->config, "asm.bits", bits);
 			r_config_set_i (c2->config, "asm.bits", bits);
+		}
+		if (columnSort) {
+			r_config_set (c->config, "diff.sort", columnSort);
+			r_config_set (c2->config, "diff.sort", columnSort);
 		}
 		r_config_set_i (c->config, "diff.bare", showbare);
 		r_config_set_i (c2->config, "diff.bare", showbare);
@@ -456,10 +476,7 @@ int main(int argc, char **argv) {
 
 	switch (mode) {
 	case MODE_COLS:
-		{
-			int cols = (r_cons_get_size (NULL) > 112) ? 16 : 8;
-			dump_cols (bufa, sza, bufb, szb, cols);
-		}
+		dump_cols (bufa, sza, bufb, szb, (r_cons_get_size (NULL) > 112) ? 16 : 8);
 		break;
 	case MODE_DIFF:
 		d = r_diff_new (0LL, 0LL);
@@ -493,12 +510,13 @@ int main(int argc, char **argv) {
 		break;
 	}
 
-	if (diffmode == 'j' && showcount)
+	if (diffmode == 'j' && showcount) {
 		printf (",\"count\":%d}\n",count);
-	else if (showcount && diffmode != 'j')
+	} else if (showcount && diffmode != 'j') {
 		printf ("%d\n", count);
-	else if (!showcount && diffmode == 'j')
+	} else if (!showcount && diffmode == 'j') {
 		printf ("}\n");
+	}
 	free (bufa);
 	free (bufb);
 

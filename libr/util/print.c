@@ -524,20 +524,25 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	//if (p->flags & R_PRINT_FLAGS_OFFSET)
 		// r_print_addr(p, seek);
 	p->interrupt = 0;
-	for (i=0; !p->interrupt && i<len; i++) {
-		if (zeroend && buf[i]=='\0')
+	for (i = 0; !p->interrupt && i < len; i++) {
+		if (zeroend && buf[i] == '\0') {
 			break;
+		}
 		r_print_cursor (p, i, 1);
 		if (urlencode) {
 			// TODO: some ascii can be bypassed here
 			p->cb_printf ("%%%02x", buf[i]);
 		} else {
-			if (buf[i]=='\n' || IS_PRINTABLE (buf[i]))
+			if (buf[i]=='\n' || IS_PRINTABLE (buf[i])) {
 				p->cb_printf ("%c", buf[i]);
-			else p->cb_printf ("\\x%02x", buf[i]);
+			} else {
+				p->cb_printf ("\\x%02x", buf[i]);
+			}
 		}
 		r_print_cursor (p, i, 0);
-		if (wide) i++;
+		if (wide) {
+			i++;
+		}
 	}
 	p->cb_printf ("\n");
 	return i;

@@ -122,17 +122,24 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 static int check_features(RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
-	if (!insn || !insn->detail)
+	if (!insn || !insn->detail) {
 		return 1;
-	for (i=0; i< insn->detail->groups_count; i++) {
+	}
+	for (i = 0; i < insn->detail->groups_count; i++) {
 		int id = insn->detail->groups[i];
-		if (id<128) continue;
-		if (id == X86_GRP_MODE32)
+		if (id < 128) {
 			continue;
-		if (id == X86_GRP_MODE64)
+		}
+		if (id == X86_GRP_MODE32) {
 			continue;
+		}
+		if (id == X86_GRP_MODE64) {
+			continue;
+		}
 		name = cs_group_name (cd, id);
-		if (!name) return 1;
+		if (!name) {
+			return 1;
+		}
 		if (!strstr (a->features, name)) {
 			return 0;
 		}

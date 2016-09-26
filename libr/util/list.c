@@ -332,7 +332,7 @@ R_API RList *r_list_clone (RList *list) {
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	RListIter *it;
 	RListIter *it2;
-	if (list) {
+	if (list && cmp) {
 		for (it = list->head; it && it->data; it = it->n) {
 			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
 				if (cmp (it->data, it2->data)>0) {

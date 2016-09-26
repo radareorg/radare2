@@ -136,14 +136,14 @@ R_API RAsm *r_asm_new() {
 	if (!a) {
 		return NULL;
 	}
-	a->bits = 32;
+	a->bits = R_SYS_BITS;
 	a->syntax = R_ASM_SYNTAX_INTEL;
 	a->plugins = r_list_newf ((RListFree)plugin_free);
 	if (!a->plugins) {
 		free (a);
 		return NULL;
 	}
-	for (i=0; asm_static_plugins[i]; i++) {
+	for (i = 0; asm_static_plugins[i]; i++) {
 		r_asm_add (a, asm_static_plugins[i]);
 	}
 	return a;

@@ -722,10 +722,10 @@ static int cb(void *p, const char *k, const char *v) {
 		HINTCMD (hint, immbase, ",\"immbase\":%d", true);
 		HINTCMD (hint, esil, ",\"esil\":\"%s\"", true);
 		HINTCMD (hint, ptr, ",\"ptr\":\"0x%"PFMT64x"x\"", true);
-		r_cons_printf ("}");
+		r_cons_print ("}");
 		break;
 	default:
-		print_hint_h_format(hint);
+		print_hint_h_format (hint);
 		break;
 	}
 	hls->count++;
@@ -763,10 +763,10 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		RAnalOp *opi;
 		RListIter *iter;
 		r_list_foreach (bb->ops, iter, opi) {
-			r_bin_addr2line (core->bin, opi->addr, file, sizeof (file)-1, &line);
+			r_bin_addr2line (core->bin, opi->addr, file, sizeof (file) - 1, &line);
 #else
 		for (at = bb->addr; at < bb->addr + bb->size; at += 2) {
-			r_bin_addr2line (core->bin, at, file, sizeof (file)-1, &line);
+			r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line);
 #endif
 			if (line != 0 && line != oline && strcmp (file, "??")) {
 				filestr = r_file_slurp_line (file, line, 0);
@@ -777,10 +777,13 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 					idx += flen;
 					if (is_json) {
 						strcpy (cmdstr + idx, "\\n");
+						idx += 2;
 					} else if (is_html) {
 						strcpy (cmdstr + idx, "<br />");
+						idx += 6;
 					} else {
 						strcpy (cmdstr + idx, "\\l");
+						idx += 2;
 					}
 					free (filestr);
 				}
@@ -797,8 +800,6 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	if (cmdstr) {
 		str = r_str_escape_dot (cmdstr);
 		free (cmdstr);
-		if (!str)
-			return NULL;
 	}
 	return str;
 }
@@ -903,7 +904,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				r_io_read_at (core->io, bbi->addr, buf, bbi->size);
 				r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0);
 				free (buf);
-			} else eprintf ("cannot allocate %d bytes\n", bbi->size);
+			} else {
+				eprintf ("cannot allocate %d bytes\n", bbi->size);
+			}
 			r_cons_printf ("}");
 			continue;
 		}
@@ -985,12 +988,11 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				}
 			}
 		}
-
 		if ((str = core_anal_graph_label (core, bbi, opts))) {
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
 				const char *difftype = bbi->diff? (\
 					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "lightgray":
-					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "black";
+					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "gray";
 				const char *diffname = bbi->diff? (\
 					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "match":
 					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "unmatch": "new"): "unk";
@@ -1002,7 +1004,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
 					//	" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 					//	fcn->addr, bbi->addr, difftype, str, fcn->name, bbi->addr);
-					r_cons_printf (" \"0x%08"PFMT64x"\" [color=\"%s\","
+					r_cons_printf (" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 						" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 						bbi->addr, difftype, str, fcn->name, bbi->addr);
 				}
@@ -1038,7 +1040,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		}
 	}
 	if (is_json) {
-		r_cons_printf ("]}");
+		r_cons_print ("]}");
 	}
 	free (pal_jump);
 	free (pal_fail);
@@ -1366,7 +1368,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
 					if (!gv_edge || !*gv_edge)
 						gv_edge = "arrowhead=\"vee\"";
 					if (!gv_node || !*gv_node)
-						gv_node = "color=gray, style=filled shape=box";
+						gv_node = "fillcolor=gray style=filled shape=box";
 					if (!gv_grph || !*gv_grph)
 						gv_grph = "bgcolor=white";
 					r_cons_printf ("digraph code {\n"
@@ -2072,7 +2074,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		if (!gv_edge || !*gv_edge)
 			gv_edge = "arrowhead=\"vee\"";
 		if (!gv_node || !*gv_node) {
-			gv_node = "color=gray, style=filled shape=box";
+			gv_node = "fillcolor=gray style=filled shape=box";
 		}
 		r_cons_printf ("digraph code {\n"
 			"\tgraph [bgcolor=white fontsize=8 fontname=\"%s\"];\n"
@@ -3195,7 +3197,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					if ((target && dst == ntarget) || !target) {
 						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
 							RAnalRefType ref =
-								op.type & R_ANAL_OP_TYPE_MASK == R_ANAL_OP_TYPE_UCALL
+								(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL
 								? R_ANAL_REF_TYPE_CALL
 								: R_ANAL_REF_TYPE_CODE;
 							r_anal_ref_add (core->anal, dst, cur, ref);

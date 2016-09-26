@@ -3705,7 +3705,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 
 static void agraph_print_node_dot(RANode *n, void *user) {
 	char *label = strdup (n->body);
-	label = r_str_replace (label, "\n", "\\l", 1);
+	//label = r_str_replace (label, "\n", "\\l", 1);
 	if (!label || !*label) {
 		free (label);
 		label = strdup (n->title);
