@@ -18,7 +18,15 @@ static int buf_size = 0;
 static int support_sw_bp = UNKNOWN;
 static int support_hw_bp = UNKNOWN;
 
+static int r_debug_gdb_attach(RDebug *dbg, int pid);
+static void check_connection (RDebug *dbg) {
+	if (!desc) {
+		r_debug_gdb_attach (dbg, -1);
+	}
+}
+
 static int r_debug_gdb_step(RDebug *dbg) {
+	check_connection (dbg);
 	gdbr_step (desc, -1); // TODO handle thread specific step?
 	return true;
 }
@@ -26,6 +34,7 @@ static int r_debug_gdb_step(RDebug *dbg) {
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int copy_size;
 	int buflen = 0;
+	check_connection (dbg);
 	gdbr_read_registers (desc);
 	if (!desc) {
 		return -1;
@@ -73,11 +82,13 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
+	check_connection (dbg);
 	//TODO
 	return NULL;
 }
 
 static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+	check_connection (dbg);
 	if (!reg_buf) {
 		// we cannot write registers before we once read them
 		return -1;
@@ -118,11 +129,13 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 }
 
 static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
+	check_connection (dbg);
 	gdbr_continue (desc, -1);
 	return true;
 }
 
 static int r_debug_gdb_wait(RDebug *dbg, int pid) {
+	check_connection (dbg);
 	/* do nothing */
 	return true;
 }
@@ -206,6 +219,7 @@ static int r_debug_gdb_detach(RDebug *dbg, int pid) {
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
+	check_connection (dbg);
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		if (bits == 16 || bits == 32) {

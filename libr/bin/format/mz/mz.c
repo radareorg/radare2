@@ -1,16 +1,13 @@
-/* radare - LGPL - Copyright 2015 nodepad */
+/* radare - LGPL - Copyright 2015-2016 nodepad, pancake */
 
 #include "mz.h"
 #include <btree.h>
 
-static ut64 r_bin_mz_seg_to_paddr (const struct r_bin_mz_obj_t *bin,
-	const ut16 segment)
-{
+static ut64 r_bin_mz_seg_to_paddr (const struct r_bin_mz_obj_t *bin, const ut16 segment) {
 	return (bin->dos_header->header_paragraphs + segment) << 4;
 }
 
-int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin)
-{
+int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	/* Value of CS in DOS header may be negative */
 	const short cs = (const short)bin->dos_header->cs;
 	const int paddr = ((bin->dos_header->header_paragraphs + cs) << 4) + \
@@ -26,8 +23,7 @@ int cmp_segs (const void *a, const void *b) {
 	return (int)(*ma-*mb);
 }
 
-void trv_segs (const void *seg, const void *segs)
-{
+void trv_segs (const void *seg, const void *segs) {
 	const ut16 * const mseg = (const ut16 * const)seg;
 	ut16 ** const msegs = (ut16 **)segs;
 	if (mseg != NULL && msegs != NULL && *msegs != NULL) {
@@ -36,8 +32,7 @@ void trv_segs (const void *seg, const void *segs)
 	}
 }
 
-struct r_bin_mz_segment_t * r_bin_mz_get_segments (
-	const struct r_bin_mz_obj_t *bin) {
+struct r_bin_mz_segment_t * r_bin_mz_get_segments (const struct r_bin_mz_obj_t *bin) {
 
 	struct btree_node *tree;
 	struct r_bin_mz_segment_t *ret;
@@ -59,8 +54,9 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments (
 		if ((paddr + 2) < bin->dos_file_size) {
 			curr_seg = (ut16 *) (bin->b->buf + paddr);
 			/* Add segment only if it's located inside dos executable data */
-			if (*curr_seg <= last_parag)
+			if (*curr_seg <= last_parag) {
 				btree_add (&tree, curr_seg, cmp_segs);
+			}
 		}
 	}
 
@@ -79,7 +75,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments (
 		btree_cleartree (tree, NULL);
 		return NULL;
 	}
-	segments = calloc (num_relocs, sizeof(*segments));
+	segments = calloc (num_relocs, sizeof (*segments));
 	if (!segments) {
 		eprintf ("Error: calloc (segments)\n");
 		btree_cleartree (tree, NULL);
@@ -90,7 +86,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments (
 	btree_traverse (tree, 0, &curr_seg, trv_segs);
 
 	num_segs = curr_seg - segments;
-	ret = calloc (num_segs + 1, sizeof(struct r_bin_mz_segment_t));
+	ret = calloc (num_segs + 1, sizeof (struct r_bin_mz_segment_t));
 	if (!ret) {
 		free (segments);
 		btree_cleartree (tree, NULL);
@@ -112,15 +108,14 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments (
 	return ret;
 }
 
-struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin)
-{
+struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin) {
 	struct r_bin_mz_reloc_t *relocs;
 	int i, j;
 	const int num_relocs = bin->dos_header->num_relocs;
 	const MZ_image_relocation_entry * const rel_entry = \
 		bin->relocation_entries;
 
-	relocs = calloc (num_relocs + 1, sizeof(*relocs));
+	relocs = calloc (num_relocs + 1, sizeof (*relocs));
 	if (!relocs) {
 		eprintf ("Error: calloc (struct r_bin_mz_reloc_t)\n");
 		return NULL;
@@ -191,10 +186,9 @@ static int r_bin_mz_init_hdr (struct r_bin_mz_obj_t* bin) {
 			" ss sp checksum ip cs reloc_table_offset overlay_number ", 0);
 
 	bin->dos_extended_header_size = bin->dos_header->reloc_table_offset - \
-		sizeof(MZ_image_dos_header);
+		sizeof (MZ_image_dos_header);
 
-	if (bin->dos_extended_header_size > 0)
-	{
+	if (bin->dos_extended_header_size > 0) {
 		if (!(bin->dos_extended_header = \
 				malloc (bin->dos_extended_header_size))) {
 			r_sys_perror ("malloc (dos extended header)");
@@ -238,8 +232,7 @@ static int r_bin_mz_init (struct r_bin_mz_obj_t* bin) {
 	return true;
 }
 
-struct r_bin_mz_obj_t* r_bin_mz_new (const char* file)
-{
+struct r_bin_mz_obj_t* r_bin_mz_new (const char* file) {
 	const ut8 *buf;
 	struct r_bin_mz_obj_t *bin = R_NEW0 (struct r_bin_mz_obj_t);
 	if (!bin) return NULL;
@@ -256,15 +249,15 @@ struct r_bin_mz_obj_t* r_bin_mz_new (const char* file)
 	return bin;
 }
 
-struct r_bin_mz_obj_t* r_bin_mz_new_buf(const struct r_buf_t *buf)
-{
+struct r_bin_mz_obj_t* r_bin_mz_new_buf(const struct r_buf_t *buf) {
 	struct r_bin_mz_obj_t *bin = R_NEW0 (struct r_bin_mz_obj_t);
-	if (!bin) return NULL;
+	if (!bin) {
+		return NULL;
+	}
 	bin->b = r_buf_new ();
 	bin->size = buf->length;
 	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)){
 		return r_bin_mz_free (bin);
 	}
-	if (!r_bin_mz_init (bin)) return r_bin_mz_free (bin);
-	return bin;
+	return r_bin_mz_init (bin) ? bin : r_bin_mz_free (bin);
 }
