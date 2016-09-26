@@ -3355,7 +3355,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			sdb_query (core->anal->sdb_xrefs, input + 2);
 		} else eprintf ("|ERROR| Usage: axk [query]\n");
 		break;
-	case '\0':
+	case '\0': // "ax"
 	case 'j': // "axj"
 	case '*': // "ax*"
 		r_core_anal_ref_list (core, input[0]);
@@ -3405,13 +3405,20 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				RAnalFunction *fcn;
 				char *buf_fcn;
 				char *comment;
+				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
+				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 				r_list_foreach (list, iter, ref) {
 					r_core_read_at (core, ref->addr, buf, size);
-					r_asm_set_pc (core->assembler, ref->addr);
+					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
+
+					fcn = r_anal_get_fcn_in (core->anal, ref->at, 0);
+					if (asm_varsub) {
+						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
+								asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
+					}
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
-					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
 										core->cons->pal.num);

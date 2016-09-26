@@ -2066,10 +2066,7 @@ reaccept:
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb) {
 	int ret, len = core->blocksize;
 	ut8 *buf;
-	if (!(buf = malloc (len))) {
-		eprintf ("Cannot allocate blocksize\n");
-	}
-	else {
+	if ((buf = malloc (len))) {
 		while (from < to) {
 			ut64 delta = to-from;
 			if (delta < len) {
@@ -2089,8 +2086,10 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 			}
 			from += len;
 		}
+		free (buf);
+	} else {
+		eprintf ("Cannot allocate blocksize\n");
 	}
-	free (buf);
 	return true;
 }
 
