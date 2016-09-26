@@ -883,6 +883,23 @@ repeat:
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			}
+			// XXX: this is TYPE_MCALL or indirect-call
+			{
+				(void)r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
+#if 0
+				char buf[8];
+				ut64 dst = UT64_MAX;
+				anal->iob.read_at (anal->iob.io, op.ptr, buf, sizeof (buf));
+				if (anal->bits == 64) {
+					dst = r_read_le64 (buf);
+				} else {
+					dst = r_read_le64 (buf);
+				}
+				if (anal->iob.is_valid_offset (anal->iob.io, dst, 0)) {
+					(void)r_anal_fcn_xref_add (anal, fcn, op.addr, dst, R_ANAL_REF_TYPE_CALL);
+				}
+#endif
+			}
 			break;
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
