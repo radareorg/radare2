@@ -569,9 +569,9 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
 		}
-		struct blob_index_t bi; //  = (struct blob_index_t *)(bin->b->buf + data + 12);
+		struct blob_index_t bi;
 		if (r_buf_read_at (bin->b, data + 12 + (i * sizeof (struct blob_index_t)),
-			&bi, sizeof (struct blob_index_t)) < sizeof (struct blob_index_t)) {
+			(ut8*)&bi, sizeof (struct blob_index_t)) < sizeof (struct blob_index_t)) {
 			break;
 		}
 		idx.type = r_read_ble32 (&bi.type, little_);
