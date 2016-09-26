@@ -55,8 +55,7 @@ R_API RAnal *r_anal_new() {
 	anal->opt.noncode = false; // do not analyze data by default
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
-	r_space_init (&anal->meta_spaces,
-		meta_unset_for, meta_count_for, anal);
+	r_space_init (&anal->meta_spaces, meta_unset_for, meta_count_for, anal);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
@@ -96,7 +95,9 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 }
 
 R_API RAnal *r_anal_free(RAnal *a) {
-	if (!a) return NULL;
+	if (!a) {
+		return NULL;
+	}
 	/* TODO: Free anals here */
 	R_FREE (a->cpu);
 	R_FREE (a->os);
@@ -206,9 +207,15 @@ R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym) {
 }
 
 R_API int r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits) {
-	if (!os || !*os) os = R_SYS_OS;
-	if (!arch || !*arch) arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
-	if (bits<1) bits = anal->bits;
+	if (!os || !*os) {
+		os = R_SYS_OS;
+	}
+	if (!arch || !*arch) {
+		arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
+	}
+	if (bits < 1) {
+		bits = anal->bits;
+	}
 	free (anal->os);
 	anal->os = strdup (os);
 	r_anal_set_bits (anal, bits);
@@ -481,6 +488,7 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 		} else if ((tmp = r_anal_type_func_guess (anal, (char *)fcnname))) {
 			char *query = sdb_fmt (-1, "func.%s.noreturn", tmp);
 			sdb_unset (anal->sdb_types, query, 0);
+	}
 			free (tmp);
 			return true;
 		} else {
@@ -489,15 +497,17 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 		}
 	}
 }
-static bool r_anal_noreturn_at_name (RAnal *anal, const char *name) {
+static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 	if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", name), NULL)) {
 		return true;
 	}
 	char *tmp = r_anal_type_func_guess (anal, (char *)name);
 	if (tmp) {
 		if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", tmp), NULL)) {
+			free (tmp);
 			return true;
 		}
+		free (tmp);
 	}
 	return false;
 }
