@@ -16,6 +16,7 @@
 #include <r_reg.h>
 #include <r_list.h>
 #include <r_util.h>
+#include <r_bind.h>
 #include <r_syscall.h>
 #include <r_flags.h>
 #include <r_bin.h>
@@ -593,6 +594,7 @@ typedef struct r_anal_t {
 	RIOBind iob;
 	RFlagBind flb;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
+	RCoreBind coreb;
 	int decode;
 	int maxreflines;
 	int trace;

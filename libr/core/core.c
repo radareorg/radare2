@@ -188,12 +188,22 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
 	}
 }
 
+static void setab(RCore *core, const char *arch, int bits) {
+	if (arch) {
+		r_config_set (core->config, "asm.arch", arch);
+	}
+	if (bits > 0) {
+		r_config_set_i (core->config, "asm.bits", bits);
+	}
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
 	bnd->cmd = (RCoreCmd)r_core_cmd0;
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->puts = (RCorePuts)r_cons_strcat;
+	bnd->setab = (RCoreSetArchBits)setab;
 	return true;
 }
 
@@ -1381,6 +1391,7 @@ R_API int r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->bin->iob));
 	r_flag_bind (core->flags, &(core->anal->flb));
 	r_anal_bind (core->anal, &(core->parser->analb));
+	r_core_bind (core, &(core->anal->coreb));
 
 	core->file = NULL;
 	core->files = r_list_new ();
