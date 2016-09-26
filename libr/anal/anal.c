@@ -496,8 +496,10 @@ static bool r_anal_noreturn_at_name (RAnal *anal, const char *name) {
 	char *tmp = r_anal_type_func_guess (anal, (char *)name);
 	if (tmp) {
 		if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", tmp), NULL)) {
+			free (tmp);
 			return true;
 		}
+		free (tmp);
 	}
 	return false;
 }
