@@ -5,6 +5,7 @@ http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
 https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #endif
 
+#define _GNU_SOURCE
 #include <string.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -468,7 +469,6 @@ INST_HANDLER (dec) {	// DEC Rd
 }
 
 INST_HANDLER (des) {	// DES k
-#warning "TODO"
 }
 
 INST_HANDLER (eijmp) {	// EIJMP
@@ -527,6 +527,16 @@ INST_HANDLER (fmul) {	// FMUL Rd, Rr
 	ESIL_A ("16,0,RPICK,>>,0xff,&,r1,=,");			// r1 = HI(0)
 	ESIL_A ("0,RPICK,0x8000,&,!,!,cf,=,");			// C = R/16
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (jmp) {	// JMP k
+	op->jump = (buf[2] << 1)
+		 | (buf[3] << 9)
+		 | (buf[1] & 0x01) << 23
+		 | (buf[0] & 0x01) << 17
+		 | (buf[0] & 0xf0) << 14;
+	op->cycles = 3;
+	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
 }
 
 INST_HANDLER (ld) {	// LD Rd, X
