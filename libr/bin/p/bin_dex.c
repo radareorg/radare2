@@ -818,12 +818,9 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 				sym->paddr = MC + prolog_size;// + 0x10;
 				sym->vaddr = MC + prolog_size;// + 0x10;
 				sym->size = insns_size * 2;
-
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
-
 				r_list_append (bin->methods_list, sym);
 				r_list_append (cls->methods, sym);
-
 				/* cache in sdb */
 				if (!mdb) {
 					mdb = sdb_new0 ();

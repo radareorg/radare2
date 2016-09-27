@@ -657,8 +657,12 @@ R_API void r_buf_deinit(RBuffer *b) {
 }
 
 R_API void r_buf_free(RBuffer *b) {
-	if (!b) return;
-	if (!b->ro) r_buf_deinit (b);
+	if (!b) {
+		return;
+	}
+	if (!b->ro) {
+		r_buf_deinit (b);
+	}
 	R_FREE (b);
 }
 
@@ -668,14 +672,16 @@ R_API int r_buf_append_string (RBuffer *b, const char *str) {
 
 R_API char *r_buf_free_to_string (RBuffer *b) {
 	char *p;
-	if (!b) return NULL;
+	if (!b) {
+		return NULL;
+	}
 	if (b->mmap) {
 		p = r_buf_to_string (b);
 	} else {
 		r_buf_append_bytes (b, (const ut8*)"", 1);
 		p = (char *)b->buf;
 	}
-	free (b);
+	r_buf_free (b);
 	return p;
 }
 
