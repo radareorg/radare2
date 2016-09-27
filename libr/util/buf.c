@@ -318,7 +318,9 @@ R_API char *r_buf_to_string(RBuffer *b) {
 }
 
 R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length) {
-	if (!b) return false;
+	if (!b) {
+		return false;
+	}
 	if (b->fd != -1) {
 		r_sandbox_lseek (b->fd, 0, SEEK_END);
 		r_sandbox_write (b->fd, buf, length);
@@ -679,7 +681,12 @@ R_API char *r_buf_free_to_string (RBuffer *b) {
 		p = r_buf_to_string (b);
 	} else {
 		r_buf_append_bytes (b, (const ut8*)"", 1);
-		p = (char *)b->buf;
+		p = malloc (b->length + 1);
+		if (!p) {
+			return NULL;	
+		}
+		memmove (p, b->buf, b->length);
+		p[b->length] = 0;
 	}
 	r_buf_free (b);
 	return p;
