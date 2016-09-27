@@ -515,7 +515,7 @@ static char* dex_method_fullname (RBinDexObj *bin, int method_idx) {
 	char *class_name = dex_class_name_byid (bin, cid);
 	class_name = r_str_replace (class_name, ";", "", 0); //TODO: move to func
 	char *signature = dex_method_signature (bin, method_idx);
-	char *flagname = r_str_newf ("%s%s%s", class_name, name, signature);
+	char *flagname = r_str_newf ("%s.%s%s", class_name, name, signature);
 	free (name);
 	free (class_name);
 	free (signature);
