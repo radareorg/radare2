@@ -518,14 +518,15 @@ INST_HANDLER (eor) {	// EOR Rd, Rr
 	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
-INST_HANDLER (jmp) {	// JMP k
-	op->jump = (buf[2] << 1)
-		 | (buf[3] << 9)
-		 | (buf[1] & 0x01) << 23
-		 | (buf[0] & 0x01) << 17
-		 | (buf[0] & 0xf0) << 14;
-	op->cycles = 3;
-	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
+INST_HANDLER (fmul) {	// FMUL Rd, Rr
+	int d = ((buf[0] >> 4) & 0x7) + 16;
+	int r = (buf[0] & 0x7) + 16;
+
+	ESIL_A ("r%d,r%d,*,", r, d);				// 0: Rd * Rr
+	ESIL_A ("DUP,0xff,&,r0,=,");				// r0 = LO(0)
+	ESIL_A ("16,0,RPICK,>>,0xff,&,r1,=,");			// r1 = HI(0)
+	ESIL_A ("0,RPICK,0x8000,&,!,!,cf,=,");			// C = R/16
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z = !R
 }
 
 INST_HANDLER (ld) {	// LD Rd, X
@@ -851,6 +852,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (sleep,  0xffff, 0x9588, 1,      2,   NOP    ), // SLEEP
 	INST_DECL (bclr,   0xff8f, 0x9488, 1,      2,   SWI    ), // BCLR s
 	INST_DECL (bset,   0xff8f, 0x9408, 1,      2,   SWI    ), // BSET s
+	INST_DECL (fmul,   0xff88, 0x0308, 2,      2,   MUL    ), // FMUL Rd, Rr
 	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
 	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
