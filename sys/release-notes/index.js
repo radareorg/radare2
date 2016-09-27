@@ -4,11 +4,12 @@
 const exec = require('child_process').exec;
 const spawn = require('child_process').spawn;
 const AsciiTable = require('ascii-table');
+const config = require('./config');
 
-const lastTag = '0.10.5';
-const curVersion = '@'; //0.10.4';
+const lastTag = config.previousRelease;
+const curVersion = config.releaseVersion;
 const showOnlyFinalReport = true;
-const codeName = 'Sleepy Autumn';
+const codeName = config.codeName;
 const topTen = 0;
 const topFive = 999;
 
@@ -37,7 +38,7 @@ const authorAlias = {
   'incredible.angst': 'kolen',
 };
 
-const columns = [ 'name', 'commits', 'fix', 'add', 'leak', 'update', 'clean', 'esil', 'endian', 'commits', 'authors' ];
+const columns = [ 'name', 'commits', 'fix', 'add', 'honor', 'leak', 'esil', 'endian', 'authors' ];
 
 const paths = [
   '', // total
@@ -45,8 +46,7 @@ const paths = [
   'binr/rabin2',
   'binr/radiff2',
   'binr/rahash2',
-  'binr/ragg2',
-  'libr/hash',
+  // 'binr/ragg2',
   'libr/debug',
   'libr/bin',
   'libr/core',
@@ -55,9 +55,11 @@ const paths = [
   'libr/anal',
   'libr/asm',
   'libr/util',
-  'libr/bp',
   'libr/egg',
+  'libr/io',
   /*
+  'libr/hash',
+  'libr/bp',
    'libr/flags',
    'libr/diff',
    'libr/search',
@@ -141,7 +143,7 @@ function getChangelog(upto, path, cb) {
           date: date,
           msg: message.trim()
         };
-        if (doh.msg.match('fix')) {
+        if (doh.msg.match(/fix/i)) {
           numberFix = doh.msg.match(/#(\d+)/);
           if (numberFix != null)
             o.fixes.push(numberFix[1]);
@@ -218,7 +220,7 @@ function computeRanking(o) {
 function computeRepairs(o) {
   let r = [];
   o.fixes.forEach(function(elem) {
-    r.push("[#" + elem + "](https://github.com/radare/radare2/issues/" + elem + "]");
+    r.push("[#" + elem + "](https://github.com/radare/radare2/issues/" + elem + ")");
   });
   return {
     count: Object.keys(o.fixes).length,
@@ -239,7 +241,7 @@ function printMdList(mdList, listLevel, total) {
     let pc = '';
     if (total !== undefined) {
       const a = mdList[elem].split(' ')[0].trim();
-      pc = [(100 * a / total)|0, '%'].join('');
+      pc = [(100 * a / total) | 0, '%'].join('');
     }
     if (typeof mdList[elem] === 'object') {
       console.log('\t'.repeat(listLevel) + '- ' + elem + ':');
@@ -296,11 +298,18 @@ function printFinalReportTable(obj) {
         if (first) {
           first = false;
         } else {
-          let last = topFive;
           let auth = '';
+          let countDown = 4;
+          let last = topFive;
           for (let a of o.ranking.authors) {
             auth += getAuthor(a) + ' ';
-            if (!last--) break;
+            if (!last--) {
+              break;
+            }
+            if (--countDown < 1) {
+              auth += '...';
+              break;
+            }
           }
           arr.push (auth);
         }
@@ -313,7 +322,7 @@ function printFinalReportTable(obj) {
   const table = new AsciiTable('Release ' + curVersion)
   paths.forEach((path) => {
     table.addRow(getFinalReportFor(path));
-});
+  });
   table.setHeading(columns);
 
   console.log('```');
@@ -322,9 +331,14 @@ function printFinalReportTable(obj) {
 }
 
 function getLogMessages(x) {
+  function validMessage(msg) {
+    return msg.indexOf('CID') === -1;
+  }
   let msg = '';
   for (let m of x) {
-    msg += m.msg + '\n';
+    if (validMessage(m.msg)) {
+      msg += m.msg + '\n';
+    }
   }
   return msg;
 }
@@ -374,8 +388,8 @@ function main() {
               console.log('--------');
               let r = oneDoner.ranking;
               let f = oneDoner.repairs;
-              oneDoner.ranking = {};
-              oneDoner.repairs = {};
+              delete oneDoner.ranking;
+              delete oneDoner.repairs;
               printMdList(oneDoner, 0);
               oneDoner.ranking = r;
               oneDoner.repairs = f;
@@ -387,18 +401,15 @@ function main() {
               console.log();
               printMdList(oneDoner.ranking.authors, 0, o.commits.length);
               console.log();
-              console.log('Fixes:');
-              console.log('--------');
-              console.log();
-              printMdList(oneDoner.repairs.fixes, 0);
-              console.log();
-              console.log('Changes:');
-              console.log('--------');
-              console.log();
               console.log('Commits:');
               console.log('--------');
               const logMessages = getLogMessages(oneDoner.priv.commits);
               console.log(logMessages);
+              console.log();
+              console.log('Fixes:');
+              console.log('------');
+              console.log();
+              printMdList(oneDoner.repairs.fixes, 0);
             }
           }
         }
