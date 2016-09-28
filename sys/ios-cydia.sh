@@ -11,7 +11,7 @@ fi
 export BUILD=1
 PREFIX=/private/var/radare2
 
-if [ ! -d sys/ios-include ]; then
+if [ ! -d sys/ios-include/mach/vm_behavior.h  ]; then
 (
 	cd sys && \
 	wget http://lolcathost.org/b/ios-include.tar.gz && \
