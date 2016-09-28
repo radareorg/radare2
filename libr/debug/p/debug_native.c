@@ -75,7 +75,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #   define WIFCONTINUED(s) ((s) == 0xffff)
 #  endif
 # endif
-#if __x86_64__ && !defined(__ANDROID__)
+#if (__x86_64__ || __i386__) && !defined(__ANDROID__)
 #include "native/linux/linux_coredump.h"
 #endif
 #else // OS

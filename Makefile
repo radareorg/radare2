@@ -54,7 +54,11 @@ all: plugins.cfg libr/include/r_version.h
 .PHONY: libr/include/r_version.h
 GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
+ifndef SOURCE_DATE_EPOCH
 GIT_NOW=$(shell date +%Y-%m-%d)
+else
+GIT_NOW=$(shell date --utc --date="@$$SOURCE_DATE_EPOCH" +%Y-%m-%d)
+endif
 
 libr/include/r_version.h:
 	@echo Generating r_version.h file
