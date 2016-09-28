@@ -6,11 +6,7 @@ typedef int integer_t;
 
 // NOTE(eddyb) the following have been slightly modified to work under radare.
 
-#include "mach/machine.h"
-#include "mach/vm_prot.h"
-#include "mach-o/loader.h"
-#include "mach-o/nlist.h"
-#include "mach-o/fat.h"
+#include "mach0_defines.h"
 
 // HACK(eddyb) everything below is from the old mach0_specs.h, should replace
 // with proper original definitions.
