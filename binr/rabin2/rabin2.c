@@ -1,13 +1,13 @@
 /* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <getopt.c>
 #include <r_core.h>
 #include <r_types.h>
 #include <r_util.h>
-#include "../blob/version.c"
+#include <stdio.h>
+#include <stdlib.h>
 #include "../../libr/bin/pdb/pdb_downloader.h"
+#include "../blob/version.c"
 
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
@@ -71,6 +71,7 @@ static int rabin_show_help(int v) {
 		" -S              sections\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -v              display version and quit\n"
+		" -V              Show binary version information\n"
 		" -x              extract bins contained in file\n"
 		" -X [fmt] [f] .. package in fat or zip the given files andbins contained in file\n"
 		" -z              strings (from data section)\n"
@@ -378,7 +379,7 @@ static int rabin_do_operation(const char *op) {
 		r_bin_wr_rpath_del (bin);
 		rc = r_bin_wr_output (bin, output);
 		break;
-	case 'C': 
+	case 'C':
 		{
 		RBinFile *cur   = r_bin_cur (bin);
 		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
@@ -389,7 +390,7 @@ static int rabin_do_operation(const char *op) {
 			r_cons_flush ();
 		}
 		}
-		break;		
+		break;
 	case 'r':
 		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
 		rc = r_bin_wr_output (bin, output);
@@ -492,11 +493,11 @@ int main(int argc, char **argv) {
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
 				   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 		/* load plugins everywhere */
-		
+
 		path = r_sys_getenv (R_LIB_ENV);
 		if (path && *path)
 			r_lib_opendir (l, path);
-		
+
 		if (1) {
 			char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
 			// eprintf ("OPENDIR (%s)\n", homeplugindir);
