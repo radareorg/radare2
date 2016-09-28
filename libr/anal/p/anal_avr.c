@@ -593,7 +593,7 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 	// cycles
 	op->cycles = 
 		(buf[1] & 0x1) == 0
-			? !(offset ? 1 : 3)		// LDD
+			? (!offset ? 1 : 3)		// LDD
 			: (buf[0] & 0x3) == 0
 				? 1			// LD Rd, X
 				: (buf[0] & 0x3) == 1
@@ -920,9 +920,6 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 	int fail;
 	char *t;
 
-	// config op
-	op->addr = addr;
-
 	// process opcode
 	for (opcode_desc = opcodes; opcode_desc->handler; opcode_desc++) {
 		if ((ins & opcode_desc->mask) == opcode_desc->selector) {
@@ -932,6 +929,8 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 			op->cycles = opcode_desc->cycles;
 			op->size = opcode_desc->size;
 			op->type = opcode_desc->type;
+			op->fail = addr + op->size;
+			op->addr = addr;
 
 			// start void esil expression
 			r_strbuf_setf (&op->esil, "");
@@ -943,10 +942,7 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 			}
 			if (op->cycles <= 0) {
 				eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
-				op->cycles = 2;
-			}
-			if (op->fail <= 0) {
-				op->fail = addr + op->size;
+				opcode_desc->cycles = 2;
 			}
 
 			// remove trailing coma (COMETE LA COMA)
