@@ -3784,6 +3784,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// i = number of bytes
 	// j = number of instructions
 	// k = delta from addr
+	ds = ds_init (core);
 	for (;;) {
 		bool end_nbopcodes, end_nbbytes;
 
@@ -3815,7 +3816,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			continue;
 		}
 
-		ds = ds_init (core);
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
 		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i);
@@ -3931,7 +3931,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
 		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
-		if (end_nbopcodes || end_nbbytes) break;
+		if (end_nbopcodes || end_nbbytes) {
+			break;
+		}
 	}
 	r_cons_printf ("]");
 	core->offset = old_offset;
