@@ -163,7 +163,9 @@
       LC_DYLIB_CODE_SIGN_DRS  = 0x0000002Bu,
       LC_ENCRYPTION_INFO_64   = 0x0000002Cu,
       LC_LINKER_OPTION        = 0x0000002Du,
-      LC_LINKER_OPTIMIZATION_HINT = 0x0000002Eu
+      LC_LINKER_OPTIMIZATION_HINT = 0x0000002Eu,
+      LC_VERSION_MIN_TVOS     = 0x0000002Fu,
+      LC_VERSION_MIN_WATCHOS  = 0x00000030u
     };
 
     enum {
@@ -1054,14 +1056,19 @@
     // Constants for the cputype field.
     enum CPUType {
       CPU_TYPE_ANY       = -1,
+      CPU_TYPE_VAX       = 1,
+      CPU_TYPE_MC680x0   = 6,
       CPU_TYPE_X86       = 7,
       CPU_TYPE_I386      = CPU_TYPE_X86,
       CPU_TYPE_X86_64    = CPU_TYPE_X86 | CPU_ARCH_ABI64,
-   /* CPU_TYPE_MIPS      = 8, */
+      CPU_TYPE_MIPS      = 8,
       CPU_TYPE_MC98000   = 10, // Old Motorola PowerPC
+      CPU_TYPE_HPPA      = 11,
       CPU_TYPE_ARM       = 12,
       CPU_TYPE_ARM64     = CPU_TYPE_ARM | CPU_ARCH_ABI64,
+      CPU_TYPE_MC88000   = 13,
       CPU_TYPE_SPARC     = 14,
+      CPU_TYPE_I860      = 15,
       CPU_TYPE_POWERPC   = 18,
       CPU_TYPE_POWERPC64 = CPU_TYPE_POWERPC | CPU_ARCH_ABI64
     };
@@ -1126,7 +1133,7 @@
       CPU_SUBTYPE_ARM_V5TEJ   = 7,
       CPU_SUBTYPE_ARM_XSCALE  = 8,
       CPU_SUBTYPE_ARM_V7      = 9,
-      //  unused  ARM_V7F     = 10,
+      CPU_SUBTYPE_ARM_V7F     = 10,
       CPU_SUBTYPE_ARM_V7S     = 11,
       CPU_SUBTYPE_ARM_V7K     = 12,
       CPU_SUBTYPE_ARM_V6M     = 14,
@@ -1157,9 +1164,61 @@
       CPU_SUBTYPE_POWERPC_7450  = 11,
       CPU_SUBTYPE_POWERPC_970   = 100,
 
-      CPU_SUBTYPE_MC980000_ALL  = CPU_SUBTYPE_POWERPC_ALL,
+      CPU_SUBTYPE_MC98000_ALL   = CPU_SUBTYPE_POWERPC_ALL,
       CPU_SUBTYPE_MC98601       = CPU_SUBTYPE_POWERPC_601
     };
+
+    enum CPUSubTypeVAX {
+      CPU_SUBTYPE_VAX_ALL       = 0,
+      CPU_SUBTYPE_VAX780        = 1,
+      CPU_SUBTYPE_VAX785        = 2,
+      CPU_SUBTYPE_VAX750        = 3,
+      CPU_SUBTYPE_VAX730        = 4,
+      CPU_SUBTYPE_UVAXI         = 5,
+      CPU_SUBTYPE_UVAXII        = 6,
+      CPU_SUBTYPE_VAX8200       = 7,
+      CPU_SUBTYPE_VAX8500       = 8,
+      CPU_SUBTYPE_VAX8600       = 9,
+      CPU_SUBTYPE_VAX8650       = 10,
+      CPU_SUBTYPE_VAX8800       = 11,
+      CPU_SUBTYPE_UVAXIII       = 12
+    };
+
+    enum CPUSubTypeMIPS {
+       CPU_SUBTYPE_MIPS_ALL     = 0,
+       CPU_SUBTYPE_MIPS_R2300   = 1,
+       CPU_SUBTYPE_MIPS_R2600   = 2,
+       CPU_SUBTYPE_MIPS_R2800   = 3,
+       CPU_SUBTYPE_MIPS_R2000a  = 4,
+       CPU_SUBTYPE_MIPS_R2000   = 5,
+       CPU_SUBTYPE_MIPS_R3000a  = 6,
+       CPU_SUBTYPE_MIPS_R3000   = 7
+    };
+
+    enum CPUSubTypeMC680x0 {
+      CPU_SUBTYPE_MC680x0_ALL   = 1,
+      CPU_SUBTYPE_MC68030       = 1,
+      CPU_SUBTYPE_MC68040       = 2,
+      CPU_SUBTYPE_MC68030_ONLY  = 3
+    };
+
+    enum CPUSubTypeMC88000 {
+      CPU_SUBTYPE_MC88000_ALL   = 0,
+      CPU_SUBTYPE_MC88100       = 1,
+      CPU_SUBTYPE_MC88110       = 2
+    };
+
+    enum CPUSubTypeHPPA {
+      CPU_SUBTYPE_HPPA_ALL      = 0,
+      CPU_SUBTYPE_HPPA_7100     = 0,
+      CPU_SUBTYPE_HPPA_7100LC   = 1
+    };
+
+    enum CPUSubTypeI860 {
+      CPU_SUBTYPE_I860_ALL      = 0,
+      CPU_SUBTYPE_I860_860      = 1
+    };
+
 
     struct x86_thread_state64_t {
       uint64_t rax;
