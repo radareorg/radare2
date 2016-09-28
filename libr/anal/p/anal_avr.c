@@ -5,7 +5,6 @@ http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
 https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #endif
 
-#define _GNU_SOURCE
 #include <string.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -60,6 +59,8 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 #define INST_ASSERT(x)			{ if (!(x)) { INST_INVALID; } }
 
 #define ESIL_A(e, ...)			r_strbuf_appendf (&op->esil, e, ##__VA_ARGS__)
+
+#define STR_BEGINS(in, s)		strncasecmp (in, s, strlen (s))
 
 CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ("ATmega48",    11, 512, 512),
@@ -313,7 +314,7 @@ INST_HANDLER (call) {	// CALL k
 		 | (buf[0] & 0x01) << 17
 		 | (buf[0] & 0xf0) << 14;
 	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
-	if (!strcasestr (cpu->model, "xmega")) {
+	if (!STR_BEGINS (cpu->model, "ATxmega")) {
 		op->cycles--;	// AT*mega optimizes one cycle
 	}
 	ESIL_A ("pc,");				// esil is already pointing to
@@ -434,7 +435,7 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 	RAnalOp next_op;
 
 	// create void next_op
-	bzero (&next_op, sizeof (RAnalOp));
+	memset (&next_op, 0, sizeof (RAnalOp));
 	r_strbuf_init (&next_op.esil);
 
 	// calculate next instruction size (call recursively avr_op_analyze)
@@ -493,7 +494,7 @@ INST_HANDLER (eicall) {	// EICALL
 	// do a standard EIJMP
 	INST_CALL (eijmp);
 	// fix cycles
-	op->cycles = !strcasestr (cpu->model, "xmega") ? 3 : 4;
+	op->cycles = !STR_BEGINS (cpu->model, "ATxmega") ? 3 : 4;
 }
 
 INST_HANDLER (elpm) {	// ELPM
@@ -561,7 +562,7 @@ INST_HANDLER (ld) {	// LD Rd, X
 			: (buf[0] & 0x3) == 1
 				? 2		// LD Rd, X+
 				: 3;		// LD Rd, -X
-	if (!strcasestr (cpu->model, "xmega") && op->cycles > 1) {
+	if (!STR_BEGINS (cpu->model, "ATxmega") && op->cycles > 1) {
 		// AT*mega optimizes 1 cycle!
 		op->cycles--;
 	}
@@ -598,7 +599,7 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 				: (buf[0] & 0x3) == 1
 					? 2		// LD Rd, X+
 					: 3;		// LD Rd, -X
-	if (!strcasestr (cpu->model, "xmega") && op->cycles > 1) {
+	if (!STR_BEGINS (cpu->model, "ATxmega") && op->cycles > 1) {
 		// AT*mega optimizes 1 cycle!
 		op->cycles--;
 	}
@@ -663,7 +664,7 @@ INST_HANDLER (push) {	// PUSH Rr
 	ESIL_A ("r%d,", r);	// load Rr
 	__generic_push (op, 1);	// push it into stack
 	// cycles
-	op->cycles = !strcasestr (cpu->model, "xmega")
+	op->cycles = !STR_BEGINS (cpu->model, "ATxmega")
 			? 1	// AT*mega optimizes one cycle
 			: 2;
 }
@@ -685,7 +686,7 @@ INST_HANDLER (rcall) {	// RCALL k
 	} else {
 		// PC size decides required runtime!
 		op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
-		if (!strcasestr (cpu->model, "xmega")) {
+		if (!STR_BEGINS (cpu->model, "ATxmega")) {
 			op->cycles--;	// ATxmega optimizes one cycle
 		}
 	}
@@ -757,7 +758,7 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 	RAnalOp next_op;
 
 	// create void next_op
-	bzero (&next_op, sizeof (RAnalOp));
+	memset (&next_op, 0, sizeof (RAnalOp));
 	r_strbuf_init (&next_op.esil);
 
 	// calculate next instruction size (call recursively avr_op_analyze)
@@ -809,7 +810,7 @@ INST_HANDLER (st) {	// ST X, Rr
 //			: buf[0] & 0x3 == 1
 //				? 2		// LD Rd, X+
 //				: 3;		// LD Rd, -X
-//	if (!strcasestr (cpu->model, "xmega") && op->cycles > 1) {
+//	if (!STR_BEGINS (cpu->model, "ATxmega") && op->cycles > 1) {
 //		// AT*mega optimizes 1 cycle!
 //		op->cycles--;
 //	}
@@ -845,7 +846,7 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 //				: buf[0] & 0x3 == 1
 //					? 2		// LD Rd, X+
 //					: 3;		// LD Rd, -X
-//	if (!strcasestr (cpu->model, "xmega") && op->cycles > 1) {
+//	if (!STR_BEGINS (cpu->model, "ATxmega") && op->cycles > 1) {
 //		// AT*mega optimizes 1 cycle!
 //		op->cycles--;
 //	}
@@ -1006,7 +1007,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (!op) {
 		return 2;
 	}
-	bzero (op, sizeof (RAnalOp));
+	memset (op, 0, sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->fail = UT64_MAX;
