@@ -179,9 +179,7 @@ static int rax (char *str, int len, int last) {
 			memset (buf, '\0', n);
 			n = r_hex_str2bin (str, (ut8*)buf);
 			if (n > 0) fwrite (buf, n, 1, stdout);
-#if __EMSCRIPTEN__
 			puts ("");
-#endif
 			fflush (stdout);
 			free (buf);
 		}
