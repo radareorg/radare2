@@ -1059,8 +1059,9 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// mistake.
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "%s,%s,|=,$s,sf,=,$z,zf,=,$p,pf,=,$0,of,=,$0,cf,=", src, dst);
+			char *dst = getarg (&gop, 0, 1, "|");
+			esilprintf (op, "%s,%s,$s,sf,=,$z,zf,=,$p,pf,=,$0,of,=,$0,cf,=",
+					src, dst);
 			free (src);
 			free (dst);
 		}
