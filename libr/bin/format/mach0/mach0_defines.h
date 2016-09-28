@@ -49,14 +49,10 @@
 #ifndef LLVM_SUPPORT_MACHO_H
 #define LLVM_SUPPORT_MACHO_H
 
-#include "llvm/Support/Compiler.h"
-#include "llvm/Support/DataTypes.h"
-#include "llvm/Support/Host.h"
+#include <stdint.h>
 
-namespace llvm {
-  namespace MachO {
     // Enums from <mach-o/loader.h>
-    enum : uint32_t {
+    enum {
       // Constants for the "magic" field in llvm::MachO::mach_header and
       // llvm::MachO::mach_header_64
       MH_MAGIC    = 0xFEEDFACEu,
@@ -114,12 +110,12 @@ namespace llvm {
       MH_APP_EXTENSION_SAFE      = 0x02000000u
     };
 
-    enum : uint32_t {
+    enum {
       // Flags for the "cmd" field in llvm::MachO::load_command
       LC_REQ_DYLD    = 0x80000000u
     };
 
-    enum LoadCommandType : uint32_t {
+    enum LoadCommandType {
       // Constants for the "cmd" field in llvm::MachO::load_command
       LC_SEGMENT              = 0x00000001u,
       LC_SYMTAB               = 0x00000002u,
@@ -170,7 +166,7 @@ namespace llvm {
       LC_LINKER_OPTIMIZATION_HINT = 0x0000002Eu
     };
 
-    enum : uint32_t {
+    enum {
       // Constant bits for the "flags" field in llvm::MachO::segment_command
       SG_HIGHVM              = 0x1u,
       SG_FVMLIB              = 0x2u,
@@ -188,7 +184,7 @@ namespace llvm {
 
     /// These are the section type and attributes fields.  A MachO section can
     /// have only one Type, but can have any of the attributes specified.
-    enum SectionType : uint32_t {
+    enum SectionType {
       // Constant masks for the "flags[7:0]" field in llvm::MachO::section and
       // llvm::MachO::section_64 (mask "flags" with SECTION_TYPE)
 
@@ -249,7 +245,7 @@ namespace llvm {
       LAST_KNOWN_SECTION_TYPE = S_THREAD_LOCAL_INIT_FUNCTION_POINTERS
     };
 
-    enum : uint32_t {
+    enum {
       // Constant masks for the "flags[31:24]" field in llvm::MachO::section and
       // llvm::MachO::section_64 (mask "flags" with SECTION_ATTRIBUTES_USR)
 
@@ -459,7 +455,7 @@ namespace llvm {
       N_LENG    = 0xFEu
     };
 
-    enum : uint32_t {
+    enum {
       // Constant values for the r_symbolnum field in an
       // llvm::MachO::relocation_info structure when r_extern is 0.
       R_ABS = 0,
@@ -1030,315 +1026,26 @@ namespace llvm {
       uint64_t n_value;
     };
 
-
-    // Byte order swapping functions for MachO structs
-
-    inline void swapStruct(mach_header &mh) {
-      sys::swapByteOrder(mh.magic);
-      sys::swapByteOrder(mh.cputype);
-      sys::swapByteOrder(mh.cpusubtype);
-      sys::swapByteOrder(mh.filetype);
-      sys::swapByteOrder(mh.ncmds);
-      sys::swapByteOrder(mh.sizeofcmds);
-      sys::swapByteOrder(mh.flags);
-    }
-
-    inline void swapStruct(mach_header_64 &H) {
-      sys::swapByteOrder(H.magic);
-      sys::swapByteOrder(H.cputype);
-      sys::swapByteOrder(H.cpusubtype);
-      sys::swapByteOrder(H.filetype);
-      sys::swapByteOrder(H.ncmds);
-      sys::swapByteOrder(H.sizeofcmds);
-      sys::swapByteOrder(H.flags);
-      sys::swapByteOrder(H.reserved);
-    }
-
-    inline void swapStruct(load_command &lc) {
-      sys::swapByteOrder(lc.cmd);
-      sys::swapByteOrder(lc.cmdsize);
-    }
-
-    inline void swapStruct(symtab_command &lc) {
-      sys::swapByteOrder(lc.cmd);
-      sys::swapByteOrder(lc.cmdsize);
-      sys::swapByteOrder(lc.symoff);
-      sys::swapByteOrder(lc.nsyms);
-      sys::swapByteOrder(lc.stroff);
-      sys::swapByteOrder(lc.strsize);
-    }
-
-    inline void swapStruct(segment_command_64 &seg) {
-      sys::swapByteOrder(seg.cmd);
-      sys::swapByteOrder(seg.cmdsize);
-      sys::swapByteOrder(seg.vmaddr);
-      sys::swapByteOrder(seg.vmsize);
-      sys::swapByteOrder(seg.fileoff);
-      sys::swapByteOrder(seg.filesize);
-      sys::swapByteOrder(seg.maxprot);
-      sys::swapByteOrder(seg.initprot);
-      sys::swapByteOrder(seg.nsects);
-      sys::swapByteOrder(seg.flags);
-    }
-
-    inline void swapStruct(segment_command &seg) {
-      sys::swapByteOrder(seg.cmd);
-      sys::swapByteOrder(seg.cmdsize);
-      sys::swapByteOrder(seg.vmaddr);
-      sys::swapByteOrder(seg.vmsize);
-      sys::swapByteOrder(seg.fileoff);
-      sys::swapByteOrder(seg.filesize);
-      sys::swapByteOrder(seg.maxprot);
-      sys::swapByteOrder(seg.initprot);
-      sys::swapByteOrder(seg.nsects);
-      sys::swapByteOrder(seg.flags);
-    }
-
-    inline void swapStruct(section_64 &sect) {
-      sys::swapByteOrder(sect.addr);
-      sys::swapByteOrder(sect.size);
-      sys::swapByteOrder(sect.offset);
-      sys::swapByteOrder(sect.align);
-      sys::swapByteOrder(sect.reloff);
-      sys::swapByteOrder(sect.nreloc);
-      sys::swapByteOrder(sect.flags);
-      sys::swapByteOrder(sect.reserved1);
-      sys::swapByteOrder(sect.reserved2);
-    }
-
-    inline void swapStruct(section &sect) {
-      sys::swapByteOrder(sect.addr);
-      sys::swapByteOrder(sect.size);
-      sys::swapByteOrder(sect.offset);
-      sys::swapByteOrder(sect.align);
-      sys::swapByteOrder(sect.reloff);
-      sys::swapByteOrder(sect.nreloc);
-      sys::swapByteOrder(sect.flags);
-      sys::swapByteOrder(sect.reserved1);
-      sys::swapByteOrder(sect.reserved2);
-    }
-
-    inline void swapStruct(dyld_info_command &info) {
-      sys::swapByteOrder(info.cmd);
-      sys::swapByteOrder(info.cmdsize);
-      sys::swapByteOrder(info.rebase_off);
-      sys::swapByteOrder(info.rebase_size);
-      sys::swapByteOrder(info.bind_off);
-      sys::swapByteOrder(info.bind_size);
-      sys::swapByteOrder(info.weak_bind_off);
-      sys::swapByteOrder(info.weak_bind_size);
-      sys::swapByteOrder(info.lazy_bind_off);
-      sys::swapByteOrder(info.lazy_bind_size);
-      sys::swapByteOrder(info.export_off);
-      sys::swapByteOrder(info.export_size);
-    }
-
-    inline void swapStruct(dylib_command &d) {
-      sys::swapByteOrder(d.cmd);
-      sys::swapByteOrder(d.cmdsize);
-      sys::swapByteOrder(d.dylib.name);
-      sys::swapByteOrder(d.dylib.timestamp);
-      sys::swapByteOrder(d.dylib.current_version);
-      sys::swapByteOrder(d.dylib.compatibility_version);
-    }
-
-    inline void swapStruct(sub_framework_command &s) {
-      sys::swapByteOrder(s.cmd);
-      sys::swapByteOrder(s.cmdsize);
-      sys::swapByteOrder(s.umbrella);
-    }
-
-    inline void swapStruct(sub_umbrella_command &s) {
-      sys::swapByteOrder(s.cmd);
-      sys::swapByteOrder(s.cmdsize);
-      sys::swapByteOrder(s.sub_umbrella);
-    }
-
-    inline void swapStruct(sub_library_command &s) {
-      sys::swapByteOrder(s.cmd);
-      sys::swapByteOrder(s.cmdsize);
-      sys::swapByteOrder(s.sub_library);
-    }
-
-    inline void swapStruct(sub_client_command &s) {
-      sys::swapByteOrder(s.cmd);
-      sys::swapByteOrder(s.cmdsize);
-      sys::swapByteOrder(s.client);
-    }
-
-    inline void swapStruct(routines_command &r) {
-      sys::swapByteOrder(r.cmd);
-      sys::swapByteOrder(r.cmdsize);
-      sys::swapByteOrder(r.init_address);
-      sys::swapByteOrder(r.init_module);
-      sys::swapByteOrder(r.reserved1);
-      sys::swapByteOrder(r.reserved2);
-      sys::swapByteOrder(r.reserved3);
-      sys::swapByteOrder(r.reserved4);
-      sys::swapByteOrder(r.reserved5);
-      sys::swapByteOrder(r.reserved6);
-    }
-
-    inline void swapStruct(routines_command_64 &r) {
-      sys::swapByteOrder(r.cmd);
-      sys::swapByteOrder(r.cmdsize);
-      sys::swapByteOrder(r.init_address);
-      sys::swapByteOrder(r.init_module);
-      sys::swapByteOrder(r.reserved1);
-      sys::swapByteOrder(r.reserved2);
-      sys::swapByteOrder(r.reserved3);
-      sys::swapByteOrder(r.reserved4);
-      sys::swapByteOrder(r.reserved5);
-      sys::swapByteOrder(r.reserved6);
-    }
-
-    inline void swapStruct(thread_command &t) {
-      sys::swapByteOrder(t.cmd);
-      sys::swapByteOrder(t.cmdsize);
-    }
-
-    inline void swapStruct(dylinker_command &d) {
-      sys::swapByteOrder(d.cmd);
-      sys::swapByteOrder(d.cmdsize);
-      sys::swapByteOrder(d.name);
-    }
-
-    inline void swapStruct(uuid_command &u) {
-      sys::swapByteOrder(u.cmd);
-      sys::swapByteOrder(u.cmdsize);
-    }
-
-    inline void swapStruct(rpath_command &r) {
-      sys::swapByteOrder(r.cmd);
-      sys::swapByteOrder(r.cmdsize);
-      sys::swapByteOrder(r.path);
-    }
-
-    inline void swapStruct(source_version_command &s) {
-      sys::swapByteOrder(s.cmd);
-      sys::swapByteOrder(s.cmdsize);
-      sys::swapByteOrder(s.version);
-    }
-
-    inline void swapStruct(entry_point_command &e) {
-      sys::swapByteOrder(e.cmd);
-      sys::swapByteOrder(e.cmdsize);
-      sys::swapByteOrder(e.entryoff);
-      sys::swapByteOrder(e.stacksize);
-    }
-
-    inline void swapStruct(encryption_info_command &e) {
-      sys::swapByteOrder(e.cmd);
-      sys::swapByteOrder(e.cmdsize);
-      sys::swapByteOrder(e.cryptoff);
-      sys::swapByteOrder(e.cryptsize);
-      sys::swapByteOrder(e.cryptid);
-    }
-
-    inline void swapStruct(encryption_info_command_64 &e) {
-      sys::swapByteOrder(e.cmd);
-      sys::swapByteOrder(e.cmdsize);
-      sys::swapByteOrder(e.cryptoff);
-      sys::swapByteOrder(e.cryptsize);
-      sys::swapByteOrder(e.cryptid);
-      sys::swapByteOrder(e.pad);
-    }
-
-    inline void swapStruct(dysymtab_command &dst) {
-      sys::swapByteOrder(dst.cmd);
-      sys::swapByteOrder(dst.cmdsize);
-      sys::swapByteOrder(dst.ilocalsym);
-      sys::swapByteOrder(dst.nlocalsym);
-      sys::swapByteOrder(dst.iextdefsym);
-      sys::swapByteOrder(dst.nextdefsym);
-      sys::swapByteOrder(dst.iundefsym);
-      sys::swapByteOrder(dst.nundefsym);
-      sys::swapByteOrder(dst.tocoff);
-      sys::swapByteOrder(dst.ntoc);
-      sys::swapByteOrder(dst.modtaboff);
-      sys::swapByteOrder(dst.nmodtab);
-      sys::swapByteOrder(dst.extrefsymoff);
-      sys::swapByteOrder(dst.nextrefsyms);
-      sys::swapByteOrder(dst.indirectsymoff);
-      sys::swapByteOrder(dst.nindirectsyms);
-      sys::swapByteOrder(dst.extreloff);
-      sys::swapByteOrder(dst.nextrel);
-      sys::swapByteOrder(dst.locreloff);
-      sys::swapByteOrder(dst.nlocrel);
-    }
-
-    inline void swapStruct(any_relocation_info &reloc) {
-      sys::swapByteOrder(reloc.r_word0);
-      sys::swapByteOrder(reloc.r_word1);
-    }
-
-    inline void swapStruct(nlist_base &S) {
-      sys::swapByteOrder(S.n_strx);
-      sys::swapByteOrder(S.n_desc);
-    }
-
-    inline void swapStruct(nlist &sym) {
-      sys::swapByteOrder(sym.n_strx);
-      sys::swapByteOrder(sym.n_desc);
-      sys::swapByteOrder(sym.n_value);
-    }
-
-    inline void swapStruct(nlist_64 &sym) {
-      sys::swapByteOrder(sym.n_strx);
-      sys::swapByteOrder(sym.n_desc);
-      sys::swapByteOrder(sym.n_value);
-    }
-
-    inline void swapStruct(linkedit_data_command &C) {
-      sys::swapByteOrder(C.cmd);
-      sys::swapByteOrder(C.cmdsize);
-      sys::swapByteOrder(C.dataoff);
-      sys::swapByteOrder(C.datasize);
-    }
-
-    inline void swapStruct(linker_option_command &C) {
-      sys::swapByteOrder(C.cmd);
-      sys::swapByteOrder(C.cmdsize);
-      sys::swapByteOrder(C.count);
-    }
-
-    inline void swapStruct(version_min_command&C) {
-      sys::swapByteOrder(C.cmd);
-      sys::swapByteOrder(C.cmdsize);
-      sys::swapByteOrder(C.version);
-      sys::swapByteOrder(C.sdk);
-    }
-
-    inline void swapStruct(data_in_code_entry &C) {
-      sys::swapByteOrder(C.offset);
-      sys::swapByteOrder(C.length);
-      sys::swapByteOrder(C.kind);
-    }
-
-    inline void swapStruct(uint32_t &C) {
-      sys::swapByteOrder(C);
-    }
-
     // Get/Set functions from <mach-o/nlist.h>
 
     static inline uint16_t GET_LIBRARY_ORDINAL(uint16_t n_desc) {
       return (((n_desc) >> 8u) & 0xffu);
     }
 
-    static inline void SET_LIBRARY_ORDINAL(uint16_t &n_desc, uint8_t ordinal) {
-      n_desc = (((n_desc) & 0x00ff) | (((ordinal) & 0xff) << 8));
+    static inline void SET_LIBRARY_ORDINAL(uint16_t *n_desc, uint8_t ordinal) {
+      *n_desc = (((*n_desc) & 0x00ff) | (((ordinal) & 0xff) << 8));
     }
 
     static inline uint8_t GET_COMM_ALIGN (uint16_t n_desc) {
       return (n_desc >> 8u) & 0x0fu;
     }
 
-    static inline void SET_COMM_ALIGN (uint16_t &n_desc, uint8_t align) {
-      n_desc = ((n_desc & 0xf0ffu) | ((align & 0x0fu) << 8u));
+    static inline void SET_COMM_ALIGN (uint16_t *n_desc, uint8_t align) {
+      *n_desc = ((*n_desc & 0xf0ffu) | ((align & 0x0fu) << 8u));
     }
 
     // Enums from <mach/machine.h>
-    enum : uint32_t {
+    enum {
       // Capability bits used in the definition of cpu_type.
       CPU_ARCH_MASK  = 0xff000000,   // Mask for architecture bits
       CPU_ARCH_ABI64 = 0x01000000    // 64 bit ABI
@@ -1359,7 +1066,7 @@ namespace llvm {
       CPU_TYPE_POWERPC64 = CPU_TYPE_POWERPC | CPU_ARCH_ABI64
     };
 
-    enum : uint32_t {
+    enum {
       // Capability bits used in the definition of cpusubtype.
       CPU_SUBTYPE_MASK  = 0xff000000,   // Mask for architecture bits
       CPU_SUBTYPE_LIB64 = 0x80000000,   // 64 bit libraries
@@ -1400,10 +1107,10 @@ namespace llvm {
     static inline int CPU_SUBTYPE_INTEL(int Family, int Model) {
       return Family | (Model << 4);
     }
-    static inline int CPU_SUBTYPE_INTEL_FAMILY(CPUSubTypeX86 ST) {
+    static inline int CPU_SUBTYPE_INTEL_FAMILY(enum CPUSubTypeX86 ST) {
       return ((int)ST) & 0x0f;
     }
-    static inline int CPU_SUBTYPE_INTEL_MODEL(CPUSubTypeX86 ST) {
+    static inline int CPU_SUBTYPE_INTEL_MODEL(enum CPUSubTypeX86 ST) {
       return ((int)ST) >> 4;
     }
     enum {
@@ -1535,8 +1242,8 @@ namespace llvm {
 
     struct x86_float_state64_t {
       int32_t fpu_reserved[2];
-      fp_control_t fpu_fcw;
-      fp_status_t fpu_fsw;
+      struct fp_control_t fpu_fcw;
+      struct fp_status_t fpu_fsw;
       uint8_t fpu_ftw;
       uint8_t fpu_rsrv1;
       uint16_t fpu_fop;
@@ -1548,30 +1255,30 @@ namespace llvm {
       uint16_t fpu_rsrv3;
       uint32_t fpu_mxcsr;
       uint32_t fpu_mxcsrmask;
-      mmst_reg_t fpu_stmm0;
-      mmst_reg_t fpu_stmm1;
-      mmst_reg_t fpu_stmm2;
-      mmst_reg_t fpu_stmm3;
-      mmst_reg_t fpu_stmm4;
-      mmst_reg_t fpu_stmm5;
-      mmst_reg_t fpu_stmm6;
-      mmst_reg_t fpu_stmm7;
-      xmm_reg_t fpu_xmm0;
-      xmm_reg_t fpu_xmm1;
-      xmm_reg_t fpu_xmm2;
-      xmm_reg_t fpu_xmm3;
-      xmm_reg_t fpu_xmm4;
-      xmm_reg_t fpu_xmm5;
-      xmm_reg_t fpu_xmm6;
-      xmm_reg_t fpu_xmm7;
-      xmm_reg_t fpu_xmm8;
-      xmm_reg_t fpu_xmm9;
-      xmm_reg_t fpu_xmm10;
-      xmm_reg_t fpu_xmm11;
-      xmm_reg_t fpu_xmm12;
-      xmm_reg_t fpu_xmm13;
-      xmm_reg_t fpu_xmm14;
-      xmm_reg_t fpu_xmm15;
+      struct mmst_reg_t fpu_stmm0;
+      struct mmst_reg_t fpu_stmm1;
+      struct mmst_reg_t fpu_stmm2;
+      struct mmst_reg_t fpu_stmm3;
+      struct mmst_reg_t fpu_stmm4;
+      struct mmst_reg_t fpu_stmm5;
+      struct mmst_reg_t fpu_stmm6;
+      struct mmst_reg_t fpu_stmm7;
+      struct xmm_reg_t fpu_xmm0;
+      struct xmm_reg_t fpu_xmm1;
+      struct xmm_reg_t fpu_xmm2;
+      struct xmm_reg_t fpu_xmm3;
+      struct xmm_reg_t fpu_xmm4;
+      struct xmm_reg_t fpu_xmm5;
+      struct xmm_reg_t fpu_xmm6;
+      struct xmm_reg_t fpu_xmm7;
+      struct xmm_reg_t fpu_xmm8;
+      struct xmm_reg_t fpu_xmm9;
+      struct xmm_reg_t fpu_xmm10;
+      struct xmm_reg_t fpu_xmm11;
+      struct xmm_reg_t fpu_xmm12;
+      struct xmm_reg_t fpu_xmm13;
+      struct xmm_reg_t fpu_xmm14;
+      struct xmm_reg_t fpu_xmm15;
       char fpu_rsrv4[6*16];
       uint32_t fpu_reserved1;
     };
@@ -1583,84 +1290,31 @@ namespace llvm {
       uint64_t faultvaddr;
     };
 
-    inline void swapStruct(x86_thread_state64_t &x) {
-      sys::swapByteOrder(x.rax);
-      sys::swapByteOrder(x.rbx);
-      sys::swapByteOrder(x.rcx);
-      sys::swapByteOrder(x.rdx);
-      sys::swapByteOrder(x.rdi);
-      sys::swapByteOrder(x.rsi);
-      sys::swapByteOrder(x.rbp);
-      sys::swapByteOrder(x.rsp);
-      sys::swapByteOrder(x.r8);
-      sys::swapByteOrder(x.r9);
-      sys::swapByteOrder(x.r10);
-      sys::swapByteOrder(x.r11);
-      sys::swapByteOrder(x.r12);
-      sys::swapByteOrder(x.r13);
-      sys::swapByteOrder(x.r14);
-      sys::swapByteOrder(x.r15);
-      sys::swapByteOrder(x.rip);
-      sys::swapByteOrder(x.rflags);
-      sys::swapByteOrder(x.cs);
-      sys::swapByteOrder(x.fs);
-      sys::swapByteOrder(x.gs);
-    }
-
-    inline void swapStruct(x86_float_state64_t &x) {
-      sys::swapByteOrder(x.fpu_reserved[0]);
-      sys::swapByteOrder(x.fpu_reserved[1]);
-      // TODO swap: fp_control_t fpu_fcw;
-      // TODO swap: fp_status_t fpu_fsw;
-      sys::swapByteOrder(x.fpu_fop);
-      sys::swapByteOrder(x.fpu_ip);
-      sys::swapByteOrder(x.fpu_cs);
-      sys::swapByteOrder(x.fpu_rsrv2);
-      sys::swapByteOrder(x.fpu_dp);
-      sys::swapByteOrder(x.fpu_ds);
-      sys::swapByteOrder(x.fpu_rsrv3);
-      sys::swapByteOrder(x.fpu_mxcsr);
-      sys::swapByteOrder(x.fpu_mxcsrmask);
-      sys::swapByteOrder(x.fpu_reserved1);
-    }
-
-    inline void swapStruct(x86_exception_state64_t &x) {
-      sys::swapByteOrder(x.trapno);
-      sys::swapByteOrder(x.cpu);
-      sys::swapByteOrder(x.err);
-      sys::swapByteOrder(x.faultvaddr);
-    }
-
     struct x86_state_hdr_t {
       uint32_t flavor;
       uint32_t count;
     };
 
     struct x86_thread_state_t {
-      x86_state_hdr_t tsh;
+      struct x86_state_hdr_t tsh;
       union {
-        x86_thread_state64_t ts64;
+        struct x86_thread_state64_t ts64;
       } uts;
     };
 
     struct x86_float_state_t {
-      x86_state_hdr_t fsh;
+      struct x86_state_hdr_t fsh;
       union {
-        x86_float_state64_t fs64;
+        struct x86_float_state64_t fs64;
       } ufs;
     };
 
     struct x86_exception_state_t {
-      x86_state_hdr_t esh;
+      struct x86_state_hdr_t esh;
       union {
-        x86_exception_state64_t es64;
+        struct x86_exception_state64_t es64;
       } ues;
     };
-
-    inline void swapStruct(x86_state_hdr_t &x) {
-      sys::swapByteOrder(x.flavor);
-      sys::swapByteOrder(x.count);
-    }
 
     enum X86ThreadFlavors {
       x86_THREAD_STATE32    = 1,
@@ -1677,39 +1331,18 @@ namespace llvm {
       x86_DEBUG_STATE       = 12
     };
 
-    inline void swapStruct(x86_thread_state_t &x) {
-      swapStruct(x.tsh);
-      if (x.tsh.flavor == x86_THREAD_STATE64)
-        swapStruct(x.uts.ts64);
-    }
+    #define x86_THREAD_STATE64_COUNT \
+      sizeof(struct x86_thread_state64_t) / sizeof(uint32_t);
+    #define x86_FLOAT_STATE64_COUNT \
+      sizeof(struct x86_float_state64_t) / sizeof(uint32_t);
+    #define x86_EXCEPTION_STATE64_COUNT \
+      sizeof(struct x86_exception_state64_t) / sizeof(uint32_t);
 
-    inline void swapStruct(x86_float_state_t &x) {
-      swapStruct(x.fsh);
-      if (x.fsh.flavor == x86_FLOAT_STATE64)
-        swapStruct(x.ufs.fs64);
-    }
-
-    inline void swapStruct(x86_exception_state_t &x) {
-      swapStruct(x.esh);
-      if (x.esh.flavor == x86_EXCEPTION_STATE64)
-        swapStruct(x.ues.es64);
-    }
-
-    const uint32_t x86_THREAD_STATE64_COUNT =
-      sizeof(x86_thread_state64_t) / sizeof(uint32_t);
-    const uint32_t x86_FLOAT_STATE64_COUNT =
-      sizeof(x86_float_state64_t) / sizeof(uint32_t);
-    const uint32_t x86_EXCEPTION_STATE64_COUNT =
-      sizeof(x86_exception_state64_t) / sizeof(uint32_t);
-
-    const uint32_t x86_THREAD_STATE_COUNT =
-      sizeof(x86_thread_state_t) / sizeof(uint32_t);
-    const uint32_t x86_FLOAT_STATE_COUNT =
-      sizeof(x86_float_state_t) / sizeof(uint32_t);
-    const uint32_t x86_EXCEPTION_STATE_COUNT =
-      sizeof(x86_exception_state_t) / sizeof(uint32_t);
-
-  } // end namespace MachO
-} // end namespace llvm
+    #define x86_THREAD_STATE_COUNT \
+      sizeof(struct x86_thread_state_t) / sizeof(uint32_t);
+    #define x86_FLOAT_STATE_COUNT \
+      sizeof(struct x86_float_state_t) / sizeof(uint32_t);
+    #define x86_EXCEPTION_STATE_COUNT \
+      sizeof(struct x86_exception_state_t) / sizeof(uint32_t);
 
 #endif
