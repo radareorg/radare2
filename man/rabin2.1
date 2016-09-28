@@ -46,8 +46,12 @@ Demangle symbol name (or - to read from stdin) for lang (cxx, swift, java, cxx, 
 Show entrypoints for disk and on-memory
 .It Fl f Ar subbin
 Select sub-binary architecture. Useful for fat-mach0 binaries
+.It Fl F Ar binfmt
+Force to use that bin plugin (ignore header check)
 .It Fl g
 Show all possible information
+.It Fl g Ar addr
+Load address . offset to header
 .It Fl h
 Show usage help message.
 .It Fl H
@@ -80,10 +84,18 @@ Output file/folder for write operations (out by default)
 Perform binary operation on target binary (dump, resize, change sections, ...) see '-O help' for more information
 .It Fl p
 Disable VA. Show physical addresses
+.It Fl P
+Show debug/pdb information
+.It Fl PP
+Download pdb file for binary
 .It Fl q
 Be quiet, just show fewer data
+.It Fl qq
+Show less info (no offset/size for -z for ex.)
 .It Fl Q
- show load address used by dlopen (non-aslr libs)
+Show load address used by dlopen (non-aslr libs)
+.It Fl r
+Radare output
 .It Fl R
 Show realocations
 .It Fl r
@@ -92,6 +104,8 @@ Show output in radare format
 Show exported symbols
 .It Fl S
 Show sections
+.It Fl u
+Unfiltered (no rename duplicated symbols/sections)
 .It Fl v
 Show version information
 .It Fl V
@@ -106,6 +120,8 @@ Show strings inside .data section (like gnu strings does)
 Guess size of binary program
 .It Fl zz
 Shows strings from raw bins
+.It Fl zzz
+Dump raw strings to stdout (for huge files)
 .El
 .Sh ENVIRONMENT
 .Pp
