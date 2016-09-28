@@ -642,8 +642,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		//  - Set flags
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, NULL);
-			esilprintf (op, "%s,%s,<<<,%s", src, dst, dst);
+			char *dst = getarg (&gop, 0, 0, NULL);
+			esilprintf (op, "%s,%s,<<<,%s,=", src, dst, dst);
 			free (src);
 			free (dst);
 		}
@@ -654,8 +654,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		//  - Set flags
 		{
 			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, NULL);
-			esilprintf (op, "%s,%s,>>>,%s", src, dst, dst);
+			char *dst = getarg (&gop, 0, 0, NULL);
+			esilprintf (op, "%s,%s,>>>,%s,=", src, dst, dst);
 			free (src);
 			free (dst);
 		}
