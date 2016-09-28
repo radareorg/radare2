@@ -87,7 +87,7 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 	if (in && out) {
 		int i_in = atoi (in);
 		int i_out = atoi (out);
-		if (i_in>=0 && i_out>=0) {
+		if (i_in >= 0 && i_out >= 0) {
 			r2p->input[0] = r2p->input[1] = i_in;
 			r2p->output[0] = r2p->output[1] = i_out;
 			done = true;
@@ -108,7 +108,9 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 
 R_API R2Pipe *r2p_open(const char *cmd) {
 	R2Pipe *r2p = R_NEW0 (R2Pipe);
-	if (!r2p) return NULL;
+	if (!r2p) {
+		return NULL;
+	}
 	r2p->magic = R2P_MAGIC;
 	if (!cmd) {
 		r2p->child = -1;
@@ -134,17 +136,26 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 
 	if (r2p->child) {
 		eprintf ("[+] r2pipe child is %d\n", r2p->child);
-#if 0
 		char ch;
 		if (read (r2p->output[0], &ch, 1) != 1) {
 			eprintf ("Failed to read 1 byte\n");
 			r2p_close (r2p);
 			return NULL;
 		}
-		if (ch == 0x00) {
-			eprintf ("[+] r2pipe-io link stablished\n");
+		if (ch != 0x00) {
+			eprintf ("[+] r2pipe-io link failed. Expected two null bytes.\n");
+			r2p_close (r2p);
+			return NULL;
+		} else {
+			if (read (r2p->output[0], &ch, 1) != 1) {
+				eprintf ("Failed to read 1 byte\n");
+				r2p_close (r2p);
+				return NULL;
+			}
+			if (ch == 0x00) {
+				eprintf ("[+] r2pipe-io link stablished\n");
+			}
 		}
-#endif
 	} else {
 		int rc = 0;
 		if (cmd && *cmd) {
@@ -176,16 +187,16 @@ R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 	va_list ap, ap2;
 	va_start (ap, fmt);
 	va_start (ap2, fmt);
-	ret = vsnprintf (string, sizeof (string)-1, fmt, ap);
+	ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
 	if (ret < 1 || ret >= sizeof (string)) {
-		p = malloc (ret+2);
+		p = malloc (ret + 2);
 		if (!p) {
 			va_end (ap2);
 			va_end (ap);
 			return NULL;
 		}
 		ret2 = vsnprintf (p, ret+1, fmt, ap2);
-		if (ret2 < 1 || ret2 > ret+1) {
+		if (ret2 < 1 || ret2 > ret + 1) {
 			free (p);
 			va_end (ap2);
 			va_end (ap);
@@ -207,10 +218,13 @@ R_API int r2p_write(R2Pipe *r2p, const char *str) {
 	if (!r2p || !str) {
 		return -1;
 	}
-	len = strlen (str) + 1; /* include \x00 */
+	len = strlen (str) + 2; /* include \n\x00 */
 	cmd = malloc (len + 2);
-	if (!cmd) return 0;
-	memcpy (cmd, str, len);
+	if (!cmd) {
+		return 0;
+	}
+	memcpy (cmd, str, len - 1);
+	strcpy (cmd + len - 2, "\n");
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	DWORD dwWritten = -1;
 	WriteFile (r2p->pipe, cmd, len, &dwWritten, NULL);
@@ -241,12 +255,12 @@ R_API char *r2p_read(R2Pipe *r2p) {
 	if (dwRead > 0) {
 		buf[dwRead] = 0;
 	}
-	buf[bufsz-1] = 0;
+	buf[bufsz - 1] = 0;
 #else
 	int i, rv;
-	for (i=0; i < bufsz; i++) {
+	for (i = 0; i < bufsz; i++) {
 		rv = read (r2p->output[0], buf + i, 1);
-		if (i+2 >= bufsz) {
+		if (i + 2 >= bufsz) {
 			bufsz += 4096;
 			newbuf = realloc (buf, bufsz);
 			if (!newbuf) {
@@ -256,10 +270,12 @@ R_API char *r2p_read(R2Pipe *r2p) {
 			}
 			buf = newbuf;
 		}
-		if (rv != 1 || !buf[i]) break;
+		if (rv != 1 || !buf[i]) {
+			break;
+		}
 	}
 	if (buf) {
-		int zpos = (i<bufsz)? i: i - 1;
+		int zpos = (i < bufsz)? i: i - 1;
 		buf[zpos] = 0;
 	}
 #endif

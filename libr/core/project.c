@@ -160,13 +160,18 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 static bool r_core_rop_load(RCore *core, const char *prjfile) {
-	char *path, *db;
+	char *path, *db, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
 	SdbNs *ns;
 
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
+	Sdb *nop_db = sdb_ns (rop_db, "nop", false);
+	Sdb *mov_db = sdb_ns (rop_db, "mov", false);
+	Sdb *const_db = sdb_ns (rop_db, "const", false);
+	Sdb *arithm_db = sdb_ns (rop_db, "arithm", false);
+	Sdb *arithmct_db = sdb_ns (rop_db, "arithm_ct", false);
 
 	if (!prjfile || !*prjfile) {
 		return false;
@@ -206,7 +211,25 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 		return false;
 	}
 	sdb_ns_set (core->sdb, "rop", rop_db);
+
+	path_ns = r_str_newf ("%s" R_SYS_DIR "rop", path);
+	nop_db = sdb_new (path_ns, "nop", 0);
+	sdb_ns_set (rop_db, "nop", nop_db);
+
+	mov_db = sdb_new (path_ns, "mov", 0);
+	sdb_ns_set (rop_db, "mov", mov_db);
+
+	const_db = sdb_new (path_ns, "const", 0);
+	sdb_ns_set (rop_db, "const", const_db);
+
+	arithm_db = sdb_new (path_ns, "arithm", 0);
+	sdb_ns_set (rop_db, "arithm", arithm_db);
+
+	arithmct_db = sdb_new (path_ns, "arithm_ct", 0);
+	sdb_ns_set (rop_db, "arithm_ct", arithmct_db);
+
 	free (path);
+	free (path_ns);
 	free (db);
 	return true;
 }
@@ -444,6 +467,8 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 R_API bool r_core_project_save(RCore *core, const char *file) {
 	bool ret = true;
 	char *prj, buf[1024];
+	SdbListIter *it;
+	SdbNs *ns;
 
 	if (!file || !*file) {
 		return false;
@@ -467,9 +492,11 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	if (rop_db) {
-		snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "rop", prj);
-		sdb_file (rop_db, buf);
-		sdb_sync (rop_db);
+		ls_foreach (rop_db->ns, it, ns){
+			snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
+			sdb_file (ns->sdb, buf);
+			sdb_sync (ns->sdb);
+		}
 	}
 
 	if (!r_core_project_save_rdb (core, prj, R_CORE_PRJ_ALL^R_CORE_PRJ_XREFS)) {

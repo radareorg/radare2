@@ -515,7 +515,7 @@ static char* dex_method_fullname (RBinDexObj *bin, int method_idx) {
 	char *class_name = dex_class_name_byid (bin, cid);
 	class_name = r_str_replace (class_name, ";", "", 0); //TODO: move to func
 	char *signature = dex_method_signature (bin, method_idx);
-	char *flagname = r_str_newf ("%s%s%s", class_name, name, signature);
+	char *flagname = r_str_newf ("%s.%s%s", class_name, name, signature);
 	free (name);
 	free (class_name);
 	free (signature);
@@ -803,28 +803,24 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 					free (sym);
 					continue;
 				}
-				ut16 regsz = r_read_le16 (ff2);
-				ut16 ins_size = r_read_le16 (ff2 + 2);
-				ut16 outs_size = r_read_le16 (ff2 + 4);
+				//ut16 regsz = r_read_le16 (ff2);
+				//ut16 ins_size = r_read_le16 (ff2 + 2);
+				//ut16 outs_size = r_read_le16 (ff2 + 4);
 				ut16 tries_size = r_read_le16 (ff2 + 6);
-				ut32 debug_info_off = r_read_le32 (ff2 + 8);
+				//ut32 debug_info_off = r_read_le32 (ff2 + 8);
 				ut32 insns_size = r_read_le32 (ff2 + 12);
 
-				ut64 prolog_size = 2+2+2+2+4+4;
+				ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
 				if (tries_size > 0) {
 					//prolog_size += 2 + 8*tries_size; // we need to parse all so the catch info...
 				}
-
 				// TODO: prolog_size
 				sym->paddr = MC + prolog_size;// + 0x10;
 				sym->vaddr = MC + prolog_size;// + 0x10;
 				sym->size = insns_size * 2;
-
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
-
 				r_list_append (bin->methods_list, sym);
 				r_list_append (cls->methods, sym);
-
 				/* cache in sdb */
 				if (!mdb) {
 					mdb = sdb_new0 ();

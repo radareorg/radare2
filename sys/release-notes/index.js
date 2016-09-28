@@ -4,11 +4,12 @@
 const exec = require('child_process').exec;
 const spawn = require('child_process').spawn;
 const AsciiTable = require('ascii-table');
+const config = require('./config');
 
-const lastTag = '0.10.4';
-const curVersion = '@'; //0.10.4';
+const lastTag = config.previousRelease;
+const curVersion = config.releaseVersion;
 const showOnlyFinalReport = true;
-const codeName = 'PreCon';
+const codeName = config.codeName;
 const topTen = 0;
 const topFive = 999;
 
@@ -37,17 +38,15 @@ const authorAlias = {
   'incredible.angst': 'kolen',
 };
 
-const columns = [ 'name', 'commits', 'fix', 'add', 'leak', 'update', 'r2pm', 'clean', 'esil', 'endian', 'commits', 'authors' ];
+const columns = [ 'name', 'commits', 'fix', 'add', 'honor', 'leak', 'esil', 'endian', 'authors' ];
 
 const paths = [
   '', // total
-  'binr/r2pm/d',
   'binr/radare2',
   'binr/rabin2',
   'binr/radiff2',
   'binr/rahash2',
-  'binr/ragg2',
-  'libr/hash',
+  // 'binr/ragg2',
   'libr/debug',
   'libr/bin',
   'libr/core',
@@ -56,15 +55,17 @@ const paths = [
   'libr/anal',
   'libr/asm',
   'libr/util',
-  'libr/bp',
   'libr/egg',
+  'libr/io',
   /*
+  'libr/hash',
+  'libr/bp',
    'libr/flags',
    'libr/diff',
    'libr/search',
    'shlr/sdb',
-   */
   'shlr/tcc',
+   */
   'shlr/bochs',
   'man',
 ];
@@ -142,7 +143,7 @@ function getChangelog(upto, path, cb) {
           date: date,
           msg: message.trim()
         };
-        if (doh.msg.match('fix')) {
+        if (doh.msg.match(/fix/i)) {
           numberFix = doh.msg.match(/#(\d+)/);
           if (numberFix != null)
             o.fixes.push(numberFix[1]);
@@ -187,7 +188,6 @@ function computeStats(o) {
     oob: countWord(o.commits, /oob/i),
     honor: countWord(o.commits, /honor/i),
     update: countWord(o.commits, /update/i),
-    r2pm: countWord(o.commits, /r2pm/i),
     clean: countWord(o.commits, /clean/i),
     'import': countWord(o.commits, /import/i),
     endian: countWord(o.commits, /endian/i),
@@ -220,7 +220,7 @@ function computeRanking(o) {
 function computeRepairs(o) {
   let r = [];
   o.fixes.forEach(function(elem) {
-    r.push("[#" + elem + "](https://github.com/radare/radare2/issues/" + elem + "]");
+    r.push("[#" + elem + "](https://github.com/radare/radare2/issues/" + elem + ")");
   });
   return {
     count: Object.keys(o.fixes).length,
@@ -232,18 +232,23 @@ String.prototype.repeat = function(times) {
   return (new Array(times + 1)).join(this);
 };
 
-function printMdList(mdList, listLevel) {
+function printMdList(mdList, listLevel, total) {
   const elems = Object.keys(mdList);
   elems.forEach(function(elem) {
     if (elem === 'priv' || elem == 'path') {
       return;
+    }
+    let pc = '';
+    if (total !== undefined) {
+      const a = mdList[elem].split(' ')[0].trim();
+      pc = [(100 * a / total) | 0, '%'].join('');
     }
     if (typeof mdList[elem] === 'object') {
       console.log('\t'.repeat(listLevel) + '- ' + elem + ':');
       return printMdList(mdList[elem], listLevel + 1);
     } else {
       const elemName = isNaN(elem) ? (elem + ': ') : '';
-      console.log ('\t'.repeat(listLevel) + '- ' + elemName + mdList[elem]);
+      console.log (pc, '\t'.repeat(listLevel) + '- ' + elemName + mdList[elem]);
     }
   });
 }
@@ -293,11 +298,18 @@ function printFinalReportTable(obj) {
         if (first) {
           first = false;
         } else {
-          let last = topFive;
           let auth = '';
+          let countDown = 4;
+          let last = topFive;
           for (let a of o.ranking.authors) {
             auth += getAuthor(a) + ' ';
-            if (!last--) break;
+            if (!last--) {
+              break;
+            }
+            if (--countDown < 1) {
+              auth += '...';
+              break;
+            }
           }
           arr.push (auth);
         }
@@ -310,7 +322,7 @@ function printFinalReportTable(obj) {
   const table = new AsciiTable('Release ' + curVersion)
   paths.forEach((path) => {
     table.addRow(getFinalReportFor(path));
-});
+  });
   table.setHeading(columns);
 
   console.log('```');
@@ -319,9 +331,14 @@ function printFinalReportTable(obj) {
 }
 
 function getLogMessages(x) {
+  function validMessage(msg) {
+    return msg.indexOf('CID') === -1;
+  }
   let msg = '';
   for (let m of x) {
-    msg += m.msg + '\n';
+    if (validMessage(m.msg)) {
+      msg += m.msg + '\n';
+    }
   }
   return msg;
 }
@@ -364,37 +381,35 @@ function main() {
           }
           for (let oneDoner of doner) {
             if (oneDoner.path == '') {
-              console.log('radare2 '+curVersion+' comes with '+oneDoner.diff.diff+'new lines of new features,'+
+              console.log('radare2 '+curVersion+' comes with '+oneDoner.diff.diff+' new lines of new features,'+
                   ' bug fixes and enhancements. Here some of the most important highlights:');
               console.log();
               console.log('Numbers:');
               console.log('--------');
               let r = oneDoner.ranking;
               let f = oneDoner.repairs;
-              oneDoner.ranking = {};
-              oneDoner.repairs = {};
+              delete oneDoner.ranking;
+              delete oneDoner.repairs;
               printMdList(oneDoner, 0);
               oneDoner.ranking = r;
               oneDoner.repairs = f;
               printFinalReportTable(doner);
               console.log();
-              console.log('Contributors:');
+              console.log('Contributors:', o.commits.length, '/', oneDoner.ranking.authors.length, '= ~',
+                o.commits.length / oneDoner.ranking.authors.length);
               console.log('-------------');
               console.log();
-              printMdList(oneDoner.ranking.authors, 0);
-              console.log();
-              console.log('Fixes:');
-              console.log('--------');
-              console.log();
-              printMdList(oneDoner.repairs.fixes, 0);
-              console.log();
-              console.log('Changes:');
-              console.log('--------');
+              printMdList(oneDoner.ranking.authors, 0, o.commits.length);
               console.log();
               console.log('Commits:');
               console.log('--------');
               const logMessages = getLogMessages(oneDoner.priv.commits);
               console.log(logMessages);
+              console.log();
+              console.log('Fixes:');
+              console.log('------');
+              console.log();
+              printMdList(oneDoner.repairs.fixes, 0);
             }
           }
         }

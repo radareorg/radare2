@@ -2445,6 +2445,14 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 	return 0;
 }
 
+static bool isValidSymbol(RBinSymbol *symbol) {
+	if (symbol && symbol->type) {
+		const char *type = symbol->type;
+		return (!strcmp (type, "FUNC") || !strcmp (type, "METH"));
+	}
+	return false;
+}
+
 R_API int r_core_anal_all(RCore *core) {
 	RList *list;
 	RListIter *iter;
@@ -2483,7 +2491,7 @@ R_API int r_core_anal_all(RCore *core) {
 		r_list_foreach (list, iter, symbol) {
 			if (core->cons->breaked)
 				break;
-			if (symbol->type && (!strcmp (symbol->type, "FUNC"))) {
+			if (isValidSymbol (symbol)) {
 				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr,
 					symbol->vaddr);
 				r_core_anal_fcn (core, addr, -1,

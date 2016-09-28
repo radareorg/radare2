@@ -1121,8 +1121,9 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	int i, err, reg, ret = false;
-	if (!dbg || !dbg->h || r_debug_is_dead (dbg))
+	if (!dbg || !dbg->h || r_debug_is_dead (dbg)) {
 		return false;
+	}
 	if (!dbg->h->contsc) {
 		/* user-level syscall tracing */
 		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
@@ -1156,10 +1157,12 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		if (reason == R_DEBUG_REASON_DEAD || r_debug_is_dead (dbg)) {
 			break;
 		}
+#if 0
 		if (reason != R_DEBUG_REASON_STEP) {
+			eprintf ("astep\n");
 			break;
 		}
-
+#endif
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			eprintf ("--> cannot sync regs, process is probably dead\n");
 			return -1;

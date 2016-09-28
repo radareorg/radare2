@@ -57,7 +57,7 @@ static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 		sdb_fmt (0, "type.%s", k), 0);
 }
 static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
-	char *spacer = NULL;
+	char *tmp, *spacer = NULL;
 	char *source = (char*)buf_asm;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_num = core->cons->pal.num;
@@ -66,14 +66,11 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	if (!use_color) {
 		return strdup (source);
 	}
-
 	// workaround dummy colorizer in case of paired commands (tms320 & friends)
-
 	spacer = strstr (source, "||");
 	if (spacer) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
-
 		scol1 = r_print_colorize_opcode (s1, color_reg, color_num);
 		free (s1);
 		scol2 = r_print_colorize_opcode (s2, color_reg, color_num);
@@ -92,7 +89,9 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	}
 	char *res = strdup("");
 	res = r_str_concat (res, r_print_color_op_type (core->print, optype));
-	res = r_str_concat (res, r_print_colorize_opcode (source, color_reg, color_num));
+	tmp = r_print_colorize_opcode (source, color_reg, color_num);
+	res = r_str_concat (res, tmp);
+	free (tmp);
 	return res;
 }
 

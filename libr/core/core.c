@@ -129,25 +129,26 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
  * The returned buffer needs to be freed
  */
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
-	int i, found = 0;
-	if (!core->asmqjmps) return NULL;
+	bool found = false;
+	if (!core->asmqjmps) {
+		return NULL;
+	}
 	if (core->is_asmqjmps_letter) {
 		if (core->asmqjmps_count >= R_CORE_ASMQJMPS_MAX_LETTERS) {
 			return NULL;
 		}
-
 		if (core->asmqjmps_count >= core->asmqjmps_size - 2) {
 			core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * 2 * sizeof (ut64));
 			if (!core->asmqjmps) return NULL;
 			core->asmqjmps_size *= 2;
 		}
 	}
-
 	if (core->asmqjmps_count < core->asmqjmps_size - 1) {
+		int i;
 		char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
 		for (i = 0; i < core->asmqjmps_count + 1; i++) {
 			if (core->asmqjmps[i] == addr) {
-				found = 1;
+				found = true;
 				break;
 			}
 		}
@@ -157,9 +158,8 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr) {
 		}
 		r_core_set_asmqjmps (core, t, sizeof (t), i);
 		return strdup (t);
-	} else {
-		return NULL;
 	}
+	return NULL;
 }
 
 /* returns in str a string that represents the shortcut to access the asmqjmp
@@ -188,12 +188,22 @@ R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int pos) {
 	}
 }
 
+static void setab(RCore *core, const char *arch, int bits) {
+	if (arch) {
+		r_config_set (core->config, "asm.arch", arch);
+	}
+	if (bits > 0) {
+		r_config_set_i (core->config, "asm.bits", bits);
+	}
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
 	bnd->cmd = (RCoreCmd)r_core_cmd0;
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->puts = (RCorePuts)r_cons_strcat;
+	bnd->setab = (RCoreSetArchBits)setab;
 	return true;
 }
 
@@ -1381,6 +1391,7 @@ R_API int r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->bin->iob));
 	r_flag_bind (core->flags, &(core->anal->flb));
 	r_anal_bind (core->anal, &(core->parser->analb));
+	r_core_bind (core, &(core->anal->coreb));
 
 	core->file = NULL;
 	core->files = r_list_new ();
@@ -2055,10 +2066,7 @@ reaccept:
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb) {
 	int ret, len = core->blocksize;
 	ut8 *buf;
-	if (!(buf = malloc (len))) {
-		eprintf ("Cannot allocate blocksize\n");
-	}
-	else {
+	if ((buf = malloc (len))) {
 		while (from < to) {
 			ut64 delta = to-from;
 			if (delta < len) {
@@ -2078,8 +2086,10 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 			}
 			from += len;
 		}
+		free (buf);
+	} else {
+		eprintf ("Cannot allocate blocksize\n");
 	}
-	free (buf);
 	return true;
 }
 

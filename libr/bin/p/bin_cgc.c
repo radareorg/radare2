@@ -129,5 +129,6 @@ RBinPlugin r_bin_plugin_cgc = {
 	.relocs = &relocs,
 	.dbginfo = &r_bin_dbginfo_elf,
 	.create = &create,
+	.patch_relocs = &patch_relocs,
 	.write = &r_bin_write_elf,
 };

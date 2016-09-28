@@ -267,8 +267,9 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
 	RIOSection *s;
-	if (oaddr == addr)
+	if (oaddr == addr) {
 		return section;
+	}
 	s = r_io_section_vget (core->io, addr);
 	if (s) {
 		snprintf (section, sizeof (section)-1, "%10s ", s->name);
@@ -280,9 +281,9 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				const char *mn = r_str_lchr (map->name, '/');
 				if (mn) {
-					strncpy (section, mn+1, sizeof (section)-1);
+					strncpy (section, mn + 1, sizeof (section) - 1);
 				} else {
-					strncpy (section, map->name, sizeof (section)-1);
+					strncpy (section, map->name, sizeof (section) - 1);
 				}
 				break;
 			}
@@ -299,7 +300,7 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 	if (ds->show_functions) {
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (!f) {
-			r_cons_printf ("  ");
+			r_cons_print ("  ");
 			ds_print_lines_left (ds);
 		}
 	}
@@ -307,7 +308,6 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 	ds_print_offset (ds);
 	if (!pre) r_cons_newline ();
 }
-
 
 static RDisasmState * ds_init(RCore *core) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
@@ -448,7 +448,6 @@ static RDisasmState * ds_init(RCore *core) {
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
 		}
 	}
-
 	if (ds->show_lines) {
 		ds->ocols += 10; // XXX
 	}
@@ -468,20 +467,21 @@ static RDisasmState * ds_init(RCore *core) {
 	/* disasm */ ds->ocols += 20;
 	ds->nb = ds->nbytes? (1+ds->nbytes*2): 0;
 	ds->tries = 3;
-
 	if (core->print->cur_enabled) {
 		if (core->print->cur < 0) {
 			core->print->cur = 0;
 		}
 		ds->cursor = core->print->cur;
-	} else ds->cursor = -1;
-
+	} else {
+		ds->cursor = -1;
+	}
 	if (r_config_get_i (core->config, "asm.lineswide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
-		if (core->utf8)
+		if (core->utf8) {
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
+		}
 	}
 	return ds;
 }
@@ -775,14 +775,14 @@ static void ds_show_refs(RDisasmState *ds) {
 		if (cmt) {
 			r_cons_printf (" ; (%s)", cmt);
 		}
-		if (ref->type == R_ANAL_REF_TYPE_CALL) {
+		if (ref->type & R_ANAL_REF_TYPE_CALL) {
 			RAnalOp aop;
 			ut8 buf[12];
-			r_core_read_at (ds->core, ref->at, buf, 12);
-			r_anal_op (ds->core->anal, &aop, ref->at, buf, 12);
+			r_core_read_at (ds->core, ref->at, buf, sizeof (buf));
+			r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf));
 			if ((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
-				RAnalFunction * fcn;
-				fcn = r_anal_get_fcn_at (ds->core->anal, ref->addr, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction * fcn = r_anal_get_fcn_at (ds->core->anal,
+					ref->addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					r_cons_printf (" ; %s", fcn->name);
 				} else {
@@ -873,24 +873,25 @@ static void ds_atabs_option(RDisasmState *ds) {
 	if (!ds || !ds->atabs) {
 		return;
 	}
-	size = strlen (ds->asmop.buf_asm)* (ds->atabs + 1) * 4; 
-	if (size < 1) {
+	size = strlen (ds->asmop.buf_asm) * (ds->atabs + 1) * 4; 
+	if (size < 1 || size < strlen (ds->asmop.buf_asm)) {
 		return;
 	}
 	free (ds->opstr);
-	ds->opstr = b = malloc (size);
-	strcpy (b, ds->asmop.buf_asm);
+	ds->opstr = b = malloc (size + 1);
+	strncpy (b, ds->asmop.buf_asm, R_MIN (size, R_ASM_BUFSIZE));
+	b[size] = 0;
 	for (; *b; b++, i++) {
-		if (*b=='(' || *b=='[') {
+		if (*b == '(' || *b == '[') {
 			brackets++;
 		}
-		if (*b==')' || *b==']') {
+		if (*b == ')' || *b == ']') {
 			brackets--;
 		}
-		if (*b==',') {
+		if (*b == ',') {
 			comma = 1;
 		}
-		if (*b!=' ') {
+		if (*b != ' ') {
 			continue;
 		}
 		if (word > 0 && !comma) {
@@ -902,7 +903,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 		comma = 0;
 		brackets = 0;
 		n = (ds->atabs-i);
-		t = strdup (b+1); //XXX slow!
+		t = strdup (b + 1); //XXX slow!
 		if (n < 1) {
 			n = 1;
 		}
@@ -1194,8 +1195,9 @@ static void ds_show_functions(RDisasmState *ds) {
 		r_list_free (args);
 		r_list_free (sp_vars);
 	}
-	if (demangle)
+	if (demangle) {
 		free (fcn_name);
+	}
 }
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle) {
@@ -2274,7 +2276,7 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 		return;
 	}
 	if (core->vmode) {
-		switch (ds->analop.type) {
+		switch (ds->analop.type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_LEA:
 			if (ds->show_leahints) {
 				ds_align_comment(ds);
@@ -2291,12 +2293,32 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 				if (ds->show_color) r_cons_strcat (Color_RESET);
 			}
 			break;
+		case R_ANAL_OP_TYPE_ICALL:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
+			ds_align_comment (ds);
+			if (ds->show_color) {
+				r_cons_strcat (ds->pal_comment);
+			}
+			shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
+			if (shortcut) {
+				r_cons_printf (" ;[%s]", shortcut);
+				free (shortcut);
+			} else {
+				r_cons_strcat (" ;[?]");
+			}
+			if (ds->show_color) {
+				r_cons_strcat (Color_RESET);
+			}
+			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
 			ds_align_comment (ds);
-			if (ds->show_color) r_cons_strcat (ds->pal_comment);
+			if (ds->show_color) {
+				r_cons_strcat (ds->pal_comment);
+			}
 			shortcut = r_core_add_asmqjmp (core, ds->analop.jump);
 			if (shortcut) {
 				r_cons_printf (" ;[%s]", shortcut);
@@ -2304,7 +2326,9 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 			} else {
 				r_cons_strcat (" ;[?]");
 			}
-			if (ds->show_color) r_cons_strcat (Color_RESET);
+			if (ds->show_color) {
+				r_cons_strcat (Color_RESET);
+			}
 			break;
 		}
 	}

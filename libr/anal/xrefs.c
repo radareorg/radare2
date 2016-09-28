@@ -34,9 +34,10 @@ R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
 }
 
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
-	char key[32];
-	if (!anal || !DB)
+	char key[33];
+	if (!anal || !DB) {
 		return false;
+	}
 	// unknown refs should not be stored. seems wrong
 	if (type == R_ANAL_REF_TYPE_NULL) {
 		return false;
@@ -49,7 +50,7 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 }
 
 R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
-	char key[32];
+	char key[33];
 	if (!anal || !DB) {
 		return false;
 	}

@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_db.h>
+#include <r_bind.h>
 
 #define IFDBG if (esil->debug)
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
@@ -785,6 +786,18 @@ static int esil_trap(RAnalEsil *esil) {
 		return r_anal_esil_fire_trap (esil, (int)s, (int)d);
 	}
 	ERR ("esil_trap: missing parameters in stack");
+	return false;
+}
+
+static int esil_bits(RAnalEsil *esil) {
+	ut64 s;
+	if (popRN (esil, &s)) {
+		if (esil->anal && esil->anal->coreb.setab) {
+			esil->anal->coreb.setab (esil->anal->coreb.core, NULL, s);
+		}
+		return true;
+	}
+	ERR ("esil_bits: missing parameters in stack");
 	return false;
 }
 
@@ -2628,6 +2641,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("RPICK", esil_rpick);
 	OP ("SWAP", esil_swap);
 	OP ("TRAP", esil_trap);
+	OP ("BITS", esil_bits);
 }
 
 /* register callbacks using this anal module. */

@@ -58,26 +58,26 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 		char *str = strdup (_str);
 		count = r_str_word_set0 (str);
 		syscalls = calloc (sizeof (int), count);
-		for (i=0; i<count; i++) {
+		for (i = 0; i < count; i++) {
 			const char *sysnumstr = r_str_word_get0 (str, i);
 			int sig = (int)r_num_math (core->num, sysnumstr);
 			if (sig == -1) { // trace ALL syscalls
 				syscalls[i] = -1;
-			} else
-				if (sig == 0) {
-					sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
-					if (sig == -1) {
-						eprintf ("Unknown syscall number\n");
-						free (str);
-						free (syscalls);
-						return;
-					}
-					syscalls[i] = sig;
+			} else if (sig == 0) {
+				sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
+				if (sig == -1) {
+					eprintf ("Unknown syscall number\n");
+					free (str);
+					free (syscalls);
+					return;
 				}
+				syscalls[i] = sig;
+			}
 		}
 		eprintf ("Running child until syscalls:");
-		for (i=0; i < count; i++)
+		for (i=0; i < count; i++) {
 			eprintf ("%d ", syscalls[i]);
+		}
 		eprintf ("\n");
 		free (str);
 	} else {
@@ -2755,111 +2755,111 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	};
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
-		case 0: // "dc"
-			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_continue (core->dbg);
-			break;
-		case 'a': // "dca"
-			eprintf ("TODO: dca\n");
-			break;
-		case 'f': // "dcf"
-			eprintf ("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
-			// we should stop in fork and vfork syscalls
-			//TODO: multiple syscalls not handled yet
-			// r_core_cmd0 (core, "dcs vfork fork");
-			r_core_cmd0 (core, "dcs vfork fork clone");
-			break;
-		case 'c': // "dcc"
-			r_reg_arena_swap (core->dbg->reg, true);
-			if (input[2] == 'u') {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
-			} else {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
-			}
-			break;
-		case 'r':
-			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
-			break;
-		case 'k':
-			// select pid and r_debug_continue_kill (core->dbg,
-			r_reg_arena_swap (core->dbg->reg, true);
-			signum = r_num_math (core->num, input + 2);
-			ptr = strchr (input + 3, ' ');
-			if (ptr) {
-				int old_pid = core->dbg->pid;
-				int old_tid = core->dbg->tid;
-				int pid = atoi (ptr+1);
-				int tid = pid; // XXX
-				*ptr = 0;
-				r_debug_select (core->dbg, pid, tid);
-				r_debug_continue_kill (core->dbg, signum);
-				r_debug_select (core->dbg, old_pid, old_tid);
-			} else {
-				r_debug_continue_kill (core->dbg, signum);
-			}
-			break;
-		case 's':
-			switch (input[2]) {
-				case '*':
-					cmd_debug_cont_syscall (core, "-1");
-					break;
-				case ' ':
-					cmd_debug_cont_syscall (core, input + 3);
-					break;
-				case '\0':
-					cmd_debug_cont_syscall (core, NULL);
-					break;
-				default:
-				case '?':
-					eprintf ("|Usage: dcs [syscall-name-or-number]\n");
-					eprintf ("|dcs         : continue until next syscall\n");
-					eprintf ("|dcs mmap    : continue until next call to mmap\n");
-					eprintf ("|dcs*        : trace all syscalls (strace)\n");
-					eprintf ("|dcs?        : show this help\n");
-					break;
-			}
-			break;
-		case 'p':
-			{ // XXX: this is very slow
-				RIOSection *s;
-				ut64 pc;
-				int n = 0;
-				int t = core->dbg->trace->enabled;
-				core->dbg->trace->enabled = 0;
-				r_cons_break (static_debug_stop, core->dbg);
-				do {
-					r_debug_step (core->dbg, 1);
-					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
-					pc = r_debug_reg_get (core->dbg, "PC");
-					eprintf (" %d %"PFMT64x"\r", n++, pc);
-					s = r_io_section_vget (core->io, pc);
-					if (r_cons_singleton ()->breaked)
-						break;
-				} while (!s);
-				eprintf ("\n");
-				core->dbg->trace->enabled = t;
-				r_cons_break_end();
-				return 1;
-			}
-		case 'u':
-			cmd_dcu (core, input);
+	case 0: // "dc"
+		r_reg_arena_swap (core->dbg->reg, true);
+		r_debug_continue (core->dbg);
+		break;
+	case 'a': // "dca"
+		eprintf ("TODO: dca\n");
+		break;
+	case 'f': // "dcf"
+		eprintf ("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
+		// we should stop in fork and vfork syscalls
+		//TODO: multiple syscalls not handled yet
+		// r_core_cmd0 (core, "dcs vfork fork");
+		r_core_cmd0 (core, "dcs vfork fork clone");
+		break;
+	case 'c': // "dcc"
+		r_reg_arena_swap (core->dbg->reg, true);
+		if (input[2] == 'u') {
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
+		} else {
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+		}
+		break;
+	case 'r':
+		r_reg_arena_swap (core->dbg->reg, true);
+		r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
+		break;
+	case 'k':
+		// select pid and r_debug_continue_kill (core->dbg,
+		r_reg_arena_swap (core->dbg->reg, true);
+		signum = r_num_math (core->num, input + 2);
+		ptr = strchr (input + 3, ' ');
+		if (ptr) {
+			int old_pid = core->dbg->pid;
+			int old_tid = core->dbg->tid;
+			int pid = atoi (ptr+1);
+			int tid = pid; // XXX
+			*ptr = 0;
+			r_debug_select (core->dbg, pid, tid);
+			r_debug_continue_kill (core->dbg, signum);
+			r_debug_select (core->dbg, old_pid, old_tid);
+		} else {
+			r_debug_continue_kill (core->dbg, signum);
+		}
+		break;
+	case 's': // "dcs"
+		switch (input[2]) {
+		case '*':
+			cmd_debug_cont_syscall (core, "-1");
 			break;
 		case ' ':
-			old_pid = core->dbg->pid;
-			pid = atoi (input + 2);
-			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_select (core->dbg, pid, core->dbg->tid);
-			r_debug_continue (core->dbg);
-			r_debug_select (core->dbg, old_pid, core->dbg->tid);
+			cmd_debug_cont_syscall (core, input + 3);
 			break;
-		case 't':
-			cmd_debug_backtrace (core, input + 2);
+		case '\0':
+			cmd_debug_cont_syscall (core, NULL);
 			break;
-		case '?': // "dc?"
 		default:
-			r_core_cmd_help (core, help_message);
-			return 0;
+		case '?':
+			eprintf ("|Usage: dcs [syscall-name-or-number]\n");
+			eprintf ("|dcs         : continue until next syscall\n");
+			eprintf ("|dcs mmap    : continue until next call to mmap\n");
+			eprintf ("|dcs*        : trace all syscalls (strace)\n");
+			eprintf ("|dcs?        : show this help\n");
+			break;
+		}
+		break;
+	case 'p':
+		{ // XXX: this is very slow
+			RIOSection *s;
+			ut64 pc;
+			int n = 0;
+			int t = core->dbg->trace->enabled;
+			core->dbg->trace->enabled = 0;
+			r_cons_break (static_debug_stop, core->dbg);
+			do {
+				r_debug_step (core->dbg, 1);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
+				pc = r_debug_reg_get (core->dbg, "PC");
+				eprintf (" %d %"PFMT64x"\r", n++, pc);
+				s = r_io_section_vget (core->io, pc);
+				if (r_cons_singleton ()->breaked)
+					break;
+			} while (!s);
+			eprintf ("\n");
+			core->dbg->trace->enabled = t;
+			r_cons_break_end();
+			return 1;
+		}
+	case 'u':
+		cmd_dcu (core, input);
+		break;
+	case ' ':
+		old_pid = core->dbg->pid;
+		pid = atoi (input + 2);
+		r_reg_arena_swap (core->dbg->reg, true);
+		r_debug_select (core->dbg, pid, core->dbg->tid);
+		r_debug_continue (core->dbg);
+		r_debug_select (core->dbg, old_pid, core->dbg->tid);
+		break;
+	case 't':
+		cmd_debug_backtrace (core, input + 2);
+		break;
+	case '?': // "dc?"
+	default:
+		r_core_cmd_help (core, help_message);
+		return 0;
 	}
 	return 1;
 }

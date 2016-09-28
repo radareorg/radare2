@@ -5,7 +5,7 @@ BINDEPS+=r_lang r_asm r_syscall r_hash
 BINDEPS+=r_magic r_socket r_flags r_egg r_crypto r_util
 
 # Apple Sign #
-CERTID=org.radare.radare2
+CERTID?=org.radare.radare2
 BUNDLE=org.radare.radare2
 MACSDK=macosx10.10
 ENTITL=radare2.xcent
