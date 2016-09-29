@@ -2401,9 +2401,13 @@ static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
 #endif
 
 static int esil_x86_cs_init (RAnalEsil *esil) {
-	if (!esil) return false;
+	if (!esil) {
+		return false;
+	}
 	// XXX. this depends on kernel
-	r_anal_esil_set_interrupt (esil, 0x80, x86_int_0x80);
+	// r_anal_esil_set_interrupt (esil, 0x80, x86_int_0x80);
+	/* disable by default */
+	r_anal_esil_set_interrupt (esil, 0x80, NULL);
 	return true;
 }
 

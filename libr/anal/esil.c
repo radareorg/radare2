@@ -94,8 +94,9 @@ R_API int r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOp code) 
 R_API int r_anal_esil_set_interrupt(RAnalEsil *esil, int interrupt, RAnalEsilInterruptCB interruptcb) {
 	char t[128];
 	char *i;
-	if (!interruptcb || !esil || !esil->interrupts)
+	if (!esil || !esil->interrupts) {
 		return false;
+	}
 	i = sdb_itoa ((ut64)interrupt, t, 16);
 	sdb_num_set (esil->interrupts, i, (ut64)(size_t)interruptcb, 0);
 	if (!sdb_num_exists (esil->interrupts, i)) {
