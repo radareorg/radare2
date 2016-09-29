@@ -170,7 +170,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	ut32 offset, left, j;
 	char *name;
 	int len;
-	bool bigendian = arch->o->info->big_endian;
+	bool bigendian;
 	mach0_ut ivar_offset_p, ivar_offset;
 	RBinField *field = NULL;
 	ut8 sivarlist[sizeof (struct MACH0_(SIVarList))] = {0};
@@ -181,6 +181,11 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		eprintf ("uncorrect RBinFile pointer\n");
 		return;
 	}
+
+	if (!arch->o->info) {
+		return;
+	}
+	bigendian = arch->o->info->big_endian;
 
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
 		return;
@@ -332,7 +337,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 	ut32 offset, left, j;
 	char *name;
 	int len;
-	bool bigendian = arch->o->info->big_endian;
+	bool bigendian;
 	RBinField *property = NULL;
 	ut8 sopl[sizeof (struct MACH0_(SObjcPropertyList))] = {0};
 	ut8 sop[sizeof (struct MACH0_(SObjcProperty))] = {0};
@@ -341,6 +346,11 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 		eprintf ("uncorrect RBinFile pointer\n");
 		return;
 	}
+
+	if (!arch->o->info) {
+		return;
+	}
+	bigendian = arch->o->info->big_endian;
 
 	r = get_pointer (p, &offset, &left, arch);
 	if (!r) {
@@ -462,6 +472,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 	return;
 error:
 	R_FREE (property);
+	R_FREE (name);
 	return;
 }
 
@@ -473,7 +484,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	ut32 offset, left, i;
 	char *name = NULL;
 	int len;
-	bool bigendian = arch->o->info->big_endian;
+	bool bigendian;
 	ut8 sml[sizeof (struct MACH0_(SMethodList))] = {0};
 	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
 
@@ -482,6 +493,11 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 		eprintf ("incorrect RBinFile pointer\n");
 		return;
 	}
+
+	if (!arch->o->info) {
+		return;
+	}
+	bigendian = arch->o->info->big_endian;
 
 	r = get_pointer (p, &offset, &left, arch);
 	if (!r) {
@@ -627,7 +643,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	ut32 offset, left, i, j;
 	mach0_ut q, r;
 	int len;
-	bool bigendian = arch->o->info->big_endian;
+	bool bigendian;
 	ut8 spl[sizeof (struct MACH0_(SProtocolList))] = {0};
 	ut8 spc[sizeof (struct MACH0_(SProtocol))] = {0};
 	ut8 sptr[sizeof (mach0_ut)] = {0};
@@ -636,6 +652,11 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		eprintf ("get_protocol_list_t: Invalid RBinFile pointer\n");
 		return;
 	}
+
+	if (!arch->o->info) {
+		return;
+	}
+	bigendian = arch->o->info->big_endian;
 
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
 		return;
@@ -805,13 +826,18 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 	ut32 offset, left, i;
 	ut64 r, s;
 	int len;
-	bool bigendian = arch->o->info->big_endian;
+	bool bigendian;
 	ut8 scro[sizeof (struct MACH0_(SClassRoT))] = {0};
 
 	if (!arch || !arch->o || !arch->o->bin_obj) {
 		eprintf ("Invalid RBinFile pointer\n");
 		return;
 	}
+
+	if (!arch->o->info) {
+		return;
+	}
+	bigendian = arch->o->info->big_endian;
 
 	bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
@@ -930,9 +956,14 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	ut32 offset = 0, left = 0;
 	ut32 is_meta_class = 0;
 	int len;
-	bool bigendian = arch->o->info->big_endian;
+	bool bigendian;
 	ut8 sc[sizeof (struct MACH0_(SClass))] = {0};
 	ut32 i;
+
+	if (!arch || !arch->o || !arch->o->info) {
+		return;
+	}
+	bigendian = arch->o->info->big_endian;
 
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
 		return;
@@ -1054,11 +1085,13 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 	mach0_ut p = 0;
 	ut32 left = 0;
 	int len;
-	bool bigendian = arch->o->info->big_endian;
+	bool bigendian;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
-	if (!arch || !arch->o || !arch->o->bin_obj)
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
 		return NULL;
+	}
+	bigendian = arch->o->info->big_endian;
 
 	/* check if it's Swift */
 	//ret = parse_swift_classes (arch);
