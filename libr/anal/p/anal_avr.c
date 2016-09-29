@@ -96,13 +96,16 @@ void __generic_bitop_flags(RAnalOp *op) {
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 }
 
-void __generic_ld_st(RAnalOp *op, char *ireg, int prepostdec, int offset, int st) {
+void __generic_ld_st(RAnalOp *op, char ireg, int use_ramp, int prepostdec, int offset, int st) {
 	// preincrement index register
 	if (prepostdec < 0) {
-		ESIL_A ("1,%s,-,%s,=,", ireg, ireg);
+		ESIL_A ("1,%c,-,%c,=,", ireg, ireg);
 	}
 	// calculate SRAM(ireg+offset) address
-	ESIL_A ("%s,_sram,+,", ireg);
+	ESIL_A ("%c,_sram,+,", ireg);
+	if (use_ramp) {
+		ESIL_A ("16,ramp%c,<<,+,", ireg);
+	}
 	if (offset != 0) {
 		ESIL_A ("%d,+,", offset);
 	}
@@ -110,7 +113,7 @@ void __generic_ld_st(RAnalOp *op, char *ireg, int prepostdec, int offset, int st
 	ESIL_A ("%s[1],", st ? "=" : "");
 	// postincrement index register
 	if (prepostdec > 0) {
-		ESIL_A ("1,%s,+,%s,=,", ireg, ireg);
+		ESIL_A ("1,%c,+,%c,=,", ireg, ireg);
 	}
 }
 
@@ -563,16 +566,6 @@ INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
 	ESIL_A ("DUP,!,zf,=,");				// Z = !R
 }
 
-INST_HANDLER (jmp) {	// JMP k
-	op->jump = (buf[2] << 1)
-		 | (buf[3] << 9)
-		 | (buf[1] & 0x01) << 23
-		 | (buf[0] & 0x01) << 17
-		 | (buf[0] & 0xf0) << 14;
-	op->cycles = 3;
-	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
-}
-
 INST_HANDLER (icall) {	// ICALL k
 	ut64 z;
 	// read z for calculating jump address on runtime
@@ -623,13 +616,54 @@ INST_HANDLER (inc) {	// INC Rd
 	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
+INST_HANDLER (jmp) {	// JMP k
+	op->jump = (buf[2] << 1)
+		 | (buf[3] << 9)
+		 | (buf[1] & 0x01) << 23
+		 | (buf[0] & 0x01) << 17
+		 | (buf[0] & 0xf0) << 14;
+	op->cycles = 3;
+	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
+}
+
+INST_HANDLER (lac) {	// LAC Z, Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+
+	// read memory from RAMPZ:Z
+	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,0xff,^,&,", d);		// 0: (Z) & ~Rd
+	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
+	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+}
+
+INST_HANDLER (las) {	// LAS Z, Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+
+	// read memory from RAMPZ:Z
+	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,|,", d);			// 0: (Z) | Rd
+	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
+	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+}
+
+INST_HANDLER (lat) {	// LAT Z, Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+
+	// read memory from RAMPZ:Z
+	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,^,", d);			// 0: (Z) ^ Rd
+	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
+	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+}
+
 INST_HANDLER (ld) {	// LD Rd, X
 			// LD Rd, X+
 			// LD Rd, -X
 	// read memory
 	__generic_ld_st (
 		op,
-		"x",				// use index register X
+		'x',				// use index register X
+		0,				// no use RAMP* registers
 		(buf[0] & 0xf) == 0xe
 			? -1			// pre decremented
 			: (buf[0] & 0xf) == 0xd
@@ -663,7 +697,8 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 	// read memory
 	__generic_ld_st (
 		op,
-		buf[0] & 0x8 ? "y" : "z",	// index register Y/Z
+		buf[0] & 0x8 ? 'y' : 'z',	// index register Y/Z
+		0,				// no use RAMP* registers
 		!(buf[1] & 0x1)
 			? 0			// no increment
 			: buf[0] & 0x1
@@ -858,7 +893,8 @@ INST_HANDLER (st) {	// ST X, Rr
 	// write in memory
 	__generic_ld_st (
 		op,
-		"x",				// use index register X
+		'x',				// use index register X
+		0,				// no use RAMP* registers
 		(buf[0] & 0xf) == 0xe
 			? -1			// pre decremented
 			: (buf[0] & 0xf) == 0xd
@@ -887,7 +923,8 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 	// write in memory
 	__generic_ld_st (
 		op,
-		buf[0] & 0x8 ? "y" : "z",	// index register Y/Z
+		buf[0] & 0x8 ? 'y' : 'z',	// index register Y/Z
+		0,				// no use RAMP* registers
 		!(buf[1] & 0x1)
 			? 0			// no increment
 			: buf[0] & 0x1
@@ -938,6 +975,9 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (dec,    0xfe0f, 0x940a, 1,      2,   SUB    ), // DEC Rd
 	INST_DECL (inc,    0xfe0f, 0x9403, 1,      2,   ADD    ), // INC Rd
+	INST_DECL (lac,    0xfe0f, 0x9206, 2,      2,   LOAD   ), // LAC Z, Rd
+	INST_DECL (las,    0xfe0f, 0x9205, 2,      2,   LOAD   ), // LAS Z, Rd
+	INST_DECL (lat,    0xfe0f, 0x9207, 2,      2,   LOAD   ), // LAT Z, Rd
 	INST_DECL (ld,     0xfe0f, 0x900c, 0,      2,   LOAD   ), // LD Rd, X
 	INST_DECL (ld,     0xfe0f, 0x900d, 0,      2,   LOAD   ), // LD Rd, X+
 	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
