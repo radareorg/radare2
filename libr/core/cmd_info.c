@@ -312,6 +312,7 @@ static int cmd_info(void *data, const char *input) {
 				input--;
 			}
 			break;
+		case 'H':
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL); break;
 		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL); break;
 		case 'L': r_bin_list (core->bin, input[1]=='j'); break;
@@ -499,7 +500,7 @@ beach:
 			break;
 		case '?': {
 			const char * help_message[] = {
-				"Usage: i", "", "Get info from opened file",
+				"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
 				"Output mode:", "", "",
 				"'*'", "", "Output in radare commands",
 				"'j'", "", "Output in json",
@@ -515,7 +516,7 @@ beach:
 				"iD", " lang sym", "demangle symbolname for given language",
 				"ie", "", "Entrypoint",
 				"iE", "", "Exports (global symbols)",
-				"ih", "", "Headers",
+				"ih", "", "Headers (alias for iH)",
 				"ii", "", "Imports",
 				"iI", "", "Binary info",
 				"ik", " [query]", "Key-value database from RBinObject",
