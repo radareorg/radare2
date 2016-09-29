@@ -290,6 +290,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 				len = r_buf_read_at (arch->buf, r, (ut8 *)name, left);
 				if (len < 1) {
 					eprintf ("Error reading\n");
+					R_FREE (name);
 					goto error;
 				}
 				name[left] = 0;
