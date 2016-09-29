@@ -124,19 +124,21 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			}
 		}
 		if (!strcmp (ops[i].op, argv[0])) {
-			for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
-				if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
+			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
+				if (ops[i].str[j] >= '0' && ops[i].str[j] <= '9') {
 					int idx = ops[i].str[j]-'0';
-					if (idx<argc) {
+					if (idx < argc) {
 						const char *w = argv[idx];
 						if (w) {
 							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
 					}
-				} else newstr[k] = ops[i].str[j];
+				} else {
+					newstr[k] = ops[i].str[j];
+				}
 			}
-			newstr[k]='\0';
+			newstr[k] = '\0';
 			r_str_replace_char (newstr, '{', '(');
 			r_str_replace_char (newstr, '}', ')');
 			return true;
@@ -145,9 +147,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 
 	/* TODO: this is slow */
 	newstr[0] = '\0';
-	for (i=0; i<argc; i++) {
+	for (i = 0; i < argc; i++) {
 		strcat (newstr, argv[i]);
-		strcat (newstr, (i == 0 || i == argc - 1)?" ":",");
+		strcat (newstr, (!i || i == argc - 1)? " " : ",");
 	}
 	r_str_replace_char (newstr, '{', '(');
 	r_str_replace_char (newstr, '}', ')');
@@ -159,19 +161,20 @@ static int parse(RParse *p, const char *data, char *str) {
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
 
-	if (len >= sizeof (w0))
+	if (len >= sizeof (w0)) {
 		return false;
+	}
 	// malloc can be slow here :?
 	if (!(buf = malloc (len + 1))) {
 		return false;
 	}
 	memcpy (buf, data, len + 1);
-
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
 		ptr = strchr (buf, ' ');
-		if (!ptr)
+		if (!ptr) {
 			ptr = strchr (buf, '\t');
+		}
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr==' '; ptr++);
@@ -179,9 +182,15 @@ static int parse(RParse *p, const char *data, char *str) {
 			strncpy (w1, ptr, sizeof (w1) - 1);
 
 			optr = ptr;
-			if (*ptr == '(') { ptr = strchr (ptr+1, ')'); }
-			if (ptr && *ptr == '[') { ptr = strchr (ptr+1, ']'); }
-			if (ptr && *ptr == '{') { ptr = strchr (ptr+1, '}'); }
+			if (*ptr == '(') { 
+				ptr = strchr (ptr+1, ')'); 
+			}
+			if (ptr && *ptr == '[') {
+				ptr = strchr (ptr+1, ']'); 
+			}
+			if (ptr && *ptr == '{') { 
+				ptr = strchr (ptr+1, '}'); 
+			}
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
 				free(buf);
@@ -206,7 +215,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		{
 			const char *wa[] = { w0, w1, w2, w3 };
 			int nw = 0;
-			for (i=0; i<4; i++) {
+			for (i = 0; i < 4; i++) {
 				if (wa[i][0]) {
 					nw++;
 				}
@@ -230,21 +239,23 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	RListIter *iter;
 	char *oldstr, *newstr;
 	char *tstr = strdup (data);
-	if (!tstr) return false;
+	if (!tstr) {
+		return false;
+	}
 	RList *spargs, *bpargs, *regargs;
 
 	if (!p->varlist) {
 		free (tstr);
 		return false;
 	}
-        if (p->relsub) {
-                char *rip = strstr (tstr, "[pc, ");
-                if (rip) {
+	if (p->relsub) {
+		char *rip = strstr (tstr, "[pc, ");
+		if (rip) {
 			rip += 4;
-                        char *tstr_new, *ripend = strchr (rip, ']');
-                        const char *neg = strchr (rip, '-');
-                        ut64 repl_num = (2 * oplen) + addr;
-                        if (!ripend) {
+			char *tstr_new, *ripend = strchr (rip, ']');
+			const char *neg = strchr (rip, '-');
+			ut64 repl_num = (2 * oplen) + addr;
+			if (!ripend) {
 				ripend = "]";
 			}
 			if (neg) {
@@ -252,12 +263,13 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			} else {
 				repl_num += r_num_get (NULL, rip);
 			}
-                        rip[1] = '\0';
-                        tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
-                        free (tstr);
-                        tstr = tstr_new;
-                }
-        }
+			rip -= 3;
+			*rip = 0;
+			tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
+			free (tstr);
+			tstr = tstr_new;
+		}
+	}
 
 	regargs = p->varlist (p->anal, f, 'r');
 	bpargs = p->varlist (p->anal, f, 'b');
