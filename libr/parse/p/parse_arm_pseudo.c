@@ -159,12 +159,13 @@ static int parse(RParse *p, const char *data, char *str) {
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
 
-	if (len>=sizeof (w0))
+	if (len >= sizeof (w0))
 		return false;
 	// malloc can be slow here :?
-	if (!(buf = malloc (len+1)))
+	if (!(buf = malloc (len + 1))) {
 		return false;
-	memcpy (buf, data, len+1);
+	}
+	memcpy (buf, data, len + 1);
 
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
@@ -236,6 +237,27 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (tstr);
 		return false;
 	}
+        if (p->relsub) {
+                char *rip = strstr (tstr, "[pc, ");
+                if (rip) {
+			rip += 4;
+                        char *tstr_new, *ripend = strchr (rip, ']');
+                        const char *neg = strchr (rip, '-');
+                        ut64 repl_num = (2 * oplen) + addr;
+                        if (!ripend) {
+				ripend = "]";
+			}
+			if (neg) {
+				repl_num -= r_num_get (NULL, neg + 1);
+			} else {
+				repl_num += r_num_get (NULL, rip);
+			}
+                        rip[1] = '\0';
+                        tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
+                        free (tstr);
+                        tstr = tstr_new;
+                }
+        }
 
 	regargs = p->varlist (p->anal, f, 'r');
 	bpargs = p->varlist (p->anal, f, 'b');
