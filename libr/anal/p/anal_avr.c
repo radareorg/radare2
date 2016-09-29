@@ -96,13 +96,16 @@ void __generic_bitop_flags(RAnalOp *op) {
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 }
 
-void __generic_ld_st(RAnalOp *op, char *ireg, int prepostdec, int offset, int st) {
+void __generic_ld_st(RAnalOp *op, char ireg, int use_ramp, int prepostdec, int offset, int st) {
 	// preincrement index register
 	if (prepostdec < 0) {
-		ESIL_A ("1,%s,-,%s,=,", ireg, ireg);
+		ESIL_A ("1,%c,-,%c,=,", ireg, ireg);
 	}
 	// calculate SRAM(ireg+offset) address
-	ESIL_A ("%s,_sram,+,", ireg);
+	ESIL_A ("%c,_sram,+,", ireg);
+	if (use_ramp) {
+		ESIL_A ("16,ramp%c,<<,+,", ireg);
+	}
 	if (offset != 0) {
 		ESIL_A ("%d,+,", offset);
 	}
@@ -110,7 +113,7 @@ void __generic_ld_st(RAnalOp *op, char *ireg, int prepostdec, int offset, int st
 	ESIL_A ("%s[1],", st ? "=" : "");
 	// postincrement index register
 	if (prepostdec > 0) {
-		ESIL_A ("1,%s,+,%s,=,", ireg, ireg);
+		ESIL_A ("1,%c,+,%c,=,", ireg, ireg);
 	}
 }
 
@@ -514,20 +517,103 @@ INST_HANDLER (eor) {	// EOR Rd, Rr
 			// CLR Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
-	ESIL_A ("r%d,r%d,^,", r, d);				// 0: Rd ^ Rr
-	__generic_bitop_flags (op);				// up flags
-	ESIL_A ("r%d,=,", d);					// Rd = Result
+	ESIL_A ("r%d,r%d,^,", r, d);			// 0: Rd ^ Rr
+	__generic_bitop_flags (op);			// up flags
+	ESIL_A ("r%d,=,", d);				// Rd = Result
 }
 
 INST_HANDLER (fmul) {	// FMUL Rd, Rr
 	int d = ((buf[0] >> 4) & 0x7) + 16;
 	int r = (buf[0] & 0x7) + 16;
 
-	ESIL_A ("r%d,r%d,*,", r, d);				// 0: Rd * Rr
-	ESIL_A ("DUP,0xff,&,r0,=,");				// r0 = LO(0)
-	ESIL_A ("16,0,RPICK,>>,0xff,&,r1,=,");			// r1 = HI(0)
-	ESIL_A ("0,RPICK,0x8000,&,!,!,cf,=,");			// C = R/16
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z = !R
+	ESIL_A ("1,r%d,r%d,*,<<,", r, d);		// 0: (Rd*Rr)<<1
+	ESIL_A ("0xffff,&,");				// prevent overflow
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/16
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (fmuls) {	// FMULS Rd, Rr
+	int d = ((buf[0] >> 4) & 0x7) + 16;
+	int r = (buf[0] & 0x7) + 16;
+
+	ESIL_A ("1,");
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", r);	// sign extension Rr
+	ESIL_A ("*,<<,", r, d);				// 0: (Rd*Rr)<<1
+
+	ESIL_A ("0xffff,&,");				// prevent overflow
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/16
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
+	int d = ((buf[0] >> 4) & 0x7) + 16;
+	int r = (buf[0] & 0x7) + 16;
+
+	ESIL_A ("1,");
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("r%d", r);				// unsigned Rr
+	ESIL_A ("*,<<,", r, d);				// 0: (Rd*Rr)<<1
+
+	ESIL_A ("0xffff,&,");				// prevent overflow
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/16
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (icall) {	// ICALL k
+	ut64 z;
+	// read z for calculating jump address on runtime
+	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+	// real target address may change during execution, so this value will
+	// be changing all the time
+	op->jump = z;
+	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
+	if (!STR_BEGINS (cpu->model, "ATxmega")) {
+		// AT*mega optimizes 1 cycle!
+		op->cycles--;
+	}
+	ESIL_A ("pc,");				// esil already points to next
+						// instruction (@ret)
+	__generic_push (op, cpu->pc_size);	// push @ret addr
+	ESIL_A ("z,pc,=,");			// jump!
+}
+
+INST_HANDLER (ijmp) {	// IJMP k
+	ut64 z;
+	// read z for calculating jump address on runtime
+	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+	// real target address may change during execution, so this value will
+	// be changing all the time
+	op->jump = z;
+	op->cycles = 2;
+	ESIL_A ("z,pc,=,");			// jump!
+}
+
+INST_HANDLER (in) {	// IN Rd, A
+	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
+	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
+	RStrBuf *io_src = __generic_io_dest (a, 0);
+	op->type2 = 0;
+	op->val = a;
+	ESIL_A ("%s,r%d,=,", r_strbuf_get (io_src), r);
+	r_strbuf_free (io_src);
+}
+
+INST_HANDLER (inc) {	// INC Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	ESIL_A ("1,r%d,+,", d);					// ++Rd
+								// FLAGS:
+	ESIL_A ("0,RPICK,0x80,==,vf,=,");			// V
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
 INST_HANDLER (jmp) {	// JMP k
@@ -540,13 +626,44 @@ INST_HANDLER (jmp) {	// JMP k
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
 }
 
+INST_HANDLER (lac) {	// LAC Z, Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+
+	// read memory from RAMPZ:Z
+	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,0xff,^,&,", d);		// 0: (Z) & ~Rd
+	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
+	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+}
+
+INST_HANDLER (las) {	// LAS Z, Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+
+	// read memory from RAMPZ:Z
+	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,|,", d);			// 0: (Z) | Rd
+	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
+	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+}
+
+INST_HANDLER (lat) {	// LAT Z, Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+
+	// read memory from RAMPZ:Z
+	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,^,", d);			// 0: (Z) ^ Rd
+	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
+	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+}
+
 INST_HANDLER (ld) {	// LD Rd, X
 			// LD Rd, X+
 			// LD Rd, -X
 	// read memory
 	__generic_ld_st (
 		op,
-		"x",				// use index register X
+		'x',				// use index register X
+		0,				// no use RAMP* registers
 		(buf[0] & 0xf) == 0xe
 			? -1			// pre decremented
 			: (buf[0] & 0xf) == 0xd
@@ -580,7 +697,8 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 	// read memory
 	__generic_ld_st (
 		op,
-		buf[0] & 0x8 ? "y" : "z",	// index register Y/Z
+		buf[0] & 0x8 ? 'y' : 'z',	// index register Y/Z
+		0,				// no use RAMP* registers
 		!(buf[1] & 0x1)
 			? 0			// no increment
 			: buf[0] & 0x1
@@ -609,27 +727,6 @@ INST_HANDLER (ldi) {	// LDI Rd, K
 	int k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	ESIL_A ("0x%x,r%d,=,", k, d);
-}
-
-INST_HANDLER (in) {	// IN Rd, A
-	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
-	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
-	RStrBuf *io_src = __generic_io_dest (a, 0);
-	op->type2 = 0;
-	op->val = a;
-	ESIL_A ("%s,r%d,=,", r_strbuf_get (io_src), r);
-	r_strbuf_free (io_src);
-}
-
-INST_HANDLER (inc) {	// INC Rd
-	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
-	ESIL_A ("1,r%d,+,", d);					// ++Rd
-								// FLAGS:
-	ESIL_A ("0,RPICK,0x80,==,vf,=,");			// V
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
 INST_HANDLER (movw) {	// // MOVW Rd+1:Rd, Rr+1Rrd
@@ -796,7 +893,8 @@ INST_HANDLER (st) {	// ST X, Rr
 	// write in memory
 	__generic_ld_st (
 		op,
-		"x",				// use index register X
+		'x',				// use index register X
+		0,				// no use RAMP* registers
 		(buf[0] & 0xf) == 0xe
 			? -1			// pre decremented
 			: (buf[0] & 0xf) == 0xd
@@ -825,7 +923,8 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 	// write in memory
 	__generic_ld_st (
 		op,
-		buf[0] & 0x8 ? "y" : "z",	// index register Y/Z
+		buf[0] & 0x8 ? 'y' : 'z',	// index register Y/Z
+		0,				// no use RAMP* registers
 		!(buf[1] & 0x1)
 			? 0			// no increment
 			: buf[0] & 0x1
@@ -857,6 +956,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (break,  0xffff, 0x9698, 1,      2,   TRAP   ), // BREAK
 	INST_DECL (eicall, 0xffff, 0x9519, 0,      2,   UCALL  ), // EICALL
 	INST_DECL (eijmp,  0xffff, 0x9419, 0,      2,   UJMP   ), // EIJMP
+	INST_DECL (icall,  0xffff, 0x9509, 0,      2,   UCALL  ), // ICALL
+	INST_DECL (ijmp,   0xffff, 0x9409, 0,      2,   UJMP   ), // IJMP
 	INST_DECL (nop,    0xffff, 0x0000, 1,      2,   NOP    ), // NOP
 	INST_DECL (ret,    0xffff, 0x9508, 4,      2,   RET    ), // RET
 	INST_DECL (reti,   0xffff, 0x9518, 4,      2,   RET    ), // RETI
@@ -864,6 +965,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (bclr,   0xff8f, 0x9488, 1,      2,   SWI    ), // BCLR s
 	INST_DECL (bset,   0xff8f, 0x9408, 1,      2,   SWI    ), // BSET s
 	INST_DECL (fmul,   0xff88, 0x0308, 2,      2,   MUL    ), // FMUL Rd, Rr
+	INST_DECL (fmuls,  0xff88, 0x0380, 2,      2,   MUL    ), // FMULS Rd, Rr
+	INST_DECL (fmulsu, 0xff88, 0x0388, 2,      2,   MUL    ), // FMULSU Rd, Rr
 	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
 	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
@@ -872,6 +975,9 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (dec,    0xfe0f, 0x940a, 1,      2,   SUB    ), // DEC Rd
 	INST_DECL (inc,    0xfe0f, 0x9403, 1,      2,   ADD    ), // INC Rd
+	INST_DECL (lac,    0xfe0f, 0x9206, 2,      2,   LOAD   ), // LAC Z, Rd
+	INST_DECL (las,    0xfe0f, 0x9205, 2,      2,   LOAD   ), // LAS Z, Rd
+	INST_DECL (lat,    0xfe0f, 0x9207, 2,      2,   LOAD   ), // LAT Z, Rd
 	INST_DECL (ld,     0xfe0f, 0x900c, 0,      2,   LOAD   ), // LD Rd, X
 	INST_DECL (ld,     0xfe0f, 0x900d, 0,      2,   LOAD   ), // LD Rd, X+
 	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
