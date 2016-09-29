@@ -785,7 +785,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_LDREXD:
 	case ARM_INS_LDREXH:
 	case ARM_INS_LDR:
-		addr &= ~3LL;
+		addr &= ~1LL;
 		if (MEMDISP(1) < 0) {
 			const char *pc = "$$";
 			if (REGBASE(1) == ARM_REG_PC) {
