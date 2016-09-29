@@ -168,7 +168,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	struct MACH0_(SIVar) i;
 	mach0_ut r;
 	ut32 offset, left, j;
-	char *name;
+	char *name = NULL;
 	int len;
 	bool bigendian;
 	mach0_ut ivar_offset_p, ivar_offset;
@@ -177,16 +177,11 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	ut8 sivar[sizeof (struct MACH0_(SIVar))] = {0};
 	ut8 offs[sizeof (mach0_ut)] = {0};
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
 		eprintf ("uncorrect RBinFile pointer\n");
 		return;
 	}
-
-	if (!arch->o->info) {
-		return;
-	}
 	bigendian = arch->o->info->big_endian;
-
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
 		return;
 	}
@@ -281,9 +276,12 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		r = get_pointer (i.name, NULL, &left, arch);
 		if (r != 0) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
-			if (r + left < r) goto error;
-			if (r > arch->size || r + left > arch->size) goto error;
-
+			if (r + left < r) {
+				goto error;
+			}
+			if (r > arch->size || r + left > arch->size) {
+				goto error;
+			}
 			if (bin->has_crypto) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
@@ -342,16 +340,11 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 	ut8 sopl[sizeof (struct MACH0_(SObjcPropertyList))] = {0};
 	ut8 sop[sizeof (struct MACH0_(SObjcProperty))] = {0};
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
 		eprintf ("uncorrect RBinFile pointer\n");
 		return;
 	}
-
-	if (!arch->o->info) {
-		return;
-	}
 	bigendian = arch->o->info->big_endian;
-
 	r = get_pointer (p, &offset, &left, arch);
 	if (!r) {
 		return;
@@ -489,16 +482,11 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
 
 	RBinSymbol *method = NULL;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
 		eprintf ("incorrect RBinFile pointer\n");
 		return;
 	}
-
-	if (!arch->o->info) {
-		return;
-	}
 	bigendian = arch->o->info->big_endian;
-
 	r = get_pointer (p, &offset, &left, arch);
 	if (!r) {
 		return;
@@ -632,6 +620,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	return;
 error:
 	R_FREE (method);
+	R_FREE (name);
 	return;
 }
 
@@ -648,16 +637,11 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 	ut8 spc[sizeof (struct MACH0_(SProtocol))] = {0};
 	ut8 sptr[sizeof (mach0_ut)] = {0};
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
 		eprintf ("get_protocol_list_t: Invalid RBinFile pointer\n");
 		return;
 	}
-
-	if (!arch->o->info) {
-		return;
-	}
 	bigendian = arch->o->info->big_endian;
-
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
 		return;
 	}
@@ -765,7 +749,11 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 				left = strlen (name) + 1;
 			} else {
 				name = malloc (left);
+				if (!name) {
+					return;
+				}
 				if (r_buf_read_at (arch->buf, r, (ut8 *)name, left) != left) {
+					R_FREE (name);
 					return;
 				}
 			}
@@ -829,16 +817,11 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 	bool bigendian;
 	ut8 scro[sizeof (struct MACH0_(SClassRoT))] = {0};
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
 		eprintf ("Invalid RBinFile pointer\n");
 		return;
 	}
-
-	if (!arch->o->info) {
-		return;
-	}
 	bigendian = arch->o->info->big_endian;
-
 	bin = (struct MACH0_(obj_t) *)arch->o->bin_obj;
 	if (!(r = get_pointer (p, &offset, &left, arch))) {
 		// eprintf ("No pointer\n");
@@ -864,7 +847,6 @@ static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBin
 	if (len < 1) {
 		return;
 	}
-
 	i = 0;
 	cro.flags = r_read_ble (&scro[i], bigendian, 8 * sizeof (ut32));
 	i += sizeof (ut32);

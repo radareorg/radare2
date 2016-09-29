@@ -1514,12 +1514,16 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		return false;
 	}
 	proc_data->per_process = get_proc_process_content (dbg);
-	if (!proc_data) {
+	if (!proc_data->per_process) {
 		free (elf_proc_note);
+		free (proc_data);
 		return false;
 	}
 	if (!elf_proc_note->n_threads || elf_proc_note->n_threads < 1 ) {
 		eprintf ("problem in elf_proc_note\n");
+		free (elf_proc_note);
+		free (proc_data->per_process);
+		free (proc_data);
 		return false;
 	}
 	elf_proc_note->n_threads = proc_data->per_process->num_threads;

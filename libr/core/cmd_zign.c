@@ -23,9 +23,8 @@ static void fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
 	int idx, old_fs;
 	ut64 len = fin - ini;
 	RSignItem *si;
-
-
 	ut8 *buf = malloc (len);
+
 	if (buf) {
 		int count = 0;
 		eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
