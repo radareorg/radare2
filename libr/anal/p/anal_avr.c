@@ -573,6 +573,56 @@ INST_HANDLER (jmp) {	// JMP k
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
 }
 
+INST_HANDLER (icall) {	// ICALL k
+	ut64 z;
+	// read z for calculating jump address on runtime
+	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+	// real target address may change during execution, so this value will
+	// be changing all the time
+	op->jump = z;
+	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
+	if (!STR_BEGINS (cpu->model, "ATxmega")) {
+		// AT*mega optimizes 1 cycle!
+		op->cycles--;
+	}
+	ESIL_A ("pc,");				// esil already points to next
+						// instruction (@ret)
+	__generic_push (op, cpu->pc_size);	// push @ret addr
+	ESIL_A ("z,pc,=,");			// jump!
+}
+
+INST_HANDLER (ijmp) {	// IJMP k
+	ut64 z;
+	// read z for calculating jump address on runtime
+	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+	// real target address may change during execution, so this value will
+	// be changing all the time
+	op->jump = z;
+	op->cycles = 2;
+	ESIL_A ("z,pc,=,");			// jump!
+}
+
+INST_HANDLER (in) {	// IN Rd, A
+	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
+	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
+	RStrBuf *io_src = __generic_io_dest (a, 0);
+	op->type2 = 0;
+	op->val = a;
+	ESIL_A ("%s,r%d,=,", r_strbuf_get (io_src), r);
+	r_strbuf_free (io_src);
+}
+
+INST_HANDLER (inc) {	// INC Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	ESIL_A ("1,r%d,+,", d);					// ++Rd
+								// FLAGS:
+	ESIL_A ("0,RPICK,0x80,==,vf,=,");			// V
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = Result
+}
+
 INST_HANDLER (ld) {	// LD Rd, X
 			// LD Rd, X+
 			// LD Rd, -X
@@ -642,27 +692,6 @@ INST_HANDLER (ldi) {	// LDI Rd, K
 	int k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	ESIL_A ("0x%x,r%d,=,", k, d);
-}
-
-INST_HANDLER (in) {	// IN Rd, A
-	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
-	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
-	RStrBuf *io_src = __generic_io_dest (a, 0);
-	op->type2 = 0;
-	op->val = a;
-	ESIL_A ("%s,r%d,=,", r_strbuf_get (io_src), r);
-	r_strbuf_free (io_src);
-}
-
-INST_HANDLER (inc) {	// INC Rd
-	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
-	ESIL_A ("1,r%d,+,", d);					// ++Rd
-								// FLAGS:
-	ESIL_A ("0,RPICK,0x80,==,vf,=,");			// V
-	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("vf,nf,^,sf,=,");				// S
-	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
 INST_HANDLER (movw) {	// // MOVW Rd+1:Rd, Rr+1Rrd
@@ -890,6 +919,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (break,  0xffff, 0x9698, 1,      2,   TRAP   ), // BREAK
 	INST_DECL (eicall, 0xffff, 0x9519, 0,      2,   UCALL  ), // EICALL
 	INST_DECL (eijmp,  0xffff, 0x9419, 0,      2,   UJMP   ), // EIJMP
+	INST_DECL (icall,  0xffff, 0x9509, 0,      2,   UCALL  ), // ICALL
+	INST_DECL (ijmp,   0xffff, 0x9409, 0,      2,   UJMP   ), // IJMP
 	INST_DECL (nop,    0xffff, 0x0000, 1,      2,   NOP    ), // NOP
 	INST_DECL (ret,    0xffff, 0x9508, 4,      2,   RET    ), // RET
 	INST_DECL (reti,   0xffff, 0x9518, 4,      2,   RET    ), // RETI
