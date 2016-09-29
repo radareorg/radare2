@@ -286,6 +286,7 @@ static int cmd_zign(void *data, const char *input) {
 				r_list_foreach (list, iter, map) {
 					fcn_zig_search (core, map->from, map->to);
 				}
+				r_list_free (list);
 			}
 		}
 		break;
