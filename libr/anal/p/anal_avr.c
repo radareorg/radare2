@@ -514,20 +514,53 @@ INST_HANDLER (eor) {	// EOR Rd, Rr
 			// CLR Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
-	ESIL_A ("r%d,r%d,^,", r, d);				// 0: Rd ^ Rr
-	__generic_bitop_flags (op);				// up flags
-	ESIL_A ("r%d,=,", d);					// Rd = Result
+	ESIL_A ("r%d,r%d,^,", r, d);			// 0: Rd ^ Rr
+	__generic_bitop_flags (op);			// up flags
+	ESIL_A ("r%d,=,", d);				// Rd = Result
 }
 
 INST_HANDLER (fmul) {	// FMUL Rd, Rr
 	int d = ((buf[0] >> 4) & 0x7) + 16;
 	int r = (buf[0] & 0x7) + 16;
 
-	ESIL_A ("r%d,r%d,*,", r, d);				// 0: Rd * Rr
-	ESIL_A ("DUP,0xff,&,r0,=,");				// r0 = LO(0)
-	ESIL_A ("16,0,RPICK,>>,0xff,&,r1,=,");			// r1 = HI(0)
-	ESIL_A ("0,RPICK,0x8000,&,!,!,cf,=,");			// C = R/16
-	ESIL_A ("0,RPICK,!,zf,=,");				// Z = !R
+	ESIL_A ("1,r%d,r%d,*,<<,", r, d);		// 0: (Rd*Rr)<<1
+	ESIL_A ("0xffff,&,");				// prevent overflow
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/16
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (fmuls) {	// FMULS Rd, Rr
+	int d = ((buf[0] >> 4) & 0x7) + 16;
+	int r = (buf[0] & 0x7) + 16;
+
+	ESIL_A ("1,");
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", r);	// sign extension Rr
+	ESIL_A ("*,<<,", r, d);				// 0: (Rd*Rr)<<1
+
+	ESIL_A ("0xffff,&,");				// prevent overflow
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/16
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
+	int d = ((buf[0] >> 4) & 0x7) + 16;
+	int r = (buf[0] & 0x7) + 16;
+
+	ESIL_A ("1,");
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("r%d", r);				// unsigned Rr
+	ESIL_A ("*,<<,", r, d);				// 0: (Rd*Rr)<<1
+
+	ESIL_A ("0xffff,&,");				// prevent overflow
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/16
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
 }
 
 INST_HANDLER (jmp) {	// JMP k
@@ -864,6 +897,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (bclr,   0xff8f, 0x9488, 1,      2,   SWI    ), // BCLR s
 	INST_DECL (bset,   0xff8f, 0x9408, 1,      2,   SWI    ), // BSET s
 	INST_DECL (fmul,   0xff88, 0x0308, 2,      2,   MUL    ), // FMUL Rd, Rr
+	INST_DECL (fmuls,  0xff88, 0x0380, 2,      2,   MUL    ), // FMULS Rd, Rr
+	INST_DECL (fmulsu, 0xff88, 0x0388, 2,      2,   MUL    ), // FMULSU Rd, Rr
 	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
 	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
