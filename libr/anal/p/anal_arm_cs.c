@@ -544,7 +544,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	int i;
 	char str[32][32];
 	int msr_flags;
-	int pcdelta = (thumb ? 4 : 8);
+	//this should be the theory
+	//int pcdelta = (thumb ? 4 : 8);
+	int pcdelta = (op->size == 4)? 8: 4;
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 	switch (insn->detail->arm.cc) {
