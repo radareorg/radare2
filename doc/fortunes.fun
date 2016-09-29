@@ -48,7 +48,7 @@ EIP = 0x41414141
 /dev/brain: No such file or directory.
 Virtual machines are great, but you lose the ability to kick the hardware.
 Charlie! We are here.
-The door is everything ...
+The door is everything...
 The door controls time and space.
 The door can see into your soul.
 I am Pentium of Borg. Division is futile. You will be approximated.
@@ -73,21 +73,21 @@ How about a nice game of chess?
 THE ONLY WINNING MOVE IS NOT TO PLAY.
 SHALL WE PLAY A GAME?
 Sudo make me a pancake.
-I nodejs so hard my exams.What a nodejs!
+I nodejs so hard my exams. What a nodejs!
 Now featuring NoSQL!
 One does not simply write documentation.
 We are bleeding edge here. Can't you feel the razors?
 There's a branch for that.
 Everything up-to-date.
-Sharing your latest session in Facebook ...
+Sharing your latest session in Facebook...
 This should be documented, since it's not that obvious.
 It's working! Look at the door!
 This is an unacceptable milion year dungeon.
 The Hard ROP Cafe
 Please remove pregnant women, pregnant children, and pregnant pets from the monitor.
-Wait a minute! I found a bug, self-fixing ... OK
+Wait a minute! I found a bug, self-fixing... OK
 Hold on, this should never happen!
-Well this is embarrasing ...
+Well this is embarrasing...
 THIS IS NOT FUNNY
 ♥ --
 Can you stand on your head?
@@ -145,7 +145,7 @@ Too old to crash
 Finnished a beer
 ESIL ruined my life
 ESIL: The Aftersleep
-Insert coin to continue ...
+Insert coin to continue...
 See you in shell
 Mess with the best, Die like the rest
 Sarah Connor?
@@ -160,9 +160,9 @@ try pressing the pigeon-shaped button
 What has been executed cannot be unexecuted
 What about taking a break? Here, have this nice 0xCC.
 r2 is meant to be read by machines.
-prove you are a robot to continue ...
+prove you are a robot to continue...
 This is fine.
-Using radare2 to generate intelligence ...
+Using radare2 to generate intelligence...
 taking the file and moving it
 It's the year of desktop on radare2
 💺
