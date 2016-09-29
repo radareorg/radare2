@@ -1,4 +1,4 @@
-.Dd Oct 19, 2015
+.Dd Sep 29, 2016
 .Dt RABIN2 1
 .Sh NAME
 .Nm RABIN2
@@ -23,6 +23,8 @@
 .Ar file
 .Sh DESCRIPTION
 This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
+.Pp
+All those commandline flags are also available under the i command in radare2. Type i? for help.
 .Bl -tag -width Fl
 .It Fl @ Ar addr
 Show information (symbol, section, import) of the given address
@@ -55,11 +57,11 @@ Load address . offset to header
 .It Fl h
 Show usage help message.
 .It Fl H
-Show header fields
+Show header fields (see ih command in r2)
 .It Fl I
-Show binary info
+Show binary info (iI in r2)
 .It Fl i
-Show imports (symbols imported from libraries)
+Show imports (symbols imported from libraries) (ii)
 .It Fl j
 Output in json
 .It Fl k Ar query
