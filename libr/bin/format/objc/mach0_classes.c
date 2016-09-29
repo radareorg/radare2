@@ -340,7 +340,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 	ut8 sopl[sizeof (struct MACH0_(SObjcPropertyList))] = {0};
 	ut8 sop[sizeof (struct MACH0_(SObjcProperty))] = {0};
 
-	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
 		eprintf ("uncorrect RBinFile pointer\n");
 		return;
 	}
@@ -482,7 +482,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBin
 	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
 
 	RBinSymbol *method = NULL;
-	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
+	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
 		eprintf ("incorrect RBinFile pointer\n");
 		return;
 	}
