@@ -370,6 +370,27 @@ what|-w)
 		ls
 	fi
 	;;
+cd)
+	if [ -n "$2" ]; then
+		cd ${R2PM_GITDIR}/$2 || exit 1
+		export R2PM_LEVEL=$((${R2PM_LEVEL}+1))
+		echo "Entering into ${SHELL} level ${R2PM_LEVEL}."
+		${SHELL}
+		echo "Exiting level ${R2PM_LEVEL}."
+		exit 0
+	else
+		echo "Missing argument. See r2pm ls"
+		exit 1
+	fi
+	;;
+ls)
+	if [ -d "${R2PM_GITDIR}" ]; then
+		ls ${R2PM_GITDIR}
+	else
+		echo "Cannot find ${R2PM_GITDIR}"
+		exit 1
+	fi
+	;;
 *|help|-h)
 	echo "Usage: r2pm [init|update|cmd] [...]"
 	echo "Commands:"
@@ -388,6 +409,8 @@ what|-w)
 	echo " -c,clean                    clear source cache"
 	echo " -w <pkgname>                what/where is installed"
 	echo " init | update ..            initialize/update database"
+	echo " cd [git/dir]                cd into given git (see 'r2pm ls')"
+	echo " ls                          ls all cloned git repos in GITDIR"
 	echo "Environment:"
 	echo "SUDO=sudo                    use this tool as sudo"
 	echo "R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins"
