@@ -2,6 +2,7 @@
 
 # Honor user environment
 [ -z "${SUDO}" ] && SUDO=sudo
+[ -z "${WGET}" ] && WGET=wget
 
 r2 -qv > /dev/null 2>&1
 if [ $? != 0 ]; then
@@ -147,6 +148,31 @@ R2PM_ListUninstalled() {
 	done
 }
 
+R2PM_TGZ() {
+	URL="$1"
+	TARBALL="`basename $1`"
+	if [ -z "$2" ]; then
+		DIR="`echo ${TARBALL} | awk -F .t '{print $1}'`"
+	else
+		DIR="$2"
+	fi
+	cd "${R2PM_GITDIR}"
+	if [ ${IS_LOCAL} = 0 ]; then
+		${WGET} -c "${URL}"
+		if [ "`echo ${URL} | grep -e tgz -e tar.gz`" ]; then
+			tar xzvf "${TARBALL}"
+		elif [ "`echo ${URL} | grep -e .tbz2 -e tar.bz2`" ]; then
+			tar xjvf "${TARBALL}"
+		elif [ "`echo ${URL} | grep -e .txz -e tar.xz`" ]; then
+			tar xJvf "${TARBALL}"
+		else
+			echo "Dunno"
+			exit 1
+		fi
+		cd "${DIR}" || R2PM_FAIL "Oops"
+	fi
+}
+
 R2PM_GIT() {
 	URL="$1"
 	if [ -z "$2" ]; then
@@ -156,14 +182,14 @@ R2PM_GIT() {
 	fi
 	cd "${R2PM_GITDIR}"
 	if [ ${IS_LOCAL} = 0 ]; then
-	        if [ -d "${R2PM_GITDIR}/${DIR}" ]; then
-		        cd "${DIR}"
-		        git pull
-	        else
-		        git clone "${URL}" "${DIR}" || R2PM_FAIL "Oops"
-		        cd "${DIR}" || R2PM_FAIL "Oops"
-	        fi
-    	fi
+		if [ -d "${DIR}" ]; then
+			cd "${DIR}"
+			git pull
+		else
+			git clone "${URL}" "${DIR}" || R2PM_FAIL "Oops"
+			cd "${DIR}" || R2PM_FAIL "Oops"
+		fi
+	fi
 }
 
 R2PM_FAIL() {
