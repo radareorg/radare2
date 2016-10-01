@@ -16,6 +16,7 @@ gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 export MAKE
 export GLOBAL=0
+export R2PM_JOBS=4
 export R2VERSION="`r2 -qv`"
 PREFIX="`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`"
 BINDIR="${PREFIX}/bin/"
@@ -375,7 +376,7 @@ cd)
 		cd ${R2PM_GITDIR}/$2 || exit 1
 		export R2PM_LEVEL=$((${R2PM_LEVEL}+1))
 		echo "Entering into ${SHELL} level ${R2PM_LEVEL}."
-		${SHELL}
+		PS1="r2pm:${R2PM_LEVEL}:\W\$ " ${SHELL}
 		echo "Exiting level ${R2PM_LEVEL}."
 		exit 0
 	else
