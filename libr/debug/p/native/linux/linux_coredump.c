@@ -844,6 +844,7 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
+		eprintf ("error: /proc/%d/start does not exist\n", dbg->pid);
 		return NULL;
 	}
 
@@ -871,6 +872,7 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 	file = sdb_fmt (0, "/proc/%d/status", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
+		eprintf ("error: /proc/%d/status does not exist\n", dbg->pid);
 		free (p);
 		return NULL;
 	}
@@ -1519,15 +1521,8 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		free (proc_data);
 		return false;
 	}
+	
 	elf_proc_note->n_threads = proc_data->per_process->num_threads;
-
-	if (!elf_proc_note->n_threads || elf_proc_note->n_threads < 1 ) {
-		eprintf ("problem in elf_proc_note\n");
-		free (elf_proc_note);
-		free (proc_data->per_process);
-		free (proc_data);
-		return false;
-	}
 
 	/* Get NT_ process_wide: AUXV, MAPS, PRPSINFO */
 	/* NT_PRPSINFO */
