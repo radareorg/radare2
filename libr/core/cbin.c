@@ -1938,6 +1938,17 @@ static int bin_fields(RCore *r, int mode, int va) {
 	return true;
 }
 
+static bool flag_exists(RFlag *f, char* name) {
+	RListIter *iter;
+	RFlagItem *flag;
+	r_list_foreach (f->flags, iter, flag) {
+		if (flag->name == r_str_newf ("sym.%s", name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static int bin_classes(RCore *r, int mode) {
 	RListIter *iter, *iter2;
 	RBinSymbol *sym;
@@ -1959,6 +1970,8 @@ static int bin_classes(RCore *r, int mode) {
 		r_cons_println ("fs classes");
 	}
 
+	bool mergeflags = r_config_get_i (r->config, "bin.mergeflags");
+
 	r_list_foreach (cs, iter, c) {
 		if (!c || !c->name || !c->name[0]) {
 			continue;
@@ -1970,9 +1983,11 @@ static int bin_classes(RCore *r, int mode) {
 			const char *classname = sdb_fmt (0, "class.%s", name);
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
-				char *method = sdb_fmt (1, "method.%s.%s", c->name, sym->name);
-				r_name_filter (method, -1);
-				r_flag_set (r->flags, method, sym->vaddr, 1);
+				if (!mergeflags && !flag_exists (r->flags, sym->name)) {
+					char *method = sdb_fmt (1, "method.%s.%s", c->name, sym->name);
+					r_name_filter (method, -1);
+					r_flag_set (r->flags, method, sym->vaddr, 1);
+				}
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x" %s%s%s\n",
