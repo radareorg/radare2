@@ -216,12 +216,12 @@ static int r_egg_raw_prepend(REgg *egg, const ut8 *b, int len) {
 }
 
 static int r_egg_prepend_bytes(REgg *egg, const ut8 *b, int len) {
-	if (!r_egg_raw_prepend(egg, b, len))
+	if (!r_egg_raw_prepend(egg, b, len)) {
 		return false;
-
-	if (!r_buf_prepend_bytes (egg->bin, b, len))
+	}
+	if (!r_buf_prepend_bytes (egg->bin, b, len)) {
 		return false;
-
+	}
 	return true;
 }
 
@@ -357,11 +357,11 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 	ut8* buf, padding_byte;
 	char *p, *o = strdup (pad);
 
-	for (p=o; *p; ) { // parse pad string
+	for (p = o; *p; ) { // parse pad string
 		const char f = *p++;
 		number = strtol(p, NULL, 10);
 
-		if (number<1) {
+		if (number < 1) {
 			eprintf ("Invalid padding length at %d\n", number);
 			free (o);
 			return false;
@@ -391,7 +391,7 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 		}
 
 		memset (buf, padding_byte, number);
-		if (f>='a' && f<='z') {
+		if (f >= 'a' && f <= 'z') {
 			r_egg_prepend_bytes(egg, buf, number);
 		} else {
 			r_egg_append_bytes(egg, buf, number);
@@ -463,10 +463,11 @@ R_API int r_egg_patch(REgg *egg, int off, const ut8 *buf, int len) {
 R_API void r_egg_finalize(REgg *egg) {
 	RBuffer *b;
 	RListIter *iter;
-	if (!egg->bin->buf)
+	if (!egg->bin->buf) {
 		egg->bin = r_buf_new ();
+	}
 	r_list_foreach (egg->patches, iter, b) {
-		if (b->cur <0) {
+		if (b->cur < 0) {
 			r_egg_append_bytes (egg, b->buf, b->length);
 		} else {
 			// TODO: use r_buf_cpy_buf or what

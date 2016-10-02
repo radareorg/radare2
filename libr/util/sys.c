@@ -722,11 +722,10 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	memcpy (ptr, buf, len);
 	r_mem_protect (ptr, sz, "rx");
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
-	cb = (void*)ptr;
+	cb = (int (*)())ptr;
 #if USE_FORK
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	pid = r_sys_fork ();
-	//pid = -1;
 #else
 	pid = -1;
 #endif
@@ -748,7 +747,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 		ret = WEXITSTATUS (st);
 	}
 #else
-	ret = cb ();
+	ret = (*cb) ();
 #endif
 	free (p);
 	return ret;
