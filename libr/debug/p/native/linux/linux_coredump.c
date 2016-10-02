@@ -868,6 +868,11 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 			&no_li, &p->nice, &p->num_threads);
 		free (buff);
 	}
+	if (!p->num_threads || p->num_threads < 1) {
+		free (p);
+		eprintf ("Warning: number of threads is < 1\n");
+		return NULL;
+	}
 	file = sdb_fmt (0, "/proc/%d/status", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
@@ -1515,15 +1520,6 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	proc_data->per_process = get_proc_process_content (dbg);
 	if (!proc_data->per_process) {
 		free (elf_proc_note);
-		free (proc_data);
-		return false;
-	}
-	elf_proc_note->n_threads = proc_data->per_process->num_threads;
-
-	if (!elf_proc_note->n_threads || elf_proc_note->n_threads < 1 ) {
-		eprintf ("problem in elf_proc_note\n");
-		free (elf_proc_note);
-		free (proc_data->per_process);
 		free (proc_data);
 		return false;
 	}
