@@ -11,20 +11,28 @@ static int check_bytes(const ut8 *buf, ut64 length);
 
 static Sdb* get_sdb (RBinObject *o) {
 	struct PE_(r_bin_pe_obj_t) *bin;
-	if (!o || !o->bin_obj) return NULL;
+	if (!o || !o->bin_obj) {
+		return NULL;
+	}	
 	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
-	if (bin && bin->kv) return bin->kv;
+	if (bin && bin->kv) {
+		return bin->kv;
+	}
 	return NULL;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct PE_(r_bin_pe_obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
-	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
+	if (!buf || !sz || sz == UT64_MAX) {
+		return NULL;
+	}
 	tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = PE_(r_bin_pe_new_buf) (tbuf);
-	if (res) sdb_ns_set (sdb, "info", res->kv);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
 	r_buf_free (tbuf);
 	return res;
 }
@@ -34,9 +42,9 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes;
 	ut64 sz;
 
-	if (!arch || !arch->o)
+	if (!arch || !arch->o) {
 		return false;
-
+	}
 	bytes = r_buf_buffer (arch->buf);
 	sz = r_buf_size (arch->buf);
 	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
@@ -56,11 +64,12 @@ static ut64 baddr(RBinFile *arch) {
 static RBinAddr* binsym(RBinFile *arch, int type) {
 	struct r_bin_pe_addr_t *peaddr = NULL;
 	RBinAddr *ret = NULL;
-	if (arch && arch->o && arch->o->bin_obj)
-	switch (type) {
-	case R_BIN_SYM_MAIN:
-		peaddr = PE_(r_bin_pe_get_main_vaddr) (arch->o->bin_obj);
-		break;
+	if (arch && arch->o && arch->o->bin_obj) {
+		switch (type) {
+		case R_BIN_SYM_MAIN:
+				peaddr = PE_(r_bin_pe_get_main_vaddr) (arch->o->bin_obj);
+				break;
+		}
 	}
 	if (peaddr && (ret = R_NEW0 (RBinAddr))) {
 		ret->paddr = peaddr->paddr;
@@ -80,12 +89,15 @@ static void add_tls_callbacks(RBinFile *arch, RList* list) {
 	do {
 		key =  sdb_fmt (0, "pe.tls_callback%d_paddr", count);
 		paddr = sdb_num_get (bin->kv, key, 0);
-		if (!paddr) break;
+		if (!paddr) {
+			break;
+		}
 
 		key =  sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
 		vaddr = sdb_num_get (bin->kv, key, 0);
-		if (!vaddr) break;
-
+		if (!vaddr) {
+			break;
+		}
 		if ((ptr = R_NEW0 (RBinAddr))) {
 			ptr->paddr = paddr;
 			ptr->vaddr = vaddr;
@@ -93,7 +105,7 @@ static void add_tls_callbacks(RBinFile *arch, RList* list) {
 			r_list_append (list, ptr);
 		}
 		count++;
-	} while (vaddr != 0);
+	} while (vaddr);
 }
 
 static RList* entries(RBinFile *arch) {
@@ -124,16 +136,18 @@ static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_pe_section_t *sections = NULL;
+	struct PE_(r_bin_pe_obj_t) *bin = (struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj;
 	ut64 ba = baddr (arch);
 	int i;
-	if (!(ret = r_list_new ()))
-		return NULL;
+	if (!(ret = r_list_new ())) {
+		return NULL;	
+	}
 	ret->free = free;
-	if (!(sections = PE_(r_bin_pe_get_sections) (arch->o->bin_obj))){
+	if (!(sections = PE_(r_bin_pe_get_sections) (bin))){
 		r_list_free (ret);
 		return NULL;
 	}
-	PE_(r_bin_pe_check_sections) (arch->o->bin_obj, &sections);
+	PE_(r_bin_pe_check_sections) (bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
@@ -143,22 +157,34 @@ static RList* sections(RBinFile *arch) {
 				R_BIN_SIZEOF_STRINGS);
 		}
 		ptr->size = sections[i].size;
-		ptr->vsize = sections[i].vsize;
-		if (!ptr->vsize) {
-			ptr->vsize = sections[i].size;
+		if (ptr->size > bin->size) {
+			if (sections[i].vsize < bin->size) {
+				ptr->size = sections[i].vsize;
+			} else {
+				//hack give it page size
+				ptr->size = 4096;
+			}
 		}
+		ptr->vsize = sections[i].vsize;
+		if (!ptr->vsize && ptr->size) {
+			ptr->vsize = ptr->size;
+		} 
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;
 		ptr->srwx = R_BIN_SCN_MAP;
-		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags))
+		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
-		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].flags))
+		}
+		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_WRITABLE;
-		if (R_BIN_PE_SCN_IS_READABLE (sections[i].flags))
+		}
+		if (R_BIN_PE_SCN_IS_READABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_READABLE;
-		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].flags))
+		}
+		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_SHAREABLE;
+		}
 		r_list_append (ret, ptr);
 	}
 	free (sections);
@@ -172,13 +198,15 @@ static RList* symbols(RBinFile *arch) {
 	struct r_bin_pe_import_t *imports = NULL;
 	int i;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	if ((symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
-		    if (!(ptr = R_NEW0 (RBinSymbol)))
-			break;
+		    if (!(ptr = R_NEW0 (RBinSymbol))) {
+				break;
+			}
 		    ptr->name = strdup ((char *)symbols[i].name);
 		    ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
 		    //strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -195,10 +223,11 @@ static RList* symbols(RBinFile *arch) {
 
 	if ((imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) {
         for (i = 0; !imports[i].last; i++) {
-            if (!(ptr = R_NEW0 (RBinSymbol)))
+            if (!(ptr = R_NEW0 (RBinSymbol))) {
                 break;
+			}
             //strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-	    ptr->name = r_str_newf ("imp.%s", imports[i].name);
+			ptr->name = r_str_newf ("imp.%s", imports[i].name);
             //strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
             ptr->bind = r_str_const ("NONE");
             ptr->type = r_str_const ("FUNC");
@@ -215,8 +244,8 @@ static RList* symbols(RBinFile *arch) {
 
 static void filter_import(ut8 *n) {
 	int I;
-	for (I=0; n[I]; I++) {
-		if (n[I]<30 || n[I]>=0x7f) {
+	for (I = 0; n[I]; I++) {
+		if (n[I] < 30 || n[I] >= 0x7f) {
 			n[I] = 0;
 			break;
 		}
@@ -230,25 +259,27 @@ static RList* imports(RBinFile *arch) {
 	struct r_bin_pe_import_t *imports = NULL;
 	int i;
 
-	if (!arch || !arch->o || !arch->o->bin_obj)
+	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
-	if (!(ret = r_list_new ()))
+	}
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	if (!(relocs = r_list_new ())) {
 		free (ret);
 		return NULL;
 	}
-
 	ret->free = free;
 	relocs->free = free;
-
 	((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs = relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj)))
+	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj))) { 
 		return ret;
+	}
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinImport)))
+		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
+		}
 		filter_import (imports[i].name);
 		ptr->name = strdup ((char*)imports[i].name);
 		ptr->bind = r_str_const ("NONE");
@@ -259,8 +290,9 @@ static RList* imports(RBinFile *arch) {
 		//ptr->hint = imports[i].hint;
 		r_list_append (ret, ptr);
 
-		if (!(rel = R_NEW0 (RBinReloc)))
+		if (!(rel = R_NEW0 (RBinReloc))) {
 			break;
+		}
 #ifdef R_BIN_PE64
 		rel->type = R_BIN_RELOC_64;
 #else
@@ -279,7 +311,9 @@ static RList* imports(RBinFile *arch) {
 
 static RList* relocs(RBinFile *arch) {
 	struct PE_(r_bin_pe_obj_t)* obj= arch->o->bin_obj;
-	if (obj) return obj->relocs;
+	if (obj) {
+		return obj->relocs;
+	}
 	return NULL;
 }
 
@@ -289,11 +323,13 @@ static RList* libs(RBinFile *arch) {
 	char *ptr = NULL;
 	int i;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj))) {
 		return ret;
+	}
 	for (i = 0; !libs[i].last; i++) {
 		ptr = strdup (libs[i].name);
 		r_list_append (ret, ptr);
@@ -305,8 +341,9 @@ static RList* libs(RBinFile *arch) {
 static int is_dot_net(RBinFile *arch) {
 	struct r_bin_pe_lib_t *libs = NULL;
 	int i;
-	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj))) {
 		return false;
+	}
 	for (i = 0; !libs[i].last; i++) {
 		if (!strcmp (libs[i].name, "mscoree.dll")) {
 			free (libs);
@@ -320,8 +357,9 @@ static int is_dot_net(RBinFile *arch) {
 static int is_vb6(RBinFile *arch) {
 	struct r_bin_pe_lib_t *libs = NULL;
 	int i;
-	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj))) {
 		return false;
+	}
 	for (i = 0; !libs[i].last; i++) {
 		if (!strcmp (libs[i].name, "msvbvm60.dll")) {
 			free (libs);
@@ -352,15 +390,18 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
-	if (!arch) 
+	if (!arch) {
 		return false;
+	}
 	buf = r_buf_buffer (arch->buf);
-	if (!buf) 
+	if (!buf) {
 		return false;
+	}
 	sz = r_buf_size (arch->buf);
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
-	if (idx + 0x5E + 1 >= sz )
+	if (idx + 0x5E + 1 >= sz ) {
 		return false;
+	}
 	//it's funny here idx+0x5E can be 158 and sz 159 but with
 	//the cast it reads two bytes until 160 
 	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
@@ -371,7 +412,9 @@ static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ut32 claimed_checksum, actual_checksum;
 
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}	
 	arch->file = strdup (arch->file);
 	ret->bclass = PE_(r_bin_pe_get_class) (arch->o->bin_obj);
 	ret->rclass = strdup ("pe");
@@ -385,13 +428,13 @@ static RBinInfo* info(RBinFile *arch) {
 	if (is_vb6 (arch)) {
 		ret->lang = "vb";
 	}
-	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
+	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj)) {
 		ret->type = strdup ("DLL (Dynamic Link Library)");
-	else ret->type = strdup ("EXEC (Executable file)");
-
+	} else {
+		ret->type = strdup ("EXEC (Executable file)");
+	}
 	claimed_checksum = PE_(bin_pe_get_claimed_checksum) (arch->o->bin_obj);
 	actual_checksum  = PE_(bin_pe_get_actual_checksum) (arch->o->bin_obj);
-
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
@@ -419,15 +462,18 @@ static RBinInfo* info(RBinFile *arch) {
 
 	ret->has_va = true;
 
-	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
+	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
-	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj))
+	}
+	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_LINENUMS;
-	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->o->bin_obj))
+	}
+	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_SYMS;
-	if (PE_(r_bin_pe_is_stripped_relocs) (arch->o->bin_obj))
+	}
+	if (PE_(r_bin_pe_is_stripped_relocs) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_RELOCS;
-
+	}
 	if (PE_(r_bin_pe_get_debug_data)(arch->o->bin_obj, &di)) {
 		ret->guid = r_str_ndup (di.guidstr, GUIDSTR_LEN);
 		if (ret->guid) {
@@ -455,15 +501,20 @@ static int check(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int idx;
-	if (!buf) return false;
-	if (length <= 0x3d)
+	if (!buf) {
 		return false;
+	}
+	if (length <= 0x3d) {
+		return false;
+	}
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
-	if (length > idx+0x18+2)
+	if (length > idx + 0x18 + 2) {
 		if (!memcmp (buf, "MZ", 2) &&
 		    !memcmp (buf+idx, "PE", 2) &&
-		    !memcmp (buf+idx+0x18, "\x0b\x01", 2))
+		    !memcmp (buf+idx+0x18, "\x0b\x01", 2)) {
 			return true;
+		}
+	}
 	return false;
 }
 
