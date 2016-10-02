@@ -102,13 +102,16 @@ R_API ut64 r_sys_now(void) {
 R_API int r_sys_truncate(const char *file, int sz) {
 #if __WINDOWS__ && !__CYGWIN__
 	int fd = r_sandbox_open (file, O_RDWR, 0644);
-	if (fd != -1) return false;
+	if (fd != -1) {
+		return false;
+	}
 	ftruncate (fd, sz);
 	close (fd);
 	return true;
 #else
-	if (r_sandbox_enable (0))
+	if (r_sandbox_enable (0)) {
 		return false;
+	}
 	return truncate (file, sz)? false: true;
 #endif
 }
@@ -165,11 +168,12 @@ R_API void r_sys_backtrace(void) {
 
 	printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	fp = saved_fp;
-	while (fp != NULL) {
+	while (fp) {
 		saved_fp = *fp;
 		fp = saved_fp;
-		if (!*fp)
+		if (!*fp) {
 			break;
+		}
 		saved_pc = *(fp + 2);
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
@@ -207,7 +211,7 @@ R_API int r_sys_clearenv(void) {
 	if (!environ) {
 		return 0;
 	}
-	while (*environ != NULL) {
+	while (*environ) {
 		*environ++ = NULL;
 	}
 #endif
@@ -220,7 +224,9 @@ R_API int r_sys_clearenv(void) {
 
 R_API int r_sys_setenv(const char *key, const char *value) {
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
-	if (!key) return 0;
+	if (!key) {
+		return 0;
+	}
 	if (!value) {
 		unsetenv (key);
 		return 0;
@@ -240,8 +246,9 @@ static char *crash_handler_cmd = NULL;
 #if __UNIX__
 static void signal_handler(int signum) {
 	char cmd[1024];
-	if (!crash_handler_cmd)
+	if (!crash_handler_cmd) {
 		return;
+	}
 	snprintf (cmd, sizeof(cmd) - 1, crash_handler_cmd, getpid ());
 	r_sys_backtrace ();
 	exit (r_sys_cmd (cmd));
@@ -250,9 +257,11 @@ static void signal_handler(int signum) {
 static int checkcmd(const char *c) {
 	char oc = 0;
 	for (;*c;c++) {
-		if (oc == '%')
-			if (*c!='d' && *c!='%')
+		if (oc == '%') {
+			if (*c != 'd' && *c != '%') {
 				return 0;
+			}
+		}
 		oc = *c;
 	}
 	return 1;
@@ -264,8 +273,9 @@ R_API int r_sys_crash_handler(const char *cmd) {
 	struct sigaction sigact;
 	void *array[1];
 
-	if (!checkcmd (cmd))
+	if (!checkcmd (cmd)) {
 		return false;
+	}
 #ifdef HAVE_BACKTRACE
 	/* call this outside of the signal handler to init it safely */
 	backtrace (array, 1);
@@ -301,14 +311,18 @@ R_API int r_sys_crash_handler(const char *cmd) {
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__ && !__CYGWIN__
 	static char envbuf[1024];
-	if (!key) return NULL;
+	if (!key) {
+		return NULL;
+	}
 	envbuf[0] = 0;
 	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
 	// TODO: handle return value of GEV
 	return *envbuf? strdup (envbuf): NULL;
 #else
 	char *b;
-	if (!key) return NULL;
+	if (!key) {
+		return NULL;
+	}
 	b = getenv (key);
 	return b? strdup (b): NULL;
 #endif
@@ -321,9 +335,10 @@ R_API char *r_sys_getdir(void) {
 #else
 	char *cwd = getcwd (NULL, 0);
 #endif
-	ret = cwd ? strdup (cwd) : NULL;
-	if (cwd)
+	ret = cwd ? strdup (cwd) : NULL; 
+	if (cwd) {
 		free (cwd);
+	}
 	return ret;
 }
 
@@ -338,9 +353,12 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	int pid, bytes = 0, status;
 	int sh_in[2], sh_out[2], sh_err[2];
 
-	if (len) *len = 0;
-	if (pipe (sh_in))
+	if (len) {
+		*len = 0;
+	}
+	if (pipe (sh_in)) {
 		return false;
+	}
 	if (output) {
 		if (pipe (sh_out)) {
 			close (sh_in[0]);
@@ -368,13 +386,18 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			close (sh_out[0]);
 			close (sh_out[1]);
 		}
-		if (sterr) dup2 (sh_err[1], 2); else close (2);
+		if (sterr) {
+			dup2 (sh_err[1], 2); 
+		} else {
+			close (2);
+		}
 		close (sh_err[0]); close (sh_err[1]);
 		exit (r_sandbox_system (cmd, 0));
 	default:
 		outputptr = strdup ("");
-		if (!outputptr)
+		if (!outputptr) {
 			return false;
+		}
 		if (sterr) {
 			*sterr = strdup ("");
 			if (!*sterr) {
@@ -382,37 +405,48 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				return false;
 			}
 		}
-		if (output) close (sh_out[1]);
+		if (output) {
+			close (sh_out[1]);
+		}
 		close (sh_err[1]);
 		close (sh_in[0]);
-		if (!inputptr || !*inputptr)
+		if (!inputptr || !*inputptr) {
 			close (sh_in[1]);
-
+		}
 		// we should handle broken pipes somehow better
 		signal (SIGPIPE, SIG_IGN);
 		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;
-
 			FD_ZERO (&rfds);
 			FD_ZERO (&wfds);
-			if (output)
+			if (output) {
 				FD_SET (sh_out[0], &rfds);
-			if (sterr)
+			}
+			if (sterr) {
 				FD_SET (sh_err[0], &rfds);
-			if (inputptr && *inputptr)
+			}
+			if (inputptr && *inputptr) {
 				FD_SET (sh_in[1], &wfds);
+			}
 			memset (buffer, 0, sizeof (buffer));
 			nfd = select (sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
-			if (nfd < 0)
+			if (nfd < 0) {
 				break;
+			}
 			if (output && FD_ISSET (sh_out[0], &rfds)) {
-				if ((bytes = read (sh_out[0], buffer, sizeof (buffer)-1)) == 0) break;
+				if (!(bytes = read (sh_out[0], buffer, sizeof (buffer)-1))) {
+					break;
+				}
 				buffer[sizeof(buffer) - 1] = '\0';
-				if (len) *len += bytes;
+				if (len) {
+					*len += bytes;
+				}
 				outputptr = r_str_concat (outputptr, buffer);
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
-				if (read (sh_err[0], buffer, sizeof (buffer)-1) == 0) break;
+				if (!read (sh_err[0], buffer, sizeof (buffer)-1)) {
+					break;
+				}
 				buffer[sizeof(buffer) - 1] = '\0';
 				*sterr = r_str_concat (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
@@ -430,20 +464,24 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				}
 			}
 		}
-		if (output)
+		if (output) {
 			close (sh_out[0]);
+		}
 		close (sh_err[0]);
 		close (sh_in[1]);
 		waitpid (pid, &status, 0);
-		if (status != 0) {
+		if (status) {
 			char *escmd = r_str_escape (cmd);
 			eprintf ("%s: failed command '%s'\n", __func__, escmd);
 			free (escmd);
 			return false;
 		}
 
-		if (output) *output = outputptr;
-		else free (outputptr);
+		if (output) {
+			*output = outputptr;
+		} else {
+			free (outputptr);
+		}
 		return true;
 	}
 	return false;
@@ -452,9 +490,15 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 // TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	char *result = r_sys_cmd_str_w32 (cmd);
-	if (len) *len = 0;
-	if (output) *output = result;
-	if (result) return true;
+	if (len) {
+		*len = 0;
+	}
+	if (output) {
+		*output = result;
+	}
+	if (result) {
+		return true;
+	}
 	return false;
 }
 #else
@@ -478,8 +522,12 @@ R_API int r_sys_cmdf (const char *fmt, ...) {
 R_API int r_sys_cmdbg (const char *str) {
 #if __UNIX__ || __CYGWIN && !defined(MINGW32)
 	int ret, pid = r_sys_fork ();
-	if (pid == -1) return -1;
-	if (pid) return pid;
+	if (pid == -1) {
+		return -1;
+	}
+	if (pid) {
+		return pid;
+	}
 	ret = r_sandbox_system (str, 0);
 	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
 	exit (0);
@@ -494,12 +542,14 @@ R_API int r_sys_cmd (const char *str) {
 #if __FreeBSD__
 	/* freebsd system() is broken */
 	int st, pid, fds[2];
-	if (pipe (fds))
+	if (pipe (fds)) {
 		return -1;
+	}
 	pid = vfork ();
-	if (pid == -1)
+	if (pid == -1) {
 		return -1;
-	if (pid == 0) {
+	}
+	if (!pid) {
 		dup2 (1, fds[1]);
 		// char *argv[] = { "/bin/sh", "-c", str, NULL};
 		// execv (argv[0], argv);
@@ -517,15 +567,16 @@ R_API int r_sys_cmd (const char *str) {
 
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	char *output;
-	if (r_sys_cmd_str_full (cmd, input, &output, len, NULL))
+	if (r_sys_cmd_str_full (cmd, input, &output, len, NULL)) {
 		return output;
+	}
 	return NULL;
 }
 
 R_API bool r_sys_mkdir(const char *dir) {
-	if (r_sandbox_enable (0))
+	if (r_sandbox_enable (0)) {
 		return false;
-
+	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	return CreateDirectory (dir, NULL) != 0;
 #else
@@ -541,11 +592,15 @@ R_API bool r_sys_mkdirp(const char *dir) {
 		eprintf ("r_sys_mkdirp: Unable to allocate memory\n");
 		return false;
 	}
-	if (*ptr == slash) ptr++;
+	if (*ptr == slash) {
+		ptr++;
+	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	{
 		char *p = strstr (ptr, ":\\");
-		if (p) ptr = p + 2;
+		if (p) {
+			ptr = p + 2;
+		}
 	}
 #endif
 	for (;;) {
@@ -556,7 +611,9 @@ R_API bool r_sys_mkdirp(const char *dir) {
 				break;
 			}
 		}
-		if (!*ptr) break;
+		if (!*ptr) {
+			break;
+		}
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
 			eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
@@ -566,8 +623,9 @@ R_API bool r_sys_mkdirp(const char *dir) {
 		*ptr = slash;
 		ptr++;
 	}
-	if (!r_sys_mkdir (path) && r_sys_mkdir_failed ())
+	if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
 		ret = false;
+	}
 	free (path);
 	return ret;
 }
@@ -594,7 +652,7 @@ R_API void r_sys_perror_str(const char *fun) {
 
 	lpDisplayBuf = (LPVOID)LocalAlloc (LMEM_ZEROINIT,
 			(lstrlen ((LPCTSTR)lpMsgBuf)+
-			lstrlen ((LPCTSTR)fun)+40)*sizeof (TCHAR));
+			lstrlen ((LPCTSTR)fun) + 40) * sizeof (TCHAR));
 	eprintf ("%s: %s\n", fun, lpMsgBuf);
 
 	LocalFree (lpMsgBuf);
@@ -604,24 +662,31 @@ R_API void r_sys_perror_str(const char *fun) {
 
 R_API bool r_sys_arch_match(const char *archstr, const char *arch) {
 	char *ptr;
-	if (!archstr || !arch || !*archstr || !*arch)
+	if (!archstr || !arch || !*archstr || !*arch) {
 		return true;
-	if (!strcmp (archstr, "*") || !strcmp (archstr, "any"))
+	}
+	if (!strcmp (archstr, "*") || !strcmp (archstr, "any")) {
 		return true;
-	if (!strcmp (archstr, arch))
+	}
+	if (!strcmp (archstr, arch)) {
 		return true;
+	}
 	if ((ptr = strstr (archstr, arch))) {
 		char p = ptr[strlen (arch)];
-		if (!p || p==',') return true;
+		if (!p || p==',') {
+			return true;
+		}
 	}
 	return false;
 }
 
 R_API int r_sys_arch_id(const char *arch) {
 	int i;
-	for (i = 0; arch_bit_array[i].name; i++)
-		if (!strcmp (arch, arch_bit_array[i].name))
+	for (i = 0; arch_bit_array[i].name; i++) {
+		if (!strcmp (arch, arch_bit_array[i].name)) {
 			return arch_bit_array[i].bit;
+		}
+	}
 	return 0;
 }
 
@@ -754,8 +819,9 @@ R_API char *r_sys_pid_to_path(int pid) {
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 	pathbuf[0] = 0;
 	int ret = proc_pidpath (pid, pathbuf, sizeof (pathbuf));
-	if (ret <= 0)
+	if (ret <= 0) {
 		return NULL;
+	}
 	return strdup (pathbuf);
 #endif
 #else
@@ -767,8 +833,9 @@ R_API char *r_sys_pid_to_path(int pid) {
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
 #endif
 	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
-	if (ret<1)
+	if (ret < 1) {
 		return NULL;
+	}
 	pathbuf[ret] = 0;
 	return strdup (pathbuf);
 #endif
@@ -781,8 +848,9 @@ R_API char **r_sys_get_environ () {
 	env = *_NSGetEnviron();
 #endif
 	// return environ if available??
-	if (!env)
+	if (!env) {
 		env = r_lib_dl_sym (NULL, "environ");
+	}
 	return env;
 }
 
@@ -794,7 +862,9 @@ R_API char *r_sys_whoami (char *buf) {
 	char _buf[32];
 	int pid = getpid ();
 	int hasbuf = (buf)? 1: 0;
-	if (!hasbuf) buf = _buf;
+	if (!hasbuf) {
+		buf = _buf;
+	}
 	sprintf (buf, "pid%d", pid);
 	return hasbuf? buf: strdup (buf);
 }
