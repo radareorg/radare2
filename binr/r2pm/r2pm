@@ -165,18 +165,27 @@ R2PM_TGZ() {
 	else
 		DIR="$2"
 	fi
+	if [ -n "$3" ]; then
+		TARBALL="$3"
+	fi
 	cd "${R2PM_GITDIR}"
 	if [ ${IS_LOCAL} = 0 ]; then
-		${WGET} -c "${URL}"
-		if [ "`echo ${URL} | grep -e tgz -e tar.gz`" ]; then
-			tar xzvf "${TARBALL}"
-		elif [ "`echo ${URL} | grep -e .tbz2 -e tar.bz2`" ]; then
-			tar xjvf "${TARBALL}"
-		elif [ "`echo ${URL} | grep -e .txz -e tar.xz`" ]; then
-			tar xJvf "${TARBALL}"
+		${WGET} -O ${TARBALL} -c "${URL}"
+		if [ -d "${DIR}" ]; then
+			echo "Already uncompressed."
 		else
-			echo "Dunno"
-			exit 1
+			if [ "`echo ${URL} | grep -e tgz -e tar.gz`" ]; then
+				tar xzvf "${TARBALL}"
+			elif [ "`echo ${URL} | grep -e .tbz2 -e tar.bz2`" ]; then
+				tar xjvf "${TARBALL}"
+			elif [ "`echo ${URL} | grep -e .txz -e tar.xz`" ]; then
+				tar xJvf "${TARBALL}"
+			elif [ "`echo ${URL} | grep -e .zip`" ]; then
+				unzip -o "${TARBALL}"
+			else
+				echo "Dunno"
+				exit 1
+			fi
 		fi
 		cd "${DIR}" || R2PM_FAIL "Oops"
 	fi
