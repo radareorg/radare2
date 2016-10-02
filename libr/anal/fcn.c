@@ -324,7 +324,7 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs)) < 1) {
 			break;
 		}
-		if (op.dst && op.dst->reg && !strcmp(op.dst->reg->name, regsz)) {
+		if (op.dst && op.dst->reg && op.dst->reg->name && !strcmp(op.dst->reg->name, regsz)) {
 			if (op.src[0]) ret = op.src[0]->delta;
 		}
 	}
