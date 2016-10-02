@@ -121,6 +121,14 @@ R2PM_DESC() {
 	:
 }
 
+R2PM_SUDO() {
+	if [ "${GLOBAL}" = 1 ]; then
+		${SUDO} $*
+	else
+		$*
+	fi
+}
+
 R2PM_List() {
 	cd "${R2PM_USRDIR}/pkg" || exit 1
 	if [ -n "$1" ]; then
@@ -353,14 +361,27 @@ case "$1" in
 	r2pm_uninstall $@
 	;;
 -c|clean)
-	R2PM_List radare2 | grep radare2
-	if [ $? != 0 ]; then
-		rm -rf "${R2PM_GITDIR}"
-		mkdir -p "${R2PM_GITDIR}"
+	if [ -n "$2" ]; then
+		if [ -d "${R2PM_GITDIR}/$2" ]; then
+			echo "Cleaning up ${R2PM_GITDIR}..."
+			rm -rf "${R2PM_GITDIR}"
+			mkdir -p "${R2PM_GITDIR}"
+		else
+			echo "Cannot find $2 in ${R2PM_GITDIR}"
+			exit 1
+		fi
 	else
-		echo "r2 is installed with r2pm, do not clean the cache to avoid autodestruction"
-		echo "do not disassemble do not disassemble do not disassemble do not disassemble"
-		exit 1
+		R2PM_List radare2 | grep radare2
+		if [ $? != 0 ]; then
+			echo "Press enter to remove the GITDIR or ^C to cancel operation"
+			read A
+			rm -rf "${R2PM_GITDIR}"
+			mkdir -p "${R2PM_GITDIR}"
+		else
+			echo "r2 is installed with r2pm, do not clean the cache to avoid autodestruction"
+			echo "do not disassemble do not disassemble do not disassemble do not disassemble"
+			exit 1
+		fi
 	fi
 	;;
 what|-w)
@@ -407,7 +428,7 @@ ls)
 	echo " -t,test FX,XX,BR BID        check in travis regressions"
 	echo " -v,version                  show version"
 	echo " -h,help                     show this message"
-	echo " -c,clean                    clear source cache"
+	echo " -c,clean ([git/dir])        clear source cache (GITDIR)"
 	echo " -w <pkgname>                what/where is installed"
 	echo " init | update ..            initialize/update database"
 	echo " cd [git/dir]                cd into given git (see 'r2pm ls')"
