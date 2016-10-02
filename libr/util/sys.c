@@ -643,17 +643,18 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	int st, pid;
 #endif
 // TODO: define R_SYS_ALIGN_FORWARD in r_util.h
-	ut8 *ptr, *p = malloc ((sz+len)<<1);
+	ut8 *ptr, *p = malloc ((sz + len) << 1);
 	ptr = p;
-	pdelta = ((size_t)(p)) & (4096-1);
-	if (pdelta)
-		ptr += (4096-pdelta);
+	pdelta = ((size_t)(p)) & (4096 - 1);
+	if (pdelta) {
+		ptr += (4096 - pdelta);
+	}
 	if (!ptr || !buf) {
 		eprintf ("r_sys_run: Cannot run empty buffer\n");
 		free (p);
 		return false;
 	}
-	memcpy (ptr, buf, sz);
+	memcpy (ptr, buf, len);
 	r_mem_protect (ptr, sz, "rx");
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (void*)ptr;
@@ -664,7 +665,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 #else
 	pid = -1;
 #endif
-	if (pid<0) {
+	if (pid < 0) {
 		return cb ();
 	}
 	if (!pid) {
