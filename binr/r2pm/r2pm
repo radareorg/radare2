@@ -44,6 +44,7 @@ export CFLAGS="-I${R2PM_HOMEPREFIX}/include/"
 export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib/"
 
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
+export R2PM_OLDPWD="${PWD}"
 
 # Global Vars
 TRAVIS_TYPE=XX
