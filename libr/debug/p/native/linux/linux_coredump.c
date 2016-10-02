@@ -1500,7 +1500,6 @@ bool linux_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	bool error = false;
 	size_t note_section_size, maps_size = 0;
 	int n_segments;
-	int n_threads;
 	ut32 hdr_size;
 	elf_offset_t offset = 0;
 
