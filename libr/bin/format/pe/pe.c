@@ -41,14 +41,14 @@ static inline int is_thumb (struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->optional_header.AddressOfEntryPoint & 1;
 }
 
-static inline int is_arm (struct PE_(r_bin_pe_obj_t)* bin) {
+static inline bool is_arm (struct PE_(r_bin_pe_obj_t)* bin) {
 	switch (bin->nt_headers->file_header.Machine) {
 	case PE_IMAGE_FILE_MACHINE_RPI2: // 462
 	case PE_IMAGE_FILE_MACHINE_ARM:
 	case PE_IMAGE_FILE_MACHINE_THUMB:
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
