@@ -860,8 +860,9 @@ R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
 	r_list_foreach (core->files, iter, file) {
-		if (file->desc->fd == fd)
+		if (file->desc->fd == fd) {
 			return file;
+		}
 	}
 	return NULL;
 }
@@ -871,8 +872,9 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	RCoreFile *f;
 	ut64 from;
 	RListIter *iter;
-	if (mode=='j')
+	if (mode == 'j') {
 		r_cons_printf ("[");
+	}
 	r_list_foreach (core->files, iter, f) {
 		if (f->map) {
 			from = f->map->from;
@@ -897,18 +899,29 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			r_cons_printf ("o %s 0x%"PFMT64x"\n", f->desc->uri, (ut64)from);
 			break;
 		default:
-			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64u" %s\n",
+			{
+			ut64 size = r_io_desc_size (core->io, f->desc);
+			if ((st64)size == -1) {
+				r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=-1 %s\n",
 					core->io->raised == f->desc->fd?'*':'-',
 					(int)f->desc->fd, f->desc->uri, (ut64)from,
-					f->desc->flags & R_IO_WRITE? "rw": "r",
-					r_io_desc_size (core->io, f->desc),
-					overlapped?"overlaps":"");
+					(f->desc->flags & R_IO_WRITE) ? "rw" : "r",
+					overlapped? "overlaps": "");
+			} else {
+				r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64u" %s\n",
+					core->io->raised == f->desc->fd?'*':'-',
+					(int)f->desc->fd, f->desc->uri, (ut64)from,
+					(f->desc->flags & R_IO_WRITE) ? "rw" : "r",
+					size, overlapped? "overlaps": "");
+			}
+			}
 			break;
 		}
 		count++;
 	}
-	if (mode=='j')
+	if (mode == 'j') {
 		r_cons_printf ("]\n");
+	}
 	return count;
 }
 
@@ -935,8 +948,9 @@ R_API int r_core_file_binlist(RCore *core) {
 	RBin *bin = core->bin;
 	const RList *binfiles = bin ? bin->binfiles: NULL;
 
-	if (!binfiles) return false;
-
+	if (!binfiles) {
+		return false;
+	}
 	r_list_foreach (binfiles, iter, binfile) {
 		int fd = binfile->fd;
 		cf = r_core_file_get_by_fd (core, fd);
@@ -988,15 +1002,17 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	}
 
 	limit = r_config_get_i (r->config, "cfg.hashlimit");
-	if (r_io_desc_size (r->io, cf->desc) > limit)
+	if (r_io_desc_size (r->io, cf->desc) > limit) {
 		return false;
+	}
 	buf = (ut8*)r_file_slurp (file, &buf_len);
-	if (buf==NULL)
+	if (!buf) {
 		return false;
+	}
 	ctx = r_hash_new (true, R_HASH_MD5);
 	md5 = r_hash_do_md5 (ctx, buf, buf_len);
 	p = hash;
-	for (i=0; i<R_HASH_SIZE_MD5; i++) {
+	for (i = 0; i < R_HASH_SIZE_MD5; i++) {
 		sprintf (p, "%02x", md5[i]);
 		p += 2;
 	}
@@ -1065,10 +1081,7 @@ R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf) {
 
 R_API ut32 r_core_file_cur_fd (RCore *core) {
 	RIODesc *desc = core->file ? core->file->desc : NULL;
-	if (desc) {
-		return desc->fd;
-	}
-	return (ut32)-1;		//WTF
+	return desc? desc->fd: UT32_MAX;
 }
 
 R_API RCoreFile * r_core_file_cur (RCore *r) {
