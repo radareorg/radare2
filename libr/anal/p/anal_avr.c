@@ -97,22 +97,29 @@ void __generic_bitop_flags(RAnalOp *op) {
 }
 
 void __generic_ld_st(RAnalOp *op, char ireg, int use_ramp, int prepostdec, int offset, int st) {
-	// preincrement index register
-	if (prepostdec < 0) {
-		ESIL_A ("1,%c,-,%c,=,", ireg, ireg);
+	if (ireg) {
+		// preincrement index register
+		if (prepostdec < 0) {
+			ESIL_A ("1,%c,-,%c,=,", ireg, ireg);
+		}
+		// set register index address
+		ESIL_A ("%c,", ireg);
+		// add offset
+		if (offset != 0) {
+			ESIL_A ("%d,+,", offset);
+		}
+	} else {
+		ESIL_A ("%d,", offset);
 	}
-	// calculate SRAM(ireg+offset) address
-	ESIL_A ("%c,_sram,+,", ireg);
 	if (use_ramp) {
-		ESIL_A ("16,ramp%c,<<,+,", ireg);
+		ESIL_A ("16,ramp%c,<<,+,", ireg ? ireg : 'd');
 	}
-	if (offset != 0) {
-		ESIL_A ("%d,+,", offset);
-	}
-	// read from SRAM
+	// set SRAM base address
+	ESIL_A ("_sram,+,");
+	// read/write from SRAM
 	ESIL_A ("%s[1],", st ? "=" : "");
 	// postincrement index register
-	if (prepostdec > 0) {
+	if (ireg && prepostdec > 0) {
 		ESIL_A ("1,%c,+,%c,=,", ireg, ireg);
 	}
 }
@@ -729,7 +736,16 @@ INST_HANDLER (ldi) {	// LDI Rd, K
 	ESIL_A ("0x%x,r%d,=,", k, d);
 }
 
-INST_HANDLER (movw) {	// // MOVW Rd+1:Rd, Rr+1Rrd
+INST_HANDLER (lds) {	// LDS Rd, k
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	int k = (buf[3] << 8) | buf[2];
+
+	// load value from RAMPD:k
+	__generic_ld_st (op, 0, 1, 0, k, 0);
+	ESIL_A ("r%d,=,", d);
+}
+
+INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1Rrd
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
 	ESIL_A ("r%d,r%d,=,r%d,r%d,=,", r, d, r + 1, d + 1);
@@ -981,6 +997,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ld,     0xfe0f, 0x900c, 0,      2,   LOAD   ), // LD Rd, X
 	INST_DECL (ld,     0xfe0f, 0x900d, 0,      2,   LOAD   ), // LD Rd, X+
 	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
+	INST_DECL (lds,    0xfe0f, 0x9000, 0,      4,   LOAD   ), // LDS Rd, k
 	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
 	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
 	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
