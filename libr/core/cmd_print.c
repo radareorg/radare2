@@ -1449,6 +1449,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	char *ox, *qo, *string = NULL;
 	char *line, *s, *str, *string2 = NULL;
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
+	bool is_free_pending = false;
 
 	if (!strncmp (input, "dsf", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -1540,6 +1541,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			if (qoe) {
 				//XXX str leaks
 				str = r_str_ndup (str, qoe - str);
+				is_free_pending = true;
 			}
 		}
 		if (str) {
@@ -1629,6 +1631,9 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	free (string2);
 	free (string);
 	free (s);
+	if (is_free_pending) {
+		free (str);
+	}
 }
 
 static void algolist(int mode) {
