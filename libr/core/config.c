@@ -587,17 +587,13 @@ static int cb_asmsyntax(void *user, void *data) {
 	if (*node->value == '?') {
 		r_cons_printf ("att\nintel\nmasm\njz\nregnum\n");
 		return false;
-	} else if (!strcmp (node->value, "regnum")) {
-		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_REGNUM);
-	} else if (!strcmp (node->value, "jz")) {
-		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_JZ);
-	} else if (!strcmp (node->value, "intel")) {
-		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-	} else if (!strcmp (node->value, "masm")) {
-		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_MASM);
-	} else if (!strcmp (node->value, "att")) {
-		r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_ATT);
-	} else return false;
+	} else {
+		int syntax = r_asm_syntax_from_string (node->value);
+		if (syntax == -1) {
+			return false;
+		}
+		r_asm_set_syntax (core->assembler, syntax);
+	}
 	return true;
 }
 

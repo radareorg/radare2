@@ -859,3 +859,22 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 	}
 	return NULL;
 }
+
+R_API int r_asm_syntax_from_string(const char *name) {
+	if (!strcmp (name, "regnum")) {
+		return R_ASM_SYNTAX_REGNUM;
+	}
+	if (!strcmp (name, "jz")) {
+		return R_ASM_SYNTAX_JZ;
+	}
+	if (!strcmp (name, "intel")) {
+		return R_ASM_SYNTAX_INTEL;
+	}
+	if (!strcmp (name, "masm")) {
+		return R_ASM_SYNTAX_MASM;
+	}
+	if (!strcmp (name, "att")) {
+		return R_ASM_SYNTAX_ATT;
+	}
+	return -1;
+}

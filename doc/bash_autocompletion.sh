@@ -78,7 +78,7 @@ _rasm2 () {
 		return 0
 		;;
 	-s)
-		COMPREPLY=( $(compgen -W "$(r2 -qc 'e asm.syntax=?' --)" -- $cur ))
+		COMPREPLY=( $(compgen -W "$(rasm2 -s?)" -- $cur ))
 		return 0
 		;;
 	esac

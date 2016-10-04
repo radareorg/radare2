@@ -476,9 +476,16 @@ int main (int argc, char *argv[]) {
 			if (fd != -1) dup2 (fd, 1);
 			break;
 		case 's':
-			if (!strcmp (optarg, "att"))
-				r_asm_set_syntax (a, R_ASM_SYNTAX_ATT);
-			else r_asm_set_syntax (a, R_ASM_SYNTAX_INTEL);
+			if (*optarg == '?') {
+				printf ("att\nintel\nmasm\njz\nregnum\n");
+				return false;
+			} else {
+				int syntax = r_asm_syntax_from_string (optarg);
+				if (syntax == -1) {
+					return false;
+				}
+				r_asm_set_syntax (a, syntax);
+			}
 			break;
 		case 'v':
 			if (quiet) {
