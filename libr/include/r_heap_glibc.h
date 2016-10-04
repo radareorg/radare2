@@ -1,6 +1,26 @@
+/* TODO: Do GH() macro thing here */
 
 #ifndef R2_HEAP_GLIBC_H
 #define R2_HEAP_GLIBC_H
+
+#ifndef INCLUDE_HEAP_GLIBC_C
+#define INCLUDE_HEAP_GLIBC_C
+#define HEAP32 1
+#include "r_heap_glibc.h"
+#undef HEAP32
+#endif
+
+
+#if HEAP32
+#define GH(x) x##_32
+#define GHT ut32
+#define GHT_MAX GHT_MAX
+#else
+#define GH(x) x##_64
+#define GHT ut64
+#define GHT_MAX UT64_MAX
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,20 +87,20 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 */
 
 typedef struct r_malloc_chunk_64 {
-	ut64	prev_size;	/* Size of previous chunk (if free).  */
-	ut64	size;       	/* Size in bytes, including overhead. */
+	ut64 prev_size;   /* Size of previous chunk (if free).  */
+	ut64 size;        /* Size in bytes, including overhead. */
 
-	ut64 fd;         	/* double links -- used only if free. */
+	ut64 fd;          /* double links -- used only if free. */
 	ut64 bk;
 
 	/* Only used for large blocks: pointer to next larger size.  */
-	ut64 fd_nextsize;	/* double links -- used only if free. */
+	ut64 fd_nextsize; /* double links -- used only if free. */
 	ut64 bk_nextsize;
-} RHeapChunk64;
+} RHeapChunk_64;
 
 typedef struct r_malloc_chunk_32 {
-	ut32	prev_size;	/* Size of previous chunk (if free).  */
-	ut32	size;       	/* Size in bytes, including overhead. */
+	ut32 prev_size;	/* Size of previous chunk (if free).  */
+	ut32 size;       	/* Size in bytes, including overhead. */
 
 	ut32 fd;	        /* double links -- used only if free. */
 	ut32 bk;
@@ -88,7 +108,7 @@ typedef struct r_malloc_chunk_32 {
 	/* Only used for large blocks: pointer to next larger size.  */
 	ut32 fd_nextsize; 	/* double links -- used only if free. */
 	ut32 bk_nextsize;
-} RHeapChunk32;
+} RHeapChunk_32;
 
 /*
 typedef RHeapChunk64 *mfastbinptr64;
@@ -112,7 +132,7 @@ typedef struct r_malloc_state_32 {
 
 	ut32 system_mem; 			/* current allocated memory of current arena */
 	ut32 max_system_mem;  			/* maximum system memory */
-} RHeap_MallocState32; 
+} RHeap_MallocState_32; 
 
 typedef struct r_malloc_state_64 { 
 	int mutex; 				/* serialized access */ 
@@ -128,7 +148,7 @@ typedef struct r_malloc_state_64 {
 
 	ut64 system_mem;	 		/* current allocated memory of current arena */
 	ut64 max_system_mem;  			/* maximum system memory */
-} RHeap_MallocState64; 
+} RHeap_MallocState_64; 
 
 typedef struct r_heap_info_32 {
 	ut32 ar_ptr;			/* Arena for this heap. */
@@ -140,7 +160,7 @@ typedef struct r_heap_info_32 {
 	that sizeof (heap_info) + 2 * SZ is a multiple of
 	MALLOC_ALIGNMENT. */	
 	/* char pad[NPAD * SZ & MALLOC_ALIGN_MASK]; */
-} RHeapInfo32;
+} RHeapInfo_32;
 
 typedef struct r_heap_info_64 {
 	ut64 ar_ptr;			/* Arena for this heap. */
@@ -152,7 +172,7 @@ typedef struct r_heap_info_64 {
 	that sizeof (heap_info) + 2 * SZ is a multiple of
 	MALLOC_ALIGNMENT. */
 	/* char pad[NPAD * SZ & MALLOC_ALIGN_MASK]; */
-} RHeapInfo64;
+} RHeapInfo_64;
 
 #ifdef __cplusplus
 }
