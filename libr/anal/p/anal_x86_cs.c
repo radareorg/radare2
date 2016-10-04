@@ -973,11 +973,11 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			char* arg2 = getarg (&gop, 1, 0, NULL);
 			esilprintf (op,
 					"%s,"
-					"%d,%s,-=,%s,"
-					"=[],"
-					"%s,cs,=,"
-					"%s,%s,=",
-					pc, rs, sp, sp, arg1, arg2, pc);
+					"2,%s,-=,cs,=[2],"	// push CS
+					"%d,%s,-=,%s,=[],"	// push IP/EIP
+					"%s,cs,=,"		// set CS
+					"%s,%s,=",		// set IP/EIP
+					pc, sp, rs, sp, sp, arg1, arg2, pc);
 			free (arg1);
 			free (arg2);
 		}
