@@ -14,7 +14,7 @@ _r2 () {
 		COMPREPLY=( $(compgen -W "8 16 32 64" -- $cur ))
 		return 0
 		;;
-	-o)
+	-k)
 		COMPREPLY=( $(compgen -W "$(r2 -qc 'e asm.os=?' --)" -- $cur ))
 		return 0
 		;;

@@ -424,7 +424,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=0AMCwfF:hH::m:e:nk:o:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=0AMCwfF:hH::m:e:nk:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -493,16 +493,11 @@ int main(int argc, char **argv, char **envp) {
 			r_list_append (prefiles, optarg);
 			break;
 		case 'k':
-			{
-				char *out = sdb_querys (r.sdb, NULL, 0, optarg);
-				if (out && *out) {
-					r_cons_println (out);
-				}
-				free (out);
-			}
+			asmos = optarg;
 			break;
-		case 'o': asmos = optarg; break;
-		case 'l': r_lib_open (r.lib, optarg); break;
+		case 'l':
+			r_lib_open (r.lib, optarg);
+			break;
 		case 'L':
 			do_list_io_plugins = true;
 			break;
