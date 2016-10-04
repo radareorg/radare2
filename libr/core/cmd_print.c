@@ -2125,20 +2125,20 @@ static int cmd_print(void *data, const char *input) {
 	}
 
 	if (input[0] && input[0]!='z' && input[1] == 'f') {
-		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) {
 			len = r_anal_fcn_size (f);
 		} else {
-			eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			eprintf ("p: Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 			core->num->value = 0;
 			goto beach;
 		}
 	}
 	core->num->value = len;
-	if (len>core->blocksize)
+	if (len>core->blocksize) {
 		len = core->blocksize;
-
+	}
 	if (off != UT64_MAX) {
 		r_core_seek (core, off, SEEK_SET);
 	}
@@ -2776,8 +2776,8 @@ static int cmd_print(void *data, const char *input) {
 				processed_cmd = true;
 			} else {
 				ut32 bsz = core->blocksize;
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+						// R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				RAnalFunction *tmp_func;
 				ut32 cont_size = 0;
 				RListIter *locs_it = NULL;
@@ -2839,7 +2839,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 					pd_result = 0;
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+					eprintf ("pdf: Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 					processed_cmd = true;
 					core->num->value = 0;
 				}
