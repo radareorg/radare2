@@ -652,7 +652,11 @@ int main(int argc, char **argv) {
 		case 'v': return blob_version ("rabin2");
 		case 'L':
 			bin->cb_printf = (PrintfCallback)printf;
-			r_bin_list (bin, rad == R_CORE_BIN_JSON);
+			if (rad) {
+				r_bin_list (bin, 'q');
+			} else {
+				r_bin_list (bin, rad == R_CORE_BIN_JSON);
+			}
 			return 1;
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
@@ -926,7 +930,11 @@ int main(int argc, char **argv) {
 	// List fatmach0 sub-binaries, etc
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!r_bin_select (bin, arch, bits, arch_name))) {
-		r_bin_list_archs (bin, (rad == R_CORE_BIN_JSON)? 'j': 1);
+		if (rad == R_CORE_BIN_SIMPLEST || rad == R_CORE_BIN_SIMPLE) {
+			r_bin_list_archs (bin, 'q');
+		} else {
+			r_bin_list_archs (bin, (rad == R_CORE_BIN_JSON)? 'j': 1);
+		}
 		actions_done++;
 		free (arch_name);
 	}

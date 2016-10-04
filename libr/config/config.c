@@ -69,6 +69,11 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 							node->desc? node->desc: "");
 		}
 		break;
+	case 'q':
+		r_list_foreach (cfg->nodes, iter, node) {
+			cfg->cb_printf ("%s\n", node->name);
+		}
+		break;
 	case 'j':
 		cfg->cb_printf ("{");
 		r_list_foreach (cfg->nodes, iter, node) {

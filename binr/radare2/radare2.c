@@ -468,10 +468,19 @@ int main(int argc, char **argv, char **envp) {
 		case 'D':
 			debug = 2;
 			debugbackend = optarg;
+			if (!strcmp (optarg, "?")) {
+				r_debug_plugin_list (r.dbg, 'q');
+				r_cons_flush();
+				return 0;
+			}
 			break;
 		case 'e':
-			r_config_eval (r.config, optarg);
-			r_list_append (evals, optarg);
+			if (!strcmp (optarg, "q")) {
+				r_core_cmd0 (&r, "eq");
+			} else {
+				r_config_eval (r.config, optarg);
+				r_list_append (evals, optarg);
+			}
 			break;
 		case 'f': fullfile = 1; break;
 		case 'F': forcebin = optarg; break;
@@ -509,7 +518,13 @@ int main(int argc, char **argv, char **envp) {
 		case 'n': run_anal--; break;
 		case 'N': run_rc = 0; break;
 		case 'p':
-			r_config_set (r.config, "file.project", optarg);
+			if (!strcmp (optarg, "?")) {
+				r_core_project_list (&r, 0);
+				r_cons_flush ();
+				return 0;
+			} else {
+				r_config_set (r.config, "file.project", optarg);
+			}
 			break;
 		case 'P':
 			patchfile = optarg;

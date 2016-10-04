@@ -179,8 +179,11 @@ static int cmd_eval(void *data, const char *input) {
 	case 'x': // exit
 		// XXX we need headers for the cmd_xxx files.
 		return cmd_quit (data, "");
-	case 'j':
+	case 'j': // json
 		r_config_list (core->config, NULL, 'j');
+		break;
+	case 'q': // quiet list of eval keys
+		r_config_list (core->config, NULL, 'q');
 		break;
 	case '\0': // "e"
 		r_config_list (core->config, NULL, 0);

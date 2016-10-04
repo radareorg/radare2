@@ -1367,7 +1367,14 @@ R_API int r_bin_list(RBin *bin, int json) {
 	RListIter *it;
 	RBinXtrPlugin *bp;
 	RBinXtrPlugin *bx;
-	if (json) {
+	if (json == 'q') {
+		r_list_foreach (bin->plugins, it, bp) {
+			bin->cb_printf ("%s\n", bp->name);
+		}
+		r_list_foreach (bin->binxtrs, it, bx) {
+			bin->cb_printf ("%s\n", bx->name);
+		}
+	} else if (json) {
 		bin->cb_printf ("{\"bin\":[");
 		r_list_foreach (bin->plugins, it, bp) {
 			bin->cb_printf ("{\"filetype\":\"%s\",\"name\":\"%s\",\"license\":\"%s\"}",
@@ -1848,13 +1855,19 @@ static void list_xtr_archs(RBin *bin, int mode) {
 				arch = xtr_data->metadata->arch;
 				machine = xtr_data->metadata->machine;
 				bits = xtr_data->metadata->bits;
-				if (mode == 'j') {
+				switch (mode) {
+				case 'q':
+					bin->cb_printf ("%s\n", arch);
+					break;
+				case 'j':
 					bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
 							"\"offset\":%" PFMT64d ",\"size\":\"%" PFMT64d ",\"machine\":\"%s\"}",
 							i++? ",": "", arch, bits, xtr_data->offset, xtr_data->size, machine);
-				} else {
+					break;
+				default:
 					bin->cb_printf ("%03i 0x%08" PFMT64x " %"PFMT64d" %s_%i %s\n", i++,
 							xtr_data->offset, xtr_data->size, arch, bits, machine);
+					break;
 				}
 			}
 		}
@@ -1908,16 +1921,18 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 		}
 
 		if (info && narch > 1) {
-			if (mode) {
-				if (mode == 'j') {
-					bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-							"\"offset\":%" PFMT64d ",\"machine\":\"%s\"}",
-							i? ",": "", arch, bits,
-							boffset, machine);
-				} else {
-					bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%i %s\n", i,
-							boffset, obj_size, arch, bits, machine);
-				}
+			switch (mode) {
+			case 'q':
+				bin->cb_printf ("%s\n", arch);
+				break;
+			case 'j':
+				bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+						"\"offset\":%" PFMT64d ",\"machine\":\"%s\"}",
+						i? ",": "", arch, bits,
+						boffset, machine);
+			default:
+				bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%i %s\n", i,
+						boffset, obj_size, arch, bits, machine);
 			}
 			snprintf (archline, sizeof (archline) - 1,
 				"0x%08" PFMT64x ":%d:%s:%d:%s",
@@ -1926,31 +1941,37 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 			//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 		} else {
 			if (info) {
-				if (mode) {
-					if (mode == 'j') {
-						bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-								"\"offset\":%" PFMT64d "}",
-								i? ",": "", arch, bits,
-								boffset);
-					} else {
-						bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%d\n", i,
-								boffset, obj_size, arch, bits);
-					}
+				switch (mode) {
+				case 'q':
+					bin->cb_printf ("%s\n", arch);
+					break;
+				case 'j':
+					bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+							"\"offset\":%" PFMT64d "}",
+							i? ",": "", arch, bits,
+							boffset);
+					break;
+				default:
+					bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%d\n", i,
+							boffset, obj_size, arch, bits);
 				}
 				snprintf (archline, sizeof (archline),
 					"0x%08" PFMT64x ":%d:%s:%d",
 					boffset, obj_size, arch, bits);
 			} else if (nbinfile && mode) {
-				if (mode) {
-					if (mode == 'j') {
-						bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
-								"\"offset\":%" PFMT64d ",\"size\":%d}",
-								i? ",": "", i, bits,
-								boffset, obj_size);
-					} else {
-						bin->cb_printf ("%03i 0x%08" PFMT64x " %d unk_0\n", i,
-								boffset, obj_size);
-					}
+				switch (mode) {
+				case 'q':
+					bin->cb_printf ("%s\n", arch);
+					break;
+				case 'j':
+					bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
+							"\"offset\":%" PFMT64d ",\"size\":%d}",
+							i? ",": "", i, bits,
+							boffset, obj_size);
+					break;
+				default:
+					bin->cb_printf ("%03i 0x%08" PFMT64x " %d unk_0\n", i,
+							boffset, obj_size);
 				}
 				snprintf (archline, sizeof (archline),
 					"0x%08" PFMT64x ":%d:%s:%d",

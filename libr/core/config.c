@@ -822,7 +822,10 @@ static int cb_dbgstatus(void *user, void *data) {
 static int cb_dbgbackend(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	// XXX: remove this spagetti
+	if (!strcmp (node->value, "?")) {
+		r_debug_plugin_list (core->dbg, 'q');
+		return false;
+	}
 	if (!strcmp (node->value, "bf")) {
 		r_config_set (core->config, "asm.arch", "bf");
 	}

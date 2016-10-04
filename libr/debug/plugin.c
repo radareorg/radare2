@@ -51,7 +51,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	return (dbg->h != NULL);
 }
 
-R_API int r_debug_plugin_list(RDebug *dbg) {
+R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 	char spaces[16];
 	int count = 0;
 	struct list_head *pos;
@@ -61,9 +61,13 @@ R_API int r_debug_plugin_list(RDebug *dbg) {
 		RDebugPlugin *h = list_entry(pos, RDebugPlugin, list);
 		int sp = 8-strlen (h->name);
 		spaces[sp] = 0;
-		dbg->cb_printf ("%d  %s  %s %s%s\n",
-			count, (h == dbg->h)? "dbg": "---",
-			h->name, spaces, h->license);
+		if (mode == 'q') {
+			dbg->cb_printf ("%s\n", h->name);
+		} else {
+			dbg->cb_printf ("%d  %s  %s %s%s\n",
+					count, (h == dbg->h)? "dbg": "---",
+					h->name, spaces, h->license);
+		}
 		spaces[sp] = ' ';
 		count++;
 	}

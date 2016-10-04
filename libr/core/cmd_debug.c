@@ -3207,12 +3207,16 @@ static int cmd_debug(void *data, const char *input) {
 			cmd_debug_pid (core, input);
 			break;
 		case 'h': // "dh"
-			if (input[1]==' ') {
+			if (input[1]=='q') {
+				r_debug_plugin_list (core->dbg, 'q');
+			} else if (input[1]==' ') {
 				char *str = r_str_chop (strdup (input + 2));
 				r_config_set (core->config, "dbg.backend", str);
 				// implicit by config.set r_debug_use (core->dbg, str);
 				free (str);
-			} else r_debug_plugin_list (core->dbg);
+			} else {
+				r_debug_plugin_list (core->dbg, 0);
+			}
 			break;
 		case 'i':
 			{
