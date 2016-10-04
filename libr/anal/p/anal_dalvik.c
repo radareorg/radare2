@@ -71,6 +71,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x8c: // double-to-float
 		case 0x8b: // double-to-long
 		case 0x88: // float-to-long
+		case 0x86: // long-to-double
 			op->family = R_ANAL_OP_FAMILY_FPU;
 			/* pass thru */
 		case 0x81: // int-to-long
