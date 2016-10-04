@@ -1726,6 +1726,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
 	SETPREF("bin.classes", "true", "Load classes from rbin on startup");
+	SETPREF("bin.mergeflags", "true", "Merge symbols with the same name into the same flag");
 
 	/* cfg */
 	SETPREF("cfg.plugins", "true", "Load plugins at startup");
