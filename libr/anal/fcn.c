@@ -963,6 +963,10 @@ river:
 		case R_ANAL_OP_TYPE_PUSH:
 			last_is_push = true;
 			last_push_addr = op.val;
+			/* consider DATA refs to code as CODE referencs */
+			if (anal->iob.is_valid_offset (anal->iob.io, op.val, 1)) {
+				(void)r_anal_fcn_xref_add (anal, fcn, op.addr, op.val, R_ANAL_REF_TYPE_CODE);
+			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
 			if (op.family == R_ANAL_OP_FAMILY_PRIV) {
