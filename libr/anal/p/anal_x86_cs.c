@@ -1643,11 +1643,13 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_STOSD:
 	case X86_INS_STOSQ:
 	case X86_INS_STOSW:
+		op->type = R_ANAL_OP_TYPE_STORE;
 		break;
 	case X86_INS_LODSB:
 	case X86_INS_LODSD:
 	case X86_INS_LODSQ:
 	case X86_INS_LODSW:
+		op->type = R_ANAL_OP_TYPE_LOAD;
 		break;
 	// mov
 	case X86_INS_MOVSS:
