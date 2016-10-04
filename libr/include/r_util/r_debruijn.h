@@ -16,8 +16,6 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset);
 
 
 // Finds the offset of a given value in a cyclic pattern of an integer.
-// Guest endian = 1 if little, 0 if big.
-// Host endian = 1 if little, 0 if big.
-R_API int r_debruijn_offset(ut64 value, int guest_endian);
+R_API int r_debruijn_offset(ut64 value, bool is_big_endian);
 
 #endif // R_DEBRUIJN_H
