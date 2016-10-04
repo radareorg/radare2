@@ -195,6 +195,7 @@ static int visual_help() {
 	" >||<     seek aligned to block size\n"
 	" a/A      (a)ssemble code, visual (A)ssembler\n"
 	" b        toggle breakpoint\n"
+	" B        enumerate and inspect classes\n"
 	" c/C      toggle (c)ursor and (C)olors\n"
 	" d[f?]    define function, data, code, ..\n"
 	" D        enter visual diff mode (set diff.from/to)\n"

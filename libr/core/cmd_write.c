@@ -1016,7 +1016,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case 's': // "wxs"
 			{
-				int len = cmd_write_hexpair (core, input + 1);
+				int len = cmd_write_hexpair (core, input + 2);
 				if (len > 0) {
 					r_core_seek_delta (core, len);
 					core->num->value = len;
