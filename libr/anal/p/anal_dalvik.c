@@ -145,6 +145,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		case 0x50: //
 		case 0x51: // aput-short
 		case 0x68: // sput-wide
+		case 0x6a: // sput-boolean
 		case 0x6c: // sput-wide
 		case 0xfe: // sput
 			op->type = R_ANAL_OP_TYPE_STORE;

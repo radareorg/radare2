@@ -53,6 +53,7 @@ static void do_hash_seed(const char *seed) {
 		if (s.len < 1) {
 			strcpy ((char*)s.buf, sptr);
 			s.len = strlen (sptr);
+			eprintf ("Warning: This is not an hexpair, assuming a string, prefix it with 's:' to skip this message.");
 		}
 	}
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -188,41 +188,41 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 
 	while (in && *in) {
 		ut8 tmp;
-
 		/* skip hex prefix */
 		if (*in == '0' && in[1] == 'x') {
 			in += 2;
 		}
-
 		/* read hex digits */
 		while (!r_hex_to_byte (out ? &out[nibbles/2] : &tmp, *in)) {
 			nibbles++;
 			in++;
 		}
-		if (*in == '\0') break;
-
+		if (*in == '\0') {
+			break;
+		}
 		/* comments */
 		if (*in == '#' || (*in == '/' && in[1] == '/')) {
 			if ((in = strchr (in, '\n')))
 				in++;
 			continue;
-		}
-		if (*in == '/' && in[1] == '*') {
+		} else if (*in == '/' && in[1] == '*') {
 			if ((in = strstr (in, "*/")))
 				in += 2;
 			continue;
+		} else if (!IS_WHITESPACE (*in)) {
+			/* this is not a valid string */
+			return 0;
 		}
-
 		/* ignore character */
 		in++;
 	}
 
 	if (nibbles % 2) {
 		if (out) r_hex_to_byte (&out[nibbles/2], '0');
-		return -(nibbles+1)/2;
+		return -(nibbles+1) / 2;
 	}
 
-	return nibbles/2;
+	return nibbles / 2;
 }
 
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
