@@ -55,13 +55,15 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->ptr = vA;
 			break;
 		case 0x1a: // const-string
-		case 0x1c: // const-class
 			op->type = R_ANAL_OP_TYPE_MOV;
 			{
 				ut32 vB = (data[3]<<8) | data[2];
-				ut64 offset = R_ANAL_GET_OFFSET(anal, 's', vB);
+				ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
 				op->ptr = offset;
 			}
+			break;
+		case 0x1c: // const-class
+			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		case 0x85: // long-to-float
 		case 0x8e: // double-to-int
