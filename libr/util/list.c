@@ -511,7 +511,7 @@ static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
 	return _merge (head, second, cmp);
 }
 
-R_API void r_list_sort(RList *list, RListComparator cmp) {
+R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
 	if (list && list->head && cmp) {
 		RListIter *iter;
 		list->head = _merge_sort (list->head, cmp);
@@ -521,6 +521,31 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 			iter = iter->n;
 		}
 		list->tail = iter;
+	}
+}
+
+R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
+	RListIter *it;
+	RListIter *it2;
+	if (list && cmp) {
+		for (it = list->head; it && it->data; it = it->n) {
+			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+				if (cmp (it->data, it2->data) > 0) {
+					void *t = it->data;
+					it->data = it2->data;
+					it2->data = t;
+				}
+			}
+		}
+	}
+}
+
+//chose wisely based on length
+R_API void r_list_sort(RList *list, RListComparator cmp) {
+	if (list->length > 43) {
+		r_list_merge_sort (list, cmp);
+	} else {
+		r_list_insertion_sort (list, cmp);
 	}
 }
  
