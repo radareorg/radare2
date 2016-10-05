@@ -1,4 +1,25 @@
 /* radare2 - LGPL - Copyright 2016 - n4x0r, soez, pancake */
+#ifndef INCLUDE_HEAP_GLIBC_C
+#define INCLUDE_HEAP_GLIBC_C
+#define HEAP32 1
+#include "linux_heap_glibc.c"
+#undef HEAP32
+#endif
+
+#undef GH(x)
+#undef GHT
+#undef GHT_MAX
+
+#if HEAP32
+#define GH(x) x##_32
+#define GHT ut32
+#define GHT_MAX UT32_MAX
+#else
+#define GH(x) x##_64
+#define GHT ut64
+#define GHT_MAX UT64_MAX
+#endif
+
 static void GH(update_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *main_arena) {
 	(void)r_core_read_at (core, m_arena, (ut8 *)main_arena, sizeof (GH(RHeap_MallocState)));
 }
@@ -19,7 +40,6 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 static void GH(print_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState) *main_arena, int format) {
 	int i, j, k, start, offset = SZ * 12 + sizeof (int) * 2;
 	GHT apart[NSMALLBINS + 1] = { 0LL };
-
 	if (format == '*') {
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
 			GHT addr = m_arena + offset + SZ * i - SZ * 2;
@@ -998,7 +1018,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state) {
 	return;
 }	
 
-static const char* help_msg[] = {
+static const char* GH(help_msg)[] = {
 	"Usage:", " dmh", " # Memory map heap",
 	"dmh", "", "List chunks in heap segment",
 	"dmh", " [malloc_state]", "List heap chunks of a particular arena",
@@ -1024,6 +1044,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 	if (!main_arena) {
 		return false;
 	}
+	SZ = core->dbg->bits;
 
 	switch (input[0]) {
 	case '\0': // dmh
@@ -1136,7 +1157,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		eprintf ("TODO: JSON output for dmh is not yet implemented\n");
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, GH(help_msg));
 		break;
 	}
 	free (main_arena);

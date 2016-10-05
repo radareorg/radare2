@@ -830,7 +830,8 @@ beach:
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
-static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input);
+static int cmd_dbg_map_heap_glibc_32 (RCore *core, const char *input);
+static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
 
 static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	RListIter *iter;
@@ -1101,7 +1102,11 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case 'h': // "dmh"
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		GH(cmd_dbg_map_heap_glibc) (core, input + 1);
+		if (SZ == 4) {
+			cmd_dbg_map_heap_glibc_32 (core, input + 1);
+		} else {
+			cmd_dbg_map_heap_glibc_64 (core, input + 1);
+		}
 #else
 		eprintf ("MALLOC algorithm not supported\n");
 #endif

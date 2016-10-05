@@ -1,26 +1,5 @@
-/* TODO: Do GH() macro thing here */
-
 #ifndef R2_HEAP_GLIBC_H
 #define R2_HEAP_GLIBC_H
-
-#ifndef INCLUDE_HEAP_GLIBC_C
-#define INCLUDE_HEAP_GLIBC_C
-#define HEAP32 1
-#include "r_heap_glibc.h"
-#undef HEAP32
-#endif
-
-
-#if HEAP32
-#define GH(x) x##_32
-#define GHT ut32
-#define GHT_MAX GHT_MAX
-#else
-#define GH(x) x##_64
-#define GHT ut64
-#define GHT_MAX UT64_MAX
-#endif
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,18 +19,16 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define PRINT_BA(msg) PRINT_A (Color_BLUE, msg)
 #define PRINT_RA(msg) PRINT_A (Color_RED, msg)
 
-
 #define NBINS 128
 #define NSMALLBINS 64
 #define NFASTBINS 10
 #define BINMAPSHIFT 5
+#define SZ core->dbg->bits
 #define BITSPERMAP (1U << BINMAPSHIFT)
 #define BINMAPSIZE (NBINS / BITSPERMAP)
-#define SZ core->dbg->bits
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define MALLOC_ALIGNMENT MAX (2 * SZ,  __alignof__ (long double))
 #define MALLOC_ALIGN_MASK (MALLOC_ALIGNMENT - 1)
-#define PFMT32x "x"
 #define NPAD -6
 
 #define largebin_index_32(size)				       \
@@ -177,6 +154,5 @@ typedef struct r_heap_info_64 {
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
