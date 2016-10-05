@@ -3585,7 +3585,9 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		if (input[1]) {
 			ut64 addr = r_num_math (core->num, input+1);
 			r_core_anal_hint_print (core->anal, addr);
-		} else r_core_cmd_help (core, help_msg);
+		} else {
+			r_core_cmd_help (core, help_msg);
+		}
 		break;
 	case '.': // ah.
 		r_core_anal_hint_print(core->anal, core->offset);
@@ -3640,7 +3642,9 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				(input[2] == 'S') ? 80 : // syscall
 				(int) r_num_math (core->num, input + 1);
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
-		} else eprintf ("|ERROR| Usage: ahi [base]\n");
+		} else {
+			eprintf ("|ERROR| Usage: ahi [base]\n");
+		}
 		break;
 	case 'c':
 		r_anal_hint_set_jump (core->anal, core->offset,
@@ -3653,22 +3657,30 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 's': // set size (opcode length)
 		if (input[1]) {
 			r_anal_hint_set_size (core->anal, core->offset, atoi (input + 1));
-		} else eprintf ("Usage: ahs 16\n");
+		} else {
+			eprintf ("Usage: ahs 16\n");
+		}
 		break;
 	case 'S': // set size (opcode length)
 		if (input[1] == ' ') {
 			r_anal_hint_set_syntax (core->anal, core->offset, input + 2);
-		} else eprintf ("Usage: ahS att\n");
+		} else {
+			eprintf ("Usage: ahS att\n");
+		}
 		break;
 	case 'o': // set opcode string
 		if (input[1] == ' ') {
 			r_anal_hint_set_opcode (core->anal, core->offset, input + 2);
-		} else eprintf ("Usage: aho popall\n");
+		} else {
+			eprintf ("Usage: aho popall\n");
+		}
 		break;
 	case 'e': // set ESIL string
 		if (input[1] == ' ') {
 			r_anal_hint_set_esil (core->anal, core->offset, input + 2);
-		} else eprintf ("Usage: ahe r0,pc,=\n");
+		} else {
+			eprintf ("Usage: ahe r0,pc,=\n");
+		}
 		break;
 #if TODO
 	case 'e': // set endian

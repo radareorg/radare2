@@ -736,7 +736,9 @@ static int cb(void *p, const char *k, const char *v) {
 R_API void r_core_anal_hint_print (RAnal* a, ut64 addr) {
 	RAnalHint *hint = r_anal_hint_get(a, addr);
 
-	if (!hint) return;
+	if (!hint) {
+		return;
+	}
 	print_hint_h_format(hint);
 	free(hint);
 }
@@ -746,9 +748,13 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 	hls.mode = mode;
 	hls.count = 0;
 	hls.a = a;
-	if (mode == 'j') r_cons_strcat ("[");
+	if (mode == 'j') {
+		r_cons_strcat ("[");
+	}
 	sdb_foreach (a->sdb_hints, cb, &hls);
-	if (mode == 'j') r_cons_strcat ("]\n");
+	if (mode == 'j') {
+		r_cons_strcat ("]\n");
+	}
 }
 
 static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
