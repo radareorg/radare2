@@ -36,6 +36,7 @@
 #define LSHIFT2(x) insn->detail->arm.operands[x].shift.value
 #define LSHIFT2_64(x) insn->detail->arm64.operands[x].shift.value
 #else
+#error FUCK
 #define LSHIFT(x) 0
 #define LSHIFT2(x) 0
 #define LSHIFT2_64(x) 0
@@ -190,7 +191,7 @@ static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n)
 			return;
 		}
 		ut64 missing_ones = bitmask_by_width[index] << (REGSIZE64(n)*8 - LSHIFT2_64(n));
-		r_strbuf_appendf (sb, "%d,%s,%s,1,%s,<<<,1,&,?{,%"PFMT64u",}{,0,},|", 
+		r_strbuf_appendf (sb, "%d,%s,%s,1,%s,<<<,1,&,?{,%"PFMT64u",}{,0,},|",
 			LSHIFT2_64(n), REG64(n), DECODE_SHIFT64(n), REG64(n), (ut64)missing_ones);
 	}
 }
@@ -398,12 +399,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 						r_strbuf_setf (&op->esil, "%s,[%d],%s,=",
 							REG64(1), size, REG64(0));
 					} else if (OPCOUNT64() == 3) {
-						/* 
+						/*
 							This seems like a capstone bug:
 							instructions like
 								ldr x16, [x13, x9]
 								ldrb w2, [x19, x23]
-							are not detected as ARM64_OP_MEM type and 
+							are not detected as ARM64_OP_MEM type and
 							fall in this case instead.
 						*/
 						if (ISREG64(2)) {
@@ -477,10 +478,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		int disp = (int)MEMDISP64(2);
 		char sign = disp>=0?'+':'-';
 		ut64 abs = disp>=0? MEMDISP64(2): -MEMDISP64(2);
-		r_strbuf_setf (&op->esil, 
+		r_strbuf_setf (&op->esil,
 			"%s,%s,%"PFMT64d",%c,=[],"
 			"%s,%s,%"PFMT64d",%c,%d,+,=[]",
-			REG64(0), MEMBASE64(2), abs, sign, 
+			REG64(0), MEMBASE64(2), abs, sign,
 			REG64(1), MEMBASE64(2), abs, sign, 8);
 		}
 		if (!strcmp ("sp", MEMBASE64(2))) {
@@ -494,10 +495,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		int disp = (int)MEMDISP64(2);
 		char sign = disp>=0?'+':'-';
 		ut64 abs = disp>=0? MEMDISP64(2): -MEMDISP64(2);
-		r_strbuf_setf (&op->esil, 
+		r_strbuf_setf (&op->esil,
 			"%s,%s,%"PFMT64d",%c,=[],"
 			"%s,%s,%"PFMT64d",%c,%d,+,=[]",
-			REG64(0), MEMBASE64(2), abs, sign, 
+			REG64(0), MEMBASE64(2), abs, sign,
 			REG64(1), MEMBASE64(2), abs, sign, 8);
 		}
 		if (!strcmp ("sp", MEMBASE64(2))) {
@@ -526,7 +527,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_MOVK: // movk w8, 0x1290
 		// XXX: wrongly implemented
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,=", IMM64 (1), REG64 (0));
+		r_strbuf_setf (&op->esil, "%d,%"PFMT64d",<<,%s,|=",
+			LSHIFT2_64(1),
+			IMM64 (1),
+			REG64 (0));
 		break;
 	case ARM64_INS_MOVZ:
 		// XXX: wrongly implemented
@@ -1491,6 +1495,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	b28	.8	224	0\n"
 		"gpr	b29	.8	232	0\n"
 		"gpr	b30	.8	240	0\n"
+		"gpr	bsp	.8	248	0\n"
 
 		/* 16bit sub-registers */
 		"gpr	h0	.16	0	0\n"
@@ -1557,8 +1562,41 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	w28	.32	224	0\n"
 		"gpr	w29	.32	232	0\n"
 		"gpr	w30	.32	240	0\n"
+		"gpr	wsp	.32	248	0\n"
 		"gpr	wzr	.32	272	0\n"
 
+		/* 32bit float sub-registers */
+		"gpr	s0	.32	0	0\n"
+		"gpr	s1	.32	8	0\n"
+		"gpr	s2	.32	16	0\n"
+		"gpr	s3	.32	24	0\n"
+		"gpr	s4	.32	32	0\n"
+		"gpr	s5	.32	40	0\n"
+		"gpr	s6	.32	48	0\n"
+		"gpr	s7	.32	56	0\n"
+		"gpr	s8	.32	64	0\n"
+		"gpr	s9	.32	72	0\n"
+		"gpr	s10	.32	80	0\n"
+		"gpr	s11	.32	88	0\n"
+		"gpr	s12	.32	96	0\n"
+		"gpr	s13	.32	104	0\n"
+		"gpr	s14	.32	112	0\n"
+		"gpr	s15	.32	120	0\n"
+		"gpr	s16	.32	128	0\n"
+		"gpr	s17	.32	136	0\n"
+		"gpr	s18	.32	144	0\n"
+		"gpr	s19	.32	152	0\n"
+		"gpr	s20	.32	160	0\n"
+		"gpr	s21	.32	168	0\n"
+		"gpr	s22	.32	176	0\n"
+		"gpr	s23	.32	184	0\n"
+		"gpr	s24	.32	192	0\n"
+		"gpr	s25	.32	200	0\n"
+		"gpr	s26	.32	208	0\n"
+		"gpr	s27	.32	216	0\n"
+		"gpr	s28	.32	224	0\n"
+		"gpr	s29	.32	232	0\n"
+		"gpr	s30	.32	240	0\n"
 		/* 64bit */
 		"gpr	x0	.64	0	0\n" // x0
 		"gpr	x1	.64	8	0\n" // x0
@@ -1590,8 +1628,42 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	x27	.64	216	0\n"
 		"gpr	x28	.64	224	0\n"
 		"gpr	x29	.64	232	0\n"
-		"gpr	fp	.64	232	0\n" // fp = x29
 		"gpr	x30	.64	240	0\n"
+		/* 64bit double */
+		"gpr	d0	.64	0	0\n" // x0
+		"gpr	d1	.64	8	0\n" // x0
+		"gpr	d2	.64	16	0\n" // x0
+		"gpr	d3	.64	24	0\n" // x0
+		"gpr	d4	.64	32	0\n" // x0
+		"gpr	d5	.64	40	0\n" // x0
+		"gpr	d6	.64	48	0\n" // x0
+		"gpr	d7	.64	56	0\n" // x0
+		"gpr	d8	.64	64	0\n" // x0
+		"gpr	d9	.64	72	0\n" // x0
+		"gpr	d10	.64	80	0\n" // x0
+		"gpr	d11	.64	88	0\n" // x0
+		"gpr	d12	.64	96	0\n" // x0
+		"gpr	d13	.64	104	0\n" // x0
+		"gpr	d14	.64	112	0\n" // x0
+		"gpr	d15	.64	120	0\n" // x0
+		"gpr	d16	.64	128	0\n" // x0
+		"gpr	d17	.64	136	0\n" // x0
+		"gpr	d18	.64	144	0\n" // x0
+		"gpr	d19	.64	152	0\n" // x0
+		"gpr	d20	.64	160	0\n" // x0
+		"gpr	d21	.64	168	0\n" // x0
+		"gpr	d22	.64	176	0\n" // x0
+		"gpr	d23	.64	184	0\n" // x0
+		"gpr	d24	.64	192	0\n" // x0
+		"gpr	d25	.64	200	0\n" // x0
+		"gpr	d26	.64	208	0\n" // x0
+		"gpr	d27	.64	216	0\n"
+		"gpr	d28	.64	224	0\n"
+		"gpr	d29	.64	232	0\n"
+		"gpr	d30	.64	240	0\n"
+		"gpr	dsp	.64	248	0\n"
+		/*  foo */
+		"gpr	fp	.64	232	0\n" // fp = x29
 		"gpr	lr	.64	240	0\n" // lr = x30
 		"gpr	sp	.64	248	0\n"
 		"gpr	pc	.64	256	0\n"
