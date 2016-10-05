@@ -365,6 +365,7 @@ R_API RList *r_list_clone(RList *list) {
 	return l;
 }
 
+#if 0
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	RListIter *it;
 	RListIter *it2;
@@ -380,6 +381,7 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 		}
 	}
 }
+#endif
 
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
 	RListIter *it, *item = NULL;
@@ -509,7 +511,7 @@ static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
 	return _merge (head, second, cmp);
 }
 
-R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
+R_API void r_list_sort(RList *list, RListComparator cmp) {
 	if (list && list->head && cmp) {
 		RListIter *iter;
 		list->head = _merge_sort (list->head, cmp);
