@@ -530,7 +530,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 static int cmp_range(const void *a, const void *b) {
 	RAnalRange *ra = (RAnalRange *)a;
 	RAnalRange *rb = (RAnalRange *)b;
-	return (ra && rb)? ((ra->from < rb->from)? -1 : 1) : 0;
+	return (ra && rb)? ra->from > rb->from : 0;
 }
 
 static int build_range(void *p, const char *k, const char *v) {
