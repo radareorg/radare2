@@ -311,8 +311,8 @@ int main(int argc, char **argv) {
 	// catch this first
 	if (get_offset) {
 		get_offset = r_num_math (0, sequence);
-		printf ("Little endian: %d\n", r_debruijn_offset (get_offset, 1));
-		printf ("Big endian: %d\n", r_debruijn_offset (get_offset, 0));
+		printf ("Little endian: %d\n", r_debruijn_offset (get_offset, false));
+		printf ("Big endian: %d\n", r_debruijn_offset (get_offset, true));
 		free (sequence);
 		return 0;
 	}
