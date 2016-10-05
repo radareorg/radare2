@@ -49,7 +49,7 @@ R_API void r_list_init(RList *list) {
 }
 
 R_API int r_list_length(const RList *list) {
-	return list->length;
+	return list? list->length : 0;
 }
 
 /* remove all elements of a list */
@@ -468,16 +468,16 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 	if (!second) {
 		return first;
 	}
-	if (cmp (first->data, second->data) < 0) {
-		first->n = _merge (first->n, second, cmp);
-		first->n->p = first;
-		first->p = NULL;
-		return first;
+	if (cmp (first->data, second->data) > 0) {
+		second->n = _merge (first, second->n, cmp);
+		second->n->p = second;
+		second->p = NULL;
+		return second;
 	} 
-	second->n = _merge (first, second->n, cmp);
-	second->n->p = second;
-	second->p = NULL;
-	return second;
+	first->n = _merge (first->n, second, cmp);
+	first->n->p = first;
+	first->p = NULL;
+	return first;
 }
 
 static RListIter * _r_list_half_split(RListIter *head) {
@@ -510,7 +510,7 @@ static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
 }
 
 R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
-	if (list && list->head) {
+	if (list && list->head && cmp) {
 		RListIter *iter;
 		list->head = _merge_sort (list->head, cmp);
 		//update tail reference
