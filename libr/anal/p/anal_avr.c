@@ -745,6 +745,18 @@ INST_HANDLER (lds) {	// LDS Rd, k
 	ESIL_A ("r%d,=,", d);
 }
 
+INST_HANDLER (lds16) {	// LDS Rd, k
+	int d = ((buf[0] >> 4) & 0xf) + 16;
+	int k = (buf[0] & 0x0f)
+		| ((buf[1] << 3) & 0x30)
+		| ((buf[1] << 4) & 0x40)
+		| (~(buf[1] << 4) & 0x80);
+
+	// load value from @k
+	__generic_ld_st (op, 0, 0, 0, k, 0);
+	ESIL_A ("r%d,=,", d);
+}
+
 INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1Rrd
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
@@ -1027,6 +1039,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (eor,    0xfc00, 0x2400, 1,      2,   XOR    ), // EOR Rd, Rr
 	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
+	INST_DECL (lds16,  0xf800, 0xa000, 0,      4,   LOAD   ), // LDS Rd, k
 	INST_DECL (out,    0xf800, 0xb800, 1,      2,   IO     ), // OUT A, Rr
 	INST_DECL (cpi,    0xf000, 0x3000, 1,      2,   CMP    ), // CPI Rd, K
 	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
