@@ -49,13 +49,7 @@ R_API void r_list_init(RList *list) {
 }
 
 R_API int r_list_length(const RList *list) {
-	int count = 0;
-	RListIter *iter = r_list_iterator (list);
-	while (iter) {
-		count++;
-		iter = iter->n;
-	}
-	return count;
+	return list? list->length : 0;
 }
 
 /* remove all elements of a list */
@@ -371,6 +365,7 @@ R_API RList *r_list_clone(RList *list) {
 	return l;
 }
 
+#if 0
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	RListIter *it;
 	RListIter *it2;
@@ -386,6 +381,7 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 		}
 	}
 }
+#endif
 
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
 	RListIter *it, *item = NULL;
@@ -444,39 +440,6 @@ R_API void *r_list_get_n(const RList *list, int n) {
 	return NULL;
 }
 
-R_API void *r_list_get_by_int(const RList *list, int off, int n) {
-	ut8 *p;
-	RListIter *iter;
-	r_list_foreach (list, iter, p) {
-		if (!memcmp (&n, p + off, sizeof (int))) {
-			return p;
-		}
-	}
-	return NULL;
-}
-
-R_API void *r_list_get_by_int64(const RList *list, int off, ut64 n) {
-	ut8 *p;
-	RListIter *iter;
-	r_list_foreach (list, iter, p) {
-		if (!memcmp (&n, p + off, sizeof (ut64))) {
-			return p;
-		}
-	}
-	return NULL;
-}
-
-R_API void *r_list_get_by_string(const RList *list, int off, const char *str) {
-	char *p;
-	RListIter *iter;
-	r_list_foreach (list, iter, p) {
-		const char *ptr = p + off;
-		if (!strcmp (str, ptr)) {
-			return p;
-		}
-	}
-	return NULL;
-}
 
 R_API RListIter *r_list_contains(const RList *list, const void *p) {
 	void *q;
@@ -507,16 +470,16 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 	if (!second) {
 		return first;
 	}
-	if (cmp (first->data, second->data) < 0) {
-		first->n = _merge (first->n, second, cmp);
-		first->n->p = first;
-		first->p = NULL;
-		return first;
+	if (cmp (first->data, second->data) > 0) {
+		second->n = _merge (first, second->n, cmp);
+		second->n->p = second;
+		second->p = NULL;
+		return second;
 	} 
-	second->n = _merge (first, second->n, cmp);
-	second->n->p = second;
-	second->p = NULL;
-	return second;
+	first->n = _merge (first->n, second, cmp);
+	first->n->p = first;
+	first->p = NULL;
+	return first;
 }
 
 static RListIter * _r_list_half_split(RListIter *head) {
@@ -548,8 +511,8 @@ static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
 	return _merge (head, second, cmp);
 }
 
-R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
-	if (list && list->head) {
+R_API void r_list_sort(RList *list, RListComparator cmp) {
+	if (list && list->head && cmp) {
 		RListIter *iter;
 		list->head = _merge_sort (list->head, cmp);
 		//update tail reference
