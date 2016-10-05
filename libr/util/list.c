@@ -49,13 +49,7 @@ R_API void r_list_init(RList *list) {
 }
 
 R_API int r_list_length(const RList *list) {
-	int count = 0;
-	RListIter *iter = r_list_iterator (list);
-	while (iter) {
-		count++;
-		iter = iter->n;
-	}
-	return count;
+	return list->length;
 }
 
 /* remove all elements of a list */
