@@ -1821,7 +1821,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	data_dir_export = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	export_dir_rva  = data_dir_export->VirtualAddress;
 	export_dir_size = data_dir_export->Size;
-	if (bin->export_directory && bin->export_directory->NumberOfFunctions < 0xfff) {
+	if (bin->export_directory) {
 		exports_sz = (bin->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
 		if (!(exports = malloc (exports_sz))) {
 			return NULL;
