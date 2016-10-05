@@ -6,6 +6,7 @@
 #include <r_anal.h>
 
 #include "../../asm/arch/dalvik/opcode.h"
+#include "../../bin/format/dex/dex.h" 
 
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int sz = dalvik_opcodes[data[0]].len;
@@ -401,6 +402,11 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static bool is_valid_offset(RAnal *anal, ut64 addr, int hasperm) {
+	RBinDexObj *bin_dex = (RBinDexObj*) anal->binb.bin->cur->o->bin_obj;
+	return addr >= bin_dex->code_from && addr <= bin_dex->code_to;
+}
+
 struct r_anal_plugin_t r_anal_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
@@ -409,6 +415,7 @@ struct r_anal_plugin_t r_anal_plugin_dalvik = {
 	.bits = 32,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.op = &dalvik_op,
+	.is_valid_offset = &is_valid_offset
 };
 
 #ifndef CORELIB
