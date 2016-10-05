@@ -972,12 +972,14 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			char* arg1 = getarg (&gop, 0, 0, NULL);
 			char* arg2 = getarg (&gop, 1, 0, NULL);
 			esilprintf (op,
-					"%s,"
-					"2,%s,-=,cs,=[2],"	// push CS
-					"%d,%s,-=,%s,=[],"	// push IP/EIP
+					"2,%s,-=,cs,%s,=[2],"	// push CS
+					"%d,%s,-=,%s,%s,=[],"	// push IP/EIP
 					"%s,cs,=,"		// set CS
 					"%s,%s,=",		// set IP/EIP
-					pc, sp, rs, sp, sp, arg1, arg2, pc);
+					sp, sp,
+					rs, sp, pc, sp,
+					arg1,
+					arg2, pc);
 			free (arg1);
 			free (arg2);
 		}
@@ -992,9 +994,19 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// TODO: what if UJMP?
 		switch (INSOP(0).type) {
 		case X86_OP_IMM:
-			{
-				ut64 dst = INSOP(0).imm;
-				esilprintf (op, "0x%"PFMT64x",%s,=", dst, pc);
+			if (a->decode) {
+				if (INSOP(1).type == X86_OP_IMM) {
+					ut64 seg = INSOP(0).imm;
+					ut64 off = INSOP(1).imm;
+					esilprintf (
+						op,
+						"0x%"PFMT64x",cs,=,"
+						"0x%"PFMT64x",%s,=",
+						seg, off, pc);
+				} else {
+					ut64 dst = INSOP(0).imm;
+					esilprintf (op, "0x%"PFMT64x",%s,=", dst, pc);
+				}
 			}
 			break;
 		case X86_OP_MEM:
@@ -1004,7 +1016,25 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				cs_x86_op in = INSOP (0);
 				if (in.mem.index == 0 && in.mem.base == 0 && in.mem.scale == 1) {
 					if (a->decode) {
-						esilprintf (op, "0x%"PFMT64x",[],%s,=", INSOP(0).mem.disp, pc);
+						if (in.mem.segment != X86_REG_INVALID) {
+							esilprintf (
+								op,
+								"4,%s,<<,0x%"PFMT64x",+,[],%s,=",
+								INSOP(0).mem.segment == X86_REG_ES ? "es"
+								: INSOP(0).mem.segment == X86_REG_CS ? "cs"
+								: INSOP(0).mem.segment == X86_REG_DS ? "ds"
+								: INSOP(0).mem.segment == X86_REG_FS ? "fs"
+								: INSOP(0).mem.segment == X86_REG_GS ? "gs"
+								: INSOP(0).mem.segment == X86_REG_SS ? "ss"
+								: "unknown_segment_register",
+								INSOP(0).mem.disp,
+								pc);
+						} else {
+							esilprintf (
+								op,
+								"0x%"PFMT64x",[],%s,=",
+								INSOP(0).mem.disp, pc);
+						}
 					}
 				}
 			}
