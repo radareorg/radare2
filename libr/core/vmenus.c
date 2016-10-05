@@ -2363,6 +2363,7 @@ R_API void r_core_visual_define (RCore *core) {
 		," w    set as 32bit word"
 		," W    set as 64bit word"
 		," q    quit menu"
+		," z    zone flag"
 		, NULL};
 	for (i = 0; lines[i]; i++) {
 		r_cons_fill_line ();
@@ -2578,6 +2579,9 @@ repeat:
 		break;
 	case 'r': // "Vdr"
 		r_core_cmdf (core, "?i new function name;afn `?y` @ 0x%08"PFMT64x, off);
+		break;
+	case 'z': // "Vdz"
+		r_core_cmdf (core, "?i zone name;fz `?y` @ 0x%08"PFMT64x, off);
 		break;
 	case 'R': // "VdR"
 		eprintf ("Finding references to 0x%08"PFMT64x" ...\n", off);

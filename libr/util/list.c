@@ -7,7 +7,7 @@
 #include "r_util.h"
 
 inline RListIter *r_list_iter_new () {
-	return malloc (sizeof (RListIter));
+	return calloc (1, sizeof (RListIter));
 }
 
 void r_list_iter_free (RListIter *list) {
@@ -86,7 +86,7 @@ R_API bool r_list_delete_data(RList *list, void *ptr) {
 }
 
 R_API void r_list_delete(RList *list, RListIter *iter) {
-	if (list && iter){
+	if (list && iter) {
 		r_list_split_iter (list, iter);
 		if (list->free && iter->data) {
 			list->free (iter->data);
@@ -169,7 +169,7 @@ R_API RList *r_list_newf(RListFree f) {
 }
 
 R_API RListIter *r_list_item_new(void *data) {
-	RListIter *item = R_NEW (RListIter);
+	RListIter *item = R_NEW0 (RListIter);
 	if (!item) {
 		return NULL;
 	}
@@ -204,7 +204,7 @@ R_API RListIter *r_list_prepend(RList *list, void *data) {
 	if (!item) {
 		return NULL;
 	}
-	if (list){
+	if (list) {
 		if (list->head) {
 			list->head->p = item;
 		}
