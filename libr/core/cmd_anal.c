@@ -4478,12 +4478,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break (NULL, NULL);
 			ut64 curseek = core->offset;
 			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
-			if (strstr (r_config_get (core->config, "asm.arch"), "arm")) {
-				rowlog (core, "Analyze value pointers (aav)");
-				done_aav = true;
-				r_core_cmd0 (core, "aav");
-				r_core_cmd0 (core, "aav $S+$SS+1");
-			}
 			r_core_anal_all (core);
 			rowlog_done (core);
 			if (core->cons->breaked) {
@@ -4493,6 +4487,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break_end ();
 			if (*input == 'a') { // "aaa"
 				int c = r_config_get_i (core->config, "anal.calls");
+				if (strstr (r_config_get (core->config, "asm.arch"), "arm")) {
+					rowlog (core, "\nAnalyze value pointers (aav)");
+					done_aav = true;
+					r_core_cmd0 (core, "aav");
+					r_core_cmd0 (core, "aav $S+$SS+1");
+				}
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");
 				rowlog (core, "Analyze len bytes of instructions for references (aar)");

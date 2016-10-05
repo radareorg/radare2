@@ -74,7 +74,7 @@ if [ -f "d/baleful" ]; then
 	R2PM_DBDIR="$(pwd)/d/"
 fi
 case "$1" in
-init|update)
+init|up|update)
 	R2PM_DBDIR="${HOME}/.config/radare2/r2pm/db"
 	mkdir -p "${R2PM_USRDIR}"/git
 	cd "${R2PM_USRDIR}"/git
