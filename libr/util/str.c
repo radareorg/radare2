@@ -11,6 +11,35 @@
 /* stable code */
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
+static const char *rwxstr[] = {
+	[0] = "----",
+	[1] = "---x",
+	[2] = "--w-",
+	[3] = "--wx",
+	[4] = "-r--",
+	[5] = "-r-x",
+	[6] = "-rw-",
+	[7] = "-rwx",
+
+	[8] = "----",
+	[9] = "---x",
+	[10] = "--w-",
+	[11] = "--wx",
+	[12] = "-r--",
+	[13] = "-r-x",
+	[14] = "-rw-",
+	[15] = "-rwx",
+
+	[16] = "m---",
+	[17] = "m--x",
+	[18] = "m-w-",
+	[19] = "m-wx",
+	[20] = "mr--",
+	[21] = "mr-x",
+	[22] = "mrw-",
+	[23] = "mrwx",
+};
+
 
 // TODO: simplify this horrible loop
 R_API void r_str_chop_path(char *s) {
@@ -222,41 +251,17 @@ R_API int r_str_rwx(const char *str) {
 		ret |= strchr (str, 'r') ? 4 : 0;
 		ret |= strchr (str, 'w') ? 2 : 0;
 		ret |= strchr (str, 'x') ? 1 : 0;
+	} else if (ret < 0 || ret >= R_ARRAY_SIZE (rwxstr)) {
+		ret = 0;
 	}
 	return ret;
 }
 
 // Returns the string representation of the permission of the inputted integer.
 R_API const char *r_str_rwx_i(int rwx) {
-	static const char *rwxstr[24] = {
-		[0] = "----",
-		[1] = "---x",
-		[2] = "--w-",
-		[3] = "--wx",
-		[4] = "-r--",
-		[5] = "-r-x",
-		[6] = "-rw-",
-		[7] = "-rwx",
-
-		[8] = "----",
-		[9] = "---x",
-		[10] = "--w-",
-		[11] = "--wx",
-		[12] = "-r--",
-		[13] = "-r-x",
-		[14] = "-rw-",
-		[15] = "-rwx",
-
-		[16] = "m---",
-		[17] = "m--x",
-		[18] = "m-w-",
-		[19] = "m-wx",
-		[20] = "mr--",
-		[21] = "mr-x",
-		[22] = "mrw-",
-		[23] = "mrwx",
-		/* ... */
-	};
+	if (rwx < 0 || rwx >= R_ARRAY_SIZE (rwxstr)) {
+		rwx = 0;
+	}
 	return rwxstr[rwx % 24]; // 15 for srwx
 }
 
@@ -523,8 +528,8 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 }
 
 // Get the idx'th entry of a tokenized string.
-// XXX: Warning! this function is UNSAFE, check that the string has idx or fewer
-// tokens.
+// XXX: Warning! this function is UNSAFE, check that the string has, at least,
+// idx+1 tokens.
 R_API const char *r_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
