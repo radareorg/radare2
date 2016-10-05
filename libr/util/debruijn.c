@@ -111,6 +111,7 @@ R_API int r_debruijn_offset(ut64 value, bool is_big_endian) {
 	// 0x10000 should be long enough. This is how peda works, and nobody complains
 	pattern = r_debruijn_pattern (0x10000, 0, debruijn_charset);
 
+	buf[8] = '\0';
 	if (is_big_endian) {
 		r_write_be64 (buf, value);
 	} else {
