@@ -560,7 +560,7 @@ R_API void r_anal_build_range_on_hints(RAnal *a) {
 		a->bits_ranges = r_list_new ();
 		a->bits_ranges->free = free;
 		sdb_foreach (a->sdb_hints, build_range, a);
-		r_list_merge_sort (a->bits_ranges, cmp_range);
+		r_list_sort (a->bits_ranges, cmp_range);
 		r_list_foreach (a->bits_ranges, iter, range) {
 			if (iter->n && !range->to) {
 				range->to = ((RAnalRange *)(iter->n->data))->from;
