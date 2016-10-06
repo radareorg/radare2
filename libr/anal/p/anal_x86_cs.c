@@ -980,7 +980,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 						sp, sp, rs, sp, pc, sp, arg1, arg2, pc);
 			} else {
 				esilprintf (op,
-						"%d,%s,-=,%s,%s,=[],"	// push IP/EIP
+						"%d,%s,-=,%d,%s,=[],"	// push IP/EIP
 						"%s,%s,=",		// set IP/EIP
 						sp, sp, rs, sp, arg1, pc);
 			}
