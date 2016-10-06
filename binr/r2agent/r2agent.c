@@ -4,7 +4,6 @@
 #include <r_core.h>
 #include <signal.h>
 
-
 #if __WINDOWS__
 int main() {
 	eprintf ("r2agent: Not yet implemented for this platform.\n");
@@ -59,8 +58,14 @@ int main(int argc, char **argv) {
 			return usage (0);
 		}
 	}
-	if (optind != argc)
+	if (optind != argc) {
 		return usage (0);
+	}
+
+#if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
+#define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT 6
+    memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0);
+#endif
 	if (dodaemon) {
 #if LIBC_HAVE_FORK
 		int pid = fork ();
@@ -95,9 +100,10 @@ int main(int argc, char **argv) {
 			if (!strncmp (rs->path, "/proc/kill/", 11)) {
 				// TODO: show page here?
 				int pid = atoi (rs->path + 11);
-				if (pid > 0) kill (pid, 9);
-			} else
-			if (!strncmp (rs->path, "/file/open/", 11)) {
+				if (pid > 0) {
+					kill (pid, 9);
+				}
+			} else if (!strncmp (rs->path, "/file/open/", 11)) {
 				int pid;
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + 11;
