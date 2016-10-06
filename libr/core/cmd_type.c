@@ -107,7 +107,7 @@ static int linklist_readable (void *p, const char *k, const char *v) {
 
 }
 static int typelist (void *p, const char *k, const char *v) {
-	r_cons_printf ("tk %s = %s\n", k, v);
+	r_cons_printf ("tk %s=%s\n", k, v);
 #if 0
 	if (!strcmp (v, "func")) {
 		const char *rv = sdb_const_get (DB,
