@@ -54,7 +54,9 @@ static int r_core_project_init(RCore *core) {
 	char *prjdir = r_file_abspath (r_config_get (
 		core->config, "dir.projects"));
 	int ret = r_sys_mkdirp (prjdir);
-	if (!ret) eprintf ("Cannot mkdir dir.projects\n");
+	if (!ret) {
+		eprintf ("Cannot mkdir dir.projects\n");
+	}
 	free (prjdir);
 	return ret;
 }
@@ -402,6 +404,10 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 		r_core_cmd (core, "om*", 0);
 		r_cons_flush ();
 	}
+	{
+		r_core_cmd (core, "fz*", 0);
+		r_cons_flush ();
+	}
 	if (opts & R_CORE_PRJ_SECTIONS) {
 		r_str_write (fd, "# sections\n");
 		r_io_section_list (core->io, core->offset, 1);
@@ -492,14 +498,14 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	if (rop_db) {
-		ls_foreach (rop_db->ns, it, ns){
+		ls_foreach (rop_db->ns, it, ns) {
 			snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
 			sdb_file (ns->sdb, buf);
 			sdb_sync (ns->sdb);
 		}
 	}
 
-	if (!r_core_project_save_rdb (core, prj, R_CORE_PRJ_ALL^R_CORE_PRJ_XREFS)) {
+	if (!r_core_project_save_rdb (core, prj, R_CORE_PRJ_ALL ^ R_CORE_PRJ_XREFS)) {
 		eprintf ("Cannot open '%s' for writing\n", prj);
 		ret = false;
 	}

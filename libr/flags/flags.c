@@ -72,6 +72,11 @@ R_API RFlag * r_flag_new() {
 	}
 	f->base = 0;
 	f->cb_printf = (PrintfCallback)printf;
+#if R_FLAG_ZONE_USE_SDB
+	f->zones = sdb_new0 ();
+#else
+	f->zones = NULL;
+#endif
 	f->flags = r_list_new ();
 	if (!f->flags) {
 		r_flag_free (f);
@@ -86,6 +91,11 @@ R_API RFlag * r_flag_new() {
 	}
 	f->ht_name = r_hashtable64_new ();
 	f->ht_off = r_hashtable64_new ();
+#if R_FLAG_ZONE_USE_SDB
+	sdb_free (f->zones);
+#else
+	r_list_free (f->zones);
+#endif
 	f->ht_off->free = (RHashFree)r_list_free;
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		f->spaces[i] = NULL;

@@ -251,7 +251,7 @@ R_API void r_core_visual_prompt_input (RCore *core) {
 	ut64 bsze = core->blocksize;
 	int h;
 	(void)r_cons_get_size (&h);
-	r_cons_gotoxy (0, h-2);
+	r_cons_gotoxy (0, h - 2);
 	r_cons_reset_colors ();
 	r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	r_cons_show_cursor (true);
@@ -2066,7 +2066,9 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		r_core_block_size (core, hexcols * core->cons->rows * 8);
 		break;
 	}
-
+	if (r_config_get_i (core->config, "scr.zoneflags")) {
+		r_core_cmd (core, "fz:", 0);
+	}
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		ut64 curpc = r_debug_reg_get (core->dbg, "PC");
 		if (curpc && curpc != UT64_MAX && curpc != oldpc) {

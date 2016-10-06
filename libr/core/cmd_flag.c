@@ -4,6 +4,73 @@
 #include "r_cons.h"
 #include "r_core.h"
 
+static void cmd_fz(RCore *core, const char *input) {
+	switch (*input) {
+	case '?':
+		eprintf ("Usage: fz[?|-name| name] [@addr]\n");
+		eprintf (" fz math    add new flagzone named 'math'\n");
+		eprintf (" fz-math    remove the math flagzone\n");
+		eprintf (" fz-*       remove all flagzones\n");
+		eprintf (" fz.        show around flagzone context\n");
+		eprintf (" fz:        show what's in scr.flagzone for visual\n");
+		eprintf (" fz*        dump into r2 commands, for projects\n");
+		break;
+	case '.':
+		{
+			const char *a, *b;
+			r_flag_zone_around (core->flags, core->offset, &a, &b);
+			r_cons_printf ("%s %s\n", a, b);
+		}
+		break;
+	case ':':
+		{
+			const char *a, *b;
+			int a_len = 0;
+			int w = r_cons_get_size (NULL);
+			r_flag_zone_around (core->flags, core->offset, &a, &b);
+			if (a) {
+				r_cons_printf ("[<< %s]", a);
+				a_len = strlen (a) + 4;
+			}
+			int padsize = (w / 2)  - a_len;
+			int title_size = 12;
+			if (a || b) {
+				char *title = r_str_newf ("[ 0x%08"PFMT64x" ]", core->offset);
+				title_size = strlen (title);
+				padsize -= strlen (title) / 2;
+				const char *halfpad = r_str_pad (' ', padsize);
+				r_cons_printf ("%s%s", halfpad, title);
+				free (title);
+			}
+			if (b) {
+				padsize = (w / 2) - title_size - strlen (b) - 4;
+				const char *halfpad = padsize > 1? r_str_pad (' ', padsize): "";
+				r_cons_printf ("%s[%s >>]", halfpad, b);
+			}
+			if (a || b) {
+				r_cons_newline();
+			}
+		}
+		break;
+	case ' ':
+		r_flag_zone_add (core->flags, input + 1, core->offset);
+		break;
+	case '-':
+		if (input[1] == '*') {
+			r_flag_zone_reset (core->flags);
+		} else {
+			r_flag_zone_del (core->flags, input + 1);
+		}
+		break;
+	case '*':
+		r_flag_zone_list (core->flags, '*');
+		break;
+	case 0:
+		r_flag_zone_list (core->flags, 0);
+		break;
+	}
+}
+
 static void flagbars(RCore *core) {
 	int total = 0;
 	int cols = r_cons_get_size (NULL);
@@ -333,6 +400,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		} else eprintf ("Missing arguments\n");
 		break;
 #endif
+	case 'z':
+		cmd_fz (core, input + 1);
+		break;
 	case 'x':
 		if (input[1] == ' ') {
 			char cmd[128];
@@ -344,7 +414,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 					 item->offset, item->size);
 				r_core_cmd0 (core, cmd);
 			}
-		} else eprintf ("Missing arguments\n");
+		} else {
+			eprintf ("Missing arguments\n");
+		}
 		break;
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));
@@ -649,6 +721,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fs"," ?+-*","manage flagspaces",
 		"fS","[on]","sort flags by offset or name",
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
+		"fz"," [name]","add named flag zone -name to delete. see fz?[name]",
 		NULL};
 		r_core_cmd_help (core, help_msg);
 		break;

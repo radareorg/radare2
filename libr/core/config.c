@@ -1955,6 +1955,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
 	SETCB("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
 	/* TODO: rename to asm.color.ops ? */
+	SETPREF("scr.zoneflags", "true", "Show zoneflags in visual mode before the title (see fz?)");
 	SETPREF("scr.color.ops", "true", "Colorize numbers and registers in opcodes");
 	SETPREF("scr.color.bytes", "true", "Colorize bytes that represent the opcodes of the instruction");
 #if __WINDOWS__ && !__CYGWIN__
