@@ -1611,6 +1611,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					}
 				}
 				if (string) {
+					string = r_str_chop (string);
+					string2 = r_str_chop (string2);
 					if (use_color) {
 						r_cons_printf ("%s0x%08"PFMT64x"%s %s%s%s%s%s%s%s\n",
 								MYPAL(offset), addr, Color_RESET,
