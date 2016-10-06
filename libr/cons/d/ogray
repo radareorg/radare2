@@ -11,7 +11,7 @@ ec comment rgb:f72
 ec reg rgb:fff
 ec creg rgb:f72
 ec flag rgb:f72
-ec fline rgb:f72
+ec fline rgb:aaa
 ec flow rgb:f72
 ec fname rgb:f72
 ec help rgb:f72

@@ -7,6 +7,9 @@ if [ -z "${CPU}" ]; then
 	export CPU=arm64
 	#export CPU=armv7
 fi
+if [ -z "${PACKAGE}" ]; then
+	PACKAGE=radare2
+fi
 
 export BUILD=1
 PREFIX=/private/var/radare2
@@ -47,7 +50,7 @@ makeDeb() {
 			fi
 		done
 	)
-	( cd sys/cydia/radare2 ; sudo make clean ; sudo make )
+	( cd sys/cydia/radare2 ; sudo make clean ; sudo make PACKAGE=${PACKAGE} )
 }
 
 if [ "$1" = makedeb ]; then
