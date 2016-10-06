@@ -2850,10 +2850,10 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	}
 	if (ds && ds->show_emu_str) {
 		if (msg && *msg) {
-			r_cons_printf ("; %s", msg);
+			r_cons_printf (" ; %s", msg);
 		}
 	} else {
-		r_cons_printf ("; %s=0x%"PFMT64x" %s", name, val, msg? msg: "");
+		r_cons_printf (" ; %s=0x%"PFMT64x" %s", name, val, msg? msg: "");
 	}
 	free (msg);
 	return 0;
@@ -2931,6 +2931,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		if (mi) { 
 			goto beach; 
 		}
+	}
+	if (ds->show_color) {
+		r_cons_strcat (ds->pal_comment);
 	}
 	ioc = r_config_get_i (core->config, "io.cache");
 	r_config_set (core->config, "io.cache", "true");
@@ -3233,7 +3236,7 @@ toro:
 		// TODO: support in-the-middle-of-instruction too
 		r_anal_op_fini (&ds->analop);
 		if (r_anal_op (core->anal, &ds->analop, core->offset + core->print->cur,
-			buf+core->print->cur, (int)(len - core->print->cur))) {
+			buf + core->print->cur, (int)(len - core->print->cur))) {
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
 		}
