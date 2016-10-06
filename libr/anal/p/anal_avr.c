@@ -390,7 +390,7 @@ INST_HANDLER (cp) {	// CP Rd, Rr
 INST_HANDLER (cpc) {	// CPC Rd, Rr
 	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
 	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
-	ESIL_A ("r%d,cf,-,r%d,-,", r, d);			// Rd - Rr - C
+	ESIL_A ("cf,r%d,-,r%d,-,", r, d);			// Rd - Rr - C
 								// FLAGS:
 	ESIL_A ("r%d,0x08,&,!,"   "r%d,0x08,&,!,!,"     "&,"	// H
 		"r%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
@@ -409,13 +409,13 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
-		d, r, d, r);
+		d, r, r, d);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 }
 
 INST_HANDLER (cpi) { // CPI Rd, K
-	int d = (buf[1] & 0xf) >> 4;
-	int k = ((buf[0] & 0xf) << 4) | (buf[1] & 0xf);
+	int d = ((buf[0] >> 4) & 0xf) + 16;
+	int k = (buf[0] & 0xf) | ((buf[1] & 0xf) << 4);
 	ESIL_A ("%d,r%d,-,", k, d);				// Rd - k
 								// FLAGS:
 	ESIL_A ("r%d,0x08,&,!,"   "%d,0x08,&,!,!,"     "&,"	// H
@@ -423,19 +423,19 @@ INST_HANDLER (cpi) { // CPI Rd, K
 		"%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
 		"|,|,hf,=,",
 		d, k, d, k);
-	ESIL_A ("r%d,0x80,&,!,!," "%d,0x80,&,!,"       "&,"	// V
+	ESIL_A ("r%d,0x80,&,!,!," "%d,0x80,&,!,"        "&,"	// V
 		""                "0,RPICK,0x80,&,!,"   "&,"
-		"r%d,0x80,&,!,"   "%d,0x80,&,!,!,"     "&,"
+		"r%d,0x80,&,!,"   "%d,0x80,&,!,!,"      "&,"
 		""                "0,RPICK,0x80,&,!,!," "&,"
 		"|,vf,=,",
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"   "%d,0x80,&,!,!,"     "&," 	// C
-		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
-		"%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
+		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
-		d, k, d, k);
+		d, k, k, d);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 }
 
@@ -760,20 +760,20 @@ INST_HANDLER (lds16) {	// LDS Rd, k
 INST_HANDLER (lpm) {	// LPM
 			// LPM Rd, Z
 			// LPM Rd, Z+
-	ut16 ins = ((ut16) (buf[1] << 8) | buf[0]);
+	ut16 ins = (((ut16) buf[1]) << 8) | ((ut16) buf[0]);
 	// read program memory
 	__generic_ld_st (
 		op, "prog",
 		'z',				// index register Y/Z
 		1,				// use RAMP* registers
-		ins & 0xfe0f == 0x9005
+		(ins & 0xfe0f) == 0x9005
 			? 1			// post incremented
 			: 0,			// no increment
 		0,				// not offset
 		0);				// load operation (!st)
 	// load register
 	ESIL_A ("r%d,=,",
-		ins == 0x95c8
+		(ins == 0x95c8)
 			? 0			// LPM (r0)
 			: ((buf[0] >> 4) & 0xf)	// LPM Rd
 				| ((buf[1] & 0x1) << 4));
@@ -818,10 +818,10 @@ INST_HANDLER (push) {	// PUSH Rr
 
 INST_HANDLER (rcall) {	// RCALL k
 	// target address
-	op->jump = op->addr
+	op->jump = (op->addr
 		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
-			| (((buf[1] & 0x8) ? ~((int) 0x1ff) : 0)))
-		+ 2;
+			| (((buf[1] & 0x8) ? ~((int) 0x1fff) : 0)))
+		+ 2) & cpu->pc_mask;
 	// esil
 	ESIL_A ("pc,");				// esil already points to next
 						// instruction (@ret)
