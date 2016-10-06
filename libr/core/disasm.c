@@ -296,7 +296,9 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 static void ds_print_spacy(RDisasmState *ds, int pre) {
 	RCore *core = ds->core;
 	RAnalFunction *f = NULL;
-	if (pre) r_cons_newline ();
+	if (pre) {
+		r_cons_newline ();
+	}
 	if (ds->show_functions) {
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		if (!f) {
@@ -306,7 +308,9 @@ static void ds_print_spacy(RDisasmState *ds, int pre) {
 	}
 	if (f) ds_beginline (ds, f, true);
 	ds_print_offset (ds);
-	if (!pre) r_cons_newline ();
+	if (!pre) {
+		r_cons_newline ();
+	}
 }
 
 static RDisasmState * ds_init(RCore *core) {
@@ -739,7 +743,7 @@ static void ds_pre_xrefs(RDisasmState *ds) {
 	if (ds->show_fcnlines) {
 		ds_setup_pre (ds, false, false);
 		if (*ds->pre != ' '){
-			ds_set_pre(ds, core->cons->vline[LINE_VERT]);
+			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 			ds->pre = r_str_concat (ds->pre, " ");
 		}
 	}
@@ -2294,8 +2298,9 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 			}
 			break;
 		case R_ANAL_OP_TYPE_ICALL:
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
+		// case R_ANAL_OP_TYPE_UCALL:
+		// case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
+		// case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
 			ds_align_comment (ds);
 			if (ds->show_color) {
 				r_cons_strcat (ds->pal_comment);
