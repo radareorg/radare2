@@ -7,7 +7,6 @@
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
 
-
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 #include "r_heap_glibc.h"
 #endif
@@ -27,8 +26,9 @@ static ut64 r_debug_get_baddr(RCore *r, const char *file) {
 	char *abspath;
 	RListIter *iter;
 	RDebugMap *map;
-	if (!r || !r->io || !r->io->desc)
+	if (!r || !r->io || !r->io->desc) {
 		return 0LL;
+	}
 	r_debug_attach (r->dbg, r->io->desc->fd);
 	r_debug_map_sync (r->dbg);
 	abspath = r_file_abspath (file);
@@ -1117,11 +1117,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	return true;
 }
 
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && GLIBC_BITS_32 == 1
-#include "linux_heap_glibc_32.c"
-#endif
-#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && GLIBC_BITS_64 == 1
-#include "linux_heap_glibc_64.c"
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
+#include "linux_heap_glibc.c"
 #endif
 
 R_API void r_core_debug_rr(RCore *core, RReg *reg) {
@@ -1133,7 +1130,9 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 	r_debug_map_sync (core->dbg);
 	r_list_foreach (list, iter, r) {
 		char *rrstr;
-		if (r->size != bits) continue;
+		if (r->size != bits) {
+			continue;
+		}
 		value = r_reg_get_value (core->dbg->reg, r);
 		rrstr = r_core_anal_hasrefs (core, value);
 		if (bits == 64) {

@@ -1,3 +1,4 @@
+/* TODO: Do GH() macro thing here */
 
 #ifndef R2_HEAP_GLIBC_H
 #define R2_HEAP_GLIBC_H
@@ -67,20 +68,20 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 */
 
 typedef struct r_malloc_chunk_64 {
-	ut64	prev_size;	/* Size of previous chunk (if free).  */
-	ut64	size;       	/* Size in bytes, including overhead. */
+	ut64 prev_size;   /* Size of previous chunk (if free).  */
+	ut64 size;        /* Size in bytes, including overhead. */
 
-	ut64 fd;         	/* double links -- used only if free. */
+	ut64 fd;          /* double links -- used only if free. */
 	ut64 bk;
 
 	/* Only used for large blocks: pointer to next larger size.  */
-	ut64 fd_nextsize;	/* double links -- used only if free. */
+	ut64 fd_nextsize; /* double links -- used only if free. */
 	ut64 bk_nextsize;
 } RHeapChunk64;
 
 typedef struct r_malloc_chunk_32 {
-	ut32	prev_size;	/* Size of previous chunk (if free).  */
-	ut32	size;       	/* Size in bytes, including overhead. */
+	ut32 prev_size;	/* Size of previous chunk (if free).  */
+	ut32 size;       	/* Size in bytes, including overhead. */
 
 	ut32 fd;	        /* double links -- used only if free. */
 	ut32 bk;
