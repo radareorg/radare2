@@ -435,22 +435,23 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	str[stri=0] = 0;
 	while (len--) {
 		char ch = (num & 0xff);
-		if (ch>=32 && ch <127) {
+		if (ch >= 32 && ch < 127) {
 			str[stri++] = ch;
 			str[stri] = 0;
-		} else if(!printable_only && (off = escape_char (str + stri, ch)) != 0) {
+		} else if (!printable_only && (off = escape_char (str + stri, ch)) != 0) {
 			stri += off;
 		} else {
 			if (ch)
 				return NULL;
 		}
-		ret |= (num&0xff);
+		ret |= (num & 0xff);
 		num >>= 8;
 	}
-	if (ret)
+	if (ret) {
 		return strdup (str);
-	else if (!printable_only)
+	} else if (!printable_only) {
 		return strdup ("\\0");
+	}
 	return NULL;
 }
 
