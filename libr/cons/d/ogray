@@ -4,11 +4,12 @@ ec b0xff rgb:333
 ec args rgb:fff
 ec bin rgb:fff
 ec btext rgb:fff
-ec call rgb:f72
+ec call rgb:f72 rgb:333
 ec cjmp rgb:f72
 ec cmp rgb:aaa
 ec comment rgb:f72
-ec creg rgb:fff
+ec reg rgb:fff
+ec creg rgb:f72
 ec flag rgb:f72
 ec fline rgb:f72
 ec flow rgb:f72
@@ -18,7 +19,7 @@ ec input rgb:f72
 ec jmp rgb:f72
 ec label rgb:f72
 ec math rgb:777
-ec mov rgb:777
+ec mov rgb:ddd
 ec nop rgb:333
 ec num rgb:f72
 ec offset rgb:555
@@ -26,7 +27,17 @@ ec other rgb:999
 ec pop rgb:999
 ec prompt rgb:f72
 ec push rgb:ddd
-ec reg rgb:fff
 ec ret rgb:777
 ec swi rgb:f72
 ec trap rgb:f72
+ec graph.true rgb:f72
+ec graph.false rgb:777
+ec graph.trufae rgb:ddd
+ec graph.current rgb:f72
+ec graph.traced rgb:f00
+ec gui.cflow rgb:f72
+ec gui.dataoffset rgb:f72
+ec graph.box2 rgb:f72
+ec graph.box3 rgb:f00
+ec crypto rgb:f72
+ec floc rgb:777
