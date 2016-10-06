@@ -1044,8 +1044,6 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 	if (!main_arena) {
 		return false;
 	}
-	SZ = core->dbg->bits;
-
 	switch (input[0]) {
 	case '\0': // dmh
 		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena)) {
