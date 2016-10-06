@@ -3,10 +3,9 @@
 #include <r_flags.h>
 #include <r_util.h>
 
-#define USE_SDB 0
-
 #define DB f->zones
-#if !USE_SDB
+
+#if !R_FLAG_ZONE_USE_SDB
 
 static RFlagZoneItem *r_flag_zone_get (RFlag *f, const char *name) {
 	RListIter *iter;
@@ -26,7 +25,7 @@ R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 		return false;
 	}
 #endif
-#if USE_SDB
+#if R_FLAG_ZONE_USE_SDB
 	RFlagZoneItem zi = { 0, 0, (const char *)name };
 	if (!f || !DB || !name) {
 		return false;
@@ -56,6 +55,9 @@ R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 			zi->to = addr;
 		}
 	} else {
+		if (!DB) {
+			r_flag_zone_reset (f);
+		}
 		zi = R_NEW0 (RFlagZoneItem);
 		zi->name = strdup (name);
 		zi->from = zi->to = addr;
@@ -63,6 +65,16 @@ R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 	}
 #endif
 	return true;
+}
+
+R_API bool r_flag_zone_reset(RFlag *f) {
+#if R_FLAG_ZONE_USE_SDB
+	return sdb_reset (DB);
+#else
+	r_list_free (f->zones);
+	f->zones = r_list_newf (r_flag_zone_item_free);
+	return true;
+#endif
 }
 
 R_API bool r_flag_zone_del(RFlag *f, const char *name) {
@@ -164,6 +176,7 @@ R_API bool r_flag_zone_list(RFlag *f, int mode) {
 R_API void r_flag_zone_item_free(void *a) {
 	RFlagZoneItem *zi = a;
 	free (zi->name);
+	free (zi);
 }
 
 R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char **next) {

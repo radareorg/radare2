@@ -7,7 +7,13 @@
 static void cmd_fz(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
-		eprintf("Usage: fz[?|-name| name] [@addr]\n");
+		eprintf ("Usage: fz[?|-name| name] [@addr]\n");
+		eprintf (" fz math    add new flagzone named 'math'\n");
+		eprintf (" fz-math    remove the math flagzone\n");
+		eprintf (" fz-*       remove all flagzones\n");
+		eprintf (" fz.        show around flagzone context\n");
+		eprintf (" fz:        show what's in scr.flagzone for visual\n");
+		eprintf (" fz*        dump into r2 commands, for projects\n");
 		break;
 	case '.':
 		{
@@ -50,7 +56,11 @@ static void cmd_fz(RCore *core, const char *input) {
 		r_flag_zone_add (core->flags, input + 1, core->offset);
 		break;
 	case '-':
-		r_flag_zone_del (core->flags, input + 1);
+		if (input[1] == '*') {
+			r_flag_zone_reset (core->flags);
+		} else {
+			r_flag_zone_del (core->flags, input + 1);
+		}
 		break;
 	case '*':
 		r_flag_zone_list (core->flags, '*');

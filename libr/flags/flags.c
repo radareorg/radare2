@@ -75,7 +75,7 @@ R_API RFlag * r_flag_new() {
 #if R_FLAG_ZONE_USE_SDB
 	f->zones = sdb_new0 ();
 #else
-	f->zones = r_list_newf (r_flag_zone_item_free);
+	f->zones = NULL;
 #endif
 	f->flags = r_list_new ();
 	if (!f->flags) {
