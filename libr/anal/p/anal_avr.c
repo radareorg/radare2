@@ -96,23 +96,30 @@ void __generic_bitop_flags(RAnalOp *op) {
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 }
 
-void __generic_ld_st(RAnalOp *op, char ireg, int use_ramp, int prepostdec, int offset, int st) {
-	// preincrement index register
-	if (prepostdec < 0) {
-		ESIL_A ("1,%c,-,%c,=,", ireg, ireg);
+void __generic_ld_st(RAnalOp *op, char *mem, char ireg, int use_ramp, int prepostdec, int offset, int st) {
+	if (ireg) {
+		// preincrement index register
+		if (prepostdec < 0) {
+			ESIL_A ("1,%c,-,%c,=,", ireg, ireg);
+		}
+		// set register index address
+		ESIL_A ("%c,", ireg);
+		// add offset
+		if (offset != 0) {
+			ESIL_A ("%d,+,", offset);
+		}
+	} else {
+		ESIL_A ("%d,", offset);
 	}
-	// calculate SRAM(ireg+offset) address
-	ESIL_A ("%c,_sram,+,", ireg);
 	if (use_ramp) {
-		ESIL_A ("16,ramp%c,<<,+,", ireg);
+		ESIL_A ("16,ramp%c,<<,+,", ireg ? ireg : 'd');
 	}
-	if (offset != 0) {
-		ESIL_A ("%d,+,", offset);
-	}
-	// read from SRAM
+	// set SRAM base address
+	ESIL_A ("_%s,+,", mem);
+	// read/write from SRAM
 	ESIL_A ("%s[1],", st ? "=" : "");
 	// postincrement index register
-	if (prepostdec > 0) {
+	if (ireg && prepostdec > 0) {
 		ESIL_A ("1,%c,+,%c,=,", ireg, ireg);
 	}
 }
@@ -630,30 +637,30 @@ INST_HANDLER (lac) {	// LAC Z, Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
-	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
-	ESIL_A ("r%d,0xff,^,&,", d);		// 0: (Z) & ~Rd
-	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
-	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,0xff,^,&,", d);			// 0: (Z) & ~Rd
+	ESIL_A ("DUP,r%d,=,", d);			// Rd = [0]
+	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 1);	// Store in RAM
 }
 
 INST_HANDLER (las) {	// LAS Z, Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
-	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
-	ESIL_A ("r%d,|,", d);			// 0: (Z) | Rd
-	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
-	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,|,", d);				// 0: (Z) | Rd
+	ESIL_A ("DUP,r%d,=,", d);			// Rd = [0]
+	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 1);	// Store in RAM
 }
 
 INST_HANDLER (lat) {	// LAT Z, Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
-	__generic_ld_st (op, 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
-	ESIL_A ("r%d,^,", d);			// 0: (Z) ^ Rd
-	ESIL_A ("DUP,r%d,=,", d);		// Rd = [0]
-	__generic_ld_st (op, 'z', 1, 0, 0, 1);	// Store in RAM
+	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	ESIL_A ("r%d,^,", d);				// 0: (Z) ^ Rd
+	ESIL_A ("DUP,r%d,=,", d);			// Rd = [0]
+	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 1);	// Store in RAM
 }
 
 INST_HANDLER (ld) {	// LD Rd, X
@@ -661,7 +668,7 @@ INST_HANDLER (ld) {	// LD Rd, X
 			// LD Rd, -X
 	// read memory
 	__generic_ld_st (
-		op,
+		op, "sram",
 		'x',				// use index register X
 		0,				// no use RAMP* registers
 		(buf[0] & 0xf) == 0xe
@@ -696,7 +703,7 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 			| (buf[0] & 0x7);
 	// read memory
 	__generic_ld_st (
-		op,
+		op, "sram",
 		buf[0] & 0x8 ? 'y' : 'z',	// index register Y/Z
 		0,				// no use RAMP* registers
 		!(buf[1] & 0x1)
@@ -729,7 +736,50 @@ INST_HANDLER (ldi) {	// LDI Rd, K
 	ESIL_A ("0x%x,r%d,=,", k, d);
 }
 
-INST_HANDLER (movw) {	// // MOVW Rd+1:Rd, Rr+1Rrd
+INST_HANDLER (lds) {	// LDS Rd, k
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
+	int k = (buf[3] << 8) | buf[2];
+
+	// load value from RAMPD:k
+	__generic_ld_st (op, "sram", 0, 1, 0, k, 0);
+	ESIL_A ("r%d,=,", d);
+}
+
+INST_HANDLER (lds16) {	// LDS Rd, k
+	int d = ((buf[0] >> 4) & 0xf) + 16;
+	int k = (buf[0] & 0x0f)
+		| ((buf[1] << 3) & 0x30)
+		| ((buf[1] << 4) & 0x40)
+		| (~(buf[1] << 4) & 0x80);
+
+	// load value from @k
+	__generic_ld_st (op, "sram", 0, 0, 0, k, 0);
+	ESIL_A ("r%d,=,", d);
+}
+
+INST_HANDLER (lpm) {	// LPM
+			// LPM Rd, Z
+			// LPM Rd, Z+
+	ut16 ins = ((ut16) (buf[1] << 8) | buf[0]);
+	// read program memory
+	__generic_ld_st (
+		op, "prog",
+		'z',				// index register Y/Z
+		1,				// use RAMP* registers
+		ins & 0xfe0f == 0x9005
+			? 1			// post incremented
+			: 0,			// no increment
+		0,				// not offset
+		0);				// load operation (!st)
+	// load register
+	ESIL_A ("r%d,=,",
+		ins == 0x95c8
+			? 0			// LPM (r0)
+			: ((buf[0] >> 4) & 0xf)	// LPM Rd
+				| ((buf[1] & 0x1) << 4));
+}
+
+INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1Rrd
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
 	ESIL_A ("r%d,r%d,=,r%d,r%d,=,", r, d, r + 1, d + 1);
@@ -892,7 +942,7 @@ INST_HANDLER (st) {	// ST X, Rr
 	ESIL_A ("r%d,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// write in memory
 	__generic_ld_st (
-		op,
+		op, "sram",
 		'x',				// use index register X
 		0,				// no use RAMP* registers
 		(buf[0] & 0xf) == 0xe
@@ -922,7 +972,7 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 	ESIL_A ("r%d,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// write in memory
 	__generic_ld_st (
-		op,
+		op, "sram",
 		buf[0] & 0x8 ? 'y' : 'z',	// index register Y/Z
 		0,				// no use RAMP* registers
 		!(buf[1] & 0x1)
@@ -958,6 +1008,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (eijmp,  0xffff, 0x9419, 0,      2,   UJMP   ), // EIJMP
 	INST_DECL (icall,  0xffff, 0x9509, 0,      2,   UCALL  ), // ICALL
 	INST_DECL (ijmp,   0xffff, 0x9409, 0,      2,   UJMP   ), // IJMP
+	INST_DECL (lpm,    0xffff, 0x95c8, 3,      2,   LOAD   ), // LPM
 	INST_DECL (nop,    0xffff, 0x0000, 1,      2,   NOP    ), // NOP
 	INST_DECL (ret,    0xffff, 0x9508, 4,      2,   RET    ), // RET
 	INST_DECL (reti,   0xffff, 0x9518, 4,      2,   RET    ), // RETI
@@ -981,10 +1032,13 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ld,     0xfe0f, 0x900c, 0,      2,   LOAD   ), // LD Rd, X
 	INST_DECL (ld,     0xfe0f, 0x900d, 0,      2,   LOAD   ), // LD Rd, X+
 	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
+	INST_DECL (lds,    0xfe0f, 0x9000, 0,      4,   LOAD   ), // LDS Rd, k
 	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
 	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
 	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
 	INST_DECL (elpm,   0xfe0f, 0x9007, 0,      2,   LOAD   ), // ELPM Rd, Z+
+	INST_DECL (lpm,    0xfe0f, 0x9004, 3,      2,   LOAD   ), // LPM Rd, Z
+	INST_DECL (lpm,    0xfe0f, 0x9005, 3,      2,   LOAD   ), // LPM Rd, Z+
 	INST_DECL (pop,    0xfe0f, 0x900f, 2,      2,   POP    ), // PUSH Rr
 	INST_DECL (push,   0xfe0f, 0x920f, 0,      2,   PUSH   ), // PUSH Rr
 	INST_DECL (st,     0xfe0f, 0x920c, 2,      2,   STORE  ), // ST X, Rr
@@ -1010,6 +1064,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (eor,    0xfc00, 0x2400, 1,      2,   XOR    ), // EOR Rd, Rr
 	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
+	INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
 	INST_DECL (out,    0xf800, 0xb800, 1,      2,   IO     ), // OUT A, Rr
 	INST_DECL (cpi,    0xf000, 0x3000, 1,      2,   CMP    ), // CPI Rd, K
 	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
@@ -1017,6 +1072,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ldi,    0xf000, 0xe000, 1,      2,   LOAD   ), // LDI Rd, K
 	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
 	INST_DECL (std,    0xd200, 0x8200, 0,      2,   STORE  ), // LD Y/Z+q, Rr
+
 	INST_LAST
 };
 
