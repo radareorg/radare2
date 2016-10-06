@@ -272,6 +272,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil,
 			"%s,%s,*,%s,+,%s,=",REG64(2),REG64(1),REG64(3), REG64(0));
 		break;
+	case ARM64_INS_DMB:
+	case ARM64_INS_DSB:
+	case ARM64_INS_ISB:
+		op->type = R_ANAL_OP_TYPE_SYNC;
+		break;
 	case ARM64_INS_ADD:
 		op->cycles = 1;
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -1332,8 +1337,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->ptr = -MEMDISP(1);
 		}
 		break;
-	case ARM_INS_BL:
 	case ARM_INS_BLX:
+		op->type = R_ANAL_OP_TYPE_RCALL;
+		break;
+	case ARM_INS_BL:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = IMM(0) & UT32_MAX;
 		op->fail = addr + op->size;

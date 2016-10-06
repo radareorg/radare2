@@ -2280,7 +2280,7 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 		return;
 	}
 	if (core->vmode) {
-		switch (ds->analop.type & R_ANAL_OP_TYPE_MASK) {
+		switch (ds->analop.type) { //  & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_LEA:
 			if (ds->show_leahints) {
 				ds_align_comment(ds);
@@ -2297,10 +2297,9 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 				if (ds->show_color) r_cons_strcat (Color_RESET);
 			}
 			break;
-		case R_ANAL_OP_TYPE_ICALL:
-		// case R_ANAL_OP_TYPE_UCALL:
-		// case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
-		// case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
+		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
 			ds_align_comment (ds);
 			if (ds->show_color) {
 				r_cons_strcat (ds->pal_comment);
@@ -2315,6 +2314,8 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 			if (ds->show_color) {
 				r_cons_strcat (Color_RESET);
 			}
+			break;
+		case R_ANAL_OP_TYPE_RCALL:
 			break;
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
