@@ -225,7 +225,7 @@ static int cmd_help(void *data, const char *input) {
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
-			asnum  = r_num_as_string (NULL, n);
+			asnum  = r_num_as_string (NULL, n, false);
 
 			/* decimal, hexa, octal */
 			s = n>>16<<12;

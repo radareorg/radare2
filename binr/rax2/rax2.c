@@ -366,7 +366,7 @@ static int rax (char *str, int len, int last) {
 			return false;
 		}
 		n32 = (ut32)(n & UT32_MAX);
-		asnum  = r_num_as_string (NULL, n);
+		asnum  = r_num_as_string (NULL, n, false);
 		memcpy (&f, &n32, sizeof (f));
 		memcpy (&d, &n, sizeof (d));
 

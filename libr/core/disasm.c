@@ -3148,7 +3148,7 @@ static void handle_print_refptr_meta_infos(RCore *core, RDisasmState *ds, ut64 w
 #endif
 
 static void ds_print_as_string(RDisasmState *ds) {
-	char *str = r_num_as_string (NULL, ds->analop.ptr);
+	char *str = r_num_as_string (NULL, ds->analop.ptr, true);
 	if (str) {
 		ds_align_comment (ds);
 		r_cons_printf (" %s; \"%s\"%s", COLOR (ds, pal_comment),

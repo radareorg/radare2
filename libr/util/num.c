@@ -6,7 +6,6 @@
 
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
-#define R_NUM_AS_STRING_ESCAPES 1
 
 R_API void r_num_irand() {
 	srand (r_sys_now ());
@@ -410,9 +409,27 @@ R_API ut64 r_num_get_input_value(RNum *num, const char *input_value) {
 }
 
 #define NIBBLE_TO_HEX(n) (((n) & 0xf) > 9 ? 'a' + ((n) & 0xf) - 10 : '0' + ((n) & 0xf))
-R_API char* r_num_as_string(RNum *___, ut64 n) {
+static int escape_char(char* dst, char byte) {
+	const char escape_map[] = "abtnvfr";
+	if (byte >= 7 && byte <= 13) {
+		*(dst++) = '\\';
+		*(dst++) = escape_map [byte - 7];
+		*dst = 0;
+		return 2;
+	} else if (byte) {
+		*(dst++) = '\\';
+		*(dst++) = 'x';
+		*(dst++) = NIBBLE_TO_HEX (byte >> 4);
+		*(dst++) = NIBBLE_TO_HEX (byte);
+		*dst = 0;
+		return 4;
+	}
+	return 0;
+}
+
+R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	char str[34]; // 8 byte * 4 chars in \x?? format
-	int stri, ret = 0;
+	int stri, ret = 0, off = 0;
 	int len = sizeof (ut64);
 	ut64 num = n;
 	str[stri=0] = 0;
@@ -421,42 +438,8 @@ R_API char* r_num_as_string(RNum *___, ut64 n) {
 		if (ch>=32 && ch <127) {
 			str[stri++] = ch;
 			str[stri] = 0;
-#ifdef R_NUM_AS_STRING_ESCAPES
-		} else if (ch == 7) {
-			str[stri++] = '\\';
-			str[stri++] = 'a';
-			str[stri] = 0;
-		} else if (ch == 8) {
-			str[stri++] = '\\';
-			str[stri++] = 'b';
-			str[stri] = 0;
-		} else if (ch == 9) {
-			str[stri++] = '\\';
-			str[stri++] = 't';
-			str[stri] = 0;
-		} else if (ch == 10) {
-			str[stri++] = '\\';
-			str[stri++] = 'n';
-			str[stri] = 0;
-		} else if (ch == 11) {
-			str[stri++] = '\\';
-			str[stri++] = 'v';
-			str[stri] = 0;
-		} else if (ch == 12) {
-			str[stri++] = '\\';
-			str[stri++] = 'f';
-			str[stri] = 0;
-		} else if (ch == 13) {
-			str[stri++] = '\\';
-			str[stri++] = 'r';
-			str[stri] = 0;
-		} else if (ch) {
-			str[stri++] = '\\';
-			str[stri++] = 'x';
-			str[stri++] = NIBBLE_TO_HEX (ch >> 4);
-			str[stri++] = NIBBLE_TO_HEX (ch);
-			str[stri] = 0;
-#endif
+		} else if(!printable_only && (off = escape_char (str + stri, ch)) != 0) {
+			stri += off;
 		} else {
 			if (ch)
 				return NULL;
@@ -466,6 +449,8 @@ R_API char* r_num_as_string(RNum *___, ut64 n) {
 	}
 	if (ret)
 		return strdup (str);
+	else if (!printable_only)
+		return strdup ("\\0");
 	return NULL;
 }
 
