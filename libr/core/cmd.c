@@ -1622,9 +1622,12 @@ next2:
 	/* temporary seek commands */
 	if (*cmd!='(' && *cmd!='"') {
 		ptr = strchr (cmd, '@');
-		if (ptr == cmd + 1 && *cmd=='?')
+		if (ptr == cmd + 1 && *cmd=='?') {
 			ptr = NULL;
-	} else ptr = NULL;
+		}
+	} else {
+		ptr = NULL;
+	}
 	core->tmpseek = ptr? true: false;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr+1, '!');
@@ -1684,6 +1687,10 @@ repeat_arroba:
 				tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 				r_config_set_i (core->config, "asm.bits",
 					r_num_math (core->num, ptr+2));
+				break;
+			case 'i': // "@i:"
+				r_core_cmdf (core, "so %s", ptr + 2);
+                                // tmpseek = true;
 				break;
 			case 'e': // "@e:"
 				tmpeval = parse_tmp_evals (core, ptr+2);
@@ -1770,8 +1777,9 @@ ignore:
                         }
                 } else {
 			char ch = *offstr;
-			if (ch=='-' || ch=='+')
-				addr = core->offset+addr;
+			if (ch=='-' || ch=='+') {
+				addr = core->offset + addr;
+			}
 		}
 next_arroba:
 		if (arroba) {

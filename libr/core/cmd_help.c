@@ -357,6 +357,7 @@ static int cmd_help(void *data, const char *input) {
 			"@b:", "bits", "temporary set asm.bits",
 			"@e:", "k=v,k=v", "temporary change eval vars",
 			"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
+			"@i:", "nth.op", "temporary seek to the Nth relative instruction",
 			"@f:", "file", "temporary replace block with file contents",
 			"@o:", "fd", "temporary switch to another fd",
 			"@s:", "string", "same as above but from a string",
