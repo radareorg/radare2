@@ -9,14 +9,46 @@
 
 #define R_CORE_MAX_DISASM (1024*1024*8)
 
+static void cmd_pCd(RCore *core, const char *input) {
+#define C(x) r_cons_canvas_##x
+	int h, w = r_cons_get_size (&h);
+	int colwidth = r_config_get_i (core->config, "hex.cols") * 2.5;
+	int i, columns = w / colwidth;
+	int rows = h - 2;
+	int obsz = core->blocksize;
+	int user_rows = r_num_math (core->num, input);
+	if (user_rows > 0) {
+		rows = user_rows + 1;
+	}
+	r_cons_push ();
+	RConsCanvas *c = r_cons_canvas_new (w, rows);
+	ut64 osek = core->offset;
+	c->color = r_config_get_i (core->config, "scr.color");
+	r_core_block_size (core, rows * 32);
+	for (i = 0; i < columns; i++) {
+		C(gotoxy)(c, i * (w / columns), 0);
+		char *cmd = r_str_newf ("pid %d @i:%d", rows, rows * i);
+		char *dis = r_core_cmd_str (core, cmd);
+		C(write)(c, dis);
+		free (cmd);
+		free (dis);
+	}
+	r_core_block_size (core, obsz);
+	r_core_seek (core, osek, 1);
+
+	r_cons_pop ();
+	C(print)(c);
+	C(free)(c);
+}
+
 static char get_string_type (const ut8 *buf, ut64 len){
 	ut64 needle = 0;
 	int rc, i;
 	char str_type = 0;
 
-	if (!buf)
+	if (!buf) {
 		return '?';
-
+	}
 	while (needle < len){
 		rc = r_utf8_decode (buf+needle, len-needle, NULL);
 		if (!rc) {
@@ -998,6 +1030,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int decode = r_config_get_i (core->config, "asm.decode");
 	int filter = r_config_get_i (core->config, "asm.filter");
 	int show_color = r_config_get_i (core->config, "scr.color");
+	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
 	int i=0, j, ret, err = 0;
@@ -1007,7 +1040,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	const char *color_reg = PAL(reg): Color_YELLOW;
 	const char *color_num = PAL(num): Color_CYAN;
 
-	if (fmt=='e') {
+	if (fmt == 'e') {
 		show_bytes = 0;
 		decode = 1;
 	}
@@ -1045,7 +1078,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+	if (core->anal && core->anal->cur && core->anal->cur->reset_counter) {
 		core->anal->cur->reset_counter (core->anal, core->offset);
 	}
 
@@ -1067,14 +1100,14 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			break;
 		}
 		r_asm_set_pc (core->assembler, core->offset+i);
-		ret = r_asm_disassemble (core->assembler, &asmop, core->block+i,
-			core->blocksize-i);
+		ret = r_asm_disassemble (core->assembler, &asmop, core->block + i,
+			core->blocksize - i);
 		if (flags) {
 			if (fmt != 'e') { // pie
-				item = r_flag_get_i (core->flags, core->offset+i);
+				item = r_flag_get_i (core->flags, core->offset + i);
 				if (item) {
 					if (show_offset)
-						r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+						r_cons_printf ("0x%08"PFMT64x"  ", core->offset + i);
 					r_cons_printf ("  %s:\n", item->name);
 				}
 			} // do not show flags in pie
@@ -1085,7 +1118,7 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			r_print_offset (core->print, at, 0, show_offseg, 0, NULL);
 		}
 		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-		if (ret<1) {
+		if (ret < 1) {
 			err = 1;
 			ret = asmop.size;
 			if (ret<1) ret = 1;
@@ -1117,6 +1150,9 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			} else {
 				if (filter) {
 					char opstr[128] = {0};
+					if (asm_ucase) {
+						r_str_case (asmop.buf_asm, 1);
+					}
 					if (show_color) {
 						RAnalOp aop = {0};
 						char *asm_str = r_print_colorize_opcode (asmop.buf_asm, color_reg, color_num);
@@ -3202,6 +3238,18 @@ static int cmd_print(void *data, const char *input) {
 			r_print_code (core->print, core->offset, core->block, len, input[1]);
 		}
 		break;
+	case 'C':
+		switch (input[1]) {
+		case 0:
+		case ' ':
+		case 'd':
+			cmd_pCd (core, input + 2);
+			break;
+		default:
+			eprintf ("Usage: pCd\n");
+			break;
+		}
+		break;
 	case 'r': // "pr"
 		switch (input[1]) {
 		case '?':
@@ -3933,6 +3981,7 @@ static int cmd_print(void *data, const char *input) {
 			 "p","[b|B|xb] [len] ([skip])", "bindump N bits skipping M",
 			 "p","[bB] [len]","bitstream of N bytes",
 			 "pc","[p] [len]","output C (or python) format",
+			 "pC","[d] [rows]","print disassembly in columns (see hex.cols and pdi)",
 			 "p","[dD][?] [sz] [a] [b]","disassemble N opcodes/bytes for Arch/Bits (see pd?)",
 			 "pf","[?|.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>)",
 			 "ph","[?=|hash] ([len])","calculate hash for a block",

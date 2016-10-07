@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_core.h>
-
 #include <string.h>
 
 #define NPF 7
@@ -15,7 +14,7 @@ static void visual_refresh(RCore *core);
 static const char *printfmt[] = {
 	"x", "pd $r",
 	debugfmt_default,
-	"pxw", "pc", "pxA", "pxa"
+	"pCd $r-1", "pxw", "pc", "pxA", "pxa"
 };
 
 #undef USE_THREADS

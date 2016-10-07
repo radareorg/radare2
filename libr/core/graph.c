@@ -2720,7 +2720,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_core_seek (core, off, 0);
 			if ((key == 'x' && !r_core_visual_xrefs_x (core)) ||
 				(key == 'X' && !r_core_visual_xrefs_X (core))) {
-				r_core_seek(core, old_off, 0);
+				r_core_seek (core, old_off, 0);
 			}
 			break;
 		}
