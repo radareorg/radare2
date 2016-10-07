@@ -11,7 +11,17 @@
 #define SLOW_IO 0
 #define HASNEXT_FOREVER 1
 
-#define in_function(fn,y) ((y) >= (fn)->addr && (y) < ((fn)->addr + r_anal_fcn_size (fn)))
+static int in_function(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	struct r_anal_bb_t *bbi;
+	r_list_foreach (fcn->bbs, iter, bbi) {
+		if (addr >= bbi->addr && addr < bbi->addr + bbi->size)
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
 #define HINTCMD_ADDR(hint,x,y) if(hint->x) \
 	r_cons_printf (y" @ 0x%"PFMT64x"\n", hint->x, hint->addr)
