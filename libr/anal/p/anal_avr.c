@@ -172,6 +172,7 @@ INST_HANDLER (adc) {	// ADC Rd, Rr
 }
 
 INST_HANDLER (add) {	// ADD Rd, Rr
+			// LSL Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,r%d,+,", r, d);				// Rd + Rr
@@ -779,7 +780,24 @@ INST_HANDLER (lpm) {	// LPM
 				| ((buf[1] & 0x1) << 4));
 }
 
-INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1Rrd
+INST_HANDLER (lsr) {	// LSR Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
+	ESIL_A ("1,r%d,>>,", d);				// 0: R=(Rd >> 1)
+	ESIL_A ("r%d,0x1,&,!,!,cf,=,", d);			// C = Rd0
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("0,nf,=,");					// N
+	ESIL_A ("nf,cf,^,vf,=,");				// V
+	ESIL_A ("nf,vf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = R
+}
+
+INST_HANDLER (mov) {	// MOV Rd, Rr
+	int d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
+	int r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
+	ESIL_A ("r%d,r%d,=,", r, d);
+}
+
+INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1:Rr
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
 	ESIL_A ("r%d,r%d,=,r%d,r%d,=,", r, d, r + 1, d + 1);
@@ -1021,10 +1039,12 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
 	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
-	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1Rrd
+	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1:Rr
 	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   AND    ), // ASR Rd
 	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (dec,    0xfe0f, 0x940a, 1,      2,   SUB    ), // DEC Rd
+	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
+	INST_DECL (elpm,   0xfe0f, 0x9007, 0,      2,   LOAD   ), // ELPM Rd, Z+
 	INST_DECL (inc,    0xfe0f, 0x9403, 1,      2,   ADD    ), // INC Rd
 	INST_DECL (lac,    0xfe0f, 0x9206, 2,      2,   LOAD   ), // LAC Z, Rd
 	INST_DECL (las,    0xfe0f, 0x9205, 2,      2,   LOAD   ), // LAS Z, Rd
@@ -1033,25 +1053,24 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ld,     0xfe0f, 0x900d, 0,      2,   LOAD   ), // LD Rd, X+
 	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
 	INST_DECL (lds,    0xfe0f, 0x9000, 0,      4,   LOAD   ), // LDS Rd, k
-	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
-	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
-	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
-	INST_DECL (elpm,   0xfe0f, 0x9007, 0,      2,   LOAD   ), // ELPM Rd, Z+
 	INST_DECL (lpm,    0xfe0f, 0x9004, 3,      2,   LOAD   ), // LPM Rd, Z
 	INST_DECL (lpm,    0xfe0f, 0x9005, 3,      2,   LOAD   ), // LPM Rd, Z+
+	INST_DECL (lsr,    0xfe0f, 0x9406, 1,      2,   AND    ), // LSR Rd
 	INST_DECL (pop,    0xfe0f, 0x900f, 2,      2,   POP    ), // PUSH Rr
 	INST_DECL (push,   0xfe0f, 0x920f, 0,      2,   PUSH   ), // PUSH Rr
 	INST_DECL (st,     0xfe0f, 0x920c, 2,      2,   STORE  ), // ST X, Rr
 	INST_DECL (st,     0xfe0f, 0x920d, 0,      2,   STORE  ), // ST X+, Rr
 	INST_DECL (st,     0xfe0f, 0x920e, 0,      2,   STORE  ), // ST -X, Rr
-	INST_DECL (std,    0xfe07, 0x9201, 0,      2,   STORE  ), // LD Y/Z+, Rr
-	INST_DECL (std,    0xfe07, 0x9202, 0,      2,   STORE  ), // LD -Y/Z, Rr
 	INST_DECL (call,   0xfe0e, 0x940e, 0,      4,   CALL   ), // CALL k
 	INST_DECL (jmp,    0xfe0e, 0x940c, 2,      4,   JMP    ), // JMP k
 	INST_DECL (bld,    0xfe08, 0xf800, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (bst,    0xfe08, 0xfa00, 1,      2,   SWI    ), // BST Rd, b
 	INST_DECL (sbrx,   0xfe08, 0xfc00, 2,      2,   CJMP   ), // SBRC Rr, b
 	INST_DECL (sbrx,   0xfe08, 0xfe00, 2,      2,   CJMP   ), // SBRS Rr, b
+	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
+	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
+	INST_DECL (std,    0xfe07, 0x9201, 0,      2,   STORE  ), // LD Y/Z+, Rr
+	INST_DECL (std,    0xfe07, 0x9202, 0,      2,   STORE  ), // LD -Y/Z, Rr
 	INST_DECL (brbx,   0xfc00, 0xf400, 0,      2,   CJMP   ), // BRBC s, k
 	INST_DECL (brbx,   0xfc00, 0xf000, 0,      2,   CJMP   ), // BRBS s, k
 	INST_DECL (adc,    0xfc00, 0x1c00, 1,      2,   ADD    ), // ADC Rd, Rr
@@ -1060,7 +1079,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (cpc,    0xfc00, 0x0400, 1,      2,   CMP    ), // CPC Rd, Rr
 	INST_DECL (cpse,   0xfc00, 0x1000, 0,      2,   CJMP   ), // CPSE Rd, Rr
 	INST_DECL (and,    0xfc00, 0x2000, 1,      2,   AND    ), // AND Rd, Rr
-	INST_DECL (andi,   0xf000, 0x7000, 1,      2,   AND    ), // ANDI Rd, K
+	INST_DECL (mov,    0xfc00, 0x2c00, 1,      2,   MOV    ), // MOV Rd, Rr
 	INST_DECL (eor,    0xfc00, 0x2400, 1,      2,   XOR    ), // EOR Rd, Rr
 	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
@@ -1068,6 +1087,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (out,    0xf800, 0xb800, 1,      2,   IO     ), // OUT A, Rr
 	INST_DECL (cpi,    0xf000, 0x3000, 1,      2,   CMP    ), // CPI Rd, K
 	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
+	INST_DECL (andi,   0xf000, 0x7000, 1,      2,   AND    ), // ANDI Rd, K
 	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
 	INST_DECL (ldi,    0xf000, 0xe000, 1,      2,   LOAD   ), // LDI Rd, K
 	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
