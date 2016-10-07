@@ -374,8 +374,7 @@ case "$1" in
 	if [ -n "$2" ]; then
 		if [ -d "${R2PM_GITDIR}/$2" ]; then
 			echo "Cleaning up ${R2PM_GITDIR}..."
-			rm -rf "${R2PM_GITDIR}"
-			mkdir -p "${R2PM_GITDIR}"
+			rm -rf "${R2PM_GITDIR}/$2"
 		else
 			echo "Cannot find $2 in ${R2PM_GITDIR}"
 			exit 1
