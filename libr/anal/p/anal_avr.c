@@ -840,6 +840,18 @@ INST_HANDLER (mulsu) {	// MULSU Rd, Rr
 	ESIL_A ("DUP,!,zf,=,");				// Z = !R
 }
 
+INST_HANDLER (neg) {	// NEG Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
+	ESIL_A ("r%d,0x00,-,0xff,&,", d);			// 0: (0-Rd)
+	ESIL_A ("DUP,r%d,0xff,^,|,0x08,&,!,!,hf,=,", d);	// H
+	ESIL_A ("DUP,0x80,-,!,vf,=,", d);			// V
+	ESIL_A ("DUP,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("DUP,!,zf,=,");					// Z
+	ESIL_A ("DUP,!,!,cf,=,");				// C
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = result
+}
+
 INST_HANDLER (nop) {	// NOP
 	ESIL_A (",,");
 }
@@ -1079,7 +1091,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
 	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1:Rr
 	INST_DECL (muls,   0xff00, 0x0200, 2,      2,   AND    ), // MUL Rd, Rr
-	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   AND    ), // ASR Rd
+	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   SAR    ), // ASR Rd
 	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (dec,    0xfe0f, 0x940a, 1,      2,   SUB    ), // DEC Rd
 	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
@@ -1094,7 +1106,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (lds,    0xfe0f, 0x9000, 0,      4,   LOAD   ), // LDS Rd, k
 	INST_DECL (lpm,    0xfe0f, 0x9004, 3,      2,   LOAD   ), // LPM Rd, Z
 	INST_DECL (lpm,    0xfe0f, 0x9005, 3,      2,   LOAD   ), // LPM Rd, Z+
-	INST_DECL (lsr,    0xfe0f, 0x9406, 1,      2,   AND    ), // LSR Rd
+	INST_DECL (lsr,    0xfe0f, 0x9406, 1,      2,   SHR    ), // LSR Rd
+	INST_DECL (neg,    0xfe0f, 0x9401, 2,      2,   SUB    ), // NEG Rd
 	INST_DECL (pop,    0xfe0f, 0x900f, 2,      2,   POP    ), // PUSH Rr
 	INST_DECL (push,   0xfe0f, 0x920f, 0,      2,   PUSH   ), // PUSH Rr
 	INST_DECL (st,     0xfe0f, 0x920c, 2,      2,   STORE  ), // ST X, Rr
