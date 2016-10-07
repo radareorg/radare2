@@ -803,6 +803,43 @@ INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1:Rr
 	ESIL_A ("r%d,r%d,=,r%d,r%d,=,", r, d, r + 1, d + 1);
 }
 
+INST_HANDLER (mul) {	// MUL Rd, Rr
+	int d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
+	int r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
+
+	ESIL_A ("r%d,r%d,*,", r, d);			// 0: (Rd*Rr)<<1
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/15
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (muls) {	// MULS Rd, Rr
+	int d = (buf[0] >> 4 & 0x0f) + 16;
+	int r = (buf[0] & 0x0f) + 16;
+
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", r);	// sign extension Rr
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("*,");					// 0: (Rd*Rr)
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/15
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (mulsu) {	// MULSU Rd, Rr
+	int d = (buf[0] >> 4 & 0x07) + 16;
+	int r = (buf[0] & 0x07) + 16;
+
+	ESIL_A ("r%s,", r);				// unsigned Rr
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("*,");					// 0: (Rd*Rr)
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/15
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
 INST_HANDLER (nop) {	// NOP
 	ESIL_A (",,");
 }
@@ -1036,10 +1073,12 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (fmul,   0xff88, 0x0308, 2,      2,   MUL    ), // FMUL Rd, Rr
 	INST_DECL (fmuls,  0xff88, 0x0380, 2,      2,   MUL    ), // FMULS Rd, Rr
 	INST_DECL (fmulsu, 0xff88, 0x0388, 2,      2,   MUL    ), // FMULSU Rd, Rr
+	INST_DECL (mulsu,  0xff88, 0x0300, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
 	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
 	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1:Rr
+	INST_DECL (muls,   0xff00, 0x0200, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   AND    ), // ASR Rd
 	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (dec,    0xfe0f, 0x940a, 1,      2,   SUB    ), // DEC Rd
@@ -1080,6 +1119,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (cpse,   0xfc00, 0x1000, 0,      2,   CJMP   ), // CPSE Rd, Rr
 	INST_DECL (and,    0xfc00, 0x2000, 1,      2,   AND    ), // AND Rd, Rr
 	INST_DECL (mov,    0xfc00, 0x2c00, 1,      2,   MOV    ), // MOV Rd, Rr
+	INST_DECL (mul,    0xfc00, 0x9c00, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (eor,    0xfc00, 0x2400, 1,      2,   XOR    ), // EOR Rd, Rr
 	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
