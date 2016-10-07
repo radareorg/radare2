@@ -142,7 +142,7 @@ fclex=clear exceptions
 fcmovbe=fp conditional move - below or equal (cf=1 or zf=1)
 fcmovb=fp conditional move - below (cf=1)
 fcmove=fp conditional move - equal (zf=1)
-fcmovnbe=fp conditional move - below or equal (cf=0 and zf=0)
+fcmovnbe=fp conditional move - not below or equal (cf=0 and zf=0)
 fcmovnb=fp conditional move - not below (cf=0)
 fcmovne=fp conditional move - not equal (zf=0)
 fcmovnu=fp conditional move - not unordered (pf=0)
@@ -161,6 +161,7 @@ fdivr=floating point divide reversed
 fdivrp=floating point reverse divide and pop
 feni=enable npx (numeric coprocessor extension) interrupt
 ffree=free floating-point register
+ffreep=free floating-point register and pop (undocumented)
 fiadd=integer add
 ficom=integer compare
 ficomp=integer compare and pop
@@ -213,6 +214,7 @@ fsqrt=square root
 fstcw=store x87 fpu control word
 fstenv=store x87 fpu environment
 fstp=store floating point value and pop
+fstpnce=store floating point value and pop (undocumented)
 fst=store floating point value
 fstsw=store x87 fpu status word
 fsub=floating point subtract
@@ -247,6 +249,8 @@ imul=signed multiply
 inc=increment by 1
 in=input from port
 insb=input from port to string
+insd=input from port to string
+insw=input from port to string
 ins=input from port to string
 int1=call to interrupt procedure
 int3=int 3, software breakpoint
@@ -279,7 +283,7 @@ jnae=jump short if not above nor equal/below (cf=1)
 jnb=jump short if not below/above or equal/not carry (cf=0)
 jnbe=jump short if not below or equal/above (cf=0 and zf=0)
 jnc=jump short if not carry (cf=0)
-jne=jump short if not equal (zf=0)
+jne=jump short if not equal/not zero (zf=0)
 jng=jump short if not greater/less or equal (zf=1 or sf!=of)
 jnge=jump short if not greater/less (sf!=of)
 jnl=jump short if not less/greater or equal (sf=of)
@@ -371,6 +375,7 @@ movsldup=move packed single-fp low and duplicate
 movs=move data from string to string
 movss=move scalar single-fp values
 movsw=ES:[edi] = (word)DS:[esi] (esi+=2, edi+=2)
+movsq=ES:[rdi] = (qword)DS:[rsi] (rsi+=8, rdi+=8)
 movsxd=move with sign-extension
 movsx=move with sign-extension
 movupd=move unaligned packed double-fp values
@@ -443,6 +448,7 @@ phsubw=packed horizontal subtract
 pinsrb=insert a byte value from a register or memory into an XMM register
 pinsrd=insert a dword value from a register or memory into an XMM register
 pinsrq=insert a qword value from a register or memory into an XMM register
+pinsrw=insert a word value from a register or memory into an XMM register
 pmaddubsw=multiply and add packed signed and unsigned bytes
 pmaddwd=multiply and add packed integers
 pmaxsb=maximum of packed signed byte integers
@@ -489,6 +495,7 @@ prefetchnta=prefetch data into caches
 prefetcht0=prefetch data into caches
 prefetcht1=prefetch data into caches
 prefetcht2=prefetch data into caches
+prefetchw=prefetch data into caches
 psadbw=compute sum of absolute differences
 pshufb=packed shuffle bytes
 pshufd=shuffle packed doublewords
@@ -538,6 +545,7 @@ rcpss=compute reciprocal of scalar single-fp values
 rcr=rotate bits right (with CF)
 rdmsr=read from model specific register
 rdpmc=read performance-monitoring counters
+rdrand=read random number
 rdtscp=read time-stamp counter and processor id
 rdtsc=read time-stamp counter
 repe=repeat string
@@ -579,9 +587,9 @@ sal=arithmetic left shift
 salc=set al if carry
 sar=arithmetic right shift
 sbb=integer subtraction with borrow
-scacd=cmp eax, ES:[edi+=2]
 scasb=cmp al, ES:[edi++]
-scasq=cmp rax, ES:[rdi+=2]
+scasd=cmp eax, ES:[edi+=4]
+scasq=cmp rax, ES:[rdi+=8]
 scas=scan string
 scasw=cmp ax, ES:[edi+=2]
 seta=set byte on condition - above/not below nor equal (cf=0 and zf=0)
@@ -634,8 +642,10 @@ stc=set carry flag
 std=set direction flag
 sti=set interrupt flag
 stmxcsr=store mxcsr register state
-stosb=store string
+stosb=store string byte
+stosd=store string dword
 stosq=store string quadword (added with x86_64)
+stosw=store string word
 stos=store string
 str=store task register
 subpd=subtract packed double-fp values
