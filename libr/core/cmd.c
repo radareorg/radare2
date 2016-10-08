@@ -1689,7 +1689,12 @@ repeat_arroba:
 					r_num_math (core->num, ptr+2));
 				break;
 			case 'i': // "@i:"
-				r_core_cmdf (core, "so %s", ptr + 2);
+				{
+					ut64 addr = r_num_math (core->num, ptr + 2);
+					if (addr) {
+						r_core_cmdf (core, "so %s", ptr + 2);
+					}
+				}
                                 // tmpseek = true;
 				break;
 			case 'e': // "@e:"
