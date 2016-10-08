@@ -11,12 +11,11 @@
 #define SLOW_IO 0
 #define HASNEXT_FOREVER 1
 
-static int in_function(RAnalFunction *fcn, ut64 addr) {
+static bool in_function(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
-	struct r_anal_bb_t *bbi;
+	RAnalBlock *bbi;
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (addr >= bbi->addr && addr < bbi->addr + bbi->size)
-		{
+		if (addr >= bbi->addr && addr < bbi->addr + bbi->size) {
 			return true;
 		}
 	}
