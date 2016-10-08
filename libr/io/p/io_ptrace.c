@@ -286,16 +286,18 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		open_pidmem (iop);
 	} else
 	if (!strncmp (cmd, "pid", 3)) {
-		int pid = iop->pid;
-		if (cmd[3] == ' ') {
-			pid = atoi (cmd+4);
-			if (pid > 0 && pid != iop->pid) {
-				(void)ptrace (PTRACE_ATTACH, pid, 0, 0);
-				// TODO: do not set pid if attach fails?
-				iop->pid = iop->tid = pid;
+		if (iop) {
+			int pid = iop->pid;
+			if (cmd[3] == ' ') {
+				pid = atoi (cmd+4);
+				if (pid > 0 && pid != iop->pid) {
+					(void)ptrace (PTRACE_ATTACH, pid, 0, 0);
+					// TODO: do not set pid if attach fails?
+					iop->pid = iop->tid = pid;
+				}
+			} else {
+				io->cb_printf ("%d\n", iop->pid);
 			}
-		} else {
-			io->cb_printf ("%d\n", iop->pid);
 		}
 		return pid;
 	} else eprintf ("Try: '=!pid'\n");

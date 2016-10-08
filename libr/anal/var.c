@@ -561,8 +561,8 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 					}
 					if (!vt.name || !vt.type) {
 						//This should be properly fixed
-						eprintf ("Warning null var in fcn.0x%"PFMT64x".%c.%s at %s-%d\n",
-								fcn->addr, kind, word, __FILE__, __LINE__);
+						eprintf ("Warning null var in fcn.0x%"PFMT64x".%c.%s\n",
+								fcn->addr, kind, word);
 						free (av);
 						continue;
 					}

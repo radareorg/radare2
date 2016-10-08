@@ -1511,10 +1511,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else {
 				size = -1;
 			}
-			if (i+7<len) { // Max byte number where updateAddr will look into
+			if (i + 7 < len) { // Max byte number where updateAddr will look into
 				updateAddr (buf, i, endian, &addr, &addr64);
 			} else {
-				eprintf ("Likely a heap buffer overflow in %s at %d\n", __FILE__, __LINE__);
+				eprintf ("Likely a heap buffer overflow\n");
 				goto beach;
 			}
 
@@ -1604,7 +1604,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if ( (i + 3) < len || (i + 7) < len) {
 						updateAddr (buf, i, endian, &addr, &addr64);
 					} else {
-						eprintf ("Likely a heap buffer overflow at %s at %d\n", __FILE__, __LINE__);
+						eprintf ("Likely a heap buffer overflow.\n");
 						goto beach;
 					}
 				} else {

@@ -1201,10 +1201,9 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 				break;
 			case 2:
 				r = r_utf8_encode_str ((const RRune *)buf, widebuf,
-							sizeof(widebuf) - 1);
+							sizeof (widebuf) - 1);
 				if (r == -1) {
-					eprintf ("Something was wrong %s-%d\n",
-						__FILE__, __LINE__);
+					eprintf ("Something was wrong with refs\n");
 				} else {
 					r_strbuf_appendf (s, " (%s%s%s)", c, widebuf, cend);
 				}
