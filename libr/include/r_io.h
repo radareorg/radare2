@@ -210,6 +210,7 @@ typedef RIOSection* (*RIOSectionVGet)(RIO *io, ut64 addr);
 typedef RIOSection* (*RIOSectionAdd)(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
 typedef int (*RIOSectionSetArchBinID)(RIO *io, ut64 addr, const char *arch, int bits, ut32 bin_id);
 typedef int (*RIOSectionSetArchBin)(RIO *io, ut64 addr, const char *arch, int bits);
+typedef int (*RIOSystem)(RIO *io, const char *cmd);
 
 /* compile time dependency */
 typedef struct r_io_bind_t {
@@ -221,6 +222,7 @@ typedef struct r_io_bind_t {
 	RIOWriteAt write_at;
 	RIOSize size;
 	RIOSeek seek;
+	RIOSystem system;
 	RIOIsValidOffset is_valid_offset;
 
 	RIOSectionVGet section_vget;

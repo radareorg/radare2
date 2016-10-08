@@ -920,6 +920,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->write_at = r_io_write_at;
 	bnd->size = r_io_size;
 	bnd->seek = r_io_seek;
+	bnd->system = r_io_system;
 	bnd->is_valid_offset = r_io_is_valid_offset;
 
 	bnd->desc_open = r_io_open_nomap;
