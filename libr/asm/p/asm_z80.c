@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-#define GPL_COMPLIANT 1
+#define GPL_COMPLIANT 0
 
 #include "../arch/z80/z80.c"
 
