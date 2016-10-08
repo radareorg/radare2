@@ -506,7 +506,7 @@ extern int bfd_stat (bfd *, struct stat *);
   (warn_deprecated ("bfd_write", (const char *) 0, 0, (const char *) 0),\
    bfd_bwrite ((BUF), (ELTSIZE) * (NITEMS), (ABFD)))
 #endif
-fi
+#endif
 extern void warn_deprecated (const char *, const char *, int, const char *);
 
 /* Cast from const char * to char * so that caller can assign to
