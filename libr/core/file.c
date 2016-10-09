@@ -720,7 +720,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		}
 	}
 	if (r_io_is_listener (r->io)) {
+		r_io_desc_detach (r->io, fd);
 		r_core_serve (r, fd);
+		r_io_desc_free (fd);
 		goto beach;
 	}
 
@@ -770,14 +772,17 @@ beach:
 }
 
 R_API int r_core_files_free(const RCore *core, RCoreFile *cf) {
-	if (!core || !core->files || !cf) return false;
+	if (!core || !core->files || !cf) {
+		return false;
+	}
 	return r_list_delete_data (core->files, cf);
 }
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	int res = 1;
-	if (!cf || !cf->core)
+	if (!cf || !cf->core) {
 		return;
+	}
 	if (cf) {
 		res = r_core_files_free (cf->core, cf);
 	}
@@ -860,8 +865,9 @@ R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
 	r_list_foreach (core->files, iter, file) {
-		if (file->desc->fd == fd)
+		if (file->desc->fd == fd) {
 			return file;
+		}
 	}
 	return NULL;
 }
@@ -916,8 +922,9 @@ R_API int r_core_file_list(RCore *core, int mode) {
 		}
 		count++;
 	}
-	if (mode=='j')
+	if (mode=='j') {
 		r_cons_printf ("]\n");
+	}
 	return count;
 }
 
@@ -944,8 +951,9 @@ R_API int r_core_file_binlist(RCore *core) {
 	RBin *bin = core->bin;
 	const RList *binfiles = bin ? bin->binfiles: NULL;
 
-	if (!binfiles) return false;
-
+	if (!binfiles) {
+		return false;
+	}
 	r_list_foreach (binfiles, iter, binfile) {
 		int fd = binfile->fd;
 		cf = r_core_file_get_by_fd (core, fd);
