@@ -81,15 +81,20 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 
 /* TODO reduce number of return statements */
 R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
-	int maxsz, ret = false;
+	int maxsz, minsz, ret = false;
 	struct r_reg_set_t *regset;
 	RRegArena *arena;
-	if (len < 1 || !buf)
+	if (len < 1 || !buf) {
 		return false;
+	}
 	if (type < 0 || type >= R_REG_TYPE_LAST) return false;
 	regset = &reg->regset[type];
 	arena = regset->arena;
+	if (!arena) {
+		return false;
+	}
 	maxsz = R_MAX (arena->size, len);
+	minsz = R_MIN (arena->size, len);
 	if ((arena->size != len) || (!arena->bytes)) {
 		arena->bytes = calloc (1, maxsz);
 		if (!arena->bytes) {
@@ -99,20 +104,22 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
 		arena->size = maxsz;
 	}
 	if (arena->size != maxsz) {
-		ut8 *buf = realloc (arena->bytes, maxsz);
-		if (buf) {
+		ut8 *tmp = realloc (arena->bytes, maxsz);
+		if (tmp) {
 			arena->size = maxsz;
-			arena->bytes = buf;
+			arena->bytes = tmp;
 		} else {
 			eprintf ("Error resizing arena to %d\n", len);
 			return false;
 		}
 	}
 	if (arena->bytes) {
-		memset (arena->bytes, 0, maxsz);
-		memcpy (arena->bytes, buf, len);
+		memset (arena->bytes, 0, arena->size);
+		memcpy (arena->bytes, buf, minsz);
 		ret = true;
-	} else ret = false;
+	} else {
+		ret = false;
+	}
 	return ret;
 }
 
