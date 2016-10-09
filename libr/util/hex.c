@@ -141,8 +141,9 @@ R_API int r_hex_pair2bin(const char *arg) {
 	ut32 j = 0;
 
 	for (ptr = (ut8*)arg; ;ptr = ptr + 1) {
-		if (!*ptr || *ptr==' ' || j==2)
+		if (!*ptr || *ptr==' ' || j==2) {
 			break;
+		}
 		d = c;
 		if (*ptr!='.' && r_hex_to_byte (&c, *ptr)) {
 			eprintf ("Invalid hexa string at char '%c' (%s).\n",
@@ -150,7 +151,9 @@ R_API int r_hex_pair2bin(const char *arg) {
 			return -1;
 		}
 		c |= d;
-		if (j++ == 0) c <<= 4;
+		if (j++ == 0) {
+			c <<= 4;
+		}
 	}
 	return (int)c;
 }
@@ -209,7 +212,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 			if ((in = strstr (in, "*/")))
 				in += 2;
 			continue;
-		} else if (!IS_WHITESPACE (*in)) {
+		} else if (!IS_WHITESPACE (*in) && *in != '\n') {
 			/* this is not a valid string */
 			return 0;
 		}
