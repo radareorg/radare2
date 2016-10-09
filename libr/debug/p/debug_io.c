@@ -18,7 +18,7 @@ static RList *__io_maps(RDebug *dbg) {
 	char perm[32];
 	char name[512];
 	ostr = str;
-	while(true) {
+	while (true) {
 		char *nl = strchr (str, '\n');
 		if (nl) {
 			*nl = 0;
@@ -49,6 +49,46 @@ static int __io_wait(RDebug *dbg, int pid) {
 static int curPid = -1;
 static int __io_attach(RDebug *dbg, int pid) {
 	curPid = pid;
+	return true;
+}
+
+// "drp" register profile
+static char *__io_reg_profile(RDebug *dbg) {
+	dbg->iob.system (dbg->iob.io, "drp");
+	const char *buf = r_cons_get_buffer ();
+	if (buf && *buf) {
+		char *ret = strdup (buf);
+		r_cons_reset ();
+		return ret;
+	}
+	return r_anal_get_reg_profile (dbg->anal);
+}
+
+// "dr8" read register state
+static int __io_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	dbg->iob.system (dbg->iob.io, "dr8");
+	char *regs = strdup (r_cons_get_buffer ());
+	int sz = r_hex_pair2bin (regs);
+	if (sz > 0) {
+		memcpy (buf, regs, R_MIN (size, sz));
+		free (buf);
+		return size;
+	}
+	return -1;
+}
+
+// "dc" continue execution
+static int __io_continue(RDebug *dbg, int pid, int tid, int sig) {
+	dbg->iob.system (dbg->iob.io, "dc");
+	r_cons_flush ();
+	return true;
+}
+
+// "dk" send kill signal
+static int __io_kill(RDebug *dbg, int pid, int tid, int sig) {
+	const char *cmd = sdb_fmt (-1, "dk %d", sig);
+	dbg->iob.system (dbg->iob.io, cmd);
+	r_cons_flush ();
 	return true;
 }
 
@@ -100,11 +140,6 @@ static int __esil_init(RDebug *dbg) {
 	return true;
 }
 
-static int __esil_continue(RDebug *dbg, int pid, int tid, int sig) {
-	eprintf ("TODO continue\n");
-	return true;
-}
-
 static int __esil_continue_syscall(RDebug *dbg, int pid, int num) {
 	eprintf ("TODO: esil continue until syscall\n");
 	return true;
@@ -115,50 +150,17 @@ static int __esil_detach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static char *__esil_reg_profile(RDebug *dbg) {
-	if (!strcmp (dbg->arch, "bf")) {
-		return strdup (
-			"=PC	pc\n"
-			"=SP	esp\n"
-			"=BP	ptr\n"
-			"gpr	rax	.32	0	0\n"
-			"gpr	pc	.32	0	0\n"
-			"gpr	ptr	.32	4	0\n"
-			"gpr	esp	.32	8	0\n"
-			"gpr	scr	.32	12	0\n"
-			"gpr	scri	.32	16	0\n"
-			"gpr	inp	.32	20	0\n"
-			"gpr	inpi	.32	24	0\n"
-			"gpr	mem	.32	28	0\n"
-			"gpr	memi	.32	32	0\n"
-		      );
-	}
-	return r_anal_get_reg_profile (dbg->anal);
-}
-
 static int __esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }
 
-static int __esil_kill(RDebug *dbg, int pid, int tid, int sig) {
-	// TODO: ESIL reset
-	return true;
-}
 
 static int __esil_stop(RDebug *dbg) {
 	eprintf ("ESIL: stop\n");
 	return true;
 }
 
-static int __reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-	int sz;
-	/* do nothing */
-	ut8 *bytes = r_reg_get_bytes (dbg->reg, type, &sz);
-	memcpy (buf, bytes, R_MIN (size, sz));
-	free (bytes);
-	return size;
-}
 #endif
 
 RDebugPlugin r_debug_plugin_io = {
@@ -171,17 +173,17 @@ RDebugPlugin r_debug_plugin_io = {
 	.map_get = __io_maps,
 	.attach = &__io_attach,
 	.wait = &__io_wait,
+	.reg_read = __io_read,
+	.cont = __io_continue,
+	.kill = __io_kill,
+	.reg_profile = __io_reg_profile,
 #if 0
 	.init = __esil_init,
 	.step_over = __esil_step_over,
-	.cont = __esil_continue,
 	.contsc = __esil_continue_syscall,
 	.detach = &__esil_detach,
 	.stop = __esil_stop,
-	.kill = __esil_kill,
 	.breakpoint = &__esil_breakpoint,
-	.reg_profile = __esil_reg_profile,
-	.reg_read = __reg_read,
 #endif
 };
 

@@ -1302,6 +1302,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"dr", " <register>=<val>", "Set register value",
 				"dr=", "", "Show registers in columns",
 				"dr?", "<register>", "Show value of given register",
+				"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 				"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 				"drC", "", "Show register profile comments",
 				"drc", " [name]", "Related to conditional flag registers",
@@ -1348,12 +1349,16 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 		}
 		break;
+	case '8': // "dr8"
 	case 'b': // "drb"
 		{
 			int len;
 			ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
 			/* TODO : parse [type] parameter here instead of hardcoded GPR */
-			switch (str[1]) {
+			if (str[0] == '8') {
+				r_print_bytes (core->print, buf, len, "%02x");
+			} else {
+				switch (str[1]) {
 				case '1':
 					r_print_hexdump (core->print, 0LL, buf, len, 8, 1);
 					break;
@@ -1373,6 +1378,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
 					}
 					break;
+				}
 			}
 			free (buf);
 		}
