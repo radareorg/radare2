@@ -37,7 +37,7 @@ bts=bit test and set
 call=calls a subroutine, push eip into the stack (esp)
 callf=call procedure
 cbw=convert byte to word
-cdqe=sign extend eax into rax (added with x86-64)
+cdqe=sign extend eax into rax
 cdq=sign extends eax into edx (convert doubleword to quadword)
 clc=clear carry flag
 cld=clear direction flag
@@ -78,11 +78,12 @@ cmovz=conditional move - zero/equal (zf=1)
 cmp=compare two operands
 cmppd=compare packed double-fp values
 cmpps=compare packed single-fp values
-cmpsb=cmp DS:[SI], ES:[edi] (esi++, edi++)
+cmpsb=cmp DS:[esi], (byte)ES:[edi] (esi++, edi++)
 cmps=compare string operands
-cmpsd=compare scalar double-fp values
-cmpsq=compare string quadword (added with x86-64)
+cmpsd=cmp DS:[esi], (dword)ES:[edi] (esi+=4, edi+=4)/compare scalar double-fp values
+cmpsq=cmp DS:[rsi], (qword)ES:[rdi] (rsi+=8, rdi+=8)
 cmpss=compare scalar single-fp values
+cmpsw=cmp DS:[esi], (word)ES:[edi] (esi+=2, edi+=2)
 cmpxchg16b=compare and exchange bytes
 cmpxchg8b=compare and exchange bytes
 cmpxchg=compare and exchange
@@ -320,7 +321,7 @@ lock=instruction prefix to setup the LOCK pin
 lodsb=Load string byte
 lodsd=Load string doubleword
 lods=load string
-lodsq=Load string quadword (added with x86-64)
+lodsq=Load string quadword
 lodsw=Load string word
 loop=decrement count; jump short if ecx!=0
 loope=decrement count; jump short if ecx!=0 and zf=1
@@ -367,9 +368,9 @@ movntpd=store packed double-fp values using non-temporal hint
 movntps=store packed single-fp values using non-temporal hint
 movntq=store of quadword using non-temporal hint
 movq2dq=move quadword from mmx technology to xmm register
-movq=move doubleword/quadword
-movsb=move byte sting
-movsd=move scalar double-fp value
+movq=move quadword
+movsb=ES:[edi] = (byte)DS:[esi] (esi++, edi++)
+movsd=ES:[edi] = (dword)DS:[esi] (esi+=4, edi+=4)/move scalar double-fp value
 movshdup=move packed single-fp high and duplicate
 movsldup=move packed single-fp low and duplicate
 movs=move data from string to string
@@ -644,7 +645,7 @@ sti=set interrupt flag
 stmxcsr=store mxcsr register state
 stosb=store string byte
 stosd=store string dword
-stosq=store string quadword (added with x86_64)
+stosq=store string quadword
 stosw=store string word
 stos=store string
 str=store task register
