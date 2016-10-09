@@ -443,6 +443,7 @@ R_API int r_io_wundo_set(RIO *io, int n, int set);
 R_API void r_io_desc_init(RIO *io);
 R_API void r_io_desc_fini(RIO *io);
 R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data);
+R_API bool r_io_desc_detach (RIO *io, RIODesc *d);
 R_API void r_io_desc_free(RIODesc *desc);
 R_API int r_io_desc_del(RIO *io, int fd);
 R_API RIODesc *r_io_desc_get(RIO *io, int fd);

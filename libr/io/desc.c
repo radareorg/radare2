@@ -159,12 +159,13 @@ R_API void r_io_desc_list_visual(RIO *io, ut64 seek, ut64 len, int width, int us
 	seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
 
 	r_list_foreach (io->maps, iter, s) {
-		if (min == -1 || s->from < min)
+		if (min == -1 || s->from < min) {
 			min = s->from;
-		if (max == -1 || s->to > max)
+		}
+		if (max == -1 || s->to > max) {
 			max = s->to;
+		}
 	}
-
 	mul = (max-min) / width;
 	if (min != -1 && mul != 0) {
 		const char * color = "", *color_end = "";
@@ -221,4 +222,27 @@ R_API void r_io_desc_list_visual(RIO *io, ut64 seek, ut64 len, int width, int us
 			io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len);
 		}
 	}
+}
+
+R_API bool r_io_desc_detach (RIO *io, RIODesc *fd) {
+	bool ret = false;
+	RIODesc *d, *prev = NULL;
+	RListIter *iter;
+	void *p = io->files->free;
+	r_list_foreach (io->files, iter, d) {
+		if (d == fd) {
+			io->files->free = NULL;
+			r_list_delete (io->files, iter);
+			ret = true;
+		}
+		if (!prev) {
+			prev = d;
+		}
+		if (ret && prev) {
+			break;
+		}
+	}
+	io->files->free = p;
+	r_io_raise (io, prev->fd);
+	return ret;
 }
