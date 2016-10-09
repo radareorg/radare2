@@ -6,8 +6,14 @@
 
 static int __io_step(RDebug *dbg) {
 	dbg->iob.system (dbg->iob.io, "ds");
-	r_cons_flush();
+	r_cons_reset ();
 	return 0;
+}
+
+static int __io_step_over(RDebug *dbg) {
+	dbg->iob.system (dbg->iob.io, "dso");
+	r_cons_reset ();
+	return true;
 }
 
 static RList *__io_maps(RDebug *dbg) {
@@ -25,6 +31,22 @@ static RList *__io_maps(RDebug *dbg) {
 			*name = 0;
 			*perm = 0;
 			map_start = map_end = 0LL;
+			if (!strncmp (str, "sys ", 4)) {
+				char *sp = strchr (str + 4, ' ');
+				if (sp) {
+					str = sp + 1;
+				} else {
+					str += 4;
+				}
+			}
+			char *_s_ = strstr (str, " s ");
+			if (_s_) {
+				memmove (_s_, _s_ + 2, strlen (_s_));
+			}
+			_s_ = strstr (str, " ? ");
+			if (_s_) {
+				memmove (_s_, _s_ + 2, strlen (_s_));
+			}
 			sscanf (str, "0x%"PFMT64x" - 0x%"PFMT64x" %s %s",
 				&map_start, &map_end, perm, name);
 			if (map_end != 0LL) {
@@ -54,11 +76,12 @@ static int __io_attach(RDebug *dbg, int pid) {
 
 // "drp" register profile
 static char *__io_reg_profile(RDebug *dbg) {
+	r_cons_push ();
 	dbg->iob.system (dbg->iob.io, "drp");
 	const char *buf = r_cons_get_buffer ();
 	if (buf && *buf) {
 		char *ret = strdup (buf);
-		r_cons_reset ();
+		r_cons_pop ();
 		return ret;
 	}
 	return r_anal_get_reg_profile (dbg->anal);
@@ -68,12 +91,17 @@ static char *__io_reg_profile(RDebug *dbg) {
 static int __io_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	dbg->iob.system (dbg->iob.io, "dr8");
 	char *regs = strdup (r_cons_get_buffer ());
-	int sz = r_hex_pair2bin (regs);
+	ut8 *bregs = calloc (1, strlen (regs));
+	r_cons_reset ();
+	int sz = r_hex_str2bin (regs, bregs);
 	if (sz > 0) {
-		memcpy (buf, regs, R_MIN (size, sz));
-		free (buf);
+		memcpy (buf, bregs, R_MIN (size, sz));
+		free (bregs);
 		return size;
+	} else {
+		eprintf ("SIZE %d (%s)\n", sz, regs);
 	}
+	free (bregs);
 	return -1;
 }
 
@@ -92,77 +120,6 @@ static int __io_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-#if 0
-static int is_io_esil(RDebug *dbg) {
-	RIODesc *d = dbg->iob.io->desc;
-	if (d && d->plugin && d->plugin->name)
-		if (!strcmp ("esil", d->plugin->name))
-			return true;
-	return false;
-}
-#endif
-#if 0
-
-static int __esil_step_over(RDebug *dbg) {
-	eprintf ("TODO: ESIL STEP OVER\n");
-	return true;
-}
-
-	int oplen;
-	ut8 buf[64];
-	ut64 pc = 0LL; // getreg("pc")
-	RAnalOp op;
-
-	pc = r_debug_reg_sync(dbg, R_REG_TYPE_GPR, 0);
-	pc = r_debug_reg_get (dbg, "PC");
-	eprintf ("PC = 0x%" PFMT64x "\n", pc);
-/// XXX. hack to trick vaddr issue
-//pc = 0x100001478;
-	//memset (buf, 0, sizeof (buf));
-	dbg->iob.read_at (dbg->iob.io, pc, buf, 64);
-	eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
-	oplen = r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-	if (oplen > 0) {
-		if (*R_STRBUF_SAFEGET (&op.esil)) {
-			eprintf ("ESIL: %s\n", R_STRBUF_SAFEGET (&op.esil));
-			r_anal_esil_parse (dbg->anal->esil, R_STRBUF_SAFEGET (&op.esil));
-		}
-	}
-	eprintf ("TODO: ESIL STEP\n");
-	return true;
-}
-
-static int __esil_init(RDebug *dbg) {
-	dbg->tid = dbg->pid = 1;
-	// aeim
-	// aei
-	eprintf ("TODO: esil-vm not initialized\n");
-	return true;
-}
-
-static int __esil_continue_syscall(RDebug *dbg, int pid, int num) {
-	eprintf ("TODO: esil continue until syscall\n");
-	return true;
-}
-
-static int __esil_detach(RDebug *dbg, int pid) {
-	// reset vm?
-	return true;
-}
-
-static int __esil_breakpoint (RBreakpointItem *bp, int set, void *user) {
-	//r_io_system (dbg->iob.io, "db");
-	return false;
-}
-
-
-static int __esil_stop(RDebug *dbg) {
-	eprintf ("ESIL: stop\n");
-	return true;
-}
-
-#endif
-
 RDebugPlugin r_debug_plugin_io = {
 	.name = "io",
 	.keepio = 1,
@@ -177,9 +134,9 @@ RDebugPlugin r_debug_plugin_io = {
 	.cont = __io_continue,
 	.kill = __io_kill,
 	.reg_profile = __io_reg_profile,
+	.step_over = __io_step_over,
 #if 0
 	.init = __esil_init,
-	.step_over = __esil_step_over,
 	.contsc = __esil_continue_syscall,
 	.detach = &__esil_detach,
 	.stop = __esil_stop,
