@@ -775,50 +775,50 @@ show_help:
 	list = r_debug_modules_list (core->dbg);
 	r_list_foreach (list, iter, map) {
 		switch (mode) {
-			case 0:
-				r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
-				break;
-			case ':':
-				if (addr >= map->addr && addr < map->addr_end) {
-					char *fn = strdup (map->file);
-					r_name_filter (fn, 0);
-					//r_cons_printf ("fs+module_%s\n", fn);
-					r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
-							fn, map->addr);
-					r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
-							map->addr, map->file);
-					//r_cons_printf ("fs-\n");
-					free (fn);
-				}
-				break;
-			case '.':
-				if (addr >= map->addr && addr < map->addr_end) {
-					r_cons_printf ("0x%08"PFMT64x" %s\n",
-							map->addr, map->file);
-					goto beach;
-				}
-				break;
-			case 'j':
-				r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
-						map->addr, map->name, map->file, iter->n?",":"");
-				break;
-			case '*':
-				{
-					char *fn = strdup (map->file);
-					r_name_filter (fn, 0);
-					//r_cons_printf ("fs+module_%s\n", fn);
-					r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
-							fn, map->addr);
-					r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
-							map->addr, map->file);
-					//r_cons_printf ("fs-\n");
-					free (fn);
-				}
-				break;
-			default:
-				r_list_free (list);
-				goto show_help;
-				/* not reached */
+		case 0:
+			r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
+			break;
+		case ':':
+			if (addr >= map->addr && addr < map->addr_end) {
+				char *fn = strdup (map->file);
+				r_name_filter (fn, 0);
+				//r_cons_printf ("fs+module_%s\n", fn);
+				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+						fn, map->addr);
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
+						map->addr, map->file);
+				//r_cons_printf ("fs-\n");
+				free (fn);
+			}
+			break;
+		case '.':
+			if (addr >= map->addr && addr < map->addr_end) {
+				r_cons_printf ("0x%08"PFMT64x" %s\n",
+						map->addr, map->file);
+				goto beach;
+			}
+			break;
+		case 'j':
+			r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
+					map->addr, map->name, map->file, iter->n?",":"");
+			break;
+		case '*':
+			{
+				char *fn = strdup (map->file);
+				r_name_filter (fn, 0);
+				//r_cons_printf ("fs+module_%s\n", fn);
+				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+						fn, map->addr);
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
+						map->addr, map->file);
+				//r_cons_printf ("fs-\n");
+				free (fn);
+			}
+			break;
+		default:
+			r_list_free (list);
+			goto show_help;
+			/* not reached */
 		}
 	}
 beach:

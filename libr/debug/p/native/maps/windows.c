@@ -9,34 +9,31 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 	RList *list = r_list_new ();
 
 	hModuleSnap = CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, pid );
-	if(!hModuleSnap ) {
+	if (!hModuleSnap) {
 		print_lasterr ((char *)__FUNCTION__, "CreateToolhelp32Snapshot");
-		CloseHandle( hModuleSnap );
+		CloseHandle (hModuleSnap);
 		return NULL;
 	}
-	me32.dwSize = sizeof( MODULEENTRY32 );
-	if( !Module32First(hModuleSnap, &me32))	{
-		CloseHandle( hModuleSnap );
+	me32.dwSize = sizeof (MODULEENTRY32);
+	if (!Module32First (hModuleSnap, &me32)) {
+		CloseHandle (hModuleSnap);
 		return NULL;
 	}
-	hProcess=w32_openprocess(PROCESS_QUERY_INFORMATION |PROCESS_VM_READ,FALSE, pid );
+	hProcess = w32_openprocess (PROCESS_QUERY_INFORMATION |PROCESS_VM_READ,FALSE, pid );
 	do {
+		ut64 baddr = (ut64)(size_t)me32.modBaseAddr;
 		mapname = (char *)malloc(MAX_PATH);
-		snprintf (mapname, MAX_PATH, "%s\\%s",me32.szExePath,me32.szModule);
-		mr = r_debug_map_new (mapname,
-				(ut64)(size_t) (me32.modBaseAddr),
-				(ut64)(size_t) (me32.modBaseAddr+1),
-				0,
-				0);
+		snprintf (mapname, MAX_PATH, "%s\\%s", me32.szExePath, me32.szModule);
+		mr = r_debug_map_new (mapname, baddr, baddr + me32.modBaseSize, 0, 0);
 		if (mr != NULL) {
 			mr->file=strdup(mapname);
 			r_list_append (list, mr);
 		}
 		free(mapname);
-	} while(Module32Next(hModuleSnap, &me32));
-	CloseHandle( hModuleSnap );
-	CloseHandle( hProcess );
-	return( list );
+	} while(Module32Next (hModuleSnap, &me32));
+	CloseHandle (hModuleSnap);
+	CloseHandle (hProcess);
+	return list;
 }
 
 static RList *w32_dbg_maps(RDebug *dbg) {
