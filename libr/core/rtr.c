@@ -507,7 +507,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 			continue;
 		}
 		if (allow && *allow) {
-			int accepted = false;
+			bool accepted = false;
 			const char *allows_host;
 			char *p, *peer = r_socket_to_string (rs->s);
 			char *allows = strdup (allow);
@@ -554,8 +554,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 
 		if (!strcmp (rs->method, "OPTIONS")) {
 			r_socket_http_response (rs, 200, "", 0, headers);
-		} else
-		if (!strcmp (rs->method, "GET")) {
+		} else if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/up/", 4)) {
 				if (r_config_get_i (core->config, "http.upget")) {
 					const char *uproot = r_config_get (core->config, "http.uproot");
@@ -592,7 +591,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 							"Permission denied\n", 0, NULL);
 				}
 			} else if (!strncmp (rs->path, "/cmd/", 5)) {
-				char *cmd = rs->path +5;
+				char *cmd = rs->path + 5;
 				const char *httpcmd = r_config_get (core->config, "http.uri");
 				const char *httpref = r_config_get (core->config, "http.referer");
 				bool httpref_enabled;
@@ -655,7 +654,9 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 							free (out);
 							free (newheaders);
 							free (res);
-						} else r_socket_http_response (rs, 200, "", 0, headers);
+						} else {
+							r_socket_http_response (rs, 200, "", 0, headers);
+						}
 					}
 				}
 				free (refstr);
@@ -723,8 +724,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 				}
 				free (path);
 			}
-		} else
-		if (!strcmp (rs->method, "POST")) {
+		} else if (!strcmp (rs->method, "POST")) {
 			ut8 *ret;
 			int retlen;
 			char buf[128];
@@ -776,6 +776,7 @@ the_end:
 	core->http_up = false;
 	r_socket_free (s);
 	r_config_free (newcfg);
+	/* refresh settings - run callbacks */
 	r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
 	r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
 	r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
@@ -783,8 +784,6 @@ the_end:
 }
 
 static int r_core_rtr_http_thread (RThread *th) {
-	int ret;
-
 	if (!th) {
 		return false;
 	}
@@ -792,7 +791,7 @@ static int r_core_rtr_http_thread (RThread *th) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
 	R_FREE (ht->path);
 	return ret;
 }
@@ -1070,20 +1069,22 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 		eprintf ("Connected to %s at port %s\n", host, port);
 		/* send */
-		buf[0] = RTR_RAP_OPEN;
-		buf[1] = 0;
-		buf[2] = (ut8)(strlen (file) + 1);
-		memcpy (buf + 3, file, buf[2]);
-		r_socket_write (fd, buf, 3 + buf[2]);
-		/* read */
-		eprintf ("waiting... ");
-		fflush (stdout);
-		r_socket_read (fd, (ut8*)buf, 5);
-		i = r_read_at_be32 (buf, 1);
-		if (buf[0] != (char)(RTR_RAP_OPEN | RTR_RAP_REPLY) || i <= 0) {
-			eprintf ("Error: Wrong reply\n");
-			r_socket_free (fd);
-			return;
+		if (file && *file) {
+			buf[0] = RTR_RAP_OPEN;
+			buf[1] = 0;
+			buf[2] = (ut8)(strlen (file) + 1);
+			memcpy (buf + 3, file, buf[2]);
+			r_socket_write (fd, buf, 3 + buf[2]);
+			/* read */
+			eprintf ("waiting... ");
+			fflush (stdout);
+			r_socket_read (fd, (ut8*)buf, 5);
+			i = r_read_at_be32 (buf, 1);
+			if (buf[0] != (char)(RTR_RAP_OPEN | RTR_RAP_REPLY) || i <= 0) {
+				eprintf ("Error: Wrong reply\n");
+				r_socket_free (fd);
+				return;
+			}
 		}
 		eprintf ("ok\n");
 		break;
@@ -1108,11 +1109,11 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
 	}
-
 	ret = core->num->value;
 	for (i = 0; i < RTR_MAX_HOSTS; i++) {
-		if (rtr_host[i].fd)
+		if (rtr_host[i].fd) {
 			continue;
+		}
 		rtr_host[i].proto = proto;
 		strncpy (rtr_host[i].host, host, sizeof (rtr_host[i].proto)-1);
 		rtr_host[i].port = r_num_get (core->num, port);
@@ -1135,9 +1136,10 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 			if (rtr_host[i].fd && rtr_host[i].fd->fd == fd) {
 				r_socket_free (rtr_host[i].fd);
 				rtr_host[i].fd = NULL;
-				if (rtr_n == i)
+				if (rtr_n == i) {
 					for (rtr_n = 0; !rtr_host[rtr_n].fd \
 						&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
+				}
 				break;
 		}
 	} else {
@@ -1170,10 +1172,12 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 				"fd:%d> ", rtr_host[rtr_n].fd->fd);
 		free (r_line_singleton ()->prompt);
 		r_line_singleton ()->prompt = strdup (prompt);
-		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 1)
+		if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 1) {
 			break;
-		if (!*buf || *buf == 'q')
+		}
+		if (!*buf || *buf == 'q') {
 			break;
+		}
 		if (*buf == 'V') {
 			eprintf ("Visual mode not supported\n");
 			continue;
@@ -1200,6 +1204,7 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 }
 
 static void r_core_rtr_rap_run(RCore *core, const char *input) {
+	/* ouch, this hurts a bit, isnt? */
 	r_core_cmdf (core, "o rap://%s", input);
 }
 
@@ -1220,12 +1225,13 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	const char *cmd = NULL;
 	int i, cmd_len, fd = atoi (input);
 
-	if (*input==':' && !strchr (input + 1, ':')) {
+	// "=:"
+	if (*input == ':' && !strchr (input + 1, ':')) {
 		r_core_rtr_rap_run (core, input);
 		return;
 	}
 
-	if (*input=='&') {
+	if (*input == '&') {
 		if (rapthread) {
 			eprintf ("RAP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");

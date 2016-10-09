@@ -71,8 +71,9 @@ static int r_socket_unix_connect(RSocket *s, const char *file) {
 R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 	struct sockaddr_un unix_name;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
-	if (sock <0)
+	if (sock < 0) {
 		return false;
+	}
 	// TODO: set socket options
 	unix_name.sun_family = AF_UNIX;
 	strncpy (unix_name.sun_path, file, sizeof (unix_name.sun_path)-1);
@@ -349,8 +350,9 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
 	ret = setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
-	if (ret < 0)
+	if (ret < 0) {
 		return false;
+	}
 	{ // fix close after write bug //
 	int x = 1500; // FORCE MTU
 	ret = setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void*)&x, sizeof (int));

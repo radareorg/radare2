@@ -75,7 +75,7 @@ static int rap__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	i = r_read_at_be32 (tmp, 1);
-	if (i>count) {
+	if (i >count) {
 		eprintf ("rap__read: Unexpected data size %d\n", i);
 		return -1;
 	}
@@ -135,8 +135,9 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 	char buf[1024];
 	RIORap *rior;
 
-	if (!rap__plugin_open (io, pathname, 0))
+	if (!rap__plugin_open (io, pathname, 0)) {
 		return NULL;
+	}
 	bool is_ssl = (!strncmp (pathname, "raps://", 7));
 	ptr = pathname + (is_ssl? 7: 6);
 	if (!(port = strchr (ptr, ':'))) {
@@ -182,8 +183,9 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 				return NULL;
 			}
 		} else {
-			if (!r_socket_listen (rior->fd, port, NULL))
+			if (!r_socket_listen (rior->fd, port, NULL)) {
 				return NULL;
+			}
 		}
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
 			pathname, rw, mode, rior);
@@ -206,8 +208,8 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 		buf[0] = RMT_OPEN;
 		buf[1] = rw;
 		buf[2] = (ut8)strlen (file);
-		memcpy (buf+3, file, buf[2]);
-		r_socket_write (rap_fd, buf, 3+buf[2]);
+		memcpy (buf + 3, file, buf[2]);
+		r_socket_write (rap_fd, buf, buf[2] + 3);
 		r_socket_flush (rap_fd);
 		// read
 		eprintf ("waiting... ");
@@ -220,7 +222,9 @@ static RIODesc *rap__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		i = r_read_at_be32 (buf, 1);
-		if (i > 0) eprintf ("ok\n");
+		if (i > 0) {
+			eprintf ("ok\n");
+		}
 #if 0
 		/* Read meta info */
 		r_socket_read (rap_fd, (ut8 *)&buf, 4);
@@ -307,8 +311,9 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 
 	// read
 	ret = r_socket_read_block (s, buf + 1, 4);
-	if (ret != 4)
+	if (ret != 4) {
 		return -1;
+	}
 	if (buf[0] != (RMT_CMD | RMT_REPLY)) {
 		eprintf ("Unexpected rap cmd reply\n");
 		return -1;
@@ -363,7 +368,7 @@ RIOPlugin r_io_plugin_rap = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_rap,
 	.version = R2_VERSION

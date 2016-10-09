@@ -1757,7 +1757,7 @@ static void rap_break (void *u) {
 R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut8 cmd, flg, *ptr = NULL, buf[1024];
 	RSocket *c, *fd;
-	int i, pipefd;
+	int i, pipefd = -1;
 	RIORap *rior;
 	ut64 x;
 
@@ -1798,7 +1798,6 @@ reaccept:
 				}
 				return -1;
 			}
-
 			switch ((ut8)cmd) {
 			case RMT_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
@@ -1912,13 +1911,18 @@ reaccept:
 				if (ptr) {
 					r_core_block_read (core);
 					ptr[0] = RMT_READ | RMT_REPLY;
-					if (i>RMT_MAX)
+					if (i > RMT_MAX) {
 						i = RMT_MAX;
-					if (i>core->blocksize)
+					}
+					if (i > core->blocksize) {
 						r_core_block_size (core, i);
-					r_write_be32 (ptr+1, i);
+					}
+					if (i + 128 < core->blocksize) {
+						r_core_block_size (core, i);
+					}
+					r_write_be32 (ptr + 1, i);
 					memcpy (ptr + 5, core->block, i); //core->blocksize);
-					r_socket_write (c, ptr, i+5);
+					r_socket_write (c, ptr, i + 5);
 					r_socket_flush (c);
 					free (ptr);
 					ptr = NULL;
@@ -1990,7 +1994,6 @@ reaccept:
 					once = false;
 				}
 #endif
-
 				bufw = malloc (cmd_len + 5);
 				bufw[0] = RMT_CMD | RMT_REPLY;
 				r_write_be32 (bufw + 1, cmd_len);
@@ -2035,14 +2038,13 @@ reaccept:
 				r_socket_flush (c);
 				break;
 			case RMT_CLOSE:
-				eprintf ("CLOSE\n");
 				// XXX : proper shutdown
 				r_socket_read_block (c, buf, 4);
 				i = r_read_be32 (buf);
 				{
 				//FIXME: Use r_socket_close
 				int ret = close (i);
-				r_write_be32 (buf+1, ret);
+				r_write_be32 (buf + 1, ret);
 				buf[0] = RMT_CLOSE | RMT_REPLY;
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);

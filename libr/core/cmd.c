@@ -261,9 +261,15 @@ static int cmd_rap(void *data, const char *input) {
 	switch (*input) {
 	case '$': aliascmd (core, input+1); break;
 	case '\0': r_core_rtr_list (core); break;
-	case 'h': r_core_rtr_http (core, getArg(input[1],'h'), input+1); break;
-	case 'H': while (input[1]==' ') input++;
-		  r_core_rtr_http (core, getArg(input[1],'H'), input+1); break;
+	case 'h':
+		r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+		break;
+	case 'H':
+		while (input[1]==' ') {
+			input++;
+		}
+		r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
+		break;
 	case '?': r_core_rtr_help (core); break;
 	case '+': r_core_rtr_add (core, input + 1); break;
 	case '-': r_core_rtr_remove (core, input + 1); break;
@@ -508,21 +514,23 @@ static int cmd_interpret(void *data, const char *input) {
 			/* .:host:port cmd */
 			cmd = ptr+1;
 			*ptr = 0;
-			eol = strchr (input+1, ':');
+			eol = strchr (input + 1, ':');
 			if (eol) {
 				*eol = 0;
 				host = input+1;
 				port = eol+1;
 			} else {
 				host = "localhost";
-				port = input+((input[1]==':')?2:1);
+				port = input + ((input[1] == ':')? 2: 1);
 			}
 			rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
 			if (rbuf) {
 				r_cons_print (rbuf);
 				free (rbuf);
 			}
-		} else r_core_rtr_cmds (core, input+1);
+		} else {
+			r_core_rtr_cmds (core, input + 1);
+		}
 		break;
 	case '.': // same as \n
 		r_core_cmd_repeat (core, 1);

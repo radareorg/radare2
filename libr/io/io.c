@@ -52,8 +52,9 @@ R_API void r_io_raise(RIO *io, int fd) {
 }
 
 R_API int r_io_is_listener(RIO *io) {
-	if (io && io->plugin && io->plugin->listener)
+	if (io && io->plugin && io->plugin->listener) {
 		return io->plugin->listener (io->desc);
+	}
 	return false;
 }
 
@@ -850,8 +851,9 @@ R_API ut64 r_io_size(RIO *io) {
 
 R_API int r_io_system(RIO *io, const char *cmd) {
 	int ret = -1;
-	if (io->plugin && io->plugin->system)
+	if (io->plugin && io->plugin->system) {
 		ret = io->plugin->system (io, io->desc, cmd);
+	}
 	return ret;
 }
 
@@ -964,13 +966,17 @@ R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 		src = start + shiftsize;
 	}
 	while (rest > 0) {
-		if (chunksize > rest) chunksize = rest;
-		if (move > 0) src -= chunksize;
-
+		if (chunksize > rest) {
+			chunksize = rest;
+		}
+		if (move > 0) {
+			src -= chunksize;
+		}
 		r_io_read_at (io, src, buf, chunksize);
 		r_io_write_at (io, src + move, buf, chunksize);
-
-		if (move < 0) src += chunksize;
+		if (move < 0) {
+			src += chunksize;
+		}
 		rest -= chunksize;
 	}
 	free (buf);
@@ -1006,7 +1012,6 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 		*out_sz = 1024 * 1024 * 1; // 2MB
 	}
 	off = io->off;
-
 	if (*out_sz == UT64_MAX) {
 		return NULL;
 	}
@@ -1015,13 +1020,13 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 				"Allocating R_IO_MAX_ALLOC set as the environment variable.\n", io->maxalloc);
 		*out_sz = io->maxalloc;
 	}
-
 	buf = malloc (*out_sz);
 	if (!buf) {
 		if (*out_sz > R_IO_MAX_ALLOC) {
 			char *num_unit = r_num_units (NULL, *out_sz);
 			eprintf ("Failed to allocate %s bytes.\n"
-					"Allocating %"PFMT64u" bytes.\n", num_unit, (ut64)R_IO_MAX_ALLOC);
+				"Allocating %"PFMT64u" bytes.\n",
+				num_unit, (ut64)R_IO_MAX_ALLOC);
 			free (num_unit);
 			*out_sz = R_IO_MAX_ALLOC;
 			buf = malloc (*out_sz);
@@ -1090,7 +1095,7 @@ if (hasperm) {
 	}
 	if (io->debug) {
 		// TODO check debug maps here
-		return 1;
+		return true;
 	} else {
 		if (io_sectonly) {
 			if (r_list_empty (io->sections)) {
