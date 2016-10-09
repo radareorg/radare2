@@ -107,7 +107,7 @@ static task_t pid_to_task(int pid) {
 		//since we are going to get a new task
 		kr = mach_port_deallocate (mach_task_self (), old_task);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("fail to deallocate port %s-%d\n", __FILE__, __LINE__);
+			eprintf ("pid_to_task: fail to deallocate port\n");
 			return 0;
 		}
 	}
@@ -271,7 +271,6 @@ static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int pe
 	kern_return_t kr;
 	kr = vm_protect (task, addr, len, 0, perm);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to change perm %s:%d\n", __FILE__, __LINE__);
 		perror ("tsk_setperm");
 		return false;
 	}

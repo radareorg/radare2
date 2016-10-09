@@ -3771,7 +3771,6 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 		char *newbody = NULL;
 		char **args, *body;
 		int n_args, B_LEN = strlen ("base64:");
-
 		input++;
 		args = r_str_argv (input, &n_args);
 		if (n_args < 1 || n_args > 2) {
@@ -3779,7 +3778,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			r_str_argv_free (args);
 			break;
 		}
-		//strdup cause there is double free in r_str_argv_free due to a realloc call
+		// strdup cause there is double free in r_str_argv_free due to a realloc call
 		if (n_args > 1) {
 			body = strdup (args[1]);
 			if (strncmp (body, "base64:", B_LEN) == 0) {
@@ -3787,7 +3786,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 				newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1);
 				free (body);
 				if (!newbody) {
-					eprintf ("Not enough space to allocate %s at %d\n", __FILE__, __LINE__);
+					eprintf ("Cannot allocate buffer\n");
 					r_str_argv_free (args);
 					break;
 				}

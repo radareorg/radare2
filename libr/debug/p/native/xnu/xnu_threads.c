@@ -17,8 +17,7 @@ static void xnu_thread_free (xnu_thread_t *thread) {
 	// count
 	kr = mach_port_deallocate (mach_task_self (), thread->port);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate thread port %s-%d\n", __FILE__,
-			 __LINE__);
+		eprintf ("failed to deallocate thread port\n");
 	}
 	free (thread);
 }

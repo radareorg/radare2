@@ -239,6 +239,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define __func__ __FUNCTION__
 #endif
 
+#define PERROR_WITH_FILELINE 0
+
+#if PERROR_WITH_FILELINE
 /* make error messages useful by prepending file, line, and function name */
 #define _perror(str,file,line,func) \
   { \
@@ -248,6 +251,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
   }
 #define perror(x) _perror(x,__FILE__,__LINE__,__func__)
 #define r_sys_perror(x) _perror(x,__FILE__,__LINE__,__func__)
+#else
+
+#define r_sys_perror(x) perror(x);
+
+#endif
 
 #if __UNIX__
 #include <sys/types.h>

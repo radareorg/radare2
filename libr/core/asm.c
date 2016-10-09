@@ -207,7 +207,6 @@ static void add_hit_to_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
 		hit->code = NULL;
 		if (!r_list_append (hits, hit)){
 			free (hit);
-			IFDBG eprintf ("hit couldn't be added to the list in %s at %d\n", __FILE__, __LINE__);	
 		}
 	}
 }
@@ -225,7 +224,9 @@ static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
 	RCoreAsmHit *to_check_hit;
 	int result = 0;
 	ut64 start_range, end_range;
-	if (!hit || !hits) return 0;
+	if (!hit || !hits) {
+		return 0;
+	}
 	start_range = hit->addr;
 	end_range =  hit->addr +  hit->len;
 	r_list_foreach_safe (hits, iter, iter_tmp, to_check_hit){

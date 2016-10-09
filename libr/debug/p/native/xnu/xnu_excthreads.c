@@ -277,8 +277,9 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 	    msg->NDR.mig_encoding != NDR_record.mig_encoding ||
 	    msg->NDR.int_rep != NDR_record.int_rep ||
 	    msg->NDR.char_rep != NDR_record.char_rep ||
-	    msg->NDR.float_rep != NDR_record.float_rep)
+	    msg->NDR.float_rep != NDR_record.float_rep) {
 		return false;
+	}
 	if (pid_to_task (dbg->pid) != msg->task.name) {
 		//we receive a exception from an unknown process this could
 		//happen if the child fork, as the created process will inherit
@@ -286,13 +287,11 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 		/*we got new rights to the task, get rid of it.*/
 		kr = mach_port_deallocate (mach_task_self (), msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("failed to deallocate task port %s-%d\n",
-				__FILE__, __LINE__);
+			eprintf ("validate_mach_message: failed to deallocate task port\n");
 		}
 		kr = mach_port_deallocate (mach_task_self (), msg->thread.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("failed to deallocated task port %s-%d\n",
-				__FILE__, __LINE__);
+			eprintf ("validate_mach_message2: failed to deallocated task port\n");
 		}
 		return false;
 	}
@@ -349,13 +348,11 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
 	}
 	kr = mach_port_deallocate (mach_task_self (), msg->task.name);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate task port %s-%d\n",
-			__FILE__, __LINE__);
+		eprintf ("failed to deallocate task port\n");
 	}
 	kr = mach_port_deallocate (mach_task_self (), msg->thread.name);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocated task port %s-%d\n",
-			__FILE__, __LINE__);
+		eprintf ("failed to deallocated task port\n");
 	}
 	return ret;
 }

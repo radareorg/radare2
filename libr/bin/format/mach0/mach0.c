@@ -1481,7 +1481,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	to = R_MIN (bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
 	for (i = bin->dysymtab.iundefsym; i < to; i++) {
 		if (j > symbols_count) {
-			eprintf ("Error: %s at %d\n", __FILE__,__LINE__);
+			eprintf ("mach0-get-symbols: error\n");
 			break;
 		}
 		if (parse_import_stub(bin, &symbols[j], i))

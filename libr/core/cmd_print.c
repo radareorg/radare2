@@ -26,7 +26,7 @@ static void cmd_pCd(RCore *core, const char *input) {
 	c->color = r_config_get_i (core->config, "scr.color");
 	r_core_block_size (core, rows * 32);
 	for (i = 0; i < columns; i++) {
-		C(gotoxy)(c, i * (w / columns), 0);
+		(void)C(gotoxy)(c, i * (w / columns), 0);
 		char *cmd = r_str_newf ("pid %d @i:%d", rows, rows * i);
 		char *dis = r_core_cmd_str (core, cmd);
 		C(write)(c, dis);

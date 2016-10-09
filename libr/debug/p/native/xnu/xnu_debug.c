@@ -189,8 +189,7 @@ int xnu_detach(RDebug *dbg, int pid) {
 	(void)xnu_restore_exception_ports (pid);
 	kr = mach_port_deallocate (mach_task_self (), task_dbg);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate port %s-%d\n",
-			__FILE__, __LINE__);
+		eprintf ("xnu_detach: failed to deallocate port\n");
 		return false;
 	}
 	//we mark the task as not longer available since we deallocated the ref
@@ -479,7 +478,7 @@ task_t pid_to_task (int pid) {
 		//since we are going to get a new task
 		kr = mach_port_deallocate (mach_task_self (), task_dbg);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("fail to deallocate port %s:%d\n", __FILE__, __LINE__);
+			eprintf ("pid_to_task: fail to deallocate port\n");
 			/* ignore on purpose to not break process reload: ood */
 			//return 0;
 		}
@@ -1033,8 +1032,9 @@ vm_address_t get_kernel_base(task_t ___task) {
 		addr += size;
 	}
 	ret = mach_port_deallocate (mach_task_self (), 0);
-	if (ret != KERN_SUCCESS)
-		eprintf ("leaking kernel port %s-%d\n", __FILE__, __LINE__);
+	if (ret != KERN_SUCCESS) {
+		eprintf ("get_kernel_base: leaking kernel port\n");
+	}
 	return (vm_address_t)0;
 }
 
