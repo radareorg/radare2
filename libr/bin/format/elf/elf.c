@@ -19,6 +19,9 @@
 #define ELF_PAGE_MASK 0xFFFFFFFFFFFFF000LL
 #define ELF_PAGE_SIZE 12
 
+#define R_ELF_FULL_RELRO 2 
+#define R_ELF_PART_RELRO 1
+
 #define READ8(x, i) r_read_ble8(x + i); i += 1;
 #define READ16(x, i) r_read_ble16(x + i, bin->endian); i += 2;
 #define READ32(x, i) r_read_ble32(x + i, bin->endian); i += 4;
@@ -338,13 +341,13 @@ static int init_strtab(ELFOBJ *bin) {
 	return true;
 }
 
-static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
+static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	Elf_(Dyn) d = {};
 	Elf_(Addr) strtabaddr = 0;
 	ut64 offset = 0;
 	char *strtab = NULL;
-	size_t strsize = 0;
+	size_t relentry, strsize = 0;
 	int entries;
 	int i, j, len, r;
 	ut8 sdyn[sizeof (Elf_(Dyn))] = {0};
@@ -421,12 +424,16 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 		case DT_STRTAB: strtabaddr = Elf_(r_bin_elf_v2p) (bin, dyn[i].d_un.d_ptr); break;
 		case DT_STRSZ: strsize = dyn[i].d_un.d_val; break;
 		case DT_PLTREL: bin->is_rela = dyn[i].d_un.d_val; break;
+		case DT_RELAENT: relentry = dyn[i].d_un.d_val; break;
 		default:
 			if ((dyn[i].d_tag >= DT_VERSYM) && (dyn[i].d_tag <= DT_VERNEEDNUM)) {
 				bin->version_info[DT_VERSIONTAGIDX (dyn[i].d_tag)] = dyn[i].d_un.d_val;
 			}
 			break;
 		}
+	}
+	if (!bin->is_rela) {
+		bin->is_rela = sizeof (Elf_(Rela)) == relentry? DT_RELA : DT_REL;
 	}
 	if (!strtabaddr || strtabaddr > bin->size || strsize > ST32_MAX || !strsize || strsize > bin->size) {
 		if (!strtabaddr) {
@@ -452,12 +459,16 @@ static int init_dynamic_section (struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->strtab = strtab;
 	bin->strtab_size = strsize;
 	r = Elf_(r_bin_elf_has_relro)(bin);
-	if (r == 2) {
+	switch (r) {
+	case R_ELF_FULL_RELRO:
 		sdb_set (bin->kv, "elf.relro", "full relro", 0);
-	} else if (r == 1) {
+		break;
+	case R_ELF_PART_RELRO:
 		sdb_set (bin->kv, "elf.relro", "partial relro", 0);
-	} else {
+		break;
+	default:
 		sdb_set (bin->kv, "elf.relro", "no relro", 0);
+		break;
 	}
 	sdb_num_set (bin->kv, "elf_strtab.offset", strtabaddr, 0);
 	sdb_num_set (bin->kv, "elf_strtab.size", strsize, 0);
@@ -1101,12 +1112,18 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		rel_sec = get_section_by_name (bin, ".rel.plt");
 		if (!rel_sec) {
 			rel_sec = get_section_by_name (bin, ".rela.plt");
+			if (!rel_sec) {
+				rel_sec = get_section_by_name (bin, ".rela.dyn");
+			}
 		}
 		tsize = sizeof (Elf_(Rel));
 	} else if (bin->is_rela == DT_RELA) {
 		rel_sec = get_section_by_name (bin, ".rela.plt");
 		if (!rel_sec) {
 			rel_sec = get_section_by_name (bin, ".rel.plt");
+			if (!rel_sec) {
+				rel_sec = get_section_by_name (bin, ".rela.dyn");
+			}
 		}
 		is_rela = true;
 		tsize = sizeof (Elf_(Rela));
@@ -1134,8 +1151,12 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	}
 	for (j = k = 0; j < rel_sec->size && k < nrel; j += tsize, k++) {
 		int l = 0;
-		if (rel_sec->offset + j > bin->size) goto out;
-		if (rel_sec->offset + j + tsize > bin->size) goto out;
+		if (rel_sec->offset + j > bin->size) {
+			goto out;
+		}
+		if (rel_sec->offset + j + tsize > bin->size) {
+			goto out;
+		}
 		len = r_buf_read_at (bin->b, rel_sec->offset + j, is_rela? rla: rl, is_rela? sizeof (Elf_(Rela)): sizeof (Elf_(Rel)));
 		if (len < 1) {
 			goto out;
@@ -1217,7 +1238,9 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 					{
 						plt_addr += k * 12 + 20;
 						// thumb symbol
-						if (plt_addr & 1) plt_addr--;
+						if (plt_addr & 1) {
+							plt_addr--;
+						}
 						free (REL);
 						return plt_addr;
 					}
@@ -1237,9 +1260,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 				case R_386_JMP_SLOT:
 					{
 					ut8 buf[8];
-					if (of + sizeof(Elf_(Addr)) >= bin->b->length) {
-						// do nothing
-					} else {
+					if (of + sizeof(Elf_(Addr)) < bin->size) {
 						// ONLY FOR X86
 						if (of > bin->size || of + sizeof (Elf_(Addr)) > bin->size) {
 							goto out;
@@ -1251,9 +1272,50 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 						plt_sym_addr = sizeof (Elf_(Addr)) == 4
 									 ? r_read_le32 (buf)
 									 : r_read_le64 (buf);
+
+						if (!plt_sym_addr) {
+							//XXX HACK ALERT!!!! full relro?? try to fix it 
+							//will there always be .plt.got, what would happen if is .got.plt?
+							RBinElfSection *s = get_section_by_name (bin, ".plt.got");
+ 							if (Elf_(r_bin_elf_has_relro)(bin) != R_ELF_FULL_RELRO || !s) {
+								goto done;
+							}
+							plt_addr = s->offset;
+							of = of + got_addr - got_offset;
+							while (plt_addr + 2 + 4 < s->offset + s->size) {
+								/*we try to locate the plt entry that correspond with the relocation
+								  since got does not point back to .plt. In this case it has the following 
+								  form
+
+								ff253a152000   JMP QWORD [RIP + 0x20153A]
+								6690		   NOP
+
+								plt_addr + 2 to remove jmp opcode and get the imm reading 4
+								and if RIP (plt_addr + 6) + imm == rel->offset 
+								return plt_addr, that will be our sym addr
+								
+								perhaps this hack doesn't work on 32 bits
+								*/
+								len = r_buf_read_at (bin->b, plt_addr + 2, buf, 4);
+								if (len < -1) {
+									goto out;
+								}
+								plt_sym_addr = sizeof (Elf_(Addr)) == 4
+												? r_read_le32 (buf)
+												: r_read_le64 (buf);
+
+								plt_sym_addr =  Elf_(r_bin_elf_v2p) (bin, plt_sym_addr);
+								if ((plt_addr + 6 + plt_sym_addr) == of) {
+									plt_sym_addr = plt_addr;
+									goto done;
+								}
+								plt_addr += sizeof (Elf_(Addr)) == 4? 4: 8;
+							}
+						} else {
+							plt_sym_addr -= 6;
+						}
+						goto done;
 					}
-					plt_sym_addr -= 6;
-					goto done;
 					break;
 					}
 				default:
@@ -2501,7 +2563,6 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 			/* find match in phdr */
 			p = phdr_symbols;
 			while (!p->last) {
-				// eprintf ("-> %s\n", p->name);
 				if (d->offset == p->offset) {
 					p->in_shdr = true;
 					if (*p->name && strcmp (d->name, p->name)) {
@@ -2689,7 +2750,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					if (st_name < 0 || st_name >= maxsize) {
 						ret[ret_ctr].name[0] = 0;
 					} else {
-						const size_t len = __strnlen (strtab+sym[k].st_name, rest);
+						const size_t len = __strnlen (strtab + sym[k].st_name, rest);
 						memcpy (ret[ret_ctr].name, &strtab[sym[k].st_name], len);
 					}
 				}
