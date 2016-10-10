@@ -2232,8 +2232,9 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	char nomalloc[256];
 	char *p;
 	if (*input == '?') {
-		eprintf ("Usage: [addr] [size] [name]\n");
+		eprintf ("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
 		eprintf ("Default: 0x100000 0xf0000\n");
+		eprintf ("See ae? for more help\n");
 		return;
 	}
 
@@ -2905,7 +2906,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			"ae?", "", "show this help",
 			"ae??", "", "show ESIL help",
 			"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
-			"aeim", "", "initialize ESIL VM stack (aeim- remove)",
+			"aeim", " [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
 			"aeip", "", "initialize ESIL program counter to curseek",
 			"ae", " [expr]", "evaluate ESIL expression",
 			"aex", " [hex]", "evaluate opcode expression",
