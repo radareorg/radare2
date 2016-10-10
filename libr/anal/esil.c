@@ -542,7 +542,7 @@ R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num) {
 	int ret = 0;
 	IFDBG { eprintf ("%s=0x%" PFMT64x "\n", dst, num); }
 	if (esil->cb.hook_reg_write) {
-		ret = esil->cb.hook_reg_write (esil, dst, num);
+		ret = esil->cb.hook_reg_write (esil, dst, &num);
 	}
 	if (!ret && dst[0] == ESIL_INTERNAL_PREFIX && dst[1]) {
 		ret = esil_internal_write (esil, dst, num);
