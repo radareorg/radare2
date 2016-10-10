@@ -401,14 +401,14 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int
 	return ret;
 }
 
-static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
+static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
 	struct r_i8015_reg *ri;
 	RAnalEsilCallbacks cbs = esil->cb;
 
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = r_anal_esil_mem_write (esil, IRAM + offset, (ut8*)&val, ri->num_bytes);
+		ret = r_anal_esil_mem_write (esil, IRAM + offset, (ut8*) val, ri->num_bytes);
 	}
 
 	esil->cb = ocbs;
