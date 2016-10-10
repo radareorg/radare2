@@ -170,10 +170,10 @@ r_8051_op r_8051_decode(const ut8 *buf, int len) {
 	return _{ "xxx", 0, 0 }; // XXX
 }
 
-static char *strdup_filter (const char *str, const ut8 *buf) {
+static char *strdup_filter(const char *str, const ut8 *buf) {
 	char *o;
 	int i, j, len;
-	if (!str || !buf) {
+	if (!str) {
 		return NULL;
 	}
 	len = strlen (str);
@@ -185,7 +185,7 @@ static char *strdup_filter (const char *str, const ut8 *buf) {
 		return NULL;
 	}
 	for (i = j = 0; i < len; i++) {
-		if (str[i] == '$') {
+		if (str[i] == '$' && buf) {
 			int n = str[i+1];
 			if (n >= '0' && n <= '9') {
 				n -= '0';
@@ -212,11 +212,15 @@ char *r_8051_disasm(r_8051_op op, ut32 addr, char *str, int len) {
 		*out = 0;
 	}
 	switch (op.operand) {
-	case NONE: strncpy (out, op.name, len-1); break;
+	case NONE: 
+		strncpy (out, op.name, len-1); 
+		break;
 	case ARG:
-		if (!strncmp (op.arg, "#imm", 4))
-		snprintf (out, len, "%s 0x%x", op.name, op.buf[1]);
-		else snprintf (out, len, "%s %s", op.name, op.arg);
+		if (!strncmp (op.arg, "#imm", 4)) {
+			snprintf (out, len, "%s 0x%x", op.name, op.buf[1]);
+		} else {
+			snprintf (out, len, "%s %s", op.name, op.arg);
+		}
 		break;
 	case ADDR11:
 	case ADDR16:

@@ -66,9 +66,9 @@ static RI8015Reg registers[] = {
 #define emit(frag) r_strbuf_appendf(&op->esil, frag)
 #define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
 
-#define j(frag) emitf(frag, 1 & buf[0], buf[1], buf[2]);
-#define h(frag) emitf(frag, 7 & buf[0], buf[1], buf[2]);
-#define k(frag) emitf(frag, bitindex[buf[1]>>3], buf[1] & 7, buf[2]);
+#define j(frag) emitf(frag, 1 & buf[0], buf[1], buf[2])
+#define h(frag) emitf(frag, 7 & buf[0], buf[1], buf[2])
+#define k(frag) emitf(frag, bitindex[buf[1]>>3], buf[1] & 7, buf[2])
 
 // on 8051 the stack grows upward and lsb is pushed first meaning
 // that on little-endian esil vms =[2] works as indended
@@ -118,20 +118,20 @@ static RI8015Reg registers[] = {
 
 #define TEMPLATE_4(base, format, src4, arg1, arg2) \
 	case base + 0x4: \
-		h (format(0, src4, arg1, arg2)) break; \
+		h (format(0, src4, arg1, arg2)); break; \
 		\
 	case base + 0x5: \
-		h (format(1, IB1,  arg1, arg2)) break; \
+		h (format(1, IB1,  arg1, arg2)); break; \
 		\
 	case base + 0x6: \
 	case base + 0x7: \
-		j (format(0, R0I,  arg1, arg2)) break; \
+		j (format(0, R0I,  arg1, arg2)); break; \
 		\
 	case base + 0x8: case base + 0x9: \
 	case base + 0xA: case base + 0xB: \
 	case base + 0xC: case base + 0xD: \
 	case base + 0xE: case base + 0xF: \
-		h (format(0, R0,   arg1, arg2)) break;
+		h (format(0, R0,   arg1, arg2)); break;
 
 #define OP_GROUP_INPLACE_LHS_4(base, lhs, op) TEMPLATE_4(base, OP_GROUP_INPLACE_LHS_4_FMT, L1, lhs, op)
 #define OP_GROUP_INPLACE_LHS_4_FMT(databyte, rhs, lhs, op) XR(rhs) XI(lhs, op)
@@ -189,7 +189,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	case 0x92: /* mov   */ /* TODO */ break;
 	case 0xA2: /* mov   */ /* TODO */ break;
 	case 0xB2: /* cpl   */
-		emitf("%d,1,<<,%d,^=[1]", a2, a1);
+		emitf ("%d,1,<<,%d,^=[1]", a2, a1);
 		break;
 	case 0xC2: /* clr   */ /* TODO */ break;
 
@@ -210,10 +210,11 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 	OP_GROUP_INPLACE_LHS_4(0x20, A, "+")
 
 	case 0x34:
-		h (XR(L1)  "C,+," XI(A, "+")) break;
+		h (XR(L1)  "C,+," XI(A, "+"));
+		 break;
 	case 0x35:
-		h (XR(IB1) "C,+," XI(A, "+")) break;
-
+		h (XR(IB1) "C,+," XI(A, "+")); 
+		break;
 	case 0x36: case 0x37:
 		j (XR(R0I) "C,+," XI(A, "+"));
 		break;
@@ -319,39 +320,51 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, const 
 		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
 
 	case 0xE2: case 0xE3:
-		/* movx */ j(XRAM_BASE "r%0$d,+,[1]," XW(A)); break;
-
+		/* movx */ 
+		j(XRAM_BASE "r%0$d,+,[1]," XW(A)); 
+		break;
 	case 0xE4:
-		/* clr  */ emit("0,A,="); break;
+		/* clr  */ 
+		emit("0,A,="); 
+		break;
 	case 0xE5:
-		/* mov  */ h (XR(IB1) XW(A)) break;
-
+		/* mov  */ 
+		h (XR(IB1) XW(A)); 
+		break;
 	case 0xE6: case 0xE7:
-		/* mov  */ j (XR(R0I) XW(A)) break;
-
+		/* mov  */ 
+		j (XR(R0I) XW(A));
+		break;
 	case 0xE8: case 0xE9:
 	case 0xEA: case 0xEB:
 	case 0xEC: case 0xED:
 	case 0xEE: case 0xEF:
-		/* mov  */ h (XR(R0)  XW(A)) break;
-
+		/* mov  */ 
+		h (XR(R0)  XW(A));
+		break;
 	case 0xF2: case 0xF3:
-		/* movx */ j(XR(A) XRAM_BASE "r%0$d,+,=[1]");
+		/* movx */ 
+		j(XR(A) XRAM_BASE "r%0$d,+,=[1]");
 		break;
 	case 0xF4:
-		/* cpl  */ h ("255" XI(A, "^")) break;
+		/* cpl  */ 
+		h ("255" XI(A, "^")); 
+		break;
 	case 0xF5:
-		/* mov  */ h (XR(A) XW(IB1)) break;
-
+		/* mov  */ 
+		h (XR(A) XW(IB1)); 
+		break;
 	case 0xF6: case 0xF7:
-		/* mov  */ j (XR(A) XW(R0I)) break;
-
+		/* mov  */ 
+		j (XR(A) XW(R0I)); 
+		break;
 	case 0xF8: case 0xF9:
 	case 0xFA: case 0xFB:
 	case 0xFC: case 0xFD:
 	case 0xFE: case 0xFF:
-		/* mov  */ h (XR(A) XW(R0)) break;
-
+		/* mov  */ 
+		h (XR(A) XW(R0)); 
+		break;
 	default: break;
 	}
 }
@@ -527,16 +540,17 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	} else if (*buf_asm && !strncmp (buf_asm+1, "call", 4)) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = o.addr;
-		op->fail = addr+o.length;
-	} else
+		op->fail = addr + o.length;
+	} else {
 		/* CJNE, DJNZ, JC, JNC, JZ, JB, JNB, LJMP, SJMP */
-	if (buf_asm[0]=='j' || (buf_asm[0] && buf_asm[1] == 'j')) {
-		op->type = R_ANAL_OP_TYPE_JMP;
-		if (o.operand == OFFSET) {
-			op->jump = o.addr+addr+o.length;
-		} else {
-			op->jump = o.addr;
-			op->fail = addr+o.length;
+		if (buf_asm[0]=='j' || (buf_asm[0] && buf_asm[1] == 'j')) {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			if (o.operand == OFFSET) {
+				op->jump = o.addr + addr + o.length;
+			} else {
+				op->jump = o.addr;
+			}
+			op->fail = addr + o.length;
 		}
 	}
 	if (anal->decode) {
