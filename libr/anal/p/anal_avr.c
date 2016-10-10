@@ -72,7 +72,7 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ("ATmega1281",  16, 512, 512),
 	CPU_MODEL_DECL ("ATmega2560",  22, 512, 512),
 	CPU_MODEL_DECL ("ATmega2561",  22, 512, 512),
-	CPU_MODEL_DECL ("unknown_avr", 16, 512, 512)
+	CPU_MODEL_DECL ("unknown_avr", 12, 512, 512)
 };
 
 RStrBuf *__generic_io_dest(ut8 port, int write) {
