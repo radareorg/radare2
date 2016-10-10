@@ -8,11 +8,12 @@ R_API RAsmCode *r_asm_code_new(void) {
 }
 
 R_API void* r_asm_code_free(RAsmCode *acode) {
-	if (!acode) return NULL;
-	free (acode->buf);
-	free (acode->buf_hex);
-	free (acode->buf_asm);
-	free (acode);
+	if (acode) {
+		free (acode->buf);
+		free (acode->buf_hex);
+		free (acode->buf_asm);
+		free (acode);
+	}
 	return NULL;
 }
 

@@ -49,8 +49,11 @@ RS1 RS0 Working Register Bank and Address
 #define _OFFSET(x) OFFSET, ((x[1])), NULL, buf
 #define _DIRECT(x) DIRECT, (x[1]), NULL, x
 
-static const char *arg[] = { "#immed", "#imm", "@r0", "@r1",
-	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7" };
+static const char *arg[] = {
+	"#immed", "#imm", "@r0", "@r1",
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"
+};
+
 static const char *ops[] = {
 	"inc",         // 0.   04 : immed=a
 	"dec",         // 1.   14 : immed=a
@@ -76,9 +79,12 @@ static const char *ops[] = {
 
 r_8051_op r_8051_decode(const ut8 *buf, int len) {
 	ut8 op = buf[0];
-	if (!op) return _{ "nop", 1, NONE, 0 };
-	if ((op&0xf)==1)
+	if (!op) {
+		return _{ "nop", 1, NONE, 0 };
+	}
+	if ((op & 0xf) == 1) {
 		return _{((op>>4)%2)? "acall": "ajmp", 2, _ADDR11(buf)};
+	}
 	switch (op) {
 	case 0x10: return _{ "jbc bit,", 3, _ADDR16(buf) };
 	case 0x20: return _{ "jb bit,", 3, _ADDR16(buf) };
@@ -167,18 +173,24 @@ r_8051_op r_8051_decode(const ut8 *buf, int len) {
 static char *strdup_filter (const char *str, const ut8 *buf) {
 	char *o;
 	int i, j, len;
-	if (!str) return NULL;
+	if (!str || !buf) {
+		return NULL;
+	}
 	len = strlen (str);
-	if ((len * 4) + 1 < len) return NULL;
+	if ((len * 4) + 1 < len) {
+		return NULL;
+	}
 	o = malloc (1 + (len * 4));
-	if (!o) return NULL;
+	if (!o) {
+		return NULL;
+	}
 	for (i = j = 0; i < len; i++) {
 		if (str[i] == '$') {
 			int n = str[i+1];
-			if (n>='0' && n<='9') {
+			if (n >= '0' && n <= '9') {
 				n -= '0';
 				i++;
-				j += sprintf (o+j, "0x%02x", buf[n]);
+				j += sprintf (o + j, "0x%02x", buf[n]);
 			} else {
 				eprintf ("strdup_filter: Internal bug\n");
 			}
@@ -202,18 +214,21 @@ char *r_8051_disasm(r_8051_op op, ut32 addr, char *str, int len) {
 	switch (op.operand) {
 	case NONE: strncpy (out, op.name, len-1); break;
 	case ARG:
-		   if (!strncmp (op.arg, "#imm", 4))
-			   snprintf (out, len, "%s 0x%x", op.name, op.buf[1]);
-		   else snprintf (out, len, "%s %s", op.name, op.arg);
+		if (!strncmp (op.arg, "#imm", 4))
+		snprintf (out, len, "%s 0x%x", op.name, op.buf[1]);
+		else snprintf (out, len, "%s %s", op.name, op.arg);
 		break;
 	case ADDR11:
 	case ADDR16:
-	case DIRECT: snprintf (out, len, "%s 0x%02x", op.name, op.addr); break;
+	case DIRECT:
+		snprintf (out, len, "%s 0x%02x", op.name, op.addr);
+		break;
 	case OFFSET:
-		snprintf (out, len, "%s 0x%02x", op.name, op.addr+addr+2); break;
+		snprintf (out, len, "%s 0x%02x", op.name, op.addr + addr + 2);
+		break;
 	}
 	if (*out == '+') {
-		eof = strchr (out+1, ';');
+		eof = strchr (out + 1, ';');
 		if (eof) {
 			*eof = 0;
 			tmp = strdup_filter (out+1, (const ut8*)op.buf);
@@ -222,7 +237,9 @@ char *r_8051_disasm(r_8051_op op, ut32 addr, char *str, int len) {
 			strcat (out, tmp);
 			free (tmp);
 			free (tmp2);
-		} else eprintf ("do8051disasm: Internal bug\n");
+		} else {
+			eprintf ("do8051disasm: Internal bug\n");
+		}
 	} else {
 		tmp = out;
 		out = strdup_filter (out, (const ut8*)op.buf);
@@ -235,7 +252,7 @@ char *r_8051_disasm(r_8051_op op, ut32 addr, char *str, int len) {
 
 int main() {
 	char *str;
-	ut8 buf[3] = {0xb3, 0x11, 0x22};
+	ut8 buf[3] = { 0xb3, 0x11, 0x22 };
 	r_8051_ op = r_8051_decode (buf, sizeof (buf));
 	str = r_8051_disasm (op, 0, NULL, 0);
 	eprintf ("%s\n", str);
