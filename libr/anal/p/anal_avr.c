@@ -145,6 +145,7 @@ void __generic_push(RAnalOp *op, int sz) {
 }
 
 INST_HANDLER (adc) {	// ADC Rd, Rr
+			// ROL Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,cf,+,r%d,+,", r, d);			// Rd + Rr + C
@@ -856,6 +857,28 @@ INST_HANDLER (nop) {	// NOP
 	ESIL_A (",,");
 }
 
+INST_HANDLER (or) {	// OR Rd, Rr
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
+	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+	ESIL_A ("r%d,r%d,|,", r, d);				// 0: (Rd | Rr)
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("0,vf,=,");					// V
+	ESIL_A ("nf,sf,=,");					// S
+	ESIL_A ("r%d,=,", d);					// Rd = result
+}
+
+INST_HANDLER (ori) {	// ORI Rd, K
+	int d = ((buf[0] >> 4) & 0xf) + 16;
+	int k = (buf[0] & 0xf) | ((buf[1] & 0xf) << 4);
+	ESIL_A ("r%d,%d,|,", d, k);				// 0: (Rd | k)
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("0,vf,=,");					// V
+	ESIL_A ("nf,sf,=,");					// S
+	ESIL_A ("r%d,=,", d);					// Rd = result
+}
+
 INST_HANDLER (out) {	// OUT A, Rr
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
@@ -936,6 +959,17 @@ INST_HANDLER (rjmp) {	// RJMP k
 			| (buf[1] & 0x8 ? ~((typeof (op->jump)) 0x1fff) : 0))
 		+ 2) & cpu->pc_mask;
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);
+}
+
+INST_HANDLER (ror) {	// ROR Rd
+	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
+	ESIL_A ("1,r%d,>>,8,cf,<<,|,", d);		// 0: (Rd>>1) | (cf<<8)
+	ESIL_A ("r%d,1,&,cf,=,");			// C
+	ESIL_A ("0,RPICK,!,zf,=,");			// Z
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");		// N
+	ESIL_A ("nf,cf,^,vf,=,");			// V
+	ESIL_A ("vf,nf,^,sf,=,");			// S
+	ESIL_A ("r%d,=,", d);				// Rd = result
 }
 
 INST_HANDLER (sbc) {	// SBC Rd, Rr
@@ -1110,6 +1144,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (neg,    0xfe0f, 0x9401, 2,      2,   SUB    ), // NEG Rd
 	INST_DECL (pop,    0xfe0f, 0x900f, 2,      2,   POP    ), // PUSH Rr
 	INST_DECL (push,   0xfe0f, 0x920f, 0,      2,   PUSH   ), // PUSH Rr
+	INST_DECL (ror,    0xfe0f, 0x9407, 1,      2,   SAR    ), // PUSH Rr
 	INST_DECL (st,     0xfe0f, 0x920c, 2,      2,   STORE  ), // ST X, Rr
 	INST_DECL (st,     0xfe0f, 0x920d, 0,      2,   STORE  ), // ST X+, Rr
 	INST_DECL (st,     0xfe0f, 0x920e, 0,      2,   STORE  ), // ST -X, Rr
@@ -1123,26 +1158,28 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
 	INST_DECL (std,    0xfe07, 0x9201, 0,      2,   STORE  ), // LD Y/Z+, Rr
 	INST_DECL (std,    0xfe07, 0x9202, 0,      2,   STORE  ), // LD -Y/Z, Rr
-	INST_DECL (brbx,   0xfc00, 0xf400, 0,      2,   CJMP   ), // BRBC s, k
-	INST_DECL (brbx,   0xfc00, 0xf000, 0,      2,   CJMP   ), // BRBS s, k
 	INST_DECL (adc,    0xfc00, 0x1c00, 1,      2,   ADD    ), // ADC Rd, Rr
 	INST_DECL (add,    0xfc00, 0x0c00, 1,      2,   ADD    ), // ADD Rd, Rr
+	INST_DECL (and,    0xfc00, 0x2000, 1,      2,   AND    ), // AND Rd, Rr
+	INST_DECL (brbx,   0xfc00, 0xf000, 0,      2,   CJMP   ), // BRBS s, k
+	INST_DECL (brbx,   0xfc00, 0xf400, 0,      2,   CJMP   ), // BRBC s, k
 	INST_DECL (cp,     0xfc00, 0x1400, 1,      2,   CMP    ), // CP Rd, Rr
 	INST_DECL (cpc,    0xfc00, 0x0400, 1,      2,   CMP    ), // CPC Rd, Rr
 	INST_DECL (cpse,   0xfc00, 0x1000, 0,      2,   CJMP   ), // CPSE Rd, Rr
-	INST_DECL (and,    0xfc00, 0x2000, 1,      2,   AND    ), // AND Rd, Rr
+	INST_DECL (eor,    0xfc00, 0x2400, 1,      2,   XOR    ), // EOR Rd, Rr
 	INST_DECL (mov,    0xfc00, 0x2c00, 1,      2,   MOV    ), // MOV Rd, Rr
 	INST_DECL (mul,    0xfc00, 0x9c00, 2,      2,   AND    ), // MUL Rd, Rr
-	INST_DECL (eor,    0xfc00, 0x2400, 1,      2,   XOR    ), // EOR Rd, Rr
+	INST_DECL (or,     0xfc00, 0x2800, 1,      2,   OR     ), // OR Rd, Rr
 	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
 	INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
 	INST_DECL (out,    0xf800, 0xb800, 1,      2,   IO     ), // OUT A, Rr
-	INST_DECL (cpi,    0xf000, 0x3000, 1,      2,   CMP    ), // CPI Rd, K
-	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
 	INST_DECL (andi,   0xf000, 0x7000, 1,      2,   AND    ), // ANDI Rd, K
-	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
+	INST_DECL (cpi,    0xf000, 0x3000, 1,      2,   CMP    ), // CPI Rd, K
 	INST_DECL (ldi,    0xf000, 0xe000, 1,      2,   LOAD   ), // LDI Rd, K
+	INST_DECL (ori,    0xf000, 0x6000, 1,      2,   OR     ), // ORI Rd, K
+	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
+	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
 	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
 	INST_DECL (std,    0xd200, 0x8200, 0,      2,   STORE  ), // LD Y/Z+q, Rr
 
