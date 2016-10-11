@@ -995,14 +995,17 @@ static int __disasm(void *_core, ut64 addr) {
 static void update_sdb(RCore *core) {
 	Sdb *d;
 	RBinObject *o;
-	if (!core)
+	if (!core) {
 		return;
+	}
 	//SDB// anal/
-	if (core->anal && core->anal->sdb)
+	if (core->anal && core->anal->sdb) {
 		sdb_ns_set (DB, "anal", core->anal->sdb);
+	}
 	//SDB// bin/
-	if (core->bin && core->bin->sdb)
+	if (core->bin && core->bin->sdb) {
 		sdb_ns_set (DB, "bin", core->bin->sdb);
+	}
 	//SDB// bin/info
 	o = r_bin_get_object (core->bin);
 	if (o) {
@@ -1016,8 +1019,10 @@ static void update_sdb(RCore *core) {
 		sdb_ns_set (DB, "syscall", core->assembler->syscall->db);
 	}
 	d = sdb_ns (DB, "debug", 1);
-	core->dbg->sgnls->refs++;
-	sdb_ns_set (d, "signals", core->dbg->sgnls);
+	if (core->dbg->sgnls) {
+		core->dbg->sgnls->refs++;
+		sdb_ns_set (d, "signals", core->dbg->sgnls);
+	}
 }
 
 // dupped in cmd_type.c

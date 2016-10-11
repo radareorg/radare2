@@ -311,8 +311,11 @@ static void list_section_visual_paddr (RIO *io, ut64 seek, ut64 len, int use_col
 
 /* TODO: move to print ??? support pretty print of ranges following an array of offsetof */
 R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len, int use_color, int cols) {
-	if (io->va) list_section_visual_vaddr (io, seek, len, use_color, cols);
-	else list_section_visual_paddr (io, seek, len, use_color, cols);
+	if (io->va) {
+		list_section_visual_vaddr (io, seek, len, use_color, cols);
+	} else {
+		list_section_visual_paddr (io, seek, len, use_color, cols);
+	}
 }
 
 R_API RIOSection *r_io_section_vget(RIO *io, ut64 vaddr) {
