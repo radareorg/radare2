@@ -432,7 +432,7 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	RAnalEsilCallbacks cbs = esil->cb;
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = r_anal_esil_mem_write (esil, IRAM + offset, (ut8*) val, ri->num_bytes);
+		ret = r_anal_esil_mem_write (esil, IRAM + offset, (ut8*)val, ri->num_bytes);
 	}
 	esil->cb = ocbs;
 	if (!ret && ocbs.hook_reg_write) {
