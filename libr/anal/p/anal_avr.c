@@ -72,7 +72,7 @@ CPU_MODEL cpu_models[] = {
 	CPU_MODEL_DECL ("ATmega1281",  16, 512, 512),
 	CPU_MODEL_DECL ("ATmega2560",  22, 512, 512),
 	CPU_MODEL_DECL ("ATmega2561",  22, 512, 512),
-	CPU_MODEL_DECL ("unknown_avr", 16, 512, 512)
+	CPU_MODEL_DECL ("unknown_avr", 12, 512, 512)
 };
 
 RStrBuf *__generic_io_dest(ut8 port, int write) {
@@ -172,6 +172,7 @@ INST_HANDLER (adc) {	// ADC Rd, Rr
 }
 
 INST_HANDLER (add) {	// ADD Rd, Rr
+			// LSL Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,r%d,+,", r, d);				// Rd + Rr
@@ -390,7 +391,7 @@ INST_HANDLER (cp) {	// CP Rd, Rr
 INST_HANDLER (cpc) {	// CPC Rd, Rr
 	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
 	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
-	ESIL_A ("r%d,cf,-,r%d,-,", r, d);			// Rd - Rr - C
+	ESIL_A ("cf,r%d,-,r%d,-,", r, d);			// Rd - Rr - C
 								// FLAGS:
 	ESIL_A ("r%d,0x08,&,!,"   "r%d,0x08,&,!,!,"     "&,"	// H
 		"r%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
@@ -409,13 +410,13 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
-		d, r, d, r);
+		d, r, r, d);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 }
 
 INST_HANDLER (cpi) { // CPI Rd, K
-	int d = (buf[1] & 0xf) >> 4;
-	int k = ((buf[0] & 0xf) << 4) | (buf[1] & 0xf);
+	int d = ((buf[0] >> 4) & 0xf) + 16;
+	int k = (buf[0] & 0xf) | ((buf[1] & 0xf) << 4);
 	ESIL_A ("%d,r%d,-,", k, d);				// Rd - k
 								// FLAGS:
 	ESIL_A ("r%d,0x08,&,!,"   "%d,0x08,&,!,!,"     "&,"	// H
@@ -423,19 +424,19 @@ INST_HANDLER (cpi) { // CPI Rd, K
 		"%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
 		"|,|,hf,=,",
 		d, k, d, k);
-	ESIL_A ("r%d,0x80,&,!,!," "%d,0x80,&,!,"       "&,"	// V
+	ESIL_A ("r%d,0x80,&,!,!," "%d,0x80,&,!,"        "&,"	// V
 		""                "0,RPICK,0x80,&,!,"   "&,"
-		"r%d,0x80,&,!,"   "%d,0x80,&,!,!,"     "&,"
+		"r%d,0x80,&,!,"   "%d,0x80,&,!,!,"      "&,"
 		""                "0,RPICK,0x80,&,!,!," "&,"
 		"|,vf,=,",
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"   "%d,0x80,&,!,!,"     "&," 	// C
-		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
-		"%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
+		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
-		d, k, d, k);
+		d, k, k, d);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 }
 
@@ -564,7 +565,7 @@ INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
 	ESIL_A ("1,");
 	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
 	ESIL_A ("r%d", r);				// unsigned Rr
-	ESIL_A ("*,<<,", r, d);				// 0: (Rd*Rr)<<1
+	ESIL_A ("*,<<,");				// 0: (Rd*Rr)<<1
 
 	ESIL_A ("0xffff,&,");				// prevent overflow
 	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
@@ -760,29 +761,95 @@ INST_HANDLER (lds16) {	// LDS Rd, k
 INST_HANDLER (lpm) {	// LPM
 			// LPM Rd, Z
 			// LPM Rd, Z+
-	ut16 ins = ((ut16) (buf[1] << 8) | buf[0]);
+	ut16 ins = (((ut16) buf[1]) << 8) | ((ut16) buf[0]);
 	// read program memory
 	__generic_ld_st (
 		op, "prog",
 		'z',				// index register Y/Z
 		1,				// use RAMP* registers
-		ins & 0xfe0f == 0x9005
+		(ins & 0xfe0f) == 0x9005
 			? 1			// post incremented
 			: 0,			// no increment
 		0,				// not offset
 		0);				// load operation (!st)
 	// load register
 	ESIL_A ("r%d,=,",
-		ins == 0x95c8
+		(ins == 0x95c8)
 			? 0			// LPM (r0)
 			: ((buf[0] >> 4) & 0xf)	// LPM Rd
 				| ((buf[1] & 0x1) << 4));
 }
 
-INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1Rrd
+INST_HANDLER (lsr) {	// LSR Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
+	ESIL_A ("1,r%d,>>,", d);				// 0: R=(Rd >> 1)
+	ESIL_A ("r%d,0x1,&,!,!,cf,=,", d);			// C = Rd0
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("0,nf,=,");					// N
+	ESIL_A ("nf,cf,^,vf,=,");				// V
+	ESIL_A ("nf,vf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = R
+}
+
+INST_HANDLER (mov) {	// MOV Rd, Rr
+	int d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
+	int r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
+	ESIL_A ("r%d,r%d,=,", r, d);
+}
+
+INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1:Rr
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
 	ESIL_A ("r%d,r%d,=,r%d,r%d,=,", r, d, r + 1, d + 1);
+}
+
+INST_HANDLER (mul) {	// MUL Rd, Rr
+	int d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
+	int r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
+
+	ESIL_A ("r%d,r%d,*,", r, d);			// 0: (Rd*Rr)<<1
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/15
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (muls) {	// MULS Rd, Rr
+	int d = (buf[0] >> 4 & 0x0f) + 16;
+	int r = (buf[0] & 0x0f) + 16;
+
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", r);	// sign extension Rr
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("*,");					// 0: (Rd*Rr)
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/15
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (mulsu) {	// MULSU Rd, Rr
+	int d = (buf[0] >> 4 & 0x07) + 16;
+	int r = (buf[0] & 0x07) + 16;
+
+	ESIL_A ("r%d,", r);				// unsigned Rr
+	ESIL_A ("r%d,DUP,0x80,&,?{,0xffff00,|,},", d);	// sign extension Rd
+	ESIL_A ("*,");					// 0: (Rd*Rr)
+	ESIL_A ("DUP,0xff,&,r0,=,");			// r0 = LO(0)
+	ESIL_A ("8,0,RPICK,>>,0xff,&,r1,=,");		// r1 = HI(0)
+	ESIL_A ("DUP,0x8000,&,!,!,cf,=,");		// C = R/15
+	ESIL_A ("DUP,!,zf,=,");				// Z = !R
+}
+
+INST_HANDLER (neg) {	// NEG Rd
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
+	ESIL_A ("r%d,0x00,-,0xff,&,", d);			// 0: (0-Rd)
+	ESIL_A ("DUP,r%d,0xff,^,|,0x08,&,!,!,hf,=,", d);	// H
+	ESIL_A ("DUP,0x80,-,!,vf,=,", d);			// V
+	ESIL_A ("DUP,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("DUP,!,zf,=,");					// Z
+	ESIL_A ("DUP,!,!,cf,=,");				// C
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = result
 }
 
 INST_HANDLER (nop) {	// NOP
@@ -818,10 +885,10 @@ INST_HANDLER (push) {	// PUSH Rr
 
 INST_HANDLER (rcall) {	// RCALL k
 	// target address
-	op->jump = op->addr
+	op->jump = (op->addr
 		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
-			| (((buf[1] & 0x8) ? ~((int) 0x1ff) : 0)))
-		+ 2;
+			| (((buf[1] & 0x8) ? ~((int) 0x1fff) : 0)))
+		+ 2) & cpu->pc_mask;
 	// esil
 	ESIL_A ("pc,");				// esil already points to next
 						// instruction (@ret)
@@ -864,10 +931,10 @@ INST_HANDLER (reti) {	// RETI
 }
 
 INST_HANDLER (rjmp) {	// RJMP k
-	op->jump = op->addr
+	op->jump = (op->addr
 		+ (((typeof (op->jump)) (((buf[1] & 0xf) << 9) | (buf[0] << 1)))
 			| (buf[1] & 0x8 ? ~((typeof (op->jump)) 0x1fff) : 0))
-		+ 2;
+		+ 2) & cpu->pc_mask;
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);
 }
 
@@ -1018,13 +1085,17 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (fmul,   0xff88, 0x0308, 2,      2,   MUL    ), // FMUL Rd, Rr
 	INST_DECL (fmuls,  0xff88, 0x0380, 2,      2,   MUL    ), // FMULS Rd, Rr
 	INST_DECL (fmulsu, 0xff88, 0x0388, 2,      2,   MUL    ), // FMULSU Rd, Rr
+	INST_DECL (mulsu,  0xff88, 0x0300, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
 	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
-	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1Rrd
-	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   AND    ), // ASR Rd
+	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1:Rr
+	INST_DECL (muls,   0xff00, 0x0200, 2,      2,   AND    ), // MUL Rd, Rr
+	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   SAR    ), // ASR Rd
 	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (dec,    0xfe0f, 0x940a, 1,      2,   SUB    ), // DEC Rd
+	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
+	INST_DECL (elpm,   0xfe0f, 0x9007, 0,      2,   LOAD   ), // ELPM Rd, Z+
 	INST_DECL (inc,    0xfe0f, 0x9403, 1,      2,   ADD    ), // INC Rd
 	INST_DECL (lac,    0xfe0f, 0x9206, 2,      2,   LOAD   ), // LAC Z, Rd
 	INST_DECL (las,    0xfe0f, 0x9205, 2,      2,   LOAD   ), // LAS Z, Rd
@@ -1033,25 +1104,25 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ld,     0xfe0f, 0x900d, 0,      2,   LOAD   ), // LD Rd, X+
 	INST_DECL (ld,     0xfe0f, 0x900e, 0,      2,   LOAD   ), // LD Rd, -X
 	INST_DECL (lds,    0xfe0f, 0x9000, 0,      4,   LOAD   ), // LDS Rd, k
-	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
-	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
-	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
-	INST_DECL (elpm,   0xfe0f, 0x9007, 0,      2,   LOAD   ), // ELPM Rd, Z+
 	INST_DECL (lpm,    0xfe0f, 0x9004, 3,      2,   LOAD   ), // LPM Rd, Z
 	INST_DECL (lpm,    0xfe0f, 0x9005, 3,      2,   LOAD   ), // LPM Rd, Z+
+	INST_DECL (lsr,    0xfe0f, 0x9406, 1,      2,   SHR    ), // LSR Rd
+	INST_DECL (neg,    0xfe0f, 0x9401, 2,      2,   SUB    ), // NEG Rd
 	INST_DECL (pop,    0xfe0f, 0x900f, 2,      2,   POP    ), // PUSH Rr
 	INST_DECL (push,   0xfe0f, 0x920f, 0,      2,   PUSH   ), // PUSH Rr
 	INST_DECL (st,     0xfe0f, 0x920c, 2,      2,   STORE  ), // ST X, Rr
 	INST_DECL (st,     0xfe0f, 0x920d, 0,      2,   STORE  ), // ST X+, Rr
 	INST_DECL (st,     0xfe0f, 0x920e, 0,      2,   STORE  ), // ST -X, Rr
-	INST_DECL (std,    0xfe07, 0x9201, 0,      2,   STORE  ), // LD Y/Z+, Rr
-	INST_DECL (std,    0xfe07, 0x9202, 0,      2,   STORE  ), // LD -Y/Z, Rr
 	INST_DECL (call,   0xfe0e, 0x940e, 0,      4,   CALL   ), // CALL k
 	INST_DECL (jmp,    0xfe0e, 0x940c, 2,      4,   JMP    ), // JMP k
 	INST_DECL (bld,    0xfe08, 0xf800, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (bst,    0xfe08, 0xfa00, 1,      2,   SWI    ), // BST Rd, b
 	INST_DECL (sbrx,   0xfe08, 0xfc00, 2,      2,   CJMP   ), // SBRC Rr, b
 	INST_DECL (sbrx,   0xfe08, 0xfe00, 2,      2,   CJMP   ), // SBRS Rr, b
+	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
+	INST_DECL (ldd,    0xfe07, 0x9002, 0,      2,   LOAD   ), // LD Rd, -Y/Z
+	INST_DECL (std,    0xfe07, 0x9201, 0,      2,   STORE  ), // LD Y/Z+, Rr
+	INST_DECL (std,    0xfe07, 0x9202, 0,      2,   STORE  ), // LD -Y/Z, Rr
 	INST_DECL (brbx,   0xfc00, 0xf400, 0,      2,   CJMP   ), // BRBC s, k
 	INST_DECL (brbx,   0xfc00, 0xf000, 0,      2,   CJMP   ), // BRBS s, k
 	INST_DECL (adc,    0xfc00, 0x1c00, 1,      2,   ADD    ), // ADC Rd, Rr
@@ -1060,7 +1131,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (cpc,    0xfc00, 0x0400, 1,      2,   CMP    ), // CPC Rd, Rr
 	INST_DECL (cpse,   0xfc00, 0x1000, 0,      2,   CJMP   ), // CPSE Rd, Rr
 	INST_DECL (and,    0xfc00, 0x2000, 1,      2,   AND    ), // AND Rd, Rr
-	INST_DECL (andi,   0xf000, 0x7000, 1,      2,   AND    ), // ANDI Rd, K
+	INST_DECL (mov,    0xfc00, 0x2c00, 1,      2,   MOV    ), // MOV Rd, Rr
+	INST_DECL (mul,    0xfc00, 0x9c00, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (eor,    0xfc00, 0x2400, 1,      2,   XOR    ), // EOR Rd, Rr
 	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
@@ -1068,6 +1140,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (out,    0xf800, 0xb800, 1,      2,   IO     ), // OUT A, Rr
 	INST_DECL (cpi,    0xf000, 0x3000, 1,      2,   CMP    ), // CPI Rd, K
 	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
+	INST_DECL (andi,   0xf000, 0x7000, 1,      2,   AND    ), // ANDI Rd, K
 	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
 	INST_DECL (ldi,    0xf000, 0xe000, 1,      2,   LOAD   ), // LDI Rd, K
 	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
