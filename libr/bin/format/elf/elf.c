@@ -1096,6 +1096,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	ut64 plt_addr;
 	int j, k, tsize, len, nrel;
 	bool is_rela = false;
+	const char *rel_sect[] = { ".rel.plt", ".rela.plt", ".rela.dyn", ".rel.dyn", NULL };
 
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
 		return -1;
@@ -1109,21 +1110,15 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return -1;
 	}
 	if (bin->is_rela == DT_REL) {
-		rel_sec = get_section_by_name (bin, ".rel.plt");
-		if (!rel_sec) {
-			rel_sec = get_section_by_name (bin, ".rela.plt");
-			if (!rel_sec) {
-				rel_sec = get_section_by_name (bin, ".rela.dyn");
-			}
+		j = 0;
+		while (!rel_sec && rel_sect[j]) {
+			rel_sec = get_section_by_name (bin, rel_sect[j++]);
 		}
 		tsize = sizeof (Elf_(Rel));
 	} else if (bin->is_rela == DT_RELA) {
-		rel_sec = get_section_by_name (bin, ".rela.plt");
-		if (!rel_sec) {
-			rel_sec = get_section_by_name (bin, ".rel.plt");
-			if (!rel_sec) {
-				rel_sec = get_section_by_name (bin, ".rela.dyn");
-			}
+		j = 0;
+		while (!rel_sec && rel_sect[j]) {
+			rel_sec = get_section_by_name (bin, rel_sect[j++]);
 		}
 		is_rela = true;
 		tsize = sizeof (Elf_(Rela));
@@ -1287,29 +1282,34 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 								  since got does not point back to .plt. In this case it has the following 
 								  form
 
-								ff253a152000   JMP QWORD [RIP + 0x20153A]
-								6690		   NOP
+								  ff253a152000   JMP QWORD [RIP + 0x20153A]
+								  6690		   NOP
+								  ----
+								  ff25ec9f0408   JMP DWORD [reloc.puts_236]
 
-								plt_addr + 2 to remove jmp opcode and get the imm reading 4
-								and if RIP (plt_addr + 6) + imm == rel->offset 
-								return plt_addr, that will be our sym addr
-								
-								perhaps this hack doesn't work on 32 bits
-								*/
+								  plt_addr + 2 to remove jmp opcode and get the imm reading 4
+								  and if RIP (plt_addr + 6) + imm == rel->offset 
+								  return plt_addr, that will be our sym addr
+
+								  perhaps this hack doesn't work on 32 bits
+								 */
 								len = r_buf_read_at (bin->b, plt_addr + 2, buf, 4);
 								if (len < -1) {
 									goto out;
 								}
 								plt_sym_addr = sizeof (Elf_(Addr)) == 4
-												? r_read_le32 (buf)
-												: r_read_le64 (buf);
+										? r_read_le32 (buf)
+										: r_read_le64 (buf);
 
-								plt_sym_addr =  Elf_(r_bin_elf_v2p) (bin, plt_sym_addr);
-								if ((plt_addr + 6 + plt_sym_addr) == of) {
+								//relative address
+								if ((plt_addr + 6 + Elf_(r_bin_elf_v2p) (bin, plt_sym_addr)) == of) {
+									plt_sym_addr = plt_addr;
+									goto done;
+								} else if (plt_sym_addr == of) {
 									plt_sym_addr = plt_addr;
 									goto done;
 								}
-								plt_addr += sizeof (Elf_(Addr)) == 4? 4: 8;
+								plt_addr += 8;
 							}
 						} else {
 							plt_sym_addr -= 6;
@@ -1912,6 +1912,9 @@ char* Elf_(r_bin_elf_get_elf_class)(ELFOBJ *bin) {
 
 int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 	/* Hack for ARCompact */
+	if (bin->bits) {
+		return bin->bits;
+	}
 	if (bin->ehdr.e_machine == EM_ARC_A5) {
 		return 16;
 	}
@@ -1924,7 +1927,8 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 				for (i = 0; !symbol[i].last; i++) {
 					ut64 paddr = symbol[i].offset;
 					if (paddr & 1) {
-						return 16;
+						bin->bits = 16;
+						return bin->bits;
 					}
 				}
 			}
@@ -1932,16 +1936,18 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 		{
 			ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 			if (entry & 1) {
-				return 16;
+				bin->bits = 16;
+				return bin->bits;
 			}
 		}
 	}
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
-	case ELFCLASS32:   return 32;
-	case ELFCLASS64:   return 64;
+	case ELFCLASS32:   bin->bits = 32;
+	case ELFCLASS64:   bin->bits = 64;
 	case ELFCLASSNONE:
-	default:           return 32; // defaults
+	default:           bin->bits = 32; // defaults
 	}
+	return bin->bits;
 }
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
