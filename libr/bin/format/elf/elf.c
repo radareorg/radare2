@@ -1096,7 +1096,8 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	ut64 plt_addr;
 	int j, k, tsize, len, nrel;
 	bool is_rela = false;
-	const char *rel_sect[] = { ".rel.plt", ".rela.plt", ".rela.dyn", ".rel.dyn", NULL };
+	const char *rel_sect[] = { ".rel.plt", ".rela.plt", ".rel.dyn", ".rela.dyn", NULL };
+	const char *rela_sect[] = { ".rela.plt", ".rel.plt", ".rela.dyn", ".rel.dyn", NULL };
 
 	if ((!bin->shdr || !bin->strtab) && !bin->phdr) {
 		return -1;
@@ -1117,8 +1118,8 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		tsize = sizeof (Elf_(Rel));
 	} else if (bin->is_rela == DT_RELA) {
 		j = 0;
-		while (!rel_sec && rel_sect[j]) {
-			rel_sec = get_section_by_name (bin, rel_sect[j++]);
+		while (!rel_sec && rela_sect[j]) {
+			rel_sec = get_section_by_name (bin, rela_sect[j++]);
 		}
 		is_rela = true;
 		tsize = sizeof (Elf_(Rela));
