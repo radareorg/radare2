@@ -1912,9 +1912,6 @@ char* Elf_(r_bin_elf_get_elf_class)(ELFOBJ *bin) {
 
 int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 	/* Hack for ARCompact */
-	if (bin->bits) {
-		return bin->bits;
-	}
 	if (bin->ehdr.e_machine == EM_ARC_A5) {
 		return 16;
 	}
@@ -1927,8 +1924,7 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 				for (i = 0; !symbol[i].last; i++) {
 					ut64 paddr = symbol[i].offset;
 					if (paddr & 1) {
-						bin->bits = 16;
-						return bin->bits;
+						return 16;
 					}
 				}
 			}
@@ -1936,18 +1932,16 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 		{
 			ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
 			if (entry & 1) {
-				bin->bits = 16;
-				return bin->bits;
+				return 16;
 			}
 		}
 	}
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
-	case ELFCLASS32:   bin->bits = 32;
-	case ELFCLASS64:   bin->bits = 64;
+	case ELFCLASS32:   return 32;
+	case ELFCLASS64:   return 64;
 	case ELFCLASSNONE:
-	default:           bin->bits = 32; // defaults
+	default:           return 32; // defaults
 	}
-	return bin->bits;
 }
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
