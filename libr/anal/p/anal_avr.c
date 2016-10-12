@@ -975,13 +975,12 @@ INST_HANDLER (ror) {	// ROR Rd
 INST_HANDLER (sbc) {	// SBC Rd, Rr
 	int r = (buf[1] & 0x0f) | ((buf[0] & 0x2) >> 1);
 	int d = ((buf[1] >> 4) & 0xf) | (buf[0] & 0x1);
-	ESIL_A ("r%d,cf,-,r%d,-,", r, d);	// Rd - Rr - C
-						// FLAGS:
+	ESIL_A ("cf,r%d,-,r%d,-,", r, d);			// 0: (Rd-Rr-C)
 	ESIL_A ("r%d,0x08,&,!,"   "r%d,0x08,&,!,!,"     "&,"	// H
 		"r%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
 		"r%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
 		"|,|,hf,=,",
-		d, r, d, r);
+		d, r, r, d);
 	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,"       "&,"	// V
 		""                "0,RPICK,0x80,&,!,"   "&,"
 		"r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"
@@ -994,9 +993,54 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
-		d, r, d, r);
+		d, r, r, d);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 	ESIL_A ("r%d,=,", d);					// Rd = Result
+}
+
+INST_HANDLER (sbci) {	// SBCI Rd, k
+	int d = ((buf[0] >> 4) & 0xf) + 16;
+	int k = ((buf[1] & 0xf) << 4) | (buf[0] & 0xf);
+	ESIL_A ("cf,%d,-,r%d,-,", k, d);			// 0: (Rd-k-C)
+	ESIL_A ("r%d,0x08,&,!,"  "%d,0x08,&,!,!,"      "&,"	// H
+		"%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
+		"%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
+		"|,|,hf,=,",
+		d, k, k, d);
+	ESIL_A ("r%d,0x80,&,!,!," "%d,0x80,&,!,"        "&,"	// V
+		""                "0,RPICK,0x80,&,!,"   "&,"
+		"r%d,0x80,&,!,"   "%d,0x80,&,!,!,"      "&,"
+		""                "0,RPICK,0x80,&,!,!," "&,"
+		"|,vf,=,",
+		d, k, d, k);
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z (C)
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
+		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
+		"|,|,cf,=,",
+		d, k, k, d);
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = Result
+}
+
+INST_HANDLER (sbi) {	// SBI A, b
+	int a = (buf[0] >> 3) & 0x1f;
+	int b = buf[0] & 0x07;
+	RStrBuf *io_port;
+
+	op->type2 = 1;
+	op->val = a;
+
+	// read port a and clear bit b
+	io_port = __generic_io_dest (a, 0);
+	ESIL_A ("0xff,%d,1,<<,|,%s,&,", b, io_port);
+	r_strbuf_free (io_port);
+
+	// write result to port a
+	io_port = __generic_io_dest (a, 1);
+	ESIL_A ("%s,=,", r_strbuf_get (io_port));
+	r_strbuf_free (io_port);
 }
 
 INST_HANDLER (sbrx) {	// SBRC Rr, b
@@ -1123,6 +1167,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
 	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
+	INST_DECL (sbi,    0xff00, 0x9a00, 1,      2,   IO     ), // SBI A, K
 	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1:Rr
 	INST_DECL (muls,   0xff00, 0x0200, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   SAR    ), // ASR Rd
@@ -1180,6 +1225,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ori,    0xf000, 0x6000, 1,      2,   OR     ), // ORI Rd, K
 	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
 	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
+	INST_DECL (sbci,   0xf000, 0x0400, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
 	INST_DECL (std,    0xd200, 0x8200, 0,      2,   STORE  ), // LD Y/Z+q, Rr
 
