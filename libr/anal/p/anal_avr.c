@@ -340,6 +340,7 @@ INST_HANDLER (cbi) {	// CBI A, b
 	int b = buf[0] & 0x07;
 	RStrBuf *io_port;
 
+	op->family = R_ANAL_OP_FAMILY_IO;
 	op->type2 = 1;
 	op->val = a;
 
@@ -610,6 +611,7 @@ INST_HANDLER (in) {	// IN Rd, A
 	RStrBuf *io_src = __generic_io_dest (a, 0);
 	op->type2 = 0;
 	op->val = a;
+	op->family = R_ANAL_OP_FAMILY_IO;
 	ESIL_A ("%s,r%d,=,", r_strbuf_get (io_src), r);
 	r_strbuf_free (io_src);
 }
@@ -885,6 +887,7 @@ INST_HANDLER (out) {	// OUT A, Rr
 	RStrBuf *io_dst = __generic_io_dest (a, 1);
 	op->type2 = 1;
 	op->val = a;
+	op->family = R_ANAL_OP_FAMILY_IO;
 	ESIL_A ("r%d,%s,=,", r, r_strbuf_get (io_dst));
 	r_strbuf_free (io_dst);
 }
@@ -1031,6 +1034,7 @@ INST_HANDLER (sbi) {	// SBI A, b
 
 	op->type2 = 1;
 	op->val = a;
+	op->family = R_ANAL_OP_FAMILY_IO;
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0);
@@ -1040,6 +1044,47 @@ INST_HANDLER (sbi) {	// SBI A, b
 	// write result to port a
 	io_port = __generic_io_dest (a, 1);
 	ESIL_A ("%s,=,", r_strbuf_get (io_port));
+	r_strbuf_free (io_port);
+}
+
+INST_HANDLER (sbix) {	// SBIC A, b
+			// SBIS A, b
+	int a = (buf[0] >> 3) & 0x1f;
+	int b = buf[0] & 0x07;
+	RAnalOp next_op;
+
+	op->type2 = 0;
+	op->val = a;
+	op->family = R_ANAL_OP_FAMILY_IO;
+
+	// create void next_op
+	memset (&next_op, 0, sizeof (RAnalOp));
+	r_strbuf_init (&next_op.esil);
+
+	// calculate next instruction size (call recursively avr_op_analyze)
+	avr_op_analyze (anal,
+			&next_op,
+			op->addr + op->size, buf + op->size,
+			cpu);
+	op->jump = op->addr + next_op.size + 2;
+
+	// free next_op's esil string (we dont need it now)
+	r_strbuf_fini (&next_op.esil);
+
+	// cycles
+	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
+			// so it cannot be really be known until this
+			// instruction is executed by the ESIL interpreter!!!
+			// In case of evaluating to false, this instruction
+			// needs 2/3 cycles, elsewhere it needs only 1 cycle.
+
+	// read port a and clear bit b
+	io_port = __generic_io_dest (a, 0);
+	ESIL_A ("%d,1,<<,%s,&,", b, io_port);		// IO(A,b)
+	ESIL_A ((buf[1] & 0xe) == 0xc
+			? "!,"				// SBIC => branch if 0
+			: "!,!,");			// SBIS => branch if 1
+	ESIL_A ("?{,%"PFMT64d",pc,=,},", op->jump);	// ?true => jmp
 	r_strbuf_free (io_port);
 }
 
@@ -1197,6 +1242,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (jmp,    0xfe0e, 0x940c, 2,      4,   JMP    ), // JMP k
 	INST_DECL (bld,    0xfe08, 0xf800, 1,      2,   SWI    ), // BLD Rd, b
 	INST_DECL (bst,    0xfe08, 0xfa00, 1,      2,   SWI    ), // BST Rd, b
+	INST_DECL (sbix,   0xfe08, 0x9900, 2,      2,   CJMP   ), // SBIC A, b
+	INST_DECL (sbix,   0xfe08, 0x9900, 2,      2,   CJMP   ), // SBIS A, b
 	INST_DECL (sbrx,   0xfe08, 0xfc00, 2,      2,   CJMP   ), // SBRC Rr, b
 	INST_DECL (sbrx,   0xfe08, 0xfe00, 2,      2,   CJMP   ), // SBRS Rr, b
 	INST_DECL (ldd,    0xfe07, 0x9001, 0,      2,   LOAD   ), // LD Rd, Y/Z+
