@@ -748,12 +748,6 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 				methods[MI] = 1;
 			}
 		}
-		if (MC > 0 && bin->code_from > MC) {
-			bin->code_from = MC;
-		}
-		if (MC > 0 && bin->code_to < MC) {
-			bin->code_to = MC;
-		}
 
 		method_name = dex_method_name (bin, MI);
 		char *signature = dex_method_signature(bin, MI);
@@ -823,6 +817,14 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
 				r_list_append (bin->methods_list, sym);
 				r_list_append (cls->methods, sym);
+
+				if (bin->code_from > sym->paddr) {
+					bin->code_from = sym->paddr;
+				}
+				if (bin->code_to < sym->paddr) {
+					bin->code_to = sym->paddr;
+				}
+
 				/* cache in sdb */
 				if (!mdb) {
 					mdb = sdb_new0 ();
@@ -861,12 +863,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 				methods[MI] = 1;
 			}
 		}
-		if ((int)MC > 0 && bin->code_from > MC) {
-			bin->code_from = MC;
-		}
-		if ((int)MC > 0 && bin->code_to < MC) {
-			bin->code_to = MC;
-		}
+
 		char *name = dex_method_name (bin, MI);
 		char *signature = dex_method_signature(bin, MI);
 
@@ -889,6 +886,14 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 			sym->ordinal = (*sym_count)++;
 			r_list_append (bin->methods_list, sym);
 			r_list_append (cls->methods, sym);
+
+			if (bin->code_from > sym->paddr) {
+				bin->code_from = sym->paddr;
+			}
+			if (bin->code_to < sym->paddr) {
+				bin->code_to = sym->paddr;
+			}
+
 		}
 		free (name);
 		free(signature);
