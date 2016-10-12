@@ -4,6 +4,16 @@
 #include <r_core.h>
 #include <signal.h>
 
+#if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
+#define USE_IOS_JETSAM 1
+
+#define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT 6
+extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, void *buffer, size_t buffersize);
+
+#else
+#define USE_IOS_JETSAM 0
+#endif
+
 #if __WINDOWS__
 int main() {
 	eprintf ("r2agent: Not yet implemented for this platform.\n");
@@ -62,9 +72,8 @@ int main(int argc, char **argv) {
 		return usage (0);
 	}
 
-#if __APPLE__ && (__arm__ || __arm64__ || __aarch64__)
-#define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT 6
-    memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0);
+#if USE_IOS_JETSAM
+	memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0);
 #endif
 	if (dodaemon) {
 #if LIBC_HAVE_FORK
