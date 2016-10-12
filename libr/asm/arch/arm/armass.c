@@ -98,7 +98,7 @@ static ArmOp ops[] = {
 	{ "ands", 0x1000, TYPE_ARI },
 	{ "eor", 0x2000, TYPE_ARI },
 	{ "eors", 0x3000, TYPE_ARI },
-	{ "orr", 0x0, TYPE_ARI },
+	{ "orr", 0x8001, TYPE_ARI },
 	{ "bic", 0x0, TYPE_ARI },
 
 	{ "cmp", 0x5001, TYPE_TST },
