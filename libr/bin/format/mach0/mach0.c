@@ -2098,18 +2098,24 @@ char* MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 				return strdup ("all");
 			case CPU_SUBTYPE_ARM_V4T:
 				return strdup ("v4t");
+			case CPU_SUBTYPE_ARM_V5:
+				return strdup ("v5");
 			case CPU_SUBTYPE_ARM_V6:
 				return strdup ("v6");
-			case CPU_SUBTYPE_ARM_V5TEJ:
-				return strdup ("v5tej");
 			case CPU_SUBTYPE_ARM_XSCALE:
 				return strdup ("xscale");
 			case CPU_SUBTYPE_ARM_V7:
 				return strdup ("v7");
 			case CPU_SUBTYPE_ARM_V7F:
 				return strdup ("v7f");
+			case CPU_SUBTYPE_ARM_V7S:
+				return strdup ("v7s");
 			case CPU_SUBTYPE_ARM_V7K:
 				return strdup ("v7k");
+			case CPU_SUBTYPE_ARM_V7M:
+				return strdup ("v7m");
+			case CPU_SUBTYPE_ARM_V7EM:
+				return strdup ("v7em");
 			default:
 				return r_str_newf ("unknown ARM subtype %d", hdr->cpusubtype & 0xff);
 			}
