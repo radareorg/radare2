@@ -24,7 +24,9 @@ static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
 
 static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 	ReflineEnd *re = R_NEW0 (struct refline_end);
-	if (!re) return NULL;
+	if (!re) {
+		return NULL;
+	}
 	re->val = val;
 	re->is_from = is_from;
 	re->r = ref;
@@ -34,7 +36,9 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
 static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
 	RAnalRefline *item = R_NEW0 (RAnalRefline);
-	if (!item) return false;
+	if (!item) {
+		return false;
+	}
 	item->from = addr;
 	item->to = to;
 	item->index = *idx;
@@ -108,7 +112,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	/* analyze code block */
 	while (ptr < end) {
 		if (nlines != -1) {
-			if (nlines == 0) {
+			if (!nlines) {
 				break;
 			}
 			nlines--;
@@ -142,8 +146,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			}
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
-			if ((!linesout && (op.jump > opc + len || op.jump < opc)) ||
-				op.jump == 0LL) {
+			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
 			if (!(res = add_refline (list, sten, addr, op.jump, &count))) {
@@ -157,8 +160,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			RListIter *iter;
 
 			// add caseops
-			if (!op.switch_op) break;
-
+			if (!op.switch_op) {
+				break;
+			}
 			r_list_foreach (op.switch_op->cases, iter, caseop) {
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					continue;
@@ -233,14 +237,13 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 
 	/* analyze code block */
 	r_list_foreach (fcn->bbs, bb_iter, bb) {
-		if (!bb || bb->size == 0) {
+		if (!bb || !bb->size) {
 			continue;
 		}
-		if (nlines != -1 && --nlines == 0) {
+		if (nlines != -1 && !--nlines) {
 			break;
 		}
 		len = bb->size;
-
 		/* store data */
 		ut64 control_type = bb->type;
 		control_type &= R_ANAL_BB_TYPE_SWITCH | R_ANAL_BB_TYPE_JMP | R_ANAL_BB_TYPE_COND | R_ANAL_BB_TYPE_CALL;
@@ -251,7 +254,6 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 				continue;
 			}
 		}
-
 		// Handles conditonal + unconditional jump
 		if ( (control_type & R_ANAL_BB_TYPE_CJMP) == R_ANAL_BB_TYPE_CJMP) {
 			// dont need to continue here is opc+len exceed function scope
@@ -267,8 +269,8 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 				r_list_append (list, item);
 			}
 		}
-		if ( (control_type & R_ANAL_BB_TYPE_JMP) == R_ANAL_BB_TYPE_JMP) {
-			if (!linesout || bb->jump == 0LL || bb->jump == bb->addr + len) {
+		if ((control_type & R_ANAL_BB_TYPE_JMP) == R_ANAL_BB_TYPE_JMP) {
+			if (!linesout || !bb->jump || bb->jump == bb->addr + len) {
 				continue;
 			}
 			item = R_NEW0 (RAnalRefline);
@@ -290,8 +292,9 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 				RListIter *iter;
 				r_list_foreach (bb->switch_op->cases, iter, caseop) {
 					if (caseop) {
-						if (!linesout)// && (op.jump > opc+len || op.jump < pc))
+						if (!linesout) {// && (op.jump > opc+len || op.jump < pc)) 
 							continue;
+						}
 						item = R_NEW0 (RAnalRefline);
 						if (!item){
 							r_list_free (list);
@@ -353,7 +356,9 @@ static void add_spaces(RBuffer *b, int level, int pos, int wide) {
 static void fill_level(RBuffer *b, int pos, char ch, RAnalRefline *r, int wide) {
 	const char *pd;
 	int sz = r->level;
-	if (wide) sz *= 2;
+	if (wide) {
+		sz *= 2;
+	}
 	pd = r_str_pad (ch, sz - 1);
 	if (pos == -1) {
 		r_buf_append_string (b, pd);
@@ -373,6 +378,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RAnalRefline *ref;
 	int l;
 	int dir = 0, wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
+	int pos = -1, max_level = -1;
 	int middle = opts & R_ANAL_REFLINE_TYPE_MIDDLE;
 	char *str = NULL;
 
@@ -384,7 +390,6 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	if (!lvls) {
 		return NULL;
 	}
-
 	r_list_foreach (anal->reflines, iter, ref) {
 		if (core->cons && core->cons->breaked) {
 			r_list_free (lvls);
@@ -394,8 +399,6 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			r_list_add_sorted (lvls, (void *)ref, (RListComparator)cmp_by_ref_lvl);
 		}
 	}
-
-	int pos = -1, max_level = -1;
 	b = r_buf_new ();
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
@@ -408,9 +411,11 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			const char *corner = get_corner_char (ref, addr, middle);
 			const char ch = ref->from == addr ? '=' : '-';
 
-			if (pos == 0) {
+			if (!pos) {
 				int ch_pos = max_level + 1 - ref->level;
-				if (wide) ch_pos = ch_pos * 2 - 1;
+				if (wide) {
+					ch_pos = ch_pos * 2 - 1;
+				}
 				r_buf_write_at (b, ch_pos, (ut8 *)corner, 1);
 				fill_level (b, ch_pos + 1, ch, ref, wide);
 			} else {
@@ -425,17 +430,18 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			}
 			pos = middle ? ref->level : 0;
 		} else {
-			if (pos == 0) {
+			if (!pos) {
 				continue;
 			}
 			add_spaces (b, ref->level, pos, wide);
 			r_buf_append_string (b, "|");
 			pos = ref->level;
 		}
-		if (max_level == -1) max_level = ref->level;
+		if (max_level == -1) {
+			max_level = ref->level;
+		}
 	}
 	add_spaces (b, 0, pos, wide);
-
 	str = r_buf_free_to_string (b);
 	if (!str) {
 		r_list_free (lvls);

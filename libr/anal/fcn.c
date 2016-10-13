@@ -99,7 +99,9 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize) {
 
 R_API RAnalFunction *r_anal_fcn_new() {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
-	if (!fcn) return NULL;
+	if (!fcn) {
+		return NULL;
+	}
 	/* Function return type */
 	fcn->rets = 0;
 	fcn->_size = 0;
@@ -133,7 +135,9 @@ R_API RList *r_anal_fcn_list_new() {
 
 R_API void r_anal_fcn_free(void *_fcn) {
 	RAnalFunction *fcn = _fcn;
-	if (!_fcn) return;
+	if (!_fcn) {
+		return;
+	}
 	fcn->_size = 0;
 	free (fcn->name);
 	free (fcn->attr);
@@ -151,11 +155,14 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	}
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
+#if USE_TINYRANGE_BBS
+	r_tinyrange_fini (&fcn->bbr);
+#endif
 	free (fcn->args);
 	free (fcn);
 }
 
-R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
+R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
 	RAnalRef *ref;
 	if (!fcn || !a) {
 		return false;
@@ -186,7 +193,7 @@ R_API int r_anal_fcn_xref_add (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr,
 	return true;
 }
 
-R_API int r_anal_fcn_xref_del (RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
+R_API int r_anal_fcn_xref_del(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
 #if FCN_OLD
 	RAnalRef *ref;
 	RListIter *iter;
@@ -260,7 +267,9 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 		if (!v) {
 			v = r_anal_var_get_byname (a, fcn, varname);
 		}
-		if (!v) break;
+		if (!v) {
+			break;
+		}
 		if (v->kind == type && R_ABS (v->delta) == idx) {
 			r_anal_var_free (v);
 			break;
@@ -291,11 +300,21 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	anal->iob.read_at (anal->iob.io, ptr, jmptbl, MAX_JMPTBL_SIZE);
 	for (offs = 0; offs + sz - 1 < MAX_JMPTBL_SIZE; offs += sz) {
 		switch (sz) {
-		case 1: jmpptr = r_read_le8 (jmptbl + offs); break;
-		case 2: jmpptr = r_read_le16 (jmptbl + offs); break;
-		case 4: jmpptr = r_read_le32 (jmptbl + offs); break;
-		case 8: jmpptr = r_read_le32 (jmptbl + offs); break; // XXX
-		default: jmpptr = r_read_le64 (jmptbl + offs); break;
+		case 1: 
+			jmpptr = r_read_le8 (jmptbl + offs); 
+			break;
+		case 2: 
+			jmpptr = r_read_le16 (jmptbl + offs); 
+			break;
+		case 4: 
+			jmpptr = r_read_le32 (jmptbl + offs); 
+			break;
+		case 8: 
+			jmpptr = r_read_le32 (jmptbl + offs); 
+			break; // XXX
+		default: 
+			jmpptr = r_read_le64 (jmptbl + offs); 
+			break;
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 			jmpptr = ptr + (st32)jmpptr;
@@ -334,11 +353,13 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 #define gotoBeach(x) ret=x;goto beach;
 #define gotoBeachRet() goto beach;
 
-void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
+void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	char *varname, *esil_buf, *ptr_end, *addr, *op_esil;
 	st64 ptr;
 	char *sig = r_str_newf (",%s,%s", reg, sign);
-	if(!sig) return;
+	if (!sig) {
+		return;
+	}
 	op_esil = r_strbuf_get (&op->esil);
 	if (!op_esil) {
 		free (sig);
@@ -358,8 +379,8 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 	}
 	*ptr_end = 0;
 	addr = ptr_end;
-	while ((*addr != '0' || *(addr+1) != 'x') &&
-		addr >= esil_buf +1  && *addr != ',' ) {
+	while ((*addr != '0' || *(addr + 1) != 'x') &&
+		addr >= esil_buf + 1  && *addr != ',' ) {
 		addr--;
 	}
 	if (strncmp (addr, "0x", 2)) {
@@ -387,7 +408,7 @@ void extract_arg (RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg,
 	free (esil_buf);
 }
 
-R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
+R_API void fill_args(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", 'b');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'b');
 	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 's');
@@ -396,13 +417,13 @@ R_API void fill_args (RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	extract_arg (anal, fcn, op, "sp", "+", 's');
 }
 
-static bool isInvalidMemory (const ut8 *buf) {
+static bool isInvalidMemory(const ut8 *buf) {
 	// can be wrong
 	return !memcmp (buf, "\xff\xff\xff\xff", 4);
 	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
 }
 
-static bool is_delta_pointer_table (RAnal *anal, ut64 ptr) {
+static bool is_delta_pointer_table(RAnal *anal, ut64 ptr) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[32] = {0};
@@ -520,7 +541,7 @@ repeat:
 		// in that case we break
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
 			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
-			if (idx == 0) {
+			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);
 			} else {
 				break; // unspecified behaviour
@@ -562,7 +583,7 @@ repeat:
 			// if we had passed a branch delay instruction, keep
 			// track of how many still to process.
 			delay.cnt--;
-			if (delay.cnt == 0) {
+			if (!delay.cnt) {
 				VERBOSE_DELAY eprintf ("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%d\n", addr+idx-oplen, bb->size);
 				delay.after = idx;
 				idx = delay.idx;
@@ -785,7 +806,7 @@ repeat:
 							/* jump inside the same function */
 							FITFCNSZ();
 							return R_ANAL_RET_END;
-#if JMP_IS_EOB_RANGE>0
+#if JMP_IS_EOB_RANGE > 0
 						} else {
 							if (op.jump < addr - JMP_IS_EOB_RANGE && op.jump < addr) {
 								gotoBeach (R_ANAL_RET_END);
@@ -889,22 +910,7 @@ repeat:
 				return R_ANAL_RET_END;
 			}
 			// XXX: this is TYPE_MCALL or indirect-call
-			{
-				(void)r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
-#if 0
-				char buf[8];
-				ut64 dst = UT64_MAX;
-				anal->iob.read_at (anal->iob.io, op.ptr, buf, sizeof (buf));
-				if (anal->bits == 64) {
-					dst = r_read_le64 (buf);
-				} else {
-					dst = r_read_le64 (buf);
-				}
-				if (anal->iob.is_valid_offset (anal->iob.io, dst, 0)) {
-					(void)r_anal_fcn_xref_add (anal, fcn, op.addr, dst, R_ANAL_REF_TYPE_CALL);
-				}
-#endif
-			}
+			(void)r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 			break;
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
@@ -984,7 +990,7 @@ river:
 				recurseAt (op.jump);
 				gotoBeachRet ();
 			} else {
-				if (op.cond == 0) {
+				if (!op.cond) {
 					VERBOSE_ANAL eprintf ("RET 0x%08"PFMT64x". %d %d %d\n",
 							addr + delay.un_idx-oplen, overlapped,
 							bb->size, r_anal_fcn_size (fcn));
@@ -1245,7 +1251,9 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 #if USE_NEW_FCN_STORE
 		// XXX: must only get the function if starting at 0?
 		RAnalFunction *f = r_listrange_find_in_range (a->fcnstore, addr);
-		if (f) r_listrange_del (a->fcnstore, f);
+		if (f) {
+			r_listrange_del (a->fcnstore, f);
+		}
 #else
 		RAnalFunction *fcni;
 		RListIter *iter, *iter_tmp;
@@ -1420,17 +1428,16 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 		return 0;
 	}
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (addr == bbi->addr) return R_ANAL_RET_DUP;
-
+		if (addr == bbi->addr) {
+			return R_ANAL_RET_DUP;
+		}
 		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
 			int new_bbi_instr, i;
-
 			bb = appendBasicBlock (anal, fcn, addr);
 			bb->size = bbi->addr + bbi->size - addr;
 			bb->jump = bbi->jump;
 			bb->fail = bbi->fail;
 			bb->conditional = bbi->conditional;
-
 			bbi->size = addr - bbi->addr;
 			bbi->jump = addr;
 			bbi->fail = -1;
@@ -1521,14 +1528,15 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 // TODO: This function is not fully implemented
 /* set function signature from string */
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
+	int length = 0;
 	if (!a || !f || !sig) {
 		eprintf ("r_anal_str_to_fcn: No function received\n");
 		return false;
 	}
+	length = strlen (sig) + 10;
 	/* Add 'function' keyword */
-	char *str = calloc (1, strlen (sig) + 10);
+	char *str = calloc (1, length);
 	if (!str) {
-		const int length = strlen (sig) + 10;
 		eprintf ("Cannot allocate %d bytes\n", length);
 		return false;
 	}
