@@ -34,20 +34,25 @@ R_API RRange *r_range_free(RRange *r) {
 // TODO: optimize by just returning the pointers to the internal foo?
 R_API int r_range_get_data(RRange *rgs, ut64 addr, ut8 *buf, int len) {
 	RRangeItem *r = r_range_item_get (rgs, addr);
-	if (!r)
+	if (!r) {
 		return 0;
-	if (r->datalen < len)
+	}
+	if (r->datalen < len) {
 		len = r->datalen;
+	}
 	memcpy (buf, r->data, len);
 	return len;
 }
 
 R_API int r_range_set_data(RRange *rgs, ut64 addr, const ut8 *buf, int len) {
 	RRangeItem *r = r_range_item_get (rgs, addr);
-	if (!r)
+	if (!r) {
 		return 0;
+	}
 	r->data = (ut8*)malloc (len);
-	if (!r->data) return 0;
+	if (!r->data) {
+		return 0;
+	}
 	r->datalen = len;
 	memcpy (r->data, buf, len);
 	return 1;
@@ -69,8 +74,9 @@ R_API ut64 r_range_size(RRange *rgs) {
 	ut64 sum = 0;
 	RListIter *iter;
 	RRangeItem *r;
-	r_list_foreach (rgs->ranges, iter, r)
+	r_list_foreach (rgs->ranges, iter, r) {
 		sum += r->to - r->fr;
+	}
 	return sum;
 }
 
@@ -82,23 +88,24 @@ R_API RRange *r_range_new_from_string(const char *string) {
 
 R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 	ut64 addr, addr2;
-	int i, len = strlen (string)+1;
+	int i, len = strlen (string) + 1;
 	char *str, *ostr = malloc (len);
-	if (!ostr) return 0;
+	if (!ostr) {
+		return 0;
+	}
 	char *p = str = ostr;
 	char *p2 = NULL;
 
 	memcpy (str, string, len);
-
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		switch (str[i]) {
 		case '-':
-			str[i]='\0';
+			str[i] = '\0';
 			p2 = p;
-			p = str+i+1;
+			p = str + i + 1;
 			break;
 		case ',':
-			str[i]='\0';
+			str[i] = '\0';
 			if (p2) {
 				addr = r_num_get (NULL, p);
 				addr2 = r_num_get (NULL, p2);
@@ -106,9 +113,9 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 				p2 = NULL;
 			} else {
 				addr = r_num_get (NULL, p);
-				r_range_add (rgs, addr, addr+1, 1);
+				r_range_add (rgs, addr, addr + 1, 1);
 			}
-			p = str+i+1;
+			p = str + i + 1;
 			str[i] = ',';
 			break;
 		}
@@ -120,7 +127,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 	} else
 	if (p) {
 		addr = r_num_get (NULL, p);
-		r_range_add (rgs, addr, addr+1, 1);
+		r_range_add (rgs, addr, addr + 1, 1);
 	}
 	free (ostr);
 	return rgs? rgs->changed: 0;
@@ -141,26 +148,21 @@ RRangeItem *r_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
 	int add = 1;
 
 	r_num_minmax_swap (&fr, &to);
-
 	r_list_foreach (rgs->ranges, iter, r) {
-		if (r->fr == fr && r->to==to) {
+		if (r->fr == fr && r->to == to) {
 			add = 0;
-		} else
-		if (r->fr<=fr && r->fr <= to && r->to>=fr && r->to <= to) {
+		} else if (r->fr <= fr && r->fr <= to && r->to >= fr && r->to <= to) {
 			r->to = to;
 			ret = r;
 			add = 0;
-		} else
-		if (r->fr>=fr && r->fr<=to && r->to>=fr && r->to >= to) {
+		} else if (r->fr >= fr && r->fr <= to && r->to >= fr && r->to >= to) {
 			r->fr = fr;
 			ret = r;
 			add = 0;
-		} else
-		if (r->fr<=fr && r->fr<=to && r->to>=fr && r->to >= to) {
+		} else if (r->fr <= fr && r->fr <= to && r->to >= fr && r->to >= to) {
 			/* ignore */
 			add = 0;
-		} else
-		if (r->fr>=fr && r->fr<=to && r->to>=fr && r->to <= to) {
+		} else if (r->fr >= fr && r->fr <= to && r->to >= fr && r->to <= to) {
 			r->fr = fr;
 			r->to = to;
 			ret = r;
@@ -199,22 +201,21 @@ R_API int r_range_sub(RRange *rgs, ut64 fr, ut64 to) {
 	__reloop:
 	r_list_foreach (rgs->ranges, iter, r) {
 		/* update to */
-		if (r->fr<fr && r->fr < to && r->to>fr && r->to < to) {
+		if (r->fr < fr && r->fr < to && r->to > fr && r->to < to) {
 			r->to = fr;
-		} else
-		/* update fr */
-		if (r->fr>fr && r->fr<to && r->to>fr && r->to>to) {
+		} else if (r->fr > fr && r->fr < to && r->to > fr && r->to > to) {
+			/* update fr */
 			r->fr = to;
 		}
 		/* delete */
-		if (r->fr>fr && r->fr<to && r->to>fr && r->to < to) {
+		if (r->fr > fr && r->fr < to && r->to > fr && r->to < to) {
 			/* delete */
 			r_list_delete (rgs->ranges, iter);
 			rgs->changed = 1;
 			goto __reloop;
 		}
 		/* split */
-		if (r->fr<fr && r->fr<to && r->to>fr && r->to > to) {
+		if (r->fr < fr && r->fr < to && r->to > fr && r->to > to) {
 			r->to = fr;
 			r_range_add (rgs, to, r->to, 1);
 			//ranges_add(rang, to, r->to, 1);
@@ -239,28 +240,28 @@ R_API int r_range_contains(RRange *rgs, ut64 addr) {
 	RRangeItem *r;
 	RListIter *iter;
 	r_list_foreach (rgs->ranges, iter, r) {
-		if (addr >= r->fr && addr <= r->to)
+		if (addr >= r->fr && addr <= r->to) {
 			return true;
+		}
 	}
 	return false;
 }
 
+static int cmp_ranges(void *a, void *b) {
+	RRangeItem *first = (RRangeItem *)a;
+	RRangeItem *second = (RRangeItem *)b;
+	return first->fr > second->fr;
+}
+
 R_API int r_range_sort(RRange *rgs) {
-	RListIter *iter, *iter2;
-	RRangeItem *r, *r2;
-
-	if (!rgs->changed)
+	bool ch = rgs->ranges->sorted;
+	if (!rgs->changed) {
 		return false;
+	}
 	rgs->changed = false;
-
-	r_list_foreach (rgs->ranges, iter, r) {
-		r_list_foreach (rgs->ranges, iter2, r2) {
-			if ((r != r2) && (r->fr > r2->fr)) {
-				// TODO : IMPLEMENTED A FUCKING SWAP IN R_LIST!!!
-				// list_move (pos, pos2);
-				rgs->changed = true;
-			}
-		}
+	r_list_sort (rgs->ranges, (RListComparator)cmp_ranges);
+	if (ch != rgs->ranges->sorted) {
+		rgs->changed = true;
 	}
 	return rgs->changed;
 }
@@ -278,24 +279,35 @@ R_API void r_range_percent(RRange *rgs) {
 			fr = r->fr;
 			to = r->to;
 		} else {
-			if (fr>r->fr) fr = r->fr;
-			if (to<r->to) to = r->to;
+			if (fr > r->fr) {
+				fr = r->fr;
+			}
+			if (to < r->to) {
+				to = r->to;
+			}
 		}
 	}
 	w = 65 ; // columns
 	if (fr != -1) {
-		dif = to-fr;
-		if (dif<w) step = 1; // XXX
-		else step = dif/w;
+		dif = to - fr;
+		if (dif < w) {
+			step = 1; // XXX
+		} else {
+			step = dif / w;
+		}
 		seek = 0;
-	} else step = fr = to = 0;
+	} else {
+		step = fr = to = 0;
+	}
 	seek = 0;
 	// XXX do not use printf here!
 	printf ("0x%08"PFMT64x" [", fr);
-	for (i=0; i<w; i++) {
-		if (r_range_contains (rgs, seek))
+	for (i = 0; i < w; i++) {
+		if (r_range_contains (rgs, seek)) {
 			printf ("#");
-		else printf (".");
+		} else {
+			printf (".");
+		}
 		seek += step;
 	}
 	printf ("] 0x%08"PFMT64x"\n", to);
@@ -308,9 +320,12 @@ int r_range_list(RRange *rgs, int rad) {
 	RListIter *iter;
 	r_range_sort (rgs);
 	r_list_foreach (rgs->ranges, iter, r) {
-		if (rad) printf ("ar+ 0x%08"PFMT64x" 0x%08"PFMT64x"\n", r->fr, r->to);
-		else printf ("0x%08"PFMT64x" 0x%08"PFMT64x" ; %"PFMT64d"\n", r->fr, r->to, r->to-r->fr);
-		total += (r->to-r->fr);
+		if (rad) {
+			printf ("ar+ 0x%08"PFMT64x" 0x%08"PFMT64x"\n", r->fr, r->to);
+		} else {
+			printf ("0x%08"PFMT64x" 0x%08"PFMT64x" ; %"PFMT64d"\n", r->fr, r->to, r->to - r->fr);
+		}
+		total += (r->to - r->fr);
 	}
 	eprintf ("Total bytes: %"PFMT64d"\n", total);
 	return 0;
@@ -348,7 +363,7 @@ RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 
 	r_list_foreach (rgs->ranges, iter, r) {
 		if (r->fr > fr && r->fr < to) {
-			r_range_add(newrgs, fr, r->fr, 1);
+			r_range_add (newrgs, fr, r->fr, 1);
 			//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, r->fr);
 			total += (r->fr - fr);
 			fr = r->to;
@@ -357,10 +372,9 @@ RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	if (fr < to) {
 		//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, to);
 		r_range_add (newrgs, fr, to, 1);
-		total += (to-fr);
+		total += (to - fr);
 	}
 	// eprintf("Total bytes: %"PFMT64d"\n", total);
-
 	return newrgs;
 }
 
@@ -374,7 +388,7 @@ R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d) {
 	// TODO: ensure ranges minmax .. innecesary at runtime?
 	//r_num_minmax_swap (&a0, &a1);
 	//r_num_minmax_swap (&b0, &b1);
-	return *d=(b0-a0),!(a1<b0||a0>b1);
+	return *d = (b0 - a0), !(a1 < b0 || a0 > b1);
 #if 0
 	// does not overlap
 	// a  |__|           |__|
