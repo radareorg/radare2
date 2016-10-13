@@ -3365,6 +3365,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 't': { // "axt"
 		const int size = 12;
 		RList *list;
+		RAnalFunction *fcn;
 		RAnalRef *ref;
 		RListIter *iter;
 		ut8 buf[12];
@@ -3383,12 +3384,19 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				r_list_foreach (list, iter, ref)
 					r_cons_printf ("0x%" PFMT64x "\n", ref->addr);
 			} else if (input[1] == 'j') { // "axtj"
+				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
+				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 				r_cons_printf ("[");
 				r_list_foreach (list, iter, ref) {
 					r_core_read_at (core, ref->addr, buf, size);
 					r_asm_set_pc (core->assembler, ref->addr);
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 					char str[512];
+					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+					if (asm_varsub) {
+						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
+								asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
+					}
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
