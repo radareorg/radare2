@@ -207,12 +207,12 @@ INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 								// FLAGS:
 	ESIL_A ("r%d,0x80,&,!,"					// V
 		"0,RPICK,0x8000,&,!,!,"
-		"&,", d + 1);
+		"&,vf,=,", d + 1);
 	ESIL_A ("0,RPICK,0x8000,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("r%d,0x80,&,!,!,"				// C
 		"0,RPICK,0x8000,&,!,"
-		"&,", d + 1);
+		"&,cf,=,", d + 1);
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 	ESIL_A ("r%d:r%d,=,", d + 1, d);			// Rd = result
 }
@@ -1052,6 +1052,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
 	RAnalOp next_op;
+	RStrBuf *io_port;
 
 	op->type2 = 0;
 	op->val = a;
@@ -1086,6 +1087,22 @@ INST_HANDLER (sbix) {	// SBIC A, b
 			: "!,!,");			// SBIS => branch if 1
 	ESIL_A ("?{,%"PFMT64d",pc,=,},", op->jump);	// ?true => jmp
 	r_strbuf_free (io_port);
+}
+
+INST_HANDLER (sbiw) {	// SBIW Rd+1:Rd, K
+	int d = ((buf[0] & 0x30) >> 3) + 24;
+	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
+	ESIL_A ("%d,r%d:r%d,-,", k, d + 1, d);		// 0(Rd+1:Rd - Rr)
+	ESIL_A ("r%d,0x80,&,!,!,"			// V
+		"0,RPICK,0x8000,&,!,"
+		"&,vf,=,", d + 1);
+	ESIL_A ("0,RPICK,0x8000,&,!,!,nf,=,");		// N
+	ESIL_A ("0,RPICK,!,zf,=,");			// Z
+	ESIL_A ("r%d,0x80,&,!,"				// C
+		"0,RPICK,0x8000,&,!,!,"
+		"&,cf,=,", d + 1);
+	ESIL_A ("vf,nf,^,sf,=,");			// S
+	ESIL_A ("r%d:r%d,=,", d + 1, d);		// Rd = result
 }
 
 INST_HANDLER (sbrx) {	// SBRC Rr, b
@@ -1211,6 +1228,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (mulsu,  0xff88, 0x0300, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (des,    0xff0f, 0x940b, 0,      2,   CRYPTO ), // DES k
 	INST_DECL (adiw,   0xff00, 0x9600, 2,      2,   ADD    ), // ADIW Rd+1:Rd, K
+	INST_DECL (sbiw,   0xff00, 0x9700, 2,      2,   SUB    ), // SBIW Rd+1:Rd, K
 	INST_DECL (cbi,    0xff00, 0x9800, 1,      2,   IO     ), // CBI A, K
 	INST_DECL (sbi,    0xff00, 0x9a00, 1,      2,   IO     ), // SBI A, K
 	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1:Rr
