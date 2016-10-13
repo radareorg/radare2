@@ -141,6 +141,9 @@ static RList *sections(RBinFile *arch) {
 				return ret;
 			}
 			strncpy (ptr->name, coffname, R_BIN_SIZEOF_STRINGS);
+			if (strstr (ptr->name, "data")) {
+				ptr->is_data = true;
+			}
 			ptr->size = obj->scn_hdrs[i].s_size;
 			ptr->vsize = obj->scn_hdrs[i].s_size;
 			ptr->paddr = obj->scn_hdrs[i].s_scnptr;

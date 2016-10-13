@@ -194,6 +194,9 @@ static RList* sections(RBinFile *arch) {
 				break;
 			}
 			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
+			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel")) {
+				ptr->is_data = true;
+			}
 			ptr->size = section[i].size;
 			ptr->vsize = section[i].size;
 			ptr->paddr = section[i].offset;

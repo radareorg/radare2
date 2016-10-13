@@ -129,6 +129,9 @@ static RList* sections(RBinFile *arch) {
 			ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
 		}
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
+		if (strstr (ptr->name, "_cstring")) {
+			ptr->is_data = true;
+		}
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].size;
 		ptr->paddr = sections[i].offset + obj->boffset;
