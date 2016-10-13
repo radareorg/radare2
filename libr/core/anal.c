@@ -1216,7 +1216,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	if (core->io->va && !core->io->raw) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
-			// eprintf ("Invalid address: 0x%08"PFMT64x"\n", at);
 			return false;
 		}
 	}
@@ -1232,36 +1231,41 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	 * run it instead of the normal analysis */
 	if (core->anal->cur && core->anal->cur->analyze_fns) {
 		int result = R_ANAL_RET_ERROR;
-		result = core->anal->cur->analyze_fns (core->anal,
-			at, from, reftype, depth);
-
+		result = core->anal->cur->analyze_fns (core->anal, at, from, reftype, depth);
 		/* update the flags after running the analysis function of the plugin */
 		r_flag_space_push (core->flags, "functions");
 		r_list_foreach (core->anal->fcns, iter, fcn) {
-			r_flag_set (core->flags, fcn->name,
-				fcn->addr, r_anal_fcn_size (fcn));
+			r_flag_set (core->flags, fcn->name, fcn->addr, r_anal_fcn_size (fcn));
 		}
 		r_flag_space_pop (core->flags);
 		return result;
 	}
-
-	if (from != UT64_MAX && at == 0) return false;
-	if (at == UT64_MAX || depth < 0) return false;
-	if (r_cons_singleton()->breaked) return false;
+	if (from != UT64_MAX && !at) {
+		return false;
+	}
+	if (at == UT64_MAX || depth < 0) {
+		return false;
+	}
+	if (r_cons_singleton()->breaked) {
+		return false;
+	}
 
 	fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
-		if (fcn->addr == at) return 0;  // already analyzed function
+		if (fcn->addr == at) {
+			return 0;  // already analyzed function
+		}
 		if (r_anal_fcn_is_in_offset (fcn, from)) { // inner function
 			RAnalRef *ref;
 
 			// XXX: use r_anal-xrefs api and sdb
 			// If the xref is new, add it
 			// avoid dupes
-			r_list_foreach (fcn->xrefs, iter, ref)
-				if (from == ref->addr)
+			r_list_foreach (fcn->xrefs, iter, ref) {
+				if (from == ref->addr) {
 					return true;
-
+				}
+			}
 			ref = r_anal_ref_new ();
 			if (!ref) {
 				eprintf ("Error: new (xref)\n");
@@ -1288,7 +1292,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 					r_list_append (fcn->xrefs, ref);
 					// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
 					r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
-				} else eprintf ("Error: new (xref)\n");
+				} else {
+					eprintf ("Error: new (xref)\n");
+				}
 			}
 			return true;
 		} else {

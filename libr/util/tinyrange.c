@@ -16,21 +16,44 @@ R_API void r_tinyrange_fini(RRangeTiny *bbr) {
 	R_FREE (bbr->ranges);
 }
 
+R_API void r_tinyrange_free(RRangeTiny *bbr) {
+	r_tinyrange_fini (bbr);
+	R_FREE (bbr);
+}
+
 R_API bool r_tinyrange_in(RRangeTiny *bbr, ut64 at) {
-	int i;
 	if (bbr->pairs > 0) {
-		int lastIndex = (bbr->pairs * 2);
+		int idx, lastIndex = ((bbr->pairs - 1) * 2);
 		if (at < bbr->ranges[0]) {
 			return false;
 		}
 		if (at > bbr->ranges[lastIndex + 1]) {
 			return false;
 		}
-	}
-	for (i = 0; i < bbr->pairs; i++) {
-		int idx = i * 2;
-		if (at >= bbr->ranges[idx] && at < bbr->ranges[idx + 1]) {
-			return true;
+		idx = lastIndex / 2;
+		if (idx % 2) {
+			idx--;
+		}
+		while (idx <= lastIndex + 1 && idx >= 0) {
+			if (at >= bbr->ranges[idx] && at < bbr->ranges[idx + 1]) {
+				return true;
+			} 
+			if (idx && idx < lastIndex) {
+				if (at < bbr->ranges[idx]) {
+					lastIndex = idx;
+					idx -= (idx / 2);
+					if (idx % 2) {
+						idx--;
+					}
+				} else {
+					idx += ((lastIndex - idx) / 2);
+					if (idx % 2) {
+						idx++;
+					}
+				}
+			} else {
+				return false;
+			}
 		}
 	}
 	return false;
