@@ -777,7 +777,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_PUSH:
 		{
 			char *dst = getarg (&gop, 0, 0, NULL);
-			esilprintf (op, "%s,%d,%s,-=,%s,= [%d]",
+			esilprintf (op, "%s,%d,%s,-=,%s,=[%d]",
 				dst?dst:"eax", rs, sp, sp, rs);
 			free (dst);
 		}
