@@ -871,6 +871,7 @@ INST_HANDLER (or) {	// OR Rd, Rr
 }
 
 INST_HANDLER (ori) {	// ORI Rd, K
+			// SBR Rd, K
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = (buf[0] & 0xf) | ((buf[1] & 0xf) << 4);
 	ESIL_A ("r%d,%d,|,", d, k);				// 0: (Rd | k)
