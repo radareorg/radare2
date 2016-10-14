@@ -97,7 +97,7 @@ RPN UDIS86_ESIL (lea,   "%s,%s,=", src, dst);
 RPN UDIS86_ESIL (movzx, "%s,%s,=", src, dst); // not working? try 0fb63d55380000
 RPN UDIS86_ESIL (mov,   "%s,%s,=", src, dst);
 //  UDIS86_ESIL (push,  "%s-=%d,%d[%s]=%s", info->sp, info->regsz, info->regsz, info->sp, dst);
-RPN UDIS86_ESIL (push,  "%d,%s,-=,%s,%s,=[%d]", info->regsz, info->sp, dst, info->sp, info->regsz);
+RPN UDIS86_ESIL (push,  "%s,%d,%s,-=,%s,=[%d]", dst, info->regsz, info->sp, info->sp, info->regsz);
 
 //  UDIS86_ESIL (pop,   "%s=%d[%s],%s+=%d", dst, info->regsz, info->sp, info->sp, info->regsz);
 RPN UDIS86_ESIL (pop,   "%s,[%d],%s,=,%d,%s,+=",
