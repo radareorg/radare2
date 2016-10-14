@@ -1788,6 +1788,8 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	r_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
 	r_core_cmdf (core, "afvr* @ 0x%"PFMT64x"\n", fcn->addr);
 	r_core_cmdf (core, "afvs* @ 0x%"PFMT64x"\n", fcn->addr);
+	/*Saving Function stack frame*/
+	r_cons_printf ("afS %"PFMT64d" @ 0x%"PFMT64x"\n", fcn->maxstack, fcn->addr);
 
 	free (name);
 	return 0;

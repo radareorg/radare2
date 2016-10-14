@@ -1368,6 +1368,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'S':
+		{
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+		if (fcn) {
+			fcn->maxstack = r_num_math (core->num, input + 3);
+			fcn->stack = fcn->maxstack;
+		}
+		}
+		break;
 #if 0
 	/* this is undocumented and probably have no uses. plz discuss */
 	case 'e': // "afe"
@@ -1516,6 +1525,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afn", " name [addr]", "rename name for function at address (change flag too)",
 			"afna", "", "suggest automatic name for current offset",
 			"afs", " [addr] [fcnsign]", "get/set function signature at current address",
+			"afS", "[stack_size]", "set stack frame size for function at current address",
 			"afu", " [addr]", "resize and analyze function from current address until addr",
 			"afv[bsra]", "?", "manipulate args, registers and variables in function",
 			"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
