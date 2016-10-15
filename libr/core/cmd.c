@@ -1484,6 +1484,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		ptr[1] = 0;
 		if (strlen (cmd) < 5) {
 			recursive_help (core, cmd);
+			return 0;
 		}
 	}
 
