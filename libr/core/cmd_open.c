@@ -321,7 +321,7 @@ static int cmd_open(void *data, const char *input) {
 		"oL","","list all IO plugins registered",
 		"om","[?]","create, list, remove IO maps",
 		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-		"oo","","reopen current file (kill+fork in debugger)",
+		"oo","[?]","reopen current file (kill+fork in debugger)",
 		"oo","+","reopen current file in read-write",
 		"ood"," [args]","reopen in debugger mode (with args)",
 		"oo[bnm]"," [...]","see oo? for help",

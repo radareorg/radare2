@@ -49,6 +49,32 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_help.c"
 #include "cmd_search.c"
 
+static void recursive_help (RCore *core, const char *cmd) {
+	char *nl, *line;
+	r_cons_push ();
+	char *msg = r_core_cmd_str (core, cmd);
+	r_cons_pop ();
+	line = msg;
+	r_cons_print (msg);
+	do {
+		nl = strchr (line, '\n');
+		if (nl) {
+			*nl = 0;
+		}
+		char *help_token = strstr (line, "[?]");
+		if (help_token) {
+			help_token[0] = '?';
+			help_token[1] = 0;
+			const char *sp = strchr (line, ' ');
+			if (sp) {
+				recursive_help (core, sp + 1);
+			}
+		}
+		// eprintf (" -- ((%s))\n", line);
+		line = nl + 1;
+	} while (nl);
+}
+
 static int r_core_cmd_nullcallback(void *data) {
 	RCore *core = (RCore*) data;
 	if (core->cons->breaked) {
@@ -1310,6 +1336,7 @@ static char *find_eoq (char *p) {
 	return p;
 }
 
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	const char *quotestr = "`";
 	const char *tick = NULL;
@@ -1381,7 +1408,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			}
 			if (!p) break;
 			*p = '"';
-			cmd = p+1;
+			cmd = p + 1;
 		}
 		return true;
 	case '(':
@@ -1391,7 +1418,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 
 // TODO must honor " and `
 	/* comments */
-	if (*cmd!='#') {
+	if (*cmd != '#') {
 		ptr = (char *)r_str_lastbut (cmd, '#', quotestr);
 		if (ptr && (ptr[1]==' '||ptr[1]=='\t')) *ptr = '\0';
 	}
@@ -1399,7 +1426,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	/* multiple commands */
 // TODO: must honor " and ` boundaries
 	//ptr = strrchr (cmd, ';');
-	if (*cmd!='#') {
+	if (*cmd != '#') {
 		ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
 		if (colon && ptr) {
 			int ret ;
@@ -1451,6 +1478,14 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	/* Out Of Band Input */
 	free (core->oobi);
 	core->oobi = NULL;
+
+	ptr = strstr (cmd, "??");
+	if (ptr) {
+		ptr[1] = 0;
+		if (strlen (cmd) < 5) {
+			recursive_help (core, cmd);
+		}
+	}
 
 	ptr = strchr (cmd, '<');
 	if (ptr) {
@@ -2162,16 +2197,22 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		/* foreach list of items */
 		each = str+1;
 		do {
-			while (*each==' ') each++;
-			if (!*each) break;
+			while (*each == ' ') {
+				each++;
+			}
+			if (!*each) {
+				break;
+			}
 			str = strchr (each, ' ');
 			if (str) {
 				*str = '\0';
 				addr = r_num_math (core->num, each);
 				*str = ' ';
-			} else addr = r_num_math (core->num, each);
+			} else {
+				addr = r_num_math (core->num, each);
+			}
 			//eprintf ("; 0x%08"PFMT64x":\n", addr);
-			each = str+1;
+			each = str + 1;
 			r_core_seek (core, addr, 1);
 			r_core_cmd (core, cmd, 0);
 			r_cons_flush ();
@@ -2273,7 +2314,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					core->rcmd->macro.counter++;
 				}
 				fclose (fd);
-			} else eprintf ("cannot open file '%s' to read offsets\n", each+1);
+			} else {
+				eprintf ("cannot open file '%s' to read offsets\n", each+1);
+			}
 		}
 		break;
 	default:
