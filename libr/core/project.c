@@ -471,6 +471,7 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 }
 
 R_API bool r_core_project_save(RCore *core, const char *file) {
+	bool scr_null = false;
 	bool ret = true;
 	char *prj, buf[1024];
 	SdbListIter *it;
@@ -491,26 +492,33 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 		return false;
 	}
 
+	if (r_config_get_i (core->config, "scr.null")) {
+		r_config_set_i (core->config, "scr.null", false);
+		scr_null = true;
+	}
 	r_core_project_init (core);
 
-	snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "xrefs", prj);
-	r_anal_project_save (core->anal, buf);
+	char *xrefs_path = r_str_newf ("%s.d" R_SYS_DIR "xrefs", prj);
+	r_anal_project_save (core->anal, xrefs_path);
+	free (xrefs_path);
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	if (rop_db) {
 		ls_foreach (rop_db->ns, it, ns) {
-			snprintf (buf, sizeof (buf), "%s.d" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
+			char *rop_path = r_str_newf ("%s.d" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
 			sdb_file (ns->sdb, buf);
 			sdb_sync (ns->sdb);
+			free (rop_path);
 		}
 	}
-
 	if (!r_core_project_save_rdb (core, prj, R_CORE_PRJ_ALL ^ R_CORE_PRJ_XREFS)) {
 		eprintf ("Cannot open '%s' for writing\n", prj);
 		ret = false;
 	}
-
 	free (prj);
+	if (scr_null) {
+		r_config_set_i (core->config, "scr.null", true);
+	}
 	return ret;
 }
 
