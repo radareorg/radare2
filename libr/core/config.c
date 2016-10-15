@@ -1876,6 +1876,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");
 
 	/* http */
+	SETPREF("http.log", "true", "Show HTTP requests processed");
+	SETPREF("http.logfile", "", "Specify a log file instead of stderr for http requests");
 	SETPREF("http.cors", "false", "Enable CORS");
 	SETPREF("http.referer", "", "CSFR protection if set");
 	SETPREF("http.dirlist", "false", "Enable directory listing");

@@ -280,7 +280,8 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	}
 	if (!binpath) {
 		/* fallback to oo */
-		return r_core_cmd0 (core, "oo");
+		(void)r_core_cmd0 (core, "oo");
+		return;
 	}
 	int bits = core->assembler->bits;
 	char *oldname = r_file_abspath (binpath);

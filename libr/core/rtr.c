@@ -40,6 +40,26 @@ typedef struct {
 	const char* input;
 } RapThread;
 
+static void http_logf(RCore *core, const char *fmt, ...) {
+	bool http_log_enabled = r_config_get_i (core->config, "http.log");
+	va_list ap;
+	va_start (ap, fmt);
+	if (http_log_enabled) {
+		const char *http_log_file = r_config_get (core->config, "http.logfile");
+		if (http_log_file && *http_log_file) {
+			char * msg = calloc (4096, 1);
+			vsnprintf (msg, 4094, fmt, ap);
+			strcat (msg, "\n");
+			r_file_dump (http_log_file, (const ut8*)msg, -1, true);
+			free (msg);
+		} else {
+			vfprintf (stderr, fmt, ap);
+			eprintf ("\n");
+		}
+	}
+	va_end (ap);
+}
+
 static char *rtrcmd (TextLog T, const char *str) {
 	char *res, *ptr2;
 	char *ptr = r_str_uri_encode (str);
@@ -51,9 +71,10 @@ static char *rtrcmd (TextLog T, const char *str) {
 	if (ptr2) {
 		ptr2[len] = 0;
 		res = strstr (ptr2, "\n\n");
-		if (res) res = strstr (res + 1, "\n\n");
+		if (res) {
+			res = strstr (res + 1, "\n\n");
+		}
 		return res? res + 2: ptr2;
-		// return res; // ptr2;
 	}
 	return NULL;
 }
@@ -62,7 +83,9 @@ static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
 		r_cons_enable_mouse (x? r_config_get_i (core->config, "scr.wheel"): false);
-	} else r_cons_enable_mouse (false);
+	} else {
+		r_cons_enable_mouse (false);
+	}
 	r_cons_flush ();
 }
 
@@ -95,7 +118,9 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 		if (r_cons_fgets (buf, sizeof (buf) - 1, 0, NULL) < 0) {
 			goto beach;
 		}
-		if (!*buf) continue;
+		if (!*buf) {
+			continue;
+		}
 		if (!strcmp (buf, "/help")) {
 			eprintf ("/quit           quit the chat (same as ^D)\n");
 			eprintf ("/nick <nick>    set cfg.user nick name\n");
@@ -278,11 +303,12 @@ TODO:
 			case 'h': free (rtrcmd (T, "s-1")); break;
 			case 'l': free (rtrcmd (T, "s+1")); break;
 			case 'J':
-				if (cmdidx==1) {
+				if (cmdidx == 1) {
 					free (rtrcmd (T, "4so"));
 				} else {
 					free (rtrcmd (T, "s+32"));
-				} break;
+				}
+				break;
 			case 'K': free (rtrcmd (T, "s-32")); break;
 			case 'H': free (rtrcmd (T, "s-2")); break;
 			case 'L': free (rtrcmd (T, "s+2")); break;
@@ -531,7 +557,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 			}
 		}
 		if (!rs->method || !rs->path) {
-			eprintf ("Invalid http headers received from client\n");
+			http_logf (core, "Invalid http headers received from client\n");
 			r_socket_http_close (rs);
 			continue;
 		}
@@ -539,7 +565,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 
 		if (r_config_get_i (core->config, "http.verbose")) {
 			char *peer = r_socket_to_string (rs->s);
-			eprintf ("[HTTP] %s %s\n", peer, rs->path);
+			http_logf (core, "[HTTP] %s %s\n", peer, rs->path);
 			free (peer);
 		}
 		if (r_config_get_i (core->config, "http.dirlist"))
@@ -572,7 +598,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 								free (f);
 							} else {
 								r_socket_http_response (rs, 403, "Permission denied", 0, headers);
-								eprintf ("http: Cannot open '%s'\n", path);
+								http_logf (core, "http: Cannot open '%s'\n", path);
 							}
 						} else {
 							if (dir) {
@@ -580,7 +606,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 								r_socket_http_response (rs, 404, resp, 0, headers);
 								free (resp);
 							} else {
-								eprintf ("File '%s' not found\n", path);
+								http_logf (core, "File '%s' not found\n", path);
 								r_socket_http_response (rs, 404, "File not found\n", 0, headers);
 							}
 						}
@@ -709,16 +735,16 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 						free (f);
 					} else {
 						r_socket_http_response (rs, 403, "Permission denied", 0, headers);
-						eprintf ("http: Cannot open '%s'\n", path);
+						http_logf (core, "http: Cannot open '%s'\n", path);
 					}
 				} else {
 					if (dir) {
 						char *resp = rtr_dir_files (dir);
-						eprintf ("Dirlisting %s\n", dir);
+						http_logf (core, "Dirlisting %s\n", dir);
 						r_socket_http_response (rs, 404, resp, 0, headers);
 						free (resp);
 					} else {
-						eprintf ("File '%s' not found\n", path);
+						http_logf (core, "File '%s' not found\n", path);
 						r_socket_http_response (rs, 404, "File not found\n", 0, headers);
 					}
 				}
@@ -738,7 +764,7 @@ static int r_core_rtr_http_run (RCore *core, int launch, const char *path) {
 						char *filename = r_file_root (
 							r_config_get (core->config, "http.uproot"),
 							rs->path + 4);
-						eprintf ("UPLOADED '%s'\n", filename);
+						http_logf (core, "UPLOADED '%s'\n", filename);
 						r_file_dump (filename, ret, retlen, 0);
 						free (filename);
 						snprintf (buf, sizeof (buf),
