@@ -48,13 +48,11 @@ static void http_logf(RCore *core, const char *fmt, ...) {
 		const char *http_log_file = r_config_get (core->config, "http.logfile");
 		if (http_log_file && *http_log_file) {
 			char * msg = calloc (4096, 1);
-			vsnprintf (msg, 4094, fmt, ap);
-			strcat (msg, "\n");
+			vsnprintf (msg, 4095, fmt, ap);
 			r_file_dump (http_log_file, (const ut8*)msg, -1, true);
 			free (msg);
 		} else {
 			vfprintf (stderr, fmt, ap);
-			eprintf ("\n");
 		}
 	}
 	va_end (ap);

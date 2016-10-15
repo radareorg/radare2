@@ -357,14 +357,23 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 			const int cfstr_offs = (bits == 64) ? 16 :  8;
 			if (strstr (section->name, "__cfstring")) {
 				int i;
+// XXX do not walk if bin.strings == 0
 				ut8 *p;
 				for (i = 0; i < section->size; i += cfstr_size) {
-					p = a->buf->buf + section->paddr + i;
-					p += cfstr_offs;
+					char buf[32];
+					if (!r_buf_read_at (a->buf, section->paddr + i + cfstr_offs, buf, sizeof (buf))) {
+						break;
+					}
+					p = buf;
+//					p = a->buf->buf + section->paddr + i;
+					// p += cfstr_offs;
 					ut64 cfstr_vaddr = section->vaddr + i;
-					ut64 cstr_vaddr = (bits == 64)
-						? r_read_le64 (p)
-						: r_read_le32 (p);
+					ut64 cstr_vaddr;
+					if (bits == 64) {
+							cstr_vaddr = r_read_le64 (p);
+					} else {
+							cstr_vaddr = r_read_le32 (p);
+					}
 					r_list_foreach (ret, iter2, s) {
 						if (s->vaddr == cstr_vaddr) {
 #if 0
