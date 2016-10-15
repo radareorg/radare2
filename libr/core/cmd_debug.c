@@ -16,10 +16,43 @@ struct dot_trace_ght {
 	Sdb *graphnodes;
 };
 
+/*
+struct RCoreCommand {
+	const char *name;
+	const char *help[];
+};
+*/
+
 struct trace_node {
 	ut64 addr;
 	int refs;
 };
+
+static void recursive_help (RCore *core, const char *cmd) {
+	char *nl, *line;
+	r_cons_push ();
+	char *msg = r_core_cmd_str (core, cmd);
+	r_cons_pop ();
+	line = msg;
+	r_cons_print (msg);
+	do {
+		nl = strchr (line, '\n');
+		if (nl) {
+			*nl = 0;
+		}
+		char *help_token = strstr (line, "[?]");
+		if (help_token) {
+			help_token[0] = '?';
+			help_token[1] = 0;
+			const char *sp = strchr (line, ' ');
+			if (sp) {
+				recursive_help (core, sp + 1);
+			}
+		}
+		// eprintf (" -- ((%s))\n", line);
+		line = nl + 1;
+	} while (nl);
+}
 
 // Get base address from a loaded file.
 static ut64 r_debug_get_baddr(RCore *r, const char *file) {
@@ -3443,6 +3476,10 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case '?':
+			if (input[1] == '?') {
+				recursive_help (core, "d?");
+				break;
+			}
 		default:
 			{
 				const char* help_msg[] = {

@@ -368,12 +368,7 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 //					p = a->buf->buf + section->paddr + i;
 					// p += cfstr_offs;
 					ut64 cfstr_vaddr = section->vaddr + i;
-					ut64 cstr_vaddr;
-					if (bits == 64) {
-							cstr_vaddr = r_read_le64 (p);
-					} else {
-							cstr_vaddr = r_read_le32 (p);
-					}
+					ut64 cstr_vaddr = (bits == 64)? r_read_le64 (p) : r_read_le32 (p);
 					r_list_foreach (ret, iter2, s) {
 						if (s->vaddr == cstr_vaddr) {
 #if 0
@@ -1541,9 +1536,11 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 		return NULL;
 	a->rawstr = bin->rawstr;
 
-	if (plugin && plugin->strings)
+	if (plugin && plugin->strings) {
 		o->strings = plugin->strings (a);
-	else o->strings = get_strings (a, bin->minstrlen, 0);
+	} else {
+		o->strings = get_strings (a, bin->minstrlen, 0);
+	}
 	return o->strings;
 }
 
@@ -1558,10 +1555,12 @@ R_API int r_bin_is_string(RBin *bin, ut64 va) {
 	RList *list;
 	if (!(list = r_bin_get_strings (bin))) return false;
 	r_list_foreach (list, iter, string) {
-		if (string->vaddr == va)
+		if (string->vaddr == va) {
 			return true;
-		if (string->vaddr > va)
+		}
+		if (string->vaddr > va) {
 			return false;
+		}
 	}
 	return false;
 }

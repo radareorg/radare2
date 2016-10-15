@@ -404,7 +404,7 @@ R_API int r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_hash_load(RCore *core, const char *file);
 R_API int r_core_bin_list(RCore *core, int mode);
 R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx, ut32 obj_idx);
-R_API int r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx);
+R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
