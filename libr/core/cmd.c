@@ -52,10 +52,15 @@ static void cmd_debug_reg(RCore *core, const char *str);
 static void recursive_help (RCore *core, const char *cmd) {
 	char *nl, *line;
 	r_cons_push ();
+	if (strchr (cmd, '[')) {
+		eprintf ("Skip ((%s))\n", cmd);
+		return;
+	}
 	char *msg = r_core_cmd_str (core, cmd);
 	r_cons_pop ();
 	line = msg;
 	r_cons_print (msg);
+	(void) r_str_ansi_filter (msg, NULL, NULL, strlen (msg));
 	do {
 		nl = strchr (line, '\n');
 		if (nl) {
@@ -1479,10 +1484,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	free (core->oobi);
 	core->oobi = NULL;
 
-	ptr = strstr (cmd, "??");
-	if (ptr) {
+	ptr = strstr (cmd, "?*");
+	if (ptr && !ptr[2]) {
 		ptr[1] = 0;
-		if (strlen (cmd) < 5) {
+		if (*cmd != '#' && strlen (cmd) < 5) {
 			recursive_help (core, cmd);
 			return 0;
 		}
