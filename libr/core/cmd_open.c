@@ -274,12 +274,13 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	bf = r_bin_file_find_by_fd (core->bin, ofile->desc->fd);
 	binpath = bf ? strdup (bf->file) : NULL;
 	if (!binpath) {
-		if (r_file_exists (ofile->desc->name))
+		if (r_file_exists (ofile->desc->name)) {
 			binpath = strdup (ofile->desc->name);
+		}
 	}
 	if (!binpath) {
-		eprintf ("No bin file open?\n");
-		return;
+		/* fallback to oo */
+		return r_core_cmd0 (core, "oo");
 	}
 	int bits = core->assembler->bits;
 	char *oldname = r_file_abspath (binpath);
