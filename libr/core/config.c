@@ -1303,6 +1303,18 @@ static int cb_rawstr(void *user, void *data) {
 	return true;
 }
 
+static int cb_binstrings(void *user, void *data) {
+	const ut32 req = R_BIN_REQ_STRINGS;
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->bin->filter_rules |= req;
+	} else {
+		core->bin->filter_rules &= ~req;
+	}
+	return true;
+}
+
 static int cb_binprefix(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1724,7 +1736,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
 	SETCB("bin.prefix", NULL, &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
-	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
+	SETCB("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETPREF("bin.mergeflags", "true", "Merge symbols with the same name into the same flag");
 
