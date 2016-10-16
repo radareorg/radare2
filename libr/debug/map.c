@@ -9,8 +9,9 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	bool notfirst = false;
 	RListIter *iter;
 	RDebugMap *map;
-	if (!dbg) return;
-
+	if (!dbg) {
+		return;
+	}
 	switch (rad) {
 	case 'j':
 		dbg->cb_printf ("[");
@@ -56,18 +57,51 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 			free (name);
 		}
 		break;
+	case 'q':
+		r_list_foreach (dbg->maps, iter, map) {
+			char *name = r_str_newf ("%s.%s", map->name,
+				r_str_rwx_i (map->perm));
+			r_name_filter (name, 0);
+			dbg->cb_printf ("0x%016"PFMT64x" - 0x%016"PFMT64x" %6s %5s %s\n",
+				map->addr, map->addr_end,
+				r_num_units (buf, map->addr_end - map->addr),
+				r_str_rwx_i (map->perm), name);
+			free (name);
+		}
+		r_list_foreach (dbg->maps_user, iter, map) {
+			char *name = r_str_newf ("%s.%s", map->name,
+				r_str_rwx_i (map->perm));
+			r_name_filter (name, 0);
+			dbg->cb_printf ("f map.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+				name, map->addr_end - map->addr, map->addr);
+			free (name);
+		}
+		break;
 	default:
 		fmtstr = dbg->bits& R_SYS_BITS_64?
-			"sys %04s 0x%016"PFMT64x" %c 0x%016"PFMT64x" %c %s %s %s\n":
-			"sys %04s 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s %s\n";
+			"sys %04s 0x%016"PFMT64x" %c 0x%016"PFMT64x" %c %s %s %s%s%s\n":
+			"sys %04s 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s %s%s%s\n";
 		r_list_foreach (dbg->maps, iter, map) {
+			const char *flagname = dbg->corebind.getName
+				? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
+			if (!flagname || !*flagname) {
+				flagname = "";
+			} else {
+				if (!strncmp (flagname, "map.", 4)) {
+					if (!strncmp (flagname + 4, map->name, 4)) {
+						flagname = "";
+					}
+				}
+			}
 			r_num_units (buf, map->size);
 			dbg->cb_printf (fmtstr,
 				buf, map->addr, (addr>=map->addr && addr<map->addr_end)?'*':'-',
 				map->addr_end, map->user?'u':'s',
 				r_str_rwx_i (map->perm),
 				map->file?map->file:"?",
-				map->name);
+				map->name,
+				*flagname? " ; ": "", 
+				flagname);
 		}
 		fmtstr = dbg->bits& R_SYS_BITS_64?
 			"usr %04s 0x%016"PFMT64x" - 0x%016"PFMT64x" %c %x %s %s\n":

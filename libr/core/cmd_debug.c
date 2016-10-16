@@ -899,9 +899,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
 		"dmj", "", "List memmaps in JSON format",
 		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
-		"dmm", "[j*]", "List modules (libraries, binaries loaded in memory)",
-		"dmp", " <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
-		"dms", " <id> <mapaddr>", "take memory snapshot",
+		"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
+		"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
+		"dms", "[?] <id> <mapaddr>", "take memory snapshot",
 		"dms-", " <id> <mapaddr>", "restore memory snapshot",
 		"dmh", "", "Show map of heap",
 		//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
@@ -1098,6 +1098,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case '\0':
 	case '*':
 	case 'j':
+	case 'q':
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_debug_map_list (core->dbg, core->offset, input[0]);
 		break;

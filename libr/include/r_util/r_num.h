@@ -33,6 +33,7 @@ typedef struct r_num_calc_t {
 
 typedef struct r_num_t {
 	ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
+	const char *(*cb_from_value)(struct r_num_t *userptr, ut64 value, int *ok);
 //	RNumCallback callback;
 	ut64 value;
 	double fvalue;
@@ -42,8 +43,9 @@ typedef struct r_num_t {
 } RNum;
 
 typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
+typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, int *ok);
 
-R_API RNum *r_num_new(RNumCallback cb, void *ptr);
+R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr);
 R_API void r_num_free(RNum *num);
 R_API char *r_num_units(char *buf, ut64 num);
 R_API int r_num_conditional(RNum *num, const char *str);
@@ -52,6 +54,7 @@ R_API const char *r_num_calc_index(RNum *num, const char *p);
 R_API ut64 r_num_chs(int cylinder, int head, int sector, int sectorsize);
 R_API int r_num_is_valid_input(RNum *num, const char *input_value);
 R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
+R_API const char *r_num_get_name(RNum *num, ut64 n);
 R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only);
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);

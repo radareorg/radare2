@@ -197,6 +197,11 @@ static void setab(RCore *core, const char *arch, int bits) {
 	}
 }
 
+static const char *getName(RCore *core, ut64 addr) {
+	RFlagItem *item = r_flag_get_i (core->flags, addr);
+	return item ? item->name : NULL;
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
@@ -204,6 +209,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->puts = (RCorePuts)r_cons_strcat;
 	bnd->setab = (RCoreSetArchBits)setab;
+	bnd->getName = (RCoreGetName)getName;
 	return true;
 }
 
@@ -267,6 +273,23 @@ static ut64 bbSize(RAnalFunction *fcn, ut64 addr) {
 		}
 	}
 	return 0;
+}
+
+static const char *str_callback(RNum *user, ut64 off, int *ok) {
+	RFlag *f = (RFlag*)user;
+	if (ok) {
+		*ok = 0;
+	}
+	if (f) {
+		RFlagItem *item = r_flag_get_i (f, off);
+		if (item) {
+			if (ok) {
+				*ok = true;
+			}
+			return item->name;
+		}
+	}
+	return NULL;
 }
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
@@ -863,14 +886,16 @@ openfile:
 		    (!strncmp (line->buffer.data, "?v ", 3)) ||
 		    (!strncmp (line->buffer.data, "? ", 2))) {
 			int n, i = 0;
-			int sdelta = (line->buffer.data[1]==' ')?2:
-				(line->buffer.data[2]==' ')?3:4;
+			int sdelta = (line->buffer.data[1] == ' ')
+				? 2 : (line->buffer.data[2] == ' ')
+				? 3 : 4;
 			n = strlen (line->buffer.data+sdelta);
 			r_list_foreach (core->flags->flags, iter, flag) {
 				if (!strncmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
-					if (i==TMP_ARGV_SZ)
+					if (i == TMP_ARGV_SZ) {
 						break;
+					}
 				}
 			}
 			tmp_argv[i>255?255:i] = NULL;
@@ -973,8 +998,7 @@ static int __dbg_write(void *user, int pid, ut64 addr, const ut8 *buf, int len) 
 static const char *r_core_print_offname(void *p, ut64 addr) {
 	RCore *c = (RCore*)p;
 	RFlagItem *item = r_flag_get_i (c->flags, addr);
-	if (item) return item->name;
-	return NULL;
+	return item ? item->name : NULL;
 }
 
 /**
@@ -1308,9 +1332,7 @@ R_API int r_core_init(RCore *core) {
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new();
-	core->num = r_num_new (&num_callback, core);
-	//core->num->callback = &num_callback;
-	//core->num->userptr = core;
+	core->num = r_num_new (&num_callback, &str_callback, core);
 	core->curasmstep = 0;
 	core->egg = r_egg_new ();
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);

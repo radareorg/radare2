@@ -37,11 +37,14 @@ R_API void r_num_minmax_swap_i(int *a, int *b) {
 	}
 }
 
-R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
+R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
 	RNum *num = R_NEW0 (RNum);
-	if (!num) return NULL;
+	if (!num) {
+		return NULL;
+	}
 	num->value = 0LL;
 	num->callback = cb;
+	num->cb_from_value = cb2;
 	num->userptr = ptr;
 	return num;
 }
@@ -72,6 +75,20 @@ R_API char *r_num_units(char *buf, ut64 num) {
 		snprintf (buf, 31, "%.0f%c", fnum, unit);
 	}
 	return buf;
+}
+
+R_API const char *r_num_get_name(RNum *num, ut64 n) {
+	if (num->cb_from_value) {
+		int ok = 0;
+		const char *msg = num->cb_from_value (num, n, &ok);
+		if (msg && *msg) {
+			return msg;
+		}
+		if (ok) {
+			return msg;
+		}
+	}
+	return NULL;
 }
 
 // TODO: try to avoid the use of sscanf

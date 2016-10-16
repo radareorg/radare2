@@ -469,7 +469,7 @@ static int use_stdin () {
 
 int main (int argc, char **argv) {
 	int i;
-	num = r_num_new (NULL, NULL);
+	num = r_num_new (NULL, NULL, NULL);
 	if (argc == 1) {
 		use_stdin ();
 	} else {

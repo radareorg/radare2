@@ -278,3 +278,4 @@ R_API ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok) {
 	// resolve using regnu
 	return r_debug_reg_get_err (dbg, str, ok);
 }
+

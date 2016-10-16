@@ -10,6 +10,7 @@ typedef int (*RCoreDebugBpHit)(void *core, void *bp);
 typedef char* (*RCoreCmdStr)(void *core, const char *cmd);
 typedef void (*RCorePuts)(const char *cmd);
 typedef void (*RCoreSetArchBits)(void *core, const char *arch, int bits);
+typedef char *(*RCoreGetName)(void *core, ut64 off);
 
 typedef struct r_core_bind_t {
 	void *core;
@@ -18,6 +19,7 @@ typedef struct r_core_bind_t {
 	RCorePuts puts;
 	RCoreDebugBpHit bphit;
 	RCoreSetArchBits setab;
+	RCoreGetName getName;
 } RCoreBind;
 
 #endif

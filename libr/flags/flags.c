@@ -15,6 +15,26 @@ R_LIB_VERSION(r_flag);
 #define ISNULLSTR(x) (!(x) || !*(x))
 #define IS_IN_SPACE(f, i) ((f)->space_idx != -1 && (i)->space != (f)->space_idx)
 
+static const char *str_callback(RNum *user, ut64 off, int *ok) {
+	RList *list;
+	RFlag *f = (RFlag*)user;
+	RFlagItem *item;
+	if (ok) {
+		*ok = 0;
+	}
+	if (f) {
+		list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
+		item = r_list_get_top (list);
+		if (item) {
+			if (ok) {
+				*ok = true;
+			}
+			return item->name;
+		}
+	}
+	return NULL;
+}
+
 static ut64 num_callback(RNum *user, const char *name, int *ok) {
 	RFlag *f = (RFlag*)user;
 	RFlagItem *item;
@@ -65,7 +85,7 @@ R_API RFlag * r_flag_new() {
 	int i;
 	RFlag *f = R_NEW0 (RFlag);
 	if (!f) return NULL;
-	f->num = r_num_new (&num_callback, f);
+	f->num = r_num_new (&num_callback, &str_callback, f);
 	if (!f->num) {
 		r_flag_free (f);
 		return NULL;
@@ -519,20 +539,18 @@ R_API int r_flag_unset_name(RFlag *f, const char *name) {
 /* unset all flag items in the RFlag f */
 R_API void r_flag_unset_all(RFlag *f) {
 	f->space_idx = -1;
-
 	r_list_free (f->flags);
 	f->flags = r_list_new ();
-	if (!f->flags) return;
+	if (!f->flags) {
+		return;
+	}
 	f->flags->free = (RListFree)r_flag_item_free;
-
 	r_hashtable64_free (f->ht_name);
 	//don't set free since f->flags will free up items when needed avoiding uaf
 	f->ht_name = r_hashtable64_new ();
-
 	r_hashtable64_free (f->ht_off);
 	f->ht_off = r_hashtable64_new ();
 	f->ht_off->free = (RHashFree)r_list_free;
-
 	r_flag_space_unset (f, NULL);
 }
 
