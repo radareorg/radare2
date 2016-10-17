@@ -921,10 +921,12 @@ static int cmd_resize(void *data, const char *input) {
 
 static int cmd_visual(void *data, const char *input) {
 	RCore *core = (RCore*) data;
-	if (core->http_up)
+	if (core->http_up) {
 		return false;
-	if (!r_config_get_i (core->config, "scr.interactive"))
+	}
+	if (!r_config_get_i (core->config, "scr.interactive")) {
 		return false;
+	}
 	return r_core_visual ((RCore *)data, input);
 }
 
@@ -1485,11 +1487,14 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	core->oobi = NULL;
 
 	ptr = strstr (cmd, "?*");
-	if (ptr && !ptr[2]) {
-		ptr[1] = 0;
-		if (*cmd != '#' && strlen (cmd) < 5) {
-			recursive_help (core, cmd);
-			return 0;
+	if (ptr && !ptr[2] && ptr > cmd) {
+		char *prech = ptr - 1;
+		if (*prech != '~') {
+			ptr[1] = 0;
+			if (*cmd != '#' && strlen (cmd) < 5) {
+				recursive_help (core, cmd);
+				return 0;
+			}
 		}
 	}
 
@@ -1677,6 +1682,7 @@ next2:
 	} else {
 		ptr = NULL;
 	}
+
 	core->tmpseek = ptr? true: false;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr+1, '!');
