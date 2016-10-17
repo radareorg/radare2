@@ -60,7 +60,7 @@ type.HACCEL=p
 HALF_PTR=type
 
 PADDR=type
-type.PADDR=s
+type.PADDR=p
 type.PADDR.size=32
 
 HANDLE=type
