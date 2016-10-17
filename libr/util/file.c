@@ -24,7 +24,7 @@ R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 #if __WINDOWS__
 	fd = r_sandbox_open (filename, O_RDWR, 0644);
 #else
-	fd = r_sandbox_open (filename, O_RDWR|O_SYNC, 0644);
+	fd = r_sandbox_open (filename, O_RDWR | O_SYNC, 0644);
 #endif
 	if (fd == -1) {
 		return false;
@@ -44,8 +44,9 @@ R_API const char *r_file_basename (const char *path) {
 	if (ptr) {
 		path = ptr + 1;
 	} else {
-		ptr = r_str_rchr (path, NULL, '\\');
-		if (ptr) path = ptr + 1;
+		if ((ptr = r_str_rchr (path, NULL, '\\'))) {
+			path = ptr + 1;
+		}
 	}
 	return path;
 }
@@ -78,7 +79,7 @@ R_API bool r_file_is_regular(const char *str) {
 
 R_API bool r_file_is_directory(const char *str) {
 	struct stat buf = {0};
-	if (!str||!*str) {
+	if (!str || !*str) {
 		return false;
 	}
 	if (stat (str, &buf) == -1) {
@@ -210,7 +211,7 @@ R_API char *r_stdin_slurp (int *sz) {
 #if __UNIX__
 	int i, ret, newfd;
 	char *buf;
-	if ((newfd = dup(0)) < 0) {
+	if ((newfd = dup (0)) < 0) {
 		return NULL;
 	}
 	buf = malloc (BS);
@@ -325,9 +326,9 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	if (!fd) {
 		return NULL;
 	}
-	(void)fseek (fd, 0, SEEK_END);
+	(void) fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
-	(void)fseek (fd, 0, SEEK_SET);
+	(void) fseek (fd, 0, SEEK_SET);
 	ret = (ut8*)malloc ((sz>>1)+1);
 	if (!ret) {
 		fclose (fd);
@@ -348,7 +349,6 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 		fclose (fd);
 		return NULL;
 	}
-
 	ret[bytes] = '\0';
 	fclose (fd);
 	if (usz) {
@@ -369,10 +369,10 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 		fclose (fd);
 		return NULL;
 	}
-	ret = (char *)malloc (sz + 1);
+	ret = (char *) malloc (sz + 1);
 	if (ret) {
 		if (osz) {
-			*osz = (int)(size_t)fread (ret, 1, sz, fd);
+			*osz = (int)(size_t) fread (ret, 1, sz, fd);
 		} else {
 			read_items = fread (ret, 1, sz, fd);
 			if (!read_items) {
@@ -387,8 +387,8 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 }
 
 R_API char *r_file_slurp_random_line(const char *file) {
-  int i = 0;
-  return r_file_slurp_random_line_count(file, &i);
+	int i = 0;
+	return r_file_slurp_random_line_count (file, &i);
 }
 
 R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
@@ -817,4 +817,19 @@ R_API char *r_file_tmpdir() {
 		eprintf ("Cannot find temporary directory '%s'\n", path);
 	}
 	return path;
+}
+
+R_API bool r_file_copy (const char *src, const char *dst) {
+	/* TODO: implement in C */
+	/* TODO: Use NO_CACHE for iOS dyldcache copying */
+#if __WINDOWS__
+	return r_sys_cmdf ("copy %s %s", src, dst);
+#else
+	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
+	char *dst2 = r_str_replace (strdup (dst), "'", "\\'", 1);
+	int rc = r_sys_cmdf ("cp -f '%s' '%s'", src2, dst2);
+	free (src2);
+	free (dst2);
+	return rc == 0;
+#endif
 }

@@ -387,27 +387,12 @@ int main(int argc, char **argv, char **envp) {
 		r_list_free (prefiles);
 		return main_help (1);
 	}
+	r_core_init (&r);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
-		char *path = r_str_home (R2_HOMEDIR"/projects/");
-		DIR *d = r_sandbox_opendir (path);
-		if (d) {
-			for (;;) {
-				struct dirent* de = readdir (d);
-				if (!de) break;
-				ret = strlen (de->d_name);
-				if (!strcmp (".d", de->d_name + ret - 2)) {
-					// TODO:
-					// do more checks to ensure it is a project
-					// show project info (opened? file? ..?)
-					printf ("%.*s\n", ret - 2, de->d_name);
-				}
-			}
-		}
-		free (path);
+		r_core_project_list (&r, 0);
+		r_cons_flush ();
 		return 0;
 	}
-	r_core_init (&r);
-
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (argc > 1 && !strcmp (argv[1], "-")) {
 		argv[1] = argv[0];
@@ -505,20 +490,22 @@ int main(int argc, char **argv, char **envp) {
 			mapaddr = r_num_math (r.num, optarg); break;
 			break;
 		case 'M':
-			{
-				r_config_set (r.config, "bin.demangle", "false");
-				r_config_set (r.config, "asm.demangle", "false");
-			}
+			r_config_set (r.config, "bin.demangle", "false");
+			r_config_set (r.config, "asm.demangle", "false");
 			break;
-		case 'n': run_anal--; break;
-		case 'N': run_rc = 0; break;
+		case 'n':
+			run_anal--;
+			break;
+		case 'N':
+			run_rc = 0;
+			break;
 		case 'p':
 			if (!strcmp (optarg, "?")) {
 				r_core_project_list (&r, 0);
 				r_cons_flush ();
 				return 0;
 			} else {
-				r_config_set (r.config, "file.project", optarg);
+				r_config_set (r.config, "prj.name", optarg);
 			}
 			break;
 		case 'P':
@@ -817,7 +804,7 @@ int main(int argc, char **argv, char **envp) {
 					}
 				}
 			} else {
-				const char *prj = r_config_get (r.config, "file.project");
+				const char *prj = r_config_get (r.config, "prj.name");
 				if (prj && *prj) {
 					pfile = r_core_project_info (&r, prj);
 					if (pfile) {
@@ -858,7 +845,7 @@ int main(int argc, char **argv, char **envp) {
 			lock = r_th_lock_new ();
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
 			// rabin_delegate (NULL);
-		} // else eprintf ("Metadata loaded from 'file.project'\n");
+		} // else eprintf ("Metadata loaded from 'prj.name'\n");
 #endif
 		if (mapaddr)
 			r_core_seek (&r, mapaddr, 1);
@@ -910,7 +897,7 @@ int main(int argc, char **argv, char **envp) {
 			const char *npath, *nsha1;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
-			has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
+			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"));
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
@@ -1069,7 +1056,7 @@ int main(int argc, char **argv, char **envp) {
 					}
 				}
 
-				prj = r_config_get (r.config, "file.project");
+				prj = r_config_get (r.config, "prj.name");
 				if (no_question_save) {
 					if (prj && *prj && y_save_project){
 						r_core_project_save (&r, prj);

@@ -7,7 +7,7 @@
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	const char *file, *arg = (input && *input)? input+1: NULL;
-	const char *fileproject = r_config_get (core->config, "file.project");
+	const char *fileproject = r_config_get (core->config, "prj.name");
 	char *str = NULL;
 
 	if (!input) {
@@ -42,7 +42,7 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 's':
 		if (r_core_project_save (core, file)) {
-			r_config_set (core->config, "file.project", file);
+			r_config_set (core->config, "prj.name", file);
 			r_cons_println (file);
 		}
 		break;
@@ -171,10 +171,10 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case 'i':
-		{
-		char *prjName = r_core_project_info (core, file);
-		r_cons_println (prjName);
-		free (prjName);
+		if (file && *file) {
+			char *prjName = r_core_project_info (core, file);
+			r_cons_println (prjName);
+			free (prjName);
 		}
 		break;
 	default: {
@@ -190,7 +190,7 @@ static int cmd_project(void *data, const char *input) {
 		"Po", " [file]", "open project",
 		"Ps", " [file]", "save project",
 		"PS", " [file]", "save script file",
-		"NOTE:", "", "See 'e file.project'",
+		"NOTE:", "", "See 'e??prj.'",
 		"NOTE:", "", "project are stored in ~/.config/radare2/projects",
 		NULL};
 		r_core_cmd_help (core, help_msg);

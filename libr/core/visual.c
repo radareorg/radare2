@@ -856,7 +856,7 @@ void SetWindow(int Width, int Height) {
 char *getcommapath(RCore *core) {
 	char *cwd;
 	const char *dir = r_config_get (core->config, "dir.projects");
-	const char *prj = r_config_get (core->config, "file.project");
+	const char *prj = r_config_get (core->config, "prj.name");
 	if (dir && *dir && prj && *prj) {
 		char *abspath = r_file_abspath (dir);
 		/* use prjdir as base directory for comma-ent files */

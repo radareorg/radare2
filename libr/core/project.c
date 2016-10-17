@@ -41,8 +41,7 @@ static char *r_core_project_file(RCore *core, const char *file) {
 			core->config, "dir.projects"));
 		prjfile = r_str_concat (prjfile, R_SYS_DIR);
 		prjfile = r_str_concat (prjfile, file);
-		if (!r_file_is_regular (prjfile)) {
-			// XXX this is a hack
+		if (r_file_is_directory (prjfile)) {
 			prjfile = r_str_concat (prjfile, R_SYS_DIR"rc");
 		}
 	}
@@ -300,7 +299,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 			return false;
 		}
 	}
-	if (!strcmp (prjfile, r_config_get (core->config, "file.project"))) {
+	if (!strcmp (prjfile, r_config_get (core->config, "prj.name"))) {
 		//eprintf ("Reloading project\n");
 		askuser = 0;
 #if 0
@@ -497,18 +496,19 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 	return true;
 }
 
+#define TRANSITION 1
+
 R_API bool r_core_project_save(RCore *core, const char *file) {
 	bool scr_null = false;
 	bool ret = true;
 	char *prj, buf[1024];
 	SdbListIter *it;
 	SdbNs *ns;
-	int prjType = 1; // file
+	int prjType = 1; // 0=old (file + file.d/) 1=new (file/*)
 
 	if (!file || !*file) {
 		return false;
 	}
-
 	prj = r_core_project_file (core, file);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", file);
@@ -516,10 +516,33 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	}
 	char *prjDir = r_file_dirname (prj);
 	if (r_file_exists (prj)) {
+		if (r_file_is_directory (prj)) {
+			eprintf ("WTF. rc is a directory?\n");
+			eprintf ("rm -rf %s.d\n", prj);
+		}
+#if 0
 		if (r_file_is_regular (prj)) {
 			prjType = 0;
 			prjDir = strdup (prj);
+#if TRANSITION
+			prjType = 1;
+			r_file_rm (prj);
+			eprintf ("rm -f %s\n", prj);
+			eprintf ("rm -rf %s.d\n", prj);
+			char *newPrj = r_str_newf ("%s/rc", prj);
+			free (prj);
+			prj = newPrj;
+			free (prjDir);
+			prjDir = r_file_dirname (prj);
+#endif
 		}
+#endif
+	} else {
+		free (prjDir);
+		prjDir = strdup (prj);
+		char *newPrj = r_str_newf ("%s/rc", prj);
+		free (prj);
+		prj = newPrj;
 	}
 	if (!prjDir) {
 		prjDir = strdup (prj);
@@ -566,6 +589,19 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	if (!r_core_project_save_rdb (core, prj, R_CORE_PRJ_ALL ^ R_CORE_PRJ_XREFS)) {
 		eprintf ("Cannot open '%s' for writing\n", prj);
 		ret = false;
+	}
+
+	if (r_config_get_i (core->config, "prj.files")) {
+		// TODO: iterate over all opened files
+		const char *binFile = r_core_project_info (core, file);
+		const char *binFileName = r_file_basename (binFile);
+		char *prjBinDir = r_str_newf ("%s/bin", prjDir);
+		char *prjBinFile = r_str_newf ("%s/%s", prjBinDir, binFileName);
+		r_sys_mkdirp (prjBinDir);
+		if (!r_file_copy (binFile, prjBinFile)) {
+			eprintf ("Warning: Cannot copy '%s' into '%s'\n", binFile, prjBinFile);
+		}
+		free (prjBinFile);
 	}
 	free (prj);
 	free (prjDir);

@@ -35,5 +35,6 @@ R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);
+R_API bool r_file_copy (const char *src, const char *dst);
 
 #endif //  R_FILE_H

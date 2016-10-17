@@ -333,10 +333,14 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				if (hascolor)
 					r_cons_printf (Color_RESET);
 			}
-			if (op.size<1) op.size =1;
-			i+= op.size;
-			if (op2.size<1) op2.size =1;
-			j+= op2.size;
+			if (op.size < 1) {
+				op.size = 1;
+			}
+			i += op.size;
+			if (op2.size < 1) {
+				op2.size = 1;
+			}
+			j += op2.size;
 		}
 		break;
 	}
@@ -344,19 +348,22 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 }
 
 static int cmd_cp(void *data, const char *input) {
-	if (strlen (input)<3) {
+	char *src, *dst;
+	if (strlen (input) < 3) {
 		eprintf ("Usage: cp src dst\n");
-		return 0;
+		return false;
 	}
-	input = input + 2;
-	if (!r_sandbox_enable(0)) {
-#if __WINDOWS__
-		r_sys_cmdf ("copy %s", input);
-#else
-		r_sys_cmdf ("cp %s", input);
-#endif
+	src = strdup (input + 2);
+	dst = strchr (src, ' ');
+	if (dst) {
+		*dst++ = 0;
+		bool rc = r_file_copy (src, dst);
+		free (src);
+		return rc;
 	}
-	return 0;
+	eprintf ("Usage: cp src dst\n");
+	free (src);
+	return false;
 }
 
 static int cmd_cmp(void *data, const char *input) {

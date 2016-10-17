@@ -1740,6 +1740,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETPREF("bin.mergeflags", "true", "Merge symbols with the same name into the same flag");
 
+	/* prj */
+	SETPREF("prj.name", "", "Name of current project");
+	SETPREF("prj.files", "false", "Save the target binary inside the project directory");
+	SETPREF("prj.git", "false", "TODO: Commit on every project save");
+	SETPREF("prj.zip", "false", "TODO: use ZIP format for project files");
+	SETPREF("prj.gpg", "false", "TODO: Encrypt project");
+
 	/* cfg */
 	SETPREF("cfg.plugins", "true", "Load plugins at startup");
 	SETCB("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
@@ -2062,7 +2069,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("file.desc", "", "User defined file description (used by projects)");
 	SETPREF("file.md5", "", "MD5 sum of current file");
 	SETPREF("file.path", "", "Path of current file");
-	SETPREF("file.project", "", "Name of current project");
 	SETPREF("file.sha1", "", "SHA1 hash of current file");
 	SETPREF("file.type", "", "Type of current file");
 	SETCB("file.loadmethod", "fail", &cb_fileloadmethod, "What to do when load addresses overlap: fail, overwrite, or append (next available)");
