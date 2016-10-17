@@ -1743,9 +1743,9 @@ R_API int r_core_config_init(RCore *core) {
 	/* prj */
 	SETPREF("prj.name", "", "Name of current project");
 	SETPREF("prj.files", "false", "Save the target binary inside the project directory");
-	SETPREF("prj.git", "false", "TODO: Commit on every project save");
-	SETPREF("prj.zip", "false", "TODO: use ZIP format for project files");
-	SETPREF("prj.gpg", "false", "TODO: Encrypt project");
+	SETPREF("prj.git", "false", "Every project is a git repo and saving is commiting");
+	SETPREF("prj.zip", "false", "Use ZIP format for project files");
+	SETPREF("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
 
 	/* cfg */
 	SETPREF("cfg.plugins", "true", "Load plugins at startup");

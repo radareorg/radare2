@@ -9,6 +9,9 @@ static bool r_core_project_load_xrefs(RCore *core, const char *prjName);
 
 static bool is_valid_project_name (const char *name) {
 	int i;
+	if (r_str_endswith (name, ".zip")) {
+		return false;
+	}
 	for (i=0; name[i]; i++) {
 		switch (name[i]) {
 		case '\\': // for w32
@@ -603,7 +606,7 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 		free (prjBinFile);
 	}
 	if (r_config_get_i (core->config, "prj.git")) {
-		char *cwd = r_sys_getdir();
+		char *cwd = r_sys_getdir ();
 		char *gitDir = r_str_newf ("%s/.git", prjDir);
 		if (r_sys_chdir (prjDir)) {
 			if (!r_file_is_directory (gitDir)) {
@@ -613,7 +616,21 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 		} else {
 			eprintf ("Cannot chdir %s\n", prjDir);
 		}
+		r_sys_chdir (cwd);
 		free (gitDir);
+		free (cwd);
+	}
+	if (r_config_get_i (core->config, "prj.zip")) {
+		char *cwd = r_sys_getdir ();
+		const char *prjName = r_file_basename (prjDir);
+		if (r_sys_chdir (prjDir)) {
+			r_sys_chdir ("..");
+			r_sys_cmdf ("rm -f '%s.zip'; zip -r '%s'.zip '%s'",
+				prjName, prjName, prjName);
+		} else {
+			eprintf ("Cannot chdir %s\n", prjDir);
+		}
+		r_sys_chdir (cwd);
 		free (cwd);
 	}
 	free (prj);
