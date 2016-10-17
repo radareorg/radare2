@@ -27,6 +27,10 @@ COLORREF=type
 type.COLORREF=d
 type.COLORREF.size=32
 
+WORD=type
+type.WORD=w
+type.WORD.size=16
+
 DWORD=type
 type.DWORD=d
 type.DWORD.size=32
@@ -54,6 +58,10 @@ HACCEL=type
 type.HACCEL=p
 
 HALF_PTR=type
+
+PADDR=type
+type.PADDR=s
+type.PADDR.size=32
 
 HANDLE=type
 type.HANDLE=p
