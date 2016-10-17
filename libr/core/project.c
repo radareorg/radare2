@@ -506,7 +506,6 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	char *prj, buf[1024];
 	SdbListIter *it;
 	SdbNs *ns;
-	int prjType = 1; // 0=old (file + file.d/) 1=new (file/*)
 
 	if (!file || !*file) {
 		return false;
@@ -516,18 +515,20 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 		eprintf ("Invalid project name '%s'\n", file);
 		return false;
 	}
-	char *prjDir = r_file_dirname (prj);
+	char *prjDir;
+	if (r_str_endswith (prj, "/rc")) {
+		prjDir = r_file_dirname (prj);
+	} else {
+		prjDir = r_str_newf ("%s.d", prj);
+	}
 	if (r_file_exists (prj)) {
 		if (r_file_is_directory (prj)) {
 			eprintf ("WTF. rc is a directory?\n");
 			eprintf ("rm -rf %s.d\n", prj);
 		}
-#if 0
-		if (r_file_is_regular (prj)) {
-			prjType = 0;
-			prjDir = strdup (prj);
+		if (r_str_endswith (prjDir, ".d")) {
+			eprintf ("Upgrading project...\n");
 #if TRANSITION
-			prjType = 1;
 			r_file_rm (prj);
 			eprintf ("rm -f %s\n", prj);
 			eprintf ("rm -rf %s.d\n", prj);
@@ -538,7 +539,6 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 			prjDir = r_file_dirname (prj);
 #endif
 		}
-#endif
 	} else {
 		free (prjDir);
 		prjDir = strdup (prj);
@@ -549,21 +549,8 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	if (!prjDir) {
 		prjDir = strdup (prj);
 	}
-	switch (prjType) {
-	case 0:
-		if (r_file_is_directory (prj)) {
-			eprintf ("Error: Target cannot be a directory\n");
-			free (prj);
-			free (prjDir);
-			free (prjDir);
-			return false;
-		}
-		break;
-	case 1:
-		if (!r_file_exists (prj)) {
-			r_sys_mkdirp (prjDir);
-		}
-		break;
+	if (!r_file_exists (prj)) {
+		r_sys_mkdirp (prjDir);
 	}
 	if (r_config_get_i (core->config, "scr.null")) {
 		r_config_set_i (core->config, "scr.null", false);
@@ -571,18 +558,14 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	}
 	r_core_project_init (core);
 
-	char *xrefs_path = prjType == 0
-		? r_str_newf ("%s.d" R_SYS_DIR "xrefs", prj)
-		: r_str_newf ("%s" R_SYS_DIR "xrefs", prjDir);
+	char *xrefs_path = r_str_newf ("%s" R_SYS_DIR "xrefs", prjDir);
 	r_anal_project_save (core->anal, xrefs_path);
 	free (xrefs_path);
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	if (rop_db) {
 		ls_foreach (rop_db->ns, it, ns) {
-			char *rop_path = prjType == 0
-				? r_str_newf ("%s.d" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name)
-				: r_str_newf ("%s" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
+			char *rop_path = r_str_newf ("%s" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
 			sdb_file (ns->sdb, buf);
 			sdb_sync (ns->sdb);
 			free (rop_path);
