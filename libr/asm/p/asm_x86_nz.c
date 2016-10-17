@@ -1056,6 +1056,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 		if (op.operands[0].type & OT_CONSTANT) {
 			return -1;
 		}
+		if (op.operands[0].type & OT_REGTYPE & OT_SEGMENTREG &&
+		    op.operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
+				return -1;
+		}
 		if (a->bits == 64) {
 			if (op.operands[0].extended) {
 				rex = 1;
@@ -1066,7 +1070,11 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 			data[l++] = 0x48 | rex;
 		}
 		offset = op.operands[0].offset * op.operands[0].offset_sign;
-		data[l++] = (op.operands[0].type & OT_BYTE) ? 0x88 : 0x89;
+		if (op.operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
+			data[l++] = 0x8c;
+		} else {
+			data[l++] = (op.operands[0].type & OT_BYTE) ? 0x88 : 0x89;
+		}
 
 		if (!(op.operands[0].type & OT_MEMORY)) {
 			if (op.operands[0].reg == X86R_UNDEFINED ||
@@ -1109,10 +1117,28 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 			}
 		}
 	} else if (op.operands[1].type & OT_MEMORY) {
+		if (op.operands[0].type & OT_MEMORY) {
+			return -1;
+		}
+		offset = op.operands[1].offset * op.operands[1].offset_sign;
+
+		if (op.operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
+			if (op.operands[1].scale[0] == 0) return -1;
+			ut8 prefixes[] = {0x2e, 0x36, 0x3e, 0x26, 0x64, 0x65};
+			data[l++] = prefixes[op.operands[1].regs[0]];
+			data[l++] = 0x8b;
+			data[l++] = op.operands[0].reg << 3 | 0x5;
+			data[l++] = offset;
+			data[l++] = offset >> 8;
+			data[l++] = offset >> 16;
+			data[l++] = offset >> 24;
+			return l;
+		}
+
 		if (a->bits == 64 && !(op.operands[1].regs[0] == X86R_RBP)) {
 			data[l++] = 0x48;
 		}
-		offset = op.operands[1].offset * op.operands[1].offset_sign;
+		
 		data[l++] = (op.operands[1].type & OT_BYTE ||
 					op.operands[0].type & OT_BYTE) ?
 					0x8a : 0x8b;
@@ -1178,8 +1204,22 @@ static int oppop(RAsm *a, ut8 *data, const Opcode op) {
 	int offset = 0;
 	int mod = 0;
 	if (op.operands[0].type & OT_GPREG) {
-		ut8 base = 0x58;
-		data[l++] = base + op.operands[0].reg;
+		if (op.operands[0].type & OT_MEMORY) {
+			return -1;
+		}
+		if (op.operands[0].type & OT_REGTYPE & OT_SEGMENTREG) {
+			ut8 base;
+			if (op.operands[0].reg & X86R_FS) {
+				data[l++] = 0x0f;
+				base = 0x81;
+			} else {
+				base = 0x7;
+			}
+			data[l++] = base + (8 * op.operands[0].reg);
+		} else {
+			ut8 base = 0x58;
+			data[l++] = base + op.operands[0].reg;
+		}
 	} else if (op.operands[0].type & OT_MEMORY) {
 		data[l++] = 0x8f;
 		offset = op.operands[0].offset * op.operands[0].offset_sign;
@@ -1761,7 +1801,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		// This isn't working properly yet
 		for (i = 0; sregs[i]; i++) {
 			if (!strncasecmp (sregs[i], token, length)) {
-				*type = (OT_GPREG & OT_REG(i)) | OT_BYTE;
+				*type = (OT_SEGMENTREG & OT_REG(i)) | OT_WORD;
 				return i;
 			}
 		}
@@ -1844,13 +1884,12 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 	int reg_index = 0;
 	// Reset type
 	op->type = 0;
-
 	// Consume tokens denoting the operand size
 	while (size_token) {
 		pos = nextpos;
 		last_type = getToken (str, &pos, &nextpos);
 
-		// Token may indicate size: then skip
+		// Token mayop->reg indicate size: then skip
 		if (!strncasecmp (str + pos, "ptr", 3))
 			continue;
 		else if (!strncasecmp (str + pos, "byte", 4)) {
@@ -1892,21 +1931,20 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 			last_type = getToken (str, &pos, &nextpos);
 
 			if (last_type == TT_SPECIAL) {
-				if (str[pos] == '+' || str[pos] == '-' || str[pos] == ']') {
+				if (str[pos] == '+' || str[pos] == '-' || 
+				    str[pos] == ':' || str[pos] == ']') {
 					if (reg != X86R_UNDEFINED) {
 						op->regs[reg_index] = reg;
 						op->scale[reg_index] = temp;
 						++reg_index;
-					}
-					else {
+					} else {
 						op->offset += temp;
 						op->regs[reg_index] = X86R_UNDEFINED;
 					}
 
 					temp = 1;
 					reg = X86R_UNDEFINED;
-				}
-				else if (str[pos] == '*') {
+				} else if (str[pos] == '*') {
 					// go to ], + or - to get scale
 
 					// Something to do here?
@@ -1942,7 +1980,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 						op->offset_sign = -1;
 					}
 				}
-				// If there's a scale, we don't want to parse out the
+				// If tparakalohere's a scale, we don't want to parse out the
 				// scale with the offset (scale + offset) otherwise the scale
 				// will be the sum of the two. This splits the numbers
 				char *tmp;
@@ -1962,6 +2000,29 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 		if (op->reg > 7) {
 			op->extended = true;
 			op->reg -= 8;
+		}
+		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
+			// Deals with fs:[x] which the rest of this routine
+			// doesn't handle yet'
+			
+			char *c = strchr (str + nextpos, ':');
+			if (c) {
+				// Move over ':['
+				nextpos += 2;
+				// Assign registers to match behaviour of OT_MEMORY type
+				op->regs[reg_index] = op->reg;
+				op->type |= OT_MEMORY;
+				op->offset_sign = 1;
+				char *p = strchr (str + nextpos, '-');
+				if (p) { 
+					op->offset_sign = -1; 
+					nextpos ++;
+				}
+				
+				op->scale[reg_index] = getnum (a, str + nextpos);
+				op->offset = op->scale[reg_index];
+				return nextpos;
+			}
 		}
 
 		if (op->reg == X86R_UNDEFINED) {
