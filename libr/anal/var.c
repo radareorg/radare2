@@ -38,7 +38,7 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 		break;
 	case R_ANAL_VAR_KIND_BPV:
 		if (delta > 0) {
-			anal->cb_printf ("pf %s @%s+0x%x\n", fmt,	anal->reg->name[R_REG_NAME_BP], delta);
+			anal->cb_printf ("pf %s @%s+0x%x\n", fmt, anal->reg->name[R_REG_NAME_BP], delta);
 		} else {
 			anal->cb_printf ("pf %s @%s-0x%x\n", fmt, anal->reg->name[R_REG_NAME_BP], -delta);
 		}
@@ -706,7 +706,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
-				if ( var->delta < fcn->stack) {
+				if (var->delta < fcn->stack) {
 					anal->cb_printf ("var %s %s @ %s+0x%x\n",
 						var->type, var->name,
 						anal->reg->name[R_REG_NAME_SP],

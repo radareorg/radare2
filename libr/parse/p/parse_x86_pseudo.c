@@ -219,7 +219,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	RList *regs, *bpargs, *spargs;
 
 	if (p->relsub) {
-		char *rip = strstr (tstr, "[rip");
+		char *rip = (char *)r_str_casestr (tstr, "[rip");
 		if (rip) {
 			char *ripend = strchr (rip + 3, ']');
 			const char *plus = strchr (rip, '+');
@@ -235,7 +235,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
 			free (tstr);
 			tstr = tstr_new;
-			if (!strncmp (tstr, "lea", 3)) {
+			if (!strncasecmp (tstr, "lea", 3)) {
 				r_str_replace_char (tstr, '[', 0);
 				r_str_replace_char (tstr, ']', 0);
 			}
@@ -250,7 +250,8 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	bpargs = p->varlist (p->anal, f, 'b');
 	spargs = p->varlist (p->anal, f, 's');
 	/*iterate over stack pointer arguments/variables*/
-	r_list_foreach (spargs, spiter,sparg) {
+	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
+	r_list_foreach (spargs, spiter, sparg) {
 		if (sparg->delta < 10) {
 			snprintf (oldstr, sizeof (oldstr)-1, "[%s + %d]",
 				p->anal->reg->name[R_REG_NAME_SP], sparg->delta);
@@ -258,9 +259,22 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			snprintf (oldstr, sizeof (oldstr)-1, "[%s + 0x%x]",
 				p->anal->reg->name[R_REG_NAME_SP], sparg->delta);
 		}
-		snprintf (newstr, sizeof (newstr)-1, "[%s + %s]",
+		if (ucase) {
+			r_str_case (oldstr, true);
+		}
+		snprintf (newstr, sizeof (newstr) - 1, "[%s + %s]",
 			p->anal->reg->name[R_REG_NAME_SP],
 			sparg->name);
+		if (ucase) {
+			char *plus = strchr (newstr, '+');
+			if (plus) {
+				*plus = 0;
+				r_str_case (newstr, true);
+				*plus = '+';
+			} else {
+				r_str_case (newstr, true);
+			}
+		}
 		if (strstr (tstr, oldstr)) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
@@ -279,23 +293,39 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 			sign = '-';
 			bparg->delta = -bparg->delta;
 		}
-		if (bparg->delta < 10) snprintf (oldstr, sizeof (oldstr)-1,
-			"[%s %c %d]",
-			p->anal->reg->name[R_REG_NAME_BP],
-			sign, bparg->delta);
-		else snprintf (oldstr, sizeof (oldstr)-1,
-			"[%s %c 0x%x]",
-			p->anal->reg->name[R_REG_NAME_BP],
-			sign, bparg->delta);
-		snprintf (newstr, sizeof (newstr)-1, "[%s %c %s]",
+		if (bparg->delta < 10) {
+			snprintf (oldstr, sizeof (oldstr) - 1,
+				"[%s %c %d]",
+				p->anal->reg->name[R_REG_NAME_BP],
+				sign, bparg->delta);
+		} else {
+			snprintf (oldstr, sizeof (oldstr) - 1,
+				"[%s %c 0x%x]",
+				p->anal->reg->name[R_REG_NAME_BP],
+				sign, bparg->delta);
+		}
+		if (ucase) {
+			r_str_case (oldstr, true);
+		}
+		snprintf (newstr, sizeof (newstr) - 1, "[%s %c %s]",
 			p->anal->reg->name[R_REG_NAME_BP], sign,
 			bparg->name);
-		if (strstr (tstr, oldstr) != NULL) {
+		if (ucase) {
+			char *plus = strchr (newstr, sign);
+			if (plus) {
+				*plus = 0;
+				r_str_case (newstr, true);
+				*plus = sign;
+			} else {
+				r_str_case (newstr, true);
+			}
+		}
+		if (strstr (tstr, oldstr)) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		} else {
 			r_str_case (oldstr, false);
-			if (strstr (tstr, oldstr) != NULL) {
+			if (strstr (tstr, oldstr)) {
 				tstr = r_str_replace (tstr, oldstr, newstr, 1);
 				break;
 			}
@@ -351,7 +381,7 @@ RParsePlugin r_parse_plugin_x86_pseudo = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_x86_pseudo,
 	.version = R2_VERSION
