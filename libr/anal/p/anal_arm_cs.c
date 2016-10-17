@@ -36,7 +36,6 @@
 #define LSHIFT2(x) insn->detail->arm.operands[x].shift.value
 #define LSHIFT2_64(x) insn->detail->arm64.operands[x].shift.value
 #else
-#error FUCK
 #define LSHIFT(x) 0
 #define LSHIFT2(x) 0
 #define LSHIFT2_64(x) 0
