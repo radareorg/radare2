@@ -293,8 +293,7 @@ R_API ut32 r_core_file_cur_fd (RCore *core);
 R_API void r_core_debug_rr (RCore *core, RReg *reg);
 
 /* project */
-R_API void r_core_project_load(RCore *core, const char *prjfile);
-R_API bool r_core_project_load_xrefs(RCore *core, const char *prjfile);
+R_API bool r_core_project_load(RCore *core, const char *prjfile, const char *rcfile);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);

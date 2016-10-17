@@ -10,9 +10,9 @@ static int cmd_project(void *data, const char *input) {
 	const char *fileproject = r_config_get (core->config, "file.project");
 	char *str = NULL;
 
-	if (!input)
+	if (!input) {
 		return false;
-
+	}
 	str = strdup (fileproject);
 	if (arg && *arg==' ') arg++;
 	file = (input[0] && input[1])? arg: str;
@@ -20,15 +20,18 @@ static int cmd_project(void *data, const char *input) {
 	case 'c':
 		if (input[1]==' ') {
 			r_core_project_cat (core, input+2);
-		} else eprintf ("Usage: Pc [prjname]\n");
+		} else {
+			eprintf ("Usage: Pc [prjname]\n");
+		}
 		break;
 	case 'o':
 	//	if (r_file_is_regular (file))
 		if (input[1]) {
 			r_core_project_open (core, file);
 		} else {
-			if (file && *file)
+			if (file && *file) {
 				r_cons_println (file);
+			}
 		}
 		break;
 	case 'l':
@@ -46,7 +49,9 @@ static int cmd_project(void *data, const char *input) {
 	case 'S':
 		if (input[1] == ' ') {
 			r_core_project_save_rdb (core, input+2, R_CORE_PRJ_ALL);
-		} else eprintf ("Usage: PS [file]\n");
+		} else {
+			eprintf ("Usage: PS [file]\n");
+		}
 		break;
 	case 'n':
 		if (!fileproject || !*fileproject) {
@@ -166,8 +171,11 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case 'i':
-//		if (r_file_is_regular (file))
-		free (r_core_project_info (core, file));
+		{
+		char *prjName = r_core_project_info (core, file);
+		r_cons_println (prjName);
+		free (prjName);
+		}
 		break;
 	default: {
 		const char* help_msg[] = {
@@ -183,7 +191,7 @@ static int cmd_project(void *data, const char *input) {
 		"Ps", " [file]", "save project",
 		"PS", " [file]", "save script file",
 		"NOTE:", "", "See 'e file.project'",
-		"NOTE:", "", "project files are stored in ~/.config/radare2/projects",
+		"NOTE:", "", "project are stored in ~/.config/radare2/projects",
 		NULL};
 		r_core_cmd_help (core, help_msg);
 		}

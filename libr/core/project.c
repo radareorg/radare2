@@ -5,7 +5,9 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-static int is_valid_project_name (const char *name) {
+static bool r_core_project_load_xrefs(RCore *core, const char *prjName);
+
+static bool is_valid_project_name (const char *name) {
 	int i;
 	for (i=0; name[i]; i++) {
 		switch (name[i]) {
@@ -21,9 +23,9 @@ static int is_valid_project_name (const char *name) {
 			continue;
 		if (name[i] >= '0' && name[i] <= '9')
 			continue;
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 static char *r_core_project_file(RCore *core, const char *file) {
@@ -39,6 +41,10 @@ static char *r_core_project_file(RCore *core, const char *file) {
 			core->config, "dir.projects"));
 		prjfile = r_str_concat (prjfile, R_SYS_DIR);
 		prjfile = r_str_concat (prjfile, file);
+		if (!r_file_is_regular (prjfile)) {
+			// XXX this is a hack
+			prjfile = r_str_concat (prjfile, R_SYS_DIR"rc");
+		}
 	}
 	data = r_file_slurp (prjfile, NULL);
 	if (data) {
@@ -61,15 +67,17 @@ static int r_core_project_init(RCore *core) {
 	return ret;
 }
 
-static int r_core_is_project(RCore *core, const char *name) {
-	int ret = 0;
-	if (name && *name && *name!='.') {
+static bool r_core_is_project(RCore *core, const char *name) {
+	bool ret = false;
+	if (name && *name && *name != '.') {
 		char *path = r_core_project_file (core, name);
-		if (!path)
-			return 0;
+		if (!path) {
+			return false;
+		}
 		path = r_str_concat (path, ".d");
-		if (r_file_is_directory (path))
-			ret = 1;
+		if (r_file_is_directory (path)) {
+			ret = true;
+		}
 		free (path);
 	}
 	return ret;
@@ -93,8 +101,9 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	RList *list;
 	int isfirst = 1;
 	char *foo, *path = r_file_abspath (r_config_get (core->config, "dir.projects"));
-	if (!path)
+	if (!path) {
 		return 0;
+	}
 	list = r_sys_dir (path);
 	switch (mode) {
 	case 'j':
@@ -111,8 +120,9 @@ R_API int r_core_project_list(RCore *core, int mode) {
 		break;
 	default:
 		r_list_foreach (list, iter, foo) {
-			if (r_core_is_project (core, foo))
+			if (r_core_is_project (core, foo)) {
 				r_cons_println (foo);
+			}
 		}
 		break;
 	}
@@ -162,12 +172,12 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 static bool r_core_rop_load(RCore *core, const char *prjfile) {
-	char *path, *db, *path_ns;
+	char *path, *db = NULL, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
+	int prjType = 0;
 	SdbNs *ns;
 
-	const char *prjdir = r_config_get (core->config, "dir.projects");
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	Sdb *nop_db = sdb_ns (rop_db, "nop", false);
 	Sdb *mov_db = sdb_ns (rop_db, "mov", false);
@@ -175,25 +185,41 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	Sdb *arithm_db = sdb_ns (rop_db, "arithm", false);
 	Sdb *arithmct_db = sdb_ns (rop_db, "arithm_ct", false);
 
+	char *rcPath = r_core_project_file (core, prjfile);
+	char *prjDir = r_file_dirname (rcPath);
+
 	if (!prjfile || !*prjfile) {
 		return false;
 	}
-
-	if (*prjfile == '/') {
-		db = r_str_newf ("%s.d", prjfile);
-		if (!db) return false;
-		path = strdup (db);
+	if (r_str_endswith (prjfile, "/rc")) {
+		// XXX
+		eprintf ("ENDS WITH\n");
+		prjType = 1;
+		path = strdup (prjfile);
+		path [strlen (path) - 3] = 0;
+	} else if (r_file_fexists ("%s/rc", prjDir, prjfile)) {
+		prjType = 1;
+		path = r_str_newf ("%s/", prjDir, prjfile);
 	} else {
-		db = r_str_newf ("%s/%s.d", prjdir, prjfile);
-		if (!db) return false;
-		path = r_file_abspath (db);
+		if (*prjfile == '/') {
+			db = r_str_newf ("%s.d", prjfile);
+			if (!db) {
+				return false;
+			}
+			path = strdup (db);
+		} else {
+			db = r_str_newf ("%s/%s.d", prjDir, prjfile);
+			if (!db) {
+				return false;
+			}
+			path = r_file_abspath (db);
+		}
 	}
 
 	if (!path) {
 		free (db);
 		return false;
 	}
-
 	if (rop_db) {
 		ls_foreach (core->sdb->ns, it, ns){
 			if (ns->sdb == rop_db) {
@@ -236,9 +262,10 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	return true;
 }
 
-R_API void r_core_project_load(RCore *core, const char *prjfile) {
-	(void)r_core_rop_load (core, prjfile);
-	(void)r_core_project_load_xrefs (core, prjfile);
+R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcpath) {
+	(void)r_core_rop_load (core, prjName);
+	(void)r_core_project_load_xrefs (core, prjName);
+	return r_core_cmd_file (core, rcpath);
 }
 
 R_API int r_core_project_open(RCore *core, const char *prjfile) {
@@ -310,8 +337,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 		r_core_bin_load (core, filepath, UT64_MAX);
 	}
 	/* load sdb stuff in here */
-	r_core_project_load (core, prjfile);
-	ret = r_core_cmd_file (core, prj);
+	ret = r_core_project_load (core, prjfile, prj);
 	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_i (core->config, "scr.interactive", scr_interactive);
 	r_config_set_i (core->config, "scr.prompt", scr_prompt);
@@ -333,17 +359,18 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	if (fd) {
 		for (;;) {
 			fgets (buf, sizeof (buf), fd);
-			if (feof (fd))
+			if (feof (fd)) {
 				break;
+			}
 			if (!strncmp (buf, "\"e file.path = ", 15)) {
 				buf[strlen (buf) - 2] = 0;
-				file = r_str_new (buf+15);
+				file = r_str_new (buf + 15);
 				break;
 			}
 			// TODO: deprecate before 1.0
 			if (!strncmp (buf, "e file.path = ", 14)) {
-				buf[strlen (buf)-1] = 0;
-				file = r_str_new (buf+14);
+				buf[strlen (buf) - 1] = 0;
+				file = r_str_new (buf + 14);
 				break;
 			}
 		}
@@ -476,6 +503,7 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	char *prj, buf[1024];
 	SdbListIter *it;
 	SdbNs *ns;
+	int prjType = 1; // file
 
 	if (!file || !*file) {
 		return false;
@@ -486,26 +514,50 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 		eprintf ("Invalid project name '%s'\n", file);
 		return false;
 	}
-	if (r_file_is_directory (prj)) {
-		eprintf ("Error: Target is a directory\n");
-		free (prj);
-		return false;
+	char *prjDir = r_file_dirname (prj);
+	if (r_file_exists (prj)) {
+		if (r_file_is_regular (prj)) {
+			prjType = 0;
+			prjDir = strdup (prj);
+		}
 	}
-
+	if (!prjDir) {
+		prjDir = strdup (prj);
+	}
+	switch (prjType) {
+	case 0:
+		if (r_file_is_directory (prj)) {
+			eprintf ("Error: Target cannot be a directory\n");
+			free (prj);
+			free (prjDir);
+			free (prjDir);
+			return false;
+		}
+		break;
+	case 1:
+		if (!r_file_exists (prj)) {
+			r_sys_mkdirp (prjDir);
+		}
+		break;
+	}
 	if (r_config_get_i (core->config, "scr.null")) {
 		r_config_set_i (core->config, "scr.null", false);
 		scr_null = true;
 	}
 	r_core_project_init (core);
 
-	char *xrefs_path = r_str_newf ("%s.d" R_SYS_DIR "xrefs", prj);
+	char *xrefs_path = prjType == 0
+		? r_str_newf ("%s.d" R_SYS_DIR "xrefs", prj)
+		: r_str_newf ("%s" R_SYS_DIR "xrefs", prjDir);
 	r_anal_project_save (core->anal, xrefs_path);
 	free (xrefs_path);
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	if (rop_db) {
 		ls_foreach (rop_db->ns, it, ns) {
-			char *rop_path = r_str_newf ("%s.d" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
+			char *rop_path = prjType == 0
+				? r_str_newf ("%s.d" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name)
+				: r_str_newf ("%s" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
 			sdb_file (ns->sdb, buf);
 			sdb_sync (ns->sdb);
 			free (rop_path);
@@ -516,6 +568,7 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 		ret = false;
 	}
 	free (prj);
+	free (prjDir);
 	if (scr_null) {
 		r_config_set_i (core->config, "scr.null", true);
 	}
@@ -533,21 +586,22 @@ R_API char *r_core_project_notes_file (RCore *core, const char *file) {
 
 #define DB core->anal->sdb_xrefs
 
-R_API bool r_core_project_load_xrefs(RCore *core, const char *prjfile) {
+static bool r_core_project_load_xrefs(RCore *core, const char *prjName) {
 	char *path, *db;
 
-	const char *prjdir = r_config_get (core->config, "dir.projects");
-
-	if (!prjfile || !*prjfile) {
+	if (!prjName || !*prjName) {
 		return false;
 	}
+	const char *prjdir = r_config_get (core->config, "dir.projects");
 
-	if (prjfile[0] == '/') {
-		db = r_str_newf ("%s.d", prjfile);
-		if (!db) return false;
+	if (prjName[0] == '/') {
+		db = r_str_newf ("%s.d", prjName);
+		if (!db) {
+			return false;
+		}
 		path = strdup (db);
 	} else {
-		db = r_str_newf ("%s/%s.d", prjdir, prjfile);
+		db = r_str_newf ("%s/%s.d", prjdir, prjName);
 		if (!db) return false;
 		path = r_file_abspath (db);
 	}
