@@ -1337,12 +1337,22 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_BLX:
-		op->type = R_ANAL_OP_TYPE_RCALL;
+		if (ISREG(0)) {
+			op->type = R_ANAL_OP_TYPE_RCALL;
+		} else {
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = IMM(0) & UT32_MAX;
+			op->fail = addr + op->size;
+		}
 		break;
 	case ARM_INS_BL:
-		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = IMM(0) & UT32_MAX;
-		op->fail = addr + op->size;
+		if (ISREG(0)) {
+			op->type = R_ANAL_OP_TYPE_RCALL;
+		} else {
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = IMM(0) & UT32_MAX;
+			op->fail = addr + op->size;
+		}
 		break;
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
