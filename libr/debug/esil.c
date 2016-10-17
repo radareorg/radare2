@@ -179,7 +179,7 @@ static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
 	return ret;
 }
 
-static int esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
+static int esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 *num) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (regname[0]>='0' && regname[0]<='9') {
@@ -187,7 +187,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
 		//eprintf (Color_BLUE"IMM WRTE %s\n"Color_RESET, regname);
 		return 0;
 	}
-	eprintf (Color_MAGENTA"REG WRTE %s 0x%"PFMT64x"\n"Color_RESET, regname, num);
+	eprintf (Color_MAGENTA"REG WRTE %s 0x%"PFMT64x"\n"Color_RESET, regname, *num);
 	r_list_foreach (EWPS, iter, ew) {
 		if (ew->rwx & R_IO_WRITE && ew->dev == 'r') {
 			// XXX: support array of regs in expr

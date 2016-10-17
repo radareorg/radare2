@@ -2360,7 +2360,7 @@ static bool contains(RList *list, const char *name) {
 
 static char *oldregread = NULL;
 
-static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
+static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	AeaStats *stats = esil->user;
 	if (oldregread && !strcmp (name, oldregread)) {
 		r_list_pop (stats->regread);
