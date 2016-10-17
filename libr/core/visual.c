@@ -2262,6 +2262,13 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	//r_cons_set_cup (true);
 
 	core->vmode = false;
+	/* honor vim */
+	if (!strncmp (input, "im", 2)) {
+		char *cmd = r_str_newf ("!v%s", input);
+		int ret = r_core_cmd0 (core, cmd);
+		free (cmd);
+		return ret;
+	}
 	while (*input) {
 		if (!r_core_visual_cmd (core, input[0])) {
 			return 0;
