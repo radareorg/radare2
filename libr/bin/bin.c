@@ -189,7 +189,9 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 				}
 			} else {
 				rc = r_utf8_decode (buf + needle, to - needle, &r);
-				if (rc > 1) str_type = R_STRING_TYPE_UTF8;
+				if (rc > 1) {
+					str_type = R_STRING_TYPE_UTF8;
+				}
 			}
 
 			/* Invalid sequence detected */
@@ -257,10 +259,6 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	if (min == 0) {
 		min = plugin? plugin->minstrlen: 4;
 	}
-#if 0
-	if (arch->rawstr == true)
-		min = 1;
-#endif
 	/* Some plugins return zero, fix it up */
 	if (min == 0) {
 		min = 4;
@@ -275,7 +273,8 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		ut64 size = to - from;
 		// in case of dump ignore here
 		if (size != 0 && size > arch->rbin->maxstrbuf) {
-			eprintf ("WARNING: bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)\n", size);
+			eprintf ("WARNING: bin_strings buffer is too big (0x%08" PFMT64x ")." 
+					" Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)\n", size);
 			return;
 		}
 	}
@@ -285,7 +284,9 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	}
 	r_list_foreach (list, it, ptr) {
 		RBinSection *s = r_bin_get_section_at (arch->o, ptr->paddr, false);
-		if (s) ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
+		if (s) {
+			ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
+		}
 	}
 }
 
@@ -337,14 +338,15 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 		ret = NULL;
 	} else {
 		ret = r_list_newf (r_bin_string_free);
-		if (!ret) return NULL;
+		if (!ret) {
+			return NULL;
+		}
 	}
 
 	if (o->sections && !r_list_empty (o->sections) && !a->rawstr) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
-				get_strings_range (a, ret, min,
-						section->paddr,
+				get_strings_range (a, ret, min, section->paddr,
 						section->paddr + section->size);
 			}
 		}
@@ -365,15 +367,10 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 						break;
 					}
 					p = buf;
-//					p = a->buf->buf + section->paddr + i;
-					// p += cfstr_offs;
 					ut64 cfstr_vaddr = section->vaddr + i;
 					ut64 cstr_vaddr = (bits == 64)? r_read_le64 (p) : r_read_le32 (p);
 					r_list_foreach (ret, iter2, s) {
 						if (s->vaddr == cstr_vaddr) {
-#if 0
-							s->vaddr = cstr_vaddr;
-#else
 							RBinString *new = R_NEW0 (RBinString);
 							new->type = s->type;
 							new->length = s->length;
@@ -382,24 +379,25 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 							new->paddr = new->vaddr = cfstr_vaddr;
 							new->string = r_str_newf ("cstr.%s", s->string);
 							r_list_append (ret, new);
-#endif
 							break;
 						}
 					}
 				}
 			}
-/*
-			if (is_data_section (a, section)) {
-				get_strings_range (a, ret, min,
-						section->paddr,
-						section->paddr + section->size);
-			}
-*/
 		}
 	} else {
 		get_strings_range (a, ret, min, 0, a->size);
 	}
 	return ret;
+}
+
+R_API RList* r_bin_raw_strings(RBinFile *a, int min) {
+	int tmp = a->rawstr;
+	RList *l = NULL;
+	a->rawstr = 2;
+	l = get_strings (a, min, 0);
+	a->rawstr = tmp;
+	return l;
 }
 
 R_API int r_bin_dump_strings(RBinFile *a, int min) {
@@ -626,9 +624,15 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 				r_bin_filter_classes (o->classes);
 		}
 	}
-	if (cp->lines) o->lines = cp->lines (binfile);
-	if (cp->get_sdb) o->kv = cp->get_sdb (o);
-	if (cp->mem) o->mem = cp->mem (binfile);
+	if (cp->lines) {
+		o->lines = cp->lines (binfile);
+	}
+	if (cp->get_sdb) {
+		o->kv = cp->get_sdb (o);
+	}
+	if (cp->mem)  {
+		o->mem = cp->mem (binfile);
+	}
 	if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
 		o->lang = r_bin_load_languages (binfile);
 	}
@@ -644,7 +648,9 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	RIO *io = (iob && iob->get_io)? iob->get_io (iob): NULL;
 	if (!io) {
 		io = r_io_new ();
-		if (!io) return false;
+		if (!io) {
+			return false;
+		}
 		r_io_bind (io, &bin->iob);
 	}
 	bin->rawstr = rawstr;
@@ -653,7 +659,9 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	} else {
 		desc = iob->desc_get_by_fd (io, fd);
 	}
-	if (!desc) return false;
+	if (!desc) {
+		return false;
+	}
 	return r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
 }
 
@@ -1526,14 +1534,17 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
 
-	if (!a || !o) return NULL;
+	if (!a || !o) {
+		return NULL;
+	}
 	if (o->strings) {
 		r_list_purge (o->strings);
 		o->strings = NULL;
 	}
 
-	if (bin->minstrlen <= 0)
+	if (bin->minstrlen <= 0) {
 		return NULL;
+	}
 	a->rawstr = bin->rawstr;
 
 	if (plugin && plugin->strings) {
@@ -1642,7 +1653,9 @@ R_API RBin *r_bin_new() {
 	int i;
 	RBinXtrPlugin *static_xtr_plugin;
 	RBin *bin = R_NEW0 (RBin);
-	if (!bin) return NULL;
+	if (!bin) {
+		return NULL;
+	}
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0 ();
@@ -2329,8 +2342,9 @@ R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *ob
 	#endif
 	bf->o = obj;
 	plugin = r_bin_file_cur_plugin (bf);
-	if (bin->minstrlen < 1)
+	if (bin->minstrlen < 1) {
 		bin->minstrlen = plugin? plugin->minstrlen: bin->minstrlen;
+	}
 	r_bin_object_set_sections (bf, obj);
 	return true;
 }
@@ -2338,7 +2352,9 @@ R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *ob
 R_API int r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf) {
 	RBinObject *obj = bf? bf->o: NULL;
 
-	if (!obj) return false;
+	if (!obj) {
+		return false;
+	}
 	return r_bin_file_set_cur_binfile_obj (bin, bf, obj);
 }
 
