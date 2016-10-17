@@ -1214,7 +1214,8 @@ static int oppush(RAsm *a, ut8 *data, const Opcode op) {
 	int mod = 0;
 	st32 immediate = 0;;
 	st32 offset = 0;
-	if (op.operands[0].type & OT_GPREG) {
+	if (op.operands[0].type & OT_GPREG &&
+	    !(op.operands[0].type & OT_MEMORY)) {
 		ut8 base = 0x50;
 		data[l++] = base + op.operands[0].reg;
 	} else if (op.operands[0].type & OT_MEMORY) {
