@@ -55,19 +55,24 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
 		int ret = 0;
-		do {
-			char *name = sdb_anext (ptr, &next);
-			query = sdb_fmt (-1, "struct.%s.%s", t, type, name);
-			char *subtype = sdb_get (anal->sdb_types, query, 0);
-			char *tmp = strchr (subtype, ',');
-			if (tmp) {
-				*tmp = 0;
-			}
-			ret += r_anal_type_get_size (anal, subtype);
-			free (subtype);
-			ptr = next;
-		} while (next);
-		free (members);
+		if (members) {
+			do {
+				char *name = sdb_anext (ptr, &next);
+				query = sdb_fmt (-1, "struct.%s.%s", t, type, name);
+				char *subtype = sdb_get (anal->sdb_types, query, 0);
+				if (!subtype) {
+					break;
+				}
+				char *tmp = strchr (subtype, ',');
+				if (tmp) {
+					*tmp = 0;
+				}
+				ret += r_anal_type_get_size (anal, subtype);
+				free (subtype);
+				ptr = next;
+			} while (next);
+			free (members);
+		}
 		return ret;
 	}
 	return 0;
