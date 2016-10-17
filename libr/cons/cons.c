@@ -422,8 +422,9 @@ R_API const char *r_cons_get_buffer() {
 
 R_API void r_cons_filter() {
 	/* grep*/
-	if (I.grep.nstrings>0 || I.grep.tokens_used || I.grep.line!=-1 || I.grep.less || I.grep.json)
+	if (I.grep.nstrings > 0 || I.grep.tokens_used || I.grep.line!=-1 || I.grep.less || I.grep.json) {
 		r_cons_grepbuf (I.buffer, I.buffer_len);
+	}
 	/* html */
 	/* TODO */
 }
@@ -435,13 +436,16 @@ static int backup_size = 0;
 // XXX this must be a stack
 R_API void r_cons_push() {
 	if (!backup) {
-		if (I.buffer_len<1)
+		if (I.buffer_len < 1) {
 			I.buffer_len = 1;
+		}
 		backup = I.buffer; //malloc (I.buffer_len);
 		backup_len = I.buffer_len;
 		backup_size = I.buffer_sz;
 		I.buffer = malloc (I.buffer_sz);
-		if (!I.buffer) return;
+		if (!I.buffer) {
+			return;
+		}
 		memcpy (I.buffer, backup, I.buffer_len);
 		I.buffer_len = 0;
 	}

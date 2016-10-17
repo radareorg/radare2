@@ -36,8 +36,9 @@ R_API void r_parse_free(RParse *p) {
 }
 
 R_API int r_parse_add(RParse *p, RParsePlugin *foo) {
-	if (foo->init)
+	if (foo->init) {
 		foo->init (p->user);
+	}
 	r_list_append (p->parsers, foo);
 	return true;
 }
@@ -69,9 +70,9 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 			if (!ret) break;
 			if (s) {
 				str = s + 1;
-				o = o+strlen (data);
-				o[0]='\n';
-				o[1]='\0';
+				o = o + strlen (data);
+				o[0] = '\n';
+				o[1] = '\0';
 				o++;
 			}
 		} while (s);
