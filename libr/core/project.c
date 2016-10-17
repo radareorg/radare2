@@ -214,7 +214,6 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 			path = r_file_abspath (db);
 		}
 	}
-
 	if (!path) {
 		free (db);
 		return false;
@@ -592,7 +591,7 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	}
 
 	if (r_config_get_i (core->config, "prj.files")) {
-		// TODO: iterate over all opened files
+		eprintf ("TODO: prj.files: support copying more than one file into the project directory\n");
 		const char *binFile = r_core_project_info (core, file);
 		const char *binFileName = r_file_basename (binFile);
 		char *prjBinDir = r_str_newf ("%s/bin", prjDir);
@@ -602,6 +601,20 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 			eprintf ("Warning: Cannot copy '%s' into '%s'\n", binFile, prjBinFile);
 		}
 		free (prjBinFile);
+	}
+	if (r_config_get_i (core->config, "prj.git")) {
+		char *cwd = r_sys_getdir();
+		char *gitDir = r_str_newf ("%s/.git", prjDir);
+		if (r_sys_chdir (prjDir)) {
+			if (!r_file_is_directory (gitDir)) {
+				r_sys_cmd ("git init");
+			}
+			r_sys_cmd ("git add * ; git commit -a");
+		} else {
+			eprintf ("Cannot chdir %s\n", prjDir);
+		}
+		free (gitDir);
+		free (cwd);
 	}
 	free (prj);
 	free (prjDir);
