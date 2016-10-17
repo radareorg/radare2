@@ -36,11 +36,11 @@ static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int
 	return ret;
 }
 
-static int trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
+static int trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
-	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, val);
+	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
 	sdb_array_add (DB, KEY ("reg.write"), name, 0);
-	sdb_num_set (DB, KEYREG ("reg.write", name), val, 0);
+	sdb_num_set (DB, KEYREG ("reg.write", name), *val, 0);
 	if (ocbs.hook_reg_write) {
 		RAnalEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;

@@ -2785,7 +2785,7 @@ static int mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return 1;
 }
 
-static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
+static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = esil->user;
@@ -2798,7 +2798,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 	}
 
 	memset (str, 0, sizeof (str));
-	if (val != 0LL) {
+	if (*val != 0LL) {
 #if 0
 		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, val);
 		if (fi) {
@@ -2826,7 +2826,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 			msg = r_str_newf ("%s", str);
 		}
 #endif
-		(void)r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
+		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
 		if (*str && r_str_is_printable (str)) {
 			// do nothing
@@ -2843,7 +2843,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 				}
 			}
 		}
-		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, val);
+		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 		if (fi) {
 			msg = r_str_concatf (msg, " %s", fi->name);
 		}
@@ -2853,7 +2853,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 val) {
 			r_cons_printf (" ; %s", msg);
 		}
 	} else {
-		r_cons_printf (" ; %s=0x%"PFMT64x" %s", name, val, msg? msg: "");
+		r_cons_printf (" ; %s=0x%"PFMT64x" %s", name, *val, msg? msg: "");
 	}
 	free (msg);
 	return 0;
