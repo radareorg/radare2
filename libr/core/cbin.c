@@ -309,8 +309,12 @@ static int bin_strings(RCore *r, int mode, int va) {
 	if (!(list = r_bin_get_strings (bin))) {
 		return false;
 	}
-	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
-	if (IS_MODE_RAD (mode)) r_cons_printf ("fs strings");
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("[");
+	}
+	if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("fs strings");
+	}
 	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
 		r_flag_space_set (r->flags, "strings");
 		r_cons_break (NULL, NULL);
@@ -325,8 +329,12 @@ static int bin_strings(RCore *r, int mode, int va) {
 		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
 		addr = va ? vaddr : paddr;
 
-		if (string->length < minstr) continue;
-		if (maxstr && string->length > maxstr) continue;
+		if (string->length < minstr) {
+			continue;
+		}
+		if (maxstr && string->length > maxstr) {
+			continue;
+		}
 
 		section = r_bin_get_section_at (r_bin_cur_object (bin), paddr, 0);
 		section_name = section ? section->name : "unknown";
