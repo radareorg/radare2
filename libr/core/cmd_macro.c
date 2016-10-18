@@ -56,7 +56,7 @@ static int cmd_macro(void *data, const char *input) {
 				comma = strchr (buf, ',');
 			if (comma) {
 				*comma = ' ';
-				strcpy (comma+1, buf+mustcall);
+				memmove (comma + 1, buf + mustcall, strlen (buf + mustcall) + 1);
 				r_cmd_macro_call (&core->rcmd->macro, buf);
 			} else eprintf ("Invalid syntax for macro\n");
 		}
