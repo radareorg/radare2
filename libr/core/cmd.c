@@ -2092,7 +2092,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	RFlagItem *flag;
 	ut64 oseek, addr;
 
-	for (; *each==' '; each++);
+	// for (; *each==' '; each++);
 	for (; *cmd==' '; cmd++);
 
 	oseek = core->offset;
@@ -2177,10 +2177,18 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RAnalFunction *fcn;
 			RListIter *iter;
 			if (core->anal) {
+				RConsGrep grep = core->cons->grep;
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					r_core_seek (core, fcn->addr, 1);
+					r_cons_push ();
 					r_core_cmd (core, cmd, 0);
+					char *buf = strdup (r_cons_get_buffer ());
+					r_cons_pop ();
+					r_cons_strcat (buf);
+					r_cons_newline();
+					free (buf);
 				}
+				core->cons->grep = grep;
 			}
 			free (ostr);
 			return false;
@@ -2333,6 +2341,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	default:
 		core->rcmd->macro.counter = 0;
+		for (; *each==' '; each++);
 		//while(str[i]) && !core->interrupted) {
 		// split by keywords
 		i = 0;
@@ -2343,25 +2352,34 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			ch = str[i];
 			str[i] = '\0';
 			word = strdup (str + j);
-			if (!word)
+			if (!word) {
 				break;
+			}
 			str[i] = ch;
 			{
 				int flagspace = core->flags->space_idx;
 				/* for all flags in current flagspace */
 				// XXX: dont ask why, but this only works with _prev..
 				r_list_foreach (core->flags->flags, iter, flag) {
-					if (r_cons_singleton()->breaked)
+					if (r_cons_singleton()->breaked) {
 						break;
+					}
 					/* filter per flag spaces */
-					if ((flagspace != -1) && (flag->space != flagspace))
+					if ((flagspace != -1) && (flag->space != flagspace)) {
 						continue;
+					}
 					if (r_str_glob (flag->name, word)) {
 						r_core_seek (core, flag->offset, 1);
+						r_cons_push ();
 						//r_cons_printf ("# @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
 					//	r_cons_printf ("0x%08"PFMT64x" %s\n", core->offset, flag->name);
 						//eprintf ("# 0x%08"PFMT64x": %s\n", flag->offset, cmd);
 						r_core_cmd (core, cmd, 0);
+
+						char *buf = strdup (r_cons_get_buffer ());
+						r_cons_pop ();
+						r_cons_strcat (buf);
+						free (buf);
 					}
 				}
 				r_cons_break (NULL, NULL);
