@@ -1017,8 +1017,29 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 			} else if (op.operands[0].type & OT_BYTE) {
 				data[l++] = 0xc6;
 			}
-
 			offset = op.operands[0].offset * op.operands[0].offset_sign;
+
+			if (op.operands[0].scale[0] > 1) {
+				int s = op.operands[0].scale[0];
+				// Check for power of 2 as valid sib
+				if (!(s & (s - 1)) == 0) {
+					return -1;
+				}
+				data[l++] = 0x04;
+				data[l++] = getsib (s) << 6 | s << 3 | 5;
+				data[l++] = offset;
+				data[l++] = offset >> 8;
+				data[l++] = offset >> 16;
+				data[l++] = offset >> 24;
+				data[l++] = immediate;
+				if (op.operands[0].type & (OT_DWORD | OT_QWORD)) {
+					data[l++] = immediate >> 8;
+					data[l++] = immediate >> 16;
+					data[l++] = immediate >> 24;
+				}
+				return l;
+			}
+
 			if (offset) {
 				mod = (offset > 128 || offset < -129) ? 0x2 : 0x1;
 			}
@@ -1027,7 +1048,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 			if (op.operands[0].regs[0] == X86R_UNDEFINED) {
 				data[l++] = 0x5;
 				mod = 0x02;
-			} else {
+			} else if (op.operands[0].scale[0] < 2) {
 				data[l++] = mod << 6 | op.operands[0].regs[0];
 			}
 			if (op.operands[0].regs[0] == X86R_ESP) {
@@ -1079,14 +1100,24 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 			data[l++] = (op.operands[0].type & OT_BYTE) ? 0x88 : 0x89;
 		}
 
+		if (op.operands[0].scale[0] > 1) {
+				data[l++] = op.operands[1].reg << 3 | 4;
+				if (op.operands[0].scale[0] > 2) {
+					data[l++] = getsib (op.operands[0].scale[0]) << 6 |
+										op.operands[0].regs[0] << 3 | 5;
+
+					data[l++] = offset;
+					data[l++] = offset >> 8;
+					data[l++] = offset >> 16;
+					data[l++] = offset >> 24;
+				}
+				return l;
+			}
+
 		if (!(op.operands[0].type & OT_MEMORY)) {
 			if (op.operands[0].reg == X86R_UNDEFINED ||
 				op.operands[1].reg == X86R_UNDEFINED) {
 				return -1;
-			}
-			if (!((op.operands[0].type & 0xff << OPSIZE_SHIFT) ==
-				(op.operands[1].type & 0xff << OPSIZE_SHIFT))) {
-					return -1;
 			}
 			mod = 0x3;
 			data[l++] = mod << 6 | op.operands[1].reg << 3 | op.operands[0].reg;
@@ -1145,7 +1176,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 		if (a->bits == 64 && !(op.operands[1].regs[0] == X86R_RBP)) {
 			data[l++] = 0x48;
 		}
-		
+
 		data[l++] = (op.operands[1].type & OT_BYTE ||
 					op.operands[0].type & OT_BYTE) ?
 					0x8a : 0x8b;
@@ -1938,7 +1969,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 			last_type = getToken (str, &pos, &nextpos);
 
 			if (last_type == TT_SPECIAL) {
-				if (str[pos] == '+' || str[pos] == '-' || 
+				if (str[pos] == '+' || str[pos] == '-' ||
 				    str[pos] == ':' || str[pos] == ']') {
 					if (reg != X86R_UNDEFINED) {
 						op->regs[reg_index] = reg;
@@ -2011,7 +2042,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
 			// Deals with fs:[x] which the rest of this routine
 			// doesn't handle yet'
-			
+
 			char *c = strchr (str + nextpos, ':');
 			if (c) {
 				// Move over ':['
@@ -2021,11 +2052,11 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 				op->type |= OT_MEMORY;
 				op->offset_sign = 1;
 				char *p = strchr (str + nextpos, '-');
-				if (p) { 
-					op->offset_sign = -1; 
+				if (p) {
+					op->offset_sign = -1;
 					nextpos ++;
 				}
-				
+
 				op->scale[reg_index] = getnum (a, str + nextpos);
 				op->offset = op->scale[reg_index];
 				return nextpos;
