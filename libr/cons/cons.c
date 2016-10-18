@@ -418,8 +418,6 @@ R_API void r_cons_reset() {
 	I.grep.str = NULL;
 	memset (I.grep.tokens, 0, R_CONS_GREP_TOKENS);
 	I.grep.tokens_used = 0;
-	r_stack_free (I.cons_stack);
-	I.cons_stack = r_stack_newf (6, cons_stack_free);
 }
 
 R_API const char *r_cons_get_buffer() {
