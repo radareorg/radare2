@@ -28,7 +28,7 @@ static int hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size
 	return 0;
 }
 
-static int hook_reg_write(RAnalEsil *esil, const char *name, ut64 val) {
+static int hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	sdb_array_add (esil->stats, "reg.write", name, 0);
 	return 0;
 }
