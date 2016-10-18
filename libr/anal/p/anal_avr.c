@@ -1363,25 +1363,17 @@ INVALID_OP:
 }
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	short ofst;
-	int imm = 0, imm2 = 0, d, r, k;
-	ut8 kbuf[4];
-	ut16 ins = AVR_SOFTCAST (buf[0], buf[1]);
-	char *arg, str[32];
 	CPU_MODEL *cpu;
-
 	// init op
 	if (!op) {
 		return 2;
 	}
-
 	// select cpu info
 	for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
 		if (!strcasecmp (anal->cpu, cpu->model)) {
 			break;
 		}
 	}
-
 	// set memory layout registers
 	if (anal->esil) {
 		r_anal_esil_reg_write (anal->esil, "_prog",   0);
@@ -1389,7 +1381,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		r_anal_esil_reg_write (anal->esil, "_io",     (1 << cpu->pc_bits) + cpu->eeprom_size);
 		r_anal_esil_reg_write (anal->esil, "_sram",   (1 << cpu->pc_bits) + cpu->eeprom_size + cpu->io_size);
 	}
-
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, cpu);
 

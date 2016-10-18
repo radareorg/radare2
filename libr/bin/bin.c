@@ -360,7 +360,7 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 // XXX do not walk if bin.strings == 0
 				ut8 *p;
 				for (i = 0; i < section->size; i += cfstr_size) {
-					char buf[32];
+					ut8 buf[32];
 					if (!r_buf_read_at (a->buf, section->paddr + i + cfstr_offs, buf, sizeof (buf))) {
 						break;
 					}
