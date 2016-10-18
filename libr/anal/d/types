@@ -120,6 +120,11 @@ getuid=func
 func.getuid.args=0
 func.getuid.ret=uid_t
 
+atoi=func
+func.atoi.args=1
+func.atoi.arg.0=const char*,str
+func.atoi.ret=int
+
 ioctl=func
 func.ioctl.args=2
 func.ioctl.arg.0=int,fd
