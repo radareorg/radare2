@@ -92,6 +92,4 @@
 #define NAN (0.0f/0.0f)
 #endif
 
-
-
 #endif
