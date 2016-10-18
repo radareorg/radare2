@@ -165,6 +165,7 @@ r_cons_click_clear();
 
 typedef struct r_cons_t {
 	RConsGrep grep;
+	RStack *cons_stack;
 	char *buffer;
 	//int line;
 	int buffer_len;

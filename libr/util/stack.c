@@ -2,23 +2,40 @@
 
 #include <r_util.h>
 
-R_API RStack *r_stack_new(unsigned int n) {
+R_API RStack *r_stack_new(ut32 n) {
 	RStack *s = R_NEW0 (RStack);
-	if (!s) return NULL;
+	if (!s) {
+		return NULL;
+	}
 	s->elems = R_NEWS0 (void *, n);
 	if (!s->elems) {
 		free (s);
 		return NULL;
 	}
-
 	s->n_elems = n;
 	s->top = -1;
 	return s;
 }
 
+R_API RStack *r_stack_newf(ut32 n, RStackFree f) {
+	RStack *s = r_stack_new (n);
+	if (s) {
+		s->free = f;
+	}
+	return s;
+}
+
 R_API void r_stack_free(RStack *s) {
-	free (s->elems);
-	free (s);
+	if (s) {
+		if (s->free && s->top > 0) {
+			int i = 0;
+			for (i = 0; i < s->top; i++) {
+				s->free (s->elems[i]);
+			}
+		}
+		free (s->elems);
+		free (s);
+	}
 }
 
 R_API int r_stack_push(RStack *s, void *el) {
@@ -35,11 +52,12 @@ R_API int r_stack_push(RStack *s, void *el) {
 	return true;
 }
 
+//the caller should be take care of the object returned
 R_API void *r_stack_pop(RStack *s) {
 	void *res;
-	if (s->top == -1)
+	if (s->top == -1) {
 		return NULL;
-
+	}
 	res = s->elems[s->top];
 	s->top--;
 	return res;
