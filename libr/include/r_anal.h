@@ -956,6 +956,7 @@ typedef struct r_anal_esil_callbacks_t {
 	int (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
 	int (*hook_reg_write)(ESIL *esil, const char *name, ut64 val);
 	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
+	int (*hook_reg_change)(ESIL *esil, const char *name, ut64 *val);
 } RAnalEsilCallbacks;
 
 typedef struct r_anal_esil_t {
