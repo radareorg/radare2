@@ -540,6 +540,16 @@ R_API int r_anal_esil_get_parm(RAnalEsil *esil, const char *str, ut64 *num) {
 
 R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num) {
 	int ret = 0;
+	if (esil->cb.hook_reg_change) {
+		ut64 new_value;
+		if (esil->cb.hook_reg_change (esil, dst, &new_value)) {
+			IFDBG {
+				eprintf ("Hook changed %s (0x%" PFMT64x " => 0x%" PFMT64x ")\n",
+						dst, num, new_value);
+			}
+			num = new_value;
+		}
+	}
 	IFDBG { eprintf ("%s=0x%" PFMT64x "\n", dst, num); }
 	if (esil->cb.hook_reg_write) {
 		ret = esil->cb.hook_reg_write (esil, dst, num);

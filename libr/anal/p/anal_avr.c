@@ -447,19 +447,14 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 	int d = ((buf[0] & 0xf) >> 4) | ((buf[1] & 0x1) << 4);
 	RAnalOp next_op;
 
-	// create void next_op
-	memset (&next_op, 0, sizeof (RAnalOp));
-	r_strbuf_init (&next_op.esil);
-
 	// calculate next instruction size (call recursively avr_op_analyze)
+	// and free next_op's esil string (we dont need it now)
 	avr_op_analyze (anal,
 			&next_op,
 			op->addr + op->size, buf + op->size,
 			cpu);
-	op->jump = op->addr + next_op.size + 2;
-
-	// free next_op's esil string (we dont need it now)
 	r_strbuf_fini (&next_op.esil);
+	op->jump = op->addr + next_op.size + 2;
 
 	// cycles
 	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
@@ -483,6 +478,11 @@ INST_HANDLER (dec) {	// DEC Rd
 }
 
 INST_HANDLER (des) {	// DES k
+//if (d < 16) {	//DES
+//	op->type = R_ANAL_OP_TYPE_CRYPTO;
+//	op->cycles = 1;		//redo this
+//	r_strbuf_setf (&op->esil, "%d,des", d);
+//}
 }
 
 INST_HANDLER (eijmp) {	// EIJMP
@@ -1059,19 +1059,14 @@ INST_HANDLER (sbix) {	// SBIC A, b
 	op->val = a;
 	op->family = R_ANAL_OP_FAMILY_IO;
 
-	// create void next_op
-	memset (&next_op, 0, sizeof (RAnalOp));
-	r_strbuf_init (&next_op.esil);
-
 	// calculate next instruction size (call recursively avr_op_analyze)
+	// and free next_op's esil string (we dont need it now)
 	avr_op_analyze (anal,
 			&next_op,
 			op->addr + op->size, buf + op->size,
 			cpu);
-	op->jump = op->addr + next_op.size + 2;
-
-	// free next_op's esil string (we dont need it now)
 	r_strbuf_fini (&next_op.esil);
+	op->jump = op->addr + next_op.size + 2;
 
 	// cycles
 	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
@@ -1112,19 +1107,14 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 	int r = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x01) << 4);
 	RAnalOp next_op;
 
-	// create void next_op
-	memset (&next_op, 0, sizeof (RAnalOp));
-	r_strbuf_init (&next_op.esil);
-
 	// calculate next instruction size (call recursively avr_op_analyze)
+	// and free next_op's esil string (we dont need it now)
 	avr_op_analyze (anal,
 			&next_op,
 			op->addr + op->size, buf + op->size,
 			cpu);
-	op->jump = op->addr + next_op.size + 2;
-
-	// free next_op's esil string (we dont need it now)
 	r_strbuf_fini (&next_op.esil);
+	op->jump = op->addr + next_op.size + 2;
 
 	// cycles
 	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
@@ -1304,6 +1294,10 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 	int fail;
 	char *t;
 
+	// initialize op struct
+	memset (op, 0, sizeof (RAnalOp));
+	r_strbuf_init (&op->esil);
+
 	// process opcode
 	for (opcode_desc = opcodes; opcode_desc->handler; opcode_desc++) {
 		if ((ins & opcode_desc->mask) == opcode_desc->selector) {
@@ -1328,6 +1322,7 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 				eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
 				opcode_desc->cycles = 2;
 			}
+			op->nopcode = (op->type == R_ANAL_OP_TYPE_UNK);
 
 			// remove trailing coma (COMETE LA COMA)
 			t = r_strbuf_get (&op->esil);
@@ -1347,32 +1342,24 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 		goto INVALID_OP;
 	}
 
-	// not processed
-	return 0;
-
 INVALID_OP:
 	// An unknown or invalid option has appeared.
 	//  -- Throw pokeball!
-	op->type = R_ANAL_OP_TYPE_UNK;
 	op->family = R_ANAL_OP_FAMILY_UNKNOWN;
-	op->size = 2;
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->addr = addr;
+	op->fail = UT64_MAX;
+	op->jump = UT64_MAX;
+	op->ptr = UT64_MAX;
+	op->val = UT64_MAX;
+	op->nopcode = 1;
 	op->cycles = 1;
+	op->size = 2;
 	// launch esil trap (for communicating upper layers about this weird
 	// and stinky situation
 	r_strbuf_set (&op->esil, "1,$");
 
 	return op->size;
-}
-
-static ut64 rjmp_dest(ut64 addr, const ut8* b) {
-	uint16_t data = (b[0] + (b[1] << 8)) & 0xfff;
-	ut32 op = data;
-	op <<= 1;
-	if (op & 0x1000) {
-		short val = (~op) & 0xfff;
-		return (ut64) (addr - val + 1);
-	}
-	return addr + op + 2;
 }
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -1387,16 +1374,6 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (!op) {
 		return 2;
 	}
-	memset (op, 0, sizeof (RAnalOp));
-	op->addr = addr;
-	op->type = R_ANAL_OP_TYPE_UNK;
-	op->fail = UT64_MAX;
-	op->family = R_ANAL_OP_FAMILY_CPU;
-	op->jump = UT64_MAX;
-	op->nopcode = 1; // Necessary??
-	op->ptr = UT64_MAX;
-	op->val = UT64_MAX;
-	r_strbuf_init (&op->esil);
 
 	// select cpu info
 	for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
@@ -1414,303 +1391,8 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 
 	// process opcode
-	if (avr_op_analyze (anal, op, addr, buf, cpu)) {
-		return op->size;
-	}
+	avr_op_analyze (anal, op, addr, buf, cpu);
 
-	// old and slow implementation
-	// NOTE: This block should collapse along time... it depends on
-	// avrdis which does not seem the most efficient and easy way
-	// to emulate the CPU details :P
-	op->size = avrdis (str, addr, buf, len);
-	r_strbuf_init (&op->esil);
-	arg = strchr (str, ' ');
-	if (arg) {
-		arg++;
-		imm = (int)r_num_get (NULL, arg);
-		arg = strchr (arg, ',');
-		if (arg) {
-			arg++;
-			imm2 = (int)r_num_get (NULL, arg);
-		}
-	}
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_UNK;
-	if (!strncmp (str, "st", 2)) {
-		op->type = R_ANAL_OP_TYPE_STORE;
-	} else if (str[0] == 'l') {
-		op->type = R_ANAL_OP_TYPE_LOAD;
-	} else if (str[0] == 's') {
-		op->type = R_ANAL_OP_TYPE_SUB;
-	} else if (!strncmp (str, "inv", 3)) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-	} else if (!strncmp (str, "ser ", 4)) {
-		op->type = R_ANAL_OP_TYPE_MOV;
-	} else if (!strncmp (str, "and", 3)) {
-		op->type = R_ANAL_OP_TYPE_AND;
-	} else if (!strncmp (str, "mul", 3)) {
-		op->type = R_ANAL_OP_TYPE_MUL;
-	} else if (!strncmp (str, "out ", 4)) {
-		op->type = R_ANAL_OP_TYPE_IO;
-		r_strbuf_setf (&op->esil, "[]");
-		op->type2 = 1;
-		op->val = imm;
-		op->cycles = 1;
-	} else if (!strncmp (str, "in ", 3)) {
-		op->type = R_ANAL_OP_TYPE_IO;
-		op->type2 = 0;
-		op->val = imm2;
-	} else if (!strncmp (str, "push ", 5)) {
-		op->type = R_ANAL_OP_TYPE_PUSH;
-	}
-	if (ins == 0) {
-		op->type = R_ANAL_OP_TYPE_NOP;
-		r_strbuf_setf (&op->esil, ",");
-		op->cycles = 1;
-	}
-	if (buf[1] == 1) {			//MOVW
-		d = (buf[0] & 0xf0) >> 3;
-		r = (buf[0] & 0x0f) << 1;
-		op->type = R_ANAL_OP_TYPE_MOV;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,=,r%d,r%d,=", r, d, r+1, d+1);
-	}
-	k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
-	d = ((buf[0] & 0xf0) >> 4) + 16;
-	if ((buf[1] & 0xf0) == 0xe0) {		//LDI
-		op->type = R_ANAL_OP_TYPE_LOAD;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "0x%x,r%d,=", k, d);
-	}
-	if ((buf[1] & 0xf0) == 0x30) {		//CPI
-		op->type = R_ANAL_OP_TYPE_CMP;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "0x%x,r%d,==,$z,zf,=,$b3,hf,=,$b8,cf,=$o,vf,=,0x%x,r%d,-,0x80,&,!,!,nf,=,vf,nf,^,sf,=", k, d, k, d);		//check vf here
-	}
-	d = ((buf[0] & 0xf0) >> 4) | ((buf[1] & 1) << 4);
-	r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
-	if ((buf[1] & 0xec) == 12) {		//ADD + ADC
-		op->type = R_ANAL_OP_TYPE_ADD;
-		op->cycles = 1;
-		if (buf[1] & 0x10)
-			r_strbuf_setf (&op->esil, "r%d,r%d,+=,$c7,cf,=,$c3,hf,=,$o,vf,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,nf,=,vf,nf,^,sf,=", r, d, d, d, d);
-		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,cf,+=,r%d,r%d,+=,$c7,cf,=,$c3,hf,=,$o,vf,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,nf,=,vf,nf,^,sf,=,r%d,=", r, r, r, d, d, d, r);
-	}
-	if ((buf[1] & 0xec) == 8) {             //SUB + SBC
-		op->type = R_ANAL_OP_TYPE_SUB;
-		op->cycles = 1;
-		if (buf[1] & 0x10)
-			r_strbuf_setf (&op->esil, "r%d,r%d,-=,$b8,cf,=,$b3,hf,=,$o,vf,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,nf,=,vf,nf,^,sf,=", r, d, d, d, d);
-		else	r_strbuf_setf (&op->esil, "r%d,NUM,r%d,cf,+=,r%d,r%d,-=,$b8,cf,=,$b3,hf,=,$o,vf,=,r%d,r%d,=,$z,zf,=,r%d,0x80,&,!,!,nf,=,vf,nf,^,sf,=,r%d,=", r, r, r, d, d, d, r);
-	}
-	if ((buf[1] & 0xec) == 4) {		//CP + CPC
-		op->type = R_ANAL_OP_TYPE_CMP;
-		op->cycles = 1;
-		if (buf[1] & 0xf0)		//CP
-			r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,zf,=,$b8,cf,=,$b3,hf,=,$o,vf,=,r%d,r%d,-,0x80,&,!,!,nf,=,vf,nf,^,sf,=", r, d, r, d);	//check vf here
-		else	r_strbuf_setf (&op->esil, "r%d,cf,r%d,-,0xff,&,-,0x80,&,!,!,nf,=,r%d,cf,r%d,-,0xff,&,==,$z,zf,=,$b8,cf,=,$b3,hf,=,$o,vf,=,vf,nf,^,sf,=", r, d, r, d);
-	}
-	switch (buf[1] & 0xfc) {
-	case 0x10:	//CPSE
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->type2 = R_ANAL_OP_TYPE_CMP;
-		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 4);
-		op->fail = addr + 2;
-		op->jump = op->fail + avrdis (str, op->fail, kbuf, 4);
-		op->failcycles = 1;
-		op->cycles = ((op->jump - op->fail) == 4) ? 3 : 2;
-		r_strbuf_setf (&op->esil, "r%d,r%d,==,$z,?{,0x%"PFMT64x",PC,=,}", r, d, op->jump);
-		break;
-	case 0x20:	//AND
-		op->type = R_ANAL_OP_TYPE_AND;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,&=,$z,zf,=,r%d,0x80,&,!,!,nf,=,nf,sf,=,0,vf,=", r, d, d);
-		break;
-	case 0x24:	//EOR
-		op->type = R_ANAL_OP_TYPE_XOR;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,^=,$z,zf,=,r%d,0x80,&,!,!,nf,=,nf,sf,=,0,vf,=", r, d, d);
-		break;
-	case 0x28:	//OR
-		op->type = R_ANAL_OP_TYPE_OR;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,|=,$z,zf,=,r%d,0x80,&,!,!,nf,=,nf,sf,=,0,vf,=", r, d, d);
-		break;
-	case 0x2c:	//MOV
-		op->type = R_ANAL_OP_TYPE_MOV;
-		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "r%d,r%d,=", r, d);
-		break;
-	}
-	if ((buf[1] & 0xfe) == 0x92) {
-		switch (buf[0] & 0xf) {
-		case 4:		//XCH
-			op->type = R_ANAL_OP_TYPE_XCHG;
-			op->cycles = 2;
-			r_strbuf_setf (&op->esil, "r%d,Z,^=[1],Z,[1],r%d,^=,r%d,Z,^=[1]", d, d, d);
-			break;
-		case 5:		//LAS
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			op->cycles = 2;
-			r_strbuf_setf (&op->esil, "r%d,Z,[1],|,Z,[1],r%d,=,Z,=[1]", d, d);
-			break;
-		case 6:		//LAC
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			op->cycles = 2;
-			r_strbuf_setf (&op->esil, "r%d,Z,[1],&,Z,[1],-,Z,[1],r%d,=,Z,=[1]", d, d);
-			break;
-		case 7:		//LAT
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			op->cycles = 2;
-			r_strbuf_setf (&op->esil, "r%d,Z,[1],^,Z,[1],r%d,=,Z,=[1]", d, d);
-			break;
-		}
-	}
-	if ((buf[1] & 0xfe) == 0x94) {
-		switch (buf[0] & 0xf) {
-		case 0:		//COM
-			op->type = R_ANAL_OP_TYPE_CPL;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,0xff,-,r%d,=,$z,zf,=,r%d,0x80,&,!,!,nf,=,nf,sf,=,0,vf,=,1,cf,=", d, d, d);
-			break;
-		case 1:		//NEG
-			op->type = R_ANAL_OP_TYPE_CPL;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,NUM,0,r%d,=,r%d,-=,$b3,hf,=,$b8,cf,=,cf,!,zf,=,r%d,0x80,&,!,!,nf,=,r%d,0x80,==,$z,vf,=,nf,vf,^,sf,=", d, d, d, d);	//Hack for accessing internal vars
-			break;
-		case 2:		//SWAP
-			op->type = R_ANAL_OP_TYPE_ROL;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "4,r%d,0xf,&,<<,4,r%d,0xf0,&,>>,|,r%d,=", d, d, d);
-			break;
-		case 3:		//INC
-			op->type = R_ANAL_OP_TYPE_ADD;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,1,+,0xff,&,r%d,=,$z,zf,=,r%d,0x80,&,!,!,nf,=,r%d,0x80,==,$z,vf,=,nf,vf,^,sf,=", d, d, d, d);
-			break;
-		case 5:		//ASR
-			op->type = R_ANAL_OP_TYPE_SAR;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,1,&,cf,=,1,r%d,>>,0x80,r%d,&,|,r%d,=,$z,zf,=,r%d,0x80,&,nf,=,cf,nf,^,vf,=,nf,vf,^,sf,=", d, d, d, d, d);
-			break;
-		case 6: 	//LSR
-			op->type = R_ANAL_OP_TYPE_SHR;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "r%d,1,&,cf,=,1,r%d,>>=,$z,zf,=,0,nf,=,cf,vf,=,cf,sf,=", d, d);
-			break;
-		case 7:		//ROR
-			op->type = R_ANAL_OP_TYPE_ROR;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "cf,nf,=,r%d,1,&,7,cf,<<,1,r%d,>>,|,r%d,=,$z,zf,=,cf,=,nf,cf,^,vf,=,nf,vf,^,sf,=", d, d, d);
-			break;
-		case 10:	//DEC
-			op->type = R_ANAL_OP_TYPE_SUB;
-			op->cycles = 1;
-			r_strbuf_setf (&op->esil, "1,r%d,-=,$z,zf,=,r%d,0x80,&,nf,=,r%d,0x80,==,$z,vf,=,nf,vf,^,sf,=", d, d, d);
-			break;
-		case 11:
-			if (d < 16) {	//DES
-				op->type = R_ANAL_OP_TYPE_CRYPTO;
-				op->cycles = 1;		//redo this
-				r_strbuf_setf (&op->esil, "%d,des", d);
-			}
-			break;
-		}
-	}
-	// 0xf0 - 0xf7 BR
-	if ((buf[1] >= 0xf0 && buf[1] <= 0xf8)) {
-		// int cond = (buf[0] & 7);
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = imm;
-		op->fail = addr + 2;
-		return op->size;
-	}
-	if ((buf[1] >= 0xc0 && buf[1] <= 0xcf)) { // rjmp
-		op->type = R_ANAL_OP_TYPE_JMP; // relative jump
-		ut64 dst = rjmp_dest (addr, buf);
-		op->jump = dst;
-		op->fail = UT64_MAX;
-		r_strbuf_setf (&op->esil, "%"PFMT64d",PC,=", dst);
-		return op->size;
-	}
-	switch (buf[1]) {
-	case 0x96: // ADIW
-		op->type = R_ANAL_OP_TYPE_ADD;
-		op->cycles = 2;
-		break;
-	case 0x97: // SBIW
-		op->type = R_ANAL_OP_TYPE_SUB;
-//		r_strbuf_setf (&op->esil, ",", dst);
-		op->cycles = 2;
-		break;
-	case 0x98: // SBI
-	case 0x9a: // CBI
-		op->type = R_ANAL_OP_TYPE_IO;
-		op->cycles = 2; // 1 for atTiny
-		break;
-	case 0x99: // SBIC
-	case 0x9b: // SBIS
-		op->type = R_ANAL_OP_TYPE_CMP;
-		op->type2 = R_ANAL_OP_TYPE_CJMP;
-		op->failcycles = 1;
-		break;
-	}
-	if (!memcmp (buf, "\x0e\x94", 2)) {
-		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
-		op->fail = (op->addr)+4;
-		// override even if len<4 wtf
-		len = 4;
-		if (len>3) {
-			memcpy (kbuf, buf+2, 2);
-			op->size = 4;
-			//anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
-			op->jump = AVR_SOFTCAST (kbuf[0],kbuf[1])*2;
-		} else {
-			op->size = 0;
-			return -1;
-			return op->size;		//WTF
-		}
-		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
-	}
-	if ((buf[1] & 0xf0) == 0xd0) {
-		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_CALL; // rcall (relative)
-		op->fail = (op->addr)+2;
-		ofst = ins << 4;
-		ofst >>= 4;
-		ofst *= 2;
-		op->jump = addr + ofst + 2;
-		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
-	}
-	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e) == 0x0c)) {
-		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_CJMP; // breq, jmp (absolute)
-		op->fail = op->addr + 4;
-		anal->iob.read_at (anal->iob.io, addr + 2, kbuf, 2);
-		// TODO: check return value
-		op->jump = AVR_SOFTCAST (kbuf[0], kbuf[1]) * 2;
-		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
-	}
-	if ((buf[1] & 0xf0) == 0xc0) { // rjmp (relative)
-		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->fail = (op->addr) + 2;
-		ofst = ins << 4;
-		ofst >>= 4;
-		ofst *= 2;
-		op->jump = addr + ofst + 2;
-		//eprintf("addr: %x inst: %x ofst: %d dest: %x fail:%x\n", op->addr, *ins, ofst, op->jump, op->fail);
-	}
-	if (ins == 0x9508 || ins == 0x9518) { // ret || reti
-		op->type = R_ANAL_OP_TYPE_RET;
-		if (ins == 0x9518) {
-			/* reti */
-			op->family = R_ANAL_OP_FAMILY_PRIV;
-		}
-		op->cycles = 4;			//5 for 22-bit bus
-		op->eob = true;
-	}
 	return op->size;
 }
 
