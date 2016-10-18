@@ -1073,6 +1073,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 		if (op.operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 			data[l++] = 0x8c;
 		} else {
+			if (op.operands[0].type & OT_WORD) {
+				data[l++] = 0x66;
+			}
 			data[l++] = (op.operands[0].type & OT_BYTE) ? 0x88 : 0x89;
 		}
 
@@ -1080,6 +1083,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 			if (op.operands[0].reg == X86R_UNDEFINED ||
 				op.operands[1].reg == X86R_UNDEFINED) {
 				return -1;
+			}
+			if (!((op.operands[0].type & 0xff << OPSIZE_SHIFT) ==
+				(op.operands[1].type & 0xff << OPSIZE_SHIFT))) {
+					return -1;
 			}
 			mod = 0x3;
 			data[l++] = mod << 6 | op.operands[1].reg << 3 | op.operands[0].reg;
