@@ -2179,10 +2179,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			if (core->anal) {
 				RConsGrep grep = core->cons->grep;
 				r_list_foreach (core->anal->fcns, iter, fcn) {
+					char *buf;
 					r_core_seek (core, fcn->addr, 1);
 					r_cons_push ();
 					r_core_cmd (core, cmd, 0);
-					char *buf = strdup (r_cons_get_buffer ());
+					buf = (char *)r_cons_get_buffer ();
+					if (buf) {
+						buf = strdup (buf);
+					}
 					r_cons_pop ();
 					r_cons_strcat (buf);
 					r_cons_newline();
