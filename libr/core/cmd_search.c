@@ -1505,53 +1505,76 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	ut8 *buf;
 	RAnalOp aop;
 	int chk_family = 0;
+	int mode = 0;
 	int i, ret, bsize = R_MIN (64, core->blocksize);
-	int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
-	int maxhits, match, count = 0;
-	if (!strncmp (param->mode, "dbg.", 4) || !strncmp(param->mode, "io.sections", 11))
-		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
-	else param->boundaries = NULL;
+	int kwidx = core->search->n_kws;
+	int maxhits, count = 0;
+	bool firstItem = true;
 
-	input = r_str_chop_ro (input);
-	if (*input=='f') {
+	if (!strncmp (param->mode, "dbg.", 4) || !strncmp (param->mode, "io.sections", 11)) {
+		param->boundaries = r_core_get_boundaries (core, param->mode, &param->from, &param->to);
+	} else {
+		param->boundaries = NULL;
+	}
+	if (*input == 'f') {
 		chk_family = 1;
 		input++;
 	}
-	if (*input=='?') {
-		r_cons_printf ("Usage: /A%s [type]\n", chk_family?"f":"");
-		for (i=0; i < 64; i++) {
+	switch (*input) {
+	case 'j':
+		r_cons_printf ("[");
+		mode = *input;
+		input++;
+		break;
+	case 'q':
+		mode = *input;
+		input++;
+		break;
+	case '?':
+		r_cons_printf ("Usage: /A[jq]%s [type]\n", chk_family? "f": "");
+		for (i = 0; i < 64; i++) {
 			const char *str;
-			if (chk_family) str = r_anal_op_family_to_string (i);
-			else str = r_anal_optype_to_string (i);
-			if (chk_family && atoi (str))
+			if (chk_family) {
+				str = r_anal_op_family_to_string (i);
+			} else {
+				str = r_anal_optype_to_string (i);
+			}
+			if (chk_family && atoi (str)) {
 				break;
-			if (!str || !*str) break;
-			if (!strcmp (str, "undefined"))
+			}
+			if (!str || !*str) {
+				break;
+			}
+			if (!strcmp (str, "undefined")) {
 				continue;
+			}
 			r_cons_println (str);
 		}
 		return;
 	}
+	input = r_str_chop_ro (input);
 	buf = malloc (bsize);
 	maxhits = (int)r_config_get_i (core->config, "search.count");
 	r_cons_break (NULL, NULL);
-	for (i=0, at = param->from; at < param->to; at++,i++) {
-		if (r_cons_singleton()->breaked)
+	for (i = 0, at = param->from; at < param->to; at++,i++) {
+		if (r_cons_singleton()->breaked) {
 			break;
-		if (i>=(bsize-32)) {
+		}
+		if (i >= (bsize - 32)) {
 			i = 0;
 		}
 		if (i == 0) {
 			r_core_read_at (core, at, buf, bsize);
 		}
-		ret = r_anal_op (core->anal, &aop, at, buf+i, bsize-i);
+		ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i);
 		if (ret) {
-			match = 0;
+			const char *arg = NULL;
+			bool match = false;
 			if (chk_family) {
 				const char *fam = r_anal_op_family_to_string (aop.family);
 				if (fam) {
 					if (!*input || !strcmp (input, fam)) {
-						match = 1;
+						match = true;
 						r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, fam);
 					}
 				}
@@ -1559,12 +1582,26 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 				const char *type = r_anal_optype_to_string (aop.type);
 				if (type) {
 					if (!*input || !strcmp (input, type)) {
-						match = 1;
-						r_cons_printf ("0x%08"PFMT64x" - %d %s\n", at, ret, type);
+						match = true;
 					}
 				}
 			}
 			if (match) {
+				// char *opstr = r_core_disassemble_instr (core, at, 1);
+				char *opstr = r_core_op_str (core, at);
+				switch (mode) {
+				case 'j':
+					r_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,\"opstr\":\"%s\"}",
+						firstItem? "": ",",
+						at, ret, opstr);
+					break;
+				case 'q':
+					r_cons_printf ("0x%08"PFMT64x"\n", at);
+					break;
+				default:
+					r_cons_printf ("0x%08"PFMT64x" %d %s\n", at, ret, opstr);
+					break;
+				}
 				if (*input && searchflags) {
 					char flag[64];
 					snprintf (flag, sizeof (flag), "%s%d_%d",
@@ -1575,16 +1612,20 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 				if (maxhits && count >= maxhits) {
 					break;
 				}
+				firstItem = false;
 			}
 			if (core->search->align>0) {
-				i += core->search->align -1;
-				at += core->search->align -1;
+				i += core->search->align - 1;
+				at += core->search->align - 1;
 			} else {
 				// skip instruction
 				i += ret - 1; //aop.size-1;
-				at += ret -1;
+				at += ret - 1;
 			}
 		}
+	}
+	if (mode == 'j') {
+		r_cons_println ("]\n");
 	}
 	r_cons_break_end ();
 	free (buf);
@@ -2147,16 +2188,7 @@ reread:
 		}
 		break;
 	case 'A':
-		switch (input[1]) {
-		case 'f':
-		case '?':
-		case ' ':
-			do_anal_search (core, &param, input + 1);
-			break;
-		default:
-			do_anal_search (core, &param, "?");
-			break;
-		}
+		do_anal_search (core, &param, input + 1);
 		dosearch = false;
 		break;
 	case 'a': if (input[1]) {
