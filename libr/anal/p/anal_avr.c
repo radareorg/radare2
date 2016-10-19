@@ -35,7 +35,7 @@ typedef struct _opcodes_tag_ {
 	inst_handler_t handler;
 	int cycles;
 	int size;
-	int type;
+	ut64 type;
 } OPCODE_DESC;
 
 static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu);
