@@ -20,7 +20,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	if (io->off + count >= RIOTCP_SZ (fd)) {
+	if (io->off + count > RIOTCP_SZ (fd)) {
 		return -1;
 	}
 	memcpy (RIOTCP_BUF (fd)+io->off, buf, count);
@@ -147,7 +147,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 				mal->fd = getmalfd (mal);
 				memcpy (mal->buf, out, mal->size);
 				free (out);
-				rw = 2;
+				rw = 7;
 				return r_io_desc_new (&r_io_plugin_tcp,
 					mal->fd, pathname, rw, mode, mal);
 			}

@@ -20,7 +20,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	if (io->off + count >= RIOHTTP_SZ (fd)) {
+	if (io->off + count > RIOHTTP_SZ (fd)) {
 		return -1;
 	}
 	memcpy (RIOHTTP_BUF (fd)+io->off, buf, count);

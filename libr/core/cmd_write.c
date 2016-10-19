@@ -426,7 +426,7 @@ static int cmd_write(void *data, const char *input) {
 		"wr"," 10","write 10 random bytes",
 		"ws"," pstring","write 1 byte for length and then the string",
 		"wt[f]"," file [sz]","write to file (from current seek, blocksize or sz bytes)",
-		"wts"," host:port", "send data to remote host:port via tcp://",
+		"wts"," host:port [sz]", "send data to remote host:port via tcp://",
 		"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 		"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
 		"wv","[?] eip+34","write 32-64 bit value",
