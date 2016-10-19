@@ -2189,7 +2189,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					}
 					r_cons_pop ();
 					r_cons_strcat (buf);
-					r_cons_newline();
 					free (buf);
 				}
 				core->cons->grep = grep;

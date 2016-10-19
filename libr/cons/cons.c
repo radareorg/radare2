@@ -308,15 +308,15 @@ R_API RCons *r_cons_free() {
 }
 
 #define MOAR (4096 * 8)
-static void palloc(int moar) {
+static bool palloc(int moar) {
 	void *temp;
 	if (moar <= 0) {
-		return;
+		return false;
 	}
 	if (!I.buffer) {
 		int new_sz;
 		if ((INT_MAX - MOAR) < moar) {
-			return;
+			return false;
 		}
 		new_sz = moar + MOAR;
 		temp = calloc (1, new_sz);
@@ -325,20 +325,22 @@ static void palloc(int moar) {
 			I.buffer = temp;
 			I.buffer[0] = '\0';
 		}
-	} else if (moar + I.buffer_len >= I.buffer_sz) {
+	} else if (moar + I.buffer_len > I.buffer_sz) {
 		char *new_buffer;
 		int old_buffer_sz = I.buffer_sz;
 		if ((INT_MAX - MOAR - moar) < I.buffer_sz) {
-			return;
+			return false;
 		}
-		I.buffer_sz += moar+MOAR;
+		I.buffer_sz += moar + MOAR;
 		new_buffer = realloc (I.buffer, I.buffer_sz);
 		if (new_buffer) {
 			I.buffer = new_buffer;
 		} else {
 			I.buffer_sz = old_buffer_sz;
+			return false;
 		}
 	}
+	return true;
 }
 
 R_API int r_cons_eof() {
@@ -453,6 +455,7 @@ R_API void r_cons_push() {
 R_API void r_cons_pop() {
 	if (I.cons_stack) {
 		RConsStack *data = (RConsStack *)r_stack_pop (I.cons_stack);
+		char *tmp;
 		if (!data) {
 			return;
 		}
@@ -460,6 +463,13 @@ R_API void r_cons_pop() {
 			free (data);
 			return;
 		} 
+		tmp = malloc (data->buf_size);
+		if (!tmp) {
+			cons_stack_free ((void *)data);
+			return;
+		}
+		free (I.buffer);
+		I.buffer = tmp;
 		memcpy (I.buffer, data->buf, data->buf_len);
 		I.buffer_len = data->buf_len;
 		I.buffer_sz = data->buf_size;
@@ -684,10 +694,11 @@ R_API void r_cons_memcat(const char *str, int len) {
 		write (2, str, len);
 	}
 	if (str && len > 0 && !I.null) {
-		palloc (len+1);
-		memcpy (I.buffer + I.buffer_len, str, len);
-		I.buffer_len += len;
-		I.buffer[I.buffer_len] = 0;
+		if (palloc (len + 1)) {
+			memcpy (I.buffer + I.buffer_len, str, len);
+			I.buffer_len += len;
+			I.buffer[I.buffer_len] = 0;
+		}
 	}
 	if (I.flush) {
 		r_cons_flush ();

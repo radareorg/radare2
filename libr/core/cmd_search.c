@@ -1568,7 +1568,6 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		}
 		ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i);
 		if (ret) {
-			const char *arg = NULL;
 			bool match = false;
 			if (chk_family) {
 				const char *fam = r_anal_op_family_to_string (aop.family);
