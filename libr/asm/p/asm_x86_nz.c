@@ -68,6 +68,8 @@ static ut64 getnum(RAsm *a, const char *s);
 #define SPECIAL_SPEC 0x00010000
 #define SPECIAL_MASK 0x00000007
 
+const ut8 SEG_REG_PREFIXES[] = {0x26, 0x2e, 0x36, 0x3e, 0x64, 0x65};
+
 typedef enum tokentype_t {
 	TT_EOF,
 	TT_WORD,
@@ -1174,8 +1176,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 		offset = op.operands[1].offset * op.operands[1].offset_sign;
 		if (op.operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
 			if (op.operands[1].scale[0] == 0) return -1;
-			ut8 prefixes[] = {0x26, 0x2e, 0x36, 0x3e, 0x64, 0x65};
-			data[l++] = prefixes[op.operands[1].regs[0]];
+			data[l++] = SEG_REG_PREFIXES[op.operands[1].regs[0]];
 			data[l++] = 0x8b;
 			data[l++] = op.operands[0].reg << 3 | 0x5;
 			data[l++] = offset;
@@ -1868,28 +1869,28 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	if (length == 3 && token[0] == 'e') {
 		for (i = 0; regs[i]; i++)
 			if (!strncasecmp (regs[i], token, length)) {
-				*type = (OT_GPREG & OT_REG(i)) | OT_DWORD;
+				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
 				return i;
 			}
 	}
 	if (length == 2 && (token[1] == 'l' || token[1] == 'h')) {
 		for (i = 0; regs8[i]; i++)
 			if (!strncasecmp (regs8[i], token, length)) {
-				*type = (OT_GPREG & OT_REG(i)) | OT_BYTE;
+				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
 				return i;
 			}
 	}
 	if (length == 2) {
 		for (i = 0; regs16[i]; i++) {
 			if (!strncasecmp (regs16[i], token, length)) {
-				*type = (OT_GPREG & OT_REG(i)) | OT_WORD;
+				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
 				return i;
 			}
 		}
 		// This isn't working properly yet
 		for (i = 0; sregs[i]; i++) {
 			if (!strncasecmp (sregs[i], token, length)) {
-				*type = (OT_SEGMENTREG & OT_REG(i)) | OT_WORD;
+				*type = (OT_SEGMENTREG & OT_REG (i)) | OT_WORD;
 				return i;
 			}
 		}
@@ -1897,13 +1898,13 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	if (token[0] == 'r') {
 		for (i = 0; regs64[i]; i++) {
 			if (!strncasecmp (regs64[i], token, length)) {
-				*type = (OT_GPREG & OT_REG(i)) | OT_QWORD;
+				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				return i;
 			}
 		}
 		for (i = 0; regs64ext[i]; i++) {
 			if (!strncasecmp (regs64ext[i], token, length)) {
-				*type = (OT_GPREG & OT_REG(i)) | OT_QWORD;
+				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				return i + 8;
 			}
 		}
@@ -1963,6 +1964,28 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	return X86R_UNDEFINED;
 }
 
+static void parse_segment_offset(RAsm *a, const char *str, size_t *pos,
+								Operand *op, int reg_index) {
+	int nextpos = *pos;
+	char *c = strchr (str + nextpos, ':');
+	if (c) {
+		nextpos ++; // Skip the ':'
+		c = strchr (str + nextpos, '[');
+		if (c) {nextpos ++;} // Skip the '['
+
+		// Assign registers to match behaviour of OT_MEMORY type
+		op->regs[reg_index] = op->reg;
+		op->type |= OT_MEMORY;
+		op->offset_sign = 1;
+		char *p = strchr (str + nextpos, '-');
+		if (p) {
+			op->offset_sign = -1;
+			nextpos ++;
+		}
+		op->scale[reg_index] = getnum (a, str + nextpos);
+		op->offset = op->scale[reg_index];
+	}
+}
 // Parse operand
 static int parseOperand(RAsm *a, const char *str, Operand *op) {
 	size_t pos, nextpos = 0;
@@ -1977,7 +2000,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 		pos = nextpos;
 		last_type = getToken (str, &pos, &nextpos);
 
-		// Token mayop->reg indicate size: then skip
+		// Token may indicate size: then skip
 		if (!strncasecmp (str + pos, "ptr", 3))
 			continue;
 		else if (!strncasecmp (str + pos, "byte", 4)) {
@@ -2051,29 +2074,10 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 				reg = parseReg (a, str, &nextpos, &reg_type);
 
 				if (reg_type & OT_REGTYPE & OT_SEGMENTREG) {
-					// Deals with fs:[x] which the rest of this routine
-					// doesn't handle yet
-					char *c = strchr (str + nextpos, ':');
-					if (c) {
-						// Move over ':'
-						nextpos += 1;
-						// Assign registers to match behaviour of OT_MEMORY type
-						op->regs[reg_index] = reg;
-						if (!explicit_size) {
-							op->type |= reg_type;
-						}
-						op->type |= OT_MEMORY;
-						op->offset_sign = 1;
-						char *p = strchr (str + nextpos, '-');
-						if (p) {
-							op->offset_sign = -1;
-							nextpos ++;
-						}
-
-						op->scale[reg_index] = getnum (a, str + nextpos);
-						op->offset = op->scale[reg_index];
-						return nextpos;
-					}
+					op->reg = reg;
+					op->type = reg_type;
+					parse_segment_offset (a, str, &nextpos, op, reg_index);
+					return nextpos;
 				}
 
 				// Still going to need to know the size if not specified
@@ -2116,27 +2120,8 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 			op->reg -= 8;
 		}
 		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
-			// Deals with fs:[x] which the rest of this routine
-			// doesn't handle yet'
-
-			char *c = strchr (str + nextpos, ':');
-			if (c) {
-				// Move over ':['
-				nextpos += 2;
-				// Assign registers to match behaviour of OT_MEMORY type
-				op->regs[reg_index] = op->reg;
-				op->type |= OT_MEMORY;
-				op->offset_sign = 1;
-				char *p = strchr (str + nextpos, '-');
-				if (p) {
-					op->offset_sign = -1;
-					nextpos ++;
-				}
-
-				op->scale[reg_index] = getnum (a, str + nextpos);
-				op->offset = op->scale[reg_index];
-				return nextpos;
-			}
+			parse_segment_offset (a, str, &nextpos, op, reg_index);
+			return nextpos;
 		}
 
 		if (op->reg == X86R_UNDEFINED) {
