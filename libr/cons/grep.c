@@ -159,12 +159,27 @@ R_API void r_cons_grep(const char *str) {
 	}
 
 	ptr2 = strchr (ptr, ':'); // line number
+	cons->grep.range_line = 2; //there is not :
 	if (ptr2 && ptr2[1] != ':') {
 		*ptr2 = '\0';
-		cons->grep.line = r_num_get (cons->num, ptr2 + 1);
-		if (cons->grep.line < 0) {
-			eprintf ("Negative line grep not yet implented\n");
-			cons->grep.line = -1;
+		char *p, *token = ptr + 1;
+		p = strstr (token, "..");
+		if (!p) {
+			cons->grep.line = r_num_get (cons->num, ptr2 + 1);
+			cons->grep.range_line = 0;
+		} else {
+			*p = '\0';
+			cons->grep.range_line = 1; 
+			if (!*token) {
+				cons->grep.f_line = 0;
+			} else {
+				cons->grep.f_line = r_num_get (cons->num, token);
+			}
+			if (!p[2]) {
+				cons->grep.l_line = -1;
+			} else  {
+				cons->grep.l_line = r_num_get (cons->num, p + 2);
+			}
 		}
 	}
 	free (cons->grep.str);
@@ -202,7 +217,8 @@ R_API void r_cons_grep(const char *str) {
 R_API int r_cons_grepbuf(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
 	char *tline, *tbuf, *p, *out, *in = buf;
-	int ret, buffer_len = 0, l = 0, tl = 0;
+	int ret, total_lines = 0, buffer_len = 0, l = 0, tl = 0;
+	bool show = false;
 
 	if ((!len || !buf || buf[0] == '\0') &&
 	   (cons->grep.json || cons->grep.less)) {
@@ -244,6 +260,32 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	out = tbuf = calloc (1, len);
 	tline = malloc (len);
 	cons->lines = 0;
+	//used to count lines and change negative grep.line values
+	while ((int)(size_t)(in-buf) < len) {
+		p = strchr (in, '\n');
+		if (!p) {
+			break;
+		}
+		l = p - in;
+		if (l > 0) {
+			in += l + 1;
+		} else {
+			in++;
+		}
+		total_lines++;
+	}
+	if (!cons->grep.range_line && cons->grep.line < 0) {
+		cons->grep.line = total_lines + cons->grep.line;
+	} 
+	if (cons->grep.range_line == 1) {
+		if (cons->grep.f_line < 0) {
+			cons->grep.f_line = total_lines + cons->grep.f_line;
+		}
+		if (cons->grep.l_line < 0) {
+			cons->grep.l_line = total_lines + cons->grep.l_line;
+		}
+	}
+	in = buf;
 	while ((int)(size_t)(in-buf) < len) {
 		p = strchr (in, '\n');
 		if (!p) {
@@ -259,14 +301,30 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 				ret = -1;
 			} else {
 				ret = r_cons_grep_line (tline, tl);
+				if (!cons->grep.range_line) {
+					if (cons->grep.line == cons->lines) {
+						show = true;
+					}
+				} else if (cons->grep.range_line == 1) {
+					if (cons->grep.f_line == cons->lines) {
+						show = true;
+					}
+					if (cons->grep.l_line == cons->lines) {
+						show = false;
+					}
+				} else {
+					show = true;
+				}
 			}
 			if (ret > 0) {
-				if (cons->grep.line == -1 ||
-					(cons->grep.line != -1 && cons->grep.line == cons->lines)) {
+				if (show) {
 					memcpy (out, tline, ret);
 					memcpy (out + ret, "\n", 1);
 					out += ret + 1;
 					buffer_len += ret + 1;
+				}
+				if (!cons->grep.range_line) {
+					show = false;
 				}
 				cons->lines++;
 			} else if (ret < 0) {
@@ -299,6 +357,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	char *in, *out, *tok = NULL;
 	int hit = cons->grep.neg;
 	int outlen = 0;
+	bool use_tok = false;
 	size_t i;
 
 	in = calloc (1, len + 1);
@@ -341,8 +400,22 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	}
 
 	if (hit) {
-		if ((cons->grep.line == -1 || cons->grep.line == cons->lines) &&
-		    cons->grep.tokens_used) {
+		if (!cons->grep.range_line) {
+			if (cons->grep.line == cons->lines) {
+				use_tok = true;
+			}
+		} else if (cons->grep.range_line == 1) {
+			if (cons->grep.f_line == cons->lines) {
+				use_tok = true;
+			}
+			if (cons->grep.l_line == cons->lines) {
+				use_tok = false;
+			}
+		} else {
+			use_tok = true;
+		}
+		if (use_tok && cons->grep.tokens_used) {
+			eprintf ("EEENTRO");
 			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
 				tok = strtok (i ? NULL : in, delims);
 
