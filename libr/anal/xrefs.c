@@ -38,6 +38,9 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 	if (!anal || !DB) {
 		return false;
 	}
+	if (!anal->iob.is_valid_offset (anal->iob.io, to, 0)) {
+		return false;
+	}
 	// unknown refs should not be stored. seems wrong
 	if (type == R_ANAL_REF_TYPE_NULL) {
 		return false;
