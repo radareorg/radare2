@@ -428,7 +428,7 @@ R_API const char *r_cons_get_buffer() {
 
 R_API void r_cons_filter() {
 	/* grep*/
-	if (I.grep.nstrings > 0 || I.grep.tokens_used || I.grep.line!=-1 || I.grep.less || I.grep.json) {
+	if (I.grep.nstrings > 0 || I.grep.tokens_used || I.grep.less || I.grep.json) {
 		r_cons_grepbuf (I.buffer, I.buffer_len);
 	}
 	/* html */
@@ -523,8 +523,9 @@ R_API void r_cons_flush() {
 	if (tee && *tee) {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d) {
-			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d))
+			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d)) {
 				eprintf ("r_cons_flush: fwrite: error (%s)\n", tee);
+			}
 			fclose (d);
 		} else {
 			eprintf ("Cannot write on '%s'\n", tee);
