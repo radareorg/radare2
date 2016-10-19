@@ -146,32 +146,43 @@ static bool string_filter(RCore *core, const char *str) {
 		int ln = 0;
 		int sp = 0;
 		int nm = 0;
-		for (i = 0; i<0x100; i++) {
+		for (i = 0; i < 0x100; i++) {
 			bo[i] = 0;
 		}
 		for (i = 0; str[i]; i++) {
-			if (str[i]>='0' && str[i]<='9')
+			if (str[i] >= '0' && str[i] <= '9') {
 				nm++;
-			else if (str[i]>='a' && str[i]<='z')
+			} else if (str[i]>='a' && str[i]<='z') {
 				lo++;
-			else if (str[i]>='A' && str[i]<='Z')
+			} else if (str[i]>='A' && str[i]<='Z') {
 				up++;
-			else ot++;
-			if (str[i]=='\\') ot++;
-			if (str[i]==' ') sp++;
+			} else {
+				ot++;
+			}
+			if (str[i]=='\\') {
+				ot++;
+			}	
+			if (str[i]==' ') {
+				sp++;
+			}
 			bo[(ut8)str[i]] = 1;
 			ln++;
 		}
 		for (i = 0; i<0x100; i++) {
-			if (bo[i])
+			if (bo[i]) {
 				di++;
+			}
 		}
-		if (ln>2 && str[0] != '_') {
-			if (ln<10) return false;
-			if (ot >= (nm+up+lo))
+		if (ln > 2 && str[0] != '_') {
+			if (ln < 10) {
 				return false;
-			if (lo <3)
+			}
+			if (ot >= (nm + up + lo)) {
 				return false;
+			}
+			if (lo < 3) {
+				return false;
+			}
 		}
 	}
 
@@ -293,7 +304,9 @@ static int bin_strings(RCore *r, int mode, int va) {
 		return 0;
 	}
 
-	if (!plugin) return 0;
+	if (!plugin) {
+		return 0;
+	}		
 	if (plugin->info && plugin->name) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
 			return false;
@@ -309,8 +322,12 @@ static int bin_strings(RCore *r, int mode, int va) {
 	if (!(list = r_bin_get_strings (bin))) {
 		return false;
 	}
-	if (IS_MODE_JSON (mode)) r_cons_printf ("[");
-	if (IS_MODE_RAD (mode)) r_cons_printf ("fs strings");
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("[");
+	}
+	if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("fs strings");
+	}
 	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
 		r_flag_space_set (r->flags, "strings");
 		r_cons_break (NULL, NULL);
@@ -325,17 +342,22 @@ static int bin_strings(RCore *r, int mode, int va) {
 		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
 		addr = va ? vaddr : paddr;
 
-		if (string->length < minstr) continue;
-		if (maxstr && string->length > maxstr) continue;
+		if (string->length < minstr) {
+			continue;
+		}
+		if (maxstr && string->length > maxstr) {
+			continue;
+		}
 
 		section = r_bin_get_section_at (r_bin_cur_object (bin), paddr, 0);
 		section_name = section ? section->name : "unknown";
 		type_string = string->type == 'w' ? "wide" : "ascii";
 		if (IS_MODE_SET (mode)) {
 			char *f_name, *str;
-			if (r_cons_singleton()->breaked) break;
-			r_meta_add (r->anal, R_META_TYPE_STRING, addr,
-				addr + string->size, string->string);
+			if (r_cons_singleton()->breaked) {
+				break;
+			}
+			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr + string->size, string->string);
 			f_name = strdup (string->string);
 			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
@@ -347,8 +369,7 @@ static int bin_strings(RCore *r, int mode, int va) {
 			free (str);
 			free (f_name);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
-				string->size, string->length, string->string);
+			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr, string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
 		} else if (IS_MODE_JSON (mode)) {

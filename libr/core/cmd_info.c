@@ -11,10 +11,14 @@
 static void pair(const char *a, const char *b) {
 	char ws[16];
 	int al = strlen (a);
-	if (!b) return;
+	if (!b) {
+		return;
+	}
 	memset (ws, ' ', sizeof (ws));
 	al = PAIR_WIDTH - al;
-	if (al<0) al = 0;
+	if (al < 0) {
+		al = 0;
+	}
 	ws[al] = 0;
 	r_cons_printf ("%s%s%s\n", a, ws, b);
 }
@@ -278,7 +282,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 	#define RBININFO(n,x,y) \
 	if (is_array) { \
-		if (is_array==1) is_array++; else r_cons_printf (","); \
+		if (is_array == 1) is_array++; else r_cons_printf (","); \
 		r_cons_printf ("\"%s\":",n); \
 	}\
 	r_core_bin_info (core, x, mode, va, NULL, y);
@@ -328,82 +332,59 @@ static int cmd_info(void *data, const char *input) {
 		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
 		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;
 		case 'z':
-			if (input[1] == 'z') {
-				char *biname = NULL;
-				char *ret = NULL;
-				int fd = -1;
-				int xtr_idx = 0;
-				int rawstr = 1;
-				RCore *r2core = core;
-				const int min = core->bin->minstrlen;
-				const int max = core->bin->maxstrlen;
-
-#if 0
-				RCons _cons, *cons;
-				cons = r_cons_singleton ();
-				memcpy (&_cons, cons, sizeof (RCons));
-				cons = &_cons;
-#endif
-#if 1
-				RLine _line, *line;
-				line = r_line_singleton ();
-				memcpy (&_line, line, sizeof (RLine));
-				line = &_line;
-#endif
+			if (input[1] == 'z') { //iz
+				RBinFile *bf = r_bin_cur (core->bin);	
 				/* TODO: reimplement in C to avoid forks */
 				if (!core->file) {
 					eprintf ("Core file not open\n");
 					return 0;
 				}
-				biname = r_str_escape (core->file->desc->name);
-				RCore *tmpcore = r_core_new ();
-				if (!tmpcore) {
-					eprintf ("Cannot create core\n");
-					return 0;
-				}
-				core = tmpcore;
-				tmpcore->bin->minstrlen = min;
-				tmpcore->bin->maxstrlen = max;
-				if (!r_bin_load (tmpcore->bin, biname, UT64_MAX, UT64_MAX, xtr_idx, fd, rawstr)){
-					eprintf ("Cannot load information\n");
-					goto beach;
-				}
-				switch (input[2]) {
+				switch (input[2]) { //izz
 				case '*':
 					mode = R_CORE_BIN_RADARE;
 					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
-					break;
-				case 'q':
-					if (input[3] == 'q') {
-						ret = r_sys_cmd_strf ("rabin2 -N %d:%d -qqzz '%s'", min, max, biname);
-						input++;
-					} else {
-						mode = R_CORE_BIN_SIMPLE;
-						RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
-					}
 					break;
 				case 'j':
 					mode = R_CORE_BIN_JSON;
 					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
-				default:
-					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
+				case 'q': //izzq
+				default: 
+					{
+					RListIter *iter;
+					RBinString *string;
+					RList *l = r_bin_raw_strings (bf, 0);
+					if (input[2] == 'q') {
+						if (input[3] == 'q') { //izzqq
+							mode = R_CORE_BIN_SIMPLEST;
+							input++;
+						} else {
+							mode = R_CORE_BIN_SIMPLE;
+						}
+					} else {
+						mode = R_CORE_BIN_PRINT;
+					}
+					r_list_foreach (l, iter, string) {
+						if (mode == R_CORE_BIN_SIMPLE) {
+							r_cons_printf ("0x%"PFMT64x" %d %d %s\n", string->vaddr, 
+							  string->size, string->length, string->string);
+						} else if (mode == R_CORE_BIN_SIMPLEST) {
+							r_cons_println (string->string);
+						} else {
+							RBinSection *section = r_bin_get_section_at (bf->o, string->paddr, 0);
+							char *section_name = section ? section->name : "unknown";
+							char *type_string = string->type == 'w' ? "wide" : "ascii";
+							r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
+							  PFMT64x" ordinal=%03u sz=%u len=%u "
+							"section=%s type=%s string=%s\n",
+							string->vaddr, string->paddr, string->ordinal, string->size,
+							string->length, section_name, type_string,
+							string->string);
+						}
+					}
+					}
 					break;
 				}
-				if (ret && *ret) {
-					r_cons_strcat (ret);
-				}
-beach:
-				core = r2core;
-				r_core_free (tmpcore);
-				//how cons is singleton cons->num was referring tmpcore->num that is freed causing UAF
-				core->cons->num = core->num;
-				//memcpy (r_cons_singleton (), cons, sizeof (RCons));
-				/* do not copy rcons because it will segfault later
-				 * because of globals like consbuffersize */
-				memcpy (r_line_singleton (), line, sizeof (RLine));
-				free (ret);
-				free (biname);
 				input++;
 			} else {
 			    	if (input[1] == 'q') {
