@@ -1253,15 +1253,18 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
 	const char *cmdrep = NULL;
 	cmd = r_str_trim_head_tail (icmd);
-	if (!icmd || !strncmp (cmd, "# ", 2))
+	if (!icmd || !strncmp (cmd, "# ", 2)) {
 		goto beach;
+	}	
 	cmt = *icmd ? strchr (icmd+1, '#'): NULL;
-	if (cmt && (cmt[1]==' ' || cmt[1]=='\t'))
+	if (cmt && (cmt[1]==' ' || cmt[1]=='\t')) {
 		*cmt = 0;
+	}
 	if (*cmd != '"') {
 		if (!strchr (cmd, '\'')) { // allow | awk '{foo;bar}' // ignore ; if there's a single quote
-			if ((colon = strchr (cmd, ';')))
+			if ((colon = strchr (cmd, ';'))) {
 				*colon = 0;
+			}
 		}
 	} else {
 		colon = NULL;
@@ -1275,7 +1278,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			goto beach;
 		}
 	}
-	if (rep<1) rep = 1;
+	if (rep < 1) {
+		rep = 1;
+	}
 	// XXX if output is a pipe then we dont want to be interactive
 	if (rep > 1 && r_sandbox_enable (0)) {
 		eprintf ("Command repeat sugar disabled in sandbox mode (%s)\n", cmd);
@@ -1283,8 +1288,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	} else {
 		if (rep > INTERACTIVE_MAX_REP) {
 			if (r_config_get_i (core->config, "scr.interactive")) {
-				if (!r_cons_yesno ('n', "Are you sure to repeat this %d times? (y/N)", rep))
+				if (!r_cons_yesno ('n', "Are you sure to repeat this %d times? (y/N)", rep)) {
 					goto beach;
+				}
 			}
 		}
 	}
@@ -1335,11 +1341,14 @@ beach:
 	return ret;
 }
 
-static char *find_eoq (char *p) {
+static char *find_eoq(char *p) {
 	for (; *p; p++) {
-		if (*p=='"') break;
-		if (*p=='\\' && p[1]=='"')
+		if (*p=='"') {
+			break;
+		}
+		if (*p=='\\' && p[1]=='"') {
 			p++;
+		}
 	}
 	return p;
 }
@@ -2346,8 +2355,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	default:
 		core->rcmd->macro.counter = 0;
 		for (; *each==' '; each++);
-		//while(str[i]) && !core->interrupted) {
-		// split by keywords
 		i = 0;
 		while (str[i]) {
 			j = i;
@@ -2375,11 +2382,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (r_str_glob (flag->name, word)) {
 						r_core_seek (core, flag->offset, 1);
 						r_cons_push ();
-						//r_cons_printf ("# @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
-					//	r_cons_printf ("0x%08"PFMT64x" %s\n", core->offset, flag->name);
-						//eprintf ("# 0x%08"PFMT64x": %s\n", flag->offset, cmd);
 						r_core_cmd (core, cmd, 0);
-
 						char *buf = strdup (r_cons_get_buffer ());
 						r_cons_pop ();
 						r_cons_strcat (buf);
@@ -2448,10 +2451,14 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 
 	ocmd = cmd = malloc (strlen (cstr) + 4096);
-	if (!ocmd) return false;
+	if (!ocmd) {
+		return false;
+	}
 	r_str_cpy (cmd, cstr);
 
-	if (log) r_line_hist_add (cstr);
+	if (log) {
+		r_line_hist_add (cstr);
+	}
 
 	if (core->cmd_depth < 1) {
 		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
@@ -2461,17 +2468,20 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		core->oobi_len = 0;
 		return 0;
 	}
-	core->cmd_depth --;
+	core->cmd_depth--;
 	for (rcmd = cmd;;) {
 		ptr = strchr (rcmd, '\n');
-		if (ptr) *ptr = '\0';
+		if (ptr) {
+			*ptr = '\0';
+		}
 		ret = r_core_cmd_subst (core, rcmd);
 		if (ret == -1) {
-			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n",
-				rcmd, *rcmd);
+			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
 			break;
 		}
-		if (!ptr) break;
+		if (!ptr) {
+			break;
+		}
 		rcmd = ptr + 1;
 	}
 	core->cmd_depth ++;

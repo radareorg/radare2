@@ -449,6 +449,7 @@ R_API void r_cons_push() {
 		data->buf_size = I.buffer_sz;
 		r_stack_push (I.cons_stack, data);
 		I.buffer_len = 0;
+		memset (I.buffer, 0, I.buffer_sz);
 	}
 }
 
