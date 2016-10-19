@@ -1377,17 +1377,36 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case X86_INS_XADD: /* xchg + add */
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, NULL);
-			if (src == dst) {
-				esilprintf (op, "%s,%s,+,%s", src, dst, dst);
+			char *src = getarg (&gop, 1, 0, NULL); // x
+			char *dst = getarg (&gop, 0, 0, NULL); // y
+			char *dstAdd = getarg ( &gop, 0, 1, "+");
+			if (INSOP(0).type == X86_OP_MEM) {
+				char *dst1 = getarg (&gop, 0, 1, NULL);
+				esilprintf (op,
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,"
+					"%s,%s,^,%s,=,"
+					"%s,%s",
+					dst, src, src,	// x = x ^ y
+					src, dst, dst1,	// y = y ^ x
+					dst, src, src,  // x = x ^ y
+					src, dstAdd);
+				free (dst1);
 			} else {
-				esilprintf (op, "%s,%s,%s,=,%s,=," "%s,%s,+,%s",
-						src, dst, src, dst,
-						src, dst, dst);
+				esilprintf (op,
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,=,"
+					"%s,%s,^,%s,=,"
+					"%s,%s",
+					dst, src, src,  // x = x ^ y
+					src, dst, dst,  // y = y ^ x
+					dst, src, src,  // x = x ^ y
+					src, dstAdd);
+				//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 			}
 			free (src);
 			free (dst);
+			free (dstAdd);
 		}
 		break;
 	case X86_INS_FADD:
