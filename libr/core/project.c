@@ -12,7 +12,7 @@ static bool is_valid_project_name (const char *name) {
 	if (r_str_endswith (name, ".zip")) {
 		return false;
 	}
-	for (i=0; name[i]; i++) {
+	for (i = 0; name[i]; i++) {
 		switch (name[i]) {
 		case '\\': // for w32
 		case '.':
@@ -20,12 +20,15 @@ static bool is_valid_project_name (const char *name) {
 		case ':':
 			continue;
 		}
-		if (name[i] >= 'a' && name[i] <= 'z')
+		if (name[i] >= 'a' && name[i] <= 'z') {
 			continue;
-		if (name[i] >= 'A' && name[i] <= 'Z')
+		}
+		if (name[i] >= 'A' && name[i] <= 'Z') {
 			continue;
-		if (name[i] >= '0' && name[i] <= '9')
+		}
+		if (name[i] >= '0' && name[i] <= '9') {
 			continue;
+		}
 		return false;
 	}
 	return true;
@@ -180,6 +183,10 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	int prjType = 0;
 	SdbNs *ns;
 
+	if (!prjfile || !*prjfile) {
+		return false;
+	}
+
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	Sdb *nop_db = sdb_ns (rop_db, "nop", false);
 	Sdb *mov_db = sdb_ns (rop_db, "mov", false);
@@ -190,9 +197,6 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	char *rcPath = r_core_project_file (core, prjfile);
 	char *prjDir = r_file_dirname (rcPath);
 
-	if (!prjfile || !*prjfile) {
-		return false;
-	}
 	if (r_str_endswith (prjfile, "/rc")) {
 		// XXX
 		eprintf ("ENDS WITH\n");
@@ -206,12 +210,16 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 		if (*prjfile == '/') {
 			db = r_str_newf ("%s.d", prjfile);
 			if (!db) {
+				free (prjDir);
+				free (rcPath);
 				return false;
 			}
 			path = strdup (db);
 		} else {
 			db = r_str_newf ("%s/%s.d", prjDir, prjfile);
 			if (!db) {
+				free (prjDir);
+				free (rcPath);
 				return false;
 			}
 			path = r_file_abspath (db);
@@ -219,6 +227,8 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	}
 	if (!path) {
 		free (db);
+		free (prjDir);
+		free (rcPath);
 		return false;
 	}
 	if (rop_db) {
@@ -237,6 +247,8 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	if (!rop_db) {
 		free (db);
 		free (path);
+		free (prjDir);
+		free (rcPath);
 		return false;
 	}
 	sdb_ns_set (core->sdb, "rop", rop_db);
@@ -260,6 +272,8 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	free (path);
 	free (path_ns);
 	free (db);
+	free (prjDir);
+	free (rcPath);
 	return true;
 }
 
@@ -587,6 +601,7 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 			eprintf ("Warning: Cannot copy '%s' into '%s'\n", binFile, prjBinFile);
 		}
 		free (prjBinFile);
+		free (prjBinDir);
 	}
 	if (r_config_get_i (core->config, "prj.git")) {
 		char *cwd = r_sys_getdir ();

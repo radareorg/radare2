@@ -85,6 +85,7 @@ static ut8 *tcpme (const char *pathname, int *code, int *len) {
 		RSocket *sl = r_socket_new (false);
 		if (!r_socket_listen (sl, pathname + 1, NULL)) {
 			eprintf ("Cannot listen\n");
+			r_socket_free (sl);
 			return NULL;
 		}
 		RSocket *sc = r_socket_accept (sl);
@@ -114,12 +115,14 @@ static ut8 *tcpme (const char *pathname, int *code, int *len) {
 					*code = 200;
 				}
 				r_socket_free (s);
+				free (host);
 				return res;
 			}
 			r_socket_free (s);
 		} else {
 			eprintf ("Missing port.\n");
 		}
+		free (host);
 	}
 	return NULL;
 }
@@ -131,7 +134,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		out = tcpme (pathname, &code, &rlen);
 		if (out && rlen > 0) {
 			RIOMalloc *mal = R_NEW0 (RIOMalloc);
-			if (!mal) return NULL;
+			if (!mal) {
+				return NULL;
+			}
 			mal->size = rlen;
 			mal->buf = malloc (mal->size+1);
 			if (!mal->buf) {
@@ -142,6 +147,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 				mal->fd = getmalfd (mal);
 				memcpy (mal->buf, out, mal->size);
 				free (out);
+				rw = 2;
 				return r_io_desc_new (&r_io_plugin_tcp,
 					mal->fd, pathname, rw, mode, mal);
 			}

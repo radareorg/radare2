@@ -397,7 +397,7 @@ static int cmd_write(void *data, const char *input) {
 	int wseek, i, size, len = strlen (input);
 	RCore *core = (RCore *)data;
 	char *tmp, *str, *ostr;
-	const char *arg, *filename;
+	const char *arg, *filename = "";
 	char _fn[32];
 	ut64 off;
 	ut8 *buf;
@@ -993,7 +993,9 @@ static int cmd_write(void *data, const char *input) {
 				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 				snprintf (_fn, sizeof(_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
 				filename = _fn;
-			} else filename = str+1;
+			} else {
+				filename = str + 1;
+			}
 			tmp = strchr (str+1, ' ');
 			if (tmp) {
 				sz = (st64) r_num_math (core->num, tmp+1);
@@ -1006,7 +1008,9 @@ static int cmd_write(void *data, const char *input) {
 			} else {
 				if (!r_file_dump (filename, core->block, core->blocksize, append)) {
 					sz = 0;
-				} else sz = core->blocksize;
+				} else {
+					sz = core->blocksize;
+				}
 			}
 			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
 				sz, core->offset, filename);

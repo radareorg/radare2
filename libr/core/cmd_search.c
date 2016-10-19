@@ -1601,6 +1601,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 					r_cons_printf ("0x%08"PFMT64x" %d %s\n", at, ret, opstr);
 					break;
 				}
+				R_FREE (opstr);
 				if (*input && searchflags) {
 					char flag[64];
 					snprintf (flag, sizeof (flag), "%s%d_%d",
