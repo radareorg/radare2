@@ -77,6 +77,9 @@ static inline int getmalfd (RIOMalloc *mal) {
 static ut8 *tcpme (const char *pathname, int *code, int *len) {
 	pathname += 6;
 	*code = 404;
+#if __UNIX__
+	signal (SIGINT, 0);
+#endif
 	if (*pathname == ':') {
 		/* listen and wait for connection */
 		RSocket *sl = r_socket_new (false);
