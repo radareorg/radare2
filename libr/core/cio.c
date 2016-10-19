@@ -368,15 +368,17 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	int ret;
-	if (!core->io || !core->file || size<1)
+	if (!core->io || !core->file || size < 1) {
 		return false;
+	}
 	ret = r_io_use_desc (core->io, core->file->desc);
 	if (ret != -1) {
 		ret = r_io_write_at (core->io, addr, buf, size);
-		if (addr >= core->offset && addr <= core->offset+core->blocksize)
+		if (addr >= core->offset && addr <= core->offset+core->blocksize) {
 			r_core_block_read (core);
+		}
 	}
-	return (ret==-1)? false: true;
+	return (ret == -1)? false: true;
 }
 
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {

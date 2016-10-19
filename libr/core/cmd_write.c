@@ -434,8 +434,9 @@ static int cmd_write(void *data, const char *input) {
 		NULL
 	};
 
-	if (!input)
+	if (!input) {
 		return 0;
+	}
 
 	wseek = r_config_get_i (core->config, "cfg.wseek");
 	str = ostr = strdup ((input&&*input)?input+1:"");

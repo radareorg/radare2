@@ -2379,15 +2379,17 @@ R_API void r_bin_force_plugin(RBin *bin, const char *name) {
 
 R_API int r_bin_read_at(RBin *bin, ut64 addr, ut8 *buf, int size) {
 	RIOBind *iob;
-	if (!bin || !(iob = &(bin->iob)))
+	if (!bin || !(iob = &(bin->iob))) {
 		return false;
+	}
 	return iob->read_at (iob->io, addr, buf, size);
 }
 
 R_API int r_bin_write_at(RBin *bin, ut64 addr, const ut8 *buf, int size) {
 	RIOBind *iob;
-	if (!bin || !(iob = &(bin->iob)))
+	if (!bin || !(iob = &(bin->iob))) {
 		return false;
+	}
 	return iob->write_at (iob->io, addr, buf, size);
 }
 

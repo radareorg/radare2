@@ -334,6 +334,10 @@ static int cmd_info(void *data, const char *input) {
 		case 'z':
 			if (input[1] == 'z') { //iz
 				RBinFile *bf = r_bin_cur (core->bin);	
+				if (strstr (bf->file, "malloc://")) {
+					//sync bf->buf to search string on it
+					r_io_read_at (core->io, 0, bf->buf->buf, bf->size);
+				}
 				/* TODO: reimplement in C to avoid forks */
 				if (!core->file) {
 					eprintf ("Core file not open\n");
