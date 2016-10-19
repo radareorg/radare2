@@ -82,7 +82,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	int res, sz = 0, count = 0;
 	ut64 opc = addr;
 
-	memset (&op, 0, sizeof(op));
+	memset (&op, 0, sizeof (op));
 	/*
 	 * 1) find all reflines
 	 * 2) sort "from"s and "to"s in a list
@@ -95,17 +95,23 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	 */
 
 	list = r_list_new ();
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 	list->free = free;
 	sten = r_list_new ();
-	if (!sten) goto list_err;
+	if (!sten) {
+		goto list_err;
+	}
 	sten->free = (RListFree)free;
 
 	/* analyze code block */
 	while (ptr < end) {
 		if (nlines != -1) {
+			if (nlines == 0) {
+				break;
+			}
 			nlines--;
-			if (nlines == 0) break;
 		}
 		{
 			const RAnalMetaItem *mi = r_meta_find (anal, addr, R_META_TYPE_ANY, 0);
@@ -131,7 +137,9 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		/* store data */
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_CALL:
-			if (!linescall) break;
+			if (!linescall) {
+				break;
+			}
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_JMP:
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) ||
@@ -169,18 +177,24 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	r_anal_op_fini (&op);
 
 	free_levels = R_NEWS0 (ut8, r_list_length (list) + 1);
-	if (!free_levels) goto sten_err;
+	if (!free_levels) {
+		goto sten_err;
+	}
 	int min = 0;
 
 	r_list_foreach (sten, iter, el) {
 		if ((el->is_from && el->r->level == -1) || (!el->is_from && el->r->level == -1)) {
 			el->r->level = min + 1;
 			free_levels[min] = 1;
-			if (min < 0) min = 0;
+			if (min < 0) {
+				min = 0;
+			}
 			while (free_levels[++min] == 1);
 		} else {
 			free_levels[el->r->level - 1] = 0;
-			if (min > el->r->level - 1) min = el->r->level - 1;
+			if (min > el->r->level - 1) {
+				min = el->r->level - 1;
+			}
 		}
 	}
 
@@ -194,7 +208,6 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	 * calculated. Those data will be quickly available because the
 	 * intervals will be sorted and the addresses to consider are always
 	 * increasing. */
-
 	free (free_levels);
 	r_list_free (sten);
 	return list;
@@ -220,8 +233,12 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 
 	/* analyze code block */
 	r_list_foreach (fcn->bbs, bb_iter, bb) {
-		if (!bb || bb->size == 0) continue;
-		if (nlines != -1 && --nlines == 0) break;
+		if (!bb || bb->size == 0) {
+			continue;
+		}
+		if (nlines != -1 && --nlines == 0) {
+			break;
+		}
 		len = bb->size;
 
 		/* store data */
@@ -229,8 +246,10 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 		control_type &= R_ANAL_BB_TYPE_SWITCH | R_ANAL_BB_TYPE_JMP | R_ANAL_BB_TYPE_COND | R_ANAL_BB_TYPE_CALL;
 
 		// handle call
-		if ( (control_type & R_ANAL_BB_TYPE_CALL) == R_ANAL_BB_TYPE_CALL && !linescall) {
-			continue;
+		if (!linescall) {
+			if ((control_type & R_ANAL_BB_TYPE_CALL) == R_ANAL_BB_TYPE_CALL) {
+				continue;
+			}
 		}
 
 		// Handles conditonal + unconditional jump
@@ -249,8 +268,9 @@ R_API RList*r_anal_reflines_fcn_get(RAnal *anal, RAnalFunction *fcn, int nlines,
 			}
 		}
 		if ( (control_type & R_ANAL_BB_TYPE_JMP) == R_ANAL_BB_TYPE_JMP) {
-			if (!linesout || bb->jump == 0LL || bb->jump == bb->addr + len)
+			if (!linesout || bb->jump == 0LL || bb->jump == bb->addr + len) {
 				continue;
+			}
 			item = R_NEW0 (RAnalRefline);
 			if (!item) {
 				r_list_free (list);
