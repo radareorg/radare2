@@ -1175,8 +1175,9 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_sys_cmd_str_full (shell_cmd+1, str, &out, &olen, NULL);
 		free (str);
 		r_cons_memcat (out, olen);
-		if (_ptr)
+		if (_ptr) {
 			r_cons_grep (_ptr);
+		}
 		free (out);
 		ret = 0;
 	}
