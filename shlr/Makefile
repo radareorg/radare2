@@ -260,23 +260,23 @@ ifneq (${EXT_AR},a)
 endif
 endif
 
-www-sync-m:
+www-sync-m sync-www-m:
 	cp -rf ../../radare2-webui/dist/m www/m.tmp
 	rm -rf www/m
 	mv www/m.tmp www/m
 	git add www/m
 
-www-sync-p:
+www-sync-p sync-www-p:
 	cp -rf ../../radare2-webui/dist/p www/p.tmp
 	rm -rf www/p
 	mv www/p.tmp www/p
 	git add www/p
 
-www-sync-t:
+www-sync-t sync-www-t:
 	cp -rf ../../radare2-webui/dist/t www/t.tmp
 	rm -rf www/t
 	mv www/t.tmp www/t
 	git add www/p
 
-www-sync: www-sync-m www-sync-p www-sync-t
+sync-www www-sync: www-sync-m www-sync-p www-sync-t
 	@echo webui sync done

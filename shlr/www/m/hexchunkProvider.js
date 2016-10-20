@@ -2,6 +2,7 @@
 importScripts('/m/r2.js');
 
 var howManyBytes;
+var nbCols;
 var configurationDone = false;
 
 function hexPairToASCII(pair) {
@@ -13,7 +14,7 @@ function hexPairToASCII(pair) {
 	return '.';
 };
 
-function getChunk(howManyBytes, addr) {
+function getChunk(howManyBytes, addr, nbCols) {
 	if (addr < 0) {
 		return {
 			offset: 0,
@@ -42,7 +43,7 @@ function getChunk(howManyBytes, addr) {
 			var pair = d[myIt * 2] + d[(myIt * 2) + 1];
 			hex.push(pair);
 			ascii += hexPairToASCII(pair);
-			if (myIt % 16 === 15) {
+			if (myIt % nbCols === nbCols-1) {
 				raw.hex.push(hex);
 				raw.ascii.push(ascii);
 
@@ -63,14 +64,15 @@ function getChunk(howManyBytes, addr) {
 }
 
 self.onmessage = function(e) {
-	if (!configurationDone) {
+	if (!configurationDone || e.data.reset) {
 		// Providing block size (how many byte retrieved)
-		howManyBytes = e.data;
+		howManyBytes = e.data.howManyBytes;
+		nbCols = e.data.nbCols;
 		configurationDone = true;
 	} else {
 		// Sending the data from r2 (arg is start offset)
 		// TODO: handle "substract" if partial required (first)
-		var chunk = getChunk(howManyBytes, e.data.offset);
+		var chunk = getChunk(howManyBytes, e.data.offset, nbCols);
 		chunk.dir = e.data.dir;
 
 		self.postMessage(chunk);
