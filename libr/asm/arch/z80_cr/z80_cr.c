@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2014-2015 - condret */
+/* radare - LGPL - Copyright 2014-2015 - condret 
+				   Copyright 2016-	   - unlogic
+*/
 
 #include <r_asm.h>
 #include <r_types.h>
@@ -30,7 +32,7 @@ static ut8 z80_fddd_branch_index_res (ut8 hex)
 		case 0x34:
 		case 0x35:
 		case 0x36:
-			return hex-0x27;
+			return hex-0x26;
 		case 0x39:
 			return 0x11;
 		case 0x44:
@@ -223,6 +225,19 @@ static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 	if (!ret)
 		return ret;
 	z_op = z80_op;
+
+#define DEBUG 0
+
+#if DEBUG
+	printf("type %d\n", z_op[buf[0]].type);
+	printf("types: Z80_OP8 %d\n", Z80_OP8);
+	printf("Z80_OP8^Z80_ARG8 %d\n", Z80_OP8^Z80_ARG8);
+	printf("Z80_OP8^Z80_ARG16 %d\n", Z80_OP8^Z80_ARG16);
+	printf("Z80_OP16 %d\n" ,Z80_OP16);
+	printf("Z80_OP_UNK^Z80_ENC1 %d\n", Z80_OP_UNK^Z80_ENC1);
+	printf("Z80_OP_UNK^Z80_ENC0 %d\n", Z80_OP_UNK^Z80_ENC0);
+#endif
+
 	switch (z_op[buf[0]].type) {
 		case Z80_OP8:
 			sprintf (op->buf_asm, "%s", z_op[buf[0]].name);
@@ -248,6 +263,9 @@ static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 		case Z80_OP_UNK^Z80_ENC0:
 			z_op = (z80_opcode *)z_op[buf[0]].op_moar;
 			res = z80_fddd_branch_index_res (buf[1]);
+#if DEBUG
+			printf ("buf: %d | type %d\n", buf[1], z_op[res].type);
+#endif
 			if (z_op[res].type == Z80_OP16)
 				sprintf (op->buf_asm, "%s", z_op[res].name);
 			if (z_op[res].type == (Z80_OP16^Z80_ARG16))
@@ -258,6 +276,8 @@ static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 				cb_tab = (char **) z_op[res].op_moar;
 				sprintf (op->buf_asm, cb_tab[z80_op_24_branch_index_res (buf[3])], buf[2]);
 			}
+			if (z_op[res].type == (Z80_OP16^Z80_ARG8^Z80_ARG16))
+				sprintf (op->buf_asm, z_op[res].name, buf[2], buf[3]);
 	}
 	if (!strcmp (op->buf_asm, "invalid"))
 		ret = 0;
