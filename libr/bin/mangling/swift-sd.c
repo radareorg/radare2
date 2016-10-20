@@ -332,7 +332,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 					strcat (out, attr2);
 				}
 			} while (0);
-			if (q && *q == '_') {
+			if (*q == '_') {
 				strcat (out, " -> ()");
 			}
 		} else {

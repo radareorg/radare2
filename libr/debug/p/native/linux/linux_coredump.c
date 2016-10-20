@@ -588,7 +588,11 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 							pmentry->anonymous, pmentry->kernel_mapping,
 							pmentry->file_backed, pmentry->dumpeable);
 		if (pmentry->file_backed) {
-			mapping_file.size += SIZE_NT_FILE_DESCSZ + strlen (pmentry->name) + 1;
+			const const char *name = pmentry->name;
+			if (!name) {
+				name = "";
+			}
+			mapping_file.size += SIZE_NT_FILE_DESCSZ + strlen (name) + 1;
 			mapping_file.count++;
 		}
 		ADD_MAP_NODE (pmentry);

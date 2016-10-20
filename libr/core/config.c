@@ -1325,10 +1325,15 @@ static int cb_binprefix(void *user, void *data) {
 				//eprintf ("core->bin->file is null\n");
 				return false;
 			}
-			char *name = (char *)r_file_basename (core->bin->file);
-			r_name_filter (name, strlen (name));
-			r_str_filter (name, strlen (name));
-			core->bin->prefix = strdup (name);
+			if (core->bin->file) {
+				char *name = (char *)r_file_basename (core->bin->file);
+				if (name) {
+					r_name_filter (name, strlen (name));
+					r_str_filter (name, strlen (name));
+					core->bin->prefix = strdup (name);
+					free (name);
+				}
+			}
 		} else {
 			core->bin->prefix = node->value;
 		}

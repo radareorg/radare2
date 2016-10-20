@@ -345,15 +345,15 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 						off = r_num_math (core->num, eq);
 					}
 					r_str_chop (name);
+					if (fcn) {
+						if (*name=='-') {
+							r_anal_fcn_label_del (core->anal, fcn, name + 1, off);
+						} else {
+							r_anal_fcn_label_set (core->anal, fcn, name, off);
+						}
+					} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					free (name);
 				}
-				if (fcn) {
-					if (*name=='-') {
-						r_anal_fcn_label_del (core->anal, fcn, name+1, off);
-					} else {
-						r_anal_fcn_label_set (core->anal, fcn, name, off);
-					}
-				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
-				free (name);
 			}
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);

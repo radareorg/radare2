@@ -2295,18 +2295,19 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	RBinElfSection *ret = NULL;
 	char unknown_s[20], invalid_s[20];
 	int i, nidx, unknown_c=0, invalid_c=0;
-
+	if (!bin) {
+		return NULL;
+	}
 	if (bin->g_sections) {
 		return bin->g_sections;
 	}
-	if (!bin || !bin->shdr) {
+	if (!bin->shdr) {
 		//we don't give up search in phdr section
 		return get_sections_from_phdr (bin);
 	}
-
-	if (!(ret = calloc ((bin->ehdr.e_shnum + 1), sizeof (RBinElfSection))))
+	if (!(ret = calloc ((bin->ehdr.e_shnum + 1), sizeof (RBinElfSection)))) {
 		return NULL;
-
+	}
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		ret[i].offset = bin->shdr[i].sh_offset;
 		ret[i].size = bin->shdr[i].sh_size;
@@ -2531,9 +2532,10 @@ beach:
 	return NULL;
 }
 
-
-
 static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_symbols)(ELFOBJ *bin) {
+	if (!bin) {
+		return NULL;
+	}
 	if (bin->phdr_symbols) {
 		return bin->phdr_symbols;
 	}
@@ -2541,15 +2543,16 @@ static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_symbols)(ELFOBJ *bin) {
 	return bin->phdr_symbols;
 }
 
-
 static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_imports)(ELFOBJ *bin) {
+	if (!bin) {
+		return NULL;
+	}
 	if (bin->phdr_imports) {
 		return bin->phdr_imports;
 	}
 	bin->phdr_imports = get_symbols_from_phdr (bin, R_BIN_ELF_IMPORTS);
 	return bin->phdr_imports;
 }
-
 
 static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sym) {
 	int count = 0;
@@ -2614,7 +2617,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	RBinElfSymbol  *ret = NULL;
 	Elf_(Shdr) *strtab_section = NULL;
 	Elf_(Sym) *sym = NULL;
-	ut8 s[sizeof (Elf_(Sym))] = {0};
+	ut8 s[sizeof (Elf_(Sym))] = { 0 };
 	char *strtab = NULL;
 
 	if (!bin || !bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {

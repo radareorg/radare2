@@ -1066,15 +1066,13 @@ R_API void r_io_set_raw(RIO *io, int raw) {
 
 // check if reading at offset or writting to offset is reasonable
 R_API int r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm) {
-	bool io_sectonly = io->sectonly;
-	bool io_va = io->va;
-//io_va=true;
-//	io_sectonly = true;
 	if (!io) {
 		eprintf ("r_io_is_valid_offset: io is NULL\n");
 		r_sys_backtrace ();
 		return R_FAIL;
 	}
+	bool io_sectonly = io->sectonly;
+	bool io_va = io->va;
 	if (!io->files) {
 		eprintf ("r_io_is_valid_offset: io->files is NULL\n");
 		r_sys_backtrace ();

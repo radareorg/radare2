@@ -775,7 +775,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					sz_n = step == 2 ? sizeof (ut16) : sizeof (ut32);
 				}
 				sz_n = R_MIN (left, sz_n);
-				r_mem_swaporcopy ((ut8*)&n, buf + j, sz_n, p->big_endian);
+				r_mem_swaporcopy ((ut8*)&n, buf + j, sz_n, p && p->big_endian);
 				r_print_cursor (p, j, 1);
 				// stub for colors
 				if (p && p->colorfor) {
@@ -784,26 +784,28 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				} else {
 					a = b = "";
 				}
-				if (base == 64)
+				if (base == 64) {
 					printfmt ("%s0x%016"PFMT64x"%s  ", a, (ut64)n, b);
-				else if (step == 2)
+				} else if (step == 2) {
 					printfmt ("%s0x%04x%s ", a, (ut16)n, b);
-				else printfmt ("%s0x%08x%s ", a, (ut32)n, b);
+				} else {
+					printfmt ("%s0x%08x%s ", a, (ut32)n, b);
+				}
 				r_print_cursor (p, j, 0);
 				j += step - 1;
 			} else if (base == -8) {
-				long long w = r_read_ble64 (buf + j, p->big_endian);
+				long long w = r_read_ble64 (buf + j, p && p->big_endian);
 				printfmt ("%23"PFMT64d" ", w);
 				j += 7;
 			} else if (base == -1) {
 				st8 w = r_read_ble8 (buf + j);
 				printfmt ("%4d ", w);
 			} else if (base == -10) {
-				st16 w = r_read_ble16 (buf + j, p->big_endian);
+				st16 w = r_read_ble16 (buf + j, p && p->big_endian);
 				printfmt ("%7d ", w);
 				j += 1;
 			} else if (base == 10) {
-				int w = r_read_ble32 (buf + j, p->big_endian);
+				int w = r_read_ble32 (buf + j, p && p->big_endian);
 				printfmt ("%13d ", w);
 				j += 3;
 			} else {

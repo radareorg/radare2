@@ -1642,7 +1642,8 @@ ST_FUNC void unary(void)
             mk_pointer(&type);
             type.t |= VT_ARRAY;
             type.ref->c = len;
-            memcpy(ptr, funcname, len);
+            // XXX ptr is NULL HERE WTF
+            // memcpy(ptr, funcname, len);
             next();
         }
         break;

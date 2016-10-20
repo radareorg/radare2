@@ -109,7 +109,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		// lower it down back
 		//ofile = r_core_file_open (core, path, R_IO_READ, addr);
 		r_core_file_set_by_file (core, ofile);
-		ofile->map->from = ofrom;
+		if (ofile->map) {
+			ofile->map->from = ofrom;
+		}
 	} else {
 		eprintf ("Cannot reopen\n");
 	}

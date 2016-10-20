@@ -465,9 +465,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				kw->kwidx, kw->count, kw->keyword_length, base_addr + addr);
 		}
 	}
-	if (first_hit)
+	if (first_hit) {
 		first_hit = false;
-	if (searchflags) {
+	}
+	if (searchflags && kw) {
 		const char *flag = sdb_fmt (0, "%s%d_%d", searchprefix, kw->kwidx, kw->count);
 		r_flag_set (core->flags, flag, base_addr + addr, kw->keyword_length);
 	}
@@ -734,7 +735,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				if (core->io->va) {
 					/* TODO: section size? */
 				} else {
-					*to = r_io_desc_size (core->io, core->file->desc);
+					if (core->file) {
+						*to = r_io_desc_size (core->io, core->file->desc);
+					} else {
+						*to = r_io_desc_size (core->io, NULL);
+					}
 				}
 			}
 		}

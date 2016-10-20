@@ -394,7 +394,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
-	int wseek, i, size, len = strlen (input);
+	int wseek, i, size, len;
 	RCore *core = (RCore *)data;
 	char *tmp, *str, *ostr;
 	const char *arg, *filename = "";
@@ -438,18 +438,19 @@ static int cmd_write(void *data, const char *input) {
 		return 0;
 	}
 
+	len = strlen (input);
 	wseek = r_config_get_i (core->config, "cfg.wseek");
-	str = ostr = strdup ((input&&*input)?input+1:"");
+	str = ostr = strdup (*input? input + 1: "");
 	_fn[0] = 0;
 
 	switch (*input) {
 	case 'B':
 		switch (input[1]) {
 		case ' ':
-			cmd_write_bits (core, 1, r_num_math (core->num, input+2));
+			cmd_write_bits (core, 1, r_num_math (core->num, input + 2));
 			break;
 		case '-':
-			cmd_write_bits (core, 0, r_num_math (core->num, input+2));
+			cmd_write_bits (core, 0, r_num_math (core->num, input + 2));
 			break;
 		default:
 			eprintf ("Usage: wB 0x2000  # or wB-0x2000\n");

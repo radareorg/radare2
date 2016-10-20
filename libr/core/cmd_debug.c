@@ -1280,6 +1280,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	} else {
 		use_color = NULL;
 	}
+	if (!str) {
+		str = "";
+	}
 	switch (str[0]) {
 	case 'C': // "drC"
 		if (core->dbg->reg->reg_profile_cmt) {

@@ -22,8 +22,12 @@ R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc){
 		old = io->desc;
 		r_io_use_desc (io, desc);
 	}
-	if (desc) sz = r_io_size(io);
-	if (old) r_io_use_desc (io, old);
+	if (desc) {
+		sz = r_io_size (io);
+	}
+	if (old) {
+		r_io_use_desc (io, old);
+	}
 	return sz;
 }
 

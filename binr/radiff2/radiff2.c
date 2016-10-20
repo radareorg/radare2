@@ -269,7 +269,7 @@ static void handle_sha256 (const ut8 *block, int len) {
 static ut8 *slurp(RCore **c, const char *file, int *sz) {
 	RIODesc *d;
 	RIO *io;
-	if (c && strstr (file, "://")) {
+	if (c && file && strstr (file, "://")) {
 		ut8 *data = NULL;
 		ut64 size;
 		if (!*c) {

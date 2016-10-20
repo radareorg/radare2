@@ -5,7 +5,7 @@
 static ut64 tmp_entry = UT64_MAX;
 
 static bool rjmp(const ut8* b) {
-	return ((b[1] & 0xf0) == 0xc0);
+	return b && ((b[1] & 0xf0) == 0xc0);
 }
 
 static ut64 rjmp_dest(ut64 addr, const ut8* b) {
@@ -90,7 +90,7 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 }
 
 static void addptr(RList *ret, const char *name, ut64 addr, const ut8 *b, int len) {
-	if (rjmp (b)) {
+	if (b && rjmp (b)) {
 		addsym (ret, sdb_fmt (0, "vector.%s", name), addr);
 		ut64 ptr_addr = rjmp_dest (addr, b + addr);
 		addsym (ret, sdb_fmt (0, "syscall.%s", name), ptr_addr);

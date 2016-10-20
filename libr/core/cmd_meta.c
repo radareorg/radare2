@@ -150,18 +150,20 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		} else {
 			goto error;
 		}
-
+		if (!file_line) {
+			return -1;
+		}
 		colon = strchr (file_line, ':');
-		if (!colon)
+		if (!colon) {
 			goto error;
+		}
 		*colon = '|';
-
-		while (*p != ' ')
+		while (*p != ' ') {
 			p++;
-
-		while (*p == ' ')
+		}
+		while (*p == ' ') {
 			p++;
-
+		}
 		if (*p != '\0') {
 			ret = sscanf (p, "0x%"PFMT64x, &offset);
 
@@ -175,16 +177,11 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 
 			goto error;
 		}
-
-		if (!file_line)
-			return -1;
-
 		if (remove) {
 			remove_meta_fileline (core, file_line);
 		} else {
 			print_meta_fileline (core, file_line);
 		}
-
 		free (file_line);
 		return 0;
 	}

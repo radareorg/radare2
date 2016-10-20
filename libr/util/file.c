@@ -104,7 +104,10 @@ R_API bool r_file_fexists(const char *fmt, ...) {
 
 R_API bool r_file_exists(const char *str) {
 	struct stat buf = {0};
-	if (str && *str && stat (str, &buf) == -1) {
+	if (!str || !*str) {
+		return false;
+	}
+	if (stat (str, &buf) == -1) {
 		return false;
 	}
 	return (S_ISREG (buf.st_mode))? true: false;

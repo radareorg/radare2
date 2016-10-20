@@ -115,7 +115,9 @@ static char *is_string_at (RCore *core, ut64 addr, int *olen) {
 R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	ut64 types = 0;
 	RRegSet *rs = NULL;
-	if (!core) return 0;
+	if (!core) {
+		return 0;
+	}
 	if (core->dbg && core->dbg->reg) {
 		rs = r_reg_regset_get (core->dbg->reg, R_REG_TYPE_GPR);
 	}
@@ -136,7 +138,7 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	if (r_anal_get_fcn_in (core->anal, addr, 0))
 		types |= R_ANAL_ADDR_TYPE_FUNC;
 	// check registers
-	if (core->io && core->io->debug) {
+	if (core->io && core->io->debug && core->dbg) {
 		RDebugMap *map;
 		RListIter *iter;
 		// use 'dm'

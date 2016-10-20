@@ -2464,13 +2464,15 @@ R_API void r_agraph_reset (RAGraph *g) {
 }
 
 R_API void r_agraph_free(RAGraph *g) {
-	r_graph_free (g->graph);
-	if (g->edges) r_list_free (g->edges);
-	agraph_free_nodes (g);
-	r_agraph_set_title (g, NULL);
-	sdb_free (g->db);
-	r_cons_canvas_free (g->can);
-	free (g);
+	if (g) {
+		r_graph_free (g->graph);
+		r_list_free (g->edges);
+		agraph_free_nodes (g);
+		r_agraph_set_title (g, NULL);
+		sdb_free (g->db);
+		r_cons_canvas_free (g->can);
+		free (g);
+	}
 }
 
 R_API RAGraph *r_agraph_new(RConsCanvas *can) {

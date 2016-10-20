@@ -984,7 +984,9 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	}
 	*file++ = 0;
 	port = r_str_chop (port);
-	while (*file == ' ') file++;
+	while (*file == ' ') {
+		file++;
+	}
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return;
@@ -1093,22 +1095,20 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 		eprintf ("Connected to %s at port %s\n", host, port);
 		/* send */
-		if (file && *file) {
-			buf[0] = RTR_RAP_OPEN;
-			buf[1] = 0;
-			buf[2] = (ut8)(strlen (file) + 1);
-			memcpy (buf + 3, file, buf[2]);
-			r_socket_write (fd, buf, 3 + buf[2]);
-			/* read */
-			eprintf ("waiting... ");
-			fflush (stdout);
-			r_socket_read (fd, (ut8*)buf, 5);
-			i = r_read_at_be32 (buf, 1);
-			if (buf[0] != (char)(RTR_RAP_OPEN | RTR_RAP_REPLY) || i <= 0) {
-				eprintf ("Error: Wrong reply\n");
-				r_socket_free (fd);
-				return;
-			}
+		buf[0] = RTR_RAP_OPEN;
+		buf[1] = 0;
+		buf[2] = (ut8)(strlen (file) + 1);
+		memcpy (buf + 3, file, buf[2]);
+		r_socket_write (fd, buf, 3 + buf[2]);
+		/* read */
+		eprintf ("waiting... ");
+		fflush (stdout);
+		r_socket_read (fd, (ut8*)buf, 5);
+		i = r_read_at_be32 (buf, 1);
+		if (buf[0] != (char)(RTR_RAP_OPEN | RTR_RAP_REPLY) || i <= 0) {
+			eprintf ("Error: Wrong reply\n");
+			r_socket_free (fd);
+			return;
 		}
 		eprintf ("ok\n");
 		break;

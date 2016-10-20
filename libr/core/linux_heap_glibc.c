@@ -1,4 +1,5 @@
 /* radare2 - LGPL - Copyright 2016 - n4x0r, soez, pancake */
+
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
 #define HEAP32 1
@@ -390,7 +391,6 @@ static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, GH(RHea
 
 static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, GH(RHeap_MallocState) *main_arena, GHT brk_start) {
 	RAGraph *g = r_agraph_new (r_cons_canvas_new (1, 1));
-	g->can->color = r_config_get_i (core->config, "scr.color");
 	GHT next = GHT_MAX;
 	char title[256], chunk[256];
 	RANode *bin_node = NULL, *prev_node = NULL, *next_node = NULL;	
@@ -398,9 +398,10 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, GH(RHeap
 
 	if (!cnk || !g) {
 		free (cnk);
-		free (g);
+		r_agraph_free (g);
 		return -1;
 	}
+	g->can->color = r_config_get_i (core->config, "scr.color");
 
 	(void)r_core_read_at (core, bin, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	snprintf (title, sizeof (title) - 1, "bin @ 0x%"PFMT64x"\n", (ut64)bin);
@@ -632,18 +633,17 @@ static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_stat
 	GHT top_size = GHT_MAX;
 	w = r_cons_get_size (&h);
 	RConsCanvas *can = r_cons_canvas_new (w, h);
-	can->color = r_config_get_i (core->config, "scr.color");
 	RAGraph *g = r_agraph_new (can);
 	RANode *top = {0}, *chunk_node = {0}, *prev_node = {0};
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk)),*prev_c = R_NEW0 (GH(RHeapChunk));
-	
 	if (!cnk || !prev_c || !g || !can) {
 		free (cnk);
 		free (prev_c);
-		free (can);
-		free (g);
+		r_cons_canvas_free (can);
+		r_agraph_free (g);
 		return;
 	}
+	can->color = r_config_get_i (core->config, "scr.color");
 
 	GHT next_chunk_ref, prev_chunk_ref, size_tmp;
 	char *top_title, *top_data, *node_title, *node_data;

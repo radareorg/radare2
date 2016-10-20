@@ -283,8 +283,10 @@ ptid_t qnxr_run (libqnxr_t *g, const char *file, char **args, char **env) {
 	g->tran.pkt.load.envc = 0;
 	g->tran.pkt.load.argc = 0;
 
-	strncpy (p, file, DS_DATA_MAX_SIZE);
-	p += strlen (p);
+	if (file) {
+		strncpy (p, file, DS_DATA_MAX_SIZE);
+		p += strlen (p);
+	}
 	*p++ = '\0';
 
 	*p++ = '\0'; // stdin
@@ -516,13 +518,13 @@ int qnxr_stop (libqnxr_t *g) {
 }
 
 ptid_t qnxr_wait (libqnxr_t *g, pid_t pid) {
-	ptid_t returned_ptid = g->inferior_ptid;
-
-	if (!g) return null_ptid;
-
-	if (g->inferior_ptid.pid != pid)
+	if (!g || pid < 0) {
 		return null_ptid;
-
+	}
+	ptid_t returned_ptid = g->inferior_ptid;
+	if (g->inferior_ptid.pid != pid) {
+		return null_ptid;
+	}
 	if (g->recv.pkt.hdr.cmd != DShMsg_notify) {
 		int rlen;
 		char waiting_for_notify = 1;
@@ -720,10 +722,11 @@ int nto_send_arg (libqnxr_t *g, const char *arg) {
 int nto_send (libqnxr_t *g, ut32 len, st32 report_errors) {
 	int rlen;
 	ut8 tries = 0;
+
+	if (!g || g->connected == 0) {
+		return -1;
+	}
 	g->send_len = len;
-
-	if (!g || g->connected == 0) return -1;
-
 	for (tries = 0;; tries++) {
 		if (tries >= MAX_TRAN_TRIES) {
 			eprintf ("%s: Remote exhausted %d retries.\n", __func__, tries);
