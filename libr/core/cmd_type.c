@@ -127,17 +127,21 @@ static int stdprintifunion (void *p, const char *k, const char *v) {
 		r_cons_println (k);
 	return 1;
 }
+
 static int sdbdelete (void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	r_anal_type_del (core->anal, k);
 	return 1;
 }
+
 static int sdbdeletelink (void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
-	if (!strncmp (k, "link.", strlen ("link.")))
+	if (!strncmp (k, "link.", strlen ("link."))) {
 		r_anal_type_del (core->anal, k);
+	}
 	return 1;
 }
+
 static int linklist (void *p, const char *k, const char *v) {
 	if (!strncmp (k, "link.", strlen ("link.")))
 		r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
@@ -279,7 +283,7 @@ static int cmd_type(void *data, const char *input) {
 			char *name = NULL;
 			SdbKv *kv;
 			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list (core->anal->sdb_types);
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
 			ls_foreach (l, iter, kv) {
 				if (!strcmp (kv->value, "enum")) {
 					if (!name || strcmp (kv->value, name)) {
@@ -467,7 +471,7 @@ static int cmd_type(void *data, const char *input) {
 			char *addr = strdup (input + 2);
 			SdbKv *kv;
 			SdbListIter *sdb_iter;
-			SdbList *sdb_list = sdb_foreach_list (core->anal->sdb_types);
+			SdbList *sdb_list = sdb_foreach_list (core->anal->sdb_types, true);
 			r_str_chop (addr);
 			ptr = r_num_math (NULL, addr);
 			//r_core_cmdf (core, "tl~0x%08"PFMT64x" = ", addr);
@@ -550,10 +554,11 @@ static int cmd_type(void *data, const char *input) {
 				r_anal_type_del (core->anal, name);
 				if (tmp) {
 					snprintf (tmp, tmp_len + 1, "%s.%s.", type, name);
-					SdbList *l = sdb_foreach_list (core->anal->sdb_types);
+					SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
 					ls_foreach (l, iter, kv) {
-						if (!strncmp (kv->key, tmp, tmp_len))
+						if (!strncmp (kv->key, tmp, tmp_len)) {
 							r_anal_type_del (core->anal, kv->key);
+						}
 					}
 					free (tmp);
 				}

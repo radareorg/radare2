@@ -11,9 +11,13 @@ all: pkgconfig src/sdb_version.h
 ifeq ($(BUILD_MEMCACHE),1)
 	${MAKE} -C memcache
 endif
+
+vala:
 ifneq (${HAVE_VALA},)
 	cd ${VALADIR} && ${MAKE}
 	cd ${VALADIR}/types && ${MAKE}
+else
+	@echo Nothing to do.
 endif
 
 .PHONY: test sdb.js pkgconfig
@@ -22,7 +26,7 @@ test:
 
 asan:
 	${MAKE} src/sdb_version.h
-	${MAKE} -C src CC="gcc -fsanitize=address" LDFLAGS=-lasan all
+	${MAKE} -C src CC="gcc -fsanitize=address" all
 
 pkgconfig:
 	[ -d pkgconfig ] && ${MAKE} -C pkgconfig || true

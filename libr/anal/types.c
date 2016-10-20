@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2016 - pancake, oddcoder */
 
 #include "r_anal.h"
 
@@ -22,6 +22,14 @@ R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val) {
 }
 
 R_API void r_anal_type_del(RAnal *anal, const char *name) {
+	Sdb *db = anal->sdb_types;
+	const char *kind = sdb_const_get (db, name, 0);
+	if (!kind) {
+		return;
+	}
+// XXX to segfault or to leak that is the question
+#define SEGFAULT 0
+#if SEGFAULT
 	int n;
 	char *p, str[128], str2[128];
 	Sdb *DB = anal->sdb_types;
@@ -30,17 +38,14 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 		return;
 	}
 	snprintf (str, sizeof (str), "%s.%s", kind, name);
-
-#define SDB_FOREACH(x,y,z) for (z = 0; (p = sdb_array_get (x, y, z, NULL)); z++)
-#define SDB_FOREACH_NEXT() free(p)
-	SDB_FOREACH (DB, str, n) {
+	for (n = 0; (p = sdb_array_get (db, str, n, NULL)); n++) {
 		snprintf (str2, sizeof (str2), "%s.%s", str, p);
-		sdb_unset (DB, str2, 0);
-		SDB_FOREACH_NEXT ();
+		sdb_unset (db, str2, 0);
+		n++;
 	}
-	sdb_set (DB, name, NULL, 0);
-	sdb_unset (DB, name, 0);
-	sdb_unset (DB, str, 0);
+	sdb_unset (db, str, 0);
+#endif
+	sdb_unset (db, name, 0);
 }
 
 R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
@@ -94,7 +99,7 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 }
 
 R_API RList *r_anal_type_fcn_list(RAnal *anal) {
-	SdbList *sdb_list = sdb_foreach_list (anal->sdb_types);
+	SdbList *sdb_list = sdb_foreach_list (anal->sdb_types, true);
 	RList *list = r_list_new ();
 	char *name, *value;
 	const char *key;

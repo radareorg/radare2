@@ -1,10 +1,10 @@
 include ../config.mk
 
-CFLAGS+= -g
-OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o num.o base64.o match.o
+CFLAGS+=-g
+OBJ=cdb.o buffer.o cdb_make.o ls.o sdbht.o ht.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o
 
-SOBJ=$(subst .o,._o,${OBJ})
+SOBJ=$(subst .o,.o.o,${OBJ})
 
 BIN=sdb${EXT_EXE}
 
@@ -72,7 +72,7 @@ ifneq ($(SILENT),)
 endif
 	${CC} -c ${CPPFLAGS} ${CFLAGS} ${CFLAGS_SHARED} -o $@ $<
 
-%._o: %.c
+%.o.o: %.c
 ifneq ($(SILENT),)
 	@echo CC PIC $<
 endif

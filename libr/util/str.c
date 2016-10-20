@@ -895,8 +895,9 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
 
 R_API char *r_str_prefix(char *ptr, const char *string) {
 	int slen, plen;
-	if (!ptr)
+	if (!ptr) {
 		return strdup (string);
+	}
 	//plen = r_str_len_utf8 (ptr);
 	//slen = r_str_len_utf8 (string);
 	plen = strlen (ptr);

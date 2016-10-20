@@ -55,11 +55,6 @@ RebuildSdb() {
 	Rebuild libr/util
 }
 
-RebuildSpp() {
-	Rebuild shlr/spp
-	Rebuild libr/util
-}
-
 RebuildBin() {
 	Rebuild libr/bin
 	Rebuild libr/core
