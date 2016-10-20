@@ -816,7 +816,6 @@ static z80_opcode ed[]={				//ed
 	{"adc hl, hl",		Z80_OP16		,NULL},
 	{"rld",			Z80_OP16		,NULL},
 	{"in [c]",		Z80_OP16		,NULL},
-	{"in f, [c]",		Z80_OP16		,NULL},
 	{"out [c], 0",		Z80_OP16		,NULL},
 	{"sbc hl, sp",		Z80_OP16		,NULL},
 	{"ld [0x%04x], sp",	Z80_OP16^Z80_ARG16	,NULL},

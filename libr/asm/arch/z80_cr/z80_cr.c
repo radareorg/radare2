@@ -144,13 +144,13 @@ static ut8 z80_ed_branch_index_res (ut8 hex) {
 	if (hex > 0x6e && 0x74 > hex)
 		return hex-0x4e;
 	if (hex > 0x77 && 0x7c > hex)
-		return hex-0x51;
+		return hex-0x52;
 	if (hex > 0x9f && 0xa4 > hex)
-		return hex-0x75;
+		return hex-0x76;
 	if (hex > 0xa7 && 0xac > hex)
-		return hex-0x79;
+		return hex-0x7a;
 	if (hex > 0xaf && 0xb4 > hex)
-		return hex-0x7d;
+		return hex-0x7e;
 	if (hex > 0xb7 && 0xbc > hex)
 		return hex-0x81;
 	return 0x3b;
