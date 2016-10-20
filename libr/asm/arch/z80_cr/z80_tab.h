@@ -464,7 +464,7 @@ static const char *ddcb[]={
 	"set 5, [ix+0x%02x], e",
 	"set 5, [ix+0x%02x], h",
 	"set 5, [ix+0x%02x], l",
-	"set 5, [ix+0x%02x]", 
+	"set 5, [ix+0x%02x]",
 	"set 5, [ix+0x%02x], a",
 	"set 6, [ix+0x%02x], b",
 	"set 6, [ix+0x%02x], c",

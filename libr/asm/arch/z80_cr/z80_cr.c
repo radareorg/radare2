@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - condret 
+/* radare - LGPL - Copyright 2014-2015 - condret
 				   Copyright 2016-	   - unlogic
 */
 
@@ -194,8 +194,7 @@ static int z80OpLength (const ut8 *buf, int len) {
 		if (op[buf[0]].type & Z80_ENC0) {
 			op = (z80_opcode *)op[buf[0]].op_moar;
 			type = op[z80_fddd_branch_index_res(buf[1])].type;
-		}
-		if (op[buf[0]].type & Z80_ENC1) {
+		} else if (op[buf[0]].type & Z80_ENC1) {
 			op = (z80_opcode *)op[buf[0]].op_moar;
 			type = op[z80_ed_branch_index_res(buf[1])].type;
 		}
@@ -214,6 +213,7 @@ static int z80OpLength (const ut8 *buf, int len) {
 		ret += 3;
 	if (ret > len)
 		return 0;
+
 	return ret;
 }
 
