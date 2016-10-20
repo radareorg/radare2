@@ -498,8 +498,8 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			}
 		}
 		f = r_flag_get_i2 (core->flags, fcn->addr);
-		free (fcn->name);
-		if (f && *f->name && strncmp (f->name, "sect", 4)) {
+		R_FREE (fcn->name);
+		if (f && f->name && strncmp (f->name, "sect", 4)) {
 			fcn->name = strdup (f->name);
 		} else {
 			f = r_flag_get_i (core->flags, fcn->addr);
@@ -517,7 +517,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			f = r_flag_get_i2 (core->flags, fcn->addr);
-			free (fcn->name);
+			R_FREE (fcn->name);
 			if (f && f->name) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name);
 			} else {
