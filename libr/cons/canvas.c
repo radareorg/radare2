@@ -1,6 +1,8 @@
-/* radare - LGPL - Copyright 2013-2015 - pancake */
+/* radare - LGPL - Copyright 2013-2016 - pancake */
 
 #include <r_cons.h>
+
+#define useUtf8 (r_cons_singleton()->use_utf8)
 
 #define W(y) r_cons_canvas_write (c, y)
 #define G(x, y) r_cons_canvas_gotoxy (c, x, y)
@@ -16,8 +18,9 @@ R_API void r_cons_canvas_clear(RConsCanvas *c) {
 	if (c && c->b) {
 		memset (c->b, '\n', c->blen);
 		c->b[c->blen] = 0;
-		for (y = 0; y < c->h; y++)
+		for (y = 0; y < c->h; y++) {
 			c->b[y * c->w] = '\n';
+		}
 		if (c->attrs) {
 			c->attrslen = 0;
 			memset (c->attrs, 0, sizeof (*c->attrs) * c->blen);
@@ -27,8 +30,9 @@ R_API void r_cons_canvas_clear(RConsCanvas *c) {
 
 R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	RConsCanvas *c;
-	if (w < 1 || h < 1)
+	if (w < 1 || h < 1) {
 		return NULL;
+	}
 	c = R_NEW0 (RConsCanvas);
 	if (!c) return NULL;
 	c->color = 0;
@@ -55,13 +59,19 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	return c;
 }
 
-R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
-	int ret = true;
-	if (!c) return 0;
+R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
+	bool ret = true;
+	if (!c) {
+		return 0;
+	}
 	x += c->sx;
 	y += c->sy;
-	if (x > c->w * 2) return 0;
-	if (y > c->h * 2) return 0;
+	if (x > c->w * 2) {
+		return false;
+	}
+	if (y > c->h * 2) {
+		return false;
+	}
 	if (x >= c->w) {
 		c->x = c->w;
 		ret = false;
@@ -78,62 +88,89 @@ R_API int r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 		c->y = 0;
 		ret = false;
 	}
-	if (x < c->w && x >= 0) c->x = x;
-	if (y < c->h && y >= 0) c->y = y;
+	if (x < c->w && x >= 0) {
+		c->x = x;
+	}
+	if (y < c->h && y >= 0) {
+		c->y = y;
+	}
 	return ret;
 }
 
 static int is_ansi_seq(const char *s) {
+#if 0
+	/* check utf8 length */
+	if (((*s & 0xc0) == 0x80)) {
+		return false;
+	}
+#endif
 	return s && *s == 0x1b && *(s + 1) == '[';
 }
 
 static int get_piece(const char *p, char *chr) {
 	const char *q = p;
-	if (!p) return 0;
-	while (p && *p && *p != '\n' && !is_ansi_seq (p)) p++;
-	if (chr) *chr = *p;
+	if (!p) {
+		return 0;
+	}
+	while (p && *p && *p != '\n' && !is_ansi_seq (p)) {
+		p++;
+	}
+	if (chr) {
+		*chr = *p;
+	}
 	return p - q;
 }
 
 static char *prefixline(RConsCanvas *c, int *left) {
 	int x, len;
 	char *p;
-	if (!c) return NULL;
-	if (strlen (c->b) < (c->y * c->w)) return NULL;
+	if (!c || strlen (c->b) < (c->y * c->w)) {
+		return NULL;
+	}
 	p = c->b + (c->y * c->w);
 	len = strlen (p) - 1;
 	for (x = 0; (p[x] && x < c->x) && x < len; x++) {
-		if (p[x] == '\n')
+		if (p[x] == '\n') {
 			p[x] = ' ';
+		}
 	}
-	if (left) *left = c->w - c->x;
+	if (left) {
+		*left = c->w - c->x;
+	}
 	return p + x;
 }
 
 static const char **attr_at(RConsCanvas *c, int loc) {
 	int i, j, delta;
-	if (!c->color || c->attrslen == 0)
+	if (!c->color || c->attrslen == 0) {
 		return NULL;
+	}
 	j = c->attrslen / 2;
 	delta = c->attrslen / 2;
 	for (i = 0; i < (c->attrslen); i++) {
 		delta /= 2;
-		if (delta == 0)
+		if (delta == 0) {
 			delta = 1;
-		if (c->attrs[j].loc == loc)
+		}
+		if (c->attrs[j].loc == loc) {
 			return &c->attrs[j].a;
+		}
 		if (c->attrs[j].loc < loc) {
 			j += delta;
-			if (j >= c->attrslen)
+			if (j >= c->attrslen) {
 				break;
-			if (c->attrs[j].loc > loc && delta == 1)
+			}
+			if (c->attrs[j].loc > loc && delta == 1) {
 				break;
+			}
 		} else if (c->attrs[j].loc > loc) {
 			j -= delta;
-			if (j <= 0)
+			if (j <= 0) {
 				break;
-			if (c->attrs[j].loc < loc && delta == 1)
+			}
+			if (c->attrs[j].loc < loc && delta == 1) {
 				break;
+			}
 		}
 	}
 	return NULL;
@@ -169,8 +206,9 @@ static void stamp_attr(RConsCanvas *c, int length) {
 
 	for (i = 0; i < length; i++) {
 		s = attr_at (c, loc + i);
-		if (s)
+		if (s) {
 			*s = c->attr;
+		}
 	}
 }
 
@@ -199,8 +237,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	int orig_x, x;
 	int left, slen, attr_len, piece_len;
 
-	if (!c || !s || !*s) return;
-
+	if (!c || !s || !*s) {
+		return;
+	}
 	/* split the string into pieces of non-ANSI chars and print them normally,
 	** using the ANSI chars to set the attr of the canvas */
 	orig_x = c->x;
@@ -208,8 +247,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		const char *s_part = set_attr (c, s);
 		ch = 0;
 		piece_len = get_piece (s_part, &ch);
-		if (piece_len == 0 && ch == '\0' && s_part == s) break;
-
+		if (piece_len == 0 && ch == '\0' && s_part == s) {
+			break;
+		}
 		left = 0;
 		p = prefixline (c, &left);
 		slen = R_MIN (left, piece_len);
@@ -217,18 +257,18 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		if (attr_len > 0) {
 			stamp_attr (c, attr_len);
 		}
-
 		x = c->x - c->sx;
 		if (G (x, c->y - c->sy)) {
 			memcpy (p, s_part, slen);
 		}
-
 		s = s_part;
 		if (ch == '\n') {
 			c->y++;
 			c->x = orig_x;
 			s++;
-			if (*s == '\0') break;
+			if (*s == '\0') {
+				break;
+			}
 		} else {
 			c->x += slen;
 		}
@@ -253,7 +293,6 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 			o[olen++] = '\n';
 		}
 		is_first = false;
-
 		for (x = 0; x < c->w; x++) {
 			const int p = x + (y * c->w);
 			atr = attr_at (c, p);
@@ -261,9 +300,16 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 				strcat (o, *atr);
 				olen += strlen (*atr);
 			}
-			if (!b[p] || b[p] == '\n')
+			if (!b[p] || b[p] == '\n') {
 				break;
-			o[olen++] = b[p];
+			}
+			const char *rune = r_cons_get_rune((const ut8)b[p]);
+			if (rune) {
+				strcpy (o + olen, rune);
+				olen += strlen (rune);
+			} else {
+				o[olen++] = b[p];
+			}
 		}
 	}
 	o[olen] = '\0';
@@ -295,9 +341,13 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	void *newbuf = NULL;
 	const int blen = (w + 1) * h;
 	char *b = NULL;
-	if (!c || w < 0) return false;
+	if (!c || w < 0) {
+		return false;
+	}
 	b = realloc (c->b, blen + 1);
-	if (!b) return false;
+	if (!b) {
+		return false;
+	}
 	c->b = b;
 	newbuf = realloc (c->attrs, sizeof (*c->attrs) * blen + 1);
 	if (!newbuf) {
@@ -317,23 +367,33 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 }
 
 R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const char *color) {
+	const char *hline = useUtf8? RUNECODESTR_LINE_HORIZ : "-";
+	const char *vline = useUtf8? RUNECODESTR_LINE_VERT : "|";
+	const char *tl_corner = useUtf8? RUNECODESTR_CORNER_TL: ".";
+	const char *tr_corner = useUtf8? RUNECODESTR_CORNER_TR: ".";
+	const char *bl_corner = useUtf8? RUNECODESTR_CORNER_BL: "`";
+	const char *br_corner = useUtf8? RUNECODESTR_CORNER_BR: "'";
 	int i, x_mod;
 	int roundcorners = 0;
 	char *row = NULL, *row_ptr;
-	char corner = '=';
 
-	if (w < 1 || h < 1) return;
-
-	if (color) c->attr = color;
+	if (w < 1 || h < 1) {
+		return;
+	}
+	if (color) {
+		c->attr = color;
+	}
 	if (!c->color) c->attr = Color_RESET;
 	row = malloc (w + 1);
 	if (!row)
 		return;
-	row[0] = roundcorners? '.': corner;
-	if (w > 2)
-		memset (row + 1, '-', w - 2);
-	if (w > 1)
-		row[w - 1] = roundcorners? '.': corner;
+	row[0] = roundcorners? '.': tl_corner[0];
+	if (w > 2) {
+		memset (row + 1, hline[0], w - 2);
+	}
+	if (w > 1) {
+		row[w - 1] = roundcorners? '.': tr_corner[0];
+	}
 	row[w] = 0;
 
 	row_ptr = row;
@@ -346,14 +406,14 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		W (row_ptr);
 	}
 	if (G (x_mod, y + h - 1)) {
-		row[0] = roundcorners? '\'': corner;
-		row[w - 1] = roundcorners? '\'': corner;
+		row[0] = roundcorners? '\'': bl_corner[0];
+		row[w - 1] = roundcorners? '\'': br_corner[0];
 		W (row_ptr);
 	}
 
 	for (i = 1; i < h - 1; i++) {
-		if (G (x, y + i)) W ("|");
-		if (G (x + w - 1, y + i)) W ("|");
+		if (G (x, y + i)) W (vline);
+		if (G (x + w - 1, y + i)) W (vline);
 	}
 	free (row);
 	if (color) c->attr = Color_RESET;
@@ -362,17 +422,19 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace) {
 	int i;
 	char *row = NULL;
-
-	if (w < 0) return;
-
+	if (w < 0) {
+		return;
+	}
 	row = malloc (w + 1);
-	if (!row) return;
+	if (!row) {
+		return;
+	}
 	memset (row, ch, w);
 	row[w] = 0;
-
 	for (i = 0; i < h; i++) {
-		if (G (x, y + i))
+		if (G (x, y + i)) {
 			W (row);
+		}
 	}
 	free (row);
 }

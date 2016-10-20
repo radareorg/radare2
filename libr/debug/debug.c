@@ -281,8 +281,8 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, char *modu
 }
 
 static const char *r_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
-	RDebug *dbg = (RDebug *)userptr;
-eprintf ("STR CALLBACK WTF WTF WTF\n");
+	// RDebug *dbg = (RDebug *)userptr;
+	eprintf ("STR CALLBACK WTF WTF WTF\n");
 	return NULL;
 }
 

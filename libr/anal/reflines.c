@@ -466,16 +466,16 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	str = r_str_concat (str, (dir == 1) ? "-> "
 		: (dir == 2) ? "=< " : "   ");
 
-	if (core->utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {
+	if (core->cons->use_utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {
 		str = r_str_replace (str, "<", c->vline[ARROW_LEFT], 1);
 		str = r_str_replace (str, ">", c->vline[ARROW_RIGHT], 1);
 		str = r_str_replace (str, "!", c->vline[LINE_UP], 1);
 		str = r_str_replace (str, "|", c->vline[LINE_VERT], 1);
 		str = r_str_replace (str, "=", c->vline[LINE_HORIZ], 1);
 		str = r_str_replace (str, "-", c->vline[LINE_HORIZ], 1);
-		str = r_str_replace (str, ",", c->vline[LUP_CORNER], 1);
-		str = r_str_replace (str, ".", c->vline[LUP_CORNER], 1);
-		str = r_str_replace (str, "`", c->vline[LDWN_CORNER], 1);
+		str = r_str_replace (str, ",", c->vline[CORNER_TL], 1);
+		str = r_str_replace (str, ".", c->vline[CORNER_TR], 1);
+		str = r_str_replace (str, "`", c->vline[CORNER_BL], 1);
 	}
 	r_list_free (lvls);
 	return str;

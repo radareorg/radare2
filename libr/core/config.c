@@ -1277,7 +1277,7 @@ static int cb_truecolor(void *user, void *data) {
 static int cb_utf8(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->utf8 = node->i_value;
+	core->cons->use_utf8 = node->i_value;
 	return true;
 }
 

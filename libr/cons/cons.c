@@ -1094,7 +1094,7 @@ R_API bool r_cons_drop (int n) {
 
 R_API void r_cons_chop () {
 	while (I.buffer_len > 0) {
-		char ch = I.buffer[I.buffer_len-1];
+		char ch = I.buffer[I.buffer_len - 1];
 		if (ch != '\n' && !IS_WHITESPACE (ch)) {
 			break;
 		}
@@ -1109,3 +1109,19 @@ R_API void r_cons_bind(RConsBind *bind) {
 	bind->get_size = r_cons_get_size;
 	bind->get_cursor = r_cons_get_cursor;
 }
+
+R_API const char* r_cons_get_rune(const ut8 ch) {
+	if (ch >= RUNECODE_MIN && ch < RUNECODE_MAX) {
+		switch (ch) {
+		case RUNECODE_LINE_HORIZ: return RUNE_LINE_HORIZ;
+		case RUNECODE_LINE_VERT:  return RUNE_LINE_VERT;
+		case RUNECODE_LINE_CROSS: return RUNE_LINE_CROSS;
+		case RUNECODE_CORNER_TL:  return RUNE_CORNER_TL;
+		case RUNECODE_CORNER_TR:  return RUNE_CORNER_TR;
+		case RUNECODE_CORNER_BR:  return RUNE_CORNER_BR;
+		case RUNECODE_CORNER_BL:  return RUNE_CORNER_BL;
+		}
+	}
+	return NULL;
+}
+

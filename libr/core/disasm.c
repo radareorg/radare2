@@ -31,14 +31,15 @@ static const char* r_vline_a[] = {
 static const char* r_vline_u[] = {
 	"│", // LINE_VERT
 	"├", // LINE_CROSS
-	"╒", // RUP_CORNER
-	"╘", // RDWN_CORNER
+	"─", // LINE_HORIZ
+	"↑", // LINE_UP
+//	"┌", // LUP_CORNER
+	"┘", // LUP_CORNER
+	"└", // RDWN_CORNER
+	"┌", // RUP_CORNER
+	"┐", // LDWN_CORNER
 	">", // ARROW_RIGHT
 	"<", // ARROW_LEFT
-	"─", // LINE_HORIZ
-	"┌", // LUP_CORNER
-	"└", // LDWN_CORNER
-	"↑", // LINE_UP
 };
 
 // TODO: what about using bit shifting and enum for keys? see libr/util/bitmap.c
@@ -458,7 +459,7 @@ static RDisasmState * ds_init(RCore *core) {
 	if (ds->show_offset) {
 		ds->ocols += 14;
 	}
-	ds->lcols = ds->ocols+2;
+	ds->lcols = ds->ocols + 2;
 	if (ds->show_bytes) {
 		ds->ocols += 20;
 	}
@@ -469,7 +470,7 @@ static RDisasmState * ds_init(RCore *core) {
 		ds->ocols += 4;
 	}
 	/* disasm */ ds->ocols += 20;
-	ds->nb = ds->nbytes? (1+ds->nbytes*2): 0;
+	ds->nb = ds->nbytes? (1 + ds->nbytes * 2): 0;
 	ds->tries = 3;
 	if (core->print->cur_enabled) {
 		if (core->print->cur < 0) {
@@ -483,7 +484,7 @@ static RDisasmState * ds_init(RCore *core) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
-		if (core->utf8) {
+		if (ds->show_utf8) {
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
 		}
 	}
@@ -1047,7 +1048,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			corner = 0;
 		}
 #endif
-		ds_set_pre (ds, core->cons->vline[RUP_CORNER]);
+		ds_set_pre (ds, core->cons->vline[CORNER_TL]);
 		if (ds->show_flgoff) {
 			r_cons_printf ("%s%s", COLOR (ds, color_fline), ds->pre);
 			if (ds->show_fcnlines) {
@@ -1220,12 +1221,12 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 	if (f) {
 		if (f->addr == ds->at) {
 			if (ds->analop.size == r_anal_fcn_size (f) && !middle) {
-				ds_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+				ds_set_pre (ds, core->cons->vline[CORNER_BL]);
 			} else {
 				ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 			}
 		} else if (f->addr + r_anal_fcn_size (f) - ds->analop.size == ds->at) {
-			ds_set_pre (ds, core->cons->vline[RDWN_CORNER]);
+			ds_set_pre (ds, core->cons->vline[CORNER_BL]);
 		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
 			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 		}
@@ -3277,7 +3278,7 @@ toro:
 				get_bits_comment (core, f, cmt, sizeof (cmt));
 				ds_show_comments_right (ds);
 				r_cons_printf ("%s%s%s (fcn) %s%s%s\n",
-					COLOR (ds, color_fline), core->cons->vline[RUP_CORNER],
+					COLOR (ds, color_fline), core->cons->vline[CORNER_TL],
 					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));
 				ds_setup_print_pre (ds, true, false);
 				ds_print_lines_left (ds);
@@ -3363,7 +3364,7 @@ toro:
 			r_anal_op_fini (&ds->analop);
 		}
 		if (!ds->lastfail) {
-			r_anal_op (core->anal, &ds->analop, ds->at, buf+idx, (int)(len-idx));
+			r_anal_op (core->anal, &ds->analop, ds->at, buf+idx, (int)(len - idx));
 		}
 		if (ret < 1) {
 			r_strbuf_init (&ds->analop.esil);
@@ -3441,7 +3442,7 @@ toro:
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
 				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx+5);
+				r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
 			ds_print_core_vmode (ds);

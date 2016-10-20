@@ -944,7 +944,7 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
 	va_start (ap, fmt);
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret+2);
+		char *p = malloc (ret + 2);
 		if (!p) {
 			va_end (ap);
 			return NULL;
@@ -1142,8 +1142,8 @@ R_API int r_str_unescape(char *buf) {
 				eprintf ("Unexpected end of string.\n");
 				return 0;
 			}
-			err |= r_hex_to_byte (&ch,  buf[i+2]);
-			err |= r_hex_to_byte (&ch2, buf[i+3]);
+			err |= r_hex_to_byte (&ch,  buf[i + 2]);
+			err |= r_hex_to_byte (&ch2, buf[i + 3]);
 			if (err) {
 				eprintf ("Error: Non-hexadecimal chars in input.\n");
 				return 0; // -1?
@@ -1191,7 +1191,6 @@ static char *r_str_escape_(const char *buf, const int dot_nl) {
 	if (!buf) {
 		return NULL;
 	}
-
 	/* Worst case scenario, we convert every byte */
 	new_buf = malloc (1 + (strlen (buf) * 4));
 	if (!new_buf) {
@@ -1257,7 +1256,6 @@ static char *r_str_escape_(const char *buf, const int dot_nl) {
 		}
 		p++;
 	}
-
 out:
 	*q = '\0';
 	return new_buf;
@@ -1281,7 +1279,7 @@ R_API int r_str_ansi_len(const char *str) {
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
-				if (!strncmp (str+2+5, "rgb:", 4)) {
+				if (!strncmp (str + 2 + 5, "rgb:", 4)) {
 					i += 18;
 				}
 			} else if (ch2 == '[') {
