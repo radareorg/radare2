@@ -123,8 +123,13 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 }
 
 R_API void r_anal_esil_trace_list (RAnalEsil *esil) {
-	/* TODO. make output more userfriendly */
-	sdb_list (esil->db_trace);
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *list = sdb_foreach_list (esil->db_trace, true);
+	ls_foreach (list, iter, kv) {
+		eprintf ("%s=%s\n", kv->key, kv->value);
+	}
+	ls_free (list);
 }
 
 R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {

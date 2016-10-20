@@ -33,8 +33,15 @@ Contains
 Rips
 ----
 * disk storage based on cdb code
-* memory hashtable based on wayland code
 * linked lists from r2 api
+
+Compilation
+-----------
+For native builds just type `make`. Everything will be compiled twice to get the .dylib and .a and sdb in PIC and nonPIC modes.
+
+To compile with Emscripten for Javascript:
+
+	make CC=emcc EXT_EXE=.js
 
 Changes
 -------
