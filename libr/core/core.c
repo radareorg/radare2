@@ -592,7 +592,6 @@ static int autocomplete(RLine *line) {
 				if (!strncmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
 					if (i == TMP_ARGV_SZ - 1) {
-						i--;
 						break;
 					}
 				}
@@ -793,7 +792,7 @@ openfile:
 						continue;
 					if (!p || !*p || !strncmp (str, p, n)) {
 						tmp_argv[i++] = r_str_newf ("%s/%s", path, str);
-						if (i == TMP_ARGV_SZ) {
+						if (i == TMP_ARGV_SZ - 1) {
 							i--;
 							break;
 						}
@@ -833,8 +832,7 @@ openfile:
 						}
 						tmp_argv[i] = strdup (buf); // LEAKS
 						i++;
-						if (i == TMP_ARGV_SZ) {
-							i--;
+						if (i == TMP_ARGV_SZ - 1) {
 							break;
 						}
 					}
@@ -850,8 +848,7 @@ openfile:
 			int j, i = 0;
 			for (j=0; j<R_FLAG_SPACES_MAX-1; j++) {
 				if (flag->spaces[j] && flag->spaces[j][0]) {
-					if (i == TMP_ARGV_SZ) {
-						i--;
+					if (i == TMP_ARGV_SZ - 1) {
 						break;
 					}
 					if (!strncmp (msg, flag->spaces[j], strlen (msg))) {
@@ -901,7 +898,7 @@ openfile:
 			r_list_foreach (core->flags->flags, iter, flag) {
 				if (!strncmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
-					if (i == TMP_ARGV_SZ) {
+					if (i == TMP_ARGV_SZ - 1) {
 						break;
 					}
 				}
@@ -939,7 +936,7 @@ openfile:
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (!strncmp (bt->name, line->buffer.data+m, n)) {
 					tmp_argv[i++] = bt->name;
-					if (i == TMP_ARGV_SZ) {
+					if (i == TMP_ARGV_SZ - 1) {
 						break;
 					}
 				}
