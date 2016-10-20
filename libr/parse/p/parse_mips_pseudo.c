@@ -11,10 +11,15 @@
 #include <r_parse.h>
 
 static int can_replace(const char *str, int idx, int max_operands) {
-	if (str[idx] > '9' || str[idx] < '1') return false;
-	if (str[idx + 1] != '\x00' && str[idx + 1] <= '9' && str[idx + 1] >= '1')
+	if (str[idx] > '9' || str[idx] < '1') {
 		return false;
-	if ((int)((int)str[idx] - 0x30) > max_operands) return false;
+	}
+	if (str[idx + 1] != '\x00' && str[idx + 1] <= '9' && str[idx + 1] >= '1') {
+		return false;
+	}
+	if ((int)((int)str[idx] - 0x30) > max_operands) {
+		return false;
+	}
 	return true;
 }
 
