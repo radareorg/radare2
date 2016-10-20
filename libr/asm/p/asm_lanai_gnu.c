@@ -41,13 +41,17 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	int flen, glen;
 	va_list ap;
 	char *tmp;
-	if (!buf_global)
+	if (!buf_global) {
 		return 0;
+	}
 	va_start (ap, format);
 	flen = strlen (format);
 	glen = strlen (buf_global);
 	tmp = malloc (flen + glen + 2);
-	if (!tmp) return 0;
+	if (!tmp) {
+		va_end (ap);
+		return 0;
+	}
 	memcpy (tmp, buf_global, glen);
 	memcpy (tmp+glen, format, flen);
 	tmp[flen+glen] = 0;

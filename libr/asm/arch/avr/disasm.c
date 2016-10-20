@@ -1,11 +1,6 @@
 #include "avr_disasm.c"
 #include "format.c"
-#ifndef ut64
-#define ut64 unsigned long long
-#endif
-#ifndef cut8
-#define cut8 const unsigned char
-#endif
+#include <r_types_base.h>
 
 static int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
 	formattingOptions opt = { 0 };

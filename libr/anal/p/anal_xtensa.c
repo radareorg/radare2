@@ -1758,7 +1758,7 @@ static void analop_esil (RAnal *a, RAnalOp *op, ut64 addr, ut8 *buffer, size_t l
 	xtensa_opcode opcode;
 	xtensa_isa isa = xtensa_default_isa;
 	xtensa_format format;
-	ut32 nslots;
+	int nslots;
 
 	static xtensa_insnbuf insn_buffer = NULL;
 	static xtensa_insnbuf slot_buffer = NULL;
@@ -1781,6 +1781,9 @@ static void analop_esil (RAnal *a, RAnalOp *op, ut64 addr, ut8 *buffer, size_t l
 	}
 
 	nslots = xtensa_format_num_slots (isa, format);
+	if (nslots < 1) {
+		return;
+	}
 
 	for (i = 0; i < nslots; i++) {
 		xtensa_format_get_slot (isa, format, i, insn_buffer, slot_buffer);

@@ -233,9 +233,15 @@ static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err
 		if (!in) dup2 (saved_stdin, STDIN_FILENO);
 		if (!out) dup2 (saved_stdout, STDOUT_FILENO);
 		if (!err) dup2 (saved_stderr, STDERR_FILENO);
-		close (saved_stdin);
-		close (saved_stdout);
-		close (saved_stderr);
+		if (saved_stdin != -1) {
+			close (saved_stdin);
+		}
+		if (saved_stdout != -1) {
+			close (saved_stdout);
+		}
+		if (saved_stderr != -1) {
+			close (saved_stderr);
+		}
 		saved_stdin = -1;
 		saved_stdout = -1;
 		saved_stderr = -1;

@@ -517,7 +517,7 @@ R_API bool r_core_project_save_rdb(RCore *core, const char *file, int opts) {
 R_API bool r_core_project_save(RCore *core, const char *file) {
 	bool scr_null = false;
 	bool ret = true;
-	char *prj, buf[1024];
+	char *prj;
 	SdbListIter *it;
 	SdbNs *ns;
 
@@ -580,7 +580,7 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	if (rop_db) {
 		ls_foreach (rop_db->ns, it, ns) {
 			char *rop_path = r_str_newf ("%s" R_SYS_DIR "rop" R_SYS_DIR "%s", prj, ns->name);
-			sdb_file (ns->sdb, buf);
+			sdb_file (ns->sdb, rop_path);
 			sdb_sync (ns->sdb);
 			free (rop_path);
 		}

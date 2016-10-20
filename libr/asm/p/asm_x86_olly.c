@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -11,10 +11,8 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	t_disasm disasm_obj;
-
 	op->size = Disasm_olly(buf, len, a->pc, &disasm_obj, DISASM_FILE);
-	snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s", disasm_obj.result);
-
+	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", disasm_obj.result);
 	return op->size;
 }
 
@@ -36,8 +34,9 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		}
 	}
 	op->size = R_MAX (0, Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, buf_err));
-	if (op->size > 0)
-		memcpy (op->buf, asm_obj.code, R_MIN(R_MIN(op->size, (R_ASM_BUFSIZE-1)), MAXCMDSIZE-1));
+	if (op->size > 0) {
+		memcpy (op->buf, asm_obj.code, R_MIN(op->size, sizeof (op->buf)));
+	}
 	return op->size;
 }
 

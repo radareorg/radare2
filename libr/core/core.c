@@ -567,9 +567,10 @@ static const char *radare_argv[] = {
 
 static int getsdelta(const char *data) {
 	int i;
-	for (i=1; data[i]; i++) {
-		if (data[i] == ' ')
+	for (i = 1; data[i]; i++) {
+		if (data[i] == ' ') {
 			return i + 1;
+		}
 	}
 	return 0;
 }
@@ -590,8 +591,10 @@ static int autocomplete(RLine *line) {
 			r_list_foreach (core->flags->flags, iter, flag) {
 				if (!strncmp (flag->name, line->buffer.data+sdelta, n)) {
 					tmp_argv[i++] = flag->name;
-					if (i == TMP_ARGV_SZ-1)
+					if (i == TMP_ARGV_SZ - 1) {
+						i--;
 						break;
+					}
 				}
 			}
 			tmp_argv[i] = NULL;
@@ -825,12 +828,15 @@ openfile:
 							line->buffer.data[1],
 							p);
 						// eprintf ("------ %p (%s) = %s\n", tmp_argv[i], buf, p);
-						if (r_is_heap ((void*)tmp_argv[i]))
+						if (r_is_heap ((void*)tmp_argv[i])) {
 							free ((char *)tmp_argv[i]);
+						}
 						tmp_argv[i] = strdup (buf); // LEAKS
 						i++;
-						if (i == TMP_ARGV_SZ)
+						if (i == TMP_ARGV_SZ) {
+							i--;
 							break;
+						}
 					}
 				}
 			}
@@ -844,8 +850,10 @@ openfile:
 			int j, i = 0;
 			for (j=0; j<R_FLAG_SPACES_MAX-1; j++) {
 				if (flag->spaces[j] && flag->spaces[j][0]) {
-					if (i==TMP_ARGV_SZ)
+					if (i == TMP_ARGV_SZ) {
+						i--;
 						break;
+					}
 					if (!strncmp (msg, flag->spaces[j], strlen (msg))) {
 						tmp_argv[i++] = flag->spaces[j];
 					}
@@ -931,8 +939,9 @@ openfile:
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (!strncmp (bt->name, line->buffer.data+m, n)) {
 					tmp_argv[i++] = bt->name;
-					if (i==TMP_ARGV_SZ)
+					if (i == TMP_ARGV_SZ) {
 						break;
+					}
 				}
 			}
 			tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;

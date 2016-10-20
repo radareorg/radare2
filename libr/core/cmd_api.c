@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_cmd.h>
 #include <r_util.h>
@@ -21,10 +21,13 @@ R_API void r_cmd_alias_init(RCmd *cmd) {
 R_API RCmd *r_cmd_new () {
 	int i;
 	RCmd *cmd = R_NEW0 (RCmd);
-	if (!cmd) return cmd;
+	if (!cmd) {
+		return cmd;
+	}
 	cmd->lcmds = r_list_new ();
-	for (i=0;i<NCMDS;i++)
+	for (i = 0; i < NCMDS; i++) {
 		cmd->cmds[i] = NULL;
+	}
 	cmd->nullcallback = cmd->data = NULL;
 	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
@@ -111,7 +114,7 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) 
 	cmd->aliases.remote = (int *)realloc (cmd->aliases.remote,
 		sizeof (int*)*cmd->aliases.count);
 	cmd->aliases.values = (char **)realloc (cmd->aliases.values,
-		sizeof (char**)*cmd->aliases.count);
+		sizeof (char*)*cmd->aliases.count);
 	cmd->aliases.keys[i] = strdup (k);
 	cmd->aliases.values[i] = strdup (v);
 	cmd->aliases.remote[i] = remote;

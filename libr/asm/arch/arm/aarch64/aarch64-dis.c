@@ -2228,6 +2228,9 @@ get_sym_code_type (struct disassemble_info *info, int n,
   elf_symbol_type *es;
   unsigned int type;
   const char *name;
+  if (n < 0) {
+    return FALSE;
+  }
 
   es = *(elf_symbol_type **)(info->symtab + n);
   type = ELF_ST_TYPE (es->internal_elf_sym.st_info);

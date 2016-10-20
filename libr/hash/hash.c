@@ -36,10 +36,15 @@ static const hash_name_bytes[] = {
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 	const ut8 *end = buffer + len;
 	int n;
-	for (n=0; buffer<end; buffer++)
-		if (IS_PRINTABLE (*buffer))
+	if (len < 1) {
+		return 0;
+	}
+	for (n = 0; buffer < end; buffer++) {
+		if (IS_PRINTABLE (*buffer)) {
 			n++;
-	return ((100*n)/len);
+		}
+	}
+	return ((100 * n) / len);
 }
 
 R_API int r_hash_parity(const ut8 *buf, ut64 len) {

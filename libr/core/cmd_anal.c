@@ -973,6 +973,9 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 	}
 	// print the bitmap
 	assigned = 0;
+	if (cols < 1) {
+		cols = 1;
+	}
 	for (i = 0; i < code_size; i += 1) {
 		if (!(i % cols)) {
 			r_cons_printf ("\n0x%08"PFMT64x"  ", base_addr+i);
@@ -1176,8 +1179,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
 		default:
-			i = 'o';
-			r_core_anal_fcn_list (core, NULL, &i);
+			r_core_anal_fcn_list (core, NULL, "o");
 			break;
 		}
 		break;
