@@ -104,6 +104,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 	}
 	basename = get_basename (pfname, strlen (pfname));
 	strncpy (p->pr_fname, basename, sizeof (p->pr_fname));
+	p->pr_fname[sizeof (p->pr_fname) - 1] = 0;
 	ppsargs = prpsinfo_get_psargs (buffer, pfname, sizeof (p->pr_psargs), len);
 	if (!ppsargs) {
 		goto error;

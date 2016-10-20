@@ -931,7 +931,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	const char *otype;
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
-	RList *ropList;
+	RList *ropList = NULL;
 	char *buf_asm;
 	unsigned int size = 0;
 	RAnalOp analop = {0};
@@ -1074,7 +1074,9 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 			rop_classify (core, db, ropList, key, size);
 		}
 	}
-	if (mode != 'j') r_cons_newline ();
+	if (mode != 'j') {
+		r_cons_newline ();
+	}
 	r_list_free (ropList);
 }
 

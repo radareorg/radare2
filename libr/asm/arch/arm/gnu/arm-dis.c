@@ -2189,7 +2189,7 @@ print_insn_coprocessor (bfd_vma pc,
 			      is_unpredictable = TRUE;
 			    u_reg = value;
 			  }
-			func (stream, "%s", arm_regnames[value]);
+			func (stream, "%s", arm_regnames[value & 0xf]);
 			break;
 		      case 'D':
 			func (stream, "d%ld", value);
@@ -3517,7 +3517,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 				  is_unpredictable = TRUE;
 				U_reg = value;
 			      }
-			    func (stream, "%s", arm_regnames[value]);
+			    func (stream, "%s", arm_regnames[value & 0xf]);
 			    break;
 			  case 'd':
 			    func (stream, "%ld", value);

@@ -239,8 +239,9 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 	int bits = anal->bits;
 	int word = R_MIN (8, bits / 8);
 
-	if (size < 4)
+	if (size < 4) {
 		return NULL;
+	}
 	if (size >= word && is_invalid (buf, word))
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID,
 					-1, buf, word);

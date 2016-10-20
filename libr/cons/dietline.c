@@ -22,7 +22,9 @@ static char *r_line_nullstr = "";
 
 #if ONLY_VALID_CHARS
 static inline int is_valid_char (unsigned char ch) {
-	if (ch>=32 && ch<=127) return true;
+	if (ch >= 32 && ch <= 127) {
+		return true;
+	}
 	switch (ch) {
 	//case 0: // wat
 	case 1: // ^a
@@ -44,11 +46,13 @@ static inline int is_valid_char (unsigned char ch) {
 
 static int inithist() {
 	ZERO_FILL (I.history);
-	if ((I.history.size + 1024) * sizeof(char *) < I.history.size)
+	if ((I.history.size + 1024) * sizeof (char *) < I.history.size) {
 		return false;
+	}
 	I.history.data = (char **)calloc ((I.history.size + 1024), sizeof(char *));
-	if (!I.history.data)
+	if (!I.history.data) {
 		return false;
+	}
 	I.history.size = R_LINE_HISTSIZE;
 	return true;
 }
@@ -56,8 +60,9 @@ static int inithist() {
 /* initialize history stuff */
 R_API int r_line_dietline_init() {
 	ZERO_FILL (I.completion);
-	if (!inithist ())
+	if (!inithist ()) {
 		return false;
+	}
 	I.echo = true;
 	return true;
 }
@@ -1244,14 +1249,15 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				// utf8 backward size
 				do {
 					I.buffer.length--;
-					s = I.buffer.data+I.buffer.length;
+					s = I.buffer.data + I.buffer.length;
 					i++;
 				} while ((*s & 0xc0) == 0x80);
 				I.buffer.index = I.buffer.length;
 #else
-				I.buffer.index = --I.buffer.length;
+				if (I.buffer.index > 0) {
+					I.buffer.index = --I.buffer.length;
+				}
 #endif
-				if (I.buffer.length < 0) I.buffer.length = 0;
 				I.buffer.data[I.buffer.length] = '\0';
 			}
 			if (I.buffer.index < 0) {

@@ -334,7 +334,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 	struct MACH0_(SObjcProperty) op;
 	mach0_ut r;
 	ut32 offset, left, j;
-	char *name;
+	char *name = NULL;
 	int len;
 	bool bigendian;
 	RBinField *property = NULL;

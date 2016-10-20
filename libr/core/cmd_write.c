@@ -977,10 +977,14 @@ static int cmd_write(void *data, const char *input) {
 		} else {
 			int append = 0;
 			st64 sz = core->blocksize;
-			if (*str=='f') { // "wtf"
+			if (*str == 'f') { // "wtf"
 				str++;
-			} else
-			if (*str=='a') { // "wta"
+				if (*str && str[1]) {
+					filename = str + 1;
+				} else {
+					filename = "";
+				}
+			} else if (*str=='a') { // "wta"
 				append = 1;
 				str++;
 				if (str[0]==' ') {
@@ -997,15 +1001,18 @@ static int cmd_write(void *data, const char *input) {
 			} else {
 				filename = str + 1;
 			}
-			tmp = strchr (str+1, ' ');
+			tmp = strchr (str + 1, ' ');
 			if (tmp) {
-				sz = (st64) r_num_math (core->num, tmp+1);
+				sz = (st64) r_num_math (core->num, tmp + 1);
 				if (!sz) {
 					sz = core->blocksize;
 				}
 				*tmp = 0;
-				if (sz<1) eprintf ("Invalid length\n");
-				else r_core_dump (core, filename, core->offset, (ut64)sz, append);
+				if (sz < 1) {
+					eprintf ("Invalid length\n");
+				} else {
+					r_core_dump (core, filename, core->offset, (ut64)sz, append);
+				}
 			} else {
 				if (!r_file_dump (filename, core->block, core->blocksize, append)) {
 					sz = 0;
