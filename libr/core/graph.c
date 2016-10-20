@@ -2532,8 +2532,8 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	if (!res) {
 		return NULL;
 	}
-	res->title = title ? strdup(title) : strdup ("");
-	res->body = body ? strdup(body) : strdup ("");
+	res->title = title ? strdup (title) : strdup ("");
+	res->body = body ? strdup (body) : strdup ("");
 	res->layer = -1;
 	res->pos_in_layer = -1;
 	res->is_dummy = false;
@@ -2544,7 +2544,6 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	if (res->title) {
 		char *s, *estr, *b;
 		size_t len;
-
 		sdb_array_add (g->db, "agraph.nodes", res->title, 0);
 		b = strdup (res->body);
 		len = strlen (b);

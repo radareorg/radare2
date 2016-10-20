@@ -1536,7 +1536,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;
-		ls_foreach (binfile->sdb_addrinfo->ht->list, iter, kv) {
+		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, true);
+		ls_foreach (ls, iter, kv) {
 			if (!strncmp (kv->key, "0x", 2)) {
 				ut64 addr;
 				RBinDwarfRow *row;
@@ -1544,6 +1545,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 				char *file = strdup (kv->value);
 				if (!file) {
 					free (buf);
+					ls_free (ls);
 					return NULL;
 				}
 				char *tok = strchr (file, '|');
@@ -1557,6 +1559,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 				free (file);
 			}
 		}
+		ls_free (ls);
 		free (buf);
 	}
 	return list;

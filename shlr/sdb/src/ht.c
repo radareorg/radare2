@@ -1,241 +1,274 @@
-/*
- * Copyright © 2009 Intel Corporation
- * Copyright © 1988-2004 Keith Packard and Bart Massey.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
- *
- * Except as contained in this notice, the names of the authors
- * or their institutions shall not be used in advertising or
- * otherwise to promote the sale, use or other dealings in this
- * Software without prior written authorization from the
- * authors.
- *
- * Authors:
- *    Eric Anholt <eric@anholt.net>
- *    Keith Packard <keithp@keithp.com>
- * Integration in r2 core api and hackit up
- *    pancake <nopcode.org>
- */
+/* radare2 - BSD 3 Clause License - crowell, pancake 2016 */
 
 #include "ht.h"
+#include "sdb.h"
 
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
-
-/*
- * From Knuth -- a good choice for hash/rehash values is p, p-2 where
- * p and p-2 are both prime.  These tables are sized to have an extra 10%
- * free to avoid exponential performance degradation as the hash table fills
- */
-
-static const struct {
-	ut32 max_entries, size, rehash;
-} hash_sizes[] = {
-	{ 2,		5,		3	  },
-	{ 4,		7,		5	  },
-	{ 8,		13,		11	  },
-	{ 16,		19,		17	  },
-	{ 32,		43,		41        },
-	{ 64,		73,		71        },
-	{ 128,		151,		149       },
-	{ 256,		283,		281       },
-	{ 512,		571,		569       },
-	{ 1024,		1153,		1151      },
-	{ 2048,		2269,		2267      },
-	{ 4096,		4519,		4517      },
-	{ 8192,		9013,		9011      },
-	{ 16384,	18043,		18041     },
-	{ 32768,	36109,		36107     },
-	{ 65536,	72091,		72089     },
-	{ 131072,	144409,		144407    },
-	{ 262144,	288361,		288359    },
-	{ 524288,	576883,		576881    },
-	{ 1048576,	1153459,	1153457   },
-	{ 2097152,	2307163,	2307161   },
-	{ 4194304,	4613893,	4613891   },
-	{ 8388608,	9227641,	9227639   },
-	{ 16777216,	18455029,	18455027  },
-	{ 33554432,	36911011,	36911009  },
-	{ 67108864,	73819861,	73819859  },
-	{ 134217728,	147639589,	147639587 },
-	{ 268435456,	295279081,	295279079 },
-	{ 536870912,	590559793,	590559791 },
-	{ 1073741824,	1181116273,	1181116271},
-	{ 2147483648ul,	2362232233ul,	2362232231ul}
+// Sizes of the ht.
+const int ht_primes_sizes[] = {
+#if GROWABLE
+	3, 7, 11, 17, 23, 29, 37, 47, 59, 71, 89, 107, 131,
+	163, 197, 239, 293, 353, 431, 521, 631, 761, 919,
+	1103, 1327, 1597, 1931, 2333, 2801, 3371, 4049, 4861,
+	5839, 7013, 8419, 10103, 12143, 14591, 17519, 21023,
+	25229, 30293, 36353, 43627, 52361, 62851, 75431, 90523,
+	108631, 130363, 156437, 187751, 225307, 270371, 324449,
+	389357, 467237, 560689, 672827, 807403, 968897, 1162687,
+	1395263, 1674319, 2009191, 2411033, 2893249, 3471899,
+	4166287, 4999559, 5999471, 7199369
+#else
+	1024,
+#endif
 };
 
-#define DELETED_HASH ((ut32)~0)
-#define entry_is_free(x) (!x->hash && !x->data)
-#define entry_is_deleted(x) (x->hash == DELETED_HASH && !x->data)
-#define entry_is_present(x) (x->data || (x->hash && x->hash != DELETED_HASH))
 
-/**
- * Finds a hash table entry with the given key and hash of that key.
- *
- * Returns NULL if no entry is found.  Note that the data pointer may be
- * modified by the user.
- */
-SdbHashEntry* ht_search(SdbHash *ht, ut32 hash) {
-	ut32 double_hash, hash_address;
-	if (ht && ht->entries) {
-		hash_address = hash % ht->size;
-		do {
-			SdbHashEntry *entry = ht->table + hash_address;
-			if (entry_is_free (entry))
-				return NULL;
-			if (entry_is_present (entry) && entry->hash == hash)
-				return entry;
-			double_hash = hash % ht->rehash;
-			if (double_hash == 0)
-				double_hash = 1;
-			hash_address = (hash_address + double_hash) % ht->size;
-		} while (hash_address != hash % ht->size);
+// Create a new hashtable and return a pointer to it.
+// size - number of buckets in the hashtable
+// hashfunction - the function that does the hashing, must not be null.
+// comparator - the function to check if values are equal, if NULL, just checks
+// == (for storing ints).
+// keydup - function to duplicate to key (eg strdup), if NULL just does =.
+// valdup - same as keydup, but for values
+// pair_free - function for freeing a keyvaluepair - if NULL just does free.
+// calcsize - function to calculate the size of a value. if NULL, just stores 0.
+static SdbHash* internal_ht_new(ut32 size, HashFunction hashfunction,
+				 ListComparator comparator, DupKey keydup,
+				 DupValue valdup, HtKvFreeFunc pair_free,
+				 CalcSize calcsizeK, CalcSize calcsizeV) {
+	SdbHash* ht = calloc (1, sizeof (*ht));
+	if (!ht) {
+		return NULL;
+	}
+	ht->size = size;
+	ht->count = 0;
+	ht->prime_idx = 0;
+	ht->load_factor = 1;
+	ht->hashfn = hashfunction;
+	ht->cmp = comparator? comparator: (ListComparator)strcmp;
+	ht->dupkey = keydup? keydup: (DupKey)strdup;
+	ht->dupvalue = valdup? valdup: (DupValue)strdup;
+	ht->table = calloc (ht->size, sizeof (SdbList*));
+	ht->calcsizeK = calcsizeK? calcsizeK: (CalcSize)strlen;
+	ht->calcsizeV = calcsizeV? calcsizeV: (CalcSize)strlen;
+	ht->freefn = pair_free;
+	ht->deleted = ls_newf (free);
+#if INSERTORDER
+	ht->list = ls_newf (NULL);
+#endif
+	// Because we use calloc, each listptr will be NULL until used */
+	return ht;
+}
+
+bool ht_delete_internal(SdbHash* ht, const char* key, ut32* hash) {
+	HtKv* kv;
+	SdbListIter* iter;
+	ut32 computed_hash = hash ? *hash : ht->hashfn (key);
+#if USE_KEYLEN
+	ut32 key_len = ht->calcsizeK ((void *)key);
+#endif
+	ut32 bucket = computed_hash % ht->size;
+#if INSERTORDER
+	ls_foreach (ht->list, iter, kv) {
+#if USE_KEYLEN
+		if (key_len != kv->key_len) {
+			continue;
+		}
+#endif
+		if (key == kv->key || !ht->cmp (key, kv->key)) {
+			ls_delete (ht->list, iter);
+			ht->count--;
+			break;
+		}
+	}
+#endif
+	SdbList* list = ht->table[bucket];
+	ls_foreach (list, iter, kv) {
+#if USE_KEYLEN
+		if (key_len != kv->key_len) {
+			continue;
+		}
+#endif
+		if (key == kv->key || !ht->cmp (key, kv->key)) {
+#if EXCHANGE
+			ls_split_iter (list, iter);
+			ls_append (ht->deleted, iter);
+			list->free (iter->data);
+			iter->data = NULL;
+#else
+			ls_delete (list, iter);
+#endif
+			ht->count--;
+			return true;
+		}
+	}
+	return false;
+}
+
+SdbHash* ht_new(HashFunction hashfunction, ListComparator comparator,
+		 DupKey keydup, DupValue valdup, HtKvFreeFunc pair_free,
+		 CalcSize calcsizeK, CalcSize calcsizeV) {
+	HashFunction hfcn = hashfunction ? hashfunction : sdb_hash;
+	return internal_ht_new (ht_primes_sizes[0], hfcn, comparator, keydup,
+				valdup, pair_free, calcsizeK, calcsizeV);
+}
+
+void ht_free(SdbHash* ht) {
+	if (ht) {
+		ut32 i;
+		for (i = 0; i < ht->size; i++) {
+			ls_free (ht->table[i]);
+		}
+		free (ht->table);
+		ls_free (ht->deleted);
+#if INSERTORDER
+		ls_free (ht->list);
+#endif
+		free (ht);
+	}
+}
+
+void ht_free_deleted(SdbHash* ht) {
+	if (!ls_empty (ht->deleted)) {
+		ls_free (ht->deleted);
+		ht->deleted = ls_newf (free);
+	}
+}
+
+// Increases the size of the hashtable by 2.
+#if GROWABLE
+static void internal_ht_grow(SdbHash* ht) {
+	SdbHash* ht2;
+	SdbHash swap;
+	HtKv* kv;
+	SdbListIter* iter;
+	ut32 i, sz = ht_primes_sizes[ht->prime_idx];
+	ht2 = internal_ht_new (sz, ht->hashfn, ht->cmp, ht->dupkey,
+			ht->dupvalue, (HtKvFreeFunc)ht->freefn, ht->calcsize);
+	ht2->prime_idx = ht->prime_idx;
+	for (i = 0; i < ht->size; i++) {
+		ls_foreach (ht->table[i], iter, kv) {
+			(void)ht_insert (ht2, kv->key, kv->value);
+		}
+	}
+	// And now swap the internals.
+	swap = *ht;
+	*ht = *ht2;
+	*ht2 = swap;
+	ht_free (ht2);
+}
+#endif
+
+static bool internal_ht_insert_kv(SdbHash *ht, HtKv *kv, bool update) {
+	bool found;
+	if (!ht || !kv) {
+		return false;
+	}
+	ut32 bucket, hash = ht->hashfn (kv->key);
+	if (update) {
+		(void)ht_delete_internal (ht, kv->key, &hash);
+	} else {
+		(void)ht_find (ht, kv->key, &found);
+	}
+	if (update || !found) {
+		bucket = hash % ht->size;
+		if (!ht->table[bucket]) {
+			ht->table[bucket] = ls_newf ((SdbListFree)ht->freefn);
+		}
+		ls_prepend (ht->table[bucket], kv);
+#if INSERTORDER
+		ls_append (ht->list, kv);
+#endif
+		ht->count++;
+#if GROWABLE
+		// Check if we need to grow the table.
+		if (ht->count >= ht->load_factor * ht_primes_sizes[ht->prime_idx]) {
+			ht->prime_idx++;
+			internal_ht_grow (ht);
+		}
+#endif
+		return true;
+	}
+	return false;
+}
+
+static bool internal_ht_insert(SdbHash* ht, bool update, const char* key,
+				void* value) {
+	if (!ht || !key || !value) {
+		return false;
+	}
+	HtKv* kv = calloc (1, sizeof (HtKv));
+	if (kv) {
+		kv->key = ht->dupkey ((void *)key);
+		kv->value = ht->dupvalue ((void *)value);
+		kv->key_len = ht->calcsizeK ((void *)kv->key);
+		kv->value_len = ht->calcsizeV ((void *)kv->value);
+		if (!internal_ht_insert_kv (ht, kv, update)) {
+			ht->freefn (kv);
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+bool ht_insert_kv(SdbHash *ht, HtKv *kv, bool update) {
+	return internal_ht_insert_kv (ht, kv, update);
+}
+// Inserts the key value pair key, value into the hashtable.
+// Doesn't allow for "update" of the value.
+bool ht_insert(SdbHash* ht, const char* key, void* value) {
+	return internal_ht_insert (ht, false, key, value);
+}
+
+// Inserts the key value pair key, value into the hashtable.
+// Does allow for "update" of the value.
+bool ht_update(SdbHash* ht, const char* key, void* value) {
+	return internal_ht_insert (ht, true, key, value);
+}
+
+// Returns the corresponding SdbKv entry from the key.
+// If `found` is not NULL, it will be set to true if the entry was found, false
+// otherwise.
+HtKv* ht_find_kv(SdbHash* ht, const char* key, bool* found) {
+	ut32 hash, bucket;
+	SdbListIter* iter;
+	HtKv* kv;
+#if USE_KEYLEN
+	ut32 key_len = ht->calcsizeK ((void *)key);
+#endif
+	hash = ht->hashfn (key);
+	bucket = hash % ht->size;
+	ls_foreach (ht->table[bucket], iter, kv) {
+#if USE_KEYLEN
+		if (key_len != kv->key_len) {
+			continue;
+		}
+#endif
+		bool match = !ht->cmp (key, kv->key);
+		if (match) {
+			if (found) {
+				*found = true;
+			}
+			return kv;
+		}
+	}
+	if (found) {
+		*found = false;
 	}
 	return NULL;
 }
 
-static int rehash = 0;
-static void ht_rehash(SdbHash *ht, ut32 new_size_index) {
-	SdbHash old_ht = *ht;
-	SdbHashEntry *e;
-	if (!ht || new_size_index >= ARRAY_SIZE (hash_sizes))
-		return;
-	// XXX: This code is redupped! fuck't
-	ht->table = calloc (hash_sizes[new_size_index].size, sizeof (*ht->table));
-	if (!ht->table)
-		return;
-	rehash = 1;
-	ht->size_index = new_size_index;
-	ht->size = hash_sizes[ht->size_index].size;
-	ht->rehash = hash_sizes[ht->size_index].rehash;
-	ht->max_entries = hash_sizes[ht->size_index].max_entries;
-	ht->entries = 0;
-	ht->deleted_entries = 0;
-	for (e = old_ht.table; e != old_ht.table + old_ht.size; e++) {
-		if (entry_is_present (e))
-			ht_insert (ht, e->hash, e->data, e->iter);
+// Looks up the corresponding value from the key.
+// If `found` is not NULL, it will be set to true if the entry was found, false
+// otherwise.
+void* ht_find(SdbHash* ht, const char* key, bool* found) {
+	bool _found = false;
+	if (!found) {
+		found = &_found;
 	}
-	free (old_ht.table);
-rehash = 0;
+	HtKv* kv = ht_find_kv (ht, key, found);
+	return (kv && *found)? kv->value : NULL;
 }
 
-SdbHash* ht_new(SdbListFree f) {
-	SdbHash *ht = R_NEW (SdbHash);
-	if (!ht) return NULL;
-	// TODO: use slices here
-	ht->list = ls_new ();
-	ht->list->free = f;
-	ht->size = hash_sizes[0].size;
-	ht->table = calloc (ht->size, sizeof (*ht->table));
-	if (!ht->table) {
-		free (ht);
-		return NULL;
-	}
-	ht->size_index = 0;
-	ht->entries = 0;
-	ht->deleted_entries = 0;
-	ht->rehash = hash_sizes[ht->size_index].rehash;
-	ht->max_entries = hash_sizes[ht->size_index].max_entries;
-	return ht;
-}
-
-void ht_free(SdbHash *ht) {
-	if (ht) {
-		free (ht->table);
-		ls_free (ht->list);
-		free (ht);
-	}
-}
-
-void *ht_lookup(SdbHash *ht, ut32 hash) {
-	SdbHashEntry *entry;
-	if (!ht || !ht->list || !ht->list->head) return NULL;
-	entry = ht_search (ht, hash);
-	return entry? entry->data : NULL;
-}
-
-#if 0
-void ht_set(SdbHash *ht, ut32 hash, void *data) {
-	SdbHashEntry *e = ht_search (ht, hash);
-	if (e) {
-		if (ht->list->free)
-			ht->list->free (e->data);
-		e->data = data;
-		e->iter->data = data;
-	} else ht_insert (ht, hash, data, NULL);
-}
-#endif
-
-/**
- * Inserts the data with the given hash into the table.
- *
- * Note that insertion may rearrange the table on a resize or rehash,
- * so previously found hash_entries are no longer valid after this function.
- */
-int ht_insert(SdbHash *ht, ut32 hash, void *data, SdbListIter *iter) {
-	ut32 hash_address;
-	if (!ht || !data) {
-		return 0;
-	}
-	if (ht->entries >= ht->max_entries) {
-		ht_rehash (ht, ht->size_index + 1);
-	} else if (ht->deleted_entries + ht->entries >= ht->max_entries) {
-		ht_rehash (ht, ht->size_index);
-	}
-
-	hash_address = hash % ht->size;
-	do {
-		SdbHashEntry *entry = ht->table + hash_address;
-		ut32 double_hash;
-		if (!entry_is_present (entry)) {
-			if (entry_is_deleted (entry)) {
-				ht->deleted_entries--;
-			}
-			entry->hash = hash;
-			entry->data = data;
-			entry->iter = rehash? iter: ls_append (ht->list, data);
-			ht->entries++;
-			return 1;
-		}
-
-		double_hash = hash % ht->rehash;
-		if (!double_hash) {
-			double_hash = 1;
-		}
-		hash_address = (hash_address + double_hash) % ht->size;
-	} while (hash_address != hash % ht->size);
-
-	/* We could hit here if a required resize failed. An unchecked-malloc
-	 * application could ignore this result.
-	 */
-	return 0;
-}
-
-void ht_delete_entry(SdbHash *ht, SdbHashEntry *entry) {
-	if (!ht || !entry)
-		return;
-	if (!rehash && entry->iter) {
-		ls_delete (ht->list, entry->iter);
-		entry->iter = NULL;
-	}
-	entry->hash = DELETED_HASH;
-	entry->data = NULL;
-	ht->entries--;
-	ht->deleted_entries++;
+// Deletes a entry from the hash table from the key, if the pair exists.
+bool ht_delete(SdbHash* ht, const char* key) {
+	return ht_delete_internal (ht, key, NULL);
 }

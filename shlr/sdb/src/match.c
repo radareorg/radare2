@@ -23,15 +23,17 @@ enum MatchFlag {
 
 static inline int mycmp(const char *a, const char *b, int n, int any) {
 	int i, j;
-	for (i=j=0; a[i] && b[j] && j<n; i++) {
+	for (i = j = 0; a[i] && b[j] && j < n; i++) {
 		if (tolower ((const ut8)a[i]) == tolower ((const ut8)b[j])) {
 			j++;
 		} else {
-			if (!any) return 0;
+			if (!any) {
+				return 0;
+			}
 			j = 0;
 		}
 	}
-	return any? j!=n: 1;
+	return any? j != n: 1;
 }
 
 static inline int strstr2(const char *a, const char *b, int n) {
@@ -52,11 +54,14 @@ static inline bool compareString(const char *a, const char *b, int blen, int fla
 	char *aa = NULL;
 	int alen;
 	bool ret = false;
-	if (!a || !b || blen<0)
+	if (!a || !b || blen < 0) {
 		return 0;
+	}
 	if (flags & SDB_LIKE_BASE64) {
 		aa = (char*)sdb_decode (a, &alen);
-		if (!aa) return 0;
+		if (!aa) {
+			return 0;
+		}
 		a = (const char *)aa;
 	} else {
 		alen = strlen (a);

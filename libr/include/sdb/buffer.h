@@ -24,12 +24,6 @@ extern int buffer_put(buffer *,const char *,unsigned int);
 extern int buffer_putalign(buffer *,const char *,unsigned int);
 extern int buffer_putflush(buffer *,const char *,unsigned int);
 
-#if 0
-extern int buffer_puts(buffer *,char *);
-extern int buffer_putsalign(buffer *,char *);
-extern int buffer_putsflush(buffer *,char *);
-#endif
-
 #define buffer_PUTC(s,c) \
   ( ((s)->n != (s)->p) \
     ? ( (s)->x[(s)->p++] = (c), 0 ) \
