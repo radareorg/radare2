@@ -152,7 +152,7 @@ static ut8 z80_ed_branch_index_res (ut8 hex) {
 	if (hex > 0xaf && 0xb4 > hex)
 		return hex-0x7e;
 	if (hex > 0xb7 && 0xbc > hex)
-		return hex-0x81;
+		return hex-0x82;
 	return 0x3b;
 }
 
@@ -226,7 +226,7 @@ static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 		return ret;
 	z_op = z80_op;
 
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG
 	printf("type %d\n", z_op[buf[0]].type);
