@@ -2974,7 +2974,7 @@ static int cmd_print(void *data, const char *input) {
 						memcpy (block, core->block, bs);
 						r_core_read_at (core, addr+bs, block+bs, instr_len-bs); //core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block, instr_len, l, 0, 1);
+								core, core->offset, block, instr_len, l, 0, 1);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
