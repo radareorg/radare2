@@ -126,6 +126,7 @@ func.strcasecmp.ret=int
 func.strcasecmp.cc=cdecl
 ```
 
+Note that the `.cc` part is optional and if it didn't exist the default calling convention for your target architecture will be used instead.
 Their is one extra optional key
 
 ```

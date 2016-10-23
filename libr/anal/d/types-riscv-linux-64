@@ -1,9 +1,0 @@
-func.__assert_fail.cc=rvg
-func._exit.cc=rvg
-func._Exit.cc=rvg
-func.__libc_init.cc=rvg
-func.__libc_init_array=rvg
-func.__libc_start_main.cc=rvg
-func.abort.cc=rvg
-func.abort.cc=rvg
-func.exit.cc=rvg

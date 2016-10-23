@@ -1,9 +1,0 @@
-func.__assert_fail.cc=cdecl
-func._exit.cc=cdecl
-func._Exit.cc=cdecl
-func.__libc_init.cc=cdecl
-func.__libc_init_array.cc=cdecl
-func.__libc_start_main.cc=cdecl
-func.abort.cc=cdecl
-func.atexit.cc=cdecl
-func.exit.cc=cdecl

@@ -1,9 +1,0 @@
-func.__assert_fail.cc=arm64
-func._exit.cc=arm64
-func._Exit.cc=arm64
-func.__libc_init.cc=arm64
-func.__libc_init_array.cc=arm64
-func.__libc_start_main.cc=arm64
-func.abort.cc=arm64
-func.atexit.cc=arm64
-func.exit.cc=arm64

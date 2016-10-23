@@ -1,9 +1,0 @@
-func.__assert_fail.cc=arm32
-func._exit.cc=arm32
-func._Exit.cc=arm32
-func.__libc_init.cc=arm32
-func.__libc_init_array.cc=arm32
-func.__libc_start_main.cc=arm32
-func.abort.cc=arm32
-func.atexit.cc=arm32
-func.exit.cc=arm32
