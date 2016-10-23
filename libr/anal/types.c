@@ -297,7 +297,8 @@ R_API const char *r_anal_type_func_ret(RAnal *anal, const char *func_name){
 
 R_API const char *r_anal_type_func_cc(RAnal *anal, const char *func_name) {
 	const char *query = sdb_fmt (-1, "func.%s.cc", func_name);
-	return sdb_const_get (anal->sdb_types, query, 0);
+	const char *cc = sdb_const_get (anal->sdb_types, query, 0);
+	return cc ? cc : r_anal_cc_default (anal);
 }
 
 R_API int r_anal_type_func_args_count(RAnal *anal, const char *func_name) {
