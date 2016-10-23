@@ -6,6 +6,7 @@
 #include "r_print.h"
 #include "r_types.h"
 #include "r_util.h"
+#include "ht.h"
 
 #define R_CORE_MAX_DISASM (1024*1024*8)
 
@@ -1477,7 +1478,7 @@ static void _handle_call(RCore *core, char * line, char **str) {
 }
 
 // TODO: this is just a PoC, the disasm loop should be rewritten
-// TODO: this is based on string matching, it should be written upon RAnalOp to know 
+// TODO: this is based on string matching, it should be written upon RAnalOp to know
 // when we have a call and such
 static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 #define MYPAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x: ""
@@ -2093,6 +2094,48 @@ static ut32 tmp_get_contsize (RAnalFunction *f) {
 	return (size < 0) ? 0 : size;
 }
 
+static void pdr_bb(RCore * core, RHashTable64* state, RAnalBlock * b, bool emu, ut64 saved_gp, ut8 *saved_arena) {
+	core->anal->gp = saved_gp;
+	if (emu) {
+		ut8 *esil_arena = r_hashtable64_lookup (state, b->addr);
+		if (esil_arena) {
+			ut64 gp;
+			r_reg_arena_poke (core->anal->reg, esil_arena);
+			r_hashtable64_remove (state, b->addr);
+			gp = r_reg_getv (core->anal->reg, "gp");
+			if (gp) {
+				r_cons_printf ("restoring GP=0x%08"PFMT64x, gp);
+				r_cons_newline ();
+				core->anal->gp = gp;
+			}
+		} else {
+			r_reg_arena_poke (core->anal->reg, saved_arena);
+		}
+	}
+	r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+#if 1
+	if (b->jump != UT64_MAX) {
+		if (emu && core->anal->last_disasm_reg != NULL) {
+			ut8 *new_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			if (new_arena) {
+				r_hashtable64_insert (state, b->jump, new_arena);
+			}
+		}
+		r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
+	}
+	if (b->fail != UT64_MAX) {
+		if (emu && core->anal->last_disasm_reg != NULL) {
+			ut8 *new_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			if (new_arena) {
+				r_hashtable64_insert (state, b->fail, new_arena);
+			}
+		}
+		r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
+	}
+	r_cons_newline ();
+#endif
+}
+
 static int cmd_print(void *data, const char *input) {
 	int mode, w, p, i, l, len, total[10];
 	ut64 off, from, to, at, ate, piece;
@@ -2382,7 +2425,7 @@ static int cmd_print(void *data, const char *input) {
 				int ret, bufsz;
 				RAnalOp aop = {0};
 				const char *str;
-// 				char *buf = strdup (input+2);
+//				char *buf = strdup (input+2);
 				bufsz = r_hex_str2bin (hex, (ut8*)hex);
 				ret = r_anal_op (core->anal, &aop, core->offset,
 					(const ut8*)hex, bufsz);
@@ -2682,7 +2725,7 @@ static int cmd_print(void *data, const char *input) {
 							if (tmp_func->addr > f->addr) {
 								break;
 							}
-							r_list_foreach (f->bbs, iter, b) {
+							r_list_foreach (tmp_func->bbs, iter, b) {
 								r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
 								if (iter->n) {
 									r_cons_print (",");
@@ -2707,57 +2750,45 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						// TODO: sort by addr
 						bool asm_lines = r_config_get_i (core->config, "asm.lines");
+						bool emu = r_config_get_i (core->config, "asm.emu");
+                        RHashTable64 *local_state;
+						ut64 saved_gp;
+						ut8 *saved_arena;
+                        if (emu) {
+							saved_gp = core->anal->gp;
+							saved_arena = r_reg_arena_peek (core->anal->reg);
+                            local_state = r_hashtable64_new();
+							local_state->free = &free;
+                        }
+
 						r_config_set_i (core->config, "asm.lines", 0);
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							if (tmp_func->addr < f->addr) {
 								r_list_foreach (tmp_func->bbs, iter, b) {
-									r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-#if 1
-									if (b->jump != UT64_MAX) {
-										r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
-										//r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
-									}
-									if (b->fail != UT64_MAX) {
-										r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
-									}
-									r_cons_newline ();
-#endif
+									pdr_bb (core, local_state, b, emu, saved_gp, saved_arena);
 								}
 							} else {
 								break;
 							}
 						}
 						r_list_foreach (f->bbs, iter, b) {
-							r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-#if 1
-							if (b->jump != UT64_MAX) {
-								r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
-								//r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
-							}
-							if (b->fail != UT64_MAX) {
-								r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
-							}
-							r_cons_newline ();
-#endif
+							pdr_bb (core, local_state, b, emu, saved_gp, saved_arena);
 						}
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							//this should be more advanced
 							r_list_foreach (tmp_func->bbs, iter, b) {
-								r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-#if 1
-								if (b->jump != UT64_MAX) {
-									r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
-									//r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
-								}
-								if (b->fail != UT64_MAX) {
-									r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
-								}
-								r_cons_newline ();
-#endif
+								pdr_bb (core, local_state, b, emu, saved_gp, saved_arena);
 							}
 						}
 
-
+						if (emu) {
+							r_hashtable64_free (local_state);
+							core->anal->gp = saved_gp;
+							if (saved_arena) {
+								r_reg_arena_poke (core->anal->reg, saved_arena);
+								R_FREE(saved_arena);
+							}
+						}
 						r_config_set_i (core->config, "asm.lines", asm_lines);
 					}
 				} else {

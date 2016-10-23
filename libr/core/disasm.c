@@ -878,7 +878,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 	if (!ds || !ds->atabs) {
 		return;
 	}
-	size = strlen (ds->asmop.buf_asm) * (ds->atabs + 1) * 4; 
+	size = strlen (ds->asmop.buf_asm) * (ds->atabs + 1) * 4;
 	if (size < 1 || size < strlen (ds->asmop.buf_asm)) {
 		return;
 	}
@@ -2697,7 +2697,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					if (*msg) {
 						int i;
 						DOALIGN();
-						if (strlen (msg) == 1) {	
+						if (strlen (msg) == 1) {
 							r_cons_printf (" ; \"");
 							for (i = 0; i < len; i++) {
 								if (!msg[i]) {
@@ -2881,6 +2881,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	}
 	core->anal->esil->user = ds;
 	free (ds->esil_regstate);
+	R_FREE (core->anal->last_disasm_reg);
 	if (core->anal->gp) {
 		r_reg_setv (core->anal->reg, "gp", core->anal->gp);
 	}
@@ -2890,6 +2891,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	if (ds->show_emu && ds->esil_regstate) {
 		RCore* core = ds->core;
+		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg);
 		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 		r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
 		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
@@ -2929,8 +2931,8 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	{
 		const RAnalMetaItem *mi = r_meta_find (core->anal, ds->at, R_META_TYPE_ANY, 0);
-		if (mi) { 
-			goto beach; 
+		if (mi) {
+			goto beach;
 		}
 	}
 	if (ds->show_color) {
