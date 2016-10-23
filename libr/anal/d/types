@@ -171,3 +171,59 @@ func.ungetc.args=2
 func.ungetc.arg.0=int,c
 func.ungetc.arg.1=FILE *,stream
 func.ungetc.ret=int
+
+err=func
+func.err.args=2
+func.err.arg.0=int,eval
+func.err.arg.1=const char *,fmt
+func.err.noreturn=true
+func.err.ret=void
+
+close=func
+func.close.args=1
+func.close.arg.0=int,fildes
+func.close.ret=int
+
+fclose=func
+func.fclose.args=1
+func.fclose.arg.0=FILE *,stream
+func.fclose.ret=int
+
+fileno=func
+func.fileno.args=1
+func.fileno.arg.0=FILE *,stream
+func.fileno.ret=int
+
+fwrite=func
+func.fwrite.args=4
+func.fwrite.arg.0=const void *,ptr
+func.fwrite.arg.1=size_t,size
+func.fwrite.arg.2=size_t,nitems
+func.fwrite.arg.3=FILE *,stream
+func.fwrite.ret=size_t
+
+open=func
+func.open.args=2
+func.open.arg.0=const char *,path
+func.open.arg.1=int,oflag
+func.open.ret=int
+
+read=func
+func.read.args=3
+func.read.arg.0=int,fildes
+func.read.arg.1=void *,buf
+func.read.arg.2=size_t,nbyte
+func.read.ret=ssize_t
+
+strcmp=func
+func.strcmp.args=2
+func.strcmp.arg.0=const char *,s1
+func.strcmp.arg.1=const char *,s2
+func.strcmp.ret=int
+
+strncmp=func
+func.strncmp.args=3
+func.strncmp.arg.0=const char *,s1
+func.strncmp.arg.1=const char *,s2
+func.strncmp.arg.2=size_t,n
+func.strncmp.ret=int
