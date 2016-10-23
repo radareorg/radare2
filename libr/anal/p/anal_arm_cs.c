@@ -228,7 +228,7 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				}
 			}
 		}
-		
+
 	} else {
 		ut64 i2 = IMM64(2);
 		if (negate) {
@@ -661,10 +661,10 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_CMP:
-		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_CMN:
-		r_strbuf_appendf (&op->esil, "%s,%s,!=", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,!=,$z,zf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_LSL:
 		// suffix 'S' forces conditional flag to be updated
@@ -1702,6 +1702,10 @@ static char *get_reg_profile(RAnal *anal) {
 		"=A1	r1\n"
 		"=A2	r2\n"
 		"=A3	r3\n"
+		"=ZF	zf\n"
+		"=SF	nf\n"
+		"=OF	vf\n"
+		"=CF	cf\n"
 		"gpr	sb	.32	36	0\n" // r9
 		"gpr	sl	.32	40	0\n" // rl0
 		"gpr	fp	.32	44	0\n" // r11
