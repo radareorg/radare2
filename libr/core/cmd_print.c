@@ -2104,8 +2104,6 @@ static void pdr_bb(RCore * core, RHashTable64* state, RAnalBlock * b, bool emu, 
 			r_hashtable64_remove (state, b->addr);
 			gp = r_reg_getv (core->anal->reg, "gp");
 			if (gp) {
-				r_cons_printf ("restoring GP=0x%08"PFMT64x, gp);
-				r_cons_newline ();
 				core->anal->gp = gp;
 			}
 		} else {
