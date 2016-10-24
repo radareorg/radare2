@@ -2094,14 +2094,13 @@ static ut32 tmp_get_contsize (RAnalFunction *f) {
 	return (size < 0) ? 0 : size;
 }
 
-static void pdr_bb(RCore * core, RHashTable64* state, RAnalBlock * b, bool emu, ut64 saved_gp, ut8 *saved_arena) {
+static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, ut64 saved_gp, ut8 *saved_arena) {
 	core->anal->gp = saved_gp;
 	if (emu) {
-		ut8 *esil_arena = r_hashtable64_lookup (state, b->addr);
-		if (esil_arena) {
+		if (b->parent_reg_arena) {
 			ut64 gp;
-			r_reg_arena_poke (core->anal->reg, esil_arena);
-			r_hashtable64_remove (state, b->addr);
+			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena);
+			R_FREE (b->parent_reg_arena);
 			gp = r_reg_getv (core->anal->reg, "gp");
 			if (gp) {
 				core->anal->gp = gp;
@@ -2114,18 +2113,18 @@ static void pdr_bb(RCore * core, RHashTable64* state, RAnalBlock * b, bool emu, 
 #if 1
 	if (b->jump != UT64_MAX) {
 		if (emu && core->anal->last_disasm_reg != NULL) {
-			ut8 *new_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
-			if (new_arena) {
-				r_hashtable64_insert (state, b->jump, new_arena);
+			RAnalBlock * jumpbb = r_anal_bb_get_jumpbb (fcn, b);
+			if (jumpbb) {
+				jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 			}
 		}
 		r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
 	}
 	if (b->fail != UT64_MAX) {
 		if (emu && core->anal->last_disasm_reg != NULL) {
-			ut8 *new_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
-			if (new_arena) {
-				r_hashtable64_insert (state, b->fail, new_arena);
+			RAnalBlock * failbb = r_anal_bb_get_failbb (fcn, b);
+			if (failbb) {
+				failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 			}
 		}
 		r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
@@ -2749,38 +2748,34 @@ static int cmd_print(void *data, const char *input) {
 						// TODO: sort by addr
 						bool asm_lines = r_config_get_i (core->config, "asm.lines");
 						bool emu = r_config_get_i (core->config, "asm.emu");
-						RHashTable64 *local_state;
 						ut64 saved_gp;
 						ut8 *saved_arena;
 						if (emu) {
 							saved_gp = core->anal->gp;
 							saved_arena = r_reg_arena_peek (core->anal->reg);
-							local_state = r_hashtable64_new ();
-							local_state->free = &free;
 						}
 
 						r_config_set_i (core->config, "asm.lines", 0);
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							if (tmp_func->addr < f->addr) {
 								r_list_foreach (tmp_func->bbs, iter, b) {
-									pdr_bb (core, local_state, b, emu, saved_gp, saved_arena);
+									pdr_bb (core, tmp_func, b, emu, saved_gp, saved_arena);
 								}
 							} else {
 								break;
 							}
 						}
 						r_list_foreach (f->bbs, iter, b) {
-							pdr_bb (core, local_state, b, emu, saved_gp, saved_arena);
+							pdr_bb (core, f, b, emu, saved_gp, saved_arena);
 						}
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							//this should be more advanced
 							r_list_foreach (tmp_func->bbs, iter, b) {
-								pdr_bb (core, local_state, b, emu, saved_gp, saved_arena);
+								pdr_bb (core, tmp_func, b, emu, saved_gp, saved_arena);
 							}
 						}
 
 						if (emu) {
-							r_hashtable64_free (local_state);
 							core->anal->gp = saved_gp;
 							if (saved_arena) {
 								r_reg_arena_poke (core->anal->reg, saved_arena);
