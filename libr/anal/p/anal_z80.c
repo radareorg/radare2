@@ -6,7 +6,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/z80_cr/z80_tab.h"
+#include "../../asm/arch/z80/z80_tab.h"
 
 static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 	int type;

@@ -24,6 +24,7 @@
 #define R_API_I
 #endif
 #include "z80asm.h"
+#include <r_util.h>
 
 /* hack */
 // must remove: equ, include, incbin, macro
@@ -210,9 +211,8 @@ static void readlabel (const char **p, int store) {
 	for (d = *p; *d && *d != ';'; ++d);
 	for (c = *p; !strchr (" \r\n\t", *c) && c < d; ++c);
 	pos = strchr (*p, ':');
-	if (!pos || pos >= c) {
+	if (!pos || pos >= c)
 		return;
-	}
 	if (pos == *p) {
 		eprintf ("`:' found without a label");
 		return;
@@ -239,25 +239,18 @@ static void readlabel (const char **p, int store) {
 	*p = c;
 	buf->value = addr;
 	//lastlabel = buf;
-	if (previous) {
+	if (previous)
 		buf->next = previous->next;
-	} else {
-		buf->next = thefirstlabel
-			? *thefirstlabel
-			: NULL;
-	}
+	else buf->next = *thefirstlabel;
 	buf->prev = previous;
 	buf->valid = 1;
 	buf->busy = 0;
 	buf->ref = NULL;
-	if (buf->prev) {
+	if (buf->prev)
 		buf->prev->next = buf;
-	} else {
-		*thefirstlabel = buf;
-	}
-	if (buf->next) {
+	else *thefirstlabel = buf;
+	if (buf->next)
 		buf->next->prev = buf;
-	}
 }
 
 static int compute_ref (struct reference *ref, int allow_invalid) {
@@ -1375,7 +1368,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 }
 
 // XXX
-R_API_I inline int z80asm (unsigned char *outbuf, const char *s) {
+R_API_I int z80asm (unsigned char *outbuf, const char *s) {
 	return assemble (s, outbuf);
 }
 
