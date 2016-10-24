@@ -46,6 +46,7 @@ R_API void r_list_init(RList *list) {
 	list->tail = NULL;
 	list->free = NULL;
 	list->length = 0;
+	list->sorted = false;
 }
 
 R_API int r_list_length(const RList *list) {
@@ -147,6 +148,7 @@ R_API int r_list_join(RList *list1, RList *list2) {
 	}
 	list1->length += list2->length;
 	list2->head = list2->tail = NULL;
+	list1->sorted = true;
 	/* the caller must free list2 */
 	return 1;
 }
@@ -195,16 +197,17 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 			list->head = item;
 		}
 		list->length++;
+		list->sorted = false;
 	}
 	return item;
 }
 
 R_API RListIter *r_list_prepend(RList *list, void *data) {
-	RListIter *item = R_NEW (RListIter);
-	if (!item) {
-		return NULL;
-	}
 	if (list) {
+		RListIter *item = R_NEW0 (RListIter);
+		if (!item) {
+			return NULL;
+		}
 		if (list->head) {
 			list->head->p = item;
 		}
@@ -216,9 +219,9 @@ R_API RListIter *r_list_prepend(RList *list, void *data) {
 			list->tail = item;
 		}
 		list->length++;
+		list->sorted = true;
 		return item;
 	}
-	free (item);
 	return NULL;
 }
 
@@ -243,6 +246,7 @@ R_API RListIter *r_list_insert(RList *list, int n, void *data) {
 				}
 				it->p = item;
 				list->length++;
+				list->sorted = true;
 				return item;
 			}
 		}
@@ -361,27 +365,10 @@ R_API RList *r_list_clone(RList *list) {
 		r_list_foreach (list, iter, data) {
 			r_list_append (l, data);
 		}
+		l->sorted = list->sorted;
 	}
 	return l;
 }
-
-#if 0
-R_API void r_list_sort(RList *list, RListComparator cmp) {
-	RListIter *it;
-	RListIter *it2;
-	if (list && cmp) {
-		for (it = list->head; it && it->data; it = it->n) {
-			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
-				if (cmp (it->data, it2->data) > 0) {
-					void *t = it->data;
-					it->data = it2->data;
-					it2->data = t;
-				}
-			}
-		}
-	}
-}
-#endif
 
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
 	RListIter *it, *item = NULL;
@@ -405,6 +392,7 @@ R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp)
 		} else {
 			r_list_append (list, data);
 		}
+		list->sorted = true;
 		return item;
 	}
 	return NULL;
@@ -420,6 +408,7 @@ R_API int r_list_set_n(RList *list, int n, void *p) {
 					list->free (it->data);
 				}
 				it->data = p;
+				list->sorted = false;
 				return true;
 			}
 		}
@@ -512,31 +501,37 @@ static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
 }
 
 R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
-	if (list && list->head && cmp) {
-		RListIter *iter;
-		list->head = _merge_sort (list->head, cmp);
-		//update tail reference
-		iter = list->head;
-		while (iter && iter->n) {
-			iter = iter->n;
+	if (!list->sorted) {
+		if (list && list->head && cmp) {
+			RListIter *iter;
+			list->head = _merge_sort (list->head, cmp);
+			//update tail reference
+			iter = list->head;
+			while (iter && iter->n) {
+				iter = iter->n;
+			}
+			list->tail = iter;
 		}
-		list->tail = iter;
+		list->sorted = true;
 	}
 }
 
 R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
-	RListIter *it;
-	RListIter *it2;
-	if (list && cmp) {
-		for (it = list->head; it && it->data; it = it->n) {
-			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
-				if (cmp (it->data, it2->data) > 0) {
-					void *t = it->data;
-					it->data = it2->data;
-					it2->data = t;
+	if (!list->sorted) {
+		RListIter *it;
+		RListIter *it2;
+		if (list && cmp) {
+			for (it = list->head; it && it->data; it = it->n) {
+				for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+					if (cmp (it->data, it2->data) > 0) {
+						void *t = it->data;
+						it->data = it2->data;
+						it2->data = t;
+					}
 				}
 			}
 		}
+		list->sorted = true;
 	}
 }
 

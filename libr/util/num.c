@@ -22,7 +22,7 @@ R_API int r_num_rand(int max) {
 }
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
-	if (*a>*b) {
+	if (*a > *b) {
 		ut64 tmp = *a;
 		*a = *b;
 		*b = tmp;

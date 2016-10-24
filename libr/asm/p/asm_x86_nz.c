@@ -1028,7 +1028,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 			if (op.operands[0].scale[0] > 1) {
 				int s = op.operands[0].scale[0];
 				// Check for power of 2 as valid sib
-				if (!(s & (s - 1)) == 0) {
+				if (!(s & (s - 1))) {
 					return -1;
 				}
 				data[l++] = 0x04;

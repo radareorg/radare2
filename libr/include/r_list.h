@@ -25,6 +25,7 @@ typedef struct r_list_t {
 	RListIter *tail;
 	RListFree free;
 	int length;
+	bool sorted;
 } RList;
 
 typedef struct r_list_range_t {

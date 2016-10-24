@@ -153,8 +153,7 @@ static RList* sections(RBinFile *arch) {
 			break;
 		}
 		if (sections[i].name[0]) {
-			strncpy (ptr->name, (char*)sections[i].name,
-				R_BIN_SIZEOF_STRINGS);
+			strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > bin->size) {
@@ -184,6 +183,15 @@ static RList* sections(RBinFile *arch) {
 		}
 		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_SHAREABLE;
+		}
+#define X 1
+#define ROW (4 | 2)
+		if (ptr->srwx & ROW && !(ptr->srwx & X) && ptr->size > 0) {
+			if (!strcmp (ptr->name, ".rsrc") ||
+			  	!strcmp (ptr->name, ".data") ||
+				!strcmp (ptr->name, ".rdata")) {
+					ptr->is_data = true;
+				}
 		}
 		r_list_append (ret, ptr);
 	}
