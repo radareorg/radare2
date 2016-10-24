@@ -16,16 +16,16 @@
 
 
 static const char* r_vline_a[] = {
-	"|", // LINE_VERT
+	"|",  // LINE_VERT
 	"|-", // LINE_CROSS
-	"/", // RUP_CORNER
+	"-",  // LINE_HORIZ
+	"!",  // LINE_UP
+	",",  // LUP_CORNER
 	"\\", // RDWN_CORNER
+	"/",  // RUP_CORNER
+	"`",  // LDWN_CORNER
 	"->", // ARROW_RIGHT
 	"=<", // ARROW_LEFT
-	"-", // LINE_HORIZ
-	",", // LUP_CORNER
-	"`", // LDWN_CORNER
-	"!", // LINE_UP
 };
 
 static const char* r_vline_u[] = {
@@ -33,8 +33,8 @@ static const char* r_vline_u[] = {
 	"├", // LINE_CROSS
 	"─", // LINE_HORIZ
 	"↑", // LINE_UP
-//	"┌", // LUP_CORNER
-	"┘", // LUP_CORNER
+ 	//"┌", // LUP_CORNER
+  	"┘", // LUP_CORNER
 	"└", // RDWN_CORNER
 	"┌", // RUP_CORNER
 	"┐", // LDWN_CORNER
