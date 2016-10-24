@@ -2755,7 +2755,7 @@ static int cmd_print(void *data, const char *input) {
 						if (emu) {
 							saved_gp = core->anal->gp;
 							saved_arena = r_reg_arena_peek (core->anal->reg);
-							local_state = r_hashtable64_new();
+							local_state = r_hashtable64_new ();
 							local_state->free = &free;
 						}
 
@@ -2784,7 +2784,7 @@ static int cmd_print(void *data, const char *input) {
 							core->anal->gp = saved_gp;
 							if (saved_arena) {
 								r_reg_arena_poke (core->anal->reg, saved_arena);
-								R_FREE(saved_arena);
+								R_FREE (saved_arena);
 							}
 						}
 						r_config_set_i (core->config, "asm.lines", asm_lines);

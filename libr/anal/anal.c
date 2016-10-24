@@ -118,9 +118,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		r_anal_esil_free (a->esil);
 		a->esil = NULL;
 	}
-	if (a->last_disasm_reg) {
-		free (a->last_disasm_reg);
-	}
+	free (a->last_disasm_reg);
 	memset (a, 0, sizeof (RAnal));
 	free (a);
 	return NULL;
