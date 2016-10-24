@@ -191,7 +191,7 @@ static ut8 z80_op_24_branch_index_res (ut8 hex) {
 			return 0x47;
 	}
 	if (hex > 0x7f) {
-		return hex - x38;
+		return hex - 0x38;
 	}
 	return 0xc8;
 }
