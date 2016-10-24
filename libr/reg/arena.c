@@ -250,18 +250,33 @@ R_API ut8 *r_reg_arena_peek(RReg *reg) {
 		return NULL;
 	}
 	ut8 *ret = malloc (regset->arena->size);
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	memcpy (ret, regset->arena->bytes, regset->arena->size);
 	return ret;
 }
 
 R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
-	if (!ret || !regset || !regset->arena || !regset->arena->bytes)
+	if (!ret || !regset || !regset->arena || !regset->arena->bytes) {
 		return;
+	}
 	memcpy (regset->arena->bytes, ret, regset->arena->size);
 }
 
+R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
+	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
+	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
+		return NULL;
+	}
+	ut8 *ret = malloc (regset->arena->size);
+	if (!ret) {
+		return NULL;
+	}
+	memcpy (ret, source, regset->arena->size);
+	return ret;
+}
 
 R_API int r_reg_arena_set_bytes(RReg *reg, const char* str) {
 	while (IS_WHITESPACE (*str)) {

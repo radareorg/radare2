@@ -70,6 +70,7 @@ R_API RAnal *r_anal_new() {
 	r_io_bind_init (anal->iob);
 	r_flag_bind_init (anal->flb);
 	anal->reg = r_reg_new ();
+	anal->last_disasm_reg = NULL;
 	anal->bits_ranges = r_list_newf (free);
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
@@ -117,6 +118,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		r_anal_esil_free (a->esil);
 		a->esil = NULL;
 	}
+	free (a->last_disasm_reg);
 	memset (a, 0, sizeof (RAnal));
 	free (a);
 	return NULL;

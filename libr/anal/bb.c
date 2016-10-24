@@ -20,6 +20,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->label = NULL;
 	bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
 	bb->op_pos_size = DFLT_NINSTR;
+    bb->parent_reg_arena = NULL;
 	return bb;
 }
 
@@ -36,6 +37,24 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	bb->cond = NULL;
 	free (bb->label);
 	free (bb->op_pos);
+    free (bb->parent_reg_arena);
+    if (bb->prev) {
+		if (bb->prev->jumpbb == bb) {
+			bb->prev->jumpbb = NULL;
+		}
+		if (bb->prev->failbb == bb) {
+			bb->prev->failbb = NULL;
+		}
+    	bb->prev = NULL;
+    }
+    if (bb->jumpbb) {
+		bb->jumpbb->prev = NULL;
+		bb->jumpbb = NULL;
+    }
+    if (bb->failbb) {
+		bb->failbb->prev = NULL;
+		bb->failbb = NULL;
+    }
 	free (bb);
 }
 
@@ -144,6 +163,44 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 			if (r_anal_bb_is_in_offset (bb, off)) {
 				return bb;
 			}
+		}
+	}
+	return NULL;
+}
+
+R_API RAnalBlock *r_anal_bb_get_jumpbb(RAnalFunction *fcn, RAnalBlock *bb) {
+	if (bb->jump == UT64_MAX) {
+		return NULL;
+	}
+	if (bb->jumpbb) {
+		return bb->jumpbb;
+	}
+	RListIter *iter;
+	RAnalBlock *b;
+	r_list_foreach (fcn->bbs, iter, b) {
+		if (b->addr == bb->jump) {
+			bb->jumpbb = b;
+			b->prev = bb;
+			return b;
+		}
+	}
+	return NULL;
+}
+
+R_API RAnalBlock *r_anal_bb_get_failbb(RAnalFunction *fcn, RAnalBlock *bb) {
+	RListIter *iter;
+	RAnalBlock *b;
+	if (bb->fail == UT64_MAX) {
+		return NULL;
+	}
+	if (bb->failbb) {
+		return bb->failbb;
+	}
+	r_list_foreach (fcn->bbs, iter, b) {
+		if (b->addr == bb->fail) {
+			bb->failbb = b;
+			b->prev = bb;
+			return b;
 		}
 	}
 	return NULL;

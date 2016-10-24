@@ -588,6 +588,7 @@ typedef struct r_anal_t {
 	RList *refs;
 	RList *vartypes;
 	RReg *reg;
+	ut8 *last_disasm_reg;
 	RSyscall *syscall;
 	struct r_anal_op_t *queued;
 	int diff_ops;
@@ -771,10 +772,12 @@ typedef struct r_anal_bb_t {
 	struct r_anal_bb_t *head;
 	struct r_anal_bb_t *tail;
 	struct r_anal_bb_t *next;
+	/* these are used also in pdr: */
 	struct r_anal_bb_t *prev;
 	struct r_anal_bb_t *failbb;
 	struct r_anal_bb_t *jumpbb;
 	RList /*struct r_anal_bb_t*/ *cases;
+	ut8 *parent_reg_arena;
 } RAnalBlock;
 
 typedef enum {
@@ -1193,6 +1196,8 @@ R_API int r_anal_bb_is_in_offset(RAnalBlock *bb, ut64 addr);
 R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
+R_API RAnalBlock *r_anal_bb_get_failbb(RAnalFunction *fcn, RAnalBlock *bb);
+R_API RAnalBlock *r_anal_bb_get_jumpbb(RAnalFunction *fcn, RAnalBlock *bb);
 
 /* op.c */
 R_API const char *r_anal_stackop_tostring (int s);
