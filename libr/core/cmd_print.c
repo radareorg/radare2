@@ -2749,15 +2749,15 @@ static int cmd_print(void *data, const char *input) {
 						// TODO: sort by addr
 						bool asm_lines = r_config_get_i (core->config, "asm.lines");
 						bool emu = r_config_get_i (core->config, "asm.emu");
-                        RHashTable64 *local_state;
+						RHashTable64 *local_state;
 						ut64 saved_gp;
 						ut8 *saved_arena;
-                        if (emu) {
+						if (emu) {
 							saved_gp = core->anal->gp;
 							saved_arena = r_reg_arena_peek (core->anal->reg);
-                            local_state = r_hashtable64_new();
+							local_state = r_hashtable64_new();
 							local_state->free = &free;
-                        }
+						}
 
 						r_config_set_i (core->config, "asm.lines", 0);
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
