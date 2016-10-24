@@ -369,6 +369,7 @@ typedef struct r_cons_canvas_line_style_t {
 
 // UTF-8 symbols indexes
 // XXX. merge with RUNE/RUNECODE/RUNECODESTR
+#if 0
 #define LINE_VERT 0
 #define LINE_CROSS 1
 #define LINE_HORIZ 2
@@ -379,6 +380,18 @@ typedef struct r_cons_canvas_line_style_t {
 #define CORNER_TR 7
 #define ARROW_RIGHT 8
 #define ARROW_LEFT 9
+#else
+#define LINE_VERT 0
+#define LINE_CROSS 1
+#define LINE_HORIZ 2
+#define LINE_UP 3
+#define CORNER_TL 2
+#define CORNER_BR 4
+#define CORNER_BL 3
+#define CORNER_TR 7
+#define ARROW_RIGHT 8
+#define ARROW_LEFT 9
+#endif
 
 
 #ifdef R_API
