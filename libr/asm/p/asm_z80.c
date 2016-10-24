@@ -6,9 +6,14 @@
 #include <r_asm.h>
 
 #include "../arch/z80/z80.c"
+#include "../arch/z80/z80asm.c"
 
 static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size = z80Disass (op, buf, len);
+}
+
+static int do_assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	return op->size = z80asm (op->buf, buf);
 }
 
 RAsmPlugin r_asm_plugin_z80 = {
@@ -19,6 +24,7 @@ RAsmPlugin r_asm_plugin_z80 = {
 	.bits = 8,
 	.endian = R_SYS_ENDIAN_NONE,
 	.disassemble = &do_disassemble,
+	.assemble = &do_assemble,
 };
 
 struct r_lib_struct_t radare_plugin = {
