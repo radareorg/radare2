@@ -228,7 +228,6 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				}
 			}
 		}
-
 	} else {
 		ut64 i2 = IMM64(2);
 		if (negate) {
