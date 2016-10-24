@@ -2974,7 +2974,7 @@ static int cmd_print(void *data, const char *input) {
 						memcpy (block, core->block, bs);
 						r_core_read_at (core, addr+bs, block+bs, instr_len-bs); //core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block, instr_len, l, 0, 1);
+								core, core->offset, block, instr_len, l, 0, 1);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -3012,7 +3012,7 @@ static int cmd_print(void *data, const char *input) {
 			free (block);
 		}
 		core->offset = current_offset;
-		// change back asm setting is they were changed
+		// change back asm setting if they were changed
 		if (settings_changed)
 			r_core_set_asm_configs (core, old_arch, old_bits, segoff);
 
