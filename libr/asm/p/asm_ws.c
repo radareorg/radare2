@@ -11,6 +11,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return wsdis (op, buf, len);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_ws = {
 	.name = "ws",
 	.desc = "Whitespace esotheric VM",
@@ -18,7 +23,8 @@ RAsmPlugin r_asm_plugin_ws = {
 	.license = "LGPL3",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_NONE,
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

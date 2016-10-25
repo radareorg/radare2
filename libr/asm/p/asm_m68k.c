@@ -38,6 +38,11 @@ static int disassemble(RAsm *a, RAsmOp *aop, const ut8 *buf, int len) {
 	return aop->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_m68k = {
 	.name = "m68k",
 	.arch = "m68k",
@@ -46,6 +51,7 @@ RAsmPlugin r_asm_plugin_m68k = {
 	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "Motorola 68000",
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

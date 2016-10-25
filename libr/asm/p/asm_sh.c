@@ -84,6 +84,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_sh = {
 	.name = "sh",
 	.arch = "sh",
@@ -91,7 +96,8 @@ RAsmPlugin r_asm_plugin_sh = {
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "SuperH-4 CPU",
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

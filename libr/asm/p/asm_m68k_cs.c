@@ -98,6 +98,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_m68k_cs = {
 	.name = "m68k.cs",
 	.desc = "Capstone M68K disassembler",
@@ -107,6 +112,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 static bool check_features(RAsm *a, cs_insn *insn) {

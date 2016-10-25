@@ -26,6 +26,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_ebc = {
 	.name = "ebc",
 	.license = "LGPL3",
@@ -34,6 +39,7 @@ RAsmPlugin r_asm_plugin_ebc = {
 	.bits = 32|64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

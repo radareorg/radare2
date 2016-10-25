@@ -407,6 +407,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	return len;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 // AVR assembler realization ends
 RAsmPlugin r_asm_plugin_avr = {
 	.name = "avr",
@@ -423,7 +428,8 @@ RAsmPlugin r_asm_plugin_avr = {
 	        "ATmega1280,"
 	        "ATmega2560,"
 		"ATmega48,"
-		"ATmega8"
+		"ATmega8",
+	.instructions = instructions,
 };
 
 #ifndef CORELIB

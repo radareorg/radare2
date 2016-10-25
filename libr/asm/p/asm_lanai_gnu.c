@@ -91,6 +91,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_lanai_gnu = {
 	.name = "lanai", // .gnu",
 	.arch = "lanai",
@@ -98,7 +103,8 @@ RAsmPlugin r_asm_plugin_lanai_gnu = {
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "LANAI",
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

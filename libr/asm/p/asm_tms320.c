@@ -36,6 +36,11 @@ static bool tms320_fini(void * user) {
 	return tms320_dasm_fini (&engine);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
@@ -47,6 +52,7 @@ RAsmPlugin r_asm_plugin_tms320 = {
 	.init = tms320_init,
 	.fini = tms320_fini,
 	.disassemble = &tms320_disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

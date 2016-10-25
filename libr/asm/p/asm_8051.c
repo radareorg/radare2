@@ -35,6 +35,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return (op->size = o.length);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): return the instrucion list.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
@@ -43,7 +48,8 @@ RAsmPlugin r_asm_plugin_8051 = {
 	.desc = "8051 Intel CPU",
 	.disassemble = &disassemble,
 	.assemble = NULL,
-	.license = "PD"
+	.license = "PD",
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

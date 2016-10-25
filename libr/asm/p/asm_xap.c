@@ -33,6 +33,11 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 	return (op->size=2);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_xap = {
 	.name = "xap",
 	.arch = "xap",
@@ -40,7 +45,8 @@ RAsmPlugin r_asm_plugin_xap = {
 	.bits = 16,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "XAP4 RISC (CSR)",
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

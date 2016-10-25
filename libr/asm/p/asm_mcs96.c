@@ -28,6 +28,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_mcs96 = {
 	.name = "mcs96",
 	.desc = "condrets car",
@@ -35,7 +40,8 @@ RAsmPlugin r_asm_plugin_mcs96 = {
 	.license = "LGPL3",
 	.bits = 16,
 	.endian = R_SYS_ENDIAN_NONE,
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

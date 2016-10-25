@@ -10,6 +10,11 @@ static int disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return i4004dis (op,buf,len);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_i4004 = {
 	.name = "i4004",
 	.desc = "Intel 4004 microprocessor",
@@ -17,7 +22,8 @@ RAsmPlugin r_asm_plugin_i4004 = {
 	.license = "LGPL3",
 	.bits = 4,
 	.endian = R_SYS_ENDIAN_NONE,
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

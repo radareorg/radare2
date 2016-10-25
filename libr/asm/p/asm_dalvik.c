@@ -457,6 +457,12 @@ static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return 0;
 }
 
+
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
@@ -466,6 +472,7 @@ RAsmPlugin r_asm_plugin_dalvik = {
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &dalvik_disassemble,
 	.assemble = &dalvik_assemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

@@ -19,6 +19,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 	return ret;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_h8300 = {
 	.name = "h8300",
 	.license = "LGPL3",
@@ -26,7 +31,8 @@ RAsmPlugin r_asm_plugin_h8300 = {
 	.arch = "h8300",
 	.bits = 16,
 	.endian = R_SYS_ENDIAN_BIG,
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

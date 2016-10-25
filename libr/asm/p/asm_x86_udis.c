@@ -71,6 +71,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return opsize;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_x86_udis = {
 	.name = "x86.udis",
 	.desc = "udis86 x86-16,32,64",
@@ -80,6 +85,7 @@ RAsmPlugin r_asm_plugin_x86_udis = {
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.modify = &modify,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

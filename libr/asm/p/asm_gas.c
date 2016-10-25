@@ -33,7 +33,8 @@ RAsmPlugin r_asm_plugin_x86_gas = {
 	.bits = 16|32|64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = NULL, /*&disassemble,*/
-	.assemble = &assemble
+	.assemble = &assemble,
+	.instructions = NULL,
 };
 
 #ifndef CORELIB

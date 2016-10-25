@@ -96,6 +96,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_hppa_gnu = {
 	.name = "hppa",
 	.arch = "hppa",
@@ -103,7 +108,8 @@ RAsmPlugin r_asm_plugin_hppa_gnu = {
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "HP PA-RISC",
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB
