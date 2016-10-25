@@ -364,7 +364,7 @@ R_API int r_str_word_set0(char *str) {
 	}
 	for (i = 0; str[i] && str[i+1]; i++) {
 		if (i > 0 && str[i-1] == ' ' && str[i] == ' ') {
-			int len = strlen (str + i) + 1;
+			int len = strlen (str + i);
 			memmove (str + i, str + i + 1, len);
 			i--;
 		}
