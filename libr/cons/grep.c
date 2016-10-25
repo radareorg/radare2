@@ -6,6 +6,7 @@
 #define sdb_json_unindent r_cons_json_unindent
 #include "../../shlr/sdb/src/json/indent.c"
 
+/* TODO: remove globals */
 static RList *sorted_lines = NULL;
 static int sorted_column = -1;
 
@@ -49,6 +50,8 @@ R_API void r_cons_grep(const char *str) {
 	}
 	cons = r_cons_singleton ();
 	memset (&(cons->grep), 0, sizeof (cons->grep));
+	sorted_column = 0;
+	cons->grep.sort = -1;
 	cons->grep.line = -1;
 	while (*str) {
 		switch (*str) {
@@ -72,6 +75,12 @@ R_API void r_cons_grep(const char *str) {
 			break;
 		case '$':
 			str++;
+			if (*str == '!') {
+				cons->grep.sort_invert = true;
+				str++;
+			} else {
+				cons->grep.sort_invert = false;
+			}
 			cons->grep.sort = atoi (str);
 			while (IS_NUMBER (*str)) {
 				str++;
@@ -398,6 +407,9 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		char *str;
 		sorted_column = cons->grep.sort;
 		r_list_sort (sorted_lines, cmp);
+		if (cons->grep.sort_invert) {
+			r_list_reverse (sorted_lines);
+		}
 		r_list_foreach (sorted_lines, iter, str) {
 			int len = strlen (str);
 			memcpy (ptr, str, len);

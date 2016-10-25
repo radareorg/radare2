@@ -418,6 +418,7 @@ R_API void r_cons_reset() {
 	I.grep.nstrings = 0; // XXX
 	I.grep.line = -1;
 	I.grep.sort = -1;
+	I.grep.sort_invert = false;
 	I.grep.str = NULL;
 	memset (I.grep.tokens, 0, R_CONS_GREP_TOKENS);
 	I.grep.tokens_used = 0;
