@@ -60,6 +60,7 @@ typedef struct r_cons_grep_t {
 	int range_line;
 	int line;
 	int sort;
+	int sort_row;
 	bool sort_invert;
 	int f_line; //first line
 	int l_line; //last line

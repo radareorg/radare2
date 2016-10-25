@@ -8,6 +8,7 @@
 
 /* TODO: remove globals */
 static RList *sorted_lines = NULL;
+static RList *unsorted_lines = NULL;
 static int sorted_column = -1;
 
 R_API void r_cons_grep_help() {
@@ -83,6 +84,10 @@ R_API void r_cons_grep(const char *str) {
 			}
 			cons->grep.sort = atoi (str);
 			while (IS_NUMBER (*str)) {
+				str++;
+			}
+			if (*str == ':') {
+				cons->grep.sort_row = atoi (++str);
 				str++;
 			}
 			break;
@@ -401,6 +406,17 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		cons->buffer_len = strlen (cons->buffer);
 	}
 	if (cons->grep.sort != -1) {
+#define INSERT_LINES(list) \
+	do {\
+		r_list_foreach (list, iter, str) { \
+			int len = strlen (str);\
+			memcpy (ptr, str, len);\
+			memcpy (ptr + len, "\n", 2); \
+			ptr += len + 1; \
+			nl++; \
+		} \
+	} while (false)
+
 		RListIter *iter;
 		int nl = 0;
 		char *ptr = cons->buffer;
@@ -410,16 +426,13 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		if (cons->grep.sort_invert) {
 			r_list_reverse (sorted_lines);
 		}
-		r_list_foreach (sorted_lines, iter, str) {
-			int len = strlen (str);
-			memcpy (ptr, str, len);
-			memcpy (ptr + len, "\n", 2);
-			ptr += len + 1;
-			nl++;
-		}
+		INSERT_LINES (unsorted_lines);
+		INSERT_LINES (sorted_lines);
 		cons->lines = nl;
 		r_list_free (sorted_lines);
 		sorted_lines = NULL;
+		r_list_free (unsorted_lines);
+		unsorted_lines = NULL;
 	}
 	return cons->lines;
 }
@@ -536,7 +549,14 @@ R_API int r_cons_grep_line(char *buf, int len) {
 		if (!sorted_lines) {
 			sorted_lines = r_list_newf (free);
 		}
-		r_list_append (sorted_lines, strdup (buf));
+		if (!unsorted_lines) {
+			unsorted_lines = r_list_newf (free);
+		}
+		if  (cons->lines > cons->grep.sort_row) {
+			r_list_append (sorted_lines, strdup (buf));
+		} else {
+			r_list_append (unsorted_lines, strdup (buf));
+		}
 		buf[len] = ch;
 	}
 
