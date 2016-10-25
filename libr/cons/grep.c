@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -6,11 +6,15 @@
 #define sdb_json_unindent r_cons_json_unindent
 #include "../../shlr/sdb/src/json/indent.c"
 
+static RList *sorted_lines = NULL;
+static int sorted_column = -1;
+
 R_API void r_cons_grep_help() {
 	eprintf (
 "|Usage: [command]~[modifier][word,word][endmodifier][[column]][:line]\n"
 "| modifiers:\n"
 "|   &        all words must match to grep the line\n"
+"|   $[n]     sort numerically / alphabetically the Nth column\n"
 "|   ^        words must be placed at the beginning of line\n"
 "|   !        negate grep\n"
 "|   ?        count number of matching lines\n"
@@ -66,28 +70,35 @@ R_API void r_cons_grep(const char *str) {
 			}
 			str++;
 			break;
-		case '&': 
-			str++; 
-			cons->grep.amp = 1; 
+		case '$':
+			str++;
+			cons->grep.sort = atoi (str);
+			while (IS_NUMBER (*str)) {
+				str++;
+			}
 			break;
-		case '^': 
-			str++; 
-			cons->grep.begin = 1; 
+		case '&':
+			str++;
+			cons->grep.amp = 1;
 			break;
-		case '!': 
-			str++; 
-			cons->grep.neg = 1; 
+		case '^':
+			str++;
+			cons->grep.begin = 1;
+			break;
+		case '!':
+			str++;
+			cons->grep.neg = 1;
 			break;
 		case '?': str++; cons->grep.counter = 1;
-			if (*str == '?') { 
+			if (*str == '?') {
 				r_cons_grep_help ();
 				return;
 			}
 			break;
-		default: 
+		default:
 			goto while_end;
 		}
-	} 
+	}
 	while_end:
 
 	len = strlen (str) - 1;
@@ -169,7 +180,7 @@ R_API void r_cons_grep(const char *str) {
 			cons->grep.range_line = 0;
 		} else {
 			*p = '\0';
-			cons->grep.range_line = 1; 
+			cons->grep.range_line = 1;
 			if (!*token) {
 				cons->grep.f_line = 0;
 			} else {
@@ -214,6 +225,39 @@ R_API void r_cons_grep(const char *str) {
 	}
 }
 
+static int cmp (const void *a, const void *b) {
+	char *da = NULL;
+	char *db = NULL;
+	const char *ca = r_str_chop_ro (a);
+	const char *cb = r_str_chop_ro (b);
+	if (!a || !b) {
+		return (int)(size_t)(a - b);
+	}
+	if (sorted_column > 0) {
+		da = strdup (ca);
+		db = strdup (cb);
+		int colsa = r_str_word_set0 (da);
+		int colsb = r_str_word_set0 (db);
+		ca = (colsa > sorted_column) ? r_str_word_get0 (da, sorted_column): "";
+		cb = (colsb > sorted_column) ? r_str_word_get0 (db, sorted_column): "";
+	}
+	if (IS_NUMBER (*ca) && IS_NUMBER (*cb)) {
+		ut64 na = r_num_get (NULL, ca);
+		ut64 nb = r_num_get (NULL, cb);
+		int ret = na > nb;
+		free (da);
+		free (db);
+		return ret;
+	}
+	if (da && db) {
+		int ret = strcmp (ca, cb);
+		free (da);
+		free (db);
+		return ret;
+	}
+	return strcmp (a, b);
+}
+
 R_API int r_cons_grepbuf(char *buf, int len) {
 	RCons *cons = r_cons_singleton ();
 	char *tline, *tbuf, *p, *out, *in = buf;
@@ -226,7 +270,6 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		cons->grep.less = 0;
 		return 0;
 	}
-
 	if (cons->grep.json) {
 		char *out = sdb_json_indent (buf);
 		free (cons->buffer);
@@ -276,7 +319,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	}
 	if (!cons->grep.range_line && cons->grep.line < 0) {
 		cons->grep.line = total_lines + cons->grep.line;
-	} 
+	}
 	if (cons->grep.range_line == 1) {
 		if (cons->grep.f_line < 0) {
 			cons->grep.f_line = total_lines + cons->grep.f_line;
@@ -347,6 +390,24 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		}
 		snprintf (cons->buffer, cons->buffer_len, "%d\n", cons->lines);
 		cons->buffer_len = strlen (cons->buffer);
+	}
+	if (cons->grep.sort != -1) {
+		RListIter *iter;
+		int nl = 0;
+		char *ptr = cons->buffer;
+		char *str;
+		sorted_column = cons->grep.sort;
+		r_list_sort (sorted_lines, cmp);
+		r_list_foreach (sorted_lines, iter, str) {
+			int len = strlen (str);
+			memcpy (ptr, str, len);
+			memcpy (ptr + len, "\n", 2);
+			ptr += len + 1;
+			nl++;
+		}
+		cons->lines = nl;
+		r_list_free (sorted_lines);
+		sorted_lines = NULL;
 	}
 	return cons->lines;
 }
@@ -457,6 +518,15 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	}
 	free (in);
 	free (out);
+	if (cons->grep.sort != -1) {
+		char ch = buf[len];
+		buf[len] = 0;
+		if (!sorted_lines) {
+			sorted_lines = r_list_newf (free);
+		}
+		r_list_append (sorted_lines, strdup (buf));
+		buf[len] = ch;
+	}
 
 	return len;
 }

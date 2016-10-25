@@ -395,7 +395,9 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			} else {
 				next = 0;
 			}
-			if (!next) return 0;
+			if (!next) {
+				return 0;
+			}
 		}
 	}
 

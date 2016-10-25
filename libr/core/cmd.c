@@ -1172,7 +1172,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		out = NULL;
 		// TODO: implement foo
 		str = r_core_cmd_str (core, radare_cmd);
-		r_sys_cmd_str_full (shell_cmd+1, str, &out, &olen, NULL);
+		r_sys_cmd_str_full (shell_cmd + 1, str, &out, &olen, NULL);
 		free (str);
 		r_cons_memcat (out, olen);
 		if (_ptr) {

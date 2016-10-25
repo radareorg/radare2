@@ -537,10 +537,12 @@ R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
 
 //chose wisely based on length
 R_API void r_list_sort(RList *list, RListComparator cmp) {
-	if (list->length > 43) {
-		r_list_merge_sort (list, cmp);
-	} else {
-		r_list_insertion_sort (list, cmp);
+	if (list) {
+		if (list->length > 43) {
+			r_list_merge_sort (list, cmp);
+		} else {
+			r_list_insertion_sort (list, cmp);
+		}
 	}
 }
  
