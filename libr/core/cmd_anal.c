@@ -75,8 +75,10 @@ static void type_cmd(RCore *core, const char *input) {
 		r_core_seek (core, seek, true);
 		break;
 	case 'm':
+		seek = core->offset;
 		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 		r_anal_type_match (core, fcn);
+		r_core_seek (core, seek, true);
 		break;
 	case '?':
 		type_cmd_help (core);
