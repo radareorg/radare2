@@ -1643,7 +1643,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input) {
 	RCoreAsmHit *hit;
 	RListIter *iter, *itermap;
-	int count = 0, maxhits = 0;
+	int count = 0, maxhits = 0, filter = 0;
 	int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
 	RList *hits;
 	RIOMap *map;
@@ -1665,6 +1665,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	}
 
 	maxhits = (int)r_config_get_i (core->config, "search.count");
+	filter = (int)r_config_get_i (core->config, "asm.filter");
 
 	if (!param->boundaries) {
 		map = R_NEW0 (RIOMap);
@@ -1711,8 +1712,15 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 							searchprefix, kwidx, count, hit->addr);
 					break;
 				default:
-					r_cons_printf ("0x%08"PFMT64x"   # %i: %s\n",
-							hit->addr, hit->len, hit->code);
+					if (filter) {
+						char tmp[128] = {};
+						r_parse_filter (core->parser, core->flags, hit->code, tmp, sizeof (tmp), core->print->big_endian);
+						r_cons_printf ("0x%08"PFMT64x"   # %i: %s\n",
+								hit->addr, hit->len, tmp);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x"   # %i: %s\n",
+								hit->addr, hit->len, hit->code);
+					}
 					break;
 				}
 				if (searchflags) {
