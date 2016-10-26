@@ -1507,7 +1507,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	}
 	count = r_str_split (s, '\n');
 	if (!line || !*line || count < 1) {
-		free (line);
+		free (s);
 		return;
 	}
 	for (i = 0; i < count; i++) {

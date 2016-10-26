@@ -1930,6 +1930,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 						"\"offset\":%" PFMT64d ",\"machine\":\"%s\"}",
 						i? ",": "", arch, bits,
 						boffset, machine);
+				break;
 			default:
 				bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%i %s\n", i,
 						boffset, obj_size, arch, bits, machine);

@@ -360,6 +360,7 @@ static void emit_load(REgg *egg, const char *dst, int sz) {
 		case 'l':
 			r_egg_printf (egg, "  movl %s, %%"R_AX"\n", dst);
 			r_egg_printf (egg, "  movl (%%"R_AX"), %%"R_AX"\n");
+			break;
 		case 'b':
 			r_egg_printf (egg, "  movl %s, %%"R_AX"\n", dst);
 			r_egg_printf (egg, "  movzb (%%"R_AX"), %%"R_AX"\n");
@@ -374,6 +375,7 @@ static void emit_load(REgg *egg, const char *dst, int sz) {
 		case 'l':
 			r_egg_printf (egg, "  mov "R_AX", %s\n", dst);
 			r_egg_printf (egg, "  mov "R_AX", ["R_AX"]\n");
+			break;
 		case 'b':
 			r_egg_printf (egg, "  mov "R_AX", %s\n", dst);
 			r_egg_printf (egg, "  movz "R_AX", ["R_AX"]\n");
