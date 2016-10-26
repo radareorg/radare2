@@ -38,6 +38,9 @@ static int rap__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		ret = -1;
 	} else {
 		ret = r_read_be32 (tmp + 1);
+		if (!ret) {
+			ret = -1;
+		}
 	}
 	free (tmp);
 	return ret;
