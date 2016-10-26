@@ -1846,11 +1846,15 @@ reaccept:
 					ut64 baddr = r_config_get_i (core->config, "bin.laddr");
 					r_socket_read_block (c, ptr, cmd); //filename
 					ptr[cmd] = 0;
-					file = r_core_file_open (core, (const char *)ptr, R_IO_READ, 0); // XXX: write mode?
+					ut32 perm = R_IO_READ;
+					if (flg & R_IO_WRITE) {
+						perm |= R_IO_WRITE;
+					}
+					file = r_core_file_open (core, (const char *)ptr, perm, 0);
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,
-								R_IO_READ, 0, 0, r_io_desc_size (core->io, file->desc));
+								perm, 0, 0, r_io_desc_size (core->io, file->desc));
 						if (core->file && core->file->desc) {
 							pipefd = core->file->desc->fd;
 						} else {
