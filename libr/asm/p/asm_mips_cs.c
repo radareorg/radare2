@@ -6,8 +6,10 @@
 #define R_IPI static
 #include "../arch/mips/mipsasm.c"
 
+static csh cd = 0;
+#include "cs_mnemonics.c"
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	csh handle;
 	cs_insn* insn;
 	int mode, n, ret = -1;
 	mode = (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
@@ -20,20 +22,28 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			mode |= CS_MODE_MIPS3;
 		}
 	}
-	mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
-	memset (op, 0, sizeof (RAsmOp));
-	op->size = 4;
-	ret = cs_open (CS_ARCH_MIPS, mode, &handle);
+	mode |= (a->bits == 64)? CS_MODE_64: CS_MODE_32;
+	if (op) {
+		memset (op, 0, sizeof (RAsmOp));
+		op->size = 4;
+	}
+	if (cd != 0) {
+		cs_close (&cd);
+	}
+	ret = cs_open (CS_ARCH_MIPS, mode, &cd);
 	if (ret) {
 		goto fin;
 	}
 	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
-		cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
 	} else {
-		cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	}
-	cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
-	n = cs_disasm (handle, (ut8*)buf, len, a->pc, 1, &insn);
+	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
+	if (!op) {
+		return 0;
+	}
+	n = cs_disasm (cd, (ut8*)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		strcpy (op->buf_asm, "invalid");
 		op->size = 4;
@@ -52,7 +62,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	r_str_replace_char (op->buf_asm, '$', 0);
 	cs_free (insn, n);
 beach:
-	cs_close (&handle);
+	// cs_close (&cd);
 fin:
 	return op->size;
 }
@@ -79,6 +89,7 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 	.bits = 16|32|64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
+	.mnemonics = mnemonics,
 	.assemble = &assemble
 };
 

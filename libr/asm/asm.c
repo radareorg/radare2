@@ -350,7 +350,11 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int oplen, ret = op->payload = 0;
+	int oplen, ret;
+	if (!a || !op || !buf) {
+		return -1;
+	}
+	ret = op->payload = 0;
 	op->size = 4;
 	if (len < 1) {
 		return 0;
@@ -877,4 +881,11 @@ R_API int r_asm_syntax_from_string(const char *name) {
 		return R_ASM_SYNTAX_ATT;
 	}
 	return -1;
+}
+
+R_API char *r_asm_mnemonics(RAsm *a, int id) {
+	if (a && a->cur && a->cur->mnemonics) {
+		return a->cur->mnemonics (a, id);
+	}
+	return NULL;
 }

@@ -270,7 +270,7 @@ static int cmd_info(void *data, const char *input) {
 			goto done;
 			break;
 		case 'o':
-			 {
+			{
 				if (!cf) {
 					eprintf ("Core file not open\n");
 					return 0;
@@ -278,7 +278,7 @@ static int cmd_info(void *data, const char *input) {
 				const char *fn = input[1]==' '? input+2: cf->desc->name;
 				ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 				r_core_bin_load (core, fn, baddr);
-			 }
+			}
 			break;
 	#define RBININFO(n,x,y) \
 	if (is_array) { \

@@ -198,6 +198,17 @@ static int cmd_help(void *data, const char *input) {
 		n = r_num_math (core->num, input+1);
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
+	case 'O':
+		{
+			int id = (input[1])
+				?(int)r_num_math (core->num, input + 1): -1;
+			char *ops = r_asm_mnemonics (core->assembler, id);
+			if (ops) {
+				r_cons_print (ops);
+				free (ops);
+			}
+		}
+		break;
 	case 'T':
 		r_cons_printf("plug.init = %"PFMT64d"\n"
 			"plug.load = %"PFMT64d"\n"
@@ -666,6 +677,7 @@ static int cmd_help(void *data, const char *input) {
 			"?iy", " prompt", "yesno input prompt",
 			"?l", " str", "returns the length of string",
 			"?o", " num", "get octal value",
+			"?O", " [id]", "List mnemonics for current asm.arch / asm.bits",
 			"?p", " vaddr", "get physical address for given virtual address",
 			"?r", " [from] [to]", "generate random number between from-to",
 			"?s", " from to step", "sequence of numbers from to by steps",
