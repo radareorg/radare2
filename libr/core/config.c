@@ -1720,6 +1720,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
 	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
+	SETPREF("asm.minicols", "false", "Only show the instruction in the column disasm");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
