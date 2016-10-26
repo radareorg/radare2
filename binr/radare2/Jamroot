@@ -21,7 +21,7 @@ exe radare2 : radare2.c :
     <library>../../libr/crypto
     <library>../../libr/egg
     <library>../../libr/socket
-    <library>../../libr/flags
+    <library>../../libr/flag
 
     <include>../../libr/include
     <library>../../shlr/sdb

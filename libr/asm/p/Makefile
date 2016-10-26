@@ -3,8 +3,8 @@ include ../../../mk/platform.mk
 
 CFLAGS+=-I$(TOP)/shlr -I../../include -I../arch/ -I../arch/include
 CFLAGS+=-Wall -shared ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
-LDFLAGS+=-L../../util -L../../lib -L../../flags
-LDFLAGS+=${LINK} -lr_flags -lr_util
+LDFLAGS+=-L../../util -L../../lib -L../../flag
+LDFLAGS+=${LINK} -lr_flag -lr_util
 
 CURDIR=
 

@@ -6,7 +6,7 @@ lib r_core : $(CORE_OBJS) :
     <define>CORELIB
     <library>../util
     <library>../anal
-    <library>../flags
+    <library>../flag
     <library>../asm
     <library>../bin
     <library>../debug

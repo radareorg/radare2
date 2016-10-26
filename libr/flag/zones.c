@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2016 - pancake */
 
-#include <r_flags.h>
+#include <r_flag.h>
 #include <r_util.h>
 
 #define DB f->zones

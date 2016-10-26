@@ -13,7 +13,7 @@ PWD=$(shell pwd)
 
 LIBS0=util hash
 LIBS1=socket reg cons magic bp search config
-LIBS2=syscall lang io crypto flags
+LIBS2=syscall lang io crypto flag
 LIBS3=fs anal bin
 LIBS4=parse
 LIBS5=asm debug

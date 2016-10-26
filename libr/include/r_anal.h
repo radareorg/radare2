@@ -18,7 +18,7 @@
 #include <r_util.h>
 #include <r_bind.h>
 #include <r_syscall.h>
-#include <r_flags.h>
+#include <r_flag.h>
 #include <r_bin.h>
 
 #ifdef __cplusplus

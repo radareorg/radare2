@@ -1,6 +1,6 @@
 /* Copyright (C) 2008-2016 - pancake */
 
-#include <r_flags.h>
+#include <r_flag.h>
 #include <r_core.h>
 #include <r_asm.h>
 #include <r_lib.h>

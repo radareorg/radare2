@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-// TODO: rename to r_flags_XXX api
+// TODO: rename to r_flag_XXX api
 R_LIB_VERSION_HEADER(r_flag);
 
 #define R_FLAG_NAME_SIZE 512

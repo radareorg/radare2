@@ -6,7 +6,7 @@
 
 #include <r_lib.h>
 #include <r_util.h>
-#include <r_flags.h>
+#include <r_flag.h>
 #include <r_anal.h>
 #include <r_reg.h>
 #include <r_parse.h>

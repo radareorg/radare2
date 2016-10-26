@@ -20,7 +20,7 @@
 #include "r_search.h"
 #include "r_sign.h"
 #include "r_debug.h"
-#include "r_flags.h"
+#include "r_flag.h"
 #include "r_config.h"
 #include "r_bin.h"
 #include "r_hash.h"

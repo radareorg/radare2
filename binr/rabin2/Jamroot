@@ -9,7 +9,7 @@ exe rabin2 : rabin2.c :
     <library>../../libr/io
     <library>../../libr/asm
     <library>../../libr/bin
-    <library>../../libr/flags
+    <library>../../libr/flag
     <library>../../libr/db
     <library>../../libr/cons
     <library>../../libr/parse

@@ -2,7 +2,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
-#include <r_flags.h>
+#include <r_flag.h>
 #include <r_core.h>
 #include <r_bin.h>
 

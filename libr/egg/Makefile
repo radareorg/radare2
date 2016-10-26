@@ -2,7 +2,7 @@ include ../config.mk
 
 NAME=r_egg
 DEPS=r_asm r_syscall r_util r_parse r_reg r_anal 
-DEPS+=r_flags r_cons
+DEPS+=r_flag r_cons
 LINK+=$(SHLR)/java/libr_java.a
 
 OBJS=egg.o lang.o

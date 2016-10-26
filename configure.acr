@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.10.6
+VERSION 0.99.9-git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -152,7 +152,7 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_debug.pc
 	pkgcfg/r_reg.pc
 	pkgcfg/r_config.pc
-	pkgcfg/r_flags.pc
+	pkgcfg/r_flag.pc
 	pkgcfg/r_syscall.pc
 	pkgcfg/r_util.pc
 	pkgcfg/r_search.pc

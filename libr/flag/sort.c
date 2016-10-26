@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2007-2015 pancake */
 
-#include <r_flags.h>
+#include <r_flag.h>
 
 /* compare names */
 static int ncmp(const void *a, const void *b) {

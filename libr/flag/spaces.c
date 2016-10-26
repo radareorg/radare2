@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2008-2016 - pancake */
 
-#include <r_flags.h>
+#include <r_flag.h>
 #include <r_cons.h>
 
 R_API int r_flag_space_get(RFlag *f, const char *name) {
