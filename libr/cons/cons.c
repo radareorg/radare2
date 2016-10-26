@@ -246,6 +246,7 @@ R_API RCons *r_cons_new() {
 	I.event_data = NULL;
 	I.is_interactive = true;
 	I.noflush = false;
+	I.linesleep = 0;
 	I.fdin = stdin;
 	I.fdout = 1;
 	I.breaked = false;
@@ -253,7 +254,7 @@ R_API RCons *r_cons_new() {
 	I.buffer = NULL;
 	I.buffer_sz = 0;
 	I.buffer_len = 0;
-	r_cons_get_size (NULL);
+	r_cons_get_size (&I.pagesize);
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__ && !__CYGWIN__
@@ -538,7 +539,27 @@ R_API void r_cons_flush() {
 	if (I.is_html) {
 		r_cons_html_print (I.buffer);
 	} else {
-		r_cons_write (I.buffer, I.buffer_len);
+		if (I.linesleep > 0 && I.linesleep < 1000) {
+			int i = 0;
+			char *ptr = I.buffer;
+			char *nl = strchr (ptr, '\n');
+			int len = I.buffer_len;
+			I.buffer[I.buffer_len] = 0;
+			r_cons_break (NULL, NULL);
+			while (nl && !r_cons_is_breaked ()) {
+				r_cons_write (ptr, nl - ptr + 1);
+				if (!(i % I.pagesize)) {
+					r_sys_usleep (I.linesleep * 1000);
+				}
+				ptr = nl + 1;
+				nl = strchr (ptr, '\n');
+				i++;
+			}
+			r_cons_write (ptr, I.buffer + len - ptr);
+			r_cons_break_end ();
+		} else {
+			r_cons_write (I.buffer, I.buffer_len);
+		}
 	}
 
 	r_cons_reset ();

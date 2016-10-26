@@ -265,6 +265,8 @@ typedef struct r_cons_t {
 #endif
 	bool flush;
 	bool use_utf8; // use utf8 features
+	int linesleep;
+	int pagesize;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */

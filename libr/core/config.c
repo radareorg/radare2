@@ -446,7 +446,7 @@ static int cb_asmfeatures(void *user, void *data) {
 static int cb_asmcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (*node->value=='?') {
+	if (*node->value == '?') {
 		rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
 		return 0;
 	}
@@ -1139,6 +1139,18 @@ static int scr_ansicon(void *user, void *data) {
 static int cb_screcho(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->echo = node->i_value;
+	return true;
+}
+
+static int cb_scrlinesleep(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->linesleep = node->i_value;
+	return true;
+}
+
+static int cb_scrpagesize(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->pagesize= node->i_value;
 	return true;
 }
 
@@ -1980,6 +1992,8 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "scr.fgets", "Use fgets() instead of dietline for prompt input");
 	SETCB("scr.echo", "false", &cb_screcho, "Show rcons output in realtime to stderr and buffer");
+	SETICB("scr.linesleep", 0, &cb_scrlinesleep, "Flush sleeping some ms in every line");
+	SETICB("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
 	/* TODO: rename to asm.color.ops ? */
 	SETPREF("scr.zoneflags", "true", "Show zoneflags in visual mode before the title (see fz?)");
