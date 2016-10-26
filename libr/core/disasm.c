@@ -495,7 +495,6 @@ static ut64 lastaddr = UT64_MAX;
 
 static void ds_reflines_fini(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
-
 	r_list_free (anal->reflines);
 	r_list_free (anal->reflines2);
 	anal->reflines = NULL;
@@ -601,7 +600,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 			scol2 = strdup ("");
 		}
 
-		source = malloc (strlen(scol1) + strlen(scol2) + 2 + 1); // reuse source variable
+		source = malloc (strlen (scol1) + strlen (scol2) + 2 + 1); // reuse source variable
 		sprintf (source, "%s||%s", scol1, scol2);
 		free (scol1);
 		free (scol2);
@@ -612,7 +611,6 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds) {
 
 static void ds_build_op_str(RDisasmState *ds) {
 	RCore *core = ds->core;
-	char *asm_str;
 	if (!ds->opstr) {
 		ds->opstr = strdup (ds->asmop.buf_asm);
 	}
@@ -629,7 +627,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 				ds->opstr = strdup (ds->strsub);
 			}
 	}
-	asm_str = colorize_asm_string (core, ds);
+	char *asm_str = colorize_asm_string (core, ds);
 	if (ds->decode) {
 		char *tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
 		// TODO: Use data from code analysis..not raw ds->analop here

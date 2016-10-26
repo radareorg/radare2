@@ -1385,7 +1385,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 					o[len] = 0;
 					return strdup (o);
 				}
-				return o;
+				return strdup (o);
 			}
 			if (is_float) {
 				/* do nothing, keep going until next */

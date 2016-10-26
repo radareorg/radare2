@@ -351,7 +351,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int oplen, ret;
-	if (!a || !op || !buf) {
+	if (!a || !buf) { //  || !op || !buf) {
 		return -1;
 	}
 	ret = op->payload = 0;
