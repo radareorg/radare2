@@ -501,26 +501,24 @@ static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
 }
 
 R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
-	if (!list->sorted) {
-		if (list && list->head && cmp) {
-			RListIter *iter;
-			list->head = _merge_sort (list->head, cmp);
-			//update tail reference
-			iter = list->head;
-			while (iter && iter->n) {
-				iter = iter->n;
-			}
-			list->tail = iter;
+	if (list && !list->sorted && list->head && cmp) {
+		RListIter *iter;
+		list->head = _merge_sort (list->head, cmp);
+		//update tail reference
+		iter = list->head;
+		while (iter && iter->n) {
+			iter = iter->n;
 		}
-		list->sorted = true;
+		list->tail = iter;
 	}
+	list->sorted = true;
 }
 
 R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
-	if (!list->sorted) {
+	if (list && !list->sorted) {
 		RListIter *it;
 		RListIter *it2;
-		if (list && cmp) {
+		if (cmp) {
 			for (it = list->head; it && it->data; it = it->n) {
 				for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
 					if (cmp (it->data, it2->data) > 0) {

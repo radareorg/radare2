@@ -269,6 +269,8 @@ static int cmp (const void *a, const void *b) {
 		free (db);
 		return ret;
 	}
+	free (da);
+	free (db);
 	return strcmp (a, b);
 }
 
