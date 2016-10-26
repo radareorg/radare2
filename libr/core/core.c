@@ -846,19 +846,22 @@ openfile:
 			const char *msg = line->buffer.data + 3;
 			RFlag *flag = core->flags;
 			int j, i = 0;
-			for (j=0; j<R_FLAG_SPACES_MAX-1; j++) {
+			for (j = 0; j < R_FLAG_SPACES_MAX - 1; j++) {
 				if (flag->spaces[j] && flag->spaces[j][0]) {
 					if (i == TMP_ARGV_SZ - 1) {
 						break;
 					}
 					if (!strncmp (msg, flag->spaces[j], strlen (msg))) {
-						tmp_argv[i++] = flag->spaces[j];
+						if (i + 1 < TMP_ARGV_SZ) {
+							tmp_argv[i++] = flag->spaces[j];
+						}
 					}
 				}
 			}
-			if (flag->spaces[j] && !strncmp (msg, flag->spaces[j],
-							strlen (msg))) {
-				tmp_argv[i++] = "*";
+			if (flag->spaces[j] && !strncmp (msg, flag->spaces[j], strlen (msg))) {
+				if (i + 1 < TMP_ARGV_SZ) {
+					tmp_argv[i++] = "*";
+				}
 			}
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;

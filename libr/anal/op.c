@@ -38,10 +38,15 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 		return false;
 	}
 	r_anal_var_free (op->var);
+	op->var = NULL;
 	r_anal_value_free (op->src[0]);
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);
+	op->src[0] = NULL;
+	op->src[1] = NULL;
+	op->src[2] = NULL;
 	r_anal_value_free (op->dst);
+	op->dst = NULL;
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
 	R_FREE (op->mnemonic);

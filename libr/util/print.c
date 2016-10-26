@@ -1351,7 +1351,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 #define STRIP_ANSI 1
 #if STRIP_ANSI
 			/* skip until 'm' */
-			for (++i;p[i] && p[i] != 'm'; i++) {
+			for (++i; p[i] && p[i] != 'm'; i++) {
 				o[j] = p[i];
 			}
 			continue;
@@ -1378,8 +1378,14 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 			if (p[i + 1] == ' ' && p[i + 2] == 'L') {
 				strcpy (o + j, num);
 				j += strlen (num);
-				strcpy (o + j , p + i);
-				return strdup (o);
+				if (j + p + i <= o + sizeof (o)) {
+					int len = strlen (p + i);
+					len = R_MIN (len, sizeof (o));
+					strncpy (o + j , p + i, len);
+					o[len] = 0;
+					return strdup (o);
+				}
+				return o;
 			}
 			if (is_float) {
 				/* do nothing, keep going until next */
@@ -1390,7 +1396,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
 				}
-				strcpy (o+j, Color_RESET);
+				strcpy (o + j, Color_RESET);
 				j += strlen (Color_RESET);
 				o[j++] = p[i];
 				if (p[i] == '$' || ((p[i] > '0') && (p[i] < '9'))) {
@@ -1421,7 +1427,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 			// find if next ',' before ' ' is found
 			is_mod = 0;
 			is_float = 0;
-			for (k = i+1; p[k]; k++) {
+			for (k = i + 1; p[k]; k++) {
 				if (p[k] == 'e' && p[k + 1] == '+') {
 					is_float = 1;
 					break;
@@ -1476,7 +1482,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 		opcode_sz += 21;
 		/* free (t_o); */
 	}
-	strcpy (o+j, Color_RESET);
+	strcpy (o + j, Color_RESET);
 	//strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
 	return strdup (o);
 }
@@ -1489,7 +1495,9 @@ R_API void r_print_init_rowoffsets (RPrint *p) {
 
 // set the offset, from the start of the printing, of the i-th row
 R_API void r_print_set_rowoff (RPrint *p, int i, ut32 offset) {
-	if (i < 0) return;
+	if (i < 0) {
+		return;
+	}
 	if (!p->row_offsets || !p->row_offsets_sz) {
 		p->row_offsets_sz = R_MAX(i + 1, DFLT_ROWS);
 		p->row_offsets = R_NEWS (ut32, p->row_offsets_sz);
@@ -1498,8 +1506,9 @@ R_API void r_print_set_rowoff (RPrint *p, int i, ut32 offset) {
 		size_t new_size;
 		p->row_offsets_sz *= 2;
 		//XXX dangerous
-		while (i >= p->row_offsets_sz)
+		while (i >= p->row_offsets_sz) {
 			p->row_offsets_sz *= 2;
+		}
 		new_size = sizeof (ut32) * p->row_offsets_sz;
 		p->row_offsets = realloc (p->row_offsets, new_size);
 	}
@@ -1509,7 +1518,9 @@ R_API void r_print_set_rowoff (RPrint *p, int i, ut32 offset) {
 // return the offset, from the start of the printing, of the i-th row.
 // if the line index is not valid, UT32_MAX is returned.
 R_API ut32 r_print_rowoff (RPrint *p, int i) {
-	if (i < 0 || i >= p->row_offsets_sz) return UT32_MAX;
+	if (i < 0 || i >= p->row_offsets_sz) {
+		return UT32_MAX;
+	}
 	return p->row_offsets[i];
 }
 
