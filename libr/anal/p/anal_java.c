@@ -638,7 +638,6 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 		methods_list = (RList *) r_bin_java_get_methods_list (bin);
 		if (methods_list) {
 			ut64 loadaddr = bin->loadaddr;
-			const char * bin_name = bin && bin->file ? bin->file : anal->iob.io->desc->name;
 			// loop over all methods in the binary object and analyse
 			// the functions
 			r_list_foreach ( methods_list, methods_iter, method ) {
@@ -680,32 +679,25 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 
 	if (op_byte == 0xaa) {
 		// handle a table switch condition
+		if (pos + 8 > len) {
+			return op->size;
+		}
 		int min_val = (ut32)(UINT (data, pos + 4)),
 			max_val = (ut32)(UINT (data, pos + 8));
 
-		ut32 default_loc = (ut32)(UINT (data, pos)),
-			 cur_case = 0;
-
+		ut32 default_loc = (ut32) (UINT (data, pos)), cur_case = 0;
 		op->switch_op = r_anal_switch_op_new (addr, min_val, default_loc);
-
 		RAnalCaseOp *caseop = NULL;
-		IFDBG {
-			eprintf ("Handling tableswitch op @ 0x%04"PFMT64x"\n", addr);
-			eprintf ("default_jump @ 0x%04"PFMT64x"\n", default_loc+addr);
-			eprintf ("min_val: %d max_val: %d\n", min_val, max_val);
-		}
 		pos += 12;
-
-		if (max_val > min_val && ((max_val-min_val)<(UT16_MAX/4))) {
+		if (max_val > min_val && ((max_val - min_val)<(UT16_MAX/4))) {
 			//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
-			for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
+			for (cur_case = 0; cur_case <= max_val - min_val; pos += 4, cur_case++) {
 				//ut32 value = (ut32)(UINT (data, pos));
-				if (pos+4>=len) {
+				if (pos + 4 >= len) {
 					// switch is too big cant read further
 					break;
 				}
 				int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
-				IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04"PFMT64x"\n", offset, cur_case+min_val, addr+offset);
 				caseop = r_anal_switch_op_add_case (op->switch_op, addr+pos, cur_case+min_val, addr+offset);
 				caseop->bb_ref_to = addr+offset;
 				caseop->bb_ref_from = addr; // TODO figure this one out
