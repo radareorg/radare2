@@ -27,6 +27,11 @@ static int disassemble(RAsm *as, RAsmOp *op, const ut8 *buf, int len)
 	}
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_lh5801 = {
 	.name = "lh5801",
 	.arch = "LH5801",
@@ -34,7 +39,8 @@ RAsmPlugin r_asm_plugin_lh5801 = {
 	.bits = 8,
 	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "SHARP LH5801 disassembler",
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

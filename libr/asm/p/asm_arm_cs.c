@@ -121,6 +121,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return opsize;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
@@ -131,7 +136,8 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
-	.features = "no-mclass,v8"
+	.features = "no-mclass,v8",
+	.instructions = &instructions,
 #if 0
 		// arm32 and arm64
 		"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"

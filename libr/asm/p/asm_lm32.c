@@ -404,6 +404,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return 4;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_lm32 = {
 	.name = "lm32",
 	.arch = "lm32",
@@ -412,6 +417,7 @@ RAsmPlugin r_asm_plugin_lm32 = {
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

@@ -16,6 +16,11 @@ static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
 	return dlen;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_spc700 = {
 	.name = "spc700",
 	.desc = "spc700, snes' sound-chip",
@@ -24,6 +29,7 @@ RAsmPlugin r_asm_plugin_spc700 = {
 	.bits = 16,
 	.endian = R_SYS_ENDIAN_NONE, // is this LE?
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

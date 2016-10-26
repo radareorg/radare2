@@ -106,6 +106,7 @@ RAsmPlugin r_asm_plugin_arm_as = {
 	.fini = NULL,
 	.disassemble = NULL,
 	.assemble = &assemble,
+	.instructions = NULL,
 };
 
 #ifndef CORELIB

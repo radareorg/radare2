@@ -15,6 +15,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return dlen;
 }
 
+static char *instructions() {
+	// TODO(lowlyw): fill in instructions list.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES/C64/Tamagotchi/T-1000 CPU",
@@ -23,6 +28,7 @@ RAsmPlugin r_asm_plugin_6502 = {
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.license = "LGPL3",
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

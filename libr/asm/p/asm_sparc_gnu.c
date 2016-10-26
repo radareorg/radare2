@@ -77,6 +77,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.arch = "sparc",
@@ -85,6 +90,7 @@ RAsmPlugin r_asm_plugin_sparc_gnu = {
 	.license = "GPL3",
 	.desc = "Scalable Processor Architecture",
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

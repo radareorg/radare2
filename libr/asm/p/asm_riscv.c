@@ -11,6 +11,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size = riscv_dis (a, op, buf, len);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V",
@@ -19,6 +24,7 @@ RAsmPlugin r_asm_plugin_riscv = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.license = "GPL",
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

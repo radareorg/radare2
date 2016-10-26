@@ -70,6 +70,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 	return ret;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS disassembler",
@@ -79,7 +84,8 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 	.bits = 16|32|64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
-	.assemble = &assemble
+	.assemble = &assemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

@@ -119,6 +119,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_tricore = {
 	.name = "tricore",
 	.arch = "tricore",
@@ -127,6 +132,7 @@ RAsmPlugin r_asm_plugin_tricore = {
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "Siemens TriCore CPU",
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

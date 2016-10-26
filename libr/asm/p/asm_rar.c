@@ -21,6 +21,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 	return op->size = rarvm_assemble (&b, str);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_rar = {
 	.name = "rar",
 	.arch = "rar",
@@ -29,7 +34,8 @@ RAsmPlugin r_asm_plugin_rar = {
 	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "RAR VM",
 	.disassemble = &disassemble,
-	.assemble = &assemble
+	.assemble = &assemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

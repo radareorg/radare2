@@ -151,6 +151,12 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return n;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
+
 RAsmPlugin r_asm_plugin_bf = {
 	.name = "bf",
 	.arch = "bf",
@@ -159,7 +165,8 @@ RAsmPlugin r_asm_plugin_bf = {
 	.endian = R_SYS_ENDIAN_NONE,
 	.desc = "Brainfuck",
 	.disassemble = &disassemble,
-	.assemble = &assemble
+	.assemble = &assemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

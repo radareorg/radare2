@@ -20,6 +20,11 @@ static int assemble(RAsm *a, RAsmOp *r_op, const char *buf) {
 	return gbAsm (a, r_op, buf);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_gb = {
 	.name = "gb",
 	.desc = "GameBoy(TM) (z80-like)",
@@ -29,6 +34,7 @@ RAsmPlugin r_asm_plugin_gb = {
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

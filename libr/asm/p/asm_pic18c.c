@@ -226,6 +226,11 @@ static int pic_disassem(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_pic18c = {
 	.disassemble = pic_disassem,
 	.name = "pic18c",
@@ -233,7 +238,8 @@ RAsmPlugin r_asm_plugin_pic18c = {
 	.license = "LGPL3",
 	.bits = 8,
 	.endian = R_SYS_ENDIAN_NONE,
-	.desc = "pic18c disassembler"
+	.desc = "pic18c disassembler",
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

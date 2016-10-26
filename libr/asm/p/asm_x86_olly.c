@@ -40,6 +40,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_x86_olly = {
 	.name = "x86.olly",
 	.license = "GPL2",
@@ -49,6 +54,7 @@ RAsmPlugin r_asm_plugin_x86_olly = {
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

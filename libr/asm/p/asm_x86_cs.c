@@ -105,6 +105,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 disassembler",
@@ -116,7 +121,8 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 	.disassemble = &disassemble,
 	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
 		"f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
-		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
+		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop",
+	.instructions = &instructions,
 };
 
 static int check_features(RAsm *a, cs_insn *insn) {

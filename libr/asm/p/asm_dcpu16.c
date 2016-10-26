@@ -23,6 +23,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return dcpu16_assemble (op->buf, buf);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_dcpu16 = {
 	.name = "dcpu16",
 	.arch = "dpcu",
@@ -31,7 +36,8 @@ RAsmPlugin r_asm_plugin_dcpu16 = {
 	.desc = "Mojang's DCPU-16",
 	.license = "PD",
 	.disassemble = &disassemble,
-	.assemble = &assemble 
+	.assemble = &assemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

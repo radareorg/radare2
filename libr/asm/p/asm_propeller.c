@@ -26,6 +26,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 	return ret;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_propeller = {
 	.name = "propeller",
 	.license = "LGPL3",
@@ -33,7 +38,8 @@ RAsmPlugin r_asm_plugin_propeller = {
 	.arch = "propeller",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

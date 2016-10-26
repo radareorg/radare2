@@ -27,6 +27,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_arm_winedbg = {
 	.name = "arm.winedbg",
 	.arch = "arm",
@@ -34,7 +39,8 @@ RAsmPlugin r_asm_plugin_arm_winedbg = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "WineDBG's ARM disassembler",
 	.disassemble = &disassemble,
-	.license = "LGPL2"
+	.license = "LGPL2",
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

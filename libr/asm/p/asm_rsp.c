@@ -102,6 +102,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_rsp = {
 	.name = "rsp",
 	.desc = "Reality Signal Processor",
@@ -109,7 +114,8 @@ RAsmPlugin r_asm_plugin_rsp = {
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BI, /* For conveniance, we don't force BIG endian but allow both to be used */
 	.license = "LGPL3",
-	.disassemble = &disassemble
+	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

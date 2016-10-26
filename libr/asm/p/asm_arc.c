@@ -98,6 +98,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in the instructions list
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
@@ -105,7 +110,8 @@ RAsmPlugin r_asm_plugin_arc = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "Argonaut RISC Core",
 	.disassemble = &disassemble,
-	.license = "GPL3"
+	.license = "GPL3",
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

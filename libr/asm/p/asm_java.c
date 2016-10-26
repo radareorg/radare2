@@ -32,6 +32,11 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return op->size = r_java_assemble (op->buf, buf);
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode",
@@ -40,7 +45,8 @@ RAsmPlugin r_asm_plugin_java = {
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
-	.assemble = &assemble
+	.assemble = &assemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

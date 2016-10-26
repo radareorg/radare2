@@ -35,6 +35,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_xcore_cs = {
 	.name = "xcore",
 	.desc = "Capstone XCore disassembler",
@@ -43,6 +48,7 @@ RAsmPlugin r_asm_plugin_xcore_cs = {
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

@@ -14,6 +14,11 @@ static int do_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int le
 	return op->size;
 }
 
+static char *instructions() {
+	//TODO(lowlyw): fill in instructions.
+	return NULL;
+}
+
 RAsmPlugin r_asm_plugin_i8080 = {
 	.name = "i8080",
 	.desc = "Intel 8080 CPU",
@@ -21,7 +26,8 @@ RAsmPlugin r_asm_plugin_i8080 = {
 	.license = "BSD",
 	.bits = 8,
 	.endian = R_SYS_ENDIAN_NONE,
-	.disassemble = &do_disassemble
+	.disassemble = &do_disassemble,
+	.instructions = &instructions,
 };
 
 #ifndef CORELIB

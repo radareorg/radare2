@@ -131,6 +131,7 @@ typedef struct r_asm_plugin_t {
 	RAsmModifyCallback modify;
 	int (*set_subarch)(RAsm *a, const char *buf);
 	const char *features;
+	char *(*instructions)();
 } RAsmPlugin;
 
 #ifdef R_API
