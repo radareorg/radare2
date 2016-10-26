@@ -1,18 +1,19 @@
-/* radare - LGPL - Copyright 2011-2015 - pancake */
+/* radare - LGPL - Copyright 2011-2016 - pancake */
 
 #include <r_core.h>
 
 R_API int r_core_patch_line (RCore *core, char *str) {
 	char *p, *q;
-	p = strchr (str+1, ' ');
-	if (!p)
+	p = strchr (str + 1, ' ');
+	if (!p) {
 		return 0;
+	}
 	*p = 0;
-	for (++p; *p==' '; p++); // XXX: skipsspaces here
+	for (++p; *p == ' '; p++); // XXX: skipsspaces here
 
 	switch (*p) {
 	case '"':
-		  q = strchr (p+1,'"');
+		  q = strchr (p + 1,'"');
 		  if (q) *q = 0;
 		  r_core_cmdf (core, "s %s", str);
 		  r_core_cmdf (core, "\"w %s\"", p+1);
@@ -33,9 +34,10 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	char tmp[128];
 	char *s, *p, *q, *off;
 	RBuffer *b = r_buf_new ();
-
-	if (!b) return 0;
-	p = off = strdup (str);;
+	if (!b) {
+		return 0;
+	}
+	p = off = strdup (str);
 	if (!p) {
 		r_buf_free (b);
 		return 0;
@@ -47,9 +49,9 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 			p++;
 			continue;
 		}
-		if (*str=='}')
+		if (*str == '}')
 			break;
-		if ((q=strstr (str, "${"))) {
+		if ((q = strstr (str, "${"))) {
 			char *end = strchr (q+2,'}');
 			if (end) {
 				*q = *end = 0;
@@ -59,7 +61,9 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 				r_buf_append_bytes (b, (const ut8*)tmp, strlen (tmp));
 				r_buf_append_bytes (b, (const ut8*)end+1, strlen (end+1));
 			}
-		} else r_buf_append_bytes (b, (const ut8*)str, strlen (str));
+		} else {
+			r_buf_append_bytes (b, (const ut8*)str, strlen (str));
+		}
 		str = p;
 	}
 
@@ -73,8 +77,9 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	r_buf_free (b);
 	b = r_egg_get_bin (core->egg);
 
-	if (strcmp (off, "+"))
+	if (strcmp (off, "+")) {
 		*noff = r_num_math (core->num, off);
+	}
 	r_core_write_at (core, *noff, b->buf, b->length);
 	*noff += b->length;
 	free (off);
@@ -86,11 +91,16 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 	ut64 noff = 0LL;
 
 	p = p0 = str = strdup (patch);
-	if (!p)
+	if (!p) {
 		return 0;
+	}
 	for (; *p; p++) {
 		/* read until newline */
-		if (!*p || *p=='\n') *p++ = 0; else continue;
+		if (!*p || *p == '\n') {
+			*p++ = 0; 
+		} else {
+			continue;
+		}
 
 		switch (*str) {
 		case '#':
@@ -112,7 +122,9 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 			r_core_patch_line (core, str);
 			break;
 		}
-		if (!*p) break;
+		if (!*p) {
+			break;
+		}
 		str = p;
 	}
 //	eprintf ("%d\n", *p);

@@ -209,17 +209,18 @@ static void Layout_run(Panel *panels) {
 				}
 				panels[i].h = h-1;
 			} else {
-				int ph = ((h-1)/(n_panels-2));
+				int ph = ((h - 1) / (n_panels - 2));
 				panels[i].x = colpos;
-				panels[i].y = 1 + (ph*(j-1));
+				panels[i].y = 1 + (ph * (j - 1));
 				panels[i].w = w-colpos;
-				if (panels[i].w<0)
+				if (panels[i].w < 0) {
 					panels[i].w = 0;
+				}
 				panels[i].h = ph;
-				if (!panels[i+1].text) {
+				if (!panels[i + 1].text) {
 					panels[i].h = h - panels[i].y;
 				}
-				if (j!=1) {
+				if (j != 1) {
 					panels[i].y--;
 					panels[i].h++;
 				}
@@ -231,7 +232,7 @@ static void Layout_run(Panel *panels) {
 
 static void delcurpanel() {
 	int i;
-	if (curnode>0 && n_panels>3) {
+	if (curnode > 0 && n_panels > 3) {
 		for (i = curnode; i < (n_panels - 1); i++) {
 			panels[i] = panels[i + 1];
 		}
@@ -281,7 +282,6 @@ static int bbPanels (RCore *core, Panel **n) {
 	addPanelFrame ("Registers", "dr=", 0);
 	addPanelFrame ("RegisterRefs", "drr", 0);
 	curnode = 0;
-
 	Layout_run (panels);
 	return n_panels;
 }
@@ -326,7 +326,7 @@ static void r_core_panels_refresh(RCore *core) {
 				strcat (panels[menu_pos].text, "          \n");
 			}
 		}
-		for (i=0; panels[i].text; i++) {
+		for (i = 0; panels[i].text; i++) {
 			if (i != curnode) {
 				Panel_print (can, &panels[i], i==curnode);
 			}
@@ -344,9 +344,10 @@ static void r_core_panels_refresh(RCore *core) {
 
 	(void)G (-can->sx, -can->sy);
 	title[0] = 0;
-	if (curnode == 0)
+	if (curnode == 0) {
 		strcpy (title, "> ");
-	for (i=0; menus[i]; i++) {
+	}
+	for (i = 0; menus[i]; i++) {
 		if (menu_x == i) {
 			snprintf (str, sizeof (title)-1, "%s[%s]"Color_RESET, color, menus[i]);
 		} else {
@@ -354,7 +355,7 @@ static void r_core_panels_refresh(RCore *core) {
 		}
 		strcat (title, str);
 	}
-	if (curnode==0) {
+	if (curnode == 0) {
 		W (Color_BLUE);
 		W (title);
 		W (Color_RESET);
@@ -379,10 +380,11 @@ static void reloadPanels(RCore *core) {
 
 static int havePanel(const char *s) {
 	int i;
-	if (!panels || !panels[0].text)
+	if (!panels || !panels[0].text) {
 		return 0;
+	}
 	// add new panel for testing
-	for (i=1; panels[i].text; i++) {
+	for (i = 1; panels[i].text; i++) {
 		if (!strcmp (panels[i].text , s)) {
 			return 1;
 		}
@@ -726,7 +728,7 @@ repeat:
 		r_core_visual_hud (core);
 		break;
 	case 'x':
-		delcurpanel();
+		delcurpanel ();
 		break;
 	case 9: // TAB
 	case 'J':
@@ -742,7 +744,7 @@ repeat:
 		menu_y = 0;
 		menu_x = -1;
 		curnode--;
-		if (curnode<0) {
+		if (curnode < 0) {
 			curnode = n_panels - 1;
 		}
 		if (!curnode) {
@@ -762,7 +764,7 @@ repeat:
 		break;
 	case 'm':
 		curnode = 0;
-		if (menu_x<0) {
+		if (menu_x < 0) {
 			menu_x = 0;
 			r_core_panels_refresh (core);
 		}
