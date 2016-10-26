@@ -239,16 +239,20 @@ static void readlabel (const char **p, int store) {
 	*p = c;
 	buf->value = addr;
 	//lastlabel = buf;
-	if (previous)
+	if (previous) {
 		buf->next = previous->next;
-	else buf->next = *thefirstlabel;
+	} else {
+		buf->next = thefirstlabel? *thefirstlabel: NULL;
+	}
 	buf->prev = previous;
 	buf->valid = 1;
 	buf->busy = 0;
 	buf->ref = NULL;
-	if (buf->prev)
+	if (buf->prev) {
 		buf->prev->next = buf;
-	else *thefirstlabel = buf;
+	} else {
+		*thefirstlabel = buf;
+	}
 	if (buf->next)
 		buf->next->prev = buf;
 }

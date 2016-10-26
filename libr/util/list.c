@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2015 - pancake */
+/* radare - LGPL - Copyright 2007-2016 - pancake, alvarofe */
 // TODO: RRef - reference counting
 
 #include <stdio.h>

@@ -1330,7 +1330,12 @@ static int cb_binstrings(void *user, void *data) {
 static int cb_binprefix(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	free (core->bin->prefix);
+	if (!core) {
+		return false;
+	}
+	if (core->bin) {
+		free (core->bin->prefix);
+	}
 	if (node->value && *node->value) {
 		if (!strcmp (node->value, "auto")) {
 			if (!core->bin || !core->bin->file) {

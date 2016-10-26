@@ -58,6 +58,9 @@ Example:
 	free (str);
 */
 R_API char *r_file_dirname (const char *path) {
+	if (!path) {
+		return NULL;
+	}
 	char *newpath = strdup (path);
 	char *ptr = (char*)r_str_rchr (newpath, NULL, '/');
 	if (ptr) {

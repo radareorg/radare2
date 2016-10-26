@@ -66,12 +66,12 @@ static int unpack (libqnxr_t *g) {
 
 int qnxr_read_packet (libqnxr_t *g) {
 	int ret;
-	g->data_len = 0;
 
 	if (!g) {
 		eprintf ("Initialize libqnxr_t first\n");
 		return -1;
 	}
+	g->data_len = 0;
 
 	// read from network if we've exhausted our buffer
 	// or the buffer is empty

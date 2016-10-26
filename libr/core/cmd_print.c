@@ -440,10 +440,12 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
 		} else if (*_input == ' ') {
-			while (*_input == ' ' && *_input != '\0') _input++;
-			if (_input != '\0')
+			while (*_input == ' ' && *_input != '\0') {
+				_input++;
+			}
+			if (*_input) {
 				r_cons_printf ("%d bytes\n", r_print_format_struct_size (_input, core->print, mode));
-			else {
+			} else {
 				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
 		} else {
