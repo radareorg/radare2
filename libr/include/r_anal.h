@@ -807,26 +807,21 @@ typedef struct r_anal_state_type_t {
 	ut64 end;
 	const ut8* buffer;
 	ut64 len;
-
 	ut64 bytes_consumed;
 	ut64 last_addr;
 	ut64 current_addr;
 	ut64 next_addr;
-
 	RList *bbs;
 	RHashTable64 *ht;
 	ut64 ht_sz;
-
 	RAnalFunction *current_fcn;
 	RAnalOp *current_op;
 	RAnalBlock *current_bb;
 	RAnalBlock *current_bb_head;
-
 	ut8 done;
 	int anal_ret_val;
 	ut32 current_depth;
 	ut32 max_depth;
-
 	void *user_state;
 } RAnalState;
 
@@ -1189,8 +1184,7 @@ R_API const char *r_anal_get_fcnsign(RAnal *anal, const char *sym);
 R_API RAnalBlock *r_anal_bb_new(void);
 R_API RList *r_anal_bb_list_new(void);
 R_API void r_anal_bb_free(RAnalBlock *bb);
-R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
-		ut64 addr, ut8 *buf, ut64 len, int head);
+R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, int head);
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
 R_API int r_anal_bb_is_in_offset(RAnalBlock *bb, ut64 addr);
 R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);

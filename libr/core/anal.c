@@ -1983,7 +1983,7 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 	return NULL;
 }
 
-R_API void fcn_callconv (RCore *core, RAnalFunction *fcn) {
+R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 	ut8 *tbuf, *buf;
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;

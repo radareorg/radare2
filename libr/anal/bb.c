@@ -8,7 +8,9 @@
 
 R_API RAnalBlock *r_anal_bb_new() {
 	RAnalBlock *bb = R_NEW0 (RAnalBlock);
-	if (!bb) return NULL;
+	if (!bb) {
+		return NULL;
+	}
 	bb->addr = UT64_MAX;
 	bb->jump = UT64_MAX;
 	bb->fail = UT64_MAX;
@@ -25,19 +27,21 @@ R_API RAnalBlock *r_anal_bb_new() {
 }
 
 R_API void r_anal_bb_free(RAnalBlock *bb) {
-	if (!bb) return;
+	if (!bb) {
+		return;
+	}
 	r_anal_cond_free (bb->cond);
-	free (bb->fingerprint);
+	R_FREE (bb->fingerprint);
 	r_anal_diff_free (bb->diff);
 	bb->diff = NULL;
-	free (bb->op_bytes);
+	R_FREE (bb->op_bytes);
 	r_anal_switch_op_free (bb->switch_op);
 	bb->switch_op = NULL;
 	bb->fingerprint = NULL;
 	bb->cond = NULL;
-	free (bb->label);
-	free (bb->op_pos);
-    free (bb->parent_reg_arena);
+	R_FREE (bb->label);
+	R_FREE (bb->op_pos);
+	R_FREE (bb->parent_reg_arena);
     if (bb->prev) {
 		if (bb->prev->jumpbb == bb) {
 			bb->prev->jumpbb = NULL;
@@ -55,13 +59,14 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 		bb->failbb->prev = NULL;
 		bb->failbb = NULL;
     }
-	free (bb);
+	R_FREE (bb);
 }
 
 R_API RList *r_anal_bb_list_new() {
-	RList *list = r_list_new ();
-	if (!list) return NULL;
-	list->free = (void*)r_anal_bb_free;
+	RList *list = r_list_newf ((RListFree)r_anal_bb_free);
+	if (!list) {
+		return NULL;
+	}
 	return list;
 }
 

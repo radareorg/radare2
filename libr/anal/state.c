@@ -16,7 +16,9 @@
 
 R_API RAnalState * r_anal_state_new(ut64 start, ut8* buffer, ut64 len) {
 	RAnalState *state = R_NEW0 (RAnalState);
-	if (!state) return NULL;
+	if (!state) {
+		return NULL;
+	}
 	state->start = start;
 	state->end = start + len;
 	state->buffer = buffer;
@@ -27,10 +29,9 @@ R_API RAnalState * r_anal_state_new(ut64 start, ut8* buffer, ut64 len) {
 	state->ht = r_hashtable64_new();
 	state->ht->free = (RHashFree)r_anal_bb_free;
 	state->ht_sz = 512;
-	state->bbs = r_list_new();
+	state->bbs = r_list_newf ((RListFree)r_anal_bb_free);
 	state->max_depth = 50;
 	state->current_depth = 0;
-	//r_hashtable64_rehash(state->ht, state->ht_sz);
 	return state;
 }
 
@@ -39,21 +40,14 @@ R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth) {
 }
 
 R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
-	if (!state || !bb)
+	if (!state || !bb) {
 		return;
-	if (!r_anal_state_search_bb (state, bb->addr) &&
-		state->current_fcn) {
-		RAnalBlock *tmp_bb;
-		IFDBG eprintf ("Inserting bb 0x%04"PFMT64x" into hash table\n", bb->addr);
-		r_list_append(state->current_fcn->bbs, bb);
+	}
+	if (!r_anal_state_search_bb (state, bb->addr) && state->current_fcn) {
+		r_list_append (state->current_fcn->bbs, bb);
         state->bytes_consumed += state->current_bb->op_sz;
-		IFDBG eprintf ("[--] Consumed 0x%02x bytes, for a total of 0x%02x\n", (short )state->current_bb->op_sz, (short) state->bytes_consumed);
-		if (r_hashtable64_insert(state->ht, bb->addr, bb)) {
-			IFDBG eprintf ("Inserted bb 0x%04"PFMT64x" successfully inserted into hashtable\n", bb->addr);
-		}
-		IFDBG {
-			tmp_bb = r_hashtable64_lookup(state->ht, bb->addr);
-			IFDBG eprintf ("Inserted bb 0x%04"PFMT64x" matches one in hash table: %02x.\n", bb->addr, bb->addr == tmp_bb->addr);
+		if (!r_hashtable64_insert(state->ht, bb->addr, bb)) {
+			eprintf ("Inserted bb 0x%04"PFMT64x" failure\n", bb->addr);
 		}
 	}
 }
@@ -82,7 +76,7 @@ R_API ut64 r_anal_state_get_len(RAnalState *state, ut64 addr) {
 R_API const ut8 * r_anal_state_get_buf_by_addr(RAnalState *state, ut64 addr) {
 	if (r_anal_state_addr_is_valid (state, addr)) {
 		ut64 offset = addr - state->start;
-		return state->buffer+offset;
+		return state->buffer + offset;
 	}
 	return NULL;
 }

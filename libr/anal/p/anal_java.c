@@ -58,7 +58,7 @@ static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj);
 static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method);
 
 static int java_cmd_ext(RAnal *anal, const char* input);
-static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length);
+static int analyze_from_code_buffer (RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length);
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method, ut64 loadaddr);
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state);
 
@@ -462,7 +462,9 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 	return result;
 }
 
-static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length  ) {
+
+//many flaws UAF
+static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length) {
 	char gen_name[1025];
 	RListIter *bb_iter;
 	RAnalBlock *bb;
@@ -480,27 +482,21 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	r_anal_fcn_set_size (fcn, code_length);
 	fcn->type = R_ANAL_FCN_TYPE_FCN;
 	fcn->addr = addr;
-
-	state = r_anal_state_new ( addr, (ut8 * ) code_buf, code_length);
+	state = r_anal_state_new (addr, (ut8*) code_buf, code_length);
 	nodes = R_NEW0 (RAnalJavaLinearSweep);
 	nodes->cfg_node_addrs = r_list_new ();
 	nodes->cfg_node_addrs->free = free;
-
 	state->user_state = nodes;
-
 	result = analyze_method (anal, fcn, state);
 	r_list_foreach (fcn->bbs, bb_iter, bb) {
 		actual_size += bb->size;
 	}
-
 	r_anal_fcn_set_size (fcn, state->bytes_consumed);
-
 	result = state->anal_ret_val;
-
 	r_list_free (nodes->cfg_node_addrs);
 	free (nodes);
-	r_anal_state_free (state);
-	IFDBG eprintf ("Completed analysing code from buffer, name: %s, desc: %s\n", fcn->name, fcn->dsc);
+	//leak to avoid UAF is the easy solution otherwise a whole rewrite is needed
+	//r_anal_state_free (state);
 	if (r_anal_fcn_size (fcn) != code_length) {
 		eprintf ("WARNING Analysis of %s Incorrect: Code Length: 0x%"PFMT64x", Function size reported 0x%x\n", fcn->name, code_length, r_anal_fcn_size(fcn));
 		eprintf ("Deadcode detected, setting code length to: 0x%"PFMT64x"\n", code_length);
@@ -530,7 +526,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 	code_buf = malloc (code_length);
 
 	anal->iob.read_at (anal->iob.io, code_addr + loadaddr, code_buf, code_length);
-	result = analyze_from_code_buffer ( anal, fcn, code_addr+loadaddr, code_buf, code_length);
+	result = analyze_from_code_buffer (anal, fcn, code_addr + loadaddr, code_buf, code_length);
 	free (code_buf);
 
 	{
@@ -561,18 +557,12 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	// deallocate niceties
 	r_list_free (fcn->bbs);
 	fcn->bbs = r_anal_bb_list_new ();
-
-	IFDBG eprintf ("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n",
-		fcn->name, fcn->addr, r_anal_fcn_size (fcn));
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
 	// Not a resource leak.  Basic blocks should be stored in the state->fcn
 	// TODO: ? RList *bbs = 
 	r_anal_ex_perform_analysis (anal, state, fcn->addr);
 	bytes_consumed = state->bytes_consumed;
-	IFDBG eprintf ("analyze_method: Completed Parsing fcn %s @ 0x%08"PFMT64x
-		", consumed %"PFMT64d" bytes\n", fcn->name, fcn->addr, bytes_consumed);
-
 	return state->anal_ret_val;
 }
 
@@ -635,13 +625,13 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	//RAnalRef *ref = NULL;
 	int result = R_ANAL_RET_ERROR;
 
-	if (end == UT64_MAX) analyze_all = 1;
-
+	if (end == UT64_MAX) {
+		analyze_all = 1;
+	}
 	if (!bin_objs_list || r_list_empty (bin_objs_list)) {
 		r_list_free (bin_objs_list);
 		return java_analyze_fns_from_buffer (anal, start, end, reftype, depth);
 	}
-
 	r_list_foreach (bin_objs_list, bin_obs_iter, bin) {
 		// loop over all bin object that are loaded
 		java_update_anal_types (anal, bin);
@@ -649,19 +639,16 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 		if (methods_list) {
 			ut64 loadaddr = bin->loadaddr;
 			const char * bin_name = bin && bin->file ? bin->file : anal->iob.io->desc->name;
-			IFDBG eprintf ("Analyzing java functions for %s\n", bin_name);
-			IFDBG eprintf ("Analyzing functions.  binobj = %p, methods_list = %p, Analysing from buffer? %d\n", bin, methods_list, !methods_list);
 			// loop over all methods in the binary object and analyse
 			// the functions
 			r_list_foreach ( methods_list, methods_iter, method ) {
-				if ( (method && analyze_all) ||
-					(check_addr_less_start (method, end) ||
-					check_addr_in_code (method, end)) ) {
-
+				if ((method && analyze_all) ||
+				    (check_addr_less_start (method, end) ||
+				     check_addr_in_code (method, end))) {
 					RAnalFunction *fcn = r_anal_fcn_new ();
 					fcn->cc = r_anal_cc_default (anal);
 					java_set_function_prototype (anal, fcn, method);
-					result = analyze_from_code_attr ( anal, fcn, method, loadaddr );
+					result = analyze_from_code_attr (anal, fcn, method, loadaddr);
 					if (result == R_ANAL_RET_ERROR) {
 						eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
 						// XXX - TO Stop or not to Stop ??

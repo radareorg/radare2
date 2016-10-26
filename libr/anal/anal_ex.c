@@ -98,10 +98,11 @@ R_API int r_anal_ex_bb_address_comparator(RAnalBlock *a, RAnalBlock *b){
 }
 
 R_API int r_anal_ex_bb_head_comparator(RAnalBlock *a, RAnalBlock *b){
-	if (a->head == b->head)
+	if (a->head == b->head) {
 		return 0;
-	else if (a->head < b->head )
+	} else if (a->head < b->head) {
 		return -1;
+	}
 	// a->head > b->head
 	return 1;
 }
@@ -128,29 +129,24 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalOp *current_op = state->current_op;
 	const ut8 * data;
 	// current_op set in a prior stage
-	if (current_op) return current_op;
-	IFDBG eprintf("[==] r_anal_ex_get_op: Parsing op @ 0x%04"PFMT64x"\n", addr);
-
-	if (!anal->cur ||
-		(!anal->cur->op_from_buffer && !anal->cur->op) ) {
+	if (current_op) {
+		return current_op;
+	}
+	if (!anal->cur || (!anal->cur->op_from_buffer && !anal->cur->op)) {
 		return NULL;
 	}
-
-
 	if (!r_anal_state_addr_is_valid(state, addr) ||
 		(anal->cur && (!anal->cur->op && !anal->cur->op_from_buffer))) {
 		state->done = 1;
 		return NULL;
 	}
 	data = r_anal_state_get_buf_by_addr(state, addr);
-
 	if (anal->cur->op_from_buffer) {
-		current_op = anal->cur->op_from_buffer (anal, addr, data,  r_anal_state_get_len( state, addr) );
+		current_op = anal->cur->op_from_buffer (anal, addr, data,  r_anal_state_get_len (state, addr));
 	} else {
 		current_op = r_anal_op_new();
-		anal->cur->op (anal, current_op, addr, data,  r_anal_state_get_len( state, addr) );
+		anal->cur->op (anal, current_op, addr, data,  r_anal_state_get_len (state, addr));
 	}
-
 	state->current_op = current_op;
 	return current_op;
 
@@ -159,15 +155,13 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
 R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalBlock *current_bb = state->current_bb;
 	RAnalOp *op = state->current_op;
-	static ut64 test = 0;
-
 	// current_bb set before in a pre-analysis stage.
-	if (current_bb) return current_bb;
-	IFDBG eprintf("[==] r_anal_ex_get_bb: Parsing op @ 0x%04"PFMT64x"\n", addr);
-
-	if (r_anal_state_addr_is_valid(state, addr) && !op)
-		op = r_anal_ex_get_op(anal, state, addr);
-
+	if (current_bb) {
+		return current_bb;
+	}
+	if (r_anal_state_addr_is_valid (state, addr) && !op) {
+		op = r_anal_ex_get_op (anal, state, addr);
+	}
 	if (!op || !r_anal_state_addr_is_valid (state, addr)) {
 		return NULL;
 	}
@@ -176,16 +170,15 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 		return NULL;
 	}
 	r_anal_ex_op_to_bb (anal, state, current_bb, op);
-
-	if (r_anal_op_is_eob (op))
+	if (r_anal_op_is_eob (op)) {
 		current_bb->type |= R_ANAL_BB_TYPE_LAST;
-
+	}
 	if (!current_bb->op_bytes) {
 		current_bb->op_sz = state->current_op->size;
 		current_bb->op_bytes = malloc (current_bb->op_sz);
 		if (current_bb->op_bytes) {
 			int buf_len = r_anal_state_get_len (state, addr);
-			if (current_bb->op_sz <buf_len) {
+			if (current_bb->op_sz < buf_len) {
 				eprintf ("Oops\n");
 				r_anal_bb_free (current_bb);
 				return NULL;
@@ -197,9 +190,6 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	// this can be overridden in a post_bb_anal_cb
 	state->next_addr = addr + current_bb->op_sz;
 	current_bb->op_sz = state->current_op->size;
-	test += current_bb->op_sz;
-	IFDBG eprintf("[==] r_anal_ex_get_bb: op size @ 0x%04x seen 0x%04"PFMT64x"\n", state->current_op->size, test);
-
 	return current_bb;
 }
 
@@ -223,103 +213,88 @@ R_API void r_anal_ex_update_bb_cfg_head_tail( RAnalBlock *start, RAnalBlock * he
 	}
 }
 
-R_API RList * r_anal_ex_perform_analysis( RAnal *anal, RAnalState *state, ut64 addr) {
-	if (anal->cur && anal->cur->analysis_algorithm)
+R_API RList * r_anal_ex_perform_analysis(RAnal *anal, RAnalState *state, ut64 addr) {
+	if (anal->cur && anal->cur->analysis_algorithm) {
 		return anal->cur->analysis_algorithm (anal, state, addr);
+	}
 
 	return r_anal_ex_analysis_driver (anal, state, addr);
 }
 
-R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 addr ) {
+R_API RList * r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr ) {
 	ut64 consumed_iter = 0;
-	ut64 bytes_consumed = 0,
-		 len = r_anal_state_get_len (state, addr);
-
-	RAnalBlock *pcurrent_bb = state->current_bb,
-			   *pcurrent_head = state->current_bb_head,
-				*past_bb = NULL;
-	RAnalOp * pcurrent_op = state->current_op;
-
+	ut64 bytes_consumed = 0, len = r_anal_state_get_len (state, addr);
+	RAnalBlock *pcurrent_bb   = state->current_bb,
+		   *pcurrent_head = state->current_bb_head, *past_bb = NULL;
+	RAnalOp *pcurrent_op = state->current_op;
 	ut64 backup_addr = state->current_addr;
 	state->current_addr = addr;
-
 	RList *bb_list = r_anal_bb_list_new ();
 
 	if (state->done) {
 		return bb_list;
 	}
-
 	state->current_bb_head = NULL;
 	state->current_bb = NULL;
 	state->current_op = NULL;
 
-
 	r_anal_ex_perform_pre_anal (anal, state, state->current_addr);
-
 	while (!state->done && bytes_consumed < len) {
-
-
 		state->current_bb = r_anal_state_search_bb (state, state->current_addr);
 		// check state for bb
-
 		if (state->current_bb) {
 			// TODO something special should happen here.
-
 			r_anal_ex_perform_revisit_bb_cb (anal, state, state->current_addr);
 			consumed_iter += state->current_bb->op_sz;
 			bytes_consumed += state->current_bb->op_sz;
-			if ( state->done) break;
+			if (state->done) {
+				break;
+			}
 			continue;
 		}
-
 		r_anal_ex_perform_pre_anal_op_cb (anal, state, state->current_addr);
-		if (state->done) break;
-
+		if (state->done) {
+			break;
+		}
 	   	r_anal_ex_get_op (anal, state, state->current_addr);
 		r_anal_ex_perform_post_anal_op_cb (anal, state, state->current_addr);
-		if (state->done) break;
-
-
+		if (state->done) {
+			break;
+		}
 		r_anal_ex_perform_pre_anal_bb_cb (anal, state, state->current_addr);
-		if (state->done) break;
-
-
-		r_anal_ex_get_bb (anal, state, state->current_addr);
-
-
+		if (state->done) {
+			break;
+		}
+		if (!r_anal_ex_get_bb (anal, state, state->current_addr)) {
+			break;
+		}
 		if (!state->current_bb_head) {
 			state->current_bb_head = state->current_bb;
 			if (state->current_bb_head) {
 				state->current_bb_head->type |= R_ANAL_BB_TYPE_HEAD;
 			}
 		}
-
 		if (past_bb) {
 			past_bb->next = state->current_bb;
 			state->current_bb->prev = past_bb;
 		}
-
 		past_bb = state->current_bb;
-
+		//state->current_bb is shared in two list and one ht!!! 
+		//source of UAF this should be rewritten to avoid such errors 
 		r_anal_state_insert_bb (state, state->current_bb);
 		r_list_append (bb_list, state->current_bb);
-
-
 		r_anal_ex_perform_post_anal_bb_cb (anal, state, state->current_addr);
 		if (state->done) {
 			break;
 		}
-
 		if (state->current_bb) {
 			bytes_consumed += state->current_bb->op_sz;
 			consumed_iter += state->current_bb->op_sz;
 		}
 		state->current_addr = state->next_addr;
 		r_anal_op_free (state->current_op);
-
 		state->current_op = NULL;
 		state->current_bb = NULL;
-		IFDBG eprintf ("[=*=] Bytes consumed overall: %"PFMT64d" locally: %"PFMT64d" of %"PFMT64d"\n", state->bytes_consumed, bytes_consumed, len);
 		if (!consumed_iter) {
 			eprintf("No bytes consumed, bailing!\n");
 			break;
@@ -347,8 +322,9 @@ R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RA
 	bb->jump = op->jump;
 
 	bb->conditional = R_ANAL_EX_COND_OP & op->type2 ? R_ANAL_OP_TYPE_COND : 0;
-	if (r_anal_op_is_eob (op))
+	if (r_anal_op_is_eob (op)) {
 		bb->type |= R_ANAL_BB_TYPE_LAST;
+	}
 	r_anal_ex_clone_op_switch_to_bb (bb, op);
 }
 
@@ -497,4 +473,3 @@ R_API ut64 r_anal_ex_map_anal_ex_to_anal_op_type (ut64 ranal2_op_type) {
 
 	return R_ANAL_OP_TYPE_UNK;
 }
-
