@@ -1558,7 +1558,8 @@ static char *getViewerPath() {
 		"geeqie",
 		"gqview",
 		"eog",
-		"xdg-open"
+		"xdg-open",
+		NULL
 	};
 	for (i = 0; viewers[i]; i++) {
 		char *dotPath = r_file_path (viewers[i]);
