@@ -7,6 +7,7 @@ F+= ios-arm-64
 F+= linux-x86-32
 F+= linux-x86-64
 F+= linux-arm-32
+F+= linux-arm-64
 F+= linux-mips-32
 F+= linux-sparc-32
 F+= darwin-x86-32
