@@ -2128,8 +2128,13 @@ static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 	}
 	r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
 #if 1
+	/*
+	 * Parent's reg arena is propagated only on forward jumps / fails
+	 * because in pdr the visit occours in order of address, this is
+	 * to avoid leaking the arenas.
+	 */
 	if (b->jump != UT64_MAX) {
-		if (emu && core->anal->last_disasm_reg != NULL) {
+		if (b->jump > b->addr && emu && core->anal->last_disasm_reg != NULL) {
 			RAnalBlock * jumpbb = r_anal_bb_get_jumpbb (fcn, b);
 			if (jumpbb) {
 				jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
@@ -2138,7 +2143,7 @@ static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 		r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
 	}
 	if (b->fail != UT64_MAX) {
-		if (emu && core->anal->last_disasm_reg != NULL) {
+		if (b->fail > b->addr && emu && core->anal->last_disasm_reg != NULL) {
 			RAnalBlock * failbb = r_anal_bb_get_failbb (fcn, b);
 			if (failbb) {
 				failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
