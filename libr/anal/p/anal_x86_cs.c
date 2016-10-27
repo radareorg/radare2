@@ -204,7 +204,7 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 	return NULL;
 	fail:
 		// TODO: print some error message or try handle this situation...
-		exit(ENOMEM);
+		exit(1);
 }
 
 static csh handle = 0;
