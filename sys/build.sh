@@ -86,7 +86,7 @@ if [ -z "${KEEP_PLUGINS_CFG}" ]; then
 	rm -f plugins.cfg
 fi
 unset DEPS
-./configure ${CFGARG} --prefix=${PREFIX} || exit 1
+./configure ${CFGARG} --with-nonpic --prefix=${PREFIX} || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1
 if [ "`uname`" = Darwin ]; then
 	${MAKE} osx-sign osx-sign-libs CERTID="${CERTID}" || (
