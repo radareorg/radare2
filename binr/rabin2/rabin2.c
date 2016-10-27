@@ -921,6 +921,7 @@ int main(int argc, char **argv) {
 // TODO: Should be moved into core, to load those flags and formats into r2
 			Sdb *db = sdb_ns (bin->cur->sdb, "info", 0);
 			char *flagname;
+			char *offset = NULL;
 			if (db) {
 				SdbListIter *iter;
 				SdbKv *kv;
@@ -935,6 +936,8 @@ int main(int argc, char **argv) {
 						*flagname = 0;
 						flagname = dup;
 						printf ("f %s @ %s\n", flagname, v);
+						free (offset);
+						offset = strdup (v);
 					}
 					if ((flagname = strstr (dup, ".cparse"))) {
 						printf ("\"td %s\"\n", v);
@@ -943,6 +946,15 @@ int main(int argc, char **argv) {
 						*flagname = 0;
 						flagname = dup;
 						printf ("pf.%s %s\n", flagname, v);
+						int fmtsize = r_print_format_struct_size (v, core.print, 0);
+						char *offset_key = r_str_newf ("%s.offset", flagname);
+						const char *offset = sdb_const_get (db, offset_key, 0);
+						free (offset_key);
+						if (offset) {
+							printf ("Cf %d %s @ %s\n", fmtsize, v, offset);
+						} else {
+							printf ("Cf %d %s @ %s\n", fmtsize, v, "0");
+						}
 					}
 					free (dup);
 				}

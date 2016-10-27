@@ -351,7 +351,9 @@ arm_symbol:
 		}
 	}
 }
+
 static RBinInfo* info(RBinFile *arch);
+
 static RList* symbols(RBinFile *arch) {
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
@@ -649,7 +651,7 @@ static void __patch_reloc (RIOBind *iob, RBinElfReloc *rel, ut64 vaddr) {
 		{
 			ut64 num = r_swap_ut64(vaddr);
 			snprintf (s, sizeof (s), "%08"PFMT64x, num);
-			write_into_reloc();
+			write_into_reloc ();
 		}
 		break;
 	default:
@@ -723,8 +725,9 @@ static RList* patch_relocs(RBin *b) {
 			continue;
 		}
 		ptr->vaddr = sym_addr ? sym_addr : vaddr;
-		if (!sym_addr)
+		if (!sym_addr) {
 			vaddr += 4;
+		}
 		r_list_append (ret, ptr);
 		sym_addr = 0;
 	}
@@ -807,11 +810,14 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->has_nx = Elf_(r_bin_elf_has_nx) (arch->o->bin_obj);
 	ret->intrp = Elf_(r_bin_elf_intrp) (arch->o->bin_obj);
 	ret->dbg_info = 0;
-	if (!Elf_(r_bin_elf_get_stripped) (arch->o->bin_obj))
+	if (!Elf_(r_bin_elf_get_stripped) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_LINENUMS | R_BIN_DBG_SYMS | R_BIN_DBG_RELOCS;
-	else  ret->dbg_info |= R_BIN_DBG_STRIPPED;
-	if (Elf_(r_bin_elf_get_static) (arch->o->bin_obj))
+	} else {
+		ret->dbg_info |= R_BIN_DBG_STRIPPED;
+	}
+	if (Elf_(r_bin_elf_get_static) (arch->o->bin_obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
+	}
 	return ret;
 }
 
@@ -903,10 +909,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	B ("\x7F" "ELF" "\x01\x01\x01\x00", 8);
 	Z (8);
 	H (2); // ET_EXEC
-	if (is_arm)
+	if (is_arm) {
 		H (40); // e_machne = EM_ARM
-	else
+	} else {
 		H (3); // e_machne = EM_I386
+	}
 
 	D (1);
 	p_start = buf->length;
@@ -960,7 +967,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	B (code, codelen);
 
-	if (data && datalen>0) {
+	if (data && datalen > 0) {
 		//ut32 data_section = buf->length;
 		eprintf ("Warning: DATA section not support for ELF yet\n");
 		B (data, datalen);

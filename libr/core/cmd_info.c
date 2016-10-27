@@ -248,6 +248,9 @@ static int cmd_info(void *data, const char *input) {
 					free (o);
 				}
 				break;
+			case '*':
+				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+				break;
 			case '.':
 			case ' ':
 				if (db) {
@@ -266,6 +269,7 @@ static int cmd_info(void *data, const char *input) {
 			case '?':
 			default:
 				eprintf ("Usage: ik [sdb-query]\n");
+				eprintf ("Usage: ik*    # load all header information\n");
 			}
 			goto done;
 			break;

@@ -349,13 +349,15 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		char *s, *p;
 		s = strchr (input, ' ');
 		if (s) {
-			s = strdup (s+1);
+			s = strdup (s + 1);
 		} else {
 			eprintf ("Usage\n");
 			return false;
 		}
 		p = strchr (s, ' ');
-		if (p) *p++ = 0;
+		if (p) {
+			*p++ = 0;
+		}
 		ut64 addr;
 		if (input[2]=='-') {
 			if (input[3]) {
@@ -388,9 +390,11 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			} else {
 				r_meta_add (core->anal,
 						R_META_TYPE_COMMENT,
-						addr, addr+1, p);
+						addr, addr + 1, p);
 			}
-		} else eprintf ("Usage: CCa [address] [comment]\n");
+		} else {
+			eprintf ("Usage: CCa [address] [comment]\n");
+		}
 		free (s);
 		return true;
 		}
@@ -444,7 +448,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 		break;
 	case ' ':
 	case '\0':
-		if (type!='z' && input[1] == '*') {
+		if (type != 'z' && input[1] == '*') {
 			r_meta_list (core->anal, type, 0);
 			break;
 		}
@@ -459,7 +463,9 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			}
 		}
 		int repcnt = 0;
-		if (repeat < 1) repeat = 1;
+		if (repeat < 1) {
+			repeat = 1;
+		}
 		while (repcnt < repeat) {
 			t = strdup (r_str_chop_ro (input + 1));
 			p = NULL;
@@ -469,12 +475,14 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				n = r_num_math (core->num, t);
 				if (type == 'f') {
 					p = strchr (t, ' ');
+					if (n < 1) {
+						n = r_print_format_struct_size (p + 1, core->print, 0);
+					}
 					if (p) {
 						n = r_print_format (core->print, addr, core->block,
 							core->blocksize, p + 1, 0, NULL, NULL);
 					}
-				}
-				if (type == 's') {
+				} else if (type == 's') {
 					strncpy (name, t, sizeof (name) - 1);
 					(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
 					name[sizeof (name) - 1] = '\0';
@@ -504,7 +512,9 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 					return false;
 				}
 			}
-			if (!n) n++;
+			if (!n) {
+				n++;
+			}
 			addr_end = addr + n;
 			r_meta_add (core->anal, type, addr, addr_end, name);
 			free (t);
