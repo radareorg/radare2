@@ -532,7 +532,7 @@ static const char *radare_argv[] = {
 	"?", "?v", "whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db ", "db-",
         "dp", "dr", "dcu", "dmd", "dmp", "dml",
-	"ec","ecs",
+	"ec","ecs", "eco",
 	"S", "S.", "S*", "S-", "S=", "Sa", "Sa-", "Sd", "Sl", "SSj", "Sr",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
 	"!", "!!",
@@ -606,12 +606,12 @@ static int autocomplete(RLine *line) {
 			}
 			tmp_argv_heap = false;
 #define ADDARG(x) if (!strncmp (line->buffer.data+7, x, strlen (line->buffer.data+7))) { tmp_argv[j++] = x; }
-			ADDARG("node");
-			ADDARG("vala");
-			ADDARG("ruby");
-			ADDARG("newlisp");
-			ADDARG("perl");
-			ADDARG("python");
+			ADDARG ("node");
+			ADDARG ("vala");
+			ADDARG ("ruby");
+			ADDARG ("newlisp");
+			ADDARG ("perl");
+			ADDARG ("python");
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
@@ -661,7 +661,6 @@ static int autocomplete(RLine *line) {
 			if (!l_ptr) {
 				l_ptr = line->buffer.data + len;
 			}
-
 			r_list_foreach (vars, iter, var) {
 				if (!strncmp (f_ptr, var->name, l_ptr - f_ptr)) {
 					tmp_argv[j++] = strdup (var->name);
@@ -669,6 +668,21 @@ static int autocomplete(RLine *line) {
 			}
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
+		} else if ((!strncmp (line->buffer.data, "eco ", 4))) {
+			int i = 0;
+			int chr = 4;
+			int len = strlen (line->buffer.data + 4);
+			char *theme;
+			RList *themes = r_core_list_themes (core);
+			r_list_foreach (themes, iter, theme) {
+				if (!len || !strncmp (line->buffer.data + 4, theme, len)) {
+					tmp_argv[i++] = strdup (theme);
+				}
+			}
+			tmp_argv[i] = NULL;
+			r_list_free (themes);
+			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "te ", 3))) {
 			int i = 0;
@@ -959,10 +973,12 @@ openfile:
 		}
 	} else {
 		int i, j;
-		for (i=j=0; i<CMDS && radare_argv[i]; i++)
+		for (i=j=0; i<CMDS && radare_argv[i]; i++) {
 			if (!strncmp (radare_argv[i], line->buffer.data,
-					line->buffer.index))
+					line->buffer.index)) {
 				tmp_argv[j++] = radare_argv[i];
+			}
+		}
 		tmp_argv[j] = NULL;
 		line->completion.argc = j;
 		line->completion.argv = tmp_argv;

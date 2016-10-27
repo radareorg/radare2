@@ -45,7 +45,38 @@ static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 	return true;
 }
 
+R_API RList *r_core_list_themes(RCore *core) {
+	RList *files = NULL;
+	RListIter *iter;
+	const char *fn;
+	int ctr = 0;
+	char *home = r_str_home (".config/radare2/cons/");
+
+	RList *list = r_list_new ();
+	getNext = false;
+	if (home) {
+		files = r_sys_dir (home);
+		r_list_foreach (files, iter, fn) {
+			if (*fn && *fn != '.') {
+				r_list_append (list, strdup (fn));
+			}
+		}
+		r_list_free (files);
+		R_FREE (home);
+	}
+	files = r_sys_dir (R2_DATDIR"/radare2/"R2_VERSION"/cons/");
+	r_list_foreach (files, iter, fn) {
+		if (*fn && *fn != '.') {
+			r_list_append (list, strdup (fn));
+		}
+	}
+	r_list_free (files);
+	files = NULL;
+	return list;
+}
+
 static void nextpal(RCore *core, int mode) {
+// TODO: use r_core_list_themes() here instead of rewalking all the time
 	RList *files = NULL;
 	RListIter *iter;
 	const char *fn;

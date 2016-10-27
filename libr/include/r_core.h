@@ -183,6 +183,7 @@ typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef R_API
 //#define r_core_ncast(x) (RCore*)(size_t)(x)
+R_API RList *r_core_list_themes (RCore *core);
 R_API RCons *r_core_get_cons (RCore *core);
 R_API RBin *r_core_get_bin (RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);
