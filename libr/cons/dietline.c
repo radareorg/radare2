@@ -1254,10 +1254,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				} while ((*s & 0xc0) == 0x80);
 				I.buffer.index = I.buffer.length;
 #else
-				if (I.buffer.index > 0) {
-					I.buffer.index = --I.buffer.length;
-				}
+				I.buffer.index = --I.buffer.length;
 #endif
+				if (I.buffer.length < 0) {
+					I.buffer.length = 0;
+				}
 				I.buffer.data[I.buffer.length] = '\0';
 			}
 			if (I.buffer.index < 0) {
