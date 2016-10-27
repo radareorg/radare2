@@ -79,6 +79,7 @@ static bool is_xmm_reg(cs_x86_op op) {
  * @return         char* with the esil operand
  */
 static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
+	char *ret;
 	char *setarg = setop ? setop : "";
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
@@ -95,12 +96,16 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 	op = INSOP (n);
 	switch (op.type) {
 	case X86_OP_INVALID:
-		return strdup ("invalid");
+		ret = strdup ("invalid");
+		if (!ret) goto fail;
+		return ret;
 	case X86_OP_REG:
 		if (set == 1) {
 			snprintf (buf, sizeof (buf), "%s,%s=",
 				cs_reg_name (handle, op.reg), setarg);
-			return strdup (buf);
+			ret = strdup (buf);
+			if (!ret) goto fail;
+			return ret;
 		} else {
 			if (gop->bits == 64) {
 				switch (op.reg) {
@@ -117,14 +122,20 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 				default: break;
 				}
 			}
-			return strdup (cs_reg_name (handle, op.reg));
+			ret = strdup (cs_reg_name (handle, op.reg));
+			if (!ret) goto fail;
+			return ret;
 		}
 	case X86_OP_IMM:
 		if (set == 1) {
-			return r_str_newf ("%"PFMT64d",%s=[%d]",
+			ret = r_str_newf ("%"PFMT64d",%s=[%d]",
 				(ut64)op.imm, setarg, op.size);
+			if (!ret) goto fail;
+			return ret;
 		}
-		return r_str_newf ("%"PFMT64d, (ut64)op.imm);
+		ret = r_str_newf ("%"PFMT64d, (ut64)op.imm);
+		if (!ret) goto fail;
+		return ret;
 	case X86_OP_MEM:
 		{
 		// address = (base + (index * scale) + offset)
@@ -186,9 +197,14 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 
 		buf[sizeof (buf) - 1] = 0;
 		}
-		return strdup (buf);
+		ret = strdup (buf);
+		if (!ret) goto fail;
+		return ret;
 	}
 	return NULL;
+	fail:
+		// TODO: print some error message or try handle this situation...
+		exit(ENOMEM);
 }
 
 static csh handle = 0;
