@@ -575,6 +575,8 @@ static int getsdelta(const char *data) {
 	return 0;
 }
 
+#define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { tmp_argv[j++] = x; }
+
 static int autocomplete(RLine *line) {
 	int pfree = 0;
 	RCore *core = line->user;
@@ -601,17 +603,81 @@ static int autocomplete(RLine *line) {
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "#!pipe ", 7)) {
 			int j = 0;
+			int chr = 7;
 			if (strchr (line->buffer.data + 7, ' ')) {
 				goto openfile;
 			}
 			tmp_argv_heap = false;
-#define ADDARG(x) if (!strncmp (line->buffer.data+7, x, strlen (line->buffer.data+7))) { tmp_argv[j++] = x; }
 			ADDARG ("node");
 			ADDARG ("vala");
 			ADDARG ("ruby");
 			ADDARG ("newlisp");
 			ADDARG ("perl");
 			ADDARG ("python");
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "ec ", 3)) {
+			int j = 0;
+			if (strchr (line->buffer.data + 3, ' ')) {
+				goto openfile;
+			}
+			int chr = 3;
+			tmp_argv_heap = false;
+			ADDARG("comment")
+			ADDARG("args")
+			ADDARG("fname")
+			ADDARG("floc")
+			ADDARG("fline")
+			ADDARG("flag")
+			ADDARG("label")
+			ADDARG("help")
+			ADDARG("flow")
+			ADDARG("prompt")
+			ADDARG("offset")
+			ADDARG("input")
+			ADDARG("invalid")
+			ADDARG("other")
+			ADDARG("b0x00")
+			ADDARG("b0x7f")
+			ADDARG("b0xff")
+			ADDARG("math")
+			ADDARG("bin")
+			ADDARG("btext")
+			ADDARG("push")
+			ADDARG("pop")
+			ADDARG("crypto")
+			ADDARG("jmp")
+			ADDARG("cjmp")
+			ADDARG("call")
+			ADDARG("nop")
+			ADDARG("ret")
+			ADDARG("trap")
+			ADDARG("swi")
+			ADDARG("cmp")
+			ADDARG("reg")
+			ADDARG("creg")
+			ADDARG("num")
+			ADDARG("mov")
+			ADDARG("ai.read")
+			ADDARG("ai.write")
+			ADDARG("ai.exec")
+			ADDARG("ai.seq")
+			ADDARG("ai.ascii")
+			ADDARG("graph.box")
+			ADDARG("graph.box2")
+			ADDARG("graph.box3")
+			ADDARG("graph.box4")
+			ADDARG("graph.true")
+			ADDARG("graph.false")
+			ADDARG("graph.trufae")
+			ADDARG("graph.current")
+			ADDARG("graph.traced")
+			ADDARG("gui.cflow")
+			ADDARG("gui.dataoffset")
+			ADDARG("gui.background")
+			ADDARG("gui.alt_background")
+			ADDARG("gui.border")
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
