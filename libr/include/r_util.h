@@ -9,7 +9,6 @@
 #include <r_regex.h>
 #include <r_list.h> // radare linked list
 #include <r_flist.h> // radare fixed pointer array iterators
-#include <list.h> // kernel linked list
 #include <r_th.h>
 #include <dirent.h>
 #include <sys/time.h>

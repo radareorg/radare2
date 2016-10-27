@@ -10,7 +10,6 @@
 #include <r_db.h>
 #include <r_io.h>
 #include <r_syscall.h>
-#include "list.h"
 
 #include <r_config.h>
 #include "r_bind.h"
@@ -230,7 +229,7 @@ typedef struct r_debug_t {
 	RIOBind iob;
 
 	struct r_debug_plugin_t *h;
-	struct list_head plugins;
+	RList *plugins;
 
 	RAnal *anal;
 	RList *maps; // <RDebugMap>
@@ -318,7 +317,6 @@ typedef struct r_debug_plugin_t {
 	int (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g);
 	RDebugDescPlugin desc;
 	// TODO: use RList here
-	struct list_head list;
 } RDebugPlugin;
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?

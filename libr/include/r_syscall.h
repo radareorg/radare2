@@ -9,7 +9,6 @@ extern "C" {
 
 #include <r_types.h>
 #include <r_db.h>
-#include <list.h>
 
 R_LIB_VERSION_HEADER (r_syscall);
 
@@ -56,7 +55,6 @@ typedef struct r_syscall_plugin_t {
 	int bits;
 	int nargs;
 	struct r_syscall_args_t *args;
-	struct list_head list;
 } RSyscallPlugin;
 
 typedef struct r_syscall_arch_plugin_t {
@@ -66,7 +64,6 @@ typedef struct r_syscall_arch_plugin_t {
 	int *bits;
 	int nargs;
 	struct r_syscall_args_t **args;
-	struct list_head list;
 } RSyscallArchPlugin;
 
 #ifdef R_API

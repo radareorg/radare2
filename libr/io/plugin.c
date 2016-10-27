@@ -6,7 +6,6 @@
 
 #include "r_io.h"
 #include "../config.h"
-#include "list.h"
 #include <stdio.h>
 
 static RIOPlugin *io_static_plugins[] = {

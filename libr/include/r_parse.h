@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #ifndef R2_PARSE_H
 #define R2_PARSE_H
@@ -6,7 +6,6 @@
 #include <r_types.h>
 #include <r_flag.h>
 #include <r_anal.h>
-#include <list.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +41,6 @@ typedef struct r_parse_plugin_t {
 	int (*filter)(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian);
 	bool (*varsub)(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 	int (*replace)(int argc, const char *argv[], char *newstr);
-	struct list_head list;
 } RParsePlugin;
 
 #ifdef R_API

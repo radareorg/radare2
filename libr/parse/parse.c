@@ -4,7 +4,6 @@
 
 #include <r_types.h>
 #include <r_parse.h>
-#include <list.h>
 #include "../config.h"
 
 R_LIB_VERSION (r_parse);

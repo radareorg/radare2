@@ -2,7 +2,6 @@
 
 #include <r_reg.h>
 #include <r_util.h>
-#include <list.h>
 
 R_LIB_VERSION (r_reg);
 

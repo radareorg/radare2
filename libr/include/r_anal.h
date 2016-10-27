@@ -608,7 +608,6 @@ typedef struct r_anal_t {
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
 	RAnalRange *limit;
-	//struct list_head anals; // TODO: Reimplement with RList
 	RList *plugins;
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
@@ -1100,7 +1099,6 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffBBCallback diff_bb;
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
-	struct list_head list;
 
 	RAnalIsValidOffsetCB is_valid_offset;
 

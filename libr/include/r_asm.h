@@ -5,7 +5,6 @@
 
 #include <r_types.h>
 #include <r_bin.h> // only for binding, no hard dep required
-#include <list.h>
 #include <r_util.h>
 #include <r_parse.h>
 

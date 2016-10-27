@@ -1,28 +1,27 @@
-/* radare - LGPL - Copyright 2009-2014 pancake */
+/* radare - LGPL - Copyright 2009-2016 pancake */
 
 #include <r_debug.h>
 #include "../config.h"
 
-static RDebugPlugin *debug_static_plugins[] =
-	{ R_DEBUG_STATIC_PLUGINS };
+static RDebugPlugin *debug_static_plugins[] = {
+	R_DEBUG_STATIC_PLUGINS
+};
 
 R_API void r_debug_plugin_init(RDebug *dbg) {
-	RDebugPlugin *static_plugin;
 	int i;
-
-	INIT_LIST_HEAD (&dbg->plugins);
-	for (i=0; debug_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RDebugPlugin);
-		memcpy (static_plugin, debug_static_plugins[i], sizeof (RDebugPlugin));
-		r_debug_plugin_add (dbg, static_plugin);
+	dbg->plugins = r_list_new ();
+	for (i = 0; debug_static_plugins[i]; i++) {
+		RDebugPlugin *p = R_NEW (RDebugPlugin);
+		memcpy (p, debug_static_plugins[i], sizeof (RDebugPlugin));
+		r_debug_plugin_add (dbg, p);
 	}
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
-	struct list_head *pos;
 	if (str) {
-		list_for_each_prev (pos, &dbg->plugins) {
-			RDebugPlugin *h = list_entry (pos, RDebugPlugin, list);
+		RDebugPlugin *h;
+		RListIter *iter;
+		r_list_foreach (dbg->plugins, iter, h) {
 			if (h->name && !strcmp (str, h->name)) {
 				dbg->h = h;
 				if (dbg->anal && dbg->anal->cur)
@@ -54,11 +53,11 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 	char spaces[16];
 	int count = 0;
-	struct list_head *pos;
 	memset (spaces, ' ', 15);
 	spaces[15] = 0;
-	list_for_each_prev (pos, &dbg->plugins) {
-		RDebugPlugin *h = list_entry(pos, RDebugPlugin, list);
+	RDebugPlugin *h;
+	RListIter *iter;
+	r_list_foreach (dbg->plugins, iter, h) {
 		int sp = 8-strlen (h->name);
 		spaces[sp] = 0;
 		if (mode == 'q') {
@@ -75,7 +74,9 @@ R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 }
 
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
-	if (!dbg || !foo || !foo->name) return false;
-	list_add_tail (&(foo->list), &(dbg->plugins));
+	if (!dbg || !foo || !foo->name) {
+		return false;
+	}
+	r_list_append (dbg->plugins, foo);
 	return true;
 }

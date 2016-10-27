@@ -3,7 +3,6 @@
 
 #include <r_types.h>
 #include <r_util.h>
-#include <list.h>
 
 R_LIB_VERSION_HEADER (r_reg);
 
