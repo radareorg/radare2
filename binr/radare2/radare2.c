@@ -31,7 +31,7 @@ static int verify_version(int show) {
 		{ "r_asm", &r_asm_version },
 		{ "r_bin", &r_bin_version },
 		{ "r_cons", &r_cons_version },
-		{ "r_flags", &r_flag_version }, // XXX inconsistency
+		{ "r_flag", &r_flag_version },
 		{ "r_core", &r_core_version },
 		{ "r_crypto", &r_crypto_version },
 		{ "r_bp", &r_bp_version },
