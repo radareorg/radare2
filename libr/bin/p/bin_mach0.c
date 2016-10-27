@@ -572,8 +572,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	W (p_cmdsize, &cmdsize, 4);
 	filesize = magiclen + cmdsize + clen + dlen;
 	// TEXT SEGMENT //
-	W (p_codefsz, &filesize, 4);
+	int cfsz = 1;
+	W (p_codefsz, &cfsz, 4);
 	W (p_codeva, &codeva, 4);
+	// clen = 4096;
 	W (p_codesz, &clen, 4);
 	p_tmp = codeva - baddr;
 	W (p_codepa, &p_tmp, 4);

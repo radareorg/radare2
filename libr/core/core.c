@@ -38,8 +38,9 @@ static void r_line_free_autocomplete(RLine *line) {
 }
 
 static void r_core_free_autocomplete(RCore *core) {
-	if (!core || !core->cons || !core->cons->line)
+	if (!core || !core->cons || !core->cons->line) {
 		return;
+	}
 	r_line_free_autocomplete (core->cons->line);
 }
 
@@ -102,8 +103,9 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
  * lowercase one. If is_asmqjmps_letter is false, the string should be a number
  * between 1 and 9 included. */
 R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
-	if (!core->asmqjmps) return UT64_MAX;
-
+	if (!core->asmqjmps) {
+		return UT64_MAX;
+	}
 	if (core->is_asmqjmps_letter) {
 		int i, pos = 0;
 		int len = strlen (str);
@@ -869,8 +871,9 @@ openfile:
 			if (list) {
 			//	bool isroot = !strcmp (path, "/");
 				r_list_foreach (list, iter, str) {
-					if (*str == '.') // also list hidden files
+					if (*str == '.') { // also list hidden files
 						continue;
+					}
 					if (!p || !*p || !strncmp (str, p, n)) {
 						tmp_argv[i++] = r_str_newf ("%s/%s", path, str);
 						if (i == TMP_ARGV_SZ - 1) {
@@ -1067,7 +1070,7 @@ R_API int r_core_fgets(char *buf, int len) {
 		return -1;
 	}
 	strncpy (buf, ptr, len);
-	buf[len-1] = 0;
+	buf[len - 1] = 0;
 	return strlen (buf)+1;
 }
 /*-----------------------------------*/
@@ -1167,9 +1170,10 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	if (isenum && !strcmp (isenum, "enum")) {
 		int isFirst = true;
 		ret = r_str_concatf (ret, "0x%08"PFMT64x" : ", val);
-		for (i=0; i < 32; i++) {
-			if (!(val & (1<<i)))
+		for (i = 0; i < 32; i++) {
+			if (!(val & (1 << i))) {
 				continue;
+			}
 			q = sdb_fmt (0, "%s.0x%x", name, (1<<i));
 			res = sdb_const_get (core->anal->sdb_types, q, 0);
 			if (isFirst) {
@@ -1192,7 +1196,9 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 #define MINLEN 1
 static int is_string (const ut8 *buf, int size, int *len) {
 	int i;
-	if (size < 1) return 0;
+	if (size < 1) {
+		return 0;
+	}
 	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
 		*len = 1; // XXX: TODO: Measure wide string length
 		return 2; // is wide
