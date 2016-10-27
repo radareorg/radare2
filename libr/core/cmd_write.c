@@ -975,7 +975,6 @@ static int cmd_write(void *data, const char *input) {
 			eprintf ("Usage: wt[a] file [size]   write 'size' bytes in current block to file\n");
 			eprintf (" wta [filename] - append to file\n");
 			eprintf (" wtf [filename] - write to file (see also wxf and wf?\n");
-			eprintf (" wt  [filename] - alias for wtf\n");
 			free (ostr);
 			return 0;
 		} else {
@@ -1000,12 +999,17 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else if (*str != ' ') {
 				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-				snprintf (_fn, sizeof(_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
 				filename = _fn;
 			} else {
 				filename = str + 1;
 			}
 			tmp = strchr (str + 1, ' ');
+			if (!filename || !*filename) {
+				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
+				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, core->offset);
+				filename = _fn;
+			}
 			if (tmp) {
 				sz = (st64) r_num_math (core->num, tmp + 1);
 				if (!sz) {
