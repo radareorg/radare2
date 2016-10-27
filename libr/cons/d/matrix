@@ -2,6 +2,7 @@ ec b0x00 rgb:030
 ec b0x7f rgb:0f0
 ec b0xff rgb:050
 ec bin rgb:0f0
+ec crypto rgb:0f0
 ec other rgb:0a0
 ec btext rgb:0b0
 ec call rgb:0b0
@@ -11,7 +12,7 @@ ec cmp rgb:191
 ec comment rgb:060
 ec ret rgb:0b0
 ec fline rgb:0a0
-ec flow rgb:030
+ec flow bgreen
 ec fname rgb:0b0
 ec label rgb:0f0
 ec math rgb:040
@@ -31,3 +32,12 @@ ec trap rgb:040
 ec swi rgb:0b0
 ec creg rgb:080
 ec flag rgb:0f0
+ec graph.box green
+ec graph.box2 rgb:060
+ec graph.box3 rgb:ff0000
+ec graph.box4 rgb:0000ff
+ec graph.true green
+ec graph.false rgb:050
+ec graph.trufae green
+ec graph.current green
+ec graph.traced rgb:060

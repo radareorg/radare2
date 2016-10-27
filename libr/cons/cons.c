@@ -541,6 +541,7 @@ R_API void r_cons_flush() {
 	} else {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
 			int i = 0;
+			int pagesize = R_MAX (1, I.pagesize);
 			char *ptr = I.buffer;
 			char *nl = strchr (ptr, '\n');
 			int len = I.buffer_len;
@@ -548,7 +549,7 @@ R_API void r_cons_flush() {
 			r_cons_break (NULL, NULL);
 			while (nl && !r_cons_is_breaked ()) {
 				r_cons_write (ptr, nl - ptr + 1);
-				if (!(i % I.pagesize)) {
+				if (!(i % pagesize)) {
 					r_sys_usleep (I.linesleep * 1000);
 				}
 				ptr = nl + 1;
