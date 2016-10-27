@@ -414,7 +414,10 @@ static void print_c_code(RPrint *p, ut64 addr, ut8 *buf, int len, int ws, int w)
 }
 
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
-	int i, w = p->cols*0.7;
+	int i, w = p->cols * 0.7;
+	if (w < 1) {
+		w = 1;
+	}
 	switch (lang) {
 	case '?':
 		eprintf ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n"
@@ -440,7 +443,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		else p->cb_printf (";s+%d\n", (i%16));
 		p->cb_printf ("s-%d\n", len);
 		break;
-	case 'a':
+	case 'a': // "pca"
 		p->cb_printf ("shellcode:");
 		for (i=0; !p->interrupt && i<len; i++) {
 			if (!(i%8)) p->cb_printf ("\n.byte ");
@@ -449,14 +452,14 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		}
 		p->cb_printf ("\n.equ shellcode_len, %d\n", len);
 		break;
-	case 's':
+	case 's': // "pcs"
 		p->cb_printf ("\"");
 		for (i=0; !p->interrupt && i<len; i++) {
 			p->cb_printf ("\\x%02x", buf[i]);
 		}
 		p->cb_printf ("\"\n");
 		break;
-	case 'S':
+	case 'S': // "pcS"
 		{
 			const int trunksize = 16;
 			for (i=0; !p->interrupt && i<len; i++) {
@@ -491,7 +494,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		p->cb_printf ("]\n");
 		break;
 	case 'P':
-	case 'p':
+	case 'p': // pcp"
 		p->cb_printf ("import struct\nbuf = struct.pack (\"%dB\", *[", len);
 		for (i=0; !p->interrupt && i<len; i++) {
 			if (!(i%w)) p->cb_printf ("\n");

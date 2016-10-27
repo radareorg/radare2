@@ -988,9 +988,11 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 
 	switch (mode) {
 	case 'p':
-		for (j=0; j<size; j++)
-			if (IS_PRINTABLE (bufz[j]))
+		for (j = 0; j < size; j++) {
+			if (IS_PRINTABLE (bufz[j])) {
 				ret++;
+			}
+		}
 		break;
 	case 'f':
 		r_list_foreach (core->flags->flags, iter, flag)
