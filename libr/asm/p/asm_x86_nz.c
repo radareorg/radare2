@@ -1013,7 +1013,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode op) {
 				}
 			}
 		} else if (op.operands[0].type & OT_MEMORY) {
-			if (a->bits == 64 && !(op.operands[0].type & OT_QWORD)) {
+			if (a->bits == 64 &&
+				!(op.operands[0].type & OT_BYTE) &&
+				!(op.operands[0].type & OT_QWORD)) {
 				data[l++] = 0x67;
 			}
 			if (op.operands[0].type & (OT_DWORD | OT_QWORD)) {
