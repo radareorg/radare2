@@ -2132,11 +2132,14 @@ static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 	 * Parent's reg arena is propagated only on forward jumps / fails
 	 * because in pdr the visit occours in order of address, this is
 	 * to avoid leaking the arenas.
+	 *
+	 * If a block already has a parent_reg_arena, it does not get
+	 * owerwritten.
 	 */
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr && emu && core->anal->last_disasm_reg != NULL) {
 			RAnalBlock * jumpbb = r_anal_bb_get_jumpbb (fcn, b);
-			if (jumpbb) {
+			if (jumpbb && !jumpbb->parent_reg_arena) {
 				jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 			}
 		}
@@ -2145,7 +2148,7 @@ static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 	if (b->fail != UT64_MAX) {
 		if (b->fail > b->addr && emu && core->anal->last_disasm_reg != NULL) {
 			RAnalBlock * failbb = r_anal_bb_get_failbb (fcn, b);
-			if (failbb) {
+			if (failbb && !failbb->parent_reg_arena) {
 				failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 			}
 		}
