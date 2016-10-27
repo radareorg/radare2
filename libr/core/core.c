@@ -1013,7 +1013,7 @@ openfile:
 		   || (!strncmp (line->buffer.data, "e? ", 3))
 		   || (!strncmp (line->buffer.data, "e! ", 3))) {
 			const char p = line->buffer.data[1];
-			int m = (p == '?' || p == '!') ? 3 : 2;
+			int m = (p == '?' || p == '!' || p == 't') ? 3 : 2;
 			int i = 0, n = strlen (line->buffer.data+m);
 			RConfigNode *bt;
 			RListIter *iter;
