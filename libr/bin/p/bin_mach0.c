@@ -397,13 +397,16 @@ typedef struct r_bin_create_t {
 #endif
 
 static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, int dlen) {
+	const bool use_pagezero = true;
+	const bool use_main = true;
 	ut32 filesize, codeva, datava;
 	ut32 ncmds, cmdsize, magiclen;
 	ut32 p_codefsz = 0, p_codeva = 0, p_codesz = 0, p_codepa = 0;
 	ut32 p_datafsz = 0, p_datava = 0, p_datasz = 0, p_datapa = 0;
 	ut32 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut32 baddr = 0x1000;
-	int is_arm = !strcmp (bin->cur->o->info->arch, "arm");
+
+	bool is_arm = strstr (bin->cur->o->info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
 #ifndef R_BIN_MACH064
 	if (bin->cur->o->info->bits == 64) {
@@ -431,12 +434,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	}
 	D (2); // filetype (executable)
 
-	if (data && dlen>0) {
+	if (data && dlen > 0) {
 		ncmds = 3;
 		cmdsize = 0;
 	} else {
 		ncmds = 2;
 		cmdsize = 0;
+	}
+	if (use_pagezero) {
+		ncmds++;
 	}
 
 	/* COMMANDS */
@@ -444,7 +450,23 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	p_cmdsize = buf->length;
 	D (-1); // cmdsize
 	D (0); // flags
+	// D (0x01200085); // alternative flags found in some a.out..
 	magiclen = buf->length;
+
+	if (use_pagezero) {
+		/* PAGEZERO */
+		D (1);   // cmd.LC_SEGMENT
+		D (56); // sizeof (cmd)
+		WZ (16, "__PAGEZERO");
+		D (0); // vmaddr
+		D (0x00001000); // vmsize XXX
+		D (0); // fileoff
+		D (0); // filesize
+		D (0); // maxprot
+		D (0); // initprot
+		D (0); // nsects
+		D (0); // flags
+	}
 
 	/* TEXT SEGMENT */
 	D (1);   // cmd.LC_SEGMENT
@@ -467,14 +489,14 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	D (-1);
 	p_codepa = buf->length; // code - baddr
 	D (-1); //_start-0x1000);
-	D (2); // align
+	D (4); // align
 	D (0); // reloff
 	D (0); // nrelocs
-	D (0); // flags
+	D (0x80000400); // flags
 	D (0); // reserved
-	D (0);
+	D (0); // ??
 
-	if (data && dlen>0) {
+	if (data && dlen > 0) {
 		/* DATA SEGMENT */
 		D (1);   // cmd.LC_SEGMENT
 		D (124); // sizeof (cmd)
@@ -508,29 +530,43 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 		D (0);
 	}
 
-	/* THREAD STATE */
-	D (5); // LC_UNIXTHREAD
-	D (80); // sizeof (cmd)
-	if (is_arm) {
-		/* arm */
-		D (1); // i386-thread-state
-		D (17); // thread-state-count
-		p_entry = buf->length + (16*sizeof (ut32));
-		Z (17 * sizeof (ut32));
-		// mach0-arm has one byte more
+	if (use_main) {
+		/* LC_MAIN */
+		D (0x80000028);   // cmd.LC_MAIN
+		D (24); // sizeof (cmd)
+		D (baddr + 0x10); // entryoff
+		D (0); // stacksize
+		D (0); // ???
+		D (0); // ???
+		p_entry = buf->length + (6 * sizeof (ut32));
 	} else {
-		/* x86-32 */
-		D (1); // i386-thread-state
-		D (16); // thread-state-count
-		p_entry = buf->length + (10*sizeof (ut32));
-		Z (16 * sizeof (ut32));
+		/* THREAD STATE */
+		D (5); // LC_UNIXTHREAD
+		D (80); // sizeof (cmd)
+		if (is_arm) {
+			/* arm */
+			D (1); // i386-thread-state
+			D (17); // thread-state-count
+			p_entry = buf->length + (16 * sizeof (ut32));
+			Z (17 * sizeof (ut32));
+			// mach0-arm has one byte more
+		} else {
+			/* x86-32 */
+			D (1); // i386-thread-state
+			D (16); // thread-state-count
+			p_entry = buf->length + (10 * sizeof (ut32));
+			Z (16 * sizeof (ut32));
+		}
 	}
 
 	cmdsize = buf->length - magiclen;
-
 	codeva = buf->length + baddr;
 	datava = buf->length + clen + baddr;
-	W (p_entry, &codeva, 4); // set PC
+	if (p_entry == 0) {
+		eprintf ("No entrypoint address\n");
+	} else {
+		W (p_entry, &codeva, 4); // set PC
+	}
 
 	/* fill header variables */
 	W (p_cmdsize, &cmdsize, 4);
@@ -544,7 +580,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 
 	B (code, clen);
 
-	if (data && dlen>0) {
+	if (data && dlen > 0) {
 		/* append data */
 		W (p_datafsz, &filesize, 4);
 		W (p_datava, &datava, 4);
