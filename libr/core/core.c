@@ -548,7 +548,7 @@ static const char *radare_argv[] = {
 	"q", "q!",
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
-	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wt", "wp",
+	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wta", "wtf", "wp",
 	"t", "to ", "t-", "tf", "td", "td-", "tb", "te", "tl", "tk", "ts",
 	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
@@ -671,7 +671,6 @@ static int autocomplete(RLine *line) {
 			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "eco ", 4))) {
 			int i = 0;
-			int chr = 4;
 			int len = strlen (line->buffer.data + 4);
 			char *theme;
 			RList *themes = r_core_list_themes (core);
@@ -719,7 +718,9 @@ static int autocomplete(RLine *line) {
 		     !strncmp (line->buffer.data, "wF ", 3) ||
 		     !strncmp (line->buffer.data, "cat ", 4) ||
 		     !strncmp (line->buffer.data, "less ", 5) ||
-		     !strncmp (line->buffer.data, "wt ", 3) ||
+		     !strncmp (line->buffer.data, "wta ", 4) ||
+		     !strncmp (line->buffer.data, "wtf ", 4) ||
+		     !strncmp (line->buffer.data, "wxf ", 4) ||
 		     !strncmp (line->buffer.data, "wp ", 3) ||
 		     !strncmp (line->buffer.data, "Sd ", 3) ||
 		     !strncmp (line->buffer.data, "Sl ", 3) ||

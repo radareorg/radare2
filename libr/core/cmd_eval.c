@@ -49,7 +49,6 @@ R_API RList *r_core_list_themes(RCore *core) {
 	RList *files = NULL;
 	RListIter *iter;
 	const char *fn;
-	int ctr = 0;
 	char *home = r_str_home (".config/radare2/cons/");
 
 	RList *list = r_list_new ();
