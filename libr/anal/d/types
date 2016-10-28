@@ -241,14 +241,14 @@ func.imaxdiv.ret=imaxdiv_t
 
 strtoimax=func
 func.strtoimax.args=3
-func.strtoimax.arg.0=const,char*
+func.strtoimax.arg.0=const char*,str
 func.strtoimax.arg.1=char**,endptr
 func.strtoimax.arg.2=int,base
 func.strtoimax.ret=intmax_t
 
 strtoumax=func
 func.strtoumax.args=3
-func.strtoumax.arg.0=const,char*
+func.strtoumax.arg.0=const char*,str
 func.strtoumax.arg.1=char**,endptr
 func.strtoumax.arg.2=int,base
 func.strtoumax.ret=uintmax_t
@@ -1184,17 +1184,17 @@ func.lroundl.ret=long
 
 nan=func
 func.nan.args=1
-func.nan.arg.0=const,char*
+func.nan.arg.0=const char*,str
 func.nan.ret=double
 
 nanf=func
 func.nanf.args=1
-func.nanf.arg.0=const,char*
+func.nanf.arg.0=const char*,str
 func.nanf.ret=float
 
 nanl=func
 func.nanl.args=1
-func.nanl.arg.0=const,char*
+func.nanl.arg.0=const char*,str
 func.nanl.ret=long double
 
 nearbyint=func
@@ -1396,45 +1396,40 @@ func.raise.ret=int
 
 atof=func
 func.atof.args=1
-func.atof.arg.0=const,char*
+func.atof.arg.0=const char*,str
 func.atof.ret=double
-
-atoi=func
-func.atoi.args=1
-func.atoi.arg.0=const,char*
-func.atoi.ret=int
 
 atol=func
 func.atol.args=1
-func.atol.arg.0=const,char*
+func.atol.arg.0=const char*,str
 func.atol.ret=long
 
 atoll=func
 func.atoll.args=1
-func.atoll.arg.0=const,char*
+func.atoll.arg.0=const char*,str
 func.atoll.ret=long long
 
 strtod=func
 func.strtod.args=2
-func.strtod.arg.0=const,char*
+func.strtod.arg.0=const char*,str
 func.strtod.arg.1=char**,endptr
 func.strtod.ret=double
 
 strtof=func
 func.strtof.args=2
-func.strtof.arg.0=const,char*
+func.strtof.arg.0=const char*,str
 func.strtof.arg.1=char**,endptr
 func.strtof.ret=float
 
 strtold=func
 func.strtold.args=2
-func.strtold.arg.0=const,char*
+func.strtold.arg.0=const char*,str
 func.strtold.arg.1=char**,endptr
 func.strtold.ret=long doubleouble
 
 strtol=func
 func.strtol.args=3
-func.strtol.arg.0=const,char*
+func.strtol.arg.0=const char*,str
 func.strtol.arg.1=char**,endptr
 func.strtol.arg.2=int,base
 func.strtol.ret=long
@@ -1446,61 +1441,61 @@ func.raise.ret=int
 
 atof=func
 func.atof.args=1
-func.atof.arg.0=const,char*
+func.atof.arg.0=const char*,str
 func.atof.ret=double
 
 atol=func
 func.atol.args=1
-func.atol.arg.0=const,char*
+func.atol.arg.0=const char*,str
 func.atol.ret=long
 
 atoll=func
 func.atoll.args=1
-func.atoll.arg.0=const,char*
+func.atoll.arg.0=const char*,str
 func.atoll.ret=long long
 
 strtod=func
 func.strtod.args=2
-func.strtod.arg.0=const,char*
+func.strtod.arg.0=const char*,str
 func.strtod.arg.1=char**,endptr
 func.strtod.ret=double
 
 strtof=func
 func.strtof.args=2
-func.strtof.arg.0=const,char*
+func.strtof.arg.0=const char*,str
 func.strtof.arg.1=char**,endptr
 func.strtof.ret=float
 
 strtold=func
 func.strtold.args=2
-func.strtold.arg.0=const,char*
+func.strtold.arg.0=const char*,str
 func.strtold.arg.1=char**,endptr
 func.strtold.ret=long double
 
 strtol=func
 func.strtol.args=3
-func.strtol.arg.0=const,char*
+func.strtol.arg.0=const char*,str
 func.strtol.arg.1=char**,endptr
 func.strtol.arg.2=int,base
 func.strtol.ret=long
 
 strtoll=func
 func.strtoll.args=3
-func.strtoll.arg.0=const,char*
+func.strtoll.arg.0=const char*,str
 func.strtoll.arg.1=char**,endptr
 func.strtoll.arg.2=int,base
 func.strtoll.ret=long long
 
 strtoul=func
 func.strtoul.args=3
-func.strtoul.arg.0=const,char*
+func.strtoul.arg.0=const char*,str
 func.strtoul.arg.1=char**,endptr
 func.strtoul.arg.2=int,base
 func.strtoul.ret=long
 
 strtoull=func
 func.strtoull.args=3
-func.strtoull.arg.0=const,char*
+func.strtoull.arg.0=const char*,str
 func.strtoull.arg.1=char**,endptr
 func.strtoull.arg.2=int,base
 func.strtoull.ret=long long
