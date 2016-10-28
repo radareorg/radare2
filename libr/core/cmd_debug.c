@@ -1024,12 +1024,17 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			}
 			i = r_str_word_set0 (ptr);
 			switch (i) {
-				case 2: // get symname
-					symname = r_str_word_get0 (ptr, 1);
-				case 1: // get addr|libname
-					addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-					if (!addr) libname = r_str_word_get0 (ptr, 0);
-					break;
+			case 2: // get symname
+				symname = r_str_word_get0 (ptr, 1);
+			case 1: // get addr|libname
+				if (IS_NUMBER (*ptr)) {
+					const char *a0 = r_str_word_get0 (ptr, 0);
+					addr = r_num_math (core->num, a0);
+				}
+				if (!addr || addr == UT64_MAX) {
+					libname = r_str_word_get0 (ptr, 0);
+				}
+				break;
 			}
 			r_debug_map_sync (core->dbg); // update process memory maps
 			r_list_foreach (core->dbg->maps, iter, map) {
