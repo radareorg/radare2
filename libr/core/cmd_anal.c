@@ -400,7 +400,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	if (n == -1) {
 		n = (int)r_debug_reg_get (core->dbg, "oeax");
 		if (n == 0 || n == -1) {
-			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_A0);
+			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 			n = (int)r_debug_reg_get (core->dbg, a0);
 		}
 	}

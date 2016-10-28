@@ -1476,7 +1476,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=SF	nf\n"
 		"=OF	vf\n"
 		"=CF	cf\n"
-		"=SN	x0\n"
+		"=SN	x8\n"
 
 		/* 8bit sub-registers */
 		"gpr	b0	.8	0	0\n"

@@ -12,7 +12,7 @@ return strdup (
 "=SF	nf\n"
 "=OF	vf\n"
 "=CF	cf\n"
-"=SN	ox0\n"
+"=SN	ox8\n"
 #endif
 "gpr	x0	.64	0	0\n"
 "gpr	x1	.64	8	0\n"
