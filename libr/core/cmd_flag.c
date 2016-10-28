@@ -53,7 +53,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
-		r_flag_zone_add (core->flags, input + 1, core->offset);
+		r_flag_zone_add (core->flags, r_str_chop_ro (input + 1), core->offset);
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -159,7 +159,7 @@ rep:
 		}
 		break;
 	case 'a':
-		if (input[1]==' '){
+		if (input[1] == ' '){
 			RFlagItem *fi;
 			R_FREE (str);
 			str = strdup (input+2);
@@ -272,18 +272,19 @@ rep:
 		break;
 	case '+':
 	case ' ': {
-		char* eq = strchr (str, '=');
-		char* s = strchr (str, ' ');
+		const char *cstr = r_str_chop_ro (str);
+		char* eq = strchr (cstr, '=');
+		char* s = strchr (cstr, ' ');
 		char* s2 = NULL;
 		ut32 bsze = 1; //core->blocksize;
 		if (eq) {
 			// TODO: add support for '=' char in flag comments
 			*eq = 0;
-			off = r_num_math (core->num, eq+1);
+			off = r_num_math (core->num, eq + 1);
 		}
 		if (s) {
 			*s = '\0';
-			s2 = strchr (s+1, ' ');
+			s2 = strchr (s + 1, ' ');
 			if (s2) {
 				*s2 = '\0';
 				if (s2[1] && s2[2]) {
@@ -292,7 +293,7 @@ rep:
 			}
 			bsze = r_num_math (core->num, s + 1);
 		}
-		if (*str == '.') {
+		if (*cstr == '.') {
 			input++;
 			goto rep;
 #if 0
@@ -302,30 +303,39 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 #endif
 		} else {
-			r_flag_set (core->flags, str, off, bsze);
+			r_flag_set (core->flags, cstr, off, bsze);
 		}
 		}
 		break;
 	case '-':
-		if (input[1]=='-') {
+		if (input[1] == '-') {
 			r_flag_unset_all (core->flags);
 		} else if (input[1]) {
-			const char *flagname = input+1;
-			while (*flagname==' ') flagname++;
+			const char *flagname = r_str_chop_ro (input + 1);
+			while (*flagname==' ') {
+				flagname++;
+			}
 			if (*flagname=='.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
-				if (fcn) eprintf ("TODO: local_del_name has been deprecated\n");
-				//;r_anal_fcn_local_del_name (core->anal, fcn, flagname+1);
-				else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+				if (fcn) {
+					eprintf ("TODO: local_del_name has been deprecated\n");
+					//;r_anal_fcn_local_del_name (core->anal, fcn, flagname+1);
+				} else {
+					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+				}
 			} else {
-				if (strchr (flagname, '*'))
+				if (strchr (flagname, '*')) {
 					r_flag_unset_glob (core->flags, flagname);
-				else r_flag_unset_name (core->flags, flagname);
+				} else {
+					r_flag_unset_name (core->flags, flagname);
+				}
 			}
-		} else r_flag_unset_off (core->flags, off);
+		} else {
+			r_flag_unset_off (core->flags, off);
+		}
 		break;
 	case '.':
-		if (input[1]==' ') input++;
+		input = r_str_chop_ro (input + 1) - 1;
 		if (input[1]) {
 			if (input[1] == '*') {
 				if (input[2] == '*') {
@@ -520,8 +530,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			const char *ret;
 			char *arg = r_str_chop (strdup (input+2));
 			char *color = strchr (arg, ' ');
-			if (color && color[1])
+			if (color && color[1]) {
 				*color++ = 0;
+			}
 			fi = r_flag_get (core->flags, arg);
 			if (fi) {
 				ret = r_flag_color (core->flags, fi, color);
@@ -534,9 +545,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		}
 		break;
 	case 'C':
-		if (input[1]==' ') {
+		if (input[1] == ' ') {
 			RFlagItem *item;
-			char *q, *p = strdup (input+2);
+			char *q, *p = strdup (input + 2);
 			q = strchr (p, ' ');
 			if (q) {
 				*q = 0;
@@ -593,7 +604,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		if (input[1]==' ' && input[2]) {
 			char *old, *new;
 			RFlagItem *item;
-			old = str+1;
+			old = str + 1;
 			new = strchr (old, ' ');
 			if (new) {
 				*new = 0;
