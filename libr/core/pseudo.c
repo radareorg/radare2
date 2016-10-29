@@ -21,6 +21,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 	int asmsection = r_config_get_i (core->config, "asm.section");
 	int asmcmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	//int asmtabs = r_config_get_i (core->config, "asm.tabs");
+	int asmfilter = r_config_get_i (core->config, "asm.filter");
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n",
 			core->offset);
@@ -218,6 +219,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.comments", asmcomments);
 	r_config_set_i (core->config, "asm.functions", asmfunctions);
 	r_config_set_i (core->config, "asm.section", asmsection);
+	r_config_set_i (core->config, "asm.filter", asmfilter); 
 	sdb_free (db);
 	return true;
 }
