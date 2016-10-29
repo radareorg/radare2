@@ -429,7 +429,8 @@ R_API RFSFile *r_fs_slurp(RFS *fs, const char *path) {
 #include "../../shlr/grub/include/grubfs.h"
 
 #if USE_GRUB
-static int grub_parhook(void *disk, struct grub_partition *par, void *closure) {
+static int grub_parhook(void *disk, void *ptr, void *closure) {
+	struct grub_partition *par = ptr;
 	RList *list = (RList *)closure;
 	RFSPartition *p = r_fs_partition_new (
 		r_list_length (list),
@@ -454,13 +455,13 @@ static RFSPartitionType partitions[] = {
 	{"dos", &fs_part_dos, fs_parhook},
 #if USE_GRUB
 	/* WARNING GPL code */
-	{"msdos", (void *) & grub_msdos_partition_map, (void *)grub_parhook},
-	{"apple", &grub_apple_partition_map},
-	{"sun", &grub_sun_partition_map},
-	{"sunpc", &grub_sun_pc_partition_map},
-	{"amiga", &grub_amiga_partition_map},
-	{"bsdlabel", &grub_bsdlabel_partition_map},
-	{"gpt", &grub_gpt_partition_map},
+	{"msdos", &grub_msdos_partition_map, grub_parhook},
+	{"apple", &grub_apple_partition_map, grub_parhook},
+	{"sun", &grub_sun_partition_map, grub_parhook},
+	{"sunpc", &grub_sun_pc_partition_map, grub_parhook},
+	{"amiga", &grub_amiga_partition_map, grub_parhook},
+	{"bsdlabel", &grub_bsdlabel_partition_map, grub_parhook},
+	{"gpt", &grub_gpt_partition_map, grub_parhook},
 #endif
 	// XXX: In BURG all bsd partition map are in bsdlabel
 	//{ "openbsdlabel", &grub_openbsd_partition_map },
@@ -490,7 +491,7 @@ R_API RList *r_fs_partitions(RFS *fs, const char *ptype, ut64 delta) {
 		RList *list = r_list_newf ((RListFree)r_fs_partition_free);
 #if USE_GRUB
 		void *disk = NULL;
-		if (partitions[i].iterate == (void *)&grub_parhook) {
+		if (partitions[i].iterate == grub_parhook) {
 			struct grub_partition_map *gpt = partitions[i].ptr;
 			grubfs_bind_io (NULL, 0);
 			disk = (void *)grubfs_disk (&fs->iob);
