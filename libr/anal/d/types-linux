@@ -43,6 +43,18 @@ func.__libc_start_main.arg.6=void *,stack_end
 func.__libc_start_main.noreturn=true
 func.__libc_start_main.ret=int
 
+__uClibc_main=func
+func.__uClibc_main.args=7
+func.__uClibc_main.arg.0=func,main
+func.__uClibc_main.arg.1=int,argc
+func.__uClibc_main.arg.2=char **,argv
+func.__uClibc_main.arg.3=func,app_init
+func.__uClibc_main.arg.4=func,app_fini
+func.__uClibc_main.arg.5=func,rtld_fini
+func.__uClibc_main.arg.6=void *,stack_end
+func.__uClibc_main.noreturn=true
+func.__uClibc_main.ret=int
+
 abort=func
 func.abort.args=0
 func.abort.noreturn=true
