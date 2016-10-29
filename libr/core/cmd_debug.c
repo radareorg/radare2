@@ -331,7 +331,7 @@ static int step_until_eof(RCore *core) {
 	r_cons_break (NULL, NULL);
 	do {
 		// XXX (HACK!)
-		r_core_cmd0 (core, "dso");
+		r_debug_step_over (core->dbg, 1);
 		off = r_debug_reg_get (core->dbg, "SP");
 		// check breakpoint here
 	} while (off <= now);
