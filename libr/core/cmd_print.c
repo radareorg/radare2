@@ -1479,17 +1479,18 @@ static void _handle_call(RCore *core, char * line, char **str) {
 		*str = strstr (line , "call ");
 	} else if (strstr (core->assembler->cur->arch, "arm")) {
 		*str = strstr (line, " b ");
+		if (*str && strstr (*str, " 0x")) {
+			/*
+			 * avoid treating branches to
+			 * non-symbols as calls
+			 */
+			*str = NULL;
+		}
 		if (!*str) {
 			*str = strstr (line, "bl ");
-			if (!*str) { // does it come with color?
-				*str = strstr (line, "bl\x1b");
-			}
 		}
 		if (!*str) {
 			*str = strstr (line, "bx ");
-			if (!*str) { //does it come with color?
-				*str = strstr (line, "bx\x1b");
-			}
 		}
 	}
 }
@@ -1587,9 +1588,6 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			R_FREE (string2);
 		}
 		_handle_call (core, line, &str);
-		if (str && strstr (str, " 0x")) {
-			str = NULL;
-		}
 		if (!str) {
 			str = strstr (line, "sym.");
 			if (!str) {
