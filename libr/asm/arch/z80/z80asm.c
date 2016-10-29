@@ -242,6 +242,7 @@ static void readlabel (const char **p, int store) {
 	if (previous) {
 		buf->next = previous->next;
 	} else {
+		// XXX dead code this thefirstlabel is always NULL
 		buf->next = thefirstlabel? *thefirstlabel: NULL;
 	}
 	buf->prev = previous;

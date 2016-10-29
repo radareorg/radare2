@@ -501,7 +501,10 @@ static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
 }
 
 R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
-	if (list && !list->sorted && list->head && cmp) {
+	if (!list) {
+		return;
+	}
+	if (!list->sorted && list->head && cmp) {
 		RListIter *iter;
 		list->head = _merge_sort (list->head, cmp);
 		//update tail reference

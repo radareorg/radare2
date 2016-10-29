@@ -59,18 +59,20 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		ret = -1;
 		goto beach;
 	}
-	op->size = 0;
+	if (op) {
+		op->size = 0;
+	}
 	if (insn->size < 1) {
 		ret = -1;
 		goto beach;
 	}
 	if (a->features && *a->features) {
-		if (!check_features (a, insn)) {
+		if (!check_features (a, insn) && op) {
 			op->size = insn->size;
 			strcpy (op->buf_asm, "illegal");
 		}
 	}
-	if (!op->size) {
+	if (op && !op->size) {
 		op->size = insn->size;
 		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
 			insn->mnemonic,

@@ -1383,7 +1383,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 				j += strlen (num);
 				if (j + p + i <= o + sizeof (o)) {
 					int len = strlen (p + i);
-					len = R_MIN (len, sizeof (o));
+					len = R_MIN (len, sizeof (o) - 1);
 					strncpy (o + j , p + i, len);
 					o[len] = 0;
 					return strdup (o);

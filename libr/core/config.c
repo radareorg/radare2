@@ -1330,32 +1330,25 @@ static int cb_binstrings(void *user, void *data) {
 static int cb_binprefix(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (!core) {
+	if (!core || !core->bin) {
 		return false;
 	}
-	if (core->bin) {
-		free (core->bin->prefix);
-	}
+	R_FREE (core->bin->prefix);
 	if (node->value && *node->value) {
 		if (!strcmp (node->value, "auto")) {
-			if (!core->bin || !core->bin->file) {
-				//eprintf ("core->bin->file is null\n");
+			if (!core->bin->file) {
 				return false;
 			}
-			if (core->bin->file) {
-				char *name = (char *)r_file_basename (core->bin->file);
-				if (name) {
-					r_name_filter (name, strlen (name));
-					r_str_filter (name, strlen (name));
-					core->bin->prefix = strdup (name);
-					free (name);
-				}
+			char *name = (char *)r_file_basename (core->bin->file);
+			if (name) {
+				r_name_filter (name, strlen (name));
+				r_str_filter (name, strlen (name));
+				core->bin->prefix = strdup (name);
+				free (name);
 			}
 		} else {
 			core->bin->prefix = node->value;
 		}
-	} else {
-		core->bin->prefix = NULL;
 	}
 	return true;
 }
