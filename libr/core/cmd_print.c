@@ -1479,17 +1479,18 @@ static void _handle_call(RCore *core, char * line, char **str) {
 		*str = strstr (line , "call ");
 	} else if (strstr (core->assembler->cur->arch, "arm")) {
 		*str = strstr (line, " b ");
+		if (*str && strstr (*str, " 0x")) {
+			/*
+			 * avoid treating branches to
+			 * non-symbols as calls
+			 */
+			*str = NULL;
+		}
 		if (!*str) {
 			*str = strstr (line, "bl ");
-			if (!*str) { // does it come with color?
-				*str = strstr (line, "bl\x1b");
-			}
 		}
 		if (!*str) {
 			*str = strstr (line, "bx ");
-			if (!*str) { //does it come with color?
-				*str = strstr (line, "bx\x1b");
-			}
 		}
 	}
 }
@@ -1505,12 +1506,14 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 	bool is_free_pending = false;
 
+	r_config_set_i (core->config, "scr.color", 0);
 	if (!strncmp (input, "dsf", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 		if (fcn) {
-			line = s = r_core_cmd_str (core, "pdf");
+			line = s = r_core_cmd_str (core, "pdr");
 		} else {
 			eprintf ("Cannot find function.\n");
+			r_config_set_i (core->config, "scr.color", use_color);
 			return;
 		}
 	} else if (!strncmp (input, "ds ", 3)) {
@@ -1520,6 +1523,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}
+	r_config_set_i (core->config, "scr.color", use_color);
 	count = r_str_split (s, '\n');
 	if (!line || !*line || count < 1) {
 		free (s);
