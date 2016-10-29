@@ -80,24 +80,24 @@ func.calloc.ret=void *
 
 fgetc=func
 func.fgetc.args=1
-func.fgetc.arg.0=FILE *,steam
+func.fgetc.arg.0=FILE,*steam
 func.fgetc.ret=int
 
 fgets=func
 func.fgets.args=3
-func.fgets.arg.0=char *,s
+func.fgets.arg.0=char,*s
 func.fgets.arg.1=int,size
-func.fgets.arg.2=FILE *,stream
+func.fgets.arg.2=FILE,*stream
 func.fgets.ret=char *
 
 free=func
 func.free.args=1
-func.free.arg.0=void *,ptr
+func.free.arg.0=void,*ptr
 func.free.ret=void
 
 getc=func
 func.getc.args=1
-func.getc.arg.0=FILE *,steam
+func.getc.arg.0=FILE,*steam
 func.getc.ret=int
 
 getchar=func
@@ -106,14 +106,14 @@ func.getchar.ret=int
 
 getenv=func
 func.getenv.args=1
-func.getenv.arg.0=const char *,name
+func.getenv.arg.0=const char,*name
 func.getenv.ret=char *
 
 getopt=func
 func.getopt.args=3
 func.getopt.arg.0=int,argc
-func.getopt.arg.1=const char **,argv
-func.getopt.arg.2=const char *,optstring
+func.getopt.arg.1=const char *,*argv
+func.getopt.arg.2=const char,*optstring
 func.getopt.ret=int
 
 getuid=func
@@ -122,7 +122,7 @@ func.getuid.ret=uid_t
 
 atoi=func
 func.atoi.args=1
-func.atoi.arg.0=const char*,str
+func.atoi.arg.0=const char,*str
 func.atoi.ret=int
 
 ioctl=func
@@ -143,39 +143,39 @@ func.malloc.ret= void *
 
 realloc=func
 func.realloc.args=2
-func.realloc.arg.0=void *,ptr
+func.realloc.arg.0=void,*ptr
 func.realloc.arg.1=size_t,size
 func.realloc.ret=void *
 
 setlocale=func
 func.setlocale.args=2
 func.setlocale.arg.0=int,category
-func.setlocale.arg.1=const char *,locale
+func.setlocale.arg.1=const char,*locale
 func.setlocale.ret=char *
 
 strcpy=func
 func.strcpy.args=2
-func.strcpy.arg.0=char *,dest
-func.strcpy.arg.1=const char *,src
+func.strcpy.arg.0=char,*dest
+func.strcpy.arg.1=const char,*src
 func.strcpy.ret=char *
 
 strncpy=func
 func.strncpy.args=3
-func.strncpy.arg.0=char *,dest
-func.strncpy.arg.1=const char *,src
+func.strncpy.arg.0=char,*dest
+func.strncpy.arg.1=const char,*src
 func.strncpy.arg.2=size_t, n
 func.strncpy.ret=char *
 
 ungetc=func
 func.ungetc.args=2
 func.ungetc.arg.0=int,c
-func.ungetc.arg.1=FILE *,stream
+func.ungetc.arg.1=FILE,*stream
 func.ungetc.ret=int
 
 err=func
 func.err.args=2
 func.err.arg.0=int,eval
-func.err.arg.1=const char *,fmt
+func.err.arg.1=const char,*fmt
 func.err.noreturn=true
 func.err.ret=void
 
@@ -186,45 +186,45 @@ func.close.ret=int
 
 fclose=func
 func.fclose.args=1
-func.fclose.arg.0=FILE *,stream
+func.fclose.arg.0=FILE,*stream
 func.fclose.ret=int
 
 fileno=func
 func.fileno.args=1
-func.fileno.arg.0=FILE *,stream
+func.fileno.arg.0=FILE,*stream
 func.fileno.ret=int
 
 fwrite=func
 func.fwrite.args=4
-func.fwrite.arg.0=const void *,ptr
+func.fwrite.arg.0=const void,*ptr
 func.fwrite.arg.1=size_t,size
 func.fwrite.arg.2=size_t,nitems
-func.fwrite.arg.3=FILE *,stream
+func.fwrite.arg.3=FILE,*stream
 func.fwrite.ret=size_t
 
 open=func
 func.open.args=2
-func.open.arg.0=const char *,path
+func.open.arg.0=const char,*path
 func.open.arg.1=int,oflag
 func.open.ret=int
 
 read=func
 func.read.args=3
 func.read.arg.0=int,fildes
-func.read.arg.1=void *,buf
+func.read.arg.1=void,*buf
 func.read.arg.2=size_t,nbyte
 func.read.ret=ssize_t
 
 strcmp=func
 func.strcmp.args=2
-func.strcmp.arg.0=const char *,s1
-func.strcmp.arg.1=const char *,s2
+func.strcmp.arg.0=const char,*s1
+func.strcmp.arg.1=const char,*s2
 func.strcmp.ret=int
 
 strncmp=func
 func.strncmp.args=3
-func.strncmp.arg.0=const char *,s1
-func.strncmp.arg.1=const char *,s2
+func.strncmp.arg.0=const char,*s1
+func.strncmp.arg.1=const char,*s2
 func.strncmp.arg.2=size_t,n
 func.strncmp.ret=int
 
@@ -241,29 +241,29 @@ func.imaxdiv.ret=imaxdiv_t
 
 strtoimax=func
 func.strtoimax.args=3
-func.strtoimax.arg.0=const char*,str
-func.strtoimax.arg.1=char**,endptr
+func.strtoimax.arg.0=const char,*str
+func.strtoimax.arg.1=char*,*endptr
 func.strtoimax.arg.2=int,base
 func.strtoimax.ret=intmax_t
 
 strtoumax=func
 func.strtoumax.args=3
-func.strtoumax.arg.0=const char*,str
-func.strtoumax.arg.1=char**,endptr
+func.strtoumax.arg.0=const char,*str
+func.strtoumax.arg.1=char*,*endptr
 func.strtoumax.arg.2=int,base
 func.strtoumax.ret=uintmax_t
 
 wcstoimax=func
 func.wcstoimax.args=3
 func.wcstoimax.arg.0=const,wchar_t*
-func.wcstoimax.arg.1=wchar_t**,endptr
+func.wcstoimax.arg.1=wchar_t*,*endptr
 func.wcstoimax.arg.2=int,base
 func.wcstoimax.ret=intmax_t
 
 wcstoumax=func
 func.wcstoumax.args=3
 func.wcstoumax.arg.0=const,wchar_t*
-func.wcstoumax.arg.1=wchar_t**,endptr
+func.wcstoumax.arg.1=wchar_t*,*endptr
 func.wcstoumax.arg.2=int,base
 func.wcstoumax.ret=uintmax_t
 
@@ -344,7 +344,7 @@ func.feclearexcept.ret=int
 
 fegetexceptflag=func
 func.fegetexceptflag.args=2
-func.fegetexceptflag.arg.0=fexcept_t*,flagp
+func.fegetexceptflag.arg.0=fexcept_t,*flagp
 func.fegetexceptflag.arg.1=int,excepts
 func.fegetexceptflag.ret=int
 
@@ -375,12 +375,12 @@ func.fesetround.ret=int
 
 fegetenv=func
 func.fegetenv.args=1
-func.fegetenv.arg.0=fenv_t*,envp
+func.fegetenv.arg.0=fenv_t,*envp
 func.fegetenv.ret=int
 
 feholdexcept=func
 func.feholdexcept.args=1
-func.feholdexcept.arg.0=fenv_t*,envp
+func.feholdexcept.arg.0=fenv_t,*envp
 func.feholdexcept.ret=int
 
 fesetenv=func
@@ -576,19 +576,19 @@ func.fmodl.ret=long double
 frexp=func
 func.frexp.args=2
 func.frexp.arg.0=arithmetic,value
-func.frexp.arg.1=int*,exp
+func.frexp.arg.1=int,*exp
 func.frexp.ret=floating_point
 
 frexpf=func
 func.frexpf.args=2
 func.frexpf.arg.0=float,value
-func.frexpf.arg.1=int*,exp
+func.frexpf.arg.1=int,*exp
 func.frexpf.ret=float
 
 frexpl=func
 func.frexpl.args=2
 func.frexpl.arg.0=long double,value
-func.frexpl.arg.1=int*,exp
+func.frexpl.arg.1=int,*exp
 func.frexpl.ret=long double
 
 ldexp=func
@@ -642,19 +642,19 @@ func.log10l.ret=long double
 modf=func
 func.modf.args=2
 func.modf.arg.0=floating_point,value
-func.modf.arg.1=floating_point*,iptr
+func.modf.arg.1=floating_point,*iptr
 func.modf.ret=floating_point
 
 modff=func
 func.modff.args=2
 func.modff.arg.0=float,value
-func.modff.arg.1=float*,iptr
+func.modff.arg.1=float,*iptr
 func.modff.ret=float
 
 modfl=func
 func.modfl.args=2
 func.modfl.arg.0=long double,value
-func.modfl.arg.1=long double*,iptr
+func.modfl.arg.1=long double,*iptr
 func.modfl.ret=long double
 
 pow=func
@@ -1184,17 +1184,17 @@ func.lroundl.ret=long
 
 nan=func
 func.nan.args=1
-func.nan.arg.0=const char*,str
+func.nan.arg.0=const char,*str
 func.nan.ret=double
 
 nanf=func
 func.nanf.args=1
-func.nanf.arg.0=const char*,str
+func.nanf.arg.0=const char,*str
 func.nanf.ret=float
 
 nanl=func
 func.nanl.args=1
-func.nanl.arg.0=const char*,str
+func.nanl.arg.0=const char,*str
 func.nanl.ret=long double
 
 nearbyint=func
@@ -1270,21 +1270,21 @@ remquo=func
 func.remquo.args=3
 func.remquo.arg.0=arithmetic,x
 func.remquo.arg.1=arithmetic,y
-func.remquo.arg.2=int*,pquo
+func.remquo.arg.2=int,*pquo
 func.remquo.ret=floating_point
 
 remquof=func
 func.remquof.args=3
 func.remquof.arg.0=float,x
 func.remquof.arg.1=float,y
-func.remquof.arg.2=int*,pquo
+func.remquof.arg.2=int,*pquo
 func.remquof.ret=float
 
 remquol=func
 func.remquol.args=3
 func.remquol.arg.0=long double,x
 func.remquol.arg.1=long double,y
-func.remquol.arg.2=int*,pquo
+func.remquol.arg.2=int,*pquo
 func.remquol.ret=long double
 
 rint=func
@@ -1396,41 +1396,41 @@ func.raise.ret=int
 
 atof=func
 func.atof.args=1
-func.atof.arg.0=const char*,str
+func.atof.arg.0=const char,*str
 func.atof.ret=double
 
 atol=func
 func.atol.args=1
-func.atol.arg.0=const char*,str
+func.atol.arg.0=const char,*str
 func.atol.ret=long
 
 atoll=func
 func.atoll.args=1
-func.atoll.arg.0=const char*,str
+func.atoll.arg.0=const char,*str
 func.atoll.ret=long long
 
 strtod=func
 func.strtod.args=2
-func.strtod.arg.0=const char*,str
-func.strtod.arg.1=char**,endptr
+func.strtod.arg.0=const char,*str
+func.strtod.arg.1=char*,*endptr
 func.strtod.ret=double
 
 strtof=func
 func.strtof.args=2
-func.strtof.arg.0=const char*,str
-func.strtof.arg.1=char**,endptr
+func.strtof.arg.0=const char,*str
+func.strtof.arg.1=char*,*endptr
 func.strtof.ret=float
 
 strtold=func
 func.strtold.args=2
-func.strtold.arg.0=const char*,str
-func.strtold.arg.1=char**,endptr
+func.strtold.arg.0=const char,*str
+func.strtold.arg.1=char*,*endptr
 func.strtold.ret=long doubleouble
 
 strtol=func
 func.strtol.args=3
-func.strtol.arg.0=const char*,str
-func.strtol.arg.1=char**,endptr
+func.strtol.arg.0=const char,*str
+func.strtol.arg.1=char*,*endptr
 func.strtol.arg.2=int,base
 func.strtol.ret=long
 
@@ -1441,62 +1441,62 @@ func.raise.ret=int
 
 atof=func
 func.atof.args=1
-func.atof.arg.0=const char*,str
+func.atof.arg.0=const char,*str
 func.atof.ret=double
 
 atol=func
 func.atol.args=1
-func.atol.arg.0=const char*,str
+func.atol.arg.0=const char,*str
 func.atol.ret=long
 
 atoll=func
 func.atoll.args=1
-func.atoll.arg.0=const char*,str
+func.atoll.arg.0=const char,*str
 func.atoll.ret=long long
 
 strtod=func
 func.strtod.args=2
-func.strtod.arg.0=const char*,str
-func.strtod.arg.1=char**,endptr
+func.strtod.arg.0=const char,*str
+func.strtod.arg.1=char*,*endptr
 func.strtod.ret=double
 
 strtof=func
 func.strtof.args=2
-func.strtof.arg.0=const char*,str
-func.strtof.arg.1=char**,endptr
+func.strtof.arg.0=const char,*str
+func.strtof.arg.1=char*,*endptr
 func.strtof.ret=float
 
 strtold=func
 func.strtold.args=2
-func.strtold.arg.0=const char*,str
-func.strtold.arg.1=char**,endptr
+func.strtold.arg.0=const char,*str
+func.strtold.arg.1=char*,*endptr
 func.strtold.ret=long double
 
 strtol=func
 func.strtol.args=3
-func.strtol.arg.0=const char*,str
-func.strtol.arg.1=char**,endptr
+func.strtol.arg.0=const char,*str
+func.strtol.arg.1=char*,*endptr
 func.strtol.arg.2=int,base
 func.strtol.ret=long
 
 strtoll=func
 func.strtoll.args=3
-func.strtoll.arg.0=const char*,str
-func.strtoll.arg.1=char**,endptr
+func.strtoll.arg.0=const char,*str
+func.strtoll.arg.1=char*,*endptr
 func.strtoll.arg.2=int,base
 func.strtoll.ret=long long
 
 strtoul=func
 func.strtoul.args=3
-func.strtoul.arg.0=const char*,str
-func.strtoul.arg.1=char**,endptr
+func.strtoul.arg.0=const char,*str
+func.strtoul.arg.1=char*,*endptr
 func.strtoul.arg.2=int,base
 func.strtoul.ret=long
 
 strtoull=func
 func.strtoull.args=3
-func.strtoull.arg.0=const char*,str
-func.strtoull.arg.1=char**,endptr
+func.strtoull.arg.0=const char,*str
+func.strtoull.arg.1=char*,*endptr
 func.strtoull.arg.2=int,base
 func.strtoull.ret=long long
 
@@ -1511,23 +1511,23 @@ func.srand.ret=void
 
 system=func
 func.system.args=1
-func.system.arg.0=const char*,string
+func.system.arg.0=const char,*string
 func.system.ret=int
 
 bsearch=func
 func.bsearch.args=5
-func.bsearch.arg.0=const void*,key
-func.bsearch.arg.1=const void*,base
+func.bsearch.arg.0=const void,*key
+func.bsearch.arg.1=const void,*base
 func.bsearch.arg.2=size_t,nmemb
 func.bsearch.arg.3=size_t,size
-func.bsearch.arg.4=int,(*compar)(const void *,const void *)
+func.bsearch.arg.4=int,(*compar)(const void,*const void *)
 
 qsort=func
 func.qsort.args=4
-func.qsort.arg.0=void*,base
+func.qsort.arg.0=void,*base
 func.qsort.arg.1=size_t,nmemb
 func.qsort.arg.2=size_t,size
-func.qsort.arg.3=int(*compar)(const void *,const void *)
+func.qsort.arg.3=int(*compar)(const void,*const void *)
 
 abs=func
 func.abs.args=1
@@ -1586,34 +1586,34 @@ func.lldiv.ret=lldiv_t
 
 mblen=func
 func.mblen.args=2
-func.mblen.arg.0=const char*,s
+func.mblen.arg.0=const char,*s
 func.mblen.arg.1=size_t,n
 func.mblen.ret=int
 
 mbtowc=func
 func.mbtowc.args=3
-func.mbtowc.arg.0=wchar_t*,pwc
-func.mbtowc.arg.1=const char*,s
+func.mbtowc.arg.0=wchar_t,*pwc
+func.mbtowc.arg.1=const char,*s
 func.mbtowc.arg.2=size_t,n
 func.mbtowc.ret=int
 
 wctomb=func
 func.wctomb.args=2
-func.wctomb.arg.0=char*,s
+func.wctomb.arg.0=char,*s
 func.wctomb.arg.1=wchar_t,wchar
 func.wctomb.ret=int
 
 mbstowcs=func
 func.mbstowcs.args=3
-func.mbstowcs.arg.0=wchar_t*,pwcs
-func.mbstowcs.arg.1=const char*,s
+func.mbstowcs.arg.0=wchar_t,*pwcs
+func.mbstowcs.arg.1=const char,*s
 func.mbstowcs.arg.2=size_t,n
 func.mbstowcs.ret=size_t
 
 wcstombs=func
 func.wcstombs.args=3
-func.wcstombs.arg.0=char*,s
-func.wcstombs.arg.1=const wchar_t*,pwcs
+func.wcstombs.arg.0=char,*s
+func.wcstombs.arg.1=const wchar_t,*pwcs
 func.wcstombs.arg.2=size_t,n
 func.wcstombs.ret=size_t
 
@@ -1634,137 +1634,137 @@ func.*aligned_alloc.ret=void
 
 memcpy=func
 func.memcpy.args=3
-func.memcpy.arg.0=void*,s1
-func.memcpy.arg.1=const void*,s2
+func.memcpy.arg.0=void,*s1
+func.memcpy.arg.1=const void,*s2
 func.memcpy.arg.2=size_t,n
-func.memcpy.ret=void*
+func.memcpy.ret=void *
 
 memmove=func
 func.memmove.args=3
-func.memmove.arg.0=void*,s1
-func.memmove.arg.1=const void*,s2
+func.memmove.arg.0=void,*s1
+func.memmove.arg.1=const void,*s2
 func.memmove.arg.2=size_t,n
-func.memmove.ret=void*
+func.memmove.ret=void *
 
 strcat=func
 func.strcat.args=2
-func.strcat.arg.0=char*,s1
-func.strcat.arg.1=const char*,s2
+func.strcat.arg.0=char,*s1
+func.strcat.arg.1=const char,*s2
 func.strcat.ret=char*
 
 strncat=func
 func.strncat.args=3
-func.strncat.arg.0=char*,s1
-func.strncat.arg.1=const char*,s2
+func.strncat.arg.0=char,*s1
+func.strncat.arg.1=const char,*s2
 func.strncat.arg.2=size_t,n
 func.strncat.ret=char*
 
 memcmp=func
 func.memcmp.args=3
-func.memcmp.arg.0=const void*,s1
-func.memcmp.arg.1=const void*,s2
+func.memcmp.arg.0=const void,*s1
+func.memcmp.arg.1=const void,*s2
 func.memcmp.arg.2=size_t,n
 func.memcmp.ret=int
 
 strcoll=func
 func.strcoll.args=2
-func.strcoll.arg.0=const char*,s1
-func.strcoll.arg.1=const char*,s2
+func.strcoll.arg.0=const char,*s1
+func.strcoll.arg.1=const char,*s2
 func.strcoll.ret=int
 
 strxfrm=func
 func.strxfrm.args=3
-func.strxfrm.arg.0=char*,s1
-func.strxfrm.arg.1=const char*,s2
+func.strxfrm.arg.0=char,*s1
+func.strxfrm.arg.1=const char,*s2
 func.strxfrm.arg.2=size_t,n
 func.strxfrm.ret=size_t
 
 memchr=func
 func.memchr.args=3
-func.memchr.arg.0=const void*,s
+func.memchr.arg.0=const void,*s
 func.memchr.arg.1=int,c
 func.memchr.arg.2=size_t,n
-func.memchr.ret=const void*
+func.memchr.ret=const void *
 
 memchr=func
 func.memchr.args=3
-func.memchr.arg.0=void*,s
+func.memchr.arg.0=void,*s
 func.memchr.arg.1=int,c
 func.memchr.arg.2=size_t,n
-func.memchr.ret=void*
+func.memchr.ret=void *
 
 strchr=func
 func.strchr.args=2
-func.strchr.arg.0=const char*,s
+func.strchr.arg.0=const char,*s
 func.strchr.arg.1=int,c
 func.strchr.ret=const char*
 
 strchr=func
 func.strchr.args=2
-func.strchr.arg.0=char*,s
+func.strchr.arg.0=char,*s
 func.strchr.arg.1=int,c
 func.strchr.ret=char*
 
 strcspn=func
 func.strcspn.args=2
-func.strcspn.arg.0=const char*,s1
-func.strcspn.arg.1=const char*,s2
+func.strcspn.arg.0=const char,*s1
+func.strcspn.arg.1=const char,*s2
 func.strcspn.ret=size_t
 
 strpbrk=func
 func.strpbrk.args=2
-func.strpbrk.arg.0=const char*,s1
-func.strpbrk.arg.1=const char*,s2
+func.strpbrk.arg.0=const char,*s1
+func.strpbrk.arg.1=const char,*s2
 func.strpbrk.ret=const char*
 
 strpbrk=func
 func.strpbrk.args=2
-func.strpbrk.arg.0=char*,s1
-func.strpbrk.arg.1=const char*,s2
+func.strpbrk.arg.0=char,*s1
+func.strpbrk.arg.1=const char,*s2
 func.strpbrk.ret=char*
 
 strrchr=func
 func.strrchr.args=2
-func.strrchr.arg.0=const char*,s
+func.strrchr.arg.0=const char,*s
 func.strrchr.arg.1=int,c
 func.strrchr.ret=const char*
 
 strrchr=func
 func.strrchr.args=2
-func.strrchr.arg.0=char*,s
+func.strrchr.arg.0=char,*s
 func.strrchr.arg.1=int,c
 func.strrchr.ret=char*
 
 strspn=func
 func.strspn.args=2
-func.strspn.arg.0=const char*,s1
-func.strspn.arg.1=const char*,s2
+func.strspn.arg.0=const char,*s1
+func.strspn.arg.1=const char,*s2
 func.strspn.ret=size_t
 
 strstr=func
 func.strstr.args=2
-func.strstr.arg.0=const char*,s1
-func.strstr.arg.1=const char*,s2
+func.strstr.arg.0=const char,*s1
+func.strstr.arg.1=const char,*s2
 func.strstr.ret=const char*
 
 strstr=func
 func.strstr.args=2
-func.strstr.arg.0=char*,s1
-func.strstr.arg.1=const char*,s2
+func.strstr.arg.0=char,*s1
+func.strstr.arg.1=const char,*s2
 func.strstr.ret=char*
 
 strtok=func
 func.strtok.args=2
-func.strtok.arg.0=char*,s1
-func.strtok.arg.1=const char*,s2
+func.strtok.arg.0=char,*s1
+func.strtok.arg.1=const char,*s2
 func.strtok.ret=char*
 
 memset=func
 func.memset.args=3
-func.memset.arg.0=void*,s
+func.memset.arg.0=void,*s
 func.memset.arg.1=int,c
 func.memset.arg.2=size_t,n
-func.memset.ret=void*
+func.memset.ret=void *
 
 strerror=func
 func.strerror.args=1
@@ -1773,7 +1773,7 @@ func.strerror.ret=char*
 
 strlen=func
 func.strlen.args=1
-func.strlen.arg.0=const char*,s
+func.strlen.arg.0=const char,*s
 func.strlen.ret=size_t
 
 clock=func
@@ -1788,151 +1788,151 @@ func.difftime.ret=double
 
 mktime=func
 func.mktime.args=1
-func.mktime.arg.0=tm*,timeptr
+func.mktime.arg.0=tm,*timeptr
 func.mktime.ret=time_t
 
 time=func
 func.time.args=1
-func.time.arg.0=time_t*,timer
+func.time.arg.0=time_t,*timer
 func.time.ret=time_t
 
 asctime=func
 func.asctime.args=1
-func.asctime.arg.0=const tm*,timeptr
+func.asctime.arg.0=const tm,*timeptr
 func.asctime.ret=char*
 
 ctime=func
 func.ctime.args=1
-func.ctime.arg.0=const time_t*,timer
+func.ctime.arg.0=const time_t,*timer
 func.ctime.ret=char*
 
 gmtime=func
 func.gmtime.args=1
-func.gmtime.arg.0=const time_t*,timer
+func.gmtime.arg.0=const time_t,*timer
 func.gmtime.ret=tm*
 
 localtime=func
 func.localtime.args=1
-func.localtime.arg.0=const time_t*,timer
+func.localtime.arg.0=const time_t,*timer
 func.localtime.ret=tm*
 
 strftime=func
 func.strftime.args=4
-func.strftime.arg.0=char*,s
+func.strftime.arg.0=char,*s
 func.strftime.arg.1=size_t,maxsize
-func.strftime.arg.2=const char*,format
-func.strftime.arg.3=const tm*,timeptr
+func.strftime.arg.2=const char,*format
+func.strftime.arg.3=const tm,*timeptr
 func.strftime.ret=size_t
 
 fwprintf=func
 func.fwprintf.args=2
-func.fwprintf.arg.0=FILE*,stream
-func.fwprintf.arg.1=const wchar_t*,format
+func.fwprintf.arg.0=FILE,*stream
+func.fwprintf.arg.1=const wchar_t,*format
 func.fwprintf.ret=int
 
 fwscanf=func
 func.fwscanf.args=2
-func.fwscanf.arg.0=FILE*,stream
-func.fwscanf.arg.1=const wchar_t*,format
+func.fwscanf.arg.0=FILE,*stream
+func.fwscanf.arg.1=const wchar_t,*format
 func.fwscanf.ret=int
 
 swprintf=func
 func.swprintf.args=3
-func.swprintf.arg.0=wchar_t*,s
+func.swprintf.arg.0=wchar_t,*s
 func.swprintf.arg.1=size_t,n
-func.swprintf.arg.2=const wchar_t*,format
+func.swprintf.arg.2=const wchar_t,*format
 func.swprintf.ret=int
 
 swscanf=func
 func.swscanf.args=2
-func.swscanf.arg.0=const wchar_t*,s
-func.swscanf.arg.1=const wchar_t*,format
+func.swscanf.arg.0=const wchar_t,*s
+func.swscanf.arg.1=const wchar_t,*format
 func.swscanf.ret=int
 
 vfwprintf=func
 func.vfwprintf.args=3
-func.vfwprintf.arg.0=FILE*,stream
-func.vfwprintf.arg.1=const wchar_t*,format
+func.vfwprintf.arg.0=FILE,*stream
+func.vfwprintf.arg.1=const wchar_t,*format
 func.vfwprintf.arg.2=va_list,arg
 func.vfwprintf.ret=int
 
 vfwscanf=func
 func.vfwscanf.args=3
-func.vfwscanf.arg.0=FILE*,stream
-func.vfwscanf.arg.1=const wchar_t*,format
+func.vfwscanf.arg.0=FILE,*stream
+func.vfwscanf.arg.1=const wchar_t,*format
 func.vfwscanf.arg.2=va_list,arg
 func.vfwscanf.ret=int
 
 vswprintf=func
 func.vswprintf.args=4
-func.vswprintf.arg.0=wchar_t*,s
+func.vswprintf.arg.0=wchar_t,*s
 func.vswprintf.arg.1=size_t,n
-func.vswprintf.arg.2=const wchar_t*,format
+func.vswprintf.arg.2=const wchar_t,*format
 func.vswprintf.arg.3=va_list,arg
 func.vswprintf.ret=int
 
 vswscanf=func
 func.vswscanf.args=3
-func.vswscanf.arg.0=const wchar_t*,s
-func.vswscanf.arg.1=const wchar_t*,format
+func.vswscanf.arg.0=const wchar_t,*s
+func.vswscanf.arg.1=const wchar_t,*format
 func.vswscanf.arg.2=va_list,arg
 func.vswscanf.ret=int
 
 vwprintf=func
 func.vwprintf.args=2
-func.vwprintf.arg.0=const wchar_t*,format
+func.vwprintf.arg.0=const wchar_t,*format
 func.vwprintf.arg.1=va_list,arg
 func.vwprintf.ret=int
 
 vwscanf=func
 func.vwscanf.args=2
-func.vwscanf.arg.0=const wchar_t*,format
+func.vwscanf.arg.0=const wchar_t,*format
 func.vwscanf.arg.1=va_list,arg
 func.vwscanf.ret=int
 
 wprintf=func
 func.wprintf.args=1
-func.wprintf.arg.0=const wchar_t*,format
+func.wprintf.arg.0=const wchar_t,*format
 func.wprintf.ret=int
 
 wscanf=func
 func.wscanf.args=1
-func.wscanf.arg.0=const wchar_t*,format
+func.wscanf.arg.0=const wchar_t,*format
 func.wscanf.ret=int
 
 fgetwc=func
 func.fgetwc.args=1
-func.fgetwc.arg.0=FILE*,stream
+func.fgetwc.arg.0=FILE,*stream
 func.fgetwc.ret=wint_t
 
 fgetws=func
 func.fgetws.args=3
-func.fgetws.arg.0=wchar_t*,s
+func.fgetws.arg.0=wchar_t,*s
 func.fgetws.arg.1=int,n
-func.fgetws.arg.2=FILE*,stream
+func.fgetws.arg.2=FILE,*stream
 func.fgetws.ret=wchar_t*
 
 fputwc=func
 func.fputwc.args=2
 func.fputwc.arg.0=wchar_t,c
-func.fputwc.arg.1=FILE*,stream
+func.fputwc.arg.1=FILE,*stream
 func.fputwc.ret=wint_t
 
 fputws=func
 func.fputws.args=2
-func.fputws.arg.0=const wchar_t*,s
-func.fputws.arg.1=FILE*,stream
+func.fputws.arg.0=const wchar_t,*s
+func.fputws.arg.1=FILE,*stream
 func.fputws.ret=int
 
 fwide=func
 func.fwide.args=2
-func.fwide.arg.0=FILE*,stream
+func.fwide.arg.0=FILE,*stream
 func.fwide.arg.1=int,mode
 func.fwide.ret=int
 
 getwc=func
 func.getwc.args=1
-func.getwc.arg.0=FILE*,stream
+func.getwc.arg.0=FILE,*stream
 func.getwc.ret=wint_t
 
 getwchar=func
@@ -1942,7 +1942,7 @@ func.getwchar.ret=wint_t
 putwc=func
 func.putwc.args=2
 func.putwc.arg.0=wchar_t,c
-func.putwc.arg.1=FILE*,stream
+func.putwc.arg.1=FILE,*stream
 func.putwc.ret=wint_t
 
 putwchar=func
@@ -1953,227 +1953,227 @@ func.putwchar.ret=wint_t
 ungetwc=func
 func.ungetwc.args=2
 func.ungetwc.arg.0=wint_t,c
-func.ungetwc.arg.1=FILE*,stream
+func.ungetwc.arg.1=FILE,*stream
 func.ungetwc.ret=wint_t
 
 wcstod=func
 func.wcstod.args=2
-func.wcstod.arg.0=const wchar_t*,nptr
-func.wcstod.arg.1=wchar_t**,endptr
+func.wcstod.arg.0=const wchar_t,*nptr
+func.wcstod.arg.1=wchar_t*,*endptr
 func.wcstod.ret=double
 
 wcstof=func
 func.wcstof.args=2
-func.wcstof.arg.0=const wchar_t*,nptr
-func.wcstof.arg.1=wchar_t**,endptr
+func.wcstof.arg.0=const wchar_t,*nptr
+func.wcstof.arg.1=wchar_t*,*endptr
 func.wcstof.ret=float
 
 wcstold=func
 func.wcstold.args=2
-func.wcstold.arg.0=const wchar_t*,nptr
-func.wcstold.arg.1=wchar_t**,endptr
+func.wcstold.arg.0=const wchar_t,*nptr
+func.wcstold.arg.1=wchar_t*,*endptr
 func.wcstold.ret=long double
 
 wcstol=func
 func.wcstol.args=3
-func.wcstol.arg.0=const wchar_t*,nptr
-func.wcstol.arg.1=wchar_t**,endptr
+func.wcstol.arg.0=const wchar_t,*nptr
+func.wcstol.arg.1=wchar_t*,*endptr
 func.wcstol.arg.2=int,base
 func.wcstol.ret=long
 
 wcstoll=func
 func.wcstoll.args=3
-func.wcstoll.arg.0=const wchar_t*,nptr
-func.wcstoll.arg.1=wchar_t**,endptr
+func.wcstoll.arg.0=const wchar_t,*nptr
+func.wcstoll.arg.1=wchar_t*,*endptr
 func.wcstoll.arg.2=int,base
 func.wcstoll.ret=long long
 
 wcstoul=func
 func.wcstoul.args=3
-func.wcstoul.arg.0=const wchar_t*,nptr
-func.wcstoul.arg.1=wchar_t**,endptr
+func.wcstoul.arg.0=const wchar_t,*nptr
+func.wcstoul.arg.1=wchar_t*,*endptr
 func.wcstoul.arg.2=int,base
 func.wcstoul.ret=long
 
 wcstoull=func
 func.wcstoull.args=3
-func.wcstoull.arg.0=const wchar_t*,nptr
-func.wcstoull.arg.1=wchar_t**,endptr
+func.wcstoull.arg.0=const wchar_t,*nptr
+func.wcstoull.arg.1=wchar_t*,*endptr
 func.wcstoull.arg.2=int,base
 func.wcstoull.ret=long long
 
 wcscpy=func
 func.wcscpy.args=2
-func.wcscpy.arg.0=wchar_t*,s1
-func.wcscpy.arg.1=const wchar_t*,s2
+func.wcscpy.arg.0=wchar_t,*s1
+func.wcscpy.arg.1=const wchar_t,*s2
 func.wcscpy.ret=wchar_t*
 
 wcsncpy=func
 func.wcsncpy.args=3
-func.wcsncpy.arg.0=wchar_t*,s1
-func.wcsncpy.arg.1=const wchar_t*,s2
+func.wcsncpy.arg.0=wchar_t,*s1
+func.wcsncpy.arg.1=const wchar_t,*s2
 func.wcsncpy.arg.2=size_t,n
 func.wcsncpy.ret=wchar_t*
 
 wcscat=func
 func.wcscat.args=2
-func.wcscat.arg.0=wchar_t*,s1
-func.wcscat.arg.1=const wchar_t*,s2
+func.wcscat.arg.0=wchar_t,*s1
+func.wcscat.arg.1=const wchar_t,*s2
 func.wcscat.ret=wchar_t*
 
 wcsncat=func
 func.wcsncat.args=3
-func.wcsncat.arg.0=wchar_t*,s1
-func.wcsncat.arg.1=const wchar_t*,s2
+func.wcsncat.arg.0=wchar_t,*s1
+func.wcsncat.arg.1=const wchar_t,*s2
 func.wcsncat.arg.2=size_t,n
 func.wcsncat.ret=wchar_t*
 
 wcscmp=func
 func.wcscmp.args=2
-func.wcscmp.arg.0=const wchar_t*,s1
-func.wcscmp.arg.1=const wchar_t*,s2
+func.wcscmp.arg.0=const wchar_t,*s1
+func.wcscmp.arg.1=const wchar_t,*s2
 func.wcscmp.ret=int
 
 wcscoll=func
 func.wcscoll.args=2
-func.wcscoll.arg.0=const wchar_t*,s1
-func.wcscoll.arg.1=const wchar_t*,s2
+func.wcscoll.arg.0=const wchar_t,*s1
+func.wcscoll.arg.1=const wchar_t,*s2
 func.wcscoll.ret=int
 
 wcsncmp=func
 func.wcsncmp.args=3
-func.wcsncmp.arg.0=const wchar_t*,s1
-func.wcsncmp.arg.1=const wchar_t*,s2
+func.wcsncmp.arg.0=const wchar_t,*s1
+func.wcsncmp.arg.1=const wchar_t,*s2
 func.wcsncmp.arg.2=size_t,n
 func.wcsncmp.ret=int
 
 wcsxfrm=func
 func.wcsxfrm.args=3
-func.wcsxfrm.arg.0=wchar_t*,s1
-func.wcsxfrm.arg.1=const wchar_t*,s2
+func.wcsxfrm.arg.0=wchar_t,*s1
+func.wcsxfrm.arg.1=const wchar_t,*s2
 func.wcsxfrm.arg.2=size_t,n
 func.wcsxfrm.ret=size_t
 
 wcschr=func
 func.wcschr.args=2
-func.wcschr.arg.0=const wchar_t*,s
+func.wcschr.arg.0=const wchar_t,*s
 func.wcschr.arg.1=wchar_t,c
 func.wcschr.ret=const wchar_t*
 
 wcschr=func
 func.wcschr.args=2
-func.wcschr.arg.0=wchar_t*,s
+func.wcschr.arg.0=wchar_t,*s
 func.wcschr.arg.1=wchar_t,c
 func.wcschr.ret=wchar_t*
 
 wcscspn=func
 func.wcscspn.args=2
-func.wcscspn.arg.0=const wchar_t*,s1
-func.wcscspn.arg.1=const wchar_t*,s2
+func.wcscspn.arg.0=const wchar_t,*s1
+func.wcscspn.arg.1=const wchar_t,*s2
 func.wcscspn.ret=size_t
 
 wcslen=func
 func.wcslen.args=1
-func.wcslen.arg.0=const wchar_t*,s
+func.wcslen.arg.0=const wchar_t,*s
 func.wcslen.ret=size_t
 
 wcspbrk=func
 func.wcspbrk.args=2
-func.wcspbrk.arg.0=const wchar_t*,s1
-func.wcspbrk.arg.1=const wchar_t*,s2
+func.wcspbrk.arg.0=const wchar_t,*s1
+func.wcspbrk.arg.1=const wchar_t,*s2
 func.wcspbrk.ret=const wchar_t*
 
 wcspbrk=func
 func.wcspbrk.args=2
-func.wcspbrk.arg.0=wchar_t*,s1
-func.wcspbrk.arg.1=const wchar_t*,s2
+func.wcspbrk.arg.0=wchar_t,*s1
+func.wcspbrk.arg.1=const wchar_t,*s2
 func.wcspbrk.ret=wchar_t*
 
 wcsrchr=func
 func.wcsrchr.args=2
-func.wcsrchr.arg.0=const wchar_t*,s
+func.wcsrchr.arg.0=const wchar_t,*s
 func.wcsrchr.arg.1=wchar_t,c
 func.wcsrchr.ret=const wchar_t*
 
 wcsrchr=func
 func.wcsrchr.args=2
-func.wcsrchr.arg.0=wchar_t*,s
+func.wcsrchr.arg.0=wchar_t,*s
 func.wcsrchr.arg.1=wchar_t,c
 func.wcsrchr.ret=wchar_t*
 
 wcsspn=func
 func.wcsspn.args=2
-func.wcsspn.arg.0=const wchar_t*,s1
-func.wcsspn.arg.1=const wchar_t*,s2
+func.wcsspn.arg.0=const wchar_t,*s1
+func.wcsspn.arg.1=const wchar_t,*s2
 func.wcsspn.ret=size_t
 
 wcsstr=func
 func.wcsstr.args=2
-func.wcsstr.arg.0=const wchar_t*,s1
-func.wcsstr.arg.1=const wchar_t*,s2
+func.wcsstr.arg.0=const wchar_t,*s1
+func.wcsstr.arg.1=const wchar_t,*s2
 func.wcsstr.ret=const wchar_t*
 
 wcsstr=func
 func.wcsstr.args=2
-func.wcsstr.arg.0=wchar_t*,s1
-func.wcsstr.arg.1=const wchar_t*,s2
+func.wcsstr.arg.0=wchar_t,*s1
+func.wcsstr.arg.1=const wchar_t,*s2
 func.wcsstr.ret=wchar_t*
 
 wcstok=func
 func.wcstok.args=3
-func.wcstok.arg.0=wchar_t*,s1
-func.wcstok.arg.1=const wchar_t*,s2
-func.wcstok.arg.2=wchar_t**,ptr
+func.wcstok.arg.0=wchar_t,*s1
+func.wcstok.arg.1=const wchar_t,*s2
+func.wcstok.arg.2=wchar_t*,*ptr
 func.wcstok.ret=wchar_t*
 
 wmemchr=func
 func.wmemchr.args=3
-func.wmemchr.arg.0=const wchar_t*,s
+func.wmemchr.arg.0=const wchar_t,*s
 func.wmemchr.arg.1=wchar_t,c
 func.wmemchr.arg.2=size_t,n
 func.wmemchr.ret=const wchar_t*
 
 wmemchr=func
 func.wmemchr.args=3
-func.wmemchr.arg.0=wchar_t*,s
+func.wmemchr.arg.0=wchar_t,*s
 func.wmemchr.arg.1=wchar_t,c
 func.wmemchr.arg.2=size_t,n
 func.wmemchr.ret=wchar_t*
 
 wmemcmp=func
 func.wmemcmp.args=3
-func.wmemcmp.arg.0=wchar_t*,s1
-func.wmemcmp.arg.1=const wchar_t*,s2
+func.wmemcmp.arg.0=wchar_t,*s1
+func.wmemcmp.arg.1=const wchar_t,*s2
 func.wmemcmp.arg.2=size_t,n
 func.wmemcmp.ret=int
 
 wmemcpy=func
 func.wmemcpy.args=3
-func.wmemcpy.arg.0=wchar_t*,s1
-func.wmemcpy.arg.1=const wchar_t*,s2
+func.wmemcpy.arg.0=wchar_t,*s1
+func.wmemcpy.arg.1=const wchar_t,*s2
 func.wmemcpy.arg.2=size_t,n
 func.wmemcpy.ret=wchar_t*
 
 wmemmove=func
 func.wmemmove.args=3
-func.wmemmove.arg.0=wchar_t*,s1
-func.wmemmove.arg.1=const wchar_t*,s2
+func.wmemmove.arg.0=wchar_t,*s1
+func.wmemmove.arg.1=const wchar_t,*s2
 func.wmemmove.arg.2=size_t,n
 func.wmemmove.ret=wchar_t*
 
 wmemset=func
 func.wmemset.args=3
-func.wmemset.arg.0=wchar_t*,s
+func.wmemset.arg.0=wchar_t,*s
 func.wmemset.arg.1=wchar_t,c
 func.wmemset.arg.2=size_t,n
 func.wmemset.ret=wchar_t*
 
 wcsftime=func
 func.wcsftime.args=4
-func.wcsftime.arg.0=wchar_t*,s
+func.wcsftime.arg.0=wchar_t,*s
 func.wcsftime.arg.1=size_t,maxsize
-func.wcsftime.arg.2=const wchar_t*,format
-func.wcsftime.arg.3=const tm*,timeptr
+func.wcsftime.arg.2=const wchar_t,*format
+func.wcsftime.arg.3=const tm,*timeptr
 func.wcsftime.ret=size_t
 
 btowc=func
@@ -2188,45 +2188,45 @@ func.wctob.ret=int
 
 mbsinit=func
 func.mbsinit.args=1
-func.mbsinit.arg.0=const mbstate_t*,ps
+func.mbsinit.arg.0=const mbstate_t,*ps
 func.mbsinit.ret=int
 
 mbrlen=func
 func.mbrlen.args=3
-func.mbrlen.arg.0=const char*,s
+func.mbrlen.arg.0=const char,*s
 func.mbrlen.arg.1=size_t,n
-func.mbrlen.arg.2=mbstate_t*,ps
+func.mbrlen.arg.2=mbstate_t,*ps
 func.mbrlen.ret=size_t
 
 mbrtowc=func
 func.mbrtowc.args=4
-func.mbrtowc.arg.0=wchar_t*,pwc
-func.mbrtowc.arg.1=const char*,s
+func.mbrtowc.arg.0=wchar_t,*pwc
+func.mbrtowc.arg.1=const char,*s
 func.mbrtowc.arg.2=size_t,n
-func.mbrtowc.arg.3=mbstate_t*,ps
+func.mbrtowc.arg.3=mbstate_t,*ps
 func.mbrtowc.ret=size_t
 
 wcrtomb=func
 func.wcrtomb.args=3
-func.wcrtomb.arg.0=char*,s
+func.wcrtomb.arg.0=char,*s
 func.wcrtomb.arg.1=wchar_t,wc
-func.wcrtomb.arg.2=mbstate_t*,ps
+func.wcrtomb.arg.2=mbstate_t,*ps
 func.wcrtomb.ret=size_t
 
 mbsrtowcs=func
 func.mbsrtowcs.args=4
-func.mbsrtowcs.arg.0=wchar_t*,dst
-func.mbsrtowcs.arg.1=const char**,src
+func.mbsrtowcs.arg.0=wchar_t,*dst
+func.mbsrtowcs.arg.1=const char*,*src
 func.mbsrtowcs.arg.2=size_t,len
-func.mbsrtowcs.arg.3=mbstate_t*,ps
+func.mbsrtowcs.arg.3=mbstate_t,*ps
 func.mbsrtowcs.ret=size_t
 
 wcsrtombs=func
 func.wcsrtombs.args=4
-func.wcsrtombs.arg.0=char*,dst
-func.wcsrtombs.arg.1=const wchar_t**,src
+func.wcsrtombs.arg.0=char,*dst
+func.wcsrtombs.arg.1=const wchar_t*,*src
 func.wcsrtombs.arg.2=size_t,len
-func.wcsrtombs.arg.3=mbstate_t*,ps
+func.wcsrtombs.arg.3=mbstate_t,*ps
 func.wcsrtombs.ret=size_t
 
 iswalnum=func
@@ -2297,7 +2297,7 @@ func.iswctype.ret=int
 
 wctype=func
 func.wctype.args=1
-func.wctype.arg.0=const char*,property
+func.wctype.arg.0=const char,*property
 func.wctype.ret=wctype_t
 
 towlower=func
@@ -2318,17 +2318,17 @@ func.towctrans.ret=wint_t
 
 wctrans=func
 func.wctrans.args=1
-func.wctrans.arg.0=const char*,property
+func.wctrans.arg.0=const char,*property
 func.wctrans.ret=wctrans_t
 
 remove=func
 func.remove.args=1
-func.remove.arg.0=const char*,filename
+func.remove.arg.0=const char,*filename
 func.remove.ret=int
 
 rename=func
 func.rename.args=2
-func.rename.arg.0=const char*,old
+func.rename.arg.0=const char,*old
 func.rename.arg.1=,const char*
 func.rename.ret=int
 
@@ -2338,36 +2338,36 @@ func.tmpfile.ret=file*
 
 tmpnam=func
 func.tmpnam.args=1
-func.tmpnam.arg.0=char*,s
+func.tmpnam.arg.0=char,*s
 func.tmpnam.ret=char*
 
 fflush=func
 func.fflush.args=1
-func.fflush.arg.0=FILE*,stream
+func.fflush.arg.0=FILE,*stream
 func.fflush.ret=int
 
 fopen=func
 func.fopen.args=2
-func.fopen.arg.0=const char*,filename
+func.fopen.arg.0=const char,*filename
 func.fopen.arg.1=,const char*
 func.fopen.ret=file*
 
 freopen=func
 func.freopen.args=3
-func.freopen.arg.0=const char*,filename
+func.freopen.arg.0=const char,*filename
 func.freopen.arg.1=,const char
 func.freopen.arg.2=FILE,*
 func.freopen.ret=file*
 
 setbuf=func
 func.setbuf.args=2
-func.setbuf.arg.0=FILE*,stream
+func.setbuf.arg.0=FILE,*stream
 func.setbuf.arg.1=,char*
 func.setbuf.ret=void
 
 setvbuf=func
 func.setvbuf.args=4
-func.setvbuf.arg.0=FILE*,stream
+func.setvbuf.arg.0=FILE,*stream
 func.setvbuf.arg.1=,char*
 func.setvbuf.arg.2=,int
 func.setvbuf.arg.3=,size_t
@@ -2375,33 +2375,33 @@ func.setvbuf.ret=int
 
 fprintf=func
 func.fprintf.args=3
-func.fprintf.arg.0=FILE*,stream
+func.fprintf.arg.0=FILE,*stream
 func.fprintf.arg.1=,const char*
 func.fprintf.arg.2=,...
 func.fprintf.ret=int
 
 fscanf=func
 func.fscanf.args=3
-func.fscanf.arg.0=FILE*,stream
+func.fscanf.arg.0=FILE,*stream
 func.fscanf.arg.1=,const char
 func.fscanf.arg.2=,...
 func.fscanf.ret=int
 
 printf=func
 func.printf.args=2
-func.printf.arg.0=const char*,format
+func.printf.arg.0=const char,*format
 func.printf.arg.1=,...
 func.printf.ret=int
 
 scanf=func
 func.scanf.args=2
-func.scanf.arg.0=const char*,format
+func.scanf.arg.0=const char,*format
 func.scanf.arg.1=,...
 func.scanf.ret=int
 
 snprintf=func
 func.snprintf.args=4
-func.snprintf.arg.0=char*,s
+func.snprintf.arg.0=char,*s
 func.snprintf.arg.1=,size_t
 func.snprintf.arg.2=,const char*
 func.snprintf.arg.3=,...
@@ -2409,47 +2409,47 @@ func.snprintf.ret=int
 
 sprintf=func
 func.sprintf.args=3
-func.sprintf.arg.0=char*,s
+func.sprintf.arg.0=char,*s
 func.sprintf.arg.1=,const char*
 func.sprintf.arg.2=,...
 func.sprintf.ret=int
 
 sscanf=func
 func.sscanf.args=3
-func.sscanf.arg.0=const char*,s
+func.sscanf.arg.0=const char,*s
 func.sscanf.arg.1=,const char*
 func.sscanf.arg.2=,...
 func.sscanf.ret=int
 
 vfprintf=func
 func.vfprintf.args=3
-func.vfprintf.arg.0=FILE*,stream
+func.vfprintf.arg.0=FILE,*stream
 func.vfprintf.arg.1=,const char*
 func.vfprintf.arg.2=,va_list
 func.vfprintf.ret=int
 
 vfscanf=func
 func.vfscanf.args=3
-func.vfscanf.arg.0=FILE*,stream
+func.vfscanf.arg.0=FILE,*stream
 func.vfscanf.arg.1=,const char*
 func.vfscanf.arg.2=,va_list
 func.vfscanf.ret=int
 
 vprintf=func
 func.vprintf.args=2
-func.vprintf.arg.0=const char*,format
+func.vprintf.arg.0=const char,*format
 func.vprintf.arg.1=,va_list
 func.vprintf.ret=int
 
 vscanf=func
 func.vscanf.args=2
-func.vscanf.arg.0=const char*,format
+func.vscanf.arg.0=const char,*format
 func.vscanf.arg.1=,va_list
 func.vscanf.ret=int
 
 vsnprintf=func
 func.vsnprintf.args=4
-func.vsnprintf.arg.0=char*,s
+func.vsnprintf.arg.0=char,*s
 func.vsnprintf.arg.1=,size_t
 func.vsnprintf.arg.2=,const char*
 func.vsnprintf.arg.3=va_list,arg
@@ -2457,14 +2457,14 @@ func.vsnprintf.ret=int
 
 vsprintf=func
 func.vsprintf.args=3
-func.vsprintf.arg.0=char*,s
+func.vsprintf.arg.0=char,*s
 func.vsprintf.arg.1=,const char*
 func.vsprintf.arg.2=,va_list
 func.vsprintf.ret=int
 
 vsscanf=func
 func.vsscanf.args=3
-func.vsscanf.arg.0=const char*,s
+func.vsscanf.arg.0=const char,*s
 func.vsscanf.arg.1=,const char*
 func.vsscanf.arg.2=,va_list
 func.vsscanf.ret=int
@@ -2477,13 +2477,13 @@ func.fputc.ret=int
 
 fputs=func
 func.fputs.args=2
-func.fputs.arg.0=const char*,s
+func.fputs.arg.0=const char,*s
 func.fputs.arg.1=,FILE*
 func.fputs.ret=int
 
 gets=func
 func.gets.args=1
-func.gets.arg.0=char*,s
+func.gets.arg.0=char,*s
 func.gets.ret=char*
 
 putc=func
@@ -2499,62 +2499,62 @@ func.putchar.ret=int
 
 puts=func
 func.puts.args=1
-func.puts.arg.0=const char*,s
+func.puts.arg.0=const char,*s
 func.puts.ret=int
 
 fread=func
 func.fread.args=4
-func.fread.arg.0=void*,ptr
+func.fread.arg.0=void,*ptr
 func.fread.arg.1=,size_t
 func.fread.arg.2=,size_t
-func.fread.arg.3=FILE*,stream
+func.fread.arg.3=FILE,*stream
 func.fread.ret=size_t
 
 fgetpos=func
 func.fgetpos.args=2
-func.fgetpos.arg.0=FILE*,stream
+func.fgetpos.arg.0=FILE,*stream
 func.fgetpos.arg.1=,fpos_t*
 func.fgetpos.ret=int
 
 fseek=func
 func.fseek.args=3
-func.fseek.arg.0=FILE*,stream
+func.fseek.arg.0=FILE,*stream
 func.fseek.arg.1=,long
 func.fseek.arg.2=,int
 func.fseek.ret=int
 
 fsetpos=func
 func.fsetpos.args=2
-func.fsetpos.arg.0=FILE*,stream
+func.fsetpos.arg.0=FILE,*stream
 func.fsetpos.arg.1=,const fpos_t*
 func.fsetpos.ret=int
 
 ftell=func
 func.ftell.args=1
-func.ftell.arg.0=FILE*,stream
+func.ftell.arg.0=FILE,*stream
 func.ftell.ret=long
 
 rewind=func
 func.rewind.args=1
-func.rewind.arg.0=FILE*,stream
+func.rewind.arg.0=FILE,*stream
 func.rewind.ret=void
 
 clearerr=func
 func.clearerr.args=1
-func.clearerr.arg.0=FILE*,stream
+func.clearerr.arg.0=FILE,*stream
 func.clearerr.ret=void
 
 feof=func
 func.feof.args=1
-func.feof.arg.0=FILE*,stream
+func.feof.arg.0=FILE,*stream
 func.feof.ret=int
 
 ferror=func
 func.ferror.args=1
-func.ferror.arg.0=FILE*,stream
+func.ferror.arg.0=FILE,*stream
 func.ferror.ret=int
 
 perror=func
 func.perror.args=1
-func.perror.arg.0=const char*,s
+func.perror.arg.0=const char,*s
 func.perror.ret=void
