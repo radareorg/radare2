@@ -330,10 +330,8 @@ static int step_until_eof(RCore *core) {
 	ut64 off, now = r_debug_reg_get (core->dbg, "SP");
 	r_cons_break (NULL, NULL);
 	do {
-		if (r_cons_singleton ()->breaked)
-			break;
-		if (!r_debug_step (core->dbg, 1))
-			break;
+		// XXX (HACK!)
+		r_core_cmd0 (core, "dso");
 		off = r_debug_reg_get (core->dbg, "SP");
 		// check breakpoint here
 	} while (off <= now);
