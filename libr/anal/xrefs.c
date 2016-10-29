@@ -167,17 +167,22 @@ static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
 	return 1;
 }
 
-static int xrefs_list_cb_json(RAnal *anal, const char *k, const char *v) {
+static bool xrefs_list_cb_json(RAnal *anal, bool is_first, const char *k, const char *v) {
 	ut64 dst, src = r_num_get (NULL, v);
 	if (!strncmp (k, "ref.", 4) && (strlen (k) > 8)) {
 		const char *p = r_str_rchr (k, NULL, '.');
 		if (p) {
+			if (is_first) {
+				is_first = false;
+			} else {
+				anal->cb_printf (",");
+			}
 			dst = r_num_get (NULL, p + 1);
 			sscanf (p + 1, "0x%"PFMT64x, &dst);
-			anal->cb_printf ("%"PFMT64d":%"PFMT64d",", src, dst);
+			anal->cb_printf ("\"%"PFMT64d"\":%"PFMT64d, src, dst);
 		}
 	}
-	return 1;
+	return is_first;
 }
 
 static int xrefs_list_cb_plain(RAnal *anal, const char *k, const char *v) {
@@ -193,7 +198,13 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		break;
 	case 'j':
 		anal->cb_printf ("{");
-		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_json, anal);
+		bool is_first = true;
+		SdbListIter *sdb_iter;
+		SdbKv *kv;
+		SdbList *sdb_list = sdb_foreach_list (DB);
+		ls_foreach (sdb_list, sdb_iter, kv) {
+			is_first = xrefs_list_cb_json (anal, is_first, kv->key, kv->value);
+		}
 		anal->cb_printf ("}\n");
 		break;
 	default:
