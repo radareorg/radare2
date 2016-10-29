@@ -1509,7 +1509,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	if (!strncmp (input, "dsf", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 		if (fcn) {
-			line = s = r_core_cmd_str (core, "pdf");
+			line = s = r_core_cmd_str (core, "pdr");
 		} else {
 			eprintf ("Cannot find function.\n");
 			r_config_set_i (core->config, "scr.color", use_color);
@@ -1587,6 +1587,9 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			R_FREE (string2);
 		}
 		_handle_call (core, line, &str);
+		if (str && strstr (str, " 0x")) {
+			str = NULL;
+		}
 		if (!str) {
 			str = strstr (line, "sym.");
 			if (!str) {
