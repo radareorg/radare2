@@ -1,4 +1,0 @@
-#!/bin/sh
-killall r2
-openurl http://localhost:9090
-r2 -qc=h /bin/ls
