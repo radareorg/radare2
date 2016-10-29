@@ -1,4 +1,4 @@
-/* io_r2k - radare2 - LGPL - Copyright SkUaTeR 2016 */
+/* io_r2k - radare2 - LGPL - Copyright 2016 - SkUaTeR + panda */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -252,13 +252,20 @@ struct r2k_data {
 
 #define R2_TYPE 0x69
 
+#ifdef IOC_OUT
+#define R2K_IOC_OUT         IOC_OUT
+#define R2K_IOCPARM_MASK    IOCPARM_MASK
+#define R2K_IOR             _IOR
+#else
+#define R2K_IOC_OUT         0x40000000      /* copy out parameters */
+#define R2K_IOCPARM_MASK    0x7f            /* parameters must be < 128 bytes */
+#define R2K_IOR(x,y,t)     (R2K_IOC_OUT|((sizeof(t)&R2K_IOCPARM_MASK)<<16)|(x<<8)|y)
+#endif
+
+
 #define READ_KERNEL_MEMORY  0x1
 #define WRITE_KERNEL_MEMORY 0x2
 
-#define R2K_IOC_OUT         0x40000000      /* copy out parameters */
-#define R2K_IOCPARM_MASK    0x7f            /* parameters must be < 128 bytes */
-
-#define R2K_IOR(x,y,t)     (R2K_IOC_OUT|((sizeof(t)&R2K_IOCPARM_MASK)<<16)|(x<<8)|y)
 
 #define IOCTL_READ_KERNEL_MEMORY  R2K_IOR (R2_TYPE, READ_KERNEL_MEMORY, sizeof (struct r2k_data));
 #define IOCTL_WRITE_KERNEL_MEMORY R2K_IOR (R2_TYPE, WRITE_KERNEL_MEMORY, sizeof (struct r2k_data));
