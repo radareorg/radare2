@@ -17,12 +17,15 @@ static Sdb * get_sdb(RBinObject *o) {
 
 static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	ut16 cs = r_read_ble16 (buf + 0x16, false);
+	if (cs != 0) {
+		return false;
+	}
 	ut16 ip = r_read_ble16 (buf + 0x14, false);
 	ut32 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
 	if (pa > 0x40 && pa + 1 < length) {
 		return true;
 	}
-	return true;
+	return false;
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
