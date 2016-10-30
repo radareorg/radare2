@@ -483,7 +483,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						}
 					}
 					if (p) {
-						n = r_print_format (core->print, addr, core->block,
+						r_print_format (core->print, addr, core->block,
 							n, p + 1, 0, NULL, NULL);
 					}
 				} else if (type == 's') {
