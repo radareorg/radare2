@@ -109,7 +109,6 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str) {
 	if (core->is_asmqjmps_letter) {
 		int i, pos = 0;
 		int len = strlen (str);
-
 		for (i = 0; i < len - 1; ++i) {
 			if (!isupper ((ut8)str[i])) return UT64_MAX;
 			pos *= R_CORE_ASMQJMPS_LETTERS;
@@ -303,7 +302,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RAnalOp op;
 	ut64 ret = 0;
 
-	if (ok) *ok = false;
+	if (ok) {
+		*ok = false;
+	}
 	switch (*str) {
 	case '.':
 		if (core->num->nc.curr_tok=='+') {
@@ -329,27 +330,26 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		ut64 n = 0LL;
 		int refsz = core->assembler->bits / 8;
 		const char *p = NULL;
-		if (strlen (str)>5)
-			p = strchr (str+5, ':');
+		if (strlen (str) > 5) {
+			p = strchr (str + 5, ':');
+		}
 		if (p) {
-			refsz = atoi (str+1);
+			refsz = atoi (str + 1);
 			str = p;
 		}
 		// push state
-		{
-			if (str[0] && str[1]) {
-				const char *q;
-				char *o = strdup (str+1);
-				if (o) {
-					q = r_num_calc_index (core->num, NULL);
-					if (q) {
-						if (r_str_replace_char (o, ']', 0)>0) {
-							n = r_num_math (core->num, o);
-							r_num_calc_index (core->num, q);
-						}
+		if (str[0] && str[1]) {
+			const char *q;
+			char *o = strdup (str+1);
+			if (o) {
+				q = r_num_calc_index (core->num, NULL);
+				if (q) {
+					if (r_str_replace_char (o, ']', 0)>0) {
+						n = r_num_math (core->num, o);
+						r_num_calc_index (core->num, q);
 					}
-					free (o);
 				}
+				free (o);
 			}
 		}
 		// pop state
