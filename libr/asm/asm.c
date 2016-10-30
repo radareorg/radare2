@@ -882,9 +882,9 @@ R_API int r_asm_syntax_from_string(const char *name) {
 	return -1;
 }
 
-R_API char *r_asm_mnemonics(RAsm *a, int id) {
+R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
 	if (a && a->cur && a->cur->mnemonics) {
-		return a->cur->mnemonics (a, id);
+		return a->cur->mnemonics (a, id, json);
 	}
 	return NULL;
 }
