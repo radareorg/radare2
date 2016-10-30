@@ -10,7 +10,7 @@ static char *mnemonics(RAsm *a, int id, bool json) {
 	}
 	RStrBuf *buf = r_strbuf_new ("");
 	if (json){
-			r_strbuf_append(buf, "[");
+			r_strbuf_append (buf, "[");
 	}
 	for (i = 1; ; i++) {
 		const char *op = cs_insn_name (cd, i);
@@ -18,14 +18,14 @@ static char *mnemonics(RAsm *a, int id, bool json) {
 			break;
 		}
 		if (json) {
-			r_strbuf_append(buf, "\"");
+			r_strbuf_append (buf, "\"");
 		}
 		r_strbuf_append (buf, op);
 		if (json) {
-			if (cs_insn_name (cd, i+1)) {
-				r_strbuf_append(buf, "\",");
+			if (cs_insn_name (cd, i + 1)) {
+				r_strbuf_append (buf, "\",");
 			} else {
-				r_strbuf_append(buf, "\"]\n");
+				r_strbuf_append (buf, "\"]\n");
 			}
 		} else {
 			r_strbuf_append (buf, "\n");
