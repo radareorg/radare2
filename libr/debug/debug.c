@@ -1206,8 +1206,9 @@ R_API int r_debug_syscall(RDebug *dbg, int num) {
 }
 
 R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
-	if (r_debug_is_dead (dbg))
+	if (r_debug_is_dead (dbg)) {
 		return false;
+	}
 	if (dbg->h && dbg->h->kill) {
 		return dbg->h->kill (dbg, pid, tid, sig);
 	}

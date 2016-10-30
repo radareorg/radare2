@@ -1692,7 +1692,11 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 	}
 	r_cons_printf (",\"callrefs\":[");
+	int outdegree = 0;
 	r_list_foreach (fcn->refs, iter, refi) {
+		if (refi->type == R_ANAL_REF_TYPE_CALL) {
+			outdegree++;
+		}
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
 				refi->type == R_ANAL_REF_TYPE_CALL) {
 			r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%c\",\"at\":%"PFMT64d"}",
@@ -1714,10 +1718,12 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	}
 
 	first = 1;
+	int indegree = 0;
 	r_cons_printf ("],\"codexrefs\":[");
 	r_list_foreach (fcn->xrefs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE ||
 				refi->type == R_ANAL_REF_TYPE_CALL) {
+			indegree++;
 			r_cons_printf ("%s{\"addr\":%"PFMT64d",\"type\":\"%c\",\"at\":%"PFMT64d"}",
 					first?"":",",
 					refi->addr,
@@ -1746,6 +1752,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 		if (fcn->diff->name != NULL)
 			r_cons_printf (",\"diffname\":\"%s\"", fcn->diff->name);
 	}
+	r_cons_printf (",\"indegree\":%d", indegree);
+	r_cons_printf (",\"outdegree\":%d", outdegree);
 	r_cons_printf (",\"nargs\":%d",
 		r_anal_var_count (core->anal, fcn, 'r', 1) +
 		r_anal_var_count (core->anal, fcn, 'r', 1) +
@@ -1825,24 +1833,34 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\n edges: %d", count_edges (fcn, &ebbs));
 	r_cons_printf ("\n end-bbs: %d", ebbs);
 	r_cons_printf ("\n call-refs: ");
-	r_list_foreach (fcn->refs, iter, refi)
-		if (refi->type == R_ANAL_REF_TYPE_CODE ||
-			refi->type == R_ANAL_REF_TYPE_CALL)
+	int outdegree = 0;
+	r_list_foreach (fcn->refs, iter, refi) {
+		if (refi->type == R_ANAL_REF_TYPE_CALL) {
+			outdegree++;
+		}
+		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
 			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
 					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J');
-
+		}
+	}
 	r_cons_printf ("\n data-refs: ");
-	r_list_foreach (fcn->refs, iter, refi)
-		if (refi->type == R_ANAL_REF_TYPE_DATA)
+	r_list_foreach (fcn->refs, iter, refi) {
+		if (refi->type == R_ANAL_REF_TYPE_DATA) {
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
+		}
+	}
 
+	int indegree = 0;
 	r_cons_printf ("\n code-xrefs: ");
-	r_list_foreach (fcn->xrefs, iter, refi)
-		if (refi->type == R_ANAL_REF_TYPE_CODE ||
-			refi->type == R_ANAL_REF_TYPE_CALL)
+	r_list_foreach (fcn->xrefs, iter, refi) {
+		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
+			indegree++;
 			r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
 					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J');
-
+		}
+	}
+	r_cons_printf ("\n in-degree: %d", indegree);
+	r_cons_printf ("\n out-degree: %d", outdegree);
 	r_cons_printf ("\n data-xrefs: ");
 	r_list_foreach (fcn->xrefs, iter, refi)
 		if (refi->type == R_ANAL_REF_TYPE_DATA)
