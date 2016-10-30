@@ -200,9 +200,13 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'O':
 		{
-			int id = (input[1])
-				?(int)r_num_math (core->num, input + 1): -1;
-			char *ops = r_asm_mnemonics (core->assembler, id);
+			bool json = false;
+			if (input[1] == 'j') {
+				json = true;
+			}
+			const int id = (input[2])
+				?(int)r_num_math (core->num, input + 2): -1;
+			char *ops = r_asm_mnemonics (core->assembler, id, json);
 			if (ops) {
 				r_cons_print (ops);
 				free (ops);

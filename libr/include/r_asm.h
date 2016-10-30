@@ -129,7 +129,7 @@ typedef struct r_asm_plugin_t {
 	int (*assemble)(RAsm *a, RAsmOp *op, const char *buf);
 	RAsmModifyCallback modify;
 	int (*set_subarch)(RAsm *a, const char *buf);
-	char *(*mnemonics)(RAsm *a, int id);
+	char *(*mnemonics)(RAsm *a, int id, bool json);
 	const char *features;
 } RAsmPlugin;
 
@@ -139,7 +139,7 @@ R_API RAsm *r_asm_new(void);
 #define r_asm_op_free free
 R_API RAsm *r_asm_free(RAsm *a);
 R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
-R_API char *r_asm_mnemonics(RAsm *a, int id);
+R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
 R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo);
 R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);
