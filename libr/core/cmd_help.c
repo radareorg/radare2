@@ -201,10 +201,10 @@ static int cmd_help(void *data, const char *input) {
 	case 'O':
 		{
 			bool json = false;
-			if (input[1]=='j') {
+			if (input[1] == 'j') {
 				json = true;
 			}
-			int id = (input[2])
+			const int id = (input[2])
 				?(int)r_num_math (core->num, input + 2): -1;
 			char *ops = r_asm_mnemonics (core->assembler, id, json);
 			if (ops) {
