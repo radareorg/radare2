@@ -42,6 +42,8 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 			    !memcmp (buf + exth_offset, "NE", 2) ||
 			    !memcmp (buf + exth_offset, "LE", 2) ||
 			    !memcmp (buf + exth_offset, "LX", 2) ) {
+				ret = false;
+			} else {
 				if (checkEntrypoint (buf, length)) {
 					/* raw plain MZ executable (watcom) */
 				} else {
