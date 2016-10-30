@@ -220,8 +220,7 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 
 /* Callback to trigger SIGINT signal */
 static void r_debug_native_stop(RDebug *dbg) {
-	// I don't know if there is a better way to trigger this
-	kill (dbg->pid, SIGINT);
+	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
 }
 
 /* TODO: specify thread? */
