@@ -8,12 +8,19 @@ static ut64 r_bin_mz_seg_to_paddr (const struct r_bin_mz_obj_t *bin, const ut16 
 }
 
 int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
+#if 0
+	ut16 cs = r_read_ble16 (buf + 0x16, false);
+	ut16 ip = r_read_ble16 (buf + 0x14, false);
+	ut16 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
+#endif
 	/* Value of CS in DOS header may be negative */
 	const short cs = (const short)bin->dos_header->cs;
 	const int paddr = ((bin->dos_header->header_paragraphs + cs) << 4) + \
 			bin->dos_header->ip;
-	if (paddr >= 0 && paddr < bin->dos_file_size) return paddr;
-	else return -1;
+	if (paddr >= 0 && paddr < bin->dos_file_size) {
+		return paddr;
+	}
+	return -1;
 }
 
 int cmp_segs (const void *a, const void *b) {

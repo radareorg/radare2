@@ -15,6 +15,16 @@ static Sdb * get_sdb(RBinObject *o) {
 	return NULL;
 }
 
+static bool checkEntrypoint(const ut8 *buf, ut64 length) {
+	ut16 cs = r_read_ble16 (buf + 0x16, false);
+	ut16 ip = r_read_ble16 (buf + 0x14, false);
+	ut32 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
+	if (pa > 0x40 && pa + 1 < length) {
+		return true;
+	}
+	return true;
+}
+
 static int check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int exth_offset;
 	int ret = false;
@@ -25,11 +35,15 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		ret = true;
 		exth_offset = (buf[0x3c] | (buf[0x3d]<<8));
 		if (length > exth_offset + 2) {
-			if (!memcmp (buf+exth_offset, "PE", 2) ||
-			    !memcmp (buf+exth_offset, "NE", 2) ||
-			    !memcmp (buf+exth_offset, "LE", 2) ||
-			    !memcmp (buf+exth_offset, "LX", 2) ) {
-				ret = false;
+			if (!memcmp (buf + exth_offset, "PE", 2) ||
+			    !memcmp (buf + exth_offset, "NE", 2) ||
+			    !memcmp (buf + exth_offset, "LE", 2) ||
+			    !memcmp (buf + exth_offset, "LX", 2) ) {
+				if (checkEntrypoint (buf, length)) {
+					/* raw plain MZ executable (watcom) */
+				} else {
+					ret = false;
+				}
 			}
 		}
 	}
