@@ -9,7 +9,7 @@ static char *mnemonics(RAsm *a, int id, bool json) {
 		return name? r_str_newf ("%s\n", name): NULL;
 	}
 	RStrBuf *buf = r_strbuf_new ("");
-	if (json){
+	if (json) {
 			r_strbuf_append (buf, "[");
 	}
 	for (i = 1; ; i++) {
