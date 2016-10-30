@@ -249,7 +249,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				break;
 			case '*':
-				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+				r_core_cmdf (core, "!rabin2 -rk.  '%s'", core->file->desc->name);
 				break;
 			case '.':
 			case ' ':

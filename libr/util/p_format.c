@@ -1314,7 +1314,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 }
 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, const char *name,
-								 int slide, int mode, const char *setval, char *field, int anon) {
+		int slide, int mode, const char *setval, char *field, int anon) {
 	const char *fmt;
 	char namefmt[128];
 	slide++;

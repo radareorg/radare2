@@ -473,14 +473,18 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 			strncpy (name, t, sizeof (name) - 1);
 			if (type != 'C') {
 				n = r_num_math (core->num, t);
-				if (type == 'f') {
+				if (type == 'f') { // "Cf"
 					p = strchr (t, ' ');
 					if (n < 1) {
 						n = r_print_format_struct_size (p + 1, core->print, 0);
+						if (n < 1) {
+							eprintf ("Cannot resolve struct size\n");
+							n = 32; //
+						}
 					}
 					if (p) {
 						n = r_print_format (core->print, addr, core->block,
-							core->blocksize, p + 1, 0, NULL, NULL);
+							n, p + 1, 0, NULL, NULL);
 					}
 				} else if (type == 's') {
 					strncpy (name, t, sizeof (name) - 1);
@@ -725,12 +729,12 @@ static int cmd_meta(void *data, const char *input) {
 	case 'C': // "CC"
 		cmd_meta_comment (core, input);
 		break;
-	case 'h': /* comment */
-	case 's': /* string */
-	case 'z': /* zero-terminated string */
-	case 'd': /* data */
-	case 'm': /* magic */
-	case 'f': /* formatted */
+	case 'h': /* Ch comment */
+	case 's': /* Cs string */
+	case 'z': /* Cz zero-terminated string */
+	case 'd': /* Cd data */
+	case 'm': /* Cm magic */
+	case 'f': /* Cf formatted */
 		cmd_meta_hsdmf (core, input);
 		break;
 	case '-':
