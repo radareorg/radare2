@@ -17,11 +17,13 @@
 
 #include <r_core.h>
 #include <r_anal.h>
-
 #include <stdint.h>
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdarg.h>
+#if __UNIX__
+#include <sys/utsname.h>
+#endif
 
 static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_quit.c"
@@ -86,7 +88,9 @@ static int r_core_cmd_nullcallback(void *data) {
 		core->cons->breaked = false;
 		return 0;
 	}
-	if (!core->cmdrepeat) return 0;
+	if (!core->cmdrepeat) {
+		return 0;
+	}
 	r_core_cmd_repeat (core, true);
 	return 1;
 }
@@ -99,15 +103,16 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	RAsmOp *op;
 	if (!b) {
 		b = r_buf_new ();
-		if (!b) return NULL;
-		if (!r_core_read_at (core, addr, buf, sizeof (buf)))
+		if (!b || !r_core_read_at (core, addr, buf, sizeof (buf))) {
 			return NULL;
+		}
 		b->base = addr;
 		r_buf_set_bytes (b, buf, sizeof (buf));
 	} else {
 		if ((addr < b->base) || addr > (b->base+b->length-32)) {
-			if (!r_core_read_at (core, addr, buf, sizeof (buf)))
+			if (!r_core_read_at (core, addr, buf, sizeof (buf))) {
 				return NULL;
+			}
 			b->base = addr;
 			r_buf_set_bytes (b, buf, sizeof (buf));
 		}
@@ -121,10 +126,6 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	}
 	return op;
 }
-
-#if __UNIX__
-#include <sys/utsname.h>
-#endif
 
 static int cmd_uname(void *data, const char *input) {
 	const char* help_msg[] = {
@@ -2093,6 +2094,33 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 	return 0;
 }
 
+static void foreachOffset (RCore *core, const char *cmd, const char *each) {
+	ut64 addr;
+	char *str;
+	/* foreach list of items */
+	do {
+		while (*each == ' ') {
+			each++;
+		}
+		if (!*each) {
+			break;
+		}
+		str = strchr (each, ' ');
+		if (str) {
+			*str = '\0';
+			addr = r_num_math (core->num, each);
+			*str = ' ';
+		} else {
+			addr = r_num_math (core->num, each);
+		}
+		//eprintf ("; 0x%08"PFMT64x":\n", addr);
+		each = str + 1;
+		r_core_seek (core, addr, 1);
+		r_core_cmd (core, cmd, 0);
+		r_cons_flush ();
+	} while (str != NULL);
+}
+
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	int i, j;
 	char ch;
@@ -2124,6 +2152,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
 		"x", " @@f", "\"\" on all functions (see aflq)",
 		"x", " @@f:write", "\"\" on all functions matching write in the name",
+		"x", " @@c:cmd", "the same as @@=`` without the backticks",
 		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
 		// TODO: Add @@k sdb-query-expression-here
 		NULL};
@@ -2226,30 +2255,16 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			return false;
 		}
 		break;
+	case 'c':
+		if (each[1] == ':') {
+			char *arg = r_core_cmd_str (core, each + 2);
+			if (arg) {
+				foreachOffset (core, cmd, arg);
+			}
+		}
+		break;
 	case '=':
-		/* foreach list of items */
-		each = str+1;
-		do {
-			while (*each == ' ') {
-				each++;
-			}
-			if (!*each) {
-				break;
-			}
-			str = strchr (each, ' ');
-			if (str) {
-				*str = '\0';
-				addr = r_num_math (core->num, each);
-				*str = ' ';
-			} else {
-				addr = r_num_math (core->num, each);
-			}
-			//eprintf ("; 0x%08"PFMT64x":\n", addr);
-			each = str + 1;
-			r_core_seek (core, addr, 1);
-			r_core_cmd (core, cmd, 0);
-			r_cons_flush ();
-		} while (str != NULL);
+		foreachOffset (core, cmd, str + 1);
 		break;
 	case 'd':
 		if (each[1] == 'b' && each[2] == 't') {
