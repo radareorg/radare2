@@ -4,6 +4,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include "esil.h"
 
 #include "../../asm/arch/dalvik/opcode.h"
 #include "../../bin/format/dex/dex.h"
@@ -28,39 +29,64 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		/* pass thru */
 	case 0x1b: // const-string/jumbo
-	case 0x01: // move
-	case 0x02: // move
-	case 0x03: // move/16
-	case 0x04: // mov-wide
-	case 0x05: // mov-wide
-	case 0x06: // mov-wide
-	case 0x07: //
-	case 0x08: //
-	case 0x09: //
-	case 0x0a: //
-	case 0x0d: // move-exception
-	case 0x12: // const/4
-	case 0x13: // const/16
 	case 0x14: // const
 	case 0x15: // const
 	case 0x16: // const
 	case 0x17: // const
 	case 0x42: // const
+	case 0x12: // const/4
+		op->type = R_ANAL_OP_TYPE_MOV;
+		{
+			ut32 vB = (data[1] & 0x0f);
+			ut32 vA = (data[1] & 0xf0) >> 4;
+			op->stackop = R_ANAL_STACK_SET;
+			op->ptr = -vA;
+			esilprintf (op, "0x%"PFMT64x",v%d,=", vA, vB);
+		}
+		break;
+	case 0x01: // move
+	case 0x07: // move-object		
+	case 0x04: // mov-wide
+		op->type = R_ANAL_OP_TYPE_MOV;
+		{
+			ut32 vB = (data[1] & 0x0f);
+			ut32 vA = (data[1] & 0xf0) >> 4;
+			op->stackop = R_ANAL_STACK_SET;
+			op->ptr = -vA;
+			esilprintf (op, "v%d,v%d,=", vA, vB);
+		}
+		break;
+	case 0x02: // move/from16
+	case 0x03: // move/16
+	case 0x05: // move-wide/from16
+	case 0x06: // mov-wide&17
+	case 0x08: // move-object/from16
+	case 0x09: // move-object/16
+	case 0x13: // const/16
 	case 0x18: // const-wide
 	case 0x19: // const-wide
-	case 0x0c: // move-result-object // TODO: add MOVRET OP TYPE ??
-	case 0x0b: // move-result-wide
 		op->type = R_ANAL_OP_TYPE_MOV;
-		int vA = (int) -data[1];
-		op->stackop = R_ANAL_STACK_SET;
-		op->ptr = vA;
+		{
+			int vA = (int) data[1];
+			ut32 vB = (data[3] << 8) | data[2];
+			esilprintf (op, "v%d,v%d,=", vA, vB);
+		}
+		break;
+	case 0x0a: // move-result
+	case 0x0d: // move-exception
+	case 0x0c: // move-result-object
+	case 0x0b: // move-result-wide
+	 	// TODO: add MOVRET OP TYPE ??
+		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case 0x1a: // const-string
 		op->type = R_ANAL_OP_TYPE_MOV;
 		{
+			ut32 vA = data[1];
 			ut32 vB = (data[3]<<8) | data[2];
 			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
 			op->ptr = offset;
+			esilprintf (op, "0x%"PFMT64x",v%d,=", offset, vA);
 		}
 		break;
 	case 0x1c: // const-class
@@ -153,6 +179,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x6c: // sput-wide
 	case 0xfe: // sput
 		op->type = R_ANAL_OP_TYPE_STORE;
+		{
+			ut32 vA = (data[1] & 0x0f);
+			ut32 vB = (data[1] & 0xf0) >> 4;
+			esilprintf (op, "v%d,v%d,=", vA, vB);
+		}
 		break;
 	case 0x9d:
 	case 0xad: // mul-double
@@ -225,6 +256,12 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xf1: // return-void-barrier
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
+		//TODO: handle return if(0x0e) {} else {}
+		if (data[0] == 0x0e) {// return-void
+			// TODO: pop -> ip
+		} else {
+			// TODO: pop -> ip, push ret
+		}
 		break;
 	case 0x28: // goto
 		op->jump = addr + ((char)data[1])*2;
@@ -305,6 +342,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
 		op->fail = addr + sz;
 		op->type = R_ANAL_OP_TYPE_CALL;
+		// TODO: handle /range instructions
+		esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
+
 		}
 		break;
 	case 0x27: // throw
