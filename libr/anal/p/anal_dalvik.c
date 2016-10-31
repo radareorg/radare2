@@ -79,6 +79,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x0b: // move-result-wide
 	 	// TODO: add MOVRET OP TYPE ??
 		op->type = R_ANAL_OP_TYPE_MOV;
+		{
+			ut32 vA = data[1];
+			esilprintf (op, "sp,v%d,=[8],8,sp,+=,8", vA);
+		}
 		break;
 	case 0x1a: // const-string
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -260,25 +264,29 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->eob = true;
 		//TODO: handle return if(0x0e) {} else {}
 		if (data[0] == 0x0e) {// return-void
-			// TODO: pop -> ip
+			esilprintf (op, "sp,[8],ip,=,8,sp,+=");
 		} else {
-			// TODO: pop -> ip, push ret
+			ut32 vA = data[1];
+			esilprintf (op, "sp,[8],ip,=,8,sp,+=,8,sp,-=,v%d,sp,=[8]", vA);
 		}
 		break;
 	case 0x28: // goto
 		op->jump = addr + ((char)data[1])*2;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->eob = true;
+		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 		break;
 	case 0x29: // goto/16
 		op->jump = addr + (short)(data[2]|data[3]<<8)*2;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->eob = true;
+		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 		break;
 	case 0x2a: // goto/32
 		op->jump = addr + (int)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24))*2;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->eob = true;
+		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 		break;
 	case 0x2c:
 	case 0x2b:
@@ -444,8 +452,22 @@ static int set_reg_profile(RAnal *anal) {
 	"gpr	v1	.32	4	0\n"
 	"gpr	v2	.32	8	0\n"
 	"gpr	v3	.32	12	0\n"
-	"gpr	ip	.32	40	0\n"
-	"gpr	sp	.32	44	0\n"
+	"gpr	v3	.32	16	0\n"
+	"gpr	v4	.32	20	0\n"
+	"gpr	v5	.32	24	0\n"
+	"gpr	v6	.32	28	0\n"
+	"gpr	v7	.32	32	0\n"
+	"gpr	v8	.32	36	0\n"
+	"gpr	v9	.32	40	0\n"
+	"gpr	v10	.32	44	0\n"
+	"gpr	v11	.32	48	0\n"
+	"gpr	v12	.32	52	0\n"
+	"gpr	v13	.32	56	0\n"
+	"gpr	v14	.32	60	0\n"
+	"gpr	v15	.32	64	0\n"
+	"gpr	ip	.32	68	0\n"
+	"gpr	sp	.32	72	0\n"
+	"gpr	bp	.32	76	0\n"
 	;
 	return r_reg_set_profile_string (anal->reg, p);
 }
