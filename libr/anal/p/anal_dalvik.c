@@ -6,7 +6,7 @@
 #include <r_anal.h>
 
 #include "../../asm/arch/dalvik/opcode.h"
-#include "../../bin/format/dex/dex.h" 
+#include "../../bin/format/dex/dex.h"
 
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int sz = dalvik_opcodes[data[0]].len;
@@ -133,6 +133,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x4d: // aput-object
 	case 0x4e: // aput-bool
 	case 0x4f: // 
+	case 0x4f: //
 	case 0x5e: //iput-char
 	case 0xfc: //iput-object-volatile
 	case 0xf5: //iput-quick
@@ -303,8 +304,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		//XXX fix this better since the check avoid an oob
 		//but the jump will be incorrect
 		ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
-		op->jump = anal->binb.get_offset (
-			anal->binb.bin, 'm', vB);
+		op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
 		op->fail = addr + sz;
 		op->type = R_ANAL_OP_TYPE_CALL;
 		}
@@ -326,6 +326,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x25: // filled-new-array-range
 	case 0x26: // filled-new-array-data
 		op->type = R_ANAL_OP_TYPE_NEW;
+		// 0x1c, 0x1f, 0x22
+		{
+			//int vA = (int) data[1];
+			int vB = (data[3] << 8) | data[2];
+			// resolve class name for vB
+			ut64 off = R_ANAL_GET_OFFSET (anal, 'C', vB);
+			op->ptr = off;
+		}
 		break;
 	case 0x00: // nop
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -380,12 +388,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_SHL;
 		break;
 	}
-
 	return sz;
 }
 
 static int set_reg_profile(RAnal *anal) {
-	const char *p = 
+	const char *p =
 	"=PC	ip\n"
 	"=SP	sp\n"
 	"=BP	bp\n"
@@ -408,7 +415,7 @@ static bool is_valid_offset(RAnal *anal, ut64 addr, int hasperm) {
 	return addr >= bin_dex->code_from && addr <= bin_dex->code_to;
 }
 
-struct r_anal_plugin_t r_anal_plugin_dalvik = {
+RAnalPlugin r_anal_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
 	.set_reg_profile = &set_reg_profile,
@@ -420,7 +427,7 @@ struct r_anal_plugin_t r_anal_plugin_dalvik = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_dalvik,
 	.version = R2_VERSION

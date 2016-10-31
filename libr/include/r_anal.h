@@ -103,6 +103,16 @@ enum {
 #define R_ANAL_ARCHINFO_MAX_OP_SIZE 1
 #define R_ANAL_ARCHINFO_ALIGN 2
 
+/* copypaste from r_asm.h */
+
+#define R_ANAL_GET_OFFSET(x,y,z) \
+        (x && x->binb.bin && x->binb.get_offset)? \
+                x->binb.get_offset (x->binb.bin, y, z): -1
+
+#define R_ANAL_GET_NAME(x,y,z) \
+        (x && x->binb.bin && x->binb.get_name)? \
+                x->binb.get_name (x->binb.bin, y, z): NULL
+
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
  *			( RANAL_VAR_TYPE_CONST & RANAL_VAR_TYPE_MODIFIER_MASK)
