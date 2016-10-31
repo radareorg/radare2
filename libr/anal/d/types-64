@@ -1,2 +1,6 @@
 type.void *.size=64
 type.char *.size=64
+
+size_t=type
+type.size_t=x
+type.size_t.size=64
