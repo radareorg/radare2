@@ -108,7 +108,10 @@ static ArmOp ops[] = {
 	{ "teq", 0x0, TYPE_TST },
 	{ "tst", 0xe1, TYPE_TST },
 
-	{"lsr", 0x0, TYPE_SHFT},
+	{"lsr", 0x3000a0e1, TYPE_SHFT},
+	{"asr", 0x5000a0e1, TYPE_SHFT},
+	{"lsl", 0x1000a0e1, TYPE_SHFT},
+	{"ror", 0x7000a0e1, TYPE_SHFT},
 
 	{ NULL }
 };
@@ -162,8 +165,12 @@ static int getreg(const char *str) {
 	if (!str || !*str) {
 		return -1;
 	}
-	if (*str == 'r')
-		return atoi (str + 1);
+	if (*str == 'r') {
+		int reg = atoi (str + 1);
+		if (reg < 16) {
+			return reg;
+		}
+	}
 	for (i=0; aliases[i]; i++) {
 		if (!strcmpnull (str, aliases[i])) {
 			return 10 + i;
@@ -469,7 +476,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			eprintf("branch out of range or not even\n");
 			return 0;
 		}
-		ao->o |= ((bdelta/2) & 0xff) << 8;	/ / 8bit offset >>1
+		ao->o |= ((bdelta/2) & 0xff) << 8;	// 8bit offset >>1
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "mov")) {
@@ -718,7 +725,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		int Rd = getreg (ao->a[0]);
 		int Rm = getreg (ao->a[1]);
 		int a2 = getnum (ao->a[2]);
-		if ((Rd  0) || (Rd > 7) || (Rm < 0) || (Rm > 7) ||
+		if ((Rd < 0) || (Rd > 7) || (Rm < 0) || (Rm > 7) ||
 				(a2 <= 0) || (a2 > 32)) {
 			eprintf("illegal shift\n");	//bad regs, or imm5 out of range
 			return 0;
@@ -749,10 +756,8 @@ static int findyz(int x, int *y, int *z) {
 }
 
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
-	printf("Assemble arm\n");
 	int i, j, ret, reg, a, b;
 	for (i = 0; ops[i].name; i++) {
-		printf("%s\n", ao->op);
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
@@ -869,8 +874,9 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= getreg (ao->a[1]) << 8;
 				ret = getreg (ao->a[2]);
 				ao->o |= (ret != -1)? ret << 24 : 2 | getnum(ao->a[2]) << 24;
-				if (ao->a[3])
+				if (ao->a[3]) {
 					ao->o |= getshift (ao->a[3]);
+				}
 				break;
 			case TYPE_SWP:
 				{
@@ -930,7 +936,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						ao->o |= (y << 24);
 						ao->o |= (z << 16);
 					} else {
-						eprintf ("Parameter %d out of range (0-255)\n", (int)b);
+						eprintf ("Parameter %d out0x3000a0e1 of range (0-255)\n", (int)b);
 						return 0;
 					}
 				} else {
@@ -949,7 +955,23 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				break;
 			case TYPE_SHFT:
-				printf("Shift\n");
+				reg = getreg (ao->a[2]);
+				if (reg == -1 || reg > 14) {
+					return 0;
+				}
+				ao->o |= reg << 16;
+
+				reg = getreg (ao->a[0]);
+				if (reg == -1 || reg > 14) {
+					return 0;
+				}
+				ao->o |= reg << 20;
+
+				reg = getreg (ao->a[1]);
+				if (reg == -1 || reg > 14) {
+					return 0;
+				}
+				ao->o |= reg << 24;
 				break;
 			}
 			return 1;
