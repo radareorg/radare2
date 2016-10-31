@@ -225,6 +225,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_LEA   : return "lea";
 	case R_ANAL_OP_TYPE_LEAVE : return "leave";
 	case R_ANAL_OP_TYPE_LOAD  : return "load";
+	case R_ANAL_OP_TYPE_NEW   : return "new";
 	case R_ANAL_OP_TYPE_MOD   : return "mod";
 	case R_ANAL_OP_TYPE_CMOV  : return "cmov";
 	case R_ANAL_OP_TYPE_MOV   : return "mov";
