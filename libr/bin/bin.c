@@ -2246,6 +2246,7 @@ R_API int r_bin_file_delete_all(RBin *bin) {
 			r_list_delete (bin->binfiles, iter);
 			counter++;
 		}
+		bin->cur = NULL;
 	}
 	return counter;
 }
