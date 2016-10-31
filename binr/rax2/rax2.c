@@ -164,11 +164,14 @@ static int rax (char *str, int len, int last) {
 			return !use_stdin ();
 		return true;
 	}
-	if (!flags) {
-		if (*str == 'q')
+	if (!flags && strnlen (str, 2) == 1) {
+		if (*str == 'q') {
 			return false;
-		if (*str == 'h' || *str == '?')
-			return help ();
+		}
+		if (*str == 'h' || *str == '?') {
+			help ();
+			return false;
+		}
 	}
 	dotherax:
 
@@ -439,8 +442,9 @@ static int rax (char *str, int len, int last) {
 static int use_stdin () {
 	char * buf = calloc (1, STDIN_BUFFER_SIZE + 1);
 	int l; //, sflag = (flags & 5);
-	if (!buf)
+	if (!buf) {
 		return 0;
+	}
 	if (!(flags & 16384)) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			//make sure we don't read beyond boundaries
@@ -461,8 +465,9 @@ static int use_stdin () {
 	} else {
 		l = 1;
 	}
-	if (l > 0)
+	if (l > 0) {
 		rax (buf, l, 0);
+	}
 	free (buf);
 	return 0;
 }
