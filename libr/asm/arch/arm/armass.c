@@ -37,6 +37,7 @@ enum {
 	TYPE_MOVW = 12,
 	TYPE_MOVT = 13,
 	TYPE_UDF = 14,
+	TYPE_SHFT = 15,
 };
 
 static int strcmpnull(const char *a, const char *b) {
@@ -106,6 +107,9 @@ static ArmOp ops[] = {
 	{ "cmn", 0x0, TYPE_TST },
 	{ "teq", 0x0, TYPE_TST },
 	{ "tst", 0xe1, TYPE_TST },
+
+	{"lsr", 0x0, TYPE_SHFT},
+
 	{ NULL }
 };
 
@@ -113,9 +117,9 @@ static ArmOp ops[] = {
 static int getnum(const char *str) {
 	if (!str)
 		return 0;
-	while (*str=='$' || *str=='#')
+	while (*str == '$' || *str == '#')
 		str++;
-	if (*str=='0' && str[1]=='x') {
+	if (*str == '0' && str[1] == 'x') {
 		int x;
 		if (sscanf (str+2, "%x", &x))
 			return x;
@@ -126,17 +130,17 @@ static int getnum(const char *str) {
 static char *getrange(char *s) {
 	char *p = NULL;
 	while (s && *s) {
-		if (*s==',') {
+		if (*s == ',') {
 			p = s+1;
 			*p=0;
 		}
-		if (*s=='[' || *s==']')
+		if (*s == '[' || *s == ']')
 			memmove (s, s+1, strlen (s+1)+1);
-		if (*s=='}')
+		if (*s == '}')
 			*s = 0;
 		s++;
 	}
-	while (p && *p==' ') p++;
+	while (p && *p == ' ') p++;
 	return p;
 }
 
@@ -158,7 +162,7 @@ static int getreg(const char *str) {
 	if (!str || !*str) {
 		return -1;
 	}
-	if (*str=='r')
+	if (*str == 'r')
 		return atoi (str + 1);
 	for (i=0; aliases[i]; i++) {
 		if (!strcmpnull (str, aliases[i])) {
@@ -171,7 +175,7 @@ static int getreg(const char *str) {
 static int thumb_getreg(const char *str) {
 	if (!str)
 		return -1;
-	if (*str=='r')
+	if (*str == 'r')
 		return atoi (str+1);
 	//FIXME Note that pc is only allowed in pop; lr in push in Thumb1 mode.
 	if (!strcmpnull (str, "pc") || !strcmpnull(str,"lr"))
@@ -189,9 +193,9 @@ static int getlist(char *op) {
 			reg = getreg (ptr);
 			if (reg == -1)
 				break;
-			list |= (1<<reg);
+			list |= (1 << reg);
 			while (*ptr && *ptr!=',') ptr++;
-		} while (*ptr && *ptr==',');
+		} while (*ptr && *ptr == ',');
 	}
 	return list;
 }
@@ -217,9 +221,9 @@ static ut32 getshift(const char *str) {
 		if (!space)
 			return 0;
 		*space = 0;
-		strncpy (arg, ++space, sizeof(arg)-1);
+		strncpy (arg, ++space, sizeof(arg) - 1);
 
-		for (i=0; shifts[i]; i++) {
+		for (i = 0; shifts[i]; i++) {
 			if (!strcasecmp (type, shifts[i])) {
 				shift = 1;
 				break;
@@ -230,17 +234,17 @@ static ut32 getshift(const char *str) {
 		shift = (i*2);
 
 		if ((i = getreg (arg)) != -1) {
-			i<<=8; // set reg
+			i <<= 8; // set reg
 //			i|=1; // use reg
-			i |= (1<<4); // bitshift
-			i|=shift<<4; // set shift mode
-			if (shift == 6) i|=(1<<20);
+			i |= (1 << 4); // bitshift
+			i |= shift << 4; // set shift mode
+			if (shift == 6) i |= (1 << 20);
 		} else {
 			i = getnum (arg);
 			// ensure only the bottom 5 bits are used
 			i &= 0x1f;
 			if (!i) i = 32;
-			i = (i*8);
+			i = (i * 8);
 			i |= shift; // lsl, ror, ...
 			i = i << 4;
 		}
@@ -268,7 +272,7 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 		ao->a[i]++;
 	}
 	for (i=0; i<16; i++)
-		while (ao->a[i] && *ao->a[i]==' ')
+		while (ao->a[i] && *ao->a[i] == ' ')
 			ao->a[i]++;
 }
 
@@ -285,14 +289,14 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 			break;
 		}
 	}
-	ao->o |= cond<<4;
+	ao->o |= cond << 4;
 	return cond;
 }
 
 static void thumb_swap (ut32 *a) {
 	ut32 a2 = *a;
 	ut8 *b = (ut8 *)a;
-	ut8 *b2 = (ut8 *)&a2;
+	ut8 *b2 = (ut8 *) & a2;
 	b[0] = b2[1];
 	b[1] = b2[0];
 	b[2] = b2[3];
@@ -305,42 +309,42 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	ao->o = UT32_MAX;
 	if (!strcmpnull (ao->op, "pop") && ao->a[0]) {
 		ao->o = 0xbc;
-		if (*ao->a[0]++=='{') {
+		if (*ao->a[0] ++== '{') {
 			// XXX: inverse order?
 			for (j=0; j<16; j++) {
 				if (ao->a[j] && *ao->a[j]) {
 					getrange (ao->a[j]); // XXX filter regname string
 					reg = thumb_getreg (ao->a[j]);
 					if (reg != -1) {
-						if (reg<8)
-							ao->o |= 1<<(8+reg);
-						if (reg==8){
+						if (reg < 8)
+							ao->o |= 1 << (8 + reg);
+						if (reg == 8){
 							ao->o |= 1;
 						}
 					//	else ignore...
 					}
 				}
 			}
-		} else ao->o |= getnum (ao->a[0])<<24; // ???
+		} else ao->o |= getnum (ao->a[0]) << 24; // ???
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "push") && ao->a[0]) {
 		ao->o = 0xb4;
-		if (*ao->a[0]++=='{') {
-			for (j=0; j<16; j++) {
+		if (*ao->a[0] ++== '{') {
+			for (j = 0; j < 16; j++) {
 				if (ao->a[j] && *ao->a[j]) {
 					getrange (ao->a[j]); // XXX filter regname string
 					reg = thumb_getreg (ao->a[j]);
 					if (reg != -1) {
-						if (reg<8)
-							ao->o |= 1<<(8+reg);
-						if (reg==8)
+						if (reg < 8)
+							ao->o |= 1 << (8 + reg);
+						if (reg == 8)
 							ao->o |= 1;
 					//	else ignore...
 					}
 				}
 			}
-		} else ao->o |= getnum (ao->a[0])<<24; // ???
+		} else ao->o |= getnum (ao->a[0]) << 24; // ???
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "ldmia")) {
@@ -376,7 +380,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else
 	if (!strcmpnull (ao->op, "udf")) {
 		ao->o = 0xde;
-		ao->o |= getnum (ao->a[0])<<8;
+		ao->o |= getnum (ao->a[0]) << 8;
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "wfe")) {
@@ -393,7 +397,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else
 	if (!strcmpnull (ao->op, "bkpt")) {
 		ao->o = 0xbe;
-		ao->o |= (0xff & getnum (ao->a[0]))<<8;
+		ao->o |= (0xff & getnum (ao->a[0])) << 8;
 		return 2;
 	} else
 #if 0
@@ -422,7 +426,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else
 	if (!strcmpnull (ao->op, "bx")) {
 		ao->o = 0x47;
-		ao->o |= getreg (ao->a[0])<<11;
+		ao->o |= getreg (ao->a[0]) << 11;
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "blx")) {
@@ -438,8 +442,8 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			n -= 4;
 			n -= ao->off;
 			n /= 4; // always aligned jump
-			ao->o |= (n & 0xffff)<<1;
-			ao->o |= (n>>10 & 0xff)<<16;
+			ao->o |= (n & 0xffff) << 1;
+			ao->o |= (n >> 10 & 0xff) << 16;
 			thumb_swap (&ao->o);
 		} else {
 			return 0;
@@ -451,7 +455,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		int reg = getreg (ao->a[0]);
 		ao->o = 0x47;
 		if (reg == -1) {
-			ao->o |= getnum (ao->a[0])<<8;
+			ao->o |= getnum (ao->a[0]) << 8;
 		} else {
 			return 0;
 		}
@@ -465,19 +469,19 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			eprintf("branch out of range or not even\n");
 			return 0;
 		}
-		ao->o |= ((bdelta/2) & 0xff) <<8;	//8bit offset >>1
+		ao->o |= ((bdelta/2) & 0xff) << 8;	/ / 8bit offset >>1
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "mov")) {
 		int reg = getreg (ao->a[1]);
-		if (reg!=-1) {
+		if (reg != -1) {
 			ao->o = 0x46;
-			ao->o |= (getreg (ao->a[0]))<<8;
-			ao->o |= reg<<11;
+			ao->o |= (getreg (ao->a[0])) << 8;
+			ao->o |= reg << 11;
 		} else {
 			ao->o = 0x20;
 			ao->o |= (getreg (ao->a[0]));
-			ao->o |= (getnum (ao->a[1])&0xff)<<8;
+			ao->o |= (getnum (ao->a[1]) & 0xff) << 8;
 		}
 		return 2;
 	} else
@@ -492,9 +496,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			int a2 = getnum (ao->a[2]);
 			ao->o = 0xd0f80000;
 			ao->o |= ((a2 & 0xff) << 8);
-			ao->o |= (((a2>>8) & 0xff));
-			ao->o |= (a0 <<4);
-			ao->o |= (a1 <<24);
+			ao->o |= (((a2 >> 8) & 0xff));
+			ao->o |= (a0 << 4);
+			ao->o |= (a1 << 24);
 			return 4;
 			}
 			break;
@@ -503,11 +507,11 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			int a1 = getreg (ao->a[1]);
 			int a2 = getreg (ao->a[2]);
 			if (a2 ==-1) {
-				a2 = getnum (ao->a[2])/8;
+				a2 = getnum (ao->a[2]) / 8;
 				ao->o = 0x88; // | (8+(0xf & a0));
-				ao->o |= (7&a0)<<8;
-				ao->o |= (7&a1)<<11;
-				ao->o += (7&a2);
+				ao->o |= (7 & a0) << 8;
+				ao->o |= (7 & a1) << 11;
+				ao->o += (7 & a2);
 				return 2;
 			} else return 0; }
 		case 'b': {
@@ -515,11 +519,11 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			int a1 = getreg (ao->a[1]);
 			int a2 = getreg (ao->a[2]);
 			if (a2 ==-1) {
-				a2 = getnum (ao->a[2])/8;
+				a2 = getnum (ao->a[2]) / 8;
 				ao->o = 0x78; // | (8+(0xf & a0));
-				ao->o |= (7&a0)<<8;
-				ao->o |= (7&a1)<<11;
-				ao->o |= (7&a2);
+				ao->o |= (7 & a0) << 8;
+				ao->o |= (7 & a1) << 11;
+				ao->o |= (7 & a2);
 				return 2;
 			} else return 0; }
 		default: {
@@ -528,7 +532,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (getreg (ao->a[2]) == -1) {
 					// ldr r0, [sp, n]
 					ao->o = 0x98 + (0xf & getreg (ao->a[0]));
-					ao->o |= (0xff & getnum (ao->a[2])/4)<<8;
+					ao->o |= (0xff & getnum (ao->a[2]) / 4) << 8;
 					return 2;
 				} else return 0;
 			} else
@@ -536,7 +540,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				// ldr r0, [pc, n] = 4[r0-8][nn*4]
 				if (getreg (ao->a[2]) == -1) {
 					ao->o = 0x40 | (8+(0xf & getreg (ao->a[0])));
-					ao->o |= (0xff & getnum (ao->a[2])/4)<<8;
+					ao->o |= (0xff & getnum (ao->a[2]) / 4) << 8;
 					return 2;
 				} else return 0;
 			} else {
@@ -545,9 +549,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				int a1 = getreg (ao->a[1]);
 				int a2 = getreg (ao->a[2]);
 				ao->o = 0x58; // | (8+(0xf & a0));
-				ao->o |= (7&a0)<<8;
-				ao->o |= (7&a1)<<11;
-				ao->o |= (7&a2)<<14;
+				ao->o |= (7 & a0) << 8;
+				ao->o |= (7 & a1) << 11;
+				ao->o |= (7 & a2) << 14;
 				return 2;
 			}
 		} }
@@ -555,29 +559,29 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (!strncmp (ao->op, "str", 3)) {
 		getrange (ao->a[1]);
 		getrange (ao->a[2]);
-		if (ao->op[3]=='h') {
+		if (ao->op[3] == 'h') {
 			int a0 = getreg (ao->a[0]);
 			int a1 = getreg (ao->a[1]);
 			int a2 = getreg (ao->a[2]);
-			if (a2 ==-1) {
+			if (a2 == -1) {
 				a2 = getnum (ao->a[2]);
 				ao->o = 0x80; // | (8+(0xf & a0));
-				ao->o |= (7&a0)<<8;
-				ao->o |= (7&a1)<<11;
-				ao->o |= (7&(a2>>1));
+				ao->o |= (7 & a0) << 8;
+				ao->o |= (7 & a1) << 11;
+				ao->o |= (7 & (a2 >> 1));
 				return 2;
 			}
 		} else
-		if (ao->op[3]=='b') {
+		if (ao->op[3] == 'b') {
 			int a0 = getreg (ao->a[0]);
 			int a1 = getreg (ao->a[1]);
 			int a2 = getreg (ao->a[2]);
-			if (a2 ==-1) {
+			if (a2 == -1) {
 				a2 = getnum (ao->a[2]);
 				ao->o = 0x70; // | (8+(0xf & a0));
-				ao->o |= (7&a0)<<8;
-				ao->o |= (7&a1)<<11;
-				ao->o |= (7&a2);
+				ao->o |= (7 & a0) << 8;
+				ao->o |= (7 & a1) << 11;
+				ao->o |= (7 & a2);
 				return 2;
 			}
 		} else {
@@ -590,7 +594,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						return 0;
 					}
 					ao->o = 0x90 + (0xf & getreg (ao->a[0]));
-					ao->o |= (0xff & getnum (ao->a[2])/4)<<8;
+					ao->o |= (0xff & getnum (ao->a[2]) / 4) << 8;
 					return 2;
 				}
 			} else
@@ -603,14 +607,14 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (a2 == -1) {
 					a2 = getnum (ao->a[2]);
 					ao->o = 0x60;
-					ao->o |= (7&a0)<<8;
-					ao->o |= (7&a1)<<11;
-					ao->o |= (3&(a2/4))<<14;
+					ao->o |= (7 & a0) << 8;
+					ao->o |= (7 & a1) << 11;
+					ao->o |= (3 & (a2 / 4)) << 14;
 				} else {
 					ao->o = 0x50;
-					ao->o |= (7&a0)<<8;
-					ao->o |= (7&a1)<<11;
-					ao->o |= (3&a2)<<14;
+					ao->o |= (7 & a0) << 8;
+					ao->o |= (7 & a1) << 11;
+					ao->o |= (3 & a2) << 14;
 				}
 				return 2;
 			}
@@ -618,20 +622,20 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else
 	if (!strcmpnull (ao->op, "tst")) {
 		ao->o = 0x42;
-		ao->o |= (getreg (ao->a[0]))<<8;
-		ao->o |= getreg (ao->a[1])<<11;
+		ao->o |= (getreg (ao->a[0])) << 8;
+		ao->o |= getreg (ao->a[1]) << 11;
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "cmp")) {
 		int reg = getreg (ao->a[1]);
-		if (reg!=-1) {
+		if (reg != -1) {
 			ao->o = 0x45;
-			ao->o |= (getreg (ao->a[0]))<<8;
-			ao->o |= reg<<11;
+			ao->o |= (getreg (ao->a[0])) << 8;
+			ao->o |= reg << 11;
 		} else {
 			ao->o = 0x20;
-			ao->o |= 8+(getreg (ao->a[0]));
-			ao->o |= (getnum (ao->a[1])&0xff)<<8;
+			ao->o |= 8 + (getreg (ao->a[0]));
+			ao->o |= (getnum (ao->a[1]) & 0xff) << 8;
 		}
 		return 2;
 	} else
@@ -682,71 +686,73 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		// add r, r = 44[7bits,7bits]
 		// adds r, n = 3[r0-7][nn]
 		int reg = getreg (ao->a[1]);
-		if (reg!=-1) {
+		if (reg != -1) {
 			ao->o = 0x44;
-			ao->o |= (getreg (ao->a[0]))<<8;
-			ao->o |= reg<<11;
+			ao->o |= (getreg (ao->a[0])) << 8;
+			ao->o |= reg << 11;
 		} else {
 			ao->o = 0x30;
 			ao->o |= (getreg (ao->a[0]));
-			ao->o |= (getnum (ao->a[1])&0xff)<<8;
+			ao->o |= (getnum (ao->a[1]) & 0xff) << 8;
 		}
 		return 2;
 	} else
 	if (!strcmpnull (ao->op, "sub")) {
 		int reg = getreg (ao->a[1]);
-		if (reg!=-1) {
+		if (reg != -1) {
 			int n = getnum (ao->a[2]); // TODO: add limit
 			ao->o = 0x1e;
-			ao->o |= (getreg (ao->a[0]))<<8;
-			ao->o |= reg<<11;
-			ao->o |= n/4 | ((n%4)<<14);
+			ao->o |= (getreg (ao->a[0])) << 8;
+			ao->o |= reg << 11;
+			ao->o |= n / 4 | ((n % 4) << 14);
 		} else {
 			ao->o = 0x30;
-			ao->o |= 8+(getreg (ao->a[0]));
-			ao->o |= (getnum (ao->a[1])&0xff)<<8;
+			ao->o |= 8 + (getreg (ao->a[0]));
+			ao->o |= (getnum (ao->a[1]) & 0xff) << 8;
 		}
 		return 2;
 	} else
 	if (!strcmpnull(ao->op, "lsls") || !strcmpnull(ao->op, "lsrs")) {
 		ut16 opcode = 0;	//0000 xiii iiMM MDDD; ls<x>s Rd, Rm, imm5
-		if (ao->op[2]=='r') opcode=0x0800;	//lsrs
+		if (ao->op[2] == 'r') opcode=0x0800;	//lsrs
 		int Rd = getreg (ao->a[0]);
 		int Rm = getreg (ao->a[1]);
 		int a2 = getnum (ao->a[2]);
-		if ((Rd<0) || (Rd>7) || (Rm<0) || (Rm>7) ||
-				(a2<=0) || (a2>32)) {
+		if ((Rd  0) || (Rd > 7) || (Rm < 0) || (Rm > 7) ||
+				(a2 <= 0) || (a2 > 32)) {
 			eprintf("illegal shift\n");	//bad regs, or imm5 out of range
 			return 0;
 		}
 		opcode |= a2 << 6;
 		opcode |= Rm << 3;
 		opcode |= Rd;
-		ao->o = (opcode >>8) | ((opcode & 0xff)<<8);
+		ao->o = (opcode >> 8) | ((opcode & 0xff) << 8);
 		return 2;
 	}
 	return 0;
 }
 
 static int findyz(int x, int *y, int *z) {
-        int i, j;
-        for (i=0;i<0xff; i++) {
-                for (j=0;j<0xf;j++) {
-                        int v = i<<j;
-                        if (v>x) continue;
-                        if (v==x) {
-                                *y = i;
-                                *z = 16-(j/2);
-                                return 1;
-                        }
-                }
-        }
-        return 0;
+	int i, j;
+	for (i = 0;i < 0xff; i++) {
+		for (j = 0;j < 0xf;j++) {
+			int v = i << j;
+			if (v > x) continue;
+			if (v == x) {
+				*y = i;
+				*z = 16 - (j / 2);
+				return 1;
+			}
+		}
+	}
+	return 0;
 }
 
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
+	printf("Assemble arm\n");
 	int i, j, ret, reg, a, b;
-	for (i=0; ops[i].name; i++) {
+	for (i = 0; ops[i].name; i++) {
+		printf("%s\n", ao->op);
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
@@ -761,59 +767,59 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					strncpy (rn, ao->a[1], 2);
 					rn[2] = 0;
 					ao->o |= getreg (ao->a[0]) << 20;
-					ao->o |= getreg (rn)<<8; // delta
+					ao->o |= getreg (rn) << 8; // delta
 				} else {
 					return 0;
 				}
 				ret = getreg (ao->a[2]);
 				if (ret != -1) {
-					ao->o |= (strstr (str,"],"))?6:7;
+					ao->o |= (strstr (str,"],")) ? 6 : 7;
 					ao->o |= (ret & 0x0f) << 24;
 				} else {
 					int num = getnum (ao->a[2]) & 0xfff;
-					ao->o |= (strstr (str, "],"))? 4: 5;
+					ao->o |= (strstr (str, "],")) ? 4 : 5;
 					ao->o |= (num & 0xff) << 24;
 					ao->o |= ((num >> 8) & 0xf) << 16;
 				}
 				break;
 			case TYPE_IMM:
-				if (*ao->a[0]++=='{') {
-					for (j=0; j<16; j++) {
+				if (*ao->a[0] ++== '{') {
+					for (j = 0; j < 16; j++) {
 						if (ao->a[j] && *ao->a[j]) {
 							getrange (ao->a[j]); // XXX filter regname string
 							reg = getreg (ao->a[j]);
 							if (reg != -1) {
-								if (reg<8)
-									ao->o |= 1<<(24+reg);
+								if (reg < 8)
+									ao->o |= 1 << (24 + reg);
 								else
-									ao->o |= 1<<(8+reg);
+									ao->o |= 1 << (8 + reg);
 							}
 						}
 					}
-				} else ao->o |= getnum (ao->a[0])<<24; // ???
+				} else ao->o |= getnum (ao->a[0]) << 24; // ???
 				break;
 			case TYPE_BRA:
 				if ((ret = getreg (ao->a[0])) == -1) {
 					// TODO: control if branch out of range
-					ret = (getnum(ao->a[0])-(int)ao->off-8)/4;
+					ret = (getnum(ao->a[0]) - (int)ao->off - 8) / 4;
 					if (ret >= 0x00800000 || ret < (int)0xff800000) {
 						eprintf("Branch into out of range\n");
 						return 0;
 					}
-					ao->o |= ((ret>>16)&0xff)<<8;
-					ao->o |= ((ret>>8)&0xff)<<16;
-					ao->o |= ((ret)&0xff)<<24;
+					ao->o |= ((ret >> 16) & 0xff) << 8;
+					ao->o |= ((ret >> 8) & 0xff) << 16;
+					ao->o |= ((ret) & 0xff) << 24;
 				} else {
 					eprintf("This branch does not accept reg as arg\n");
 					return 0;
 				}
 				break;
 			case TYPE_BKP:
-				ao->o |= 0x70<<24;
+				ao->o |= 0x70 << 24;
 				if (ao->a[0]) {
 					int n = getnum (ao->a[0]);
-					ao->o |= ((n&0xf)<<24);
-					ao->o |= (((n>>4)&0xff)<<16);
+					ao->o |= ((n & 0xf) << 24);
+					ao->o |= (((n >> 4) & 0xff) << 16);
 				}
 				break;
 			case TYPE_BRR:
@@ -822,26 +828,26 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					dst -= (ao->off + 8);
 					dst /= 4;
 					ao->o = 0xfa;
-					ao->o |= ((dst>>16)&0xff)<<8;
-					ao->o |= ((dst>>8)&0xff)<<16;
-					ao->o |= ((dst)&0xff)<<24;
+					ao->o |= ((dst >> 16) & 0xff) << 8;
+					ao->o |= ((dst >> 8) & 0xff) << 16;
+					ao->o |= ((dst) & 0xff) << 24;
 					return 4;
-				} else ao->o |= (getreg (ao->a[0])<<24);
+				} else ao->o |= (getreg (ao->a[0]) << 24);
 				break;
 			case TYPE_HLT:
 				{
 					ut32 o = 0, n = getnum (ao->a[0]);
-					o |= ((n>>12)&0xf)<<8;
-					o |= ((n>>8)&0xf)<<20;
-					o |= ((n>>4)&0xf)<<16;
-					o |= ((n)&0xf)<<24;
+					o |= ((n >> 12) & 0xf) << 8;
+					o |= ((n >> 8) & 0xf) << 20;
+					o |= ((n >> 4) & 0xf) << 16;
+					o |= ((n) & 0xf) << 24;
 					ao->o |=o;
 				}
 				break;
 			case TYPE_SWI:
-				ao->o |= (getnum (ao->a[0])&0xff)<<24;
-				ao->o |= ((getnum (ao->a[0])>>8)&0xff)<<16;
-				ao->o |= ((getnum (ao->a[0])>>16)&0xff)<<8;
+				ao->o |= (getnum (ao->a[0]) & 0xff) << 24;
+				ao->o |= ((getnum (ao->a[0]) >> 8) & 0xff) << 16;
+				ao->o |= ((getnum (ao->a[0]) >> 16) & 0xff) << 8;
 				break;
 			case TYPE_UDF:
 				{
@@ -850,8 +856,8 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ut32 n = getnum (ao->a[0]);
 					ao->o |= 0xe7;
 					ao->o |= (n & 0xf) << 24;
-					ao->o |= ((n>>4) & 0xff) << 16;
-					ao->o |= ((n>>12) & 0xf) << 8;
+					ao->o |= ((n >> 4) & 0xff) << 16;
+					ao->o |= ((n >> 12) & 0xf) << 8;
 				}
 				break;
 			case TYPE_ARI:
@@ -859,10 +865,10 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->a[2] = ao->a[1];
 					ao->a[1] = ao->a[0];
 				}
-				ao->o |= getreg (ao->a[0])<<20;
-				ao->o |= getreg (ao->a[1])<<8;
+				ao->o |= getreg (ao->a[0]) << 20;
+				ao->o |= getreg (ao->a[1]) << 8;
 				ret = getreg (ao->a[2]);
-				ao->o |= (ret!=-1)? ret<<24 : 2 | getnum(ao->a[2])<<24;
+				ao->o |= (ret != -1)? ret << 24 : 2 | getnum(ao->a[2]) << 24;
 				if (ao->a[3])
 					ao->o |= getshift (ao->a[3]);
 				break;
@@ -871,28 +877,28 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				int a1 = getreg (ao->a[1]);
 				if (a1) {
 					ao->o = 0xe1;
-					ao->o |= (getreg(ao->a[0])<<4)<<16;
+					ao->o |= (getreg(ao->a[0]) << 4) << 16;
 					ao->o |= (0x90 + a1) << 24;
 					if (ao->a[2]) {
-						ao->o |= (getreg(ao->a[2]+1))<<8;
+						ao->o |= (getreg(ao->a[2] + 1)) << 8;
 					} else {
 						return 0;
 					}
 				}
-				if (0xff==((ao->o>>16)&0xff))
+				if (0xff == ((ao->o >> 16) & 0xff))
 					return 0;
 				}
 				break;
 			case TYPE_MOV:
 				if (!strcmpnull (ao->op, "movs"))
 					ao->o = 0xb0e1;
-				ao->o |= getreg (ao->a[0])<<20;
+				ao->o |= getreg (ao->a[0]) << 20;
 				ret = getreg (ao->a[1]);
-				if (ret!=-1) ao->o |= ret<<24;
-				else ao->o |= 0xa003 | getnum (ao->a[1])<<24;
+				if (ret!=-1) ao->o |= ret << 24;
+				else ao->o |= 0xa003 | getnum (ao->a[1]) << 24;
 				break;
 			case TYPE_MOVW:
-				ao->o |= getreg (ao->a[0])<<20;
+				ao->o |= getreg (ao->a[0]) << 20;
 				ret = getnum (ao->a[1]);
 
 				ao->o |= 0x3 | ret << 24;
@@ -900,7 +906,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= (ret & 0xf00) << 8;
 				break;
 			case TYPE_MOVT:
-				ao->o |= getreg (ao->a[0])<<20;
+				ao->o |= getreg (ao->a[0]) << 20;
 				ret = getnum (ao->a[1]);
 
 				ao->o |= 0x4003 | ret << 24;
@@ -913,34 +919,37 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (b == -1) {
 					int y, z;
 					b = getnum (ao->a[1]);
-					if (b>=0 && b<=0xff) {
+					if (b >= 0 && b <= 0xff) {
 						ao->o = 0x50e3;
 						// TODO: if (b>255) -> automatic multiplier
-						ao->o |= (a<<8);
-						ao->o |= ((b&0xff)<<24);
+						ao->o |= (a << 8);
+						ao->o |= ((b & 0xff) << 24);
 					} else
 					if (findyz (b, &y, &z)) {
 						ao->o = 0x50e3;
-						ao->o |= (y<<24);
-						ao->o |= (z<<16);
+						ao->o |= (y << 24);
+						ao->o |= (z << 16);
 					} else {
 						eprintf ("Parameter %d out of range (0-255)\n", (int)b);
 						return 0;
 					}
 				} else {
-					ao->o |= (a<<8);
-					ao->o |= (b<<24);
+					ao->o |= (a << 8);
+					ao->o |= (b << 24);
 					if (ao->a[2])
 						ao->o |= getshift (ao->a[2]);
 				}
 				if (ao->a[2]) {
 					int n = getnum (ao->a[2]);
-					if (n&1) {
+					if (n & 1) {
 						eprintf ("Invalid multiplier\n");
 						return 0;
 					}
-					ao->o |= (n>>1)<<16;
+					ao->o |= (n >> 1) << 16;
 				}
+				break;
+			case TYPE_SHFT:
+				printf("Shift\n");
 				break;
 			}
 			return 1;
@@ -956,8 +965,10 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	int i, j;
 	char buf[128];
 	ArmOpcode aop = {.off = off};
-	for (i=j=0; i < sizeof (buf)-1 && str[i]; i++, j++) {
-		if (str[j]=='#') { i--; continue; }
+	for (i = j = 0; i < sizeof (buf) - 1 && str[i]; i++, j++) {
+		if (str[j] == '#') {
+			i--; continue;
+		}
 		buf[i] = tolower ((const ut8)str[j]);
 	}
 	buf[i] = 0;
