@@ -16,6 +16,7 @@
 #endif
 
 static Sdb *mdb = NULL;
+static Sdb *cdb = NULL;
 
 static char *getstr(RBinDexObj *bin, int idx) {
 	ut8 buf[6];
@@ -523,6 +524,16 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	return flagname;
 }
 
+static int *dex_get_type_offset(RBinDexObj *bin, int type_idx) {
+	if (!bin || !bin->types) {
+		return NULL;
+	}
+	if (type_idx < 0 || type_idx >= bin->header.types_size) {
+		return NULL;
+	}
+	return &bin->types[type_idx];
+}
+
 /*
 static char *getClassName(const char *name) {
 	const char *p;
@@ -594,7 +605,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 	}
 
 	dprintf("  Class descriptor  : '%s'\n", dex_class_name (bin, c));
-	dprintf("  Access flags      : 0x%04x (%s)\n", c->access_flags, createAccessFlagStr(c->access_flags, kAccessForClass));
+	dprintf("  Access flags      : 0x%04x (%s)\n", c->access_flags, createAccessFlagStr (c->access_flags, kAccessForClass));
 	dprintf("  Superclass        : '%s'\n", dex_class_super_name (bin, c));
 	dprintf("  Interfaces        -\n");
 
@@ -646,7 +657,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 		field.name_id = r_read_le32 (ff + 4);
 		char *fieldName = getstr (bin, field.name_id);
 
-		const char* accessStr = createAccessFlagStr(accessFlags, kAccessForField);
+		const char* accessStr = createAccessFlagStr (accessFlags, kAccessForField);
 		if (field.type_id < 0 || field.type_id >= bin->header.types_size) {
 			break;
 		}
@@ -701,7 +712,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 		cln = r_str_replace (cln, ";", "_", 0);
 
 
-		const char* accessStr = createAccessFlagStr(accessFlags, kAccessForField);
+		const char* accessStr = createAccessFlagStr (accessFlags, kAccessForField);
 		if (field.type_id < 0 || field.type_id >= bin->header.types_size) {
 			break;
 		}
@@ -764,7 +775,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 			continue;
 		}
 
-		const char* accessStr = createAccessFlagStr(MA, kAccessForMethod);
+		const char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
 
 		dprintf("    #%d              : (in %s)\n", i, class_name);
 		dprintf("      name          : '%s'\n", method_name);
@@ -832,6 +843,17 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 					mdb = sdb_new0 ();
 				}
 				sdb_num_set (mdb, sdb_fmt (0, "method.%d", MI), sym->paddr, 0);
+				// -----------------
+				// WORK IN PROGRESS
+				// -----------------
+				if (MA & 0x10000) { //ACC_CONSTRUCTOR
+					//eprintf("CONSTRUCTOR %d %d \n", c->class_id, sym->paddr);
+					if (!cdb) {
+						cdb = sdb_new0 ();
+					}
+					sdb_num_set (cdb, sdb_fmt (0, "%d", c->class_id), sym->paddr, 0);
+				}
+				// ---------------
 			} else {
 				//r_list_append (bin->methods_list, sym);
 				// XXX memleak sym
@@ -869,7 +891,6 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 		char *name = dex_method_name (bin, MI);
 		char *signature = dex_method_signature(bin, MI);
 		char* accessStr = createAccessFlagStr(MA, kAccessForMethod);
-
 		dprintf("    #%d              : (in %s)\n", i, class_name);
 		dprintf("      name          : '%s'\n", name);
 		dprintf("      type          : '%s'\n", signature);
@@ -1266,8 +1287,10 @@ static int getoffset(RBinFile *arch, int type, int idx) {
 			if (dex->strings) return dex->strings[idx];
 		}
 		break;
-	case 't': // things
-		break;
+	case 't': // type
+		return dex_get_type_offset (arch, idx);
+	case 'c': // constructor
+		return sdb_num_get (cdb, sdb_fmt (0, "%d", idx), 0);
 	}
 	return -1;
 }
