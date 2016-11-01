@@ -191,13 +191,22 @@ type.LPFILETIME=p
 type.LPFILETIME.pointto=_FILETIME
 
 LPTSTR=type
-type.LPTSTR=*z
+type.LPTSTR=s
+type.LPTSTR.size=32
+
+LPSTR=type
+type.LPSTR=s
+type.LPSTR.size=32
 
 PVOID=type
 type.PVOID=p
 
+PACTCTX=type
+type.PACTCTX=p
+type.PACTCTX.size=32
+
 UINT=type
-type.UINT=d
+type.UINT=x
 type.UINT.size=32
 ##############################################################################
 _FILETIME=struct
@@ -205,6 +214,11 @@ struct._FILETIME=dwLowDateTime,dwHighDateTime
 struct._FILETIME.dwLowDateTime=DWORD,0,0
 struct._FILETIME.dwHighDateTime=DWORD,4,0
 ##############################################################################
+CreateActCtxA=func
+func.CreateActCtxA.args=1
+func.CreateActCtxA.arg.0=PACTCTX,pActCtx
+func.CreateActCtxA.ret=HANDLE
+
 DecodePointer=func
 func.DecodePointer.args=1
 func.DecodePointer.arg.0=PVOID,Ptr
@@ -9218,7 +9232,7 @@ func.LoadCursorW.ret=hrsrc
 LoadIconA=func
 func.LoadIconA.args=2
 func.LoadIconA.arg.0=HINSTANCE,hInstance
-func.LoadIconA.arg.1=IconValueA,lpIconName
+func.LoadIconA.arg.1=LPCTSTR,lpIconName
 func.LoadIconA.ret=hrsrc
 
 LoadIconW=func

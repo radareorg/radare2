@@ -1,10 +1,5 @@
 include ../../../global.mk
 F=
-F+= linux-x86-32
-F+= linux-x86-64
-F+= darwin-x86-64
-F+= windows-x86-32
-F+= windows-x86-64
 F+= types
 F+= types-16
 F+= types-32

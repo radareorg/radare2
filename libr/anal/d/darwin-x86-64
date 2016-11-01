@@ -1,4 +1,0 @@
-imp.setlocale=iz category locale
-imp.exit=i status
-imp.puts=z string
-imp.fputs=zp string stream
