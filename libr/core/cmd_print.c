@@ -1131,9 +1131,10 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			} // do not show flags in pie
 		}
 		if (show_offset) {
-			const int show_offseg = 0;
+			const int show_offseg = core->print->flags & R_PRINT_FLAGS_ADDRMOD;
+			const int show_offdec = core->print->flags & R_PRINT_FLAGS_ADDRDEC;
 			ut64 at = core->offset + i;
-			r_print_offset (core->print, at, 0, show_offseg, 0, NULL);
+			r_print_offset (core->print, at, 0, show_offseg, show_offdec, 0, NULL);
 		}
 		// r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret < 1) {
@@ -3479,7 +3480,7 @@ static int cmd_print(void *data, const char *input) {
 			for (i = c = 0; i < len; i++,c++) {
 				if (c == 0) {
 					r_print_offset (core->print,
-						core->offset + i, 0, 0, 0, NULL);
+						core->offset + i, 0, 0, 0, 0, NULL);
 				}
 				r_str_bits (buf, core->block+i, 8, NULL);
 				SPLIT_BITS (buf);
@@ -4082,7 +4083,10 @@ static int lenof (ut64 off, int two) {
 }
 
 // TODO : move to r_util? .. depends on r_cons...
-R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta, const char *label) {
+// XXX: dupe of r_print_addr
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
+	char space[32] = { 0 };
+	const char *white;
 	bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
 		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
@@ -4093,8 +4097,14 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta
 			ut32 s, a;
 			a = off & 0xffff;
 			s = (off - a) >> 4;
-			r_cons_printf ("%s%04x:%04x"Color_RESET,
-				k, s & 0xFFFF, a & 0xFFFF);
+			if (offdec) {
+				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
+				white = r_str_pad (' ', 9 - strlen (space));
+				r_cons_printf ("%s%s%s"Color_RESET, k, white, space);
+			} else {
+				r_cons_printf ("%s%04x:%04x"Color_RESET,
+						k, s & 0xFFFF, a & 0xFFFF);
+			}
 		} else {
 			int sz = lenof (off, 0);
 			int sz2 = lenof (delta, 1);
@@ -4102,18 +4112,33 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta
 				if (label) {
 					const int label_padding = 10;
 					if (delta > 0) {
-						const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
-						r_cons_printf ("%s%s"Color_RESET"+0x%x%s", k, label, delta, pad);
+						if (offdec) {
+							const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
+							r_cons_printf ("%s%s"Color_RESET"+%d%s", k, label, delta, pad);
+						} else {
+							const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
+							r_cons_printf ("%s%s"Color_RESET"+0x%x%s", k, label, delta, pad);
+						}
 					} else {
 						const char *pad = r_str_pad (' ', sz + label_padding);
 						r_cons_printf ("%s%s"Color_RESET"%s", k, label, pad);
 					}
 				} else {
 					const char *pad = r_str_pad (' ', sz - sz2);
-					r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+					if (offdec) {
+						r_cons_printf ("%s+%d"Color_RESET, pad, delta);
+					} else {
+						r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+					}
 				}
 			} else {
-				r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
+				if (offdec) {
+					snprintf (space, sizeof (space), "%"PFMT64d, off);
+					white = r_str_pad (' ', 10 - strlen (space));
+					r_cons_printf ("%s%s%s"Color_RESET, k, white, space, off);
+				} else {
+					r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
+				}
 			}
 		}
 		r_cons_print (" ");
@@ -4122,15 +4147,31 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int delta
 			ut32 s, a;
 			a = off & 0xffff;
 			s = (off - a) >> 4;
-			r_cons_printf ("%04x:%04x", s & 0xFFFF, a & 0xFFFF);
+			if (offdec) {
+				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
+				white = r_str_pad (' ', 9 - strlen (space));
+				r_cons_printf ("%s%s"Color_RESET, white, space);
+			} else {
+				r_cons_printf ("%04x:%04x", s & 0xFFFF, a & 0xFFFF);
+			}
 		} else {
 			int sz = lenof (off, 0);
 			int sz2 = lenof (delta, 1);
 			const char *pad = r_str_pad (' ', sz - 5 - sz2 - 3);
-			if (delta>0) {
-				r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+			if (delta > 0) {
+				if (offdec) {
+					r_cons_printf ("%s+%d"Color_RESET, pad, delta);
+				} else {
+					r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+				}
 			} else {
-				r_cons_printf ("0x%08"PFMT64x" ", off);
+				if (offdec) {
+					snprintf (space, sizeof (space), "%"PFMT64d, off);
+					white = r_str_pad (' ', 10 - strlen (space));
+					r_cons_printf ("%s%s", white, space);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x" ", off);
+				}
 			}
 		}
 	}

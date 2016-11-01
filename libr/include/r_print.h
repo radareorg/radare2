@@ -20,6 +20,7 @@ extern "C" {
 #define R_PRINT_FLAGS_OFFSET  0x00000040
 #define R_PRINT_FLAGS_REFS    0x00000080
 #define R_PRINT_FLAGS_DIFFOUT 0x00000100 /* only show different rows in `cc` hexdiffing */
+#define R_PRINT_FLAGS_ADDRDEC 0x00000200
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
@@ -99,7 +100,7 @@ R_API void r_print_set_interrupt(int i);
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
 R_API RPrint *r_print_new(void);
 R_API RPrint *r_print_free(RPrint *p);
-R_API int r_print_mute(RPrint *p, int x);
+R_API bool r_print_mute(RPrint *p, int x);
 R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API void r_print_addr(RPrint *p, ut64 addr);
@@ -132,7 +133,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
 R_API int r_print_format_struct_size(const char *format, RPrint *p, int mode);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
 R_API int r_print_format_length(const char *fmt);
-R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt, int delta, const char *label);
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 #define R_PRINT_STRING_WIDE 1
 #define R_PRINT_STRING_ZEROEND 2
 #define R_PRINT_STRING_URLENCODE 4

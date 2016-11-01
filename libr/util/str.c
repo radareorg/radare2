@@ -50,13 +50,13 @@ R_API void r_str_chop_path(char *s) {
 	}
 	dst = src = s + 1;
 	while (*src) {
-		if (*(src-1) == '/' && *src == '.' && *(src+1) == '.') {
-			if (*(src+2) == '/' || *(src+2) == '\0') {
-				p = dst-1;
+		if (*(src - 1) == '/' && *src == '.' && *(src + 1) == '.') {
+			if (*(src + 2) == '/' || *(src + 2) == '\0') {
+				p = dst - 1;
 				while (s != p) {
 					if (*p == '/') {
 						if (i) {
-							dst = p+1;
+							dst = p + 1;
 							i = 0;
 							break;
 						}
@@ -65,14 +65,14 @@ R_API void r_str_chop_path(char *s) {
 					p--;
 				}
 				if (s == p && *p == '/') {
-					dst = p+1;
+					dst = p + 1;
 				}
-				src = src+2;
+				src = src + 2;
 			} else {
 				*dst = *src;
 				dst++;
 			}
-		} else if (*src == '/' && *(src+1) == '.' && (*(src+2) == '/' || *(src+2) == '\0')) {
+		} else if (*src == '/' && *(src + 1) == '.' && (*(src + 2) == '/' || *(src + 2) == '\0')) {
 			src++;
 		} else if (*src != '/' || *(src-1) != '/') {
 			*dst = *src;

@@ -78,6 +78,7 @@ typedef struct r_disam_options_t {
 	int adistrick;
 	int asm_demangle;
 	bool show_offset;
+	bool show_offdec; // dupe for r_print->flags
 	bool show_bbline;
 	bool show_emu;
 	bool show_emu_str;
@@ -390,6 +391,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
+	ds->show_offdec = r_config_get_i (core->config, "asm.decoff");
 	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
@@ -1708,7 +1710,7 @@ static void ds_print_offset(RDisasmState *ds) {
 			}
 		}
 		r_print_offset (core->print, ds->at, (ds->at == ds->dest),
-				ds->show_offseg, delta, label);
+				ds->show_offseg, ds->show_offdec, delta, label);
 	}
 	if (ds->atabsoff > 0) {
 		if (ds->_tabsoff != ds->atabsoff) {

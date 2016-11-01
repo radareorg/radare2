@@ -711,6 +711,18 @@ static int cb_color(void *user, void *data) {
 	return true;
 }
 
+static int cb_decoff(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_ADDRDEC;
+	} else {
+		core->print->flags &= (~R_PRINT_FLAGS_ADDRDEC);
+	}
+	r_print_set_flags (core->print, core->print->flags);
+	return true;
+}
+
 static int cb_dbgbep(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
@@ -1227,9 +1239,11 @@ static int cb_searchalign(void *user, void *data) {
 static int cb_segoff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (node->i_value)
+	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_SEGOFF;
-	else core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SEGOFF));
+	} else {
+		core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SEGOFF));
+	}
 	return true;
 }
 
@@ -1719,6 +1733,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
 	SETCB("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
+	SETCB("asm.decoff", "false", &cb_decoff, "Show segmented address in prompt (x86-16)");
 	SETCB("asm.syntax", "intel", &cb_asmsyntax, "Select assembly syntax");
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
 	SETPREF("asm.bytespace", "false", "Separate hexadecimal bytes with a whitespace");
