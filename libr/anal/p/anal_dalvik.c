@@ -262,10 +262,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->eob = true;
 		//TODO: handle return if(0x0e) {} else {}
 		if (data[0] == 0x0e) {// return-void
-			esilprintf (op, "sp,ip,=[8],8,sp,+=");
+			esilprintf (op, "sp,[8],ip,=,8,sp,+=");
 		} else {
 			ut32 vA = data[1];
-			esilprintf (op, "sp,ip,=[8],8,sp,+=,8,sp,-=,v%d,sp,=[8]", vA);
+			esilprintf (op, "sp,[8],ip,=,8,sp,+=,8,sp,-=,v%d,sp,=[8]", vA);
 		}
 		break;
 	case 0x28: // goto
