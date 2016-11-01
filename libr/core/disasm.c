@@ -2766,6 +2766,14 @@ static void ds_print_relocs(RDisasmState *ds) {
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
 
 	if (rel) {
+		const int cmtcol = ds->cmtcol;
+		char *ll = r_cons_lastline ();
+		int cstrlen = strlen (ll);
+		int cols, ansilen = r_str_ansi_len (ll);
+		int utf8len = r_utf8_strlen ((const ut8*)ll);
+		int cells = utf8len - (cstrlen - ansilen);
+		int len = cmtcol - cells;
+		r_cons_memset (' ', len);
 		if (rel->import) {
 			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->import->name);
 		} else if (rel->symbol) {
