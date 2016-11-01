@@ -2390,13 +2390,11 @@ func.fscanf.ret=int
 printf=func
 func.printf.args=1
 func.printf.arg.0=const char *,format
-# func.printf.arg.1=,...
 func.printf.ret=int
 
 scanf=func
 func.scanf.args=1
 func.scanf.arg.0=const char *,format
-#func.scanf.arg.1=,...
 func.scanf.ret=int
 
 snprintf=func
