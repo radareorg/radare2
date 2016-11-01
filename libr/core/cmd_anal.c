@@ -546,6 +546,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_printf ("\"ophint\": \"%s\",", hint->opcode);
 			}
 			r_cons_printf ("\"prefix\": %" PFMT64d ",", op.prefix);
+			r_cons_printf ("\"id\": %d,", op.id);
 			r_cons_printf ("\"addr\": %" PFMT64d ",", core->offset + idx);
 			r_cons_printf ("\"bytes\": \"");
 			for (j = 0; j < size; j++) {
@@ -617,6 +618,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				printline ("addr", "0x%08" PFMT64x "\n", (hint->addr + idx));
 			}
 			printline ("prefix", "%" PFMT64d "\n", op.prefix);
+			printline ("id", "%d\n", op.id);
 			printline ("bytes", NULL, 0);
 			for (j = 0; j < size; j++) {
 				r_cons_printf ("%02x", buf[j + idx]);
