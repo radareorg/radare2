@@ -23,6 +23,7 @@ static void show_help(RCore *core) {
 		"tk", " <sdb-query>", "Perform sdb query",
 		"tl", "[?]", "Show/Link type to an address",
 		//"to",  "",         "List opened files",
+		"tn", " [-][addr]", "manage noreturn function attributes and marks",
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
 		"tos", " <path>", "Load types from parsed Sdb database",
@@ -32,6 +33,56 @@ static void show_help(RCore *core) {
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 		NULL };
 	r_core_cmd_help (core, help_message);
+}
+
+static void cmd_type_noreturn(RCore *core, const char *input) {
+	const char *help_msg[] = {
+		"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
+		"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
+		"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
+		"tn", "-*", "remove all no-return references",
+		"tn", "", "list them all",
+		NULL };
+	switch (input[0]) {
+	case '-': // "tn-"
+		r_anal_noreturn_drop (core->anal, input + 1);
+		break;
+	case ' ': // "tn"
+		if (input[1] == '0' && input[2] == 'x') {
+			r_anal_noreturn_add (core->anal, NULL,
+					r_num_math (core->num, input + 1));
+		} else {
+			r_anal_noreturn_add (core->anal, input + 1,
+					r_num_math (core->num, input + 1));
+		}
+		break;
+	case 'a': // "ta"
+		if (input[1] == ' ') {
+			r_anal_noreturn_add (core->anal, NULL,
+					r_num_math (core->num, input + 1));
+		} else {
+			r_core_cmd_help (core, help_msg);
+		}
+		break;
+	case 'n': // "tnn"
+		if (input[1] == ' ') {
+			/* do nothing? */
+		} else {
+			r_core_cmd_help (core, help_msg);
+		}
+		break;
+	case '*':
+	case 'r': // "tn*"
+		r_anal_noreturn_list (core->anal, 1);
+		break;
+	case 0: // "tn"
+		r_anal_noreturn_list (core->anal, 0);
+		break;
+	default:
+	case '?':
+		r_core_cmd_help (core, help_msg);
+		break;
+	}
 }
 
 static void save_parsed_type(RCore *core, const char *parsed) {
@@ -164,6 +215,9 @@ static int cmd_type(void *data, const char *input) {
 	};
 
 	switch (input[0]) {
+	case 'n': // "tn"
+		cmd_type_noreturn (core, input + 1);
+		break;
 	// t [typename] - show given type in C syntax
 	case 'u': // "tu"
 		switch (input[1]) {
@@ -510,7 +564,6 @@ static int cmd_type(void *data, const char *input) {
 	case 'f':
 		sdb_foreach (core->anal->sdb_types, stdprintiffunc, core);
 		break;
-
 	case '?':
 		show_help (core);
 		break;

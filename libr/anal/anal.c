@@ -401,8 +401,11 @@ static int nonreturn_print_commands(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
 		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
 		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
-			anal->cb_printf ("ann %s\n", k);
+			anal->cb_printf ("tnn %s\n", k);
 		}
+	}
+	if (!strncmp (k, "addr.", 5)) {
+		anal->cb_printf ("tna 0x%s %s\n", k + 5, v);
 	}
 	return 1;
 }
@@ -410,10 +413,19 @@ static int nonreturn_print_commands(void *p, const char *k, const char *v) {
 static int nonreturn_print(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
+		const char *query = sdb_fmt (-1, "func.%s.noreturn", k);
 		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
-			anal->cb_printf ("%s\n", k);
+			anal->cb_printf ("- %s\n", k);
 		}
+	}
+	if (!strncmp (k, "addr.", 5)) {
+		char *off = strdup (k + 5);
+		char *ptr = strstr (off, ".noret");
+		if (ptr) {
+			*ptr = 0;
+			anal->cb_printf ("0x%s\n", off);
+		}
+		free (off);
 	}
 	return 1;
 }
@@ -431,9 +443,15 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
 	}
 }
 
+#define K_NORET_ADDR(x) sdb_fmt (-1, "addr.%"PFMT64x".noreturn", x)
+#define K_NORET_FUNC(x) sdb_fmt (-1, "func.%s.noreturn", x)
+
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	const char *tmp_name = NULL;
 	char *fnl_name = NULL;
+	if (sdb_bool_set (anal->sdb_types, K_NORET_ADDR (addr), true, 0)) {
+		return true;
+	}
 	if (name && *name) {
 		tmp_name = name;
 	} else {
@@ -443,7 +461,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 			eprintf ("Cant find Function at given address\n");
 			return false;
 		}
-		tmp_name =fcn ? fcn->name: fi->name;
+		tmp_name = fcn ? fcn->name: fi->name;
 	}
 	if (r_anal_type_func_exist (anal, tmp_name)) {
 		fnl_name = strdup (tmp_name);
@@ -451,7 +469,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		eprintf ("Cant find prototype for %s in types databse\n", tmp_name);
 		return false;
 	}
-	sdb_bool_set (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", fnl_name), true, 0);
+	sdb_bool_set (anal->sdb_types, K_NORET_FUNC(fnl_name), true, 0);
 	free (fnl_name);
 	return true;
 }
@@ -459,8 +477,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 static int noreturn_dropall(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strcmp (v, "func")) {
-		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
-		sdb_unset (anal->sdb_types, query, 0);
+		sdb_unset (anal->sdb_types, K_NORET_FUNC(k), 0);
 	}
 	return 1;
 }
@@ -484,12 +501,10 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 			fcnname = expr;
 		}
 		if (r_anal_type_func_exist (anal, fcnname)) {
-			char *query = sdb_fmt (-1, "func.%s.noreturn", fcnname);
-			sdb_unset (anal->sdb_types, query, 0);
+			sdb_unset (anal->sdb_types, K_NORET_FUNC (fcnname), 0);
 			return true;
 		} else if ((tmp = r_anal_type_func_guess (anal, (char *)fcnname))) {
-			char *query = sdb_fmt (-1, "func.%s.noreturn", tmp);
-			sdb_unset (anal->sdb_types, query, 0);
+			sdb_unset (anal->sdb_types, K_NORET_FUNC (fcnname), 0);
 			free (tmp);
 			return true;
 		} else {
@@ -499,12 +514,12 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	}
 }
 static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
-	if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", name), NULL)) {
+	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC(name), NULL)) {
 		return true;
 	}
 	char *tmp = r_anal_type_func_guess (anal, (char *)name);
 	if (tmp) {
-		if (sdb_bool_get (anal->sdb_types, sdb_fmt (-1, "func.%s.noreturn", tmp), NULL)) {
+		if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC(tmp), NULL)) {
 			free (tmp);
 			return true;
 		}
@@ -513,7 +528,18 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 	return false;
 }
 
+R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
+	if (sdb_bool_get (anal->sdb_types, K_NORET_ADDR(addr), NULL)) {
+		return true;
+	}
+	return false;
+}
+
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
+	if (r_anal_noreturn_at_addr (anal, addr)) {
+		return true;
+	}
+	/* XXX this is very slow */
 	RAnalFunction *f = r_anal_get_fcn_at (anal, addr, 0);
 	if (f) {
 		if (r_anal_noreturn_at_name (anal, f->name)) {
