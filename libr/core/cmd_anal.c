@@ -3610,26 +3610,28 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?':
 		if (input[1]) {
-			ut64 addr = r_num_math (core->num, input+1);
+			ut64 addr = r_num_math (core->num, input + 1);
 			r_core_anal_hint_print (core->anal, addr);
 		} else {
 			r_core_cmd_help (core, help_msg);
 		}
 		break;
 	case '.': // ah.
-		r_core_anal_hint_print(core->anal, core->offset);
+		r_core_anal_hint_print (core->anal, core->offset);
 		break;
 	case 'a': // set arch
 		if (input[1]) {
 			int i;
 			char *ptr = strdup (input + 2);
 			i = r_str_word_set0 (ptr);
-			if (i == 2)
+			if (i == 2) {
 				r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			r_anal_hint_set_arch (core->anal, core->offset,
-					r_str_word_get0 (ptr, 0));
+			}
+			r_anal_hint_set_arch (core->anal, core->offset, r_str_word_get0 (ptr, 0));
 			free (ptr);
-		} else eprintf ("Missing argument\n");
+		} else {
+			eprintf ("Missing argument\n");
+		}
 		break;
 	case 'b': // set bits
 		if (input[1]) {
