@@ -11,17 +11,6 @@
 #define SLOW_IO 0
 #define HASNEXT_FOREVER 1
 
-static bool in_function(RAnalFunction *fcn, ut64 addr) {
-	RListIter *iter;
-	RAnalBlock *bbi;
-	r_list_foreach (fcn->bbs, iter, bbi) {
-		if (addr >= bbi->addr && addr < bbi->addr + bbi->size) {
-			return true;
-		}
-	}
-	return false;
-}
-
 #define HINTCMD_ADDR(hint,x,y) if(hint->x) \
 	r_cons_printf (y" @ 0x%"PFMT64x"\n", hint->x, hint->addr)
 #define HINTCMD(hint,x,y,json) if(hint->x) \
@@ -745,13 +734,12 @@ static int cb(void *p, const char *k, const char *v) {
 }
 
 R_API void r_core_anal_hint_print (RAnal* a, ut64 addr) {
-	RAnalHint *hint = r_anal_hint_get(a, addr);
-
+	RAnalHint *hint = r_anal_hint_get (a, addr);
 	if (!hint) {
 		return;
 	}
-	print_hint_h_format(hint);
-	free(hint);
+	print_hint_h_format (hint);
+	free (hint);
 }
 
 R_API void r_core_anal_hint_list (RAnal *a, int mode) {
@@ -1317,7 +1305,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 			return false;
 	} else {
 		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
-			if (in_function (fcni, addr)) {
+			if (r_anal_fcn_in (fcni, addr)) {
 				r_list_delete (core->anal->fcns, iter);
 			}
 		}
@@ -1935,7 +1923,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		RListIter *iter;
 		RAnalFunction *fcn;
 		r_list_foreach (core->anal->fcns, iter, fcn) {
-			if (in_function (fcn, addr) || (!strcmp (name, fcn->name))) {
+			if (r_anal_fcn_in (fcn, addr) || (!strcmp (name, fcn->name))) {
 				r_list_append (fcns, fcn);
 			}
 		}
@@ -2128,7 +2116,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		r_cons_printf ("[");
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN)
-				&& (addr == 0 || in_function (fcni, addr))) {
+				&& (addr == 0 || r_anal_fcn_in (fcni, addr))) {
 			if (!addr && (from != UT64_MAX && to != UT64_MAX)) {
 				if (fcni->addr < from || fcni->addr > to) {
 					continue;
