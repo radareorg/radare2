@@ -643,7 +643,8 @@ R_API char *r_core_project_notes_file (RCore *core, const char *file) {
 	char *notes_txt;
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
-	notes_txt = r_str_newf ("%s"R_SYS_DIR"%s.d"R_SYS_DIR"notes.txt", prjpath, file);
+	// notes_txt = r_str_newf ("%s"R_SYS_DIR"%s.d"R_SYS_DIR"notes.txt", prjpath, file);
+	notes_txt = r_str_newf ("%s"R_SYS_DIR"%s"R_SYS_DIR"notes.txt", prjpath, file);
 	free (prjpath);
 	return notes_txt;
 }
