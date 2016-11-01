@@ -21,7 +21,9 @@ R_API void r_tinyrange_free(RRangeTiny *bbr) {
 	R_FREE (bbr);
 }
 
-R_API bool r_tinyrange_in(RRangeTiny *bbr, ut64 at) {
+
+//bool value if true return bb->addr otherwise a boolean to notify was found
+R_API ut64 r_tinyrange_in(RRangeTiny *bbr, ut64 at, bool addr) {
 	if (bbr->pairs > 0) {
 		int idx, lastIndex = ((bbr->pairs - 1) * 2);
 		if (at < bbr->ranges[0]) {
@@ -36,6 +38,9 @@ R_API bool r_tinyrange_in(RRangeTiny *bbr, ut64 at) {
 		}
 		while (idx <= lastIndex + 1 && idx >= 0) {
 			if (at >= bbr->ranges[idx] && at < bbr->ranges[idx + 1]) {
+				if (addr) {
+					return bbr->ranges[idx];
+				}
 				return true;
 			} 
 			if (idx && idx < lastIndex) {
