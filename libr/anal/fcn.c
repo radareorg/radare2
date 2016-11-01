@@ -1389,6 +1389,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			}
 		}
 	}
+	update_tinyrange_bbs (fcn);
 	return true;
 }
 

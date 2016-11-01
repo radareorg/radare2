@@ -1107,13 +1107,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 			case 4:
 				ptr2 = r_str_word_get0 (ptr, 3);
-				if (strchr (ptr2, 'l'))
+				if (strchr (ptr2, 'l')) {
 					type = R_ANAL_FCN_TYPE_LOC;
-				else if (strchr (ptr2, 'i'))
+				} else if (strchr (ptr2, 'i')) {
 					type = R_ANAL_FCN_TYPE_IMP;
-				else if (strchr (ptr2, 's'))
+				} else if (strchr (ptr2, 's')) {
 					type = R_ANAL_FCN_TYPE_SYM;
-				else type = R_ANAL_FCN_TYPE_FCN;
+				} else {
+					type = R_ANAL_FCN_TYPE_FCN;
+				}
 			case 3:
 				name = r_str_word_get0 (ptr, 2);
 			case 2:
@@ -4188,7 +4190,9 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 				tp->count = atoi (ptr + 1);
 				r_anal_trace_bb (core->anal, addr);
 				r_anal_op_free (op);
-			} else eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
+			} else {
+				eprintf ("Cannot analyze opcode at 0x%" PFMT64x "\n", addr);
+			}
 		}
 		break;
 	case '-':
