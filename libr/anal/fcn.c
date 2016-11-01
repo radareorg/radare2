@@ -1298,9 +1298,8 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 
 
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
-	return r_tinyrange_in (&fcn->bbr, addr);
+	return r_tinyrange_in (&fcn->bbr, addr, false);
 }
-
 
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {
 #if USE_NEW_FCN_STORE
