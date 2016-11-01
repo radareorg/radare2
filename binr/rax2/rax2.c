@@ -63,6 +63,7 @@ static int format_output (char mode, const char *s) {
 }
 
 static int help () {
+	printf ("Usage: rax2 [options] [expr ...]\n");
 	printf (
 		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
 		"  int   ->  hex           ;  rax2 10\n"
@@ -155,7 +156,6 @@ static int rax (char *str, int len, int last) {
 					if (str[2] == 'x') out_mode = 'I';
 					return format_output (out_mode, str);
 				}
-				printf ("Usage: rax2 [options] [expr ...]\n");
 				return help ();
 			}
 			str++;
@@ -164,11 +164,14 @@ static int rax (char *str, int len, int last) {
 			return !use_stdin ();
 		return true;
 	}
-	if (!flags) {
+	if (!flags && strlen(str) == 1) {
 		if (*str == 'q')
 			return false;
-		if (*str == 'h' || *str == '?')
-			return help ();
+		if (*str == 'h' || *str == '?') {
+			help ();
+			exit (0);
+			return false;
+		}
 	}
 	dotherax:
 
