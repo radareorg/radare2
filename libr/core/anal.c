@@ -14,7 +14,7 @@
 #define HINTCMD_ADDR(hint,x,y) if(hint->x) \
 	r_cons_printf (y" @ 0x%"PFMT64x"\n", hint->x, hint->addr)
 #define HINTCMD(hint,x,y,json) if(hint->x) \
-	r_cons_printf (y"%s", hint->x, json ? "" : "\n")
+	r_cons_printf (y"", hint->x)
 
 typedef struct {
 	RAnal *a;
@@ -22,8 +22,8 @@ typedef struct {
 	int count;
 } HintListState;
 
-static void add_string_ref (RCore *core, ut64 xref_to);
-static int cmpfcn (const void *_a, const void *_b);
+static void add_string_ref(RCore *core, ut64 xref_to);
+static int cmpfcn(const void *_a, const void *_b);
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
@@ -117,7 +117,6 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		RListIter *iter;
 		r_list_foreach (rs->regs, iter, r) {
 			ut64 val = r_reg_getv (core->dbg->reg, r->name);
-			//r_cons_printf ("%s\n", r->name);
 			if (addr == val) {
 				types |= R_ANAL_ADDR_TYPE_REG;
 				break;
@@ -717,7 +716,7 @@ err_op:
 }
 
 static void print_hint_h_format(RAnalHint* hint) {
-	r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", hint->addr, hint->addr+hint->size);
+	r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x" =>", hint->addr, hint->addr + hint->size);
 	HINTCMD (hint, arch, " arch='%s'", false);
 	HINTCMD (hint, bits, " bits=%d", false);
 	HINTCMD (hint, size, " size=%d", false);
@@ -732,7 +731,7 @@ static int cb(void *p, const char *k, const char *v) {
 	RAnalHint *hint;
 	HintListState *hls = p;
 
-	hint = r_anal_hint_from_string (hls->a, sdb_atoi (k+5), v);
+	hint = r_anal_hint_from_string (hls->a, sdb_atoi (k + 5), v);
 	// TODO: format using (mode)
 	switch (hls->mode) {
 	case 's':
@@ -768,16 +767,26 @@ static int cb(void *p, const char *k, const char *v) {
 	return 1;
 }
 
-R_API void r_core_anal_hint_print (RAnal* a, ut64 addr) {
+R_API void r_core_anal_hint_print(RAnal* a, ut64 addr, int mode) {
 	RAnalHint *hint = r_anal_hint_get (a, addr);
 	if (!hint) {
 		return;
 	}
-	print_hint_h_format (hint);
+	if (mode == '*') {
+		HINTCMD_ADDR (hint, arch, "aha %s");
+		HINTCMD_ADDR (hint, bits, "ahb %d");
+		HINTCMD_ADDR (hint, size, "ahs %d");
+		HINTCMD_ADDR (hint, opcode, "aho %s");
+		HINTCMD_ADDR (hint, syntax, "ahS %s");
+		HINTCMD_ADDR (hint, immbase, "ahi %d");
+		HINTCMD_ADDR (hint, esil, "ahe %s");
+	} else {
+		print_hint_h_format (hint);
+	}
 	free (hint);
 }
 
-R_API void r_core_anal_hint_list (RAnal *a, int mode) {
+R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 	HintListState hls = {};
 	hls.mode = mode;
 	hls.count = 0;

@@ -3611,13 +3611,13 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case '?':
 		if (input[1]) {
 			ut64 addr = r_num_math (core->num, input + 1);
-			r_core_anal_hint_print (core->anal, addr);
+			r_core_anal_hint_print (core->anal, addr, 0);
 		} else {
 			r_core_cmd_help (core, help_msg);
 		}
 		break;
 	case '.': // ah.
-		r_core_anal_hint_print (core->anal, core->offset);
+		r_core_anal_hint_print (core->anal, core->offset, 0);
 		break;
 	case 'a': // set arch
 		if (input[1]) {
@@ -3629,6 +3629,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 			r_anal_hint_set_arch (core->anal, core->offset, r_str_word_get0 (ptr, 0));
 			free (ptr);
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_arch (core->anal, core->offset);
 		} else {
 			eprintf ("Missing argument\n");
 		}
@@ -3638,12 +3640,17 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			char *ptr = strdup (input + 2);
 			int bits;
 			int i = r_str_word_set0 (ptr);
-			if (i == 2)
+			if (i == 2) {
 				r_num_math (core->num, r_str_word_get0 (ptr, 1));
+			}
 			bits = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			r_anal_hint_set_bits (core->anal, core->offset, bits);
 			free (ptr);
-		} else eprintf ("Missing argument\n");
+		}  else if (input[1] == '-') {
+			r_anal_hint_unset_bits (core->anal, core->offset);
+		} else {
+			eprintf ("Missing argument\n");
+		}
 		break;
 	case 'i': // "ahi"
 		if (input[1] == '?') {
@@ -3671,21 +3678,35 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				(input[2] == 'S') ? 80 : // syscall
 				(int) r_num_math (core->num, input + 1);
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
+		} else if (input[1] == '-') {
+			r_anal_hint_set_immbase (core->anal, core->offset, 0);
 		} else {
 			eprintf ("|ERROR| Usage: ahi [base]\n");
 		}
 		break;
 	case 'c':
-		r_anal_hint_set_jump (core->anal, core->offset,
+		if (input[1] == ' ') {
+			r_anal_hint_set_jump (
+				core->anal, core->offset,
 				r_num_math (core->num, input + 1));
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_jump (core->anal, core->offset);
+		}
 		break;
 	case 'f':
-		r_anal_hint_set_fail (core->anal, core->offset,
+		if (input[1] == ' ') {
+			r_anal_hint_set_fail (
+				core->anal, core->offset,
 				r_num_math (core->num, input + 1));
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_fail (core->anal, core->offset);
+		}
 		break;
 	case 's': // set size (opcode length)
-		if (input[1]) {
+		if (input[1] == ' ') {
 			r_anal_hint_set_size (core->anal, core->offset, atoi (input + 1));
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_size (core->anal, core->offset);
 		} else {
 			eprintf ("Usage: ahs 16\n");
 		}
@@ -3693,6 +3714,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'S': // set size (opcode length)
 		if (input[1] == ' ') {
 			r_anal_hint_set_syntax (core->anal, core->offset, input + 2);
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_syntax (core->anal, core->offset);
 		} else {
 			eprintf ("Usage: ahS att\n");
 		}
@@ -3700,6 +3723,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'o': // set opcode string
 		if (input[1] == ' ') {
 			r_anal_hint_set_opcode (core->anal, core->offset, input + 2);
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_opcode (core->anal, core->offset);
 		} else {
 			eprintf ("Usage: aho popall\n");
 		}
@@ -3707,19 +3732,38 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'e': // set ESIL string
 		if (input[1] == ' ') {
 			r_anal_hint_set_esil (core->anal, core->offset, input + 2);
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_esil (core->anal, core->offset);
 		} else {
 			eprintf ("Usage: ahe r0,pc,=\n");
 		}
 		break;
-#if TODO
+#if 0
 	case 'e': // set endian
-		r_anal_hint_set_opcode (core->anal, core->offset, atoi (input + 1));
+		if (input[1] == ' ') {
+			r_anal_hint_set_opcode (core->anal, core->offset, atoi (input + 1));
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_opcode (core->anal, core->offset);
+		}
 		break;
 #endif
 	case 'p':
-		r_anal_hint_set_pointer (core->anal, core->offset, r_num_math (core->num, input + 1));
+		if (input[1] == ' ') {
+			r_anal_hint_set_pointer (core->anal, core->offset, r_num_math (core->num, input + 1));
+		} else if (input[1] == '-') {
+			r_anal_hint_unset_pointer (core->anal, core->offset);
+		}
 		break;
 	case '*':
+		if (input[1] == ' ') {
+			char *ptr = strdup (r_str_chop_ro (input + 2));
+			r_str_word_set0 (ptr);
+			ut64 addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+			r_core_anal_hint_print (core->anal, addr, '*'); 
+		} else {
+			r_core_anal_hint_list (core->anal, input[0]);
+		}
+		break;
 	case 'j':
 	case '\0':
 		r_core_anal_hint_list (core->anal, input[0]);
@@ -3729,7 +3773,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (input[1] == '*') {
 				r_anal_hint_clear (core->anal);
 			} else {
-				char *ptr = strdup (input + 1);
+				char *ptr = strdup (r_str_chop_ro (input + 1));
 				ut64 addr;
 				int size = 1;
 				int i = r_str_word_set0 (ptr);
