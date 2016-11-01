@@ -149,6 +149,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			.bits = a->bits
 		};
 		op->size = insn->size;
+		op->id = insn->id;
 		switch (insn->id) {
 		case PPC_INS_MFLR:
 			op->type = R_ANAL_OP_TYPE_PUSH;

@@ -726,7 +726,8 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		//eprintf ("Parsing op: (0x%02x) %s.\n", op_byte, JAVA_OPS[op_byte].name);
 	}
 	op->addr = addr;
-	op->size= sz;
+	op->size = sz;
+	op->id = data[0];
 	op->type2 = JAVA_OPS[op_byte].op_type;
 	op->type = r_anal_ex_map_anal_ex_to_anal_op_type (op->type2);
 	// handle lookup and table switch offsets
@@ -760,7 +761,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
 	}
 
-	if (len<4) {
+	if (len < 4) {
 		// incomplete analysis here
 		return 0;
 	}
@@ -897,7 +898,7 @@ static int java_reset_counter (RAnal *anal, ut64 start_addr ) {
 	return true;
 }
 
-struct r_anal_plugin_t r_anal_plugin_java = {
+RAnalPlugin r_anal_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode analysis plugin",
 	.license = "Apache",
@@ -913,7 +914,7 @@ struct r_anal_plugin_t r_anal_plugin_java = {
 	0
 };
 
-struct r_anal_plugin_t r_anal_plugin_java_ls = {
+RAnalPlugin r_anal_plugin_java_ls = {
 	.name = "java_ls",
 	.desc = "Java bytecode analysis plugin with linear sweep",
 	.license = "Apache",
@@ -930,7 +931,7 @@ struct r_anal_plugin_t r_anal_plugin_java_ls = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	//.data = &r_anal_plugin_java
 	.data = &r_anal_plugin_java_ls,

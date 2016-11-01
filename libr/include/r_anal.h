@@ -712,7 +712,8 @@ typedef struct r_anal_op_t {
 	int cycles;	/* cpu-cycles taken by instruction */
 	int failcycles;	/* conditional cpu-cycles */
 	int family;     /* family of opcode */
-	bool eob;        /* end of block (boolean) */
+	int id;         /* instruction id */
+	bool eob;       /* end of block (boolean) */
 	/* Run N instructions before executing the current one */
 	int delay;      /* delay N slots (mips, ..)*/
 	ut64 jump;      /* true jmp */

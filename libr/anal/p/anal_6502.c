@@ -288,12 +288,13 @@ static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0) {
 
 static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	char addrbuf[64];
-	const int buffsize = sizeof(addrbuf)-1;
+	const int buffsize = sizeof (addrbuf) - 1;
 
 	memset (op, '\0', sizeof (RAnalOp));
-	op->size = snes_op_get_size(8, &snes_op[data[0]]);	//snes-arch is similiar to nes/6502
+	op->size = snes_op_get_size (8, &snes_op[data[0]]);	//snes-arch is similiar to nes/6502
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+	op->id = data[0];
 	r_strbuf_init (&op->esil);
 	switch (data[0]) {
 	case 0x02:
@@ -896,7 +897,7 @@ static int esil_6502_fini (RAnalEsil *esil) {
 	return true;
 }
 
-struct r_anal_plugin_t r_anal_plugin_6502 = {
+RAnalPlugin r_anal_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES analysis plugin",
 	.license = "LGPL3",
@@ -910,7 +911,7 @@ struct r_anal_plugin_t r_anal_plugin_6502 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_6502,
 	.version = R2_VERSION

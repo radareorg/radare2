@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2015 - pancake */
+/* radare2 - LGPL - Copyright 2014-2016 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -43,10 +43,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	r_strbuf_init (&op->esil);
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
-	if (n<1) {
+	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
 		op->size = insn->size;
+		op->id = insn->id;
 		switch (insn->id) {
 		case SPARC_INS_MOV:
 			op->type = R_ANAL_OP_TYPE_MOV;

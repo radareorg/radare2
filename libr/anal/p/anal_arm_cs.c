@@ -1438,12 +1438,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	}
 
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
-	if (n<1) {
+	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
 		//bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);
 		bool thumb = a->bits == 16;
 		op->size = insn->size;
+		op->id = insn->id;
 		if (a->bits == 64) {
 			anop64 (handle, op, insn);
 			if (a->decode) {

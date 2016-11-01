@@ -559,6 +559,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	op->delay = 0;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
+	op->id = insn->id;
 	opsize = op->size = insn->size;
 	switch (insn->id) {
 	case MIPS_INS_INVALID:

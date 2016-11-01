@@ -2397,6 +2397,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->nopcode = cs_len_prefix_opcode (insn->detail->x86.prefix)
 			+cs_len_prefix_opcode (insn->detail->x86.opcode);
 		op->size = insn->size;
+		op->id = insn->id;
 		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;
 		op->cond = cond_x862r2 (insn->id);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
 
 #include <r_lib.h>
 #include <r_types.h>
@@ -188,6 +188,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	ud_set_input_buffer (&u, data, len);
 	ud_disassemble (&u);
 
+	op->id = u.mnemonic;
 	oplen = op->size = ud_insn_len (&u);
 	r_strbuf_init (&op->esil);
 	if (anal->decode && (handler = udis86_esil_get_handler (u.mnemonic))) {
@@ -783,7 +784,7 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-struct r_anal_plugin_t r_anal_plugin_x86_udis = {
+RAnalPlugin r_anal_plugin_x86_udis = {
 	.name = "x86.udis",
 	.desc = "X86 analysis plugin (udis86 backend)",
 	.license = "LGPL3",
@@ -795,7 +796,7 @@ struct r_anal_plugin_t r_anal_plugin_x86_udis = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_x86_udis,
 	.version = R2_VERSION
