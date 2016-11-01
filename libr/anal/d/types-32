@@ -1,2 +1,6 @@
 type.void *.size=32
 type.char *.size=32
+
+size_t=type
+type.size_t=d
+type.size_t.size=32

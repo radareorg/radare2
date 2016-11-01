@@ -2922,6 +2922,60 @@ static void ds_print_bbline(RDisasmState *ds) {
 	}
 }
 
+static void get_fcn_args_info(RAnal *anal, const char *fcn_name, int arg_num, const char * cc, const char **name,
+		char **orig_c_type, char **c_type, const char **fmt, ut64 *size, const char **source) {
+	*name = r_anal_type_func_args_name (anal, fcn_name, arg_num);
+	*orig_c_type = r_anal_type_func_args_type (anal, fcn_name, arg_num);
+	if (!strncmp("const ", *orig_c_type, 6)) {
+		*c_type = *orig_c_type+6;
+	} else {
+		*c_type = *orig_c_type;
+	}
+	const char *query = sdb_fmt (-1, "type.%s", *c_type);
+	*fmt = sdb_const_get (anal->sdb_types, query, 0);
+	const char *t_query = sdb_fmt (-1, "type.%s.size", *c_type);
+	*size = sdb_num_get (anal->sdb_types, t_query, 0) / 8;
+	*source = r_anal_cc_arg (anal, cc, arg_num+1);
+}
+
+static void print_fcn_arg(RCore *core, const char *type, const char *name, const char *fmt, const ut64 addr, const int on_stack) {
+	//r_cons_newline ();
+	r_cons_printf ("%s", type);
+	r_core_cmdf (core, "pf %s%s %s @ 0x%08"PFMT64x, (on_stack==1)?"*":"", fmt, name, addr);
+	r_cons_chop ();
+	r_cons_chop ();
+}
+
+static void delete_last_comment(RDisasmState *ds) {
+	if (ds->show_comment_right_default) {
+		char *ll = r_cons_lastline ();
+		if (ll) {
+			char * begin = strstr (ll, "; ");
+			if (begin) {
+				int cstrlen = strlen (ll);
+				r_cons_drop (cstrlen - (int)(begin - ll));
+			}
+		}
+	}
+}
+
+static char * resolve_fcn_name(RAnal *anal, const char * func_name) {
+	const char * name = NULL;
+	const char * str = func_name;
+	if (r_anal_type_func_exist (anal, func_name)) {
+		return strdup (func_name);
+	}
+	name = func_name;
+	while ((str = strchr (str, '.'))) {
+		name = str+1;
+		str++;
+	}
+	if (r_anal_type_func_exist (anal, name)) {
+		return strdup (name);
+	}
+	return r_anal_type_func_guess (anal, (char*)func_name);
+}
+
 // modifies anal register state
 static void ds_print_esil_anal(RDisasmState *ds) {
 	RCore *core = ds->core;
@@ -2984,7 +3038,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_CALL:
 		{
 			RAnalFunction *fcn;
-			const char *usefmt = NULL;
+			const char *fcn_name = NULL;
 			ut64 pcv = ds->analop.jump;
 			if (pcv == UT64_MAX) {
 				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
@@ -2994,27 +3048,105 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			}
 			fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
 			if (fcn) {
-				nargs = fcn->nargs;
-				usefmt = r_anal_get_fcnsign (core->anal, fcn->name);
+				fcn_name = fcn->name;
 			} else {
 				RFlagItem *item = r_flag_get_i (core->flags, pcv);
 				if (item) {
-					usefmt = r_anal_get_fcnsign (core->anal, item->name);
-				}
-				if (!usefmt) {
-					nargs = DEFAULT_NARGS;
+					fcn_name = item->name;
 				}
 			}
-			if (usefmt) {
-				const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-				ut64 spv = r_reg_getv (core->anal->reg, sp);
-				spv += (core->anal->bits == 64)? 8: 4;
-				r_cons_newline ();
-				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, usefmt, spv);
-				r_cons_chop ();
+			if (fcn_name) {
+				char * key = resolve_fcn_name (core->anal, fcn_name);
+				if (key) {
+					const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+					const char *fcn_type = r_anal_type_func_ret (core->anal, key);
+					const char * cc;
+					nargs = r_anal_type_func_args_count (core->anal, key);
+					// HACK: remove other comments
+					delete_last_comment (ds);
+					if (ds->show_color) {
+						r_cons_strcat (ds->pal_comment);
+					}
+					ds_align_comment (ds);
+					r_cons_printf ("; %s%s%s(", fcn_type, fcn_type[strlen (fcn_type) - 1] == '*' ? "": " ", key);
+					if (nargs == 0) {
+						r_cons_printf ("void);");
+						break;
+					}
+					cc = r_anal_type_func_cc (core->anal, key);
+					if (!cc) {
+						// unsupported calling convention
+						break;
+					}
+					ut64 spv = r_reg_getv (core->anal->reg, sp);
+					ut64 s_width = (core->anal->bits == 64)? 8: 4;
+					spv += s_width;
+					ut64 arg_addr = UT64_MAX;
+					for (i = 0; i < nargs; i++) {
+						const char *arg_name, *fmt, *cc_source;
+						char *arg_orig_c_type, *arg_c_type;
+						ut64 arg_size;
+						int on_stack=0;
+						get_fcn_args_info (core->anal, key, i, cc, &arg_name, &arg_orig_c_type, &arg_c_type, &fmt, &arg_size, &cc_source);
+						if (!strcmp (cc_source, "stack_rev")) {
+							int j;
+							free (arg_orig_c_type);
+							on_stack = 1;
+							for (j = nargs-1; j >= i; j--) {
+								get_fcn_args_info (core->anal, key, j, cc, &arg_name, &arg_orig_c_type, &arg_c_type, &fmt, &arg_size, &cc_source);
+								arg_addr = spv;
+								if (arg_size == 0) {
+									r_cons_printf ("\nWARNING: missing size for type '%s'\n", arg_c_type);
+									arg_size = s_width;
+								}
+								spv += s_width;
+								if (!fmt) {
+									r_cons_printf ("\nWARNING: no format for type '%s'\n", arg_c_type);
+									free (arg_orig_c_type);
+									continue;
+								}
+								if (fmt) {
+									print_fcn_arg (core, arg_orig_c_type, arg_name, fmt, arg_addr, on_stack);
+									r_cons_printf (j!=i?", ":");");
+								}
+								free (arg_orig_c_type);
+							}
+							break;
+						}
+						if (!strncmp (cc_source, "stack", 5)) {
+							arg_addr = spv;
+							if (arg_size == 0) {
+								r_cons_printf ("\nWARNING: missing size for type '%s'\n", arg_c_type);
+								arg_size = s_width;
+							}
+							spv += s_width;
+							on_stack = 1;
+						} else {
+							arg_addr = r_reg_getv (core->anal->reg, cc_source);
+						}
+						if (!fmt) {
+							r_cons_printf ("\nWARNING: no format for type '%s'\n", arg_c_type);
+							free (arg_orig_c_type);
+							continue;
+						}
+						if (fmt) {
+							print_fcn_arg (core, arg_orig_c_type, arg_name, fmt, arg_addr, on_stack);
+							r_cons_printf (i!=(nargs-1)?", ":");");
+						}
+						free (arg_orig_c_type);
+					}
+					free (key);
+				} else {
+					// function not in sdb
+					goto callfallback;
+				}
 			} else {
-				//handle_print_pre (core, ds, false);
-				//handle_print_lines_left (core, ds);
+				// function name not resolved
+callfallback:
+				nargs = DEFAULT_NARGS;
+				if (fcn) {
+					nargs = fcn->nargs;
+				}
 				r_cons_printf ("; CALL: ");
 				for (i = 0; i < nargs; i++) {
 					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
@@ -3044,6 +3176,12 @@ beach:
 }
 
 static void ds_print_calls_hints(RDisasmState *ds) {
+	int emu = r_config_get_i (ds->core->config, "asm.emu");
+	int emuwrite = r_config_get_i (ds->core->config, "asm.emuwrite");
+	if (emu && emuwrite) {
+		// this is done by ESIL
+		return;
+	}
 	RAnal *anal = ds->core->anal;
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
 	char *name;

@@ -34,7 +34,7 @@ type.char=c
 type.char.size=8
 
 char *=type
-type.char *=*z
+type.char *=z
 
 uint8_t=type
 type.uint8_t=b
