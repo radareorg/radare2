@@ -6,7 +6,7 @@ static char *mnemonics(RAsm *a, int id, bool json) {
 		if (json) {
 			return name? r_str_newf ("[\"%s\"]\n", name): NULL;
 		}
-		return name? r_str_newf ("%s\n", name): NULL;
+		return name? r_str_newf ("%s", name): NULL;
 	}
 	RStrBuf *buf = r_strbuf_new ("");
 	if (json) {

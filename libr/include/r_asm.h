@@ -140,6 +140,7 @@ R_API RAsm *r_asm_new(void);
 R_API RAsm *r_asm_free(RAsm *a);
 R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);
+R_API int r_asm_mnemonics_byname(RAsm *a, const char *name);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
 R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo);
 R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian);

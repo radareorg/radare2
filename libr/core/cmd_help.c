@@ -19,8 +19,9 @@ static char *filter_flags(RCore *core, const char *msg) {
 	char *word, *buf = NULL;
 	for (;;) {
 		dollar = strchr (msg, '$');
-		if (!dollar)
+		if (!dollar) {
 			break;
+		}
 		buf = r_str_concatlen (buf, msg, dollar-msg);
 		if (dollar[1]=='{') {
 			// find }
@@ -199,7 +200,9 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
 	case 'O':
-		{
+		if (input[1] && !IS_NUMBER (input[2])) {
+			r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->assembler, input + 2));
+		} else {
 			bool json = false;
 			if (input[1] == 'j') {
 				json = true;

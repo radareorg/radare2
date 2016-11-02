@@ -888,3 +888,17 @@ R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
 	}
 	return NULL;
 }
+
+R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
+	if (a && a->cur && a->cur->mnemonics) {
+		int i;
+		for (i = 0; i < 1024; i++) {
+			char *n = a->cur->mnemonics (a, i, false);
+			if (n && !strcmp (n, name)) {
+				return i;
+			}
+			free (n);
+		}
+	}
+	return 0;
+}
