@@ -286,13 +286,11 @@ static int cmd_help(void *data, const char *input) {
 			ut32 s, a;
 			double d;
 			float f;
-
 			n = r_num_math (core->num, input + 1);
 			if (core->num->dbz) {
 				eprintf ("RNum ERROR: Division by Zero\n");
 			}
 			asnum  = r_num_as_string (NULL, n, false);
-
 			/* decimal, hexa, octal */
 			s = n >> 16 << 12;
 			a = n & 0x0fff;
@@ -300,8 +298,11 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o
 				" %s %04x:%04x ",
 				n, n, n, unit, s, a);
-			if (n>>32) r_cons_printf ("%"PFMT64d" ", (st64)n);
-			else r_cons_printf ("%d ", (st32)n);
+			if (n >> 32) {
+				r_cons_printf ("%"PFMT64d" ", (st64)n);
+			} else {
+				r_cons_printf ("%d ", (st32)n);
+			}
 			if (asnum) {
 				r_cons_printf ("\"%s\" ", asnum);
 				free (asnum);
@@ -309,15 +310,14 @@ static int cmd_help(void *data, const char *input) {
 			/* binary and floating point */
 			r_str_bits64 (out, n);
 			f = d = core->num->fvalue;
-			r_cons_printf ("%s %.01lf %ff %lf\n",
-				out, core->num->fvalue, f, d);
+			r_cons_printf ("%s %.01lf %ff %lf\n", out, core->num->fvalue, f, d);
 		}
 		break;
 	case 'v':
 		{
 			const char *space = strchr (input, ' ');
 			if (space) {
-				n = r_num_math (core->num, space+1);
+				n = r_num_math (core->num, space + 1);
 			} else {
 				n = r_num_math (core->num, "$?");
 			}
@@ -336,7 +336,7 @@ static int cmd_help(void *data, const char *input) {
 				"|?vi will show in decimal instead of hex\n");
 			break;
 		case '\0':
-		        r_cons_printf ("%d\n", (st32)n);
+			r_cons_printf ("%d\n", (st32)n);
 			break;
 		case 'i': // "?vi"
 			switch (input[2]) {
@@ -717,8 +717,9 @@ static int cmd_help(void *data, const char *input) {
 				return 0;
 			}
 			if (input[2]) {
-				if (core->num->value)
-					r_core_cmd (core, input+1, 0);
+				if (core->num->value) {
+					r_core_cmd (core, input + 1, 0);
+				}
 				break;
 			}
 			const char* help_msg[] = {

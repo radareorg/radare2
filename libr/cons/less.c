@@ -159,11 +159,15 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	const char *sreg;
 	RList **mla;
 
-	if (!str || !*str) return 0;
+	if (!str || !*str) {
+		return 0;
+	}
 	char *p = strdup (str);
-	if (!p) return 0;
+	if (!p) {
+		return 0;
+	}
 	int *lines = splitlines (p, &lines_count);
-	if (lines_count<1) {
+	if (lines_count < 1) {
 		mla = NULL;
 	} else {
 		mla = calloc (lines_count, sizeof (RList *));
@@ -183,9 +187,12 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	while (ui) {
 		w = r_cons_get_size (&h);
 		to = R_MIN (lines_count, from + h - 1);
-		if (from+3>lines_count)
+		if (from + 3 > lines_count) {
 			from = lines_count - 3;
-		if (from<0) from = 0;
+		}
+		if (from < 0) {
+			from = 0;
+		}
 		printpage (p, lines, mla, from, to, w);
 		ch = r_cons_readchar ();
 		if (exitkeys && strchr (exitkeys, ch)) {
@@ -208,7 +215,9 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			break;
 		case 'u':
 			from -= h;
-			if (from < 0) from = 0;
+			if (from < 0) {
+				from = 0;
+			}
 			break;
 		case ' ': from += h; break;
 		case 'g': from = 0; break;

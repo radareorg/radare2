@@ -1121,16 +1121,17 @@ R_API const char *r_anal_esil_trapstr(int type) {
 
 R_API int r_anal_esil_dumpstack(RAnalEsil *esil) {
 	int i;
-	if (!esil)
+	if (!esil) {
 		return 0;
+	}
 	if (esil->trap) {
 		eprintf ("ESIL TRAP type %d code 0x%08x %s\n",
 			esil->trap, esil->trap_code,
 			r_anal_esil_trapstr (esil->trap));
 	}
-	if (esil->stackptr < 1)
+	if (esil->stackptr < 1) {
 		return 0;
-	//eprintf ("StackDump:\n");
+	}
 	for (i = esil->stackptr - 1; i >= 0; i--) {
 		esil->anal->cb_printf ("%s\n", esil->stack[i]);
 	}

@@ -23,12 +23,14 @@ typedef struct {
 	char *buf;
 	int buf_len;	
 	int buf_size;
+	RConsGrep *grep;
 } RConsStack;
 
 
 static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
 	free (s->buf);
+	free (s->grep);
 	free (s);
 }
 
@@ -450,6 +452,13 @@ R_API void r_cons_push() {
 		memcpy (data->buf, I.buffer, I.buffer_len);
 		data->buf_len = I.buffer_len;
 		data->buf_size = I.buffer_sz;
+		data->grep = R_NEW0 (RConsGrep);
+		if (data->grep) {
+			memcpy (data->grep, &I.grep, sizeof (RConsGrep));
+			if (I.grep.str) {
+				data->grep->str = strdup (I.grep.str);
+			}
+		}
 		r_stack_push (I.cons_stack, data);
 		I.buffer_len = 0;
 		memset (I.buffer, 0, I.buffer_sz);
@@ -477,6 +486,13 @@ R_API void r_cons_pop() {
 		memcpy (I.buffer, data->buf, data->buf_len);
 		I.buffer_len = data->buf_len;
 		I.buffer_sz = data->buf_size;
+		if (data->grep) {
+			memcpy (&I.grep, data->grep, sizeof (RConsGrep));
+			if (data->grep->str) {
+				free (I.grep.str);
+				I.grep.str = data->grep->str;
+			}
+		}
 		cons_stack_free ((void *)data);
 	}
 }
@@ -694,10 +710,10 @@ R_API void r_cons_printf(const char *format, ...) {
 		va_start (ap, format);
 		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
 		va_end (ap);
-		if (written>=size) { /* not all bytes were written */
+		if (written >= size) { /* not all bytes were written */
 			palloc (written);
 			va_start (ap, format);
-			written = vsnprintf (I.buffer+I.buffer_len, written, format, ap);
+			written = vsnprintf (I.buffer + I.buffer_len, written, format, ap);
 			va_end (ap);
 		}
 		I.buffer_len += written;

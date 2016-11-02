@@ -53,13 +53,11 @@ static void cmd_debug_reg(RCore *core, const char *str);
 
 static void recursive_help (RCore *core, const char *cmd) {
 	char *nl, *line;
-	r_cons_push ();
 	if (strchr (cmd, '[')) {
 		eprintf ("Skip ((%s))\n", cmd);
 		return;
 	}
 	char *msg = r_core_cmd_str (core, cmd);
-	r_cons_pop ();
 	line = msg;
 	r_cons_print (msg);
 	(void) r_str_ansi_filter (msg, NULL, NULL, strlen (msg));
@@ -1670,7 +1668,7 @@ next2:
 				goto fail;
 			}
 			// ignore contents if first char is pipe or comment
-			if (*str=='|' || *str=='*') {
+			if (*str == '|' || *str == '*') {
 				eprintf ("r_core_cmd_subst_i: invalid backticked command\n");
 				free (str);
 				goto fail;
@@ -2511,7 +2509,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		return false;
 	}
 	r_str_cpy (cmd, cstr);
-
 	if (log) {
 		r_line_hist_add (cstr);
 	}
@@ -2717,7 +2714,7 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	const char *static_str;
 	char *retstr = NULL;
-	r_cons_reset ();
+	r_cons_push ();
 	if (r_core_cmd (core, cmd, 0) == -1) {
 		//eprintf ("Invalid command: %s\n", cmd);
 		return NULL;
@@ -2725,7 +2722,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	r_cons_filter ();
 	static_str = r_cons_get_buffer ();
 	retstr = strdup (static_str? static_str: "");
-	r_cons_reset ();
+	r_cons_pop ();
 	return retstr;
 }
 
