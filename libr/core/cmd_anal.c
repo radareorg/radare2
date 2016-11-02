@@ -2070,8 +2070,9 @@ repeat:
 		int exectrap = r_config_get_i (core->config, "esil.exectrap");
 		int stacksize = r_config_get_i (core->config, "esil.stacksize");
 		int nonull = r_config_get_i (core->config, "esil.nonull");
-		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap)))
+		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
 			return 0;
+		}
 		esil = core->anal->esil;
 		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 		esil->exectrap = exectrap;
@@ -2108,7 +2109,9 @@ repeat:
 	r_io_read_at (core->io, addr, code, sizeof (code));
 	r_asm_set_pc (core->assembler, addr);
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
-	if (op.size < 1) op.size = 1; // avoid inverted stepping
+	if (op.size < 1) {
+		op.size = 1; // avoid inverted stepping
+	}
 	r_reg_setv (core->anal->reg, name, addr + op.size);
 	if (ret) {
 		ut64 delay_slot = 0;
@@ -2135,7 +2138,7 @@ repeat:
 			if (core->anal->cur && core->anal->cur->esil_post_loop) {
 				core->anal->cur->esil_post_loop (esil, &op);
 			}
-			r_anal_esil_dumpstack (esil);
+			//r_anal_esil_dumpstack (esil);
 			r_anal_esil_stack_free (esil);
 			delay_slot--;
 
@@ -2668,7 +2671,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		{
 			ut64 pc = r_debug_reg_get (core->dbg, "PC");
 			RAnalOp *op = r_core_anal_op (core, pc);
-			if (!op) break;
+			if (!op) {
+				break;
+			}
 			r_core_esil_step (core, UT64_MAX, NULL);
 			r_debug_reg_set (core->dbg, "PC", pc + op->size);
 			r_anal_esil_set_pc (esil, pc + op->size);
