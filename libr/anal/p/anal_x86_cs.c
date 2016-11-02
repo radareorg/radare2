@@ -1228,7 +1228,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				// TODO update flags & handle signedness
 				esilprintf (op, "%s,%s,*,%s,=", a2, a1, a0);
 			} else {
-				if (a1[0]) {
+				if (ISVALID(a1[0])) {
 					esilprintf (op, "%s,%s,*=", a1, a0);
 				} else {
 					esilprintf (op, "%s,%s,*=", a0, "rax");
