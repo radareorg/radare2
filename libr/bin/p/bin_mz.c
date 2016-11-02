@@ -36,11 +36,18 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		ret = true;
 		exth_offset = (buf[0x3c] | (buf[0x3d]<<8));
 		if (length > exth_offset + 2) {
-			if (!memcmp (buf + exth_offset, "PE", 2) ||
-			    !memcmp (buf + exth_offset, "NE", 2) ||
+			//check for PE
+			if (length > exth_offset + 0x20) {
+				if (!memcmp (buf, "MZ", 2) &&
+				    !memcmp (buf + exth_offset, "PE", 2) &&
+				    !memcmp (buf + exth_offset + 0x18,
+					     "\x0b\x01", 2)) {
+					return false;
+					}
+			}
+			if (!memcmp (buf + exth_offset, "NE", 2) ||
 			    !memcmp (buf + exth_offset, "LE", 2) ||
 			    !memcmp (buf + exth_offset, "LX", 2) ) {
-
 				if (!checkEntrypoint (buf, length)) {
 					ret = false;
 				}
