@@ -1762,7 +1762,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* bin */
 	SETI("bin.baddr", -1, "Base address of the binary");
 	SETI("bin.laddr", 0, "Base address for loading library ('*.so')");
-	SETPREF("bin.dbginfo", "true", "Load debug information on startup if available");
+	SETPREF("bin.dbginfo", "false", "Load debug information on startup if available");
 	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETICB("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");
 	SETICB("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
