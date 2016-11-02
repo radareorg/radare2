@@ -1131,8 +1131,8 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			} // do not show flags in pie
 		}
 		if (show_offset) {
-			const int show_offseg = core->print->flags & R_PRINT_FLAGS_ADDRMOD;
-			const int show_offdec = core->print->flags & R_PRINT_FLAGS_ADDRDEC;
+			const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
+			const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
 			ut64 at = core->offset + i;
 			r_print_offset (core->print, at, 0, show_offseg, show_offdec, 0, NULL);
 		}
