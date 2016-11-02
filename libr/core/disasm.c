@@ -9,6 +9,7 @@
 
 #define R_MIDFLAGS_SHOW 1
 #define R_MIDFLAGS_REALIGN 2
+#define R_MIDFLAGS_SYMALIGN 3
 
 #define COLOR(ds, field) (ds->show_color ? ds->field : "")
 #define COLOR_CONST(ds, color) (ds->show_color ? Color_ ## color : "")
@@ -937,6 +938,12 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			if (!strncmp (fi->name, "reloc.", 6)) {
 				if (print) {
 					r_cons_printf ("(%s)\n", fi->name);
+				}
+				continue;
+			}
+			if (ds->midflags == R_MIDFLAGS_SYMALIGN) {
+				if (!strncmp (fi->name, "sym.", 4)) {
+					return i;
 				}
 				continue;
 			}

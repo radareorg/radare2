@@ -548,7 +548,8 @@ static int cb_midflags (void *user, void *data) {
 		eprintf ("Valid values for asm.midflags:\n");
 		eprintf ("0  do not show middle flags\n");
 		eprintf ("1  print the middfle flag without realign instruction\n");
-		eprintf ("2  realign the instruction at the middfle flag\n");
+		eprintf ("2  realign the instruction at the middle flag\n");
+		eprintf ("3  realign the instruction at the middle flag only if it's a sym.\n");
 		return false;
 	}
 	return true;
