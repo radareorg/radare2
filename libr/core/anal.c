@@ -1614,10 +1614,32 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 	return name;
 }
 
-#define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
+static int count_edges(RAnalFunction *fcn, int *ebbs) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	int edges = 0;
+	if (ebbs) {
+		*ebbs = 0;
+	}
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
+			*ebbs = *ebbs + 1;
+		} else {
+			if (bb->jump != UT64_MAX) {
+				edges ++;
+			}
+			if (bb->fail != UT64_MAX) {
+				edges ++;
+			}
+		}
+	}
+	return edges;
+}
+
+#define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = get_fcn_name(core, fcn);
-
+	int ebbs = 0;
 	const char *color = "";
 	const char *color_end = "";
 	if (use_color) {
@@ -1635,6 +1657,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 			fcn->addr,
 			r_anal_fcn_realsize (fcn),
 			r_list_length (fcn->bbs),
+			count_edges (fcn, &ebbs),
 			r_anal_fcn_cc (fcn),
 			fcn->meta.min,
 			r_anal_fcn_size (fcn),
@@ -1657,11 +1680,11 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 static int fcn_list_verbose(RCore *core, RList *fcns) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
 
-	r_cons_printf ("%-11s %4s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
-			"address", "size", "nbbs", "cc", "min bound", "max bound",
+	r_cons_printf ("%-11s %4s %5s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
+			"address", "size", "nbbs", "edges", "cc", "min bound", "max bound",
 			"calls", "locals", "args", "xref", "frame", "name");
-	r_cons_printf ("%-11s %-4s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
-			"===========", "====", "=====", "====", "===========", "===========",
+	r_cons_printf ("%-11s %-4s %-5s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
+			"===========", "====", "=====", "=====", "====", "===========", "===========",
 			"=====", "======", "====", "====", "=====", "====");
 
 	RListIter *iter;
@@ -1703,28 +1726,6 @@ static int fcn_list_default(RCore *core, RList *fcns, bool quiet) {
 		r_cons_newline ();
 	}
 	return 0;
-}
-
-static int count_edges(RAnalFunction *fcn, int *ebbs) {
-	RListIter *iter;
-	RAnalBlock *bb;
-	int edges = 0;
-	if (ebbs) {
-		*ebbs = 0;
-	}
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
-			*ebbs = *ebbs + 1;
-		} else {
-			if (bb->jump != UT64_MAX) {
-				edges ++;
-			}
-			if (bb->fail != UT64_MAX) {
-				edges ++;
-			}
-		}
-	}
-	return edges;
 }
 
 static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
