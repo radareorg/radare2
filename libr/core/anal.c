@@ -1197,12 +1197,14 @@ fin:
 /* returns the address of the basic block that contains addr or UT64_MAX if
  * there is no such basic block */
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr) {
+	RAnalBlock *bbi;
 	RAnalFunction *fcni;
-	RListIter *iter;
-	ut64 from = 0;
+	RListIter *iter, *iter2;
 	r_list_foreach (core->anal->fcns, iter, fcni) {
-		if ((from = r_tinyrange_in (&fcni->bbr, addr, true))) {
-			return from;
+		r_list_foreach (fcni->bbs, iter2, bbi) {
+			if (addr >= bbi->addr && addr < bbi->addr + bbi->size) {
+				return bbi->addr;
+			}
 		}
 	}
 	return UT64_MAX;

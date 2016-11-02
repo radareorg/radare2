@@ -1878,7 +1878,9 @@ static void update_graph_sizes (RAGraph *g) {
 }
 
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *a) {
-	if (!a) return;
+	if (!a) {
+		return;
+	}
 	g->curnode = a->gnode;
 	if (a->title) {
 		sdb_set (g->db, "agraph.curnode", a->title, 0);
@@ -1888,7 +1890,7 @@ R_API void r_agraph_set_curnode(RAGraph *g, RANode *a) {
 	}
 }
 
-static ut64 rebase (RAGraph *g, int v) {
+static ut64 rebase(RAGraph *g, int v) {
 	return g->x < 0 ? -g->x + v : v;
 }
 
