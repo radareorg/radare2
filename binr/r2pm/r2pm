@@ -98,7 +98,9 @@ init|up|update)
 	fi
 
 	ln -fs "${R2PM_USRDIR}"/git/radare2-pm/db "${R2PM_DBDIR}" || exit 1
-	echo "r2pm database initialized. Use 'r2pm update' to update"
+	if [ "$1" = "init" ]; then
+		echo "r2pm database initialized. Use 'r2pm update' to update"
+	fi
 	exit 0
 	;;
 esac
