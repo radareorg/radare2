@@ -558,16 +558,16 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		p->cb_printf ("\n");
 		break;
 	case 'h':
-		print_c_code (p, addr, buf, len, 2, 9);
+		print_c_code (p, addr, buf, len, 2, p->cols / 2); // 9
 		break;
 	case 'w':
-		print_c_code (p, addr, buf, len, 4, 6);
+		print_c_code (p, addr, buf, len, 4, p->cols / 3); // 6);
 		break;
 	case 'd':
-		print_c_code (p, addr, buf, len, 8, 3);
+		print_c_code (p, addr, buf, len, 8, p->cols / 5); //3);
 		break;
 	default:
-		print_c_code (p, addr, buf, len, 1, 12);
+		print_c_code (p, addr, buf, len, 1, p->cols / 1.5); // 12);
 		break;
 	}
 }
