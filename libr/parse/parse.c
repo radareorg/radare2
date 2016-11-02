@@ -14,7 +14,9 @@ static RParsePlugin *parse_static_plugins[] =
 R_API RParse *r_parse_new() {
 	int i;
 	RParse *p = R_NEW0 (RParse);
-	if (!p) return NULL;
+	if (!p) {
+		return NULL;
+	}
 	p->parsers = r_list_new ();
 	if (!p->parsers) {
 		r_parse_free (p);
@@ -23,7 +25,7 @@ R_API RParse *r_parse_new() {
 	p->parsers->free = NULL; // memleak
 	p->notin_flagspace = -1;
 	p->flagspace = -1;
-	for (i=0; parse_static_plugins[i]; i++) {
+	for (i = 0; parse_static_plugins[i]; i++) {
 		r_parse_add (p, parse_static_plugins[i]);
 	}
 	return p;
@@ -61,12 +63,16 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 
 	data[0]='\0';
 	if (p->cur && p->cur->assemble) {
-		o = data+strlen (data);
+		o = data + strlen (data);
 		do {
 			s = strchr (str, ';');
-			if (s) *s='\0';
+			if (s) {
+				*s = '\0';
+			}
 			ret = p->cur->assemble (p, o, str);
-			if (!ret) break;
+			if (!ret) {
+				break;
+			}
 			if (s) {
 				str = s + 1;
 				o = o + strlen (data);
@@ -81,8 +87,9 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 }
 
 R_API int r_parse_parse(RParse *p, const char *data, char *str) {
-	if (p->cur && p->cur->parse)
+	if (p->cur && p->cur->parse) {
 		return p->cur->parse (p, data, str);
+	}
 	return false;
 }
 
@@ -108,7 +115,9 @@ static char *findNextNumber(char *op) {
 		while (*p) {
 			if (*p == 0x1b) {
 				p++;
-				if (!*p) break;
+				if (!*p) {
+					break;
+				}
 				if (*p == '[') {
 					p++;
 					if (p[0] && p[1] == ';') {
@@ -218,8 +227,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				pnum += 2;
 			}
 			for (; *pnum; pnum++) {
-				if ((is_hex && ishexchar(*pnum)) || IS_NUMBER(*pnum))
+				if ((is_hex && ishexchar(*pnum)) || IS_NUMBER(*pnum)) {
 					continue;
+				}
 				break;
 			}
 			*pnum = 0;
@@ -241,24 +251,26 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				// overflow checks.
 				while (off) {
 					ut8 ch;
-
 					if (big_endian) {
-						ch = off >> (8 * (sizeof(off) - 1));
-						off <<= 8;
-					} else {
 						ch = off & 0xff;
 						off >>= 8;
+					} else {
+						ch = off >> (8 * (sizeof(off) - 1));
+						off <<= 8;
 					}
 
 					//Skip first '\x00' bytes
-					if (num[1] == '\0' && ch == '\0') continue;
-
+					if (num[1] == '\0' && ch == '\0') {
+						continue;
+					}
 					if (IS_PRINTABLE(ch)) {
 						*pnum++ = ch;
 						pnumleft --;
 					} else {
 						int sz = snprintf (pnum, pnumleft, "\\x%2.2x", ch);
-						if (sz < 0) break;
+						if (sz < 0) {
+							break;
+						}
 						pnum += sz;
 						pnumleft -= sz;
 					}
@@ -308,8 +320,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 
 R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
 	filter (p, f, data, str, len, big_endian);
-	if (p->cur && p->cur->filter)
+	if (p->cur && p->cur->filter) {
 		return p->cur->filter (p, f, data, str, len, big_endian);
+	}
 	return false;
 }
 
