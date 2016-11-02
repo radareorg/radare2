@@ -1337,7 +1337,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			char dstAdd[64];
 			getarg (&gop, 1, 0, NULL, src);
 			getarg (&gop, 0, 0, NULL, dst);
-			getarg ( &gop, 0, 1, "+", dstAdd);
+			getarg (&gop, 0, 1, "+", dstAdd);
 			if (INSOP(0).type == X86_OP_MEM) {
 				char dst1[64];
 				getarg (&gop, 0, 1, NULL, dst1);
