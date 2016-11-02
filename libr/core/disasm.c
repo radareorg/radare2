@@ -3051,8 +3051,11 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			ut64 pcv = ds->analop.jump;
 			if (pcv == UT64_MAX) {
 				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
-				if (pcv == UT64_MAX) {
-					pcv = r_reg_getv (core->anal->reg, pc);
+				if (pcv == UT64_MAX || pcv == 0) {
+					r_anal_esil_reg_read (esil, "$jt", &pcv, NULL);
+					if (pcv == UT64_MAX || pcv == 0) {
+						pcv = r_reg_getv (core->anal->reg, pc);
+					}
 				}
 			}
 			fcn = r_anal_get_fcn_at (core->anal, pcv, 0);
