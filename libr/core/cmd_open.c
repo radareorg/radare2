@@ -317,6 +317,7 @@ static int cmd_open(void *data, const char *input) {
 		"ob","[lbdos] [...]","list open binary files backed by fd",
 		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"oc"," [file]","open core file, like relaunching r2",
+		"oi","[-|idx]","alias for o, but using index instead of fd",
 		"oj","","list opened files in JSON format",
 		"oL","","list all IO plugins registered",
 		"om","[?]","create, list, remove IO maps",
@@ -440,10 +441,50 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1]==' ') {
-			if (r_lib_open (core->lib, input+2) == R_FAIL)
+			if (r_lib_open (core->lib, input+2) == R_FAIL) {
 				eprintf ("Oops\n");
+			}
 		} else {
 			eprintf ("Usage: op [r2plugin."R_LIB_EXT"]\n");
+		}
+		break;
+	case 'i': // "oi"
+		switch (input[1]) {
+		case ' ': // "oi "
+			{
+				RListIter *iter = NULL;
+				RCoreFile *f;
+				int nth = r_num_math (core->num, input + 2);
+				int count = 0;
+				r_list_foreach (core->files, iter, f) {
+					if (count == nth) {
+						r_io_raise (core->io, num);
+						break;
+					}
+					count++;
+				}
+			}
+			break;
+		case '-': // "oi-"
+			{
+				RListIter *iter = NULL;
+				RCoreFile *f;
+				int nth = r_num_math (core->num, input + 2);
+				int count = 0;
+				r_list_foreach (core->files, iter, f) {
+					if (count == nth) {
+						r_core_file_close_fd (core, f->desc->fd);
+						break;
+					}
+					count++;
+				}
+			}
+			break;
+		case 'j':
+		case '*':
+		case 0:
+			r_core_file_list (core, input[1]);
+			break;
 		}
 		break;
 	case '+':
@@ -467,7 +508,7 @@ static int cmd_open(void *data, const char *input) {
 			addr = 0LL;
 		}
 		if (num <= 0) {
-			const char *fn = input+1; //(isn?2:1);
+			const char *fn = input + 1; //(isn?2:1);
 			if (fn && *fn) {
 				if (isn) fn++;
 				file = r_core_file_open (core, fn, perms, addr);
@@ -520,9 +561,10 @@ static int cmd_open(void *data, const char *input) {
 			// TODO: rbin?
 			break;
 		default:
-			if (!r_core_file_close_fd (core, atoi (input+1)))
+			if (!r_core_file_close_fd (core, atoi (input + 1))) {
 				eprintf ("Unable to find filedescriptor %d\n",
-						atoi (input+1));
+						atoi (input + 1));
+			}
 			break;
 		case '?':
 			eprintf ("Usage: o-# or o-*, where # is the filedescriptor number\n");

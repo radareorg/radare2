@@ -879,8 +879,9 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	RCoreFile *f;
 	ut64 from;
 	RListIter *iter;
-	if (mode=='j')
+	if (mode == 'j') {
 		r_cons_printf ("[");
+	}
 	r_list_foreach (core->files, iter, f) {
 		if (f->map) {
 			from = f->map->from;
@@ -909,12 +910,13 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			ut64 sz = r_io_desc_size (core->io, f->desc);
 			const char *fmt;
 			if (sz == UT64_MAX) {
-				fmt = "%c %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64d" %s\n";
+				fmt = "%c %d %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64d" %s\n";
 			} else {
-				fmt = "%c %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64u" %s\n";
+				fmt = "%c %d %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64u" %s\n";
 			}
 			r_cons_printf (fmt,
 					core->io->raised == f->desc->fd?'*':'-',
+					count,
 					(int)f->desc->fd, f->desc->uri, (ut64)from,
 					f->desc->flags & R_IO_WRITE? "rw": "r",
 					r_io_desc_size (core->io, f->desc),
@@ -1015,7 +1017,7 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	ctx = r_hash_new (true, R_HASH_MD5);
 	md5 = r_hash_do_md5 (ctx, buf, buf_len);
 	p = hash;
-	for (i=0; i<R_HASH_SIZE_MD5; i++) {
+	for (i = 0; i < R_HASH_SIZE_MD5; i++) {
 		sprintf (p, "%02x", md5[i]);
 		p += 2;
 	}
@@ -1025,7 +1027,7 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	ctx = r_hash_new (true, R_HASH_SHA1);
 	sha1 = r_hash_do_sha1 (ctx, buf, buf_len);
 	p = hash;
-	for (i=0; i<R_HASH_SIZE_SHA1; i++) {
+	for (i = 0; i < R_HASH_SIZE_SHA1; i++) {
 		sprintf (p, "%02x", sha1[i]);
 		p += 2;
 	}
@@ -1039,9 +1041,10 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 R_API RCoreFile * r_core_file_find_by_fd (RCore *core, ut64 fd) {
 	RListIter *iter;
 	RCoreFile *cf = NULL;
-
 	r_list_foreach (core->files, iter, cf) {
-		if (cf && cf->desc && cf->desc->fd == fd) break;
+		if (cf && cf->desc && cf->desc->fd == fd) {
+			break;
+		}
 		cf = NULL;
 	}
 	return cf;
@@ -1052,7 +1055,9 @@ R_API RCoreFile * r_core_file_find_by_name (RCore * core, const char * name) {
 	RCoreFile *cf = NULL;
 
 	r_list_foreach (core->files, iter, cf) {
-		if (cf && cf->desc && !strcmp (cf->desc->name, name)) break;
+		if (cf && cf->desc && !strcmp (cf->desc->name, name)) {
+			break;
+		}
 		cf = NULL;
 	}
 	return cf;
@@ -1087,7 +1092,7 @@ R_API ut32 r_core_file_cur_fd (RCore *core) {
 	if (desc) {
 		return desc->fd;
 	}
-	return (ut32)-1;		//WTF
+	return UT32_MAX;
 }
 
 R_API RCoreFile * r_core_file_cur (RCore *r) {
