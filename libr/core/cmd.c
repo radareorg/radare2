@@ -573,8 +573,8 @@ static int cmd_interpret(void *data, const char *input) {
 		} else r_core_run_script (core, "-");
 		break;
 	case ' ':
-		if (!r_core_run_script (core, input+1)) {
-			eprintf ("Cannot find script '%s'\n", input+1);
+		if (!r_core_run_script (core, input + 1)) {
+			eprintf ("Cannot find script '%s'\n", input + 1);
 			core->num->value = 1;
 		} else {
 			core->num->value = 0;
@@ -611,22 +611,27 @@ static int cmd_interpret(void *data, const char *input) {
 	default:
 		inp = strdup (input);
 		filter = strchr (inp, '~');
-		if (filter) *filter = 0;
+		if (filter) {
+			*filter = 0;
+		}
 		ptr = str = r_core_cmd_str (core, inp);
-		if (filter) *filter = '~';
+		if (filter) {
+			*filter = '~';
+		}
 		r_cons_break (NULL, NULL);
-		if (ptr)
-		for (;;) {
-			if (r_cons_singleton()->breaked) break;
-			eol = strchr (ptr, '\n');
-			if (eol) *eol = '\0';
-			if (*ptr) {
-				char *p = r_str_concat (strdup (ptr), filter);
-				r_core_cmd0 (core, p);
-				free (p);
+		if (ptr) {
+			for (;;) {
+				if (r_cons_singleton()->breaked) break;
+				eol = strchr (ptr, '\n');
+				if (eol) *eol = '\0';
+				if (*ptr) {
+					char *p = r_str_concat (strdup (ptr), filter);
+					r_core_cmd0 (core, p);
+					free (p);
+				}
+				if (!eol) break;
+				ptr = eol + 1;
 			}
-			if (!eol) break;
-			ptr = eol+1;
 		}
 		r_cons_break_end ();
 		free (str);

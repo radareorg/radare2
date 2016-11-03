@@ -918,49 +918,8 @@ int main(int argc, char **argv) {
 
 	if (query) {
 		if (rad) {
-// TODO: Should be moved into core, to load those flags and formats into r2
-			Sdb *db = sdb_ns (bin->cur->sdb, "info", 0);
-			char *flagname;
-			char *offset = NULL;
-			if (db) {
-				SdbListIter *iter;
-				SdbKv *kv;
-				printf ("fs format\n");
-				// iterate over all keys
-				ls_foreach (db->ht->list, iter, kv) {
-					char *k = kv->key;
-					char *v = kv->value;
-					char *dup = strdup (k);
-
-					if ((flagname = strstr (dup, ".offset"))) {
-						*flagname = 0;
-						flagname = dup;
-						printf ("f %s @ %s\n", flagname, v);
-						free (offset);
-						offset = strdup (v);
-					}
-					if ((flagname = strstr (dup, ".cparse"))) {
-						printf ("\"td %s\"\n", v);
-					}
-					if ((flagname = strstr (dup, ".format"))) {
-						*flagname = 0;
-						flagname = dup;
-						printf ("pf.%s %s\n", flagname, v);
-						int fmtsize = r_print_format_struct_size (v, core.print, 0);
-						char *offset_key = r_str_newf ("%s.offset", flagname);
-						const char *offset = sdb_const_get (db, offset_key, 0);
-						free (offset_key);
-						if (offset) {
-							printf ("Cf %d %s @ %s\n", fmtsize, v, offset);
-						} else {
-							printf ("Cf %d %s @ %s\n", fmtsize, v, "0");
-						}
-					}
-					free (dup);
-				}
-
-			}
-			//sdb_query (bin->cur->sdb, "info/*");
+			r_core_bin_export_info_rad (&core);
+			r_cons_flush ();
 		} else {
 			if (!strcmp (query, "-")) {
 				__sdb_prompt (bin->cur->sdb);

@@ -2380,6 +2380,54 @@ static int bin_signature(RCore *r, int mode) {
 	return false;
 }
 
+R_API void r_core_bin_export_info_rad(RCore *core) {
+	RBinFile *bf = r_core_bin_cur (core);
+	Sdb *db = NULL; 
+	if (!bf) return;
+	db = sdb_ns (bf->sdb, "info", 0);; 
+	if (!db) return;
+	char *flagname;
+	char *offset = NULL;
+	if (db) {
+		SdbListIter *iter;
+		SdbKv *kv;
+		r_cons_printf ("fs format\n");
+		// iterate over all keys
+		ls_foreach (db->ht->list, iter, kv) {
+			char *k = kv->key;
+			char *v = kv->value;
+			char *dup = strdup (k);
+
+			if ((flagname = strstr (dup, ".offset"))) {
+				*flagname = 0;
+				flagname = dup;
+				r_cons_printf ("f %s @ %s\n", flagname, v);
+				free (offset);
+				offset = strdup (v);
+			}
+			if ((flagname = strstr (dup, ".cparse"))) {
+				r_cons_printf ("\"td %s\"\n", v);
+			}
+			if ((flagname = strstr (dup, ".format"))) {
+				*flagname = 0;
+				flagname = dup;
+				r_cons_printf ("pf.%s %s\n", flagname, v);
+				int fmtsize = r_print_format_struct_size (v, core->print, 0);
+				char *offset_key = r_str_newf ("%s.offset", flagname);
+				const char *offset = sdb_const_get (db, offset_key, 0);
+				free (offset_key);
+				if (offset) {
+					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, offset);
+				} else {
+					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, "0");
+				}
+			}
+			free (dup);
+		}
+
+	}
+}
+
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = true;
 	const char *name = NULL;
