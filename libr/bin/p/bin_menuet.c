@@ -174,13 +174,15 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 static ut64 size(RBinFile *arch) {
+	ut8 buf[4] = {0};
 	if (!arch->o->info) {
 		arch->o->info = info (arch);
 	}
 	if (!arch->o->info) {
 		return 0;
 	}
-	return (ut64)r_read_ble32 (arch->buf->buf + 16, false);
+	r_buf_read_at (arch->buf, 16, buf, 4);
+	return (ut64)r_read_ble32 (buf, false);
 }
 
 #if !R_BIN_P9
@@ -192,7 +194,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 #define D(x) r_buf_append_ut32(buf,x)
 	B ("MENUET01", 8);
 	D (1); // header version
-	D (1); // program start
+	D (32); // program start
 	D (0x1000); // program image size
 	D (0x1000); // ESP
 	D (0); // no parameters
