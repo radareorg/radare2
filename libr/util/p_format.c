@@ -20,12 +20,22 @@
 #define SEEVALUE (mode & R_PRINT_VALUE)
 #define MUSTSEEJSON (mode & R_PRINT_JSON && mode & R_PRINT_ISFIELD)
 
+//this define is used as a way to acknowledge when updateAddr should take len
+//as real len of the buffer
+#define THRESHOLD -4444
+
+//TODO REWRITE THIS IS BECOMING A NIGHTMARE
+
 static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *addr64) {
 	float f = 0.0f;
 	// assert sizeof (float) == sizeof (ut32))
 	ut32 tmpaddr;
 	// XXX 999 is used as an implicit buffer size, we should pass the buffer size to every function too, otherwise this code will give us some problems
-	len  = 999;
+	if (len >= THRESHOLD - 7 && len < THRESHOLD) {
+		len = len + THRESHOLD; // get the real len to avoid oob
+	} else {
+		len = 999;
+	}
 	if (len >= sizeof (float)) {
 		r_mem_swaporcopy ((ut8*)&f, buf, sizeof (float), endian);
 	}
@@ -1391,28 +1401,39 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	ut8 *buf;
 
 	/* Load format from name into fmt */
-	if (!formatname) return 0;
+	if (!formatname) {
+		return 0;
+	}
 	fmt = r_strht_get (p->formats, formatname);
-	if (!fmt) fmt = formatname;
+	if (!fmt) {
+		fmt = formatname;
+	}
 	while (*fmt && iswhitechar (*fmt)) fmt++;
-	argend = fmt+strlen (fmt);
+	argend = fmt + strlen (fmt);
 	arg = fmt;
 
 	nexti = nargs = i = j = 0;
 
-	if (len < 1) return 0;
+	if (len < 1) {
+		return 0;
+	}
 	// len+2 to save space for the null termination in wide strings
-	buf = calloc (1,len + 2);
-	if (!buf) return 0;
+	buf = calloc (1, len + 2);
+	if (!buf) {
+		return 0;
+	}
 	memcpy (buf, b, len);
 	endian = p->big_endian;
 
-	if (ofield && ofield != MINUSONE) field = strdup (ofield);
-
+	if (ofield && ofield != MINUSONE) {
+		field = strdup (ofield);
+	}
 	/* get times */
 	otimes = times = atoi (arg);
 	if (times > 0) {
-		while (*arg >= '0' && *arg <= '9') arg++;
+		while (*arg >= '0' && *arg <= '9') {
+			arg++;
+		}
 	}
 
 	bracket = strchr (arg,'{');
@@ -1497,7 +1518,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		int first = 1;
 		if (otimes > 1) {
 			if (mode & R_PRINT_JSON) {
-				if (otimes > times) p->cb_printf (",");
+				if (otimes > times) {
+					p->cb_printf (",");
+				}
 				p->cb_printf ("[{\"index\":%d,\"offset\":%d},", otimes-times, seek+i);
 			} else {
 				p->cb_printf ("0x%08"PFMT64x" [%d] {\n", seek+i, otimes-times);
@@ -1533,7 +1556,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			}
 			if (i + fs - 1 < len) { // should be +7 to avoid oobread on 'q'
 					// Max byte number where updateAddr will look into
-				updateAddr (buf + i, len - i, endian, &addr, &addr64);
+				if (len - i < 7) {
+					updateAddr (buf + i, THRESHOLD - (len - i), endian, &addr, &addr64);
+				} else { 
+					updateAddr (buf + i, len - i, endian, &addr, &addr64);
+				}
 			} else {
 				eprintf ("Format strings is too big for this buffer\n");
 				goto beach;
