@@ -661,7 +661,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					isseparator (*ptr_start); ptr_start++);
 			}
 			if (!strncmp (ptr_start, "/*", 2)) {
-				inComment = true;
+				if (!strstr (ptr_start + 2, "*/")) {
+					inComment = true;
+				}
 				continue;
 			}
 			ptr = strchr (ptr_start, '#'); /* Comments */
