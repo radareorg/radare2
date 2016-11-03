@@ -72,19 +72,22 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 		eprintf ("int16 Out is out of range\n");
 		return 0;
 	}
+	// XXX honor endian here
 	if (n == 2) {
 		s = (short)s64;
 		p = (const ut8*)&s;
+		r_write_ble16 (op->buf, s, a->big_endian);
 	} else if (n == 4) {
 		i = (int)s64;
 		p = (const ut8*)&i;
+		r_write_ble32 (op->buf, i, a->big_endian);
 	} else if (n == 8) {
 		l = (long int)s64;
 		p = (const ut8*)&l;
+		r_write_ble64 (op->buf, l, a->big_endian);
 	} else {
 		return 0;
 	}
-	memcpy (op->buf, p, n);
 	r_hex_bin2str (op->buf, n, op->buf_hex);
 	return n;
 }
@@ -313,16 +316,18 @@ R_API int r_asm_set_bits(RAsm *a, int bits) {
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
-	if (!a || !a->cur) return false;
+	if (!a || !a->cur) {
+		return false;
+	}
 	switch (a->cur->endian) {
 	case R_SYS_ENDIAN_NONE:
 	case R_SYS_ENDIAN_BI:
 		// let user select
 		a->big_endian = b;
-		return b;
+		return true;
 	case R_SYS_ENDIAN_LITTLE:
 		a->big_endian = false;
-		return false;
+		return true;
 	case R_SYS_ENDIAN_BIG:
 		a->big_endian = true;
 		return true;
@@ -712,15 +717,21 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			if (*ptr_start == '.') { /* pseudo */
 				/* TODO: move into a separate function */
 				ptr = ptr_start;
-				if (!strncmp (ptr, ".intel_syntax", 13))
+				if (!strncmp (ptr, ".intel_syntax", 13)) {
 					a->syntax = R_ASM_SYNTAX_INTEL;
-				else if (!strncmp (ptr, ".att_syntax", 10)) {
+				} else if (!strncmp (ptr, ".att_syntax", 10)) {
 					a->syntax = R_ASM_SYNTAX_ATT;
+				} else if (!strncmp (ptr, ".endian", 7)) {
+					r_asm_set_big_endian (a, atoi (ptr + 7));
+				} else if (!strncmp (ptr, ".big_endian", 7 + 4)) {
+					r_asm_set_big_endian (a, true);
+				} else if (!strncmp (ptr, ".lil_endian", 7 + 4) || !strncmp (ptr, "little_endian", 7 + 6)) {
+					r_asm_set_big_endian (a, false);
 				} else if (!strncmp (ptr, ".asciz", 6)) {
 					r_str_chop (ptr + 8);
 					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
 				} else if (!strncmp (ptr, ".string ", 8)) {
-					r_str_chop (ptr+8);
+					r_str_chop (ptr + 8);
 					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
 				} else if (!strncmp (ptr, ".ascii ", 6)) {
 					ret = r_asm_pseudo_string (&op, ptr + 7, 0);
