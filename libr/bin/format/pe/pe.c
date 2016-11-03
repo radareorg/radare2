@@ -1812,7 +1812,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	PE_(image_data_directory) *data_dir_export;
 	PE_VWord export_dir_rva ;
 	int n,i, export_dir_size;
-	int exports_sz = 0;
+	st64 exports_sz = 0;
 
 	if (!bin || !bin->data_directory) {
 	    return NULL;
@@ -1840,7 +1840,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		for (i = 0; i < bin->export_directory->NumberOfFunctions; i++) {
 			// get vaddr from AddressOfFunctions array
 			int ret = r_buf_read_at (bin->b, functions_paddr + i * sizeof(PE_VWord), (ut8*)&function_rva, sizeof(PE_VWord));
-			if (!ret) {
+			if (ret < 1) {
 				break;
 			}
 			// have exports by name?
@@ -1889,7 +1889,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
 			function_name[PE_NAME_LENGTH] = '\0';
-			snprintf (export_name, sizeof(export_name) - 1, "%s_%s", dll_name, function_name);
+			snprintf (export_name, sizeof (export_name) - 1, "%s_%s", dll_name, function_name);
 			exports[i].vaddr = bin_pe_rva_to_va (bin, function_rva);
 			exports[i].paddr = bin_pe_rva_to_paddr (bin, function_rva);
 			exports[i].ordinal = function_ordinal;
