@@ -24,6 +24,22 @@
 #define INSOPS insn->detail->x86.op_count
 #define ISIMM(x) insn->detail->x86.operands[x].type == X86_OP_IMM
 
+#define BUF_SZ      64
+
+#define AR_DIM       4
+
+#define SRC_AR       0
+#define DST_AR       1
+#define DST_R_AR     1
+#define DST_W_AR     2
+#define SRC2_AR      2
+#define DST2_AR      2
+#define DSTADD_AR    3
+#define ARG0_AR      0
+#define ARG1_AR      1
+#define ARG2_AR      2
+
+
 struct Getarg {
 	csh handle;
 	cs_insn *insn;
@@ -76,31 +92,33 @@ static bool is_xmm_reg(cs_x86_op op) {
  * @param  n       Operand index
  * @param  set     if 1 it adds set (=) to the operand
  * @param  setoper Extra operation for the set (^, -, +, etc...)
- * @return         char* with the esil operand
+ * @param  sel     Selector for output buffer in staic array
+ * @return         Pointer to esil operand in static array
  */
-static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
+static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
+	static char buf[AR_DIM][BUF_SZ];
+	char *out = buf[sel];
 	char *setarg = setop ? setop : "";
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
-	char buf[64];
 	cs_x86_op op;
 
 	if (!insn->detail) {
 		return NULL;
 	}
-	buf[0] = 0;
 	if (n < 0 || n >= INSOPS) {
 		return NULL;
 	}
+	out[0] = 0;
 	op = INSOP (n);
 	switch (op.type) {
 	case X86_OP_INVALID:
-		return strdup ("invalid");
+		return "invalid";
 	case X86_OP_REG:
 		if (set == 1) {
-			snprintf (buf, sizeof (buf), "%s,%s=",
+			snprintf (out, BUF_SZ, "%s,%s=",
 				cs_reg_name (handle, op.reg), setarg);
-			return strdup (buf);
+			return out;
 		} else {
 			if (gop->bits == 64) {
 				switch (op.reg) {
@@ -117,18 +135,20 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 				default: break;
 				}
 			}
-			return strdup (cs_reg_name (handle, op.reg));
+			return (char *)cs_reg_name (handle, op.reg);
 		}
 	case X86_OP_IMM:
 		if (set == 1) {
-			return r_str_newf ("%"PFMT64d",%s=[%d]",
+			snprintf (out, BUF_SZ, "%"PFMT64d",%s=[%d]",
 				(ut64)op.imm, setarg, op.size);
+			return out;
 		}
-		return r_str_newf ("%"PFMT64d, (ut64)op.imm);
+		snprintf (out, BUF_SZ, "%"PFMT64d, (ut64)op.imm);
+		return out;
 	case X86_OP_MEM:
 		{
 		// address = (base + (index * scale) + offset)
-		char buf_[64] = {0};
+		char buf_[BUF_SZ] = {0};
 		int component_count = 0;
 		const char *base = cs_reg_name (handle, op.mem.base);
 		const char *index = cs_reg_name (handle, op.mem.index);
@@ -136,57 +156,57 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop) {
 		st64 disp = op.mem.disp;
 
 		if (disp != 0) {
-			snprintf (buf, sizeof (buf), "0x%"PFMT64x",", (disp < 0) ? -disp : disp);
+			snprintf (out, BUF_SZ, "0x%"PFMT64x",", (disp < 0) ? -disp : disp);
 			component_count++;
 		}
 
 		if (index) {
 			if (scale > 1) {
-				snprintf (buf_, sizeof (buf), "%s%s,%d,*,", buf, index, scale);
+				snprintf (buf_, BUF_SZ, "%s%s,%d,*,", out, index, scale);
 			} else {
-				snprintf (buf_, sizeof (buf), "%s%s,", buf, index);
+				snprintf (buf_, BUF_SZ, "%s%s,", out, index);
 			}
-			strncpy (buf, buf_, sizeof (buf));
+			strncpy (out, buf_, BUF_SZ);
 			component_count++;
 		}
 
 		if (base) {
-			snprintf (buf_, sizeof (buf), "%s%s,", buf, base);
-			strncpy (buf, buf_, sizeof (buf));
+			snprintf (buf_, BUF_SZ, "%s%s,", out, base);
+			strncpy (out, buf_, BUF_SZ);
 			component_count++;
 		}
 
 		if (component_count > 1) {
 			if (component_count > 2) {
-				snprintf (buf_, sizeof (buf), "%s+,", buf);
-				strncpy (buf, buf_, sizeof (buf));
+				snprintf (buf_, BUF_SZ, "%s+,", out);
+				strncpy (out, buf_, BUF_SZ);
 			}
 			if (disp < 0) {
-				snprintf (buf_, sizeof (buf), "%s-", buf);
+				snprintf (buf_, BUF_SZ, "%s-", out);
 			} else {
-				snprintf (buf_, sizeof (buf), "%s+", buf);
+				snprintf (buf_, BUF_SZ, "%s+", out);
 			}
-			strncpy (buf, buf_, sizeof (buf));
+			strncpy (out, buf_, BUF_SZ);
 		} else {
 			// Remove the trailing ',' from esil statement.
-			if (*buf) {
-				buf[strlen (buf) - 1] = 0;
+			if (*out) {
+				out[strlen (out) - 1] = 0;
 			}
 		}
 
 		// set = 2 is reserved for lea, where the operand is a memory address,
 		// but the corresponding memory is not loaded.
 		if (set == 1) {
-			snprintf (buf_, sizeof (buf), "%s,%s=[%d]", buf, setarg, op.size==10?8:op.size);
-			strncpy (buf, buf_, sizeof (buf));
+			snprintf (buf_, BUF_SZ, "%s,%s=[%d]", out, setarg, op.size==10?8:op.size);
+			strncpy (out, buf_, BUF_SZ);
 		} else if (set == 0) {
-			snprintf (buf_, sizeof (buf), "%s,[%d]", buf, op.size==10? 8: op.size);
-			strncpy (buf, buf_, sizeof (buf));
+			snprintf (buf_, BUF_SZ, "%s,[%d]", out, op.size==10? 8: op.size);
+			strncpy (out, buf_, BUF_SZ);
 		}
 
-		buf[sizeof (buf) - 1] = 0;
+		out[BUF_SZ - 1] = 0;
 		}
-		return strdup (buf);
+		return out;
 	}
 	return NULL;
 }
@@ -239,6 +259,16 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		.insn = insn,
 		.bits = a->bits
 	};
+	char *src;
+	char *src2;
+	char *dst;
+	char *dst2;
+	char *dst_r;
+	char *dst_w;
+	char *dstAdd;
+	char *arg0;
+	char *arg1;
+	char *arg2;
 
 	// counter for rep prefix
 	const char *counter = (a->bits==16)?"cx":
@@ -377,7 +407,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_SETE:
 	case X86_INS_SETGE:
 		{
-			char *dst = getarg (&gop, 0, 1, NULL);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR);
 			switch (insn->id) {
 			case X86_INS_SETE:  esilprintf (op, "zf,%s", dst); break;
 			case X86_INS_SETNE: esilprintf (op, "zf,!,%s", dst); break;
@@ -396,7 +426,6 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			case X86_INS_SETA:  esilprintf (op, "cf,zf,|,!,%s", dst); break;
 			case X86_INS_SETBE: esilprintf (op, "cf,zf,|,%s", dst); break;
 			}
-			free (dst);
 		}
 		break;
 	// cmov
@@ -426,8 +455,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_CMOVP:
 	case X86_INS_CMOVS: {
 		const char *conditional = NULL;
-		char *src = getarg (&gop, 1, 0, NULL);
-		char *dst = getarg (&gop, 0, 1, NULL);
+		src = getarg (&gop, 1, 0, NULL, SRC_AR);
+		dst = getarg (&gop, 0, 1, NULL, DST_AR);
 		switch (insn->id) {
 		case X86_INS_CMOVA:
 			// mov if CF = 0 *AND* ZF = 0
@@ -497,8 +526,6 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		if (src && dst && conditional) {
 			esilprintf (op, "%s,?{,%s,%s,}", conditional, src, dst);
 		}
-		free (src);
-		free (dst);
 	}
 		break;
 	case X86_INS_STOSB:
@@ -544,13 +571,11 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_MOVSD:
 		// Handle "Move Scalar Double-Precision Floating-Point Value"
 		if (is_xmm_reg (INSOP(0)) || is_xmm_reg (INSOP(1))) {
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, NULL);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR);
 			if (src && dst) {
 				esilprintf (op, "%s,%s", src, dst);
 			}
-			if (src) free (src);
-			if (dst) free (dst);
 			break;
 		}
 	case X86_INS_MOVSB:
@@ -558,8 +583,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_MOVSW:
 		if (op->prefix & R_ANAL_OP_PREFIX_REP) {
 			int width = INSOP(0).size;
-			const char *src = cs_reg_name(*handle, INSOP(1).mem.base);
-			const char *dst = cs_reg_name(*handle, INSOP(0).mem.base);
+			src = (char *)cs_reg_name(*handle, INSOP(1).mem.base);
+			dst = (char *)cs_reg_name(*handle, INSOP(0).mem.base);
 			r_strbuf_appendf (&op->esil,
 					"%s,[%d],%s,=[%d],"\
 					"df,?{,%d,%s,-=,%d,%s,-=,},"\
@@ -569,8 +594,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					width, src, width, dst);
 		} else {
 			int width = INSOP(0).size;
-			const char *src = cs_reg_name(*handle, INSOP(1).mem.base);
-			const char *dst = cs_reg_name(*handle, INSOP(0).mem.base);
+			src = (char *)cs_reg_name(*handle, INSOP(1).mem.base);
+			dst = (char *)cs_reg_name(*handle, INSOP(0).mem.base);
 			esilprintf (op, "%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
 					"df,!,?{,%d,%s,+=,%d,%s,+=,}",
 					src, width, dst, width, width, src, width,
@@ -600,8 +625,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		case X86_OP_MEM:
 			if (op->prefix & R_ANAL_OP_PREFIX_REP) {
 				int width = INSOP(0).size;
-				const char *src = cs_reg_name(*handle, INSOP(1).mem.base);
-				const char *dst = cs_reg_name(*handle, INSOP(0).mem.base);
+				src = (char *)cs_reg_name(*handle, INSOP(1).mem.base);
+				dst = (char *)cs_reg_name(*handle, INSOP(0).mem.base);
 				const char *counter = (a->bits==16)?"cx":
 					(a->bits==32)?"ecx":"rcx";
 				esilprintf (op, "%s,!,?{,BREAK,},%s,NUM,%s,NUM,"\
@@ -612,25 +637,21 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 						width, width, src, width, dst, width, src,
 						width, dst, counter, counter);
 			} else {
-				char *src = getarg (&gop, 1, 0, NULL);
-				char *dst = getarg (&gop, 0, 1, NULL);
+				src = getarg (&gop, 1, 0, NULL, SRC_AR);
+				dst = getarg (&gop, 0, 1, NULL, DST_AR);
 				esilprintf (op, "%s,%s", src, dst);
-				free (src);
-				free (dst);
 			}
 			break;
 		case X86_OP_REG:
 		default:
 			{
-				char *src = getarg (&gop, 1, 0, NULL);
-				char *dst = getarg (&gop, 0, 0, NULL);
+				src = getarg (&gop, 1, 0, NULL, SRC_AR);
+				dst = getarg (&gop, 0, 0, NULL, DST_AR);
 				const char *dst64 = r_reg_32_to_64 (a->reg, dst);
 				esilprintf (op, "%s,%s,=", src, dst);
 				if (a->bits == 64 && dst64) {
 					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", dst64);
 				}
-				free (src);
-				free (dst);
 				break;
 			}
 		}
@@ -641,11 +662,9 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// TODO: RCL Still does not work as intended
 		//  - Set flags
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 0, NULL);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			esilprintf (op, "%s,%s,<<<,%s,=", src, dst, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_ROR:
@@ -653,11 +672,9 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// TODO: RCR Still does not work as intended
 		//  - Set flags
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 0, NULL);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			esilprintf (op, "%s,%s,>>>,%s,=", src, dst, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_SHL:
@@ -668,32 +685,26 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// number of bits shifted is greater than the size of the
 		// destination.
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "<<");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "<<", DST_AR);
 			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_SAR:
 	case X86_INS_SARX:
 		// TODO: Set CF. See case X86_INS_SHL for more details.
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, ">>");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, ">>", DST_AR);
 			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_SAL:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "<<");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "<<", DST_AR);
 			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_SALC:
@@ -704,13 +715,10 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_SHRX:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst_r = getarg (&gop, 0, 0, NULL);
-			char *dst_w = getarg (&gop, 0, 1, NULL);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst_r = getarg (&gop, 0, 0, NULL, DST_R_AR);
+			dst_w = getarg (&gop, 0, 1, NULL, DST_W_AR);
 			esilprintf (op, "0,cf,=,1,%s,-,1,<<,%s,&,?{,1,cf,=,},%s,%s,>>,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst_r, src, dst_r, dst_w);
-			free (src);
-			free (dst_r);
-			free (dst_w);
 		}
 		break;
 	case X86_INS_CMP:
@@ -723,28 +731,22 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_CMPSS:
 	case X86_INS_TEST:
 		if (insn->id == X86_INS_TEST) {
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 0, NULL);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			esilprintf (op, "0,%s,%s,&,==,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
 				src, dst);
-			free (src);
-			free (dst);
 		} else {
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 0, NULL);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			esilprintf (op,  "%s,%s,==,$z,zf,=,$b%d,cf,=,$p,pf,=,$s,sf,=,$o,of,=",
 				src, dst, (INSOP(0).size*8));
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_LEA:
 		{
-			char *src = getarg (&gop, 1, 2, NULL);
-			char *dst = getarg (&gop, 0, 1, NULL);
+			src = getarg (&gop, 1, 2, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR);
 			esilprintf (op, "%s,%s", src, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_PUSHAW:
@@ -776,10 +778,9 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_ENTER:
 	case X86_INS_PUSH:
 		{
-			char *dst = getarg (&gop, 0, 0, NULL);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			esilprintf (op, "%s,%d,%s,-=,%s,=[%d]",
 				dst?dst:"eax", rs, sp, sp, rs);
-			free (dst);
 		}
 		break;
 	case X86_INS_PUSHF:
@@ -818,11 +819,10 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case X86_INS_POP:
 		{
-			char *dst = getarg (&gop, 0, 0, NULL);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			esilprintf (op,
 				"%s,[%d],%s,=,%d,%s,+=",
 				sp, rs, dst, rs, sp);
-			free (dst);
 		}
 		break;
 	case X86_INS_POPF:
@@ -881,7 +881,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_LOOPNE:
 		{
 			const char *cnt = (a->bits==16)?"cx":(a->bits==32)?"ecx":"rcx";
-			char *dst = getarg (&gop, 0, 2, NULL);
+			dst = getarg (&gop, 0, 2, NULL, DST_AR);
 			switch (insn->id) {
 			case X86_INS_JL:
 				esilprintf (op, "of,sf,^,?{,%s,%s,=,}", dst, pc);
@@ -952,48 +952,43 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					cnt, cnt, dst, pc);
 				break;
 			}
-			free (dst);
 		}
 		break;
 	case X86_INS_CALL:
 		{
-			char* arg = getarg (&gop, 0, 0, NULL);
+			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR);
 			esilprintf (op,
 					"%s,"
 					"%d,%s,-=,%s,"
 					"=[],"
 					"%s,%s,=",
-					pc, rs, sp, sp, arg, pc);
-			free (arg);
+					pc, rs, sp, sp, arg0, pc);
 		}
 		break;
 	case X86_INS_LCALL:
 		{
-			char* arg1 = getarg (&gop, 0, 0, NULL);
-			char* arg2 = getarg (&gop, 1, 0, NULL);
-			if (arg2) {
+			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR);
+			arg1 = getarg (&gop, 1, 0, NULL, ARG1_AR);
+			if (arg1) {
 				esilprintf (op,
 						"2,%s,-=,cs,%s,=[2],"	// push CS
 						"%d,%s,-=,%s,%s,=[],"	// push IP/EIP
 						"%s,cs,=,"		// set CS
 						"%s,%s,=",		// set IP/EIP
-						sp, sp, rs, sp, pc, sp, arg1, arg2, pc);
+						sp, sp, rs, sp, pc, sp, arg0, arg1, pc);
 			} else {
 				esilprintf (op,
 						"%d,%s,-=,%d,%s,=[],"	// push IP/EIP
 						"%s,%s,=",		// set IP/EIP
-						sp, sp, rs, sp, arg1, pc);
+						sp, sp, rs, sp, arg0, pc);
 			}
-			free (arg1);
-			free (arg2);
 		}
 		break;
 	case X86_INS_JMP:
 	case X86_INS_LJMP:
 		{
-			char *src = getarg (&gop, 0, 0, NULL);
+			src = getarg (&gop, 0, 0, NULL, SRC_AR);
 			esilprintf (op, "%s,%s,=", src, pc);
-			free (src);
 		}
 		// TODO: what if UJMP?
 		switch (INSOP(0).type) {
@@ -1045,10 +1040,9 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			break;
 		case X86_OP_REG:
 			{
-			char *src = getarg (&gop, 0, 0, NULL);
+			src = getarg (&gop, 0, 0, NULL, SRC_AR);
 			op->src[0] = r_anal_value_new ();
 			op->src[0]->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
-			free (src);
 			//XXX fallthrough
 			}
 		//case X86_OP_FP:
@@ -1082,8 +1076,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_PXOR:
 	case X86_INS_XOR:
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "^");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "^", DST_AR);
 			char *p;
 			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=", src, dst);
 			if ((a->bits == 64) && (p = strchr (dst, (int)','))) {
@@ -1092,8 +1086,6 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", p);
 				}
 			}
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_OR:
@@ -1106,30 +1098,26 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// XXX: Fix the above issue in esil.c to ensure we never make this
 		// mistake.
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "|");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "|", DST_AR);
 			esilprintf (op, "%s,%s,$s,sf,=,$z,zf,=,$p,pf,=,$0,of,=,$0,cf,=",
 					src, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_INC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		{
-			char *src = getarg (&gop, 0, 1, "++");
+			src = getarg (&gop, 0, 1, "++", SRC_AR);
 			esilprintf (op, "%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
-			free (src);
 		}
 		break;
 	case X86_INS_DEC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
 		{
-			char *src = getarg (&gop, 0, 1, "--");
+			src = getarg (&gop, 0, 1, "--", SRC_AR);
 			esilprintf (op, "%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=", src);
-			free (src);
 		}
 		break;
 	case X86_INS_PSUBB:
@@ -1141,36 +1129,30 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_PSUBUSB:
 	case X86_INS_PSUBUSW:
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "-");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "-", DST_AR);
 			esilprintf (op, "%s,%s", src, dst);
-			free(src);
-			free(dst);
 		}
 		break;
 	case X86_INS_SUB:
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "-");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "-", DST_AR);
 			ut64 size = INSOP(0).size;
 			// Set OF, SF, ZF, AF, PF, and CF flags.
 			// We use $b rather than $c here as the carry flag really
 			// represents a "borrow"
 			esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b%d,cf,=",
 				src, dst, size);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_SBB:
 		// dst = dst - (src + cf)
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 0, NULL);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			ut64 size = INSOP(0).size;
 			esilprintf (op, "cf,%s,+,%s,-=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=,$b%d,cf,=", src, dst, size);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_LIDT:
@@ -1206,8 +1188,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_ANDNPD:
 	case X86_INS_ANDNPS:
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "&");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "&", DST_AR);
 			char *p;
 			esilprintf (op, "%s,%s,$0,of,=,$0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", src, dst);
 			if ((a->bits == 64) && (p = strchr (dst, (int)','))) {
@@ -1216,65 +1198,56 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", p);
 				}
 			}
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_IDIV:
 		{
-			char *a0 = getarg (&gop, 0, 0, NULL);
-			char *a1 = getarg (&gop, 1, 0, NULL);
-			char *a2 = getarg (&gop, 2, 0, NULL);
+			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR);
+			arg1 = getarg (&gop, 1, 0, NULL, ARG1_AR);
+			arg2 = getarg (&gop, 2, 0, NULL, ARG2_AR);
 			// TODO update flags & handle signedness
-			if (!a2 && !a1) {
+			if (!arg2 && !arg1) {
 				// TODO: IDIV rbx not implemented. this is just a workaround
 // http://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
 // Divides (signed) the value in the AX, DX:AX, or EDX:EAX registers (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory location. The action of this instruction depends on the operand size (dividend/divisor), as shown in the following table:
 // IDIV RBX    ==   RDX:RAX /= RBX
-				esilprintf (op, "%s,%s,/=", a0, "rax");
+				esilprintf (op, "%s,%s,/=", arg0, "rax");
 			} else {
-				esilprintf (op, "%s,%s,/,%s,=", a2, a1, a0);
+				esilprintf (op, "%s,%s,/,%s,=", arg2, arg1, arg0);
 			}
-			free (a0);
-			free (a1);
-			free (a2);
 		}
 		break;
 	case X86_INS_DIV:
 		{
 			int width = INSOP(0).size;
-			char *dst = getarg (&gop, 0, 0, NULL);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			const char *r_ax = (width==2)?"ax": (width==4)?"eax":"rax";
 			const char *r_dx = (width==2)?"dx": (width==4)?"edx":"rdx";
 			// TODO update flags & handle signedness
 			esilprintf (op, "%s,%s,%%,%s,=,%s,%s,/,%s,=",
 				dst, r_ax, r_dx, dst, r_ax, r_ax);
-			free (dst);
 		}
 		break;
 	case X86_INS_IMUL:
 		{
-			char *a0 = getarg (&gop, 0, 0, NULL);
-			char *a1 = getarg (&gop, 1, 0, NULL);
-			char *a2 = getarg (&gop, 2, 0, NULL);
-			if (a2) {
+			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR);
+			arg1 = getarg (&gop, 1, 0, NULL, ARG1_AR);
+			arg2 = getarg (&gop, 2, 0, NULL, ARG2_AR);
+			if (arg2) {
 				// TODO update flags & handle signedness
-				esilprintf (op, "%s,%s,*,%s,=", a2, a1, a0);
-				free (a2);
+				esilprintf (op, "%s,%s,*,%s,=", arg2, arg1, arg0);
 			} else {
-				if (a1) {
-					esilprintf (op, "%s,%s,*=", a1, a0);
+				if (arg1) {
+					esilprintf (op, "%s,%s,*=", arg1, arg0);
 				} else {
-					esilprintf (op, "%s,%s,*=", a0, "rax");
+					esilprintf (op, "%s,%s,*=", arg0, "rax");
 				}
 			}
-			free (a0);
-			free (a1);
 		}
 		break;
 	case X86_INS_MUL:
 		{
-			char *src = getarg (&gop, 0, 0, NULL);
+			src = getarg (&gop, 0, 0, NULL, SRC_AR);
 			if (src) {
 				switch (src[0]) {
 				case 'r':
@@ -1287,7 +1260,6 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					esilprintf (op, "%s,al,*=", src);
 					break;
 				}
-				free (src);
 			} else {
 				/* should never happen */
 			}
@@ -1299,40 +1271,35 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case X86_INS_MULSD:
 	case X86_INS_MULSS:
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "*");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "*", DST_AR);
 			if (!src && dst) {
 				switch (dst[0]) {
 				case 'r':
-					src = strdup ("rax");
+					src = "rax";
 					break;
 				case 'e':
-					src = strdup ("eax");
+					src = "eax";
 					break;
 				default:
-					src = strdup ("al");
+					src = "al";
 					break;
 				}
 			}
 			esilprintf (op, "%s,%s", src, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_NEG:
 		{
-			char *src = getarg (&gop, 0, 0, NULL);
-			char *dst = getarg(&gop, 0, 1, NULL);
+			src = getarg (&gop, 0, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR);
 			esilprintf (op, "0,cf,=,0,%s,>,?{,1,cf,=,},%s,0,-,%s,$z,zf,=,0,of,=,$s,sf,=,$o,pf,=", src, src, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_NOT:
 		{
-			char *dst = getarg (&gop, 0, 1, "^");
+			dst = getarg (&gop, 0, 1, "^", DST_AR);
 			esilprintf (op, "-1,%s", dst);
-			free (dst);
 		}
 		break;
 	case X86_INS_PACKSSDW:
@@ -1349,18 +1316,17 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case X86_INS_XCHG:
 		{
-			char *src = getarg (&gop, 1, 0, NULL); // x
-			char *dst = getarg (&gop, 0, 0, NULL); // y
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			if (INSOP(0).type == X86_OP_MEM) {
-				char *dst1 = getarg (&gop, 0, 1, NULL);
+				dst2 = getarg (&gop, 0, 1, NULL, DST2_AR);
 				esilprintf (op,
 					"%s,%s,^,%s,=,"
 					"%s,%s,^,%s,"
 					"%s,%s,^,%s,=",
 					dst, src, src,	// x = x ^ y
-					src, dst, dst1,	// y = y ^ x
+					src, dst, dst2,	// y = y ^ x
 					dst, src, src); // x = x ^ y
-				free (dst1);
 			} else {
 				esilprintf (op,
 					"%s,%s,^,%s,=,"
@@ -1371,27 +1337,24 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					dst, src, src); // x = x ^ y
 				//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 			}
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_XADD: /* xchg + add */
 		{
-			char *src = getarg (&gop, 1, 0, NULL); // x
-			char *dst = getarg (&gop, 0, 0, NULL); // y
-			char *dstAdd = getarg ( &gop, 0, 1, "+");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
+			dstAdd = getarg (&gop, 0, 1, "+", DSTADD_AR);
 			if (INSOP(0).type == X86_OP_MEM) {
-				char *dst1 = getarg (&gop, 0, 1, NULL);
+				dst2 = getarg (&gop, 0, 1, NULL, DST2_AR);
 				esilprintf (op,
 					"%s,%s,^,%s,=,"
 					"%s,%s,^,%s,"
 					"%s,%s,^,%s,=,"
 					"%s,%s",
 					dst, src, src,	// x = x ^ y
-					src, dst, dst1,	// y = y ^ x
+					src, dst, dst2,	// y = y ^ x
 					dst, src, src,  // x = x ^ y
 					src, dstAdd);
-				free (dst1);
 			} else {
 				esilprintf (op,
 					"%s,%s,^,%s,=,"
@@ -1404,9 +1367,6 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					src, dstAdd);
 				//esilprintf (op, "%s,%s,%s,=,%s", src, dst, src, dst);
 			}
-			free (src);
-			free (dst);
-			free (dstAdd);
 		}
 		break;
 	case X86_INS_FADD:
@@ -1421,37 +1381,30 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		if (INSOP(0).type == X86_OP_MEM) {
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *src2 = getarg (&gop, 0, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, NULL);
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			src2 = getarg (&gop, 0, 0, NULL, SRC2_AR);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR);
 			esilprintf (op, "%s,%s,+,%s", src, src2, dst);
-			free (src);
-			free (src2);
-			free (dst);
 		} else {
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "+");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "+", DST_AR);
 			esilprintf (op, "%s,%s", src, dst);
-			free (src);
-			free (dst);
 		}
 		break;
 	case X86_INS_ADD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
 		{
-		char *src = getarg (&gop, 1, 0, NULL);
-		char *dst = getarg (&gop, 0, 1, "+");
+		src = getarg (&gop, 1, 0, NULL, SRC_AR);
+		dst = getarg (&gop, 0, 1, "+", DST_AR);
 		int carry_out_bit = (INSOP(0).size * 8) - 1;
 		esilprintf (op, "%s,%s,$o,of,=,$s,sf,=,$z,zf,=,$c%d,cf,=,$p,pf,=", src, dst, carry_out_bit);
-		free (src);
-		free (dst);
 		}
 		break;
 	case X86_INS_ADC:
 		{
-			char *src = getarg (&gop, 1, 0, NULL);
-			char *dst = getarg (&gop, 0, 1, "+");
+			src = getarg (&gop, 1, 0, NULL, SRC_AR);
+			dst = getarg (&gop, 0, 1, "+", DST_AR);
 			int carry_out_bit = (INSOP(0).size * 8) - 1;
 			// dst = dst + src + cf
 			// NOTE: We would like to add the carry first before adding the
@@ -1460,8 +1413,6 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			// that adds carry (as esil only keeps track of the last
 			// addition to set the flags).
 			esilprintf (op, "cf,%s,+,%s,$o,of,=,$s,sf,=,$z,zf,=,$c%d,cf,=,$p,pf,=", src, dst, carry_out_bit);
-			free (src);
-			free (dst);
 		}
 		break;
 		/* Direction flag */
@@ -1519,6 +1470,7 @@ static int parse_reg_name_lea(RRegItem *reg, csh *handle, cs_insn *insn, int reg
 }
 
 static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+	char *dst;
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
@@ -1772,14 +1724,13 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			break;
 		case X86_OP_REG:
 			{
-			char *dst = getarg (&gop, 0, 0, NULL);
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			//op->dst = r_anal_value_new ();
 			op->dst->reg = r_reg_get (a->reg, dst, R_REG_TYPE_GPR);
 			//op->src[0] = r_anal_value_new ();
 			if (INSOP(1).type == X86_OP_MEM) {
 				op->src[0]->delta = INSOP(1).mem.disp;
 			}
-			free (dst);
 			}
 		default:
 			break;
