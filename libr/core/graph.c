@@ -1551,13 +1551,13 @@ static void set_layout(RAGraph *g) {
 
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	char *body;
-	int o_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
-	int o_lines = r_config_get_i (core->config, "asm.lines");
-	int o_bytes = r_config_get_i (core->config, "asm.bytes");
-	int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
-	int o_marks = r_config_get_i (core->config, "asm.marks");
-	int o_offset = r_config_get_i (core->config, "asm.offset");
-	int o_comments = r_config_get_i (core->config, "asm.comments");
+	const bool o_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
+	const bool o_lines = r_config_get_i (core->config, "asm.lines");
+	const bool o_bytes = r_config_get_i (core->config, "asm.bytes");
+	const int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
+	const bool o_marks = r_config_get_i (core->config, "asm.marks");
+	const bool o_offset = r_config_get_i (core->config, "asm.offset");
+	const bool o_comments = r_config_get_i (core->config, "asm.comments");
 	int o_cursor = core->print->cur_enabled;
 
 	const char *cmd = (opts & BODY_SUMMARY) ? "pds" : "pD";
@@ -1593,14 +1593,12 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 }
 
 static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena) {
-	char * body;
 	core->anal->gp = saved_gp;
 	if (emu) {
 		if (b->parent_reg_arena) {
-			ut64 gp;
 			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena);
 			R_FREE (b->parent_reg_arena);
-			gp = r_reg_getv (core->anal->reg, "gp");
+			ut64 gp = r_reg_getv (core->anal->reg, "gp");
 			if (gp) {
 				core->anal->gp = gp;
 			}
@@ -1608,7 +1606,7 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 			r_reg_arena_poke (core->anal->reg, saved_arena);
 		}
 	}
-	body = get_body (core, b->addr, b->size, opts);
+	char * body = get_body (core, b->addr, b->size, opts);
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr && emu && core->anal->last_disasm_reg != NULL) {
 			RAnalBlock * jumpbb = r_anal_bb_get_jumpbb (fcn, b);
@@ -1635,9 +1633,9 @@ static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
-    bool emu = r_config_get_i (core->config, "asm.emu");
-    ut64 saved_gp;
-    ut8 *saved_arena;
+	bool emu = r_config_get_i (core->config, "asm.emu");
+	ut64 saved_gp;
+	ut8 *saved_arena;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
@@ -1681,10 +1679,10 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	char *shortcut = NULL;
 	int shortcuts = 0;
-    bool emu = r_config_get_i (core->config, "asm.emu");
+	bool emu = r_config_get_i (core->config, "asm.emu");
 	int ret = false;
-    ut64 saved_gp;
-    ut8 *saved_arena;
+	ut64 saved_gp;
+	ut8 *saved_arena;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
