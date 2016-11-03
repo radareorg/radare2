@@ -327,7 +327,7 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 		return true;
 	case R_SYS_ENDIAN_LITTLE:
 		a->big_endian = false;
-		return true;
+		return false;
 	case R_SYS_ENDIAN_BIG:
 		a->big_endian = true;
 		return true;
