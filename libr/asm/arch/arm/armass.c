@@ -421,6 +421,10 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else
 	if (!strcmpnull (ao->op, "b") || !strcmpnull (ao->op, "b.n")) {
 		//uncond branch : PC += 4 + (delta*2)
+		int offset = getnum (ao->a[0]);
+		if (offset == 0) {
+			return 0;
+		}
 		int delta = getnum (ao->a[0]) - 4 - ao->off;
 		if ((delta < -2048) || (delta > 2046) || (delta & 1)) {
 			eprintf("branch out of range or not even\n");
