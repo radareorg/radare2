@@ -1052,6 +1052,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			is_first_thread = false;
 			break;
 		case LC_LOAD_DYLIB:
+		case LC_LOAD_WEAK_DYLIB:
 			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "load_dylib", 0);
 			bin->nlibs++;
 			if (!parse_dylib(bin, off)){
