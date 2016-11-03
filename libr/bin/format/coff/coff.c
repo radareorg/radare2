@@ -82,8 +82,6 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 				 r_coff_rebase_sym (obj, addr, &obj->symbols[i]))
 				return addr;
 		}
-	}
-	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			if ((!strcmp (obj->symbols[i].n_name, "_main") || 
 				 !strcmp (obj->symbols[i].n_name, "main")) &&

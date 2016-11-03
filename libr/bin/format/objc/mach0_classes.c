@@ -89,7 +89,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *arch, RBinClass *klass)
 static void get_method_list_t(mach0_ut p, RBinFile *arch, char *class_name, RBinClass *klass, bool is_static);
 static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass);
 static void get_class_ro_t(mach0_ut p, RBinFile *arch, ut32 *is_meta_class, RBinClass *klass);
-static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass);
+static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass, bool dupe);
 static void __r_bin_class_free(RBinClass *p);
 
 static int is_thumb(RBinFile *arch) {
@@ -932,7 +932,7 @@ static mach0_ut get_isa_value() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
+static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass, bool dupe) {
 	struct MACH0_(SClass) c = { 0 };
 	const int size = sizeof (struct MACH0_(SClass));
 	mach0_ut r = 0;
@@ -989,10 +989,10 @@ static void get_class_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		eprintf ("This is a Swift class");
 	}
 #endif
-	if (!is_meta_class) {
+	if (!is_meta_class && !dupe) {
 		mach0_ut isa_n_value = get_isa_value ();
 		ut64 tmp = klass->addr;
-		get_class_t (c.isa + isa_n_value, arch, klass);
+		get_class_t (c.isa + isa_n_value, arch, klass, true);
 		klass->addr = tmp;
 	}
 }
@@ -1146,7 +1146,7 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 			goto get_classes_error;
 		}
 		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
-		get_class_t (p, arch, klass);
+		get_class_t (p, arch, klass, false);
 		if (!klass->name) {
 			klass->name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
 			if (!klass->name) {
