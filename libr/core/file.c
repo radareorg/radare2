@@ -285,7 +285,9 @@ R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinFile *bf = NULL;
-	if (desc) result = r_bin_reload (r->bin, desc, baseaddr);
+	if (desc) {
+		result = r_bin_reload (r->bin, desc, baseaddr);
+	}
 	bf = r_bin_cur (r->bin);
 	r_core_bin_set_env (r, bf);
 	return result;
