@@ -10,8 +10,10 @@ R_LIB_VERSION (r_asm);
 
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
+static int code_align = 0;
+
 static int r_asm_pseudo_align(RAsmOp *op, char *input) {
-	eprintf ("TODO: .align\n"); // Must add padding for labels and others.. but this is from RAsm, not RAsmOp
+	code_align = r_num_math (NULL, input);
 	return 0;
 }
 
@@ -79,7 +81,9 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	} else if (n == 8) {
 		l = (long int)s64;
 		p = (const ut8*)&l;
-	} else return 0;
+	} else {
+		return 0;
+	}
 	memcpy (op->buf, p, n);
 	r_hex_bin2str (op->buf, n, op->buf_hex);
 	return n;
@@ -102,7 +106,7 @@ static inline int r_asm_pseudo_byte(RAsmOp *op, char *input) {
 	r_str_replace_char (input, ',', ' ');
 	len = r_str_word_count (input);
 	r_str_word_set0 (input);
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		const char *word = r_str_word_get0 (input, i);
 		int num = (int)r_num_math (NULL, word);
 		op->buf[i] = num;
@@ -540,7 +544,9 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
 R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
 	RAsmCode *ac;
 	char *f = r_file_slurp (file, NULL);
-	if (!f) return NULL;
+	if (!f) {
+		return NULL;
+	}
 	ac = r_asm_massemble (a, f);
 	free (f);
 	return ac;
@@ -553,18 +559,23 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	RAsmCode *acode = NULL;
 	RAsmOp op = {0};
 	ut64 off, pc;
-	if (!buf)
+	if (!buf) {
 		return NULL;
-	if (!(acode = r_asm_code_new ()))
+	}
+	if (!(acode = r_asm_code_new ())) {
 		return NULL;
-	if (!(acode->buf_asm = malloc (strlen (buf)+16)))
+	}
+	if (!(acode->buf_asm = malloc (strlen (buf)+16))) {
 		return r_asm_code_free (acode);
+	}
 	strncpy (acode->buf_asm, buf, sizeof (acode->buf_asm)-1);
-	if (!(acode->buf_hex = malloc (64))) // WTF unefficient
+	if (!(acode->buf_hex = malloc (64))) { // WTF unefficient
 		return r_asm_code_free (acode);
+	}
 	*acode->buf_hex = 0;
-	if (!(acode->buf = malloc (64)))
+	if (!(acode->buf = malloc (64))) {
 		return r_asm_code_free (acode);
+	}
 	lbuf = strdup (buf);
 	memset (&op, 0, sizeof (op));
 
@@ -601,10 +612,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			p = strstr (p+5, "$sys.");
 		}
 	}
-
-	if (strchr (lbuf, ':'))
+	if (strchr (lbuf, ':')) {
 		labels = 1;
-
+	}
 	/* Tokenize */
 	for (tokens[0] = lbuf, ctr = 0;
 		ctr < R_ASM_BUFSIZE - 1 &&
@@ -624,14 +634,23 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 // XXX: stages must be dynamic. until all equs have been resolved
 #define STAGES 5
 	pc = a->pc;
+	bool inComment = false;
 	for (stage = 0; stage < STAGES; stage++) {
-		if (stage < 2 && !labels)
+		if (stage < 2 && !labels) {
 			continue;
+		}
+		inComment = false;
 		r_asm_set_pc (a, pc);
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 				i <= ctr; i++, idx += ret) {
+			if (inComment) {
+				if (!strncmp (ptr_start, "*/", 2)) {
+					inComment = false;
+				}
+				continue;
+			}
 			memset (buf_token, 0, R_ASM_BUFSIZE);
-			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE-1);
+			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE - 1);
 			if (!strncmp (a->cur->arch, "avr", 3)) {
 				for (ptr_start = buf_token; *ptr_start &&
 					isavrseparator (*ptr_start); ptr_start++);
@@ -639,9 +658,14 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				for (ptr_start = buf_token; *ptr_start &&
 					isseparator (*ptr_start); ptr_start++);
 			}
+			if (!strncmp (ptr_start, "/*", 2)) {
+				inComment = true;
+				continue;
+			}
 			ptr = strchr (ptr_start, '#'); /* Comments */
-			if (ptr && !R_BETWEEN ('0', ptr[1], '9') && ptr[1]!='-')
+			if (ptr && !R_BETWEEN ('0', ptr[1], '9') && ptr[1]!='-') {
 				*ptr = '\0';
+			}
 			r_asm_set_pc (a, a->pc + ret);
 			off = a->pc;
 			ret = 0;
@@ -682,14 +706,17 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				ptr = ptr_start;
 				if (!strncmp (ptr, ".intel_syntax", 13))
 					a->syntax = R_ASM_SYNTAX_INTEL;
-				else if (!strncmp (ptr, ".att_syntax", 10))
+				else if (!strncmp (ptr, ".att_syntax", 10)) {
 					a->syntax = R_ASM_SYNTAX_ATT;
-				else if (!strncmp (ptr, ".string ", 8)) {
+				} else if (!strncmp (ptr, ".asciz", 6)) {
+					r_str_chop (ptr + 8);
+					ret = r_asm_pseudo_string (&op, ptr+8, 1);
+				} else if (!strncmp (ptr, ".string ", 8)) {
 					r_str_chop (ptr+8);
 					ret = r_asm_pseudo_string (&op, ptr+8, 1);
-				} else if (!strncmp (ptr, ".ascii ", 7)) {
+				} else if (!strncmp (ptr, ".ascii ", 6)) {
 					ret = r_asm_pseudo_string (&op, ptr+7, 0);
-				} else if (!strncmp (ptr, ".align", 7)) {
+				} else if (!strncmp (ptr, ".align", 6)) {
 					ret = r_asm_pseudo_align (&op, ptr+7);
 				} else if (!strncmp (ptr, ".arm", 4)) {
 					r_asm_use (a, "arm");
@@ -748,8 +775,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					eprintf ("Unknown directive (%s)\n", ptr);
 					return r_asm_code_free (acode);
 				}
-				if (!ret)
+				if (!ret) {
 					continue;
+				}
 				if (ret < 0) {
 					eprintf ("!!! Oops\n");
 					return r_asm_code_free (acode);
@@ -757,30 +785,35 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			} else { /* Instruction */
 				char *str = ptr_start;
 				ptr_start = r_str_chop (str);
-				if (a->ifilter)
+				if (a->ifilter) {
 					r_parse_parse (a->ifilter, ptr_start, ptr_start);
+				}
 				if (acode->equs) {
-					if (!*ptr_start)
+					if (!*ptr_start) {
 						continue;
+					}
 					str = r_asm_code_equ_replace (acode, strdup (ptr_start));
 					ret = r_asm_assemble (a, &op, str);
 					free (str);
 				} else {
-					if (!*ptr_start)
+					if (!*ptr_start) {
 						continue;
+					}
 					ret = r_asm_assemble (a, &op, ptr_start);
 				}
 			}
-			if (stage == STAGES-1) {
+			if (stage == STAGES - 1) {
 				if (ret < 1) {
 					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;
-				if (!(acode->buf = realloc (acode->buf, (idx+ret)*2)))
+				if (!(acode->buf = realloc (acode->buf, (idx+ret)*2))) {
 					return r_asm_code_free (acode);
-				if (!(acode->buf_hex = realloc (acode->buf_hex, (acode->len*2)+1)))
+				}
+				if (!(acode->buf_hex = realloc (acode->buf_hex, (acode->len*2)+1))) {
 					return r_asm_code_free (acode);
+				}
 				memcpy (acode->buf+idx, op.buf, ret);
 				strcat (acode->buf_hex, op.buf_hex);
 			}
