@@ -1557,6 +1557,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
 	int o_marks = r_config_get_i (core->config, "asm.marks");
 	int o_offset = r_config_get_i (core->config, "asm.offset");
+	int o_comments = r_config_get_i (core->config, "asm.comments");
 	int o_cursor = core->print->cur_enabled;
 
 	const char *cmd = (opts & BODY_SUMMARY) ? "pds" : "pD";
@@ -1566,6 +1567,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmtcol", 0);
 	r_config_set_i (core->config, "asm.marks", false);
+	r_config_set_i (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
 	core->print->cur_enabled = false;
 
 	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY) {
@@ -1586,6 +1588,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_i (core->config, "asm.cmtcol", o_cmtcol);
 	r_config_set_i (core->config, "asm.marks", o_marks);
 	r_config_set_i (core->config, "asm.offset", o_offset);
+	r_config_set_i (core->config, "asm.comments", o_comments);
 	return body;
 }
 
