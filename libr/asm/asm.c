@@ -808,13 +808,17 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;
-				if (!(acode->buf = realloc (acode->buf, (idx+ret)*2))) {
+				char *newbuf = realloc (acode->buf, (idx + ret) * 2);
+				if (!newbuf) {
 					return r_asm_code_free (acode);
 				}
-				if (!(acode->buf_hex = realloc (acode->buf_hex, (acode->len*2)+1))) {
+				acode->buf = (ut8*)newbuf;
+				newbuf = realloc (acode->buf_hex, strlen (acode->buf_hex) + strlen (op.buf_hex) + 1);
+				if (!newbuf) {
 					return r_asm_code_free (acode);
 				}
-				memcpy (acode->buf+idx, op.buf, ret);
+				acode->buf_hex = newbuf;
+				memcpy (acode->buf + idx, op.buf, ret);
 				strcat (acode->buf_hex, op.buf_hex);
 			}
 		}
