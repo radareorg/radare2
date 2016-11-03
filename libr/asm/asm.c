@@ -319,23 +319,24 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 	if (!a || !a->cur) {
 		return false;
 	}
+	a->big_endian = false; //little endian by default
 	switch (a->cur->endian) {
 	case R_SYS_ENDIAN_NONE:
 	case R_SYS_ENDIAN_BI:
 		// let user select
 		a->big_endian = b;
-		return true;
+		break;
 	case R_SYS_ENDIAN_LITTLE:
 		a->big_endian = false;
-		return false;
+		break;
 	case R_SYS_ENDIAN_BIG:
 		a->big_endian = true;
-		return true;
+		break;
 	default:
 		eprintf ("RAsmPlugin doesn't specify endianness\n");
 		break;
 	}
-	return false;
+	return a->big_endian;
 }
 
 R_API int r_asm_set_syntax(RAsm *a, int syntax) {
