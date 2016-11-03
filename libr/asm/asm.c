@@ -68,7 +68,7 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	int i;
 	long int l;
 	ut64 s64 = r_num_math (NULL, input);
-	if (n!=8 && s64>>(n*8)) {
+	if (n != 8 && s64 >> (n * 8)) {
 		eprintf ("int16 Out is out of range\n");
 		return 0;
 	}
@@ -409,7 +409,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	memcpy (op->buf, buf, oplen);
 	*op->buf_hex = 0;
-	if ((oplen*4) >= sizeof (op->buf_hex)) {
+	if ((oplen * 4) >= sizeof (op->buf_hex)) {
 		oplen = (sizeof (op->buf_hex) / 4) - 1;
 	}
 	r_hex_bin2str (buf, oplen, op->buf_hex);
@@ -526,36 +526,36 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
 	RAsmCode *ret;
 	ut8 *buf;
 	int len;
-
-	if (!(buf = malloc (1+strlen (hexstr))))
+	if (!(buf = malloc (strlen (hexstr) + 1))) {
 		return NULL;
+	}
 	len = r_hex_str2bin (hexstr, buf);
 	if (len < 1) {
 		free (buf);
 		return NULL;
 	}
 	ret = r_asm_mdisassemble (a, buf, (ut64)len);
-	if (ret && a->ofilter)
+	if (ret && a->ofilter) {
 		r_parse_parse (a->ofilter, ret->buf_asm, ret->buf_asm);
+	}
 	free (buf);
 	return ret;
 }
 
 R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
-	RAsmCode *ac;
+	RAsmCode *ac = NULL;
 	char *f = r_file_slurp (file, NULL);
-	if (!f) {
-		return NULL;
+	if (f) {
+		ac = r_asm_massemble (a, f);
+		free (f);
 	}
-	ac = r_asm_massemble (a, f);
-	free (f);
 	return ac;
 }
 
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	int labels = 0, num, stage, ret, idx, ctr, i, j, linenum = 0;
-	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
-		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
+	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
+	char *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
 	RAsmCode *acode = NULL;
 	RAsmOp op = {0};
 	ut64 off, pc;
@@ -565,10 +565,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	if (!(acode = r_asm_code_new ())) {
 		return NULL;
 	}
-	if (!(acode->buf_asm = malloc (strlen (buf)+16))) {
+	if (!(acode->buf_asm = malloc (strlen (buf) + 16))) {
 		return r_asm_code_free (acode);
 	}
-	strncpy (acode->buf_asm, buf, sizeof (acode->buf_asm)-1);
+	strncpy (acode->buf_asm, buf, sizeof (acode->buf_asm) - 1);
 	if (!(acode->buf_hex = malloc (64))) { // WTF unefficient
 		return r_asm_code_free (acode);
 	}
@@ -577,6 +577,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		return r_asm_code_free (acode);
 	}
 	lbuf = strdup (buf);
+	code_align = 0;
 	memset (&op, 0, sizeof (op));
 
 	/* accept ';' as comments when input is multiline */
@@ -669,15 +670,16 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			r_asm_set_pc (a, a->pc + ret);
 			off = a->pc;
 			ret = 0;
-			if (!*ptr_start)
+			if (!*ptr_start) {
 				continue;
+			}
 			linenum ++;
 			/* labels */
 			if (labels && (ptr = strchr (ptr_start, ':'))) {
 				bool is_a_label = true;
 				char *q = ptr_start;
 				while (*q) {
-					if (*q==' ') {
+					if (*q == ' ') {
 						is_a_label = false;
 						break;
 					}
@@ -688,6 +690,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					if (ptr_start[1] != 0 && ptr_start[1] != ' ') {
 						char food[64];
 						*ptr = 0;
+						if (code_align) {
+							off += (code_align - (off % code_align));
+						}
 						snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
 						// TODO: warning when redefined
 						r_asm_code_set_equ (acode, ptr_start, food);
@@ -710,14 +715,14 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					a->syntax = R_ASM_SYNTAX_ATT;
 				} else if (!strncmp (ptr, ".asciz", 6)) {
 					r_str_chop (ptr + 8);
-					ret = r_asm_pseudo_string (&op, ptr+8, 1);
+					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
 				} else if (!strncmp (ptr, ".string ", 8)) {
 					r_str_chop (ptr+8);
-					ret = r_asm_pseudo_string (&op, ptr+8, 1);
+					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
 				} else if (!strncmp (ptr, ".ascii ", 6)) {
-					ret = r_asm_pseudo_string (&op, ptr+7, 0);
+					ret = r_asm_pseudo_string (&op, ptr + 7, 0);
 				} else if (!strncmp (ptr, ".align", 6)) {
-					ret = r_asm_pseudo_align (&op, ptr+7);
+					ret = r_asm_pseudo_align (&op, ptr + 7);
 				} else if (!strncmp (ptr, ".arm", 4)) {
 					r_asm_use (a, "arm");
 					r_asm_set_bits (a, 32);
@@ -755,15 +760,17 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					ret = 0;
 					continue;
 				} else if (!strncmp (ptr, ".equ ", 5)) {
-					ptr2 = strchr (ptr+5, ',');
+					ptr2 = strchr (ptr + 5, ',');
 					if (!ptr2)
-						ptr2 = strchr (ptr+5, '=');
+						ptr2 = strchr (ptr + 5, '=');
 					if (!ptr2)
-						ptr2 = strchr (ptr+5, ' ');
+						ptr2 = strchr (ptr + 5, ' ');
 					if (ptr2) {
 						*ptr2 = '\0';
-						r_asm_code_set_equ (acode, ptr+5, ptr2+1);
-					} else eprintf ("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
+						r_asm_code_set_equ (acode, ptr + 5, ptr2 + 1);
+					} else {
+						eprintf ("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
+					}
 				} else if (!strncmp (ptr, ".org ", 5)) {
 					ret = r_asm_pseudo_org (a, ptr+5);
 					off = a->pc;
@@ -828,10 +835,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 }
 
 R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
-	int ret = false;
-	if (a->cur && a->cur->modify)
-		ret = a->cur->modify (a, buf, field, val);
-	return ret;
+	if (a->cur && a->cur->modify) {
+		return a->cur->modify (a, buf, field, val);
+	}
+	return false;
 }
 
 R_API char *r_asm_op_get_hex(RAsmOp *op) {
@@ -844,20 +851,27 @@ R_API char *r_asm_op_get_asm(RAsmOp *op) {
 
 R_API int r_asm_op_get_size(RAsmOp *op) {
 	int len;
-	if (!op) return 0;
+	if (!op) {
+		return 0;
+	}
 	len = op->size - op->payload;
-	if (len<1) len = 1;
+	if (len < 1) {
+		len = 1;
+	}
 	return len;
 }
 
 R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
-	if (a && a->binb.bin && a->binb.get_offset)
+	if (a && a->binb.bin && a->binb.get_offset) {
 		return a->binb.get_offset (a->binb.bin, type, idx);
+	}
 	return -1;
 }
 
 R_API char *r_asm_describe(RAsm *a, const char* str) {
-	if (!a->pair) return NULL;
+	if (!a->pair) {
+		return NULL;
+	}
 	return sdb_get (a->pair, str, 0);
 }
 
