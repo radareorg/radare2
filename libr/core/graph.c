@@ -1551,12 +1551,13 @@ static void set_layout(RAGraph *g) {
 
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	char *body;
-	int o_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
-	int o_lines = r_config_get_i (core->config, "asm.lines");
-	int o_bytes = r_config_get_i (core->config, "asm.bytes");
-	int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
-	int o_marks = r_config_get_i (core->config, "asm.marks");
-	int o_offset = r_config_get_i (core->config, "asm.offset");
+	const bool o_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
+	const bool o_lines = r_config_get_i (core->config, "asm.lines");
+	const bool o_bytes = r_config_get_i (core->config, "asm.bytes");
+	const int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
+	const bool o_marks = r_config_get_i (core->config, "asm.marks");
+	const bool o_offset = r_config_get_i (core->config, "asm.offset");
+	const bool o_comments = r_config_get_i (core->config, "asm.comments");
 	int o_cursor = core->print->cur_enabled;
 
 	const char *cmd = (opts & BODY_SUMMARY) ? "pds" : "pD";
@@ -1566,6 +1567,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmtcol", 0);
 	r_config_set_i (core->config, "asm.marks", false);
+	r_config_set_i (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
 	core->print->cur_enabled = false;
 
 	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY) {
@@ -1586,13 +1588,62 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_i (core->config, "asm.cmtcol", o_cmtcol);
 	r_config_set_i (core->config, "asm.marks", o_marks);
 	r_config_set_i (core->config, "asm.offset", o_offset);
+	r_config_set_i (core->config, "asm.comments", o_comments);
 	return body;
+}
+
+static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena) {
+	core->anal->gp = saved_gp;
+	if (emu) {
+		if (b->parent_reg_arena) {
+			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena);
+			R_FREE (b->parent_reg_arena);
+			ut64 gp = r_reg_getv (core->anal->reg, "gp");
+			if (gp) {
+				core->anal->gp = gp;
+			}
+		} else {
+			r_reg_arena_poke (core->anal->reg, saved_arena);
+		}
+	}
+	char * body = get_body (core, b->addr, b->size, opts);
+	if (b->jump != UT64_MAX) {
+		if (b->jump > b->addr && emu && core->anal->last_disasm_reg != NULL) {
+			RAnalBlock * jumpbb = r_anal_bb_get_jumpbb (fcn, b);
+			if (jumpbb && !jumpbb->parent_reg_arena) {
+				jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			}
+		}
+	}
+	if (b->fail != UT64_MAX) {
+		if (b->fail > b->addr && emu && core->anal->last_disasm_reg != NULL) {
+			RAnalBlock * failbb = r_anal_bb_get_failbb (fcn, b);
+			if (failbb && !failbb->parent_reg_arena) {
+				failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			}
+		}
+	}
+	return body;
+}
+
+static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
+	return a->addr - b->addr;
 }
 
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
+	bool emu = r_config_get_i (core->config, "asm.emu");
+	ut64 saved_gp;
+	ut8 *saved_arena;
 	core->keep_asmqjmps = false;
+
+	if (emu) {
+		saved_gp = core->anal->gp;
+		saved_arena = r_reg_arena_peek (core->anal->reg);
+	}
+	r_list_sort (fcn->bbs, (RListComparator)bbcmp);
+
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
@@ -1600,7 +1651,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX)
 			continue;
 
-		body = get_body (core, bb->addr, bb->size, mode2opts (g));
+		body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
 		title = get_title (bb->addr);
 		node = r_agraph_get_node (g, title);
 		if (node) {
@@ -1612,6 +1663,14 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		free (title);
 		core->keep_asmqjmps = true;
 	}
+
+	if (emu) {
+		core->anal->gp = saved_gp;
+		if (saved_arena) {
+			r_reg_arena_poke (core->anal->reg, saved_arena);
+			R_FREE (saved_arena);
+		}
+	}
 }
 
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
@@ -1620,6 +1679,17 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	char *shortcut = NULL;
 	int shortcuts = 0;
+	bool emu = r_config_get_i (core->config, "asm.emu");
+	int ret = false;
+	ut64 saved_gp;
+	ut8 *saved_arena;
+	core->keep_asmqjmps = false;
+
+	if (emu) {
+		saved_gp = core->anal->gp;
+		saved_arena = r_reg_arena_peek (core->anal->reg);
+	}
+	r_list_sort (fcn->bbs, (RListComparator)bbcmp);
 
 	core->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1628,7 +1698,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		if (bb->addr == UT64_MAX) continue;
 
-		body = get_body (core, bb->addr, bb->size, mode2opts (g));
+		body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
 		title = get_title (bb->addr);
 
 		node = r_agraph_add_node (g, title, body);
@@ -1643,7 +1713,9 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 		free (body);
 		free (title);
-		if (!node) return false;
+		if (!node) {
+			goto cleanup;
+		}
 		core->keep_asmqjmps = true;
 	}
 
@@ -1671,7 +1743,17 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
-	return true;
+	ret = true;
+
+cleanup:
+	if (emu) {
+		core->anal->gp = saved_gp;
+		if (saved_arena) {
+			r_reg_arena_poke (core->anal->reg, saved_arena);
+			R_FREE (saved_arena);
+		}
+	}
+	return ret;
 }
 
 /* build the RGraph inside the RAGraph g, starting from the Call Graph
