@@ -2748,29 +2748,36 @@ static int cmd_print(void *data, const char *input) {
 					r_list_sort (f->bbs, (RListComparator)bbcmp);
 					if (input[2] == 'j') {
 						r_cons_print ("[");
+						bool isFirst = true;
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							if (tmp_func->addr > f->addr) {
 								break;
 							}
 							r_list_foreach (tmp_func->bbs, iter, b) {
-								r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-								if (iter->n) {
+								if (isFirst) {
+									isFirst = false;
+								} else {
 									r_cons_print (",");
 								}
+								r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
 							}
 						}
 						r_list_foreach (f->bbs, iter, b) {
-							r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-							if (iter->n) {
+							if (isFirst) {
+								isFirst = false;
+							} else {
 								r_cons_print (",");
 							}
+							r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
 						}
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							r_list_foreach (tmp_func->bbs, iter, b) {
-								r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-								if (iter->n) {
+								if (isFirst) {
+									isFirst = false;
+								} else {
 									r_cons_print (",");
 								}
+								r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
 							}
 						}
 						r_cons_print ("]");

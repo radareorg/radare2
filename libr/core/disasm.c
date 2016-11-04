@@ -3724,7 +3724,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
-	int count, nbytes = 0;
+	int nbytes = 0;
 
 	r_reg_arena_push (core->anal->reg);
 	if (!nb_bytes) {
