@@ -11,7 +11,7 @@
 #define ut16 unsigned short
 #define st16 short
 #define ut8 unsigned char
-#define st8 char
+#define st8 signed char
 #define boolt int
 
 #include <stdbool.h>
