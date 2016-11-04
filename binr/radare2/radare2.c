@@ -13,8 +13,8 @@
 #if USE_THREADS
 #include <r_th.h>
 static char *rabin_cmd = NULL;
-static int threaded = 0;
 #endif
+static bool threaded = false;
 static struct r_core_t r;
 
 static int verify_version(int show) {
@@ -343,7 +343,6 @@ int main(int argc, char **argv, char **envp) {
 	RCoreFile *fh = NULL;
 	const char *patchfile = NULL;
 	const char *prj = NULL;
-	//int threaded = false;
 	int debug = 0;
 	int zflag = 0;
 	int do_analysis = 0;
@@ -809,7 +808,8 @@ int main(int argc, char **argv, char **envp) {
 					pfile = r_core_project_info (&r, prj);
 					if (pfile) {
 						fh = r_core_file_open (&r, pfile, perms, mapaddr);
-						r_core_project_open (&r, prj);
+						// run_anal = 0;
+						run_anal = -1;
 					} else {
 						eprintf ("Cannot find project file\n");
 					}
@@ -847,8 +847,9 @@ int main(int argc, char **argv, char **envp) {
 			// rabin_delegate (NULL);
 		} // else eprintf ("Metadata loaded from 'prj.name'\n");
 #endif
-		if (mapaddr)
+		if (mapaddr) {
 			r_core_seek (&r, mapaddr, 1);
+		}
 
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r.config, cmdn);
@@ -897,7 +898,7 @@ int main(int argc, char **argv, char **envp) {
 			const char *npath, *nsha1;
 			char *path = strdup (r_config_get (r.config, "file.path"));
 			char *sha1 = strdup (r_config_get (r.config, "file.sha1"));
-			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"));
+			has_project = r_core_project_open (&r, r_config_get (r.config, "prj.name"), threaded);
 			if (has_project) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
@@ -997,7 +998,9 @@ int main(int argc, char **argv, char **envp) {
 			r_core_patch (&r, data);
 			r_core_seek (&r, 0, 1);
 			free (data);
-		} else eprintf ("Cannot open '%s'\n", patchfile);
+		} else {
+			eprintf ("Cannot open '%s'\n", patchfile);
+		}
 	}
 	if ((patchfile && !quiet) || !patchfile) {
 		if (zerosep)

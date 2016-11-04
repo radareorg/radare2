@@ -294,6 +294,7 @@ R_API void r_core_debug_rr (RCore *core, RReg *reg);
 
 /* project */
 R_API bool r_core_project_load(RCore *core, const char *prjfile, const char *rcfile);
+R_API RThread *r_core_project_load_bg(RCore *core, const char *prjfile, const char *rcfile);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
@@ -414,7 +415,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input);
 R_API int r_core_gdiff(RCore *core1, RCore *core2);
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2);
 
-R_API int r_core_project_open(RCore *core, const char *file);
+R_API int r_core_project_open(RCore *core, const char *file, bool thready);
 R_API int r_core_project_cat(RCore *core, const char *name);
 R_API int r_core_project_delete(RCore *core, const char *prjfile);
 R_API int r_core_project_list(RCore *core, int mode);

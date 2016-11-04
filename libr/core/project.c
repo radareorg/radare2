@@ -278,21 +278,55 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 }
 
 R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcpath) {
+	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
+	const bool scr_interactive = r_config_get_i (core->config, "scr.interactive");
+	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
 	(void)r_core_rop_load (core, prjName);
 	(void)r_core_project_load_xrefs (core, prjName);
-	return r_core_cmd_file (core, rcpath);
+	bool ret = r_core_cmd_file (core, rcpath);
+	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
+	r_config_set_i (core->config, "scr.interactive", scr_interactive);
+	r_config_set_i (core->config, "scr.prompt", scr_prompt);
+	r_config_bump (core->config, "asm.arch");
+	return ret;
 }
 
-R_API int r_core_project_open(RCore *core, const char *prjfile) {
+/*** vvv thready ***/
+
+typedef struct {
+	RCore *core;
+	char *prjName;
+	char *rcPath;
+} ProjectState;
+
+static int prjloadbg(RThread *th) {
+	ProjectState *ps = th->user;
+	r_core_project_load (ps->core, ps->prjName, ps->rcPath);
+	free (ps->prjName);
+	free (ps->rcPath);
+	free (ps);
+	return 0;
+}
+
+R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const char *rcPath) {
+	ProjectState *ps = R_NEW (ProjectState);
+	ps->core = core;
+	ps->prjName = strdup (prjName);
+	ps->rcPath = strdup (rcPath);
+	RThread* th = r_th_new (prjloadbg, ps, false);
+	r_th_start (th, true);
+	return th;
+}
+
+/*** ^^^ thready ***/
+
+R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	int askuser = 1;
 	int ret, close_current_session = 1;
 	char *prj, *filepath;
 	if (!prjfile || !*prjfile) {
 		return false;
 	}
-	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
-	const bool scr_interactive = r_config_get_i (core->config, "scr.interactive");
-	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
 	prj = r_core_project_file (core, prjfile);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
@@ -351,12 +385,13 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 		// TODO: handle base address
 		r_core_bin_load (core, filepath, UT64_MAX);
 	}
-	/* load sdb stuff in here */
-	ret = r_core_project_load (core, prjfile, prj);
-	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
-	r_config_set_i (core->config, "scr.interactive", scr_interactive);
-	r_config_set_i (core->config, "scr.prompt", scr_prompt);
-	r_config_bump (core->config, "asm.arch");
+	if (thready) {
+		(void)r_core_project_load_bg (core, prjfile, prj);
+		return true;
+	} else {
+		/* load sdb stuff in here */
+		ret = r_core_project_load (core, prjfile, prj);
+	}
 	free (filepath);
 	free (prj);
 	return ret;

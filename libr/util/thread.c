@@ -1,28 +1,31 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_th.h>
 
 static void *_r_th_launcher(void *_th) {
 	int ret;
-	struct r_th_t *th = _th;
-
+	RThread *th = _th;
 	th->ready = true;
 #if __UNIX__
-	if (th->delay>0) sleep(th->delay);
-	else if (th->delay<0) r_th_lock_wait(th->lock);
+	if (th->delay > 0) {
+		sleep (th->delay);
+	} else if (th->delay < 0) {
+		r_th_lock_wait (th->lock);
+	}
 #else
-	if (th->delay<0) r_th_lock_wait(th->lock);
+	if (th->delay < 0) {
+		r_th_lock_wait (th->lock);
+	}
 #endif
 	do {
-		r_th_lock_leave(th->lock);
+		r_th_lock_leave (th->lock);
 		th->running = true;
-		ret = th->fun(th);
+		ret = th->fun (th);
 		th->running = false;
-		r_th_lock_enter(th->lock);
-	} while(ret);
-
+		r_th_lock_enter (th->lock);
+	} while (ret);
 #if HAVE_PTHREAD
-	pthread_exit(&ret);
+	pthread_exit (&ret);
 #endif
 	return 0;
 }
@@ -30,14 +33,14 @@ static void *_r_th_launcher(void *_th) {
 R_API int r_th_push_task(struct r_th_t *th, void *user) {
 	int ret = true;
 	th->user = user;
-	r_th_lock_leave(th->lock);
+	r_th_lock_leave (th->lock);
 	return ret;
 }
 
-R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
+R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 	RThread *th = R_NEW0 (RThread);
 	if (th) {
-		th->lock = r_th_lock_new();
+		th->lock = r_th_lock_new ();
 		th->running = false;
 		th->fun = fun;	
 		th->user = user;
@@ -45,19 +48,19 @@ R_API struct r_th_t *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 		th->breaked = false;
 		th->ready = false;
 #if HAVE_PTHREAD
-		pthread_create(&th->tid, NULL, _r_th_launcher, th);
+		pthread_create (&th->tid, NULL, _r_th_launcher, th);
 #elif __WIN32__ || __WINDOWS__ && !defined(__CYGWIN__)
-		th->tid = CreateThread(NULL, 0, _r_th_launcher, th, 0, &th->tid);
+		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, &th->tid);
 #endif
 	}
 	return th;
 }
 
-R_API void r_th_break(struct r_th_t *th) {
+R_API void r_th_break(RThread *th) {
 	th->breaked = true;
 }
 
-R_API int r_th_kill(struct r_th_t *th, int force) {
+R_API int r_th_kill(RThread *th, int force) {
 	th->breaked = true;
 	r_th_break(th);
 	r_th_wait(th);
@@ -71,12 +74,14 @@ R_API int r_th_kill(struct r_th_t *th, int force) {
 	return 0;
 }
 
-R_API int r_th_start(struct r_th_t *th, int enable) {
-	int ret = true;
+R_API bool r_th_start(RThread *th, int enable) {
+	bool ret = true;
 	if (enable) {
 		if (!th->running) {
 			// start thread
-			while (!th->ready);
+			while (!th->ready) {
+				/* spinlock */
+			}
 			r_th_lock_leave (th->lock);
 		}
 	} else {

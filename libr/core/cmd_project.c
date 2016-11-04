@@ -14,8 +14,16 @@ static int cmd_project(void *data, const char *input) {
 		return false;
 	}
 	str = strdup (fileproject);
-	if (arg && *arg==' ') arg++;
-	file = (input[0] && input[1])? arg: str;
+	arg = strchr (input, ' ');
+	if (arg) {
+		arg++;
+	} else {
+		arg = input + 1;
+		if (*arg == '&') {
+			arg++;
+		}
+	}
+	file = arg;
 	switch (input[0]) {
 	case 'c':
 		if (input[1]==' ') {
@@ -26,8 +34,10 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'o':
 	//	if (r_file_is_regular (file))
-		if (input[1]) {
-			r_core_project_open (core, file);
+		if (input[1] == '&') {
+			r_core_project_open (core, file, true);
+		} else if (input[1]) {
+			r_core_project_open (core, file, false);
 		} else {
 			if (file && *file) {
 				r_cons_println (file);
