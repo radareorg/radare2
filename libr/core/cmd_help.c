@@ -224,14 +224,38 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("0%"PFMT64o"\n", n);
 		break;
 	case 'O':
-		if (input[1] && !IS_NUMBER (input[2])) {
+		if (input[1] == '?') {
+			r_cons_printf ("Usage: ?O[jd] [arg] .. list all mnemonics for asm.arch (d = describe, j=json)\n");
+		} else if (input[1] == 'd') {
+			const int id = (input[2]==' ')
+				?(int)r_num_math (core->num, input + 2): -1;
+			char *ops = r_asm_mnemonics (core->assembler, id, false);
+			if (ops) {
+				char *ptr = ops;
+				char *nl = strchr (ptr, '\n');
+				while (nl) {
+					*nl = 0;
+					char *desc = r_asm_describe (core->assembler, ptr);
+					if (desc) {
+						const char *pad = r_str_pad (' ', 16 - strlen (ptr));
+						r_cons_printf ("%s%s%s\n", ptr, pad, desc);
+						free (desc);
+					} else {
+						r_cons_printf ("%s\n", ptr);
+					}
+					ptr = nl + 1;
+					nl = strchr (ptr, '\n');
+				}
+				free (ops);
+			}
+		} else if (input[1] && !IS_NUMBER (input[2])) {
 			r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->assembler, input + 2));
 		} else {
 			bool json = false;
 			if (input[1] == 'j') {
 				json = true;
 			}
-			const int id = (input[2])
+			const int id = (input[2]== ' ')
 				?(int)r_num_math (core->num, input + 2): -1;
 			char *ops = r_asm_mnemonics (core->assembler, id, json);
 			if (ops) {
