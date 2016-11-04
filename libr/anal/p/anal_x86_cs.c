@@ -2029,13 +2029,13 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		// TODO: what if UJMP?
 		switch (INSOP(0).type) {
 		case X86_OP_IMM:
-            if (INSOP(1).type == X86_OP_IMM) {
-                ut64 seg = INSOP(0).imm;
-                ut64 off = INSOP(1).imm;
-			    op->jump = (seg << 4) + off;
-            } else {
-			    op->jump = INSOP(0).imm;
-            }
+			if (INSOP(1).type == X86_OP_IMM) {
+				ut64 seg = INSOP(0).imm;
+				ut64 off = INSOP(1).imm;
+				op->jump = (seg << 4) + off;
+			} else {
+				op->jump = INSOP(0).imm;
+			}
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
 		case X86_OP_MEM:
