@@ -3943,7 +3943,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 
 			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &addr)) {
-				nbytes = core->offset - addr;
+				nbytes = old_offset - addr;
 			} else if (!r_core_asm_bwdis_len (core, &nbytes, &addr, nb_opcodes)) {
 				/* workaround to avoid empty arrays */
 #define BWRETRY 0
