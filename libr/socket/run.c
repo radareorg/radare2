@@ -117,29 +117,30 @@ static char *getstr(const char *src) {
 		}
 		return NULL;
 	case '"':
-		ret = strdup (src+1);
+		ret = strdup (src + 1);
 		if (ret) {
 			len = strlen (ret);
-			if (len>0) {
+			if (len > 0) {
 				len--;
-				if (ret[len]=='"') {
+				if (ret[len] == '"') {
 					ret[len] = 0;
 					r_str_unescape (ret);
 					return ret;
-				} else eprintf ("Missing \"\n");
+				}
+				eprintf ("Missing \"\n");
 			}
 			free (ret);
 		}
 		return NULL;
 	case '@':
 		{
-			char *pat = strchr (src+1, '@');
+			char *pat = strchr (src + 1, '@');
 			if (pat) {
 				int i, len, rep;
 				*pat++ = 0;
 				rep = atoi (src + 1);
 				len = strlen (pat);
-				if (rep>0) {
+				if (rep > 0) {
 					char *buf = malloc (rep);
 					if (buf) {
 						for (i = 0; i < rep; i++) {
@@ -155,20 +156,19 @@ static char *getstr(const char *src) {
 	case '!':
 		return r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 	case ':':
-		if (src[1]=='!') {
+		if (src[1] == '!') {
 			ret = r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 		} else {
 			ret = strdup (src);
 		}
-		len = r_hex_str2bin (src+1, (ut8*)ret);
+		len = r_hex_str2bin (src + 1, (ut8*)ret);
 		if (len > 0) {
 			ret[len] = 0;
 			return ret;
-		} else {
-			eprintf ("Invalid hexpair string\n");
-			free (ret);
-			return NULL;
 		}
+		eprintf ("Invalid hexpair string\n");
+		free (ret);
+		return NULL;
 	}
 	r_str_unescape ((ret = strdup (src)));
 	return ret;
@@ -181,20 +181,30 @@ static int parseBool (const char *e) {
 		0: 1): 1): 1);
 }
 
+#if __linux__
+#define RVAS "/proc/sys/kernel/randomize_va_space"
+static void setRVA(const char *v) {
+	int fd = open (RVAS, O_WRONLY);
+	if (fd != -1) {
+		write (fd, v, 2);
+		close (fd);
+	}
+}
+#endif
+
 // TODO: move into r_util? r_run_... ? with the rest of funcs?
 static void setASLR(int enabled) {
 #if __linux__
-#define RVAS "/proc/sys/kernel/randomize_va_space"
 	if (enabled) {
-		system ("echo 2 > "RVAS);
+		setRVA ("2\n");
 	} else {
 #if __ANDROID__
-		system ("echo 0 > "RVAS);
+		setRVA ("0\n");
 #else
 #ifdef ADDR_NO_RANDOMIZE
 		if (personality (ADDR_NO_RANDOMIZE) == -1)
 #endif
-			system ("echo 0 > "RVAS);
+			setRVA ("0\n");
 #endif
 	}
 #elif __APPLE__
