@@ -21,7 +21,9 @@ static RIO *r_io_bind_get_io(RIOBind *bnd);
 
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW0 (RIO);
-	if (!io) return NULL;
+	if (!io) {
+		return NULL;
+	}
 	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
 	io->write_mask_fd = -1;
 	io->cb_printf = (void *)printf;
@@ -29,6 +31,7 @@ R_API RIO *r_io_new() {
 	io->ff = true;
 	io->Oxff = 0xff;
 	io->aslr = 0;
+	io->pava = false;
 	io->raised = -1;
 	io->autofd = true;
 	r_io_map_init (io);

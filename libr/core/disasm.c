@@ -1671,22 +1671,35 @@ static void ds_print_stackptr(RDisasmState *ds) {
 	}
 }
 
+static ut64 p2v(RDisasmState *ds, ut64 addr) {
+	if (ds->core->io->pava) {
+		ut64 at = r_io_section_get_vaddr (ds->core->io, addr);
+		if (at == UT64_MAX || (!at && ds->at)) {
+			addr = ds->at;
+		} else {
+			addr = at + addr;
+		}
+	}
+	return addr;
+}
+
 static void ds_print_offset(RDisasmState *ds) {
 	RCore *core = ds->core;
+	ut64 at = p2v (ds, ds->at);
 
-	r_print_set_screenbounds (core->print, ds->at);
+	r_print_set_screenbounds (core->print, at);
 	if (ds->show_offset) {
 		static RFlagItem sfi = {0};
 		const char *label = NULL;
 		RFlagItem *fi;
 		int delta = -1;
 		if (ds->show_reloff) {
-			RAnalFunction *f = r_anal_get_fcn_at (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+			RAnalFunction *f = r_anal_get_fcn_at (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			if (!f) {
-				f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+				f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			}
 			if (f) {
-				delta = ds->at - f->addr;
+				delta = at - f->addr;
 				sfi.name = f->name;
 				sfi.offset = f->addr;
 				ds->lastflag = &sfi;
@@ -1694,18 +1707,18 @@ static void ds_print_offset(RDisasmState *ds) {
 			} else {
 				if (ds->show_reloff_flags) {
 					/* XXX: this is wrong if starting to disasm after a flag */
-					fi = r_flag_get_i (core->flags, ds->at);
+					fi = r_flag_get_i (core->flags, at);
 					if (fi) {
 						ds->lastflag = fi;
 					}
 					if (ds->lastflag) {
-						if (ds->lastflag->offset == ds->at) {
+						if (ds->lastflag->offset == at) {
 							delta = 0;
 						} else {
-							delta = ds->at - ds->lastflag->offset;
+							delta = at - ds->lastflag->offset;
 						}
 					} else {
-						delta = ds->at - core->offset;
+						delta = at - core->offset;
 					}
 					if (ds->lastflag) {
 						label = ds->lastflag->name;
@@ -1716,7 +1729,7 @@ static void ds_print_offset(RDisasmState *ds) {
 				delta = 0;
 			}
 		}
-		r_print_offset (core->print, ds->at, (ds->at == ds->dest),
+		r_print_offset (core->print, at, (at == ds->dest),
 				ds->show_offseg, ds->show_offdec, delta, label);
 	}
 	if (ds->atabsoff > 0) {
@@ -2991,6 +3004,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
 	int i, ioc, nargs;
+	ut64 at = ds->at; //p2v (ds, ds->at);
 	if (!esil) {
 		ds_print_esil_anal_init (ds);
 		esil = core->anal->esil;
@@ -2999,7 +3013,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		goto beach;
 	}
 	{
-		const RAnalMetaItem *mi = r_meta_find (core->anal, ds->at, R_META_TYPE_ANY, 0);
+		const RAnalMetaItem *mi = r_meta_find (core->anal, at, R_META_TYPE_ANY, 0);
 		if (mi) {
 			goto beach;
 		}
@@ -3012,8 +3026,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	ds_align_comment (ds);
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	r_reg_setv (core->anal->reg, pc, ds->at + ds->analop.size);
-	//r_reg_setv (core->anal->reg, pc, ds->at);
+	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
 	esil->cb.hook_reg_write = myregwrite;
 	if (ds->show_emu_write) {
 		esil->cb.hook_mem_write = mymemwrite0;
@@ -3021,7 +3034,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		esil->cb.hook_mem_write = mymemwrite1;
 	}
 	ds->esil_likely = 0;
-	r_anal_esil_set_pc (esil, ds->at);
+	r_anal_esil_set_pc (esil, at);
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
 
@@ -3371,7 +3384,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->l = l;
 	ds->buf = buf;
 	ds->len = len;
-	ds->addr = addr;
+	ds->addr = addr; //p2v (ds, addr);
 	ds->hint = NULL;
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
@@ -3503,7 +3516,7 @@ toro:
 		}
 		ds_show_comments_right (ds);
 
-		//TRY adding here
+		// TRY adding here
 		char *link_key = sdb_fmt (-1, "link.%08"PFMT64x, ds->addr + idx);
 		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
 		if (link_type) {
@@ -3613,11 +3626,11 @@ toro:
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
 				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx + 5);
+				r_asm_disassemble (core->assembler, &ao, buf + idx, len - idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
 			ds_print_core_vmode (ds);
-			//ds_print_cc_update (ds);
+			// ds_print_cc_update (ds);
 		} else {
 			ds->mi_found = 0;
 		}

@@ -124,6 +124,7 @@ typedef struct r_io_t {
 	int debug;
 	int raised;
 	int va;
+	bool pava;
 	int raw;
 	int vio; // remove that when vio replaces the old stuff
 	int sectonly;

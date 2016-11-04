@@ -1049,6 +1049,13 @@ static int cb_iova(void *user, void *data) {
 	return true;
 }
 
+static int cb_iopava(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->io->pava = node->i_value;
+	return true;
+}
+
 static int cb_ioraw(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2097,6 +2104,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
+	SETCB("io.pava", "false", &cb_iopava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
 	SETCB("io.vio", "false", &cb_iovio, "Enable the new vio (reading only) (WIP)");
 

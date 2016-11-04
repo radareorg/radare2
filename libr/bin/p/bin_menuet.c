@@ -39,6 +39,17 @@ static int check_bytes(const ut8 *buf, ut64 length);
         40 dd __idata_start; секция .import
         44 dd __idata_end
         48 dd main
+
+        db 'MENUET02'
+        dd 1
+        dd start
+        dd i_end
+        dd mem
+        dd mem
+        dd cmdline
+        dd path
+        dd 0
+
 #endif
 
 static int check(RBinFile *arch) {
@@ -48,16 +59,14 @@ static int check(RBinFile *arch) {
 }
 
 static int check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length >= 8) {
-		if (!memcmp (buf, "MENUET0", 7)) {
-			switch (buf[7]) {
-			case '0':
-			case '1':
-			case '2':
-				return true;
-			}
-			eprintf ("Unsupported MENUET version header\n");
+	if (buf && length >= 32 && !memcmp (buf, "MENUET0", 7)) {
+		switch (buf[7]) {
+		case '0':
+		case '1':
+		case '2':
+			return true;
 		}
+		eprintf ("Unsupported MENUET version header\n");
 	}
 	return false;
 }

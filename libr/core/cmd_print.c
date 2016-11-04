@@ -3443,9 +3443,10 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'a': // "pxa"
 			if (l != 0) {
-				if (len%16)
+				if (len%16) {
 					len += 16-(len%16);
-				annotated_hexdump (core, input+2, len);
+				}
+				annotated_hexdump (core, input + 2, len);
 			}
 			break;
 		case 'A': // "pxA"
@@ -3831,7 +3832,7 @@ static int cmd_print(void *data, const char *input) {
 					 (void)r_core_block_size (core, obsz);
 				}
 				core->num->value = len;
-			 }
+			}
 			break;
 		}
 		r_cons_break_end ();
