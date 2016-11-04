@@ -180,7 +180,7 @@ typedef struct r_disam_options_t {
 	char *osl, *sl;
 	int stackptr, ostackptr;
 	int index;
-	ut64 at, addr, dest;
+	ut64 at, vat, addr, dest;
 	int tries, cbytes, idx;
 	ut8 mi_found, retry, toro;
 	RAsmOp asmop;
@@ -241,6 +241,18 @@ static void ds_print_asmop_payload(RDisasmState *ds);
 static void ds_print_op_push_info(RDisasmState *ds);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
+
+static ut64 p2v(RDisasmState *ds, ut64 addr) {
+	if (ds->core->io->pava) {
+		ut64 at = r_io_section_get_vaddr (ds->core->io, addr);
+		if (at == UT64_MAX || (!at && ds->at)) {
+			addr = ds->at;
+		} else {
+			addr = at + addr;
+		}
+	}
+	return addr;
+}
 
 static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalBlock *a = _a, *b = _b;
@@ -620,15 +632,15 @@ static void ds_build_op_str(RDisasmState *ds) {
 	/* initialize */
 	core->parser->hint = ds->hint;
 	if (ds->varsub && ds->opstr) {
-		RAnalFunction *f = r_anal_get_fcn_in (core->anal,
-			ds->at, R_ANAL_FCN_TYPE_NULL);
-			core->parser->varlist = r_anal_var_list_dynamic;
-			r_parse_varsub (core->parser, f, ds->at, ds->analop.size,
-				ds->opstr, ds->strsub, sizeof (ds->strsub));
-			if (*ds->strsub) {
-				free (ds->opstr);
-				ds->opstr = strdup (ds->strsub);
-			}
+		ut64 at = ds->vat;
+		RAnalFunction *f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+		core->parser->varlist = r_anal_var_list_dynamic;
+		r_parse_varsub (core->parser, f, at, ds->analop.size,
+			ds->opstr, ds->strsub, sizeof (ds->strsub));
+		if (*ds->strsub) {
+			free (ds->opstr);
+			ds->opstr = strdup (ds->strsub);
+		}
 	}
 	char *asm_str = colorize_asm_string (core, ds);
 	if (ds->decode) {
@@ -1671,21 +1683,9 @@ static void ds_print_stackptr(RDisasmState *ds) {
 	}
 }
 
-static ut64 p2v(RDisasmState *ds, ut64 addr) {
-	if (ds->core->io->pava) {
-		ut64 at = r_io_section_get_vaddr (ds->core->io, addr);
-		if (at == UT64_MAX || (!at && ds->at)) {
-			addr = ds->at;
-		} else {
-			addr = at + addr;
-		}
-	}
-	return addr;
-}
-
 static void ds_print_offset(RDisasmState *ds) {
 	RCore *core = ds->core;
-	ut64 at = p2v (ds, ds->at);
+	ut64 at = ds->vat;
 
 	r_print_set_screenbounds (core->print, at);
 	if (ds->show_offset) {
@@ -2791,7 +2791,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 		const int cmtcol = ds->cmtcol;
 		char *ll = r_cons_lastline ();
 		int cstrlen = strlen (ll);
-		int cols, ansilen = r_str_ansi_len (ll);
+		int ansilen = r_str_ansi_len (ll);
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
 		int len = cmtcol - cells;
@@ -3004,7 +3004,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
 	int i, ioc, nargs;
-	ut64 at = ds->at; //p2v (ds, ds->at);
+	ut64 at = p2v (ds, ds->at);
 	if (!esil) {
 		ds_print_esil_anal_init (ds);
 		esil = core->anal->esil;
@@ -3384,7 +3384,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->l = l;
 	ds->buf = buf;
 	ds->len = len;
-	ds->addr = addr; //p2v (ds, addr);
+	ds->addr = addr;
 	ds->hint = NULL;
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
@@ -3414,7 +3414,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	}
 toro:
 	// uhm... is this necesary? imho can be removed
-	r_asm_set_pc (core->assembler, ds->addr + idx);
+	r_asm_set_pc (core->assembler, p2v (ds, ds->addr + idx));
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? r_vline_u : r_vline_a;
 
 	if (core->print->cur_enabled) {
@@ -3444,6 +3444,7 @@ toro:
 	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
+		ds->vat = p2v (ds, ds->at);
 		if (core->cons && core->cons->breaked) {
 			dorepeat = 0;
 			return 0; //break;
@@ -3767,6 +3768,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 #define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
 	for (i = j = 0; isTheEnd; i += ret, j++) {
 		ds->at = core->offset +i;
+		ds->vat = p2v (ds, ds->at);
 		hasanal = false;
 		r_core_seek_archbits (core, ds->at);
 		if (r_cons_singleton ()->breaked) {
@@ -4144,6 +4146,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	if (l < 1) {
 		l = len;
 	}
+	RDisasmState *ds = ds_init (core);
 	if (l > core->blocksize || addr != core->offset) {
 		buf = malloc (l + 1);
 		r_core_read_at (core, addr, buf, l);
@@ -4153,7 +4156,9 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	}
 	r_cons_break (NULL, NULL);
 	for (i = 0; i < l; i++) {
-		r_asm_set_pc (core->assembler, addr + i);
+		ds->at = addr + i;
+		ds->vat = p2v (ds, ds->at);
+		r_asm_set_pc (core->assembler, ds->vat);
 		if (r_cons_singleton ()->breaked) {
 			break;
 		}
@@ -4168,7 +4173,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				r_cons_printf ("???\n");
 				break;
 			default:
-				r_cons_printf ("0x%08"PFMT64x" ???\n", addr + i);
+				r_cons_printf ("0x%08"PFMT64x" ???\n", ds->vat);
 				break;
 			}
 		} else {
@@ -4194,7 +4199,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			case '=':
 				if (i < 28) {
 					char *str = r_str_newf ("0x%08"PFMT64x" %60s  %s\n",
-							addr + i, "", asmop.buf_asm);
+							ds->vat, "", asmop.buf_asm);
 					char *sp = strchr (str, ' ');
 					if (sp) {
 						char *end = sp + 60 + 1;
@@ -4230,6 +4235,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	if (mode == 'j') {
 		r_cons_printf ("{}]\n");
 	}
+	ds_free (ds);
 	return count;
 }
 
@@ -4309,6 +4315,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		ut32 bb_size_consumed = 0;
 		// internal loop to consume bb that contain case-like operations
 		ds->at = bb->addr;
+		ds->vat = p2v (ds, ds->at);
 		ds->addr = bb->addr;
 		len = bb->size;
 

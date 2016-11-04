@@ -1695,7 +1695,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->offset) {
 				int delta = (core->print->screen_bounds - core->offset);
 				if (core->io->pava) {
-					r_core_seek_delta (core, -delta);
+					r_core_seek_delta (core, -32);
 				} else {
 					if (core->offset >= delta) {
 						r_core_seek (core, core->offset - delta, 1);
