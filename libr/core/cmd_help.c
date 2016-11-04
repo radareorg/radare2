@@ -710,7 +710,7 @@ static int cmd_help(void *data, const char *input) {
 		core->num->value = (ut64)(int)prof.result;
 		eprintf ("%lf\n", prof.result);
 		} break;
-	case '?': // ???
+	case '?': // "??" "???"
 		if (input[1]=='?') {
 			if (input[2]=='?') {
 				clippy ("What are you doing?");

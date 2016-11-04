@@ -406,6 +406,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		}
 		snprintf (cons->buffer, cons->buffer_len, "%d\n", cons->lines);
 		cons->buffer_len = strlen (cons->buffer);
+		cons->num->value = cons->lines;
 	}
 	if (cons->grep.sort != -1) {
 #define INSERT_LINES(list) \
