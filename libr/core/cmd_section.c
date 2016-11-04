@@ -123,6 +123,7 @@ static int cmd_section(void *data, const char *input) {
 		"S"," off va sz vsz name mrwx","add new section (if(!vsz)vsz=sz)",
 		"S-[id]","","remove section identified by id",
 		"S-.","","remove section at core->offset (can be changed with @)",
+		"S.-*","","remove all sections in current offset",
 		NULL
 	};
 	switch (*input) {
@@ -343,22 +344,37 @@ static int cmd_section(void *data, const char *input) {
 					r_cons_get_size (NULL));
 		break;
 	case '.':
-		{
-		ut64 o = core->offset;
-		RListIter *iter;
-		RIOSection *s;
-		if (core->io->va || core->io->debug) {
-			o = r_io_section_vaddr_to_maddr_try (core->io, o);
-		}
-		r_list_foreach (core->io->sections, iter, s) {
-			if (o >= s->offset && o < s->offset + s->size) {
-				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-					s->offset + s->vaddr,
-					s->offset + s->vaddr + s->size,
-					s->name);
-				break;
+		if (input[1] == '-') {
+			ut64 o = core->offset;
+			RListIter *iter, *iter2;
+			RIOSection *s;
+			if (core->io->va || core->io->debug) {
+				o = r_io_section_vaddr_to_maddr_try (core->io, o);
 			}
-		}
+			r_list_foreach_safe (core->io->sections, iter, iter2, s) {
+				if (o >= s->offset && o < s->offset + s->size) {
+					r_io_section_rm (core->io, s->id);
+					if (input[2] != '*') {
+						break;
+					}
+				}
+			}
+		} else {
+			ut64 o = core->offset;
+			RListIter *iter;
+			RIOSection *s;
+			if (core->io->va || core->io->debug) {
+				o = r_io_section_vaddr_to_maddr_try (core->io, o);
+			}
+			r_list_foreach (core->io->sections, iter, s) {
+				if (o >= s->offset && o < s->offset + s->size) {
+					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+						s->offset + s->vaddr,
+						s->offset + s->vaddr + s->size,
+						s->name);
+					break;
+				}
+			}
 		}
 		break;
 	case '\0':
