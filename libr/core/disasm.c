@@ -3724,6 +3724,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
+	int count, nbytes = 0;
 
 	r_reg_arena_push (core->anal->reg);
 	if (!nb_bytes) {
@@ -3733,8 +3734,23 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			 * - We compute the new starting offset
 			 * - Read at the new offset */
 			nb_opcodes = -nb_opcodes;
-			r_core_asm_bwdis_len (core, &nb_bytes, &core->offset, nb_opcodes);
-			r_core_read_at (core, core->offset, core->block, nb_bytes);
+
+			// We have some anal_info.
+			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &core->offset)) {
+				nbytes = old_offset - core->offset;
+			} else if (!r_core_asm_bwdis_len (core, &nbytes, &core->offset, nb_opcodes)) {
+				/* TODO: error handling */
+					return false;
+			}
+			count = R_MIN (nb_bytes, nbytes);
+			if (count > 0) {
+				r_core_read_at (core, core->offset, core->block, count);
+				r_core_read_at (core, core->offset+count, core->block+count, nb_bytes-count);
+			} else {
+				if (nb_bytes > 0) {
+					memset (core->block, 0xff, nb_bytes);
+				}
+			}
 		}
 	} else {
 		if (nb_bytes < 0) { // Disassemble backward `nb_bytes` bytes
