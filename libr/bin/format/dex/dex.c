@@ -42,6 +42,10 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	bufptr = bin->b->buf;
 	dexhdr = &bin->header;
 
+	//check boundaries of bufptr
+	if (bin->size < 112) {
+		goto fail;
+	}
 	memcpy (&dexhdr->magic, bufptr, 8);
 	dexhdr->checksum = r_read_le32 (bufptr + 8);
 	memcpy (&dexhdr->signature, bufptr + 12, 20);
@@ -103,6 +107,11 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	}
 	for (i = 0; i < dexhdr->strings_size; i++) {
 		ut64 offset = dexhdr->strings_offset + i * sizeof (ut32);
+		//make sure we can read from bufptr without oob
+		if (offset + 4 > bin->size) {
+			free (bin->strings);
+			goto fail;
+		}
 		bin->strings[i] = r_read_le32 (bufptr + offset);
 	}
 	/* classes */
@@ -110,13 +119,18 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	if (dexhdr->class_offset + classes_size >= bin->size) {
 		classes_size = bin->size - dexhdr->class_offset;
 	}
-	if (classes_size<0) {
+	if (classes_size < 0) {
 		classes_size = 0;
 	}
 	dexhdr->class_size = classes_size / sizeof (struct dex_class_t);
 	bin->classes = (struct dex_class_t *) malloc (classes_size);
 	for (i = 0; i < dexhdr->class_size; i++) {
 		ut64 offset = dexhdr->class_offset + i * sizeof (struct dex_class_t);
+		if (offset + 32 > bin->size) {
+			free (bin->strings);
+			free (bin->classes);
+			goto fail;
+		}
 		bin->classes[i].class_id = r_read_le32 (bufptr + offset + 0);
 		bin->classes[i].access_flags = r_read_le32 (bufptr + offset + 4);
 		bin->classes[i].super_class = r_read_le32 (bufptr + offset + 8);
@@ -139,6 +153,12 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	bin->methods = (struct dex_method_t *) calloc (methods_size, 1);
 	for (i = 0; i < dexhdr->method_size; i++) {
 		ut64 offset = dexhdr->method_offset + i * sizeof (struct dex_method_t);
+		if (offset + 8 > bin->size) {
+			free (bin->strings);
+			free (bin->classes);
+			free (bin->methods);
+			goto fail;
+		}
 		bin->methods[i].class_id = r_read_le16 (bufptr + offset + 0);
 		bin->methods[i].proto_id = r_read_le16 (bufptr + offset + 2);
 		bin->methods[i].name_id = r_read_le32 (bufptr + offset + 4);
@@ -156,6 +176,13 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	bin->types = (struct dex_type_t *) calloc (types_size, 1);
 	for (i = 0; i < dexhdr->types_size; i++) {
 		ut64 offset = dexhdr->types_offset + i * sizeof (struct dex_type_t);
+		if (offset + 4 > bin->size) {
+			free (bin->strings);
+			free (bin->classes);
+			free (bin->methods);
+			free (bin->types);
+			goto fail;
+		}
 		bin->types[i].descriptor_id = r_read_le32 (bufptr + offset);
 	}
 
@@ -171,6 +198,14 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	bin->fields = (struct dex_field_t *) calloc (fields_size, 1);
 	for (i = 0; i < dexhdr->fields_size; i++) {
 		ut64 offset = dexhdr->fields_offset + i * sizeof (struct dex_field_t);
+		if (offset + 8 > bin->size) {
+			free (bin->strings);
+			free (bin->classes);
+			free (bin->methods);
+			free (bin->types);
+			free (bin->fields);
+			goto fail;
+		}
 		bin->fields[i].class_id = r_read_le16 (bufptr + offset + 0);
 		bin->fields[i].type_id = r_read_le16 (bufptr + offset + 2);
 		bin->fields[i].name_id = r_read_le32 (bufptr + offset + 4);
@@ -188,6 +223,15 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	bin->protos = (struct dex_proto_t *) calloc (protos_size, 1);
 	for (i = 0; i < dexhdr->prototypes_size; i++) {
 		ut64 offset = dexhdr->prototypes_offset + i * sizeof (struct dex_proto_t);
+		if (offset + 12 > bin->size) {
+			free (bin->strings);
+			free (bin->classes);
+			free (bin->methods);
+			free (bin->types);
+			free (bin->fields);
+			free (bin->protos);
+			goto fail;
+		}
 		bin->protos[i].shorty_id = r_read_le32 (bufptr + offset + 0);
 		bin->protos[i].return_type_id = r_read_le32 (bufptr + offset + 4);
 		bin->protos[i].parameters_off = r_read_le32 (bufptr + offset + 8);
