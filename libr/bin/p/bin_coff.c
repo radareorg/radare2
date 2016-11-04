@@ -64,7 +64,10 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 	RBinSymbol *ptr = *sym;
 	char * coffname = NULL;
 	struct coff_symbol *s = NULL;
-	if (idx > bin->hdr.f_nsyms) {
+	if (idx < 0 || idx > bin->hdr.f_nsyms) {
+		return false;
+	}
+	if (!bin->symbols) {
 		return false;
 	}
 	s = &bin->symbols[idx];
@@ -213,7 +216,7 @@ static RList *relocs(RBinFile *arch) {
 			if (size < 0) {
 				return list_rel;
 			}
-			rel = calloc (1, size + 1);
+			rel = calloc (1, size + sizeof (struct coff_reloc));
 			if (!rel) {
 				return list_rel;
 			}
@@ -247,7 +250,7 @@ static RList *relocs(RBinFile *arch) {
 				reloc->vaddr = reloc->paddr;
 				r_list_append (list_rel, reloc);
 			}
-			
+
 		}
 	}
 	return list_rel;

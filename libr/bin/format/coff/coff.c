@@ -141,7 +141,7 @@ static bool r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
 	if (offset > obj->size || offset + size > obj->size || size < 0) {
 		return false;
 	}
-	obj->scn_hdrs = calloc (1, size + 1); 
+	obj->scn_hdrs = calloc (1, size + sizeof (struct coff_scn_hdr)); 
 	if (!obj->scn_hdrs) {
 		return false;
 	}
@@ -166,7 +166,7 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 		offset + size > obj->size) {
 		return false;
 	} 
-	obj->symbols = calloc (1, size + 1);
+	obj->symbols = calloc (1, size + sizeof (struct coff_symbol));
 	if (!obj->symbols) {
 		return false;
 	}
