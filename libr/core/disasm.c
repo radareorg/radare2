@@ -53,6 +53,7 @@ typedef struct r_disam_options_t {
 	bool show_color_bytes;
 	int colorop;
 	int acase;
+	bool capitalize;
 	bool show_flgoff;
 	int atabs;
 	int atabsonce;
@@ -375,6 +376,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->colorop = r_config_get_i (core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
+	ds->capitalize = r_config_get_i (core->config, "asm.capitalize");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
 	ds->atabsonce = r_config_get_i (core->config, "asm.tabsonce");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabsoff");
@@ -1530,9 +1532,10 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
 	}
-
 	if (ds->acase) {
 		r_str_case (ds->asmop.buf_asm, 1);
+	} else if (ds->capitalize) {
+		ds->asmop.buf_asm[0] = toupper (ds->asmop.buf_asm[0]);
 	}
 	return ret;
 }
