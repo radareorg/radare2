@@ -347,7 +347,7 @@ int main(int argc, char **argv, char **envp) {
 	int zflag = 0;
 	int do_analysis = 0;
 	int do_connect = 0;
-	int fullfile = 0;
+	bool fullfile = false;
 	int has_project;
 	int prefile = 0;
 	bool zerosep = false;
@@ -466,7 +466,9 @@ int main(int argc, char **argv, char **envp) {
 				r_list_append (evals, optarg);
 			}
 			break;
-		case 'f': fullfile = 1; break;
+		case 'f':
+			fullfile = true;
+			break;
 		case 'F': forcebin = optarg; break;
 		case 'h': help++; break;
 		case 'H': main_print_var (optarg); return 0; break;
@@ -970,6 +972,9 @@ int main(int argc, char **argv, char **envp) {
 	}
 #endif
 #endif
+	if (fullfile) {
+		r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+	}
 	ret = run_commands (cmds, files, quiet);
 	r_list_free (cmds);
 	r_list_free (files);
