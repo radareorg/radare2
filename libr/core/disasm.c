@@ -3738,19 +3738,12 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			// We have some anal_info.
 			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &core->offset)) {
 				nbytes = old_offset - core->offset;
-			} else if (!r_core_asm_bwdis_len (core, &nbytes, &core->offset, nb_opcodes)) {
-				/* TODO: error handling */
-					return false;
-			}
-			count = R_MIN (nb_bytes, nbytes);
-			if (count > 0) {
-				r_core_read_at (core, core->offset, core->block, count);
-				r_core_read_at (core, core->offset+count, core->block+count, nb_bytes-count);
 			} else {
-				if (nb_bytes > 0) {
-					memset (core->block, 0xff, nb_bytes);
-				}
+				// core->offset is modified by r_core_prevop_addr
+				core->offset=old_offset;
+				r_core_asm_bwdis_len (core, &nbytes, &core->offset, nb_opcodes);
 			}
+			r_core_read_at (core, core->offset, core->block, nbytes);
 		}
 	} else {
 		if (nb_bytes < 0) { // Disassemble backward `nb_bytes` bytes
