@@ -109,7 +109,7 @@ static bool check_arg(ut32 ins_bits, int *err_code) {
 	return res;
 }
 
-static char *decode_regis(st8 *reg_arg, st32 hash_code, ut32 ins_bits,
+static st8 *decode_regis(st8 *reg_arg, st32 hash_code, ut32 ins_bits,
 	ut32 *ret_ins_bits, int *err_code)
 {
 	ut8 reg_type;
