@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_types.h"
@@ -48,7 +49,7 @@ static int __dump_section_to_disk(RCore *core, char *file) {
 				file = heapfile;
 				snprintf (file, len,
 					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
-					s->vaddr, s->vaddr+s->size,
+					s->vaddr, s->vaddr + s->size,
 					r_str_rwx_i (s->rwx));
 			}
 			if (!r_file_dump (file, buf, s->size, 0)) {

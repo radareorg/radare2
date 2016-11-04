@@ -101,8 +101,9 @@ R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
 	if (!io || !io->sections)
 		return NULL;
 	r_list_foreach (io->sections, iter, s) {
-		if (s->id == idx)
+		if (s->id == idx) {
 			return s;
+		}
 	}
 	return NULL;
 }
@@ -171,19 +172,21 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 			io->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->offset,
 				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->rwx));
+			free (n);
 		} else {
 			io->cb_printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
-			i, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
+			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
-			if (s->arch && s->bits)
+			if (s->arch && s->bits) {
 				io->cb_printf ("  ; %s %d\n", r_sys_arch_str (s->arch), s->bits);
-			else io->cb_printf ("\n");
+			} else {
+				io->cb_printf ("\n");
+			}
 		}
 		i++;
 	}
 }
-
 
 #define PRINT_CURRENT_SEEK \
 	if (i > 0 && len != 0) { \
@@ -234,16 +237,18 @@ static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_col
 				color = "";
 				color_end = "";
 			}
-			io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+			io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", s->id,
 					(seek >= s->vaddr && seek < s->vaddr + s->size) ? '*' : ' ',
 					//(seek>=s->vaddr && seek<s->vaddr+s->size)?'*':' ',
 					color, s->vaddr, color_end);
 			for (j = 0; j < width; j++) {
 				ut64 pos = min + (j * mul);
 				ut64 npos = min + ((j + 1) * mul);
-				if (s->vaddr < npos && (s->vaddr + s->size) > pos)
+				if (s->vaddr < npos && (s->vaddr + s->size) > pos) {
 					io->cb_printf ("#");
-				else io->cb_printf ("-");
+				} else {
+					io->cb_printf ("-");
+				}
 			}
 			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s  %04s\n",
 				color, s->vaddr + s->size, color_end,
@@ -289,7 +294,7 @@ static void list_section_visual_paddr (RIO *io, ut64 seek, ut64 len, int use_col
 				color = "";
 				color_end = "";
 			}
-			io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+			io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", s->id,
 					(seek >= s->offset && seek < s->offset + s->size) ? '*' : ' ',
 					color, s->offset, color_end);
 			for (j = 0; j < width; j++) {
