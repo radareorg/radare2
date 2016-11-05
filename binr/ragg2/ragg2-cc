@@ -1,5 +1,5 @@
 #!/bin/sh
-# ragg2-cc : a shellcode compiler -- pancake - 2011-2013
+# ragg2-cc : a shellcode compiler -- pancake - 2011-2016
 #
 # Supported operating systems:
 #  - GNU/Linux
@@ -39,7 +39,7 @@ fi
 
 # Get local architecture
 case "$(uname -m)" in
-"x86_64")
+arm64|aarch64|x86_64)
 	B=64
 	;;
 *)
@@ -134,60 +134,94 @@ if [ -z "$F" ]; then
 	exit 1
 fi
 
-if [ "`uname`" = Darwin ]; then
+JMP=jmp
+case "$A" in
+arm|aarch64|arm64|thumb|arm32)
+	JMP=b
+	;;
+mips|mips32|mips64)
+	JMP=b
+	;;
+esac
+
+FMT=elf
+if [ "$K" = darwin ]; then
 	OBJCOPY=gobjcopy
-	case "$B" in
-	32)
-		CFLAGS="-arch i386 "
-		LDFLAGS="-arch i386 -shared -c"
-		ARCH=darwin-x86-32
-		;;
-	64)
-		CFLAGS="-arch x86_64"
-		LDFLAGS="-arch x86_64 -shared -c"
-		ARCH=darwin-x86-64
-		;;
-	esac
+	FMT=mach0
+	ARCH="$A"
+	if [ "$ARCH" = x86 ]; then
+		if [ "${B}" = 32 ]; then
+			ARCH=i386
+			TRIPLET=darwin-x86-32
+		else
+			ARCH=x86_64
+			TRIPLET=darwin-x86-64
+		fi
+		case "$B" in
+		32)
+			CFLAGS="-arch $ARCH "
+			LDFLAGS="-arch $ARCH -shared -c"
+			;;
+		64)
+			CFLAGS="-arch $ARCH"
+			LDFLAGS="-arch $ARCH -shared -c"
+			;;
+		esac
+	else
+		LDFLAGS="-shared -c"
+	fi
 	SHDR="
 .text
-jmp _main"
+${JMP} _main"
 else
 	OBJCOPY=objcopy
 	SHDR="
 .section .text
 .globl  main
 .type   main, @function
-jmp main
+${JMP} main
 "
-	case "$B" in
-	64)
-	        CFLAGS="-fPIC -fPIE -pie -fpic -m64"
-	        LDFLAGS="-fPIC -fPIE -pie -fpic -m64"
-		ARCH=linux-x86-64
-		;;
-	*) 
-	        CFLAGS="-fPIC -fPIE -pie -fpic -m32"
-	        LDFLAGS="-fPIC -fPIE -pie -fpic -m32"
-		ARCH=linux-x86-32
-		;;
-	esac
+	if [ "$A" = x86 ]; then
+		case "$B" in
+		64)
+			CFLAGS="-fPIC -fPIE -pie -fpic -m64"
+			LDFLAGS="-fPIC -fPIE -pie -fpic -m64"
+			TRIPLET=linux-x86-64
+			;;
+		*) 
+			CFLAGS="-fPIC -fPIE -pie -fpic -m32"
+			LDFLAGS="-fPIC -fPIE -pie -fpic -m32"
+			TRIPLET=linux-x86-32
+			;;
+		esac
+	else
+		CFLAGS="-fPIC -fPIE -pie -fpic -nostartfiles"
+		LDFLAGS="-fPIC -fPIE -pie -fpic -nostartfiles"
+	fi
 fi
 
-[ "$A$K" ] && ARCH="$K-$A-$B"
+[ "$A$K" ] && TRIPLET="$K-$A-$B"
 
 OPT=-Os
-CFLAGS="${CFLAGS} -nostdinc -include ${SFLIBPATH}/${ARCH}/sflib.h"
+CFLAGS="${CFLAGS} -nostdinc -include ${SFLIBPATH}/${TRIPLET}/sflib.h"
 CFLAGS="${CFLAGS} -z execstack"
 CFLAGS="${CFLAGS} -fomit-frame-pointer -finline-functions -fno-zero-initialized-in-bss"
 LDFLAGS="${LDFLAGS} -nostdlib"
 
 case "$K" in
+windows)
+	#TEXT="__TEXT.__text"
+	TEXT=".text"
+	FMT=pe
+	;;
 darwin)
 	#TEXT="__TEXT.__text"
 	TEXT="0.__text"
+	FMT=mach0
 	;;
 *|linux)
 	TEXT=".text"
+	FMT=elf
 	;;
 esac
 
@@ -251,7 +285,7 @@ if [ "$D" ]; then
 	ls -l $F.text
 fi
 [ -z "$O" ] && O="$F.bin"
-ragg2 -b "$B" -C "$F.text" -F -o "$O" || fail
+ragg2 -b "$B" -C "$F.text" -f ${FMT} -a $A -o "$O" || fail
 echo "$O"
 rmtemps
 exit 0
