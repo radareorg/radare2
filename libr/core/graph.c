@@ -2928,8 +2928,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_toggle (core->config, "scr.color");
 			break;
 		case 'r':
-			if (!fcn) break;
-			g->need_reload_nodes = true;
+			if (fcn) {
+				g->need_reload_nodes = true;
+			}
 			break;
 		case 'm':
 			mousemode++;

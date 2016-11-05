@@ -38,7 +38,7 @@ static char *prompt(const char *str, const char *txt) {
 	}
 	*cmd = '\0';
 	r_line_set_prompt (str);
-	if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+	if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
 		*cmd = '\0';
 	}
 	//line[strlen(line)-1]='\0';
@@ -56,6 +56,7 @@ static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 	return sdb_get (vt->core->anal->sdb_types,
 		sdb_fmt (0, "type.%s", k), 0);
 }
+
 static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	char *tmp, *spacer = NULL;
 	char *source = (char*)buf_asm;
@@ -2140,9 +2141,12 @@ R_API void r_core_visual_anal(RCore *core) {
 			r_cons_show_cursor (true);
 			r_cons_set_raw (false);
 			r_line_set_prompt ("New name: ");
-			if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
-			//old[strlen (old)-1] = 0;
-			function_rename (core, addr, old);
+			if (r_cons_fgets (old, sizeof (old), 0, NULL)) {
+				if (*old) {
+					//old[strlen (old)-1] = 0;
+					function_rename (core, addr, old);
+				}
+			}
 			r_cons_set_raw (true);
 			r_cons_show_cursor (false);
 			break;
