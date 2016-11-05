@@ -208,6 +208,7 @@ typedef struct r_debug_t {
 	int trace_clone; /* stop on new threads */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
+	bool consbreak; /* SIGINT handle for attached processes */
 
 	/* tracking debugger state */
 	int steps; /* counter of steps done */
