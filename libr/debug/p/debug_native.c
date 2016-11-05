@@ -18,6 +18,7 @@
 static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int size);
+static void r_debug_native_stop(RDebug *dbg);
 
 #include "native/bt.c"
 
@@ -217,6 +218,12 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 #endif
 }
 
+/* Callback to trigger SIGINT signal */
+static void r_debug_native_stop(RDebug *dbg) {
+	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
+	r_cons_break_end();
+}
+
 /* TODO: specify thread? */
 /* TODO: must return true/false */
 static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
@@ -247,6 +254,10 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 		contsig = sig;
 	}
 	//eprintf ("continuing with signal %d ...\n", contsig);
+	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
+	if (dbg->consbreak) {
+		r_cons_break (r_debug_native_stop, dbg);
+	}
 	return ptrace (PTRACE_CONT, pid, NULL, contsig) == 0;
 #endif
 }

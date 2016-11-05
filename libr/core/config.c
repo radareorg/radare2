@@ -1269,6 +1269,13 @@ static int cb_swstep(void *user, void *data) {
 	return true;
 }
 
+static int cb_consbreak(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->dbg->consbreak = node->i_value;
+	return true;
+}
+
 static int cb_teefile(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->teefile = node->value;
@@ -1866,6 +1873,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
 	SETPREF("dbg.shallow_trace", "false", "While tracing, avoid following calls outside specified range");
 	SETPREF("dbg.exitkills", "true", "Kill process on exit");
+	SETCB("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
 
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
 
