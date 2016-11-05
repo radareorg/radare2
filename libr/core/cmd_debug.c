@@ -1027,9 +1027,11 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			case 2: // get symname
 				symname = r_str_word_get0 (ptr, 1);
 			case 1: // get addr|libname
-				if (!IS_NUMBER (*ptr)) {
+				if (IS_NUMBER (*ptr)) {
 					const char *a0 = r_str_word_get0 (ptr, 0);
 					addr = r_num_math (core->num, a0);
+				} else {
+					addr = UT64_MAX;
 				}
 				if (!addr || addr == UT64_MAX) {
 					libname = r_str_word_get0 (ptr, 0);
