@@ -92,7 +92,8 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	/* Still clueless ? Let's just use the address of .text */
 	if (obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
-			if (!strcmp (obj->scn_hdrs[i].s_name, ".text")) {
+			//avoid doing string matching and use x bit from the section
+			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
 				addr->paddr = obj->scn_hdrs[i].s_scnptr;
 				return addr;
 			}

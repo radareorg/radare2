@@ -99,8 +99,10 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 		ptr->type = r_str_const (sdb_fmt (0, "%i", s->n_sclass));
 		break;
 	}
-	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns) {
-		ptr->paddr = bin->scn_hdrs[s->n_scnum].s_scnptr + s->n_value;
+	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns &&
+	    bin->symbols[idx].n_scnum > 0) {
+		//first index is 0 that is why -1
+		ptr->paddr = bin->scn_hdrs[s->n_scnum - 1].s_scnptr + s->n_value;
 	}
 	ptr->size = 4;
 	ptr->ordinal = 0;
@@ -120,7 +122,7 @@ static RList *entries(RBinFile *arch) {
 }
 
 static RList *sections(RBinFile *arch) {
-	char *coffname = NULL;
+	char *tmp, *coffname = NULL;
 	size_t i;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
@@ -133,11 +135,15 @@ static RList *sections(RBinFile *arch) {
 	if (obj && obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
 			free (coffname);
-			coffname = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
-			if (!coffname) {
+			tmp = r_coff_symbol_name (obj, &obj->scn_hdrs[i]);
+			if (!tmp) {
 				r_list_free (ret);
 				return NULL;
 			}
+			//IO does not like sections with the same name append idx
+			//since it will update it
+			coffname = r_str_newf ("%s-%d", tmp, i);
+			free (tmp); 
 			ptr = R_NEW0 (RBinSection);
 			if (!ptr) {
 				free (coffname);
@@ -152,13 +158,13 @@ static RList *sections(RBinFile *arch) {
 			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
 			ptr->add = true;
 			ptr->srwx = R_BIN_SCN_MAP;
-			if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_READ) {
+			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
 				ptr->srwx |= R_BIN_SCN_READABLE;
 			}
-			if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_WRITE) {
+			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
 				ptr->srwx |= R_BIN_SCN_WRITABLE;
 			}
-			if (obj->scn_hdrs[i].s_flags&COFF_SCN_MEM_EXECUTE) {
+			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
 				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 			}
 			r_list_append (ret, ptr);
