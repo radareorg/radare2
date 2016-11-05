@@ -116,18 +116,26 @@ static ArmOp ops[] = {
 	{ NULL }
 };
 
+static bool err;
 //decode str as number
 static int getnum(const char *str) {
-	if (!str)
+	char *endptr;
+	err = false;
+	double val;
+
+	if (!str) {
+		err = true;
 		return 0;
-	while (*str == '$' || *str == '#')
-		str++;
-	if (*str == '0' && str[1] == 'x') {
-		int x;
-		if (sscanf (str+2, "%x", &x))
-			return x;
 	}
-	return atoi(str);
+	while (*str == '$' || *str == '#') {
+		str++;
+	}
+	val = strtod (str, &endptr);
+	if (str != endptr && *endptr == '\0') {
+		return val;
+	}
+	err = true;
+	return 0;
 }
 
 static char *getrange(char *s) {
@@ -422,10 +430,10 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (!strcmpnull (ao->op, "b") || !strcmpnull (ao->op, "b.n")) {
 		//uncond branch : PC += 4 + (delta*2)
 		int offset = getnum (ao->a[0]);
-		if (offset == 0) {
+		if (err) {
 			return 0;
 		}
-		int delta = getnum (ao->a[0]) - 4 - ao->off;
+		int delta = offset - 4 - ao->off;
 		if ((delta < -2048) || (delta > 2046) || (delta & 1)) {
 			eprintf("branch out of range or not even\n");
 			return 0;
@@ -475,7 +483,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else
 	if (*ao->op == 'b') { // conditional branch
 		ao->o = 0xd0 | arm_opcode_cond (ao, 1);
-		int bdelta = getnum(ao->a[0]) -4;
+		int bdelta = getnum (ao->a[0]) -4;
 		if ((bdelta < -256) || (bdelta > 254) || (bdelta & 1)) {
 			eprintf("branch out of range or not even\n");
 			return 0;
@@ -810,7 +818,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			case TYPE_BRA:
 				if ((ret = getreg (ao->a[0])) == -1) {
 					// TODO: control if branch out of range
-					ret = (getnum(ao->a[0]) - (int)ao->off - 8) / 4;
+					ret = (getnum (ao->a[0]) - (int)ao->off - 8) / 4;
 					if (ret >= 0x00800000 || ret < (int)0xff800000) {
 						eprintf("Branch into out of range\n");
 						return 0;
@@ -877,7 +885,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= getreg (ao->a[0]) << 20;
 				ao->o |= getreg (ao->a[1]) << 8;
 				ret = getreg (ao->a[2]);
-				ao->o |= (ret != -1)? ret << 24 : 2 | getnum(ao->a[2]) << 24;
+				ao->o |= (ret != -1)? ret << 24 : 2 | getnum (ao->a[2]) << 24;
 				if (ao->a[3]) {
 					ao->o |= getshift (ao->a[3]);
 				}
