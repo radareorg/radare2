@@ -610,7 +610,30 @@ static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	CloseHandle(thread);
 	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
 	#if __MINGW64__
-		eprintf ("TODO: r_debug_native_reg_read fpu/mmx/xmm\n");
+		typedef struct _M128A {
+			unsigned long long Low;
+			long long High;
+		} *PM128A;
+		if (showfpu) {
+			eprintf ("cwd = 0x%08x  ; control   ", (ut32)ctx.FltSave.ControlWord);
+			eprintf ("swd = 0x%08x  ; status\n", (ut32)ctx.FltSave.StatusWord);
+			eprintf ("twd = 0x%08x ", (ut32)ctx.FltSave.TagWord);
+			eprintf ("eof = 0x%08x\n", (ut32)ctx.FltSave.ErrorOffset);
+			eprintf ("ese = 0x%08x\n", (ut32)ctx.FltSave.ErrorSelector);
+			eprintf ("dof = 0x%08x\n", (ut32)ctx.FltSave.DataOffset);
+			eprintf ("dse = 0x%08x\n", (ut32)ctx.FltSave.DataSelector);
+			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.MxCsr);
+			PM128A a = {0};
+			int i;
+			for (i=0; i<8; i++) {
+				a = (PM128A)&ctx.FltSave.FloatRegisters[i];
+				eprintf("st%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
+			}
+			for (i=0; i<16; i++) {
+				a = (PM128A)&ctx.FltSave.XmmRegisters[i];
+				eprintf("xmm%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
+			}
+		}
 	#else
 		int i;
 		if (showfpu) {
