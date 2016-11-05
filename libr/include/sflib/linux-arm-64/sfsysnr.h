@@ -85,7 +85,7 @@
 #define __NR_fork				57
 #define __NR_vfork				58
 #define __NR_execve				59
-#define __NR_exit				0x5e // ok
+#define __NR_exit				0x5d // ok
 #define __NR_wait4				61
 #define __NR_kill				62
 #define __NR_uname				63

@@ -132,16 +132,21 @@ static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, Pri
 	mul = (max - min) / width;
 	if (min != -1 && mul != 0) {
 		const char *c = "", *c_end = "";
-		char buf[56];
 		const char *fmtstr;
+		char buf[56];
 		int j;
 		r_list_foreach (maps, iter, map) {
 			r_num_units (buf, map->size);
 			if (use_color) {
 				c_end = Color_RESET;
-				if (map->perm & 1) c = Color_GREEN;
-				if (map->perm & 2) c = Color_RED;
-				else { c = "" ;  c_end = ""; }
+				if (map->perm & 2) {
+					c = Color_RED;
+				} else if (map->perm & 1) {
+					c = Color_GREEN;
+				} else {
+					c = "";
+					c_end = "";
+				}
 			} else {
 				c = "";
 				c_end = "";

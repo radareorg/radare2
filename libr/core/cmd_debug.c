@@ -774,7 +774,7 @@ show_help:
 		return;
 	}
 	if (mode == 'j') {
-		r_cons_printf ("[");
+		r_cons_print ("[");
 	}
 	// TODO: honor mode
 	list = r_debug_modules_list (core->dbg);
@@ -828,7 +828,7 @@ show_help:
 	}
 beach:
 	if (mode == 'j') {
-		r_cons_printf ("]\n");
+		r_cons_print ("]\n");
 	}
 	r_list_free (list);
 }
