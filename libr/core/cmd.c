@@ -2005,7 +2005,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		case 'a': // call
 			break;
 		default:
-			r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd);
+			r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, foreach_comment, (void*)cmd, UT64_MAX);
 			break;
 		}
 		break;

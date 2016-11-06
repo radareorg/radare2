@@ -469,47 +469,68 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	const char *v2; // space_idx
 	RAnalMetaUserItem *ui = user;
 	RAnalMetaItem it;
-	if (strlen (k)<8)
+	if (strlen (k) < 8) {
 		return 1;
-	if (memcmp (k+6, ".0x", 3))
+	}
+	if (memcmp (k + 6, ".0x", 3)) {
 		return 1;
+	}
 	it.type = k[5];
 	it.size = sdb_atoi (v);
-	it.from = sdb_atoi (k+7);
-
+	it.from = sdb_atoi (k + 7);
+	int uirad = ui->rad;
+	if (ui->rad == 'f') {
+		if (!r_anal_fcn_in (ui->fcn, it.from)) {
+			goto beach;
+		}
+		ui->rad = 0;
+	}
 	v2 = strchr (v, ',');
-	if (!v2) goto beach;
-	it.space = atoi (v2+1);
+	if (!v2) {
+		goto beach;
+	}
+	it.space = atoi (v2 + 1);
 	it.to = it.from + it.size;
-	it.str = strchr (v2+1, ',');
-	if (it.str)
-		it.str = (char *)sdb_decode ((const char*)it.str+1, 0);
-	else {
+	it.str = strchr (v2 + 1, ',');
+	if (it.str) {
+		it.str = (char *)sdb_decode ((const char*)it.str + 1, 0);
+	} else {
 		it.str = strdup (it.str? it.str: ""); // don't break in free
-		if (!it.str) goto beach;
+		if (!it.str) {
+			goto beach;
+		}
 	}
 	printmetaitem (ui->anal, &it, ui->rad);
 	free (it.str);
 beach:
+	ui->rad = uirad;
 	return 1;
 }
 
-R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user) {
-	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0 };
-	if (rad=='j') a->cb_printf ("[");
+R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
+	RAnalFunction *fcn = (addr != UT64_MAX) ? r_anal_get_fcn_at (a, addr, 0) : NULL;
+	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0, fcn};
+	if (rad == 'j') {
+		a->cb_printf ("[");
+	}
 	if (cb) {
 		sdb_foreach (DB, cb, &ui);
 	} else {
 		sdb_foreach (DB, meta_print_item, &ui);
 	}
-	if (rad=='j') a->cb_printf ("]\n");
+	if (rad == 'j') {
+		a->cb_printf ("]\n");
+	}
 	return ui.count;
 }
 
 R_API int r_meta_list(RAnal *a, int type, int rad) {
-	return r_meta_list_cb (a, type, rad, NULL, NULL);
+	return r_meta_list_cb (a, type, rad, NULL, NULL, UT64_MAX);
 }
 
+R_API int r_meta_list_at(RAnal *a, int type, int rad, ut64 addr) {
+	return r_meta_list_cb (a, type, rad, NULL, NULL, addr);
+}
 static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 	const char *v2;
 	RAnalMetaUserItem *ui = user;
@@ -548,19 +569,21 @@ beach:
 
 R_API RList *r_meta_enumerate(RAnal *a, int type) {
 	RList *list = r_list_new ();
-	r_meta_list_cb (a, type, 0, meta_enumerate_cb, list);
+	r_meta_list_cb (a, type, 0, meta_enumerate_cb, list, UT64_MAX);
 	return list;
 }
 
 static int deserialize(RAnalMetaItem *it, const char *k, const char *v) {
 	const char *v2;
-	if (strlen (k)<8)
+	if (strlen (k) < 8) {
 		return 1;
-	if (memcmp (k+6, ".0x", 3))
+	}
+	if (memcmp (k + 6, ".0x", 3)) {
 		return 1;
+	}
 	it->type = k[5];
 	it->size = sdb_atoi (v);
-	it->from = sdb_atoi (k+7);
+	it->from = sdb_atoi (k + 7);
 	it->to = it->from + it->size;
 	v2 = strchr (v, ',');
 	if (!v2) goto beach;
@@ -593,7 +616,7 @@ static int meta_unset_cb(void *user, const char *k, const char *v) {
 }
 
 R_API void r_meta_space_unset_for(RAnal *a, int type) {
-	r_meta_list_cb (a, type, 0, meta_unset_cb, NULL);
+	r_meta_list_cb (a, type, 0, meta_unset_cb, NULL, UT64_MAX);
 }
 
 typedef struct {
@@ -621,6 +644,6 @@ R_API int r_meta_space_count_for(RAnal *a, int ctx) {
 	myMetaUser mu = {0};
 	mu.ctx = ctx;
 	int type = a->meta_spaces.space_idx;
-	r_meta_list_cb (a, type, 0, meta_count_cb, &mu);
+	r_meta_list_cb (a, type, 0, meta_count_cb, &mu, UT64_MAX);
 	return mu.count;
 }

@@ -209,8 +209,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			"CC*", "", "list all comments in r2 commands",
 			"CC.", "", "show comment at current offset",
 			"CC,", " [file]", "show or set comment file",
-			"CC", " or maybe not", "append comment at current address",
-			"CC+", " same as above", "append comment at current address",
+			"CC", " [text]", "append comment at current address",
+			"CCf", "", "list comments in function",
+			"CC+", " [text]", "append comment at current address",
 			"CC!", "", "edit comment using cfg.editor (vim, ..)",
 			"CC-", " @ cmt_addr", "remove comment at given address",
 			"CCu", " good boy @ addr", "add good boy comment at given address",
@@ -262,6 +263,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case 0:
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
+		break;
+	case 'f':
+		r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'f', core->offset);
 		break;
 	case 'j':
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 'j');
@@ -471,14 +475,14 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				n = r_num_math (core->num, t);
 				if (type == 'f') { // "Cf"
 					p = strchr (t, ' ');
-					if (n < 1) {
-						n = r_print_format_struct_size (p + 1, core->print, 0);
-						if (n < 1) {
-							eprintf ("Cannot resolve struct size\n");
-							n = 32; //
-						}
-					}
 					if (p) {
+						if (n < 1) {
+							n = r_print_format_struct_size (p + 1, core->print, 0);
+							if (n < 1) {
+								eprintf ("Cannot resolve struct size\n");
+								n = 32; //
+							}
+						}
 						r_print_format (core->print, addr, core->block,
 							n, p + 1, 0, NULL, NULL);
 					}
