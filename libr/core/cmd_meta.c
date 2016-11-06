@@ -64,38 +64,34 @@ static int print_addrinfo (void *user, const char *k, const char *v) {
 	char *colonpos, *subst;
 
 	offset = sdb_atoi (v);
-	if (!offset)
+	if (!offset) {
 		return true;
-
+	}
 	subst = strdup (k);
 	colonpos = strchr (subst, '|');
 
-	if (colonpos)
+	if (colonpos) {
 		*colonpos = ':';
-
+	}
 	r_cons_printf ("CL %s %s\n", subst, v);
-
 	free (subst);
 
 	return true;
 }
 
 static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
-	char aoffset[64], *aoffsetptr;
+	char aoffset[64];
+	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
 
-	aoffsetptr = sdb_itoa (offset, aoffset, 16);
-
-	if (!aoffsetptr)
+	if (!aoffsetptr) {
 		return -1;
-
+	}
 	if (!sdb_add (s, aoffsetptr, fileline, 0)) {
 		sdb_set (s, aoffsetptr, fileline, 0);
 	}
-
 	if (!sdb_add (s, fileline, aoffsetptr, 0)) {
 		sdb_set (s, fileline, aoffsetptr, 0);
 	}
-
 	return 0;
 }
 
@@ -729,6 +725,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 'C': // "CC"
 		cmd_meta_comment (core, input);
 		break;
+	case 'r': /* Cr run command*/
 	case 'h': /* Ch comment */
 	case 's': /* Cs string */
 	case 'z': /* Cz zero-terminated string */

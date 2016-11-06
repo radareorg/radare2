@@ -250,11 +250,13 @@ R_API int r_meta_add(RAnal *a, int type, ut64 from, ut64 to, const char *str) {
 	int space_idx = a->meta_spaces.space_idx;
 	char *e_str, key[100], val[2048];
 	int exists;
-	if (from > to)
+	if (from > to) {
 		return false;
-	if (from == to)
+	}
+	if (from == to) {
 		to = from + 1;
-	if (type == 100 && (to-from)<1) {
+	}
+	if (type == 100 && (to - from) < 1) {
 		return false;
 	}
 	/* set entry */

@@ -1908,6 +1908,12 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					ds->oplen = mi->size;
 					ds->mi_found = 1;
 					break;
+				case R_META_TYPE_RUN:
+					r_core_cmdf (core, "%s @ 0x%"PFMT64x, mi->str, ds->at);
+					ds->asmop.size = mi->size;
+					ds->oplen = mi->size;
+					ds->mi_found = 1;
+					break;
 				case R_META_TYPE_DATA:
 					hexlen = len - idx;
 					delta = ds->at-mi->from;
