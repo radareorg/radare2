@@ -1,7 +1,10 @@
 /* radare - LGPL - Copyright 2016 - Oscar Salvador */
 
-#if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <r_debug.h>
+
+#if DEBUGGER
+
+#if __x86_64__ || __i386__ || __arm__ || __arm64__
 #include <sys/uio.h>
 #include <sys/ptrace.h>
 #include <asm/ptrace.h>
@@ -1589,4 +1592,6 @@ cleanup:
 	free (note_data);
 	return !error;
 }
+#endif
+
 #endif
