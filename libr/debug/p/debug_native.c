@@ -625,13 +625,13 @@ static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.MxCsr);
 			PM128A a = {0};
 			int i;
-			for (i=0; i<8; i++) {
+			for (i = 0; i < 8; i++) {
 				a = (PM128A)&ctx.FltSave.FloatRegisters[i];
 				eprintf("st%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
 			}
-			for (i=0; i<16; i++) {
+			for (i = 0; i < 16; i++) {
 				a = (PM128A)&ctx.FltSave.XmmRegisters[i];
-				eprintf("xmm%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
+				eprintf("mm%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
 			}
 		}
 	#else
@@ -645,14 +645,14 @@ static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			eprintf ("dof = 0x%08x\n", (ut32)ctx.FloatSave.DataOffset);
 			eprintf ("dse = 0x%08x\n", (ut32)ctx.FloatSave.DataSelector);
 			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.ExtendedRegisters[24]);
-			for (i=0; i<8; i++) {
-				ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
-				a = a + (i * 4);
-				eprintf ("xmm%d = %08x %08x %08x %08x  ",i
-						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+			for (i = 0; i < 8; i++) {
 				ut64 *b = (ut64 *)&ctx.FloatSave.RegisterArea[i*10];
 				eprintf ("st%d = %lg (0x%08"PFMT64x")\n", i,
 					(double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
+				ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
+				a = a + (i * 4);
+				eprintf ("mm%d = %08x %08x %08x %08x  ",i
+						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
 			}
 		}
 	#endif
