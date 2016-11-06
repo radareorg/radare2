@@ -2410,6 +2410,9 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 			}
 			if ((flagname = strstr (dup, ".format"))) {
 				*flagname = 0;
+				if (!offset) {
+					offset = strdup ("0");
+				}
 				flagname = dup;
 				r_cons_printf ("pf.%s %s\n", flagname, v);
 				int fmtsize = r_print_format_struct_size (v, core->print, 0);
@@ -2419,7 +2422,7 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 				if (offset) {
 					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, offset);
 				} else {
-					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, "0");
+					// r_cons_printf ("CC Cf %d %s @ %s\n", fmtsize, v, "0");
 				}
 			}
 			free (dup);

@@ -88,7 +88,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		odesc = NULL;
 	//	core->file = file;
 		eprintf ("File %s reopened in %s mode\n", path,
-			(perm&R_IO_WRITE)? "read-write": "read-only");
+			(perm & R_IO_WRITE)? "read-write": "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
