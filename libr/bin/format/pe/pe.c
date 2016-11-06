@@ -1822,6 +1822,11 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	export_dir_rva  = data_dir_export->VirtualAddress;
 	export_dir_size = data_dir_export->Size;
 	if (bin->export_directory) {
+		if (bin->export_directory->NumberOfFunctions + 1 <
+		    bin->export_directory->NumberOfFunctions) {
+			// avoid integer overflow
+			return NULL;
+		}
 		exports_sz = (bin->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
 		if (exports_sz < 0) {
 			return NULL;
