@@ -1968,7 +1968,7 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 				eprintf ("Warning: Cannot read PE debug info\n");
 				return 0;
 			}
-			snprintf ((st8 *) res->guidstr, GUIDSTR_LEN,
+			snprintf (res->guidstr, GUIDSTR_LEN,
 				"%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%x",
 				rsds_hdr.guid.data1,
 				rsds_hdr.guid.data2,
@@ -1990,7 +1990,7 @@ static int get_debug_info(PE_(image_debug_directory_entry) *dbg_dir_entry, ut8 *
 			SCV_NB10_HEADER nb10_hdr;
 			init_cv_nb10_header (&nb10_hdr);
 			get_nb10 (dbg_data, &nb10_hdr);
-			snprintf ((st8 *) res->guidstr, sizeof (res->guidstr),
+			snprintf (res->guidstr, sizeof (res->guidstr),
 				"%x%x", nb10_hdr.timestamp, nb10_hdr.age);
 			strncpy (res->file_name, (const char *)
 				nb10_hdr.file_name, sizeof(res->file_name)-1);
@@ -2529,6 +2529,12 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		sections[j].vaddr = shdr[i].VirtualAddress;
 		sections[j].size  = shdr[i].SizeOfRawData;
 		sections[j].vsize = shdr[i].Misc.VirtualSize;
+		if (bin->optional_header) {
+			sections[j].vsize +=
+				(bin->optional_header->SectionAlignment -
+				(sections[j].vsize &
+				 bin->optional_header->SectionAlignment - 1));
+		}
 		sections[j].paddr = shdr[i].PointerToRawData;
 		sections[j].flags = shdr[i].Characteristics;
 		sections[j].last = 0;
