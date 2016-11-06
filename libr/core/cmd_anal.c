@@ -7,40 +7,7 @@
 #include "anal_vt.c"
 
 /* better aac for windows-x86-32 */
-#define JAYRO_03 0
-
-#if JAYRO_03
-
-static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
-	ut64 align = addr % PE_ALIGN;
-	ut32 call_bytes;
-
-	// XXX this is x86 specific
-	if (align == 0) {
-		call_bytes = (ut32)((ut8*)buf)[bufi + 3] << 24;
-		call_bytes |= (ut32)((ut8*)buf)[bufi + 2] << 16;
-		call_bytes |= (ut32)((ut8*)buf)[bufi + 1] << 8;
-		call_bytes |= (ut32)((ut8*)buf)[bufi];
-	} else {
-		call_bytes = (ut32)((ut8*)buf)[bufi - align + 3] << 24;
-		call_bytes |= (ut32)((ut8*)buf)[bufi - align + 2] << 16;
-		call_bytes |= (ut32)((ut8*)buf)[bufi - align + 1] << 8;
-		call_bytes |= (ut32)((ut8*)buf)[bufi - align];
-	}
-	if (call_bytes >= from && call_bytes <= to) {
-		return true;
-	}
-	call_bytes = (ut32)((ut8*)buf)[bufi + 4] << 24;
-	call_bytes |= (ut32)((ut8*)buf)[bufi + 3] << 16;
-	call_bytes |= (ut32)((ut8*)buf)[bufi + 2] << 8;
-	call_bytes |= (ut32)((ut8*)buf)[bufi + 1];
-	call_bytes += addr + 5;
-	if (call_bytes >= from && call_bytes <= to) {
-		return false;
-	}
-	return false;
-}
-#endif
+#define JAYRO_03 1
 
 static void type_cmd_help (RCore *core) {
 	const char *help_msg[] = {
@@ -3033,7 +3000,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	ut8 *buf;
 	RBinFile *binfile;
 	RAnalOp op;
-	ut64 addr, addr_end;
+	ut64 addr, addr_begin, addr_end;
 	int depth = r_config_get_i (core->config, "anal.depth");
 	ut64 len = r_num_math (core->num, input);
 	if (len > 0xffffff) {
@@ -3078,6 +3045,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			len = binfile->size - core->offset;
 		}
 	*/
+	addr_begin = addr;
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
 	buf = malloc (4096);
@@ -3100,8 +3068,8 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
 #if JAYRO_03
-				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
-					fcn = r_anal_get_fcn_in(core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
+				if ((r_io_section_get_rwx (core->io, op.jump) & R_IO_EXEC)) {
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
 					if (!fcn) {
 						r_core_anal_fcn (core, op.jump, addr,
 								R_ANAL_REF_TYPE_NULL, depth);
