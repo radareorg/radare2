@@ -192,6 +192,7 @@ static int cmd_hash(void *data, const char *input) {
 		r_core_cmd_help (core, helpmsg3);
 		return false;
 	}
-	/* this is a comment - captain obvious */
+	/* this is a comment - captain obvious
+	   should not be reached, see r_core_cmd_subst() */
 	return 0;
 }

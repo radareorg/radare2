@@ -1259,7 +1259,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
 	const char *cmdrep = NULL;
 	cmd = r_str_trim_head_tail (icmd);
-	if (!icmd || !strncmp (cmd, "# ", 2)) {
+	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
+	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}	
 	cmt = *icmd ? strchr (icmd+1, '#'): NULL;
