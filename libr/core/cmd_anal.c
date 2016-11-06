@@ -3053,7 +3053,12 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			// search in current section
 			if (s->size > binfile->size) {
 				addr = s->vaddr;
-				len = binfile->size - s->offset;
+				if (binfile->size > s->offset) {
+					len = binfile->size - s->offset;
+				} else {
+					eprintf ("Opps something went wrong aac\n");
+					return;
+				}
 			} else {
 				addr = s->vaddr;
 				len = s->size;
@@ -3065,7 +3070,12 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				len = binfile->size - o;
 			} else {
 				if (binfile->size > core->offset) {
-					len = binfile->size - core->offset;
+					if (binfile->size > core->offset) {
+						len = binfile->size - core->offset;
+					} else {
+						eprintf ("Opps something went wrong aac\n");
+						return;
+					}
 				} else {
 					eprintf ("Oops invalid range\n");
 					len = 0;
@@ -3073,19 +3083,16 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			}
 		}
 	}
-	/*
-		if (core->offset + len > binfile->size) {
-			len = binfile->size - core->offset;
-		}
-	*/
 	addr_end = addr + len;
 	r_cons_break (NULL, NULL);
-	buf = malloc (4096);
-	if (!buf) return;
+	if (!(buf = malloc (4096))) {
+		return;
+	}
 	bufi = 0;
 	while (addr < addr_end) {
-		if (core->cons->breaked)
+		if (core->cons->breaked) {
 			break;
+		}
 		// TODO: too many ioreads here
 		if (bufi > 4000) {
 			bufi = 0;
