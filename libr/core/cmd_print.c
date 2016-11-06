@@ -2548,8 +2548,13 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1]=='?') {
 			r_cons_printf ("|Usage: p[bB] [len]       bitstream of N bytes\n");
 		} else if (l != 0) {
-			const int size = len*8;
-			char *buf = malloc (size+1);
+			int size;
+			char *buf;
+			if (!r_core_block_size (core, len)) {
+				len = core->blocksize;
+			}
+			size = len*8;
+			buf = malloc (size+1);
 			if (buf) {
 				r_str_bits (buf, core->block, size, NULL);
 				r_cons_println (buf);
@@ -3818,25 +3823,16 @@ static int cmd_print(void *data, const char *input) {
 			/* faltrhou */
 		default:
 			if (l != 0) {
-				int restore_block_size = 0;
 				ut64 from = r_config_get_i (core->config, "diff.from");
 				ut64 to = r_config_get_i (core->config, "diff.to");
-				ut64 obsz = core->blocksize;
 				if (from == to && from == 0) {
-					 if (len != obsz) {
-						if (!r_core_block_size (core, len)) {
-							 len = obsz;
-						} else {
-							 restore_block_size = 1;
-						}
-					 }
+					if (!r_core_block_size (core, len)) {
+						 len = core->blocksize;
+					}
 					 r_print_hexdump (core->print, core->offset,
 							 core->block, len, 16, 1);
 				} else {
 					 r_core_print_cmp (core, from, to);
-				}
-				if (restore_block_size) {
-					 (void)r_core_block_size (core, obsz);
 				}
 				core->num->value = len;
 			}
@@ -3888,6 +3884,9 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_cons_printf("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
 		} else if (l != 0) {
+			if (!r_core_block_size (core, len)) {
+				len = core->blocksize;
+			}
 			if (input[1] == 'j') {
 				r_core_cmdf (core, "pcj %s", input+2);
 			} else if (input[1] == 'f') {
@@ -4069,10 +4068,11 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	}
 beach:
-	if (tbs != core->blocksize)
-		r_core_block_size (core, tbs);
 	if (tmpseek != UT64_MAX) {
 		r_core_seek (core, tmpseek, SEEK_SET);
+	}
+	if (tbs != core->blocksize) {
+		r_core_block_size (core, tbs);
 	}
 	return ret;
 }
