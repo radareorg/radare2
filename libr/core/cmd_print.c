@@ -1703,7 +1703,11 @@ static void algolist(int mode) {
 		ut64 bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
 		if (name && *name) {
-			r_cons_println (name);
+			if (mode) {
+				r_cons_println (name);
+			} else {
+				r_cons_printf ("%s ", name);
+			}
 		}
 	}
 	if (!mode) r_cons_newline ();
@@ -1726,9 +1730,11 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	input = r_str_chop_ro (input);
 	ptr = strchr (input, ' ');
 	sscanf (input, "%31s", algo);
-	if (ptr && *(ptr + 1) && r_num_is_valid_input (core->num, ptr + 1)) {
+	if (ptr && ptr[1]) { // && r_num_is_valid_input (core->num, ptr + 1)) {
 		int nlen = r_num_math (core->num, ptr + 1);
-		if (nlen>0) len = nlen;
+		if (nlen > 0) {
+			len = nlen;
+		}
 		osize = core->blocksize;
 		if (nlen > core->blocksize) {
 			r_core_block_size (core, nlen);
@@ -1741,7 +1747,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	} else if (!ptr || !*(ptr+1)) {
 		osize = len;
 	}
-
+	r_core_block_read (core);
 	/* TODO: Simplify this spaguetti monster */
 	while (osize > 0 && hash_handlers[pos].name) {
 		if (!r_str_ccmp (input, hash_handlers[pos].name, ' ')) {
@@ -2176,10 +2182,10 @@ static int cmd_print(void *data, const char *input) {
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
 	l = len = core->blocksize;
-	if (input[0] && input[1]) {
-		const char *p = strchr (input, ' ');
+	if (input[0] && input[1] && input[2]) {
+		const char *p = strchr (input + 2, ' ');
 		if (p) {
-			l = (int) r_num_math (core->num, p+1);
+			l = (int) r_num_math (core->num, p + 1);
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0]!='a' && input[0]!='f' && input[0] != 'i' && input[0] != 'I') {
 				int n = (st32) l; //r_num_math (core->num, input+1);
@@ -2205,7 +2211,9 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 		}// else l = 0;
-	} else l = len;
+	} else {
+		l = len;
+	}
 
 	if (len > core->blocksize) {
 		len = core->blocksize;
@@ -2244,7 +2252,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 	}
 	core->num->value = len;
-	if (len>core->blocksize) {
+	if (len > core->blocksize) {
 		len = core->blocksize;
 	}
 	if (off != UT64_MAX) {
