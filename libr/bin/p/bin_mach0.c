@@ -399,6 +399,8 @@ typedef struct r_bin_create_t {
 static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, int dlen) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
+	const bool use_dylinker = true;
+	const bool use_libsystem = true;
 	ut32 filesize, codeva, datava;
 	ut32 ncmds, cmdsize, magiclen;
 	ut32 p_codefsz = 0, p_codeva = 0, p_codesz = 0, p_codepa = 0;
@@ -424,12 +426,14 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 
 	/* MACH0 HEADER */
 	B ("\xce\xfa\xed\xfe", 4); // header
+// 64bit header	B ("\xce\xfa\xed\xfe", 4); // header
 	if (is_arm) {
 		D (12); // cpu type (arm)
 		D (3); // subtype (all?)
 	} else {
 		/* x86-32 */
 		D (7); // cpu type (x86)
+// D(0x1000007); // x86-64
 		D (3); // subtype (i386-all)
 	}
 	D (2); // filetype (executable)
@@ -443,6 +447,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	}
 	if (use_pagezero) {
 		ncmds++;
+	}
+	if (use_dylinker) {
+		ncmds++;
+		if (use_libsystem) {
+			ncmds++;
+		}
 	}
 
 	/* COMMANDS */
@@ -489,10 +499,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	D (-1);
 	p_codepa = buf->length; // code - baddr
 	D (-1); //_start-0x1000);
-	D (4); // align
+	D (0); // align // should be 2 for 64bit
 	D (0); // reloff
 	D (0); // nrelocs
-	D (0x80000400); // flags
+	D (0); // flags
 	D (0); // reserved
 	D (0); // ??
 
@@ -529,6 +539,28 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 		D (0); // reserved
 		D (0);
 	}
+	if (use_dylinker) {
+		const char *dyld = "/usr/lib/dyld";
+		const int dyld_len = strlen (dyld) + 1;
+		D(0xe); /* LC_DYLINKER */
+		D((4 * 3) + dyld_len);
+		D(dyld_len - 2);
+		WZ(dyld_len, dyld); // path
+
+		if (use_libsystem) {
+			/* add libSystem at least ... */
+			const char *lib = "/usr/lib/libSystem.B.dylib";
+			const int lib_len = strlen (lib) + 1;
+			D(0xc); /* LC_LOAD_DYLIB */
+			D(28 + lib_len); // cmdsize
+			D(28); // offset where the lib string start
+			D(0x2);
+			D(0x1);
+			D(0x1);
+			D(0x04ca0a01); // tstamp
+			WZ(lib_len, lib);
+		}
+	}
 
 	if (use_main) {
 		/* LC_MAIN */
@@ -558,6 +590,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 			Z (16 * sizeof (ut32));
 		}
 	}
+
+	/* padding to make mach_loader checks happy */
+	/* binaries must be at least of 4KB :( not tiny anymore */
+	WZ (4096 - buf->length, "");
 
 	cmdsize = buf->length - magiclen;
 	codeva = buf->length + baddr;
