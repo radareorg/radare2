@@ -2596,7 +2596,7 @@ repeat:
 		int i, j;
 		bool is_wide = false;
 		do {
-			n = r_str_nlen ((const char *)p + ntotal,
+			n = r_str_nlen_w ((const char *)p + ntotal,
 					plen - ntotal) + 1;
 			if (n < 2) break;
 			name = malloc (n + 10);
@@ -2645,7 +2645,7 @@ repeat:
 		if (core->print->ocur != -1) {
 			n = plen;
 		} else {
-			n = r_str_nlen ((const char*)p, plen) + 1;
+			n = r_str_nlen_w ((const char*)p, plen) + 1;
 		}
 		name = malloc (n + 10);
 		if (!name) {

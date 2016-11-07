@@ -1346,17 +1346,34 @@ R_API int r_str_ansi_chop(char *str, int str_len, int n) {
 	return back;
 }
 
-
-// TODO: support wide char strings
 R_API int r_str_nlen(const char *str, int n) {
 	int len = 0;
 	if (str) {
-		//while (IS_PRINTABLE (*str) && n>0) {
+		while (*str && n > 0) {
+			len++;
+			str++;
+			n--;
+		}
+	}
+	return len;
+}
+
+//to handle wide string as well
+//XXX can be error prone
+R_API int r_str_nlen_w(const char *str, int n) {
+	int len = 0;
+	if (str) {
 		while (*str && n > 0) {
 			len++;
 			str++;
 			if (!*str) {
 				//handle wide strings
+			 	//xx00yy00bb00
+				if (n - 2 > 0) {
+					if (str[2]) {
+						break;
+					}
+				}
 				str++;
 			}
 			n--;

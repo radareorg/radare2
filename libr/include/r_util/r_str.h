@@ -111,6 +111,7 @@ R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src
 R_API char *r_str_utf16_encode(const char *s, int len);
 R_API char *r_str_home(const char *str);
 R_API int r_str_nlen(const char *s, int n);
+R_API int r_str_nlen_w(const char *s, int n);
 R_API int r_wstr_clen(const char *s);
 R_API char *r_str_prefix(char *ptr, const char *string);
 R_API char *r_str_prefix_all(char *s, const char *pfx);
