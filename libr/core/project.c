@@ -180,7 +180,6 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	char *path, *db = NULL, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
-	int prjType = 0;
 	SdbNs *ns;
 
 	if (!prjfile || !*prjfile) {
@@ -200,11 +199,9 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	if (r_str_endswith (prjfile, "/rc")) {
 		// XXX
 		eprintf ("ENDS WITH\n");
-		prjType = 1;
 		path = strdup (prjfile);
 		path [strlen (path) - 3] = 0;
 	} else if (r_file_fexists ("%s/rc", prjDir, prjfile)) {
-		prjType = 1;
 		path = r_str_newf ("%s/", prjDir, prjfile);
 	} else {
 		if (*prjfile == '/') {
