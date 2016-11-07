@@ -1743,11 +1743,11 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 				r_core_block_size (core, osize);
 				return false;
 			}
+			r_core_block_read (core);
 		}
-	} else if (!ptr || !*(ptr+1)) {
+	} else if (!ptr || !*(ptr + 1)) {
 		osize = len;
 	}
-	r_core_block_read (core);
 	/* TODO: Simplify this spaguetti monster */
 	while (osize > 0 && hash_handlers[pos].name) {
 		if (!r_str_ccmp (input, hash_handlers[pos].name, ' ')) {
