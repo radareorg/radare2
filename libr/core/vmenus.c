@@ -2592,39 +2592,75 @@ repeat:
 		r_core_cmdf (core, "./r 0x%08"PFMT64x" @ $S", off);
 		break;
 	case 'S':
+		{
+		int i, j;
+		bool is_wide = false;
 		do {
-			n = r_str_nlen ((const char*)p+ntotal, plen-ntotal)+1;
-			if (n<2) break;
-			if (p[ntotal + n - 1])
-				break; // Not a \0 terminated string
-			name = malloc (n+10);
+			n = r_str_nlen ((const char *)p + ntotal,
+					plen - ntotal) + 1;
+			if (n < 2) break;
+			name = malloc (n + 10);
 			strcpy (name, "str.");
-			memcpy (name+4, (const char *)p+ntotal, n);
-			name[4+n] = '\0';
-			r_meta_add (core->anal, R_META_TYPE_STRING,
-				off+ntotal, off+n+ntotal, (const char *)name+4);
-			r_name_filter (name, n+10);
+			for (i = 0, j = 0; i < n; i++, j++) {
+				name[4 + i] = p[j + ntotal];
+				if (!p[j + 1 + ntotal])  {
+					is_wide = true;
+					j++;
+				}
+			}
+			name[4 + n] = '\0';
+			if (is_wide) {
+				r_meta_add (core->anal, R_META_TYPE_STRING,
+				  off + ntotal, off + (n * 2) + ntotal,
+						   (const char *)name + 4);
+			} else {
+				r_meta_add (core->anal, R_META_TYPE_STRING,
+				  off + ntotal, off + n + ntotal,
+						   (const char *)name + 4);
+			}
+			r_name_filter (name, n + 10);
 			r_flag_set (core->flags, name, off+ntotal, n);
 			free (name);
-			ntotal += n;
-		} while (ntotal<plen);
+			if (is_wide) {
+				ntotal += n * 2 - 1;
+			} else {
+				ntotal += n;
+			}
+		} while (ntotal < plen);
+		}
 		break;
 	case 's':
 		{
-		int i;
-		// TODO: r_core_cmd0 (core, "Cz");
-		if (core->print->ocur != -1)
+		int i, j;
+		bool is_wide;
+		if (core->print->ocur != -1) {
 			n = plen;
-		else n = r_str_nlen ((const char*)p, plen)+1;
-		name = malloc (n+10);
+		} else {
+			n = r_str_nlen ((const char*)p, plen) + 1;
+		}
+		name = malloc (n + 10);
+		if (!name) {
+			break;
+		}
 		strcpy (name, "str.");
-		memcpy (name+4, (const char *)p, n);
-		name[4+n] = '\0';
-		for (i = 0; i < n; i++)
-			if (!name[4+i])
-				name[4+i]='_';
-		r_meta_add (core->anal, R_META_TYPE_STRING, off, off+n, (const char *)name+4);
-		r_name_filter (name, n+10);
+		for (i = 0, j = 0; i < n; i++, j++) {
+			name[4 + i] = p[j];
+			if (!p[j + 1]) {
+				is_wide = true;
+				j++;
+			} 
+		}
+		name[4 + n] = '\0';
+		//handle wide strings
+		//memcpy (name + 4, (const char *)p, n);
+		if (is_wide) {
+			r_meta_add (core->anal, R_META_TYPE_STRING, off,
+				    off + (n * 2), (const char *)name + 4);
+		} else {
+			r_meta_add (core->anal, R_META_TYPE_STRING, off,
+				    off + n, (const char *)name + 4);
+		}
+		r_name_filter (name, n + 10);
 		r_flag_set (core->flags, name, off, n);
 		free (name);
 		}

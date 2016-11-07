@@ -1355,6 +1355,10 @@ R_API int r_str_nlen(const char *str, int n) {
 		while (*str && n > 0) {
 			len++;
 			str++;
+			if (!*str) {
+				//handle wide strings
+				str++;
+			}
 			n--;
 		}
 	}

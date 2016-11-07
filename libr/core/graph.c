@@ -1154,7 +1154,7 @@ static void collect_changes(const RAGraph *g, int l, const RGraphNode *b, int fr
 	}
 }
 
-static void combine_sequences (const RAGraph *g, int l, const RGraphNode *bm, const RGraphNode *bp, int from_up, int a, int r) {
+static void combine_sequences(const RAGraph *g, int l, const RGraphNode *bm, const RGraphNode *bp, int from_up, int a, int r) {
 	RList *Rm = r_list_new (), *Rp = r_list_new ();
 	const RGraphNode *vt, *vtp;
 	RANode *at, *atp;
