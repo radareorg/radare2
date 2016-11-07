@@ -811,13 +811,16 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 					refi->at,
 					      refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr, fun->name, f?f->name:"");
-				if (++count > 9) break;
+				if (++count > 9) {
+					break;
+				}
 			}
 		}
 	}
 	r_cons_flush ();
-	if (!count)
+	if (!count) {
 		return 0;
+	}
 	ch = r_cons_readchar ();
 	if (fun && fun->refs) {
 		if (ch >= '0' && ch <= '9') {

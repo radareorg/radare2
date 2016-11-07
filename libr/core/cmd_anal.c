@@ -3433,7 +3433,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			r_list_free (list);
 		}
 	} break;
-	case 'f': {
+	case 'f': { // "axf"
 		ut8 buf[12];
 		RAsmOp asmop;
 		char *buf_asm = NULL;
@@ -3447,13 +3447,19 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		} else {
 			addr = core->offset;
 		}
+#if 0
 		list = r_anal_xrefs_get_from (core->anal, addr);
+#else
+		RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		list = fcn? fcn->refs: NULL;
+#endif
 		if (list) {
 			if (input[1] == 'q') { // axfq
-				r_list_foreach (list, iter, ref)
+				r_list_foreach (list, iter, ref) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->at);
+				}
 			} else if (input[1] == 'j') { // axfj
-				r_cons_printf ("[");
+				r_cons_print ("[");
 				r_list_foreach (list, iter, ref) {
 					r_core_read_at (core, ref->at, buf, 12);
 					r_asm_set_pc (core->assembler, ref->at);
@@ -3461,12 +3467,13 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_printf ("{\"from\":0x%" PFMT64x ",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
 						ref->at, ref->type, asmop.buf_asm, iter->n? ",": "");
 				}
-				r_cons_printf ("]\n");
+				r_cons_print ("]\n");
 			} else if (input[1] == '*') { // axf*
 				// TODO: implement multi-line comments
-				r_list_foreach (list, iter, ref)
+				r_list_foreach (list, iter, ref) {
 					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF from 0x%" PFMT64x "\n",
 						ref->at, ref->type, asmop.buf_asm, iter->n? ",": "");
+				}
 			} else { // axf
 				char str[512];
 				r_list_foreach (list, iter, ref) {
@@ -3487,12 +3494,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							cmd_anal_ucall_ref (core, ref->addr);
 						}
 					}
-
-					r_cons_printf ("\n");
+					r_cons_newline ();
 					free (buf_asm);
 				}
 			}
-			r_list_free (list);
+			// r_list_free (list);
 		}
 	} break;
 	case 'F':
