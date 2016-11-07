@@ -486,11 +486,19 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						r_print_format (core->print, addr, core->block,
 							n, p + 1, 0, NULL, NULL);
 					}
-				} else if (type == 's') {
-					strncpy (name, t, sizeof (name) - 1);
-					(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
+				} else if (type == 's') { //Cs
+					char tmp[256] = {0};
+					int i, j, name_len = 0;
+					(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 1);
+					name_len = r_str_nlen (tmp, sizeof (tmp));
+					//handle wide strings
+					for (i = 0, j = 0; i < sizeof (name); i++, j++) {
+						name[i] = tmp[j];
+						if (!tmp[j + 1]) {
+							j++;
+						}
+					}
 					name[sizeof (name) - 1] = '\0';
-					int name_len = strlen (name);
 					if (n == 0) {
 						n = name_len + 1;
 					} else {
