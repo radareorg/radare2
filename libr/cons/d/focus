@@ -9,16 +9,16 @@ ec cjmp rgb:ff0
 ec ret rgb:f00
 ec trap rgb:000 rgb:f00
 ec offset rgb:fff
-ec prompt rgb:ccc
+ec prompt yellow 
 ec comment rgb:0cf
 ec push rgb:f3f
 ec pop rgb:000 rgb:f3f
 ec cmp rgb:000 rgb:0f0
 ec nop rgb:000
-ec b0x00 rgb:666
-ec b0x7f rgb:666
-ec b0xff rgb:666
-ec btext rgb:666
+ec b0x00 green
+ec b0x7f cyan 
+ec b0xff red 
+ec btext yellow 
 ec text rgb:666
 ec other rgb:666
 ec num rgb:888
@@ -27,3 +27,9 @@ ec fline rgb:fc0
 ec flow rgb:ff3
 ec mov rgb:888
 ec swi rgb:000 rgb:fff
+ec floc rgb:af2
+ec ai.read green
+ec ai.write blue
+ec ai.exec red
+ec ai.seq rgb:ff00ff
+ec ai.ascii rgb:ffff00

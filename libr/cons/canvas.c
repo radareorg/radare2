@@ -284,10 +284,14 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 	const char **atr;
 	int is_first = true;
 
-	if (!c) return NULL;
+	if (!c) {
+		return NULL;
+	}
 	b = c->b;
 	o = calloc (1, (c->w * (c->h + 1)) * (CONS_MAX_ATTR_SZ));
-	if (!o) return NULL;
+	if (!o) {
+		return NULL;
+	}
 	for (y = 0; y < c->h; y++) {
 		if (!is_first) {
 			o[olen++] = '\n';
@@ -296,7 +300,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		for (x = 0; x < c->w; x++) {
 			const int p = x + (y * c->w);
 			atr = attr_at (c, p);
-			if (atr) {
+			if (atr && *atr) {
 				strcat (o, *atr);
 				olen += strlen (*atr);
 			}
