@@ -3738,7 +3738,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		ut8 buf[12];
 		RAsmOp asmop;
 		char *buf_asm = NULL;
-		RList *list;
+		RList *list, *list_ = NULL;
 		RAnalRef *ref;
 		RListIter *iter;
 		char *space = strchr (input, ' ');
@@ -3748,12 +3748,17 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		} else {
 			addr = core->offset;
 		}
-#if 0
-		list = r_anal_xrefs_get_from (core->anal, addr);
-#else
-		RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-		list = fcn? fcn->refs: NULL;
-#endif
+		if (input[1] == '.') { // axf.
+			list = list_ = r_anal_xrefs_get_from (core->anal, addr);
+			if (!list) {
+				RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+				list = fcn? fcn->refs: NULL;
+			}
+		} else {
+			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			list = fcn? fcn->refs: NULL;
+		}
+
 		if (list) {
 			if (input[1] == 'q') { // axfq
 				r_list_foreach (list, iter, ref) {
@@ -3804,7 +3809,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					free (buf_asm);
 				}
 			}
-			// r_list_free (list);
+			r_list_free (list_);
 		}
 	} break;
 	case 'F':
