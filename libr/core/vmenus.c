@@ -2603,7 +2603,16 @@ repeat:
 			strcpy (name, "str.");
 			for (i = 0, j = 0; i < n; i++, j++) {
 				name[4 + i] = p[j + ntotal];
+				if (!p[j + ntotal]) {
+					break;
+				}
 				if (!p[j + 1 + ntotal])  {
+					//check if is still wide
+					if (j + 3 + ntotal < n) {
+						if (p[j + 3]) {
+							break;
+						}
+					}
 					is_wide = true;
 					j++;
 				}
@@ -2646,6 +2655,14 @@ repeat:
 		for (i = 0, j = 0; i < n; i++, j++) {
 			name[4 + i] = p[j];
 			if (!p[j + 1]) {
+				break;
+			}
+			if (!p[j + 1]) {
+				if (j + 3 < n) {
+					if (p[j + 3]) {
+						break;
+					}
+				}
 				is_wide = true;
 				j++;
 			} 

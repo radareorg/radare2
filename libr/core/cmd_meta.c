@@ -494,7 +494,15 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 					//handle wide strings
 					for (i = 0, j = 0; i < sizeof (name); i++, j++) {
 						name[i] = tmp[j];
+						if (!tmp[j]) {
+							break;
+						}
 						if (!tmp[j + 1]) {
+							if (j + 3 < sizeof (tmp)) {
+								if (tmp[j + 3]) {
+									break;	
+								}
+							}
 							j++;
 						}
 					}
