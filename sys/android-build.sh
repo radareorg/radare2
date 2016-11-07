@@ -1,7 +1,7 @@
 #!/bin/sh
 
 BUILD=1
-PREFIX="/data/data/org.radare2.installer/radare2"
+PREFIX="/data/data/org.radare.radare2installer/radare2"
 
 type pax
 [ $? != 0 ] && exit 1
@@ -155,9 +155,9 @@ rm -f ${HERE}/${D}/${LIBDIR}/*.a
 rm -rf ${HERE}/${D}/${DATADIR}/radare2/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`
-WWWROOT="/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
-WWWWOOT="${HERE}/${D}/data/data/org.radare2.installer/www"
-WWWSOOT="${HERE}/${D}/data/data/org.radare2.installer/radare2/share/radare2/${VERSION}/www"
+WWWROOT="/data/data/org.radare.radare2installer/radare2/share/radare2/${VERSION}/www"
+WWWWOOT="${HERE}/${D}/data/data/org.radare.radare2installer/www"
+WWWSOOT="${HERE}/${D}/data/data/org.radare.radare2installer/radare2/share/radare2/${VERSION}/www"
 echo WWWROOT="${WWWROOT}"
 echo WWWROOT="${WWWWOOT}"
 echo WWWROOT="${WWWSOOT}"

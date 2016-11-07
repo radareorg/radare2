@@ -1836,7 +1836,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
-	SETPREF("dir.projects", "/data/data/org.radare2.installer/radare2/projects", "Default path for projects");
+	SETPREF("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
 #elif __WINDOWS__
 	SETPREF("dir.projects", "~\\"R2_HOMEDIR"\\projects", "Default path for projects");
 #else
@@ -1971,7 +1971,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("http.bind", "localhost", "Server address");
 	SETPREF("http.homeroot", "~/.config/radare2/www", "http home root directory");
 #if __ANDROID__
-	SETPREF("http.root", "/data/data/org.radare2.installer/www", "http root directory");
+	SETPREF("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");
 #elif __WINDOWS__
 	SETPREF("http.root", "www", "http root directory");
 #else

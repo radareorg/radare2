@@ -808,7 +808,7 @@ R_API char *r_file_tmpdir() {
 		path = strdup ("C:\\WINDOWS\\Temp\\");
 	}
 #elif __ANDROID__
-	char *path = strdup ("/data/data/org.radare2.installer/radare2/tmp");
+	char *path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");
 #else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (path && !*path) {
