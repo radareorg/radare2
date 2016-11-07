@@ -26,4 +26,5 @@ ${TARGET_PTRACE}: ${OBJ_PTRACE}
 		${LDFLAGS_LINKPATH}../../reg -L../../reg -lr_reg \
 		${LDFLAGS_LINKPATH}../../util -L../../util -lr_util \
 		${LDFLAGS_LINKPATH}../../syscall -L../../util -lr_syscall \
+		${LDFLAGS_LINKPATH}../../cons -L../../cons -lr_cons \
 		${OBJ_PTRACE}
