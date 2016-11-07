@@ -621,7 +621,30 @@ static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	CloseHandle(thread);
 	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
 	#if __MINGW64__
-		eprintf ("TODO: r_debug_native_reg_read fpu/mmx/xmm\n");
+		typedef struct _M128A {
+			unsigned long long Low;
+			long long High;
+		} *PM128A;
+		if (showfpu) {
+			eprintf ("cwd = 0x%08x  ; control   ", (ut32)ctx.FltSave.ControlWord);
+			eprintf ("swd = 0x%08x  ; status\n", (ut32)ctx.FltSave.StatusWord);
+			eprintf ("twd = 0x%08x ", (ut32)ctx.FltSave.TagWord);
+			eprintf ("eof = 0x%08x\n", (ut32)ctx.FltSave.ErrorOffset);
+			eprintf ("ese = 0x%08x\n", (ut32)ctx.FltSave.ErrorSelector);
+			eprintf ("dof = 0x%08x\n", (ut32)ctx.FltSave.DataOffset);
+			eprintf ("dse = 0x%08x\n", (ut32)ctx.FltSave.DataSelector);
+			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.MxCsr);
+			PM128A a = {0};
+			int i;
+			for (i = 0; i < 8; i++) {
+				a = (PM128A)&ctx.FltSave.FloatRegisters[i];
+				eprintf("st%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
+			}
+			for (i = 0; i < 16; i++) {
+				a = (PM128A)&ctx.FltSave.XmmRegisters[i];
+				eprintf("mm%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
+			}
+		}
 	#else
 		int i;
 		if (showfpu) {
@@ -633,14 +656,14 @@ static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			eprintf ("dof = 0x%08x\n", (ut32)ctx.FloatSave.DataOffset);
 			eprintf ("dse = 0x%08x\n", (ut32)ctx.FloatSave.DataSelector);
 			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.ExtendedRegisters[24]);
-			for (i=0; i<8; i++) {
-				ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
-				a = a + (i * 4);
-				eprintf ("xmm%d = %08x %08x %08x %08x  ",i
-						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
+			for (i = 0; i < 8; i++) {
 				ut64 *b = (ut64 *)&ctx.FloatSave.RegisterArea[i*10];
 				eprintf ("st%d = %lg (0x%08"PFMT64x")\n", i,
 					(double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
+				ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
+				a = a + (i * 4);
+				eprintf ("mm%d = %08x %08x %08x %08x  ",i
+						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
 			}
 		}
 	#endif
