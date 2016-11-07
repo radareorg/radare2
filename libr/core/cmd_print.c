@@ -2182,8 +2182,9 @@ static int cmd_print(void *data, const char *input) {
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
 	l = len = core->blocksize;
-	if (input[0] && input[1] && input[2]) {
-		const char *p = strchr (input + 2, ' ');
+	if (input[0] && input[1]) {
+		int idx = (input[0] == 'h')? 2: 1;
+		const char *p = off? strchr (input + idx, ' '): NULL;
 		if (p) {
 			l = (int) r_num_math (core->num, p + 1);
 			/* except disasm and memoryfmt (pd, pm) */
