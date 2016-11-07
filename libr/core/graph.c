@@ -1593,8 +1593,8 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 }
 
 static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena) {
-	core->anal->gp = saved_gp;
 	if (emu) {
+		core->anal->gp = saved_gp;
 		if (b->parent_reg_arena) {
 			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena);
 			R_FREE (b->parent_reg_arena);
@@ -1634,12 +1634,11 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	bool emu = r_config_get_i (core->config, "asm.emu");
-	ut64 saved_gp;
+	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
-		saved_gp = core->anal->gp;
 		saved_arena = r_reg_arena_peek (core->anal->reg);
 	}
 	r_list_sort (fcn->bbs, (RListComparator)bbcmp);
@@ -1681,12 +1680,11 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	int shortcuts = 0;
 	bool emu = r_config_get_i (core->config, "asm.emu");
 	int ret = false;
-	ut64 saved_gp;
+	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
-		saved_gp = core->anal->gp;
 		saved_arena = r_reg_arena_peek (core->anal->reg);
 	}
 	r_list_sort (fcn->bbs, (RListComparator)bbcmp);
