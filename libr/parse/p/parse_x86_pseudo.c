@@ -251,6 +251,9 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	spargs = p->varlist (p->anal, f, 's');
 	/*iterate over stack pointer arguments/variables*/
 	bool ucase = *tstr >= 'A' && *tstr <= 'Z';
+	if (ucase && tstr[1]) {
+		ucase = tstr[1] >= 'A' && tstr[1] <= 'Z';
+	}
 	r_list_foreach (spargs, spiter, sparg) {
 		if (sparg->delta < 10) {
 			snprintf (oldstr, sizeof (oldstr)-1, "[%s + %d]",
