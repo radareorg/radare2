@@ -1491,7 +1491,7 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
 				E++;
 		}
 	}
-	return E - N + (2 * P);
+	return E - N + 2; // (2 * P);
 }
 
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
