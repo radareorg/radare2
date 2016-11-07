@@ -3476,14 +3476,19 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			} else { // axf
 				char str[512];
+				int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 				r_list_foreach (list, iter, ref) {
 					r_core_read_at (core, ref->at, buf, 12);
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
 					r_parse_filter (core->parser, core->flags,
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
-					buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
-									core->cons->pal.num);
+					if (has_color) {
+						buf_asm = r_print_colorize_opcode (str, core->cons->pal.reg,
+										core->cons->pal.num);
+					} else {
+						buf_asm = r_str_new (str);
+					}
 					r_cons_printf ("%c 0x%" PFMT64x " %s",
 						ref->type, ref->at, buf_asm);
 
