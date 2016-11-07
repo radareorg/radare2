@@ -835,12 +835,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 			iob->desc_seek (io, desc, seekaddr);
 			buf_bytes = iob->desc_read (io, desc, &sz);
 		}
-#if 0
-	} else {
-		ut64 seekaddr = baseaddr;
-		iob->desc_seek (io, desc, seekaddr);
-		buf_bytes = iob->desc_read (io, desc, &sz);
-#endif
 	}
 
 	if (!name) {
@@ -1039,8 +1033,9 @@ R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64
 		return NULL;
 	}
 	r_list_foreach (bin->plugins, it, plugin) {
-		if (plugin->check_bytes && plugin->check_bytes (bytes, sz))
+		if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
 			return plugin;
+		}
 	}
 	return NULL;
 }
@@ -1234,8 +1229,9 @@ static int r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	free (bytes);
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	// size is set here because the reported size of the object depends on if loaded from xtr plugin or partially read
-	if (o && !o->size) o->size = sz;
-
+	if (o && !o->size) {
+		o->size = sz;
+	}
 	if (!o) {
 		return false;
 	}

@@ -740,8 +740,9 @@ int main(int argc, char **argv, char **envp) {
 					char *diskfile = strstr (file, "://");
 					diskfile = diskfile? diskfile + 3: file;
 					fh = r_core_file_open (&r, file, perms, mapaddr);
-					if (fh != NULL)
+					if (fh != NULL) {
 						r_debug_use (r.dbg, is_gdb ? "gdb" : debugbackend);
+					}
 					/* load symbols when doing r2 -d ls */
 					// NOTE: the baddr is redefined to support PIE/ASLR
 					baddr = getBaddrFromDebugger (&r, diskfile);

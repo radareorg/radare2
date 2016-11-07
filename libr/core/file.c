@@ -399,7 +399,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	if (!desc) return false;
 	r_io_use_desc (r->io, desc);
 
-	if ( !r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
+	if (!r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
@@ -411,8 +411,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 		RBinInfo * info = obj ? obj->info : NULL;
 		if (!info) return false;
 		// set use of raw strings
-		r_core_bin_set_arch_bits (r, binfile->file,
-					info->arch, info->bits);
+		r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		r_config_set_i (r->config, "io.va", false);
 		// r_config_set (r->config, "bin.rawstr", "true");
 		// get bin.minstr
@@ -525,8 +524,9 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_io_use_desc (r->io, desc);
 	}
 
-	if (cf && binfile && desc)
+	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
+	}
 	binfile = r_bin_cur (r->bin);
 	if (r->bin->cur && r->bin->cur->curplugin && r->bin->cur->curplugin->strfilter) {
 		char msg[2];
