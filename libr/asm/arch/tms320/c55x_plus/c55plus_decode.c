@@ -12,10 +12,10 @@
 #include "hashtable.h"
 #include "decode_funcs.h"
 
-extern st8 *ins_str[];
+extern char *ins_str[];
 extern ut32 ins_buff_len;
 
-static ut32 get_q_bits(ut32 val, st8 *ins, ut32 ins_len, int *err_code) {
+static ut32 get_q_bits(ut32 val, char *ins, ut32 ins_len, int *err_code) {
 	ut32 res = 0;
 
 	if (!strncasecmp(ins, "q_MMAP", 6)) {
@@ -51,13 +51,13 @@ static ut32 get_q_bits(ut32 val, st8 *ins, ut32 ins_len, int *err_code) {
 	a2 = 0x223;
 	0x800 = valor que se crea en sub_40BAE0<) con and 0xfffff800
 */
-static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, st8 *ins,
+static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, char *ins,
 	ut32 ins_len, ut32 magic_value, int *err_code)
 {
 	ut32 res = 0;
 	ut8 op_b;
 	ut32 len, x, i;
-	st8 *op_str, *aux;
+	char *op_str, *aux;
 
 	if (ins[0] == 'q')
 		return get_q_bits(magic_value, ins, ins_len, err_code);
@@ -109,11 +109,10 @@ static bool check_arg(ut32 ins_bits, int *err_code) {
 	return res;
 }
 
-static st8 *decode_regis(st8 *reg_arg, st32 hash_code, ut32 ins_bits,
-	ut32 *ret_ins_bits, int *err_code)
-{
-	ut8 reg_type;
-	st8 *res;
+static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
+	ut32 *ret_ins_bits, int *err_code) {
+	char reg_type;
+	char *res;
 
 	reg_type = *reg_arg;
 	res = NULL;
@@ -217,16 +216,16 @@ static st8 *decode_regis(st8 *reg_arg, st32 hash_code, ut32 ins_bits,
 
 
 
-static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len_dec,
+static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len_dec,
 	ut32 *reg_len_dec, ut32 *ret_ins_bits, ut32 magic_value, ut8 two_ins, int *err_code)
 {
 	ut32 ins_len;
-	st8 *ins, *pos;
-	st8 token_aux[80];
+	char *ins, *pos;
+	char token_aux[80];
 	ut32 i, len;
-	st8 *reg = NULL;
-	st8 *res_decode = NULL;
-	st8 *aux = NULL;
+	char *reg = NULL;
+	char *res_decode = NULL;
+	char *aux = NULL;
 
 	// get instruction length
 	ins_len = get_ins_len(get_ins_part(ins_pos + ins_off, 1));
@@ -376,12 +375,12 @@ void set_magic_value(ut32 *magic_value, st32 hash_code, int *err_code)
 }
 
 
-static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_pos,
+static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_pos,
 	st32 *ins_hash_code, int *err_code)
 {
 	st32 hash_code, hash_aux;
 	ut32 reg_len_dec, ins_len_dec, ret_ins_bits;
-	st8 *ins_res = NULL, *ins_aux = NULL;
+	char *ins_res = NULL, *ins_aux = NULL;
 	ut32 magic_value = 0x800;
 
 	*next_ins_pos = 0;
@@ -443,11 +442,11 @@ static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_p
 	return ins_res;
 }
 
-st8 *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos) {
+char *c55plus_decode(ut32 ins_pos, ut32 *next_ins_pos) {
 	ut8 opcode, two_ins = 0;
 	ut32 next_ins1_pos, next_ins2_pos;
 	st32 hash_code;
-	st8 *ins1, *ins2, *aux, *ins_res;
+	char *ins1, *ins2, *aux, *ins_res;
 	int err_code;
 
 	if (ins_pos >= ins_buff_len) {
@@ -517,14 +516,13 @@ static bool is_linear_circular(ut32 ins_bits) {
 	return (op == 26 || op == 30 || (op3 > 7 && op3 != 15));
 }
 
-static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len,
-	st8 *reg_arg, ut32 *ret_ins_bits, ut32 *ret_reg_len, ut32 magic_value,
-	ut32 ins_pos, ut32 ins_len, ut8 two_ins, int *err_code)
-{
+static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_len,
+	char *reg_arg, ut32 *ret_ins_bits, ut32 *ret_reg_len, ut32 magic_value,
+	ut32 ins_pos, ut32 ins_len, ut8 two_ins, int *err_code) {
 	ut32 tok_op, ins_bits;
-	st8 *res = NULL;
-	st8 buff_aux[512];
-	st8 *aux = NULL;
+	char *res = NULL;
+	char buff_aux[512];
+	char *aux = NULL;
 	ut32 ret_len = 0, flag;
 
 	*ret_ins_bits = 0;
@@ -614,13 +612,6 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 			if (C55PLUS_DEBUG) {
 				fprintf (stderr, "Ooops!!! look up address in sections!! %d", hash_code);
 			}
-#if 0
-			if(two_ins) {
-				;//sections(ins_pos + two_ins);
-			} else {
-				;//sections(ins_pos + *ret_reg_len+ *ret_ins_bits);
-			}
-#endif
 		}
 		if (reg_arg && *reg_arg == 'L') {
 			ins_bits = ins_bits << (32 - ins_token_len) >> (32 - ins_token_len);
@@ -855,7 +846,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 		res = strdup(res);
 		break;
 	case 78:
-		if (!strncasecmp(ins_token, "q_SAT", 5)) {
+		if (!strncasecmp (ins_token, "q_SAT", 5)) {
 			res = ins_bits? "s": NULL;
 		} else if (!strncasecmp(ins_token, "q_CIRC", 6)) {
 			res = ins_bits? ".cr": NULL;
@@ -877,7 +868,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 
 ret_decode:
 	if (C55PLUS_DEBUG) {
-		printf("RES = %s\n", (res) ? res :"NULL");
+		printf ("RES = %s\n", (res) ? res :"NULL");
 	}
 	return res;
 }

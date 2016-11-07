@@ -8,56 +8,54 @@
 static char hex_str[] = "01234567890abcdef";
 
 // TODO: Add in a Coverity modelling file
-st8 *strcat_dup(st8 *s1, st8 *s2, st32 n_free)
-{
-	st8 *res;
+char *strcat_dup(char *s1, char *s2, st32 n_free) {
+	char *res;
 	ut32 len_s1, len_s2;
 
-
-	if(s1 != NULL)
+	if(s1 != NULL) {
 		len_s1 = strlen(s1);
-	else
+	} else {
 		len_s1 = 0;
-
-	if(s2 != NULL)
+	}
+	if(s2 != NULL) {
 		len_s2 = strlen(s2);
-	else
+	} else {
 		len_s2 = 0;
+	}
 
 	res = (char *)malloc(len_s1 + len_s2 + 1);
-	if(!res)
+	if(!res) {
 		return NULL;
-
-	if(len_s1 > 0)
+	}
+	if(len_s1 > 0) {
 		memcpy(res, s1, len_s1);
-
-	if(len_s2 > 0)
+	}
+	if(len_s2 > 0) {
 		memcpy(res + len_s1, s2, len_s2);
-
+	}
 	res[len_s1 + len_s2] = '\0';
 
 	if(n_free == 1) {
-		if(s1 != NULL)
+		if(s1) {
 			free(s1);
-
+		}
 	} else if(n_free == 2) {
 		if(s2 != NULL)
 			free(s2);
 
 	} else if(n_free == 3) {
-		if(s1 != NULL)
+		if(s1) {
 			free(s1);
-
-		if(s2 != NULL)
+		}
+		if(s2) {
 			free(s2);
+		}
 	}
-
 	return res;
 }
 
-st8 *get_hex_str(ut32 hex_num)
-{
-    st8 aux[3];
+char *get_hex_str(ut32 hex_num) {
+    char aux[3];
 
     aux[2] = '\0';
     aux[1] = hex_str[hex_num & 0xF];
