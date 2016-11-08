@@ -169,8 +169,14 @@ static HANDLE WINAPI (*w32_openprocess)(DWORD, BOOL, DWORD) = NULL;
 static BOOL WINAPI (*w32_queryfullprocessimagename)(HANDLE, DWORD, LPTSTR, PDWORD) = NULL;
 static DWORD WINAPI (*psapi_getmappedfilename)(HANDLE, LPVOID, LPTSTR, DWORD) = NULL;
 static NTSTATUS WINAPI (*w32_ntquerysysteminformation)(ULONG, PVOID, ULONG, PULONG) = NULL;
-static NTSTATUS WINAPI (*w32_ntduplicateobject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) =NULL;
+static NTSTATUS WINAPI (*w32_ntduplicateobject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) = NULL;
 static NTSTATUS WINAPI (*w32_ntqueryobject)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
+// fpu access API
+static ut64 WINAPI (*w32_GetEnabledXStateFeatures)() = NULL;
+static BOOL WINAPI (*w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
+static BOOL WINAPI (*w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
+static PVOID WINAPI (*w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD) = NULL;
+static BOOL WINAPI (*w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NULL;
 
 static bool w32dbg_SeDebugPrivilege() {
 	/////////////////////////////////////////////////////////
@@ -248,7 +254,17 @@ static int w32_dbg_init() {
 		GetProcAddress (GetModuleHandle ("kernel32"), "GetProcessId");
 	w32_queryfullprocessimagename = (BOOL WINAPI (*)(HANDLE, DWORD, LPTSTR, PDWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"), "QueryFullProcessImageNameA");
-
+	// api to retrieve YMM from w7 sp1
+	w32_GetEnabledXStateFeatures = (ut64 WINAPI (*) ())
+		GetProcAddress(GetModuleHandle ("kernel32"), "GetEnabledXStateFeatures");
+	w32_InitializeContext = (BOOL WINAPI (*) (PVOID, DWORD, PCONTEXT*, PDWORD))
+		GetProcAddress(GetModuleHandle ("kernel32"), "InitializeContext");
+	w32_GetXStateFeaturesMask = (BOOL WINAPI (*) (PCONTEXT Context, PDWORD64))
+		GetProcAddress(GetModuleHandle ("kernel32"), "GetXStateFeaturesMask");
+	w32_LocateXStateFeature = (PVOID WINAPI (*) (PCONTEXT Context, DWORD ,PDWORD))
+		GetProcAddress(GetModuleHandle ("kernel32"), "LocateXStateFeature");
+	w32_SetXStateFeaturesMask = (BOOL WINAPI (*) (PCONTEXT Context, DWORD64))
+		GetProcAddress(GetModuleHandle ("kernel32"), "SetXStateFeaturesMask");
 	lib = LoadLibrary ("psapi.dll");
 	if(!lib) {
 		eprintf ("Cannot load psapi.dll. Aborting\n");
@@ -822,6 +838,124 @@ void w32_break_process (void *d) {
 	}
 	CloseHandle (process);
 	CloseHandle (lib);
+}
+void printcontext(PCONTEXT ctx)
+{
+	ut128 xmm[16];
+	ut80 st[8];
+	ut64 mm[8];
+	ut16 top;
+	int x;
+#if __MINGW64__
+	eprintf("cwd = 0x%04x  ; control   ", (ut16)ctx->FltSave.ControlWord);
+	eprintf("swd = 0x%04x  ; status\n", (ut16)ctx->FltSave.StatusWord);
+	eprintf("twd = 0x%04x ", (ut16)ctx->FltSave.TagWord);
+	eprintf("eof = 0x%08x\n", (ut32)ctx->FltSave.ErrorOffset);
+	eprintf("ese = 0x%08x\n", (ut32)ctx->FltSave.ErrorSelector);
+	eprintf("dof = 0x%08x\n", (ut32)ctx->FltSave.DataOffset);
+	eprintf("dse = 0x%08x\n", (ut32)ctx->FltSave.DataSelector);
+	eprintf("mxcsr = 0x%08x\n", (ut32)ctx->MxCsr);
+	for (x = 0; x < 8; x++) {
+		st[x].Low = ctx->FltSave.FloatRegisters[x].Low;
+		st[x].High = (ut16)ctx->FltSave.FloatRegisters[x].High;
+		eprintf("ST%i %04x %016"PFMT64x" (%lg)\n", x, st[x].High, st[x].Low, (double)(*((long double *)&st[x])));
+	}
+	top = (ctx->FltSave.StatusWord & 0x3fff) >> 11;
+	x = 0;
+	for (x = 0; x < 8; x++) {
+		mm[top++] = ctx->FltSave.FloatRegisters[x].Low;
+		if (top > 8) {
+			top = 0;
+		}
+	}
+	for (x = 0; x < 8; x++) {
+		eprintf("MM%i %I64x\n", x, mm[x]);
+	}
+	for (x = 0; x < 16; x++)
+	{
+		xmm[x].High = ctx->FltSave.XmmRegisters[x].High;
+		xmm[x].Low = ctx->FltSave.XmmRegisters[x].Low;
+		eprintf("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
+	}
+#else
+	eprintf("cwd = 0x%04x  ; control   ", (ut16)ctx->FloatSave.ControlWord);
+	eprintf("swd = 0x%04x  ; status\n", (ut16)ctx->FloatSave.StatusWord);
+	eprintf("twd = 0x%04x ", (ut16)ctx->FloatSave.TagWord);
+	eprintf("eof = 0x%08x\n", (ut32)ctx->FloatSave.ErrorOffset);
+	eprintf("ese = 0x%08x\n", (ut32)ctx->FloatSave.ErrorSelector);
+	eprintf("dof = 0x%08x\n", (ut32)ctx->FloatSave.DataOffset);
+	eprintf("dse = 0x%08x\n", (ut32)ctx->FloatSave.DataSelector);
+	eprintf("mxcsr = 0x%08x\n", (ut32)*(ut32 *)&ctx->ExtendedRegisters[24]);
+	for (x = 0; x < 8; x++)
+	{
+		st[x].High = (ut16) *((ut16 *)(&ctx->FloatSave.RegisterArea[x * 10] + 8));
+		st[x].Low = *((ut64 *)&ctx->FloatSave.RegisterArea[x * 10]);
+		eprintf("ST%i %04x %016"PFMT64x" (%lg)\n", x, st[x].High, st[x].Low, (double)(*((long double *)&st[x])));
+	}
+	top = (ctx->FloatSave.StatusWord & 0x3fff) >> 11;
+	for (x = 0; x < 8; x++) {
+		mm[top++] = *((ut64 *)&ctx->FloatSave.RegisterArea[x * 10]) ;
+		if (top>8) {
+			top = 0;
+		}
+	}
+	for (x = 0; x < 8; x++) {
+		eprintf("MM%i %016"PFMT64x"\n", x, mm[x]);
+	}
+	for (x = 0; x < 8; x++)
+	{
+		xmm[x] = (ut128)*((ut128 *)&ctx->ExtendedRegisters[(10 + x) * 16]);
+		eprintf("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
+	}
+
+#endif
+}
+
+static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+	int showfpu = false;
+	int pid = dbg->pid;
+	int tid = dbg->tid;
+
+	if (type < -1) {
+		showfpu = true; // hack for debugging
+		type = -type;
+	}
+
+	HANDLE thread = w32_open_thread (pid, tid);
+	CONTEXT ctx __attribute__ ((aligned (16)));
+	ctx.ContextFlags = CONTEXT_ALL;
+	if (!GetThreadContext (thread, &ctx)) {
+		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
+		CloseHandle(thread);
+		return false;
+	}
+	CloseHandle(thread);
+	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
+		if (showfpu) {
+			printcontext(&ctx);
+		}
+	}
+	if (sizeof(CONTEXT) < size)
+		size = sizeof(CONTEXT);
+	memcpy (buf, &ctx, size);
+	return size;
+}
+
+static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
+	BOOL ret = false;
+	HANDLE thread;
+	CONTEXT ctx __attribute__((aligned (16)));
+	thread = w32_open_thread (dbg->pid, dbg->tid);
+	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+	GetThreadContext (thread, &ctx);
+	if (type == R_REG_TYPE_DRX || type == R_REG_TYPE_GPR || type == R_REG_TYPE_SEG) {
+		if (sizeof(CONTEXT) < size)
+			size = sizeof(CONTEXT);
+		memcpy (&ctx, buf, size);
+		ret = SetThreadContext (thread, &ctx)? true: false;
+	}
+	CloseHandle (thread);
+	return ret;
 }
 
 static RDebugInfo* w32_info (RDebug *dbg, const char *arg) {

@@ -13,6 +13,14 @@
 #define ut8 unsigned char
 #define st8 signed char
 #define boolt int
+typedef struct _ut128 {
+	ut64 Low;
+	st64 High;
+} ut128;
+typedef struct _ut80 {
+	ut64 Low;
+	ut16 High;
+} ut80;
 
 #include <stdbool.h>
 
