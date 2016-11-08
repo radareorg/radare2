@@ -218,7 +218,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 	int extH, extL;
 	int bc=0, type, byte, i, l;
 	//fugly macro to prevent an overflow of r_buf_write_at() len
-#define SEC_MAX (sizeof(sec_tmp)<INT_MAX)?sizeof(sec_tmp):INT_MAX
+#define SEC_MAX (sec_size < INT_MAX)? sec_size: INT_MAX
 	ut32 sec_size = 0;
 	sec_tmp = calloc (1, UT16_MAX);
 	if (!sec_tmp) {
@@ -243,8 +243,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			cksum += addr_tmp;
 			cksum += type;
 
-			if ((next_addr != addr_tmp) ||
-				((sec_size + bc) > SEC_MAX)) {
+			if ((next_addr != addr_tmp) || ((sec_size + bc) > SEC_MAX)) {
 				//previous block is not contiguous, or
 				//section buffer is full => write a sparse chunk
 				if (sec_size) {

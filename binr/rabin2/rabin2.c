@@ -100,9 +100,12 @@ static char *stdin_gets() {
 	if (!stdin_buf) {
 		/* XXX: never freed. leaks! */
 		stdin_buf = malloc (STDIN_BUF_SIZE);
+		if (!stdin_buf) {
+			return NULL;
+		}
 	}
 	memset (stdin_buf, 0, STDIN_BUF_SIZE);
-        fgets (stdin_buf, sizeof (stdin_buf) - 1, stdin);
+        fgets (stdin_buf, STDIN_BUF_SIZE - 1, stdin);
 		if (feof (stdin)) {
 			return NULL;
 		}

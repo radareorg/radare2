@@ -102,13 +102,15 @@ R_API void btree_insert(struct btree_node **T, struct btree_node *p, BTREE_CMP(c
 }
 
 R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp)) {
-	struct btree_node *p = (struct btree_node*)
-		malloc(sizeof(struct btree_node));
+	struct btree_node *p = (struct btree_node*) malloc (sizeof (struct btree_node));
 	p->data = e;
 	p->hits = 0;
 	p->left = p->right = NULL;
-	if (!*T) *T = p;
-	else btree_insert (T, p, cmp);
+	if (!*T) {
+		*T = p;
+	} else {
+		btree_insert (T, p, cmp);
+	}
 }
 
 /* unused */
