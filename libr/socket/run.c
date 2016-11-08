@@ -618,9 +618,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	}
 #if __UNIX__
 	if (p->_chroot) {
-		if (chroot (p->_chroot) == 0) {
-			chdir ("/");
-		} else {
+		if (chroot (".") != 0) {
 			eprintf ("rarun2: cannot chroot\n");
 			r_sys_perror ("chroot");
 			return 1;
