@@ -251,7 +251,11 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 			ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 			ut64 a1 = r_num_math (NULL, r_str_word_get0 (argv, 2));
 			ut64 a2 = r_num_math (NULL, r_str_word_get0 (argv, 3));
-			result = cb (a0, a1, a2);
+			if (cb) {
+				result = cb (a0, a1, a2);
+			} else {
+				eprintf ("No callback defined\n");
+			}
 		} else if (argc == 5) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3) = \
 				(size_t(*)(size_t,size_t,size_t,size_t))cbptr;
