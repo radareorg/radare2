@@ -2280,15 +2280,15 @@ struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
 		free (macho_hdr);
 		return NULL;
 	}
-	macho_hdr->magic = r_read_ble (&machohdrbytes, big_endian, 32);
-	macho_hdr->cputype = r_read_ble (&machohdrbytes + 4, big_endian, 32);
-	macho_hdr->cpusubtype = r_read_ble (&machohdrbytes + 8, big_endian, 32);
-	macho_hdr->filetype = r_read_ble (&machohdrbytes + 12, big_endian, 32);
-	macho_hdr->ncmds = r_read_ble (&machohdrbytes + 16, big_endian, 32);
-	macho_hdr->sizeofcmds = r_read_ble (&machohdrbytes + 20, big_endian, 32);
-	macho_hdr->flags = r_read_ble (&machohdrbytes + 24, big_endian, 32);
+	macho_hdr->magic = r_read_ble (&machohdrbytes[0], big_endian, 32);
+	macho_hdr->cputype = r_read_ble (&machohdrbytes[4], big_endian, 32);
+	macho_hdr->cpusubtype = r_read_ble (&machohdrbytes[8], big_endian, 32);
+	macho_hdr->filetype = r_read_ble (&machohdrbytes[12], big_endian, 32);
+	macho_hdr->ncmds = r_read_ble (&machohdrbytes[16], big_endian, 32);
+	macho_hdr->sizeofcmds = r_read_ble (&machohdrbytes[20], big_endian, 32);
+	macho_hdr->flags = r_read_ble (&machohdrbytes[24], big_endian, 32);
 #if R_BIN_MACH064
-	macho_hdr->reserved = r_read_ble (&machohdrbytes + 28, big_endian, 32);
+	macho_hdr->reserved = r_read_ble (&machohdrbytes[28], big_endian, 32);
 #endif
 	return macho_hdr;
 }
