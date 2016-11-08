@@ -1681,7 +1681,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	bool emu = r_config_get_i (core->config, "asm.emu");
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
-	ut8 *saved_arena;
+	ut8 *saved_arena = NULL;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
@@ -1694,8 +1694,9 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		RANode *node;
 		char *title, *body;
 
-		if (bb->addr == UT64_MAX) continue;
-
+		if (bb->addr == UT64_MAX) {
+			continue;
+		}
 		body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
 		title = get_title (bb->addr);
 

@@ -1058,7 +1058,7 @@ static void r_print_format_num_specifier (const RPrint *p, ut64 addr, int bytes,
 }
 
 static void r_print_format_num (const RPrint *p, int endian, int mode, const char *setval, ut64 seeki, ut8 *buf, int i, int bytes, int sign, int size) {
-	ut64 addr;
+	ut64 addr = 0LL;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size / ARRAYINDEX_COEF - 1;
@@ -1075,7 +1075,7 @@ static void r_print_format_num (const RPrint *p, int endian, int mode, const cha
 		p->cb_printf ("%"PFMT64u, addr);
 	} else if (MUSTSEE) {
 		if (!SEEVALUE) {
-			p->cb_printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*(bytes):0));
+			p->cb_printf ("0x%08"PFMT64x" = ", seeki + ((elem >= 0)? elem * bytes: 0));
 		}
 		if (size == -1) {
 			r_print_format_num_specifier (p, addr, bytes, sign);

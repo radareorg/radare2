@@ -628,6 +628,9 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		} else if ((fields.format == 3) && ((fields.a & 0x20) == 0x20) && (fields.c == ARC_REG_LIMM)) {
 			op->size = 8;
 			fields.limm = words[1];
+		} else {
+			op->size = 0;
+			fields.limm = 0;
 		}
 
 		/* TODO: fill in the extansion functions */
