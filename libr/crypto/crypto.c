@@ -147,8 +147,13 @@ R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len) {
 }
 
 R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size) {
+	if (cry->output_size < 1) {
+		return NULL;
+	}
 	ut8 *buf = calloc (1, cry->output_size);
-	if (!buf) return NULL;
+	if (!buf) {
+		return NULL;
+	}
 	if (size) {
 		*size = cry->output_len;
 		memcpy (buf, cry->output, *size);

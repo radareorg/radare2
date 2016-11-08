@@ -44,10 +44,15 @@ static void de_bruijn_seq(int prenecklace_len_t, int lyndon_prefix_len_p, int or
 // The returned string is malloced, and it is the responsibility of the caller
 // to free the memory.
 static char* de_bruijn(const char* charset, int order, int maxlen) {
+	if (!charset) {
+		return NULL;
+	}
 	int size = strlen (charset);
-	int* prenecklace_a = calloc (size * order, sizeof(int));
-	if (!prenecklace_a) return NULL;
-	char* sequence = calloc (maxlen + 1, sizeof(char));
+	int* prenecklace_a = calloc (size * order, sizeof (int));
+	if (!prenecklace_a) {
+		return NULL;
+	}
+	char* sequence = calloc (maxlen + 1, sizeof (char));
 	if (!sequence) {
 		free (prenecklace_a);
 		return NULL;

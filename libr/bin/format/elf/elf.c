@@ -690,6 +690,9 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		return false;
 	}
 	link_shdr = &bin->shdr[shdr->sh_link];
+	if (shdr->sh_size < 1) {
+		return false;
+	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, sizeof (char));
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
 		section_name = &bin->shstrtab[shdr->sh_name];

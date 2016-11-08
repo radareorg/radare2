@@ -210,7 +210,7 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	}
 	bufptr = bin->b->buf;
 	list_size = r_read_le32 (bufptr + params_off); // size of the list, in entries
-	signature = calloc (0, sizeof(char));
+	signature = calloc (0, sizeof (char));
 	if (!signature) {
 		return NULL;
 	}

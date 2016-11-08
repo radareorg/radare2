@@ -19,22 +19,26 @@ struct parse_ctx {
 	int chksum_nibble;
 };
 
-static int append(libgdbr_t *g, char ch) {
+static bool append(libgdbr_t *g, const char ch) {
 	char *ptr;
 
 	if (g->data_len == g->data_max) {
-		ptr = realloc (g->data, g->data_max * 2);
+		int newsize = g->data_max * 2;
+		if (newsize < 1) {
+			return false;
+		}
+		ptr = realloc (g->data, newsize);
 		if (!ptr) {
 			eprintf ("%s: Failed to reallocate buffer\n",
 				 __func__);
-			return -1;
+			return false;
 		}
 		g->data = ptr;
-		g->data_max *= 2;
+		g->data_max = newsize;
 	}
 
 	g->data[g->data_len++] = ch;
-	return 0;
+	return true;
 }
 
 static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
@@ -67,7 +71,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 		ctx->sum += cur;
 
 		if (ctx->flags & ESC) {
-			if (append (g, cur ^ 0x20) < 0) {
+			if (!append (g, cur ^ 0x20)) {
 				return -1;
 			}
 
@@ -83,7 +87,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			}
 
 			for (j = cur - 29; j > 0; j--) {
-				if (append (g, ctx->last) < 0) {
+				if (!append (g, ctx->last)) {
 					return -1;
 				}
 			}
@@ -131,7 +135,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 			}
 			/* Fall-through */
 		default:
-			if (append (g, cur) < 0) {
+			if (!append (g, cur)) {
 				return -1;
 			}
 			ctx->last = cur;

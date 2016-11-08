@@ -8145,11 +8145,16 @@ R_API ConstJavaValue * U(r_bin_java_resolve_to_const_value)(RBinJavaObj *BIN_OBJ
 		}
 		result->type = "str";
 		result->value._str = R_NEW0 (struct  java_const_value_str_t);
-		result->value._str->str = malloc (length);
 		result->value._str->len = length;
-		memcpy (result->value._str->str, string_str, length);
-		if (string_str != empty)
+		if (length > 0) {
+			result->value._str->str = malloc (length);
+			memcpy (result->value._str->str, string_str, length);
+		} else {
+			result->value._str->str = strdup ("");
+		}
+		if (string_str != empty) {
 			free (string_str);
+		}
 	} else if (strcmp (cp_name, "Utf8") == 0) {
 		result->type = "str";
 		result->value._str = R_NEW0 (struct java_const_value_str_t);

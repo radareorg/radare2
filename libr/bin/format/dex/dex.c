@@ -217,7 +217,8 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		protos_size = bin->size - dexhdr->prototypes_offset;
 	}
 	if (protos_size < 0) {
-		protos_size = 0;
+		dexhdr->prototypes_size = 0;
+		return bin;
 	}
 	dexhdr->prototypes_size = protos_size / sizeof (struct dex_proto_t);
 	bin->protos = (struct dex_proto_t *) calloc (protos_size, 1);
