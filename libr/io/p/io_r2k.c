@@ -254,8 +254,14 @@ struct r2k_data {
 
 #define READ_KERNEL_MEMORY  0x1
 #define WRITE_KERNEL_MEMORY 0x2
-#define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, sizeof (struct r2k_data));
-#define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, sizeof (struct r2k_data));
+
+#define R2K_IOC_OUT         0x40000000      /* copy out parameters */
+#define R2K_IOCPARM_MASK    0x7f            /* parameters must be < 128 bytes */
+
+#define R2K_IOR(x,y,t)     (R2K_IOC_OUT|((sizeof(t)&R2K_IOCPARM_MASK)<<16)|(x<<8)|y)
+
+#define IOCTL_READ_KERNEL_MEMORY  R2K_IOR (R2_TYPE, READ_KERNEL_MEMORY, sizeof (struct r2k_data));
+#define IOCTL_WRITE_KERNEL_MEMORY R2K_IOR (R2_TYPE, WRITE_KERNEL_MEMORY, sizeof (struct r2k_data));
 
 static int ReadKernelMemory_linux (RIODesc *iodesc, ut64 address,  ut8 *buf, int len) {
 	if (iodesc && iodesc->fd > 0) {
