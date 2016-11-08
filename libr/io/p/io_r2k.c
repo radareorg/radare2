@@ -2,6 +2,7 @@
 
 #include <r_io.h>
 #include <r_lib.h>
+#include <r_types.h>
 #include <sys/types.h>
 
 #if __WINDOWS__
@@ -238,10 +239,93 @@ static int Init (const char * driverPath) {
 }
 #endif
 
+#if __linux__
+#include <sys/ioctl.h>
+#include <errno.h>
+
+struct r2k_data {
+	int pid;
+	ut64 addr;
+	ut64 len;
+	ut8 *buff;
+};
+
+#define R2_TYPE 0x69
+
+#define READ_KERNEL_MEMORY  0x1
+#define WRITE_KERNEL_MEMORY 0x2
+#define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, sizeof (struct r2k_data));
+#define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, sizeof (struct r2k_data));
+
+static int ReadKernelMemory_linux (RIODesc *iodesc, ut64 address,  ut8 *buf, int len) {
+	if (iodesc && iodesc->fd > 0) {
+		struct r2k_data data;
+		int ret, ioctl_n;
+
+		data.pid = 0;
+		data.addr = address;
+		data.len = len;
+		data.buff = (ut8 *) calloc (len + 1, 1);
+		if (!data.buff) {
+			return -1;
+		}
+
+		ioctl_n = IOCTL_READ_KERNEL_MEMORY;
+		ret = ioctl (iodesc->fd, ioctl_n, &data);
+		if (!ret) {
+			memcpy (buf, data.buff, len);
+			ret = len;
+		} else {
+			//eprintf ("Read failed. ioctl err: %s\n", strerror (errno));
+			ret = -1;
+		}
+
+		free (data.buff);
+		return ret;
+	} else {
+		eprintf ("IOCTL device not initialized.\n");
+		return -1;
+	}
+}
+
+static int WriteKernelMemory_linux (RIODesc *iodesc, ut64 address, const ut8 *buf, int len) {
+	if (iodesc && iodesc->fd > 0) {
+		struct r2k_data data;
+		int ret, ioctl_n;
+
+		data.pid = 0;
+		data.addr = address;
+		data.len = len;
+		data.buff = (ut8 *) calloc (len + 1, 1);
+		if (!data.buff) {
+			return -1;
+		}
+
+		ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
+		memcpy (data.buff, buf, len);
+		ret = ioctl (iodesc->fd, ioctl_n, &data);
+		if (!ret) {
+			ret = len;
+		} else {
+			eprintf ("Write failed. ioctl err: %s\n", strerror (errno));
+			ret = -1;
+		}
+
+		free (data.buff);
+		return ret;
+	} else {
+		eprintf ("IOCTL device not initialized.\n");
+		return -1;
+	}
+}
+#endif
+
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 #if __WINDOWS__
 	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return WriteKernelMemory (io->off, buf, count);
+#elif __linux__
+	return WriteKernelMemory_linux (fd, io->off, buf, count);
 #else
 	eprintf ("TODO: r2k not implemented for this plataform.\n");
 	return -1;
@@ -251,6 +335,8 @@ int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #if __WINDOWS__
 	return ReadKernelMemory (io->off, buf, count);
+#elif __linux__
+	return ReadKernelMemory_linux (fd, io->off, buf, count);
 #else
 	eprintf ("TODO: r2k not implemented for this plataform.\n");
 	memset (buf, '\xff', count);
@@ -263,6 +349,10 @@ static int r2k__close(RIODesc *fd) {
 	if (gHandleDriver) {
 		CloseHandle (gHandleDriver);
 		StartStopService ("r2k",TRUE);
+	}
+#elif __linux__
+	if (fd) {
+		close (fd->fd);
 	}
 #else
 	eprintf ("TODO: r2k not implemented for this plataform.\n");
@@ -300,6 +390,13 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		return r_io_desc_new (&r_io_plugin_r2k, -1, pathname, rw, mode, w32);
+#elif __linux__
+		int fd = open ("/dev/r2k", O_RDONLY);
+		if (fd == -1) {
+			eprintf ("r2k__open: Error in opening /dev/r2k.");
+			return NULL;
+		}
+		return r_io_desc_new (&r_io_plugin_r2k, fd, pathname, rw, mode, NULL);
 #else
 		eprintf ("Not supported on this platform\n");
 #endif
@@ -309,7 +406,7 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 
 RIOPlugin r_io_plugin_r2k = {
 	.name = "r2k",
-        .desc = "kernel access API io (r2k://)",
+	.desc = "kernel access API io (r2k://)",
 	.license = "LGPL3",
 	.open = r2k__open,
 	.close = r2k__close,
