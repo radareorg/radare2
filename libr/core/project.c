@@ -250,7 +250,7 @@ static bool r_core_rop_load(RCore *core, const char *prjfile) {
 	}
 	sdb_ns_set (core->sdb, "rop", rop_db);
 
-	path_ns = r_str_newf ("%s" R_SYS_DIR "rop", prjDir);
+	path_ns = r_str_newf ("%s" R_SYS_DIR "rop.sdb", prjDir);
 	nop_db = sdb_new (path_ns, "nop", 0);
 	sdb_ns_set (rop_db, "nop", nop_db);
 
@@ -604,14 +604,14 @@ R_API bool r_core_project_save(RCore *core, const char *file) {
 	}
 	r_core_project_init (core);
 
-	char *xrefs_path = r_str_newf ("%s" R_SYS_DIR "xrefs", prjDir);
+	char *xrefs_path = r_str_newf ("%s" R_SYS_DIR "xrefs.sdb", prjDir);
 	r_anal_project_save (core->anal, xrefs_path);
 	free (xrefs_path);
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	if (rop_db) {
 		ls_foreach (rop_db->ns, it, ns) {
-			char *rop_path = r_str_newf ("%s" R_SYS_DIR "rop" R_SYS_DIR "%s", prjDir, ns->name);
+			char *rop_path = r_str_newf ("%s" R_SYS_DIR "rop.sdb" R_SYS_DIR "%s", prjDir, ns->name);
 			sdb_file (ns->sdb, rop_path);
 			sdb_sync (ns->sdb);
 			free (rop_path);
