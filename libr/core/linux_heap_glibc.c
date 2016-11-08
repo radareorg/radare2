@@ -7,7 +7,7 @@
 #undef HEAP32
 #endif
 
-#undef GH(x)
+#undef GH
 #undef GHT
 #undef GHT_MAX
 

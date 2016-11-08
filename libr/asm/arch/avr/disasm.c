@@ -8,24 +8,24 @@ static int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
 	assembledInstruction ins;
 	AVR_Long_Instruction = 0;
 	AVR_Long_Address = 0;
-	if (len<2) {
+	if (len < 2) {
 		strcpy (out, "truncated");
 		return -1;
 	}
 	ins.address = addr;
-	ins.opcode = (buf[0] | buf[1]<<8); // | (buf[2]<<16) | (buf[3]<<24);
+	ins.opcode = (buf[0] | buf[1] << 8); // | (buf[2]<<16) | (buf[3]<<24);
 	if (disassembleInstruction (&dins, ins)) {
 		strcpy (out, "invalid");
 		return -1;
 	}
 	if (AVR_Long_Instruction) {
-		if (len<4) {
+		if (len < 4) {
 			strcpy (out, "truncated");
 			return -1;
 		}
 		ins.address = addr;
 		//ins.opcode = (buf[0] | buf[1]<<8) | (buf[2]<<16) | (buf[3]<<24);
-		ins.opcode = (buf[3]<<8) | (buf[2]);
+		ins.opcode = (buf[3] << 8) | (buf[2]);
 		/*
 			(buf[3]<<24) | (buf[2]<<16) | \
 			(buf[1]<<8) | (buf[0]);

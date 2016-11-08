@@ -115,7 +115,8 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 		}
 		r_cons_printf ("%d> %s|\n", top_entry_n, user_input);
 		int counter = 0;
-		int rows, cols = r_cons_get_size (&rows);
+		int rows;
+		(void)r_cons_get_size (&rows);
 		// Iterate over each entry in the list
 		r_list_foreach (list, iter, current_entry) {
 			memset (mask, 0, buf_size);
@@ -188,8 +189,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		nch = r_cons_arrow_to_hjkl (ch);
-		// rows = r_cons_get_size (NULL);
-		cols = r_cons_get_size (&rows);
+		(void)r_cons_get_size (&rows);
 		if (nch == 'J' && ch != 'J') {
 			top_entry_n += (rows - 1);
 			if (top_entry_n + 1 >= current_entry_n) {

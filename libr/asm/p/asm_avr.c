@@ -15,8 +15,9 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret = op->size = avrdis (op->buf_asm, a->pc, buf, len);
-	if (op->buf_asm[0] == '.')
+	if (op->buf_asm[0] == '.') {
 		op->buf_asm[0] = 0;
+	}
 	return ret;
 }
 

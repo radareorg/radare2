@@ -63,7 +63,6 @@ static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
 }
 
 static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
-	const ut8 *p;
 	short s;
 	int i;
 	long int l;
@@ -75,15 +74,12 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	// XXX honor endian here
 	if (n == 2) {
 		s = (short)s64;
-		p = (const ut8*)&s;
 		r_write_ble16 (op->buf, s, a->big_endian);
 	} else if (n == 4) {
 		i = (int)s64;
-		p = (const ut8*)&i;
 		r_write_ble32 (op->buf, i, a->big_endian);
 	} else if (n == 8) {
 		l = (long int)s64;
-		p = (const ut8*)&l;
 		r_write_ble64 (op->buf, l, a->big_endian);
 	} else {
 		return 0;

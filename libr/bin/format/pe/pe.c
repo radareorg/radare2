@@ -367,7 +367,6 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	SymbolRecord *sr;
 	ut64 text_off = 0LL;
 	ut64 text_rva = 0LL;
-	ut64 text = 0LL;
 	int textn = 0;
 	int exports_sz;
 	int symctr = 0;
@@ -413,7 +412,6 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		}
 	}
 	free (sections);
-	text = text_rva; // text_off // TODO: io.va
 	symctr = 0;
 	if (r_buf_read_at (bin->b, sym_tbl_off, (ut8*)buf, bufsz)) {
 		for (i = 0; i < shsz; i += srsz) {
@@ -2538,7 +2536,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 			sections[j].vsize +=
 				(bin->optional_header->SectionAlignment -
 				(sections[j].vsize &
-				 bin->optional_header->SectionAlignment - 1));
+				 (bin->optional_header->SectionAlignment - 1)));
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
 		sections[j].flags = shdr[i].Characteristics;

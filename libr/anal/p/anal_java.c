@@ -553,7 +553,6 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 }
 
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
-	ut64 bytes_consumed = 0;
 	// deallocate niceties
 	r_list_free (fcn->bbs);
 	fcn->bbs = r_anal_bb_list_new ();
@@ -562,7 +561,6 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	// Not a resource leak.  Basic blocks should be stored in the state->fcn
 	// TODO: ? RList *bbs = 
 	r_anal_ex_perform_analysis (anal, state, fcn->addr);
-	bytes_consumed = state->bytes_consumed;
 	return state->anal_ret_val;
 }
 

@@ -521,18 +521,14 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 					}
 
 					r_list_foreach (head, iter_dst, item_dst) {
-						ut64 value_dst, diff_dst;
+						ut64 value_dst;
 						bool redundant = false, simulate, simulate_r;
 
 						value_dst = r_reg_get_value (core->dbg->reg, item_dst);
 						r_reg_arena_swap (core->dbg->reg, false);
-						diff_dst = r_reg_get_value (core->dbg->reg, item_dst);
-						r_reg_arena_swap (core->dbg->reg, false);
-
 						if (!r_list_find (reg_write, item_dst->name, (RListComparator)strcmp)) {
 							continue;
 						}
-
 						// dont check flags for arithmetic
 						if (isFlag (item_dst)) {
 							continue;

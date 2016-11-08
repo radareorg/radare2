@@ -2388,6 +2388,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
+#if 0
 static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
@@ -2419,6 +2420,8 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 	eprintf ("syscall %d not implemented yet\n", syscall);
 	return false;
 }
+#endif
+
 #if 0
 static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
 	if (!esil) return false;

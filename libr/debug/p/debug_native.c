@@ -256,7 +256,7 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	//eprintf ("continuing with signal %d ...\n", contsig);
 	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
 	if (dbg->consbreak) {
-		r_cons_break (r_debug_native_stop, dbg);
+		r_cons_break ((RConsBreak)r_debug_native_stop, dbg);
 	}
 	return ptrace (PTRACE_CONT, pid, NULL, contsig) == 0;
 #endif
