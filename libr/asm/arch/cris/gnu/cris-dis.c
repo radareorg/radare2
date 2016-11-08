@@ -841,12 +841,11 @@ print_with_operands (const struct cris_opcode *opcodep,
 
       case 'D':
       case 'r':
-	tp = format_reg (disdata, insn & 15, tp, with_reg_prefix);
-	break;
-
+		tp = format_reg (disdata, insn & 15, tp, with_reg_prefix);
+		break;
       case 'R':
-	tp = format_reg (disdata, (insn >> 12) & 15, tp, with_reg_prefix);
-	break;
+		tp = format_reg (disdata, (insn >> 12) & 15, tp, with_reg_prefix);
+		break;
 
       case 'n':
 	{

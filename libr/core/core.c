@@ -1907,7 +1907,6 @@ reaccept:
 		}
 		if (!c) {
 			eprintf ("rap: cannot accept\n");
-			/*r_socket_close (c);*/
 			r_socket_free (c);
 			return -1;
 		}
@@ -1917,7 +1916,6 @@ reaccept:
 				eprintf ("rap: connection closed\n");
 				if (r_config_get_i (core->config, "rap.loop")) {
 					eprintf ("rap: waiting for new connection\n");
-					/*r_socket_close (c);*/
 					r_socket_free (c);
 					goto reaccept;
 				}
@@ -2057,7 +2055,7 @@ reaccept:
 					ptr = NULL;
 				} else {
 					eprintf ("Cannot read %d bytes\n", i);
-					r_socket_close (c);
+					r_socket_free (c);
 					// TODO: reply error here
 					return -1;
 				}

@@ -192,7 +192,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		type = "field";
 		if (p) {
 			*p = 0;
-			name = strdup (p+1);
+			name = strdup (p + 1);
 		} else {
 			name = NULL;
 		}
@@ -230,6 +230,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		args = strstr (clas, "__");
 		if (!args) {
 			free (clas);
+			free (name);
 			return NULL;
 		}
 		*args = 0;

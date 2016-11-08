@@ -192,7 +192,7 @@ static int var_cmd (RCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-	ostr = p = strdup (str);
+	ostr = p = NULL; 
 	if (!str[0] || str[1] == '?'|| str[0] == '?') {
 		var_help (core, *str);
 		return res;
@@ -201,6 +201,7 @@ static int var_cmd (RCore *core, const char *str) {
 		eprintf ("Cannot find function here\n");
 		return false;
 	}
+	ostr = p = strdup (str);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
 	case 'a': // "afva"
@@ -208,6 +209,7 @@ static int var_cmd (RCore *core, const char *str) {
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
 		fcn_callconv (core, fcn);
+		free (p);
 		return true;
 	case 'n': { // "afvn"
 		char *old_name = r_str_trim_head (strchr (ostr, ' '));
