@@ -103,6 +103,7 @@ enum {
 typedef struct r_bin_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
+	ut64 haddr;
 	int type;
 	int bits;
 } RBinAddr;
