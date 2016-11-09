@@ -56,6 +56,7 @@ struct reloc_t {
 struct addr_t {
 	ut64 offset;
 	ut64 addr;
+	ut64 haddr;
 	int last;
 };
 

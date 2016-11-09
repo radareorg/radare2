@@ -740,10 +740,12 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 
 	if (is_first_thread) {
 		bin->main_cmd = *lc;
-		if (pc != UT64_MAX)
+		if (pc != UT64_MAX) {
 			bin->entry = pc;
-		if (pc_offset != UT64_MAX)
+		}
+		if (pc_offset != UT64_MAX) {
 			sdb_num_set (bin->kv, "mach0.entry.offset", pc_offset, 0);
+		}
 	}
 
 	return true;
@@ -1861,6 +1863,7 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 	if (bin->entry) {
 		entry->addr = entry_to_vaddr(bin);
 		entry->offset = addr_to_offset (bin, entry->addr);
+		entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
 	}
 
 	if (!bin->entry || entry->offset == 0) {

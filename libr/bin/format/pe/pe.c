@@ -736,7 +736,7 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t) *bin, PE_DWord callbacks) {
-	PE_DWord paddr;
+	PE_DWord paddr, haddr;
 	int count = 0;
 	PE_DWord addressOfTLSCallback = 1;
 	char *key;
@@ -758,6 +758,9 @@ static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t) *bin, PE_DWord
 		key = sdb_fmt (0, "pe.tls_callback%d_paddr", count);
 		paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva(bin, (PE_DWord) addressOfTLSCallback));
 		sdb_num_set (bin->kv, key, paddr, 0);
+		key = sdb_fmt (0, "pe.tls_callback%d_haddr", count);
+		haddr = callbacks;
+		sdb_num_set (bin->kv, key, haddr, 0);
 		count++;
 		callbacks += sizeof (addressOfTLSCallback);
 	}

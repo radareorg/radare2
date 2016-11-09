@@ -80,7 +80,7 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 }
 
 static void add_tls_callbacks(RBinFile *arch, RList* list) {
-	PE_DWord paddr, vaddr;
+	PE_DWord paddr, vaddr, haddr;
 	int count = 0;
 	RBinAddr *ptr = NULL;
 	struct PE_(r_bin_pe_obj_t) *bin = (struct PE_(r_bin_pe_obj_t) *) (arch->o->bin_obj);
@@ -98,9 +98,16 @@ static void add_tls_callbacks(RBinFile *arch, RList* list) {
 		if (!vaddr) {
 			break;
 		}
+
+		key =  sdb_fmt (0, "pe.tls_callback%d_haddr", count);
+		haddr = sdb_num_get (bin->kv, key, 0);
+		if (!haddr) {
+			break;
+		}
 		if ((ptr = R_NEW0 (RBinAddr))) {
 			ptr->paddr = paddr;
 			ptr->vaddr = vaddr;
+			ptr->haddr = haddr;
 			ptr->type  = R_BIN_ENTRY_TYPE_TLS;
 			r_list_append (list, ptr);
 		}

@@ -836,7 +836,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
-		ut64 haddr = entry->haddr;
+		ut64 haddr = UT64_MAX;
+		if (entry->haddr) {
+			haddr = entry->haddr;
+		}
 		ut64 at = rva (r->bin, paddr, entry->vaddr, va);
 		const char *type = r_bin_entry_type_string (entry->type);
 		if (!type) type = "unknown";
@@ -856,16 +859,26 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va) {
 				iter->p ? "," : "", at, paddr, baddr, laddr, haddr, type);
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f entry%i 1 @ 0x%08"PFMT64x"\n", i, at);
+			r_cons_printf ("f entry%i_haddr 1 @ 0x%08"PFMT64x"\n", i, haddr);
 			r_cons_printf ("s entry%i\n", i);
 		} else {
 			r_cons_printf (
 				 "vaddr=0x%08"PFMT64x
 				" paddr=0x%08"PFMT64x
 				" baddr=0x%08"PFMT64x
-				" laddr=0x%08"PFMT64x
-				" haddr=0x%08"PFMT64x
-				" type=%s\n",
-				at, paddr, baddr, laddr, haddr, type);
+				" laddr=0x%08"PFMT64x,
+				at, paddr, baddr, laddr);
+			if (haddr == UT64_MAX) {
+				r_cons_printf (
+					" haddr=%"PFMT64d
+					" type=%s\n",
+					haddr, type);
+			} else {
+				r_cons_printf (
+					" haddr=0x%08"PFMT64x
+					" type=%s\n",
+					haddr, type);
+			}
 		}
 		i++;
 	}

@@ -96,7 +96,8 @@ static RList* entries(RBinFile *arch) {
 	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->offset + obj->boffset;
-		ptr->vaddr = entry->addr; //
+		ptr->vaddr = entry->addr;
+		ptr->haddr = entry->haddr;
 		r_list_append (ret, ptr);
 	}
 	free (entry);
