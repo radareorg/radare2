@@ -2747,14 +2747,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							r_cons_printf (" ; \"%s\"", msg);
 						}
 					}
-				} else if (!strcmp (kind, "invalid")){
+				} else if (!strcmp (kind, "invalid")) {
 					int *n = (int*)&p;
-					if (*n>-0xfff && *n < 0xfff) {
-						DOALIGN();
-						r_cons_printf (" ; %d", *n);
+					ut64 p = ds->analop.ptr;
+					/* avoid double ; -1 */
+					if (p != UT64_MAX && p != UT32_MAX) {
+						if (*n > -0xfff && *n < 0xfff) {
+							DOALIGN ();
+							r_cons_printf (" ; %d", *n);
+						}
 					}
 				} else {
-					//r_cons_printf (" ; %s", kind);
+					// r_cons_printf (" ; %s", kind);
 				}
 				// TODO: check for more data kinds
 			}
@@ -2998,7 +3002,7 @@ static char * resolve_fcn_name(RAnal *anal, const char * func_name) {
 	}
 	name = func_name;
 	while ((str = strchr (str, '.'))) {
-		name = str+1;
+		name = str + 1;
 		str++;
 	}
 	if (r_anal_type_func_exist (anal, name)) {
