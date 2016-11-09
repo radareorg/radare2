@@ -381,7 +381,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	RBinPlugin * plugin;
 
 	if (!desc) return false;
-	r_io_use_desc (r->io, desc);
+	r_io_desc_use (r->io, desc->fd);
 
 	if ( !r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
@@ -465,7 +465,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_core_file_do_load_for_io_plugin (r, baddr, laddr);
 		}
 		// Restore original desc
-		r_io_use_desc (r->io, desc);
+		r_io_desc_use (r->io, desc->fd);
 	}
 
 	if (cf && binfile && desc)
@@ -958,7 +958,7 @@ R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf) {
 		core->offset = cf && cf->map ? cf->map->from : 0LL;
 		core->file = cf;
 		if (desc) {
-			r_io_use_desc (core->io, desc);
+			r_io_desc_use (core->io, desc->fd);
 			r_core_bin_set_by_fd (core, desc->fd);
 		}
 		return true;

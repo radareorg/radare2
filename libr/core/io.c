@@ -317,9 +317,9 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	int ret;
-	if (!core->io || !core->file || size<1)
+	if (!core->io || !core->file || !core->file->desc || size<1)
 		return false;
-	ret = r_io_use_desc (core->io, core->file->desc);
+	ret = r_io_desc_use (core->io, core->file->desc->fd);
 	if (ret != -1) {
 		ret = r_io_write_at (core->io, addr, buf, size);
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
@@ -330,10 +330,9 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 	int ret;
-	if (!core->io || !core->file || size<1)
+	if (!core->io || !core->file || !core->file->desc || size<1)
 		return false;
-	//ret = r_io_use_fd (core->io, core->file->desc->fd);
-	ret = r_io_use_desc (core->io, core->file->desc);
+	ret = r_io_desc_use (core->io, core->file->desc->fd);
 	if (ret != -1) {
 		ret = r_io_extend_at (core->io, addr, size);
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
@@ -348,8 +347,11 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	ut8 * shift_buf = NULL;
 	int res = false;
 
+	if (!core->io || !core->file || !core->file->desc || b_size<1)
+		return false;
+	
 	if (b_size == 0 || b_size == (ut64) -1) {
-		res = r_io_use_desc (core->io, core->file->desc);
+		res = r_io_desc_use (core->io, core->file->desc->fd);
 		file_sz = r_io_size (core->io);
 		bstart = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		fend = r_io_seek (core->io, 0, R_IO_SEEK_END);
@@ -357,10 +359,8 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 		b_size = fend > bstart ? fend - bstart: 0;
 	}
 
-
-	if (!core->io || !core->file || b_size<1)
+	if (b_size < 1)
 		return false;
-
 
 	// XXX handling basic cases atm
 	shift_buf = malloc (b_size);
@@ -383,7 +383,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	else if ( (addr) + dist > fend) {
 		res = false;
 	} else {
-		res = r_io_use_desc (core->io, core->file->desc);
+		res = r_io_desc_use (core->io, core->file->desc->fd);
 		r_io_read_at (core->io, addr, shift_buf, b_size);
 		r_io_write_at (core->io, addr+dist, shift_buf, b_size);
 		res = true;
@@ -427,7 +427,7 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 			memset (buf, 0xff, size);
 		return false;
 	}
-	r_io_use_desc (core->io, core->file->desc);
+	r_io_desc_use (core->io, core->file->desc->fd);
 	return r_io_read_at (core->io, addr, buf, size);
 }
 

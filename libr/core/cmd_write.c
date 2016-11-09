@@ -166,8 +166,8 @@ static void cmd_write_value (RCore *core, const char *input) {
 	if (input && input[0] && input[1] && input[2]) {
 		off = r_num_math (core->num, input+2);
 	}
-	if (core->file) {
-		r_io_use_desc (core->io, core->file->desc);
+	if (core->file && core->file->desc) {
+		r_io_desc_use (core->io, core->file->desc->fd);
 	}
 	r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 	if (type == 0)
@@ -237,7 +237,8 @@ static bool cmd_wf(RCore *core, const char *input) {
 				return false;
 			}
 		}
-		r_io_use_desc (core->io, core->file->desc);
+		if (core->file->desc)
+			r_io_desc_use (core->io, core->file->desc->fd);
 		r_io_write_at (core->io, core->offset, buf + u_offset, u_size);
 		WSEEK (core, size);
 		free (buf);
@@ -819,7 +820,8 @@ static int cmd_write(void *data, const char *input) {
 			}
 		} else
 		if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-			r_io_use_desc (core->io, core->file->desc);
+			if (core->file->desc)
+				r_io_desc_use (core->io, core->file->desc->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
 			WSEEK (core, size);
 			free (buf);
@@ -837,7 +839,8 @@ static int cmd_write(void *data, const char *input) {
 				else tmp[i] = str[i>>1];
 			}
 			str = tmp;
-			r_io_use_desc (core->io, core->file->desc);
+			if (core->file->desc)
+				r_io_desc (core->io, core->file->desc->fd);
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
 			r_core_block_read (core, 0);
@@ -939,7 +942,8 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case ' ':
 			if (size>0) {
-				r_io_use_desc (core->io, core->file->desc);
+				if (core->file->desc)
+					r_io_desc_use (core->io, core->file->desc->fd);
 				r_io_set_write_mask (core->io, (const ut8*)str, size);
 				WSEEK (core, size);
 				eprintf ("Write mask set to '");
@@ -990,7 +994,8 @@ static int cmd_write(void *data, const char *input) {
 	case '?':
 		if (core->oobi) {
 			eprintf ("Writing oobi buffer!\n");
-			r_io_use_desc (core->io, core->file->desc);
+			if (core->file->desc)
+				r_io_desc_use (core->io, core->file->desc->fd);
 			r_io_write (core->io, core->oobi, core->oobi_len);
 			WSEEK (core, core->oobi_len);
 			r_core_block_read (core, 0);

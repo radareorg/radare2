@@ -557,7 +557,7 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 	if (res == true) {
 		ut64 n_file_sz = 0;
 		ut8 * bin_buffer = NULL;
-		res = r_io_use_desc (core->io, core->file->desc);
+		res = r_io_desc_use (core->io, core->file->desc->fd);
 		n_file_sz = r_io_size (core->io);
 		bin_buffer = n_file_sz > 0 ? malloc (n_file_sz) : NULL;
 		if (bin_buffer) {
@@ -885,7 +885,7 @@ static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd) {
 	// XXX this may cause problems cause the file we are looking at may not be the bin we want.
 	// lets pretend it is for now
 	if (buf_size == 0) {
-		res = r_io_use_desc (core->io, core->file->desc);
+		res = r_io_desc_use (core->io, core->file->desc->fd);
 		buf_size = r_io_size (core->io);
 		buf = malloc (buf_size);
 		memset (buf, 0, buf_size);
