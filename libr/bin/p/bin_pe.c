@@ -122,6 +122,7 @@ static RList* entries(RBinFile *arch) {
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->paddr;
 		ptr->vaddr = entry->vaddr;
+		ptr->haddr = entry->haddr;
 		ptr->type  = R_BIN_ENTRY_TYPE_PROGRAM;
 		r_list_append (ret, ptr);
 	}
