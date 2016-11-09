@@ -28,8 +28,10 @@ static void XREFKEY(char * const key, const size_t key_len,
 	snprintf (key, key_len, "%s.%s.0x%"PFMT64x, kind, _sdb_type, addr);
 }
 
-R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
-	sdb_file (anal->sdb_xrefs, prjfile);
+R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjDir) {
+	char *xrefs_path = r_str_newf ("%s" R_SYS_DIR "xrefs.sdb", prjDir);
+	sdb_file (anal->sdb_xrefs, xrefs_path);
+	free (xrefs_path);
 	return sdb_sync (anal->sdb_xrefs);
 }
 
