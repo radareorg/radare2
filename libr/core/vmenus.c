@@ -441,16 +441,18 @@ R_API int r_core_visual_types(RCore *core) {
 		switch (ch) {
 		case 'h':
 			h_opt--;
-			if (h_opt<0)
+			if (h_opt < 0) {
 				h_opt = 0;
+			}
 			option = 0;
 			R_FREE (optword);
 			break;
 		case 'l':
 			h_opt++;
 			option = 0;
-			if (!opts[h_opt])
+			if (!opts[h_opt]) {
 				h_opt--;
+			}
 			R_FREE (optword);
 			break;
 		case 'o':
@@ -541,7 +543,11 @@ R_API int r_core_visual_types(RCore *core) {
 				case 1: // enum
 				case 2: // struct
 					free (optword);
-					optword = strdup (vt.curname);
+					if (vt.curname) {
+						optword = strdup (vt.curname);
+					} else {
+						optword = NULL;
+					}
 					break;
 				default:
 					break;
@@ -568,9 +574,9 @@ R_API int r_core_visual_types(RCore *core) {
 		case ':':
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
-			cmd[0]='\0';
+			cmd[0] = '\0';
 			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
+			if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
 				cmd[0]='\0';
 			}
 			r_core_cmd (core, cmd, 1);
