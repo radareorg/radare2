@@ -164,7 +164,7 @@ static int rax (char *str, int len, int last) {
 			return !use_stdin ();
 		return true;
 	}
-	if (!flags && strnlen (str, 2) == 1) {
+	if (!flags && r_str_nlen (str, 2) == 1) {
 		if (*str == 'q') {
 			return false;
 		}
