@@ -336,69 +336,28 @@ static int cmd_info(void *data, const char *input) {
 		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
 		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;
 		case 'z':
-			if (input[1] == 'z') { //iz
-				RBinFile *bf = r_bin_cur (core->bin);	
-				if (!bf) {
-					eprintf ("Likely you used -nn \n");
-					eprintf ("try: .!rabin2 -B <baddr> -zzr filename");
-					break;
-				}
-				if (bf && strstr (bf->file, "malloc://")) {
-					//sync bf->buf to search string on it
-					r_io_read_at (core->io, 0, bf->buf->buf, bf->size);
-				}
-				/* TODO: reimplement in C to avoid forks */
-				if (!core->file) {
-					eprintf ("Core file not open\n");
-					return 0;
-				}
-				switch (input[2]) { //izz
+			if (input[1] == 'z') { //izz
+				switch (input[2]) {
 				case '*':
 					mode = R_CORE_BIN_RADARE;
-					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				case 'j':
 					mode = R_CORE_BIN_JSON;
-					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
 					break;
 				case 'q': //izzq
-				default: 
-					{
-					RListIter *iter;
-					RBinString *string;
-					RList *l = r_bin_raw_strings (bf, 0);
-					if (input[2] == 'q') {
-						if (input[3] == 'q') { //izzqq
-							mode = R_CORE_BIN_SIMPLEST;
-							input++;
-						} else {
-							mode = R_CORE_BIN_SIMPLE;
-						}
+					if (input[3] == 'q') { //izzqq
+						mode = R_CORE_BIN_SIMPLEST;
+						input++;
 					} else {
-						mode = R_CORE_BIN_PRINT;
+						mode = R_CORE_BIN_SIMPLE;
 					}
-					r_list_foreach (l, iter, string) {
-						if (mode == R_CORE_BIN_SIMPLE) {
-							r_cons_printf ("0x%"PFMT64x" %d %d %s\n", string->vaddr, 
-							  string->size, string->length, string->string);
-						} else if (mode == R_CORE_BIN_SIMPLEST) {
-							r_cons_println (string->string);
-						} else {
-							RBinSection *section = r_bin_get_section_at (bf->o, string->paddr, 0);
-							char *section_name = section ? section->name : "unknown";
-							char *type_string = string->type == 'w' ? "wide" : "ascii";
-							r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
-							  PFMT64x" ordinal=%03u sz=%u len=%u "
-							"section=%s type=%s string=%s\n",
-							string->vaddr, string->paddr, string->ordinal, string->size,
-							string->length, section_name, type_string,
-							string->string);
-						}
-					}
-					}
+					break;
+				default: 
+					mode = R_CORE_BIN_PRINT;
 					break;
 				}
 				input++;
+				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL);
 			} else {
 			    	if (input[1] == 'q') {
 					mode = (input[2] == 'q')

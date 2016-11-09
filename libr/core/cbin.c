@@ -282,46 +282,17 @@ static bool string_filter(RCore *core, const char *str) {
 	return true;
 }
 
-static int bin_strings(RCore *r, int mode, int va) {
-	char *q;
-	RBinSection *section;
-	int hasstr, minstr, maxstr, rawstr;
-	RBinString *string;
+static void _print_strings(RCore *r, RList *list, int mode, int va) {
+	int minstr = r_config_get_i (r->config, "bin.minstr");
+	int maxstr = r_config_get_i (r->config, "bin.maxstr");
+	RBin *bin = r->bin;	
 	RListIter *iter;
-	RList *list;
-	RBin *bin = r->bin;
-	RBinFile *binfile = r_core_bin_cur (r);
-	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
-	if (!binfile) {
-		return false;
-	}
-	minstr = r_config_get_i (r->config, "bin.minstr");
-	maxstr = r_config_get_i (r->config, "bin.maxstr");
-	rawstr = r_config_get_i (r->config, "bin.rawstr");
-	binfile->rawstr = rawstr;
-
-	if (!(hasstr = r_config_get_i (r->config, "bin.strings"))) {
-		return 0;
-	}
-
-	if (!plugin) {
-		return 0;
-	}		
-	if (plugin->info && plugin->name) {
-		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
-			return false;
-		}
-	}
+	RBinString *string;
+	RBinSection *section;
+	char *q;
 
 	bin->minstrlen = minstr;
-	minstr = bin->minstrlen;
-
 	bin->maxstrlen = maxstr;
-	maxstr = bin->maxstrlen;
-
-	if (!(list = r_bin_get_strings (bin))) {
-		return false;
-	}
 	if (IS_MODE_JSON (mode)) {
 		r_cons_printf ("[");
 	}
@@ -341,7 +312,6 @@ static int bin_strings(RCore *r, int mode, int va) {
 		paddr = string->paddr;
 		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
 		addr = va ? vaddr : paddr;
-
 		if (string->length < minstr) {
 			continue;
 		}
@@ -416,6 +386,53 @@ static int bin_strings(RCore *r, int mode, int va) {
 	if (IS_MODE_SET (mode)) {
 		r_cons_break_end ();
 	}
+}
+
+
+static bool bin_raw_strings(RCore *r, int mode, int va) {
+	RBinFile *bf = r_bin_cur (r->bin);	
+	if (!bf) {
+		eprintf ("Likely you used -nn \n");
+		eprintf ("try: .!rabin2 -B <baddr> -zzr filename");
+		return false;
+	}
+	if (bf && strstr (bf->file, "malloc://")) {
+		//sync bf->buf to search string on it
+		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
+	}
+	if (!r->file) {
+		eprintf ("Core file not open\n");
+		return false;
+	}
+	RList *l = r_bin_raw_strings (bf, 0);
+	_print_strings (r, l, mode, va);
+	return true;
+}
+
+static bool bin_strings(RCore *r, int mode, int va) {
+	RList *list;
+	RBinFile *binfile = r_core_bin_cur (r);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+	int rawstr = r_config_get_i (r->config, "bin.rawstr");
+	if (!binfile) {
+		return false;
+	}
+	if (!r_config_get_i (r->config, "bin.strings")) {
+		return 0;
+	}
+	if (!plugin) {
+		return 0;
+	}		
+	if (plugin->info && plugin->name) {
+		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
+			return false;
+		}
+	}
+
+	if (!(list = r_bin_get_strings (r->bin))) {
+		return false;
+	}
+	_print_strings (r, list, mode, va);
 	return true;
 }
 
@@ -2444,6 +2461,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
 	if ((action & R_CORE_BIN_ACC_STRINGS)) ret &= bin_strings (core, mode, va);
+	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) ret &= bin_raw_strings (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_INFO)) ret &= bin_info (core, mode);
 	if ((action & R_CORE_BIN_ACC_MAIN)) ret &= bin_main (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_DWARF)) ret &= bin_dwarf (core, mode);
