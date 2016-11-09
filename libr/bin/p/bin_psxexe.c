@@ -55,14 +55,19 @@ static RList* sections(RBinFile* arch) {
 	psxexe_header psxheader;
 	ut64 sz = 0;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 
-	if(!(sect = R_NEW0 (RBinSection)))
+	if(!(sect = R_NEW0 (RBinSection))) {
+		r_list_free (ret);
 		return ret;
+	}
 
 	if (r_buf_fread_at (arch->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
 		eprintf ("Truncated Header\n");
+		free (sect);
+		r_list_free (ret);
 		return NULL;
 	}
 

@@ -38,13 +38,19 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 	struct stat st;
 	struct dirent *de;
 	DIR *dir = opendir (path);
-	if (!dir) return NULL;
+	if (!dir) {
+		return NULL;
+	}
 	list = r_list_new ();
-	if (!list) return NULL;
+	if (!list) {
+		closedir (dir);
+		return NULL;
+	}
 	while ((de = readdir (dir))) {
 		RFSFile *fsf = r_fs_file_new (NULL, de->d_name);
 		if (!fsf) {
 			r_list_free (list);
+			closedir (dir);
 			return NULL;
 		}
 		fsf->type = 'f';
