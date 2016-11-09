@@ -177,7 +177,24 @@ static BOOL WINAPI (*w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = N
 static BOOL WINAPI (*w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
 static PVOID WINAPI (*w32_LocateXStateFeature)(PCONTEXT Context, DWORD, PDWORD) = NULL;
 static BOOL WINAPI (*w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NULL;
-
+/*#if __MINGW64__
+#define CONTEXT_XSTATE                      (0x00100040)
+#define XSTATE_AVX                          (2)
+#define XSTATE_MASK_AVX                     (4)
+#else
+#define CONTEXT_XSTATE                      (0x00010040)
+#define XSTATE_AVX                          (2)
+#define XSTATE_MASK_AVX                     (4)
+#endif
+*/
+#undef CONTEXT_XSTATE
+#if defined(_M_X64)
+#define CONTEXT_XSTATE                      (0x00100040)
+#else
+#define CONTEXT_XSTATE                      (0x00010040)
+#endif
+#define XSTATE_AVX                          (XSTATE_GSSE)
+#define XSTATE_MASK_AVX                     (XSTATE_MASK_GSSE)
 static bool w32dbg_SeDebugPrivilege() {
 	/////////////////////////////////////////////////////////
 	//   Note: Enabling SeDebugPrivilege adapted from sample
@@ -391,7 +408,7 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 #if __MINGW64__
 	/* STATUS_WX86_BREAKPOINT */
 	case 0x4000001f:
-		eprintf ("(%d) WOW64 loaded.\n", de->dwProcessId);
+		eprintf ("(%d) WOW64 loaded.\n", (int)de->dwProcessId);
 		return 1;
 #endif
 	/* MS_VC_EXCEPTION */
@@ -839,7 +856,8 @@ void w32_break_process (void *d) {
 	CloseHandle (process);
 	CloseHandle (lib);
 }
-void printcontext(PCONTEXT ctx)
+
+static void printcontext(PCONTEXT ctx)
 {
 	ut128 xmm[16];
 	ut80 st[8];
@@ -911,6 +929,67 @@ void printcontext(PCONTEXT ctx)
 #endif
 }
 
+void GET_FPU_XMM_YMM(HANDLE hThread)
+{
+
+	DWORD ContextSize = 0;
+	PCONTEXT Context;
+	CONTEXT ctx = { 0 };
+	void * buffer;
+	ut64 FeatureMask;
+	DWORD FeatureLength;
+	ut128 * Xmm;
+	ut128 * Ymm;
+	int Index;
+	if (w32_GetEnabledXStateFeatures != (ut64 WINAPI (*) ())-1) {
+		// Check for AVX extension
+		FeatureMask = w32_GetEnabledXStateFeatures();
+		if ((FeatureMask & XSTATE_MASK_AVX) != 0) {
+			ContextSize = 0;
+			BOOL Success = w32_InitializeContext(NULL, CONTEXT_ALL | CONTEXT_XSTATE, NULL, &ContextSize);
+			if ((Success == TRUE) || (GetLastError() == ERROR_INSUFFICIENT_BUFFER)) {
+				buffer = malloc(ContextSize);
+				if (buffer != NULL) {
+					Success = w32_InitializeContext(buffer, CONTEXT_ALL | CONTEXT_XSTATE, &Context, &ContextSize);
+					if (Success) {
+						Success = w32_SetXStateFeaturesMask(Context, XSTATE_MASK_AVX);
+						if (Success) {
+							Success = GetThreadContext(hThread, Context);
+							if (Success == TRUE) {
+								Success = w32_GetXStateFeaturesMask(Context, &FeatureMask);
+								if (Success == TRUE) {
+									Xmm = (ut128 *)w32_LocateXStateFeature(Context, XSTATE_LEGACY_SSE, &FeatureLength);
+									Ymm = 0;
+									if ((FeatureMask & XSTATE_MASK_AVX) != 0) {
+										// si esta inicializado los registros AVX obtenemos la parte alta si no esta sera 0.
+										Ymm = (ut128 *)w32_LocateXStateFeature(Context, XSTATE_AVX, NULL);
+									}
+									// show fpu,mm,xmm regs
+									printcontext(Context);
+									// show Ymm regs
+									for (Index = 0; Index < (FeatureLength / sizeof(*Ymm)); Index++) {
+										eprintf("Ymm%d: %016"PFMT64x" %016"PFMT64x" %016"PFMT64x" %016"PFMT64x"\n", Index, (Ymm == NULL ? 0 : Ymm[Index].High), (Ymm == NULL ? 0 : Ymm[Index].Low), Xmm[Index].High, Xmm[Index].Low);
+									}
+									free(buffer);
+									return;
+								}
+							}
+						}
+					}
+					free(buffer);
+				}
+			}
+		}
+	}
+	ctx.ContextFlags = CONTEXT_ALL ;
+	if (GetThreadContext(hThread, &ctx) == FALSE) {
+		eprintf("Error  0x%08x\n", (ut32)GetLastError());
+	}
+	else
+		printcontext(&ctx);
+}
+
+
 static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	int showfpu = false;
 	int pid = dbg->pid;
@@ -929,12 +1008,13 @@ static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		CloseHandle(thread);
 		return false;
 	}
-	CloseHandle(thread);
 	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
 		if (showfpu) {
-			printcontext(&ctx);
+			//printcontext(&ctx);
+			GET_FPU_XMM_YMM(thread);
 		}
 	}
+	CloseHandle(thread);
 	if (sizeof(CONTEXT) < size)
 		size = sizeof(CONTEXT);
 	memcpy (buf, &ctx, size);
