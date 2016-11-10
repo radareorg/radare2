@@ -511,7 +511,7 @@ static int cmd_open(void *data, const char *input) {
 			const char *fn = input + 1; //(isn?2:1);
 			if (fn && *fn) {
 				if (isn) fn++;
-				file = r_core_file_open (core, fn, perms, addr);
+				file = r_core_file_open (core, fn, perms, addr, true);
 				if (file) {
 					r_cons_printf ("%d\n", file->desc->fd);
 					// MUST CLEAN BEFORE LOADING
@@ -662,7 +662,7 @@ static int cmd_open(void *data, const char *input) {
 		r_core_fini (core);
 		r_core_init (core);
 		if (input[1] && input[2]) {
-			if (!r_core_file_open (core, input + 2, R_IO_READ, 0)) {
+			if (!r_core_file_open (core, input + 2, R_IO_READ, 0, true)) {
 				eprintf ("Cannot open file\n");
 			}
 			if (!r_core_bin_load (core, NULL, baddr)) {

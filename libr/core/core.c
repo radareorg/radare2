@@ -1940,7 +1940,7 @@ reaccept:
 					if (flg & R_IO_WRITE) {
 						perm |= R_IO_WRITE;
 					}
-					file = r_core_file_open (core, (const char *)ptr, perm, 0);
+					file = r_core_file_open (core, (const char *)ptr, perm, 0, true);
 					if (file) {
 						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->desc->fd,

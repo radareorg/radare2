@@ -40,7 +40,7 @@ static RCore* opencore(const char *f) {
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", true);
 	if (f) {
-		if (!r_core_file_open (c, f, 0, 0)) {
+		if (!r_core_file_open (c, f, 0, 0, true)) {
 			r_core_free (c);
 			return NULL;
 		}

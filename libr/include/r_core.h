@@ -273,7 +273,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 
 R_API int r_core_files_free(const RCore *core, RCoreFile *cf);
 R_API void r_core_file_free(RCoreFile *cf);
-R_API RCoreFile *r_core_file_open(RCore *core, const char *file, int flags, ut64 loadaddr);
+R_API RCoreFile *r_core_file_open(RCore *core, const char *file, int flags, ut64 loadaddr, bool set);
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr);
 R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd);
 R_API int r_core_file_close(RCore *core, RCoreFile *fh);
