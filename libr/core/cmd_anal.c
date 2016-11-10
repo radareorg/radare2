@@ -61,7 +61,7 @@ static void type_cmd(RCore *core, const char *input) {
 	RListIter *it;
 	ut64 seek;
 	switch (*input) {
-	case 'a':
+	case 'a': // "afta"
 		seek = core->offset;
 		r_core_cmd0 (core, "aei");
 		r_core_cmd0 (core, "aeim");
@@ -74,7 +74,7 @@ static void type_cmd(RCore *core, const char *input) {
 		r_core_cmd0 (core, "aei-");
 		r_core_seek (core, seek, true);
 		break;
-	case 'm':
+	case 'm': // "aftm"
 		seek = core->offset;
 		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 		r_anal_type_match (core, fcn);
@@ -2269,21 +2269,33 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 				size = 0xf0000;
 			if ((p = strchr (p, ' '))) {
 				while (*p == ' ') p++;
-				snprintf (name, 128, "mem.%s", p);
-			} else snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
-		} else snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
-	} else snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
+				snprintf (name, sizeof (name), "mem.%s", p);
+			} else {
+				snprintf (name, sizeof (name), "mem.0x%" PFMT64x "_0x%x", addr, size);
+			}
+		} else {
+			snprintf (name, sizeof (name), "mem.0x%" PFMT64x "_0x%x", addr, size);
+		}
+	} else {
+		snprintf (name, sizeof (name), "mem.0x%" PFMT64x "_0x%x", addr, size);
+	}
 
 	fi = r_flag_get (core->flags, name);
 	if (fi) {
 		if (*input == '-') {
-			cf = r_core_file_get_by_fd (core, fi->offset);
-			r_core_file_close (core, cf);
+			RFlagItem *fd = r_flag_get (core->flags, "aeim.fd");
+			if (fd) {
+				cf = r_core_file_get_by_fd (core, fd->offset);
+				r_core_file_close (core, cf);
+			} else {
+				eprintf ("Unknown fd for the aeim\n");
+			}
+			r_flag_unset_name (core->flags, "aeim.fd");
 			r_flag_unset_name (core->flags, name);
 			eprintf ("Deinitialized %s\n", name);
 			return;
 		}
-		eprintf ("Cannot create mem here, mem allready lives here");
+		eprintf ("Already initialized\n");
 		return;
 	}
 	if (*input == '-') {
@@ -2292,7 +2304,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	}
 	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
 	cf = r_core_file_open (core, uri, R_IO_RW, addr);
-	if (cf) r_flag_set (core->flags, name, addr, size);
+	if (cf) {
+		r_flag_set (core->flags, name, addr, size);
+	}
+	r_flag_set (core->flags, "aeim.fd", cf->desc->fd, 1);
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
 	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
@@ -4536,7 +4551,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break_end ();
 			if (*input == 'a') { // "aaa"
 				int c = r_config_get_i (core->config, "anal.calls");
-				r_core_cmd0 (core, "aeim");
 				if (strstr (r_config_get (core->config, "asm.arch"), "arm")) {
 					rowlog (core, "\nAnalyze value pointers (aav)");
 					done_aav = true;
