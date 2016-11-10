@@ -2265,14 +2265,21 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		if ((p = strchr (p, ' '))) {
 			while (*p == ' ') p++;
 			size = (ut32)r_num_math (core->num, p);
-			if (size < 1)
+			if (size < 1) {
 				size = 0xf0000;
+			}
 			if ((p = strchr (p, ' '))) {
 				while (*p == ' ') p++;
 				snprintf (name, 128, "mem.%s", p);
-			} else snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
-		} else snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
-	} else snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
+			} else {
+				snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
+			}
+		} else {
+			snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
+		}
+	} else {
+		snprintf (name, 128, "mem.0x%" PFMT64x "_0x%x", addr, size);
+	}
 
 	fi = r_flag_get (core->flags, name);
 	if (fi) {
@@ -2291,8 +2298,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		return;
 	}
 	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
-	cf = r_core_file_open (core, uri, R_IO_RW, addr);
-	if (cf) r_flag_set (core->flags, name, addr, size);
+	cf = r_core_file_open (core, uri, R_IO_RW, addr, false);
+	if (cf) {
+		r_flag_set (core->flags, name, addr, size);
+	}
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
 	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);

@@ -892,7 +892,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (file && *file) {
-		cf = r_core_file_open (&core, file, R_IO_READ, 0);
+		cf = r_core_file_open (&core, file, R_IO_READ, 0, true);
 		fd = cf ? r_core_file_cur_fd (&core) : -1;
 		if (!cf || fd == -1) {
 			eprintf ("r_core: Cannot open file '%s'\n", file);

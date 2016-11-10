@@ -69,7 +69,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	free (obinfilepath);
 	obinfilepath = strdup (ofilepath);
 
-	file = r_core_file_open (core, path, perm, laddr);
+	file = r_core_file_open (core, path, perm, laddr, true);
 	if (file) {
 		bool had_rbin_info = false;
 
@@ -436,7 +436,7 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 }
 
 static int try_loadlib(RCore *core, const char *lib, ut64 addr) {
-	RCoreFile *cf = r_core_file_open (core, lib, 0, addr);
+	RCoreFile *cf = r_core_file_open (core, lib, 0, addr, true);
 	if (!cf) {
 		return false;
 	}
@@ -687,7 +687,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 }
 
 /* loadaddr is r2 -m (mapaddr) */
-R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
+R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr, bool set) {
 	ut64 prev = r_sys_now();
 	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
@@ -760,7 +760,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	// check load addr to make sure its still valid
 	r_bin_bind (r->bin, &(fh->binb));
 	r_list_append (r->files, fh);
-	r_core_file_set_by_file (r, fh);
+	if (set) {
+		r_core_file_set_by_file (r, fh);
+	}
 	r_config_set_i (r->config, "zoom.to", fh->map->from + r_io_desc_size (r->io, fh->desc));
 
 	if (r_config_get_i (r->config, "cfg.debug")) {

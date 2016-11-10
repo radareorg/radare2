@@ -653,7 +653,7 @@ int main(int argc, char **argv, char **envp) {
 		if (sz > 0) {
 			char path[1024];
 			snprintf (path, sizeof (path) - 1, "malloc://%d", sz);
-			fh = r_core_file_open (&r, path, perms, mapaddr);
+			fh = r_core_file_open (&r, path, perms, mapaddr, true);
 			if (fh) {
 				r_io_write_at (r.io, 0, buf, sz);
 				r_core_block_read (&r);
@@ -688,7 +688,7 @@ int main(int argc, char **argv, char **envp) {
 					debug = 2;
 					if (!strstr (pfile, "://"))
 						optind--; // take filename
-					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					fh = r_core_file_open (&r, pfile, perms, mapaddr, true);
 					r_config_set (r.config, "io.raw", "false");
 /*
 					if (fh) {
@@ -739,7 +739,7 @@ int main(int argc, char **argv, char **envp) {
 				{
 					char *diskfile = strstr (file, "://");
 					diskfile = diskfile? diskfile + 3: file;
-					fh = r_core_file_open (&r, file, perms, mapaddr);
+					fh = r_core_file_open (&r, file, perms, mapaddr, true);
 					if (fh != NULL) {
 						r_debug_use (r.dbg, is_gdb ? "gdb" : debugbackend);
 					}
@@ -769,10 +769,10 @@ int main(int argc, char **argv, char **envp) {
 			if (optind < argc) {
 				while (optind < argc) {
 					pfile = argv[optind++];
-					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					fh = r_core_file_open (&r, pfile, perms, mapaddr, true);
 					if ((perms & R_IO_WRITE) && !fh) {
 						if (r_io_create (r.io, pfile, 0644, 0)) {
-							fh = r_core_file_open (&r, pfile, perms, mapaddr);
+							fh = r_core_file_open (&r, pfile, perms, mapaddr, true);
 						} else eprintf ("r_io_create: Permission denied.\n");
 					}
 					if (fh) {
@@ -811,7 +811,7 @@ int main(int argc, char **argv, char **envp) {
 				if (prj && *prj) {
 					pfile = r_core_project_info (&r, prj);
 					if (pfile) {
-						fh = r_core_file_open (&r, pfile, perms, mapaddr);
+						fh = r_core_file_open (&r, pfile, perms, mapaddr, true);
 						// run_anal = 0;
 						run_anal = -1;
 					} else {

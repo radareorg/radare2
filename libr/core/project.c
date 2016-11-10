@@ -363,7 +363,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		// open new file
 		// TODO: handle read/read-write mode
 		// TODO: handle mapaddr (io.maps are not saved in projects yet)
-		fh = r_core_file_open (core, filepath, 0, 0);
+		fh = r_core_file_open (core, filepath, 0, 0, true);
 		if (!fh) {
 			eprintf ("Cannot open file '%s'\n", filepath);
 			free (filepath);
