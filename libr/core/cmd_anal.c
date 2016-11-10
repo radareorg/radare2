@@ -2245,7 +2245,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	ut64 addr = 0x100000;
 	ut32 size = 0xf0000;
 	char name[128];
-	RCoreFile *cf;
+	RCoreFile *cf, *cache;
 	RFlagItem *fi;
 	const char *sp;
 	char uri[32];
@@ -2303,10 +2303,12 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		return;
 	}
 	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
+	cache = core->file;
 	cf = r_core_file_open (core, uri, R_IO_RW, addr);
 	if (cf) {
 		r_flag_set (core->flags, name, addr, size);
 	}
+	r_core_file_set_by_file (core, cache);
 	r_flag_set (core->flags, "aeim.fd", cf->desc->fd, 1);
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
