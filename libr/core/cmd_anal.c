@@ -4536,6 +4536,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break_end ();
 			if (*input == 'a') { // "aaa"
 				int c = r_config_get_i (core->config, "anal.calls");
+				r_core_cmd0 (core, "aeim");
 				if (strstr (r_config_get (core->config, "asm.arch"), "arm")) {
 					rowlog (core, "\nAnalyze value pointers (aav)");
 					done_aav = true;
