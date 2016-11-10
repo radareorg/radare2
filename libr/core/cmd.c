@@ -1368,6 +1368,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	char *arroba = NULL;
 	int i, ret = 0, pipefd;
 	int usemyblock = 0;
+	int scr_html = -1;
 
 	if (!cmd) return 0;
 	cmd = r_str_trim_head_tail (cmd);
@@ -1375,8 +1376,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	/* quoted / raw command */
 	switch (*cmd) {
 	case '.':
-		if (cmd[1] == '"') /* interpret */
+		if (cmd[1] == '"') { /* interpret */
 			return r_cmd_call (core->rcmd, cmd);
+		}
 		break;
 	case '"':
 		for (cmd++; *cmd; ) {
@@ -1401,16 +1403,16 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					p = q;
 				} else p = NULL;
 			}
-			if (p && *p && p[1]=='>') {
+			if (p && *p && p[1] == '>') {
 				str = p + 2;
-				while (*str=='>') {
+				while (*str == '>') {
 					str++;
 				}
 				while (IS_WHITESPACE (*str)) {
 					str++;
 				}
 				r_cons_flush ();
-				pipefd = r_cons_pipe_open (str, 1, p[2]=='>');
+				pipefd = r_cons_pipe_open (str, 1, p[2] == '>');
 			}
 			line = strdup (cmd);
 			line = r_str_replace (line, "\\\"", "\"", true);
@@ -1430,14 +1432,17 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				r_cons_flush ();
 				r_cons_pipe_close (pipefd);
 			}
-			if (!p) break;
+			if (!p) {
+				break;
+			}
 			*p = '"';
 			cmd = p + 1;
 		}
 		return true;
 	case '(':
-		if (cmd[1] != '*')
+		if (cmd[1] != '*') {
 			return r_cmd_call (core->rcmd, cmd);
+		}
 	}
 
 // TODO must honor " and `
@@ -1519,7 +1524,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	if (ptr) {
 		ptr[0] = '\0';
 		if (r_cons_singleton()->is_interactive) {
-			if (ptr[1]=='<') {
+			if (ptr[1] == '<') {
 				/* this is a bit mess */
 				//const char *oprompt = strdup (r_line_singleton ()->prompt);
 				//oprompt = ">";
@@ -1581,9 +1586,15 @@ next:
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
 		if (ptr > cmd) {
-			char *fdnum = ptr-1;
-			if (*fdnum >= '0' && *fdnum <= '9') {
-				fdn = *fdnum - '0';
+			char *fdnum = ptr - 1;
+			if (*fdnum == 'H') {
+				scr_html = r_config_get_i (core->config, "scr.html");
+				r_config_set_i (core->config, "scr.html", true);
+				pipecolor = true;
+			} else {
+				if (*fdnum >= '0' && *fdnum <= '9') {
+					fdn = *fdnum - '0';
+				}
 			}
 			*fdnum = 0;
 		}
@@ -1965,6 +1976,9 @@ next_arroba:
 	}
 
 	int rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+	if (scr_html != -1) {
+		r_config_set_i (core->config, "scr.html", scr_html);
+	}
 	core->fixedblock = false;
 	return rc;
 }

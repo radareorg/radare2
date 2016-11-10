@@ -617,7 +617,7 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 
 	if (r_config_get_i (core->config, "prj.files")) {
 		eprintf ("TODO: prj.files: support copying more than one file into the project directory\n");
-		const char *binFile = r_core_project_info (core, prjName);
+		char *binFile = r_core_project_info (core, prjName);
 		const char *binFileName = r_file_basename (binFile);
 		char *prjBinDir = r_str_newf ("%s/bin", prjDir);
 		char *prjBinFile = r_str_newf ("%s/%s", prjBinDir, binFileName);
