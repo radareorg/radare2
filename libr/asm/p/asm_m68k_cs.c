@@ -134,9 +134,12 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 };
 
+#ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,
 	.version = R2_VERSION
 };
+#endif
+
 #endif
