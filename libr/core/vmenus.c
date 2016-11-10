@@ -2647,7 +2647,7 @@ repeat:
 	case 's':
 		{
 		int i, j;
-		bool is_wide;
+		bool is_wide = false;
 		if (core->print->ocur != -1) {
 			n = plen;
 		} else {

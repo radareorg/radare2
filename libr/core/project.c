@@ -376,7 +376,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	}
 	if (thready) {
 		(void)r_core_project_load_bg (core, prjfile, prj);
-		return true;
+		ret = true;
 	} else {
 		/* load sdb stuff in here */
 		ret = r_core_project_load (core, prjfile, prj);
@@ -627,6 +627,7 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 		}
 		free (prjBinFile);
 		free (prjBinDir);
+		free (binFile);
 	}
 	if (r_config_get_i (core->config, "prj.git")) {
 		char *cwd = r_sys_getdir ();

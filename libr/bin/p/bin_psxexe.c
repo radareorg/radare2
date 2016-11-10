@@ -61,7 +61,7 @@ static RList* sections(RBinFile* arch) {
 
 	if(!(sect = R_NEW0 (RBinSection))) {
 		r_list_free (ret);
-		return ret;
+		return NULL;
 	}
 
 	if (r_buf_fread_at (arch->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {

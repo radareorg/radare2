@@ -603,7 +603,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 			return 1;
 		}
 	}
-#endif
+#else
 	if (p->_chgdir) {
 		ret = chdir (p->_chgdir);
 		if (ret < 0) {
@@ -616,31 +616,29 @@ R_API int r_run_config_env(RRunProfile *p) {
 			return 1;
 		}
 	}
+#endif
 #if __UNIX__
-	if (p->_chroot) {
-		if (chroot (".") != 0) {
-			eprintf ("rarun2: cannot chroot\n");
-			r_sys_perror ("chroot");
+	if (p->_setuid) {
+		ret = setgroups (0, NULL);
+		if (ret < 0) {
+			return 1;
+		}
+		ret = setuid (atoi (p->_setuid));
+		if (ret < 0) {
 			return 1;
 		}
 	}
-	if (p->_setuid) {
-		ret = setgroups (0, NULL);
-		if (ret < 0)
-			return 1;
-		ret = setuid (atoi (p->_setuid));
-		if (ret < 0)
-			return 1;
-	}
 	if (p->_seteuid) {
 		ret = seteuid (atoi (p->_seteuid));
-		if (ret < 0)
+		if (ret < 0) {
 			return 1;
+		}
 	}
 	if (p->_setgid) {
 		ret = setgid (atoi (p->_setgid));
-		if (ret < 0)
+		if (ret < 0) {
 			return 1;
+		}
 	}
 	if (p->_input) {
 		char *inp;
