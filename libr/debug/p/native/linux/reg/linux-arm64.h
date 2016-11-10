@@ -3,6 +3,7 @@ return strdup (
 "=PC	pc\n"
 "=BP	x29\n"
 "=SP	sp\n"
+"=SN	x8\n"
 "=A0	x0\n"
 "=A1	x1\n"
 "=A2	x2\n"
