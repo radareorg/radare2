@@ -46,8 +46,8 @@
 !:mime	image/gif
 >4	string		7a		\b, version 8%s,
 >4	string		9a		\b, version 8%s,
->6	leshort		>0		%hd x
->8	leshort		>0		%hd
+>6	leshort		>0		%d x
+>8	leshort		>0		%d
 #>10	byte		&0x80		color mapped,
 #>10	byte&0x07	=0x00		2 colors
 #>10	byte&0x07	=0x01		4 colors

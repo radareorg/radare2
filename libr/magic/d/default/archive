@@ -238,7 +238,7 @@
 # From: Dirk Jagdmann <doj@cubic.org>
 # xar archive format: http://code.google.com/p/xar/
 0	string	xar!		xar archive
->6	beshort	x		- version %hd
+>6	beshort	x		- version %d
 
 # From: "Nelson A. de Oliveira" <naoliv@gmail.com>
 # .kgb
