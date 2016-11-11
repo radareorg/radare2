@@ -1131,9 +1131,10 @@
 # CDROM Filesystems
 # Modified for UDF by gerardo.cacciari@gmail.com
 32769	string    CD001
-!:mime	application/x-iso9660-image
 >38913	string   !NSR0      ISO 9660 CD-ROM filesystem data
+!:mime	application/x-iso9660-image
 >38913	string    NSR0      UDF filesystem data
+!:mime	application/x-iso9660-image
 >>38917	string    1         (version 1.0)
 >>38917	string    2         (version 1.5)
 >>38917	string    3         (version 2.0)
