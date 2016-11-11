@@ -11,7 +11,7 @@ ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm
 endif
 ifeq ($(OSTYPE),gnulinux)
-LDFLAGS+=-Wl,-soname,libr2.${EXT_SO}.${VERSION}
+LDFLAGS+=-Wl,-soname,libr2.${EXT_SO}.${LIBVERSION}
 endif
 include ../../libr/socket/deps.mk
 include ../../shlr/zip/deps.mk
