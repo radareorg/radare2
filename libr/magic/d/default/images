@@ -28,8 +28,8 @@
 !:mime	image/png
 >4	belong		!0x0d0a1a0a	CORRUPTED,
 >4	belong		0x0d0a1a0a
->>16	belong		x		%ld x
->>20	belong		x		%ld,
+>>16	belong		x		%d x
+>>20	belong		x		%d,
 >>24	byte		x		%d-bit
 >>25	byte		0		grayscale,
 >>25	byte		2		\b/color RGB,
@@ -148,7 +148,7 @@
 # Author: Hans-Joachim Baader <hjb@pro-linux.de>
 0		string	PaRtImAgE-VoLuMe	PartImage
 >0x0020		string	0.6.1		file version %s
->>0x0060	lelong	>-1		volume %ld
+>>0x0060	lelong	>-1		volume %d
 #>>0x0064 8 byte identifier
 #>>0x007c reserved
 >>0x0200	string	>\0		type %s

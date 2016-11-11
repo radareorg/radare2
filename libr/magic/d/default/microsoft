@@ -561,7 +561,7 @@
 
 # Using the existence of the Backing File Offset to Branch or not
 # to read Backing File Information
->>0xc    belong  >0      , Backing File( Offset: %lu
+>>0xc    belong  >0      , Backing File( Offset: %u
 >>>(0xc.L)       string >\0     , Path: %s
 
 # Didn't get the trick here how qemu stores the "Size" at this Position
