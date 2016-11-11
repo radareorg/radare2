@@ -577,6 +577,8 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 			eprintf ("Please remove: rm -rf %s %s.d\n", prjName, prjName);
 			char *rc = r_str_newf ("%s/rc", prjDir);
 			if (!rc) {
+				free (prjDir);
+				free (scriptPath);
 				return false;
 			}
 			free (scriptPath);

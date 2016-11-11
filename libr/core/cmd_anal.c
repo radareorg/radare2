@@ -2309,7 +2309,9 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		r_flag_set (core->flags, name, addr, size);
 	}
 	r_core_file_set_by_file (core, cache);
-	r_flag_set (core->flags, "aeim.fd", cf->desc->fd, 1);
+	if (cf) {
+		r_flag_set (core->flags, "aeim.fd", cf->desc->fd, 1);
+	}
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
 	//r_core_cmdf (core, "f stack=0x%08"PFMT64x, stack_addr);
