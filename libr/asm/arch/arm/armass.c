@@ -568,10 +568,26 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				int a1 = getreg (ao->a[1]);
 				int a2 = getreg (ao->a[2]);
 				if (a2 == -1) {
-					// ldr r0, [rN]
-					ao->o = 0x68;
-					ao->o |= (7 & a0) << 8;
-					ao->o |= (7 & a1) << 11;
+					int num= getnum (ao->a[2]);
+					if (num > 0) {
+						if (num >= 0x1000) {
+							return -1;
+						}
+						// ldr r0, [rN, num]
+						// Separate out hundreds
+						int h = num >> 8;
+						num &= 0xff;
+						ao->o = (0xd0 | a1) << 24;
+						ao->o |= 0xf8 << 16;
+						ao->o |= num << 8;
+						ao->o |= a0 << 4;
+						ao->o |= h;
+					} else {
+						// ldr r0, [rN]
+						ao->o = 0x68;
+						ao->o |= (7 & a0) << 8;
+						ao->o |= (7 & a1) << 11;
+					}
 				} else {
 					ao->o = 0x58; // | (8+(0xf & a0));
 					ao->o |= (7 & a0) << 8;
