@@ -1581,7 +1581,9 @@ next:
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
 		str = r_str_trim_head_tail (ptr + 1 + (ptr[1] == '>'));
-		if (!*str) goto next2;
+		if (!*str) {
+			goto next2;
+		}
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
@@ -1630,6 +1632,9 @@ next:
 			r_config_set_i (core->config, "scr.color", ocolor);
 			free (str);
 		}
+		if (scr_html != -1) {
+			r_config_set_i (core->config, "scr.html", scr_html);
+		}
 		return ret;
 	}
 next2:
@@ -1648,7 +1653,7 @@ next2:
 			/* do nothing */
 		} else if (!ptr2) {
 			eprintf ("parse: Missing backtick in expression.\n");
-			return -1;
+			goto fail;
 		} else {
 			int value = core->num->value;
 			*ptr = '\0';
@@ -1658,13 +1663,14 @@ next2:
 			} else {
 				str = r_core_cmd_str (core, ptr+1);
 			}
-			if (!str)
-				return -1;
+			if (!str) {
+				goto fail;
+			}
 			// ignore contents if first char is pipe or comment
 			if (*str=='|' || *str=='*') {
 				eprintf ("r_core_cmd_subst_i: invalid backticked command\n");
 				free (str);
-				return -1;
+				goto fail;
 			}
 			if (oneline && str) {
 				for (i = 0; str[i]; i++) {
@@ -1678,6 +1684,9 @@ next2:
 			core->num->value = value;
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);
+			if (scr_html != -1) {
+				r_config_set_i (core->config, "scr.html", scr_html);
+			}
 			free (str);
 			return ret;
 		}
@@ -1850,7 +1859,9 @@ ignore:
 				/* XXXX:YYYY */
 			} else {
 				*ptr2 = '\0';
-				if (!ptr2[1]) return -1;
+				if (!ptr2[1]) {
+					goto fail;
+				}
 				r_core_block_size (core, r_num_math (core->num, ptr2+1));
 			}
 		}
@@ -1860,8 +1871,8 @@ ignore:
 		addr = r_num_math (core->num, offstr);
                 if (isalpha ((unsigned char)ptr[1]) && addr== 0) {
                         if (!r_flag_get (core->flags, ptr+1)) {
-                                eprintf ("Invalid address (%s)\n", ptr+1);
-                                return false;
+                                eprintf ("Invalid address (%s)\n", ptr + 1);
+				goto fail;
                         }
                 } else {
 			char ch = *offstr;
@@ -1901,7 +1912,7 @@ next_arroba:
 					eprintf ("Usage: / ABCD @..0x1000 0x3000\n");
 					free (tmpeval);
 					free (tmpasm);
-					return false;
+					goto fail;
 				}
 				*p = '\x00';
 				ut64 from = r_num_math (core->num, range);
@@ -1972,15 +1983,22 @@ next_arroba:
 		}
 		r_core_seek (core, tmpoff, 1);
 		*ptr = '@';
+		if (scr_html != -1) {
+			r_config_set_i (core->config, "scr.html", scr_html);
+		}
 		return ret;
 	}
 
 	int rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+beach:
 	if (scr_html != -1) {
 		r_config_set_i (core->config, "scr.html", scr_html);
 	}
 	core->fixedblock = false;
 	return rc;
+fail:
+	rc = -1;
+	goto beach;
 }
 
 static int foreach_comment(void *user, const char *k, const char *v) {
