@@ -14,7 +14,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_asm);
 
-#define R_ASM_OPCODES_PATH R2_LIBDIR "/radare2/" R2_VERSION "/opcodes"
+#define R_ASM_OPCODES_PATH R2_PREFIX "/share/radare2/" R2_VERSION "/opcodes"
 // XXX too big!
 // the 256th character is left for the null terminator
 #define R_ASM_BUFSIZE 255

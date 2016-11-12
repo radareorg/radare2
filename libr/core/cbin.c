@@ -458,7 +458,7 @@ static int is_executable (RBinObject *obj) {
 	return false;
 }
 
-#define DBSPATH R2_LIBDIR"/radare2/"R2_VERSION"/fcnsign"
+#define DBSPATH R2_PREFIX "/share/radare2/" R2_VERSION "/fcnsign"
 static void sdb_concat_by_path (Sdb *s, const char *path) {
 	Sdb *db = sdb_new (0, path, 0);
 	sdb_merge (s, db);

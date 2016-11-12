@@ -83,7 +83,7 @@ R_API int r_syscall_setup(RSyscall *s, const char *arch, const char *os, int bit
 		}
 	}
 
-#define SYSCALLPATH R2_LIBDIR"/radare2/"R2_VERSION"/syscall"
+#define SYSCALLPATH R2_PREFIX "/share/radare2/" R2_VERSION "/syscall"
 	file = sdb_fmt (0, "%s/%s-%s-%d.sdb",
 		SYSCALLPATH, os, arch, bits);
 	if (!r_file_exists (file)) {

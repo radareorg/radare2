@@ -201,9 +201,9 @@ install love: install-doc install-man install-www
 		rm -f last ; ln -fs $(VERSION) last
 	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
-	rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud"
-	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud"
-	cp -f doc/hud "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud/main"
+	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
+	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
+	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	sys/ldconfig.sh
 	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
@@ -242,12 +242,12 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 		echo "$$DIR" ; \
 		${MAKE} install-symlink ); \
 	done
-	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud"
+	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
 	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
-	ln -fs "${PWD}/doc/hud" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/hud/main"
+	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	sys/ldconfig.sh
 	./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
