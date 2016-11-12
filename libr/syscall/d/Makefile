@@ -66,15 +66,17 @@ ${SDB}:
 
 .PHONY: all clean install install-symlink symstall
 
+SYSCALLPATH=${DESTDIR}${DATADIR}/radare2/${VERSION}/syscall
+
 install: ${F_SDB}
-	-rm -rf "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
-	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
-	cp -f *.sdb "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
+	-rm -rf "${SYSCALLPATH}"
+	mkdir -p "${SYSCALLPATH}"
+	cp -f *.sdb "${SYSCALLPATH}"
 
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
-	mkdir -p "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall"
-	for FILE in *.sdb ; do ln -fs "${CWD}/$$FILE" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall/$$FILE" ; done
+	mkdir -p "${SYSCALLPATH}"
+	for FILE in *.sdb ; do ln -fs "${CWD}/$$FILE" "${SYSCALLPATH}/$$FILE" ; done
 
 uninstall:
-	rm -rf "${DESTDIR}${LIBDIR}/radare2/syscall"
+	rm -rf "${SYSCALLPATH}"
