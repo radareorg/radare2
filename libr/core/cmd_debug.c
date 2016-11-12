@@ -1376,8 +1376,20 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '8': // "dr8"
 	case 'b': // "drb"
 		{
-			int len;
-			ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
+			int len, type = R_REG_TYPE_GPR;
+			arg = strchr (str, ' ');
+			if (arg) {
+				char *string = r_str_chop (strdup (arg + 1));
+				if (string) {
+					type = r_reg_type_by_name (string);
+					if (type == -1 && string[0] != 'a') {
+						type = R_REG_TYPE_GPR;
+					}
+					free (string);
+				}
+			}
+			ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
+
 			/* TODO : parse [type] parameter here instead of hardcoded GPR */
 			if (str[0] == '8') {
 				r_print_bytes (core->print, buf, len, "%02x");
