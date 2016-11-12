@@ -16,7 +16,7 @@ clean:
 .PHONY: all clean install install-symlink symstall uninstall
 
 # XXX rmdblslash not defined, but doesnt warns about it
-OPDIR=${DESTDIR}${LIBDIR}/radare2/${VERSION}/opcodes
+OPDIR=${DESTDIR}${DATADIR}/radare2/${VERSION}/opcodes
 
 install: ${F_SDB}
 	-rm -rf "${OPDIR}"
@@ -30,4 +30,4 @@ symstall install-symlink: ${F_SDB}
 	for FILE in *.sdb ; do ln -fs "${CWD}/$$FILE" "${OPDIR}/$$FILE" ; done
 
 uninstall:
-	rm -rf "${DESTDIR}${LIBDIR}/radare2/opcodes"
+	rm -rf "${OPDIR}"
