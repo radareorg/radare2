@@ -85,6 +85,7 @@ typedef struct r_reg_item_t {
 	bool is_float;
 	char *flags;
 	int index;
+	int arena; /* in which arena is this reg living */
 } RRegItem;
 
 typedef struct r_reg_arena_t {

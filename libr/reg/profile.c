@@ -35,21 +35,34 @@ static ut64 parse_size(char *s, char **end) {
 
 static const char *parse_def(RReg *reg, char **tok, const int n) {
 	RRegItem *item;
-	char *end;
-	int type;
+	char *end, *p;
+	int type, type2;
 
-	if (n != 5 && n != 6)
-		return "Invalid syntax";
-
-	type = r_reg_type_by_name (tok[0]);
-	if (type < 0) {
+	if (n != 5 && n != 6) {
+		return "Invalid syntax: Wrong number of columns";
+	}
+	p = strchr (tok[0], '@');
+	if (p) {
+		char *tok0 = strdup (tok[0]);
+		char *at = tok0 + (p - tok[0]);
+		*at++ = 0;
+		type = r_reg_type_by_name (tok0);
+		free (tok0);
+		type2 = r_reg_type_by_name (at);
+	} else {
+		type2 = type = r_reg_type_by_name (tok[0]);
+	}
+	if (type < 0 || type2 < 0) {
 		return "Invalid register type";
 	}
 
 	item = R_NEW0 (RRegItem);
-	if (!item) return "Unable to allocate memory";
+	if (!item) {
+		return "Unable to allocate memory";
+	}
 
 	item->type = type;
+	item->arena = type2;
 	item->name = strdup (tok[1]);
 	// All the numeric arguments are strictly checked
 	item->size = parse_size (tok[2], &end);
@@ -72,8 +85,9 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	reg->bits |= item->size;
 
 	// This is optional
-	if (n == 6)
+	if (n == 6) {
 		item->flags = strdup (tok[5]);
+	}
 
 	// Don't allow duplicate registers
 	if (r_reg_get (reg, item->name, R_REG_TYPE_ALL)) {
@@ -102,12 +116,14 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	int i, j, l;
 	const char *p = str;
 
-	if (!reg || !str)
+	if (!reg || !str) {
 		return false;
+	}
 
 	// Same profile, no need to change
-	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str))
+	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
 		return true;
+	}
 
 	// we should reset all the arenas before setting the new reg profile
 	r_reg_arena_pop (reg);
@@ -126,8 +142,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		// Skip comment lines
 		if (*p == '#') {
 			const char *q = p;
-			while (*q != '\n')
+			while (*q != '\n') {
 				q++;
+			}
 			reg->reg_profile_cmt = r_str_concatlen (
 				reg->reg_profile_cmt, p, (int)(q - p) + 1);
 			p = q;
@@ -137,16 +154,19 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		// For every word
 		while (*p) {
 			// Skip the whitespace
-			while (*p == ' ' || *p == '\t')
+			while (*p == ' ' || *p == '\t') {
 				p++;
+			}
 			// Skip the rest of the line is a comment is encountered
 			if (*p == '#') {
-				while (*p != '\n')
+				while (*p != '\n') {
 					p++;
+				}
 			}
 			// EOL ?
-			if (*p == '\n')
+			if (*p == '\n') {
 				break;
+			}
 			// Gather a handful of chars
 			// Use isgraph instead of isprint because the latter considers ' ' printable
 			for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;) {
@@ -154,8 +174,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			}
 			tmp[i] = '\0';
 			// Limit the number of tokens
-			if (j > PARSER_MAX_TOKENS - 1)
+			if (j > PARSER_MAX_TOKENS - 1) {
 				break;
+			}
 			// Save the token
 			tok[j++] = strdup (tmp);
 		}
@@ -168,8 +189,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 				? parse_alias (reg, tok, j)
 				: parse_def (reg, tok, j);
 			// Clean up
-			for (i = 0; i < j; i++)
+			for (i = 0; i < j; i++) {
 				free (tok[i]);
+			}
 			// Warn the user if something went wrong
 			if (r) {
 				eprintf ("%s: Parse error @ line %d (%s)\n",
