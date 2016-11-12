@@ -15,8 +15,8 @@
 >9	string		file		version 0,
 >9	string		v		version
 >>10	string		>\0		%s,
->14	belong		x		%lu x
->18	belong		x		%lu,
+>14	belong		x		%u x
+>18	belong		x		%u,
 >22     belong          0               RGB Color
 >22     belong          1               Greyscale
 >22     belong          2               Indexed Color

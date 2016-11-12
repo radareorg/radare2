@@ -19,9 +19,10 @@
 # Debian package (needs to go before regular portable archives)
 #
 0	string		=!<arch>\ndebian
-!:mime	application/x-debian-package
 >8	string		debian-split	part of multipart Debian package
+!:mime	application/vnd.debian.binary-package
 >8	string		debian-binary	Debian binary package
+!:mime	application/vnd.debian.binary-package
 >8	string		!debian
 >68	string		>\0		(format %s)
 # These next two lines do not work, because a bzip2 Debian archive
@@ -80,7 +81,7 @@
 >9	string	\0		
 >>0	string	KWAJ		
 >>>7	string	\321\003	MS Compress archive data
->>>>14	ulong	>0		\b, original size: %ld bytes
+>>>>14	ulong	>0		\b, original size: %d bytes
 >>>>18		ubyte	>0x65  	
 >>>>>18		string	x    	\b, was %.8s
 >>>>>(10.b-4)	string	x    	\b.%.3s
@@ -237,7 +238,7 @@
 # From: Dirk Jagdmann <doj@cubic.org>
 # xar archive format: http://code.google.com/p/xar/
 0	string	xar!		xar archive
->6	beshort	x		- version %ld
+>6	beshort	x		- version %d
 
 # From: "Nelson A. de Oliveira" <naoliv@gmail.com>
 # .kgb

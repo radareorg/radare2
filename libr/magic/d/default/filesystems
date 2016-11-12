@@ -931,7 +931,7 @@
 >&-180	lelong		x		average file size %d,
 >&-176	lelong		x		average number of files in dir %d,
 >&-272	lequad		x		pending blocks to free %lld,
->&-264	lelong		x		pending inodes to free %ld,
+>&-264	lelong		x		pending inodes to free %d,
 >&-664	lequad		x		system-wide uuid %0llx,
 >&-1316	lelong		x		minimum percentage of free blocks %d,
 >&-1248	lelong		0		TIME optimization
@@ -951,7 +951,7 @@
 >&-180	lelong		x		average file size %d,
 >&-176	lelong		x		average number of files in dir %d,
 >&-272	lequad		x		pending blocks to free %lld,
->&-264	lelong		x		pending inodes to free %ld,
+>&-264	lelong		x		pending inodes to free %d,
 >&-664	lequad		x		system-wide uuid %0llx,
 >&-1316	lelong		x		minimum percentage of free blocks %d,
 >&-1248	lelong		0		TIME optimization
@@ -991,7 +991,7 @@
 >&-180	belong		x		average file size %d,
 >&-176	belong		x		average number of files in dir %d,
 >&-272	bequad		x		pending blocks to free %lld,
->&-264	belong		x		pending inodes to free %ld,
+>&-264	belong		x		pending inodes to free %d,
 >&-664	bequad		x		system-wide uuid %0llx,
 >&-1316	belong		x		minimum percentage of free blocks %d,
 >&-1248	belong		0		TIME optimization
@@ -1011,7 +1011,7 @@
 >&-180	belong		x		average file size %d,
 >&-176	belong		x		average number of files in dir %d,
 >&-272	bequad		x		pending blocks to free %lld,
->&-264	belong		x		pending inodes to free %ld,
+>&-264	belong		x		pending inodes to free %d,
 >&-664	bequad		x		system-wide uuid %0llx,
 >&-1316	belong		x		minimum percentage of free blocks %d,
 >&-1248	belong		0		TIME optimization
@@ -1131,9 +1131,10 @@
 # CDROM Filesystems
 # Modified for UDF by gerardo.cacciari@gmail.com
 32769	string    CD001
-!:mime	application/x-iso9660-image
 >38913	string   !NSR0      ISO 9660 CD-ROM filesystem data
+!:mime	application/x-iso9660-image
 >38913	string    NSR0      UDF filesystem data
+!:mime	application/x-iso9660-image
 >>38917	string    1         (version 1.0)
 >>38917	string    2         (version 1.5)
 >>38917	string    3         (version 2.0)
@@ -1148,24 +1149,24 @@
 
 # cramfs filesystem - russell@coker.com.au
 0       lelong    0x28cd3d45      Linux Compressed ROM File System data, little endian
->4      lelong  x size %lu
+>4      lelong  x size %u
 >8      lelong  &1 version #2
 >8      lelong  &2 sorted_dirs
 >8      lelong  &4 hole_support
 >32     lelong  x CRC 0x%x,
->36     lelong  x edition %lu,
->40     lelong  x %lu blocks,
->44     lelong  x %lu files
+>36     lelong  x edition %u,
+>40     lelong  x %u blocks,
+>44     lelong  x %u files
 
 0       belong    0x28cd3d45      Linux Compressed ROM File System data, big endian
->4      belong  x size %lu
+>4      belong  x size %u
 >8      belong  &1 version #2
 >8      belong  &2 sorted_dirs
 >8      belong  &4 hole_support
 >32     belong  x CRC 0x%x,
->36     belong  x edition %lu,
->40     belong  x %lu blocks,
->44     belong  x %lu files
+>36     belong  x edition %u,
+>40     belong  x %u blocks,
+>44     belong  x %u files
 
 # reiserfs - russell@coker.com.au
 0x10034		string	ReIsErFs	ReiserFS V3.5

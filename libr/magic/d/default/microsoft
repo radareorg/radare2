@@ -40,8 +40,13 @@
 #
 #0	string	MZ		MS-DOS executable
 0	string	MZ
+
+# All non-DOS EXE extensions have the relocation table more than 0x40 bytes into the file.
+>0x18	leshort <0x40 MS-DOS executable
 !:mime	application/x-dosexec
+
 >0 string MZ\0\0\0\0\0\0\0\0\0\0PE\0\0 \b, PE for MS Windows
+!:mime	application/x-dosexec
 >>&18	leshort&0x2000	>0	(DLL)
 >>&88	leshort		0	(unknown subsystem)
 >>&88	leshort		1	(native)
@@ -67,6 +72,7 @@
 
 >0x18  leshort >0x3f
 >>(0x3c.l) string PE\0\0 PE 
+!:mime	application/x-dosexec
 # hooray, there's a DOS extender using the PE format, with a valid PE
 # executable inside (which just prints a message and exits if run in win)
 >>>(8.s*16) string 32STUB for MS-DOS, 32rtm DOS extender
@@ -561,7 +567,7 @@
 
 # Using the existence of the Backing File Offset to Branch or not
 # to read Backing File Information
->>0xc    belong  >0      , Backing File( Offset: %lu
+>>0xc    belong  >0      , Backing File( Offset: %u
 >>>(0xc.L)       string >\0     , Path: %s
 
 # Didn't get the trick here how qemu stores the "Size" at this Position
