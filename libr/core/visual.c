@@ -143,7 +143,7 @@ static int zoom = 0;
 
 R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
-	const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
+	const char *f = R2_PREFIX "/share/radare2/" R2_VERSION "/hud/main";
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char *homehud = r_str_home (R2_HOMEDIR"/hud");
 	char *res = NULL;
