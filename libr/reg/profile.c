@@ -230,12 +230,10 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 			free (file);
 		}
 	}
-
 	if (!str) {
 		eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
 		return false;
 	}
-
 	ret = r_reg_set_profile_string (reg, str);
 	free (str);
 	return ret;

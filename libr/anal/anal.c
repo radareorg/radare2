@@ -150,9 +150,12 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RAnalPlugin *h;
 	r_list_foreach (anal->plugins, it, h) {
 		if (!strcmp (h->name, name)) {
+#if 0
+			// regression happening here for asm.emu
 			if (anal->cur && anal->cur == h) {
 				return true;
 			}
+#endif
 			anal->cur = h;
 			r_anal_set_reg_profile (anal);
 			r_anal_set_fcnsign (anal, NULL);
@@ -237,6 +240,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	case 16:
 	case 32:
 	case 64:
+		// if (anal->bits != bits)
 		anal->bits = bits;
 		r_anal_set_fcnsign (anal, NULL);
 		r_anal_set_reg_profile (anal);
