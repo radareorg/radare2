@@ -1389,8 +1389,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 			}
 			ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
-
-			/* TODO : parse [type] parameter here instead of hardcoded GPR */
+			eprintf("1\n");
 			if (str[0] == '8') {
 				r_print_bytes (core->print, buf, len, "%02x");
 			} else {
@@ -1408,6 +1407,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
 					break;
 				default:
+					eprintf("2\n");
 					if (core->assembler->bits == 64) {
 						r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
 					} else {
@@ -1418,6 +1418,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			free (buf);
 		}
+		eprintf("3\n");
 		break;
 	case 'c': // "drc"
 		// TODO: set flag values with drc zf=1
@@ -1791,18 +1792,36 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			return;
 		} else {
 			ut64 off;
+			utX value;
+			int err;
 			int bits = atoi (str);
 			r_debug_reg_sync (core->dbg, -1, 0); //R_REG_TYPE_GPR, false);
 			if (bits) {
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color);
 			} else {
-				off = r_debug_reg_get (core->dbg, str + 1);
-				//		r = r_reg_get (core->dbg->reg, str+1, 0);
-				//		if (!r) eprintf ("Unknown register (%s)\n", str+1);
-				r_cons_printf ("0x%08"PFMT64x"\n", off);
+				off = r_debug_reg_get_err (core->dbg, str + 1, &err, &value);
 				core->num->value = off;
+				switch (err) {
+					case 0:
+						r_cons_printf ("0x%08"PFMT64x"\n", off);
+						break;
+					case 1: 
+						r_cons_printf("Unknown register '%s'\n", str + 1);
+						break;
+					case 80:
+						r_cons_printf("0x%04x %016"PFMT64x"\n", value.v80.High, value.v80.Low);
+						break;
+					case 96:
+						r_cons_printf("0x%08x %016"PFMT64x"\n", value.v96.High, value.v96.Low);
+						break;
+					case 128:
+						r_cons_printf("0x%016"PFMT64x" %016"PFMT64x"\n", value.v128.High, value.v128.Low);
+						break;
+					default:
+						r_cons_printf("Error %i while retrieving '%s' \n", err, str + 1);
+						core->num->value = 0;
+				}
 			}
-			//r_reg_get_value (core->dbg->reg, r));
 		}
 	}
 }

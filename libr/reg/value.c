@@ -3,6 +3,44 @@
 #include <r_reg.h>
 #include <r_util.h>
 
+R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
+	RRegSet *regset;
+	int off;
+	ut64 ret = 0LL;
+	if (!reg || !item)
+		return 0LL;
+	off = BITS2BYTES (item->offset);
+	regset = &reg->regset[item->type];
+	switch (item->size) {
+	case 80: // word + qword
+		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
+			val->v80.Low = *((ut64 *)(regset->arena->bytes+off));
+			val->v80.High =*((ut16 *)(regset->arena->bytes+off+8));
+		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		ret = val->v80.Low;
+		break;
+	case 96: // dword + qword
+		if (regset->arena->bytes && (off + 12 <= regset->arena->size)) {
+			val->v96.Low = *((ut64 *)(regset->arena->bytes+off));
+			val->v96.High =*((ut32 *)(regset->arena->bytes+off+8));
+		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		ret = val->v96.Low;
+		break;
+	case 128:// qword + qword
+		if (regset->arena->bytes && (off + 16 <= regset->arena->size)) {
+			val->v128.Low = *((ut64 *)(regset->arena->bytes+off));
+			val->v128.High =*((ut64 *)(regset->arena->bytes+off+8));
+		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		ret = val->v128.Low;
+		break;
+	//case 256:// qword + qword + qword + qword
+	//	break;
+	default:
+		eprintf ("r_reg_get_value_big: Bit size %d not supported\n", item->size);
+		break;
+	}
+	return ret;
+}
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	RRegSet *regset;
 	int off;
