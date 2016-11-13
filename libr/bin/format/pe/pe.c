@@ -736,7 +736,7 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t) *bin, PE_DWord callbacks) {
-	PE_DWord paddr;
+	PE_DWord paddr, haddr;
 	int count = 0;
 	PE_DWord addressOfTLSCallback = 1;
 	char *key;
@@ -758,6 +758,9 @@ static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t) *bin, PE_DWord
 		key = sdb_fmt (0, "pe.tls_callback%d_paddr", count);
 		paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva(bin, (PE_DWord) addressOfTLSCallback));
 		sdb_num_set (bin->kv, key, paddr, 0);
+		key = sdb_fmt (0, "pe.tls_callback%d_haddr", count);
+		haddr = callbacks;
+		sdb_num_set (bin->kv, key, haddr, 0);
 		count++;
 		callbacks += sizeof (addressOfTLSCallback);
 	}
@@ -1735,6 +1738,8 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	pe_entry      = bin->optional_header->AddressOfEntryPoint;
 	entry->vaddr  = bin_pe_rva_to_va (bin, pe_entry);
 	entry->paddr  = bin_pe_rva_to_paddr (bin, pe_entry);
+	// haddr is the address of AddressOfEntryPoint in header.
+	entry->haddr  = bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) + 16;
 
 	if (entry->paddr >= bin->size) {
 	 	struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
