@@ -240,10 +240,11 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	case 16:
 	case 32:
 	case 64:
-		// if (anal->bits != bits)
-		anal->bits = bits;
-		r_anal_set_fcnsign (anal, NULL);
-		r_anal_set_reg_profile (anal);
+		if (anal->bits != bits) {
+			anal->bits = bits;
+			r_anal_set_fcnsign (anal, NULL);
+			r_anal_set_reg_profile (anal);
+		}
 		return true;
 	}
 	return false;
