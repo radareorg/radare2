@@ -2012,17 +2012,17 @@ void cmd_anal_reg (RCore *core, const char *str) {
 				if (r->size > 64) {
 					off = r_reg_get_value_big (core->dbg->reg, r, &value);
 					switch (r->size) {
-						case 80:
-							r_cons_printf("0x%04x %016"PFMT64x"\n", value.v80.High, value.v80.Low);
-							break;
-						case 96:
-							r_cons_printf("0x%08x %016"PFMT64x"\n", value.v96.High, value.v96.Low);
-							break;
-						case 128:
-							r_cons_printf("0x%016"PFMT64x" %016"PFMT64x"\n", value.v128.High, value.v128.Low);
-							break;
-						default:
-							r_cons_printf("Error while retrieving reg '%s' of %i bits\n", str +1, r->size);
+					case 80:
+						r_cons_printf ("0x%04x %016"PFMT64x"\n", value.v80.High, value.v80.Low);
+						break;
+					case 96:
+						r_cons_printf ("0x%08x %016"PFMT64x"\n", value.v96.High, value.v96.Low);
+						break;
+					case 128:
+						r_cons_printf ("0x%016"PFMT64x" %016"PFMT64x"\n", value.v128.High, value.v128.Low);
+						break;
+					default:
+						r_cons_printf ("Error while retrieving reg '%s' of %i bits\n", str +1, r->size);
 					}
 				} else {
 					off = r_reg_get_value (core->dbg->reg, r);
