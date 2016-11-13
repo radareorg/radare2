@@ -25,13 +25,13 @@ WRKDIR="$PWD"
 export LIBEXT="`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`"
 export R2HOMEDIR="`r2 -hh | grep '^ RHOMEDIR' | awk '{print $2}' 2> /dev/null`"
 #[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
-export R2PM_PLUGDIR="${R2HOMEDIR}/plugins/"
+export R2PM_PLUGDIR="${R2HOMEDIR}/plugins"
 # prefix
 export R2PM_SYSPREFIX="${PREFIX}"
-export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix/"
+export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix"
 export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
 # bindir
-export R2PM_HOMEBINDIR="${R2PM_HOMEPREFIX}/bin/"
+export R2PM_HOMEBINDIR="${R2PM_HOMEPREFIX}/bin"
 export R2PM_SYSBINDIR="${BINDIR}"
 export R2PM_BINDIR=${R2PM_HOMEBINDIR}
 # www
@@ -40,8 +40,8 @@ export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/"
 export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
 # pkgconfig
 export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${R2PM_SYSPREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
-export CFLAGS="-I${R2PM_HOMEPREFIX}/include/"
-export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib/"
+export CFLAGS="-I${R2PM_HOMEPREFIX}/include"
+export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
 export R2PM_OLDPWD="${PWD}"
@@ -50,7 +50,7 @@ export R2PM_OLDPWD="${PWD}"
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
-R2PM_USRDIR="${HOME}/.config/radare2/r2pm/"
+R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
 R2PM_ETCD="${R2HOMEDIR}/radare2/radare2rc.d"
 IS_LOCAL=0
 
