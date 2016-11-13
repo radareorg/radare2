@@ -150,6 +150,9 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RAnalPlugin *h;
 	r_list_foreach (anal->plugins, it, h) {
 		if (!strcmp (h->name, name)) {
+			if (anal->cur && anal->cur == h) {
+				return true;
+			}
 			anal->cur = h;
 			r_anal_set_reg_profile (anal);
 			r_anal_set_fcnsign (anal, NULL);
