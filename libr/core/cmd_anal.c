@@ -1850,8 +1850,19 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		free (buf);
 	} break;
 	case 'b': { // WORK IN PROGRESS // DEBUG COMMAND
-		int len;
-		ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
+		int len, type = R_REG_TYPE_GPR;
+		arg = strchr (str, ' ');
+		if (arg) {
+			char *string = r_str_chop (strdup (arg + 1));
+			if (string) {
+				type = r_reg_type_by_name (string);
+				if (type == -1 && string[0] != 'a') {
+					type = R_REG_TYPE_GPR;
+				}
+				free (string);
+			}
+		}
+		ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
 		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
 		free (buf);
@@ -1996,8 +2007,27 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		if (size == 0) {
 			r = r_reg_get (core->dbg->reg, str + 1, -1);
 			if (r) {
-				r_cons_printf ("0x%08" PFMT64x "\n",
-					r_reg_get_value (core->dbg->reg, r));
+				ut64 off;
+				utX value;
+				if (r->size > 64) {
+					off = r_reg_get_value_big (core->dbg->reg, r, &value);
+					switch (r->size) {
+						case 80:
+							r_cons_printf("0x%04x %016"PFMT64x"\n", value.v80.High, value.v80.Low);
+							break;
+						case 96:
+							r_cons_printf("0x%08x %016"PFMT64x"\n", value.v96.High, value.v96.Low);
+							break;
+						case 128:
+							r_cons_printf("0x%016"PFMT64x" %016"PFMT64x"\n", value.v128.High, value.v128.Low);
+							break;
+						default:
+							r_cons_printf("Error while retrieving reg '%s' of %i bits\n", str +1, r->size);
+					}
+				} else {
+					off = r_reg_get_value (core->dbg->reg, r);
+					r_cons_printf ("0x%08"PFMT64x "\n", off);
+				}
 				return;
 			}
 			arg = strchr (str + 1, ' ');
