@@ -1140,7 +1140,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		eprintf ("--> cannot read registers\n");
 		return -1;
 	}
-	reg = (int)r_debug_reg_get_err (dbg, "SN", &err);
+	reg = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
 	if (err) {
 		eprintf ("Cannot find 'sn' register for current arch-os.\n");
 		return -1;
