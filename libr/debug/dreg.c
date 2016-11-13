@@ -99,14 +99,6 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (rad == 'j') {
 		dbg->cb_printf ("{");
 	}
-	//if (type == -1) {
-	//	from = 0;
-	//	to = R_REG_TYPE_LAST;
-	//} else {
-	//	from = type;
-	//	to = from + 1;
-	//}
-	//to = R_MAX (to, R_REG_TYPE_FLG + 1);
 	// with the new field "arena" into reg items why need
 	// to get all arenas.
 	from = 0;
@@ -152,18 +144,17 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			} else {
 				value = r_reg_get_value_big (dbg->reg, item, &valueBig);
 		                switch (regSize) {
-					case 80:
-						snprintf (strvalue, sizeof (strvalue), "%04x %016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
-						break;
-					case 96:
-						snprintf (strvalue, sizeof (strvalue), "%08x %016"PFMT64x"", valueBig.v96.High, valueBig.v96.Low);
-						break;
-					case 128:
-						snprintf (strvalue, sizeof (strvalue), "%016"PFMT64x" %016"PFMT64x"", valueBig.v128.High, valueBig.v128.Low);
-						break;
-					default:
-						snprintf (strvalue, sizeof (strvalue), "ERROR");
-
+				case 80:
+					snprintf (strvalue, sizeof (strvalue), "%04x %016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
+					break;
+				case 96:
+					snprintf (strvalue, sizeof (strvalue), "%08x %016"PFMT64x"", valueBig.v96.High, valueBig.v96.Low);
+					break;
+				case 128:
+					snprintf (strvalue, sizeof (strvalue), "%016"PFMT64x" %016"PFMT64x"", valueBig.v128.High, valueBig.v128.Low);
+					break;
+				default:
+					snprintf (strvalue, sizeof (strvalue), "ERROR");
 				}
 				delta = 0; // TODO: calculate delta with big values.
 			}
@@ -287,7 +278,9 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 		name = r_reg_get_name (dbg->reg, role);
 		if (!name || *name == '\0') {
 			eprintf ("No debug register profile defined for '%s'.\n", pname);
-			if (err) *err = 1;
+			if (err) {
+				*err = 1;
+			}
 			return UT64_MAX;
 		}
 	}
@@ -295,14 +288,17 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 	if (ri) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
 		if (value && ri->size > 64) {
-			if (err) *err = ri->size;
+			if (err) {
+				*err = ri->size;
+			}
 			ret = r_reg_get_value_big (dbg->reg, ri, value);
-		}
-		else {
+		} else {
 		    ret = r_reg_get_value (dbg->reg, ri);
 		}
 	} else {
-		if (err) *err = 1;
+		if (err) {
+			*err = 1;
+		}
 	}
 	return ret;
 }
