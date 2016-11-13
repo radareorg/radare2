@@ -276,7 +276,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 			}
 			group[0] = '(';
 			p = group+1;
-			if (r_str_delta (p, '(', ')')<0) {
+			if (r_str_delta (p, '(', ')') < 0) {
 				char *p2 = strchr (p, '(');
 				if (p2 != NULL) {
 					*p2 = '\0';
@@ -284,21 +284,26 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 					ret = r_num_op (op, ret, r_num_math (num, p2+1));
 					p = p2+1;
 					continue;
-				} else eprintf ("WTF!\n");
-			} else ret = r_num_op (op, ret, r_num_math_internal (num, p));
-		} else ret = r_num_op (op, ret, r_num_math_internal (num, p));
+				}
+				eprintf ("WTF!\n");
+			} else {
+				ret = r_num_op (op, ret, r_num_math_internal (num, p));
+			}
+		} else {
+			ret = r_num_op (op, ret, r_num_math_internal (num, p));
+		}
 	} while (0);
 
-	if (num != NULL)
+	if (num) {
 		num->value = ret;
+	}
 	free (os);
 	return ret;
 #endif
 }
 
 R_API int r_num_is_float(RNum *num, const char *str) {
-	// TODO: also support 'f' terminated strings
-	return (strchr (str, '.') != NULL)? true:false;
+	return (IS_NUMBER (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
 }
 
 R_API double r_num_get_float(RNum *num, const char *str) {
