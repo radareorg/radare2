@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014-2015 - dso, pancake */
+/* radare - Apache - Copyright 2014-2016 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -1396,26 +1396,26 @@ static int r_cmd_java_call(void *user, const char *input) {
 	RCore *core = (RCore *) user;
 	int res = false;
 	ut32 i = 0;
-	IFDBG r_cons_printf ("Function call made: %s\n", input);
-	if (strncmp (input, "java",4)) return false;
-	else if (strncmp (input, "java ",5)) {
+	if (strncmp (input, "java", 4)) {
+		return false;
+	}
+	if (input[4] != ' ') {
 		return r_cmd_java_handle_help (core, input);
 	}
-
-	for (; i <END_CMDS; i++) {
+	for (; i < END_CMDS; i++) {
 		//IFDBG r_cons_printf ("Checking cmd: %s %d %s\n", JAVA_CMDS[i].name, JAVA_CMDS[i].name_len, p);
 		IFDBG r_cons_printf ("Checking cmd: %s %d\n", JAVA_CMDS[i].name, strncmp (input+5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len));
-		if (!strncmp (input+5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len)) {
-			const char *cmd = input+5+JAVA_CMDS[i].name_len;
+		if (!strncmp (input + 5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len)) {
+			const char *cmd = input + 5 + JAVA_CMDS[i].name_len;
 			if (*cmd && *cmd == ' ') cmd++;
 			//IFDBG r_cons_printf ("Executing cmd: %s (%s)\n", JAVA_CMDS[i].name, cmd+5+JAVA_CMDS[i].name_len );
-
 			res =  JAVA_CMDS[i].handler (core, cmd);
 			break;
 		}
 	}
-
-	if (res == false) res = r_cmd_java_handle_help (core, input);
+	if (!res) {
+		res = r_cmd_java_handle_help (core, input);
+	}
 	return true;
 }
 
@@ -1864,6 +1864,7 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 			if (operation) {
 				cp_ref_idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
 				full_bird = r_cmd_java_get_descriptor (core, bin, cp_ref_idx);
+eprintf ("FUCK\n");
 				if (!full_bird) {
 					eprintf ("Error identifying reference @ 0x%"PFMT64x"\n", bb->addr);
 					full_bird = strdup ("ANALYSIS_ERROR");
@@ -1895,7 +1896,7 @@ static int r_cmd_java_handle_yara_code_extraction_refs (RCore *core, const char 
 	if (!p) return res;
 
 	n = *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
-	name = n && p && p != n ? malloc (n-p+2) : NULL;
+	name = n && p && p != n ? malloc (n - p + 2) : NULL;
 
 	if (!name) return res;
 
@@ -1933,8 +1934,10 @@ static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input) 
 	ut32 cn_sz = 0, n_sz = 0, d_sz = 0;
 	int res = false;
 
-	if (!bin) return res;
-	else if (!anal || !anal->fcns || r_list_length (anal->fcns) == 0) {
+	if (!bin) {
+		return res;
+	}
+	if (!anal || !anal->fcns || r_list_length (anal->fcns) == 0) {
 		eprintf ("Unable to access the current analysis, perform 'af' for function analysis.\n");
 		return true;
 	}
@@ -1960,7 +1963,7 @@ static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input) 
 	//memset (name, 0, n_sz);
 	//memcpy (name, p, n-p);
 
-	p = n+1;
+	p = n + 1;
 	n =  p && *p ? r_cmd_java_strtok (p, ' ', -1) : NULL;
 	if (n) {
 		descriptor = n && p && p != n ? malloc (n-p+1) : NULL;
@@ -2028,7 +2031,6 @@ static int r_cmd_java_handle_print_exceptions (RCore *core, const char *input) {
 			free (class_info);
 		}
 	}
-
 	return true;
 }
 

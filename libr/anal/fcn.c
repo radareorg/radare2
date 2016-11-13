@@ -1296,7 +1296,6 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 #endif
 }
 
-
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
 	return fcn? r_tinyrange_in (&fcn->bbr, addr): false;
 }
@@ -1580,7 +1579,8 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {
 
 R_API int r_anal_fcn_is_in_offset(RAnalFunction *fcn, ut64 addr) {
 	if (r_list_empty (fcn->bbs)) {
-		return addr >= fcn->addr && addr < fcn->addr + fcn->_size;// r_anal_fcn_size (fcn);
+		// r_anal_fcn_size (fcn);
+		return addr >= fcn->addr && addr < fcn->addr + fcn->_size;
 	}
 	if (r_anal_fcn_in (fcn, addr)) {
 		return true;
@@ -1604,7 +1604,7 @@ R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
  * NULL is returned if such basic block doesn't exist. */
 R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 #if USE_SDB_CACHE
-	return sdb_ptr_get (HB, sdb_fmt(0, SDB_KEY_BB, fcn->addr, addr), NULL);
+	return sdb_ptr_get (HB, sdb_fmt (0, SDB_KEY_BB, fcn->addr, addr), NULL);
 #else
 	RListIter *iter;
 	RAnalBlock *bb;

@@ -796,7 +796,7 @@ static int autocomplete(RLine *line) {
 		     !strncmp (line->buffer.data, "pm ", 3) ||
 		     !strncmp (line->buffer.data, "dml ", 4) ||
 		     !strncmp (line->buffer.data, "/m ", 3)) {
-			// XXX: SO MANY FUCKING MEMORY LEAKS
+			// XXX: SO MANY MEMORY LEAKS HERE
 			char *str, *p, *path;
 			int n = 0, i = 0, isroot = 0, iscwd = 0;
 			RList *list;

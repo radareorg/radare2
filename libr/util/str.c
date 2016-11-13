@@ -635,7 +635,9 @@ R_API int r_str_nstr(char *from, char *to, int size) {
 // TODO: rewrite in macro?
 R_API const char *r_str_chop_ro(const char *str) {
 	if (str) {
-		while (*str && iswhitechar (*str)) str++;
+		while (*str && iswhitechar (*str)) {
+			str++;
+		}
 	}
 	return str;
 }
@@ -707,7 +709,9 @@ R_API char *r_str_chop(char *str) {
 	int len;
 	char *ptr;
 
-	if (!str) return NULL;
+	if (!str) {
+		return NULL;
+	}
 	while (*str && iswhitechar (*str)) {
 		memmove (str, str + 1, strlen (str + 1) + 1);
 	}

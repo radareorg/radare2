@@ -550,6 +550,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 
 	return true;
 }
+
 void r_comment_var_help(RCore *core, char type) {
 	const char *help_bp[] = {
 		"Usage:", "Cvb", "[name] [comment]",
@@ -599,6 +600,7 @@ void r_comment_var_help(RCore *core, char type) {
 		r_cons_printf("See Cvb, Cvs and Cvr\n");
 	}
 }
+
 void r_comment_vars(RCore *core, const char *input) {
 	//TODO enable base64 and make it the default for C*
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);

@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2016 - alvarofe */
+
 #include <r_util.h>
 
 R_API RRangeTiny *r_tinyrange_new() {
@@ -21,7 +23,6 @@ R_API void r_tinyrange_free(RRangeTiny *bbr) {
 	R_FREE (bbr);
 }
 
-
 //bool value if true return bb->addr otherwise a boolean to notify was found
 R_API bool r_tinyrange_in(RRangeTiny *bbr, ut64 at) {
 	if (bbr->pairs > 0) {
@@ -40,21 +41,20 @@ R_API bool r_tinyrange_in(RRangeTiny *bbr, ut64 at) {
 			if (at >= bbr->ranges[idx] && at < bbr->ranges[idx + 1]) {
 				return true;
 			} 
-			if (idx && idx < lastIndex) {
-				if (at < bbr->ranges[idx]) {
-					lastIndex = idx;
-					idx -= (idx / 2);
-					if (idx % 2) {
-						idx--;
-					}
-				} else {
-					idx += ((lastIndex - idx) / 2);
-					if (idx % 2) {
-						idx++;
-					}
+			if (!idx || idx >= lastIndex) {
+				return false;
+			}
+			if (at < bbr->ranges[idx]) {
+				lastIndex = idx;
+				idx -= (idx / 2);
+				if (idx % 2) {
+					idx--;
 				}
 			} else {
-				return false;
+				idx += ((lastIndex - idx) / 2);
+				if (idx % 2) {
+					idx++;
+				}
 			}
 		}
 	}

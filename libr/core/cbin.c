@@ -59,11 +59,11 @@ static int r_core_bin_set_cur(RCore *core, RBinFile *binfile);
 static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {
 		return r_bin_get_vaddr (bin, paddr, vaddr);
-	} else if (va == VA_NOREBASE) {
-		return vaddr;
-	} else {
-		return paddr;
 	}
+	if (va == VA_NOREBASE) {
+		return vaddr;
+	}
+	return paddr;
 }
 
 R_API int r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
@@ -196,18 +196,23 @@ static bool string_filter(RCore *core, const char *str) {
 					return false;
 	//			}
 			}
-			if (ch<0 || !IS_PRINTABLE (ch))
+			if (ch<0 || !IS_PRINTABLE (ch)) {
 				return false;
+			}
 		}
 		if (str[0] && str[1]) {
 			for (i = 2; i<6 && str[i]; i++) {
-				if (str[i] == str[0])
+				if (str[i] == str[0]) {
 					return false;
-				if (str[i] == str[1])
+				}
+				if (str[i] == str[1]) {
 					return false;
+				}
 			}
 		}
-		if (str[0] == str[2]) return false; // rm false positives
+		if (str[0] == str[2]) {
+			return false; // rm false positives
+		}
 		break;
 	case 'a': // only alphanumeric - plain ascii
 		for (i = 0; str[i]; i++) {
@@ -1166,7 +1171,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 	if (mydb) {
 		if (name) {
 			res = (RBinSymbol*)(void*)(size_t)
-				sdb_num_get (mydb, sdb_fmt (0,"%x",sdb_hash (name)), NULL);
+				sdb_num_get (mydb, sdb_fmt (0, "%x", sdb_hash (name)), NULL);
 		} else {
 			res = (RBinSymbol*)(void*)(size_t)
 				sdb_num_get (mydb, sdb_fmt (0, "0x"PFMT64x, addr), NULL);
@@ -1175,7 +1180,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 		mydb = sdb_new0 ();
 		r_list_foreach (symbols, iter, symbol) {
 			/* ${name}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, sdb_fmt (0,"%x", sdb_hash (symbol->name)), (ut64)(size_t)symbol, 0)) {
+			if (!sdb_num_add (mydb, sdb_fmt (0, "%x", sdb_hash (symbol->name)), (ut64)(size_t)symbol, 0)) {
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			/* 0x${vaddr}=${ptrToSymbol} */
@@ -1285,7 +1290,6 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		} else if (IS_MODE_JSON (mode)) {
 			str = r_str_utf16_encode (symname, -1);
 			str = r_str_replace (str, "\"", "\\\"", 1);
-			addr = impaddr (r->bin, va, symname);
 			r_cons_printf ("%s{\"ordinal\":%d,"
 				"\"bind\":\"%s\","
 				"\"type\":\"%s\",",
@@ -1339,7 +1343,8 @@ static const char *getPrefixFor(const char *s) {
 	if (s) {
 		if (!strcmp (s, "NOTYPE")) {
 			return "loc";
-		} else if (!strcmp (s, "OBJECT")) {
+		}
+		if (!strcmp (s, "OBJECT")) {
 			return "obj";
 		}
 	}
@@ -1498,12 +1503,14 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			}
 
 			if (!strncmp (symbol->name, "imp.", 4)) {
-				if (lastfs != 'i')
+				if (lastfs != 'i') {
 					r_flag_space_set (r->flags, "imports");
+				}
 				lastfs = 'i';
 			} else {
-				if (lastfs != 's')
+				if (lastfs != 's') {
 					r_flag_space_set (r->flags, "symbols");
+				}
 				lastfs = 's';
 			}
 			/* If that's a Classed symbol (method or so) */

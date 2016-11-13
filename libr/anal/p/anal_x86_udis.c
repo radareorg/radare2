@@ -474,22 +474,6 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		default:
 			op->type = R_ANAL_OP_TYPE_JMP;
-#if 0
-{
-ut16 a = (op->lval.ptr.seg & 0xFFFF);
-ut16 b = (op->lval.ptr.off);
-switch (op->size) {
-case 32:
-	sprintf (src, "%04x:%04x", a, b & 0xFFFF);
-	break;
-case 48:
-	sprintf (src, "%04x:%04x", a, b);
-	break;
-default:
-	eprintf ("FUCK YOU\n");
-}
-}
-#endif
 			if (u.operand[0].type==UD_OP_PTR) {
 				op->jump = getval (&u.operand[0]);
 			} else {

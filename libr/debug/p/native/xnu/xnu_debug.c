@@ -1263,8 +1263,8 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 			r_list_append (list, mr);
 		}
 		if (size < 1) {
-			eprintf ("EFUCK\n");
-			size = osize; // fuck
+			eprintf ("size error\n");
+			size = osize;
 		}
 		address += size;
 		size = 0;

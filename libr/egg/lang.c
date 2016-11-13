@@ -604,7 +604,7 @@ emit->while_end (egg, get_frame_label (context-1));
 				emit->branch (egg, b, g, e, n, varsize, str);
 				if (CTX>0) {
 					/* XXX .. */
-				} else eprintf ("FUCKING CASE\n");
+				}
 				rcc_reset_callname ();
 			} //else eprintf ("Unknown statement (%s)(%s)\n", cn, elem);
 		} // handle '{ ..'
@@ -658,7 +658,7 @@ eprintf ("STACKTRAF %d\n", stackframe);
 				ndstval = 0;
 				CTX = 0;
 				return 1;
-			} else eprintf ("FUCK FUCK\n");
+			}
 		}
 	}
 	dstval[ndstval++] = c;
@@ -699,7 +699,8 @@ static int parseinlinechar(REgg *egg, char c) {
 				R_FREE (dstvar);
 				R_FREE (dstval);
 				return 1;
-			} else eprintf ("FUCK FUCK\n");
+			}
+			eprintf ("Parse error\n");
 		}
 	}
 	dstval[ndstval++] = c;
