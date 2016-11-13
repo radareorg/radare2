@@ -1389,7 +1389,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 			}
 			ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
-			eprintf("1\n");
 			if (str[0] == '8') {
 				r_print_bytes (core->print, buf, len, "%02x");
 			} else {
@@ -1407,7 +1406,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
 					break;
 				default:
-					eprintf("2\n");
 					if (core->assembler->bits == 64) {
 						r_print_hexdump (core->print, 0LL, buf, len, 64, 8);
 					} else {
@@ -1418,7 +1416,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 			free (buf);
 		}
-		eprintf("3\n");
 		break;
 	case 'c': // "drc"
 		// TODO: set flag values with drc zf=1

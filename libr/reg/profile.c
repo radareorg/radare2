@@ -96,10 +96,10 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 	/* Hack to put flags in the same arena as gpr */
 	if (type == R_REG_TYPE_FLG) {
-		type = R_REG_TYPE_GPR;
+		type2 = R_REG_TYPE_GPR;
 	}
 
-	r_list_append (reg->regset[item->type].regs, item);
+	r_list_append (reg->regset[type2].regs, item);
 
 	// Update the overall profile size
 	if (item->offset + item->size > reg->size) {

@@ -65,7 +65,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	RRegItem *item;
 	RList *head;
 	ut64 diff;
-
+	char strvalue[128];
 	if (!dbg || !dbg->reg) {
 		return false;
 	}
@@ -79,14 +79,16 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		size = 32;
 	}
 	if (dbg->bits & R_SYS_BITS_64) {
-		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%s%4s%s 0x%08"PFMT64x"%s";
+		//fmt = "%s = 0x%08"PFMT64x"%s";
+		fmt = "%s = %s%s";
+		fmt2 = "%s%4s%s 0x%s%s";
 		kwhites = "         ";
 		colwidth = dbg->regcols? 20: 25;
 		cols = 3;
 	} else {
-		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%s%4s%s 0x%08"PFMT64x"%s";
+		//fmt = "%s = 0x%08"PFMT64x"%s";
+		fmt = "%s = %s%s";
+		fmt2 = "%s%4s%s 0x%s%s";
 		kwhites = "    ";
 		colwidth = 20;
 		cols = 4;
@@ -97,15 +99,18 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (rad == 'j') {
 		dbg->cb_printf ("{");
 	}
-	if (type == -1) {
-		from = 0;
-		to = R_REG_TYPE_LAST;
-	} else {
-		from = type;
-		to = from + 1;
-	}
-
-	to = R_MAX (to, R_REG_TYPE_FLG + 1);
+	//if (type == -1) {
+	//	from = 0;
+	//	to = R_REG_TYPE_LAST;
+	//} else {
+	//	from = type;
+	//	to = from + 1;
+	//}
+	//to = R_MAX (to, R_REG_TYPE_FLG + 1);
+	// with the new field "arena" into reg items why need
+	// to get all arenas.
+	from = 0;
+	to = R_REG_TYPE_LAST;
 
 	int itmidx = -1;
 	dbg->creg = NULL;
@@ -116,6 +121,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 		}
 		r_list_foreach (head, iter, item) {
 			ut64 value;
+			utX valueBig;
 #if 0
 			bool is_arm = dbg->arch && strstr (dbg->arch, "arm");
 
@@ -135,25 +141,46 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				if (type != item->type && R_REG_TYPE_FLG != item->type) continue;
 				if (size != 0 && size != item->size) continue;
 			}
-			value = r_reg_get_value (dbg->reg, item);
-			r_reg_arena_swap (dbg->reg, false);
-			diff = r_reg_get_value (dbg->reg, item);
-			r_reg_arena_swap (dbg->reg, false);
-			delta = value-diff;
+			int regSize = item->size;
+			if (regSize < 80) {
+				value = r_reg_get_value (dbg->reg, item);
+				r_reg_arena_swap (dbg->reg, false);
+				diff = r_reg_get_value (dbg->reg, item);
+				r_reg_arena_swap (dbg->reg, false);
+				delta = value-diff;
+				snprintf (strvalue, sizeof (strvalue),"%08"PFMT64x"", value);
+			} else {
+				value = r_reg_get_value_big (dbg->reg, item, &valueBig);
+		                switch (regSize) {
+					case 80:
+						snprintf (strvalue, sizeof (strvalue), "%04x %016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
+						break;
+					case 96:
+						snprintf (strvalue, sizeof (strvalue), "%08x %016"PFMT64x"", valueBig.v96.High, valueBig.v96.Low);
+						break;
+					case 128:
+						snprintf (strvalue, sizeof (strvalue), "%016"PFMT64x" %016"PFMT64x"", valueBig.v128.High, valueBig.v128.Low);
+						break;
+					default:
+						snprintf (strvalue, sizeof (strvalue), "ERROR");
+
+				}
+				delta = 0; // TODO: calculate delta with big values.
+			}
 			itmidx++;
 
 			switch (rad) {
 			case 'j':
-				dbg->cb_printf ("%s\"%s\":%"PFMT64d,
-					n?",":"", item->name, value);
+				dbg->cb_printf ("%s\"%s\":%s",
+					n?",":"", item->name, strvalue);
 				break;
 			case '-':
 				dbg->cb_printf ("f-%s\n", item->name);
 				break;
 			case 1:
 			case '*':
-				dbg->cb_printf ("f %s 1 0x%"PFMT64x"\n",
-					item->name, value);
+				dbg->cb_printf ("f %s 1 0x%s\n",
+					item->name, strvalue);
 				break;
 			case 'd':
 			case 2:
@@ -180,12 +207,12 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 						free (str);
 					} else {
 						snprintf (content, sizeof (content),
-							fmt2, "", item->name, "", value, "");
+							fmt2, "", item->name, "", strvalue, "");
 						len = colwidth - strlen (content);
 						if (len < 0) len = 0;
 						memset (whites, ' ', sizeof (whites));
 						whites[len] = 0;
-						dbg->cb_printf (fmt2, a, item->name, b, value,
+						dbg->cb_printf (fmt2, a, item->name, b, strvalue,
 							((n+1)%cols)? whites: "\n");
 					}
 					if (highlight) {
@@ -198,18 +225,18 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				break;
 			case 3:
 				if (delta) {
-					char woot[64];
+					char woot[512];
 					snprintf (woot, sizeof (woot),
-						" was 0x%08"PFMT64x" delta %d\n", diff, delta);
-					dbg->cb_printf (fmt, item->name, value, woot);
+						" was 0x%s delta %d\n", diff, delta);
+					dbg->cb_printf (fmt, item->name, strvalue, woot);
 				}
 				break;
 			default:
 				if (delta && use_color) {
 					dbg->cb_printf (use_color);
-					dbg->cb_printf (fmt, item->name, value, Color_RESET"\n");
+					dbg->cb_printf (fmt, item->name, strvalue, Color_RESET"\n");
 				} else {
-					dbg->cb_printf (fmt, item->name, value, "\n");
+					dbg->cb_printf (fmt, item->name, strvalue, "\n");
 				}
 				break;
 			}

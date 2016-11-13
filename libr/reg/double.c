@@ -14,7 +14,7 @@ R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
 	if (!reg || !item)
 		return 0LL;
 	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->type];
+	regset = &reg->regset[item->arena];
 	switch (item->size) {
 	case 64:
 		if (regset->arena->size - off - 1 >= 0) {
@@ -45,8 +45,8 @@ R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
 		eprintf ("r_reg_set_double: Bit size %d not supported\n", item->size);
 		return false;
 	}
-	if (reg->regset[item->type].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
-		r_mem_copybits (reg->regset[item->type].arena->bytes +
+	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
+		r_mem_copybits (reg->regset[item->arena].arena->bytes +
 					BITS2BYTES (item->offset),
 				src, item->size);
 		return true;
@@ -64,7 +64,7 @@ R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
 	if (!reg || !item)
 		return 0LL;
 	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->type];
+	regset = &reg->regset[item->arena];
 	switch (item->size) {
 	case 80:
 	case 96:
@@ -99,8 +99,8 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 		eprintf ("r_reg_set_longdouble: Bit size %d not supported\n", item->size);
 		return false;
 	}
-	if (reg->regset[item->type].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
-		r_mem_copybits (reg->regset[item->type].arena->bytes +
+	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
+		r_mem_copybits (reg->regset[item->arena].arena->bytes +
 					BITS2BYTES (item->offset),
 				src, item->size);
 		return true;
