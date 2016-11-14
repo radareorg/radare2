@@ -178,7 +178,7 @@ else
 	SHDR="
 .section .text
 .globl  main
-.type   main, @function
+// .type   main, @function
 ${JMP} main
 "
 	if [ "$A" = x86 ]; then
