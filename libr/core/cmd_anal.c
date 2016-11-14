@@ -72,7 +72,9 @@ static void type_cmd(RCore *core, const char *input) {
 			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 			r_core_anal_type_match (core, fcn);
 		}
-		r_config_set_i (core->config, "io.cache", io_cache);
+		if (!io_cache) {
+			r_config_set_i (core->config, "io.cache", io_cache);
+		}
 		r_core_cmd0 (core, "aeim-");
 		r_core_cmd0 (core, "aei-");
 		r_core_seek (core, seek, true);

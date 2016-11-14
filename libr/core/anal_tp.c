@@ -211,7 +211,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	if (!core) {
 		return;
 	}
-	if (!r_anal_emul_init (core, esil_var) || !fcn ) {
+	if (!r_anal_emul_init (core, esil_var) || !fcn) {
 		r_anal_emul_restore (core, esil_var);
 		return;
 	}
@@ -229,6 +229,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			eprintf ("I kept trace log for you to review and find out how bad things were going to happen by yourself.\n");
 			eprintf ("You can view this log by `ate`. Meanwhile, I will train on how to behave with such behaviour without bothering you.\n");
 #endif
+			r_anal_emul_restore (core, esil_var);
 			return;
 		}
 		sdb_num_set (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), loop_count + 1, 0);
