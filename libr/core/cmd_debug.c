@@ -1806,13 +1806,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_cons_printf ("Unknown register '%s'\n", str + 1);
 					break;
 				case 80:
-					r_cons_printf ("0x%04x %016"PFMT64x"\n", value.v80.High, value.v80.Low);
+					r_cons_printf ("0x%04x%016"PFMT64x"\n", value.v80.High, value.v80.Low);
 					break;
 				case 96:
-					r_cons_printf ("0x%08x %016"PFMT64x"\n", value.v96.High, value.v96.Low);
+					r_cons_printf ("0x%08x%016"PFMT64x"\n", value.v96.High, value.v96.Low);
 					break;
 				case 128:
-					r_cons_printf ("0x%016"PFMT64x" %016"PFMT64x"\n", value.v128.High, value.v128.Low);
+					r_cons_printf ("0x%016"PFMT64x"%016"PFMT64x"\n", value.v128.High, value.v128.Low);
 					break;
 				default:
 					r_cons_printf ("Error %i while retrieving '%s' \n", err, str + 1);
