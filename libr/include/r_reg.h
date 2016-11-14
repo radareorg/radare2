@@ -97,6 +97,7 @@ typedef struct r_reg_set_t {
 	RRegArena *arena;
 	RList *pool; /* RRegArena */
 	RList *regs; /* RRegItem */
+	int maskregstype; /* which type of regs have this reg set (logic mask with RRegisterType  R_REG_TYPE_XXX) */
 } RRegSet;
 
 typedef struct r_reg_t {

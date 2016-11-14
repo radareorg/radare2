@@ -105,6 +105,8 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	if (item->offset + item->size > reg->size) {
 		reg->size = item->offset + item->size;
 	}
+	// Update the overall type of registers into a regset
+	reg->regset[type2].maskregstype |= ((int)1 << type);
 	return NULL;
 }
 
