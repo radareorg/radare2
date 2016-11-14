@@ -218,7 +218,7 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 addr = fcn->addr;
 	r_reg_setv (core->dbg->reg, pc, fcn->addr);
-	r_debug_reg_sync (core->dbg, -1, true);
+	r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 	r_cons_break (NULL, NULL);
 	while (!r_cons_is_breaked ()) {
 		RAnalOp *op = r_core_anal_op (core, addr);
@@ -245,11 +245,11 @@ R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			addr += op->size;
 			r_anal_op_free (op);
 			r_reg_setv (core->dbg->reg, pc, addr);
-			r_debug_reg_sync (core->dbg, -1, true);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 			r_anal_esil_set_pc (core->anal->esil, addr);
 			addr += stack_clean (core, addr, fcn);
 			r_reg_setv (core->dbg->reg, pc, addr);
-			r_debug_reg_sync (core->dbg, -1, true);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 			r_anal_esil_set_pc (core->anal->esil, addr);
 			continue;
 		} else {

@@ -25,7 +25,7 @@ static int __esil_step(RDebug *dbg) {
 	ut64 pc = 0LL; // getreg("pc")
 	RAnalOp op;
 
-	pc = r_debug_reg_sync(dbg, R_REG_TYPE_GPR, 0);
+	pc = r_debug_reg_sync(dbg, R_REG_TYPE_GPR, false);
 	pc = r_debug_reg_get (dbg, "PC");
 	eprintf ("PC = 0x%" PFMT64x "\n", pc);
 /// XXX. hack to trick vaddr issue
