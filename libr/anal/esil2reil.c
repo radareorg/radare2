@@ -1079,9 +1079,10 @@ static int setup_reil_ins(RAnalEsil *esil, const char *op) {
 
 R_API int r_anal_esil_to_reil_setup(RAnalEsil *esil, RAnal *anal, int romem,
 		int stats) {
-	if (!esil) return false;
-
-	esil->debug = 1;
+	if (!esil) {
+		return false;
+	}
+	esil->verbose = 2;
 	esil->anal = anal;
 	esil->trap = 0;
 	esil->trap_code = 0;
@@ -1100,7 +1101,7 @@ R_API int r_anal_esil_to_reil_setup(RAnalEsil *esil, RAnal *anal, int romem,
 
 	// Store the pc
 	const char *name = r_reg_get_name (esil->anal->reg, r_reg_get_name_idx ("PC"));
-	strncpy (esil->Reil->pc, name, sizeof(esil->Reil->pc) - 1);
+	strncpy (esil->Reil->pc, name, sizeof (esil->Reil->pc) - 1);
 
 	r_anal_esil_mem_ro(esil, romem);
 

@@ -6,7 +6,8 @@
 #include <r_db.h>
 #include <r_bind.h>
 
-#define IFDBG if (esil->debug)
+#define IFDBG if (esil->verbose > 1)
+#define IFVBS if (esil->verbose > 0)
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
 #define cpuflag(x, y)\
 	if (y) { \
@@ -17,7 +18,9 @@
 
 /* internal helper functions */
 static void err(RAnalEsil *esil, const char *msg) {
-	eprintf ("0x%08" PFMT64x " %s\n", esil->address, msg);
+	if (esil->verbose) {
+		eprintf ("0x%08" PFMT64x " %s\n", esil->address, msg);
+	}
 }
 #define ERR(x) err(esil,x)
 
@@ -60,7 +63,9 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
-	if (!esil) return NULL;
+	if (!esil) {
+		return NULL;
+	}
 	if (stacksize < 3) {
 		free (esil);
 		return NULL;
@@ -69,6 +74,7 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 		free (esil);
 		return NULL;
 	}
+	esil->verbose = false;
 	esil->stacksize = stacksize;
 	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
 	esil->ops = sdb_new0 ();
@@ -80,8 +86,9 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 R_API int r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOp code) {
 	char t[128];
 	char *h;
-	if (!code || !op || !strlen (op) || !esil || !esil->ops)
+	if (!code || !op || !strlen (op) || !esil || !esil->ops) {
 		return false;
+	}
 	h = sdb_itoa (sdb_hash (op), t, 16);
 	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
 	if (!sdb_num_exists (esil->ops, h)) {

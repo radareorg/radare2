@@ -65,11 +65,14 @@ static void type_cmd(RCore *core, const char *input) {
 		seek = core->offset;
 		r_core_cmd0 (core, "aei");
 		r_core_cmd0 (core, "aeim");
+		bool io_cache = r_config_get_i (core->config, "io.cache");
+		r_config_set_i (core->config, "io.cache", true);
 		r_list_foreach (core->anal->fcns, it, fcn) {
 			r_core_seek (core, fcn->addr, true);
 			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
-			r_anal_type_match (core, fcn);
+			r_core_anal_type_match (core, fcn);
 		}
+		r_config_set_i (core->config, "io.cache", io_cache);
 		r_core_cmd0 (core, "aeim-");
 		r_core_cmd0 (core, "aei-");
 		r_core_seek (core, seek, true);
@@ -77,7 +80,7 @@ static void type_cmd(RCore *core, const char *input) {
 	case 'm': // "aftm"
 		seek = core->offset;
 		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
-		r_anal_type_match (core, fcn);
+		r_core_anal_type_match (core, fcn);
 		r_core_seek (core, seek, true);
 		break;
 	case '?':
@@ -2144,12 +2147,16 @@ repeat:
 	}
 	// check esil
 	if (esil->trap) {
-		eprintf ("TRAP\n");
+		if (core->anal->esil->verbose) {
+			eprintf ("TRAP\n");
+		}
 		return 0;
 	}
 	if (until_expr) {
 		if (r_anal_esil_condition (core->anal->esil, until_expr)) {
-			eprintf ("ESIL BREAK!\n");
+			if (core->anal->esil->verbose) {
+				eprintf ("ESIL BREAK!\n");
+			}
 			return 0;
 		} else goto repeat;
 	}
@@ -2741,7 +2748,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (!(esil = core->anal->esil = r_anal_esil_new (stacksize, iotrap)))
 				return;
 			r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
-			esil->debug = (int)r_config_get_i (core->config, "esil.debug");
+			esil->verbose = (int)r_config_get_i (core->config, "esil.verbose");
 			/* restore user settings for interrupt handling */
 			{
 				const char *s = r_config_get (core->config, "cmd.esil.intr");

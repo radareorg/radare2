@@ -1440,7 +1440,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		/* hook addrinfo */
 		r_anal_esil_setup (core->anal->esil, core->anal, 1, 0, nonull);
 		r_anal_esil_stack_free (core->anal->esil);
-		core->anal->esil->debug = 0;
+		core->anal->esil->verbose = 0;
 		for (; addr<param->to; addr++) {
 			if (core->search->align) {
 				if ((addr % core->search->align)) {

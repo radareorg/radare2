@@ -367,7 +367,8 @@ R_API int r_core_anal_all(RCore *core);
 R_API RList* r_core_anal_cycles (RCore *core, int ccl);
 
 /*tp.c*/
-R_API void r_anal_type_match(RCore *core, RAnalFunction *fcn);
+R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
+
 /* asm.c */
 typedef struct r_core_asm_hit {
 	char *code;

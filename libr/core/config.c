@@ -855,11 +855,12 @@ static int cb_gotolimit(void *user, void *data) {
 	return true;
 }
 
-static int cb_esildebug (void *user, void *data) {
+static int cb_esilverbose (void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (core->anal->esil)
-		core->anal->esil->debug = node->i_value;
+	if (core->anal->esil) {
+		core->anal->esil->verbose = node->i_value;
+	}
 	return true;
 }
 
@@ -1672,7 +1673,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
-	SETCB("esil.debug", "false", &cb_esildebug, "Show ESIL debug info");
+	SETICB("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
 	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
 	SETICB("esil.stacksize", 32, &cb_esilstacksize, "Number of elements that can be pushed on the esilstack");
 
