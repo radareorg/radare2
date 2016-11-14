@@ -120,6 +120,10 @@ getuid=func
 func.getuid.args=0
 func.getuid.ret=uid_t
 
+geteuid=func
+func.geteuid.args=0
+func.geteuid.ret=uid_t
+
 atoi=func
 func.atoi.args=1
 func.atoi.arg.0=const char *,str
@@ -155,9 +159,30 @@ func.setlocale.ret=char *
 
 strcpy=func
 func.strcpy.args=2
-func.strcpy.arg.0=char,*dest
+func.strcpy.arg.0=char *,dest
 func.strcpy.arg.1=const char *,src
 func.strcpy.ret=char *
+
+compat_mode=func
+func.compat_mode.args=2
+func.compat_mode.arg.0=const char *,function
+func.compat_mode.arg.1=const char *,mode
+func.compat_mode.ret=bool
+
+strdup=func
+func.strdup.args=1
+func.strdup.arg.0=const char,*src
+func.strdup.ret=char *
+
+strndup=func
+func.strndup.args=2
+func.strndup.arg.0=const char,*src
+func.strndup.arg.1=int,n
+func.strndup.ret=char *
+
+getprogname=func
+func.strndup.args=0
+func.strndup.ret=const char *
 
 strncpy=func
 func.strncpy.args=3
@@ -166,11 +191,23 @@ func.strncpy.arg.1=const char *,src
 func.strncpy.arg.2=size_t, n
 func.strncpy.ret=char *
 
+strlcpy=func
+func.strlcpy.args=3
+func.strlcpy.arg.0=char,*dest
+func.strlcpy.arg.1=const char *,src
+func.strlcpy.arg.2=size_t, n
+func.strlcpy.ret=char *
+
 ungetc=func
 func.ungetc.args=2
 func.ungetc.arg.0=int,c
 func.ungetc.arg.1=FILE,*stream
 func.ungetc.ret=int
+
+sleep=func
+func.sleep.args=1
+func.sleep.arg.0=int,s
+func.sleep.ret=int
 
 err=func
 func.err.args=2
@@ -221,12 +258,25 @@ func.strcmp.arg.0=const char *,s1
 func.strcmp.arg.1=const char *,s2
 func.strcmp.ret=int
 
+strcasecmp=func
+func.strcasecmp.args=2
+func.strcasecmp.arg.0=const char *,s1
+func.strcasecmp.arg.1=const char *,s2
+func.strcasecmp.ret=int
+
 strncmp=func
 func.strncmp.args=3
 func.strncmp.arg.0=const char *,s1
 func.strncmp.arg.1=const char *,s2
 func.strncmp.arg.2=size_t,n
 func.strncmp.ret=int
+
+strncasecmp=func
+func.strncasecmp.args=3
+func.strncasecmp.arg.0=const char *,s1
+func.strncasecmp.arg.1=const char *,s2
+func.strncasecmp.arg.2=size_t,n
+func.strncasecmp.ret=int
 
 imaxabs=func
 func.imaxabs.args=1
@@ -1776,6 +1826,23 @@ func.strlen.args=1
 func.strlen.arg.0=const char *,s
 func.strlen.ret=size_t
 
+symlink=func
+func.symlink.args=2
+func.symlink.arg.0=const char *,path1
+func.symlink.arg.2=const char *,path2
+func.symlink.ret=int
+
+umask=func
+func.umask.args=1
+func.umask.arg.0=int,m
+func.umask.ret=int
+
+fstat=func
+func.fstat.args=2
+func.fstat.arg.0=int,fildes
+func.fstat.arg.1=void *,buf
+func.fstat.ret=int
+
 clock=func
 func.clock.args=0
 func.clock.ret=clock_t
@@ -2392,6 +2459,17 @@ func.printf.args=1
 func.printf.arg.0=const char *,format
 func.printf.ret=int
 
+warn=func
+func.warn.args=1
+func.warn.arg.0=const char *,format
+func.warn.ret=void
+
+lstat=func
+func.lstat.args=2
+func.lstat.arg.0=const char *,path
+func.lstat.arg.1=void *,buf
+func.lstat.ret=void
+
 scanf=func
 func.scanf.args=1
 func.scanf.arg.0=const char *,format
@@ -2598,3 +2676,50 @@ func.tgoto.arg.0=const char *,cap
 func.tgoto.arg.1=int,col
 func.tgoto.arg.2=int,row
 func.tgoto.ret=char *
+
+basename=func
+func.basename.args=1
+func.basename.arg.0=char *,path
+func.basename.ret=char *
+
+unlink=func
+func.unlink.args=1
+func.unlink.arg.0=const char *,path
+func.unlink.ret=int
+
+chmod=func
+func.chmod.args=2
+func.chmod.arg.0=const char *,path
+func.chmod.arg.1=int,mode
+func.chmod.ret=int
+
+fchmod=func
+func.fchmod.args=2
+func.fchmod.arg.0=int,fd
+func.fchmod.arg.1=int,mode
+func.fchmod.ret=int
+
+humanize_number=func
+func.humanize_number.args=1
+func.humanize_number.arg.0=char *,buf
+func.humanize_number.arg.1=size_t,len
+func.humanize_number.arg.2,int64_t,number
+func.humanize_number.arg.3,const char *,suffix
+func.humanize_number.arg.4,int,scale
+func.humanize_number.arg.5,int,flags
+func.humanize_number.ret=int
+
+pututxline=func
+func.pututxline.args=1
+func.pututxline.arg.0=void *,utx
+func.pututxline.ret=void *
+
+mkstemp=func
+func.mkstemp.args=1
+func.mkstemp.arg.0=char *,template
+func.mkstemp.ret=int
+
+mktemp=func
+func.mktemp.args=1
+func.mktemp.arg.0=char *,template
+func.mktemp.ret=char *
