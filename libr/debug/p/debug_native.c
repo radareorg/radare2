@@ -599,99 +599,6 @@ static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 #endif
 }
 
-#if __WINDOWS__ && !__CYGWIN__
-static int windows_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
-	int showfpu = false;
-	int pid = dbg->pid;
-	int tid = dbg->tid;
-
-	if (type < -1) {
-		showfpu = true; // hack for debugging
-		type = -type;
-	}
-
-	HANDLE thread = w32_open_thread (pid, tid);
-	CONTEXT ctx __attribute__ ((aligned (16)));
-	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	if (!GetThreadContext (thread, &ctx)) {
-		eprintf ("GetThreadContext: %x\n", (int)GetLastError ());
-		CloseHandle(thread);
-		return false;
-	}
-	CloseHandle(thread);
-	if (type==R_REG_TYPE_FPU || type==R_REG_TYPE_MMX || type==R_REG_TYPE_XMM) {
-	#if __MINGW64__
-		typedef struct _M128A {
-			unsigned long long Low;
-			long long High;
-		} *PM128A;
-		if (showfpu) {
-			eprintf ("cwd = 0x%08x  ; control   ", (ut32)ctx.FltSave.ControlWord);
-			eprintf ("swd = 0x%08x  ; status\n", (ut32)ctx.FltSave.StatusWord);
-			eprintf ("twd = 0x%08x ", (ut32)ctx.FltSave.TagWord);
-			eprintf ("eof = 0x%08x\n", (ut32)ctx.FltSave.ErrorOffset);
-			eprintf ("ese = 0x%08x\n", (ut32)ctx.FltSave.ErrorSelector);
-			eprintf ("dof = 0x%08x\n", (ut32)ctx.FltSave.DataOffset);
-			eprintf ("dse = 0x%08x\n", (ut32)ctx.FltSave.DataSelector);
-			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.MxCsr);
-			PM128A a = {0};
-			int i;
-			for (i = 0; i < 8; i++) {
-				a = (PM128A)&ctx.FltSave.FloatRegisters[i];
-				eprintf("st%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
-			}
-			for (i = 0; i < 16; i++) {
-				a = (PM128A)&ctx.FltSave.XmmRegisters[i];
-				eprintf("mm%d = 0x%"PFMT64x" %"PFMT64x"\n", i, a->High, a->Low);
-			}
-		}
-	#else
-		int i;
-		if (showfpu) {
-			eprintf ("cwd = 0x%08x  ; control   ", (ut32)ctx.FloatSave.ControlWord);
-			eprintf ("swd = 0x%08x  ; status\n", (ut32)ctx.FloatSave.StatusWord);
-			eprintf ("twd = 0x%08x ", (ut32)ctx.FloatSave.TagWord);
-			eprintf ("eof = 0x%08x\n", (ut32)ctx.FloatSave.ErrorOffset);
-			eprintf ("ese = 0x%08x\n", (ut32)ctx.FloatSave.ErrorSelector);
-			eprintf ("dof = 0x%08x\n", (ut32)ctx.FloatSave.DataOffset);
-			eprintf ("dse = 0x%08x\n", (ut32)ctx.FloatSave.DataSelector);
-			eprintf ("mxcr = 0x%08x\n", (ut32)ctx.ExtendedRegisters[24]);
-			for (i = 0; i < 8; i++) {
-				ut64 *b = (ut64 *)&ctx.FloatSave.RegisterArea[i*10];
-				eprintf ("st%d = %lg (0x%08"PFMT64x")\n", i,
-					(double)*((double*)&ctx.FloatSave.RegisterArea[i*10]), *b);
-				ut32 *a = (ut32*) &(ctx.ExtendedRegisters[10*16]);
-				a = a + (i * 4);
-				eprintf ("mm%d = %08x %08x %08x %08x  ",i
-						, (int)a[0], (int)a[1], (int)a[2], (int)a[3] );
-			}
-		}
-	#endif
-	}
-	if (sizeof(CONTEXT) < size)
-		size = sizeof(CONTEXT);
-	memcpy (buf, &ctx, size);
-	return size;
-// XXX this must be defined somewhere else
-
-}
-static int windows_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
-	BOOL ret = false;
-	HANDLE thread;
-	CONTEXT ctx __attribute__((aligned (16)));
-	thread = w32_open_thread (dbg->pid, dbg->tid);
-	ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-	GetThreadContext (thread, &ctx);
-	if (type == R_REG_TYPE_DRX || type == R_REG_TYPE_GPR || type == R_REG_TYPE_SEG) {
-		if (sizeof(CONTEXT) < size)
-			size = sizeof(CONTEXT);
-		memcpy (&ctx, buf, size);
-		ret = SetThreadContext (thread, &ctx)? true: false;
-	}
-	CloseHandle (thread);
-	return ret;
-}
-#endif
 
 
 #if __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__
@@ -763,7 +670,7 @@ static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	if (size < 1)
 		return false;
 #if __WINDOWS__ && !__CYGWIN__
-	return windows_reg_read (dbg, type, buf, size);
+	return w32_reg_read (dbg, type, buf, size);
 #elif __APPLE__
 	return xnu_reg_read (dbg, type, buf, size);
 #elif __linux__
@@ -792,7 +699,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 #else
 		//eprintf ("TODO: No support for write DRX registers\n");
 #if __WINDOWS__ && !__CYGWIN__
-		return windows_reg_write (dbg, type, buf, size);
+		return w32_reg_write (dbg, type, buf, size);
 #endif
 		return false;
 #endif
@@ -802,7 +709,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 	} else
 	if (type == R_REG_TYPE_GPR) {
 #if __WINDOWS__ && !__CYGWIN__
-		return windows_reg_write(dbg, type, buf, size);
+		return w32_reg_write(dbg, type, buf, size);
 #elif __linux__
 		return linux_reg_write (dbg, type, buf, size);
 #elif __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__

@@ -97,6 +97,7 @@ typedef struct r_reg_set_t {
 	RRegArena *arena;
 	RList *pool; /* RRegArena */
 	RList *regs; /* RRegItem */
+	int maskregstype; /* which type of regs have this reg set (logic mask with RRegisterType  R_REG_TYPE_XXX) */
 } RRegSet;
 
 typedef struct r_reg_t {
@@ -162,6 +163,7 @@ R_API int r_reg_cond(RReg *r, int type);
 /* integer value 8-64 bits */
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item);
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value);
+R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val);
 
 /* float */
 R_API float r_reg_get_float(RReg *reg, RRegItem *item);

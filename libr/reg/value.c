@@ -3,6 +3,44 @@
 #include <r_reg.h>
 #include <r_util.h>
 
+R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
+	RRegSet *regset;
+	int off;
+	ut64 ret = 0LL;
+	if (!reg || !item)
+		return 0LL;
+	off = BITS2BYTES (item->offset);
+	regset = &reg->regset[item->arena];
+	switch (item->size) {
+	case 80: // word + qword
+		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
+			val->v80.Low = *((ut64 *)(regset->arena->bytes+off));
+			val->v80.High =*((ut16 *)(regset->arena->bytes+off+8));
+		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		ret = val->v80.Low;
+		break;
+	case 96: // dword + qword
+		if (regset->arena->bytes && (off + 12 <= regset->arena->size)) {
+			val->v96.Low = *((ut64 *)(regset->arena->bytes+off));
+			val->v96.High =*((ut32 *)(regset->arena->bytes+off+8));
+		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		ret = val->v96.Low;
+		break;
+	case 128:// qword + qword
+		if (regset->arena->bytes && (off + 16 <= regset->arena->size)) {
+			val->v128.Low = *((ut64 *)(regset->arena->bytes+off));
+			val->v128.High =*((ut64 *)(regset->arena->bytes+off+8));
+		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		ret = val->v128.Low;
+		break;
+	//case 256:// qword + qword + qword + qword
+	//	break;
+	default:
+		eprintf ("r_reg_get_value_big: Bit size %d not supported\n", item->size);
+		break;
+	}
+	return ret;
+}
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	RRegSet *regset;
 	int off;
@@ -10,7 +48,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	if (!reg || !item)
 		return 0LL;
 	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->type];
+	regset = &reg->regset[item->arena];
 #if 0
 	eprintf ("GET sz=%d off %d  off = %d %d\n",
 		item->size, off, item->offset, (item->offset/8));
@@ -96,12 +134,12 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		break;
 	case 1:
 		if (value) {
-			ut8 *buf = reg->regset[item->type].arena->bytes + (item->offset / 8);
+			ut8 *buf = reg->regset[item->arena].arena->bytes + (item->offset / 8);
 			int bit = (item->offset % 8);
 			ut8 mask = (1 << bit);
 			buf[0] = (buf[0] & (0xff ^ mask)) | mask;
 		} else {
-			ut8 *buf = reg->regset[item->type].arena->bytes + (item->offset / 8);
+			ut8 *buf = reg->regset[item->arena].arena->bytes + (item->offset / 8);
 			int bit = item->offset % 8;
 			ut8 mask = 0xff ^ (1 << bit);
 			buf[0] = (buf[0] & mask) | 0;
@@ -111,9 +149,9 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return false;
 	}
-	fits_in_arena = (reg->regset[item->type].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
+	fits_in_arena = (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
 	if (src && fits_in_arena) {
-		r_mem_copybits (reg->regset[item->type].arena->bytes +
+		r_mem_copybits (reg->regset[item->arena].arena->bytes +
 					BITS2BYTES (item->offset),
 				src, item->size);
 		return true;
@@ -167,7 +205,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 		return 0LL;
 	}
 	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->type];
+	regset = &reg->regset[item->arena];
 	off += (packidx * packbytes);
 	if (regset->arena->size - off - 1 >= 0) {
 		memcpy (&ret, regset->arena->bytes + off, packbytes);
@@ -196,8 +234,8 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 		eprintf ("Invalid bit size for packet register\n");
 		return false;
 	}
-	if (reg->regset[item->type].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
-		ut8 *dst = reg->regset[item->type].arena->bytes + BITS2BYTES (off);
+	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
+		ut8 *dst = reg->regset[item->arena].arena->bytes + BITS2BYTES (off);
 		r_mem_copybits (dst, (ut8 *)&val, packbytes);
 		return true;
 	}

@@ -244,7 +244,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 			break;
 		}
 		r_debug_step (core->dbg, 1);
-		r_debug_reg_sync (core->dbg, -1, 0);
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		if (r_anal_esil_condition (core->anal->esil, esilstr)) {
 			eprintf ("ESIL BREAK!\n");
 			break;
@@ -272,7 +272,7 @@ static int step_until_inst(RCore *core, const char *instr) {
 		if (r_debug_is_dead (core->dbg))
 			break;
 		r_debug_step (core->dbg, 1);
-		r_debug_reg_sync (core->dbg, -1, 0);
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		/* TODO: disassemble instruction and strstr */
 		pc = r_debug_reg_get (core->dbg, "PC");
 		r_asm_set_pc (core->assembler, pc);
@@ -309,7 +309,7 @@ static int step_until_flag(RCore *core, const char *instr) {
 		if (r_debug_is_dead (core->dbg))
 			break;
 		r_debug_step (core->dbg, 1);
-		r_debug_reg_sync (core->dbg, -1, 0);
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		pc = r_debug_reg_get (core->dbg, "PC");
 		list = r_flag_get_list (core->flags, pc);
 		r_list_foreach (list, iter, f) {
@@ -1312,7 +1312,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			while (IS_WHITESPACE (*p)) {
 				p++;
 			}
-			r_debug_reg_sync (core->dbg, -1, 0); //R_REG_TYPE_GPR, false);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false); //R_REG_TYPE_GPR, false);
 			off = r_debug_reg_get (core->dbg, p);
 			//		r = r_reg_get (core->dbg->reg, str+1, 0);
 			//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
@@ -1389,8 +1389,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 			}
 			ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
-
-			/* TODO : parse [type] parameter here instead of hardcoded GPR */
 			if (str[0] == '8') {
 				r_print_bytes (core->print, buf, len, "%02x");
 			} else {
@@ -1524,7 +1522,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		case '-':
 			r_reg_arena_pop (core->dbg->reg);
 			// restore debug registers if in debugger mode
-			r_debug_reg_sync (core->dbg, 0, 1);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 			break;
 		case '+':
 			r_reg_arena_push (core->dbg->reg);
@@ -1772,7 +1770,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_cons_printf ("0x%08"PFMT64x" ->",
 							r_reg_get_value (core->dbg->reg, r));
 					r_reg_set_bvalue (core->dbg->reg, r, arg+1);
-					r_debug_reg_sync (core->dbg, -1, true);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 					r_cons_printf ("0x%08"PFMT64x"\n",
 							r_reg_get_value (core->dbg->reg, r));
 				} else {
@@ -1780,7 +1778,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 							r_reg_get_value (core->dbg->reg, r));
 					r_reg_set_value (core->dbg->reg, r,
 							r_num_math (core->num, arg+1));
-					r_debug_reg_sync (core->dbg, -1, true);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 					r_cons_printf ("0x%08"PFMT64x"\n",
 							r_reg_get_value (core->dbg->reg, r));
 				}
@@ -1791,18 +1789,36 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			return;
 		} else {
 			ut64 off;
+			utX value;
+			int err;
 			int bits = atoi (str);
-			r_debug_reg_sync (core->dbg, -1, 0); //R_REG_TYPE_GPR, false);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false); //R_REG_TYPE_GPR, false);
 			if (bits) {
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color);
 			} else {
-				off = r_debug_reg_get (core->dbg, str + 1);
-				//		r = r_reg_get (core->dbg->reg, str+1, 0);
-				//		if (!r) eprintf ("Unknown register (%s)\n", str+1);
-				r_cons_printf ("0x%08"PFMT64x"\n", off);
+				off = r_debug_reg_get_err (core->dbg, str + 1, &err, &value);
 				core->num->value = off;
+				switch (err) {
+				case 0:
+					r_cons_printf ("0x%08"PFMT64x"\n", off);
+					break;
+				case 1: 
+					r_cons_printf ("Unknown register '%s'\n", str + 1);
+					break;
+				case 80:
+					r_cons_printf ("0x%04x %016"PFMT64x"\n", value.v80.High, value.v80.Low);
+					break;
+				case 96:
+					r_cons_printf ("0x%08x %016"PFMT64x"\n", value.v96.High, value.v96.Low);
+					break;
+				case 128:
+					r_cons_printf ("0x%016"PFMT64x" %016"PFMT64x"\n", value.v128.High, value.v128.Low);
+					break;
+				default:
+					r_cons_printf ("Error %i while retrieving '%s' \n", err, str + 1);
+					core->num->value = 0;
+				}
 			}
-			//r_reg_get_value (core->dbg->reg, r));
 		}
 	}
 }
