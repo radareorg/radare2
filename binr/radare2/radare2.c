@@ -81,6 +81,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	RListIter *iter;
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc) {
+		eprintf ("INValid fd\n");
 		return 0LL;
 	}
 #if __WINDOWS__
@@ -97,15 +98,23 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	}
 	return r->io->winbase;
 #else
-	if (r_debug_attach (r->dbg, r->io->desc->fd) == -1) {
+	int pid = r->io->desc->fd;
+	eprintf ("=!PID %s\n", r_core_cmd_str (r, "=!pid"));
+
+	if (r_debug_attach (r->dbg, pid) == -1) {
 		return 0LL;
 	}
+	r_debug_select (r->dbg, pid, pid);
 #endif
 	r_debug_map_sync (r->dbg);
 	abspath = r_file_abspath (file);
-	if (!abspath) abspath = strdup (file);
+	if (!abspath) {
+		abspath = strdup (file);
+	}
 	r_list_foreach (r->dbg->maps, iter, map) {
+		eprintf ("%llx %s\n" ,map->addr, map->name);
 		if (!strcmp (abspath, map->name)) {
+			eprintf ("NAME IS %s\n", map->name);
 			free (abspath);
 			return map->addr;
 		}
@@ -767,32 +776,6 @@ int main(int argc, char **argv, char **envp) {
 					free (escaped_arg);
 					optind++;
 				}
-				{
-					char *diskfile = strstr (file, "://");
-					diskfile = diskfile? diskfile + 3: file;
-					fh = r_core_file_open (&r, diskfile, perms, mapaddr);
-					if (fh != NULL) {
-						r_debug_use (r.dbg, is_gdb ? "gdb" : debugbackend);
-					}
-					/* load symbols when doing r2 -d ls */
-					// NOTE: the baddr is redefined to support PIE/ASLR
-					baddr = getBaddrFromDebugger (&r, diskfile);
-					if (baddr != UT64_MAX && baddr != 0) {
-						eprintf ("bin.baddr 0x%08"PFMT64x"\n", baddr);
-						va = 2;
-					}
-					if (run_anal > 0) {
-						if (r_core_bin_load (&r, diskfile, baddr)) {
-							RBinObject *obj = r_bin_get_object (r.bin);
-							if (obj && obj->info)
-								eprintf ("asm.bits %d\n", obj->info->bits);
-						}
-					}
-					r_core_cmd0 (&r, ".dm*");
-					// Set Thumb Mode if necessary
-					r_core_cmd0 (&r, "dr? thumb;?? e asm.bits=16");
-					r_cons_reset ();
-				}
 			}
 		}
 
@@ -863,6 +846,29 @@ int main(int argc, char **argv, char **envp) {
 			}
 		} else {
 			fh = r_core_file_open (&r, pfile, perms, mapaddr);
+			if (fh != NULL) {
+				r_debug_use (r.dbg, is_gdb ? "gdb" : debugbackend);
+			}
+			/* load symbols when doing r2 -d ls */
+			// NOTE: the baddr is redefined to support PIE/ASLR
+			baddr = getBaddrFromDebugger (&r, pfile);
+			if (baddr != UT64_MAX && baddr != 0) {
+				eprintf ("bin.baddr 0x%08"PFMT64x"\n", baddr);
+				va = 2;
+			}
+			if (run_anal > 0) {
+				eprintf ("USING %llx\n", baddr);
+				if (r_core_bin_load (&r, pfile, baddr)) {
+					RBinObject *obj = r_bin_get_object (r.bin);
+					if (obj && obj->info) {
+						eprintf ("asm.bits %d\n", obj->info->bits);
+					}
+				}
+			}
+			r_core_cmd0 (&r, ".dm*");
+			// Set Thumb Mode if necessary
+			r_core_cmd0 (&r, "dr? thumb;?? e asm.bits=16");
+			r_cons_reset ();
 		}
 		if (!pfile) {
 			pfile = file;

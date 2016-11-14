@@ -309,10 +309,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 					exit (MAGIC_EXIT);
 				}
 			}
-			if (bits == 64)
+			if (bits == 64) {
 				r_run_parseline (rp, expr=strdup ("bits=64"));
-			else if (bits == 32)
+			} else if (bits == 32) {
 				r_run_parseline (rp, expr=strdup ("bits=32"));
+			}
 			free (expr);
 			if (r_run_config_env (rp)) {
 				eprintf ("Can't config the environment.\n");
