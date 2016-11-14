@@ -316,12 +316,11 @@ R_API void r_reg_arena_shrink(RReg *reg) {
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].pool, iter, a) {
 			free (a->bytes);
-			a->bytes = calloc (1, 1);
-			a->size = 1;
+			/* ha ha ha */
+			a->bytes = calloc (1024, 1);
+			a->size = 1024;
+			/* looks like sizing down the arena breaks the regsync */
+			/* and sizing it up fixes reallocation when fit() is called */
 		}
-		a = reg->regset[i].arena;
-		free (a->bytes);
-		a->bytes = calloc (1, 1);
-		a->size = 1;
 	}
 }
