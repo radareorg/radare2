@@ -426,7 +426,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write);
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char *use_color);
 R_API int r_debug_reg_set(RDebug *dbg, const char *name, ut64 num);
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
-R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err);
+R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *value);
 
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io);
 R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore);
