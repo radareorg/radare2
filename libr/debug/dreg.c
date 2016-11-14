@@ -20,29 +20,25 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		return false;
 	if (!write && !dbg->h->reg_read)
 		return false;
-
 	
 	// Sync all the types sequentially if asked
 	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
-	
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
-	eprintf(" req  type %i i=%i regsetsize  =%08x\n", type,i,dbg->reg->regset[i].regs->length  );
-	// if dont exist the request arena can be a redirection into another
-	if (dbg->reg->regset[i].regs->length == 0) { 
-		// Enumerate all arenas to get ref
-		eprintf("no head\n");
+	// if request type is positive and the request regset dont have regs
+	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs->length == 0) {
+		// seek into the other arena for redirections.
 		for (n = R_REG_TYPE_GPR; n < R_REG_TYPE_LAST; n++) {
-			head = r_reg_get_list (dbg->reg, n);
-			if (!head) {
-				continue;
-			}
-			r_list_foreach (head, iter, item) {
-				eprintf("req= %i name = %s arena = %i type = %i\n", i,item->name, item->arena, item->type);
-				if (item->type == i) {
-					eprintf(" %i ==> %i\n", i, item->arena );
-					i = item->arena;
-					break;
-				}
+			// get regset mask
+			int mask = dbg->reg->regset[n].maskregstype;
+			// convert request arena to mask value
+			int v = ((int)1 << i);
+			// skip checks on same request arena and check if this arena have inside the request arena type
+			if (n != i && (mask & v)) {
+				//eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
+				//eprintf(" request arena %i found at arena %i\n", i, n );
+				// if this arena have the request arena type, force to use this arena.
+				i = n;
+				break;
 			}
 		}
 	}
