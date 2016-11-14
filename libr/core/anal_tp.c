@@ -7,7 +7,7 @@
 #define LOOP_MAX 10
 
 enum {
-	ROMEM=0,
+	ROMEM = 0,
 	ASM_TRACE,
 	ANAL_TRACE,
 	DBG_TRACE,
@@ -208,7 +208,7 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	bool esil_var[STATES_SIZE] = {false};
-	if (!core ) {
+	if (!core) {
 		return;
 	}
 	if (!r_anal_emul_init (core, esil_var) || !fcn ) {
@@ -222,11 +222,13 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_cons_break (NULL, NULL);
 	while (!r_cons_is_breaked ()) {
 		RAnalOp *op = r_core_anal_op (core, addr);
-		int loop_count = sdb_num_get ( core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), 0);
+		int loop_count = sdb_num_get (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), 0);
 		if (loop_count > LOOP_MAX) {
+#if 0
 			eprintf ("Unfortunately your evilly engineered %s function trapped my most innocent `aftm` in an infinite loop.\n", fcn->name);
 			eprintf ("I kept trace log for you to review and find out how bad things were going to happen by yourself.\n");
 			eprintf ("You can view this log by `ate`. Meanwhile, I will train on how to behave with such behaviour without bothering you.\n");
+#endif
 			return;
 		}
 		sdb_num_set (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), loop_count + 1, 0);
