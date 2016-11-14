@@ -465,7 +465,8 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ao->o |= (n >> 10 & 0xff) << 16;
 			thumb_swap (&ao->o);
 		} else {
-			return 0;
+			ao->o = 0x8047;
+			ao->o |= reg << 11;
 		}
 		// XXX: length = 4
 		return 4;
@@ -574,8 +575,8 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 							return -1;
 						}
 						if (num < 0x78 &&
-							(!(num & 0xb) || !(num & 0x7)) &&
-							(a0 < 8 && a1 < 8)) {
+						    (!(num & 0xb) || !(num & 0x7)) &&
+						    (a0 < 8 && a1 < 8)) {
 							ao->o = 0x68;
 							ao->o |= (num & 0xf) << 12;
 							ao->o |= a1 << 11;
