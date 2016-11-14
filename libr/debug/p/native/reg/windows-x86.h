@@ -73,6 +73,6 @@ return strdup(
 "xmm@gpr	xmm6	.128	460	0\n"
 "xmm@gpr	xmm7	.128	476	0\n"
 /* this last register is needed to fit the arena into WINDOWS CONTEXT */
-"xmm@gpr	endext	.32	712	0\n"
+//"xmm@gpr	endext	.32	712	0\n"
 /* end extended registers */
 );
