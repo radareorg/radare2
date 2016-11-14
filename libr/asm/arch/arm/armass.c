@@ -745,9 +745,34 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ao->o |= (getreg (ao->a[0])) << 8;
 			ao->o |= reg << 11;
 		} else {
-			ao->o = 0x30;
+			if (reg < 10) {
+				int num = getnum (ao->a[1]);
+				if (err) {
+					return 0;
+				}
+				if (getreg (ao->a[0]) == 13 &&
+				    (!(num & 0xb) || !(num & 0x7))) {
+					ao->o = 0x04b0;
+					ao->o |= num << 6;
+					return 2;
+				}
+				if (num > 0xff) {
+					if (num % 2) {
+						return 0;
+					}
+					ao->o = 0x00f58070;
+					ao->o |= (num >> 8) << 16;
+					ao->o |= (num & 0xff) << 7;
+				} else {
+					ao->o = 0x00f10000;
+					ao->o |= num << 8;
+				}
+				ao->o |= getreg (ao->a[0]) << 24;
+				ao->o |= getreg (ao->a[0]);
+			}
+			/*ao->o = 0x30;
 			ao->o |= (getreg (ao->a[0]));
-			ao->o |= (getnum (ao->a[1]) & 0xff) << 8;
+			ao->o |= (getnum (ao->a[1]) & 0xff) << 8;*/
 		}
 		return 2;
 	} else
