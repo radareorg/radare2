@@ -573,8 +573,18 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						if (num >= 0x1000) {
 							return -1;
 						}
+						if (num < 0x78 &&
+							(!(num & 0xb) || !(num & 0x7)) &&
+							(a0 < 8 && a1 < 8)) {
+							ao->o = 0x68;
+							ao->o |= (num & 0xf) << 12;
+							ao->o |= a1 << 11;
+							ao->o |= a0 << 8;
+							ao->o |= num >> 4;
+							return 2;
+						}
 						// ldr r0, [rN, num]
-						// Separate out hundreds
+						// Separate out high bits
 						int h = num >> 8;
 						num &= 0xff;
 						ao->o = (0xd0 | a1) << 24;
