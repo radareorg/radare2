@@ -95,15 +95,32 @@ static PE_DWord bin_pe_rva_to_paddr(RBinPEObj* bin, PE_DWord rva) {
 	return rva;
 }
 
+
+ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
+	ut64 imageBase = 0;
+	if (!bin || !bin->nt_headers) {
+		return 0LL; 
+	}	
+	imageBase = bin->nt_headers->optional_header.ImageBase;
+	if (!imageBase) {
+		//this should only happens with messed up binaries
+		//XXX this value should be user defined by bin.baddr
+		//but from here we can not access config API
+		imageBase = 0x10000;
+	}
+	return imageBase;
+}
+
 static PE_DWord bin_pe_rva_to_va(RBinPEObj* bin, PE_DWord rva) {
-	return bin->nt_headers->optional_header.ImageBase + rva;
+	return PE_(r_bin_pe_get_image_base) (bin) + rva;
 }
 
 static PE_DWord bin_pe_va_to_rva(RBinPEObj* bin, PE_DWord va) {
-	if (va < bin->nt_headers->optional_header.ImageBase) {
+	ut64 imageBase = PE_(r_bin_pe_get_image_base) (bin);
+	if (va < imageBase) {
 		return va;
 	}
-	return va - bin->nt_headers->optional_header.ImageBase;
+	return va - imageBase;
 }
 
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
@@ -460,17 +477,18 @@ static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
-		return false;
+		goto out_error;
 	}
 	if (!(bin->section_header = malloc (sections_size))) {
 		r_sys_perror ("malloc (section header)");
-		return false;
+		goto out_error;
 	}
 	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
 				bin->nt_headers->file_header.SizeOfOptionalHeader,
 				(ut8*)bin->section_header, sections_size) == -1) {
 		eprintf ("Warning: read (sections)\n");
-		return false;
+		R_FREE (bin->section_header);
+		goto out_error;
 	}
 #if 0
 Each symbol table entry includes a name, storage class, type, value and section number. Short names (8 characters or fewer) are stored directly in the symbol table; longer names are stored as an paddr into the string table at the end of the COFF object.
@@ -510,6 +528,9 @@ struct symrec {
 
 #endif
 	return true;
+out_error:
+	bin->num_sections = 0;
+	return false;
 }
 
 int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
@@ -1671,14 +1692,11 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 		eprintf ("Warning: File is not PE\n");
 		return false;
 	}
-	if (!bin_pe_init_sections(bin)) {
-		eprintf ("Warning: Cannot initialize sections\n");
-		return false;
-	}
-	bin_pe_init_imports(bin);
-	bin_pe_init_exports(bin);
-	bin_pe_init_resource(bin);
-	bin_pe_init_tls(bin);
+	bin_pe_init_sections (bin);
+	bin_pe_init_imports (bin);
+	bin_pe_init_exports (bin);
+	bin_pe_init_resource (bin);
+	bin_pe_init_tls (bin);
 
 	PE_(r_bin_store_all_resource_version_info)(bin);
 	bin->relocs = NULL;
@@ -1920,12 +1938,6 @@ int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->optional_header.FileAlignment;
 }
 
-ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
-	if (!bin || !bin->nt_headers) {
-		return 0LL; 
-	}	
-	return (ut64)bin->nt_headers->optional_header.ImageBase;
-}
 
 static void free_rsdr_hdr(SCV_RSDS_HEADER *rsds_hdr) {
 	R_FREE (rsds_hdr->file_name);
@@ -2492,7 +2504,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 	sections[i].last = 0;
 	strcpy ((char *)sections[i].name, "blob");
 	sections[i].paddr = entry->paddr;
-	sections[i].vaddr = entry->vaddr - PE_(r_bin_pe_get_image_base) (bin);
+	sections[i].vaddr = entry->vaddr - base_addr;
 	sections[i].size = sections[i].vsize = new_section_size;
 	sections[i].flags = new_perm;
 	sections[i+1].last = 1;
@@ -2558,26 +2570,27 @@ char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (bin && bin->nt_headers) {
 		switch (bin->nt_headers->optional_header.Subsystem) {
 		case PE_IMAGE_SUBSYSTEM_NATIVE:
-				subsystem = "Native"; break;
+			subsystem = "Native"; break;
 		case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
-				subsystem = "Windows GUI"; break;
+			subsystem = "Windows GUI"; break;
 		case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
-				subsystem = "Windows CUI"; break;
+			subsystem = "Windows CUI"; break;
 		case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
-				subsystem = "POSIX CUI"; break;
+			subsystem = "POSIX CUI"; break;
 		case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-				subsystem = "Windows CE GUI"; break;
+			subsystem = "Windows CE GUI"; break;
 		case PE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
-				subsystem = "EFI Application"; break;
+			subsystem = "EFI Application"; break;
 		case PE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
-				subsystem = "EFI Boot Service Driver"; break;
+			subsystem = "EFI Boot Service Driver"; break;
 		case PE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
-				subsystem = "EFI Runtime Driver"; break;
+			subsystem = "EFI Runtime Driver"; break;
 		case PE_IMAGE_SUBSYSTEM_EFI_ROM:
-				subsystem = "EFI ROM"; break;
+			subsystem = "EFI ROM"; break;
 		case PE_IMAGE_SUBSYSTEM_XBOX:
-				subsystem = "XBOX"; break;
-		default: subsystem = "Unknown";
+			subsystem = "XBOX"; break;
+		default: 
+			subsystem = "Unknown"; break;
 		}
 	}
 	return subsystem? strdup (subsystem): NULL;
