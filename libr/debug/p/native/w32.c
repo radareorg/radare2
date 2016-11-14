@@ -1045,7 +1045,7 @@ static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
 	thread = w32_open_thread (dbg->pid, dbg->tid);
 	ctx.ContextFlags = CONTEXT_ALL;
 	GetThreadContext (thread, &ctx);
-	if (type == R_REG_TYPE_DRX || type == R_REG_TYPE_GPR || type == R_REG_TYPE_SEG) {
+	if (type == R_REG_TYPE_GPR) {
 		//if (sizeof(CONTEXT) < size)
 		size = sizeof(CONTEXT);
 		memcpy (&ctx, buf, size);

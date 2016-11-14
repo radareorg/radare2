@@ -6,7 +6,10 @@
 #include <r_reg.h>
 
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
-	int i, size;
+	int i, n, size;
+	RList *head;
+	RListIter *iter;
+	RRegItem *item;
 	if (!dbg || !dbg->reg || !dbg->h)
 		return false;
 	// Theres no point in syncing a dead target
@@ -17,8 +20,32 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		return false;
 	if (!write && !dbg->h->reg_read)
 		return false;
+
+	
 	// Sync all the types sequentially if asked
 	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
+	
+	// Check to get the correct arena when using @ into reg profile (arena!=type)
+	eprintf(" req  type %i i=%i regsetsize  =%08x\n", type,i,dbg->reg->regset[i].regs->length  );
+	// if dont exist the request arena can be a redirection into another
+	if (dbg->reg->regset[i].regs->length == 0) { 
+		// Enumerate all arenas to get ref
+		eprintf("no head\n");
+		for (n = R_REG_TYPE_GPR; n < R_REG_TYPE_LAST; n++) {
+			head = r_reg_get_list (dbg->reg, n);
+			if (!head) {
+				continue;
+			}
+			r_list_foreach (head, iter, item) {
+				eprintf("req= %i name = %s arena = %i type = %i\n", i,item->name, item->arena, item->type);
+				if (item->type == i) {
+					eprintf(" %i ==> %i\n", i, item->arena );
+					i = item->arena;
+					break;
+				}
+			}
+		}
+	}
 	do {
 		if (write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);

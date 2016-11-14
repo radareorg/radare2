@@ -1922,7 +1922,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 		case '-':
 			r_reg_arena_pop (core->dbg->reg);
 			// restore debug registers if in debugger mode
-			r_debug_reg_sync (core->dbg, 0, 1);
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 			break;
 		case '+':
 			r_reg_arena_push (core->dbg->reg);
@@ -1999,7 +1999,7 @@ void cmd_anal_reg (RCore *core, const char *str) {
 				//	r_reg_get_value (core->dbg->reg, r));
 				r_reg_set_value (core->dbg->reg, r,
 						r_num_math (core->num, arg + 1));
-				r_debug_reg_sync (core->dbg, -1, true);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));
 			} else {
