@@ -1178,7 +1178,9 @@ static int esil_mod(RAnalEsil *esil) {
 	if (src && r_anal_esil_get_parm (esil, src, &s)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
-				eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
+				if (esil->verbose > 0) {
+					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
+				}
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
@@ -1633,7 +1635,9 @@ static int esil_peek_some(RAnalEsil *esil) {
 						num32 = r_read_ble32 (a, esil->anal->big_endian);
 						r_anal_esil_reg_write (esil, foo, num32);
 					} else {
-						eprintf ("Cannot peek from 0x%08" PFMT64x "\n", ptr);
+						if (esil->verbose) {
+							eprintf ("Cannot peek from 0x%08" PFMT64x "\n", ptr);
+						}
 					}
 					ptr += sizeof (ut32);
 					free (foo);
@@ -2411,10 +2415,12 @@ static const char *gotoWord(const char *str, int n) {
  * 3: normal continuation
  */
 static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
-	if ((*str)[0] && (*str)[1] == ',')
+	if ((*str)[0] && (*str)[1] == ',') {
 		return 2;
-	if (esil->repeat)
+	}
+	if (esil->repeat) {
 		return 0;
+	}
 	if (esil->parse_goto != -1) {
 		// TODO: detect infinite loop??? how??
 		*str = gotoWord (ostr, esil->parse_goto);
@@ -2422,7 +2428,9 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 			esil->parse_goto = -1;
 			return 2;
 		}
-		eprintf ("Cannot find word %d\n", esil->parse_goto);
+		if (esil->verbose) {
+			eprintf ("Cannot find word %d\n", esil->parse_goto);
+		}
 		return 1;
 	}
 	if (esil->parse_stop) {
@@ -2439,8 +2447,9 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int dorunword;
 	char word[64];
 	const char *ostr = str;
-	if (!esil || !str || !*str)
+	if (!esil || !str || !*str) {
 		return 0;
+	}
 	esil->trap = 0;
 loop:
 	esil->repeat = 0;
