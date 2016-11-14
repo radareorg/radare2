@@ -3058,6 +3058,109 @@ static void cmd_anal_jumps(RCore *core, const char *input) {
 	r_core_cmdf (core, "af @@= `ax~ref.code.jmp[1]`");
 }
 
+// TODO: cleanup to reuse code
+static void cmd_anal_aftertraps(RCore *core, const char *input) {
+	int bufi, minop = 1; // 4
+	ut8 *buf;
+	RBinFile *binfile;
+	RAnalOp op;
+	ut64 addr, addr_end;
+	ut64 len = r_num_math (core->num, input);
+	if (len > 0xffffff) {
+		eprintf ("Too big\n");
+		return;
+	}
+	binfile = r_core_bin_cur (core);
+	if (!binfile) {
+		eprintf ("cur binfile null\n");
+		return;
+	}
+	addr = core->offset;
+	if (!len) {
+		// ignore search.in to avoid problems. analysis != search
+		RIOSection *s = r_io_section_vget (core->io, addr);
+		if (s && s->rwx & 1) {
+			// search in current section
+			if (s->size > binfile->size) {
+				addr = s->vaddr;
+				if (binfile->size > s->offset) {
+					len = binfile->size - s->offset;
+				} else {
+					eprintf ("Opps something went wrong aac\n");
+					return;
+				}
+			} else {
+				addr = s->vaddr;
+				len = s->size;
+			}
+		} else {
+			// search in full file
+			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
+			if (o != UT64_MAX && binfile->size > o) {
+				len = binfile->size - o;
+			} else {
+				if (binfile->size > core->offset) {
+					if (binfile->size > core->offset) {
+						len = binfile->size - core->offset;
+					} else {
+						eprintf ("Opps something went wrong aac\n");
+						return;
+					}
+				} else {
+					eprintf ("Oops invalid range\n");
+					len = 0;
+				}
+			}
+		}
+	}
+	addr_end = addr + len;
+	r_cons_break (NULL, NULL);
+	if (!(buf = malloc (4096))) {
+		return;
+	}
+	bufi = 0;
+	int trapcount = 0;
+	int nopcount = 0;
+	while (addr < addr_end) {
+		if (core->cons->breaked) {
+			break;
+		}
+		// TODO: too many ioreads here
+		if (bufi > 4000) {
+			bufi = 0;
+		}
+		if (!bufi) {
+			r_io_read_at (core->io, addr, buf, 4096);
+		}
+		if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi)) {
+			if (op.size < 1) {
+				// XXX must be +4 on arm/mips/.. like we do in disasm.c
+				op.size = minop;
+			}
+			if (op.type == R_ANAL_OP_TYPE_TRAP) {
+				trapcount ++;
+			} else if (op.type == R_ANAL_OP_TYPE_NOP) {
+				nopcount ++;
+			} else {
+				if (nopcount > 1) {
+					r_cons_printf ("af @ 0x%08"PFMT64x"\n", addr);
+					nopcount = 0;
+				}
+				if (trapcount > 0) {
+					r_cons_printf ("af @ 0x%08"PFMT64x"\n", addr);
+					trapcount = 0;
+				}
+			}
+		} else {
+			op.size = minop;
+		}
+		addr += (op.size > 0)? op.size: 1;
+		bufi += (op.size > 0)? op.size: 1;
+		r_anal_op_fini (&op);
+	}
+	free (buf);
+}
+
 static void cmd_anal_calls(RCore *core, const char *input) {
 	int bufi, minop = 1; // 4
 	ut8 *buf;
@@ -4506,6 +4609,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 		"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 		"aat", " [len]", "analyze all consecutive functions in section",
+		"aaT", " [len]", "analyze code after trap-sleds",
 		"aap", "", "find and analyze function preludes",
 		"aav", " [sat]", "find values referencing a specific section or map",
 		"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
@@ -4640,6 +4744,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_seek (core, cur, 1);
 		break;
 	}
+	case 'T': // "aaT"
+		cmd_anal_aftertraps (core, input + 1);
+		break;
 	case 'e': // "aae"
 		if (input[1]) {
 			const char *len = (char *) input + 1;

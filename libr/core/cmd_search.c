@@ -266,8 +266,8 @@ R_API int r_core_search_preludes(RCore *core) {
 	const char *prelude = r_config_get (core->config, "anal.prelude");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	int bits = r_config_get_i (core->config, "asm.bits");
-	ut64 from = -1;//core->offset;
-	ut64 to = -1; //core->offset+0xffffff; // hacky!
+	ut64 from = -1; // core->offset;
+	ut64 to = -1; // core->offset + 0xffffff; // hacky!
 	int fc0, fc1;
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	const char *where = cfg_debug? "dbg.map": "io.sections.exec";
@@ -286,7 +286,7 @@ R_API int r_core_search_preludes(RCore *core) {
 		from = p->from;
 		to = p->to;
 		if (prelude && *prelude) {
-			ut8 *kw = malloc (strlen (prelude)+1);
+			ut8 *kw = malloc (strlen (prelude) + 1);
 			int kwlen = r_hex_str2bin (prelude, kw);
 			ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 			free (kw);
