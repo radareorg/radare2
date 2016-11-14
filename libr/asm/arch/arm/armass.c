@@ -496,7 +496,8 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		int reg = getreg (ao->a[1]);
 		if (reg != -1) {
 			ao->o = 0x46;
-			ao->o |= (getreg (ao->a[0])) << 8;
+			ao->o |= (getreg (ao->a[0]) & 0x8) << 12;
+			ao->o |= (getreg (ao->a[0]) & 0x7) << 8;
 			ao->o |= reg << 11;
 		} else {
 			ao->o = 0x20;
@@ -929,10 +930,10 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				int a1 = getreg (ao->a[1]);
 				if (a1) {
 					ao->o = 0xe1;
-					ao->o |= (getreg(ao->a[0]) << 4) << 16;
+					ao->o |= (getreg (ao->a[0]) << 4) << 16;
 					ao->o |= (0x90 + a1) << 24;
 					if (ao->a[2]) {
-						ao->o |= (getreg(ao->a[2] + 1)) << 8;
+						ao->o |= (getreg (ao->a[2] + 1)) << 8;
 					} else {
 						return 0;
 					}
