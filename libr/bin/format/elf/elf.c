@@ -1502,6 +1502,9 @@ ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
 		if (entry != UT64_MAX) {
 			return entry;
 		}
+		if (entry == UT64_MAX) {
+			return 0;
+		}
 	}
 	return Elf_(r_bin_elf_v2p) (bin, entry);
 }
@@ -2772,33 +2775,35 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			R_FREE (sym);
 		}
 	}
-	if (ret) {
-		int max = -1;
-		RBinElfSymbol *aux = NULL;
-		nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
-		if (nsym == -1) {
-			goto beach;
-		}
-		aux = ret;
-		while (!aux->last) {
-			if ((int)aux->ordinal > max) {
-				max = aux->ordinal;
-			}
-			aux++;
-		}
-		nsym = max;
-		if (type == R_BIN_ELF_IMPORTS) {
-			R_FREE (bin->imports_by_ord);
-			bin->imports_by_ord_size = nsym + 1;
-			bin->imports_by_ord = (RBinImport**)calloc (nsym + 1, sizeof (RBinImport*));
-		} else if (type == R_BIN_ELF_SYMBOLS) {
-			R_FREE (bin->symbols_by_ord);
-			bin->symbols_by_ord_size = nsym + 1;
-			bin->symbols_by_ord = (RBinSymbol**)calloc (nsym + 1, sizeof (RBinSymbol*));
-		}
-		return ret;
+	if (!ret) {
+		return (type == R_BIN_ELF_SYMBOLS)
+				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
+				: Elf_(r_bin_elf_get_phdr_imports) (bin);
 	}
-	return NULL;
+	int max = -1;
+	RBinElfSymbol *aux = NULL;
+	nsym = Elf_(fix_symbols) (bin, ret_ctr, type, &ret);
+	if (nsym == -1) {
+		goto beach;
+	}
+	aux = ret;
+	while (!aux->last) {
+		if ((int)aux->ordinal > max) {
+			max = aux->ordinal;
+		}
+		aux++;
+	}
+	nsym = max;
+	if (type == R_BIN_ELF_IMPORTS) {
+		R_FREE (bin->imports_by_ord);
+		bin->imports_by_ord_size = nsym + 1;
+		bin->imports_by_ord = (RBinImport**)calloc (nsym + 1, sizeof (RBinImport*));
+	} else if (type == R_BIN_ELF_SYMBOLS) {
+		R_FREE (bin->symbols_by_ord);
+		bin->symbols_by_ord_size = nsym + 1;
+		bin->symbols_by_ord = (RBinSymbol**)calloc (nsym + 1, sizeof (RBinSymbol*));
+	}
+	return ret;
 beach:
 	free (ret);
 	free (sym);
