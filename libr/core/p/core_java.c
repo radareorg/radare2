@@ -1864,7 +1864,6 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 			if (operation) {
 				cp_ref_idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
 				full_bird = r_cmd_java_get_descriptor (core, bin, cp_ref_idx);
-eprintf ("FUCK\n");
 				if (!full_bird) {
 					eprintf ("Error identifying reference @ 0x%"PFMT64x"\n", bb->addr);
 					full_bird = strdup ("ANALYSIS_ERROR");

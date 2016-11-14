@@ -93,7 +93,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	if (!strcmp ("w32dbg", d->plugin->name)) {
 		RIOW32Dbg *g = d->data;
 		r->io->desc->fd = g->pid;
-		r_debug_attach (r->dbg,g->pid);
+		r_debug_attach (r->dbg, g->pid);
 	}
 	return r->io->winbase;
 #else
@@ -569,6 +569,8 @@ int main(int argc, char **argv, char **envp) {
 			} else {
 				eprintf ("Cannot read dbg.profile\n");
 			}
+		} else {
+			pfile = strdup (argv[optind]);
 		}
 	}
 	if (do_list_io_plugins) {
@@ -725,10 +727,10 @@ int main(int argc, char **argv, char **envp) {
 */
 				}
 			} else {
-				const char *f = haveRarunProfile? pfile: argv[optind];
+				const char *f = (haveRarunProfile && pfile)? pfile: argv[optind];
 				is_gdb = (!memcmp (f, "gdb://", 6));
 				if (!is_gdb) {
-					file = strdup ("dbg://");
+					pfile = strdup ("dbg://");
 				}
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
@@ -745,7 +747,8 @@ int main(int argc, char **argv, char **envp) {
 							path = r_file_path (f);
 					}
 					escaped_path = r_str_arg_escape (path);
-					file = r_str_concat (file, escaped_path);
+					pfile = r_str_concat (pfile, escaped_path);
+					file = pfile; // probably leaks
 					free (escaped_path);
 					free (path);
 				}
@@ -756,7 +759,6 @@ int main(int argc, char **argv, char **envp) {
 					free (escaped_path);
 				}
 #endif
-
 				optind++;
 				while (optind < argc) {
 					char *escaped_arg = r_str_arg_escape (argv[optind]);
@@ -768,7 +770,7 @@ int main(int argc, char **argv, char **envp) {
 				{
 					char *diskfile = strstr (file, "://");
 					diskfile = diskfile? diskfile + 3: file;
-					fh = r_core_file_open (&r, file, perms, mapaddr);
+					fh = r_core_file_open (&r, diskfile, perms, mapaddr);
 					if (fh != NULL) {
 						r_debug_use (r.dbg, is_gdb ? "gdb" : debugbackend);
 					}
