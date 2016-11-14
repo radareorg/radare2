@@ -2556,3 +2556,45 @@ perror=func
 func.perror.args=1
 func.perror.arg.0=const char *,s
 func.perror.ret=void
+
+signal=func
+func.signal.args=2
+func.signal.arg.0=int,sig
+func.signal.arg.1=void *,func
+func.signal.ret=void
+
+write=func
+func.write.args=3
+func.write.arg.0=int,fd
+func.write.arg.1=void,*ptr
+func.write.arg.2=size_t,nbytes
+func.write.ret=ssize_t
+
+getpid=func
+func.write.args=0
+func.write.ret=int
+
+bzero=func
+func.bzero.args=2
+func.bzero.arg.0=void *,s
+func.bzero.arg.1=size_t,n
+func.bzero.ret=void
+
+maskrune=func
+func.maskrune.args=2
+func.maskrune.arg.0=uint32_t,c
+func.maskrune.arg.1=unsigned long,f
+func.maskrune.ret=int
+
+strmode=func
+func.strmode.args=2
+func.strmode.arg.0=int,mode
+func.strmode.arg.1=char *,bp
+func.strmode.ret=void
+
+tgoto=func
+func.tgoto.args=3
+func.tgoto.arg.0=const char *,cap
+func.tgoto.arg.1=int,col
+func.tgoto.arg.2=int,row
+func.tgoto.ret=char *
