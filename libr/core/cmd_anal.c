@@ -1853,7 +1853,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			core->anal->reg, R_REG_TYPE_GPR, &sz);
 		r_cons_printf ("%d\n", sz);
 		free (buf);
-	} break;
+		} break;
 	case 'b': { // WORK IN PROGRESS // DEBUG COMMAND
 		int len, type = R_REG_TYPE_GPR;
 		arg = strchr (str, ' ');
@@ -1871,7 +1871,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
 		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
 		free (buf);
-	} break;
+		} break;
 	case 'c':
 		// TODO: set flag values with drc zf=1
 		{
