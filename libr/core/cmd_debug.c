@@ -16,13 +16,6 @@ struct dot_trace_ght {
 	Sdb *graphnodes;
 };
 
-/*
-struct RCoreCommand {
-	const char *name;
-	const char *help[];
-};
-*/
-
 struct trace_node {
 	ut64 addr;
 	int refs;
@@ -82,7 +75,7 @@ static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
 			}
 		}
 		eprintf ("Running child until syscalls:");
-		for (i=0; i < count; i++) {
+		for (i = 0; i < count; i++) {
 			eprintf ("%d ", syscalls[i]);
 		}
 		eprintf ("\n");
@@ -298,7 +291,7 @@ static int step_until_flag(RCore *core, const char *instr) {
 	ut64 pc;
 
 	instr = r_str_chop_ro (instr);
-	if (!core || !instr|| !core->dbg) {
+	if (!core || !instr || !core->dbg) {
 		eprintf ("Wrong state\n");
 		return false;
 	}
@@ -1166,8 +1159,32 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 	}
 }
 
+static void show_rreg(RCore *core) {
+	int i;
+	RListIter *iter;
+	RRegItem *ri;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		const char *nmi = r_reg_get_type (i);
+		r_cons_printf ("regset %d (%s)\n", i, nmi);
+		RRegSet *rs = &core->anal->reg->regset[i];
+		r_cons_printf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
+		r_list_foreach (rs->regs, iter, ri) {
+			const char *tpe = r_reg_get_type (ri->type);
+			const char *arn = r_reg_get_type (ri->arena);
+			r_cons_printf ("   %s %s @ %s (offset: %d  size: %d)", ri->name, tpe, arn, ri->offset, ri->size);
+			if (ri->offset + ri->size >= rs->arena->size) {
+				r_cons_printf ("OVERFLOW\n");
+			}
+			r_cons_newline ();
+		}
+	}
+}
+
 static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" and "drp"
 	switch (str[1]) {
+	case 'i':
+		show_rreg (core);
+		break;
 	case 0:
 		if (core->dbg->reg->reg_profile_str) {
 			//core->anal->reg = core->dbg->reg;
@@ -1258,6 +1275,7 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 				"Usage:", "drp", " # Register profile commands",
 				"drp", "", "Show the current register profile",
 				"drp", " [regprofile-file]", "Set the current register profile",
+				"drpi", "", "Show internal representation of the register profile",
 				"drp.", "", "Show the current fake size",
 				"drpj", "", "Show the current register profile (JSON)",
 				"drps", " [new fake size]", "Set the fake size",
@@ -1336,6 +1354,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"dro", "", "Show previous (old) values of registers",
 				"drp", " <file>", "Load register metadata file",
 				"drp", "", "Display current register profile",
+				"drpi", "", "Display current internal representation of the register profile",
 				"drps", "", "Fake register profile size",
 				"drr", "", "Show registers references (telescoping)",
 				"drs", " [?]", "Stack register states",
@@ -1630,7 +1649,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'p': // "drp"
-		cmd_reg_profile (core, 'd', str);
+		if (str[1] == 'i') {
+			cmd_reg_profile (core, 'i', str);
+		} else {
+			cmd_reg_profile (core, 'd', str);
+		}
 		break;
 	case 't': // "drt"
 		switch (str[1]) {

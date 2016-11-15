@@ -7,9 +7,6 @@
 
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	int i, n, size;
-	RList *head;
-	RListIter *iter;
-	RRegItem *item;
 	if (!dbg || !dbg->reg || !dbg->h) {
 		return false;
 	}
@@ -243,7 +240,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				if (delta) {
 					char woot[512];
 					snprintf (woot, sizeof (woot),
-						" was 0x%s delta %d\n", diff, delta);
+						" was 0x%"PFMT64x" delta %d\n", diff, delta);
 					dbg->cb_printf (fmt, item->name, strvalue, woot);
 				}
 				break;

@@ -65,7 +65,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	case 1:
 		{
 		int offset = item->offset / 8;
-		if (offset > regset->arena->size) {
+		if (offset + item->size >= regset->arena->size) {
 			break;
 		}
 		ret = (regset->arena->bytes[offset] &
@@ -128,25 +128,28 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		r_reg_set_longdouble (reg, item, (long double)value);
 		break;
 	case 64:
-		if (reg->big_endian)
-			r_write_be64(src, value);
-		else
-			r_write_le64(src, value);
+		if (reg->big_endian) {
+			r_write_be64 (src, value);
+		} else {
+			r_write_le64 (src, value);
+		}
 		break;
 	case 32:
-		if (reg->big_endian)
-			r_write_be32(src, value);
-		else
-			r_write_le32(src, value);
+		if (reg->big_endian) {
+			r_write_be32 (src, value);
+		} else {
+			r_write_le32 (src, value);
+		}
 		break;
 	case 16:
-		if (reg->big_endian)
-			r_write_be16(src, value);
-		else
-			r_write_le16(src, value);
+		if (reg->big_endian) {
+			r_write_be16 (src, value);
+		} else {
+			r_write_le16 (src, value);
+		}
 		break;
 	case 8:
-		r_write_ble8(src, (ut8)(value & UT8_MAX));
+		r_write_ble8 (src, (ut8)(value & UT8_MAX));
 		break;
 	case 1:
 		if (value) {
@@ -155,7 +158,13 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			ut8 mask = (1 << bit);
 			buf[0] = (buf[0] & (0xff ^ mask)) | mask;
 		} else {
-			ut8 *buf = reg->regset[item->arena].arena->bytes + (item->offset / 8);
+			int idx = item->offset / 8;
+			RRegArena *arena = reg->regset[item->arena].arena;
+			if (idx + item->size >= arena->size) {
+				eprintf ("RRegSetOverflow %d vs %d\n", idx + item->size, arena->size);
+				return false;
+			}
+			ut8 *buf = arena->bytes + idx;
 			int bit = item->offset % 8;
 			ut8 mask = 0xff ^ (1 << bit);
 			buf[0] = (buf[0] & mask) | 0;

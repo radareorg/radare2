@@ -104,7 +104,7 @@ typedef struct r_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
 	char *reg_profile_str;
-	char *name[R_REG_NAME_LAST];
+	char *name[R_REG_NAME_LAST]; // XXX
 	RRegSet regset[R_REG_TYPE_LAST];
 	RList *allregs;
 	int iters;
