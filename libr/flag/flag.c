@@ -387,6 +387,20 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
 	return p;
 }
 
+R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size) {
+	if (!r_flag_get (f, name)) {
+		return r_flag_set (f, name, off, size);
+	}
+	int i;
+	for (i = 0; ; i++) {
+		const char *newName = sdb_fmt (0, "%s.%d", name, i);
+		if (!r_flag_get (f, newName)) {
+			return r_flag_set (f, newName, off, size);
+		}
+	}
+	return NULL;
+}
+
 /* create or modify an existing flag item with the given name and parameters.
  * The realname of the item will be the same as the name.
  * NULL is returned in case of any errors during the process. */

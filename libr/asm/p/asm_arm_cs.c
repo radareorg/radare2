@@ -147,11 +147,11 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.assemble = &assemble,
 	.features = "no-mclass,v8"
 #if 0
-		// arm32 and arm64
-		"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
-		"thumb2dsp,trustzone,v4t,v5t,v5te,v6,v6t2,v7,v8,vfp2,vfp3,vfp4,"
-		"arm,mclass,notmclass,thumb,thumb1only,thumb2,prev8,fpvmlx,"
-		"mulops,crc,dpvfp,v6m"
+	// arm32 and arm64
+	"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
+	"thumb2dsp,trustzone,v4t,v5t,v5te,v6,v6t2,v7,v8,vfp2,vfp3,vfp4,"
+	"arm,mclass,notmclass,thumb,thumb1only,thumb2,prev8,fpvmlx,"
+	"mulops,crc,dpvfp,v6m"
 #endif
 };
 
