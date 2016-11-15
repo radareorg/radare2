@@ -1593,7 +1593,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		break;
 	case X86_INS_CLI:
 	case X86_INS_STI:
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 		break;
 	case X86_INS_CLC:
