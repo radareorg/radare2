@@ -1757,7 +1757,7 @@ static void cmd_arw_help (RCore *core) {
 }
 
 // XXX dup from drp :OOO
-void cmd_anal_reg (RCore *core, const char *str) {
+void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");

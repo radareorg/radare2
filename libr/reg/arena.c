@@ -160,8 +160,9 @@ R_API int r_reg_fit_arena(RReg *reg) {
 R_API RRegArena *r_reg_arena_new(int size) {
 	RRegArena *arena = R_NEW0 (RRegArena);
 	if (arena) {
-		if (size < 1)
+		if (size < 1) {
 			size = 1;
+		}
 		if (!(arena->bytes = malloc (size + 8))) {
 			free (arena);
 			arena = NULL;

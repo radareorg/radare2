@@ -10,17 +10,20 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	RList *head;
 	RListIter *iter;
 	RRegItem *item;
-	if (!dbg || !dbg->reg || !dbg->h)
+	if (!dbg || !dbg->reg || !dbg->h) {
 		return false;
+	}
 	// Theres no point in syncing a dead target
-	if (r_debug_is_dead (dbg))
+	if (r_debug_is_dead (dbg)) {
 		return false;
+	}
 	// Check if the functions needed are available
-	if (write && !dbg->h->reg_write)
+	if (write && !dbg->h->reg_write) {
 		return false;
-	if (!write && !dbg->h->reg_read)
+	}
+	if (!write && !dbg->h->reg_read) {
 		return false;
-	
+	}
 	// Sync all the types sequentially if asked
 	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
@@ -46,9 +49,10 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		if (write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
-				if (i == 0)
+				if (!i) {
 					eprintf ("r_debug_reg: error writing "
 						"registers %d to %d\n", i, dbg->tid);
+				}
 				return false;
 			}
 		} else {
@@ -92,11 +96,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (!dbg || !dbg->reg) {
 		return false;
 	}
-
 	if (dbg->corebind.core) {
 		pr = ((RCore*)dbg->corebind.core)->print;
 	}
-
 	if (!(dbg->reg->bits & size)) {
 		// TODO: verify if 32bit exists, otherwise use 64 or 8?
 		size = 32;
@@ -166,7 +168,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				snprintf (strvalue, sizeof (strvalue),"%08"PFMT64x"", value);
 			} else {
 				value = r_reg_get_value_big (dbg->reg, item, &valueBig);
-		                switch (regSize) {
+				switch (regSize) {
 				case 80:
 					snprintf (strvalue, sizeof (strvalue), "%04x%016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
 					break;

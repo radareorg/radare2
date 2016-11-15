@@ -7,8 +7,9 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	RRegSet *regset;
 	int off;
 	ut64 ret = 0LL;
-	if (!reg || !item)
+	if (!reg || !item) {
 		return 0LL;
+	}
 	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->arena];
 	switch (item->size) {
@@ -16,21 +17,27 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 		if (regset->arena->bytes && (off + 10 <= regset->arena->size)) {
 			val->v80.Low = *((ut64 *)(regset->arena->bytes+off));
 			val->v80.High =*((ut16 *)(regset->arena->bytes+off+8));
-		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		} else {
+			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		}
 		ret = val->v80.Low;
 		break;
 	case 96: // dword + qword
 		if (regset->arena->bytes && (off + 12 <= regset->arena->size)) {
 			val->v96.Low = *((ut64 *)(regset->arena->bytes+off));
 			val->v96.High =*((ut32 *)(regset->arena->bytes+off+8));
-		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		} else {
+			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		}
 		ret = val->v96.Low;
 		break;
 	case 128:// qword + qword
 		if (regset->arena->bytes && (off + 16 <= regset->arena->size)) {
 			val->v128.Low = *((ut64 *)(regset->arena->bytes+off));
 			val->v128.High =*((ut64 *)(regset->arena->bytes+off+8));
-		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		} else {
+			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		}
 		ret = val->v128.Low;
 		break;
 	//case 256:// qword + qword + qword + qword
@@ -45,8 +52,9 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	RRegSet *regset;
 	int off;
 	ut64 ret = 0LL;
-	if (!reg || !item)
+	if (!reg || !item) {
 		return 0LL;
+	}
 	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->arena];
 #if 0
@@ -55,10 +63,14 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 #endif
 	switch (item->size) {
 	case 1:
-		ret = (regset->arena->bytes[item->offset / 8] &
-		(1 << (item->offset % 8))) ?
-			1 :
-			0;
+		{
+		int offset = item->offset / 8;
+		if (offset > regset->arena->size) {
+			break;
+		}
+		ret = (regset->arena->bytes[offset] &
+		       (1 << (item->offset % 8))) ? 1 : 0;
+		}
 		break;
 	case 4:
 		if (regset->arena->size - off - 1 >= 0) {
@@ -78,12 +90,16 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	case 32:
 		if (off + 4 <= regset->arena->size) {
 			ret = r_read_ble32 (regset->arena->bytes + off, reg->big_endian);
-		} else eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
+		} else {
+			eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
+		}
 		break;
 	case 64:
 		if (regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			ret = r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
-		} else eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		} else {
+			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		}
 		break;
 	case 80: // long double
 	case 96: // long floating value
