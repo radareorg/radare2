@@ -375,18 +375,30 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 	if (!s || !file)
 		return;
 	p = r_str_rchr (file, NULL, '/');
-	if (p) p++; else p = file;
+	if (p) {
+		p++;
+	} else {
+		p = file;
+	}
 	// includedirs and properly check full paths
 	switch (mode) {
 	case 1:
 	case 'r':
 	case '*':
-		if (!f) f = stdout;
+		if (!f) {
+			f = stdout;
+		}
 		fprintf (f, "CL %s:%d 0x%08"PFMT64x"\n", p, (int)line, addr);
 		break;
 	}
-	if (r_file_exists (file))
+#if 0
+	/* THIS IS TOO SLOW */
+	if (r_file_exists (file)) {
 		p = file;
+	}
+#else
+	p = file;
+#endif
 	snprintf (fileline, sizeof (fileline) - 1, "%s|%"PFMT64d, p, line);
 	offset_ptr = sdb_itoa (addr, offset, 16);
 
@@ -507,14 +519,14 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(
 	regs->address += advance_adr;
 	regs->line += hdr->line_base + (adj_opcode % hdr->line_range);
 	if (f) {
-		fprintf(f, "Special opcode %d: ", adj_opcode);
-		fprintf(f, "advance Address by %"PFMT64d" to %"PFMT64x" and Line by %d to %"PFMT64d"\n",
+		fprintf (f, "Special opcode %d: ", adj_opcode);
+		fprintf (f, "advance Address by %"PFMT64d" to %"PFMT64x" and Line by %d to %"PFMT64d"\n",
 			advance_adr, regs->address, hdr->line_base +
 			(adj_opcode % hdr->line_range), regs->line);
 	}
 	if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 		int idx = regs->file -1;
-		if (idx>=0 && idx < hdr->file_names_count) {
+		if (idx >= 0 && idx < hdr->file_names_count) {
 			add_sdb_addrline (binfile->sdb_addrinfo, regs->address,
 					hdr->file_names[idx].name,
 					regs->line, f, mode);
@@ -680,8 +692,7 @@ static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 	return buf;
 }
 
-static void r_bin_dwarf_set_regs_default (const RBinDwarfLNPHeader *hdr,
-		RBinDwarfSMRegisters *regs) {
+static void r_bin_dwarf_set_regs_default (const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs) {
 	regs->address = 0;
 	regs->file = 1;
 	regs->line = 1;
@@ -726,7 +737,6 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		buf = buf_tmp + tmplen;
 		len = (int)(buf_end - buf);
 	}
-
 	return true;
 }
 
@@ -816,31 +826,32 @@ static int r_bin_dwarf_init_die(RBinDwarfDIE *die) {
 
 static int r_bin_dwarf_expand_die(RBinDwarfDIE* die) {
 	RBinDwarfAttrValue *tmp = NULL;
-	if (!die || die->capacity == 0) return -EINVAL;
-
-	if (die->capacity != die->length) return -EINVAL;
-
+	if (!die || die->capacity == 0) {
+		return -EINVAL;
+	}
+	if (die->capacity != die->length) {
+		return -EINVAL;
+	}
 	tmp = (RBinDwarfAttrValue*)realloc(die->attr_values,
 			die->capacity * 2 * sizeof(RBinDwarfAttrValue));
-
-	if (!tmp)
+	if (!tmp) {
 		return -ENOMEM;
-
+	}
 	die->attr_values = tmp;
 	die->capacity *= 2;
 	return 0;
 }
 
 static int r_bin_dwarf_init_comp_unit(RBinDwarfCompUnit *cu) {
-
-	if (!cu) return -EINVAL;
-	cu->dies = calloc(sizeof(RBinDwarfDIE), COMP_UNIT_CAPACITY);
-
-	if (!cu->dies) return -ENOMEM;
-
+	if (!cu) {
+		return -EINVAL;
+	}
+	cu->dies = calloc (sizeof (RBinDwarfDIE), COMP_UNIT_CAPACITY);
+	if (!cu->dies) {
+		return -ENOMEM;
+	}
 	cu->capacity = COMP_UNIT_CAPACITY;
 	cu->length = 0;
-
 	return 0;
 }
 
@@ -1558,15 +1569,15 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 
 	if (binfile && section) {
 		len = section->size;
-		if (len<1 || len > ST32_MAX) return NULL;
+		if (len < 1 || len > ST32_MAX) {
+			return NULL;
+		}
 		buf = calloc (1, len);
 		ret = r_buf_read_at (binfile->buf, section->paddr, buf, len);
-
 		if (!ret) {
 			free (buf);
 			return NULL;
 		}
-
 		if (mode == R_CORE_BIN_PRINT) {
 			r_bin_dwarf_parse_aranges_raw (buf, len, stdout);
 		} else {
