@@ -3217,6 +3217,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	r_cons_break (cccb, core);
 
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	int in = r_syscall_get_swi (core->anal->syscall);
 	const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 	for (i = 0; i < iend; i++) {
 		if (esil_anal_stop || r_cons_is_breaked ()) {
@@ -3246,18 +3247,20 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_SWI:
-			{
+			if (in == -1 || op.val == in) {
 				r_flag_space_set (core->flags, "syscalls");
 				int snv = (int)r_reg_getv (core->anal->reg, sn);
-				RSyscallItem *si = r_syscall_get(core->anal->syscall, snv, -1);
-				if (si) {
-					//eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
-					r_flag_set_next (core->flags, sdb_fmt (0, "syscall.%s", si->name), cur, 1);
-				} else {
-					//eprintf ("0x%08"PFMT64x" SYSCALL %4d\n", cur, snv);
-					r_flag_set_next (core->flags, sdb_fmt (0, "syscall.%d", snv), cur, 1);
+				if (snv > 0) {
+					RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, in);
+					if (si) {
+					//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
+						r_flag_set_next (core->flags, sdb_fmt (0, "syscall.%s", si->name), cur, 1);
+					} else {
+					//	eprintf ("0x%08"PFMT64x" SYSCALL %d\n", cur, snv);
+						r_flag_set_next (core->flags, sdb_fmt (0, "syscall.%d", snv), cur, 1);
+					}
+					r_flag_space_set (core->flags, NULL);
 				}
-				r_flag_space_set (core->flags, NULL);
 			}
 			break;
 		}

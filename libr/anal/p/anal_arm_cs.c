@@ -922,6 +922,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	switch (insn->id) {
 	case ARM64_INS_SVC:
 		op->type = R_ANAL_OP_TYPE_SWI;
+		op->val = IMM64(0);
 		break;
 	case ARM64_INS_ADRP:
 	case ARM64_INS_ADR:

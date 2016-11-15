@@ -1943,6 +1943,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		break;
 	case X86_INS_INT1:
 		op->type = R_ANAL_OP_TYPE_SWI; // TRAP
+		op->val = 1;
 		break;
 	case X86_INS_INT:
 		op->type = R_ANAL_OP_TYPE_SWI;

@@ -154,11 +154,15 @@ R_API void r_syscall_item_free(RSyscallItem *si) {
 	free (si);
 }
 
-static int getswi(Sdb *p, int swi) {
-	if (p && swi == -1) {
-		swi = (int)sdb_array_get_num (p, "_", 0, NULL);
+static int getswi(RSyscall *s, int swi) {
+	if (s && swi == -1) {
+		return r_syscall_get_swi (s);
 	}
 	return swi;
+}
+
+R_API int r_syscall_get_swi(RSyscall *s) {
+	return (int)sdb_array_get_num (s->db, "_", 0, NULL);
 }
 
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
@@ -168,7 +172,7 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 		eprintf ("Syscall database not loaded\n");
 		return NULL;
 	}
-	swi = getswi (s->db, swi);
+	swi = getswi (s, swi);
 	if (swi < 16) {
 		key = sdb_fmt (0, "%d.%d", swi, num);
 	} else {
@@ -198,7 +202,7 @@ R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
 	if (!s || !s->db) {
 		return NULL;
 	}
-	swi = getswi (s->db, swi);
+	swi = getswi (s, swi);
 	snprintf (foo, sizeof (foo), "0x%x.%d", swi, num);
 	return sdb_const_get (s->db, foo, 0);
 }
