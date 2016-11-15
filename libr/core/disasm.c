@@ -3235,7 +3235,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	}
 	ds_align_comment (ds);
 	const char *fcn_type = r_anal_type_func_ret (anal, name);
-	if (fcn_type) {
+	if (fcn_type && *fcn_type) {
 		r_cons_printf (
 			"; %s%s%s(", fcn_type,
 			fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
@@ -3247,10 +3247,12 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	} else {
 		for (i = 0; i < arg_max; i++) {
 			char *type = r_anal_type_func_args_type (anal, name, i);
-			r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
-				type[strlen (type) -1] == '*' ? "": " ",
-				r_anal_type_func_args_name (anal, name, i),
-				i == arg_max - 1 ? ");": ",");
+			if (type && *type) {
+				r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
+				  type[strlen (type) -1] == '*' ? "": " ",
+							  r_anal_type_func_args_name (anal, name, i),
+							  i == arg_max - 1 ? ");": ",");
+			}
 			free (type);
 		}
 	}
