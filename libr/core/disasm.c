@@ -3235,7 +3235,12 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	}
 	ds_align_comment (ds);
 	const char *fcn_type = r_anal_type_func_ret (anal, name);
-	r_cons_printf ("; %s%s%s(", fcn_type, fcn_type[strlen (fcn_type) - 1] == '*' ? "": " ", name);
+	if (fcn_type) {
+		r_cons_printf (
+			"; %s%s%s(", fcn_type,
+			fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
+			name);
+	}
 	int i, arg_max = r_anal_type_func_args_count (anal, name);
 	if (!arg_max) {
 		r_cons_printf ("void);");
