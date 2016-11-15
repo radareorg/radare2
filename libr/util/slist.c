@@ -74,10 +74,12 @@ R_API RSList *r_slist_add(RSList *s, void *data, ut64 from, ut64 to) {
 R_API RSListItem **r_slist_get(RSList *s, ut64 addr) {
 	int idx;
 	ut64 base;
-	if (s->min == 0 && s->min == s->max)
+	if (s->min == 0 && s->min == s->max) {
 		return NULL;
-	if (addr < s->min || addr > s->max)
+	}
+	if (addr < s->min || addr > s->max) {
 		return NULL;
+	}
 	base = addr - s->min;
 	idx = base / s->mod;
 	return s->items[idx];

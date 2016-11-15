@@ -741,14 +741,73 @@ static int bin_dwarf(RCore *core, int mode) {
 			free (da);
 		}
 	}
-	if (!list) return false;
 	r_cons_break (NULL, NULL);
+	if (!list) {
+		return false;
+	}
+
+
+	/* cache file:line contents */
+	const char *lastFile = NULL;
+	int *lastFileLines = NULL;
+	char *lastFileContents = NULL;
+	int lastFileLinesCount = 0;
+
+	/* ugly dupe for speedup */
+	const char *lastFile2 = NULL;
+	int *lastFileLines2 = NULL;
+	char *lastFileContents2 = NULL;
+	int lastFileLinesCount2 = 0;
+
+	/* we should need to store all this in sdb, or do a filecontentscache in libr/util */
+
         r_list_foreach (list, iter, row) {
-		if (r_cons_singleton()->breaked) break;
+		if (r_cons_singleton()->breaked) {
+			break;
+		}
 		if (mode) {
 			// TODO: use 'Cl' instead of CC
 			const char *path = row->file;
-			char *line = r_file_slurp_line (path, row->line-1, 0);
+			if (!lastFile || strcmp (path, lastFile)) {
+				if (lastFile && lastFile2 && !strcmp (path, lastFile2)) {
+					const char *lf = lastFile;
+					int *lfl = lastFileLines;
+					char *lfc = lastFileContents;
+					int lflc = lastFileLinesCount;
+					lastFile = lastFile2;
+					lastFileLines = lastFileLines2;
+					lastFileContents = lastFileContents2;
+					lastFileLinesCount = lastFileLinesCount2;
+					lastFile2 = lf;
+					lastFileLines2 = lfl;
+					lastFileContents2 = lfc;
+					lastFileLinesCount2 = lflc;
+				} else {
+					lastFile2 = lastFile;
+					lastFileLines2 = lastFileLines;
+					lastFileContents2 = lastFileContents;
+					lastFileLinesCount2 = lastFileLinesCount;
+
+					lastFile = path;
+					free (lastFileLines);
+					lastFileContents = r_file_slurp (path, NULL);
+					if (lastFileContents) {
+						lastFileLines = r_str_split_lines (lastFileContents, &lastFileLinesCount);
+					} else {
+						lastFileLines = NULL;
+					}
+				}
+			}
+			char *line = NULL;
+			//r_file_slurp_line (path, row->line - 1, 0);
+			if (lastFileLines) {
+				int nl = row->line - 1;
+				if (nl >= 0 && nl < lastFileLinesCount) {
+					line = strdup (lastFileContents + lastFileLines[nl]);
+				}
+			} else {
+				line = NULL;
+			}
 			if (line) {
 				r_str_filter (line, strlen (line));
 				line = r_str_replace (line, "\"", "\\\"", 1);
@@ -764,7 +823,6 @@ static int bin_dwarf(RCore *core, int mode) {
 				r_cons_printf ("\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
 					row->file, row->line, line?line:"", row->address);
 			}
-			free (line);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x"\t%s\t%d\n", row->address, row->file, row->line);
 		}
