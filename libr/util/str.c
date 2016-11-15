@@ -2480,7 +2480,7 @@ R_API int *r_str_split_lines(char *str, int *count) {
 		}
 	}
 	// allocate and set indexes
-	indexes = calloc (sizeof (int), lines);
+	indexes = calloc (sizeof (int), lines + 1);
 	int line = 0;
 	indexes[line++] = 0;
 	for (i = 0; str[i]; i++) {
