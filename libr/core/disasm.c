@@ -3106,7 +3106,11 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 						r_cons_strcat (ds->pal_comment);
 					}
 					ds_align_comment (ds);
-					r_cons_printf ("; %s%s%s(", fcn_type, fcn_type[strlen (fcn_type) - 1] == '*' ? "": " ", key);
+					{
+						r_cons_printf ("; %s%s%s(", r_str_get (fcn_type),
+							(fcn_type && *fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "": " ",
+							r_str_get (key));
+					}
 					if (nargs == 0) {
 						r_cons_printf ("void);");
 						break;
