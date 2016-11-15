@@ -616,6 +616,9 @@ static int parsedatachar(REgg *egg, char c) {
 	char *str;
 	int i, j;
 
+	if (!dstval) {
+		return 0;
+	}
 	/* skip until '{' */
 	if (c == '{') { /* XXX: repeated code!! */
 		rcc_context (egg, 1);
@@ -625,9 +628,10 @@ static int parsedatachar(REgg *egg, char c) {
 		/* capture value between parenthesis foo@data(NNN) { ... } */
 		if (c==')') {
 			stackframe = atoi (dstval);
-eprintf ("STACKTRAF %d\n", stackframe);
 			ndstval = 0;
-		} else dstval[ndstval++] = c;
+		} else {
+			dstval[ndstval++] = c;
+		}
 		return 0;
 	}
 	/* capture body */
