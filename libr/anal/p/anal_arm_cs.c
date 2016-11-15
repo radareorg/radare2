@@ -1706,6 +1706,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=SF	nf\n"
 		"=OF	vf\n"
 		"=CF	cf\n"
+		"=SN	r7\n"
 		"gpr	sb	.32	36	0\n" // r9
 		"gpr	sl	.32	40	0\n" // rl0
 		"gpr	fp	.32	44	0\n" // r11
