@@ -388,10 +388,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 					}
 				} else {
 					if (LSHIFT2_64(1)) {
-						r_strbuf_appendf (&op->esil, "%s,%d,%d,%s,+,[%d],%s,=",
+						r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+,[%d],%s,=",
 								MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
 					} else {
-						r_strbuf_appendf (&op->esil, "%s,%d,+,[%d],%s,=",
+						r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",+,[%d],%s,=",
 								MEMBASE64(1), MEMDISP64(1), size, REG64(0));
 					}
 				}
