@@ -51,6 +51,9 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		type2 = r_reg_type_by_name (at);
 	} else {
 		type2 = type = r_reg_type_by_name (tok[0]);
+		if (type == R_REG_TYPE_FLG) {
+			type2 = R_REG_TYPE_GPR;
+		}
 	}
 	if (type < 0 || type2 < 0) {
 		return "Invalid register type";

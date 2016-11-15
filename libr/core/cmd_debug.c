@@ -1159,10 +1159,14 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 	}
 }
 
-static void show_rreg(RCore *core) {
+static void show_drpi(RCore *core) {
 	int i;
 	RListIter *iter;
 	RRegItem *ri;
+	r_cons_printf ("Aliases (Reg->name)\n");
+	for (i = 0; i < R_REG_NAME_LAST; i++) {
+		r_cons_printf ("%d %s %s\n", i, r_reg_get_role (i), core->anal->reg->name[i]);
+	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		const char *nmi = r_reg_get_type (i);
 		r_cons_printf ("regset %d (%s)\n", i, nmi);
@@ -1171,9 +1175,9 @@ static void show_rreg(RCore *core) {
 		r_list_foreach (rs->regs, iter, ri) {
 			const char *tpe = r_reg_get_type (ri->type);
 			const char *arn = r_reg_get_type (ri->arena);
-			r_cons_printf ("   %s %s @ %s (offset: %d  size: %d)", ri->name, tpe, arn, ri->offset, ri->size);
-			if (ri->offset + ri->size >= rs->arena->size) {
-				r_cons_printf ("OVERFLOW\n");
+			r_cons_printf ("   %s %s @ %s (offset: %d  size: %d)", ri->name, tpe, arn, ri->offset / 8, ri->size / 8);
+			if ((ri->offset / 8) + (ri->size / 8) > rs->arena->size) {
+				r_cons_printf (" *OVERFLOW*");
 			}
 			r_cons_newline ();
 		}
@@ -1183,14 +1187,14 @@ static void show_rreg(RCore *core) {
 static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" and "drp"
 	switch (str[1]) {
 	case 'i':
-		show_rreg (core);
+		show_drpi (core);
 		break;
 	case 0:
 		if (core->dbg->reg->reg_profile_str) {
-			//core->anal->reg = core->dbg->reg;
 			r_cons_println (core->dbg->reg->reg_profile_str);
-			//r_cons_printf ("%s\n", core->anal->reg->reg_profile);
-		} else eprintf ("No register profile defined. Try 'dr.'\n");
+		} else {
+			eprintf ("No register profile defined. Try 'dr.'\n");
+		}
 		break;
 	case ' ':
 		r_reg_set_profile (core->dbg->reg, str+2);

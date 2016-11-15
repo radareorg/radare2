@@ -40,6 +40,9 @@ typedef enum {
 	R_REG_NAME_A4,
 	R_REG_NAME_A5,
 	R_REG_NAME_A6,
+	R_REG_NAME_A7,
+	R_REG_NAME_A8,
+	R_REG_NAME_A9,
 	/* retval */
 	R_REG_NAME_R0, // arguments
 	R_REG_NAME_R1,
@@ -104,7 +107,7 @@ typedef struct r_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
 	char *reg_profile_str;
-	char *name[R_REG_NAME_LAST]; // XXX
+	char *name[R_REG_NAME_LAST]; // aliases
 	RRegSet regset[R_REG_TYPE_LAST];
 	RList *allregs;
 	int iters;

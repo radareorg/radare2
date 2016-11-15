@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -57,10 +57,6 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	}
 	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->arena];
-#if 0
-	eprintf ("GET sz=%d off %d  off = %d %d\n",
-		item->size, off, item->offset, (item->offset/8));
-#endif
 	switch (item->size) {
 	case 1:
 		{
