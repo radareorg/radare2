@@ -937,10 +937,10 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	ut16 top = 0;
 	int x = 0, nxmm = 0,nymm = 0;
 #if __MINGW64__
-	eprintf("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
-	eprintf("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
-	eprintf("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
-	eprintf("ErrorSelector = %08x DataSelector = %08x\n", ctx->FltSave.ErrorSelector, ctx->FltSave.DataSelector);
+	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
+	eprintf ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
+	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
+	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", ctx->FltSave.ErrorSelector, ctx->FltSave.DataSelector);
 	for (x = 0; x < 8; x++) {
 		st[x].Low = ctx->FltSave.FloatRegisters[x].Low;
 		st[x].High = (ut16)ctx->FltSave.FloatRegisters[x].High;
@@ -960,10 +960,10 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	}
 	nxmm = 16;
 #else
-	eprintf("ControlWord   = %08x StatusWord   = %08x\n", ctx->FloatSave.ControlWord, ctx->FloatSave.StatusWord);
-	eprintf("MxCsr         = %08x TagWord      = %08x\n", *(ut32 *)&ctx->ExtendedRegisters[24], ctx->FloatSave.TagWord);
-	eprintf("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FloatSave.ErrorOffset, ctx->FloatSave.DataOffset);
-	eprintf("ErrorSelector = %08x DataSelector = %08x\n", ctx->FloatSave.ErrorSelector, ctx->FloatSave.DataSelector);
+	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FloatSave.ControlWord, ctx->FloatSave.StatusWord);
+	eprintf ("MxCsr         = %08x TagWord      = %08x\n", *(ut32 *)&ctx->ExtendedRegisters[24], ctx->FloatSave.TagWord);
+	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FloatSave.ErrorOffset, ctx->FloatSave.DataOffset);
+	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", ctx->FloatSave.ErrorSelector, ctx->FloatSave.DataSelector);
 	for (x = 0; x < 8; x++) {
 		st[x].High = (ut16) *((ut16 *)(&ctx->FloatSave.RegisterArea[x * 10] + 8));
 		st[x].Low = (ut64)  *((ut64 *)&ctx->FloatSave.RegisterArea[x * 10]);
@@ -988,19 +988,19 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 		//   in mingw long double is 12 bytes size
 		//   in msvc long double is alias for double = 8 bytes size
 		//   in gcc long double is 10 bytes (correct representation)
-		eprintf("ST%i %04x %016"PFMT64x" (%f)\n", x, st[x].High, st[x].Low, (double)(*((long double *)&st[x])));
+		eprintf ("ST%i %04x %016"PFMT64x" (%f)\n", x, st[x].High, st[x].Low, (double)(*((long double *)&st[x])));
 	}
 	for (x = 0; x < 8; x++) {
-		eprintf("MM%i %016"PFMT64x"\n", x, mm[x]);
+		eprintf ("MM%i %016"PFMT64x"\n", x, mm[x]);
 	}
 	for (x = 0; x < nxmm; x++) {
-		eprintf("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
+		eprintf ("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
 	}
 	// show Ymm regs
 	nymm = GetAVX(hThread, &xmm, &ymm);
 	if (nymm) {
 		for (x = 0; x < nymm; x++) {
-			eprintf("Ymm%d: %016"PFMT64x" %016"PFMT64x" %016"PFMT64x" %016"PFMT64x"\n", x, ymm[x].High, ymm[x].Low, xmm[x].High, xmm[x].Low );
+			eprintf ("Ymm%d: %016"PFMT64x" %016"PFMT64x" %016"PFMT64x" %016"PFMT64x"\n", x, ymm[x].High, ymm[x].Low, xmm[x].High, xmm[x].Low );
 		}
 	}
 }
@@ -1016,12 +1016,12 @@ static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		type = -type;
 	}
 	hThread = w32_open_thread (pid, tid);
-	memset(&ctx, 0, sizeof(CONTEXT));
+	memset(&ctx, 0, sizeof (CONTEXT));
 	ctx.ContextFlags = CONTEXT_ALL ;
-	if (GetThreadContext(hThread, &ctx) == TRUE) {
+	if (GetThreadContext (hThread, &ctx) == TRUE) {
 		if (type == R_REG_TYPE_GPR) {
-			if (size > sizeof(CONTEXT)) {
-				size = sizeof(CONTEXT);
+			if (size > sizeof (CONTEXT)) {
+				size = sizeof (CONTEXT);
 			}
 			memcpy (buf, &ctx, size);
 		} else {
@@ -1032,7 +1032,7 @@ static int w32_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		size = 0;
 	}
 	if (showfpu) {
-		printwincontext(hThread, &ctx);
+		printwincontext (hThread, &ctx);
 	}
 	CloseHandle(hThread);
 	return size;
@@ -1046,8 +1046,8 @@ static int w32_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
 	ctx.ContextFlags = CONTEXT_ALL;
 	GetThreadContext (thread, &ctx);
 	if (type == R_REG_TYPE_GPR) {
-		if (size > sizeof(CONTEXT)) {
-			size = sizeof(CONTEXT);
+		if (size > sizeof (CONTEXT)) {
+			size = sizeof (CONTEXT);
 		}
 		memcpy (&ctx, buf, size);
 		ret = SetThreadContext (thread, &ctx)? true: false;
