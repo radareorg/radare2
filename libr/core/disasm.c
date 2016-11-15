@@ -574,7 +574,7 @@ static void ds_free(RDisasmState *ds) {
 	free (ds->osl);
 	free (ds->sl);
 	free (ds->_tabsbuf);
-	free (ds);
+	R_FREE (ds);
 }
 
 static void ds_set_pre(RDisasmState *ds, const char * str) {
@@ -2830,44 +2830,19 @@ static int mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
-	RDisasmState *ds = esil->user;
-
+	RDisasmState *ds = NULL;
+	if (!esil) {
+		return 0;
+	}
+	ds = esil->user;
 	if (ds) {
 		ds->esil_likely = true;
 		if (!ds->show_slow) {
 			return 0;
 		}
 	}
-
 	memset (str, 0, sizeof (str));
 	if (*val != 0LL) {
-#if 0
-		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, val);
-		if (fi) {
-			strncpy (str, fi->name, sizeof (str)-1);
-		}
-		if (!str[0]) {
-			(void)r_io_read_at (esil->anal->iob.io, val, (ut8*)str, sizeof (str)-1);
-			str[sizeof (str)-1] = 0;
-			if (*str && r_str_is_printable (str)) {
-				// do nothing
-				msg = r_str_newf ("\"%s\"", str);
-			} else {
-				str[0] = 0;
-				if (*n32 == 0) {
-					// msg = strdup ("NULL");
-				} else if (*n32 == UT32_MAX) {
-					/* nothing */
-				} else {
-					if (ds && !ds->show_emu_str) {
-						msg = r_str_newf ("-> 0x%x", *n32);
-					}
-				}
-			}
-		} else {
-			msg = r_str_newf ("%s", str);
-		}
-#endif
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
 		if (*str && r_str_is_printable (str)) {
@@ -2890,13 +2865,15 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			msg = r_str_concatf (msg, " %s", fi->name);
 		}
 	}
-	if (ds && ds->show_emu_str) {
-		if (msg && *msg) {
-			r_cons_printf (" ; %s", msg);
+	if (ds) {
+		if (ds->show_emu_str) {
+			if (msg && *msg) {
+				r_cons_printf (" ; %s", msg);
+			}
+		} else {
+			r_cons_printf (" ; %s=0x%"PFMT64x" %s", name, *val, msg? msg: "");
 		}
-	} else {
-		r_cons_printf (" ; %s=0x%"PFMT64x" %s", name, *val, msg? msg: "");
-	}
+	} 
 	free (msg);
 	return 0;
 }
@@ -2930,6 +2907,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 }
 
 static void ds_print_esil_anal_fini(RDisasmState *ds) {
+	RCore *core = ds->core;
 	if (ds->show_emu && ds->esil_regstate) {
 		RCore* core = ds->core;
 		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg);
@@ -2937,6 +2915,10 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 		r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
 		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
 		R_FREE (ds->esil_regstate);
+	}
+	if (core && core->anal && core->anal->esil) {
+		//make sure to remove reference to ds to avoid UAF
+		core->anal->esil->user = NULL;
 	}
 }
 

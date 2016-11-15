@@ -2372,8 +2372,9 @@ static int runword(RAnalEsil *esil, const char *word) {
 		// run action
 		if (op) {
 			if (esil->cb.hook_command) {
-				if (esil->cb.hook_command (esil, word))
+				if (esil->cb.hook_command (esil, word)) {
 					return 1; // XXX cannot return != 1
+				}
 			}
 			return op (esil);
 		}
@@ -2503,8 +2504,9 @@ repeat:
 	}
 	word[wordi] = 0;
 	if (*word) {
-		if (!runword (esil, word))
+		if (!runword (esil, word)) {
 			return 0;
+		}
 		switch (evalWord (esil, ostr, &str)) {
 		case 0: goto loop;
 		case 1: return 0;

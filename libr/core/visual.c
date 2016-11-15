@@ -2225,10 +2225,14 @@ static void visual_refresh(RCore *core) {
 		r_cons_gotoxy (0, 0);
 		r_core_visual_title (core, color);
 		vi = r_config_get (core->config, "cmd.vprompt");
-		if (vi) r_core_cmd (core, vi, 0);
+		if (vi) {
+			r_core_cmd (core, vi, 0);
+		}
 	} else {
 		vi = r_config_get (core->config, "cmd.vprompt");
-		if (vi) r_core_cmd (core, vi, 0);
+		if (vi) {
+			r_core_cmd (core, vi, 0);
+		}	
 		r_core_visual_title (core, color);
 	}
 
