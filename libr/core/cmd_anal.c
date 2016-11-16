@@ -3629,7 +3629,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_core_read_at (core, ref->at, buf, 12);
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
-					r_cons_printf ("{\"from\":0x%" PFMT64x ",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
+					r_cons_printf ("{\"from\":%" PFMT64d ",\"type\":\"%c\",\"opcode\":\"%s\"}%s",
 						ref->at, ref->type, asmop.buf_asm, iter->n? ",": "");
 				}
 				r_cons_print ("]\n");
