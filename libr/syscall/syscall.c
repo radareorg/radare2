@@ -167,7 +167,6 @@ R_API int r_syscall_get_swi(RSyscall *s) {
 
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	const char *ret, *ret2, *key;
-	RSyscallItem *si;
 	if (!s || !s->db) {
 		eprintf ("Syscall database not loaded\n");
 		return NULL;
@@ -186,8 +185,7 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	if (!ret2) {
 		return NULL;
 	}
-	si = r_syscall_item_new_from_string (ret, ret2);
-	return si;
+	return r_syscall_item_new_from_string (ret, ret2);
 }
 
 R_API int r_syscall_get_num(RSyscall *s, const char *str) {

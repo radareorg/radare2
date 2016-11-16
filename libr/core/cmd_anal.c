@@ -3338,15 +3338,17 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 				else eprintf ("Unknown syscall number\n");
 			} else {
 				n = r_syscall_get_num (core->anal->syscall, input + 2);
-				if (n != -1)
+				if (n != -1) {
 					r_cons_printf ("%d\n", n);
-				else eprintf ("Unknown syscall name\n");
+				} else {
+					eprintf ("Unknown syscall name\n");
+				}
 			}
 		} else {
 			list = r_syscall_list (core->anal->syscall);
 			r_list_foreach (list, iter, si) {
-				r_cons_printf ("%s = 0x%02x.%d\n",
-					si->name, si->swi, si->num);
+				r_cons_printf ("%s = 0x%02x.%u\n",
+					si->name, (ut32)si->swi, (ut32)si->num);
 			}
 			r_list_free (list);
 		}
@@ -3395,11 +3397,11 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 	if (input && *input) {
 		addr = r_num_math (core->num, input);
 	}
-	int spaces = (level+1) * 2;
-	if (spaces > sizeof (pre)-4) {
-		spaces = sizeof(pre)-4;
+	int spaces = (level + 1) * 2;
+	if (spaces > sizeof (pre) - 4) {
+		spaces = sizeof (pre) - 4;
 	}
-	memset (pre, ' ', sizeof(pre));
+	memset (pre, ' ', sizeof (pre));
 	strcpy (pre+spaces, "- ");
 
 	xrefs = r_anal_xrefs_get (core->anal, addr);
@@ -3408,7 +3410,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 		if (fcn) {
 			//if (sdb_add (db, fcn->name, "1", 0)) {
 				r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n",
-					pre+2, addr, fcn->addr, fcn->name);
+					pre + 2, addr, fcn->addr, fcn->name);
 			//}
 		} else {
 			//snprintf (arg, sizeof (arg), "0x%08"PFMT64x, addr);
