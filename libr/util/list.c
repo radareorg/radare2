@@ -129,26 +129,22 @@ R_API void r_list_split_iter(RList *list, RListIter *iter) {
 }
 
 //Warning: free functions must be compatible
-#define r_list_empty(x) (!x || (!(x->head) && !(x->tail)))
 R_API int r_list_join(RList *list1, RList *list2) {
-	if (!list1 || !list2) {
-		return 0;
-	}	
-	if (r_list_empty (list2)) {
-		return 0;
-	}
-	if (r_list_empty (list1)) {
+	if (!list1 || !list2) return 0;
+	if (!(list2->length)) return 0;
+
+	if (!(list1->length)) {
 		list1->head = list2->head;
 		list1->tail = list2->tail;
-	} else if (!list1->tail) {
-		list1->tail = list2->head;
-	} else if (list2->head != NULL) {
+	} else {
 		list1->tail->n = list2->head;
 		list2->head->p = list1->tail;
+		list1->tail = list2->tail;
+		list1->tail->n = NULL;
+		list1->sorted = false;
 	}
 	list1->length += list2->length;
 	list2->head = list2->tail = NULL;
-	list1->sorted = true;
 	/* the caller must free list2 */
 	return 1;
 }
@@ -453,7 +449,7 @@ R_API RListIter *r_list_find(const RList *list, const void *p, RListComparator c
 }
 
 static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cmp) {
-	if (!first) { 
+	if (!first) {
 		return second;
 	}
 	if (!second) {
@@ -464,7 +460,7 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 		second->n->p = second;
 		second->p = NULL;
 		return second;
-	} 
+	}
 	first->n = _merge (first->n, second, cmp);
 	first->n->p = first;
 	first->p = NULL;
@@ -477,7 +473,7 @@ static RListIter * _r_list_half_split(RListIter *head) {
 	RListIter *slow;
 	if (!head || !head->n) {
 		return head;
-	} 
+	}
 	slow = head;
 	fast = head;
 	while (fast && fast->n && fast->n->n) {
@@ -546,8 +542,8 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 		}
 	}
 }
- 
- 
+
+
 
 #if TEST
 
