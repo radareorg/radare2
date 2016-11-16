@@ -1303,6 +1303,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	// TODO: store in core->cmdtimes to speedup ?
 	cmdrep = r_config_get (core->config, "cmd.times");
+	if (!cmdrep) {
+		cmdrep = "";
+	}
 	orep = rep;
 
 	int ocur_enabled = core->print->cur_enabled;
