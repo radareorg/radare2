@@ -81,20 +81,18 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 		if (ptr[0] == 0xa) {
 			int ll = (size_t)(ptr - str) - 1;
 			lines--;
-			if (vmode && lines<0) {
+			if (vmode && lines < 0) {
 				break;
 			}
-			//if (ll < 1) {
 			if (ll < 0) {
 				continue;
 			}
 			if (vmode) {
 				// TODO: Fix utf8 chop
 				/* only chop columns if necessary */
-				if (/*ll != linelen && */ll+linelen >= cols) {
+				if (ll + linelen >= cols) {
 					// chop line if too long
-					ll = (cols-linelen)-1;
-					//if (ll < 1) {
+					ll = (cols - linelen) - 1;
 					if (ll < 0) {
 							continue;
 					}
