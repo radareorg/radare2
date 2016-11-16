@@ -156,7 +156,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		} else {
 			int idx = item->offset / 8;
 			RRegArena *arena = reg->regset[item->arena].arena;
-			if (idx + item->size >= arena->size) {
+			if (idx + item->size > arena->size) {
 				eprintf ("RRegSetOverflow %d vs %d\n", idx + item->size, arena->size);
 				return false;
 			}
