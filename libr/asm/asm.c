@@ -10,10 +10,8 @@ R_LIB_VERSION (r_asm);
 
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
-static int code_align = 0;
-
-static int r_asm_pseudo_align(RAsmOp *op, char *input) {
-	code_align = r_num_math (NULL, input);
+static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, char *input) {
+	acode->code_align = r_num_math (NULL, input);
 	return 0;
 }
 
@@ -274,6 +272,7 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 				// TODO: allow configurable path for sdb files
 				snprintf (file, sizeof (file), R_ASM_OPCODES_PATH"/%s.sdb", h->arch);
 				sdb_free (a->pair);
+				r_asm_set_cpu (a, NULL);
 				a->pair = sdb_new (NULL, file, 0);
 			}
 			a->cur = h;
@@ -286,16 +285,14 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 }
 
 R_API int r_asm_set_subarch(RAsm *a, const char *name) {
-	int ret = false;
-	if (a->cur && a->cur->set_subarch)
-		ret = a->cur->set_subarch(a, name);
-	return ret;
+	if (a->cur && a->cur->set_subarch) {
+		return a->cur->set_subarch(a, name);
+	}
+	return false;
 }
 
 static int has_bits(RAsmPlugin *h, int bits) {
-	if (h && h->bits && (bits & h->bits))
-		return true;
-	return false;
+	return (h && h->bits && (bits & h->bits));
 }
 
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
@@ -579,14 +576,14 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		return r_asm_code_free (acode);
 	}
 	lbuf = strdup (buf);
-	code_align = 0;
+	acode->code_align = 0;
 	memset (&op, 0, sizeof (op));
 
 	/* accept ';' as comments when input is multiline */
 	{
 		char *nl = strchr (lbuf, '\n');
 		if (nl) {
-			if (strchr (nl+1, '\n'))
+			if (strchr (nl + 1, '\n'))
 				r_str_replace_char (lbuf, ';', '#');
 		}
 	}
@@ -620,12 +617,12 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	}
 	/* Tokenize */
 	for (tokens[0] = lbuf, ctr = 0;
-		ctr < R_ASM_BUFSIZE - 1 &&
-		((ptr = strchr (tokens[ctr], ';')) ||
-		(ptr = strchr (tokens[ctr], '\n')) ||
-		(ptr = strchr (tokens[ctr], '\r')));
-		tokens[++ctr] = ptr+1) {
-			*ptr = '\0';
+			ctr < R_ASM_BUFSIZE - 1 &&
+			((ptr = strchr (tokens[ctr], ';')) ||
+			(ptr = strchr (tokens[ctr], '\n')) ||
+			(ptr = strchr (tokens[ctr], '\r')));
+			tokens[++ctr] = ptr + 1) {
+		*ptr = '\0';
 	}
 
 #define isavrseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
@@ -695,8 +692,8 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					if (ptr_start[1] != 0 && ptr_start[1] != ' ') {
 						char food[64];
 						*ptr = 0;
-						if (code_align) {
-							off += (code_align - (off % code_align));
+						if (acode->code_align) {
+							off += (acode->code_align - (off % acode->code_align));
 						}
 						snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
 						// TODO: warning when redefined
@@ -733,7 +730,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				} else if (!strncmp (ptr, ".ascii ", 6)) {
 					ret = r_asm_pseudo_string (&op, ptr + 7, 0);
 				} else if (!strncmp (ptr, ".align", 6)) {
-					ret = r_asm_pseudo_align (&op, ptr + 7);
+					ret = r_asm_pseudo_align (acode, &op, ptr + 7);
 				} else if (!strncmp (ptr, ".arm", 4)) {
 					r_asm_use (a, "arm");
 					r_asm_set_bits (a, 32);

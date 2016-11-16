@@ -82,6 +82,7 @@ typedef struct r_asm_code_t {
 	RList *equs; // TODO: must be a hash
 	ut64 code_offset;
 	ut64 data_offset;
+	int code_align;
 } RAsmCode;
 
 // TODO: Must use Hashtable instead of this hack
