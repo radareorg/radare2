@@ -371,11 +371,11 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 	s->sa.sin_family = AF_INET;
 	s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
 	s->port = r_socket_port_by_name (port);
-	if (s->port <1)
+	if (s->port < 1) {
 		return false;
+	}
 	s->sa.sin_port = htons (s->port); // TODO honor etc/services
-
-	if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof(s->sa)) < 0) {
+	if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof (s->sa)) < 0) {
 		r_sys_perror ("bind");
 		close (s->fd);
 		return false;

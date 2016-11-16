@@ -4043,6 +4043,14 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		oplen = r_asm_op_get_size (&asmop);
 		r_cons_printf (j > 0 ? ",{" : "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
+		if (ds->analop.ptr != UT64_MAX) {
+			r_cons_printf (",\"ptr\":%"PFMT64d, ds->analop.ptr);
+		}
+		if (ds->analop.val != UT64_MAX) {
+			r_cons_printf (",\"val\":%"PFMT64d, ds->analop.val);
+		}
+		r_cons_printf (",\"esil\":\"%s\"", R_STRBUF_SAFEGET (&ds->analop.esil));
+		r_cons_printf (",\"refptr\":%s", r_str_bool (ds->analop.refptr));
 		if (f) {
 			r_cons_printf (",\"fcn_addr\":%"PFMT64d, f->addr);
 			r_cons_printf (",\"fcn_last\":%"PFMT64d, f->addr + r_anal_fcn_size (f) - oplen);
