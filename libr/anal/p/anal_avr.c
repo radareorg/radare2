@@ -962,6 +962,7 @@ INST_HANDLER (rjmp) {	// RJMP k
 		+ (((typeof (op->jump)) (((buf[1] & 0xf) << 9) | (buf[0] << 1)))
 			| (buf[1] & 0x8 ? ~((typeof (op->jump)) 0x1fff) : 0))
 		+ 2) & cpu->pc_mask;
+	op->jump |= op->addr & 0xfffff000;
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);
 }
 
