@@ -353,7 +353,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_BLR:
 		// XXX
-		r_strbuf_setf (&op->esil, "pc,lr,=,%d,pc,=", IMM64 (0));
+		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", IMM64 (0));
 		break;
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDR:
@@ -428,18 +428,17 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_CMP: // cmp w8, 0xd
 	case ARM64_INS_CMN: // cmp w8, 0xd
 		// update esil, cpu flags
-		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,=",
-			IMM64(1), REG64(0));
+		r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,=", IMM64(1), REG64(0));
 		break;
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSEL: // CSEL w8, w13, w14, eq
 		// TODO: w8 = eq? w13: w14
 		// COND64(4) { ARM64_CC_EQ, NE, HS, ...
-		r_strbuf_setf (&op->esil, "$z,?{,%s,}{,%s,},%s,=",
+		r_strbuf_setf (&op->esil, "$z,?{,%s,}{,%s,},%s,=", 
 			REG64(1), REG64(2), REG64(0));
 		break;
 	case ARM64_INS_STRB:
-		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[1]",
+		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[1]", 
 			REG64(0), MEMBASE64(1), MEMDISP64(1));
 		break;
 	case ARM64_INS_STUR:
@@ -453,7 +452,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				REG64(0), (ut64)-(int)MEMDISP64(1), MEMBASE64(1));
 		} else {
 			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,+,=[]",
-				REG64(0), (ut64)MEMDISP64(1), MEMBASE64(1));
+				REG64(0), MEMDISP64(1), MEMBASE64(1));
 		}
 		break;
 	case ARM64_INS_CBZ:
@@ -1205,10 +1204,11 @@ jmp $$ + 4 + ( [delta] * 2 )
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
 			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 					insn->detail->arm.operands[i].reg == ARM_REG_PC) {
-				if (insn->detail->arm.cc == ARM_CC_AL)
+				if (insn->detail->arm.cc == ARM_CC_AL) {
 					op->type = R_ANAL_OP_TYPE_RET;
-				else
+				} else {
 					op->type = R_ANAL_OP_TYPE_CRET;
+				}
 				break;
 			}
 		}
