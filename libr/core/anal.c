@@ -116,10 +116,12 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		RRegItem *r;
 		RListIter *iter;
 		r_list_foreach (rs->regs, iter, r) {
-			ut64 val = r_reg_getv (core->dbg->reg, r->name);
-			if (addr == val) {
-				types |= R_ANAL_ADDR_TYPE_REG;
-				break;
+			if (r->type == R_REG_TYPE_GPR) {
+				ut64 val = r_reg_getv(core->dbg->reg, r->name);
+				if (addr == val) {
+					types |= R_ANAL_ADDR_TYPE_REG;
+					break;
+				}
 			}
 		}
 	}

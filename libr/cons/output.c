@@ -79,27 +79,31 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 	if (ptr && hConsole)
 	for (; *ptr && ptr < ptr_end; ptr++) {
 		if (ptr[0] == 0xa) {
-			int ll = (size_t)(ptr - str);
+			int ll = (size_t)(ptr - str) - 1;
 			lines--;
 			if (vmode && lines<0) {
 				break;
 			}
-			if (ll < 1) {
+			//if (ll < 1) {
+			if (ll < 0) {
 				continue;
 			}
 			if (vmode) {
 				// TODO: Fix utf8 chop
 				/* only chop columns if necessary */
-				if (ll != linelen && ll+linelen >= cols) {
+				if (/*ll != linelen && */ll+linelen >= cols) {
 					// chop line if too long
 					ll = (cols-linelen)-1;
-					if (ll < 1) {
-						continue;
+					//if (ll < 1) {
+					if (ll < 0) {
+							continue;
 					}
 				}
 			}
-			write (1, str, ll);
-			linelen += ll;
+			if (ll > 0) {
+				write(1, str, ll);
+				linelen += ll;
+			}
 			esc = 0;
 			str = ptr+1;
 			if (vmode) {
@@ -137,8 +141,10 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				if (linelen+ll>=cols) {
 					// chop line if too long
 					ll = (cols-linelen)-1;
-					// fix utf8 len here
-					ll = wrapline ((const char*)str, cols-linelen-1);
+					if (ll>0) {
+						// fix utf8 len here
+						ll = wrapline ((const char*)str, cols-linelen-1);
+					}
 				}
 			}
 			if (ll>0) {
