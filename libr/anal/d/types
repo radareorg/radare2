@@ -2649,8 +2649,8 @@ func.write.arg.2=size_t,nbytes
 func.write.ret=ssize_t
 
 getpid=func
-func.write.args=0
-func.write.ret=int
+func.getpid.args=0
+func.getpid.ret=int
 
 bzero=func
 func.bzero.args=2
