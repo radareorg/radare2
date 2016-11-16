@@ -3280,7 +3280,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
 				if ((target && op.ptr == ntarget) || !target) {
-					if (strcmp (core->anal->cpu, "arm")) {
+					if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
 						if (cfg_anal_strings) {
 							r_anal_ref_add (core->anal, op.ptr, cur, 'd');
 							if ((target && op.ptr == ntarget) || !target) {
@@ -3292,31 +3292,31 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				break;
 			case R_ANAL_OP_TYPE_ADD:
 				/* TODO: test if this is valid for other archs too */
-				if (core->anal->bits == 64 && !strcmp (core->anal->cpu, "arm")) {
+				if (core->anal->bits == 64 && core->anal->cur && !strcmp (core->anal->cur->arch, "arm")) {
 					ut64 dst = ESIL->cur;
 					if ((target && dst == ntarget) || !target) {
 						r_anal_ref_add (core->anal, dst, cur, 'd');
 					}
-				} else if ((core->anal->bits == 32 && !strcmp (core->anal->cpu, "mips"))) {
+				} else if ((core->anal->bits == 32 && core->anal->cur && !strcmp (core->anal->cur->arch, "mips"))) {
 					ut64 dst = ESIL->cur;
-					if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name)
+					if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name) {
 						break;
-					if (!strcmp (op.src[0]->reg->name, "sp"))
+					}
+					if (!strcmp (op.src[0]->reg->name, "sp")) {
 						break;
-					if (!strcmp (op.src[0]->reg->name, "zero"))
+					}
+					if (!strcmp (op.src[0]->reg->name, "zero")) {
 						break;
-
+					}
 					if ((target && dst == ntarget) || !target) {
 						if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) &&
 								myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
 							RFlagItem *f;
 							char *str;
-
 							r_anal_ref_add (core->anal, dst, cur, 'd');
 							if (cfg_anal_strings) {
 								add_string_ref (core, dst);
 							}
-
 							if ((f = r_flag_get_i2 (core->flags, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
 							} else if ((str = is_string_at (mycore, dst, NULL))) {
