@@ -2432,6 +2432,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				addr = s->vaddr;
 				len = s->size;
 			}
+#if 0
 		} else {
 			// search in full file
 			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
@@ -2445,6 +2446,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 					len = 0;
 				}
 			}
+#endif
 		}
 	}
 	/*

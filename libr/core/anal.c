@@ -1500,8 +1500,10 @@ static int core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int cod
 		endian = core->bin->cur->o->info->big_endian;
 	} else endian = CPU_ENDIAN;
 	wordsize = (int)(core->anal->bits/8);
-	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1)
+#if 0
+	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1)	//TODO: check this, it might be pointless with the new io
 		return false;
+#endif
 	return core_anal_followptr (core, at, dataptr, ref, code, depth-1);
 }
 
