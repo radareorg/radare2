@@ -313,9 +313,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						if (comp_dir) {
-							allocated_id = calloc(1,strlen(comp_dir) +
-									strlen(include_dir) + 8);
-							snprintf (allocated_id, strlen(comp_dir) + strlen(include_dir) + 8,
+							allocated_id = calloc (1, strlen (comp_dir) +
+									strlen (include_dir) + 8);
+							snprintf (allocated_id, strlen (comp_dir) + strlen (include_dir) + 8,
 									"%s/%s/", comp_dir, include_dir);
 							include_dir = allocated_id;
 						}
@@ -333,8 +333,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 					snprintf (hdr->file_names[count].name, namelen - 1,
 						"%s/%s", include_dir, filename);
 					hdr->file_names[count].name[namelen - 1] = '\0';
-					if (allocated_id)
-						free (allocated_id);
+					free (allocated_id);
 					hdr->file_names[count].id_idx = id_idx;
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;
@@ -442,7 +441,7 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
 			int fnidx = regs->file - 1;
-			if (fnidx>=0 && fnidx<hdr->file_names_count) {
+			if (fnidx >= 0 && fnidx < hdr->file_names_count) {
 				add_sdb_addrline(binfile->sdb_addrinfo, regs->address,
 						hdr->file_names[fnidx].name, regs->line, f, mode);
 			}
@@ -1294,9 +1293,8 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 					&cu->hdr, debug_str, debug_str_len);
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
 				ut64 comp_dir = (ut64)(size_t)cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
-				if (s) {
-					sdb_num_add (s, "DW_AT_comp_dir", comp_dir, 0);
-				}
+				// sdb_num_add (s, "DW_AT_comp_dir", comp_dir, 0);
+				sdb_set (s, "DW_AT_comp_dir", cu->dies[cu->length].attr_values[i].encoding.str_struct.string, 0);
 			}
 			cu->dies[cu->length].length++;
 		}

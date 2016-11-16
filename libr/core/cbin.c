@@ -760,7 +760,6 @@ static int bin_dwarf(RCore *core, int mode) {
 	int lastFileLinesCount2 = 0;
 
 	/* we should need to store all this in sdb, or do a filecontentscache in libr/util */
-
         r_list_foreach (list, iter, row) {
 		if (r_cons_singleton()->breaked) {
 			break;
