@@ -99,7 +99,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				}
 			}
 			if (ll > 0) {
-				write(1, str, ll);
+				write (1, str, ll);
 				linelen += ll;
 			}
 			esc = 0;
