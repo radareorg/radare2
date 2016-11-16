@@ -267,6 +267,21 @@ static int cb_asmarch(void *user, void *data) {
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
+	if (core->assembler->cur) {
+		const char *newAsmCPU = core->assembler->cur->cpus;
+		if (newAsmCPU) {
+			if (*newAsmCPU) {
+				char *nac = strdup (newAsmCPU);
+				char *comma = strchr (nac, ',');
+				if (comma) {
+					*comma = 0;
+					r_config_set (core->config, "asm.cpu", nac);
+				}
+			} else {
+				r_config_set (core->config, "asm.cpu", "");
+			}
+		}
+	}
 	if (core->assembler && core->assembler->cur) {
 		bits = core->assembler->cur->bits;
 		if (8 & bits) {

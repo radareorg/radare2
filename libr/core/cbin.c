@@ -815,9 +815,8 @@ static int bin_dwarf(RCore *core, int mode) {
 			}
 			// TODO: implement internal : if ((mode & R_CORE_BIN_SET))
 			if ((mode & R_CORE_BIN_SET)) {
-				char *cmt = r_str_newf ("%s:%d  %s", row->file, row->line, line?line:"");
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
-						row->address, cmt);
+				char *cmt = r_str_newf ("%s:%d  %s", row->file, (int)row->line, line? line: "");
+				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, row->address, cmt);
 				free (cmt);
 			} else {
 				r_cons_printf ("\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
