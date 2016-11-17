@@ -9,17 +9,41 @@
 static ut32 mov(const char *str, int k) {
 	const char *comma = strchr (str, ',');
 	ut32 op = UT32_MAX;
-	if (!strncmp (str, "mov", 3) && strlen (str)> 5) {
+	if (!strncmp (str, "mov", 3) && strlen (str) > 5) {
 		int w = atoi (str + 6);
 		if (w >= 0 && w < 32 && comma) {
 			int n = (int)r_num_math (NULL, comma + 1);
 			op = k;
 			op |= (w << 24); // arg(0)
-			op |= ((n & 7)<<29); // arg(1)
-			op |= (((n >> 3) & 0xff)<<16); // arg(1)
-			op |= ((n >> 10)<<7); // arg(1)
+			op |= ((n & 7) << 29); // arg(1)
+			op |= (((n >> 3) & 0xff) << 16); // arg(1)
+			op |= ((n >> 10) << 7); // arg(1)
 		}
 	}
+	return op;
+}
+
+static ut32 branch(const char *str, ut64 addr, int k) {
+	ut32 op = UT32_MAX;
+	const char *operand = strchr (str, ' ');
+	operand++;
+
+	int n = (int)r_num_math (NULL, operand);
+
+	if (n & 0x3 || n > 0x7ffffff) {
+		return -1;
+	}
+	n -= addr;
+	n = n >> 2;
+	int t = n >> 24;
+	int h = n >> 16;
+	int m = (n & 0xff00) >> 8;
+	n &= 0xff;
+	op = k;
+	op |= n << 24;
+	op |= m << 16;
+	op |= h << 8;
+	op |= t;
 	return op;
 }
 
@@ -120,6 +144,15 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		if (*op != UT32_MAX) {
 			return true;
 		}
+	}
+	if (!strncmp (str, "b ", 2)) {
+		*op = branch (str, addr, 0x14);
+		return *op != -1;
+
+	}
+	if (!strncmp (str, "bl ", 3)) {
+		*op = branch (str, addr, 0x94);
+		return *op != -1;
 	}
 	return false;
 }
