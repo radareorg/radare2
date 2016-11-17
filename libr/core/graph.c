@@ -1684,6 +1684,9 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	ut8 *saved_arena = NULL;
 	core->keep_asmqjmps = false;
 
+	if (!fcn) {
+		return false;
+	}
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg);
 	}

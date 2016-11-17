@@ -4103,15 +4103,19 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 	case 'i': // "aggi" - open current core->graph in interactive mode
 	{
 		RANode *ran = r_agraph_get_first_node (core->graph);
-		r_agraph_set_title (core->graph, r_config_get (core->config, "graph.title"));
-		r_agraph_set_curnode (core->graph, ran);
-		core->graph->force_update_seek = true;
-		core->graph->need_set_layout = true;
-		int ov = r_config_get_i (core->config, "scr.interactive");
-		core->graph->need_update_dim = true;
-		r_core_visual_graph (core, core->graph, NULL, true);
-		r_config_set_i (core->config, "scr.interactive", ov);
-		r_cons_show_cursor (true);
+		if (ran) {
+			r_agraph_set_title (core->graph, r_config_get (core->config, "graph.title"));
+			r_agraph_set_curnode (core->graph, ran);
+			core->graph->force_update_seek = true;
+			core->graph->need_set_layout = true;
+			int ov = r_config_get_i (core->config, "scr.interactive");
+			core->graph->need_update_dim = true;
+			r_core_visual_graph (core, core->graph, NULL, true);
+			r_config_set_i (core->config, "scr.interactive", ov);
+			r_cons_show_cursor (true);
+		} else {
+			eprintf ("This graph contains no nodes\n");
+		}
 		break;
 	}
 	case 'd': // "aggd" - dot format
