@@ -68,6 +68,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 	int ret = 0;
 	int inv = 0;
 	int linelen = 0;
+	int ll = 0;
 	int lines, cols = r_cons_get_size (&lines);
 	if (I->is_wine==-1) {
 		I->is_wine = r_file_is_directory ("/proc")? 1: 0;
@@ -79,9 +80,9 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 	if (ptr && hConsole)
 	for (; *ptr && ptr < ptr_end; ptr++) {
 		if (ptr[0] == 0xa) {
-			int ll = (size_t)(ptr - str);
+			ll = (size_t)(ptr - str);
 			lines--;
-			if (vmode && lines<0) {
+			if (vmode && lines < 0) {
 				break;
 			}
 			if (ll < 1) {
@@ -90,22 +91,24 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			if (vmode) {
 				// TODO: Fix utf8 chop
 				/* only chop columns if necessary */
-				if (ll != linelen && ll+linelen >= cols) {
+				if (ll + linelen >= cols) {
 					// chop line if too long
-					ll = (cols-linelen)-1;
-					if (ll < 1) {
+					ll = (cols - linelen) - 1;
+					if (ll < 0) {
 						continue;
 					}
 				}
 			}
-			write (1, str, ll);
-			linelen += ll;
+			if (ll > 0) {
+				write (1, str, ll);
+				linelen += ll;
+			}
 			esc = 0;
-			str = ptr+1;
+			str = ptr + 1;
 			if (vmode) {
 				int wlen = cols - linelen;
 				char white[1024];
-				if (wlen>0 && wlen<sizeof (white)) {
+				if (wlen > 0 && wlen < sizeof (white)) {
 					memset (white, ' ', sizeof (white));
 					write (1, white, wlen-1);
 				}
@@ -115,15 +118,15 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			continue;
 		}
 		if (ptr[0] == 0x1b) {
-			int ll = (size_t)(ptr-str);
-			if (str[0]=='\n') {
+			ll = (size_t)(ptr-str);
+			if (str[0] == '\n') {
 				str++;
 				ll--;
 				if (vmode) {
-					int wlen = cols-linelen-1;
+					int wlen = cols - linelen - 1;
 					char white[1024];
 					//wlen = 5;
-					if (wlen>0) {
+					if (wlen > 0) {
 						memset (white, ' ', sizeof (white));
 						write (1, white, wlen);
 					}
@@ -134,14 +137,16 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				linelen = 0;
 			}
 			if (vmode) {
-				if (linelen+ll>=cols) {
+				if (linelen + ll >= cols) {
 					// chop line if too long
-					ll = (cols-linelen)-1;
-					// fix utf8 len here
-					ll = wrapline ((const char*)str, cols-linelen-1);
+					ll = (cols-linelen) - 1;
+					if (ll > 0) {
+						// fix utf8 len here
+						ll = wrapline ((const char*)str, cols - linelen - 1);
+					}
 				}
 			}
-			if (ll>0) {
+			if (ll > 0) {
 				write (1, str, ll);
 				linelen += ll;
 			}
