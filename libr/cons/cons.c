@@ -461,7 +461,9 @@ R_API void r_cons_push() {
 		}
 		r_stack_push (I.cons_stack, data);
 		I.buffer_len = 0;
-		memset (I.buffer, 0, I.buffer_sz);
+		if (I.buffer) {
+			memset (I.buffer, 0, I.buffer_sz);
+		}
 	}
 }
 
@@ -708,7 +710,7 @@ R_API void r_cons_printf(const char *format, ...) {
 		palloc (MOAR + strlen (format) * 20);
 		size = I.buffer_sz - I.buffer_len - 1; /* remaining space in I.buffer */
 		va_start (ap, format);
-		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
+		written = vsnprintf (I.buffer + I.buffer_len, size, format, ap);
 		va_end (ap);
 		if (written >= size) { /* not all bytes were written */
 			palloc (written);
