@@ -746,7 +746,6 @@ static int bin_dwarf(RCore *core, int mode) {
 		return false;
 	}
 
-
 	/* cache file:line contents */
 	const char *lastFile = NULL;
 	int *lastFileLines = NULL;
@@ -788,18 +787,15 @@ static int bin_dwarf(RCore *core, int mode) {
 					lastFileLinesCount2 = lastFileLinesCount;
 
 					lastFile = path;
-					free (lastFileLines);
 					lastFileContents = r_file_slurp (path, NULL);
 					if (lastFileContents) {
 						lastFileLines = r_str_split_lines (lastFileContents, &lastFileLinesCount);
-					} else {
-						lastFileLines = NULL;
 					}
 				}
 			}
 			char *line = NULL;
 			//r_file_slurp_line (path, row->line - 1, 0);
-			if (lastFileLines) {
+			if (lastFileLines && lastFileContents) {
 				int nl = row->line - 1;
 				if (nl >= 0 && nl < lastFileLinesCount) {
 					line = strdup (lastFileContents + lastFileLines[nl]);
@@ -826,6 +822,8 @@ static int bin_dwarf(RCore *core, int mode) {
 		}
         }
 	r_cons_break_end ();
+	R_FREE (lastFileContents);
+	R_FREE (lastFileContents2);
 	r_list_free (list);
 	return true;
 }
