@@ -108,7 +108,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 			if (vmode) {
 				int wlen = cols - linelen;
 				char white[1024];
-				if (wlen>0 && wlen<sizeof (white)) {
+				if (wlen > 0 && wlen < sizeof (white)) {
 					memset (white, ' ', sizeof (white));
 					write (1, white, wlen-1);
 				}
@@ -119,14 +119,14 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 		}
 		if (ptr[0] == 0x1b) {
 			ll = (size_t)(ptr-str);
-			if (str[0]=='\n') {
+			if (str[0] == '\n') {
 				str++;
 				ll--;
 				if (vmode) {
-					int wlen = cols-linelen-1;
+					int wlen = cols - linelen - 1;
 					char white[1024];
 					//wlen = 5;
-					if (wlen>0) {
+					if (wlen > 0) {
 						memset (white, ' ', sizeof (white));
 						write (1, white, wlen);
 					}
@@ -137,16 +137,16 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 				linelen = 0;
 			}
 			if (vmode) {
-				if (linelen+ll>=cols) {
+				if (linelen + ll >= cols) {
 					// chop line if too long
-					ll = (cols-linelen)-1;
-					if (ll>0) {
+					ll = (cols-linelen) - 1;
+					if (ll > 0) {
 						// fix utf8 len here
-						ll = wrapline ((const char*)str, cols-linelen-1);
+						ll = wrapline ((const char*)str, cols - linelen - 1);
 					}
 				}
 			}
-			if (ll>0) {
+			if (ll > 0) {
 				write (1, str, ll);
 				linelen += ll;
 			}
