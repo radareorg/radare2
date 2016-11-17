@@ -1834,6 +1834,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	SETI("zign.min", 2, "Minimum zignature length to filter in 'zg'");
 	SETI("zign.max", 500, "Maximum zignature length to filter in 'zg'");
+	SETPREF("zign.prefix", "sign", "Default prefix for signatures matches");
 
 	/* diff */
 	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
