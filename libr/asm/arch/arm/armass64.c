@@ -23,6 +23,24 @@ static ut32 mov(const char *str, int k) {
 	return op;
 }
 
+static ut32 branch_reg(const char *str, ut64 addr, int k) {
+	ut32 op = UT32_MAX;
+	const char *operand = strchr (str, 'x');
+	operand++;
+
+	int n = (int)r_num_math (NULL, operand);
+	if (n < 0 || n > 31) {
+		return -1;
+	}
+	n = n << 5;
+	int h = n >> 8;
+	n &= 0xff;
+	op = k;
+	op |= n << 24;
+	op |= h << 16;
+	return op;
+}
+
 static ut32 branch(const char *str, ut64 addr, int k) {
 	ut32 op = UT32_MAX;
 	const char *operand = strchr (str, ' ');
@@ -148,10 +166,17 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	if (!strncmp (str, "b ", 2)) {
 		*op = branch (str, addr, 0x14);
 		return *op != -1;
-
 	}
 	if (!strncmp (str, "bl ", 3)) {
 		*op = branch (str, addr, 0x94);
+		return *op != -1;
+	}
+	if (!strncmp (str, "br x", 4)) {
+		*op = branch_reg (str, addr, 0x1fd6);
+		return *op != -1;
+	}
+	if (!strncmp (str, "blr x", 4)) {
+		*op = branch_reg (str, addr, 0x3fd6);
 		return *op != -1;
 	}
 	return false;
