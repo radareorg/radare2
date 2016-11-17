@@ -128,8 +128,8 @@ static int cmd_zign(void *data, const char *input) {
 	case 'g':
 		if (input[1]==' ' && input[2]) {
 			int fdold = r_cons_singleton ()->fdout;
-			int minzlen = r_config_get_i (core->config, "cfg.minzlen");
-			int maxzlen = r_config_get_i (core->config, "cfg.maxzlen");
+			int minzlen = r_config_get_i (core->config, "zign.min");
+			int maxzlen = r_config_get_i (core->config, "zign.max");
 			ptr = strchr (input + 2, ' ');
 			if (ptr) {
 				*ptr = '\0';
@@ -189,9 +189,9 @@ static int cmd_zign(void *data, const char *input) {
 							r_cons_newline ();
 						} else {
 							if (zlen <= minzlen) {
-								eprintf ("Omitting %s zignature is too small. Length is %d. Check cfg.minzlen.\n", name, zlen);
+								eprintf ("Omitting %s zignature is too small. Length is %d. Check zign.min.\n", name, zlen);
 							} else {
-								eprintf ("Omitting %s zignature is too big. Length is %d. Check cfg.maxzlen.\n", name, zlen);
+								eprintf ("Omitting %s zignature is too big. Length is %d. Check zign.max.\n", name, zlen);
 							}
 						}
 					} else {

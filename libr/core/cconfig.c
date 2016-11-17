@@ -1832,8 +1832,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF("cfg.wseek", "false", "Seek after write");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	SETI("cfg.minzlen", 2, "Minimum zignature length to filter in 'zg'");
-	SETI("cfg.maxzlen", 500, "Maximum zignature length to filter in 'zg'");
+	SETI("zign.min", 2, "Minimum zignature length to filter in 'zg'");
+	SETI("zign.max", 500, "Maximum zignature length to filter in 'zg'");
 
 	/* diff */
 	SETCB("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
