@@ -3,6 +3,8 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_types.h>
+#include <r_print.h>
+#include <r_util.h>
 #include <sys/types.h>
 
 #if __WINDOWS__
@@ -254,16 +256,45 @@ struct r2k_data {
 
 #define READ_KERNEL_MEMORY  0x1
 #define WRITE_KERNEL_MEMORY 0x2
+#define READ_PROCESS_ADDR   0x3
+#define WRITE_PROCESS_ADDR  0X4
+#define READ_PHYSICAL_ADDR  0x5
+#define WRITE_PHYSICAL_ADDR 0x6
+#define GET_PROC_MAPS       0x7
+#define GET_KERNEL_MAP      0x8
 
-#define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, struct r2k_data)
-#define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, struct r2k_data)
+#define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, sizeof (struct r2k_data))
+#define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, sizeof (struct r2k_data))
+#define IOCTL_READ_PROCESS_ADDR   _IOR (R2_TYPE, READ_PROCESS_ADDR, sizeof (struct r2k_data))
+#define IOCTL_WRITE_PROCESS_ADDR  _IOR (R2_TYPE, WRITE_PROCESS_ADDR, sizeof (struct r2k_data))
+#define IOCTL_READ_PHYSICAL_ADDR  _IOR (R2_TYPE, READ_PHYSICAL_ADDR, sizeof (struct r2k_data))
+#define IOCTL_WRITE_PHYSICAL_ADDR _IOR (R2_TYPE, WRITE_PHYSICAL_ADDR, sizeof (struct r2k_data))
+#define IOCTL_GET_PROC_MAPS       _IOR (R2_TYPE, GET_PROC_MAPS, sizeof (struct r2k_data))
+#define IOCTL_GET_KERNEL_MAP      _IOR (R2_TYPE, GET_KERNEL_MAP, sizeof (struct r2k_data))
 
-static int ReadKernelMemory_linux (RIODesc *iodesc, ut64 address,  ut8 *buf, int len) {
-	if (iodesc && iodesc->fd > 0) {
+static char* getargpos (const char *buf, int pos) {
+	int i;
+	for (i = 0; i < pos; i++) {
+		buf = strchr (buf, ' ');
+		buf = r_str_ichr ((char *) buf, ' ');
+	}
+	return buf;
+}
+
+static ut64 getvalue (const char *buf, int pos) {
+	//TODO: Add checks if the particular position exist or not.
+	ut64 ret;
+	buf = getargpos (buf, pos);
+	ret = strtoull (buf, 0, 0);
+	return ret;
+}
+
+static int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, ut64 pid, ut64 address, ut8 *buf, int len) {
+	int ret = -1;
+	if (iodesc && iodesc->fd > 0 && buf) {
 		struct r2k_data data;
-		int ret, ioctl_n;
 
-		data.pid = 0;
+		data.pid = pid;
 		data.addr = address;
 		data.len = len;
 		data.buff = (ut8 *) calloc (len + 1, 1);
@@ -271,7 +302,6 @@ static int ReadKernelMemory_linux (RIODesc *iodesc, ut64 address,  ut8 *buf, int
 			return -1;
 		}
 
-		ioctl_n = IOCTL_READ_KERNEL_MEMORY;
 		ret = ioctl (iodesc->fd, ioctl_n, &data);
 		if (!ret) {
 			memcpy (buf, data.buff, len);
@@ -282,19 +312,20 @@ static int ReadKernelMemory_linux (RIODesc *iodesc, ut64 address,  ut8 *buf, int
 		}
 
 		free (data.buff);
-		return ret;
+	} else if (!buf) {
+		io->cb_printf ("Invalid input buffer.\n");
 	} else {
-		eprintf ("IOCTL device not initialized.\n");
-		return -1;
+		io->cb_printf ("IOCTL device not initialized.\n");
 	}
+	return ret;
 }
 
-static int WriteKernelMemory_linux (RIODesc *iodesc, ut64 address, const ut8 *buf, int len) {
-	if (iodesc && iodesc->fd > 0) {
+static int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, ut64 pid, ut64 address, const ut8 *buf, int len) {
+	int ret = -1;
+	if (iodesc && iodesc->fd > 0 && buf) {
 		struct r2k_data data;
-		int ret, ioctl_n;
 
-		data.pid = 0;
+		data.pid = pid;
 		data.addr = address;
 		data.len = len;
 		data.buff = (ut8 *) calloc (len + 1, 1);
@@ -302,23 +333,132 @@ static int WriteKernelMemory_linux (RIODesc *iodesc, ut64 address, const ut8 *bu
 			return -1;
 		}
 
-		ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
 		memcpy (data.buff, buf, len);
 		ret = ioctl (iodesc->fd, ioctl_n, &data);
 		if (!ret) {
 			ret = len;
 		} else {
-			eprintf ("Write failed. ioctl err: %s\n", strerror (errno));
+			io->cb_printf ("Write failed. ioctl err: %s\n", strerror (errno));
 			ret = -1;
 		}
 
 		free (data.buff);
-		return ret;
+	} else if (!buf) {
+		io->cb_printf ("Invalid input buffer.\n");
 	} else {
-		eprintf ("IOCTL device not initialized.\n");
-		return -1;
+		io->cb_printf ("IOCTL device not initialized.\n");
 	}
+	return ret;
 }
+
+static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
+	int ret, inphex, ioctl_n;
+	ut64 pid, addr, len;
+	ut8 *databuf = NULL;
+	buf = r_str_ichr ((char *) buf, ' ');
+
+	switch (*buf) {
+	case 'r':
+		{
+			switch (buf[1]) {
+			case 'l':
+				//read linear address
+				//=! rl addr len
+				pid = 0;
+				addr = getvalue (buf, 1);
+				len = getvalue (buf, 2);
+				ioctl_n = IOCTL_READ_KERNEL_MEMORY;
+				break;
+			case 'p':
+				//read process address
+				//=! rp pid address len
+				pid = getvalue (buf, 1);
+				addr = getvalue (buf, 2);
+				len = getvalue (buf, 3);
+				ioctl_n = IOCTL_READ_PROCESS_ADDR;
+				break;
+			case 'P':
+				//read physical address
+				//=! rP address len
+				pid = 0;
+				addr = getvalue (buf, 1);
+				len = getvalue (buf, 2);
+				ioctl_n = IOCTL_READ_PHYSICAL_ADDR;
+				break;
+			default:
+				goto end;
+			}
+			databuf = (ut8 *) calloc (len + 1, 1);
+			ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
+			if (ret > 0) {
+				r_print_hexdump (NULL, addr, (const ut8 *) databuf, ret, 16, 1); //TODO: Fix this. Not to use r_print_hexdump
+			}
+		}
+		break;
+	case 'w':
+		{
+			inphex = (buf[2] == 'x') ? 1 : 0;
+			switch (buf[1]) {
+			case 'l':
+				//write linear address
+				//=! wl addr str
+				pid = 0;
+				addr = getvalue (buf, 1);
+				buf = getargpos (buf, 2);
+				ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
+				break;
+			case 'p':
+				//write process address
+				//=! wp pid address str
+				pid = getvalue (buf, 1);
+				addr = getvalue (buf, 2);
+				buf = getargpos (buf, 3);
+				ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
+				break;
+			case 'P':
+				//write physical address
+				//=! wP address str
+				pid = 0;
+				addr = getvalue (buf, 1);
+				buf = getargpos (buf, 2);
+				ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
+				break;
+			default:
+				goto end;
+			}
+			len = strlen (buf);
+			databuf = (ut8 *) calloc (len + 1, 1);
+			if (databuf) {
+				if (inphex) {
+					len = r_hex_str2bin (buf, databuf);
+				} else {
+					memcpy (databuf, buf, strlen (buf) + 1);
+					len = r_str_unescape ((char *) databuf);
+				}
+				ret = WriteMemory (io, iodesc, ioctl_n, pid, addr, (const ut8 *) databuf, len);
+			} else {
+			    io->cb_printf ("Failed to allocate buffer.\n");
+			}
+		}
+		break;
+	case 'g':
+		break;
+	default:
+		{
+			const char* help_msg = "Usage:   =![rw][lpP] [args...]\n" \
+				"=!rl     addr len        Read from linear address\n" \
+				"=!rp     pid addr len    Read from process address\n" \
+				"=!rP     addr len        Read physical address\n" \
+				"=!wl[x]  addr input      Write at linear address. Use =!wlx for input in hex\n" \
+				"=!wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex\n" \
+				"=!wP[x]  addr input      Write at physical address. Use =!wPx for input in hex\n";
+			io->cb_printf ("%s", help_msg);
+		}
+	}
+ end:
+	return 0;
+}
+
 #endif
 
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -326,9 +466,9 @@ int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return WriteKernelMemory (io->off, buf, count);
 #elif __linux__
-	return WriteKernelMemory_linux (fd, io->off, buf, count);
+	return WriteMemory (io, fd, IOCTL_WRITE_KERNEL_MEMORY, 0, io->off, buf, count);
 #else
-	eprintf ("TODO: r2k not implemented for this plataform.\n");
+	io->cb_printf ("TODO: r2k not implemented for this plataform.\n");
 	return -1;
 #endif
 }
@@ -337,9 +477,9 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #if __WINDOWS__
 	return ReadKernelMemory (io->off, buf, count);
 #elif __linux__
-	return ReadKernelMemory_linux (fd, io->off, buf, count);
+	return ReadMemory (io, fd, IOCTL_READ_KERNEL_MEMORY, 0, io->off, buf, count);
 #else
-	eprintf ("TODO: r2k not implemented for this plataform.\n");
+	io->cb_printf ("TODO: r2k not implemented for this plataform.\n");
 	memset (buf, '\xff', count);
 	return count;
 #endif
@@ -376,7 +516,11 @@ static int r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 		GetSystemModules (io);
 #endif
 	} else {
+#if __linux__
+		run_ioctl_command (io, fd, cmd);
+#else
 		eprintf ("Try: '=!mod'\n    '.=!mod'\n");
+#endif
 	}
 	return -1;
 }
@@ -394,12 +538,12 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 #elif __linux__
 		int fd = open ("/dev/r2k", O_RDONLY);
 		if (fd == -1) {
-			eprintf ("r2k__open: Error in opening /dev/r2k.");
+			io->cb_printf ("r2k__open: Error in opening /dev/r2k.");
 			return NULL;
 		}
 		return r_io_desc_new (&r_io_plugin_r2k, fd, pathname, rw, mode, NULL);
 #else
-		eprintf ("Not supported on this platform\n");
+		io->cb_printf ("Not supported on this platform\n");
 #endif
 	}
 	return NULL;
