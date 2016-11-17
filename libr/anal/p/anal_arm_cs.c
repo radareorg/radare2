@@ -332,6 +332,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		/* TODO: support WZR XZR to specify 32, 64bit op */
 		r_strbuf_setf (&op->esil, "%s,%s,/=", REG64 (1), REG64 (0));
 		break;
+	case ARM64_INS_BR:
+		r_strbuf_setf (&op->esil, "%s,pc,=", REG64(0));
+		break;
 	case ARM64_INS_B:
 		switch (insn->detail->arm.cc) {
 		case 0:
@@ -1094,7 +1097,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		op->fail = addr+op->size;
 		break;
 	case ARM64_INS_BR:
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = R_ANAL_OP_TYPE_UJMP; // RJMP ?
 		op->eob = true;
 		break;
 	case ARM64_INS_B:
