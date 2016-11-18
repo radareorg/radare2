@@ -2434,10 +2434,15 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						continue;
 					}
 					if (r_str_glob (flag->name, word)) {
+						char *buf = NULL;
+						const char *tmp = NULL;
 						r_core_seek (core, flag->offset, 1);
 						r_cons_push ();
 						r_core_cmd (core, cmd, 0);
-						char *buf = strdup (r_cons_get_buffer ());
+						tmp = r_cons_get_buffer ();
+						if (tmp) {
+							buf = tmp? strdup (tmp): NULL;
+						}
 						r_cons_pop ();
 						r_cons_strcat (buf);
 						free (buf);
