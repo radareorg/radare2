@@ -204,7 +204,7 @@ fail:
 }
 
 // Move to r_util ??
-int dex_read_uleb128 (const ut8 *ptr) {
+int dex_read_uleb128(const ut8 *ptr) {
 	ut8 len = dex_uleb128_len (ptr);
 	const ut8 *in = ptr + len - 1;
 	ut32 result = 0;
@@ -223,7 +223,7 @@ int dex_read_uleb128 (const ut8 *ptr) {
 }
 
 #define LEB_MAX_SIZE 6
-int dex_uleb128_len (const ut8 *ptr) {
+int dex_uleb128_len(const ut8 *ptr) {
 	int i = 1, result = *(ptr++);
 	while (result > 0x7f && i <= LEB_MAX_SIZE) {
 		result = *(ptr++);
@@ -233,7 +233,7 @@ int dex_uleb128_len (const ut8 *ptr) {
 }
 
 #define SIG_EXTEND(X,Y) X = (X << Y) >> Y
-int dex_read_sleb128 (const char *ptr) {
+int dex_read_sleb128(const char *ptr) {
 	int cur, result;
 	ut8 len = dex_uleb128_len ((const ut8*)ptr);
 	ptr += len - 1;
