@@ -7,7 +7,7 @@
 #define r_hash_adler32 __adler32
 #include "../../hash/adler32.c"
 
-#define DEBUG_PRINTF 0
+#define DEBUG_PRINTF 1
 
 #if DEBUG_PRINTF
 #define dprintf eprintf
@@ -177,6 +177,17 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	}
 	*cp = '\0';
 	return str;
+}
+
+/*
+ * Parse 
+ *
+ */
+
+static void readHandlersFromCodeItem(RBinDexObj *bin, ut64 offset) {
+	ut8 *bufptr = bin->b->buf;
+	int size = r_read_le32 (bufptr+offset);
+	eprintf("SIZE=%d\n", size);
 }
 
 
@@ -589,11 +600,11 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 	ut8 ff[sizeof (DexField)] = {0};
 	ut8 ff2[16] = {0};
 	char *class_name, *cln = NULL;
-	int total, i;
+	int total, i, z;
 	const ut8 *p, *p_end;
 	DexField field;
 
-	if (!c || !c->class_data_offset) {
+	if (!c) {
 		return;
 	}
 
@@ -608,6 +619,28 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 	dprintf("  Access flags      : 0x%04x (%s)\n", c->access_flags, createAccessFlagStr (c->access_flags, kAccessForClass));
 	dprintf("  Superclass        : '%s'\n", dex_class_super_name (bin, c));
 	dprintf("  Interfaces        -\n");
+	// parse Interface :: types list
+	if (c->interfaces_offset > 0) {
+		p = r_buf_get_at (binfile->buf, c->interfaces_offset, NULL);
+		int types_list_size = r_read_le32(p);
+		for (z = 0; z < types_list_size; z++) {
+			int t = r_read_le16 (p+4+z*2);
+			int tid = bin->types[t].descriptor_id;
+			dprintf("    #%d              : '%s'\n", z, getstr (bin, tid));
+		}
+	}
+
+	// TODO: this is quite ugly
+	if (!c || !c->class_data_offset) {
+		char *source_file = getstr (bin, c->source_file);
+		dprintf("  Static fields     -\n  Instance fields   -\n  Direct methods    -\n  Virtual methods   -\n");
+		if (source_file == NULL) {
+			dprintf("  source_file_idx   : %d (unknown)\n\n", c->source_file);
+		} else {
+			dprintf("  source_file_idx   : %d (%s)\n\n", c->source_file, source_file);
+		}
+		return;
+	}
 
 	p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
 	p_end = p + binfile->buf->length - c->class_data_offset;
@@ -674,7 +707,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 			sym->paddr = sym->vaddr = total;
 			sym->ordinal = (*sym_count)++;
 			
-			dprintf("    #%d              : (in %s)\n", i, class_name);
+			dprintf("    #%d              : (in %s;)\n", i, class_name);
 			dprintf("      name          : '%s'\n", fieldName);
 			dprintf("      type          : '%s'\n", type_str);
 			dprintf("      access        : 0x%04x (%s)\n", (unsigned int)accessFlags, accessStr);
@@ -728,7 +761,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 			sym->paddr = sym->vaddr = total;
 			sym->ordinal = (*sym_count)++;
 
-			dprintf("    #%d              : (in %s)\n", i, class_name);
+			dprintf("    #%d              : (in %s;)\n", i, class_name);
 			dprintf("      name          : '%s'\n", name);
 			dprintf("      type          : '%s'\n", type_str);
 			dprintf("      access        : 0x%04x (%s)\n", (unsigned int)accessFlags, accessStr);
@@ -741,7 +774,8 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 
 	dprintf ("  Direct methods    -\n");
 	/* direct methods (aka static) */
-	ut64 omi = 0;
+	ut64 omi = 0; 
+	bool catchAll;
 	for (i = 0; i < DM; i++) {
 		char *method_name, *flag_name;
 		ut64 MI, MA, MC;
@@ -777,10 +811,212 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 
 		const char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
 
-		dprintf("    #%d              : (in %s)\n", i, class_name);
+		ut16 regsz;
+		ut16 ins_size;
+		ut16 outs_size;
+		ut16 tries_size;
+		ut16 start_addr;
+		ut16 insn_count;
+		ut16 handler_off;
+		ut32 debug_info_off;
+		ut32 insns_size;
+
+		ut8 ff3[8] = {0};
+		ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
+		ut64 v2, handler_type, handler_addr;
+		int t;
+
+		if (MC > 0) { 
+			// TODO: parse debug info
+			if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
+				eprintf("error1");
+				continue;
+			}
+
+			regsz = r_read_le16 (ff2);
+			ins_size = r_read_le16 (ff2 + 2);
+			outs_size = r_read_le16 (ff2 + 4);
+			tries_size = r_read_le16 (ff2 + 6);
+			debug_info_off = r_read_le32 (ff2 + 8);
+			insns_size = r_read_le32 (ff2 + 12);
+
+			int padd = 0;
+			if (tries_size > 0 && insns_size%2 != 0) padd = 2;
+			t = 16 + 2*insns_size + padd;
+		}
+
+		dprintf("    #%d              : (in %s;)\n", i, class_name);
 		dprintf("      name          : '%s'\n", method_name);
 		dprintf("      type          : '%s'\n", signature);
 		dprintf("      access        : 0x%04x (%s)\n", (unsigned int)MA, accessStr);
+
+		if (MC > 0) {
+			dprintf("      code          -\n");
+			dprintf("      registers     : %d\n", regsz);
+			dprintf("      ins           : %d\n", ins_size);
+			dprintf("      outs          : %d\n", outs_size);
+			dprintf("      insns size    : %d 16-bit code units\n", insns_size);
+			if (tries_size > 0) {
+				dprintf("      catches       : %d\n", tries_size);
+				int j, m = 0;
+				for (j=0; j < tries_size; ++j) {
+					if (r_buf_read_at (binfile->buf, binfile->buf->base + MC + t + j*8, ff3, 8) < 1) {
+						eprintf("error2");
+						continue;
+					}
+					start_addr = r_read_le32 (ff3);
+					insn_count = r_read_le16 (ff3 + 4);
+					handler_off = r_read_le16 (ff3 + 6);
+					char* s = NULL;
+					dprintf("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
+					
+					const ut8 *p3, *p3_end;
+					int off = MC + t + tries_size*8 + handler_off;
+					p3 = r_buf_get_at (binfile->buf, off, NULL);
+					p3_end = p3 + binfile->buf->length - off;
+					st64 size = gum_read_sleb128 (&p3, p3_end);
+					//eprintf("handler_off=0x%x handlers_size=0x%x offset=0x%x\n", handler_off, size, off);
+
+
+					if (size <= 0) {
+						catchAll = true;
+						size = -size;
+					} else {
+						catchAll = false;
+					}
+
+					for (m = 0; m < size; m++) {
+						p3 = r_uleb128 (p3, p3_end - p3, &handler_type);
+						p3 = r_uleb128 (p3, p3_end - p3, &handler_addr);
+						
+						if (handler_type > 0 && handler_type < bin->header.types_size) {
+							s = getstr (bin, bin->types[handler_type].descriptor_id);
+							dprintf("          %s -> 0x%04x\n", s, handler_addr);
+						} else {
+							dprintf("          (error) -> 0x%04x\n", s, handler_addr);
+						}
+					}
+
+					if (catchAll) {
+						p3 = r_uleb128 (p3, p3_end - p3, &v2);
+						dprintf("          <any> -> 0x%04x\n", v2);
+					}
+				}
+
+			} else {
+				dprintf("      catches       : (none)\n");
+			}
+		} else {
+			dprintf("      code          : (none)\n");
+		}
+
+		// THIS_WILL_BE_A_FUNCTION:: PARSE_DEBUG_INFO()
+		if (MC > 0 && debug_info_off > 0) {			
+			//eprintf("debug_info_off=%x\n", debug_info_off);
+			ut8 *p4 = r_buf_get_at (binfile->buf, debug_info_off, NULL);
+			ut8 *p4_end = p4 + binfile->buf->length - debug_info_off;
+			ut64 line_start;
+			ut64 parameters_size;
+			ut64 param_type_idx;
+
+			p4 = r_uleb128 (p4, p4_end - p4, &line_start);
+			p4 = r_uleb128 (p4, p4_end - p4, &parameters_size);
+			//eprintf("line_start=%x parameters_size=%x\n", line_start, parameters_size);
+			while (parameters_size > 0) {
+				p4 = r_uleb128 (p4, p4_end - p4, &param_type_idx);
+				parameters_size -= 1;
+			}
+
+			// The state machine consists of five registers
+			ut32 address = 0;
+			ut32 line = line_start;
+			ut32 source_file = c->source_file;
+			bool prologue_end = false;
+			bool epilogue_begin = false;
+
+			RList *debug_positions = r_list_new ();
+
+			struct dex_debug_local_t debug_locals[regsz];
+    		memset(debug_locals, 0, sizeof(struct dex_debug_local_t) * regsz);
+
+			ut16 argReg = regsz - ins_size;
+
+			if ((MA & 0x0008) == 0) {
+				debug_locals[argReg].name = "this";
+				debug_locals[argReg].descriptor = class_name;
+				debug_locals[argReg].startAddress = 0;
+				debug_locals[argReg].live = true;
+			}
+
+			// foreach parameters_size
+			ut8 opcode = *(p4++) & 0xff;
+			while (opcode != 0x0) {
+				if (opcode == 0x1) {
+					ut64 addr_diff;
+					p4 = r_uleb128 (p4, p4_end - p4, &addr_diff);
+					address += addr_diff;
+					//eprintf("DBG_ADVANCE_PC %x\n", addr_diff);
+				} else if (opcode == 0x2) {
+					st64 line_diff = gum_read_sleb128 (&p4, p4_end - p4);
+					line += line_diff;
+					//eprintf("DBG_ADVANCE_LINE %x\n", line_diff);
+				} else if (opcode == 0x3) {
+					ut64 register_num;
+					ut64 name_idx;
+					ut64 type_idx;
+					p4 = r_uleb128 (p4, p4_end - p4, &register_num);
+					p4 = r_uleb128 (p4, p4_end - p4, &name_idx); name_idx -= 1;
+					p4 = r_uleb128 (p4, p4_end - p4, &type_idx); type_idx -= 1;
+					//eprintf("DBG_START_LOCAL %x %x %x\n", register_num, name_idx, type_idx);
+				} else if (opcode == 0x4) {
+				} else if (opcode == 0x5) {
+				} else if (opcode == 0x6) {
+				} else if (opcode == 0x7) {//DBG_SET_PROLOGUE_END
+					//eprintf("DBG_SET_PROLOGUE_END\n");
+					prologue_end = true;
+				} else if (opcode == 0x8) {// DBG_SET_EPILOGUE_BEGIN
+					//eprintf("DBG_SET_EPILOGUE_BEGIN\n");
+					epilogue_begin = true;
+				} else if (opcode == 0x9) {
+				} else {
+					ut64 adjusted_opcode = opcode - 0x0a;
+					line += -4 + (adjusted_opcode % 15);
+					address += (adjusted_opcode / 15);
+					// emit new position
+					//eprintf("emit %x %x %x %x %x\n", address, line, source_file, prologue_end, epilogue_begin);
+
+					struct dex_debug_position_t *position = malloc(sizeof(struct dex_debug_position_t));
+					position->address = address;
+					position->line = line; 
+					r_list_append (debug_positions, position);
+
+					prologue_end = false;
+					epilogue_begin = false;
+				}
+				opcode = *(p4++) & 0xff;
+			}			
+
+			RList *symbols;
+			RListIter *iter;
+			struct dex_debug_position_t *position;
+
+			dprintf("      positions     : \n");
+			r_list_foreach (debug_positions, iter, position) {
+				dprintf("        0x%04x line=%d\n", position->address, position->line);
+			}
+
+			// https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
+			// https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
+			dprintf("      locals        : \n");
+			for (int reg = 0; reg < regsz; reg++) {
+				if (debug_locals[reg].live) {
+					dprintf("        0x%04x - 0x%04x reg=%d %s %s; \n", debug_locals[reg].startAddress, debug_locals[reg].startAddress + insns_size, reg, debug_locals[reg].name, debug_locals[reg].descriptor);
+				}
+			}
+		} else if (MC > 0) {
+			dprintf("      positions     : \n");
+			dprintf("      locals        : \n");
+		}
 
 		/* add symbol */
 		if (*flag_name) {
@@ -793,19 +1029,6 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
 				 /* avoid methods at 0 paddr */
-#if 0
-				// TODO: use sdb+pf to show method header
-				ut16 regsz;
-				ut16 ins_size
-				ut16 outs_size
-				ut16 tries_size
-				ut32 debug_info_off
-				ut32 insns_size
-				ut16[insn_size] insns;
-				ut16 padding = 0
-				try_item[tries_size] tries
-				encoded_catch_handler_list handlers
-#endif
 
 				// TODO: parse debug info
 				if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
@@ -869,7 +1092,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 	dprintf ("  Virtual methods   -\n");
 	omi = 0;
 	for (i = 0; i < VM; i++) {
-		ut64 MI, MA, MC;
+		ut64 MI, MA, MC; 
 		p = r_uleb128 (p, p_end-p, &MI);
 		p = r_uleb128 (p, p_end-p, &MA);
 		p = r_uleb128 (p, p_end-p, &MC);
@@ -890,12 +1113,213 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 
 		char *name = dex_method_name (bin, MI);
 		char *signature = dex_method_signature(bin, MI);
-		char* accessStr = createAccessFlagStr(MA, kAccessForMethod);
-		dprintf("    #%d              : (in %s)\n", i, class_name);
+		const char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
+
+		ut16 regsz;
+		ut16 ins_size;
+		ut16 outs_size;
+		ut16 tries_size;
+		ut16 start_addr;
+		ut16 insn_count;
+		ut16 handler_off;
+		ut32 debug_info_off;
+		ut32 insns_size;
+
+		// TODO: parse debug info
+		if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
+			eprintf("error1");
+			continue;
+		}
+
+		regsz = r_read_le16 (ff2);
+		ins_size = r_read_le16 (ff2 + 2);
+		outs_size = r_read_le16 (ff2 + 4);
+		tries_size = r_read_le16 (ff2 + 6);
+		debug_info_off = r_read_le32 (ff2 + 8);
+		insns_size = r_read_le32 (ff2 + 12);
+
+		int padd = 0;
+		if (tries_size > 0 && insns_size%2 != 0) padd = 2;
+		int t = 16 + 2*insns_size + padd;
+
+		ut8 ff3[8] = {0};
+		ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
+		ut64 v2, handler_type, handler_addr;
+
+		dprintf("    #%d              : (in %s;)\n", i, class_name);
 		dprintf("      name          : '%s'\n", name);
 		dprintf("      type          : '%s'\n", signature);
 		dprintf("      access        : 0x%04x (%s)\n", (unsigned int)MA, accessStr);
 		free (accessStr);
+
+		if ((MA & 0x0400) == 0) {
+			dprintf("      code          -\n");
+			dprintf("      registers     : %d\n", regsz);
+			dprintf("      ins           : %d\n", ins_size);
+			dprintf("      outs          : %d\n", outs_size);
+			dprintf("      insns size    : %d 16-bit code units\n", insns_size);
+			if (tries_size > 0) {
+				dprintf("      catches       : %d\n", tries_size);
+				int j, m = 0;
+				for (j=0; j < tries_size; ++j) {
+					if (r_buf_read_at (binfile->buf, binfile->buf->base + MC + t + j*8, ff3, 8) < 1) {
+						eprintf("error2");
+						continue;
+					}
+					start_addr = r_read_le32 (ff3);
+					insn_count = r_read_le16 (ff3 + 4);
+					handler_off = r_read_le16 (ff3 + 6);
+					char* s = NULL;
+					dprintf("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
+					
+					const ut8 *p3, *p3_end;
+					int off = MC + t + tries_size*8 + handler_off;
+					p3 = r_buf_get_at (binfile->buf, off, NULL);
+					p3_end = p3 + binfile->buf->length - off;
+					st64 size = gum_read_sleb128 (&p3, p3_end);
+					//eprintf("handler_off=0x%x handlers_size=0x%x offset=0x%x\n", handler_off, size, off);
+
+
+					if (size <= 0) {
+						catchAll = true;
+						size = -size;
+					} else {
+						catchAll = false;
+					}
+
+					for (m = 0; m < size; m++) {
+						p3 = r_uleb128 (p3, p3_end - p3, &handler_type);
+						p3 = r_uleb128 (p3, p3_end - p3, &handler_addr);
+						
+						if (handler_type > 0 && handler_type < bin->header.types_size) {
+							s = getstr (bin, bin->types[handler_type].descriptor_id);
+							dprintf("          %s -> 0x%04x\n", s, handler_addr);
+						} else {
+							dprintf("          (error) -> 0x%04x\n", s, handler_addr);
+						}
+					}
+
+					if (catchAll) {
+						p3 = r_uleb128 (p3, p3_end - p3, &v2);
+						dprintf("          <any> -> 0x%04x\n", v2);
+					}
+				}
+
+			} else {
+				dprintf("      catches       : (none)\n");
+			}
+		} else {
+			dprintf("      code          : (none)\n");
+		}
+
+		// TODO: parse debug_info
+		// THIS_WILL_BE_A_FUNCTION:: PARSE_DEBUG_INFO()
+		if (MC > 0 && debug_info_off > 0) {			
+			//eprintf("debug_info_off=%x\n", debug_info_off);
+			ut8 *p4 = r_buf_get_at (binfile->buf, debug_info_off, NULL);
+			ut8 *p4_end = p4 + binfile->buf->length - debug_info_off;
+			ut64 line_start;
+			ut64 parameters_size;
+			ut64 param_type_idx;
+
+			p4 = r_uleb128 (p4, p4_end - p4, &line_start);
+			p4 = r_uleb128 (p4, p4_end - p4, &parameters_size);
+			//eprintf("line_start=%x parameters_size=%x\n", line_start, parameters_size);
+			while (parameters_size > 0) {
+				p4 = r_uleb128 (p4, p4_end - p4, &param_type_idx);
+				parameters_size -= 1;
+			}
+
+			// The state machine consists of five registers
+			ut32 address = 0;
+			ut32 line = line_start;
+			ut32 source_file = c->source_file;
+			bool prologue_end = false;
+			bool epilogue_begin = false;
+
+			RList *debug_positions = r_list_new ();
+
+			struct dex_debug_local_t debug_locals[regsz];
+    		memset(debug_locals, 0, sizeof(struct dex_debug_local_t) * regsz);
+
+			ut16 argReg = regsz - ins_size;
+
+			if ((MA & 0x0008) == 0) {
+				debug_locals[argReg].name = "this";
+				debug_locals[argReg].descriptor = class_name;
+				debug_locals[argReg].startAddress = 0;
+				debug_locals[argReg].live = true;
+			}
+
+			// foreach parameters_size
+			ut8 opcode = *(p4++) & 0xff;
+			while (opcode != 0x0) {
+				if (opcode == 0x1) {
+					ut64 addr_diff;
+					p4 = r_uleb128 (p4, p4_end - p4, &addr_diff);
+					address += addr_diff;
+					//eprintf("DBG_ADVANCE_PC %x\n", addr_diff);
+				} else if (opcode == 0x2) {
+					st64 line_diff = gum_read_sleb128 (&p4, p4_end - p4);
+					line += line_diff;
+					//eprintf("DBG_ADVANCE_LINE %x\n", line_diff);
+				} else if (opcode == 0x3) {
+					ut64 register_num;
+					ut64 name_idx;
+					ut64 type_idx;
+					p4 = r_uleb128 (p4, p4_end - p4, &register_num);
+					p4 = r_uleb128 (p4, p4_end - p4, &name_idx); name_idx -= 1;
+					p4 = r_uleb128 (p4, p4_end - p4, &type_idx); type_idx -= 1;
+					//eprintf("DBG_START_LOCAL %x %x %x\n", register_num, name_idx, type_idx);
+				} else if (opcode == 0x4) {
+				} else if (opcode == 0x5) {
+				} else if (opcode == 0x6) {
+				} else if (opcode == 0x7) {//DBG_SET_PROLOGUE_END
+					//eprintf("DBG_SET_PROLOGUE_END\n");
+					prologue_end = true;
+				} else if (opcode == 0x8) {// DBG_SET_EPILOGUE_BEGIN
+					//eprintf("DBG_SET_EPILOGUE_BEGIN\n");
+					epilogue_begin = true;
+				} else if (opcode == 0x9) {
+				} else {
+					ut64 adjusted_opcode = opcode - 0x0a;
+					line += -4 + (adjusted_opcode % 15);
+					address += (adjusted_opcode / 15);
+					// emit new position
+					//eprintf("emit %x %x %x %x %x\n", address, line, source_file, prologue_end, epilogue_begin);
+
+					struct dex_debug_position_t *position = malloc(sizeof(struct dex_debug_position_t));
+					position->address = address;
+					position->line = line; 
+					r_list_append (debug_positions, position);
+
+					prologue_end = false;
+					epilogue_begin = false;
+				}
+				opcode = *(p4++) & 0xff;
+			}	
+
+			RList *symbols;
+			RListIter *iter;
+			struct dex_debug_position_t *position;
+
+			dprintf("      positions     : \n");
+			r_list_foreach (debug_positions, iter, position) {
+				dprintf("        0x%04x line=%d\n", position->address, position->line);
+			}
+
+			// https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
+			// https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
+			dprintf("      locals        : \n");
+			for (int reg = 0; reg < regsz; reg++) {
+				if (debug_locals[reg].live) {
+					dprintf("        0x%04x - 0x%04x reg=%d %s %s; \n", debug_locals[reg].startAddress, debug_locals[reg].startAddress + insns_size, reg, debug_locals[reg].name, debug_locals[reg].descriptor);
+				}
+			}
+		} else if (MC > 0) {
+			dprintf("      positions     : \n");
+			dprintf("      locals        : \n");
+		}
 
 		{
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
@@ -920,6 +1344,15 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 		}
 		free (name);
 		free(signature);
+
+
+	}
+
+	char *source_file = getstr (bin, c->source_file);
+	if (source_file == NULL) {
+		dprintf("  source_file_idx   : %d (unknown)\n\n", c->source_file);
+	} else {
+		dprintf("  source_file_idx   : %d (%s)\n\n", c->source_file, source_file);
 	}
 	// TODO:!!!!
 	// FIX: FREE BEFORE ALLOCATE!!!
@@ -1383,6 +1816,11 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
+static RList *header(RBinFile *arch) {
+	RList *list = r_list_new ();
+	return list;
+}
+
 static ut64 size(RBinFile *arch) {
 	int ret;
 	ut32 off = 0, len = 0;
@@ -1418,6 +1856,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.imports = imports,
 	.strings = strings,
 	.info = &info,
+	.fields = &header,
 	.size = &size,
 	.get_offset = &getoffset,
 	.get_name = &getname

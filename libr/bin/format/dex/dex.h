@@ -96,6 +96,30 @@ struct r_bin_dex_str_t {
 	int last;
 };
 
+struct dex_encoded_type_addr_pair_t {
+	ut64 type_idx;
+	ut64 addr;
+};
+
+struct dex_encoded_catch_handler_t {
+	st64 size;
+	struct dex_encoded_type_addr_pair_t *handlers;
+	ut64 catch_all_addr;
+};
+
+struct dex_debug_position_t {
+	ut64 address;
+	ut64 line;
+};
+
+struct dex_debug_local_t {
+    const char *name;
+    const char *descriptor;
+    const char *signature;
+    ut16 startAddress;
+    bool live;
+};
+
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);
 struct r_bin_dex_obj_t *r_bin_dex_new_buf(struct r_buf_t *buf);
 struct r_bin_dex_str_t *r_bin_dex_get_strings (struct r_bin_dex_obj_t* bin);
