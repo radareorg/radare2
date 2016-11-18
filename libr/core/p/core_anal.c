@@ -104,10 +104,8 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 		sdb_array_add_num (db, "bbs", from, 0);
 		eprintf ("####### adding 0x%x\n", from);
 		sdb_num_set (db, Fbb(from), to, 0);
-		if (jump != UT64_MAX)
-			sdb_array_set_num (db, FbbTo(from), 0, jump, 0);
-		if (fail != UT64_MAX)
-			sdb_array_set_num (db, FbbTo(from), 1, fail, 0);
+		sdb_array_set_num (db, FbbTo(from), 0, jump, 0);
+		sdb_array_set_num (db, FbbTo(from), 1, fail, 0);
 		sdb_num_min (db, "min", from, 0);
 		sdb_num_max (db, "max", to, 0);
 	}
@@ -313,12 +311,7 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 			eprintf ("  -> %s\n", sdb_const_get (db, FbbTo (addr), 0));
 			jump = sdb_array_get_num (db, FbbTo(addr), 0, NULL);
 			fail = sdb_array_get_num (db, FbbTo(addr), 1, NULL);
-			if (!jump) {
-				jump = UT64_MAX;
-			}
-			if (!fail) {
-				fail = UT64_MAX;
-			}
+
 			r_core_cmdf (core, "afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x,
 				sdb_num_get (db, "addr", NULL),
 				addr, (int)(addr_end-addr),
