@@ -29,6 +29,7 @@ R_API void r_cons_grep_help() {
 "|   [n]      show only column n\n"
 "|   [n-m]    show column n to m\n"
 "|   [n-]     show all columns starting from column n\n"
+"|   [i,j,k]  show the columns i, j and k\n"
 "| examples:\n"
 "|   i~:0     show fist line of 'i' output\n"
 "|   pd~mov   disasm and grep for mov\n"
