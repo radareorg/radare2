@@ -26,7 +26,8 @@ static void b64_encode(const ut8 in[3], char out[4], int len) {
 }
 
 static int b64_decode(const char in[4], ut8 out[3], int isz) {
-	ut8 len = 3, i, v[4] = { 0 };
+	int len = 3;
+	ut8 i, v[4] = { 0 };
 	for (i = 0; i < 4; i++) {
 		if (in[i] < 43 || in[i] > 122) {
 			return -1;
@@ -35,9 +36,8 @@ static int b64_decode(const char in[4], ut8 out[3], int isz) {
 		if (v[i] == '$') {
 			len = i? i - 1: -1;
 			break;
-		} else {
-			v[i] -= 62;
 		}
+		v[i] -= 62;
 	}
 	out[0] = v[0] << 2 | v[1] >> 4;
 	out[1] = v[1] << 4 | v[2] >> 2;
@@ -50,7 +50,7 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 	if (len < 0) {
 		len = strlen (bin);
 	}
-	for (in = out = 0; in < len - 1; in += 4) {
+	for (in = out = 0; in + 3 < len; in += 4) {
 		ret = b64_decode (bin + in, bout + out, len - in - 1);
 		if (ret < 1) {
 			return -1;
@@ -58,15 +58,21 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 		out += ret;
 	}
 	bout[out] = 0;
-	return (in != out)? out: 0;
+	/* XXX this makes no sense, just return out? */
+	return (in != out)? out: -1;
 }
 
 R_API ut8 *r_base64_decode_dyn(const char *in, int len) {
 	ut8 *bout;
-	if (!in) return NULL;
-	if (len < 0) len = strlen (in) + 1;
-	bout = malloc (1 + len * 2);
+	if (!in) {
+		return NULL;
+	}
+	if (len < 0) {
+		len = strlen (in) + 1;
+	}
+	bout = calloc (4, len + 1);
 	if (r_base64_decode (bout, in, len) == -1) {
+		free (bout);
 		return NULL;
 	}
 	return bout;
