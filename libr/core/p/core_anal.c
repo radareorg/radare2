@@ -82,7 +82,7 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 			ut64 old_jump = sdb_array_get_num (db, FbbTo(block_start), 0, NULL);
 			ut64 old_fail = sdb_array_get_num (db, FbbTo(block_start), 1, NULL);
 			sdb_array_set_num (db, FbbTo(block_start), 0, from, 0);
-			sdb_array_delete (db, FbbTo(block_start), 1, 0);
+			sdb_array_set_num (db, FbbTo(block_start), 1, UT64_MAX, 0);
 			if (old_jump != jump || old_fail != fail) {
 				eprintf ("####### 0x%x has different childs\n", block_start);
 				eprintf ("#### old_j = 0x%x new_j = 0x%x and old_f = 0x%x new_f = 0x%x\n", 
