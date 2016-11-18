@@ -326,7 +326,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 
 		section = r_bin_get_section_at (r_bin_cur_object (bin), paddr, 0);
 		section_name = section ? section->name : "unknown";
-		type_string = string->type == 'w' ? "wide" : "ascii";
+		type_string = r_bin_string_type (string->type);
 		if (IS_MODE_SET (mode)) {
 			char *f_name, *str;
 			if (r_cons_singleton()->breaked) {

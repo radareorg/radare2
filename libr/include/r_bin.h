@@ -87,6 +87,14 @@ enum {
 };
 
 enum {
+	R_STRING_TYPE_DETECT = '?',
+	R_STRING_TYPE_ASCII = 'a',
+	R_STRING_TYPE_UTF8 = 'u',
+	R_STRING_TYPE_WIDE = 'w',
+	R_STRING_TYPE_BASE64 = 'b',
+};
+
+enum {
 	R_BIN_CLASS_PRIVATE,
 	R_BIN_CLASS_PUBLIC,
 	R_BIN_CLASS_FRIENDLY,
@@ -214,6 +222,7 @@ typedef struct r_bin_t {
 	int narch;
 	void *user;
 	/* preconfigured values */
+	int debase64;
 	int minstrlen;
 	int maxstrlen;
 	ut64 maxstrbuf;
@@ -415,7 +424,7 @@ typedef struct r_bin_string_t {
 	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
 	ut32 length; // length of string in chars
-	char type; // Ascii Wide cp850 utf8 ...
+	char type; // Ascii Wide cp850 utf8 base64 ...
 } RBinString;
 
 typedef struct r_bin_field_t {
@@ -570,6 +579,7 @@ R_API RBinFile * r_bin_file_find_by_name_n (RBin * bin, const char * name, int i
 R_API int r_bin_file_set_cur_binfile (RBin * bin, RBinFile *bf);
 R_API RBinPlugin * r_bin_file_cur_plugin (RBinFile *binfile);
 R_API void r_bin_force_plugin (RBin *bin, const char *pname);
+R_API const char *r_bin_string_type (int type);
 
 /* dbginfo.c */
 R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line);

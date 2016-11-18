@@ -89,6 +89,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
 		" RABIN2_STRFILTER: e bin.strfilter    # r2 -qe bin.strfilter=? -c '' --\n"
 		" RABIN2_STRPURGE:  e bin.strpurge     # try to purge false positives\n"
+		" RABIN2_DEBASE64:  e bin.debase64     # Try to debase64 all strings\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n");
 	}
@@ -577,6 +578,10 @@ int main(int argc, char **argv) {
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_STRPURGE"))) {
 		r_config_set (core.config, "bin.strpurge", tmp);
+		free (tmp);
+	}
+	if ((tmp = r_sys_getenv ("RABIN2_DEBASE64"))) {
+		r_config_set (core.config, "bin.debase64", tmp);
 		free (tmp);
 	}
 

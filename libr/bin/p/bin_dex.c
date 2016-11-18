@@ -397,13 +397,13 @@ static RList *strings(RBinFile *arch) {
 		len = dex_read_uleb128 (buf);
 
 		if (len > 1 && len < R_BIN_SIZEOF_STRINGS) {
-			ptr->string = malloc (len + 1);
+			ptr->string = calloc (len + 1, 1);
 			if (!ptr->string) {
 				goto out_error;
 			}
 			off = bin->strings[i] + dex_uleb128_len (buf);
 			if (off > bin->size || off + len > bin->size) {
-				free (ptr->string);
+				R_FREE (ptr->string);
 				goto out_error;
 			}
 			r_buf_read_at (bin->b, off, (ut8*)ptr->string, len);

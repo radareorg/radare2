@@ -1360,6 +1360,13 @@ static int cb_rawstr(void *user, void *data) {
 	return true;
 }
 
+static int cb_debase64(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->bin->debase64 = node->i_value;
+	return true;
+}
+
 static int cb_binstrings(void *user, void *data) {
 	const ut32 req = R_BIN_REQ_STRINGS;
 	RCore *core = (RCore *) user;
@@ -1801,6 +1808,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("bin.prefix", NULL, &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
+	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETPREF("bin.mergeflags", "true", "Merge symbols with the same name into the same flag");
 

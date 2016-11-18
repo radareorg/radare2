@@ -66,6 +66,37 @@ static int r_bin_file_object_add(RBinFile *binfile, RBinObject *o);
 static void binobj_set_baddr(RBinObject *o, ut64 baddr);
 static ut64 binobj_a2b(RBinObject *o, ut64 addr);
 
+static void filterStrings (RBin *bin, RList *strings) {
+	RBinString *ptr;
+	RListIter *iter;
+	r_list_foreach (strings, iter, ptr) {
+		char *dec = (char *)r_base64_decode_dyn (ptr->string, -1);
+		if (dec) {
+			char *s = ptr->string;
+			do {
+				char *dec2 = (char *)r_base64_decode_dyn (s, -1);
+				if (!dec2) {
+					break;
+				}
+				if (!r_str_is_printable (dec2)) {
+					free (dec2);
+					break;
+				}
+				free (dec);
+				s = dec = dec2;
+			} while (true);
+			if (r_str_is_printable (dec) && strlen (dec) > 3) {
+				free (ptr->string);
+				ptr->string = dec;
+				ptr->type = R_STRING_TYPE_BASE64;
+				// eprintf ("--> 0x%08"PFMT64x"  %s\n", ptr->vaddr, ptr->string);
+			} else {
+				free (dec);
+			}
+		}
+	}
+}
+
 R_API void r_bin_iobind(RBin *bin, RIO *io) {
 	r_io_bind (io, &bin->iob);
 }
@@ -92,6 +123,16 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 	}
 	free (data);
 	return NULL;
+}
+
+R_API const char *r_bin_string_type (int type) {
+	switch (type) {
+	case 'a': return "ascii";
+	case 'u': return "utf8";
+	case 'w': return "wide";
+	case 'b': return "base64";
+	}
+	return "ascii"; // XXX
 }
 
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
@@ -131,13 +172,6 @@ R_API int r_bin_file_cur_set_plugin(RBinFile *binfile, RBinPlugin *plugin) {
 	return false;
 }
 
-enum {
-	R_STRING_TYPE_DETECT = '?',
-	R_STRING_TYPE_ASCII = 'a',
-	R_STRING_TYPE_UTF8 = 'u',
-	R_STRING_TYPE_WIDE = 'w',
-};
-
 #define R_STRING_SCAN_BUFFER_SIZE 2048
 
 static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 from, const ut64 to, int type) {
@@ -148,7 +182,6 @@ static int string_scan_range(RList *list, const ut8 *buf, int min, const ut64 fr
 	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
 	}
-
 	if (!buf || !min) {
 		return -1;
 	}
@@ -592,13 +625,17 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		} else {
 			o->strings = get_strings (binfile, minlen, 0);
 		}
+		if (bin->debase64) {
+			filterStrings (bin, o->strings);
+		}
 		REBASE_PADDR (o, o->strings, RBinString);
 	}
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
 		if (cp->classes) {
 			o->classes = cp->classes (binfile);
-			if (bin->filter)
+			if (bin->filter) {
 				r_bin_filter_classes (o->classes);
+			}
 		}
 	}
 	if (cp->lines) {
@@ -666,13 +703,16 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	ut8 *buf_bytes = NULL;
 	ut64 len_bytes = UT64_MAX, sz = UT64_MAX;
 
-	if (!io) return false;
-
-	if (!desc || !io) return false;
-
+	if (!io) {
+		return false;
+	}
+	if (!desc || !io) {
+		return false;
+	}
 	bf = r_bin_file_find_by_name (bin, desc->name);
-	if (!bf) return false;
-
+	if (!bf) {
+		return false;
+	}
 	the_obj_list = bf->objs;
 	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
 	// invalidate current object reference
@@ -686,7 +726,9 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		// load the bin-properly.  Many of the plugins require all content and are not
 		// stream based loaders
 		RIODesc *tdesc = iob->desc_open (io, desc->name, desc->flags, R_IO_READ);
-		if (!tdesc) return false;
+		if (!tdesc) {
+			return false;
+		}
 		sz = iob->desc_size (io, tdesc);
 		if (sz == UT64_MAX) {
 			iob->desc_close (io, tdesc);
@@ -697,10 +739,8 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	} else if (sz == UT64_MAX || sz > (64 * 1024 * 1024)) { // too big, probably wrong
 		eprintf ("Too big\n");
 		return false;
-	} else {
-		buf_bytes = iob->desc_read (io, desc, &len_bytes);
 	}
-
+	buf_bytes = iob->desc_read (io, desc, &len_bytes);
 	if (!buf_bytes) {
 		sz = 0;
 		buf_bytes = iob->desc_read (io, desc, &sz);
@@ -720,7 +760,8 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		RBinObject *old_o;
 		r_list_foreach (the_obj_list, iter, old_o) {
 			// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
-			res = r_bin_load_io_at_offset_as (bin, desc, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
+			res = r_bin_load_io_at_offset_as (bin, desc, baseaddr,
+				old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
 		}
 	}
 	bf->o = r_list_get_n (bf->objs, 0);
@@ -1495,8 +1536,9 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 			from = va? binobj_a2b (o, section->vaddr): section->paddr;
 			to = va? (binobj_a2b (o, section->vaddr) + section->vsize) :
 				(section->paddr + section->size);
-			if (off >= from && off < to)
+			if (off >= from && off < to) {
 				return section;
+			}
 		}
 	}
 	return NULL;
@@ -1524,6 +1566,9 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 		o->strings = plugin->strings (a);
 	} else {
 		o->strings = get_strings (a, bin->minstrlen, 0);
+	}
+	if (bin->debase64) {
+		filterStrings (bin, o->strings);
 	}
 	return o->strings;
 }
