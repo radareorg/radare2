@@ -8,10 +8,8 @@
 #define Fbb(x) sdb_fmt(0,"bb.%"PFMT64x,x)
 #define Fhandled(x) sdb_fmt(0, "handled.%"PFMT64x,x)
 #define FbbTo(x) sdb_fmt(0,"bb.%"PFMT64x".to",x)
-#define Fmin(x) "min"
-#define Fmax(x) "max"
 
-static ut64 getCrossingBlock (Sdb *db, const char *key, ut64 start, ut64 end) {
+static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 	ut64 block_start, block_end, addr_end = UT64_MAX;
 	ut64 nearest_start = UT64_MAX;
 	const char *s = sdb_const_get (db, key, NULL);
@@ -54,7 +52,7 @@ static ut64 getCrossingBlock (Sdb *db, const char *key, ut64 start, ut64 end) {
  bb.<addr-of-basic-block>.to=array,of,destination,addresses
 */
 
-static int bbAdd (Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
+static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 	eprintf ("bb add: from: 0x%x to: 0x%x jump: 0x%x fail: 0x%x\n", from, to, jump, fail);
 	ut64 block_end, block_start = getCrossingBlock (db, "bbs", from, to);
 	int add = 1;
@@ -116,7 +114,7 @@ static int bbAdd (Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 	return 0;
 }
 
-void addTarget (RCore *core, RStack *stack, Sdb *db, ut64 addr) {
+void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	if (!sdb_num_get (db, Fhandled(addr), NULL)) {
 		r_stack_push (stack, addr);
 		sdb_num_set (db, Fhandled(addr), 1, 0);
