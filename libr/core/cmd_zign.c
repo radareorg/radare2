@@ -332,18 +332,21 @@ static int cmd_zign(void *data, const char *input) {
 				eprintf("No functions found, please run some analysis before.\n");
 				return false;
 			}
-			if (!(it = r_list_find (core->anal->fcns, (const void *)core->offset, (RListComparator)fcn_offset_cmp))) {
+			if (!(it = r_list_find (
+				      core->anal->fcns,
+				      (const void *)core->offset,
+				      (RListComparator)fcn_offset_cmp))) {
 				return false;
 			}
 			fcni = (RAnalFunction*)it->data;
-			if (r_cons_singleton ()->breaked)
+			if (r_cons_singleton ()->breaked) {
 				break;
+			}
 			len = r_anal_fcn_realsize (fcni);
 			if (!(buf = malloc (len))) {
 				return false;
 			}
-			if (r_io_read_at (core->io, fcni->addr, buf,
-					len) == len) {
+			if (r_io_read_at (core->io, fcni->addr, buf, len) == len) {
 				si = r_sign_check (core->sign, buf, len);
 				if (si) {
 					old_fs = core->flags->space_idx;

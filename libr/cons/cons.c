@@ -428,7 +428,8 @@ R_API void r_cons_reset() {
 }
 
 R_API const char *r_cons_get_buffer() {
-	return I.buffer;
+	//check len otherwise it will return trash
+	return I.buffer_len? I.buffer : NULL;
 }
 
 R_API void r_cons_filter() {
