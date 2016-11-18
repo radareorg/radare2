@@ -12,18 +12,19 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <r_asm.h>
 #include <r_anal.h>
 
-// hack to get avr disasm in anal, this must be fixed by merging both worlds
-#include "../asm/arch/avr/disasm.c"
-
-#define	AVR_SOFTCAST(x,y) (x+(y*0x100))
+typedef struct _cpu_const_tag_ {
+	const char *const key;
+	ut32 value;
+	ut8 size;
+} CPU_CONST;
 
 typedef struct _cpu_models_tag_ {
 	const char *const model;
-	int pc_bits;
-	int pc_mask;
-	int pc_size;
-	int eeprom_size;
-	int io_size;
+	int pc;
+	union {
+		CPU_CONST *consts[10];
+		char *alias;
+	};
 } CPU_MODEL;
 
 typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu);
@@ -40,15 +41,15 @@ typedef struct _opcodes_tag_ {
 
 static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu);
 
-#define CPU_MODEL_DECL(model, pc_bits, eeprom_sz, io_sz)		\
+#define CPU_MODEL_DECL(model, pc, consts)				\
 	{								\
 		model,							\
-		(pc_bits),						\
-		~(~((unsigned int) 0) << (pc_bits)),			\
-		((pc_bits) >> 3) + (((pc_bits) & 0x07) ? 1 : 0),	\
-		eeprom_sz,						\
-		io_sz							\
+		pc,							\
+		consts							\
 	}
+#define MASK(bits)			(~(~((ut32) 0) << (bits)))
+#define CPU_PC_MASK(cpu)		MASK((cpu)->pc)
+#define CPU_PC_SIZE(cpu)		((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0))
 
 #define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
@@ -62,41 +63,105 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 
 #define STR_BEGINS(in, s)		strncasecmp (in, s, strlen (s))
 
-CPU_MODEL cpu_models[] = {
-	CPU_MODEL_DECL ("ATmega48",    11, 512, 512),
-	CPU_MODEL_DECL ("ATmega8",     12, 512, 512),
-	CPU_MODEL_DECL ("ATmega88",    12, 512, 512),
-	CPU_MODEL_DECL ("ATmega168",   13, 512, 512),
-	CPU_MODEL_DECL ("ATmega640",   16, 512, 512),
-	CPU_MODEL_DECL ("ATmega1280",  16, 512, 512),
-	CPU_MODEL_DECL ("ATmega1281",  16, 512, 512),
-	CPU_MODEL_DECL ("ATmega2560",  22, 512, 512),
-	CPU_MODEL_DECL ("ATmega2561",  22, 512, 512),
-	CPU_MODEL_DECL ("unknown_avr", 12, 512, 512)
+// Following IO definitions are valid for:
+//	ATmega8
+//	ATmega88
+CPU_CONST cpu_reg_common[] = {
+	{ "spl",      0x3d, sizeof (ut8) },
+	{ "sph",      0x3e, sizeof (ut8) },
+	{ "sreg",     0x3f, sizeof (ut8) },
+	{ "spmcr",    0x37, sizeof (ut8) },
+	{ NULL, 0, 0 },
 };
 
-RStrBuf *__generic_io_dest(ut8 port, int write) {
-	RStrBuf *r = r_strbuf_new ("");
+CPU_CONST cpu_memsize_common[] = {
+	{ "eeprom_size",  512, sizeof (ut32) },
+	{ "io_size",     0x40, sizeof (ut32) },
+	{ "sram_start",  0x60, sizeof (ut32) },
+	{ "sram_size",   1024, sizeof (ut32) },
+	{ NULL, 0, 0 },
+};
 
-	switch (port) {
-	case 0x3f: /* SREG */ r_strbuf_set (r, "sreg"); break;
-	case 0x3e: /* SPH  */ r_strbuf_set (r, "sph");  break;
-	case 0x3d: /* SPL  */ r_strbuf_set (r, "spl");  break;
-	default:
+CPU_CONST cpu_pagesize_32[] = {
+	{ "page_size", 32, sizeof (ut8) },
+	{ NULL, 0, 0 },
+};
+
+CPU_MODEL cpu_models[] = {
+	{
+		.model = "ATmega8", .pc = 13,
+		.consts = {
+			cpu_reg_common,
+			cpu_memsize_common,
+			cpu_pagesize_32,
+			NULL
+		}
+	},
+//	CPU_MODEL_DECL ("ATmega168",   13, 512, 512),
+//	CPU_MODEL_DECL ("ATmega640",   16, 512, 512),
+//	CPU_MODEL_DECL ("ATmega1280",  16, 512, 512),
+//	CPU_MODEL_DECL ("ATmega1281",  16, 512, 512),
+//	CPU_MODEL_DECL ("ATmega2560",  22, 512, 512),
+//	CPU_MODEL_DECL ("ATmega2561",  22, 512, 512),
+	{ .model = "ATmega88",    .pc = 0, .alias = "ATmega8" },
+	{ .model = "unknown_avr", .pc = 0, .alias = "ATmega8" } // default AVR - ATmega8 forever!
+};
+
+static CPU_CONST *const_by_name(CPU_MODEL *cpu, char *c) {
+	CPU_CONST **clist, *citem;
+
+	for (clist = cpu->consts; *clist; clist++) {
+		for (citem = *clist; citem->key; citem++) {
+			if (!strcmp (c, citem->key)) {
+				return citem;
+			}
+		}
+	}
+	eprintf ("ERROR: CONSTANT key[%s] NOT FOUND.\n", c);
+	return NULL;
+}
+
+static CPU_CONST *get_const_by_value(CPU_MODEL *cpu, ut32 v) {
+	CPU_CONST **clist, *citem;
+
+	for (clist = cpu->consts; *clist; clist++) {
+		for (citem = *clist; citem && citem->key; citem++) {
+			if (citem->value == (MASK (citem->size * 8) & v)) {
+				return citem;
+			}
+		}
+	}
+	eprintf ("ERROR: CONSTANT value[%d] NOT FOUND.\n", v);
+	return NULL;
+}
+
+static ut32 const_get_value(CPU_CONST *c) {
+	return c ? MASK (c->size * 8) & c->value : 0;
+}
+
+static RStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
+	RStrBuf *r = r_strbuf_new ("");
+	CPU_CONST *c = get_const_by_value (cpu, port);
+	if (c != NULL) {
+		r_strbuf_set (r, c->key);
+		if (write) {
+			r_strbuf_append (r, ",=");
+		}
+	} else {
 		r_strbuf_setf (r, "_io,%d,+,%s[1]", port, write ? "=" : "");
 	}
 
 	return r;
 }
 
-void __generic_bitop_flags(RAnalOp *op) {
+static void __generic_bitop_flags(RAnalOp *op) {
 	ESIL_A ("0,vf,=,");					// V
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("vf,nf,^,sf,=,");				// S
 }
 
-void __generic_ld_st(RAnalOp *op, char *mem, char ireg, int use_ramp, int prepostdec, int offset, int st) {
+static void __generic_ld_st(RAnalOp *op, char *mem, char ireg, int use_ramp, int prepostdec, int offset, int st) {
 	if (ireg) {
 		// preincrement index register
 		if (prepostdec < 0) {
@@ -124,19 +189,19 @@ void __generic_ld_st(RAnalOp *op, char *mem, char ireg, int use_ramp, int prepos
 	}
 }
 
-void __generic_pop(RAnalOp *op, int sz) {
+static void __generic_pop(RAnalOp *op, int sz) {
 	if (sz > 1) {
-		ESIL_A ("1,sp,+,_sram,+,");	// calc SRAM(sp+1)
+		ESIL_A ("1,sp,+,_ram,+,");	// calc SRAM(sp+1)
 		ESIL_A ("[%d],", sz);		// read value
 		ESIL_A ("%d,sp,+=,", sz);	// sp += item_size
 	} else {
 		ESIL_A ("1,sp,+=,"		// increment stack pointer
-			"sp,_sram,+,[1],");	// load SRAM[sp]
+			"sp,_ram,+,[1],");	// load SRAM[sp]
 	}
 }
 
-void __generic_push(RAnalOp *op, int sz) {
-	ESIL_A ("sp,_sram,+,");			// calc pointer SRAM(sp)
+static void __generic_push(RAnalOp *op, int sz) {
+	ESIL_A ("sp,_ram,+,");			// calc pointer SRAM(sp)
 	if (sz > 1) {
 		ESIL_A ("-%d,+,", sz - 1);	// dec SP by 'sz'
 	}
@@ -325,13 +390,13 @@ INST_HANDLER (call) {	// CALL k
 		 | (buf[1] & 0x01) << 23
 		 | (buf[0] & 0x01) << 17
 		 | (buf[0] & 0xf0) << 14;
-	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
+	op->cycles = cpu->pc <= 16 ? 3 : 4;
 	if (!STR_BEGINS (cpu->model, "ATxmega")) {
 		op->cycles--;	// AT*mega optimizes one cycle
 	}
 	ESIL_A ("pc,");				// esil is already pointing to
 						// next instruction (@ret)
-	__generic_push (op, cpu->pc_size);	// push @ret in stack
+	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret in stack
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
 }
 
@@ -345,13 +410,13 @@ INST_HANDLER (cbi) {	// CBI A, b
 	op->val = a;
 
 	// read port a and clear bit b
-	io_port = __generic_io_dest (a, 0);
+	io_port = __generic_io_dest (a, 0, cpu);
 	ESIL_A ("0xff,%d,1,<<,^,%s,&,", b, io_port);
 	r_strbuf_free (io_port);
 
 	// write result to port a
-	io_port = __generic_io_dest (a, 1);
-	ESIL_A ("%s,=,", r_strbuf_get (io_port));
+	io_port = __generic_io_dest (a, 1, cpu);
+	ESIL_A ("%s,", r_strbuf_get (io_port));
 	r_strbuf_free (io_port);
 }
 
@@ -503,7 +568,7 @@ INST_HANDLER (eicall) {	// EICALL
 	// push pc in stack
 	ESIL_A ("pc,");				// esil is already pointing to
 						// next instruction (@ret)
-	__generic_push (op, cpu->pc_size);	// push @ret in stack
+	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret in stack
 	// do a standard EIJMP
 	INST_CALL (eijmp);
 	// fix cycles
@@ -583,14 +648,14 @@ INST_HANDLER (icall) {	// ICALL k
 	// real target address may change during execution, so this value will
 	// be changing all the time
 	op->jump = z;
-	op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
+	op->cycles = cpu->pc <= 16 ? 3 : 4;
 	if (!STR_BEGINS (cpu->model, "ATxmega")) {
 		// AT*mega optimizes 1 cycle!
 		op->cycles--;
 	}
 	ESIL_A ("pc,");				// esil already points to next
 						// instruction (@ret)
-	__generic_push (op, cpu->pc_size);	// push @ret addr
+	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret addr
 	ESIL_A ("z,pc,=,");			// jump!
 }
 
@@ -608,7 +673,7 @@ INST_HANDLER (ijmp) {	// IJMP k
 INST_HANDLER (in) {	// IN Rd, A
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
-	RStrBuf *io_src = __generic_io_dest (a, 0);
+	RStrBuf *io_src = __generic_io_dest (a, 0, cpu);
 	op->type2 = 0;
 	op->val = a;
 	op->family = R_ANAL_OP_FAMILY_IO;
@@ -641,30 +706,30 @@ INST_HANDLER (lac) {	// LAC Z, Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
-	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	__generic_ld_st (op, "ram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
 	ESIL_A ("r%d,0xff,^,&,", d);			// 0: (Z) & ~Rd
 	ESIL_A ("DUP,r%d,=,", d);			// Rd = [0]
-	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 1);	// Store in RAM
+	__generic_ld_st (op, "ram", 'z', 1, 0, 0, 1);	// Store in RAM
 }
 
 INST_HANDLER (las) {	// LAS Z, Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
-	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	__generic_ld_st (op, "ram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
 	ESIL_A ("r%d,|,", d);				// 0: (Z) | Rd
 	ESIL_A ("DUP,r%d,=,", d);			// Rd = [0]
-	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 1);	// Store in RAM
+	__generic_ld_st (op, "ram", 'z', 1, 0, 0, 1);	// Store in RAM
 }
 
 INST_HANDLER (lat) {	// LAT Z, Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
-	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
+	__generic_ld_st (op, "ram", 'z', 1, 0, 0, 0);	// 0: Read (RAMPZ:Z)
 	ESIL_A ("r%d,^,", d);				// 0: (Z) ^ Rd
 	ESIL_A ("DUP,r%d,=,", d);			// Rd = [0]
-	__generic_ld_st (op, "sram", 'z', 1, 0, 0, 1);	// Store in RAM
+	__generic_ld_st (op, "ram", 'z', 1, 0, 0, 1);	// Store in RAM
 }
 
 INST_HANDLER (ld) {	// LD Rd, X
@@ -672,7 +737,7 @@ INST_HANDLER (ld) {	// LD Rd, X
 			// LD Rd, -X
 	// read memory
 	__generic_ld_st (
-		op, "sram",
+		op, "ram",
 		'x',				// use index register X
 		0,				// no use RAMP* registers
 		(buf[0] & 0xf) == 0xe
@@ -707,7 +772,7 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 			| (buf[0] & 0x7);
 	// read memory
 	__generic_ld_st (
-		op, "sram",
+		op, "ram",
 		buf[0] & 0x8 ? 'y' : 'z',	// index register Y/Z
 		0,				// no use RAMP* registers
 		!(buf[1] & 0x1)
@@ -745,7 +810,7 @@ INST_HANDLER (lds) {	// LDS Rd, k
 	int k = (buf[3] << 8) | buf[2];
 
 	// load value from RAMPD:k
-	__generic_ld_st (op, "sram", 0, 1, 0, k, 0);
+	__generic_ld_st (op, "ram", 0, 1, 0, k, 0);
 	ESIL_A ("r%d,=,", d);
 }
 
@@ -757,7 +822,7 @@ INST_HANDLER (lds16) {	// LDS Rd, k
 		| (~(buf[1] << 4) & 0x80);
 
 	// load value from @k
-	__generic_ld_st (op, "sram", 0, 0, 0, k, 0);
+	__generic_ld_st (op, "ram", 0, 0, 0, k, 0);
 	ESIL_A ("r%d,=,", d);
 }
 
@@ -885,11 +950,11 @@ INST_HANDLER (ori) {	// ORI Rd, K
 INST_HANDLER (out) {	// OUT A, Rr
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
-	RStrBuf *io_dst = __generic_io_dest (a, 1);
+	RStrBuf *io_dst = __generic_io_dest (a, 1, cpu);
 	op->type2 = 1;
 	op->val = a;
 	op->family = R_ANAL_OP_FAMILY_IO;
-	ESIL_A ("r%d,%s,=,", r, r_strbuf_get (io_dst));
+	ESIL_A ("r%d,%s,", r, r_strbuf_get (io_dst));
 	r_strbuf_free (io_dst);
 }
 
@@ -915,18 +980,18 @@ INST_HANDLER (rcall) {	// RCALL k
 	op->jump = (op->addr
 		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
 			| (((buf[1] & 0x8) ? ~((int) 0x1fff) : 0)))
-		+ 2) & cpu->pc_mask;
+		+ 2) & CPU_PC_MASK (cpu);
 	// esil
 	ESIL_A ("pc,");				// esil already points to next
 						// instruction (@ret)
-	__generic_push (op, cpu->pc_size);	// push @ret addr
+	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret addr
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
 	// cycles
 	if (!strncasecmp (cpu->model, "ATtiny", 6)) {
 		op->cycles = 4;	// ATtiny is always slow
 	} else {
 		// PC size decides required runtime!
-		op->cycles = cpu->pc_bits <= 16 ? 3 : 4;
+		op->cycles = cpu->pc <= 16 ? 3 : 4;
 		if (!STR_BEGINS (cpu->model, "ATxmega")) {
 			op->cycles--;	// ATxmega optimizes one cycle
 		}
@@ -936,10 +1001,10 @@ INST_HANDLER (rcall) {	// RCALL k
 INST_HANDLER (ret) {	// RET
 	op->eob = true;
 	// esil
-	__generic_pop (op, cpu->pc_size);
+	__generic_pop (op, CPU_PC_SIZE (cpu));
 	ESIL_A ("pc,=,");	// jump!
 	// cycles
-	if (cpu->pc_size > 2) {	// if we have a bus bigger than 16 bit
+	if (CPU_PC_SIZE (cpu) > 2) {	// if we have a bus bigger than 16 bit
 		op->cycles++;	// (i.e. a 22-bit bus), add one extra cycle
 	}
 }
@@ -961,7 +1026,7 @@ INST_HANDLER (rjmp) {	// RJMP k
 	op->jump = (op->addr
 		+ (((typeof (op->jump)) (((buf[1] & 0xf) << 9) | (buf[0] << 1)))
 			| (buf[1] & 0x8 ? ~((typeof (op->jump)) 0x1fff) : 0))
-		+ 2) & cpu->pc_mask;
+		+ 2) & CPU_PC_MASK (cpu);
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);
 }
 
@@ -1038,13 +1103,13 @@ INST_HANDLER (sbi) {	// SBI A, b
 	op->family = R_ANAL_OP_FAMILY_IO;
 
 	// read port a and clear bit b
-	io_port = __generic_io_dest (a, 0);
+	io_port = __generic_io_dest (a, 0, cpu);
 	ESIL_A ("0xff,%d,1,<<,|,%s,&,", b, io_port);
 	r_strbuf_free (io_port);
 
 	// write result to port a
-	io_port = __generic_io_dest (a, 1);
-	ESIL_A ("%s,=,", r_strbuf_get (io_port));
+	io_port = __generic_io_dest (a, 1, cpu);
+	ESIL_A ("%s,", r_strbuf_get (io_port));
 	r_strbuf_free (io_port);
 }
 
@@ -1076,7 +1141,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 			// needs 2/3 cycles, elsewhere it needs only 1 cycle.
 
 	// read port a and clear bit b
-	io_port = __generic_io_dest (a, 0);
+	io_port = __generic_io_dest (a, 0, cpu);
 	ESIL_A ("%d,1,<<,%s,&,", b, io_port);		// IO(A,b)
 	ESIL_A ((buf[1] & 0xe) == 0xc
 			? "!,"				// SBIC => branch if 0
@@ -1133,6 +1198,42 @@ INST_HANDLER (sleep) {	// SLEEP
 	ESIL_A ("BREAK");
 }
 
+INST_HANDLER (spm) {	// SPM Z+
+//	ut8 spmcr;
+//	char *lval, *hval;
+
+	// read SPM Control Register (SPMCR) and decide which operation will be
+	// performed during the SPM operation
+//	r_anal_esil_reg_read (anal->esil, "spmcr", &spmcr, NULL);
+//	switch (spmcr & 0x7f) {
+//		case 0x03: // PAGE ERASE
+//			// erase target page (write 0xff value)
+//			// update SPMCR
+//			ESIL_A ("%d,spmcr,|=,", cpu->);
+//			break;
+//		case 0x01:
+//	}
+//	ESIL_A ("3,spmcr,&,"
+//
+//	r_strbuf_init (&op->esil);
+//	// write program memory
+//	__generic_ld_st (
+//		op, "prog",
+//		'z',				// index register Y/Z
+//		1,				// use RAMP* registers
+//		(ins & 0xfe0f) == 0x9005
+//			? 1			// post incremented
+//			: 0,			// no increment
+//		0,				// not offset
+//		0);				// load operation (!st)
+//	// load register
+//	ESIL_A ("r%d,=,",
+//		(ins == 0x95c8)
+//			? 0			// LPM (r0)
+//			: ((buf[0] >> 4) & 0xf)	// LPM Rd
+//				| ((buf[1] & 0x1) << 4));
+}
+
 INST_HANDLER (st) {	// ST X, Rr
 			// ST X+, Rr
 			// ST -X, Rr
@@ -1140,7 +1241,7 @@ INST_HANDLER (st) {	// ST X, Rr
 	ESIL_A ("r%d,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// write in memory
 	__generic_ld_st (
-		op, "sram",
+		op, "ram",
 		'x',				// use index register X
 		0,				// no use RAMP* registers
 		(buf[0] & 0xf) == 0xe
@@ -1170,7 +1271,7 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 	ESIL_A ("r%d,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// write in memory
 	__generic_ld_st (
-		op, "sram",
+		op, "ram",
 		buf[0] & 0x8 ? 'y' : 'z',	// index register Y/Z
 		0,				// no use RAMP* registers
 		!(buf[1] & 0x1)
@@ -1364,22 +1465,43 @@ INVALID_OP:
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	CPU_MODEL *cpu;
+	char *target_model;
+	ut32 offset;
+
 	// init op
 	if (!op) {
 		return 2;
 	}
 	// select cpu info
-	for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
-		if (!strcasecmp (anal->cpu, cpu->model)) {
-			break;
+	
+	for (cpu = NULL, target_model = anal->cpu; !cpu; ) {
+		for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
+			if (!strcasecmp (target_model, cpu->model)) {
+				break;
+			}
+		}
+		if (!cpu->pc) {
+			target_model = cpu->alias;
+			cpu = NULL;
 		}
 	}
+
 	// set memory layout registers
 	if (anal->esil) {
-		r_anal_esil_reg_write (anal->esil, "_prog",   0);
-		r_anal_esil_reg_write (anal->esil, "_eeprom", (1 << cpu->pc_bits));
-		r_anal_esil_reg_write (anal->esil, "_io",     (1 << cpu->pc_bits) + cpu->eeprom_size);
-		r_anal_esil_reg_write (anal->esil, "_sram",   (1 << cpu->pc_bits) + cpu->eeprom_size + cpu->io_size);
+		offset = 0;
+		r_anal_esil_reg_write (anal->esil, "_prog", offset);
+
+		offset += (1 << cpu->pc);
+		r_anal_esil_reg_write (anal->esil, "_io", offset);
+
+		offset += const_get_value (const_by_name (cpu, "sram_start"));
+		r_anal_esil_reg_write (anal->esil, "_sram", offset);
+
+		offset += const_get_value (const_by_name (cpu, "sram_size"));
+		r_anal_esil_reg_write (anal->esil, "_eeprom", offset);
+
+		offset += const_get_value (const_by_name (cpu, "eeprom_size"));
+		r_anal_esil_reg_write (anal->esil, "_page", offset);
 	}
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, cpu);
@@ -1415,7 +1537,7 @@ static int avr_custom_des (RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_avr_init (RAnalEsil *esil) {
+static int esil_avr_init(RAnalEsil *esil) {
 	if (!esil)
 		return false;
 	r_anal_esil_set_op (esil, "des", avr_custom_des);
@@ -1423,7 +1545,7 @@ static int esil_avr_init (RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_avr_fini (RAnalEsil *esil) {
+static int esil_avr_fini(RAnalEsil *esil) {
 	return true;
 }
 
@@ -1518,9 +1640,11 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	eind	.8	43	0\n"
 // memory mapping emulator registers
 		"gpr	_prog	.32	44	0\n"
-		"gpr	_eeprom	.32	48	0\n"
-		"gpr	_io	.32	52	0\n"
-		"gpr	_sram	.32	56	0\n"
+		"gpr    _page   .32     48	0\n"
+		"gpr	_eeprom	.32	52	0\n"
+		"gpr	_io	.32	56	0\n"
+		"gpr	_ram	.32	56	0\n"
+		"gpr	_sram	.32	60	0\n"
 		;
 
 	return r_reg_set_profile_string (anal->reg, p);
