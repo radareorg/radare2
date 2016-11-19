@@ -243,13 +243,28 @@ static int Init (const char * driverPath) {
 
 #if __linux__
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <errno.h>
+
+#define MAX_PHYS_ADDR   128
 
 struct r2k_data {
 	int pid;
 	ut64 addr;
 	ut64 len;
 	ut8 *buff;
+};
+
+struct kernel_map_info {
+	ut64 start_addr;
+	ut64 end_addr;
+	ut64 phys_addr[MAX_PHYS_ADDR];
+	int n_pages;
+};
+
+struct kernel_maps {
+	int n_entries;
+	int size;
 };
 
 #define R2_TYPE 0x69
@@ -260,8 +275,9 @@ struct r2k_data {
 #define WRITE_PROCESS_ADDR  0X4
 #define READ_PHYSICAL_ADDR  0x5
 #define WRITE_PHYSICAL_ADDR 0x6
-#define GET_PROC_MAPS       0x7
-#define GET_KERNEL_MAP      0x8
+#define GET_KERNEL_MAP      0x7
+#define READ_CONTROL_REG    0x8
+#define PRINT_PROC_INFO     0x9
 
 #define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, sizeof (struct r2k_data))
 #define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, sizeof (struct r2k_data))
@@ -269,8 +285,9 @@ struct r2k_data {
 #define IOCTL_WRITE_PROCESS_ADDR  _IOR (R2_TYPE, WRITE_PROCESS_ADDR, sizeof (struct r2k_data))
 #define IOCTL_READ_PHYSICAL_ADDR  _IOR (R2_TYPE, READ_PHYSICAL_ADDR, sizeof (struct r2k_data))
 #define IOCTL_WRITE_PHYSICAL_ADDR _IOR (R2_TYPE, WRITE_PHYSICAL_ADDR, sizeof (struct r2k_data))
-#define IOCTL_GET_PROC_MAPS       _IOR (R2_TYPE, GET_PROC_MAPS, sizeof (struct r2k_data))
 #define IOCTL_GET_KERNEL_MAP      _IOR (R2_TYPE, GET_KERNEL_MAP, sizeof (struct r2k_data))
+#define IOCTL_READ_CONTROL_REG    _IOR (R2_TYPE, READ_CONTROL_REG, sizeof (struct r2k_data))
+#define IOCTL_PRINT_PROC_INFO     _IOR (R2_TYPE, PRINT_PROC_INFO, sizeof (struct r2k_data))
 
 static char* getargpos (const char *buf, int pos) {
 	int i;
@@ -441,7 +458,42 @@ static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
 			}
 		}
 		break;
-	case 'g':
+	case 'M':
+		{
+			//Print kernel memory map.
+			//=!M
+			int i, j;
+			struct kernel_maps map_data;
+			struct kernel_map_info *info;
+
+			ioctl_n = IOCTL_GET_KERNEL_MAP;
+			ret = ioctl (iodesc->fd, ioctl_n, &map_data);
+
+			if (ret < 0) {
+				io->cb_printf ("ioctl err: %s\n", strerror (errno));
+				break;
+			}
+
+			io->cb_printf ("map_data.size: %d, map_data.n_entries: %d\n", map_data.size, map_data.n_entries);
+			info = mmap (0, map_data.size, PROT_READ, MAP_SHARED, iodesc->fd, 0);
+			if (info == MAP_FAILED) {
+				io->cb_printf ("mmap err: %s\n", strerror (errno));
+				break;
+			}
+
+			for (i = 0; i < map_data.n_entries; i++) {
+				struct kernel_map_info *in = &info[i];
+				io->cb_printf ("start_addr: 0x%"PFMT64x"\n", in->start_addr);
+				io->cb_printf ("end_addr: 0x%"PFMT64x"\n", in->end_addr);
+				for (j = 0; j < in->n_pages; j++) {
+					io->cb_printf ("\tphys_addr: 0x%"PFMT64x"\n", in->phys_addr[j]);
+				}
+			}
+
+			if (munmap (info, map_data.size) == -1) {
+				io->cb_printf ("munmap failed.\n");
+			}
+		}
 		break;
 	default:
 		{
@@ -451,7 +503,8 @@ static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
 				"=!rP     addr len        Read physical address\n" \
 				"=!wl[x]  addr input      Write at linear address. Use =!wlx for input in hex\n" \
 				"=!wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex\n" \
-				"=!wP[x]  addr input      Write at physical address. Use =!wPx for input in hex\n";
+				"=!wP[x]  addr input      Write at physical address. Use =!wPx for input in hex\n" \
+				"=!M                      Print kernel memory map\n";
 			io->cb_printf ("%s", help_msg);
 		}
 	}
