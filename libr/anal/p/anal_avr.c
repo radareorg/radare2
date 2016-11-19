@@ -1382,7 +1382,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ori,    0xf000, 0x6000, 1,      2,   OR     ), // ORI Rd, K
 	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
 	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
-	INST_DECL (sbci,   0xf000, 0x0400, 1,      2,   SUB    ), // SBC Rd, Rr
+	INST_DECL (sbci,   0xf000, 0x4000, 1,      2,   SUB    ), // SBC Rd, Rr
 	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
 	INST_DECL (std,    0xd200, 0x8200, 0,      2,   STORE  ), // LD Y/Z+q, Rr
 
