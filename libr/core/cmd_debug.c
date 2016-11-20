@@ -194,17 +194,17 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 
 static int step_until(RCore *core, ut64 addr) {
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
-	if (off == 0LL) {
+	if (!off) {
 		eprintf ("Cannot 'drn pc'\n");
 		return false;
 	}
-	if (addr == 0LL) {
+	if (!addr) {
 		eprintf ("Cannot continue until address 0\n");
 		return false;
 	}
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	do {
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			core->break_loop = true;
 			break;
 		}
@@ -216,7 +216,7 @@ static int step_until(RCore *core, ut64 addr) {
 		off = r_debug_reg_get (core->dbg, "PC");
 		// check breakpoint here
 	} while (off != addr);
-	r_cons_break_end();
+	r_cons_break_pop ();
 	return true;
 }
 
@@ -226,9 +226,9 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 		eprintf ("Not initialized %p. Run 'aei' first.\n", core->anal->esil);
 		return false;
 	}
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			core->break_loop = true;
 			break;
 		}
@@ -243,7 +243,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 			break;
 		}
 	}
-	r_cons_break_end();
+	r_cons_break_pop ();
 	return true;
 }
 
@@ -258,12 +258,14 @@ static int step_until_inst(RCore *core, const char *instr) {
 		eprintf ("Wrong state\n");
 		return false;
 	}
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_is_breaked ()) {
 			break;
-		if (r_debug_is_dead (core->dbg))
+		}
+		if (r_debug_is_dead (core->dbg)) {
 			break;
+		}
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		/* TODO: disassemble instruction and strstr */
@@ -273,14 +275,14 @@ static int step_until_inst(RCore *core, const char *instr) {
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
 		ret = r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
 		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, asmop.buf_asm);
-		if (ret>0) {
+		if (ret > 0) {
 			if (strstr (asmop.buf_asm, instr)) {
 				eprintf ("Stop.\n");
 				break;
 			}
 		}
 	}
-	r_cons_break_end();
+	r_cons_break_pop ();
 	return true;
 }
 
@@ -295,12 +297,14 @@ static int step_until_flag(RCore *core, const char *instr) {
 		eprintf ("Wrong state\n");
 		return false;
 	}
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_is_breaked ()) {
 			break;
-		if (r_debug_is_dead (core->dbg))
+		}
+		if (r_debug_is_dead (core->dbg)) {
 			break;
+		}
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		pc = r_debug_reg_get (core->dbg, "PC");
@@ -314,21 +318,21 @@ static int step_until_flag(RCore *core, const char *instr) {
 		}
 	}
 beach:
-	r_cons_break_end();
+	r_cons_break_pop ();
 	return true;
 }
 
 /* until end of frame */
 static int step_until_eof(RCore *core) {
 	ut64 off, now = r_debug_reg_get (core->dbg, "SP");
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	do {
 		// XXX (HACK!)
 		r_debug_step_over (core->dbg, 1);
 		off = r_debug_reg_get (core->dbg, "SP");
 		// check breakpoint here
 	} while (off <= now);
-	r_cons_break_end();
+	r_cons_break_pop ();
 	return true;
 }
 
@@ -2492,10 +2496,8 @@ static void debug_trace_calls (RCore *core, const char *input) {
 		eprintf ("No process to debug.");
 		return;
 	}
-
 	if (*input == ' ') {
 		ut64 first_n;
-
 		while (*input == ' ') input++;
 		first_n = r_num_math (core->num, input);
 		input = strchr (input, ' ');
@@ -2512,27 +2514,24 @@ static void debug_trace_calls (RCore *core, const char *input) {
 			final_addr = first_n;
 		}
 	}
-
 	core->dbg->trace->enabled = 0;
-	r_cons_break (static_debug_stop, core->dbg);
+	r_cons_break_push (static_debug_stop, core->dbg);
 	r_reg_arena_swap (core->dbg->reg, true);
-
 	if (final_addr != UT64_MAX) {
 		int hwbp = r_config_get_i (core->config, "dbg.hwbp");
-
 		bp_final = r_debug_bp_add (core->dbg, final_addr, hwbp, NULL, 0);
 		if (!bp_final) {
 			eprintf ("Cannot set breakpoint at final address (%"PFMT64x")\n", final_addr);
 		}
 	}
-
 	do_debug_trace_calls (core, from, to, final_addr);
-	if (bp_final)
+	if (bp_final) {
 		r_bp_del (core->dbg->bp, final_addr);
+	}
 	_core = core;
 	trace_traverse (core->dbg->tree);
 	core->dbg->trace->enabled = t;
-	r_cons_break_end();
+	r_cons_break_pop ();
 }
 
 static void r_core_debug_esil (RCore *core, const char *input) {
@@ -2788,18 +2787,18 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		return false;
 	}
 	if (dcu_range) {
-		// TODO : handle ^C here
-		r_cons_break (NULL, NULL);
+		r_cons_break_push (NULL, NULL);
 		do {
-			if (r_cons_is_breaked ())
+			if (r_cons_is_breaked ()) {
 				break;
+			}
 			r_debug_step (core->dbg, 1);
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			pc = r_debug_reg_get (core->dbg, "PC");
 			eprintf ("Continue 0x%08"PFMT64x" > 0x%08"PFMT64x" < 0x%08"PFMT64x"\n",
 					from, pc, to);
 		} while (pc < from || pc > to);
-		r_cons_break_end ();
+		r_cons_break_pop ();
 	} else {
 		ut64 addr = from;
 		eprintf ("Continue until 0x%08"PFMT64x" using %d bpsize\n", addr, core->dbg->bpsize);
@@ -2909,19 +2908,20 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			int n = 0;
 			int t = core->dbg->trace->enabled;
 			core->dbg->trace->enabled = 0;
-			r_cons_break (static_debug_stop, core->dbg);
+			r_cons_break_push (static_debug_stop, core->dbg);
 			do {
 				r_debug_step (core->dbg, 1);
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				pc = r_debug_reg_get (core->dbg, "PC");
 				eprintf (" %d %"PFMT64x"\r", n++, pc);
 				s = r_io_section_vget (core->io, pc);
-				if (r_cons_singleton ()->breaked)
+				if (r_cons_is_breaked ()) {
 					break;
+				}
 			} while (!s);
 			eprintf ("\n");
 			core->dbg->trace->enabled = t;
-			r_cons_break_end();
+			r_cons_break_pop ();
 			return 1;
 		}
 	case 'u':
@@ -2995,10 +2995,11 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	case 'i': // "dsi"
 		if (input[2] == ' ') {
 			int n = 0;
-			r_cons_break (static_debug_stop, core->dbg);
+			r_cons_break_push (static_debug_stop, core->dbg);
 			do {
-				if (r_cons_singleton ()->breaked)
+				if (r_cons_is_breaked ()) {
 					break;
+				}
 				r_debug_step (core->dbg, 1);
 				if (r_debug_is_dead (core->dbg)) {
 					core->break_loop = true;
@@ -3007,6 +3008,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 				r_core_cmd0 (core, ".dr*");
 				n++;
 			} while (!r_num_conditional (core->num, input + 3));
+			r_cons_break_pop ();
 			eprintf ("Stopped after %d instructions\n", n);
 		} else {
 			eprintf ("3 Missing argument\n");
@@ -3268,10 +3270,10 @@ static int cmd_debug(void *data, const char *input) {
 			eprintf ("TODO: transplant process\n");
 			break;
 		case 'c': // "dc"
-			r_cons_break (static_debug_stop, core->dbg);
+			r_cons_break_push (static_debug_stop, core->dbg);
 			(void)cmd_debug_continue (core, input);
 			follow = r_config_get_i (core->config, "dbg.follow");
-			r_cons_break_end ();
+			r_cons_break_pop ();
 			break;
 		case 'm': // "dm"
 			cmd_debug_map (core, input + 1);
@@ -3483,15 +3485,17 @@ static int cmd_debug(void *data, const char *input) {
 
 			break;
 		case 'w':
-			r_cons_break (static_debug_stop, core->dbg);
-			for (;!r_cons_singleton ()->breaked;) {
+			r_cons_break_push (static_debug_stop, core->dbg);
+			for (;!r_cons_is_breaked ();) {
 				int pid = atoi (input + 1);
 				//int opid = core->dbg->pid = pid;
 				int res = r_debug_kill (core->dbg, pid, 0, 0);
-				if (!res) break;
+				if (!res) {
+					break;
+				}
 				r_sys_usleep (200);
 			}
-			r_cons_break_end ();
+			r_cons_break_pop ();
 			break;
 		case 'k':
 			r_core_debug_kill (core, input + 1);

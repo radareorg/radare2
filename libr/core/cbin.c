@@ -306,7 +306,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	}
 	if (IS_MODE_SET (mode) && r_config_get_i (r->config, "bin.strings")) {
 		r_flag_space_set (r->flags, "strings");
-		r_cons_break (NULL, NULL);
+		r_cons_break_push (NULL, NULL);
 	}
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
@@ -329,7 +329,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		type_string = r_bin_string_type (string->type);
 		if (IS_MODE_SET (mode)) {
 			char *f_name, *str;
-			if (r_cons_singleton()->breaked) {
+			if (r_cons_is_breaked ()) {
 				break;
 			}
 			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr + string->size, string->string);
@@ -389,7 +389,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		r_cons_printf ("]");
 	}
 	if (IS_MODE_SET (mode)) {
-		r_cons_break_end ();
+		r_cons_break_pop ();
 	}
 }
 
@@ -741,11 +741,11 @@ static int bin_dwarf(RCore *core, int mode) {
 			free (da);
 		}
 	}
-	r_cons_break (NULL, NULL);
 	if (!list) {
 		return false;
 	}
 
+	r_cons_break_push (NULL, NULL);
 	/* cache file:line contents */
 	const char *lastFile = NULL;
 	int *lastFileLines = NULL;
@@ -760,7 +760,7 @@ static int bin_dwarf(RCore *core, int mode) {
 
 	/* we should need to store all this in sdb, or do a filecontentscache in libr/util */
         r_list_foreach (list, iter, row) {
-		if (r_cons_singleton()->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		if (mode) {
@@ -821,7 +821,7 @@ static int bin_dwarf(RCore *core, int mode) {
 			r_cons_printf ("0x%08"PFMT64x"\t%s\t%d\n", row->address, row->file, row->line);
 		}
         }
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	R_FREE (lastFileContents);
 	R_FREE (lastFileContents2);
 	r_list_free (list);
@@ -1127,8 +1127,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
 		relocs = r_bin_get_relocs (r->bin);
-		if (!relocs)
+		if (!relocs) {
 			return false;
+		}
 	}
 
 	if (IS_MODE_RAD (mode)) {

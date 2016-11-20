@@ -84,12 +84,14 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 		fclose (fd);
 		return false;
 	}
-	r_cons_break (NULL, NULL);
-	for (i = 0; i<size; i += bs) {
-		if (r_cons_singleton ()->breaked)
+	r_cons_break_push (NULL, NULL);
+	for (i = 0; i < size; i += bs) {
+		if (r_cons_is_breaked ()) {
 			break;
-		if ((i + bs) > size)
+		}
+		if ((i + bs) > size) {
 			bs = size - i;
+		}
 		r_io_read_at (core->io, addr + i, buf, bs);
 		if (fwrite (buf, bs, 1, fd) < 1) {
 			eprintf ("write error\n");
@@ -97,7 +99,7 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int a
 		}
 	}
 	eprintf ("dumped 0x%"PFMT64x" bytes\n", i);
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	fclose (fd);
 	free (buf);
 	return true;

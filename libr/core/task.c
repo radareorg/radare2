@@ -35,9 +35,9 @@ R_API void r_core_task_list (RCore *core, int mode) {
 R_API void r_core_task_join (RCore *core, RCoreTask *task) {
 	RListIter *iter;
 	if( task) {
-		r_cons_break (NULL, NULL);
+		r_cons_break_push (NULL, NULL);
 		r_th_wait (task->msg->th);
-		r_cons_break_end ();
+		r_cons_break_pop ();
 	} else {
 		r_list_foreach_prev (core->tasks, iter, task) {
 			r_th_wait (task->msg->th);

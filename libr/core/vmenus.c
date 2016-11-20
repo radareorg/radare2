@@ -2713,10 +2713,9 @@ repeat:
 				}
 				//depth = 0;
 			}
-			r_cons_break (NULL, NULL);
+			r_cons_break_push (NULL, NULL);
 			r_core_cmdf (core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection
-			//r_core_anal_fcn (core, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
-			r_cons_break_end ();
+			r_cons_break_pop ();
 			if (funsize) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
 				r_anal_fcn_set_size (f, funsize);

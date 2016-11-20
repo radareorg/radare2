@@ -38,14 +38,14 @@ DWORD WINAPI ThreadFunction(LPVOID lpParam) {
 	BOOL bSuccess = FALSE;
 	int i, res = 0;
 	DWORD dwRead, dwWritten;
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	res = ConnectNamedPipe (hPipeInOut, NULL);
 	if (!res) {
 		eprintf ("ConnectNamedPipe failed\n");
 		return FALSE;
 	}
 	do {
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			TerminateProcess(hproc,0);
 			break;
 		}
@@ -85,7 +85,7 @@ DWORD WINAPI ThreadFunction(LPVOID lpParam) {
 			}
 		}
 	} while(!bStopThread);
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	return TRUE;
 }
 #else
@@ -113,7 +113,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	child = r_sys_fork ();
 	if (child == -1) {
 		/* error */
-	} else if (child == 0) {
+	} else if (!child) {
 		/* children */
 		r_sandbox_system (code, 1);
 		write (input[1], "", 1);
@@ -126,22 +126,20 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 	} else {
 		/* parent */
 		char *res, buf[1024];
-
 		/* Close pipe ends not required in the parent */
 		close (output[1]);
 		close (input[0]);
-
-		r_cons_break (NULL, NULL);
+		r_cons_break_push (NULL, NULL);
 		for (;;) {
-			if (r_cons_singleton ()->breaked) {
+			if (r_cons_is_breaked ()) {
 				break;
 			}
 			memset (buf, 0, sizeof (buf));
 			ret = read (output[0], buf, sizeof (buf)-1);
-			if (ret <1 || !buf[0]) {
+			if (ret < 1 || !buf[0]) {
 				break;
 			}
-			buf[sizeof (buf)-1] = 0;
+			buf[sizeof (buf) - 1] = 0;
 			res = lang->cmd_str ((RCore*)lang->user, buf);
 			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
@@ -152,22 +150,26 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 				write (input[1], "", 1); // NULL byte
 			}
 		}
+		r_cons_break_pop ();
 		/* workaround to avoid stdin closed */
-		if (safe_in != -1)
+		if (safe_in != -1) {
 			close (safe_in);
+		}
 		safe_in = open (ttyname(0), O_RDONLY);
 		if (safe_in != -1) {
 			dup2 (safe_in, 0);
-		} else eprintf ("Cannot open ttyname(0) %s\n", ttyname(0));
-		r_cons_break_end ();
+		} else {
+			eprintf ("Cannot open ttyname(0) %s\n", ttyname(0));
+		}
 	}
 
 	close (input[0]);
 	close (input[1]);
 	close (output[0]);
 	close (output[1]);
-	if (safe_in != -1)
+	if (safe_in != -1) {
 		close (safe_in);
+	}
 	waitpid (child, NULL, 0);
 	return true;
 #else

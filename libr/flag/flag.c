@@ -77,7 +77,7 @@ static int set_name(RFlagItem *item, const char *name) {
 	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
 	item->namehash = r_str_hash64 (item->name);
 	free (item->realname);
-	item->realname = item->name;
+	item->realname = strdup (item->name);
 	return true;
 }
 
@@ -413,7 +413,9 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	RList *list;
 
 	/* contract fail */
-	if (!name || !*name) return NULL;
+	if (!name || !*name) {
+		return NULL;
+	}
 
 	item = r_flag_get (f, name);
 	if (item) {

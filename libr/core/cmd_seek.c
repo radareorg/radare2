@@ -90,15 +90,17 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 
 	line_count = start_addr ? 0 : 1;
 	core->print->lines_cache[0] = start_addr ? 0 : baddr;
-	r_cons_break (NULL, NULL);
 	buf = malloc (bsz);
-	if (!buf) return -1;
+	if (!buf) {
+		return -1;
+	}
+	r_cons_break_push (NULL, NULL);
 	while (off < end_addr) {
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		r_io_read_at (core->io, off, (ut8*)buf, bsz);
-		for (i=0; i<bsz; i++) {
+		for (i = 0; i < bsz; i++) {
 			if (buf[i] == '\n') {
 				core->print->lines_cache[line_count] = start_addr ? off+i+1 : off+i+1+baddr;
 				line_count++;
@@ -117,11 +119,11 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 		off += bsz;
 	}
 	free (buf);
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	return line_count;
 beach:
 	free (buf);
-	r_cons_break_end();
+	r_cons_break_pop ();
 	return -1;
 }
 

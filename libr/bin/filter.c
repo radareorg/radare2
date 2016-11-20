@@ -48,9 +48,13 @@ R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 
 R_API void r_bin_filter_sym(Sdb *db, ut64 vaddr, RBinSymbol *sym) {
 	char *name;
-	if (!db || !sym) return;
+	if (!db || !sym) {
+		return;
+	}
 	name = sym->name;
-	if (!name) return;
+	if (!name) {
+		return;
+	}
 	const char *uname = sdb_fmt (0, "%" PFMT64x ".%s", vaddr, name);
 	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
 	ut32 hash = sdb_hash (name);   // name hash - if dupped and not in unique hash must insert
@@ -65,7 +69,10 @@ R_API void r_bin_filter_sym(Sdb *db, ut64 vaddr, RBinSymbol *sym) {
 	}
 	if (count > 1) {
 		char *nstr = r_str_newf ("%s_%d", sym->name, count - 1);
-		free (sym->name);
+		//this leaks but for security reasons until refactored
+		//the problem is only with ELF's relocs though 
+		//complains go to alvarofe
+		//free (sym->name);
 		sym->name = nstr;
 	}
 }

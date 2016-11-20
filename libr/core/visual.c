@@ -31,8 +31,9 @@ static const char **printfmt = printfmtSingle;
 static int visual_repeat_thread(RThread *th) {
 	RCore *core = th->user;
 	int i = 0;
+	r_cons_break_push (NULL, NULL);
 	for (;;) {
-		if (core->cons->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		visual_refresh (core);
@@ -42,6 +43,7 @@ static int visual_repeat_thread(RThread *th) {
 		r_cons_flush ();
 		r_sys_sleep (1);
 	}
+	r_cons_break_pop ();
 	r_th_kill (th, 1);
 	return 0;
 }
@@ -117,14 +119,16 @@ static void visual_repeat(RCore *core) {
 #endif
 	} else {
 		RThread *th = r_th_new (visual_repeat_thread, core, 0);
-		if (!th) return;
+		if (!th) {
+			return;
+		}
 		r_th_start (th, 1);
-		r_cons_break (NULL, NULL);
+		r_cons_break_push (NULL, NULL);
 		r_cons_any_key (NULL);
 		eprintf ("^C  \n");
 		core->cons->breaked = true;
 		r_th_wait (th);
-		r_cons_break_end ();
+		r_cons_break_pop ();
 	}
 }
 #endif

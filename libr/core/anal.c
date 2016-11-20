@@ -2353,7 +2353,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 		free (buf);
 		return -1;
 	}
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	if (core->blocksize > OPSZ) {
 		if (bckwrds) {
 			if (from + core->blocksize > to) {
@@ -2370,7 +2370,6 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			r_cons_break (NULL, NULL);
 			// TODO: this can be probably enhaced
 			ret = r_io_read_at (core->io, at, buf, core->blocksize);
 			if (ret != core->blocksize) {
@@ -2383,7 +2382,6 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 				if (r_cons_is_breaked ()) {
 					break;	
 				}
-				r_cons_break (NULL, NULL);
 				r_anal_op_fini (&op);
 				if (!r_anal_op (core->anal, &op, at + i,
 						buf + i, core->blocksize - i)) {
@@ -2453,7 +2451,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	} else {
 		eprintf ("error: block size too small\n");
 	}
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	free (buf);
 	r_anal_op_fini (&op);
 	return count;
@@ -2488,21 +2486,18 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		r_cons_printf ("{");
 	}
 	r_io_use_desc (core->io, core->file->desc);
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	at = from;
-	while (at < to && !r_cons_singleton()->breaked) {
+	while (at < to && !r_cons_is_breaked ()) {
 		int i, ret;
 		ret = r_io_read_at (core->io, at, buf, core->blocksize);
 		if (ret != core->blocksize && at+ret-OPSZ < to) {
 			break;
 		}
 		i = 0;
-		while (at+i < to && i < ret-OPSZ) {
+		while (at + i < to && i < ret-OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
-			if (r_cons_singleton()->breaked) {
-				break;
-			}
 			xref_from = at+i;
 			r_anal_op_fini (&op);
 			ret = r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i);
@@ -2571,9 +2566,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				RIOSection *s;
 				r_list_foreach (core->io->sections, iter, s) {
 					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
-						if (s->vaddr != 0) {
-							break;
-						}
+						if (s->vaddr) break;
 					}
 				}
 				if (!iter) {
@@ -2612,8 +2605,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
 				default: cmd = "ax"; break;
 				}
-				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-						cmd, xref_to, xref_from);
+				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, xref_from);
 				if (cfg_anal_strings) {
 					char *str_flagname = is_string_at (core, xref_to, &len);
 					if (str_flagname) {
@@ -2627,16 +2619,14 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 					}
 				}
 			}
-
 			count++;
 		}
 
 		at += i;
 	}
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	free (buf);
 	r_anal_op_fini (&op);
-
 	if (rad == 'j') {
 		r_cons_printf ("}\n");
 	}
@@ -2677,7 +2667,7 @@ R_API int r_core_anal_all(RCore *core) {
 		r_core_cmd0 (core, "af");
 	}
 
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL) {
 		ut64 addr = r_bin_get_vaddr (core->bin, binmain->paddr, binmain->vaddr);
@@ -2692,7 +2682,7 @@ R_API int r_core_anal_all(RCore *core) {
 	/* Symbols (Imports are already analyzed by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin)) != NULL) {
 		r_list_foreach (list, iter, symbol) {
-			if (core->cons->breaked) {
+			if (r_cons_is_breaked ()) {
 				break;
 			}
 			if (isValidSymbol (symbol)) {
@@ -2706,18 +2696,21 @@ R_API int r_core_anal_all(RCore *core) {
 	if (anal_vars) {
 		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (core->cons->breaked)
+			if (r_cons_is_breaked ()) {
 				break;
+			}
 			if (r_config_get_i (core->config, "anal.vars")) {
 				r_anal_var_delete_all (core->anal, fcni->addr, 'r');
 				r_anal_var_delete_all (core->anal, fcni->addr, 'b');
 				r_anal_var_delete_all (core->anal, fcni->addr, 's');
 				fcn_callconv (core, fcni);
 			}
-			if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4))
+			if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
 				fcni->type = R_ANAL_FCN_TYPE_SYM;
+			}
 		}
 	}
+	r_cons_break_pop ();
 	return true;
 }
 
@@ -2871,7 +2864,7 @@ R_API void r_core_anal_stats_free (RCoreAnalStats *s) {
 	free (s);
 }
 
-R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
+R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 	ut64 addr = core->offset;
 	int depth = 0;
 	RAnalOp *op = NULL;
@@ -2882,7 +2875,8 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 		return NULL;
 	}
 	cf = r_anal_cycle_frame_new ();
-	while (cf && !core->cons->breaked) {
+	r_cons_break_push (NULL, NULL);
+	while (cf && !r_cons_is_breaked ()) {
 		if ((op = r_core_anal_op (core, addr)) && (op->cycles) && (ccl > 0)) {
 			r_cons_clear_line (1);
 			eprintf ("%i -- ", ccl);
@@ -3034,7 +3028,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 		}
 		r_anal_op_free (op);
 	}
-	if (core->cons->breaked) {
+	if (r_cons_is_breaked ()) {
 		while (cf) {
 			ch = r_list_pop (cf->hooks);
 			while (ch) {
@@ -3046,6 +3040,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl) {
 			cf = prev;
 		}
 	}
+	r_cons_break_pop ();
 	return hooks;
 }
 
@@ -3189,7 +3184,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 }
 
 static bool esil_anal_stop = false;
-static void cccb(void*u) {
+static void cccb(void *u) {
 	esil_anal_stop = true;
 	eprintf ("^C\n");
 }
@@ -3293,7 +3288,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		return;
 	}
 	esil_anal_stop = false;
-	r_cons_break (cccb, core);
+	r_cons_break_push (cccb, core);
 
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	int in = r_syscall_get_swi (core->anal->syscall);
@@ -3352,10 +3347,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			}
 			(void)r_anal_esil_parse (ESIL, esilstr);
 			// looks like ^C is handled by esil_parse !!!!
-			r_cons_break (cccb, core);
 			//r_anal_esil_dumpstack (ESIL);
 			r_anal_esil_stack_free (ESIL);
-
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
 				if ((target && op.ptr == ntarget) || !target) {
@@ -3457,5 +3450,5 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	free (buf);
 	free (op.mnemonic);
-	r_cons_break_end ();
+	r_cons_break_pop ();
 }

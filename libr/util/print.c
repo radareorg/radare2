@@ -785,35 +785,38 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		if (use_sparse) {
 			if (check_sparse (buf+i, inc, sparse_char)) {
-				if (i+inc>=len || check_sparse (buf+i+inc, inc, sparse_char)) {
+				if (i + inc >= len || check_sparse (buf+i+inc, inc, sparse_char)) {
 					if (i+inc+inc>=len || check_sparse (buf+i+inc+inc, inc, sparse_char)) {
 						sparse_char = buf[j];
 						last_sparse++;
-						if (last_sparse==2) {
+						if (last_sparse == 2) {
 							printfmt (" ...\n");
 							continue;
 						}
-						if (last_sparse>2) continue;
+						if (last_sparse > 2) continue;
 					}
 				}
-			} else last_sparse = 0;
+			} else {
+				last_sparse = 0;
+			}
 		}
-		if (use_offset)
-			r_print_addr (p, addr+j);
-		printfmt ((col==1)? "|": " ");
+		if (use_offset) {
+			r_print_addr (p, addr + j);
+		}
+		printfmt ((col == 1)? "|": " ");
 		for (j = i; j < i + inc; j++) {
 			if (j >= len) {
 				if (col == 1) {
-					if (j+1 >= inc + i) {
-						printfmt (j%2?"  |":"| ");
+					if (j + 1 >= inc + i) {
+						printfmt (j % 2?"  |":"| ");
 					} else {
-						printfmt (j%2?"   ":"  ");
+						printfmt (j % 2?"   ":"  ");
 					}
 				} else {
 					if (base == 10) {
-						printfmt (j%2?"     ":"  ");
+						printfmt (j % 2?"     ":"  ");
 					} else {
-						printfmt (j%2?"   ":"  ");
+						printfmt (j % 2?"   ":"  ");
 					}
 				}
 				continue;
@@ -869,8 +872,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					break;
 				}
 				r_print_byte (p, fmt, j, buf[j]);
-				if (j%2 || !pairs) {
-					if (col==1) {
+				if (j % 2 || !pairs) {
+					if (col == 1) {
 						if (j + 1 < inc + i) {
 							printfmt (" ");
 						} else {
@@ -889,7 +892,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		if (col == 2) printfmt("|");
 		if (p && p->flags & R_PRINT_FLAGS_REFS) {
-			ut64 *foo = (ut64*)(buf+i);
+			ut64 *foo = (ut64*)(buf + i);
 			ut64 addr = *foo;
 			if (base == 32) {
 				addr &= UT32_MAX;

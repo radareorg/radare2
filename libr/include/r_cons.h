@@ -209,6 +209,7 @@ r_cons_click_clear();
 typedef struct r_cons_t {
 	RConsGrep grep;
 	RStack *cons_stack;
+	RStack *break_stack;
 	char *buffer;
 	//int line;
 	int buffer_len;
@@ -423,7 +424,6 @@ R_API RCons *r_cons_free (void);
 R_API char *r_cons_lastline (void);
 
 typedef void (*RConsBreak)(void *);
-R_API void r_cons_break(RConsBreak cb, void *user);
 R_API void r_cons_break_end(void);
 R_API bool r_cons_is_breaked();
 
@@ -437,6 +437,9 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
 
 R_API void r_cons_push();
 R_API void r_cons_pop();
+R_API void r_cons_break_pop();
+R_API void r_cons_break_push(RConsBreak cb, void*user);
+R_API void r_cons_break_clear();
 
 /* control */
 R_API char *r_cons_editor (const char *file, const char *str);

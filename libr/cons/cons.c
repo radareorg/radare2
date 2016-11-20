@@ -26,6 +26,16 @@ typedef struct {
 	RConsGrep *grep;
 } RConsStack;
 
+typedef struct {
+	bool breaked;
+	void *data;
+	RConsEvent event_interrupt;	
+} RConsBreakStack;
+
+static void break_stack_free(void *ptr) {
+	RConsBreakStack *b = (RConsBreakStack*)ptr;
+	free (b);
+}
 
 static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
@@ -165,13 +175,49 @@ R_API RCons *r_cons_singleton () {
 	return &I;
 }
 
-R_API void r_cons_break(void (*cb)(void *u), void *user) {
+R_API void r_cons_break_clear() {
 	I.breaked = false;
-	I.event_interrupt = cb;
-	I.data = user;
+}
+
+R_API void r_cons_break_push(RConsBreak cb, void *user) {
+	if (I.break_stack) {
+		//if we don't have any element in the stack start the signal
+		RConsBreakStack *b = R_NEW0 (RConsBreakStack);
+		if (!b) return;
+		if (r_stack_is_empty (I.break_stack)) {
 #if __UNIX__ || __CYGWIN__
-	signal (SIGINT, break_signal);
+			signal (SIGINT, break_signal);
 #endif
+			I.breaked = false;
+		}
+		//save the actual state
+		b->event_interrupt = I.event_interrupt;
+		b->data = I.data;
+		r_stack_push (I.break_stack, b);
+		//configure break
+		I.event_interrupt = cb;
+		I.data = user;
+	}
+}
+
+R_API void r_cons_break_pop() {
+	//restore old state
+	if (I.break_stack) {
+		RConsBreakStack *b = NULL; 
+		r_print_set_interrupted (I.breaked);
+		b = r_stack_pop (I.break_stack);
+		if (b) {
+			I.event_interrupt = b->event_interrupt;
+			I.data = b->data;
+			break_stack_free (b);
+		} else {
+			//there is not more elements in the stack
+#if __UNIX__ || __CYGWIN__
+			signal (SIGINT, SIG_IGN);
+#endif
+			I.breaked = false;	
+		}
+	}
 }
 
 R_API bool r_cons_is_breaked() {
@@ -184,6 +230,14 @@ R_API void r_cons_break_end() {
 #if __UNIX__ || __CYGWIN__
 	signal (SIGINT, SIG_IGN);
 #endif
+	if (!r_stack_is_empty (I.break_stack)) {
+		//free all the stack
+		r_stack_free (I.break_stack);
+		//create another one
+		I.break_stack = r_stack_newf (6, break_stack_free);
+		I.data = NULL;
+		I.event_interrupt = NULL;
+	}
 }
 
 #if __WINDOWS__ && !__CYGWIN__
@@ -285,6 +339,7 @@ R_API RCons *r_cons_new() {
 	I.truecolor = 0;
 	I.mouse = 0;
 	I.cons_stack = r_stack_newf (6, cons_stack_free);
+	I.break_stack = r_stack_newf (6, break_stack_free);
 	r_cons_pal_null ();
 	r_cons_pal_init (NULL);
 	r_cons_rgb_init ();
@@ -307,6 +362,7 @@ R_API RCons *r_cons_free() {
 		I.buffer = NULL;
 	}
 	r_stack_free (I.cons_stack);	
+	r_stack_free (I.break_stack);
 	return NULL;
 }
 
@@ -566,7 +622,7 @@ R_API void r_cons_flush() {
 				char *nl = strchr (ptr, '\n');
 				int len = I.buffer_len;
 				I.buffer[I.buffer_len] = 0;
-				r_cons_break (NULL, NULL);
+				r_cons_break_push (NULL, NULL);
 				while (nl && !r_cons_is_breaked ()) {
 					r_cons_write (ptr, nl - ptr + 1);
 					if (!(i % pagesize)) {
@@ -577,7 +633,7 @@ R_API void r_cons_flush() {
 					i++;
 				}
 				r_cons_write (ptr, I.buffer + len - ptr);
-				r_cons_break_end ();
+				r_cons_break_pop ();
 			} else {
 				r_cons_write (I.buffer, I.buffer_len);
 			}
