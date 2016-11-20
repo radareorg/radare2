@@ -2873,7 +2873,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		} else {
 			r_cons_printf (" ; %s=0x%"PFMT64x" %s", name, *val, msg? msg: "");
 		}
-	} 
+	}
 	free (msg);
 	return 0;
 }
@@ -2993,11 +2993,11 @@ static char * resolve_fcn_name(RAnal *anal, const char * func_name) {
 	return r_anal_type_func_guess (anal, (char*)func_name);
 }
 
-static bool can_emulate_metadata(RAnal * a, ut64 at) {
+static bool can_emulate_metadata(RCore * core, ut64 at) {
 	const char *infos;
-	const char *emuskipmeta = "ds";
+	const char *emuskipmeta = r_config_get (core->config, "asm.emuskip");
 	char key[32];
-	Sdb *s = a->sdb_meta;
+	Sdb *s = core->anal->sdb_meta;
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, at);
 	infos = sdb_const_get (s, key, 0);
 	if (!infos) {
@@ -3030,7 +3030,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	if (!ds->show_comments || !ds->show_emu) {
 		goto beach;
 	}
-	if (!can_emulate_metadata (core->anal, at)) {
+	if (!can_emulate_metadata (core, at)) {
 		goto beach;
 	}
 	if (ds->show_color) {

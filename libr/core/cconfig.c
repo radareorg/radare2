@@ -1727,6 +1727,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
 	SETCB("asm.emustr", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
+	SETPREF("asm.emuskip", "ds", "Skip metadata of given types in asm.emu (default: d=data, s=string)");
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF("asm.flags", "true", "Show flags");
