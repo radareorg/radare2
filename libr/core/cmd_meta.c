@@ -261,13 +261,13 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			  }
 		  }
 		break;
-	case 0:
+	case 0: // "CC"
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
 		break;
-	case 'f':
+	case 'f': // "CCf"
 		r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'f', core->offset);
 		break;
-	case 'j':
+	case 'j': // "CCj"
 		r_meta_list (core->anal, R_META_TYPE_COMMENT, 'j');
 		break;
 	case '!':

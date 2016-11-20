@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2016 - nibble, pancake */
 
 // TODO: rename to r_anal_meta_get() ??
 #if 0
@@ -346,6 +346,7 @@ R_API const char *r_meta_type_to_string(int type) {
 	return "(...)";
 }
 
+static bool isFirst = true;
 static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 	char *pstr, *str;
 	//eprintf ("%d %d\n", d->space, a->meta_spaces.space_idx);
@@ -369,8 +370,10 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
-			a->cb_printf ("{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"}",
+			a->cb_printf ("%s{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"}",
+				isFirst? "": ",",
 				d->from, r_meta_type_to_string (d->type), str);
+			isFirst = false;
 			break;
 		case 0:
 		case 1:
@@ -513,6 +516,7 @@ R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, voi
 	if (rad == 'j') {
 		a->cb_printf ("[");
 	}
+	isFirst = true; // TODO: kill global
 	if (cb) {
 		sdb_foreach (DB, cb, &ui);
 	} else {
