@@ -486,6 +486,18 @@ static int cb_emustr(void *user, void *data) {
 	return true;
 }
 
+static int cb_emuskip(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value == '?') {
+		r_cons_printf ("Concatenation of meta types encoded as characters:\n" \
+				"'d': data\n'c': code\n's': string\n'f': format\n'm': magic\n" \
+				"'h': hide\n'C': comment\n'r': run\n" \
+				"(default is 'ds' to skip data and strings)\n");
+		return false;
+	}
+	return true;
+}
+
 static int cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1727,7 +1739,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
 	SETCB("asm.emustr", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
-	SETPREF("asm.emuskip", "ds", "Skip metadata of given types in asm.emu (default: d=data, s=string)");
+	SETCB("asm.emuskip", "ds", &cb_emuskip, "Skip metadata of given types in asm.emu (see e asm.emuskip=?)");
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF("asm.flags", "true", "Show flags");
