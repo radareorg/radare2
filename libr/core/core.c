@@ -542,6 +542,7 @@ static const char *radare_argv[] = {
 	"#!python", "#!perl", "#!vala",
 	"V", "v",
 	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax", "ad",
+	"ae", "aec", "aex", "aep", "aea", "aeA", "aes", "aeso", "aesu", "aesue", "aer", "aei", "aeim", "aef",
 	"aaa", "aac","aae", "aai", "aar", "aan", "aas", "aat", "aap", "aav",
 	"af", "afa", "afan", "afc", "afi", "afb", "afbb", "afn", "afr", "afs", "af*", "afv", "afvn",
 	"aga", "agc", "agd", "agl", "agfl",
@@ -956,6 +957,11 @@ openfile:
 		    (!strncmp (line->buffer.data, "ag ", 3)) ||
 		    (!strncmp (line->buffer.data, "aav ", 4)) ||
 		    (!strncmp (line->buffer.data, "afi ", 4)) ||
+		    (!strncmp (line->buffer.data, "aep ", 4)) ||
+		    (!strncmp (line->buffer.data, "aef ", 4)) ||
+		    (!strncmp (line->buffer.data, "aecu ", 5)) ||
+		    (!strncmp (line->buffer.data, "aesu ", 5)) ||
+		    (!strncmp (line->buffer.data, "aeim ", 5)) ||
 		    (!strncmp (line->buffer.data, "afb ", 4)) ||
 		    (!strncmp (line->buffer.data, "afc ", 4)) ||
 		    (!strncmp (line->buffer.data, "axt ", 4)) ||
