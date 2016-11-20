@@ -12,7 +12,7 @@ static char *saveRegs;
 static ut64 ripStop = 0LL;
 
 typedef struct {
-	libbochs_t desc; 
+	libbochs_t desc;
 } RIOBochs;
 
 static libbochs_t *desc = NULL;
@@ -25,8 +25,9 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 	ut64 a;
 	int  n,i,lenRec;
 	//eprintf ("bochs_breakpoint\n");
-	if (!bp) 
+	if (!bp) {
 		return false;
+	}
 	if (set) {
 		//eprintf("[set] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
 		sprintf (cmd, "lb 0x%x", (ut32)bp->addr);
@@ -55,8 +56,9 @@ static int r_debug_bochs_breakpoint (RBreakpointItem *bp, int set, void *user) {
 					n = r_num_get (NULL,num);
 					a = r_num_get (NULL,addr);
 					//eprintf("parseado %x %016"PFMT64x"\n",n,a);
-					if (a == bp->addr)
-						break;						
+					if (a == bp->addr) {
+						break;
+					}
 				}
 				i += 48;
 			} while (desc->data[i] != '<' && i<lenRec-4);
@@ -141,8 +143,8 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		   idtr:base=0x0000000000000000, limit=0xffff
 		*/
 		bochs_send_cmd (desc, "sreg", true);
-		
-		pos = 0x38;	
+
+		pos = 0x38;
 		char * s [] = { "es:0x", "cs:0x","ss:0x","ds:0x","fs:0x","gs:0x",0};
 		const char *x;
 		int n;
@@ -174,7 +176,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		}
 		// Cheat para evitar traducciones de direcciones
 		if (ripStop != 0) {
-			memcpy (&buf[0], &ripStop, 8);	
+			memcpy (&buf[0], &ripStop, 8);
 		} else {
 			memcpy (&buf[0], &valRIP, 8);	// guardamos el valor cs:ip en el registro virtual "vip"
 		}
@@ -186,7 +188,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		memcpy (buf, saveRegs, size);
 		//eprintf("[cache] bochs_reg_read\n");
 	}
-	return size;		
+	return size;
 }
 
 static int r_debug_bochs_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
@@ -203,7 +205,7 @@ static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 	//eprintf("bochs_map_getdebug:\n");
 	RDebugMap *mr;
 	RList *list = r_list_newf ((RListFree)map_free);
-	if (!list) return NULL;	
+	if (!list) return NULL;
 	mr = R_NEW0 (RDebugMap);
 	if (!mr) {
 		r_list_free (list);
@@ -252,7 +254,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 	if (bStep) {
 		bStep = false;
 	} else {
-		r_cons_break (bochs_debug_break, dbg);
+		r_cons_break_push (bochs_debug_break, dbg);
 		i = 500;
 		do {
 			bochs_wait (desc);
@@ -273,11 +275,12 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 				break;
 			}
 		} while(1);
+		r_cons_break_pop ();
 	}
 	//eprintf ("bochs_wait: loop done\n");
 	i = 0;
 	// Next at t=394241428
-	// (0) [0x000000337635] 0020:0000000000337635 (unk. ctxt): add eax, esi              ; 03c6	
+	// (0) [0x000000337635] 0020:0000000000337635 (unk. ctxt): add eax, esi              ; 03c6
 	ripStop = 0;
 	if ((x = strstr (desc->data, "Next at"))) {
 		if ((ini = strstr (x, "[0x"))) {
@@ -332,7 +335,7 @@ static int r_debug_bochs_detach(RDebug *dbg, int pid) {
 
 static const char *r_debug_bochs_reg_profile(RDebug *dbg) {
 	int bits = dbg->anal->bits;
-	
+
 	if (bits == 16 || bits == 32 || bits == 64) {
 		return strdup (
 				"=PC	csip\n"
@@ -349,7 +352,7 @@ static const char *r_debug_bochs_reg_profile(RDebug *dbg) {
 				"seg	ds	2	0x03E	0	\n"
 				"seg	fs	2	0x040	0	\n"
 				"seg	gs	2	0x042	0	\n"
-				
+
 				"gpr	rax	8	0x078	0	\n"
 				"gpr	eax	4	0x078	0	\n"
 				"gpr	ax	2	0x078	0	\n"

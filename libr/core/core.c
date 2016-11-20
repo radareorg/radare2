@@ -1066,8 +1066,9 @@ R_API int r_core_fgets(char *buf, int len) {
 	const char *ptr;
 	RLine *rli = r_line_singleton ();
 	buf[0] = '\0';
-	if (rli->completion.argv != radare_argv)
+	if (rli->completion.argv != radare_argv) {
 		r_line_free_autocomplete (rli);
+	}
 	rli->completion.argc = CMDS;
 	rli->completion.argv = radare_argv;
 	rli->completion.run = autocomplete;
@@ -1077,7 +1078,7 @@ R_API int r_core_fgets(char *buf, int len) {
 	}
 	strncpy (buf, ptr, len);
 	buf[len - 1] = 0;
-	return strlen (buf)+1;
+	return strlen (buf) + 1;
 }
 /*-----------------------------------*/
 
@@ -1627,7 +1628,7 @@ R_API RCore *r_core_free(RCore *c) {
 R_API void r_core_prompt_loop(RCore *r) {
 	int ret;
 	do {
-		if (r_core_prompt (r, false)<1) {
+		if (r_core_prompt (r, false) < 1) {
 			break;
 		}
 //			if (lock) r_th_lock_enter (lock);
@@ -1761,7 +1762,6 @@ R_API int r_core_prompt(RCore *r, int sync) {
 
 	rnv = r->num->value;
 	set_prompt (r);
-
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) {
 		return R_CORE_CMD_EXIT; // ^D
@@ -1900,24 +1900,25 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	fd = rior->fd;
 	eprintf ("RAP Server started (rap.loop=%s)\n",
 			r_config_get (core->config, "rap.loop"));
+
+	r_cons_break_push (rap_break, rior);
 reaccept:
 	core->io->plugin = NULL;
-	r_cons_break (rap_break, rior);
-	while (!core->cons->breaked) {
+	while (!r_cons_is_breaked ()) {
 		c = r_socket_accept (fd);
 		if (!c) {
 			break;
 		}
-		if (core->cons->breaked) {
-			return -1;
+		if (r_cons_is_breaked ()) {
+			goto out_of_function;
 		}
 		if (!c) {
 			eprintf ("rap: cannot accept\n");
 			r_socket_free (c);
-			return -1;
+			goto out_of_function;
 		}
 		eprintf ("rap: client connected\n");
-		for (;!core->cons->breaked;) {
+		for (;!r_cons_is_breaked ();) {
 			if (!r_socket_read (c, &cmd, 1)) {
 				eprintf ("rap: connection closed\n");
 				if (r_config_get_i (core->config, "rap.loop")) {
@@ -1925,7 +1926,7 @@ reaccept:
 					r_socket_free (c);
 					goto reaccept;
 				}
-				return -1;
+				goto out_of_function;
 			}
 			switch ((ut8)cmd) {
 			case RMT_OPEN:
@@ -1962,78 +1963,13 @@ reaccept:
 						pipefd = -1;
 						eprintf ("Cannot open file (%s)\n", ptr);
 						r_socket_close (c);
-						return -1; //XXX: Close conection and goto accept
+						goto out_of_function; //XXX: Close conection and goto accept
 					}
 				}
 				buf[0] = RMT_OPEN | RMT_REPLY;
 				r_write_be32 (buf + 1, pipefd);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
-#if 0
-				/* Write meta info */
-				RMetaItem *d;
-				r_list_foreach (core->anal->meta->data, iter, d) {
-					if (d->type == R_META_TYPE_COMMENT)
-						snprintf ((char *)buf, sizeof (buf), "%s %s @ 0x%08"PFMT64x,
-							r_meta_type_to_string (d->type), d->str, d->from);
-					else
-						snprintf ((char *)buf, sizeof (buf),
-							"%s %d %s @ 0x%08"PFMT64x,
-							r_meta_type_to_string (d->type),
-							(int)(d->to-d->from), d->str, d->from);
-					i = strlen ((char *)buf);
-					r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
-					r_socket_write (c, (ut8 *)&j, 4);
-					r_socket_write (c, buf, i);
-					r_socket_flush (c);
-				}
-#endif
-#if 0
-				RIOSection *s;
-				r_list_foreach_prev (core->io->sections, iter, s) {
-					snprintf ((char *)buf, sizeof (buf),
-							"S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d",
-							s->offset, s->vaddr, s->size, s->vsize, s->name, s->rwx);
-					i = strlen ((char *)buf);
-					r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
-					r_socket_write (c, (ut8 *)&j, 4);
-					r_socket_write (c, buf, i);
-					r_socket_flush (c);
-				}
-#endif
-#if 0
-				int fs = -1;
-				RFlagItem *flag;
-				r_list_foreach_prev (core->flags->flags, iter, flag) {
-					if (fs == -1 || flag->space != fs) {
-						fs = flag->space;
-						snprintf ((char *)buf, sizeof (buf),
-								"fs %s", r_flag_space_get_i (core->flags, fs));
-						i = strlen ((char *)buf);
-						r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
-						r_socket_write (c, (ut8 *)&j, 4);
-						r_socket_write (c, buf, i);
-					}
-					snprintf ((char *)buf, sizeof (buf),
-									"f %s %"PFMT64d" 0x%08"PFMT64x,
-									flag->name, flag->size, flag->offset);
-						i = strlen ((char *)buf);
-						r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
-						r_socket_write (c, (ut8 *)&j, 4);
-						r_socket_write (c, buf, i);
-						r_socket_flush (c);
-				}
-
-				snprintf ((char *)buf, sizeof (buf), "s 0x%"PFMT64x, core->offset);
-				i = strlen ((char *)buf);
-				r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
-				r_socket_write (c, (ut8 *)&j, 4);
-				r_socket_write (c, buf, i);
-
-				i = 0;
-				r_socket_write (c, (ut8 *)&i, 4);
-				r_socket_flush (c);
-#endif
 				free (ptr);
 				ptr = NULL;
 				break;
@@ -2063,7 +1999,7 @@ reaccept:
 					eprintf ("Cannot read %d bytes\n", i);
 					r_socket_free (c);
 					// TODO: reply error here
-					return -1;
+					goto out_of_function;
 				}
 				break;
 			case RMT_CMD:
@@ -2188,12 +2124,13 @@ reaccept:
 				r_socket_close (c);
 				free (ptr);
 				ptr = NULL;
-				return -1;
+				goto out_of_function;
 			}
 		}
-		r_cons_break_end ();
 		eprintf ("client: disconnected\n");
 	}
+out_of_function:
+	r_cons_break_pop ();
 	return -1;
 }
 

@@ -240,7 +240,9 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 		RETURN (-1);
 	}
 	if (feof (cons->fdin)) {
-		if (color) printf (Color_RESET);
+		if (color) {
+			printf (Color_RESET);
+		}
 		RETURN (-2);
 	}
 	buf[strlen (buf)-1] = '\0';

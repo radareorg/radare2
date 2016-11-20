@@ -283,7 +283,6 @@ static RList* relocs(RBinFile *arch) {
 	if (arch && arch->o) {
 		bin = arch->o->bin_obj;
 	}
-
 	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
 		return NULL;
 	ret->free = free;

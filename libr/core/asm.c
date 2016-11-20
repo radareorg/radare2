@@ -68,14 +68,16 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int tokcount, matchcount, count = 0;
 	int matches = 0;
 
-	if (!*input)
+	if (!*input) {
 		return NULL;
+	}
 	if (core->blocksize <= OPSZ) {
 		eprintf ("error: block size too small\n");
 		return NULL;
 	}
-	if (!(buf = (ut8 *)calloc (core->blocksize, 1)))
+	if (!(buf = (ut8 *)calloc (core->blocksize, 1))) {
 		return NULL;
+	}
 	if (!(ptr = strdup (input))) {
 		free (buf);
 		return NULL;
@@ -86,21 +88,22 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 	tokens[0] = NULL;
-	for (tokcount=0; tokcount<(sizeof (tokens) / sizeof (char*)) - 1; tokcount++) {
+	for (tokcount = 0; tokcount < (sizeof (tokens) / sizeof (char*)) - 1; tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ";");
-		if (!tok)
-			break;
+		if (!tok) break;
 		tokens[tokcount] = r_str_trim_head_tail (tok);
 	}
 	tokens[tokcount] = NULL;
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	for (at = from, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
 		matches = 0;
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_is_breaked ()) {
 			break;
+		}
 		ret = r_io_read_at (core->io, at, buf, core->blocksize);
-		if (ret != core->blocksize)
+		if (ret != core->blocksize) {
 			break;
+		}
 		idx = 0, matchcount = 0;
 		while (idx < core->blocksize) {
 			ut64 addr = at + idx;
@@ -108,33 +111,37 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			op.buf_asm[0] = 0;
 			op.buf_hex[0] = 0;
 			if (!(len = r_asm_disassemble (core->assembler, &op, buf+idx, core->blocksize-idx))) {
-				idx = (matchcount)? tidx+1: idx+1;
+				idx = (matchcount)? tidx + 1: idx + 1;
 				matchcount = 0;
 				continue;
 			}
 			matches = true;
-			if (!strcmp (op.buf_asm, "unaligned"))
+			if (!strcmp (op.buf_asm, "unaligned")) {
+				matches = false; 
+			}
+			if (!strcmp (op.buf_asm, "invalid")) {
 				matches = false;
-			if (!strcmp (op.buf_asm, "invalid"))
-				matches = false;
+			}
 			if (matches && tokens[matchcount]) {
-				if (!regexp) matches = strstr(op.buf_asm, tokens[matchcount]) != NULL;
-				else {
+				if (!regexp) {
+					matches = strstr(op.buf_asm, tokens[matchcount]) != NULL;
+				} else {
 					rx = r_regex_new (tokens[matchcount], "");
 					matches = r_regex_exec (rx, op.buf_asm, 0, 0, 0) == 0;
 					r_regex_free (rx);
 				}
 			}
-			if (align && align>1) {
+			if (align && align > 1) {
 				if (addr % align) {
 					matches = false;
 				}
 			}
 			if (matches) {
 				code = r_str_concatf (code, "%s; ", op.buf_asm);
-				if (matchcount == tokcount-1) {
-					if (tokcount == 1)
+				if (matchcount == tokcount - 1) {
+					if (tokcount == 1) {
 						tidx = idx;
+					}
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_purge (hits);
 						free (hits);
@@ -152,15 +159,15 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					r_list_append (hits, hit);
 					R_FREE (code);
 					matchcount = 0;
-					idx = tidx+1;
+					idx = tidx + 1;
 					if (maxhits) {
-						count ++;
+						count++;
 						if (count >= maxhits) {
 							//eprintf ("Error: search.maxhits reached\n");
 							goto beach;
 						}
 					}
-				} else  if (matchcount == 0) {
+				} else  if (!matchcount) {
 					tidx = idx;
 					matchcount++;
 					idx += len;
@@ -169,19 +176,20 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					idx += len;
 				}
 			} else {
-				idx = matchcount? tidx+1: idx+1;
+				idx = matchcount? tidx + 1: idx + 1;
 				R_FREE (code);
 				matchcount = 0;
 			}
 		}
-
 		at += OPSZ;
 	}
+	r_cons_break_pop ();
 	r_asm_set_pc (core->assembler, toff);
 beach:
 	free (buf);
 	free (ptr);
 	free (code);
+	r_cons_break_pop ();
 	return hits;
 }
 

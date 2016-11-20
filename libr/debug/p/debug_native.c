@@ -221,12 +221,12 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 /* Callback to trigger SIGINT signal */
 static void r_debug_native_stop(RDebug *dbg) {
 	r_debug_kill (dbg, dbg->pid, dbg->tid, SIGINT);
-	r_cons_break_end();
+	r_cons_break_pop ();
 }
 
 /* TODO: specify thread? */
 /* TODO: must return true/false */
-static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
+static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if __WINDOWS__ && !__CYGWIN__
 	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
 		print_lasterr ((char *)__FUNCTION__, "ContinueDebugEvent");
@@ -237,14 +237,15 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 #elif __APPLE__
 	bool ret;
 	ret = xnu_continue (dbg, pid, tid, sig);
-	if (!ret)
+	if (!ret) {
 		return -1;
+	}
 	return tid;
 #elif __BSD__
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	ut64 pc = r_debug_reg_get (dbg, "PC");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;
-#elif __CYGWIN__
+#elif __CYGWIN__ 
 	#warning "r_debug_native_continue not supported on this platform"
 	return -1;
 #else
@@ -256,7 +257,7 @@ static int r_debug_native_continue (RDebug *dbg, int pid, int tid, int sig) {
 	//eprintf ("continuing with signal %d ...\n", contsig);
 	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
 	if (dbg->consbreak) {
-		r_cons_break ((RConsBreak)r_debug_native_stop, dbg);
+		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
 	}
 	return ptrace (PTRACE_CONT, pid, NULL, contsig) == 0;
 #endif

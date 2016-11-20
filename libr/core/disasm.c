@@ -3461,18 +3461,19 @@ toro:
 	}
 
 	ds_print_esil_anal_init (ds);
-	r_cons_break (NULL, NULL);
 	inc = 0;
 	if (!ds->l) {
 		len = ds->l = core->blocksize;
 	}
 
+	r_cons_break_push (NULL, NULL);
 	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = p2v (ds, ds->at);
-		if (core->cons && core->cons->breaked) {
+		if (r_cons_is_breaked ()) {
 			dorepeat = 0;
+			r_cons_break_pop ();
 			return 0; //break;
 		}
 		r_core_seek_archbits (core, ds->at); // slow but safe
@@ -3514,8 +3515,6 @@ toro:
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
 				idx = 0;
-			//	 r_cons_printf ("delta %d fsize %d\n", delta, f->size);
-			//	inc = 1;
 				continue;
 			}
 		}
@@ -3564,6 +3563,7 @@ toro:
 		}
 		if (ds->retry) {
 			ds->retry = 0;
+			r_cons_break_pop ();
 			goto retry;
 		}
 		ds_atabs_option (ds);
@@ -3695,7 +3695,7 @@ toro:
 	if (nbuf == buf) {
 		R_FREE (buf);
 	}
-	r_cons_break_end ();
+	r_cons_break_pop ();
 
 #if HASRETRY
 	if (!ds->cbytes && ds->lines < ds->l && dorepeat) {
@@ -3796,8 +3796,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	if (!ds->l) {
 		ds->l = ds->len;
 	}
-	r_cons_break (NULL, NULL);
 
+	r_cons_break_push (NULL, NULL);
 	//build ranges to map addr with bits
 	r_anal_build_range_on_hints (core->anal);
 #define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
@@ -3806,7 +3806,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		ds->vat = p2v (ds, ds->at);
 		hasanal = false;
 		r_core_seek_archbits (core, ds->at);
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
@@ -3918,7 +3918,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			ds->hint = NULL;
 		}
 	}
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	if (ds->oldbits) {
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
 		ds->oldbits = 0;
@@ -4197,12 +4197,12 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < l; i++) {
 		ds->at = addr + i;
 		ds->vat = p2v (ds, ds->at);
 		r_asm_set_pc (core->assembler, ds->vat);
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, l - i);
@@ -4271,7 +4271,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			}
 		}
 	}
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	if (buf != core->block) {
 		free (buf);
 	}
@@ -4348,7 +4348,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	core->inc = 0;
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8")? r_vline_u: r_vline_a;
 	i = idx = 0;
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	ds_print_esil_anal_init (ds);
 
 	if (core->io && core->io->debug) {
@@ -4372,7 +4372,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			// XXX - why is it necessary to set this everytime?
 			r_asm_set_pc (core->assembler, ds->at);
 			if (ds->lines >= ds->l) break;
-			if (r_cons_singleton ()->breaked) break;
+			if (r_cons_is_breaked ()) break;
 
 			ds_update_ref_lines (ds);
 			/* show type links */
@@ -4382,22 +4382,19 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ret = ds_disassemble (ds, buf+idx, len - bb_size_consumed);
 			ds_atabs_option (ds);
 			// TODO: store previous oplen in core->dec
-			if (core->inc == 0) {
+			if (!core->inc) {
 				core->inc = ds->oplen;
 			}
-
 			r_anal_op_fini (&ds->analop);
-
-			if (!ds->lastfail)
+			if (!ds->lastfail) {
 				r_anal_op (core->anal, &ds->analop,
 					ds->at+bb_size_consumed, buf+idx,
 					len-bb_size_consumed);
-
+			}
 			if (ret < 1) {
 				r_strbuf_init (&ds->analop.esil);
 				ds->analop.type = R_ANAL_OP_TYPE_ILL;
 			}
-
 			ds_instruction_mov_lea (ds, idx);
 			ds_control_flow_comments (ds);
 			ds_adistrick_comments (ds);
@@ -4455,7 +4452,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_print_comments_right (ds);
 			ds_show_refs (ds);
 			ds_print_esil_anal (ds);
-			if ( !(ds->show_comments && ds->show_comment_right && ds->comment)) {
+			if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 				r_cons_newline ();
 			}
 			if (ds->line) {
@@ -4477,7 +4474,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		i++;
 	}
 	free (buf);
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	ds_print_esil_anal_fini (ds);
 
 	if (ds->oldbits) {
