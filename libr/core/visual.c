@@ -10,12 +10,19 @@ static int autoblocksize = 1;
 static void visual_refresh(RCore *core);
 #define PIDX (R_ABS(core->printidx%NPF))
 
-#define debugfmt_default "?0;f tmp;sr SP;pxw 64;?1;dr=;?1;s-;s tmp;f-tmp;pd $r"
-static const char *printfmt[] = {
+static const char *printfmtSingle[] = {
 	"x", "pd $r",
-	debugfmt_default,
-	"pCd $r-1", "pxw", "pc", "pxA", "pxa"
+	"pxw 64@r:SP;dr=;pd $r",
+	"pxw", "pc", "pxA", "pxa"
 };
+
+static const char *printfmtColumns[] = {
+	"pCx", "pCd $r-1",
+	"pCD",
+	"pCw", "pCc", "pCA", "pCa"
+};
+
+static const char **printfmt = printfmtSingle;
 
 #undef USE_THREADS
 #define USE_THREADS 1
@@ -186,6 +193,7 @@ static int visual_help() {
 	" =        set cmd.vprompt (top row)\n"
 	" |        set cmd.cprompt (right column)\n"
 	" .        seek to program counter\n"
+	" \"        toggle the column mode (uses pC..)\n"
 	" /        in cursor mode search in current block\n"
 	" :cmd     run radare command\n"
 	" ;[-]cmt  add/remove comment\n"
@@ -1773,6 +1781,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			}
 		}
 		break;
+	case '"':
+		if (printfmt == printfmtSingle) {
+			printfmt = printfmtColumns;
+		} else {
+			printfmt = printfmtSingle;
+		}
+		break;
 	case 'p':
 		setprintmode (core, 1);
 		break;
@@ -1815,7 +1830,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			r_cons_clear00 ();
-		} else r_core_yank_paste (core, core->offset+core->print->cur, 0);
+		} else {
+			r_core_yank_paste (core, core->offset+core->print->cur, 0);
+		}
 		break;
 	case '0':
 		{
@@ -2303,7 +2320,7 @@ dodo:
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
 
-		if (core->printidx == 2) {
+		if (printfmt == printfmtSingle && core->printidx == 2) {
 			static char debugstr[512];
 			const int ref = r_config_get_i (core->config, "dbg.slow");
 			const int pxa = r_config_get_i (core->config, "stack.anotated"); // stack.anotated

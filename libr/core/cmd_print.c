@@ -25,6 +25,7 @@ static void cmd_pCd(RCore *core, const char *input) {
 		r_config_set (core->config, "asm.offset", "false");
 		r_config_set (core->config, "asm.bytes", "false");
 	}
+		r_config_set (core->config, "asm.bytes", "false");
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
@@ -51,8 +52,106 @@ static void cmd_pCd(RCore *core, const char *input) {
 		r_config_set (core->config, "asm.offset", o_ao);
 		r_config_set (core->config, "asm.bytes", o_ab);
 	}
+		r_config_set (core->config, "asm.bytes", o_ab);
 	free (o_ao);
 	free (o_ab);
+}
+
+static void cmd_pCD(RCore *core, const char *input) {
+#define C(x) r_cons_canvas_##x
+	int h, w = r_cons_get_size (&h);
+	int colwidth = r_config_get_i (core->config, "hex.cols") * 2.5;
+	int i, columns = w / colwidth / 2;
+	int rows = h - 2;
+	int obsz = core->blocksize;
+	int user_rows = r_num_math (core->num, input);
+	bool asm_minicols = r_config_get_i (core->config, "asm.minicols");
+	char *o_ao = strdup (r_config_get (core->config, "asm.offset"));
+	char *o_ab = strdup (r_config_get (core->config, "asm.bytes"));
+	if (asm_minicols) {
+		r_config_set (core->config, "asm.offset", "false");
+		r_config_set (core->config, "asm.bytes", "false");
+	}
+		r_config_set (core->config, "asm.bytes", "false");
+	if (user_rows > 0) {
+		rows = user_rows + 1;
+	}
+	r_cons_push ();
+	RConsCanvas *c = r_cons_canvas_new (w, rows);
+	ut64 osek = core->offset;
+	c->color = r_config_get_i (core->config, "scr.color");
+	r_core_block_size (core, rows * 32);
+	char *cmd;
+	columns = 2;
+	for (i = 0; i < columns; i++) {
+		switch (i) {
+		case 0:
+			(void)C(gotoxy)(c, 0, 0);
+			cmd = r_str_newf ("dr;?e;?e backtrace:;dbt");
+			break;
+		case 1:
+			(void)C(gotoxy)(c, 28, 0);
+			if (core->assembler->bits == 64) {
+				cmd = r_str_newf ("pxq 128@r:SP;pd@r:PC");
+			} else {
+				cmd = r_str_newf ("pxw 128@r:SP;pd@r:PC");
+			}
+			break;
+		}
+		char *dis = r_core_cmd_str (core, cmd);
+		C(write)(c, dis);
+		free (cmd);
+		free (dis);
+	}
+	r_core_block_size (core, obsz);
+	r_core_seek (core, osek, 1);
+
+	r_cons_pop ();
+	C(print)(c);
+	C(free)(c);
+	if (asm_minicols) {
+		r_config_set (core->config, "asm.offset", o_ao);
+		r_config_set (core->config, "asm.bytes", o_ab);
+	}
+		r_config_set (core->config, "asm.bytes", o_ab);
+	free (o_ao);
+	free (o_ab);
+}
+
+static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
+#define C(x) r_cons_canvas_##x
+	int h, w = r_cons_get_size (&h);
+	int hex_cols = r_config_get_i (core->config, "hex.cols");
+	int colwidth = hex_cols * 5;
+	int i, columns = w / (colwidth * 0.9);
+	int rows = h - 2;
+	int user_rows = r_num_math (core->num, input);
+	r_config_set_i (core->config, "hex.cols", colwidth / 5);
+	if (user_rows > 0) {
+		rows = user_rows + 1;
+	}
+	r_cons_push ();
+	RConsCanvas *c = r_cons_canvas_new (w, rows);
+	ut64 tsek = core->offset;
+	c->color = r_config_get_i (core->config, "scr.color");
+	int bsize = hex_cols * rows;
+	if (!strcmp (xcmd, "pxA")) {
+		bsize *= 12;
+	}
+	for (i = 0; i < columns; i++) {
+		(void)C(gotoxy)(c, i * (w / columns), 0);
+		char *cmd = r_str_newf ("%s %d @ %"PFMT64d, xcmd, bsize, tsek);
+		char *dis = r_core_cmd_str (core, cmd);
+		C(write)(c, dis);
+		free (cmd);
+		free (dis);
+		tsek += bsize - 32;
+	}
+
+	r_cons_pop ();
+	C(print)(c);
+	C(free)(c);
+	r_config_set_i (core->config, "hex.cols", hex_cols);
 }
 
 static char get_string_type (const ut8 *buf, ut64 len){
@@ -3313,12 +3412,30 @@ static int cmd_print(void *data, const char *input) {
 			r_print_code (core->print, core->offset, core->block, len, input[1]);
 		}
 		break;
-	case 'C':
+	case 'C': // "pC"
 		switch (input[1]) {
 		case 0:
 		case ' ':
 		case 'd':
 			cmd_pCd (core, input + 2);
+			break;
+		case 'D':
+			cmd_pCD (core, input + 2);
+			break;
+		case 'a':
+			cmd_pCx (core, input + 2, "pxa");
+			break;
+		case 'A':
+			cmd_pCx (core, input + 2, "pxA");
+			break;
+		case 'x':
+			cmd_pCx (core, input + 2, "px");
+			break;
+		case 'w':
+			cmd_pCx (core, input + 2, "pxw");
+			break;
+		case 'c':
+			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:
 			eprintf ("Usage: pCd\n");
