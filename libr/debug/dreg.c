@@ -103,14 +103,14 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 	if (dbg->bits & R_SYS_BITS_64) {
 		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
-		fmt2 = "%s%4s%s 0x%s%s";
+		fmt2 = "%s%4s%s %s%s";
 		kwhites = "         ";
 		colwidth = dbg->regcols? 20: 25;
 		cols = 3;
 	} else {
 		//fmt = "%s = 0x%08"PFMT64x"%s";
 		fmt = "%s = %s%s";
-		fmt2 = "%s%4s%s 0x%s%s";
+		fmt2 = "%s%4s%s %s%s";
 		kwhites = "    ";
 		colwidth = 20;
 		cols = 4;
@@ -171,7 +171,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				value = r_reg_get_value_big (dbg->reg, item, &valueBig);
 				switch (regSize) {
 				case 80:
-					snprintf (strvalue, sizeof (strvalue), "%04x%016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
+					snprintf (strvalue, sizeof (strvalue), "0x%04x%016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
 					break;
 				case 96:
 					snprintf (strvalue, sizeof (strvalue), "0x%08x%016"PFMT64x"", valueBig.v96.High, valueBig.v96.Low);

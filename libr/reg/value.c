@@ -185,8 +185,9 @@ R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
 	ut64 num = UT64_MAX;
 	if (item && item->flags && str) {
 		num = r_str_bits_from_string (str, item->flags);
-		if (num == UT64_MAX)
+		if (num == UT64_MAX) {
 			num = r_num_math (NULL, str);
+		}
 		r_reg_set_value (reg, item, num);
 	}
 	return num;
@@ -214,8 +215,9 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	ut64 ret = 0LL;
 	RRegSet *regset;
 	int off;
-	if (!reg || !item)
+	if (!reg || !item) {
 		return 0LL;
+	}
 	if (packbits < 1) {
 		packbits = item->packed_size;
 	}
