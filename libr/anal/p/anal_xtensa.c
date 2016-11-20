@@ -34,8 +34,6 @@ static inline ut64 xtensa_imm18s (ut64 addr, const ut8 *buf) {
 
 static inline ut64 xtensa_imm6s (ut64 addr, const ut8 *buf) {
 	ut8 imm6 = (buf[1] >> 4) | (buf[0] & 0x30);
-	if (imm6 & 0x20)
-		return (addr + 4 + imm6 - 0x40);
 	return (addr + 4 + imm6);
 }
 
