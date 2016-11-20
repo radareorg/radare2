@@ -90,9 +90,21 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 				if (!str || !strncmp (str, node->name, len)) {
 					const char *val = node->value;
 					if (node->flags & CN_BOOL || node->flags & CN_INT || node->flags & CN_OFFT) {
-						if (!val) val = "0";
-						cfg->cb_printf ("\"%s\":%s",
+						if (!val) {
+							val = "0";
+						}
+						if (!strncmp (val, "0x", 2)) {
+							ut64 n = r_num_get (NULL, val);
+							cfg->cb_printf ("\"%s\":%"PFMT64d,
+									node->name, n);
+						} else if (r_str_isnumber (val) || !strcmp (val, "true") || !strcmp (val, "false")) {
+							cfg->cb_printf ("\"%s\":%s",
 								node->name, val);
+						} else {
+							char *sval = r_str_escape (val);
+							cfg->cb_printf ("\"%s\":\"%s\"", node->name, sval);
+							free (sval);
+						}
 					} else {
 						cfg->cb_printf ("\"%s\":\"%s\"",
 								node->name, val);

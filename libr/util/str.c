@@ -2499,3 +2499,17 @@ R_API int *r_str_split_lines(char *str, int *count) {
 	}
 	return indexes;
 }
+
+R_API bool r_str_isnumber (const char *str) {
+	if (!*str) {
+		return false;
+	}
+	bool isnum = IS_NUMBER (*str) || *str == '-';
+	str++;
+	while (*str++) {
+		if (!IS_NUMBER (*str) || *str == '-') {
+			isnum = false;
+		}
+	}
+	return isnum;
+}
