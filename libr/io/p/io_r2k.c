@@ -291,8 +291,11 @@ struct kernel_maps {
 
 static char* getargpos (const char *buf, int pos) {
 	int i;
-	for (i = 0; i < pos; i++) {
+	for (i = 0; buf && i < pos; i++) {
 		buf = strchr (buf, ' ');
+		if (!buf) {
+			break;
+		}
 		buf = r_str_ichr ((char *) buf, ' ');
 	}
 	return buf;
@@ -376,86 +379,82 @@ static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
 
 	switch (*buf) {
 	case 'r':
-		{
-			switch (buf[1]) {
-			case 'l':
-				//read linear address
-				//=! rl addr len
-				pid = 0;
-				addr = getvalue (buf, 1);
-				len = getvalue (buf, 2);
-				ioctl_n = IOCTL_READ_KERNEL_MEMORY;
-				break;
-			case 'p':
-				//read process address
-				//=! rp pid address len
-				pid = getvalue (buf, 1);
-				addr = getvalue (buf, 2);
-				len = getvalue (buf, 3);
-				ioctl_n = IOCTL_READ_PROCESS_ADDR;
-				break;
-			case 'P':
-				//read physical address
-				//=! rP address len
-				pid = 0;
-				addr = getvalue (buf, 1);
-				len = getvalue (buf, 2);
-				ioctl_n = IOCTL_READ_PHYSICAL_ADDR;
-				break;
-			default:
-				goto end;
-			}
-			databuf = (ut8 *) calloc (len + 1, 1);
-			ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
-			if (ret > 0) {
-				r_print_hexdump (NULL, addr, (const ut8 *) databuf, ret, 16, 1); //TODO: Fix this. Not to use r_print_hexdump
-			}
+		switch (buf[1]) {
+		case 'l':
+			//read linear address
+			//=! rl addr len
+			pid = 0;
+			addr = getvalue (buf, 1);
+			len = getvalue (buf, 2);
+			ioctl_n = IOCTL_READ_KERNEL_MEMORY;
+			break;
+		case 'p':
+			//read process address
+			//=! rp pid address len
+			pid = getvalue (buf, 1);
+			addr = getvalue (buf, 2);
+			len = getvalue (buf, 3);
+			ioctl_n = IOCTL_READ_PROCESS_ADDR;
+			break;
+		case 'P':
+			//read physical address
+			//=! rP address len
+			pid = 0;
+			addr = getvalue (buf, 1);
+			len = getvalue (buf, 2);
+			ioctl_n = IOCTL_READ_PHYSICAL_ADDR;
+			break;
+		default:
+			goto end;
+		}
+		databuf = (ut8 *) calloc (len + 1, 1);
+		ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
+		if (ret > 0) {
+			r_print_hexdump (NULL, addr, (const ut8 *) databuf, ret, 16, 1); //TODO: Fix this. Not to use r_print_hexdump
 		}
 		break;
 	case 'w':
-		{
-			inphex = (buf[2] == 'x') ? 1 : 0;
-			switch (buf[1]) {
-			case 'l':
-				//write linear address
-				//=! wl addr str
-				pid = 0;
-				addr = getvalue (buf, 1);
-				buf = getargpos (buf, 2);
-				ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
-				break;
-			case 'p':
-				//write process address
-				//=! wp pid address str
-				pid = getvalue (buf, 1);
-				addr = getvalue (buf, 2);
-				buf = getargpos (buf, 3);
-				ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
-				break;
-			case 'P':
-				//write physical address
-				//=! wP address str
-				pid = 0;
-				addr = getvalue (buf, 1);
-				buf = getargpos (buf, 2);
-				ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
-				break;
-			default:
-				goto end;
-			}
-			len = strlen (buf);
-			databuf = (ut8 *) calloc (len + 1, 1);
-			if (databuf) {
-				if (inphex) {
-					len = r_hex_str2bin (buf, databuf);
-				} else {
-					memcpy (databuf, buf, strlen (buf) + 1);
-					len = r_str_unescape ((char *) databuf);
-				}
-				ret = WriteMemory (io, iodesc, ioctl_n, pid, addr, (const ut8 *) databuf, len);
+		inphex = (buf[2] == 'x') ? 1 : 0;
+		switch (buf[1]) {
+		case 'l':
+			//write linear address
+			//=! wl addr str
+			pid = 0;
+			addr = getvalue (buf, 1);
+			buf = getargpos (buf, 2);
+			ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
+			break;
+		case 'p':
+			//write process address
+			//=! wp pid address str
+			pid = getvalue (buf, 1);
+			addr = getvalue (buf, 2);
+			buf = getargpos (buf, 3);
+			ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
+			break;
+		case 'P':
+			//write physical address
+			//=! wP address str
+			pid = 0;
+			addr = getvalue (buf, 1);
+			buf = getargpos (buf, 2);
+			ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
+			break;
+		default:
+			goto end;
+		}
+		len = strlen (buf);
+		databuf = (ut8 *) calloc (len + 1, 1);
+		if (databuf) {
+			if (inphex) {
+				len = r_hex_str2bin (buf, databuf);
 			} else {
-			    io->cb_printf ("Failed to allocate buffer.\n");
+				memcpy (databuf, buf, strlen (buf) + 1);
+				len = r_str_unescape ((char *) databuf);
 			}
+			ret = WriteMemory (io, iodesc, ioctl_n, pid, addr, (const ut8 *) databuf, len);
+		} else {
+			eprintf ("Failed to allocate buffer.\n");
 		}
 		break;
 	case 'M':
@@ -509,6 +508,7 @@ static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
 		}
 	}
  end:
+	free (databuf);
 	return 0;
 }
 
@@ -555,7 +555,7 @@ static int r2k__close(RIODesc *fd) {
 }
 
 static ut64 r2k__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-        return (!whence) ? offset : whence == 1
+	return (!whence) ? offset : whence == 1
 		? io->off + offset : UT64_MAX;
 }
 
@@ -616,7 +616,7 @@ RIOPlugin r_io_plugin_r2k = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_r2k,
 	.version = R2_VERSION

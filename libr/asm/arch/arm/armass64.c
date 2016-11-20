@@ -44,24 +44,26 @@ static ut32 branch_reg(const char *str, ut64 addr, int k) {
 static ut32 branch(const char *str, ut64 addr, int k) {
 	ut32 op = UT32_MAX;
 	const char *operand = strchr (str, ' ');
-	operand++;
+	if (operand) {
+		operand++;
+		int n = (int)r_num_math (NULL, operand);
 
-	int n = (int)r_num_math (NULL, operand);
-
-	if (n & 0x3 || n > 0x7ffffff) {
-		return -1;
+		if (n & 0x3 || n > 0x7ffffff) {
+			/* return -1 */
+		} else {
+			n -= addr;
+			n = n >> 2;
+			int t = n >> 24;
+			int h = n >> 16;
+			int m = (n & 0xff00) >> 8;
+			n &= 0xff;
+			op = k;
+			op |= n << 24;
+			op |= m << 16;
+			op |= h << 8;
+			op |= t;
+		}
 	}
-	n -= addr;
-	n = n >> 2;
-	int t = n >> 24;
-	int h = n >> 16;
-	int m = (n & 0xff00) >> 8;
-	n &= 0xff;
-	op = k;
-	op |= n << 24;
-	op |= m << 16;
-	op |= h << 8;
-	op |= t;
 	return op;
 }
 
