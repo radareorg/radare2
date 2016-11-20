@@ -2873,7 +2873,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		} else {
 			r_cons_printf (" ; %s=0x%"PFMT64x" %s", name, *val, msg? msg: "");
 		}
-	} 
+	}
 	free (msg);
 	return 0;
 }
@@ -2993,6 +2993,29 @@ static char * resolve_fcn_name(RAnal *anal, const char * func_name) {
 	return r_anal_type_func_guess (anal, (char*)func_name);
 }
 
+static bool can_emulate_metadata(RCore * core, ut64 at) {
+	const char *infos;
+	const char *emuskipmeta = r_config_get (core->config, "asm.emuskip");
+	char key[32];
+	Sdb *s = core->anal->sdb_meta;
+	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, at);
+	infos = sdb_const_get (s, key, 0);
+	if (!infos) {
+		/* no metadata: let's emulate this */
+		return true;
+	}
+	for (; *infos; infos++) {
+		/*
+		 * don't emulate if at least one metadata type
+		 * can't be emulated
+		 */
+		if (*infos != ',' && strchr(emuskipmeta, *infos)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 // modifies anal register state
 static void ds_print_esil_anal(RDisasmState *ds) {
 	RCore *core = ds->core;
@@ -3007,18 +3030,15 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	if (!ds->show_comments || !ds->show_emu) {
 		goto beach;
 	}
-	{
-		const RAnalMetaItem *mi = r_meta_find (core->anal, at, R_META_TYPE_ANY, 0);
-		if (mi) {
-			goto beach;
-		}
+	if (!can_emulate_metadata (core, at)) {
+		goto beach;
 	}
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
 	}
+	ds_align_comment (ds);
 	ioc = r_config_get_i (core->config, "io.cache");
 	r_config_set (core->config, "io.cache", "true");
-	ds_align_comment (ds);
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
