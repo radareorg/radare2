@@ -1292,7 +1292,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 					&cu->dies[cu->length].attr_values[i],
 					&cu->hdr, debug_str, debug_str_len);
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
-				ut64 comp_dir = (ut64)(size_t)cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
+				// ut64 comp_dir = (ut64)(size_t)cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
 				// sdb_num_add (s, "DW_AT_comp_dir", comp_dir, 0);
 				sdb_set (s, "DW_AT_comp_dir", cu->dies[cu->length].attr_values[i].encoding.str_struct.string, 0);
 			}
