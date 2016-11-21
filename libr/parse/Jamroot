@@ -11,7 +11,6 @@ p/parse_mreplace/mmemory.c
 
 lib r_parse : $(OBJS) :
     <include>../include
-    <include>../../shlr/tcc
     <library>../flag
     <library>../anal
     <library>../util

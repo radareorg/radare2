@@ -19,7 +19,4 @@ lib r_egg : $(EGG_OBJS) :
     <library>../db
     <library>../asm
     <library>../util
-
-    <include>../../shlr/tcc
-    <library>../../shlr/tcc
 ;

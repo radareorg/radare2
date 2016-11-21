@@ -5,9 +5,6 @@ DEPS=r_flag r_util r_syscall r_reg
 # indirect dependencies
 DEPS+=r_cons
 
-LINK+=$(STOP)/tcc/libr_tcc.a
-CFLAGS+=-I$(STOP)/tcc/
-
 foo:
 	@for TARGET in pre libr_parse.${EXT_SO} \
 	libr_parse.${EXT_AR} plugins bins ; do \

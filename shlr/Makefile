@@ -37,7 +37,7 @@ HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip udis86 java tcc
+MODS=sdb zip udis86 java
 ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
@@ -161,44 +161,26 @@ sdb-sync sync-sdb:
 	git add $I/sdb*
 	git add sdb
 
-$(TCCLIB) libr_tcc/libr_tcc.a:
-	cd libr_tcc ; $(MAKE)
-
 udis-sync udis86-sync sync-udis sync-udis86:
 	cd udis86 ; $(MAKE) sync
 
-tcc-clean tccclean:
-	cd libr_tcc ; $(MAKE) clean
-
-CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
-HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
+CFILES=i386-asm.c i386-gen.c
+HFILES=i386-asm.h stab.h
 HFILES+=elf.h config.h i386-tok.h
 
 # TODO: use mob branch?
 
 .PHONY: sdb-sync sync-sdb sdbclean
-tcc-sync sync-tcc:
-	rm -rf _
-	$(GIT) clone --depth 1 git://repo.or.cz/tinycc.git _
-	cd _ ; ./configure --prefix=${PREFIX}
-	mkdir -p tcc
-	for FILE in ${CFILES} ${HFILES} ; do cp -f _/$$FILE tcc ; done
-	cp -f _/VERSION _/COPYING _/stab.def tcc
-	$(GIT) add tcc
-	rm -rf _
 
 install:
 	#mkdir -p ${DESTDIR}${LIBDIR}
-	#cp -f tcc/libr_tcc* ${DESTDIR}${LIBDIR}
 	#cp -f zip/libr_z* ${DESTDIR}${LIBDIR}
 
 install-symlink symstall:
 	mkdir -p "${DESTDIR}${LIBDIR}"
-	#cd tcc ; for FILE in libr_tcc* ; do \
 	#	ln -fs `pwd`/$$FILE ${DESTDIR}${LIBDIR}/$$FILE ; done
 
 uninstall deinstall:
-	#rm -f ${DESTDIR}${LIBDIR}/libr_tcc*
 	#rm -f ${DESTDIR}${LIBDIR}/libr_z*
 
 ifeq ($(USE_CAPSTONE),1)
