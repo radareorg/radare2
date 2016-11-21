@@ -43,6 +43,7 @@
 #include "r_util/r_tree.h"
 #include "r_util/r_uleb128.h"
 #include "r_util/r_utf8.h"
+#include <dualbuf.h>
 #if __UNIX__
 #include <signal.h>
 #endif
