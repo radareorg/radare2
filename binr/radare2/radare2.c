@@ -570,7 +570,7 @@ int main(int argc, char **argv, char **envp) {
 				eprintf ("Cannot read dbg.profile\n");
 			}
 		} else {
-			pfile = strdup (argv[optind]);
+			pfile = argv[optind] ? strdup (argv[optind]) : NULL;
 		}
 	}
 	if (do_list_io_plugins) {
