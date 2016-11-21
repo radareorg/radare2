@@ -50,11 +50,11 @@ return strdup (
 "drx 	dr5	.32	20	0\n"
 "drx	dr6	.32	24	0\n"
 "drx	dr7	.32	28	0\n"
-"seg	cs	.32	44	0\n"
-"seg	ds	.32	48	0\n"
-"seg	es	.32	52	0\n"
-"seg	fs	.32	56	0\n"
-"seg	gs	.32	60	0\n"
+"seg@gpr	cs	.32	44	0\n"
+"seg@gpr	ds	.32	48	0\n"
+"seg@gpr	es	.32	52	0\n"
+"seg@gpr	fs	.32	56	0\n"
+"seg@gpr	gs	.32	60	0\n"
 );
 
 /*

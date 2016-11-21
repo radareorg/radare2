@@ -938,8 +938,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		size_t line_len;
 		ut64 map_start, map_end;
 
-		if (!fgets (line, sizeof (line), fd))
+		if (!fgets (line, sizeof (line), fd)) {
 			break;
+		}
 		/* kill the newline if we got one */
 		line_len = strlen (line);
 		if (line[line_len - 1] == '\n') {
@@ -981,14 +982,14 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 
 		/* split the region in two */
 		pos_c = strchr (&region[2], '-');
-		if (!pos_c) // should this be an error?
+		if (!pos_c) { // should this be an error?
 			continue;
-
+		}
 		strncpy (&region2[2], pos_c + 1, sizeof (region2) - 2 - 1);
 #endif // __KFBSD__
-
-		if (!*name)
+		if (!*name) {
 			snprintf (name, sizeof (name), "unk%d", unk++);
+		}
 		perm = 0;
 		for (i = 0; perms[i] && i < 4; i++) {
 			switch (perms[i]) {
@@ -1004,7 +1005,6 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			eprintf ("%s: ignoring invalid map size: %s - %s\n", __func__, region, region2);
 			continue;
 		}
-
 		map = r_debug_map_new (name, map_start, map_end, perm, 0);
 		if (!map) {
 			break;

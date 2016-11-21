@@ -112,9 +112,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 		abspath = strdup (file);
 	}
 	r_list_foreach (r->dbg->maps, iter, map) {
-		eprintf ("%llx %s\n" ,map->addr, map->name);
 		if (!strcmp (abspath, map->name)) {
-			eprintf ("NAME IS %s\n", map->name);
 			free (abspath);
 			return map->addr;
 		}

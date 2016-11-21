@@ -90,9 +90,9 @@ return strdup (
 "gpr	if	.1	.1161	0	interrupt\n"
 "gpr	df	.1	.1162	0	direction\n"
 "gpr	of	.1	.1163	0	overflow\n"
-"seg	cs	.64	136	0\n"
-"seg	fs	.64	144	0\n"
-"seg	gs	.64	152	0\n"
+"seg@gpr	cs	.64	136	0\n"
+"seg@gpr	fs	.64	144	0\n"
+"seg@gpr	gs	.64	152	0\n"
 
 "drx	dr0	.64	0	0\n"
 "drx	dr1	.64	8	0\n"

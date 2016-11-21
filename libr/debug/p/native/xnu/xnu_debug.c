@@ -52,10 +52,12 @@ static thread_t getcurthread (RDebug *dbg) {
 
 static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 	RListIter *it = NULL;
-	if (!dbg)
+	if (!dbg) {
 		return NULL;
-	if (tid < 0)
+	}
+	if (tid < 0) {
 		return NULL;
+	}
 	if (!xnu_update_thread_list (dbg)) {
 		eprintf ("Failed to update thread_list xnu_reg_write\n");
 		return NULL;
@@ -63,8 +65,9 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 	//TODO get the current thread
 	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
 			  (RListComparator)&thread_find);
-	if (it)
+	if (it) {
 		return (xnu_thread_t *)it->data;
+	}
 	tid = getcurthread (dbg);
 	it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
 			  (RListComparator)&thread_find);
@@ -83,13 +86,13 @@ static task_t task_for_pid_workaround(int Pid) {
 	mach_msg_type_number_t numTasks = 0;
 	kern_return_t kr;
 	int i;
-	if (Pid == -1)
+	if (Pid == -1) {
 		return 0;
-
+	}
 	kr = processor_set_default (myhost, &psDefault);
-	if (kr != KERN_SUCCESS)
+	if (kr != KERN_SUCCESS) {
 		return 0;
-
+	}
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
@@ -103,7 +106,6 @@ static task_t task_for_pid_workaround(int Pid) {
 		eprintf ("processor_set_tasks failed with error %x\n", kr);
 		return 0;
 	}
-
 	/* kernel task */
 	if (Pid == 0) {
 		return tasks[0];
