@@ -1423,7 +1423,7 @@ repeat:
 		} else if (fmt == 1 && isGML) {
 			RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 			if (iteration == 0) {
-				char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcnr->addr);
+				char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcni->addr);
 				r_cons_printf ("\tnode [\n"
 						"\t\tid\t%"PFMT64d"\n"
 						"\t\tlabel\t\"%s\"\n"
