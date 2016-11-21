@@ -31,7 +31,7 @@ static void fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
 		eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
 		old_fs = core->flags->space_idx;
 		r_cons_printf ("fs sign\n");
-		r_cons_break (NULL, NULL);
+		r_cons_break_push (NULL, NULL);
 		if (r_io_read_at (core->io, ini, buf, len) == len) {
 			ut64 align = r_config_get_i (core->config, "search.align");
 			for (idx = 0; idx < len; idx++) {
@@ -52,7 +52,7 @@ static void fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
 			eprintf ("Cannot read %"PFMT64d" bytes at 0x%08"PFMT64x"\n", len, ini);
 		}
 		r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
-		r_cons_break_end ();
+		r_cons_break_pop ();
 		free (buf);
 		core->sign->matches = count;
 	} else {
@@ -101,7 +101,7 @@ static int cmd_zign(void *data, const char *input) {
 
 	switch (*input) {
 	case 'B':
-		if (input[1]==' ' && input[2]) {
+		if (input[1] == ' ' && input[2]) {
 			ut8 buf[128];
 			ut64 addr = core->offset;
 			int size = 32;
@@ -118,16 +118,23 @@ static int cmd_zign(void *data, const char *input) {
 					name = flag->name;
 					r_cons_printf ("zb %s ", name);
 					len = R_MIN (size, sizeof (buf));
-					for (i=0; i<len; i++)
+					for (i = 0; i < len; i++) {
 						r_cons_printf ("%02x", buf[i]);
+					}
 					r_cons_newline ();
-				} else eprintf ("Unnamed function at 0x%08"PFMT64x"\n", addr);
-			} else eprintf ("Cannot read at 0x%08"PFMT64x"\n", addr);
-		} else eprintf ("Usage: zB [size] @@ sym*\nNote: Use zn and zn-");
+				} else {
+					eprintf ("Unnamed function at 0x%08"PFMT64x"\n", addr);
+				}
+			} else {
+				eprintf ("Cannot read at 0x%08"PFMT64x"\n", addr);
+			}
+		} else {
+			eprintf ("Usage: zB [size] @@ sym*\nNote: Use zn and zn-");
+		}
 		break;
 	case 'G':
 	case 'g':
-		if (input[1]==' ' && input[2]) {
+		if (input[1] == ' ' && input[2]) {
 			int fdold = r_cons_singleton ()->fdout;
 			int minzlen = r_config_get_i (core->config, "zign.min");
 			int maxzlen = r_config_get_i (core->config, "zign.max");
@@ -143,13 +150,17 @@ static int cmd_zign(void *data, const char *input) {
 				r_cons_strcat ("# Signatures\n");
 			}
 			r_cons_printf ("zn %s\n", input + 2);
+			r_cons_break_push (NULL, NULL);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				RAnalOp *op = NULL;
 				int zlen, len, oplen, idx = 0;
 				ut8 *buf;
-
+				if (r_cons_is_breaked ()) {
+					break;
+				}
 				len = r_anal_fcn_realsize (fcni);
 				if (!(buf = calloc (1, len))) {
+					r_cons_break_pop ();
 					return false;
 				}
 				/* XXX this is wrong. we must read for each basic block not the whole function length */
@@ -159,6 +170,7 @@ static int cmd_zign(void *data, const char *input) {
 						name = flag->name;
 						if (!(op = r_anal_op_new ())) {
 							free (buf);
+							r_cons_break_pop ();
 							return false;
 						}
 						zlen = 0;
@@ -166,10 +178,11 @@ static int cmd_zign(void *data, const char *input) {
 							zlen = len;
 						} else {
 							while (idx < len) {
-								if ((oplen = r_anal_op (core->anal, op, fcni->addr + idx, buf + idx, len - idx)) < 1) {
+								oplen = r_anal_op (core->anal, op, fcni->addr + idx, buf + idx, len - idx);
+								if (oplen < 1) {
 									break;
 								}
-								if (op->nopcode != 0) {
+								if (op->nopcode) {
 									int left = R_MAX (oplen - op->nopcode, 0);
 									memset (buf + idx + op->nopcode, 0, left);
 								}
@@ -181,7 +194,7 @@ static int cmd_zign(void *data, const char *input) {
 							r_cons_printf ("zb %s ", name);
 							for (i = 0; i < len; i++) {
 								/* XXX assuming buf[i] == 0 is wrong because mask != data */
-								if (buf[i] == 0) {
+								if (!buf[i]) {
 									r_cons_printf ("..");
 								} else {
 									r_cons_printf ("%02x", buf[i]);
@@ -204,27 +217,32 @@ static int cmd_zign(void *data, const char *input) {
 				free (buf);
 				r_anal_op_free (op);
 			}
+			r_cons_break_pop ();
 			r_cons_strcat ("zn-\n");
 			if (ptr) {
 				r_cons_flush ();
 				r_cons_singleton ()->fdout = fdold;
 				close (fd);
 			}
-		} else eprintf ("Usage: zg libc [libc.sig]\n");
+		} else {
+			eprintf ("Usage: zg libc [libc.sig]\n");
+		}
 		break;
 	case 'n':
-		if (!input[1])
+		if (!input[1]) {
 			r_cons_println (core->sign->ns);
-		else if (!strcmp ("-", input+1))
+		} else if (!strcmp ("-", input + 1)) {
 			r_sign_ns (core->sign, "");
-		else r_sign_ns (core->sign, input+2);
+		} else {
+			r_sign_ns (core->sign, input + 2);
+		}
 		break;
 	case 'a':
 	case 'b':
 	case 'h':
 	case 'f':
 	case 'p':
-		if (*(input+1) == '\0' || *(input+2) == '\0')
+		if (*(input + 1) == '\0' || *(input + 2) == '\0')
 			eprintf ("Usage: z%c [name] [arg]\n", *input);
 		else{
 			ptr = strchr (input+3, ' ');
@@ -236,8 +254,9 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	case 'c':
 		item = r_sign_check (core->sign, core->block, core->blocksize);
-		if (item)
+		if (item) {
 			r_cons_printf ("f sign.%s @ 0x%08"PFMT64x"\n", item->name, core->offset);
+		}
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -261,7 +280,6 @@ static int cmd_zign(void *data, const char *input) {
 					eprintf ("Usage: z%c [ini] [end]\n", *input);
 					return false;
 				}
-
 				char *ptr = strchr (input+2, ' ');
 				if (ptr) {
 					*ptr = '\0';
@@ -327,7 +345,6 @@ static int cmd_zign(void *data, const char *input) {
 			int old_fs;
 			RListIter *it;
 			ut8 *buf;
-
 			if (r_list_empty (core->anal->fcns)) {
 				eprintf("No functions found, please run some analysis before.\n");
 				return false;
@@ -339,9 +356,6 @@ static int cmd_zign(void *data, const char *input) {
 				return false;
 			}
 			fcni = (RAnalFunction*)it->data;
-			if (r_cons_singleton ()->breaked) {
-				break;
-			}
 			len = r_anal_fcn_realsize (fcni);
 			if (!(buf = malloc (len))) {
 				return false;
@@ -357,7 +371,6 @@ static int cmd_zign(void *data, const char *input) {
 				}
 			}
 			free (buf);
-			r_cons_break_end ();
 			core->sign->matches += count;
 		}
 		break;

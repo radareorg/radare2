@@ -52,6 +52,7 @@ R_API int r_stack_push(RStack *s, void *el) {
 	return true;
 }
 
+
 //the caller should be take care of the object returned
 R_API void *r_stack_pop(RStack *s) {
 	void *res;
@@ -63,7 +64,7 @@ R_API void *r_stack_pop(RStack *s) {
 	return res;
 }
 
-R_API int r_stack_is_empty(RStack *s) {
+R_API bool r_stack_is_empty(RStack *s) {
 	return s->top == -1;
 }
 

@@ -568,7 +568,9 @@ static int cmd_interpret(void *data, const char *input) {
 	case '-':
 		if (input[1]=='?') {
 			r_cons_printf ("Usage: '-' '.-' '. -' do the same\n");
-		} else r_core_run_script (core, "-");
+		} else {
+			r_core_run_script (core, "-");
+		}
 		break;
 	case ' ':
 		if (!r_core_run_script (core, input + 1)) {
@@ -616,10 +618,12 @@ static int cmd_interpret(void *data, const char *input) {
 		if (filter) {
 			*filter = '~';
 		}
-		r_cons_break (NULL, NULL);
+		r_cons_break_push (NULL, NULL);
 		if (ptr) {
 			for (;;) {
-				if (r_cons_singleton()->breaked) break;
+				if (r_cons_is_breaked ()) {
+					break;
+				}
 				eol = strchr (ptr, '\n');
 				if (eol) *eol = '\0';
 				if (*ptr) {
@@ -631,7 +635,7 @@ static int cmd_interpret(void *data, const char *input) {
 				ptr = eol + 1;
 			}
 		}
-		r_cons_break_end ();
+		r_cons_break_pop ();
 		free (str);
 		free (inp);
 		break;
@@ -2174,8 +2178,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 	oseek = core->offset;
 	ostr = str = strdup (each);
-	//r_cons_break();
-
+	r_cons_break_push (NULL, NULL); //pop on return
 	switch (each[0]) {
 	case '?':{
 		const char* help_msg[] = {
@@ -2210,11 +2213,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_core_block_size (core, bb->size);
 					r_core_seek (core, bb->addr, 1);
 					r_core_cmd (core, cmd, 0);
+					if (r_cons_is_breaked ()) {
+						break;
+					}
 				}
 			}
 			free (ostr);
 			r_core_block_size (core, bs);
-			return false;
+			goto out_finish;
 		}
 		break;
 	case 'i': // "@@i" - function instructions
@@ -2230,11 +2236,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						ut64 addr = bb->addr + bb->op_pos[i];
 						r_core_seek (core, addr, 1);
 						r_core_cmd (core, cmd, 0);
+						if (r_cons_is_breaked ()) {
+							break;
+						}
 					}
 				}
 			}
 			free (ostr);
-			return false;
+			goto out_finish;
 		}
 		break;
 	case 'f': // "@@f"
@@ -2246,11 +2255,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (each[2] && strstr (fcn->name, each + 2)) {
 						r_core_seek (core, fcn->addr, 1);
 						r_core_cmd (core, cmd, 0);
+						if (r_cons_is_breaked ()) {
+							break;
+						}
 					}
 				}
 			}
 			free (ostr);
-			return false;
+			goto out_finish;
 		} else {
 			RAnalFunction *fcn;
 			RListIter *iter;
@@ -2268,11 +2280,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_pop ();
 					r_cons_strcat (buf);
 					free (buf);
+					if (r_cons_is_breaked ()) {
+						break;
+					}
 				}
 				core->cons->grep = grep;
 			}
 			free (ostr);
-			return false;
+			goto out_finish;
 		}
 		break;
 	case 't':
@@ -2291,7 +2306,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 			r_debug_select (core->dbg, pid, pid);
 			free (ostr);
-			return false;
+			goto out_finish;
 		}
 		break;
 	case 'c':
@@ -2343,14 +2358,18 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		if (out) {
 			each = out;
 			do {
-				while (*each==' ') each++;
-				if (!*each) break;
+				while (*each == ' ') each++;
+				if (!*each) {
+					break;
+				}
 				str = strchr (each, ' ');
 				if (str) {
 					*str = '\0';
 					addr = r_num_math (core->num, each);
 					*str = ' ';
-				} else addr = r_num_math (core->num, each);
+				} else {
+					addr = r_num_math (core->num, each);
+				}
 				//eprintf ("; 0x%08"PFMT64x":\n", addr);
 				each = str+1;
 				r_core_seek (core, addr, 1);
@@ -2362,19 +2381,18 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case '.':
-		if (each[1]=='(') {
+		if (each[1] == '(') {
 			char cmd2[1024];
-			// TODO: use r_cons_break() here
 			// XXX whats this 999 ?
 			i = 0;
-			r_cons_break (NULL, NULL);
-			for (core->rcmd->macro.counter=0;i<999;core->rcmd->macro.counter++) {
-				if (r_cons_singleton ()->breaked)
+			for (core->rcmd->macro.counter = 0;i < 999; core->rcmd->macro.counter++) {
+				if (r_cons_is_breaked ()) {
 					break;
+				}
 				r_cmd_macro_call (&core->rcmd->macro, each+2);
-				if (!core->rcmd->macro.brk_value)
+				if (!core->rcmd->macro.brk_value) {
 					break;
-
+				}		
 				addr = core->rcmd->macro._brk_value;
 				sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
 				eprintf ("0x%08"PFMT64x" (%s)\n", addr, cmd2);
@@ -2382,17 +2400,17 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_core_cmd (core, cmd2, 0);
 				i++;
 			}
-			r_cons_break_end();
 		} else {
 			char buf[1024];
 			char cmd2[1024];
-			FILE *fd = r_sandbox_fopen (each+1, "r");
+			FILE *fd = r_sandbox_fopen (each + 1, "r");
 			if (fd) {
 				core->rcmd->macro.counter=0;
 				while (!feof (fd)) {
 					buf[0] = '\0';
-					if (!fgets (buf, sizeof (buf), fd))
+					if (!fgets (buf, sizeof (buf), fd)) {
 						break;
+					}
 					addr = r_num_math (core->num, buf);
 					eprintf ("0x%08"PFMT64x": %s\n", addr, cmd);
 					sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
@@ -2426,7 +2444,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				/* for all flags in current flagspace */
 				// XXX: dont ask why, but this only works with _prev..
 				r_list_foreach (core->flags->flags, iter, flag) {
-					if (r_cons_singleton()->breaked) {
+					if (r_cons_is_breaked ()) {
 						break;
 					}
 					/* filter per flag spaces */
@@ -2446,7 +2464,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						free (buf);
 					}
 				}
-				r_cons_break (NULL, NULL);
 				core->flags->space_idx = flagspace;
 				core->rcmd->macro.counter++ ;
 				free (word);
@@ -2454,13 +2471,16 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			}
 		}
 	}
-	r_cons_break_end ();
+	r_cons_break_pop ();
 	// XXX: use r_core_seek here
 	core->offset = oseek;
 
 	free (word);
 	free (ostr);
 	return true;
+out_finish:
+	r_cons_break_pop ();
+	return false;
 }
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
@@ -2552,15 +2572,20 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	int r, ret = true;
 	char *nl, *data, *odata;
 
-	if (!lines || !*lines) return true;
+	if (!lines || !*lines) {
+		return true;
+	}
 	data = odata = strdup (lines);
-	if (!odata) return false;
+	if (!odata) {
+		return false;
+	}
 	nl = strchr (odata, '\n');
 	if (nl) {
-		r_cons_break (NULL, NULL);
+		r_cons_break_push (NULL, NULL);
 		do {
-			if (core->cons->breaked) {
+			if (r_cons_is_breaked ()) {
 				free (odata);
+				r_cons_break_pop ();
 				return ret;
 			}
 			*nl = '\0';
@@ -2572,18 +2597,21 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			}
 			r_cons_flush ();
 			if (data[0]=='q') {
-				if (data[1]=='!')
+				if (data[1] == '!') {
 					ret = -1;
-				else eprintf ("'q': quit ignored. Use 'q!'\n");
+				} else {
+					eprintf ("'q': quit ignored. Use 'q!'\n");
+				}
 				data = nl + 1;
 				break;
 			}
 			data = nl+1;
 		} while ((nl = strchr (data, '\n')));
-		r_cons_break_end ();
+		r_cons_break_pop ();
 	}
-	if (ret>=0 && data && *data)
+	if (ret >= 0 && data && *data) {
 		r_core_cmd (core, data, 0);
+	}
 	free (odata);
 	return ret;
 }

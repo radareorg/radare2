@@ -570,7 +570,6 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 
 /* TODO: add support for spaced arguments */
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
-	RCons *cons;
 	char *args;
 	int nargs = 0;
 	char *str, *ptr, *ptr2;
@@ -610,39 +609,37 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	ptr = strchr (str, ',');
 	if (ptr) *ptr =0;
 
-	cons = r_cons_singleton ();
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (str, m->name)) {
 			char *ptr = m->code;
 			char *end = strchr (ptr, '\n');
-
 			if (m->nargs != 0 && nargs != m->nargs) {
-				eprintf ("Macro '%s' expects %d args, not %d\n",
-					m->name, m->nargs, nargs);
+				eprintf ("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
 				macro_level --;
 				free (str);
+				r_cons_break_pop ();
 				return false;
 			}
-
 			mac->brk = 0;
 			do {
 				if (end) *end = '\0';
-				if (cons->breaked) {
+				if (r_cons_is_breaked ()) {
 					eprintf ("Interrupted at (%s)\n", ptr);
-					if (end) *end = '\n';
+					if (end) {
+						*end = '\n';
+					}
 					free (str);
+					r_cons_break_pop ();
 					return false;
 				}
 				r_cons_flush ();
-
 				/* Label handling */
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
 					eprintf ("Oops. invalid label name\n");
 					break;
-				} else
-				if (ptr != ptr2) { // && end) {
+				} else if (ptr != ptr2) { 
 					ptr = ptr2;
 					if (end) *end ='\n';
 					end = strchr (ptr, '\n');
@@ -655,8 +652,9 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					// TODO: handle quit? r == 0??
 					// quit, exits the macro. like a break
 					value = mac->num->value;
-					if (r <0) {
+					if (r < 0) {
 						free (str);
+						r_cons_break_pop ();
 						return r;
 					}
 				}
@@ -666,23 +664,24 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				} else {
 					macro_level --;
 					free (str);
-					return true;
+					goto out_clean;
 				}
 
 				/* Fetch next command */
 				end = strchr (ptr, '\n');
 			} while (!mac->brk);
-
 			if (mac->brk) {
 				macro_level--;
 				free (str);
-				return true;
+				goto out_clean;
 			}
 		}
 	}
 	eprintf ("No macro named '%s'\n", str);
 	macro_level--;
 	free (str);
+out_clean:
+	r_cons_break_pop ();
 	return true;
 }
 

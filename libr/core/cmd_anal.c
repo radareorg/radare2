@@ -42,7 +42,7 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 }
 #endif
 
-static void type_cmd_help (RCore *core) {
+static void type_cmd_help(RCore *core) {
 	const char *help_msg[] = {
 		"Usage:", "aftm", "",
 		"afta", "", "Setup memory and analyse do type matching analysis for all functions",
@@ -60,6 +60,7 @@ static void type_cmd(RCore *core, const char *input) {
 	}
 	RListIter *it;
 	ut64 seek;
+	r_cons_break_push (NULL, NULL);
 	switch (*input) {
 	case 'a': // "afta"
 		seek = core->offset;
@@ -71,6 +72,9 @@ static void type_cmd(RCore *core, const char *input) {
 			r_core_seek (core, fcn->addr, true);
 			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 			r_core_anal_type_match (core, fcn);
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 		}
 		if (!io_cache) {
 			r_config_set_i (core->config, "io.cache", io_cache);
@@ -89,6 +93,7 @@ static void type_cmd(RCore *core, const char *input) {
 		type_cmd_help (core);
 		break;
 	}
+	r_cons_break_pop ();
 }
 
 static int cc_print(void *p, const char *k, const char *v) {
@@ -2058,10 +2063,11 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr)
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 addr = r_reg_getv (core->anal->reg, name);
+	r_cons_break_push (NULL, NULL);
 repeat:
-	if (r_cons_singleton ()->breaked) {
+	if (r_cons_is_breaked ()) {
 		eprintf ("[+] ESIL emulation interrupted at 0x%08" PFMT64x "\n", addr);
-		return 0;
+		goto out_return_zero;
 	}
 	if (!esil) {
 		int romem = r_config_get_i (core->config, "esil.romem");
@@ -2071,7 +2077,7 @@ repeat:
 		int stacksize = r_config_get_i (core->config, "esil.stacksize");
 		int nonull = r_config_get_i (core->config, "esil.nonull");
 		if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap))) {
-			return 0;
+			goto out_return_zero;
 		}
 		esil = core->anal->esil;
 		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
@@ -2096,14 +2102,14 @@ repeat:
 	}
 	if (r_anal_pin_call (core->anal, addr)) {
 		eprintf ("esil pin called\n");
-		return 1;
+		goto out_return_one;
 	}
 	if (esil->exectrap) {
 		if (!(r_io_section_get_rwx (core->io, addr) & R_IO_EXEC)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
-			return 1;
+			goto out_return_one;
 		}
 	}
 	r_io_read_at (core->io, addr, code, sizeof (code));
@@ -2123,7 +2129,7 @@ repeat:
 				esil->trap = R_ANAL_TRAP_EXEC_ERR;
 				esil->trap_code = addr;
 				eprintf ("[ESIL] Trap, trying to execute a branch in a delay slot\n");
-				return 1;
+				goto out_return_one;
 			}
 		}
 
@@ -2177,25 +2183,34 @@ repeat:
 	if (until_addr != UT64_MAX) {
 		if (r_reg_getv (core->anal->reg, name) == until_addr) {
 			eprintf ("ADDR BREAK\n");
-			return 0;
-		} else goto repeat;
+			goto out_return_zero;
+		} else {
+			goto repeat;
+		}
 	}
 	// check esil
 	if (esil->trap) {
 		if (core->anal->esil->verbose) {
 			eprintf ("TRAP\n");
 		}
-		return 0;
+		goto out_return_zero;
 	}
 	if (until_expr) {
 		if (r_anal_esil_condition (core->anal->esil, until_expr)) {
 			if (core->anal->esil->verbose) {
 				eprintf ("ESIL BREAK!\n");
 			}
-			return 0;
-		} else goto repeat;
+			goto out_return_zero;
+		} else {
+			goto repeat;
+		}
 	}
+out_return_one:
+	r_cons_break_pop ();
 	return 1;
+out_return_zero:
+	r_cons_break_pop ();
+	return 0;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -3149,15 +3164,15 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 		}
 	}
 	addr_end = addr + len;
-	r_cons_break (NULL, NULL);
 	if (!(buf = malloc (4096))) {
 		return;
 	}
 	bufi = 0;
 	int trapcount = 0;
 	int nopcount = 0;
+	r_cons_break_push (NULL, NULL);
 	while (addr < addr_end) {
-		if (core->cons->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		// TODO: too many ioreads here
@@ -3189,10 +3204,11 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 		} else {
 			op.size = minop;
 		}
-		addr += (op.size > 0)? op.size: 1;
-		bufi += (op.size > 0)? op.size: 1;
+		addr += (op.size > 0)? op.size : 1;
+		bufi += (op.size > 0)? op.size : 1;
 		r_anal_op_fini (&op);
 	}
+	r_cons_break_pop ();
 	free (buf);
 }
 
@@ -3252,13 +3268,13 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		}
 	}
 	addr_end = addr + len;
-	r_cons_break (NULL, NULL);
 	if (!(buf = malloc (4096))) {
 		return;
 	}
 	bufi = 0;
+	r_cons_break_push (NULL, NULL);
 	while (addr < addr_end) {
-		if (core->cons->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		// TODO: too many ioreads here
@@ -3296,6 +3312,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		bufi += (op.size > 0)? op.size: 1;
 		r_anal_op_fini (&op);
 	}
+	r_cons_break_pop ();
 	free (buf);
 }
 
@@ -4747,30 +4764,35 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			eprintf ("Usage: See aa? for more help\n");
 		} else {
 			bool done_aav = false;
-			r_cons_break (NULL, NULL);
 			ut64 curseek = core->offset;
 			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
+			r_cons_break_push (NULL, NULL);
 			r_core_anal_all (core);
 			rowlog_done (core);
-			if (core->cons->breaked) {
+			if (r_cons_is_breaked ()) {
 				goto jacuzzi;
 			}
 			r_cons_clear_line (1);
-			r_cons_break_end ();
 			if (*input == 'a') { // "aaa"
 				int c = r_config_get_i (core->config, "anal.calls");
 				if (strstr (r_config_get (core->config, "asm.arch"), "arm")) {
 					rowlog (core, "\nAnalyze value pointers (aav)");
 					done_aav = true;
 					r_core_cmd0 (core, "aav");
+					if (r_cons_is_breaked ()) {
+						goto jacuzzi;
+					}
 					r_core_cmd0 (core, "aav $S+$SS+1");
 				}
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");
 				rowlog (core, "Analyze len bytes of instructions for references (aar)");
+				if (r_cons_is_breaked ()) {
+					goto jacuzzi;
+				}
 				(void)r_core_anal_refs (core, input + 1); // "aar"
 				rowlog_done (core);
-				if (core->cons->breaked) {
+				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
 				rowlog (core, "Analyze function calls (aac)");
@@ -4779,7 +4801,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				// rowlog (core, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
 				rowlog_done (core);
-				if (core->cons->breaked) {
+				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
 				if (input[1] == 'a') { // "aaaa"
@@ -4800,6 +4822,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				r_config_set_i (core->config, "anal.calls", c);
 				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
+				if (r_cons_is_breaked ()) {
+					goto jacuzzi;
+				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
 					r_core_anal_autoname_all_fcns (core);
 				}
@@ -4809,14 +4834,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog_done (core);
 				}
 				rowlog_done (core);
-				if (core->cons->breaked) {
-					goto jacuzzi;
-				}
 				r_core_cmd0 (core, "s-");
 			}
 		jacuzzi:
 			flag_every_function (core);
-		//	r_core_cmd0 (core, "aai");
+			r_cons_break_pop ();
 		}
 		break;
 	case 't': {
@@ -5005,8 +5027,6 @@ static int cmd_anal(void *data, const char *input) {
 		//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
 		NULL };
 
-	r_cons_break (NULL, NULL);
-
 	switch (input[0]) {
 	case 'p': // "ap"
 		{
@@ -5043,7 +5063,9 @@ static int cmd_anal(void *data, const char *input) {
 			if (len > 0)
 				core_anal_bytes (core, buf, len, 0, input[1]);
 			free (buf);
-		} else eprintf ("Usage: ab [hexpair-bytes]\n abj [hexpair-bytes] (json)");
+		} else {
+			eprintf ("Usage: ab [hexpair-bytes]\n abj [hexpair-bytes] (json)");
+		}
 		break;
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
@@ -5055,7 +5077,6 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'f': // "af"
 		if (!cmd_anal_fcn (core, input)) {
-			r_cons_break_end ();
 			return false;
 		}
 		break;
@@ -5073,7 +5094,6 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'x':
 		if (!cmd_anal_refs (core, input + 1)) {
-			r_cons_break_end ();
 			return false;
 		}
 		break;
@@ -5100,9 +5120,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_config_set_i (core->config, "asm.lines", false);
 			r_config_set_i (core->config, "asm.xrefs", false);
 
-			r_cons_break (NULL, NULL);
 			hooks = r_core_anal_cycles (core, ccl); //analyse
-			r_cons_break_end ();
 			r_cons_clear_line (1);
 			r_list_foreach (hooks, iter, hook) {
 				instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
@@ -5158,9 +5176,11 @@ static int cmd_anal(void *data, const char *input) {
 		cmd_anal_hint (core, input + 1);
 		break;
 	case '!':
-		if (core->anal && core->anal->cur && core->anal->cur->cmd_ext)
+		if (core->anal && core->anal->cur && core->anal->cur->cmd_ext) {
 			return core->anal->cur->cmd_ext (core->anal, input + 1);
-		else r_cons_printf ("No plugins for this analysis plugin\n");
+		} else {
+			r_cons_printf ("No plugins for this analysis plugin\n");
+		}
 		break;
 	default:
 		r_core_cmd_help (core, help_msg);
@@ -5171,12 +5191,11 @@ static int cmd_anal(void *data, const char *input) {
 			NULL);
 		break;
 	}
-	if (tbs != core->blocksize)
+	if (tbs != core->blocksize) {
 		r_core_block_size (core, tbs);
-	if (core->cons->breaked) {
-		r_cons_clear_line (1);
-		eprintf ("Interrupted\n");
 	}
-	r_cons_break_end ();
+	if (r_cons_is_breaked ()) {
+		r_cons_clear_line (1);
+	}
 	return 0;
 }

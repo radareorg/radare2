@@ -67,13 +67,20 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 	const char *bp_name = r_reg_get_name (anal->reg, R_REG_NAME_BP);
 	ut64 sp = r_reg_getv (anal->reg, sp_name);
 	ut64 bp = r_reg_getv (anal->reg, bp_name);
+	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < max; i++) {
+		if (r_cons_is_breaked ()) {
+			goto out_function;
+		}
 		char *type = r_anal_type_func_args_type (anal, fcn_name, i);
-		const char *name =r_anal_type_func_args_name (anal, fcn_name, i);
+		const char *name = r_anal_type_func_args_name (anal, fcn_name, i);
 		const char *place = r_anal_cc_arg (anal, cc, i + 1);
 		if (!strcmp (place, "stack")) {
 			// type_match_stack ();
 			for (j = idx; j >= 0; j--) {
+				if (r_cons_is_breaked ()) {
+					goto out_function;
+				}
 				ut64 write_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.mem.write", j), 0);
 				if (write_addr == sp + size) {
 					ut64 instr_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.addr", j), 0);
@@ -84,7 +91,7 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 					for (i2 = 0; i2 < array_size; i2++) {
 						if (bp_name) {
 							int bp_idx = sdb_array_get_num (trace, tmp, i2, 0) - bp;
-							if ((v =r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_BPV, 1, bp_idx))) {
+							if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_BPV, 1, bp_idx))) {
 								r_anal_var_retype (anal, addr, 1, bp_idx, R_ANAL_VAR_KIND_BPV, type, -1, v->name);
 								r_anal_var_free (v);
 							}
@@ -104,13 +111,19 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 			free (type);
 			int k;
 			for ( k = max -1; k >=i; k--) {
+				if (r_cons_is_breaked ()) {
+					goto out_function;
+				}
 				type = r_anal_type_func_args_type (anal, fcn_name, k);
-				name =r_anal_type_func_args_name (anal, fcn_name, k);
+				name = r_anal_type_func_args_name (anal, fcn_name, k);
 				place = r_anal_cc_arg (anal, cc, k + 1);
 				if (strcmp (place ,"stack_rev")) {
 					break;
 				}
 				for (j = idx; j >= 0; j--) {
+					if (r_cons_is_breaked ()) {
+						goto out_function;
+					}
 					ut64 write_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.mem.write", j), 0);
 					if (write_addr == sp + size) {
 						ut64 instr_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.addr", j), 0);
@@ -121,7 +134,7 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 						for (i2 = 0; i2 < array_size; i2++) {
 							if (bp_name) {
 								int bp_idx = sdb_array_get_num (trace, tmp, i2, 0) - bp;
-								if ((v =r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_BPV, 1, bp_idx))) {
+								if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_BPV, 1, bp_idx))) {
 									r_anal_var_retype (anal, addr, 1, bp_idx, R_ANAL_VAR_KIND_BPV, type, -1, v->name);
 									r_anal_var_free (v);
 								}
@@ -142,6 +155,9 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 		} else {
 			// type_match_reg ();
 			for (j = idx; j >= 0; j--) {
+				if (r_cons_is_breaked ()) {
+					goto out_function;
+				}
 				if (sdb_array_contains (trace, sdb_fmt (-1, "%d.reg.write", j), place, 0)) {
 					ut64 instr_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.addr", j), 0);
 					r_meta_set_string (core->anal, R_META_TYPE_COMMENT, instr_addr,
@@ -149,15 +165,18 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 					char *tmp = sdb_fmt (-1, "%d.mem.read", j);
 					int i2, array_size = sdb_array_size (trace, tmp);
 					for (i2 = 0; i2 < array_size; i2++) {
+						if (r_cons_is_breaked ()) {
+							goto out_function;
+						}
 						if (bp_name) {
 							int bp_idx = sdb_array_get_num (trace, tmp, i2, 0) - bp;
-							if ((v =r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_BPV, 1, bp_idx))) {
+							if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_BPV, 1, bp_idx))) {
 								r_anal_var_retype (anal, addr, 1, bp_idx, R_ANAL_VAR_KIND_BPV, type, -1, v->name);
 								r_anal_var_free (v);
 							}
 						}
 						int sp_idx = sdb_array_get_num (trace, tmp, i2, 0) - sp;
-						if ((v =r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
+						if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
 							r_anal_var_retype (anal, addr, 1, sp_idx, R_ANAL_VAR_KIND_SPV, type, -1, v->name);
 							r_anal_var_free (v);
 						}
@@ -168,6 +187,8 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 		}
 		free (type);
 	}
+out_function:
+	r_cons_break_pop ();
 	free (fcn_name);
 }
 
@@ -219,23 +240,16 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	ut64 addr = fcn->addr;
 	r_reg_setv (core->dbg->reg, pc, fcn->addr);
 	r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-	r_cons_break (NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 	while (!r_cons_is_breaked ()) {
 		RAnalOp *op = r_core_anal_op (core, addr);
 		int loop_count = sdb_num_get (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), 0);
 		if (loop_count > LOOP_MAX) {
-#if 0
-			eprintf ("Unfortunately your evilly engineered %s function trapped my most innocent `aftm` in an infinite loop.\n", fcn->name);
-			eprintf ("I kept trace log for you to review and find out how bad things were going to happen by yourself.\n");
-			eprintf ("You can view this log by `ate`. Meanwhile, I will train on how to behave with such behaviour without bothering you.\n");
-#endif
-			r_anal_emul_restore (core, esil_var);
-			return;
+			goto out;
 		}
 		sdb_num_set (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), loop_count + 1, 0);
 		if (!op || op->type == R_ANAL_OP_TYPE_RET) {
-			r_anal_emul_restore (core, esil_var);
-			return;
+			goto out;
 		}
 		if (op->type == R_ANAL_OP_TYPE_CALL) {
 			RAnalFunction *fcn_call = r_anal_get_fcn_in (core->anal, op->jump, -1);
@@ -258,10 +272,12 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		} else {
 			r_core_esil_step (core, UT64_MAX, NULL);
 			r_anal_op_free (op);
+
 		}
 		r_core_cmd0 (core, ".ar*");
 		addr = r_reg_getv (core->anal->reg, pc);
 	}
-	r_cons_break_end ();
+out:
+	r_cons_break_pop ();
 	r_anal_emul_restore (core, esil_var);
 }

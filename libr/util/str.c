@@ -670,7 +670,7 @@ R_API char *r_str_newlen(const char *str, int len) {
 // specification.
 R_API char *r_str_newf(const char *fmt, ...) {
 	int ret, ret2;
-	char *p, string[1024];
+	char *tmp, *p, string[1024];
 	va_list ap, ap2;
 	va_start (ap, fmt);
 	va_start (ap2, fmt);
@@ -681,7 +681,7 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	}
 	ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
 	if (ret < 1 || ret >= sizeof (string)) {
-		p = malloc (ret + 2);
+		p = calloc (1, ret + 3);
 		if (!p) {
 			va_end (ap2);
 			va_end (ap);
@@ -694,14 +694,14 @@ R_API char *r_str_newf(const char *fmt, ...) {
 			va_end (ap);
 			return NULL;
 		}
-		fmt = r_str_new (p);
+		tmp = r_str_new (p);
 		free (p);
 	} else {
-		fmt = r_str_new (string);
+		tmp = r_str_new (string);
 	}
 	va_end (ap2);
 	va_end (ap);
-	return (char*)fmt;
+	return tmp;
 }
 
 // TODO: rename to r_str_trim_inplace() or something like that
