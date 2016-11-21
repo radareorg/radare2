@@ -2383,14 +2383,20 @@ static int cmd_print(void *data, const char *input) {
 	case '-': // "p-"
 		mode = input[1];
 		w = len? len: core->print->cols * 4;
-		if (mode == 'j') r_cons_strcat ("{");
+		w = core->print->cols * 2.7;
+		if (mode == 'j') {
+			r_cons_strcat ("{");
+		}
 		off = core->offset;
-		for (i=0; i<10; i++)
+		for (i = 0; i < 10; i++) {
 			total[i] = 0;
+		}
 		r_list_free (r_core_get_boundaries (core, "file", &from, &to));
 		piece = R_MAX((to - from) / w, 1);
 		as = r_core_anal_get_stats (core, from, to, piece);
-		if (!as && mode !='?') return 0;
+		if (!as && mode !='?') {
+			return 0;
+		}
 		//eprintf ("RANGE = %llx %llx\n", from, to);
 		switch (mode) {
 		case '?':{
