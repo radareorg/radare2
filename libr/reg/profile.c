@@ -47,8 +47,8 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		char *at = tok0 + (p - tok[0]);
 		*at++ = 0;
 		type = r_reg_type_by_name (tok0);
-		free (tok0);
 		type2 = r_reg_type_by_name (at);
+		free (tok0);
 	} else {
 		type2 = type = r_reg_type_by_name (tok[0]);
 		if (type == R_REG_TYPE_FLG) {
@@ -114,7 +114,6 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 }
 
 #define PARSER_MAX_TOKENS 8
-
 R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
@@ -208,14 +207,19 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			}
 		}
 	} while (*p++);
+	reg->size = 0;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RRegSet *rs = &reg->regset[i];
+		//eprintf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
+		reg->size += rs->arena->size;
 
-	// Align to byte boundary if needed
-	if (reg->size & 7) {
-		reg->size += 8 - (reg->size & 7);
 	}
-	reg->size >>= 3; // bits to bytes (divide by 8)
+	// Align to byte boundary if needed
+	//if (reg->size & 7) {
+	//	reg->size += 8 - (reg->size & 7);
+	//}
+	//reg->size >>= 3; // bits to bytes (divide by 8)
 	r_reg_fit_arena (reg);
-
 	// dup the last arena to allow regdiffing
 	r_reg_arena_push (reg);
 	r_reg_reindex (reg);

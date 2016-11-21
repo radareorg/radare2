@@ -398,9 +398,10 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			if (i == 4 || i == 5) continue;
 			long ret = ptrace (PTRACE_PEEKUSER, pid, 
 					r_offsetof (struct user, u_debugreg[i]), 0);
-			memcpy (buf + (i * sizeof(ret)), &ret, sizeof(ret));
+			memcpy (buf + (i * sizeof (ret)), &ret, sizeof (ret));
 		}
-		return sizeof (R_DEBUG_REG_T);
+		struct user a;
+		return  sizeof (a.u_debugreg);
 	}
 #else
 	#warning Android X86 does not support DRX
