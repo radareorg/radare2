@@ -41,7 +41,7 @@ static int readline_callback(void *_a, const char *str) {
 			strcpy (a->codebuf, a->blockbuf);
 			memcpy (a->codebuf, a->acode->buf_hex, xlen);
 		}
-		r_core_cmdf (a->core, "pd 7@x:%s @0x%"PFMT64x, a->codebuf, a->off);
+		r_core_cmdf (a->core, "pd $r-10 @x:%s @0x%"PFMT64x, a->codebuf, a->off);
 	}
 	r_cons_flush ();
 	return 1;
