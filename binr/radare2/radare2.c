@@ -15,6 +15,7 @@
 static char *rabin_cmd = NULL;
 #endif
 static bool threaded = false;
+static bool haveRarunProfile = false;
 static struct r_core_t r;
 
 static int verify_version(int show) {
@@ -519,6 +520,7 @@ int main(int argc, char **argv, char **envp) {
 			quiet = true;
 			break;
 		case 'R':
+			haveRarunProfile = true;
 			r_config_set (r.config, "dbg.profile", optarg);
 			break;
 		case 's':
@@ -549,6 +551,26 @@ int main(int argc, char **argv, char **envp) {
 			help++;
 		}
 	}
+	{
+		const char *dbg_profile = r_config_get (r.config, "dbg.profile");
+		if (dbg_profile && *dbg_profile) {
+			char *msg = r_file_slurp (dbg_profile, NULL);
+			if (msg) {
+				char *program = strstr (msg, "program=");
+				if (program) {
+					program += 8;
+					char *p = strchr (program, '\n');
+					if (p) {
+						*p = 0;
+						pfile = strdup (program);
+					}
+				}
+				free (msg);
+			} else {
+				eprintf ("Cannot read dbg.profile\n");
+			}
+		}
+	}
 	if (do_list_io_plugins) {
 		if (r_config_get_i (r.config, "cfg.plugins")) {
 			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
@@ -569,11 +591,11 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (help > 1? 2: 0);
 	}
 	if (debug == 1) {
-		if (optind >= argc) {
+		if (optind >= argc && !haveRarunProfile) {
 			eprintf ("Missing argument for -d\n");
 			return 1;
 		}
-		char *uri = strdup (argv[optind]);
+		char *uri = strdup (haveRarunProfile? pfile: argv[optind]);
 		char *p = strstr (uri, "://");
 		if (p) {
 			*p = 0;
@@ -636,7 +658,8 @@ int main(int argc, char **argv, char **envp) {
 	if (run_rc) {
 		radare2_rc (&r);
 	}
-	if (argv[optind] && r_file_is_directory (argv[optind])) {
+	// if (argv[optind] && r_file_is_directory (argv[optind]))
+	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
 			eprintf ("Error: Cannot debug directories, yet.\n");
 			return 1;
@@ -668,14 +691,16 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Cannot slurp from stdin\n");
 			return 1;
 		}
-	} else if (strcmp (argv[optind-1], "--")) {
+	} else if (strcmp (argv[optind - 1], "--")) {
 		if (debug) {
-			if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
+			if (asmbits) {
+				r_config_set (r.config, "asm.bits", asmbits);
+			}
 			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
 			r_config_set_i (r.config, "io.va", false); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE;
-			if (optind >= argc) {
+			if (optind >= argc && !haveRarunProfile) {
 				eprintf ("No program given to -d\n");
 				return 1;
 			}
@@ -683,7 +708,9 @@ int main(int argc, char **argv, char **envp) {
 				// autodetect backend with -D
 				r_config_set (r.config, "dbg.backend", debugbackend);
 				if (strcmp (debugbackend, "native")) {
-					pfile = argv[optind++];
+					if (!haveRarunProfile) {
+						pfile = argv[optind++];
+					}
 					perms = R_IO_READ; // XXX. should work with rw too
 					debug = 2;
 					if (!strstr (pfile, "://"))
@@ -698,9 +725,11 @@ int main(int argc, char **argv, char **envp) {
 */
 				}
 			} else {
-				const char *f = argv[optind];
-				is_gdb = (!memcmp (argv[optind], "gdb://", 6));
-				if (!is_gdb) file = strdup ("dbg://");
+				const char *f = haveRarunProfile? pfile: argv[optind];
+				is_gdb = (!memcmp (f, "gdb://", 6));
+				if (!is_gdb) {
+					file = strdup ("dbg://");
+				}
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
 				{
@@ -766,6 +795,15 @@ int main(int argc, char **argv, char **envp) {
 		}
 
 		if (!debug || debug == 2) {
+			const char *dbg_profile = r_config_get (r.config, "dbg.profile");
+			if (optind == argc && dbg_profile && *dbg_profile) {
+				fh = r_core_file_open (&r, pfile, perms, mapaddr);
+				if (fh) {
+					if (!r_core_bin_load (&r, pfile, baddr)) {
+						r_config_set_i (r.config, "io.va", false);
+					}
+				}
+			}
 			if (optind < argc) {
 				while (optind < argc) {
 					pfile = argv[optind++];
@@ -773,7 +811,9 @@ int main(int argc, char **argv, char **envp) {
 					if ((perms & R_IO_WRITE) && !fh) {
 						if (r_io_create (r.io, pfile, 0644, 0)) {
 							fh = r_core_file_open (&r, pfile, perms, mapaddr);
-						} else eprintf ("r_io_create: Permission denied.\n");
+						} else {
+							eprintf ("r_io_create: Permission denied.\n");
+						}
 					}
 					if (fh) {
 						if (run_anal > 0) {
@@ -819,6 +859,8 @@ int main(int argc, char **argv, char **envp) {
 					}
 				}
 			}
+		} else {
+			fh = r_core_file_open (&r, pfile, perms, mapaddr);
 		}
 		if (!pfile) {
 			pfile = file;
@@ -883,7 +925,6 @@ int main(int argc, char **argv, char **envp) {
 				r_core_setup_debugger (&r, debugbackend, true);
 			}
 		}
-
 		if (!debug && r_flag_get (r.flags, "entry0")) {
 			r_core_cmd0 (&r, "s entry0");
 		}
