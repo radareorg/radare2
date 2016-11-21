@@ -14,13 +14,20 @@ static int backup_fdn = 1;
 #endif
 
 R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
+	char *targetFile;
 	if (fdn < 1) {
 		return -1;
 	}
-	int fd = r_sandbox_open (file,
+	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
+		targetFile = r_str_home (file + 2);
+	} else {
+		targetFile = strdup (file);
+	}
+	int fd = r_sandbox_open (targetFile,
 		O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC), 0644);
 	if (fd==-1) {
 		eprintf ("r_cons_pipe_open: Cannot open file '%s'\n", file);
+		free (targetFile);
 		return -1;
 	}// else eprintf ("%s created\n", file);
 	if (backup_fd != -1) {
@@ -36,10 +43,12 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	if (dup2 (fdn, backup_fd) == -1) {
 #endif
 		eprintf ("Cannot dup stdout to %d\n", backup_fd);
+		free (targetFile);
 		return -1;
 	}
 	close (fdn);
 	dup2 (fd, fdn);
+	free (targetFile);
 	return fd;
 }
 
