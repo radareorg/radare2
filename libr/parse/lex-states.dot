@@ -10,7 +10,7 @@ digraph stategraph {
 	18 [shape = doublecircle, label = "ASSIGN"];
 	23 [shape = doublecircle, label = "MATH"];
 	0 -> 1 [label = "0"];
-	0 -> 10 [label = "+- or * only if last state wasn't identifier"];
+	0 -> 10 [label = "+-% or * only if last state wasn't identifier"];
 	0 -> 11 [label = "0-9"]
 	0 -> 13 [label = "*"];
 	0 -> 15 [label = "A-Za-z_"];

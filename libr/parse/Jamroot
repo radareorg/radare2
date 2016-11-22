@@ -1,4 +1,4 @@
-OBJS = parse.c code.c ;
+OBJS = parse.c racp.c ;
 OBJS += p/parse_att2intel.c
     p/parse_dalvik_pseudo.c
     p/parse_mips_pseudo.c

@@ -13,7 +13,7 @@ foo:
 CFLAGS+=-DCORELIB
 -include ${STATIC_PARSE_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
-OBJS=parse.o code.o ${STATIC_OBJS}
+OBJS=parse.o racp.o ${STATIC_OBJS}
 
 bins:
 #	@cd t && ${MAKE} all
