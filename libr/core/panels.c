@@ -23,6 +23,8 @@ typedef struct {
 #define PANEL_TYPE_FLOAT 2
 
 static int COLW = 80;
+static const int layoutCount = 2;
+static int layout = 0;
 static RCore *_core;
 static int n_panels = 0;
 static void reloadPanels(RCore *core) ;
@@ -45,7 +47,7 @@ static const char *menus[] = {
 };
 
 static const char *menus_File[] = {
-	"New", "Open", "Close", "--", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", "Quit",
+	"New", "Open", "Close", ".", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", ".", "Quit",
 	NULL
 };
 
@@ -71,9 +73,11 @@ static const char *menus_Search[] = {
 
 static const char *menus_Debug[] = {
 	"Registers", "RegisterRefs", "DRX", "Breakpoints",
-	"Watchpoints", "Maps",
-	"Continue", "Cont until.",
+	"Watchpoints", "Maps", "Modules",
 	"Backtrace",
+	".",
+	"Continue", "Cont until.",
+	"Step", "Step Over",
 	NULL
 };
 
@@ -83,7 +87,7 @@ static const char *menus_Analyze[] = {
 };
 
 static const char *menus_Help[] = {
-	"Fortune", "Commands", "2048", "License", "About",
+	"Fortune", "Commands", "2048", "License", ".", "About",
 	NULL
 };
 
@@ -187,6 +191,12 @@ static void Layout_run(Panel *panels) {
 		COLW = w;
 		colpos = 0;
 	}
+	if (layout < 0) {
+		layout = layoutCount - 1;
+	}
+	if (layout >= layoutCount) {
+		layout = 0;
+	}
 
 	can->sx = 0;
 	can->sy = 0;
@@ -199,31 +209,74 @@ static void Layout_run(Panel *panels) {
 			panels[i].h += 4;
 			break;
 		case PANEL_TYPE_FRAME:
-			if (j == 0) {
-				panels[i].x = 0;
-				panels[i].y = 1;
-				if (panels[j+1].text) {
-					panels[i].w = colpos+1;
+			switch (layout) {
+			case 0:
+				if (j == 0) {
+					panels[i].x = 0;
+					panels[i].y = 1;
+					if (panels[j+1].text) {
+						panels[i].w = colpos+1;
+					} else {
+						panels[i].w = w;
+					}
+					panels[i].h = h-1;
 				} else {
-					panels[i].w = w;
+					int ph = ((h - 1) / (n_panels - 2));
+					panels[i].x = colpos;
+					panels[i].y = 1 + (ph * (j - 1));
+					panels[i].w = w-colpos;
+					if (panels[i].w < 0) {
+						panels[i].w = 0;
+					}
+					panels[i].h = ph;
+					if (!panels[i + 1].text) {
+						panels[i].h = h - panels[i].y;
+					}
+					if (j != 1) {
+						panels[i].y--;
+						panels[i].h++;
+					}
 				}
-				panels[i].h = h-1;
-			} else {
-				int ph = ((h - 1) / (n_panels - 2));
-				panels[i].x = colpos;
-				panels[i].y = 1 + (ph * (j - 1));
-				panels[i].w = w-colpos;
-				if (panels[i].w < 0) {
-					panels[i].w = 0;
+				break;
+			case 1:
+				if (j == 0) {
+					panels[i].x = 0;
+					panels[i].y = 1;
+					if (panels[j+1].text) {
+						panels[i].w = colpos + 1;
+					} else {
+						panels[i].w = w;
+					}
+					panels[i].h = (h / 2) + 1;
+				} else if (j == 1) {
+					panels[i].x = 0;
+					panels[i].y = (h / 2) + 1;
+					if (panels[j+1].text) {
+						panels[i].w = colpos + 1;
+					} else {
+						panels[i].w = w;
+					}
+					panels[i].h = (h-1) / 2;
+				} else {
+					int ph = ((h - 1) / (n_panels - 3));
+					panels[i].x = colpos;
+					panels[i].y = 1 + (ph * (j - 2));
+					panels[i].w = w - colpos;
+					if (panels[i].w < 0) {
+						panels[i].w = 0;
+					}
+					panels[i].h = ph;
+					if (!panels[i + 1].text) {
+						panels[i].h = h - panels[i].y;
+					}
+					if (j != 2) {
+						panels[i].y--;
+						panels[i].h++;
+					}
 				}
-				panels[i].h = ph;
-				if (!panels[i + 1].text) {
-					panels[i].h = h - panels[i].y;
-				}
-				if (j != 1) {
-					panels[i].y--;
-					panels[i].h++;
-				}
+				break;
+				break;
+
 			}
 			j++;
 		}
@@ -252,6 +305,7 @@ static void zoom() {
 		Panel ocurnode = panels[curnode];
 		panels[curnode] = panels[1];
 		panels[1] = ocurnode;
+		curnode = 1;
 	}
 }
 
@@ -272,16 +326,19 @@ static void addPanelFrame (const char *title, const char *cmd, ut64 addr) {
 	panels[i].type = PANEL_TYPE_FRAME;
 	panels[i+1].text = NULL;
 	n_panels++;
+	curnode = n_panels - 1;
+	zoom();
+	menu_y = 0;
 }
 
 static int bbPanels (RCore *core, Panel **n) {
 	//panels = NULL;
-	addPanelFrame ("Disassembly", "pd 128", 0);
 	addPanelFrame ("Symbols", "isq", 0);
 	addPanelFrame ("Stack", "px 256@r:SP", 0);
 	addPanelFrame ("Registers", "dr=", 0);
 	addPanelFrame ("RegisterRefs", "drr", 0);
-	curnode = 0;
+	addPanelFrame ("Disassembly", "pd 128", 0);
+	curnode = 1;
 	Layout_run (panels);
 	return n_panels;
 }
@@ -301,8 +358,11 @@ static void r_core_panels_refresh(RCore *core) {
 		return;
 	}
 	r_cons_canvas_resize (can, w, h);
+#if 0
+	/* avoid flickering */
 	r_cons_canvas_clear (can);
 	r_cons_flush ();
+#endif
 	if (panels) {
 		if (menu_y > 0) {
 			panels[menu_pos].x = menu_x * 6;
@@ -444,9 +504,9 @@ repeat:
 	Layout_run (panels);
 	r_core_panels_refresh (core);
 	wheel = r_config_get_i (core->config, "scr.wheel");
-	if (wheel)
+	if (wheel) {
 		r_cons_enable_mouse (true);
-
+	}
 	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
@@ -585,8 +645,16 @@ repeat:
 				addPanelFrame ("Strings", "izq", 0);
 			} else if (strstr (action, "Maps")) {
 				addPanelFrame ("Maps", "dm", 0);
+			} else if (strstr (action, "Modules")) {
+				addPanelFrame ("Modules", "dmm", 0);
 			} else if (strstr (action, "Backtrace")) {
 				addPanelFrame ("Backtrace", "dbt", 0);
+			} else if (strstr (action, "Step")) {
+				r_core_cmd (core, "ds", 0);
+				r_cons_flush ();
+			} else if (strstr (action, "Step Over")) {
+				r_core_cmd (core, "dso", 0);
+				r_cons_flush ();
 			} else if (strstr (action, "Breakpoints")) {
 				addPanelFrame ("Breakpoints", "db", 0);
 			} else if (strstr (action, "Symbols")) {
@@ -635,7 +703,7 @@ repeat:
 				goto beach;
 			}
 		} else {
-			if (curnode>0) {
+			if (curnode > 0) {
 				zoom ();
 			} else {
 				menu_y = 1;
@@ -693,10 +761,14 @@ repeat:
 	//	reloadPanels (core);
 		break;
 	case 'R':
-		r_core_cmd0 (core, "ecr");
+		if (r_config_get_i (core->config, "scr.randpal")) {
+			r_core_cmd0 (core, "ecr");
+		} else {
+			r_core_cmd0 (core, "ecn");
+		}
 		break;
 	case 'j':
-		if (curnode==0) {
+		if (curnode == 0) {
 			if (panels[curnode].type == PANEL_TYPE_FLOAT) {
 				if (menus_sub[menu_x][menu_y])
 					menu_y ++;
@@ -786,7 +858,7 @@ repeat:
 				r_core_panels_refresh (core);
 			}
 		} else {
-			panels[curnode].sx ++;
+			panels[curnode].sx --;
 		}
 		break;
 	case 'l':
@@ -797,7 +869,7 @@ repeat:
 				r_core_panels_refresh (core);
 			}
 		} else {
-			panels[curnode].sx --;
+			panels[curnode].sx ++;
 		}
 		break;
 	case 'V':
@@ -820,10 +892,23 @@ repeat:
 			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 		break;
+	case ']':
+		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+		break;
+	case '[':
+		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+		break;
+	case 'w':
+		layout++;
+		Layout_run (panels);
+		r_core_panels_refresh (core);
+		r_cons_canvas_print (can);
+		r_cons_flush ();
+		break;
 	case '!':
 	case 'q':
 	case -1: // EOF
-		if (menu_y>0) {
+		if (menu_y > 0) {
 			menu_y = 0;
 		} else {
 			goto beach;
