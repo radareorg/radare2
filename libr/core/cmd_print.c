@@ -2427,21 +2427,23 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf ("0x%"PFMT64x" [", from);
 		}
 
+		bool use_color = r_config_get_i (core->config, "scr.color");
 		len = 0;
-		for (i=0; i<w; i++) {
+		for (i = 0; i < w; i++) {
 			at = from + (piece*i);
 			ate = at + piece;
-			p = (at-from)/piece;
+			p = (at - from) / piece;
 			switch (mode) {
 			case 'j':
-				r_cons_printf ("%s{",len?",":"");
+				r_cons_printf ("%s{", len? ",": "");
 				if ((as->block[p].flags)
 						|| (as->block[p].functions)
 						|| (as->block[p].comments)
 						|| (as->block[p].imports)
 						|| (as->block[p].symbols)
-						|| (as->block[p].strings))
+						|| (as->block[p].strings)) {
 					r_cons_printf ("\"offset\":%"PFMT64d",", at), l++;
+				}
 				// TODO: simplify with macro
 				l = 0;
 				if (as->block[p].flags) r_cons_printf ("%s\"flags\":%d", l?",":"", as->block[p].flags), l++;
@@ -2465,7 +2467,7 @@ static int cmd_print(void *data, const char *input) {
 						|| (as->block[p].comments)
 						|| (as->block[p].imports)
 						|| (as->block[p].symbols)
-						|| (as->block[p].strings))
+						|| (as->block[p].strings)) {
 					r_cons_printf ("| 0x%09"PFMT64x" | %4d %4d %4d %4d %4d %4d   |\n", at,
 							as->block[p].flags,
 							as->block[p].functions,
@@ -2473,41 +2475,59 @@ static int cmd_print(void *data, const char *input) {
 							as->block[p].imports,
 							as->block[p].symbols,
 							as->block[p].strings);
+				}
 				break;
 			default:
 				if (off>=at && off<ate) {
 					r_cons_memcat ("^", 1);
 				} else {
-					if (as->block[p].strings>0)
+					RIOSection *s = r_io_section_vget (core->io, at);
+					if (use_color) {
+						if (s) {
+							if (s->rwx & 1) {
+								r_cons_print (Color_BGBLUE);
+							} else {
+								r_cons_print (Color_BGGREEN);
+							}
+						} else {
+							r_cons_print (Color_BGRED);
+						}
+					}
+					if (as->block[p].strings > 0) {
 						r_cons_memcat ("z", 1);
-					else if (as->block[p].imports>0)
+					} else if (as->block[p].imports>0) {
 						r_cons_memcat ("i", 1);
-					else if (as->block[p].symbols>0)
+					} else if (as->block[p].symbols>0) {
 						r_cons_memcat ("s", 1);
-					else if (as->block[p].functions>0)
+					} else if (as->block[p].functions>0) {
 						r_cons_memcat ("F", 1);
-					else if (as->block[p].flags>0)
-						r_cons_memcat ("f", 1);
-					else if (as->block[p].comments>0)
+					} else if (as->block[p].comments > 0) {
 						r_cons_memcat ("c", 1);
-					else r_cons_memcat (".", 1);
+					} else if (as->block[p].flags > 3) {
+						r_cons_memcat ("f", 1);
+					} else {
+						r_cons_memcat (".", 1);
+					}
 				}
 				break;
 			}
 		}
+		if (use_color) {
+			r_cons_print (Color_RESET);
+		}
 		switch (mode) {
-			case 'j':
-				r_cons_strcat ("]}\n");
-				break;
-			case 'h':
-				//r_cons_printf ("  total    | flags funcs cmts imps syms str  |\n");
-				r_cons_printf ("|-------------)---------------------------------|\n");
-				r_cons_printf ("|    total    | %4d %4d %4d %4d %4d %4d   |\n",
-					total[0], total[1], total[2], total[3], total[4], total[5]);
-				r_cons_printf ("`-------------'---------------------------------'\n");
-				break;
-			default:
-				r_cons_printf ("] 0x%"PFMT64x"\n", to);
+		case 'j':
+			r_cons_strcat ("]}\n");
+			break;
+		case 'h':
+			//r_cons_printf ("  total    | flags funcs cmts imps syms str  |\n");
+			r_cons_printf ("|-------------)---------------------------------|\n");
+			r_cons_printf ("|    total    | %4d %4d %4d %4d %4d %4d   |\n",
+				total[0], total[1], total[2], total[3], total[4], total[5]);
+			r_cons_printf ("`-------------'---------------------------------'\n");
+			break;
+		default:
+			r_cons_printf ("] 0x%"PFMT64x"\n", to);
 		}
 		r_core_anal_stats_free (as);
 		break;

@@ -5018,7 +5018,6 @@ static int cmd_anal(void *data, const char *input) {
 		"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 		"ao", "[e?] [len]", "analyze Opcodes (or emulate it)",
 		"aO", "", "Analyze N instructions in M bytes",
-		"an", "[an-] [...]", "manage no-return addresses/symbols/functions",
 		"ar", "", "like 'dr' but for the esil vm. (registers)",
 		"ap", "", "find prelude for current offset",
 		"ax", "[?ld-*]", "manage refs/xrefs (see also afx?)",
