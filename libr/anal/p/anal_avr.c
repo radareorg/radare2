@@ -1070,7 +1070,7 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 INST_HANDLER (sbci) {	// SBCI Rd, k
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = ((buf[1] & 0xf) << 4) | (buf[0] & 0xf);
-	ESIL_A ("cf,%d,-,r%d,-,", k, d);			// 0: (Rd-k-C)
+	ESIL_A ("cf,%d,+,r%d,-,", k, d);			// 0: (Rd-k-C)
 	ESIL_A ("r%d,0x08,&,!,"  "%d,0x08,&,!,!,"      "&,"	// H
 		"%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
 		"%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
