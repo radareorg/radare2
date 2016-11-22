@@ -503,7 +503,7 @@ static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 static char *demangleAs(int type) {
 	char *res = NULL;
 	switch (type) {
-	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (file); break;
+	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
 	case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
 	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file, 0); break; // XX: use
