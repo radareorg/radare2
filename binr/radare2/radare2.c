@@ -376,6 +376,7 @@ int main(int argc, char **argv, char **envp) {
 	ut64 mapaddr = 0LL;
 	int quiet = false;
 	int is_gdb = false;
+	const char * s_seek = NULL;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	RList *files = r_list_new ();
@@ -531,7 +532,7 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set (r.config, "dbg.profile", optarg);
 			break;
 		case 's':
-			seek = r_num_math (r.num, optarg);
+			s_seek = optarg;
 			break;
 		case 'S':
 			sandbox = true;
@@ -934,8 +935,11 @@ int main(int argc, char **argv, char **envp) {
 		if (!debug && r_flag_get (r.flags, "entry0")) {
 			r_core_cmd0 (&r, "s entry0");
 		}
-		if (seek != UT64_MAX) {
-			r_core_seek (&r, seek, 1);
+		if (s_seek) {
+			seek = r_num_math (r.num, s_seek);
+			if (seek != UT64_MAX) {
+				r_core_seek (&r, seek, 1);
+			}
 		}
 
 		if (fullfile) {
