@@ -2163,18 +2163,20 @@ R_API RBinObject *r_bin_get_object(RBin *bin) {
 
 R_API RList * /*<RBinClass>*/ r_bin_get_classes(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o) return o->classes;
-	return NULL;
+	return o? o->classes: NULL;
 }
 
 R_API RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char *super, int view) {
 	RBinObject *o = binfile? binfile->o: NULL;
 	RList *list = NULL;
 	RBinClass *c;
-	if (!o)
+	if (!o) {
 		return NULL;
+	}
 	list = o->classes;
-	if (!name) return NULL;
+	if (!name) {
+		return NULL;
+	}
 	c = r_bin_class_get (binfile, name);
 	if (c) {
 		if (super) {
@@ -2184,15 +2186,18 @@ R_API RBinClass *r_bin_class_new(RBinFile *binfile, const char *name, const char
 		return c;
 	}
 	c = R_NEW0 (RBinClass);
-	if (!c) return NULL;
+	if (!c) {
+		return NULL;
+	}
 	c->name = strdup (name);
 	c->super = super? strdup (super): NULL;
 	c->index = r_list_length (list);
 	c->methods = r_list_new ();
 	c->fields = r_list_new ();
 	c->visibility = view;
-	if (!list)
+	if (!list) {
 		list = o->classes = r_list_new ();
+	}
 	r_list_append (list, c);
 	return c;
 }
@@ -2214,14 +2219,25 @@ R_API RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
 
 R_API int r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	RBinClass *c = r_bin_class_get (binfile, classname);
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (!sym) return false;
-	sym->name = strdup (name);
-	if (c) {
-		r_list_append (c->methods, sym);
-		return true;
+	if (!c) {
+		c = r_bin_class_new (binfile, classname, NULL, 0);
+		if (!c) {
+			eprintf ("Cannot allocate class %s\n", classname);
+			return false;
+		}
 	}
-	c = r_bin_class_new (binfile, classname, NULL, 0);
+	RBinSymbol *m;
+	RListIter *iter;
+	r_list_foreach (c->methods, iter, m) {
+		if (!strcmp (m->name, name)) {
+			return false;
+		}
+	}
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	if (!sym) {
+		return false;
+	}
+	sym->name = strdup (name);
 	r_list_append (c->methods, sym);
 	return true;
 }

@@ -508,7 +508,7 @@ R_API const char *r_bin_entry_type_string(int etype);
 R_API char* r_bin_demangle(RBinFile *binfile, const char *lang, const char *str);
 R_API int r_bin_demangle_type (const char *str);
 R_API char *r_bin_demangle_java(const char *str);
-R_API char *r_bin_demangle_cxx(const char *str);
+R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
