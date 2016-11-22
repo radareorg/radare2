@@ -396,10 +396,9 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		int i;
 		for (i = 0; i < 8; i++) { //DR0-DR7
 			if (i == 4 || i == 5) continue;
-			// I think this is wrong, sizeof ret always return 4
 			long ret = ptrace (PTRACE_PEEKUSER, pid, 
 					r_offsetof (struct user, u_debugreg[i]), 0);
-			memcpy (buf + (i * sizeof(ret)), &ret, sizeof(ret));
+			memcpy (buf + (i * sizeof (ret)), &ret, sizeof (ret));
 		}
 		//return sizeof (R_DEBUG_REG_T);
 		// return the real size of read register to fit into arena and dont oversize.
