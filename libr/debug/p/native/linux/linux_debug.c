@@ -400,8 +400,6 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 					r_offsetof (struct user, u_debugreg[i]), 0);
 			memcpy (buf + (i * sizeof (ret)), &ret, sizeof (ret));
 		}
-		//return sizeof (R_DEBUG_REG_T);
-		// return the real size of read register to fit into arena and dont oversize.
 		struct user a;
 		return  sizeof (a.u_debugreg);
 	}
