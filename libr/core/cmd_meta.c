@@ -741,7 +741,7 @@ static int cmd_meta(void *data, const char *input) {
 	case '*':
 		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
 		break;
-	case 'L':
+	case 'L': // "CL"
 		cmd_meta_lineinfo (core, input + 1);
 		break;
 	case 'C': // "CC"

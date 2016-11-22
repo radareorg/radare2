@@ -2470,13 +2470,40 @@ static void ds_print_dwarf(RDisasmState *ds) {
 		if (len < 30) {
 			len = 30 - len;
 		}
-		ds->sl = r_bin_addr2text (ds->core->bin, ds->at, true);
+// TODO: cache value in ds
+		int dwarfFile = r_config_get_i (ds->core->config, "asm.dwarf.file")? 1: 0;
+		dwarfFile += r_config_get_i (ds->core->config, "asm.dwarf.abspath")? 1: 0;
+free (ds->sl);
+		ds->sl = r_bin_addr2text (ds->core->bin, ds->at, dwarfFile);
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
 				char *chopstr, *line = strdup (ds->sl);
 				if (!line) {
 					return;
 				}
+// TODO: cache value in ds
+				bool chopPath = !r_config_get_i (ds->core->config, "asm.dwarf.abspath");
+#if 0
+				if (!chopPath) {
+					char *nl = r_str_newf ("%s/%s", line);
+					free (line);
+					line = nl;
+				}
+#endif
+#if 0
+				if (chopPath) {
+r_cons_printf ("(((%s)))", line);
+					char *eyes = strchr (line, ':');
+					if (eyes) {
+						*eyes = 0;
+						const char *slash = r_str_lchr (line, '/');
+						*eyes = ':';
+						if (slash) {
+							memmove (line, slash + 1, strlen (slash));
+						}
+					}
+				}
+#endif
 				r_str_replace_char (line, '\t', ' ');
 				r_str_replace_char (line, '\x1b', ' ');
 				r_str_replace_char (line, '\r', ' ');
@@ -2584,7 +2611,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		RFlagItem *f, *f2;
 		r_io_read_at (core->io, p, (ut8*)msg, len - 1);
 		if (ds->analop.refptr) {
-			ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr*8);
+			ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr * 8);
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
 			DOALIGN();

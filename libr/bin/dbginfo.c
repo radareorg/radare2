@@ -19,7 +19,7 @@ R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line) 
 	return false;
 }
 
-R_API char *r_bin_addr2text(RBin *bin, ut64 addr, bool origin) {
+R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	char file[4096];
 	int line;
 	char *out = NULL, *out2 = NULL;
@@ -28,14 +28,22 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, bool origin) {
 	file[0] = 0;
 	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line)) {
 		if (bin->srcdir && *bin->srcdir) {
-			char *nf = r_str_newf ("%s/%s", bin->srcdir, file);
+			char *slash = strrchr (file, '/');
+			char *nf = r_str_newf ("%s/%s", bin->srcdir, slash? slash + 1: file);
 			strncpy (file, nf, sizeof (file) - 1);
 			free (nf);
 		}
+		// TODO: this is slow. must use a cached pool of mmaped files and line:off entries
 		out = r_file_slurp_line (file, line, 0);
-		if (!out) return 0;
+		if (!out) {
+			return 0;
+		}
 		out2 = malloc ((strlen (file) + 64 + strlen (out)) * sizeof (char));
-		file_nopath = strrchr (file, '/');
+		if (origin > 1) {
+			file_nopath = NULL;
+		} else {
+			file_nopath = strrchr (file, '/');
+		}
 		if (origin) {
 			snprintf (out2, strlen (file) + 63 + strlen (out), "%s:%d%s%s",
 				file_nopath? file_nopath + 1: file, line, *out? " ": "", out);

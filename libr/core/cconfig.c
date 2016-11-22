@@ -1734,6 +1734,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETI("asm.indentspace", 2, "How many spaces to indent the code");
 	SETPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
+	SETPREF("asm.dwarf.abspath", "false", "Show absolute path in asm.dwarf");
+	SETPREF("asm.dwarf.file", "true", "Show filename of asm.dwarf in pd");
 	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
