@@ -27,7 +27,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	char *res = NULL;
 	int type = r_bin_demangle_type (lang);
 	switch (type) {
-	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (s); break;
+	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (core->bin->cur, s, 0); break;
 	case R_BIN_NM_JAVA: res = r_bin_demangle_java (s); break;
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, s); break;
 	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s, core->bin->demanglercmd); break;

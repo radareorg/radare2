@@ -2217,29 +2217,29 @@ R_API RBinClass *r_bin_class_get(RBinFile *binfile, const char *name) {
 	return NULL;
 }
 
-R_API int r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
+R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classname, const char *name, int nargs) {
 	RBinClass *c = r_bin_class_get (binfile, classname);
 	if (!c) {
 		c = r_bin_class_new (binfile, classname, NULL, 0);
 		if (!c) {
 			eprintf ("Cannot allocate class %s\n", classname);
-			return false;
+			return NULL;
 		}
 	}
 	RBinSymbol *m;
 	RListIter *iter;
 	r_list_foreach (c->methods, iter, m) {
 		if (!strcmp (m->name, name)) {
-			return false;
+			return NULL;
 		}
 	}
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (!sym) {
-		return false;
+		return NULL;
 	}
 	sym->name = strdup (name);
 	r_list_append (c->methods, sym);
-	return true;
+	return sym;
 }
 
 R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name) {

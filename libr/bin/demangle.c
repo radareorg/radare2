@@ -117,7 +117,7 @@ R_API char *r_bin_demangle_msvc(const char *str) {
 	return out;
 }
 
-R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str) {
+R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
 	char *out;
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;
@@ -157,7 +157,10 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str) {
 		char *nerd = (char*)r_str_last (out, "::");
 		if (nerd && *nerd) {
 			*nerd = 0;
-			r_bin_class_add_method (binfile, out, nerd + 2, 0);
+			RBinSymbol *sym = r_bin_class_add_method (binfile, out, nerd + 2, 0);
+			if (sym) {
+				sym->vaddr = vaddr;
+			}
 			*nerd = ':';
 		}
 	}
@@ -281,6 +284,7 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 				ret = r_str_newf ("%s int  %s::%s(%s)", type, clas, name, args);
 				if (binfile) {
 					r_bin_class_add_method (binfile, clas, name, nargs);
+
 				}
 			}
 		}
@@ -358,16 +362,19 @@ R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	return type;
 }
 
-R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str) {
+R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, ut64 vaddr) {
 	int type = -1;
 	RBin *bin;
-	if (!binfile || !str || !*str) return NULL;
-
+	if (!binfile || !str || !*str) {
+		return NULL;
+	}
 	bin = binfile->rbin;
-	if (!strncmp (str, "sym.", 4))
+	if (!strncmp (str, "sym.", 4)) {
 		str += 4;
-	if (!strncmp (str, "imp.", 4))
+	}
+	if (!strncmp (str, "imp.", 4)) {
 		str += 4;
+	}
 	if (!strncmp (str, "__", 2)) {
 		if (str[2] == 'T') {
 			type = R_BIN_NM_SWIFT;
@@ -386,10 +393,10 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str) 
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
 	/* rust uses the same mangling as c++ and appends a uniqueid */
-	case R_BIN_NM_RUST: return r_bin_demangle_cxx (binfile, str);
+	case R_BIN_NM_RUST: return r_bin_demangle_cxx (binfile, str, vaddr);
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
 	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str, bin->demanglercmd);
-	case R_BIN_NM_CXX: return r_bin_demangle_cxx (binfile, str);
+	case R_BIN_NM_CXX: return r_bin_demangle_cxx (binfile, str, vaddr);
 	case R_BIN_NM_DLANG: return r_bin_demangle_plugin (bin, "dlang", str);
 	}
 	return NULL;

@@ -867,7 +867,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				core->anal, refi->addr, -1);
 			name = strdup (fun ? fun->name : "unk");
 			if (demangle) {
-				tmp = r_bin_demangle (core->bin->cur, lang, name);
+				tmp = r_bin_demangle (core->bin->cur, lang, name, refi->addr);
 				if (tmp) {
 					free (name);
 					name = tmp;
@@ -1032,7 +1032,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		return;
 	}
 	if (demangle) {
-		fcn_name = r_bin_demangle (core->bin->cur, lang, f->name);
+		fcn_name = r_bin_demangle (core->bin->cur, lang, f->name, f->addr);
 		if (!fcn_name) {
 			fcn_name = strdup (f->name);
 		}
@@ -1427,7 +1427,7 @@ static void ds_show_flags(RDisasmState *ds) {
 		//beginch = (iter->p && printed) ? ", " : "";
 		if (ds->asm_demangle && flag->realname) {
 			const char *lang = r_config_get (core->config, "bin.lang");
-			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname);
+			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset);
 			r_cons_printf ("%s:\n", name? name: flag->realname);
 			R_FREE (name);
 		} else {

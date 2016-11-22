@@ -1094,7 +1094,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s_%d", reloc_name, (int)(addr&0xff));
 		}
 		if (bin_demangle) {
-			demname = r_bin_demangle (r->bin->cur, lang, str);
+			demname = r_bin_demangle (r->bin->cur, lang, str, addr);
 		}
 		r_name_filter (str, 0);
 		fi = r_flag_set (r->flags, str, addr, bin_reloc_size (reloc));
@@ -1152,7 +1152,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				? strdup (reloc->import->name)
 				: (reloc->symbol ? strdup (reloc->symbol->name) : NULL);
 			if (name && bin_demangle) {
-				char *mn = r_bin_demangle (r->bin->cur, NULL, name);
+				char *mn = r_bin_demangle (r->bin->cur, NULL, name, addr);
 				if (mn) {
 					free (name);
 					name = mn;
@@ -1185,7 +1185,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				? strdup (reloc->symbol->name)
 				: strdup ("null");
 			if (bin_demangle) {
-				char *mn = r_bin_demangle (r->bin->cur, NULL, name);
+				char *mn = r_bin_demangle (r->bin->cur, NULL, name, addr);
 				if (mn && *mn) {
 					free (name);
 					name = mn;
@@ -1338,8 +1338,9 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			continue;
 		}
 		symname = strdup (import->name);
+		addr = impaddr (r->bin, va, symname);
 		if (bin_demangle) {
-			char *dname = r_bin_demangle (r->bin->cur, NULL, symname);
+			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr);
 			if (dname) {
 				free (symname);
 				symname = r_str_newf ("sym.imp.%s", dname);
@@ -1353,7 +1354,6 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			symname = prname;
 		}
 		escname = r_str_escape (symname);
-		addr = impaddr (r->bin, va, symname);
 		if (IS_MODE_SET (mode)) {
 			// TODO(eddyb) symbols that are imports.
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -1459,7 +1459,7 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	sn->demname = NULL;
 	sn->demflag = NULL;
 	if (bin_demangle && sym->paddr) {
-		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name);
+		sn->demname = r_bin_demangle (r->bin->cur, lang, sn->name, sym->vaddr);
 		if (sn->demname) {
 			sn->demflag = r_str_newf ("%s.%s", pfx, sn->demname);
 			r_name_filter (sn->demflag, -1);

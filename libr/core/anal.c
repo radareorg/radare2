@@ -1683,8 +1683,7 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 
 	char *name = strdup (fcn->name ? fcn->name : "");
 	if (demangle) {
-		char *tmp;
-		tmp = r_bin_demangle (core->bin->cur, lang, name);
+		char *tmp = r_bin_demangle (core->bin->cur, lang, name, fcn->addr);
 		if (tmp) {
 			free (name);
 			name = tmp;

@@ -505,10 +505,10 @@ R_API ut64 r_bin_get_boffset(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
 R_API const char *r_bin_entry_type_string(int etype);
 
-R_API char* r_bin_demangle(RBinFile *binfile, const char *lang, const char *str);
+R_API char* r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr);
 R_API int r_bin_demangle_type (const char *str);
 R_API char *r_bin_demangle_java(const char *str);
-R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str);
+R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
@@ -533,7 +533,7 @@ R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin);
 
 R_API RBinClass *r_bin_class_get (RBinFile *binfile, const char *name);
 R_API RBinClass *r_bin_class_new (RBinFile *binfile, const char *name, const char *super, int view);
-R_API int r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs);
+R_API RBinSymbol *r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs);
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name);
 
 R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va);

@@ -114,7 +114,8 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 
 void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	if (!sdb_num_get (db, Fhandled(addr), NULL)) {
-		r_stack_push (stack, addr);
+		// XXX void* != ut64
+		r_stack_push (stack, (void*)(size_t)addr);
 		sdb_num_set (db, Fhandled(addr), 1, 0);
 	}
 }
@@ -131,14 +132,14 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr) {
 	int cur = 0;
 	bool block_end = false;
 	RStack *stack = r_stack_new (10);
-	if (!r_stack_push (stack, addr)) {
+	if (!r_stack_push (stack, (void*)(size_t)addr)) {
 		eprintf ("Cannot push start address onto handling stack\n");
 		r_stack_free (stack);
 		return UT64_MAX;
 	}
 	while (!r_stack_is_empty (stack)) {
 		block_end = false;
-		addr = r_stack_pop (stack);
+		addr = (ut64)(size_t)r_stack_pop (stack); // XXX ut64 != void*
 		eprintf ("Handling 0x%"PFMT64x"\n", addr);
 		cur = 0;
 		while (!block_end) {
@@ -236,7 +237,7 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr) {
 }
 
 static ut64 getFunctionSize(Sdb *db) {
-	ut64 min, max;
+	ut64 min = UT64_MAX, max = 0;
 	char *c, *bbs = sdb_get (db, "bbs", NULL);
 	bool first = true;
 	sdb_aforeach (c, bbs) {
@@ -264,7 +265,7 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	Sdb *db = sdb_new0 ();
 	RFlagItem *fi;
 	char *function_label;
-	bool hasnext = r_config_get_i (core->config, "anal.hasnext");
+	// bool hasnext = r_config_get_i (core->config, "anal.hasnext");
 	if (!db) {
 		eprintf ("Cannot create db\n");
 		return false;

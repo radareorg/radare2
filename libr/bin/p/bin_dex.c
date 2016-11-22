@@ -905,8 +905,6 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 	//free (class_name);
 }
 
-
-
 static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	int i;
 	int *methods = NULL;
