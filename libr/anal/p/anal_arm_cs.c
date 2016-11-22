@@ -437,11 +437,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_CSEL: // CSEL w8, w13, w14, eq
 		// TODO: w8 = eq? w13: w14
 		// COND64(4) { ARM64_CC_EQ, NE, HS, ...
-		r_strbuf_setf (&op->esil, "$z,?{,%s,}{,%s,},%s,=", 
+		r_strbuf_setf (&op->esil, "$z,?{,%s,}{,%s,},%s,=",
 			REG64(1), REG64(2), REG64(0));
 		break;
 	case ARM64_INS_STRB:
-		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[1]", 
+		r_strbuf_setf (&op->esil, "%s,%s,%"PFMT64d",+,=[1]",
 			REG64(0), MEMBASE64(1), MEMDISP64(1));
 		break;
 	case ARM64_INS_STUR:
@@ -549,7 +549,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 }
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
-	bool hascond = false;
+	const char *close_cond[3];
+	close_cond[0] = "\0";
+	close_cond[1] = ",}\0";
+	close_cond[2] = ",},}\0";
+	int close_type = 0;
 	int i;
 	char str[32][32];
 	int msr_flags;
@@ -559,19 +563,66 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 	switch (insn->detail->arm.cc) {
-	case ARM_CC_AL:
-		// no condition
-		break;
 	case ARM_CC_EQ:
-		hascond = true;
+		close_type = 1;
 		r_strbuf_setf (&op->esil, "zf,?{,");
 		break;
 	case ARM_CC_NE:
+		close_type = 1;
 		r_strbuf_setf (&op->esil, "zf,!,?{,");
-		hascond = true;
+		break;
+	case ARM_CC_HS:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "cf,?{,");
+		break;
+	case ARM_CC_LO:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "cf,!,?{,");
+		break;
+	case ARM_CC_MI:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "nf,?{,");
+		break;
+	case ARM_CC_PL:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "nf,!,?{,");
+		break;
+	case ARM_CC_VS:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "vf,?{,");
+		break;
+	case ARM_CC_VC:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "vf,!,?{,");
+		break;
+	case ARM_CC_HI:
+		close_type = 2;
+		r_strbuf_setf (&op->esil, "cf,?{,zf,!,?{,");
+		break;
+	case ARM_CC_LS:
+		close_type = 2;
+		r_strbuf_setf (&op->esil, "cf,!,?{,zf,?{,");
+		break;
+	case ARM_CC_GE:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "nf,vf,==,!,?{,");
+		break;
+	case ARM_CC_LT:
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "nf,vf,!=,!,?{,");
 		break;
 	case ARM_CC_GT:
+		// zf == 0 && nf == vf
+		close_type = 2;
+		r_strbuf_setf (&op->esil, "zf,!,?{,nf,vf,==?{,");
+		break;
 	case ARM_CC_LE:
+		// zf == 1 && nf != vf
+		close_type = 2;
+		r_strbuf_setf (&op->esil, "zf,?{,nf,vf,!=?{,");
+		break;
+	case ARM_CC_AL:
+		// always executed
 		break;
 	default:
 		break;
@@ -580,7 +631,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (insn->id) {
 	case ARM_INS_IT:
-		// TODO: See #3486
+		r_strbuf_appendf (&op->esil, "%d,pc,+=%s", op->fail, close_cond[close_type]);
 		break;
 	case ARM_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
@@ -684,7 +735,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_B:
-		r_strbuf_appendf (&op->esil, "%s,pc,=%s", ARG(0), hascond? ",}":"");
+		r_strbuf_appendf (&op->esil, "%s,pc,=%s", ARG(0), close_cond[close_type]);
 		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
@@ -1737,20 +1788,20 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r15	.32	60	0\n"
 		"gpr	r16	.32	64	0\n"
 		"gpr	r17	.32	68	0\n"
-		"gpr	cpsr	.32	72	0\n"
-		"gpr	tf	.1	72.5	0	thumb\n" // +5
-		"gpr	ef	.1	72.9	0	endian\n" // +9
+		"flg	cpsr	.32	.72	0\n"
+		"flg	tf	.1	.77	0	thumb\n" // +5
+		"flg	ef	.1	.81	0	endian\n" // +9
 		// ...
-		"gpr	jf	.1	72.24	0	java\n" // +24
+		"flg	jf	.1	.96	0	java\n" // +24
 		// ...
-		"gpr	qf	.1	72.27	0	sticky_overflow\n" // +27
-		"gpr	vf	.1	72.28	0	overflow\n" // +28
-		"gpr	cf	.1	72.29	0	carry\n" // +29
-		"gpr	zf	.1	72.30	0	zero\n" // +30
-		"gpr	nf	.1	72.31	0	negative\n" // +31
+		"flg	qf	.1	.99	0	sticky_overflow\n" // +27
+		"flg	vf	.1	.100	0	overflow\n" // +28
+		"flg	cf	.1	.101	0	carry\n" // +29
+		"flg	zf	.1	.102	0	zero\n" // +30
+		"flg	nf	.1	.103	0	negative\n" // +31
 		// if-then-counter
-		"gpr	itc	.4	72.10	0	if_then_count\n" // +10
-		"gpr	gef	.4	72.16	0	great_or_equal\n" // +16
+		"flg	itc	.4	.82	0	if_then_count\n" // +10
+		"flg	gef	.4	.88	0	great_or_equal\n" // +16
 		;
 	}
 	return strdup (p);
