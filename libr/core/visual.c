@@ -1728,14 +1728,22 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case '[':
-		{
+		if (core->print->cur_enabled) {
+			int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
+			if (cmtcol > 2) {
+				r_config_set_i (core->config, "asm.cmtcol", cmtcol-2);
+			}
+		} else {
 			int scrcols = r_config_get_i (core->config, "hex.cols");
-			if (scrcols>2)
+			if (scrcols > 2)
 				r_config_set_i (core->config, "hex.cols", scrcols-2);
 		}
 		break;
 	case ']':
-		{
+		if (core->print->cur_enabled) {
+			int cmtcol = r_config_get_i (core->config, "asm.cmtcol");
+			r_config_set_i (core->config, "asm.cmtcol", cmtcol+2);
+		} else {
 			int scrcols = r_config_get_i (core->config, "hex.cols");
 			r_config_set_i (core->config, "hex.cols", scrcols+2);
 		}
