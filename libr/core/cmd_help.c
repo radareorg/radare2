@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake */
-#include <stddef.h>
 
+#include <stddef.h>
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_util.h"
@@ -15,7 +15,7 @@ static const char* findBreakChar(const char *s) {
 	return s;
 }
 
-static char *filter_flags(RCore *core, const char *msg) {
+static char *filterFlags(RCore *core, const char *msg) {
 	const char *dollar, *end;
 	char *word, *buf = NULL;
 	for (;;) {
@@ -577,14 +577,14 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == 'n') { // mimic echo -n
 			const char *msg = r_str_chop_ro (input+2);
 			// TODO: replace all ${flagname} by its value in hexa
-			char *newmsg = filter_flags (core, msg);
+			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
 			r_cons_print (newmsg);
 			free (newmsg);
 		} else {
 			const char *msg = r_str_chop_ro (input+1);
 			// TODO: replace all ${flagname} by its value in hexa
-			char *newmsg = filter_flags (core, msg);
+			char *newmsg = filterFlags (core, msg);
 			r_str_unescape (newmsg);
 			r_cons_println (newmsg);
 			free (newmsg);

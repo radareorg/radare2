@@ -20,6 +20,8 @@ R_API void r_cons_grep_help() {
 "|   ^        words must be placed at the beginning of line\n"
 "|   !        negate grep\n"
 "|   ?        count number of matching lines\n"
+"|   ?.       count number chars\n"
+"|   ??       show this help message\n"
 "|   ..       internal 'less'\n"
 "|   {}       json indentation\n"
 "|   {}..     less json indentation\n"
@@ -104,8 +106,13 @@ R_API void r_cons_grep(const char *str) {
 			str++;
 			cons->grep.neg = 1;
 			break;
-		case '?': str++; cons->grep.counter = 1;
-			if (*str == '?') {
+		case '?':
+			str++;
+			cons->grep.counter = 1;
+			if (*str == '.') {
+				cons->grep.charCounter = true;
+				str++;
+			} else if (*str == '?') {
 				r_cons_grep_help ();
 				return;
 			}
@@ -402,10 +409,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	free (tbuf);
 	free (tline);
 	if (cons->grep.counter) {
+		int cnt = cons->grep.charCounter? strlen (cons->buffer): cons->lines;
 		if (cons->buffer_len < 10) {
 			cons->buffer_len = 10; // HACK
 		}
-		snprintf (cons->buffer, cons->buffer_len, "%d\n", cons->lines);
+		snprintf (cons->buffer, cons->buffer_len, "%d\n", cnt);
 		cons->buffer_len = strlen (cons->buffer);
 		cons->num->value = cons->lines;
 	}
