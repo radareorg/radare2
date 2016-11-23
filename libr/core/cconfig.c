@@ -1563,7 +1563,7 @@ static int cb_anal_pushret(void *user, void *data) {
 	return true;
 }
 
-static int cb_anal_followbrokenfcnsrefs(void *user, void *data) {
+static int cb_anal_brokenrefs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->anal->opt.followbrokenfcnsrefs = node->i_value;
@@ -1656,7 +1656,7 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->cb_printf = r_cons_printf;
 	cfg->num = core->num;
 	/* pdb */
-	SETPREF("pdb.user_agent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
+	SETPREF("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF("pdb.server", "http://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
 	SETI("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 
@@ -1681,7 +1681,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB("anal.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	SETCB("anal.bbsplit", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
 	SETCB("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
 	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
@@ -1698,12 +1697,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.jmpref", "true", &cb_anal_jmpref, "Create references for unconditional jumps");
 
 	SETCB("anal.jmpabove", "true", &cb_anal_jmpabove, "Jump above function pointer");
-	SETCB("anal.followdatarefs", "false", &cb_anal_followdatarefs, "Follow data references for code coverage");
-	SETCB("anal.followbrokenfcnsrefs", "false", &cb_anal_followbrokenfcnsrefs, "Follow function references as well if function analysis was failed");
+	SETCB("anal.datarefs", "false", &cb_anal_followdatarefs, "Follow data references for code coverage");
+	SETCB("anal.brokenrefs", "false", &cb_anal_brokenrefs, "Follow function references as well if function analysis was failed");
 
 	SETCB("anal.searchstringrefs", "false", &cb_anal_searchstringrefs, "Search string references in data references");
-	SETCB("anal.bbs_alignment", "0x10", &cb_anal_bbs_alignment, "Possible space between basic blocks");
-	SETCB("anal.bb_max_size", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
+	SETCB("anal.bb.split", "true", &cb_analbbsplit, "Use the experimental basic block split for JMPs");
+	SETCB("anal.bb.align", "0x10", &cb_anal_bbs_alignment, "Possible space between basic blocks");
+	SETCB("anal.bb.maxsize", "1024", &cb_anal_bb_max_size, "Maximum basic block size");
 	SETCB("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
@@ -1911,7 +1911,7 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	SETCB("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
-	SETPREF("dbg.shallow_trace", "false", "While tracing, avoid following calls outside specified range");
+	SETPREF("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
 	SETPREF("dbg.exitkills", "true", "Kill process on exit");
 	SETCB("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
 
@@ -2089,8 +2089,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
 	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
 	SETCB("scr.fps", "false", &cb_fps, "Show FPS in Visual");
-	SETICB("scr.fix_rows", 0, &cb_fixrows, "Workaround for Linux TTY");
-	SETICB("scr.fix_columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
+	SETICB("scr.fix.rows", 0, &cb_fixrows, "Workaround for Linux TTY");
+	SETICB("scr.fix.columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS SSH client");
 	SETCB("scr.highlight", "", &cb_scrhighlight, "Highlight that word at RCons level");
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interactive mode");
 	SETI("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");

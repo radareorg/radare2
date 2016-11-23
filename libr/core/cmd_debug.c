@@ -2393,7 +2393,7 @@ static void trace_traverse (RTree *t) {
 }
 
 static void do_debug_trace_calls (RCore *core, ut64 from, ut64 to, ut64 final_addr) {
-	int shallow_trace = r_config_get_i (core->config, "dbg.shallow_trace");
+	int shallow_trace = r_config_get_i (core->config, "dbg.trace.inrange");
 	Sdb *tracenodes = core->dbg->tracenodes;
 	RTree *tr = core->dbg->tree;
 	RDebug *dbg = core->dbg;

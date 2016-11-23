@@ -994,7 +994,7 @@ int main(int argc, char **argv) {
 			r_config_set (core.config, "pdb.server", env_pdbserver);
 		}
 		if (env_useragent && *env_useragent) {
-			r_config_set (core.config, "pdb.user_agent", env_useragent);
+			r_config_set (core.config, "pdb.useragent", env_useragent);
 		}
 		if (env_pdbextract && *env_pdbextract) {
 			r_config_set_i (core.config, "pdb.extract", !(*env_pdbextract == '0'));
@@ -1005,7 +1005,7 @@ int main(int argc, char **argv) {
 		opt.dbg_file = info->debug_file_name;
 		opt.guid = info->guid;
 		opt.symbol_server = (char *)r_config_get (core.config, "pdb.server");
-		opt.user_agent = (char *)r_config_get (core.config, "pdb.user_agent");
+		opt.user_agent = (char *)r_config_get (core.config, "pdb.useragent");
 		opt.path = path;
 		opt.extract = r_config_get_i(core.config, "pdb.extract");
 
