@@ -317,12 +317,14 @@ R_API int r_anal_type_func_args_count(RAnal *anal, const char *func_name) {
 R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i) {
 	const char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get (anal->sdb_types, query, 0);
-	char *comma = strchr (ret, ',');
-	if (comma) {
-		*comma = 0;
-		return ret;
+	if (ret) {
+		char *comma = strchr (ret, ',');
+		if (comma) {
+			*comma = 0;
+			return ret;
+		}
+		free (ret);
 	}
-	free (ret);
 	return NULL;
 }
 
