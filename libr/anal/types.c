@@ -26,6 +26,9 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	char *p, str[128], str2[128];
 	Sdb *DB = anal->sdb_types;
 	const char *kind = sdb_const_get (DB, name, 0);
+	if (!kind) {
+		return;
+	}
 	snprintf (str, sizeof (str), "%s.%s", kind, name);
 
 #define SDB_FOREACH(x,y,z) for (z = 0; (p = sdb_array_get (x, y, z, NULL)); z++)
@@ -58,6 +61,9 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 		if (members) {
 			do {
 				char *name = sdb_anext (ptr, &next);
+				if (!name) {
+					break;
+				}
 				query = sdb_fmt (-1, "struct.%s.%s", type, name);
 				char *subtype = sdb_get (anal->sdb_types, query, 0);
 				if (!subtype) {
@@ -129,14 +135,16 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 			RAnalVar *arg = R_NEW0 (RAnalVar);
 			key = r_str_newf ("func.%s.arg.%d", kv->key, i);
 			value = sdb_get (anal->sdb_types, key, 0);
-			name = strstr (value, ",");
-			*name++ = 0;
-			arg->name = strdup (name);
-			arg->type = value;
-			arg->kind = 'a';
-			//TODO Calculate the size and the delta
-			arg->delta = i;
-			r_list_append (fcn->vars, arg);
+			if (value) {
+				name = strstr (value, ",");
+				*name++ = 0;
+				arg->name = strdup (name);
+				arg->type = value;
+				arg->kind = 'a';
+				//TODO Calculate the size and the delta
+				arg->delta = i;
+				r_list_append (fcn->vars, arg);
+			}
 		}
 
 	}
@@ -248,8 +256,9 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 					// special case for char[]. Use char* format type without *
 					if (!strncmp (type, "char", 5) && elements > 0) {
 						tfmt = sdb_const_get (DB, "type.char *", NULL);
-						if (tfmt && *tfmt == '*')
+						if (tfmt && *tfmt == '*') {
 							tfmt++;
+						}
 					} else {
 						if (!strncmp (type, "enum ", 5)) {
 							snprintf (var3, sizeof (var3), "%s", type + 5);
@@ -331,10 +340,15 @@ R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i
 R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i) {
 	const char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get (anal->sdb_types, query, 0);
-	char *ret = strchr (get, ',');
-	return ret == 0 ? ret : ret + 1;
+	if (get) {
+		char *ret = strchr (get, ',');
+		return ret == 0 ? ret : ret + 1;
+	}
+	return NULL;
 }
-static int capture_sub_string (void *p, const char *k, const char *v) {
+
+/* WTF always return 1? */
+static int captureSubString (void *p, const char *k, const char *v) {
 	char **ret = (char **)p;
 	if (strcmp (v, "func")) {
 		return 1;
@@ -350,6 +364,6 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 		NULL,
 		func_name
 	};
-	sdb_foreach (anal->sdb_types, capture_sub_string, ret);
+	sdb_foreach (anal->sdb_types, captureSubString, ret);
 	return ret[0];
 }

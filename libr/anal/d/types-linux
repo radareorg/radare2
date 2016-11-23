@@ -70,3 +70,9 @@ func.exit.args=1
 func.exit.arg.0=int,status
 func.exit.noreturn=true
 func.exit.ret=void
+
+access=func
+func.access.args=2
+func.access.arg.0=const char *,path
+func.access.arg.1=int,mode
+func.access.ret=int

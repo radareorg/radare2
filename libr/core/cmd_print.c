@@ -2512,9 +2512,6 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			}
 		}
-		if (use_color) {
-			r_cons_print (Color_RESET);
-		}
 		switch (mode) {
 		case 'j':
 			r_cons_strcat ("]}\n");
@@ -2528,6 +2525,9 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		default:
 			r_cons_printf ("] 0x%"PFMT64x"\n", to);
+			if (use_color) {
+				r_cons_print (Color_RESET);
+			}
 		}
 		r_core_anal_stats_free (as);
 		break;
