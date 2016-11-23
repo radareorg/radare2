@@ -119,9 +119,10 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	}
 }
 
-R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name) {
-	if (strnull (name))
+R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name) { 
+	if (strnull (name)) {
 		return NULL;
+	}
 	return r_hashtable_lookup (cfg->ht, r_str_hash (name));
 }
 
@@ -154,7 +155,9 @@ static bool is_bool(const char *s) {
 R_API const char *r_config_get(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
-		if (node->getter) node->getter (cfg->user, node);
+		if (node->getter) {
+			node->getter (cfg->user, node);
+		}	
 		cfg->last_notfound = 0;
 		if (node->flags & CN_BOOL) {
 			return r_str_bool (is_true (node->value));
@@ -179,10 +182,12 @@ R_API int r_config_toggle(RConfig *cfg, const char *name) {
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
-		if (node->getter)
+		if (node->getter) {
 			node->getter (cfg->user, node);
-		if (node->i_value != 0 || !strcmp (node->value, "false"))
+		}
+		if (node->i_value || !strcmp (node->value, "false")) {
 			return node->i_value;
+		}
 		return (ut64)r_num_math (cfg->num, node->value);
 	}
 	return (ut64)0LL;
@@ -499,4 +504,78 @@ R_API void r_config_bump(RConfig *cfg, const char *key) {
 	char *orig = strdup (r_config_get (cfg, key));
 	r_config_set (cfg, key, orig);
 	free (orig);
+}
+
+R_API bool r_config_save_char(RConfigHold *h, ...) {
+	va_list ap;
+	char *key;
+	if (!h->list_char) {
+		h->list_char = r_list_newf ((RListFree)free);
+		if (!h->list_char) {
+			return false;
+		}
+	}
+	va_start (ap, h);
+	while ((key = va_arg (ap, char*))) {
+		RConfigHoldChar *hc = R_NEW0 (RConfigHoldChar);
+		if (!hc) {
+			continue;
+		}
+		hc->key = key;
+		hc->value = r_config_get (h->cfg, key); 
+		r_list_append (h->list_char, hc);
+	}
+	va_end (ap);
+	return true;
+}
+
+R_API bool r_config_save_num(RConfigHold *h, ...) {
+	va_list ap;
+	char *key;
+	if (!h->list_num) {
+		h->list_num = r_list_newf ((RListFree)free);
+		if (!h->list_num) {
+			return false;
+		}
+	}
+	va_start (ap, h);
+	while ((key = va_arg (ap, char*))) {
+		RConfigHoldNum *hc = R_NEW0 (RConfigHoldNum);
+		if (!hc) {
+			continue;
+		}
+		hc->key = key;
+		hc->value = r_config_get_i (h->cfg, key); 
+		r_list_append (h->list_num, hc);
+	}
+	va_end (ap);
+	return true;
+}
+
+R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
+	RConfigHold* hold = R_NEW0 (RConfigHold);
+	if (hold) {
+		hold->cfg = cfg;
+		return hold;
+	}
+	return NULL;
+}
+
+R_API void r_config_restore(RConfigHold *h) {
+	RListIter *iter;
+	RConfigHoldChar *hchar;
+	RConfigHoldNum *hnum;
+
+	r_list_foreach (h->list_num, iter, hnum) {
+		r_config_set_i (h->cfg, hnum->key, hnum->value);
+	}		
+	r_list_foreach (h->list_char, iter, hchar) {
+		r_config_set (h->cfg, hchar->key, hchar->value);
+	}		
+}
+
+R_API void r_config_hold_free(RConfigHold* h) {
+	r_list_free (h->list_num);
+	r_list_free (h->list_char);
+	R_FREE (h);
 }

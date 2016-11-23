@@ -1551,12 +1551,12 @@ static void set_layout(RAGraph *g) {
 
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	char *body;
-	const bool o_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
-	const bool o_lines = r_config_get_i (core->config, "asm.lines");
-	const bool o_bytes = r_config_get_i (core->config, "asm.bytes");
-	const int o_cmtcol = r_config_get_i (core->config, "asm.cmtcol");
-	const bool o_marks = r_config_get_i (core->config, "asm.marks");
-	const bool o_offset = r_config_get_i (core->config, "asm.offset");
+	RConfigHold *hc = r_config_hold_new (core->config);
+	if (!hc) {
+		return NULL;
+	}
+	r_config_save_num (hc, "asm.fcnlines", "asm.lines", "asm.bytes", 
+		"asm.cmtcol", "asm.marks", "asm.marks", "asm.offset", "asm.comments", NULL);
 	const bool o_comments = r_config_get_i (core->config, "asm.comments");
 	int o_cursor = core->print->cur_enabled;
 
@@ -1582,13 +1582,8 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 
 	// restore original options
 	core->print->cur_enabled = o_cursor;
-	r_config_set_i (core->config, "asm.fcnlines", o_fcnlines);
-	r_config_set_i (core->config, "asm.lines", o_lines);
-	r_config_set_i (core->config, "asm.bytes", o_bytes);
-	r_config_set_i (core->config, "asm.cmtcol", o_cmtcol);
-	r_config_set_i (core->config, "asm.marks", o_marks);
-	r_config_set_i (core->config, "asm.offset", o_offset);
-	r_config_set_i (core->config, "asm.comments", o_comments);
+	r_config_restore (hc);
+	r_config_hold_free (hc);
 	return body;
 }
 

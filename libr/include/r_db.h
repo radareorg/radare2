@@ -57,13 +57,6 @@ typedef struct r_db_table_t {
 	int *offset;
 } RDatabaseTable;
 
-#if 0
-it = r_db_iterator (db);
-while (r_db_iter_next(it)) {
-	f = (RAnalFcn*) r_db_iter_get (it);
-	/* ... */
-}
-#endif
 
 typedef struct r_pair_item_t {
 	char *k, *v;
