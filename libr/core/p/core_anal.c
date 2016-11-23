@@ -28,7 +28,6 @@ static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 		}
 
 		block_end = sdb_num_get (db, Fbb(block_start), NULL);
-		eprintf ("current : 0x%"PFMT64x" end: 0x%08"PFMT64x"\n", block_start, block_end);
 		if (block_end) {
 			if (start > block_start && start < block_end) { // case 2
 				// start is inside the block
@@ -53,14 +52,12 @@ static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 */
 
 static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
-	eprintf ("bb add: from: 0x%08"PFMT64x" to: 0x%08"PFMT64x" jump: 0x%08"PFMT64x" fail: 0x%08"PFMT64x"\n", from, to, jump, fail);
 	ut64 block_end, block_start = getCrossingBlock (db, "bbs", from, to);
 	int add = 1;
 	if (block_start == UT64_MAX) {
 		// add = 1;
 	} else if (block_start == from) {
 		// check if size is the same,
-		eprintf ("basic block already analyzed\n");
 		add = 0;
 	} else {
 		block_end = sdb_num_get (db, Fbb(block_start), NULL);
@@ -76,33 +73,19 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 		if (from > block_start) {
 			// from inside
 			// RESIZE this
-			eprintf ("block1 s: 0x%"PFMT64x" e: 0x%"PFMT64x"\n", block_start, from);
 			sdb_num_set (db, Fbb(block_start), from, 0);
 			sdb_num_set (db, FbbTo(block_start), from, 0);
-			ut64 old_jump = sdb_array_get_num (db, FbbTo(block_start), 0, NULL);
-			ut64 old_fail = sdb_array_get_num (db, FbbTo(block_start), 1, NULL);
 			sdb_array_set_num (db, FbbTo(block_start), 0, from, 0);
 			sdb_array_set_num (db, FbbTo(block_start), 1, UT64_MAX, 0);
-			if (old_jump != jump || old_fail != fail) {
-				eprintf ("####### 0x%"PFMT64x" has different childs\n", block_start);
-				eprintf ("#### old_j = 0x%"PFMT64x" new_j = 0x%"PFMT64x" and old_f = 0x%"PFMT64x" new_f = 0x%"PFMT64x"\n", 
-						old_jump, jump, old_fail, fail);
-			}
-			// new one:
-			eprintf ("block2 s: 0x%08"PFMT64x" e: 0x%08"PFMT64x"\n", from, block_end);
 		} else {
 			// < the current runs into a known block
-			// new one:
 			to = block_start;
 			jump = block_start;
 			fail = UT64_MAX;
-			eprintf ("block1 s: 0x%"PFMT64x" e: 0x%"PFMT64x"\n", from, block_start);
-			eprintf ("block2 s: 0x%"PFMT64x" e: 0x%"PFMT64x"\n", block_start, block_end);
 		}
 	}
 	if (add) {
 		sdb_array_add_num (db, "bbs", from, 0);
-		eprintf ("####### adding 0x%08"PFMT64x"\n", from);
 		sdb_num_set (db, Fbb(from), to, 0);
 		sdb_array_set_num (db, FbbTo(from), 0, jump, 0);
 		sdb_array_set_num (db, FbbTo(from), 1, fail, 0);
@@ -114,8 +97,17 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 
 void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	if (!sdb_num_get (db, Fhandled(addr), NULL)) {
-		// XXX void* != ut64
-		r_stack_push (stack, (void*)(size_t)addr);
+		ut64* value = (ut64*) malloc (1 * sizeof(ut64));
+		if (!value) {
+			eprintf ("Failed to allocate memory for address stack\n");
+			return;
+		}
+		*value = addr;
+		if (!r_stack_push (stack, (void*)value)) {
+			eprintf ("Failed to push address on stack\n");
+			free (value);
+			return;
+		}
 		sdb_num_set (db, Fhandled(addr), 1, 0);
 	}
 }
@@ -128,19 +120,23 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr) {
 #define addRet(x) sdb_array_add_num (db, "rets", x, 0);
 #define bbAddOpcode(x) sdb_array_insert_num (db, sdb_fmt (0, "bb.%"PFMT64x, addr+cur), -1, x, 0);
 	ut64 oaddr = addr;
+	ut64 *value = NULL;
 	RAnalOp *op;
 	int cur = 0;
 	bool block_end = false;
-	RStack *stack = r_stack_new (10);
-	if (!r_stack_push (stack, (void*)(size_t)addr)) {
-		eprintf ("Cannot push start address onto handling stack\n");
-		r_stack_free (stack);
-		return UT64_MAX;
-	}
+	RStack *stack = r_stack_newf (10, free);
+	addTarget (core, stack, db, addr);
+
 	while (!r_stack_is_empty (stack)) {
 		block_end = false;
-		addr = (ut64)(size_t)r_stack_pop (stack); // XXX ut64 != void*
-		eprintf ("Handling 0x%"PFMT64x"\n", addr);
+		value = (ut64*) r_stack_pop (stack);
+		if (!value) {
+			eprintf ("Failed to pop next address from stack\n");
+			break;
+		}
+
+		addr = *value;
+		free (value);
 		cur = 0;
 		while (!block_end) {
 			op = r_core_anal_op (core, addr + cur);
@@ -148,7 +144,6 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr) {
 				eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
 				break;
 			}
-			eprintf ("0x%08"PFMT64x"  %s\n", addr + cur, op->mnemonic);
 			if (op->mnemonic[0] == '?') {
 				eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
 				break;
@@ -159,7 +154,6 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr) {
 			case R_ANAL_OP_TYPE_NOP:
 				// skip nops
 				if (cur == 0) {
-					eprintf ("NOPSKIP %d\n", op->size);
 					cur -= op->size;
 					addr += op->size;
 					oaddr += op->size;
@@ -195,8 +189,7 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr) {
 				break;
 			case R_ANAL_OP_TYPE_TRAP:
 				if (cur == 0) {
-					// we skip leading int3 too?
-					eprintf ("TRAPSKIP %d\n", op->size);
+					// skip leading int3
 					cur -= op->size;
 					addr += op->size;
 					oaddr += op->size;
@@ -278,13 +271,15 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	}
 	sdb_num_set (db, "addr", addr, 0);
 
-	eprintf ("addr: %s\n", sdb_const_get (db, "addr", NULL));
-	eprintf ("calls: %s\n", sdb_const_get (db, "calls", NULL));
-	eprintf ("ucalls: %s\n", sdb_const_get (db, "ucalls", NULL));
-	eprintf ("cjmps: %s\n", sdb_const_get (db, "cjmps", NULL));
-	eprintf ("ujmps: %s\n", sdb_const_get (db, "ujmps", NULL));
-	eprintf ("rets: %s\n", sdb_const_get (db, "rets", NULL));
-	eprintf ("bbs: %s\n", sdb_const_get (db, "bbs", NULL));
+	//TODO add the possible addresses to the analysis stack
+	//TODO add xrefs
+	//eprintf ("addr: %s\n", sdb_const_get (db, "addr", NULL));
+	//eprintf ("calls: %s\n", sdb_const_get (db, "calls", NULL));
+	//eprintf ("ucalls: %s\n", sdb_const_get (db, "ucalls", NULL));
+	//eprintf ("cjmps: %s\n", sdb_const_get (db, "cjmps", NULL));
+	//eprintf ("ujmps: %s\n", sdb_const_get (db, "ujmps", NULL));
+	//eprintf ("rets: %s\n", sdb_const_get (db, "rets", NULL));
+	//eprintf ("bbs: %s\n", sdb_const_get (db, "bbs", NULL));
 
 	// fcnfit to get fcn size
 	sdb_num_set (db, "size", getFunctionSize (db), 0);
@@ -309,9 +304,6 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 			ut64 addr = sdb_atoi (c);
 			ut64 addr_end = sdb_num_get (db, Fbb(addr), NULL);
 			// check if call destination is inside the function boundaries
-			eprintf ("BB 0x%08"PFMT64x" - 0x%08"PFMT64x"  %d\n",
-				addr, addr_end, (int)(addr_end-addr));
-			eprintf ("  -> %s\n", sdb_const_get (db, FbbTo (addr), 0));
 			jump = sdb_array_get_num (db, FbbTo(addr), 0, NULL);
 			fail = sdb_array_get_num (db, FbbTo(addr), 1, NULL);
 
@@ -324,17 +316,16 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 		free (bbs);
 		free (function_label);
 	}
-	eprintf ("size: %s\n", sdb_const_get (db, "size", NULL));
 	// analyze next calls
-	{
-		char *c, *calls = sdb_get (db, "calls", NULL);
-		sdb_aforeach (c, calls) {
-			ut64 addr = sdb_atoi (c);
-			r_cons_printf ("a2f @ 0x%"PFMT64x"\n", addr);
-			sdb_aforeach_next (c);
-		}
-		free (calls);
-	}
+//	{
+//		char *c, *calls = sdb_get (db, "calls", NULL);
+//		sdb_aforeach (c, calls) {
+//			ut64 addr = sdb_atoi (c);
+//			r_cons_printf ("a2f @ 0x%"PFMT64x"\n", addr);
+//			sdb_aforeach_next (c);
+//		}
+//		free (calls);
+//	}
 	sdb_free (db);
 	return true;
 }
