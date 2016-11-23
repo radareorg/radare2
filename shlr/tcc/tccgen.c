@@ -1633,7 +1633,7 @@ ST_FUNC void unary(void)
         /* fall thru */
     case TOK___FUNC__:
         {
-            void *ptr = NULL;
+            // void *ptr = NULL;
             int len;
             /* special function name identifier */
             len = strlen(funcname) + 1;

@@ -826,7 +826,7 @@ static int bin_dwarf(RCore *core, int mode) {
 				free (cmt);
 #endif
 			} else {
-				r_cons_printf (core, "CL %s:%d 0x%08"PFMT64x"\n", file, (int)row->line, row->address);
+				r_cons_printf ("CL %s:%d 0x%08"PFMT64x"\n", file, (int)row->line, row->address);
 				r_cons_printf ("\"CC %s:%d %s\"@0x%"PFMT64x"\n", file, row->line, line?line:"", row->address);
 			}
 			free (file);

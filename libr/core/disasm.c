@@ -198,6 +198,8 @@ typedef struct r_disam_options_t {
 	// caches
 	char *_tabsbuf;
 	int _tabsoff;
+	bool dwarfFile;
+	bool dwarfAbspath;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
@@ -397,6 +399,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->tracespace = r_config_get_i (core->config, "asm.tracespace");
 	ds->cyclespace = r_config_get_i (core->config, "asm.cyclespace");
 	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
+	ds->dwarfFile = r_config_get_i (ds->core->config, "asm.dwarf.file");
+	ds->dwarfAbspath = r_config_get_i (ds->core->config, "asm.dwarf.abspath");
 	ds->show_lines_call = r_config_get_i (core->config, "asm.lines.call");
 	ds->show_lines_ret = r_config_get_i (core->config, "asm.lines.ret");
 	ds->show_size = r_config_get_i (core->config, "asm.size");
@@ -2470,10 +2474,9 @@ static void ds_print_dwarf(RDisasmState *ds) {
 		if (len < 30) {
 			len = 30 - len;
 		}
-// TODO: cache value in ds
-		int dwarfFile = r_config_get_i (ds->core->config, "asm.dwarf.file")? 1: 0;
-		dwarfFile += r_config_get_i (ds->core->config, "asm.dwarf.abspath")? 1: 0;
-free (ds->sl);
+		// TODO: cache value in ds
+		int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
+		free (ds->sl);
 		ds->sl = r_bin_addr2text (ds->core->bin, ds->at, dwarfFile);
 		if (ds->sl) {
 			if ((!ds->osl || (ds->osl && strcmp (ds->sl, ds->osl)))) {
@@ -2481,29 +2484,6 @@ free (ds->sl);
 				if (!line) {
 					return;
 				}
-// TODO: cache value in ds
-				bool chopPath = !r_config_get_i (ds->core->config, "asm.dwarf.abspath");
-#if 0
-				if (!chopPath) {
-					char *nl = r_str_newf ("%s/%s", line);
-					free (line);
-					line = nl;
-				}
-#endif
-#if 0
-				if (chopPath) {
-r_cons_printf ("(((%s)))", line);
-					char *eyes = strchr (line, ':');
-					if (eyes) {
-						*eyes = 0;
-						const char *slash = r_str_lchr (line, '/');
-						*eyes = ':';
-						if (slash) {
-							memmove (line, slash + 1, strlen (slash));
-						}
-					}
-				}
-#endif
 				r_str_replace_char (line, '\t', ' ');
 				r_str_replace_char (line, '\x1b', ' ');
 				r_str_replace_char (line, '\r', ' ');
