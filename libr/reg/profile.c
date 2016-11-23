@@ -133,6 +133,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	r_reg_arena_pop (reg);
 	// Purge the old registers
 	r_reg_free_internal (reg, true);
+	r_reg_arena_shrink (reg);
 
 	// Cache the profile string
 	reg->reg_profile_str = strdup (str);

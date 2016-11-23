@@ -311,3 +311,16 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char* str) {
 	free (bin_str);
 	return 0;
 }
+
+R_API void r_reg_arena_shrink(RReg *reg) {
+	RListIter *iter;
+	RRegArena *a;
+	int i;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_list_foreach (reg->regset[i].pool, iter, a) {
+			free (a->bytes);
+			a->bytes = malloc (1);
+			a->size = 1;
+		}
+	}
+}
