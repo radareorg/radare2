@@ -2236,7 +2236,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
         int is_html = r_cons_singleton ()->is_html;
         int is_json = opts & R_CORE_ANAL_JSON;
         int is_keva = opts & R_CORE_ANAL_KEYVALUE;
-	int reflines, bytes, dwarf;
+	RConfigHold *hc;
 	RAnalFunction *fcni;
 	RListIter *iter;
 	int nodes = 0;
@@ -2249,11 +2249,12 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		eprintf ("No functions to diff\n");
 		return false;
 	}
-
+	hc = r_config_hold_new (core->config);
+	if (!hc) {
+		return false;
+	}
+	r_config_save_num (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
 	//opts |= R_CORE_ANAL_GRAPHBODY;
-	reflines = r_config_get_i (core->config, "asm.lines");
-	bytes = r_config_get_i (core->config, "asm.bytes");
-	dwarf = r_config_get_i (core->config, "asm.dwarf");
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
@@ -2303,9 +2304,8 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (is_json) {
 		r_cons_printf ("]\n");
 	}
-	r_config_set_i (core->config, "asm.lines", reflines);
-	r_config_set_i (core->config, "asm.bytes", bytes);
-	r_config_set_i (core->config, "asm.dwarf", dwarf);
+	r_config_restore (hc);
+	r_config_hold_free (hc);
 	return true;
 }
 

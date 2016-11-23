@@ -3,28 +3,17 @@
 #include <r_core.h>
 
 
-R_API int r_core_pseudo_code (RCore *core, const char *input) {
+R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	Sdb *db;
 	ut64 queuegoto = 0LL;
 	const char *blocktype = "else";
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
-		core->offset, R_ANAL_FCN_TYPE_NULL);
-	int asmpseudo = r_config_get_i (core->config, "asm.pseudo");
-	int asmdecode = r_config_get_i (core->config, "asm.decode");
-	int asmlines = r_config_get_i (core->config, "asm.lines");
-	int asmbytes = r_config_get_i (core->config, "asm.bytes");
-	int asmoffset = r_config_get_i (core->config, "asm.offset");
-	int asmflags = r_config_get_i (core->config, "asm.flags");
-	int asmfcnlines = r_config_get_i (core->config, "asm.fcnlines");
-	int asmcomments = r_config_get_i (core->config, "asm.comments");
-	int asmfunctions = r_config_get_i (core->config, "asm.functions");
-	int asmsection = r_config_get_i (core->config, "asm.section");
-	int asmcmtcol = r_config_get_i (core->config, "asm.cmtcol");
-	//int asmtabs = r_config_get_i (core->config, "asm.tabs");
-	int asmfilter = r_config_get_i (core->config, "asm.filter");
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	RConfigHold *hc = r_config_hold_new (core->config);
+	r_config_save_num (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", NULL);
+	r_config_save_num (hc, "asm.offset", "asm.flags", "asm.fcnlines", "asm.comments", NULL);
+	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmtcol", "asm.filter", NULL);
 	if (!fcn) {
-		eprintf ("Cannot find function in 0x%08"PFMT64x"\n",
-			core->offset);
+		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		return false;
 	}
 	r_config_set_i (core->config, "asm.pseudo", 1);
@@ -194,7 +183,7 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 				nindent = sdb_num_get (db, K_INDENT(addr), NULL);
 				if (indent>nindent) {
 					int i;
-					for (i=indent; i!=nindent; i--) {
+					for (i = indent; i != nindent; i--) {
 						SET_INDENT (i);
 						r_cons_printf ("\n%s}", indentstr);
 					}
@@ -206,20 +195,10 @@ R_API int r_core_pseudo_code (RCore *core, const char *input) {
 			}
 		}
 		//n_bb --;
-	} while (n_bb>0);
+	} while (n_bb > 0);
 	r_cons_printf ("}\n");
-	r_config_set_i (core->config, "asm.pseudo", asmpseudo);
-	r_config_set_i (core->config, "asm.decode", asmdecode);
-	r_config_set_i (core->config, "asm.lines", asmlines);
-	r_config_set_i (core->config, "asm.cmtcol", asmcmtcol);
-	r_config_set_i (core->config, "asm.bytes", asmbytes);
-	r_config_set_i (core->config, "asm.offset", asmoffset);
-	r_config_set_i (core->config, "asm.flags", asmflags);
-	r_config_set_i (core->config, "asm.fcnlines", asmfcnlines);
-	r_config_set_i (core->config, "asm.comments", asmcomments);
-	r_config_set_i (core->config, "asm.functions", asmfunctions);
-	r_config_set_i (core->config, "asm.section", asmsection);
-	r_config_set_i (core->config, "asm.filter", asmfilter); 
+	r_config_restore (hc);
+	r_config_hold_free (hc);
 	sdb_free (db);
 	return true;
 }

@@ -15,16 +15,13 @@ enum {
 	STATES_SIZE
 };
 
-static bool r_anal_emul_init(RCore *core, bool *state) {
-	state[ROMEM] = r_config_get_i (core->config, "esil.romem");
+static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
+	r_config_save_num (hc, "esil.romem", "asm.trace", "anal.trace", 
+			"dbg.trace", "esil.nonull", NULL);
 	r_config_set (core->config, "esil.romem", "true");
-	state[ASM_TRACE] = r_config_get_i (core->config, "asm.trace");
 	r_config_set (core->config, "asm.trace", "true");
-	state[ANAL_TRACE] = r_config_get_i (core->config, "anal.trace");
 	r_config_set (core->config, "anal.trace", "true");
-	state[DBG_TRACE] = r_config_get_i (core->config, "dbg.trace");
 	r_config_set (core->config, "dbg.trace", "true");
-	state[NONULL] = r_config_get_i (core->config, "esil.nonull");
 	r_config_set (core->config, "esil.nonull", "true");
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
@@ -36,13 +33,10 @@ static bool r_anal_emul_init(RCore *core, bool *state) {
 	return (core->anal->esil != NULL);
 }
 
-static void r_anal_emul_restore(RCore *core, bool *state) {
+static void r_anal_emul_restore(RCore *core, RConfigHold *hc) {
 	sdb_reset (core->anal->esil->db_trace);
-	r_config_set_i (core->config, "esil.romem", state[ROMEM]);
-	r_config_set_i (core->config, "asm.trace", state[ASM_TRACE]);
-	r_config_set_i (core->config, "anal.trace", state[ANAL_TRACE]);
-	r_config_set_i (core->config, "dbg.trace", state[DBG_TRACE]);
-	r_config_set_i (core->config, "esil.nonull", state[NONULL]);
+	r_config_restore (hc);
+	r_config_hold_free (hc);
 }
 
 static void type_match(RCore *core, ut64 addr, char *name) {
@@ -228,12 +222,16 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	bool esil_var[STATES_SIZE] = {false};
+	RConfigHold *hc = NULL; 
 	if (!core) {
 		return;
 	}
-	if (!r_anal_emul_init (core, esil_var) || !fcn) {
-		r_anal_emul_restore (core, esil_var);
+	hc = r_config_hold_new (core->config);
+	if (!hc) {
+		return;
+	}
+	if (!r_anal_emul_init (core, hc) || !fcn) {
+		r_anal_emul_restore (core, hc);
 		return;
 	}
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
@@ -279,5 +277,5 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	}
 out:
 	r_cons_break_pop ();
-	r_anal_emul_restore (core, esil_var);
+	r_anal_emul_restore (core, hc);
 }
