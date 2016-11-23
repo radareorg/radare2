@@ -2495,18 +2495,18 @@ static int cmd_print(void *data, const char *input) {
 					}
 					if (as->block[p].strings > 0) {
 						r_cons_memcat ("z", 1);
-					} else if (as->block[p].imports>0) {
+					} else if (as->block[p].imports > 0) {
 						r_cons_memcat ("i", 1);
-					} else if (as->block[p].symbols>0) {
+					} else if (as->block[p].symbols > 0) {
 						r_cons_memcat ("s", 1);
-					} else if (as->block[p].functions>0) {
+					} else if (as->block[p].functions > 0) {
 						r_cons_memcat ("F", 1);
 					} else if (as->block[p].comments > 0) {
 						r_cons_memcat ("c", 1);
-					} else if (as->block[p].flags > 3) {
-						r_cons_memcat ("f", 1);
-					} else {
+					} else if (as->block[p].flags > 0) {
 						r_cons_memcat (".", 1);
+					} else {
+						r_cons_memcat ("_", 1);
 					}
 				}
 				break;

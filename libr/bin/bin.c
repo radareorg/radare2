@@ -2371,7 +2371,9 @@ R_API int r_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 
 R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	RBinPlugin *plugin = NULL;
-	if (!bin || !bf || !obj) return false;
+	if (!bin || !bf || !obj) {
+		return false;
+	}
 	bin->file = bf->file;
 	bin->cur = bf;
 	bin->narch = bf->narch;
@@ -2390,7 +2392,6 @@ R_API int r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *ob
 
 R_API int r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf) {
 	RBinObject *obj = bf? bf->o: NULL;
-
 	if (!obj) {
 		return false;
 	}

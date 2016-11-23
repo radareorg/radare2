@@ -1859,7 +1859,8 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					// what about a config var to choose which io api to use?
 					ret = r_io_mread (core->io, fd, at, buf, bufsz);
 				} else {
-					r_io_seek (core->io, at, R_IO_SEEK_SET);
+					// if seek fails we shouldnt read at all
+					(void)r_io_seek (core->io, at, R_IO_SEEK_SET);
 					ret = r_io_read (core->io, buf, bufsz);
 				}
 				if (ret < 1) {

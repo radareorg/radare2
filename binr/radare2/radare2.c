@@ -99,8 +99,6 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	return r->io->winbase;
 #else
 	int pid = r->io->desc->fd;
-	eprintf ("=!PID %s\n", r_core_cmd_str (r, "=!pid"));
-
 	if (r_debug_attach (r->dbg, pid) == -1) {
 		return 0LL;
 	}
