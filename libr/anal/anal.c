@@ -555,8 +555,10 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 		}
 	}
 	int oss = anal->flb.f->space_strict;
+	int ofs = anal->flb.f->space_idx;
 	anal->flb.set_fs (anal->flb.f, "symbols");
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
+	anal->flb.f->space_idx = ofs;
 	anal->flb.f->space_strict = oss;
 	if (fi) {
 		if (r_anal_noreturn_at_name (anal, fi->name)) {
