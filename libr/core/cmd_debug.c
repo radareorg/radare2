@@ -324,6 +324,7 @@ beach:
 
 /* until end of frame */
 static int step_until_eof(RCore *core) {
+	int maxLoops = 1024;
 	ut64 off, now = r_debug_reg_get (core->dbg, "SP");
 	r_cons_break_push (NULL, NULL);
 	do {
@@ -331,6 +332,10 @@ static int step_until_eof(RCore *core) {
 		r_debug_step_over (core->dbg, 1);
 		off = r_debug_reg_get (core->dbg, "SP");
 		// check breakpoint here
+		if (--maxLoops < 0) {
+			eprintf ("Step loop limit exceeded\n");
+			break;
+		}
 	} while (off <= now);
 	r_cons_break_pop ();
 	return true;
