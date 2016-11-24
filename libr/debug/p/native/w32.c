@@ -187,6 +187,19 @@ static BOOL WINAPI (*w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NUL
 #define XSTATE_MASK_AVX                     (4)
 #endif
 */
+
+#ifndef XSTATE_GSSE
+#define XSTATE_GSSE 2
+#endif
+
+#ifndef XSTATE_LEGACY_SSE
+#define XSTATE_LEGACY_SSE 1
+#endif
+
+#ifndef XSTATE_MASK_GSSE
+#define XSTATE_MASK_GSSE (1LLU << (XSTATE_GSSE))
+#endif
+
 #undef CONTEXT_XSTATE
 #if defined(_M_X64)
 #define CONTEXT_XSTATE                      (0x00100040)
@@ -195,6 +208,9 @@ static BOOL WINAPI (*w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NUL
 #endif
 #define XSTATE_AVX                          (XSTATE_GSSE)
 #define XSTATE_MASK_AVX                     (XSTATE_MASK_GSSE)
+#ifndef CONTEXT_ALL
+#define CONTEXT_ALL 1048607
+#endif
 static bool w32dbg_SeDebugPrivilege() {
 	/////////////////////////////////////////////////////////
 	//   Note: Enabling SeDebugPrivilege adapted from sample
