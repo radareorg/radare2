@@ -222,7 +222,7 @@ static int visual_help() {
 	" O        toggle asm.esil\n"
 	" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
 	" q        back to radare shell\n"
-	" r        browse anal info and comments\n"
+	" r        browse anal info and comments / in cursor mode = remove byte\n"
 	" R        randomize color palette (ecr)\n"
 	" sS       step / step over\n"
 	" T        enter textlog chat console (TT)\n"
@@ -242,8 +242,6 @@ static int visual_help() {
 	"  F8      step over\n"
 	"  F9      continue\n",
 	"?");
-	r_cons_flush ();
-	r_cons_clear00 ();
 }
 
 static void prompt_read (const char *p, char *buf, int buflen) {
@@ -1157,6 +1155,12 @@ static bool insert_mode_enabled(RCore *core) {
 			__nib = ch;
 		}
 		break;
+	case 'r':
+		r_core_cmdf (core, "r-1 @ 0x%08"PFMT64x, core->offset + core->print->cur);
+		break;
+	case 'R':
+		r_core_cmdf (core, "r+1 @ 0x%08"PFMT64x, core->offset + core->print->cur);
+		break;
 	case 'h':
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		break;
@@ -1171,6 +1175,19 @@ static bool insert_mode_enabled(RCore *core) {
 		break;
 	case 'q':
 		__ime = false;
+		break;
+	case '?':
+		r_cons_less_str ("\nVisual Insert Mode:\n\n"
+			" tab      - toggle between ascii and hex columns\n"
+			" q        - quit insert mode\n"
+			"\nHex column:\n"
+			" r        - remove byte in cursor\n"
+			" R        - insert byte in cursor\n"
+			" [0-9a-f] - insert hexpairs in hex column\n"
+			" hjkl     - move around\n"
+			"\nAscii column:\n"
+			" arrows   - move around\n"
+		, "?");
 		break;
 	}
 	return true;
@@ -2055,8 +2072,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		zoom = !zoom;
 		break;
 	case '?':
-		if (visual_help ()=='?')
+		if (visual_help ()=='?') {
 			r_core_visual_hud (core);
+		}
 		break;
 	case 0x1b:
 	case 'q':
