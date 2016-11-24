@@ -227,9 +227,13 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 		}
 	}
 	kr = task_resume (task);
+#if 0
+// it fails because the process is in a syscall like read() waiting to finish
+// so it cant resume
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Failed to resume task xnu_continue\n");
 	}
+#endif
 	return true;
 #endif
 }
