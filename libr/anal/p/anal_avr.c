@@ -1137,6 +1137,32 @@ INST_HANDLER (sbci) {	// SBCI Rd, k
 	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
+INST_HANDLER (subi) {	// SUBI Rd, k
+	int d = ((buf[0] >> 4) & 0xf) + 16;
+	int k = ((buf[1] & 0xf) << 4) | (buf[0] & 0xf);
+	ESIL_A ("%d,r%d,-,", k, d);			                // 0: (Rd-k)
+	ESIL_A ("r%d,0x08,&,!,"  "%d,0x08,&,!,!,"      "&,"	// H
+		"%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
+		"%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
+		"|,|,hf,=,",
+		d, k, k, d);
+	ESIL_A ("r%d,0x80,&,!,!," "%d,0x80,&,!,"        "&,"	// V
+		""                "0,RPICK,0x80,&,!,"   "&,"
+		"r%d,0x80,&,!,"   "%d,0x80,&,!,!,"      "&,"
+		""                "0,RPICK,0x80,&,!,!," "&,"
+		"|,vf,=,",
+		d, k, d, k);
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("0,RPICK,!,zf,=,");			// Z
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
+		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
+		"|,|,cf,=,",
+		d, k, k, d);
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = Result
+}
+
 INST_HANDLER (sbi) {	// SBI A, b
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
@@ -1427,6 +1453,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (rcall,  0xf000, 0xd000, 0,      2,   CALL   ), // RCALL k
 	INST_DECL (rjmp,   0xf000, 0xc000, 2,      2,   JMP    ), // RJMP k
 	INST_DECL (sbci,   0xf000, 0x4000, 1,      2,   SUB    ), // SBC Rd, Rr
+	INST_DECL (subi,   0xf000, 0x5000, 1,      2,   SUB    ), // SUBI Rd, Rr
 	INST_DECL (ldd,    0xd200, 0x8000, 0,      2,   LOAD   ), // LD Rd, Y/Z+q
 	INST_DECL (std,    0xd200, 0x8200, 0,      2,   STORE  ), // LD Y/Z+q, Rr
 
