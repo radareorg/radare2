@@ -1789,9 +1789,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			char *string;
 			const char *regname;
 			*arg = 0;
-			string = r_str_chop (strdup (str+1));
-			regname = r_reg_get_name (core->dbg->reg,
-					r_reg_get_name_idx (string));
+			string = r_str_chop (strdup (str + 1));
+			regname = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (string));
 			if (!regname) {
 				regname = string;
 			}
@@ -1813,7 +1812,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_cons_printf ("0x%08"PFMT64x"\n",
 							r_reg_get_value (core->dbg->reg, r));
 				}
-			} else eprintf ("Unknown register '%s'\n", string);
+			} else {
+				eprintf ("Unknown register '%s'\n", string);
+			}
 			free (string);
 			// update flags here
 			r_core_cmdf (core, ".dr*%d", bits);

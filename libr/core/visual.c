@@ -946,6 +946,15 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		p->cur += cols > 0 ? cols: 3;
 		return;
 	}
+	if (core->seltab == 0 && core->printidx == 2) {
+		int w = r_config_get_i (core->config, "hex.cols");
+		if (w < 1) {
+			w = 16;
+		}
+		r_config_set_i (core->config, "stack.delta",
+				r_config_get_i (core->config, "stack.delta") - w);
+		return;
+	}
 
 	if (p->row_offsets != NULL) {
 		// FIXME: cache the current row
@@ -985,6 +994,16 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		return;
 	}
 	cursor_ocur (core, use_ocur);
+
+	if (core->seltab == 0 && core->printidx == 2) {
+		int w = r_config_get_i (core->config, "hex.cols");
+		if (w < 1) {
+			w = 16;
+		}
+		r_config_set_i (core->config, "stack.delta",
+				r_config_get_i (core->config, "stack.delta") + w);
+		return;
+	}
 
 	if (p->row_offsets != NULL) {
 		int delta, prev_sz;
@@ -1873,15 +1892,22 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '-':
 		if (core->print->cur_enabled) {
-			if (core->print->ocur == -1) {
-				sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
+			if (core->seltab == 0 && core->printidx == 2) {
+				int w = r_config_get_i (core->config, "hex.cols");
+				r_config_set_i (core->config, "stack.size",
+						r_config_get_i (core->config, "stack.size") - w);
+
 			} else {
-				sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur < core->print->ocur
-					? core->print->cur
-					: core->print->ocur,
-					R_ABS (core->print->ocur - core->print->cur) + 1);
+				if (core->print->ocur == -1) {
+					sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
+				} else {
+					sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+							? core->print->cur
+							: core->print->ocur,
+							R_ABS (core->print->ocur - core->print->cur) + 1);
+				}
+				r_core_cmd (core, buf, 0);
 			}
-			r_core_cmd (core, buf, 0);
 		} else {
 			if (!autoblocksize) {
 				r_core_block_size (core, core->blocksize-1);
@@ -1890,15 +1916,22 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '+':
 		if (core->print->cur_enabled) {
-			if (core->print->ocur == -1) {
-				sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
+			if (core->seltab == 0 && core->printidx == 2) {
+				int w = r_config_get_i (core->config, "hex.cols");
+				r_config_set_i (core->config, "stack.size",
+						r_config_get_i (core->config, "stack.size") + w);
+
 			} else {
-				sprintf (buf, "woa 01 @ $$+%i!%i", core->print->cur < core->print->ocur
-					? core->print->cur
-					: core->print->ocur,
-					R_ABS (core->print->ocur - core->print->cur) + 1);
+				if (core->print->ocur == -1) {
+					sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
+				} else {
+					sprintf (buf, "woa 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+							? core->print->cur
+							: core->print->ocur,
+							R_ABS (core->print->ocur - core->print->cur) + 1);
+				}
+				r_core_cmd (core, buf, 0);
 			}
-			r_core_cmd (core, buf, 0);
 		} else {
 			if (!autoblocksize)
 				r_core_block_size (core, core->blocksize+1);
@@ -1934,6 +1967,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case '.':
 		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		if (core->print->cur_enabled) {
+			r_config_set_i (core->config, "stack.delta", 0);
 			r_core_seek (core, core->offset+core->print->cur, 1);
 			core->print->cur = 0;
 		} else {
@@ -2397,11 +2431,13 @@ dodo:
 					default: pxw = "px"; break;
 					}
 				}
+				const char sign = (delta < 0)? '+': '-';
+				const int absdelta = R_ABS(delta);
 				snprintf (debugstr, sizeof (debugstr),
-					"?0;f tmp;sr SP;%s %d@$$-%d;"
+					"?0;f tmp;sr SP;%s %d@$$%c%d;"
 					"?1;%s;s-;"
 					"?1;s tmp;f-tmp;pd $r",
-					pxa? "pxa": pxw, size, delta,
+					pxa? "pxa": pxw, size, sign, absdelta,
 					ref? "drr": "dr=");
 			}
 			printfmt[2] = debugstr;
