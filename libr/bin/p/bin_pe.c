@@ -317,7 +317,12 @@ static RList* imports(RBinFile *arch) {
 		rel->additive = 0;
 		rel->import = ptr;
 		rel->addend = 0;
-		rel->vaddr = imports[i].vaddr;
+		{
+			ut8 addr[4];
+			r_buf_read_at (arch->buf, imports[i].paddr, addr, 4);
+			ut64 newaddr = r_read_le32 (&addr);
+			rel->vaddr = newaddr;
+		}
 		rel->paddr = imports[i].paddr;
 		r_list_append (relocs, rel);
 	}
