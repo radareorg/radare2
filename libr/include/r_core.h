@@ -3,6 +3,10 @@
 #ifndef R2_CORE_H
 #define R2_CORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "r_types.h"
 #include "r_magic.h"
 #include "r_io.h"
@@ -28,10 +32,6 @@
 #include "r_util.h"
 #include "r_crypto.h"
 #include "r_bind.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 R_LIB_VERSION_HEADER(r_core);
 
