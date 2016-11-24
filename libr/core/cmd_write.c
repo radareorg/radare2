@@ -1076,15 +1076,21 @@ static int cmd_write(void *data, const char *input) {
 					}
 					free (in);
 				}
-			} else if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-				r_io_use_desc (core->io, core->file->desc);
-				if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
-					core->num->value = size;
-					WSEEK (core, size);
+			} else if (r_file_exists (arg)) {
+				if ((buf = r_file_slurp_hexpairs (arg, &size))) {
+					r_io_use_desc (core->io, core->file->desc);
+					if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
+						core->num->value = size;
+						WSEEK (core, size);
+					}
+					free (buf);
+					r_core_block_read (core);
+				} else {
+					eprintf ("This file doesnt contains hexpairs\n");
 				}
-				free (buf);
-				r_core_block_read (core);
-			} else eprintf ("Cannot open file '%s'\n", arg);
+			} else {
+				eprintf ("Cannot open file '%s'\n", arg);
+			}
 			break;
 		case 's': // "wxs"
 			{
