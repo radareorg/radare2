@@ -100,14 +100,11 @@ R_API void r_io_sundo_reset(RIO *io) {
 R_API void r_io_sundo_list(RIO *io, int mode) {
 	int idx, undos, redos, i, j, start, end;
 
-	if (!io->undo.s_enable)
-		return;
-	undos = io->undo.undos;
-	redos = io->undo.redos;
-	if (!undos && !redos) {
-		io->cb_printf ("-no seeks done-\n");
+	if (!io->undo.s_enable) {
 		return;
 	}
+	undos = io->undo.undos;
+	redos = io->undo.redos;
 
 	idx = io->undo.idx;
 	start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
@@ -119,6 +116,7 @@ R_API void r_io_sundo_list(RIO *io, int mode) {
 		io->cb_printf ("[");
 		break;
 	}
+	const char *comma = "";
 	for (i = start; i < end || j == 0; i = (i + 1) % R_IO_UNDOS) {
 		int idx = (j< undos)? undos - j - 1: j - undos - 1;
 		RIOUndos *undo = &io->undo.seek[i];
@@ -133,6 +131,7 @@ R_API void r_io_sundo_list(RIO *io, int mode) {
 		case 'j':
 			if (j < undos) {
 				io->cb_printf ("%"PFMT64d"%s", addr, notLast? ",": "");
+				comma = ",";
 			}
 			break;
 		case '*':
@@ -151,7 +150,7 @@ R_API void r_io_sundo_list(RIO *io, int mode) {
 		io->cb_printf ("\n");
 		break;
 	case 'j':
-		io->cb_printf ("]\n");
+		io->cb_printf ("%s%"PFMT64d"]\n", comma, io->off);
 		break;
 	}
 }
