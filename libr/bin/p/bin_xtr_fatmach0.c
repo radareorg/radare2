@@ -13,57 +13,41 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size );
 static int free_xtr (void *xtr_obj) ;
 
-static int check(RBin *bin) {
-	ut8 *h, buf[4];
-	int off, ret = false;
-	RMmap *m = r_file_mmap (bin->file, false, 0);
-	if (!m || !m->buf) {
-		r_file_mmap_free (m);
-		return false;
-	}
-	h = m->buf;
-	if (m->len >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
-		// XXX assuming BE
-		off = r_read_at_be32 (h, 4 * sizeof (int));
-		if (off > 0 && off < m->len) {
-			memcpy (buf, h + off, 4);
-			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
-				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-				!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-				ret = true;
-		}
-	}
-	r_file_mmap_free (m);
-	return ret;
-}
-
-static int check_bytes(const ut8* bytes, ut64 sz) {
-	const ut8 *h;
+static int checkHeader(const ut8 *h, int sz) {
 	ut8 buf[4];
-	int off, ret = false;
-
-	if (!bytes || sz < 0x300) {
-		return false;
-	}
-	// XXX assuming BE
-	off = r_read_at_be32 (bytes, 4 * sizeof (int));
-
-	h = bytes;
 	if (sz >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
 		// XXX assuming BE
-		off = r_read_at_be32 (h, 4 * sizeof (int));
+		int off = r_read_at_be32 (h, 4 * sizeof (int));
 		if (off > 0 && off < sz) {
 			memcpy (buf, h + off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
 				!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-				ret = true;
+				return true;
 			}
 		}
 	}
+	return false;
+}
+
+static int check(RBin *bin) {
+	int ret = false;
+	RMmap *m = r_file_mmap (bin->file, false, 0);
+	if (!m || !m->buf) {
+		r_file_mmap_free (m);
+		return false;
+	}
+	ret = checkHeader (m->buf, m->len);
+	r_file_mmap_free (m);
 	return ret;
+}
+
+static int check_bytes(const ut8* bytes, ut64 sz) {
+	if (!bytes || sz < 0x300) {
+		return false;
+	}
+	return checkHeader(bytes, sz);
 }
 
 // TODO: destroy must be void?

@@ -610,8 +610,9 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		// XXX sections are populated by call to size
 		if (!o->sections) o->sections = cp->sections (binfile);
 		REBASE_PADDR (o, o->sections, RBinSection);
-		if (bin->filter)
+		if (bin->filter) {
 			r_bin_filter_sections (o->sections);
+		}
 	}
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (cp->relocs) {
@@ -1022,10 +1023,12 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const 
 	if (!bf) {
 		if (!bin) return NULL;
 		bf = r_bin_file_create_append (bin, filename, bytes, sz, file_sz, rawstr, fd, xtr->name);
-		if (!bf)
+		if (!bf) {
 			return bf;
-		if (!bin->cur)
+		}
+		if (!bin->cur) {
 			bin->cur = bf;
+		}
 	}
 
 	if (idx == 0 && xtr && bytes) {
@@ -1034,15 +1037,17 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const 
 			bf->xtr_data = xtr_data_list;
 			// set the first sub binary as the primary RBinObject
 			RBinXtrData *xtr_data = r_list_get_n (xtr_data_list, 0);
-			if (!r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data))
+			if (!r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data)) {
 				eprintf ("Error: failed to load the Extracted Objects with %s for %s.\n", xtr->name, bf->file);
+			}
 		}
 	} else if (xtr && xtr->extract_from_bytes) {
 		if (idx == 0) idx = 1;
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bin, bytes, sz, idx);
 		if (xtr_data) {
-			if (!r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data))
+			if (!r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data)) {
 				eprintf ("Error: failed to load the Extracted Objects with %s for %s.\n", xtr->name, bf->file);
+			}
 		}
 		r_bin_xtrdata_free (xtr_data);
 	}
@@ -1260,7 +1265,6 @@ static int r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	if (!bytes) {
 		return false;
 	}
-
 	plugin = r_bin_get_binplugin_by_bytes (bin, (const ut8*)bytes, sz);
 	if (!plugin) {
 		plugin = r_bin_get_binplugin_any (bin);
@@ -1277,14 +1281,20 @@ static int r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 		return false;
 	}
 	bf->narch = data->file_count;
-
-	o->info = R_NEW0 (RBinInfo);
+	if (!o->info) {
+		o->info = R_NEW0 (RBinInfo);
+	}
+	free (o->info->file);
 	o->info->file = strdup (bf->file);
 	o->info->bits = data->metadata->bits;
+	free (o->info->arch);
 	o->info->arch = strdup (data->metadata->arch);
+	free (o->info->machine);
 	o->info->machine = strdup (data->metadata->machine);
+	free (o->info->type);
 	o->info->type = strdup (data->metadata->type);
-	o->info->has_va = true;
+	// o->info->has_va = true; // depends on filetype
+	o->info->has_crypto = bf->o->info->has_crypto;
 	data->loaded = true;
 	return true;
 }
@@ -1792,12 +1802,12 @@ R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, con
 static RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id) {
 	RBinObject *obj;
 	RListIter *iter;
-
-	if (binfile)
+	if (binfile)  {
 		r_list_foreach (binfile->objs, iter, obj) {
 			if (obj->id == binobj_id)
 				return obj;
 		}
+	}
 	return NULL;
 }
 
