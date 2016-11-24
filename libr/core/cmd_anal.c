@@ -2223,7 +2223,7 @@ repeat:
 	// check addr
 	if (until_addr != UT64_MAX) {
 		if (r_reg_getv (core->anal->reg, name) == until_addr) {
-			eprintf ("ADDR BREAK\n");
+			// eprintf ("ADDR BREAK\n");
 			goto out_return_zero;
 		} else {
 			goto repeat;
