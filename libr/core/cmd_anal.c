@@ -2044,6 +2044,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));
+				r_core_cmdf (core, ".dr*%d", bits);
 			} else {
 				eprintf ("ar: Unknown register '%s'\n", regname);
 			}
@@ -2149,7 +2150,10 @@ repeat:
 			goto out_return_one;
 		}
 	}
-	r_io_read_at (core->io, addr, code, sizeof (code));
+	int rc = r_io_read_at (core->io, addr, code, sizeof (code));
+	if (rc != sizeof (code)) {
+		eprintf ("read error\n");
+	}
 	r_asm_set_pc (core->assembler, addr);
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
 	if (op.size < 1) {
