@@ -12,18 +12,19 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <r_asm.h>
 #include <r_anal.h>
 
-typedef struct _cpu_const_tag_ {
+typedef struct _cpu_const_tag {
 	const char *const key;
 	ut32 value;
 	ut8 size;
 } CPU_CONST;
 
-typedef struct _cpu_models_tag_ {
+typedef struct _cpu_model_tag {
 	const char *const model;
 	int pc;
+	char *inherit;
+	struct _cpu_model_tag *inherit_cpu_p;
 	union {
 		CPU_CONST *consts[10];
-		char *alias;
 	};
 } CPU_MODEL;
 
@@ -47,7 +48,7 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 		pc,							\
 		consts							\
 	}
-#define MASK(bits)			(~(~((ut32) 0) << (bits)))
+#define MASK(bits)			((bits) == 32 ? 0xffffffff : (~((~((ut32) 0)) << (bits))))
 #define CPU_PC_MASK(cpu)		MASK((cpu)->pc)
 #define CPU_PC_SIZE(cpu)		((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0))
 
@@ -82,8 +83,21 @@ CPU_CONST cpu_memsize_common[] = {
 	{ NULL, 0, 0 },
 };
 
+CPU_CONST cpu_memsize_m640_m1280m_m1281_m2560_m2561[] = {
+	{ "eeprom_size",    512, sizeof (ut32) },
+	{ "io_size",      0x1ff, sizeof (ut32) },
+	{ "sram_start",   0x200, sizeof (ut32) },
+	{ "sram_size",   0x2000, sizeof (ut32) },
+	{ NULL, 0, 0 },
+};
+
 CPU_CONST cpu_pagesize_32[] = {
 	{ "page_size", 32, sizeof (ut8) },
+	{ NULL, 0, 0 },
+};
+
+CPU_CONST cpu_pagesize_256[] = {
+	{ "page_size", 256, sizeof (ut8) },
 	{ NULL, 0, 0 },
 };
 
@@ -97,15 +111,45 @@ CPU_MODEL cpu_models[] = {
 			NULL
 		}
 	},
+	{ .model = "ATmega640",   .pc = 15,
+		.consts = {
+			cpu_reg_common,
+			cpu_memsize_m640_m1280m_m1281_m2560_m2561,
+			cpu_pagesize_256,
+			NULL
+		},
+	},
+	{ .model = "ATmega1280",  .pc = 16, .inherit = "ATmega640" },
+	{ .model = "ATmega1281",  .pc = 16, .inherit = "ATmega640" },
+	{ .model = "ATmega2560",  .pc = 17, .inherit = "ATmega640" },
+	{ .model = "ATmega2561",  .pc = 17, .inherit = "ATmega640" },
+	{ .model = "ATmega88",    .pc = 8,  .inherit = "ATmega8" },
+	{ .model = "unknown_avr", .pc = 8,  .inherit = "ATmega8" } // default AVR - ATmega8 forever!
 //	CPU_MODEL_DECL ("ATmega168",   13, 512, 512),
-//	CPU_MODEL_DECL ("ATmega640",   16, 512, 512),
-//	CPU_MODEL_DECL ("ATmega1280",  16, 512, 512),
-//	CPU_MODEL_DECL ("ATmega1281",  16, 512, 512),
-//	CPU_MODEL_DECL ("ATmega2560",  22, 512, 512),
-//	CPU_MODEL_DECL ("ATmega2561",  22, 512, 512),
-	{ .model = "ATmega88",    .pc = 0, .alias = "ATmega8" },
-	{ .model = "unknown_avr", .pc = 0, .alias = "ATmega8" } // default AVR - ATmega8 forever!
 };
+
+static CPU_MODEL *get_cpu_model(char *model) {
+	CPU_MODEL *cpu;
+
+	for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
+		if (!strcasecmp (model, cpu->model)) {
+			break;
+		}
+	}
+	if (cpu->inherit && !cpu->inherit_cpu_p) {
+		cpu->inherit_cpu_p = get_cpu_model (cpu->inherit);
+		if (!cpu->inherit_cpu_p) {
+			eprintf ("ERROR: Cannot inherit from unknown CPU model '%s'.\n", cpu->inherit);
+		}
+	}
+
+	return cpu;
+}
+
+static ut32 const_get_value(CPU_CONST *c) {
+	return c ? MASK (c->size * 8) & c->value : 0;
+}
+
 
 static CPU_CONST *const_by_name(CPU_MODEL *cpu, char *c) {
 	CPU_CONST **clist, *citem;
@@ -117,11 +161,13 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, char *c) {
 			}
 		}
 	}
+	if (cpu->inherit_cpu_p)
+		return const_by_name (cpu->inherit_cpu_p, c);
 	eprintf ("ERROR: CONSTANT key[%s] NOT FOUND.\n", c);
 	return NULL;
 }
 
-static CPU_CONST *get_const_by_value(CPU_MODEL *cpu, ut32 v) {
+static CPU_CONST *const_by_value(CPU_MODEL *cpu, ut32 v) {
 	CPU_CONST **clist, *citem;
 
 	for (clist = cpu->consts; *clist; clist++) {
@@ -131,17 +177,15 @@ static CPU_CONST *get_const_by_value(CPU_MODEL *cpu, ut32 v) {
 			}
 		}
 	}
+	if (cpu->inherit_cpu_p)
+		return const_by_value (cpu->inherit_cpu_p, v);
 	eprintf ("ERROR: CONSTANT value[%d] NOT FOUND.\n", v);
 	return NULL;
 }
 
-static ut32 const_get_value(CPU_CONST *c) {
-	return c ? MASK (c->size * 8) & c->value : 0;
-}
-
 static RStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
 	RStrBuf *r = r_strbuf_new ("");
-	CPU_CONST *c = get_const_by_value (cpu, port);
+	CPU_CONST *c = const_by_value (cpu, port);
 	if (c != NULL) {
 		r_strbuf_set (r, c->key);
 		if (write) {
@@ -1465,26 +1509,15 @@ INVALID_OP:
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	CPU_MODEL *cpu;
-	char *target_model;
 	ut32 offset;
 
 	// init op
 	if (!op) {
 		return 2;
 	}
+
 	// select cpu info
-	
-	for (cpu = NULL, target_model = anal->cpu; !cpu; ) {
-		for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
-			if (!strcasecmp (target_model, cpu->model)) {
-				break;
-			}
-		}
-		if (!cpu->pc) {
-			target_model = cpu->alias;
-			cpu = NULL;
-		}
-	}
+	cpu = get_cpu_model (anal->cpu);
 
 	// set memory layout registers
 	if (anal->esil) {
