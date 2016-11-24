@@ -14,9 +14,14 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 typedef struct _cpu_const_tag {
 	const char *const key;
+	ut8 type;
 	ut32 value;
 	ut8 size;
 } CPU_CONST;
+
+#define CPU_CONST_NONE	0
+#define CPU_CONST_PARAM	1
+#define CPU_CONST_REG	2
 
 typedef struct _cpu_model_tag {
 	const char *const model;
@@ -68,37 +73,37 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 //	ATmega8
 //	ATmega88
 CPU_CONST cpu_reg_common[] = {
-	{ "spl",      0x3d, sizeof (ut8) },
-	{ "sph",      0x3e, sizeof (ut8) },
-	{ "sreg",     0x3f, sizeof (ut8) },
-	{ "spmcr",    0x37, sizeof (ut8) },
-	{ NULL, 0, 0 },
+	{ "spl",   CPU_CONST_REG, 0x3d, sizeof (ut8) },
+	{ "sph",   CPU_CONST_REG, 0x3e, sizeof (ut8) },
+	{ "sreg",  CPU_CONST_REG, 0x3f, sizeof (ut8) },
+	{ "spmcr", CPU_CONST_REG, 0x37, sizeof (ut8) },
+	{ NULL, 0, 0, 0 },
 };
 
 CPU_CONST cpu_memsize_common[] = {
-	{ "eeprom_size",  512, sizeof (ut32) },
-	{ "io_size",     0x40, sizeof (ut32) },
-	{ "sram_start",  0x60, sizeof (ut32) },
-	{ "sram_size",   1024, sizeof (ut32) },
-	{ NULL, 0, 0 },
+	{ "eeprom_size", CPU_CONST_PARAM,  512, sizeof (ut32) },
+	{ "io_size",     CPU_CONST_PARAM, 0x40, sizeof (ut32) },
+	{ "sram_start",  CPU_CONST_PARAM, 0x60, sizeof (ut32) },
+	{ "sram_size",   CPU_CONST_PARAM, 1024, sizeof (ut32) },
+	{ NULL, 0, 0, 0 },
 };
 
 CPU_CONST cpu_memsize_m640_m1280m_m1281_m2560_m2561[] = {
-	{ "eeprom_size",    512, sizeof (ut32) },
-	{ "io_size",      0x1ff, sizeof (ut32) },
-	{ "sram_start",   0x200, sizeof (ut32) },
-	{ "sram_size",   0x2000, sizeof (ut32) },
-	{ NULL, 0, 0 },
+	{ "eeprom_size", CPU_CONST_PARAM,    512, sizeof (ut32) },
+	{ "io_size",     CPU_CONST_PARAM,  0x1ff, sizeof (ut32) },
+	{ "sram_start",  CPU_CONST_PARAM,  0x200, sizeof (ut32) },
+	{ "sram_size",   CPU_CONST_PARAM, 0x2000, sizeof (ut32) },
+	{ NULL, 0, 0, 0 },
 };
 
 CPU_CONST cpu_pagesize_32[] = {
-	{ "page_size", 32, sizeof (ut8) },
-	{ NULL, 0, 0 },
+	{ "page_size", CPU_CONST_PARAM, 32, sizeof (ut8) },
+	{ NULL, 0, 0, 0 },
 };
 
 CPU_CONST cpu_pagesize_256[] = {
-	{ "page_size", 256, sizeof (ut8) },
-	{ NULL, 0, 0 },
+	{ "page_size", CPU_CONST_PARAM, 256, sizeof (ut8) },
+	{ NULL, 0, 0, 0 },
 };
 
 CPU_MODEL cpu_models[] = {
@@ -128,14 +133,18 @@ CPU_MODEL cpu_models[] = {
 //	CPU_MODEL_DECL ("ATmega168",   13, 512, 512),
 };
 
-static CPU_MODEL *get_cpu_model(char *model) {
-	CPU_MODEL *cpu;
+static CPU_MODEL *get_cpu_model(char *model);
+
+static CPU_MODEL *__get_cpu_model_recursive(char *model) {
+	CPU_MODEL *cpu = NULL;
 
 	for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
 		if (!strcasecmp (model, cpu->model)) {
 			break;
 		}
 	}
+
+	// fix inheritance tree
 	if (cpu->inherit && !cpu->inherit_cpu_p) {
 		cpu->inherit_cpu_p = get_cpu_model (cpu->inherit);
 		if (!cpu->inherit_cpu_p) {
@@ -146,46 +155,60 @@ static CPU_MODEL *get_cpu_model(char *model) {
 	return cpu;
 }
 
+static CPU_MODEL *get_cpu_model(char *model) {
+	static CPU_MODEL *cpu = NULL;
+
+	// cached value?
+	if (cpu && !strcasecmp (model, cpu->model))
+		return cpu;
+
+	// do the real search
+	cpu = __get_cpu_model_recursive (model);
+
+	return cpu;
+}
+
 static ut32 const_get_value(CPU_CONST *c) {
 	return c ? MASK (c->size * 8) & c->value : 0;
 }
 
 
-static CPU_CONST *const_by_name(CPU_MODEL *cpu, char *c) {
+static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	CPU_CONST **clist, *citem;
 
 	for (clist = cpu->consts; *clist; clist++) {
 		for (citem = *clist; citem->key; citem++) {
-			if (!strcmp (c, citem->key)) {
+			if (!strcmp (c, citem->key)
+			&& (type == CPU_CONST_NONE || type == citem->type)) {
 				return citem;
 			}
 		}
 	}
 	if (cpu->inherit_cpu_p)
-		return const_by_name (cpu->inherit_cpu_p, c);
+		return const_by_name (cpu->inherit_cpu_p, type, c);
 	eprintf ("ERROR: CONSTANT key[%s] NOT FOUND.\n", c);
 	return NULL;
 }
 
-static CPU_CONST *const_by_value(CPU_MODEL *cpu, ut32 v) {
+static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
 	CPU_CONST **clist, *citem;
 
 	for (clist = cpu->consts; *clist; clist++) {
 		for (citem = *clist; citem && citem->key; citem++) {
-			if (citem->value == (MASK (citem->size * 8) & v)) {
+			if (citem->value == (MASK (citem->size * 8) & v)
+			&& (type == CPU_CONST_NONE || type == citem->type)) {
 				return citem;
 			}
 		}
 	}
 	if (cpu->inherit_cpu_p)
-		return const_by_value (cpu->inherit_cpu_p, v);
-	eprintf ("ERROR: CONSTANT value[%d] NOT FOUND.\n", v);
+		return const_by_value (cpu->inherit_cpu_p, type, v);
 	return NULL;
 }
 
 static RStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
 	RStrBuf *r = r_strbuf_new ("");
-	CPU_CONST *c = const_by_value (cpu, port);
+	CPU_CONST *c = const_by_value (cpu, CPU_CONST_REG, port);
 	if (c != NULL) {
 		r_strbuf_set (r, c->key);
 		if (write) {
@@ -829,7 +852,7 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 	// load register
 	ESIL_A ("r%d,=,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// cycles
-	op->cycles = 
+	op->cycles =
 		(buf[1] & 0x1) == 0
 			? (!offset ? 1 : 3)		// LDD
 			: (buf[0] & 0x3) == 0
@@ -1006,7 +1029,7 @@ INST_HANDLER (pop) {	// POP Rd
 	int d = ((buf[1] & 0x1) << 4) | ((buf[0] >> 4) & 0xf);
 	__generic_pop (op, 1);
 	ESIL_A ("r%d,=,", d);	// store in Rd
-		
+
 }
 
 INST_HANDLER (push) {	// PUSH Rr
@@ -1356,7 +1379,7 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 			: 0,			// no offset
 		1);				// load operation (!st)
 //	// cycles
-//	op->cycles = 
+//	op->cycles =
 //		buf[1] & 0x1 == 0
 //			? !(offset ? 1 : 3)		// LDD
 //			: buf[0] & 0x3 == 0
@@ -1554,13 +1577,13 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		offset += (1 << cpu->pc);
 		r_anal_esil_reg_write (anal->esil, "_io", offset);
 
-		offset += const_get_value (const_by_name (cpu, "sram_start"));
+		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "sram_start"));
 		r_anal_esil_reg_write (anal->esil, "_sram", offset);
 
-		offset += const_get_value (const_by_name (cpu, "sram_size"));
+		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "sram_size"));
 		r_anal_esil_reg_write (anal->esil, "_eeprom", offset);
 
-		offset += const_get_value (const_by_name (cpu, "eeprom_size"));
+		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "eeprom_size"));
 		r_anal_esil_reg_write (anal->esil, "_page", offset);
 	}
 	// process opcode
@@ -1597,10 +1620,40 @@ static int avr_custom_des (RAnalEsil *esil) {
 	return true;
 }
 
+static int esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+	CPU_MODEL *cpu;
+
+	if (!esil || !esil->anal) {
+		return 0;
+	}
+
+	// select cpu info
+	cpu = get_cpu_model (esil->anal->cpu);
+
+	// crop registers and force certain values
+	if (!strcmp (name, "pc")) {
+		eprintf ("pc: entra %08x\n", *val);
+		*val &= CPU_PC_MASK (cpu);
+		eprintf ("pc: sale %08x\n", *val);
+	} else if(!strcmp (name, "pcl")) {
+		if (cpu->pc < 8)
+			*val &= MASK (8);
+	} else if(!strcmp (name, "pch")) {
+		*val = cpu->pc > 8
+			? *val & MASK (cpu->pc - 8)
+			: 0;
+	} else {
+		eprintf ("Modifying register '%s' with value %08x\n", name, *val);
+	}
+
+	return 0;
+}
+
 static int esil_avr_init(RAnalEsil *esil) {
 	if (!esil)
 		return false;
 	r_anal_esil_set_op (esil, "des", avr_custom_des);
+	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
 
 	return true;
 }
@@ -1699,11 +1752,18 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	rampd	.8	42	0\n"
 		"gpr	eind	.8	43	0\n"
 // memory mapping emulator registers
+//	_ram
+//		start of the data addres space. It is the same address of IO,
+//		because IO is the first memory space addressable in the AVR.
+//	_io
+//	_sram
+//		start of the SRAM (this offset depends on IO size, and it is
+//		inside the _ram)
 		"gpr	_prog	.32	44	0\n"
 		"gpr    _page   .32     48	0\n"
 		"gpr	_eeprom	.32	52	0\n"
-		"gpr	_io	.32	56	0\n"
 		"gpr	_ram	.32	56	0\n"
+		"gpr	_io	.32	56	0\n"
 		"gpr	_sram	.32	60	0\n"
 		;
 
