@@ -761,7 +761,8 @@ int main(int argc, char **argv, char **envp) {
 #else
 				{
 					char *escaped_path = r_str_arg_escape (f);
-					file = r_str_concat (file, escaped_path);
+					pfile = r_str_concat (pfile, escaped_path);
+					file = pfile; // r_str_concat (file, escaped_path);
 					free (escaped_path);
 				}
 #endif
