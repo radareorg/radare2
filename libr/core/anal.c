@@ -869,6 +869,17 @@ static char *palColorFor(const char *k) {
 	return NULL;
 }
 
+static void core_anal_color_curr_node(RCore *core, struct r_anal_bb_t *bbi) {
+	bool color_current = r_config_get_i (core->config, "graph.gv.current");
+	char *pal_curr = palColorFor ("graph.current");
+	bool current = r_anal_bb_is_in_offset (bbi, core->offset);
+
+	if (current && color_current) {
+		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
+		r_cons_printf ("\t[fillcolor=%s style=filled shape=box];\n", pal_curr);
+	}
+}
+
 static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	int is_html = r_cons_singleton ()->is_html;
 	int is_json = opts & R_CORE_ANAL_JSON;
@@ -992,6 +1003,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 					"[color=\"%s\"];\n", bbi->addr, bbi->jump,
 					bbi->fail != -1 ? pal_jump : pal_trfa);
+				core_anal_color_curr_node (core, bbi);
 			}
 		}
 		if (bbi->fail != -1) {
@@ -1005,6 +1017,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				//	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 					"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
+				core_anal_color_curr_node (core, bbi);
 			}
 		}
 		if (bbi->switch_op) {
@@ -1020,6 +1033,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 				//	"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 					"[color=\"%s\"];\n", pal_fail, bbi->addr, bbi->fail);
+				core_anal_color_curr_node (core, bbi);
 			}
 
 			r_list_foreach (bbi->switch_op->cases, iter, caseop) {
@@ -1041,7 +1055,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 					//	"[color=\"red\"];\n", fcn->addr, caseop->addr, fcn->addr, caseop->jump);
 					r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-						"[color=\"%s\"];\n", pal_fail, caseop->addr, caseop->jump);
+						"[color2=\"%s\"];\n", pal_fail, caseop->addr, caseop->jump);
+					core_anal_color_curr_node (core, bbi);
 				}
 			}
 		}
