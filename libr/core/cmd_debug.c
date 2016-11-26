@@ -897,6 +897,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
 		"dmi", " [addr|libname] [symname]", "List symbols of target lib",
 		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
+		"dmS", " [addr|libname] [sectname]", "List sections of target lib",
+		"dmS*", " [addr|libname] [sectname]", "List sections of target lib in radare commands",
 		"dmj", "", "List memmaps in JSON format",
 		"dml", " <file>", "Load contents of file into the current map region (see Sl)",
 		"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
@@ -1066,6 +1068,64 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						r_bin_set_baddr (core->bin, baddr);
 					}
 					break;
+				}
+			}
+			free (ptr);
+		}
+		break;
+	case 'S': // "dmS"
+		{ // Move to a separate function
+			const char *libname = NULL, *sectname = NULL, *mode = "";
+			ut64 baddr = 0LL;
+			char *ptr;
+			int i;
+
+			if (input[1]=='*') {
+				ptr = strdup (r_str_trim_head ((char*)input + 2));
+				mode = "-r ";
+			} else {
+				ptr = strdup (r_str_trim_head ((char*)input + 1));
+			}
+			i = r_str_word_set0 (ptr);
+
+			addr = UT64_MAX;
+			libname = NULL;
+			switch (i) {
+			case 2: // get section name
+				sectname = r_str_word_get0 (ptr, 1);
+			case 1: // get addr|libname
+				if (IS_NUMBER (*ptr)) {
+					const char *a0 = r_str_word_get0 (ptr, 0);
+					addr = r_num_math (core->num, a0);
+				} else {
+					addr = UT64_MAX;
+				}
+				if (!addr || addr == UT64_MAX) {
+					libname = r_str_word_get0 (ptr, 0);
+				}
+				break;
+			}
+			r_debug_map_sync (core->dbg); // update process memory maps
+			RList *list = r_debug_modules_list (core->dbg);
+			r_list_foreach (list, iter, map) {
+				if ((!libname ||
+					 (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) ||
+					 (libname != NULL && (strstr (map->name, libname))))) {
+					baddr = map->addr;
+					char *res;
+					const char *file = map->file? map->file: map->name;
+					char *name = r_str_escape ((char *)r_file_basename (file));
+					if (sectname) {
+						res  = r_sys_cmd_strf ("env RABIN2_PREFIX=\"%s\" rabin2 %s-B 0x%08"PFMT64x" -S %s | grep %s", name, mode, baddr, file, sectname);
+					} else {
+						res = r_sys_cmd_strf ("env RABIN2_PREFIX=\"%s\" rabin2 %s-B 0x%08"PFMT64x" -S %s", name, mode, baddr, file);
+					}
+					r_cons_println (res);
+					free(name);
+					free (res);
+					if (libname || addr != UT64_MAX) { //only single match requested
+						break;
+					}
 				}
 			}
 			free (ptr);
