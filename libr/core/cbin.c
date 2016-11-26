@@ -1993,10 +1993,17 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			} else {
 				str[0] = 0;
 			}
-			r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-				"perm=%s %s%sname=%s\n",
-				i, addr, section->paddr, section->size, section->vsize,
-				perms, str, hashstr ?hashstr : "", section->name);
+			if (r->bin->prefix) {
+				r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+					"perm=%s %s%sname=%s.%s\n",
+					i, addr, section->paddr, section->size, section->vsize,
+					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
+			} else {
+				r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+					"perm=%s %s%sname=%s\n",
+					i, addr, section->paddr, section->size, section->vsize,
+					perms, str, hashstr ?hashstr : "", section->name);
+			}
 			free (hashstr);
 		}
 		i++;
