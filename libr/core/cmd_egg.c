@@ -156,7 +156,7 @@ eprintf ("TODO: list options\n");
 			"gw", "", "Compile and write",
 			"gc", " cmd=/bin/ls", "Set config option for shellcodes and encoders",
 			"gc", "", "List all config options",
-			"gl", "", "List plugins (shellcodes, encoders)",
+			"gl", " [?]", "List plugins (shellcodes, encoders)",
 			"gs", " name args", "Compile syscall name(args)",
 			"gi", " exec", "Compile shellcode. like ragg2 -i",
 			"gp", " padding", "Define padding for command",

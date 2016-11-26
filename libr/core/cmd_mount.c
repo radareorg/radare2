@@ -214,7 +214,7 @@ static int cmd_mount(void *data, const char *_input) {
 			"my", "", "Yank contents of file into clipboard",
 			"mo", " /foo", "Get offset and size of given file",
 			"mg", " /foo", "Get contents of file/dir dumped to disk (XXX?)",
-			"mf", "[o|n]", "Search files for given filename or for offset",
+			"mf", "[?] [o|n]", "Search files for given filename or for offset",
 			"md", " /", "List directory contents for path",
 			"mp", "", "List all supported partition types",
 			"mp", " msdos 0", "Show partitions in msdos format at offset 0",

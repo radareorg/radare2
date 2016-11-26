@@ -714,7 +714,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fa"," [name] [alias]","alias a flag to evaluate an expression",
 		"fb"," [addr]","set base address for new flags",
 		"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",
-		"fc"," [name] [color]","set color for given flag",
+		"fc"," [?][name] [color]","set color for given flag",
 		"fC"," [name] [cmt]","set comment for given flag",
 		"fd"," addr","return flag+delta",
 		"fe-","","resets the enumerator counter",
@@ -728,11 +728,11 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fo","","show fortunes",
 		//" fc [name] [cmt]  ; set execution command for a specific flag"
 		"fr"," [old] [[new]]","rename flag (if no new flag current seek one is used)",
-		"fR"," [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
-		"fs"," ?+-*","manage flagspaces",
+		"fR"," [?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
+		"fs","[?]+-*","manage flagspaces",
 		"fS","[on]","sort flags by offset or name",
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
-		"fz"," [name]","add named flag zone -name to delete. see fz?[name]",
+		"fz"," [?][name]","add named flag zone -name to delete. see fz?[name]",
 		NULL};
 		r_core_cmd_help (core, help_msg);
 		break;

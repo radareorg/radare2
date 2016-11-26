@@ -99,7 +99,7 @@ static int cmd_log(void *data, const char *input) {
 			"Tj", "", "List in json format",
 			"Tm", " [idx]", "Display log messages without index",
 			"Ts", "", "List files in current directory (see pwd, cd)",
-			"Tp", "[-plug]", "Tist, load, unload plugins",
+			"Tp", "[?] [-plug]", "List, load, unload plugins",
 			"TT", "", "Enter into the text log chat console",
 			NULL};
 		r_core_cmd_help (core, help_msg);

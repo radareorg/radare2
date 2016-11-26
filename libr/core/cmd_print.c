@@ -3144,7 +3144,7 @@ static int cmd_print(void *data, const char *input) {
 				"pdi", "", "like 'pi', with offset and bytes",
 				"pdl", "", "show instruction sizes",
 				//"pds", "", "disassemble with back sweep (greedy disassembly backwards)",
-				"pds", "", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
+				"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
 				"pdt", "", "disassemble the debugger traces (see atd)",
 				NULL};
 				r_core_cmd_help (core, help_msg);
@@ -3482,7 +3482,7 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf ("|Usage: pr[glx] [size]\n"
 			"| prl: print raw with lines offsets\n"
 			"| prx: printable chars with real offset (hyew)\n"
-			"| prg: print raw GUNZIPped block\n"
+			"| prg[?]: print raw GUNZIPped block\n"
 			"| prz: print raw zero terminated string\n");
 			break;
 		case 'g': // "prg" // gunzip
@@ -4244,20 +4244,20 @@ static int cmd_print(void *data, const char *input) {
 			 "p","[b|B|xb] [len] ([skip])", "bindump N bits skipping M",
 			 "pb","[?] [n]","bitstream of N bits",
 			 "pB","[?] [n]","bitstream of N bytes",
-			 "pc","[p] [len]","output C (or python) format",
+			 "pc","[?][p] [len]","output C (or python) format",
 			 "pC","[d] [rows]","print disassembly in columns (see hex.cols and pdi)",
 			 "pd","[?] [sz] [a] [b]","disassemble N opcodes (pd) or N bytes (pD)",
 			 "pf","[?][.nam] [fmt]","print formatted data (pf.name, pf.name $<expr>)",
 			 "ph","[?][=|hash] ([len])","calculate hash for a block",
 			 "p","[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
 			 "pm","[?] [magic]","print libmagic data (see pm? and /m?)",
-			 "pr","[glx] [len]","print N raw bytes (in lines or hexblocks, 'g'unzip)",
+			 "pr","[?][glx] [len]","print N raw bytes (in lines or hexblocks, 'g'unzip)",
 			 "p","[kK] [len]","print key in randomart (K is for mosaic)",
-			 "ps","[pwz] [len]","print pascal/wide/zero-terminated strings",
+			 "ps","[?][pwz] [len]","print pascal/wide/zero-terminated strings",
 			 "pt","[?][dn] [len]","print different timestamps",
 			 "pu","[?][w] [len]","print N url encoded bytes (w=wide)",
 			 "pv","[?][jh] [mode]","show variable/pointer/value in memory",
-			 "p-","[jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
+			 "p-","[?][jh] [mode]","bar|json|histogram blocks (mode: e?search.in)",
 			 "px","[?][owq] [len]","hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 			 "pz","[?] [len]","print zoom view (see pz? for help)",
 			 "pwd","","display current working directory",
