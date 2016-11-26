@@ -57,7 +57,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			int bufsize = dbg->reg->size;
 			//int bufsize = dbg->reg->regset[i].arena->size;
 			if (bufsize > 0) {
-				ut8 *buf = calloc (1, bufsize);
+				ut8 *buf = calloc (1 + 1, bufsize);
 				if (!buf) {
 					return false;
 				}
