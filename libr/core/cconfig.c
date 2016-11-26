@@ -1397,7 +1397,6 @@ static int cb_binprefix(void *user, void *data) {
 	if (!core || !core->bin) {
 		return false;
 	}
-	R_FREE (core->bin->prefix);
 	if (node->value && *node->value) {
 		if (!strcmp (node->value, "auto")) {
 			if (!core->bin->file) {
