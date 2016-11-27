@@ -212,22 +212,21 @@ RIO *bind_get_io (RIOBind *iob)
 	return iob->io;
 }
 
-int _is_valid_offset (RIO *io, ut64 addr, int hasperm)
-{
+R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm) {
 	RIOMap *map;
-	if (!io || !io->desc)
-		return false;		//FAIL
-#warning TODO: Check sections if desc->plugin->is_dbg
-	if (r_io_desc_size (io->desc) > addr)
-		return true;
-	if (io->va) {
-		if ((map = r_io_map_get (io, addr)))
-			return ((map->flags & hasperm) == hasperm);
+	if (!io) {
+		eprintf ("r_io_is_valid_offset: io is NULL\n");
+		r_sys_backtrace ();
+		return R_FAIL;
 	}
-	return false;
+	if (io->va && (map = r_io_map_get (io, offset)))
+		return ((map->flags & hasperm) == hasperm);
+	if (!io->desc)
+		return false;
+	if (r_io_desc_size (io->desc) < offset)
+		return false;
+	return ((io->desc->flags & hasperm) != hasperm);
 }
-
-
 
 R_API int r_io_bind (RIO *io, RIOBind *bnd)
 {
@@ -244,7 +243,7 @@ R_API int r_io_bind (RIO *io, RIOBind *bnd)
 	bnd->close = r_io_close;
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
-	bnd->is_valid_offset = _is_valid_offset;
+	bnd->is_valid_offset = r_io_is_valid_offset;
 	return true;
 }
 
