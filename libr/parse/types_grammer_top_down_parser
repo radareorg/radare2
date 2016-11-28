@@ -1,0 +1,81 @@
+Statement -> Function OptAttrs ; | Struct OptAttrs ; | Union OptAttrs ; | Typedef OptAttrs | Enum OptAttrs ;
+
+OptAttrs -> OptAttr OptAttrs | EPSILON
+
+OptAttr -> __attribute__ ( ( Name ) )
+
+Function -> FuncItem ( OptParams )
+
+FuncItem -> Declarator Type Pointer Name
+
+Declarator -> const Declarator | extern Declarator | register Declarator | static Declarator | volatile Declarator | EPSILON
+
+Type -> Name | struct Name | union Name | Sign SType
+
+SType -> char | short ShortExtension | int | long LongExtension
+
+ShortExtension -> int | EPSILON
+
+LongExtension -> int | long _LongExtension | EPSILON
+
+_LongExtension -> int | EPSILON
+
+EType -> Name | Sign SType | struct _EType | union _EType
+
+_EType -> Name | { Items }
+
+Sign -> signed | unsigned | EPSILON
+
+Pointer -> * _Pointer
+
+_Pointer -> * _Pointer | Declarator
+
+Name -> R_RACP_IDENTIFIER
+
+OptParams -> Params | EPSILON
+
+Params -> FuncItem FunOptArray _Params
+
+_Params -> , FuncItem _Params | EPSILON
+
+FunOptArray -> [ OptExpression ] | EPSILON
+
+OptExpression -> Expression | EPSILON
+
+OptArray -> [ Expression ] | EPSILON
+
+Expression -> SubExpression _SubExpression
+
+_SubExpression -> + SubExpression _SubExpression | - SubExpression _SubExpression | EPSILON
+
+SubExpression -> Atom _Atom
+
+_Atom -> * Atom _Atom | / Atom _Atom | % Atom _Atom | EPSILON
+
+Atom -> ( Expression ) | R_RACP_BINARY | R_RACP_HEX | R_RACP_OCTAL | R_RACP_DECIMAL
+
+Struct -> struct Name { Items }
+
+Items -> Item ExtraItems
+
+ExtraItems -> Item ExtraItems | EPSILON
+
+Item -> Declarator EType Pointer Name OptArray ;
+
+Union -> union Name { Items }
+
+Typedef -> typedef _Typedef
+
+_Typedef -> Struct Name | Union Name | EType Name
+
+Enum -> enum OptName { EnumList }
+
+OptName -> Name | EPSILON
+
+EnumList -> EnumItem _EnumList
+
+_EnumList -> , EnumItem _EnumList | EPSILON
+
+EnumItem -> Name OptAssign
+
+OptAssign -> = Expression | EPSILON
