@@ -1393,6 +1393,14 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 //	}
 }
 
+INST_HANDLER (swap) {	// SWAP Rd
+	int d = ((buf[1] & 0x1) << 4) | ((buf[0] >> 4) & 0xf);
+	ESIL_A ("4,r%d,>>,0x0f,&,", d);		// (Rd >> 4) & 0xf
+	ESIL_A ("4,r%d,<<,0xf0,&,", d);		// (Rd >> 4) & 0xf
+	ESIL_A ("|,", d);			// S[0] | S[1]
+	ESIL_A ("r%d,=,", d);			// Rd = result
+}
+
 OPCODE_DESC opcodes[] = {
 	//         op     mask    select  cycles  size type
 	INST_DECL (break,  0xffff, 0x9698, 1,      2,   TRAP   ), // BREAK
@@ -1441,6 +1449,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (st,     0xfe0f, 0x920c, 2,      2,   STORE  ), // ST X, Rr
 	INST_DECL (st,     0xfe0f, 0x920d, 0,      2,   STORE  ), // ST X+, Rr
 	INST_DECL (st,     0xfe0f, 0x920e, 0,      2,   STORE  ), // ST -X, Rr
+	INST_DECL (swap,   0xfe0f, 0x9402, 1,      2,   SAR    ), // SWAP Rd
 	INST_DECL (call,   0xfe0e, 0x940e, 0,      4,   CALL   ), // CALL k
 	INST_DECL (jmp,    0xfe0e, 0x940c, 2,      4,   JMP    ), // JMP k
 	INST_DECL (bld,    0xfe08, 0xf800, 1,      2,   SWI    ), // BLD Rd, b
