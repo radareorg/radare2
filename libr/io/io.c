@@ -80,6 +80,7 @@ R_API int r_io_write_buf(RIO *io, struct r_buf_t *b) {
 
 R_API RIO *r_io_free(RIO *io) {
 	if (!io) return NULL;
+	free(io->plugin_default);
 	r_list_free (io->plugins);
 	r_list_free (io->sections);
 	r_list_free (io->maps);
@@ -798,7 +799,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 		io->off = (whence == R_IO_SEEK_SET)
 			? offset // HACKY FIX linux-arm-32-bs at 0x10000
 			: ret;
-			io->off = offset; 
+			io->off = offset;
 		ret = (!io->debug && io->va && !r_list_empty (io->sections))
 			? r_io_section_maddr_to_vaddr (io, io->off)
 			: io->off;
