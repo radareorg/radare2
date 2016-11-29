@@ -9,7 +9,7 @@ static RDebugPlugin *debug_static_plugins[] = {
 
 R_API void r_debug_plugin_init(RDebug *dbg) {
 	int i;
-	dbg->plugins = r_list_new ();
+	dbg->plugins = r_list_newf (free);
 	for (i = 0; debug_static_plugins[i]; i++) {
 		RDebugPlugin *p = R_NEW (RDebugPlugin);
 		memcpy (p, debug_static_plugins[i], sizeof (RDebugPlugin));
