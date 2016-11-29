@@ -526,7 +526,9 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 					 "but loaded to 0x%08"PFMT64x"\n", loadaddr, map->from);
 		}
 	}
-	r_io_sort_maps (core->io);				//necessary ???
+#if	0
+	r_io_sort_maps (core->io);				//necessary ???	//condret says NO!
+#endif
 	return map;
 }
 
