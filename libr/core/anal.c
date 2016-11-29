@@ -878,6 +878,7 @@ static void core_anal_color_curr_node(RCore *core, struct r_anal_bb_t *bbi) {
 		r_cons_printf ("\t\"0x%08"PFMT64x"\" ", bbi->addr);
 		r_cons_printf ("\t[fillcolor=%s style=filled shape=box];\n", pal_curr);
 	}
+	free (pal_curr);
 }
 
 static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {

@@ -1418,12 +1418,15 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		if (ret > 0) {
 			buf[ret] = 0;
 			for (i = 0; buf[i]; i++) {
-				if (buf[i] == '\n')
+				if (buf[i] == '\n') {
 					buf[i] = buf[i + 1]? ';': '\0';
+				}
 			}
 			if (!r_config_get_i (core->config, "scr.prompt") &&
-			    !strcmp ((char *)buf, "q!"))
+			    !strcmp ((char *)buf, "q!")) {
+				r_socket_close (ch);
 				break;
+			}
 			str = r_core_cmd_str (core, (const char *)buf);
 			if (str && *str)  {
 				r_socket_write (ch, str, strlen (str));
@@ -1433,6 +1436,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 			free (str);
 		}
 		r_socket_close (ch);
+		ch = NULL;
 	}
 	r_cons_break_pop ();
 	r_socket_free (s);

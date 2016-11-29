@@ -1317,6 +1317,8 @@ INST_HANDLER (sleep) {	// SLEEP
 	ESIL_A ("BREAK");
 }
 
+#if 0
+/* UNUSED */
 INST_HANDLER (spm) {	// SPM Z+
 //	ut8 spmcr;
 //	char *lval, *hval;
@@ -1352,6 +1354,7 @@ INST_HANDLER (spm) {	// SPM Z+
 //			: ((buf[0] >> 4) & 0xf)	// LPM Rd
 //				| ((buf[1] & 0x1) << 4));
 }
+#endif
 
 INST_HANDLER (st) {	// ST X, Rr
 			// ST X+, Rr
@@ -1649,7 +1652,6 @@ static int avr_custom_des (RAnalEsil *esil) {
 	enc = (int)key;
 	r_anal_esil_reg_read (esil, "deskey", &key, NULL);
 	r_anal_esil_reg_read (esil, "text", &text, NULL);
-//	eprintf ("des - key: 0x%"PFMT64x" - text: 0x%"PFMT64x" - round: %d - %s\n", key, text, r, enc ? "decrypt" : "encrypt");
 	key = r_des_get_roundkey (key, r, enc);
 	text = r_des_round (text, key);
 	r_anal_esil_reg_write (esil, "text", text);
@@ -1668,18 +1670,17 @@ static int esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val)
 
 	// crop registers and force certain values
 	if (!strcmp (name, "pc")) {
-		eprintf ("pc: entra %08x\n", *val);
 		*val &= CPU_PC_MASK (cpu);
-		eprintf ("pc: sale %08x\n", *val);
 	} else if(!strcmp (name, "pcl")) {
-		if (cpu->pc < 8)
+		if (cpu->pc < 8) {
 			*val &= MASK (8);
-	} else if(!strcmp (name, "pch")) {
+		}
+	} else if (!strcmp (name, "pch")) {
 		*val = cpu->pc > 8
 			? *val & MASK (cpu->pc - 8)
 			: 0;
 	} else {
-		eprintf ("Modifying register '%s' with value %08x\n", name, *val);
+		eprintf ("Modifying register '%s' with value 0x%08"PFMT64x"\n", name, *val);
 	}
 
 	return 0;

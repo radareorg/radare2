@@ -4,7 +4,7 @@ HASOVR=$(shell clang -Wno-initializer-overrides -E -</dev/null 2>&1| grep unknow
 ifeq ($(HASOVR),)
 CFLAGS+=-Wno-initializer-overrides
 endif
-CFLAGS+=-Wall -g -ggdb
+CFLAGS+=-Wall -g
 BIN=a.out
 OBJ=rangstr.o path.o js0n.o api.o main.o
 OBJ+=../libsdb.a

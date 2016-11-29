@@ -14,6 +14,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmtcol", "asm.filter", NULL);
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+		r_config_hold_free (hc);
 		return false;
 	}
 	r_config_set_i (core->config, "asm.pseudo", 1);

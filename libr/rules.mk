@@ -7,7 +7,7 @@ _INCLUDE_RULES_MK_=
 ifeq ($(DEBUG),1)
 export NOSTRIP=1
 CFLAGS+=-g
-LINK+=-g -ggdb
+LINK+=-g
 endif
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
