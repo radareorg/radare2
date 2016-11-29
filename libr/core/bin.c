@@ -1493,7 +1493,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				ut8 *data = malloc (section->size);
 				if (!data) return false;
 				ut32 datalen = section->size;
-				r_io_pread (r->io, section->paddr, data, datalen);
+				r_io_pread_at (r->io, section->paddr, data, datalen);
 				hashstr = build_hash_string (mode, chksum,
 							data, datalen);
 				free (data);
@@ -1511,7 +1511,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				ut8 *data = malloc (section->size);
 				if (!data) return false;
 				ut32 datalen = section->size;
-				r_io_pread (r->io, section->paddr, data, datalen);
+				r_io_pread_at (r->io, section->paddr, data, datalen);
 				hashstr = build_hash_string (mode, chksum,
 							data, datalen);
 				free (data);
@@ -1585,7 +1585,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				if (!data) return false;
 				ut32 datalen = section->size;
 				// VA READ IS BROKEN?
-				r_io_pread (r->io, section->paddr, data, datalen);
+				r_io_pread_at (r->io, section->paddr, data, datalen);
 				hashstr = build_hash_string (mode, chksum,
 							data, datalen);
 				free (data);
