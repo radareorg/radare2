@@ -304,7 +304,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		ut64 size = to - from;
 		// in case of dump ignore here
 		if (size != 0 && size > arch->rbin->maxstrbuf) {
-			eprintf ("WARNING: bin_strings buffer is too big (0x%08" PFMT64x ")." 
+			eprintf ("WARNING: bin_strings buffer is too big (0x%08" PFMT64x ")."
 					" Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)\n", size);
 			return;
 		}
@@ -1350,6 +1350,7 @@ static void plugin_free(RBinPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
+	R_FREE (p);
 }
 
 // rename to r_bin_plugin_add like the rest
