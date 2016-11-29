@@ -204,6 +204,7 @@ R_API void r_reg_free(RReg *reg) {
 		r_list_free (reg->regset[i].pool);
 		reg->regset[i].pool = NULL;
 	}
+	r_list_free (reg->allregs);
 	r_reg_free_internal (reg, false);
 	free (reg);
 }
