@@ -35,9 +35,6 @@ e asm.cmtright=true
 # Shows pseudocode in disassembly. Eg mov eax, str.ok = > eax = str.ok
 e asm.pseudo = true
 
-# Display stack and register values on top of disasembly view (visual mode)
-e cmd.stack = true
-
 # Solarized theme
 eco solarized
 
