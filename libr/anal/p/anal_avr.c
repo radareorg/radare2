@@ -59,7 +59,7 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 
 #define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
-#define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ANAL_OP_TYPE_UNK      }
+#define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ANAL_OP_TYPE_UNK }
 
 #define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, buf, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
@@ -1140,7 +1140,7 @@ INST_HANDLER (sbci) {	// SBCI Rd, k
 	ESIL_A ("cf,%d,+,r%d,-,", k, d);			// 0: (Rd-k-C)
 	ESIL_A ("r%d,0x08,&,!,"  "%d,0x08,&,!,!,"      "&,"	// H
 		"%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
-		"%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
+		"r%d,0x08,&,!,"  "0,RPICK,0x08,&,!,!," "&,"
 		"|,|,hf,=,",
 		d, k, k, d);
 	ESIL_A ("r%d,0x80,&,!,!," "%d,0x80,&,!,"        "&,"	// V
@@ -1160,13 +1160,39 @@ INST_HANDLER (sbci) {	// SBCI Rd, k
 	ESIL_A ("r%d,=,", d);					// Rd = Result
 }
 
+INST_HANDLER (sub) {	// SUB Rd, Rr
+	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
+	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
+	ESIL_A ("r%d,r%d,-,", r, d);				// 0: (Rd-k)
+	ESIL_A ("r%d,0x08,&,!,"   "r%d,0x08,&,!,!,"     "&,"	// H
+		"r%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
+		"r%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
+		"|,|,hf,=,",
+		d, r, r, d);
+	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,"       "&,"	// V
+		""                "0,RPICK,0x80,&,!,"   "&,"
+		"r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"
+		""                "0,RPICK,0x80,&,!,!," "&,"
+		"|,vf,=,",
+		d, r, d, r);
+	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
+		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
+		"|,|,cf,=,",
+		d, r, r, d);
+	ESIL_A ("vf,nf,^,sf,=,");				// S
+	ESIL_A ("r%d,=,", d);					// Rd = Result
+}
+
 INST_HANDLER (subi) {	// SUBI Rd, k
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = ((buf[1] & 0xf) << 4) | (buf[0] & 0xf);
-	ESIL_A ("%d,r%d,-,", k, d);			                // 0: (Rd-k)
+	ESIL_A ("%d,r%d,-,", k, d);				// 0: (Rd-k)
 	ESIL_A ("r%d,0x08,&,!,"  "%d,0x08,&,!,!,"      "&,"	// H
 		"%d,0x08,&,!,!," "0,RPICK,0x08,&,!,!," "&,"
-		"%d,0x08,&,!,"   "0,RPICK,0x08,&,!,!," "&,"
+		"r%d,0x08,&,!,"  "0,RPICK,0x08,&,!,!," "&,"
 		"|,|,hf,=,",
 		d, k, k, d);
 	ESIL_A ("r%d,0x80,&,!,!," "%d,0x80,&,!,"        "&,"	// V
@@ -1176,7 +1202,7 @@ INST_HANDLER (subi) {	// SUBI Rd, k
 		"|,vf,=,",
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	ESIL_A ("0,RPICK,!,zf,=,");			// Z
+	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
 		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
@@ -1475,6 +1501,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (mul,    0xfc00, 0x9c00, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (or,     0xfc00, 0x2800, 1,      2,   OR     ), // OR Rd, Rr
 	INST_DECL (sbc,    0xfc00, 0x0800, 1,      2,   SUB    ), // SBC Rd, Rr
+	INST_DECL (sub,    0xfc00, 0x1800, 1,      2,   SUB    ), // SUB Rd, Rr
 	INST_DECL (in,     0xf800, 0xb000, 1,      2,   IO     ), // IN Rd, A
 	INST_DECL (lds16,  0xf800, 0xa000, 1,      2,   LOAD   ), // LDS Rd, k
 	INST_DECL (out,    0xf800, 0xb800, 1,      2,   IO     ), // OUT A, Rr
