@@ -840,7 +840,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 			str = tmp;
 			if (core->file->desc)
-				r_io_desc (core->io, core->file->desc->fd);
+				r_io_desc_use (core->io, core->file->desc->fd);
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
 			r_core_block_read (core, 0);
