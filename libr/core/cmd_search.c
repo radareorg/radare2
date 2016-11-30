@@ -1446,7 +1446,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	int ret;
 
 	if (json) r_cons_printf("[");
-	int oraise = core->io->desc->fd;
+	int ofd = core->io->desc->fd;		//what could possibly go wrong
 	int bufsz;
 	RListIter *iter;
 	RIOMap *map;
@@ -1488,7 +1488,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			param->to = map->to;
 			searchhits = 0;
 
-			r_io_raise (core->io, map->fd);
+			r_io_desc_use (core->io, map->fd);			//this needs some review
 			fd = core->io->desc->fd;
 			if (fd == -1 && core->io->desc) {
 				fd = core->io->desc->fd;
@@ -1595,7 +1595,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			r_list_free (param->boundaries);
 			param->boundaries = NULL;
 		}
-		r_io_raise (core->io, oraise);
+		r_io_desc_use (core->io, ofd);
 	} else eprintf ("No keywords defined\n");
 
 	/* Crazy party counter (kill me please) */

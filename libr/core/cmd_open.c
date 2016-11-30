@@ -418,7 +418,7 @@ static int cmd_open(void *data, const char *input) {
 			core->switch_file_view = 0;
 			r_list_foreach (core->files, iter, f) {
 				if (f->desc->fd == num) {
-					r_io_raise (core->io, num);
+					r_io_desc_use (core->io, num);
 					core->switch_file_view = 1;
 					break;
 				}
