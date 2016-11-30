@@ -112,10 +112,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		int len;
 		ut8 *data = (ut8*)r_file_slurp (pathname+7, &len);
 		mal->buf = r_inflate (data, len, NULL, &mal->size);
-		if (mal->buf) {
-			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
+		if (mal->buf)
+			return r_io_desc_new (&r_io_plugin_malloc,
 				mal->fd, pathname, rw, mode, mal);
-		}
 		free (data);
 		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9,
 			mal->size);
