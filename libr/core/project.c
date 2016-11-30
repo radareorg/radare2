@@ -5,6 +5,26 @@
 #include <r_flags.h>
 #include <r_core.h>
 
+static void __section_list_for_projects (RIO *io, RPrint *print) {
+	int i = 0;
+	SdbListIter *iter;
+	RIOSection *s;
+
+	if (!io || !io->sections || !print || !print->cb_printf)
+		return;
+	ls_foreach (io->sections, iter, s) {	
+		print->cb_printf ("[%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
+			" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
+			i, s->addr, r_str_rwx_i (s->flags), s->vaddr,
+			s->size, s->vsize, s->name);
+		if (s->arch && s->bits)
+			print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
+				s->bits);
+		print->cb_printf ("\n");
+		i++;
+	}
+}
+
 static int is_valid_project_name (const char *name) {
 	int i;
 	for (i=0; name[i]; i++) {
@@ -309,7 +329,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_core_cmd (core, "om*", 0);
 		r_cons_flush ();
 		r_str_write (fd, "# sections\n");
-		r_io_section_list (core->io, core->offset, 1);
+		__section_list_for_projects (core->io, core->print);
 		r_cons_flush ();
 		r_str_write (fd, "# meta\n");
 		r_meta_list (core->anal, R_META_TYPE_ANY, 1);

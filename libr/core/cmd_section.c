@@ -1,5 +1,37 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+static void __section_list (RIO *io, RPrint *print, int rad) {
+	int i = 0;
+	SdbListIter *iter;
+	RIOSection *s;
+
+	if (!io || !io->sections || !print || !print->cb_printf)
+		return;
+	if (rad) {
+		ls_foreach (io->sections, iter, s) {
+			char *n = strdup (s->name);
+			r_name_filter (n, strlen (n));
+			print->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n");
+			print->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
+				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->addr,
+				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->flags));
+			i++;
+		}
+	} else {
+		ls_foreach (io->sections, iter, s) {	
+			print->cb_printf ("[%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
+				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
+				i, s->addr, r_str_rwx_i (s->flags), s->vaddr,
+				s->size, s->vsize, s->name);
+			if (s->arch && s->bits)
+				print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
+					s->bits);
+			print->cb_printf ("\n");
+			i++;
+		}
+	}
+}
+
 static int __dump_sections_to_disk(RCore *core) {
 	char file[128];
 	RListIter *iter;
@@ -308,10 +340,10 @@ static int cmd_section(void *data, const char *input) {
 		}
 		break;
 	case '\0':
-		r_io_section_list (core->io, core->offset, false);
+		__section_list (core->io, core->print, false);
 		break;
 	case '*':
-		r_io_section_list (core->io, core->offset, true);
+		__section_list (core->io, core->print, true);
 		break;
 	}
 	return 0;
