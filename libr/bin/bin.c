@@ -645,7 +645,9 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 	if (cp->get_sdb) {
 		Sdb* new_kv = cp->get_sdb (o);
-		if (new_kv != o->kv) sdb_free (o->kv);
+		if (new_kv != o->kv) {
+			sdb_free (o->kv);
+		}
 		o->kv = new_kv;
 	}
 	if (cp->mem)  {
