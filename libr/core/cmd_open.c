@@ -1,5 +1,27 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#include <sdb.h>
+
+static inline void map_list (RIO *io, int mode, RPrint *print) {
+	SdbListIter *iter;
+	RIOMap *map;
+	if (!io || !io->maps || !print || !print->cb_printf)
+		return;
+	ls_foreach (io->maps, iter, map) {
+		switch (mode) {
+			case 1:
+			case 'r':
+				if (map->from)
+					print->cb_printf ("omr 0x0 0x%"PFMT64x"\n", map->from);
+				break;
+			default:
+				print->cb_printf ("%i +0x%"PFMT64x" 0x%"PFMT64x
+						" - 0x%"PFMT64x" ; %s\n", map->fd,
+						map->delta, map->from, map->to,
+						r_str_rwx_i (map->flags));
+		}
+	}
+}
 
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
 	RListIter *it;
@@ -219,10 +241,10 @@ static void cmd_open_map (RCore *core, const char *input) {
 		}
 		break;
 	case '\0':
-		r_io_map_list (core->io, 0);
+		map_list (core->io, 0, core->print);
 		break;
 	case '*':
-		r_io_map_list (core->io, 'r');
+		map_list (core->io, 'r', core->print);
 		break;
 	default:
 	case '?':
