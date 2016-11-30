@@ -874,6 +874,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode op) {
 		data[l-1] -= 0x10;
 	}
 
+	immediate -= instr_offset;
 	data[l++] = immediate;
 	if (!op.is_short) {
 		data[l++] = immediate >> 8;

@@ -1119,7 +1119,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'a':
+	case 'a': // "wa"
 		switch (input[1]) {
 		case 'o': // "wao"
 			if (input[2] == ' ')
