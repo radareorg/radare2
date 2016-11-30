@@ -168,7 +168,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "om[-] [arg]", " # map opened files",
 		"om", "", "list all defined IO maps",
-		"om", "-0x10000", "remove the map at given address",
+		"om", "-mapid", "remove the map with corresponding id",
 		"om", " fd addr [size]", "create new io map",
 		"omr", " mapid addr", "relocate map with corresponding id",
 		"om*", "", "show r2 commands to restore mapaddr",
@@ -222,13 +222,8 @@ static void cmd_open_map (RCore *core, const char *input) {
 		free (s);
 		break;
 	case '-':
-		if (atoi (input+3)>0) {
-			r_io_map_del (core->io,
-					r_num_math (core->num, input+2));
-		} else {
-			r_io_map_del_at (core->io,
-					r_num_math (core->num, input+2));
-		}
+		r_io_map_del (core->io,
+			r_num_math (core->num, input+2));
 		break;
 	case '\0':
 		map_list (core->io, 0, core->print);
