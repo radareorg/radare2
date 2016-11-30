@@ -41,7 +41,7 @@ void map_free (void *p)										//not-public-api
 R_API void r_io_map_init (RIO *io)
 {
 	if (io && !io->maps) {
-		if (io->maps = ls_new ())
+		if ((io->maps = ls_new ()))
 			io->maps->free = map_free;
 	}
 }
@@ -63,15 +63,20 @@ R_API int r_io_map_exists (RIO *io, RIOMap *map)
 //check if a map with specified id exists
 R_API int r_io_map_exists_for_id (RIO *io, ut32 id)
 {
+	return !!(r_io_map_resolve(io, id));
+}
+
+R_API RIOMap *r_io_map_resolve (RIO *io, ut32 id)
+{
 	SdbListIter *iter;
 	RIOMap *map;
 	if (!io || !io->maps)
-		return false;
+		return NULL;
 	ls_foreach (io->maps, iter, map) {
 		if (map->id == id)
-			return true;
+			return map;
 	}
-	return false;
+	return NULL;
 }
 
 //add new map

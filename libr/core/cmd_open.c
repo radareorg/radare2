@@ -170,7 +170,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		"om", "", "list all defined IO maps",
 		"om", "-0x10000", "remove the map at given address",
 		"om", " fd addr [size]", "create new io map",
-		"omr", " fd|0xADDR ADDR", "relocate current map",
+		"omr", " mapid addr", "relocate map with corresponding id",
 		"om*", "", "show r2 commands to restore mapaddr",
 		NULL };
 	ut64 fd = 0LL;
@@ -178,7 +178,8 @@ static void cmd_open_map (RCore *core, const char *input) {
 	ut64 size = 0LL;
 	ut64 delta = 0LL;
 	char *s, *p, *q;
-	ut64 cur, new;
+	ut32 mapid;
+	ut64 new;
 	RIOMap *map = NULL;
 	const char *P;
 
@@ -188,25 +189,14 @@ static void cmd_open_map (RCore *core, const char *input) {
 			break;
 		P = strchr (input+3, ' ');
 		if (P) {
-			cur = r_num_math (core->num, input+3);
+			mapid = (ut32)r_num_math (core->num, input+3);
 			new = r_num_math (core->num, P+1);
-			map = atoi (input+3)>0?
-				r_io_map_resolve (core->io, cur):
-				r_io_map_get (core->io, cur);
+			map = r_io_map_resolve (core->io, mapid);	//the remapping should be done in the api
 			if (map) {
 				ut64 diff = map->to - map->from;
 				map->from = new;
-				map->to = new+diff;
-			} else eprintf ("Cannot find any map here\n");
-		} else {
-			cur = core->offset;
-			new = r_num_math (core->num, input+3);
-			map = r_io_map_resolve (core->io, core->file->desc->fd);
-			if (map) {
-				ut64 diff = map->to - map->from;
-				map->from = new;
-				map->to = new+diff;
-			} else eprintf ("Cannot find any map here\n");
+				map->to = new+diff;			//this is so risky
+			} else eprintf ("Cannot find any map with mapid %d\n", mapid);
 		}
 		break;
 	case ' ':
