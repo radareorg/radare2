@@ -1520,6 +1520,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				}
 				//ret = r_core_read_at (core, at, buf, bufsz);
 				//	ret = r_io_read_at (core->io, at, buf, bufsz);
+#if 0				//all this is configured by io.va now
 				if (param->use_mread) {
 					// what about a config var to choose which io api to use?
 					ret = r_io_mread (core->io, fd, at, buf, bufsz);
@@ -1527,6 +1528,8 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					r_io_seek (core->io, at, R_IO_SEEK_SET);
 					ret = r_io_read (core->io, buf, bufsz);
 				}
+#endif
+				ret = r_io_read_at (core->io, at, buf, bufsz);
 				/*
 				   if (ignorecase) {
 				   int i;
