@@ -772,7 +772,7 @@ R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd) {
 }
 
 R_API int r_core_file_list(RCore *core, int mode) {
-	int overlapped, count = 0;
+	int count = 0;
 	RCoreFile *f;
 	ut64 from;
 	RListIter *iter;
@@ -781,20 +781,17 @@ R_API int r_core_file_list(RCore *core, int mode) {
 	r_list_foreach (core->files, iter, f) {
 		if (f->map) {
 			from = f->map->from;
-			overlapped = r_io_map_overlaps (core->io, f->desc, f->map);
 		} else {
 			from = 0LL;
-			overlapped = false;
 		}
 		switch (mode) {
 		case 'j':
 			r_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
-				PFMT64d",\"writable\":%s,\"size\":%d,\"overlaps\":%s}%s",
+				PFMT64d",\"writable\":%s,\"size\":%d}%s",
 				core->io->desc->fd == f->desc->fd?"true":"false",
 				(int)f->desc->fd, f->desc->uri, (ut64)from,
 				f->desc->flags & R_IO_WRITE? "true": "false",
 				(int)r_io_desc_size (f->desc),
-				overlapped?"true":"false",
 				iter->n? ",":"");
 			break;
 		case '*':
@@ -802,12 +799,11 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			r_cons_printf ("o %s 0x%"PFMT64x"\n", f->desc->uri, (ut64)from);
 			break;
 		default:
-			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%d %s\n",
+			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s size=%d\n",
 					core->io->desc->fd == f->desc->fd?'*':'-',
 					(int)f->desc->fd, f->desc->uri, (ut64)from,
 					f->desc->flags & R_IO_WRITE? "rw": "r",
-					(ut32)r_io_desc_size (f->desc),
-					overlapped?"overlaps":"");
+					(ut32)r_io_desc_size (f->desc));
 			break;
 		}
 		count++;
