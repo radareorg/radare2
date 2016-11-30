@@ -527,6 +527,7 @@ static void r_bin_object_free(void /*RBinObject*/ *o_) {
 	}
 	r_bin_info_free (o->info);
 	r_bin_object_delete_items (o);
+	R_FREE (o);
 }
 
 // XXX - change this to RBinObject instead of RBinFile
@@ -997,9 +998,9 @@ static void r_bin_file_free(void /*RBinFile*/ *bf_) {
 		a->sdb_addrinfo = NULL;
 	}
 	free (a->file);
+	a->o = NULL;
 	r_list_free (a->objs);
 	r_list_free (a->xtr_data);
-	r_bin_object_free (a->o);
 	memset (a, 0, sizeof (RBinFile));
 	free (a);
 }
