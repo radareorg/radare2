@@ -2223,7 +2223,7 @@ static ut32 tmp_get_contsize (RAnalFunction *f) {
 	return (size < 0) ? 0 : size;
 }
 
-static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, ut64 saved_gp, ut8 *saved_arena) {
+static void pr_bb (RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type) {
 	core->anal->gp = saved_gp;
 	if (emu) {
 		if (b->parent_reg_arena) {
@@ -2238,16 +2238,10 @@ static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 			r_reg_arena_poke (core->anal->reg, saved_arena);
 		}
 	}
-	r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-#if 1
-	/*
-	 * Parent's reg arena is propagated only on forward jumps / fails
-	 * because in pdr the visit occours in order of address, this is
-	 * to avoid leaking the arenas.
-	 *
-	 * If a block already has a parent_reg_arena, it does not get
-	 * owerwritten.
-	 */
+	p_type == 'D'
+	? r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr)
+	: r_core_cmdf (core, "pI %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr && emu && core->anal->last_disasm_reg != NULL) {
 			RAnalBlock * jumpbb = r_anal_bb_get_jumpbb (fcn, b);
@@ -2255,7 +2249,9 @@ static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 				jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 			}
 		}
-		r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
+		if (p_type == 'D') {
+			r_cons_printf ("| ----------- true: 0x%08"PFMT64x, b->jump);
+		}
 	}
 	if (b->fail != UT64_MAX) {
 		if (b->fail > b->addr && emu && core->anal->last_disasm_reg != NULL) {
@@ -2264,10 +2260,113 @@ static void pdr_bb(RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 				failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 			}
 		}
-		r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
+		if (p_type == 'D') {
+			r_cons_printf ("  false: 0x%08"PFMT64x, b->fail);
+		}
 	}
-	r_cons_newline ();
-#endif
+	if (p_type == 'D') {
+		r_cons_newline ();
+	}
+}
+
+static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char type_print) {
+	RListIter *iter;
+	RAnalBlock *b;
+	RAnalFunction *tmp_func;
+	RListIter *locs_it = NULL;
+	
+	if (f->fcn_locs) {
+		locs_it = f->fcn_locs->head;
+	}
+	// XXX: hack must be reviewed/fixed in code analysis
+	if (r_list_length (f->bbs) == 1) {
+		ut32 fcn_size = r_anal_fcn_size (f);
+		b = r_list_get_top (f->bbs);
+		if (b->size > fcn_size) {
+			b->size = fcn_size;
+		}
+	}
+	r_list_sort (f->bbs, (RListComparator)bbcmp);
+	if (input == 'j') {
+		r_cons_print ("[");
+		bool isFirst = true;
+		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+			if (tmp_func->addr > f->addr) {
+				break;
+			}
+			r_list_foreach (tmp_func->bbs, iter, b) {
+				if (isFirst) {
+					isFirst = false;
+				} else {
+					r_cons_print (",");
+				}
+				type_print == 'D'
+				? r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr)
+				: r_core_cmdf (core, "pIj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+			}
+		}
+		r_list_foreach (f->bbs, iter, b) {
+			if (isFirst) {
+				isFirst = false;
+			} else {
+				r_cons_print (",");
+			}
+			type_print == 'D'
+			? r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr)
+			: r_core_cmdf (core, "pIj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+		}
+		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+			r_list_foreach (tmp_func->bbs, iter, b) {
+				if (isFirst) {
+					isFirst = false;
+				} else {
+					r_cons_print (",");
+				}
+				type_print == 'D'
+				? r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr)
+				: r_core_cmdf (core, "pIj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+			}
+		}
+		r_cons_print ("]");
+	} else {
+		bool asm_lines = r_config_get_i (core->config, "asm.lines");
+		bool emu = r_config_get_i (core->config, "asm.emu");
+		ut64 saved_gp;
+		ut8 *saved_arena;
+		if (emu) {
+			saved_gp = core->anal->gp;
+			saved_arena = r_reg_arena_peek (core->anal->reg);
+		}
+
+		r_config_set_i (core->config, "asm.lines", 0);
+		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+			if (tmp_func->addr < f->addr) {
+				r_list_foreach (tmp_func->bbs, iter, b) {
+					pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print);
+				}
+			} else {
+				break;
+			}
+		}
+		r_list_foreach (f->bbs, iter, b) {
+			pr_bb (core, f, b, emu, saved_gp, saved_arena, type_print);
+		}
+		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+			//this should be more advanced
+			r_list_foreach (tmp_func->bbs, iter, b) {
+				pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print);
+			}
+		}
+
+		if (emu) {
+			core->anal->gp = saved_gp;
+			if (saved_arena) {
+				r_reg_arena_poke (core->anal->reg, saved_arena);
+				R_FREE (saved_arena);
+			}
+		}
+		r_config_set_i (core->config, "asm.lines", asm_lines);
+	}
 }
 
 static int cmd_print(void *data, const char *input) {
@@ -2737,7 +2836,14 @@ static int cmd_print(void *data, const char *input) {
 	case 'i': // "pi"
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("|Usage: pi[defj] [num]\n");
+//			r_cons_printf ("|Usage: pi[defj] [num]\n");
+			{
+			const char *help_msg[] = {
+						"Usage:", "pi[defrj] [num]", "",
+						"pir", "", "like 'pdr' but with 'pI' output",
+						NULL};
+			r_core_cmd_help (core, help_msg);
+			}
 			break;
 		case 'a': // "pia" is like "pda", but with "pi" output
 			if (l != 0) {
@@ -2773,6 +2879,18 @@ static int cmd_print(void *data, const char *input) {
 					r_core_print_disasm_instructions (core,
 						core->blocksize, l);
 				}
+			}
+			break;
+		case 'r': //pir
+			{
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			if (f) {
+				func_walk_blocks (core, f, input[1], 'I');
+			} else {
+				eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+				core->num->value = 0;
+			}
 			}
 			break;
 		default:
@@ -2868,105 +2986,14 @@ static int cmd_print(void *data, const char *input) {
 		case 'r': // "pdr"
 			processed_cmd = true;
 			{
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-				if (f) {
-					RListIter *iter;
-					RAnalBlock *b;
-					RAnalFunction *tmp_func;
-					RListIter *locs_it = NULL;
-					if (f->fcn_locs) {
-						locs_it = f->fcn_locs->head;
-					}
-					// XXX: hack must be reviewed/fixed in code analysis
-					if (r_list_length (f->bbs) == 1) {
-						ut32 fcn_size = r_anal_fcn_size (f);
-						b = r_list_get_top (f->bbs);
-						if (b->size > fcn_size) {
-							b->size = fcn_size;
-						}
-					}
-					r_list_sort (f->bbs, (RListComparator)bbcmp);
-					if (input[2] == 'j') {
-						r_cons_print ("[");
-						bool isFirst = true;
-						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
-							if (tmp_func->addr > f->addr) {
-								break;
-							}
-							r_list_foreach (tmp_func->bbs, iter, b) {
-								if (isFirst) {
-									isFirst = false;
-								} else {
-									r_cons_print (",");
-								}
-								r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-							}
-						}
-						r_list_foreach (f->bbs, iter, b) {
-							if (isFirst) {
-								isFirst = false;
-							} else {
-								r_cons_print (",");
-							}
-							r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-						}
-						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
-							r_list_foreach (tmp_func->bbs, iter, b) {
-								if (isFirst) {
-									isFirst = false;
-								} else {
-									r_cons_print (",");
-								}
-								r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
-							}
-						}
-						r_cons_print ("]");
-					} else {
-						// TODO: sort by addr
-						bool asm_lines = r_config_get_i (core->config, "asm.lines");
-						bool emu = r_config_get_i (core->config, "asm.emu");
-						ut64 saved_gp;
-						ut8 *saved_arena;
-						if (emu) {
-							saved_gp = core->anal->gp;
-							saved_arena = r_reg_arena_peek (core->anal->reg);
-						}
-
-						r_config_set_i (core->config, "asm.lines", 0);
-						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
-							if (tmp_func->addr < f->addr) {
-								r_list_foreach (tmp_func->bbs, iter, b) {
-									pdr_bb (core, tmp_func, b, emu, saved_gp, saved_arena);
-								}
-							} else {
-								break;
-							}
-						}
-						r_list_foreach (f->bbs, iter, b) {
-							pdr_bb (core, f, b, emu, saved_gp, saved_arena);
-						}
-						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
-							//this should be more advanced
-							r_list_foreach (tmp_func->bbs, iter, b) {
-								pdr_bb (core, tmp_func, b, emu, saved_gp, saved_arena);
-							}
-						}
-
-						if (emu) {
-							core->anal->gp = saved_gp;
-							if (saved_arena) {
-								r_reg_arena_poke (core->anal->reg, saved_arena);
-								R_FREE (saved_arena);
-							}
-						}
-						r_config_set_i (core->config, "asm.lines", asm_lines);
-					}
-				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
-					core->num->value = 0;
-				}
-				pd_result = true;
+			if (f) {
+				func_walk_blocks (core, f, input[2], 'D');
+			} else {
+				eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			}
+			pd_result = true;
 			}
 			break;
 		case 'b': // "pdb"
