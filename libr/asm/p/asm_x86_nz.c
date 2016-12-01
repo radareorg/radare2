@@ -789,17 +789,16 @@ static int opint(RAsm *a, ut8 *data, const Opcode op) {
 
 static int opjc(RAsm *a, ut8 *data, const Opcode op) {
 	int l = 0;
-	ut64 instr_offset = a->pc;
 	int immediate = op.operands[0].immediate * op.operands[0].sign;
 	if (op.is_short && (immediate > ST8_MAX || immediate < ST8_MIN)) {
 		return l;
 	}
+	immediate -= a->pc;
 	if (!strcmp (op.mnemonic, "jmp")) {
 		if (op.operands[0].type & OT_GPREG) {
 			data[l++] = 0xff;
 			data[l++] = 0xe0 | op.operands[0].reg;
 		} else {
-			immediate -= instr_offset;
 			if (-0x80 <= (immediate - 2) && (immediate - 2) <= 0x7f) {
 					/* relative byte address */
 					data[l++] = 0xeb;
@@ -816,11 +815,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode op) {
 		}
 		return l;
 	}
-	if (op.is_short) {
-		immediate -= 2;
-	} else {
-		immediate -= 6;
-	}
+	
 	if (!op.is_short) {data[l++] = 0x0f;}
 	if (!strcmp (op.mnemonic, "ja") ||
 		!strcmp (op.mnemonic, "jnbe")) {
@@ -874,7 +869,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode op) {
 		data[l-1] -= 0x10;
 	}
 
-	immediate -= instr_offset;
+	immediate -= op.is_short ? 2 : 6;
 	data[l++] = immediate;
 	if (!op.is_short) {
 		data[l++] = immediate >> 8;
