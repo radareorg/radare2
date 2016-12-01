@@ -788,6 +788,7 @@ int main(int argc, char **argv, char **envp) {
 				}
 			}
 			if (optind < argc) {
+				R_FREE (pfile);
 				while (optind < argc) {
 					pfile = argv[optind++];
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);

@@ -9,7 +9,7 @@ static RDebugPlugin *debug_static_plugins[] = {
 
 R_API void r_debug_plugin_init(RDebug *dbg) {
 	int i;
-	dbg->plugins = r_list_new ();
+	dbg->plugins = r_list_newf (free);
 	for (i = 0; debug_static_plugins[i]; i++) {
 		RDebugPlugin *p = R_NEW (RDebugPlugin);
 		memcpy (p, debug_static_plugins[i], sizeof (RDebugPlugin));
@@ -35,8 +35,8 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 		char *p = dbg->h->reg_profile (dbg);
 		if (p) {
 			r_reg_set_profile_string (dbg->reg, p);
-			if (dbg->anal) {
-				//r_reg_free (dbg->anal->reg);
+			if (dbg->anal && dbg->reg != dbg->anal->reg) {
+				r_reg_free (dbg->anal->reg);
 				dbg->anal->reg = dbg->reg;
 			}
 			if (dbg->h->init)

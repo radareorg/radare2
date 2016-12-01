@@ -304,7 +304,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 		ut64 size = to - from;
 		// in case of dump ignore here
 		if (size != 0 && size > arch->rbin->maxstrbuf) {
-			eprintf ("WARNING: bin_strings buffer is too big (0x%08" PFMT64x ")." 
+			eprintf ("WARNING: bin_strings buffer is too big (0x%08" PFMT64x ")."
 					" Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)\n", size);
 			return;
 		}
@@ -527,6 +527,7 @@ static void r_bin_object_free(void /*RBinObject*/ *o_) {
 	}
 	r_bin_info_free (o->info);
 	r_bin_object_delete_items (o);
+	R_FREE (o);
 }
 
 // XXX - change this to RBinObject instead of RBinFile
@@ -643,7 +644,11 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		o->lines = cp->lines (binfile);
 	}
 	if (cp->get_sdb) {
-		o->kv = cp->get_sdb (o);
+		Sdb* new_kv = cp->get_sdb (o);
+		if (new_kv != o->kv) {
+			sdb_free (o->kv);
+		}
+		o->kv = new_kv;
 	}
 	if (cp->mem)  {
 		o->mem = cp->mem (binfile);
@@ -997,9 +1002,9 @@ static void r_bin_file_free(void /*RBinFile*/ *bf_) {
 		a->sdb_addrinfo = NULL;
 	}
 	free (a->file);
+	a->o = NULL;
 	r_list_free (a->objs);
 	r_list_free (a->xtr_data);
-	r_bin_object_free (a->o);
 	memset (a, 0, sizeof (RBinFile));
 	free (a);
 }
@@ -1350,6 +1355,7 @@ static void plugin_free(RBinPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
+	R_FREE (p);
 }
 
 // rename to r_bin_plugin_add like the rest

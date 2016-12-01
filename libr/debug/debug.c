@@ -350,7 +350,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		r_tree_free (dbg->tree);
 		sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
 		sdb_free (dbg->tracenodes);
-		//r_debug_plugin_free();
+		r_list_free (dbg->plugins);
 		free (dbg->btalgo);
 		r_debug_trace_free (dbg->trace);
 		dbg->trace = NULL;
