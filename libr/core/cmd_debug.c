@@ -2113,7 +2113,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				list = r_debug_frames (core->dbg, addr);
 				r_list_foreach (list, iter, frame) {
 					char flagdesc[1024], flagdesc2[1024], pcstr[32], spstr[32];
-					RFlagItem *f = r_flag_get_at (core->flags, frame->addr);
+					RFlagItem *f = r_flag_get_at (core->flags, frame->addr, true);
 
 					flagdesc[0] = flagdesc2[0] = 0;
 
@@ -2135,9 +2135,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 									"%s", f->name);
 						}
 					}
-					f = r_flag_get_at (core->flags, frame->addr);
+					f = r_flag_get_at (core->flags, frame->addr, true);
 					if (f && !strchr (f->name, '.')) {
-						f = r_flag_get_at (core->flags, frame->addr-1);
+						f = r_flag_get_at (core->flags, frame->addr - 1, true);
 					}
 					if (f) {
 						if (f->offset != addr) {
@@ -2447,7 +2447,7 @@ static void trace_traverse_pre (RTreeNode *n, RTreeVisitor *vis) {
 		r_cons_printf ("  ");
 	}
 	if (_core) {
-		RFlagItem *f = r_flag_get_at (_core->flags, tn->addr);
+		RFlagItem *f = r_flag_get_at (_core->flags, tn->addr, true);
 		if (f) {
 			name = f->name;
 		}

@@ -3743,7 +3743,7 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						a = b = "";
 					}
-					f = r_flag_get_at (core->flags, v);
+					f = r_flag_get_at (core->flags, v, true);
 					fn = NULL;
 					if (f) {
 						st64 delta = (v - f->offset);
@@ -3837,7 +3837,7 @@ static int cmd_print(void *data, const char *input) {
 				} else { 
 					a = b = ""; 
 				}
-				f = r_flag_get_at (core->flags, v);
+				f = r_flag_get_at (core->flags, v, true);
 				fn = NULL;
 				if (f) {
 					st64 delta = (v - f->offset);
@@ -3880,7 +3880,7 @@ static int cmd_print(void *data, const char *input) {
 					} else { 
 						a = b = ""; 
 					}
-					f = r_flag_get_at (core->flags, v);
+					f = r_flag_get_at (core->flags, v, true);
 					fn = NULL;
 					if (f) {
 						st64 delta = (v - f->offset);

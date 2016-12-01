@@ -813,7 +813,7 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 			r_cons_clear00 ();
 		} else {
 			r_list_foreach (fun->refs, iter, refi) {
-				RFlagItem *f = r_flag_get_at (core->flags, refi->addr);
+				RFlagItem *f = r_flag_get_at (core->flags, refi->addr, false);
 				if (f) {
 					eprintf ("%s\n", f->name);
 				}
@@ -2188,15 +2188,15 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		core->flags->space_strict = true;
 		core->anal->flb.set_fs (core->flags, "symbols");
 		if (core->flags->space_idx != -1) {
-			f = core->anal->flb.get_at (core->flags, addr);
+			f = core->anal->flb.get_at (core->flags, addr, false);
 		}
 		core->flags->space_strict = oss;
 		core->flags->space_idx = osi;
 		if (!f) {
-			f = r_flag_get_at (core->flags, addr);
+			f = r_flag_get_at (core->flags, addr, false);
 		}
 #else
-		RFlagItem *f = r_flag_get_at (core->flags, addr);
+		RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 #endif
 		if (f) {
 			if (f->offset == addr || !f->offset)

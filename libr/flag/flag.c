@@ -350,7 +350,7 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 
 /* returns the last flag item defined before or at the given offset.
  * NULL is returned if such a item is not found. */
-R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off) {
+R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	RFlagItem *item, *nice = NULL;
 	RListIter *iter;
 
@@ -361,7 +361,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off) {
 		if (item->offset == off) {
 			return evalFlag (f, item);
 		}
-		if (off > item->offset) {
+		if (closest && off > item->offset) {
 			if (!nice || nice->offset < item->offset) {
 				nice = item;
 			}

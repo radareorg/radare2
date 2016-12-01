@@ -678,11 +678,11 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				addr = core->offset;
 				break;
 			default:
-				addr = r_num_math (core->num, input+2);
+				addr = r_num_math (core->num, input + 2);
 				break;
 			}
 			core->flags->space_strict = true;
-			f = r_flag_get_at (core->flags, addr);
+			f = r_flag_get_at (core->flags, addr, true);
 			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {

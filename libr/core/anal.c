@@ -466,7 +466,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	}
 	fcn->addr = at;
 	r_anal_fcn_set_size (fcn, 0);
-	RFlagItem *fi = r_flag_get_at (core->flags, at);
+	RFlagItem *fi = r_flag_get_at (core->flags, at, false);
 	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
 		fcn->name = strdup (fi->name);
 	} else {

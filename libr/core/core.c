@@ -1649,7 +1649,7 @@ R_API void r_core_prompt_loop(RCore *r) {
 
 static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	const char DOTS[] = "...";
-	const RFlagItem *f = r_flag_get_at (r->flags, r->offset);
+	const RFlagItem *f = r_flag_get_at (r->flags, r->offset, false);
 	if (!f) return false;
 
 	if (f->offset < r->offset) {

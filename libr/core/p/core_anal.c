@@ -285,7 +285,7 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	sdb_num_set (db, "size", getFunctionSize (db), 0);
 
 	// receiving a possible flag to label the new function
-	fi = r_flag_get_at (core->flags, addr);
+	fi = r_flag_get_at (core->flags, addr, false);
 	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
 		function_label = strdup (fi->name);
 	} else {

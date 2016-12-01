@@ -465,7 +465,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		tmp_name = name;
 	} else {
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, -1);
-		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
+		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 		if (!fcn && !fi) {
 			eprintf ("Cant find Function at given address\n");
 			return false;
@@ -559,10 +559,10 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 	int ofs = anal->flb.f->space_idx;
 	anal->flb.set_fs (anal->flb.f, "imports");
 	anal->flb.f->space_strict = true;
-	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
+	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 	if (!fi) {
 		anal->flb.set_fs (anal->flb.f, "symbols");
-		fi = anal->flb.get_at (anal->flb.f, addr);
+		fi = anal->flb.get_at (anal->flb.f, addr, false);
 	}
 	anal->flb.f->space_idx = ofs;
 	anal->flb.f->space_strict = oss;

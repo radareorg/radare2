@@ -716,7 +716,7 @@ repeat:
 				if (!strcmp (anal->cur->arch, "mips")) {
 					//Looks like this flags check is useful only for mips
 					// do not skip nops if there's a flag at starting address
-					RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr);
+					RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 					if (!fi || strncmp (fi->name, "sym.", 4)) {
 						if ((addr + delay.un_idx - oplen) == fcn->addr) {
 							fcn->addr += oplen;
@@ -746,7 +746,12 @@ repeat:
 			if (anal->opt.jmpref) {
 				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
-			if (r_anal_noreturn_at (anal, op.jump) || (op.jump < fcn->addr && !anal->opt.jmpabove)) {
+			if (!anal->opt.jmpabove && (op.jump < fcn->addr)) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
+			if (r_anal_noreturn_at (anal, op.jump)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
@@ -779,6 +784,7 @@ repeat:
 					bb->fail = UT64_MAX;
 				}
 				recurseAt (op.jump);
+				FITFCNSZ();
 				gotoBeachRet ();
 #endif
 			} else {

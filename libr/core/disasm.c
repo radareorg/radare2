@@ -788,7 +788,7 @@ static void ds_show_refs(RDisasmState *ds) {
 	r_list_foreach (list, iter, ref) {
 		cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
 		flagi = r_flag_get_i (ds->core->flags, ref->addr);
-		flagat = r_flag_get_at (ds->core->flags, ref->addr);
+		flagat = r_flag_get_at (ds->core->flags, ref->addr, false);
 		ds_align_comment (ds);
 		if (ds->show_color) {
 			r_cons_strcat (ds->color_comment);
@@ -1621,7 +1621,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 			sfi.name = ds->fcn->name;
 			ds->lastflag = &sfi;
 		} else {
-			RFlagItem *fi = r_flag_get_at (core->flags, ds->at);
+			RFlagItem *fi = r_flag_get_at (core->flags, ds->at, false);
 			if (fi) { // && (!ds->lastflag || fi->offset != ds->at)) {
 				sfi.offset = fi->offset;
 				sfi.name = fi->name;
@@ -2392,7 +2392,7 @@ static void ds_print_cc_update(RDisasmState *ds) {
 			tmp[0] = 0;
 			r_anal_cc_update (core->anal, &cc, &ds->analop);
 			if (ccstr) {
-				RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
+				RFlagItem *flag = r_flag_get_at (core->flags, cc.jump, false);
 				if (flag && ccstr) {
 					int delta = 0;
 					if (f) { delta = cc.jump-flag->offset; }

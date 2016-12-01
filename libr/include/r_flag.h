@@ -66,7 +66,7 @@ typedef struct r_flag_t {
 
 typedef bool (*RFlagExistAt)(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 typedef RFlagItem* (*RFlagGet)(RFlag *f, const char *name);
-typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr);
+typedef RFlagItem* (*RFlagGetAt)(RFlag *f, ut64 addr, bool closest);
 typedef RFlagItem* (*RFlagSet)(RFlag *f, const char *name, ut64 addr, ut32 size);
 typedef int (*RFlagSetSpace)(RFlag *f, const char *name);
 
@@ -91,7 +91,7 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
-R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off);
+R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest);
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off);
 R_API int r_flag_unset(RFlag *f, RFlagItem *item);
