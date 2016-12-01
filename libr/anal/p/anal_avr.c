@@ -73,10 +73,10 @@ static int avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, C
 //	ATmega8
 //	ATmega88
 CPU_CONST cpu_reg_common[] = {
-	{ "spl",   CPU_CONST_REG, 0x3d, sizeof (ut8) },
-	{ "sph",   CPU_CONST_REG, 0x3e, sizeof (ut8) },
-	{ "sreg",  CPU_CONST_REG, 0x3f, sizeof (ut8) },
-	{ "spmcr", CPU_CONST_REG, 0x37, sizeof (ut8) },
+	{ "spl",    CPU_CONST_REG, 0x3d, sizeof (ut8) },
+	{ "sph",    CPU_CONST_REG, 0x3e, sizeof (ut8) },
+	{ "sreg",   CPU_CONST_REG, 0x3f, sizeof (ut8) },
+	{ "spmcsr", CPU_CONST_REG, 0x37, sizeof (ut8) },
 	{ NULL, 0, 0, 0 },
 };
 
@@ -96,13 +96,13 @@ CPU_CONST cpu_memsize_m640_m1280m_m1281_m2560_m2561[] = {
 	{ NULL, 0, 0, 0 },
 };
 
-CPU_CONST cpu_pagesize_32[] = {
+CPU_CONST cpu_pagesize_5_bits[] = {
 	{ "page_size", CPU_CONST_PARAM, 32, sizeof (ut8) },
 	{ NULL, 0, 0, 0 },
 };
 
-CPU_CONST cpu_pagesize_256[] = {
-	{ "page_size", CPU_CONST_PARAM, 256, sizeof (ut8) },
+CPU_CONST cpu_pagesize_7_bits[] = {
+	{ "page_size", CPU_CONST_PARAM, 128, sizeof (ut8) },
 	{ NULL, 0, 0, 0 },
 };
 
@@ -112,7 +112,7 @@ CPU_MODEL cpu_models[] = {
 		.consts = {
 			cpu_reg_common,
 			cpu_memsize_common,
-			cpu_pagesize_32,
+			cpu_pagesize_5_bits,
 			NULL
 		}
 	},
@@ -120,7 +120,7 @@ CPU_MODEL cpu_models[] = {
 		.consts = {
 			cpu_reg_common,
 			cpu_memsize_m640_m1280m_m1281_m2560_m2561,
-			cpu_pagesize_256,
+			cpu_pagesize_7_bits,
 			NULL
 		},
 	},
@@ -188,6 +188,16 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 		return const_by_name (cpu->inherit_cpu_p, type, c);
 	eprintf ("ERROR: CONSTANT key[%s] NOT FOUND.\n", c);
 	return NULL;
+}
+
+static int __esil_pop_argument(RAnalEsil *esil, ut64 *v) {
+	char *t = r_anal_esil_pop (esil);
+	if (!t || !r_anal_esil_get_parm (esil, t, v)) {
+		free (t);
+		return false;
+	}
+	free (t);
+	return true;
 }
 
 static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
@@ -1317,44 +1327,46 @@ INST_HANDLER (sleep) {	// SLEEP
 	ESIL_A ("BREAK");
 }
 
-#if 0
-/* UNUSED */
 INST_HANDLER (spm) {	// SPM Z+
-//	ut8 spmcr;
-//	char *lval, *hval;
+	ut64 spmcsr;
 
-	// read SPM Control Register (SPMCR) and decide which operation will be
-	// performed during the SPM operation
-//	r_anal_esil_reg_read (anal->esil, "spmcr", &spmcr, NULL);
-//	switch (spmcr & 0x7f) {
-//		case 0x03: // PAGE ERASE
-//			// erase target page (write 0xff value)
-//			// update SPMCR
-//			ESIL_A ("%d,spmcr,|=,", cpu->);
-//			break;
-//		case 0x01:
-//	}
-//	ESIL_A ("3,spmcr,&,"
-//
-//	r_strbuf_init (&op->esil);
-//	// write program memory
-//	__generic_ld_st (
-//		op, "prog",
-//		'z',				// index register Y/Z
-//		1,				// use RAMP* registers
-//		(ins & 0xfe0f) == 0x9005
-//			? 1			// post incremented
-//			: 0,			// no increment
-//		0,				// not offset
-//		0);				// load operation (!st)
-//	// load register
-//	ESIL_A ("r%d,=,",
-//		(ins == 0x95c8)
-//			? 0			// LPM (r0)
-//			: ((buf[0] >> 4) & 0xf)	// LPM Rd
-//				| ((buf[1] & 0x1) << 4));
+	// read SPM Control Register (SPMCR)
+	r_anal_esil_reg_read (anal->esil, "spmcsr", &spmcsr, NULL);
+
+	// clear SPMCSR
+	ESIL_A ("0x7c,spmcsr,&=,");
+
+	// decide action depending on the old value of SPMCSR
+	switch (spmcsr & 0x7f) {
+		case 0x03: // PAGE ERASE
+			// invoke SPM_CLEAR_PAGE (erases target page writing
+			// the 0xff value
+			ESIL_A ("16,rampz,<<,z,+,"); // push target address
+			ESIL_A ("SPM_PAGE_ERASE,");  // do magic
+			break;
+
+		case 0x01: // FILL TEMPORARY BUFFER
+			ESIL_A ("r1,r0,");           // push data
+			ESIL_A ("z,");               // push target address
+			ESIL_A ("SPM_PAGE_FILL,");   // do magic
+			break;
+
+		case 0x05: // WRITE PAGE
+			ESIL_A ("16,rampz,<<,z,+,"); // push target address
+			ESIL_A ("SPM_PAGE_WRITE,");  // do magic
+			break;
+
+		default:
+			eprintf ("SPM: I dont know what to do with SPMCSR %02x.\n",
+					(unsigned int) spmcsr);
+	}
+
+	op->cycles = 1;	// This is truly false. Datasheets do not publish how
+			// many cycles this instruction uses in all its
+			// operation modes and I am pretty sure that this value
+			// can vary substantially from one MCU type to another.
+			// So... one cycle is fine.
 }
-#endif
 
 INST_HANDLER (st) {	// ST X, Rr
 			// ST X+, Rr
@@ -1431,7 +1443,7 @@ INST_HANDLER (swap) {	// SWAP Rd
 }
 
 OPCODE_DESC opcodes[] = {
-	//         op     mask    select  cycles  size type
+	//         op      mask    select  cycles  size type
 	INST_DECL (break,  0xffff, 0x9698, 1,      2,   TRAP   ), // BREAK
 	INST_DECL (eicall, 0xffff, 0x9519, 0,      2,   UCALL  ), // EICALL
 	INST_DECL (eijmp,  0xffff, 0x9419, 0,      2,   UJMP   ), // EIJMP
@@ -1442,6 +1454,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (ret,    0xffff, 0x9508, 4,      2,   RET    ), // RET
 	INST_DECL (reti,   0xffff, 0x9518, 4,      2,   RET    ), // RETI
 	INST_DECL (sleep,  0xffff, 0x9588, 1,      2,   NOP    ), // SLEEP
+	INST_DECL (spm,    0xffff, 0x95e8, 1,      2,   TRAP   ), // SPM ...
 	INST_DECL (bclr,   0xff8f, 0x9488, 1,      2,   SWI    ), // BCLR s
 	INST_DECL (bset,   0xff8f, 0x9408, 1,      2,   SWI    ), // BSET s
 	INST_DECL (fmul,   0xff88, 0x0308, 2,      2,   MUL    ), // FMUL Rd, Rr
@@ -1632,21 +1645,14 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 }
 
 static int avr_custom_des (RAnalEsil *esil) {
-	char *round;
 	ut64 key, text;
 	int r, enc;
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
-	round = r_anal_esil_pop (esil);
-	if (!round) {
+	if (!__esil_pop_argument(esil, &key)) {
 		return false;
 	}
-	if (!r_anal_esil_get_parm (esil, round, &key)) {
-		free (round);
-		return false;
-	}
-	free (round);
 	r = (int)key;
 	r_anal_esil_reg_read (esil, "hf", &key, NULL);
 	enc = (int)key;
@@ -1655,6 +1661,119 @@ static int avr_custom_des (RAnalEsil *esil) {
 	key = r_des_get_roundkey (key, r, enc);
 	text = r_des_round (text, key);
 	r_anal_esil_reg_write (esil, "text", text);
+	return true;
+}
+
+// ESIL operation SPM_PAGE_ERASE
+static int avr_custom_spm_page_erase(RAnalEsil *esil) {
+	CPU_MODEL *cpu;
+	ut8 c;
+	ut64 addr, page_size_bits, i;
+
+	// sanity check
+	if (!esil || !esil->anal || !esil->anal->reg) {
+		return false;
+	}
+
+	// get target address
+	if (!__esil_pop_argument(esil, &addr)) {
+		return false;
+	}
+
+	// get details about current MCU and fix input address
+	cpu = get_cpu_model (esil->anal->cpu);
+	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
+
+	// align base address to page_size_bits
+	addr &= ~(MASK (page_size_bits));
+
+	// perform erase
+	//eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
+	c = 0xff;
+	for (i = 0; i < (1 << page_size_bits); i++) {
+		r_anal_esil_mem_write (
+			esil, (addr + i) & CPU_PC_MASK (cpu), &c, 1);
+	}
+
+	return true;
+}
+
+// ESIL operation SPM_PAGE_FILL
+static int avr_custom_spm_page_fill(RAnalEsil *esil) {
+	CPU_MODEL *cpu;
+	ut64 addr, page_size_bits, i;
+	ut8 r0, r1;
+
+	// sanity check
+	if (!esil || !esil->anal || !esil->anal->reg) {
+		return false;
+	}
+
+	// get target address, r0, r1
+	if (!__esil_pop_argument(esil, &addr)) {
+		return false;
+	}
+
+	if (!__esil_pop_argument (esil, &i)) {
+		return false;
+	}
+	r0 = i;
+
+	if (!__esil_pop_argument (esil, &i)) {
+		return false;
+	}
+	r1 = i;
+
+	// get details about current MCU and fix input address
+	cpu = get_cpu_model (esil->anal->cpu);
+	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
+
+	// align and crop base address
+	addr &= (MASK (page_size_bits) ^ 1);
+
+	// perform write to temporary page
+	//eprintf ("SPM_PAGE_FILL bytes (%02x, %02x) @ 0x%08" PFMT64x ".\n", r1, r0, addr);
+	r_anal_esil_mem_write (esil, addr++, &r0, 1);
+	r_anal_esil_mem_write (esil, addr++, &r1, 1);
+
+	return true;
+}
+
+// ESIL operation SPM_PAGE_WRITE
+static int avr_custom_spm_page_write(RAnalEsil *esil) {
+	CPU_MODEL *cpu;
+	char *t = NULL;
+	ut64 addr, page_size_bits, tmp_page;
+
+	// sanity check
+	if (!esil || !esil->anal || !esil->anal->reg) {
+		return false;
+	}
+
+	// get target address
+	if (!t || !__esil_pop_argument (esil, &addr)) {
+		return false;
+	}
+	free (t);
+
+	// get details about current MCU and fix input address and base address
+	// of the internal temporary page
+	cpu = get_cpu_model (esil->anal->cpu);
+	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
+	r_anal_esil_reg_read (esil, "_page", &tmp_page, NULL);
+
+	// align base address to page_size_bits
+	addr &= (~(MASK (page_size_bits)) & CPU_PC_MASK (cpu));
+
+	// perform writing
+	//eprintf ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
+	if ((t = malloc (1 << page_size_bits)) == NULL) {
+		eprintf ("Cannot alloc a buffer for copying the temporary page.\n");
+		return false;
+	}
+	r_anal_esil_mem_read (esil, tmp_page, (ut8 *) t, 1 << page_size_bits);
+	r_anal_esil_mem_write (esil, addr, (ut8 *) t, 1 << page_size_bits);
+
 	return true;
 }
 
@@ -1671,7 +1790,7 @@ static int esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val)
 	// crop registers and force certain values
 	if (!strcmp (name, "pc")) {
 		*val &= CPU_PC_MASK (cpu);
-	} else if(!strcmp (name, "pcl")) {
+	} else if (!strcmp (name, "pcl")) {
 		if (cpu->pc < 8) {
 			*val &= MASK (8);
 		}
@@ -1690,6 +1809,9 @@ static int esil_avr_init(RAnalEsil *esil) {
 	if (!esil)
 		return false;
 	r_anal_esil_set_op (esil, "des", avr_custom_des);
+	r_anal_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase);
+	r_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill);
+	r_anal_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write);
 	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
 
 	return true;
@@ -1789,19 +1911,31 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	rampd	.8	42	0\n"
 		"gpr	eind	.8	43	0\n"
 // memory mapping emulator registers
+//      _prog
+//		the program flash. It has its own address space.
 //	_ram
+//	_io
 //		start of the data addres space. It is the same address of IO,
 //		because IO is the first memory space addressable in the AVR.
-//	_io
 //	_sram
 //		start of the SRAM (this offset depends on IO size, and it is
-//		inside the _ram)
+//		inside the _ram address space)
+//      _eeprom
+//              this is another address space, outside ram and flash
+//      _page
+//              this is the temporary page used by the SPM instruction. This
+//              memory is not directly addressable and it is used internally by
+//              the CPU when autoflashing.
 		"gpr	_prog	.32	44	0\n"
 		"gpr    _page   .32     48	0\n"
 		"gpr	_eeprom	.32	52	0\n"
 		"gpr	_ram	.32	56	0\n"
 		"gpr	_io	.32	56	0\n"
 		"gpr	_sram	.32	60	0\n"
+// other important MCU registers
+//	spmcsr/spmcr
+//		Store Program Memory Control and Status Register (SPMCSR)
+		"gpr    spmcsr  .8      64      0\n"
 		;
 
 	return r_reg_set_profile_string (anal->reg, p);
