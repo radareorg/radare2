@@ -286,7 +286,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
 				}
 				if (blacklisted_word (f->name)) {
-    				break;
+					break;
 				}
 				if (strstr (f->name, ".isatty")) {
 					use_isatty = 1;
@@ -298,7 +298,8 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 					free (do_call);
 					do_call = strdup (f->name+8);
 					break;
-				} else if (!strncmp (f->name, "reloc.", 6)) {
+				}
+				if (!strncmp (f->name, "reloc.", 6)) {
 					free (do_call);
 					do_call = strdup (f->name+6);
 					break;
@@ -2825,6 +2826,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	RListIter *iter;
 	RCoreAnalStats *as = NULL;
 	int piece, as_size, blocks;
+	ut64 at;
 
 	if (from == to) {
 		return NULL;
@@ -2837,34 +2839,31 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		step = 1;
 	}
 	blocks = (to-from)/step;
-	as_size = (1+blocks) * sizeof (RCoreAnalStatsItem);
+	as_size = (1 + blocks) * sizeof (RCoreAnalStatsItem);
 	as->block = malloc (as_size);
 	if (!as->block) {
 		free (as);
 		return NULL;
 	}
 	memset (as->block, 0, as_size);
+	for (at = from; at < to; at += step) {
+		piece = (at - from) / step;
+		as->block[piece].rwx = r_io_section_get_rwx (core->io, at);
+	}
 	// iter all flags
 	r_list_foreach (core->flags->flags, iter, f) {
 		//if (f->offset+f->size < from) continue;
-		if (f->offset< from) {
+		if (f->offset < from || f->offset > to) {
 			continue;
 		}
-		if (f->offset > to) {
-			continue;
-		}
-		piece = (f->offset-from)/step;
+		piece = (f->offset - from) / step;
 		as->block[piece].flags++;
 	}
-
 	r_list_foreach (core->anal->fcns, iter, F) {
-		if (F->addr < from) {
+		if (F->addr < from || F->addr > to) {
 			continue;
 		}
-		if (F->addr > to) {
-			continue;
-		}
-		piece = (F->addr-from)/step;
+		piece = (F->addr - from) / step;
 		as->block[piece].functions++;
 	}
 	// iter all comments

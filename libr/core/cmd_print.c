@@ -2430,7 +2430,7 @@ static int cmd_print(void *data, const char *input) {
 		bool use_color = r_config_get_i (core->config, "scr.color");
 		len = 0;
 		for (i = 0; i < w; i++) {
-			at = from + (piece*i);
+			at = from + (piece * i);
 			ate = at + piece;
 			p = (at - from) / piece;
 			switch (mode) {
@@ -2443,6 +2443,7 @@ static int cmd_print(void *data, const char *input) {
 						|| (as->block[p].symbols)
 						|| (as->block[p].strings)) {
 					r_cons_printf ("\"offset\":%"PFMT64d",", at), l++;
+					r_cons_printf ("\"size\":%"PFMT64d",", piece), l++;
 				}
 				// TODO: simplify with macro
 				l = 0;
@@ -2452,6 +2453,7 @@ static int cmd_print(void *data, const char *input) {
 				if (as->block[p].imports) r_cons_printf ("%s\"imports\":%d", l?",":"", as->block[p].imports), l++;
 				if (as->block[p].symbols) r_cons_printf ("%s\"symbols\":%d", l?",":"", as->block[p].symbols), l++;
 				if (as->block[p].strings) r_cons_printf ("%s\"strings\":%d", l?",":"", as->block[p].strings), l++;
+				if (as->block[p].rwx) r_cons_printf ("%s\"rwx\":\"%s\"", l?",":"", r_str_rwx_i (as->block[p].rwx)), l++;
 				r_cons_strcat ("}");
 				len++;
 				break;
