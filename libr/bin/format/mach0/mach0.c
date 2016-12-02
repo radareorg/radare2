@@ -1264,7 +1264,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		sections[i].size = (ut64)bin->sects[i].size;
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
-		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname)-1);
+		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname) - 1);
 		// hack to support multiple sections with same name
 		snprintf (segname, sizeof (segname), "%d", i); // wtf
 		for (j = 0; j < bin->nsegs; j++) {
@@ -2225,8 +2225,9 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 	}
 	free (symbols);
 
-	if (!addr && bin->main_cmd.cmd == LC_MAIN)
+	if (!addr && bin->main_cmd.cmd == LC_MAIN) {
 		addr = bin->entry + bin->baddr;
+	}
 
 	if (!addr) {
 		ut8 b[128];
@@ -2235,11 +2236,12 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 		if (entry > bin->size || entry + sizeof (b) > bin->size)
 			return 0;
 		i = r_buf_read_at (bin->b, entry, b, sizeof (b));
-		if (i < 1)
+		if (i < 1) {
 			return 0;
-		for (i=0; i<64; i++) {
+		}
+		for (i = 0; i < 64; i++) {
 			if (b[i] == 0xe8 && !b[i+3] && !b[i+4]) {
-				int delta = b[i+1] | (b[i+2]<<8) | (b[i+3]<<16) | (b[i+4]<<24);
+				int delta = b[i+1] | (b[i+2] << 8) | (b[i+3] << 16) | (b[i+4] << 24);
 				return bin->entry + i + 5 + delta;
 
 			}

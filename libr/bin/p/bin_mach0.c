@@ -54,7 +54,9 @@ static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return false;
+	if (!arch || !arch->o) {
+		return false;
+	}
  	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 
 	if (!arch->o || !res) {
@@ -75,8 +77,9 @@ static int destroy(RBinFile *arch) {
 
 static ut64 baddr(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin;
-	if (!arch || !arch->o || !arch->o->bin_obj)
+	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return 0LL;
+	}
 	bin = arch->o->bin_obj;
 	return MACH0_(get_baddr)(bin);
 }
@@ -120,14 +123,16 @@ static RList* sections(RBinFile *arch) {
 	RBinObject *obj = arch ? arch->o : NULL;
 	int i;
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_new ()))
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
-	ret->free = free;
-	if (!(sections = MACH0_(get_sections) (obj->bin_obj)))
+	}
+	if (!(sections = MACH0_(get_sections) (obj->bin_obj))) {
 		return ret;
+	}
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
+		}
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		if (strstr (ptr->name, "la_symbol_ptr")) {
 #ifndef R_BIN_MACH064
@@ -147,8 +152,9 @@ static RList* sections(RBinFile *arch) {
 		ptr->paddr = sections[i].offset + obj->boffset;
 		ptr->vaddr = sections[i].addr;
 		ptr->add = true;
-		if (ptr->vaddr == 0)
+		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
+		}
 		ptr->srwx = sections[i].srwx | R_BIN_SCN_MAP;
 		r_list_append (ret, ptr);
 	}
@@ -212,11 +218,13 @@ static RList* symbols(RBinFile *arch) {
 		ut64 value = 0, address = 0;
 		const ut8* temp = bin->func_start;
 		const ut8* temp_end = bin->func_start + bin->func_size;
-		while (temp+3 < temp_end && *temp) {
+		while (temp + 3 < temp_end && *temp) {
 			temp = r_uleb128_decode (temp, NULL, &value);
 			address += value;
 			ptr = R_NEW0 (RBinSymbol);
-			if (!ptr) break;
+			if (!ptr) {
+				break;
+			}
 			ptr->vaddr = bin->baddr + address;
 			ptr->paddr = address;
 			ptr->size = 0;
@@ -247,15 +255,17 @@ static RList* imports(RBinFile *arch) {
 	int i;
 	RBinObject *obj = arch ? arch->o : NULL;
 
-	if (!obj || !bin || !obj->bin_obj || !(ret = r_list_newf (free)))
+	if (!obj || !bin || !obj->bin_obj || !(ret = r_list_newf (free))) {
 		return NULL;
-
-	if (!(imports = MACH0_(get_imports) (arch->o->bin_obj)))
+	}
+	if (!(imports = MACH0_(get_imports) (arch->o->bin_obj))) {
 		return ret;
+	}
 	bin->has_canary = false;
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinImport)))
+		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
+		}
 		name = imports[i].name;
 		type = "FUNC";
 
@@ -268,14 +278,16 @@ static RList* imports(RBinFile *arch) {
 		}
 
 		// Remove the extra underscore that every import seems to have in Mach-O.
-		if (*name == '_')
+		if (*name == '_') {
 			name++;
+		}
 		ptr->name = strdup (name);
 		ptr->bind = r_str_const ("NONE");
 		ptr->type = r_str_const (type);
 		ptr->ordinal = imports[i].ord;
-		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
+		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size) {
 			bin->imports_by_ord[ptr->ordinal] = ptr;
+		}
  		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
 		}

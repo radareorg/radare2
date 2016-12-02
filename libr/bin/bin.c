@@ -1026,7 +1026,9 @@ static RBinFile *r_bin_file_create_append(RBin *bin, const char *file, const ut8
 static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
 	RBinFile *bf = bin? r_bin_file_find_by_name (bin, filename): NULL;
 	if (!bf) {
-		if (!bin) return NULL;
+		if (!bin) {
+			return NULL;
+		}
 		bf = r_bin_file_create_append (bin, filename, bytes, sz, file_sz, rawstr, fd, xtr->name);
 		if (!bf) {
 			return bf;
@@ -1047,7 +1049,7 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const 
 			}
 		}
 	} else if (xtr && xtr->extract_from_bytes) {
-		if (idx == 0) idx = 1;
+		if (!idx) idx = 1;
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bin, bytes, sz, idx);
 		if (xtr_data) {
 			if (!r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data)) {
@@ -1256,7 +1258,9 @@ static int r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	ut64 offset = data? data->offset: 0;
 	ut64 sz = data ? data->size : 0;
 
-	if (!data || !bf) return false;
+	if (!data || !bf) {
+		return false;
+	}
 
 	// for right now the bytes used will just be the offest into the binfile buffer
 	// if the extraction requires some sort of transformation then this will need to be fixed

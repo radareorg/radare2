@@ -110,6 +110,7 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch
 	static RList *sctns = NULL;
 	RListIter *iter = NULL;
 	RBinSection *s = NULL;
+	RBinObject *obj = arch ? arch->o : NULL;
 
 	if (!sctns) {
 		sctns = r_bin_plugin_mach.sections (arch);
@@ -129,11 +130,7 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch
 			if (left) {
 				*left = s->vsize - (addr - s->vaddr);
 			}
-			r = (s->paddr + (addr - s->vaddr));
-#if 0
-			r_list_free (sctns);
-			sctns = NULL;
-#endif
+			r = (s->paddr - obj->boffset  + (addr - s->vaddr));
 			return r;
 		}
 	}
@@ -144,11 +141,6 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch
 	if (left) {
 		*left = 0;
 	}
-
-#if 0
-	r_list_free (sctns);
-	sctns = NULL;
-#endif
 
 	return 0;
 }
@@ -1062,19 +1054,20 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 	RBinClass *klass = NULL;
 	RListIter *iter = NULL;
 	RBinSection *s = NULL;
+	RBinObject *obj = arch ? arch->o : NULL;
 	ut32 i = 0, size = 0;
 	RList *sctns = NULL;
 	bool is_found = false;
 	mach0_ut p = 0;
 	ut32 left = 0;
-	int len;
+	int len, paddr;
 	bool bigendian;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
-	if (!arch || !arch->o || !arch->o->bin_obj || !arch->o->info) {
+	if (!arch || !obj || !obj->bin_obj || !obj->info) {
 		return NULL;
 	}
-	bigendian = arch->o->info->big_endian;
+	bigendian = obj->info->big_endian;
 
 	/* check if it's Swift */
 	//ret = parse_swift_classes (arch);
@@ -1100,15 +1093,13 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 	}
 	// end of seaching of section with name __objc_classlist
 
-	if (!ret && !(ret = r_list_new ())) {
+	if (!ret && !(ret = r_list_newf ((RListFree)__r_bin_class_free))) {
 		// retain just for debug
 		// eprintf ("RList<RBinClass> allocation error\n");
 		goto get_classes_error;
 	}
-
-	ret->free = (RListFree)__r_bin_class_free;
-
 	// start of getting information about each class in file
+	paddr = s->paddr - obj->boffset;
 	for (i = 0; i < s->size; i += sizeof (mach0_ut)) {
 		if (!(klass = R_NEW0 (RBinClass))) {
 			// retain just for debug
@@ -1134,14 +1125,13 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 			break;
 		}
 		size = sizeof (mach0_ut);
-
-		if (s->paddr > arch->size || s->paddr + size > arch->size) {
+		if (paddr > arch->size || paddr + size > arch->size) {
 			goto get_classes_error;
 		}
-		if (s->paddr + size < s->paddr) {
+		if (paddr + size < paddr) {
 			goto get_classes_error;
 		}
-		len = r_buf_read_at (arch->buf, s->paddr + i, pp, sizeof (mach0_ut));
+		len = r_buf_read_at (arch->buf, paddr + i, pp, sizeof (mach0_ut));
 		if (len != sizeof (mach0_ut)) {
 			goto get_classes_error;
 		}
