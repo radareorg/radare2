@@ -1538,27 +1538,6 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		}
 	}
 
-	//handle thumb and arm for entry point since they are not present in symbols
-	if (is_arm) {
-		r_list_foreach (entries, iter, entry) {
-			if (IS_MODE_SET (mode)) {
-				if (info->bits < 33) { // 16 or 32
-					int force_bits = 0;
-					ut64 addr = rva (r->bin, entry->paddr, entry->vaddr, va);
-					if (entry->paddr & 1 || entry->bits == 16) {
-						force_bits = 16;
-					} else if (info->bits == 16 && entry->bits == 32) {
-						force_bits = 32;
-					} else if (!(entry->paddr & 1)) {
-						force_bits = 32;
-					}
-					if (force_bits) {
-						r_anal_hint_set_bits (r->anal, addr, force_bits);
-					}
-				}
-			}
-		}
-	}
 	r_list_foreach (symbols, iter, symbol) {
 		ut64 addr = rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		SymName sn;
@@ -1725,6 +1704,28 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		}
 		snFini (&sn);
 		i++;
+	}
+	
+	//handle thumb and arm for entry point since they are not present in symbols
+	if (is_arm) {
+		r_list_foreach (entries, iter, entry) {
+			if (IS_MODE_SET (mode)) {
+				if (info->bits < 33) { // 16 or 32
+					int force_bits = 0;
+					ut64 addr = rva (r->bin, entry->paddr, entry->vaddr, va);
+					if (entry->paddr & 1 || entry->bits == 16) {
+						force_bits = 16;
+					} else if (info->bits == 16 && entry->bits == 32) {
+						force_bits = 32;
+					} else if (!(entry->paddr & 1)) {
+						force_bits = 32;
+					}
+					if (force_bits) {
+						r_anal_hint_set_bits (r->anal, addr, force_bits);
+					}
+				}
+			}
+		}
 	}
 	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
 	if (IS_MODE_NORMAL (mode) && !at) {
