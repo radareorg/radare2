@@ -1856,13 +1856,15 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 	struct addr_t *entry;
 	int i;
 
-	if (!bin->entry && !bin->sects)
+	if (!bin->entry && !bin->sects) {
 		return NULL;
-	if (!(entry = calloc (1, sizeof (struct addr_t))))
+	}
+	if (!(entry = calloc (1, sizeof (struct addr_t)))) {
 		return NULL;
+	}
 
 	if (bin->entry) {
-		entry->addr = entry_to_vaddr(bin);
+		entry->addr = entry_to_vaddr (bin);
 		entry->offset = addr_to_offset (bin, entry->addr);
 		entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
 	}
@@ -1874,8 +1876,9 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 				entry->offset = (ut64)bin->sects[i].offset;
 				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
-				if (!entry->addr) // workaround for object files
+				if (!entry->addr) { // workaround for object files
 					entry->addr = entry->offset;
+				}
 				break;
 			}
 		}

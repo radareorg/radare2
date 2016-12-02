@@ -86,6 +86,7 @@ static RList* entries(RBinFile *arch) {
 	RBinAddr *ptr = NULL;
 	RBinObject *obj = arch ? arch->o : NULL;
 	struct addr_t *entry = NULL;
+	int wordsize = MACH0_(get_bits) (obj->bin_obj);
 
 	if (!obj || !obj->bin_obj || !(ret = r_list_new ())) {
 		return NULL;
@@ -98,6 +99,15 @@ static RList* entries(RBinFile *arch) {
 		ptr->paddr = entry->offset + obj->boffset;
 		ptr->vaddr = entry->addr;
 		ptr->haddr = entry->haddr;
+		ptr->bits = wordsize;
+		//realign due to thumb
+		if (wordsize == 16) {
+			if (ptr->vaddr & 1) {
+				ptr->paddr--;
+				ptr->vaddr--;
+				ptr->haddr--;
+			}
+		}
 		r_list_append (ret, ptr);
 	}
 	free (entry);
@@ -156,8 +166,9 @@ static RList* symbols(RBinFile *arch) {
 	RList *ret = r_list_newf (free);
 	const char *lang = "c";
 	int wordsize = 16;
-	if (!ret)
+	if (!ret) {
 		return NULL;
+	}
 	if (!obj || !obj->bin_obj) {
 		free (ret);
 		return NULL;
@@ -169,9 +180,12 @@ static RList* symbols(RBinFile *arch) {
 	}
 	bin = (struct MACH0_(obj_t) *) obj->bin_obj;
 	for (i = 0; !symbols[i].last; i++) {
-		if (!symbols[i].name[0] || symbols[i].addr<100) continue;
-		if (!(ptr = R_NEW0 (RBinSymbol)))
+		if (!symbols[i].name[0] || symbols[i].addr < 100) {
+			continue;
+		}
+		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			break;
+		}
 		ptr->name = strdup ((char*)symbols[i].name);
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
