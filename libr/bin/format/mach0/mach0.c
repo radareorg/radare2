@@ -733,7 +733,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		int i;
 		ut8 *p = arw_ptr;
 		eprintf ("arw ");
-		for (i=0; i< arw_sz; i++) {
+		for (i = 0; i < arw_sz; i++) {
 			eprintf ("%02x", 0xff & p[i]);
 		}
 		eprintf ("\n");
@@ -1023,18 +1023,18 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				eprintf("Error: LC_MAIN with other threads\n");
 				return false;
 			}
-			if (off+8 > bin->size || off + sizeof (ep) > bin->size) {
+			if (off + 8 > bin->size || off + sizeof (ep) > bin->size) {
 				eprintf ("invalid command size for main\n");
 				return false;
 			}
-			r_buf_read_at (bin->b, off+8, sep, 2 * sizeof (ut64));
+			r_buf_read_at (bin->b, off + 8, sep, 2 * sizeof (ut64));
 			ep.eo = r_read_ble64 (&sep[0], bin->big_endian);
 			ep.ss = r_read_ble64 (&sep[8], bin->big_endian);
 
 			bin->entry = ep.eo;
 			bin->main_cmd = lc;
 
-			sdb_num_set (bin->kv, "mach0.entry.offset", off+8, 0);
+			sdb_num_set (bin->kv, "mach0.entry.offset", off + 8, 0);
 			sdb_num_set (bin->kv, "stacksize", ep.ss, 0);
 
 			is_first_thread = false;

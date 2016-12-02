@@ -105,7 +105,6 @@ static RList* entries(RBinFile *arch) {
 			if (ptr->vaddr & 1) {
 				ptr->paddr--;
 				ptr->vaddr--;
-				ptr->haddr--;
 			}
 		}
 		r_list_append (ret, ptr);
