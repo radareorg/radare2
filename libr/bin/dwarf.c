@@ -21,7 +21,7 @@
 #define STANDARD_OPERAND_COUNT_DWARF3 12
 #define R_BIN_DWARF_INFO 1
 
-#define READ(x,y) ((x+sizeof(y)<buf_end)? *((y*)x): 0); x += sizeof (y)
+#define READ(x,y) ((x + sizeof(y) < buf_end)? *((y*)x): 0); x += sizeof (y)
 
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_array_type] = "DW_TAG_array_type",
@@ -1071,7 +1071,7 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f) 
 	};
 }
 
-static void r_bin_dwarf_dump_debug_info (FILE *f, const RBinDwarfDebugInfo *inf) {
+static void r_bin_dwarf_dump_debug_info(FILE *f, const RBinDwarfDebugInfo *inf) {
 	size_t i, j, k;
 	RBinDwarfDIE *dies;
 	RBinDwarfAttrValue *values;
@@ -1253,7 +1253,11 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 	const ut8 *buf = obuf, *buf_end = obuf + (cu->hdr.length - 7);
 	ut64 abbr_code;
 	size_t i;
-
+	
+	if (cu->hdr.length > debug_str_len) {
+		//avoid oob read
+		return NULL;
+	}
 	while (buf && buf < buf_end && buf >= obuf) {
 		if (cu->length && cu->capacity == cu->length) {
 			r_bin_dwarf_expand_cu (cu);
@@ -1287,7 +1291,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 				eprintf ("Warning: malformed dwarf attribute capacity doesn't match length\n");
 				break;
 			}
-			buf = r_bin_dwarf_parse_attr_value (buf, buf_end-buf,
+			buf = r_bin_dwarf_parse_attr_value (buf, buf_end - buf,
 					&da->decls[abbr_code - 1].specs[i],
 					&cu->dies[cu->length].attr_values[i],
 					&cu->hdr, debug_str, debug_str_len);
@@ -1457,7 +1461,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 			debug_str_len = debug_str->size;
 			debug_str_buf = calloc (1, debug_str_len);
 			ret = r_buf_read_at (binfile->buf, debug_str->paddr,
-					debug_str_buf, debug_str_len);
+					     debug_str_buf, debug_str_len);
 			if (!ret) {
 				free (debug_str_buf);
 				return false;
@@ -1465,7 +1469,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 		}
 
 		len = section->size;
-		if (len > (UT32_MAX>>1) || len <1) {
+		if (len > (UT32_MAX >> 1) || len < 1) {
 			free (debug_str_buf);
 			return false;
 		}
