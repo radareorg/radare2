@@ -526,6 +526,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			RIOSection *s;
 			*from = *to = 0;
 			r_list_foreach (core->io->sections, iter, s) {
+				if (!(s->rwx & R_IO_MAP)) {
+					continue;
+				}
 				if (!*from) {
 					*from = s->vaddr;
 					*to = s->vaddr+s->vsize;
@@ -751,7 +754,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 
 // XXX: deprecate and use _ok function only
 R_API RList *r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to) {
-	return r_core_get_boundaries_prot (core, R_IO_EXEC|R_IO_WRITE|R_IO_READ, mode, from, to);
+	return r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode, from, to);
 }
 
 static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf) {

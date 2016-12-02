@@ -23,9 +23,9 @@ static void cmd_pCd(RCore *core, const char *input) {
 	char *o_ab = strdup (r_config_get (core->config, "asm.bytes"));
 	if (asm_minicols) {
 		r_config_set (core->config, "asm.offset", "false");
-		r_config_set (core->config, "asm.bytes", "false");
+//		r_config_set (core->config, "asm.bytes", "false");
 	}
-		r_config_set (core->config, "asm.bytes", "false");
+	r_config_set (core->config, "asm.bytes", "false");
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
@@ -2441,6 +2441,7 @@ static int cmd_print(void *data, const char *input) {
 						|| (as->block[p].comments)
 						|| (as->block[p].imports)
 						|| (as->block[p].symbols)
+						|| (as->block[p].rwx)
 						|| (as->block[p].strings)) {
 					r_cons_printf ("\"offset\":%"PFMT64d",", at), l++;
 					r_cons_printf ("\"size\":%"PFMT64d",", piece), l++;

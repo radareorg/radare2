@@ -2838,7 +2838,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	if (step < 1) {
 		step = 1;
 	}
-	blocks = (to-from)/step;
+	blocks = (to - from) / step;
 	as_size = (1 + blocks) * sizeof (RCoreAnalStatsItem);
 	as->block = malloc (as_size);
 	if (!as->block) {

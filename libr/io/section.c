@@ -209,6 +209,9 @@ static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_col
 	int  width = cols - 60;
 	if (width < 1) width = 30;
 	r_list_foreach (io->sections, iter, s) {
+		if (!(s->rwx & R_IO_MAP)) {
+			continue;
+		}
 		if (min == -1 || s->vaddr < min) {
 			min = s->vaddr;
 		}
