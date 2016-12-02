@@ -76,10 +76,13 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
+#if 0				//TODO: check this stuff
 	{
 		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
 		baddr = s ? s->addr : r_config_get_i (core->config, "bin.baddr");
 	}
+#endif
+	baddr = r_config_get_i (core->config, "bin.baddr");
 
 	line_count = start_addr ? 0 : 1;
 	core->print->lines_cache[0] = start_addr ? 0 : baddr;

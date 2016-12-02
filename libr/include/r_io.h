@@ -297,6 +297,7 @@ R_API RIOSection *r_io_section_get_i (RIO *io, ut32 id);
 R_API int r_io_section_rm (RIO *io, ut32 id);
 R_API SdbList *r_io_section_bin_get (RIO *io, ut32 bin_id);
 R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id);
+R_API SdbList *r_io_section_gets_at (RIO *io, ut64 addr);
 R_API int r_io_section_set_archbits (RIO *io, ut32 id, const char *arch, int bits);
 R_API char *r_io_section_get_archbits (RIO *io, ut32 id, int *bits);
 R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch, int bits);
