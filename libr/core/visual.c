@@ -271,7 +271,9 @@ R_API void r_core_visual_prompt_input (RCore *core) {
 			int newsz = core->print->cur - core->print->ocur;
 			newaddr = core->offset + core->print->ocur;
 			r_core_block_size (core, newsz);
-		} else newaddr = core->offset + core->print->cur;
+		} else {
+			newaddr = core->offset + core->print->cur;
+		}
 		r_core_seek (core, newaddr, 1);
 	}
 	do {
@@ -2125,7 +2127,9 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
 	char pos[512], foo[512], bar[512], pcs[32];
-	if (!oldpc) oldpc = core->offset;
+	if (!oldpc) {
+		oldpc = r_debug_reg_get (core->dbg, "PC");
+	}
 	/* automatic block size */
 	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize)
