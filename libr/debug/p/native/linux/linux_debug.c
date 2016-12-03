@@ -103,8 +103,12 @@ int linux_handle_signals (RDebug *dbg) {
  * NOTE: This API was added in Linux 2.5.46
  */
 RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
-	ut32 pt_evt;
+	long pt_evt;
+#if __powerpc64__ || __arm64__ || __aarch64__ || __x86_64__
+	ut64 data;
+#else
 	ut32 data;
+#endif
 
 	/* we only handle stops with SIGTRAP here */
 	if (!WIFSTOPPED(status) || WSTOPSIG(status) != SIGTRAP) {
