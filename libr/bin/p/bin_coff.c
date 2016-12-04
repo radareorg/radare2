@@ -256,7 +256,7 @@ static RList *relocs(RBinFile *arch) {
 				reloc->vaddr = reloc->paddr;
 				r_list_append (list_rel, reloc);
 			}
-
+			free (rel);
 		}
 	}
 	return list_rel;

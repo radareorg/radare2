@@ -92,16 +92,22 @@ static int __io_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	dbg->iob.system (dbg->iob.io, "dr8");
 	char *regs = strdup (r_cons_get_buffer ());
 	ut8 *bregs = calloc (1, strlen (regs));
+	if (!bregs) {
+		free (regs);
+		return -1;
+	}
 	r_cons_reset ();
 	int sz = r_hex_str2bin (regs, bregs);
 	if (sz > 0) {
 		memcpy (buf, bregs, R_MIN (size, sz));
 		free (bregs);
+		free (regs);
 		return size;
 	} else {
 		eprintf ("SIZE %d (%s)\n", sz, regs);
 	}
 	free (bregs);
+	free (regs);
 	return -1;
 }
 

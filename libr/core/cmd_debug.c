@@ -1209,24 +1209,29 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 	RRegItem *r;
 	r_debug_map_sync (core->dbg);
 	r_list_foreach (list, iter, r) {
-		char *rrstr;
+		char *rrstr, *tmp = NULL;
 		if (r->size != bits) {
 			continue;
 		}
 		value = r_reg_get_value (core->dbg->reg, r);
 		rrstr = r_core_anal_hasrefs (core, value);
 		if (bits == 64) {
-			if (r->flags) {
-				r_cons_printf ("%6s %018s", r->name, r_reg_get_bvalue (reg, r));
+			if (r->flags) {	
+				tmp = r_reg_get_bvalue (reg, r);
+				r_cons_printf ("%6s %018s", r->name, tmp);
 			} else {
 				r_cons_printf ("%6s 0x%016"PFMT64x, r->name, value);
 			}
 		} else {
 			if (r->flags) {
-				r_cons_printf ("%6s %010s", r->name, r_reg_get_bvalue (reg, r));
+				tmp = r_reg_get_bvalue (reg, r);
+				r_cons_printf ("%6s %010s", r->name, tmp);
 			} else {
 				r_cons_printf ("%6s 0x%08"PFMT64x, r->name, value);
 			}
+		}
+		if (r->flags) {
+			free (tmp);
 		}
 		if (rrstr) {
 			r_cons_printf (" %s\n", rrstr);

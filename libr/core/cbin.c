@@ -18,17 +18,19 @@
 // dup from cmd_info
 #define PAIR_WIDTH 9
 static void pair(const char *a, const char *b, int mode, bool last) {
-	if (!b || !(*b)) return;
-
+	if (!b || !(*b)) {
+		return;
+	}
 	if (IS_MODE_JSON (mode)) {
 		const char *lst = last ? "" : ",";
 		r_cons_printf ("\"%s\":%s%s", a, b, lst);
 	} else {
 		char ws[16];
 		int al = strlen (a);
-
 		al = PAIR_WIDTH - al;
-		if (al < 0) al = 0;
+		if (al < 0) {
+			al = 0;
+		}
 		memset (ws, ' ', al);
 		ws[al] = 0;
 		r_cons_printf ("%s%s%s\n", a, ws, b);
@@ -758,8 +760,15 @@ static int bin_dwarf(RCore *core, int mode) {
 	char *lastFileContents2 = NULL;
 	int lastFileLinesCount2 = 0;
 
-	/* we should need to store all this in sdb, or do a filecontentscache in libr/util */
-        r_list_foreach (list, iter, row) {
+
+	const char *lf = NULL; 
+	int *lfl = NULL; 
+	char *lfc = NULL;
+	int lflc = 0; 
+
+	//TODO we should need to store all this in sdb, or do a filecontentscache in libr/util 
+	//XXX this whole thing has leaks
+	r_list_foreach (list, iter, row) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -768,10 +777,10 @@ static int bin_dwarf(RCore *core, int mode) {
 			const char *path = row->file;
 			if (!lastFile || strcmp (path, lastFile)) {
 				if (lastFile && lastFile2 && !strcmp (path, lastFile2)) {
-					const char *lf = lastFile;
-					int *lfl = lastFileLines;
-					char *lfc = lastFileContents;
-					int lflc = lastFileLinesCount;
+					lf = lastFile;
+					lfl = lastFileLines;
+					lfc = lastFileContents;
+					lflc = lastFileLinesCount;
 					lastFile = lastFile2;
 					lastFileLines = lastFileLines2;
 					lastFileContents = lastFileContents2;
@@ -785,7 +794,6 @@ static int bin_dwarf(RCore *core, int mode) {
 					lastFileLines2 = lastFileLines;
 					lastFileContents2 = lastFileContents;
 					lastFileLinesCount2 = lastFileLinesCount;
-
 					lastFile = path;
 					lastFileContents = r_file_slurp (path, NULL);
 					if (lastFileContents) {
@@ -818,8 +826,8 @@ static int bin_dwarf(RCore *core, int mode) {
 			}
 			// TODO: implement internal : if ((mode & R_CORE_BIN_SET))
 			if ((mode & R_CORE_BIN_SET)) {
-// TODO: use CL here.. but its not necessary.. so better not do anything imho
-// r_core_cmdf (core, "CL %s:%d 0x%08"PFMT64x, file, (int)row->line, row->address);
+				// TODO: use CL here.. but its not necessary.. so better not do anything imho
+				// r_core_cmdf (core, "CL %s:%d 0x%08"PFMT64x, file, (int)row->line, row->address);
 #if 0
 				char *cmt = r_str_newf ("%s:%d %s", file, (int)row->line, line? line: "");
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, row->address, cmt);
@@ -830,14 +838,16 @@ static int bin_dwarf(RCore *core, int mode) {
 				r_cons_printf ("\"CC %s:%d %s\"@0x%"PFMT64x"\n", file, row->line, line?line:"", row->address);
 			}
 			free (file);
+			free (line);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x"\t%s\t%d\n", row->address, row->file, row->line);
 		}
-        }
+	}
 	r_cons_break_pop ();
 	R_FREE (lastFileContents);
 	R_FREE (lastFileContents2);
 	r_list_free (list);
+	free (lastFileLines);
 	return true;
 }
 
@@ -2066,8 +2076,9 @@ static int bin_fields(RCore *r, int mode, int va) {
 		}
 		i++;
 	}
-	if (IS_MODE_JSON (mode)) r_cons_printf ("]");
-	else if (IS_MODE_RAD (mode)) {
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("]");
+	} else if (IS_MODE_RAD (mode)) {
 		/* add program header section */
 		r_cons_printf ("S 0 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" ehdr rwx\n",
 			baddr, size, size);
@@ -2081,10 +2092,15 @@ static int bin_fields(RCore *r, int mode, int va) {
 static bool flag_exists(RFlag *f, char* name) {
 	RListIter *iter;
 	RFlagItem *flag;
+	char *sym_name = NULL;
 	r_list_foreach (f->flags, iter, flag) {
-		if (flag->name == r_str_newf ("sym.%s", name)) {
+		sym_name = r_str_newf ("sym.%s", name);
+		if (!strncmp (flag->name, sym_name,
+			      R_MIN (strlen (flag->name), strlen (sym_name)))) {
+			free (sym_name);
 			return true;
 		}
+		free (sym_name);
 	}
 	return false;
 }
@@ -2497,13 +2513,16 @@ static int bin_signature(RCore *r, int mode) {
 }
 
 R_API void r_core_bin_export_info_rad(RCore *core) {
-	RBinFile *bf = r_core_bin_cur (core);
 	Sdb *db = NULL; 
-	if (!bf) return;
+	char *flagname, *offset = NULL;
+	RBinFile *bf = r_core_bin_cur (core);
+	if (!bf) {
+		return;
+	}
 	db = sdb_ns (bf->sdb, "info", 0);; 
-	if (!db) return;
-	char *flagname;
-	char *offset = NULL;
+	if (!db) {
+		return;
+	}
 	if (db) {
 		SdbListIter *iter;
 		SdbKv *kv;
@@ -2533,17 +2552,15 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 				r_cons_printf ("pf.%s %s\n", flagname, v);
 				int fmtsize = r_print_format_struct_size (v, core->print, 0);
 				char *offset_key = r_str_newf ("%s.offset", flagname);
-				const char *offset = sdb_const_get (db, offset_key, 0);
+				const char *off = sdb_const_get (db, offset_key, 0);
 				free (offset_key);
-				if (offset) {
-					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, offset);
-				} else {
-					// r_cons_printf ("CC Cf %d %s @ %s\n", fmtsize, v, "0");
-				}
+				if (off) {
+					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
+				} 
 			}
 			free (dup);
 		}
-
+		free (offset);
 	}
 }
 

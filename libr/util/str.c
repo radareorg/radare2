@@ -996,8 +996,8 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		if (!p) {
 			break;
 		}
-		off = (int)(size_t)(p-str);
-		scnd = strdup (p+klen);
+		off = (int)(size_t)(p - str);
+		scnd = strdup (p + klen);
 		slen += vlen - klen;
 		// HACK: this 32 avoids overwrites wtf
 		newstr = realloc (str, slen + klen + 1);
@@ -2486,6 +2486,9 @@ R_API int *r_str_split_lines(char *str, int *count) {
 	}
 	// allocate and set indexes
 	indexes = calloc (sizeof (int), lines + 1);
+	if (!indexes) {
+		return NULL;
+	}
 	int line = 0;
 	indexes[line++] = 0;
 	for (i = 0; str[i]; i++) {

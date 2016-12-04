@@ -13,6 +13,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
 	int mode, n, ret = -1;
 	mode = (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	if (!op) {
+		return 0;
+	}
 	if (a->cpu && *a->cpu) {
 		if (!strcmp (a->cpu, "micro")) {
 			mode |= CS_MODE_MICRO;
@@ -23,10 +26,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	mode |= (a->bits == 64)? CS_MODE_64: CS_MODE_32;
-	if (op) {
-		memset (op, 0, sizeof (RAsmOp));
-		op->size = 4;
-	}
+	memset (op, 0, sizeof (RAsmOp));
+	op->size = 4;
 	if (cd != 0) {
 		cs_close (&cd);
 	}
@@ -40,9 +41,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
 	}
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
-	if (!op) {
-		return 0;
-	}
 	n = cs_disasm (cd, (ut8*)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		strcpy (op->buf_asm, "invalid");

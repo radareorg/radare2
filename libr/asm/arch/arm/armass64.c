@@ -26,8 +26,10 @@ static ut32 mov(const char *str, int k) {
 static ut32 branch_reg(const char *str, ut64 addr, int k) {
 	ut32 op = UT32_MAX;
 	const char *operand = strchr (str, 'x');
+	if (!operand) {
+		return -1;
+	}
 	operand++;
-
 	int n = (int)r_num_math (NULL, operand);
 	if (n < 0 || n > 31) {
 		return -1;

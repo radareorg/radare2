@@ -189,6 +189,8 @@ static RList* sections(RBinFile *arch) {
 	if (!obj || !(ret = r_list_newf (free))) {
 		return NULL;
 	}
+	//there is not leak in section since they are cached by elf.c
+	//and freed within Elf_(r_bin_elf_free)
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
@@ -204,14 +206,17 @@ static RList* sections(RBinFile *arch) {
 			ptr->vaddr = section[i].rva;
 			ptr->add = true;
 			ptr->srwx = 0;
-			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
+			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
-			if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags))
+			}
+			if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_WRITABLE;
+			}
 			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_READABLE;
-				if (obj->ehdr.e_type == ET_REL)
+				if (obj->ehdr.e_type == ET_REL) {
 					ptr->srwx |= R_BIN_SCN_MAP;
+				}
 			}
 			r_list_append (ret, ptr);
 		}

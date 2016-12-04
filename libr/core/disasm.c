@@ -2598,11 +2598,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 				ds_comment_newline (ds);
 				const char *flag = "";
+				char str[128];
 				f = r_flag_get_i (core->flags, p);
 				if (f) {
 					flag = f->name;
 				} else if (ds->show_slow) {
-					char str[128];
 					(void)r_io_read_at (ds->core->io, ds->analop.ptr, (ut8*)str, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
 					if (*str && r_str_is_printable (str)) {

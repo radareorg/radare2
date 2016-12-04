@@ -204,7 +204,7 @@ static int readcommand (const char **p) {
 }
 
 /* try to read a label and optionally store it in the list */
-static void readlabel (const char **p, int store) {
+static void readlabel(const char **p, int store) {
 	const char *c, *d, *pos, *dummy;
 	int i, j;
 	struct label *buf, *previous, **thefirstlabel = NULL;
