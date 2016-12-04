@@ -389,14 +389,16 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	return true;
 }
 
-static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr) {
+static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinFile *binfile = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 	RBinPlugin * plugin;
 
-	if (!desc) return false;
+	if (!desc) {
+		return false;
+	}
 	r_io_use_desc (r->io, desc);
 
 	if (!r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {
@@ -409,7 +411,9 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	if (plugin && !strcmp (plugin->name, "any") ) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
-		if (!info) return false;
+		if (!info) {
+			return false;
+		}
 		// set use of raw strings
 		r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		r_config_set_i (r->config, "io.va", false);
@@ -420,7 +424,9 @@ static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 load
 	} else if (binfile) {
 		RBinObject *obj = r_bin_get_object (r->bin);
 		RBinInfo * info = obj ? obj->info : NULL;
-		if (!info) return false;
+		if (!info) {
+			return false;
+		}
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 				info->arch, info->bits);
@@ -514,7 +520,7 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// TODO? necessary to restore the desc back?
 		// RIODesc *oldesc = desc;
 		// Fix to select pid before trying to load the binary
-		if ( (desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
+		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
 			ut64 laddr = r_config_get_i (r->config, "bin.laddr");

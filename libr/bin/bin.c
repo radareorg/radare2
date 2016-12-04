@@ -1049,7 +1049,9 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const 
 			}
 		}
 	} else if (xtr && xtr->extract_from_bytes) {
-		if (!idx) idx = 1;
+		if (!idx) {
+			idx = 1;
+		}
 		RBinXtrData *xtr_data = xtr->extract_from_bytes (bin, bytes, sz, idx);
 		if (xtr_data) {
 			if (!r_bin_file_object_new_from_xtr_data (bin, bf, baseaddr, loadaddr, xtr_data)) {

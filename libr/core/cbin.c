@@ -2611,6 +2611,9 @@ R_API int r_core_bin_update_arch_bits(RCore *r) {
 	const char *arch = r->assembler->cur->arch;
 	ut16 bits = r->assembler->bits;
 	const char *name = binfile ? binfile->file : NULL;
+	if (r && r->bin && r->bin->binxtrs) {
+		r_anal_hint_clear (r->anal);
+	}
 	return r_core_bin_set_arch_bits (r, name, arch, bits);
 }
 
