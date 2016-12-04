@@ -802,7 +802,11 @@ static int bin_pe_init_tls(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (!image_tls_directory->AddressOfCallBacks) {
 		return 0;
 	}
-	PE_DWord callbacks_paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva(bin, (PE_DWord) image_tls_directory->AddressOfCallBacks));
+	if (image_tls_directory->EndAddressOfRawData < image_tls_directory->StartAddressOfRawData) {
+		return 0;
+	}
+	PE_DWord callbacks_paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva (bin, 
+							(PE_DWord) image_tls_directory->AddressOfCallBacks));
 	bin_pe_store_tls_callbacks (bin, callbacks_paddr);
 	return 0;
 }
