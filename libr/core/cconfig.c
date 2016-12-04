@@ -251,7 +251,10 @@ static int cb_asmarch(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = r_config_get (core->config, "asm.os");
 	int bits = R_SYS_BITS;
-	if (core->anal->bits) {
+	if (!*node->value || !core || !core->assembler) {
+		return false;
+	}
+	if (core && core->anal && core->anal->bits) {
 		bits = core->anal->bits;
 	}
 	if (*node->value == '?') {
@@ -260,9 +263,6 @@ static int cb_asmarch(void *user, void *data) {
 	}
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
-	if (!*node->value) {
-		return false;
-	}
 	if (!r_asm_use (core->assembler, node->value)) {
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
 		return false;
@@ -277,12 +277,11 @@ static int cb_asmarch(void *user, void *data) {
 					*comma = 0;
 					r_config_set (core->config, "asm.cpu", nac);
 				}
+				free (nac);
 			} else {
 				r_config_set (core->config, "asm.cpu", "");
 			}
 		}
-	}
-	if (core->assembler && core->assembler->cur) {
 		bits = core->assembler->cur->bits;
 		if (8 & bits) {
 			bits = 8;
@@ -296,7 +295,8 @@ static int cb_asmarch(void *user, void *data) {
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
-	if (core->assembler->cur && !(core->assembler->cur->bits & core->anal->bits)) {
+	if (core->assembler->cur && core->anal &&
+	    !(core->assembler->cur->bits & core->anal->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
@@ -325,9 +325,11 @@ static int cb_asmarch(void *user, void *data) {
 			r_config_set_i (core->config, "asm.pcalign", 0);
 		}
 	}
-	if (!r_syscall_setup (core->anal->syscall, node->value, asmos, core->anal->bits)) {
-		//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
-		//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
+	if (core->anal) {
+		if (!r_syscall_setup (core->anal->syscall, node->value, asmos, core->anal->bits)) {
+			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
+		}
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");

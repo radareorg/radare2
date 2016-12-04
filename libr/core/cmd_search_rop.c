@@ -30,10 +30,9 @@ static RList* parse_list (const char *str) {
 	return list;
 }
 
-static RList* get_constants (const char *str) {
+static RList* get_constants(const char *str) {
 	RList *list;
 	char *p, *data;
-
 	if (!str) {
 		return NULL;
 	}
@@ -41,14 +40,12 @@ static RList* get_constants (const char *str) {
 	data = strdup (str);
 	list = r_list_newf (free);
 	p = strtok (data, ",");
-
 	while (p) {
 		if (strtol (p, NULL, 0)) {
 			r_list_append (list, (void*)strdup (p));
 		}
 		p = strtok (NULL, ",");
 	}
-
 	return list;
 }
 
@@ -200,7 +197,7 @@ static void esil_split_flg (char *esil_str, char **esil_main, char **esil_flg) {
 	}
 }
 
-static char* rop_classify_constant (RCore *core, RList *ropList) {
+static char* rop_classify_constant(RCore *core, RList *ropList) {
 	char *esil_str, *constant;
 	char *ct = NULL, *esil_main = NULL, *esil_flg = NULL;
 	RListIter *iter_r, *iter_dst, *iter_const;
@@ -219,7 +216,7 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 	r_list_foreach (ropList, iter_r, esil_str) {
 		constants = get_constants (esil_str);
 		// if there are no constants in the instruction continue
-		if (!constants || !constants->head) {
+		if (r_list_empty (constants)) {
 			continue;
 		}
 
@@ -227,7 +224,8 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 		fillRegisterValues (core);
 		head = r_reg_get_list (core->dbg->reg, 0);
 		if (!head) {
-			return NULL;
+			ct = NULL;
+			goto out_error;
 		}
 
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
@@ -292,6 +290,7 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 				}
 			}
 		}
+out_error:
 		free (out);
 		R_FREE (esil_flg);
 		R_FREE (esil_main);
@@ -302,12 +301,13 @@ static char* rop_classify_constant (RCore *core, RList *ropList) {
 		r_list_free (reg_write);
 		r_list_free (mem_read);
 		r_list_free (mem_write);
+		r_list_free (constants);
 	}
 
 	return ct;
 }
 
-static char* rop_classify_mov (RCore *core, RList *ropList) {
+static char* rop_classify_mov(RCore *core, RList *ropList) {
 	char *esil_str;
 	char *mov = NULL, *esil_main = NULL, *esil_flg = NULL;
 	RListIter *iter_src, *iter_r, *iter_dst;
@@ -435,7 +435,7 @@ static char* rop_classify_mov (RCore *core, RList *ropList) {
 	return mov;
 }
 
-static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
+static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 	char *esil_str, *op;
 	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
 	RListIter *iter_src1, *iter_src2, *iter_r, *iter_dst, *iter_ops;
@@ -580,7 +580,7 @@ static char* rop_classify_arithmetic (RCore *core, RList *ropList) {
 	return arithmetic;
 }
 
-static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
+static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 	char *esil_str, *op, *constant;
 	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
 	RListIter *iter_src1, *iter_r, *iter_dst, *iter_ops, *iter_const;
@@ -603,17 +603,16 @@ static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
 	r_list_foreach (ropList, iter_r, esil_str) {
 		constants = get_constants (esil_str);
 		// if there are no constants in the instruction continue
-		if (!constants || !constants->head) {
+		if (r_list_empty (constants)) {
 			continue;
 		}
-
 		// init regs with known values
 		fillRegisterValues (core);
 		head = r_reg_get_list (core->dbg->reg, 0);
 		if (!head) {
-			return NULL;
+			arithmetic = NULL;
+			goto out_error;
 		}
-
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
 
 		// r_cons_printf ("Split : <%s> + <%s>\n", esil_main, esil_flg);
@@ -645,7 +644,6 @@ static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
 		r_list_foreach (ops_list, iter_ops, op) {
 			r_list_foreach (head, iter_src1, item_src1) {
 				ut64 value_src1, diff_src1;
-
 				value_src1 = r_reg_get_value (core->dbg->reg, item_src1);
 				r_reg_arena_swap (core->dbg->reg, false);
 				diff_src1 = r_reg_get_value (core->dbg->reg, item_src1);
@@ -654,11 +652,9 @@ static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
 				if (!r_list_find (reg_read, item_src1->name, (RListComparator)strcmp)) {
 					continue;
 				}
-
 				r_list_foreach (head, iter_dst, item_dst) {
 					ut64 value_dst, diff_dst;
 					bool redundant = false, simulate, simulate_r;
-
 					value_dst = r_reg_get_value (core->dbg->reg, item_dst);
 					r_reg_arena_swap (core->dbg->reg, false);
 					diff_dst = r_reg_get_value (core->dbg->reg, item_dst);
@@ -700,6 +696,7 @@ static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
 				}
 			}
 		}
+out_error:
 		free (out);
 		R_FREE (esil_flg);
 		R_FREE (esil_main);
@@ -710,6 +707,7 @@ static char* rop_classify_arithmetic_const (RCore *core, RList *ropList) {
 		r_list_free (mem_read);
 		r_list_free (mem_write);
 		r_list_free (ops_list);
+		r_list_free (constants);
 	}
 	free (op_result);
 	free (op_result_r);

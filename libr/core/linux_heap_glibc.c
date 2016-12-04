@@ -913,7 +913,7 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state) {
 	
 		bool is_free = false;
 		GHT double_free = GHT_MAX;
-		if (size_tmp >= SZ * 4 && size_tmp <= SZ * 24) {
+		if (size_tmp >= (GHT)SZ * 4 && size_tmp <= (GHT)SZ * 24) {
 			int i = (size_tmp / (SZ * 2)) - 2;
 			GHT next = ms->fastbinsY[i];
 			double_free = next;

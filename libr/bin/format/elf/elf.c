@@ -525,14 +525,25 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		return NULL;
 	}
 	if (!bin->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]) {
+		sdb_free (sdb);
 		return NULL;
 	}
 	if (shdr->sh_link > bin->ehdr.e_shnum) {
+		sdb_free (sdb);
 		return NULL;
 	}
 	link_shdr = &bin->shdr[shdr->sh_link];
 	ut8 *edata = calloc (num_entries, sizeof (ut16));
+	if (!edata) {
+		sdb_free (sdb);
+		return NULL;
+	}
 	ut16 *data = calloc (num_entries, sizeof (ut16));
+	if (!data) {
+		free (edata);
+		sdb_free (sdb);
+		return NULL;
+	}
 	ut64 off = Elf_(r_bin_elf_v2p) (bin, bin->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]);
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
 		section_name = &bin->shstrtab[shdr->sh_name];
@@ -2857,7 +2868,9 @@ RBinElfField* Elf_(r_bin_elf_get_fields)(ELFOBJ *bin) {
 
 void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	int i;
-	if (!bin) return NULL;
+	if (!bin) {
+		return NULL;
+	}
 	free (bin->phdr);
 	free (bin->shdr);
 	free (bin->strtab);

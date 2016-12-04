@@ -51,7 +51,7 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_help.c"
 #include "cmd_search.c"
 
-static void recursive_help (RCore *core, const char *cmd) {
+static void recursive_help(RCore *core, const char *cmd) {
 	char *nl, *line;
 	if (strchr (cmd, '[')) {
 		eprintf ("Skip ((%s))\n", cmd);
@@ -78,6 +78,7 @@ static void recursive_help (RCore *core, const char *cmd) {
 		// eprintf (" -- ((%s))\n", line);
 		line = nl + 1;
 	} while (nl);
+	free (msg);
 }
 
 static int r_core_cmd_nullcallback(void *data) {
@@ -1375,7 +1376,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	int usemyblock = 0;
 	int scr_html = -1;
 
-	if (!cmd) return 0;
+	if (!cmd) {
+		return 0;
+	}
 	cmd = r_str_trim_head_tail (cmd);
 
 	/* quoted / raw command */
@@ -1465,8 +1468,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		if (colon && ptr) {
 			int ret ;
 			*ptr = '\0';
-			if (r_core_cmd_subst (core, cmd) == -1)
+			if (r_core_cmd_subst (core, cmd) == -1) {
 				return -1;
+			}
 			cmd = ptr+1;
 			ret = r_core_cmd_subst (core, cmd);
 			*ptr = ';';

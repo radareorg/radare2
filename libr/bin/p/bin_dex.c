@@ -868,13 +868,13 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 
 		char *name = dex_method_name (bin, MI);
 		char *signature = dex_method_signature(bin, MI);
-
-		const char* accessStr = createAccessFlagStr(MA, kAccessForMethod);
+		char* accessStr = createAccessFlagStr(MA, kAccessForMethod);
 
 		dprintf("    #%d              : (in %s)\n", i, class_name);
 		dprintf("      name          : '%s'\n", name);
 		dprintf("      type          : '%s'\n", signature);
 		dprintf("      access        : 0x%04x (%s)\n", (unsigned int)MA, accessStr);
+		free (accessStr);
 
 		{
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);

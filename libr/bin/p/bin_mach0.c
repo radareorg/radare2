@@ -89,12 +89,12 @@ static RList* entries(RBinFile *arch) {
 	RBinAddr *ptr = NULL;
 	RBinObject *obj = arch ? arch->o : NULL;
 	struct addr_t *entry = NULL;
-	int wordsize = MACH0_(get_bits) (obj->bin_obj);
+	int wordsize = 0; 
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_new ())) {
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
+	wordsize = MACH0_(get_bits) (obj->bin_obj);
 	if (!(entry = MACH0_(get_entrypoint) (obj->bin_obj))) {
 		return ret;
 	}

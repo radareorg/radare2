@@ -418,7 +418,7 @@ static int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, ut64 pid, ut64 ad
 	return ret;
 }
 
-static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
+static int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	int ret, inphex, ioctl_n;
 	ul pid, addr, len;
 	ut8 *databuf = NULL;
@@ -427,7 +427,7 @@ static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
 	switch (*buf) {
 	case 'r':
 		{
-			RPrint *print = r_print_new();
+			RPrint *print = r_print_new ();
 			switch (buf[1]) {
 			case 'l':
 				//read linear address
@@ -465,12 +465,17 @@ static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
 				ioctl_n = IOCTL_READ_PHYSICAL_ADDR;
 				break;
 			default:
+				r_print_free (print);
 				goto end;
 			}
 			databuf = (ut8 *) calloc (len + 1, 1);
-			ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
-			if (ret > 0) {
-				r_print_hexdump (print, addr, (const ut8 *) databuf, ret, 16, 1);
+			if (databuf) {
+				ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
+				if (ret > 0) {
+					r_print_hexdump (print, addr, (const ut8 *) databuf, ret, 16, 1);
+				}
+			} else {
+				io->cb_printf ("Failed to allocate buffer\n");
 			}
 			r_print_free (print);
 		}
@@ -516,6 +521,9 @@ static int run_ioctl_command (RIO *io, RIODesc *iodesc, const char *buf) {
 			break;
 		default:
 			goto end;
+		}
+		if (!buf) {
+			break;
 		}
 		len = strlen (buf);
 		databuf = (ut8 *) calloc (len + 1, 1);

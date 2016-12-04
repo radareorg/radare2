@@ -1664,6 +1664,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				R_FREE (string2);
 			}
 		}
+		//XXX leak
 		str = strstr (line, " str.");
 		if (str) {
 			char *qoe = NULL;

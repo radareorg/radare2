@@ -240,8 +240,10 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 
 		switch (type) {
 		case 0: // DATA
-			eol = strchr (str+1, ':');
-			if (eol) *eol = 0;
+			eol = strchr (str + 1, ':');
+			if (eol) {
+				*eol = 0;
+			}
 			cksum = bc;
 			cksum += addr_tmp>>8;
 			cksum += addr_tmp;
@@ -250,7 +252,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			if ((next_addr != addr_tmp) || ((sec_size + bc) > SEC_MAX)) {
 				//previous block is not contiguous, or
 				//section buffer is full => write a sparse chunk
-				if (sec_size) {
+				if (sec_size && sec_size < UT16_MAX) {
 					if (r_buf_write_at (rbuf, sec_start, sec_tmp, (int) sec_size) != sec_size) {
 						eprintf ("sparse buffer problem, giving up\n");
 						goto fail;

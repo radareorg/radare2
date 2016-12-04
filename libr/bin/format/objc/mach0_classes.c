@@ -111,7 +111,9 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *arch
 	RListIter *iter = NULL;
 	RBinSection *s = NULL;
 	RBinObject *obj = arch ? arch->o : NULL;
-
+	if (!obj) {
+		return 0;
+	}
 	if (!sctns) {
 		sctns = r_bin_plugin_mach.sections (arch);
 		if (!sctns) {
