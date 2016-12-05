@@ -3407,6 +3407,7 @@ static void handle_print_refptr(RCore *core, RDisasmState *ds) {
 }
 #endif
 
+
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
 	int continueoninvbreak = (len == l) && invbreak;
@@ -4402,7 +4403,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			r_anal_op_fini (&ds->analop);
 			if (!ds->lastfail) {
 				r_anal_op (core->anal, &ds->analop,
-					ds->at+bb_size_consumed, buf+idx,
+					ds->at + bb_size_consumed, buf + idx,
 					len-bb_size_consumed);
 			}
 			if (ret < 1) {

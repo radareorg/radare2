@@ -298,13 +298,13 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, at);
 	infos = sdb_const_get (s, key, 0);
-	if (!infos)
-		return NULL;
+	if (!infos) return NULL;
 	for (; *infos; infos++) {
 		/* XXX wtf, must use anal.meta.deserialize() */
 		char *p, *q;
-		if (*infos==',')
+		if (*infos == ',') {
 			continue;
+		}
 		snprintf (key, sizeof (key) - 1, "meta.%c.0x%"PFMT64x, *infos, at);
 		metas = sdb_const_get (s, key, 0);
 		mi.size = sdb_array_get_num (s, key, 0, 0);
@@ -357,7 +357,7 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 	}
 	str = r_str_escape (d->str);
 	if (str || d->type == 'd') {
-		if (d->type=='s' && !*str) {
+		if (d->type == 's' && !*str) {
 			free (str);
 			return;
 		}
@@ -366,7 +366,9 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
-		} else pstr = d->str;
+		} else {
+			pstr = d->str;
+		}
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
