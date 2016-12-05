@@ -1450,6 +1450,7 @@ R_API int r_meta_set_var_comment (RAnal *a, int type, ut64 idx, ut64 addr, const
 R_API int r_meta_del(RAnal *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 size, const char *str);
+R_API bool r_meta_get_diff_regard_addr(RAnal *m, ut64 addr, int *inc, bool backwards); 
 R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);

@@ -1372,9 +1372,9 @@ R_API int r_str_nlen_w(const char *str, int n) {
 			str++;
 			if (!*str) {
 				//handle wide strings
-			 	//xx00yy00bb00
+			 	//xx00yy00bb00 0000
 				if (n - 2 > 0) {
-					if (str[2]) {
+					if (!str[1] && !str[2]) {
 						break;
 					}
 				}

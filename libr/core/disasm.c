@@ -3486,6 +3486,10 @@ toro:
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = p2v (ds, ds->at);
+		//r_cons_printf ("BEFORE %d\n", inc);
+		if (r_meta_get_diff_regard_addr (core->anal, ds->at, &inc, true)) {
+			continue;
+		}
 		if (r_cons_is_breaked ()) {
 			dorepeat = 0;
 			r_cons_break_pop ();

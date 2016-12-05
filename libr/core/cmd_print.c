@@ -3244,18 +3244,31 @@ static int cmd_print(void *data, const char *input) {
 						eprintf ("Cannot allocate %d bytes\n", l);
 					}
 				} else {
-					block = malloc (R_MAX(l*10, bs));
+					int inc = 0;
+					static ut64 praddr = 0; 
+					block = malloc (R_MAX (l * 10, bs));
+					if (!block) {
+						return 1;
+					}
 					memcpy (block, core->block, bs);
-					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
-					core->num->value = r_core_print_disasm (core->print, core, addr, block, l*10, l, 0, 0);
+					r_core_read_at (core, addr + bs, block + bs, (l * 10) - bs); //core->blocksize);
+					core->num->value = r_core_print_disasm (core->print, core, addr, block, l * 10, l, 0, 0);
+					if (r_meta_get_diff_regard_addr (core->anal, addr, &inc, true)) {
+						if (praddr >= addr) {
+							r_meta_get_diff_regard_addr (core->anal, addr, &inc, false);
+						} 
+						current_offset = addr + inc - 1;
+					}
+					praddr = addr;
 				}
 			}
 			free (block);
 		}
 		core->offset = current_offset;
 		// change back asm setting if they were changed
-		if (settings_changed)
+		if (settings_changed) {
 			r_core_set_asm_configs (core, old_arch, old_bits, segoff);
+		}
 
 		free (old_arch);
 		free (new_arch);

@@ -327,9 +327,48 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 			free (mi.str);
 			mi.str = (char*)sdb_decode (q + 1, 0);
 			return &mi;
-		} else mi.str = NULL;
+		} else {
+			mi.str = NULL;
+		}
 	}
 	return NULL;
+}
+
+
+typedef struct {
+	ut64 addr;
+	int inc;
+	bool found;
+	bool backwards;
+} RRangeMeta;
+
+static int rangeMeta(void *user, const char *k, const char *v) {
+	RRangeMeta *meta = (RRangeMeta *)user;
+	ut64 from, size;
+	int type;
+	type = k[5];
+	size = sdb_atoi (v);
+	from = sdb_atoi (k + 7);
+	if (from < meta->addr && meta->addr < from + size) {
+		if (meta->backwards) {
+			meta->inc += ((from + size) - meta->addr);
+		} else {
+			meta->inc += (from - meta->addr);
+		}
+		meta->found = true;
+		return 0;
+	} 
+	return 1;
+}
+
+R_API bool r_meta_get_diff_regard_addr(RAnal *anal, ut64 addr, int *inc, bool backwards) {
+	RRangeMeta meta = {addr, *inc, false, backwards};
+	sdb_foreach (anal->sdb_meta, rangeMeta, &meta);
+	if (meta.found) {
+		*inc = meta.inc;
+		return true;
+	}
+	return false;
 }
 
 R_API const char *r_meta_type_to_string(int type) {
