@@ -413,7 +413,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	char str[64];
 	if (n == -1) {
 		n = (int)r_debug_reg_get (core->dbg, "oeax");
-		if (n == 0 || n == -1) {
+		if (!n || n == -1) {
 			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 			n = (int)r_debug_reg_get (core->dbg, a0);
 		}
@@ -3354,7 +3354,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
 #if JAYRO_03
 				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
-					fcn = r_anal_get_fcn_in(core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
+					fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
 					if (!fcn) {
 						r_core_anal_fcn (core, op.jump, addr,
 								R_ANAL_REF_TYPE_NULL, depth);
@@ -3607,8 +3607,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case '-': { // "ax-"
 		const char *inp;
 		ut64 a, b;
-		for (inp = input + 1; *inp && IS_WHITESPACE (*inp); inp++)
-			;
+		for (inp = input + 1; *inp && IS_WHITESPACE (*inp); inp++) {
+			//nothing to see here
+		}
 		if (!strcmp (inp, "*")) {
 			r_anal_xrefs_init (core->anal);
 		} else {
@@ -3629,14 +3630,16 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'g': // "axg"
 		{
 			Sdb *db = sdb_new0();
-			anal_axg (core, input+2, 0, db);
+			anal_axg (core, input + 2, 0, db);
 			sdb_free (db);
 		}
 		break;
 	case 'k': // "axk"
 		if (input[1] == ' ') {
 			sdb_query (core->anal->sdb_xrefs, input + 2);
-		} else eprintf ("|ERROR| Usage: axk [query]\n");
+		} else {
+			eprintf ("|ERROR| Usage: axk [query]\n");
+		}
 		break;
 	case '\0': // "ax"
 	case 'j': // "axj"
@@ -4579,7 +4582,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	from = to = 0;
 	ptr = r_str_trim_head (strdup (input));
 	n = r_str_word_set0 (ptr);
-	if (n == 0) {
+	if (!n) {
 		int rwx = R_IO_EXEC;
 		// get boundaries of current memory map, section or io map
 		if (cfg_debug) {
@@ -4601,7 +4604,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			from = core->offset;
 			to = r_io_size (core->io) + (map? map->to: 0);
 		}
-		if (from == 0 && to == 0) {
+		if (!from && !to) {
 			eprintf ("Cannot determine xref search boundaries\n");
 		} else if (!(rwx & R_IO_EXEC)) {
 			eprintf ("Warning: Searching xrefs in non-executable region\n");
@@ -4617,7 +4620,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	if (from == UT64_MAX && to == UT64_MAX) {
 		return false;
 	}
-	if (from == 0 && to == 0) {
+	if (!from && !to) {
 		return false;
 	}
 	if (to - from > r_io_size (core->io)) {

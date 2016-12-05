@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <r_anal.h>
+#include <r_cons.h>
 #include <sdb.h>
 
 #define DB anal->sdb_xrefs
