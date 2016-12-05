@@ -65,6 +65,7 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
+#if 0
 // Detect if there's code in the given address
 // - falls in section named 'text'
 // - section has exec bit, some const strings are in there
@@ -78,13 +79,17 @@ static bool iscodesection(RCore *core, ut64 addr) {
 	// BSS return (s && s->rwx & R_IO_WRITE)? 0: 1;
 	// Cstring return (s && s->rwx & R_IO_EXEC)? 1: 0;
 }
+#endif
 
 static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 	ut8 *str;
 	int ret, len = 0;
+	//there can be strings in code section
+#if 0
 	if (iscodesection (core, addr)) {
 		return NULL;
 	}
+#endif
 	str = calloc (1024, 1);
 	if (!str) {
 		return NULL;
@@ -496,7 +501,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				goto error;
 			}
 		}
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		fcnlen = r_anal_fcn (core->anal, fcn, at + delta, buf, buflen, reftype);
@@ -530,7 +535,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && r_anal_fcn_size (fcn) < 1)) { /* Error analyzing function */
 			if (core->anal->opt.followbrokenfcnsrefs) {
-				r_anal_analyze_fcn_refs(core, fcn, depth);
+				r_anal_analyze_fcn_refs (core, fcn, depth);
 			}
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
@@ -1305,7 +1310,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	if (at == UT64_MAX || depth < 0) {
 		return false;
 	}
-	if (r_cons_singleton()->breaked) {
+	if (r_cons_is_breaked ()) {
 		return false;
 	}
 
@@ -1370,7 +1375,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	RAnalFunction *fcni;
 	RListIter *iter, *iter_tmp;
 
-	if (addr == 0) {
+	if (!addr) {
 		r_list_purge (core->anal->fcns);
 		if (!(core->anal->fcns = r_anal_fcn_list_new ()))
 			return false;
@@ -2507,16 +2512,16 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	while (at < to && !r_cons_is_breaked ()) {
 		int i, ret;
 		ret = r_io_read_at (core->io, at, buf, core->blocksize);
-		if (ret != core->blocksize && at+ret-OPSZ < to) {
+		if (ret != core->blocksize && at + ret-OPSZ < to) {
 			break;
 		}
 		i = 0;
 		while (at + i < to && i < ret-OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_from, xref_to;
-			xref_from = at+i;
+			xref_from = at + i;
 			r_anal_op_fini (&op);
-			ret = r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i);
+			ret = r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i);
 			i += (ret > 0) ? ret : 1;
 			if (ret <= 0 || at + i > to) {
 				continue;
@@ -2590,18 +2595,21 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				}
 			}
 			if (!rad) {
-				if (cfg_anal_strings) {
+				if (cfg_anal_strings && type == R_ANAL_REF_TYPE_DATA) {
 					int len = 0;
 					char *str_string = is_string_at (core, xref_to, &len);
 					if (str_string) {
 						r_name_filter (str_string, -1);
 						char *str_flagname = r_str_newf ("str.%s", str_string);
+						r_flag_space_push (core->flags, "strings");
 						(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
-						free (str_string);
+						r_flag_space_pop (core->flags);
 					}
 					if (len > 0) {
-						r_core_cmdf (core, "Cs %d @ 0x%"PFMT64x, len, xref_to);
+						r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,  
+								xref_to + len, (const char *)str_string);
 					}
+					free (str_string);
 				}
 				// Add to SDB
 				r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
@@ -2622,15 +2630,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				default: cmd = "ax"; break;
 				}
 				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, xref_from);
-				if (cfg_anal_strings) {
+				if (cfg_anal_strings && type == R_ANAL_REF_TYPE_DATA) {
 					char *str_flagname = is_string_at (core, xref_to, &len);
 					if (str_flagname) {
 						ut64 str_addr = xref_to;
 						r_name_filter (str_flagname, -1);
-						r_cons_printf ("f str.%s=0x%"PFMT64x"\n",
-							str_flagname, str_addr);
-						r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n",
-							len, str_addr);
+						r_cons_printf ("f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
+						r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n", len, str_addr);
 						free (str_flagname);
 					}
 				}

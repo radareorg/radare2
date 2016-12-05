@@ -4,7 +4,7 @@ EXTRA_TARGETS+=do
 EXTRA_CLEAN=doclean
 
 NAME=r_anal
-DEPS=r_util r_reg r_syscall
+DEPS=r_util r_reg r_syscall r_cons
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 CFLAGS+=-I$(LTOP)/asm/arch/include
 

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
 
 #include <r_anal.h>
+#include <r_cons.h>
 #include <sdb.h>
 
 #define DB anal->sdb_xrefs
@@ -188,11 +189,15 @@ static bool xrefs_list_cb_json(RAnal *anal, bool is_first, const char *k, const 
 }
 
 static int xrefs_list_cb_plain(RAnal *anal, const char *k, const char *v) {
+	if (r_cons_is_breaked ()) {
+		return 0;
+	}
 	anal->cb_printf ("%s=%s\n", k, v);
 	return 1;
 }
 
 R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
+	r_cons_break_push (NULL, NULL);
 	switch (rad) {
 	case 1:
 	case '*':
@@ -213,6 +218,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_plain, anal);
 		break;
 	}
+	r_cons_break_pop ();
 }
 
 R_API const char *r_anal_xrefs_type_tostring (char type) {

@@ -75,7 +75,7 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 	return f->space_idx;
 }
 
-R_API int r_flag_space_unset (RFlag *f, const char *fs) {
+R_API int r_flag_space_unset(RFlag *f, const char *fs) {
 	RListIter *iter;
 	RFlagItem *fi;
 	int i, count = 0;

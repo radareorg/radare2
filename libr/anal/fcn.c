@@ -482,7 +482,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	}
 
 	if (depth < 1) {
-		eprintf ("That's too deep\n");
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
@@ -519,7 +518,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	ut64 last_push_addr = UT64_MAX;
 	while (idx < len) {
 		if (anal->limit) {
-			if ((addr + idx)<anal->limit->from || (addr + idx + 1) >anal->limit->to) {
+			if ((addr + idx) < anal->limit->from || (addr + idx + 1) >anal->limit->to) {
 				break;
 			}
 		}
@@ -536,7 +535,7 @@ repeat:
 		// check if opcode is in another basic block
 		// in that case we break
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
-			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr + idx);
 			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);
 			} else {
@@ -561,7 +560,7 @@ repeat:
 		}
 		idx += oplen;
 		delay.un_idx = idx;
-		if (op.delay > 0 && delay.pending == 0) {
+		if (op.delay > 0 && !delay.pending) {
 			// Handle first pass through a branch delay jump:
 			// Come back and handle the current instruction later.
 			// Save the location of it in `delay.idx`
@@ -975,9 +974,8 @@ river:
 		case R_ANAL_OP_TYPE_PUSH:
 			last_is_push = true;
 			last_push_addr = op.val;
-			/* consider DATA refs to code as CODE referencs */
 			if (anal->iob.is_valid_offset (anal->iob.io, op.val, 1)) {
-				(void)r_anal_fcn_xref_add (anal, fcn, op.addr, op.val, R_ANAL_REF_TYPE_CODE);
+				(void)r_anal_fcn_xref_add (anal, fcn, op.addr, op.val, R_ANAL_REF_TYPE_DATA);
 			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
