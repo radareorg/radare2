@@ -792,8 +792,14 @@ show_help:
 				//r_cons_printf ("fs+module_%s\n", fn);
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 						fn, map->addr);
+#if __WINDOWS__
+				/* Single quotes break the generated rabin2 command on Windows */
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
+						map->addr, map->file);
+#else
 				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
 						map->addr, map->file);
+#endif
 				//r_cons_printf ("fs-\n");
 				free (fn);
 			}
@@ -816,8 +822,15 @@ show_help:
 				//r_cons_printf ("fs+module_%s\n", fn);
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 						fn, map->addr);
+
+#if __WINDOWS__
+				/* Single quotes break the generated rabin2 command on Windows */
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
+						map->addr, map->file);
+#else
 				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
 						map->addr, map->file);
+#endif
 				//r_cons_printf ("fs-\n");
 				free (fn);
 			}
