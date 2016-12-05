@@ -314,10 +314,9 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 		function_label = r_str_newf ("fcn2.%08"PFMT64x, addr);
 	}
 	r_core_cmdf (core, "af+ 0x%08"PFMT64x" %d %s\n",
-							 sdb_num_get (db, "addr", NULL),
-							 (int)sdb_num_get (db, "size", NULL),
-							 function_label
-							);
+		sdb_num_get (db, "addr", NULL),
+		(int)sdb_num_get (db, "size", NULL),
+		function_label);
 	// list bbs
 	{
 		char *c, *bbs = sdb_get (db, "bbs", NULL);
