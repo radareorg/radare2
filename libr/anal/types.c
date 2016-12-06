@@ -99,7 +99,7 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 }
 
 R_API RList *r_anal_type_fcn_list(RAnal *anal) {
-	SdbList *sdb_list = sdb_foreach_list (anal->sdb_types, true);
+	SdbList *sdb_list = sdb_foreach_match (anal->sdb_types, "=^func$", false);
 	RList *list = r_list_new ();
 	char *name, *value;
 	const char *key;
@@ -109,12 +109,10 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 
 	if (!list || !sdb_list) {
 		r_list_free (list);
+		r_list_free (sdb_list);
 		return 0;
 	}
 	ls_foreach (sdb_list, sdb_iter, kv) {
-		if (strcmp (kv->value, "func")) {
-			continue;
-		}
 		RAnalFunction *fcn = r_anal_fcn_new ();
 		r_list_append (list, fcn);
 		//setting function name and return type
