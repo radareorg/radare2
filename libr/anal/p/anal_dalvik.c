@@ -163,7 +163,6 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x4d: // aput-object
 	case 0x4e: // aput-bool
 	case 0x4f: // 
-	case 0x4f: //
 	case 0x5e: //iput-char
 	case 0xfc: //iput-object-volatile
 	case 0xf5: //iput-quick
@@ -379,7 +378,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			//int vA = (int) data[1];
 			int vB = (data[3] << 8) | data[2];
 			// resolve class name for vB
-			ut64 off = R_ANAL_GET_OFFSET (anal, 'c', vB);
+			ut64 off = R_ANAL_GET_OFFSET (anal, 't', vB);
 			op->ptr = off;
 		}
 		break;

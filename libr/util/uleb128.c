@@ -95,30 +95,24 @@ R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
 #define G_GINT64_CONSTANT(val) (val##L)
 
 R_API st64 gum_read_sleb128(const ut8 **data, const ut8 *end) {
-  const ut8 *p = *data;
-  st64 result = 0;
-  int offset = 0;
-  ut8 value;
-
-  do {
-    st64 chunk;
-
-    //g_assert (p != end);
-    //g_assert_cmpint (offset, <=, 63);
-
-    value = *p;
-    chunk = value & 0x7f;
-    result |= (chunk << offset);
-    offset += 7;
-  }
-  while (*p++ & 0x80);
-
-  if ((value & 0x40) != 0)
-    result |= G_GINT64_CONSTANT (-1) << offset;
-
-  *data = p;
-
-  return result;
+	const ut8 *p = *data;
+	st64 result = 0;
+	int offset = 0;
+	ut8 value;
+ 	do {
+		st64 chunk;
+		value = *p;
+		chunk = value & 0x7f;
+		result |= (chunk << offset);
+		offset += 7;
+	}
+	while (*p++ & 0x80);
+  	
+  	if ((value & 0x40) != 0) {
+  		result |= G_GINT64_CONSTANT (-1) << offset;
+  	}
+ 	*data = p;
+	return result;
 }
 
 #if 0

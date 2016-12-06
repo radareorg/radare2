@@ -321,6 +321,10 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'H':
+			if (input[1] == 'H') { //iHH
+				RBININFO ("header", R_CORE_BIN_ACC_HEADER, NULL);
+				break;
+			}
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL); break;
 		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL); break;
 		case 'L': r_bin_list (core->bin, input[1]=='j'); break;
@@ -486,6 +490,7 @@ static int cmd_info(void *data, const char *input) {
 				"ie", "", "Entrypoint",
 				"iE", "", "Exports (global symbols)",
 				"ih", "", "Headers (alias for iH)",
+				"iHH", "", "Verbose Headers in raw text",
 				"ii", "", "Imports",
 				"iI", "", "Binary info",
 				"ik", " [query]", "Key-value database from RBinObject",

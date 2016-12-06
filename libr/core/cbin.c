@@ -2529,6 +2529,7 @@ static int bin_signature(RCore *r, int mode) {
 	return false;
 }
 
+
 R_API void r_core_bin_export_info_rad(RCore *core) {
 	Sdb *db = NULL; 
 	char *flagname, *offset = NULL;
@@ -2581,6 +2582,17 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 	}
 }
 
+static int bin_header(RCore *r, int mode) {
+	RBinFile *cur = r_bin_cur (r->bin);
+	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
+	if (plg && plg->header) {
+		plg->header (cur);
+		return true;
+	}
+	return false;
+
+}
+
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
 	int ret = true;
 	const char *name = NULL;
@@ -2612,6 +2624,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if ((action & R_CORE_BIN_ACC_MEM)) ret &= bin_mem (core, mode);
 	if ((action & R_CORE_BIN_ACC_VERSIONINFO)) ret &= bin_versioninfo (core, mode);
 	if ((action & R_CORE_BIN_ACC_SIGNATURE)) ret &= bin_signature (core, mode);
+	if ((action & R_CORE_BIN_ACC_HEADER)) ret &= bin_header (core, mode);
 	return ret;
 }
 

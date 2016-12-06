@@ -4,14 +4,6 @@
 #include <r_util.h>
 #include "dex.h"
 
-#define DEBUG_PRINTF 0
-
-#if DEBUG_PRINTF
-#define dprintf eprintf
-#else
-#define dprintf if (0)eprintf
-#endif
-
 char* r_bin_dex_get_version(RBinDexObj *bin) {
 	if (bin) {
 		ut8* version = calloc (1, 8);
@@ -36,7 +28,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		goto fail;
 	}
 	/* header */
-	if (bin->size < sizeof(struct dex_header_t)) {
+	if (bin->size < sizeof (struct dex_header_t)) {
 		goto fail;
 	}
 	bufptr = bin->b->buf;
@@ -46,12 +38,15 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	if (bin->size < 112) {
 		goto fail;
 	}
+
 	memcpy (&dexhdr->magic, bufptr, 8);
 	dexhdr->checksum = r_read_le32 (bufptr + 8);
 	memcpy (&dexhdr->signature, bufptr + 12, 20);
 	dexhdr->size = r_read_le32 (bufptr + 32);
 	dexhdr->header_size = r_read_le32 (bufptr + 36);
 	dexhdr->endian = r_read_le32 (bufptr + 40);
+	// TODO: this offsets and size will be used for checking,
+	// so they should be checked. Check overlap, < 0, > bin.size
 	dexhdr->linksection_size = r_read_le32 (bufptr + 44);
 	dexhdr->linksection_offset = r_read_le32 (bufptr + 48);
 	dexhdr->map_offset = r_read_le32 (bufptr + 52);
@@ -70,33 +65,8 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	dexhdr->data_size = r_read_le32 (bufptr + 104);
 	dexhdr->data_offset = r_read_le32 (bufptr + 108);
 
-#if DEBUG_PRINTF
-	dprintf ("DEX file header:\n");
-	dprintf ("magic               : 'dex\\n035\\0'\n");
-	dprintf ("checksum            : %x\n", dexhdr->checksum);
-	dprintf ("signature           : %02x%02x...%02x%02x\n", dexhdr->signature[0], dexhdr->signature[1], dexhdr->signature[18], dexhdr->signature[19]);
-	dprintf ("file_size           : %d\n", dexhdr->size);
-	dprintf ("header_size         : %d\n", dexhdr->header_size);
-	dprintf ("link_size           : %d\n", dexhdr->linksection_size);
-	dprintf ("link_off            : %d (0x%06x)\n", dexhdr->linksection_offset, dexhdr->linksection_offset);
-	dprintf ("string_ids_size     : %d\n", dexhdr->strings_size);
-	dprintf ("string_ids_off      : %d (0x%06x)\n", dexhdr->strings_offset, dexhdr->strings_offset);
-	dprintf ("type_ids_size       : %d\n", dexhdr->types_size);
-	dprintf ("type_ids_off        : %d (0x%06x)\n", dexhdr->types_offset, dexhdr->types_offset);
-	dprintf ("proto_ids_size       : %d\n", dexhdr->prototypes_size);
-	dprintf ("proto_ids_off        : %d (0x%06x)\n", dexhdr->prototypes_offset, dexhdr->prototypes_offset);
-	dprintf ("field_ids_size      : %d\n", dexhdr->fields_size);
-	dprintf ("field_ids_off       : %d (0x%06x)\n", dexhdr->fields_offset, dexhdr->fields_offset);
-	dprintf ("method_ids_size     : %d\n", dexhdr->method_size);
-	dprintf ("method_ids_off      : %d (0x%06x)\n", dexhdr->method_offset, dexhdr->method_offset);
-	dprintf ("class_defs_size     : %d\n", dexhdr->class_size);
-	dprintf ("class_defs_off      : %d (0x%06x)\n", dexhdr->class_offset, dexhdr->class_offset);
-	dprintf ("data_size           : %d\n", dexhdr->data_size);
-	dprintf ("data_off            : %d (0x%06x)\n\n", dexhdr->data_offset, dexhdr->data_offset);
-#endif
-
 	/* strings */
-	#define STRINGS_SIZE ((dexhdr->strings_size+1)*sizeof(ut32))
+	#define STRINGS_SIZE ((dexhdr->strings_size + 1) * sizeof (ut32))
 	bin->strings = (ut32 *) calloc (dexhdr->strings_size + 1, sizeof (ut32));
 	if (!bin->strings) {
 		goto fail;
@@ -115,17 +85,19 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		bin->strings[i] = r_read_le32 (bufptr + offset);
 	}
 	/* classes */
-	int classes_size = dexhdr->class_size * sizeof (struct dex_class_t);
+	// TODO: not sure about if that is needed
+	int classes_size = dexhdr->class_size * DEX_CLASS_SIZE;
 	if (dexhdr->class_offset + classes_size >= bin->size) {
 		classes_size = bin->size - dexhdr->class_offset;
 	}
 	if (classes_size < 0) {
 		classes_size = 0;
 	}
-	dexhdr->class_size = classes_size / sizeof (struct dex_class_t);
-	bin->classes = (struct dex_class_t *) malloc (classes_size);
+
+	dexhdr->class_size = classes_size / DEX_CLASS_SIZE;
+	bin->classes = (struct dex_class_t *) malloc (sizeof (struct dex_class_t) * dexhdr->class_size);
 	for (i = 0; i < dexhdr->class_size; i++) {
-		ut64 offset = dexhdr->class_offset + i * sizeof (struct dex_class_t);
+		ut64 offset = dexhdr->class_offset + i * DEX_CLASS_SIZE;
 		if (offset + 32 > bin->size) {
 			free (bin->strings);
 			free (bin->classes);
