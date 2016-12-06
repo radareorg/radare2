@@ -374,10 +374,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_NEW;
 		// 0x1c, 0x1f, 0x22
 		{
-			int vA = (int) data[1];
+			//int vA = (int) data[1];
 			int vB = (data[3] << 8) | data[2];
 			// resolve class name for vB
-			ut64 off = R_ANAL_GET_OFFSET (anal, 'c', vB);
+			ut64 off = R_ANAL_GET_OFFSET (anal, 't', vB);
 			op->ptr = off;
 		}
 		break;
