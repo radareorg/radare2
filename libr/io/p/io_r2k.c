@@ -246,64 +246,57 @@ static int Init (const char * driverPath) {
 #include <sys/mman.h>
 #include <errno.h>
 
-typedef size_t ul;
 #define MAX_PHYS_ADDR   128
 
 struct r2k_data {
 	int pid;
-	ul addr;
-	ul len;
+	size_t addr;
+	size_t len;
 	ut8 *buff;
 };
 
-struct kernel_map_info {
-	ul start_addr;
-	ul end_addr;
-	ul phys_addr[MAX_PHYS_ADDR];
+struct r2k_kernel_map_info {
+	size_t start_addr;
+	size_t end_addr;
+	size_t phys_addr[MAX_PHYS_ADDR];
 	int n_pages;
+	int n_phys_addr;
 };
 
-struct kernel_maps {
+struct r2k_kernel_maps {
 	int n_entries;
 	int size;
 };
 
+struct r2k_control_reg {
 #if __x86_64__ || __i386__
-struct r2k_control_reg {
-	ul cr0;
-	ul cr1;
-	ul cr2;
-	ul cr3;
-	ul cr4;
+	size_t cr0;
+	size_t cr1;
+	size_t cr2;
+	size_t cr3;
+	size_t cr4;
 #if __x86_64__
-	ul cr8;
+	size_t cr8;
 #endif
-};
-#endif
-
-//arm r2k_control_reg definition
-#if __arm__
-struct r2k_control_reg {
-	ul ttbr0;
-	ul ttbr1;
-	ul ttbcr;
-	ul c1;
-	ul c3;
-};
+#elif __arm__
+	size_t ttbr0;
+	size_t ttbr1;
+	size_t ttbcr;
+	size_t c1;
+	size_t c3;
 #elif __arm64__ || __aarch64__
-struct r2k_control_reg {
-	ul sctlr_el1;
-	ul ttbr0_el1;
-	ul ttbr1_el1;
-	ul tcr_el1;
-};
+	size_t sctlr_el1;
+	size_t ttbr0_el1;
+	size_t ttbr1_el1;
+	size_t tcr_el1;
 #endif
+};
 
 struct r2k_proc_info {
 	int pid;
 	char comm[16];
-	ul vmareastruct[4096];
-	ul stack;
+	size_t vmareastruct[4096];
+	size_t stack;
 };
 
 #define R2_TYPE 0x69
@@ -318,15 +311,27 @@ struct r2k_proc_info {
 #define READ_CONTROL_REG    0x8
 #define PRINT_PROC_INFO     0x9
 
-#define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, sizeof (struct r2k_data))
-#define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, sizeof (struct r2k_data))
-#define IOCTL_READ_PROCESS_ADDR   _IOR (R2_TYPE, READ_PROCESS_ADDR, sizeof (struct r2k_data))
-#define IOCTL_WRITE_PROCESS_ADDR  _IOR (R2_TYPE, WRITE_PROCESS_ADDR, sizeof (struct r2k_data))
-#define IOCTL_READ_PHYSICAL_ADDR  _IOR (R2_TYPE, READ_PHYSICAL_ADDR, sizeof (struct r2k_data))
-#define IOCTL_WRITE_PHYSICAL_ADDR _IOR (R2_TYPE, WRITE_PHYSICAL_ADDR, sizeof (struct r2k_data))
-#define IOCTL_GET_KERNEL_MAP      _IOR (R2_TYPE, GET_KERNEL_MAP, sizeof (struct r2k_data))
-#define IOCTL_READ_CONTROL_REG    _IOR (R2_TYPE, READ_CONTROL_REG, sizeof (struct r2k_data))
-#define IOCTL_PRINT_PROC_INFO     _IOR (R2_TYPE, PRINT_PROC_INFO, sizeof (struct r2k_data))
+#ifdef _IOC_TYPECHECK
+#define r2k_data_size struct r2k_data
+#define r2k_kernel_maps_size struct r2k_kernel_maps
+#define r2k_control_reg_size struct r2k_control_reg
+#define r2k_proc_info_size struct r2k_proc_info
+#else
+#define r2k_data_size sizeof (struct r2k_data)
+#define r2k_kernel_maps_size sizeof (struct r2k_kernel_maps)
+#define r2k_control_reg_size sizeof (struct r2k_control_reg)
+#define r2k_proc_info_size sizeof (struct r2k_proc_info)
+#endif
+
+#define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, r2k_data_size)
+#define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, r2k_data_size)
+#define IOCTL_READ_PROCESS_ADDR   _IOR (R2_TYPE, READ_PROCESS_ADDR, r2k_data_size)
+#define IOCTL_WRITE_PROCESS_ADDR  _IOR (R2_TYPE, WRITE_PROCESS_ADDR, r2k_data_size)
+#define IOCTL_READ_PHYSICAL_ADDR  _IOR (R2_TYPE, READ_PHYSICAL_ADDR, r2k_data_size)
+#define IOCTL_WRITE_PHYSICAL_ADDR _IOR (R2_TYPE, WRITE_PHYSICAL_ADDR, r2k_data_size)
+#define IOCTL_GET_KERNEL_MAP      _IOR (R2_TYPE, GET_KERNEL_MAP, r2k_kernel_maps_size)
+#define IOCTL_READ_CONTROL_REG    _IOR (R2_TYPE, READ_CONTROL_REG, r2k_control_reg_size)
+#define IOCTL_PRINT_PROC_INFO     _IOR (R2_TYPE, PRINT_PROC_INFO, r2k_data_size) // Bad hack. Incorrect size, but since module does not use _IOC_SIZE, it won't matter if size parameter is wrong
 
 #define VM_READ 0x1
 #define VM_WRITE 0x2
@@ -345,8 +350,8 @@ static char* getargpos (const char *buf, int pos) {
 	return buf;
 }
 
-static ul getvalue (const char *buf, int pos) {
-	ul ret;
+static size_t getvalue (const char *buf, int pos) {
+	size_t ret;
 	buf = getargpos (buf, pos);
 	if (buf) {
 		ret = strtoul (buf, 0, 0);
@@ -356,7 +361,7 @@ static ul getvalue (const char *buf, int pos) {
 	return ret;
 }
 
-static int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, ul pid, ul address, ut8 *buf, int len) {
+static int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len) {
 	int ret = -1;
 	if (iodesc && iodesc->fd > 0 && buf) {
 		struct r2k_data data;
@@ -387,7 +392,7 @@ static int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, ul pid, ul address
 	return ret;
 }
 
-static int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, ut64 pid, ut64 address, const ut8 *buf, int len) {
+static int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len) {
 	int ret = -1;
 	if (iodesc && iodesc->fd > 0 && buf) {
 		struct r2k_data data;
@@ -420,7 +425,7 @@ static int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, ut64 pid, ut64 ad
 
 static int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	int ret, inphex, ioctl_n;
-	ul pid, addr, len;
+	size_t pid, addr, len;
 	ut8 *databuf = NULL;
 	buf = r_str_ichr ((char *) buf, ' ');
 
@@ -544,8 +549,9 @@ static int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			//Print kernel memory map.
 			//=! M
 			int i, j;
-			struct kernel_maps map_data;
-			struct kernel_map_info *info;
+			struct r2k_kernel_maps map_data;
+			struct r2k_kernel_map_info *info;
+			long page_size = sysconf (_SC_PAGESIZE);
 
 			ioctl_n = IOCTL_GET_KERNEL_MAP;
 			ret = ioctl (iodesc->fd, ioctl_n, &map_data);
@@ -563,12 +569,15 @@ static int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			}
 
 			for (i = 0; i < map_data.n_entries; i++) {
-				struct kernel_map_info *in = &info[i];
+				struct r2k_kernel_map_info *in = &info[i];
 				io->cb_printf ("start_addr: 0x%"PFMT64x"\n", (ut64) in->start_addr);
 				io->cb_printf ("end_addr: 0x%"PFMT64x"\n", (ut64) in->end_addr);
-				for (j = 0; j < in->n_pages; j++) {
+				io->cb_printf ("n_pages: %d (%ld Kbytes)\n", in->n_pages, (in->n_pages * page_size) / 1024);
+				io->cb_printf ("n_phys_addr: %d\n", in->n_phys_addr);
+				for (j = 0; j < in->n_phys_addr; j++) {
 					io->cb_printf ("\tphys_addr: 0x%"PFMT64x"\n", (ut64) in->phys_addr[j]);
 				}
+				io->cb_printf ("\n");
 			}
 
 			if (munmap (info, map_data.size) == -1) {
@@ -643,10 +652,10 @@ static int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 						proc_data.vmareastruct[i+2] & VM_EXEC ? 'x' : '-',
 						proc_data.vmareastruct[i+2] & VM_MAYSHARE ? 's' : 'p',
 						(ut64) proc_data.vmareastruct[i+3], proc_data.vmareastruct[i+4],
-					    proc_data.vmareastruct[i+5], (ut64) proc_data.vmareastruct[i+6]);
+						proc_data.vmareastruct[i+5], (ut64) proc_data.vmareastruct[i+6]);
 				i += 7;
 				io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i]));
-				i += (strlen(&(proc_data.vmareastruct[i])) - 1 + sizeof (ul)) / sizeof (ul);
+				i += (strlen(&(proc_data.vmareastruct[i])) - 1 + sizeof (size_t)) / sizeof (size_t);
 			}
 			io->cb_printf ("STACK ADDRESS = 0x%"PFMT64x"\n", (void *) proc_data.stack);
 		}
