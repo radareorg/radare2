@@ -4,6 +4,7 @@
 #include <r_bin.h>
 
 #define R_BIN_DEX_MAXSTR 256
+#define DEX_CLASS_SIZE (32)
 
 #pragma pack(4)
 typedef struct dex_header_t {
@@ -67,7 +68,16 @@ typedef struct dex_class_t {
 	ut32 anotations_offset;
 	ut32 class_data_offset;
 	ut32 static_values_offset;
+	struct dex_class_data_item_t *class_data;
 } RBinDexClass;
+
+#pragma pack(1)
+typedef struct dex_class_data_item_t {
+	ut64 static_fields_size;
+	ut64 instance_fields_size;
+	ut64 direct_methods_size;
+	ut64 virtual_methods_size;
+} RBinDexClassData;
 
 typedef struct r_bin_dex_obj_t {
 	int size;
@@ -118,6 +128,8 @@ struct dex_debug_local_t {
     const char *signature;
     ut16 startAddress;
     bool live;
+    int reg;
+    ut16 endAddress;
 };
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);
