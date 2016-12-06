@@ -26,7 +26,6 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 	HANDLE hModuleSnap = 0;
 	MODULEENTRY32 me32;
 	RDebugMap *mr;
-	char *mapname = NULL;
 	int pid = dbg->pid;
 	RList *list = r_list_new ();
 
