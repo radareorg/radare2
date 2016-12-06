@@ -289,6 +289,7 @@ static void cmd_write_value (RCore *core, const char *input) {
 	ut64 off = 0LL;
 	ut8 buf[sizeof(ut64)];
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
+	bool be = r_config_get_i (core->config, "cfg.bigendian");
 
 	if (!input)
 		return;
@@ -328,17 +329,17 @@ static void cmd_write_value (RCore *core, const char *input) {
 		WSEEK (core, 1);
 		break;
 	case 2:
-		r_write_le16 (buf, (ut16)(off & UT16_MAX));
+		r_write_ble16 (buf, (ut16)(off & UT16_MAX), be);
 		r_io_write (core->io, buf, 2);
 		WSEEK (core, 2);
 		break;
 	case 4:
-		r_write_le32 (buf, (ut32)(off & UT32_MAX));
+		r_write_ble32 (buf, (ut32)(off & UT32_MAX), be);
 		r_io_write (core->io, buf, 4);
 		WSEEK (core, 4);
 		break;
 	case 8:
-		r_write_le64 (buf, off);
+		r_write_ble64 (buf, off, be);
 		r_io_write (core->io, buf, 8);
 		WSEEK (core, 8);
 		break;
