@@ -216,7 +216,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 
 	case 0x10: // djnz
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + (st8)data[1] + ilen;
+		op->jump = addr + (st8)data[1] + ilen - 2 ;
 		op->fail = addr + ilen;
 		break;
 	case 0x18: // jr xx
