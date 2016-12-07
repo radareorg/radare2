@@ -287,11 +287,11 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			return;
 		}
 	}
-	if (min == 0) {
+	if (!min) {
 		min = plugin? plugin->minstrlen: 4;
 	}
 	/* Some plugins return zero, fix it up */
-	if (min == 0) {
+	if (!min) {
 		min = 4;
 	}
 	if (min < 0) {

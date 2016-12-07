@@ -1811,9 +1811,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 		addr = rva (r->bin, section->paddr, section->vaddr, va_sect);
 
-		if (name && strcmp (section->name, name)) continue;
+		if (name && strcmp (section->name, name)) {
+			continue;
+		}
 		r_name_filter (section->name, sizeof (section->name));
-		if (at && (section->size == 0 || !is_in_range (at, addr, section->size))) {
+		if (at && (!section->size || !is_in_range (at, addr, section->size))) {
 			continue;
 		}
 
@@ -1854,10 +1856,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 			r_flag_set (r->flags, str, addr, section->size);
 			if (r->bin->prefix) {
-				snprintf (str, sizeof(str)-1, "%s.section_end.%s",
+				snprintf (str, sizeof(str) - 1, "%s.section_end.%s",
 					r->bin->prefix, section->name);
 			} else {
-				snprintf (str, sizeof(str)-1, "section_end.%s", section->name);
+				snprintf (str, sizeof(str) - 1, "section_end.%s", section->name);
 			}
 
 			r_flag_set (r->flags, str, addr + section->size, 0);
@@ -1865,8 +1867,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				const char *arch = section->arch;
 				int bits = section->bits;
 				if (info) {
-					if (!arch) arch = info->arch;
-					if (!bits) bits = info->bits;
+					if (!arch) {
+						arch = info->arch;
+					}
+					if (!bits) {
+						bits = info->bits;
+					}
 				}
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
@@ -1883,13 +1889,19 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 
 			}
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
-			if (section->add)
-				r_io_section_add (r->io, section->paddr, addr, section->size, section->vsize, section->srwx, section->name, 0, fd);
+			if (section->add) {
+				r_io_section_add (r->io, section->paddr, addr,
+						  section->size, section->vsize,
+						  section->srwx, section->name,
+						  0, fd);
+			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
 			if (chksum) {
 				ut8 *data = malloc (section->size);
-				if (!data) return false;
+				if (!data) {
+					return false;
+				}
 				ut32 datalen = section->size;
 				r_io_pread (r->io, section->paddr, data, datalen);
 				hashstr = build_hash_string (mode, chksum,
@@ -1907,7 +1919,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			char *hashstr = NULL;
 			if (chksum) {
 				ut8 *data = malloc (section->size);
-				if (!data) return false;
+				if (!data) {
+					return false;
+				}
 				ut32 datalen = section->size;
 				r_io_pread (r->io, section->paddr, data, datalen);
 				hashstr = build_hash_string (mode, chksum,

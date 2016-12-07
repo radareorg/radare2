@@ -116,6 +116,19 @@ static RList* entries(RBinFile *arch) {
 	return ret;
 }
 
+static void handle_data_sections(RBinSection *sect) {
+	if (strstr (sect->name, "_cstring")) {
+		sect->is_data = true;
+	} else if (strstr (sect->name, "_objc_methname")) {
+		sect->is_data = true;
+	} else if (strstr (sect->name, "_objc_classname")) {
+		sect->is_data = true;
+		return;
+	} else if (strstr (sect->name, "_objc_methtype")) {
+		sect->is_data = true;
+	}
+}
+
 static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
@@ -144,6 +157,7 @@ static RList* sections(RBinFile *arch) {
 			ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
 		}
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
+		handle_data_sections (ptr);
 		if (strstr (ptr->name, "_cstring")) {
 			ptr->is_data = true;
 		}
