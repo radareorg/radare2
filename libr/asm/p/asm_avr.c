@@ -418,13 +418,14 @@ RAsmPlugin r_asm_plugin_avr = {
 	.desc = "AVR Atmel",
 	.disassemble = &disassemble,
 	.assemble = &assemble,
-	.cpus = "ATmega168,"
+	.cpus = 
+		"ATmega8,"
+		"ATmega168,"
 		"ATmega328p,"
 		"ATmega32u4,"
 	        "ATmega1280,"
 	        "ATmega2560,"
-		"ATmega48,"
-		"ATmega8"
+		"ATmega48"
 };
 
 #ifndef CORELIB

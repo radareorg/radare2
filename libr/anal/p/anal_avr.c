@@ -107,15 +107,6 @@ CPU_CONST cpu_pagesize_7_bits[] = {
 };
 
 CPU_MODEL cpu_models[] = {
-	{
-		.model = "ATmega8", .pc = 13,
-		.u.consts = {
-			cpu_reg_common,
-			cpu_memsize_common,
-			cpu_pagesize_5_bits,
-			NULL
-		}
-	},
 	{ .model = "ATmega640",   .pc = 15,
 		.u.consts = {
 			cpu_reg_common,
@@ -129,8 +120,17 @@ CPU_MODEL cpu_models[] = {
 	{ .model = "ATmega2560",  .pc = 17, .inherit = "ATmega640" },
 	{ .model = "ATmega2561",  .pc = 17, .inherit = "ATmega640" },
 	{ .model = "ATmega88",    .pc = 8,  .inherit = "ATmega8" },
-	{ .model = "unknown_avr", .pc = 8,  .inherit = "ATmega8" } // default AVR - ATmega8 forever!
 //	CPU_MODEL_DECL ("ATmega168",   13, 512, 512),
+	// last model is the default AVR - ATmega8 forever!
+	{
+		.model = "ATmega8", .pc = 13,
+		.u.consts = {
+			cpu_reg_common,
+			cpu_memsize_common,
+			cpu_pagesize_5_bits,
+			NULL
+		}
+	},
 };
 
 static CPU_MODEL *get_cpu_model(char *model);
