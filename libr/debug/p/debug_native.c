@@ -1505,11 +1505,7 @@ RDebugPlugin r_debug_plugin_native = {
 #elif __x86_64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "x86",
-#if __linux__
-	.canstep = 0, // XXX it's 1 on some platforms...
-#else
 	.canstep = 1, // XXX it's 1 on some platforms...
-#endif
 #elif __aarch64__ || __arm64__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
