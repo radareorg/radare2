@@ -2171,6 +2171,8 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 	ut8 *tbuf, *buf;
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
+	RAnalOp *op = NULL;
+	ut64 pos;
 	int i;
 
 	if (!core || !core->anal || !fcn || core->anal->opt.bb_max_size < 1) {
@@ -2197,18 +2199,16 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 			eprintf ("read error\n");
 			break;
 		}
-		for (i = 0 ; i < bb->ninstr; i++) {
-			RAnalOp op = { 0 };
-			int sz, pos = i? bb->op_pos[i - 1]: 0;
-			if (pos >= bb->size) {
-				/* out of range - internal issue */
+		pos = bb->addr;
+		while (pos < bb->addr + bb->size) {
+			op = r_core_anal_op (core, pos);
+			if (!op) {
+				eprintf ("Cannot get op\n");
 				break;
 			}
-			sz = bb->size - pos;
-			r_anal_op (core->anal, &op, 0, buf + pos, sz);
-			op.addr = bb->addr + pos;
-			fill_args (core->anal, fcn, &op);
-			r_anal_op_fini (&op);
+			fill_args (core->anal, fcn, op);
+			pos += op->size;
+			r_anal_op_free (op);
 		}
 	}
 
