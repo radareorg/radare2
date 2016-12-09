@@ -901,7 +901,7 @@ static void print_types(R_PDB *pdb, int mode) {
 					continue;
 				}
 			}
-			if ((mode == 8) && (is_first == 0)) {
+			if ((mode == 'j') && (is_first == 0)) {
 				pdb->cb_printf (",");
 			}
 			is_first = 0;
