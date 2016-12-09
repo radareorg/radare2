@@ -1760,12 +1760,15 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 	char tmp[128];
 	int i;
 	do {
-		for (i = 0; *ptr && *ptr != ',' && i < sizeof(tmp) -1; i++)
+		for (i = 0; *ptr && *ptr != ',' && i < sizeof (tmp) -1; i++) {
 			tmp[i] = *ptr++;
+		}
 		tmp[i] = '\0';
 		chkstr = r_hash_to_string (NULL, tmp, data, datalen);
 		if (!chkstr) {
-			if (*ptr && *ptr == ',') ptr++;
+			if (*ptr && *ptr == ',') {
+				ptr++;
+			}
 			continue;
 		}
 		if (IS_MODE_SIMPLE (mode)) {

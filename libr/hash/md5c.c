@@ -48,10 +48,8 @@ documentation and/or software.
 static void MD5Transform (ut32 [4], const unsigned char [64]);
 static void Encode (unsigned char *, ut32 *, unsigned int);
 static void Decode (ut32 *, const unsigned char *, unsigned int);
-static void MD5_memcpy (void*, const void*, unsigned int);
-static void MD5_memset (void*, int, unsigned int);
 
-static unsigned char PADDING[64] = {
+static const unsigned char PADDING[64] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -114,8 +112,9 @@ void MD5Update (R_MD5_CTX *context, const ut8 *input, unsigned int inputLen) {
 
 	/* Update number of bits */
 	if ((context->count[0] += ((ut32)inputLen << 3))
-			< ((ut32)inputLen << 3))
+			< ((ut32)inputLen << 3)) {
 		context->count[1]++;
+	}
 	context->count[1] += ((ut32)inputLen >> 29);
 
 	partLen = 64 - index;
@@ -123,26 +122,22 @@ void MD5Update (R_MD5_CTX *context, const ut8 *input, unsigned int inputLen) {
 	/* Transform as many times as possible.
 	 */
 	if (inputLen >= partLen) {
-		MD5_memcpy
-			((void*)&context->buffer[index], (void*)input, partLen);
+		memmove ((void*)&context->buffer[index], (void*)input, partLen);
 		MD5Transform (context->state, context->buffer);
-
-		for (i = partLen; i + 63 < inputLen; i += 64)
+		for (i = partLen; i + 63 < inputLen; i += 64) {
 			MD5Transform (context->state, &input[i]);
-
+		}
 		index = 0;
 	} else i = 0;
 
 	/* Buffer remaining input */
-	MD5_memcpy
-		((void*)&context->buffer[index], (void*)&input[i],
-		 inputLen-i);
+	memmove ((void*)&context->buffer[index], (void*)&input[i], inputLen - i);
 }
 
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
   the message digest and zeroizing the context */
 void MD5Final (ut8 digest[16], R_MD5_CTX *context) {
-	unsigned char bits[8];
+	ut8 bits[8];
 	unsigned int index, padLen;
 
 	/* Save number of bits */
@@ -160,7 +155,7 @@ void MD5Final (ut8 digest[16], R_MD5_CTX *context) {
 	Encode (digest, context->state, 16);
 
 	/* Zeroize sensitive information.  */
-	MD5_memset ((void*)context, 0, sizeof (*context));
+	memset ((void*)context, 0, sizeof (*context));
 }
 
 /* MD5 basic transformation. Transforms state based on block */
@@ -248,7 +243,7 @@ static void MD5Transform (ut32 state[4], const ut8 block[64]) {
 
 	/* Zeroize sensitive information.
 	 */
-	MD5_memset ((void*)x, 0, sizeof (x));
+	memset ((void*)x, 0, sizeof (x));
 }
 
 /* Encodes input (ut32) into output (unsigned char). Assumes len is a multiple of 4. */
@@ -268,14 +263,4 @@ static void Decode (ut32 *output, const ut8 *input, unsigned int len) {
 	for (i = 0, j = 0; j < len; i++, j += 4)
 		output[i] = ((ut32)input[j]) | (((ut32)input[j+1]) << 8) |
 			(((ut32)input[j+2]) << 16) | (((ut32)input[j+3]) << 24);
-}
-
-/* Note: Replace "for loop" with standard memcpy if possible.  */
-static void MD5_memcpy (void *output, const void *input, unsigned int len) {
-    memmove(output, input, len);
-}
-
-/* Note: Replace "for loop" with standard memset if possible.  */
-static void MD5_memset (void *output, int value, unsigned int len) {
-    memset(output, value, len);
 }

@@ -62,8 +62,9 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 /* fmi: nopcode.org/0xFFFF */
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len) {
 	ut16 result = 0, *b = (ut16 *)a;
-	for (len>>=1; len--; b++)
+	for (len >>= 1; len--; b++) {
 		result ^= *b;
+	}
 	return result;
 }
 
@@ -201,8 +202,6 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 			digest_hex[digest_size * 2] = 0;
 		}
 	}
-	if (myctx) {
-		r_hash_free (myctx);
-	}
+	r_hash_free (myctx);
 	return digest_hex;
 }
