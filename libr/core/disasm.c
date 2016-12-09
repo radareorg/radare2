@@ -2564,6 +2564,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
 	ut64 p = ds->analop.ptr;
 	ut64 v = ds->analop.val;
+	bool string_found = false;
 	int aligned = 0;
 #define DOALIGN() \
 	if (!aligned) { \
@@ -2603,10 +2604,13 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				if (f) {
 					flag = f->name;
 				} else if (ds->show_slow) {
-					(void)r_io_read_at (ds->core->io, ds->analop.ptr, (ut8*)str, sizeof (str) - 1);
+					(void)r_io_read_at (ds->core->io, ds->analop.ptr, (ut8*)str + 1, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
-					if (*str && r_str_is_printable (str)) {
+					if (str[1] && r_str_is_printable (str + 1)) {
+						str[0] = '"';
 						flag = str;
+						strcpy (str + strlen (str), "\"");
+						string_found = true;
 					}
 				}
 				r_cons_printf (" ; 0x%"PFMT64x"%s%s", p, *flag?" ; ":"", flag);
@@ -2651,7 +2655,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (!IS_PRINTABLE (*msg)) {
 			*msg = 0;
 		} else {
-			msg[len-1] = 0;
+			msg[len - 1] = 0;
 		}
 #endif
 		f = r_flag_get_i (core->flags, p);
@@ -2758,7 +2762,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							}
 							r_cons_printf ("\"");
 						} else {
-							r_cons_printf (" ; \"%s\"", msg);
+							if (!string_found) {
+								r_cons_printf (" ; \"%s\"", msg);
+							}
 						}
 					}
 				} else if (!strcmp (kind, "invalid")) {

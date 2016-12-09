@@ -2649,7 +2649,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);
 	if (!can) {
-		eprintf ("Cannot create RCons.canvas context\n");
+		eprintf ("Cannot create RCons.canvas context. Invalid screen size? See scr.columns + scr.rows\n");
 		return false;
 	}
 	can->linemode = 1;
