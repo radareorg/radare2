@@ -603,14 +603,17 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Missing argument for -d\n");
 			return 1;
 		}
-		char *uri = strdup (haveRarunProfile? pfile: argv[optind]);
-		char *p = strstr (uri, "://");
-		if (p) {
-			*p = 0;
-			debugbackend = uri;
-			debug = 2;
-		} else {
-			free (uri);
+		const char *src = haveRarunProfile? pfile: argv[optind];
+		if (src && *src) {
+			char *uri = strdup (src);
+			char *p = strstr (uri, "://");
+			if (p) {
+				*p = 0;
+				debugbackend = uri;
+				debug = 2;
+			} else {
+				free (uri);
+			}
 		}
 	}
 
@@ -845,7 +848,7 @@ int main(int argc, char **argv, char **envp) {
 			}
 		} else {
 			fh = r_core_file_open (&r, pfile, perms, mapaddr);
-			if (fh != NULL) {
+			if (fh) {
 				r_debug_use (r.dbg, is_gdb ? "gdb" : debugbackend);
 			}
 			/* load symbols when doing r2 -d ls */
