@@ -289,9 +289,9 @@ typedef struct r_debug_plugin_t {
 	int (*detach)(RDebug *dbg, int pid);
 	int (*select)(int pid, int tid);
 	RList *(*threads)(RDebug *dbg, int pid);
-	RList *(*pids)(int pid);
-	RList *(*tids)(int pid);
-	RFList (*backtrace)(int count);
+	RList *(*pids)(RDebug *dbg, int pid);
+	RList *(*tids)(RDebug *dbg, int pid);
+	RFList (*backtrace)(RDebug *dbg, int count);
 	/* flow */
 	int (*stop)(RDebug *dbg);
 	int (*step)(RDebug *dbg);

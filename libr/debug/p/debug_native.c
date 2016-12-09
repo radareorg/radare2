@@ -423,13 +423,13 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 #undef MAXPID
 #define MAXPID 99999
 
-static RList *r_debug_native_tids (int pid) {
+static RList *r_debug_native_tids (RDebug *dbg, int pid) {
 	printf ("TODO: Threads: \n");
 	// T
 	return NULL;
 }
 
-static RList *r_debug_native_pids (int pid) {
+static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (!list) return NULL;
 #if __WINDOWS__ && !__CYGWIN__

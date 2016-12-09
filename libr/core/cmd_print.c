@@ -4115,6 +4115,22 @@ static int cmd_print(void *data, const char *input) {
 	case 'k': // "pk"
 		if (input[1] == '?') {
 			r_cons_printf ("|Usage: pk [len]       print key in randomart\n");
+			r_cons_printf ("|Usage: pkill [process-name]\n");
+		} else if (!strncmp (input, "kill", 4)) {
+			RListIter *iter;
+			RDebugPid *pid;
+			const char *arg = strchr (input, ' ');
+			RList *pids = (core->dbg->h && core->dbg->h->pids)
+				? core->dbg->h->pids (core->dbg, 0): NULL;
+			if (arg && *++arg) {
+				r_list_foreach (pids, iter, pid) {
+					if (strstr (pid->path, arg)) {
+						r_cons_printf ("dk 9 %d\n", pid->pid);
+					}
+					// r_debug_kill (core->dbg, pid->pid, pid->pid, 9); // kill -9
+				}
+			}
+			r_list_free (pids);
 		} else if (l > 0) {
 			len = len > core->blocksize ? core->blocksize : len;
 			char *s = r_print_randomart (core->block, len, core->offset);

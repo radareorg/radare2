@@ -390,7 +390,7 @@ static int get_pid_of(RIO *io, const char *procname) {
 		RListIter *iter;
 		RDebugPid *proc;
 		RDebug *d = c->dbg;
-		RList *pids = d->h->pids (0);
+		RList *pids = d->h->pids (d, 0);
 		r_list_foreach (pids, iter, proc) {
 			if (strstr (proc->path, procname)) {
 				eprintf ("Matching PID %d %s\n", proc->pid, proc->path);

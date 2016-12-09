@@ -403,113 +403,113 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		"dpt=", "<thread>", "Attach to thread",
 		NULL};
 	switch (input[1]) {
-		case 0:
-			eprintf ("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
-			r_debug_pid_list (core->dbg, core->dbg->pid, 0);
-			break;
-		case '-': // "dp-"
-			if (input[2]== ' ') {
-				r_debug_detach (core->dbg, r_num_math (core->num, input + 2));
+	case 0:
+		eprintf ("Selected: %d %d\n", core->dbg->pid, core->dbg->tid);
+		r_debug_pid_list (core->dbg, core->dbg->pid, 0);
+		break;
+	case '-': // "dp-"
+		if (input[2]== ' ') {
+			r_debug_detach (core->dbg, r_num_math (core->num, input + 2));
+		} else {
+			r_debug_detach (core->dbg, core->dbg->pid);
+		}
+		break;
+	case 'c': // "dpc"
+		if (core->dbg->forked_pid != -1) {
+			if (input[2] == '*') {
+				eprintf ("dp %d\n", core->dbg->forked_pid);
 			} else {
-				r_debug_detach (core->dbg, core->dbg->pid);
+				r_debug_select (core->dbg, core->dbg->forked_pid, core->dbg->tid);
+				core->dbg->forked_pid = -1;
 			}
-			break;
-		case 'c': // "dpc"
-			if (core->dbg->forked_pid != -1) {
-				if (input[2] == '*') {
-					eprintf ("dp %d\n", core->dbg->forked_pid);
-				} else {
-					r_debug_select (core->dbg, core->dbg->forked_pid, core->dbg->tid);
-					core->dbg->forked_pid = -1;
-				}
-			} else {
-				eprintf ("No recently forked children\n");
-			}
-			break;
-		case 'k': // "dpk"
-			/* stop, print, pass -- just use flags*/
-			/* XXX: not for threads? signal is for a whole process!! */
-			/* XXX: but we want fine-grained access to process resources */
-			pid = atoi (input + 2);
-			if (pid > 0) {
-				ptr = r_str_chop_ro (input + 2);
-				ptr = strchr (ptr, ' ');
-				sig = ptr? atoi (ptr + 1): 0;
-				eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
-				r_debug_kill (core->dbg, 0, false, sig);
-			} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
-			break;
-		case 'n': // "dpn"
-			eprintf ("TODO: debug_fork: %d\n", r_debug_child_fork (core->dbg));
-			break;
-		case 't': // "dpt"
-			switch (input[2]) {
-				case 0:
-					r_debug_thread_list (core->dbg, core->dbg->pid);
-					break;
-				case 'n':
-					eprintf ("TODO: debug_clone: %d\n", r_debug_child_clone (core->dbg));
-					break;
-				case '=':
-					r_debug_select (core->dbg, core->dbg->pid,
-							(int) r_num_math (core->num, input + 3));
-					break;
-				case ' ':
-					r_debug_thread_list (core->dbg, atoi (input + 2));
-					break;
-				case '?':
-				default:
-					r_core_cmd_help (core, help_msg);
-					break;
-			}
-			break;
-		case 'a': // "dpa"
-			if (input[2]) {
-				r_debug_attach (core->dbg, (int) r_num_math (
-							core->num, input + 2));
-			} else {
-				if (core->file && core->file->desc) {
-					r_debug_attach (core->dbg, core->file->desc->fd);
-				}
-			}
-			r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
-			r_config_set_i (core->config, "dbg.swstep",
-					(core->dbg->h && !core->dbg->h->canstep));
-			r_core_cmdf (core, "=!pid %d", core->dbg->pid);
-			break;
-		case 'f': // "dpf"
+		} else {
+			eprintf ("No recently forked children\n");
+		}
+		break;
+	case 'k': // "dpk"
+		/* stop, print, pass -- just use flags*/
+		/* XXX: not for threads? signal is for a whole process!! */
+		/* XXX: but we want fine-grained access to process resources */
+		pid = atoi (input + 2);
+		if (pid > 0) {
+			ptr = r_str_chop_ro (input + 2);
+			ptr = strchr (ptr, ' ');
+			sig = ptr? atoi (ptr + 1): 0;
+			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
+			r_debug_kill (core->dbg, 0, false, sig);
+		} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
+		break;
+	case 'n': // "dpn"
+		eprintf ("TODO: debug_fork: %d\n", r_debug_child_fork (core->dbg));
+		break;
+	case 't': // "dpt"
+		switch (input[2]) {
+			case 0:
+				r_debug_thread_list (core->dbg, core->dbg->pid);
+				break;
+			case 'n':
+				eprintf ("TODO: debug_clone: %d\n", r_debug_child_clone (core->dbg));
+				break;
+			case '=':
+				r_debug_select (core->dbg, core->dbg->pid,
+						(int) r_num_math (core->num, input + 3));
+				break;
+			case ' ':
+				r_debug_thread_list (core->dbg, atoi (input + 2));
+				break;
+			case '?':
+			default:
+				r_core_cmd_help (core, help_msg);
+				break;
+		}
+		break;
+	case 'a': // "dpa"
+		if (input[2]) {
+			r_debug_attach (core->dbg, (int) r_num_math (
+						core->num, input + 2));
+		} else {
 			if (core->file && core->file->desc) {
-				r_debug_select (core->dbg, core->file->desc->fd, core->dbg->tid);
+				r_debug_attach (core->dbg, core->file->desc->fd);
 			}
-			break;
-		case '=': // "dp="
-			r_debug_select (core->dbg,
-					(int) r_num_math (core->num, input + 2), core->dbg->tid);
-			break;
-		case '*': // "dp*"
-			r_debug_pid_list (core->dbg, 0, 0);
-			break;
-		case 'j': // "dpj"
-			r_debug_pid_list (core->dbg, core->dbg->pid, 'j');
-			break;
-		case 'e': // "dpe"
-			{
-				int pid = (input[2] == ' ')? atoi (input + 2): core->dbg->pid;
-				char *exe = r_sys_pid_to_path (pid);
-				if (exe) {
-					r_cons_println (exe);
-					free (exe);
-				}
+		}
+		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
+		r_config_set_i (core->config, "dbg.swstep",
+				(core->dbg->h && !core->dbg->h->canstep));
+		r_core_cmdf (core, "=!pid %d", core->dbg->pid);
+		break;
+	case 'f': // "dpf"
+		if (core->file && core->file->desc) {
+			r_debug_select (core->dbg, core->file->desc->fd, core->dbg->tid);
+		}
+		break;
+	case '=': // "dp="
+		r_debug_select (core->dbg,
+				(int) r_num_math (core->num, input + 2), core->dbg->tid);
+		break;
+	case '*': // "dp*"
+		r_debug_pid_list (core->dbg, 0, 0);
+		break;
+	case 'j': // "dpj"
+		r_debug_pid_list (core->dbg, core->dbg->pid, 'j');
+		break;
+	case 'e': // "dpe"
+		{
+			int pid = (input[2] == ' ')? atoi (input + 2): core->dbg->pid;
+			char *exe = r_sys_pid_to_path (pid);
+			if (exe) {
+				r_cons_println (exe);
+				free (exe);
 			}
-			break;
-		case ' ':
-			r_debug_pid_list (core->dbg,
-					(int) R_MAX (0, (int)r_num_math (core->num, input + 2)), 0);
-			break;
-		case '?':
-		default:
-			r_core_cmd_help (core, help_msg);
-			break;
+		}
+		break;
+	case ' ':
+		r_debug_pid_list (core->dbg,
+				(int) R_MAX (0, (int)r_num_math (core->num, input + 2)), 0);
+		break;
+	case '?':
+	default:
+		r_core_cmd_help (core, help_msg);
+		break;
 	}
 }
 

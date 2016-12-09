@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015, The Lemon Man, All rights reserved.
+// Copyright (c) 2014-2016, The Lemon Man, All rights reserved.
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 #include <kd.h>
 
 static WindCtx *wctx = NULL;
+static bool dbreak = false;
 
 static int r_debug_wind_step (RDebug *dbg) {
 	return true;
@@ -27,8 +28,9 @@ static int r_debug_wind_step (RDebug *dbg) {
 static int r_debug_wind_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	(void)type;
 	int ret = wind_read_reg(wctx, buf, size);
-	if (!ret || size != ret)
+	if (!ret || size != ret) {
 		return -1;
+	}
 	r_reg_read_regs (dbg->reg, buf, ret);
 	// Report as if no register has been written as we've already updated the arena here
 	return 0;
@@ -37,23 +39,17 @@ static int r_debug_wind_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 static int r_debug_wind_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	(void)buf;
 	(void)size;
-	ut8 *arena;
-	int arena_size;
-	int ret;
-
-	if (!dbg->reg)
+	if (!dbg->reg) {
 		return false;
-
-	arena = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &arena_size);
+	}
+	int arena_size;
+	ut8 *arena = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &arena_size);
 	if (!arena) {
 		eprintf ("Could not retrieve the register arena!\n");
 		return false;
 	}
-
-	ret = wind_write_reg(wctx, arena, arena_size);
-
+	int ret = wind_write_reg (wctx, arena, arena_size);
 	free (arena);
-
 	return ret;
 }
 
@@ -61,10 +57,8 @@ static int r_debug_wind_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return wind_continue(wctx);
 }
 
-static int dbreak=0;
-
 static void wstatic_debug_break(void *u) {
-	dbreak = 1;
+	dbreak = true;
 	wind_break_read (wctx);
 }
 
@@ -73,12 +67,12 @@ static int r_debug_wind_wait (RDebug *dbg, int pid) {
 	kd_packet_t *pkt;
 	kd_stc_64 *stc;
 	int ret;
-	dbreak = 0;
+	dbreak = false;
 	r_cons_break_push (wstatic_debug_break, dbg);
 	for (;;) {
 		ret = wind_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE, &pkt);
 		if (dbreak) {
-			dbreak = 0;
+			dbreak = false;
 			wind_break (wctx);
 			continue;
 		}
@@ -95,33 +89,32 @@ static int r_debug_wind_wait (RDebug *dbg, int pid) {
 			dbg->reason.signum = stc->state;
 			free (pkt);
 			break;
-		} else {
-			wind_continue (wctx);
 		}
+		wind_continue (wctx);
 		free (pkt);
 	}
 	r_cons_break_pop ();
 	// TODO : Set the faulty process as target
-
 	return true;
 }
 
 static int r_debug_wind_attach (RDebug *dbg, int pid) {
 	RIODesc *desc = dbg->iob.io->desc;
 
-	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data)
+	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data) {
 		return false;
-
-	if (strncmp (desc->plugin->name, "windbg", 6))
+	}
+	if (strncmp (desc->plugin->name, "windbg", 6)) {
 		return false;
-
-	if (dbg->arch && strcmp (dbg->arch, "x86"))
+	}
+	if (dbg->arch && strcmp (dbg->arch, "x86")) {
 		return false;
-
+	}
 	wctx = (WindCtx *)desc->data;
 
-	if (!wctx)
+	if (!wctx) {
 		return false;
+	}
 
 	// Handshake
 	if (!wind_sync(wctx)) {
@@ -167,19 +160,20 @@ static int r_debug_wind_init(RDebug *dbg) {
 	return true;
 }
 
-static RList *r_debug_wind_pids (int pid) {
-	RList *ret, *pids;
+static RList *r_debug_wind_pids (RDebug *dbg, int pid) {
 	RListIter *it;
 	WindProc *p;
 
-	ret = r_list_newf (free);
-	if (!ret) return NULL;
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
+	}
 
-	pids = wind_list_process(wctx);
-	if (!pids)
+	RList *pids = wind_list_process(wctx);
+	if (!pids) {
 		return ret;
-
-	r_list_foreach(pids, it, p) {
+	}
+	r_list_foreach (pids, it, p) {
 		RDebugPid *newpid = R_NEW0 (RDebugPid);
 		if (!newpid) {
 			r_list_free (ret);
@@ -196,23 +190,21 @@ static RList *r_debug_wind_pids (int pid) {
 }
 
 static int r_debug_wind_select (int pid, int tid) {
-	ut64 base;
 	ut32 old = wind_get_target (wctx);
 	int ret = wind_set_target (wctx, pid);
-	if (!ret)
+	if (!ret) {
 		return false;
-
-	base = wind_get_target_base (wctx);
+	}
+	ut64 base = wind_get_target_base (wctx);
 	if (!base) {
 		wind_set_target (wctx, old);
 		return false;
 	}
-
 	eprintf ("Process base is 0x%"PFMT64x"\n", base);
 	return true;
 }
 
-struct r_debug_plugin_t r_debug_plugin_wind = {
+RDebugPlugin r_debug_plugin_wind = {
 	.name = "wind",
 	.license = "LGPL3",
 	.arch = "x86",
@@ -232,7 +224,7 @@ struct r_debug_plugin_t r_debug_plugin_wind = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_wind,
 	.version = R2_VERSION
