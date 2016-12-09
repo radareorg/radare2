@@ -1044,6 +1044,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	SGlobal *gdata = 0;
 	RListIter *it = 0;
 	RList *l = 0;
+	int is_first = 1;
 
 	l = pdb->pdb_streams2;
 	it = r_list_iterator (l);
@@ -1081,17 +1082,17 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 	}
 	it = r_list_iterator (gsym_data_stream->globals_list);
 	while (r_list_iter_next (it)) {
-		if ((format == 'j') && gdata) {
-			pdb->cb_printf (",");
-		}
-		gdata = (SGlobal *) r_list_iter_get(it);
-		sctn_header = r_list_get_n(pe_stream->sections_hdrs, (gdata->segment -1));
+		gdata = (SGlobal *) r_list_iter_get (it);
+		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment -1));
 		if (sctn_header) {
 			char *name = r_name_filter2 (gdata->name.name);
 			switch (format) {
 			case 2:
 			case 'j': // JSON
-				pdb->cb_printf("{\"%s\":%d,\"%s\":%d,\"%s\":\"%s\",\"%s\":\"%s\"}",
+				if (!is_first) {
+					pdb->cb_printf (",");
+				}
+				pdb->cb_printf ("{\"%s\":%d,\"%s\":%d,\"%s\":\"%s\",\"%s\":\"%s\"}",
 							"address", (ut64)(img_base + omap_remap((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 							"symtype", gdata->symtype,
 							"section_name", sctn_header->name,
@@ -1120,6 +1121,7 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 			eprintf ("Skipping %s, segment %d does not exist\n",
 				   gdata->name.name, (gdata->segment -1));
 		}
+		is_first = 0;
 	}
 	if (format == 'j') {
 		pdb->cb_printf ("]}");
