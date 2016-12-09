@@ -2,6 +2,7 @@ return strdup (
 "=PC	rip\n"
 "=SP	rsp\n"
 "=BP	rbp\n"
+"=SN	rax\n"
 "=A0	rax\n"
 "=A1	rbx\n"
 "=A2	rcx\n"
