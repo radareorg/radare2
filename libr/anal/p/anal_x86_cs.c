@@ -851,6 +851,8 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			R_ABS((int)INSOP(0).imm));
 		break;
 	case X86_INS_SYSCALL:
+	case X86_INS_SYSENTER:
+	case X86_INS_SYSEXIT:
 		break;
 	case X86_INS_INTO:
 	case X86_INS_VMCALL:
@@ -1954,7 +1956,12 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->val = (int)INSOP(0).imm;
 		break;
 	case X86_INS_SYSCALL:
+	case X86_INS_SYSENTER:
 		op->type = R_ANAL_OP_TYPE_SWI;
+		break;
+	case X86_INS_SYSEXIT:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		op->family = R_ANAL_OP_FAMILY_PRIV;
 		break;
 	case X86_INS_INTO:
 	case X86_INS_VMCALL:
