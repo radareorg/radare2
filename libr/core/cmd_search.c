@@ -2038,6 +2038,45 @@ static void rop_kuery(void *data, const char *input) {
 	}
 }
 
+static int memcmpdiff(const ut8 *a, const ut8 *b, int len) {
+	int i, diff = 0;
+	for (i = 0; i < len; i++) {
+		if (a[i] == b[i] && a[i] == 0x00) {
+			/* ignore nulls */
+		} else if (a[i]!=b[i]) {
+			diff++;
+		}
+	}
+	return diff;
+}
+
+static void search_similar_pattern(RCore *core, int count) {
+	RIOMap *p;
+	RListIter *iter;
+	ut8 *block = calloc (core->blocksize, 1);
+	const char *where = r_config_get (core->config, "search.in");
+
+	r_cons_break_push (NULL, NULL);
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, NULL, NULL);
+	r_list_foreach (list, iter, p) {
+		ut64 addr = p->from;
+		while (addr < p->to) {
+			(void)r_io_read_at (core->io, addr, block, core->blocksize);
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			int diff = memcmpdiff (core->block, block, core->blocksize);
+			int equal = core->blocksize - diff;
+			if (equal >= count) {
+				r_cons_printf ("0x%08"PFMT64x" %d/%d\n", addr, equal, core->blocksize);
+			}
+			addr += core->blocksize;
+		}
+	}
+	r_cons_break_pop ();
+	free (block);
+}
+
 static int cmd_search(void *data, const char *input) {
 	struct search_parameters param;
 	bool dosearch = false;
@@ -2173,7 +2212,7 @@ reread:
 			param.from = 0;
 		}
 		goto reread;
-	case 'P':
+	case 'o': // "/P"
 		{
 		// print the offset of the Previous opcode
 		ut8 buf[64];
@@ -2281,7 +2320,7 @@ reread:
 					// something went terribly wrong.
 					break;
 				}
-				addr += ret-1;
+				addr += ret - 1;
 			}
 			r_cons_clear_line (1);
 			r_cons_break_pop ();
@@ -2292,8 +2331,8 @@ reread:
 		break;
 	case 'p': // "/p"
 		{
-			if (input[param_offset-1]) {
-				int ps = atoi (input+param_offset);
+			if (input[param_offset - 1]) {
+				int ps = atoi (input + param_offset);
 				if (ps > 1) {
 					r_cons_break_push (NULL, NULL);
 					r_search_pattern_size (core->search, ps);
@@ -2302,8 +2341,11 @@ reread:
 					break;
 				}
 			}
-			eprintf ("Invalid pattern size (must be >0)\n");
+			eprintf ("Invalid pattern size (must be > 0)\n");
 		}
+		break;
+	case 'P': // "/P"
+		search_similar_pattern (core, atoi (input + 1));
 		break;
 	case 'V':
 		// TODO: add support for json
@@ -2395,14 +2437,15 @@ reread:
 			int strstart, len;
 			const char *p2;
 			char *p, *str;
-			strstart = 2+json+ignorecase;
-			len = strlen (input+strstart);
-			str = malloc ((len+1)*2);
-			for (p2=input+strstart, p=str; *p2; p+=2, p2++) {
-				if (ignorecase)
-					p[0] = tolower((const unsigned char)*p2);
-				else
+			strstart = 2 + json + ignorecase;
+			len = strlen (input + strstart);
+			str = malloc ((len + 1) * 2);
+			for (p2 = input + strstart, p=str; *p2; p+=2, p2++) {
+				if (ignorecase) {
+					p[0] = tolower((const ut8)*p2);
+				} else {
 					p[0] = *p2;
+				}
 				p[1] = 0;
 			}
 			r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -2662,8 +2705,9 @@ reread:
 			"/E", " esil-expr", "offset matching given esil expressions %%= here ",
 			"/i", " foo", "search for string 'foo' ignoring case",
 			"/m", " magicfile", "search for matching magic file (use blocksize)",
+			"/o", "", "show offset of previous instruction",
 			"/p", " patternsize", "search for pattern of given size",
-			"/P", "", "show offset of previous instruction",
+			"/P", " patternsize", "search similar blocks",
 			"/r", " sym.printf", "analyze opcode reference an offset",
 			"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 			"/v", "[1248] value", "look for an `asm.bigendian` 32bit value",
