@@ -4313,7 +4313,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		NULL };
 
 	switch (input[0]) {
-	case 'f':			// "agf"
+	case 'f': // "agf"
 		r_core_visual_graph (core, NULL, NULL, false);
 		break;
 	case '-':

@@ -1223,8 +1223,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	int wheelspeed;
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
-	if (ch<2) return 1;
-
+	if (ch < 2) {
+		return 1;
+	}
 	if (r_cons_singleton()->mouse_event) {
 		wheelspeed = r_config_get_i (core->config, "scr.wheelspeed");
 	} else {

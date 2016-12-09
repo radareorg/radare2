@@ -2654,7 +2654,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	}
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
-	r_config_set_i (core->config, "scr.interactive", false);
 
 	if (!g) {
 		graph_allocated = true;
@@ -2665,13 +2664,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		}
 		g = r_agraph_new (can);
 		if (!g) {
-			r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 			r_cons_canvas_free (can);
 			return false;
 		}
 	} else {
 		o_can = g->can;
 	}
+	r_config_set_i (core->config, "scr.interactive", false);
 	g->can = can;
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 	g->on_curnode_change = (RANodeCallback)seek_to_node;
@@ -2884,8 +2883,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		{
 			if (!fcn) break;
 			RIOUndos *undo = r_io_sundo_redo (core->io);
-			if (undo != NULL) r_core_seek (core, undo->off, 0);
-			else eprintf ("Cannot redo\n");
+			if (undo) {
+				r_core_seek (core, undo->off, 0);
+			} else {
+				eprintf ("Cannot redo\n");
+			}
 			break;
 		}
 		case 'R':
