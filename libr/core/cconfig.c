@@ -937,7 +937,7 @@ static int cb_hexpairs(void *user, void *data) {
 	return true;
 }
 
-static int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int a1, int a2) {
+R_API int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int a1, int a2) {
 	if (cmd && *cmd) {
 		RCore *core = esil->anal->user;
 		r_core_cmdf (core, "%s %d %d", cmd, a1, a2);

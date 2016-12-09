@@ -140,8 +140,9 @@ R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, int interrupt) {
 	char t[128];
 	char *i;
 	RAnalEsilInterruptCB icb;
-	if (!esil)
+	if (!esil) {
 		return false;
+	}
 	if (esil->cmd) {
 		if (esil->cmd (esil, esil->cmd_intr, interrupt, 0)) {
 			return true;
@@ -2532,8 +2533,9 @@ R_API void r_anal_esil_stack_free(RAnalEsil *esil) {
 R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 	char *popped;
 	int ret;
-	if (!esil)
+	if (!esil) {
 		return false;
+	}
 	while (*str == ' ') str++; // use proper string chop?
 	ret = r_anal_esil_parse (esil, str);
 	popped = r_anal_esil_pop (esil);
