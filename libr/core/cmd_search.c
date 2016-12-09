@@ -539,10 +539,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				if ((s->vaddr+s->vsize) > *to)
 					*to = s->vaddr+s->vsize;
 			}
-			if (!*to || *to == UT64_MAX || *to == UT32_MAX) {
-				*to = r_io_size (core->io);
-			}
-		} else {
+		}
+		if (!*to || *to == UT64_MAX || *to == UT32_MAX) {
 			RIOMap *map = r_io_map_get (core->io, core->offset);
 			*from = core->offset;
 			*to = r_io_size (core->io) + (map? map->to:0);
