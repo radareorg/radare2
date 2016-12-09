@@ -288,13 +288,16 @@ static const char *r_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
 
 R_API RDebug *r_debug_new(int hard) {
 	RDebug *dbg = R_NEW0 (RDebug);
-	if (!dbg) return NULL;
+	if (!dbg) {
+		return NULL;
+	}
 	// R_SYS_ARCH
 	dbg->arch = strdup (R_SYS_ARCH);
 	dbg->bits = R_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
 	dbg->trace_clone = 0;
+	dbg->trace_aftersyscall = true;
 	R_FREE (dbg->btalgo);
 	dbg->trace_execs = 0;
 	dbg->anal = NULL;

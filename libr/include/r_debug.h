@@ -205,6 +205,7 @@ typedef struct r_debug_t {
 	int stop_all_threads; /* stop all threads at any stop */
 	int trace_forks; /* stop on new children */
 	int trace_execs; /* stop on new execs */
+	int trace_aftersyscall; /* stop after the syscall (before if disabled) */
 	int trace_clone; /* stop on new threads */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */

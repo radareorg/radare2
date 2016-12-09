@@ -167,8 +167,7 @@ int linux_step (RDebug *dbg) {
 	return ret;
 }
 
-int linux_attach (RDebug *dbg, int pid) {
-	int ret = -1;
+bool linux_set_options (RDebug *dbg, int pid) {
 	int traceflags = 0;
 	if (dbg->trace_forks) {
 		traceflags |= PTRACE_O_TRACEFORK;
@@ -183,21 +182,32 @@ int linux_attach (RDebug *dbg, int pid) {
 	if (dbg->trace_execs) {
 		traceflags |= PTRACE_O_TRACEEXEC;
 	}
-	traceflags |= PTRACE_O_TRACEEXIT;
+	if (dbg->trace_aftersyscall) {
+		traceflags |= PTRACE_O_TRACEEXIT;
+	}
 	/* SIGTRAP | 0x80 on signal handler .. not supported on all archs */
 	traceflags |= PTRACE_O_TRACESYSGOOD;
 	if (ptrace (PTRACE_SETOPTIONS, pid, 0, traceflags) == -1) {
-		/* ignore ptrace-options errors */
+		return false;
 	}
-	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
-	if (ret != -1) perror ("ptrace (PT_ATTACH)");
+	return true;
+}
+
+int linux_attach (RDebug *dbg, int pid) {
+	linux_set_options (dbg, pid);
+	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
+	if (ret != -1) {
+		perror ("ptrace (PT_ATTACH)");
+	}
 	return pid;
 }
 
 RDebugInfo *linux_info (RDebug *dbg, const char *arg) {
 	char procpid_cmdline[1024];
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
-	if (!rdi) return NULL;
+	if (!rdi) {
+		return NULL;
+	}
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;

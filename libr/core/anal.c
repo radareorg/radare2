@@ -2173,7 +2173,6 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb = NULL;
 	RAnalOp *op = NULL;
 	ut64 pos;
-	int i;
 
 	if (!core || !core->anal || !fcn || core->anal->opt.bb_max_size < 1) {
 		return;

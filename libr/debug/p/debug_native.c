@@ -208,6 +208,7 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 // XXX: num is ignored
 #if __linux__
+	linux_set_options (dbg, pid);
 	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "PC");

@@ -820,6 +820,16 @@ static int cb_dbg_clone(void *user, void *data) {
 	return true;
 }
 
+static int cb_dbg_aftersc(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->dbg->trace_aftersyscall = node->i_value;
+	if (core->io->debug) {
+		r_debug_attach (core->dbg, core->dbg->pid);
+	}
+	return true;
+}
+
 static int cb_runprofile(void *user, void *data) {
 	RCore *r = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1898,6 +1908,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo, "Select backtrace algorithm");
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
+	SETCB("dbg.aftersyscall", "true", &cb_dbg_aftersc, "Stop execution before the syscall is executed (see dcs)");
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	SETCB("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
