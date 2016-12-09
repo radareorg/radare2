@@ -2332,13 +2332,12 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 	} else {
 		bool asm_lines = r_config_get_i (core->config, "asm.lines");
 		bool emu = r_config_get_i (core->config, "asm.emu");
-		ut64 saved_gp;
+		ut64 saved_gp = 0;
 		ut8 *saved_arena;
 		if (emu) {
 			saved_gp = core->anal->gp;
 			saved_arena = r_reg_arena_peek (core->anal->reg);
 		}
-
 		r_config_set_i (core->config, "asm.lines", 0);
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 			if (tmp_func->addr < f->addr) {
