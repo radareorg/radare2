@@ -17,7 +17,7 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loaddr, Sd
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_bflt_new_buf (tbuf);
 	r_buf_free (tbuf);
-	return res;
+	return res ? res : NULL;
 }
 
 static int load(RBinFile *arch) {
@@ -84,7 +84,7 @@ static RList *patch_relocs(RBin *b) {
 		return NULL;
 	}
 	
-	for(i = 0; i < bin->hdr->reloc_count; i++) {
+	for (i = 0; i < bin->hdr->reloc_count; i++) {
 		__patch_reloc (bin->b, &reloc_table[i]);
 		RBinReloc *reloc = R_NEW0 (RBinReloc);
 		reloc->type = R_BIN_RELOC_32;
@@ -104,8 +104,7 @@ static int get_ngot_entries(struct r_bin_bflt_obj *obj) {
 		ut32 entry;
 		len = r_buf_read_at (obj->b, obj->hdr->data_start + (i * 4), (ut8 *)&entry, sizeof (ut32));
 		if (len != sizeof (ut32)) {
-			goto fail;
-		
+			return 0;
 		}
 		entry = r_swap_ut32 (entry);
 		if (!VALID_GOT_ENTRY (entry)) {
@@ -113,22 +112,18 @@ static int get_ngot_entries(struct r_bin_bflt_obj *obj) {
 		}
 	}
 	return i;
-fail:
-	return 0;
 }
 
 static RList *relocs(RBinFile *arch) {
 	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj*)arch->o->bin_obj;
 	struct bflt_relocation_t *bflt_reloc_table = NULL;
-	RList *list;
-	int i, len, n_got = 0, n_reloc = 0;
+	RList *list = r_list_new ();
+	int i, len, n_got = 0, n_reloc = obj->hdr->reloc_count;
 	
-	list = r_list_new ();
 	if (!list || !obj) {
 		r_list_free (list);
 		return NULL;
 	}
-	n_reloc = obj->hdr->reloc_count;
 	if (obj->hdr->flags & FLAT_FLAG_GOTPIC) {
 		n_got = get_ngot_entries (obj);
 		n_reloc += n_got;
@@ -143,16 +138,16 @@ static RList *relocs(RBinFile *arch) {
 			ut32 got_entry;
 			len = r_buf_read_at (obj->b, obj->hdr->data_start + offset, (ut8 *)&got_entry, sizeof (ut32));
 			got_entry = r_swap_ut32 (got_entry);
-			if (VALID_GOT_ENTRY (got_entry)) {
+			if (!VALID_GOT_ENTRY (got_entry)) {
+				break;
+			} else {
 				bflt_reloc_table[i].addr_to_patch = got_entry;
 				bflt_reloc_table[i].data = got_entry + BFLT_HDR_SIZE;
-			} else {
-				break;
 			}
 		}
 	}
 
-	for(i = 0; i < obj->hdr->reloc_count; i++) {
+	for (i = 0; i < obj->hdr->reloc_count; i++) {
 		ut32 reloc_pointer;
 
 		len = r_buf_read_at (obj->b, obj->hdr->reloc_start + (i * 4), (ut8 *)&reloc_pointer, 4);
@@ -235,38 +230,6 @@ static int destroy(RBinFile *arch) {
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
-	return 0;
-}
-
-static RList *sections(RBinFile *arch) {
-	return NULL;
-}
-
-static RList *symbols(RBinFile *arch) {
-	return NULL;
-}
-
-static RList *fields(RBinFile *arch) {
-	return NULL;
-}
-
-static ut64 size(RBinFile *arch) {
-	return 0;
-}
-
-static RBinAddr *binsym(RBinFile *arch, int sym) {
-	return NULL;
-}
-
-static RList *imports(RBinFile *arch) {
-	return NULL;
-}
-
-static RList *libs(RBinFile *arch) {
-	return NULL;
-}
-
 RBinPlugin r_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT format r_bin plugin",
@@ -277,25 +240,23 @@ RBinPlugin r_bin_plugin_bflt = {
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,
-	.baddr = &baddr,
-	.binsym = &binsym,
+	.baddr = NULL,
+	.binsym = NULL,
 	.entries = &entries,
-	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
+	.sections = NULL,
+	.symbols = NULL,
+	.imports = NULL,
 	.info = &info,
-	.fields = &fields,
-	.size = &size,
-	.libs = &libs,
+	.fields = NULL,
+	.size = NULL,
+	.libs = NULL,
 	.relocs = &relocs,
-//	.relocs = NULL,
-//	.patch_relocs = NULL,
 	.patch_relocs = &patch_relocs,
 	.write = NULL,
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bflt,
 	.version = R2_VERSION

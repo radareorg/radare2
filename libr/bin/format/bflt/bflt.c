@@ -5,7 +5,7 @@
 
 #include "bflt.h"
 
-#define READ(x, i)	r_read_be32(x + i); i += 4;
+#define READ(x, i) r_read_be32 (x + i); i += 4;
 
 RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
         RBinAddr *addr = R_NEW0 (RBinAddr);
@@ -90,7 +90,7 @@ struct r_bin_bflt_obj *r_bin_bflt_new_buf(struct r_buf_t *buf) {
 }	
 
 void r_bin_bflt_free(struct r_bin_bflt_obj *obj) {
-        free (obj->hdr);
+	free (obj->hdr);
 	R_FREE (obj->b);
-        R_FREE (obj);
+	R_FREE (obj);
 }

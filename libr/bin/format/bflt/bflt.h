@@ -14,6 +14,7 @@
 #define FLAT_RELOC_TYPE_DATA	0x1
 #define FLAT_RELOC_TYPE_BSS	0x2
 
+/*
 struct bflt_relocation {
 #if defined(__BIG_ENDIAN_BITFIELD)
         ut32 type : 2;
@@ -23,6 +24,7 @@ struct bflt_relocation {
         ut32 type : 2;
 #endif
 };
+*/
 /* */
 
 /* Version 4 */
