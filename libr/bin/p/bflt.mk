@@ -2,7 +2,7 @@ OBJ_BFLT=bin_bflt.o
 OBJ_BFLT+=../format/bflt/bflt.o
 
 STATIC_OBJ+=${OBJ_BFLT}
-TARGET_BFLT=bin_coff.${EXT_SO}
+TARGET_BFLT=bin_bflt.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_BFLT}
 
