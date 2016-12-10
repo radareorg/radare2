@@ -12,8 +12,8 @@ static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 	int type;
 	switch(data[0]) {
 	case 0xed:
-                // ed?
-		type = dd[data[1]].type;
+//		type = dd[data[1]].type;
+		type = ed[data[1]].type;
 		break;
 	case 0xcb:
 		type = Z80_OP16;
@@ -22,12 +22,12 @@ static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 		type = dd[data[1]].type;
 		break;
 	case 0xfd:
-                // fd?
-		type = dd[data[1]].type;
+//		type = dd[data[1]].type;
+		type = fd[data[1]].type;
 		break;
 	default:
-                // z80op?
-		type = dd[data[0]].type;
+//		type = dd[data[0]].type;
+		type = z80_op[data[0]].type;
 		break;
 	}
 
@@ -219,15 +219,11 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 
 	case 0x10: // djnz
 		op->type = R_ANAL_OP_TYPE_CJMP;
-// why is ilen sometimes incorrect (ilen==4)?
-                ilen = 2 ; // until proper fix
 		op->jump = addr + (st8)data[1] + ilen ;
-//		op->jump = addr + (st8)data[1] + ilen - 2 ;
 		op->fail = addr + ilen;
 		break;
 	case 0x18: // jr xx
 		op->type = R_ANAL_OP_TYPE_JMP;
-                ilen = 2 ; // to be sure until proper fix
 		op->jump = addr + (st8)data[1] + ilen;
 		break;
 	// jr cond, xx
@@ -236,10 +232,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0x30:
 	case 0x38:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-                ilen = 2 ; // until proper fix
-// why is ilen sometimes incorrect (ilen==3) @ jr nc,rel ?
 		op->jump = addr + (st8)data[1] + ilen;
-//		op->jump = addr + (st8)data[1] + 2 ;
 		op->fail = addr + ilen;
 		break;
 
