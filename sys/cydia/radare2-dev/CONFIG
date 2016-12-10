@@ -1,4 +1,4 @@
-PACKAGE=radare2-dev
+PACKAGE?=radare2-dev
 ARCH=iphoneos-arm
 SECTION=user/shell
 DEPENDS=radare2

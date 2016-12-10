@@ -495,6 +495,14 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 
 R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, ut64 *from, ut64 *to) {
 	RList *list = NULL;
+	ut64 _from, _to;
+
+	if (!from) {
+		from = &_from;
+	}
+	if (!to) {
+		to = &_to;
+	}
 	if (!strcmp (mode, "block")) {
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
@@ -534,10 +542,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					*to = s->vaddr+s->vsize;
 					continue;
 				}
-				if (((s->vaddr) < *from) && s->vaddr)
+				if (((s->vaddr) < *from) && s->vaddr) {
 					*from = s->vaddr;
-				if ((s->vaddr+s->vsize) > *to)
+				}
+				if ((s->vaddr+s->vsize) > *to) {
 					*to = s->vaddr+s->vsize;
+				}
 			}
 		}
 		if (!*to || *to == UT64_MAX || *to == UT32_MAX) {
@@ -548,6 +558,18 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				*from = 0;
 			}
 		}
+#if 0
+		RIOMap *map = R_NEW0 (RIOMap);
+		if (map) {
+			map->fd = core->io->raised;
+			map->from = *from;
+			map->to = *to;
+			map->flags = 6;
+			map->delta = 0;
+			list = r_list_newf (free);
+			r_list_append (list, map);
+		}
+#endif
 	} else if (!strcmp (mode, "io.section")) {
 		if (core->io->va) {
 			RListIter *iter;
@@ -1210,7 +1232,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	|| !strncmp (smode, "io.sections", 11) \
 	|| prot & R_IO_EXEC) {
 		list = r_core_get_boundaries_prot (core, prot, smode, &from, &to);
-	} else list = NULL;
+	} else {
+		list = NULL;
+	}
 
 	if (!list) {
 		map = R_NEW0 (RIOMap);
@@ -2050,31 +2074,43 @@ static int memcmpdiff(const ut8 *a, const ut8 *b, int len) {
 	return diff;
 }
 
+static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to) {
+	ut64 addr = from;
+	ut8 *block = calloc (core->blocksize, 1);
+	while (addr < to) {
+		(void)r_io_read_at (core->io, addr, block, core->blocksize);
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		int diff = memcmpdiff (core->block, block, core->blocksize);
+		int equal = core->blocksize - diff;
+		if (equal >= count) {
+			int pc = (equal * 100 )/core->blocksize;
+			r_cons_printf ("0x%08"PFMT64x" %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
+			ut8 ptr[2] = { pc * 2.5, 0 };
+			r_print_fill (core->print, ptr, 1, UT64_MAX, core->blocksize);
+		}
+		addr += core->blocksize;
+	}
+	free (block);
+}
+
 static void search_similar_pattern(RCore *core, int count) {
 	RIOMap *p;
+	ut64 from, to;
 	RListIter *iter;
-	ut8 *block = calloc (core->blocksize, 1);
 	const char *where = r_config_get (core->config, "search.in");
 
 	r_cons_break_push (NULL, NULL);
-	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, NULL, NULL);
-	r_list_foreach (list, iter, p) {
-		ut64 addr = p->from;
-		while (addr < p->to) {
-			(void)r_io_read_at (core->io, addr, block, core->blocksize);
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			int diff = memcmpdiff (core->block, block, core->blocksize);
-			int equal = core->blocksize - diff;
-			if (equal >= count) {
-				r_cons_printf ("0x%08"PFMT64x" %d/%d\n", addr, equal, core->blocksize);
-			}
-			addr += core->blocksize;
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
+	if (list) {
+		r_list_foreach (list, iter, p) {
+			search_similar_pattern_in (core, count, p->from, p->to);
 		}
+	} else {
+		search_similar_pattern_in (core, count, from, to);
 	}
 	r_cons_break_pop ();
-	free (block);
 }
 
 static int cmd_search(void *data, const char *input) {

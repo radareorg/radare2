@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=0.10.4
+PREVIOUS_RELEASE=1.0.2
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)

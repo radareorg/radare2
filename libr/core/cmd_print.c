@@ -645,7 +645,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 	}
 	/* syntax aliasing bridge for 'pf foo=xxd' -> 'pf.foo xxd' */
 	if (input[1]==' ') {
-		char *eq = strchr (input+2, '=');
+		char *eq = strchr (input + 2, '=');
 		if (eq) {
 			input[1] = '.';
 			*eq = ' ';

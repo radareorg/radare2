@@ -1,4 +1,4 @@
-PACKAGE=radare2
+PACKAGE?=radare2
 ARCH=iphoneos-arm
 SECTION=user/shell
 PRIORITY=optional

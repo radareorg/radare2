@@ -1219,8 +1219,10 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		int base = 0;
 		if (addr != UT64_MAX && step > 0) {
 			p->cb_printf ("0x%08"PFMT64x" ", addr + (i * step));
+			p->cb_printf ("%02x %04x |", i, arr[i]);
+		} else {
+			p->cb_printf ("|");
 		}
-		p->cb_printf ("%02x %04x |", i, arr[i]);
 		if (show_colors) {
 			int idx = (int)(arr[i] * 5 / 255);
 			const char *k = firebow[idx];
