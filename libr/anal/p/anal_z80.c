@@ -12,6 +12,7 @@ static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 	int type;
 	switch(data[0]) {
 	case 0xed:
+                // ed?
 		type = dd[data[1]].type;
 		break;
 	case 0xcb:
@@ -21,9 +22,11 @@ static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 		type = dd[data[1]].type;
 		break;
 	case 0xfd:
+                // fd?
 		type = dd[data[1]].type;
 		break;
 	default:
+                // z80op?
 		type = dd[data[0]].type;
 		break;
 	}
