@@ -12,7 +12,8 @@ static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 	int type;
 	switch(data[0]) {
 	case 0xed:
-		type = dd[data[1]].type;
+//		type = dd[data[1]].type;
+		type = ed[data[1]].type;
 		break;
 	case 0xcb:
 		type = Z80_OP16;
@@ -21,10 +22,12 @@ static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 		type = dd[data[1]].type;
 		break;
 	case 0xfd:
-		type = dd[data[1]].type;
+//		type = dd[data[1]].type;
+		type = fd[data[1]].type;
 		break;
 	default:
-		type = dd[data[0]].type;
+//		type = dd[data[0]].type;
+		type = z80_op[data[0]].type;
 		break;
 	}
 
@@ -216,7 +219,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 
 	case 0x10: // djnz
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + (st8)data[1] + ilen - 2 ;
+		op->jump = addr + (st8)data[1] + ilen ;
 		op->fail = addr + ilen;
 		break;
 	case 0x18: // jr xx
