@@ -58,6 +58,8 @@ static void recursive_help(RCore *core, const char *cmd) {
 		return;
 	}
 	char *msg = r_core_cmd_str (core, cmd);
+	if (NULL == msg)
+		return;
 	line = msg;
 	r_cons_print (msg);
 	(void) r_str_ansi_filter (msg, NULL, NULL, strlen (msg));
