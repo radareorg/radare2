@@ -195,3 +195,5 @@ Beer in mind.
 r2 -- leading options since 2006
 don’t feed the bugs! (except delicious stacktraces)!
 feed the bugs!
+r2 talks to you. tries to make you feel well.
+now i'm like an evil engineer. MUAHAHAH
