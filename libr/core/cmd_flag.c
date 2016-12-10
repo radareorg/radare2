@@ -731,6 +731,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fR"," [?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 		"fs","[?]+-*","manage flagspaces",
 		"fS","[on]","sort flags by offset or name",
+		"fV","[*-] [nkey] [offset]","dump/restore visual marks (mK/'K)",
 		"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 		"fz"," [?][name]","add named flag zone -name to delete. see fz?[name]",
 		NULL};
