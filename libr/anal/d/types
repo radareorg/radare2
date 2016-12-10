@@ -2434,10 +2434,10 @@ func.setbuf.ret=void
 
 setvbuf=func
 func.setvbuf.args=4
-func.setvbuf.arg.0=FILE,*stream
-func.setvbuf.arg.1=,char*
-func.setvbuf.arg.2=,int
-func.setvbuf.arg.3=,size_t
+func.setvbuf.arg.0=FILE*,stream
+func.setvbuf.arg.1=char*,buf
+func.setvbuf.arg.2=int,mode
+func.setvbuf.arg.3=size_t,size
 func.setvbuf.ret=int
 
 fprintf=func
