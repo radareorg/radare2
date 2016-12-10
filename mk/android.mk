@@ -8,35 +8,40 @@ ifeq (${NDK_ARCH},x86)
 # mips
 ARCH2=i686
 RANLIB=${ARCH2}-linux-android-ranlib
-CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
+AR=${ARCH2}-linux-android-ar
+CC_AR=${AR} -r ${LIBAR}
 endif
 
 ifeq (${NDK_ARCH},mips)
 # mips
 ARCH2=mipsel
 RANLIB=${ARCH2}-linux-android-ranlib
-CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
+AR=${ARCH2}-linux-android-ar
+CC_AR=${AR} -r ${LIBAR}
 endif
 
 ifeq (${NDK_ARCH},mips64)
 # mips
 ARCH2=mips64el
 RANLIB=${ARCH2}-linux-android-ranlib
-CC_AR=${ARCH2}-linux-android-ar -r ${LIBAR}
+AR=${ARCH2}-linux-android-ar
+CC_AR=${AR} -r ${LIBAR}
 endif
 
 ifeq (${NDK_ARCH},arm)
 # arm32
 ARCH=arm
 RANLIB=${ARCH}-linux-androideabi-ranlib
-CC_AR=${ARCH}-linux-androideabi-ar -r ${LIBAR}
+AR=${ARCH}-linux-androideabi-ar
+CC_AR=${AR} -r ${LIBAR}
 endif
 
 ifeq (${NDK_ARCH},aarch64)
 # aarch64
 ARCH=aarch64
 RANLIB=${ARCH}-linux-android-ranlib
-CC_AR=${ARCH}-linux-android-ar -r ${LIBAR}
+AR=${ARCH}-linux-android-ar
+CC_AR=${AR} -r ${LIBAR}
 endif
 ONELIB=0
 OSTYPE=android

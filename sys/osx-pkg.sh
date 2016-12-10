@@ -18,7 +18,7 @@ fi
 [ -z "${MAKE}" ] && MAKE=make
 
 rm -rf "${SRC}"
-${MAKE} mrproper
+${MAKE} mrproper 2>/dev/null
 ./configure --prefix="${PREFIX}" || exit 1
 ${MAKE} -j4 || exit 1
 # TODO: run sys/install.sh
