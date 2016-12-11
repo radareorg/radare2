@@ -301,10 +301,12 @@ static int internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *nu
 }
 
 static int internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
-	RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
-	if (reg) {
-		r_reg_set_value (esil->anal->reg, reg, num);
-		return true;
+	if (esil && esil->anal) {
+		RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
+		if (reg) {
+			r_reg_set_value (esil->anal->reg, reg, num);
+			return true;
+		}
 	}
 	return false;
 }
