@@ -2107,6 +2107,7 @@ static void search_similar_pattern(RCore *core, int count) {
 		r_list_foreach (list, iter, p) {
 			search_similar_pattern_in (core, count, p->from, p->to);
 		}
+		r_list_free (list);
 	} else {
 		search_similar_pattern_in (core, count, from, to);
 	}
