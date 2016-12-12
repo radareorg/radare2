@@ -1543,8 +1543,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				r_cons_break_push (NULL, NULL);
 				recursive_help (core, cmd);
 				r_cons_break_pop ();
-				//less the content
-				if (strstr (ptr + 2, "~..")) {
+				//grep the content
+				if (ptr[2] == '~') {
 					r_cons_grep (ptr + 3);
 				}
 				return 0;
