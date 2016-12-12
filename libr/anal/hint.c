@@ -148,7 +148,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	token = *s;
 	for (r = s; ; r = nxt2) {
 		r = sdb_anext (r, &nxt);
-		char *v = sdb_anext (nxt, &nxt2);
+		sdb_anext (nxt, &nxt2); // tokenize value
 		if (token) {
 			switch (token) {
 			case 'i': hint->immbase = sdb_atoi (nxt); break;

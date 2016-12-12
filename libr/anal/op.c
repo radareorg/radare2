@@ -478,10 +478,41 @@ R_API const char *r_anal_op_family_to_string(int n) {
 }
 
 R_API int r_anal_op_family_from_string(const char *f) {
+	// TODO: use array of strings or so ..
 	if (!strcmp (f, "cpu")) return R_ANAL_OP_FAMILY_CPU;
 	if (!strcmp (f, "fpu")) return R_ANAL_OP_FAMILY_FPU;
 	if (!strcmp (f, "mmx")) return R_ANAL_OP_FAMILY_MMX;
 	if (!strcmp (f, "priv")) return R_ANAL_OP_FAMILY_PRIV;
 	if (!strcmp (f, "virt")) return R_ANAL_OP_FAMILY_VIRT;
 	return R_ANAL_OP_FAMILY_UNKNOWN;
+}
+
+/* apply hint to op, return the number of hints applied */
+R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint) {
+	int changes = 0;
+	if (hint) {
+		if (hint->jump != UT64_MAX) {
+			changes++;
+			op->jump = hint->jump;
+		}
+		if (hint->fail != UT64_MAX) {
+			changes++;
+			op->fail = hint->fail;
+		}
+		if (hint->opcode) {
+			changes++;
+			/* XXX: this is not correct */
+			free (op->mnemonic);
+			op->mnemonic = strdup (hint->opcode);
+		}
+		if (hint->esil) {
+			changes++;
+			r_strbuf_set (&op->esil, hint->esil);
+		}
+		if (hint->size) {
+			changes++;
+			op->size = hint->size;
+		}
+	}
+	return changes;
 }

@@ -536,7 +536,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (d && *d) {
 				r_cons_printf ("%s: %s\n", opname, d);
 				free (d);
-			} else r_cons_printf ("Unknown opcode\n");
+			} else {
+				eprintf ("Unknown opcode\n");
+			}
 			free (opname);
 		} else if (fmt == 'e') {
 			if (*esilstr) {
@@ -582,9 +584,10 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.reg) {
 				r_cons_printf ("\"reg\": \"%s\",", op.reg);
 			}
-			if (*esilstr) {
-				r_cons_printf ("\"esil\": \"%s\",",
-					esilstr);
+			if (hint->esil) {
+				r_cons_printf ("\"esil\": \"%s\",", hint->esil);
+			} else if (*esilstr) {
+				r_cons_printf ("\"esil\": \"%s\",", esilstr);
 			}
 			if (hint && hint->jump != UT64_MAX) {
 				op.jump = hint->jump;
@@ -665,22 +668,29 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("type2", "%s\n", t2);
 				}
 			}
-			if (op.reg)
+			if (op.reg) {
 				printline ("reg", "%s\n", op.reg);
-			if (*esilstr)
+			}
+			if (hint && hint->esil) {
+				printline ("esil", "%s\n", hint->esil);
+			} else if (*esilstr) {
 				printline ("esil", "%s\n", esilstr);
-			if (hint && hint->jump != UT64_MAX)
+			}
+			if (hint && hint->jump != UT64_MAX) {
 				op.jump = hint->jump;
-			if (op.jump != UT64_MAX)
+			}
+			if (op.jump != UT64_MAX) {
 				printline ("jump", "0x%08" PFMT64x "\n", op.jump);
-
-			if (hint && hint->fail != UT64_MAX)
+			}
+			if (hint && hint->fail != UT64_MAX) {
 				op.fail = hint->fail;
-			if (op.fail != UT64_MAX)
+			}
+			if (op.fail != UT64_MAX) {
 				printline ("fail", "0x%08" PFMT64x "\n", op.fail);
-			if (op.delay)
+			}
+			if (op.delay) {
 				printline ("delay", "%d\n", op.delay);
-
+			}
 			printline ("stack", "%s\n", r_anal_stackop_tostring (op.stackop));
 			{
 				const char *arg = (op.type & R_ANAL_OP_TYPE_COND)?  r_anal_cond_tostring (op.cond): NULL;
@@ -2173,9 +2183,16 @@ repeat:
 		eprintf ("read error\n");
 	}
 	r_asm_set_pc (core->assembler, addr);
+	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code));
 	if (op.size < 1) {
 		op.size = 1; // avoid inverted stepping
+	}
+	{
+		/* apply hint */
+		RAnalHint *hint = r_anal_hint_get (core->anal, addr);
+		r_anal_op_hint (&op, hint);
+		r_anal_hint_free (hint);
 	}
 	r_reg_setv (core->anal->reg, name, addr + op.size);
 	if (ret) {
@@ -2755,6 +2772,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		{
 			ut64 pc = r_debug_reg_get (core->dbg, "PC");
 			RAnalOp *op = r_core_anal_op (core, pc);
+// TODO: honor hint
 			if (!op) {
 				break;
 			}
