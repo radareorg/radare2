@@ -1535,7 +1535,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	core->oobi = NULL;
 
 	ptr = strstr (cmd, "?*");
-	if (ptr && ptr > cmd) {
+	if (ptr) {
 		char *prech = ptr - 1;
 		if (*prech != '~') {
 			ptr[1] = 0;

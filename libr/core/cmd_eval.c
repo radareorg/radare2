@@ -357,7 +357,7 @@ static int cmd_eval(void *data, const char *input) {
 		default: r_config_list (core->config, input+1, 2); break;
 		case 0:{
 			const char* help_msg[] = {
-			"Usage:", "e[?] [var[=value]]", "Evaluable vars",
+			"Usage:", "e [var[=value]]", "Evaluable vars",
 			"e","?asm.bytes", "show description",
 			"e", "??", "list config vars with description",
 			"e", "", "list config vars",
