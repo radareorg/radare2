@@ -1738,7 +1738,7 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin) {
 	case PE_IMAGE_FILE_MACHINE_EBC:
 		arch = strdup("ebc");
 		break;
-	case 0xaa64:
+	case PE_IMAGE_FILE_MACHINE_ARM64:
 		arch = strdup("arm");
 		break;
 	default:

@@ -60,6 +60,7 @@ typedef struct {
 #define PE_IMAGE_FILE_MACHINE_AM33             0x01d3
 #define PE_IMAGE_FILE_MACHINE_AMD64            0x8664
 #define PE_IMAGE_FILE_MACHINE_ARM              0x01c0
+#define PE_IMAGE_FILE_MACHINE_ARM64            0xaa64
 #define PE_IMAGE_FILE_MACHINE_AXP64            PE_IMAGE_FILE_MACHINE_ALPHA64
 #define PE_IMAGE_FILE_MACHINE_CEE              0xc0ee
 #define PE_IMAGE_FILE_MACHINE_CEF              0x0cef
