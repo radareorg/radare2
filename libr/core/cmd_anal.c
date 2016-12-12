@@ -584,7 +584,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.reg) {
 				r_cons_printf ("\"reg\": \"%s\",", op.reg);
 			}
-			if (hint->esil) {
+			if (hint && hint->esil) {
 				r_cons_printf ("\"esil\": \"%s\",", hint->esil);
 			} else if (*esilstr) {
 				r_cons_printf ("\"esil\": \"%s\",", esilstr);
