@@ -489,7 +489,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	const char *color = "";
 	const char *esilstr;
 	RAnalHint *hint;
-	RAnalEsil *esil;
+	RAnalEsil *esil = NULL;
 	RAsmOp asmop;
 	RAnalOp op;
 	ut64 addr;
@@ -703,16 +703,16 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);
 		r_anal_hint_free (hint);
-		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r')
+		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r') {
 			r_cons_print (",");
+		}
 	}
 
 	if (fmt == 'j') {
 		r_cons_printf ("]");
 		r_cons_newline ();
-	} else if (fmt == 'r') {
-		r_anal_esil_free (esil);
 	}
+	r_anal_esil_free (esil);
 }
 
 static int bb_cmp(const void *a, const void *b) {
