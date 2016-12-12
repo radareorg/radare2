@@ -50,7 +50,6 @@ typedef struct r_anal_meta_item_t {
 	int space;
 } RAnalMetaItem;
 
-
 typedef struct {
 	struct r_anal_t *anal;
 	int type;
