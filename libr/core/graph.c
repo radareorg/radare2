@@ -1557,7 +1557,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	}
 	r_config_save_num (hc, "asm.fcnlines", "asm.lines", "asm.bytes", 
 		"asm.cmtcol", "asm.marks", "asm.marks", "asm.offset", "asm.comments", NULL);
-	const bool o_comments = r_config_get_i (core->config, "asm.comments");
+	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	int o_cursor = core->print->cur_enabled;
 
 	const char *cmd = (opts & BODY_SUMMARY) ? "pds" : "pD";
@@ -2675,8 +2675,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
 	g->on_curnode_change = (RANodeCallback)seek_to_node;
 	g->on_curnode_change_data = core;
-	int asm_comments = r_config_get_i (core->config, "asm.comments");
-	r_config_set (core->config, "asm.comments", r_str_bool (false));
+	bool asm_comments = r_config_get_i (core->config, "asm.comments");
+	r_config_set (core->config, "asm.comments", r_str_bool (r_config_get_i (core->config, "graph.comments")));
 
 	/* we want letters as shortcuts for call/jmps */
 	core->is_asmqjmps_letter = true;
