@@ -221,11 +221,31 @@ R_API void r_cons_break_pop() {
 }
 
 R_API bool r_cons_is_breaked() {
+	if (I.timeout) {
+		if (r_sys_now () > I.timeout) {
+			I.breaked = true;
+			eprintf ("\nTimeout!\n");
+			I.timeout = 0;
+		}
+	}
 	return I.breaked;
+}
+
+R_API void r_cons_break_timeout(int timeout) {
+	if (!timeout && I.timeout) {
+		I.timeout = 0;
+	} else {
+		if (timeout) {
+			I.timeout = r_sys_now () + (timeout * 1000000);
+		} else {
+			I.timeout = 0;
+		}
+	}
 }
 
 R_API void r_cons_break_end() {
 	I.breaked = false;
+	I.timeout = 0;
 	r_print_set_interrupted (I.breaked);
 #if __UNIX__ || __CYGWIN__
 	signal (SIGINT, SIG_IGN);

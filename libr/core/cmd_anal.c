@@ -1098,6 +1098,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
+	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case 'f':
 		r_anal_fcn_fit_overlaps (core->anal, NULL);
@@ -4886,6 +4887,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			ut64 curseek = core->offset;
 			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
 			r_cons_break_push (NULL, NULL);
+			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
 			rowlog_done (core);
 			if (r_cons_is_breaked ()) {

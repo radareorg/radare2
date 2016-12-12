@@ -269,6 +269,7 @@ typedef struct r_cons_t {
 	bool use_utf8; // use utf8 features
 	int linesleep;
 	int pagesize;
+	ut64 timeout;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -427,6 +428,7 @@ R_API char *r_cons_lastline (void);
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
 R_API bool r_cons_is_breaked();
+R_API void r_cons_break_timeout(int timeout);
 
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);

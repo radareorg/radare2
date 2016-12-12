@@ -1677,6 +1677,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
 	SETICB("anal.from", -1, (RConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
 	SETICB("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
+	SETI("anal.timeout", 0, "Upper limit on the address range for analysis");
 
 	SETCB("anal.eobjmp", "false", &cb_analeobjmp, "jmp is end of block mode (option)");
 	SETCB("anal.afterjmp", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
