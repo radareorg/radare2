@@ -578,7 +578,7 @@ R_API void r_cons_flush() {
 #if COUNT_LINES
 			int i, lines = 0;
 			for (i = 0; I.buffer[i]; i++) {
-				if (I.buffer[i]=='\n') {
+				if (I.buffer[i] == '\n') {
 					lines ++;
 				}
 			}

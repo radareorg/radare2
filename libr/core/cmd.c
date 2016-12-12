@@ -58,8 +58,9 @@ static void recursive_help(RCore *core, const char *cmd) {
 		return;
 	}
 	char *msg = r_core_cmd_str (core, cmd);
-	if (NULL == msg)
+	if (!msg) {
 		return;
+	}
 	line = msg;
 	r_cons_print (msg);
 	(void) r_str_ansi_filter (msg, NULL, NULL, strlen (msg));
@@ -77,7 +78,6 @@ static void recursive_help(RCore *core, const char *cmd) {
 				recursive_help (core, sp + 1);
 			}
 		}
-		// eprintf (" -- ((%s))\n", line);
 		line = nl + 1;
 	} while (nl);
 	free (msg);
@@ -1039,7 +1039,9 @@ static int cmd_thread(void *data, const char *input) {
 				RCoreTask *task = r_core_task_get (core, tid);
 				if (task) {
 					r_core_task_join (core, task);
-				} else eprintf ("Cannot find task\n");
+				} else {
+					eprintf ("Cannot find task\n");
+				}
 			} else {
 				RCoreTask *task = r_core_task_add (core, r_core_task_new (
 							core, input+1, (RCoreTaskCallback)task_finished, core));
@@ -1404,14 +1406,18 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			while (IS_WHITESPACE (p[1])) p++;
 			if (p[1]=='@' || (p[1] && p[2]=='@')) {
 				char *q = strchr (p+1, '"');
-				if (q) *q = 0;
+				if (q) {
+					*q = 0;
+				}
 				oseek = core->offset;
-				r_core_seek (core, r_num_math (
-					core->num, p+2), 1);
+				r_core_seek (core,
+					     r_num_math (core->num, p + 2), 1);
 				if (q) {
 					*p = '"';
 					p = q;
-				} else p = NULL;
+				} else {
+					p = NULL;
+				}
 			}
 			if (p && *p && p[1] == '>') {
 				str = p + 2;
@@ -1428,7 +1434,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			line = r_str_replace (line, "\\\"", "\"", true);
 			if (p && p[1]=='|') {
 				str = p+2;
-				while (IS_WHITESPACE (*str)) str++;
+				while (IS_WHITESPACE (*str)) {
+					str++;
+				}
 				r_core_cmd_pipe (core, cmd, str);
 			} else {
 				r_cmd_call (core->rcmd, line);
@@ -1473,7 +1481,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			if (r_core_cmd_subst (core, cmd) == -1) {
 				return -1;
 			}
-			cmd = ptr+1;
+			cmd = ptr + 1;
 			ret = r_core_cmd_subst (core, cmd);
 			*ptr = ';';
 			return ret;
@@ -1492,8 +1500,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				*ptr = '\0';
 				cmd = r_str_clean (cmd);
 				int value = core->num->value;
-				if (*cmd) r_core_cmd_pipe (core, cmd, ptr+1);
-				else r_io_system (core->io, ptr+1);
+				if (*cmd) {
+					r_core_cmd_pipe (core, cmd, ptr + 1);
+				} else {
+					r_io_system (core->io, ptr + 1);
+				}
 				core->num->value = value;
 				return 0;
 			}
@@ -1511,7 +1522,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			eprintf ("command error(%s)\n", cmd);
 			return ret;
 		}
-		for (cmd=ptr+2; cmd && *cmd==' '; cmd++);
+		for (cmd = ptr + 2; cmd && *cmd==' '; cmd++);
 		ptr = strchr (cmd, '&');
 	}
 
@@ -1539,41 +1550,51 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				/* this is a bit mess */
 				//const char *oprompt = strdup (r_line_singleton ()->prompt);
 				//oprompt = ">";
-				for (str=ptr+2; str[0]==' '; str++);
+				for (str = ptr + 2; str[0] == ' '; str++) {
+					//nothing to see here
+				}
 				eprintf ("==> Reading from stdin until '%s'\n", str);
 				free (core->oobi);
 				core->oobi = malloc (1);
-				if (core->oobi)
+				if (core->oobi) {
 					core->oobi[0] = '\0';
+				}
 				core->oobi_len = 0;
 				for (;;) {
 					char buf[1024];
 					int ret;
 					write (1, "> ", 2);
-					fgets (buf, sizeof (buf)-1, stdin); // XXX use r_line ??
-					if (feof (stdin))
+					fgets (buf, sizeof (buf) - 1, stdin); // XXX use r_line ??
+					if (feof (stdin)) {
 						break;
+					}
 					if (*buf) buf[strlen (buf)-1]='\0';
 					ret = strlen (buf);
 					core->oobi_len += ret;
 					core->oobi = realloc (core->oobi, core->oobi_len+1);
 					if (core->oobi) {
-						if (!strcmp (buf, str))
+						if (!strcmp (buf, str)) {
 							break;
+						}
 						strcat ((char *)core->oobi, buf);
 					}
 				}
 				//r_line_set_prompt (oprompt);
 			} else {
-				for (str=ptr+1; *str== ' '; str++);
-				if (!*str) goto next;
+				for (str = ptr + 1; *str == ' '; str++) {
+					//nothing to see here
+				}
+				if (!*str) {
+					goto next;
+				}
 				eprintf ("Slurping file '%s'\n", str);
 				free (core->oobi);
 				core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
-				if (!core->oobi)
+				if (!core->oobi) {
 					eprintf ("cannot open file\n");
-				else if (ptr == cmd)
+				} else if (ptr == cmd) {
 					return r_core_cmd_buffer (core, (const char *)core->oobi);
+				}
 			}
 		} else {
 			eprintf ("Cannot slurp with << in non-interactive mode\n");
@@ -1654,12 +1675,12 @@ next2:
 	if (ptr) {
 		int empty = 0;
 		int oneline = 1;
-		if (ptr[1]=='`') {
+		if (ptr[1] == '`') {
 			memmove (ptr, ptr + 1, strlen (ptr));
 			oneline = 0;
 			empty = 1;
 		}
-		ptr2 = strchr (ptr+1, '`');
+		ptr2 = strchr (ptr + 1, '`');
 		if (empty) {
 			/* do nothing */
 		} else if (!ptr2) {
@@ -1724,7 +1745,7 @@ next2:
 	/* temporary seek commands */
 	if (*cmd!='(' && *cmd!='"') {
 		ptr = strchr (cmd, '@');
-		if (ptr == cmd + 1 && *cmd=='?') {
+		if (ptr == cmd + 1 && *cmd == '?') {
 			ptr = NULL;
 		}
 	} else {
@@ -1733,7 +1754,7 @@ next2:
 
 	core->tmpseek = ptr? true: false;
 	if (ptr) {
-		char *f, *ptr2 = strchr (ptr+1, '!');
+		char *f, *ptr2 = strchr (ptr + 1, '!');
 		ut64 addr = UT64_MAX;
 		const char *tmpbits = NULL;
 		const char *offstr = NULL;
@@ -1746,13 +1767,14 @@ next2:
 		ut8 *buf;
 
 		*ptr = '\0';
-		for (ptr++; *ptr== ' '; ptr++);
+		for (ptr++; *ptr== ' '; ptr++) {
+			//nothing to see here
+		}
 		if (*ptr && ptr[1]==':') {
 			/* do nothing here */
 		} else {
 			ptr--;
 		}
-
 		if (ptr[0] && ptr[1] && ptr[2]) {
 			arroba = strchr (ptr + 2, '@');
 		} else {
@@ -1766,7 +1788,7 @@ repeat_arroba:
 			usemyblock = 1;
 			switch (ptr[0]) {
 			case 'f': // "@f:" // slurp file in block
-				f = r_file_slurp (ptr+2, &sz);
+				f = r_file_slurp (ptr + 2, &sz);
 				if (f) {
 					buf = malloc (sz);
 					if (buf) {
@@ -1774,9 +1796,13 @@ repeat_arroba:
 						core->block = buf;
 						core->blocksize = sz;
 						memcpy (core->block, f, sz);
-					} else eprintf ("cannot alloc %d", sz);
+					} else {
+						eprintf ("cannot alloc %d", sz);
+					}
 					free (f);
-				} else eprintf ("cannot open '%s'\n", ptr+3);
+				} else {
+					eprintf ("cannot open '%s'\n", ptr+3);
+				}
 				break;
 			case 'r': // "@r:" // regname
 				if (ptr[1]==':') {
@@ -1789,7 +1815,7 @@ repeat_arroba:
 			case 'b': // "@b:" // bits
 				tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 				r_config_set_i (core->config, "asm.bits",
-					r_num_math (core->num, ptr+2));
+					r_num_math (core->num, ptr + 2));
 				break;
 			case 'i': // "@i:"
 				{
@@ -1798,13 +1824,12 @@ repeat_arroba:
 						r_core_cmdf (core, "so %s", ptr + 2);
 					}
 				}
-                                // tmpseek = true;
 				break;
 			case 'e': // "@e:"
 				tmpeval = parse_tmp_evals (core, ptr+2);
 				break;
 			case 'x': // "@x:" // hexpairs
-				if (ptr[1]==':') {
+				if (ptr[1] == ':') {
 					buf = malloc (strlen (ptr+2)+1);
 					if (buf) {
 						len = r_hex_str2bin (ptr+2, buf);
@@ -1812,8 +1837,12 @@ repeat_arroba:
 						memcpy (core->block, buf, core->blocksize);
 						core->fixedblock = true;
 						free (buf);
-					} else eprintf ("cannot allocate\n");
-				} else eprintf ("Invalid @x: syntax\n");
+					} else {
+						eprintf ("cannot allocate\n");
+					}
+				} else {
+					eprintf ("Invalid @x: syntax\n");
+				}
 				break;
 			case 'k': // "@k"
 				 {
@@ -1825,14 +1854,14 @@ repeat_arroba:
 				 }
 				break;
 			case 'o': // "@o:3"
-				if (ptr[1] ==':') {
+				if (ptr[1] == ':') {
 					tmpfd = core->io->raised;
 					r_io_raise (core->io, atoi (ptr + 2));
 				}
 				break;
 			case 'a': // "@a:"
-				if (ptr[1]==':') {
-					char *q = strchr (ptr+2, ':');
+				if (ptr[1] == ':') {
+					char *q = strchr (ptr + 2, ':');
 					tmpasm = strdup (r_config_get (core->config, "asm.arch"));
 					if (q) {
 						*q++ = 0;
@@ -1846,9 +1875,9 @@ repeat_arroba:
 				}
 				break;
 			case 's': // "@s:"
-				len = strlen (ptr+2);
+				len = strlen (ptr + 2);
 				r_core_block_size (core, len);
-				memcpy (core->block, ptr+2, len);
+				memcpy (core->block, ptr + 2, len);
 				break;
 			default:
 				goto ignore;
@@ -1862,32 +1891,33 @@ ignore:
 
 		cmd = r_str_clean (cmd);
 		if (ptr2) {
-			if (strlen (ptr+1)==13 && strlen (ptr2+1)==6 && \
-				!memcmp (ptr+1,"0x", 2) && !memcmp (ptr2+1, "0x", 2)) {
+			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
+			    !memcmp (ptr + 1, "0x", 2) &&
+			    !memcmp (ptr2 + 1, "0x", 2)) {
 				/* 0xXXXX:0xYYYY */
-			} else
-			if (strlen (ptr+1)==9 && strlen (ptr2+1)==4) {
+			} else if (strlen (ptr + 1) == 9 && strlen (ptr2 + 1) == 4) {
 				/* XXXX:YYYY */
 			} else {
 				*ptr2 = '\0';
 				if (!ptr2[1]) {
 					goto fail;
 				}
-				r_core_block_size (core, r_num_math (core->num, ptr2+1));
+				r_core_block_size (
+					core, r_num_math (core->num, ptr2 + 1));
 			}
 		}
 
 		offstr = r_str_trim_head (ptr+1);
 
 		addr = r_num_math (core->num, offstr);
-                if (isalpha ((unsigned char)ptr[1]) && addr== 0) {
-                        if (!r_flag_get (core->flags, ptr+1)) {
-                                eprintf ("Invalid address (%s)\n", ptr + 1);
+		if (isalpha ((unsigned char)ptr[1]) && !addr) {
+			if (!r_flag_get (core->flags, ptr+1)) {
+				eprintf ("Invalid address (%s)\n", ptr + 1);
 				goto fail;
-                        }
-                } else {
+			}
+		} else {
 			char ch = *offstr;
-			if (ch=='-' || ch=='+') {
+			if (ch == '-' || ch == '+') {
 				addr = core->offset + addr;
 			}
 		}
@@ -1897,7 +1927,7 @@ next_arroba:
 			arroba = NULL;
 			goto repeat_arroba;
 		}
-		if (ptr[1]=='@') {
+		if (ptr[1] == '@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
 			if (ptr[2] == '@') {
 				char *rule = ptr + 3;
@@ -1928,7 +1958,6 @@ next_arroba:
 				*p = '\x00';
 				ut64 from = r_num_math (core->num, range);
 				ut64 to = r_num_math (core->num, p + 1);
-
 				// save current ranges
 				for (i = 0; fromvars[i]; i++) {
 					curfrom[i] = r_config_get_i (core->config, fromvars[i]);
@@ -1936,7 +1965,6 @@ next_arroba:
 				for (i = 0; tovars[i]; i++) {
 					curto[i] = r_config_get_i (core->config, tovars[i]);
 				}
-
 				// set new ranges
 				for (i = 0; fromvars[i]; i++) {
 					r_config_set_i (core->config, fromvars[i], from);
@@ -1944,7 +1972,6 @@ next_arroba:
 				for (i = 0; tovars[i]; i++) {
 					r_config_set_i (core->config, tovars[i], to);
 				}
-
 				tmpseek = true;
 			}
 			if (usemyblock) {
@@ -1962,7 +1989,6 @@ next_arroba:
 					}
 				}
 			}
-
 			if (tmpseek) {
 				// restore ranges
 				for (i = 0; fromvars[i]; i++) {
@@ -2602,7 +2628,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 				break;
 			}
 			r_cons_flush ();
-			if (data[0]=='q') {
+			if (data[0] == 'q') {
 				if (data[1] == '!') {
 					ret = -1;
 				} else {

@@ -570,7 +570,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // clippy echo
-		clippy (r_str_chop_ro (input+1));
+		clippy (r_str_chop_ro (input + 1));
 		break;
 	case 'e': // echo
 		{
