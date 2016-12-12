@@ -513,10 +513,10 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_debug_backtrace (RCore *core, const char *input) {
+static void cmd_debug_backtrace(RCore *core, const char *input) {
 	RAnalOp analop;
 	ut64 addr, len = r_num_math (core->num, input);
-	if (len == 0) {
+	if (!len) {
 		r_bp_traptrace_list (core->dbg->bp);
 	} else {
 		ut64 oaddr = 0LL;
@@ -530,7 +530,7 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 			ut8 buf[32];
 			r_debug_continue (core->dbg);
 			addr = r_debug_reg_get (core->dbg, "PC");
-			if (addr == 0LL) {
+			if (!addr) {
 				eprintf ("pc=0\n");
 				break;
 			}
@@ -2028,16 +2028,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 't': // "dbt"
 		switch (input[2]) {
 			case 'e': // "dbte"
-				for (p = input + 3; *p == ' '; p++) { /* nothing to do here */ }
+				for (p = input + 3; *p == ' '; p++) { 
+					/* nothing to do here */ 
+				}
 				if (*p == '*') {
 					r_bp_set_trace_all (core->dbg->bp,true);
-				} else if (!r_bp_set_trace (core->dbg->bp,
-							addr, true)) {
+				} else if (!r_bp_set_trace (core->dbg->bp, addr, true)) {
 					eprintf ("Cannot set tracepoint\n");
 				}
 				break;
 			case 'd': // "dbtd"
-				for (p = input + 3; *p==' ';p++);
+				for (p = input + 3; *p==' ';p++) {
+					//nothing to see here
+				}
 				if (*p == '*') {
 					r_bp_set_trace_all (core->dbg->bp,false);
 				} else if (!r_bp_set_trace (core->dbg->bp, addr, false)) {
@@ -2046,19 +2049,24 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				break;
 			case 's': // "dbts"
 				bpi = r_bp_get_at (core->dbg->bp, addr);
-				if (bpi) bpi->trace = !!!bpi->trace;
-				else eprintf ("Cannot unset tracepoint\n");
+				if (bpi) {
+					bpi->trace = !!!bpi->trace;
+				} else {
+					eprintf ("Cannot unset tracepoint\n");
+				}
 				break;
 			case 'j': // "dbtj"
 				addr = UT64_MAX;
-				if (input[2] == ' ' && input[3])
+				if (input[2] == ' ' && input[3]) {
 					addr = r_num_math (core->num, input + 2);
+				}
 				i = 0;
 				list = r_debug_frames (core->dbg, addr);
 				r_cons_printf ("[");
 				r_list_foreach (list, iter, frame) {
-					r_cons_printf ("%s%08"PFMT64d,
-							(i ? "," : ""), frame->addr);
+					r_cons_printf ("%s%08" PFMT64d,
+						       (i ? "," : ""),
+						       frame->addr);
 					i++;
 				}
 				r_cons_printf ("]\n");
@@ -2066,8 +2074,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				break;
 			case '=': // dbt=
 				addr = UT64_MAX;
-				if (input[2] == ' ' && input[3])
+				if (input[2] == ' ' && input[3]) {
 					addr = r_num_math (core->num, input + 2);
+				}
 				i = 0;
 				list = r_debug_frames (core->dbg, addr);
 				r_list_reverse (list);
@@ -2097,8 +2106,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				break;
 			case '*': // dbt*
 				addr = UT64_MAX;
-				if (input[2] == ' ' && input[3])
+				if (input[2] == ' ' && input[3]) {
 					addr = r_num_math (core->num, input + 2);
+				}
 				i = 0;
 				list = r_debug_frames (core->dbg, addr);
 				r_list_reverse (list);
@@ -2112,16 +2122,15 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				break;
 			case 0: // "dbt" -- backtrace
 				addr = UT64_MAX;
-				if (input[2] == ' ' && input[3])
+				if (input[2] == ' ' && input[3]) {
 					addr = r_num_math (core->num, input + 2);
+				}
 				i = 0;
 				list = r_debug_frames (core->dbg, addr);
 				r_list_foreach (list, iter, frame) {
 					char flagdesc[1024], flagdesc2[1024], pcstr[32], spstr[32];
 					RFlagItem *f = r_flag_get_at (core->flags, frame->addr, true);
-
 					flagdesc[0] = flagdesc2[0] = 0;
-
 					if (f) {
 						if (f->offset != addr) {
 							int delta = (int)(frame->addr - f->offset);
@@ -2190,7 +2199,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				break;
 			case '?':
 			default:
-				r_core_cmd0 (core, "db?~dbt");
+				{
+				const char* dbt_help_msg[] = {
+					"Usage: dbt", "", " # Backtrace commands",
+					"dbt", "", "Display backtrace based on dbg.btdepth and dbg.btalgo",
+					"dbt*", "", "Display backtrace in flags",
+					"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
+					"dbtj", "", "Display backtrace in JSON",
+					"dbte", " <addr>", "Enable Breakpoint Trace",
+					"dbtd", " <addr>", "Disable Breakpoint Trace",
+					"dbts", " <addr>", "Swap Breakpoint Trace",
+					NULL};
+				r_core_cmd_help (core, dbt_help_msg);
+				}
 				break;
 		}
 		break;
@@ -2411,7 +2432,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			case 's':
 				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
 					bpi->trace = !!!bpi->trace;
-				} else eprintf ("Cannot unset tracepoint\n");
+				} else {
+					eprintf ("Cannot unset tracepoint\n");
+				}
 				break;
 			}
 			break;
