@@ -157,6 +157,18 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn);
 }
 
+static bool refExists(RList *refs, RAnalRef *ref) {
+	RAnalRef *r;
+	RListIter *iter;
+	r_list_foreach (refs, iter, r) {
+		if (r->at == ref->at && ref->addr == r->addr) {
+			r->type = ref->type;
+			return true;
+		}
+	}
+	return false;
+}
+
 R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
 	RAnalRef *ref;
 	if (!fcn || !a) {
@@ -177,7 +189,11 @@ R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, 
 	ref->addr = addr; // to
 	ref->type = type;
 	// TODO: ensure we are not dupping xrefs
-	r_list_append (fcn->refs, ref);
+	if (refExists (fcn->refs, ref)) {
+		r_anal_ref_free (ref);
+	} else {
+		r_list_append (fcn->refs, ref);
+	}
 #endif
 #if FCN_SDB
 	sdb_add (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x".name", fcn->addr), fcn->name, 0);
