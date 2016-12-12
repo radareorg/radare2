@@ -586,20 +586,25 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_printf ("\"esil\": \"%s\",",
 					esilstr);
 			}
-			if (hint && hint->jump != UT64_MAX)
+			if (hint && hint->jump != UT64_MAX) {
 				op.jump = hint->jump;
-			if (op.jump != UT64_MAX)
+			}
+			if (op.jump != UT64_MAX) {
 				r_cons_printf ("\"jump\":%" PFMT64d ",", op.jump);
-			if (hint && hint->fail != UT64_MAX)
+			}
+			if (hint && hint->fail != UT64_MAX) {
 				op.fail = hint->fail;
-			if (op.refptr != -1)
+			}
+			if (op.refptr != -1) {
 				r_cons_printf ("\"refptr\":%d,", op.refptr);
-			if (op.fail != UT64_MAX)
+			}
+			if (op.fail != UT64_MAX) {
 				r_cons_printf ("\"fail\":%" PFMT64d ",", op.fail);
-
+			}
 			r_cons_printf ("\"cycles\":%d,", op.cycles);
-			if (op.failcycles)
+			if (op.failcycles) {
 				r_cons_printf ("\"failcycles\":%d,", op.failcycles);
+			}
 			r_cons_printf ("\"delay\":%d,", op.delay);
 			{
 				const char *p = r_anal_stackop_tostring (op.stackop);
@@ -632,7 +637,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				if (hint->opcode) {
 					printline ("ophint", "%s\n", hint->opcode);
 				}
-				printline ("addr", "0x%08" PFMT64x "\n", (hint->addr + idx));
+#if 0
+				// addr should not override core->offset + idx.. its silly
+				if (hint->addr != UT64_MAX) {
+					printline ("addr", "0x%08" PFMT64x "\n", (hint->addr + idx));
+				}
+#endif
 			}
 			printline ("prefix", "%" PFMT64d "\n", op.prefix);
 			printline ("id", "%d\n", op.id);

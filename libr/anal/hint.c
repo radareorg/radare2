@@ -130,56 +130,54 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 }
 
 R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
-	char *r, *nxt;
+	char *r, *nxt, *nxt2;
 	int token = 0;
 	RAnalHint *hint = R_NEW0 (RAnalHint);
 	char *s;
 	if (!hint) {
 		return NULL;
 	}
+	hint->jump = UT64_MAX;
+	hint->fail = UT64_MAX;
 	s = strdup (str);
 	if (!s) {
 		free (hint);
 		return NULL;
 	}
 	hint->addr = addr;
-	for (r = s; ; r = nxt) {
+	token = *s;
+	for (r = s; ; r = nxt2) {
 		r = sdb_anext (r, &nxt);
+		char *v = sdb_anext (nxt, &nxt2);
 		if (token) {
 			switch (token) {
-			case 'i': hint->immbase = sdb_atoi (r); break;
-			case 'j': hint->jump = sdb_atoi (r); break;
-			case 'f': hint->fail = sdb_atoi (r); break;
-			case 'p': hint->ptr  = sdb_atoi (r); break;
-			case 'b': hint->bits = sdb_atoi (r); break;
-			case 's': hint->size = sdb_atoi (r); break;
-			case 'S': hint->syntax = (char*)sdb_decode (r, 0); break;
-			case 'o': hint->opcode = (char*)sdb_decode (r, 0); break;
-			case 'e': hint->esil = (char*)sdb_decode (r, 0); break;
-			case 'a': hint->arch = (char*)sdb_decode (r, 0); break;
+			case 'i': hint->immbase = sdb_atoi (nxt); break;
+			case 'j': hint->jump = sdb_atoi (nxt); break;
+			case 'f': hint->fail = sdb_atoi (nxt); break;
+			case 'p': hint->ptr  = sdb_atoi (nxt); break;
+			case 'b': hint->bits = sdb_atoi (nxt); break;
+			case 's': hint->size = sdb_atoi (nxt); break;
+			case 'S': hint->syntax = (char*)sdb_decode (nxt, 0); break;
+			case 'o': hint->opcode = (char*)sdb_decode (nxt, 0); break;
+			case 'e': hint->esil = (char*)sdb_decode (nxt, 0); break;
+			case 'a': hint->arch = (char*)sdb_decode (nxt, 0); break;
 			}
-			token = 0;
-		} else {
-			token = *r;
 		}
-		if (!nxt) {
+		if (!nxt || !nxt2) {
 			break;
 		}
+		token = *nxt2;
 	}
 	free (s);
 	return hint;
 }
 
 R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
-	char key[128];
-	const char *s;
-	RAnalHint *hint;
-
+	char key[64];
 	setf (key, "hint.0x%08"PFMT64x, addr);
-	s = sdb_const_get (DB, key, 0);
+	const char *s = sdb_const_get (DB, key, 0);
 	if (!s) {
 		return NULL;
 	}
-	hint = r_anal_hint_from_string (a, addr, s);
-	return hint;
+	return r_anal_hint_from_string (a, addr, s);
 }

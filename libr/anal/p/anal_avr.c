@@ -1611,7 +1611,7 @@ INVALID_OP:
 
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	CPU_MODEL *cpu;
-	ut32 offset;
+	ut64 offset;
 
 	// init op
 	if (!op) {

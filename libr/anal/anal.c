@@ -583,8 +583,7 @@ static int cmp_range(const void *a, const void *b) {
 static int build_range(void *p, const char *k, const char *v) {
 	RAnal *a = (RAnal *)p;
 	RList *list_range = a->bits_ranges;
-	RAnalHint *hint;
-	hint = r_anal_hint_from_string (a, sdb_atoi (k + 5), v);
+	RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (k + 5), v);
 	if (hint->bits) {
 		RAnalRange *range = R_NEW0 (RAnalRange);
 		if (range) {
