@@ -17,6 +17,7 @@
 
 #include <r_core.h>
 #include <r_anal.h>
+#include <r_cons.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <ctype.h>
@@ -68,6 +69,9 @@ static void recursive_help(RCore *core, const char *cmd) {
 		nl = strchr (line, '\n');
 		if (nl) {
 			*nl = 0;
+		}
+		if (r_cons_is_breaked ()) {
+			break;
 		}
 		char *help_token = strstr (line, "[?]");
 		if (help_token) {
@@ -1531,12 +1535,18 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	core->oobi = NULL;
 
 	ptr = strstr (cmd, "?*");
-	if (ptr && !ptr[2] && ptr > cmd) {
+	if (ptr && ptr > cmd) {
 		char *prech = ptr - 1;
 		if (*prech != '~') {
 			ptr[1] = 0;
 			if (*cmd != '#' && strlen (cmd) < 5) {
+				r_cons_break_push (NULL, NULL);
 				recursive_help (core, cmd);
+				r_cons_break_pop ();
+				//less the content
+				if (strstr (ptr + 2, "~..")) {
+					r_cons_grep (ptr + 3);
+				}
 				return 0;
 			}
 		}
