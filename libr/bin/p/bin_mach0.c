@@ -27,7 +27,7 @@ static Sdb* get_sdb (RBinObject *o) {
 static char *entitlements(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin;
 	if (!arch || !arch->o) {
-	    return NULL;
+		return NULL;
 	}
 	bin = arch->o->bin_obj;
 	return (char *)bin->signature;
@@ -57,7 +57,7 @@ static int load(RBinFile *arch) {
 	if (!arch || !arch->o) {
 		return false;
 	}
- 	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	res = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 
 	if (!arch->o || !res) {
 		MACH0_(mach0_free) (res);
@@ -299,7 +299,7 @@ static RList* imports(RBinFile *arch) {
 		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size) {
 			bin->imports_by_ord[ptr->ordinal] = ptr;
 		}
- 		if (!strcmp (name, "__stack_chk_fail") ) {
+		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
 		}
 		r_list_append (ret, ptr);
@@ -416,7 +416,7 @@ static int check(RBinFile *arch) {
 static int check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 4) {
 		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-		    !memcmp (buf, "\xfe\xed\xfa\xce", 4))
+			!memcmp (buf, "\xfe\xed\xfa\xce", 4))
 			return true;
 	}
 	return false;
