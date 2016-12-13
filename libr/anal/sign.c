@@ -99,6 +99,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 		si->size = r_hex_str2binmask (data, si->bytes, si->mask);
 		if (si->size < 1) {
 			r_sign_item_free (si);
+			si = NULL;
 		} else {
 			if (!signatureExists (sig, si)) {
 				r_list_append (sig->items, si);
@@ -106,7 +107,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 					sig->s_head++;
 				} else if (type == R_SIGN_BYTE) {
 					sig->s_byte++;
-				} else if(type == R_SIGN_BODY) {
+				} else if (type == R_SIGN_BODY) {
 					sig->s_func++;
 				}
 			}
@@ -116,9 +117,11 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 	case R_SIGN_ANAL:
 		eprintf ("r_sign_add: TODO. unsupported signature type %d\n", type);
 		r_sign_item_free (si);
+		si = NULL;
 		break;
 	}
 	free (data);
+
 	return false;
 }
 
