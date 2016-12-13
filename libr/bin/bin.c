@@ -751,9 +751,9 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		sz = 0;
 		buf_bytes = iob->desc_read (io, desc, &sz);
 	}
-	if (!buf_bytes)
+	if (!buf_bytes) {
 		return false;
-
+	}
 	r_bin_file_set_bytes (bf, buf_bytes, sz);
 	free (buf_bytes);
 
@@ -1210,7 +1210,12 @@ static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz) {
 	if (!bytes) return false;
 	r_buf_free (binfile->buf);
 	binfile->buf = r_buf_new ();
-	r_buf_set_bytes (binfile->buf, bytes, sz);
+	if (sz < 1024 * 1024) {
+		r_buf_set_bytes (binfile->buf, bytes, sz);
+	} else {
+		// TODO: use r_buf_io instead of setbytes all the time to save memory
+		eprintf ("Too big\n");
+	}
 	return binfile->buf != NULL;
 }
 
