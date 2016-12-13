@@ -1216,7 +1216,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			char *comment = r_meta_get_var_comment (anal, var->kind, var->delta, f->addr);
 			if (comment) {
-				r_cons_printf ("    %s; %s", COLOR(ds,color_comment),comment);
+				r_cons_printf ("    %s; %s", COLOR(ds, color_comment), comment);
 			}
 			r_cons_println (COLOR_RESET (ds));
 		}

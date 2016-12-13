@@ -1160,8 +1160,9 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		show_bytes = 0;
 		decode = 1;
 	}
-	if (!nb_opcodes && !nb_bytes) return 0;
-
+	if (!nb_opcodes && !nb_bytes) {
+		return 0;
+	}
 	if (!nb_opcodes) {
 		nb_opcodes = 0xffff;
 		if (nb_bytes < 0) {
@@ -1243,6 +1244,15 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		r_asm_set_pc (core->assembler, core->offset + i);
 		ret = r_asm_disassemble (core->assembler, &asmop, core->block + i,
 			core->blocksize - i);
+		if (fmt == 'C') {
+			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, core->offset + i);
+			if (comment) {
+				r_cons_printf ("0x%08"PFMT64x" %s\n", core->offset + i, comment);
+				free (comment);
+			}
+			i += ret;
+			continue;
+		}
 		if (flags) {
 			if (fmt != 'e') { // pie
 				item = r_flag_get_i (core->flags, core->offset + i);
@@ -2986,6 +2996,11 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		switch (input[1]) {
+		case 'C': // "pdC"
+			pdi (core, l, 0, 'C');
+			pd_result = 0;
+			processed_cmd = true;
+			break;
 		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input + 2);
 			pd_result = 0;
@@ -3187,6 +3202,7 @@ static int cmd_print(void *data, const char *input) {
 				"pda", "", "disassemble all possible opcodes (byte per byte)",
 				"pdb", "", "disassemble basic block",
 				"pdc", "", "pseudo disassembler output in C-like syntax",
+				"pdC", "", "show comments found in N instructions",
 				"pdj", "", "disassemble to json",
 				"pdr", "", "recursive disassemble across the function graph",
 				"pdf", "", "disassemble function",
