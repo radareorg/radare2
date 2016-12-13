@@ -1217,11 +1217,27 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		}
 		RAnalMetaItem *meta = r_meta_find (core->anal, core->offset + i,
 			R_META_TYPE_ANY, R_META_WHERE_HERE);
-		if (meta) {
-			if (meta->size) {
-				r_cons_printf (".data: %x\n", meta->str);
+		if (meta && meta->size > 0) {
+			switch (meta->type) {
+			case R_META_TYPE_DATA:
+				r_cons_printf (".data: %s\n", meta->str);
 				i += meta->size;
 				continue;
+			case R_META_TYPE_STRING:
+				r_cons_printf (".string: %s\n", meta->str);
+				i += meta->size;
+				continue;
+			case R_META_TYPE_FORMAT:
+				r_cons_printf (".format : %s\n", meta->str);
+				i += meta->size;
+				continue;
+			case R_META_TYPE_MAGIC:
+			       r_cons_printf (".magic : %s\n", meta->str);
+			       i += meta->size;
+			       continue;
+			case R_META_TYPE_RUN:
+			     /* TODO */
+			     break;
 			}
 		}
 		r_asm_set_pc (core->assembler, core->offset + i);
