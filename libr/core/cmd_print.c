@@ -254,7 +254,6 @@ static void cmd_pDj (RCore *core, const char *arg) {
 			eprintf ("cannot allocate %d bytes\n", bsize);
 		}
 	}
-	r_cons_newline ();
 }
 
 static void cmd_pdj (RCore *core, const char *arg) {
@@ -2301,9 +2300,8 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 				} else {
 					r_cons_print (",");
 				}
-				type_print == 'D'
-				? r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr)
-				: r_core_cmdf (core, "pIj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+				const char *cmd = (type_print == 'D')? "pDj": "pIj";
+				r_core_cmdf (core, "%s %"PFMT64d" @0x%"PFMT64x, cmd, b->size, b->addr);
 			}
 		}
 		r_list_foreach (f->bbs, iter, b) {
@@ -2312,9 +2310,8 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 			} else {
 				r_cons_print (",");
 			}
-			type_print == 'D'
-			? r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr)
-			: r_core_cmdf (core, "pIj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+			const char *cmd = (type_print == 'D')? "pDj": "pIj";
+			r_core_cmdf (core, "%s %"PFMT64d" @0x%"PFMT64x, cmd, b->size, b->addr);
 		}
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 			r_list_foreach (tmp_func->bbs, iter, b) {
@@ -2323,9 +2320,8 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 				} else {
 					r_cons_print (",");
 				}
-				type_print == 'D'
-				? r_core_cmdf (core, "pDj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr)
-				: r_core_cmdf (core, "pIj %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+				const char *cmd = (type_print == 'D')? "pDj": "pIj";
+				r_core_cmdf (core, "%s %"PFMT64d" @0x%"PFMT64x, cmd, b->size, b->addr);
 			}
 		}
 		r_cons_print ("]");
@@ -2340,12 +2336,11 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 		}
 		r_config_set_i (core->config, "asm.lines", 0);
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
-			if (tmp_func->addr < f->addr) {
-				r_list_foreach (tmp_func->bbs, iter, b) {
-					pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print);
-				}
-			} else {
+			if (tmp_func->addr >= f->addr) {
 				break;
+			}
+			r_list_foreach (tmp_func->bbs, iter, b) {
+				pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print);
 			}
 		}
 		r_list_foreach (f->bbs, iter, b) {
@@ -2357,7 +2352,6 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 				pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print);
 			}
 		}
-
 		if (emu) {
 			core->anal->gp = saved_gp;
 			if (saved_arena) {
@@ -2390,7 +2384,7 @@ static int cmd_print(void *data, const char *input) {
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0]!='a' && input[0]!='f' && input[0] != 'i' && input[0] != 'I') {
 				int n = (st32) l; //r_num_math (core->num, input+1);
-				if (l<0) {
+				if (l < 0) {
 					off = core->offset + n;
 					len = l = - n;
 					tmpseek = core->offset;
