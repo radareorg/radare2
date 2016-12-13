@@ -89,7 +89,7 @@ static RList* entries(RBinFile *arch) {
 	RBinAddr *ptr = NULL;
 	RBinObject *obj = arch ? arch->o : NULL;
 	struct addr_t *entry = NULL;
-	int wordsize = 0; 
+	int wordsize = 0;
 
 	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
 		return NULL;
@@ -437,6 +437,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	const bool use_main = true;
 	const bool use_dylinker = true;
 	const bool use_libsystem = true;
+	const bool use_linkedit = true;
 	ut32 filesize, codeva, datava;
 	ut32 ncmds, cmdsize, magiclen;
 	ut32 p_codefsz = 0, p_codeva = 0, p_codesz = 0, p_codepa = 0;
@@ -486,6 +487,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	}
 	if (use_dylinker) {
 		ncmds++;
+		if (use_linkedit) {
+			ncmds += 3;
+		}
 		if (use_libsystem) {
 			ncmds++;
 		}
@@ -575,7 +579,36 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 		D (0); // reserved
 		D (0);
 	}
+
 	if (use_dylinker) {
+		if (use_linkedit) {
+			/* LINKEDIT */
+			D (1);   // cmd.LC_SEGMENT
+			D (56); // sizeof (cmd)
+			WZ (16, "__LINKEDIT");
+			D (0x3000); // vmaddr
+			D (0x00001000); // vmsize XXX
+			D (0x1000); // fileoff
+			D (0); // filesize
+			D (7); // maxprot
+			D (1); // initprot
+			D (0); // nsects
+			D (0); // flags
+
+			/* LC_SYMTAB */
+			D (2); // cmd.LC_SYMTAB
+			D (24); // sizeof (cmd)
+			D (0x1000); // symtab offset
+			D (0); // symtab size
+			D (0x1000); // strtab offset
+			D (0); // strtab size
+
+			/* LC_DYSYMTAB */
+			D (0xb); // cmd.LC_DYSYMTAB
+			D (80); // sizeof (cmd)
+			Z (18 * sizeof (ut32)); // empty
+		}
+
 		const char *dyld = "/usr/lib/dyld";
 		const int dyld_len = strlen (dyld) + 1;
 		D(0xe); /* LC_DYLINKER */
@@ -587,14 +620,13 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 			/* add libSystem at least ... */
 			const char *lib = "/usr/lib/libSystem.B.dylib";
 			const int lib_len = strlen (lib) + 1;
-			D(0xc); /* LC_LOAD_DYLIB */
-			D(28 + lib_len); // cmdsize
-			D(28); // offset where the lib string start
-			D(0x2);
-			D(0x1);
-			D(0x1);
-			D(0x04ca0a01); // tstamp
-			WZ(lib_len, lib);
+			D (0xc); /* LC_LOAD_DYLIB */
+			D (24 + lib_len); // cmdsize
+			D (24); // offset where the lib string start
+			D (0x2);
+			D (0x1);
+			D (0x1);
+			WZ (lib_len, lib);
 		}
 	}
 
@@ -602,11 +634,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 		/* LC_MAIN */
 		D (0x80000028);   // cmd.LC_MAIN
 		D (24); // sizeof (cmd)
-		D (baddr + 0x10); // entryoff
+		D (baddr); // entryoff
 		D (0); // stacksize
 		D (0); // ???
 		D (0); // ???
-		p_entry = buf->length + (6 * sizeof (ut32));
 	} else {
 		/* THREAD STATE */
 		D (5); // LC_UNIXTHREAD
@@ -634,18 +665,16 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	cmdsize = buf->length - magiclen;
 	codeva = buf->length + baddr;
 	datava = buf->length + clen + baddr;
-	if (p_entry == 0) {
-		eprintf ("No entrypoint address\n");
-	} else {
+	if (p_entry != 0) {
 		W (p_entry, &codeva, 4); // set PC
 	}
 
 	/* fill header variables */
 	W (p_cmdsize, &cmdsize, 4);
 	filesize = magiclen + cmdsize + clen + dlen;
-	// TEXT SEGMENT //
-	int cfsz = 1;
-	W (p_codefsz, &cfsz, 4);
+	// TEXT SEGMENT should span the whole file //
+	W (p_codefsz, &filesize, 4);
+	W (p_codefsz-8, &filesize, 4); // vmsize = filesize
 	W (p_codeva, &codeva, 4);
 	// clen = 4096;
 	W (p_codesz, &clen, 4);
