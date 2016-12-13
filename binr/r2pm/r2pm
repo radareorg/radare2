@@ -80,6 +80,7 @@ init|up|update)
 	cd "${R2PM_USRDIR}"/git
 	if [ -d radare2-pm ]; then
 		cd radare2-pm
+		git reset --hard @^^
 		git pull || exit 1
 	else
 		echo git clone https://github.com/radare/radare2-pm
@@ -273,6 +274,7 @@ r2pm_install() {
 		if [ -f "${FILE}" ]; then
 			NAME="$2"
 			ACTION=Install
+			export PATH="${R2PM_HOMEBINDIR}:${PATH}"
 			. "${FILE}"
 			R2PM_INSTALL
 			R2PM_REGISTER
