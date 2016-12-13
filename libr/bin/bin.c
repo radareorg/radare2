@@ -1206,16 +1206,23 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 
 	return o;
 }
 
+#define LIMIT_SIZE 0
 static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz) {
-	if (!bytes) return false;
+	if (!bytes) {
+		return false;
+	}
 	r_buf_free (binfile->buf);
 	binfile->buf = r_buf_new ();
+#if LIMIT_SIZE
 	if (sz < 1024 * 1024) {
 		r_buf_set_bytes (binfile->buf, bytes, sz);
 	} else {
 		// TODO: use r_buf_io instead of setbytes all the time to save memory
 		eprintf ("Too big\n");
 	}
+#else
+	r_buf_set_bytes (binfile->buf, bytes, sz);
+#endif
 	return binfile->buf != NULL;
 }
 
