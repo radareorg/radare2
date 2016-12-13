@@ -1215,7 +1215,16 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 			err = 1;
 			break;
 		}
-		r_asm_set_pc (core->assembler, core->offset+i);
+		RAnalMetaItem *meta = r_meta_find (core->anal, core->offset + i,
+			R_META_TYPE_ANY, R_META_WHERE_HERE);
+		if (meta) {
+			if (meta->size) {
+				r_cons_printf (".data: %x\n", meta->str);
+				i += meta->size;
+				continue;
+			}
+		}
+		r_asm_set_pc (core->assembler, core->offset + i);
 		ret = r_asm_disassemble (core->assembler, &asmop, core->block + i,
 			core->blocksize - i);
 		if (flags) {
@@ -2853,7 +2862,7 @@ static int cmd_print(void *data, const char *input) {
 				cmd_pdj (core, input+2);
 			}
 			break;
-		case 'd': //pid is the same as pdi
+		case 'd': // "pid" is the same as pdi
 			if (l != 0) {
 				pdi (core, l, 0, 0);
 			}
