@@ -2816,7 +2816,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" ;            - add comment in current basic block\n"
 					" .            - center graph to the current node\n"
 					" :cmd         - run radare command\n"
-					" '            - toggle asm.comments\n"
+					" '            - toggle graph.comments\n"
 					" \"            - toggle graph.refs\n"
 					" /            - highlight text\n"
 					" |            - set cmd.gprompt\n"
@@ -2909,7 +2909,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case '\'':
 			if (!fcn) break;
-			r_config_toggle (core->config, "asm.comments");
+			r_config_toggle (core->config, "graph.comments");
 			g->need_reload_nodes = true;
 			break;
 		case ';':
