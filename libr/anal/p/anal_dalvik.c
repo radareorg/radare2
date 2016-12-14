@@ -4,9 +4,10 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include "esil.h"
 
 #include "../../asm/arch/dalvik/opcode.h"
-#include "../../bin/format/dex/dex.h" 
+#include "../../bin/format/dex/dex.h"
 
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int sz = dalvik_opcodes[data[0]].len;
@@ -29,39 +30,68 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		/* pass thru */
 	case 0x1b: // const-string/jumbo
-	case 0x01: // move
-	case 0x02: // move
-	case 0x03: // move/16
-	case 0x04: // mov-wide
-	case 0x05: // mov-wide
-	case 0x06: // mov-wide
-	case 0x07: //
-	case 0x08: //
-	case 0x09: //
-	case 0x0a: //
-	case 0x0d: // move-exception
-	case 0x12: // const/4
-	case 0x13: // const/16
 	case 0x14: // const
 	case 0x15: // const
 	case 0x16: // const
 	case 0x17: // const
 	case 0x42: // const
+	case 0x12: // const/4
+		op->type = R_ANAL_OP_TYPE_MOV;
+		{
+			ut32 vB = (data[1] & 0x0f);
+			ut32 vA = (data[1] & 0xf0) >> 4;
+			op->stackop = R_ANAL_STACK_SET;
+			op->ptr = -vA;
+			esilprintf (op, "0x%"PFMT64x",v%d,=", vA, vB);
+		}
+		break;
+	case 0x01: // move
+	case 0x07: // move-object		
+	case 0x04: // mov-wide
+		op->type = R_ANAL_OP_TYPE_MOV;
+		{
+			ut32 vB = (data[1] & 0x0f);
+			ut32 vA = (data[1] & 0xf0) >> 4;
+			op->stackop = R_ANAL_STACK_SET;
+			op->ptr = -vA;
+			esilprintf (op, "v%d,v%d,=", vA, vB);
+		}
+		break;
+	case 0x02: // move/from16
+	case 0x03: // move/16
+	case 0x05: // move-wide/from16
+	case 0x06: // mov-wide&17
+	case 0x08: // move-object/from16
+	case 0x09: // move-object/16
+	case 0x13: // const/16
 	case 0x18: // const-wide
 	case 0x19: // const-wide
-	case 0x0c: // move-result-object // TODO: add MOVRET OP TYPE ??
-	case 0x0b: // move-result-wide
 		op->type = R_ANAL_OP_TYPE_MOV;
-		int vA = (int) -data[1];
-		op->stackop = R_ANAL_STACK_SET;
-		op->ptr = vA;
+		{
+			int vA = (int) data[1];
+			ut32 vB = (data[3] << 8) | data[2];
+			esilprintf (op, "v%d,v%d,=", vA, vB);
+		}
+		break;
+	case 0x0a: // move-result
+	case 0x0d: // move-exception
+	case 0x0c: // move-result-object
+	case 0x0b: // move-result-wide
+	 	// TODO: add MOVRET OP TYPE ??
+		op->type = R_ANAL_OP_TYPE_MOV;
+		{
+			ut32 vA = data[1];
+			esilprintf (op, "sp,v%d,=[8],8,sp,+=,8", vA);
+		}
 		break;
 	case 0x1a: // const-string
 		op->type = R_ANAL_OP_TYPE_MOV;
 		{
+			ut32 vA = data[1];
 			ut32 vB = (data[3]<<8) | data[2];
 			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
 			op->ptr = offset;
+			esilprintf (op, "0x%"PFMT64x",v%d,=", offset, vA);
 		}
 		break;
 	case 0x1c: // const-class
@@ -154,6 +184,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x6c: // sput-wide
 	case 0xfe: // sput
 		op->type = R_ANAL_OP_TYPE_STORE;
+		{
+			ut32 vA = (data[1] & 0x0f);
+			ut32 vB = (data[1] & 0xf0) >> 4;
+			esilprintf (op, "v%d,v%d,=", vA, vB);
+		}
 		break;
 	case 0x9d:
 	case 0xad: // mul-double
@@ -226,21 +261,31 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xf1: // return-void-barrier
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
+		//TODO: handle return if(0x0e) {} else {}
+		if (data[0] == 0x0e) {// return-void
+			esilprintf (op, "sp,[8],ip,=,8,sp,+=");
+		} else {
+			ut32 vA = data[1];
+			esilprintf (op, "sp,[8],ip,=,8,sp,+=,8,sp,-=,v%d,sp,=[8]", vA);
+		}
 		break;
 	case 0x28: // goto
 		op->jump = addr + ((char)data[1])*2;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->eob = true;
+		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 		break;
 	case 0x29: // goto/16
 		op->jump = addr + (short)(data[2]|data[3]<<8)*2;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->eob = true;
+		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 		break;
 	case 0x2a: // goto/32
 		op->jump = addr + (int)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24))*2;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->eob = true;
+		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 		break;
 	case 0x2c:
 	case 0x2b:
@@ -303,10 +348,12 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		//XXX fix this better since the check avoid an oob
 		//but the jump will be incorrect
 		ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
-		op->jump = anal->binb.get_offset (
-			anal->binb.bin, 'm', vB);
+		op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
 		op->fail = addr + sz;
 		op->type = R_ANAL_OP_TYPE_CALL;
+		// TODO: handle /range instructions
+		esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
+
 		}
 		break;
 	case 0x27: // throw
@@ -326,6 +373,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x25: // filled-new-array-range
 	case 0x26: // filled-new-array-data
 		op->type = R_ANAL_OP_TYPE_NEW;
+		// 0x1c, 0x1f, 0x22
+		{
+			//int vA = (int) data[1];
+			int vB = (data[3] << 8) | data[2];
+			// resolve class name for vB
+			ut64 off = R_ANAL_GET_OFFSET (anal, 't', vB);
+			op->ptr = off;
+		}
 		break;
 	case 0x00: // nop
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -380,12 +435,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_SHL;
 		break;
 	}
-
 	return sz;
 }
 
 static int set_reg_profile(RAnal *anal) {
-	const char *p = 
+	const char *p =
 	"=PC	ip\n"
 	"=SP	sp\n"
 	"=BP	bp\n"
@@ -397,8 +451,21 @@ static int set_reg_profile(RAnal *anal) {
 	"gpr	v1	.32	4	0\n"
 	"gpr	v2	.32	8	0\n"
 	"gpr	v3	.32	12	0\n"
-	"gpr	ip	.32	40	0\n"
-	"gpr	sp	.32	44	0\n"
+	"gpr	v4	.32	16	0\n"
+	"gpr	v5	.32	20	0\n"
+	"gpr	v6	.32	24	0\n"
+	"gpr	v7	.32	28	0\n"
+	"gpr	v8	.32	32	0\n"
+	"gpr	v9	.32	36	0\n"
+	"gpr	v10	.32	40	0\n"
+	"gpr	v11	.32	44	0\n"
+	"gpr	v12	.32	48	0\n"
+	"gpr	v13	.32	52	0\n"
+	"gpr	v14	.32	56	0\n"
+	"gpr	v15	.32	60	0\n"
+	"gpr	ip	.32	64	0\n"
+	"gpr	sp	.32	68	0\n"
+	"gpr	bp	.32	72	0\n"
 	;
 	return r_reg_set_profile_string (anal->reg, p);
 }
@@ -408,7 +475,7 @@ static bool is_valid_offset(RAnal *anal, ut64 addr, int hasperm) {
 	return addr >= bin_dex->code_from && addr <= bin_dex->code_to;
 }
 
-struct r_anal_plugin_t r_anal_plugin_dalvik = {
+RAnalPlugin r_anal_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
 	.set_reg_profile = &set_reg_profile,
@@ -420,7 +487,7 @@ struct r_anal_plugin_t r_anal_plugin_dalvik = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_dalvik,
 	.version = R2_VERSION

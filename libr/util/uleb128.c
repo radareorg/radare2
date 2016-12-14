@@ -4,7 +4,7 @@
 
 /* dex/dwarf uleb128 implementation */
 
-R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v) {
+R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 	ut8 c;
 	ut64 s, sum = 0;
 	const ut8 *data_end;
@@ -36,7 +36,7 @@ R_API const ut8 *r_uleb128 (const ut8 *data, int datalen, ut64 *v) {
  * datalen will point (if not NULL) to the length of the uleb number
  * v (if not NULL) will point to the data's value (if fitting the size of an ut64)
  */
-R_API const ut8 *r_uleb128_decode (const ut8 *data, int *datalen, ut64 *v) {
+R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	ut8 c = 0xff;
 	ut64 s = 0, sum = 0, l = 0;
 	if (data && *data) {
@@ -52,7 +52,7 @@ R_API const ut8 *r_uleb128_decode (const ut8 *data, int *datalen, ut64 *v) {
 	return data;
 }
 
-R_API const ut8 *r_uleb128_encode (const ut64 s, int *len) {
+R_API const ut8 *r_uleb128_encode(const ut64 s, int *len) {
 	ut8 c = 0;
 	int l = 0;
 	ut8 *otarget = NULL, *target = NULL;
@@ -74,7 +74,7 @@ R_API const ut8 *r_uleb128_encode (const ut64 s, int *len) {
 	return otarget;
 }
 
-R_API const ut8 *r_leb128 (const ut8 *data, st64 *v) {
+R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
 	ut8 c = 0;
 	st64 s = 0, sum = 0;
 	if (data) {
@@ -90,6 +90,29 @@ R_API const ut8 *r_leb128 (const ut8 *data, st64 *v) {
 	}
 	if (v) *v = sum;
 	return data;
+}
+
+#define G_GINT64_CONSTANT(val) (val##L)
+
+R_API st64 gum_read_sleb128(const ut8 **data, const ut8 *end) {
+	const ut8 *p = *data;
+	st64 result = 0;
+	int offset = 0;
+	ut8 value;
+ 	do {
+		st64 chunk;
+		value = *p;
+		chunk = value & 0x7f;
+		result |= (chunk << offset);
+		offset += 7;
+	}
+	while (*p++ & 0x80);
+  	
+  	if ((value & 0x40) != 0) {
+  		result |= G_GINT64_CONSTANT (-1) << offset;
+  	}
+ 	*data = p;
+	return result;
 }
 
 #if 0
