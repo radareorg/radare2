@@ -18,7 +18,7 @@ RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
 static int bflt_init_hdr (struct r_bin_bflt_obj *bin) {
 	struct bflt_hdr *p_hdr;
 	ut8 bhdr[BFLT_HDR_SIZE] = {0};
-	int i, len;
+	int len, i = 0;
 	
 	len = r_buf_read_at (bin->b, 0, bhdr, BFLT_HDR_SIZE);
 	if (len < 1) {
@@ -54,14 +54,15 @@ static int bflt_init_hdr (struct r_bin_bflt_obj *bin) {
 		goto fail;
 	}
 	bin->hdr = p_hdr;
-
 	return true;
 fail:
 	return false;
 }
 
-static int r_bin_bflt_init (struct r_bin_bflt_obj *obj, RBuffer *buf) {
-	obj->b = r_buf_new ();
+static int r_bin_bflt_init(struct r_bin_bflt_obj *obj, RBuffer *buf) {
+	if (!(obj->b = r_buf_new ())) {
+		return false;
+	}
 	obj->size = buf->length;
 	obj->endian = false;
 	obj->reloc_table = NULL;
