@@ -636,6 +636,7 @@ extern RBinPlugin r_bin_plugin_ningba;
 extern RBinPlugin r_bin_plugin_ninds;
 extern RBinPlugin r_bin_plugin_nin3ds;
 extern RBinPlugin r_bin_plugin_xbe;
+extern RBinPlugin r_bin_plugin_bflt;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache;
 extern RBinPlugin r_bin_plugin_zimg;
