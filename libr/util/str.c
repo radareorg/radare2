@@ -1582,12 +1582,15 @@ R_API bool r_str_glob (const char* str, const char *glob) {
 	if (!glob || !strcmp (glob, "*")) {
 		return true;
 	}
-	while ((*str) && (*glob != '*')) {
-		if ((*glob != *str)) {
+	if (!strchr (glob, '*')) {
+		return strstr (str, glob) != NULL;
+	}
+	while (*str && (*glob != '*')) {
+		if (*glob != *str) {
 			return false;
 		}
-		++glob;
-		++str;
+		glob++;
+		str++;
 	}
 	while (*str) {
 		if (*glob == '*') {
@@ -1595,10 +1598,10 @@ R_API bool r_str_glob (const char* str, const char *glob) {
 				return true;
 			}
 			mp = glob;
-			cp = str+1;
+			cp = str + 1;
 		} else if (*glob == *str) {
-			++glob;
-			++str;
+			glob++;
+			str++;
 		} else {
 			glob = mp;
 			str = cp++;

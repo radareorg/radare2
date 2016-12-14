@@ -372,8 +372,32 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		}
 		break;
 	case 'l': // "fl"
-		if (input[1] == ' ') {
-			char *p, *arg = strdup (input+2);
+		if (input[1] == 'a') { // "fla"
+			// TODO: we can optimize this if core->flags->flags is sorted by flagitem->offset
+			char *glob = strchr (input, ' ');
+			if (glob) {
+				glob++;
+			}
+			RListIter *iter, *iter2;
+			RFlagItem *flag, *flag2;
+			r_list_foreach (core->flags->flags, iter, flag) {
+				if (flag->size == 0 && (!glob || r_str_glob (flag->name, glob))) {
+					RFlagItem *win = NULL;
+					ut64 at = flag->offset;
+					r_list_foreach (core->flags->flags, iter2, flag2) {
+						if (flag2->offset > at) {
+							if (!win || flag2->offset < win->offset) {
+								win = flag2;
+							}
+						}
+					}
+					if (win) {
+						flag->size = win->offset - flag->offset;
+					}
+				}
+			}
+		} else if (input[1] == ' ') { // "fl ..."
+			char *p, *arg = strdup (input + 2);
 			r_str_trim_head_tail (arg);
 			p = strchr (arg, ' ');
 			if (p) {
@@ -389,7 +413,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 					r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 			}
 			free (arg);
-		} else {
+		} else { // "fl"
 			item = r_flag_get_i (core->flags, core->offset);
 			if (item)
 				r_cons_printf ("0x%08"PFMT64x"\n", item->size);
@@ -723,6 +747,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"fg","","bring visual mode to foreground",
 		"fj","","list flags in JSON format",
 		"fl"," [flag] [size]","show or set flag length (size)",
+		"fla"," [glob]","automatically compute the size of all flags matching glob",
 		"fm"," addr","move flag at current offset to new address",
 		"fn","","list flags displaying the real name (demangled)",
 		"fo","","show fortunes",
