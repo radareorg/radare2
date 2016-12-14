@@ -36,18 +36,19 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		goto fail;
 	}
 	/* header */
-	if (bin->size < sizeof(struct dex_header_t)) {
+	if (bin->size < sizeof (struct dex_header_t)) {
 		goto fail;
 	}
 	bufptr = bin->b->buf;
 	dexhdr = &bin->header;
-
 	memcpy (&dexhdr->magic, bufptr, 8);
 	dexhdr->checksum = r_read_le32 (bufptr + 8);
 	memcpy (&dexhdr->signature, bufptr + 12, 20);
 	dexhdr->size = r_read_le32 (bufptr + 32);
 	dexhdr->header_size = r_read_le32 (bufptr + 36);
 	dexhdr->endian = r_read_le32 (bufptr + 40);
+	// TODO: this offsets and size will be used for checking,
+	// so they should be checked. Check overlap, < 0, > bin.size
 	dexhdr->linksection_size = r_read_le32 (bufptr + 44);
 	dexhdr->linksection_offset = r_read_le32 (bufptr + 48);
 	dexhdr->map_offset = r_read_le32 (bufptr + 52);
@@ -66,33 +67,8 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	dexhdr->data_size = r_read_le32 (bufptr + 104);
 	dexhdr->data_offset = r_read_le32 (bufptr + 108);
 
-#if DEBUG_PRINTF
-	dprintf ("DEX file header:\n");
-	dprintf ("magic               : 'dex\\n035\\0'\n");
-	dprintf ("checksum            : %x\n", dexhdr->checksum);
-	dprintf ("signature           : %02x%02x...%02x%02x\n", dexhdr->signature[0], dexhdr->signature[1], dexhdr->signature[18], dexhdr->signature[19]);
-	dprintf ("file_size           : %d\n", dexhdr->size);
-	dprintf ("header_size         : %d\n", dexhdr->header_size);
-	dprintf ("link_size           : %d\n", dexhdr->linksection_size);
-	dprintf ("link_off            : %d (0x%06x)\n", dexhdr->linksection_offset, dexhdr->linksection_offset);
-	dprintf ("string_ids_size     : %d\n", dexhdr->strings_size);
-	dprintf ("string_ids_off      : %d (0x%06x)\n", dexhdr->strings_offset, dexhdr->strings_offset);
-	dprintf ("type_ids_size       : %d\n", dexhdr->types_size);
-	dprintf ("type_ids_off        : %d (0x%06x)\n", dexhdr->types_offset, dexhdr->types_offset);
-	dprintf ("proto_ids_size       : %d\n", dexhdr->prototypes_size);
-	dprintf ("proto_ids_off        : %d (0x%06x)\n", dexhdr->prototypes_offset, dexhdr->prototypes_offset);
-	dprintf ("field_ids_size      : %d\n", dexhdr->fields_size);
-	dprintf ("field_ids_off       : %d (0x%06x)\n", dexhdr->fields_offset, dexhdr->fields_offset);
-	dprintf ("method_ids_size     : %d\n", dexhdr->method_size);
-	dprintf ("method_ids_off      : %d (0x%06x)\n", dexhdr->method_offset, dexhdr->method_offset);
-	dprintf ("class_defs_size     : %d\n", dexhdr->class_size);
-	dprintf ("class_defs_off      : %d (0x%06x)\n", dexhdr->class_offset, dexhdr->class_offset);
-	dprintf ("data_size           : %d\n", dexhdr->data_size);
-	dprintf ("data_off            : %d (0x%06x)\n\n", dexhdr->data_offset, dexhdr->data_offset);
-#endif
-
 	/* strings */
-	#define STRINGS_SIZE ((dexhdr->strings_size+1)*sizeof(ut32))
+	#define STRINGS_SIZE ((dexhdr->strings_size + 1) * sizeof (ut32))
 	bin->strings = (ut32 *) calloc (dexhdr->strings_size + 1, sizeof (ut32));
 	if (!bin->strings) {
 		goto fail;
@@ -106,17 +82,19 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 		bin->strings[i] = r_read_le32 (bufptr + offset);
 	}
 	/* classes */
-	int classes_size = dexhdr->class_size * sizeof (struct dex_class_t);
+	// TODO: not sure about if that is needed
+	int classes_size = dexhdr->class_size * DEX_CLASS_SIZE;
 	if (dexhdr->class_offset + classes_size >= bin->size) {
 		classes_size = bin->size - dexhdr->class_offset;
 	}
 	if (classes_size<0) {
 		classes_size = 0;
 	}
-	dexhdr->class_size = classes_size / sizeof (struct dex_class_t);
-	bin->classes = (struct dex_class_t *) malloc (classes_size);
+
+	dexhdr->class_size = classes_size / DEX_CLASS_SIZE;
+	bin->classes = (struct dex_class_t *) malloc (sizeof (struct dex_class_t) * dexhdr->class_size);
 	for (i = 0; i < dexhdr->class_size; i++) {
-		ut64 offset = dexhdr->class_offset + i * sizeof (struct dex_class_t);
+		ut64 offset = dexhdr->class_offset + i * DEX_CLASS_SIZE;
 		bin->classes[i].class_id = r_read_le32 (bufptr + offset + 0);
 		bin->classes[i].access_flags = r_read_le32 (bufptr + offset + 4);
 		bin->classes[i].super_class = r_read_le32 (bufptr + offset + 8);
@@ -204,7 +182,7 @@ fail:
 }
 
 // Move to r_util ??
-int dex_read_uleb128 (const ut8 *ptr) {
+int dex_read_uleb128(const ut8 *ptr) {
 	ut8 len = dex_uleb128_len (ptr);
 	const ut8 *in = ptr + len - 1;
 	ut32 result = 0;
@@ -223,7 +201,7 @@ int dex_read_uleb128 (const ut8 *ptr) {
 }
 
 #define LEB_MAX_SIZE 6
-int dex_uleb128_len (const ut8 *ptr) {
+int dex_uleb128_len(const ut8 *ptr) {
 	int i = 1, result = *(ptr++);
 	while (result > 0x7f && i <= LEB_MAX_SIZE) {
 		result = *(ptr++);
@@ -233,7 +211,7 @@ int dex_uleb128_len (const ut8 *ptr) {
 }
 
 #define SIG_EXTEND(X,Y) X = (X << Y) >> Y
-int dex_read_sleb128 (const char *ptr) {
+int dex_read_sleb128(const char *ptr) {
 	int cur, result;
 	ut8 len = dex_uleb128_len ((const ut8*)ptr);
 	ptr += len - 1;

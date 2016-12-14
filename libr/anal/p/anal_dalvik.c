@@ -374,10 +374,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_NEW;
 		// 0x1c, 0x1f, 0x22
 		{
-			int vA = (int) data[1];
+			//int vA = (int) data[1];
 			int vB = (data[3] << 8) | data[2];
 			// resolve class name for vB
-			ut64 off = R_ANAL_GET_OFFSET (anal, 'c', vB);
+			ut64 off = R_ANAL_GET_OFFSET (anal, 't', vB);
 			op->ptr = off;
 		}
 		break;
@@ -450,8 +450,21 @@ static int set_reg_profile(RAnal *anal) {
 	"gpr	v1	.32	4	0\n"
 	"gpr	v2	.32	8	0\n"
 	"gpr	v3	.32	12	0\n"
-	"gpr	ip	.32	40	0\n"
-	"gpr	sp	.32	44	0\n"
+	"gpr	v4	.32	16	0\n"
+	"gpr	v5	.32	20	0\n"
+	"gpr	v6	.32	24	0\n"
+	"gpr	v7	.32	28	0\n"
+	"gpr	v8	.32	32	0\n"
+	"gpr	v9	.32	36	0\n"
+	"gpr	v10	.32	40	0\n"
+	"gpr	v11	.32	44	0\n"
+	"gpr	v12	.32	48	0\n"
+	"gpr	v13	.32	52	0\n"
+	"gpr	v14	.32	56	0\n"
+	"gpr	v15	.32	60	0\n"
+	"gpr	ip	.32	64	0\n"
+	"gpr	sp	.32	68	0\n"
+	"gpr	bp	.32	72	0\n"
 	;
 	return r_reg_set_profile_string (anal->reg, p);
 }
