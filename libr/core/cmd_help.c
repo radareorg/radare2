@@ -462,6 +462,8 @@ static int cmd_help(void *data, const char *input) {
 			"$alias", "=value", "Alias commands (simple macros)",
 			"$b", "", "block size",
 			"$B", "", "base address (aligned lowest map address)",
+			"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
+			"$fl", "", "flag length (size) at current address (fla; pD $l @ entry0)"
 			"$F", "", "current function size",
 			"$FB", "", "begin of function",
 			"$Fb", "", "address of the current basic block",
@@ -475,7 +477,6 @@ static int cmd_help(void *data, const char *input) {
 			"$D", "", "current debug map base address ?v $D @ rsp",
 			"$DD", "", "current debug map size",
 			"$e", "", "1 if end of block, else 0",
-			"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
 			"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
 			"$Ja", "", "get nth jump of function",
 			"$Xn", "", "get nth xref of function",
