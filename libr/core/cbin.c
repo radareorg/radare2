@@ -2580,6 +2580,7 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 		}
 		free (offset);
 	}
+}
 
 static int bin_header(RCore *r, int mode) {
 	RBinFile *cur = r_bin_cur (r->bin);

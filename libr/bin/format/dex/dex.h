@@ -53,9 +53,9 @@ typedef struct dex_field_t {
 
 #pragma pack(1)
 typedef struct dex_method_t {
-        ut16 class_id;
-        ut16 proto_id;
-        ut32 name_id;
+	ut16 class_id;
+	ut16 proto_id;
+	ut32 name_id;
 } RBinDexMethod;
 
 #pragma pack(1)
@@ -123,13 +123,13 @@ struct dex_debug_position_t {
 };
 
 struct dex_debug_local_t {
-    const char *name;
-    const char *descriptor;
-    const char *signature;
-    ut16 startAddress;
-    bool live;
-    int reg;
-    ut16 endAddress;
+	const char *name;
+	const char *descriptor;
+	const char *signature;
+	ut16 startAddress;
+	bool live;
+	int reg;
+	ut16 endAddress;
 };
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);

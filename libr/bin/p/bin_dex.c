@@ -194,7 +194,7 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	}
 	bufptr = bin->b->buf;
 	list_size = r_read_le32 (bufptr + params_off); // size of the list, in entries
-	signature = calloc (0, sizeof (char));
+	signature = calloc (0, sizeof(char));
 	if (!signature) {
 		return NULL;
 	}
@@ -306,6 +306,11 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 	}
 
 	RList *params = dex_method_signature2 (bin, MI);
+
+	if (!params || r_list_empty(params)) {
+		return;
+	}
+
 	RListIter *iter = r_list_iterator(params);
 	char *name;
 	char *type;
@@ -314,7 +319,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 	while (parameters_size-- != 0) {
 		type = (char *) r_list_iter_get(iter);
 
-		if ((argReg >= regsz) || (type == NULL)) {
+		if ((argReg >= regsz) || !type || r_list_empty(params)) {
 			return;
 		}
 
@@ -610,9 +615,7 @@ static RBinInfo *info(RBinFile *arch) {
 		ut32  cc = __adler32 (arch->buf->buf + 12, arch->buf->length - 12);
 		if (*fc != cc) {
 			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
-			eprintf ("# found 0x%08x   should be 0x%08x\n", *fc, cc);
-			eprintf ("wv 0x%08x @ 8\n", cc);
-			eprintf ("wx `ph sha1 $s-32 @32` @ 12 ; wx `ph adler32 $s-12 @ 12` @ 8\n");
+			eprintf ("wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8\n");
 		}
 	}
 	ret->arch = strdup ("dalvik");
@@ -655,13 +658,13 @@ static RList *strings(RBinFile *arch) {
 		len = dex_read_uleb128 (buf);
 
 		if (len > 1 && len < R_BIN_SIZEOF_STRINGS) {
-			ptr->string = calloc (len + 1, 1);
+			ptr->string = malloc (len + 1);
 			if (!ptr->string) {
 				goto out_error;
 			}
 			off = bin->strings[i] + dex_uleb128_len (buf);
 			if (off > bin->size || off + len > bin->size) {
-				R_FREE (ptr->string);
+				free (ptr->string);
 				goto out_error;
 			}
 			r_buf_read_at (bin->b, off, (ut8*)ptr->string, len);
@@ -1090,11 +1093,6 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 	class_name = dex_class_name (bin, c);
 	class_name = r_str_replace (class_name, ";", "", 0); //TODO: move to func
 
-<<<<<<< 2e696dcbe93941da23d0db45e3dc54a92a0ff721
-		char *name = dex_method_name (bin, MI);
-		char *signature = dex_method_signature(bin, MI);
-		const char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
-=======
 	if (!class_name || !*class_name) {
 		return;
 	}
@@ -1105,7 +1103,6 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 	cls->addr = bin->header.class_offset + class_index * DEX_CLASS_SIZE;
 	cls->methods = r_list_new ();
 	cls->fields = r_list_new ();
->>>>>>> code refactor and several fixes
 
 	r_list_append (bin->classes_list, cls);
 
@@ -1127,86 +1124,6 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 		}
 	}
 
-<<<<<<< 2e696dcbe93941da23d0db45e3dc54a92a0ff721
-		regsz = r_read_le16 (ff2);
-		ins_size = r_read_le16 (ff2 + 2);
-		outs_size = r_read_le16 (ff2 + 4);
-		tries_size = r_read_le16 (ff2 + 6);
-		debug_info_off = r_read_le32 (ff2 + 8);
-		insns_size = r_read_le32 (ff2 + 12);
-
-		int padd = 0;
-		if (tries_size > 0 && insns_size%2 != 0) padd = 2;
-		int t = 16 + 2*insns_size + padd;
-
-		ut8 ff3[8] = {0};
-		ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
-		ut64 v2, handler_type, handler_addr;
-
-		dprintf("    #%d              : (in %s;)\n", i, class_name);
-		dprintf("      name          : '%s'\n", name);
-		dprintf("      type          : '%s'\n", signature);
-		dprintf("      access        : 0x%04x (%s)\n", (unsigned int)MA, accessStr);
-		free (accessStr);
-
-		if ((MA & 0x0400) == 0) {
-			dprintf("      code          -\n");
-			dprintf("      registers     : %d\n", regsz);
-			dprintf("      ins           : %d\n", ins_size);
-			dprintf("      outs          : %d\n", outs_size);
-			dprintf("      insns size    : %d 16-bit code units\n", insns_size);
-			if (tries_size > 0) {
-				dprintf("      catches       : %d\n", tries_size);
-				int j, m = 0;
-				for (j=0; j < tries_size; ++j) {
-					if (r_buf_read_at (binfile->buf, binfile->buf->base + MC + t + j*8, ff3, 8) < 1) {
-						eprintf("error2");
-						continue;
-					}
-					start_addr = r_read_le32 (ff3);
-					insn_count = r_read_le16 (ff3 + 4);
-					handler_off = r_read_le16 (ff3 + 6);
-					char* s = NULL;
-					dprintf("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
-					
-					const ut8 *p3, *p3_end;
-					int off = MC + t + tries_size*8 + handler_off;
-					p3 = r_buf_get_at (binfile->buf, off, NULL);
-					p3_end = p3 + binfile->buf->length - off;
-					st64 size = gum_read_sleb128 (&p3, p3_end);
-					//eprintf("handler_off=0x%x handlers_size=0x%x offset=0x%x\n", handler_off, size, off);
-
-
-					if (size <= 0) {
-						catchAll = true;
-						size = -size;
-					} else {
-						catchAll = false;
-					}
-
-					for (m = 0; m < size; m++) {
-						p3 = r_uleb128 (p3, p3_end - p3, &handler_type);
-						p3 = r_uleb128 (p3, p3_end - p3, &handler_addr);
-						
-						if (handler_type > 0 && handler_type < bin->header.types_size) {
-							s = getstr (bin, bin->types[handler_type].descriptor_id);
-							dprintf("          %s -> 0x%04x\n", s, handler_addr);
-						} else {
-							dprintf("          (error) -> 0x%04x\n", s, handler_addr);
-						}
-					}
-
-					if (catchAll) {
-						p3 = r_uleb128 (p3, p3_end - p3, &v2);
-						dprintf("          <any> -> 0x%04x\n", v2);
-					}
-				}
-
-			} else {
-				dprintf("      catches       : (none)\n");
-			}
-		} else {
-			dprintf("      code          : (none)\n");
 	// TODO: this is quite ugly
 	if (!c || !c->class_data_offset) {
 		if (dexdump) {
@@ -1264,6 +1181,8 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c, int
 	// FIX: FREE BEFORE ALLOCATE!!!
 	//free (class_name);
 }
+
+
 
 static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	struct r_bin_t *rbin = arch->rbin;
