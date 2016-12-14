@@ -9,10 +9,10 @@
 #include <r_bin.h>
 
 /* Version 4 */
-#define FLAT_VERSION            0x00000004L
+#define	FLAT_VERSION		0x00000004L
 #define FLAT_FLAG_RAM		0x1	/* load program entirely into RAM */
-#define FLAT_FLAG_GOTPIC 	0x2 	/* program is PIC with GOT */
-#define FLAT_FLAG_GZIP   	0x4	/* all but the header is compressed */
+#define FLAT_FLAG_GOTPIC	0x2 	/* program is PIC with GOT */
+#define FLAT_FLAG_GZIP		0x4	/* all but the header is compressed */
 #define FLAT_FLAG_GZDATA	0x8	/* only data/relocs are compressed (for XIP) */
 #define FLAT_FLAG_KTRACE	0x10	/* output useful kernel trace for debugging */
 

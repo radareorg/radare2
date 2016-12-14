@@ -47,8 +47,6 @@ static RList *entries(RBinFile *arch) {
 
 static void __patch_reloc (RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
 	ut32 val = data_offset;
-
-	eprintf ("__patch_reloc: patching 0x%x with 0x%x\n", addr_to_patch, val);
 	r_buf_write_at (buf, addr_to_patch, (void *)&val, 4);
 }
 
@@ -242,7 +240,7 @@ out:
 
 static RBinInfo *info(RBinFile *arch) {
 	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj*)arch->o->bin_obj;
-	RBinInfo *info = R_NEW0(RBinInfo);
+	RBinInfo *info = R_NEW0 (RBinInfo);
 
 	if (!info) {
 		return NULL;
@@ -285,25 +283,15 @@ RBinPlugin r_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT format r_bin plugin",
 	.license = "LGPL3",
-	.get_sdb = NULL,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check = &check,
 	.check_bytes = &check_bytes,
-	.baddr = NULL,
-	.binsym = NULL,
 	.entries = &entries,
-	.sections = NULL,
-	.symbols = NULL,
-	.imports = NULL,
 	.info = &info,
-	.fields = NULL,
-	.size = NULL,
-	.libs = NULL,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
-	.write = NULL,
 };
 
 #ifndef CORELIB

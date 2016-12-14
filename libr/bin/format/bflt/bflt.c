@@ -9,11 +9,9 @@
 
 RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
         RBinAddr *addr = R_NEW0 (RBinAddr);
-
-        if (!addr) {
-                return NULL;
+        if (addr) {
+        	addr->paddr = bin->hdr->entry;
         }
-        addr->paddr = bin->hdr->entry;
         return addr;
 }
 
@@ -83,12 +81,9 @@ static int r_bin_bflt_init (struct r_bin_bflt_obj *obj, RBuffer *buf) {
 
 struct r_bin_bflt_obj *r_bin_bflt_new_buf(struct r_buf_t *buf) {
 	struct r_bin_bflt_obj *bin = R_NEW0 (struct r_bin_bflt_obj);
-	if (bin) {
-		if (r_bin_bflt_init (bin, buf)) {
-			return bin;
-		}
+	if (bin && r_bin_bflt_init (bin, buf)) {
+		return bin;
 	}
-
 	return NULL;
 }	
 
