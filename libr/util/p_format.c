@@ -1140,12 +1140,12 @@ static void r_print_format_num (const RPrint *p, int endian, int mode, const cha
 
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
 int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
-	char *o, *end, *args, *fmt;
+	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0;
 	if (!f) {
 		return -1;
 	}
-	o = strdup (f);
+	char *o = strdup (f);
 	if (!o) {
 		return -1;
 	}
@@ -1316,7 +1316,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 				eprintf ("Invalid n format.\n");
 				free (o);
 				free (args);
-				return -1;
+				return -2;
 			}
 			i++;
 			break;
@@ -1552,8 +1552,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			} else {
 				size = -1;
 			}
-			int fs = r_print_format_struct_size(arg, p, 0);
-			if (fs == -1) {
+			int fs = r_print_format_struct_size (arg, p, 0);
+			if (fs == -2) {
 				i = -1;
 				goto beach;
 			}

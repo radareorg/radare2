@@ -29,8 +29,8 @@ static void print_meta_offset(RCore *core, ut64 offset) {
 		if (line >= 2)
 			line -= 2;
 		if (r_file_exists (file)) {
-			for (i = 0; i<5; i++) {
-				char *row = r_file_slurp_line (file, line+i, 0);
+			for (i = 0; i < 5; i++) {
+				char *row = r_file_slurp_line (file, line + i, 0);
 				if (row) {
 					r_cons_printf ("%c %.3x  %s\n", line+i == line_old ? '>' : ' ', line+i, row);
 					free (row);
@@ -488,6 +488,9 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						if (r < 0) {
 							n  = -1;
 						}
+					} else {
+						eprintf ("Usage: Cf [size] [pf-format-string]\n");
+						break;
 					}
 				} else if (type == 's') { //Cs
 					char tmp[256] = {0};
