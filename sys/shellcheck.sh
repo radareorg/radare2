@@ -40,13 +40,9 @@ fileslist=(
 ./mk/rapi-list
 ./sys/afl.sh
 ./sys/all.sh
-./sys/android-aarch64.sh
-./sys/android-arm.sh
+./sys/android-target.sh
 ./sys/android-build.sh
-./sys/android-mips64.sh
-./sys/android-mips.sh
 ./sys/android-shell.sh
-./sys/android-x86.sh
 ./sys/asan.sh
 ./sys/bokken.sh
 ./sys/build-harden.sh
