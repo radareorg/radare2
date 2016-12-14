@@ -9,6 +9,7 @@ typedef struct _ulebr {
 	ut8 *p;
 } ulebr;
 
+/* move into struct MACH0_(obj_t) *bin */
 static bool little_;
 
 static ut64 read_uleb128(ulebr *r, ut8 *end) {

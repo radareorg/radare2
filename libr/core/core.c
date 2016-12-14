@@ -378,7 +378,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		r_anal_op_fini (&op); // we dont need strings or pointers, just values, which are not nullified in fini
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
-			return r_debug_reg_get (core->dbg, str+2);
+			return r_debug_reg_get (core->dbg, str + 2);
 		case 'k':
 			if (str[2]!='{') {
 				eprintf ("Expected '{' after 'k'.\n");
@@ -406,7 +406,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return ret;
 			break;
 		case '{':
-			bptr = strdup (str+2);
+			bptr = strdup (str + 2);
 			ptr = strchr (bptr, '}');
 			if (ptr != NULL) {
 				ut64 ret;
@@ -418,12 +418,24 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			free (bptr);
 			break;
 		case 'c': return r_cons_get_size (NULL);
-		case 'r': { int rows; r_cons_get_size (&rows); return rows; }
+		case 'r': {
+			int rows;
+			(void)r_cons_get_size (&rows);
+			return rows;
+			}
 		case 'e': return r_anal_op_is_eob (&op);
 		case 'j': return op.jump;
 		case 'p': return r_sys_getpid ();
 		case 'P': return (core->dbg->pid > 0)? core->dbg->pid: 0;
-		case 'f': return op.fail;
+		case 'f':
+			if (str[2] == 'l') { // "$fl" = "`fl`"
+				RFlagItem *fi = r_flag_get_i (core->flags, core->offset);
+				if (fi) {
+					return fi->size;
+				}
+				return 0;
+			}
+			return op.fail;
 		case 'm': return op.ptr; // memref
 		case 'B':
 		case 'M': {
@@ -431,7 +443,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				RListIter *iter;
 				RIOSection *s;
 				r_list_foreach (core->io->sections, iter, s) {
-					if (!s->vaddr && s->offset) continue;
+					if (!s->vaddr && s->offset) {
+						continue;
+					}
 					if (s->vaddr < lower) lower = s->vaddr;
 				}
 				if (str[1] == 'B') {
