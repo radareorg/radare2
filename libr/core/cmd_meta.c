@@ -483,8 +483,11 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 								n = 32; //
 							}
 						}
-						r_print_format (core->print, addr, core->block,
+						int r = r_print_format (core->print, addr, core->block,
 							n, p + 1, 0, NULL, NULL);
+						if (r < 0) {
+							n  = -1;
+						}
 					}
 				} else if (type == 's') { //Cs
 					char tmp[256] = {0};
@@ -515,6 +518,10 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						}
 					}
 				}
+				if (n < 1) {
+					/* invalid length, do not insert into db */
+					return false;
+				}
 				if (!*t || n > 0) {
 					RFlagItem *fi;
 					p = strchr (t, ' ');
@@ -527,9 +534,6 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 							if (fi) strncpy (name, fi->name, sizeof (name)-1);
 						}
 					}
-				} else if (n < 1) {
-					eprintf ("Invalid length %d\n", n);
-					return false;
 				}
 			}
 			if (!n) {

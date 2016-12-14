@@ -1314,7 +1314,9 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 				size += tabsize * 8;
 			} else {
 				eprintf ("Invalid n format.\n");
-				break;
+				free (o);
+				free (args);
+				return -1;
 			}
 			i++;
 			break;
@@ -1551,6 +1553,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				size = -1;
 			}
 			int fs = r_print_format_struct_size(arg, p, 0);
+			if (fs == -1) {
+				i = -1;
+				goto beach;
+			}
 			if (fs < 1) {
 				fs = 4;
 			}
@@ -1562,7 +1568,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					updateAddr (buf + i, len - i, endian, &addr, &addr64);
 				}
 			} else {
-				eprintf ("Format strings is too big for this buffer\n");
+				// eprintf ("Format strings is too big for this buffer\n");
 				goto beach;
 			}
 
