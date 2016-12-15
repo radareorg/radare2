@@ -428,7 +428,19 @@ static int rabin_do_operation(const char *op) {
 		RBinFile *cur   = r_bin_cur (bin);
 		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 		if (!plg) {
-			break;
+			//are we in xtr?
+			if (cur->xtr_data) {
+				//load the first one
+				RBinXtrData *xtr_data = r_list_get_n (cur->xtr_data, 0);
+				if (!r_bin_file_object_new_from_xtr_data (bin, cur,
+						  UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
+					break;
+				}
+			}
+			plg = r_bin_file_cur_plugin (cur);
+			if (!plg) {
+				break;
+			}
 		}
 		if (plg->signature) {
 			const char *sign = plg->signature (cur);
@@ -912,9 +924,13 @@ int main(int argc, char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 	if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
-		eprintf ("r_bin: Cannot open file\n");
-		r_core_fini (&core);
-		return 1;
+		//if this return null means that we did not return a valid bin object
+		//but we have yet the chance that this file is a fat binary
+		if (!bin->cur->xtr_data) {
+			eprintf ("r_bin: Cannot open file\n");
+			r_core_fini (&core);
+			return 1;
+		}
 	}
 	if (baddr != UT64_MAX) {
 		r_bin_set_baddr (bin, baddr);
@@ -1051,22 +1067,14 @@ int main(int argc, char **argv) {
 		rabin_show_srcline (at);
 	}
 	if (action & R_BIN_REQ_EXTRACT) {
-		RListIter *iter;
-		RBinXtrPlugin *xtr;
-		bool supported = false;
-
-		r_list_foreach (bin->binxtrs, iter, xtr) {
-			if (xtr->check (bin)) {
-				// xtr->extractall (bin);
-				rabin_extract ((!arch && !arch_name && !bits));
-				supported = true;
-				break;
-			}
-		}
-
-		if (!supported) {
-			// if we reach here, no supported xtr plugins found
-			eprintf ("Cannot extract bins from '%s'. No supported plugins found!\n", bin->file);
+		RBinFile *bf = r_bin_cur (bin);
+		if (bf && bf->xtr_data) {
+			rabin_extract ((!arch && !arch_name && !bits));
+		} else {
+			eprintf (
+				"Cannot extract bins from '%s'. No supported "
+				"plugins found!\n",
+				bin->file);
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {

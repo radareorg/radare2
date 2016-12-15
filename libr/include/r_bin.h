@@ -496,6 +496,9 @@ R_API int r_bin_file_deref_by_bind (RBinBind * binb);
 R_API int r_bin_file_deref (RBin *bin, RBinFile * a);
 R_API int r_bin_file_ref_by_bind (RBinBind * binb);
 R_API int r_bin_file_ref (RBin *bin, RBinFile * a);
+R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf,
+						ut64 baseaddr, ut64 loadaddr,
+						RBinXtrData *xtr_data);
 R_API int r_bin_list(RBin *bin, int json);
 R_API RBinObject *r_bin_get_object(RBin *bin);
 R_API ut64 r_binfile_get_baddr (RBinFile *binfile);
