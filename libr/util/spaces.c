@@ -133,16 +133,20 @@ R_API int r_space_list(RSpaces *f, int mode) {
 		f->cb_printf ("[");
 	}
 	for (i = 0; i < R_SPACES_MAX; i++) {
-		if (!f->spaces[i]) continue;
+		if (!f->spaces[i]) {
+			continue;
+		}
 		count = r_space_count (f, i);
-		if (mode=='j') {
+		if (mode == 'j') {
 			f->cb_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
 					j? ",":"", f->spaces[i],
-					(i==f->space_idx)? ",\"selected\":true":"",
+					(i == f->space_idx)? ",\"selected\":true":"",
 					count);
-		} else if (mode=='*') {
+		} else if (mode == '*') {
 			f->cb_printf ("fs %s\n", f->spaces[i]);
-			if (i==f->space_idx) defspace = f->spaces[i];
+			if (i == f->space_idx) {
+				defspace = f->spaces[i];
+			}
 		} else {
 			#define INDENT 5
 			char num0[64], num1[64], spaces[32];
@@ -151,12 +155,12 @@ R_API int r_space_list(RSpaces *f, int mode) {
 			memset (spaces, ' ', sizeof (spaces));
 			len = strlen (num0) + strlen (num1);
 			if (len < INDENT) {
-				spaces[INDENT-len] = 0;
+				spaces[INDENT - len] = 0;
 			} else {
 				spaces[0] = 0;
 			}
 			f->cb_printf ("%s%s %s %c %s\n", num0, spaces, num1,
-					(i==f->space_idx)?'*':'.',
+					(i == f->space_idx)?'*':'.',
 					f->spaces[i]);
 		}
 		j++;

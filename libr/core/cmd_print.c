@@ -3159,7 +3159,7 @@ static int cmd_print(void *data, const char *input) {
 				int j, ret;
 				const ut8 *buf = core->block;
 				if (!l) {
-					l= len;
+					l = len;
 				}
 				r_cons_break_push (NULL, NULL);
 				for (i = j = 0; i < core->blocksize && j < l; i += ret, j++ ) {
@@ -3179,14 +3179,16 @@ static int cmd_print(void *data, const char *input) {
 		case 'j': //pdj
 			processed_cmd = true;
 			if (*input == 'D') {
-				cmd_pDj (core, input+2);
-			} else cmd_pdj (core, input+2);
+				cmd_pDj (core, input + 2);
+			} else {
+				cmd_pdj (core, input + 2);
+			}
 			r_cons_newline ();
 			pd_result = 0;
 			break;
 		case 0:
 			/* "pd" -> will disassemble blocksize/4 instructions */
-			if (*input=='d') {
+			if (*input == 'd') {
 				l /= 4;
 			}
 			break;
@@ -3229,8 +3231,8 @@ static int cmd_print(void *data, const char *input) {
 					if (*input == 'D'){ //pD
 						free (block);
 						block = malloc (l);
-						r_core_read_at (core, addr-l, block, l); //core->blocksize);
-						core->num->value = r_core_print_disasm (core->print, core, addr-l, block, l, l, 0, 1);
+						r_core_read_at (core, addr - l, block, l); //core->blocksize);
+						core->num->value = r_core_print_disasm (core->print, core, addr - l, block, l, l, 0, 1);
 					} else { //pd
 						const int bs = core->blocksize;
 						int instr_len;
@@ -3245,7 +3247,7 @@ static int cmd_print(void *data, const char *input) {
 						r_core_seek (core, prevaddr - instr_len, true);
 						block = realloc (block, R_MAX(instr_len, bs));
 						memcpy (block, core->block, bs);
-						r_core_read_at (core, addr+bs, block+bs, instr_len-bs); //core->blocksize);
+						r_core_read_at (core, addr + bs, block + bs, instr_len - bs); //core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
 								core, core->offset, block, instr_len, l, 0, 1);
 						r_core_seek (core, prevaddr, true);
@@ -3254,7 +3256,7 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				const int bs = core->blocksize;
 				// XXX: issue with small blocks
-				if (*input == 'D' && l>0) {
+				if (*input == 'D' && l > 0) {
 					if (l < 1) {
 						//eprintf ("Block size too small\n");
 						return 1;
@@ -3265,7 +3267,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 					block = malloc (l);
 					if (block) {
-						if (l>core->blocksize) {
+						if (l > core->blocksize) {
 							r_core_read_at (core, addr, block, l); //core->blocksize);
 						} else {
 							memcpy (block, core->block, l);
@@ -3276,18 +3278,31 @@ static int cmd_print(void *data, const char *input) {
 						eprintf ("Cannot allocate %d bytes\n", l);
 					}
 				} else {
-					block = malloc (R_MAX(l*10, bs));
+					int inc = 0;
+					static ut64 praddr = 0; 
+					block = malloc (R_MAX (l * 10, bs));
+					if (!block) {
+						return 1;
+					}
 					memcpy (block, core->block, bs);
-					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
-					core->num->value = r_core_print_disasm (core->print, core, addr, block, l*10, l, 0, 0);
+					r_core_read_at (core, addr + bs, block + bs, (l * 10) - bs); //core->blocksize);
+					core->num->value = r_core_print_disasm (core->print, core, addr, block, l * 10, l, 0, 0);
+					if (r_meta_get_diff_regard_addr (core->anal, addr, &inc, true)) {
+						if (praddr >= addr) {
+							r_meta_get_diff_regard_addr (core->anal, addr, &inc, false);
+						} 
+						current_offset = addr + inc - 1;
+					}
+					praddr = addr;
 				}
 			}
 			free (block);
 		}
 		core->offset = current_offset;
 		// change back asm setting if they were changed
-		if (settings_changed)
+		if (settings_changed) {
 			r_core_set_asm_configs (core, old_arch, old_bits, segoff);
+		}
 
 		free (old_arch);
 		free (new_arch);
@@ -3358,32 +3373,32 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'i': //psi
 			if (l > 0) {
-			ut8 *buf = malloc (1024);
-			int delta = 512;
-			ut8 *p, *e, *b;
-			if (!buf) return 0;
-			if (core->offset<delta)
-				delta = core->offset;
-			p = buf + delta;
-			r_core_read_at (core, core->offset-delta, buf, 1024);
-			for (b = p; b>buf; b--) {
-				if (!IS_PRINTABLE (*b)) {
-					b++;
-					break;
+				ut8 *buf = malloc (1024);
+				int delta = 512;
+				ut8 *p, *e, *b;
+				if (!buf) return 0;
+				if (core->offset < delta) {
+					delta = core->offset;
 				}
-			}
-			for (e = p; e<(buf+1024); e++) {
-				if (!IS_PRINTABLE (*b)) {
-					*e = 0;
-					e--;
-					break;
+				p = buf + delta;
+				r_core_read_at (core, core->offset - delta, buf, 1024);
+				for (b = p; b>buf; b--) {
+					if (!IS_PRINTABLE (*b)) {
+						b++;
+						break;
+					}
 				}
-			}
-			r_cons_strcat ((const char *)b);
-			r_cons_newline ();
-			//r_print_string (core->print, core->offset, b,
-			//	(size_t)(e-b), 0);
-			free (buf);
+				for (e = p; e < (buf + 1024); e++) {
+					if (!IS_PRINTABLE (*b)) {
+						*e-- = 0;
+						break;
+					}
+				}
+				r_cons_strcat ((const char *)b);
+				r_cons_newline ();
+				//r_print_string (core->print, core->offset, b,
+				//	(size_t)(e-b), 0);
+				free (buf);
 			}
 			break;
 		case 'x': // "psx"

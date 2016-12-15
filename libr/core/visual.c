@@ -1724,13 +1724,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				r_core_cmd0 (core, "sp");
 			} else {
 				int times = wheelspeed;
-				if (times<1) times = 1;
+				if (times < 1) times = 1;
 				while (times--) {
 					if (isDisasmPrint (core->printidx)) {
 						RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 						if (f && f->folded) {
 							cols = core->offset - f->addr; // + f->size;
-							if (cols<1) {
+							if (cols < 1) {
 								cols = 4;
 							}
 						} else {
@@ -2295,12 +2295,13 @@ static int visual_responsive(RCore *core) {
 static void visual_refresh(RCore *core) {
 	int w;
 	const char *vi, *vcmd;
-	if (!core) return;
-	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
+	if (!core) {
+		return;
+	}
+	r_print_set_cursor (core->print, core->print->cur_enabled,
+			    core->print->ocur, core->print->cur);
 	core->cons->blankline = true;
-
 	w = visual_responsive (core);
-
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
 	} else {
@@ -2316,9 +2317,9 @@ static void visual_refresh(RCore *core) {
 		r_cons_clear00 ();
 		r_cons_flush ();
 		{
-		       int hc = r_config_get_i (core->config, "hex.cols");
-		       int nw = 12 + 4 + hc + (hc*3);
-		       if (nw>w) {
+			int hc = r_config_get_i (core->config, "hex.cols");
+			int nw = 12 + 4 + hc + (hc * 3);
+			if (nw > w) {
 				// do not show column contents
 			} else {
 				r_cons_printf ("[cmd.cprompt=%s]\n", vi);

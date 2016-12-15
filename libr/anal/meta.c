@@ -298,13 +298,13 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, at);
 	infos = sdb_const_get (s, key, 0);
-	if (!infos)
-		return NULL;
+	if (!infos) return NULL;
 	for (; *infos; infos++) {
 		/* XXX wtf, must use anal.meta.deserialize() */
 		char *p, *q;
-		if (*infos==',')
+		if (*infos == ',') {
 			continue;
+		}
 		snprintf (key, sizeof (key) - 1, "meta.%c.0x%"PFMT64x, *infos, at);
 		metas = sdb_const_get (s, key, 0);
 		mi.size = sdb_array_get_num (s, key, 0, 0);
@@ -327,9 +327,48 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 			free (mi.str);
 			mi.str = (char*)sdb_decode (q + 1, 0);
 			return &mi;
-		} else mi.str = NULL;
+		} else {
+			mi.str = NULL;
+		}
 	}
 	return NULL;
+}
+
+
+typedef struct {
+	ut64 addr;
+	int inc;
+	bool found;
+	bool backwards;
+} RRangeMeta;
+
+static int rangeMeta(void *user, const char *k, const char *v) {
+	RRangeMeta *meta = (RRangeMeta *)user;
+	ut64 from, size;
+	int type;
+	type = k[5];
+	size = sdb_atoi (v);
+	from = sdb_atoi (k + 7);
+	if (from < meta->addr && meta->addr < from + size) {
+		if (meta->backwards) {
+			meta->inc += ((from + size) - meta->addr);
+		} else {
+			meta->inc += (from - meta->addr);
+		}
+		meta->found = true;
+		return 0;
+	} 
+	return 1;
+}
+
+R_API bool r_meta_get_diff_regard_addr(RAnal *anal, ut64 addr, int *inc, bool backwards) {
+	RRangeMeta meta = {addr, *inc, false, backwards};
+	sdb_foreach (anal->sdb_meta, rangeMeta, &meta);
+	if (meta.found) {
+		*inc = meta.inc;
+		return true;
+	}
+	return false;
 }
 
 R_API const char *r_meta_type_to_string(int type) {
@@ -357,7 +396,7 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 	}
 	str = r_str_escape (d->str);
 	if (str || d->type == 'd') {
-		if (d->type=='s' && !*str) {
+		if (d->type == 's' && !*str) {
 			free (str);
 			return;
 		}
@@ -366,7 +405,9 @@ static void printmetaitem(RAnal *a, RAnalMetaItem *d, int rad) {
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
-		} else pstr = d->str;
+		} else {
+			pstr = d->str;
+		}
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':

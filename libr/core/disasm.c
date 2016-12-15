@@ -3413,6 +3413,7 @@ static void handle_print_refptr(RCore *core, RDisasmState *ds) {
 }
 #endif
 
+
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
 	int continueoninvbreak = (len == l) && invbreak;
@@ -3491,6 +3492,10 @@ toro:
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = p2v (ds, ds->at);
+		//r_cons_printf ("BEFORE %d\n", inc);
+		if (r_meta_get_diff_regard_addr (core->anal, ds->at, &inc, true)) {
+			continue;
+		}
 		if (r_cons_is_breaked ()) {
 			dorepeat = 0;
 			r_cons_break_pop ();
@@ -4408,7 +4413,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			r_anal_op_fini (&ds->analop);
 			if (!ds->lastfail) {
 				r_anal_op (core->anal, &ds->analop,
-					ds->at+bb_size_consumed, buf+idx,
+					ds->at + bb_size_consumed, buf + idx,
 					len-bb_size_consumed);
 			}
 			if (ret < 1) {

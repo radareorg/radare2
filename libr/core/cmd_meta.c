@@ -767,7 +767,9 @@ static int cmd_meta(void *data, const char *input) {
 		if (input[1]!='*') {
 			i = r_num_math (core->num, input+((input[1]==' ')?2:1));
 			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i, "");
-		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
+		} else {
+			r_meta_cleanup (core->anal, 0LL, UT64_MAX);
+		}
 		break;
 	case '\0':
 	case '?':{
@@ -795,8 +797,11 @@ static int cmd_meta(void *data, const char *input) {
 	case 'F':
 		f = r_anal_get_fcn_in (core->anal, core->offset,
 			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-		if (f) r_anal_str_to_fcn (core->anal, f, input+2);
-		else eprintf ("Cannot find function here\n");
+		if (f) {
+			r_anal_str_to_fcn (core->anal, f, input+2);
+		} else {
+			eprintf ("Cannot find function here\n");
+		}
 		break;
 	case 'S':
 		ms = &core->anal->meta_spaces;
@@ -823,9 +828,11 @@ static int cmd_meta(void *data, const char *input) {
 			r_space_push (ms, input+2);
 			break;
 		case 'r':
-			if (input[2]==' ')
-				r_space_rename (ms, NULL, input+2);
-			else eprintf ("Usage: CSr [newname]\n");
+			if (input[2]==' ') {
+				r_space_rename (ms, NULL, input + 2);
+			} else {
+				eprintf ("Usage: CSr [newname]\n");
+			}
 			break;
 		case '-':
 			if (input[2]) {
