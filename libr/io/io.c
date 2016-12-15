@@ -79,7 +79,9 @@ R_API int r_io_write_buf(RIO *io, struct r_buf_t *b) {
 }
 
 R_API RIO *r_io_free(RIO *io) {
-	if (!io) return NULL;
+	if (!io) {
+		return NULL;
+	}
 	R_FREE (io->plugin_default);
 	r_list_free (io->plugins);
 	r_list_free (io->sections);

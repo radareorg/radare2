@@ -37,13 +37,15 @@ static int free_xtr(void *xtr_obj) {
 }
 
 static bool load(RBin *bin) {
-	if (!bin || !bin->cur)
-	    	return false;
+	if (!bin || !bin->cur) {
+	    return false;
+	}
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_dyldcache_new (bin->cur->file);
 	}
-	if (!bin->file)
-	    	bin->file = bin->cur->file;
+	if (!bin->file) {
+	   	bin->file = bin->cur->file;
+	}
 	return bin->cur->xtr_obj? true : false;
 }
 
@@ -51,12 +53,15 @@ static RList * extractall(RBin *bin) {
 	RList *result = NULL;
 	int nlib, i = 0;
 	RBinXtrData *data = extract (bin, i);
-	if (!data) return result;
-
+	if (!data) {
+		return result;
+	}
 	// XXX - how do we validate a valid nlib?
 	nlib = data->file_count;
-
 	result = r_list_newf (r_bin_xtrdata_free);
+	if (!result) {
+		return NULL;
+	}
 	r_list_append (result, data);
 	for (i = 1; data && i < nlib; i++) {
 		data = extract (bin, i);
@@ -65,8 +70,8 @@ static RList * extractall(RBin *bin) {
 	return result;
 }
 
-
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta,
+						struct MACH0_ (mach_header) *hdr) {
 	meta->arch = MACH0_(get_cputype_from_hdr) (hdr);
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
@@ -97,7 +102,8 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 		r_bin_dydlcache_get_libname (lib, &libname);
 		metadata->libname = strdup (libname);
 
-		res = r_bin_xtrdata_new (lib->b, lib->offset, lib->size, nlib, metadata, bin->sdb);
+		res = r_bin_xtrdata_new (lib->b, lib->offset, lib->size, nlib,
+					 metadata, bin->sdb);
 		r_buf_free (lib->b);
 		free (lib);
 		free (hdr);
@@ -139,7 +145,8 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	r_bin_dydlcache_get_libname (lib, &libname);
 	metadata->libname = strdup (libname);
 
-	res = r_bin_xtrdata_new (lib->b, lib->offset, lib->b->length, nlib, metadata, bin->sdb);
+	res = r_bin_xtrdata_new(lib->b, lib->offset, lib->b->length, nlib,
+				 metadata, bin->sdb);
 	r_buf_free (lib->b);
 	free (hdr);
 	free (lib);
@@ -151,21 +158,22 @@ static RList * oneshotall(RBin *bin, const ut8* buf, ut64 size) {
 	RList *res = NULL;
 	int nlib, i = 0;
 	if (!bin->file) {
-		if (!load (bin))
-		    	return NULL;
+		if (!load (bin)) {
+			return NULL;
+		}
 	}
 	data = oneshot (bin, buf, size, i);
-	if (!data) return res;
+	if (!data) {
+		return res;
+	}
 	// XXX - how do we validate a valid nlib?
 	nlib = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	r_list_append (res, data);
 	for (i = 1; data && i < nlib; i++) {
-		data = NULL;
 		data = oneshot (bin, buf, size, i);
 		r_list_append (res, data);
 	}
-
 	return res;
 }
 
