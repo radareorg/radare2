@@ -253,7 +253,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 		}
 		freeaddrinfo (res);
 		if (!rp) {
-			eprintf ("Could not resolve address '%s'\n", host);
+			eprintf ("Could not resolve address '%s' or failed to connect\n", host);
 			return false;
 		}
 	}
