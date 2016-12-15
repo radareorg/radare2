@@ -142,7 +142,8 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 		return NULL;
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);
-	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata, bin->sdb);
+	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch,
+				 metadata, bin->sdb);
 	r_buf_free (arch->b);
 	free (arch);
 	free (hdr);
@@ -155,14 +156,18 @@ static RList * extractall(RBin *bin) {
 	RBinXtrData *data = NULL;
 
 	data = extract (bin, i);
-	if (!data) return res;
+	if (!data) {
+		return res;
+	}
 
 	// XXX - how do we validate a valid narch?
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
+	if (!res) {
+		return NULL;	
+	}	
 	r_list_append (res, data);
 	for (i = 1; data && i < narch; i++) {
-		data = NULL;
 		data = extract (bin, i);
 		r_list_append (res, data);
 	}
@@ -174,7 +179,9 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	int narch, i = 0;
 	RBinXtrData *data = oneshot (bin, buf, size, i);
 
-	if (!data) return res;
+	if (!data) {
+		return res;
+	}
 	// XXX - how do we validate a valid narch?
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);

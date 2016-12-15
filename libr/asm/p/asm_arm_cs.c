@@ -34,7 +34,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = 4;
 		op->buf_asm[0] = 0;
 	}
-	if (cd == 0) {
+	if (!cd) {
 		ret = (a->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &cd):
 			cs_open (CS_ARCH_ARM, mode, &cd);
