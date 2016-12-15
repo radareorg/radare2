@@ -46,6 +46,8 @@
 #endif
 #endif
 
+#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK
+
 R_API RRunProfile *r_run_new(const char *str) {
 	RRunProfile *p = R_NEW (RRunProfile);
 	if (p) {
@@ -221,7 +223,7 @@ static void setASLR(int enabled) {
 }
 
 static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err) {
-#if __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK
+#if HAVE_PTY
 	// use PTY to redirect I/O because pipes can be problematic in
 	// case of interactive programs.
 	int fdm;
@@ -352,6 +354,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "pidfile")) p->_pidfile = strdup (e);
 	else if (!strcmp (b, "connect")) p->_connect = strdup (e);
 	else if (!strcmp (b, "listen")) p->_listen = strdup (e);
+	else if (!strcmp (b, "pty")) p->_pty = parseBool (e);
 	else if (!strcmp (b, "stdio")) {
 		if (e[0] == '!') {
 			p->_stdio = strdup (e);
@@ -448,6 +451,7 @@ R_API const char *r_run_help() {
 	"timeout=3\n"
 	"# connect=localhost:8080\n"
 	"# listen=8080\n"
+	"# pty=false\n"
 	"# fork=true\n"
 	"# bits=32\n"
 	"# pid=0\n"
@@ -475,7 +479,8 @@ R_API const char *r_run_help() {
 	"# nice=5\n";
 }
 
-static int fd_forward (int in_fd, int out_fd, char **buff) {
+#if __UNIX__
+static int fd_forward(int in_fd, int out_fd, char **buff) {
 	int size = 0;
 
 	if (ioctl (in_fd, FIONREAD, &size) == -1) {
@@ -483,21 +488,42 @@ static int fd_forward (int in_fd, int out_fd, char **buff) {
 		return -1;
 	}
 
-	if (size == 0) // child process exited or socket is closed
+	if (size == 0) { // child process exited or socket is closed
 		return -1;
+	}
 
-	*buff = realloc (*buff, size);
+	char *new_buff = realloc (*buff, size);
+	if (new_buff == NULL) {
+		eprintf ("Failed to allocate buffer for redirection");
+		return -1;
+	}
+	*buff = new_buff;
+
 	read (in_fd, *buff, size);
 
 	if (write (out_fd, *buff, size) != size) {
 		perror ("write");
 		return -1;
 	}
+
+	return 0;
+}
+#endif
+
+static int redirect_socket_to_stdio(RSocket *sock) {
+	close (0);
+	close (1);
+	close (2);
+
+	dup2 (sock->fd, 0);
+	dup2 (sock->fd, 1);
+	dup2 (sock->fd, 2);
+
 	return 0;
 }
 
-static int redirect_socket_to_pty (RSocket *sock) {
-#if __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK
+static int redirect_socket_to_pty(RSocket *sock) {
+#if HAVE_PTY
 	// directly duplicating the fds using dup2() creates problems
 	// in case of interactive applications
 	int fdm;
@@ -539,14 +565,16 @@ static int redirect_socket_to_pty (RSocket *sock) {
 			break;
 		}
 
-		if(FD_ISSET (fdm, &readfds)) {
-			if (fd_forward (fdm, sockfd, &buff) != 0)
+		if (FD_ISSET (fdm, &readfds)) {
+			if (fd_forward (fdm, sockfd, &buff) != 0) {
 				break;
+			}
 		}
 
-		if(FD_ISSET (sockfd, &readfds)) {
-			if (fd_forward (sockfd, fdm, &buff) != 0)
+		if (FD_ISSET (sockfd, &readfds)) {
+			if (fd_forward (sockfd, fdm, &buff) != 0) {
 				break;
+			}
 		}
 	}
 
@@ -557,15 +585,7 @@ static int redirect_socket_to_pty (RSocket *sock) {
 	_exit (0);
 #else
 	// Fallback to socket to I/O redirection
-	close (0);
-	close (1);
-	close (2);
-
-	dup2 (sock->fd, 0);
-	dup2 (sock->fd, 1);
-	dup2 (sock->fd, 2);
-
-	return 0;
+	return redirect_socket_to_stdio (sock);
 #endif
 }
 
@@ -615,10 +635,14 @@ R_API int r_run_config_env(RRunProfile *p) {
 				return 1;
 			}
 			eprintf ("connected\n");
-			if (redirect_socket_to_pty (fd) != 0) {
-				eprintf ("socket redirection failed\n");
-				r_socket_free (fd);
-				return 1;
+			if (p->_pty) {
+				if (redirect_socket_to_pty (fd) != 0) {
+					eprintf ("socket redirection failed\n");
+					r_socket_free (fd);
+					return 1;
+				}
+			} else {
+				redirect_socket_to_stdio (fd);
 			}
 		} else {
 			eprintf ("Invalid format for connect. missing ':'\n");
@@ -654,11 +678,15 @@ R_API int r_run_config_env(RRunProfile *p) {
 				if (is_child) {
 					r_socket_close_fd (fd);
 					eprintf ("connected\n");
-					if (redirect_socket_to_pty (child) != 0) {
-						eprintf ("socket redirection failed\n");
-						r_socket_free (child);
-						r_socket_free (fd);
-						return 1;
+					if (p->_pty) {
+						if (redirect_socket_to_pty (child) != 0) {
+							eprintf ("socket redirection failed\n");
+							r_socket_free (child);
+							r_socket_free (fd);
+							return 1;
+						}
+					} else {
+						redirect_socket_to_stdio (child);
 					}
 					break;
 				} else {
