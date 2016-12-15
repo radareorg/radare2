@@ -316,7 +316,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return 0LL;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			s = r_io_section_vget (core->io, core->offset);
+			{
+				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
+				s = (!!secs) ? ls_pop (secs) : NULL;
+				ls_free (secs);
+			}
 			return s? (str[2]=='S'? s->size: s->vaddr): 3;
 		case '?': return core->num->value;
 		case '$': return core->offset;
@@ -960,6 +964,7 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
+	SdbList *secs;
 	RIOSection *sect;
 	char *mapname;
 	RAnalFunction *fcn;
@@ -977,7 +982,9 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	} else {
 		mapname = NULL;
 	}
-	sect = value? r_io_section_vget (core->io, value): NULL;
+	secs = value? r_io_section_vget_secs_at (core->io, value): NULL;
+	sect = (!!secs) ? ls_pop (secs): NULL;
+	ls_free (secs);
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
@@ -1377,8 +1384,10 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 }
 
 static void prompt_sec(RCore *r, char *s, size_t maxlen) {
-	const RIOSection *sec = r_io_section_vget (r->io, r->offset);
+	const SdbList * secs = r_io_section_vget_secs_at (r->io, r->offset);
+	const RIOSection *sec = (!!secs) ? ls_pop (secs) : NULL;
 	if (!sec) return;
+	ls_free (secs);
 
 	snprintf (s, maxlen, "%s:", sec->name);
 }

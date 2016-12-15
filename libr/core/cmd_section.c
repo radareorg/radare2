@@ -169,6 +169,7 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case 'r':
 		if (input[1] == ' ') {
+			SdbList *secs;
 			RIOSection *s;
 			int len = 0;
 			ut64 vaddr;
@@ -179,7 +180,9 @@ static int cmd_section(void *data, const char *input) {
 			} else {
 				vaddr = core->offset;
 			}
-			s = r_io_section_vget (core->io, vaddr);
+			secs = r_io_section_vget_secs_at (core->io, vaddr);
+			s = (!!secs) ? ls_pop (secs) : NULL;
+			ls_free (secs);
 			if (s) {
 				if (!len) len = sizeof (s->name);
 				r_str_ncpy (s->name, input + 2, len);
@@ -249,12 +252,15 @@ static int cmd_section(void *data, const char *input) {
 	case '-':
 		// remove all sections
 		if (input[1] == '*') r_io_section_init (core->io);
-		if (input[1] == '0' && input[2]=='x') {
-			RIOSection *s = r_io_section_vget (core->io,
-							r_num_get (NULL, input + 1));
-			if (!s) return 0;
-			// use offset
-			r_io_section_rm (core->io, s->id);
+		if (input[1] == '0' && input[2]=='x') {		//uses the offset
+			SdbList *secs = r_io_section_vget_secs_at (core->io,
+								r_num_get (NULL, input + 1));
+			SdbListIter *iter;
+			RIOSection *s;
+			if (!secs) return 0;
+			ls_foreach (secs, iter, s)
+				r_io_section_rm (core->io, s->id);
+			ls_free (secs);
 		} else {
 			r_io_section_rm (core->io, atoi (input+1));
 		}
@@ -306,8 +312,7 @@ static int cmd_section(void *data, const char *input) {
 				if (i > 4) rwx = r_str_rwx (r_str_word_get0 (ptr, 4));
 			}
 			if (!name || !*name) {
-				sprintf (vname, "area%d",
-					r_list_length (core->io->sections));
+				sprintf (vname, "area%d", core->io->sections->length);
 				name = vname;
 			}
 			r_io_section_add (core->io, offset, vaddr, size,
@@ -324,11 +329,11 @@ static int cmd_section(void *data, const char *input) {
 	case '.':
 		{
 		ut64 o = core->offset;
-		RListIter *iter;
+		SdbListIter *iter;
 		RIOSection *s;
 		if (core->io->va || core->io->debug)
 			o = r_io_section_vaddr_to_maddr_try (core->io, o);
-		r_list_foreach (core->io->sections, iter, s) {
+		ls_foreach (core->io->sections, iter, s) {
 			if (o >= s->addr && o < s->addr + s->size) {
 				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
 					s->addr + s->vaddr,

@@ -235,10 +235,14 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refdepth) {
 	ut8 *buf;
 	ut16 bufsz = 1000;
+	SdbList *secs;
 	RIOSection *sec;
 	if (!refdepth) return 1;
-	sec = r_io_section_vget (core->io, ref->addr);
-	if (!sec) return 1;
+	if (!(secs = r_io_section_vget_secs_at (core->io, ref->addr)))		//this is conceptually broken. We should use the map-API instead, 
+										//since maps in the end define what happens in the esil context, which should be realistic
+		return 1;
+	sec = ls_pop (secs);
+	ls_free (secs);
 	buf = calloc (bufsz, 1);
 	if (!buf) {
 		eprintf ("Error: malloc (buf)\n");
@@ -421,8 +425,10 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			r_anal_fcn_insert (core->anal, fcn);
 			if (has_next) {
 				ut64 addr = fcn->addr + fcn->size;
-				RIOSection *sect = r_io_section_vget (core->io, addr);
+				SdbList *secs = r_io_section_vget_secs_at (core->io, addr);	//use map-API here
+				RIOSection *sect = (!!secs) ? ls_pop (secs) : NULL;
 				// only get next if found on an executable section
+				ls_free (secs);
 				if (!sect || (sect && sect->flags & 1)) {
 					for (i = 0; i < nexti; i++) {
 						if (next[i] == addr) {
@@ -476,7 +482,9 @@ error:
 		}
 		if (fcn && has_next) {
 			ut64 newaddr = fcn->addr+fcn->size;
-			RIOSection *sect = r_io_section_vget (core->io, newaddr);
+			SdbList *secs = r_io_section_vget_secs_at (core->io, newaddr);
+			RIOSection *sect = (!!secs) ? ls_pop (secs) : NULL;
+			ls_free (secs);
 			if (!sect || (sect && (sect->flags & 1))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
@@ -2297,7 +2305,9 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 	if (str[0] == ' ') {
 		end = addr + r_num_math (core->num, str+1);
 	} else {
-		RIOSection *sect = r_io_section_vget (core->io, addr);
+		SdbList *secs = r_io_section_vget_secs_at (core->io, addr);
+		RIOSection *sect = (!!secs) ? ls_pop (secs): NULL;
+		ls_free (secs);
 		if (sect) {
 			end = sect->vaddr + sect->size;
 		} else {

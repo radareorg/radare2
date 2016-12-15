@@ -174,6 +174,23 @@ R_API SdbList *r_io_section_get_secs_at (RIO *io, ut64 addr)
 	return ret;
 }
 
+R_API SdbList *r_io_section_vget_secs_at (RIO *io, ut64 vaddr)
+{
+	SdbList *ret = NULL;
+	SdbListIter *iter;
+	RIOSection *s;
+	if (!io || !io->sections)
+		return NULL;
+	ls_foreach (io->sections, iter, s) {
+		if (vaddr >= s->vaddr && vaddr < (s->vaddr + s->vsize)) {
+			if (!ret)
+				ret = ls_new ();
+			ls_prepend (ret, s);
+		}
+	}
+	return ret;
+}
+
 R_API int r_io_section_set_archbits (RIO *io, ut32 id, const char *arch, int bits)
 {
 	RIOSection *s;
