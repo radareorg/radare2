@@ -524,6 +524,9 @@ grub_ext2_read_inode (struct grub_ext2_data *data,
     return grub_errno;
 
   inodes_per_block = EXT2_BLOCK_SIZE (data) / EXT2_INODE_SIZE (data);
+  if (inodes_per_block < 1) {
+    return grub_errno = GRUB_ERR_BAD_FS;
+  }
   blkno = (ino % grub_le_to_cpu32 (sblock->inodes_per_group))
     / inodes_per_block;
   blkoff = (ino % grub_le_to_cpu32 (sblock->inodes_per_group))
