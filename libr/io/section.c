@@ -157,7 +157,7 @@ R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id)
 	return (!(length == io->sections->length));
 }
 
-R_API SdbList *r_io_section_gets_at (RIO *io, ut64 addr)
+R_API SdbList *r_io_section_get_secs_at (RIO *io, ut64 addr)
 {
 	SdbList *ret = NULL;
 	SdbListIter *iter;

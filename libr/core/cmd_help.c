@@ -444,7 +444,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%s\n", s->name);
 		}
 #endif
-		if ((sections = r_io_section_gets_at (core->io, n))) {
+		if ((sections = r_io_section_get_secs_at (core->io, n))) {
 			ls_foreach (sections, iter, s)
 				r_cons_printf ("%s\n", s->name);
 			ls_free (sections);
