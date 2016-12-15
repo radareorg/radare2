@@ -1,0 +1,10 @@
+This is a pod file
+
+=head1 Title of the article
+
+this really rocks
+OMG this is another line
+
+=cut
+
+fuck :)

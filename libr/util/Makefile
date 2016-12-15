@@ -14,6 +14,8 @@ OBJS+=utf8.o strbuf.o lib.o name.o spaces.o
 OBJS+=diff.o bdiff.o stack.o queue.o tree.o des.o
 OBJS+=punycode.o
 
+include spp.mk
+
 # DO NOT BUILD r_big api (not yet used and its buggy)
 ifeq (1,0)
 ifeq (${HAVE_LIB_GMP},1)
@@ -41,10 +43,10 @@ endif
 endif
 
 EXTRA_PRE+=sdb_version
-#$(SDBLIB)
 
 include ../rules.mk
 include sdb.mk
+
 
 sync-regex regex-sync:
 	-rm -rf src/

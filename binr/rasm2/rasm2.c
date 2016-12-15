@@ -8,6 +8,7 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_lib.h>
+#include <spp.h>
 #include "../blob/version.c"
 
 static RLib *l = NULL;
@@ -382,11 +383,11 @@ int main (int argc, char *argv[]) {
 				&__lib_asm_cb, &__lib_asm_dt, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_ANAL, "analysis/emulation plugins",
 				&__lib_anal_cb, &__lib_anal_dt, NULL);
-		
+
 		path = r_sys_getenv (R_LIB_ENV);
 		if (path && *path)
 			r_lib_opendir (l, path);
-		
+
 		if (1) {
 			char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
 			// eprintf ("OPENDIR (%s)\n", homeplugindir);
@@ -592,6 +593,13 @@ int main (int argc, char *argv[]) {
 			}
 		} else {
 			content = r_file_slurp (file, &length);
+			Output out;
+			out.fout = NULL;
+			out.cout = r_strbuf_new ("");
+			r_strbuf_init (out.cout);
+			struct Proc proc;
+			spp_proc_set (&proc, "asm", 1);
+
 			if (content) {
 				if (len && len > 0 && len < length)
 					length = len;
@@ -608,7 +616,10 @@ int main (int argc, char *argv[]) {
 				} else if (analinfo) {
 					ret = show_analinfo ((const char *)buf, offset);
 				} else {
-					ret = rasm_asm (content, offset, length, a->bits, bin);
+					spp_eval (content, &out);
+					char *spp_out = strdup (r_strbuf_get (out.cout));
+					ret = rasm_asm (spp_out, offset, length, a->bits, bin);
+					free (spp_out);
 				}
 				ret = !ret;
 				free (content);

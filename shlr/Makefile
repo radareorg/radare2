@@ -45,6 +45,7 @@ MODS+=gdb
 MODS+=qnx
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
+SPP_URL=git://github.com/radare/spp
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
@@ -280,3 +281,13 @@ www-sync-t sync-www-t:
 
 sync-www www-sync: www-sync-m www-sync-p www-sync-t
 	@echo webui sync done
+
+
+spp-sync:
+	rm -rf spp
+	git clone --depth 1 ${SPP_URL} spp
+
+spp: spp-sync
+	cd spp ; $(MAKE)
+
+.PHONY: spp

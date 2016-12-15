@@ -1,0 +1,1 @@
+<{set var 1}><{ifeq var 1}>its true<{else}>BUG: false conditional check in oneliner ifeq<{endif}>
