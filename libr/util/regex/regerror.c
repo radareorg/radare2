@@ -103,7 +103,7 @@ r_regex_error(int errcode, const RRegex *preg, char *errbuf, size_t errbuf_size)
 
 	len = strlen(s) + 1;
 	if (errbuf_size > 0) {
-		STRLCPY(errbuf, s, errbuf_size);
+		STRLCPY(errbuf, s, errbuf_size - 1);
 	}
 
 	return(len);

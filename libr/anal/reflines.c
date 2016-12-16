@@ -443,11 +443,12 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	}
 	add_spaces (b, 0, pos, wide);
 	str = r_buf_free_to_string (b);
+	b = NULL;
 	if (!str) {
 		r_list_free (lvls);
 		//r_buf_free_to_string already free b and if that is the case
-		//b will be NULL and r_buf_free will return but if there was 
-		//an error we free b here 
+		//b will be NULL and r_buf_free will return but if there was
+		//an error we free b here
 		r_buf_free (b);
 		return NULL;
 	}
