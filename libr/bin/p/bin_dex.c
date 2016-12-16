@@ -319,7 +319,6 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 
 	if (!params) {
 		free (debug_positions);
-		//free (debug_locals);
 		return;
 	}
 
@@ -331,7 +330,6 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 	r_list_foreach (params, iter, type) {
 		if ((argReg >= regsz) || !type || parameters_size <= 0) {
 			free (debug_positions);
-			//free (debug_locals);
 			free (params);
 			return;
 		}
@@ -383,7 +381,6 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 
 			if (register_num >= regsz) {
 				free (debug_positions);
-				free (debug_locals);
 				free (params);
 				return;
 			}
@@ -420,7 +417,6 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 
 			if (register_num >= regsz) {
 				free (debug_positions);
-				free (debug_locals);
 				free (params);
 				return;
 			}
@@ -479,22 +475,21 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 		} else {
 			int adjusted_opcode = opcode - 0x0a;
 			address += (adjusted_opcode / 15);
-			line += -4 + (adjusted_opcode % 15);	
+			line += -4 + (adjusted_opcode % 15);
 			//eprintf("Special opcode: line + %d, address + %d\n", (-4 + (adjusted_opcode % 15)), (adjusted_opcode / 15));
 			struct dex_debug_position_t *position = malloc (sizeof (struct dex_debug_position_t));
 			position->address = address;
-			position->line = line; 
+			position->line = line;
 			r_list_append (debug_positions, position);
 			//prologue_end = false;
 			//epilogue_begin = false;
 		}
 		opcode = *(p4++) & 0xff;
-	}	
+	}
 
 	free (params);
 	if (!dexdump) {
 		free (debug_positions);
-		//free (debug_locals);
 		return;
 	}
 
@@ -529,7 +524,6 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 	}
 
 	free (debug_positions);
-	//free (debug_locals);
 }
 
 static int check (RBinFile *arch);
