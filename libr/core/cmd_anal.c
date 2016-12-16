@@ -1392,7 +1392,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				" .afbr-*     - undo the above operation\n"
 				" afbj        - show basic blocks information in JSON\n"
 				" afB [bits]  - define asm.bits for given function\n"
-				" afb [addr]  - list basic blocks of function (see afbq, afbj, afb*)\n"
+				" afb         - list basic blocks of function (see afbq, afbj, afb*)\n"
 				" afb+ fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))  add bb to function @ fcnaddr\n");
 			break;
 		}
