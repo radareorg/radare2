@@ -162,7 +162,7 @@ R_API const char *r_bin_string_type (int type) {
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 	RBinXtrData *data = data_;
 	if (data) {
-		sdb_remove (data->sdb, sdb_fmt (0, "%d", data->offset), 0);
+		sdb_remove (data->sdb, sdb_fmt (0, "%d", data->offset));
 		if (data->metadata) {
 			free (data->metadata->libname);
 			free (data->metadata->arch);
