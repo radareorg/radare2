@@ -371,7 +371,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin, RBinDexClas
 			p4 = r_uleb128 (p4, p4_end - p4, &addr_diff);
 			address += addr_diff;
 		} else if (opcode == 0x2) { // DBG_ADVANCE_LINE
-			st64 line_diff = gum_read_sleb128 (&p4, p4_end);
+			st64 line_diff = r_sleb128 (&p4, p4_end);
 			line += line_diff;
 		} else if (opcode == 0x3) { // DBG_START_LOCAL
 			ut64 register_num;
@@ -983,7 +983,7 @@ static const ut8* parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin, RBi
 					int off = MC + t + tries_size*8 + handler_off;
 					p3 = r_buf_get_at (binfile->buf, off, NULL);
 					p3_end = p3 + binfile->buf->length - off;
-					st64 size = gum_read_sleb128 (&p3, p3_end);
+					st64 size = r_sleb128 (&p3, p3_end);
 					//eprintf("handler_off=0x%x handlers_size=0x%x offset=0x%x\n", handler_off, size, off);
 
 

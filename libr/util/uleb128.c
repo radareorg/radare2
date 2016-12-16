@@ -92,9 +92,11 @@ R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
 	return data;
 }
 
+
+//API borrowed from frida
 #define G_GINT64_CONSTANT(val) (val##L)
 
-R_API st64 gum_read_sleb128(const ut8 **data, const ut8 *end) {
+R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	const ut8 *p = *data;
 	st64 result = 0;
 	int offset = 0;
