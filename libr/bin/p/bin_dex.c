@@ -253,7 +253,7 @@ static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	list_size = r_read_le32 (bufptr + params_off); 
 	for (i = 0; i < list_size; i++) {
 		ut64 of = params_off + 4 + (i * 2);
-		if (of >= bin->size | of < params_off) {
+		if (of >= bin->size || of < params_off) {
 			continue;
 		}
 		type_idx = r_read_le16 (bufptr + of);
