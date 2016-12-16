@@ -7,8 +7,7 @@
 
 #include "bflt/bflt.h"
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loaddr,
-			 Sdb *sdb) {
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *sdb) {
 	struct r_bin_bflt_obj *res;
 	RBuffer *tbuf = NULL;
 
