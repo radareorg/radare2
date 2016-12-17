@@ -962,7 +962,7 @@ static const ut8* parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin, RBi
 				for (j=0; j < tries_size; ++j) {
 					if (r_buf_read_at (binfile->buf, binfile->buf->base + MC + t + j*8, ff3, 8) < 1) {
 						//free (method_name);
-						free (signature);
+						r_free (signature);
 						continue;
 					}
 					start_addr = r_read_le32 (ff3);
@@ -1046,7 +1046,7 @@ static const ut8* parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin, RBi
 				// TODO: parse debug info
 				if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
 					free (sym);
-					free (signature);
+					r_free (signature);
 					continue;
 				}
 				//ut16 regsz = r_read_le16 (ff2);
