@@ -269,6 +269,8 @@ typedef struct r_cons_t {
 	bool use_utf8; // use utf8 features
 	int linesleep;
 	int pagesize;
+	char *break_word;
+	int break_word_len;
 	ut64 timeout;
 } RCons;
 
@@ -429,6 +431,7 @@ typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
 R_API bool r_cons_is_breaked();
 R_API void r_cons_break_timeout(int timeout);
+R_API void r_cons_breakword(const char *s);
 
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);

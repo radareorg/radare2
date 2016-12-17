@@ -167,7 +167,7 @@ R_API void r_cons_strcat_justify (const char *str, int j, char c) {
 		}
 	}
 	if (len > 1) {
-		r_cons_memcat (str+o, len);
+		r_cons_memcat (str + o, len);
 	}
 }
 
@@ -381,6 +381,7 @@ R_API RCons *r_cons_free() {
 		free (I.buffer);
 		I.buffer = NULL;
 	}
+	R_FREE (I.break_word);
 	r_stack_free (I.cons_stack);	
 	r_stack_free (I.break_stack);
 	return NULL;
@@ -828,6 +829,11 @@ R_API void r_cons_memcat(const char *str, int len) {
 	if (I.flush) {
 		r_cons_flush ();
 	}
+	if (I.break_word) {
+		if (r_mem_mem ((const ut8*)str, len, (const ut8*)I.break_word, I.break_word_len)) {
+			I.breaked = true;
+		}
+	}
 }
 
 R_API void r_cons_memset(char ch, int len) {
@@ -1248,3 +1254,13 @@ R_API const char* r_cons_get_rune(const ut8 ch) {
 	return NULL;
 }
 
+R_API void r_cons_breakword(const char *s) {
+	free (I.break_word);
+	if (s) {
+		I.break_word = strdup (s);
+		I.break_word_len = strlen (s);
+	} else {
+		I.break_word = NULL;
+		I.break_word_len = 0;
+	}
+}
