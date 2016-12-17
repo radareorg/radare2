@@ -1158,7 +1158,7 @@ static int cb_rgbcolors(void *user, void *data) {
 	return true;
 }
 
-static int cb_scrbreak(void* user, void* data) {
+static int cb_scrbreakword(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value) {
 		r_cons_breakword (node->value);
@@ -2109,7 +2109,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("scr.atport", "false", "V@ starts a background http server and spawns an r2 -C");
 	SETI("scr.wheelspeed", 4, "Mouse wheel speed");
 	// DEPRECATED: USES hex.cols now SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
-	SETCB("scr.break", "", &cb_scrbreak, "Emulate console break (^C) when a word is printed (useful for pD)");
+	SETCB("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
 	SETCB("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
 	SETICB("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
