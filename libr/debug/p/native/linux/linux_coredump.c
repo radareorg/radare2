@@ -591,7 +591,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 							pmentry->anonymous, pmentry->kernel_mapping,
 							pmentry->file_backed, pmentry->dumpeable);
 		if (pmentry->file_backed) {
-			const const char *name = pmentry->name;
+			const char *name = pmentry->name;
 			if (!name) {
 				name = "";
 			}
