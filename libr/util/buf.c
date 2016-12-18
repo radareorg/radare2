@@ -682,7 +682,7 @@ R_API int r_buf_append_string (RBuffer *b, const char *str) {
 	return r_buf_append_bytes (b, (const ut8*)str, strlen (str));
 }
 
-R_API char *r_buf_free_to_string (RBuffer *b) {
+R_API char *r_buf_free_to_string(RBuffer *b) {
 	char *p;
 	if (!b) {
 		return NULL;

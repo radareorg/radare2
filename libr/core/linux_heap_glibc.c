@@ -244,6 +244,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocS
 		}
 
 		if (is_debug_file[0] || is_debug_file[1]) {
+			free (path);
 			path = r_str_newf ("%s", libc_ver_end);
 			if (r_file_exists (path)) {
 				goto arena;
@@ -251,6 +252,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocS
 		}
 
 		if ((is_debug_file[2] || is_debug_file[3]) && r_file_is_directory ("/usr/lib/debug")) {
+			free (path);
 			path = r_str_newf ("%s%s", dir_dbg, libc_ver_end);
 			if (r_file_exists (path)) {
 				goto arena;
@@ -260,6 +262,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocS
 		if ((is_debug_file[2] || is_debug_file[3]) && r_file_is_directory ("/usr/lib/debug/.build-id")) {
 			get_hash_debug_file (libc_ver_end, hash, sizeof (hash) - 1);
 			libc_ver_end = hash;
+			free (path);
 			path = r_str_newf ("%s%s%s", dir_dbg, dir_build_id, libc_ver_end);
 			if (r_file_exists (path)) {
 				goto arena;
@@ -278,7 +281,9 @@ arena:
 			}
 		}	
 not_arena:
-		eprintf ("Warning: glibc library with symbol main_arena could not be found. Is libc6-dbg installed?\n");
+		eprintf (
+		  "Warning: glibc library with symbol main_arena could not be "
+		"found. Is libc6-dbg installed?\n");
 		free (path);
 		return false;
 	} else {
@@ -1161,4 +1166,3 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 	free (main_arena);
 	return true;
 }
-

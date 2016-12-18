@@ -592,6 +592,7 @@ static int build_range(void *p, const char *k, const char *v) {
 			r_list_append (list_range, range);
 		}
 	}
+	r_anal_hint_free (hint);
 	return 1;
 }
 

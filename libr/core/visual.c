@@ -2449,12 +2449,16 @@ dodo:
 		}
 		wheel = r_config_get_i (core->config, "scr.wheel");
 		r_cons_show_cursor (false);
-		if (wheel) r_cons_enable_mouse (true);
+		if (wheel) {
+			r_cons_enable_mouse (true);
+		}
 		core->cons->event_data = core;
 		core->cons->event_resize = (RConsEvent)visual_refresh;
 		flags = core->print->flags;
 		color = r_config_get_i (core->config, "scr.color");
-		if (color) flags |= R_PRINT_FLAGS_COLOR;
+		if (color) {
+			flags |= R_PRINT_FLAGS_COLOR;
+		}
 		debug = r_config_get_i (core->config, "cfg.debug");
 		flags |= R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
 		r_print_set_flags (core->print, core->print->flags);

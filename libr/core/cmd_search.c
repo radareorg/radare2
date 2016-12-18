@@ -977,6 +977,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 		ropList = r_list_newf (free);
 		if (!db) {
 			eprintf ("Error: Could not create SDB 'rop' namespace\n");
+			r_list_free (ropList);
 			return;
 		}
 	}

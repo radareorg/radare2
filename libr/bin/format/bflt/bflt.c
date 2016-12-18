@@ -85,11 +85,14 @@ struct r_bin_bflt_obj *r_bin_bflt_new_buf(struct r_buf_t *buf) {
 	if (bin && r_bin_bflt_init (bin, buf)) {
 		return bin;
 	}
+	r_bin_bflt_free (bin);
 	return NULL;
 }	
 
 void r_bin_bflt_free(struct r_bin_bflt_obj *obj) {
-	R_FREE (obj->hdr);
-	R_FREE (obj->b);
-	R_FREE (obj);
+	if (obj) {
+		R_FREE (obj->hdr);
+		R_FREE (obj->b);
+		R_FREE (obj);
+	}
 }

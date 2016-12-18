@@ -83,7 +83,7 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 		bproc = bact + patlen ;
 //		read ( fd, sblk, patlen );
 //XXX bytepattern should be used with a read callback
-		nr = ((bytes-bproc) < BSIZE)?(bytes-bproc):BSIZE;
+		nr = ((bytes - bproc) < BSIZE)?(bytes - bproc):BSIZE;
 	//XXX	radare_read_at(bact, sblk, patlen);
 		rb = s->iob.read_at (s->iob.io, addr, sblk, nr);
 		sblk[patlen] = 0; // XXX
@@ -92,17 +92,17 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 		cnt = 0;
 		while (bproc < bytes) {
 			// TODO: handle ^C here
-			nr = ((bytes-bproc) < BSIZE)?(bytes-bproc):BSIZE;
+			nr = ((bytes - bproc) < BSIZE)?(bytes - bproc):BSIZE;
 			nr += (patlen - (nr % patlen)); // tamany de bloc llegit multiple superior de tamany busqueda
 			rb = s->iob.read_at (s->iob.io, bproc, block, nr);
-			if (rb<1) {
-				bproc +=nr;
+			if (rb < 1) {
+				bproc += nr;
 				break;
 			}
 			nr = rb;
 			addr += nr;
 			moar = 0;
-			for (i=0; i<nr; i++) {
+			for (i = 0; i<nr; i++) {
 				if (!memcmp (&block[i], sblk, patlen) && !is_fi_present (root, sblk, patlen)){
 					if (cnt == 0) {
 						add_fi (root, sblk, patlen);
@@ -121,7 +121,7 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 				eprintf ("\ncount: %d: %d\n", pcnt, moar+1);
 			bproc += rb;
 		}
-		bact += (moar>0)? patlen: 1;
+		bact += (moar > 0)? patlen: 1;
 	}
 	eprintf ("\n");
 	fini_fi (root);

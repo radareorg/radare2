@@ -499,20 +499,17 @@ static int fd_forward(int in_fd, int out_fd, char **buff) {
 		perror ("ioctl");
 		return -1;
 	}
-
-	if (size == 0) { // child process exited or socket is closed
+	if (!size) { // child process exited or socket is closed
 		return -1;
 	}
 
 	char *new_buff = realloc (*buff, size);
-	if (new_buff == NULL) {
+	if (!new_buff) {
 		eprintf ("Failed to allocate buffer for redirection");
 		return -1;
 	}
 	*buff = new_buff;
-
-	read (in_fd, *buff, size);
-
+	(void)read (in_fd, *buff, size);
 	if (write (out_fd, *buff, size) != size) {
 		perror ("write");
 		return -1;

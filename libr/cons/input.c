@@ -483,7 +483,9 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 
 R_API char *r_cons_input(const char *msg) {
 	char *oprompt = r_line_get_prompt (); //r_cons_singleton()->line->prompt);
-	if (!oprompt) return NULL;
+	if (!oprompt) {
+		return NULL;
+	}
 	char buf[1024];
 	if (msg) {
 		//r_cons_printf ("%s\n", msg);

@@ -2065,7 +2065,8 @@ static void list_xtr_archs(RBin *bin, int mode) {
 		int bits, i = 0;
 		char *arch, *machine;
 		r_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
-			if (!xtr_data->metadata && !xtr_data->metadata->arch) {
+			if (!xtr_data || !xtr_data->metadata || 
+			    !xtr_data->metadata->arch) {
 				continue;
 			}
 			arch = xtr_data->metadata->arch;
