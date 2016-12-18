@@ -1,0 +1,22 @@
+<{set foo 2}>
+<{set bar 3}>
+
+<{ifeq foo 3}>
+BUG 1
+<{ifeq bar 4}>
+BUG 2
+<{else}>
+BUG 3
+<{endif}>
+BUG 4
+<{endif}>
+
+<{ifeq foo 2}>
+Fine!
+<{ifeq bar 3}>
+Perfect
+<{else}>
+BUG 5
+<{endif}>
+Cool :D
+<{endif}>

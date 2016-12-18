@@ -1,0 +1,12 @@
+Known bugs and missfeatures
+===========================
+
+* Argument parsing is not correct
+
+* Add includeonce into 'spp'
+
+* set variable names with middle dash doesnt works
+  <{set foo-bar cow}>
+  <{ifeq foo-bar}>
+   <{trace failed}>
+  <{endif}>
