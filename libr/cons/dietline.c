@@ -381,7 +381,7 @@ R_API void r_line_autocomplete() {
 	char *p;
 	const char **argv = NULL;
 	int i, j, opt = 0, plen, len = 0;
-	int cols = r_cons_get_size (NULL)*0.82;
+	int cols = r_cons_get_size (NULL) * 0.82;
 
 	/* prepare argc and argv */
 	if (I.completion.run) {
@@ -1414,6 +1414,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 9: // tab
+			if (I.buffer.data[I.buffer.length - 1] == '@') {
+				strcpy (I.buffer.data + I.buffer.length, " ");
+				I.buffer.length ++;
+				I.buffer.index ++;
+			}
 			r_line_autocomplete ();
 			break;
 		case 13:
