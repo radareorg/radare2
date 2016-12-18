@@ -1,0 +1,18 @@
+PREFIX=/usr/src/mxe/usr/
+CC=x86_64-w64-mingw32.static-gcc
+RANLIB=x86_64-w64-mingw32.static-ranlib
+ONELIB=0
+OSTYPE=windows
+LINK=
+CC_AR=x86_64-w64-mingw32.static-ar -r ${LIBAR}
+PICFLAGS=
+CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
+CC_LIB=${CC} -shared -o
+CFLAGS_INCLUDE=-I
+LDFLAGS_LINK=-l
+LDFLAGS_LINKPATH=-L
+CFLAGS_OPT0=-O0
+CFLAGS_OPT1=-O1
+CFLAGS_OPT2=-O2
+CFLAGS_OPT3=-O3
+CFLAGS_DEBUG=-g
