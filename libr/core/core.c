@@ -222,9 +222,36 @@ R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
 }
 
-static int core_cmd_callback (void *user, const char *cmd) {
+static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt) {
 	RCore *core = (RCore *)user;
-	return r_core_cmd0 (core, cmd);
+
+	if (!r_config_get_i (core->config, "asm.cmtpatch")) {
+		return;
+	}
+
+	char *hex_pairs = r_hex_bin2strdup (bytes, cnt);
+	if (!hex_pairs) {
+		eprintf ("core_post_write_callback: Cannot obtain hex pairs\n");
+		return;
+	}
+
+	char *comment = r_str_newf ("patch: %d bytes (%s)", cnt, hex_pairs);
+	free (hex_pairs);
+	if (!comment) {
+		eprintf ("core_post_write_callback: Cannot create comment\n");
+		return;
+	}
+
+	ut64 vaddr = r_io_section_maddr_to_vaddr (core->io, maddr);
+	vaddr = (vaddr == UT64_MAX) ? maddr : vaddr;
+
+	r_meta_add (core->anal, R_META_TYPE_COMMENT, vaddr, vaddr, comment);
+	free (comment);
+}
+
+static int core_cmd_callback (void *user, const char *cmd) {
+    RCore *core = (RCore *)user;
+    return r_core_cmd0 (core, cmd);
 }
 
 static char *core_cmdstr_callback (void *user, const char *cmd) {
@@ -1495,6 +1522,7 @@ R_API int r_core_init(RCore *core) {
 	core->io->user = (void *)core;
 	core->io->cb_core_cmd = core_cmd_callback;
 	core->io->cb_core_cmdstr = core_cmdstr_callback;
+	core->io->cb_core_post_write = core_post_write_callback;
 	core->sign = r_sign_new ();
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
