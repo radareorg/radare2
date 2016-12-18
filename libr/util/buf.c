@@ -417,8 +417,9 @@ R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a) {
 // ret copied length if successful, -1 if failed
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
-	if (!b || b->empty)
+	if (!b || b->empty) {
 		return 0;
+	}
 	if (b->fd != -1) {
 		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
 			// seek failed - print error here?
@@ -433,23 +434,31 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	if (b->sparse) {
 		if (write) {
 			// create new with src + len
-			if (sparse_write (b->sparse, addr, src, len) <0) return -1;
+			if (sparse_write (b->sparse, addr, src, len) < 0) {
+				return -1;
+			}
 		} else {
 			// read from sparse and write into dst
 			memset (dst, 0xff, len);
-			if (sparse_read (b->sparse, addr, dst, len) <0) return -1;
+			if (sparse_read (b->sparse, addr, dst, len) < 0) {
+				return -1;
+			}
 		}
 		return len;
 	}
-	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
-	if (len<1 || !dst || addr > b->length)
+	addr = (addr == R_BUF_CUR) ? b->cur : addr - b->base;
+	if (len < 1 || !dst || addr > b->length) {
 		return -1;
- 	end = (int)(addr+len);
-	if (end > b->length)
+	}
+ 	end = (int)(addr + len);
+	if (end > b->length) {
 		len -= end-b->length;
-	if (write)
+	}
+	if (write) {
 		dst += addr;
-	else src += addr;
+	} else {
+		src += addr;
+	}
 	memmove (dst, src, len);
 	b->cur = addr + len;
 	return len;
@@ -590,10 +599,11 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 		return r_sandbox_read (b->fd, buf, len);
 	}
 	if (!b->sparse) {
-		if (addr < b->base || len<1)
+		if (addr < b->base || len < 1) {
 			return 0;
+		}
 		pa = addr - b->base;
-		if (pa+len > b->length) {
+		if (pa + len > b->length) {
 			memset (buf, 0xff, len);
 			len = b->length - pa;
 			if (len < 0) {
