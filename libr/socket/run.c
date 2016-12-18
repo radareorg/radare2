@@ -155,6 +155,18 @@ static char *getstr(const char *src) {
 			// slurp file
 			return r_file_slurp (src + 1, NULL);
 		}
+	case '`':
+		{
+		char *msg = strdup (src + 1);
+		int msg_len = strlen (msg);
+		if (msg_len > 0) {
+			msg [msg_len - 1] = 0;
+			char *ret = r_str_trim_tail (r_sys_cmd_str (msg, NULL, NULL));
+			free (msg);
+			return ret;
+		}
+		return strdup ("");
+		}
 	case '!':
 		return r_str_trim_tail (r_sys_cmd_str (src + 1, NULL, NULL));
 	case ':':
