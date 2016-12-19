@@ -235,9 +235,14 @@ static int cmd_seek(void *data, const char *input) {
 					break;
 				}
 				free (cb.str);
-			} else eprintf ("Usage: sC[?*] comment-grep\n"
-				"sC*        list all comments\n"
-				"sC const   seek to comment matching 'const'\n");
+			} else {
+				const char *help_msg[] = {
+					"Usage:", "sC", "Comment grep",
+					"sC", "*", "List all comments",
+					"sC", " str", "Seek to the first comment matching 'str'",
+					NULL };
+				r_core_cmd_help (core, help_msg);
+			}
 			break;
 		case ' ':
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));

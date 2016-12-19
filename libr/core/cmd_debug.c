@@ -935,8 +935,12 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case 'p': // "dmp"
 		if (input[1] == '?') {
-			eprintf ("Usage: dmp [addr] [size] [perms]\n");
-			eprintf ("Usage: dmp [perms] # change dbg.map permissions\n");
+			const char* help_msg[] = {
+				"Usage:", "dmp", " Change page permissions",
+				"dmp", " [addr] [size] [perms]", "Change permissions",
+				"dmp", " [perms]", "Change dbg.map permissions",
+				NULL};
+			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == ' ') {
 			int perms;
 			char *p, *q;

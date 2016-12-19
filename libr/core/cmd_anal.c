@@ -1235,15 +1235,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
-		case '?':
-			eprintf ("Usage: afl\n");
-			eprintf ("List all functions in quiet, commands or json format\n");
-			eprintf ("afl  - list functions\n");
-			eprintf ("aflj - list functions in json format\n");
-			eprintf ("afll - list functions in verbose mode\n");
-			eprintf ("aflq - list functions in 'quiet' mode\n");
-			eprintf ("aflqj - list functions in json 'quiet' mode\n");
-			eprintf ("afls - print sum of sizes of all functions\n");
+			case '?':
+			{
+				const char *help_msg[] = {
+					"Usage:", "afl", " List all functions",
+					"afl", "", "list functions",
+					"aflj", "", "list functions in json",
+					"afll", "", "list functions in verbose mode",
+					"aflq", "", "list functions in quiet mode",
+					"aflqj", "", "list functions in json quiet mode",
+					"afls", "", "print sum of sizes of all functions",
+					NULL };
+				r_core_cmd_help (core, help_msg);
+			}
 			break;
 		case 'j':
 		case 'l':
@@ -1396,7 +1400,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					"afB", " [bits]", "define asm.bits for the given function",
 					NULL
 				};
-				r_core_cmd_help (core, help_msg);	/* TODO: use r_core_help */
+				r_core_cmd_help (core, help_msg);
 			}
 			break;
 		}
@@ -1442,11 +1446,17 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			}
 			break;
-		default:
-			eprintf ("Usage: afn[sa] - analyze function names\n");
-			eprintf (" afna       - construct a function name for the current offset\n");
-			eprintf (" afns       - list all strings associated with the current function\n");
-			eprintf (" afn [name] - rename function\n");
+		default: 
+			{
+				const char *help_msg[] = {
+					"Usage:", "afn[sa]", " Analyze function names",
+					"afn", " [name]", "rename the function",
+					"afna", "", "construct a function name for the current offset",
+					"afns", "", "list all strings associated with the current function",
+					NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			}
 			break;
 		}
 		break;
