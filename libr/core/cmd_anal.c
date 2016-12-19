@@ -2374,6 +2374,35 @@ static void cmd_anal_info(RCore *core, const char *input) {
 	}
 }
 
+static void initialize_stack (RCore *core, ut64 addr, ut64 size) {
+	const char *mode = r_config_get (core->config, "esil.fillstack");
+	if (mode && *mode && *mode != '0') {
+		const int bs = 4096 * 32;
+		ut64 i;
+		for (i = 0; i < size; i += bs) {
+			int left = R_MIN (bs, size - i);
+		//	r_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
+			switch (*mode) {
+			case 'd': // "debrujn"
+				r_core_cmdf (core, "wopD %"PFMT64d" @ 0x%"PFMT64x, left, addr + i);
+				break;
+			case 's': // "seq"
+				r_core_cmdf (core, "woe 1 0xff 1 4 @ 0x%"PFMT64x"!0x%"PFMT64x, addr + i, left);
+				break;
+			case 'r': // "random"
+				r_core_cmdf (core, "woR %"PFMT64d" @ 0x%"PFMT64x"!0x%"PFMT64x, left, addr + i, left);
+				break;
+			case 'z': // "zero"
+			case '0':
+				r_core_cmdf (core, "wow 00 @ 0x%"PFMT64x"!0x%"PFMT64x, addr + i, left);
+				break;
+			}
+		}
+		// eprintf ("[*] Initializing ESIL stack with pattern\n");
+		// r_core_cmdf (core, "woe 0 10 4 @ 0x%"PFMT64x, size, addr);
+	}
+}
+
 static void cmd_esil_mem(RCore *core, const char *input) {
 	ut64 curoff = core->offset;
 	ut64 addr = 0x100000;
@@ -2392,6 +2421,18 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		return;
 	}
 
+	if (input[0] == 'p') {
+		fi = r_flag_get (core->flags, "aeim.stack");
+		if (fi) {
+			addr = fi->offset;
+			size = fi->size;
+		} else {
+			cmd_esil_mem (core, "");
+		}
+		initialize_stack (core, addr, size);
+		return;
+	}
+
 	p = strncpy (nomalloc, input, 255);
 	if ((p = strchr (p, ' '))) {
 		while (*p == ' ') p++;
@@ -2399,8 +2440,9 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		if ((p = strchr (p, ' '))) {
 			while (*p == ' ') p++;
 			size = (ut32)r_num_math (core->num, p);
-			if (size < 1)
+			if (size < 1) {
 				size = 0xf0000;
+			}
 			if ((p = strchr (p, ' '))) {
 				while (*p == ' ') p++;
 				snprintf (name, sizeof (name), "mem.%s", p);
@@ -2445,6 +2487,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	r_core_file_set_by_file (core, cache);
 	if (cf) {
 		r_flag_set (core->flags, "aeim.fd", cf->desc->fd, 1);
+		r_flag_set (core->flags, "aeim.stack", addr, size);
 	}
 	//r_core_cmdf (core, "f stack_fd=`on malloc://%d 0x%08"
 	//	PFMT64x"`", stack_size, stack_addr);
@@ -2461,6 +2504,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	if (!r_io_section_get_name (core->io, "esil_stack")) {
 		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d esil_stack", addr, addr, size, size);
 	}
+	initialize_stack (core, addr, size);
 //	r_core_cmdf (core, "wopD 0x%"PFMT64x" @ 0x%"PFMT64x, size, addr);
 	r_core_seek (core, curoff, 0);
 }

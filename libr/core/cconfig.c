@@ -1729,6 +1729,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
 
 	SETPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
+	SETPREF("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
 	SETICB("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
 	SETICB("esil.stacksize", 32, &cb_esilstacksize, "Number of elements that can be pushed on the esilstack");
