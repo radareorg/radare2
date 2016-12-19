@@ -1915,13 +1915,13 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf (",\"indegree\":%d", indegree);
 	r_cons_printf (",\"outdegree\":%d", outdegree);
 	r_cons_printf (",\"nargs\":%d",
+		r_anal_var_count (core->anal, fcn, 'b', 1) +
 		r_anal_var_count (core->anal, fcn, 'r', 1) +
-		r_anal_var_count (core->anal, fcn, 'r', 1) +
-		r_anal_var_count (core->anal, fcn, 'r', 1));
+		r_anal_var_count (core->anal, fcn, 's', 1));
 	r_cons_printf (",\"nlocals\":%d",
+		r_anal_var_count (core->anal, fcn, 'b', 0) +
 		r_anal_var_count (core->anal, fcn, 'r', 0) +
-		r_anal_var_count (core->anal, fcn, 'r', 0) +
-		r_anal_var_count (core->anal, fcn, 'r', 0));
+		r_anal_var_count (core->anal, fcn, 's', 0));
 
 	r_cons_printf ("}");
 	free (name);
