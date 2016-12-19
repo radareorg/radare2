@@ -1255,7 +1255,6 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 		} else if (r_anal_fcn_is_in_offset (f, ds->at)) {
 			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 		}
-
 		if (ds->show_fcnlines) {
 			ds->pre = r_str_concat (ds->pre, " ");
 		}
@@ -3726,7 +3725,8 @@ toro:
 		}
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
-			if (r_core_read_at (core, ds->addr, buf, len) ) {
+			if (r_core_read_at (core, ds->addr, buf, len)) {
+				R_FREE (buf);
 				goto toro;
 			}
 		}
@@ -3735,11 +3735,14 @@ toro:
 			if (r_core_read_at (core, ds->addr, buf, len) != len) {
 				//ds->tries = -1;
 			}
+			R_FREE (buf);
 			goto toro;
 		}
 		if (continueoninvbreak) {
+			R_FREE (buf);
 			goto toro;
 		}
+		R_FREE (buf);
 	}
 #endif
 	if (ds->oldbits) {

@@ -1308,6 +1308,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 		if (!type || (fcn && fcn->type & type)) {
 			if (fcn->addr == addr || (!ret && r_anal_fcn_is_in_offset (fcn, addr))) {
 				ret = fcn;
+				break;
 			}
 		}
 	}
