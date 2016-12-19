@@ -207,7 +207,7 @@ static int readcommand (const char **p) {
 static void readlabel(const char **p, int store) {
 	const char *c, *d, *pos, *dummy;
 	int i, j;
-	struct label *buf, *previous, **thefirstlabel = NULL;
+	struct label *buf, *previous;
 	for (d = *p; *d && *d != ';'; ++d);
 	for (c = *p; !strchr (" \r\n\t", *c) && c < d; ++c);
 	pos = strchr (*p, ':');
@@ -242,8 +242,7 @@ static void readlabel(const char **p, int store) {
 	if (previous) {
 		buf->next = previous->next;
 	} else {
-		// XXX dead code this thefirstlabel is always NULL
-		buf->next = thefirstlabel? *thefirstlabel: NULL;
+		buf->next = NULL;
 	}
 	buf->prev = previous;
 	buf->valid = 1;
@@ -251,11 +250,10 @@ static void readlabel(const char **p, int store) {
 	buf->ref = NULL;
 	if (buf->prev) {
 		buf->prev->next = buf;
-	} else {
-		*thefirstlabel = buf;
-	}
-	if (buf->next)
+	} 
+	if (buf->next) {
 		buf->next->prev = buf;
+	}
 }
 
 static int compute_ref (struct reference *ref, int allow_invalid) {

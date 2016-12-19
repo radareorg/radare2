@@ -203,20 +203,21 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	bufptr = bin->b->buf;
 	// size of the list, in entries
 	list_size = r_read_le32 (bufptr + params_off); 
+	//XXX again list_size is user controlled huge loop
 	for (i = 0; i < list_size; i++) {
 		int buff_len = 0;
 		if (params_off + 4 + (i * 2) >= bin->size) {
-			continue;
+			break;
 		}
 		type_idx = r_read_le16 (bufptr + params_off + 4 + (i * 2));
 		if (type_idx < 0 ||
 		    type_idx >=
 			    bin->header.types_size || type_idx >= bin->size) {
-			continue;
+			break;
 		}
 		buff = getstr (bin, bin->types[type_idx].descriptor_id);
 		if (!buff) {
-			continue;
+			break;
 		}
 		buff_len = strlen (buff);
 		size += buff_len + 1;
@@ -259,19 +260,20 @@ static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	bufptr = bin->b->buf;
 	// size of the list, in entries
 	list_size = r_read_le32 (bufptr + params_off); 
+	//XXX list_size tainted it may produce huge loop
 	for (i = 0; i < list_size; i++) {
 		ut64 of = params_off + 4 + (i * 2);
 		if (of >= bin->size || of < params_off) {
-			continue;
+			break;
 		}
 		type_idx = r_read_le16 (bufptr + of);
 		if (type_idx >= bin->header.types_size ||
 		    type_idx > bin->size) {
-			continue;
+			break;
 		}
 		buff = getstr (bin, bin->types[type_idx].descriptor_id);
 		if (!buff) {
-			continue;
+			break;
 		}
 		r_list_append (params, buff);
 	}
@@ -946,6 +948,7 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 }
 
 // TODO: refactor this method
+// XXX it needs a lot of love!!!
 static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					  RBinDexClass *c, RBinClass *cls,
 					  const ut8 *p, const ut8 *p_end,
@@ -1050,11 +1053,12 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					rbin->cb_printf ("      catches       : %d\n", tries_size);
 				}
 				int j, m = 0;
+				//XXX bucle controlled by tainted variable it could produces huge loop
 				for (j = 0; j < tries_size; ++j) {
 					ut64 offset = MC + t + j * 8;
 					if (offset >= bin->size || offset < MC) {
 						R_FREE (signature);
-						continue;
+						break;
 					}
 					if (r_buf_read_at (
 						    binfile->buf,
@@ -1062,7 +1066,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						    ff3, 8) < 1) {
 						// free (method_name);
 						R_FREE (signature);
-						continue;
+						break;
 					}
 					start_addr = r_read_le32 (ff3);
 					insn_count = r_read_le16 (ff3 + 4);
@@ -1078,7 +1082,12 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					}
 					
 					const ut8 *p3, *p3_end;
+					//XXX tries_size is tainted and oob here
 					int off = MC + t + tries_size * 8 + handler_off;
+					if (off >= bin->size || off < tries_size) {
+						R_FREE (signature);
+						break;
+					}
 					p3 = r_buf_get_at (binfile->buf, off, NULL);
 					p3_end = p3 + binfile->buf->length - off;
 					st64 size = r_sleb128 (&p3, p3_end);
@@ -1277,9 +1286,11 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 				 dex_class_super_name (bin, c));
 		rbin->cb_printf ("  Interfaces        -\n");
 	}
-	
-	if (c->interfaces_offset > 0 && bin->header.data_offset < c->interfaces_offset 
-		&& c->interfaces_offset < bin->header.data_offset + bin->header.data_size) {
+
+	if (c->interfaces_offset > 0 &&
+	    bin->header.data_offset < c->interfaces_offset &&
+	    c->interfaces_offset <
+		    bin->header.data_offset + bin->header.data_size) {
 		p = r_buf_get_at (binfile->buf, c->interfaces_offset, NULL);
 		int types_list_size = r_read_le32(p);
 		if (types_list_size < 0 || types_list_size >= bin->header.types_size ) {

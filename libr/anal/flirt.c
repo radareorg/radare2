@@ -686,15 +686,18 @@ static ut8 read_module_tail_bytes (RFlirtModule *module, RBuffer *b) {
 	int i;
 	ut8 number_of_tail_bytes;
 	RFlirtTailByte *tail_byte = NULL;
-	module->tail_bytes = r_list_new ();
+	if (!(module->tail_bytes = r_list_newf ((RListFree)free))) {
+		goto err_exit;
+	}
 
 	if (version >= 8) { // this counter was introduced in version 8
 		number_of_tail_bytes = read_byte (b); // XXX are we sure it's not read_multiple_bytes?
-		if (buf_eof || buf_err) goto err_exit;
+		if (buf_eof || buf_err) {
+			goto err_exit;
+		}
 	} else { // suppose there's only one
 		number_of_tail_bytes = 1;
 	}
-
 	for (i = 0 ; i < number_of_tail_bytes ; i++) {
 		tail_byte = R_NEW0 (RFlirtTailByte);
 		if (!tail_byte) {
@@ -702,15 +705,21 @@ static ut8 read_module_tail_bytes (RFlirtModule *module, RBuffer *b) {
 		}
 		if (version >= 9) {
 			/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
-			tail_byte->offset = read_multiple_bytes(b);
-			if (buf_eof || buf_err) goto err_exit;
+			tail_byte->offset = read_multiple_bytes (b);
+			if (buf_eof || buf_err) {
+				goto err_exit;
+			}
 		} else {
-			tail_byte->offset = read_max_2_bytes(b);
-			if (buf_eof || buf_err) goto err_exit;
+			tail_byte->offset = read_max_2_bytes (b);
+			if (buf_eof || buf_err) {
+				goto err_exit;
+			}
 		}
 		tail_byte->value = read_byte(b);
-		if (buf_eof || buf_err) goto err_exit;
-		r_list_append(module->tail_bytes, tail_byte);
+		if (buf_eof || buf_err) {
+			goto err_exit;
+		}
+		r_list_append (module->tail_bytes, tail_byte);
 #if DEBUG
 		eprintf("READ TAIL BYTE: %04X: %02X\n", tail_byte->offset, tail_byte->value);
 #endif
@@ -720,6 +729,7 @@ static ut8 read_module_tail_bytes (RFlirtModule *module, RBuffer *b) {
 
 err_exit:
 	free (tail_byte);
+	r_list_free (module->tail_bytes);
 	return false;
 }
 
@@ -733,38 +743,52 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 
 	module->referenced_functions = r_list_new();
 
-	if ( version >= 8 ) { // this counter was introduced in version 8
+	if (version >= 8) { // this counter was introduced in version 8
 		number_of_referenced_functions = read_byte(b); // XXX are we sure it's not read_multiple_bytes?
-		if (buf_eof || buf_err) goto err_exit;
+		if (buf_eof || buf_err) {
+			goto err_exit;
+		}
 	} else { // suppose there's only one
 		number_of_referenced_functions = 1;
 	}
 
 	for (i = 0 ; i < number_of_referenced_functions ; i++) {
 		ref_function = R_NEW0(RFlirtFunction);
-		if (!ref_function) goto err_exit;
+		if (!ref_function) {
+			goto err_exit;
+		}
 		if ( version >= 9 ) {
 			ref_function->offset = read_multiple_bytes(b);
-			if (buf_eof || buf_err) goto err_exit;
+			if (buf_eof || buf_err) {
+				goto err_exit;
+			}
 		} else {
 			ref_function->offset = read_max_2_bytes(b);
-			if (buf_eof || buf_err) goto err_exit;
+			if (buf_eof || buf_err) {
+				goto err_exit;
+			}
 		}
-
-		ref_function_name_length = read_byte(b);
-		if (buf_eof || buf_err) goto err_exit;
-		if ( ref_function_name_length == 0 ) {
+		ref_function_name_length = read_byte (b);
+		if (buf_eof || buf_err) {
+			goto err_exit;
+		}
+		if (!ref_function_name_length) {
 			// not sure why it's not read_multiple_bytes() in the first place
 			ref_function_name_length = read_multiple_bytes(b); // XXX might be read_max_2_bytes, need more data
-			if (buf_eof || buf_err) goto err_exit;
+			if (buf_eof || buf_err) {
+				goto err_exit;
+			}
 		}
-
+		if ((int)ref_function_name_length < 0) {
+			goto err_exit;
+		}
 		for (j = 0 ; j < ref_function_name_length ; j++) {
 			ref_function->name[j] = read_byte(b);
-			if (buf_eof || buf_err) goto err_exit;
+			if (buf_eof || buf_err) {
+				goto err_exit;
+			}
 		}
-
-		if ( ref_function->name[ref_function_name_length] == 0 ) {
+		if (!ref_function->name[ref_function_name_length]) {
 			// if the last byte of the name is 0, it means the offset is negative
 			ref_function->negative_offset = true;
 		} else {
@@ -947,17 +971,17 @@ static bool read_node_bytes (RFlirtNode *node, RBuffer *b) {
 	/*Reads the node bytes, and also sets the variant bytes in variant_bool_array*/
 	/*returns false on parsing error*/
 	int i;
-	ut64 current_mask_bit = 1ULL << (node->length - 1);
-
-	node->pattern_bytes = malloc(node->length);
-	if (!node->pattern_bytes) {
+	ut64 current_mask_bit = 0; 
+	if ((int)node->length < 0) {
 		return false;
 	}
-	node->variant_bool_array = malloc(node->length);
-	if (!node->variant_bool_array) {
+	current_mask_bit = 1ULL << (node->length - 1);
+	if (!(node->pattern_bytes = malloc (node->length))) {
 		return false;
 	}
-
+	if (!(node->variant_bool_array = malloc (node->length))) {
+		return false;
+	}
 	for (i = 0; i < node->length ; i++, current_mask_bit >>= 1) {
 		node->variant_bool_array[i] =
 			(node->variant_mask & current_mask_bit) ? true : false;
@@ -965,7 +989,9 @@ static bool read_node_bytes (RFlirtNode *node, RBuffer *b) {
 			node->pattern_bytes[i] = 0x00;
 		} else {
 			node->pattern_bytes[i] = read_byte(b);
-			if (buf_eof || buf_err) return false;
+			if (buf_eof || buf_err) {
+				return false;
+			}
 		}
 	}
 	return true;

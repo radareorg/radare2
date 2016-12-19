@@ -1076,6 +1076,8 @@ char *get_opers(ut8 oper_byte) {
 			}
 			res = strcat_dup (reg_name, " != #0", 1);
 		} else {
+			// coverity may complain but strcat_dup set to null
+			// reg_name when free
 			res = strcat_dup (reg_name, " == #0", 1);
 		}
 	}

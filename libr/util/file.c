@@ -409,6 +409,8 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 		srand (getpid() + tv.tv_usec);
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '\n') {
+				//here rand doesn't have any security implication
+				// https://www.securecoding.cert.org/confluence/display/c/MSC30-C.+Do+not+use+the+rand()+function+for+generating+pseudorandom+numbers
 				if (!(rand() % (++(*line)))) {
 					selection = (*line - 1);  /* The line we want. */
 				}

@@ -246,7 +246,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if ((b[3]&0xf)==5) { // [reg,0xa4]
 		if ((b[1]&0xf0) == 0xf0) {
 			//ldr pc, [pc, #1] ; 
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			//op->type = R_ANAL_OP_TYPE_UJMP;
 			op->type = R_ANAL_OP_TYPE_RET; // FAKE FOR FUN
 			//op->stackop = R_ANAL_STACK_SET;
 			op->jump = 1234;
@@ -255,7 +255,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 		//eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
 		// 0x0001B4D8,           1eff2fe1        bx    lr
-	} else if (b[3]==0xe2 && b[2]==0x8d && b[1]==0xd0) {
+	} else if (b[3] == 0xe2 && b[2] == 0x8d && b[1] == 0xd0) {
 		// ADD SP, SP, ...
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->stackop = R_ANAL_STACK_INC;

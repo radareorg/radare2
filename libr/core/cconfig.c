@@ -249,11 +249,12 @@ static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	const char *asmos = r_config_get (core->config, "asm.os");
+	const char *asmos = NULL; 
 	int bits = R_SYS_BITS;
 	if (!*node->value || !core || !core->assembler) {
 		return false;
 	}
+	asmos = r_config_get (core->config, "asm.os");
 	if (core && core->anal && core->anal->bits) {
 		bits = core->anal->bits;
 	}

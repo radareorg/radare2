@@ -484,12 +484,19 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 }
 
 R_API void r_core_anal_type_init(RCore *core) {
-	Sdb *types = core->anal->sdb_types;
-	sdb_reset (types); // make sure they are empty this is initializing
-	const char *anal_arch = r_config_get (core->config, "anal.arch");
-	const char *os = r_config_get (core->config, "asm.os");
-	int bits = core->assembler->bits;
+	Sdb *types = NULL; 
+	const char *anal_arch = NULL, *os = NULL;
+	int bits = 0;
 	char *dbpath;
+	if (!core || !core->anal) {
+		return;
+	}
+	bits = core->assembler->bits;
+	types = core->anal->sdb_types;
+ 	// make sure they are empty this is initializing
+	sdb_reset (types);
+	anal_arch = r_config_get (core->config, "anal.arch");
+	os = r_config_get (core->config, "asm.os");
 	if (r_file_exists (DBSPATH"/types.sdb")) {
 		sdb_concat_by_path (types, DBSPATH"/types.sdb");
 	}
@@ -2692,10 +2699,20 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 }
 
 R_API int r_core_bin_update_arch_bits(RCore *r) {
-	RBinFile *binfile = r_core_bin_cur (r);
-	const char *arch = r->assembler->cur->arch;
-	ut16 bits = r->assembler->bits;
-	const char *name = binfile ? binfile->file : NULL;
+	RBinFile *binfile = NULL;
+	const char *name = NULL, *arch = NULL; 
+	ut16 bits = 0;
+	if (!r) {
+		return 0;
+	}
+	if (r->assembler) {
+		bits = r->assembler->bits;
+	   	if (r->assembler->cur) {
+			arch = r->assembler->cur->arch;
+		}
+	} 
+	binfile = r_core_bin_cur (r);
+	name = binfile ? binfile->file : NULL;
 	if (r && r->bin && r->bin->binxtrs) {
 		r_anal_hint_clear (r->anal);
 	}

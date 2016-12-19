@@ -506,7 +506,7 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 }
 
 static int esil_internal_write(RAnalEsil *esil, const char *str, ut64 num) {
-	if (!str || !*str) {
+	if (!str || !*str || !esil) {
 		return false;
 	}
 	switch (str[1]) {
@@ -572,7 +572,7 @@ R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num) {
 	if (esil && esil->cb.hook_reg_write) {
 		ret = esil->cb.hook_reg_write (esil, dst, &num);
 	}
-	if (!ret && dst[0] == ESIL_INTERNAL_PREFIX && dst[1]) {
+	if (!ret && esil && dst[0] == ESIL_INTERNAL_PREFIX && dst[1]) {
 		ret = esil_internal_write (esil, dst, num);
 	}
 	if (!ret && esil && esil->cb.reg_write) {

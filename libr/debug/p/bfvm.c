@@ -81,11 +81,12 @@ R_API BfvmCPU *bfvm_free(BfvmCPU *c) {
 }
 
 R_API ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
-	if (at >= c->base) at -= c->base;
-	//if (at<0) at = c->circular? c->size-2: 0;
-	else if (at >= c->size) at = c->circular? 0: c->size-1;
-	//if (at<0) return c->mem;
-	return c->mem+at;
+	if (at >= c->base) {
+		at -= c->base;
+	} else if (at >= c->size) {
+		at = c->circular? 0: c->size-1;
+	}
+	return c->mem + at;
 }
 
 R_API ut8 *bfvm_get_ptr(BfvmCPU *c) {
@@ -179,7 +180,7 @@ R_API int bfvm_step(BfvmCPU *c, int over) {
 			/* trap */
 			return 1;
 		case '.':
-			bfvm_get_ptr (c);
+			//bfvm_get_ptr (c);
 			bfvm_poke (c);
 			break;
 		case ',':

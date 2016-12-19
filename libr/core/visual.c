@@ -729,13 +729,6 @@ repeat:
 						snprintf (cstr, sizeof (cstr), "%d", count);
 					}
 					fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
-#if 0
-					r_cons_printf (" %d [%s] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)                      \n",
-							idx, cstr, refi->at,
-							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							fun?fun->name:"unk");
-#endif
 					r_cons_printf (" %d [%s] 0x%08"PFMT64x" %s XREF (%s)\n",
 							idx, cstr, refi->addr,
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
@@ -821,8 +814,12 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 				}
 				r_cons_printf (" [%i] 0x%08"PFMT64x" %s XREF 0x%08"PFMT64x" (%s)(%s)  \n", count,
 					refi->at,
-					      refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-					      refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr, fun->name, f?f->name:"");
+					      refi->type == R_ANAL_REF_TYPE_CODE
+						  		? "CODE (JMP)"
+								: refi->type == R_ANAL_REF_TYPE_CALL
+						  			? "CODE (CALL)"
+									: "DATA", 
+						  refi->addr, fun->name, f?f->name:"");
 				if (++count > 9) {
 					break;
 				}

@@ -109,17 +109,20 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) 
 	}
 	// new
 	i = cmd->aliases.count++;
-	char **K = (char **)realloc (cmd->aliases.keys, sizeof (char**) * cmd->aliases.count);
+	char **K = (char **)realloc (cmd->aliases.keys,
+				     sizeof (char *) * cmd->aliases.count);
 	if (!K) {
 		return 0;
 	}
 	cmd->aliases.keys = K;
-	int *R = (int *)realloc (cmd->aliases.remote, sizeof (int*) * cmd->aliases.count);
+	int *R = (int *)realloc (cmd->aliases.remote,
+				 sizeof (int) * cmd->aliases.count);
 	if (!R) {
 		return 0;
 	}
 	cmd->aliases.remote = R;
-	char **V = (char **)realloc (cmd->aliases.values, sizeof (char*) * cmd->aliases.count);
+	char **V = (char **)realloc (cmd->aliases.values,
+				     sizeof (char *) * cmd->aliases.count);
 	if (!V) {
 		return 0;
 	}

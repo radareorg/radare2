@@ -274,7 +274,7 @@ static int check_fmt(RMagic *ms, struct r_magic *m) {
 	rc = r_regex_comp (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED|R_REGEX_NOSUB);
 	if (rc) {
 		char errmsg[512];
-		r_regex_error (rc, &rx, errmsg, sizeof (errmsg)-1);
+		r_regex_error (rc, &rx, errmsg, sizeof (errmsg) - 1);
 		file_magerror (ms, "regex error %d, (%s)", rc, errmsg);
 		return -1;
 	} else {
@@ -1348,10 +1348,10 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 		    R_REGEX_EXTENDED|R_REGEX_NEWLINE|
 		    ((m->str_flags & STRING_IGNORE_CASE) ? R_REGEX_ICASE : 0));
 		if (rc) {
-			(void)r_regex_error(rc, &rx, errmsg, sizeof(errmsg)-1);
+			(void)r_regex_error(rc, &rx, errmsg, sizeof(errmsg) - 1);
 			file_magerror(ms, "regex error %d, (%s)",
 			    rc, errmsg);
-			v = (ut64)-1;
+			v = (ut64) - 1;
 		} else {
 			RRegexMatch pmatch[1];
 #ifndef R_REGEX_STARTEND
