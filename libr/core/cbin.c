@@ -2053,7 +2053,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (section->arch || section->bits) {
 				const char *arch = section->arch;
 				int bits = section->bits;
-				if (!arch) {
+				if (!arch && info) {
 					arch = info->arch;
 					if (!arch) {
 						arch = r_config_get (r->config, "asm.arch");
@@ -2062,7 +2062,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				if (!bits) {
 					bits = info->bits;
 				}
-				snprintf (str, sizeof (str), "arch=%s bits=%d ", arch, bits);
+				snprintf (str, sizeof (str), "arch=%s bits=%d ",
+					r_str_get2 (arch), bits);
 			} else {
 				str[0] = 0;
 			}

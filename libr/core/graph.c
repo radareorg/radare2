@@ -1457,6 +1457,9 @@ static void analyze_back_edges (const RAGraph *g, RANode *an) {
 	RGraphNode *gk;
 	RANode *ak;
 	int j = 0, i = -1;
+	if (!g || !an) {
+		return;
+	}
 
 	/* traverse all neighbours and analyze only the ones that create back
 	 * edges. */
@@ -2531,8 +2534,9 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 		sdb_array_add (g->db, "agraph.nodes", res->title, 0);
 		b = strdup (res->body);
 		len = strlen (b);
-		if (len>0 && b[len-1] == '\n')
+		if (len > 0 && b[len - 1] == '\n') {
 			b[len - 1] = '\0';
+		}
 		estr = sdb_encode ((const void *)b, -1);
 		s = sdb_fmt (1, "base64:%s", estr);
 		free (estr);

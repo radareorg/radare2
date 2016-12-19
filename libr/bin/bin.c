@@ -36,8 +36,8 @@ R_LIB_VERSION (r_bin);
 #define R_BIN_XTR_STATIC_PLUGINS 0
 #endif
 
-static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
-static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
+static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
+static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 
 static int is_data_section(RBinFile *a, RBinSection *s);
 static RList *get_strings(RBinFile *a, int min, int dump);

@@ -1523,13 +1523,15 @@ R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y,
 		} else if (*str == 0x1b && str + 1 && *(str + 1) == '[') {
 			const char *ptr;
 
-			/* copy 0x1b and [ */
-			*r++ = *str++;
-			*r++ = *str++;
-			for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ++ptr) {
-				*r++ = *ptr;
+			if ((r_end - r) > 3) {
+				/* copy 0x1b and [ */
+				*r++ = *str++;
+				*r++ = *str++;
+				for (ptr = str; *ptr && *ptr != 'J' && *ptr != 'm' && *ptr != 'H'; ++ptr) {
+					*r++ = *ptr;
+				}
+				*r++ = *ptr++;
 			}
-			*r++ = *ptr++;
 			str = ptr;
 		} else {
 			if (ch >= y && ch < y2 && cw >= x && cw < x2) {
