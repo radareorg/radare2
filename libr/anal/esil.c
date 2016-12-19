@@ -506,7 +506,7 @@ static int esil_internal_read(RAnalEsil *esil, const char *str, ut64 *num) {
 }
 
 static int esil_internal_write(RAnalEsil *esil, const char *str, ut64 num) {
-	if (!str || !*str || !esil) {
+	if (!str || !*str || !esil) {
 		return false;
 	}
 	switch (str[1]) {
