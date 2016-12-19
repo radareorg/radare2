@@ -278,15 +278,19 @@ static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
 #if __WINDOWS__ && !__CYGWIN__
 static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 	const char *needle = NULL;
+	int tmp = 0;
 	if (mode) {
 		switch (mode[0]) {
 		case 'l': needle = dbg->glob_libs; break;
 		case 'u': needle = dbg->glob_unlibs; break;
 		}
 	}
-	eprintf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
+	r_cons_printf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
 		item->BaseOfDll, item->Path, item->Name);
-	return !mode || !needle || r_str_glob (item->Name, needle);
+	if (needle && strlen (needle)) {
+		tmp = r_str_glob (item->Name, needle);
+	}
+	return !mode || !needle || tmp ;
 }
 #endif
 
@@ -312,8 +316,9 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	if (mode) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
-			if (tracelib (dbg, mode=='l'? "load":"unload", r->lib))
+			if (tracelib (dbg, mode == 'l' ? "load" : "unload", r->lib)) {
 				reason = R_DEBUG_REASON_TRAP;
+			}
 		} else {
 			eprintf ("%soading unknown library.\n", mode?"L":"Unl");
 		}
