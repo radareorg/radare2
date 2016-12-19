@@ -70,9 +70,11 @@ static void cvt_64(union VALUETYPE *, const struct r_magic *);
 int file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
 	struct mlist *ml;
 	int rv;
-	for (ml = ms->mlist->next; ml != ms->mlist; ml = ml->next)
-		if ((rv = match(ms, ml->magic, ml->nmagic, buf, nbytes, mode)) != 0)
+	for (ml = ms->mlist->next; ml != ms->mlist; ml = ml->next) {
+		if ((rv = match(ms, ml->magic, ml->nmagic, buf, nbytes, mode)) != 0) {
 			return rv;
+		}
+	}
 	return 0;
 }
 
@@ -111,18 +113,18 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 	int firstline = 1; /* a flag to print X\n  X\n- X */
 	int printed_something = 0;
 
-	if (file_check_mem (ms, cont_level) == -1)
+	if (file_check_mem (ms, cont_level) == -1) {
 		return -1;
-
+	}
 	for (magindex = 0; magindex < nmagic; magindex++) {
 		int flush;
 		struct r_magic *m = &magic[magindex];
 
 		if ((m->flag & BINTEST) != mode) {
 			/* Skip sub-tests */
-			while (magic[magindex + 1].cont_level != 0 &&
-			       ++magindex < nmagic - 1)
+			while (magic[magindex + 1].cont_level != 0 && ++magindex < nmagic - 1) {
 				continue;
+			}
 			continue; /* Skip to next top-level test*/
 		}
 
@@ -132,20 +134,26 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 		/* if main entry matches, print it... */
 		flush = !mget(ms, s, m, nbytes, cont_level);
 		if (flush) {
-			if (m->reln == '!')
+			if (m->reln == '!') {
 				flush = 0;
+			}
 		} else {
 			int ret = magiccheck (ms, m);
-			if (ret == -1) return -1;
-			if (!ret) flush++;
+			if (ret == -1) {
+				return -1;
+			}
+			if (!ret) {
+				flush++;
+			}
 		}
 		if (flush) {
 			/*
 			 * main entry didn't match,
 			 * flush its continuations
 			 */
-			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level)
+			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
 				magindex++;
+			}
 			continue;
 		}
 
@@ -164,15 +172,17 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 			return -1;
 
 		/* and any continuations that match */
-		if (file_check_mem(ms, ++cont_level) == -1)
+		if (file_check_mem(ms, ++cont_level) == -1) {
 			return -1;
+		}
 
 		while (++magindex < nmagic - 1 && magic[magindex].cont_level != 0) {
 			m = &magic[magindex];
 			ms->line = m->lineno; /* for messages */
 
-			if (cont_level < m->cont_level)
+			if (cont_level < m->cont_level) {
 				continue;
+			}
 			if (cont_level > m->cont_level) {
 				/*
 				 * We're at the end of the level
@@ -519,7 +529,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		return -1;
 	}
 	free (buf);
-	return(t);
+	return t;
 }
 
 #define DO_CVT(fld, cast) \
@@ -1361,18 +1371,16 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 			case 0:
 				ms->search.s += (int)pmatch[0].rm_so;
 				ms->search.offset += (size_t)pmatch[0].rm_so;
-				ms->search.rm_len =
-				    (size_t)(pmatch[0].rm_eo - pmatch[0].rm_so);
+				ms->search.rm_len = (size_t)(pmatch[0].rm_eo - pmatch[0].rm_so);
 				v = 0;
 				break;
 			case R_REGEX_NOMATCH:
 				v = 1;
 				break;
 			default:
-				(void)r_regex_error(rc, &rx, errmsg, sizeof(errmsg));
-				file_magerror(ms, "regexec error %d, (%s)",
-				    rc, errmsg);
-				v = (ut64)-1;
+				(void)r_regex_error (rc, &rx, errmsg, sizeof (errmsg) - 1);
+				file_magerror (ms, "regexec error %d, (%s)", rc, errmsg);
+				v = UT64_MAX;
 				break;
 			}
 			r_regex_fini (&rx);

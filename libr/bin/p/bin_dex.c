@@ -1218,13 +1218,13 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 			} else {
 				//r_list_append (bin->methods_list, sym);
 				// XXX memleak sym
-				free (sym);
+				R_FREE (sym);
 			}
 		} else {
-			free (flag_name);
+			R_FREE (flag_name);
 		}
-		free (signature);
-		free (method_name);
+		R_FREE (signature);
+		R_FREE (method_name);
 	}
 	return p;
 }
