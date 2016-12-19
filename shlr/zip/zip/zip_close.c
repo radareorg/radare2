@@ -647,7 +647,8 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
 	0
 #endif
 	);
-
+#endif
+	
     *outp = tfp;
     return temp;
 }
