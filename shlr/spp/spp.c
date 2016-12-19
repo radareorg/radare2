@@ -152,7 +152,7 @@ retry:
 	delta = strlen (tag_post);
 
 	/* (pre) tag */
-	ptr = strstr (buf, tag_pre);
+	ptr = tag_pre? strstr (buf, tag_pre): NULL;
 	if (ptr) {
 		D printf ("==> 0.0 (%s)\n", ptr);
 		incmd = 1;
@@ -177,15 +177,16 @@ retry:
 			if (ptrr < ptr2) {
 				char *p = strdup (ptr2 + 2);
 				char *s = spp_run_str (ptrr + strlen (tag_pre), NULL);
-				D fprintf (stderr, "strcpy(%s)(%s)\n",ptrr, s);
+				D fprintf (stderr, "strcpy(%s)(%s)\n", ptrr, s);
 				strcpy (ptrr, s);
 				free (s);
 				ptr[-2] = tag_pre[0]; // XXX -2 check underflow?
 
-				D fprintf(stderr, "strcat(%s)(%s)\n",ptrr, p);
-				strcat(ptrr, p);
-				buf = ptr-2;
-				D fprintf(stderr, "CONTINUE (%s)\n", buf);
+				D fprintf (stderr, "strcat(%s)(%s)\n", ptrr, p);
+				strcat (ptrr, p);
+				buf = ptr - 2;
+				D fprintf (stderr, "CONTINUE (%s)\n", buf);
+				free (p);
 				ptrr = NULL;
 				goto retry;
 			}

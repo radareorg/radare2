@@ -48,6 +48,9 @@ R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool) {
 }
 
 R_API void* r_mem_pool_alloc(RMemoryPool *pool) {
+	if (!pool) {
+		return NULL;
+	}
 	if (pool->ncount >= pool->poolsize) {
 		if (++pool->npool >= pool->poolcount) {
 			eprintf ("FAIL: Cannot allocate more memory in the pool\n");

@@ -104,16 +104,19 @@ TAG_CALLBACK(spp_sub)
 	char *eq = strchr(buf, ' ');
 	char *var;
 	int ret = 0;
-	if (!echo[ifl]) return 0;
+	if (!echo[ifl]) {
+		return 0;
+	}
 	if (eq) {
 		*eq = '\0';
-		var = spp_var_get(buf);
-		if (var == NULL) ret = 0;
-		else ret = atoi(var);
-		ret -= atoi(eq+1);
-		r_sys_setenv(buf, eq + 1);
-	} else { /* syntax error */ }
-	return 0;
+		var = spp_var_get (buf);
+		ret = var? atoi (var): 0;
+		ret -= atoi (eq + 1);
+		r_sys_setenv (buf, eq + 1);
+	} else {
+		/* syntax error */
+	}
+	return ret;
 }
 
 // XXX This method needs some love

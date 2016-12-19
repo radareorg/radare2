@@ -54,8 +54,7 @@ static bool signatureExists(RSign *sig, RSignItem *item) {
 R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
 	int len;
 	char *data = NULL, *ptr;
-	RSignItem *si; // TODO: like in r_search.. we need r_sign_item_new ()
-			// TODO: but..we need to use a pool here..
+	RSignItem *si = NULL;
 	if (!name || !arg || !anal) {
 		return false;
 	}
@@ -76,6 +75,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 		if (!signatureExists (sig, si)) {
 			if (!r_list_append (sig->items, si)) {
 				r_sign_item_free (si);
+				si = NULL;
 			} else {
 				sig->s_func++;
 			}
@@ -86,6 +86,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 	case R_SIGN_BODY: // function body
 		if (!(data = r_anal_strmask (anal, arg))) {
 			r_sign_item_free (si);
+			si = NULL;
 			break;
 		}
 		len = strlen (data) + 4; // \xf0
@@ -94,6 +95,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 		if (!si->bytes || !si->mask) {
 			eprintf ("Cannot malloc\n");
 			r_sign_item_free (si);
+			si = NULL;
 			break;
 		}
 		si->size = r_hex_str2binmask (data, si->bytes, si->mask);
@@ -110,6 +112,7 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 				} else if (type == R_SIGN_BODY) {
 					sig->s_func++;
 				}
+				si = NULL;
 			}
 		}
 		break;
@@ -120,8 +123,8 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 		si = NULL;
 		break;
 	}
+	free (si);
 	free (data);
-
 	return false;
 }
 
@@ -130,15 +133,17 @@ R_API void r_sign_list(RSign *sig, int rad, int json) {
 		int i;
 		RListIter *iter;
 		RSignItem *si;
-		if (!r_list_empty (sig->items))
+		if (!r_list_empty (sig->items)) {
 			sig->cb_printf ("zp-\n");
+		}
 		r_list_foreach (sig->items, iter, si) {
 			sig->cb_printf ("z%c %s ", si->type, si->name);
-			for (i=0; i<si->size; i++){
-				if (!si->mask[i]) // This is a mask
+			for (i = 0; i < si->size; i++){
+				if (!si->mask[i]) { // This is a mask
 					sig->cb_printf ("..");
-				else
+				} else {
 					sig->cb_printf ("%02x", si->bytes[i]);
+				}
 			}
 			sig->cb_printf ("\n");
 		}
