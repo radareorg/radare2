@@ -117,9 +117,7 @@ static void run_state(	SStateInfo *state_info,
 	state_table[state_info->state](state_info, type_code_str);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int copy_len)
-{
+int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int copy_len) {
 	int res = 1; // all is OK
 	int str_for_copy_len = (copy_len == 0 && str_for_copy) ? strlen (str_for_copy) : copy_len;
 	int free_space = type_code_str->type_str_len - type_code_str->curr_pos - 1;
@@ -127,9 +125,14 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 
 	if (free_space > str_for_copy_len) {
 		type_code_str->type_str_len =
-				((type_code_str->type_str_len +  str_for_copy_len) << 1) + 1;
-		type_code_str->type_str = (char *) realloc(	type_code_str->type_str,
-													type_code_str->type_str_len);
+			((type_code_str->type_str_len + str_for_copy_len) << 1) + 1;
+		char *type_str = (char *) realloc (
+			type_code_str->type_str, type_code_str->type_str_len);
+		if (!type_str) {
+			R_FREE (type_code_str->type_str);
+			goto copy_string_err;
+		}
+		type_code_str->type_str = type_str;
 		if (!type_code_str->type_str) {
 			res = 0;
 			goto copy_string_err;
@@ -137,7 +140,11 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 	}
 
 	dst = type_code_str->type_str + type_code_str->curr_pos;
-	strncpy(dst, str_for_copy, str_for_copy_len);
+	if (str_for_copy) {
+		strncpy (dst, str_for_copy, str_for_copy_len);
+	} else {
+		memset (dst, 0, str_for_copy_len);
+	}
 	type_code_str->curr_pos += str_for_copy_len;
 	type_code_str->type_str[type_code_str->curr_pos] = '\0';
 

@@ -2177,22 +2177,23 @@ R_API int r_print_format_length (const char *fmt) {
 }
 
 R_API char *r_str_prefix_all (char *s, const char *pfx) {
+	char *o, *p, *os = s;
 	int newlines = 1;
 	int len = 0;
 	int plen = 0;
-	char *o, *p, *os = s;
 
 	if (s) {
-		len = strlen (s);
-		if (pfx) {
-			plen = strlen (pfx);
+		if (!pfx) {
+			return strdup (s);
 		}
+		len = strlen (s);
+		plen = strlen (pfx);
 		for (p = s; *p; p++)  {
 			if (*p == '\n') {
 				newlines++;
 			}
 		}
-		o = malloc (len + (plen*newlines) + 1);
+		o = malloc (len + (plen * newlines) + 1);
 		memcpy (o, pfx, plen);
 		for (p=o + plen; *s; s++) {
 			*p++ = *s;
@@ -2204,9 +2205,8 @@ R_API char *r_str_prefix_all (char *s, const char *pfx) {
 		*p = 0;
 		free (os);
 		return o;
-	} else {
-		return NULL;
 	}
+	return NULL;
 }
 
 #define HASCH(x) strchr (input_value,x)

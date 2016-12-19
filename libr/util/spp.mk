@@ -3,4 +3,5 @@ SPP_OBJS=spp.o
 SPPOBJS=$(addprefix ${SPPPATH},${SPP_OBJS})
 OBJS+=$(SPPOBJS)
 
-$(shell cp ${SPPPATH}/config.def.h ${SPPPATH}/config.h)
+$(SPPPATH)/config.h:
+	cp -f ${SPPPATH}/config.def.h ${SPPPATH}/config.h

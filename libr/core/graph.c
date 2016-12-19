@@ -704,7 +704,7 @@ static int dist_nodes (const RAGraph *g, const RGraphNode *a, const RGraphNode *
 				}
 			}
 
-			if (!found) {
+			if (acur && !found) {
 				int space = HORIZONTAL_NODE_SPACING;
 				if (acur->is_reversed && anext->is_reversed) {
 					if (!acur->is_reversed)
@@ -738,11 +738,11 @@ static void set_dist_nodes (const RAGraph *g, int l, int cur, int next) {
 	find_el.from = vi;
 	find_el.to = vip;
 	it = r_list_find (g->dists, &find_el, (RListComparator)find_dist);
-	d = it ? (struct dist_t *)r_list_iter_get_data (it) : R_NEW (struct dist_t);
+	d = it ? (struct dist_t *)r_list_iter_get_data (it) : R_NEW0 (struct dist_t);
 
 	d->from = vi;
 	d->to = vip;
-	d->dist = avip->x - avi->x;
+	d->dist = (avip && avi)? avip->x - avi->x: 0;
 	if (!it)
 		r_list_push (g->dists, d);
 }
@@ -1049,8 +1049,9 @@ static void adjust_directions (const RAGraph *g, int i, int from_up, Sdb *D, Sdb
 		if (from_up) wp = r_list_get_n (r_graph_innodes (g->graph, vp), 0);
 		else wp = r_graph_nth_neighbour (g->graph, vp, 0);
 		wpa = get_anode (wp);
-		if (!wpa->is_dummy) continue;
-
+		if (!wpa || !wpa->is_dummy) {
+			continue;
+		}
 		if (vm) {
 			int p = hash_get_int (P, wm);
 			int k;
@@ -1067,7 +1068,7 @@ static void adjust_directions (const RAGraph *g, int i, int from_up, Sdb *D, Sdb
 				for (k = vma->pos_in_layer + 1; k < vpa->pos_in_layer; ++k) {
 					const RGraphNode *v = g->layers[vma->layer].nodes[k];
 					const RANode *av = get_anode (v);
-					if (av->is_dummy) {
+					if (av && av->is_dummy) {
 						hash_set (D, v, from_up);
 					}
 				}
@@ -1211,29 +1212,31 @@ static void combine_sequences(const RAGraph *g, int l, const RGraphNode *bm, con
 	rm = rp = 0;
 
 	m = dist_nodes (g, vt, vtp);
-	while (atp->x - at->x < m) {
-		if (atp->x == at->x) {
-			int step = m / 2;
-			at->x -= step;
-			atp->x += m - step;
-		} else {
-			if (rm < rp) {
-				if (r_list_empty (Rm)) {
-					at->x = atp->x - m;
-				} else {
-					struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rm);
-					rm = rm + cx->len;
-					at->x = R_MAX (cx->pos, atp->x - m);
-					free (cx);
-				}
+	if (at && atp) {
+		while (atp->x - at->x < m) {
+			if (atp->x == at->x) {
+				int step = m / 2;
+				at->x -= step;
+				atp->x += m - step;
 			} else {
-				if (r_list_empty (Rp)) {
-					atp->x = at->x + m;
+				if (rm < rp) {
+					if (r_list_empty (Rm)) {
+						at->x = atp->x - m;
+					} else {
+						struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rm);
+						rm = rm + cx->len;
+						at->x = R_MAX (cx->pos, atp->x - m);
+						free (cx);
+					}
 				} else {
-					struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rp);
-					rp = rp + cx->len;
-					atp->x = R_MIN (cx->pos, at->x + m);
-					free (cx);
+					if (r_list_empty (Rp)) {
+						atp->x = at->x + m;
+					} else {
+						struct len_pos_t *cx = (struct len_pos_t *)r_list_pop (Rp);
+						rp = rp + cx->len;
+						atp->x = R_MIN (cx->pos, at->x + m);
+						free (cx);
+					}
 				}
 			}
 		}
@@ -1414,14 +1417,16 @@ static void create_edge_from_dummies (const RAGraph *g, RANode *an, RList *torem
 	e->x = r_list_new ();
 	e->y = r_list_new ();
 	e->is_reversed = an->is_reversed;
-	if (e->is_reversed) {
-		e->to = a_from;
-		add_to_list = r_list_prepend;
-		add_to_list (e->x, (void *)(size_t)an->x);
-		add_to_list (e->y, (void *)(size_t)a_from->y);
-	} else {
-		e->from = a_from;
-		add_to_list = r_list_append;
+	if (a_from) {
+		if (e->is_reversed) {
+			e->to = a_from;
+			add_to_list = r_list_prepend;
+			add_to_list (e->x, (void *)(size_t)an->x);
+			add_to_list (e->y, (void *)(size_t)a_from->y);
+		} else {
+			e->from = a_from;
+			add_to_list = r_list_append;
+		}
 	}
 
 	while (an->is_dummy) {
@@ -1681,15 +1686,18 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg);
 	}
+	if (!fcn) {
+		return;
+	}
 	r_list_sort (fcn->bbs, (RListComparator)bbcmp);
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
 
-		if (bb->addr == UT64_MAX)
+		if (bb->addr == UT64_MAX) {
 			continue;
-
+		}
 		body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
 		title = get_title (bb->addr);
 		node = r_agraph_get_node (g, title);
@@ -3072,7 +3080,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				// handle page down key
 				can->sy -= PAGEKEY_SPEED * (invscroll ? -1 : 1);
 			} else {
-				get_anode (g->curnode)->y += movspeed;
+				RANode *n = get_anode (g->curnode);
+				if (n) {
+					n->y += movspeed;
+				}
 			}
 			break;
 		case 'K':
@@ -3080,7 +3091,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				// handle page up key
 				can->sy += PAGEKEY_SPEED * (invscroll ? -1 : 1);
 			} else {
-				get_anode (g->curnode)->y -= movspeed;
+				RANode *n = get_anode (g->curnode);
+				if (n) {
+					n->y -= movspeed;
+				}
 			}
 			break;
 		case 'H':
