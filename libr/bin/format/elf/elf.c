@@ -533,12 +533,12 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		return NULL;
 	}
 	link_shdr = &bin->shdr[shdr->sh_link];
-	ut8 *edata = (ut8*) calloc (R_MIN (1, num_entries), sizeof (ut16));
+	ut8 *edata = (ut8*) calloc (R_MAX (1, num_entries), sizeof (ut16));
 	if (!edata) {
 		sdb_free (sdb);
 		return NULL;
 	}
-	ut16 *data = (ut16*) calloc (R_MIN (1, num_entries), sizeof (ut16));
+	ut16 *data = (ut16*) calloc (R_MAX (1, num_entries), sizeof (ut16));
 	if (!data) {
 		free (edata);
 		sdb_free (sdb);
@@ -835,7 +835,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	if (bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
 	}
-	if (!(need = (ut8*) calloc (R_MIN (1, shdr->sh_size), sizeof (ut8)))) {
+	if (!(need = (ut8*) calloc (R_MAX (1, shdr->sh_size), sizeof (ut8)))) {
 		eprintf ("Warning: Cannot allocate memory for Elf_(Verneed)\n");
 		goto beach;
 	}
@@ -2817,11 +2817,11 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	if (type == R_BIN_ELF_IMPORTS) {
 		R_FREE (bin->imports_by_ord);
 		bin->imports_by_ord_size = nsym + 1;
-		bin->imports_by_ord = (RBinImport**)calloc (R_MIN (1, nsym + 1), sizeof (RBinImport*));
+		bin->imports_by_ord = (RBinImport**)calloc (R_MAX (1, nsym + 1), sizeof (RBinImport*));
 	} else if (type == R_BIN_ELF_SYMBOLS) {
 		R_FREE (bin->symbols_by_ord);
 		bin->symbols_by_ord_size = nsym + 1;
-		bin->symbols_by_ord = (RBinSymbol**)calloc (R_MIN (1, nsym + 1), sizeof (RBinSymbol*));
+		bin->symbols_by_ord = (RBinSymbol**)calloc (R_MAX (1, nsym + 1), sizeof (RBinSymbol*));
 	}
 	return ret;
 beach:

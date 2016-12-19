@@ -448,7 +448,7 @@ static bool pdb7_parse(R_PDB *pdb) {
 	num_root_pages = count_pages (root_size, page_size);
 	num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
 
-	root_index_pages = (int *)calloc (sizeof (int), R_MIN (num_root_index_pages, 1));
+	root_index_pages = (int *)calloc (sizeof (int), R_MAX (num_root_index_pages, 1));
 	if (!root_index_pages) {
 		eprintf("error memory allocation\n");
 		goto error;
