@@ -73,7 +73,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	if (file) {
 		bool had_rbin_info = false;
 
-		ofile->map->from = ofrom;
+		if (ofile->map) {
+			ofile->map->from = ofrom;
+		}
 		if (ofile->desc) {
 			if (r_bin_file_delete (core->bin, ofile->desc->fd)) {
 				had_rbin_info = true;

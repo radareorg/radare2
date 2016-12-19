@@ -86,10 +86,12 @@ static RList* entries(RBinFile *arch) {
 	const r_bin_xbe_obj_t *obj;
 	RList* ret;
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (!arch || !arch->buf || !arch->o->bin_obj || !ptr)
+	if (!arch || !arch->buf || !arch->o->bin_obj || !ptr) {
+		free (ptr);
 		return NULL;
+	}
 	ret = r_list_new ();
-	if (!ret){
+	if (!ret) {
 		free (ptr);
 		return NULL;
 	}

@@ -2244,6 +2244,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		}
 	}
 	//eprintf ("Error: Unknown instruction (%s)\n", instr.mnemonic);
+	free (instr.mnemonic);
 	return -1;
 }
 
@@ -2257,8 +2258,9 @@ RAsmPlugin r_asm_plugin_x86_nz = {
 	.assemble = &assemble };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_nz,
-	.version = R2_VERSION };
+	.version = R2_VERSION
+};
 #endif

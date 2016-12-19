@@ -2554,13 +2554,15 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 		return false;
 	}
 	while (*str == ' ') str++; // use proper string chop?
-	ret = r_anal_esil_parse (esil, str);
+	(void) r_anal_esil_parse (esil, str);
 	popped = r_anal_esil_pop (esil);
 	if (popped) {
 		ut64 num;
 		if (isregornum (esil, popped, &num)) {
 			ret = !!num;
-		} else ret = 0;
+		} else {
+			ret = 0;
+		}
 		free (popped);
 	} else {
 		ERR ("ESIL stack is empty");

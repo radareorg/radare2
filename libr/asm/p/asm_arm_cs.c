@@ -89,7 +89,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 		return op->size;
 	}
-	return 0;
+	return ret;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {

@@ -668,7 +668,6 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 		if (!(r = get_pointer (p, &offset, &left, arch))) {
 			return;
 		}
-		q = 0;
 		if (r + left < r || r + sizeof (mach0_ut) < r) {
 			return;
 		}
@@ -1103,6 +1102,11 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 	// start of getting information about each class in file
 	paddr = s->paddr - obj->boffset;
 	for (i = 0; i < s->size; i += sizeof (mach0_ut)) {
+		left = s->size - i;
+		if (left < sizeof (mach0_ut)) {
+			eprintf ("Chopped classlist data\n");
+			break;
+		}
 		if (!(klass = R_NEW0 (RBinClass))) {
 			// retain just for debug
 			// eprintf ("RBinClass allocation error\n");
@@ -1119,12 +1123,6 @@ RList *MACH0_(parse_classes)(RBinFile *arch) {
 			// retain just for debug
 			// eprintf ("RList<RBinSymbol> allocation error\n");
 			goto get_classes_error;
-		}
-		p = 0;
-		left = s->size - i;
-		if (left < sizeof (mach0_ut)) {
-			eprintf ("Chopped classlist data\n");
-			break;
 		}
 		size = sizeof (mach0_ut);
 		if (paddr > arch->size || paddr + size > arch->size) {

@@ -1319,9 +1319,10 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	r_socket_read (fh, (ut8*)bufr, 5);
 	if (bufr[0] == (char)(RAP_RMT_CMD)) {
 		cmd_len = r_read_at_be32 (bufr, 1);
-		cmd = malloc (cmd_len);
-		if (cmd) {
-			char *res = r_core_cmd_str (core, cmd);
+		char *rcmd = calloc (1, cmd_len + 1);
+		if (rcmd) {
+			r_socket_read (fh, (ut8*)rcmd, cmd_len);
+			char *res = r_core_cmd_str (core, rcmd);
 			if (res) {
 				int res_len = strlen (res) + 1;
 				ut8 *pkt = r_rap_packet ((RAP_RMT_CMD | RAP_RMT_REPLY), res_len);
@@ -1330,6 +1331,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				free (res);
 				free (pkt);
 			}
+			free (rcmd);
 		}
 		/* read response */
 		r_socket_read (fh, (ut8*)bufr, 5);

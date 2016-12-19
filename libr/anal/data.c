@@ -112,7 +112,6 @@ R_API char *r_anal_data_to_string(RAnalData *d) {
 		int msz = mallocsz - idx;
 		snprintf (line + idx, msz, "..");
 		idx += 2;
-		msz -= 2;
 	}
 	strcat (line, "  ");
 	idx += 2;
@@ -120,7 +119,6 @@ R_API char *r_anal_data_to_string(RAnalData *d) {
 		switch (d->type) {
 		case R_ANAL_DATA_TYPE_STRING:
 			snprintf (line + idx, mallocsz - idx, "string \"%s\"", d->str);
-			idx = strlen (line);
 			break;
 		case R_ANAL_DATA_TYPE_WIDE_STRING:
 			strcat (line, "wide string");

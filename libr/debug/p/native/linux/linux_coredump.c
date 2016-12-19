@@ -231,7 +231,7 @@ static prstatus_t *linux_get_prstatus(int pid, int tid, proc_content_t *proc_dat
 
 	if (ptrace (PTRACE_GETREGS, tid, NULL, &regs) < 0) {
 		perror ("PTRACE_GETREGS");
-		free (proc_data->per_thread);
+		R_FREE (proc_data->per_thread);
 		free (p);
 		return NULL;
 	}
@@ -529,7 +529,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 	RDebugMap *map;
 	bool is_anonymous, is_deleted, ret;
 	char *file = NULL, *buff_maps= NULL, *buff_smaps = NULL;
-	unsigned long offset;
+	unsigned long offset = 0;
 	int size_file = 0;
 	ut8 flags_perm;
 
@@ -900,9 +900,9 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 		}
 		p_uid[temp_p_uid - p_uid - 1] = '\0';
 	} else {
-		p_uid = 0;
+		p_uid = NULL;
 	}
-	p->uid = atoi (p_uid);
+	p->uid = p_uid? atoi (p_uid): 0;
 
 	/* Gid */
 	if (temp_p_gid) {
@@ -915,9 +915,9 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 		}
 		p_gid[temp_p_gid - p_gid - 1] = '\0';
 	} else {
-		p_gid = 0;
+		p_gid = NULL;
 	}
-	p->gid = atoi (p_gid);
+	p->gid = p_gid? atoi (p_gid): 0;
 
 	free (buff);
 	/* Check the coredump_filter value if we have*/
@@ -935,12 +935,12 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 }
 
 static void may_clean_all(elf_proc_note_t *elf_proc_note, proc_content_t *proc_data, elf_hdr_t *elf_hdr) {
-	free (elf_proc_note->prpsinfo);
-	free (elf_proc_note->auxv);
+	R_FREE (elf_proc_note->prpsinfo);
+	R_FREE (elf_proc_note->auxv);
 	clean_maps (elf_proc_note->maps);
 	free (elf_proc_note);
-	free (proc_data->per_thread);
-	free (proc_data->per_process);
+	R_FREE (proc_data->per_thread);
+	R_FREE (proc_data->per_process);
 	free (proc_data);
 	free (elf_hdr);
 }
@@ -1237,6 +1237,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 	/* Start building note */
 	note_data = calloc (size, 1);
 	if (!note_data) {
+		free (thread_id);
 		free (maps_data);
 		return NULL;
 	}
@@ -1364,6 +1365,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 
 	detach_threads (dbg, thread_id, elf_proc_note->n_threads);
 	free (thread_id);
+	free (maps_data);
 	return pnote_data;
 fail:
 	free (elf_proc_note->thread_note->siginfo);

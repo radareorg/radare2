@@ -96,6 +96,7 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 	}
 	hdr = MACH0_(get_hdr_from_bytes) (arch->b);
 	if (!hdr) {
+		free (metadata);
 		free (arch);
 		free (hdr);
 		return NULL;

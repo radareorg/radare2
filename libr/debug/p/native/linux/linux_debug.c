@@ -553,7 +553,11 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 #else 
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, 0, (void*)buf);
 #endif
-		if (size > sizeof (R_DEBUG_REG_T)) size = sizeof (R_DEBUG_REG_T);
+#if DEAD_CODE
+		if (size > sizeof (R_DEBUG_REG_T)) {
+			size = sizeof (R_DEBUG_REG_T);
+		}
+#endif
 		return (ret != 0) ? false : true;
 	}
 	return false;

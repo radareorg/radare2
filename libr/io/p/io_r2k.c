@@ -338,7 +338,7 @@ struct r2k_proc_info {
 #define VM_EXEC 0x4
 #define VM_MAYSHARE 0x80
 
-static char* getargpos (const char *buf, int pos) {
+static const char* getargpos (const char *buf, int pos) {
 	int i;
 	for (i = 0; buf && i < pos; i++) {
 		buf = strchr (buf, ' ');
@@ -655,7 +655,7 @@ static int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 						proc_data.vmareastruct[i+5], (ut64) proc_data.vmareastruct[i+6]);
 				i += 7;
 				io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i]));
-				i += (strlen(&(proc_data.vmareastruct[i])) - 1 + sizeof (size_t)) / sizeof (size_t);
+				i += (strlen ((const char *)&(proc_data.vmareastruct[i])) - 1 + sizeof (size_t)) / sizeof (size_t);
 			}
 			io->cb_printf ("STACK ADDRESS = 0x%"PFMT64x"\n", (void *) proc_data.stack);
 		}

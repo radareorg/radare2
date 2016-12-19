@@ -1613,7 +1613,7 @@ R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
 	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcni) {
 		if (fcni->addr >= from && fcni->addr < to) {
-			return n++;
+			n++;
 		}
 	}
 	return n;

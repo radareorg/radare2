@@ -289,8 +289,8 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 				bin->sects[k].reserved1 = r_read_ble32 (&sec[i], bin->big_endian);
 				i += sizeof (ut32);
 				bin->sects[k].reserved2 = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
 #if R_BIN_MACH064
+				i += sizeof (ut32);
 				bin->sects[k].reserved3 = r_read_ble32 (&sec[i], bin->big_endian);
 #endif
 			}
@@ -2189,16 +2189,16 @@ int MACH0_(is_pie)(struct MACH0_(obj_t)* bin) {
 char* MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	const char *mhtype = "Unknown";
 	switch (hdr->filetype) {
-	case MH_OBJECT:		mhtype = "Relocatable object";
-	case MH_EXECUTE:	mhtype = "Executable file";
-	case MH_FVMLIB:		mhtype = "Fixed VM shared library";
-	case MH_CORE:		mhtype = "Core file";
-	case MH_PRELOAD:	mhtype = "Preloaded executable file";
-	case MH_DYLIB:		mhtype = "Dynamically bound shared library";
-	case MH_DYLINKER:	mhtype = "Dynamic link editor";
-	case MH_BUNDLE:		mhtype = "Dynamically bound bundle file";
-	case MH_DYLIB_STUB:	mhtype = "Shared library stub for static linking (no sections)";
-	case MH_DSYM:		mhtype = "Companion file with only debug sections";
+	case MH_OBJECT:     mhtype = "Relocatable object"; break;
+	case MH_EXECUTE:    mhtype = "Executable file"; break;
+	case MH_FVMLIB:     mhtype = "Fixed VM shared library"; break;
+	case MH_CORE:       mhtype = "Core file"; break;
+	case MH_PRELOAD:    mhtype = "Preloaded executable file"; break;
+	case MH_DYLIB:      mhtype = "Dynamically bound shared library"; break;
+	case MH_DYLINKER:   mhtype = "Dynamic link editor"; break;
+	case MH_BUNDLE:     mhtype = "Dynamically bound bundle file"; break;
+	case MH_DYLIB_STUB: mhtype = "Shared library stub for static linking (no sections)"; break;
+	case MH_DSYM:       mhtype = "Companion file with only debug sections"; break;
 	}
 	return strdup (mhtype);
 }

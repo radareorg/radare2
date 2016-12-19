@@ -72,16 +72,16 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 				char *tmp = strchr (subtype, ',');
 				if (tmp) {
 					*tmp++ = 0;
+					tmp = strchr (tmp, ',');
+					if (tmp) {
+						*tmp++ = 0;
+					}
+					int elements = r_num_math (NULL, tmp);
+					if (elements == 0) {
+						elements = 1;
+					}
+					ret += r_anal_type_get_size (anal, subtype) * elements;
 				}
-				tmp = strchr (tmp, ',');
-				if (tmp) {
-					*tmp++ = 0;
-				}
-				int elements = r_num_math (NULL, tmp);
-				if (elements == 0) {
-					elements = 1;
-				}
-				ret += r_anal_type_get_size (anal, subtype) * elements;
 				free (subtype);
 				ptr = next;
 			} while (next);
@@ -132,12 +132,12 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 		//for as much architectures as we want here as we want here
 		fcn->vars = r_list_new ();
 		for (i = 0; i < args_n; i++) {
-			RAnalVar *arg = R_NEW0 (RAnalVar);
 			key = r_str_newf ("func.%s.arg.%d", kv->key, i);
 			value = sdb_get (anal->sdb_types, key, 0);
 			if (value) {
 				name = strstr (value, ",");
 				*name++ = 0;
+				RAnalVar *arg = R_NEW0 (RAnalVar);
 				arg->name = strdup (name);
 				arg->type = value;
 				arg->kind = 'a';

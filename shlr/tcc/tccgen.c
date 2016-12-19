@@ -149,8 +149,8 @@ ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long long c)
                           get_tok_str(v, NULL));
     }
 	// printf (" %d %ld set symbol '%s'\n", t, c, get_tok_str(v, NULL));
-    s = *ps;
-    s = sym_malloc();
+    // s = *ps;
+    s = sym_malloc ();
     s->asm_label = NULL;
     s->v = v;
     s->type.t = t;
@@ -1479,7 +1479,7 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td)
         post_type(type, ad);
         nocode_wanted = saved_nocode_wanted;
     } else {
-	    char kind[1024];
+	    static char kind[1024];
 	    char *name = get_tok_str (*v, NULL);
 	    type_to_str (kind, sizeof(kind), type, NULL);
 	    //eprintf ("---%d %s STATIC %s\n", td, kind, name);
@@ -1491,8 +1491,9 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td)
     if (tok == TOK_ATTRIBUTE1 || tok == TOK_ATTRIBUTE2)
         parse_attribute(ad);
 
-    if (!type1.t)
+    if (!type1.t) {
         return;
+    }
     /* append type at the end of type1 */
     type2 = &type1;
     for(;;) {
@@ -1884,7 +1885,9 @@ ST_FUNC void unary(void)
                 tcc_error("field not found: %s",  get_tok_str(tok & ~SYM_FIELD, NULL));
             /* add field offset to pointer */
             vtop->type = char_pointer_type; /* change type to 'char *' */
+if (s) {
             vpushi(s->c);
+}
             /* change type to field type, and set to lvalue */
             vtop->type = s->type;
             vtop->type.t |= qualifiers;
@@ -2162,14 +2165,12 @@ static void decl_designator(CType *type, unsigned long c,
                             long long *cur_index, Sym **cur_field,
                             int size_only)
 {
-    Sym *s, *f;
-	long long index, index_last;
+    Sym *s, *f = NULL;
+    long long index, index_last;
     int notfirst, align, l, nb_elems, elem_size;
     CType type1;
 
     notfirst = 0;
-    elem_size = 0;
-    nb_elems = 1;
     if (gnu_ext && (l = is_label()) != 0)
         goto struct_field;
     while (tok == '[' || tok == '.') {
@@ -2223,10 +2224,12 @@ static void decl_designator(CType *type, unsigned long c,
             if (!notfirst)
                 *cur_field = f;
             /* XXX: fix this mess by using explicit storage field */
+if (f) {
             type1 = f->type;
             type1.t |= (type->t & ~VT_TYPE);
             type = &type1;
             c += f->c;
+}
         }
         notfirst = 1;
     }
@@ -2247,10 +2250,12 @@ static void decl_designator(CType *type, unsigned long c,
             if (!f)
                 tcc_error("too many field init");
             /* XXX: fix this mess by using explicit storage field */
+if (f) {
             type1 = f->type;
             type1.t |= (type->t & ~VT_TYPE);
             type = &type1;
             c += f->c;
+}
         }
     }
     decl_initializer(type, c, 0, size_only);
@@ -2689,7 +2694,7 @@ static void func_decl_list(Sym *func_sym)
 {
     AttributeDef ad;
     int v;
-    Sym *s;
+    Sym *s = NULL;
     CType btype, type;
 
     /* parse each declaration */
@@ -2720,7 +2725,9 @@ static void func_decl_list(Sym *func_sym)
                     tcc_error("storage class specified for '%s'", get_tok_str(v, NULL));
                 convert_parameter_type(&type);
                 /* we can add the type (NOTE: it could be local to the function) */
+if (s) {
                 s->type = type;
+}
                 /* accept other parameters */
                 if (tok == ',')
                     next();

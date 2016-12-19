@@ -934,7 +934,7 @@ repeat:
 			RCore *core = (RCore *)dbg->corebind.core;
 			RNum *num = core->num;
 			if (reason == R_DEBUG_REASON_COND) {
-				if (bp->cond && dbg->corebind.cmd) {
+				if (bp && bp->cond && dbg->corebind.cmd) {
 					dbg->corebind.cmd (dbg->corebind.core, bp->cond);
 				}
 				if (num->value) {
