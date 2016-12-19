@@ -200,6 +200,7 @@ static bool edit_bits (RCore *core) {
 		}
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
+		case 'Q':
 		case 'q':
 			return false;
 		case 'j':
@@ -490,6 +491,7 @@ R_API int r_core_visual_types(RCore *core) {
 			r_core_cmdf (core, "tl %s", vt.curname);
 			break;
 		case -1: // EOF
+		case 'Q':
 		case 'q':
 			if (optword) {
 				R_FREE (optword);
@@ -859,6 +861,7 @@ R_API int r_core_visual_classes(RCore *core) {
 		case 'h':
 		case 127: // backspace
 		case 'b': // back
+		case 'Q':
 		case 'q':
 			if (mode == 'c') {
 				return true;
@@ -1038,6 +1041,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'K': option-=10; if (option<0) option = 0; break;
 		case 'h':
 		case 'b': // back
+		case 'Q':
 		case 'q':
 			if (menu <= 0) return true;
 			menu--;
@@ -1306,6 +1310,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			r_core_cmdf (core, "s 0x%"PFMT64x, from);
 			R_FREE (p);
 			return true;
+		case 'Q':
 		case 'q':
 			R_FREE (p);
 			return true;
@@ -1470,6 +1475,7 @@ R_API void r_core_visual_config(RCore *core) {
 		case '_':
 			r_core_visual_config_hud (core);
 			break;
+		case 'Q':
 		case 'q':
 			if (menu <= 0) {
 				return;
@@ -1761,6 +1767,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 					return;
 				}
 				break;
+			case 'Q':
 			case 'q':
 				if (mode == 2 && root) {
 					r_fs_umount (core->fs, root);
@@ -2219,6 +2226,7 @@ R_API void r_core_visual_anal(RCore *core) {
 			level = 0;
 			option = _option;
 			break;
+		case 'Q':
 		case 'q':
 			if (level == 0) {
 				goto beach;
@@ -2722,6 +2730,7 @@ repeat:
 			}
 		}
 		break;
+	case 'Q':
 	case 'q':
 	default:
 		if (ch >= '0' && ch <= '9') {
@@ -2773,6 +2782,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		CASE_RGB ('R','r',r);
 		CASE_RGB ('G','g',g);
 		CASE_RGB ('B','b',b);
+		case 'Q':
 		case 'q': return;
 		case 'k': opt--; break;
 		case 'j': opt++; break;

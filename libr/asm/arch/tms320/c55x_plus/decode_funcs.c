@@ -1070,7 +1070,7 @@ char *get_opers(ut8 oper_byte) {
 		reg_name = get_reg_name_1 ((oper_byte & 0xF) + 128);
 		oper_type = (oper_byte >> 4) - 12;
 		if (oper_type) {
-			if (oper_type != 1 ) {
+			if (oper_type != 1) {
 				free (reg_name);
 				return NULL;
 			}
@@ -1125,6 +1125,5 @@ char *get_sim_reg (char *reg_arg, ut32 ins_bits) {
 		res = strdup ("<reserved>");
 		break;
 	}
-
 	return res;
 }

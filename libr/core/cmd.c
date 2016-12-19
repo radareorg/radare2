@@ -2887,4 +2887,5 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->rcmd, "u",        "uname/undo", &cmd_uname);
 	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
+	r_cmd_add (core->rcmd, "Q",        "alias for q!", &cmd_Quit);
 }

@@ -1,5 +1,19 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
 #include "r_core.h"
+
+static int cmd_Quit(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	if (input[0] == '!') {
+		r_config_set (core->config, "scr.histsave", "false");
+	}
+	if (IS_NUMBER (input[0]) || input[0] == ' ') {
+		core->num->value = r_num_math (core->num, input);
+	} else {
+		core->num->value = -1;
+	}
+	return -2;
+}
 
 static int cmd_quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -18,11 +32,7 @@ static int cmd_quit(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg);
 		break;
 	case '!':
-		if (input[1] == '!') {
-			r_config_set (core->config, "scr.histsave", "false");
-		}
-		core->num->value = -1;
-		return -2;
+		return cmd_Quit (core, input);
 	case '\0':
 		core->num->value = 0LL;
 		return -2;

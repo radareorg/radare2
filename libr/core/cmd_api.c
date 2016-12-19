@@ -99,7 +99,7 @@ R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
 
 R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) {
 	int i; // find
-	for (i=0; i<cmd->aliases.count; i++) {
+	for (i = 0; i < cmd->aliases.count; i++) {
 		int matches = !strcmp (k, cmd->aliases.keys[i]);
 		if (matches) {
 			free (cmd->aliases.values[i]);
@@ -109,12 +109,21 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) 
 	}
 	// new
 	i = cmd->aliases.count++;
-	cmd->aliases.keys = (char **)realloc (cmd->aliases.keys,
-		sizeof (char**)*cmd->aliases.count);
-	cmd->aliases.remote = (int *)realloc (cmd->aliases.remote,
-		sizeof (int*)*cmd->aliases.count);
-	cmd->aliases.values = (char **)realloc (cmd->aliases.values,
-		sizeof (char*)*cmd->aliases.count);
+	char **K = (char **)realloc (cmd->aliases.keys, sizeof (char**) * cmd->aliases.count);
+	if (!K) {
+		return 0;
+	}
+	cmd->aliases.keys = K;
+	int *R = (int *)realloc (cmd->aliases.remote, sizeof (int*) * cmd->aliases.count);
+	if (!R) {
+		return 0;
+	}
+	cmd->aliases.remote = R;
+	char **V = (char **)realloc (cmd->aliases.values, sizeof (char*) * cmd->aliases.count);
+	if (!V) {
+		return 0;
+	}
+	cmd->aliases.values = V;
 	cmd->aliases.keys[i] = strdup (k);
 	cmd->aliases.values[i] = strdup (v);
 	cmd->aliases.remote[i] = remote;
@@ -147,8 +156,9 @@ R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 
 R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const char *desc) {
 	RCmdLongItem *item = R_NEW (RCmdLongItem);
-	if (!item)
+	if (!item) {
 		return false;
+	}
 	strncpy (item->cmd, lcmd, sizeof (item->cmd)-1);
 	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
 	item->cmd_len = strlen (lcmd);
@@ -177,7 +187,7 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 
 R_API int r_cmd_del(RCmd *cmd, const char *command) {
 	int idx = (ut8)command[0];
-	free(cmd->cmds[idx]);
+	free (cmd->cmds[idx]);
 	cmd->cmds[idx] = NULL;
 	return 0;
 }
@@ -224,15 +234,16 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
 	int ret, inplen = strlen (input)+1;
 
 	r_list_foreach (cmd->lcmds, iter, c) {
-		if (inplen>=c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
+		if (inplen >= c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
 			int lcmd = strlen (c->cmd_short);
 			int linp = strlen (input+c->cmd_len);
 			/// SLOW malloc on most situations. use stack
 			inp = malloc (lcmd+linp+2); // TODO: use static buffer with R_CMD_MAXLEN
-			if (!inp)
+			if (!inp) {
 				return -1;
+			}
 			memcpy (inp, c->cmd_short, lcmd);
-			memcpy (inp+lcmd, input+c->cmd_len, linp+1);
+			memcpy (inp + lcmd, input + c->cmd_len, linp + 1);
 			ret = r_cmd_call (cmd, inp);
 			free (inp);
 			return ret;
@@ -285,14 +296,13 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	}
 
 	pbody = strchr (name, ',');
-	if (pbody) {
-		*pbody = '\0';
-		pbody++;
-	} else {
+	if (!pbody) {
 		eprintf ("Invalid macro body\n");
 		free (name);
 		return false;
 	}
+	*pbody = '\0';
+	pbody++;
 
 	if (*name && name[1] && name[strlen (name)-1]==')') {
 		eprintf ("r_cmd_macro_add: missing macro body?\n");
@@ -317,8 +327,9 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 			break;
 		}
 	}
-	if (ptr)
+	if (ptr) {
 		*ptr = ' ';
+	}
 	if (!macro) {
 		macro = (struct r_cmd_macro_item_t *)malloc (
 			sizeof (struct r_cmd_macro_item_t));

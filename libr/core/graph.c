@@ -14,6 +14,8 @@ static const char *mousemodes[] = {
 	NULL
 };
 
+#define GRAPH_MERGE_FEATURE 0
+
 #define BORDER 3
 #define BORDER_WIDTH 4
 #define BORDER_HEIGHT 3
@@ -2198,6 +2200,7 @@ static void follow_nth(RAGraph *g, int nth) {
 	}
 }
 
+#if GRAPH_MERGE_FEATURE
 #define K_NEIGHBOURS(x) (sdb_fmt(2, "agraph.nodes.%s.neighbours", x->title))
 static void agraph_merge_child(RAGraph *g, int idx) {
 	const RGraphNode *nn = r_graph_nth_neighbour (g->graph, g->curnode, idx);
@@ -2226,6 +2229,7 @@ static void agraph_merge_child(RAGraph *g, int idx) {
 	}
 	//agraph_update_seek (g, get_anode (g->curnode), false);
 }
+#endif
 
 static void agraph_toggle_mini(RAGraph *g) {
 	RANode *n = get_anode (g->curnode);
@@ -3126,6 +3130,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case -1: // EOF
 		case ' ':
+		case 'Q':
 		case 'q':
 			if (g->is_callgraph) {
 				agraph_toggle_callgraph (g);

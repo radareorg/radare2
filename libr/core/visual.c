@@ -1194,6 +1194,7 @@ static bool insert_mode_enabled(RCore *core) {
 	case 'k':
 		cursor_prevrow (core, false);
 		break;
+	case 'Q':
 	case 'q':
 		__ime = false;
 		break;
