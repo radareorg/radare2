@@ -535,63 +535,72 @@ static int redirect_socket_to_pty(RSocket *sock) {
 #if HAVE_PTY
 	// directly duplicating the fds using dup2() creates problems
 	// in case of interactive applications
-	int fdm;
+	int fdm, fds;
 
-	pid_t child_pid = forkpty (&fdm, NULL, NULL, NULL);
+	if (openpty (&fdm, &fds, NULL, NULL, NULL) == -1) {
+		perror ("opening pty");
+		return -1;
+	}
+
+	pid_t child_pid = r_sys_fork ();
+
 	if (child_pid == -1) {
-		perror ("forking pty");
+		eprintf ("cannot fork\n");
+		close(fdm);
+		close(fds);
 		return -1;
 	}
 
 	if (child_pid == 0) {
 		// child process
-		r_socket_close_fd (sock);
+		close (fds);
 
-		// disable the echo on slave stdin
-		struct termios t;
-		tcgetattr (0, &t);
-		cfmakeraw (&t);
-		tcsetattr (0, TCSANOW, &t);
+		char *buff = NULL;
+		int sockfd = sock->fd;
+		int max_fd = fdm > sockfd ? fdm : sockfd;
 
-		return 0;
+		while (true) {
+			fd_set readfds;
+			FD_ZERO (&readfds);
+			FD_SET (fdm, &readfds);
+			FD_SET (sockfd, &readfds);
+
+			if (select (max_fd + 1, &readfds, NULL, NULL, NULL) == -1) {
+				perror ("select error");
+				break;
+			}
+
+			if (FD_ISSET (fdm, &readfds)) {
+				if (fd_forward (fdm, sockfd, &buff) != 0) {
+					break;
+				}
+			}
+
+			if (FD_ISSET (sockfd, &readfds)) {
+				if (fd_forward (sockfd, fdm, &buff) != 0) {
+					break;
+				}
+			}
+		}
+
+		free (buff);
+		close (fdm);
+		r_socket_free (sock);
+		exit (0);
 	}
 
 	// parent
-	char *buff = NULL;
-	int sockfd = sock->fd;
-	int max_fd = fdm > sockfd ? fdm : sockfd;
-
-	while (true) {
-		fd_set readfds;
-		FD_ZERO (&readfds);
-		FD_SET (fdm, &readfds);
-		FD_SET (sockfd, &readfds);
-
-		int activity = select (max_fd + 1, &readfds, NULL, NULL, NULL);
-
-		if (activity < 0) {
-			perror ("select error");
-			break;
-		}
-
-		if (FD_ISSET (fdm, &readfds)) {
-			if (fd_forward (fdm, sockfd, &buff) != 0) {
-				break;
-			}
-		}
-
-		if (FD_ISSET (sockfd, &readfds)) {
-			if (fd_forward (sockfd, fdm, &buff) != 0) {
-				break;
-			}
-		}
-	}
-
-	free (buff);
+	r_socket_close_fd (sock);
+	login_tty (fds);
 	close (fdm);
-	r_socket_free (sock);
 
-	_exit (0);
+	// disable the echo on slave stdin
+	struct termios t;
+	tcgetattr (0, &t);
+	cfmakeraw (&t);
+	tcsetattr (0, TCSANOW, &t);
+
+	return 0;
 #else
 	// Fallback to socket to I/O redirection
 	return redirect_socket_to_stdio (sock);
