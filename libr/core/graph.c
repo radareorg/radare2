@@ -155,7 +155,7 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 			if (len > INT_MAX) {
 				len = INT_MAX;
 			}
-			n->w = R_MAX (n->w, (int)len);
+			// n->w = n->w; //R_MIN (n->w, (int)len);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
@@ -266,7 +266,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 
 	/* print the body */
 	if (g->zoom > ZOOM_DEFAULT) {
-		center_x = (g->zoom - ZOOM_DEFAULT) / 20;
+		center_x = (g->zoom - ZOOM_DEFAULT) / 10;
 		center_y = (g->zoom - ZOOM_DEFAULT) / 30;
 		delta_txt_x = R_MIN (delta_x, center_x);
 		delta_txt_y = R_MIN (delta_y, center_y);
@@ -2049,15 +2049,23 @@ static void agraph_print_node(const RAGraph *g, RANode *n) {
 	} else {
 		if (n->mini) {
 			n->w = strlen (n->title) + 4;
+			n->h = 1;
 #if 1
 			mini_RANode_print (g, n, cur);
 #else
 			small_RANode_print (g, n, cur);
 #endif
-			(void)r_str_bounds ("", (int *)&n->h);
 		} else {
-			n->w = r_str_bounds (n->body, (int *)&n->h);
-			n->h += 3;
+			if (n->h < 4) {
+				int titlen = strlen (n->title);
+				n->w = r_str_bounds (n->body, (int *)&n->h);
+				if (titlen > n->w) {
+					n->w = titlen + 6;
+				} else {
+					n->w += 4;
+				}
+				n->h += 3;
+			}
 			normal_RANode_print (g, n, cur);
 		}
 	}
