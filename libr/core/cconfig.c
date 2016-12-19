@@ -2055,7 +2055,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "http.uproot", "Path where files are uploaded");
 
 	/* graph */
-	SETPREF("graph.comments", "false", "Show disasm comments in graph");
+	SETPREF("graph.comments", "true", "Show disasm comments in graph");
+	SETPREF("graph.cmtright", "false", "Show comments at right");
 	SETPREF("graph.format", "dot", "Specify output format for graphs (dot, gml, gmlfcn)");
 	SETPREF("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETPREF("graph.font", "Courier", "Font for dot graphs");

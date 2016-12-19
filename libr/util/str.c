@@ -911,8 +911,8 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 }
 
 R_API char *r_str_concatlen(char *ptr, const char *string, int slen) {
-	char *ret, *msg = r_str_newlen (string, slen);
-	ret = r_str_concat (ptr, msg);
+	char *msg = r_str_newlen (string, slen);
+	char *ret = r_str_concat (ptr, msg);
 	free (msg);
 	return ret;
 }
@@ -921,7 +921,6 @@ R_API char *r_str_concatlen(char *ptr, const char *string, int slen) {
  * first argument must be allocated
  * return: the pointer ptr resized to string size.
  */
-// TODO: use vararg here?
 R_API char *r_str_concat(char *ptr, const char *string) {
 	int slen, plen;
 	if (!string && !ptr) {
@@ -966,7 +965,7 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
 }
 
 R_API char *r_str_concatch(char *x, char y) {
-	char b[2] = {y, 0};
+	char b[2] = { y, 0 };
 	return r_str_concat (x,b);
 }
 

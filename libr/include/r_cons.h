@@ -635,6 +635,7 @@ typedef struct r_ascii_node_t {
 	int is_dummy;
 	int is_reversed;
 	int klass;
+	bool mini;
 } RANode;
 
 #define R_AGRAPH_MODE_NORMAL 0
@@ -661,8 +662,8 @@ typedef struct r_ascii_graph_t {
 	int movspeed;
 
 	RANode *update_seek_on;
-	int need_reload_nodes;
-	int need_set_layout;
+	bool need_reload_nodes;
+	bool need_set_layout;
 	int need_update_dim;
 	int force_update_seek;
 
