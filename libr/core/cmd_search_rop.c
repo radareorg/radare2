@@ -243,23 +243,18 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 			goto continue_error;
 		}
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		if (esil_main) {
-			cmd_anal_esil (core, esil_main);
-		} else {
-			cmd_anal_esil (core, esil_str);
-		}
+		cmd_anal_esil (core, esil_main? esil_main: esil_str);
 		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		if (out) {
-			ops_list  = parse_list (strstr (out, "ops.list"));
-			flg_read  = parse_list (strstr (out, "flg.read"));
-			flg_write = parse_list (strstr (out, "flg.write"));
-			reg_read  = parse_list (strstr (out, "reg.read"));
-			reg_write = parse_list (strstr (out, "reg.write"));
-			mem_read  = parse_list (strstr (out, "mem.read"));
-			mem_write = parse_list (strstr (out, "mem.write"));
-		} else {
+		if (!out) {
 			goto continue_error;
 		}
+		ops_list  = parse_list (strstr (out, "ops.list"));
+		flg_read  = parse_list (strstr (out, "flg.read"));
+		flg_write = parse_list (strstr (out, "flg.write"));
+		reg_read  = parse_list (strstr (out, "reg.read"));
+		reg_write = parse_list (strstr (out, "reg.write"));
+		mem_read  = parse_list (strstr (out, "mem.read"));
+		mem_write = parse_list (strstr (out, "mem.write"));
 		if (!r_list_find (ops_list, "=", (RListComparator)strcmp)) {
 			goto continue_error;
 		}
@@ -290,10 +285,10 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 			}
 		}
 continue_error:
-	// coverity may complain here but as long as the pointer is set back to
-	// NULL is safe that is why is used R_FREE
-	FREE_ROP;	
-	r_list_free (constants);
+		// coverity may complain here but as long as the pointer is set back to
+		// NULL is safe that is why is used R_FREE
+		FREE_ROP;	
+		r_list_free (constants);
 	}
 	return ct;
 out_error:
@@ -327,11 +322,7 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 			goto out_error;
 		}
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		if (esil_main) {
-			cmd_anal_esil (core, esil_main);
-		} else {
-			cmd_anal_esil (core, esil_str);
-		}
+		cmd_anal_esil (core, esil_main? esil_main: esil_str);
 		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
 		if (out) {
 			ops_list  = parse_list (strstr (out, "ops.list"));
@@ -437,17 +428,16 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 		}
 		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
 		// r_cons_println (out);
-		if (out) {
-			ops_list  = parse_list (strstr (out, "ops.list"));
-			flg_read  = parse_list (strstr (out, "flg.read"));
-			flg_write = parse_list (strstr (out, "flg.write"));
-			reg_read  = parse_list (strstr (out, "reg.read"));
-			reg_write = parse_list (strstr (out, "reg.write"));
-			mem_read  = parse_list (strstr (out, "mem.read"));
-			mem_write = parse_list (strstr (out, "mem.write"));
-		} else {
+		if (!out) {
 			goto continue_error;
 		}
+		ops_list  = parse_list (strstr (out, "ops.list"));
+		flg_read  = parse_list (strstr (out, "flg.read"));
+		flg_write = parse_list (strstr (out, "flg.write"));
+		reg_read  = parse_list (strstr (out, "reg.read"));
+		reg_write = parse_list (strstr (out, "reg.write"));
+		mem_read  = parse_list (strstr (out, "mem.read"));
+		mem_write = parse_list (strstr (out, "mem.write"));
 
 		r_list_foreach (ops_list, iter_ops, op) {
 			r_list_foreach (head, iter_src1, item_src1) {
@@ -676,10 +666,8 @@ static int rop_classify_nops(RCore *core, RList *ropList) {
 			free (out);
 			return 0;
 		}
-		else {
-			// directly say NOP
-			continue;
-		}
+		// directly say NOP
+		continue;
 	}
 
 	return changes;

@@ -1,22 +1,19 @@
 /* radare - LGPL - Copyright 2016 - Oscar Salvador */
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 #include <r_io.h>
-
 #include "bflt/bflt.h"
 
 static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *sdb) {
-	struct r_bin_bflt_obj *res;
-	RBuffer *tbuf = NULL;
-
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
-	tbuf = r_buf_new ();
+	RBuffer *tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
-	res = r_bin_bflt_new_buf (tbuf);
+	struct r_bin_bflt_obj *res = r_bin_bflt_new_buf (tbuf);
 	r_buf_free (tbuf);
 	return res ? res : NULL;
 }
@@ -24,9 +21,7 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loaddr, Sd
 static int load(RBinFile *arch) {
 	const ut8 *bytes = r_buf_buffer (arch->buf);
 	ut64 sz = r_buf_size (arch->buf);
-
-	arch->o->bin_obj =
-		load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return arch->o->bin_obj ? true : false;
 }
 
@@ -47,12 +42,12 @@ static RList *entries(RBinFile *arch) {
 }
 
 static void __patch_reloc(RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
-	ut32 val = data_offset;
-	r_buf_write_at (buf, addr_to_patch, (void *)&val, 4);
+	ut8 val[4] = { 0 };
+	r_write_le32 (val, data_offset);
+	r_buf_write_at (buf, addr_to_patch, (void *)val, sizeof (val));
 }
 
-static int search_old_relocation(struct reloc_struct_t *reloc_table,
-				  ut32 addr_to_patch, int n_reloc) {
+static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_to_patch, int n_reloc) {
 	int i;
 	for (i = 0; i < n_reloc; i++) {
 		if (addr_to_patch == reloc_table[i].data_offset) {
@@ -181,10 +176,9 @@ static RList *relocs(RBinFile *arch) {
 								(ut8 *)&got_entry, sizeof (ut32));
 					if (!VALID_GOT_ENTRY (got_entry) || len != sizeof (ut32)) {
 						break;
-					} else {
-						got_table[i].addr_to_patch = got_entry;
-						got_table[i].data_offset = got_entry + BFLT_HDR_SIZE;
 					}
+					got_table[i].addr_to_patch = got_entry;
+					got_table[i].data_offset = got_entry + BFLT_HDR_SIZE;
 				}
 				obj->n_got = n_got;
 				obj->got_table = got_table;
@@ -203,7 +197,6 @@ static RList *relocs(RBinFile *arch) {
 		if (!reloc_table) {
 			goto out_error;
 		}
-
 		amount = n_reloc * sizeof (ut32);
 		if (amount < n_reloc || amount > UT32_MAX) {
 			free (reloc_table);
@@ -214,7 +207,6 @@ static RList *relocs(RBinFile *arch) {
 			free (reloc_table);
 			goto out_error;
 		}
-
 		if (obj->hdr->reloc_start + amount > obj->size ||
 		    obj->hdr->reloc_start + amount < amount) {
 			free (reloc_table);
@@ -222,8 +214,7 @@ static RList *relocs(RBinFile *arch) {
 			goto out_error;
 		}
 		len = r_buf_read_at (obj->b, obj->hdr->reloc_start,
-				     (ut8 *)reloc_pointer_table,
-				     amount);
+				     (ut8 *)reloc_pointer_table, amount);
 		if (len != amount) {
 			free (reloc_table);
 			free (reloc_pointer_table);

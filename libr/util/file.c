@@ -282,7 +282,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 		fclose (fd);
 		return NULL;
 	}
-	fseek (fd, 0, SEEK_SET);
+	(void)fseek (fd, 0, SEEK_SET);
 	ret = (char *)calloc (sz + 1, 1);
 	if (!ret) {
 		fclose (fd);

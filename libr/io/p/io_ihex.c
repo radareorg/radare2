@@ -224,7 +224,8 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 	//fugly macro to prevent an overflow of r_buf_write_at() len
 #define SEC_MAX (sec_size < INT_MAX)? sec_size: INT_MAX
 	ut32 sec_size = 0;
-	sec_tmp = calloc (1, UT16_MAX);
+	const int sec_count = UT16_MAX;
+	sec_tmp = calloc (1, sec_count);
 	if (!sec_tmp) {
 		goto fail;
 	}
@@ -269,7 +270,9 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 					eprintf ("unparsable data !\n");
 					goto fail;
 				}
-				sec_tmp[sec_size + i] = (ut8) byte & 0xff;
+				if (sec_size + i < sec_count) {
+					sec_tmp[sec_size + i] = (ut8) byte & 0xff;
+				}
 				cksum += byte;
 			}
 			sec_size += bc;
