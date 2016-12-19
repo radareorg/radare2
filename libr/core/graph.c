@@ -1597,8 +1597,9 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (!hc) {
 		return NULL;
 	}
-	r_config_save_num (hc, "asm.fcnlines", "asm.lines", "asm.bytes", 
-		"asm.cmtcol", "asm.marks", "asm.marks", "asm.offset", "asm.comments", NULL);
+	r_config_save_num (hc, "asm.fcnlines", "asm.lines", "asm.bytes",
+			   "asm.cmtcol", "asm.marks", "asm.marks", "asm.offset",
+			   "asm.comments", "asm.cmtright", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
 	int o_cursor = core->print->cur_enabled;
