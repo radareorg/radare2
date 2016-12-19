@@ -2553,7 +2553,7 @@ static void ds_comment_newline(RDisasmState *ds) {
 	}
 	sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
-	r_cons_printf ("\n%s%s%s%s%s  ^- %s", COLOR (ds, color_fline),
+	r_cons_printf ("\n%s%s%s%s%s  `- %s", COLOR (ds, color_fline),
 		ds->pre, sn, ds->refline, COLOR_RESET (ds),
 		COLOR (ds, pal_comment));
 }
@@ -2565,11 +2565,17 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 v = ds->analop.val;
 	bool string_found = false;
 	int aligned = 0;
+	bool newlined = false;
 #define DOALIGN() \
 	if (!aligned) { \
 		ds_align_comment (ds); \
 		if (ds->show_color) r_cons_printf (ds->pal_comment); \
 		aligned = 1; \
+	}
+#define CMTRIGHT_NL \
+	if (!newlined && !ds->show_comment_right) { \
+		ds_comment_newline (ds); \
+		newlined = true; \
 	}
 
 	if (!ds->show_comments) {
@@ -2596,7 +2602,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			st32 n32 = (st32)(n & UT32_MAX);
 			DOALIGN();
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-				ds_comment_newline (ds);
 				const char *flag = "";
 				char str[128];
 				f = r_flag_get_i (core->flags, p);
@@ -2612,12 +2617,15 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						string_found = true;
 					}
 				}
+				CMTRIGHT_NL
 				r_cons_printf (" ; 0x%"PFMT64x"%s%s", p, *flag?" ; ":"", flag);
 			} else {
 				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
+					CMTRIGHT_NL
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=-1", p, ds->analop.refptr);
 				} else if (n == n32 && (n32>-512 && n32 <512)) {
+					CMTRIGHT_NL
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=%"PFMT64d, p, ds->analop.refptr, n);
 				} else {
 					const char *kind, *flag = "";
@@ -2640,6 +2648,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						}
 					}
 					// try to guess what's in there
+					if (!ds->show_comment_right) {
+						r_cons_printf ("\n%s", ds->pre);
+					}
 					r_cons_printf (" ; [0x%"PFMT64x":%d]=0x%"PFMT64x"%s%s", p, ds->analop.refptr, n, (flag&&*flag)?" ":"", flag);
 					free (msg2);
 				}
@@ -3711,9 +3722,7 @@ toro:
 			inc = 1;
 		}
 	}
-	if (nbuf == buf) {
-		R_FREE (buf);
-	}
+	R_FREE (nbuf);
 	r_cons_break_pop ();
 
 #if HASRETRY
@@ -3726,7 +3735,7 @@ toro:
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
 			if (r_core_read_at (core, ds->addr, buf, len)) {
-				R_FREE (buf);
+				R_FREE (nbuf);
 				goto toro;
 			}
 		}
@@ -3735,14 +3744,14 @@ toro:
 			if (r_core_read_at (core, ds->addr, buf, len) != len) {
 				//ds->tries = -1;
 			}
-			R_FREE (buf);
+			R_FREE (nbuf);
 			goto toro;
 		}
 		if (continueoninvbreak) {
-			R_FREE (buf);
+			R_FREE (nbuf);
 			goto toro;
 		}
-		R_FREE (buf);
+		R_FREE (nbuf);
 	}
 #endif
 	if (ds->oldbits) {
@@ -4134,7 +4143,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				r_cons_printf (", \"value\":%"PFMT64d, (st64) caseop->value);
 				r_cons_printf (", \"jump\":%"PFMT64d, caseop->jump);
 				r_cons_printf ("}");
-				if (cnt > 0) r_cons_printf (",");
+				if (cnt > 0) {
+					r_cons_printf (",");
+				}
 			}
 			r_cons_printf ("]");
 		}
