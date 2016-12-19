@@ -4517,8 +4517,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		"at+", " [addr] [times]", "add trace for address N times",
 		"at", " [addr]", "show trace info at address",
 		"ate", "[?]", "show esil trace logs (anal.trace)",
-		"ate", " [idx]", "show commands to restore to this trace index",
-		"ate", "-", "clear esil trace logs",
 		"att", " [tag]", "select trace tag (no arg unsets)",
 		"at%", "", "TODO",
 		"ata", " 0x804020 ...", "only trace given addresses",
@@ -4588,12 +4586,17 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("|Usage: ate[ilk] [-arg]\n"
-				"| ate           esil trace log single instruction\n"
-				"| ate idx       show commands for that index log\n"
-				"| ate-*         delete all esil traces\n"
-				"| atei          esil trace log single instruction\n"
-				"| atek  [sdbq]  esil trace log single instruction\n");
+			{
+			const char *help_msg[] = {
+				"Usage:", "ate", " Show esil trace logs",
+				"ate", "", "Esil trace log for a single instruction",
+				"ate", " [idx]", "show commands for that index log",
+				"ate", "-*", "delete all esil traces",
+				"atei", "", "esil trace log single instruction",
+				"atek", " [sdb query]", "esil trace log single instruction from sdb",
+				NULL };
+			r_core_cmd_help (core, help_msg);
+		}
 		}
 		break;
 	case '?':
