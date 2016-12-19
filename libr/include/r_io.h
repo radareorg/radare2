@@ -161,6 +161,8 @@ typedef struct r_io_t {
 	void *user;
 	int (*cb_core_cmd)(void *user, const char *str);
 	char* (*cb_core_cmdstr)(void *user, const char *str);
+	/* Used for comment generation */
+	void (*cb_core_post_write)(void *user, ut64 maddr, ut8 *orig_bytes, int orig_len);
 	struct r_io_plugin_t *plugin_default;
 } RIO;
 

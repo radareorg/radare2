@@ -576,6 +576,15 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz) {
 	return ret;
 }
 
+/* Same as r_io_read_at, but not consume bytes */
+R_API int r_io_peek_at(RIO *io, const ut64 addr, ut8 *buf, const int sz) {
+	int ret = -1;
+	r_io_seek (io, addr, R_IO_SEEK_SET);
+	ret = r_io_read (io, buf, sz);
+	r_io_seek (io, addr, R_IO_SEEK_SET);
+	return ret;
+}
+
 // TODO. this is a physical resize
 R_API bool r_io_resize(RIO *io, ut64 newsize) {
 	if (io->plugin) {
@@ -649,20 +658,34 @@ R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {
 }
 
 R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
-	int i, ret = -1;
-	ut8 *data = NULL;
+	ut64 maddr = io->off;
+	int i, ret = -1, orig_len = 0;
+	ut8 *data = NULL, *orig_bytes = NULL;
 
 	/* check section permissions */
 	if (io->enforce_rwx & R_IO_WRITE) {
 		if (!(r_io_section_get_rwx (io, io->off) & R_IO_WRITE)) {
-			return -1;
+			ret = -1;
+			goto cleanup;
 		}
 	}
+
+	orig_bytes = malloc (len);
+	if (!orig_bytes) {
+		eprintf ("Cannot allocate %d bytes", len);
+		ret = -1;
+		goto cleanup;
+	}
+
+	orig_len = r_io_peek_at (io, io->off, orig_bytes, len);
 
 	if (io->cached) {
 		ret = r_io_cache_write (io, io->off, buf, len);
 		if (ret == len) {
-			return len;
+			if (orig_len > 0 && io->cb_core_post_write) {
+				io->cb_core_post_write (io->user, maddr, orig_bytes, orig_len);
+			}
+			goto cleanup;
 		}
 		if (ret > 0) {
 			len -= ret;
@@ -677,12 +700,11 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 		data = (len > 0)? malloc (len): NULL;
 		if (!data) {
 			eprintf ("malloc failed in write_mask_fd");
-			return -1;
+			ret = -1;
+			goto cleanup;
 		}
 		// memset (data, io->Oxff, len);
-		r_io_seek (io, io->off, R_IO_SEEK_SET);
-		r_io_read (io, data, len);
-		r_io_seek (io, io->off, R_IO_SEEK_SET);
+		r_io_peek_at (io, io->off, data, len);
 		for (i = 0; i < len; i++) {
 			data[i] = buf[i] &
 				io->write_mask_buf[i % io->write_mask_len];
@@ -733,7 +755,15 @@ R_API int r_io_write(RIO *io, const ut8 *buf, int len) {
 			io->off += ret;
 		}
 	}
+
+	if (ret > 0 && orig_len > 0 && io->cb_core_post_write) {
+		io->cb_core_post_write (io->user, maddr, orig_bytes, orig_len);
+	}
+
+cleanup:
 	free (data);
+	free (orig_bytes);
+
 	return ret;
 }
 
