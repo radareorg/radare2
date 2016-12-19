@@ -155,12 +155,15 @@ static void update_node_dimension(const RGraph *g, int is_small, int zoom) {
 			if (len > INT_MAX) {
 				len = INT_MAX;
 			}
+			if (len > n->w) {
+				n->w = len;
+			}
 			// n->w = n->w; //R_MIN (n->w, (int)len);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
-			n->w = R_MAX (MIN_NODE_WIDTH, (n->w * zoom) / 100);
-			n->h = R_MAX (MIN_NODE_HEIGHT, (n->h * zoom) / 100);
+			//n->w = R_MAX (MIN_NODE_WIDTH, (n->w * zoom) / 100);
+			//n->h = R_MAX (MIN_NODE_HEIGHT, (n->h * zoom) / 100);
 		}
 	}
 }
