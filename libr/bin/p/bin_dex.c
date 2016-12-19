@@ -536,10 +536,10 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		}
 		opcode = *(p4++) & 0xff;
 	}
-	r_list_free (params);
 	if (!dexdump) {
 		r_list_free (debug_positions);
 		r_list_free (emitted_debug_locals);
+		r_list_free (params);
 		return;
 	}
 
@@ -593,6 +593,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	}
 	r_list_free (debug_positions);
 	r_list_free (emitted_debug_locals);
+	r_list_free (params);
 }
 
 static int check (RBinFile *arch);

@@ -29,7 +29,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 	}
 	len = r_str_unescape (input)+zero;
 	r_hex_bin2str ((ut8*)input, len, op->buf_hex);
-	strncpy ((char*)op->buf, input, R_ASM_BUFSIZE-1);
+	strncpy ((char*)op->buf, input, R_ASM_BUFSIZE - 1);
 	return len;
 }
 
@@ -406,7 +406,8 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->ofilter) {
 		r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
 	}
-	memcpy (op->buf, buf, oplen);
+	//XXX check against R_ASM_BUFSIZE other oob write
+	memcpy (op->buf, buf, R_MIN (R_ASM_BUFSIZE - 1, oplen));
 	*op->buf_hex = 0;
 	if ((oplen * 4) >= sizeof (op->buf_hex)) {
 		oplen = (sizeof (op->buf_hex) / 4) - 1;
@@ -475,7 +476,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		r_hex_bin2str (op->buf, ret, op->buf_hex);
 		op->size = ret;
 		op->buf_hex[ret*2] = 0;
-		strncpy (op->buf_asm, b, R_ASM_BUFSIZE-1);
+		strncpy (op->buf_asm, b, R_ASM_BUFSIZE - 1);
 	}
 	free (b);
 	return ret;
