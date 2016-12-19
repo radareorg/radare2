@@ -3746,8 +3746,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		list = r_anal_xrefs_get (core->anal, addr);
 		if (list) {
 			if (input[1] == 'q') { // "axtq"
-				r_list_foreach (list, iter, ref)
+				r_list_foreach (list, iter, ref) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->addr);
+				}
 			} else if (input[1] == 'j') { // "axtj"
 				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
 				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");

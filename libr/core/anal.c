@@ -1657,24 +1657,25 @@ static int cmpfcn(const void *_a, const void *_b) {
 }
 
 /* Fill out metadata struct of functions */
-static int fcnlist_gather_metadata(RList *fcns) {
+static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
+	RList *refs = NULL;
 
 	r_list_foreach (fcns, iter, fcn) {
 		// Count the number of references and number of calls
 		RListIter *callrefiter;
 		RAnalRef *ref;
 		int numcallrefs = 0;
-		int numrefs = 0;
 		r_list_foreach (fcn->refs, callrefiter, ref) {
 			if (ref->type == R_ANAL_REF_TYPE_CALL) {
 				numcallrefs++;
 			}
-			numrefs++;
 		}
-		fcn->meta.numrefs = numrefs;
 		fcn->meta.numcallrefs = numcallrefs;
+		refs = r_anal_xrefs_get (anal, fcn->addr);
+		fcn->meta.numrefs = refs? refs->length: 0; 
+		r_list_free (refs);
 
 		// Determine the bounds of the functions address space
 		ut64 min = UT64_MAX;
@@ -2078,13 +2079,17 @@ static int fcn_list_legacy(RCore *core, RList *fcns)
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
-	RList *fcns = core->anal->fcns;
+	RList *fcns = NULL;
+	if (!core || !core->anal) {
+		return 0;
+	}
+	fcns = core->anal->fcns;
 	if (r_list_empty (fcns)) {
 		return 0;
 	}
 
 	r_list_sort (fcns, &cmpfcn);
-	fcnlist_gather_metadata (fcns);
+	fcnlist_gather_metadata (core->anal, fcns);
 
 	if (input) {// input points to a filter argument
 		const char *name = input;

@@ -135,7 +135,9 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 
 R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	RList *list = r_list_new ();
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 	list->free = NULL; // XXX
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_NULL, to);
 	r_anal_xrefs_from (anal, list, "ref", R_ANAL_REF_TYPE_CODE, to);
