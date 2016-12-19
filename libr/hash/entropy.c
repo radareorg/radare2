@@ -16,7 +16,7 @@ static double get_px(ut8 x, const ut8 *data, ut64 size) {
                         count++;
 		}
 	}
-        return (double) count / size;
+        return size > 0? (double) count / size: 0;
 }
 
 R_API double r_hash_entropy(const ut8 *data, ut64 size) {
@@ -24,8 +24,9 @@ R_API double r_hash_entropy(const ut8 *data, ut64 size) {
         double h = 0, px, log2 = log (2.0);
         for (x = 0; x < 256; x++) {
                 px = get_px (x, data, size);
-                if (px > 0)
+                if (px > 0) {
                         h += -px * (log (px) / log2);
+		}
         }
         return h;
 }

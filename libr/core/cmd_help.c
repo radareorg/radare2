@@ -463,7 +463,7 @@ static int cmd_help(void *data, const char *input) {
 			"$b", "", "block size",
 			"$B", "", "base address (aligned lowest map address)",
 			"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
-			"$fl", "", "flag length (size) at current address (fla; pD $l @ entry0)"
+			"$fl", "", "flag length (size) at current address (fla; pD $l @ entry0)",
 			"$F", "", "current function size",
 			"$FB", "", "begin of function",
 			"$Fb", "", "address of the current basic block",
