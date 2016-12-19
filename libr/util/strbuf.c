@@ -16,7 +16,9 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 
 R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 	int l;
-	if (!sb) return false;
+	if (!sb) {
+		return false;
+	}
 	if (!s) {
 		r_strbuf_init (sb);
 		return true;
@@ -26,7 +28,9 @@ R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 		char *ptr = sb->ptr;
 		if (!ptr || l+1 > sb->ptrlen) {
 			ptr = malloc (l + 1);
-			if (!ptr) return false;
+			if (!ptr) {
+				return false;
+			}
 			sb->ptrlen = l + 1;
 			sb->ptr = ptr;
 		}

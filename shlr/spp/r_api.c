@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
-#if NO_UTIL
+/* radare - LGPL - Copyright 2013-2016 - pancake */
 
-#include "r_strbuf.h"
+#if !HAVE_R_UTIL
 
+#include "r_api.h"
 
 RStrBuf *r_strbuf_new(const char *str) {
 	RStrBuf *s = R_NEW0 (RStrBuf);
@@ -84,6 +84,26 @@ void r_strbuf_free(RStrBuf *sb) {
 void r_strbuf_fini(RStrBuf *sb) {
 	if (sb && sb->ptr)
 		R_FREE (sb->ptr);
+}
+
+/* --------- */
+int r_sys_setenv(const char *key, const char *value) {
+#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
+	if (!key) {
+		return 0;
+	}
+	if (!value) {
+		unsetenv (key);
+		return 0;
+	}
+	return setenv (key, value, 1);
+#elif __WINDOWS__
+	SetEnvironmentVariable (key, (LPSTR)value);
+	return 0; // TODO. get ret
+#else
+#warning r_sys_setenv : unimplemented for this platform
+	return 0;
+#endif
 }
 
 #endif // NO_UTIL

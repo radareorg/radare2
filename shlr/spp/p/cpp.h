@@ -11,7 +11,7 @@ TAG_CALLBACK(cpp_error)
 	do_printf (out,"\n");
 	if (echo[ifl] && buf != NULL) {
 		do_printf (out, "ERROR: %s (line=%d)\n", buf, lineno);
-		return 1;
+		return -1;
 	}
 	return 0;
 }
@@ -38,24 +38,20 @@ TAG_CALLBACK(cpp_if)
 TAG_CALLBACK(cpp_ifdef)
 {
 	char *var = getenv (buf);
-	if (var) {
-		echo[ifl + 1] = 1;
-	} else {
-		echo[ifl + 1] = 0;
-	}
+	echo[ifl + 1] = var? 1: 0;
 	return 1;
 }
 
 TAG_CALLBACK(cpp_else)
 {
-	echo[ifl] = echo[ifl]?0:1;
+	echo[ifl] = echo[ifl]? 0: 1;
 	return 0;
 }
 
 TAG_CALLBACK(cpp_ifndef)
 {
-	cpp_ifdef(buf, out);
-	cpp_else(buf, out);
+	cpp_ifdef (buf, out);
+	cpp_else (buf, out);
 	return 1;
 }
 
@@ -64,6 +60,7 @@ static struct cpp_macro_t {
 	char *args;
 	char *body;
 } cpp_macros[10];
+
 static int cpp_macros_n = 0;
 
 static void cpp_macro_add(char *name, char *args, char *body)
@@ -71,9 +68,10 @@ static void cpp_macro_add(char *name, char *args, char *body)
 	char *ptr;
 	cpp_macros[cpp_macros_n].args = strdup(args);
 	cpp_macros[cpp_macros_n].body = strdup(body);
-	ptr = strchr(name, '(');
-	if (ptr)
-		ptr[1]='\0';
+	ptr = strchr (name, '(');
+	if (ptr) {
+		ptr[1] = '\0';
+	}
 	cpp_macros[cpp_macros_n].name = strdup(name);
 	cpp_macros_n++;
 }
@@ -100,8 +98,8 @@ TAG_CALLBACK(cpp_define)
 		*eq = '\0';
 		if (macro) {
 			/*macro[0]='\0'; */
-			ptr = strchr(macro+1, ')');
-			if (ptr==NULL) {
+			ptr = strchr (macro + 1, ')');
+			if (!ptr) {
 				fprintf(stderr, "Invalid syntax\n");
 				return 1;
 			}

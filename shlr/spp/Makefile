@@ -1,10 +1,11 @@
-override CFLAGS+=-g -Wall -MD
 PREFIX?=/usr
 BINDIR=${DESTDIR}${PREFIX}/bin
 INSTALL_BIN=install -m 0755
-OBJ=spp.o main.o p/strbuf.o
+OBJ=spp.o main.o r_api.o
 ODF=$(subst .o,.d,$(OBJ))
 BIN=spp
+
+CFLAGS?=-Wall -O2
 
 all: ${BIN}
 

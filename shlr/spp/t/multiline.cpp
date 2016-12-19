@@ -1,2 +1,0 @@
-#define FOO hello \
-world

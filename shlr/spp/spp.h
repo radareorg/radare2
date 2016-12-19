@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#if NO_UTIL
-#include "p/r_strbuf.h"
-int r_sys_setenv(const char *key, const char *value);
-#else
+#if HAVE_R_UTIL
 #include <r_util.h>
+#else
+#include "r_api.h"
+int r_sys_setenv(const char *key, const char *value);
 #endif
 
 #ifdef __WINDOWS__
@@ -77,7 +77,7 @@ struct Proc {
 
 
 int spp_file(const char *file, Output *out);
-void spp_run(char *buf, Output *out);
+int spp_run(char *buf, Output *out);
 void spp_eval(char *buf, Output *out);
 void spp_io(FILE *in, Output *out);
 void do_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
