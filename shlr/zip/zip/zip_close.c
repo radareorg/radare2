@@ -98,7 +98,7 @@ zip_close(struct zip *za)
 	}
 	zip_discard(za);
 	return 0;
-    }	       
+    }
 
     if (!changed) {
 	zip_discard(za);
@@ -109,7 +109,7 @@ zip_close(struct zip *za)
         _zip_error_set(&za->error, ZIP_ER_INTERNAL, 0);
         return -1;
     }
-    
+
     if ((filelist=(struct zip_filelist *)malloc(sizeof(filelist[0])*survivors)) == NULL)
 	return -1;
 
@@ -134,7 +134,6 @@ zip_close(struct zip *za)
             _zip_error_set(&za->error, ZIP_ER_INTERNAL, 0);
             return -1;
         }
-        
 	filelist[j].idx = i;
 	filelist[j].name = zip_get_name(za, i, 0);
 	j++;
@@ -150,7 +149,6 @@ zip_close(struct zip *za)
 	free(filelist);
 	return -1;
     }
-    
     
     if (zip_get_archive_flag(za, ZIP_AFL_TORRENT, 0))
 	qsort(filelist, survivors, sizeof(filelist[0]),
@@ -257,7 +255,6 @@ zip_close(struct zip *za)
 	free(temp);
 	return -1;
     }
-    
     if (za->zp) {
 	fclose(za->zp);
 	za->zp = NULL;
@@ -281,7 +278,6 @@ zip_close(struct zip *za)
 
     zip_discard(za);
     free(temp);
-    
     return 0;
 }
 
@@ -296,7 +292,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de, FILE *ft
     int ret;
     int is_zip64;
     zip_flags_t flags;
-    
+
     if (zip_source_stat(src, &st) < 0) {
 	_zip_error_set_from_source(&za->error, src);
 	return -1;
@@ -395,7 +391,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de, FILE *ft
 	
     if (zip_source_stat(s2, &st) < 0)
 	ret = -1;
-    
+
     while (s2 != src) {
 	if ((s2=zip_source_pop(s2)) == NULL) {
 	    /* XXX: set erorr */
@@ -508,7 +504,7 @@ copy_source(struct zip *za, struct zip_source *src, FILE *ft)
 	    break;
 	}
     }
-    
+
     if (n < 0) {
 	if (ret == 0)
 	    _zip_error_set_from_source(&za->error, src);
@@ -516,7 +512,7 @@ copy_source(struct zip *za, struct zip_source *src, FILE *ft)
     }	
 
     zip_source_close(src);
-    
+
     return ret;
 }
 
@@ -529,7 +525,7 @@ write_cdir(struct zip *za, const struct zip_filelist *filelist, zip_uint64_t sur
     zip_int64_t size;
     uLong crc;
     char buf[TORRENT_CRC_LEN+1];
-    
+
     cd_start = ftello(out);
 	if (cd_start < 0)
 		return -1;
@@ -598,7 +594,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
     char *temp;
     int tfd;
     FILE *tfp;
-    
+
     if (za->tempdir) {
         if ((temp=(char *)malloc(strlen(za->tempdir)+13)) == NULL) {
             _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
@@ -642,8 +638,15 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
       According to Pierre Joye, Windows in some environments per
       default creates text files, so force binary mode.
     */
-    _setmode(_fileno(tfp), _O_BINARY );
+    _setmode(_fileno(tfp),
+#if O_BINARY
+	O_BINARY
+#elif _O_BINARY
+	_O_BINARY
+#else
+	0
 #endif
+	);
 
     *outp = tfp;
     return temp;
