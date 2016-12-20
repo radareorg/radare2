@@ -690,7 +690,7 @@ repeat:
 			} else if (!strcmp (action, "2048")) {
 				r_cons_2048 (can->color);
 			} else if (strstr (action, "License")) {
-				r_cons_message ("Copyright 2006-2015 - pancake - LGPL");
+				r_cons_message ("Copyright 2006-2016 - pancake - LGPL");
 			} else if (strstr (action, "Fortune")) {
 				char *s = r_core_cmd_str (core, "fo");
 				r_cons_message (s);
