@@ -196,7 +196,10 @@ static BOOL WINAPI (*w32_SetXStateFeaturesMask)(PCONTEXT Context, DWORD64) = NUL
 #define XSTATE_LEGACY_SSE 1
 #endif
 
-#ifndef XSTATE_MASK_GSSE
+#if !defined(XSTATE_MASK_GSSE) || defined(MINGW32)
+#if defined(XSTATE_MASK_GSSE)
+#undef XSTATE_MASK_GSSE
+#endif
 #define XSTATE_MASK_GSSE (1LLU << (XSTATE_GSSE))
 #endif
 
