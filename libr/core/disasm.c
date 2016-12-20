@@ -3735,7 +3735,6 @@ toro:
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
 			if (r_core_read_at (core, ds->addr, buf, len)) {
-				R_FREE (nbuf);
 				goto toro;
 			}
 		}
@@ -3744,11 +3743,9 @@ toro:
 			if (r_core_read_at (core, ds->addr, buf, len) != len) {
 				//ds->tries = -1;
 			}
-			R_FREE (nbuf);
 			goto toro;
 		}
 		if (continueoninvbreak) {
-			R_FREE (nbuf);
 			goto toro;
 		}
 		R_FREE (nbuf);
@@ -3764,6 +3761,7 @@ toro:
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
 	ds_free (ds);
+	R_FREE (nbuf);
 	/* used by asm.emu */
 	r_reg_arena_pop (core->anal->reg);
 	return idx; //-ds->lastfail;

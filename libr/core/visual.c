@@ -424,7 +424,7 @@ static void findPair (RCore *core) {
 	p = (const ut8*)strchr (keys, ch);
 	if (p) {
 		char p_1 = 0;
-		if ((char *)p != keys) {
+		if ((const char *)p != keys) {
 			p_1 = p[-1];
 		}
 		delta = (size_t)(p-(const ut8*)keys);
