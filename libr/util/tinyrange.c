@@ -41,7 +41,7 @@ R_API bool r_tinyrange_in(RRangeTiny *bbr, ut64 at) {
 			if (at >= bbr->ranges[idx] && at < bbr->ranges[idx + 1]) {
 				return true;
 			} 
-			if (!idx || idx >= lastIndex) {
+			if (idx >= lastIndex) {
 				return false;
 			}
 			if (at < bbr->ranges[idx]) {
