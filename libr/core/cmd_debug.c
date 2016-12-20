@@ -2998,11 +2998,16 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			break;
 		default:
 		case '?':
-			eprintf ("|Usage: dcs [syscall-name-or-number]\n");
-			eprintf ("|dcs         : continue until next syscall\n");
-			eprintf ("|dcs mmap    : continue until next call to mmap\n");
-			eprintf ("|dcs*        : trace all syscalls (strace)\n");
-			eprintf ("|dcs?        : show this help\n");
+			{
+				const char* help_msg[] = {
+					"Usage:", "dcs", " Continue until syscall",
+					"dcs", "", "Continue until next syscall",
+					"dcs [str]", "", "Continue until next call to the 'str' syscall",
+					"dcs", "*", "trace all syscalls, a la strace",
+					NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			}
 			break;
 		}
 		break;
