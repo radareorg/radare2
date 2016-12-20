@@ -23,7 +23,8 @@ LDFLAGS+=-ldl
 endif
 endif
 
-CFLAGS=-I../../libr/include/
+CFLAGS+=-I../../libr/include/
+CFLAGS+=-I$(SHLR)/spp
 
 #ifeq ($(STATIC_BUILD),1)
 ifeq ($(WITHNONPIC),1)

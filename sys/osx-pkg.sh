@@ -13,7 +13,7 @@ if [ -n "$1" ]; then
 	VERSION="$1"
 else
 	VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
-	[ -z "${VERSION}" ] && VERSION=0.10.5
+	[ -z "${VERSION}" ] && VERSION=1.1.0
 fi
 [ -z "${MAKE}" ] && MAKE=make
 
