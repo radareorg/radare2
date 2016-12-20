@@ -2854,9 +2854,14 @@ static bool cmd_dcu (RCore *core, const char *input) {
 	bool dcu_range = false;
 	bool invalid = (!input[0] || !input[1] || !input[2]);
 	if (invalid || (input[2] != ' ' && input[2] != '.')) {
-		eprintf ("|Usage: dcu <address>\n");
-		eprintf ("|Usage: dcu[..tail]\n");
-		eprintf ("|Usage: dcu [from] [to]\n");
+		const char* help_msg[] = {
+			"Usage:", "dcu", " Continue until address",
+			"dcu", " address", "Continue until address",
+			"dcu", " [..tail]", "Continue until the range",
+			"dcu", " [from] [to]", "Continue until the range",
+			NULL
+		};
+		r_core_cmd_help (core, help_msg);
 		return false;
 	}
 	from = UT64_MAX;
