@@ -631,7 +631,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 
 	if (has_next) {
 		for (i = 0; i < nexti; i++) {
-			if (!next[i]) {
+			if (!next[i] || r_anal_get_fcn_in (core->anal, next[i], 0)) {
 				continue;
 			}		
 			r_core_anal_fcn (core, next[i], from, 0, depth - 1);
