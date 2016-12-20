@@ -149,15 +149,16 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 			char white [128];
 			int idx = -delta_x;
 			memset (white, ' ', sizeof(white));
-			if (idx>=sizeof(white))
-				idx = sizeof (white)-1;
+			if (idx >= sizeof (white)) {
+				idx = sizeof (white) - 1;
+			}
 			white[idx] = 0;
 			text = r_str_ansi_crop (foo,
-				0, delta_y, n->w + delta_x, n->h - 2 + delta_y);
+				0, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
 			text = r_str_prefix_all (text, white);
 		} else {
 			text = r_str_ansi_crop (foo,
-				delta_x, delta_y, n->w + delta_x, n->h - 2 + delta_y);
+				delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
 		}
 		if (text) {
 			W (text);
