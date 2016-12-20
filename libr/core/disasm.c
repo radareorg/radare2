@@ -1416,7 +1416,9 @@ static void ds_show_flags(RDisasmState *ds) {
 				ds_beginline (ds, f, false);
 			} else {
 				ds_print_lines_left (ds);
-				r_cons_printf ("  ");
+				if (ds->show_fcnlines) {
+					r_cons_printf ("  ");
+				}
 			}
 			ds_print_offset (ds);
 			r_cons_printf (" ");
@@ -1425,9 +1427,9 @@ static void ds_show_flags(RDisasmState *ds) {
 			ds_print_lines_left (ds);
 			r_cons_printf (";-- ");
 		}
-		if (ds->show_color)
+		if (ds->show_color) {
 			r_cons_strcat (ds->color_flag);
-		//beginch = (iter->p && printed) ? ", " : "";
+		}
 		if (ds->asm_demangle && flag->realname) {
 			const char *lang = r_config_get (core->config, "bin.lang");
 			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset);
@@ -1436,11 +1438,10 @@ static void ds_show_flags(RDisasmState *ds) {
 		} else {
 			r_cons_printf ("%s:\n", flag->name);
 		}
-		//printed = true;
 	}
 	if (ds->show_spacy) {
 		if (!r_list_empty (flaglist)) {
-			ds_print_spacy(ds, false);
+			ds_print_spacy (ds, false);
 		}
 	}
 }
