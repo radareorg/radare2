@@ -973,9 +973,12 @@ static int cmd_write(void *data, const char *input) {
 				eprintf ("Usage wts host:port [sz]\n");
 			}
 		} else if (*str == '?' || *str == '\0') {
-			eprintf ("Usage: wt[a] file [size]   write 'size' bytes in current block to file\n");
-			eprintf (" wta [filename] - append to file\n");
-			eprintf (" wtf [filename] - write to file (see also wxf and wf?\n");
+			const char* help_msg[] = {
+				"Usage:", "wt[a] file [size]", " Write 'size' bytes in current blok to 'file'",
+				"wta", " [filename]", "append to 'filename'",
+				"wtf", " [filename]", "write to file (see also 'wxf' and 'wf?')",
+				NULL};
+			r_core_cmd_help (core, help_msg);
 			free (ostr);
 			return 0;
 		} else {
