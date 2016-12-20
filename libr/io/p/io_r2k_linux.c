@@ -1,6 +1,6 @@
 #include "io_r2k_linux.h"
 
-static char* getargpos (const char *buf, int pos) {
+static const char* getargpos (const char *buf, int pos) {
 	int i;
 	for (i = 0; buf && i < pos; i++) {
 		buf = strchr (buf, ' ');
@@ -21,6 +21,28 @@ static size_t getvalue (const char *buf, int pos) {
 		ret = -1;
 	}
 	return ret;
+}
+
+static void print_help (RIO *io, ut64 num, int p_usage) {
+	int i = 0;
+	const char* usage = "Usage:   =![MprRw][lpP] [args...]";
+	const char* help_msg[] = {"=!M                      Print kernel memory map",
+				  "=!p      pid             Print process information",
+				  "=!rl     addr len        Read from linear address",
+				  "=!rp     pid addr len    Read from process address",
+				  "=!rP     addr len        Read physical address",
+				  "=!R                      Print control registers",
+				  "=!wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
+				  "=!wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
+				  "=!wP[x]  addr input      Write at physical address. Use =!wPx for input in hex"};
+	if (p_usage) {
+		io->cb_printf ("%s\n", usage);
+	}
+	for (i = 0; i < sizeof (ut64) * 8 && i < (sizeof (help_msg) / sizeof (char*)); i++) {
+		if (num & (1<<i)) {
+			io->cb_printf ("%s\n", help_msg[i]);
+		}
+	}
 }
 
 int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len) {
@@ -99,39 +121,59 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			case 'l':
 				//read linear address
 				//=! rl addr len
-				pid = 0;
-				addr = getvalue (buf, 1);
-				len = getvalue (buf, 2);
-				if (addr == -1 || len == -1) {
-					io->cb_printf ("Invalid number of arguments.\n");
+				if (buf[2] != ' ') {
+					print_help (io, 0x4, 0);
+					goto end;
+				} else {
+					pid = 0;
+					addr = getvalue (buf, 1);
+					len = getvalue (buf, 2);
+					if (addr == -1 || len == -1) {
+						io->cb_printf ("Invalid number of arguments.\n");
+						print_help (io, 0x4, 0);
+						goto end;
+					}
+					ioctl_n = IOCTL_READ_KERNEL_MEMORY;
 					break;
 				}
-				ioctl_n = IOCTL_READ_KERNEL_MEMORY;
-				break;
 			case 'p':
 				//read process address
 				//=! rp pid address len
-				pid = getvalue (buf, 1);
-				addr = getvalue (buf, 2);
-				len = getvalue (buf, 3);
-				if (pid == -1 || addr == -1 || len == -1) {
-					io->cb_printf ("Invalid number of arguments.\n");
+				if (buf[2] != ' ') {
+					print_help (io, 0x8, 0);
+					goto end;
+				} else {
+					pid = getvalue (buf, 1);
+					addr = getvalue (buf, 2);
+					len = getvalue (buf, 3);
+					if (pid == -1 || addr == -1 || len == -1) {
+						io->cb_printf ("Invalid number of arguments.\n");
+						print_help (io, 0x8, 0);
+						goto end;;
+					}
+					ioctl_n = IOCTL_READ_PROCESS_ADDR;
 					break;
 				}
-				ioctl_n = IOCTL_READ_PROCESS_ADDR;
-				break;
 			case 'P':
 				//read physical address
 				//=! rP address len
-				pid = 0;
-				addr = getvalue (buf, 1);
-				len = getvalue (buf, 2);
-				if (addr == -1 || len == -1) {
-					io->cb_printf ("Invalid number of arguments.\n");
+				if (buf[2] != ' ') {
+					print_help (io, 0x10, 0);
+					goto end;
+				} else {
+					pid = 0;
+					addr = getvalue (buf, 1);
+					len = getvalue (buf, 2);
+					if (addr == -1 || len == -1) {
+						io->cb_printf ("Invalid number of arguments.\n");
+						print_help (io, 0x10, 0);
+						goto end;
+					}
+					ioctl_n = IOCTL_READ_PHYSICAL_ADDR;
+					break;
 				}
-				ioctl_n = IOCTL_READ_PHYSICAL_ADDR;
-				break;
 			default:
+				print_help(io, 0x1c, 0);
 				r_print_free (print);
 				goto end;
 			}
@@ -153,40 +195,59 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		case 'l':
 			//write linear address
 			//=! wl addr str
-			pid = 0;
-			addr = getvalue (buf, 1);
-			buf = getargpos (buf, 2);
-			if (addr == -1 || !buf) {
-				io->cb_printf ("Invalid number of arguments.\n");
+			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
+				print_help (io, 0x40, 0);
+				goto end;
+			} else {
+				pid = 0;
+				addr = getvalue (buf, 1);
+				buf = getargpos (buf, 2);
+				if (addr == -1 || !buf) {
+					io->cb_printf ("Invalid number of arguments.\n");
+					print_help (io, 0x40, 0);
+					goto end;
+				}
+				ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
 				break;
 			}
-			ioctl_n = IOCTL_WRITE_KERNEL_MEMORY;
-			break;
 		case 'p':
 			//write process address
 			//=! wp pid address str
-			pid = getvalue (buf, 1);
-			addr = getvalue (buf, 2);
-			buf = getargpos (buf, 3);
-			if (pid == -1 || addr == -1 || !buf) {
-				io->cb_printf ("Invalid number of arguments.\n");
+			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
+				print_help (io, 0x80, 0);
+				goto end;
+			} else {
+				pid = getvalue (buf, 1);
+				addr = getvalue (buf, 2);
+				buf = getargpos (buf, 3);
+				if (pid == -1 || addr == -1 || !buf) {
+					io->cb_printf ("Invalid number of arguments.\n");
+					print_help (io, 0x80, 0);
+					goto end;
+				}
+				ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
 				break;
 			}
-			ioctl_n = IOCTL_WRITE_PROCESS_ADDR;
-			break;
 		case 'P':
 			//write physical address
 			//=! wP address str
-			pid = 0;
-			addr = getvalue (buf, 1);
-			buf = getargpos (buf, 2);
-			if (addr == -1 || !buf) {
-				io->cb_printf ("Invalid number of arguments.\n");
+			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
+				print_help (io, 0x100, 0);
+				goto end;
+			} else {
+				pid = 0;
+				addr = getvalue (buf, 1);
+				buf = getargpos (buf, 2);
+				if (addr == -1 || !buf) {
+					io->cb_printf ("Invalid number of arguments.\n");
+					print_help (io, 0x100, 0);
+					goto end;
+				}
+				ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
 				break;
 			}
-			ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
-			break;
 		default:
+			print_help(io, 0x1c0, 0);
 			goto end;
 		}
 		if (!buf) {
@@ -210,6 +271,10 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		{
 			//Print kernel memory map.
 			//=! M
+			if ((buf[1] == ' ' && getargpos (buf, 1)) || (buf[1] && buf[1] != ' ')) {
+				print_help (io, 0x1, 0);
+				goto end;
+			}
 			int i, j;
 			struct r2k_kernel_maps map_data;
 			struct r2k_kernel_map_info *info;
@@ -251,6 +316,10 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		{
 			//Read control registers
 			//=! R
+			if (getargpos (buf, 1)) {
+				print_help (io, 0x20, 0);
+				goto end;
+			}
 			struct r2k_control_reg reg_data;
 			ioctl_n = IOCTL_READ_CONTROL_REG;
 			ret = ioctl (iodesc->fd, ioctl_n, &reg_data);
@@ -269,7 +338,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			io->cb_printf ("cr3 = 0x%"PFMT64x"\n", (ut64) reg_data.cr3);
 			io->cb_printf ("cr4 = 0x%"PFMT64x"\n", (ut64) reg_data.cr4);
 #if __x86_64__
-			io->cb_printf ("cr8 = 0x%p\n", reg_data.cr8);
+			io->cb_printf ("cr8 = 0x%"PFMT64x"\n", (ut64) reg_data.cr8);
 #endif
 #elif __arm__
 			io->cb_printf ("ttbr0 = 0x%"PFMT64x"\n", (ut64) reg_data.ttbr0);
@@ -289,11 +358,16 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		{
 			//Print process info
 			//=! p pid
+			if (*(buf + 1) != ' ') {
+				print_help (io, 0x2, 0);
+				goto end;
+			}
 			int i;
 			struct r2k_proc_info proc_data;
 			pid = getvalue (buf, 1);
 			if (pid == -1) {
 				io->cb_printf ("Invalid number of arguments.\n");
+				print_help (io, 0x2, 0);
 				break;
 			}
 			proc_data.pid = pid;
@@ -320,24 +394,14 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 						proc_data.vmareastruct[i+5], (ut64) proc_data.vmareastruct[i+6]);
 				i += 7;
 				io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i]));
-				i += (strlen(&(proc_data.vmareastruct[i])) - 1 + sizeof (size_t)) / sizeof (size_t);
+				i += (strlen ((const char *)&(proc_data.vmareastruct[i])) - 1 + sizeof (size_t)) / sizeof (size_t);
 			}
-			io->cb_printf ("STACK ADDRESS = 0x%"PFMT64x"\n", (void *) proc_data.stack);
+			io->cb_printf ("STACK BASE ADDRESS = 0x%"PFMT64x"\n", (void *) proc_data.stack);
 		}
 		break;
 	default:
 		{
-			const char* help_msg = "Usage:   =![MprRw][lpP] [args...]\n" \
-				"=!M                      Print kernel memory map\n" \
-				"=!p      pid             Print process information\n" \
-				"=!rl     addr len        Read from linear address\n" \
-				"=!rp     pid addr len    Read from process address\n" \
-				"=!rP     addr len        Read physical address\n" \
-				"=!R                      Print control registers\n" \
-				"=!wl[x]  addr input      Write at linear address. Use =!wlx for input in hex\n" \
-				"=!wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex\n" \
-				"=!wP[x]  addr input      Write at physical address. Use =!wPx for input in hex\n";
-			io->cb_printf ("%s", help_msg);
+			print_help (io, 0x1ff, 1);
 		}
 	}
  end:
