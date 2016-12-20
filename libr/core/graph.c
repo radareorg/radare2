@@ -1607,7 +1607,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	}
 	r_config_save_num (hc, "asm.fcnlines", "asm.lines", "asm.bytes",
 			   "asm.cmtcol", "asm.marks", "asm.marks", "asm.offset",
-			   "asm.comments", "asm.cmtright", NULL);
+			   "asm.comments", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
 	int o_cursor = core->print->cur_enabled;
@@ -2768,16 +2768,23 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	bool graph_allocated = false;
 	int movspeed;
 	int ret, invscroll;
+	RConfigHold *hc = r_config_hold_new (core->config);
 
 	int h, w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);
 	if (!can) {
-		eprintf ("Cannot create RCons.canvas context. Invalid screen size? See scr.columns + scr.rows\n");
+		eprintf (
+			"Cannot create RCons.canvas context. Invalid screen "
+			"size? See scr.columns + scr.rows\n");
 		return false;
 	}
 	can->linemode = 1;
 	can->color = r_config_get_i (core->config, "scr.color");
 
+	if (!hc) {
+		return false;
+	}
+	r_config_save_num (hc, "asm.cmtright", NULL);
 	if (!g) {
 		graph_allocated = true;
 		fcn = _fcn ? _fcn : r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -3194,5 +3201,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	} else {
 		g->can = o_can;
 	}
+	r_config_restore (hc);
+	r_config_hold_free (hc);
 	return !is_error;
 }
