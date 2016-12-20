@@ -289,11 +289,12 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	char *newfile2 = strdup (newfile);
 	core->file->desc->uri = newfile;
 	core->file->desc->referer = NULL;
-	r_core_file_reopen (core, newfile, 0, 2);
+	//r_core_file_reopen (core, newfile, 0, 2);
 	r_config_set_i (core->config, "asm.bits", bits);
 	r_config_set_i (core->config, "cfg.debug", true);
+	r_core_file_reopen (core, newfile, 0, 2);
 	newfile = newfile2;
-
+#if !__WINDOWS__
 	//XXX: need cmd_debug.h for r_debug_get_baddr
 	ut64 new_baddr = r_debug_get_baddr (core, newfile);
 	ut64 old_baddr = r_config_get_i (core->config, "bin.baddr");
@@ -302,6 +303,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		r_config_set_i (core->config, "bin.baddr", new_baddr);
 		r_core_bin_load (core, newfile, new_baddr);
 	}
+#endif
 	r_core_cmd0 (core, "sr PC");
 	free (oldname);
 	free (binpath);
