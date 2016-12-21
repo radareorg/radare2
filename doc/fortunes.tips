@@ -43,7 +43,7 @@ Move the comments to the right changing their margin with asm.cmtmargin
 Execute a command on the visual prompt with cmd.vprompt
 Reduce the delta where flag resolving by address is used with cfg.delta
 Disable these messages with 'e cfg.fortunes = false' in your ~/.radare2rc
-Change your fortune types with 'e cfg.fortunetype = fun,tips,nsfw' in your ~/.radare2rc
+Change your fortune types with 'e cfg.fortunes.type = fun,tips,nsfw' in your ~/.radare2rc
 Show offsets in graphs with 'e graph.offset = true'
 Execute a command every time a breakpoint is hit with 'e cmd.bp = !my-program'
 Disassemble in intel syntax with 'e asm.syntax = intel'.

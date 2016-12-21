@@ -598,7 +598,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			const char *fortunes_fuun = R2_PREFIX "/share/doc/radare2/fortunes.fun";
 			const char *fortunes_nsfw = R2_PREFIX "/share/doc/radare2/fortunes.nsfw";
 			const char *fortunes_crep = R2_PREFIX "/share/doc/radare2/fortunes.creepy";
-			const char *types = (char *)r_config_get (core->config, "cfg.fortunetype");
+			const char *types = (char *)r_config_get (core->config, "cfg.fortunes.type");
 			char *line = NULL, *templine = NULL;
 			int i = 0;
 			if (strstr (types, "tips")) {
@@ -628,6 +628,9 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			}
 			if (line) {
 				r_cons_printf (" -- %s\n", line);
+				if (r_config_get_i (core->config, "cfg.fortunes.tts")) {
+					r_sys_tts (line, true);
+				}
 				free (line);
 			}
 		}

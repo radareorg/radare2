@@ -879,3 +879,15 @@ R_API int r_sys_getpid() {
 	return -1;
 #endif
 }
+
+R_API bool r_sys_tts(const char *txt, bool bg) {
+// XXX: This is OSX-specific. must be ported to linux and windows
+#if __APPLE__
+	char *line = r_str_replace (strdup (txt), "\"", "'", 1);
+	r_sys_cmdf ("say \"%s\"%s", line, bg? " &": "");
+	free (line);
+	return true;
+#else
+	return false;
+#endif
+}
