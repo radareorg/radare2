@@ -57,7 +57,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 	return buf;
 }
 
-static void clippy(const char *msg) {
+R_API void r_core_clippy(const char *msg) {
 	int msglen = strlen (msg);
 	char *l = strdup (r_str_pad ('-', msglen));
 	char *s = strdup (r_str_pad (' ', msglen));
@@ -571,7 +571,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'E': // clippy echo
-		clippy (r_str_chop_ro (input + 1));
+		r_core_clippy (r_str_chop_ro (input + 1));
 		break;
 	case 'e': // echo
 		{
@@ -714,7 +714,7 @@ static int cmd_help(void *data, const char *input) {
 	case '?': // "??" "???"
 		if (input[1]=='?') {
 			if (input[2]=='?') {
-				clippy ("What are you doing?");
+				r_core_clippy ("What are you doing?");
 				return 0;
 			}
 			if (input[2]) {

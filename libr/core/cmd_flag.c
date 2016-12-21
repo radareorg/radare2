@@ -627,7 +627,11 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				}
 			}
 			if (line) {
-				r_cons_printf (" -- %s\n", line);
+				if (r_config_get_i (core->config, "cfg.fortunes.clippy")) {
+					r_core_clippy (line);
+				} else {
+					r_cons_printf (" -- %s\n", line);
+				}
 				if (r_config_get_i (core->config, "cfg.fortunes.tts")) {
 					r_sys_tts (line, true);
 				}
