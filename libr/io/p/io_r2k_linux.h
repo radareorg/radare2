@@ -13,6 +13,17 @@
 
 #define MAX_PHYS_ADDR   128
 
+/*
+ * Backend Id (be_id):
+ * 	0: Linear Address
+ * 	1: Process Address
+ * 	2: Physical Address
+ */
+struct io_r2k_linux {
+	int beid;
+	int pid;
+};
+
 struct r2k_data {
 	int pid;
 	size_t addr;
@@ -102,6 +113,8 @@ struct r2k_proc_info {
 #define VM_WRITE 0x2
 #define VM_EXEC 0x4
 #define VM_MAYSHARE 0x80
+
+extern struct io_r2k_linux r2k_struct;
 
 int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len);
 int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len);

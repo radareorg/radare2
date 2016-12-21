@@ -11,6 +11,7 @@
 #include "io_r2k_windows.h"
 #elif __linux__
 #include "io_r2k_linux.h"
+struct io_r2k_linux r2k_struct;
 #endif
 
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -18,7 +19,16 @@ int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return WriteKernelMemory (io->off, buf, count);
 #elif __linux__
-	return WriteMemory (io, fd, IOCTL_WRITE_KERNEL_MEMORY, 0, io->off, buf, count);
+	if (r2k_struct.beid == 0) {
+		return WriteMemory (io, fd, IOCTL_WRITE_KERNEL_MEMORY, r2k_struct.pid, io->off, buf, count);
+	} else if (r2k_struct.beid == 1) {
+		return WriteMemory (io, fd, IOCTL_WRITE_PROCESS_ADDR, r2k_struct.pid, io->off, buf, count);
+	} else if (r2k_struct.beid == 2) {
+		return WriteMemory (io, fd, IOCTL_WRITE_PHYSICAL_ADDR, r2k_struct.pid, io->off, buf, count);
+	} else {
+		io->cb_printf ("ERROR: Undefined beid in r2k__write.\n");
+		return -1;
+	}
 #else
 	io->cb_printf ("TODO: r2k not implemented for this plataform.\n");
 	return -1;
@@ -29,7 +39,17 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #if __WINDOWS__
 	return ReadKernelMemory (io->off, buf, count);
 #elif __linux__
-	return ReadMemory (io, fd, IOCTL_READ_KERNEL_MEMORY, 0, io->off, buf, count);
+	if (r2k_struct.beid == 0) {
+		return ReadMemory (io, fd, IOCTL_READ_KERNEL_MEMORY, r2k_struct.pid, io->off, buf, count);
+	} else if (r2k_struct.beid == 1) {
+		return ReadMemory (io, fd, IOCTL_READ_PROCESS_ADDR, r2k_struct.pid, io->off, buf, count);
+	} else if (r2k_struct.beid == 2) {
+		return ReadMemory (io, fd, IOCTL_READ_PHYSICAL_ADDR, r2k_struct.pid, io->off, buf, count);
+	} else {
+		io->cb_printf ("ERROR: Undefined beid in r2k__read.\n");
+		memset (buf, '\xff', count);
+		return count;
+	}
 #else
 	io->cb_printf ("TODO: r2k not implemented for this plataform.\n");
 	memset (buf, '\xff', count);
@@ -93,6 +113,9 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 			io->cb_printf ("r2k__open: Error in opening /dev/r2k.");
 			return NULL;
 		}
+
+		r2k_struct.beid = 0;
+		r2k_struct.pid = 0;
 		return r_io_desc_new (&r_io_plugin_r2k, fd, pathname, rw, mode, NULL);
 #else
 		io->cb_printf ("Not supported on this platform\n");
