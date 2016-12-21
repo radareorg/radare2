@@ -935,8 +935,12 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case 'p': // "dmp"
 		if (input[1] == '?') {
-			eprintf ("Usage: dmp [addr] [size] [perms]\n");
-			eprintf ("Usage: dmp [perms] # change dbg.map permissions\n");
+			const char* help_msg[] = {
+				"Usage:", "dmp", " Change page permissions",
+				"dmp", " [addr] [size] [perms]", "Change permissions",
+				"dmp", " [perms]", "Change dbg.map permissions",
+				NULL};
+			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == ' ') {
 			int perms;
 			char *p, *q;
@@ -2850,9 +2854,14 @@ static bool cmd_dcu (RCore *core, const char *input) {
 	bool dcu_range = false;
 	bool invalid = (!input[0] || !input[1] || !input[2]);
 	if (invalid || (input[2] != ' ' && input[2] != '.')) {
-		eprintf ("|Usage: dcu <address>\n");
-		eprintf ("|Usage: dcu[..tail]\n");
-		eprintf ("|Usage: dcu [from] [to]\n");
+		const char* help_msg[] = {
+			"Usage:", "dcu", " Continue until address",
+			"dcu", " address", "Continue until address",
+			"dcu", " [..tail]", "Continue until the range",
+			"dcu", " [from] [to]", "Continue until the range",
+			NULL
+		};
+		r_core_cmd_help (core, help_msg);
 		return false;
 	}
 	from = UT64_MAX;
@@ -2994,11 +3003,16 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			break;
 		default:
 		case '?':
-			eprintf ("|Usage: dcs [syscall-name-or-number]\n");
-			eprintf ("|dcs         : continue until next syscall\n");
-			eprintf ("|dcs mmap    : continue until next call to mmap\n");
-			eprintf ("|dcs*        : trace all syscalls (strace)\n");
-			eprintf ("|dcs?        : show this help\n");
+			{
+				const char* help_msg[] = {
+					"Usage:", "dcs", " Continue until syscall",
+					"dcs", "", "Continue until next syscall",
+					"dcs [str]", "", "Continue until next call to the 'str' syscall",
+					"dcs", "*", "trace all syscalls, a la strace",
+					NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			}
 			break;
 		}
 		break;

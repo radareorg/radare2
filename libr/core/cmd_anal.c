@@ -1235,15 +1235,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'l': // "afl"
 		switch (input[2]) {
-		case '?':
-			eprintf ("Usage: afl\n");
-			eprintf ("List all functions in quiet, commands or json format\n");
-			eprintf ("afl  - list functions\n");
-			eprintf ("aflj - list functions in json format\n");
-			eprintf ("afll - list functions in verbose mode\n");
-			eprintf ("aflq - list functions in 'quiet' mode\n");
-			eprintf ("aflqj - list functions in json 'quiet' mode\n");
-			eprintf ("afls - print sum of sizes of all functions\n");
+			case '?':
+			{
+				const char *help_msg[] = {
+					"Usage:", "afl", " List all functions",
+					"afl", "", "list functions",
+					"aflj", "", "list functions in json",
+					"afll", "", "list functions in verbose mode",
+					"aflq", "", "list functions in quiet mode",
+					"aflqj", "", "list functions in json quiet mode",
+					"afls", "", "print sum of sizes of all functions",
+					NULL };
+				r_core_cmd_help (core, help_msg);
+			}
 			break;
 		case 'j':
 		case 'l':
@@ -1384,16 +1388,20 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		default:
 		case '?':
-			/* TODO: use r_core_help */
-			eprintf ("Usage: afb+ or afbb or afb\n"
-				/* TODO: move afbr into afr? */
-				" afbr        - show addresses of instructions which leave the function\n"
-				" .afbr*      - set breakpoint on every return address of the fcn\n"
-				" .afbr-*     - undo the above operation\n"
-				" afbj        - show basic blocks information in JSON\n"
-				" afB [bits]  - define asm.bits for given function\n"
-				" afb [addr]  - list basic blocks of function (see afbq, afbj, afb*)\n"
-				" afb+ fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))  add bb to function @ fcnaddr\n");
+			{
+				const char *help_msg[] = {
+					"Usage:", "afb", " List basic blocks of given function",
+					".afbr-", "", "Set breakpoint on every return address of the function",
+					".afbr-*", "", "Remove breakpoint on every return address of the function",
+					"afb", " [addr]", "list basic blocks of function",
+					"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "list basic blocks of function",
+					"afbr", "", "Show addresses of instructions which leave the function",
+					"afbj", "", "show basic blocks information in json",
+					"afB", " [bits]", "define asm.bits for the given function",
+					NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			}
 			break;
 		}
 		break;
@@ -1438,11 +1446,17 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			}
 			break;
-		default:
-			eprintf ("Usage: afn[sa] - analyze function names\n");
-			eprintf (" afna       - construct a function name for the current offset\n");
-			eprintf (" afns       - list all strings associated with the current function\n");
-			eprintf (" afn [name] - rename function\n");
+		default: 
+			{
+				const char *help_msg[] = {
+					"Usage:", "afn[sa]", " Analyze function names",
+					"afn", " [name]", "rename the function",
+					"afna", "", "construct a function name for the current offset",
+					"afns", "", "list all strings associated with the current function",
+					NULL
+				};
+				r_core_cmd_help (core, help_msg);
+			}
 			break;
 		}
 		break;
@@ -2854,10 +2868,14 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'c':
 		if (input[1] == '?') { // "aec?"
-			eprintf ("aecs         - continue until syscall\n");
-			eprintf ("aec          - continue until exception\n");
-			eprintf ("aecu [addr]  - continue until address\n");
-			eprintf ("aecue [expr] - continue until esil expression\n");
+			const char *help_msg[] = {
+				"Examples:", "aec", " continue until ^c",
+				"aec", "", "Continue until exception",
+				"aecs", "", "Continue until syscall",
+				"aecu", "[addr]", "Continue until address",
+				"aecue", "[addr]", "Continue until esil expression",
+				NULL };
+			r_core_cmd_help (core, help_msg);
 		} else if (input[1] == 's') { // "aecs"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			ut64 newaddr;
@@ -4499,8 +4517,6 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		"at+", " [addr] [times]", "add trace for address N times",
 		"at", " [addr]", "show trace info at address",
 		"ate", "[?]", "show esil trace logs (anal.trace)",
-		"ate", " [idx]", "show commands to restore to this trace index",
-		"ate", "-", "clear esil trace logs",
 		"att", " [tag]", "select trace tag (no arg unsets)",
 		"at%", "", "TODO",
 		"ata", " 0x804020 ...", "only trace given addresses",
@@ -4570,12 +4586,17 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("|Usage: ate[ilk] [-arg]\n"
-				"| ate           esil trace log single instruction\n"
-				"| ate idx       show commands for that index log\n"
-				"| ate-*         delete all esil traces\n"
-				"| atei          esil trace log single instruction\n"
-				"| atek  [sdbq]  esil trace log single instruction\n");
+			{
+			const char *help_msg[] = {
+				"Usage:", "ate", " Show esil trace logs",
+				"ate", "", "Esil trace log for a single instruction",
+				"ate", " [idx]", "show commands for that index log",
+				"ate", "-*", "delete all esil traces",
+				"atei", "", "esil trace log single instruction",
+				"atek", " [sdb query]", "esil trace log single instruction from sdb",
+				NULL };
+			r_core_cmd_help (core, help_msg);
+		}
 		}
 		break;
 	case '?':
@@ -5268,38 +5289,36 @@ static int cmd_anal(void *data, const char *input) {
 			return false;
 		break;
 	case 'c':
-		if (input[1] == '?') {
-			eprintf ("Usage: ac [cycles]   # analyze instructions that fit in N cycles\n");
-		} else {
-			RList *hooks;
-			RListIter *iter;
-			RAnalCycleHook *hook;
-			char *instr_tmp = NULL;
-			int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
-			int cr = r_config_get_i (core->config, "asm.cmtright");
-			int fun = r_config_get_i (core->config, "asm.functions");
-			int li = r_config_get_i (core->config, "asm.lines");
-			int xr = r_config_get_i (core->config, "asm.xrefs");
+		{
+		RList *hooks;
+		RListIter *iter;
+		RAnalCycleHook *hook;
+		char *instr_tmp = NULL;
+		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
+		int cr = r_config_get_i (core->config, "asm.cmtright");
+		int fun = r_config_get_i (core->config, "asm.functions");
+		int li = r_config_get_i (core->config, "asm.lines");
+		int xr = r_config_get_i (core->config, "asm.xrefs");
 
-			r_config_set_i (core->config, "asm.cmtright", true);
-			r_config_set_i (core->config, "asm.functions", false);
-			r_config_set_i (core->config, "asm.lines", false);
-			r_config_set_i (core->config, "asm.xrefs", false);
+		r_config_set_i (core->config, "asm.cmtright", true);
+		r_config_set_i (core->config, "asm.functions", false);
+		r_config_set_i (core->config, "asm.lines", false);
+		r_config_set_i (core->config, "asm.xrefs", false);
 
-			hooks = r_core_anal_cycles (core, ccl); //analyse
-			r_cons_clear_line (1);
-			r_list_foreach (hooks, iter, hook) {
-				instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
-				r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-				r_cons_flush ();
-				free (instr_tmp);
-			}
-			r_list_free (hooks);
+		hooks = r_core_anal_cycles (core, ccl); //analyse
+		r_cons_clear_line (1);
+		r_list_foreach (hooks, iter, hook) {
+			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
+			r_cons_printf ("After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
+			r_cons_flush ();
+			free (instr_tmp);
+		}
+		r_list_free (hooks);
 
-			r_config_set_i (core->config, "asm.cmtright", cr); //reset settings
-			r_config_set_i (core->config, "asm.functions", fun);
-			r_config_set_i (core->config, "asm.lines", li);
-			r_config_set_i (core->config, "asm.xrefs", xr);
+		r_config_set_i (core->config, "asm.cmtright", cr); //reset settings
+		r_config_set_i (core->config, "asm.functions", fun);
+		r_config_set_i (core->config, "asm.lines", li);
+		r_config_set_i (core->config, "asm.xrefs", xr);
 		}
 		break;
 	case 'd':
