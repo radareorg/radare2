@@ -165,6 +165,7 @@ static char *getstr(const char *src) {
 			free (msg);
 			return ret;
 		}
+		free (msg);
 		return strdup ("");
 		}
 	case '!':

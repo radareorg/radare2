@@ -18,6 +18,7 @@ static RList* parse_list (const char *str) {
 	str_n = strdup (str);
 	list = r_list_newf (free);
 	if (!list) {
+		free (str_n);
 		return NULL;
 	}
 	line = strtok (str_n, "\n");

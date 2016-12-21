@@ -1683,13 +1683,16 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	bool emu = r_config_get_i (core->config, "asm.emu");
 	ut64 saved_gp = core->anal->gp;
-	ut8 *saved_arena;
+	ut8 *saved_arena = NULL;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg);
 	}
 	if (!fcn) {
+		if (saved_arena) {
+			R_FREE (saved_arena);
+		}
 		return;
 	}
 	r_list_sort (fcn->bbs, (RListComparator)bbcmp);
@@ -2790,11 +2793,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		fcn = _fcn ? _fcn : r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn) {
 			eprintf ("No function in current seek\n");
+			r_config_restore (hc);
+			r_config_hold_free (hc);
 			return false;
 		}
 		g = r_agraph_new (can);
 		if (!g) {
 			r_cons_canvas_free (can);
+			r_config_restore (hc);
+			r_config_hold_free (hc);
 			return false;
 		}
 	} else {
