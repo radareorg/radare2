@@ -594,25 +594,33 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		break;
 	case 'o':
 		{ // TODO: use file.fortunes // can be dangerous in sandbox mode
-			char *fortunes_tips = R2_PREFIX "/share/doc/radare2/fortunes.tips";
-			char *fortunes_fun = R2_PREFIX "/share/doc/radare2/fortunes.fun";
-			char *fortunes_nsfw = R2_PREFIX "/share/doc/radare2/fortunes.nsfw";
-			char *types = (char *)r_config_get (core->config, "cfg.fortunetype");
+			const char *fortunes_tips = R2_PREFIX "/share/doc/radare2/fortunes.tips";
+			const char *fortunes_fuun = R2_PREFIX "/share/doc/radare2/fortunes.fun";
+			const char *fortunes_nsfw = R2_PREFIX "/share/doc/radare2/fortunes.nsfw";
+			const char *fortunes_crep = R2_PREFIX "/share/doc/radare2/fortunes.creepy";
+			const char *types = (char *)r_config_get (core->config, "cfg.fortunetype");
 			char *line = NULL, *templine = NULL;
 			int i = 0;
-			if (strstr(types, "tips")) {
+			if (strstr (types, "tips")) {
 				templine = r_file_slurp_random_line_count (fortunes_tips, &i);
 				line = templine;
 			}
-			if (strstr(types, "fun")) {
-				templine = r_file_slurp_random_line_count (fortunes_fun, &i);
+			if (strstr (types, "fun")) {
+				templine = r_file_slurp_random_line_count (fortunes_fuun, &i);
 				if (templine) {
 					free (line);
 					line = templine;
 				}
 			}
-			if (strstr(types, "nsfw")) {
+			if (strstr (types, "nsfw")) {
 				templine = r_file_slurp_random_line_count (fortunes_nsfw, &i);
+				if (templine) {
+					free (line);
+					line = templine;
+				}
+			}
+			if (strstr (types, "creepy")) {
+				templine = r_file_slurp_random_line_count (fortunes_crep, &i);
 				if (templine) {
 					free (line);
 					line = templine;
