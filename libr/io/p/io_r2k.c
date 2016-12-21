@@ -1,5 +1,12 @@
 /* io_r2k - radare2 - LGPL - Copyright 2016 - SkUaTeR + panda */
 
+#include <r_io.h>
+#include <r_lib.h>
+#include <r_types.h>
+#include <r_print.h>
+#include <r_util.h>
+#include <sys/types.h>
+
 #if __WINDOWS__
 #include "io_r2k_windows.h"
 #elif __linux__
