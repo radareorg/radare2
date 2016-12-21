@@ -266,6 +266,7 @@ typedef struct r_debug_info_t {
 	int status; // zombie, running, sleeping, ...
 	int signum;
 	void * lib;
+	void * thread;
 	// retrieve mem/fd/core limits?
 	// list of threads ? hasthreads? counter?
 	// environment?

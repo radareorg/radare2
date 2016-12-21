@@ -304,25 +304,43 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 #if __WINDOWS__ && !__CYGWIN__
-	int mode = 0;
 	reason = w32_dbg_wait (dbg, pid);
 	if (reason == R_DEBUG_REASON_NEW_LIB) {
-		mode = 'l';
-	} else if (reason == R_DEBUG_REASON_EXIT_LIB) {
-		mode = 'u';
-	} else {
-		mode = 0;
-	}
-	if (mode) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->lib) {
-			if (tracelib (dbg, mode == 'l' ? "load" : "unload", r->lib)) {
+			if (tracelib (dbg, "load", r->lib)) {
 				reason = R_DEBUG_REASON_TRAP;
 			}
+			r_debug_info_free (r);
 		} else {
-			eprintf ("%soading unknown library.\n", mode?"L":"Unl");
+			eprintf ("Loading unknown library.\n");
 		}
-		r_debug_info_free (r);
+	}
+	else if (reason == R_DEBUG_REASON_EXIT_LIB) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r && r->lib) {
+			if (tracelib (dbg, "unload", r->lib)) {
+				reason = R_DEBUG_REASON_TRAP;
+			}
+			r_debug_info_free (r);
+		} else {
+			eprintf ("Unloading unknown library.\n");
+		}
+	} else if (reason == R_DEBUG_REASON_NEW_TID) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r && r->thread) {
+			PTHREAD_ITEM item = r->thread;
+			eprintf ("(%d) Created thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			r_debug_info_free (r);
+		}
+
+	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
+		RDebugInfo *r = r_debug_native_info (dbg, "");
+		if (r && r->thread) {
+			PTHREAD_ITEM item = r->thread;
+			eprintf ("(%d) Finished thread %d Exit code %d\n", item->pid, item->tid, item->dwExitCode);
+			r_debug_info_free (r);
+		}
 	}
 #else
 	if (pid == -1) {
