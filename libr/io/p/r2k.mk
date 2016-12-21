@@ -5,6 +5,9 @@ endif
 ifeq (${OSTYPE},windows)
 OBJ_R2K += io_r2k_windows.o
 endif
+ifeq (${OSTYPE},mingw32)
+OBJ_R2K += io_r2k_windows.o
+endif
 
 STATIC_OBJ+=${OBJ_R2K}
 TARGET_R2K=io_r2k.${EXT_SO}
