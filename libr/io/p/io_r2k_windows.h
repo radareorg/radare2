@@ -52,7 +52,7 @@ FILE_WRITE_ACCESS 2
 #define IOCTL_WRITE_PHYS_MEM IOCTL_CODE(0x22, 0x808, 0, 1 | 2)
 #define IOCTL_GET_SYSTEM_MODULES IOCTL_CODE(0x22, 0x80a, 0, 1 | 2)
 
-HANDLE gHandleDriver = NULL;
+extern HANDLE gHandleDriver;
 
 BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop);
 int GetSystemModules(RIO *io);

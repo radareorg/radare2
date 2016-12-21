@@ -1,5 +1,7 @@
 #include "io_r2k_windows.h"
 
+HANDLE gHandleDriver = NULL;
+
 static BOOL InstallService(const char * rutaDriver, LPCSTR  lpServiceName, LPCSTR  lpDisplayName) {
 	HANDLE hService;
 	BOOL ret = FALSE;
