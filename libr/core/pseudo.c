@@ -9,6 +9,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	const char *blocktype = "else";
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	RConfigHold *hc = r_config_hold_new (core->config);
+	if (!hc) {
+		return false;
+	}
 	r_config_save_num (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", NULL);
 	r_config_save_num (hc, "asm.offset", "asm.flags", "asm.fcnlines", "asm.comments", NULL);
 	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmtcol", "asm.filter", NULL);

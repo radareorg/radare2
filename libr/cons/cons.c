@@ -21,7 +21,7 @@ static RCons r_cons_instance;
 //this structure goes into cons_stack when r_cons_push/pop
 typedef struct {
 	char *buf;
-	int buf_len;	
+	int buf_len;
 	int buf_size;
 	RConsGrep *grep;
 } RConsStack;
@@ -29,7 +29,7 @@ typedef struct {
 typedef struct {
 	bool breaked;
 	void *data;
-	RConsEvent event_interrupt;	
+	RConsEvent event_interrupt;
 } RConsBreakStack;
 
 static void break_stack_free(void *ptr) {
@@ -203,7 +203,7 @@ R_API void r_cons_break_push(RConsBreak cb, void *user) {
 R_API void r_cons_break_pop() {
 	//restore old state
 	if (I.break_stack) {
-		RConsBreakStack *b = NULL; 
+		RConsBreakStack *b = NULL;
 		r_print_set_interrupted (I.breaked);
 		b = r_stack_pop (I.break_stack);
 		if (b) {
@@ -215,7 +215,7 @@ R_API void r_cons_break_pop() {
 #if __UNIX__ || __CYGWIN__
 			signal (SIGINT, SIG_IGN);
 #endif
-			I.breaked = false;	
+			I.breaked = false;
 		}
 	}
 }
@@ -296,7 +296,7 @@ static void r_cons_pal_null() {
 	int i;
 	RCons *cons = r_cons_singleton ();
 	for (i = 0; i < R_CONS_PALETTE_LIST_SIZE; i++){
-		cons->pal.list[i] = NULL;	
+		cons->pal.list[i] = NULL;
 	}
 }
 
@@ -382,7 +382,7 @@ R_API RCons *r_cons_free() {
 		I.buffer = NULL;
 	}
 	R_FREE (I.break_word);
-	r_stack_free (I.cons_stack);	
+	r_stack_free (I.cons_stack);
 	r_stack_free (I.break_stack);
 	return NULL;
 }
@@ -555,7 +555,7 @@ R_API void r_cons_pop() {
 		if (!data->buf) {
 			free (data);
 			return;
-		} 
+		}
 		tmp = malloc (data->buf_size);
 		if (!tmp) {
 			cons_stack_free ((void *)data);
@@ -829,7 +829,7 @@ R_API void r_cons_memcat(const char *str, int len) {
 	if (I.flush) {
 		r_cons_flush ();
 	}
-	if (I.break_word) {
+	if (I.break_word && str) {
 		if (r_mem_mem ((const ut8*)str, len, (const ut8*)I.break_word, I.break_word_len)) {
 			I.breaked = true;
 		}

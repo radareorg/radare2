@@ -1254,7 +1254,8 @@ static int r_core_rtr_rap_thread (RThread *th) {
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	char bufw[1024], bufr[8], *cmd_output = NULL;
 	const char *cmd = NULL;
-	int i, cmd_len, fd = atoi (input);
+	unsigned int cmd_len;
+	int i, fd = atoi (input);
 
 	// "=:"
 	if (*input == ':' && !strchr (input + 1, ':')) {

@@ -359,10 +359,11 @@ static int __lib_anal_dt(RLibPlugin *pl, void *p, void *u) {
 
 static char *replace_directives_for(char *str, char *token) {
 	RStrBuf *sb = r_strbuf_new ("");
+	char *p = NULL;
 	char *q = str;
 	bool changes = false;
 	for (;;) {
-		char *p = strstr (q, token);
+		if (q) p = strstr (q, token);
 		if (p) {
 			char *nl = strchr (p, '\n');
 			if (nl) {
@@ -376,7 +377,7 @@ static char *replace_directives_for(char *str, char *token) {
 			q = nl;
 			changes = true;
 		} else {
-			r_strbuf_append (sb, q);
+			if (q) r_strbuf_append (sb, q);
 			break;
 		}
 	}

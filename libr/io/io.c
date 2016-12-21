@@ -578,10 +578,15 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz) {
 
 /* Same as r_io_read_at, but not consume bytes */
 R_API int r_io_peek_at(RIO *io, const ut64 addr, ut8 *buf, const int sz) {
-	int ret = -1;
-	r_io_seek (io, addr, R_IO_SEEK_SET);
-	ret = r_io_read (io, buf, sz);
-	r_io_seek (io, addr, R_IO_SEEK_SET);
+	int ret = -1, tmp_ret = -1;
+	ret = r_io_seek (io, addr, R_IO_SEEK_SET);
+	if (ret != -1) {
+		ret = r_io_read (io, buf, sz);
+	}
+	if (ret != -1) {
+		tmp_ret = r_io_seek (io, addr, R_IO_SEEK_SET);
+	}
+	if (tmp_ret == -1) ret = tmp_ret;
 	return ret;
 }
 

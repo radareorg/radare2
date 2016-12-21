@@ -216,7 +216,7 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	if (x < 0) {
 		delta_x = -x;
 	}
-	G (n->x + SMALLNODE_CENTER_X + delta_x, n->y);
+	if (!G (n->x + SMALLNODE_CENTER_X + delta_x, n->y)) return;
 
 	if (cur) {
 		W(&SMALLNODE_TEXT_CUR[delta_x]);
@@ -1248,13 +1248,17 @@ static void combine_sequences(const RAGraph *g, int l, const RGraphNode *bm, con
 	for (i = t - 2; i >= a; --i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RANode *av = get_anode (gv);
-		av->x = R_MIN (av->x, at->x - dist_nodes (g, gv, vt));
+		if (av) {
+			av->x = R_MIN (av->x, at->x - dist_nodes (g, gv, vt));
+		}
 	}
 
 	for (i = t + 1; i < r; ++i) {
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RANode *av = get_anode (gv);
-		av->x = R_MAX (av->x, atp->x + dist_nodes (g, vtp, gv));
+		if (av) {
+			av->x = R_MAX (av->x, atp->x + dist_nodes (g, vtp, gv));
+		}
 	}
 }
 
@@ -1427,7 +1431,7 @@ static void create_edge_from_dummies (const RAGraph *g, RANode *an, RList *torem
 			e->from = a_from;
 			add_to_list = r_list_append;
 		}
-	}
+	} else return;
 
 	while (an->is_dummy) {
 		add_to_list (toremove, n);
@@ -1452,7 +1456,7 @@ static void create_edge_from_dummies (const RAGraph *g, RANode *an, RList *torem
 }
 
 static void analyze_back_edges (const RAGraph *g, RANode *an) {
-	const RList *neigh = r_graph_get_neighbours (g->graph, an->gnode);
+	const RList *neigh;
 	RListIter *itk;
 	RGraphNode *gk;
 	RANode *ak;
@@ -1461,6 +1465,7 @@ static void analyze_back_edges (const RAGraph *g, RANode *an) {
 		return;
 	}
 
+	neigh = r_graph_get_neighbours (g->graph, an->gnode);
 	/* traverse all neighbours and analyze only the ones that create back
 	 * edges. */
 	graph_foreach_anode (neigh, itk, gk, ak) {
