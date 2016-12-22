@@ -195,9 +195,27 @@ bool linux_set_options (RDebug *dbg, int pid) {
 
 int linux_attach (RDebug *dbg, int pid) {
 	linux_set_options (dbg, pid);
-	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
+	int ret = ptrace (PTRACE_ATTACH, pid, NULL, NULL);
 	if (ret != -1) {
 		perror ("ptrace (PT_ATTACH)");
+	}
+	
+	if (dbg->h) {
+		RList *list = r_list_new ();
+		if (list) {
+			list = linux_thread_list (pid, list);
+			RDebugPid *th;
+			RListIter *it;
+			r_list_foreach (list, it, th) {
+				if (th->pid && th->pid != pid) {
+					eprintf ("Attaching to pid: %d\n", th->pid);
+					int ret = ptrace (PTRACE_ATTACH, th->pid, NULL, NULL);
+					if (ret != -1) {
+						perror ("ptrace (PT_ATTACH)");
+					}
+				}
+			}
+		}
 	}
 	return pid;
 }
