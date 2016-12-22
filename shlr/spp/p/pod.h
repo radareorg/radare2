@@ -15,14 +15,14 @@ TAG_CALLBACK(pod_cut)
 
 TAG_CALLBACK(pod_head1)
 {
-	int i, len = strlen (buf);
 	echo[ifl] = 1;
-	do_printf (out,"\n");
-	if (buf==NULL) {
+	do_printf (out, "\n");
+	if (!buf) {
 		return 0;
 	}
 	do_printf (out, "%s\n", buf);
-	for(i = 0; i < len; i++) {
+	int i, len = strlen (buf);
+	for (i = 0; i < len; i++) {
 		do_printf (out, "%c", '=');
 	}
 	do_printf (out, "\n");

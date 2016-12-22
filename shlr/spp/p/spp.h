@@ -86,16 +86,21 @@ TAG_CALLBACK(spp_add)
 	char res[32];
 	char *var, *eq = strchr (buf, ' ');
 	int ret = 0;
-	if (!echo[ifl]) return 0;
+	if (!echo[ifl]) {
+		return 0;
+	}
 	if (eq) {
 		*eq = '\0';
 		var = spp_var_get (buf);
-		if (var != NULL)
+		if (var) {
 			ret = atoi (var);
+		}
 		ret += atoi (eq + 1);
-		sprintf (res, "%d", ret);
+		snprintf (res, sizeof (res), "%d", ret);
 		r_sys_setenv (buf, res);
-	} else { /* syntax error */ }
+	} else {
+		/* syntax error */
+	}
 	return 0;
 }
 
@@ -169,24 +174,30 @@ TAG_CALLBACK(spp_system)
 TAG_CALLBACK(spp_include)
 {
 	char *incdir;
-	if (!echo[ifl]) return 0;
+	if (!echo[ifl]) {
+		return 0;
+	}
 	incdir = getenv("SPP_INCDIR");
 	if (incdir) {
-		char *b = strdup(incdir);
-		b = realloc(b, strlen(b)+strlen(buf)+3);
-		strcat(b, "/");
-		strcat(b, buf);
-		spp_file(b, out);
-	} else spp_file(buf, out);
+		char *b = strdup (incdir);
+		char *p = realloc (b, strlen (b) + strlen (buf) + 3);
+		if (p) {
+			b = p;
+			strcat (b, "/");
+			strcat (b, buf);
+			spp_file (b, out);
+		}
+		free (b);
+	} else {
+		spp_file(buf, out);
+	}
 	return 0;
 }
 
 TAG_CALLBACK(spp_if)
 {
 	char *var = spp_var_get(buf);
-	if (var && *var!='0' && *var != '\0')
-		echo[ifl+1] = 1;
-	else echo[ifl+1] = 0;
+	echo[ifl + 1] = (var && *var!='0' && *var != '\0')? 1: 0;
 	return 1;
 }
 
@@ -204,7 +215,7 @@ TAG_CALLBACK(spp_ifeq)
 //fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, eq+1, echo[ifl]);
 	} else {
 		value = spp_var_get(buf);
-		if (value==NULL || *value=='\0')
+		if (!value || *value=='\0')
 			echo[ifl+1] = 1;
 		else echo[ifl+1] = 0;
 //fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, value, echo[ifl]);
