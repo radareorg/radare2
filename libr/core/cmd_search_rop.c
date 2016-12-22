@@ -201,17 +201,25 @@ static void esil_split_flg (char *esil_str, char **esil_main, char **esil_flg) {
 	}
 }
 
-#define FREE_ROP  \
+#define FREE_ROP  { \
 	R_FREE (out); \
 	R_FREE (esil_flg);       \
 	R_FREE (esil_main);      \
 	r_list_free (ops_list);  \
+	ops_list = NULL; \
 	r_list_free (flg_read);  \
+	flg_read = NULL; \
 	r_list_free (flg_write); \
+	flg_write = NULL; \
 	r_list_free (reg_read);  \
+	reg_read = NULL; \
 	r_list_free (reg_write); \
+	reg_write = NULL; \
 	r_list_free (mem_read);  \
-	r_list_free (mem_write) 
+	mem_read = NULL; \
+	r_list_free (mem_write); \
+	mem_write = NULL; \
+}
 
 static char* rop_classify_constant(RCore *core, RList *ropList) {
 	char *esil_str, *constant;
@@ -288,7 +296,7 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 continue_error:
 		// coverity may complain here but as long as the pointer is set back to
 		// NULL is safe that is why is used R_FREE
-		FREE_ROP;	
+		FREE_ROP;
 		r_list_free (constants);
 	}
 	return ct;
