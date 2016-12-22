@@ -60,20 +60,19 @@ static int print_meta_fileline(RCore *core, const char *file_line) {
 }
 
 static int print_addrinfo (void *user, const char *k, const char *v) {
-	ut64 offset;
 	char *colonpos, *subst;
 
-	offset = sdb_atoi (v);
+	ut64 offset = sdb_atoi (k);
 	if (!offset) {
 		return true;
 	}
-	subst = strdup (k);
+	subst = strdup (v);
 	colonpos = strchr (subst, '|');
 
 	if (colonpos) {
 		*colonpos = ':';
 	}
-	r_cons_printf ("CL %s %s\n", subst, v);
+	r_cons_printf ("CL %s %s\n", subst, k);
 	free (subst);
 
 	return true;
@@ -135,7 +134,9 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		offset = r_num_math (core->num, p);
 		if (!offset)
 			offset = core->offset;
-	} else offset = core->offset;
+	} else {
+		offset = core->offset;
+	}
 	colon = strchr (p, ':');
 	if (colon) {
 		space = strchr (p, ' ');
@@ -154,24 +155,25 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			goto error;
 		}
 		*colon = '|';
-		while (*p != ' ') {
+		while (*p && *p != ' ') {
 			p++;
 		}
 		while (*p == ' ') {
 			p++;
 		}
 		if (*p != '\0') {
+			// TODO: use r_num_math here or something less rusty than sscanf
 			ret = sscanf (p, "0x%"PFMT64x, &offset);
-
 			if (ret != 1) {
+				remove = 0;
 				eprintf ("Failed to parse addr at %s\n", p);
+				// goto error;
+			} else {
+				ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
+						file_line, offset);
+
 				goto error;
 			}
-
-			ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
-					file_line, offset);
-
-			goto error;
 		}
 		if (remove) {
 			remove_meta_fileline (core, file_line);

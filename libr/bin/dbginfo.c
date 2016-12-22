@@ -25,6 +25,23 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	char *out = NULL, *out2 = NULL;
 	char *file_nopath;
 
+	{
+		char *key = r_str_newf ("0x%"PFMT64x, addr);
+		char *file_line = sdb_get (bin->cur->sdb_addrinfo, key, 0);
+		if (file_line) {
+			char *token = strchr (file_line, '|');
+			if (token) {
+				*token ++ = 0;
+				int line = atoi (token);
+				out = r_file_slurp_line (file_line, line, 0);
+			}
+			free (file_line);
+		}
+		free (key);
+		if (out) {
+			return out;
+		}
+	}
 	file[0] = 0;
 	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line)) {
 		if (bin->srcdir && *bin->srcdir) {
