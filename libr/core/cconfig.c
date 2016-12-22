@@ -1876,7 +1876,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cfg.fortunes", "true", "If enabled show tips at start");
 	SETPREF("cfg.fortunes.type", "tips,fun", "Type of fortunes to show (tips, fun, nsfw, creepy)");
 	SETPREF("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
-	SETPREF("cfg.fortunes.tts", "true", "Speak out the fortune");
+	SETPREF("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETI("cfg.hashlimit", SLURP_LIMIT, "If the file is bigger than hashlimit, do not compute hashes");
 	SETPREF("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
