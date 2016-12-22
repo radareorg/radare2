@@ -2,10 +2,7 @@ OBJ_R2K = io_r2k.o
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 OBJ_R2K += io_r2k_linux.o
 endif
-ifeq (${OSTYPE},windows)
-OBJ_R2K += io_r2k_windows.o
-endif
-ifeq (${OSTYPE},mingw32)
+ifeq (${OSTYPE},$(filter $(OSTYPE),windows mingw32 mingw64 cygwin))
 OBJ_R2K += io_r2k_windows.o
 endif
 
