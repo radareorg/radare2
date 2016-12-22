@@ -229,7 +229,7 @@ static void readlabel(const char **p, int store) {
 		*p = c;
 		return;
 	}
-	if (NULL == (buf = malloc (sizeof (struct label) + c - *p))) {
+	if (! (buf = malloc (sizeof (struct label) + c - *p))) {
 		eprintf ("not enough memory to store label %s\n", *p);
 		*p = c;
 		return;
