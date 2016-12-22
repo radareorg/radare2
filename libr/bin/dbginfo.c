@@ -45,6 +45,8 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 				file_nopath = strrchr (file_line, '/');
 				if (file_nopath) {
 					file_nopath ++;
+				} else {
+					file_nopath = file_line;
 				}
 			}
 			char *res = r_str_newf ("%s:%d%s%s",
