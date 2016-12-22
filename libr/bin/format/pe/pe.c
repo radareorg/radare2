@@ -95,7 +95,6 @@ static PE_DWord bin_pe_rva_to_paddr(RBinPEObj* bin, PE_DWord rva) {
 	return rva;
 }
 
-
 ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
 	ut64 imageBase = 0;
 	if (!bin || !bin->nt_headers) {
@@ -109,6 +108,15 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
 		imageBase = 0x10000;
 	}
 	return imageBase;
+}
+
+static PE_DWord bin_pe_calc_alignment(RBinPEObj* bin, PE_DWord value) {
+  PE_DWord aligned_value = 0;
+
+  while (aligned_value < value)
+    aligned_value += bin->optional_header->SectionAlignment;
+
+  return aligned_value;
 }
 
 static PE_DWord bin_pe_rva_to_va(RBinPEObj* bin, PE_DWord rva) {
@@ -2557,10 +2565,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		sections[j].size  = shdr[i].SizeOfRawData;
 		sections[j].vsize = shdr[i].Misc.VirtualSize;
 		if (bin->optional_header) {
-			sections[j].vsize +=
-				(bin->optional_header->SectionAlignment -
-				(sections[j].vsize &
-				 (bin->optional_header->SectionAlignment - 1)));
+			sections[j].vsize = bin_pe_calc_alignment (bin, sections[j].vsize);
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
 		sections[j].flags = shdr[i].Characteristics;
