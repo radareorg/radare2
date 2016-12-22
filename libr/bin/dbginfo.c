@@ -23,7 +23,7 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	char file[4096];
 	int line;
 	char *out = NULL, *out2 = NULL;
-	char *file_nopath;
+	char *file_nopath = NULL;
 
 	{
 		char *key = r_str_newf ("0x%"PFMT64x, addr);
@@ -32,15 +32,28 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 			char *token = strchr (file_line, '|');
 			if (token) {
 				*token ++ = 0;
-				int line = atoi (token);
+				line = atoi (token);
 				out = r_file_slurp_line (file_line, line, 0);
+				*token ++ = ':';
 			}
-			free (file_line);
 		}
 		free (key);
 		if (out) {
-			return out;
+			if (origin > 1) {
+				file_nopath = file_line;
+			} else {
+				file_nopath = strrchr (file_line, '/');
+				if (file_nopath) {
+					file_nopath ++;
+				}
+			}
+			char *res = r_str_newf ("%s:%d%s%s",
+				file_nopath, line, (file_nopath)? " ": "",
+				(out)? out: "");
+			free (out);
+			return res;
 		}
+		free (file_line);
 	}
 	file[0] = 0;
 	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line)) {
