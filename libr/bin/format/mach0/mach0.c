@@ -223,81 +223,80 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 				 bin->nsects, new_nsects);
 			bin->nsects = new_nsects;
 		}
-		if ((int)bin->nsects > 0) {
-			if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))){
-				bin->nsects = sect;
-				return false;
-			}
-			if (!size_sects || size_sects > bin->size){
-				bin->nsects = sect;
-				return false;
-			}
-
-			if (bin->segs[j].cmdsize != sizeof (struct MACH0_(segment_command)) \
-					  + (sizeof (struct MACH0_(section))*bin->segs[j].nsects)){
-				bin->nsects = sect;
-				return false;
-			}
-
-			if (off + sizeof (struct MACH0_(segment_command)) > bin->size ||\
-					off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size){
-				bin->nsects = sect;
-				return false;
-			}
-
-			if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
-				perror ("realloc (sects)");
-				bin->nsects = sect;
-				return false;
-			}
-
-			for (k = sect, j = 0; k < bin->nsects; k++, j++) {
-				ut64 offset = off + sizeof (struct MACH0_(segment_command)) + j * sizeof (struct MACH0_(section));
-				len = r_buf_read_at (bin->b, offset, sec, sizeof (struct MACH0_(section)));
-				if (len != sizeof (struct MACH0_(section))) {
-					eprintf ("Error: read (sects)\n");
-					bin->nsects = sect;
-					return false;
-				}
-
-				i = 0;
-				memcpy (&bin->sects[k].sectname, &sec[i], 16);
-				i += 16;
-				memcpy (&bin->sects[k].segname, &sec[i], 16);
-				i += 16;
-#if R_BIN_MACH064
-				bin->sects[k].addr = r_read_ble64 (&sec[i], bin->big_endian);
-				i += sizeof (ut64);
-				bin->sects[k].size = r_read_ble64 (&sec[i], bin->big_endian);
-				i += sizeof (ut64);
-#else
-				bin->sects[k].addr = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
-				bin->sects[k].size = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
-#endif
-				bin->sects[k].offset = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
-				bin->sects[k].align = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
-				bin->sects[k].reloff = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
-				bin->sects[k].nreloc = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
-				bin->sects[k].flags = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
-				bin->sects[k].reserved1 = r_read_ble32 (&sec[i], bin->big_endian);
-				i += sizeof (ut32);
-				bin->sects[k].reserved2 = r_read_ble32 (&sec[i], bin->big_endian);
-#if R_BIN_MACH064
-				i += sizeof (ut32);
-				bin->sects[k].reserved3 = r_read_ble32 (&sec[i], bin->big_endian);
-#endif
-			}
-		} else {
+		if ((int)bin->nsects < 1) {
 			eprintf ("Warning: Invalid number of sections\n");
 			bin->nsects = sect;
 			return false;
+		}
+		if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))){
+			bin->nsects = sect;
+			return false;
+		}
+		if (!size_sects || size_sects > bin->size){
+			bin->nsects = sect;
+			return false;
+		}
+
+		if (bin->segs[j].cmdsize != sizeof (struct MACH0_(segment_command)) \
+				  + (sizeof (struct MACH0_(section))*bin->segs[j].nsects)){
+			bin->nsects = sect;
+			return false;
+		}
+
+		if (off + sizeof (struct MACH0_(segment_command)) > bin->size ||\
+				off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size){
+			bin->nsects = sect;
+			return false;
+		}
+
+		if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
+			perror ("realloc (sects)");
+			bin->nsects = sect;
+			return false;
+		}
+
+		for (k = sect, j = 0; k < bin->nsects; k++, j++) {
+			ut64 offset = off + sizeof (struct MACH0_(segment_command)) + j * sizeof (struct MACH0_(section));
+			len = r_buf_read_at (bin->b, offset, sec, sizeof (struct MACH0_(section)));
+			if (len != sizeof (struct MACH0_(section))) {
+				eprintf ("Error: read (sects)\n");
+				bin->nsects = sect;
+				return false;
+			}
+
+			i = 0;
+			memcpy (&bin->sects[k].sectname, &sec[i], 16);
+			i += 16;
+			memcpy (&bin->sects[k].segname, &sec[i], 16);
+			i += 16;
+#if R_BIN_MACH064
+			bin->sects[k].addr = r_read_ble64 (&sec[i], bin->big_endian);
+			i += sizeof (ut64);
+			bin->sects[k].size = r_read_ble64 (&sec[i], bin->big_endian);
+			i += sizeof (ut64);
+#else
+			bin->sects[k].addr = r_read_ble32 (&sec[i], bin->big_endian);
+			i += sizeof (ut32);
+			bin->sects[k].size = r_read_ble32 (&sec[i], bin->big_endian);
+			i += sizeof (ut32);
+#endif
+			bin->sects[k].offset = r_read_ble32 (&sec[i], bin->big_endian);
+			i += sizeof (ut32);
+			bin->sects[k].align = r_read_ble32 (&sec[i], bin->big_endian);
+			i += sizeof (ut32);
+			bin->sects[k].reloff = r_read_ble32 (&sec[i], bin->big_endian);
+			i += sizeof (ut32);
+			bin->sects[k].nreloc = r_read_ble32 (&sec[i], bin->big_endian);
+			i += sizeof (ut32);
+			bin->sects[k].flags = r_read_ble32 (&sec[i], bin->big_endian);
+			i += sizeof (ut32);
+			bin->sects[k].reserved1 = r_read_ble32 (&sec[i], bin->big_endian);
+			i += sizeof (ut32);
+			bin->sects[k].reserved2 = r_read_ble32 (&sec[i], bin->big_endian);
+#if R_BIN_MACH064
+			i += sizeof (ut32);
+			bin->sects[k].reserved3 = r_read_ble32 (&sec[i], bin->big_endian);
+#endif
 		}
 	}
 	return true;
@@ -625,14 +624,14 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	if (len == -1)
 		goto wrong_read;
 
-	if (off + sizeof(struct thread_command) + sizeof(flavor) > bin->size || \
-	  off + sizeof(struct thread_command) + sizeof(flavor) + sizeof (ut32) > bin->size)
+	if (off + sizeof (struct thread_command) + sizeof (flavor) > bin->size || \
+	  off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (ut32) > bin->size)
 		return false;
 
 	// TODO: use count for checks
-	count = r_read_ble32 (bin->b->buf + off + sizeof(struct thread_command) + sizeof(flavor),
+	count = r_read_ble32 (bin->b->buf + off + sizeof (struct thread_command) + sizeof(flavor),
 				bin->big_endian);
-	ptr_thread = off + sizeof(struct thread_command) + sizeof(flavor) + sizeof(count);
+	ptr_thread = off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (count);
 
 	if (ptr_thread > bin->size)
 		return false;
@@ -712,15 +711,16 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		arw_sz = sizeof (struct arm_thread_state32);
 		break;
 	case CPU_TYPE_ARM64:
-		if (ptr_thread + sizeof (struct arm_thread_state64) > bin->size)
+		if (ptr_thread + sizeof (struct arm_thread_state64) > bin->size) {
 			return false;
+		}
 		if ((len = r_buf_fread_at(bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.arm_64, bin->big_endian?"34LI1I":"34Li1i", 1)) == -1) {
 			eprintf ("Error: read (thread state arm)\n");
 			return false;
 		}
-		pc = bin->thread_state.arm_64.pc;
-		pc_offset = ptr_thread + r_offsetof(struct arm_thread_state64, pc);
+		pc = r_read_be64 (&bin->thread_state.arm_64.pc);
+		pc_offset = ptr_thread + r_offsetof (struct arm_thread_state64, pc);
 		arw_ptr = (ut8*)&bin->thread_state.arm_64;
 		arw_sz = sizeof (struct arm_thread_state64);
 		break;
@@ -751,9 +751,8 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	}
 
 	return true;
-
 wrong_read:
-	eprintf("Error: read (thread)\n");
+	eprintf ("Error: read (thread)\n");
 	return false;
 }
 
@@ -1049,7 +1048,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 		case LC_THREAD:
 			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "thread", 0);
-			if (!parse_thread(bin, &lc, off, is_first_thread)) {
+			if (!parse_thread (bin, &lc, off, is_first_thread)) {
 				eprintf ("Cannot parse thread\n");
 				return false;
 			}
@@ -1267,7 +1266,8 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		sections[i].flags = bin->sects[i].flags;
 		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname) - 1);
 		// hack to support multiple sections with same name
-		snprintf (segname, sizeof (segname), "%d", i); // wtf
+		// snprintf (segname, sizeof (segname), "%d", i); // wtf
+		snprintf (segname, sizeof (segname), "%d.%s", i, bin->sects[i].segname);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {

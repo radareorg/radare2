@@ -157,8 +157,9 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 	RListIter *iter;
 	RIOSection *s;
 
-	if (io->va || io->debug)
+	if (io->va || io->debug) {
 		offset = r_io_section_vaddr_to_maddr_try (io, offset);
+	}
 	// XXX - Should this print the section->id or the location in the
 	// rio sections array?
 	r_list_foreach (io->sections, iter, s) {
@@ -174,8 +175,8 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 		} else {
 			io->cb_printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
-			s->id, (offset>=s->offset && offset<s->offset + s->size)?'*':'.',
-			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
+				s->id, (offset >= s->offset && offset<s->offset + s->size)?'*': '.',
+				s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 			if (s->arch && s->bits) {
 				io->cb_printf ("  ; %s %d\n", r_sys_arch_str (s->arch), s->bits);
 			} else {
@@ -204,7 +205,7 @@ static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_col
 	RListIter *iter;
 	RIOSection *s;
 	int j, i = 0;
-	int  width = cols - 60;
+	int  width = cols - 70;
 	if (width < 1) width = 30;
 	r_list_foreach (io->sections, iter, s) {
 		if (!(s->rwx & R_IO_MAP)) {
@@ -213,7 +214,7 @@ static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_col
 		if (min == -1 || s->vaddr < min) {
 			min = s->vaddr;
 		}
-		if (max == -1 || s->vaddr+s->size > max) {
+		if (max == -1 || s->vaddr + s->size > max) {
 			max = s->vaddr+s->size;
 		}
 	}
@@ -251,9 +252,9 @@ static void list_section_visual_vaddr (RIO *io, ut64 seek, ut64 len, int use_col
 					io->cb_printf ("-");
 				}
 			}
-			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s  %04s\n",
-				color, s->vaddr + s->size, color_end,
-				r_str_rwx_i (s->rwx), s->name, buf);
+			io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s %s\n",
+				color, s->vaddr + s->size, color_end, buf,
+				r_str_rwx_i (s->rwx), s->name);
 			i++;
 		}
 		PRINT_CURRENT_SEEK;
@@ -265,14 +266,18 @@ static void list_section_visual_paddr (RIO *io, ut64 seek, ut64 len, int use_col
 	RListIter *iter;
 	RIOSection *s;
 	int j, i = 0;
-	int  width = cols - 60;
-	if (width < 1) width = 30;
+	int width = cols - 70;
+	if (width < 1) {
+		width = 30;
+	}
 	seek = r_io_section_vaddr_to_maddr_try (io, seek);
 	r_list_foreach (io->sections, iter, s) {
-		if (min == -1 || s->offset < min)
+		if (min == -1 || s->offset < min) {
 			min = s->offset;
-		if (max == -1 || s->offset+s->size > max)
-			max = s->offset+s->size;
+		}
+		if (max == -1 || s->offset+s->size > max) {
+			max = s->offset + s->size;
+		}
 	}
 	mul = (max-min) / width;
 	if (min != -1 && mul != 0) {
@@ -305,12 +310,12 @@ static void list_section_visual_paddr (RIO *io, ut64 seek, ut64 len, int use_col
 					io->cb_printf ("#");
 				else io->cb_printf ("-");
 			}
-			io->cb_printf ("| %s0x%08"PFMT64x"%s %s %s  %04s\n",
-				color, s->offset+s->size, color_end,
-				r_str_rwx_i (s->rwx), s->name, buf);
+			io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
+				color, s->offset+s->size, color_end, buf,
+				r_str_rwx_i (s->rwx), s->name);
 
 			i++;
-			}
+		}
 		PRINT_CURRENT_SEEK;
 	}
 }
@@ -340,8 +345,9 @@ R_API RIOSection *r_io_section_mget_in(RIO *io, ut64 maddr) {
 	RIOSection *s;
 	RListIter *iter;
 	r_list_foreach (io->sections, iter, s) {
-		if ((maddr >= s->offset && maddr < (s->offset + s->size)))
+		if ((maddr >= s->offset && maddr < (s->offset + s->size))) {
 			return s;
+		}
 	}
 	return NULL;
 }
@@ -350,8 +356,9 @@ R_API RIOSection *r_io_section_mget_prev(RIO *io, ut64 maddr) {
 	RIOSection *s;
 	RListIter *iter;
 	r_list_foreach_prev (io->sections, iter, s) {
-		if ((maddr >= s->offset && maddr < (s->offset + s->size)))
+		if ((maddr >= s->offset && maddr < (s->offset + s->size))) {
 			return s;
+		}
 	}
 	return NULL;
 }
@@ -371,7 +378,7 @@ R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 maddr) {
 // TODO: deprecate
 R_API int r_io_section_get_rwx(RIO *io, ut64 offset) {
 	RIOSection *s = r_io_section_mget_in (io, offset);
-	return s?s->rwx:R_IO_READ|R_IO_WRITE|R_IO_EXEC;
+	return s? s->rwx: R_IO_READ | R_IO_WRITE | R_IO_EXEC;
 }
 
 R_API int r_io_section_overlaps(RIO *io, RIOSection *s) {
@@ -380,7 +387,9 @@ R_API int r_io_section_overlaps(RIO *io, RIOSection *s) {
 	RIOSection *s2;
 
 	r_list_foreach (io->sections, iter, s2) {
-		if (!(s->rwx & R_IO_MAP)) continue;
+		if (!(s->rwx & R_IO_MAP)) {
+			continue;
+		}
 		if (s != s2) {
 			if (s->offset >= s2->offset) {
 				if (s2->offset+s2->size < s->offset)
@@ -409,9 +418,10 @@ R_API ut64 r_io_section_vaddr_to_maddr(RIO *io, ut64 vaddr) {
 	RIOSection *s;
 
 	r_list_foreach (io->sections, iter, s) {
-		if (!(s->rwx & R_IO_MAP)) continue;
-		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
-			return (vaddr - s->vaddr + s->offset);
+		if (s->rwx & R_IO_MAP) {
+			if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+				return (vaddr - s->vaddr + s->offset);
+			}
 		}
 	}
 	return UT64_MAX;
