@@ -1790,8 +1790,6 @@ static int esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val)
 		*val = cpu->pc > 8
 			? *val & MASK (cpu->pc - 8)
 			: 0;
-	} else {
-		eprintf ("Modifying register '%s' with value 0x%08"PFMT64x"\n", name, *val);
 	}
 
 	return 0;
