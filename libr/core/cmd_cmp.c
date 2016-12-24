@@ -398,46 +398,44 @@ static int cmd_cmp(void *data, const char *input) {
 			strlen (input + 1) + 1, 0);
 		break;
 	case 'x':
-		switch (input[1])
-		{
-			case ' ':
-				mode = 0;
-				input += 2;
-				break;
-			case '*':
-				if (input[2] != ' ') {
-					eprintf ("Usage: cx* 00..22'\n");
-					return 0;
-				}
-
-				mode = '*';
-				input += 3;
-				break;
-			default:
-				eprintf ("Usage: cx 00..22'\n");
+		switch (input[1]) {
+		case ' ':
+			mode = 0;
+			input += 2;
+			break;
+		case '*':
+			if (input[2] != ' ') {
+				eprintf ("Usage: cx* 00..22'\n");
 				return 0;
+			}
+			mode = '*';
+			input += 3;
+			break;
+		default:
+			eprintf ("Usage: cx 00..22'\n");
+			return 0;
 		}
-
-		filled = (char*) malloc (strlen (input) + 1);
-		if (!filled)
+		if (!(filled = (char*) malloc (strlen (input) + 1))) {
 			return false;
-
+		}
 		memcpy (filled, input, strlen (input) + 1);
-
-		buf = (ut8*)malloc (strlen (input) + 1);
-		if (!buf) {
-			free(filled);
+		if (!(buf = (ut8*)malloc (strlen (input) + 1))) {
+			free (filled);
 			return false;
 		}
 		ret = r_hex_bin2str (core->block, strlen (input) / 2, (char *)buf);
-
-		for (i = 0; i < ret * 2; i++)
-			if (filled[i] == '.')
+		for (i = 0; i < ret * 2; i++) {
+			if (filled[i] == '.') {
 				filled[i] = buf[i];
+			}
+		}
 
 		ret = r_hex_str2bin (filled, buf);
-		if (ret<1) eprintf ("Cannot parse hexpair\n");
-		else val = radare_compare (core, core->block, buf, ret, mode);
+		if (ret < 1) {
+			eprintf ("Cannot parse hexpair\n");
+		} else {
+			val = radare_compare (core, core->block, buf, ret, mode);
+		}
 		free (buf);
 		free (filled);
 		break;
@@ -446,7 +444,9 @@ static int cmd_cmp(void *data, const char *input) {
 		if (buf) {
 			ret = r_io_read_at (core->io, r_num_math (core->num,
 				input+1), buf, core->blocksize);
-			if (ret<1) eprintf ("Cannot read hexdump\n");
+			if (ret < 1) {
+				eprintf ("Cannot read hexdump\n");
+			}
 			val = radare_compare (core, core->block, buf, ret, mode);
 			free (buf);
 		} return false;
@@ -511,8 +511,9 @@ static int cmd_cmp(void *data, const char *input) {
 			}
 		} else {
 			char* home = r_sys_getenv (R_SYS_HOME);
-			if (!home || r_sandbox_chdir (home)==-1)
+			if (!home || r_sandbox_chdir (home) == -1) {
 				eprintf ("Cannot find home.\n");
+			}
 			free (home);
 		}
 		break;
