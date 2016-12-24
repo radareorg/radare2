@@ -425,9 +425,10 @@ static int cmd_cmp(void *data, const char *input) {
 		memcpy (filled, input, strlen (input) + 1);
 
 		buf = (ut8*)malloc (strlen (input) + 1);
-		if (!buf)
+		if (!buf) {
+			free(filled);
 			return false;
-
+		}
 		ret = r_hex_bin2str (core->block, strlen (input) / 2, (char *)buf);
 
 		for (i = 0; i < ret * 2; i++)
