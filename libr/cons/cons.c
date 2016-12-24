@@ -149,7 +149,7 @@ R_API void r_cons_println(const char* str) {
 	r_cons_newline ();
 }
 
-R_API void r_cons_strcat_justify (const char *str, int j, char c) {
+R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 	int i, o, len;
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (str[i]=='\n') {
@@ -777,9 +777,8 @@ R_API void r_cons_visual_write (char *buffer) {
 	}
 }
 
-R_API void r_cons_printf(const char *format, ...) {
+R_API void r_cons_printf_list(const char *format, va_list ap) {
 	size_t size, written;
-	va_list ap;
 
 	if (I.null || !format) {
 		return;
@@ -787,19 +786,22 @@ R_API void r_cons_printf(const char *format, ...) {
 	if (strchr (format, '%')) {
 		palloc (MOAR + strlen (format) * 20);
 		size = I.buffer_sz - I.buffer_len - 1; /* remaining space in I.buffer */
-		va_start (ap, format);
 		written = vsnprintf (I.buffer + I.buffer_len, size, format, ap);
-		va_end (ap);
 		if (written >= size) { /* not all bytes were written */
 			palloc (written);
-			va_start (ap, format);
 			written = vsnprintf (I.buffer + I.buffer_len, written, format, ap);
-			va_end (ap);
 		}
 		I.buffer_len += written;
 	} else {
 		r_cons_strcat (format);
 	}
+}
+
+R_API void r_cons_printf(const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	r_cons_printf_list (format, ap);
+	va_end (ap);
 }
 
 R_API int r_cons_get_column() {
