@@ -327,6 +327,11 @@ static int cmd_rap(void *data, const char *input) {
 	return 0;
 }
 
+static int cmd_rap_run(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	return r_io_system (core->io, input);
+}
+
 static int cmd_yank(void *data, const char *input) {
 	ut64 n;
 	RCore *core = (RCore *)data;
@@ -2878,6 +2883,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "%",        "short version of 'env' command", &cmd_env);
 	r_cmd_add (core->rcmd, "!",        "run system command", &cmd_system);
 	r_cmd_add (core->rcmd, "=",        "io pipe", &cmd_rap);
+	r_cmd_add (core->rcmd, "\\",       "alias for =!", &cmd_rap_run);
 	r_cmd_add (core->rcmd, "#",        "calculate hash", &cmd_hash);
 	r_cmd_add (core->rcmd, "?",        "help message", &cmd_help);
 	r_cmd_add (core->rcmd, "$",        "alias", &cmd_alias);
