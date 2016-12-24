@@ -634,9 +634,9 @@ INST_HANDLER (eijmp) {	// EIJMP
 	r_anal_esil_reg_read (anal->esil, "eind", &eind, NULL);
 	// real target address may change during execution, so this value will
 	// be changing all the time
-	op->jump = (eind << 16) + z;
+	op->jump = ((eind << 16) + z) << 1;
 	// jump
-	ESIL_A ("z,16,eind,<<,+,pc,=,");
+	ESIL_A ("1,z,16,eind,<<,+,<<,pc,=,");
 	// cycles
 	op->cycles = 2;
 }
@@ -718,33 +718,29 @@ INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
 	ESIL_A ("DUP,!,zf,=,");				// Z = !R
 }
 
-INST_HANDLER (icall) {	// ICALL k
-	ut64 z;
-	// read z for calculating jump address on runtime
-	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
-	// real target address may change during execution, so this value will
-	// be changing all the time
-	op->jump = z;
-	op->cycles = cpu->pc <= 16 ? 3 : 4;
-	if (!STR_BEGINS (cpu->model, "ATxmega")) {
-		// AT*mega optimizes 1 cycle!
-		op->cycles--;
-	}
-	ESIL_A ("pc,");				// esil already points to next
-						// instruction (@ret)
-	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret addr
-	ESIL_A ("z,pc,=,");			// jump!
-}
-
 INST_HANDLER (ijmp) {	// IJMP k
 	ut64 z;
 	// read z for calculating jump address on runtime
 	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
 	// real target address may change during execution, so this value will
 	// be changing all the time
-	op->jump = z;
+	op->jump = z << 1;
 	op->cycles = 2;
-	ESIL_A ("z,pc,=,");			// jump!
+	ESIL_A ("1,z,<<,pc,=,");		// jump!
+}
+
+INST_HANDLER (icall) {	// ICALL k
+	// push pc in stack
+	ESIL_A ("pc,");				// esil is already pointing to
+						// next instruction (@ret)
+	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret in stack
+	// do a standard IJMP
+	INST_CALL (eijmp);
+	// fix cycles
+	if (!STR_BEGINS (cpu->model, "ATxmega")) {
+		// AT*mega optimizes 1 cycle!
+		op->cycles--;
+	}
 }
 
 INST_HANDLER (in) {	// IN Rd, A
