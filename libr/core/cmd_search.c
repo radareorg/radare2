@@ -2293,7 +2293,7 @@ reread:
 	case 'r': // "/r"
 		if (input[param_offset - 1] == ' ') {
 			r_core_anal_search (core, param.from, param.to,
-					r_num_math (core->num, input+2));
+					r_num_math (core->num, input + 2));
 		} else {
 			r_core_anal_search (core, param.from, param.to,
 					core->offset);
