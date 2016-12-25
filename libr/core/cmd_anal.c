@@ -5016,7 +5016,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_anal_autoname_all_fcns (core);
 				}
 				if (input[1] == 'a') { // "aaaa"
-					rowlog (core, "Type matching analysis for all functions");
+					rowlog (core, "Type matching analysis for all functions (afta)");
 					r_core_cmd0 (core, "afta");
 					rowlog_done (core);
 				}
