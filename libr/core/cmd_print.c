@@ -2655,10 +2655,10 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf ("`-------------'---------------------------------'\n");
 			break;
 		default:
-			r_cons_printf ("] 0x%"PFMT64x"\n", to);
 			if (use_color) {
 				r_cons_print (Color_RESET);
 			}
+			r_cons_printf ("] 0x%"PFMT64x"\n", to);
 		}
 		r_core_anal_stats_free (as);
 		break;
