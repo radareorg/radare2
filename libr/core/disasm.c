@@ -2833,7 +2833,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				/* nothing */
 			} else {
 				if (ds && !ds->show_emu_str) {
-					msg = r_str_newf ("-> 0x%x", *n32);
+					msg = r_str_newf (" -> 0x%x", *n32);
 				}
 			}
 		}
@@ -2851,7 +2851,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		} else {
-			ds_comment_esil (ds, true, false, "; %s=0x%" PFMT64x "%s", name, *val,
+			ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x"%s", name, *val,
 					 msg ? msg : "");
 			if (ds->show_comments && !ds->show_comment_right) {
 				r_cons_newline ();
@@ -3554,13 +3554,10 @@ toro:
 		if (ds->show_comments && !ds->show_comment_right) {
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
-				ds_setup_print_pre (ds, false, false);
-				ds_print_lines_left (ds);
 			}
-		} else {
-			ds_setup_print_pre (ds, false, false);
-			ds_print_lines_left (ds);
 		}
+		ds_setup_print_pre (ds, false, false);
+		ds_print_lines_left (ds);
 		f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 		if (ds_print_labels (ds, f)) {
 			ds_show_functions (ds);
