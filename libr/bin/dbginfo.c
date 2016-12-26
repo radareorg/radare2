@@ -49,11 +49,15 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 					file_nopath = file_line;
 				}
 			}
-			char *res = r_str_newf ("%s:%d%s%s",
-				file_nopath, line, (file_nopath)? " ": "",
-				(out)? out: "");
-			free (out);
-			return res;
+			if (origin) {
+				char *res = r_str_newf ("%s:%d%s%s",
+						file_nopath, line, (file_nopath)? " ": "",
+						(out)? out: "");
+				free (out);
+				return res;
+			} else {
+				return out;
+			}
 		}
 		free (file_line);
 	}
