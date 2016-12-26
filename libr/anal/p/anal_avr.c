@@ -28,9 +28,7 @@ typedef struct _cpu_model_tag {
 	int pc;
 	char *inherit;
 	struct _cpu_model_tag *inherit_cpu_p;
-	union {
-		CPU_CONST *consts[10];
-	} u;
+	CPU_CONST *consts[10];
 } CPU_MODEL;
 
 typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu);
@@ -108,7 +106,7 @@ CPU_CONST cpu_pagesize_7_bits[] = {
 
 CPU_MODEL cpu_models[] = {
 	{ .model = "ATmega640",   .pc = 15,
-		.u.consts = {
+		.consts = {
 			cpu_reg_common,
 			cpu_memsize_m640_m1280m_m1281_m2560_m2561,
 			cpu_pagesize_7_bits,
@@ -124,7 +122,7 @@ CPU_MODEL cpu_models[] = {
 	// last model is the default AVR - ATmega8 forever!
 	{
 		.model = "ATmega8", .pc = 13,
-		.u.consts = {
+		.consts = {
 			cpu_reg_common,
 			cpu_memsize_common,
 			cpu_pagesize_5_bits,
@@ -176,7 +174,7 @@ static ut32 const_get_value(CPU_CONST *c) {
 static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	CPU_CONST **clist, *citem;
 
-	for (clist = cpu->u.consts; *clist; clist++) {
+	for (clist = cpu->consts; *clist; clist++) {
 		for (citem = *clist; citem->key; citem++) {
 			if (!strcmp (c, citem->key)
 			&& (type == CPU_CONST_NONE || type == citem->type)) {
@@ -203,7 +201,7 @@ static int __esil_pop_argument(RAnalEsil *esil, ut64 *v) {
 static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
 	CPU_CONST **clist, *citem;
 
-	for (clist = cpu->u.consts; *clist; clist++) {
+	for (clist = cpu->consts; *clist; clist++) {
 		for (citem = *clist; citem && citem->key; citem++) {
 			if (citem->value == (MASK (citem->size * 8) & v)
 			&& (type == CPU_CONST_NONE || type == citem->type)) {
