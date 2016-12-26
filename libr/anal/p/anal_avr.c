@@ -733,7 +733,7 @@ INST_HANDLER (icall) {	// ICALL k
 						// next instruction (@ret)
 	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret in stack
 	// do a standard IJMP
-	INST_CALL (eijmp);
+	INST_CALL (ijmp);
 	// fix cycles
 	if (!STR_BEGINS (cpu->model, "ATxmega")) {
 		// AT*mega optimizes 1 cycle!
