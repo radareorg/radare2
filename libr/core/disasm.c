@@ -2590,6 +2590,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		DOALIGN();
 		r_cons_printf (" ; '%c'", ch);
 	}
+	bool flag_printed = false;
 	if (p == UT64_MAX) {
 		/* do nothing */
 	} else if (((st64)p) > 0) {
@@ -2620,6 +2621,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 				CMTRIGHT_NL
 				r_cons_printf (" ; 0x%"PFMT64x"%s%s", p, *flag?" ; ":"", flag);
+				flag_printed = true;
 			} else {
 				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
@@ -2672,6 +2674,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		f = r_flag_get_i (core->flags, p);
 		if (f) {
 			r_str_filter (msg, 0);
+			if (!strncmp (msg, "UH..", 4)) {
+				*msg = 0;
+			}
 			ds_comment_newline (ds);
 			DOALIGN();
 			if (*msg) {
@@ -2697,7 +2702,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					r_cons_printf (" ; \"%s\" @ 0x%"PFMT64x, msg, p);
 				}
 			} else {
-				r_cons_printf (" ; %s", f->name);
+				if (!flag_printed) {
+					r_cons_printf (" ; %s", f->name);
+					flag_printed = true;
+				}
 			}
 		} else {
 			if (p == UT64_MAX || p == UT32_MAX) {
