@@ -14,7 +14,7 @@ static int searchshow = 0;
 static int searchhits = 0;
 static int maplist = 0;
 static int maxhits = 0;
-static bool json = 0;
+static bool json = false;
 static int first_hit = true;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
@@ -402,11 +402,17 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				pre = getstring (buf, ctx);
 				wrd = r_str_utf16_encode (buf + ctx, len);
 				pos = getstring (buf + ctx + len, ctx);
+				if (!pos) {
+					pos = strdup ("");
+				}
 				free (buf);
 				if (json) {
-					char *msg = r_str_newf (".%s%s%s.", pre, wrd, pos);
+					s = r_str_newf ("%s%s%s", pre, wrd, pos);
+#if 0
+					char *msg = r_str_newf ("%s%s%s", pre, wrd, pos);
 					s = r_base64_encode_dyn (msg, -1);
 					free (msg);
+#endif
 				} else if (use_color) {
 					s = r_str_newf (".%s"Color_YELLOW"%s"Color_RESET"%s.", pre, wrd, pos);
 				} else {
@@ -2775,8 +2781,9 @@ reread:
 	}
 	searchhits = 0;
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
-	if (dosearch)
+	if (dosearch) {
 		do_string_search (core, &param);
+	}
 beach:
 	core->num->value = searchhits;
 	core->in_search = false;
