@@ -2461,6 +2461,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 					}
 					break;
 				}
+				i += op.size - 1;
 			}
 			if (bckwrds) {
 				if (!do_bckwrd_srch) {
