@@ -1738,14 +1738,17 @@ static int avr_custom_spm_page_write(RAnalEsil *esil) {
 	CPU_MODEL *cpu;
 	char *t = NULL;
 	ut64 addr, page_size_bits, tmp_page;
+
 	// sanity check
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
+
 	// get target address
 	if (!__esil_pop_argument (esil, &addr)) {
 		return false;
 	}
+
 	// get details about current MCU and fix input address and base address
 	// of the internal temporary page
 	cpu = get_cpu_model (esil->anal->cpu);
