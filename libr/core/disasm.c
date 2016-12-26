@@ -311,9 +311,9 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 	return section;
 }
 
-// up means if this lines go up
-// nl if we have to insert new line
-static void _ds_comment_newline_(RDisasmState *ds, bool up, bool nl) {
+// up means if this lines go up, it controls whether to insert `_
+// nl if we have to insert new line, it controls whether to insert \n
+static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	const char *sn;
 	if (ds->show_comment_right) {
 		return;
@@ -325,13 +325,13 @@ static void _ds_comment_newline_(RDisasmState *ds, bool up, bool nl) {
 		up? "": "`-", COLOR (ds, pal_comment));
 }
 static void ds_comment_lineup(RDisasmState *ds) {
-	_ds_comment_newline_ (ds, true, false);
+	_ds_comment_align_ (ds, true, false);
 }
 
 static void _ds_comment(RDisasmState *ds, bool nl, bool align, const char *format,
 			 va_list ap) {
 	if (ds->show_comments && !ds->show_comment_right && nl) {
-		_ds_comment_newline_ (ds, true, nl);
+		_ds_comment_align_ (ds, true, nl);
 	}
    	if (ds->show_comments && ds->show_comment_right && align) {
 		ds_align_comment (ds);
@@ -903,7 +903,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		cols -= 15;
 		cols /= 23;
 		ds_pre_xrefs (ds);
-		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
+		ds_comment (ds, false, "   %s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
 			ds_comment (ds, false, "%s 0x%08"PFMT64x"  ",
 				r_anal_xrefs_type_tostring (refi->type), refi->addr);
@@ -912,7 +912,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					ds_print_color_reset (ds);
 					r_cons_newline ();
 					ds_pre_xrefs (ds);
-					ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
+					ds_comment (ds, false, "   %s; XREFS: ", ds->show_color? ds->pal_comment: "");
 				}
 				count = 0;
 			} else {
@@ -938,12 +938,10 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				}
 			}
 			ds_pre_xrefs (ds);
-			ds_comment (ds, false, "%s; %s XREF from 0x%08"PFMT64x" (%s)%s\n",
-				COLOR (ds, pal_comment),
-				r_anal_xrefs_type_tostring (refi->type),
-				refi->addr,
-				name,
-				COLOR_RESET (ds));
+			//those extra space to align
+			ds_comment (ds, false, "   %s; %s XREF from 0x%08"PFMT64x" (%s)%s\n", 
+			  	COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type),
+				refi->addr, name, COLOR_RESET (ds));
 			R_FREE (name);
 		}
 	}
@@ -1370,7 +1368,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	linelen = maxclen;
 	if (ds->show_comment_right_default) {
 		if (ds->ocols + maxclen < core->cons->columns) {
-			if (ds->comment && *ds->comment && strlen (ds->comment)<maxclen) {
+			if (ds->comment && *ds->comment && strlen (ds->comment) < maxclen) {
 				if (!strchr (ds->comment, '\n')) { // more than one line?
 					ds->show_comment_right = 1;
 				}
@@ -1378,36 +1376,13 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 	}
 	if (!ds->show_comment_right) {
-		int infun, mycols = ds->lcols;
+		int mycols = ds->lcols;
 		if (mycols + linelen + 10 > core->cons->columns) {
 			mycols = 0;
 		}
 		mycols /= 2;
 		if (ds->show_color) {
 			r_cons_strcat (ds->pal_comment);
-		}
-#if OLD_COMMENTS
-		ds_comment_nl (ds, false, ds->comment);
-#else
-		infun = f && (f->addr != ds->at);
-		if (infun) {
-			char *str = strdup (ds->show_color ? ds->color_fline : "");
-			str = r_str_concat (str, core->cons->vline[LINE_VERT]);
-			if (ds->show_color) {
-				str = r_str_concat (str, ds->color_flow);
-			}
-			// color refline
-			str = r_str_concat (str, " ");
-			str = r_str_concat (str, ds->refline2);
-			// color comment
-			if (ds->show_color) {
-				str = r_str_concat (str, ds->color_comment);
-			}
-			str = r_str_concat (str, ";  ");
-			ds->comment = r_str_prefix_all (ds->comment, str);
-			free (str);
-		} else {
-			ds->comment = r_str_prefix_all (ds->comment, "   ;      ");
 		}
 		/* print multiline comment */
 		if (ds->cmtfold) {
@@ -1420,15 +1395,15 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			}
 			free (p);
 		} else {
-			ds_comment_nl (ds, false, ds->comment);
+			ds->comment = r_str_prefix_all (ds->comment, "; ");
+			_ds_comment_align_ (ds, true, false);
+			ds_comment (ds, false, ds->comment);
 		}
-#endif
 		if (ds->show_color) {
 			ds_print_color_reset (ds);
 		}
-		r_cons_newline ();
 		R_FREE (ds->comment);
-
+		r_cons_newline ();
 		/* flag one */
 		if (item && item->comment && ds->ocomment != item->comment) {
 			if (ds->show_color) {
@@ -3091,6 +3066,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					if (ds->show_color) {
 						ds_comment_esil (ds, true, false, ds->pal_comment);
 					}
+					ds_align_comment (ds);
 					ds_comment_esil (ds, ds->show_color? false : true, false, 
 					  		"; %s%s%s(", r_str_get (fcn_type), (fcn_type && *fcn_type &&
 							fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
@@ -3196,12 +3172,14 @@ callfallback:
 				if (fcn) {
 					nargs = fcn->nargs;
 				}
-				ds_comment_esil (ds, true, false, "; CALL: ");
-				for (i = 0; i < nargs; i++) {
-					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
-					ds_comment_esil (ds, false, false, "%s0x%"PFMT64x, i?", ":"", v);
+				if (nargs > 0) {
+					ds_comment_esil (ds, true, false, "; CALL: ");
+					for (i = 0; i < nargs; i++) {
+						ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+						ds_comment_esil (ds, false, false, "%s0x%"PFMT64x, i?", ":"", v);
+					}
+					ds_comment_esil (ds, false, true, "");
 				}
-				ds_comment_esil (ds, false, true, "");
 			}
 		}
 		break;
