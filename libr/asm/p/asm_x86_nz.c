@@ -114,6 +114,7 @@ typedef struct Opcode_t {
 	size_t op_len;
 	bool is_short;
 	ut8 opcode[3];
+	int operands_count;
 	Operand operands[2];
 } Opcode;
 
@@ -133,8 +134,9 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode op) {
 	if (!op.operands[1].is_good_flag) {
 		return -1;
 	}
-	if (a->bits == 64 && op.operands[0].type & OT_QWORD) data[l++] = 0x48;
-
+	if (a->bits == 64 && op.operands[0].type & OT_QWORD) {
+		data[l++] = 0x48;
+	}
 	if (!strcmp (op.mnemonic, "adc")) {
 		modrm = 2;
 	} else if (!strcmp (op.mnemonic, "add")) {
@@ -415,6 +417,9 @@ static int opor(RAsm *a, ut8 * data, const Opcode op) {
 }
 
 static int opxor(RAsm *a, ut8 * data, const Opcode op) {
+	if (op.operands_count < 2) {
+		return -1;
+	}
 	if (op.operands[1].type & OT_CONSTANT) {
 		return process_group_1 (a, data, op);
 	}
@@ -2165,22 +2170,24 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 	out->operands[0].sign = out->operands[1].sign = 1;
 	out->operands[0].is_good_flag = out->operands[1].is_good_flag = true;
 	out->is_short = false;
+	out->operands_count = 0;
 	if (args) {
 		args++;
 	} else {
 		return 1;
 	}
-
 	if (!strncasecmp (args, "short", 5)) {
 		out->is_short = true;
 		args += 5;
 	}
-
 	parseOperand (a, args, &(out->operands[0]));
 	args = strchr (args, ',');
 	if (args) {
 		args++;
 		parseOperand (a, args, &(out->operands[1]));
+		out->operands_count = 2;
+	} else {
+		out->operands_count = 1;
 	}
 	return 0;
 }

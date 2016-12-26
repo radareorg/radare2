@@ -584,8 +584,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	{
 		char *nl = strchr (lbuf, '\n');
 		if (nl) {
-			if (strchr (nl + 1, '\n'))
+			if (strchr (nl + 1, '\n')) {
 				r_str_replace_char (lbuf, ';', '#');
+			}
 		}
 	}
 	// XXX: ops like mov eax, $pc+33 fail coz '+' is nov alid number!!!
