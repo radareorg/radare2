@@ -303,7 +303,7 @@ INST_HANDLER (adc) {	// ADC Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"|,|,cf,=,",
@@ -331,7 +331,7 @@ INST_HANDLER (add) {	// ADD Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"|,|,cf,=,",
@@ -522,7 +522,7 @@ INST_HANDLER (cp) {	// CP Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -548,7 +548,7 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z
-	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -574,7 +574,7 @@ INST_HANDLER (cpi) { // CPI Rd, K
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&,"	// C
 		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -1129,7 +1129,7 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z (C)
-	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -1155,7 +1155,7 @@ INST_HANDLER (sbci) {	// SBCI Rd, k
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z (C)
-	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&,"	// C
 		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -1181,7 +1181,7 @@ INST_HANDLER (sub) {	// SUB Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -1207,7 +1207,7 @@ INST_HANDLER (subi) {	// SUBI Rd, k
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&,"	// C
 		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
