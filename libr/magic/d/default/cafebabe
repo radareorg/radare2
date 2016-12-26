@@ -16,7 +16,7 @@
 #
 0	beshort		0xcafe
 >2	beshort         0xbabe
->4	belong		>30		compiled Java class data,
+#>4	belong		>30		compiled Java class data,
 #>4	belong		>30
 !:mime	application/x-java-applet
 >>6	beshort		<20

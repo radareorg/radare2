@@ -22,7 +22,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->label = NULL;
 	bb->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
 	bb->op_pos_size = DFLT_NINSTR;
-    bb->parent_reg_arena = NULL;
+	bb->parent_reg_arena = NULL;
 	return bb;
 }
 
@@ -42,23 +42,23 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	R_FREE (bb->label);
 	R_FREE (bb->op_pos);
 	R_FREE (bb->parent_reg_arena);
-    if (bb->prev) {
+	if (bb->prev) {
 		if (bb->prev->jumpbb == bb) {
 			bb->prev->jumpbb = NULL;
 		}
 		if (bb->prev->failbb == bb) {
 			bb->prev->failbb = NULL;
 		}
-    	bb->prev = NULL;
-    }
-    if (bb->jumpbb) {
+		bb->prev = NULL;
+	}
+	if (bb->jumpbb) {
 		bb->jumpbb->prev = NULL;
 		bb->jumpbb = NULL;
-    }
-    if (bb->failbb) {
+	}
+	if (bb->failbb) {
 		bb->failbb->prev = NULL;
 		bb->failbb = NULL;
-    }
+	}
 	R_FREE (bb);
 }
 
@@ -212,7 +212,7 @@ R_API RAnalBlock *r_anal_bb_get_failbb(RAnalFunction *fcn, RAnalBlock *bb) {
 }
 
 /* return the offset of the i-th instruction in the basicblock bb.
- * If the index of the instruction is not valid, it returns UT16_MAX  */
+ * If the index of the instruction is not valid, it returns UT16_MAX */
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
 	if (i < 0 || i >= bb->ninstr) return UT16_MAX;
 	return i > 0 ? bb->op_pos[i - 1] : 0;
