@@ -1436,6 +1436,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 		case '[':
 		case ',':
 			/* ugly trick for dalvik */
+			/*
 			if (p[i + 1] == ' ' && p[i + 2] == 'L') {
 				strcpy (o + j, num);
 				j += strlen (num);
@@ -1448,6 +1449,7 @@ R_API char * r_print_colorize_opcode (char *p, const char *reg, const char *num)
 				}
 				return strdup (o);
 			}
+			*/
 			if (is_float) {
 				/* do nothing, keep going until next */
 				is_float = 0;
