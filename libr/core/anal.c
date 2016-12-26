@@ -2200,14 +2200,14 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 			bb_size = bb->size;
 		}
 		if (r_io_read_at (core->io, bb->addr, buf, bb->size) != bb->size) {
-			eprintf ("read error\n");
+	//		eprintf ("read error\n");
 			break;
 		}
 		pos = bb->addr;
 		while (pos < bb->addr + bb->size) {
 			op = r_core_anal_op (core, pos);
 			if (!op) {
-				eprintf ("Cannot get op\n");
+	//			eprintf ("Cannot get op\n");
 				break;
 			}
 			fill_args (core->anal, fcn, op);
