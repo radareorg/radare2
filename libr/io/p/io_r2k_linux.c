@@ -247,6 +247,11 @@ static void print_help (RIO *io, char *cmd, int p_usage) {
 
 int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len) {
 	int ret = -1;
+	int pagesize, newlen;
+	ut64 pageaddr, offset;
+	bool flag = 0;
+	ut8 garbage;
+
 	if (iodesc && iodesc->fd > 0 && buf) {
 		struct r2k_data data;
 
@@ -263,8 +268,53 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 			memcpy (buf, data.buff, len);
 			ret = len;
 		} else {
-			// eprintf ("Read failed. ioctl err: %s\n", strerror (errno)); /*TODO: This needs to be discussed whether to uncomment or not*/
-			ret = -1;
+			garbage = io->ff ? io->Oxff : 0xff;
+			flag = 0;
+			offset = 0;
+			pagesize = getpagesize();
+			pageaddr = address + pagesize;
+			pageaddr -= (pageaddr % pagesize);
+			if ((len - (int)(pageaddr - address)) <= 0) {
+				ret = -1;
+			} else {
+				data.len = pageaddr - address;
+				ret = ioctl (iodesc->fd, ioctl_n, &data);
+				if (!ret) {
+					memcpy (buf + offset, data.buff, pageaddr - address);
+					flag = 1;
+				} else {
+					memset (buf + offset, garbage, pageaddr - address);
+				}
+
+				offset = pageaddr - address;
+				newlen = len - offset;
+				while (newlen >= pagesize) {
+					data.addr = pageaddr;
+					data.len = pagesize;
+
+					ret = ioctl (iodesc->fd, ioctl_n, &data);
+					if (!ret) {
+						memcpy (buf + offset, data.buff, pagesize);
+						flag = 1;
+					} else {
+						memset (buf + offset, garbage, pagesize);
+					}
+					pageaddr += pagesize;
+					offset += pagesize;
+					newlen -= pagesize;
+				}
+
+				data.addr = pageaddr;
+				data.len = newlen;
+				ret = ioctl (iodesc->fd, ioctl_n, &data);
+				if (!ret) {
+					memcpy (buf + offset, data.buff, newlen);
+					flag = 1;
+				} else {
+					memset (buf + offset, garbage, newlen);
+				}
+			}
+			ret = flag ? len : -1;
 		}
 
 		free (data.buff);
