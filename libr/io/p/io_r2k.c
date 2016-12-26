@@ -89,7 +89,7 @@ static int r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 #endif
 	} else {
 #if __linux__
-		run_ioctl_command (io, fd, cmd);
+		return run_ioctl_command (io, fd, cmd);
 #else
 		eprintf ("Try: '=!mod'\n    '.=!mod'\n");
 #endif
