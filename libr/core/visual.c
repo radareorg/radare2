@@ -712,6 +712,8 @@ R_API int r_core_visual_xrefs_x (RCore *core) {
 
 repeat:
 	if ((xrefs = r_anal_xref_get (core->anal, addr))) {
+		bool asm_bytes = r_config_get_i (core->config, "asm.bytes");
+		r_config_set_i (core->config, "asm.bytes", false);
 		r_cons_clear00 ();
 		r_cons_gotoxy (1, 1);
 		r_cons_printf ("[GOTO XREF]> 0x%08"PFMT64x"\n", addr);
@@ -726,8 +728,26 @@ repeat:
 			rows -= 3;
 			// int maxcount = rows > 20 ? 9: 4;
 			int maxcount = cols < 90 ? 4: 9;
+			if (cols > 90) {
+				r_list_foreach (xrefs, iter, refi) {
+					if (idx == skip) {
+						char *dis = r_core_cmd_strf (core, "pd $r-10 @ 0x%08"PFMT64x, refi->addr);
+						char *d = r_str_ansi_crop (dis, 0, 0, cols - 50, rows - 3);
+						r_cons_printf ("%s", d);
+						r_cons_column (50);
+						free (d);
+						free (dis);
+						r_cons_gotoxy (1, 1);
+						r_cons_printf ("[GOTO XREF]> 0x%08"PFMT64x"\n", addr);
+						break;
+					}
+					idx ++;
+				}
+			}
+			idx = 0;
 			r_list_foreach (xrefs, iter, refi) {
-				if (idx > maxcount) {
+				if (idx - skip > maxcount) {
+					r_cons_printf ("...\n");
 					break;
 				}
 				if (idx >= skip) {
@@ -743,16 +763,9 @@ repeat:
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA",
 							fun?fun->name:"unk");
 					if (idx == skip) {
-						if (cols > 90) {
-							char *dis = r_core_cmd_strf (core, "pd $r-10 @ 0x%08"PFMT64x, refi->addr);
-							char *d = r_str_ansi_crop (dis, 0, 0, cols - 50, rows - 3);
-							r_cons_printf ("%s", d);
-							r_cons_column (50);
-							free (d);
-							free (dis);
-						} else {
-							char *dis = r_core_cmd_strf (core, "pd $r-10 @ 0x%08"PFMT64x, refi->addr);
-							char *d = r_str_ansi_crop (dis, 0, 0, cols, rows - 10);
+						if (cols <= 90) {
+							char *dis = r_core_cmd_strf (core, "pd $r-5 @ 0x%08"PFMT64x, refi->addr);
+							char *d = r_str_ansi_crop (dis, 0, 0, cols, rows - 5);
 							r_cons_printf ("%s", d);
 							free (d);
 							free (dis);
@@ -766,6 +779,7 @@ repeat:
 				idx++;
 			}
 		}
+		r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	} else {
 		xrefs = NULL;
 	}
@@ -775,7 +789,9 @@ repeat:
 	}
 	r_cons_flush ();
 	ch = r_cons_readchar ();
-	if (ch == 'j') {
+	if (ch == ':') {
+		r_core_visual_prompt_input (core);
+	} else if (ch == 'j') {
 		skip++;
 		goto repeat;
 	} else if (ch == 'k') {
