@@ -296,7 +296,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	ut64 line_start;
 	ut64 parameters_size;
 	ut64 param_type_idx;
-	ut16 argReg = regsz - ins_size; // ins_size or insns_size
+	ut16 argReg = regsz - ins_size;
 	RList *params, *debug_positions, *emitted_debug_locals = NULL; 
 	bool keep = true;
 	if (argReg >= regsz) {
@@ -344,8 +344,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			r_list_free (emitted_debug_locals);
 			return;
 		}
-		p4 = r_uleb128 (p4, p4_end - p4, &param_type_idx);
-		name = getstr (bin, bin->types[param_type_idx].descriptor_id);
+		p4 = r_uleb128 (p4, p4_end - p4, &param_type_idx); // read uleb128p1
+		param_type_idx -= 1;
+		name = getstr (bin, param_type_idx);
 		reg = argReg;
 		switch (type[0]) {
 		case 'D':
@@ -546,13 +547,13 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	RListIter *iter2;
 	struct dex_debug_position_t *position;
 
-	rbin->cb_printf ("      positions     : \n");
+	rbin->cb_printf ("      positions     :\n");
 	r_list_foreach (debug_positions, iter2, position) {
 		rbin->cb_printf ("        0x%04llx line=%llu\n",
 				 position->address, position->line);
 	}
 
-	rbin->cb_printf ("      locals        : \n");
+	rbin->cb_printf ("      locals        :\n");
 
 	RListIter *iter3;
 	struct dex_debug_local_t *local;
@@ -565,7 +566,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 				local->signature);
 		} else {
 			rbin->cb_printf (
-				"        0x%04x - 0x%04x reg=%d %s %s; \n",
+				"        0x%04x - 0x%04x reg=%d %s %s;\n",
 				local->startAddress, local->endAddress,
 				local->reg, local->name, local->descriptor);
 		}
@@ -583,7 +584,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 					debug_locals[reg].signature);
 			} else {
 				rbin->cb_printf (
-					"        0x%04x - 0x%04x reg=%d %s %s; "
+					"        0x%04x - 0x%04x reg=%d %s %s;"
 					"\n",
 					debug_locals[reg].startAddress,
 					insns_size, reg, debug_locals[reg].name,
