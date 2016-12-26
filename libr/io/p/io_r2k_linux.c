@@ -224,22 +224,22 @@ static size_t getvalue (const char *buf, int pos) {
 static void print_help (RIO *io, char *cmd, int p_usage) {
 	int i = 0;
 	int cmd_len = cmd ? strlen (cmd) : 0;
-	const char* usage = "Usage:   =![MprRw][lpP] [args...]";
-	const char* help_msg[] = {"=!M                      Print kernel memory map",
-				  "=!b      beid [pid]      Change r2k backend. pid is required when beid is 1. Possible beid 0: linear address; 1: process address; 2: physical address",
-				  "=!p      pid             Print process information",
-				  "=!rl     addr len        Read from linear address",
-				  "=!rp     pid addr len    Read from process address",
-				  "=!rP     addr len        Read physical address",
-				  "=!R[p]                   Print control registers. Use =!Rp for detailed description",
-				  "=!wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
-				  "=!wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
-				  "=!wP[x]  addr input      Write at physical address. Use =!wPx for input in hex"};
+	const char* usage = "Usage:   \\[MprRw][lpP] [args...]";
+	const char* help_msg[] = {"\\M                      Print kernel memory map",
+				  "\\b      beid [pid]      Change r2k backend. pid is required when beid is 1. Possible beid 0: linear address; 1: process address; 2: physical address",
+				  "\\p      pid             Print process information",
+				  "\\rl     addr len        Read from linear address",
+				  "\\rp     pid addr len    Read from process address",
+				  "\\rP     addr len        Read physical address",
+				  "\\R[p]                   Print control registers. Use =!Rp for detailed description",
+				  "\\wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
+				  "\\wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
+				  "\\wP[x]  addr input      Write at physical address. Use =!wPx for input in hex"};
 	if (p_usage) {
 		io->cb_printf ("%s\n", usage);
 	}
 	for (i = 0; i < (sizeof (help_msg) / sizeof (char*)); i++) {
-		if (!cmd || !strncmp (cmd, help_msg[i]+2, cmd_len)) {
+		if (!cmd || !strncmp (cmd, help_msg[i]+1, cmd_len)) {
 			io->cb_printf ("%s\n",help_msg[i]);
 		}
 	}
@@ -642,12 +642,28 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		{
 			//Print process info
 			//=! p pid
-			if (*(buf + 1) != ' ') {
+			int i;
+			bool fflag = 0;
+			struct r2k_proc_info proc_data;
+
+			if (*(buf + 1) == '*') {
+				fflag = 1;
+			}
+			switch (*(buf + 1)) {
+			case '*':
+				fflag = 1;
+				if (*(buf + 2) != ' ') {
+					print_help (io, "p*", 0);
+					goto end;
+				}
+				break;
+			case ' ':
+				break;
+			default:
 				print_help (io, "p", 0);
 				goto end;
 			}
-			int i;
-			struct r2k_proc_info proc_data;
+
 			pid = getvalue (buf, 1);
 			if (pid == -1) {
 				io->cb_printf ("Invalid number of arguments.\n");
@@ -663,24 +679,38 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				break;
 			}
 
-			io->cb_printf ("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
-			for (i = 0; i < 4096;) {
-				if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1]) {
-					break;
+			if (fflag) {
+				int j = 0;
+				for (i = 0; i < 4096;) {
+					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1]) {
+						break;
+					}
+					io->cb_printf ("f pid.%d.%s.%d.start=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i+7]), j, (ut64) proc_data.vmareastruct[i]);
+					io->cb_printf ("f pid.%d.%s.%d.end=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i+7]), j, (ut64) proc_data.vmareastruct[i+1]);
+					j += 1;
+					i += 7;
+					i += (strlen ((const char *)&(proc_data.vmareastruct[i])) - 1 + sizeof (size_t)) / sizeof (size_t);
 				}
-				io->cb_printf ("%08"PFMT64x"-%08"PFMT64x" %c%c%c%c %08"PFMT64x" %02x:%02x %-8"PFMT64u"",
-						(ut64) proc_data.vmareastruct[i], (ut64) proc_data.vmareastruct[i+1],
-						proc_data.vmareastruct[i+2] & VM_READ ? 'r' : '-',
-						proc_data.vmareastruct[i+2] & VM_WRITE ? 'w' : '-',
-						proc_data.vmareastruct[i+2] & VM_EXEC ? 'x' : '-',
-						proc_data.vmareastruct[i+2] & VM_MAYSHARE ? 's' : 'p',
-						(ut64) proc_data.vmareastruct[i+3], proc_data.vmareastruct[i+4],
-						proc_data.vmareastruct[i+5], (ut64) proc_data.vmareastruct[i+6]);
-				i += 7;
-				io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i]));
-				i += (strlen ((const char *)&(proc_data.vmareastruct[i])) - 1 + sizeof (size_t)) / sizeof (size_t);
+			} else {
+				io->cb_printf ("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
+				for (i = 0; i < 4096;) {
+					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1]) {
+						break;
+					}
+					io->cb_printf ("%08"PFMT64x"-%08"PFMT64x" %c%c%c%c %08"PFMT64x" %02x:%02x %-8"PFMT64u"",
+							(ut64) proc_data.vmareastruct[i], (ut64) proc_data.vmareastruct[i+1],
+							proc_data.vmareastruct[i+2] & VM_READ ? 'r' : '-',
+							proc_data.vmareastruct[i+2] & VM_WRITE ? 'w' : '-',
+							proc_data.vmareastruct[i+2] & VM_EXEC ? 'x' : '-',
+							proc_data.vmareastruct[i+2] & VM_MAYSHARE ? 's' : 'p',
+							(ut64) proc_data.vmareastruct[i+3], proc_data.vmareastruct[i+4],
+							proc_data.vmareastruct[i+5], (ut64) proc_data.vmareastruct[i+6]);
+					i += 7;
+					io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i]));
+					i += (strlen ((const char *)&(proc_data.vmareastruct[i])) - 1 + sizeof (size_t)) / sizeof (size_t);
+				}
+				io->cb_printf ("STACK BASE ADDRESS = 0x%"PFMT64x"\n", (void *) proc_data.stack);
 			}
-			io->cb_printf ("STACK BASE ADDRESS = 0x%"PFMT64x"\n", (void *) proc_data.stack);
 		}
 		break;
 	default:
