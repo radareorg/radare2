@@ -125,6 +125,16 @@ static ut8 getsib(const ut8 sib) {
 	return (sib & 0x8) ? 3 : getsib ((sib << 1) | 1) - 1;
 }
 
+static int is_al_reg(const Operand op) {
+	if (op.type & OT_MEMORY) {
+		return 0;
+	}
+	if (op.reg == X86R_AL && op.type & OT_BYTE) {
+		return 1;
+	}
+	return 0;
+}
+
 static int process_group_1(RAsm *a, ut8 *data, const Opcode op) {
 	int l = 0;
 	int modrm = 0;
@@ -383,8 +393,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode op, int op1) {
 
 static int opadc(RAsm *a, ut8 *data, const Opcode op) {
 	if (op.operands[1].type & OT_CONSTANT &&
-	    !(op.operands[0].reg == X86R_AL &&
-	    op.operands[0].type & OT_BYTE)) {
+	    !is_al_reg (op.operands[0])) {
 		return process_group_1 (a, data, op);
 	}
 	return process_1byte_op (a, data, op, 0x10);
@@ -392,8 +401,7 @@ static int opadc(RAsm *a, ut8 *data, const Opcode op) {
 
 static int opadd(RAsm *a, ut8 *data, const Opcode op) {
 	if (op.operands[1].type & OT_CONSTANT &&
-	    !(op.operands[0].reg == X86R_AL &&
-	    op.operands[0].type & OT_BYTE)) {
+	    !is_al_reg (op.operands[0])) {
 		return process_group_1 (a, data, op);
 	}
 	return process_1byte_op (a, data, op, 0x00);
@@ -401,8 +409,7 @@ static int opadd(RAsm *a, ut8 *data, const Opcode op) {
 
 static int opand(RAsm *a, ut8 *data, const Opcode op) {
 	if (op.operands[1].type & OT_CONSTANT &&
-	    !(op.operands[0].reg == X86R_AL &&
-	    op.operands[0].type & OT_BYTE)) {
+	    !is_al_reg (op.operands[0])) {
 		return process_group_1 (a, data, op);
 	}
 	return process_1byte_op (a, data, op, 0x20);
@@ -410,8 +417,7 @@ static int opand(RAsm *a, ut8 *data, const Opcode op) {
 
 static int opcmp(RAsm *a, ut8 *data, const Opcode op) {
 	if (op.operands[1].type & OT_CONSTANT &&
-	    !(op.operands[0].reg == X86R_AL &&
-	    op.operands[0].type & OT_BYTE)) {
+	    !is_al_reg (op.operands[0])) {
 		return process_group_1 (a, data, op);
 	}
 	return process_1byte_op (a, data, op, 0x38);
@@ -419,8 +425,7 @@ static int opcmp(RAsm *a, ut8 *data, const Opcode op) {
 
 static int opsub(RAsm *a, ut8 *data, const Opcode op) {
 	if (op.operands[1].type & OT_CONSTANT &&
-	    !(op.operands[0].reg == X86R_AL &&
-	    op.operands[0].type & OT_BYTE)) {
+	    !is_al_reg (op.operands[0])) {
 		return process_group_1 (a, data, op);
 	}
 	return process_1byte_op (a, data, op, 0x28);
@@ -428,8 +433,7 @@ static int opsub(RAsm *a, ut8 *data, const Opcode op) {
 
 static int opor(RAsm *a, ut8 * data, const Opcode op) {
 	if (op.operands[1].type & OT_CONSTANT &&
-	    !(op.operands[0].reg == X86R_AL &&
-	    op.operands[0].type & OT_BYTE)) {
+	    !is_al_reg (op.operands[0])) {
 		return process_group_1 (a, data, op);
 	}
 	return process_1byte_op (a, data, op, 0x08);
@@ -440,8 +444,7 @@ static int opxor(RAsm *a, ut8 * data, const Opcode op) {
 		return -1;
 	}
 	if (op.operands[1].type & OT_CONSTANT &&
-	    !(op.operands[0].reg == X86R_AL &&
-	    op.operands[0].type & OT_BYTE)) {
+	    !is_al_reg (op.operands[0])) {
 		return process_group_1 (a, data, op);
 	}
 	return process_1byte_op (a, data, op, 0x30);
@@ -449,8 +452,7 @@ static int opxor(RAsm *a, ut8 * data, const Opcode op) {
 
 static int opsbb(RAsm *a, ut8 *data, const Opcode op) {
 	if (op.operands[1].type & OT_CONSTANT &&
-	    !(op.operands[0].reg == X86R_AL &&
-	    op.operands[0].type & OT_BYTE)) {
+	    !is_al_reg (op.operands[0])) {
 		return process_group_1 (a, data, op);
 	}
 	return process_1byte_op (a, data, op, 0x18);
