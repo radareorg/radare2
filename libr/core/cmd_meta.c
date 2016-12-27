@@ -296,10 +296,10 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
 		if (comment) {
-			text = malloc (strlen (comment)+strlen (newcomment)+2);
+			text = malloc (strlen (comment)+ strlen (newcomment)+2);
 			if (text) {
 				strcpy (text, comment);
-				strcat (text, "\n");
+				strcat (text, " ");
 				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
 				free (text);
