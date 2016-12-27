@@ -65,7 +65,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 		CloseHandle (hModuleSnap);
 		return NULL;
 	}
-	hProcess=w32_openprocess (PROCESS_QUERY_INFORMATION |PROCESS_VM_READ, FALSE, pid );
+	hProcess = w32_openprocess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	do {
 		ReadProcessMemory (WIN32_PI (hProcess), (const void *)me32.modBaseAddr, (LPVOID)PeHeader, sizeof(PeHeader), &ret_len);
 		if (ret_len == sizeof (PeHeader) && CheckValidPE (PeHeader)) {
