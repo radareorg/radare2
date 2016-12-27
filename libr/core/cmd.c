@@ -1379,6 +1379,13 @@ static char *find_eoq(char *p) {
 	return p;
 }
 
+static char* findSeparator(char *p) {
+	char *q = strchr (p, '+');
+	if (q) {
+		return q;
+	}
+	return strchr (p, '-');
+}
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	const char *quotestr = "`";
@@ -1386,7 +1393,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
 	int i, ret = 0, pipefd;
-	int usemyblock = 0;
+	bool usemyblock = false;
 	int scr_html = -1;
 
 	if (!cmd) {
@@ -1617,7 +1624,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		}
 	}
 next:
-
 	// TODO must honor " and `
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
@@ -1790,17 +1796,14 @@ next2:
 		} else {
 			ptr--;
 		}
-		if (ptr[0] && ptr[1] && ptr[2]) {
-			arroba = strchr (ptr + 2, '@');
-		} else {
-			arroba = NULL;
-		}
+		arroba = (ptr[0] && ptr[1] && ptr[2])?
+			strchr (ptr + 2, '@'): NULL;
 repeat_arroba:
 		if (arroba) {
 			*arroba = 0;
 		}
 		if (ptr[0] && ptr[1]==':' && ptr[2]) {
-			usemyblock = 1;
+			usemyblock = true;
 			switch (ptr[0]) {
 			case 'f': // "@f:" // slurp file in block
 				f = r_file_slurp (ptr + 2, &sz);
@@ -1820,11 +1823,23 @@ repeat_arroba:
 				}
 				break;
 			case 'r': // "@r:" // regname
-				if (ptr[1]==':') {
-					ut64 regval = r_debug_reg_get (core->dbg, ptr+2);
+				if (ptr[1] == ':') {
+					ut64 regval;
+					char *mander = strdup (ptr + 2);
+					char *sep = findSeparator (mander);
+					if (sep) {
+						char ch = *sep;
+						*sep = 0;
+						regval = r_debug_reg_get (core->dbg, mander);
+						*sep = ch;
+						char *numexpr = r_str_newf ("0x%"PFMT64x"%s", regval, sep);
+						regval = r_num_math (core->num, numexpr);
+						free (numexpr);
+					} else {
+						regval = r_debug_reg_get (core->dbg, ptr + 2);
+					}
 					r_core_seek (core, regval, 1);
-				} else {
-					eprintf ("Fin\n");
+					free (mander);
 				}
 				break;
 			case 'b': // "@b:" // bits
