@@ -95,12 +95,12 @@ CPU_CONST cpu_memsize_m640_m1280m_m1281_m2560_m2561[] = {
 };
 
 CPU_CONST cpu_pagesize_5_bits[] = {
-	{ "page_size", CPU_CONST_PARAM, 32, sizeof (ut8) },
+	{ "page_size", CPU_CONST_PARAM, 5, sizeof (ut8) },
 	{ NULL, 0, 0, 0 },
 };
 
 CPU_CONST cpu_pagesize_7_bits[] = {
-	{ "page_size", CPU_CONST_PARAM, 128, sizeof (ut8) },
+	{ "page_size", CPU_CONST_PARAM, 7, sizeof (ut8) },
 	{ NULL, 0, 0, 0 },
 };
 
