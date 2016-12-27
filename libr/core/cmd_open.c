@@ -253,8 +253,7 @@ R_API void r_core_file_reopen_in_malloc (RCore *core) {
 			r_io_close (core->io, f->desc);
 			f->desc = desc;
 			(void)r_io_write_at (core->io, 0, buf, sz);
-		}
-		else {
+		} else {
 			eprintf ("Cannot open %s\n", url);
 		}
 		free (buf);
