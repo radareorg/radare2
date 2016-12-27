@@ -2656,7 +2656,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		} else {
 			if (p == UT64_MAX || p == UT32_MAX) {
 				ALIGN;
-				ds_comment (ds, true, "%s; -1%s", esc, p, nl);
+				ds_comment (ds, true, "%s; -1%s", esc, nl);
 			} else if (((char)p > 0) && p >= '!' && p <= '~') {
 				char ch = p;
 				ALIGN;
