@@ -2811,6 +2811,7 @@ static int mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 
 static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
+	char *esc = NULL;
 	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = NULL;
 	if (!esil) {
@@ -2823,6 +2824,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			return 0;
 		}
 	}
+	esc = ds->show_comment_right? " ": "";
 	memset (str, 0, sizeof (str));
 	if (*val) {
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
@@ -2850,13 +2852,13 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (ds) {
 		if (ds->show_emu_str) {
 			if (msg && *msg) {
-				ds_comment_esil (ds, true, false, "; %s", msg);
+				ds_comment_esil (ds, true, false, "%s; %s", msg);
 				if (ds->show_comments && !ds->show_comment_right) {
 					r_cons_newline ();
 				}
 			}
 		} else {
-			ds_comment_esil (ds, true, false, "; %s=0x%"PFMT64x"%s", name, *val,
+			ds_comment_esil (ds, true, false, "%s; %s=0x%"PFMT64x"%s", esc, name, *val,
 					 msg ? msg : "");
 			if (ds->show_comments && !ds->show_comment_right) {
 				r_cons_newline ();
