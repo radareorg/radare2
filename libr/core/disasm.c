@@ -2852,7 +2852,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (ds) {
 		if (ds->show_emu_str) {
 			if (msg && *msg) {
-				ds_comment_esil (ds, true, false, "%s; %s", msg);
+				ds_comment_esil (ds, true, false, "%s; %s", esc, msg);
 				if (ds->show_comments && !ds->show_comment_right) {
 					r_cons_newline ();
 				}
