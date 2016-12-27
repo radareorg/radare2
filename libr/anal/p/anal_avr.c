@@ -28,9 +28,7 @@ typedef struct _cpu_model_tag {
 	int pc;
 	char *inherit;
 	struct _cpu_model_tag *inherit_cpu_p;
-	union {
-		CPU_CONST *consts[10];
-	} u;
+	CPU_CONST *consts[10];
 } CPU_MODEL;
 
 typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu);
@@ -108,7 +106,7 @@ CPU_CONST cpu_pagesize_7_bits[] = {
 
 CPU_MODEL cpu_models[] = {
 	{ .model = "ATmega640",   .pc = 15,
-		.u.consts = {
+		.consts = {
 			cpu_reg_common,
 			cpu_memsize_m640_m1280m_m1281_m2560_m2561,
 			cpu_pagesize_7_bits,
@@ -124,7 +122,7 @@ CPU_MODEL cpu_models[] = {
 	// last model is the default AVR - ATmega8 forever!
 	{
 		.model = "ATmega8", .pc = 13,
-		.u.consts = {
+		.consts = {
 			cpu_reg_common,
 			cpu_memsize_common,
 			cpu_pagesize_5_bits,
@@ -176,7 +174,7 @@ static ut32 const_get_value(CPU_CONST *c) {
 static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	CPU_CONST **clist, *citem;
 
-	for (clist = cpu->u.consts; *clist; clist++) {
+	for (clist = cpu->consts; *clist; clist++) {
 		for (citem = *clist; citem->key; citem++) {
 			if (!strcmp (c, citem->key)
 			&& (type == CPU_CONST_NONE || type == citem->type)) {
@@ -203,7 +201,7 @@ static int __esil_pop_argument(RAnalEsil *esil, ut64 *v) {
 static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
 	CPU_CONST **clist, *citem;
 
-	for (clist = cpu->u.consts; *clist; clist++) {
+	for (clist = cpu->consts; *clist; clist++) {
 		for (citem = *clist; citem && citem->key; citem++) {
 			if (citem->value == (MASK (citem->size * 8) & v)
 			&& (type == CPU_CONST_NONE || type == citem->type)) {
@@ -305,7 +303,7 @@ INST_HANDLER (adc) {	// ADC Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"|,|,cf,=,",
@@ -333,7 +331,7 @@ INST_HANDLER (add) {	// ADD Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,!," "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,"   "&,"
 		"|,|,cf,=,",
@@ -524,7 +522,7 @@ INST_HANDLER (cp) {	// CP Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -550,7 +548,7 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z
-	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -576,7 +574,7 @@ INST_HANDLER (cpi) { // CPI Rd, K
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&,"	// C
 		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -735,7 +733,7 @@ INST_HANDLER (icall) {	// ICALL k
 						// next instruction (@ret)
 	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret in stack
 	// do a standard IJMP
-	INST_CALL (eijmp);
+	INST_CALL (ijmp);
 	// fix cycles
 	if (!STR_BEGINS (cpu->model, "ATxmega")) {
 		// AT*mega optimizes 1 cycle!
@@ -1131,7 +1129,7 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z (C)
-	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -1157,7 +1155,7 @@ INST_HANDLER (sbci) {	// SBCI Rd, k
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,&,zf,=,");			// Z (C)
-	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&,"	// C
 		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -1183,7 +1181,7 @@ INST_HANDLER (sub) {	// SUB Rd, Rr
 		d, r, d, r);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"   "r%d,0x80,&,!,!,"     "&,"	// C
 		"r%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -1209,7 +1207,7 @@ INST_HANDLER (subi) {	// SUBI Rd, k
 		d, k, d, k);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
-	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&," 	// C
+	ESIL_A ("r%d,0x80,&,!,"  "%d,0x80,&,!,!,"      "&,"	// C
 		"%d,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"r%d,0x80,&,!,"  "0,RPICK,0x80,&,!,!," "&,"
 		"|,|,cf,=,",
@@ -1740,14 +1738,17 @@ static int avr_custom_spm_page_write(RAnalEsil *esil) {
 	CPU_MODEL *cpu;
 	char *t = NULL;
 	ut64 addr, page_size_bits, tmp_page;
+
 	// sanity check
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
+
 	// get target address
 	if (!__esil_pop_argument (esil, &addr)) {
 		return false;
 	}
+
 	// get details about current MCU and fix input address and base address
 	// of the internal temporary page
 	cpu = get_cpu_model (esil->anal->cpu);
