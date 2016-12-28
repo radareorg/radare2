@@ -234,7 +234,8 @@ static void print_help (RIO *io, char *cmd, int p_usage) {
 				  "\\R[p]                   Print control registers. Use =!Rp for detailed description",
 				  "\\wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
 				  "\\wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
-				  "\\wP[x]  addr input      Write at physical address. Use =!wPx for input in hex"};
+				  "\\wP[x]  addr input      Write at physical address. Use =!wPx for input in hex",
+				  "\\W      1|0             Honor arch write protect (1 enable WP, 0 disable WP)"};
 	if (p_usage) {
 		io->cb_printf ("%s\n", usage);
 	}
@@ -326,6 +327,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 
 int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len) {
 	int ret = -1;
+
 	if (iodesc && iodesc->fd > 0 && buf) {
 		struct r2k_data data;
 
@@ -333,6 +335,8 @@ int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address
 		data.addr = address;
 		data.len = len;
 		data.buff = (ut8 *) calloc (len + 1, 1);
+		data.wp = r2k_struct.wp;
+
 		if (!data.buff) {
 			return -1;
 		}
@@ -362,6 +366,25 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	buf = r_str_ichr ((char *) buf, ' ');
 
 	switch (*buf) {
+	case 'W':
+		{
+			char *cmd = NULL;
+			if (buf[1] != ' ') {
+				io->cb_printf ("Write Protect: %d\n", r2k_struct.wp);
+				io->cb_printf ("Usage:\n");
+				print_help (io, "W", 0);
+				break;
+			}
+
+			int wp = getvalue (buf, 1);
+			if (wp < 0 || wp > 1) {
+				io->cb_printf ("Invalid usage of W\n");
+				print_help (io, "W", 0);
+				break;
+			}
+			r2k_struct.wp = (ut8)wp;
+		}
+		break;
 	case 'b':
 		{
 			char *cmd = NULL;

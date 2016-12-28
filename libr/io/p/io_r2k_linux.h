@@ -22,6 +22,7 @@
 struct io_r2k_linux {
 	int beid;
 	int pid;
+	ut8 wp;
 };
 
 struct r2k_data {
@@ -29,6 +30,7 @@ struct r2k_data {
 	size_t addr;
 	size_t len;
 	ut8 *buff;
+	ut8 wp;
 };
 
 struct r2k_kernel_map_info {
