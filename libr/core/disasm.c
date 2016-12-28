@@ -316,8 +316,12 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	const char *sn;
 	if (ds->show_comment_right) {
+		if (ds->show_color) {
+			r_cons_printf (ds->pal_comment);
+		}
 		return;
 	}
+	//XXX fix this generate many dupes with section name
 	sn = ds->show_section ? get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
 	r_cons_printf ("%s%s%s%s%s%s  %s %s", nl? "\n": "", COLOR (ds, color_fline),
@@ -2173,11 +2177,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 			str = nstr;
 		}
 	}
-	if (ds->show_color) {
-		r_cons_printf ("%s%s %s"Color_RESET, pad, str, extra);
-	} else {
-		r_cons_printf ("%s%s %s", pad, str, extra);
-	}
+	r_cons_printf ("%s%s %s", pad, str, extra);
 	free (str);
 	core->print->flags = oldFlags;
 }
@@ -2318,7 +2318,6 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 					}
 				}
 			}
-			ds_print_color_reset (ds);
 		}
 		break;
 	}
@@ -2804,7 +2803,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			return 0;
 		}
 	}
-	esc = ds->show_comment_right? " ": "";
+	esc = ds && ds->show_comment_right? " ": "";
 	memset (str, 0, sizeof (str));
 	if (*val) {
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
@@ -3543,8 +3542,8 @@ toro:
 			ds_print_ptr (ds, len + 256, idx);
 			ds_build_op_str (ds);
 			ds_print_fcn_name (ds);
-			R_FREE (ds->opstr);
 			ds_print_color_reset (ds);
+			R_FREE (ds->opstr);
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
 			}
@@ -3572,7 +3571,6 @@ toro:
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds);
 			ds_print_opstr (ds);
-			ds_print_color_reset (ds);
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
