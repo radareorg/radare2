@@ -488,26 +488,34 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		break;
 	case '*':
 		p->cb_printf ("wx ");
-		for (i=0; !p->interrupt && i<len; i++) {
-			if (i && !(i%16)) p->cb_printf (";s+16\nwx ");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			if (i && !(i % 16)) {
+				p->cb_printf (";s+16\nwx ");
+			}
 			p->cb_printf ("%02x", buf[i]);
 		}
-		if (i && !(i%16)) p->cb_printf (";s+16\n");
-		else p->cb_printf (";s+%d\n", (i%16));
+		if (i && !(i % 16)) {
+			p->cb_printf (";s+16\n");
+		} else {
+			p->cb_printf (";s+%d\n", (i % 16));
+		}
 		p->cb_printf ("s-%d\n", len);
 		break;
 	case 'a': // "pca"
 		p->cb_printf ("shellcode:");
-		for (i=0; !p->interrupt && i<len; i++) {
-			if (!(i%8)) p->cb_printf ("\n.byte ");
-			else p->cb_printf (", ");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			if (!(i % 8)) {
+				p->cb_printf ("\n.byte ");
+			} else {
+				p->cb_printf (", ");
+			}
 			p->cb_printf ("0x%02x", buf[i]);
 		}
 		p->cb_printf ("\n.equ shellcode_len, %d\n", len);
 		break;
 	case 's': // "pcs"
 		p->cb_printf ("\"");
-		for (i=0; !p->interrupt && i<len; i++) {
+		for (i = 0; !p->interrupt && i < len; i++) {
 			p->cb_printf ("\\x%02x", buf[i]);
 		}
 		p->cb_printf ("\"\n");
@@ -515,15 +523,18 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	case 'S': // "pcS"
 		{
 			const int trunksize = 16;
-			for (i=0; !p->interrupt && i<len; i++) {
-				if ((i % trunksize ) == 0)
+			for (i = 0; !p->interrupt && i < len; i++) {
+				if (!(i % trunksize)) {
 					p->cb_printf ("printf \"");
+				}
 				p->cb_printf ("\\%03o", buf[i]);
-				if ((i % trunksize ) == (trunksize-1))
-					p->cb_printf ("\" %s bin\n", (i <= trunksize) ? ">" : ">>" );
+				if ((i % trunksize) == (trunksize - 1)) {
+					p->cb_printf ("\" %s bin\n", (i <= trunksize) ? ">" : ">>");
+				}
 			}
-			if ((i % trunksize))
-				p->cb_printf("\" %s bin\n", (i <= trunksize) ? ">" : ">>" );
+			if ((i % trunksize)) {
+				p->cb_printf ("\" %s bin\n", (i <= trunksize) ? ">" : ">>");
+			}
 		}
                 break;
 	case 'J':
@@ -539,9 +550,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		break;
 	case 'j':
 		p->cb_printf ("[");
-		for (i=0; !p->interrupt && i<len; i++) {
+		for (i = 0; !p->interrupt && i < len; i++) {
 			r_print_cursor (p, i, 1);
-			p->cb_printf ("%d%s", buf[i], (i+1<len)?",":"");
+			p->cb_printf ("%d%s", buf[i], (i + 1 < len) ? "," : "");
 			r_print_cursor (p, i, 0);
 		}
 		p->cb_printf ("]\n");
@@ -549,10 +560,12 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	case 'P':
 	case 'p': // pcp"
 		p->cb_printf ("import struct\nbuf = struct.pack (\"%dB\", *[", len);
-		for (i=0; !p->interrupt && i<len; i++) {
-			if (!(i%w)) p->cb_printf ("\n");
+		for (i = 0; !p->interrupt && i < len; i++) {
+			if (!(i % w)) {
+				p->cb_printf ("\n");
+			}
 			r_print_cursor (p, i, 1);
-			p->cb_printf ("0x%02x%s", buf[i], (i+1<len)?",":"])");
+			p->cb_printf ("0x%02x%s", buf[i], (i + 1 < len) ? "," : "])");
 			r_print_cursor (p, i, 0);
 		}
 		p->cb_printf ("\n");

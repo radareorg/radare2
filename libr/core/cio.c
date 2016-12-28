@@ -318,18 +318,20 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 	newsection = core->io->section;
 
 	if (ret == UT64_MAX) {
-		if (!core->io->va)
+		if (!core->io->va) {
 			return false;
+		}
 	} else {
 		core->offset = addr;
 	}
 	if (rb) {
 		ret = r_core_block_read (core);
 		if (core->io->ff) {
-			if (ret < 1 || ret > core->blocksize)
+			if (ret < 1 || ret > core->blocksize) {
 				memset (core->block, core->io->Oxff, core->blocksize);
-			else
+			} else {
 				memset (core->block+ret, core->io->Oxff, core->blocksize-ret);
+			}
 			ret = core->blocksize;
 			core->offset = addr;
 		} else {
