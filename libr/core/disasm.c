@@ -2858,7 +2858,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		} else {
-			ds_comment_esil (ds, true, false, "%s; %s=0x%"PFMT64x"%s", esc, name, *val,
+			ds_comment_esil (ds, true, false, "%s; %s=0x%"PFMT64x" %s", esc, name, *val,
 					 msg ? msg : "");
 			if (ds->show_comments && !ds->show_comment_right) {
 				r_cons_newline ();
