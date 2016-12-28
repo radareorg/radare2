@@ -296,6 +296,9 @@ R_API void r_core_visual_prompt_input (RCore *core) {
 R_API int r_core_visual_prompt (RCore *core) {
 	char buf[1024];
 	int ret;
+	if (PIDX != 2) {
+		core->seltab = 0;
+	}
 #if __UNIX__
 	r_line_set_prompt (Color_RESET":> ");
 #else
