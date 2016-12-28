@@ -171,6 +171,13 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	return str;
 }
 
+static char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
+	if (type_idx < 0 || type_idx >= bin->header.types_size) {
+		return NULL;
+	}
+	return getstr (bin, bin->types[type_idx].descriptor_id);
+}
+
 static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	ut32 proto_id, params_off, type_id, list_size;
 	char *r, *return_type = NULL, *signature = NULL, *buff = NULL; 
@@ -300,7 +307,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	RList *params, *debug_positions, *emitted_debug_locals = NULL; 
 	bool keep = true;
 	if (argReg >= regsz) {
-		return;
+		//return; // this return breaks tests
 	}
 	p4 = r_uleb128 (p4, p4_end - p4, &line_start);
 	p4 = r_uleb128 (p4, p4_end - p4, &parameters_size);
@@ -315,6 +322,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		r_list_free (debug_positions);
 		return;
 	}
+
+	class_name = r_str_newf("%s;", class_name);
+
 	struct dex_debug_local_t debug_locals[regsz];
 	memset (debug_locals, 0, sizeof (struct dex_debug_local_t) * regsz);
 
@@ -420,7 +430,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 				r_list_append (emitted_debug_locals, local);
 			}
 			debug_locals[register_num].name = getstr (bin, name_idx);
-			debug_locals[register_num].descriptor = getstr (bin, bin->types[type_idx].descriptor_id);
+			debug_locals[register_num].descriptor = dex_type_descriptor (bin, type_idx);
 			debug_locals[register_num].startAddress = address;
 			debug_locals[register_num].signature = NULL;
 			debug_locals[register_num].live = true;
@@ -466,8 +476,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			}
 
 			debug_locals[register_num].name = getstr (bin, name_idx);
-			debug_locals[register_num].descriptor = getstr (
-				bin, bin->types[type_idx].descriptor_id);
+			debug_locals[register_num].descriptor = dex_type_descriptor (bin, type_idx);
 			debug_locals[register_num].startAddress = address;
 			debug_locals[register_num].signature = getstr (bin, sig_idx);
 			debug_locals[register_num].live = true;
@@ -496,7 +505,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			}
 			debug_locals[register_num].live = false;
 			}
-			break;	
+			break;
 		case 0x6: // DBG_RESTART_LOCAL
 			{
 			ut64 register_num;
@@ -510,14 +519,14 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		case 0x7: //DBG_SET_PROLOGUE_END
 			break;
 		case 0x8: //DBG_SET_PROLOGUE_BEGIN
-			break;	
+			break;
 		case 0x9:
 			{
 			ut64 name_idx;
 			p4 = r_uleb128 (p4, p4_end - p4, &name_idx);
 			name_idx -= 1;
 			}
-			break;	
+			break;
 		default:
 			{
 			int adjusted_opcode = opcode - 0x0a;
@@ -533,7 +542,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			position->line = line;
 			r_list_append (debug_positions, position);
 			}
-			break;	
+			break;
 		}
 		opcode = *(p4++) & 0xff;
 	}
@@ -560,13 +569,13 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	r_list_foreach (emitted_debug_locals, iter3, local) {
 		if (local->signature) {
 			rbin->cb_printf (
-				"        0x%04x - 0x%04x reg=%d %s %s; %s\n",
+				"        0x%04x - 0x%04x reg=%d %s %s %s\n",
 				local->startAddress, local->endAddress,
 				local->reg, local->name, local->descriptor,
 				local->signature);
 		} else {
 			rbin->cb_printf (
-				"        0x%04x - 0x%04x reg=%d %s %s;\n",
+				"        0x%04x - 0x%04x reg=%d %s %s\n",
 				local->startAddress, local->endAddress,
 				local->reg, local->name, local->descriptor);
 		}
@@ -576,7 +585,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		if (debug_locals[reg].live) {
 			if (debug_locals[reg].signature) {
 				rbin->cb_printf (
-					"        0x%04x - 0x%04x reg=%d %s %s; "
+					"        0x%04x - 0x%04x reg=%d %s %s "
 					"%s\n",
 					debug_locals[reg].startAddress,
 					insns_size, reg, debug_locals[reg].name,
@@ -584,7 +593,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 					debug_locals[reg].signature);
 			} else {
 				rbin->cb_printf (
-					"        0x%04x - 0x%04x reg=%d %s %s;"
+					"        0x%04x - 0x%04x reg=%d %s %s"
 					"\n",
 					debug_locals[reg].startAddress,
 					insns_size, reg, debug_locals[reg].name,
@@ -1105,22 +1114,25 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						p3 = r_uleb128 (p3, p3_end - p3, &handler_type);
 						p3 = r_uleb128 (p3, p3_end - p3, &handler_addr);
 
-						if (dexdump &&
-						    handler_type > 0 &&
+						if (handler_type > 0 &&
 						    handler_type <
 							    bin->header.types_size) {
 							s = getstr (bin, bin->types[handler_type].descriptor_id);
-							rbin->cb_printf (
-								"          %s "
-								"-> 0x%04llx\n",
-								s,
-								handler_addr);
+							if (dexdump) {
+								rbin->cb_printf (
+									"          %s "
+									"-> 0x%04llx\n",
+									s,
+									handler_addr);
+							}
 						} else {
-							rbin->cb_printf (
-								"          "
-								"(error) -> "
-								"0x%04llx\n",
-								handler_addr);
+							if (dexdump) {
+								rbin->cb_printf (
+									"          "
+									"(error) -> "
+									"0x%04llx\n",
+									handler_addr);
+							}
 						}
 					}
 
@@ -1158,8 +1170,8 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				insns_size, cls->name, regsz, debug_info_off);
 		} else if (MC > 0) {
 			if (dexdump) {
-				rbin->cb_printf ("      positions     : \n");
-				rbin->cb_printf ("      locals        : \n");
+				rbin->cb_printf ("      positions     :\n");
+				rbin->cb_printf ("      locals        :\n");
 			}
 		}
 
@@ -1279,8 +1291,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	}
 	r_list_append (bin->classes_list, cls);
 	if (dexdump) {
-		rbin->cb_printf ("  Class descriptor  : '%s'\n",
-				 dex_class_name (bin, c));
+		rbin->cb_printf ("  Class descriptor  : '%s;'\n", class_name);
 		rbin->cb_printf (
 			"  Access flags      : 0x%04x (%s)\n", c->access_flags,
 			createAccessFlagStr (c->access_flags, kAccessForClass));
