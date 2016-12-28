@@ -359,7 +359,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	int ret = waitpid (-1, &status, WAITPID_FLAGS);
 #else
 	//eprintf ("waiting on pid %d ...\n", pid);
-	int ret = waitpid (pid, &status, WAITPID_FLAGS);
+	int ret = waitpid (pid, &status, WAITPID_FLAGS|WNOHANG);
 #endif // WAIT_ON_ALL_CHILDREN
 	if (ret == -1) {
 		r_sys_perror ("waitpid");
@@ -395,12 +395,18 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			eprintf ("child received signal %d\n", WTERMSIG (status));
 			reason = R_DEBUG_REASON_SIGNAL;
 		} else if (WIFSTOPPED (status)) {
-			if (WSTOPSIG (status) != SIGTRAP) {
+			if (WSTOPSIG (status) != SIGTRAP &&
+				WSTOPSIG (status) != SIGSTOP) {
 				eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
 			}
 
 			/* this one might be good enough... */
 			dbg->reason.signum = WSTOPSIG (status);
+			if (dbg->reason.signum == SIGSTOP) {
+				eprintf ("delivery\n");
+				reason = R_DEBUG_REASON_NONE;
+				goto delivery;
+			}
 
 			/* the ptrace documentation says GETSIGINFO is only necessary for
 			 * differentiating the various stops.
@@ -438,7 +444,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	}
 #endif // __APPLE__
 #endif // __WINDOWS__ && !__CYGWIN__
-
+delivery:
 	dbg->reason.tid = pid;
 	dbg->reason.type = reason;
 	return reason;

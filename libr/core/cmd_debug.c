@@ -2948,7 +2948,27 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	switch (input[1]) {
 	case 0: // "dc"
 		r_reg_arena_swap (core->dbg->reg, true);
+#if __linux__
+		old_pid = core->dbg->pid;
 		r_debug_continue (core->dbg);
+		RList *list = core->dbg->h 
+			? core->dbg->h->threads (core->dbg, core->dbg->pid) 
+			: NULL;
+		if (list) {
+			RDebugPid *th;
+			RListIter *it;
+			r_list_foreach (list, it, th) {
+				if (th->pid && th->pid != old_pid) {
+					r_debug_select (core->dbg, th->pid,
+								core->dbg->tid);
+					r_debug_continue (core->dbg);
+				}
+			}
+		}
+		r_debug_select (core->dbg, old_pid, core->dbg->tid);
+#else
+		r_debug_continue (core->dbg);
+#endif
 		break;
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
