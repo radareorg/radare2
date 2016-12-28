@@ -2487,6 +2487,7 @@ static int cmd_print(void *data, const char *input) {
 	}
 	if (off != UT64_MAX) {
 		r_core_seek (core, off, SEEK_SET);
+		r_core_block_read (core);
 	}
 	switch (*input) {
 	case 'w': // "pw"
@@ -3424,7 +3425,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'z': //psz
 			if (l > 0) {
-				char *s = malloc (core->blocksize+1);
+				char *s = malloc (core->blocksize + 1);
 				int i, j;
 				if (s) {
 					memset (s, 0, core->blocksize);
@@ -3495,7 +3496,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'u': // "pu"
-		if (input[1]=='?') {
+		if (input[1] == '?') {
 			r_cons_printf ("|Usage: pu[w] [len]       print N url"
 					"encoded bytes (w=wide)\n");
 		} else {
@@ -3507,7 +3508,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'c': // "pc"
-		if (l != 0) {
+		if (l) {
 			r_print_code (core->print, core->offset, core->block, len, input[1]);
 		}
 		break;
@@ -4083,7 +4084,7 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_break_pop ();
 		break;
 	case '2': // "p2"
-		if (l != 0) {
+		if (l) {
 			if (input[1] == '?') {
 				r_cons_printf ("|Usage: p2 [number of bytes representing tiles]\n"
 						"NOTE: Only full tiles will be printed\n");
@@ -4093,11 +4094,11 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case '6':
-		if (l != 0) {
-		int malen = (core->blocksize*4)+1;
-		ut8 *buf = malloc (malen);
-		if (!buf) {
-			break;
+		if (l) {
+			int malen = (core->blocksize*4)+1;
+			ut8 *buf = malloc (malen);
+			if (!buf) {
+				break;
 		}
 		memset (buf, 0, malen);
 		switch (input[1]) {
@@ -4351,6 +4352,7 @@ static int cmd_print(void *data, const char *input) {
 beach:
 	if (tmpseek != UT64_MAX) {
 		r_core_seek (core, tmpseek, SEEK_SET);
+		r_core_block_read (core);
 	}
 	if (tbs != core->blocksize) {
 		r_core_block_size (core, tbs);
