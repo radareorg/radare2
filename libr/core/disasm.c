@@ -348,26 +348,6 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	va_end (ap);
 }
 
-static void ds_comment_nl(RDisasmState *ds, bool align, const char *format, ...) {
-	va_list ap;
-	va_start (ap, format);
-	_ds_comment (ds, true, align, format, ap);
-	va_end (ap);
-}
-
-static void ds_comment_down(RDisasmState *ds, bool nl, const char *format, ...) {
-	va_list ap;
-	va_start (ap, format);
-	if (ds->show_comments && !ds->show_comment_right) {
-		_ds_comment_align_ (ds, false, nl);
-	}
-   	if (ds->show_comments && ds->show_comment_right) {
-		ds_align_comment (ds);
-	}
-	r_cons_printf_list (format, ap);
-	va_end (ap);
-}
-
 static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
@@ -2840,13 +2820,13 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				/* nothing */
 			} else {
 				if (ds && !ds->show_emu_str) {
-					msg = r_str_newf (" -> 0x%x", *n32);
+					msg = r_str_newf ("-> 0x%x", *n32);
 				}
 			}
 		}
 		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 		if (fi) {
-			msg = r_str_concatf (msg, "%s ", fi->name);
+			msg = r_str_concatf (msg, "%s", fi->name);
 		}
 	}
 	if (ds) {
