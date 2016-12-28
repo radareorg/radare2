@@ -407,6 +407,13 @@ static int cb_asmbits(void *user, void *data) {
 		}
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
+#if __WINDOWS__
+#if !defined(__MINGW64__)
+				core->dbg->bits = R_SYS_BITS_32;
+#else
+				core->dbg->bits = R_SYS_BITS_64;
+#endif
+#endif
 				char *rp = core->dbg->h->reg_profile (core->dbg);
 				r_reg_set_profile_string (core->dbg->reg, rp);
 				r_reg_set_profile_string (core->anal->reg, rp);

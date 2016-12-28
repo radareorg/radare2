@@ -646,6 +646,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		if (exited_already == pid) {
 			return -1;
 		}
+		memset (&de, 0, sizeof (DEBUG_EVENT));
 		if (WaitForDebugEvent (&de, INFINITE) == 0) {
 			print_lasterr ((char *)__FUNCTION__, "WaitForDebugEvent");
 			return -1;
@@ -729,6 +730,9 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
+#if __MINGW64__
+			case 0x4000001f:
+#endif
 			case EXCEPTION_BREAKPOINT:
 				ret = R_DEBUG_REASON_BREAKPOINT;
 				next_event = 0;

@@ -236,8 +236,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 	}
 	r_core_block_read (core);
 }
-
-R_API void r_core_file_reopen_in_malloc(RCore *core) {
+R_API void r_core_file_reopen_in_malloc (RCore *core) {
 	RCoreFile *f;
 	RListIter *iter;
 	r_list_foreach (core->files, iter, f) {
@@ -263,7 +262,7 @@ R_API void r_core_file_reopen_in_malloc(RCore *core) {
 	}
 }
 
-R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
+R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = NULL;
 	char *binpath = NULL;
@@ -309,6 +308,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	free (binpath);
 	free (newfile);
 }
+
 
 static int cmd_open(void *data, const char *input) {
 	const char *help_msg[] = {
