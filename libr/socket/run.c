@@ -40,6 +40,7 @@
 #if __linux__ && !__ANDROID__
 #include <sys/personality.h>
 #include <pty.h>
+#include <utmp.h>
 #endif
 #if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <util.h>
