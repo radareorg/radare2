@@ -779,22 +779,33 @@ R_API void r_cons_visual_write (char *buffer) {
 
 R_API void r_cons_printf_list(const char *format, va_list ap) {
 	size_t size, written;
+	va_list ap2;
 
+	va_copy (ap2, ap);
 	if (I.null || !format) {
 		return;
 	}
 	if (strchr (format, '%')) {
 		palloc (MOAR + strlen (format) * 20);
+club:
 		size = I.buffer_sz - I.buffer_len - 1; /* remaining space in I.buffer */
 		written = vsnprintf (I.buffer + I.buffer_len, size, format, ap);
 		if (written >= size) { /* not all bytes were written */
 			palloc (written);
-			written = vsnprintf (I.buffer + I.buffer_len, written, format, ap);
+			va_copy (ap, ap2);
+			va_copy (ap2, ap);
+			written = vsnprintf (I.buffer + I.buffer_len, written, format, ap2);
+			if (written >= size) {
+				palloc (written);
+				goto club;
+			}
+			va_end (ap2);
 		}
 		I.buffer_len += written;
 	} else {
 		r_cons_strcat (format);
 	}
+	va_end (ap2);
 }
 
 R_API void r_cons_printf(const char *format, ...) {
