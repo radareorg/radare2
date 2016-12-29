@@ -2623,7 +2623,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					ds_comment (ds, false, "\" @ 0x%"PFMT64x"%s", p, nl);
 				} else {
 					ALIGN;
-					ds_comment (ds, true, "%s; \"%s\" @ 1x%"PFMT64x"%s", esc, msg, p, nl);
+					ds_comment (ds, true, "%s; \"%s\" @ 0x%"PFMT64x"%s", esc, msg, p, nl);
 				}
 			} else {
 				if (!flag_printed) {
