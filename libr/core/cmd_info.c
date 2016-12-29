@@ -468,7 +468,7 @@ static int cmd_info(void *data, const char *input) {
 			case R_CORE_BIN_RADARE: cmd_info (core, "i*IiecsSmz"); break;
 			case R_CORE_BIN_JSON: cmd_info (core, "ijIiecsSmz"); break;
 			case R_CORE_BIN_SIMPLE: cmd_info (core, "iqIiecsSmz"); break;
-			default: cmd_info (core, "iIiecsSmz"); break;
+			default: cmd_info (core, "IiEecsSmz"); break;
 			}
 			break;
 		case '?': {
