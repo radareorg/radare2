@@ -976,18 +976,24 @@ static int cmd_write(void *data, const char *input) {
 			const char* help_msg[] = {
 				"Usage:", "wt[a] file [size]", " Write 'size' bytes in current blok to 'file'",
 				"wta", " [filename]", "append to 'filename'",
-				"wtf", " [filename]", "write to file (see also 'wxf' and 'wf?')",
+				"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
+				"wtf!", " [filename]", "write to file from current addresss to eof",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			free (ostr);
 			return 0;
 		} else {
-			int append = 0;
+			bool append = false;
+			bool toend = false;
 			st64 sz = core->blocksize;
 			if (*str == 'f') { // "wtf"
 				str++;
-				if (*str && str[1]) {
-					filename = str + 1;
+				if (*str == '!') {
+					toend = true;
+					str++;
+				}
+				if (*str) {
+					filename = str + ((*str == ' ')? 1: 0);
 				} else {
 					filename = "";
 				}
@@ -1015,21 +1021,30 @@ static int cmd_write(void *data, const char *input) {
 				filename = _fn;
 			}
 			if (tmp) {
-				sz = (st64) r_num_math (core->num, tmp + 1);
-				if (!sz) {
-					sz = core->blocksize;
+				if (toend) {
+					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+				} else {
+					sz = (st64) r_num_math (core->num, tmp + 1);
+					if (!sz) {
+						sz = core->blocksize;
+					}
+					*tmp = 0;
 				}
-				*tmp = 0;
 				if (sz < 1) {
 					eprintf ("Invalid length\n");
 				} else {
 					r_core_dump (core, filename, core->offset, (ut64)sz, append);
 				}
 			} else {
-				if (!r_file_dump (filename, core->block, core->blocksize, append)) {
-					sz = 0;
+				if (toend) {
+					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					r_core_dump (core, filename, core->offset, (ut64)sz, append);
 				} else {
-					sz = core->blocksize;
+					if (!r_file_dump (filename, core->block, core->blocksize, append)) {
+						sz = 0;
+					} else {
+						sz = core->blocksize;
+					}
 				}
 			}
 			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
