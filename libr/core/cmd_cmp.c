@@ -394,8 +394,12 @@ static int cmd_cmp(void *data, const char *input) {
 			strlen (input + 2) + 1, '*');
 		break;
 	case ' ':
-		val = radare_compare (core, core->block, (ut8*)input+1,
-			strlen (input + 1) + 1, 0);
+		{
+			char *str = strdup (input + 1);
+			int len = r_str_unescape (str);
+			val = radare_compare (core, core->block, (ut8*)str, len, 0);
+			free (str);
+		}
 		break;
 	case 'x':
 		switch (input[1]) {
