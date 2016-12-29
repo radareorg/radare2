@@ -2819,7 +2819,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				/* nothing */
 			} else {
 				if (ds && !ds->show_emu_str) {
-					msg = r_str_newf ("-> 0x%x", *n32);
+					msg = r_str_newf ("-> 0x%x ", *n32);
 				}
 			}
 		}
