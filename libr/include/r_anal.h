@@ -811,6 +811,8 @@ typedef struct r_anal_refline_t {
 	ut64 to;
 	int index;
 	int level;
+	int type;
+	int direction;
 } RAnalRefline;
 
 typedef struct r_anal_state_type_t {
