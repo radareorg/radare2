@@ -1037,7 +1037,7 @@ static const char* GH(help_msg)[] = {
 	"dmhg", "", "Display heap graph of heap segment",
 	"dmhg", " [malloc_state]", "Display heap graph of a particular arena",
 	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
-	"dmhm", "", "List all elemnts of struct malloc_state of main thread (main_arena)",
+	"dmhm", "", "List all elements of struct malloc_state of main thread (main_arena)",
 	"dmhm", " [malloc_state]", "List all malloc_state instance of a particular arena",
 	"dmh?", "", "Show map heap help",
 	NULL
