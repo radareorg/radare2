@@ -111,12 +111,10 @@ R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op) {
 	RListIter *iter;
 	RAnalCaseOp *caseop = NULL;
 
-	if (!op->switch_op) {
+	if (op->switch_op) {
 		bb->switch_op = r_anal_switch_op_new (op->switch_op->addr,
 				op->switch_op->min_val,
 				op->switch_op->max_val);
-	}
-	if (bb->switch_op) {
 		r_list_foreach (op->switch_op->cases, iter, caseop) {
 			r_anal_switch_op_add_case (bb->switch_op, caseop->addr,
 					caseop->value, caseop->jump);
