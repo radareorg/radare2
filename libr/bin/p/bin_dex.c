@@ -323,14 +323,11 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		return;
 	}
 
-	class_name = r_str_newf("%s;", class_name);
-
 	struct dex_debug_local_t debug_locals[regsz];
 	memset (debug_locals, 0, sizeof (struct dex_debug_local_t) * regsz);
-
 	if (!(MA & 0x0008)) {
 		debug_locals[argReg].name = "this";
-		debug_locals[argReg].descriptor = class_name;
+		debug_locals[argReg].descriptor = r_str_newf("%s;", class_name);
 		debug_locals[argReg].startAddress = 0;
 		debug_locals[argReg].signature = NULL;
 		debug_locals[argReg].live = true;
