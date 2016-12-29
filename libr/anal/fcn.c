@@ -473,6 +473,48 @@ static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb,
 	return 0;
 }
 
+R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr, ut8 *buf, ut64 len, int reftype) {
+	RAnalOp op = {0};
+	int oplen, idx = 0;
+	while (idx < len) {
+		if ((len - idx) < 5) {
+			break;
+		}
+		r_anal_op_fini (&op);
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
+			return 0;
+		}
+		switch (op.type) {
+		case R_ANAL_OP_TYPE_TRAP:
+		case R_ANAL_OP_TYPE_RET:
+		case R_ANAL_OP_TYPE_JMP:
+			// eprintf ("CASE AT 0x%llx size %d\n", addr, idx + oplen);
+			anal->cb_printf ("afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
+					fcn->addr, addr, idx + oplen);
+			anal->cb_printf ("afbe 0x%"PFMT64x" 0x%"PFMT64x"\n",
+					addr_bbsw, addr);
+			return idx + oplen;
+		}
+		idx += oplen;
+	}
+	return idx;
+}
+
+static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
+	ut8 buf[1024];
+	int i;
+	eprintf ("WALK SWITCH TABLE INTO (0x%llx) %llx\n", from, at);
+	for (i = 0; i < 10; i++) {
+		anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
+		int sz = r_anal_case (anal, fcn, from, at, buf, sizeof (buf), 0);
+		if (sz < 1) {
+			break;
+		}
+		at += sz;
+	}
+	return 0;
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int continue_after_jump = anal->opt.afterjmp;
 	int noncode = anal->opt.noncode;
@@ -882,10 +924,10 @@ repeat:
 						return R_ANAL_RET_END;
 #if JMP_IS_EOB_RANGE > 0
 					} else {
-						if (op.jump < addr-JMP_IS_EOB_RANGE && op.jump<addr) {
+						if (op.jump < addr - JMP_IS_EOB_RANGE && op.jump<addr) {
 							gotoBeach (R_ANAL_RET_END);
 						}
-						if (op.jump > addr+JMP_IS_EOB_RANGE) {
+						if (op.jump > addr + JMP_IS_EOB_RANGE) {
 							gotoBeach (R_ANAL_RET_END);
 						}
 #endif
@@ -966,8 +1008,9 @@ repeat:
 						}
 					}
 				}
+				walk_switch (anal, fcn, op.addr, op.addr + op.size);
 			}
-			if (anal->cur) { 
+			if (anal->cur) {
 				/* if UJMP is in .plt section just skip it */
 				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
 				if (s && s->name) {
@@ -977,7 +1020,9 @@ repeat:
 							if (!in_plt) goto river;
 						}
 					} else {
-						if (in_plt) goto river;
+						if (in_plt) {
+							goto river;
+						}
 					}
 				}
 			}

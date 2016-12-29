@@ -1800,6 +1800,16 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			free (title);
 			r_agraph_add_edge (g, u, v);
 		}
+		if (bb->switch_op) {
+			RListIter *it;
+			RAnalCaseOp *cop;
+			r_list_foreach (bb->switch_op->cases, it, cop) {
+				title = get_title (cop->addr);
+				v = r_agraph_get_node (g, title);
+				free (title);
+				r_agraph_add_edge (g, u, v);
+			}
+		}
 	}
 
 	ret = true;

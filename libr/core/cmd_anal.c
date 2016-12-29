@@ -833,6 +833,35 @@ static int anal_fcn_list_bb(RCore *core, const char *input) {
 	return true;
 }
 
+static bool anal_bb_edge (RCore *core, const char *input) {
+	// "afbe" switch-bb-addr case-bb-addr
+	char *arg = strdup (r_str_chop_ro(input));
+	char *sp = strchr (arg, ' ');
+	if (sp) {
+		*sp++ = 0;
+		ut64 sw_at = r_num_math (core->num, arg);
+		ut64 cs_at = r_num_math (core->num, sp);
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, sw_at, 0);
+		if (fcn) {
+			RAnalBlock *bb;
+			RListIter *iter;
+			r_list_foreach (fcn->bbs, iter, bb) {
+				if (sw_at >= bb->addr && sw_at < (bb->addr + bb->size)) {
+					if (!bb->switch_op) {
+						bb->switch_op = r_anal_switch_op_new (
+							sw_at, 0, 0);
+					}
+					r_anal_switch_op_add_case (bb->switch_op, cs_at, 0, cs_at);
+				}
+			}
+			free (arg);
+			return true;
+		}
+	}
+	free (arg);
+	return false;
+}
+
 static bool anal_fcn_del_bb(RCore *core, const char *input) {
 	ut64 addr = r_num_math (core->num, input);
 	if (!addr) {
@@ -1057,10 +1086,12 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 }
 
 static bool fcnNeedsPrefix(const char *name) {
-	if (!strncmp (name, "entry", 5))
+	if (!strncmp (name, "entry", 5)) {
 		return false;
-	if (!strncmp (name, "main", 4))
+	}
+	if (!strncmp (name, "main", 4)) {
 		return false;
+	}
 	return (!strchr (name, '.'));
 }
 
@@ -1373,7 +1404,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'b': // "afb"
 		switch (input[2]) {
 		case '-':
-			anal_fcn_del_bb (core, input +3);
+			anal_fcn_del_bb (core, input + 3);
+			break;
+		case 'e':
+			anal_bb_edge (core, input + 3);
 			break;
 		case 0:
 		case ' ':
