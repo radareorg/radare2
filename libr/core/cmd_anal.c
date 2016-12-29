@@ -1431,6 +1431,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "list basic blocks of function",
 					"afbr", "", "Show addresses of instructions which leave the function",
 					"afbj", "", "show basic blocks information in json",
+					"afbe", "bbfrom bbto", "add basic-block edge for switch-cases",
 					"afB", " [bits]", "define asm.bits for the given function",
 					NULL
 				};

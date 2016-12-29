@@ -489,9 +489,9 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 		case R_ANAL_OP_TYPE_RET:
 		case R_ANAL_OP_TYPE_JMP:
 			// eprintf ("CASE AT 0x%llx size %d\n", addr, idx + oplen);
-			anal->cb_printf ("afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
+			eprintf ("afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
 					fcn->addr, addr, idx + oplen);
-			anal->cb_printf ("afbe 0x%"PFMT64x" 0x%"PFMT64x"\n",
+			eprintf ("afbe 0x%"PFMT64x" 0x%"PFMT64x"\n",
 					addr_bbsw, addr);
 			return idx + oplen;
 		}
