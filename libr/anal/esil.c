@@ -1516,7 +1516,7 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 				esil->lastsz = bits;
 				num = num & bitmask;
 			}
-			r_write_ble(b, num, esil->anal->big_endian, bits);
+			r_write_ble (b, num, esil->anal->big_endian, bits);
 			ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
@@ -1530,6 +1530,9 @@ static int esil_poke1(RAnalEsil *esil) {
 }
 static int esil_poke2(RAnalEsil *esil) {
 	return esil_poke_n (esil, 16);
+}
+static int esil_poke3(RAnalEsil *esil) {
+	return esil_poke_n (esil, 24);
 }
 static int esil_poke4(RAnalEsil *esil) {
 	return esil_poke_n (esil, 32);
@@ -1597,6 +1600,7 @@ static int esil_peek_n(RAnalEsil *esil, int bits) {
 		free (dst);
 		return 0;
 	}
+	//eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
 	if (dst && isregornum (esil, dst, &addr)) {
 		ut64 bitmask = genmask (bits - 1);
 		ut8 a[sizeof(ut64)] = {0};
@@ -1618,6 +1622,9 @@ static int esil_peek1(RAnalEsil *esil) {
 }
 static int esil_peek2(RAnalEsil *esil) {
 	return esil_peek_n (esil, 16);
+}
+static int esil_peek3(RAnalEsil *esil) {
+	return esil_peek_n (esil, 24);
 }
 static int esil_peek4(RAnalEsil *esil) {
 	return esil_peek_n (esil, 32);
@@ -2613,6 +2620,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("=[]", esil_poke);
 	OP ("=[1]", esil_poke1);
 	OP ("=[2]", esil_poke2);
+	OP ("=[3]", esil_poke3);
 	OP ("=[4]", esil_poke4);
 	OP ("=[8]", esil_poke8);
 	OP ("|=[]", esil_mem_oreq);
@@ -2670,6 +2678,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("=[*]", esil_poke_some);
 	OP ("[1]", esil_peek1);
 	OP ("[2]", esil_peek2);
+	OP ("[3]", esil_peek3);
 	OP ("[4]", esil_peek4);
 	OP ("[8]", esil_peek8);
 	OP ("STACK", r_anal_esil_dumpstack);

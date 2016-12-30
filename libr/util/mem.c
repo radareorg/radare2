@@ -180,6 +180,12 @@ R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
 		dest[0] = orig[1];
 		dest[1] = buffer[0];
 		break;
+	case 3:
+		*buffer = *orig;
+		dest[0] = orig[2];
+		dest[1] = orig[1];
+		dest[2] = buffer[0];
+		break;
 	case 4:
 		memcpy (buffer, orig, 4);
 		dest[0] = buffer[3];
