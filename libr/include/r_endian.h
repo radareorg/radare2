@@ -74,6 +74,12 @@ static inline void r_write_be32(void *dest, ut32 val) {
 	r_write_at_be16 (dest, val >> 0, sizeof (ut16));
 }
 
+static inline void r_write_be24(void *dest, ut32 val) {
+	r_write_be8 (dest++, val >> 16);
+	r_write_be8 (dest++, val >> 8);
+	r_write_be8 (dest, val >> 0);
+}
+
 static inline void r_write_at_be32(void *dest, ut32 val, size_t offset) {
 	ut8 *d = (ut8*)dest + offset;
 	r_write_be32 (d, val);
@@ -136,6 +142,12 @@ static inline void r_write_le16(void *dest, ut16 val) {
 static inline void r_write_at_le16(void *dest, ut16 val, size_t offset) {
 	ut8 *d = (ut8 *)dest + offset;
 	r_write_le16 (d, val);
+}
+
+static inline void r_write_le24(void *dest, ut32 val) {
+	r_write_le8 (dest++, val >> 0);
+	r_write_le8 (dest++, val >> 8);
+	r_write_le8 (dest,   val >> 16);
 }
 
 static inline ut32 r_read_le32(const void *src) {
@@ -213,6 +225,10 @@ static inline void r_write_ble16(void *dest, ut16 val, bool big_endian) {
 	big_endian? r_write_be16 (dest, val): r_write_le16 (dest, val);
 }
 
+static inline void r_write_ble24(void *dest, ut32 val, bool big_endian) {
+	big_endian? r_write_be24 (dest, val): r_write_le24 (dest, val);
+}
+
 static inline void r_write_ble32(void *dest, ut32 val, bool big_endian) {
 	big_endian? r_write_be32 (dest, val): r_write_le32 (dest, val);
 }
@@ -228,6 +244,9 @@ static inline void r_write_ble(void *dst, ut64 val, bool big_endian, int size) {
 		break;
 	case 16:
 		r_write_ble16 (dst, (ut16) val, big_endian);
+		break;
+	case 24:
+		r_write_ble24 (dst, (ut32) val, big_endian);
 		break;
 	case 32:
 		r_write_ble32 (dst, (ut32) val, big_endian);
