@@ -783,6 +783,7 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 
 	va_copy (ap2, ap);
 	if (I.null || !format) {
+		va_end (ap2);
 		return;
 	}
 	if (strchr (format, '%')) {
