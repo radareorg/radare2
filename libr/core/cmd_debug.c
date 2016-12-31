@@ -2951,7 +2951,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 #if __linux__
 		old_pid = core->dbg->pid;
 		r_debug_continue (core->dbg);
-		RList *list = core->dbg->h 
+		RList *list = (core->dbg->h && core->dbg->h->threads)
 			? core->dbg->h->threads (core->dbg, core->dbg->pid) 
 			: NULL;
 		if (list) {
@@ -2959,8 +2959,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			RListIter *it;
 			r_list_foreach (list, it, th) {
 				if (th->pid && th->pid != old_pid) {
-					r_debug_select (core->dbg, th->pid,
-								core->dbg->tid);
+					r_debug_select (core->dbg, th->pid, core->dbg->tid);
 					r_debug_continue (core->dbg);
 				}
 			}
