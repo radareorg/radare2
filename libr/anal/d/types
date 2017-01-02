@@ -2723,3 +2723,9 @@ mktemp=func
 func.mktemp.args=1
 func.mktemp.arg.0=char *,template
 func.mktemp.ret=char *
+
+objc_msgSend=func
+func.objc_msgSend.args=2
+func.objc_msgSend.arg.0=void *,instance
+func.objc_msgSend.arg.1=char *,selector
+func.objc_msgSend.ret=void *
