@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2011-2016 - pancake */
+
 #include <r_cons.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -17,7 +18,6 @@
 #endif
 
 static bool dexdump = false;
-
 static Sdb *mdb = NULL;
 static Sdb *cdb = NULL; // TODO: remove if it is not used
 
@@ -1132,7 +1132,6 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 							}
 						}
 					}
-
 					if (catchAll) {
 						p3 = r_uleb128 (p3, p3_end - p3, &v2);
 						if (dexdump) {
@@ -1144,7 +1143,6 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						}
 					}
 				}
-
 			} else {
 				if (dexdump) {
 					rbin->cb_printf (
@@ -1159,10 +1157,8 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 			}
 		}
 
-		if (MC > 0 && debug_info_off > 0 &&
-		    bin->header.data_offset < debug_info_off &&
-		    debug_info_off <
-			    bin->header.data_offset + bin->header.data_size) {
+		if (MC > 0 && debug_info_off > 0 && bin->header.data_offset < debug_info_off &&
+		    debug_info_off < bin->header.data_offset + bin->header.data_size) {
 			dex_parse_debug_item (binfile, bin, c, MI, MA, ins_size, 
 				insns_size, cls->name, regsz, debug_info_off);
 		} else if (MC > 0) {

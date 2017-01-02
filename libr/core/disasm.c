@@ -2734,9 +2734,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	} else {
 		ds_print_as_string (ds);
 	}
+#if DEADCODE
 	if (aligned && ds->show_color) {
 		r_cons_printf (Color_RESET);
 	}
+#endif
 }
 
 // TODO: Use sdb in rbin to accelerate this
@@ -3195,9 +3197,9 @@ callfallback:
 		}
 		break;
 	}
+beach:
 	r_config_restore (hc);
 	r_config_hold_free (hc);
-beach:
 	if (ds->show_spacy) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_CALL:
