@@ -1021,6 +1021,32 @@ static int esil_lsreq(RAnalEsil *esil) {
 	return ret;
 }
 
+static int esil_asr(RAnalEsil *esil) {
+	int regsize, ret = 0;
+	ut64 op_num, param_num;
+	char *op    = r_anal_esil_pop (esil);
+	char *param = r_anal_esil_pop (esil);
+	if (op && r_anal_esil_get_parm_size (esil, op, &op_num, &regsize)) {
+		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
+			ut64 mask = (regsize - 1);
+			param_num &= mask;
+			ut64 left_bits = 0;
+			if (op_num & (1 << (regsize-1))) {
+				left_bits = (1 << param_num) - 1;
+				left_bits <<= regsize - param_num;
+			}
+			ut64 res = left_bits | (op_num >> param_num);
+			r_anal_esil_pushnum (esil, res);
+			ret = 1;
+		} else {
+			ERR ("esil_asr: empty stack");
+		}
+	}
+	free (param);
+	free (op);
+	return ret;
+}
+
 static int esil_ror(RAnalEsil *esil) {
 	int regsize, ret = 0;
 	ut64 num, num2;
@@ -2591,6 +2617,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("<<=", esil_lsleq);
 	OP (">>", esil_lsr);
 	OP (">>=", esil_lsreq);
+	OP (">>>>", esil_asr);
 	OP (">>>", esil_ror);
 	OP ("<<<", esil_rol);
 	OP ("&", esil_and);
