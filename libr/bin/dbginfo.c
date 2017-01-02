@@ -51,13 +51,13 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 			}
 			if (origin) {
 				char *res = r_str_newf ("%s:%d%s%s",
-						file_nopath, line, (file_nopath)? " ": "",
-						(out)? out: "");
+						file_nopath? file_nopath: "",
+						line, file_nopath? " ": "",
+						out? out: "");
 				free (out);
 				return res;
-			} else {
-				return out;
 			}
+			return out;
 		}
 		free (file_line);
 	}

@@ -891,6 +891,7 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 			char *line = r_str_replace (strdup (txt), "\"", "'", 1);
 			r_sys_cmdf ("\"%s\" \"%s\"%s", sayPath, line, bg? " &": "");
 			free (line);
+			free (sayPath);
 			return true;
 		}
 	}

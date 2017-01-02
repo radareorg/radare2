@@ -1415,23 +1415,21 @@ static void create_edge_from_dummies (const RAGraph *g, RANode *an, RList *torem
 	RANode *a_from = get_anode (from);
 	RListIter *(*add_to_list)(RList *, void *) = NULL;
 	AEdge *e = R_NEW0 (AEdge);
-	if (!e) {
+	if (!e || !a_from) {
 		return;
 	}
 	e->x = r_list_new ();
 	e->y = r_list_new ();
 	e->is_reversed = an->is_reversed;
-	if (a_from) {
-		if (e->is_reversed) {
-			e->to = a_from;
-			add_to_list = r_list_prepend;
-			add_to_list (e->x, (void *)(size_t)an->x);
-			add_to_list (e->y, (void *)(size_t)a_from->y);
-		} else {
-			e->from = a_from;
-			add_to_list = r_list_append;
-		}
-	} else return;
+	if (e->is_reversed) {
+		e->to = a_from;
+		add_to_list = r_list_prepend;
+		add_to_list (e->x, (void *)(size_t)an->x);
+		add_to_list (e->y, (void *)(size_t)a_from->y);
+	} else {
+		e->from = a_from;
+		add_to_list = r_list_append;
+	}
 
 	while (an->is_dummy) {
 		add_to_list (toremove, n);
