@@ -633,6 +633,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
 	return NULL;
     }
 
+#if 0
 #ifdef _WIN32
     /*
       According to Pierre Joye, Windows in some environments per
@@ -647,6 +648,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
 	0
 #endif
 	);
+#endif
 #endif
 	
     *outp = tfp;
