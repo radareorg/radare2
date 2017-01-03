@@ -74,9 +74,11 @@ TAG_CALLBACK(spp_getrandom)
 	if (!echo[ifl]) {
 		return 0;
 	}
-	srandom (getpid()); // TODO: change this to be portable
+	srandom (getpid ()); // TODO: change this to be portable
 	max = atoi (buf);
-	max = (int)(rand()%max);
+	if (max > 0) {
+		max = (int)(rand () % max);
+	}
 	do_printf (out, "%d", max);
 	return 0;
 }
@@ -363,6 +365,7 @@ TAG_CALLBACK(spp_endpipe)
 		pclose (spp_pipe_fd);
 	}
 	spp_pipe_fd = NULL;
+	free (str);
 	return 0;
 }
 
