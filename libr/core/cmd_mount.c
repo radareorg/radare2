@@ -1,24 +1,16 @@
-/* radare - LGPL - Copyright 2009-2015 // pancake */
+/* radare - LGPL - Copyright 2009-2017 // pancake */
 
 static int cmd_mkdir(void *data, const char *input) {
-	r_core_syscmd_mkdir (input);
+	char *res = r_syscmd_mkdir (input);
+	if (res) {
+		r_cons_print (res);
+		free (res);
+	}
 	return 0;
 }
 
 static int cmd_mv(void *data, const char *input) {
-	if (strlen (input)<3) {
-		eprintf ("Usage: mv src dst\n");
-		return 0;
-	}
-	input = input + 2;
-	if (!r_sandbox_enable(0)) {
-#if __WINDOWS__
-		r_sys_cmdf ("move %s", input);
-#else
-		r_sys_cmdf ("mv %s", input);
-#endif
-	}
-	return 0;
+	return r_syscmd_mv (input)? 1: 0;
 }
 
 static int cmd_mount(void *data, const char *_input) {

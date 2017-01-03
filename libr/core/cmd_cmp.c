@@ -382,7 +382,15 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'p':
 		return cmd_cp (data, input);
 		break;
-	case 'a': r_core_syscmd_cat (input+1); break;
+	case 'a':
+		if (input[1] == 't') {
+			char *res = r_syscmd_cat (input + 1);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+		}
+		break;
 	case 'w': cmd_cmp_watcher (core, input+1); break;
 	case '*':
 		if (!input[2]) {

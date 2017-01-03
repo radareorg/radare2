@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2017 - pancake */
 
 #include <r_core.h>
 #include <errno.h>
@@ -8,35 +8,34 @@
 
 static int needs_newline = 0;
 
-static void showfile(const int nth, const char *fpath, const char *name, int printfmt) {
+static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt) {
 #if __UNIX__
 	struct stat sb;
 #endif
 	const char *n = fpath;
 	char *nn, *u_rwx = NULL;
 	int sz = r_file_size (n);
-	int perm, isdir, uid = 0, gid = 0;
+	int perm, uid = 0, gid = 0;
 	int fch = '-';
 	if (!strncmp (fpath, "./", 2)) {
 		fpath = fpath + 2;
 	}
-	if (r_file_is_directory (n)) {
+	const bool isdir = r_file_is_directory (n);
+	if (isdir) {
 		nn = r_str_concat (strdup (fpath), "/");
-		isdir = 1;
 	} else {
 		nn = strdup (fpath);
-		isdir = 0;
 	}
 	if (!*nn) {
 		free (nn);
-		return;
+		return res;
 	}
 	perm = isdir? 0755: 0644;
 	if (!printfmt) {
 		needs_newline = ((nth + 1)%4)? 1: 0;
-		r_cons_printf ("%18s%s", nn, needs_newline? "  ": "\n");
+		res = r_str_concatf (res, "%18s%s", nn, needs_newline? "  ": "\n");
 		free (nn);
-		return;
+		return res;
 	}
 	// TODO: escape non-printable chars in filenames
 	// TODO: Implement more real info in ls -l
@@ -49,7 +48,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 		perm = sb.st_mode & 0777;
 		if (!(u_rwx = strdup (r_str_rwx_i (perm >> 6)))) {
 			free (nn);
-			return;
+			return res;
 		}
 		if (sb.st_mode & S_ISUID) {
 			u_rwx[2] = (sb.st_mode & S_IXUSR) ? 's' : 'S';
@@ -73,7 +72,7 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 	fch = isdir? 'd': '-';
 #endif
 	if (printfmt == FMT_RAW) {
-		r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
+		res = r_str_concatf (res, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
 			isdir?'d': fch,
 			u_rwx? u_rwx: "-",
 			r_str_rwx_i ((perm >> 3) & 7),
@@ -81,18 +80,20 @@ static void showfile(const int nth, const char *fpath, const char *name, int pri
 			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
 		if (nth > 0) {
-			r_cons_printf (",");
+			res = r_str_concat (res, ",");
 		}
-		r_cons_printf("{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
+		res = r_str_concatf (res, "{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
 			"\"gid\":%d,\"perm\":%d,\"isdir\":%s}",
 			name, sz, uid, gid, perm, isdir?"true":"false");
 	}
 	free (nn);
 	free (u_rwx);
+	return res;
 }
 
 // TODO: Move into r_util .. r_print maybe? r_cons dep is anoying
-R_API void r_core_syscmd_ls(const char *input) {
+R_API char *r_syscmd_ls(const char *input) {
+	char *res = NULL;
 	const char *path = ".";
 	char *d = NULL;
 	char *p = NULL;
@@ -105,11 +106,11 @@ R_API void r_core_syscmd_ls(const char *input) {
 	char *dir;
 	int off;
 	if (!input || *input == '\0') {
-		return;
+		return NULL;
 	}
 	if (r_sandbox_enable (0)) {
 		eprintf ("Sandbox forbids listing directories\n");
-		return;
+		return NULL;
 	}
 	if (input[1] == ' ') {
 		if ((!strncmp (input + 2, "-l", 2)) || (!strncmp (input + 2, "-j", 2))) {
@@ -147,13 +148,13 @@ R_API void r_core_syscmd_ls(const char *input) {
 		}
 	}
 	if (!r_file_is_directory (path)) {
-		p = strrchr(path, '/');
+		p = strrchr (path, '/');
 		if (p){
 			off = p - path;
 			d = (char *) calloc (1, off + 1);
 			if (!d) {
 				free (homepath);
-				return;
+				return NULL;
 			}
 			memcpy (d, path, off);
 			path = (const char *)d;
@@ -166,22 +167,22 @@ R_API void r_core_syscmd_ls(const char *input) {
 		pattern = strdup ("*");
 	}
 	if (r_file_is_regular (path)) {
-		showfile (0, path, path, printfmt);
+		res = showfile (res, 0, path, path, printfmt);
 		free (homepath);
 		free (pattern);
 		free (d);
-		return;
+		return res;
 	}
 	files = r_sys_dir (path);
 
-	if (path[strlen (path)-1] == '/') {
+	if (path[strlen (path) - 1] == '/') {
 		dir = strdup (path);
 	} else {
 		dir = r_str_concat (strdup (path), "/");
 	}
 	int nth = 0;
 	if (printfmt == FMT_JSON) {
-		r_cons_printf ("[");
+		res = strdup ("[");
 	}
 	needs_newline = 0;
 	r_list_foreach (files, iter, name) {
@@ -191,26 +192,27 @@ R_API void r_core_syscmd_ls(const char *input) {
 		}
 		if (r_str_glob (name, pattern)) {
 			if (*n) {
-				showfile (nth, n, name, printfmt);
+				res = showfile (res, nth, n, name, printfmt);
 			}
 			nth++;
 		}
 		free (n);
 	}
 	if (printfmt == FMT_JSON) {
-		r_cons_printf ("]");
+		res = r_str_concat (res, "]");
 	}
 	if (needs_newline) {
-		r_cons_newline ();
+		res = r_str_concat (res, "\n");
 	}
 	free (dir);
 	free (d);
 	free (homepath);
 	free (pattern);
 	r_list_free (files);
+	return res;
 }
 
-R_API void r_core_syscmd_cat(const char *file) {
+R_API char *r_syscmd_cat(const char *file) {
 	int sz;
 	const char *p = strchr (file, ' ');
 	if (p) {
@@ -218,8 +220,7 @@ R_API void r_core_syscmd_cat(const char *file) {
 		filename = r_str_chop (filename);
 		data = r_file_slurp (filename, &sz);
 		if (data) {
-			r_cons_memcat (data, sz);
-			free (data);
+			return data;
 		} else {
 			eprintf ("No such file or directory\n");
 		}
@@ -227,9 +228,10 @@ R_API void r_core_syscmd_cat(const char *file) {
 	} else {
 		eprintf ("Usage: cat [file]\n");
 	}
+	return NULL;
 }
 
-R_API void r_core_syscmd_mkdir(const char *dir) {
+R_API char *r_syscmd_mkdir(const char *dir) {
 	bool show_help = true;
 	const char *p = strchr (dir, ' ');
 	if (p) {
@@ -253,4 +255,21 @@ R_API void r_core_syscmd_mkdir(const char *dir) {
 	if (show_help) {
 		eprintf ("Usage: mkdir [-p] [directory]\n");
 	}
+	return NULL;
+}
+
+R_API bool r_syscmd_mv(const char *input) {
+	if (strlen (input) < 3) {
+		eprintf ("Usage: mv src dst\n");
+		return false;
+	}
+	input = input + 2;
+	if (!r_sandbox_enable (0)) {
+#if __WINDOWS__
+		r_sys_cmdf ("move %s", input);
+#else
+		r_sys_cmdf ("mv %s", input);
+#endif
+	}
+	return false;
 }

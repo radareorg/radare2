@@ -528,7 +528,11 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 }
 
 static int cmd_ls(void *data, const char *input) {
-	r_core_syscmd_ls (input);
+	char *res = r_syscmd_ls (input);
+	if (res) {
+		r_cons_print (res);
+		free (res);
+	}
 	return 0;
 }
 

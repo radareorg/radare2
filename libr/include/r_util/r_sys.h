@@ -51,4 +51,11 @@ R_API char *r_sys_cmd_strf(const char *cmd, ...);
 //#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
 R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);
+
+/* syscmd */
+R_API char *r_syscmd_ls(const char *input);
+R_API char *r_syscmd_cat(const char *file);
+R_API char *r_syscmd_mkdir(const char *dir);
+R_API bool r_syscmd_mv(const char *input);
+
 #endif //  R_SYS_H
