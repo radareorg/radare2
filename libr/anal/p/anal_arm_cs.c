@@ -20,6 +20,7 @@
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
 // s/index/base|reg/
 #define MEMINDEX(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index))
+#define HASMEMINDEX(x) insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID
 #define MEMINDEX64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
@@ -894,6 +895,10 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 					if (ISREG(1)) {
 						r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
 							MEMBASE(1), MEMINDEX(1), REG(0));
+					} else if (HASMEMINDEX(1)) {	// e.g. `ldr r2, [r3, r1]`
+						// TODO: handle shift of index register value
+						r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
+							MEMINDEX(1), MEMBASE(1), REG(0));
 					} else {
 						int disp = MEMDISP(1);
 						if (disp < 0) {
