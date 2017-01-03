@@ -255,12 +255,12 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (sig != -1) {
 		contsig = sig;
 	}
-	//eprintf ("continuing with signal %d ...\n", contsig);
 	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
 	if (dbg->consbreak) {
 		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
 	}
-	return ptrace (PTRACE_CONT, pid, NULL, contsig) == 0;
+	int ret = ptrace (PTRACE_CONT, tid, NULL, contsig);
+	return ret >= 0 ? tid : false;
 #endif
 }
 static RDebugInfo* r_debug_native_info (RDebug *dbg, const char *arg) {
@@ -355,10 +355,12 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 #else
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
-	//eprintf ("waiting on all children ...\n");
 	int ret = waitpid (-1, &status, WAITPID_FLAGS);
 #else
-	//eprintf ("waiting on pid %d ...\n", pid);
+	reason = linux_dbg_wait (dbg, dbg->tid);
+	dbg->reason.tid = pid;
+	dbg->reason.type = reason;
+	return reason;
 	int ret = waitpid (pid, &status, WAITPID_FLAGS);
 #endif // WAIT_ON_ALL_CHILDREN
 	if (ret == -1) {
@@ -400,14 +402,6 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 				eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
 			}
 
-			/* this one might be good enough... */
-			dbg->reason.signum = WSTOPSIG (status);
-			if (dbg->reason.signum == SIGSTOP) {
-				eprintf ("delivery\n");
-				reason = R_DEBUG_REASON_NONE;
-				goto delivery;
-			}
-
 			/* the ptrace documentation says GETSIGINFO is only necessary for
 			 * differentiating the various stops.
 			 *
@@ -444,7 +438,6 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	}
 #endif // __APPLE__
 #endif // __WINDOWS__ && !__CYGWIN__
-delivery:
 	dbg->reason.tid = pid;
 	dbg->reason.type = reason;
 	return reason;
