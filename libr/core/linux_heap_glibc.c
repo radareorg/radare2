@@ -329,7 +329,7 @@ void GH(print_heap_chunk)(RCore *core) {
 	}
 
 	PRINT_GA (",\n}\n");
-	GHT size = ((cnk->size >> 3) << 3) - SZ * 2;
+	GHT size = ((cnk->size >> 3) << 3) - SZ;
 	if (size > SZ * 128) {
 		PRINT_GA ("chunk too big to be displayed\n");
 		size = SZ * 128;
