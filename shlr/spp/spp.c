@@ -224,24 +224,7 @@ retry:
 		do_fputs (out, ptr2 + delta);
 	} else {
 		D printf ("==> 3\n");
-		if (ptr) {
-			lbuf_strcat (lbuf, ptr);
-		} else {
-			if (!lbuf) {
-				// XXX should never happen
-				fprintf (stderr, "syntax error?\n");
-				return;
-			}
-			if (buf[0]) {
-				if (incmd) {
-					lbuf_strcat (lbuf, buf);
-				} else {
-					do_fputs (out, buf);
-				}
-			} else {
-				do_fputs (out, buf);
-			}
-		}
+		lbuf_strcat (lbuf, ptr);
 	}
 }
 
