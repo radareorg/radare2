@@ -1031,7 +1031,7 @@ static int esil_asr(RAnalEsil *esil) {
 			ut64 mask = (regsize - 1);
 			param_num &= mask;
 			ut64 left_bits = 0;
-			if (op_num & (1 << (regsize-1))) {
+			if (op_num & (1 << (regsize - 1))) {
 				left_bits = (1 << param_num) - 1;
 				left_bits <<= regsize - param_num;
 			}

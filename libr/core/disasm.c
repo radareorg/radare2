@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake, dso */
 
 #include "r_core.h"
 #include "r_cons.h"

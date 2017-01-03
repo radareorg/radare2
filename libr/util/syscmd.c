@@ -219,12 +219,11 @@ R_API char *r_syscmd_cat(const char *file) {
 		char *data, *filename = strdup (p+1);
 		filename = r_str_chop (filename);
 		data = r_file_slurp (filename, &sz);
-		if (data) {
-			return data;
-		} else {
+		if (!data) {
 			eprintf ("No such file or directory\n");
 		}
 		free (filename);
+		return data;
 	} else {
 		eprintf ("Usage: cat [file]\n");
 	}

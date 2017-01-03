@@ -553,10 +553,12 @@ R_API bool r_config_save_num(RConfigHold *h, ...) {
 }
 
 R_API RConfigHold* r_config_hold_new(RConfig *cfg) {
-	RConfigHold* hold = R_NEW0 (RConfigHold);
-	if (hold) {
-		hold->cfg = cfg;
-		return hold;
+	if (cfg) {
+		RConfigHold* hold = R_NEW0 (RConfigHold);
+		if (hold) {
+			hold->cfg = cfg;
+			return hold;
+		}
 	}
 	return NULL;
 }
@@ -565,17 +567,20 @@ R_API void r_config_restore(RConfigHold *h) {
 	RListIter *iter;
 	RConfigHoldChar *hchar;
 	RConfigHoldNum *hnum;
-
-	r_list_foreach (h->list_num, iter, hnum) {
-		r_config_set_i (h->cfg, hnum->key, hnum->value);
-	}		
-	r_list_foreach (h->list_char, iter, hchar) {
-		r_config_set (h->cfg, hchar->key, hchar->value);
-	}		
+	if (h) {
+		r_list_foreach (h->list_num, iter, hnum) {
+			r_config_set_i (h->cfg, hnum->key, hnum->value);
+		}
+		r_list_foreach (h->list_char, iter, hchar) {
+			r_config_set (h->cfg, hchar->key, hchar->value);
+		}
+	}
 }
 
 R_API void r_config_hold_free(RConfigHold* h) {
-	r_list_free (h->list_num);
-	r_list_free (h->list_char);
-	R_FREE (h);
+	if (h) {
+		r_list_free (h->list_num);
+		r_list_free (h->list_char);
+		R_FREE (h);
+	}
 }
