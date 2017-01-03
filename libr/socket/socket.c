@@ -116,11 +116,13 @@ R_API RSocket *r_socket_new (int is_ssl) {
 		s->sfd = NULL;
 		s->ctx = NULL;
 		s->bio = NULL;
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
 		if (!SSL_library_init ()) {
 			r_socket_free (s);
 			return NULL;
 		}
 		SSL_load_error_strings ();
+#endif
 	}
 #endif
 	return s;
