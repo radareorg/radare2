@@ -883,7 +883,7 @@ R_API int r_sys_getpid() {
 R_API bool r_sys_tts(const char *txt, bool bg) {
 	int i;
 	const char *says[] = {
-		"say", NULL
+		"say", "termux-tts-speak", NULL
 	};
 	for (i = 0; says[i]; i++) {
 		char *sayPath = r_file_path (says[i]);
