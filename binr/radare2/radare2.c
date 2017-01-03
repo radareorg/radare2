@@ -724,8 +724,9 @@ int main(int argc, char **argv, char **envp) {
 					}
 					perms = R_IO_READ; // XXX. should work with rw too
 					debug = 2;
-					if (!strstr (pfile, "://"))
+					if (!strstr (pfile, "://")) {
 						optind--; // take filename
+					}
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					r_config_set (r.config, "io.raw", "false");
 /*
@@ -745,21 +746,22 @@ int main(int argc, char **argv, char **envp) {
 				/* implicit ./ to make unix behave like windows */
 				{
 					char *path, *escaped_path;
-					if (strchr (f, '/') != NULL) {
+					if (strchr (f, '/')) {
 						// f is a path
 						path = strdup (f);
 					} else {
 						// f is a filename
-						if (r_file_exists (f))
+						if (r_file_exists (f)) {
 							path = r_str_prefix (strdup (f), "./");
-						else
+						} else {
 							path = r_file_path (f);
+						}
 					}
 					escaped_path = r_str_arg_escape (path);
 					pfile = r_str_concat (pfile, escaped_path);
 					file = pfile; // probably leaks
-					free (escaped_path);
-					free (path);
+					R_FREE (escaped_path);
+					R_FREE (path);
 				}
 #else
 				{
@@ -777,6 +779,7 @@ int main(int argc, char **argv, char **envp) {
 					free (escaped_arg);
 					optind++;
 				}
+				pfile = file;
 			}
 		}
 
