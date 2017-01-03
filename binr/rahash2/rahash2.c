@@ -353,9 +353,11 @@ static int encrypt_or_decrypt_file (const char *algo, int direction, char *filen
 		if (r_crypto_use (cry, algo)) {
 			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
 				int file_size;
-				ut8 *buf = (ut8*)r_file_slurp (filename, &file_size);
+				ut8 *buf = strcmp (filename, "-")
+					? (ut8*)r_file_slurp (filename, &file_size)
+					: (ut8*)r_stdin_slurp (&file_size);
 				if (!buf) {
-					eprintf ("rahash2: Cannot open file\n");
+					eprintf ("rahash2: Cannot open '%s'\n", filename);
 					return -1;
 				}
 
