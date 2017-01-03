@@ -663,9 +663,9 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		{
 			//Print process info
 			//=! p pid
-			int i;
-			int nextstart;
-			int buffsize;
+			ut64 i;
+			ut64 nextstart;
+			ut64 buffsize;
 			bool fflag = 0;
 			struct r2k_proc_info proc_data;
 
@@ -702,11 +702,11 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				break;
 			}
 
-			buffsize = sizeof (proc_data.vmareastruct) / sizeof (proc_data.vmareastruct[0]);
+			buffsize = (ut64) (sizeof (proc_data.vmareastruct) / sizeof (proc_data.vmareastruct[0]));
 			if (fflag) {
 				int j = 0;
 				for (i = 0; i < buffsize;) {
-					nextstart = -1;
+					nextstart = 0;
 					if (i + 7 < buffsize) {
 						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i+7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}
@@ -722,7 +722,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			} else {
 				io->cb_printf ("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
 				for (i = 0; i < buffsize;) {
-					nextstart = -1;
+					nextstart = 0;
 					if (i + 7 < buffsize) {
 						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i+7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}

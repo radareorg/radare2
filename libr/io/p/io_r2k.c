@@ -47,12 +47,12 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return ReadMemory (io, fd, IOCTL_READ_PHYSICAL_ADDR, r2k_struct.pid, io->off, buf, count);
 	} else {
 		io->cb_printf ("ERROR: Undefined beid in r2k__read.\n");
-		memset (buf, '\xff', count);
+		memset (buf, 0xff, count);
 		return count;
 	}
 #else
 	io->cb_printf ("TODO: r2k not implemented for this plataform.\n");
-	memset (buf, '\xff', count);
+	memset (buf, 0xff, count);
 	return count;
 #endif
 }
