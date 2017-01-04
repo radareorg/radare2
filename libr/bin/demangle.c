@@ -295,6 +295,62 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	return ret;
 }
 
+static inline bool rust_replace_mangled_seq (const char **in, char **out, const char *seq, char value) {
+	size_t len = strlen (seq);
+
+	if (strncmp (*in, seq, len))
+		return false;
+
+	**out = value;
+
+	*in += len;
+	*out += 1;
+
+	return true;
+}
+
+R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr) {
+	size_t len;
+	char *str, *out, *in;
+
+	str = r_bin_demangle_cxx (binfile, sym, vaddr);
+	out = in = str;
+	len = strlen (str);
+
+	if (*in == '_') {
+		*in++;
+	}
+
+	while (len-- > 0)
+		if (!(*in == '$' && (rust_replace_mangled_seq (&in, &out, "$SP$", '@')
+				|| rust_replace_mangled_seq (&in, &out, "$BP$", '*')
+				|| rust_replace_mangled_seq (&in, &out, "$RF$", '&')
+				|| rust_replace_mangled_seq (&in, &out, "$LT$", '<')
+				|| rust_replace_mangled_seq (&in, &out, "$GT$", '>')
+				|| rust_replace_mangled_seq (&in, &out, "$LP$", '(')
+				|| rust_replace_mangled_seq (&in, &out, "$RP$", ')')
+				|| rust_replace_mangled_seq (&in, &out, "$C$", ',')
+				// maybe a good idea to replace all utf-sequences by regexp \$u[0-9a-f]{2}\$ or so
+				|| rust_replace_mangled_seq (&in, &out, "$u20$", ' ')
+				|| rust_replace_mangled_seq (&in, &out, "$u22$", '\"')
+				|| rust_replace_mangled_seq (&in, &out, "$u27$", '\'')
+				|| rust_replace_mangled_seq (&in, &out, "$u2b$", '+')
+				|| rust_replace_mangled_seq (&in, &out, "$u3b$", ';')
+				|| rust_replace_mangled_seq (&in, &out, "$u5b$", '[')
+				|| rust_replace_mangled_seq (&in, &out, "$u5d$", ']')
+				|| rust_replace_mangled_seq (&in, &out, "$u7e$", '~')))) {
+			if (*in == '.' && in[1] == '.') {
+				in += 2;
+				*out++ = ':';
+				*out++ = ':';
+			} else {
+				*out++ = *in++;
+			}
+		}
+
+	return str;
+}
+
 R_API int r_bin_demangle_type (const char *str) {
 	if (!str || !*str)
 		return R_BIN_NM_NONE;
@@ -310,6 +366,8 @@ R_API int r_bin_demangle_type (const char *str) {
 		return R_BIN_NM_DLANG;
 	if (!strcmp (str, "msvc"))
 		return R_BIN_NM_MSVC;
+	if (!strcmp (str, "rust"))
+		return R_BIN_NM_RUST;
 	return R_BIN_NM_NONE;
 }
 
@@ -392,8 +450,7 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, 
 	}
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);
-	/* rust uses the same mangling as c++ and appends a uniqueid */
-	case R_BIN_NM_RUST: return r_bin_demangle_cxx (binfile, str, vaddr);
+	case R_BIN_NM_RUST: return r_bin_demangle_rust (binfile, str, vaddr);
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
 	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str, bin->demanglercmd);
 	case R_BIN_NM_CXX: return r_bin_demangle_cxx (binfile, str, vaddr);
