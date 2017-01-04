@@ -111,7 +111,6 @@ static const char *decode_shift_64(arm64_shifter shift) {
 	return E_OP_VOID;
 }
 
-
 #define DECODE_SHIFT(x) decode_shift(insn->detail->arm.operands[x].shift.type)
 #define DECODE_SHIFT64(x) decode_shift_64(insn->detail->arm64.operands[x].shift.type)
 
@@ -378,7 +377,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				break;
 			default:
 				break;
-
 			}
 			if (ISMEM64(1)) {
 				if (HASMEMINDEX64(1)) {
@@ -394,7 +392,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 						r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+,[%d],%s,=",
 								MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
 					} else {
-						r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",+,[%d],%s,=",
+						r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",+,DUP,tmp,=,[%d],%s,=,",
 								MEMBASE64(1), MEMDISP64(1), size, REG64(0));
 					}
 				}
@@ -1705,6 +1703,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	x28	.64	224	0\n"
 		"gpr	x29	.64	232	0\n"
 		"gpr	x30	.64	240	0\n"
+		"gpr	tmp	.64	248	0\n"
 		/* 64bit double */
 		"gpr	d0	.64	0	0\n" // x0
 		"gpr	d1	.64	8	0\n" // x0
