@@ -131,9 +131,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		//reopen and attach
 		r_core_setup_debugger (core, "native", true);
 		r_debug_select (core->dbg, newpid, newtid);
-		//
 	}
-
 	if (core->file) {
 		RCoreFile * cf = core->file;
 		RIODesc *desc = cf ? cf->desc : NULL;

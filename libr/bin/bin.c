@@ -1904,7 +1904,6 @@ R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch,
 	if (!name || !arch) {
 		return NULL;
 	}
-
 	r_list_foreach (bin->binfiles, iter, binfile) {
 		RListIter *iter_xtr;
 		if (!binfile->xtr_data) {
