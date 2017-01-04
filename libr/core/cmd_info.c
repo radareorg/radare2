@@ -186,9 +186,26 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 			r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
 				mode, va, NULL, NULL);
 		}
-		if (mode == R_CORE_BIN_JSON && array == 0)
+		if (mode == R_CORE_BIN_JSON && array == 0) {
 			r_cons_printf ("}\n");
-	} else eprintf ("No file selected\n");
+		}
+	} else {
+		eprintf ("No file selected\n");
+	}
+}
+
+static void playMsg(RCore *core, const char *n, int len) {
+	if (r_config_get_i (core->config, "scr.tts")) {
+		if (len > 0) {
+			char *s = r_str_newf ("%d %s", len, n);
+			r_sys_tts (s, true);
+			free (s);
+		} else if (len == 0) {
+			char *s = r_str_newf ("there are no %s", n);
+			r_sys_tts (s, true);
+			free (s);
+		}
+	}
 }
 
 static int cmd_info(void *data, const char *input) {
@@ -213,21 +230,25 @@ static int cmd_info(void *data, const char *input) {
 		if (strlen (input+1)>1)
 			is_array = 1;
 	}
-	if (is_array)
+	if (is_array) {
 		r_cons_printf ("{");
-	if (!*input)
+	}
+	if (!*input) {
 		cmd_info_bin (core, va, mode);
+	}
 	/* i* is an alias for iI* */
 	if (!strcmp (input, "*")) {
 		input = "I*";
 	}
+	RBinObject *obj = r_bin_cur_object (core->bin);
 	while (*input) {
 		switch (*input) {
 		case 'b': // "ib"
 			{
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
-			if (input[1]==' ')
+			if (input[1] == ' ') {
 				baddr = r_num_math (core->num, input+1);
+			}
 			// XXX: this will reload the bin using the buffer.
 			// An assumption is made that assumes there is an underlying
 			// plugin that will be used to load the bin (e.g. malloc://)
@@ -284,11 +305,12 @@ static int cmd_info(void *data, const char *input) {
 				r_core_bin_load (core, fn, baddr);
 			}
 			break;
-	#define RBININFO(n,x,y) \
+	#define RBININFO(n,x,y,z) \
 	if (is_array) { \
 		if (is_array == 1) is_array++; else r_cons_printf (","); \
 		r_cons_printf ("\"%s\":",n); \
 	}\
+	if (z) playMsg(core, n, z);\
 	r_core_bin_info (core, x, mode, va, NULL, y);
 		case 'A':
 			newline = false;
@@ -300,19 +322,19 @@ static int cmd_info(void *data, const char *input) {
 				r_bin_list_archs (core->bin, 1);
 			}
 			break;
-		case 'E': RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, NULL); break;
-		case 'Z': RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL); break;
+		case 'E': RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, NULL, 0); break;
+		case 'Z': RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0); break;
 		case 'S':
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
-				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL);
+				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
 			} else  { //iS entropy,sha1
-		        	if (mode == R_CORE_BIN_RADARE || mode == R_CORE_BIN_JSON || mode == R_CORE_BIN_SIMPLE) {
-		                    RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 3);
-		                }
-		                else {
-		                    RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2);
-		                }
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				if (mode == R_CORE_BIN_RADARE || mode == R_CORE_BIN_JSON || mode == R_CORE_BIN_SIMPLE) {
+					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 3, r_list_length (obj->sections));
+				} else {
+					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2, r_list_length (obj->sections));
+				}
 				//we move input until get '\0'
 				while (*(++input));
 				//input-- because we are inside a while that does input++
@@ -322,11 +344,11 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'H':
 			if (input[1] == 'H') { //iHH
-				RBININFO ("header", R_CORE_BIN_ACC_HEADER, NULL);
+				RBININFO ("header", R_CORE_BIN_ACC_HEADER, NULL, -1);
 				break;
 			}
-		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL); break;
-		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL); break;
+		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0); break;
+		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, r_list_length (obj->libs)); break;
 		case 'L': r_bin_list (core->bin, input[1]=='j'); break;
 		case 's':
 			if (input[1] == '.') {
@@ -342,19 +364,20 @@ static int cmd_info(void *data, const char *input) {
 				input++;
 				break;
 			} else {
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, NULL);
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, NULL, r_list_length (obj->symbols));
 				break;
 			}
 		case 'R':
-		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL); break;
-		case 'd': RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL); break;
-		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS, NULL); break;
-		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL); break;
-		case 'e': RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL); break;
-		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL); break;
-		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL); break;
-		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL); break;
-		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL); break;
+		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0); break;
+		case 'd': RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1); break;
+		case 'i': RBININFO ("imports",R_CORE_BIN_ACC_IMPORTS, NULL, r_list_length (obj->imports)); break;
+		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0); break;
+		case 'e': RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0); break;
+		case 'M': RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0); break;
+		case 'm': RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL, 0); break;
+		case 'V': RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0); break;
+		case 'C': RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL, 0); break;
 		case 'z':
 			if (input[1] == 'z') { //izz
 				switch (input[2]) {
@@ -377,15 +400,16 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				}
 				input++;
-				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL);
+				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
 			} else {
+				RBinObject *obj = r_bin_cur_object (core->bin);
 			    	if (input[1] == 'q') {
 					mode = (input[2] == 'q')
 						? R_CORE_BIN_SIMPLEST
 						: R_CORE_BIN_SIMPLE;
 					input++;
 				}
-				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL);
+				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL, r_list_length (obj->strings));
 			}
 			break;
 		case 'c': // for r2 `ic`
@@ -441,25 +465,29 @@ static int cmd_info(void *data, const char *input) {
 						goto done;
 					}
 				} else {
+					playMsg (core, "classes", r_list_length (obj->classes));
 					if (input[1] == 'l' && obj) { // "icl"
 						r_list_foreach (obj->classes, iter, cls) {
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
 								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
 							}
-							if (!r_list_empty (cls->methods))
+							if (!r_list_empty (cls->methods)) {
 								r_cons_newline ();
+							}
 						}
 					} else {
-						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL);
+						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
 					}
 				}
 			} else {
-				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL);
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				int len = r_list_length (obj->classes);
+				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
 			}
 			break;
 		case 'D':
-			if (input[1]!=' ' || !demangle (core, input+2)) {
+			if (input[1]!=' ' || !demangle (core, input + 2)) {
 				eprintf ("|Usage: iD lang symbolname\n");
 			}
 			return 0;

@@ -2140,6 +2140,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("scr.promptfile", "false", "Show user prompt file (used by r2 -q)");
 	SETPREF("scr.promptflag", "false", "Show flag name in the prompt");
 	SETPREF("scr.promptsect", "false", "Show section name in the prompt");
+	SETPREF("scr.tts", "true", "Use tts if available by a command (see ic)");
 	SETCB("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
 	SETCB("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF("scr.seek", "", "Seek to the specified address on startup");
