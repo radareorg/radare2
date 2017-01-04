@@ -295,11 +295,12 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 	return ret;
 }
 
-static inline bool rust_replace_mangled_seq (const char **in, char **out, const char *seq, char value) {
+static bool replace_seq (const char **in, char **out, const char *seq, char value) {
 	size_t len = strlen (seq);
 
-	if (strncmp (*in, seq, len))
+	if (strncmp (*in, seq, len)) {
 		return false;
+	}
 
 	**out = value;
 
@@ -321,24 +322,24 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 		*in++;
 	}
 
-	while (len-- > 0)
-		if (!(*in == '$' && (rust_replace_mangled_seq (&in, &out, "$SP$", '@')
-				|| rust_replace_mangled_seq (&in, &out, "$BP$", '*')
-				|| rust_replace_mangled_seq (&in, &out, "$RF$", '&')
-				|| rust_replace_mangled_seq (&in, &out, "$LT$", '<')
-				|| rust_replace_mangled_seq (&in, &out, "$GT$", '>')
-				|| rust_replace_mangled_seq (&in, &out, "$LP$", '(')
-				|| rust_replace_mangled_seq (&in, &out, "$RP$", ')')
-				|| rust_replace_mangled_seq (&in, &out, "$C$", ',')
+	while (len-- > 0) {
+		if (!(*in == '$' && (replace_seq (&in, &out, "$SP$", '@')
+				|| replace_seq (&in, &out, "$BP$", '*')
+				|| replace_seq (&in, &out, "$RF$", '&')
+				|| replace_seq (&in, &out, "$LT$", '<')
+				|| replace_seq (&in, &out, "$GT$", '>')
+				|| replace_seq (&in, &out, "$LP$", '(')
+				|| replace_seq (&in, &out, "$RP$", ')')
+				|| replace_seq (&in, &out, "$C$", ',')
 				// maybe a good idea to replace all utf-sequences by regexp \$u[0-9a-f]{2}\$ or so
-				|| rust_replace_mangled_seq (&in, &out, "$u20$", ' ')
-				|| rust_replace_mangled_seq (&in, &out, "$u22$", '\"')
-				|| rust_replace_mangled_seq (&in, &out, "$u27$", '\'')
-				|| rust_replace_mangled_seq (&in, &out, "$u2b$", '+')
-				|| rust_replace_mangled_seq (&in, &out, "$u3b$", ';')
-				|| rust_replace_mangled_seq (&in, &out, "$u5b$", '[')
-				|| rust_replace_mangled_seq (&in, &out, "$u5d$", ']')
-				|| rust_replace_mangled_seq (&in, &out, "$u7e$", '~')))) {
+				|| replace_seq (&in, &out, "$u20$", ' ')
+				|| replace_seq (&in, &out, "$u22$", '\"')
+				|| replace_seq (&in, &out, "$u27$", '\'')
+				|| replace_seq (&in, &out, "$u2b$", '+')
+				|| replace_seq (&in, &out, "$u3b$", ';')
+				|| replace_seq (&in, &out, "$u5b$", '[')
+				|| replace_seq (&in, &out, "$u5d$", ']')
+				|| replace_seq (&in, &out, "$u7e$", '~')))) {
 			if (*in == '.' && in[1] == '.') {
 				in += 2;
 				*out++ = ':';
@@ -347,27 +348,29 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 				*out++ = *in++;
 			}
 		}
+	}
 
 	return str;
 }
 
 R_API int r_bin_demangle_type (const char *str) {
-	if (!str || !*str)
+	if (!str || !*str) {
 		return R_BIN_NM_NONE;
-	if (!strcmp (str, "swift"))
+	} if (!strcmp (str, "swift")) {
 		return R_BIN_NM_SWIFT;
-	if (!strcmp (str, "java"))
+	} if (!strcmp (str, "java")){
 		return R_BIN_NM_JAVA;
-	if (!strcmp (str, "objc"))
+	} if (!strcmp (str, "objc")){
 		return R_BIN_NM_OBJC;
-	if (!strcmp (str, "cxx"))
+	} if (!strcmp (str, "cxx")){
 		return R_BIN_NM_CXX;
-	if (!strcmp (str, "dlang"))
+	} if (!strcmp (str, "dlang")){
 		return R_BIN_NM_DLANG;
-	if (!strcmp (str, "msvc"))
+	} if (!strcmp (str, "msvc")){
 		return R_BIN_NM_MSVC;
-	if (!strcmp (str, "rust"))
+	} if (!strcmp (str, "rust")){
 		return R_BIN_NM_RUST;
+	}
 	return R_BIN_NM_NONE;
 }
 
