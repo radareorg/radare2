@@ -398,7 +398,7 @@ R_API bool r_bin_lang_rust(RBinFile *binfile) {
 
 	if (info) {
 		r_list_foreach (o->symbols, iter, sym) {
-			if (sym->name && strstr (sym->name, "rust_stack_exhausted")) {
+			if (sym->name && strstr (sym->name, "_$LT$")) {
 				haslang = true;
 				info->lang = "rust";
 				break;
