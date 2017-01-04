@@ -310,41 +310,50 @@ static bool replace_seq (const char **in, char **out, const char *seq, char valu
 	return true;
 }
 
+#define RS(from, to) (replace_seq(&in, &out, from, to))
+
 R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr) {
 	size_t len;
 	char *str, *out, *in;
 
 	str = r_bin_demangle_cxx (binfile, sym, vaddr);
+	
+	if (!str) {
+		return str;
+	}
+
 	out = in = str;
 	len = strlen (str);
 
 	if (*in == '_') {
 		*in++;
+		len--;
 	}
 
 	while (len-- > 0) {
-		if (!(*in == '$' && (replace_seq (&in, &out, "$SP$", '@')
-				|| replace_seq (&in, &out, "$BP$", '*')
-				|| replace_seq (&in, &out, "$RF$", '&')
-				|| replace_seq (&in, &out, "$LT$", '<')
-				|| replace_seq (&in, &out, "$GT$", '>')
-				|| replace_seq (&in, &out, "$LP$", '(')
-				|| replace_seq (&in, &out, "$RP$", ')')
-				|| replace_seq (&in, &out, "$C$", ',')
+		if (!(*in == '$' && (RS("$SP$", '@')
+				|| RS("$BP$", '*')
+				|| RS("$RF$", '&')
+				|| RS("$LT$", '<')
+				|| RS("$GT$", '>')
+				|| RS("$LP$", '(')
+				|| RS("$RP$", ')')
+				|| RS("$C$", ',')
 				// maybe a good idea to replace all utf-sequences by regexp \$u[0-9a-f]{2}\$ or so
-				|| replace_seq (&in, &out, "$u20$", ' ')
-				|| replace_seq (&in, &out, "$u22$", '\"')
-				|| replace_seq (&in, &out, "$u27$", '\'')
-				|| replace_seq (&in, &out, "$u2b$", '+')
-				|| replace_seq (&in, &out, "$u3b$", ';')
-				|| replace_seq (&in, &out, "$u5b$", '[')
-				|| replace_seq (&in, &out, "$u5d$", ']')
-				|| replace_seq (&in, &out, "$u7e$", '~')))) {
+				|| RS("$u20$", ' ')
+				|| RS("$u22$", '\"')
+				|| RS("$u27$", '\'')
+				|| RS("$u2b$", '+')
+				|| RS("$u3b$", ';')
+				|| RS("$u5b$", '[')
+				|| RS("$u5d$", ']')
+				|| RS("$u7e$", '~')))) {
 			if (*in == '.') {
 				if (in[1] == '.') {
 					in += 2;
 					*out++ = ':';
 					*out++ = ':';
+					len--;
 				} else {
 					in += 1;
 					*out = '-';
@@ -354,6 +363,7 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 			}
 		}
 	}
+	*out = '\0';
 
 	return str;
 }
