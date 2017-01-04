@@ -2296,13 +2296,29 @@ reread:
 			}
 		} else r_core_search_rop (core, param.from, param.to, 0, input+1, 0);
 		goto beach;
-	case 'r': // "/r"
-		if (input[param_offset - 1] == ' ') {
-			r_core_anal_search (core, param.from, param.to,
-					r_num_math (core->num, input + 2));
-		} else {
-			r_core_anal_search (core, param.from, param.to,
-					core->offset);
+	case 'r': // "/r" and "/re"
+		if (input[1] == 'e') { // "/re"
+			if (input[2] == '?') {
+				eprintf ("Usage: /re $$ - to find references to current address\n");
+			} else {
+				ut64 refptr = r_num_math (core->num, input + 2);
+				ut64 curseek = core->offset;
+				r_core_seek (core, param.from, 1);
+				char *arg = r_str_newf ("%"PFMT64d, param.to - param.from);
+				char *trg = refptr ? r_str_newf ("%"PFMT64d, refptr) : strdup ("");
+				r_core_anal_esil (core, arg, trg);
+				free (arg);
+				free (trg);
+				r_core_seek (core, curseek, 1);
+			}
+		} else { // "/r"
+			if (input[param_offset - 1] == ' ') {
+				r_core_anal_search (core, param.from, param.to,
+						r_num_math (core->num, input + 2));
+			} else {
+				r_core_anal_search (core, param.from, param.to,
+						core->offset);
+			}
 		}
 		break;
 	case 'A':
@@ -2752,7 +2768,7 @@ reread:
 			"/o", "", "show offset of previous instruction",
 			"/p", " patternsize", "search for pattern of given size",
 			"/P", " patternsize", "search similar blocks",
-			"/r", " sym.printf", "analyze opcode reference an offset",
+			"/r[e]", " sym.printf", "analyze opcode reference an offset (/re for esil)",
 			"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 			"/v", "[1248] value", "look for an `asm.bigendian` 32bit value",
 			"/V", "[1248] min max", "look for an `asm.bigendian` 32bit value in range",
