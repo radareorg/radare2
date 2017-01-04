@@ -516,6 +516,7 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
+R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
 R_API bool r_bin_lang_objc(RBinFile *binfile);
 R_API bool r_bin_lang_swift(RBinFile *binfile);

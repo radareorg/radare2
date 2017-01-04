@@ -519,7 +519,8 @@ static char *demangleAs(int type) {
 	case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
 	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file, 0); break; // XX: use
-	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc(file); break;
+	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (file); break;
+	case R_BIN_NM_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
 	default:
 		eprintf ("Unsupported demangler\n");
 		break;
