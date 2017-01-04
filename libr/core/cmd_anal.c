@@ -4488,9 +4488,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		if (input[1] == '*') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
 			r_core_anal_coderefs (core, addr, '*');
+		} else if (input[1] == 'j') {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
+			r_core_anal_coderefs (core, addr, 2);
 		} else if (input[1] == ' ') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 1): UT64_MAX;
-			r_core_anal_coderefs (core, addr, input[1] == 'j'? 2: 1);
+			r_core_anal_coderefs (core, addr, 1);
 		} else {
 			eprintf ("|ERROR| Usage: agc [addr]\n");
 		}
