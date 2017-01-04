@@ -340,10 +340,15 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 				|| replace_seq (&in, &out, "$u5b$", '[')
 				|| replace_seq (&in, &out, "$u5d$", ']')
 				|| replace_seq (&in, &out, "$u7e$", '~')))) {
-			if (*in == '.' && in[1] == '.') {
-				in += 2;
-				*out++ = ':';
-				*out++ = ':';
+			if (*in == '.') {
+				if (in[1] == '.') {
+					in += 2;
+					*out++ = ':';
+					*out++ = ':';
+				} else {
+					in += 1;
+					*out = '-';
+				}
 			} else {
 				*out++ = *in++;
 			}
