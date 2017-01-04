@@ -917,7 +917,6 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
-
 	bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
 	bin->maxstrbuf = r_config_get_i (core.config, "bin.maxstrbuf");
 
@@ -932,6 +931,9 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
+	/* required to automatically select a sub-bin when not specified */
+	(void)r_core_bin_update_arch_bits (&core);
+
 	if (baddr != UT64_MAX) {
 		r_bin_set_baddr (bin, baddr);
 	}
@@ -939,7 +941,6 @@ int main(int argc, char **argv) {
 		rawstr = false;
 		r_bin_dump_strings (core.bin->cur, bin->minstrlen);
 	}
-
 	if (query) {
 		if (rad) {
 			r_core_bin_export_info_rad (&core);
