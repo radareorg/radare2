@@ -57,9 +57,13 @@ R_API int r_flag_space_set(RFlag *f, const char *name) {
 		f->space_idx = -1;
 		return f->space_idx;
 	}
-
+	if (f->space_idx != -1) {
+		if (!strcmp (name, f->spaces[f->space_idx])) {
+			return f->space_idx;
+		}
+	}
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
-		if (f->spaces[i] != NULL && !strcmp (name, f->spaces[i])) {
+		if (f->spaces[i] && !strcmp (name, f->spaces[i])) {
 			f->space_idx = i;
 			return f->space_idx;
 		}
@@ -104,7 +108,7 @@ static int r_flag_space_count(RFlag *f, int n) {
 	RListIter *iter;
 	int count = 0;
 	RFlagItem *fi;
-	if (n!=-1) {
+	if (n != -1) {
 		r_list_foreach (f->flags, iter, fi) {
 			if (fi->space == n) {
 				count++;
@@ -117,12 +121,15 @@ static int r_flag_space_count(RFlag *f, int n) {
 R_API int r_flag_space_list(RFlag *f, int mode) {
 	const char *defspace = NULL;
 	int count, len, i, j = 0;
-	if (mode == 'j')
+	if (mode == 'j') {
 		f->cb_printf ("[");
-	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
-		if (!f->spaces[i]) continue;
+	}
+	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
+		if (!f->spaces[i]) {
+			continue;
+		}
 		count = r_flag_space_count (f, i);
-		if (mode=='j') {
+		if (mode == 'j') {
 			f->cb_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
 					j? ",":"", f->spaces[i],
 					(i==f->space_idx)? ",\"selected\":true":"",
