@@ -313,7 +313,7 @@ static bool replace_seq (const char **in, char **out, const char *seq, char valu
 #define RS(from, to) (replace_seq(&in, &out, from, to))
 
 R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr) {
-	size_t len;
+	int len;
 	char *str, *out, *in;
 
 	str = r_bin_demangle_cxx (binfile, sym, vaddr);
@@ -349,7 +349,7 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 				|| RS("$u5d$", ']')
 				|| RS("$u7e$", '~')))) {
 			if (*in == '.') {
-				if (in[1] == '.') {
+				if (len > 0 && in[1] == '.') {
 					in += 2;
 					*out++ = ':';
 					*out++ = ':';
