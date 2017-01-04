@@ -47,7 +47,7 @@ static int check_bytes(const ut8* bytes, ut64 sz) {
 	if (!bytes || sz < 0x300) {
 		return false;
 	}
-	return checkHeader(bytes, sz);
+	return checkHeader (bytes, sz);
 }
 
 // TODO: destroy must be void?

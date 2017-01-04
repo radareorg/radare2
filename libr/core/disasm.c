@@ -3694,7 +3694,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				nbytes = old_offset - core->offset;
 			} else {
 				// core->offset is modified by r_core_prevop_addr
-				core->offset=old_offset;
+				core->offset = old_offset;
 				r_core_asm_bwdis_len (core, &nbytes, &core->offset, nb_opcodes);
 			}
 			r_core_read_at (core, core->offset, core->block, nbytes);

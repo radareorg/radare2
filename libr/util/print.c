@@ -479,7 +479,8 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		"  pch    C half-words (2 byte)\n"
 		"  pcw    C words (4 byte)\n"
 		"  pcd    C dwords (8 byte)\n"
-		"  pca    Assembly\n"
+		"  pca    GAS .byte blob\n"
+		"  pcA    .bytes with instructions in comments\n"
 		"  pcs    string\n"
 		"  pcS    shellscript that reconstructs the bin\n"
 		"  pcj    json\n"
@@ -500,6 +501,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 			p->cb_printf (";s+%d\n", (i % 16));
 		}
 		p->cb_printf ("s-%d\n", len);
+		break;
+	case 'A': // "pcA"
+		/* implemented in core because of disasm :( */
 		break;
 	case 'a': // "pca"
 		p->cb_printf ("shellcode:");

@@ -3509,7 +3509,26 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'c': // "pc"
 		if (l) {
-			r_print_code (core->print, core->offset, core->block, len, input[1]);
+			const ut8 *buf = core->block;
+			int len = core->blocksize;
+			int i = 0;
+			int j = 0;
+			if (input[1] == 'A') {
+				r_cons_printf ("shellcode:\n");
+				for (i = 0; i < len; i++) {
+					RAsmOp asmop = {0};
+					(void)r_asm_disassemble (core->assembler, &asmop, buf + i, len - i);
+					r_cons_printf ("  .byte ");
+					for (j = 0; j < asmop.size; j++) {
+						r_cons_printf ("%s0x%02x", j? ", ":"", buf[i]);
+						i++;
+					}
+					r_cons_printf ("  // %s\n", asmop.buf_asm);
+				}
+				r_cons_printf (".equ shellcode_len, %d\n", len);
+			} else {
+				r_print_code (core->print, core->offset, core->block, len, input[1]);
+			}
 		}
 		break;
 	case 'C': // "pC"
