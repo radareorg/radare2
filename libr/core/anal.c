@@ -3340,9 +3340,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (i > iend) {
 			break;
 		}
+#if 0
 		if (r_asm_disassemble (core->assembler, &asmop, buf + i, iend - i) > 0) {
 			op.mnemonic = strdup (asmop.buf_asm);
 		}
+#endif
 		if (op.size < 1) {
 			i += minopsize - 1;
 			continue;
