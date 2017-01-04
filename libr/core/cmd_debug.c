@@ -1019,7 +1019,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'i': // "dmi"
 		{ // Move to a separate function
 			RCoreBinFilter filter;
-			const char *libname = NULL, *symname = NULL, *mode = "";
+			const char *libname = NULL, *symname = NULL, *mode = "", *a0;
 			ut64 baddr = 0LL;
 			char *ptr;
 			int i;
@@ -1035,12 +1035,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			case 2: // get symname
 				symname = r_str_word_get0 (ptr, 1);
 			case 1: // get addr|libname
-				if (IS_NUMBER (*ptr)) {
-					const char *a0 = r_str_word_get0 (ptr, 0);
-					addr = r_num_math (core->num, a0);
-				} else {
-					addr = UT64_MAX;
-				}
+				a0 = r_str_word_get0 (ptr, 0);
+				addr = r_num_math (core->num, a0);
 				if (!addr || addr == UT64_MAX) {
 					libname = r_str_word_get0 (ptr, 0);
 				}
@@ -1050,7 +1046,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_list_foreach (core->dbg->maps, iter, map) {
 				if (core->bin &&
 						((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
-						 (libname != NULL && (strstr (map->name, libname))))) {
+						 (libname && (strstr (map->name, libname))))) {
 					filter.offset = 0LL;
 					filter.name = (char *)symname;
 					baddr = map->addr;
