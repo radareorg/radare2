@@ -1522,7 +1522,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL; 
 			}
 			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
-			symbols[j].name[R_BIN_MACH0_STRING_LENGTH-1] = 0;
+			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 			symbols[j].last = 0;
 			if (inSymtab (db, symbols, j, symbols[j].name, symbols[j].addr)) {
 				symbols[j].name[0] = 0;
@@ -1586,8 +1586,9 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
 		return NULL;
 	}
-	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct import_t))))
+	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct import_t)))) {
 		return NULL;
+	}
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
 		idx = bin->dysymtab.iundefsym +i;
 		if (idx < 0 || idx >= bin->nsymtab) {
@@ -1642,7 +1643,6 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 
 	return imports;
 }
-
 
 
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {

@@ -318,22 +318,28 @@ static RList* relocs(RBinFile *arch) {
 	if (arch && arch->o) {
 		bin = arch->o->bin_obj;
 	}
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(relocs = MACH0_(get_relocs) (arch->o->bin_obj)))
+	if (!(relocs = MACH0_(get_relocs) (arch->o->bin_obj))) {
 		return ret;
+	}
 	for (i = 0; !relocs[i].last; i++) {
 		// TODO(eddyb) filter these out earlier.
-		if (!relocs[i].addr)
+		if (!relocs[i].addr) {
 			continue;
-		if (!(ptr = R_NEW0 (RBinReloc)))
+		}
+		if (!(ptr = R_NEW0 (RBinReloc))) {
 			break;
+		}
 		ptr->type = relocs[i].type;
 		ptr->additive = 0;
-		if (bin->imports_by_ord && relocs[i].ord < bin->imports_by_ord_size)
+		if (bin->imports_by_ord && relocs[i].ord < bin->imports_by_ord_size) {
 			ptr->import = bin->imports_by_ord[relocs[i].ord];
-		else ptr->import = NULL;
+		} else {
+			ptr->import = NULL;
+		}
 		ptr->addend = relocs[i].addend;
 		ptr->vaddr = relocs[i].addr;
 		ptr->paddr = relocs[i].offset;
@@ -350,9 +356,9 @@ static RList* libs(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinObject *obj = arch ? arch->o : NULL;
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free)))
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
 		return NULL;
-
+	}
 	if ((libs = MACH0_(get_libs) (obj->bin_obj))) {
 		for (i = 0; !libs[i].last; i++) {
 			ptr = strdup (libs[i].name);

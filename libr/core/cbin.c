@@ -1093,8 +1093,7 @@ static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	return reloc_name;
 }
 
-static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db,
-			    char **sdb_module) {
+static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	const char *lang = r_config_get (r->config, "bin.lang");
 	char *reloc_name, *demname = NULL;
@@ -1210,10 +1209,17 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "relocs");
 	}
+	RBinFile * binfile = r->bin->cur;
+	RBinObject *binobj = binfile ? binfile->o: NULL;
+	RBinInfo *info = binobj ? binobj->info: NULL;
+	int cdsz = info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0;
 	r_list_foreach (relocs, iter, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode)) {
 			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
+			if (cdsz) {
+				r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
+			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
@@ -1231,6 +1237,9 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				r_cons_printf ("f %s%s%s @ 0x%08"PFMT64x"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "", name, addr);
+				if (cdsz) {
+					r_cons_printf ("f Cd %d @ 0x%08"PFMT64x"\n", cdsz, addr);
+				}
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
