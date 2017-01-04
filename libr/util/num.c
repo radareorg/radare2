@@ -137,11 +137,13 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		ret = str[1] & 0xff;
 	} else
 	if (str[0]=='0' && str[1]=='x') {
+#if 0
+// 32bit chop
 #if __WINDOWS__ && MINGW32 && !__CYGWIN__
 		ret = _strtoui64 (str+2, NULL, 16);
-#else
-		ret = strtoull (str+2, NULL, 16);
 #endif
+#endif
+		ret = strtoull (str + 2, NULL, 16);
 		//sscanf (str+2, "%"PFMT64x, &ret);
 	} else {
 		lch = str[len>0?len-1:0];
@@ -174,12 +176,14 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			ret *= 1024*1024*1024;
 			break;
 		default:
+#if 0
 			//sscanf (str, "%"PFMT64d, &ret);
+// 32bit chop
 #if __WINDOWS__ && MINGW32 && !__CYGWIN__
 			ret = _strtoui64 (str, NULL, 10);
-#else
-			ret = strtoull (str, NULL, 10);
 #endif
+#endif
+			ret = strtoull (str, NULL, 10);
 			break;
 		}
 	}

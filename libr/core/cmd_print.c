@@ -3512,7 +3512,7 @@ static int cmd_print(void *data, const char *input) {
 			const ut8 *buf = core->block;
 			int i = 0;
 			int j = 0;
-			if (input[1] == 'A') { // "pca"
+			if (input[1] == 'A') { // "pcA"
 				r_cons_printf ("sub_0x%08"PFMT64x":\n", core->offset);
 				for (i = 0; i < len; i++) {
 					RAsmOp asmop = {0};
