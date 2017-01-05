@@ -1794,7 +1794,8 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 			if (min_off == -1) {
 				//no section just a hack to try to fix entrypoint
 				//maybe doesn't work always
-				entry->paddr = pe_entry & ((bin->optional_header->SectionAlignment << 1) - 1);
+				int sa = R_MAX (bin->optional_header->SectionAlignment, 0x1000);
+				entry->paddr = pe_entry & ((sa << 1) - 1);
 				entry->vaddr = entry->paddr + base_addr;
 			}
 		}
@@ -1939,11 +1940,6 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	}
 	return exports;
 }
-
-int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
-	return bin->nt_headers->optional_header.FileAlignment;
-}
-
 
 static void free_rsdr_hdr(SCV_RSDS_HEADER *rsds_hdr) {
 	R_FREE (rsds_hdr->file_name);
@@ -2415,13 +2411,6 @@ int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bits;
 }
 
-int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
-	if (!bin || !bin->nt_headers) {
-		return 0;
-	}
-	return bin->nt_headers->optional_header.SectionAlignment;
-}
-
 //This function try to detect anomalies within section
 //we check if there is a section mapped at entrypoint, otherwise add it up
 void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t **sects) {
@@ -2556,9 +2545,10 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		sections[j].size  = shdr[i].SizeOfRawData;
 		sections[j].vsize = shdr[i].Misc.VirtualSize;
 		if (bin->optional_header) {
-			ut64 diff = sections[j].vsize % bin->optional_header->SectionAlignment;
+			int sa = R_MAX (bin->optional_header->SectionAlignment, 0x1000);
+			ut64 diff = sections[j].vsize % sa;
 			if (diff) {
-				sections[j].vsize += bin->optional_header->SectionAlignment - diff;
+				sections[j].vsize += sa - diff;
 			}
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
