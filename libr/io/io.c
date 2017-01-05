@@ -213,6 +213,12 @@ R_API int r_io_system (RIO *io, const char* cmd)
 	return ret;
 }
 
+R_API bool r_io_resize (RIO *io, ut64 newsize)
+{
+	if (io && io->desc && io->desc->plugin && io->desc->plugin->resize)
+		return io->desc->plugin->resize (io, io->desc, newsize);
+	return false;
+}
 
 RIO *bind_get_io (RIOBind *iob)
 {
