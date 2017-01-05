@@ -326,7 +326,7 @@ R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr)
 	len = strlen (str);
 
 	if (*in == '_') {
-		*in++;
+		in++;
 		len--;
 	}
 
