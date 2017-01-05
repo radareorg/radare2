@@ -377,7 +377,7 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	ret = r_io_use_desc (core->io, core->file->desc);
 	if (ret != -1) {
 		ret = r_io_write_at (core->io, addr, buf, size);
-		if (addr >= core->offset && addr <= core->offset+core->blocksize) {
+		if (addr >= core->offset && addr <= core->offset + core->blocksize) {
 			r_core_block_read (core);
 		}
 	}

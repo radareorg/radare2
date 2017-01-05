@@ -261,10 +261,11 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 	RListIter *iter;
 	ut64 prevfrom = 0LL;
 	r_list_foreach (io->maps, iter, im) {
-		if (off>=im->from) {
+		if (off >= im->from) {
 			if (prevfrom) {
-				if (im->from<prevfrom)
+				if (im->from < prevfrom) {
 					r_io_use_fd (io, im->fd);
+				}
 			} else {
 				r_io_use_fd (io, im->fd);
 			}
@@ -274,8 +275,9 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 			paddr = off - im->from + im->delta; //-im->from;
 			fd = im->fd;
 			done = 1;
-			if (fd == io->raised)
+			if (fd == io->raised) {
 				break;
+			}
 		}
 	}
 	if (done == 0) {
@@ -288,7 +290,7 @@ R_API ut64 r_io_map_select(RIO *io, ut64 off) {
 		return off;
 	}
 	r_io_use_fd (io, fd);
-	if (io->debug) {/* HACK */
+	if (io->debug) { /* HACK */
 		(void)r_io_seek (io, off, R_IO_SEEK_SET);
 	} else {
 		r_io_seek (io, paddr, R_IO_SEEK_SET);
@@ -303,7 +305,9 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 off, int fd) {
 	RIOMap *im = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) {
-		if (im->fd != fd) continue;
+		if (im->fd != fd) {
+			continue;
+		}
 		if (off >= im->from && off < im->to) {
 			paddr = off - im->from + im->delta; //-im->from;
 			done = 1;
@@ -329,9 +333,13 @@ R_API bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
 	RListIter *iter;
 	RIOMap *im = NULL;
 	ut64 off = map->from;
-	if (!fd) return false;
+	if (!fd) {
+		return false;
+	}
 	r_list_foreach (io->maps, iter, im) {
-		if (im == map) continue;
+		if (im == map) {
+			continue;
+		}
 		if (off >= im->from && off < im->to) {
 			return true;
 		}
@@ -339,7 +347,7 @@ R_API bool r_io_map_overlaps (RIO *io, RIODesc *fd, RIOMap *map) {
 	return false;
 }
 
-R_API void r_io_map_list (RIO *io, int mode) {
+R_API void r_io_map_list(RIO *io, int mode) {
 	RIOMap *map;
 	RListIter *iter;
 	if (io && io->maps && io->cb_printf) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2016 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2017 - earada, pancake */
 
 #include <r_core.h>
 
@@ -1212,7 +1212,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	RBinFile * binfile = r->bin->cur;
 	RBinObject *binobj = binfile ? binfile->o: NULL;
 	RBinInfo *info = binobj ? binobj->info: NULL;
-	int cdsz = info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0;
+	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	r_list_foreach (relocs, iter, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode)) {

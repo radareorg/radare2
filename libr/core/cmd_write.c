@@ -1073,7 +1073,7 @@ static int cmd_write(void *data, const char *input) {
 			eprintf ("Cannot malloc %d\n", len);
 		}
 		break;
-	case 'x':
+	case 'x': // "wx"
 		switch (input[1]) {
 		case 'f': // "wxf"
 			arg = (const char *)(input + ((input[2]==' ')? 3: 2));
