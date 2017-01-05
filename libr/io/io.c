@@ -205,6 +205,15 @@ R_API ut64 r_io_size (RIO *io)
 	return 0LL;
 }
 
+R_API int r_io_system (RIO *io, const char* cmd)
+{
+	int ret = -1;
+	if (io && io->desc && io->desc->plugin && io->desc->plugin->system)
+		ret = io->desc->plugin->system (io, io->desc, cmd);
+	return ret;
+}
+
+
 RIO *bind_get_io (RIOBind *iob)
 {
 	if (!iob)
