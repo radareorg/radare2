@@ -5,7 +5,7 @@ cc.o32.name=o32
 cc.o32.arg1=a0
 cc.o32.arg2=a1
 cc.o32.arg3=a2
-cc.o32.arg3=a3
+cc.o32.arg4=a3
 cc.o32.argn=stack
 cc.o32.ret=v0
 
