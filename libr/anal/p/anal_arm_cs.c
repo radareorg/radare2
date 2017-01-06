@@ -643,16 +643,20 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_setf (&op->esil, "%s,TRAP", ARG(0));
 		break;
 	case ARM_INS_EOR:
+
 		if (OPCOUNT() == 2) {
 			r_strbuf_setf (&op->esil, "%s,%s,^=", ARG(1), ARG(0));
 		} else if (OPCOUNT() == 3) {
-			r_strbuf_setf (&op->esil, "%s,%s,^,%s,=", ARG(2), ARG(1), ARG(0));
+		        r_strbuf_setf (&op->esil, "%s,%s,^,%s,=", ARG(2), ARG(1), ARG(0));
 		}
+		// Assembler doesn't know about eors?? 'wa eors' writes 'eor'
 		break;
 	case ARM_INS_ORR:
+	        // See EOR, same problem
 		r_strbuf_setf (&op->esil, "%s,%s,|=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_AND:
+	        // See EOR, same problem
 		r_strbuf_setf (&op->esil, "%s,%s,&=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_SVC:
@@ -706,8 +710,8 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%d,sp,+=",
 			4 * insn->detail->arm.op_count);
 		break;
-	case ARM_INS_LDM:
-		{
+	case ARM_INS_LDM:  
+                {
 		const char *comma = "";
 		for (i=1; i<insn->detail->arm.op_count; i++) {
 			r_strbuf_appendf (&op->esil, "%s%s,%d,+,[4],%s,=",
@@ -830,7 +834,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			REG(0), MEMBASE(1), MEMDISP(1));
 		break;
 	case ARM_INS_TST:
-		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_LDRD:
 	case ARM_INS_LDRB:
@@ -957,6 +961,12 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	default:
 		break;
 	}
+	// Update flags if required...TODO different instructions update different flags, but this should fix
+	// many errors
+	if (insn->detail->arm.update_flags) {
+	        r_strbuf_appendf (&op->esil, ",$z,zf,=");
+	}
+        
 	return 0;
 }
 
