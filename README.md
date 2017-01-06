@@ -85,11 +85,15 @@ To start to use it for the first time you need to initialize packages:
 
 And to refresh packages before installation/updating a new one:
 
-    $ r2pm refresh
+    $ r2pm update
 
-To install/update package use the command
+To install package use the command
 
     $ r2pm install [package name]
+
+To update package use the command
+
+    $ r2pm update [package name]
 
 # Bindings
 
