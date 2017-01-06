@@ -466,6 +466,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	void* map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
 
 	if (!map) {
+		free (filename);
 		CloseHandle (handle_file_map);
 		return NULL;
 	}
