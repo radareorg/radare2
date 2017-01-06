@@ -403,12 +403,12 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			if (p) {
 				*p++ = 0;
 				item = r_flag_get_i (core->flags,
-					r_num_math (core->num, str));
+					r_num_math (core->num, arg));
 				if (item)
 					item->size = r_num_math (core->num, p);
 			} else {
 				item = r_flag_get_i (core->flags,
-					r_num_math (core->num, str));
+					r_num_math (core->num, arg));
 				if (item)
 					r_cons_printf ("0x%08"PFMT64x"\n", item->size);
 			}
