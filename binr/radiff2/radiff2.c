@@ -317,6 +317,7 @@ static ut8 *get_strings(RCore *c, int *len) {
 
 	r_list_foreach (list, iter, str) {
 		memcpy (ptr, str->string, str->length);
+		ptr += str->length;
 	}
 
 	return buf;
@@ -481,14 +482,17 @@ int main(int argc, char **argv) {
 			r_core_diff_show (c, c2);
 		} else if (mode == MODE_DIFF_STRS) {
 			bufa = get_strings (c, &sza);
-			bufb = get_strings (c, &szb);
+			bufb = get_strings (c2, &szb);
+		}
+
+		if (mode == MODE_CODE || mode == MODE_GRAPH) {
+			r_cons_flush ();
 		}
 
 		r_core_free (c);
 		r_core_free (c2);
 
 		if (mode == MODE_CODE || mode == MODE_GRAPH) {
-			r_cons_flush ();
 			return 0;
 		}
 	default:
