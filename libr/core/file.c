@@ -276,6 +276,13 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 			//b = map->addr;
 		}
 	}
+	// fallback resolution copied from cmd_debug.c:r_debug_get_baddr
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (map->perm == 5) { // r-x
+			return map->addr;
+		}
+	}
+
 	return b;
 }
 #endif
