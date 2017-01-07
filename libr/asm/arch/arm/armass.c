@@ -95,10 +95,11 @@ static ArmOp ops[] = {
 	{ "svc", 0xf, TYPE_SWI }, // ???
 	{ "hlt", 0x70000001, TYPE_HLT }, // ???
 
-	{ "and", 0x0000, TYPE_ARI },
 	{ "ands", 0x1000, TYPE_ARI },
-	{ "eor", 0x2000, TYPE_ARI },
+	{ "and", 0x0000, TYPE_ARI },
 	{ "eors", 0x3000, TYPE_ARI },
+	{ "eor", 0x2000, TYPE_ARI },
+	{ "orrs", 0x9001, TYPE_ARI },
 	{ "orr", 0x8001, TYPE_ARI },
 	{ "bic", 0x0, TYPE_ARI },
 
