@@ -211,13 +211,14 @@ static int main_print_var(const char *var_name) {
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_PREFIX", R2_PREFIX },
-		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
 		{ "MAGICPATH", R_MAGIC_PATH },
 		{ "PREFIX", R2_PREFIX },
 		{ "INCDIR", R2_INCDIR },
 		{ "LIBDIR", R2_LIBDIR },
 		{ "LIBEXT", R_LIB_EXT },
 		{ "RHOMEDIR", R2_HOMEDIR },
+		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
+		{ "USER_PLUGINS", r_str_home (R2_HOMEDIR) },
 		{ NULL, NULL }
 	};
 
@@ -476,9 +477,15 @@ int main(int argc, char **argv, char **envp) {
 		case 'f':
 			fullfile = true;
 			break;
-		case 'F': forcebin = optarg; break;
-		case 'h': help++; break;
-		case 'H': main_print_var (optarg); return 0; break;
+		case 'F':
+			forcebin = optarg;
+			break;
+		case 'h':
+			help++;
+			break;
+		case 'H':
+			main_print_var (optarg);
+			return 0;
 		case 'i':
 			r_list_append (files, optarg);
 			break;
