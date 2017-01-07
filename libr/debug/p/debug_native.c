@@ -671,7 +671,7 @@ static int bsd_reg_read (RDebug *dbg, int type, ut8* buf, int size) {
 		memset (&regs, 0, sizeof(regs));
 		memset (buf, 0, size);
 		#if __NetBSD__ || __OpenBSD__
-			ret = ptrace (PTRACE_GETREGS, pid, &regs, sizeof (regs));
+			ret = ptrace (PTRACE_GETREGS, pid, (caddr_t)&regs, sizeof (regs));
 		#elif __KFBSD__
 			ret = ptrace(PT_GETREGS, pid, (caddr_t)&regs, 0);
 		#else
