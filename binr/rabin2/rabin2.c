@@ -926,6 +926,30 @@ int main(int argc, char **argv) {
 	if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
 		//if this return null means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
+
+		
+                /*
+
+                 when loading crafted corrupted file if (!bin->cur->xtr_data) will seg fault and might be exploitable  see bellow
+
+                        Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+                        Warning: File is not M  Z
+                        Error in r_bin_object_new: load_bytes failed for mz plugin
+                        Warning: File is not MZ
+                        Error in r_bin_object_new: load_bytes failed for mz plugin
+
+                        Program received signal SIGSEGV, Segmentation fault.
+                        0x000055555555861e in main (argc=<optimized out>, argv=<optimized out>) at rabin2.c:929
+
+                        tx, Udi Shamir
+
+                */
+
+                if(bin != NULL){
+                        eprintf("bin: object might be corrupted\n");
+                        return 1;
+                }
+		// bin might be corrupted //
 		if (!bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
 			r_core_fini (&core);
