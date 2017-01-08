@@ -30,6 +30,7 @@ SDB_API Sdb* sdb_new0 () {
 SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	Sdb* s = R_NEW0 (Sdb);
 	if (!s) return NULL;
+	s->db.fd = -1;
 	s->fd = -1;
 	s->refs = 1;
 	if (path && !*path) {
