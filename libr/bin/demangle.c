@@ -310,9 +310,9 @@ static bool replace_seq (const char **in, char **out, const char *seq, char valu
 	return true;
 }
 
-#define RS(from, to) (replace_seq(&in, &out, from, to))
+#define RS(from, to) (replace_seq ((const char **)&in, &out, (const char *)from, to))
 
-R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr) {
+R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) {
 	int len;
 	char *str, *out, *in;
 
