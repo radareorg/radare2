@@ -1202,7 +1202,7 @@ static int cond_cs2r2(int cc) {
 	return cc;
 }
 
-static void anop32 (csh handle, RAnalOp *op, cs_insn *insn, bool thumb) {
+static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb) {
 	const ut64 addr = op->addr;
 	int i;
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
@@ -1405,6 +1405,12 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
+			//switch instruction set
+			if (!(op->jump & 1)) {
+				r_anal_hint_set_bits (a, op->jump, 32);
+			} else {
+				r_anal_hint_set_bits (a, op->jump, 16);
+			}
 		}
 		break;
 	case ARM_INS_BL:
@@ -1459,6 +1465,11 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = IMM(0);
 			op->fail = addr + op->size;
+			if (!(op->jump & 1)) {
+				r_anal_hint_set_bits (a, op->jump, 32);
+			} else {
+				r_anal_hint_set_bits (a, op->jump, 16);
+			}
 		}
 		break;
 	default:
@@ -1491,7 +1502,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->refptr = 0;
 	r_strbuf_init (&op->esil);
 	if (handle == 0) {
-		ret = (a->bits==64)?
+		ret = (a->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &handle):
 			cs_open (CS_ARCH_ARM, mode, &handle);
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
@@ -1514,7 +1525,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
-			anop32 (handle, op, insn, thumb);
+			anop32 (a, handle, op, insn, thumb);
 			if (a->decode) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}
