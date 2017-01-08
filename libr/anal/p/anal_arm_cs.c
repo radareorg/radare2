@@ -1409,7 +1409,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			if (!(op->jump & 1)) {
 				r_anal_hint_set_bits (a, op->jump, 32);
 			} else {
-				r_anal_hint_set_bits (a, op->jump, 16);
+				r_anal_hint_set_bits (a, op->jump - 1, 16);
 			}
 		}
 		break;
@@ -1468,7 +1468,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			if (!(op->jump & 1)) {
 				r_anal_hint_set_bits (a, op->jump, 32);
 			} else {
-				r_anal_hint_set_bits (a, op->jump, 16);
+				r_anal_hint_set_bits (a, op->jump - 1, 16);
 			}
 		}
 		break;
