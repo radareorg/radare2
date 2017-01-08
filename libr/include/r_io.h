@@ -243,6 +243,7 @@ R_API int r_io_system (RIO *io, const char* cmd);
 R_API bool r_io_resize (RIO *io, ut64 newsize);
 R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API int r_io_bind (RIO *io, RIOBind *bnd);
+R_API int r_io_create (RIO *io, const char *file, int mode, int type);
 R_API ut64 r_io_seek (RIO *io, ut64 offset, int whence);
 R_API int r_io_fini (RIO *io);
 R_API void r_io_free (RIO *io);

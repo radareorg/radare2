@@ -262,6 +262,15 @@ R_API int r_io_bind (RIO *io, RIOBind *bnd)
 	return true;
 }
 
+R_API int r_io_create (RIO *io, const char *file, int mode, int type)
+{
+	if (io && io->desc && io->desc->plugin && io->desc->plugin->create)
+		return io->desc->plugin->create (io, file, mode, type);
+	if (type == 'd' || type == 1)
+		return r_sys_mkdir (file);
+	return r_sandbox_creat (file, mode);
+}
+
 R_API ut64 r_io_seek (RIO *io, ut64 offset, int whence)
 {
 	if (!io)
