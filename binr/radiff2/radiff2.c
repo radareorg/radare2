@@ -9,6 +9,7 @@
 
 enum {
 	MODE_DIFF,
+	MODE_DIFF_STRS,
 	MODE_DIST,
 	MODE_DIST_LEVENSTEIN,
 	MODE_CODE,
@@ -178,7 +179,8 @@ static int show_help(int v) {
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
 		"  -v         show version information\n"
-		"  -V         be verbose (current only for -s)\n");
+		"  -V         be verbose (current only for -s)\n"
+		"  -z         diff on extracted strings\n");
 	}
 	return 1;
 }
@@ -300,6 +302,28 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 	return (ut8*)r_file_slurp (file, sz);
 }
 
+static ut8 *get_strings(RCore *c, int *len) {
+	RList *list = r_bin_get_strings (c->bin);
+	RListIter *iter;
+	RBinString *str;
+	ut8 *buf, *ptr;
+
+	*len = 0;
+
+	r_list_foreach (list, iter, str) {
+		*len += str->length;
+	}
+	
+	ptr = buf = malloc (*len);
+
+	r_list_foreach (list, iter, str) {
+		memcpy (ptr, str->string, str->length);
+		ptr += str->length;
+	}
+
+	return buf;
+}
+
 int main(int argc, char **argv) {
 	const char *columnSort = NULL;
 	const char *addr = NULL;
@@ -312,7 +336,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsS:Vvxt:")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsS:Vvxt:z")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -379,6 +403,9 @@ int main(int argc, char **argv) {
 		case 'j':
 			diffmode = 'j';
 			break;
+		case 'z':
+			mode = MODE_DIFF_STRS;
+			break;
 		default:
 			return show_help (0);
 		}
@@ -402,6 +429,7 @@ int main(int argc, char **argv) {
 	switch (mode) {
 	case MODE_GRAPH:
 	case MODE_CODE:
+	case MODE_DIFF_STRS:
 		c = opencore (file);
 		if (!c) {
 			eprintf ("Cannot open '%s'\n", r_str_get (file));
@@ -450,28 +478,39 @@ int main(int argc, char **argv) {
 					R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 			}
 			free (words);
-		} else {
+		} else if (mode == MODE_CODE) {
 			r_core_gdiff (c, c2);
 			r_core_diff_show (c, c2);
+		} else if (mode == MODE_DIFF_STRS) {
+			bufa = get_strings (c, &sza);
+			bufb = get_strings (c2, &szb);
 		}
-		r_cons_flush ();
+
+		if (mode == MODE_CODE || mode == MODE_GRAPH) {
+			r_cons_flush ();
+		}
+
 		r_core_free (c);
 		r_core_free (c2);
-		return 0;
-	}
-	bufa = slurp (&c, file, &sza);
-	if (!bufa) {
-		eprintf ("radiff2: Cannot open %s\n", r_str_get (file));
-		return 1;
-	}
-	bufb = slurp (&c, file2, &szb);
-	if (!bufb) {
-		eprintf ("radiff2: Cannot open: %s\n", r_str_get (file2));
-		free (bufa);
-		return 1;
-	}
-	if (sza != szb) {
-		eprintf ("File size differs %d vs %d\n", sza, szb);
+
+		if (mode == MODE_CODE || mode == MODE_GRAPH) {
+			return 0;
+		}
+	default:
+		bufa = slurp (&c, file, &sza);
+		if (!bufa) {
+			eprintf ("radiff2: Cannot open %s\n", r_str_get (file));
+			return 1;
+		}
+		bufb = slurp (&c, file2, &szb);
+		if (!bufb) {
+			eprintf ("radiff2: Cannot open: %s\n", r_str_get (file2));
+			free (bufa);
+			return 1;
+		}
+		if (sza != szb) {
+			eprintf ("File size differs %d vs %d\n", sza, szb);
+		}
 	}
 
 	switch (mode) {
@@ -479,6 +518,7 @@ int main(int argc, char **argv) {
 		dump_cols (bufa, sza, bufb, szb, (r_cons_get_size (NULL) > 112) ? 16 : 8);
 		break;
 	case MODE_DIFF:
+	case MODE_DIFF_STRS:
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);
 		if (diffmode == 'j') {
