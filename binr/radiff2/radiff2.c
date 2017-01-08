@@ -179,7 +179,8 @@ static int show_help(int v) {
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
 		"  -v         show version information\n"
-		"  -V         be verbose (current only for -s)\n");
+		"  -V         be verbose (current only for -s)\n"
+		"  -z         diff on extracted strings\n");
 	}
 	return 1;
 }
