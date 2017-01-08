@@ -3025,7 +3025,7 @@ static void ds_print_esil_anal(RDisasmState *ds, bool print) {
 		ds_print_esil_anal_init (ds);
 		esil = core->anal->esil;
 	}
-	if (!ds->show_comments || !ds->show_emu) {
+ 	if (!ds->show_emu) {
 		goto beach;
 	}
 	if (!can_emulate_metadata (core, at)) {
@@ -3034,7 +3034,9 @@ static void ds_print_esil_anal(RDisasmState *ds, bool print) {
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
 	}
-	ds_align_comment (ds);
+	if (print) {
+		ds_align_comment (ds);
+	}
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
@@ -3051,14 +3053,14 @@ static void ds_print_esil_anal(RDisasmState *ds, bool print) {
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
 	hc = r_config_hold_new (core->config);
-	if (!print) {
-		return;
-	}
 	if (!hc) {
 		return;
 	}
 	r_config_save_num (hc, "io.cache", NULL);
 	r_config_set (core->config, "io.cache", "true");
+	if (!ds->show_comments || !print) {
+		goto beach;
+	}
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_SWI: {
 		char *s = cmd_syscall_dostr (core, -1);
