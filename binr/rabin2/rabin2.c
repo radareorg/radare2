@@ -926,7 +926,7 @@ int main(int argc, char **argv) {
 	if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
 		//if this return null means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
-		if (!bin->cur->xtr_data) {
+		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
 			r_core_fini (&core);
 			return 1;
