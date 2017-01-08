@@ -36,17 +36,24 @@ void cdb_free(struct cdb *c) {
 
 void cdb_findstart(struct cdb *c) {
 	c->loop = 0;
+#if !USE_MMAN
+	if (c->fd != -1) {
+		lseek (c->fd, 0, SEEK_SET);
+	}
+#endif
 }
 
 int cdb_init(struct cdb *c, int fd) {
 	struct stat st;
-	c->map = NULL;
+	if (fd != c->fd && c->fd != -1) {
+		close (c->fd);
+	}
 	c->fd = fd;
 	cdb_findstart (c);
 	if (fd != -1 && !fstat (fd, &st) && st.st_size > 4 && st.st_size != (off_t)UT64_MAX) {
 #if USE_MMAN
 		char *x = mmap (0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-		if (!x) {
+		if (x == MAP_FAILED) {
 			eprintf ("Cannot mmap %d\n", (int)st.st_size);
 			return 0;
 		}
@@ -56,12 +63,20 @@ int cdb_init(struct cdb *c, int fd) {
 			eprintf ("Cannot malloc %d\n", (int)st.st_size);
 			return 0;
 		}
-		read (fd, x, st.st_size); // TODO: handle return value
-#endif
-		if (x + 1) {
-			c->size = st.st_size;
-			c->map = x;
+		/* TODO: read by chunks instead of a big huge syscall */
+		if (read (fd, x, st.st_size) != st.st_size) {
+			/* handle read error */
 		}
+#endif
+#if USE_MMAN
+		if (c->map) {
+			munmap (c->map, c->size);
+		}
+#else
+		free (c->map);
+#endif
+		c->map = x;
+		c->size = st.st_size;
 		return 1;
 	}
 	c->map = NULL;
