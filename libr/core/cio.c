@@ -250,7 +250,6 @@ beach:
 static void _set_bits(RCore *core, ut64 addr, int *bits) {
 	RAnalRange *range;
 	RListIter *iter;
-
 	r_list_foreach (core->anal->bits_ranges, iter, range) {
 		if (addr >= range->from && addr < range->to) {
 			*bits = range->bits;

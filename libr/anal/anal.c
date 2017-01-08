@@ -589,6 +589,7 @@ static int build_range(void *p, const char *k, const char *v) {
 		if (range) {
 			range->bits = hint->bits;
 			range->from = hint->addr;
+			range->to = UT64_MAX;
 			r_list_append (list_range, range);
 		}
 	}
@@ -601,19 +602,18 @@ static int build_range(void *p, const char *k, const char *v) {
 R_API void r_anal_build_range_on_hints(RAnal *a) {
 	RListIter *iter;
 	RAnalRange *range;
-	if (a->sdb_hints_changed) {
+	if (a->bits_hints_changed) {
 		// construct again the range from hint to handle properly arm/thumb
 		r_list_free (a->bits_ranges);
-		a->bits_ranges = r_list_new ();
-		a->bits_ranges->free = free;
+		a->bits_ranges = r_list_newf ((RListFree)free);
 		sdb_foreach (a->sdb_hints, build_range, a);
 		r_list_sort (a->bits_ranges, cmp_range);
 		r_list_foreach (a->bits_ranges, iter, range) {
-			if (iter->n && !range->to) {
+			if (iter->n && iter->n->data) {
 				range->to = ((RAnalRange *)(iter->n->data))->from;
 			}
 		}
-		a->sdb_hints_changed = false;
+		a->bits_hints_changed = false;
 	}
 }
 

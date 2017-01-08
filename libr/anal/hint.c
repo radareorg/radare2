@@ -16,7 +16,7 @@ R_API void r_anal_hint_del(RAnal *a, ut64 addr, int size) {
 	} else {
 		setf (key, "hint.0x%08"PFMT64x, addr);
 		sdb_unset (a->sdb_hints, key, 0);
-		a->sdb_hints_changed = true;
+		a->bits_hints_changed = true;
 	}
 }
 
@@ -28,7 +28,6 @@ static void unsetHint(RAnal *a, const char *type, ut64 addr) {
 	if (idx != -1) {
 		sdb_array_delete (DB, key, idx, 0);
 		sdb_array_delete (DB, key, idx, 0);
-		a->sdb_hints_changed = true;
 	}
 }
 
@@ -51,7 +50,6 @@ static void setHint(RAnal *a, const char *type, ut64 addr, const char *s, ut64 p
 		sdb_array_push (DB, key, nval, 0);
 		sdb_array_push (DB, key, type, 0);
 	}
-	a->sdb_hints_changed = true;
 	if (s) {
 		free (nval);
 	}
@@ -86,6 +84,7 @@ R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *esil) {
 	setHint (a, "esil:", addr, r_str_trim_const (esil), 0);
 }
 R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits) {
+	a->bits_hints_changed = true;
 	setHint (a, "bits:", addr, NULL, bits);
 }
 R_API void r_anal_hint_set_size(RAnal *a, ut64 addr, int size) {
@@ -95,6 +94,8 @@ R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr) {
 	unsetHint(a, "size:", addr);
 }
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr) {
+
+	a->bits_hints_changed = true;
 	unsetHint(a, "bits:", addr);
 }
 R_API void r_anal_hint_unset_esil(RAnal *a, ut64 addr) {

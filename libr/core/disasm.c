@@ -2504,7 +2504,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	char *esc = ds->show_comment_right? " ": "";
 	char *nl = ds->show_comment_right? "" : "\n";
 	bool string_found = false;
-	int aligned = 0;
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}

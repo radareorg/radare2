@@ -1573,9 +1573,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	RListIter *iter;
 	RList *symbols;
 	const char *lang;
-	int lastfs = 's';
-	int i = 0;
-	int is_arm, bin_demangle = r_config_get_i (r->config, "bin.demangle");
+	int i = 0, is_arm, lastfs = 's',
+	    bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		return 0;
 	}
@@ -1607,9 +1606,13 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		ut64 addr = rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		SymName sn;
 
-		if (exponly && !isAnExport (symbol)) continue;
-		if (name && strcmp (symbol->name, name)) continue;
-		if (at && (symbol->size == 0 || !is_in_range (at, addr, symbol->size))) {
+		if (exponly && !isAnExport (symbol)) {
+			continue;
+		}
+		if (name && strcmp (symbol->name, name)) {
+			continue;
+		}
+		if (at && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
 			continue;
 		}
 
