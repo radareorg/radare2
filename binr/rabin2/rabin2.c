@@ -930,7 +930,7 @@ int main(int argc, char **argv) {
 		
                 /*
 
-                 when loading crafted corrupted file if (!bin->cur->xtr_data) will segf ault and might be exploitable  see bellow
+                 when loading crafted corrupted file if (!bin->cur->xtr_data) will seg fault and might be exploitable  see bellow
 
                         Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
                         Warning: File is not M  Z
