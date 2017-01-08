@@ -42,7 +42,7 @@ static int format_output (char mode, const char *s) {
 		printf ("%ff\n", *f);
 		} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
-	case 'O': printf ("%"PFMT64o"\n", n); break;
+	case 'O': printf ("0%"PFMT64o"\n", n); break;
 	case 'B':
 		if (n) {
 			r_num_to_bits (strbits, n);
