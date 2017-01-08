@@ -200,13 +200,14 @@ typedef struct r_disam_options_t {
 	int _tabsoff;
 	bool dwarfFile;
 	bool dwarfAbspath;
+	bool _print;
 } RDisasmState;
 
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle);
 static void ds_print_pre(RDisasmState *ds);
 static void ds_beginline(RDisasmState *ds, RAnalFunction *f, bool nopre);
-static void ds_print_esil_anal(RDisasmState *ds);
+static void ds_print_esil_anal(RDisasmState *ds, bool print);
 static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
 static RDisasmState * ds_init(RCore * core);
@@ -2794,6 +2795,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char *esc = NULL;
 	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = NULL;
+	RAnal *anal = esil->anal;
 	if (!esil) {
 		return 0;
 	}
@@ -2830,18 +2832,39 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		}
 	}
 	if (ds) {
+		//to handle switch instruction set with blx and bx inst
+		if (anal && anal->cur && anal->cur->arch && anal->bits < 33 &&
+		    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc")) {
+			switch (ds->analop.id) {
+			case 14: //ARM_INS_BLX
+			case 15: //ARM_INS_BX
+				{
+				if (!(*val & 1)) {
+					r_anal_hint_set_bits (anal, *val, 32);
+				} else {
+					r_anal_hint_set_bits (anal, *val - 1, 16);
+				}
+				}
+				break;
+			default:
+				break;	
+			}
+
+		}
 		if (ds->show_emu_str) {
-			if (msg && *msg) {
+			if (msg && *msg && ds->_print) {
 				ds_comment_esil (ds, true, false, "%s; %s", esc, msg);
 				if (ds->show_comments && !ds->show_comment_right) {
 					r_cons_newline ();
 				}
 			}
 		} else {
-			ds_comment_esil (ds, true, false, "%s; %s=0x%"PFMT64x" %s", esc, name, *val,
-					 msg ? msg : "");
-			if (ds->show_comments && !ds->show_comment_right) {
-				r_cons_newline ();
+			if (ds->_print) {
+				ds_comment_esil (ds, true, false, "%s; %s=0x%"PFMT64x" %s", esc, name, *val,
+				  msg ? msg : "");
+				if (ds->show_comments && !ds->show_comment_right) {
+					r_cons_newline ();
+				}
 			}
 		}
 	}
@@ -2991,18 +3014,18 @@ static bool can_emulate_metadata(RCore * core, ut64 at) {
 }
 
 // modifies anal register state
-static void ds_print_esil_anal(RDisasmState *ds) {
+static void ds_print_esil_anal(RDisasmState *ds, bool print) {
 	RCore *core = ds->core;
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
 	int i, nargs;
 	ut64 at = p2v (ds, ds->at);
-	RConfigHold *hc = r_config_hold_new (core->config);
+	RConfigHold *hc = NULL; 
 	if (!esil) {
 		ds_print_esil_anal_init (ds);
 		esil = core->anal->esil;
 	}
-	if (!ds->show_comments || !ds->show_emu || !hc) {
+	if (!ds->show_comments || !ds->show_emu) {
 		goto beach;
 	}
 	if (!can_emulate_metadata (core, at)) {
@@ -3012,11 +3035,10 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		r_cons_strcat (ds->pal_comment);
 	}
 	ds_align_comment (ds);
-	r_config_save_num (hc, "io.cache", NULL);
-	r_config_set (core->config, "io.cache", "true");
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
+	ds->_print = print;
 	esil->cb.user = ds;
 	esil->cb.hook_reg_write = myregwrite;
 	if (ds->show_emu_write) {
@@ -3028,16 +3050,25 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	r_anal_esil_set_pc (esil, at);
 	r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&ds->analop.esil));
 	r_anal_esil_stack_free (esil);
+	hc = r_config_hold_new (core->config);
+	if (!print) {
+		return;
+	}
+	if (!hc) {
+		return;
+	}
+	r_config_save_num (hc, "io.cache", NULL);
+	r_config_set (core->config, "io.cache", "true");
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_SWI: {
 		char *s = cmd_syscall_dostr (core, -1);
 		if (s) {
-			ds_comment_esil (ds, true, "; %s", s);
+			ds_comment_esil (ds, true, true, "; %s", s);
 			free (s);
 		}
 		} break;
 	case R_ANAL_OP_TYPE_CJMP:
-		ds_comment_esil (ds, true, true, ds->esil_likely? "; likely" : "; unlikely");
+		ds_comment_esil	(ds, true, true, ds->esil_likely? "; likely" : "; unlikely");
 		break;
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_ICALL:
@@ -3164,10 +3195,11 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 							continue;
 						}
 						if (fmt) {
-							//it may need ds_comment_esil
+							//it may need ds_comment_esil 
 							print_fcn_arg (core, arg_orig_c_type, arg_name, 
 							  	fmt, arg_addr, on_stack);
 							ds_comment_esil (ds, false, false, i!=(nargs - 1)?", ":")");
+
 						}
 						free (arg_orig_c_type);
 					}
@@ -3396,7 +3428,6 @@ toro:
 	}
 
 	r_cons_break_push (NULL, NULL);
-	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = p2v (ds, ds->at);
@@ -3405,6 +3436,7 @@ toro:
 			r_cons_break_pop ();
 			return 0; //break;
 		}
+		r_anal_build_range_on_hints (core->anal);
 		r_core_seek_archbits (core, ds->at); // slow but safe
 		ds->has_description = false;
 		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
@@ -3546,7 +3578,7 @@ toro:
 			ds_print_color_reset (ds);
 			R_FREE (ds->opstr);
 			if (ds->show_emu) {
-				ds_print_esil_anal (ds);
+				ds_print_esil_anal (ds, true);
 			}
 		}
 		ds_setup_print_pre (ds, false, false);
@@ -3595,7 +3627,7 @@ toro:
 			ds_print_fcn_name (ds);
 			ds_print_color_reset (ds);
 			ds_print_comments_right (ds);
-			ds_print_esil_anal (ds);
+			ds_print_esil_anal (ds, true);
 			ds_show_refs (ds);
 		}
 
@@ -3729,12 +3761,13 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 
 	r_cons_break_push (NULL, NULL);
 	//build ranges to map addr with bits
-	r_anal_build_range_on_hints (core->anal);
+	ds_print_esil_anal_init (ds);
 #define isTheEnd (nb_opcodes? j<nb_opcodes: i<nb_bytes)
 	for (i = j = 0; isTheEnd; i += ret, j++) {
 		ds->at = core->offset +i;
 		ds->vat = p2v (ds, ds->at);
 		hasanal = false;
+		r_anal_build_range_on_hints (core->anal);
 		r_core_seek_archbits (core, ds->at);
 		if (r_cons_is_breaked ()) {
 			break;
@@ -3787,8 +3820,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			if (ds->use_esil) {
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop,
-						ds->at, core->block+i,
-						core->blocksize-i);
+						ds->at, core->block + i,
+						core->blocksize - i);
 					hasanal = true;
 				}
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -3833,6 +3866,9 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (ds->asmop.buf_asm);
 			}
 		}
+		if (ds->show_emu) {
+			ds_print_esil_anal (ds, false);
+		}
 		{
 			const char *opcolor = NULL;
 			if (ds->show_color) {
@@ -3853,6 +3889,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
 		ds->oldbits = 0;
 	}
+	ds_print_esil_anal_fini (ds);
 	ds_free (ds);
 	core->offset = old_offset;
 	r_reg_arena_pop (core->anal->reg);
@@ -4383,7 +4420,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_cdiv_optimization (ds);
 			ds_print_comments_right (ds);
 			ds_show_refs (ds);
-			ds_print_esil_anal (ds);
+			ds_print_esil_anal (ds, true);
 			if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
 				r_cons_newline ();
 			}
