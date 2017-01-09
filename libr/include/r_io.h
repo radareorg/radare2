@@ -61,6 +61,8 @@ typedef struct r_io_t {
 	RCache *buffer;
 	RList *cache;	//sdblist?
 	Sdb *files;
+	ut8 *write_mask;
+	int write_mask_len;
 	RIOUndo undo;
 	SdbList *plugins;
 	char *runprofile;
@@ -243,6 +245,7 @@ R_API int r_io_is_listener (RIO *io);
 R_API int r_io_system (RIO *io, const char* cmd);
 R_API bool r_io_resize (RIO *io, ut64 newsize);
 R_API int r_io_extend_at (RIO *io, ut64 addr, ut64 size);
+R_API bool r_io_set_write_mask (RIO *io, const ut8 *mask, int len);
 R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API int r_io_bind (RIO *io, RIOBind *bnd);
 R_API int r_io_shift (RIO *io, ut64 start, ut64 end, st64 move);

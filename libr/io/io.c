@@ -168,8 +168,12 @@ R_API int r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len)
 
 R_API int r_io_write_at (RIO *io, ut64 addr, ut8 *buf, int len)
 {
+	int i;
 	if (!io || !buf || !len)
 		return 0;
+	if (io->write_mask)
+		for (i = 0; i < len; i++)
+			buf[i] &= io->write_mask[i % io->write_mask_len];	//this sucks
 	if (io->cached)
 		return !!r_io_cache_write (io, addr, buf, len);
 	if (io->va)
@@ -257,6 +261,22 @@ R_API int r_io_extend_at (RIO *io, ut64 addr, ut64 size)
 	r_io_pread_at (io, addr, buffer, (int)tmp_size);
 	r_io_pwrite_at (io, addr + size, buffer, (int)tmp_size);
 	free (buffer);
+	return true;
+}
+
+R_API bool r_io_set_write_mask (RIO *io, const ut8 *mask, int len)
+{
+	if (!io)
+		return false;
+	free (io->write_mask);
+	if (!mask) {
+		io->write_mask = NULL;
+		io->write_mask_len = 0;
+		return true;
+	}
+	io->write_mask = (ut8 *)malloc (len);
+	memcpy (io->write_mask, mask, len);
+	io->write_mask_len = len;
 	return true;
 }
 
@@ -382,8 +402,10 @@ R_API int r_io_fini (RIO *io)
 
 R_API void r_io_free (RIO *io)
 {
-	if (r_io_fini (io))
-		R_FREE (io->args);
+	if (r_io_fini (io)) {
+		free (io->args);
+		free (io->write_mask);					//maybe this would be better in r_io_fini
+	}
 	free (io);
 }
 
