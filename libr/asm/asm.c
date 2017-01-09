@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
+#include <spp.h>
 #include "../config.h"
 
 R_LIB_VERSION (r_asm);
@@ -443,16 +444,45 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 	return ase;
 }
 
+static char *replace_directives(char *str) {
+	char *o = replace_directives_for (str, ".include");
+	o = replace_directives_for (o, ".warning");
+	o = replace_directives_for (o, ".error");
+	o = replace_directives_for (o, ".echo");
+	o = replace_directives_for (o, ".if");
+	o = replace_directives_for (o, ".ifeq");
+	o = replace_directives_for (o, ".endif");
+	o = replace_directives_for (o, ".else");
+	o = replace_directives_for (o, ".set");
+	o = replace_directives_for (o, ".get");
+	// eprintf ("(%s)\n", o);
+	return o;
+}
+
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
+
+	Output out;
+	out.fout = NULL;
+	out.cout = r_strbuf_new ("");
+	r_strbuf_init (out.cout);
+	struct Proc proc;
+	spp_proc_set (&proc, "spp", 1);
+
 	char *b = strdup (buf);
+
 	if (!b) {
 		return 0;
 	}
-	if (a->ifilter) {
-		r_parse_parse (a->ifilter, buf, b);
-	}
+
 	r_str_case (b, 0); // to-lower
+	b = replace_directives (b);
+	spp_eval (b, &out);
+	char *spp_out = strdup (r_strbuf_get (out.cout));
+
+	if (a->ifilter) {
+		r_parse_parse (a->ifilter, buf, spp_out);
+	}
 	memset (op, 0, sizeof (RAsmOp));
 	if (a->cur) {
 		Ase ase = NULL;
@@ -469,16 +499,17 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			ase = a->cur->assemble;
 		}
 		if (ase) {
-			ret = ase (a, op, b);
+			ret = ase (a, op, spp_out);
 		}
 	}
 	if (op && ret > 0) {
 		r_hex_bin2str (op->buf, ret, op->buf_hex);
 		op->size = ret;
 		op->buf_hex[ret*2] = 0;
-		strncpy (op->buf_asm, b, R_ASM_BUFSIZE - 1);
+		strncpy (op->buf_asm, spp_out, R_ASM_BUFSIZE - 1);
 	}
 	free (b);
+	free (spp_out);
 	return ret;
 }
 
