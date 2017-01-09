@@ -1,0 +1,36 @@
+#!/bin/sh
+show_help() {
+	echo "Usage: rundiff [-u] [cmd] [file1] [file2]"
+	exit 1
+}
+
+UNIQ=0
+if [ "$1" = "-u" ]; then
+	UNIQ=1
+	shift
+fi
+
+cmd=""
+arg=""
+for a in $@ ; do
+	if [ -n "$B" ]; then
+		cmd="$cmd $B"
+	fi
+	B="$A"
+	A="$a"
+done
+if [ -z "$cmd" -o -z "$A" -o -z "$B" ]; then
+	show_help
+fi
+
+if [ "$UNIQ" = 1 ]; then
+	eval $cmd $A | sort -u > .a
+	eval $cmd $B | sort -u > .b
+else
+	eval $cmd $A > .a
+	eval $cmd $B > .b
+fi
+echo $cmd $A
+echo $cmd $B
+diff -ru .a .b
+rm -f .a .b
