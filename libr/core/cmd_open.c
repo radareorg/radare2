@@ -23,6 +23,13 @@ static inline void map_list (RIO *io, int mode, RPrint *print) {
 	}
 }
 
+static inline void desc_list_cb (void *user, const char *k, const char *v) 
+{					//TODO: make this fancy
+	RPrint *p = (RPrint *)user;
+	RIODesc *desc = (RIODesc *)v;
+	p->cb_printf ("%d\t%s\n", desc->fd, desc->uri);
+}
+
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
 	RListIter *it;
 	RBinFile *bf;
@@ -329,8 +336,9 @@ static int cmd_open(void *data, const char *input) {
 
 	switch (*input) {
 	case '=':
-		r_io_desc_list_visual (core->io, core->offset, core->blocksize,
-			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		//r_io_desc_list_visual (core->io, core->offset, core->blocksize,
+		//	r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		sdb_foreach (core->io->files, desc_list_cb, core->print);
 		break;
 	case '\0':
 	case '*':
