@@ -368,7 +368,6 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	switch (*buf) {
 	case 'W':
 		{
-			char *cmd = NULL;
 			if (buf[1] != ' ') {
 				io->cb_printf ("Write Protect: %d\n", r2k_struct.wp);
 				io->cb_printf ("Usage:\n");
