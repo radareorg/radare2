@@ -215,7 +215,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		free (s);
 		break;
 	case '-':
-		if (atoi (input+3)>0) {
+		if (atoi (input + 3)>0) {
 			r_io_map_del (core->io,
 					r_num_math (core->num, input+2));
 		} else {
@@ -236,6 +236,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 	}
 	r_core_block_read (core);
 }
+
 R_API void r_core_file_reopen_in_malloc (RCore *core) {
 	RCoreFile *f;
 	RListIter *iter;
@@ -496,48 +497,73 @@ static int cmd_open(void *data, const char *input) {
 		// like in r2 -n
 		isn = 1;
 		/* fall through */
-	case ' ':
-		if (input[(isn?2:1) - 1] == '\x00') {
-			eprintf ("Usage: on [file]\n");
-			break;
-		}
-		ptr = strchr (input+(isn?2:1), ' ');
-		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
-			*ptr = '\0';
-			addr = r_num_math (core->num, ptr+1);
+	case 'f':
+		/* open file with spaces or special chars */
+		if (input[1] == ' ') {
+			const char *fn = input + 2;
+			file = r_core_file_open (core, fn, perms, 0);
+			if (file) {
+				r_core_bin_load (core, fn, UT64_MAX);
+			} else {
+				eprintf ("Cannot open (%s)\n", fn);
+			}
 		} else {
-			num = atoi (ptr? ptr: input+1);
-			addr = 0LL;
+			eprintf ("Usage: of [path-to-file]\n");
 		}
-		if (num <= 0) {
-			const char *fn = input + 1; //(isn?2:1);
-			if (fn && *fn) {
-				if (isn) fn++;
-				file = r_core_file_open (core, fn, perms, addr);
-				if (file) {
-					r_cons_printf ("%d\n", file->desc->fd);
-					// MUST CLEAN BEFORE LOADING
-					if (!isn)
-						r_core_bin_load (core, fn, baddr);
-				} else if (!nowarn) {
-					eprintf ("Cannot open file '%s'\n", fn);
+		break;
+	case ' ':
+		{
+			ut64 ba = 0L;
+			ut64 ma = 0L;
+			if (!input[(isn? 2: 1) - 1]) {
+				eprintf ("Usage: on [file]\n");
+				break;
+			}
+			ptr = strchr (input + (isn? 2: 1), ' ');
+			if (ptr) {
+				*ptr++ = '\0';
+				char *ptr2 = strchr (ptr, ' ');
+				if (ptr2) {
+					*ptr2++ = 0;
+					ba = r_num_math (core->num, ptr2);
+				}
+				ma = r_num_math (core->num, ptr);
+			}
+			int num = atoi (input + 1);
+			if (num <= 0) {
+				const char *fn = input + (isn? 2: 1);
+				if (fn && *fn) {
+					if (isn) fn++;
+					file = r_core_file_open (core, fn, perms, ma);
+					if (file) {
+						r_cons_printf ("%d\n", file->desc->fd);
+						// MUST CLEAN BEFORE LOADING
+						if (!isn) {
+							r_core_bin_load (core, fn, ba);
+						}
+					} else if (!nowarn) {
+						eprintf ("Cannot open file '%s'\n", fn);
+					}
+				} else {
+					eprintf ("Usage: on [file] ([maddr]) ([baddr])\n");
 				}
 			} else {
-				eprintf ("Usage: on [file]\n");
-			}
-		} else {
-			RListIter *iter = NULL;
-			RCoreFile *f;
-			core->switch_file_view = 0;
-			r_list_foreach (core->files, iter, f) {
-				if (f->desc->fd == num) {
-					r_io_raise (core->io, num);
-					core->switch_file_view = 1;
-					break;
+				RListIter *iter = NULL;
+				RCoreFile *f;
+				core->switch_file_view = 0;
+				r_list_foreach (core->files, iter, f) {
+					if (f->desc->fd == num) {
+						r_io_raise (core->io, num);
+						core->switch_file_view = 1;
+						// raise rbinobj too
+						int binfile_num = find_binfile_id_by_fd (core->bin, num);
+						r_core_bin_raise (core, binfile_num, -1);
+						break;
+					}
 				}
 			}
+			r_core_block_read (core);
 		}
-		r_core_block_read (core);
 		break;
 	case 'b':
 		cmd_open_bin (core, input);
