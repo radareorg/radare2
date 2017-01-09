@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nikolai */
 
 #include <r_diff.h>
 
@@ -45,15 +45,17 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		fprintf(stderr,
 			"Buffer truncated to %d bytes (%d not compared)\n",
 			len, R_ABS(lb-la));
-	} else len = la;
+	} else {
+		len = la;
+	}
 	for(i = 0; i<len; i++) {
 		if (a[i]!=b[i]) {
 			hit++;
 		} else {
 			if (hit>0) {
 				struct r_diff_op_t o = {
-					.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = hit,
-					.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = hit
+					.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = la,
+					.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = lb 
 				};
 				d->callback (d, d->user, &o);
 				hit = 0;
@@ -72,119 +74,17 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 }
 
 // XXX: temporary files are
-R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
-	char *ptr, *str, buf[64], oop = 0;
-	int ret, atl, btl, hit;
-	ut8 at[128], bt[128];
-	ut64 ooa, oob;
-	FILE *fd;
-
-	hit = atl = btl = 0;
-	ooa = oob = 0LL;
-	oop = -1;
-
-	r_file_dump (".a", a, la, 0);
-	r_file_dump (".b", b, lb, 0);
-	r_sys_cmd ("radiff -d .a .b | rsc uncolor > .d");
-	fd = fopen (".d", "r");
-	if (!fd) return 0;
-
-	while (!feof (fd)) {
-		ut64 oa, ob; // offset
-		int ba, bb = 0; // byte
-		char op; // operation
-
-		oa = ob = 0LL;
-		if (!fgets (buf, 63, fd))
-			break;
-		if (feof (fd))
-			break;
-		str = buf;
-
-		ptr = strchr (buf, ' ');
-		if (!ptr) continue;
-		*ptr='\0';
-		sscanf (str, "0x%08"PFMT64x"", &oa);
-
-		str = r_str_ichr (ptr+1, ' ');
-		if (*str!='|'&&*str!='>'&&*str!='<') {
-			ptr = strchr (str, ' ');
-			if (!ptr) continue;
-			*ptr='\0';
-			sscanf (str, "%02x", &ba);
-		} else ba = 0;
-
-		str = r_str_ichr (ptr+1, ' ');
-		ptr = strchr (str, ' ');
-		if (!ptr) continue;
-		*ptr='\0';
-		sscanf (str, "%c", &op);
-
-		str = r_str_ichr (ptr+1, ' ');
-		if (str[0]!='0' || str[1]!='x') {
-			ptr = strchr(str, ' ');
-			if (!ptr) continue;
-			*ptr = '\0';
-			sscanf (str, "%02x", &bb);
-		}
-
-		str = ptr+1;
-		ptr = strchr (str, '\n');
-		if (!ptr) continue;
-		*ptr='\0';
-		sscanf (str, "0x%08"PFMT64x"", &ob);
-
-		if (oop == op || oop==-1) {
-			if (hit == 0) {
-				ooa = oa;
-				oob = ob;
-			}
-			at[atl] = ba;
-			bt[btl] = bb;
-			switch (op) {
-			case '|':
-				atl++;
-				btl++;
-				break;
-			case '>':
-				btl++;
-				break;
-			case '<':
-				atl++;
-				break;
-			}
-			hit++;
-		} else {
-			if (hit>0) {
-				struct r_diff_op_t o = {
-					.a_off = ooa, .a_buf = at, .a_len = atl,
-					.b_off = oob, .b_buf = bt, .b_len = btl
-				};
-				ret = d->callback(d, d->user, &o);
-				if (!ret)
-					break;
-				atl = btl = 0;
-				hit = 0;
-			}
-		}
-		oop = op;
+R_API int r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+	if (r_mem_is_printable (a, R_MIN (5, la))) {
+		r_file_dump (".a", a, la, 0);
+		r_file_dump (".b", b, lb, 0);
+	} else {
+		r_file_hexdump (".a", a, la, 0);
+		r_file_hexdump (".b", b, lb, 0);
 	}
-	if (hit > 0) {
-		struct r_diff_op_t o = {
-			.a_off = ooa, .a_buf = at, .a_len = atl,
-			.b_off = oob, .b_buf = bt, .b_len = btl
-		};
-		if (!d->callback (d, d->user, &o)) {
-			fclose (fd);
-			return 0;
-		}
-		atl = btl = 0;
-		hit = 0;
-	}
-	fclose (fd);
-	unlink (".a");
-	unlink (".b");
-	unlink (".d");
+	r_sys_cmd ("diff -ru .a .b");
+	r_file_rm (".a");
+	r_file_rm (".b");
 	return 0;
 }
 

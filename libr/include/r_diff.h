@@ -49,6 +49,7 @@ R_API int r_diff_buffers_delta(RDiff *diff, const ut8 *sa, int la, const ut8 *sb
 R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);
 R_API int r_diff_set_callback(RDiff *d, RDiffCallback callback, void *user);
 R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity);
+R_API int r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
 /* static method !??! */
 R_API int r_diff_lines(const char *file1, const char *sa, int la, const char *file2, const char *sb, int lb);
 R_API int r_diff_set_delta(RDiff *d, int delta);

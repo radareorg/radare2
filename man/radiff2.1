@@ -33,6 +33,8 @@ Show disasm instead of hexpairs (honors -a arch and -b bits)
 Graph diff output of given symbol, or between two functions, at given offsets: one for each binary.
 .It Fl h
 Show usage help message.
+.It Fl i
+Compare the list of imports
 .It Fl n
 Suppress address names (show only addresses) when code diffing.
 .It Fl O
@@ -51,6 +53,10 @@ Same as before but using the Levenstein algorithm (faster but sometimes buggy)
 Specify which column of the code diffing algo use for diffing
 .It Fl t Ar 0\-100
 Choose matching threshold for binary code diffing
+.It Fl u
+Unified diff output
+.It Fl U
+Unified diff output using system\'s diff program
 .It Fl v
 Show version information.
 .It Fl V

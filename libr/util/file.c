@@ -493,6 +493,37 @@ R_API char *r_file_root(const char *root, const char *path) {
 	return ret;
 }
 
+R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append) {
+	FILE *fd;
+	int i,j;
+	if (!file || !*file || !buf || len < 0) {
+		eprintf ("r_file_hexdump file: %s buf: %p\n", file, buf);
+		return false;
+	}
+	if (append) {
+		fd = r_sandbox_fopen (file, "awb");
+	} else {
+		r_sys_truncate (file, 0);
+		fd = r_sandbox_fopen (file, "wb");
+	}
+	if (!fd) {
+		eprintf ("Cannot open '%s' for writing\n", file);
+		return false;
+	}
+	for (i = 0; i< len; i+= 16) {
+		fprintf (fd, "0x%08"PFMT64x"  ", (ut64)i);
+		for (j = 0; j<16; j+=2) {
+			fprintf (fd, "%02x%02x ", buf[i +j], buf[i+j+1]);
+		}
+		for (j = 0; j<16; j++) {
+			fprintf (fd, "%c", IS_PRINTABLE(buf[i +j])? buf[i+j]: '.');
+		}
+		fprintf (fd, "\n");
+	}
+	fclose (fd);
+	return true;
+}
+
 R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 	FILE *fd;
 	if (!file || !*file || !buf || len < 0) {

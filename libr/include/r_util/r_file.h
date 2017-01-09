@@ -28,6 +28,7 @@ R_API char *r_file_slurp_random_line(const char *file);
 R_API char *r_file_slurp_random_line_count(const char *file, int *linecount);
 R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz);
 R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append);
+R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append);
 R_API bool r_file_rm(const char *file);
 R_API bool r_file_exists(const char *str);
 R_API bool r_file_fexists(const char *fmt, ...);

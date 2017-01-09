@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -10,6 +10,7 @@
 enum {
 	MODE_DIFF,
 	MODE_DIFF_STRS,
+	MODE_DIFF_IMPORTS,
 	MODE_DIST,
 	MODE_DIST_LEVENSTEIN,
 	MODE_CODE,
@@ -59,13 +60,65 @@ static RCore* opencore(const char *f) {
 	return c;
 }
 
+
+static bool virgin = true;
+static void readstr (char *s, int sz, const ut8 *buf, int len) {
+	int die = 0;
+	int last = R_MIN (len, sz);
+	strncpy (s, (char *)buf, last + die);
+	s[last] = 0;
+	while (*s && *s == '\n') {
+		s++;
+	}
+#if 1
+	char *nl = strchr (s, '\n');
+	if (nl) {
+		*nl = 0;
+	}
+#endif
+	virgin = false;
+}
+
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i; //, diffmode = (int)(size_t)user;
+	char s[256];
 	if (showcount) {
 		count++;
 		return 1;
 	}
 	switch (diffmode) {
+	case 'U': // 'U' in theory never handled here
+	case 'u':
+		if (op->a_len > 0) {
+			readstr (s, sizeof (s), op->a_buf, op->a_len);
+			if (*s) {
+				if (r_mem_is_printable ((const ut8*)s, R_MIN (strlen (s), 5))) {
+					printf ("-%s\n", s);
+				} else {
+					printf ("-:");
+					int len = op->a_len; //R_MIN (op->a_len, strlen (op->a_buf));
+					for (i = 0; i < len; i++) {
+						printf ("%02x", op->a_buf[i]);
+					}
+					printf (" \"%s\"\n", op->a_buf);
+				}
+			}
+		}
+		if (op->b_len > 0) {
+			readstr (s, sizeof (s), op->b_buf, op->b_len);
+			if (*s) {
+				if (r_mem_is_printable ((const ut8*)s, R_MIN (strlen (s), 5))) {
+					printf ("+%s\n", s);
+				} else {
+					printf ("+:");
+					for (i = 0; i < op->b_len; i++) {
+						printf ("%02x", op->b_buf[i]);
+					}
+					printf (" \"%s\"\n", op->b_buf);
+				}
+			}
+		}
+		break;
 	case 'r':
 		if (disasm) {
 			eprintf ("r2cmds (-r) + disasm (-D) not yet implemented\n");
@@ -77,9 +130,10 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			}
 			printf (" @ 0x%08"PFMT64x"\n", op->b_off);
 		} else {
-			if (op->a_len > 0)
+			if (op->a_len > 0) {
 				printf ("r-%d @ 0x%08"PFMT64x"\n",
 					op->a_len, op->a_off + delta);
+			}
 			if (op->b_len > 0) {
 				printf ("r+%d @ 0x%08"PFMT64x"\n",
 					op->b_len, op->b_off + delta);
@@ -154,10 +208,11 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		}
 		return 1;
 	}
+	return 0;
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abcCdjrspOxvV] [-g sym] [-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abcCdjrspOxuUvV] [-A[A]] [-g sym] [-t %%] [file] [file]\n");
 	if (v) {
 		printf (
 		"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
@@ -168,6 +223,7 @@ static int show_help(int v) {
 		"  -d         use delta diffing\n"
 		"  -D         show disasm instead of hexpairs\n"
 		"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
+		"  -i         diff imports of target files (see -u, -U and -z)\n"
 		"  -j         output in json format\n"
 		"  -n         print bare addresses only (diff.bare=1)\n"
 		"  -O         code diffing with opcode bytes only\n"
@@ -178,6 +234,8 @@ static int show_help(int v) {
 		"  -S [name]  sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)\n"
 		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -x         show two column hexdump diffing\n"
+		"  -u         unified output (---+++)\n"
+		"  -U         unified output using system 'diff'\n"
 		"  -v         show version information\n"
 		"  -V         be verbose (current only for -s)\n"
 		"  -z         diff on extracted strings\n");
@@ -250,8 +308,9 @@ static void dump_cols (ut8 *a, int as, ut8 *b, int bs, int w) {
 		}
 		printf ("\n");
 	}
-	if (as != bs)
+	if (as != bs) {
 		printf ("...\n");
+	}
 }
 
 static void handle_sha256 (const ut8 *block, int len) {
@@ -302,6 +361,31 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 	return (ut8*)r_file_slurp (file, sz);
 }
 
+static ut8 *get_imports(RCore *c, int *len) {
+	RList *list = r_bin_get_imports (c->bin);
+	RListIter *iter;
+	RBinImport *str;
+	ut8 *buf, *ptr;
+
+	*len = 0;
+
+	r_list_foreach (list, iter, str) {
+		*len += strlen (str->name) + 1;
+	}
+	ptr = buf = malloc (*len + 1);
+
+	r_list_foreach (list, iter, str) {
+		int namelen = strlen (str->name);
+		memcpy (ptr, str->name, namelen);
+		ptr += namelen;
+		*ptr++ = '\n';
+	}
+	*ptr = 0;
+
+	*len = strlen ((const char *)buf);
+	return buf;
+}
+
 static ut8 *get_strings(RCore *c, int *len) {
 	RList *list = r_bin_get_strings (c->bin);
 	RListIter *iter;
@@ -311,16 +395,17 @@ static ut8 *get_strings(RCore *c, int *len) {
 	*len = 0;
 
 	r_list_foreach (list, iter, str) {
-		*len += str->length;
+		*len += str->length + 1;
 	}
 	
-	ptr = buf = malloc (*len);
+	ptr = buf = malloc (*len + 1);
 
 	r_list_foreach (list, iter, str) {
 		memcpy (ptr, str->string, str->length);
 		ptr += str->length;
+		*ptr++ = '\n';
 	}
-
+	*len = strlen ((const char *)buf);
 	return buf;
 }
 
@@ -336,7 +421,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OjrhcdsS:Vvxt:z")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OijrhcdsS:uUvVxt:z")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -362,6 +447,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'C':
 			mode = MODE_CODE;
+			break;
+		case 'i':
+			mode = MODE_DIFF_IMPORTS;
 			break;
 		case 'n':
 			showbare = true;
@@ -393,6 +481,12 @@ int main(int argc, char **argv) {
 			break;
 		case 'x':
 			mode = MODE_COLS;
+			break;
+		case 'u':
+			diffmode = 'u';
+			break;
+		case 'U':
+			diffmode = 'U';
 			break;
 		case 'v':
 			printf ("radiff2 v"R2_VERSION"\n");
@@ -430,6 +524,7 @@ int main(int argc, char **argv) {
 	case MODE_GRAPH:
 	case MODE_CODE:
 	case MODE_DIFF_STRS:
+	case MODE_DIFF_IMPORTS:
 		c = opencore (file);
 		if (!c) {
 			eprintf ("Cannot open '%s'\n", r_str_get (file));
@@ -481,21 +576,23 @@ int main(int argc, char **argv) {
 		} else if (mode == MODE_CODE) {
 			r_core_gdiff (c, c2);
 			r_core_diff_show (c, c2);
+		} else if (mode == MODE_DIFF_IMPORTS) {
+			bufa = get_imports (c, &sza);
+			bufb = get_imports (c2, &szb);
 		} else if (mode == MODE_DIFF_STRS) {
 			bufa = get_strings (c, &sza);
 			bufb = get_strings (c2, &szb);
 		}
-
 		if (mode == MODE_CODE || mode == MODE_GRAPH) {
 			r_cons_flush ();
 		}
-
 		r_core_free (c);
 		r_core_free (c2);
 
 		if (mode == MODE_CODE || mode == MODE_GRAPH) {
 			return 0;
 		}
+		break;
 	default:
 		bufa = slurp (&c, file, &sza);
 		if (!bufa) {
@@ -511,6 +608,7 @@ int main(int argc, char **argv) {
 		if (sza != szb) {
 			eprintf ("File size differs %d vs %d\n", sza, szb);
 		}
+		break;
 	}
 
 	switch (mode) {
@@ -519,6 +617,7 @@ int main(int argc, char **argv) {
 		break;
 	case MODE_DIFF:
 	case MODE_DIFF_STRS:
+	case MODE_DIFF_IMPORTS:
 		d = r_diff_new (0LL, 0LL);
 		r_diff_set_delta (d, delta);
 		if (diffmode == 'j') {
@@ -529,8 +628,13 @@ int main(int argc, char **argv) {
 			printf("\"}],\n");
 			printf("\"changes\":[");
 		}
-		r_diff_set_callback (d, &cb, 0);//(void *)(size_t)diffmode);
-		r_diff_buffers (d, bufa, sza, bufb, szb);
+		virgin = true;
+		if (diffmode == 'U') {
+			r_diff_buffers_unified (d, bufa, sza, bufb, szb);
+		} else {
+			r_diff_set_callback (d, &cb, 0); // (void *)(size_t)diffmode);
+			r_diff_buffers (d, bufa, sza, bufb, szb);
+		}
 		if (diffmode == 'j') {
 			printf ("]\n");
 		}
