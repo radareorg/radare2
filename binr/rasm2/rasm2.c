@@ -357,53 +357,6 @@ static int __lib_anal_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-static char *replace_directives_for(char *str, char *token) {
-	RStrBuf *sb = r_strbuf_new ("");
-	char *p = NULL;
-	char *q = str;
-	bool changes = false;
-	for (;;) {
-		if (q) p = strstr (q, token);
-		if (p) {
-			char *nl = strchr (p, '\n');
-			if (nl) {
-				*nl ++ = 0;
-			}
-			char _ = *p;
-			*p = 0;
-			r_strbuf_append (sb, q);
-			*p = _;
-			r_strbuf_appendf (sb, "<{%s}>\n", p + 1);
-			q = nl;
-			changes = true;
-		} else {
-			if (q) r_strbuf_append (sb, q);
-			break;
-		}
-	}
-	if (changes) {
-		free (str);
-		return r_strbuf_drain (sb);
-	}
-	r_strbuf_free (sb);
-	return str;
-}
-
-static char *replace_directives(char *str) {
-	char *o = replace_directives_for (str, ".include");
-	o = replace_directives_for (o, ".warning");
-	o = replace_directives_for (o, ".error");
-	o = replace_directives_for (o, ".echo");
-	o = replace_directives_for (o, ".if");
-	o = replace_directives_for (o, ".ifeq");
-	o = replace_directives_for (o, ".endif");
-	o = replace_directives_for (o, ".else");
-	o = replace_directives_for (o, ".set");
-	o = replace_directives_for (o, ".get");
-	// eprintf ("(%s)\n", o);
-	return o;
-}
-
 int main (int argc, char *argv[]) {
 	const char *path;
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
@@ -640,12 +593,6 @@ int main (int argc, char *argv[]) {
 			}
 		} else {
 			content = r_file_slurp (file, &length);
-			Output out;
-			out.fout = NULL;
-			out.cout = r_strbuf_new ("");
-			r_strbuf_init (out.cout);
-			struct Proc proc;
-			spp_proc_set (&proc, "spp", 1);
 
 			if (content) {
 				if (len && len > 0 && len < length)
@@ -663,11 +610,7 @@ int main (int argc, char *argv[]) {
 				} else if (analinfo) {
 					ret = show_analinfo ((const char *)buf, offset);
 				} else {
-					content = replace_directives (content);
-					spp_eval (content, &out);
-					char *spp_out = strdup (r_strbuf_get (out.cout));
-					ret = rasm_asm (spp_out, offset, length, a->bits, bin);
-					free (spp_out);
+					ret = rasm_asm (content, offset, length, a->bits, bin);
 				}
 				ret = !ret;
 				free (content);
