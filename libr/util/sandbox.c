@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2016 - pancake */
+/* radare - LGPL - Copyright 2012-2017 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -46,7 +46,9 @@ R_API int r_sandbox_check_path (const char *path) {
 	// Absolute paths are forbidden.
 	if (*path == '/') return 0;
 #if __UNIX__
-	if (readlink (path, &ch, 1) != -1) return 0;
+	if (readlink (path, &ch, 1) != -1) {
+		return false;
+	}
 #endif
 	return true;
 }
@@ -60,7 +62,7 @@ R_API bool r_sandbox_disable (bool e) {
 		}
 #endif
 		disabled = enabled;
-		enabled = 0;
+		enabled = false;
 	} else {
 		enabled = disabled;
 	}
@@ -69,9 +71,12 @@ R_API bool r_sandbox_disable (bool e) {
 
 R_API bool r_sandbox_enable (bool e) {
 	if (enabled) {
+		if (!e) {
+			eprintf ("Cant disable sandbox\n");
+		}
 		return true;
 	}
-	enabled = !!e;
+	enabled = e;
 #if LIBC_HAVE_PLEDGE
 	if (enabled && pledge ("stdio rpath tty prot_exec", NULL) == -1) {
 		eprintf ("sandbox: pledge call failed\n");

@@ -471,9 +471,11 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 	r_config_set (core->config, "scr.color", "false");
 	r_config_set (core->config, "asm.bytes", "false");
 	r_config_set (core->config, "scr.interactive", "false");
+	bool restoreSandbox = false;
 	if (r_config_get_i (core->config, "http.sandbox")) {
 		//(void)r_config_get_i (core->config, "cfg.sandbox");
 		r_config_set (core->config, "cfg.sandbox", "true");
+		restoreSandbox = true;
 	}
 	eprintf ("Starting http server...\n");
 	eprintf ("open http://%s:%d/\n", host, atoi (port));
@@ -807,6 +809,9 @@ the_end:
 	core->http_up = false;
 	r_socket_free (s);
 	r_config_free (newcfg);
+	if (restoreSandbox) {
+		r_sandbox_disable (true);
+	}
 	/* refresh settings - run callbacks */
 	r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
 	r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
