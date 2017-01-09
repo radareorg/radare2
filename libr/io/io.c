@@ -220,6 +220,39 @@ R_API bool r_io_resize (RIO *io, ut64 newsize)
 	return false;
 }
 
+R_API int r_io_extend_at (RIO *io, ut64 addr, ut64 size)
+{
+	ut64 cur_size, tmp_size;
+	ut8 *buffer;
+	if (!io || !io->desc || !io->desc->plugin || !size)
+		return false;
+	if (io->desc->plugin->extend) {
+		ut64 cur_off = io->off;
+		int ret;
+		r_io_seek (io, addr, R_IO_SEEK_SET);
+		ret = io->desc->plugin->extend (io, io->desc, size);
+		io->off = cur_off;				//no need to seek here
+		return ret;
+	}
+	if ((io->desc->flags & R_IO_RW) != R_IO_RW)
+		return false;
+	cur_size = r_io_desc_size (io->desc);
+	if (addr > cur_size)
+		return false;
+	if (r_chk_overflow_add_ut64 (cur_size, size) != size)
+		return false;
+	if (!r_io_resize (io, cur_size + size))
+		return false;
+	if ((tmp_size = cur_size - addr) == 0LL)
+		return true;
+	if (!(buffer = malloc ((size_t)tmp_size)))
+		return false;
+	r_io_pread_at (io, addr, buffer, (int)tmp_size);
+	r_io_pwrite_at (io, addr + size, buffer, (int)tmp_size);
+	free (buffer);
+	return true;
+}
+
 RIO *bind_get_io (RIOBind *iob)
 {
 	if (!iob)
