@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "libqnxr.h"
+#include "gdb_signals.h"
 
 #define LONGEST st64
 #define ULONGEST ut64

@@ -1348,14 +1348,13 @@ static void ds_print_pre(RDisasmState *ds) {
 static void ds_show_comments_right(RDisasmState *ds) {
 	int linelen, maxclen ;
 	RCore *core = ds->core;
-	RAnalFunction *f;
 	RFlagItem *item;
 	/* show comment at right? */
 	int scr = ds->show_comment_right;
 	if (!ds->show_comments) {
 		return;
 	}
-	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	item = r_flag_get_i (core->flags, ds->at);
 	ds->comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 	if (!ds->comment && item && item->comment && *item->comment) {

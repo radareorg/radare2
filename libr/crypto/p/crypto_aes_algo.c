@@ -23,7 +23,7 @@ static const ut8 Rcon[30] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
 // Expand a user-supplied key material into a session key.
 // key        - The 128/192/256-bit user-key to use.
 //expkey[2][Nr + 1][Nb]
-void aes_expkey (const struct aes_state *st, ut32 expkey[2][st->rounds + 1][Nb]) {
+void aes_expkey (const struct aes_state *st, ut32 ***expkey) { //expkey[2][st->rounds + 1][Nb]) {
 	int ROUND_KEY_COUNT = 4 * (1 + st->rounds);
     ut32 tk[st->columns], tt;
     st32 idx = 0, t = 0;

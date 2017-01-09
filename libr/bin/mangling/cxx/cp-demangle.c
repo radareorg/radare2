@@ -95,10 +95,6 @@
       stdout about the mangled string.  This is not generally useful.
 */
 
-#if defined (_AIX) && !defined (__GNUC__)
- #pragma alloca
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -107,18 +103,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#else
-# ifndef alloca
-#  ifdef __GNUC__
-#   define alloca __builtin_alloca
-#  else
-extern char *alloca ();
-#  endif /* __GNUC__ */
-# endif /* alloca */
-#endif /* HAVE_ALLOCA_H */
 
 #include "ansidecl.h"
 #include "libiberty.h"
