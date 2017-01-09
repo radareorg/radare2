@@ -699,7 +699,8 @@ int main(int argc, char **argv) {
 					"  Resize Section: r/.data/1024\n"
 					"  Remove RPATH: R\n"
 					"  Add Library: a/l/libfoo.dylib\n"
-					"  Change Permissions: p/.data/rwx\n");
+					"  Change Permissions: p/.data/rwx\n"
+					"  Show LDID entitlements: ldid\n");
 				r_core_fini (&core);
 				return 0;
 			}
