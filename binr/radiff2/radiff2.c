@@ -4,9 +4,6 @@
 #include <r_core.h>
 #include <r_hash.h>
 
-#define RED     "\x1b[31m"
-#define GREEN   "\x1b[32m"
-
 enum {
 	MODE_DIFF,
 	MODE_DIFF_STRS,
@@ -28,6 +25,7 @@ static int showbare = false;
 static int json_started = 0;
 static int diffmode = 0;
 static bool disasm = false;
+static bool quiet = false;
 static RCore *core = NULL;
 static const char *arch = NULL;
 static int bits = 0;
@@ -92,6 +90,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		if (op->a_len > 0) {
 			readstr (s, sizeof (s), op->a_buf, op->a_len);
 			if (*s) {
+				if (!quiet) printf (Color_RED);
 				if (r_mem_is_printable ((const ut8*)s, R_MIN (strlen (s), 5))) {
 					printf ("-%s\n", s);
 				} else {
@@ -102,11 +101,13 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 					}
 					printf (" \"%s\"\n", op->a_buf);
 				}
+				if (!quiet) printf (Color_RESET);
 			}
 		}
 		if (op->b_len > 0) {
 			readstr (s, sizeof (s), op->b_buf, op->b_len);
 			if (*s) {
+				if (!quiet) printf (Color_GREEN);
 				if (r_mem_is_printable ((const ut8*)s, R_MIN (strlen (s), 5))) {
 					printf ("+%s\n", s);
 				} else {
@@ -116,6 +117,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 					}
 					printf (" \"%s\"\n", op->b_buf);
 				}
+				if (!quiet) printf (Color_RESET);
 			}
 		}
 		break;
@@ -228,6 +230,7 @@ static int show_help(int v) {
 		"  -n         print bare addresses only (diff.bare=1)\n"
 		"  -O         code diffing with opcode bytes only\n"
 		"  -p         use physical addressing (io.va=0)\n"
+		"  -q         quiet mode (disable colors, reduce output)\n"
 		"  -r         output in radare commands\n"
 		"  -s         compute text distance\n"
 		"  -ss        compute text distance (using levenstein algorithm)\n"
@@ -361,6 +364,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 	return (ut8*)r_file_slurp (file, sz);
 }
 
+// TODO: sort and uniq() https://github.com/radare/radare2/issues/6461
 static ut8 *get_imports(RCore *c, int *len) {
 	RList *list = r_bin_get_imports (c->bin);
 	RListIter *iter;
@@ -386,6 +390,7 @@ static ut8 *get_imports(RCore *c, int *len) {
 	return buf;
 }
 
+// TODO: sort and uniq() https://github.com/radare/radare2/issues/6461
 static ut8 *get_strings(RCore *c, int *len) {
 	RList *list = r_bin_get_strings (c->bin);
 	RListIter *iter;
@@ -421,7 +426,7 @@ int main(int argc, char **argv) {
 	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OijrhcdsS:uUvVxt:z")) != -1) {
+	while ((o = getopt (argc, argv, "Aa:b:CDnpg:OijrhcdsS:uUvVxt:zq")) != -1) {
 		switch (o) {
 		case 'a':
 			arch = optarg;
@@ -491,6 +496,9 @@ int main(int argc, char **argv) {
 		case 'v':
 			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
+		case 'q':
+			quiet = true;
+			break;
 		case 'V':
 			verbose = true;
 			break;
