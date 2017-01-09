@@ -498,12 +498,10 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (!b) {
 		return 0;
 	}
-
-	r_str_case (b, 0); // to-lower
-
 	if (a->ifilter) {
 		r_parse_parse (a->ifilter, buf, b);
 	}
+	r_str_case (b, 0); // to-lower
 	memset (op, 0, sizeof (RAsmOp));
 	if (a->cur) {
 		Ase ase = NULL;
@@ -610,17 +608,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	RAsmCode *acode = NULL;
 	RAsmOp op = {0};
 	ut64 off, pc;
-	Output out;
-	out.fout = NULL;
-	out.cout = r_strbuf_new ("");
-	r_strbuf_init (out.cout);
-	struct Proc proc;
-	spp_proc_set (&proc, "spp", 1);
-
 	if (!buf) {
 		return NULL;
 	}
-
 	if (!(acode = r_asm_code_new ())) {
 		return NULL;
 	}
@@ -636,11 +626,6 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		return r_asm_code_free (acode);
 	}
 	lbuf = strdup (buf);
-	lbuf = replace_directives (lbuf);
-	spp_eval (lbuf, &out);
-	free (lbuf);
-	lbuf = strdup (r_strbuf_get (out.cout));
-
 	acode->code_align = 0;
 	memset (&op, 0, sizeof (op));
 
@@ -1026,4 +1011,25 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
 		}
 	}
 	return 0;
+}
+
+R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
+	char *lbuf = strdup (buf);
+	RAsmCode *acode;
+	if (use_spp) {
+		Output out;
+		out.fout = NULL;
+		out.cout = r_strbuf_new ("");
+		r_strbuf_init (out.cout);
+		struct Proc proc;
+		spp_proc_set (&proc, "spp", 1);
+
+		lbuf = replace_directives (lbuf);
+		spp_eval (lbuf, &out);
+		free (lbuf);
+		lbuf = strdup (r_strbuf_get (out.cout));
+	}
+	acode = r_asm_massemble (a, lbuf);
+	free (lbuf);
+	return acode;
 }
