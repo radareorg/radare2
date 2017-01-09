@@ -205,6 +205,13 @@ R_API ut64 r_io_size (RIO *io)
 	return 0LL;
 }
 
+R_API int r_io_is_listener (RIO *io)
+{
+	if (io && io->desc && io->desc->plugin && io->desc->plugin->listener)
+		return io->desc->plugin->listener (io->desc);
+	return false;
+}
+
 R_API int r_io_system (RIO *io, const char* cmd)
 {
 	int ret = -1;
