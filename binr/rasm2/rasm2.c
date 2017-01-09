@@ -8,7 +8,6 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_lib.h>
-#include <spp.h>
 #include "../blob/version.c"
 
 static RLib *l = NULL;
@@ -202,6 +201,7 @@ static int rasm_show_help(int v) {
 			"               a___ asm, _d__ disasm, __A_ analyzer, ___e ESIL\n"
 			" -o [offset]  Set start address for code (default 0)\n"
 			" -O [file]    Output file name (rasm2 -Bf a.asm -O a)\n"
+			" -p           Run SPP over input for assembly\n"
 			" -s [syntax]  Select syntax (intel, att)\n"
 			" -B           Binary input/output (-l is mandatory for binary input)\n"
 			" -v           Show version information\n"
@@ -305,11 +305,11 @@ static void print_buf(char *str) {
 	} else printf ("%s\n", str);
 }
 
-static int rasm_asm(const char *buf, ut64 offset, ut64 len, int bits, int bin) {
+static int rasm_asm(const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp) {
 	RAsmCode *acode;
 	int i, j, ret = 0;
 	r_asm_set_pc (a, offset);
-	if (!(acode = r_asm_massemble (a, buf))) {
+	if (!(acode = r_asm_rasm_assemble (a, buf, use_spp))) {
 		return 0;
 	}
 	if (acode->len) {
@@ -357,53 +357,6 @@ static int __lib_anal_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-static char *replace_directives_for(char *str, char *token) {
-	RStrBuf *sb = r_strbuf_new ("");
-	char *p = NULL;
-	char *q = str;
-	bool changes = false;
-	for (;;) {
-		if (q) p = strstr (q, token);
-		if (p) {
-			char *nl = strchr (p, '\n');
-			if (nl) {
-				*nl ++ = 0;
-			}
-			char _ = *p;
-			*p = 0;
-			r_strbuf_append (sb, q);
-			*p = _;
-			r_strbuf_appendf (sb, "<{%s}>\n", p + 1);
-			q = nl;
-			changes = true;
-		} else {
-			if (q) r_strbuf_append (sb, q);
-			break;
-		}
-	}
-	if (changes) {
-		free (str);
-		return r_strbuf_drain (sb);
-	}
-	r_strbuf_free (sb);
-	return str;
-}
-
-static char *replace_directives(char *str) {
-	char *o = replace_directives_for (str, ".include");
-	o = replace_directives_for (o, ".warning");
-	o = replace_directives_for (o, ".error");
-	o = replace_directives_for (o, ".echo");
-	o = replace_directives_for (o, ".if");
-	o = replace_directives_for (o, ".ifeq");
-	o = replace_directives_for (o, ".endif");
-	o = replace_directives_for (o, ".else");
-	o = replace_directives_for (o, ".set");
-	o = replace_directives_for (o, ".get");
-	// eprintf ("(%s)\n", o);
-	return o;
-}
-
 int main (int argc, char *argv[]) {
 	const char *path;
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
@@ -411,6 +364,7 @@ int main (int argc, char *argv[]) {
 	unsigned char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
 	bool isbig = false;
+	bool use_spp = false;
 	ut64 offset = 0;
 	int fd = -1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0, skip = 0;
@@ -456,7 +410,7 @@ int main (int argc, char *argv[]) {
 		r_asm_set_bits (a, sysbits);
 		r_anal_set_bits (anal, sysbits);
 	}
-	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wqO:")) != -1) {
+	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wqO:p")) != -1) {
 		switch (c) {
 		case 'a':
 			arch = optarg;
@@ -522,6 +476,9 @@ int main (int argc, char *argv[]) {
 		case 'O':
 			fd = open (optarg, O_TRUNC | O_RDWR | O_CREAT, 0644);
 			if (fd != -1) dup2 (fd, 1);
+			break;
+		case 'p':
+			use_spp = true;
 			break;
 		case 's':
 			if (*optarg == '?') {
@@ -636,16 +593,10 @@ int main (int argc, char *argv[]) {
 			} else if (analinfo) {
 				ret = show_analinfo ((const char *)buf, offset);
 			} else {
-				ret = rasm_asm ((char *)buf, offset, len, a->bits, bin);
+				ret = rasm_asm ((char *)buf, offset, len, a->bits, bin, use_spp);
 			}
 		} else {
 			content = r_file_slurp (file, &length);
-			Output out;
-			out.fout = NULL;
-			out.cout = r_strbuf_new ("");
-			r_strbuf_init (out.cout);
-			struct Proc proc;
-			spp_proc_set (&proc, "spp", 1);
 
 			if (content) {
 				if (len && len > 0 && len < length)
@@ -663,11 +614,7 @@ int main (int argc, char *argv[]) {
 				} else if (analinfo) {
 					ret = show_analinfo ((const char *)buf, offset);
 				} else {
-					content = replace_directives (content);
-					spp_eval (content, &out);
-					char *spp_out = strdup (r_strbuf_get (out.cout));
-					ret = rasm_asm (spp_out, offset, length, a->bits, bin);
-					free (spp_out);
+					ret = rasm_asm (content, offset, length, a->bits, bin, use_spp);
 				}
 				ret = !ret;
 				free (content);
@@ -705,7 +652,7 @@ int main (int argc, char *argv[]) {
 				} else if (analinfo) {
 					ret = show_analinfo ((const char *)buf, offset);
 				} else {
-					ret = rasm_asm ((const char *)buf, offset, length, a->bits, bin);
+					ret = rasm_asm ((const char *)buf, offset, length, a->bits, bin, use_spp);
 				}
 				idx += ret;
 				offset += ret;
@@ -734,7 +681,7 @@ int main (int argc, char *argv[]) {
 		} else if (analinfo) {
 			ret = show_analinfo ((const char *)argv[optind], offset);
 		} else {
-			ret = rasm_asm (argv[optind], offset, len, a->bits, bin);
+			ret = rasm_asm (argv[optind], offset, len, a->bits, bin, use_spp);
 		}
 		if (!ret) {
 			eprintf ("invalid\n");

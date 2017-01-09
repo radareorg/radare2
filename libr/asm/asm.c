@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
+#include <spp/spp.h>
 #include "../config.h"
 
 R_LIB_VERSION (r_asm);
@@ -443,9 +444,57 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 	return ase;
 }
 
+static char *replace_directives_for(char *str, char *token) {
+	RStrBuf *sb = r_strbuf_new ("");
+	char *p = NULL;
+	char *q = str;
+	bool changes = false;
+	for (;;) {
+		if (q) p = strstr (q, token);
+		if (p) {
+			char *nl = strchr (p, '\n');
+			if (nl) {
+				*nl ++ = 0;
+			}
+			char _ = *p;
+			*p = 0;
+			r_strbuf_append (sb, q);
+			*p = _;
+			r_strbuf_appendf (sb, "<{%s}>\n", p + 1);
+			q = nl;
+			changes = true;
+		} else {
+			if (q) r_strbuf_append (sb, q);
+			break;
+		}
+	}
+	if (changes) {
+		free (str);
+		return r_strbuf_drain (sb);
+	}
+	r_strbuf_free (sb);
+	return str;
+}
+
+static char *replace_directives(char *str) {
+	char *o = replace_directives_for (str, ".include");
+	o = replace_directives_for (o, ".warning");
+	o = replace_directives_for (o, ".error");
+	o = replace_directives_for (o, ".echo");
+	o = replace_directives_for (o, ".if");
+	o = replace_directives_for (o, ".ifeq");
+	o = replace_directives_for (o, ".endif");
+	o = replace_directives_for (o, ".else");
+	o = replace_directives_for (o, ".set");
+	o = replace_directives_for (o, ".get");
+	// eprintf ("(%s)\n", o);
+	return o;
+}
+
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
 	char *b = strdup (buf);
+
 	if (!b) {
 		return 0;
 	}
@@ -962,4 +1011,25 @@ R_API int r_asm_mnemonics_byname(RAsm *a, const char *name) {
 		}
 	}
 	return 0;
+}
+
+R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
+	char *lbuf = strdup (buf);
+	RAsmCode *acode;
+	if (use_spp) {
+		Output out;
+		out.fout = NULL;
+		out.cout = r_strbuf_new ("");
+		r_strbuf_init (out.cout);
+		struct Proc proc;
+		spp_proc_set (&proc, "spp", 1);
+
+		lbuf = replace_directives (lbuf);
+		spp_eval (lbuf, &out);
+		free (lbuf);
+		lbuf = strdup (r_strbuf_get (out.cout));
+	}
+	acode = r_asm_massemble (a, lbuf);
+	free (lbuf);
+	return acode;
 }
