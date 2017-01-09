@@ -92,7 +92,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (*s) {
 				if (!quiet) printf (Color_RED);
 				if (r_mem_is_printable ((const ut8*)s, R_MIN (strlen (s), 5))) {
-					printf ("-%s\n", s);
+					printf ("- %s\n", s);
 				} else {
 					printf ("-:");
 					int len = op->a_len; //R_MIN (op->a_len, strlen (op->a_buf));
@@ -109,7 +109,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			if (*s) {
 				if (!quiet) printf (Color_GREEN);
 				if (r_mem_is_printable ((const ut8*)s, R_MIN (strlen (s), 5))) {
-					printf ("+%s\n", s);
+					printf ("+ %s\n", s);
 				} else {
 					printf ("+:");
 					for (i = 0; i < op->b_len; i++) {

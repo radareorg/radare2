@@ -299,7 +299,7 @@ R_API void r_mem_reverse(ut8 *b, int l) {
 R_API bool r_mem_is_printable (const ut8 *a, int la) {
 	int i;
 	for (i = 0; i< la; i++) {
-		if (!IS_PRINTABLE (a[i])) {
+		if (a[i] != '\n' && a[i] != '\t' && !IS_PRINTABLE (a[i])) {
 			return false;
 		}
 	}
