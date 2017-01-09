@@ -493,10 +493,6 @@ static int cmd_open(void *data, const char *input) {
 	case '+':
 		perms = R_IO_READ|R_IO_WRITE;
 		/* fall through */
-	case 'n':
-		// like in r2 -n
-		isn = 1;
-		/* fall through */
 	case 'f':
 		/* open file with spaces or special chars */
 		if (input[1] == ' ') {
@@ -511,15 +507,20 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("Usage: of [path-to-file]\n");
 		}
 		break;
+	case 'n': // "on"
+		// like in r2 -n
+		isn = 1;
+		/* fall through */
 	case ' ':
 		{
 			ut64 ba = 0L;
 			ut64 ma = 0L;
-			if (!input[(isn? 2: 1) - 1]) {
+			char *fn = strdup (input + (isn? 2:1));
+			if (!*fn) {
 				eprintf ("Usage: on [file]\n");
 				break;
 			}
-			ptr = strchr (input + (isn? 2: 1), ' ');
+			ptr = strchr (fn, ' ');
 			if (ptr) {
 				*ptr++ = '\0';
 				char *ptr2 = strchr (ptr, ' ');
@@ -531,9 +532,7 @@ static int cmd_open(void *data, const char *input) {
 			}
 			int num = atoi (input + 1);
 			if (num <= 0) {
-				const char *fn = input + (isn? 2: 1);
 				if (fn && *fn) {
-					if (isn) fn++;
 					file = r_core_file_open (core, fn, perms, ma);
 					if (file) {
 						r_cons_printf ("%d\n", file->desc->fd);
@@ -563,6 +562,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 			}
 			r_core_block_read (core);
+			free (fn);
 		}
 		break;
 	case 'b':
