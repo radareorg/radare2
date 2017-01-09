@@ -2054,7 +2054,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETPREF("http.port", "9090", "Server port");
 	SETPREF("http.ui", "m", "Default webui (enyo, m, p, t)");
-	SETPREF("http.sandbox", "false", "Sandbox the HTTP server");
+	SETPREF("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI("http.dietime", 0, "Kill server after N seconds with no client");
 	SETPREF("http.verbose", "true", "Output server logs to stdout");
