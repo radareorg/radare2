@@ -610,12 +610,19 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 	ut64 cur_size = r_io_size (io), tmp_size = cur_size - size;
 	ut8 *buffer = NULL;
 
-	if (!size) return false;
-
-	if (io->plugin && io->plugin->extend)
+	if (!size) {
+		return false;
+	}
+	if (io->plugin && io->plugin->extend) {
 		return io->plugin->extend (io, io->desc, size);
-
-	if (!r_io_resize (io, size + cur_size)) return false;
+	}
+	if (UT64_ADD_OVFCHK (size, cur_size)) {
+		if (!r_io_resize (io, size + cur_size)) {
+			return false;
+		}
+	} else {
+		return false;
+	}
 
 	if (cur_size < size) {
 		tmp_size = size - cur_size;
