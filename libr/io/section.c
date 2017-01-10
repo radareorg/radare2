@@ -242,51 +242,54 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 	char uri[64];
 	if (!(sec = r_io_section_get_i (io, id)))
 		return false;
-	if (method == R_IO_SECTION_APPLY_FOR_PATCHING) {
+	if (method == R_IO_SECTION_APPLY_FOR_PATCHING) {			//this is for doing hexeditor-stuff and pure static analysis
 		if (sec->addr == sec->vaddr) {
-			if (sec->vsize > sec->size) {
-				if (!sec->memmap) {
-					at = sec->vaddr + sec->size;		//TODO: harden this, handle mapslit
-					snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize - sec->size);
-					desc = r_io_open_at (io, uri, sec->flags, 664, at);
+			if (sec->vsize > sec->size) {				//only for vaddr==addr and vsize > size
+				if (!sec->memmap) {				//in that case, we just have to allocate some memory of the size (vsize-size)
+					at = sec->vaddr + sec->size;		//offset,where the memory should be mapped to
+										//TODO: harden this, handle mapslit
+					snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize - sec->size);	//craft the uri for the malloc-fd
+					desc = r_io_open_at (io, uri, sec->flags, 664, at);	//open the malloc-fd and map it to vaddr + size
 					if (!desc) return false;
 					map = r_io_map_get (io, at);		//this works, because new maps are allways born on the top
-					if (!map) {
+					if (!map) {				//check if the mapping failed
 						r_io_close (io, desc->fd);
 						return false;
 					}
-					sec->memmap = map->id;
+					sec->filemap = 0;			//when addr==vaddr we need no filemap
+					sec->memmap = map->id;			//let the section refere to the map as a memory-map
 					return true;
-				} else return false;
-			} else return true;
+				} else return false;				//the section is already applied
+			} else return true;					//there is nothing todo here if vsize <= size
 		}
-		if (!sec->filemap && sec->size >= sec->vsize) {
-			desc = r_io_desc_get (io, sec->fd);
-			if (!desc) return false;
-			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->vsize);
+		if (!sec->filemap && sec->size >= sec->vsize) {			//taken, when the section does a remapping, but no "memory-allocation"
+			desc = r_io_desc_get (io, sec->fd);			//get the RIODesc that the section belongs to
+			if (!desc) return false;				//this usually won't happen, but checking against it doesn't hurt
+			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->vsize);	//apply the mapping
 			if (map) {
-				sec->filemap = sec->memmap = map->id;
+				sec->filemap = map->id;				//let the section refere to the new map as a filemap
+				sec->memmap = 0;				//memmap is 0, because there is no memory allocation here
 				return true;
 			}
 			sec->memmap = 0;
 			return false;
 		}
-		if (!sec->filemap && !sec->memmap) {
-			desc = r_io_desc_get (io, sec->fd);
+		if (!sec->filemap && !sec->memmap) {				//check if section already got applied
+			desc = r_io_desc_get (io, sec->fd);			//get the RIODesc to which the section belongs
 			if (!desc) return false;
-			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->size);
+			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->size);	//apply the mapping for the filearea
 			if (!map) return false;
-			sec->filemap = map->id;
+			sec->filemap = map->id;					//let the section refere to the map as filemap
 			at = sec->vaddr + sec->size;				//TODO: harden this, handle mapslit
-			snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize - sec->size);
-			desc = r_io_open_at (io, uri, sec->flags, 664, at);
+			snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize - sec->size);	//craft the uri for the malloc-fd
+			desc = r_io_open_at (io, uri, sec->flags, 664, at);	//open the malloc-fd and map it to vaddr+size
 			if (!desc) return false;
-			map = r_io_map_get (io, at);
+			map = r_io_map_get (io, at);				//get the malloc-map
 			if (!map) {
 				r_io_close (io, desc->fd);
 				return false;
 			}
-			sec->memmap = map->id;
+			sec->memmap = map->id;					//let the section refere to the malloc-map as a memory-map
 			return true;
 		}
 	}
@@ -297,18 +300,19 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 		if (sec->size > sec->vsize)
 			size = (size_t)sec->vsize;
 		else	size = (size_t)sec->size;
-		buf = malloc (size);
-		snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize);
-		desc = io->desc;
-		r_io_desc_use (io, sec->fd);
+		buf = malloc (size);						//allocate a buffer for copying from sec->fd to the malloc-map
+		snprintf (uri, 64, "malloc://%"PFMT64u"", sec->vsize);		//craft the uri for the opening the malloc-fd
+		desc = io->desc;						//save the current desc
+		r_io_desc_use (io, sec->fd);					//copy to the buffer
 		r_io_pread_at (io, sec->addr, buf, (int)size);
-		r_io_desc_use (io, (r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr))->fd);
-		r_io_pwrite_at (io, 0LL, buf, (int)size);
+		r_io_desc_use (io,						//open the malloc-fd and map it to vaddr
+			(r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr))->fd);
+		r_io_pwrite_at (io, 0LL, buf, (int)size);			//copy from buffer to the malloc-fd
 		free (buf);
-		map = r_io_map_get (io, sec->vaddr);
-		map->flags = sec->flags;
-		r_io_desc_use (io, desc->fd);
-		sec->filemap = sec->memmap = map->id;
+		map = r_io_map_get (io, sec->vaddr);				//get the malloc-map
+		map->flags = sec->flags;					//copy the flags
+		r_io_desc_use (io, desc->fd);					//restore old RIODesc
+		sec->filemap = sec->memmap = map->id;				//let the section refere to the map
 		return true;
 	}
 	return false;
@@ -342,7 +346,7 @@ R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 		char uri[64];
 		ut8 *buf = NULL;
 		size_t size;
-		if (sec->filemap != sec->memmap) {
+		if (sec->filemap != sec->memmap) {		//in this case the section was applied for patching
 			if (!sec->memmap) {
 				r_io_map_del (io, sec->filemap);
 				sec->filemap = 0;
