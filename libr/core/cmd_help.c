@@ -575,6 +575,14 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'e': // echo
 		{
+		if (input[1] == 's') { // say
+			char *msg = strdup (input + 2);
+			msg = r_str_chop (msg);
+			char *p = strchr (msg, '&');
+			if (p) *p = 0;
+			r_sys_tts (msg, p != NULL);
+			free (msg);
+		} else
 		if (input[1] == 'n') { // mimic echo -n
 			const char *msg = r_str_chop_ro (input+2);
 			// TODO: replace all ${flagname} by its value in hexa
