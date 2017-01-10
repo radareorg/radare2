@@ -230,6 +230,7 @@ R_API RIO *r_io_init (RIO *io);
 R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode);
 R_API RIODesc *r_io_open (RIO *io, char *uri, int flags, int mode);
 R_API RIODesc *r_io_open_at (RIO *io, char *uri, int flags, int mode, ut64 at);
+R_API RList *r_io_open_many (RIO *io, char *uri, int flags, int mode);
 R_API int r_io_close (RIO *io, int fd);
 R_API int r_io_close_all (RIO *io);
 R_API int r_io_pread_at (RIO *io, ut64 paddr, ut8 *buf, int len);

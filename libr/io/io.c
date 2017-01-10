@@ -22,6 +22,7 @@ R_API RIO *r_io_init (RIO *io)
 	return io;
 }
 
+/* opens a file without mapping it */
 R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode)
 {
 	RIODesc *desc;
@@ -44,6 +45,7 @@ R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode)
 	return desc;
 }
 
+/* opens a file and maps it to 0x0 */
 R_API RIODesc *r_io_open (RIO *io, char *uri, int flags, int mode)
 {
 	RIODesc *desc;
@@ -56,6 +58,7 @@ R_API RIODesc *r_io_open (RIO *io, char *uri, int flags, int mode)
 	return desc;
 }
 
+/* opens a file and maps it to an offset specified by the "at"-parameter */
 R_API RIODesc *r_io_open_at (RIO *io, char *uri, int flags, int mode, ut64 at)
 {
 	RIODesc *desc;
@@ -72,6 +75,34 @@ R_API RIODesc *r_io_open_at (RIO *io, char *uri, int flags, int mode, ut64 at)
 	}
 	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size);			//first map
 	return desc;
+}
+
+/* opens many files, without mapping them. This should be discussed */
+R_API RList *r_io_open_many (RIO *io, char *uri, int flags, int mode)
+{
+	RList *desc_list;
+	RListIter *iter;
+	RIODesc *desc;
+	RIOPlugin *plugin;
+	if (!io || !io->files || !uri)
+		return NULL;
+	plugin = r_io_plugin_resolve (io, uri, 1);
+	if (!plugin || !plugin->open_many || !plugin->close)
+		return NULL;
+	if (!(desc_list = plugin->open_many (io, uri, flags, mode)))
+		return NULL;
+	r_list_foreach (desc_list, iter, desc) {
+		if (desc) {
+			if (!desc->plugin)
+				desc->plugin = plugin;
+			if (!desc->uri)
+				desc->uri = strdup (uri);
+			r_io_desc_add (io, desc);
+			if (!io->desc)						//should autofd be honored here?
+				io->desc = desc;
+		}
+	}
+	return desc_list;
 }
 
 R_API int r_io_close (RIO *io, int fd)
