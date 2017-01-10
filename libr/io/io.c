@@ -616,7 +616,7 @@ R_API int r_io_extend(RIO *io, ut64 size) {
 	if (io->plugin && io->plugin->extend) {
 		return io->plugin->extend (io, io->desc, size);
 	}
-	if (UT64_ADD_OVFCHK (size, cur_size)) {
+	if (!UT64_ADD_OVFCHK (size, cur_size)) {
 		if (!r_io_resize (io, size + cur_size)) {
 			return false;
 		}
