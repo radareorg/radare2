@@ -243,3 +243,26 @@ R_API void r_io_map_del_name (RIOMap *map)
 	free (map->name);
 	map->name = NULL;
 }
+
+//TODO: Kill it with fire
+R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align)
+{
+	RIOMap *map;
+	SdbListIter *iter;
+	ut64 next_addr = addr,
+		 end_addr = next_addr + size;
+	ls_foreach (io->maps, iter, map) {
+		next_addr = R_MAX (next_addr, map->to+(load_align - (map->to % load_align)));
+		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
+		// adding the check for the map's fd to see if this removes contention for
+		// memory mapping with multiple files.
+
+		if (map->fd == fd && ((map->from <= next_addr && next_addr < map->to) ||
+			(map->from <= end_addr  && end_addr < map->to)) ) {
+			//return r_io_map_add(io, fd, flags, delta, map->to, size);
+			next_addr = map->to + (load_align - (map->to % load_align));
+			return r_io_map_add_next_available(io, fd, flags, delta, next_addr, size, load_align);
+		} else break;
+	}
+	return r_io_map_new (io, fd, flags, delta, next_addr, size);
+}
