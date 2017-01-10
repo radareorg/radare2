@@ -3000,6 +3000,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
 		"dcc", "", "Continue until call (use step into)",
 		"dccu", "", "Continue until unknown call (call reg)",
+		"dce", "", "Continue execution (pass exception to program)",
 		"dcf", "", "Continue until fork (TODO)",
 		"dck", " <signal> <pid>", "Continue sending signal to process",
 		"dco", " <num>", "Step over <num> instructions",
@@ -3061,6 +3062,10 @@ beach:
 		break;
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
+		break;
+	case 'e': // "dce"
+		r_reg_arena_swap (core->dbg->reg, true);
+		r_debug_continue_pass_exception (core->dbg);
 		break;
 	case 'f': // "dcf"
 		eprintf ("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
