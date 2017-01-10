@@ -422,8 +422,8 @@ static int cmd_help(void *data, const char *input) {
 			secs = r_io_section_get_secs_at (core->io, n);
 			sec = secs ? (RIOSection *)ls_pop (secs) : NULL;
 			ls_free (secs);
-			if (sec) {		//maybe check if section got applied?
-				o = n - sec->vaddr + sec->addr;
+			if (sec) {
+				o = n + sec->vaddr - sec->addr;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else 	eprintf ("no sections at 0x%08\n", n);
 		} else eprintf ("io.va is false\n");
