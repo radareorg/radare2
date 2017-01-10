@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2017 - pancake */
 
 #include <r_cons.h>
 #include <ctype.h>
@@ -18,7 +18,9 @@ R_API char *r_cons_hud_file(const char *f, const bool usecolor) {
 // the lines starting with # )
 R_API char *r_cons_hud_string(const char *s, const bool usecolor) {
 	char *os, *track, *ret, *o = strdup (s);
-	if (!o) return NULL;
+	if (!o) {
+		return NULL;
+	}
 	RList *fl = r_list_new ();
 	int i;
 	if (!fl) {
@@ -108,6 +110,9 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 		first_line = 1;
 		r_cons_gotoxy (0, 0);
 		current_entry_n = 0;
+		if (top_entry_n < 0) {
+			top_entry_n = 0;
+		}
 		selected_entry = NULL;
 		if (prompt && *prompt) {
 			r_cons_print (">> ");
