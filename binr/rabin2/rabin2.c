@@ -700,7 +700,7 @@ int main(int argc, char **argv) {
 					"  Remove RPATH: R\n"
 					"  Add Library: a/l/libfoo.dylib\n"
 					"  Change Permissions: p/.data/rwx\n"
-					"  Show LDID entitlements: ldid\n");
+					"  Show LDID entitlements: C\n");
 				r_core_fini (&core);
 				return 0;
 			}
