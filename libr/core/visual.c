@@ -203,7 +203,7 @@ static int visual_help() {
 	" ;[-]cmt  add/remove comment\n"
 	" ,file    add a link to the text file\n"
 	" /*+-[]   change block size, [] = resize hex.cols\n"
-	" >||<     seek aligned to block size\n"
+	" </>      seek aligned to block size (seek cursor in cursor mode)\n"
 	" a/A      (a)ssemble code, visual (A)ssembler\n"
 	" b        toggle breakpoint\n"
 	" B        enumerate and inspect classes\n"
@@ -245,8 +245,9 @@ static int visual_help() {
 }
 
 static void prompt_read (const char *p, char *buf, int buflen) {
-	if (!buf || buflen < 1)
+	if (!buf || buflen < 1) {
 		return;
+	}
 	*buf = 0;
 	r_line_set_prompt (p);
 	showcursor (NULL, true);
@@ -1996,19 +1997,31 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case '>':
-		r_core_seek_align (core, core->blocksize, 1);
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		if (core->print->cur_enabled) {
+			char buf[128];
+			prompt_read ("inc cursor:", buf, sizeof (buf));
+			core->print->cur += (st64)r_num_math (core->num, buf);
+		} else {
+			r_core_seek_align (core, core->blocksize, 1);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
 		break;
 	case '<':
-		r_core_seek_align (core, core->blocksize, -1);
-		r_core_seek_align (core, core->blocksize, -1);
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		if (core->print->cur_enabled) {
+			char buf[128];
+			prompt_read ("dec cursor:", buf, sizeof (buf));
+			core->print->cur -= (st64)r_num_math (core->num, buf);
+		} else {
+			r_core_seek_align (core, core->blocksize, -1);
+			r_core_seek_align (core, core->blocksize, -1);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
 		break;
 	case '.':
 		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		if (core->print->cur_enabled) {
 			r_config_set_i (core->config, "stack.delta", 0);
-			r_core_seek (core, core->offset+core->print->cur, 1);
+			r_core_seek (core, core->offset + core->print->cur, 1);
 			core->print->cur = 0;
 		} else {
 			ut64 addr = r_debug_reg_get (core->dbg, "PC");
