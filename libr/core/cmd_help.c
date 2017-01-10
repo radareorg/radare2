@@ -431,10 +431,17 @@ static int cmd_help(void *data, const char *input) {
 	case 'p':
 		if (core->io->va) {
 			// physical address
+			SdbList *secs;
+			RIOSection *sec;
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
-			o = r_io_section_vaddr_to_maddr (core->io, n);
-			r_cons_printf ("0x%08"PFMT64x"\n", o);
+			secs = r_io_section_get_secs_at (core->io, n);
+			sec = secs ? ls_pop (secs) : NULL;
+			ls_free (secs);
+			if (sec) {
+				o = n - sec->vaddr + sec->addr;
+				r_cons_printf ("0x%08"PFMT64x"\n", o);
+			} else eprintf ("no section at 0x%08\n", n);
 		} else eprintf ("Virtual addresses not enabled!\n");
 		break;
 	case 'S': {
