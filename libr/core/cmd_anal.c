@@ -1127,6 +1127,47 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 	return true;
 }
 
+static void afcc(RCore *core, const char *input) {
+	ut64 addr;
+	RAnalFunction *fcn;
+	if (*input == ' ') {
+		addr = r_num_math (core->num, input);
+	} else {
+		addr = core->offset;
+	}
+	if (addr == 0LL) {
+		fcn = r_anal_fcn_find_name (core->anal, input + 3);
+	} else {
+		fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	}
+	if (fcn) {
+		RListIter *iter;
+		RAnalBlock *bb;
+		ut32 totalCycles = 0;
+		r_list_foreach (fcn->bbs, iter, bb) {
+			RAnalOp op;
+			ut64 at, end = bb->addr + bb->size;
+			ut8 *buf = malloc (bb->size);
+			r_io_read_at (core->io, bb->addr, (ut8 *)buf, bb->size);
+			int idx = 0;
+			for (at = bb->addr; at < end; ) {
+				memset (&op, 0, sizeof (op));
+				(void)r_anal_op (core->anal, &op, at, buf + idx, bb->size - idx);
+				if (op.size < 1) {
+					op.size = 1;
+				}
+				idx += op.size;
+				at += op.size;
+				totalCycles += op.cycles;
+			}
+			free (buf);
+		}
+		r_cons_printf ("%d\n", totalCycles);
+	} else {
+		eprintf ("Cannot find function\n");
+	}
+}
+
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
@@ -1329,13 +1370,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		type_cmd (core, input + 2);
 		break;
 	case 'c': // "afc"
-		{
-		RAnalFunction *fcn;
-		if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
-			r_cons_printf ("%i\n", r_anal_fcn_cc (fcn));
-		} else  {
-			eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
-		}
+		if (input[2] == 'c') {
+			RAnalFunction *fcn;
+			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
+				r_cons_printf ("%i\n", r_anal_fcn_cc (fcn));
+			} else {
+				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
+			}
+		} else if (input[2] == '?') {
+			eprintf ("Usage: afc[c] ([addr])\n"
+				" afc   - function cycles cost\n"
+				" afcc  - cyclomatic complexity\n");
+		} else {
+			afcc (core, input + 3);
 		}
 		break;
 	case 'C':{ // "afC"
@@ -1639,7 +1686,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", "[?] [addr]", "List basic blocks of given function",
 			"afB", " 16", "set current function as thumb (change asm.bits)",
-			"afc", "@[addr]", "calculate the Cyclomatic Complexity (starting at addr)",
+			"afc[c]", " ([addr])@[addr]", "calculate the Cycles (afc) or Cyclomatic Complexity (afcc)",
 			"afC", "[?] type @[addr]", "set calling convention for function",
 			"aft", "[?]", "type matching, type propagation",
 			"aff", "", "re-adjust function boundaries to fit",

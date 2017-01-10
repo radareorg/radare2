@@ -1551,8 +1551,9 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
 			P++; // exit nodes
 		} else {
 			E++; // edges
-			if (bb->fail != UT64_MAX)
+			if (bb->fail != UT64_MAX) {
 				E++;
+			}
 		}
 	}
 	return E - N + 2; // (2 * P);

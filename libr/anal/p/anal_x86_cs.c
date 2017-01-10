@@ -5,6 +5,19 @@
 #include <capstone/capstone.h>
 #include <capstone/x86.h>
 
+#if 0
+CYCLES:
+======
+register access = 1
+memory access = 2
+jump = 3
+call = 4
+#endif
+
+#define CYCLE_REG 0
+#define CYCLE_MEM 1
+#define CYCLE_JMP 2
+
 // TODO: when capstone-4 is released, add proper check here
 
 #if CS_NEXT_VERSION>0
@@ -1709,6 +1722,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->dst->reg = R_NEW0 (RRegItem);
 			parse_reg_name_mov (op->dst->reg, &gop.handle, insn, 0);
 
+			op->cycles = CYCLE_MEM;
 			op->ptr = INSOP(0).mem.disp;
 			op->refptr = INSOP(0).size;
 			if (INSOP(0).mem.base == X86_REG_RIP) {
@@ -1904,9 +1918,12 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		case X86_OP_IMM:
 			op->val = op->ptr = INSOP(0).imm;
 			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
 		default:
 			op->type = R_ANAL_OP_TYPE_UPUSH;
+			op->cycles = 1;
+			op->cycles = CYCLE_MEM + CYCLE_MEM;
 			break;
 		}
 		op->stackop = R_ANAL_STACK_INC;
@@ -1943,6 +1960,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -regsz;
+		op->cycles = CYCLE_MEM + CYCLE_JMP;
 		break;
 	case X86_INS_INT3:
 		op->type = R_ANAL_OP_TYPE_TRAP; // TRAP
@@ -1958,6 +1976,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_SYSCALL:
 	case X86_INS_SYSENTER:
 		op->type = R_ANAL_OP_TYPE_SWI;
+		op->cycles = CYCLE_JMP;
 		break;
 	case X86_INS_SYSEXIT:
 		op->type = R_ANAL_OP_TYPE_SWI;
@@ -1993,9 +2012,11 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = INSOP(0).imm;
 		op->fail = addr + op->size;
+		op->cycles = CYCLE_JMP;
 		break;
 	case X86_INS_CALL:
 	case X86_INS_LCALL:
+		op->cycles = CYCLE_JMP + CYCLE_MEM;
 		switch (INSOP(0).type) {
 		case X86_OP_IMM:
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -2011,6 +2032,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->disp = INSOP (0).mem.disp;
 			op->reg = NULL;
 			op->ireg = NULL;
+			op->cycles += CYCLE_MEM;
 			if (INSOP (0).mem.index == X86_REG_INVALID) {
 				if (INSOP (0).mem.base != X86_REG_INVALID) {
 					op->reg = cs_reg_name (*handle, INSOP (0).mem.base);
@@ -2029,6 +2051,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->reg = cs_reg_name (*handle, INSOP (0).reg);
 			op->type = R_ANAL_OP_TYPE_RCALL;
 			op->ptr = UT64_MAX;
+			op->cycles += CYCLE_REG;
 			break;
 		default:
 			op->type = R_ANAL_OP_TYPE_UCALL;
@@ -2049,6 +2072,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				op->jump = INSOP(0).imm;
 			}
 			op->type = R_ANAL_OP_TYPE_JMP;
+			op->cycles = CYCLE_JMP;
 			break;
 		case X86_OP_MEM:
 			// op->type = R_ANAL_OP_TYPE_UJMP;
@@ -2057,6 +2081,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->disp = INSOP (0).mem.disp;
 			op->reg = NULL;
 			op->ireg = NULL;
+			op->cycles = CYCLE_JMP + CYCLE_MEM;
 			if (INSOP(0).mem.base != X86_REG_INVALID) {
 				if (INSOP (0).mem.base != X86_REG_INVALID) {
 					op->reg = cs_reg_name (*handle, INSOP (0).mem.base);
@@ -2077,6 +2102,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			break;
 		case X86_OP_REG:
 			{
+			op->cycles = CYCLE_JMP + CYCLE_REG;
 			op->reg = cs_reg_name (gop.handle, INSOP(0).reg);
 			op->type = R_ANAL_OP_TYPE_RJMP;
 			op->ptr = UT64_MAX;
@@ -2306,7 +2332,6 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 	}
 	return len;
 }
-
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode = 0;
