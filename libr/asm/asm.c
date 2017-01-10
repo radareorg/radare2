@@ -947,6 +947,7 @@ R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits) {
 	return r_asm_set_bits (a, bits);
 }
 
+/* to ease the use of the native bindings (not used in r2) */
 R_API char *r_asm_to_string(RAsm *a, ut64 addr, const ut8 *b, int l) {
 	RAsmCode *code;
 	r_asm_set_pc (a, addr);
