@@ -200,24 +200,24 @@ static char get_string_type (const ut8 *buf, ut64 len){
 	return str_type;
 }
 
-static void cmd_print_eq_dict(RCore *core, int bsz) {
+static void cmd_print_eq_dict(RCore *core, const ut8* block, int bsz) {
 	int i;
 	int min = 0;
 	int max = 0;
 	int dict = 0;
 	int range = 0;
-	ut8 buf[0xff+1];
-
-	for (i=0; i<0xff; i++) {
-		buf[i] = 0;
+	bool histogram[0xff+1];
+	for (i = 0; i < 0xff; i++) {
+		histogram[block[i]] = false;
 	}
-	for (i=0; i<bsz; i++) {
-		buf[core->block[i]] = 1;
+	for (i = 0; i < bsz; i++) {
+		histogram[block[i]] = true;
 	}
-	for (i=0; i<0xff; i++) {
-		if (buf[i]) {
-			if (min == 0)
+	for (i = 0; i < 0xff; i++) {
+		if (histogram[i]) {
+			if (min == 0) {
 				min = i;
+			}
 			max = i;
 			dict++;
 		}
@@ -227,7 +227,7 @@ static void cmd_print_eq_dict(RCore *core, int bsz) {
 	r_cons_printf ("max:   %d  0x%x\n", max, max);
 	r_cons_printf ("dict:  %d  0x%x\n", dict, dict);
 	r_cons_printf ("range: %d  0x%x\n", range, range);
-	r_cons_printf ("block: %d  0x%x\n", bsz, bsz);
+	r_cons_printf ("size:  %d  0x%x\n", bsz, bsz);
 }
 
 R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
@@ -2042,6 +2042,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				if (spc) {
 					skipblocks = r_num_get (core->num, spc + 1);
 				}
+			} else {
+				totalsize = nblocks;
 			}
 		}
 		mode = input[1];
@@ -2078,7 +2080,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	switch (mode) {
 	case '?': { // bars
 			 const char* help_msg[] = {
-				 "Usage:", "p=[bep?][qj] [num-of-blocks] ([len]) ([block-offset]) ", "show entropy/printable chars/chars bars",
+				 "Usage:", "p=[bep?][qj] [nblocks] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 				 "p=", "", "print bytes of current block in bars",
 				 "p=", "b", "same as above",
 				 "p=", "d", "print different bytes from block",
@@ -2091,8 +2093,18 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		 }
 		 break;
 	case 'd':
-		 cmd_print_eq_dict (core, blocksize);
-		 break;
+		 {
+			ut64 bufsz = r_num_math (core->num, input + 3);
+			ut64 curbsz = core->blocksize;
+			if (bufsz > core->blocksize) {
+				r_core_block_size (core, bufsz);
+			}
+			cmd_print_eq_dict (core, core->block, bufsz);
+			if (bufsz != curbsz) {
+				r_core_block_size (core, curbsz);
+			}
+		 }
+		break;
 	case 'e': // "p=e" entropy
 		 {
 			ut8 *p;
