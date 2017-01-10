@@ -208,7 +208,7 @@ static void cmd_print_eq_dict(RCore *core, const ut8* block, int bsz) {
 	int range = 0;
 	bool histogram[0xff+1];
 	for (i = 0; i < 0xff; i++) {
-		histogram[block[i]] = false;
+		histogram[i] = false;
 	}
 	for (i = 0; i < bsz; i++) {
 		histogram[block[i]] = true;
@@ -2042,8 +2042,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				if (spc) {
 					skipblocks = r_num_get (core->num, spc + 1);
 				}
-			} else {
-				totalsize = nblocks;
 			}
 		}
 		mode = input[1];
@@ -2093,17 +2091,23 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		 }
 		 break;
 	case 'd':
-		 {
+		if (input[1]) {
 			ut64 bufsz = r_num_math (core->num, input + 3);
 			ut64 curbsz = core->blocksize;
+			if (bufsz < 1) {
+				bufsz = curbsz;
+			}
 			if (bufsz > core->blocksize) {
 				r_core_block_size (core, bufsz);
+				r_core_block_read (core);
 			}
 			cmd_print_eq_dict (core, core->block, bufsz);
 			if (bufsz != curbsz) {
 				r_core_block_size (core, curbsz);
 			}
-		 }
+		} else {
+			cmd_print_eq_dict (core, core->block, core->blocksize);
+		}
 		break;
 	case 'e': // "p=e" entropy
 		 {
