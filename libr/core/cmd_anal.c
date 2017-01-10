@@ -1072,7 +1072,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				RAnalRef *ref;
 				RListIter *iter;
 				SdbList *secs = r_io_section_vget_secs_at (core->io, fcn->addr);		//use map-API here
-				RIOSection *sect = (!!secs) ? ls_pop (secs) : NULL;
+				RIOSection *sect = secs ? ls_pop (secs) : NULL;
 				ls_free (secs);
 				ut64 text_addr = 0x1000; // XXX use file baddr
 				if (sect) {
@@ -2425,7 +2425,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
 		SdbList *secs = r_io_section_vget_secs_at (core->io, addr);	//use map-API here
-		RIOSection *s = (!!secs) ? ls_pop (secs) : NULL;
+		RIOSection *s = secs ? ls_pop (secs) : NULL;
 		ls_free (secs);
 		if (s && s->flags & 1) {
 			// search in current section
@@ -3413,7 +3413,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			}
 		} else if (core->io->va) {
 			SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);	//use map-API here
-			RIOSection *section = (!!secs) ? ls_pop (secs): NULL;
+			RIOSection *section = secs ? ls_pop (secs): NULL;
 			ls_free (secs);
 			if (section) {
 				from = section->vaddr;
@@ -3517,7 +3517,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 't': {
 		ut64 cur = core->offset;
 		SdbList *secs = r_io_section_vget_secs_at (core->io, cur);		//use map-API here
-		RIOSection *s = (!!secs) ? ls_pop (secs) : NULL;
+		RIOSection *s = secs ? ls_pop (secs) : NULL;
 		ls_free (secs);
 		if (s) {
 			int hasnext = r_config_get_i (core->config, "anal.hasnext");

@@ -371,7 +371,7 @@ static int cmd_seek(void *data, const char *input) {
 		case 'g': // "sg"
 			{
 				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
-				RIOSection *s = (!!secs) ? ls_pop (secs) : NULL;
+				RIOSection *s = secs ? ls_pop (secs) : NULL;
 				ls_free (secs);
 				if (s) r_core_seek (core, s->vaddr, 1);
 				else r_core_seek (core, 0, 1);
@@ -381,7 +381,7 @@ static int cmd_seek(void *data, const char *input) {
 			{
 				if (!core->file) break;				//broken concept
 				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
-				RIOSection *s = (!!secs) ? ls_pop (secs) : NULL;
+				RIOSection *s = secs ? ls_pop (secs) : NULL;
 				ls_free (secs);
 				// XXX: this +2 is a hack. must fix gap between sections
 				if (s) r_core_seek (core, s->vaddr+s->size+2, 1);

@@ -318,7 +318,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'S':
 			{
 				SdbList *secs = r_io_section_vget_secs_at (core->io, core->offset);
-				s = (!!secs) ? ls_pop (secs) : NULL;
+				s = secs ? ls_pop (secs) : NULL;
 				ls_free (secs);
 			}
 			return s? (str[2]=='S'? s->size: s->vaddr): 3;
@@ -983,7 +983,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		mapname = NULL;
 	}
 	secs = value? r_io_section_vget_secs_at (core->io, value): NULL;
-	sect = (!!secs) ? ls_pop (secs): NULL;
+	sect = secs ? ls_pop (secs): NULL;
 	ls_free (secs);
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
@@ -1385,7 +1385,7 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 
 static void prompt_sec(RCore *r, char *s, size_t maxlen) {
 	const SdbList * secs = r_io_section_vget_secs_at (r->io, r->offset);
-	const RIOSection *sec = (!!secs) ? ls_pop (secs) : NULL;
+	const RIOSection *sec = secs ? ls_pop (secs) : NULL;
 	if (!sec) return;
 	ls_free (secs);
 

@@ -426,7 +426,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			if (has_next) {
 				ut64 addr = fcn->addr + fcn->size;
 				SdbList *secs = r_io_section_vget_secs_at (core->io, addr);	//use map-API here
-				RIOSection *sect = (!!secs) ? ls_pop (secs) : NULL;
+				RIOSection *sect = secs ? ls_pop (secs) : NULL;
 				// only get next if found on an executable section
 				ls_free (secs);
 				if (!sect || (sect && sect->flags & 1)) {
@@ -483,7 +483,7 @@ error:
 		if (fcn && has_next) {
 			ut64 newaddr = fcn->addr+fcn->size;
 			SdbList *secs = r_io_section_vget_secs_at (core->io, newaddr);
-			RIOSection *sect = (!!secs) ? ls_pop (secs) : NULL;
+			RIOSection *sect = secs ? ls_pop (secs) : NULL;
 			ls_free (secs);
 			if (!sect || (sect && (sect->flags & 1))) {
 				next = next_append (next, &nexti, newaddr);
@@ -2306,7 +2306,7 @@ R_API void r_core_anal_esil (RCore *core, const char *str) {
 		end = addr + r_num_math (core->num, str+1);
 	} else {
 		SdbList *secs = r_io_section_vget_secs_at (core->io, addr);
-		RIOSection *sect = (!!secs) ? ls_pop (secs): NULL;
+		RIOSection *sect = secs ? ls_pop (secs): NULL;
 		ls_free (secs);
 		if (sect) {
 			end = sect->vaddr + sect->size;

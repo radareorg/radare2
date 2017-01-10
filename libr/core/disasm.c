@@ -233,7 +233,7 @@ static const char *getSectionName (RCore *core, ut64 addr) {
 	if (oaddr == addr)
 		return section;
 	secs = r_io_section_vget_secs_at (core->io, addr);
-	s = (!!secs) ? ls_pop (secs): NULL;
+	s = secs ? ls_pop (secs): NULL;
 	ls_free (secs);
 	if (s) {
 		snprintf (section, sizeof (section)-1, "%10s ", s->name);

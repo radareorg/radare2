@@ -133,7 +133,7 @@ static int cmd_zign(void *data, const char *input) {
 				}
 			} else {
 				SdbList *secs = r_io_section_vget_secs_at (core->io, core->io->off);
-				s = (!!secs) ? ls_pop (secs) : NULL;
+				s = secs ? ls_pop (secs) : NULL;
 				ls_free (secs);
 				if (s) {
 					ini = core->io->va?s->vaddr:s->addr;

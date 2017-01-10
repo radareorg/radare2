@@ -415,10 +415,17 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'P':
 		if (core->io->va) {
+			SdbList *secs;
+			RIOSection *sec;
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
-			o = r_io_section_maddr_to_vaddr (core->io, n);
-			r_cons_printf ("0x%08"PFMT64x"\n", o);
+			secs = r_io_section_get_secs_at (core->io, n);
+			sec = secs ? (RIOSection *)ls_pop (secs) : NULL;
+			ls_free (secs);
+			if (sec) {		//maybe check if section got applied?
+				o = n - sec->vaddr + sec->addr;
+				r_cons_printf ("0x%08"PFMT64x"\n", o);
+			} else 	eprintf ("no sections at 0x%08\n", n);
 		} else eprintf ("io.va is false\n");
 		break;
 	case 'p':

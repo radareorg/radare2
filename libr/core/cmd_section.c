@@ -181,7 +181,7 @@ static int cmd_section(void *data, const char *input) {
 				vaddr = core->offset;
 			}
 			secs = r_io_section_vget_secs_at (core->io, vaddr);
-			s = (!!secs) ? ls_pop (secs) : NULL;
+			s = secs ? ls_pop (secs) : NULL;
 			ls_free (secs);
 			if (s) {
 				if (!len) len = sizeof (s->name);
