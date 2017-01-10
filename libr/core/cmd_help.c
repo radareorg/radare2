@@ -435,7 +435,7 @@ static int cmd_help(void *data, const char *input) {
 			RIOSection *sec;
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input+2): core->offset;
-			secs = r_io_section_get_secs_at (core->io, n);
+			secs = r_io_section_vget_secs_at (core->io, n);
 			sec = secs ? ls_pop (secs) : NULL;
 			ls_free (secs);
 			if (sec) {

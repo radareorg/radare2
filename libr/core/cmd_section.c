@@ -34,10 +34,10 @@ static void __section_list (RIO *io, RPrint *print, int rad) {
 
 static int __dump_sections_to_disk(RCore *core) {
 	char file[128];
-	RListIter *iter;
+	SdbListIter *iter;
 	RIOSection *s;
 
-	r_list_foreach (core->io->sections, iter, s) {
+	ls_foreach (core->io->sections, iter, s) {
 		ut8 *buf = malloc (s->size);
 		r_io_read_at (core->io, s->addr, buf, s->size);
 		snprintf (file, sizeof(file),
@@ -57,13 +57,18 @@ static int __dump_sections_to_disk(RCore *core) {
 
 static int __dump_section_to_disk(RCore *core, char *file) {
 	char *heapfile = NULL;
-	ut64 o = core->offset;
-	RListIter *iter;
+	ut64 o;
+	SdbList *secs;
+	SdbListIter *iter;
 	RIOSection *s;
 	int len = 128;
-	if (core->io->va || core->io->debug)
-		o = r_io_section_vaddr_to_maddr_try (core->io, o);
-	r_list_foreach (core->io->sections, iter, s) {
+	if (core->io->va || core->io->debug) {
+		secs = r_io_section_vget_secs_at (core->io, core->offset);
+		s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
+		o = s ? core->offset - s->vaddr + s->addr : core->offset;
+	}
+	ls_foreach (core->io->sections, iter, s) {
 		if (o >= s->addr && o < s->addr + s->size) {
 			ut8 *buf = malloc (s->size);
 			r_io_read_at (core->io, s->addr, buf, s->size);
@@ -219,16 +224,21 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case 'l':
 		{
-		ut64 o = core->offset;
-		RListIter *iter;
+		ut64 o;
+		SdbList *secs;
+		SdbListIter *iter;
 		RIOSection *s;
 		if (input[1] != ' ') {
 			eprintf ("Usage: Sl [file]\n");
 			return false;
 		}
-		if (core->io->va || core->io->debug)
-			o = r_io_section_vaddr_to_maddr_try (core->io, o);
-		r_list_foreach (core->io->sections, iter, s) {
+		if (core->io->va || core->io->debug) {
+			secs = r_io_section_vget_secs_at (core->io, core->offset);
+			s = secs ? ls_pop (secs) : NULL;
+			ls_free (secs);
+			o = s ? core->offset - s->vaddr + s->addr : core->offset;
+		}
+		ls_foreach (core->io->sections, iter, s) {
 			if (o >= s->addr && o < s->addr + s->size) {
 				int sz;
 				char *buf = r_file_slurp (input + 2, &sz);
@@ -329,11 +339,16 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case '.':
 		{
-		ut64 o = core->offset;
+		SdbList *secs;
+		ut64 o;
 		SdbListIter *iter;
 		RIOSection *s;
-		if (core->io->va || core->io->debug)
-			o = r_io_section_vaddr_to_maddr_try (core->io, o);
+		if (core->io->va || core->io->debug) {
+			secs = r_io_section_vget_secs_at (core->io, core->offset);
+			s = secs ? ls_pop (secs) : NULL;
+			ls_free (secs);
+			o = s ? core->offset - s->vaddr + s->addr : core->offset;
+		}
 		ls_foreach (core->io->sections, iter, s) {
 			if (o >= s->addr && o < s->addr + s->size) {
 				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",

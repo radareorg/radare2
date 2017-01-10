@@ -324,8 +324,15 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return s? (str[2]=='S'? s->size: s->vaddr): 3;
 		case '?': return core->num->value;
 		case '$': return core->offset;
-		case 'o': return r_io_section_vaddr_to_maddr_try (core->io,
-				core->offset);
+		case 'o': 
+			{
+				SdbList *secs;
+				RIOSection *s;
+				secs = r_io_section_vget_secs_at (core->io, core->offset);
+				s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
+				return s ? core->offset - s->vaddr + s->addr : core->offset;
+			}
 		case 'C': return getref (core, atoi (str+2), 'r',
 				R_ANAL_REF_TYPE_CALL);
 		case 'J': return getref (core, atoi (str+2), 'r',

@@ -1682,8 +1682,13 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	bar[11] = '.'; // chop cmdfmt
 	bar[12] = 0; // chop cmdfmt
 	{
-		ut64 sz = r_io_size (core->io);
-		ut64 pa = r_io_section_vaddr_to_maddr_try (core->io, core->offset);
+		SdbList *secs;
+		RIOSection *s;
+		ut64 pa, sz = r_io_size (core->io);
+		secs = r_io_section_vget_secs_at (core->io, core->offset);
+		s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
+		pa = s ? core->offset - s->vaddr + s->addr : core->offset;
 		if (sz == UT64_MAX) {
 			pcs[0] = 0;
 		} else {
