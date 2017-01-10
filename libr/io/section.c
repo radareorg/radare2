@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2017 - condret */
+
 #include <r_io.h>
 #include <sdb.h>
 #include <r_types.h>

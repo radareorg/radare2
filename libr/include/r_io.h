@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2017 - condret, pancake */
+
 #ifndef R_IO_API
 #define R_IO_API
 
@@ -16,6 +18,8 @@
 #define R_IO_SEEK_END	2
 
 #define R_IO_UNDOS 64
+
+R_LIB_VERSION_HEADER(r_io);
 
 typedef struct r_io_undo_t {
 	int s_enable;

@@ -472,7 +472,7 @@ int main(int argc, char **argv) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
-					r_io_pwrite (io, 0, buf, sz);
+					r_io_pwrite_at (io, 0, buf, sz);
 				}
 				free (uri);
 			} else {

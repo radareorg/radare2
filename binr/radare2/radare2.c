@@ -38,7 +38,7 @@ static int verify_version(int show) {
 		{ "r_debug", &r_debug_version },
 		{ "r_hash", &r_hash_version },
 		{ "r_fs", &r_fs_version },
-		{ "r_io", &r_io_version },
+//		{ "r_io", &r_io_version },	//because this way it works for me
 		{ "r_magic", &r_magic_version },
 		{ "r_parse", &r_parse_version },
 		{ "r_reg", &r_reg_version },
@@ -183,17 +183,17 @@ static int main_help(int line) {
 
 
 static void list_io_plugins(RIO *io) {
+	SdbListIter *iter;
+	RIOPlugin *plugin;
 	char str[4];
-	struct list_head *pos;
-	list_for_each_prev (pos, &io->io_list) {
-		RIOList *il = list_entry (pos, RIOList, list);
+	ls_foreach (io->plugins, iter, plugin){
 		// read, write, debug, proxy
 		str[0] = 'r';
-		str[1] = il->plugin->write? 'w': '_';
-		str[2] = il->plugin->isdbg? 'd': '_';
+		str[1] = plugin->write? 'w': '_';
+		str[2] = plugin->isdbg? 'd': '_';
 		str[3] = 0;
-		printf ("%s  %-11s %s (%s)\n", str, il->plugin->name,
-			il->plugin->desc, il->plugin->license);
+		printf ("%s  %-11s %s (%s)\n", str, plugin->name,
+			plugin->desc, plugin->license);
 	}
 }
 
@@ -701,7 +701,7 @@ int main(int argc, char **argv, char **envp) {
 		if (seek != UT64_MAX)
 			r_core_seek (&r, seek, 1);
 
-		if (fullfile) r_core_block_size (&r, r_io_desc_size (r.io, r.file->desc));
+		if (fullfile) r_core_block_size (&r, r_io_desc_size (r.file->desc));
 
 		r_core_seek (&r, r.offset, 1); // read current block
 

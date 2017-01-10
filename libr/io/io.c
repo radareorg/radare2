@@ -1,5 +1,9 @@
+/* radare2 - LGPL - Copyright 2017 - condret */
+
 #include <r_io.h>
 #include <sdb.h>
+
+R_LIB_VERSION_HEADER(r_io);
 
 void operate_on_itermap (SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, int (op (RIO *io, ut64 addr, ut8 *buf, int len)));
 
