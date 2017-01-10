@@ -87,7 +87,7 @@ R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence)
 R_API ut64 r_io_desc_size (RIODesc *desc)
 {
 	ut64 off, ret;
-	if (desc || !desc->plugin || !desc->plugin->lseek)
+	if (!desc || !desc->plugin || !desc->plugin->lseek)
 		return 0LL;
 	off = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_CUR);
 	ret = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_END);
