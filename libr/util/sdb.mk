@@ -7,6 +7,7 @@ SDB_OBJS+=buffer.o
 SDB_OBJS+=cdb.o
 SDB_OBJS+=cdb_make.o
 SDB_OBJS+=ht.o
+SDB_OBJS+=sdbht.o
 SDB_OBJS+=json.o
 SDB_OBJS+=lock.o
 SDB_OBJS+=ls.o
