@@ -45,6 +45,8 @@ R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode)
 		desc->plugin = plugin;
 	if (!desc->uri)
 		desc->uri = strdup (uri);
+	if (!desc->name)
+		desc->name = strdup (uri);
 	r_io_desc_add (io, desc);
 	if (io->autofd || !io->desc)				//set desc as current if autofd or io->desc==NULL
 		io->desc = desc;

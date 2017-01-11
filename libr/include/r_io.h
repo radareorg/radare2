@@ -55,7 +55,7 @@ typedef struct r_io_t {
 	int cached_read;
 	int buffer_enabled;
 	int debug;
-#warning remove debug from RIO
+//#warning remove debug from RIO
 	ut32 map_id;
 	ut32 sec_id;
 	SdbList *freed_map_ids;
@@ -89,7 +89,7 @@ typedef struct r_io_desc_t {
 	RIO *io;
 } RIODesc;
 
-#warning move RIORap somewhere else
+//#warning move RIORap somewhere else
 typedef struct {
 	RSocket *fd;
 	RSocket *client;

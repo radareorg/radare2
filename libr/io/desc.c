@@ -30,6 +30,7 @@ R_API void r_io_desc_free (RIODesc *desc)
 	if (desc) {
 		free (desc->uri);
 		free (desc->referer);
+		free (desc->name);
 //		free (desc->plugin);
 	}
 	free (desc);
