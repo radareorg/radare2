@@ -178,6 +178,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		"om", "-mapid", "remove the map with corresponding id",
 		"om", " fd addr [size]", "create new io map",
 		"omr", " mapid addr", "relocate map with corresponding id",
+		"omp", " mapid", "priorize map with corresponding id",
 		"om*", "", "show r2 commands to restore mapaddr",
 		NULL };
 	ut64 fd = 0LL;
@@ -188,6 +189,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 	ut32 mapid;
 	ut64 new;
 	RIOMap *map = NULL;
+	RIODesc *desc = NULL;
 	const char *P;
 
 	switch (input[1]) {
@@ -206,6 +208,14 @@ static void cmd_open_map (RCore *core, const char *input) {
 			} else eprintf ("Cannot find any map with mapid %d\n", mapid);
 		}
 		break;
+	case 'p':
+		if (input[2] != ' ')
+			break;
+		mapid = (ut32)r_num_math (core->num, input+3);
+		if (r_io_map_exists_for_id (core->io, mapid)) {
+			r_io_map_priorize (core->io, mapid);
+		} else eprintf ("Cannot find any map with mapid %d\n", mapid);
+		break;
 	case ' ':
 		// i need to parse delta, offset, size
 		s = strdup (input+2);
@@ -223,8 +233,10 @@ static void cmd_open_map (RCore *core, const char *input) {
 					size = r_num_math (core->num, q+1);
 					delta = r_num_math (core->num, r+1);
 				} else size = r_num_math (core->num, q+1);
-			} else size = r_io_size (core->io);
-			r_io_map_add (core->io, fd, 0, delta, addr, size);
+			} else size = r_io_size (core->io);		//XXX
+			if (desc = r_io_desc_get (core->io, fd)) {
+				r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
+			} else eprintf ("No file opened with fd %d\n", fd);
 		} else eprintf ("Invalid use of om . See om? for help.");
 		free (s);
 		break;

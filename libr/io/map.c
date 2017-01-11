@@ -160,18 +160,18 @@ R_API int r_io_map_priorize (RIO *io, ut32 id)
 		return false;
 	ls_foreach (io->maps, iter, map) {
 		if (map->id == id) {								//search for iter with the correct map
-			if (io->maps->head == iter)						//check if map is allready at the top
+			if (io->maps->tail == iter)						//check if map is allready at the top
 				return true;
-			if (iter->n)								//bring iter with correct map to the front
-				iter->n->p = iter->p;
-			if (iter->p)
+			if (iter->p)								//bring iter with correct map to the front
 				iter->p->n = iter->n;
-			if (io->maps->tail == iter)
-				io->maps->tail = iter->p;
-			io->maps->head->p = iter;
-			iter->n = io->maps->head;
-			io->maps->head = iter;
-			iter->p = NULL;
+			if (iter->n)
+				iter->n->p = iter->p;
+			if (io->maps->head == iter)
+				io->maps->head = iter->n;
+			io->maps->tail->n = iter;
+			iter->p = io->maps->tail;
+			io->maps->tail = iter;
+			iter->n = NULL;
 			return true;								//TRUE if the map could be priorized
 		}
 	}
