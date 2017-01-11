@@ -52,7 +52,7 @@ R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, u
 	RIOSection *sec;
 	if (!io || !io->sections || !r_io_desc_get (io, fd) || !size || (UT64_MAX - size) < addr || (UT64_MAX - vsize) < vaddr)
 		return NULL;
-	if (!io->freed_sec_ids || io->sec_id == UT32_MAX)
+	if (!io->freed_sec_ids && io->sec_id == UT32_MAX)
 		return NULL;
 	sec = R_NEW0 (RIOSection);
 	if (io->freed_sec_ids) {
