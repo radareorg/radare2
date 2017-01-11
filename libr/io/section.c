@@ -159,6 +159,38 @@ R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id)
 	return (!(length == io->sections->length));
 }
 
+R_API void r_io_section_cleanup (RIO *io)
+{
+	SdbListIter *iter, *ator;
+	RIOSection *section;
+	if (!io || !io->sections)
+		return;
+	if (!io->files) {
+		r_io_section_fini (io);
+		r_io_section_init (io);
+		return;
+	}
+	for (iter = io->sections->head; iter != NULL; iter = ator) {
+		section = iter->data;
+		ator = iter->n;
+		if (!section) {
+			ls_delete (io->sections, iter);
+		} else if (!r_io_desc_get (io, section->fd)) {
+			if (!io->freed_sec_ids) {
+				io->freed_sec_ids = ls_new ();
+				io->freed_sec_ids->free = NULL;
+			}
+			ls_prepend (io->freed_sec_ids, (void *)(size_t)section->id);
+			ls_delete (io->sections, iter);
+		} else {
+			if (section->filemap && !r_io_map_exists_for_id (io, section->filemap))
+				section->filemap = 0;
+			if (section->memmap && !r_io_map_exists_for_id (io, section->memmap))
+				section->memmap = 0;
+		}
+	}
+}
+
 R_API SdbList *r_io_section_get_secs_at (RIO *io, ut64 addr)
 {
 	SdbList *ret = NULL;

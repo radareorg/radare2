@@ -120,6 +120,7 @@ R_API int r_io_close (RIO *io, int fd)
 		return false;
 	r_io_desc_del (io, fd);								//remove entry from sdb-instance and free the desc-struct
 	r_io_map_cleanup (io);								//remove all dead maps
+	r_io_section_cleanup (io);
 	return true;
 }
 
