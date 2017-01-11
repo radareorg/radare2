@@ -16,7 +16,8 @@ R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val) {
 			//int siz = sdb_array_get_num (DB, var, 2, NULL);
 			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at+off);
 			return true;
-		} else eprintf ("Invalid kind of type\n");
+		}
+		eprintf ("Invalid kind of type\n");
 	}
 	return false;
 }
@@ -89,7 +90,6 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 		return ret;
 	}
 	return 0;
-
 }
 
 R_API RList *r_anal_type_fcn_list(RAnal *anal) {
@@ -143,7 +143,6 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 				r_list_append (fcn->vars, arg);
 			}
 		}
-
 	}
 	ls_destroy (sdb_list);
 	if (r_list_empty (list)) {
@@ -192,8 +191,9 @@ R_API int r_anal_type_unlink(RAnal *anal, ut64 addr) {
 
 static void filter_type(char *t) {
 	for (;*t; t++) {
-		if (*t == ' ')
+		if (*t == ' ') {
 			*t = '_';
+		}
 		// memmove (t, t+1, strlen (t));
 	}
 }
@@ -358,6 +358,7 @@ static int captureSubString (void *p, const char *k, const char *v) {
 	}
 	return 1;
 }
+
 R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 	char *ret[] = {
 		NULL,
