@@ -715,7 +715,6 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 	case 'd': // "fd"
 		{
 			ut64 addr = 0;
-			RFlagItem *f = NULL;
 			switch (input[1]) {
 			case '?':
 				eprintf ("Usage: fd [offset|flag|expression]\n");
@@ -731,7 +730,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 				break;
 			}
 			core->flags->space_strict = true;
-			f = r_flag_get_at (core->flags, addr, true);
+			RFlagItem *f = r_flag_get_at (core->flags, addr, true);
 			core->flags->space_strict = false;
 			if (f) {
 				if (f->offset != addr) {
