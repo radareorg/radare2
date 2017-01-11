@@ -27,13 +27,8 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	if (!kind) {
 		return;
 	}
-// XXX to segfault or to leak that is the question
-#define SEGFAULT 0
-#if SEGFAULT
 	int n;
 	char *p, str[128], str2[128];
-	Sdb *DB = anal->sdb_types;
-	const char *kind = sdb_const_get (DB, name, 0);
 	if (!kind) {
 		return;
 	}
@@ -44,7 +39,6 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 		n++;
 	}
 	sdb_unset (db, str, 0);
-#endif
 	sdb_unset (db, name, 0);
 }
 
@@ -109,7 +103,7 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 
 	if (!list || !sdb_list) {
 		r_list_free (list);
-		r_list_free (sdb_list);
+		ls_free (sdb_list);
 		return 0;
 	}
 	ls_foreach (sdb_list, sdb_iter, kv) {
@@ -216,8 +210,9 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 	snprintf (var, sizeof (var), "%s.%s", kind, t);
 	if (!strcmp (kind, "type")) {
 		const char *fmt = sdb_const_get (DB, var, NULL);
-		if (fmt)
+		if (fmt) {
 			return strdup (fmt);
+		}
 	} else
 	if (!strcmp (kind, "struct")) {
 		// assumes var list is sorted by offset.. should do more checks here
@@ -304,6 +299,7 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 	}
 	return NULL;
 }
+
 // Function prototypes api
 R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name) {
 	const char *fcn = sdb_const_get (anal->sdb_types, func_name, 0);
