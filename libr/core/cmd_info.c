@@ -407,13 +407,16 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
 			} else {
 				RBinObject *obj = r_bin_cur_object (core->bin);
-			    	if (input[1] == 'q') {
+				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
-						? R_CORE_BIN_SIMPLEST
-						: R_CORE_BIN_SIMPLE;
+					? R_CORE_BIN_SIMPLEST
+					: R_CORE_BIN_SIMPLE;
 					input++;
 				}
-				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL, r_list_length (obj->strings));
+				if (obj) {
+					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL, 
+					  	r_list_length (obj->strings));
+				}
 			}
 			break;
 		case 'c': // for r2 `ic`
