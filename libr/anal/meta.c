@@ -535,18 +535,23 @@ R_API int r_meta_list(RAnal *a, int type, int rad) {
 R_API int r_meta_list_at(RAnal *a, int type, int rad, ut64 addr) {
 	return r_meta_list_cb (a, type, rad, NULL, NULL, addr);
 }
+
 static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 	const char *v2;
 	RAnalMetaUserItem *ui = user;
 	RList *list = ui->user;
 	//RAnal *a = ui->anal;
 	RAnalMetaItem *it;
-	if (strlen (k)<8)
+	if (strlen (k) < 8) {
 		return 1;
-	if (memcmp (k+6, ".0x", 3))
+	}
+	if (memcmp (k + 6, ".0x", 3)) {
 		return 1;
+	}
 	it = R_NEW0 (RAnalMetaItem);
-	if (!it) return 0;
+	if (!it) {
+		return 0;
+	}
 	it->type = k[5];
 	it->size = sdb_atoi (v);
 	it->from = sdb_atoi (k+7);
@@ -556,8 +561,8 @@ static int meta_enumerate_cb(void *user, const char *k, const char *v) {
 		free (it);
 		goto beach;
 	}
-	it->space = atoi (v2+1);
-	it->str = strchr (v2+1, ',');
+	it->space = atoi (v2 + 1);
+	it->str = strchr (v2 + 1, ',');
 
 	if (it->str) {
 		it->str = (char *)sdb_decode ((const char*)it->str+1, 0);
