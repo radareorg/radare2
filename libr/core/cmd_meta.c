@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2016 - pancake */
+/* radare2 - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_anal.h"
 #include "r_bin.h"
@@ -26,8 +26,9 @@ static void print_meta_offset(RCore *core, ut64 offset) {
 	if (ret) {
 		r_cons_printf ("file %s\nline %d\n", file, line);
 		line_old = line;
-		if (line >= 2)
+		if (line >= 2) {
 			line -= 2;
+		}
 		if (r_file_exists (file)) {
 			for (i = 0; i < 5; i++) {
 				char *row = r_file_slurp_line (file, line + i, 0);
@@ -171,7 +172,6 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			} else {
 				ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
 						file_line, offset);
-
 				goto error;
 			}
 		}
@@ -218,7 +218,8 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			"CC-", " @ cmt_addr", "remove comment at given address",
 			"CCu", " good boy @ addr", "add good boy comment at given address",
 			"CCu", " base64:AA== @ addr", "add comment in base64",
-			NULL};
+			NULL
+		};
 		r_core_cmd_help (core, help_msg);
 		} break;
 	case ',': // "CC,"
@@ -822,12 +823,14 @@ static int cmd_meta(void *data, const char *input) {
 			}
 			break;
 		case '+':
-			r_space_push (ms, input+2);
+			r_space_push (ms, input + 2);
 			break;
 		case 'r':
-			if (input[2]==' ')
+			if (input[2] == ' ') {
 				r_space_rename (ms, NULL, input+2);
-			else eprintf ("Usage: CSr [newname]\n");
+			} else {
+				eprintf ("Usage: CSr [newname]\n");
+			}
 			break;
 		case '-':
 			if (input[2]) {

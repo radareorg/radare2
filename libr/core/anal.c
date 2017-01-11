@@ -737,14 +737,12 @@ static void print_hint_h_format(RAnalHint* hint) {
 }
 
 static int cb(void *p, const char *k, const char *v) {
-	RAnalHint *hint;
 	HintListState *hls = p;
-
-	hint = r_anal_hint_from_string (hls->a, sdb_atoi (k + 5), v);
-	// TODO: format using (mode)
+	RAnalHint *hint = r_anal_hint_from_string (hls->a, sdb_atoi (k + 5), v);
 	switch (hls->mode) {
 	case 's':
 		r_cons_printf ("%s=%s\n", k, v);
+		break;
 	case '*':
 		HINTCMD_ADDR (hint, arch, "aha %s");
 		HINTCMD_ADDR (hint, bits, "ahb %d");
@@ -771,7 +769,6 @@ static int cb(void *p, const char *k, const char *v) {
 		print_hint_h_format (hint);
 		break;
 	}
-	hls->count++;
 	free (hint);
 	return 1;
 }
@@ -803,7 +800,17 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 	if (mode == 'j') {
 		r_cons_strcat ("[");
 	}
+#if 0
 	sdb_foreach (a->sdb_hints, cb, &hls);
+#else
+	SdbList *ls = sdb_foreach_list (a->sdb_hints, true);
+	SdbListIter *lsi;
+	SdbKv *kv;
+	ls_foreach (ls, lsi, kv) {
+		cb (&hls, kv->key, kv->value);
+	}
+	ls_free (ls);
+#endif
 	if (mode == 'j') {
 		r_cons_strcat ("]\n");
 	}
