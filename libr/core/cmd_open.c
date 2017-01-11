@@ -7,7 +7,7 @@ static inline void map_list (RIO *io, int mode, RPrint *print) {
 	RIOMap *map;
 	if (!io || !io->maps || !print || !print->cb_printf)
 		return;
-	ls_foreach (io->maps, iter, map) {
+	ls_foreach_prev (io->maps, iter, map) {
 		switch (mode) {
 			case 1:
 			case 'r':
@@ -15,8 +15,8 @@ static inline void map_list (RIO *io, int mode, RPrint *print) {
 					print->cb_printf ("omr 0x0 0x%"PFMT64x"\n", map->from);
 				break;
 			default:
-				print->cb_printf ("%i +0x%"PFMT64x" 0x%"PFMT64x
-						" - 0x%"PFMT64x" ; %s\n", map->fd,
+				print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
+						" - 0x%"PFMT64x" ; %s\n", map->id, map->fd,
 						map->delta, map->from, map->to,
 						r_str_rwx_i (map->flags));
 		}

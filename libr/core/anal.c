@@ -86,10 +86,10 @@ R_API ut64 r_core_anal_address (RCore *core, ut64 addr) {
 	} else {
 		int _rwx = -1;
 		RIOSection *ios;
-		RListIter *iter;
+		SdbListIter *iter;
 		if (core->io) {
 		// sections
-		r_list_foreach (core->io->sections, iter, ios) {
+		ls_foreach (core->io->sections, iter, ios) {
 			if (addr >= ios->vaddr && addr < (ios->vaddr+ios->vsize)) {
 				// sections overlap, so we want to get the one with lower perms
 				if (_rwx != -1) {
@@ -1718,9 +1718,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				if (!r_debug_map_get (core->dbg, xref_to))
 					continue;
 			} else if (core->io->va) {
-				RListIter *iter = NULL;
+				SdbListIter *iter = NULL;
 				RIOSection *s;
-				r_list_foreach (core->io->sections, iter, s) {
+				ls_foreach (core->io->sections, iter, s) {
 					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
 						if (s->vaddr != 0)
 							break;
