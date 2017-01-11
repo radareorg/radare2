@@ -1770,13 +1770,13 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	pc	.64	256	0\n"
 		"gpr	zr	.64	272	0\n"
 		"gpr	xzr	.64	272	0\n"
-		"gpr	cpsr	.64	264	0	_____tfiae_____________j__qvczn\n"
-		"gpr	pstate	.64	264	0\n" // x0
+		"gpr	cpsr	.64	280	0	_____tfiae_____________j__qvczn\n"
+		"gpr	pstate	.64	280	0\n" // x0
 		// probably wrong
-		"gpr	nf	.1	.264	0	sign\n" // msb bit of last op
-		"gpr	zf	.1	.265	0	zero\n" // set if last op is 0
-		"gpr	cf	.1	.268	0	carry\n" // set if last op carries
-		"gpr	vf	.1	.269	0	overflow\n"; // set if overflows
+		"gpr	nf	.1	.2240	0	sign\n" // msb bit of last op
+		"gpr	zf	.1	.2241	0	zero\n" // set if last op is 0
+		"gpr	cf	.1	.2242	0	carry\n" // set if last op carries
+		"gpr	vf	.1	.2243	0	overflow\n"; // set if overflows
 	} else {
 		p = \
 		"=PC	r15\n"
@@ -1818,20 +1818,20 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r15	.32	60	0\n"
 		"gpr	r16	.32	64	0\n"
 		"gpr	r17	.32	68	0\n"
-		"flg	cpsr	.32	.72	0\n"
-		"flg	tf	.1	.77	0	thumb\n" // +5
-		"flg	ef	.1	.81	0	endian\n" // +9
+		"flg	cpsr	.32	72	0\n"
+		"flg	tf	.1	.576	0	thumb\n" // +5
+		"flg	ef	.1	.577	0	endian\n" // +9
 		// ...
-		"flg	jf	.1	.96	0	java\n" // +24
+		"flg	jf	.1	.578	0	java\n" // +24
 		// ...
-		"flg	qf	.1	.99	0	sticky_overflow\n" // +27
-		"flg	vf	.1	.100	0	overflow\n" // +28
-		"flg	cf	.1	.101	0	carry\n" // +29
-		"flg	zf	.1	.102	0	zero\n" // +30
-		"flg	nf	.1	.103	0	negative\n" // +31
+		"flg	qf	.1	.579	0	sticky_overflow\n" // +27
+		"flg	vf	.1	.580	0	overflow\n" // +28
+		"flg	cf	.1	.581	0	carry\n" // +29
+		"flg	zf	.1	.582	0	zero\n" // +30
+		"flg	nf	.1	.583	0	negative\n" // +31
 		// if-then-counter
-		"flg	itc	.4	.82	0	if_then_count\n" // +10
-		"flg	gef	.4	.88	0	great_or_equal\n" // +16
+		"flg	itc	.4	.584	0	if_then_count\n" // +10
+		"flg	gef	.4	.585	0	great_or_equal\n" // +16
 		;
 	}
 	return strdup (p);
