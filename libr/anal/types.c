@@ -94,7 +94,7 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 
 R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 	SdbList *sdb_list = sdb_foreach_match (anal->sdb_types, "=^func$", false);
-	RList *list = r_list_new ();
+	RList *list = r_list_newf ((RListFree)r_anal_fcn_free);
 	char *name, *value;
 	const char *key;
 	SdbListIter *sdb_iter;
@@ -126,8 +126,11 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 			continue;
 		}
 		//XXX we should handle as much calling conventions
-		//for as much architectures as we want here as we want here
-		fcn->vars = r_list_new ();
+		//for as much architectures as we want here
+		fcn->vars = r_list_newf ((RListFree)r_anal_var_free);
+		if (!fcn->vars) {
+			continue;
+		}
 		for (i = 0; i < args_n; i++) {
 			key = r_str_newf ("func.%s.arg.%d", kv->key, i);
 			value = sdb_get (anal->sdb_types, key, 0);
@@ -144,7 +147,7 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 			}
 		}
 	}
-	ls_destroy (sdb_list);
+	ls_free (sdb_list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		return NULL;
