@@ -370,7 +370,6 @@ R_API int r_debug_attach(RDebug *dbg, int pid) {
 	if (dbg && dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach (dbg, pid);
 		if (ret != -1) {
-			//eprintf ("Attached debugger to pid = %d, tid = %d\n", pid, ret);
 			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
 		}
 	}

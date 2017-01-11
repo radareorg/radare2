@@ -189,6 +189,7 @@ typedef struct r_debug_t {
 	int bits; /// XXX: MUST SET ///
 	int hitinfo;
 
+	int main_pid;
 	int pid; /* selected process id */
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
@@ -267,12 +268,11 @@ typedef struct r_debug_info_t {
 	int signum;
 	void * lib;
 	void * thread;
+	char *kernel_stack;
 	// retrieve mem/fd/core limits?
 	// list of threads ? hasthreads? counter?
 	// environment?
-	// /proc/pid/stack ???
 	// /proc/pid/syscall ???
-	//
 } RDebugInfo;
 
 /* TODO: pass dbg and user data pointer everywhere */
@@ -328,6 +328,8 @@ typedef struct r_debug_pid_t {
 	char status; /* stopped, running, zombie, sleeping ,... */
 	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
 	char *path;
+	int uid;
+	int gid;
 	ut64 pc;
 } RDebugPid;
 

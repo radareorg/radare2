@@ -2917,7 +2917,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 }
 
 static int cmd_debug_continue (RCore *core, const char *input) {
-	int pid, old_pid, signum;
+	int pid, main_pid, old_pid, signum;
 	char *ptr;
 	const char * help_message[] = {
 		"Usage: dc", "", "Execution continuation commands",
@@ -2946,20 +2946,30 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		r_reg_arena_swap (core->dbg->reg, true);
 #if __linux__
 		old_pid = core->dbg->pid;
-		r_debug_continue (core->dbg);
-		RList *list = (core->dbg->h && core->dbg->h->threads)
-			? core->dbg->h->threads (core->dbg, core->dbg->pid) 
-			: NULL;
+		main_pid = core->dbg->main_pid;
+
+		RList *list = NULL;
+		if (core->dbg->threads) {
+			list = core->dbg->threads;
+		} else {
+			if (core->dbg->h && core->dbg->h->threads) {
+				list = core->dbg->h->threads (core->dbg, core->dbg->pid);
+			}
+		}
 		if (list) {
 			RDebugPid *th;
 			RListIter *it;
 			r_list_foreach (list, it, th) {
-				if (th->pid && th->pid != old_pid) {
-					r_debug_select (core->dbg, th->pid, core->dbg->tid);
+				if (th->pid && th->pid != main_pid) {
+					eprintf ("Selecting and continuing: %d\n", th->pid);
+					r_debug_select (core->dbg, main_pid, th->pid);
 					r_debug_continue (core->dbg);
 				}
 			}
 		}
+		eprintf ("Selecting and continuing: %d\n", main_pid);
+		r_debug_select (core->dbg, main_pid, main_pid);
+		r_debug_continue (core->dbg);
 		r_debug_select (core->dbg, old_pid, core->dbg->tid);
 #else
 		r_debug_continue (core->dbg);
@@ -3454,6 +3464,7 @@ static int cmd_debug(void *data, const char *input) {
 							P ("signum=%d\n", core->dbg->reason.signum);
 							P ("sigpid=%d\n", core->dbg->reason.tid);
 							P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
+							P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
 							P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
 							P ("pid=%d\n", rdi->pid);
 							P ("tid=%d\n", rdi->tid);
@@ -3465,6 +3476,8 @@ static int cmd_debug(void *data, const char *input) {
 								P ("cmdline=%s\n", rdi->cmdline);
 							if (rdi->cwd && *rdi->cwd)
 								P ("cwd=%s\n", rdi->cwd);
+							if (rdi->kernel_stack && *rdi->kernel_stack)
+								P ("kernel_stack=\n%s\n", rdi->kernel_stack);
 						}
 						if (stop != -1) P ("stopreason=%d\n", stop);
 						break;
