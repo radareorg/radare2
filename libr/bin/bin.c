@@ -692,9 +692,10 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, RIODesc *desc, ut64 baseaddr,
 	}
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
-        ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-        if (seekaddr == UT64_MAX) seekaddr = 0;
-		sz = iob->read_at (io, seekaddr, buf_bytes, sz) * sz;
+        	ut64 seekaddr = is_debugger? baseaddr: loadaddr;
+        	if (seekaddr == UT64_MAX) seekaddr = 0;
+		buf_bytes = malloc (sz);
+		sz = iob->read_at (io, seekaddr, buf_bytes, sz) * sz;	//don't do this
 	}
 
 	if (!name) {
