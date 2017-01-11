@@ -225,7 +225,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case ',': // "CC,"
 		if (input[2]=='?') {
 			eprintf ("Usage: CC, [file]\n");
-		} else if (input[2]==' ') {
+		} else if (input[2] == ' ') {
 			const char *fn = input+2;
 			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			while (*fn== ' ')fn++;
