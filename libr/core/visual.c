@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_core.h>
 #include <string.h>
@@ -123,12 +123,12 @@ static void visual_repeat(RCore *core) {
 			return;
 		}
 		r_th_start (th, 1);
-		r_cons_break_push (NULL, NULL);
+	//	r_cons_break_push (NULL, NULL);
 		r_cons_any_key (NULL);
 		eprintf ("^C  \n");
 		core->cons->breaked = true;
 		r_th_wait (th);
-		r_cons_break_pop ();
+	//	r_cons_break_pop ();
 	}
 }
 #endif
@@ -191,7 +191,7 @@ static int visual_help() {
 	" ?        show this help or enter the userfriendly hud\n"
 	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
 	" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
-	" @        set cmd.vprompt to run commands before the visual prompt\n"
+	" @        redraw screen every 1s (multi-user view), in cursor set position\n"
 	" !        enter into the visual panels mode\n"
 	" _        enter the flag/comment/functions/.. hud (same as VF_)\n"
 	" =        set cmd.vprompt (top row)\n"
@@ -1427,7 +1427,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		setcursor (core, !core->print->cur_enabled);
 		break;
 	case '@':
-		visual_repeat (core);
+		if (core->print->cur_enabled) {
+			char buf[128];
+			prompt_read ("cursor at:", buf, sizeof (buf));
+			core->print->cur = (st64)r_num_math (core->num, buf);
+		} else {
+			visual_repeat (core);
+		}
 		break;
 	case 'C':
 		color = color? 0: 1;
