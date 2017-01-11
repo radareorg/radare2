@@ -2265,7 +2265,19 @@ R_API void r_core_visual_title (RCore *core, int color) {
 			else snprintf (pos, sizeof (pos), "@ %s+%d # 0x%"PFMT64x,
 				f->name, (int)(addr-f->offset), addr);
 		} else {
-			pos[0] = 0;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			if (fcn) {
+				int delta = addr - fcn->addr;
+				if (delta > 0) {
+					snprintf (pos, sizeof (pos), "@ %s+%d", fcn->name, delta);
+				} else if (delta < 0) {
+					snprintf (pos, sizeof (pos), "@ %s%d", fcn->name, delta);
+				} else {
+					snprintf (pos, sizeof (pos), "@ %s", fcn->name);
+				}
+			} else {
+				pos[0] = 0;
+			}
 		}
 	}
 
