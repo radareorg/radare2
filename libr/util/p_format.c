@@ -508,6 +508,75 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode,
 	}
 }
 
+static void r_print_format_int(const RPrint* p, int endian, int mode,
+		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
+	ut64 addr;
+	int elem = -1;
+	if (size >= ARRAYINDEX_COEF) {
+		elem = size/ARRAYINDEX_COEF-1;
+		size %= ARRAYINDEX_COEF;
+	}
+	updateAddr (buf + i, size - i, endian, &addr, NULL);
+	if (MUSTSET) {
+		p->cb_printf ("wv4 %s @ %"PFMT64d"\n", setval, seeki+((elem>=0)?elem*4:0));
+	} else if (mode & R_PRINT_DOT) {
+		p->cb_printf ("0x%08"PFMT64x, addr);
+	} else if (MUSTSEE) {
+		if (!SEEVALUE) {
+			p->cb_printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*4:0));
+		}
+		if (size == -1) {
+			p->cb_printf ("%"PFMT64d, (st64)(st32)addr);
+		} else {
+			if (!SEEVALUE) {
+				p->cb_printf ("[ ");
+			}
+			while (size--) {
+				updateAddr (buf + i, size - i, endian, &addr, NULL);
+				if (elem == -1 || elem == 0) {
+					p->cb_printf ("%"PFMT64d, (st64)(st32)addr);
+					if (elem == 0) {
+						elem = -2;
+					}
+				}
+				if (size != 0 && elem == -1) {
+					p->cb_printf (", ");
+				}
+				if (elem > -1) {
+					elem--;
+				}
+				i += 4;
+			}
+			if (!SEEVALUE) {
+				p->cb_printf (" ]");
+			}
+		}
+	} else if (MUSTSEEJSON) {
+		if (size==-1)
+			p->cb_printf ("%d", addr);
+		else {
+			p->cb_printf ("[ ");
+			while (size--) {
+				updateAddr (buf + i, size - i, endian, &addr, NULL);
+				if (elem == -1 || elem == 0) {
+					p->cb_printf ("%d", addr);
+					if (elem == 0) {
+						elem = -2;
+					}
+				}
+				if (size != 0 && elem == -1) {
+					p->cb_printf (", ");
+				}
+				if (elem > -1) {
+					elem--;
+				}
+				i+=4;
+			}
+			p->cb_printf (" ]");
+		}
+		p->cb_printf ("}");
+	}
+}
 static int r_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
 	ut64 prevseeki = seeki;
 
@@ -1833,6 +1902,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i += (size==-1) ? 4 : 4*size;
 					break;
 				case 'i':
+					r_print_format_int (p, endian, mode, setval, seeki, buf, i, size);
+					i+= (size==-1) ? 4 : 4*size;
+					break;
 				case 'd': //WHY?? help says: 0x%%08x hexadecimal value (4 bytes)
 					r_print_format_hex (p, endian, mode, setval, seeki, buf, i, size);
 					i+= (size==-1) ? 4 : 4*size;
