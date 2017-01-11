@@ -144,10 +144,14 @@ R_API char *r_meta_get_string(RAnal *a, int type, ut64 addr) {
 	const char *k, *p, *p2;
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
 	k = sdb_const_get (DB, key, NULL);
-	if (!k) return NULL;
+	if (!k) {
+		return NULL;
+	}
 	p = strchr (k, SDB_RS);
-	if (!p) return NULL;
-	k = p+1;
+	if (!p) {
+		return NULL;
+	}
+	k  = p + 1;
 	p2 = strchr (k, SDB_RS);
 	if (!p2) {
 		return (char *)sdb_decode (k, NULL);
@@ -513,15 +517,21 @@ beach:
 R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, void *user, ut64 addr) {
 	RAnalFunction *fcn = (addr != UT64_MAX) ? r_anal_get_fcn_at (a, addr, 0) : NULL;
 	RAnalMetaUserItem ui = { a, type, rad, cb, user, 0, fcn};
+	SdbList *ls = sdb_foreach_list (DB, true);
+	SdbListIter *lsi;
+	SdbKv *kv;
 	if (rad == 'j') {
 		a->cb_printf ("[");
 	}
 	isFirst = true; // TODO: kill global
-	if (cb) {
-		sdb_foreach (DB, cb, &ui);
-	} else {
-		sdb_foreach (DB, meta_print_item, &ui);
+	ls_foreach (ls, lsi, kv) {
+		if (cb) {
+			cb ((void *)&ui, kv->key, kv->value);
+		} else {
+			meta_print_item ((void *)&ui, kv->key, kv->value);
+		}
 	}
+	ls_free (ls);
 	if (rad == 'j') {
 		a->cb_printf ("]\n");
 	}
