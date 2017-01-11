@@ -515,8 +515,8 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 		for (j = 0; j<16; j+=2) {
 			fprintf (fd, "%02x%02x ", buf[i +j], buf[i+j+1]);
 		}
-		for (j = 0; j<16; j++) {
-			fprintf (fd, "%c", IS_PRINTABLE(buf[i +j])? buf[i+j]: '.');
+		for (j = 0; j < 16; j++) {
+			fprintf (fd, "%c", IS_PRINTABLE (buf[i + j])? buf[i+j]: '.');
 		}
 		fprintf (fd, "\n");
 	}

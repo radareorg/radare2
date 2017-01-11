@@ -377,14 +377,27 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank_cat (core, r_num_math (core->num, input+1));
 		break;
 	case 's':
-		r_core_yank_cat_string (core, r_num_math (core->num, input+1));
+		r_core_yank_cat_string (core, r_num_math (core->num, input + 1));
 		break;
-	case 't':
-		r_core_yank_to (core, input+1);
+	case 't': // "wt"
+		if (input[1] == 'f') { // "wtf"
+			const char *file = r_str_chop_ro (input + 2);
+			if (!r_file_dump (file, core->yank_buf->buf, core->yank_buf->length, false)) {
+				eprintf ("Cannot dump to '%s'\n", file);
+			}
+		} else {
+			r_core_yank_to (core, input + 1);
+		}
 		break;
 	case 'f':
-		if (*(input+1) == ' ' ) r_core_yank_file_ex (core, input+1);
-		else if (*(input+1) == 'a' ) r_core_yank_file_all (core, input+2);
+		switch (input[1]) {
+		case ' ': // "wf"
+			r_core_yank_file_ex (core, input + 1);
+			break;
+		case 'a': // "wfa"
+			r_core_yank_file_all (core, input + 2);
+			break;
+		}
 		break;
 	case '\0':
 		r_core_yank_dump (core, r_num_math (core->num, ""));
@@ -404,6 +417,7 @@ static int cmd_yank(void *data, const char *input) {
 		"yx", "", "print contents of clipboard in hexadecimal",
 		"ys", "", "print contents of clipboard as string",
 		"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
+		"ytf", " file", "dump the clipboard to given file",
 		"yf", " 64 0x200", "file copy 64 bytes from 0x200 from file (opens w/ io), use -1 for all bytes",
 		"yfa", " file copy", "copy all bytes from file (opens w/ io)",
 		"yy", " 0x3344", "paste clipboard",
