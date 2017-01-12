@@ -353,14 +353,13 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	reason = xnu_wait (dbg, pid);
 	status = reason? 1: 0;
 #else
+#if __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
+	reason = linux_dbg_wait (dbg, dbg->tid);
+#else
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
 	int ret = waitpid (-1, &status, WAITPID_FLAGS);
 #else
-	reason = linux_dbg_wait (dbg, dbg->tid);
-	dbg->reason.tid = pid;
-	dbg->reason.type = reason;
-	return reason;
 	int ret = waitpid (pid, &status, WAITPID_FLAGS);
 #endif // WAIT_ON_ALL_CHILDREN
 	if (ret == -1) {
@@ -436,6 +435,7 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
 		reason = R_DEBUG_REASON_ERROR;
 	}
+#endif // __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 #endif // __APPLE__
 #endif // __WINDOWS__ && !__CYGWIN__
 	dbg->reason.tid = pid;
