@@ -2,8 +2,9 @@
 
 #include <r_io.h>
 #include <sdb.h>
+#include "../config.h"
 
-R_LIB_VERSION_HEADER(r_io);
+R_LIB_VERSION(r_io);
 
 void operate_on_itermap (SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, int (op (RIO *io, ut64 addr, ut8 *buf, int len)));
 

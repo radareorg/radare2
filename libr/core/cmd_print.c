@@ -1893,9 +1893,9 @@ static int cmd_print(void *data, const char *input) {
 			r_print_fill (core->print, core->block, core->blocksize);
 			break;
 		}
-		if (ptr && ptr != core->block)
+		if (ptr && (ptr != core->block))
 			free (ptr);
-			ptr = NULL;
+		ptr = NULL;
 		}
 		if (nbsz)
 			r_core_block_size (core, obsz);

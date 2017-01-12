@@ -38,7 +38,7 @@ static int verify_version(int show) {
 		{ "r_debug", &r_debug_version },
 		{ "r_hash", &r_hash_version },
 		{ "r_fs", &r_fs_version },
-//		{ "r_io", &r_io_version },	//because this way it works for me
+		{ "r_io", &r_io_version },
 		{ "r_magic", &r_magic_version },
 		{ "r_parse", &r_parse_version },
 		{ "r_reg", &r_reg_version },

@@ -23,11 +23,27 @@ static inline void map_list (RIO *io, int mode, RPrint *print) {
 	}
 }
 
-static inline void desc_list_cb (void *user, const char *k, const char *v) 
+static inline int desc_list_cb (void *user, const char *str_fd, const char *str_desc) 
 {					//TODO: make this fancy
 	RPrint *p = (RPrint *)user;
-	RIODesc *desc = (RIODesc *)v;
-	p->cb_printf ("%d\t%s\n", desc->fd, desc->uri);
+	SdbListIter *iter;
+	RIODesc *desc = (RIODesc *)(size_t)sdb_atoi (str_desc);
+	RIOMap *map;
+	if (desc) {
+		p->cb_printf ("[%2d] %c %s : %s size=0x%"PFMT64x"\n", desc->fd, 
+				(desc->io && (desc->io->desc == desc)) ? '*' : '-',
+				desc->uri, r_str_rwx_i (desc->flags), r_io_desc_size (desc));
+		if (desc->io && desc->io->va && desc->io->maps) {
+			ls_foreach_prev (desc->io->maps, iter, map) {
+				if (map->fd == desc->fd) {
+					p->cb_printf (" [%2d] +0x%"PFMT64x" 0x%"PFMT64x
+						" - 0x%"PFMT64x" : %s\n", map->id, map->delta,
+						map->from, map->to, r_str_rwx_i (map->flags));
+				}
+			}
+		}
+	} else return false;
+	return true;
 }
 
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
@@ -181,7 +197,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		"omp", " mapid", "priorize map with corresponding id",
 		"om*", "", "show r2 commands to restore mapaddr",
 		NULL };
-	ut64 fd = 0LL;
+	ut64 fd = 0LL;			//shouldn't that but st32/int?
 	ut64 addr = 0LL;
 	ut64 size = 0LL;
 	ut64 delta = 0LL;
@@ -236,7 +252,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 			} else size = r_io_size (core->io);		//XXX
 			if (desc = r_io_desc_get (core->io, fd)) {
 				r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
-			} else eprintf ("No file opened with fd %d\n", fd);
+			} else eprintf ("No file opened with fd %"PFMT64d"\n", fd);
 		} else eprintf ("Invalid use of om . See om? for help.");
 		free (s);
 		break;
@@ -347,12 +363,16 @@ static int cmd_open(void *data, const char *input) {
 	RListIter *iter;
 
 	switch (*input) {
+#if 0
 	case '=':
 		//r_io_desc_list_visual (core->io, core->offset, core->blocksize,
 		//	r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		sdb_foreach (core->io->files, desc_list_cb, core->print);
 		break;
+#endif
 	case '\0':
+		sdb_foreach (core->io->files, desc_list_cb, core->print);
+		break;
 	case '*':
 	case 'j':
 		r_core_file_list (core, (int)(*input));

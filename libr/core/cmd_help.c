@@ -425,7 +425,7 @@ static int cmd_help(void *data, const char *input) {
 			if (sec) {
 				o = n + sec->vaddr - sec->addr;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
-			} else 	eprintf ("no sections at 0x%08\n", n);
+			} else 	eprintf ("no sections at 0x%08"PFMT64x"\n", n);
 		} else eprintf ("io.va is false\n");
 		break;
 	case 'p':
@@ -441,7 +441,7 @@ static int cmd_help(void *data, const char *input) {
 			if (sec) {
 				o = n - sec->vaddr + sec->addr;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
-			} else eprintf ("no section at 0x%08\n", n);
+			} else eprintf ("no section at 0x%08"PFMT64x"\n", n);
 		} else eprintf ("Virtual addresses not enabled!\n");
 		break;
 	case 'S': {
