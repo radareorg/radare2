@@ -147,7 +147,7 @@ typedef struct r_cmd_java_cms_t {
 
 #define PROTOTYPES "prototypes"
 #define PROTOTYPES_ARGS " <jaicmf>" // < j | a | i | c | m | f>
-#define PROTOTYPES_DESC "show in JSON, or All,Imports,Class,Methods,Fields,Methods,Fields"
+#define PROTOTYPES_DESC "show in JSON, or All,Imports,Class,Methods,Fields"
 #define PROTOTYPES_LEN 10
 
 #define RESOLVE_CP "resolve_cp"
