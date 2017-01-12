@@ -415,7 +415,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				if (obj) {
 					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL, 
-					  	r_list_length (obj->strings));
+						obj? r_list_length (obj->strings): 0);
 				}
 			}
 			break;
@@ -429,62 +429,64 @@ static int cmd_info(void *data, const char *input) {
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				int idx = r_num_math (core->num, input +2);
 				int count = 0;
-				if (input[2] && obj) {
-					r_list_foreach (obj->classes, iter, cls) {
-						if (idx != count++) {
-							continue;
-						}
-						switch (input[1]) {
-						case '*':
-							r_list_foreach (cls->methods, iter2, sym) {
-								r_cons_printf ("f sym.%s @ 0x%"PFMT64x"\n",
-									sym->name, sym->vaddr);
-							}
-							input++;
-							break;
-						case 'l':
-							r_list_foreach (cls->methods, iter2, sym) {
-								const char *comma = iter2->p? " ": "";
-								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
-							}
-							r_cons_newline ();
-							input++;
-							break;
-						case 'j':
-							input++;
-							r_cons_printf ("\"class\":\"%s\"", cls->name);
-							r_cons_printf (",\"methods\":[");
-							r_list_foreach (cls->methods, iter2, sym) {
-								const char *comma = iter2->p? ",": "";
-								r_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d"}",
-									comma, sym->name, sym->vaddr);
-							}
-							r_cons_printf ("]");
-							break;
-						default:
-							r_cons_printf ("class %s\n", cls->name);
-							r_list_foreach (cls->methods, iter2, sym) {
-								r_cons_printf ("0x%08"PFMT64x" method %s %s\n",
-									sym->vaddr, cls->name, sym->name);
-							}
-							break;
-						}
-						goto done;
-					}
-				} else {
-					playMsg (core, "classes", r_list_length (obj->classes));
-					if (input[1] == 'l' && obj) { // "icl"
+				if (obj) {
+					if (input[2]) {
 						r_list_foreach (obj->classes, iter, cls) {
-							r_list_foreach (cls->methods, iter2, sym) {
-								const char *comma = iter2->p? " ": "";
-								r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+							if (idx != count++) {
+								continue;
 							}
-							if (!r_list_empty (cls->methods)) {
+							switch (input[1]) {
+							case '*':
+								r_list_foreach (cls->methods, iter2, sym) {
+									r_cons_printf ("f sym.%s @ 0x%"PFMT64x"\n",
+											sym->name, sym->vaddr);
+								}
+								input++;
+								break;
+							case 'l':
+								r_list_foreach (cls->methods, iter2, sym) {
+									const char *comma = iter2->p? " ": "";
+									r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+								}
 								r_cons_newline ();
+								input++;
+								break;
+							case 'j':
+								input++;
+								r_cons_printf ("\"class\":\"%s\"", cls->name);
+								r_cons_printf (",\"methods\":[");
+								r_list_foreach (cls->methods, iter2, sym) {
+									const char *comma = iter2->p? ",": "";
+									r_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d"}",
+											comma, sym->name, sym->vaddr);
+								}
+								r_cons_printf ("]");
+								break;
+							default:
+								r_cons_printf ("class %s\n", cls->name);
+								r_list_foreach (cls->methods, iter2, sym) {
+									r_cons_printf ("0x%08"PFMT64x" method %s %s\n",
+											sym->vaddr, cls->name, sym->name);
+								}
+								break;
 							}
+							goto done;
 						}
 					} else {
-						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+						playMsg (core, "classes", r_list_length (obj->classes));
+						if (input[1] == 'l' && obj) { // "icl"
+							r_list_foreach (obj->classes, iter, cls) {
+								r_list_foreach (cls->methods, iter2, sym) {
+									const char *comma = iter2->p? " ": "";
+									r_cons_printf ("%s0x%"PFMT64d, comma, sym->vaddr);
+								}
+								if (!r_list_empty (cls->methods)) {
+									r_cons_newline ();
+								}
+							}
+						} else {
+							RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, r_list_length (obj->classes));
+						}
 					}
 				}
 			} else {
