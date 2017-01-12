@@ -61,7 +61,7 @@
 #define MINGW32 1
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
+#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif

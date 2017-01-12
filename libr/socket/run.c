@@ -47,7 +47,7 @@
 #endif
 #endif
 
-#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK
+#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !defined(__sun)
 
 R_API RRunProfile *r_run_new(const char *str) {
 	RRunProfile *p = R_NEW (RRunProfile);

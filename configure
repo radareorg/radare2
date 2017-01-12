@@ -488,6 +488,9 @@ USEROSTYPE="gnulinux"
 HAVE_LIB_DL="1"
 DL_LIBS="-ldl"
 else
+if [ "$HOST_OS" = "sunos" ]; then
+USEROSTYPE="solaris"
+else
 if [ "$HOST_OS" = "gnu/kfreebsd" ]; then
 USEROSTYPE="bsd"
 else
@@ -501,7 +504,7 @@ if [ "$HOST_OS" = "openbsd" ]; then
 USEROSTYPE="bsd"
 else
 if [ "$HOST_OS" = "darwin" ]; then
-USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="darwin"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 SEDFLAGS=" -e '"
