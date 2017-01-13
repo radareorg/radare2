@@ -3,6 +3,7 @@
 #include <r_core.h>
 #include <errno.h>
 
+#define FMT_NONE 0
 #define FMT_RAW  1
 #define FMT_JSON 2
 
@@ -32,7 +33,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	}
 	perm = isdir? 0755: 0644;
 	if (!printfmt) {
-		needs_newline = ((nth + 1)%4)? 1: 0;
+		needs_newline = ((nth + 1) % 4)? 1: 0;
 		res = r_str_concatf (res, "%18s%s", nn, needs_newline? "  ": "\n");
 		free (nn);
 		return res;
@@ -105,29 +106,34 @@ R_API char *r_syscmd_ls(const char *input) {
 	char *name;
 	char *dir;
 	int off;
-	if (!input || *input == '\0') {
-		return NULL;
+	if (!input) {
+		input = "";
+		path = ".";
 	}
 	if (r_sandbox_enable (0)) {
 		eprintf ("Sandbox forbids listing directories\n");
 		return NULL;
 	}
-	if (input[1] == ' ') {
-		if ((!strncmp (input + 2, "-l", 2)) || (!strncmp (input + 2, "-j", 2))) {
-			//mode = 'l';
-			if (input[3]) {
-				printfmt = (input[3] == 'j') ? FMT_JSON : FMT_RAW;
-			//	mode = 'j';
-				path = input + 4;
-				while (*path==' ') {
+	if (*input && input[0] == ' ') {
+		input++;
+	}
+	if (*input) {
+		if ((!strncmp (input, "-l", 2)) || (!strncmp (input, "-j", 2))) {
+			// mode = 'l';
+			if (input[2]) {
+				printfmt = (input[2] == 'j') ? FMT_JSON : FMT_RAW;
+				path = input + 2;
+				while (*path == ' ') {
 					path++;
 				}
 				if (!*path) {
 					path = ".";
 				}
+			} else {
+				printfmt = FMT_RAW;
 			}
 		} else {
-			path = input + 2;
+			path = input;
 		}
 	}
 	if (*path == '~') {
@@ -146,6 +152,9 @@ R_API char *r_syscmd_ls(const char *input) {
 				path = (const char *)homepath;
 			}
 		}
+	}
+	if (!path || !*path) {
+		path = ".";
 	}
 	if (!r_file_is_directory (path)) {
 		p = strrchr (path, '/');
@@ -214,11 +223,18 @@ R_API char *r_syscmd_ls(const char *input) {
 
 R_API char *r_syscmd_cat(const char *file) {
 	int sz;
-	const char *p = strchr (file, ' ');
-	if (p) {
-		char *data, *filename = strdup (p+1);
+	const char *p = NULL;
+	if (file) {
+		if ((p = strchr (file, ' '))) {
+			p = p + 1;
+		} else {
+			p = file;
+		}
+	}
+	if (p && *p) {
+		char *filename = strdup (p);
 		filename = r_str_chop (filename);
-		data = r_file_slurp (filename, &sz);
+		char *data = r_file_slurp (filename, &sz);
 		if (!data) {
 			eprintf ("No such file or directory\n");
 		}
