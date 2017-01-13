@@ -58,6 +58,8 @@ typedef struct r_io_t {
 //#warning remove debug from RIO
 	ut32 map_id;
 	ut32 sec_id;
+	ut32 desc_fd;
+	SdbList *freed_desc_fds;
 	SdbList *freed_map_ids;
 	SdbList *freed_sec_ids;
 	SdbList *maps;

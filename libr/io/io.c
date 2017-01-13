@@ -40,8 +40,7 @@ R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode)
 	desc = plugin->open (io, uri, flags, mode);
 	if (!desc)
 		return NULL;
-	if (!desc->io)
-		desc->io = io;
+	desc->fd = 3;						//XXX: remove this after reviewing all the plugins
 	if (!desc->plugin)						//for none static callbacks, those that cannot use r_io_desc_new
 		desc->plugin = plugin;
 	if (!desc->uri)
