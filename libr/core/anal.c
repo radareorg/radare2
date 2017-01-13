@@ -1738,7 +1738,7 @@ static int count_edges(RAnalFunction *fcn, int *ebbs) {
 	return edges;
 }
 
-#define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
+#define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %5d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = get_fcn_name(core, fcn);
 	int ebbs = 0;
@@ -1761,6 +1761,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 			r_list_length (fcn->bbs),
 			count_edges (fcn, &ebbs),
 			r_anal_fcn_cc (fcn),
+			r_anal_fcn_cost (core->anal, fcn),
 			fcn->meta.min,
 			r_anal_fcn_size (fcn),
 			fcn->meta.max,
@@ -1782,11 +1783,11 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 static int fcn_list_verbose(RCore *core, RList *fcns) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
 
-	r_cons_printf ("%-11s %4s %5s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
-			"address", "size", "nbbs", "edges", "cc", "min bound", "max bound",
+	r_cons_printf ("%-11s %4s %5s %5s %5s %4s %11s range %-11s %s %s %s %s %s %s\n",
+			"address", "size", "nbbs", "edges", "cc", "cost", "min bound", "max bound",
 			"calls", "locals", "args", "xref", "frame", "name");
-	r_cons_printf ("%-11s %-4s %-5s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
-			"===========", "====", "=====", "=====", "====", "===========", "===========",
+	r_cons_printf ("%-11s %-4s %-5s %-5s %-5s %-4s %-11s ===== %-11s %s %s %s %s %s %s\n",
+			"===========", "====", "=====", "=====", "=====", "====", "===========", "===========",
 			"=====", "======", "====", "====", "=====", "====");
 
 	RListIter *iter;
@@ -1840,6 +1841,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			fcn->addr, name, r_anal_fcn_size (fcn));
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
+	r_cons_printf (",\"cost\":%d", r_anal_fcn_cost (core->anal, fcn));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
 	r_cons_printf (",\"edges\":%d", count_edges (fcn, &ebbs));
 	r_cons_printf (",\"ebbs\":%d", ebbs);
@@ -1984,6 +1986,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\n realsz: %d", r_anal_fcn_realsize (fcn));
 	r_cons_printf ("\n stackframe: %d", fcn->maxstack);
 	r_cons_printf ("\n call-convention: %s", fcn->cc);
+	r_cons_printf ("\n cyclomatic-cost : %d", r_anal_fcn_cost (core->anal, fcn));
 	r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
 	r_cons_printf ("\n bits: %d", fcn->bits);
 	r_cons_printf ("\n type: %s", r_anal_fcn_type_tostring (fcn->type));

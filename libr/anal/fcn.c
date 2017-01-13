@@ -1740,3 +1740,32 @@ R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn) {
 	}
 	return sz;
 }
+
+// compute the cyclomatic cost
+R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	ut32 totalCycles = 0;
+	if (!fcn) {
+		return 0;
+	}
+	r_list_foreach (fcn->bbs, iter, bb) {
+		RAnalOp op;
+		ut64 at, end = bb->addr + bb->size;
+		ut8 *buf = malloc (bb->size);
+		anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *)buf, bb->size);
+		int idx = 0;
+		for (at = bb->addr; at < end; ) {
+			memset (&op, 0, sizeof (op));
+			(void)r_anal_op (anal, &op, at, buf + idx, bb->size - idx);
+			if (op.size < 1) {
+				op.size = 1;
+			}
+			idx += op.size;
+			at += op.size;
+			totalCycles += op.cycles;
+		}
+		free (buf);
+	}
+	return totalCycles;
+}

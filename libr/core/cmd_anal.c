@@ -361,9 +361,11 @@ static int var_cmd (RCore *core, const char *str) {
 			r_anal_var_add (core->anal, fcn->addr,
 					scope, delta, type,
 					vartype, size, name);
-		} else eprintf ("Missing name\n");
+		} else {
+			eprintf ("Missing name\n");
+		}
+		}
 		break;
-	}
 	};
 
 	free (ostr);
@@ -376,10 +378,11 @@ static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) 
 		ut32 n;
 		memcpy (&n, core->block + i, sizeof (ut32));
 		if (n >= a && n <= b) {
-			if (element_size == 4)
+			if (element_size == 4) {
 				r_cons_printf ("f trampoline.%x @ 0x%" PFMT64x "\n", n, core->offset + i);
-			else r_cons_printf ("f trampoline.%" PFMT64x " @ 0x%" PFMT64x "\n", n, core->offset + i);
-
+			} else {
+				r_cons_printf ("f trampoline.%" PFMT64x " @ 0x%" PFMT64x "\n", n, core->offset + i);
+			}
 			r_cons_printf ("Cd %u @ 0x%" PFMT64x ":%u\n", element_size, core->offset + i, element_size);
 			// TODO: add data xrefs
 		}
@@ -1141,27 +1144,7 @@ static void afcc(RCore *core, const char *input) {
 		fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	}
 	if (fcn) {
-		RListIter *iter;
-		RAnalBlock *bb;
-		ut32 totalCycles = 0;
-		r_list_foreach (fcn->bbs, iter, bb) {
-			RAnalOp op;
-			ut64 at, end = bb->addr + bb->size;
-			ut8 *buf = malloc (bb->size);
-			r_io_read_at (core->io, bb->addr, (ut8 *)buf, bb->size);
-			int idx = 0;
-			for (at = bb->addr; at < end; ) {
-				memset (&op, 0, sizeof (op));
-				(void)r_anal_op (core->anal, &op, at, buf + idx, bb->size - idx);
-				if (op.size < 1) {
-					op.size = 1;
-				}
-				idx += op.size;
-				at += op.size;
-				totalCycles += op.cycles;
-			}
-			free (buf);
-		}
+		ut32 totalCycles = r_anal_fcn_cost (core->anal, fcn);
 		r_cons_printf ("%d\n", totalCycles);
 	} else {
 		eprintf ("Cannot find function\n");
@@ -1180,9 +1163,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_anal_fcn_del_locs (core->anal, UT64_MAX);
 			r_anal_fcn_del (core->anal, UT64_MAX);
 		} else {
-			ut64 addr = input[2] ?
-					r_num_math (core->num, input + 2) :
-					core->offset;
+			ut64 addr = input[2]
+				? r_num_math (core->num, input + 2)
+				: core->offset;
 			r_anal_fcn_del_locs (core->anal, addr);
 			r_anal_fcn_del (core->anal, addr);
 		}
