@@ -789,18 +789,22 @@ static int cmd_meta(void *data, const char *input) {
 				"Ch", "[-] [size] [@addr]", "hide data",
 				"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
 				"Cf", "[-] [sz] [fmt..] [@addr]", "format memory (see pf?)",
+				"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
 				"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			}
 		break;
-	case 'F':
+	case 'F': // "CF"
 		f = r_anal_get_fcn_in (core->anal, core->offset,
 			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-		if (f) r_anal_str_to_fcn (core->anal, f, input+2);
-		else eprintf ("Cannot find function here\n");
+		if (f) {
+			r_anal_str_to_fcn (core->anal, f, input + 2);
+		} else {
+			eprintf ("Cannot find function here\n");
+		}
 		break;
-	case 'S':
+	case 'S': // "CS"
 		ms = &core->anal->meta_spaces;
 		/** copypasta from `fs`.. this must be refactorized to be shared */
 		switch (input[1]) {
