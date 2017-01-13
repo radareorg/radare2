@@ -1274,8 +1274,15 @@ static int is_string (const ut8 *buf, int size, int *len) {
 }
 
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth);
-R_API char *r_core_anal_hasrefs(RCore *core, ut64 value) {
-	return r_core_anal_hasrefs_to_depth(core, value, r_config_get_i(core->config, "hex.depth"));
+R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
+	if (verbose) {
+		return r_core_anal_hasrefs_to_depth(core, value, r_config_get_i (core->config, "hex.depth"));
+	}
+	RFlagItem *fi = r_flag_get_i (core->flags, value);
+	if (fi) {
+		return strdup (fi->name);
+	}
+	return NULL;
 }
 
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
@@ -1284,8 +1291,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RIOSection *sect;
 	char *mapname;
 	RAnalFunction *fcn;
-	RFlagItem *fi;
-	fi = r_flag_get_i (core->flags, value);
+	RFlagItem *fi = r_flag_get_i (core->flags, value);
 	type = r_core_anal_address (core, value);
 	fcn = r_anal_get_fcn_in (core->anal, value, 0);
 	if (value && value != UT64_MAX) {
@@ -1312,7 +1318,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	if (fi) r_strbuf_appendf (s, " %s", fi->name);
 	if (fcn) r_strbuf_appendf (s, " %s", fcn->name);
 	if (type) {
-		const char *c = r_core_anal_optype_colorfor (core, value);
+		const char *c = r_core_anal_optype_colorfor (core, value, true);
 		const char *cend = (c && *c) ? Color_RESET: "";
 		if (!c) c = "";
 		if (type & R_ANAL_ADDR_TYPE_HEAP) {
@@ -1408,10 +1414,11 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	return r_strbuf_drain (s);
 }
 
-R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr) {
+R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose) {
 	ut64 type;
-	if (!(core->print->flags & R_PRINT_FLAGS_COLOR))
+	if (!(core->print->flags & R_PRINT_FLAGS_COLOR)) {
 		return NULL;
+	}
 	type = r_core_anal_address (core, addr);
 	if (type & R_ANAL_ADDR_TYPE_EXEC)
 		return core->cons->pal.ai_exec; //Color_RED;

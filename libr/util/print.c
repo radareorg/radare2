@@ -855,7 +855,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				r_print_cursor (p, j, 1);
 				// stub for colors
 				if (p && p->colorfor) {
-					a = p->colorfor (p->user, n);
+					a = p->colorfor (p->user, n, true);
 					if (a && *a) { b = Color_RESET; } else { a = b = ""; }
 				} else {
 					a = b = "";
@@ -910,14 +910,19 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (col == 2) printfmt("|");
 		if (p && p->flags & R_PRINT_FLAGS_REFS) {
 			ut64 *foo = (ut64*)(buf + i);
-			ut64 addr = *foo;
+			ut64 off = *foo;
 			if (base == 32) {
-				addr &= UT32_MAX;
+				off &= UT32_MAX;
 			}
 			if (p->hasrefs) {
-				const char *rstr = p->hasrefs (p->user, addr);
-				if (rstr && *rstr)
+				const char *rstr = p->hasrefs (p->user, addr + i, false);
+				if (rstr && *rstr) {
+					printfmt (" @%s", rstr);
+				}
+				rstr = p->hasrefs (p->user, off, true);
+				if (rstr && *rstr) {
 					printfmt ("%s", rstr);
+				}
 			}
 		}
 		printfmt ("\n");

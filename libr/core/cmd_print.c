@@ -3839,7 +3839,7 @@ static int cmd_print(void *data, const char *input) {
 					RFlagItem *f;
 					ut32 v = r_read_ble32 (core->block + i, core->print->big_endian);
 					if (p && p->colorfor) {
-						a = p->colorfor (p->user, v);
+						a = p->colorfor (p->user, v, true);
 						if (a && *a) {
 							b = Color_RESET;
 						} else {
@@ -3886,7 +3886,7 @@ static int cmd_print(void *data, const char *input) {
 						// XXX: this only works in little endian
 						withref = 0;
 						if (core->print->hasrefs) {
-							const char *rstr = core->print->hasrefs (core->print->user, val);
+							const char *rstr = core->print->hasrefs (core->print->user, val, true);
 							if (rstr && *rstr) {
 								char *ns; //r_str_ansi_chop (ns, -1, 0);
 								ns = r_str_escape (rstr);
@@ -3933,7 +3933,7 @@ static int cmd_print(void *data, const char *input) {
 				RFlagItem *f;
 				ut64 v = (ut64)r_read_ble16 (core->block + i, p->big_endian);
 				if (p && p->colorfor) {
-					a = p->colorfor (p->user, v);
+					a = p->colorfor (p->user, v, true);
 					if (a && *a) { 
 						b = Color_RESET; 
 					} else { 
@@ -3976,7 +3976,7 @@ static int cmd_print(void *data, const char *input) {
 					RFlagItem *f;
 					ut64 v = r_read_ble64 (core->block + i, p->big_endian);
 					if (p && p->colorfor) {
-						a = p->colorfor (p->user, v);
+						a = p->colorfor (p->user, v, true);
 						if (a && *a) { 
 							b = Color_RESET; 
 						} else { 

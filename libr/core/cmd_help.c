@@ -707,7 +707,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'w':
 		{
 		ut64 addr = r_num_math (core->num, input + 1);
-		const char *rstr = core->print->hasrefs (core->print->user, addr);
+		const char *rstr = core->print->hasrefs (core->print->user, addr, true);
 		r_cons_println (rstr);
 		}
 		break;

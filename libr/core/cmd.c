@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)

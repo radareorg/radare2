@@ -1214,7 +1214,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 			continue;
 		}
 		value = r_reg_get_value (core->dbg->reg, r);
-		rrstr = r_core_anal_hasrefs (core, value);
+		rrstr = r_core_anal_hasrefs (core, value, true);
 		if (bits == 64) {
 			if (r->flags) {	
 				tmp = r_reg_get_bvalue (reg, r);
