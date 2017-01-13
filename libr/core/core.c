@@ -585,7 +585,7 @@ static const char *radare_argv[] = {
 	"aa", "ab", "af", "ar", "ag", "at", "a?", "ax", "ad",
 	"ae", "aec", "aex", "aep", "aea", "aeA", "aes", "aeso", "aesu", "aesue", "aer", "aei", "aeim", "aef",
 	"aaa", "aac","aae", "aai", "aar", "aan", "aas", "aat", "aap", "aav",
-	"af", "afa", "afan", "afc", "afi", "afb", "afbb", "afn", "afr", "afs", "af*", "afv", "afvn",
+	"af", "afa", "afan", "afc", "afC", "afi", "afb", "afbb", "afn", "afr", "afs", "af*", "afv", "afvn",
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "et", "e-", "e*", "e!", "e?", "env ",
 	"i", "ii", "iI", "is", "iS", "iz",
@@ -593,7 +593,7 @@ static const char *radare_argv[] = {
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
 	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wta", "wtf", "wp",
-	"t", "to ", "t-", "tf", "td", "td-", "tb", "tn", "te", "tl", "tk", "ts", "tu",
+	"t", "to", "t-", "tf", "td", "td-", "tb", "tn", "te", "tl", "tk", "ts", "tu",
 	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
@@ -992,6 +992,24 @@ openfile:
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else if ((!strncmp (line->buffer.data, "afC ", 4))) {
+			// autocomplete afC
+			SdbList *ccs = sdb_foreach_list (core->anal->sdb_cc);
+			SdbKv *kv;
+			SdbListIter *iter;
+			int sdelta = 4;
+			int i = 0;
+			int n = strlen (line->buffer.data + sdelta);
+			ls_foreach (ccs, iter, kv) {
+				if (!strchr (kv->key, '.')) {
+					if (!strncmp (kv->key, line->buffer.data + sdelta, n)) {
+						tmp_argv[i++] = kv->key;
+					}
+				}
+			}
+			ls_free (ccs);
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "s ", 2)) ||
 		    (!strncmp (line->buffer.data, "ad ", 3)) ||
 		    (!strncmp (line->buffer.data, "bf ", 3)) ||
@@ -1029,9 +1047,9 @@ openfile:
 			int sdelta = (line->buffer.data[1] == ' ')
 				? 2 : (line->buffer.data[2] == ' ')
 				? 3 : 4;
-			n = strlen (line->buffer.data+sdelta);
+			n = strlen (line->buffer.data + sdelta);
 			r_list_foreach (core->flags->flags, iter, flag) {
-				if (!strncmp (flag->name, line->buffer.data+sdelta, n)) {
+				if (!strncmp (flag->name, line->buffer.data + sdelta, n)) {
 					tmp_argv[i++] = flag->name;
 					if (i == TMP_ARGV_SZ - 1) {
 						break;
