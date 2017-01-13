@@ -297,9 +297,9 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 			} else return true;					//there is nothing todo here if vsize <= size
 		}
 		if (!sec->filemap && sec->size >= sec->vsize) {			//taken, when the section does a remapping, but no "memory-allocation"
-			desc = r_io_desc_get (io, sec->fd);			//get the RIODesc that the section belongs to
-			if (!desc) return false;				//this usually won't happen, but checking against it doesn't hurt
-			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->vsize);	//apply the mapping
+			if (!r_io_desc_get (io, sec->fd))			//get the RIODesc that the section belongs to
+				return false;					//this usually won't happen, but checking against it doesn't hurt
+			map = r_io_map_add (io, sec->fd, sec->flags, sec->addr, sec->vaddr, sec->vsize);	//apply the mapping
 			if (map) {
 				sec->filemap = map->id;				//let the section refere to the new map as a filemap
 				sec->memmap = 0;				//memmap is 0, because there is no memory allocation here
@@ -309,9 +309,9 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 			return false;
 		}
 		if (!sec->filemap && !sec->memmap) {				//check if section already got applied
-			desc = r_io_desc_get (io, sec->fd);			//get the RIODesc to which the section belongs
-			if (!desc) return false;
-			map = r_io_map_add (io, sec->fd, desc->flags, sec->addr, sec->vaddr, sec->size);	//apply the mapping for the filearea
+			if (!r_io_desc_get (io, sec->fd))			//get the RIODesc to which the section belongs
+				return false;
+			map = r_io_map_add (io, sec->fd, sec->flags, sec->addr, sec->vaddr, sec->size);	//apply the mapping for the filearea
 			if (!map) return false;
 			sec->filemap = map->id;					//let the section refere to the map as filemap
 			at = sec->vaddr + sec->size;				//TODO: harden this, handle mapslit
@@ -344,7 +344,7 @@ R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 		r_io_pwrite_at (io, 0LL, buf, (int)size);			//copy from buffer to the malloc-fd
 		free (buf);
 		map = r_io_map_get (io, sec->vaddr);				//get the malloc-map
-		map->flags = sec->flags;					//copy the flags
+		map->flags = sec->flags;					//set the flags correctly
 		r_io_desc_use (io, desc->fd);					//restore old RIODesc
 		sec->filemap = sec->memmap = map->id;				//let the section refere to the map
 		return true;

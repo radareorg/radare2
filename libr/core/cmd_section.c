@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
 static void __section_list (RIO *io, RPrint *print, int rad) {
-	int i = 0;
 	SdbListIter *iter;
 	RIOSection *s;
 
@@ -15,19 +14,17 @@ static void __section_list (RIO *io, RPrint *print, int rad) {
 			print->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->addr,
 				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->flags));
-			i++;
 		}
 	} else {
 		ls_foreach (io->sections, iter, s) {	
 			print->cb_printf ("[%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
-				i, s->addr, r_str_rwx_i (s->flags), s->vaddr,
+				s->id, s->addr, r_str_rwx_i (s->flags), s->vaddr,
 				s->size, s->vsize, s->name);
 			if (s->arch && s->bits)
 				print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
 					s->bits);
 			print->cb_printf ("\n");
-			i++;
 		}
 	}
 }

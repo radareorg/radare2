@@ -2,7 +2,7 @@
 
 #include <sdb.h>
 
-static inline void map_list (RIO *io, int mode, RPrint *print) {
+static void map_list (RIO *io, int mode, RPrint *print) {
 	SdbListIter *iter;
 	RIOMap *map;
 	if (!io || !io->maps || !print || !print->cb_printf)
@@ -23,9 +23,8 @@ static inline void map_list (RIO *io, int mode, RPrint *print) {
 	}
 }
 
-static inline int desc_list_cb (void *user, const char *str_fd, const char *str_desc) 
-{					//TODO: make this fancy
-	RPrint *p = (RPrint *)user;
+static int desc_list_cb (void *user, const char *str_fd, const char *str_desc) {
+	RPrint *p = (RPrint *)user;					//TODO: make this fancy
 	SdbListIter *iter;
 	RIODesc *desc = (RIODesc *)(size_t)sdb_atoi (str_desc);
 	RIOMap *map;
@@ -42,8 +41,8 @@ static inline int desc_list_cb (void *user, const char *str_fd, const char *str_
 				}
 			}
 		}
-	} else return false;
-	return true;
+		return true;
+	} return false;
 }
 
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
@@ -375,7 +374,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '*':
 	case 'j':
-		r_core_file_list (core, (int)(*input));
+		r_core_file_list (core, (int)(*input));		//XXX: don't use the cores file list
 		break;
 	case 'a':
 		addr = core->offset;
@@ -417,34 +416,33 @@ static int cmd_open(void *data, const char *input) {
 		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
 			*ptr = '\0';
 			addr = r_num_math (core->num, ptr+1);
-		} else {
-			num = atoi (ptr? ptr: input+1);
-			addr = 0LL;
 		}
-		if (num<=0) {
-			const char *fn = input+1; //(isn?2:1);
-			if (fn && *fn) {
-				if (isn) fn++;
-				file = r_core_file_open (core, fn, perms, addr);
-				if (file) {
-					r_cons_printf ("%d\n", file->desc->fd);
-					// MUST CLEAN BEFORE LOADING
-					if (!isn)
-						r_core_bin_load (core, fn, baddr);
-				} else if (!nowarn) {
-					eprintf ("Cannot open file '%s'\n", fn);
-				}
-			} else {
-				eprintf ("Usage: on [file]\n");
+		const char *fn = input+1; //(isn?2:1);
+		if (fn && *fn) {
+			if (isn) fn++;
+			file = r_core_file_open (core, fn, perms, addr);
+			if (file) {
+				r_cons_printf ("%d\n", file->desc->fd);
+				// MUST CLEAN BEFORE LOADING
+				if (!isn)
+					r_core_bin_load (core, fn, baddr);
+			} else if (!nowarn) {
+				eprintf ("Cannot open file '%s'\n", fn);
 			}
 		} else {
+			eprintf ("Usage: o [file]\n");
+		}
+		break;
+	case 'f':
+		{
 			RListIter *iter = NULL;
 			RCoreFile *f;
+			num = atoi (input+1);
 			core->switch_file_view = 0;
 			r_list_foreach (core->files, iter, f) {
 				if (f->desc->fd == num) {
 					r_io_desc_use (core->io, num);
-					core->switch_file_view = 1;
+//					core->switch_file_view = 1;	//WTF, why does this line break 'of'?
 					break;
 				}
 			}
@@ -456,7 +454,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '-': // o-
 		switch (input[1]) {
-		case '*': // "o-*"
+			case '*': // "o-*"
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
@@ -502,7 +500,7 @@ static int cmd_open(void *data, const char *input) {
 			if (input[2]=='n') {
 				perms = (input[3]=='+')? R_IO_READ|R_IO_WRITE: 0;
 				r_core_file_reopen (core, input + 4, perms, 0);
-				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);	//WTF
 			} else {
 				perms = (input[2]=='+')? R_IO_READ|R_IO_WRITE: 0;
 				r_core_file_reopen (core, input + 3, perms, 0);
