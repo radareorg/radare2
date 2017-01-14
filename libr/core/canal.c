@@ -522,9 +522,11 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		}
 		R_FREE (fcn->name);
 		core->flags->space_strict = true;
+		//XXX fcn's API should handle this for us
 		f = r_flag_get_at (core->flags, fcn->addr, true);
 		if (f && f->name && strncmp (f->name, "sect", 4) &&
-		    strncmp (f->name, "sym.func.", 9)) {
+		    strncmp (f->name, "sym.func.", 9) &&
+		    strncmp (f->name, "loc", 3)) {
 			fcn->name = strdup (f->name);
 		} else {
 			f = r_flag_get_i2 (core->flags, fcn->addr);
