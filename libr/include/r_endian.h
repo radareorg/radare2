@@ -1,6 +1,8 @@
 #ifndef R_ENDIAN_H
 #define R_ENDIAN_H
 
+extern "C" {
+
 /* Endian agnostic functions working on single byte. */
 
 static inline ut8 r_read_ble8(const void *src) {
@@ -397,6 +399,8 @@ static inline int UT8_SUB(ut8 *r, ut8 a, ut8 b) {
 	if(r != NULL)
 		*r = a - b;
 	return 1;
+}
+
 }
 
 #endif
