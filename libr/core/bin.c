@@ -1486,7 +1486,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 			if (section->add)
 				r_io_section_add (r->io, section->paddr, addr, section->size,
-					section->vsize, section->srwx, section->name, 0, fd);
+					section->vsize, section->srwx, section->name, r->bin->cur->id, fd);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
 			if (chksum) {
@@ -1631,7 +1631,7 @@ static int bin_fields(RCore *r, int mode, int va) {
 		// XXX: Need more flags??
 		// this will be set even if the binary does not have an ehdr
 		int fd = r_core_file_cur_fd(r);
-		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr", 0, fd);
+		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr", binfile->id, fd);
 	}
 	r_list_foreach (fields, iter, field) {
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
