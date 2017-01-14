@@ -20,7 +20,7 @@
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
 // s/index/base|reg/
 #define MEMINDEX(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index))
-#define HASMEMINDEX(x) insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID
+#define HASMEMINDEX(x) (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define MEMINDEX64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
@@ -1339,7 +1339,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 			if (ISIMM64(1)) {
 				//sub sp, 0x54
 				op->stackptr = IMM(1);
-			} else if ( ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
+			} else if (ISIMM64(2) && ISREG64(1) && REGID64(1) == ARM64_REG_SP) {
 				//sub sp, sp, 0x10
 				op->stackptr = IMM64(2);
 			}
