@@ -22,15 +22,15 @@
 #define MEMINDEX(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.index))
 #define HASMEMINDEX(x) (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define MEMINDEX64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.index))
-#define HASMEMINDEX64(x) insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID
+#define HASMEMINDEX64(x) (insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
-#define ISIMM(x) insn->detail->arm.operands[x].type == ARM_OP_IMM
-#define ISIMM64(x) insn->detail->arm64.operands[x].type == ARM64_OP_IMM
-#define ISREG(x) insn->detail->arm.operands[x].type == ARM_OP_REG
-#define ISREG64(x) insn->detail->arm64.operands[x].type == ARM64_OP_REG
-#define ISMEM(x) insn->detail->arm.operands[x].type == ARM_OP_MEM
-#define ISMEM64(x) insn->detail->arm64.operands[x].type == ARM64_OP_MEM
+#define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
+#define ISIMM64(x) (insn->detail->arm64.operands[x].type == ARM64_OP_IMM)
+#define ISREG(x) (insn->detail->arm.operands[x].type == ARM_OP_REG)
+#define ISREG64(x) (insn->detail->arm64.operands[x].type == ARM64_OP_REG)
+#define ISMEM(x) (insn->detail->arm.operands[x].type == ARM_OP_MEM)
+#define ISMEM64(x) (insn->detail->arm64.operands[x].type == ARM64_OP_MEM)
 
 #if CS_API_MAJOR > 3
 #define LSHIFT(x) insn->detail->arm.operands[x].mem.lshift
