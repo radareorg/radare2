@@ -1,7 +1,9 @@
 #ifndef R_ENDIAN_H
 #define R_ENDIAN_H
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 /* Endian agnostic functions working on single byte. */
 
@@ -149,8 +151,8 @@ static inline void r_write_at_le16(void *dest, ut16 val, size_t offset) {
 
 static inline void r_write_le24(void *_dest, ut32 val) {
 	ut8* dest = (ut8*)_dest;
-        r_write_le8 (dest++, val >> 0);
-        r_write_le8 (dest++, val >> 8);
+	r_write_le8 (dest++, val >> 0);
+	r_write_le8 (dest++, val >> 8);
 	r_write_le8 (dest,   val >> 16);
 }
 
@@ -306,101 +308,126 @@ static inline st64 r_swap_st64(st64 val) {
 
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {
-	if(UT64_MAX - a < b)
+	if (UT64_MAX - a < b) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a + b;
+	}
 	return 1;
 }
 
 static inline int UT64_MUL(ut64 *r, ut64 a, ut64 b) {
-	if(a && UT64_MAX / a < b)
+	if (a && UT64_MAX / a < b) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a * b;
+	}
 	return 1;
 }
 
 static inline int UT64_SUB(ut64 *r, ut64 a, ut64 b) {
-	if(b > a)
+	if (b > a) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a - b;
+	}
 	return 1;
 }
 
 static inline int UT32_ADD(ut32 *r, ut32 a, ut32 b) {
-	if(UT32_MAX - a < b)
+	if (UT32_MAX - a < b) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a + b;
+	}
 	return 1;
 }
 
 static inline int UT32_MUL(ut32 *r, ut32 a, ut32 b) {
-	if(a && UT32_MAX / a < b)
+	if (a && UT32_MAX / a < b) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a * b;
+	}
 	return 1;
 }
 
 static inline int UT32_SUB(ut32 *r, ut32 a, ut32 b) {
-	if(b > a)
+	if (b > a) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a - b;
+	}
 	return 1;
 }
 
 static inline int UT16_ADD(ut16 *r, ut16 a, ut16 b) {
-	if(UT16_MAX - a < b)
+	if (UT16_MAX - a < b) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a + b;
+	}
 	return 1;
 }
 
 static inline int UT16_MUL(ut16 *r, ut16 a, ut16 b) {
-	if(a && UT16_MAX / a < b)
+	if (a && UT16_MAX / a < b) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a * b;
+	}
 	return 1;
 }
 
 static inline int UT16_SUB(ut16 *r, ut16 a, ut16 b) {
-	if(b > a)
+	if (b > a) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a - b;
+	}
 	return 1;
 }
 
 static inline int UT8_ADD(ut8 *r, ut8 a, ut8 b) {
-	if(UT8_MAX - a < b)
+	if (UT8_MAX - a < b) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a + b;
+	}
 	return 1;
 }
 
 static inline int UT8_MUL(ut8 *r, ut8 a, ut8 b) {
-	if(a && UT8_MAX / a < b)
+	if (a && UT8_MAX / a < b) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a * b;
+	}
 	return 1;
 }
 
 static inline int UT8_SUB(ut8 *r, ut8 a, ut8 b) {
-	if(b > a)
+	if (b > a) {
 		return 0;
-	if(r != NULL)
+	}
+	if (r) {
 		*r = a - b;
+	}
 	return 1;
 }
-
+#ifdef __cplusplus
 }
+#endif
 
 #endif
