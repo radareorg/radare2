@@ -151,7 +151,7 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	return list;
 }
 
-R_API bool r_anal_xrefs_init (RAnal *anal) {
+R_API bool r_anal_xrefs_init(RAnal *anal) {
 	sdb_reset (DB);
 	if (DB) {
 		sdb_array_set (DB, "types", -1, "code.jmp,code.call,data.mem,data.string", 0);
@@ -202,6 +202,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_rad, anal);
 		break;
 	case 'j':
+		{
 		anal->cb_printf ("{");
 		bool is_first = true;
 		SdbListIter *sdb_iter;
@@ -212,8 +213,9 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		}
 		ls_free (sdb_list);
 		anal->cb_printf ("}\n");
+		}
 		break;
-	default:
+	default: 
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_plain, anal);
 		break;
 	}

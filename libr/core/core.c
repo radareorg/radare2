@@ -994,7 +994,7 @@ openfile:
 			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "afC ", 4))) {
 			// autocomplete afC
-			SdbList *ccs = sdb_foreach_list (core->anal->sdb_cc);
+			SdbList *ccs = sdb_foreach_list (core->anal->sdb_cc, true);
 			SdbKv *kv;
 			SdbListIter *iter;
 			int sdelta = 4;

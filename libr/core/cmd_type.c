@@ -236,7 +236,15 @@ static void typesList(RCore *core, int mode) {
 		sdb_foreach (core->anal->sdb_types, typelist, core);
 		break;
 	default:
-		sdb_foreach (core->anal->sdb_types, sdbforcb, core);
+		{
+		SdbList *ls = sdb_foreach_list (core->anal->sdb_types, true);
+		SdbListIter *it;
+		SdbKv *kv;
+		ls_foreach (ls, it, kv) {
+			sdbforcb ((void *)core, kv->key, kv->value);
+		}
+		ls_free (ls);
+		}
 		break;
 	}
 }
