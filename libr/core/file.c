@@ -1024,11 +1024,13 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	}
 
 	limit = r_config_get_i (r->config, "cfg.hashlimit");
-	if (r_io_desc_size (r->io, cf->desc) > limit)
+	if (cf && r_io_desc_size (r->io, cf->desc) > limit) {
 		return false;
+	}
 	buf = (ut8*)r_file_slurp (file, &buf_len);
-	if (buf==NULL)
+	if (!buf) {
 		return false;
+	}
 	ctx = r_hash_new (true, R_HASH_MD5);
 	md5 = r_hash_do_md5 (ctx, buf, buf_len);
 	p = hash;
