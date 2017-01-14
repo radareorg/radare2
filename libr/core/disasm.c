@@ -1354,7 +1354,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	if (!ds->show_comments) {
 		return;
 	}
-	RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	//RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	item = r_flag_get_i (core->flags, ds->at);
 	ds->comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 	if (!ds->comment && item && item->comment && *item->comment) {

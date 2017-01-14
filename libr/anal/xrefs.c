@@ -151,7 +151,7 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	return list;
 }
 
-R_API bool r_anal_xrefs_init (RAnal *anal) {
+R_API bool r_anal_xrefs_init(RAnal *anal) {
 	sdb_reset (DB);
 	if (DB) {
 		sdb_array_set (DB, "types", -1, "code.jmp,code.call,data.mem,data.string", 0);
@@ -174,7 +174,7 @@ static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
 
 static bool xrefs_list_cb_json(RAnal *anal, bool is_first, const char *k, const char *v) {
 	ut64 dst, src = r_num_get (NULL, v);
-	if (!strncmp (k, "ref.", 4) && (strlen (k) > 8)) {
+	if (strlen (k) > 8) {
 		const char *p = r_str_rchr (k, NULL, '.');
 		if (p) {
 			if (is_first) {
@@ -202,17 +202,20 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_rad, anal);
 		break;
 	case 'j':
+		{
 		anal->cb_printf ("{");
 		bool is_first = true;
 		SdbListIter *sdb_iter;
 		SdbKv *kv;
-		SdbList *sdb_list = sdb_foreach_list (DB);
+		SdbList *sdb_list = sdb_foreach_match (DB, "^ref.", false);
 		ls_foreach (sdb_list, sdb_iter, kv) {
 			is_first = xrefs_list_cb_json (anal, is_first, kv->key, kv->value);
 		}
+		ls_free (sdb_list);
 		anal->cb_printf ("}\n");
+		}
 		break;
-	default:
+	default: 
 		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_plain, anal);
 		break;
 	}

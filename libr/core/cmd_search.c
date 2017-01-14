@@ -1989,7 +1989,7 @@ static void rop_kuery(void *data, const char *input) {
 	switch (*input) {
 	case 'q':
 		ls_foreach (db_rop->ns, it, ns) {
-			sdb_list = sdb_foreach_list (ns->sdb);
+			sdb_list = sdb_foreach_list (ns->sdb, false);
 			ls_foreach (sdb_list, sdb_iter, kv) {
 				r_cons_printf ("%s ", kv->key);
 			}
@@ -1998,7 +1998,7 @@ static void rop_kuery(void *data, const char *input) {
 	case 'j':
 		r_cons_print ("{\"gadgets\":[");
 			ls_foreach (db_rop->ns, it, ns) {
-			sdb_list = sdb_foreach_list (ns->sdb);
+			sdb_list = sdb_foreach_list (ns->sdb, false);
 			ls_foreach (sdb_list, sdb_iter, kv) {
 				char *dup = strdup (kv->value);
 				bool flag = false; //to free tok when doing strdup

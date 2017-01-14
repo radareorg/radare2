@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2016 - pancake, oddcoder */
 
 #include "r_anal.h"
 
@@ -16,31 +16,31 @@ R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val) {
 			//int siz = sdb_array_get_num (DB, var, 2, NULL);
 			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at+off);
 			return true;
-		} else eprintf ("Invalid kind of type\n");
+		}
+		eprintf ("Invalid kind of type\n");
 	}
 	return false;
 }
 
 R_API void r_anal_type_del(RAnal *anal, const char *name) {
+	Sdb *db = anal->sdb_types;
+	const char *kind = sdb_const_get (db, name, 0);
+	if (!kind) {
+		return;
+	}
 	int n;
 	char *p, str[128], str2[128];
-	Sdb *DB = anal->sdb_types;
-	const char *kind = sdb_const_get (DB, name, 0);
 	if (!kind) {
 		return;
 	}
 	snprintf (str, sizeof (str), "%s.%s", kind, name);
-
-#define SDB_FOREACH(x,y,z) for (z = 0; (p = sdb_array_get (x, y, z, NULL)); z++)
-#define SDB_FOREACH_NEXT() free(p)
-	SDB_FOREACH (DB, str, n) {
+	for (n = 0; (p = sdb_array_get (db, str, n, NULL)); n++) {
 		snprintf (str2, sizeof (str2), "%s.%s", str, p);
-		sdb_unset (DB, str2, 0);
-		SDB_FOREACH_NEXT ();
+		sdb_unset (db, str2, 0);
+		n++;
 	}
-	sdb_set (DB, name, NULL, 0);
-	sdb_unset (DB, name, 0);
-	sdb_unset (DB, str, 0);
+	sdb_unset (db, str, 0);
+	sdb_unset (db, name, 0);
 }
 
 R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
@@ -90,12 +90,11 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 		return ret;
 	}
 	return 0;
-
 }
 
 R_API RList *r_anal_type_fcn_list(RAnal *anal) {
-	SdbList *sdb_list = sdb_foreach_list (anal->sdb_types);
-	RList *list = r_list_new ();
+	SdbList *sdb_list = sdb_foreach_match (anal->sdb_types, "=^func$", false);
+	RList *list = r_list_newf ((RListFree)r_anal_fcn_free);
 	char *name, *value;
 	const char *key;
 	SdbListIter *sdb_iter;
@@ -104,12 +103,10 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 
 	if (!list || !sdb_list) {
 		r_list_free (list);
+		ls_free (sdb_list);
 		return 0;
 	}
 	ls_foreach (sdb_list, sdb_iter, kv) {
-		if (strcmp (kv->value, "func")) {
-			continue;
-		}
 		RAnalFunction *fcn = r_anal_fcn_new ();
 		r_list_append (list, fcn);
 		//setting function name and return type
@@ -129,8 +126,11 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 			continue;
 		}
 		//XXX we should handle as much calling conventions
-		//for as much architectures as we want here as we want here
-		fcn->vars = r_list_new ();
+		//for as much architectures as we want here
+		fcn->vars = r_list_newf ((RListFree)r_anal_var_free);
+		if (!fcn->vars) {
+			continue;
+		}
 		for (i = 0; i < args_n; i++) {
 			key = r_str_newf ("func.%s.arg.%d", kv->key, i);
 			value = sdb_get (anal->sdb_types, key, 0);
@@ -146,9 +146,8 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 				r_list_append (fcn->vars, arg);
 			}
 		}
-
 	}
-	ls_destroy (sdb_list);
+	ls_free (sdb_list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		return NULL;
@@ -195,8 +194,9 @@ R_API int r_anal_type_unlink(RAnal *anal, ut64 addr) {
 
 static void filter_type(char *t) {
 	for (;*t; t++) {
-		if (*t == ' ')
+		if (*t == ' ') {
 			*t = '_';
+		}
 		// memmove (t, t+1, strlen (t));
 	}
 }
@@ -213,8 +213,9 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 	snprintf (var, sizeof (var), "%s.%s", kind, t);
 	if (!strcmp (kind, "type")) {
 		const char *fmt = sdb_const_get (DB, var, NULL);
-		if (fmt)
+		if (fmt) {
 			return strdup (fmt);
+		}
 	} else
 	if (!strcmp (kind, "struct")) {
 		// assumes var list is sorted by offset.. should do more checks here
@@ -301,6 +302,7 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 	}
 	return NULL;
 }
+
 // Function prototypes api
 R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name) {
 	const char *fcn = sdb_const_get (anal->sdb_types, func_name, 0);
@@ -359,6 +361,7 @@ static int captureSubString (void *p, const char *k, const char *v) {
 	}
 	return 1;
 }
+
 R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 	char *ret[] = {
 		NULL,

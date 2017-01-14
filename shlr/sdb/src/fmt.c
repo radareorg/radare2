@@ -1,16 +1,23 @@
-/* sdb - MIT - Copyright 2014-2015 - pancake */
+/* sdb - MIT - Copyright 2014-2016 - pancake */
 
 #include "sdb.h"
 #include <stdarg.h>
 #include <string.h>
 
+// TODO: convert into a function
 // TODO: Add 'a' format for array of pointers null terminated??
 // XXX SLOW CONCAT
 #define concat(x) if (x) { \
-	int size = 2+strlen(x)+(out?strlen(out)+4:0); \
+	int size = 2+strlen(x?x:"")+(out?strlen(out)+4:0); \
 	if (out) { char *o = realloc (out, size); \
-		if (o) { strcat (o, ","); strcat (o, x); out = o; } \
-	} else out = strdup (x); \
+		if (o) {\
+			strcat (o, ",");\
+			strcat (o, x);\
+			out = o;\
+		} \
+	} else {\
+		out = strdup (x);\
+	} \
 }
 
 // move to util?
@@ -23,15 +30,14 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 	if (n == -1) {
 		if (fmt) {
 			n = cyclic_n++;
-			if (cyclic_n > 15) {
+			if (cyclic_n>15)
 				cyclic_n = 0;
-			}
 		} else {
 			n = cyclic_n;
 		}
 	}
-	if (n < 0 || n > 15) {
-		return NULL;
+        if (n < 0 || n > 15) {
+                return NULL;
 	}
 	if (!fmt) {
 		return Key[n];
@@ -43,7 +49,6 @@ SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
 	va_end (ap);
 	return Key[n];
 }
-
 
 SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 	char buf[128], *e_str, *out = NULL;
@@ -66,7 +71,7 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 			n = 8;
 			break;
 		case 'z':
-			concat (p+len);
+			concat (p + len);
 			break;
 		case 's':
 			e_str = sdb_encode ((const ut8*)*((char**)(p+len)), -1);
@@ -87,18 +92,21 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 	int n, idx = 0, items = 0;
 	char *next, *str, *ptr, *word, *e_str;
-	if (!_str || !*_str || !fmt) return 0;
+	if (!_str || !*_str || !fmt) {
+		return 0;
+	}
 	str = ptr = strdup (_str);
 	for (; *fmt; fmt++) {
 		word = sdb_anext (ptr, &next);
-		if (!word || !*word)
+		if (!word || !*word) {
 			break;
+		}
 		items++;
 		n = 4; // ALIGN
 		switch (*fmt) {
 		case 'b': *((ut8*)(stru + idx)) = (ut8)sdb_atoi (word); break;
 		case 'd': *((int*)(stru + idx)) = (int)sdb_atoi (word); break;
-		case 'q': *((ut64*)(stru + idx)) = sdb_atoi (word); n=8; break;
+		case 'q': *((ut64*)(stru + idx)) = sdb_atoi (word); n = 8; break;
 		case 'h': *((short*)(stru + idx)) = (short)sdb_atoi (word); break;
 		case 's':
 			e_str = (char*)sdb_decode (word, 0);
@@ -111,9 +119,10 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 			*((void**)(stru + idx)) = (void*)(size_t)sdb_atoi (word);
 			break;
 		}
-		idx += R_MAX((long)sizeof (void*), n); // align
-		if (!next)
+		idx += R_MAX ((long)sizeof (void*), n); // align
+		if (!next) {
 			break;
+		}
 		ptr = next;
 	}
 	free (str);
@@ -128,10 +137,16 @@ SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
 		case 'p': // TODO: leak or wat
 		case 'b':
 		case 'h':
-		case 'd': break;
-		case 'q': n = 8; break;
+		case 'd':
+			/* do nothing */
+			break;
+		case 'q':
+			n = 8;
+			break;
 		case 'z':
-		case 's': free ((void*)*((char**)(stru+len))); break;
+		case 's':
+			free ((void*)*((char**)(stru + len)));
+			break;
 		}
 		len += R_MAX ((long)sizeof (void*), n); // align
 	}
@@ -150,14 +165,22 @@ SDB_API int sdb_fmt_init (void *p, const char *fmt) {
 		case 'p': len += sizeof (char*); break; // void *
 		}
 	}
-	if (p) memset (p, 0, len);
+	if (p) {
+		memset (p, 0, len);
+	}
 	return len;
 }
 
 static const char *sdb_anext2(const char *str, const char **next) {
 	char *nxt, *p = strchr (str, SDB_RS);
-	if (p) { nxt = p+1; } else nxt = NULL;
-	if (next) *next = nxt;
+	if (p) {
+		nxt = p + 1;
+	} else {
+		nxt = NULL;
+	}
+	if (next) {
+		*next = nxt;
+	}
 	return str;
 }
 
@@ -169,10 +192,13 @@ SDB_API ut64* sdb_fmt_array_num(const char *list) {
 	if (list && *list) {
 		ut32 len = (ut32) sdb_alen (list);
 		size = sizeof (ut64) * (len + 1);
-		if (size < len) return NULL;
-		retp = ret = (ut64*) malloc (size);
-		if (!ret)
+		if (size < len) {
 			return NULL;
+		}
+		retp = ret = (ut64*) malloc (size);
+		if (!ret) {
+			return NULL;
+		}
 		*retp++ = len;
 		do {
 			const char *str = sdb_anext2 (ptr, &next);
@@ -189,20 +215,20 @@ SDB_API char** sdb_fmt_array(const char *list) {
 	const char *next, *ptr = list;
 	if (list && *list) {
 		int len = sdb_alen (list);
-		retp = ret = (char**) malloc (2*strlen (list) +
-			((len+1)*sizeof(char*))+1);
-		_s = (char*)ret + ((len+1)*sizeof(char*));
+		retp = ret = (char**) malloc (2 * strlen (list) +
+			((len + 1)*sizeof (char*))+1);
+		_s = (char*)ret + ((len + 1) * sizeof (char*));
 		if (!ret) {
 			return NULL;
 		}
 		do {
 			const char *str = sdb_anext2 (ptr, &next);
-			int slen = next? (next-str) - 1:
+			int slen = next? (next - str) - 1:
 				(int)strlen (str) + 1;
 			memcpy (_s, str, slen);
-			_s[slen]=0;
+			_s[slen] = 0;
 			*retp++ = _s;
-			_s += slen+1;
+			_s += slen + 1;
 			ptr = next;
 		} while (next);
 		*retp = NULL;

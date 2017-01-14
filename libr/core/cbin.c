@@ -2472,9 +2472,9 @@ static void bin_elf_versioninfo(RCore *r) {
 	Sdb *sdb = NULL;
 	do {
 		snprintf (path, sizeof (path), format, "versym", num_versym++);
-		if (!(sdb = sdb_ns_path (r->sdb, path, 0)))
+		if (!(sdb = sdb_ns_path (r->sdb, path, 0))) {
 			break;
-
+		}
 		ut64 addr = sdb_num_get (sdb, "addr", 0);
 		ut64 offset = sdb_num_get (sdb, "offset", 0);
 		ut64 link = sdb_num_get (sdb, "link", 0);
@@ -2605,7 +2605,8 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 		SdbKv *kv;
 		r_cons_printf ("fs format\n");
 		// iterate over all keys
-		ls_foreach (db->ht->list, iter, kv) {
+		SdbList *ls = sdb_foreach_list (db, true);
+		ls_foreach (ls, iter, kv) {
 			char *k = kv->key;
 			char *v = kv->value;
 			char *dup = strdup (k);
@@ -2638,6 +2639,7 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 			free (dup);
 		}
 		free (offset);
+		ls_free (ls);
 	}
 }
 

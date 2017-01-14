@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #undef eprintf
 #define eprintf(x,y...) fprintf(stderr,x,##y)
@@ -33,14 +34,18 @@
 
 #include <inttypes.h>
 #if __CYGWIN__
-#define USE_MMAN 1
+#define HAVE_MMAN 1
 #define ULLFMT "ll"
 #elif __SDB_WINDOWS__
-#define USE_MMAN 0
+#define HAVE_MMAN 0
 #define ULLFMT "I64"
 #else
 #define ULLFMT "ll"
-#define USE_MMAN 1
+#define HAVE_MMAN 1
+#endif
+
+#ifndef USE_MMAN
+#define USE_MMAN HAVE_MMAN
 #endif
 
 #include <unistd.h>
@@ -63,9 +68,10 @@
 #define boolt int
 // TODO: deprecate R_NEW
 #define R_NEW(x) (x*)malloc(sizeof(x))
-#define R_NEW0(x) (x*)calloc(1,sizeof(x))
+#define R_NEW0(x) (x*)calloc(1, sizeof(x))
 #define UT32_MAX ((ut32)0xffffffff)
 #define UT64_MAX ((ut64)(0xffffffffffffffffLL))
+#define R_FREE(x) free (x); x = NULL
 #endif
 #ifndef R_MAX_DEFINED
 #define R_MAX(x,y) (((x)>(y))?(x):(y))
@@ -80,7 +86,7 @@
 #include "config.h"
 
 static inline int seek_set(int fd, off_t pos) {
-	return ((fd==-1) || (lseek (fd, (off_t) pos, SEEK_SET) == -1))? 0:1;
+	return ((fd == -1) || (lseek (fd, (off_t) pos, SEEK_SET) == -1))? 0:1;
 }
 
 static inline void ut32_pack(char s[4], ut32 u) {

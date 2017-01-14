@@ -1,6 +1,8 @@
-/* sdb - MIT - Copyright 2011-2015 - pancake */
+/* sdb - MIT - Copyright 2011-2017 - pancake */
 
 #include "sdb.h"
+
+#define FORCE_COLLISION 0
 
 #if USE_MONOTONIC_CLOCK
 #include <time.h>
@@ -8,61 +10,15 @@
 #include <sys/time.h>
 #endif
 
-// XXX deprecate or wtf? who uses this??
-SDB_API int sdb_check_value(const char *s) {
-	if (!s || *s == '$')
-		return 0;
-	// TODO: check value length
-#if 0
-	for (; *s; s++) {
-		switch (*s) {
-		case ';':
-			return 0;
-		}
-	}
-#endif
-	return 1;
-}
-
-SDB_API bool sdb_check_key(const char *s) {
-	if (!s || !*s) {
-		return false;
-	}
-	const char *last = s + SDB_KSZ - 1;
-	for (; *s; s++) {
-		char c = *s;
-		if (!c) {
-			return true;
-		}
-		if (s == last) {
-			return false;
-		}
-		switch (c) {
-		case '"':
-		case '+':
-		case '-':
-		case '=':
-		case '[':
-		case ']':
-		case ':':
-		case '$':
-		case ';':
-			return false;
-		}
-	}
-	return true;
-}
-
-SDB_API ut32 sdb_hash(const char *s) {
-	ut32 h = CDB_HASHSTART;
-	if (s)
-		while (*s)
-			h = (h + (h << 5)) ^* s++;
-	return h;
-}
-
 SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
 	ut32 h = CDB_HASHSTART;
+#if FORCE_COLLISION
+	h = 0;
+	while (*s) {
+		h += *s;
+		s++;
+	}
+#else
 	ut32 count = 0;
 	if (s) {
 		while (*s) {
@@ -73,7 +29,12 @@ SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
 	if (len) {
 		*len = count;
 	}
+#endif
 	return h;
+}
+
+SDB_API ut32 sdb_hash(const char *s) {
+	return sdb_hash_len (s, NULL);
 }
 
 // assert (sizeof (s)>64)
@@ -92,26 +53,32 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 		copy_string = 0;
 		base = -base;
 	}
-	if ((base > 16) || (base < 1))
+	if ((base > 16) || (base < 1)) {
 		return NULL;
+	}
 	if (!n) {
-		if (os) s = strdup ("0");
-		else strcpy (s, "0");
+		if (os) {
+			return strdup ("0");
+		}
+		strcpy (s, "0");
 		return s;
 	}
-	s[imax+1] = '\0';
+	s[imax + 1] = '\0';
 	if (base <= 10) {
-		for (; n && i>0; n /= base)
+		for (; n && i>0; n /= base) {
 			s[i--] = (n % base) + '0';
+		}
 	} else {
-		for (; n && i > 0; n /= base)
+		for (; n && i > 0; n /= base) {
 			s[i--] = lookup[(n % base)];
-		if (i!=imax)
+		}
+		if (i != imax) {
 			s[i--] = 'x';
+		}
 		s[i--] = '0';
 	}
 	if (os) {
-		return strdup (s+i+1);
+		return strdup (s + i + 1);
 	}
 	if (copy_string) {
 		// unnecessary memmove in case we use the return value
@@ -125,11 +92,11 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 SDB_API ut64 sdb_atoi(const char *s) {
 	char *p;
 	ut64 ret;
-	if (!s || *s == '-')
+	if (!s || *s == '-') {
 		return 0LL;
+	}
 	ret = strtoull (s, &p, 0);
-	if (!p) return 0LL;
-	return ret;
+	return p ? ret: 0LL;
 }
 
 // NOTE: Reuses memory. probably not bindings friendly..
@@ -154,23 +121,27 @@ SDB_API char *sdb_aslice(char *out, int from, int to) {
 	char *str = NULL;
 	char *end = NULL;
 	char *p = out;
-	if (from>=to)
+	if (from >= to) {
 		return NULL;
+	}
 	while (*p) {
-		if (idx == from)
-			if (!str) str = p;
+		if (!str && idx == from) {
+			str = p;
+		}
 		if (idx == to) {
 			end = p;
 			break;
 		}
-		if (*p == ',')
+		if (*p == ',') {
 			idx++;
+		}
 		p++;
 	}
 	if (str) {
-		if (!end)
+		if (!end) {
 			end = str + strlen (str);
-		len = (size_t)(end-str);
+		}
+		len = (size_t)(end - str);
 		memcpy (out, str, len);
 		out[len] = 0;
 		return out;
@@ -183,11 +154,15 @@ SDB_API char *sdb_aslice(char *out, int from, int to) {
 SDB_API int sdb_alen(const char *str) {
 	int len = 1;
 	const char *n, *p = str;
-	if (!p|| !*p) return 0;
+	if (!p|| !*p) {
+		return 0;
+	}
 	for (len = 0; ; len++) {
 		n = strchr (p, SDB_RS);
-		if (!n) break;
-		p = n+1;
+		if (!n) {
+			break;
+		}
+		p = n + 1;
 	}
 	return ++len;
 }
@@ -195,13 +170,21 @@ SDB_API int sdb_alen(const char *str) {
 SDB_API int sdb_alen_ignore_empty(const char *str) {
 	int len = 1;
 	const char *n, *p = str;
-	if (!p || !*p) return 0;
-	while (*p == SDB_RS) p++;
+	if (!p || !*p) {
+		return 0;
+	}
+	while (*p == SDB_RS) {
+		p++;
+	}
 	for (len = 0; ; ) {
 		n = strchr (p, SDB_RS);
-		if (!n) break;
-		p = n+1;
-		if (*(p) == SDB_RS) continue;
+		if (!n) {
+			break;
+		}
+		p = n + 1;
+		if (*(p) == SDB_RS) {
+			continue;
+		}
 		len++;
 	}
 	if (*p) len++;
@@ -210,15 +193,22 @@ SDB_API int sdb_alen_ignore_empty(const char *str) {
 
 SDB_API char *sdb_anext(char *str, char **next) {
 	char *nxt, *p = strchr (str, SDB_RS);
-	if (p) { *p = 0; nxt = p+1; } else nxt = NULL;
-	if (next) *next = nxt;
+	if (p) {
+		*p = 0;
+		nxt = p + 1;
+	} else {
+		nxt = NULL;
+	}
+	if (next) {
+		*next = nxt;
+	}
 	return str;
 }
 
 SDB_API const char *sdb_const_anext(const char *str, const char **next) {
 	if (next) {
 		const char *p = strchr (str, SDB_RS);
-		*next = p? p+1: NULL;
+		*next = p? p + 1: NULL;
 	}
 	return str;
 }
@@ -226,12 +216,14 @@ SDB_API const char *sdb_const_anext(const char *str, const char **next) {
 SDB_API ut64 sdb_now () {
 #if USE_MONOTINIC_CLOCK
 	struct timespec ts;
-	if (!clock_gettime (CLOCK_MONOTONIC, &ts))
+	if (!clock_gettime (CLOCK_MONOTONIC, &ts)) {
 		return ts.tv_sec;
+	}
 #else
 	struct timeval now;
-	if (!gettimeofday (&now, NULL))
+	if (!gettimeofday (&now, NULL)) {
 		return now.tv_sec;
+	}
 #endif
 	return 0LL;
 }
@@ -243,7 +235,7 @@ SDB_API ut64 sdb_unow () {
 	if (!clock_gettime (CLOCK_MONOTONIC, &ts)) {
 		x = ts.tv_sec;
 		x <<= 32;
-		x += ts.tv_nsec/1000;
+		x += ts.tv_nsec / 1000;
 	}
 #else
         struct timeval now;
@@ -256,49 +248,57 @@ SDB_API ut64 sdb_unow () {
 	return x;
 }
 
-SDB_API int sdb_isnum (const char *s) {
+SDB_API int sdb_isnum(const char *s) {
 	const char vs = *s;
-	return ((vs=='-' || vs=='+') || (vs>='0' && vs<='9'));
+	return ((vs == '-' || vs == '+') || (vs >= '0' && vs <= '9'));
 }
 
-SDB_API int sdb_num_base (const char *s) {
-	if (!s) return SDB_NUM_BASE;
-	if (!strncmp (s, "0x", 2))
+SDB_API int sdb_num_base(const char *s) {
+	if (!s) {
+		return SDB_NUM_BASE;
+	}
+	if (!strncmp (s, "0x", 2)) {
 		return 16;
-	if (*s=='0' && s[1]) return 8;
-	return 10;
+	}
+	return (*s=='0' && s[1]) ? 8: 10;
 }
 
 SDB_API const char *sdb_type(const char *k) {
-	if (!k || !*k)
+	if (!k || !*k) {
 		return "undefined";
-	if (sdb_isnum (k))
+	}
+	if (sdb_isnum (k)) {
 		return "number";
-	if (sdb_isjson (k))
+	}
+	if (sdb_isjson (k)) {
 		return "json";
-	if (strchr (k, ','))
+	}
+	if (strchr (k, ',')) {
 		return "array";
-	if (!strcmp (k, "true") || !strcmp (k, "false"))
+	}
+	if (!strcmp (k, "true") || !strcmp (k, "false")) {
 		return "boolean";
+	}
 	return "string";
 }
 
-// TODO: check if open and closed bracket/parenthesis matches
 // TODO: check all the values
-SDB_API int sdb_isjson (const char *k) {
+SDB_API bool sdb_isjson (const char *k) {
 	int level = 0;
-	int quotes = 0;
-	if (!k || (*k!='{' && *k != '['))
-		return 0;
+	bool quotes = false;
+	if (!k || (*k != '{' && *k != '[')) {
+		return false;
+	}
 	for (; *k; k++) {
 		if (quotes) {
-			if (*k == '"')
-				quotes = 0;
+			if (*k == '"') {
+				quotes = false;
+			}
 			continue;
 		}
 		switch (*k) {
 		case '"':
-			quotes = 1;
+			quotes = true;
 			break;
 		case '[':
 		case '{':
@@ -307,10 +307,12 @@ SDB_API int sdb_isjson (const char *k) {
 		case ']':
 		case '}':
 			level--;
+			if (level < 0) {
+				/* invalid json */
+				return false;
+			}
 			break;
 		}
 	}
-	if (quotes || level)
-		return 0;
-	return 1;
+	return (!quotes && !level);
 }
