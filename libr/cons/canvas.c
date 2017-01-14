@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2017 - pancake */
 
 #include <r_cons.h>
 
@@ -414,7 +414,6 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 		row[w - 1] = roundcorners? '\'': br_corner[0];
 		W (row_ptr);
 	}
-
 	for (i = 1; i < h - 1; i++) {
 		if (G (x, y + i)) W (vline);
 		if (G (x + w - 1, y + i)) W (vline);

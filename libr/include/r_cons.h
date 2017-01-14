@@ -656,6 +656,7 @@ typedef struct r_ascii_graph_t {
 	Sdb *db;
 	Sdb *nodes; // Sdb with title(key)=RANode*(value)
 
+	int layout;
 	int is_instep;
 	int mode;
 	int is_callgraph;

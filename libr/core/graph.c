@@ -1,4 +1,4 @@
-/* Copyright radare2 - 2014-2016 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2017 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -81,6 +81,7 @@ struct layer_t {
 	RGraphNode **nodes;
 	int position;
 	int height;
+	int width;
 };
 
 struct agraph_refresh_data {
@@ -100,18 +101,23 @@ struct agraph_refresh_data {
 static bool is_offset(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_OFFSET;
 }
+
 static bool is_mini(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_MINI;
 }
+
 static bool is_summary(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_SUMMARY;
 }
+
 static int next_mode(int mode) {
 	return (mode + 1) % R_AGRAPH_MODE_MAX;
 }
+
 static int prev_mode(int mode) {
 	return (mode + R_AGRAPH_MODE_MAX - 1) % R_AGRAPH_MODE_MAX;
 }
+
 static const char *mode2str(const RAGraph *g, const char *prefix) {
 	static char m[20];
 	const char *submode;
@@ -1556,13 +1562,18 @@ static void set_layout(RAGraph *g) {
 	/* identify row height */
 	for (i = 0; i < g->n_layers; i++) {
 		int rh = 0;
+		int rw = 0;
 		for (j = 0; j < g->layers[i].n_nodes; ++j) {
 			const RANode *n = get_anode (g->layers[i].nodes[j]);
 			if (n->h > rh) {
 				rh = n->h;
 			}
+			if (n->w > rw) {
+				rw = n->w;
+			}
 		}
 		g->layers[i].height = rh;
+		g->layers[i].width = rw;
 	}
 
 	/* x-coordinate assignment: algorithm based on:
@@ -1571,25 +1582,52 @@ static void set_layout(RAGraph *g) {
 	place_dummies (g);
 	place_original (g);
 
-	/* vertical align */
-	for (i = 0; i < g->n_layers; ++i) {
-		for (j = 0; j < g->layers[i].n_nodes; ++j) {
-			RANode *n = get_anode (g->layers[i].nodes[j]);
-			n->y = 1;
-			for (k = 0; k < n->layer; ++k) {
-				n->y += g->layers[k].height + VERTICAL_NODE_SPACING;
+	switch (g->layout) {
+	default:
+	case 0: // vertical layout
+		/* vertical align */
+		for (i = 0; i < g->n_layers; ++i) {
+			for (j = 0; j < g->layers[i].n_nodes; ++j) {
+				RANode *n = get_anode (g->layers[i].nodes[j]);
+				n->y = 1;
+				for (k = 0; k < n->layer; ++k) {
+					n->y += g->layers[k].height + VERTICAL_NODE_SPACING;
+				}
 			}
 		}
-	}
-
-	/* finalize x coordinate */
-	for (i = 0; i < g->n_layers; ++i) {
-		for (j = 0; j < g->layers[i].n_nodes; ++j) {
-			RANode *n = get_anode (g->layers[i].nodes[j]);
-			n->x -= n->w / 2;
+		/* finalize x coordinate */
+		for (i = 0; i < g->n_layers; ++i) {
+			for (j = 0; j < g->layers[i].n_nodes; ++j) {
+				RANode *n = get_anode (g->layers[i].nodes[j]);
+				n->x -= n->w / 2;
+			}
 		}
+		break;
+	/* experimental */
+	case 1: // horizontal layout
+		/* vertical align */
+		for (i = 0; i < g->n_layers; i++) {
+			for (j = 0; j < g->layers[i].n_nodes; j++) {
+				RANode *n = get_anode (g->layers[i].nodes[j]);
+				n->x = 1;
+				for (k = 0; k < n->layer; k++) {
+					n->x += g->layers[k].width + HORIZONTAL_NODE_SPACING;
+				}
+			}
+		}
+		/* finalize x coordinate */
+		for (i = 0; i < g->n_layers; i++) {
+			for (j = 0; j < g->layers[i].n_nodes; j++) {
+				RANode *n = get_anode (g->layers[i].nodes[j]);
+				n->y = 1;
+				for (k = 0; k < j; k++) {
+					RANode *m = get_anode (g->layers[i].nodes[k]);
+					n->y += m->h + VERTICAL_NODE_SPACING;
+				}
+			}
+		}
+		break;
 	}
-
 	restore_original_edges (g);
 	remove_dummy_nodes (g);
 
@@ -1908,10 +1946,18 @@ static void update_seek(RConsCanvas *can, RANode *n, int force) {
 }
 
 static int is_near (const RANode *n, int x, int y, int is_next) {
-	if (is_next)
+	if (is_next) {
 		return (n->y == y && n->x > x) || n->y > y;
-	else
-		return (n->y == y && n->x < x) || n->y < y;
+	}
+	return (n->y == y && n->x < x) || n->y < y;
+}
+
+/// XXX is wrong
+static int is_near_h (const RANode *n, int x, int y, int is_next) {
+	if (is_next) {
+		return (n->x == x && n->y > y) || n->x > x;
+	}
+	return (n->x == x && n->y < y) || n->x < x;
 }
 
 static const RGraphNode *find_near_of (const RAGraph *g, const RGraphNode *cur, int is_next) {
@@ -1925,7 +1971,10 @@ static const RGraphNode *find_near_of (const RAGraph *g, const RGraphNode *cur, 
 	int start_x = acur ? acur->x : default_v;
 
 	graph_foreach_anode (nodes, it, gn, n) {
-		if (is_near (n, start_x, start_y, is_next)) {
+		bool isNear = g->layout
+			? is_near (n, start_x, start_y, is_next)
+			: is_near_h (n, start_x, start_y, is_next);
+		if (isNear) {
 			const RANode *resn;
 
 			if (!resgn) {
@@ -1934,17 +1983,17 @@ static const RGraphNode *find_near_of (const RAGraph *g, const RGraphNode *cur, 
 			}
 
 			resn = get_anode (resgn);
-			if ((is_next && resn->y > n->y) || (!is_next && resn->y < n->y))
+			if ((is_next && resn->y > n->y) || (!is_next && resn->y < n->y)) {
 				resgn = gn;
-			else if ((is_next && resn->y == n->y && resn->x > n->x) ||
-					(!is_next && resn->y == n->y && resn->x < n->x))
+			} else if ((is_next && resn->y == n->y && resn->x > n->x) ||
+					(!is_next && resn->y == n->y && resn->x < n->x)) {
 				resgn = gn;
+			}
 		}
 	}
-
-	if (!resgn && cur)
+	if (!resgn && cur) {
 		resgn = find_near_of (g, NULL, is_next);
-
+	}
 	return resgn;
 }
 
@@ -2150,36 +2199,62 @@ static void agraph_print_edge(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	e.from = a;
 	e.to = b;
 	it = r_list_find (g->edges, &e, (RListComparator)find_ascii_edge);
-	if (it) {
-		int i, len;
 
-		edg = r_list_iter_get_data (it);
-		len = r_list_length (edg->x);
+	switch (g->layout) {
+	case 0:
+	default:
+		it = r_list_find (g->edges, &e, (RListComparator)find_ascii_edge);
+		if (it) {
+			int i, len;
 
-		for (i = 0; i < len; ++i) {
-			x2 = (int)(size_t)r_list_get_n (edg->x, i);
-			y2 = (int)(size_t)r_list_get_n (edg->y, i) - 1;
+			edg = r_list_iter_get_data (it);
+			len = r_list_length (edg->x);
 
-			if (is_first && nth == 0 && x2 > x) {
-				xinc += 4;
-				x += 4;
+			for (i = 0; i < len; ++i) {
+				x2 = (int)(size_t)r_list_get_n (edg->x, i);
+				y2 = (int)(size_t)r_list_get_n (edg->y, i) - 1;
+
+				if (is_first && nth == 0 && x2 > x) {
+					xinc += 4;
+					x += 4;
+				}
+				r_cons_canvas_line (g->can, x, y, x2, y2, &style);
+
+				x = x2;
+				y = y2;
+				style.symbol = LINE_NONE;
+				is_first = false;
 			}
-			r_cons_canvas_line (g->can, x, y, x2, y2, &style);
-
-			x = x2;
-			y = y2;
-			style.symbol = LINE_NONE;
-			is_first = false;
 		}
-	}
+		x2 = b->x + xinc;
+		y2 = b->y - 1;
+		if (is_first && nth == 0 && x2 > x) {
+			xinc += 4;
+			x += 4;
+		}
+		r_cons_canvas_line (g->can, x, y, x2, y2, &style);
+		break;
+	case 1:
+		x = a->x + a->w;
+		y = a->y + (a->h / 2) + nth;
+		if (it) {
+			int i, len;
+			edg = r_list_iter_get_data (it);
+			len = r_list_length (edg->x);
 
-	x2 = b->x + xinc;
-	y2 = b->y - 1;
-	if (is_first && nth == 0 && x2 > x) {
-		xinc += 4;
-		x += 4;
+			for (i = 0; i < len; i++) {
+				//r_cons_canvas_line (g->can, x, y, x2, y2, &style);
+				x = a->x + a->w;
+				y = a->y + (a->h / 2);
+				style.symbol = LINE_NONE;
+				is_first = false;
+			}
+		}
+		x2 = b->x - 1;
+		y2 = b->y + (b->h / 2);
+		r_cons_canvas_line (g->can, x, y, x2, y2, &style);
+		break;
 	}
-	r_cons_canvas_line (g->can, x, y, x2, y2, &style);
 }
 
 static void agraph_print_edges(const RAGraph *g) {
@@ -2797,7 +2872,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		r_config_hold_free (hc);
 		return false;
 	}
-	can->linemode = 1;
+	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 
 	r_config_save_num (hc, "asm.cmtright", NULL);
@@ -2811,6 +2886,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			return false;
 		}
 		g = r_agraph_new (can);
+		g->layout = r_config_get_i (core->config, "graph.layout");
 		if (!g) {
 			r_cons_canvas_free (can);
 			r_config_restore (hc);
@@ -3084,6 +3160,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'r':
 			if (fcn) {
+				g->layout = r_config_get_i (core->config, "graph.layout");
 				g->need_reload_nodes = true;
 			}
 			break;
