@@ -1317,7 +1317,6 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 			if (*structname == '(') {
 				endname = (char*)r_str_rchr (structname, NULL, ')');
 			} else {
-				eprintf ("Missing struct name\n");
 				free (structname);
 				break;
 			}
