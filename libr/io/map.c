@@ -152,7 +152,7 @@ R_API int r_io_map_del_for_fd (RIO *io, int fd)
 }
 
 //brings map with specified id to the top of of the list
-R_API int r_io_map_priorize (RIO *io, ut32 id)
+R_API bool r_io_map_priorize (RIO *io, ut32 id)
 {
 	SdbListIter *iter;
 	RIOMap *map;

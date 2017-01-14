@@ -194,6 +194,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 		"om", " fd addr [size]", "create new io map",
 		"omr", " mapid addr", "relocate map with corresponding id",
 		"omp", " mapid", "priorize map with corresponding id",
+		"omsp", " sectionid", "priorize maps of mapped section with sectionid"
 		"om*", "", "show r2 commands to restore mapaddr",
 		NULL };
 	ut64 fd = 0LL;			//shouldn't that but st32/int?
@@ -201,7 +202,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 	ut64 size = 0LL;
 	ut64 delta = 0LL;
 	char *s, *p, *q;
-	ut32 mapid;
+	ut32 id;
 	ut64 new;
 	RIOMap *map = NULL;
 	RIODesc *desc = NULL;
@@ -213,23 +214,30 @@ static void cmd_open_map (RCore *core, const char *input) {
 			break;
 		P = strchr (input+3, ' ');
 		if (P) {
-			mapid = (ut32)r_num_math (core->num, input+3);
+			id = (ut32)r_num_math (core->num, input+3);	//mapid
 			new = r_num_math (core->num, P+1);
-			map = r_io_map_resolve (core->io, mapid);	//the remapping should be done in the api
+			map = r_io_map_resolve (core->io, id);	//the remapping should be done in the api
 			if (map) {
 				ut64 diff = map->to - map->from;
 				map->from = new;
 				map->to = new+diff;			//this is so risky
-			} else eprintf ("Cannot find any map with mapid %d\n", mapid);
+			} else eprintf ("Cannot find any map with mapid %d\n", id);
 		}
+		break;
+	case 's':
+		if (input[2] != 'p' || input[3] != ' ')
+			break;
+		id = (ut32)r_num_math (core->num, input+4);		//sectionid
+		if (!r_io_section_priorize (core->io, id))
+			eprintf ("Cannot priorize section with sectionid %d\n", id);
 		break;
 	case 'p':
 		if (input[2] != ' ')
 			break;
-		mapid = (ut32)r_num_math (core->num, input+3);
-		if (r_io_map_exists_for_id (core->io, mapid)) {
-			r_io_map_priorize (core->io, mapid);
-		} else eprintf ("Cannot find any map with mapid %d\n", mapid);
+		id = (ut32)r_num_math (core->num, input+3);		//mapid
+		if (r_io_map_exists_for_id (core->io, id)) {
+			r_io_map_priorize (core->io, id);
+		} else eprintf ("Cannot find any map with mapid %d\n", id);
 		break;
 	case ' ':
 		// i need to parse delta, offset, size
@@ -336,6 +344,7 @@ static int cmd_open(void *data, const char *input) {
 		"o"," [file] 0x4000","map file at 0x4000",
 		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 		"ob","[lbdos] [...]","list open binary files backed by fd",
+		"of", " fd", "priorize RIODesc with fd (bring to the front in pa)"
 		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"om","[?]","create, list, remove IO maps",
 		NULL

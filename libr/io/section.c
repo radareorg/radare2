@@ -267,6 +267,24 @@ R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch,
 	return true;
 }
 
+R_API bool r_io_section_priorize (RIO *io, ut32 id)
+{
+	RIOSection *sec = r_io_section_get_i (io, id);
+	bool ret;
+	if (!sec)
+		return false;
+	if (sec->filemap) {
+		if (!sec->memmap) {
+			return r_io_map_priorize (io, sec->filemap);
+		}
+		ret = r_io_map_priorize (io, sec->filemap);
+	} else if (!(sec->filemap == sec->memmap))
+		return r_io_map_priorize (io, sec->memmap);
+	if (!(sec->filemap == sec->memmap))
+		return ret & r_io_map_priorize (io, sec->memmap);
+	return false;
+}
+
 R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method)
 {
 	RIOSection *sec;

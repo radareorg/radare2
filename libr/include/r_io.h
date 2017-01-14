@@ -223,7 +223,7 @@ R_API RIOMap *r_io_map_add (RIO *io, int fd, int flags, ut64 delta, ut64 addr, u
 R_API RIOMap *r_io_map_get (RIO *io, ut64 addr);		//returns the map at addr with the highest priority
 R_API int r_io_map_del (RIO *io, ut32 id);
 R_API int r_io_map_del_for_fd (RIO *io, int fd);
-R_API int r_io_map_priorize (RIO *io, ut32 id);
+R_API bool r_io_map_priorize (RIO *io, ut32 id);
 R_API void r_io_map_cleanup (RIO *io);
 R_API void r_io_map_fini (RIO *io);
 R_API int r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to);
@@ -320,6 +320,7 @@ R_API SdbList *r_io_section_vget_secs_at (RIO *io, ut64 vaddr);
 R_API int r_io_section_set_archbits (RIO *io, ut32 id, const char *arch, int bits);
 R_API char *r_io_section_get_archbits (RIO *io, ut32 id, int *bits);
 R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch, int bits);
+R_API bool r_io_section_priorize (RIO *io, ut32 id);
 R_API int r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method);
 R_API int r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method);
 
