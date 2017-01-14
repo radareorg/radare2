@@ -1139,6 +1139,14 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr,
 	}
 	if (xtr && bytes) {
 		RList *xtr_data_list = xtr->extractall_from_bytes (bin, bytes, sz);
+		RListIter *iter;
+		RBinXtrData *xtr;
+		//populate xtr_data with baddr and laddr that will be used later on
+		//r_bin_file_object_new_from_xtr_data
+		r_list_foreach (xtr_data_list, iter, xtr) {
+			xtr->baddr = baseaddr? baseaddr : UT64_MAX;
+			xtr->laddr = loadaddr? loadaddr : UT64_MAX;
+		}
 		bf->xtr_data = xtr_data_list ? xtr_data_list : NULL;
 	} 
 	return bf;
@@ -1917,8 +1925,8 @@ R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch,
 				if (bits == iter_bits && !strcmp (iter_arch, arch)) {
 					if (!xtr_data->loaded) {
 						if (!r_bin_file_object_new_from_xtr_data (
-							    bin, binfile, UT64_MAX,
-							    r_bin_get_laddr (bin), xtr_data)) {
+							    bin, binfile, xtr_data->baddr,
+							    xtr_data->laddr, xtr_data)) {
 							return NULL;
 						}
 						return binfile;

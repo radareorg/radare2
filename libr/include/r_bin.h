@@ -259,6 +259,8 @@ typedef struct r_bin_xtr_extract_t {
 	Sdb *sdb;
 	ut64 size;
 	ut64 offset;
+	ut64 baddr;
+	ut64 laddr;
 	int file_count;
 	int loaded;
 	RBinXtrMetadata *metadata;
