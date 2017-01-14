@@ -17,10 +17,10 @@ static void __section_list (RIO *io, RPrint *print, int rad) {
 		}
 	} else {
 		ls_foreach (io->sections, iter, s) {	
-			print->cb_printf ("[%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
+			print->cb_printf ("[%02d:%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
-				s->id, s->addr, r_str_rwx_i (s->flags), s->vaddr,
-				s->size, s->vsize, s->name);
+				s->bin_id, s->id, s->addr, r_str_rwx_i (s->flags),
+				s->vaddr, s->size, s->vsize, s->name);
 			if (s->arch && s->bits)
 				print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
 					s->bits);
