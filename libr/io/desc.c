@@ -7,6 +7,7 @@ R_API int r_io_desc_init (RIO *io)
 	if (!io || io->files)
 		return false;
 	io->files = sdb_new0 ();
+	io->desc_fd = 2;
 	return true;
 }
 
@@ -30,6 +31,18 @@ R_API void r_io_desc_free (RIODesc *desc)
 	if (desc) {
 		free (desc->uri);
 		free (desc->referer);
+		free (desc->name);
+		if (desc->io && (desc->fd > 2)) {
+			if (desc->fd == desc->io->desc_fd) {
+				desc->io->desc_fd--;
+			} else {
+				if (!desc->io->freed_desc_fds) {
+					desc->io->freed_desc_fds = ls_new ();
+					desc->io->freed_desc_fds->free = NULL;
+				}
+				ls_prepend (desc->io->freed_desc_fds, (void *)(size_t)desc->fd);
+			}
+		}
 //		free (desc->plugin);
 	}
 	free (desc);
@@ -40,9 +53,23 @@ R_API int r_io_desc_add (RIO *io, RIODesc *desc)
 	char s[64];
 	if (!io || !io->files || !desc)
 		return false;
-	sdb_itoa ((ut64)desc->fd, s, 10);
-	if (sdb_num_exists (io->files, s))		//check if fd already exists in db
-		return false;
+	desc->io = io;
+	if (desc->fd > 2) {
+		sdb_itoa ((ut64)desc->fd, s, 10);
+		if (sdb_num_exists (io->files, s))	//check if fd already exists in db
+			return false;
+		if (io->freed_desc_fds) {
+			desc->fd = (int)(size_t) ls_pop (io->freed_desc_fds);
+			if (!io->freed_desc_fds->length) {
+				ls_free (io->freed_desc_fds);
+				io->freed_desc_fds = NULL;
+			}
+		} else if (io->desc_fd != 0xffffffff) {
+				io->desc_fd++;
+				desc->fd = io->desc_fd;
+		}		
+		sdb_itoa ((ut64)desc->fd, s, 10);
+	}
 	sdb_num_set (io->files, s, (ut64)desc, 0);
 	return sdb_num_exists (io->files, s);		//check if storage worked
 }
@@ -87,7 +114,7 @@ R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence)
 R_API ut64 r_io_desc_size (RIODesc *desc)
 {
 	ut64 off, ret;
-	if (desc || !desc->plugin || !desc->plugin->lseek)
+	if (!desc || !desc->plugin || !desc->plugin->lseek)
 		return 0LL;
 	off = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_CUR);
 	ret = desc->plugin->lseek (desc->io, desc, 0LL, R_IO_SEEK_END);

@@ -1,5 +1,49 @@
 /* radare - LGPL - Copyright 2009-2015 - pancake */
 
+#include <sdb.h>
+
+static void map_list (RIO *io, int mode, RPrint *print) {
+	SdbListIter *iter;
+	RIOMap *map;
+	if (!io || !io->maps || !print || !print->cb_printf)
+		return;
+	ls_foreach_prev (io->maps, iter, map) {
+		switch (mode) {
+			case 1:
+			case 'r':
+				if (map->from)
+					print->cb_printf ("omr 0x0 0x%"PFMT64x"\n", map->from);
+				break;
+			default:
+				print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
+						" - 0x%"PFMT64x" ; %s\n", map->id, map->fd,
+						map->delta, map->from, map->to,
+						r_str_rwx_i (map->flags));
+		}
+	}
+}
+
+static int desc_list_cb (void *user, const char *str_fd, const char *str_desc) {
+	RPrint *p = (RPrint *)user;					//TODO: make this fancy
+	SdbListIter *iter;
+	RIODesc *desc = (RIODesc *)(size_t)sdb_atoi (str_desc);
+	RIOMap *map;
+	if (desc) {
+		p->cb_printf ("[%2d] %c %s : %s size=0x%"PFMT64x"\n", desc->fd, 
+				(desc->io && (desc->io->desc == desc)) ? '*' : '-',
+				desc->uri, r_str_rwx_i (desc->flags), r_io_desc_size (desc));
+		if (desc->io && desc->io->va && desc->io->maps) {
+			ls_foreach_prev (desc->io->maps, iter, map) {
+				if (map->fd == desc->fd) {
+					p->cb_printf (" [%2d] +0x%"PFMT64x" 0x%"PFMT64x
+						" - 0x%"PFMT64x" : %s\n", map->id, map->delta,
+						map->from, map->to, r_str_rwx_i (map->flags));
+				}
+			}
+		}
+		return true;
+	} return false;
+}
 
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
 	RListIter *it;
@@ -146,18 +190,22 @@ static void cmd_open_map (RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "om[-] [arg]", " # map opened files",
 		"om", "", "list all defined IO maps",
-		"om", "-0x10000", "remove the map at given address",
+		"om", "-mapid", "remove the map with corresponding id",
 		"om", " fd addr [size]", "create new io map",
-		"omr", " fd|0xADDR ADDR", "relocate current map",
+		"omr", " mapid addr", "relocate map with corresponding id",
+		"omp", " mapid", "priorize map with corresponding id",
+		"omsp", " sectionid", "priorize maps of mapped section with sectionid"
 		"om*", "", "show r2 commands to restore mapaddr",
 		NULL };
-	ut64 fd = 0LL;
+	ut64 fd = 0LL;			//shouldn't that but st32/int?
 	ut64 addr = 0LL;
 	ut64 size = 0LL;
 	ut64 delta = 0LL;
 	char *s, *p, *q;
-	ut64 cur, new;
+	ut32 id;
+	ut64 new;
 	RIOMap *map = NULL;
+	RIODesc *desc = NULL;
 	const char *P;
 
 	switch (input[1]) {
@@ -166,26 +214,30 @@ static void cmd_open_map (RCore *core, const char *input) {
 			break;
 		P = strchr (input+3, ' ');
 		if (P) {
-			cur = r_num_math (core->num, input+3);
+			id = (ut32)r_num_math (core->num, input+3);	//mapid
 			new = r_num_math (core->num, P+1);
-			map = atoi (input+3)>0?
-				r_io_map_resolve (core->io, cur):
-				r_io_map_get (core->io, cur);
+			map = r_io_map_resolve (core->io, id);	//the remapping should be done in the api
 			if (map) {
 				ut64 diff = map->to - map->from;
 				map->from = new;
-				map->to = new+diff;
-			} else eprintf ("Cannot find any map here\n");
-		} else {
-			cur = core->offset;
-			new = r_num_math (core->num, input+3);
-			map = r_io_map_resolve (core->io, core->file->desc->fd);
-			if (map) {
-				ut64 diff = map->to - map->from;
-				map->from = new;
-				map->to = new+diff;
-			} else eprintf ("Cannot find any map here\n");
+				map->to = new+diff;			//this is so risky
+			} else eprintf ("Cannot find any map with mapid %d\n", id);
 		}
+		break;
+	case 's':
+		if (input[2] != 'p' || input[3] != ' ')
+			break;
+		id = (ut32)r_num_math (core->num, input+4);		//sectionid
+		if (!r_io_section_priorize (core->io, id))
+			eprintf ("Cannot priorize section with sectionid %d\n", id);
+		break;
+	case 'p':
+		if (input[2] != ' ')
+			break;
+		id = (ut32)r_num_math (core->num, input+3);		//mapid
+		if (r_io_map_exists_for_id (core->io, id)) {
+			r_io_map_priorize (core->io, id);
+		} else eprintf ("Cannot find any map with mapid %d\n", id);
 		break;
 	case ' ':
 		// i need to parse delta, offset, size
@@ -204,25 +256,22 @@ static void cmd_open_map (RCore *core, const char *input) {
 					size = r_num_math (core->num, q+1);
 					delta = r_num_math (core->num, r+1);
 				} else size = r_num_math (core->num, q+1);
-			} else size = r_io_size (core->io);
-			r_io_map_add (core->io, fd, 0, delta, addr, size);
+			} else size = r_io_size (core->io);		//XXX
+			if (desc = r_io_desc_get (core->io, fd)) {
+				r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
+			} else eprintf ("No file opened with fd %"PFMT64d"\n", fd);
 		} else eprintf ("Invalid use of om . See om? for help.");
 		free (s);
 		break;
 	case '-':
-		if (atoi (input+3)>0) {
-			r_io_map_del (core->io,
-					r_num_math (core->num, input+2));
-		} else {
-			r_io_map_del_at (core->io,
-					r_num_math (core->num, input+2));
-		}
+		r_io_map_del (core->io,
+			r_num_math (core->num, input+2));
 		break;
 	case '\0':
-		r_io_map_list (core->io, 0);
+		map_list (core->io, 0, core->print);
 		break;
 	case '*':
-		r_io_map_list (core->io, 'r');
+		map_list (core->io, 'r', core->print);
 		break;
 	default:
 	case '?':
@@ -295,6 +344,7 @@ static int cmd_open(void *data, const char *input) {
 		"o"," [file] 0x4000","map file at 0x4000",
 		"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 		"ob","[lbdos] [...]","list open binary files backed by fd",
+		"of", " fd", "priorize RIODesc with fd (bring to the front in pa)"
 		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"om","[?]","create, list, remove IO maps",
 		NULL
@@ -321,14 +371,19 @@ static int cmd_open(void *data, const char *input) {
 	RListIter *iter;
 
 	switch (*input) {
+#if 0
 	case '=':
-		r_io_desc_list_visual (core->io, core->offset, core->blocksize,
-			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		//r_io_desc_list_visual (core->io, core->offset, core->blocksize,
+		//	r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
+		sdb_foreach (core->io->files, desc_list_cb, core->print);
 		break;
+#endif
 	case '\0':
+		sdb_foreach (core->io->files, desc_list_cb, core->print);
+		break;
 	case '*':
 	case 'j':
-		r_core_file_list (core, (int)(*input));
+		r_core_file_list (core, (int)(*input));		//XXX: don't use the cores file list
 		break;
 	case 'a':
 		addr = core->offset;
@@ -370,34 +425,33 @@ static int cmd_open(void *data, const char *input) {
 		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
 			*ptr = '\0';
 			addr = r_num_math (core->num, ptr+1);
-		} else {
-			num = atoi (ptr? ptr: input+1);
-			addr = 0LL;
 		}
-		if (num<=0) {
-			const char *fn = input+1; //(isn?2:1);
-			if (fn && *fn) {
-				if (isn) fn++;
-				file = r_core_file_open (core, fn, perms, addr);
-				if (file) {
-					r_cons_printf ("%d\n", file->desc->fd);
-					// MUST CLEAN BEFORE LOADING
-					if (!isn)
-						r_core_bin_load (core, fn, baddr);
-				} else if (!nowarn) {
-					eprintf ("Cannot open file '%s'\n", fn);
-				}
-			} else {
-				eprintf ("Usage: on [file]\n");
+		const char *fn = input+1; //(isn?2:1);
+		if (fn && *fn) {
+			if (isn) fn++;
+			file = r_core_file_open (core, fn, perms, addr);
+			if (file) {
+				r_cons_printf ("%d\n", file->desc->fd);
+				// MUST CLEAN BEFORE LOADING
+				if (!isn)
+					r_core_bin_load (core, fn, baddr);
+			} else if (!nowarn) {
+				eprintf ("Cannot open file '%s'\n", fn);
 			}
 		} else {
+			eprintf ("Usage: o [file]\n");
+		}
+		break;
+	case 'f':
+		{
 			RListIter *iter = NULL;
 			RCoreFile *f;
+			num = atoi (input+1);
 			core->switch_file_view = 0;
 			r_list_foreach (core->files, iter, f) {
 				if (f->desc->fd == num) {
-					r_io_raise (core->io, num);
-					core->switch_file_view = 1;
+					r_io_desc_use (core->io, num);
+//					core->switch_file_view = 1;	//WTF, why does this line break 'of'?
 					break;
 				}
 			}
@@ -409,7 +463,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '-': // o-
 		switch (input[1]) {
-		case '*': // "o-*"
+			case '*': // "o-*"
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
@@ -455,7 +509,7 @@ static int cmd_open(void *data, const char *input) {
 			if (input[2]=='n') {
 				perms = (input[3]=='+')? R_IO_READ|R_IO_WRITE: 0;
 				r_core_file_reopen (core, input + 4, perms, 0);
-				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);
+				r_core_cmdf (core, ".!rabin2 -rk '' '%s'", core->file->desc->name);	//WTF
 			} else {
 				perms = (input[2]=='+')? R_IO_READ|R_IO_WRITE: 0;
 				r_core_file_reopen (core, input + 3, perms, 0);

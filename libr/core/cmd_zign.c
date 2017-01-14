@@ -132,9 +132,11 @@ static int cmd_zign(void *data, const char *input) {
 					fin = ini+r_num_math (core->num, input+2);
 				}
 			} else {
-				s = r_io_section_vget (core->io, core->io->off);
+				SdbList *secs = r_io_section_vget_secs_at (core->io, core->io->off);
+				s = secs ? ls_pop (secs) : NULL;
+				ls_free (secs);
 				if (s) {
-					ini = core->io->va?s->vaddr:s->offset;
+					ini = core->io->va?s->vaddr:s->addr;
 					fin = ini + (core->io->va?s->vsize:s->size);
 				} else {
 					eprintf ("No section identified, please provide range.\n");

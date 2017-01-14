@@ -62,7 +62,7 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, ut8 many) {
 		if (ret->plugin_open (io, filename, many))
 			return ret;
 	}
-	return NULL;
+	return r_io_plugin_get_default (io, filename, many);
 }
 
 R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin) {
