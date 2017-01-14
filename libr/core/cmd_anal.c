@@ -3803,7 +3803,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	} break;
 	case 'g': // "axg"
 		{
-			Sdb *db = sdb_new0();
+			Sdb *db = sdb_new0 ();
 			anal_axg (core, input + 2, 0, db);
 			sdb_free (db);
 		}
@@ -3996,7 +3996,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'C': // "axC"
 	case 'c': // "axc"
 	case 'd': // "axd"
-	case ' ': {
+	case ' ': 
+		{
 		char *ptr = strdup (r_str_trim_head ((char *)input + 1));
 		int n = r_str_word_set0 (ptr);
 		ut64 at = core->offset;
@@ -4004,7 +4005,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		switch (n) {
 		case 2: // get at
 			at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			/* fall through */
+		/* fall through */
 		case 1: // get addr
 			addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			break;
@@ -4014,7 +4015,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		r_anal_ref_add (core->anal, addr, at, input[0]);
 		free (ptr);
-	} break;
+		} 
+	   	break;
 	default:
 	case '?':
 		r_core_cmd_help (core, help_msg);
@@ -4023,27 +4025,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 
 	return true;
 }
-/*
-	in core/disasm we call
-	R_API int r_core_hint(RCore *core, ut64 addr) {
-		static int hint_bits = 0;
-		RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-		if (hint->bits) {
-			if (!hint_bits)
-			hint_bits = core->assembler->bits;
-			r_config_set_i (core->config, "asm.bits", hint->bits);
-		} else if (hint_bits) {
-			r_config_set_i (core->config, "asm.bits", hint_bits);
-			hint_bits = 0;
-		}
-		if (hint->arch)
-			r_config_set (core->config, "asm.arch", hint->arch);
-		if (hint->length)
-			force_instruction_length = hint->length;
-		r_anal_hint_free (hint);
-	}
-	*/
-
 static void cmd_anal_hint(RCore *core, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "ah[lba-]", "Analysis Hints",
