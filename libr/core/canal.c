@@ -520,7 +520,9 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				continue;
 			}
 		}
+		f = r_flag_get_i2 (core->flags, fcn->addr);
 		R_FREE (fcn->name);
+#if 0
 		core->flags->space_strict = true;
 		//XXX fcn's API should handle this for us
 		f = r_flag_get_at (core->flags, fcn->addr, true);
@@ -532,12 +534,18 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			f = r_flag_get_i2 (core->flags, fcn->addr);
 			if (f && f->name && strncmp (f->name, "sect", 4) &&
 			    strncmp (f->name, "sym.func.", 9)) {
+#else
+		if (f && f->name && strncmp (f->name, "sect", 4)) {
+			fcn->name = strdup (f->name);
+		} else {
+			f = r_flag_get_i (core->flags, fcn->addr);
+			if (f && *f->name && strncmp (f->name, "sect", 4)) {
+#endif
 				fcn->name = strdup (f->name);
 			} else {
 				fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
 			}
 		}
-		core->flags->space_strict = false;
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && r_anal_fcn_size (fcn) < 1)) { /* Error analyzing function */
 			if (core->anal->opt.followbrokenfcnsrefs) {
@@ -572,6 +580,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			} else {
 				fcn->depth = 256 - fcn->depth;
 			}
+
 			/* New function: Add initial xref */
 			if (from != UT64_MAX) {
 				// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
