@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_userconf.h>
 #include <stdlib.h>
@@ -391,7 +391,8 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		} else {
 			close (2);
 		}
-		close (sh_err[0]); close (sh_err[1]);
+		close (sh_err[0]);
+		close (sh_err[1]);
 		exit (r_sandbox_system (cmd, 0));
 	default:
 		outputptr = strdup ("");
@@ -460,7 +461,9 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 					close (sh_in[1]);
 					/* If neither stdout nor stderr should be captured,
 					 * abort now - nothing more to do for select(). */
-					if (!output && !sterr) break;
+					if (!output && !sterr) {
+						break;
+					}
 				}
 			}
 		}
@@ -470,11 +473,13 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		close (sh_err[0]);
 		close (sh_in[1]);
 		waitpid (pid, &status, 0);
+		bool ret = true;
 		if (status) {
 			char *escmd = r_str_escape (cmd);
-			eprintf ("%s: failed command '%s'\n", __func__, escmd);
+			eprintf ("error code %d\n", WEXITSTATUS(status));
+			//eprintf ("%s: failed command '%s'\n", __func__, escmd);
 			free (escmd);
-			return false;
+			ret = false;
 		}
 
 		if (output) {
@@ -482,7 +487,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		} else {
 			free (outputptr);
 		}
-		return true;
+		return ret;
 	}
 	return false;
 }
