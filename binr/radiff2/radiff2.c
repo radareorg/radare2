@@ -364,25 +364,38 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 	return (ut8*)r_file_slurp (file, sz);
 }
 
-// TODO: sort and uniq() https://github.com/radare/radare2/issues/6461
+static int import_cmp(const RBinImport* a, const RBinImport* b) {
+	return strcmp(a->name, b->name);
+}
+
 static ut8 *get_imports(RCore *c, int *len) {
 	RList *list = r_bin_get_imports (c->bin);
 	RListIter *iter;
-	RBinImport *str;
+	RBinImport *str, *old = NULL;
 	ut8 *buf, *ptr;
+
+	r_list_sort (list, (RListComparator)import_cmp);
 
 	*len = 0;
 
 	r_list_foreach (list, iter, str) {
-		*len += strlen (str->name) + 1;
+		if (!old || (old && import_cmp(old, str) != 0)) {
+			*len += strlen (str->name) + 1;
+			old = str;
+		}
 	}
 	ptr = buf = malloc (*len + 1);
 
+	old = NULL;
+
 	r_list_foreach (list, iter, str) {
+		if (old && import_cmp(old, str) == 0)
+			continue;
 		int namelen = strlen (str->name);
 		memcpy (ptr, str->name, namelen);
 		ptr += namelen;
 		*ptr++ = '\n';
+		old = str;
 	}
 	*ptr = 0;
 
@@ -390,26 +403,42 @@ static ut8 *get_imports(RCore *c, int *len) {
 	return buf;
 }
 
-// TODO: sort and uniq() https://github.com/radare/radare2/issues/6461
+static int bs_cmp(const RBinString* a, const RBinString* b) {
+	int diff = a->length - b->length;
+	return diff == 0 ? strncmp(a->string, b->string, a->length) : diff;
+}
+
 static ut8 *get_strings(RCore *c, int *len) {
 	RList *list = r_bin_get_strings (c->bin);
 	RListIter *iter;
-	RBinString *str;
+	RBinString *str, *old = NULL;
 	ut8 *buf, *ptr;
+
+	r_list_sort (list, (RListComparator)bs_cmp);
 
 	*len = 0;
 
 	r_list_foreach (list, iter, str) {
-		*len += str->length + 1;
+		if (!old || (old && bs_cmp(old, str) != 0)) {
+			*len += str->length + 1;
+			old = str;
+		}
 	}
 	
 	ptr = buf = malloc (*len + 1);
 
+	old = NULL;
+
 	r_list_foreach (list, iter, str) {
+		if (old && bs_cmp(old, str) == 0)
+			continue;
 		memcpy (ptr, str->string, str->length);
 		ptr += str->length;
 		*ptr++ = '\n';
+		old = str;
 	}
+	*ptr = 0;
+
 	*len = strlen ((const char *)buf);
 	return buf;
 }
