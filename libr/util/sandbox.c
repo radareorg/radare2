@@ -72,7 +72,7 @@ R_API bool r_sandbox_disable (bool e) {
 R_API bool r_sandbox_enable (bool e) {
 	if (enabled) {
 		if (!e) {
-			eprintf ("Cant disable sandbox\n");
+			// eprintf ("Cant disable sandbox\n");
 		}
 		return true;
 	}
