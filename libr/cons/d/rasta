@@ -4,6 +4,7 @@ ec fline green
 ec flag green
 ec label yellow
 ec flow green
+ec flow2 yellow
 ec floc green
 ec prompt red
 ec offset yellow

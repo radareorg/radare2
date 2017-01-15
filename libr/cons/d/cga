@@ -13,6 +13,7 @@ ec input rgb:0ff
 ec fname rgb:f0f
 ec label rgb:f0f
 ec flow rgb:f0f
+ec flow2 rgb:f0f
 ec prompt rgb:0ff
 ec offset rgb:0ff
 ec other rgb:fff

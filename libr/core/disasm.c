@@ -137,6 +137,7 @@ typedef struct r_disam_options_t {
 	const char *color_floc;
 	const char *color_fline;
 	const char *color_flow;
+	const char *color_flow2;
 	const char *color_flag;
 	const char *color_label;
 	const char *color_other;
@@ -404,6 +405,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_floc = P(floc): Color_MAGENTA;
 	ds->color_fline = P(fline): Color_CYAN;
 	ds->color_flow = P(flow): Color_CYAN;
+	ds->color_flow2 = P(flow2): Color_CYAN;
 	ds->color_flag = P(flag): Color_CYAN;
 	ds->color_label = P(label): Color_CYAN;
 	ds->color_other = P(other): Color_WHITE;
@@ -1476,6 +1478,11 @@ static void ds_show_flags(RDisasmState *ds) {
 static void ds_update_ref_lines(RDisasmState *ds) {
 	if (ds->show_lines) {
 		ds->line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
+		if (ds->show_color) {
+			char *newstr = r_str_newf ("%s%s%s", ds->color_flow2, "|", ds->color_flow);
+			ds->line = r_str_replace (ds->line, ds->core->cons->vline[LINE_UP], newstr, true);
+			free (newstr);
+		}
 		free (ds->refline);
 		ds->refline = ds->line? strdup (ds->line): NULL;
 		free (ds->refline2);

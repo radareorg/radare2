@@ -5,6 +5,7 @@ ec fline rgb:afd
 ec flag rgb:f5d
 ec label rgb:f5d
 ec flow rgb:f5d
+ec flow2 rgb:72d
 ec prompt rgb:f5d
 ec offset rgb:72d
 ec input rgb:f5d

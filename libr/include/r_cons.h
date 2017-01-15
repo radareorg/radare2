@@ -89,6 +89,7 @@ typedef struct r_cons_palette_t {
 	char *fline;
 	char *floc;
 	char *flow;
+	char *flow2;
 	char *fname;
 	char *help;
 	char *input;
