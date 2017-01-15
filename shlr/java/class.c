@@ -1343,7 +1343,7 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 			method->class_name = r_str_dup (NULL, "NULL");
 	} else {
 		// XXX - default to this class?
-		method->field_ref_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2.this_class);
+		method->field_ref_cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, bin->cf2.this_class);
 		method->class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, method->field_ref_cp_obj);
 	}
 	IFDBG eprintf ("Parsing %s(%s)\n", method->name, method->descriptor);
@@ -1445,7 +1445,7 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			field->class_name = r_str_dup (NULL, "NULL");
 	}else {
 		// XXX - default to this class?
-		field->field_ref_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2.this_class);
+		field->field_ref_cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, bin->cf2.this_class);
 		field->class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, field->field_ref_cp_obj);
 	}
 	IFDBG eprintf ("Parsing %s(%s)", field->name, field->descriptor);
@@ -1641,7 +1641,7 @@ R_API RBinJavaCPTypeObj* r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, 
 	if (bin == NULL)
 		return NULL;
 	if (idx > bin->cp_count || idx == 0)
-		return r_bin_java_get_java_null_cp();
+		return r_bin_java_get_java_null_cp ();
 	return r_bin_java_get_item_from_cp_item_list (bin->cp_list, idx);
 }
 
@@ -1727,7 +1727,7 @@ R_API ut32 r_bin_java_get_utf8_len_from_cp_item_list(RList *cp_list, ut64 idx) {
 	return value;
 }
 
-R_API RBinJavaCPTypeObj* r_bin_java_get_item_from_cp_item_list (RList *cp_list, ut64 idx) {
+R_API RBinJavaCPTypeObj* r_bin_java_get_item_from_cp_item_list(RList *cp_list, ut64 idx) {
 	/*
 		Search through the Constant Pool list for the given CP Index.
 		rvalue: RBinJavaObj *
@@ -1739,7 +1739,7 @@ R_API RBinJavaCPTypeObj* r_bin_java_get_item_from_cp_item_list (RList *cp_list, 
 	return item;
 }
 
-R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
+R_API char* r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
 	/*
 		Given a constant poool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 		return the actual descriptor string.
@@ -1774,7 +1774,7 @@ R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJava
 	return NULL;
 }
 
-R_API char* r_bin_java_get_name_from_cp_item_list (RList *cp_list, ut64 idx) {
+R_API char* r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx) {
 	/*
 		Given a constant poool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 		return the actual descriptor string.
@@ -1791,7 +1791,7 @@ R_API char* r_bin_java_get_name_from_cp_item_list (RList *cp_list, ut64 idx) {
 	return NULL;
 }
 
-R_API char* r_bin_java_get_item_desc_from_cp_item_list (RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
+R_API char* r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
 	/*
 		Given a constant poool object FieldRef, MethodRef, or InterfaceMethodRef
 		return the actual descriptor string.
@@ -1817,7 +1817,7 @@ R_API char* r_bin_java_get_item_desc_from_cp_item_list (RList *cp_list, RBinJava
 	return NULL;
 }
 
-R_API char* r_bin_java_get_desc_from_cp_item_list (RList *cp_list, ut64 idx) {
+R_API char* r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx) {
 	/*
 		Given a constant poool object FieldRef, MethodRef, or InterfaceMethodRef
 		return the actual descriptor string.
@@ -2316,6 +2316,7 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 				addr->vaddr = addr->paddr = \
 					r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
 			}
+            addr->haddr = fm_type->file_offset;
 			r_list_append (ret, addr);
 		}
 	}
