@@ -116,12 +116,6 @@ typedef unsigned int uint;
 
 uint MaxMem = 0;
 
-// void judy_abort (char *msg) __attribute__ ((noreturn)); // Tell static analyser that this function will not return
-void judy_abort (char *msg)
-{
-	fprintf(stderr, "%s\n", msg);
-	exit(1);
-}
 #endif
 
 #define JUDY_seg	65536
@@ -141,7 +135,7 @@ enum JUDY_types {
 #endif
 };
 
-int JudySize[] = {
+static int JudySize[] = {
 	(JUDY_slot_size * 16),						// JUDY_radix node size
 	(JUDY_slot_size + JUDY_key_size),			// JUDY_1 node size
 	(2 * JUDY_slot_size + 2 * JUDY_key_size),
@@ -156,10 +150,10 @@ int JudySize[] = {
 #endif
 };
 
-judyvalue JudyMask[9] = {
-0, 0xff, 0xffff, 0xffffff, 0xffffffff,
+static judyvalue JudyMask[9] = {
+	0, 0xff, 0xffff, 0xffffff, 0xffffffff,
 #if JUDY_key_size > 4
-0xffffffffffULL, 0xffffffffffffULL, 0xffffffffffffffULL, 0xffffffffffffffffULL
+	0xffffffffffULL, 0xffffffffffffULL, 0xffffffffffffffULL, 0xffffffffffffffffULL
 #endif
 };
 
@@ -199,23 +193,18 @@ typedef struct {
 //		call with max key size
 //		and Integer tree depth.
 
-void *judy_open (uint max, uint depth)
-{
-JudySeg *seg;
-Judy *judy;
-uint amt;
+void *judy_open (uint max, uint depth) {
+	JudySeg *seg;
+	Judy *judy;
+	uint amt;
 
 	max++;		// allow for zero terminator on keys
 
-	if( (seg = malloc(JUDY_seg)) ) {
+	if( (seg = malloc (JUDY_seg)) ) {
 		seg->seg = NULL;
 		seg->next = JUDY_seg;
 	} else {
-#if defined(STANDALONE) || defined(ASKITIS)
-		judy_abort ("No virtual memory");
-#else
 		return NULL;
-#endif
 	}
 
 	amt = sizeof(Judy) + max * sizeof(JudyStack);
@@ -248,25 +237,21 @@ JudySeg *seg, *nxt = judy->seg;
 
 //	allocate judy node
 
-void *judy_alloc (Judy *judy, uint type)
-{
-uint amt, idx, min;
-JudySeg *seg;
-void **block;
-void **rtn;
+void *judy_alloc (Judy *judy, uint type) {
+	uint amt, idx, min;
+	JudySeg *seg;
+	void **block;
+	void **rtn;
 
-	if( !judy->seg )
-#if defined(STANDALONE) || defined(ASKITIS)
-			judy_abort("illegal allocation from judy clone");
-#else
-			return NULL;
-#endif
+	if (!judy->seg) {
+		return NULL;
+	}
 
-	if( type == JUDY_radix )
+	if (type == JUDY_radix)
 		type = JUDY_radix_equiv;
 
 #ifndef ASKITIS
-	if( type == JUDY_span )
+	if (type == JUDY_span)
 		type = JUDY_span_equiv;
 #endif
 
@@ -307,11 +292,7 @@ void **rtn;
 			judy->seg = seg;
 			seg->next -= (JudySlot)seg & (JUDY_cache_line - 1);
 		} else {
-#if defined(STANDALONE) || defined(ASKITIS)
-			judy_abort("Out of virtual memory");
-#else
 			return NULL;
-#endif
 		}
 
 #if defined(STANDALONE) || defined(ASKITIS)
@@ -341,12 +322,9 @@ void *judy_data (Judy *judy, uint amt)
 JudySeg *seg;
 void *block;
 
-	if( !judy->seg )
-#if defined(STANDALONE) || defined(ASKITIS)
-			judy_abort("illegal allocation from judy clone");
-#else
-			return NULL;
-#endif
+	if( !judy->seg ) {
+		return NULL;
+	}
 
 	if( amt & (JUDY_cache_line - 1))
 		amt |= (JUDY_cache_line - 1), amt += 1;
@@ -358,11 +336,7 @@ void *block;
 			judy->seg = seg;
 			seg->next -= (JudySlot)seg & (JUDY_cache_line - 1);
 		} else {
-#if defined(STANDALONE) || defined(ASKITIS)
-			judy_abort("Out of virtual memory");
-#else
 			return NULL;
-#endif
 		}
 	
 #if defined(STANDALONE) || defined(ASKITIS)

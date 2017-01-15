@@ -2,6 +2,7 @@
  * ascii85 - Ascii85 encode/decode data and print to standard output
  *
  * Copyright (C) 2011 Remy Oukaour
+ *  Updated by pancake in 2017
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,13 +33,13 @@
 
 static int getc_nospace(FILE *f) {
 	int c;
-	while (isspace(c = getc(f)));
+	while (isspace (c = getc (f)));
 	return c;
 }
 
 static void putc_wrap(char c, int wrap, int *len) {
 	if (wrap && *len >= wrap) {
-		putchar('\n');
+		putchar ('\n');
 		*len = 0;
 	}
 	putchar(c);
@@ -77,40 +78,46 @@ R_API void r_base85_encode(FILE *fp, int delims, int wrap, int y_abbr) {
 	int c, count = 0, len = 0;
 	unsigned long tuple = 0;
 	if (delims) {
-		putc_wrap('<', wrap, &len);
-		putc_wrap('~', wrap, &len);
+		putc_wrap ('<', wrap, &len);
+		putc_wrap ('~', wrap, &len);
 	}
 	for (;;) {
 		c = getc(fp);
 		if (c != EOF) {
 			tuple |= c << ((3 - count++) * 8);
-			if (count < 4) continue;
+			if (count < 4) {
+				continue;
+			}
+		} else if (count == 0) {
+			break;
 		}
-		else if (count == 0) break;
 		encode_tuple(tuple, count, wrap, &len, y_abbr);
-		if (c == EOF) break;
+		if (c == EOF) {
+			break;
+		}
 		tuple = 0;
 		count = 0;
 	}
 	if (delims) {
-		putc_wrap('~', wrap, &len);
-		putc_wrap('>', wrap, &len);
+		putc_wrap ('~', wrap, &len);
+		putc_wrap ('>', wrap, &len);
 	}
 }
 
-R_API void r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
+R_API bool r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 	int c, count = 0, end = 0;
 	unsigned long tuple = 0, pows[] = {85*85*85*85, 85*85*85, 85*85, 85, 1};
 	while (delims) {
-		c = getc_nospace(fp);
+		c = getc_nospace (fp);
 		if (c == '<') {
-			c = getc_nospace(fp);
-			if (c == '~') break;
-			ungetc(c, fp);
-		}
-		else if (c == EOF) {
-			eprintf("ascii85: missing <~\n");
-			exit(1);
+			c = getc_nospace (fp);
+			if (c == '~') {
+				break;
+			}
+			ungetc (c, fp);
+		} else if (c == EOF) {
+			eprint ("ascii85: missing <~");
+			return false;
 		}
 	}
 	for (;;) {
@@ -126,16 +133,16 @@ R_API void r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 		if (c == '~' && delims) {
 			c = getc_nospace (fp);
 			if (c != '>') {
-				eprintf("ascii85: ~ without >\n");
-				exit(1);
+				eprint ("ascii85: ~ without >\n");
+				return false;
 			}
 			c = EOF;
 			end = 1;
 		}
 		if (c == EOF) {
 			if (delims && !end) {
-				eprintf("ascii85: missing ~>\n");
-				exit(1);
+				eprint ("ascii85: missing ~>");
+				return false;
 			}
 			if (count > 0) {
 				tuple += pows[count-1];
@@ -144,9 +151,11 @@ R_API void r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 			break;
 		}
 		if (c < '!' || c > 'u') {
-			if (ignore_garbage) continue;
-			eprintf("ascii85: invalid character '%c'\n", c);
-			exit(1);
+			if (ignore_garbage) {
+				continue;
+			}
+			eprintf ("ascii85: invalid character '%c'\n", c);
+			return false;
 		}
 		tuple += (c - '!') * pows[count++];
 		if (count == 5) {
@@ -155,4 +164,5 @@ R_API void r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 			count = 0;
 		}
 	}
+	return true;
 }

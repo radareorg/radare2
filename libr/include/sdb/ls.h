@@ -5,6 +5,7 @@
 #include "types.h"
 
 typedef void (*SdbListFree)(void *ptr);
+typedef int (*SdbListComparator)(const void *a, const void *b);
 
 typedef struct ls_iter_t {
 	void *data;
@@ -16,10 +17,8 @@ typedef struct ls_t {
 	SdbListIter *head;
 	SdbListIter *tail;
 	SdbListFree free;
-	void *sorted;
+	SdbListComparator sorted;
 } SdbList;
-
-typedef int (*SdbListComparator)(const void *a, const void *b);
 
 #define ls_foreach(list, it, pos) \
 	if ((list))               \

@@ -55,7 +55,7 @@ R_API int r_socket_rap_server_listen (RSocketRapServer *rap_s, const char *certf
 
 R_API RSocket* r_socket_rap_server_accept (RSocketRapServer *rap_s) {
 	if (!rap_s || !rap_s->fd) {
-		eprintf ("error: r_socket_rap_server_accept\n");
+		eprint ("error: r_socket_rap_server_accept");
 		return NULL;
 	}
 	return r_socket_accept (rap_s->fd);

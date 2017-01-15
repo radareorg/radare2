@@ -991,7 +991,7 @@ SDB_API bool sdb_hook(Sdb* s, SdbHook cb, void* user) {
 		s->hooks = ls_new ();
 		s->hooks->free = NULL;
 	}
-	ls_append (s->hooks, cb);
+	ls_append (s->hooks, (void*)cb);
 	ls_append (s->hooks, user);
 	return true;
 }

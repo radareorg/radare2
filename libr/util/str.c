@@ -839,11 +839,10 @@ R_API char *r_str_word_get_first(const char *text) {
 	ret = (char *)malloc (len + 1);
 	if (!ret) {
 		eprintf ("Cannot allocate %d bytes.\n", len+1);
-		exit (1);
+		return NULL;
 	}
 	strncpy (ret, text, len);
 	ret[len] = '\0';
-
 	return ret;
 }
 

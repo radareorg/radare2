@@ -281,6 +281,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #ifndef HAVE_EPRINTF
 #define eprintf(x,y...) fprintf(stderr,x,##y)
+#define eprint(x) fprintf(stderr,"%s\n",x)
 #define HAVE_EPRINTF 1
 #endif
 
@@ -406,11 +407,11 @@ enum {
 	R_SYS_ARCH_SYSZ = 0x1000000,
 	R_SYS_ARCH_XCORE = 0x2000000,
 	R_SYS_ARCH_PROPELLER = 0x4000000,
-	R_SYS_ARCH_MSP430 = 0x8000000, // 1<<27
-	R_SYS_ARCH_CRIS =  0x10000000, // 1<<28
-	R_SYS_ARCH_HPPA =  0x20000000, // 1<<29
-	R_SYS_ARCH_V810 =  0x40000000, // 1<<30
-	R_SYS_ARCH_LM32 =  0x80000000, // 1<<31
+	R_SYS_ARCH_MSP430 = 0x8000000LL, // 1<<27
+	R_SYS_ARCH_CRIS =  0x10000000LL, // 1<<28
+	R_SYS_ARCH_HPPA =  0x20000000LL, // 1<<29
+	R_SYS_ARCH_V810 =  0x40000000LL, // 1<<30
+	R_SYS_ARCH_LM32 =  0x80000000LL, // 1<<31
 };
 
 /* os */
