@@ -109,7 +109,7 @@ R_API RList *r_anal_type_fcn_list(RAnal *anal) {
 
 	if (!list || !sdb_list) {
 		r_list_free (list);
-		r_list_free (sdb_list);
+		ls_free (sdb_list);
 		return 0;
 	}
 	ls_foreach (sdb_list, sdb_iter, kv) {

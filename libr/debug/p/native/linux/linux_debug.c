@@ -68,7 +68,7 @@ int linux_handle_signals (RDebug *dbg) {
 		switch (dbg->reason.signum) {
 			case SIGTRAP:
 				dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
-				dbg->reason.bp_addr = siginfo.si_addr;
+				dbg->reason.bp_addr = (ut64)siginfo.si_addr;
 				break;
 			case SIGABRT: // 6 / SIGIOT // SIGABRT
 				dbg->reason.type = R_DEBUG_REASON_ABORT;
@@ -249,13 +249,13 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 	return reason;
 }
 
-static int match_pid(const void *pid_o, const void *th_o) {
+int match_pid(const void *pid_o, const void *th_o) {
 	int pid = *(int *)pid_o;
 	RDebug *th = (RDebug *)th_o; 
 	return pid == th->pid;
 }
 
-static void add_and_attach_new_thread(RDebug *dbg, int tid) {
+void add_and_attach_new_thread(RDebug *dbg, int tid) {
 	char info[1024] = {0};
 	RDebugPid *tid_info;
 
@@ -268,12 +268,12 @@ static void add_and_attach_new_thread(RDebug *dbg, int tid) {
 	r_list_append (dbg->threads, tid_info);
 }
 
-static int attach_to_pid(RDebug *dbg, int ptid) {
+int attach_to_pid(RDebug *dbg, int ptid) {
 	linux_set_options (dbg, ptid);
 	return ptrace (PTRACE_ATTACH, ptid, NULL, NULL);
 }
 
-static RList *attach_to_pid_and_threads(RDebug *dbg, int main_pid) {
+RList *attach_to_pid_and_threads(RDebug *dbg, int main_pid) {
 	RList *list = NULL;
 	int ret = attach_to_pid (dbg, main_pid);
 	if (ret != -1) {
@@ -318,7 +318,7 @@ out:
 	return pid;
 }
 
-static char *read_link(int pid, const char *file) {
+char *read_link(int pid, const char *file) {
 	char path[1024] = {0};
 	char buf[1024] = {0};
 
@@ -372,7 +372,7 @@ RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-static RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
+RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	RDebugPid *pid_info = R_NEW0 (RDebugPid);
 	if (!pid_info) {
 		return NULL;
@@ -514,7 +514,7 @@ RList *linux_thread_list(int pid, RList *list) {
 	eprintf ("foo = 0x%04lx          \n", (fpregs).foo);\
 	eprintf ("fos = 0x%04lx              ", (fpregs).fos)
 
-static void print_fpu (void *f, int r){
+void print_fpu (void *f, int r){
 #if __x86_64__ || __i386__
 	int i;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct*)f;

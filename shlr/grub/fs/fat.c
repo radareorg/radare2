@@ -538,9 +538,10 @@ grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
 	}
 
       /* Check if this entry is valid.  */
-if (!(grub_fshelp_view & R_FS_VIEW_DELETED))
-      if (dir.name[0] == 0xe5 || (dir.attr & ~GRUB_FAT_ATTR_VALID))
-	continue;
+      if (!(grub_fshelp_view & R_FS_VIEW_DELETED)) {
+        if (dir.name[0] == 0xe5 || (dir.attr & ~GRUB_FAT_ATTR_VALID))
+	  continue;
+      }
 
       /* This is a workaround for Japanese.  */
       if (dir.name[0] == 0x05)
