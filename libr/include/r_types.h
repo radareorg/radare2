@@ -8,6 +8,18 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
+#ifdef R_NEW
+#undef R_NEW
+#endif
+
+#ifdef R_NEW0
+#undef R_NEW0
+#endif
+
+#ifdef R_FREE
+#undef R_FREE
+#endif
+
 // HACK to fix capstone-android-mips build
 #undef mips
 #define mips mips

@@ -67,11 +67,18 @@
 #define st64 long long
 #define boolt int
 // TODO: deprecate R_NEW
+#ifndef R_NEW
+//it means we are within sdb
 #define R_NEW(x) (x*)malloc(sizeof(x))
+#endif
+#ifndef R_NEW0
 #define R_NEW0(x) (x*)calloc(1, sizeof(x))
+#endif
+#ifndef R_FREE
+#define R_FREE(x) { free (x); x = NULL; }
+#endif
 #define UT32_MAX ((ut32)0xffffffff)
 #define UT64_MAX ((ut64)(0xffffffffffffffffLL))
-#define R_FREE(x) free (x); x = NULL
 #endif
 #ifndef R_MAX_DEFINED
 #define R_MAX(x,y) (((x)>(y))?(x):(y))
