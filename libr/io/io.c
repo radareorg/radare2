@@ -281,7 +281,7 @@ R_API int r_io_reopen(RIO *io, RIODesc *desc, int flags, int mode) {
 }
 
 R_API int r_io_use_desc(RIO *io, RIODesc *d) {
-	if (d) {
+	if (d && d->plugin) {
 		io->desc = d;
 		io->plugin = d->plugin;
 		return true;

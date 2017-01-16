@@ -485,7 +485,9 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 		}
 		return false;
 	}
-	r_io_use_desc (core->io, core->file->desc);
+	if (core->file) {
+		r_io_use_desc (core->io, core->file->desc);
+	}
 	return r_io_read_at (core->io, addr, buf, size);
 }
 
