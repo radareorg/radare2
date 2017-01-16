@@ -22,7 +22,9 @@
 #define _TCC_H
 
 #include "r_types.h"
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include "config.h"
 
 #ifdef CONFIG_TCCBOOT
