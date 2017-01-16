@@ -2418,7 +2418,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			at = from;
 		}
 		while ((!bckwrds && at < to) || bckwrds) {
-			eprintf ("\r[0x%08"PFMT64x"-0x%08"PFMT64x"]", at, to);
+			eprintf ("\r[0x%08"PFMT64x"-0x%08"PFMT64x"] ", at, to);
 			if (r_cons_is_breaked ()) {
 				break;
 			}

@@ -2315,9 +2315,11 @@ reread:
 			if (input[param_offset - 1] == ' ') {
 				r_core_anal_search (core, param.from, param.to,
 						r_num_math (core->num, input + 2));
+				r_core_cmdf (core, "axt @ 0x%"PFMT64x"\n", r_num_math (core->num, input + 2));
 			} else {
 				r_core_anal_search (core, param.from, param.to,
 						core->offset);
+				r_core_cmdf (core, "axt @ 0x%"PFMT64x"\n", core->offset);
 			}
 		}
 		break;
