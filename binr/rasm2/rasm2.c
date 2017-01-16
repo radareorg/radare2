@@ -195,7 +195,7 @@ static int rasm_show_help(int v) {
 			" -E           Display ESIL expression (same input as in -d)\n"
 			" -f [file]    Read data from file\n"
 			" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
-			" -h           Show this help\n"
+			" -h, -hh      Show this help, -hh for long\n"
 			" -i [len]     ignore/skip N bytes of the input buffer\n"
 			" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     Input/Output length\n"
