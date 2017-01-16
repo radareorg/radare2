@@ -14,6 +14,9 @@
 #include "linux_debug.h"
 #include "../procfs.h"
 
+#include <sys/syscall.h>
+#include <unistd.h>
+
 const char *linux_reg_profile (RDebug *dbg) {
 #if __arm__
 #include "reg/linux-arm.h"
@@ -42,10 +45,9 @@ const char *linux_reg_profile (RDebug *dbg) {
 #endif
 }
 
-int linux_handle_signals (RDebug *dbg) {
+int linux_handle_signals (RDebug *dbg, bool self_signalled) {
 	siginfo_t siginfo = {0};
 	int ret = ptrace (PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
-
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
 		if (errno == ESRCH) {
@@ -79,7 +81,7 @@ int linux_handle_signals (RDebug *dbg) {
 			default:
 				break;
 		}
-		if (dbg->reason.signum != SIGTRAP) {
+		if (!self_signalled && dbg->reason.signum != SIGTRAP) {
 			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
 				" code=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
@@ -138,7 +140,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
-			eprintf ("PTRACE_EVENT_FORK new_pid=0x%"PFMT64x"\n", data);
+			eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", data);
 			dbg->forked_pid = data;
 			// TODO: more handling here?
 			/* we have a new process that we are already tracing */
@@ -198,11 +200,88 @@ bool linux_set_options(RDebug *dbg, int pid) {
 	return true;
 }
 
+static int detach_procs_and_threads (RDebug *dbg) {
+	RList *th_list = dbg->threads;
+	int ret = 0;
+
+	if (th_list) {
+		RDebugPid *th;
+		RListIter *it;
+		r_list_foreach (th_list, it, th) {
+			if (th->pid != dbg->main_pid) {
+				if (ptrace (PTRACE_DETACH, th->pid, NULL, NULL) == -1) {
+					perror ("PTRACE_DETACH");
+				}
+			}
+		}
+	}
+
+	// Detaching from main proc
+	if (ptrace (PTRACE_DETACH, dbg->main_pid, NULL, NULL) == -1) {
+		perror ("PTRACE_DETACH");
+	}
+	return ret;
+}
+
+static int stop_process (int pid) {
+	int status;
+	int ret = syscall (__NR_tkill, pid, SIGSTOP);
+	ret = waitpid (pid, &status, __WALL);
+	return ret == pid;
+}
+				
+void linux_attach_new_process (RDebug *dbg) {
+	int ret = detach_procs_and_threads (dbg);
+
+	if (dbg->threads) {
+		r_list_free (dbg->threads);
+		dbg->threads = NULL;
+	}
+	int stopped = stop_process (dbg->forked_pid);
+	if (!stopped) {
+		eprintf ("Could not stop pid (%d)\n", dbg->forked_pid);
+	}
+	linux_attach (dbg, dbg->forked_pid);
+	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
+}
+
+static RDebugPid *find_rdebug_pid (RDebug *dbg, int pid) {
+	RList *list = dbg->threads;
+	if (list) {
+		RDebugPid *th;
+		RListIter *it;
+		r_list_foreach (list, it, th) {
+			if (th->pid == pid) {
+				return th;
+			}
+		}
+	}
+	return NULL;
+}
+
+static bool get_pid_signalled_status (RDebug *dbg, int pid) {
+	RDebugPid *th = find_rdebug_pid (dbg, pid);
+	if (th) {
+		return th->signalled;
+	}
+	return false;
+}
+
+static void set_pid_signalled_status (RDebug *dbg, int pid, bool value) {
+	RDebugPid *th = find_rdebug_pid (dbg, pid);
+	if (th) {
+		th->signalled = value;
+	}
+}
+
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason;
 	bool done = false;
+	bool self_signalled;
 
+repeat:
 	do {
+		self_signalled = get_pid_signalled_status (dbg, pid);
 		int status;
 		int ret = waitpid (pid, &status, __WALL|WNOHANG);
 		if (ret) {
@@ -222,10 +301,18 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 					WSTOPSIG (status) != SIGSTOP) {
 					eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
 				}
-				if (!linux_handle_signals (dbg)) {
+				if (!linux_handle_signals (dbg, self_signalled)) {
 					return R_DEBUG_REASON_ERROR;
 				}
 				reason = dbg->reason.type;
+				if (self_signalled && reason == R_DEBUG_REASON_SIGNAL && dbg->reason.signum == SIGSTOP) {
+					set_pid_signalled_status (dbg, pid, false);
+					ptrace (PTRACE_CONT, pid, NULL, 0);
+					goto repeat;
+				}
+				if (self_signalled) {
+					set_pid_signalled_status (dbg, pid, false);
+				}
 			} else if (WIFCONTINUED (status)) {
 				eprintf ("child continued...\n");
 				reason = R_DEBUG_REASON_NONE;
@@ -270,23 +357,31 @@ void add_and_attach_new_thread(RDebug *dbg, int tid) {
 
 int attach_to_pid(RDebug *dbg, int ptid) {
 	linux_set_options (dbg, ptid);
+	set_pid_signalled_status (dbg, ptid, true);
 	return ptrace (PTRACE_ATTACH, ptid, NULL, NULL);
 }
 
-RList *attach_to_pid_and_threads(RDebug *dbg, int main_pid) {
-	RList *list = NULL;
-	int ret = attach_to_pid (dbg, main_pid);
+static RList *get_pid_thread_list (RDebug *dbg, int main_pid) {
+	RList *list = r_list_new ();
+	if (list) {
+		list = linux_thread_list (main_pid, list);
+		dbg->main_pid = main_pid;
+	}
+	return list;
+}
+
+static void attach_to_pid_and_threads (RDebug *dbg) {
+	int ret = attach_to_pid (dbg, dbg->main_pid);
 	if (ret != -1) {
 		perror ("ptrace (PT_ATTACH)");
 	}
 
-	list = r_list_new ();
+	RList *list = dbg->threads;
 	if (list) {
 		RDebugPid *th;
 		RListIter *it;
-		list = linux_thread_list (main_pid, list);
 		r_list_foreach (list, it, th) {
-			if (th->pid && th->pid != main_pid) {
+			if (th->pid && th->pid != dbg->main_pid) {
 				ret = attach_to_pid (dbg, th->pid);
 				if (ret != -1) {
 					perror ("ptrace (PT_ATTACH)");
@@ -294,15 +389,13 @@ RList *attach_to_pid_and_threads(RDebug *dbg, int main_pid) {
 			}
 		}
 	}
-	// We save main_pid (this will be the last pid to be continued)
-	dbg->main_pid = main_pid;
-	return list;
 }
 
 int linux_attach(RDebug *dbg, int pid) {
 	// First time we run: We try to attach to all "possible" threads and to the main pid
 	if (!dbg->threads) {
-		dbg->threads = attach_to_pid_and_threads (dbg, pid);
+		dbg->threads = get_pid_thread_list (dbg, pid);
+		attach_to_pid_and_threads (dbg);
 	} else {
 		// This means we did a first run, so we probably attached to all possible threads already. 
 		// So check if the requested thread is being traced already. If yes: skip

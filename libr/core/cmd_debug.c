@@ -2964,16 +2964,27 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 					eprintf ("Selecting and continuing: %d\n", th->pid);
 					r_debug_select (core->dbg, main_pid, th->pid);
 					r_debug_continue (core->dbg);
+					if (main_pid != core->dbg->main_pid) {
+						// This means that the process we were tracing has forked
+						// so we attached to it and selected it already.
+						goto beach;
+					}
 				}
 			}
 		}
+		
 		eprintf ("Selecting and continuing: %d\n", main_pid);
 		r_debug_select (core->dbg, main_pid, main_pid);
 		r_debug_continue (core->dbg);
-		r_debug_select (core->dbg, old_pid, core->dbg->tid);
+		if (main_pid == core->dbg->main_pid) {
+			// If we forked and we're tracing the child,
+			// we selected it already. We don't wanna select the old one
+			r_debug_select (core->dbg, old_pid, core->dbg->tid);
+		}
 #else
 		r_debug_continue (core->dbg);
 #endif
+beach:
 		break;
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
