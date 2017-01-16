@@ -365,7 +365,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 }
 
 static int import_cmp(const RBinImport* a, const RBinImport* b) {
-	return strcmp(a->name, b->name);
+	return strcmp (a->name, b->name);
 }
 
 static ut8 *get_imports(RCore *c, int *len) {
@@ -379,7 +379,7 @@ static ut8 *get_imports(RCore *c, int *len) {
 	*len = 0;
 
 	r_list_foreach (list, iter, str) {
-		if (!old || (old && import_cmp(old, str) != 0)) {
+		if (old == NULL || (old && import_cmp (old, str) != 0)) {
 			*len += strlen (str->name) + 1;
 			old = str;
 		}
@@ -389,8 +389,9 @@ static ut8 *get_imports(RCore *c, int *len) {
 	old = NULL;
 
 	r_list_foreach (list, iter, str) {
-		if (old && import_cmp(old, str) == 0)
+		if (old && import_cmp (old, str) == 0) {
 			continue;
+		}
 		int namelen = strlen (str->name);
 		memcpy (ptr, str->name, namelen);
 		ptr += namelen;
@@ -405,7 +406,7 @@ static ut8 *get_imports(RCore *c, int *len) {
 
 static int bs_cmp(const RBinString* a, const RBinString* b) {
 	int diff = a->length - b->length;
-	return diff == 0 ? strncmp(a->string, b->string, a->length) : diff;
+	return diff == 0 ? strncmp (a->string, b->string, a->length) : diff;
 }
 
 static ut8 *get_strings(RCore *c, int *len) {
@@ -419,7 +420,7 @@ static ut8 *get_strings(RCore *c, int *len) {
 	*len = 0;
 
 	r_list_foreach (list, iter, str) {
-		if (!old || (old && bs_cmp(old, str) != 0)) {
+		if (old == NULL || (old && bs_cmp (old, str) != 0)) {
 			*len += str->length + 1;
 			old = str;
 		}
@@ -430,8 +431,9 @@ static ut8 *get_strings(RCore *c, int *len) {
 	old = NULL;
 
 	r_list_foreach (list, iter, str) {
-		if (old && bs_cmp(old, str) == 0)
+		if (old && bs_cmp (old, str) == 0) {
 			continue;
+		}
 		memcpy (ptr, str->string, str->length);
 		ptr += str->length;
 		*ptr++ = '\n';
