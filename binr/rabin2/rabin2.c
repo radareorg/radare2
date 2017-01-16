@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #include <getopt.c>
 #include <r_core.h>
@@ -25,8 +25,8 @@ static ut64 at = 0LL;
 static RLib *l;
 
 static int rabin_show_help(int v) {
-	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
-		"              [-B addr] [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M]\n"
+	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 		"              [-o str] [-O str] [-k query] [-D lang symname] | file\n");
 	if (v) {
 		printf (
