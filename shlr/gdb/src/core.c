@@ -698,7 +698,7 @@ int send_vcont(libgdbr_t* g, const char* command, int thread_id) {
 	int ret;
 	if (!g) return -1;
 	if (thread_id < 0) {
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s", CMD_C, command);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s", command);
 	} else {
 		ret = snprintf (tmp, sizeof (tmp) - 1, "%s;%s:%x", CMD_C, command, thread_id);
 	}
