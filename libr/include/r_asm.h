@@ -169,6 +169,7 @@ R_API int r_asm_filter_input(RAsm *a, const char *f);
 R_API int r_asm_filter_output(RAsm *a, const char *f);
 R_API char *r_asm_describe(RAsm *a, const char* str);
 R_API RList* r_asm_get_plugins(RAsm *a);
+R_API void r_asm_list_directives(void);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new(void);
