@@ -321,7 +321,6 @@ static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
 ///////////////////////////////////////////////////////////////////////////////
 static int pdb_read_root(R_PDB *pdb) {
 	int i = 0;
-
 	RList *pList = pdb->pdb_streams;
 	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
 	R_PDB_STREAM *pdb_stream = 0;
@@ -344,25 +343,31 @@ static int pdb_read_root(R_PDB *pdb) {
 		//      look default
 		case ePDB_STREAM_PDB:
 			pdb_info_stream = R_NEW0 (SPDBInfoStream);
-			if (!pdb_info_stream) return 0;
+			if (!pdb_info_stream) {
+				return 0;
+			}
 			pdb_info_stream->free_ = free_info_stream;
 			parse_pdb_info_stream (pdb_info_stream, &stream_file);
 			r_list_append (pList, pdb_info_stream);
 			break;
 		case ePDB_STREAM_TPI:
 			tpi_stream = R_NEW0 (STpiStream);
-			if (!tpi_stream) return 0;
+			if (!tpi_stream) {
+				return 0;
+			}
 			init_tpi_stream (tpi_stream);
 			if (!parse_tpi_stream (tpi_stream, &stream_file)) {
 				free (tpi_stream);
 				return 0;
 			}
-			r_list_append(pList, tpi_stream);
+			r_list_append (pList, tpi_stream);
 			break;
 		case ePDB_STREAM_DBI:
 		{
 			SDbiStream *dbi_stream = R_NEW0 (SDbiStream);
-			if (!dbi_stream) return 0;
+			if (!dbi_stream) {
+				return 0;
+			}
 			init_dbi_stream (dbi_stream);
 			parse_dbi_stream (dbi_stream, &stream_file);
 			r_list_append (pList, dbi_stream);
@@ -372,36 +377,29 @@ static int pdb_read_root(R_PDB *pdb) {
 		}
 		default:
 			find_indx_in_list (pdb->pdb_streams2, i, &stream_parse_func);
-			if (stream_parse_func) {
-				if (stream_parse_func->parse_stream) {
-					stream_parse_func->parse_stream (stream_parse_func->stream,
-													&stream_file);
-					break;
-				}
+			if (stream_parse_func && stream_parse_func->parse_stream) {
+				stream_parse_func->parse_stream (stream_parse_func->stream, &stream_file);
+				break;
 			}
 
 			pdb_stream = R_NEW0 (R_PDB_STREAM);
-			if (!pdb_stream) return 0;
+			if (!pdb_stream) {
+				return 0;
+			}
 			init_r_pdb_stream (pdb_stream, pdb->buf, (int *)page->stream_pages,
-							  root_stream->pdb_stream.pages_amount, i,
-							  page->stream_size,
-							  root_stream->pdb_stream.page_size);
+					root_stream->pdb_stream.pages_amount, i,
+					page->stream_size, root_stream->pdb_stream.page_size);
 			r_list_append (pList, pdb_stream);
-
 			break;
 		}
-
 		if (stream_file.error) {
 			return 0;
 		}
-
 		i++;
 	}
-
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static bool pdb7_parse(R_PDB *pdb) {
 	char signature[PDB7_SIGNATURE_LEN + 1];
 	int num_root_index_pages = 0;
@@ -487,7 +485,7 @@ static bool pdb7_parse(R_PDB *pdb) {
 		p_tmp = (int *)p_tmp + 1;
 	}
 
-	pdb->pdb_streams2 = 0;
+	pdb->pdb_streams2 = NULL;
 	if (!init_pdb7_root_stream (pdb, root_page_list, num_root_pages,
 			ePDB_STREAM_ROOT, root_size, page_size)) {
 		eprintf ("root stream has not initialized\n");
@@ -509,10 +507,8 @@ error:
 	return false;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void finish_pdb_parse(R_PDB *pdb) {
 	R_PDB7_ROOT_STREAM *p = pdb->root_stream;
-
 	RListIter *it;
 	SPage *page = 0;
 
@@ -542,22 +538,28 @@ static void finish_pdb_parse(R_PDB *pdb) {
 	SStreamParseFunc *stream_parse_func;
 	R_PDB_STREAM *pdb_stream = 0;
 	int i = 0;
+#if 1
+/* r_list_free should be enough, all the items in a list should be freeable using a generic destructor
+   hacking up things like that may only produce problems. so it is better to not assume that a specific
+   element in a list is of a specific type and just store this info in the type struct or so.
+*/
+// XXX: this loop is fucked up. i prefer to leak than crash
 	it = r_list_iterator (pdb->pdb_streams);
 	while (r_list_iter_next(it)) {
 		switch (i) {
 		case 1:
 			pdb_info_stream = (SPDBInfoStream *) r_list_iter_get(it);
-			pdb_info_stream->free_(pdb_info_stream);
-			free(pdb_info_stream);
+			//pdb_info_stream->free_ (pdb_info_stream);
+			free (pdb_info_stream);
 			break;
 		case 2:
 			tpi_stream = (STpiStream *) r_list_iter_get(it);
-			tpi_stream->free_(tpi_stream);
+			// tpi_stream->free_(tpi_stream);
 			free (tpi_stream);
 			break;
 		case 3:
 			dbi_stream = (SDbiStream *) r_list_iter_get(it);
-			dbi_stream->free_(dbi_stream);
+			// dbi_stream->free_(dbi_stream);
 			free (dbi_stream);
 			break;
 		default:
@@ -566,17 +568,19 @@ static void finish_pdb_parse(R_PDB *pdb) {
 				break;
 			}
 			pdb_stream = (R_PDB_STREAM *) r_list_iter_get(it);
-			pdb_stream->free_(pdb_stream);
+			// pdb_stream->free_(pdb_stream);
 			free (pdb_stream);
 			break;
 		}
 		i++;
 	}
+#endif
 	r_list_free (pdb->pdb_streams);
 	// enf of free of pdb->pdb_streams
 
+#if 0
 	// start of free pdb->pdb_streams2
-	it = r_list_iterator(pdb->pdb_streams2);
+	it = r_list_iterator (pdb->pdb_streams2);
 	while (r_list_iter_next (it)) {
 		stream_parse_func = (SStreamParseFunc *) r_list_iter_get(it);
 		if (stream_parse_func->free) {
@@ -585,6 +589,7 @@ static void finish_pdb_parse(R_PDB *pdb) {
 		}
 		free (stream_parse_func);
 	}
+#endif
 	r_list_free (pdb->pdb_streams2);
 	// end of free pdb->streams2
 
