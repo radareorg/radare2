@@ -9,6 +9,12 @@
 
 R_LIB_VERSION (r_asm);
 
+char *directives[] = {
+	".include", ".error", ".warning",
+	".echo", ".if", ".ifeq", ".endif",
+	".else", ".set", ".get", NULL
+	};
+
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, char *input) {
@@ -477,18 +483,23 @@ static char *replace_directives_for(char *str, char *token) {
 }
 
 static char *replace_directives(char *str) {
-	char *o = replace_directives_for (str, ".include");
-	o = replace_directives_for (o, ".warning");
-	o = replace_directives_for (o, ".error");
-	o = replace_directives_for (o, ".echo");
-	o = replace_directives_for (o, ".if");
-	o = replace_directives_for (o, ".ifeq");
-	o = replace_directives_for (o, ".endif");
-	o = replace_directives_for (o, ".else");
-	o = replace_directives_for (o, ".set");
-	o = replace_directives_for (o, ".get");
-	// eprintf ("(%s)\n", o);
+	int i = 0;
+	char *dir = directives[i++];
+	char *o = replace_directives_for (str, dir);
+	while (dir) {
+		char *o = replace_directives_for (o, dir);
+		dir = directives[i++];
+	}
 	return o;
+}
+
+R_API void r_asm_list_directives() {
+	int i = 0;
+	char *dir = directives[i++];
+	while (dir) {
+		printf ("%s\n", dir);
+		dir = directives[i++];
+	}
 }
 
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {

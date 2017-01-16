@@ -180,9 +180,11 @@ static int showanal(RAnal *lanal, RAnalOp *op, ut64 offset, ut8 *buf, int len, b
 }
 
 static int rasm_show_help(int v) {
-	printf ("Usage: rasm2 [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
-		"             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
-	if (v) {
+	if (v < 2) {
+		printf ("Usage: rasm2 [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
+			"             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
+	}
+	if (v != 1) {
 		printf (" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
 			" -A           Show Analysis information from given hexpairs\n"
 			" -b [bits]    Set cpu register size (8, 16, 32, 64) (RASM2_BITS)\n"
@@ -193,7 +195,7 @@ static int rasm_show_help(int v) {
 			" -E           Display ESIL expression (same input as in -d)\n"
 			" -f [file]    Read data from file\n"
 			" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
-			" -h           Show this help\n"
+			" -h, -hh      Show this help, -hh for long\n"
 			" -i [len]     ignore/skip N bytes of the input buffer\n"
 			" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     Input/Output length\n"
@@ -213,6 +215,12 @@ static int rasm_show_help(int v) {
 		" RASM2_NOPLUGINS  do not load shared plugins (speedup loading)\n"
 		" R_DEBUG          if defined, show error messages and crash signal\n"
 		"");
+	}
+	if (v == 2) {
+		printf (
+		"Supported Assembler directives:\n"
+		);
+		r_asm_list_directives ();
 	}
 	return 0;
 }
@@ -367,11 +375,12 @@ int main (int argc, char *argv[]) {
 	bool use_spp = false;
 	ut64 offset = 0;
 	int fd = -1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	int help = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 	bool analinfo = false;
 
 	if (argc < 2) {
-		return rasm_show_help (0);
+		return rasm_show_help (1);
 	}
 	a = r_asm_new ();
 	anal = r_anal_new ();
@@ -449,8 +458,7 @@ int main (int argc, char *argv[]) {
 			filters = optarg;
 			break;
 		case 'h':
-			ret = rasm_show_help (1);
-			goto beach;
+			help ++;
 		case 'i':
 			skip = r_num_math (NULL, optarg);
 			break;
@@ -506,6 +514,11 @@ int main (int argc, char *argv[]) {
 			ret = rasm_show_help (0);
 			goto beach;
 		}
+	}
+
+	if (help > 0) {
+		ret = rasm_show_help (help > 1? 2: 0);
+		goto beach;
 	}
 
 	if (arch) {
