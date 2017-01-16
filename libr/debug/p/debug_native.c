@@ -1117,8 +1117,16 @@ static int r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
 		}
 	} else {
 #endif
-	if ((r_sandbox_kill (pid, sig) != -1)) ret = true;
-	if (errno == 1) ret = -true; // EPERM
+	if (sig == SIGKILL && dbg->threads) {
+		r_list_free (dbg->threads);
+		dbg->threads = NULL;
+	}
+	if ((r_sandbox_kill (pid, sig) != -1)) {
+		ret = true;
+	}
+	if (errno == 1) {
+		ret = -true; // EPERM
+	}
 #if 0
 //	}
 #endif

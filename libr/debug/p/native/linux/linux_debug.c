@@ -425,6 +425,7 @@ RList *linux_thread_list(int pid, RList *list) {
 		return NULL;
 	}
 
+	list->free = (RListFree)&r_debug_pid_free;
 	/* if this process has a task directory, use that */
 	snprintf (buf, sizeof (buf), "/proc/%d/task", pid);
 	if (r_file_is_directory (buf)) {
