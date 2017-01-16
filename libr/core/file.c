@@ -122,6 +122,10 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		// XXX - select the right backend
 		if (core->file && core->file->desc) {
 			newpid = core->file->desc->fd;
+#if __linux__
+			core->dbg->main_pid = newpid;
+			newtid = newpid;
+#endif
 #if __WINDOWS__
 			newpid = core->io->winpid;
 			newtid = core->io->wintid;
