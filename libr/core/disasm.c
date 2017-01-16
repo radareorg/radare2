@@ -184,7 +184,8 @@ typedef struct r_disam_options_t {
 	int index;
 	ut64 at, vat, addr, dest;
 	int tries, cbytes, idx;
-	ut8 mi_found, retry, toro;
+	bool retry;
+	bool mi_found;
 	RAsmOp asmop;
 	RAnalOp analop;
 	RAnalFunction *fcn;
@@ -1553,7 +1554,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			ds->addr = core->assembler->pc;
 			ds->tries--;
 			ds->idx = 0;
-			ds->retry = 1;
+			ds->retry = true;
 			return ret;
 		}
 #endif
@@ -1889,7 +1890,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, ds->at);
 	infos = sdb_const_get (s, key, 0);
 
-	ds->mi_found = 0;
+	ds->mi_found = false;
 	if (infos) {
 		for (;*infos; infos++) {
 			/* XXX wtf, must use anal.meta.deserialize() */
@@ -1937,40 +1938,40 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					R_FREE (ds->line);
 					R_FREE (ds->refline);
 					R_FREE (ds->refline2);
-					ds->mi_found = 1;
+					ds->mi_found = true;
 					break;
 				}
 				case R_META_TYPE_HIDE:
 					r_cons_printf ("(%d bytes hidden)", mi->size);
 					ds->asmop.size = mi->size;
 					ds->oplen = mi->size;
-					ds->mi_found = 1;
+					ds->mi_found = true;
 					break;
 				case R_META_TYPE_RUN:
 					r_core_cmdf (core, "%s @ 0x%"PFMT64x, mi->str, ds->at);
 					ds->asmop.size = mi->size;
 					ds->oplen = mi->size;
-					ds->mi_found = 1;
+					ds->mi_found = true;
 					break;
 				case R_META_TYPE_DATA:
 					hexlen = len - idx;
-					delta = ds->at-mi->from;
+					delta = ds->at - mi->from;
 					if (mi->size < hexlen) {
 						hexlen = mi->size;
 					}
-					ds->oplen = mi->size;
+					ds->oplen = mi->size - delta;
 					core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 					if (!ds_print_data_type (core, buf + idx, ds->hint? ds->hint->immbase: 0, mi->size)) {
 						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", mi->size , delta);
 						r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1);
 					}
-					core->inc = 16;
+					core->inc = 16; // ds->oplen; //
 					core->print->flags |= R_PRINT_FLAGS_HEADER;
 					ds->asmop.size = ret = (int)mi->size; //-delta;
 					R_FREE (ds->line);
 					R_FREE (ds->refline);
 					R_FREE (ds->refline2);
-					ds->mi_found = 1;
+					ds->mi_found = true;
 					break;
 				case R_META_TYPE_FORMAT:
 					r_cons_printf ("format %s {\n", mi->str);
@@ -1980,7 +1981,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					R_FREE (ds->line);
 					R_FREE (ds->refline);
 					R_FREE (ds->refline2);
-					ds->mi_found = 1;
+					ds->mi_found = true;
 					break;
 				}
 			}
@@ -3530,7 +3531,7 @@ toro:
 			}
 		}
 		if (ds->retry) {
-			ds->retry = 0;
+			ds->retry = false;
 			r_cons_break_pop ();
 			goto retry;
 		}
@@ -3626,7 +3627,7 @@ toro:
 			ds_print_core_vmode (ds);
 			// ds_print_cc_update (ds);
 		} else {
-			ds->mi_found = 0;
+			ds->mi_found = false;
 		}
 		ds_print_op_push_info (ds);
 		ds_cdiv_optimization (ds);
@@ -4392,7 +4393,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ds_print_stackptr (ds);
 			ret = ds_print_meta_infos (ds, buf, len, idx);
 			if (ds->mi_found) {
-				ds->mi_found = 0;
+				ds->mi_found = false;
 				continue;
 			}
 			/* show cursor */
