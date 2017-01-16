@@ -379,7 +379,7 @@ static ut8 *get_imports(RCore *c, int *len) {
 	*len = 0;
 
 	r_list_foreach (list, iter, str) {
-		if (old == NULL || (old && import_cmp (old, str) != 0)) {
+		if (!old || (old && import_cmp (old, str) != 0)) {
 			*len += strlen (str->name) + 1;
 			old = str;
 		}
@@ -420,7 +420,7 @@ static ut8 *get_strings(RCore *c, int *len) {
 	*len = 0;
 
 	r_list_foreach (list, iter, str) {
-		if (old == NULL || (old && bs_cmp (old, str) != 0)) {
+		if (!old || (old && bs_cmp (old, str) != 0)) {
 			*len += str->length + 1;
 			old = str;
 		}
