@@ -24,7 +24,7 @@ static void r_debug_native_stop(RDebug *dbg);
 
 #if __UNIX__ || __CYGWIN__
 # include <errno.h>
-# if !defined (__HAIKU__) && !defined (__CYGWIN__)
+# if !defined (__HAIKU__) && !defined (__CYGWIN__) && !defined (__sun)
 #  include <sys/ptrace.h>
 # endif
 # include <sys/wait.h>
