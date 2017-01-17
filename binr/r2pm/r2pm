@@ -12,6 +12,7 @@ fi
 
 # Exported Vars
 MAKE=make
+[ -z "${CURL}" ] && CURL=curl
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 export MAKE
@@ -84,10 +85,14 @@ init|up|update)
 		git pull || exit 1
 	else
 		echo git clone https://github.com/radare/radare2-pm
-		git clone https://github.com/radare/radare2-pm || exit 1
+		git clone --depth=3 https://github.com/radare/radare2-pm || exit 1
 		cd radare2-pm
 		pwd
 	fi
+	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
+		echo "Updating $a ..."
+		( cd $a ; git pull )
+	done
 
 	if [ -d "${R2PM_DBDIR}" ] && [ ! -L "${R2PM_DBDIR}" ]; then
 		# that's weird, it should be a symlink
@@ -100,7 +105,7 @@ init|up|update)
 
 	ln -fs "${R2PM_USRDIR}"/git/radare2-pm/db "${R2PM_DBDIR}" || exit 1
 	if [ "$1" = "init" ]; then
-		echo "r2pm database initialized. Use 'r2pm update' to update"
+		echo "r2pm database initialized. Use 'r2pm update' to update later today."
 	fi
 	exit 0
 	;;
@@ -143,21 +148,16 @@ R2PM_List() {
 }
 
 R2PM_Search() {
-	cd "${R2PM_DBDIR}" || exit 1
-	if [ -n "$1" ]; then
-		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' | grep -i "$1"
-	else
-		grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g'
-	fi
-}
-
-R2PM_ListUninstalled() {
-	cd "${R2PM_DBDIR}" || exit 1
-	PKGS=$(grep R2PM_DESC * | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' |awk '{print $1}')
-	for a in ${PKGS} ; do
-		if [ ! -f "${R2PM_USRDIR}/pkg/$a" ]; then
-			echo $a
+	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
+		[ -d "$a" ] || continue
+(
+		cd "${a}"
+		if [ -n "$1" ]; then
+			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g' | grep -i "$1"
+		else
+			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf ' \t'`," -e 's,",,g'
 		fi
+)
 	done
 }
 
@@ -208,7 +208,7 @@ R2PM_GIT() {
 			cd "${DIR}"
 			git pull
 		else
-			git clone "${URL}" "${DIR}" || R2PM_FAIL "Oops"
+			git clone --depth 1 "${URL}" "${DIR}" || R2PM_FAIL "Oops"
 			cd "${DIR}" || R2PM_FAIL "Oops"
 		fi
 	fi
@@ -266,11 +266,20 @@ R2PM_DEPS() {
 	done
 }
 
+pkgFilePath() {
+	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
+		if [ -f "$a/$1" ]; then
+			echo "$a/$1"
+			return
+		fi
+	done
+}
+
 r2pm_install() {
 	if [ -z "$2" ]; then
 		R2PM_Info
 	else
-		FILE="${R2PM_DBDIR}/$2"
+		FILE="$(pkgFilePath $2)"
 		if [ -f "${FILE}" ]; then
 			NAME="$2"
 			ACTION=Install
@@ -289,7 +298,7 @@ r2pm_uninstall() {
 	if [ -z "$2" ]; then
 		R2PM_Info
 	else
-		FILE="${R2PM_DBDIR}/$2"
+		FILE="`pkgFilePath $2`"
 		if [ -f "${FILE}" ]; then
 			NAME="$2"
 			ACTION=Uninstall
@@ -326,15 +335,15 @@ case "$1" in
 	if [ -n "$3" ]; then
 		TRAVIS_JOB="$3"
 	else
-		TRAVIS_JOB=`curl -s https://api.travis-ci.org/repos?slug=radare%2Fradare2| jq .[0].last_build_id`
+		TRAVIS_JOB=`${CURL} -s https://api.travis-ci.org/repos?slug=radare%2Fradare2| jq .[0].last_build_id`
 		TRAVIS_JOB=$(($TRAVIS_JOB+1))
 	fi
 	echo $TRAVIS_JOB > /dev/stderr
 	# storage
-	curl -s https://s3.amazonaws.com/archive.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+	${CURL} -s https://s3.amazonaws.com/archive.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
 		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
 # wip
-	curl -s https://api.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
+	${CURL} -s https://api.travis-ci.org/jobs/${TRAVIS_JOB}/log.txt |\
 		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
 	;;
 -l|list)
@@ -342,9 +351,6 @@ case "$1" in
 	;;
 -s|search)
 	R2PM_Search "$2"
-	;;
--lu)
-	R2PM_ListUninstalled "$2"
 	;;
 -r|run)
 	shift
@@ -420,11 +426,56 @@ cd)
 	;;
 ls)
 	if [ -d "${R2PM_GITDIR}" ]; then
-		ls ${R2PM_GITDIR}
+		ls "${R2PM_GITDIR}"
 	else
 		echo "Cannot find ${R2PM_GITDIR}"
 		exit 1
 	fi
+	;;
+-a|add)
+	if [ "$2" = "help" ]; then
+		echo "Usage: r2pm -a [url] ([name]) # manage package repositories"
+		echo " $ r2pm -a https://github.com/foo/bar  # register bar repo"
+		echo " $ r2pm -a                             # list all repos"
+		echo " $ r2pm -a - bar                       # delete 'foo' repo"
+		exit 1
+	fi
+	pushd "${R2PM_DBDIR}" > /dev/null
+	cd ..
+	mkdir -p db2
+	cd db2
+	URL="$2"
+	NAME="$3"
+	if [ -n "$URL" -a -z "$NAME" ]; then
+		NAME=`basename $URL`
+	fi
+	if [ -n "$URL" -a -n "$NAME" ]; then
+		if [ "$URL" = "-" ]; then
+			if [ -d "$NAME" ]; then
+				rm -rf "$NAME"
+				echo "Unregistered repository"
+			else
+				echo "Cannot find '$NAME'"
+				exit 1
+			fi
+		else
+			echo "Registering this db repository"
+			if [ -d "$URL" ]; then
+				cd "$URL"
+				git pull
+			else
+				git clone --depth=2 "$URL" "$NAME"
+			fi
+			if [ ! -d "$NAME/db" ]; then
+				echo "This is not an r2pm repository"
+				rm -rf "$NAME"
+				exit 1
+			fi
+		fi
+	else
+		ls
+	fi
+	popd > /dev/null
 	;;
 *|help|-h)
 	echo "Usage: r2pm [init|update|cmd] [...]"
@@ -435,7 +486,6 @@ ls)
 	echo " -gu,global-uninstall <pkg>  uninstall pkg from systemdir"
 	echo " -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)"
 	echo " -l,list                     list installed pkgs"
-	echo " -lu                         list uninstalled packages"
 	echo " -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH"
 	echo " -s,search [<keyword>]       search in database"
 	echo " -t,test FX,XX,BR BID        check in travis regressions"
