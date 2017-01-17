@@ -399,7 +399,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 }
 		break;
 	case '$':
-		if (ok) *ok = 1;
+		if (ok) {
+			*ok = 1;
+		}
 		// TODO: group analop-dependant vars after a char, so i can filter
 		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize);
 		r_anal_op_fini (&op); // we dont need strings or pointers, just values, which are not nullified in fini
@@ -407,11 +409,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str + 2);
 		case 'k':
-			if (str[2]!='{') {
+			if (str[2] != '{') {
 				eprintf ("Expected '{' after 'k'.\n");
 				break;
 			}
-			bptr = strdup (str+3);
+			bptr = strdup (str + 3);
 			ptr = strchr (bptr, '}');
 			if (!ptr) {
 				// invalid json

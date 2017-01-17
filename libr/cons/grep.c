@@ -23,7 +23,9 @@ R_API void r_cons_grep_help() {
 "|   ?.       count number chars\n"
 "|   ??       show this help message\n"
 "|   ..       internal 'less'\n"
+"|   ...      internal 'hud' (like V_)\n"
 "|   {}       json indentation\n"
+"|   {path}   json grep\n"
 "|   {}..     less json indentation\n"
 "| endmodifiers:\n"
 "|   $        words must be placed at the end of line\n"
@@ -61,7 +63,11 @@ R_API void r_cons_grep(const char *str) {
 		switch (*str) {
 		case '.':
 			if (str[1] == '.') {
-				cons->grep.less = 1;
+				if (str[2] == '.') {
+					cons->grep.less = 2;
+				} else {
+					cons->grep.less = 1;
+				}
 				return;
 			}
 			str++;
@@ -74,6 +80,8 @@ R_API void r_cons_grep(const char *str) {
 				}
 				str++;
 				return;
+			} else {
+				eprintf ("TODO: json grep goes here\n");
 			}
 			str++;
 			break;
@@ -308,15 +316,21 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		return 3;
 	}
 	if (cons->grep.less) {
+		int less = cons->grep.less;
 		cons->grep.less = 0;
-		r_cons_less_str (buf, NULL);
-		buf[0] = 0;
-		cons->buffer_len = 0;
-		if (cons->buffer) {
-			cons->buffer[0] = 0;
+		if (less == 2) {
+			char *res = r_cons_hud_string (buf, true);
+			r_cons_println (res);
+			free (res);
+		} else {
+			r_cons_less_str (buf, NULL);
+			buf[0] = 0;
+			cons->buffer_len = 0;
+			if (cons->buffer) {
+				cons->buffer[0] = 0;
+			}
+			R_FREE (cons->buffer);
 		}
-		free (cons->buffer);
-		cons->buffer = NULL;
 		return 0;
 	}
 	if (!cons->buffer) {
@@ -353,7 +367,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		}
 	}
 	in = buf;
-	while ((int)(size_t)(in-buf) < len) {
+	while ((int)(size_t)(in - buf) < len) {
 		p = strchr (in, '\n');
 		if (!p) {
 			free (tbuf);
