@@ -828,6 +828,13 @@ static int cb_dbg_clone(void *user, void *data) {
 	return true;
 }
 
+static int cb_dbg_follow_child(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->dbg->follow_child = node->i_value;
+	return true;
+}
+
 static int cb_dbg_aftersc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1935,6 +1942,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETCB("dbg.profile", "", &cb_runprofile, "Path to RRunProfile file");
 	SETCB("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
+	SETCB("dbg.follow.child", "false", &cb_dbg_follow_child, "Continue tracing the child process on fork. By default the parent process is traced");
 	/* debug */
 	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;s-'");
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");

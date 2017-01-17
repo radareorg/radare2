@@ -298,6 +298,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->forked_pid = -1;
 	dbg->trace_clone = 0;
 	dbg->trace_aftersyscall = true;
+	dbg->follow_child = false;
 	R_FREE (dbg->btalgo);
 	dbg->trace_execs = 0;
 	dbg->anal = NULL;
@@ -942,7 +943,12 @@ repeat:
 			}
 		}
 
-
+#if __linux__
+		if (reason == R_DEBUG_REASON_NEW_PID && dbg->follow_child) {
+			linux_attach_new_process (dbg);
+			goto repeat;
+		}
+#endif
 #if __WINDOWS__
 		if (reason != R_DEBUG_REASON_DEAD) {
 			// XXX(jjd): returning a thread id?!

@@ -208,6 +208,7 @@ typedef struct r_debug_t {
 	int trace_execs; /* stop on new execs */
 	int trace_aftersyscall; /* stop after the syscall (before if disabled) */
 	int trace_clone; /* stop on new threads */
+	int follow_child; /* On fork, trace the child */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
 	bool consbreak; /* SIGINT handle for attached processes */
@@ -327,6 +328,7 @@ typedef struct r_debug_pid_t {
 	int pid;
 	char status; /* stopped, running, zombie, sleeping ,... */
 	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
+	bool signalled;
 	char *path;
 	int uid;
 	int gid;

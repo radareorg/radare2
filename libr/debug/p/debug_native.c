@@ -100,7 +100,7 @@ static void r_debug_native_stop(RDebug *dbg);
 #if !__APPLE__
 static int r_debug_handle_signals (RDebug *dbg) {
 #if __linux__
-	return linux_handle_signals (dbg);
+	return linux_handle_signals (dbg, 0);
 #else
 	return -1;
 #endif
