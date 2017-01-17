@@ -4,7 +4,7 @@
 #include <r_util.h>
 #define sdb_json_indent r_cons_json_indent
 #define sdb_json_unindent r_cons_json_unindent
-#include "../../shlr/sdb/src/json/indent.c"
+#include "../../shlr/sdb/src/json.c"
 
 /* TODO: remove globals */
 static RList *sorted_lines = NULL;
@@ -45,11 +45,11 @@ R_API void r_cons_grep_help() {
 #define R_CONS_GREP_BUFSIZE 4096
 
 R_API void r_cons_grep(const char *str) {
+	static char buf[R_CONS_GREP_BUFSIZE];
 	int wlen, len, is_range, num_is_parsed, fail = 0;
+	char *ptr, *optr, *ptr2, *ptr3;
 	ut64 range_begin, range_end;
 	RCons *cons;
-	char buf[R_CONS_GREP_BUFSIZE];
-	char *ptr, *optr, *ptr2, *ptr3;
 
 	if (!str || !*str) {
 		return;
@@ -81,7 +81,15 @@ R_API void r_cons_grep(const char *str) {
 				str++;
 				return;
 			} else {
-				eprintf ("TODO: json grep goes here\n");
+				char *jsonPath = strdup (str + 1);
+				char *jsonPathEnd = strchr (jsonPath, '}');
+				if (jsonPathEnd) {
+					*jsonPathEnd = 0;
+				}
+				free (cons->grep.json_path);
+				cons->grep.json_path = jsonPath;
+				cons->grep.json = 1;
+				return;
 			}
 			str++;
 			break;
@@ -139,7 +147,7 @@ R_API void r_cons_grep(const char *str) {
 	if (len > 0 && str[len] == '?') {
 		cons->grep.counter = 1;
 		strncpy (buf, str, R_MIN (len, sizeof (buf) - 1));
-		buf[len]=0;
+		buf[len] = 0;
 		len--;
 	} else {
 		strncpy (buf, str, sizeof (buf) - 1);
@@ -303,15 +311,28 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		return 0;
 	}
 	if (cons->grep.json) {
-		char *out = sdb_json_indent (buf);
-		free (cons->buffer);
-		cons->buffer = out;
-		cons->buffer_len = strlen (out);
-		cons->buffer_sz = cons->buffer_len + 1;
-		cons->grep.json = 0;
-		if (cons->grep.less) {
-			cons->grep.less = 0;
-			r_cons_less_str (cons->buffer, NULL);
+		if (cons->grep.json_path) {
+			Rangstr rs = json_get (cons->buffer, cons->grep.json_path);
+			char *u = rangstr_dup (&rs);
+			if (u) {
+				cons->buffer = u;
+				cons->buffer_len = strlen (u);
+				cons->buffer_sz = cons->buffer_len + 1;
+				cons->grep.json = 0;
+				r_cons_newline();
+			}
+			R_FREE (cons->grep.json_path);
+		} else {
+			char *out = sdb_json_indent (buf);
+			free (cons->buffer);
+			cons->buffer = out;
+			cons->buffer_len = strlen (out);
+			cons->buffer_sz = cons->buffer_len + 1;
+			cons->grep.json = 0;
+			if (cons->grep.less) {
+				cons->grep.less = 0;
+				r_cons_less_str (cons->buffer, NULL);
+			}
 		}
 		return 3;
 	}

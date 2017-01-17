@@ -58,6 +58,7 @@ typedef struct r_cons_grep_t {
 	bool charCounter;
 	int less;
 	int json;
+	char *json_path;
 	int range_line;
 	int line;
 	int sort;
