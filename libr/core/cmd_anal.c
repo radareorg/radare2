@@ -204,10 +204,22 @@ static int var_cmd (RCore *core, const char *str) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	ostr = p = NULL;
 	if (!str[0]) {
+		// "afv"
 		if (fcn) {
 			r_core_cmd0 (core, "afvs");
 			r_core_cmd0 (core, "afvb");
 			r_core_cmd0 (core, "afvr");
+			return true;
+		}
+		eprintf ("Cannot find function\n");
+		return false;
+	}
+	if (str[0] == 'j') {
+		// "afvj"
+		if (fcn) {
+			r_core_cmd0 (core, "afvsj");
+			r_core_cmd0 (core, "afvbj");
+			r_core_cmd0 (core, "afvrj");
 			return true;
 		}
 		eprintf ("Cannot find function\n");
