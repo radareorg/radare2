@@ -47,12 +47,12 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 	if (r_anal_type_func_exist (anal, name)) {
 		fcn_name = strdup (name);
 	} else if (!(fcn_name = r_anal_type_func_guess (anal, name))) {
-		eprintf ("can't find function prototype for %s\n", name);
+		//eprintf ("can't find function prototype for %s\n", name);
 		return;
 	}
 	const char* cc = r_anal_type_func_cc (anal, fcn_name);
 	if (!cc || !r_anal_cc_exist (anal, cc)) {
-		eprintf ("can't find %s calling convention %s\n", fcn_name, cc);
+		//eprintf ("can't find %s calling convention %s\n", fcn_name, cc);
 		return;
 	}
 	int i, j, max = r_anal_type_func_args_count (anal, fcn_name);
@@ -211,7 +211,6 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 	if (!strncmp (tmp, sig, strlen (sig))) {
 		const char *esil = sdb_fmt (-1, "%d,%s,-=", offset, sp);
 		r_anal_esil_parse (core->anal->esil, esil);
-		r_anal_esil_dumpstack (core->anal->esil);
 		r_anal_esil_stack_free (core->anal->esil);
 		r_core_esil_step (core, UT64_MAX, NULL);
 		ret = op->size;
@@ -222,8 +221,11 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	RConfigHold *hc = NULL; 
-	if (!core) {
+	RConfigHold *hc = NULL;
+	RAnalBlock *bb;
+	RListIter *it;
+
+	if (!core|| !fcn) {
 		return;
 	}
 	hc = r_config_hold_new (core->config);
@@ -235,47 +237,41 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		return;
 	}
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	ut64 addr = fcn->addr;
-	r_reg_setv (core->dbg->reg, pc, fcn->addr);
-	r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-	r_cons_break_push (NULL, NULL);
-	while (!r_cons_is_breaked ()) {
-		RAnalOp *op = r_core_anal_op (core, addr);
-		int loop_count = sdb_num_get (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), 0);
-		if (loop_count > LOOP_MAX) {
-			goto out;
-		}
-		sdb_num_set (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), loop_count + 1, 0);
-		if (!op || op->type == R_ANAL_OP_TYPE_RET) {
-			goto out;
-		}
-		if (op->type == R_ANAL_OP_TYPE_CALL) {
-			RAnalFunction *fcn_call = r_anal_get_fcn_in (core->anal, op->jump, -1);
-			//eprintf ("in the middle of %s\n", fcn_call->name);
-			if (fcn_call) {
-				type_match (core, addr, fcn_call->name);
-			} else {
-				eprintf ("Cannot find function at 0x%08"PFMT64x"\n", op->jump);
+	r_list_foreach (fcn->bbs, it,bb) {
+		ut64 addr = bb->addr;
+		r_reg_setv (core->dbg->reg, pc, bb->addr);
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+		r_cons_break_push (NULL, NULL);
+		while (!r_cons_is_breaked ()) {
+			RAnalOp *op = r_core_anal_op (core, addr);
+			int loop_count = sdb_num_get (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), 0);
+			if (loop_count > LOOP_MAX || !op || op->type == R_ANAL_OP_TYPE_RET || addr >= bb->addr + bb->size || addr < bb->addr) {
+				break;
 			}
-			addr += op->size;
-			r_anal_op_free (op);
-			r_reg_setv (core->dbg->reg, pc, addr);
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-			r_anal_esil_set_pc (core->anal->esil, addr);
-			addr += stack_clean (core, addr, fcn);
-			r_reg_setv (core->dbg->reg, pc, addr);
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-			r_anal_esil_set_pc (core->anal->esil, addr);
-			continue;
-		} else {
-			r_core_esil_step (core, UT64_MAX, NULL);
-			r_anal_op_free (op);
-
+			sdb_num_set (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), loop_count + 1, 0);
+			if (op->type == R_ANAL_OP_TYPE_CALL) {
+				RAnalFunction *fcn_call = r_anal_get_fcn_in (core->anal, op->jump, -1);
+				if (fcn_call) {
+					type_match (core, addr, fcn_call->name);
+				}
+				addr += op->size;
+				r_anal_op_free (op);
+				r_reg_setv (core->dbg->reg, pc, addr);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+				r_anal_esil_set_pc (core->anal->esil, addr);
+				addr += stack_clean (core, addr, fcn);
+				r_reg_setv (core->dbg->reg, pc, addr);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+				r_anal_esil_set_pc (core->anal->esil, addr);
+			} else {
+				r_core_esil_step (core, UT64_MAX, NULL);
+				r_anal_op_free (op);
+				r_core_cmd0 (core, ".ar*");
+				addr = r_reg_getv (core->anal->reg, pc);
+			}
 		}
-		r_core_cmd0 (core, ".ar*");
-		addr = r_reg_getv (core->anal->reg, pc);
 	}
-out:
 	r_cons_break_pop ();
 	r_anal_emul_restore (core, hc);
+
 }

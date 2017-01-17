@@ -60,13 +60,13 @@ static void type_cmd(RCore *core, const char *input) {
 	}
 	RListIter *it;
 	ut64 seek;
+	bool io_cache =  r_config_get_i (core->config, "io.cache");
 	r_cons_break_push (NULL, NULL);
 	switch (*input) {
 	case 'a': // "afta"
 		seek = core->offset;
 		r_core_cmd0 (core, "aei");
 		r_core_cmd0 (core, "aeim");
-		bool io_cache = r_config_get_i (core->config, "io.cache");
 		r_config_set_i (core->config, "io.cache", true);
 		r_list_foreach (core->anal->fcns, it, fcn) {
 			r_core_seek (core, fcn->addr, true);
@@ -76,18 +76,18 @@ static void type_cmd(RCore *core, const char *input) {
 				break;
 			}
 		}
-		if (!io_cache) {
-			r_config_set_i (core->config, "io.cache", io_cache);
-		}
 		r_core_cmd0 (core, "aeim-");
 		r_core_cmd0 (core, "aei-");
 		r_core_seek (core, seek, true);
+		r_config_set_i (core->config, "io.cache", io_cache);
 		break;
 	case 'm': // "aftm"
+		r_config_set_i (core->config, "io.cache", true);
 		seek = core->offset;
 		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 		r_core_anal_type_match (core, fcn);
 		r_core_seek (core, seek, true);
+		r_config_set_i (core->config, "io.cache", io_cache);
 		break;
 	case '?':
 		type_cmd_help (core);
