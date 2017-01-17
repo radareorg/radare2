@@ -146,15 +146,6 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 			eprintf ("[+] r2pipe-io link failed. Expected two null bytes.\n");
 			r2p_close (r2p);
 			return NULL;
-		} else {
-			if (read (r2p->output[0], &ch, 1) != 1) {
-				eprintf ("Failed to read 1 byte\n");
-				r2p_close (r2p);
-				return NULL;
-			}
-			if (ch == 0x00) {
-				eprintf ("[+] r2pipe-io link stablished\n");
-			}
 		}
 	} else {
 		int rc = 0;
