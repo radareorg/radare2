@@ -487,7 +487,7 @@ static char *replace_directives(char *str) {
 	char *dir = directives[i++];
 	char *o = replace_directives_for (str, dir);
 	while (dir) {
-		char *o = replace_directives_for (o, dir);
+		o = replace_directives_for (o, dir);
 		dir = directives[i++];
 	}
 	return o;
