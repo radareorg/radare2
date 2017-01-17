@@ -5350,6 +5350,8 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 		case 'j': //avj
 			r_core_anal_list_vtables (core, true);
 			break;
+		case 'r': //avr
+			r_core_anal_print_rtti (core);
 		case '\0': //av
 			r_core_anal_list_vtables (core, false);
 			break;
