@@ -2943,7 +2943,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		default:
-			if (l) {
+			if (l != 0) {
 				r_core_print_disasm_instructions (core, 0, l);
 			}
 			break;

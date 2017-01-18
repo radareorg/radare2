@@ -1820,7 +1820,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn *insn = NULL;
-	int mode = (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
+	int mode = (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 

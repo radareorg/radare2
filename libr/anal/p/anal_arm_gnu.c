@@ -352,12 +352,10 @@ static ut64 getaddr (ut64 addr, const ut8 *d) {
 
 static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) {
 	memset (op, 0, sizeof (RAnalOp));
-	if (d[3] == 0) {
-		return -1;  // invalid
-	}
+	if (d[3]==0) return -1; // invalid
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_NULL;
-	if (d[0] == 0xc0 && d[3] == 0xd6) {
+	if (d[0]==0xc0 && d[3]==0xd6) {
 		// defaults to x30 reg. but can be different
 		op->type = R_ANAL_OP_TYPE_RET;
 	}
