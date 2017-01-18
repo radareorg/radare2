@@ -789,6 +789,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			for (i = 0; i < inc; i++) {
 				printfmt ("%c", hex[(i+k)%16]);
 			}
+			/* print comment header*/
+			if (p->use_comments) {
+				printfmt (col == 1 ? "|" : " ");
+				printfmt (" commment ");
+			}
 			printfmt (col == 2 ? "|\n" : "\n");
 		}
 	}
@@ -903,9 +908,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		printfmt ((col == 2)? "|" : " ");
 		for (j = i; j < i + inc; j++) {
 			if (j >= len) {
-				break;
+				//break;
+				printfmt (" ");
+			} else {
+				r_print_byte (p, "%c", j, buf[j]);
 			}
-			r_print_byte (p, "%c", j, buf[j]);
 		}
 		if (col == 2) printfmt("|");
 		if (p && p->flags & R_PRINT_FLAGS_REFS) {
@@ -922,6 +929,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				rstr = p->hasrefs (p->user, off, true);
 				if (rstr && *rstr) {
 					printfmt ("%s", rstr);
+				}
+			}
+		}
+		if (p->use_comments) {
+			for (j = i; j < i + inc; j++) {
+				const char *comment = p->get_comments (p->user, addr + j);
+				if (comment) {
+					if (p && p->colorfor) {
+						a = p->colorfor (p->user, addr + j, true);
+						if (a && *a) { b = Color_RESET; } else { a = b = ""; }
+					} else {
+						a = b = "";
+					}
+					printfmt("%s  ; %s", a, comment);
 				}
 			}
 		}

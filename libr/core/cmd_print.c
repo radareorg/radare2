@@ -3685,6 +3685,8 @@ static int cmd_print(void *data, const char *input) {
 			core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
 			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 		}
+		/* Don't show comments in default case */
+		core->print->use_comments = false;
 		}
 		r_cons_break_push (NULL, NULL);
 		switch (input[1]) {
@@ -3699,6 +3701,7 @@ static int cmd_print(void *data, const char *input) {
 				"pxa", "", "show annotated hexdump",
 				"pxA", "", "show op analysis color map",
 				"pxb", "", "dump bits in hexdump form",
+				"pxc", "", "show hexdump with comments",
 				"pxd", "[124]", "signed integer dump (1 byte, 2 and 4)",
 				"pxe", "", "emoji hexdump! :)",
 				"pxi", "", "HexII compact binary representation",
@@ -3773,6 +3776,23 @@ static int cmd_print(void *data, const char *input) {
 					c = -1;
 				}
 			}
+			}
+			break;
+		case 'c':
+			core->print->use_comments = core->print->flags & R_PRINT_FLAGS_COMMENT;
+			if (l) {
+				ut64 from = r_config_get_i (core->config, "diff.from");
+				ut64 to = r_config_get_i (core->config, "diff.to");
+				if (from == to && !from) {
+					if (!r_core_block_size (core, len)) {
+						 len = core->blocksize;
+					}
+					r_print_hexdump (core->print, core->offset,
+					  core->block, len, 16, 1);
+				} else {
+					 r_core_print_cmp (core, from, to);
+				}
+				core->num->value = len;
 			}
 			break;
 		case 'i': // "pxi"

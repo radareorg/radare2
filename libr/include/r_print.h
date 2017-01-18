@@ -21,9 +21,11 @@ extern "C" {
 #define R_PRINT_FLAGS_REFS    0x00000080
 #define R_PRINT_FLAGS_DIFFOUT 0x00000100 /* only show different rows in `cc` hexdiffing */
 #define R_PRINT_FLAGS_ADDRDEC 0x00000200
+#define R_PRINT_FLAGS_COMMENT 0x00000400
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
+typedef const char *(*RPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RPrintColorFor)(void *user, ut64 addr, bool verbose);
 
 typedef struct r_print_zoom_t {
@@ -59,6 +61,7 @@ typedef struct r_print_t {
 	int ocur;
 	int cols;
 	int flags;
+	bool use_comments;
 	int addrmod;
 	int col;
 	int stride;
@@ -68,6 +71,7 @@ typedef struct r_print_t {
 	RPrintNameCallback offname;
 	RPrintColorFor colorfor;
 	RPrintColorFor hasrefs;
+	RPrintCommentCallback get_comments;
 	RStrHT *formats;
 	RCons *cons;
 	RConsBind consbind;

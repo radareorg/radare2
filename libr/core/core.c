@@ -1436,6 +1436,13 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	return r_strbuf_drain (s);
 }
 
+R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
+	if (core) {
+		return r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+	}
+	return NULL;
+}
+
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose) {
 	ut64 type;
 	if (!(core->print->flags & R_PRINT_FLAGS_COLOR)) {
@@ -1493,6 +1500,8 @@ R_API int r_core_init(RCore *core) {
 	core->print->disasm = __disasm;
 	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;
 	core->print->hasrefs = (RPrintColorFor)r_core_anal_hasrefs;
+	core->print->get_comments = (RPrintCommentCallback) r_core_anal_get_comments;
+	core->print->use_comments = false;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->tasks = r_list_new ();

@@ -952,6 +952,17 @@ static int cb_hexpairs(void *user, void *data) {
 	return true;
 }
 
+static int cb_hexcomments(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_COMMENT;
+	} else {
+		core->print->flags &= ~R_PRINT_FLAGS_COMMENT;
+	}
+	return true;
+}
+
 R_API int r_core_esil_cmd(RAnalEsil *esil, const char *cmd, int a1, int a2) {
 	if (cmd && *cmd) {
 		RCore *core = esil->anal->user;
@@ -2025,6 +2036,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("hex.depth", 5, "Maximal level of recurrence while telescoping memory");
 	SETPREF("hex.onechar", "false", "Number of columns in hexdump");
 	SETICB("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");
+	SETCB("hex.comments", "true", &cb_hexcomments, "Show comments in 'px' hexdump");
 
 	/* http */
 	SETPREF("http.log", "true", "Show HTTP requests processed");

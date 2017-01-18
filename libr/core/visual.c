@@ -11,7 +11,7 @@ static void visual_refresh(RCore *core);
 #define PIDX (R_ABS(core->printidx%NPF))
 
 static const char *printfmtSingle[] = {
-	"x", "pd $r",
+	"xc", "pd $r",
 	"pxw 64@r:SP;dr=;pd $r",
 	"pxw", "pc", "pxA", "pxa"
 };
