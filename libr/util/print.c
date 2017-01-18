@@ -718,6 +718,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int use_header = 1;
 	int use_offset = 1;
 	int use_segoff = 0;
+	int use_comment = 0;
 	int pairs = 0;
 	const char *fmt = "%02x";
 	const char *pre = "";
@@ -731,6 +732,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
+		use_comment = p->flags & R_PRINT_FLAGS_COMMENT;
 		inc = p->cols;
 		col = p->col;
 		printfmt = (PrintfCallback) p->cb_printf;
@@ -788,6 +790,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			printfmt ((col == 2) ? "|" : " ");
 			for (i = 0; i < inc; i++) {
 				printfmt ("%c", hex[(i+k)%16]);
+			}
+			/* print comment header*/
+			if (use_comment) {
+				printfmt (col == 1 ? "|" : " ");
+				printfmt (" commment ");
 			}
 			printfmt (col == 2 ? "|\n" : "\n");
 		}
@@ -903,9 +910,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		printfmt ((col == 2)? "|" : " ");
 		for (j = i; j < i + inc; j++) {
 			if (j >= len) {
-				break;
+				//break;
+				printfmt (" ");
+			} else {
+				r_print_byte (p, "%c", j, buf[j]);
 			}
-			r_print_byte (p, "%c", j, buf[j]);
 		}
 		if (col == 2) printfmt("|");
 		if (p && p->flags & R_PRINT_FLAGS_REFS) {
@@ -922,6 +931,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				rstr = p->hasrefs (p->user, off, true);
 				if (rstr && *rstr) {
 					printfmt ("%s", rstr);
+				}
+			}
+		}
+		if (use_comment) {
+			for (j = i; j < i + inc; j++) {
+				const char *comment = p->get_comments (p->user, addr + j);
+				if (comment) {
+					if (p && p->colorfor) {
+						a = p->colorfor (p->user, addr + j, true);
+						if (a && *a) { b = Color_RESET; } else { a = b = ""; }
+					} else {
+						a = b = "";
+					}
+					printfmt("%s  ; %s", a, comment);
 				}
 			}
 		}
