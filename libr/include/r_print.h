@@ -25,6 +25,7 @@ extern "C" {
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
+typedef const char *(*RPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RPrintColorFor)(void *user, ut64 addr, bool verbose);
 
 typedef struct r_print_zoom_t {
@@ -69,6 +70,7 @@ typedef struct r_print_t {
 	RPrintNameCallback offname;
 	RPrintColorFor colorfor;
 	RPrintColorFor hasrefs;
+	RPrintCommentCallback get_comments;
 	RStrHT *formats;
 	RCons *cons;
 	RConsBind consbind;

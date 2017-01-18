@@ -557,6 +557,7 @@ typedef struct {
 } RCoreAnalStats;
 
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose);
+R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 R_API void r_core_anal_list_vtables(void *core, bool printJson);
