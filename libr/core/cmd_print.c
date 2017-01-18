@@ -3686,7 +3686,7 @@ static int cmd_print(void *data, const char *input) {
 			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 		}
 		/* Don't show comments in default case */
-		core->print->use_comments = 0;
+		core->print->use_comments = false;
 		}
 		r_cons_break_push (NULL, NULL);
 		switch (input[1]) {
