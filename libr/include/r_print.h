@@ -61,6 +61,7 @@ typedef struct r_print_t {
 	int ocur;
 	int cols;
 	int flags;
+	int use_comments;
 	int addrmod;
 	int col;
 	int stride;

@@ -718,7 +718,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int use_header = 1;
 	int use_offset = 1;
 	int use_segoff = 0;
-	int use_comment = 0;
 	int pairs = 0;
 	const char *fmt = "%02x";
 	const char *pre = "";
@@ -732,7 +731,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
-		use_comment = p->flags & R_PRINT_FLAGS_COMMENT;
 		inc = p->cols;
 		col = p->col;
 		printfmt = (PrintfCallback) p->cb_printf;
@@ -792,7 +790,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt ("%c", hex[(i+k)%16]);
 			}
 			/* print comment header*/
-			if (use_comment) {
+			if (p->use_comments) {
 				printfmt (col == 1 ? "|" : " ");
 				printfmt (" commment ");
 			}
@@ -934,7 +932,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			}
 		}
-		if (use_comment) {
+		if (p->use_comments) {
 			for (j = i; j < i + inc; j++) {
 				const char *comment = p->get_comments (p->user, addr + j);
 				if (comment) {
