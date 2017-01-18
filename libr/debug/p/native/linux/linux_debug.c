@@ -92,6 +92,11 @@ int linux_handle_signals (RDebug *dbg, bool self_signalled) {
 	return false;
 }
 
+#if __ANDROID__
+#undef PT_GETEVENTMSG
+#define PT_GETEVENTMSG
+#endif
+
 #ifdef PT_GETEVENTMSG
 /*
  * Handle PTRACE_EVENT_*
@@ -313,9 +318,11 @@ repeat:
 				if (self_signalled) {
 					set_pid_signalled_status (dbg, pid, false);
 				}
+#ifdef WIFCONTINUED
 			} else if (WIFCONTINUED (status)) {
 				eprintf ("child continued...\n");
 				reason = R_DEBUG_REASON_NONE;
+#endif
 			} else if (status == 1) {
 				eprintf ("EEK DEAD DEBUGEE!\n");
 				reason = R_DEBUG_REASON_DEAD;
@@ -338,7 +345,7 @@ repeat:
 
 int match_pid(const void *pid_o, const void *th_o) {
 	int pid = *(int *)pid_o;
-	RDebug *th = (RDebug *)th_o; 
+	RDebug *th = (RDebug *)th_o;
 	return pid == th->pid;
 }
 
@@ -397,7 +404,7 @@ int linux_attach(RDebug *dbg, int pid) {
 		dbg->threads = get_pid_thread_list (dbg, pid);
 		attach_to_pid_and_threads (dbg);
 	} else {
-		// This means we did a first run, so we probably attached to all possible threads already. 
+		// This means we did a first run, so we probably attached to all possible threads already.
 		// So check if the requested thread is being traced already. If yes: skip
 		if (dbg->threads && !r_list_find (dbg->threads, &pid, &match_pid)) {
 			goto out;
@@ -455,7 +462,7 @@ RDebugInfo *linux_info(RDebug *dbg, const char *arg) {
 	rdi->gid = found ? th->gid : -1;
 	rdi->cwd = read_link (rdi->pid, "cwd");
 	rdi->exe = read_link (rdi->pid, "exe");
-	snprintf (proc_buff, sizeof (proc_buff), 
+	snprintf (proc_buff, sizeof (proc_buff),
 				"/proc/%d/cmdline", rdi->pid);
 	rdi->cmdline = r_file_slurp (proc_buff, NULL);
 	snprintf (proc_buff, sizeof (proc_buff),
@@ -469,7 +476,7 @@ RDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	RDebugPid *pid_info = R_NEW0 (RDebugPid);
 	if (!pid_info) {
 		return NULL;
-	} 
+	}
 	char *ptr = strstr (info, "State:");
 	if (ptr) {
 		switch (*(ptr + 7)) {
@@ -695,7 +702,7 @@ void print_fpu (void *f, int r){
 		}
 	}
 #endif
-#else 
+#else
 #warning not implemented for this platform
 #endif
 }
@@ -719,7 +726,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		int i;
 		for (i = 0; i < 8; i++) { //DR0-DR7
 			if (i == 4 || i == 5) continue;
-			long ret = ptrace (PTRACE_PEEKUSER, pid, 
+			long ret = ptrace (PTRACE_PEEKUSER, pid,
 					r_offsetof (struct user, u_debugreg[i]), 0);
 			if ((i+1) * sizeof (ret) > size) {
 				eprintf ("linux_reg_get: Buffer too small %d\n", size);
@@ -816,9 +823,9 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
 #endif
 			/*
-			 * if perror here says 'no such process' and the 
-			 * process exists still.. is because there's a missing call 
-			 * to 'wait'. and the process is not yet available to accept 
+			 * if perror here says 'no such process' and the
+			 * process exists still.. is because there's a missing call
+			 * to 'wait'. and the process is not yet available to accept
 			 * more ptrace queries.
 			 */
 			if (ret != 0) return false;
@@ -859,7 +866,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 		int ret = ptrace (PTRACE_SETREGSET, dbg->pid, NT_PRSTATUS, &io);
 #elif __POWERPC__
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, buf, NULL);
-#else 
+#else
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid, 0, (void*)buf);
 #endif
 #if DEAD_CODE

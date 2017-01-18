@@ -2,9 +2,13 @@
 
 #include <r_cons.h>
 #include <r_util.h>
-#define sdb_json_indent r_cons_json_indent
-#define sdb_json_unindent r_cons_json_unindent
-#include "../../shlr/sdb/src/json.c"
+#include <sdb.h>
+#undef SDB_API
+#define SDB_API static
+#include "../../shlr/sdb/src/json/rangstr.c"
+int js0n(const ut8 *js, RangstrType len, RangstrType *out);
+#include "../../shlr/sdb/src/json/path.c"
+// #include "../../shlr/sdb/src/json.c"
 
 /* TODO: remove globals */
 static RList *sorted_lines = NULL;

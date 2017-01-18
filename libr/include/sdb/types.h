@@ -18,6 +18,14 @@
 #endif
 #endif
 
+#ifndef SDB_IPI
+#if defined(__GNUC__) && __GNUC__ >= 4
+// __attribute__((visibility("hidden")))
+#endif
+#define SDB_IPI static
+#endif
+
+
 #if MINGW || __MINGW32__ || __MINGW64__
 #define __MINGW__ 1
 #endif

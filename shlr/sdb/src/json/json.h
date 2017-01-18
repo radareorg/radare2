@@ -3,15 +3,17 @@
 
 #include "rangstr.h"
 
-int js0n(const unsigned char *js, RangstrType len, RangstrType *out);
-Rangstr json_get (const char *s, const char *path);
+#if 0
+SDB_IPI int js0n(const unsigned char *js, RangstrType len, RangstrType *out);
+SDB_IPI Rangstr json_get (const char *s, const char *path);
 
 /* string based api */
-char *api_json_get (const char *s, const char *p);
-char *api_json_set (const char *s, const char *k, const char *v);
-int api_json_geti (const char *s, const char *p);
-char *api_json_seti (const char *s, const char *k, int a);
-char *api_json_unindent(const char *s);
-char *api_json_indent(const char *s);
+SDB_IPI char *api_json_get (const char *s, const char *p);
+SDB_IPI char *api_json_set (const char *s, const char *k, const char *v);
+SDB_IPI int api_json_geti (const char *s, const char *p);
+SDB_IPI char *api_json_seti (const char *s, const char *k, int a);
+SDB_IPI char *api_json_unindent(const char *s);
+SDB_IPI char *api_json_indent(const char *s);
+#endif
 
 #endif

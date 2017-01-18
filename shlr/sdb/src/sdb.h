@@ -94,7 +94,7 @@ typedef struct sdb_ns_t {
 	Sdb *sdb;
 } SdbNs;
 
-SDB_API SDB_API Sdb* sdb_new0();
+SDB_API Sdb* sdb_new0();
 SDB_API Sdb* sdb_new(const char *path, const char *file, int lock);
 
 SDB_API int sdb_open(Sdb *s, const char *file);

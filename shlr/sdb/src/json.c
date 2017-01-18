@@ -2,10 +2,10 @@
 
 #include <stdarg.h>
 #include "sdb.h"
-#include "json/api.c"
+#include "json/rangstr.c"
 #include "json/js0n.c"
 #include "json/path.c"
-#include "json/rangstr.c"
+#include "json/api.c"
 #include "json/indent.c"
 
 SDB_API char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
