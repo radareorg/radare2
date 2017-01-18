@@ -63,10 +63,10 @@ R_API char *r_num_units(char *buf, ut64 num) {
 	int tnum;
 	double fnum = num;
 	if (!buf) buf = malloc (32);
-	//if (num>TB) { unit = 'T'; fnum = num/TB; } else
-	if (num>GB) { unit = 'G'; fnum = fnum/GB; } else
-	if (num>MB) { unit = 'M'; fnum = fnum/MB; } else
-	if (num>KB) { unit = 'K'; fnum = fnum/KB; } else
+	//if (num>=TB) { unit = 'T'; fnum = num/TB; } else
+	if (num>=GB) { unit = 'G'; fnum = fnum/GB; } else
+	if (num>=MB) { unit = 'M'; fnum = fnum/MB; } else
+	if (num>=KB) { unit = 'K'; fnum = fnum/KB; } else
 		{ unit = 0; fnum = num; }
 	tnum = (int)((double)(fnum - (int)fnum)*10);
 	if (tnum) {
