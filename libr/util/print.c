@@ -908,11 +908,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		printfmt ((col == 2)? "|" : " ");
 		for (j = i; j < i + inc; j++) {
 			if (j >= len) {
-				//break;
-				printfmt (" ");
-			} else {
-				r_print_byte (p, "%c", j, buf[j]);
+				break;
 			}
+			r_print_byte (p, "%c", j, buf[j]);
 		}
 		if (col == 2) printfmt("|");
 		if (p && p->flags & R_PRINT_FLAGS_REFS) {
@@ -933,6 +931,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		if (p->use_comments) {
+			for (;j < i + inc; j++) {
+				printfmt (" ");
+			}
 			for (j = i; j < i + inc; j++) {
 				const char *comment = p->get_comments (p->user, addr + j);
 				if (comment) {
