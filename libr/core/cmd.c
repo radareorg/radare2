@@ -1664,12 +1664,13 @@ next:
 				scr_html = r_config_get_i (core->config, "scr.html");
 				r_config_set_i (core->config, "scr.html", true);
 				pipecolor = true;
+				*fdnum = 0;
 			} else {
 				if (*fdnum >= '0' && *fdnum <= '9') {
 					fdn = *fdnum - '0';
 				}
+				*fdnum = 0;
 			}
-			*fdnum = 0;
 		}
 		r_cons_set_interactive (false);
 		if (!strcmp (str, "-")) {
