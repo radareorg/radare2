@@ -26,8 +26,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		obits = a->bits;
 	}
 
-	if (!a->features || !strstr (a->features, "no-mclass")) {
-		mode |= CS_MODE_MCLASS;
+	if (a->bits != 64) {
+		if (!a->features || !strstr (a->features, "no-mclass")) {
+			mode |= CS_MODE_MCLASS;
+		}
 	}
 	if (a->features && strstr (a->features, "v8")) {
 		mode |= CS_MODE_V8;
