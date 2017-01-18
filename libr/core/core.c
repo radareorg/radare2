@@ -566,7 +566,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 
 R_API RCore *r_core_new() {
 	RCore *c = R_NEW0 (RCore);
-	if (!c) return NULL;
+	if (!c) {
+		return NULL;
+	}
 	r_core_init (c);
 	return c;
 }
@@ -1465,7 +1467,7 @@ static void r_core_setenv (RCore *core) {
 
 R_API int r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
-	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE+1);
+	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
 		eprintf ("Cannot allocate %d bytes\n", R_CORE_BLOCKSIZE);
 		/* XXX memory leak */
@@ -1475,6 +1477,9 @@ R_API int r_core_init(RCore *core) {
 	core->cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
+	core->cmdfilter = NULL;
+	core->switch_file_view = 0;
+	core->cmdremote = 0;
 	core->incomment = false;
 	core->config = NULL;
 	core->http_up = false;
