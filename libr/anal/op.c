@@ -145,7 +145,7 @@ R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 }
 
 // TODO: return RAnalException *
-R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
+R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 	while (op) {
 		if (op->delay > 0) {
 			anal->queued = r_anal_op_copy (op);

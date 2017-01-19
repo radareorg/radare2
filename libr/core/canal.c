@@ -3241,10 +3241,10 @@ static void cccb(void *u) {
 	eprintf ("^C\n");
 }
 
-static void add_string_ref (RCore *core, ut64 xref_to) {
+static void add_string_ref(RCore *core, ut64 xref_to) {
 	int len = 0;
 	char *str_flagname;
-	if (xref_to == UT64_MAX || xref_to == 0LL) {
+	if (xref_to == UT64_MAX || !xref_to) {
 		return;
 	}
 	str_flagname = is_string_at (core, xref_to, &len);
@@ -3258,6 +3258,40 @@ static void add_string_ref (RCore *core, ut64 xref_to) {
 		//r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n", len, xref_to);
 		free (str_flagname);
 	}
+}
+
+
+static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+	RAnal *anal = NULL;
+	RAnalOp *op = NULL;
+	if (!esil) {
+		return 0;
+	}
+	anal = esil->anal;
+	op = esil->user;
+	//specific case to handle blx/bx cases in arm through emulation
+	if (anal && anal->cur && anal->cur->arch && anal->bits < 33 &&
+	    strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
+		switch (op->id) {
+		//Thoses values comes from capstone so basically for others plugin
+		//will not work since they not fill analop.id
+		//do not include here capstone's headers
+		case 14: //ARM_INS_BLX
+		case 15: //ARM_INS_BX
+		{
+			if (!(*val & 1)) {
+				r_anal_hint_set_bits (anal, *val, 32);
+			} else {
+				r_anal_hint_set_bits (anal, *val - 1, 16);
+			}
+		}
+			break;
+		default:
+			break;
+		}
+
+	}
+	return 0;
 }
 
 
@@ -3339,6 +3373,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			return;
 		}
 	}
+	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
+	//this is necessary for the hook to read the id of analop 
+	ESIL->user = &op;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	if (!core->io->cached) {
 		ESIL->cb.hook_mem_write = &esilbreak_mem_write;
@@ -3375,12 +3412,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (i > iend) {
 			break;
 		}
-#if 0
-		// speedup. we dont need op.mnemonic at all
-		if (r_asm_disassemble (core->assembler, &asmop, buf + i, iend - i) > 0) {
-			op.mnemonic = strdup (asmop.buf_asm);
-		}
-#endif
 		if (op.size < 1) {
 			i += minopsize - 1;
 			continue;

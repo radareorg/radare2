@@ -109,7 +109,6 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->cc = NULL;
 	/* Function attributes: weak/noreturn/format/etc */
 	fcn->addr = UT64_MAX;
-	fcn->bits = 0;
 #if FCN_OLD
 	fcn->refs = r_anal_ref_list_new ();
 	fcn->xrefs = r_anal_ref_list_new ();

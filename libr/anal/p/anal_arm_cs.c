@@ -1743,12 +1743,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
-			//switch instruction set
-			if (!(op->jump & 1)) {
-				r_anal_hint_set_bits (a, op->jump, 32);
-			} else {
-				r_anal_hint_set_bits (a, op->jump - 1, 16);
-			}
+			//switch instruction set always with blx label
+			r_anal_hint_set_bits (a, op->jump, a->bits == 32? 16 : 32);
 		}
 		break;
 	case ARM_INS_BL:
@@ -1803,11 +1799,6 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = IMM(0);
 			op->fail = addr + op->size;
-			if (!(op->jump & 1)) {
-				r_anal_hint_set_bits (a, op->jump, 32);
-			} else {
-				r_anal_hint_set_bits (a, op->jump - 1, 16);
-			}
 		}
 		break;
 	default:

@@ -121,7 +121,6 @@ typedef struct r_disam_options_t {
 	char *ocomment;
 	int linesopts;
 	int lastfail;
-	int oldbits;
 	int ocols;
 	int lcols;
 	int nb, nbytes;
@@ -517,7 +516,6 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->ocomment = NULL;
 	ds->linesopts = 0;
 	ds->lastfail = 0;
-	ds->oldbits = 0;
 	ds->ocols = 0;
 	ds->lcols = 0;
 
@@ -625,10 +623,6 @@ static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut
 static void ds_free(RDisasmState *ds) {
 	if (!ds) return;
 	RCore *core = ds->core;
-	if (core && ds->oldbits) {
-		r_config_set_i (core->config, "asm.bits", ds->oldbits);
-		ds->oldbits = 0;
-	}
 	r_anal_op_fini (&ds->analop);
 	r_anal_hint_free (ds->hint);
 	free (ds->comment);
@@ -3039,7 +3033,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	r_config_save_num (hc, "io.cache", NULL);
 	r_config_set (core->config, "io.cache", "true");
-	if (!ds->show_comments || !print) {
+	if (!ds->show_comments) {
 		goto beach;
 	}
 	switch (ds->analop.type) {
@@ -3461,28 +3455,6 @@ toro:
 				continue;
 			}
 		}
-		if (!ds->hint || !ds->hint->bits) {
-			if (f) {
-				if (f->bits) {
-					if (!ds->oldbits) {
-						ds->oldbits = r_config_get_i (core->config, "asm.bits");
-					}
-					if (ds->oldbits != f->bits) {
-						r_config_set_i (core->config, "asm.bits", f->bits);
-					}
-				} else {
-					if (ds->oldbits) {
-						r_config_set_i (core->config, "asm.bits", ds->oldbits);
-						ds->oldbits = 0;
-					}
-				}
-			} else {
-				if (ds->oldbits) {
-					r_config_set_i (core->config, "asm.bits", ds->oldbits);
-					ds->oldbits = 0;
-				}
-			}
-		}
 		ds_show_comments_right (ds);
 		// TRY adding here
 		char *link_key = sdb_fmt (-1, "link.%08"PFMT64x, ds->addr + idx);
@@ -3665,10 +3637,6 @@ toro:
 		R_FREE (nbuf);
 	}
 #endif
-	if (ds->oldbits) {
-		r_config_set_i (core->config, "asm.bits", ds->oldbits);
-		ds->oldbits = 0;
-	}
 	r_print_set_rowoff (core->print, ds->lines, ds->at - addr);
 	r_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX);
 	// TODO: this too (must review)
@@ -3758,28 +3726,6 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		r_asm_set_pc (core->assembler, ds->at);
 		// XXX copypasta from main disassembler function
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-		if (!ds->hint || !ds->hint->bits) {
-			if (f) {
-				if (f->bits) {
-					if (!ds->oldbits) {
-						ds->oldbits = r_config_get_i (core->config, "asm.bits");
-					}
-					if (ds->oldbits != f->bits) {
-						r_config_set_i (core->config, "asm.bits", f->bits);
-					}
-				} else {
-					if (ds->oldbits != 0) {
-						r_config_set_i (core->config, "asm.bits", ds->oldbits);
-						ds->oldbits = 0;
-					}
-				}
-			} else {
-				if (ds->oldbits) {
-					r_config_set_i (core->config, "asm.bits", ds->oldbits);
-					ds->oldbits = 0;
-				}
-			}
-		}
 		ret = r_asm_disassemble (core->assembler, &ds->asmop, core->block+i, core->blocksize-i);
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
@@ -3863,10 +3809,6 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		}
 	}
 	r_cons_break_pop ();
-	if (ds->oldbits) {
-		r_config_set_i (core->config, "asm.bits", ds->oldbits);
-		ds->oldbits = 0;
-	}
 	ds_free (ds);
 	core->offset = old_offset;
 	r_reg_arena_pop (core->anal->reg);
@@ -4423,10 +4365,6 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	r_cons_break_pop ();
 	ds_print_esil_anal_fini (ds);
 
-	if (ds->oldbits) {
-		r_config_set_i (core->config, "asm.bits", ds->oldbits);
-		ds->oldbits = 0;
-	}
 	ds_free (ds);
 	r_list_free (bb_list);
 	return idx;

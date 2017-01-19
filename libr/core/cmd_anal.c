@@ -1445,7 +1445,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 			if (fcn) {
-				fcn->bits = atoi (input + 3);
+				int bits = atoi (input + 3);
+				r_anal_hint_set_bits (core->anal, fcn->addr, bits);
+				r_anal_hint_set_bits (core->anal,
+					fcn->addr + r_anal_fcn_size (fcn),
+					core->anal->bits);
+				fcn->bits = bits;
 			} else {
 				eprintf ("Cannot find function to set bits\n");
 			}
