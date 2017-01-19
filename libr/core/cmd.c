@@ -1658,7 +1658,7 @@ next:
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
-		if (ptr > cmd) {
+		if (ptr > (cmd+1) && iswhitechar (ptr[-2])) {
 			char *fdnum = ptr - 1;
 			if (*fdnum == 'H') {
 				scr_html = r_config_get_i (core->config, "scr.html");
