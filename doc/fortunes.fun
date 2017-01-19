@@ -202,3 +202,4 @@ we only have bugs, features are an unintended side-effect
 There are 5 minutes from WTF to FIX in r2land
 Quantum dissasemble: it's there as long as you don't observe it
 Ceci n'est pas une r2pipe
+Buy a mac
