@@ -13,16 +13,87 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#if __UNIX__ || defined(__CYGWIN__)
-#include <netinet/tcp.h>
+#if EMSCRIPTEN
+#define NETWORK_DISABLED 1
+#else
+#define NETWORK_DISABLED 0
 #endif
 
 R_LIB_VERSION(r_socket);
 
-#if EMSCRIPTEN
+
+#if NETWORK_DISABLED
 /* no network */
-R_API RSocket *r_socket_new (int is_ssl) { return NULL; }
-#endif
+R_API RSocket *r_socket_new (int is_ssl) {
+	return NULL;
+}
+R_API bool r_socket_is_connected (RSocket *s) {
+	return false;
+}
+static int r_socket_unix_connect(RSocket *s, const char *file) {
+	return -1;
+}
+R_API int r_socket_unix_listen (RSocket *s, const char *file) {
+	return -1;
+}
+R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
+	return false;
+}
+R_API int r_socket_close_fd (RSocket *s) {
+	return -1;
+}
+R_API int r_socket_close (RSocket *s) {
+	return -1;
+}
+R_API int r_socket_free (RSocket *s) {
+	return -1;
+}
+R_API int r_socket_port_by_name(const char *name) {
+	return -1;
+}
+R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) {
+	return false;
+}
+R_API RSocket *r_socket_accept(RSocket *s) {
+	return NULL;
+}
+R_API int r_socket_block_time (RSocket *s, int block, int sec) {
+	return -1;
+}
+R_API int r_socket_flush(RSocket *s) {
+	return -1;
+}
+R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
+	return -1;
+}
+R_API char *r_socket_to_string(RSocket *s) {
+	return NULL;
+}
+R_API int r_socket_write(RSocket *s, void *buf, int len) {
+	return -1;
+}
+R_API int r_socket_puts(RSocket *s, char *buf) {
+	return -1;
+}
+R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
+	/* nothing here */
+}
+R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
+	return -1;
+}
+R_API int r_socket_read_block(RSocket *s, unsigned char *buf, int len) {
+	return -1;
+}
+R_API int r_socket_gets(RSocket *s, char *buf,	int size) {
+	return -1;
+}
+R_API RSocket *r_socket_new_from_fd (int fd) {
+	return NULL;
+}
+R_API ut8* r_socket_slurp(RSocket *s, int *len) {
+	return NULL;
+}
+#else
 
 #if 0
 winsock api notes
@@ -506,8 +577,9 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 #if XXX_THIS_IS_NOT_WORKING_WELL
 	fd_set rfds;
 	struct timeval tv;
-	if (s->fd==-1)
+	if (s->fd == -1) {
 		return -1;
+	}
 	FD_ZERO (&rfds);
 	FD_SET (s->fd, &rfds);
 	tv.tv_sec = secs;
@@ -552,7 +624,9 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 #endif
 	for (;;) {
 		int b = 1500; //65536; // Use MTU 1500?
-		if (b>len) b = len;
+		if (b > len) {
+			b = len;
+		}
 #if HAVE_LIB_SSL
 		if (s->is_ssl) {
 			if (s->bio)
@@ -697,3 +771,5 @@ R_API ut8* r_socket_slurp(RSocket *s, int *len) {
 	}
 	return buf;
 }
+
+#endif // EMSCRIPTEN

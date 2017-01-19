@@ -28,6 +28,10 @@ R_LIB_VERSION_HEADER(r_socket);
 #include <ws2tcpip.h>
 #endif
 
+#if __UNIX__ || defined(__CYGWIN__)
+#include <netinet/tcp.h>
+#endif
+
 /* For the Mingw-W64 toolchain */
 #ifndef MSG_DONTWAIT
 #define MSG_DONTWAIT 0
@@ -48,7 +52,6 @@ typedef struct {
 	int output[2];
 #endif
 } R2Pipe;
-
 
 typedef struct r_socket_t {
 	int fd;
