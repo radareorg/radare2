@@ -2,6 +2,7 @@ ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 EXT_EXE=.js
 EXT_SO=.js
+EXT_AR=a
 CC=emcc
 AR=emar
 LINK=
