@@ -52,6 +52,11 @@
 
 #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !defined(__sun)
 
+#if EMSCRIPTEN
+#undef HAVE_PTY
+#define HAVE_PTY 0
+#endif
+
 R_API RRunProfile *r_run_new(const char *str) {
 	RRunProfile *p = R_NEW (RRunProfile);
 	if (p) {
