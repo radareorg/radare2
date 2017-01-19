@@ -45,6 +45,7 @@ static RCore* opencore(const char *f) {
 			return NULL;
 		}
 		r_core_bin_load (c, NULL, baddr);
+		(void)r_core_bin_update_arch_bits (c);
 	}
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	if (f && anal_all) {

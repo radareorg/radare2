@@ -178,7 +178,7 @@ int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			if (!(dyn = malloc (1+bin->phdr[i].p_filesz))) {
+			if (!(dyn = malloc (bin->phdr[i].p_filesz + 1))) {
 				perror ("malloc (dyn)");
 				return false;
 			}
@@ -187,7 +187,7 @@ int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				free (dyn);
 				return false;
 			}
-			if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof(Elf_(Dyn)))) > 0) {
+			if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)))) > 0) {
 				for (j = 0; j < ndyn; j++)
 					if (dyn[j].d_tag == DT_STRTAB) {
 						stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);

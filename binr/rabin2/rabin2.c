@@ -542,7 +542,7 @@ int main(int argc, char **argv) {
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
 	int fd = -1;
-	RCore core;
+	RCore core = {0};
 
 	r_core_init (&core);
 	bin = core.bin;
