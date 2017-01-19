@@ -1536,7 +1536,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode) {
 		// k bin/cur/addrinfo/*
 		SdbListIter *iter;
 		SdbKv *kv;
-		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, true);
+		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
 		ls_foreach (ls, iter, kv) {
 			if (!strncmp (kv->key, "0x", 2)) {
 				ut64 addr;
