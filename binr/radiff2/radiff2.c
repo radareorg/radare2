@@ -25,6 +25,7 @@ static int showbare = false;
 static int json_started = 0;
 static int diffmode = 0;
 static bool disasm = false;
+static bool pdc = false;
 static bool quiet = false;
 static RCore *core = NULL;
 static const char *arch = NULL;
@@ -502,7 +503,13 @@ int main(int argc, char **argv) {
 			delta = 1;
 			break;
 		case 'D':
-			disasm = true;
+			if (disasm) {
+				pdc = true;
+				disasm = false;
+				mode = MODE_CODE;
+			} else {
+				disasm = true;
+			}
 			break;
 		case 'h':
 			return show_help (1);
@@ -590,13 +597,29 @@ int main(int argc, char **argv) {
 		r_config_set_i (c2->config, "diff.bare", showbare);
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
-		if (mode == MODE_GRAPH) {
+		if (pdc) {
+			if (!addr) {
+				addr = "entry0";
+				addr = "main";
+			}
+			/* should be in mode not in bool pdc */
+			r_config_set (c->config, "scr.color", "false");
+			r_config_set (c2->config, "scr.color", "false");
+
+			ut64 addra = r_num_math (c->num, addr);
+			bufa = (ut8*)r_core_cmd_strf (c, "af;pdc @ 0x%08"PFMT64x, addra);
+			sza = strlen ((const char *)bufa);
+
+			ut64 addrb = r_num_math (c2->num, addr);
+			bufb = (ut8*)r_core_cmd_strf (c2, "af;pdc @ 0x%08"PFMT64x, addrb);
+			szb = strlen ((const char *)bufb);
+			mode = MODE_DIFF;
+		} else if (mode == MODE_GRAPH) {
 			char *words = strdup (addr ? addr : "0");
 			char *second = strstr (words, ",");
 			if (second) {
-				ut64 off;
 				*second++ = 0;
-				off = r_num_math (c->num, words);
+				ut64 off = r_num_math (c->num, words);
 				// define the same function at each offset
 				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
 				r_core_anal_fcn (c2, r_num_math (c2->num, second),
