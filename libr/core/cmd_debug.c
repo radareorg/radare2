@@ -885,6 +885,19 @@ static int str_start_with(const char *ptr, const char *str) {
 
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
+static RDebugMap *get_closest_map(RCore *core, ut64 addr) {
+	RListIter *iter;
+	RDebugMap *map;
+
+	r_debug_map_sync (core->dbg);
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) {
+			return map;
+		}
+	}
+	return NULL;
+}
+
 static int cmd_debug_map(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "dm", " # Memory maps commands",
@@ -897,6 +910,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
 		"dmi", " [addr|libname] [symname]", "List symbols of target lib",
 		"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
+		"dmi.", "", "List closest symbol to the current address",
 		"dmS", " [addr|libname] [sectname]", "List sections of target lib",
 		"dmS*", " [addr|libname] [sectname]", "List sections of target lib in radare commands",
 		"dmj", "", "List memmaps in JSON format",
@@ -1017,39 +1031,39 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		eprintf ("No debug region found here\n");
 		return false;
 	case 'i': // "dmi"
-		{ // Move to a separate function
-			RCoreBinFilter filter;
-			const char *libname = NULL, *symname = NULL, *mode = "", *a0;
-			ut64 baddr = 0LL;
-			char *ptr;
-			int i;
-
-			if (input[1]=='*') {
-				ptr = strdup (r_str_trim_head ((char*)input + 2));
-				mode = "-r ";
-			} else {
-				ptr = strdup (r_str_trim_head ((char*)input + 1));
-			}
-			i = r_str_word_set0 (ptr);
-			switch (i) {
-			case 2: // get symname
-				symname = r_str_word_get0 (ptr, 1);
-			case 1: // get addr|libname
-				a0 = r_str_word_get0 (ptr, 0);
-				addr = r_num_math (core->num, a0);
-				if (!addr || addr == UT64_MAX) {
-					libname = r_str_word_get0 (ptr, 0);
+		switch (input[1]) {
+		case 0:
+		case '*':
+			{
+				const char *libname = NULL, *symname = NULL, *mode = "", *a0;
+				ut64 baddr = 0LL;
+				char *ptr;
+				int i;
+				if (input[1]=='*') {
+					ptr = strdup (r_str_trim_head ((char*)input + 2));
+					mode = "-r ";
+				} else {
+					ptr = strdup (r_str_trim_head ((char*)input + 1));
 				}
-				break;
-			}
-			r_debug_map_sync (core->dbg); // update process memory maps
-			r_list_foreach (core->dbg->maps, iter, map) {
-				if (core->bin &&
-						((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
-						 (libname && (strstr (map->name, libname))))) {
+				i = r_str_word_set0 (ptr);
+				switch (i) {
+				case 2:
+					symname = r_str_word_get0 (ptr, 1);
+				case 1:
+					a0 = r_str_word_get0 (ptr, 0);
+					addr = r_num_math (core->num, a0);
+					if (!addr || addr == UT64_MAX) {
+						libname = r_str_word_get0 (ptr, 0);
+					}
+					break;
+				}
+				map = get_closest_map (core, addr);
+				if (map) {
+					RCoreBinFilter filter;
 					filter.offset = 0LL;
 					filter.name = (char *)symname;
 					baddr = map->addr;
+
 					if (libname) {
 						char *cmd, *res;
 						const char *file = map->file? map->file: map->name;
@@ -1067,10 +1081,52 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'), true, &filter, NULL);
 						r_bin_set_baddr (core->bin, baddr);
 					}
-					break;
+				}
+				free (ptr);
+			}
+			break;
+		case '.':
+			{
+				map = get_closest_map (core, addr);
+				if (map) {
+					ut64 closest_addr = UT64_MAX;
+					RList *symbols = r_bin_get_symbols (core->bin);
+					RBinSymbol *symbol, *closest_symbol;
+					
+					r_list_foreach (symbols, iter, symbol) {
+						if (symbol->vaddr > addr) {
+							if (symbol->vaddr - addr < closest_addr) {
+								closest_addr = symbol->vaddr - addr;
+								closest_symbol = symbol;
+							}
+						} else {
+							if (addr - symbol->vaddr < closest_addr) {
+								closest_addr = addr - symbol->vaddr;
+								closest_symbol = symbol;
+							}
+						}
+					}
+
+					RCoreBinFilter filter;
+					filter.offset = 0LL;
+					filter.name = (char *) closest_symbol->name;
+
+					r_bin_set_baddr (core->bin, map->addr);
+					r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, false, true, &filter, NULL);
 				}
 			}
-			free (ptr);
+			break;
+		default:
+			{
+				const char *dmi_help_msg[] = {
+					"Usage: dmi", "", " # List/Load Symbols",
+					"dmi", "", "List symbols of target lib",
+					"dmi*", "", "List symbols of target lib in radare commands",
+					"dmi.", "", "List closest symbol to the current address",
+					NULL};
+				r_core_cmd_help (core, dmi_help_msg);
+			}
+			break;
 		}
 		break;
 	case 'S': // "dmS"
