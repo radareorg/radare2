@@ -4405,7 +4405,6 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		"Usage:", "agg[kid?*]", "print graph",
 		"agg", "", "show current graph in ascii art",
 		"aggk", "", "show graph in key=value form",
-		"aggd", "", "print the current graph in GRAPHVIZ dot format",
 		"aggi", "", "enter interactive mode for the current graph",
 		"aggd", "", "print the current graph in GRAPHVIZ dot format",
 		"agg*", "", "in r2 commands, to save in projects, etc",
