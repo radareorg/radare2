@@ -565,7 +565,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 		}
 		return;
 	case '?':
-		_input+=2;
+		_input += 2;
 		if (*_input) {
 			if (*_input == '?') {
 				_input++;
@@ -600,21 +600,23 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 
 	input = strdup (_input);
 	// "pfo" // open formatted thing
-	if (input[1]=='o') { // "pfo"
+	if (input[1] == 'o') { // "pfo"
 		if (input[2] == '?') {
 			eprintf ("|Usage: pfo [format-file]\n"
 			" ~/.config/radare2/format\n"
 			" "R2_DATDIR"/radare2/"R2_VERSION"/format/\n");
 		} else if (input[2] == ' ') {
 			char *home, path[512];
+			// XXX hardcoded path here
 			snprintf (path, sizeof (path), ".config/radare2/format/%s", input+3);
 			home = r_str_home (path);
 			snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
-					R2_VERSION"/format/%s", input+3);
-			if (!r_core_cmd_file (core, home))
-				if (!r_core_cmd_file (core, path))
-					if (!r_core_cmd_file (core, input+3))
-						eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
+					R2_VERSION"/format/%s", input + 3);
+			if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
+				if (!r_core_cmd_file (core, input + 3)) {
+					eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
+				}
+			}
 			free (home);
 		} else {
 			RList *files;
@@ -652,10 +654,12 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 	}
 
 	int listFormats = 0;
-	if (input[1]=='.')
+	if (input[1]=='.') {
 		listFormats = 1;
-	if (!strcmp (input, "*") && mode == R_PRINT_SEEFLAGS)
+	}
+	if (!strcmp (input, "*") && mode == R_PRINT_SEEFLAGS) {
 		listFormats = 1;
+	}
 
 	core->print->reg = core->dbg->reg;
 	core->print->get_register = r_reg_get;
@@ -666,7 +670,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 	if (listFormats) {
 		core->print->num = core->num;
 		/* print all stored format */
-		if (input[1]==0 || input[2]=='\0') {
+		if (!input[1] || !input[2]) {
 			RListIter *iter;
 			RStrHT *sht = core->print->formats;
 			int *i;
@@ -678,10 +682,13 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			}
 			/* delete a format */
 		} else if (input[1] && input[2]=='-') {
-			if (input[2] && input[3]) r_strht_del (core->print->formats, input+3);
-			else r_strht_clear (core->print->formats);
+			if (input[3] == '*') {
+				r_strht_clear (core->print->formats);
+			} else {
+				r_strht_del (core->print->formats, input + 3);
+			}
 		} else {
-			char *name = strdup (input+(input[1]?2:1));
+			char *name = strdup (input + (input[1]? 2: 1));
 			char *space = strchr (name, ' ');
 			char *eq = strchr (name, '=');
 			char *dot = strchr (name, '.');
@@ -720,8 +727,9 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			fmt = r_strht_get (core->print->formats, name);
 			if (fmt != NULL) {
 				int size = r_print_format_struct_size (fmt, core->print, mode)+10;
-				if (size > core->blocksize)
+				if (size > core->blocksize) {
 					r_core_block_size (core, size);
+				}
 			}
 			/* display a format */
 			if (dot) {
@@ -744,12 +752,12 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 		}
 	} else {
 		/* This make sure the structure will be printed entirely */
-		char *fmt = input+1;
-		int size = 0;
+		char *fmt = input + 1;
 		while (*fmt && iswhitechar (*fmt)) fmt++;
-		size = r_print_format_struct_size (fmt, core->print, mode)+10;
-		if (size > core->blocksize)
+		int size = r_print_format_struct_size (fmt, core->print, mode)+10;
+		if (size > core->blocksize) {
 			r_core_block_size (core, size);
+		}
 		r_print_format (core->print, core->offset,
 			core->block, core->blocksize, fmt, mode, NULL, NULL);
 	}

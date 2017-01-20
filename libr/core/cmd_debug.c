@@ -2917,7 +2917,10 @@ static bool cmd_dcu (RCore *core, const char *input) {
 }
 
 static int cmd_debug_continue (RCore *core, const char *input) {
-	int pid, main_pid, old_pid, signum;
+	int pid, old_pid, signum;
+#if __linux__
+	int main_pid;
+#endif
 	char *ptr;
 	const char * help_message[] = {
 		"Usage: dc", "", "Execution continuation commands",
@@ -2981,10 +2984,10 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 			// we selected it already. We don't wanna select the old one
 			r_debug_select (core->dbg, old_pid, core->dbg->tid);
 		}
+beach:
 #else
 		r_debug_continue (core->dbg);
 #endif
-beach:
 		break;
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");

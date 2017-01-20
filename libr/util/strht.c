@@ -1,31 +1,34 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2017 - pancake */
 
 #include <r_util.h>
+// XXX deprecate and just use Sdb here
+// strpool is more optimal than how sdb stores the strings...
+// but DUPE!
 
-static void r_strht_init(RStrHT *s) {
-	s->ht = r_hashtable_new ();
-	s->sp = r_strpool_new (0);
-	s->ls = r_list_new ();
+static RStrHT *r_strht_init(RStrHT *s) {
+	if (s) {
+		s->ht = r_hashtable_new ();
+		s->sp = r_strpool_new (0);
+		s->ls = r_list_new ();
+	}
+	return s;
 }
 
 static void r_strht_fini(RStrHT *s) {
-	r_hashtable_free (s->ht);
-	r_strpool_free (s->sp);
-	r_list_free (s->ls);
+	if (s) {
+		r_hashtable_free (s->ht);
+		r_strpool_free (s->sp);
+		r_list_free (s->ls);
+	}
 }
 
 R_API RStrHT *r_strht_new() {
 	RStrHT *s = R_NEW0 (RStrHT);
-	if (!s)
-		return NULL;
 	r_strht_init (s);
 	return s;
 }
 
 R_API void r_strht_free(RStrHT *s) {
-	if (!s) {
-		return;
-	}
 	r_strht_fini (s);
 	free (s);
 }
@@ -35,10 +38,9 @@ R_API void r_strht_del(RStrHT *s, const char *key) {
 	const char *k;
 	RListIter *iter;
 	ut32 h = r_str_hash (key);
-	r_hashtable_remove (s->ht, h);
 	r_list_foreach (s->ls, iter, _i) {
 		i = (int)(size_t)_i;
-		k = r_strpool_get (s->sp, i);
+		k = r_strpool_get (s->sp, i) -1; // LOL at -1
 		if (!k) {
 			continue;
 		}
@@ -47,13 +49,13 @@ R_API void r_strht_del(RStrHT *s, const char *key) {
 			break;
 		}
 	}
+	r_hashtable_remove (s->ht, h);
 }
 
 R_API const char *r_strht_get(RStrHT *s, const char *key) {
 	ut32 h = r_str_hash (key);
 	int p = (int)(size_t)r_hashtable_lookup (s->ht, h);
-	if (p) return r_strpool_get (s->sp, p-1);
-	return NULL;
+	return p? r_strpool_get (s->sp, p - 1): NULL;
 }
 
 R_API int r_strht_set(RStrHT *s, const char *key, const char *val) {
