@@ -236,56 +236,53 @@ static void setASLR(int enabled) {
 #endif
 }
 
+static void restore_saved_fd (int saved, bool resore, int fd) {
+	if (saved == -1) {
+		return;
+	}
+	if (resore) {
+		dup2 (saved, fd);
+	}
+
+	close (saved);
+}
+
 static int handle_redirection_proc (const char *cmd, bool in, bool out, bool err) {
 #if HAVE_PTY
 	// use PTY to redirect I/O because pipes can be problematic in
 	// case of interactive programs.
-	int fdm;
-
 	int saved_stdin = dup (STDIN_FILENO);
 	int saved_stdout = dup (STDOUT_FILENO);
-	int saved_stderr = dup (STDERR_FILENO);
 
-	if (forkpty (&fdm, NULL, NULL, NULL) == 0) {
+	int fdm;
+	int pid = forkpty (&fdm, NULL, NULL, NULL);
+	if (in) {
+		dup2 (fdm, STDIN_FILENO);
+	}
+	if (out) {
+		dup2 (fdm, STDOUT_FILENO);
+	}
+
+	if (pid == 0) {
 		// child - program to run
-		struct termios t;
 
 		// necessary because otherwise you can read the same thing you
 		// wrote on fdm.
+		struct termios t;
 		tcgetattr (0, &t);
 		cfmakeraw (&t);
 		tcsetattr (0, TCSANOW, &t);
 
-		if (!in) dup2 (saved_stdin, STDIN_FILENO);
-		if (!out) dup2 (saved_stdout, STDOUT_FILENO);
-		if (!err) dup2 (saved_stderr, STDERR_FILENO);
-		if (saved_stdin != -1) {
-			close (saved_stdin);
-		}
-		if (saved_stdout != -1) {
-			close (saved_stdout);
-		}
-		if (saved_stderr != -1) {
-			close (saved_stderr);
-		}
-		saved_stdin = -1;
-		saved_stdout = -1;
-		saved_stderr = -1;
-		return 0;
+		int code = r_sys_cmd (cmd);
+		restore_saved_fd (saved_stdin, in, STDIN_FILENO);
+		restore_saved_fd (saved_stdout, out, STDOUT_FILENO);
+		exit (code);
 	}
-	// father
-	if (saved_stdin != -1) {
-		close (saved_stdin);
-	}
-	if (saved_stdout != -1) {
-		close (saved_stdout);
-	}
-	if (saved_stderr != -1) {
-		close (saved_stderr);
-	}
-	if (in) dup2 (fdm, STDOUT_FILENO);
-	if (out) dup2 (fdm, STDIN_FILENO);
-	exit (r_sys_cmd (cmd));
+
+	// parent
+	close (saved_stdin);
+	close (saved_stdout);
+	return 0;
 #else
 #warning handle_redirection_proc : unimplemented for this platform
 	return -1;
