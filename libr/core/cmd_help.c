@@ -556,7 +556,7 @@ static int cmd_help(void *data, const char *input) {
 			out[len] = 0;
 			r_cons_println ((const char*)out);
 			free (out);
-		} else if (!strncmp (input, "0x", 2) || (*input>='0' && *input<='9')) {
+		} else if (*input == '+') {
 			ut64 n = r_num_math (core->num, input);
 			int bits = r_num_to_bits (NULL, n) / 8;
 			for (i = 0; i < bits; i++) {
@@ -564,6 +564,9 @@ static int cmd_help(void *data, const char *input) {
 			}
 			r_cons_newline ();
 		} else {
+			if (*input == ' ') {
+				input++;
+			}
 			for (i = 0; input[i]; i++) {
 				r_cons_printf ("%02x", input[i]);
 			}
@@ -771,7 +774,9 @@ static int cmd_help(void *data, const char *input) {
 			"?v", " eip-0x804800", "show hex value of math expr",
 			"?vi", " rsp-rbp", "show decimal value of math expr",
 			"?w", " addr", "show what's in this address (like pxr/pxq does)",
-			"?x", " num|str|-hexst", "returns the hexpair of number or string",
+			"?x", "+num", "like ?v, but in hexpairs honoring cfg.bigendian",
+			"?x", " str", "returns the hexpair of number or string",
+			"?x", "-hexst", "convert hexpair into raw string with newline",
 			"?y", " [str]", "show contents of yank buffer, or set with string",
 			NULL};
 			r_core_cmd_help (core, help_msg);

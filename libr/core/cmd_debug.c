@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_core.h"
 #include "r_util.h"
@@ -1091,7 +1091,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				if (map) {
 					ut64 closest_addr = UT64_MAX;
 					RList *symbols = r_bin_get_symbols (core->bin);
-					RBinSymbol *symbol, *closest_symbol;
+					RBinSymbol *symbol, *closest_symbol = NULL;
 					
 					r_list_foreach (symbols, iter, symbol) {
 						if (symbol->vaddr > addr) {
