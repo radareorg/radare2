@@ -139,12 +139,6 @@ static int stdprintifunion (void *p, const char *k, const char *v) {
 	return 1;
 }
 
-static int sdbdelete (void *p, const char *k, const char *v) {
-	RCore *core = (RCore *)p;
-	r_anal_type_del (core->anal, k);
-	return 1;
-}
-
 static int sdbdeletelink (void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	if (!strncmp (k, "link.", strlen ("link."))) {
@@ -573,7 +567,7 @@ static int cmd_type(void *data, const char *input) {
 				NULL };
 			r_core_cmd_help (core, help_message);
 		} else if (input[1] == '*') {
-			sdb_foreach (core->anal->sdb_types, sdbdelete, core);
+			sdb_reset (core->anal->sdb_types);
 		} else {
 			const char *name = input + 1;
 			while (IS_WHITESPACE (*name)) name++;

@@ -28,25 +28,45 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	if (!kind) {
 		return;
 	}
-// XXX to segfault or to leak that is the question
-#define SEGFAULT 0
-#if SEGFAULT
-	int n;
-	char *p, str[128], str2[128];
-	Sdb *DB = anal->sdb_types;
-	const char *kind = sdb_const_get (DB, name, 0);
-	if (!kind) {
-		return;
+	if (!strcmp (kind, "type")) {
+		sdb_unset (db, sdb_fmt (-1, "type.%s", name), 0);
+		sdb_unset (db, sdb_fmt (-1, "type.%s.size", name), 0);
+		sdb_unset (db, name, 0);
+	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
+		int i, n = sdb_array_length(db, sdb_fmt (-1, "%s.%s", kind, name));
+		char *elements_key = r_str_newf ("%s.%s", kind, name);
+		for (i = 0; i< n; i++) {
+			char *p = sdb_array_get (db, elements_key, i, NULL);
+			sdb_unset (db, sdb_fmt (-1, "%s.%s", elements_key, p), 0);
+			free (p);
+		}
+		sdb_unset (db, elements_key, 0);
+		sdb_unset (db, name, 0);
+		free (elements_key);
+	} else if (!strcmp (kind, "func")) {
+		int i, n = sdb_num_get (db, sdb_fmt(-1, "func.%s.args", name), 0);
+		for (i = 0; i < n; i++) {
+			sdb_unset (db, sdb_fmt(-1, "func.%s.arg.%d", name, i), 0);
+		}
+		sdb_unset (db, sdb_fmt(-1, "func.%s.ret", name), 0);
+		sdb_unset (db, sdb_fmt(-1, "func.%s.cc", name), 0);
+		sdb_unset (db, sdb_fmt(-1, "func.%s.noreturn", name), 0);
+		sdb_unset (db, sdb_fmt(-1, "func.%s.args", name), 0);
+		sdb_unset (db, name, 0);
+	} else if (!strcmp (kind, "enum")) {
+		int i;
+		for (i=0;; i++) {
+			const char *tmp = sdb_const_get (db, sdb_fmt (-1, "%s.0x%x", name, i), 0);
+			if (!tmp) {
+				break;
+			}
+			sdb_unset (db, sdb_fmt (-1, "%s.%s", name, tmp), 0);
+			sdb_unset (db, sdb_fmt (-1, "%s.0x%x", name, i), 0);			
+		}
+		sdb_unset (db, name, 0);		
+	} else {
+		eprintf ("Unrecognized type \"%s\"\n", kind);
 	}
-	snprintf (str, sizeof (str), "%s.%s", kind, name);
-	for (n = 0; (p = sdb_array_get (db, str, n, NULL)); n++) {
-		snprintf (str2, sizeof (str2), "%s.%s", str, p);
-		sdb_unset (db, str2, 0);
-		n++;
-	}
-	sdb_unset (db, str, 0);
-#endif
-	sdb_unset (db, name, 0);
 }
 
 R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
@@ -189,12 +209,8 @@ R_API int r_anal_type_link(RAnal *anal, const char *type, ut64 addr) {
 }
 
 R_API int r_anal_type_unlink(RAnal *anal, ut64 addr) {
-	char *laddr = r_str_newf ("link.%08"PFMT64x, addr);
-	if (!laddr) {
-		return false;
-	}
-	r_anal_type_del(anal, laddr);
-	free (laddr);
+	char *laddr = sdb_fmt (-1, "link.%08"PFMT64x, addr);
+	sdb_unset (anal->sdb_types, laddr, 0);
 	return true;
 }
 
