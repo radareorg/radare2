@@ -24,8 +24,9 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 		r_list_foreach (dbg->plugins, iter, h) {
 			if (h->name && !strcmp (str, h->name)) {
 				dbg->h = h;
-				if (dbg->anal && dbg->anal->cur)
+				if (dbg->anal && dbg->anal->cur) {
 					r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->bits);
+				}
 				dbg->bp->breakpoint = dbg->h->breakpoint;
 				dbg->bp->user = dbg;
 			}
@@ -77,6 +78,8 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
 	if (!dbg || !foo || !foo->name) {
 		return false;
 	}
-	r_list_append (dbg->plugins, foo);
+	RDebugPlugin *dp = R_NEW (RDebugPlugin);
+	memcpy (dp, foo, sizeof (RDebugPlugin));
+	r_list_append (dbg->plugins, dp);
 	return true;
 }
