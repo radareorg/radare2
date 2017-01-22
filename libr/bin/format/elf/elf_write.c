@@ -171,11 +171,14 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 }
 
 /* XXX Endianness? */
-int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
+bool Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	Elf_(Dyn) *dyn = NULL;
 	ut64 stroff = 0LL;
 	int ndyn, i, j;
 
+	if (!bin->phdr) {
+		return false;
+	}
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_DYNAMIC) {
 			if (!(dyn = malloc (bin->phdr[i].p_filesz + 1))) {

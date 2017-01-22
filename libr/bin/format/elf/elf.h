@@ -150,10 +150,9 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf, bool 
 ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, ut64 size);
 bool Elf_(r_bin_elf_section_perms)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, int perms);
 bool Elf_(r_bin_elf_entry_write)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 addr);
-int Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
+bool Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut8 *Elf_(r_bin_elf_grab_regstate)(struct Elf_(r_bin_elf_obj_t) *bin, int *len);
 
 #endif
-
