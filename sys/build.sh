@@ -37,6 +37,10 @@ case "$1" in
 '')
 	:
 	;;
+-)
+	shift
+	CFGARG="${CFGARG} $*"
+	;;
 *)
 	PREFIX="$1"
 	;;
