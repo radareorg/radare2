@@ -11,6 +11,7 @@
 
 R_LIB_VERSION (r_bin);
 
+#define bprintf if(binfile->rbin->verbose)eprintf
 #define DB a->sdb;
 #define RBINLISTFREE(x)\
 	if (x) { \
@@ -1225,7 +1226,7 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin,
 		o->bin_obj = plugin->load_bytes (binfile, bytes + offset, sz,
 						 loadaddr, sdb);
 		if (!o->bin_obj) {
-			eprintf (
+			bprintf (
 				"Error in r_bin_object_new: load_bytes failed "
 				"for %s plugin\n",
 				plugin->name);
