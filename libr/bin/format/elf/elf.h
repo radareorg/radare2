@@ -103,6 +103,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	ut64 baddr;
 	ut64 boffset;
 	int endian;
+	bool verbose;
 	const char* file;
 	RBuffer *b;
 	Sdb *kv;
@@ -144,8 +145,8 @@ RBinElfSymbol* Elf_(r_bin_elf_get_imports)(struct Elf_(r_bin_elf_obj_t) *bin);
 struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t) *bin);
 char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin);
 void* Elf_(r_bin_elf_free)(struct Elf_(r_bin_elf_obj_t)* bin);
-struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file);
-struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf);
+struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file, bool verbose);
+struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf, bool verbose);
 ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, ut64 size);
 bool Elf_(r_bin_elf_section_perms)(struct Elf_(r_bin_elf_obj_t) *bin, const char *name, int perms);
 bool Elf_(r_bin_elf_entry_write)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 addr);

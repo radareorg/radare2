@@ -27,9 +27,9 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
-	tbuf = r_buf_new();
+	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
-	res = PE_(r_bin_pe_new_buf) (tbuf);
+	res = PE_(r_bin_pe_new_buf) (tbuf, arch->rbin->verbose);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}

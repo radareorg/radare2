@@ -133,10 +133,11 @@ struct MACH0_(obj_t) {
 	const char *lang;
 	int uuidn;
 	int func_size;
+	bool verbose;
 };
 
-struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file);
-struct MACH0_(obj_t)* MACH0_(new_buf)(struct r_buf_t *buf);
+struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, bool verbose);
+struct MACH0_(obj_t)* MACH0_(new_buf)(struct r_buf_t *buf, bool verbose);
 void* MACH0_(mach0_free)(struct MACH0_(obj_t)* bin);
 struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin);
 struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin);

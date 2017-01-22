@@ -243,6 +243,7 @@ typedef struct r_bin_t {
 	char *prefix; // bin.prefix
 	ut64 filter_rules;
 	bool demanglercmd;
+	bool verbose;
 } RBin;
 
 typedef struct r_bin_xtr_metadata_t {

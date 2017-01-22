@@ -1413,6 +1413,13 @@ static int cb_zoombyte(void *user, void *data) {
 	return true;
 }
 
+static int cb_binverbose(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->bin->verbose = node->i_value;
+	return true;
+}
+
 static int cb_rawstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -1876,6 +1883,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETPREF("bin.classes", "true", "Load classes from rbin on startup");
 	SETPREF("bin.mergeflags", "true", "Merge symbols with the same name into the same flag");
+	SETCB("bin.verbose", "true", &cb_binverbose, "Show RBin warnings when loading binaries");
 
 	/* prj */
 	SETPREF("prj.name", "", "Name of current project");

@@ -24,7 +24,6 @@ R_LIB_VERSION (r_bin);
 		r_list_foreach ((l), _it, _el) { \
 			_el->paddr += (o)->loadaddr;\
 		}\
-\
 	} while (0)
 
 #define ARCHS_KEY "archs"
@@ -299,8 +298,7 @@ static int string_scan_range(RList *list, const ut8 *buf, int min,
 	return count;
 }
 
-static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from,
-			       ut64 to) {
+static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, ut64 to) {
 	RBinPlugin *plugin = r_bin_file_cur_plugin (arch);
 	RBinString *ptr;
 	RListIter *it;
@@ -340,7 +338,6 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from,
 			return;
 		}
 	}
-
 	if (string_scan_range (list, arch->buf->buf, min, from, to, -1) < 0) {
 		return;
 	}
@@ -381,7 +378,6 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 			return NULL;
 		}
 	}
-
 	if (o->sections && !r_list_empty (o->sections) && !a->rawstr) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
