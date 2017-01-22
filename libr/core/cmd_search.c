@@ -2241,7 +2241,12 @@ reread:
 		param.inverse = true;
 		goto reread;
 	case 'B':
-		cmd_search_bin (core, param.from, param.to);
+		{
+			bool bin_verbose = r_config_get_i (core->config, "bin.verbose");
+			r_config_set_i (core->config, "bin.verbose", false);
+			cmd_search_bin (core, param.from, param.to);
+			r_config_set_i (core->config, "bin.verbose", bin_verbose);
+		}
 		break;
 	case 'b':
 		if (*(++input) == '?'){
