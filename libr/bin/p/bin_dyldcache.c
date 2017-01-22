@@ -24,7 +24,9 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		rc = !memcmp (buf, "\x64\x79\x6c\x64", 4);
 		if (rc) {
 			dyld64 = strstr (arch, "64") != NULL;
-			eprintf ("Arch: %s\n", arch);
+			if (arch && *arch) {
+				eprintf ("Arch: %s\n", arch);
+			}
 		}
 	}
 	return rc;

@@ -1,8 +1,10 @@
-/* radare - LGPL - Copyright 2008-2016 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2017 pancake, inisider */
 
 #include <r_util.h>
 
 #include "coff.h"
+
+#define bprintf if(obj->verbose)eprintf
 
 bool r_coff_supported_arch(const ut8 *buf) {
 	ut16 arch = *(ut16*)buf;
@@ -179,24 +181,25 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 	return true;
 }
 
-static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf) {
+static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbose) {
 	obj->b = r_buf_new ();
 	obj->size = buf->length;
+	obj->verbose = verbose;
 	if (!r_buf_set_bytes (obj->b, buf->buf, obj->size)){
 		r_buf_free (obj->b);
 		return false;
 	}
 	if (!r_bin_coff_init_hdr (obj)) {
-		eprintf ("Warning: failed to init hdr\n");
+		bprintf ("Warning: failed to init hdr\n");
 		return false;
 	}
 	r_bin_coff_init_opt_hdr (obj);
 	if (!r_bin_coff_init_scn_hdr (obj)) {
-		eprintf ("Warning: failed to init section header\n");
+		bprintf ("Warning: failed to init section header\n");
 		return false;
 	}
 	if (!r_bin_coff_init_symtable (obj)) {
-		eprintf ("Warning: failed to init symtable\n");
+		bprintf ("Warning: failed to init symtable\n");
 		return false;
 	}
 	return true;
@@ -208,8 +211,8 @@ void r_bin_coff_free(struct r_bin_coff_obj *obj) {
 	R_FREE (obj);
 }
 
-struct r_bin_coff_obj* r_bin_coff_new_buf(struct r_buf_t *buf) {
+struct r_bin_coff_obj* r_bin_coff_new_buf(RBuffer *buf, bool verbose) {
 	struct r_bin_coff_obj* bin = R_NEW0 (struct r_bin_coff_obj);
-	r_bin_coff_init (bin, buf);
+	r_bin_coff_init (bin, buf, verbose);
 	return bin;
 }

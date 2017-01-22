@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2017 - Fedor Sakharov */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -22,15 +22,12 @@ static Sdb* get_sdb(RBinObject *o) {
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	void *res = NULL;
-	RBuffer *tbuf = NULL;
-
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
-	tbuf = r_buf_new();
+	RBuffer *tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
-	res = r_bin_coff_new_buf(tbuf);
+	void *res = r_bin_coff_new_buf (tbuf, arch->rbin->verbose);
 	r_buf_free (tbuf);
 	return res;
 }
@@ -58,7 +55,6 @@ static ut64 baddr(RBinFile *arch) {
 static RBinAddr *binsym(RBinFile *arch, int sym) {
 	return NULL;
 }
-
 
 static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;

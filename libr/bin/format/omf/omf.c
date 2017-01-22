@@ -14,12 +14,12 @@ static int is_valid_omf_type(ut8 type) {
 		OMF_COMDAT, OMF_COMDAT32, OMF_LINSYM, OMF_LINSYM32,
 		OMF_ALIAS, OMF_NBKPAT, OMF_NBKPAT32, OMF_LLNAMES, OMF_VERNUM,
 		OMF_VENDEXT, 0};
-	for (; types[ct]; ct++)
-		if (type == types[ct])
+	for (; types[ct]; ct++) {
+		if (type == types[ct]) {
 			return true;
-
-	eprintf ("Invalid record type\n");
-
+		}
+	}
+	// eprintf ("Invalid record type\n");
 	return false;
 }
 
@@ -48,19 +48,17 @@ int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size) {
 		}
 		checksum += buf[size - 1];
 	}
-	if (checksum)
-		eprintf ("Invalid record checksum\n");
-
+	if (checksum) {
+		// eprintf ("Invalid record checksum\n");
+	}
 	return !checksum ? true : false;
 }
 
 static ut16 omf_get_idx(const char *buf) {
-	ut16 idx;
-
-	if (*buf & 0x80)
-		idx = (*buf & 0x7f) * 0x100 + buf[1];
-	else idx = *buf;
-	return idx;
+	if (*buf & 0x80) {
+		return (ut16)((*buf & 0x7f) * 0x100 + buf[1]);
+	}
+	return *buf;
 }
 
 static void free_lname(OMF_multi_datas *lname) {
