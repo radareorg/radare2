@@ -792,7 +792,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			/* print comment header*/
 			if (p->use_comments) {
 				printfmt (col == 1 ? "|" : " ");
-				printfmt (" commment ");
+				printfmt (" comment ");
 			}
 			printfmt (col == 2 ? "|\n" : "\n");
 		}
