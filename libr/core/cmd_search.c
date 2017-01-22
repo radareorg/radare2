@@ -2297,7 +2297,8 @@ reread:
 		} else r_core_search_rop (core, param.from, param.to, 0, input+1, 0);
 		goto beach;
 	case 'r': // "/r" and "/re"
-		if (input[1] == 'e') { // "/re"
+		switch (input[1]) {
+		case 'e': // "/re"
 			if (input[2] == '?') {
 				eprintf ("Usage: /re $$ - to find references to current address\n");
 			} else {
@@ -2311,7 +2312,12 @@ reread:
 				free (trg);
 				r_core_seek (core, curseek, 1);
 			}
-		} else { // "/r"
+			break;
+		case 'r': // "/rr"
+			eprintf ("TODO: https://github.com/radare/radare2/issues/6549\n");
+			break;
+		case ' ': // "/r $$"
+		case 0: // "/r"
 			if (input[param_offset - 1] == ' ') {
 				r_core_anal_search (core, param.from, param.to,
 						r_num_math (core->num, input + 2));
@@ -2321,6 +2327,10 @@ reread:
 						core->offset);
 				r_core_cmdf (core, "axt @ 0x%"PFMT64x"\n", core->offset);
 			}
+			break;
+		case '?':
+			eprintf ("Usage /r[e] [address] - search references to this specific address\n");
+			break;
 		}
 		break;
 	case 'A':
