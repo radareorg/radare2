@@ -621,8 +621,9 @@ static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut
 }
 
 static void ds_free(RDisasmState *ds) {
-	if (!ds) return;
-	RCore *core = ds->core;
+	if (!ds) {
+		return;
+	}
 	r_anal_op_fini (&ds->analop);
 	r_anal_hint_free (ds->hint);
 	free (ds->comment);
@@ -3040,6 +3041,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case R_ANAL_OP_TYPE_SWI: {
 		char *s = cmd_syscall_dostr (core, -1);
 		if (s) {
+			r_cons_printf ("; "); // XXX this should be shown in ds_comment_esil, for some reason it doesnt
 			ds_comment_esil (ds, true, "; %s", s);
 			free (s);
 		}
