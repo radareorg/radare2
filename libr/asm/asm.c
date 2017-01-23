@@ -137,6 +137,21 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 	return size;
 }
 
+static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
+	int splits = r_str_split (input, ' ');
+	int skip, count = 0;
+	int bytes_read;
+	if (splits > 1) {
+		skip = atoi (r_str_word_get0 (input, 1));
+		if (splits == 3) {
+			count = atoi (r_str_word_get0 (input, 2));
+		}
+	}
+	char *content = r_file_slurp_range (input, skip, count, &bytes_read);
+	memcpy (op->buf_hex, content, bytes_read);
+	return bytes_read;
+}
+
 static void plugin_free(RAsmPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
@@ -896,6 +911,8 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp (ptr, ".data", 5)) {
 					acode->data_offset = a->pc;
+				} else if (!strncmp (ptr, ".incbin ", 8)) {
+					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);
 					return r_asm_code_free (acode);
