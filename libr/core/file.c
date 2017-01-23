@@ -312,7 +312,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 	if (bp) {
 		bp->internal = true;
 #if __linux__
-		bp->data = r_str_newf ("?e %s: %s;dd", mode, sym);
+		bp->data = r_str_newf ("?e %s: %s", mode, sym);
 #else
 		bp->data = r_str_newf ("?e %s: %s;ps@rdi", mode, sym);
 #endif
@@ -367,13 +367,12 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	if (*r_config_get (r->config, "dbg.libs")) {
 		r_core_cmd0 (r, ".dmm*");
 #if __linux__
-		setbpint(r, "dbg.libs", "sym._dl_map_object_from_fd");
-		setbpint(r, "dbg.libs", "sym._dl_open");
-		setbpint(r, "dbg.unlibs", "sym._dl_unmap");
-		setbpint(r, "dbg.unlibs", "sym._dl_close");
+		setbpint (r, "dbg.libs", "sym.imp.dlopen");
+		setbpint (r, "dbg.libs", "sym.imp.dlmopen");
+		setbpint (r, "dbg.unlibs", "sym.imp.dlclose");
 #elif __APPLE__
-		setbpint(r, "dbg.libs", "sym._dlopen");
-		setbpint(r, "dbg.libs", "sym._dlclose");
+		setbpint (r, "dbg.libs", "sym._dlopen");
+		setbpint (r, "dbg.libs", "sym._dlclose");
 #endif
 	}
 	binfile = r_bin_cur (r->bin);
