@@ -521,12 +521,14 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			}
 		}
 		f = r_flag_get_i2 (core->flags, fcn->addr);
-		R_FREE (fcn->name);
+
+		// XXX sometimes renaming a function here is done wrong.
 #if 0
 		core->flags->space_strict = true;
 		//XXX fcn's API should handle this for us
 		f = r_flag_get_at (core->flags, fcn->addr, true);
 		if (f && f->name && strncmp (f->name, "sect", 4) &&
+		R_FREE (fcn->name);
 		    strncmp (f->name, "sym.func.", 9) &&
 		    strncmp (f->name, "loc", 3)) {
 			fcn->name = strdup (f->name);
@@ -536,8 +538,12 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			    strncmp (f->name, "sym.func.", 9)) {
 #else
 		if (f && f->name && strncmp (f->name, "sect", 4)) {
-			fcn->name = strdup (f->name);
+			if (!strncmp (fcn->name, "fcn.", 4)) {
+				R_FREE (fcn->name);
+				fcn->name = strdup (f->name);
+			}
 		} else {
+			R_FREE (fcn->name);
 			f = r_flag_get_i (core->flags, fcn->addr);
 			if (f && *f->name && strncmp (f->name, "sect", 4)) {
 #endif
