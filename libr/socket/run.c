@@ -355,6 +355,62 @@ R_API int r_run_parsefile (RRunProfile *p, const char *b) {
 	return 0;
 }
 
+static struct {
+	const char *name;
+	int code;
+} signals[] = {
+	// hardcoded from linux
+	{ "SIGHUP", SIGHUP },
+	{ "SIGINT", SIGINT },
+	{ "SIGQUIT", SIGQUIT },
+	{ "SIGILL", SIGILL },
+	{ "SIGTRAP", SIGTRAP },
+	{ "SIGABRT", SIGABRT },
+	{ "SIGBUS", SIGBUS },
+	{ "SIGFPE", SIGFPE },
+	{ "SIGKILL", SIGKILL },
+	{ "SIGUSR1", SIGUSR1 },
+	{ "SIGSEGV", SIGSEGV },
+	{ "SIGUSR2", SIGUSR2 },
+	{ "SIGPIPE", SIGPIPE },
+	{ "SIGALRM", SIGALRM },
+	{ "SIGTERM", SIGTERM },
+	{ "SIGSTKFLT", SIGSTKFLT },
+	{ "SIGCHLD", SIGCHLD },
+	{ "SIGCONT", SIGCONT },
+	{ "SIGSTOP", SIGSTOP },
+	{ "SIGTSTP", SIGTSTP },
+	{ "SIGTTIN", SIGTTIN },
+	{ "SIGTTOU", SIGTTOU },
+	{ "SIGURG", SIGURG },
+	{ "SIGXCPU", SIGXCPU },
+	{ "SIGXFSZ", SIGXFSZ },
+	{ "SIGVTALRM", SIGVTALRM },
+	{ "SIGPROF", SIGPROF },
+	{ "SIGWINCH", SIGWINCH },
+	{ "SIGIO", SIGIO },
+	{ "SIGPOLL", SIGPOLL },
+	{ "SIGPWR", SIGPWR },
+	{ "SIGSYS", SIGSYS },
+	{ "SIGSTKSZ", SIGSTKSZ },
+	{ NULL }
+};
+
+static int get_signal (const char *e) {
+	int i;
+	for (i = 1; signals[i].name; i++) {
+		char *str = signals[i].name;
+		if (!str) {
+			continue;
+		}
+		if (!strcmp (e, str)) {
+			return signals[i].code;
+		}
+	}
+
+	return atoi (e);
+}
+
 R_API int r_run_parseline (RRunProfile *p, char *b) {
 	int must_free = false;
 	char *e = strchr (b, '=');
@@ -405,16 +461,15 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "setgid")) p->_setgid = strdup (e);
 	else if (!strcmp (b, "setegid")) p->_setegid = strdup (e);
 	else if (!strcmp (b, "nice")) p->_nice = atoi (e);
+	else if (!strcmp (b, "timeout")) p->_timeout = atoi (e);
+	else if (!strcmp (b, "timeoutsig")) p->_timeout_sig = get_signal (e);
 	else if (!memcmp (b, "arg", 3)) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
 			p->_args[n] = getstr (e);
-		} else eprintf ("Out of bounds args index: %d\n", n);
-	} else if (!strcmp (b, "timeout")) {
-		p->_timeout = atoi (e);
-	} else if (!strcmp (b, "timeoutsig")) {
-		// TODO: support non-numeric signal numbers here
-		p->_timeout_sig = atoi (e);
+		} else {
+			eprintf ("Out of bounds args index: %d\n", n);
+		}
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		FILE *fd = fopen (e, "r");
@@ -468,6 +523,7 @@ R_API const char *r_run_help() {
 	"# clearenv=true\n"
 	"# envfile=environ.txt\n"
 	"timeout=3\n"
+	"# timeoutsig=SIGTERM # or 15\n"
 	"# connect=localhost:8080\n"
 	"# listen=8080\n"
 	"# pty=false\n"
