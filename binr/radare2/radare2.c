@@ -342,6 +342,7 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 
 #if EMSCRIPTEN
 static RCore *core = NULL;
+
 char *r2_asmjs_cmd(const char *cmd) {
 	if (cmd == NULL) {
 		r_core_free (core);
@@ -350,6 +351,21 @@ char *r2_asmjs_cmd(const char *cmd) {
 		core = r_core_new ();
 	}
 	return r_core_cmd_str (core, cmd);
+}
+
+static void wget_cb(const char *f) {
+        char *cmd = r_str_newf ("o %s", f);
+	if (cmd) {
+		r_core_cmd (core, cmd);
+		free (cmd);
+	}
+}
+
+void r2_asmjs_openurl(const char *url) {
+        char *file = r_str_lchr (url, '/');
+        if (file) {
+                emscripten_async_wget (url, file, wget_cb, NULL);
+        }
 }
 
 #else // EMSCRIPTEN
