@@ -75,7 +75,7 @@ R_API char *r_str_trim_head_tail(char *str);
 R_API ut32 r_str_hash(const char *str);
 R_API ut64 r_str_hash64(const char *str);
 R_API char *r_str_clean(char *str);
-R_API int r_str_nstr(char *from, char *to, int size);
+R_API const char *r_str_nstr(const char *from, const char *to, int size);
 R_API const char *r_str_lchr(const char *str, char chr);
 R_API const char *r_sub_str_lchr(const char *str, int start, int end, char chr);
 R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr);

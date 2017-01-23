@@ -622,14 +622,14 @@ R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
 	return (p < base) ? NULL : p;
 }
 
-R_API int r_str_nstr(char *from, char *to, int size) {
+R_API const char *r_str_nstr(const char *from, const char *to, int size) {
 	int i;
 	for (i = 0; i < size; i++) {
 		if (!from || !to || from[i] != to[i]) {
 			break;
 		}
 	}
-	return (size!=i);
+	return from + i;
 }
 
 // TODO: rewrite in macro?
