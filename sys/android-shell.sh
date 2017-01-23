@@ -68,12 +68,13 @@ fi
 #	echo 'NDK=~/Downloads/android-ndk-r7b'
 #	exit 1
 #fi
-if [ ! -d "${NDK}" ]; then
-	echo "Cannot find Android NDK ${NDK}"
-	echo "echo NDK=/path/to/ndk  > ~/.r2androidrc"
-	#echo "echo SDK=/path/to/sdk >> ~/.r2androidrc"
-	exit 1
-fi
+if [ "${BUILD}" != 0 ]; then
+	if [ ! -d "${NDK}" ]; then
+		echo "Cannot find Android NDK ${NDK}"
+		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc"
+		#echo "echo SDK=/path/to/sdk >> ~/.r2androidrc"
+		exit 1
+	fi
 
 TOOLCHAIN_MIPS=`ls ${NDK}/toolchains/ |grep "^mips" | grep -v mips64|sort |head -n 1`
 TOOLCHAIN_MIPS64=`ls ${NDK}/toolchains/ |grep "mips64" |sort |head -n 1`
@@ -96,6 +97,7 @@ NDKPATH_X86=`echo ${NDK}/toolchains/${TOOLCHAIN_X86}/prebuilt/${OS}-x86*/bin/`
 #PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
 PATH=$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
 export PATH
+fi
 export CFLAGS
 export NDK
 export NDK_ARCH
