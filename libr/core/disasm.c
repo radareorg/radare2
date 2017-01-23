@@ -2397,9 +2397,9 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 static void ds_align_comment(RDisasmState *ds) {
 	const int cmtcol = ds->cmtcol;
 	if (ds->show_comment_right_default) {
-		char *ll = r_cons_lastline ();
+		int cstrlen = 0;
+		char *ll = r_cons_lastline (&cstrlen);
 		if (ll) {
-			int cstrlen = strlen (ll);
 			int cols, ansilen = r_str_ansi_len (ll);
 			int utf8len = r_utf8_strlen ((const ut8*)ll);
 			int cells = utf8len - (cstrlen - ansilen);
@@ -2766,8 +2766,8 @@ static void ds_print_relocs(RDisasmState *ds) {
 
 	if (rel) {
 		const int cmtcol = ds->cmtcol;
-		char *ll = r_cons_lastline ();
-		int cstrlen = strlen (ll);
+		int cstrlen = 0;
+		char *ll = r_cons_lastline (&cstrlen);
 		int ansilen = r_str_ansi_len (ll);
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
@@ -2941,11 +2941,12 @@ static void print_fcn_arg(RCore *core, const char *type, const char *name,
 
 static void delete_last_comment(RDisasmState *ds) {
 	if (ds->show_comment_right_default) {
-		char *ll = r_cons_lastline ();
+		int len = 0;
+		char *ll = r_cons_lastline (&len);
 		if (ll) {
-			char * begin = strstr (ll, "; ");
+			char *begin = strnstr (ll, "; ", len);
 			if (begin) {
-				int cstrlen = strlen (ll);
+				const int cstrlen = strlen (ll);
 				r_cons_drop (cstrlen - (int)(begin - ll));
 			}
 		}

@@ -427,7 +427,7 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 R_API RCons *r_cons_new (void);
 R_API RCons *r_cons_singleton (void);
 R_API RCons *r_cons_free (void);
-R_API char *r_cons_lastline (void);
+R_API char *r_cons_lastline (int *size);
 
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
