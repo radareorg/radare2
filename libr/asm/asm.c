@@ -138,17 +138,32 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 }
 
 static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
-	int splits = r_str_split (input, ' ');
 	int skip, count = 0;
-	int bytes_read;
-	if (splits > 1) {
-		skip = atoi (r_str_word_get0 (input, 1));
-		if (splits == 3) {
-			count = atoi (r_str_word_get0 (input, 2));
+	char *args = r_str_lchr (input, ',');
+	if (args) {
+		args[0] = '\0';
+		args++;
+		skip = (int)r_num_math (NULL, args);
+		args = r_str_lchr (input, ',');
+		if (args) {
+			args[0] = '\0';
+			args++;
+			count = skip;
+			skip = (int)r_num_math (NULL, args);
 		}
 	}
-	char *content = r_file_slurp_range (input, skip, count, &bytes_read);
-	memcpy (op->buf_hex, content, bytes_read);
+	int bytes_read = 0;
+	char *content = r_file_slurp (input, &bytes_read);
+	if (skip > 0) {
+		skip = skip > bytes_read ? bytes_read : skip;
+	}
+	if (count > 0) {
+		count = count > bytes_read ? 0 : count;
+	} else {
+		count = bytes_read;
+	}
+	memcpy (op->buf_hex, content + skip, count);
+	free (content);
 	return bytes_read;
 }
 
@@ -911,7 +926,11 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp (ptr, ".data", 5)) {
 					acode->data_offset = a->pc;
-				} else if (!strncmp (ptr, ".incbin ", 8)) {
+				} else if (!strncmp (ptr, ".incbin", 7)) {
+					if (ptr[7] != ' ') {
+						eprintf ("incbin missing filename\n");
+						continue;
+					}
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);
