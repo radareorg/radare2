@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 
 #include "r_anal.h"
 #include "r_cons.h"
@@ -1131,7 +1131,35 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
         p->cb_printf ("]");
 }
 
-R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
+	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
+	int j = 0;
+	p->cb_printf ("|");
+	int mul = (max - min) / cols;
+	bool isFirst = true;
+	for (j = 0; j < cols; j++) {
+		ut64 startB = min + (j * mul);
+		ut64 endB = min + ((j + 1) * mul);
+		if (startA <= endB && endA >= startB) {
+			if (show_colors & isFirst) {
+				p->cb_printf (Color_GREEN"#");
+				isFirst = false;
+			} else {
+				p->cb_printf ("#");
+			}
+		} else {
+			if (isFirst) {
+				p->cb_printf ("-");
+			} else {
+				p->cb_printf (Color_RESET"-");
+				isFirst = true;
+			}
+		}
+	}
+	p->cb_printf ("|");
+}
+
+R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
 	static int mode = -1;
 	ut8 *bufz, *bufz2;
 	int i, j = 0;
