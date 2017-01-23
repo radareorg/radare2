@@ -81,11 +81,11 @@
   #define __BSD__ 1
   #define __UNIX__ 1
 #endif
-#if __WIN32__ || __CYGWIN__ || MINGW32
+#if _WIN32 || __CYGWIN__ || MINGW32
   #define __addr_t_defined
   #include <windows.h>
 #endif
-#if __WIN32__ || MINGW32 && !__CYGWIN__
+#if _WIN32 || MINGW32 && !__CYGWIN__
   #include <winsock.h>
   typedef int socklen_t;
   #undef USE_SOCKETS
@@ -423,7 +423,7 @@ enum {
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)
 #define R_SYS_OS "linux"
-#elif defined (__WIN32__) || defined (__CYGWIN__) || defined (MINGW32)
+#elif defined (_WIN32) || defined (__CYGWIN__) || defined (MINGW32)
 #define R_SYS_OS "windows"
 #elif defined (__NetBSD__ )
 #define R_SYS_OS "netbsd"

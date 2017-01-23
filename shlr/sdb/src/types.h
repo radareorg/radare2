@@ -30,7 +30,7 @@
 #define __MINGW__ 1
 #endif
 
-#if __WIN32__ || __MINGW__ || __WINDOWS__
+#if _WIN32 || __MINGW__ || __WINDOWS__
 #define __SDB_WINDOWS__ 1
 #include <windows.h>
 #define DIRSEP '\\'
