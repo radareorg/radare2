@@ -13,6 +13,10 @@ ENTITL=radare2.xcent
 #CFLAGS+=-flto
 #LDFLAGS+=-flto
 
+ifeq (${COMPILER},emscripten)
+CFLAGS+=-s EXPORTED_FUNCTIONS='["_r2_asmjs_cmd"]'
+endif
+
 FOOD_LIBS=$(addprefix ../../libr/,$(subst r_,,$(BINDEPS)))
 SIGN_LIBS=$(addsuffix /libr_*.dylib,$(FOOD_LIBS))
 

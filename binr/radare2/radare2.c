@@ -340,6 +340,19 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	return false;
 }
 
+#if EMSCRIPTEN
+static RCore *core = NULL;
+char *r2_asmjs_cmd(const char *cmd) {
+	if (cmd == NULL) {
+		r_core_free (core);
+	}
+	if (core == NULL) {
+		core = r_core_new ();
+	}
+	return r_core_cmd_str (core, cmd);
+}
+
+#else // EMSCRIPTEN
 int main(int argc, char **argv, char **envp) {
 #if USE_THREADS
 	RThreadLock *lock = NULL;
@@ -1182,3 +1195,4 @@ beach:
 	r_cons_free ();
 	return ret;
 }
+#endif // EMSCRIPTEN
