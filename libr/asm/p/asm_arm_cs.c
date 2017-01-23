@@ -26,10 +26,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		obits = a->bits;
 	}
 
-	if (a->bits != 64) {
-		if (!a->features || !strstr (a->features, "no-mclass")) {
-			mode |= CS_MODE_MCLASS;
-		}
+	if (a->cpu && strstr (a->cpu, "cortex")) {
+		mode |= CS_MODE_MCLASS;
 	}
 	if (a->features && strstr (a->features, "v8")) {
 		mode |= CS_MODE_V8;
@@ -38,7 +36,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = 4;
 		op->buf_asm[0] = 0;
 	}
-	if (!cd) {
+	if (!cd || mode != omode) {
 		ret = (a->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &cd):
 			cs_open (CS_ARCH_ARM, mode, &cd);
@@ -49,7 +47,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-	} else cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+	} else {
+		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+	}
 	if (a->features && *a->features) {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
 	} else {

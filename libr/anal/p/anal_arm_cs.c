@@ -1814,6 +1814,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int mode = (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	if (a->cpu && strstr (a->cpu, "cortex")) {
+		mode |= CS_MODE_MCLASS;
+	}
 
 	if (mode != omode || a->bits != obits) {
 		cs_close (&handle);
@@ -2199,7 +2202,7 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_arm_cs,
 	.version = R2_VERSION
