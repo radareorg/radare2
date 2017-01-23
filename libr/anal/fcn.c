@@ -784,7 +784,7 @@ repeat:
 					}
 				} else {
 					RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-					if (fi && strstr (fi->name, "imp.")) {
+					if (fi) {
 						break;
 					}
 					skip_ret = skip_hp (anal, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
