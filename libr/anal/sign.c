@@ -73,12 +73,12 @@ R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const
 		//	sig->addr =
 		}
 		if (!signatureExists (sig, si)) {
-			if (!r_list_append (sig->items, si)) {
-				r_sign_item_free (si);
-				si = NULL;
-			} else {
+			if (r_list_append (sig->items, si)) {
 				sig->s_func++;
+			} else {
+				r_sign_item_free (si);
 			}
+			si = NULL;
 		}
 		break;
 	case R_SIGN_HEAD: // function prefix (push ebp..)
