@@ -816,10 +816,9 @@ static void ds_beginline(RDisasmState *ds, RAnalFunction *f, bool nopre) {
 
 static void ds_pre_xrefs(RDisasmState *ds) {
 	RCore *core = ds->core;
-
 	if (ds->show_fcnlines) {
 		ds_setup_pre (ds, false, false);
-		if (*ds->pre != ' '){
+		if (*ds->pre != ' ') {
 			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 			ds->pre = r_str_concat (ds->pre, " ");
 		}
@@ -2411,14 +2410,17 @@ static void ds_align_comment(RDisasmState *ds) {
 			int cols, ansilen = r_str_ansi_len (ll);
 			int utf8len = r_utf8_strlen ((const ut8*)ll);
 			int cells = utf8len - (cstrlen - ansilen);
-
+			if (cstrlen < 20) {
+				ds_print_pre (ds);
+				ds_print_lines_left (ds);
+			}
 			cols = ds->interactive ? ds->core->cons->columns : 1024;
 			//cols = r_cons_get_size (NULL);
 			if (cmtcol + 16 >= cols) {
-				int len = cmtcol - cells;
+				int len = cmtcol - cells - 16;
 				r_cons_memset (' ', len);
 			} else if (cells < cmtcol) {
-				int len = cmtcol - cells;
+				int len = cmtcol - cells - 16;
 				if (len < cols) {
 					r_cons_memset (' ', len);
 				}
