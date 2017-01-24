@@ -2946,7 +2946,7 @@ static void delete_last_comment(RDisasmState *ds) {
 		if (ll) {
 			const char *begin = r_str_nstr (ll, "; ", len);
 			if (begin) {
-				const int cstrlen = strlen (ll);
+				const int cstrlen = ll + len - begin;
 				r_cons_drop (cstrlen - (int)(begin - ll));
 			}
 		}
