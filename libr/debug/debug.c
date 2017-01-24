@@ -604,8 +604,11 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			return R_DEBUG_REASON_ERROR;
 		}
 
+		bool libs_bp = (dbg->glob_libs || dbg->glob_unlibs) ? true : false;
 		/* if the underlying stop reason is a breakpoint, call the handlers */
-		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP) {
+		if (reason == R_DEBUG_REASON_BREAKPOINT || reason == R_DEBUG_REASON_STEP || 
+			(libs_bp && 
+			((reason == R_DEBUG_REASON_NEW_LIB) || (reason == R_DEBUG_REASON_EXIT_LIB)))) {
 			RRegItem *pc_ri;
 			RBreakpointItem *b = NULL;
 			ut64 pc;
