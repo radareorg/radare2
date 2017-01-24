@@ -2417,10 +2417,10 @@ static void ds_align_comment(RDisasmState *ds) {
 			cols = ds->interactive ? ds->core->cons->columns : 1024;
 			//cols = r_cons_get_size (NULL);
 			if (cmtcol + 16 >= cols) {
-				int len = cmtcol - cells - 16;
+				int len = cmtcol - cells;
 				r_cons_memset (' ', len);
 			} else if (cells < cmtcol) {
-				int len = cmtcol - cells - 16;
+				int len = cmtcol - cells;
 				if (len < cols) {
 					r_cons_memset (' ', len);
 				}
