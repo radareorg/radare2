@@ -10,6 +10,10 @@
 #include <r_anal.h>
 #include <r_parse.h>
 
+#ifndef PFMT32x
+#define PFMT32x "lx"
+#endif
+
 ut64 mask64(ut64 mb, ut64 me) {
 	int i;
 	ut64 mask = 0;
