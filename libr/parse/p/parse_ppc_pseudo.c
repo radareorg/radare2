@@ -68,7 +68,7 @@ const char* cmask32(const char *mb_c, const char *me_c){
 	ut32 me = 32;
 	if (mb_c) mb += atol(mb_c);
 	if (me_c) me += atol(me_c);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"",mask32(mb, me));
+	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask32(mb, me));
 	return cmask;
 }
 
@@ -76,11 +76,9 @@ const char* inv_mask64(const char *mb_c, const char *sh){
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
-	if (mb_c)
-		mb = atol(mb_c);
-	if (me_c)
-		me = atol(sh);
-	snprintf(cmask, 32, "0x%"PFMT64x"", mask64(mb, ~me));
+	if (mb_c) mb = atol(mb_c);
+	if (sh) me = atol(sh);
+	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask64(mb, ~me));
 	return cmask;
 }
 
@@ -88,11 +86,9 @@ const char* inv_mask32(const char *mb_c, const char *sh){
 	static char cmask[32];
 	ut32 mb = 0;
 	ut32 me = 0;
-	if (mb_c)
-		mb = atol(mb_c);
-	if (me_c)
-		me = atol(sh);
-	snprintf(cmask, 32, "0x%"PFMT64x"", mask32(mb, ~me));
+	if (mb_c) mb = atol(mb_c);
+	if (sh) me = atol(sh);
+	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask32(mb, ~me));
 	return cmask;
 }
 
