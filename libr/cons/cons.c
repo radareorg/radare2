@@ -853,8 +853,9 @@ R_API void r_cons_memcat(const char *str, int len) {
 R_API void r_cons_memset(char ch, int len) {
 	if (!I.null && len > 0) {
 		palloc (len + 1);
-		memset (I.buffer + I.buffer_len, ch, len + 1);
+		memset (I.buffer + I.buffer_len, ch, len);
 		I.buffer_len += len;
+		I.buffer[I.buffer_len] = 0;
 	}
 }
 

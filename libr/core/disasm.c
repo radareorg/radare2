@@ -2412,16 +2412,11 @@ static void ds_align_comment(RDisasmState *ds) {
 			int cells = utf8len - (cstrlen - ansilen);
 			if (cstrlen < 20) {
 				ds_print_pre (ds);
-				ds_print_lines_left (ds);
 			}
 			cols = ds->interactive ? ds->core->cons->columns : 1024;
-			//cols = r_cons_get_size (NULL);
-			if (cmtcol + 16 >= cols) {
+			if (cells < cmtcol) {
 				int len = cmtcol - cells;
-				r_cons_memset (' ', len);
-			} else if (cells < cmtcol) {
-				int len = cmtcol - cells;
-				if (len < cols) {
+				if (len < cols && len > 0) {
 					r_cons_memset (' ', len);
 				}
 			}
@@ -2956,8 +2951,9 @@ static void delete_last_comment(RDisasmState *ds) {
 		if (ll) {
 			const char *begin = r_str_nstr (ll, "; ", len);
 			if (begin) {
-				const int cstrlen = ll + len - begin;
-				r_cons_drop (cstrlen - (int)(begin - ll));
+				const int cstrlen = begin + len - ll;
+				// r_cons_drop (cstrlen - (int)(begin - ll));
+				r_cons_newline();
 			}
 		}
 	}
