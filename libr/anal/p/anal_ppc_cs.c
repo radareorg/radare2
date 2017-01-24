@@ -11,27 +11,28 @@ struct Getarg {
     int bits;
 };
 
-#define R_PPC_RA 0
-#define R_PPC_RS 1
-#define R_PPC_SH 2
-#define R_PPC_BM 3
-
 #define esilprintf(op, fmt, arg...) r_strbuf_appendf (&op->esil, fmt, ##arg)
 #define INSOPS insn->detail->ppc.op_count
 #define INSOP(n) insn->detail->ppc.operands[n]
 
+#ifndef PFMT32x
+#define PFMT32x "lx"
+#endif
 
 ut64 mask64(ut64 mb, ut64 me) {
+    int i;
     ut64 mask = 0;
     if (mb < 0 || me < 0 || mb > 63 || me > 63) {
         return mask;
-    } else if (mb < (me + 1)) {
-        for(int i = mb; i <= me ; i= i + 1) {
-            mask = mask | (ut64)(1LL<<(63-i));
+    }
+
+    if (mb < (me + 1)) {
+        for(i = mb; i <= me ; i++) {
+            mask = mask | (ut64)(1LL << (63 - i));
         }
     } else if (mb == (me + 1)) {
         mask = 0xffffffffffffffffull;
-    } else if(mb > (me + 1)) {
+    } else if (mb > (me + 1)) {
         ut64 lo = mask64(0, me);
         ut64 hi = mask64(mb, 63);
         mask = lo | hi;
@@ -39,36 +40,65 @@ ut64 mask64(ut64 mb, ut64 me) {
     return mask;
 }
 
-ut64 mask32_c(const char *mb_c, ut64 me){
+const char* cmask64(const char *mb_c, const char *me_c){
+    static char cmask[32];
     ut64 mb = 0;
-    if(mb_c)
-        mb = atol(mb_c);
-    return mask64(mb, me);
+    ut64 me = 0;
+    if (mb_c) mb = atol(mb_c);
+    if (me_c) me = atol(me_c);
+    snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask64(mb, me));
+    return cmask;
 }
 
-ut64 mask32(ut64 mb, ut64 me) {
-    ut64 mask = 0;
+ut32 mask32(ut32 mb, ut32 me) {
+    int i;
+    ut32 mask = 0;
     if (mb < 0 || me < 0 || mb > 31 || me > 31) {
         return mask;
-    } else if (mb < (me + 1)) {
-        for(int i = mb; i <= me ; i= i + 1) {
-            mask = mask | (ut64)(1LL<<(31-i));
+    }
+
+    if (mb < (me + 1)) {
+        for(i = mb; i <= me ; i++) {
+            mask = mask | (ut32)(1LL << (31 - i));
         }
     } else if (mb == (me + 1)) {
         mask = 0xffffffffu;
-    } else if(mb > (me + 1)) {
-        ut64 lo = mask32(0, me);
-        ut64 hi = mask32(mb, 31);
+    } else if (mb > (me + 1)) {
+        ut32 lo = mask32(0, me);
+        ut32 hi = mask32(mb, 31);
         mask = lo | hi;
     }
     return mask;
 }
 
-ut64 mask64_c(const char *mb_c, ut64 me){
+const char* cmask32(const char *mb_c, const char *me_c){
+    static char cmask[32];
+    ut32 mb = 32;
+    ut32 me = 32;
+    if (mb_c) mb += atol(mb_c);
+    if (me_c) me += atol(me_c);
+    snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32(mb, me));
+    return cmask;
+}
+
+const char* inv_mask64(const char *mb_c, const char *sh){
+    static char cmask[32];
     ut64 mb = 0;
-    if(mb_c)
-        mb = atol(mb_c);
-    return mask64(mb, me);
+    ut64 me = 0;
+    if (mb_c) mb = atol(mb_c);
+    if (sh) me = atol(sh);
+    snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask64(mb, ~me));
+    return cmask;
+}
+
+const char* inv_mask32(const char *mb_c, const char *sh){
+    static char cmask[32];
+    ut32 mb = 0;
+    ut32 me = 0;
+    if (mb_c) mb = atol(mb_c);
+    if (sh) me = atol(sh);
+    snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32(mb, ~me));
+    return cmask;
 }
 
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
@@ -158,19 +188,26 @@ static int set_reg_profile(RAnal *anal) {
         "gpr    r29 .32 124 0\n"
         "gpr    r30 .32 128 0\n"
         "gpr    r31 .32 132 0\n"
-        "gpr    cr  .32 136 0\n"
-        "gpr    xer .32 140 0\n"
-        "gpr    lr  .32 144 0\n"
-        "gpr    ctr .32 148 0\n"
-        "gpr    mq  .32 152 0\n"
-        "gpr    vrsave  .32 156 0\n"
-        "gpr    pvr .32 160 0\n"
-        "gpr    dccr    .32 164 0\n"
-        "gpr    iccr    .32 168 0\n"
-        "gpr    dear    .32 172 0\n"
-        "gpr    msr .32 176 0\n"
-        "gpr    pc  .32 180 0\n"
-        "gpr    mask    .32 184 0\n";
+        "gpr    cr0 .8  136 0\n"
+        "gpr    cr1 .8  137 0\n"
+        "gpr    cr2 .8  138 0\n"
+        "gpr    cr3 .8  139 0\n"
+        "gpr    cr4 .8  140 0\n"
+        "gpr    cr5 .8  141 0\n"
+        "gpr    cr6 .8  142 0\n"
+        "gpr    cr7 .8  143 0\n"
+        "gpr    xer .32 144 0\n"
+        "gpr    lr  .32 148 0\n"
+        "gpr    ctr .32 152 0\n"
+        "gpr    mq  .32 156 0\n"
+        "gpr    vrsave  .32 160 0\n"
+        "gpr    pvr .32 164 0\n"
+        "gpr    dccr    .32 168 0\n"
+        "gpr    iccr    .32 172 0\n"
+        "gpr    dear    .32 176 0\n"
+        "gpr    msr .32 180 0\n"
+        "gpr    pc  .32 184 0\n"
+        "gpr    mask    .32 188 0\n";
     } else {
         p =
         "=PC    pc\n"
@@ -217,7 +254,14 @@ static int set_reg_profile(RAnal *anal) {
         "gpr    r29 .64 248 0\n"
         "gpr    r30 .64 256 0\n"
         "gpr    r31 .64 264 0\n"
-        "gpr    cr  .32 272 0\n"
+        "gpr    cr0 .8  272 0\n"
+        "gpr    cr1 .8  273 0\n"
+        "gpr    cr2 .8  274 0\n"
+        "gpr    cr3 .8  275 0\n"
+        "gpr    cr4 .8  276 0\n"
+        "gpr    cr5 .8  277 0\n"
+        "gpr    cr6 .8  278 0\n"
+        "gpr    cr7 .8  279 0\n"
         "gpr    xer .64 280 0\n"
         "gpr    lr  .64 288 0\n"
         "gpr    ctr .64 296 0\n"
@@ -239,7 +283,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
     static int omode = -1;
     int n, ret;
     cs_insn *insn;
-    int mode = (a->bits==64)? CS_MODE_64: (a->bits==32)? CS_MODE_32: 0;
+    int mode = (a->bits == 64)? CS_MODE_64: (a->bits == 32)? CS_MODE_32: 0;
     mode |= CS_MODE_BIG_ENDIAN;
     if (mode != omode) {
         cs_close (&handle);
@@ -674,7 +718,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
         case PPC_INS_RLDCL:
         case PPC_INS_RLDICL:
             op->type = R_ANAL_OP_TYPE_ROL;
-            esilprintf (op, "%s,%s,<<<,0x%"PFMT64x",&,%s,=", ARG(R_PPC_SH), ARG(R_PPC_RS),mask64_c(ARG(R_PPC_BM), 63), ARG(R_PPC_RA));
+            esilprintf (op, "%s,%s,<<<,0x%"PFMT64x",&,%s,=", ARG(2), ARG(1), cmask64(ARG(3), "63"), ARG(0));
             break;
         }
         r_strbuf_fini (&op->esil);
