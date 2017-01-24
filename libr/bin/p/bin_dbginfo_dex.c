@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, montekki, pancake */
+/* radare - LGPL - Copyright 2009-2016 - nibble, montekki, pancake */
 
 #include <r_types.h>
 #include <r_bin.h>
 
-// TODO: use proper dwarf api here.. or deprecate
 static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
 	if (arch->sdb_addrinfo) {
 		char offset[64];
@@ -22,8 +21,6 @@ static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
 	return false;
 }
 
-#if !R_BIN_ELF64
-struct r_bin_dbginfo_t r_bin_dbginfo_elf = {
+struct r_bin_dbginfo_t r_bin_dbginfo_dex = {
 	.get_line = &get_line,
 };
-#endif

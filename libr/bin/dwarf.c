@@ -367,7 +367,7 @@ beach:
 
 static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 line, FILE *f, int mode) {
 	const char *p;
-	char fileline[128];
+	char *fileline;
 	char offset[64];
 	char *offset_ptr;
 
@@ -398,16 +398,10 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 #else
 	p = file;
 #endif
-	snprintf (fileline, sizeof (fileline) - 1, "%s|%"PFMT64d, p, line);
+	fileline = r_str_newf ("%s|%"PFMT64d, p, line);
 	offset_ptr = sdb_itoa (addr, offset, 16);
-
-	if (!sdb_add (s, offset_ptr, fileline, 0)) {
-		sdb_set (s, offset_ptr, fileline, 0);
-	}
-
-	if (!sdb_add (s, fileline, offset_ptr, 0)) {
-		sdb_set (s, fileline, offset_ptr, 0);
-	}
+	sdb_add (s, offset_ptr, fileline, 0);
+	sdb_add (s, fileline, offset_ptr, 0);
 }
 
 static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
