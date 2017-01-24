@@ -5068,11 +5068,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
 			rowlog_done (core);
+			char *dh_orig = core->dbg->h ? strdup (core->dbg->h->name): "";
 			if (r_cons_is_breaked ()) {
 				goto jacuzzi;
 			}
 			r_cons_clear_line (1);
 			if (*input == 'a') { // "aaa"
+				if (dh_orig && strcmp (dh_orig, "esil")) {
+					r_core_cmd0 (core, "dh esil");
+				}
 				int c = r_config_get_i (core->config, "anal.calls");
 				if (strstr (r_config_get (core->config, "asm.arch"), "arm")) {
 					rowlog (core, "\nAnalyze value pointers (aav)");
@@ -5134,10 +5138,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				rowlog_done (core);
 				r_core_cmd0 (core, "s-");
+				if (dh_orig) {
+					r_core_cmdf (core, "dh %s;dpa", dh_orig);
+				}
 			}
 		jacuzzi:
 			flag_every_function (core);
 			r_cons_break_pop ();
+			R_FREE (dh_orig);
 		}
 		break;
 	case 't': {

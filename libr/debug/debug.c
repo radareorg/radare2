@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, jduck, TheLemonMan, saucec0de */
+/* radare - LGPL - Copyright 2009-2017 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
 #include <r_core.h>
@@ -26,7 +26,6 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
 	free (rdi->cmdline);
 	free (rdi->libname);
 }
-
 
 /*
  * Recoiling after a breakpoint has two stages:
