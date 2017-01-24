@@ -3300,7 +3300,6 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	return 0;
 }
 
-
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	RAnalEsil *ESIL = core->anal->esil;
@@ -3399,6 +3398,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	int in = r_syscall_get_swi (core->anal->syscall);
 	const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	r_reg_arena_push (core->anal->reg);
 	for (i = 0; i < iend; i++) {
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
@@ -3570,4 +3570,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	free (buf);
 	free (op.mnemonic);
 	r_cons_break_pop ();
+	// restore register
+	r_reg_arena_pop (core->anal->reg);
 }

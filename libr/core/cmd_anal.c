@@ -68,6 +68,7 @@ static void type_cmd(RCore *core, const char *input) {
 		r_core_cmd0 (core, "aei");
 		r_core_cmd0 (core, "aeim");
 		r_config_set_i (core->config, "io.cache", true);
+			r_reg_arena_push (core->anal->reg);
 		r_list_foreach (core->anal->fcns, it, fcn) {
 			r_core_seek (core, fcn->addr, true);
 			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
@@ -80,6 +81,7 @@ static void type_cmd(RCore *core, const char *input) {
 		r_core_cmd0 (core, "aei-");
 		r_core_seek (core, seek, true);
 		r_config_set_i (core->config, "io.cache", io_cache);
+			r_reg_arena_pop (core->anal->reg);
 		break;
 	case 'm': // "aftm"
 		r_config_set_i (core->config, "io.cache", true);
