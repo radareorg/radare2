@@ -11,11 +11,12 @@
 #include <r_parse.h>
 
 ut64 mask64(ut64 mb, ut64 me) {
+	int i;
     ut64 mask = 0;
     if (mb < 0 || me < 0 || mb > 63 || me > 63) {
         return mask;
     } else if (mb < (me + 1)) {
-        for(int i = mb; i <= me ; i= i + 1) {
+        for(i = mb; i <= me ; i= i + 1) {
             mask = mask | (ut64)(1LL<<(63-i));
         }
     } else if (mb == (me + 1)) {
@@ -41,11 +42,12 @@ const char* cmask64(const char *mb_c, const char *me_c){
 }
 
 ut32 mask32(ut32 mb, ut32 me) {
+	int i;
     ut32 mask = 0;
     if (mb < 0 || me < 0 || mb > 31 || me > 31) {
         return mask;
     } else if (mb < (me + 1)) {
-        for(int i = mb; i <= me ; i= i + 1) {
+        for(i = mb; i <= me ; i= i + 1) {
             mask = mask | (ut32)(1LL<<(31-i));
         }
     } else if (mb == (me + 1)) {
