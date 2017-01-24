@@ -697,11 +697,14 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		break;
 	case 'd': // "fd"
 		{
-			ut64 addr = 0;
+			ut64 addr = core->offset;
 			RFlagItem *f = NULL;
+			bool space_strict = true;
 			switch (input[1]) {
 			case '?':
-				eprintf ("Usage: fd [offset|flag|expression]\n");
+				eprintf ("Usage: fd[d] [offset|flag|expression]\n");
+				eprintf ("  fd $$   # describe flag + delta for given offset\n");
+				eprintf ("  fdd $$  # describe flag without space restrictions\n");
 				if (str) {
 					free (str);
 				}
@@ -709,11 +712,17 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			case '\0':
 				addr = core->offset;
 				break;
+			case 'd':
+				space_strict = false;
+				if (input[2] == ' ') {
+					addr = r_num_math (core->num, input + 3);
+				}
+				break;
 			default:
 				addr = r_num_math (core->num, input + 2);
 				break;
 			}
-			core->flags->space_strict = true;
+			core->flags->space_strict = space_strict;
 			f = r_flag_get_at (core->flags, addr, true);
 			core->flags->space_strict = false;
 			if (f) {

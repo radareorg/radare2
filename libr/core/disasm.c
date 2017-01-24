@@ -925,9 +925,17 @@ static void ds_show_xrefs(RDisasmState *ds) {
 
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
-			RAnalFunction *fun = r_anal_get_fcn_in (
-				core->anal, refi->addr, -1);
-			name = strdup (fun ? fun->name : "unk");
+			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, refi->addr, -1);
+			if (fun) {
+				name = strdup (fun->name);
+			} else {
+				RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
+				if (f) {
+					name = r_str_newf ("%s + %d", f->name, refi->addr - f->offset);
+				} else {
+					name = strdup ("unk");
+				}
+			}
 			if (demangle) {
 				tmp = r_bin_demangle (core->bin->cur, lang, name, refi->addr);
 				if (tmp) {

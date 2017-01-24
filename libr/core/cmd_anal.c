@@ -993,7 +993,7 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 	int counter;
 
 	if (minlen < 1) {
-		minlen=1;
+		minlen = 1;
 	}
 	if (code_size < 1) {
 		return;
@@ -2060,7 +2060,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 						// ORLY?
 						r_cons_printf ("%d\n", o);
 						free (rf);
-					} else eprintf ("unknown conditional or flag register\n");
+					} else {
+						eprintf ("unknown conditional or flag register\n");
+					}
 				}
 			} else {
 				RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
