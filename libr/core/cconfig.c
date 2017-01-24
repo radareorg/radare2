@@ -268,6 +268,7 @@ static int cb_asmarch(void *user, void *data) {
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
+	const char *asm_cpu = r_config_get (core->config, "asm.cpu");
 	if (core->assembler->cur) {
 		const char *newAsmCPU = core->assembler->cur->cpus;
 		if (newAsmCPU) {
@@ -349,6 +350,7 @@ static int cb_asmarch(void *user, void *data) {
 		// set endian of display to match binary
 		core->print->big_endian = bigbin;
 	}
+	r_asm_set_cpu (core->assembler, asm_cpu);
 	/* reload types and cc info */
 	r_core_anal_type_init (core);
 	r_core_anal_cc_init (core);
@@ -1838,9 +1840,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETPREF("asm.minicols", "false", "Only show the instruction in the column disasm");
+	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
 	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
 	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
-	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
 	SETCB("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB("asm.decoff", "false", &cb_decoff, "Show segmented address in prompt (x86-16)");

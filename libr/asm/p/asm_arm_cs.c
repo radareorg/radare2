@@ -141,7 +141,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM disassembler",
-	.cpus = "v8,cortex-m",
+	.cpus = "v8,cortex",
 	.license = "BSD",
 	.arch = "arm",
 	.bits = 16 | 32 | 64,
@@ -149,7 +149,7 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,
 	.assemble = &assemble,
-	.features = "no-mclass,v8"
+	.features = "v8"
 #if 0
 	// arm32 and arm64
 	"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
