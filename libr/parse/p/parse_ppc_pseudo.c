@@ -68,7 +68,7 @@ const char* cmask32(const char *mb_c, const char *me_c){
 	ut32 me = 32;
 	if (mb_c) mb += atol(mb_c);
 	if (me_c) me += atol(me_c);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask32(mb, me));
+	snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32(mb, me));
 	return cmask;
 }
 
@@ -88,7 +88,7 @@ const char* inv_mask32(const char *mb_c, const char *sh){
 	ut32 me = 0;
 	if (mb_c) mb = atol(mb_c);
 	if (sh) me = atol(sh);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask32(mb, ~me));
+	snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32(mb, ~me));
 	return cmask;
 }
 
@@ -108,13 +108,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *str;
 		int max_operands;
 	} ops[] = {
-		{ "cmpb", "A = ((byte)B == (byte)c)", 3}, //0
+		{ "cmpb", "A = ((byte) B == (byte) C)", 3}, //0
 		{ "cmpd", "A = (B == C)", 3},
 		{ "cmpdi", "A = (B == C)", 3},
-		{ "cmpld", "A = ((unsigned)B == (unsigned)c)", 3},
-		{ "cmpldi", "A = ((unsigned)B == (unsigned)c)", 3},
-		{ "cmplw", "A = ((unsigned)B == (unsigned)c)", 3},
-		{ "cmplwi", "A = ((unsigned)B == (unsigned)c)", 3},
+		{ "cmpld", "A = ((unsigned) B == (unsigned) C)", 3},
+		{ "cmpldi", "A = ((unsigned) B == (unsigned) C)", 3},
+		{ "cmplw", "A = ((unsigned) B == (unsigned) C)", 3},
+		{ "cmplwi", "A = ((unsigned) B == (unsigned) C)", 3},
 		{ "cmpw", "A = (B == C)", 3},
 		{ "cmpwi", "A = (B == C)", 3},
 		{ "beq", "if (A & FLG_EQ) goto B", 2},
@@ -135,23 +135,23 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "bne", "if (A & FLG_NE) goto B", 2},
 		{ "bne-", "if (A & FLG_NE) goto B", 2},
 		{ "bne+", "if (A & FLG_NE) goto B", 2}, //26
-		{ "rldic", "A = rol64(B,C) & D", 4}, //27
-		{ "rldcl", "A = rol64(B,C) & D", 4}, //28
-		{ "rldicl", "A = rol64(B,C) & D", 4}, //29
-		{ "rldcr", "A = rol64(B,C) & D", 4}, //30
-		{ "rldicr", "A = rol64(B,C) & D", 4}, //31
-		{ "rldimi", "mask = D; A = (rol64(B,C) & mask) | (A & ~mask)", 4}, //32
-		{ "rlwimi", "mask = D; A = (rol32(B,C) & mask) | (A & ~mask)", 4}, //33
-		{ "rlwinm", "A = rol32(B,C) & D", 4}, //34
-		{ "rlwnm", "A = rol32(B,C) & D", 4}, //35
+		{ "rldic", "A = rol64(B, C) & D", 4}, //27
+		{ "rldcl", "A = rol64(B, C) & D", 4}, //28
+		{ "rldicl", "A = rol64(B, C) & D", 4}, //29
+		{ "rldcr", "A = rol64(B, C) & D", 4}, //30
+		{ "rldicr", "A = rol64(B, C) & D", 4}, //31
+		{ "rldimi", "mask = D; A = (rol64(B, C) & mask) | (A & ~mask)", 4}, //32
+		{ "rlwimi", "mask = D; A = (rol32(B, C) & mask) | (A & ~mask)", 4}, //33
+		{ "rlwinm", "A = rol32(B, C) & D", 4}, //34
+		{ "rlwnm", "A = rol32(B, C) & D", 4}, //35
 		{ "td", "if (B A C) trap", 3}, //36
 		{ "tdi", "if (B A C) trap", 3},
 		{ "tdu", "if (B A C) trap", 3},
 		{ "tdui", "if (B A C) trap", 3},
-		{ "tw", "if ((word)B A (word)C) trap", 3},
-		{ "twi", "if ((word)B A (word)C) trap", 3},
-		{ "twu", "if ((word)B A (word)C) trap", 3},
-		{ "twui", "if ((word)B A (word)C) trap", 3}, //43
+		{ "tw", "if ((word) B A (word) C) trap", 3},
+		{ "twi", "if ((word) B A (word) C) trap", 3},
+		{ "twu", "if ((word) B A (word) C) trap", 3},
+		{ "twui", "if ((word) B A (word) C) trap", 3}, //43
 		{ "add", "A = B + C", 3},
 		{ "addc", "A = B + C", 3},
 		{ "adde", "A = B + C", 3},
@@ -243,8 +243,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "crclr", "A = A ^ A", 1},
 		{ "creqv", "A = B == C", 3},
 		{ "crmove", "A = B", 2},
-		{ "crnand", "A = B & !c", 3},
-		{ "crnor", "A = B | !c", 3},
+		{ "crnand", "A = B & !C", 3},
+		{ "crnor", "A = B | !C", 3},
 		{ "crnot", "A = !B", 2},
 		{ "cror", "A = B | C", 3},
 		{ "crorc", "A = B | C", 3},
@@ -255,20 +255,20 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "dcbi", "dcb_inval(A,B)", 2},
 		{ "dcbst", "dcb_store(A,B)", 2},
 		{ "dcbt", "dcb_touch(A,B)", 2},
-		{ "dcbtst", "dcb_touch_store(A,B)", 2},
+		{ "dcbtst", "dcb_touch_store(A, B)", 2},
 		{ "dcbz", "dcb_zero(A,B)", 2},
-		{ "dcbzl", "dcb_zero_line(A,B)", 2},
-		{ "dccci", "dcc_inval(A,B)", 3}, // Data Cache Congruence Class Invalidate
+		{ "dcbzl", "dcb_zero_line(A, B)", 2},
+		{ "dccci", "dcc_inval(A, B)", 3}, // Data Cache Congruence Class Invalidate
 		{ "divd", "A = B / C", 3},
 		{ "divdu", "A = (unsigned) B / C", 3},
 		{ "divw", "A = (word) B / C", 3},
 		{ "divwu", "A = (word unsigned) B / C", 3},
-		{ "dss", "altivec_ds_stop(a)", 1},
+		{ "dss", "altivec_ds_stop(A)", 1},
 		{ "dssall", "altivec_ds_stop_all", 0},
 		{ "dst", "altivec_ds_touch(A,B,C)", 3},
-		{ "dstst", "altivec_ds_touch_store(A,B,C)", 3},
-		{ "dststt", "altivec_ds_touch_store_tran(A,B,C)", 3},
-		{ "dstt", "altivec_ds_touch_tran(A,B,C)", 3},
+		{ "dstst", "altivec_ds_touch_store(A, B, C)", 3},
+		{ "dststt", "altivec_ds_touch_store_tran(A, B, C)", 3},
+		{ "dstt", "altivec_ds_touch_tran(A, B, C)", 3},
 		{ "eieio", "enforce_in_order_exec_io", 0},
 		{ "eqv", "A = B ^ C", 3},
 		{ "evabs", "A = (vector) abs(B)", 2},
@@ -281,23 +281,23 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "evand", "A = (vector) B + C", 3},
 		{ "evandc", "A = (vector) B + C", 3},
 		{ "evcmpeq", "A = (vector) B == C", 3},
-		{ "evcmpgts", "A = (signed vector) B > C", 3},
+		{ "evcmpgts", "A = (vector) B > C", 3},
 		{ "evcmpgtu", "A = (unsigned vector) B > C", 3},
-		{ "evcmplts", "A = (signed vector) B < C", 3},
+		{ "evcmplts", "A = (vector) B < C", 3},
 		{ "evcmpltu", "A =  (unsigned vector) B <> C", 3},
 		{ "evcntlsw", "A = (vector) cnt_sign_bits(B)", 2},
 		{ "evcntlzw", "A = (vector) cnt_zero_bits(B)", 2},
-		{ "evdivws", "A = (signed vector) B / C", 3},
+		{ "evdivws", "A = (vector) B / C", 3},
 		{ "evdivwu", "A = (unsigned vector) B + C", 3},
 		{ "eveqv", "A = (vector) B ^ C", 3},
 		//{ "evextsb", "", 0}, //extend sign byte
 		//{ "evextsh", "", 0}, //extend sign half
-		{ "evldd", "A = (vector) [C + B]", 3},
-		{ "evlddx", "A = (vector) [C + B]", 3},
-		{ "evldh", "A = (vector) [C + B]", 3},
-		{ "evldhx", "A = (vector) [C + B]", 3},
-		{ "evldw", "A = (vector) [C + B]", 3},
-		{ "evldwx", "A = (vector) [C + B]", 3},
+		{ "evldd", "A = vector[C + B]", 3},
+		{ "evlddx", "A = vector[C + B]", 3},
+		{ "evldh", "A = vector[C + B]", 3},
+		{ "evldhx", "A = vector[C + B]", 3},
+		{ "evldw", "A = vector[C + B]", 3},
+		{ "evldwx", "A = vector[C + B]", 3},
 		//Vector Load Half Word into Half Words Even and Splat  ??
 		/*
 		{ "evlhhesplat", "A = B + C", 3},
@@ -307,17 +307,17 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "evlhhousplat", "A = B + C", 3},
 		{ "evlhhousplatx", "A = B + C", 3},
 		*/
-		{ "evlwhe", "A = (vector) [C + B]", 3},
-		{ "evlwhex", "A = (vector) [C + B]", 3},
-		{ "evlwhos", "A = (vector) [C + B]", 3},
-		{ "evlwhosx", "A = (vector) [C + B]", 3},
-		{ "evlwhou", "A = (vector) [C + B]", 3},
-		{ "evlwhoux", "A = (vector) [C + B]", 3},
+		{ "evlwhe", "A = vector[C + B]", 3},
+		{ "evlwhex", "A = vector[C + B]", 3},
+		{ "evlwhos", "A = vector[C + B]", 3},
+		{ "evlwhosx", "A = vector[C + B]", 3},
+		{ "evlwhou", "A = vector[C + B]", 3},
+		{ "evlwhoux", "A = vector[C + B]", 3},
 		/*
-		{ "evlwhsplat", "A = (vector) [C + B]", 3},
-		{ "evlwhsplatx", "A = (vector) [C + B]", 3},
-		{ "evlwwsplat", "A = (vector) [C + B]", 3},
-		{ "evlwwsplatx", "A = (vector) [C + B]", 3},
+		{ "evlwhsplat", "A = vector[C + B]", 3},
+		{ "evlwhsplatx", "A = vector[C + B]", 3},
+		{ "evlwwsplat", "A = vector[C + B]", 3},
+		{ "evlwwsplatx", "A = vector[C + B]", 3},
 		{ "evmergehi", "A = lo | hi", 3},
 		{ "evmergehilo", "A = B + C", 3},
 		{ "evmergelo", "A = B + C", 3},
@@ -559,7 +559,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lwzu", "A = word[C + B]", 3},
 		{ "lwzux", "A = word[C + B]", 3},
 		{ "lwzx", "A = word[C + B]", 3},
-		{ "lxsdx", "A = ???[C + B]", 3},
+//		{ "lxsdx", "A = ???[C + B]", 3},
 		{ "lxvdbx", "A = vector[C + B]", 3},
 		{ "lxvdsx", "A = vector[C + B]", 3},
 		{ "lxvwdx", "A = vector[C + B]", 3},
