@@ -60,16 +60,39 @@ ut32 mask32(ut32 mb, ut32 me) {
 
 const char* cmask32(const char *mb_c, const char *me_c){
     static char cmask[32];
+    ut32 mb = 32;
+    ut32 me = 32;
+    if(mb_c)
+        mb += atol(mb_c);
+    if(me_c)
+        me += atol(me_c);
+    snprintf(cmask, 32, "0x%"PFMT64x"",mask32(mb, me));
+    return cmask;
+}
+
+const char* inv_mask64(const char *mb_c, const char *sh){
+    static char cmask[32];
+    ut64 mb = 0;
+    ut64 me = 0;
+    if(mb_c)
+        mb = atol(mb_c);
+    if(me_c)
+        me = atol(sh);
+    snprintf(cmask, 32, "0x%"PFMT64x"", mask64(mb, ~me));
+    return cmask;
+}
+
+const char* inv_mask32(const char *mb_c, const char *sh){
+    static char cmask[32];
     ut32 mb = 0;
     ut32 me = 0;
     if(mb_c)
         mb = atol(mb_c);
     if(me_c)
-        me = atol(me_c);
-    snprintf(cmask, 32, "0x%"PFMT64x"",mask32(mb, me));
+        me = atol(sh);
+    snprintf(cmask, 32, "0x%"PFMT64x"", mask32(mb, ~me));
     return cmask;
 }
-
 
 static int can_replace(const char *str, int idx, int max_operands) {
     if (str[idx] < 'A' || str[idx] > 'J')
@@ -114,15 +137,15 @@ static int replace(int argc, const char *argv[], char *newstr) {
         { "bne", "if(A & FLG_NE) goto B", 2},
         { "bne-", "if(A & FLG_NE) goto B", 2},
         { "bne+", "if(A & FLG_NE) goto B", 2}, //26
-        { "rldic", "A = B + C + D", 4}, //27
-        { "rldcl", "A = (B + C) + D", 4}, //28
+        { "rldic", "A = rol64(B,C) & D", 4}, //27
+        { "rldcl", "A = rol64(B,C) & D", 4}, //28
         { "rldicl", "A = rol64(B,C) & D", 4}, //29
         { "rldcr", "A = rol64(B,C) & D", 4}, //30
-        { "rldicr", "A = B + C + D", 4}, //31
-        { "rldimi", "A = B + C + D", 4},
-        { "rlwimi", "A = B + C + D", 4},
-        { "rlwinm", "A = B + C + D", 4},
-        { "rlwnm", "A = B + C + D", 4}, //35
+        { "rldicr", "A = rol64(B,C) & D", 4}, //31
+        { "rldimi", "mask = D; A = (rol64(B,C) & mask) | (A & ~mask)", 4}, //32
+        { "rlwimi", "mask = D; A = (rol32(B,C) & mask) | (A & ~mask)", 4}, //33
+        { "rlwinm", "A = rol32(B,C) & D", 4}, //34
+        { "rlwnm", "A = rol32(B,C) & D", 4}, //35
         { "td", "if(B A C) trap", 3}, //36
         { "tdi", "if(B A C) trap", 3},
         { "tdu", "if(B A C) trap", 3},
@@ -219,7 +242,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
         { "cntlzw", "A = cnt_leading_zeros(B)", 2},
         { "crand", "A = B & C", 3},
         { "crandc", "A = B & C", 3},
-        { "crclr", "A = A ^ A", 3},
+        { "crclr", "A = A ^ A", 1},
         { "creqv", "A = B == C", 3},
         { "crmove", "A = B", 2},
         { "crnand", "A = B & !c", 3},
@@ -500,8 +523,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
         { "lfdu", "A = double[C + B]", 3},
         { "lfdux", "A = double[C + B]", 3},
         { "lfdx", "A = double[C + B]", 3},
-        { "lfiwax", "if(B == 0) A = float[C]; else a = float[C + B]", },
-        { "lfiwzx", "A = B + C", 3},
+        { "lfiwax", "A = float[C + B]", },
+        { "lfiwzx", "A = float[C + B]", 3},
         { "lfs", "A = float[C + B]", 3},
         { "lfsu", "A = float[C + B]", 3},
         { "lfsux", "A = float[C + B]", 3},
@@ -1260,12 +1283,18 @@ static int replace(int argc, const char *argv[], char *newstr) {
                         }
                         int letter = ops[i].str[j] - '@';
                         const char *w = argv[letter];
-                        if (letter == 4 && i >= 28 && i <= 29) {
+                        if (letter == 4 && i == 27) {
+                            w = inv_mask64(argv[4], argv[3]);
+                        } else if (letter == 4 && i >= 28 && i <= 29) {
                             w = cmask64(w, "63");
                         } else if (letter == 4 && i >= 30 && i <= 31) {
                             w = cmask64("0", w);
                         } else if (letter == 4 && i >= 30 && i <= 31) {
                             w = cmask64("0", w);
+                        } else if (letter == 4 && i == 32) {
+                            w = inv_mask64(argv[4], argv[3]);
+                        } else if (letter == 4 && i >= 33 && i <= 35) {
+                            w = cmask32(argv[4], argv[5]);
                         } else if (letter == 1 && i >= 36 && i <= 43) {
                             int to = atoi(w);
                             switch(to) {
