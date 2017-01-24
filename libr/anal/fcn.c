@@ -257,7 +257,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 }
 
 #define FITFCNSZ() {\
-	st64 n = bb->addr+bb->size-fcn->addr; \
+	st64 n = bb->addr + bb->size-fcn->addr; \
 	if (n >= 0 && r_anal_fcn_size (fcn) <n) {r_anal_fcn_set_size (fcn, n); } } \
 	if (r_anal_fcn_size (fcn) > MAX_FCN_SIZE) { \
 		/* eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */ \

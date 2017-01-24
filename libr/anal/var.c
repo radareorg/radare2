@@ -532,7 +532,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 		return NULL;
 	}
 	list = r_list_new ();
-	if (!kind) {
+	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
 	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x".%c", fcn->addr, kind), 0);
@@ -552,8 +552,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 				if (vardef) {
 					sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 					sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
-					RAnalVar *av;
-					av = R_NEW0 (RAnalVar);
+					RAnalVar *av = R_NEW0 (RAnalVar);
 					if (!av) {
 						free (varlist);
 						r_list_free (list);

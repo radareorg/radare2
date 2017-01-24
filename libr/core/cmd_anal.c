@@ -175,6 +175,8 @@ static void var_help(RCore *core, char ch) {
 		"afvr", "[?]", "manipulate register based arguments",
 		"afvb", "[?]", "manipulate bp based arguments/locals",
 		"afvs", "[?]", "manipulate sp based arguments/locals",
+		"afvR", " [varname]", "list addresses where vars are accessed",
+		"afvW", " [varname]", "list addresses where vars are accessed",
 		"afva", "", "analyze function arguments/locals",
 		"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
 		"afvn", " [old_name] [new_name]", "rename argument/local",
@@ -199,7 +201,32 @@ static void var_help(RCore *core, char ch) {
 	}
 }
 
-static int var_cmd (RCore *core, const char *str) {
+static void var_accesses_list(RAnal *a, RAnalFunction *fcn, int delta, const char *typestr) {
+	const char *var_local = sdb_fmt (0, "var.0x%"PFMT64x".%d.%d.%s",
+			fcn->addr, 1, delta, typestr);
+	const char *xss = sdb_const_get (a->sdb_fcns, var_local, 0);
+	if (xss && *xss) {
+		r_cons_printf ("%s\n", xss);
+	} else {
+		r_cons_newline ();
+	}
+}
+
+static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
+	RAnalVar *var;
+	RListIter *iter;
+	RList *list = r_anal_var_list (core->anal, fcn, 0);
+	if (type != 'W' && type != 'R') {
+		return;
+	}
+	const char *typestr = type == 'R'?"reads":"writes";
+	r_list_foreach (list, iter, var) {
+		r_cons_printf ("%10s  ", var->name);
+		var_accesses_list (core->anal, fcn, var->delta, typestr);
+	}
+}
+
+static int var_cmd(RCore *core, const char *str) {
 	char *p, *ostr;
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
@@ -238,6 +265,10 @@ static int var_cmd (RCore *core, const char *str) {
 	ostr = p = strdup (str);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
+	case 'R': // "afvR"
+	case 'W': // "afvW"
+		list_vars (core, fcn, str[0], str + 1);
+		break;
 	case 'a': // "afva"
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
@@ -265,8 +296,8 @@ static int var_cmd (RCore *core, const char *str) {
 			r_anal_var_free (v1);
 		}
 		free (ostr);
+		}
 		return true;
-	}
 	case 'd': //afvd
 		p = r_str_chop (strchr (ostr, ' '));
 		if (!p) {
@@ -354,7 +385,9 @@ static int var_cmd (RCore *core, const char *str) {
 				r_anal_var_free (var);
 				break;
 			}
-		} else eprintf ("Missing argument\n");
+		} else {
+			eprintf ("Missing argument\n");
+		}
 		break;
 	case ' ': {
 		const char *name;
@@ -1487,7 +1520,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					".afbr-", "", "Set breakpoint on every return address of the function",
 					".afbr-*", "", "Remove breakpoint on every return address of the function",
 					"afb", " [addr]", "list basic blocks of function",
-					"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "list basic blocks of function",
+					"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
 					"afbr", "", "Show addresses of instructions which leave the function",
 					"afbj", "", "show basic blocks information in json",
 					"afbe", "bbfrom bbto", "add basic-block edge for switch-cases",
