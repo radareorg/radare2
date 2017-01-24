@@ -538,6 +538,10 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 			    strncmp (f->name, "sym.func.", 9)) {
 #else
 		if (f && f->name && strncmp (f->name, "sect", 4)) {
+			if (!strncmp (fcn->name, "loc.", 4)) {
+				R_FREE (fcn->name);
+				fcn->name = strdup (f->name);
+			}
 			if (!strncmp (fcn->name, "fcn.", 4)) {
 				R_FREE (fcn->name);
 				fcn->name = strdup (f->name);
