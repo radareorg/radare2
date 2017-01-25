@@ -303,7 +303,9 @@ static int has_bits(RAsmPlugin *h, int bits) {
 }
 
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
-	free (a->cpu);
+	if (a) {
+		free (a->cpu);
+	}
 	a->cpu = cpu? strdup (cpu): NULL;
 }
 

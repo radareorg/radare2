@@ -268,7 +268,9 @@ static int cb_asmarch(void *user, void *data) {
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
-	const char *asm_cpu = r_config_get (core->config, "asm.cpu");
+	//we should strdup here otherwise will crash if any r_config_set
+	//free the old value
+	char *asm_cpu = strdup (r_config_get (core->config, "asm.cpu"));
 	if (core->assembler->cur) {
 		const char *newAsmCPU = core->assembler->cur->cpus;
 		if (newAsmCPU) {
@@ -351,6 +353,7 @@ static int cb_asmarch(void *user, void *data) {
 		core->print->big_endian = bigbin;
 	}
 	r_asm_set_cpu (core->assembler, asm_cpu);
+	free (asm_cpu);
 	/* reload types and cc info */
 	r_core_anal_type_init (core);
 	r_core_anal_cc_init (core);
