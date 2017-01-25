@@ -470,11 +470,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
             else  esilprintf (op, "%s,%s,-,0xff,&,%s,=", ARG(2), ARG(1), ARG(0));
             break;
         case PPC_INS_MFLR:
-            op->type = R_ANAL_OP_TYPE_PUSH;
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "lr,%s,=", ARG(0));
             break;
         case PPC_INS_MTLR:
-            op->type = R_ANAL_OP_TYPE_POP;
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "%s,lr,=", ARG(0));
             break;
         case PPC_INS_MR:
@@ -487,7 +487,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
             esilprintf (op, "%s0000,%s,=", ARG(1), ARG(0));
             break;
         case PPC_INS_CLRLWI:
-            op->type = R_ANAL_OP_TYPE_ROL;
+            op->type = R_ANAL_OP_TYPE_AND;
             esilprintf (op, "%s,0x%"PFMT64x",&,%s,=", ARG(1), cmask32(ARG(2), "31"), ARG(0));
             break;
         case PPC_INS_RLWINM:
@@ -841,40 +841,52 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
             esilprintf (op, "%s,%s,|,%s,=", ARG(2), ARG(1), ARG(0));
             break;
         case PPC_INS_MFPVR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "pvr,%s,=", ARG(0));
             break;
         case PPC_INS_MFSPR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "%s,%s,=", PPCSPR(1), ARG(0));
             break;
         case PPC_INS_MFCTR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "ctr,%s,=", ARG(0));
             break;
         case PPC_INS_MFDCCR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "dccr,%s,=", ARG(0));
             break;
         case PPC_INS_MFICCR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "iccr,%s,=", ARG(0));
             break;
         case PPC_INS_MFDEAR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "dear,%s,=", ARG(0));
             break;
         case PPC_INS_MFMSR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "msr,%s,=", ARG(0));
             break;
         case PPC_INS_MTCTR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "%s,ctr,=", ARG(0));
             break;
         case PPC_INS_MTDCCR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "%s,dccr,=", ARG(0));
             break;
         case PPC_INS_MTICCR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "%s,iccr,=", ARG(0));
             break;
         case PPC_INS_MTDEAR:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "%s,dear,=", ARG(0));
             break;
         case PPC_INS_MTMSR:
         case PPC_INS_MTMSRD:
+            op->type = R_ANAL_OP_TYPE_MOV;
             esilprintf (op, "%s,msr,=", ARG(0));
             break;
         // Data Cache Block Zero
@@ -883,7 +895,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
             esilprintf (op, "%s,%s", ARG(0), ARG2(1, ",=[128]"));
             break;
         case PPC_INS_CLRLDI:
-            op->type = R_ANAL_OP_TYPE_ROL;
+            op->type = R_ANAL_OP_TYPE_AND;
             esilprintf (op, "%s,0x%"PFMT64x",&,%s,=", ARG(1), cmask64(ARG(2), "63"), ARG(0));
             break;
         case PPC_INS_ROTLDI:
