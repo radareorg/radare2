@@ -368,7 +368,9 @@ static int cmd_yank(void *data, const char *input) {
 					eprintf ("Invalid length\n");
 				}
 				free (out);
-			} else eprintf ("Usage: ywx [hexpairs]\n");
+			} else {
+				eprintf ("Usage: ywx [hexpairs]\n");
+			}
 			// r_core_yank_write_hex (core, input + 2);
 			break;
 		}

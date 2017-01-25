@@ -3183,14 +3183,17 @@ R_API void r_core_anal_auto_merge (RCore *core, ut64 addr) {
 }
 
 
-static int myvalid(ut64 addr) {
+static bool myvalid(RIO *io, ut64 addr) {
 	if (addr < 0x100) {
-		return 0;
+		return false;
 	}
 	if (addr == UT32_MAX || addr == UT64_MAX) {
-		return 0;
+		return false;
 	}
-	return 1;
+	if (!r_io_is_valid_offset (io, addr, 0)) {
+		return false;
+	}
+	return true;
 }
 
 static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
@@ -3200,46 +3203,56 @@ static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int l
 
 /* TODO: move into RCore? */
 static ut64 esilbreak_last_read = UT64_MAX;
-#if 0
-static ut32 esilbreak_last_data = UT32_MAX;
-#endif
+static ut64 esilbreak_last_data = UT64_MAX;
 
 static ut64 ntarget = UT64_MAX;
 
 static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	ut8 str[128];
-	char cmd[128];
-
-	if (ntarget == UT64_MAX || ntarget == addr) {
+	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
-
-		if (myvalid (addr) && r_io_is_valid_offset (mycore->io, addr, 0)) {
-			ut8 buf[4];
-			ut64 refptr;
+	}
+	if (myvalid (mycore->io, addr)) {
+		ut8 buf[8];
+		ut64 refptr;
+		if (len == 8) {
 			if (r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf)) != sizeof (buf)) {
 				/* invalid read */
-				refptr = UT32_MAX;
+				refptr = UT64_MAX;
 			} else {
-				refptr = r_read_ble32 (buf, esil->anal->big_endian);
+				refptr = r_read_ble64 (buf, esil->anal->big_endian);
+				esilbreak_last_data = refptr;
 			}
-
-			if (myvalid (refptr) && r_io_is_valid_offset (mycore->io, (ut64)refptr, 0)) {
-				snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
+		} else {
+			if (r_io_read_at (mycore->io, addr, (ut8*)buf, sizeof (buf)) != sizeof (buf)) {
+				/* invalid read */
+				refptr = UT64_MAX;
+			} else {
+				refptr = (ut64)r_read_ble32 (buf, esil->anal->big_endian);
+				esilbreak_last_data = refptr;
+			}
+		}
+		bool validRef = false;
+		if (myvalid (mycore->io, refptr)) {
+			if (ntarget == UT64_MAX || ntarget == refptr) {
+				r_core_cmdf (mycore, "axd 0x%"PFMT64x" 0x%"PFMT64x,
 						(ut64)refptr, esil->address);
 				str[0] = 0;
 				if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
 					eprintf ("Invalid read\n");
 					str[0] = 0;
 				}
-				str[sizeof(str)-1] = 0;
+				str[sizeof (str) - 1] = 0;
 				add_string_ref (mycore, refptr);
-			} else {
-				snprintf (cmd, sizeof (cmd), "axd 0x%"PFMT64x" 0x%"PFMT64x,
-						addr, esil->address); //, addr);
+				esilbreak_last_data = UT64_MAX;
+				validRef = true;
 			}
-			if (*cmd) {
-				r_core_cmd0 (mycore, cmd);
-			}
+		}
+
+		/** resolve ptr */
+		if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
+			r_core_cmdf (mycore, "axd 0x%"PFMT64x" 0x%"PFMT64x,
+					addr, esil->address);
 		}
 	}
 	return 0; // fallback
@@ -3269,7 +3282,6 @@ static void add_string_ref(RCore *core, ut64 xref_to) {
 		free (str_flagname);
 	}
 }
-
 
 static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	RAnal *anal = NULL;
@@ -3324,8 +3336,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	mycore = core;
 	if (!strcmp (str, "?")) {
 		eprintf ("Usage: aae[f] [len] [addr] - analyze refs in function, section or len bytes with esil\n");
-		eprintf ("  aae $SS @ $S            - analyze the whole section\n");
-		eprintf ("  aae $SS str.Hello @ $S  - find references for str.Hellow\n");
+		eprintf ("  aae $SS @ $S             - analyze the whole section\n");
+		eprintf ("  aae $SS str.Hello @ $S   - find references for str.Hellow\n");
 		return;
 	}
 #define CHECKREF(x) ((refptr && x == refptr) || !refptr)
@@ -3492,8 +3504,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						break;
 					}
 					if ((target && dst == ntarget) || !target) {
-						if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) &&
-								myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+						if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) && myvalid (mycore->io, dst)) {
 							RFlagItem *f;
 							char *str;
 							if (CHECKREF(dst) || CHECKREF(cur)) {
@@ -3516,8 +3527,17 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			case R_ANAL_OP_TYPE_LOAD:
 				{
 					ut64 dst = esilbreak_last_read;
-					if (CHECKREF(dst)) {
-						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+					if (dst != UT64_MAX && CHECKREF(dst)) {
+						if (myvalid (mycore->io, dst)) {
+							r_anal_ref_add (core->anal, dst, cur, 'd');
+							if (cfg_anal_strings) {
+								add_string_ref (core, dst);
+							}
+						}
+					}
+					dst = esilbreak_last_data;
+					if (dst != UT64_MAX && CHECKREF(dst)) {
+						if (myvalid (mycore->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'd');
 							if (cfg_anal_strings) {
 								add_string_ref (core, dst);
@@ -3530,7 +3550,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				{
 					ut64 dst = op.jump;
 					if (CHECKREF(dst)) {
-						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+						if (myvalid (core->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'c');
 						}
 					}
@@ -3539,8 +3559,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			case R_ANAL_OP_TYPE_CALL:
 				{
 					ut64 dst = op.jump;
-					if (CHECKREF(dst)) {
-						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+					if (CHECKREF (dst)) {
+						if (myvalid (core->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'C');
 						}
 					}
@@ -3558,7 +3578,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						dst = r_reg_getv (core->anal->reg, pcname);
 					}
 					if (CHECKREF(dst)) {
-						if (myvalid (dst) && r_io_is_valid_offset (mycore->io, dst, 0)) {
+						if (myvalid (core->io, dst)) {
 							RAnalRefType ref =
 								(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL
 								? R_ANAL_REF_TYPE_CALL
