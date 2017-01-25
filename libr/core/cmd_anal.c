@@ -216,6 +216,15 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	RAnalVar *var;
 	RListIter *iter;
 	RList *list = r_anal_var_list (core->anal, fcn, 0);
+	if (type == '*') {
+		const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
+		r_cons_printf ("f-fcnvar*\n");
+		r_list_foreach (list, iter, var) {
+			r_cons_printf ("f fcnvar.%s @ %s%s%d\n", var->name, bp,
+				var->delta>=0? "+":"", var->delta);
+		}
+		return;
+	}
 	if (type != 'W' && type != 'R') {
 		return;
 	}
@@ -267,6 +276,7 @@ static int var_cmd(RCore *core, const char *str) {
 	switch (str[0]) {
 	case 'R': // "afvR"
 	case 'W': // "afvW"
+	case '*': // "afv*"
 		list_vars (core, fcn, str[0], str + 1);
 		break;
 	case 'a': // "afva"
