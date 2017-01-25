@@ -126,8 +126,7 @@ R_API void r_bin_iobind(RBin *bin, RIO *io) {
 // TODO: move these two function do a different file
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
 				      ut32 file_count,
-				      RBinXtrMetadata *metadata, Sdb *sdb) {
-	char *encoded_bin;
+				      RBinXtrMetadata *metadata) {
 	RBinXtrData *data = R_NEW0 (RBinXtrData);
 	if (!data) {
 		return NULL;
@@ -135,18 +134,16 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
 	data->offset = offset;
 	data->size = size;
 	data->file_count = file_count;
-	data->sdb = sdb;
 	data->metadata = metadata;
 	data->loaded = 0;
-
-	encoded_bin = sdb_encode (r_buf_buffer (buf), r_buf_size (buf));
-	if (encoded_bin) {
-		sdb_set (data->sdb, sdb_fmt (0, "%d", offset), encoded_bin, 0);
-		free (encoded_bin);
-		return data;
+	data->buffer = malloc (size + 1);
+	data->buffer[size] = 0;
+	if (!data->buffer) {
+		free (data);
+		return NULL;
 	}
-	free (data);
-	return NULL;
+	memcpy (data->buffer, r_buf_buffer (buf), size);
+	return data;
 }
 
 R_API const char *r_bin_string_type (int type) {
@@ -162,7 +159,6 @@ R_API const char *r_bin_string_type (int type) {
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 	RBinXtrData *data = data_;
 	if (data) {
-		sdb_remove (data->sdb, sdb_fmt (0, "%d", data->offset), 0);
 		if (data->metadata) {
 			free (data->metadata->libname);
 			free (data->metadata->arch);
@@ -170,6 +166,7 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 			free (data->metadata);
 		}
 		free (data->file);
+		free (data->buffer);
 		free (data);
 	}
 }
@@ -1337,10 +1334,8 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf,
 	RBinObject *o = NULL;
 	RBinPlugin *plugin = NULL;
 	ut8* bytes;
-	char *bytes_encoded;
 	ut64 offset = data? data->offset: 0;
 	ut64 sz = data ? data->size : 0;
-
 	if (!data || !bf) {
 		return false;
 	}
@@ -1350,12 +1345,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf,
 	// if the extraction requires some sort of transformation then this will
 	// need to be fixed
 	// here.
-	bytes_encoded = sdb_get (data->sdb, sdb_fmt (0, "%d", data->offset), 0);
-	if (!bytes_encoded) {
-		return false;
-	}
-	bytes = sdb_decode (bytes_encoded, NULL);
-	free (bytes_encoded);
+	bytes = data->buffer;
 	if (!bytes) {
 		return false;
 	}
@@ -1365,7 +1355,6 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf,
 	}
 	r_buf_free (bf->buf);
 	bf->buf = r_buf_new_with_bytes ((const ut8*)bytes, data->size);
-	free (bytes);
 	//r_bin_object_new append the new object into binfile
 	o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
 	// size is set here because the reported size of the object depends on

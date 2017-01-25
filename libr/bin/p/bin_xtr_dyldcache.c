@@ -102,8 +102,7 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 		r_bin_dydlcache_get_libname (lib, &libname);
 		metadata->libname = strdup (libname);
 
-		res = r_bin_xtrdata_new (lib->b, lib->offset, lib->size, nlib,
-					 metadata, bin->sdb);
+		res = r_bin_xtrdata_new (lib->b, lib->offset, lib->size, nlib, metadata);
 		r_buf_free (lib->b);
 		free (lib);
 		free (hdr);
@@ -145,8 +144,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	r_bin_dydlcache_get_libname (lib, &libname);
 	metadata->libname = strdup (libname);
 
-	res = r_bin_xtrdata_new(lib->b, lib->offset, lib->b->length, nlib,
-				 metadata, bin->sdb);
+	res = r_bin_xtrdata_new(lib->b, lib->offset, lib->b->length, nlib, metadata);
 	r_buf_free (lib->b);
 	free (hdr);
 	free (lib);
