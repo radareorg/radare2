@@ -874,6 +874,9 @@ R_API void r_cons_newline() {
 	if (!I.null) {
 		r_cons_strcat ("\n");
 	}
+#if __WINDOWS__
+	r_cons_reset_colors();
+#endif
 	//if (I.is_html) r_cons_strcat ("<br />\n");
 }
 
