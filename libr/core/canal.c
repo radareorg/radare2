@@ -2011,25 +2011,25 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RAnalRef *refi;
 	int ebbs = 0;
 	char *name = get_fcn_name (core, fcn);
-	r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
+	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
-	r_cons_printf ("\n realsz: %d", r_anal_fcn_realsize (fcn));
-	r_cons_printf ("\n stackframe: %d", fcn->maxstack);
-	r_cons_printf ("\n call-convention: %s", fcn->cc);
-	r_cons_printf ("\n cyclomatic-cost : %d", r_anal_fcn_cost (core->anal, fcn));
-	r_cons_printf ("\n cyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
-	r_cons_printf ("\n bits: %d", fcn->bits);
-	r_cons_printf ("\n type: %s", r_anal_fcn_type_tostring (fcn->type));
+	r_cons_printf ("\nrealsz: %d", r_anal_fcn_realsize (fcn));
+	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
+	r_cons_printf ("\ncall-convention: %s", fcn->cc);
+	r_cons_printf ("\ncyclomatic-cost : %d", r_anal_fcn_cost (core->anal, fcn));
+	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_fcn_cc (fcn));
+	r_cons_printf ("\nbits: %d", fcn->bits);
+	r_cons_printf ("\ntype: %s", r_anal_fcn_type_tostring (fcn->type));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
 		r_cons_printf (" [%s]",
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 	}
 
-	r_cons_printf ("\n num-bbs: %d", r_list_length (fcn->bbs));
-	r_cons_printf ("\n edges: %d", count_edges (fcn, &ebbs));
-	r_cons_printf ("\n end-bbs: %d", ebbs);
-	r_cons_printf ("\n call-refs: ");
+	r_cons_printf ("\nnum-bbs: %d", r_list_length (fcn->bbs));
+	r_cons_printf ("\nedges: %d", count_edges (fcn, &ebbs));
+	r_cons_printf ("\nend-bbs: %d", ebbs);
+	r_cons_printf ("\ncall-refs: ");
 	int outdegree = 0;
 	r_list_foreach (fcn->refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CALL) {
@@ -2040,7 +2040,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J');
 		}
 	}
-	r_cons_printf ("\n data-refs: ");
+	r_cons_printf ("\ndata-refs: ");
 	r_list_foreach (fcn->refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_DATA) {
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
@@ -2048,7 +2048,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	}
 
 	int indegree = 0;
-	r_cons_printf ("\n code-xrefs: ");
+	r_cons_printf ("\ncode-xrefs: ");
 	r_list_foreach (fcn->xrefs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
 			indegree++;
@@ -2056,9 +2056,9 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 					refi->type == R_ANAL_REF_TYPE_CALL?'C':'J');
 		}
 	}
-	r_cons_printf ("\n in-degree: %d", indegree);
-	r_cons_printf ("\n out-degree: %d", outdegree);
-	r_cons_printf ("\n data-xrefs: ");
+	r_cons_printf ("\nin-degree: %d", indegree);
+	r_cons_printf ("\nout-degree: %d", outdegree);
+	r_cons_printf ("\ndata-xrefs: ");
 	r_list_foreach (fcn->xrefs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_DATA) {
 			r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
@@ -2073,18 +2073,18 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		var_count += r_anal_var_count (core->anal, fcn, 's', 0);
 		var_count += r_anal_var_count (core->anal, fcn, 'r', 0);
 
-		r_cons_printf ("\n locals:%d\n args: %d\n", var_count, args_count);
+		r_cons_printf ("\nlocals:%d\nargs: %d\n", var_count, args_count);
 		r_anal_var_list_show (core->anal, fcn, 'b', 0);
 		r_anal_var_list_show (core->anal, fcn, 's', 0);
 		r_anal_var_list_show (core->anal, fcn, 'r', 0);
-		r_cons_printf (" diff: type: %s",
+		r_cons_printf ("diff: type: %s",
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"match":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
 		if (fcn->diff->addr != -1) {
-			r_cons_printf (" addr: 0x%"PFMT64x, fcn->diff->addr);
+			r_cons_printf ("addr: 0x%"PFMT64x, fcn->diff->addr);
 		}
 		if (fcn->diff->name != NULL) {
-			r_cons_printf (" function: %s", fcn->diff->name);
+			r_cons_printf ("function: %s", fcn->diff->name);
 		}
 	}
 	free (name);
