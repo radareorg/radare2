@@ -8,7 +8,7 @@ const INPUT_FOLDER_ARG = 2;
 const OUTPUT_FOLDER_ARG = 3;
 
 const SYMBOL_SERVER = 'Microsoft-Symbol-Server/6.11.0001.402';
-const DOWNLOABLE_LINK = 'http://msdl.microsoft.com/download/symbols';
+const DOWNLOABLE_LINK = 'https://msdl.microsoft.com/download/symbols';
 const GUID = 'guid';
 const DBG_FNAME = 'dbg_file';
 const CURL = 'curl';
