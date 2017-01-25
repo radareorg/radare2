@@ -1411,7 +1411,7 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 	case '?':
 	default:
 		{
-			const char *from_a[] = { "arp", "arp.", "arpj", "arps" };
+			const char *from_a[] = { "arp", "arpi", "arp.", "arpj", "arps" };
 			const char *help_msg[] = {
 				"Usage:", "drp", " # Register profile commands",
 				"drp", "", "Show the current register profile",
@@ -1427,6 +1427,7 @@ static void cmd_reg_profile (RCore *core, int from, const char *str) { // "arp" 
 				help_msg[9] = from_a[1];
 				help_msg[12] = from_a[2];
 				help_msg[15] = from_a[3];
+				help_msg[18] = from_a[4];
 			}
 			r_core_cmd_help (core, help_msg);
 			break;
