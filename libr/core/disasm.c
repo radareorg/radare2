@@ -2851,9 +2851,6 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				r_cons_newline ();
 			}
 		}
-#if __WINDOWS__
-		r_cons_reset_colors();
-#endif
 	}
 	free (msg);
 	return 0;
