@@ -1135,6 +1135,9 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
 	p->cb_printf ("|");
+	if (cols < 1) {
+		cols = 1;
+	}
 	int mul = (max - min) / cols;
 	bool isFirst = true;
 	for (j = 0; j < cols; j++) {
