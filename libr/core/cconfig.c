@@ -1713,7 +1713,7 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->num = core->num;
 	/* pdb */
 	SETPREF("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
-	SETPREF("pdb.server", "http://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
+	SETPREF("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
 	SETI("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 
 	/* anal */
