@@ -4,6 +4,8 @@
 #include <r_core.h>
 #include <r_hash.h>
 
+#include "../blob/version.c"
+
 enum {
 	MODE_DIFF,
 	MODE_DIFF_STRS,
@@ -533,7 +535,7 @@ int main(int argc, char **argv) {
 			diffmode = 'U';
 			break;
 		case 'v':
-			printf ("radiff2 v"R2_VERSION"\n");
+			return blob_version ("radiff2");
 			return 0;
 		case 'q':
 			quiet = true;
