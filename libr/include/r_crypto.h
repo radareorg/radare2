@@ -89,6 +89,7 @@ extern RCryptoPlugin r_crypto_plugin_cps2;
 #define R_CRYPTO_ROT 1<<7
 #define R_CRYPTO_BLOWFISH 1<<8
 #define R_CRYPTO_CPS2 1<<9
+#define R_CRYPTO_DES_ECB 1<<10
 #define R_CRYPTO_ALL 0xFFFF
 
 #ifdef __cplusplus
