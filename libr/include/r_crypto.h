@@ -63,6 +63,7 @@ R_API const char *r_crypto_name(ut64 bit);
 
 /* plugin pointers */
 extern RCryptoPlugin r_crypto_plugin_aes;
+extern RCryptoPlugin r_crypto_plugin_des;
 extern RCryptoPlugin r_crypto_plugin_rc4;
 extern RCryptoPlugin r_crypto_plugin_xor;
 extern RCryptoPlugin r_crypto_plugin_blowfish;
