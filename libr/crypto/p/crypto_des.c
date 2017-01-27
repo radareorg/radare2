@@ -299,7 +299,7 @@ static struct des_state st;
 static bool doEncrypt = true;
 
 static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, bool direction) {
-	ut32 keylo, keyhi;
+	ut32 keylo, keyhi, i;
 	if (keylen != DES_KEY_SIZE) {
 		return false;
 	}
@@ -314,9 +314,9 @@ static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, boo
 	// key permutation to derive round keys
 	des_permute_key (&keylo, &keyhi);
 
-	for (int i = 0; i < 16; ++i) {
+	for (i = 0; i < 16; ++i) {
 		// filling round keys space
-		des_round_key(i, &st.keylo[i], &st.keyhi[i], &keylo, &keyhi);
+		des_round_key (i, &st.keylo[i], &st.keyhi[i], &keylo, &keyhi);
 	}
 
 	return true;
