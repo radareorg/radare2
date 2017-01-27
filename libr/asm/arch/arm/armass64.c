@@ -7,17 +7,33 @@
 #include <r_util.h>
 
 static ut32 mov(const char *str, int k) {
-	const char *comma = strchr (str, ',');
 	ut32 op = UT32_MAX;
-	if (!strncmp (str, "mov", 3) && strlen (str) > 5) {
-		int w = atoi (str + 6);
-		if (w >= 0 && w < 32 && comma) {
-			int n = (int)r_num_math (NULL, comma + 1);
+	const char *op1 = strchr (str, ' ') + 1;
+	char *comma = strchr (str, ',');
+	comma[0] = '\0';
+	const char *op2 = (comma[1]) == ' ' ? comma + 2 : comma + 1;
+
+	int n = (int)r_num_math (NULL, op1 + 1);
+	int w = (int)r_num_math (NULL, op2);
+	if (!strncmp (str, "mov x", 5)) {
+		// TODO handle values > 32
+		if (n >= 0 && n < 32) {
+			if (op2[0] == 'x') {
+				w = (int)r_num_math (NULL, op2 + 1);
+				k = 0xE00300AA;
+				op = k | w << 8;
+			} else {
+				op = k | w << 29;
+			}
+		}
+		op |= n << 24;
+	} else if (!strncmp (str, "mov", 3) && strlen (str) > 5) {
+		if (n >= 0 && n < 32 && comma) {
 			op = k;
-			op |= (w << 24); // arg(0)
-			op |= ((n & 7) << 29); // arg(1)
-			op |= (((n >> 3) & 0xff) << 16); // arg(1)
-			op |= ((n >> 10) << 7); // arg(1)
+			op |= (n << 24); // arg(0)
+			op |= ((w & 7) << 29); // arg(1)
+			op |= (((w >> 3) & 0xff) << 16); // arg(1)
+			op |= ((w >> 10) << 7); // arg(1)
 		}
 	}
 	return op;
@@ -145,6 +161,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strncmp (str, "movz ", 5)) { // w
 		*op = mov (str, 0x8052);
+		return *op != -1;
+	}
+	if (!strncmp (str, "mov x", 5)) { // w
+		*op = mov (str, 0x80d2);
 		return *op != -1;
 	}
 	if (!strcmp (str, "nop")) {
