@@ -16,7 +16,7 @@ struct des_state {
 	ut32 bufhi; // buf hi
 	int key_size;
 	int rounds;
-    int i;
+	int i;
 };
 
 /* des sboxes */
@@ -126,35 +126,37 @@ static void wbe32(ut8 *buf4, ut32 val) {
 }
 
 static void des_permute_key (ut32 *keylo, ut32 *keyhi) {
-    ut32 perm;
-    perm = ((*keylo >> 4) ^ *keyhi) & 0x0F0F0F0F;
-    *keyhi ^= perm; *keylo ^= (perm << 4);
-    perm = ((*keyhi >> 16) ^ *keylo) & 0x0000FFFF;
-    *keylo ^= perm; *keyhi ^= (perm << 16);
-    perm = ((*keylo >> 2) ^ *keyhi) & 0x33333333;
-    *keyhi ^= perm; *keylo ^= (perm << 2);
-    perm = ((*keyhi >> 16) ^ *keylo) & 0x0000FFFF;
-    *keylo ^= perm; *keyhi ^= (perm << 16);
-    perm = ((*keylo >> 1) ^ *keyhi) & 0x55555555;
-    *keyhi ^= perm; *keylo ^= (perm << 1);
-    perm = ((*keyhi >> 8) ^ *keylo) & 0x00FF00FF;
-    *keylo ^= perm; *keyhi ^= (perm << 8);
-    perm = ((*keylo >> 1) ^ *keyhi) & 0x55555555;
-    *keyhi ^= perm; *keylo ^= (perm << 1);
-    perm = (*keylo << 8) | ((*keyhi >> 20) & 0x000000F0);
-    *keylo = ((*keyhi << 20) & 0x0FF00000);
-    *keylo |= ((*keyhi << 4) & 0x000FF000);
-    *keylo |= ((*keyhi >> 12) & 0x00000FF0);
-    *keylo |= ((*keyhi >> 28) & 0x0000000F);
-    *keyhi = perm >> 4;
+	ut32 perm;
+	perm = ((*keylo >> 4) ^ *keyhi) & 0x0F0F0F0F;
+	*keyhi ^= perm; *keylo ^= (perm << 4);
+	perm = ((*keyhi >> 16) ^ *keylo) & 0x0000FFFF;
+	*keylo ^= perm; *keyhi ^= (perm << 16);
+	perm = ((*keylo >> 2) ^ *keyhi) & 0x33333333;
+	*keyhi ^= perm; *keylo ^= (perm << 2);
+	perm = ((*keyhi >> 16) ^ *keylo) & 0x0000FFFF;
+	*keylo ^= perm; *keyhi ^= (perm << 16);
+	perm = ((*keylo >> 1) ^ *keyhi) & 0x55555555;
+	*keyhi ^= perm; *keylo ^= (perm << 1);
+	perm = ((*keyhi >> 8) ^ *keylo) & 0x00FF00FF;
+	*keylo ^= perm; *keyhi ^= (perm << 8);
+	perm = ((*keylo >> 1) ^ *keyhi) & 0x55555555;
+	*keyhi ^= perm; *keylo ^= (perm << 1);
+	perm = (*keylo << 8) | ((*keyhi >> 20) & 0x000000F0);
+	*keylo = ((*keyhi << 20) & 0x0FF00000);
+	*keylo |= ((*keyhi << 4) & 0x000FF000);
+	*keylo |= ((*keyhi >> 12) & 0x00000FF0);
+	*keylo |= ((*keyhi >> 28) & 0x0000000F);
+	*keyhi = perm >> 4;
 }
 
 // first permutation of the block
 static void des_permute_block0  (ut32 *blocklo, ut32 *blockhi) {
-    ut32 lo, hi, perm;
-    if (!blocklo || !blockhi) return;
-    lo = *blocklo;
-    hi = *blockhi;
+	ut32 lo, hi, perm;
+	if (!blocklo || !blockhi) {
+		return;
+	}
+	lo = *blocklo;
+	hi = *blockhi;
 	perm = ((lo >> 4) ^ hi) & 0x0F0F0F0F;
 	hi ^= perm; lo ^= perm << 4;
 	perm = ((lo >> 16) ^ hi) & 0x0000FFFF;
@@ -171,10 +173,10 @@ static void des_permute_block0  (ut32 *blocklo, ut32 *blockhi) {
 
 // last permutation of the block
 static void des_permute_block1 (ut32 *blocklo, ut32 *blockhi) {
-    ut32 lo, hi, perm;
+	ut32 lo, hi, perm;
 	if (!blocklo || !blockhi) return;
-    lo = *blocklo;
-    hi = *blockhi;
+	lo = *blocklo;
+	hi = *blockhi;
 	lo = ROTR(lo, 1);
 	hi = ROTR(hi, 1);
 	perm = ((lo >> 1) ^ hi) & 0x55555555;
@@ -187,25 +189,25 @@ static void des_permute_block1 (ut32 *blocklo, ut32 *blockhi) {
 	hi ^= perm; lo ^= perm << 16;
 	perm = ((lo >> 4) ^ hi) & 0x0F0F0F0F;
 	hi ^= perm; lo ^= perm << 4;
-    *blocklo = lo;
-    *blockhi = hi;
+	*blocklo = lo;
+	*blockhi = hi;
 }
 
 // keylo & keyhi are the derivated round keys
 // deskeylo & deskeyhi are the des derivated keys
 static void des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32 *deskeyhi) {
-    ut32 deslo, deshi;
+	ut32 deslo, deshi;
 	if (!keylo || !keyhi || !deskeylo || !deskeyhi) return;
 	if (i == 0 || i == 1 || i == 8 || i == 15) {
-	   *deskeylo = ROTL28(*deskeylo, 1);
-	   *deskeyhi = ROTL28(*deskeyhi, 1);
+		*deskeylo = ROTL28(*deskeylo, 1);
+		*deskeyhi = ROTL28(*deskeyhi, 1);
 	} else {
-	   *deskeylo = ROTL28(*deskeylo, 2);
-	   *deskeyhi = ROTL28(*deskeyhi, 2);
+		*deskeylo = ROTL28(*deskeylo, 2);
+		*deskeyhi = ROTL28(*deskeyhi, 2);
 	}
 
-    deslo = *deskeylo;
-    deshi = *deskeyhi;
+	deslo = *deskeylo;
+	deshi = *deskeyhi;
 
 	*keylo =((deslo << 4)  & 0x24000000) | ((deslo << 28) & 0x10000000) |
 			((deslo << 14) & 0x08000000) | ((deslo << 18) & 0x02080000) |
@@ -214,7 +216,7 @@ static void des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32 
 			((deslo << 2)  & 0x00020000) | ((deslo >> 10) & 0x00010000) |
 			((deshi >> 13) & 0x00002000) | ((deshi >> 4)  & 0x00001000) |
 			((deshi << 6)  & 0x00000800) | ((deshi >> 1)  & 0x00000400) |
-			((deshi >> 14) & 0x00000200) | ((deshi)       & 0x00000100) |
+			((deshi >> 14) & 0x00000200) | ((deshi)	   & 0x00000100) |
 			((deshi >> 5)  & 0x00000020) | ((deshi >> 10) & 0x00000010) |
 			((deshi >> 3)  & 0x00000008) | ((deshi >> 18) & 0x00000004) |
 			((deshi >> 26) & 0x00000002) | ((deshi >> 24) & 0x00000001);
@@ -227,7 +229,7 @@ static void des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32 
 			((deslo << 15) & 0x00020000) | ((deslo >> 4)  & 0x00010000) |
 			((deshi >> 2)  & 0x00002000) | ((deshi << 8)  & 0x00001000) |
 			((deshi >> 14) & 0x00000808) | ((deshi >> 9)  & 0x00000400) |
-			((deshi)       & 0x00000200) | ((deshi << 7)  & 0x00000100) |
+			((deshi)	   & 0x00000200) | ((deshi << 7)  & 0x00000100) |
 			((deshi >> 7)  & 0x00000020) | ((deshi >> 3)  & 0x00000011) |
 			((deshi << 2)  & 0x00000004) | ((deshi >> 21) & 0x00000002);
 }
@@ -235,8 +237,8 @@ static void des_round_key(int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32 
 static void des_round(ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundkeyhi) {
 	ut32 perm, lo, hi;
 	if (!buflo || !bufhi || !roundkeylo || !roundkeyhi) return;
-    lo = *buflo;
-    hi = *bufhi;
+	lo = *buflo;
+	hi = *bufhi;
 	perm = hi ^ (*roundkeylo);
 	lo ^= sbox2[(perm >> 24) & 0x3F];
 	lo ^= sbox4[(perm >> 16) & 0x3F];
@@ -253,69 +255,69 @@ static void des_round(ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundkey
 }
 
 static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
-    if (!st || !input || !output) return false;
-	st->buflo = be32(input + 0);
-	st->bufhi = be32(input + 4);
+	if (!st || !input || !output) return false;
+	st->buflo = be32 (input + 0);
+	st->bufhi = be32 (input + 4);
  
 	//first permutation
-	des_permute_block0(&st->buflo, &st->bufhi);
+	des_permute_block0 (&st->buflo, &st->bufhi);
 
  	for (st->i = 0; st->i < 16; st->i++) {
-       des_round(&st->buflo, &st->bufhi, &st->keylo[st->i], &st->keyhi[st->i]);
+	   des_round (&st->buflo, &st->bufhi, &st->keylo[st->i], &st->keyhi[st->i]);
 	}
  	//last permutation
-	des_permute_block1(&st->bufhi, &st->buflo);
+	des_permute_block1 (&st->bufhi, &st->buflo);
  
 	//result
-    wbe32(output + 0, st->bufhi);
-    wbe32(output + 4, st->buflo);
+	wbe32 (output + 0, st->bufhi);
+	wbe32 (output + 4, st->buflo);
 
-    return true;
+	return true;
 }
 
 static int des_decrypt (struct des_state *st, const ut8 *input, ut8 *output) {
-    if (!st || !input || !output) return false;
-    st->buflo = be32(input + 0);
-    st->bufhi = be32(input + 4);
- 
-    //first permutation
-    des_permute_block0(&st->buflo, &st->bufhi);
+	if (!st || !input || !output) return false;
+	st->buflo = be32 (input + 0);
+	st->bufhi = be32 (input + 4);
+	//first permutation
+	des_permute_block0 (&st->buflo, &st->bufhi);
 
-    for (st->i = 0; st->i < 16; st->i++) {
-       des_round(&st->buflo, &st->bufhi, &st->keylo[15 - st->i], &st->keyhi[15 - st->i]);
-    }
-    //last permutation
-    des_permute_block1(&st->bufhi, &st->buflo);
- 
-    //result
-    wbe32(output + 0, st->bufhi);
-    wbe32(output + 4, st->buflo);
+	for (st->i = 0; st->i < 16; st->i++) {
+	   des_round (&st->buflo, &st->bufhi, &st->keylo[15 - st->i], &st->keyhi[15 - st->i]);
+	}
 
-    return true;
+	//last permutation
+	des_permute_block1 (&st->bufhi, &st->buflo);
+	//result
+	wbe32 (output + 0, st->bufhi);
+	wbe32 (output + 4, st->buflo);
+	return true;
 }
 
 
 static struct des_state st;
-static int flag = 0;
+static bool doEncrypt = true;
 
-static int des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-    ut32 keylo, keyhi;
+static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, bool direction) {
+	ut32 keylo, keyhi;
 	if (keylen != DES_KEY_SIZE) {
 		return false;
 	}
-    // splitting the key in hi & lo
-	keylo = be32(key);
-	keyhi = be32(key + 4);
+
+	// splitting the key in hi & lo
+	keylo = be32 (key);
+	keyhi = be32 (key + 4);
 
 	st.key_size = DES_KEY_SIZE;
 	st.rounds = 16;
-	flag = direction;
-    // key permutation to derive round keys
+	doEncrypt = direction == 0;
+	// key permutation to derive round keys
 	des_permute_key (&keylo, &keyhi);
-    for (int i = 0; i < 16; ++i) {
-        // filling round keys space
-        des_round_key(i, &st.keylo[i], &st.keyhi[i], &keylo, &keyhi);
-    }
+
+	for (int i = 0; i < 16; ++i) {
+		// filling round keys space
+		des_round_key(i, &st.keylo[i], &st.keyhi[i], &keylo, &keyhi);
+	}
 
 	return true;
 }
@@ -328,14 +330,20 @@ static bool des_use (const char *algo) {
 	return !strcmp (algo, "des-ecb");
 }
 
-static int update (RCrypto *cry, const ut8 *buf, int len) {
+static bool update (RCrypto *cry, const ut8 *buf, int len) {
+	if (len <= 0) {
+		return false;
+	}
+
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
 	const int blocks = size / BLOCK_SIZE;
 
 	ut8 *const obuf = calloc (1, size);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 
 	ut8 *const ibuf = calloc (1, size);
 	if (!ibuf) {
@@ -343,7 +351,7 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
 		return false;
 	}
 
-	memset (ibuf, 0, size);
+	memset (ibuf + len, 0, (size - len));
 	memcpy (ibuf, buf, len);
 // got it from AES, should be changed??
 // Padding should start like 100000...
@@ -352,12 +360,12 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
 //	}
 
 	int i;
-	if (flag == 0) {
+	if (doEncrypt) {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (BLOCK_SIZE * i);
 			des_encrypt (&st, ibuf + next, obuf + next);
 		}
-	} else if (flag == 1) {
+	} else {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (BLOCK_SIZE * i);
 			des_decrypt (&st, ibuf + next, obuf + next);
@@ -374,7 +382,7 @@ static int final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 
-RCryptoPlugin r_crypto_plugin_des = { 
+RCryptoPlugin r_crypto_plugin_des = {
 	.name = "des-ecb",
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,
@@ -384,7 +392,7 @@ RCryptoPlugin r_crypto_plugin_des = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = { 
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_des,
 	.version = R2_VERSION
