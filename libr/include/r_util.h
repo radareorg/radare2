@@ -852,6 +852,8 @@ R_API ut32 r_des_p (ut32 half);
 
 R_API int r_util_lines_getline (ut64 *lines_cache, int lines_cache_sz, ut64 off);
 
+R_API ut64 r_chk_overflow_add_ut64 (ut64 a, ut64 b);
+
 /* Some "secured" functions, to do basic operation (mul, sub, add...) on integers */
 static inline int UT64_ADD(ut64 *r, ut64 a, ut64 b) {
 	if(UT64_MAX - a < b)

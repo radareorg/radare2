@@ -395,7 +395,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			ret = r_io_open_nomap (io, uri, rw, mode);
 		}
 		if (ret)
-			ret->referer = strdup (file);
+			ret->referer = strdup (file);		//kill this
 	}
 	return ret;
 }

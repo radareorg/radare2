@@ -1798,7 +1798,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		if (fsz<1)
-			fsz = (core->file && core->io)? r_io_desc_size (core->io, core->file->desc): 0;
+			fsz = (core->file && core->io)? r_io_desc_size (core->file->desc): 0;
 		if (nbsz) {
 			obsz = core->blocksize;
 			switch (input1) {
@@ -1893,9 +1893,9 @@ static int cmd_print(void *data, const char *input) {
 			r_print_fill (core->print, core->block, core->blocksize);
 			break;
 		}
-		if (ptr && ptr != core->block)
+		if (ptr && (ptr != core->block))
 			free (ptr);
-			ptr = NULL;
+		ptr = NULL;
 		}
 		if (nbsz)
 			r_core_block_size (core, obsz);
@@ -2494,6 +2494,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 			}
 			break;
+#if 0
 		case 'j':
 			{
 				char *str, *type;
@@ -2534,6 +2535,7 @@ static int cmd_print(void *data, const char *input) {
 				free (str);
 			}
 			break;
+#endif
 		case 'i': //psi
 			{
 			ut8 *buf = malloc (1024);

@@ -163,8 +163,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (mal->buf != NULL) {
 			memcpy (mal->buf, out, rlen);
 			free (out);
-			return r_io_desc_new (&r_io_plugin_bfdbg,
-				mal->fd, pathname, rw, mode, mal);
+			return r_io_desc_new (io, &r_io_plugin_bfdbg,
+				pathname, rw, mode, mal);
 		}
 		eprintf ("Cannot allocate (%s) %d bytes\n",
 			pathname+9, mal->size);

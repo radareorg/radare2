@@ -74,7 +74,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			eprintf ("Search in range 0x%08"PFMT64x" and 0x%08"PFMT64x"\n", from, to);
 			int blocks = (int)(to-from-len);
 			eprintf ("Carving %d blocks...\n", blocks);
-			(void)r_io_read_at (core->io, from, buf, bufsz);
+			r_io_read_at (core->io, from, buf, bufsz);
 			for (i = 0; (from+i+len)<to; i++) {
 				char *s = r_hash_to_string (NULL, hashname, buf+i, len);
 				if (!(i%5)) eprintf ("%d\r", i);
@@ -148,7 +148,7 @@ static int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin,
 	}
 	while (from < to) {
 		memset (buf, 0, sz); // probably unnecessary
-		(void)r_io_read_at (core->io, from, buf, sz);
+		r_io_read_at (core->io, from, buf, sz);
 		for (i=0; i<sizeof (buf)-vsize; i++) {
 			void *v = (buf+i);
 			if (align && (from+i)%4)
@@ -181,7 +181,6 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 		int blen, const ut8 *mask, int mlen) {
-	int ret;
 	ut64 at;
 	ut8 *b = (ut8 *)malloc (core->blocksize);
 // TODO: handle sections ?
@@ -194,10 +193,9 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	for (at = from; at < to; at += core->blocksize) {
 		if (r_cons_singleton ()->breaked)
 			break;
-		ret = r_io_read_at (core->io, at, b, core->blocksize);
-		if (ret != core->blocksize)
+		if (!r_io_read_at (core->io, at, b, core->blocksize))
 			break;
-		if (r_search_update (core->search, &at, b, ret) == -1) {
+		if (r_search_update (core->search, &at, b, core->blocksize) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 			break;
 		}
@@ -362,8 +360,8 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 		at, to, n, (c%2)?"[ #]":"[# ]");
 }
 
-R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, ut64 *from, ut64 *to) {
-	RList *list = NULL;
+R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, ut64 *from, ut64 *to) {
+	SdbList *list = NULL;
 	if (!strcmp (mode, "block")) {
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
@@ -371,11 +369,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		*from = *to = 0;
 		return core->io->maps;
 	} else if (!strcmp (mode, "io.maps.range")) {
-		RListIter *iter;
+		SdbListIter *iter;
 		RIOMap *m;
 		*from = *to = 0;
-		list = r_list_newf (free);
-		r_list_foreach (core->io->maps, iter, m) {
+		list = ls_new ();
+		list->free = free;
+		ls_foreach (core->io->maps, iter, m) {
 			if (!*from) {
 				*from = m->from;
 				*to = m->to;
@@ -390,10 +389,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			*to = r_io_size (core->io);
 	} else if (!strcmp (mode, "file")) {
 		if (core->io->va) {
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 			*from = *to = 0;
-			r_list_foreach (core->io->sections, iter, s) {
+			ls_foreach (core->io->sections, iter, s) {
 				if (!*from) {
 					*from = s->vaddr;
 					*to = s->vaddr+s->vsize;
@@ -416,11 +415,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		}
 	} else if (!strcmp (mode, "io.section")) {
 		if (core->io->va) {
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 			*from = *to = core->offset;
-			r_list_foreach (core->io->sections, iter, s) {
-				if (*from >= s->offset && *from < (s->offset+s->size)) {
+			ls_foreach (core->io->sections, iter, s) {
+				if (*from >= s->addr && *from < (s->addr+s->size)) {
 					*from = s->vaddr;
 					*to = s->vaddr+s->vsize;
 					break;
@@ -470,16 +469,17 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (core->io->va) {
 			int mask = 0;
 			RIOMap *map;
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 
 			if (!strcmp (mode, "io.sections.exec")) mask = R_IO_EXEC;
 			if (!strcmp (mode, "io.sections.write")) mask = R_IO_WRITE;
 
-			r_list_foreach (core->io->sections, iter, s) {
-				if (!mask || (s->rwx & mask)) {
+			ls_foreach (core->io->sections, iter, s) {
+				if (!mask || (s->flags & mask)) {
 					if (!list) {
-						list = r_list_newf (free);
+						list = ls_new ();
+						list->free = free;
 						maplist = true;
 					}
 					map = R_NEW0 (RIOMap);
@@ -490,13 +490,13 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					map->fd = s->fd;
 					map->from = s->vaddr;
 					map->to = s->vaddr + s->size;
-					map->flags = s->rwx;
+					map->flags = s->flags;
 					map->delta = 0;
 					if (!(map->flags & protection)) {
 						R_FREE (map);
 						continue;
 					}
-					r_list_append (list, map);
+					ls_append (list, map);
 				}
 			}
 		} else {
@@ -537,7 +537,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 					if ((mask && (map->perm & mask)) || add || all) {
 						if (!list) {
-							list = r_list_newf (free);
+							list = ls_new ();
+							list->free = free;
 							maplist = true;
 						}
 						RIOMap *nmap = R_NEW0 (RIOMap);
@@ -547,7 +548,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 						nmap->to = map->addr_end;
 						nmap->flags = map->perm;
 						nmap->delta = 0;
-						r_list_append (list, nmap);
+						ls_append (list, nmap);
 					}
 				}
 			}
@@ -855,7 +856,7 @@ R_API RList* r_core_get_boundaries_ok(RCore *core) {
 	ut8 prot;
 	ut64 from, to;
 	ut64 __from, __to;
-	RList *list;
+	SdbList *list;
 	if (!core) return NULL;
 	prot = r_config_get_i (core->config, "rop.nx") ?
 		R_IO_READ|R_IO_WRITE|R_IO_EXEC : R_IO_EXEC;
@@ -884,8 +885,9 @@ R_API RList* r_core_get_boundaries_ok(RCore *core) {
 		map->fd = core->io->desc->fd;
 		map->from = from;
 		map->to = to;
-		list = r_list_newf (free);
-		r_list_append (list, map);
+		list = ls_new ();
+		list->free = free;
+		ls_append (list, map);
 	}
 	return list;
 }
@@ -903,9 +905,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	RList/*<endlist_pair>*/ *end_list = r_list_newf(free);
 	RList/*<intptr_t>*/ *badstart = r_list_new();
 	RList/*<RRegex>*/ *rx_list = NULL;
-	RList/*<RIOMap>*/ *list = NULL;
+	SdbList/*<RIOMap>*/ *list = NULL;
 	int align = core->search->align;
-	RListIter *itermap = NULL;
+	SdbListIter *itermap = NULL;
 	char* tok, *gregexp = NULL;
 	char* grep_arg = NULL;
 	bool json_first = true;
@@ -982,14 +984,15 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			r_list_free (rx_list);
 			r_list_free (end_list);
 			r_list_free (badstart);
-			r_list_free (list);
+			ls_free (list);
 			return false;
 		}
 		map->fd = core->io->desc->fd;
 		map->from = from;
 		map->to = to;
-		list = r_list_newf (free);
-		r_list_append (list, map);
+		list = ls_new ();
+		list->free = free;
+		ls_append (list, map);
 		maplist = true;
 	}
 
@@ -997,7 +1000,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_cons_printf ("[");
 
 	r_cons_break (NULL, NULL);
-	r_list_foreach (list, itermap, map) {
+	ls_foreach (list, itermap, map) {
 		from = map->from;
 		to = map->to;
 		if (to > search_to) {
@@ -1025,7 +1028,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				r_list_free (rx_list);
 				r_list_free (end_list);
 				r_list_free (badstart);
-				r_list_free (list);
+				ls_free (list);
 				return false;
 			}
 		}
@@ -1036,10 +1039,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			r_list_free (rx_list);
 			r_list_free (end_list);
 			r_list_free (badstart);
-			r_list_free (list);
+			ls_free (list);
 			return -1;
 		}
-		(void)r_io_read_at (core->io, from, buf, delta);
+		r_io_read_at (core->io, from, buf, delta);
 
 		// Find the end gadgets.
 		for (i = 0; i+32 < delta; i += increment) {
@@ -1149,7 +1152,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	if (json)
 		r_cons_printf ("]\n");
 
-	r_list_free (list);
+	ls_free (list);
 	r_list_free (rx_list);
 	r_list_free (end_list);
 	r_list_free (badstart);
@@ -1443,10 +1446,9 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 static void do_string_search(RCore *core, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
-	int ret;
 
 	if (json) r_cons_printf("[");
-	int oraise = core->io->raised;
+	int ofd = core->io->desc->fd;		//what could possibly go wrong
 	int bufsz;
 	RListIter *iter;
 	RIOMap *map;
@@ -1488,8 +1490,8 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			param->to = map->to;
 			searchhits = 0;
 
-			r_io_raise (core->io, map->fd);
-			fd = core->io->raised;
+			r_io_desc_use (core->io, map->fd);			//this needs some review
+			fd = core->io->desc->fd;
 			if (fd == -1 && core->io->desc) {
 				fd = core->io->desc->fd;
 			}
@@ -1520,6 +1522,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				}
 				//ret = r_core_read_at (core, at, buf, bufsz);
 				//	ret = r_io_read_at (core->io, at, buf, bufsz);
+#if 0				//all this is configured by io.va now
 				if (param->use_mread) {
 					// what about a config var to choose which io api to use?
 					ret = r_io_mread (core->io, fd, at, buf, bufsz);
@@ -1527,6 +1530,8 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 					r_io_seek (core->io, at, R_IO_SEEK_SET);
 					ret = r_io_read (core->io, buf, bufsz);
 				}
+#endif
+				if (!r_io_read_at (core->io, at, buf, bufsz))
 				/*
 				   if (ignorecase) {
 				   int i;
@@ -1534,21 +1539,20 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				   buf[i] = tolower (buf[i]);
 				   }
 				   */
-				if (ret <1)
 					break;
 				if (param->crypto_search) {
 					int delta = 0;
 					if (param->aes_search)
-						delta = r_search_aes_update (core->search, at, buf, ret);
+						delta = r_search_aes_update (core->search, at, buf, bufsz);
 					else if (param->rsa_search)
-						delta = r_search_rsa_update (core->search, at, buf, ret);
+						delta = r_search_rsa_update (core->search, at, buf, bufsz);
 					if (delta != -1) {
 						if (!r_search_hit_new (core->search, &aeskw, at+delta)) {
 							break;
 						}
 						aeskw.count++;
 					}
-				} else if (r_search_update (core->search, &at, buf, ret) == -1) {
+				} else if (r_search_update (core->search, &at, buf, bufsz) == -1) {
 					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
@@ -1592,7 +1596,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			r_list_free (param->boundaries);
 			param->boundaries = NULL;
 		}
-		r_io_raise (core->io, oraise);
+		r_io_desc_use (core->io, ofd);
 	} else eprintf ("No keywords defined\n");
 
 	/* Crazy party counter (kill me please) */

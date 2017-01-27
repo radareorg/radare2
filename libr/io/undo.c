@@ -30,7 +30,7 @@ R_API void r_io_undo_enable(RIO *io, int s, int w) {
 /* undo seekz */
 
 R_API ut64 r_io_sundo(RIO *io, ut64 offset) {
-	ut64 off;
+//	ut64 off;
 
 	if (!io->undo.s_enable || !io->undo.undos)
 		return UT64_MAX;
@@ -44,13 +44,16 @@ R_API ut64 r_io_sundo(RIO *io, ut64 offset) {
 	io->undo.undos--;
 	io->undo.redos++;
 
+	return io->off = io->undo.seek[io->undo.idx];
+#if 0
 	off = io->undo.seek[io->undo.idx];
 	io->off = r_io_section_vaddr_to_maddr_try (io, off);
 	return off;
+#endif
 }
 
 R_API ut64 r_io_sundo_redo(RIO *io) {
-	ut64 off;
+//	ut64 off;
 
 	if (!io->undo.s_enable || !io->undo.redos)
 		return UT64_MAX;
@@ -59,9 +62,12 @@ R_API ut64 r_io_sundo_redo(RIO *io) {
 	io->undo.undos++;
 	io->undo.redos--;
 
+	return io->off = io->undo.seek[io->undo.idx];
+#if 0
 	off = io->undo.seek[io->undo.idx];
 	io->off = r_io_section_vaddr_to_maddr_try (io, off);
 	return off;
+#endif
 }
 
 R_API void r_io_sundo_push(RIO *io, ut64 off) {

@@ -69,7 +69,6 @@ static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname,0)) {
 		RIOSparse *mal = R_NEW0 (RIOSparse);
-		mal->fd = -2; /* causes r_io_desc_new() to set the correct fd */
 		int size = (int)r_num_math (NULL, pathname+9);
 		mal->buf = r_buf_new_sparse ();
 		if (size>0) {
@@ -85,7 +84,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			}
 		}
 		if (mal->buf)
-			return r_io_desc_new (&r_io_plugin_sparse, mal->fd, pathname, rw, mode, mal);
+			return r_io_desc_new (io, &r_io_plugin_sparse,
+				pathname, rw, mode, mal);
 		r_buf_free (mal->buf);
 		free (mal);
 	}

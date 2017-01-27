@@ -265,7 +265,7 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int flags, int mode) {
 	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, flags);
 	if (!mmo) return NULL;
-	return r_io_desc_new (&r_io_plugin_default, mmo->fd, mmo->filename, flags, mode, mmo);
+	return r_io_desc_new (io, &r_io_plugin_default, mmo->filename, flags, mode, mmo);
 }
 
 static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {

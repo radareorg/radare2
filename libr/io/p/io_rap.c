@@ -177,7 +177,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			if (!r_socket_listen (rior->fd, port, NULL))
 				return NULL;
 		}
-		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
+		return r_io_desc_new (io, &r_io_plugin_rap,
 			pathname, rw, mode, rior);
 	}
 	if ((rap_fd = r_socket_new (is_ssl)) == NULL) {
@@ -234,7 +234,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		return NULL;
 	}
 	//r_socket_free (rap_fd);
-	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
+	return r_io_desc_new (io, &r_io_plugin_rap,
 		pathname, rw, mode, rior);
 }
 
