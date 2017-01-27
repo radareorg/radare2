@@ -34,7 +34,6 @@
 #include <sys/ioctl.h>
 #include <sys/resource.h>
 #include <termios.h>
-#include <signal.h>
 #include <grp.h>
 #include <errno.h>
 #if defined(__sun)
@@ -355,62 +354,6 @@ R_API int r_run_parsefile (RRunProfile *p, const char *b) {
 	return 0;
 }
 
-static struct {
-	const char *name;
-	int code;
-} signals[] = {
-	// hardcoded from linux
-	{ "SIGHUP", SIGHUP },
-	{ "SIGINT", SIGINT },
-	{ "SIGQUIT", SIGQUIT },
-	{ "SIGILL", SIGILL },
-	{ "SIGTRAP", SIGTRAP },
-	{ "SIGABRT", SIGABRT },
-	{ "SIGBUS", SIGBUS },
-	{ "SIGFPE", SIGFPE },
-	{ "SIGKILL", SIGKILL },
-	{ "SIGUSR1", SIGUSR1 },
-	{ "SIGSEGV", SIGSEGV },
-	{ "SIGUSR2", SIGUSR2 },
-	{ "SIGPIPE", SIGPIPE },
-	{ "SIGALRM", SIGALRM },
-	{ "SIGTERM", SIGTERM },
-	{ "SIGSTKFLT", SIGSTKFLT },
-	{ "SIGCHLD", SIGCHLD },
-	{ "SIGCONT", SIGCONT },
-	{ "SIGSTOP", SIGSTOP },
-	{ "SIGTSTP", SIGTSTP },
-	{ "SIGTTIN", SIGTTIN },
-	{ "SIGTTOU", SIGTTOU },
-	{ "SIGURG", SIGURG },
-	{ "SIGXCPU", SIGXCPU },
-	{ "SIGXFSZ", SIGXFSZ },
-	{ "SIGVTALRM", SIGVTALRM },
-	{ "SIGPROF", SIGPROF },
-	{ "SIGWINCH", SIGWINCH },
-	{ "SIGIO", SIGIO },
-	{ "SIGPOLL", SIGPOLL },
-	{ "SIGPWR", SIGPWR },
-	{ "SIGSYS", SIGSYS },
-	{ "SIGSTKSZ", SIGSTKSZ },
-	{ NULL }
-};
-
-static int get_signal (const char *e) {
-	int i;
-	for (i = 1; signals[i].name; i++) {
-		char *str = signals[i].name;
-		if (!str) {
-			continue;
-		}
-		if (!strcmp (e, str)) {
-			return signals[i].code;
-		}
-	}
-
-	return atoi (e);
-}
-
 R_API int r_run_parseline (RRunProfile *p, char *b) {
 	int must_free = false;
 	char *e = strchr (b, '=');
@@ -462,7 +405,7 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "setegid")) p->_setegid = strdup (e);
 	else if (!strcmp (b, "nice")) p->_nice = atoi (e);
 	else if (!strcmp (b, "timeout")) p->_timeout = atoi (e);
-	else if (!strcmp (b, "timeoutsig")) p->_timeout_sig = get_signal (e);
+	else if (!strcmp (b, "timeoutsig")) p->_timeout_sig = r_signal_from_string (e);
 	else if (!memcmp (b, "arg", 3)) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
