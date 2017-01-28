@@ -13,7 +13,7 @@ char *directives[] = {
 	".include", ".error", ".warning",
 	".echo", ".if", ".ifeq", ".endif",
 	".else", ".set", ".get", NULL
-	};
+};
 
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 

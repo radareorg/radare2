@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake */
+/* radare - LGPL - Copyright 2015-2017 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -186,6 +186,14 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		if (*op != UT32_MAX) {
 			return true;
 		}
+	}
+	if (!strncmp (str, "svc ", 4)) {
+		int n = (int)r_num_math (NULL, str + 4);
+		n /= 8;
+		*op = 0x010000d4;
+		*op += ((n & 0xff) << 16);
+		*op += ((n >> 8) << 8);
+		return *op != -1;
 	}
 	if (!strncmp (str, "b ", 2)) {
 		*op = branch (str, addr, 0x14);
