@@ -643,7 +643,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			/* handle signal on continuations here */
 			eprintf ("got signal...\n");
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
-			const char *name = r_debug_signal_resolve_i (dbg, dbg->reason.signum);
+			const char *name = r_signal_to_string (dbg->reason.signum);
 			if (name && strcmp ("SIGTRAP", name)) {
 				r_cons_printf ("[+] signal %d aka %s received %d\n",
 						dbg->reason.signum, name, what);
@@ -1001,7 +1001,7 @@ repeat:
 				dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 				r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 				if (op.size > 0) {
-					const char *signame = r_debug_signal_resolve_i (dbg, dbg->reason.signum);
+					const char *signame = r_signal_to_string (dbg->reason.signum);
 					r_debug_reg_set (dbg, "PC", pc+op.size);
 					eprintf ("Skip signal %d handler %s\n",
 						dbg->reason.signum, signame);

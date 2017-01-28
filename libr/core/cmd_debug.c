@@ -2803,11 +2803,11 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			const char *signame, *arg = input + 1;
 			int signum = atoi (arg);
 			if (signum > 0) {
-				signame = r_debug_signal_resolve_i (core->dbg, signum);
+				signame = r_signal_to_string (signum);
 				if (signame)
 					r_cons_println (signame);
 			} else {
-				signum = r_debug_signal_resolve (core->dbg, arg);
+				signum = r_signal_from_string (arg);
 				if (signum > 0) {
 					r_cons_printf ("%d\n", signum);
 				}
@@ -2841,7 +2841,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 					//  - pass
 					//  - trace
 					//  - stop
-					if (signum<1) signum = r_debug_signal_resolve (core->dbg, name);
+					if (signum<1) signum = r_signal_from_string (name);
 					if (signum>0) {
 						if (!p || !p[0]) { // stop (the usual)
 							r_debug_signal_setup (core->dbg, signum, 0);
@@ -3529,7 +3529,7 @@ static int cmd_debug(void *data, const char *input) {
 #define P r_cons_printf
 #define PS(X, Y) {escaped_str = r_str_escape (Y);r_cons_printf(X, escaped_str);free(escaped_str);}
 						if (rdi) {
-							const char *s = r_debug_signal_resolve_i (core->dbg, core->dbg->reason.signum);
+							const char *s = r_signal_to_string (core->dbg->reason.signum);
 							P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
 							P ("signal=%s\n", s? s: "none");
 							P ("signum=%d\n", core->dbg->reason.signum);
@@ -3555,7 +3555,7 @@ static int cmd_debug(void *data, const char *input) {
 					case 'j':
 						P ("{");
 						if (rdi) {
-							const char *s = r_debug_signal_resolve_i (core->dbg, core->dbg->reason.signum);
+							const char *s = r_signal_to_string (core->dbg->reason.signum);
 							P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
 							P ("\"signal\":\"%s\",", s? s: "none");
 							P ("\"signum\":%d,", core->dbg->reason.signum);

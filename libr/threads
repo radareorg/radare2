@@ -259,14 +259,14 @@ core/cmd_debug.c:					dot_trace_traverse (core, core->dbg->tree, input[2]);
 core/cmd_debug.c:					r_tree_reset (core->dbg->tree);
 core/cmd_debug.c:					r_debug_trace_free (core->dbg->trace);
 core/cmd_debug.c:					core->dbg->trace = r_debug_trace_new ();
-core/cmd_debug.c:							const char *s = r_debug_signal_resolve_i (core->dbg, core->dbg->reason.signum);
+core/cmd_debug.c:							const char *s = r_signal_to_string (core->dbg->reason.signum);
 core/cmd_debug.c:							P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
 core/cmd_debug.c:							P ("signum=%d\n", core->dbg->reason.signum);
 core/cmd_debug.c:							P ("sigpid=%d\n", core->dbg->reason.tid);
 core/cmd_debug.c:							P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
 core/cmd_debug.c:							P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
 core/cmd_debug.c:							P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
-core/cmd_debug.c:							const char *s = r_debug_signal_resolve_i (core->dbg, core->dbg->reason.signum);
+core/cmd_debug.c:							const char *s = r_signal_to_string (core->dbg->reason.signum);
 core/cmd_debug.c:							P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
 core/cmd_debug.c:							P ("\"signum\":%d,", core->dbg->reason.signum);
 core/cmd_debug.c:							P ("\"sigpid\":%d,", core->dbg->reason.tid);
@@ -529,7 +529,7 @@ debug/debug.c:			if (dbg->corebind.core && b && b->cond) {
 debug/debug.c:		dbg->reason.type = reason;
 debug/debug.c:		if (reason == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
 debug/debug.c:			int what = r_debug_signal_what (dbg, dbg->reason.signum);
-debug/debug.c:			const char *name = r_debug_signal_resolve_i (dbg, dbg->reason.signum);
+debug/debug.c:			const char *name = r_signal_to_string (dbg->reason.signum);
 debug/debug.c:						dbg->reason.signum, name, what);
 debug/debug.c:	if (dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 debug/debug.c:		dbg->recoil_mode = R_DBG_RECOIL_STEP;
@@ -580,7 +580,7 @@ debug/debug.c:			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 debug/debug.c:				sig = dbg->reason.signum;
 debug/debug.c:				dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 debug/debug.c:				r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
-debug/debug.c:					const char *signame = r_debug_signal_resolve_i (dbg, dbg->reason.signum);
+debug/debug.c:					const char *signame = r_signal_to_string (dbg->reason.signum);
 debug/debug.c:						dbg->reason.signum, signame);
 debug/debug.c:	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
 debug/debug.c:	if (!dbg->anal || !dbg->reg) {
