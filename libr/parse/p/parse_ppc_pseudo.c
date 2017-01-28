@@ -112,7 +112,7 @@ static int can_replace(const char *str, int idx, int max_operands) {
 		return false;
 	}
 	if ((int)((int)str[idx] - 0x41) > max_operands) {
-		return false; 
+		return false;
 	}
 	return true;
 }
