@@ -326,7 +326,8 @@ static int rabin_dump_sections(char *scnname) {
 				free (ret);
 				return false;
 			}
-			if (output) {
+			//it does mean the user specified an output file
+			if (strcmp (output, file)) {
 				r_file_dump (output, buf, section->size, 0);
 			} else {
 				r_hex_bin2str (buf, section->size, ret);
