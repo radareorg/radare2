@@ -17,7 +17,7 @@
 ut64 mask64(ut64 mb, ut64 me) {
 	int i;
 	ut64 mask = 0;
-	if (mb < 0 || me < 0 || mb > 63 || me > 63) {
+	if (mb > 63 || me > 63) {
 		return mask;
 	}
 
@@ -48,7 +48,7 @@ const char* cmask64(const char *mb_c, const char *me_c){
 ut32 mask32(ut32 mb, ut32 me) {
 	int i;
 	ut32 mask = 0;
-	if (mb < 0 || me < 0 || mb > 31 || me > 31) {
+	if (mb > 31 || me > 31) {
 		return mask;
 	}
 
@@ -72,7 +72,7 @@ const char* cmask32(const char *mb_c, const char *me_c){
 	ut32 me = 32;
 	if (mb_c) mb += atol(mb_c);
 	if (me_c) me += atol(me_c);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32(mb, me));
+	snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32 (mb, me));
 	return cmask;
 }
 
@@ -80,9 +80,13 @@ const char* inv_mask64(const char *mb_c, const char *sh){
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
-	if (mb_c) mb = atol(mb_c);
-	if (sh) me = atol(sh);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask64(mb, ~me));
+	if (mb_c) {
+		mb = atol(mb_c);
+	}
+	if (sh) {
+		me = atol(sh);
+	}
+	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask64 (mb, ~me));
 	return cmask;
 }
 
@@ -90,18 +94,26 @@ const char* inv_mask32(const char *mb_c, const char *sh){
 	static char cmask[32];
 	ut32 mb = 0;
 	ut32 me = 0;
-	if (mb_c) mb = atol(mb_c);
-	if (sh) me = atol(sh);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32(mb, ~me));
+	if (mb_c) {
+		mb = atol(mb_c);
+	}
+	if (sh) {
+		me = atol(sh);
+	}
+	snprintf (cmask, sizeof(cmask), "0x%"PFMT32x"", mask32 (mb, ~me));
 	return cmask;
 }
 
 static int can_replace(const char *str, int idx, int max_operands) {
-	if (str[idx] < 'A' || str[idx] > 'J')
+	if (str[idx] < 'A' || str[idx] > 'J') {
 		return false;
-	if (str[idx + 1] != '\x00' && str[idx + 1] <= 'J' && str[idx + 1] >= 'A')
+	}
+	if (str[idx + 1] != '\x00' && str[idx + 1] <= 'J' && str[idx + 1] >= 'A') {
 		return false;
-	if ((int)((int)str[idx] - 0x41) > max_operands) return false;
+	}
+	if ((int)((int)str[idx] - 0x41) > max_operands) {
+		return false; 
+	}
 	return true;
 }
 
@@ -1268,7 +1280,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 
 	for (i = 0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr != NULL) {
+			if (newstr) {
 				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
 						if (i >= 0 && i <= 26 && argv[ops[i].max_operands][0] == 0) {
@@ -1286,19 +1298,19 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						int letter = ops[i].str[j] - '@';
 						const char *w = argv[letter];
 						if (letter == 4 && i == 27) {
-							w = inv_mask64(argv[4], argv[3]);
+							w = inv_mask64 (argv[4], argv[3]);
 						} else if (letter == 4 && i >= 28 && i <= 29) {
-							w = cmask64(w, "63");
+							w = cmask64 (w, "63");
 						} else if (letter == 4 && i >= 30 && i <= 31) {
-							w = cmask64("0", w);
+							w = cmask64 ("0", w);
 						} else if (letter == 4 && i >= 30 && i <= 31) {
-							w = cmask64("0", w);
+							w = cmask64 ("0", w);
 						} else if (letter == 4 && i == 32) {
-							w = inv_mask64(argv[4], argv[3]);
+							w = inv_mask64 (argv[4], argv[3]);
 						} else if (letter == 4 && i >= 33 && i <= 35) {
-							w = cmask32(argv[4], argv[5]);
+							w = cmask32 (argv[4], argv[5]);
 						} else if (letter == 1 && i >= 36 && i <= 43) {
-							int to = atoi(w);
+							int to = atoi (w);
 							switch(to) {
 							case 4:
 								w = "==";
@@ -1324,7 +1336,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						}
 						if (w != NULL) {
 							strcpy (newstr + k, w);
-							k += strlen(w)-1;
+							k += strlen(w) - 1;
 						}
 					} else {
 						newstr[k] = ops[i].str[j];
@@ -1337,7 +1349,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	}
 
 	/* TODO: this is slow */
-	if (newstr != NULL) {
+	if (newstr) {
 		newstr[0] = '\0';
 		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
@@ -1364,8 +1376,9 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 
 	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1)))
+	if (!(buf = malloc (len + 1))) {
 		return false;
+	}
 	memcpy (buf, data, len + 1);
 
 	r_str_replace_char (buf, '(', ',');
@@ -1379,34 +1392,40 @@ static int parse(RParse *p, const char *data, char *str) {
 		w3[0]='\0';
 		w4[0]='\0';
 		ptr = strchr (buf, ' ');
-		if (!ptr)
+		if (!ptr) {
 			ptr = strchr (buf, '\t');
+		}
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr==' '; ptr++);
 			strncpy (w0, buf, WSZ - 1);
 			strncpy (w1, ptr, WSZ - 1);
 
-			optr=ptr;
+			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr==' '; ptr++);
+				for (++ptr; *ptr==' '; ptr++) {
+					//nothing to see here
+				}
 				strncpy (w1, optr, WSZ - 1);
 				strncpy (w2, ptr, WSZ - 1);
 				optr=ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
-					for (++ptr; *ptr==' '; ptr++);
+					for (++ptr; *ptr==' '; ptr++) {
+						//nothing to see here
+					}
 					strncpy (w2, optr, WSZ - 1);
 					strncpy (w3, ptr, WSZ - 1);
-					optr=ptr;
-// bonus
+					optr = ptr;
 					ptr = strchr (ptr, ',');
 					if (ptr) {
 						*ptr = '\0';
-						for (++ptr; *ptr==' '; ptr++);
+						for (++ptr; *ptr == ' '; ptr++) {
+							//nothing to see here
+						}
 						strncpy (w3, optr, WSZ - 1);
 						strncpy (w4, ptr, WSZ - 1);
 					}
@@ -1419,8 +1438,9 @@ static int parse(RParse *p, const char *data, char *str) {
 			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
 			for (i = 0; i < 4; i++) {
-				if (wa[i][0] != '\0')
+				if (wa[i][0] != '\0') {
 					nw++;
+				}
 			}
 			replace (nw, wa, str);
 {
