@@ -3231,7 +3231,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				const RGraphNode *gn = find_near_of (g, NULL, true);
 				g->update_seek_on = get_anode (gn);
 			} else {
-				get_anode (g->curnode)->x -= movspeed;
+				RANode *n = get_anode (g->curnode);
+				if (n) {
+					n->x -= movspeed;
+				}
 			}
 			break;
 		case 'v':
@@ -3240,7 +3243,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'N':
 			agraph_toggle_mini (g);
 			break;
-		case 'L': get_anode (g->curnode)->x += movspeed; break;
+		case 'L': 
+			 {
+				RANode *n = get_anode (g->curnode);
+				if (n) {
+					n->x += movspeed;
+				}
+				break;
+			 }
 		case 'j': can->sy -= movspeed * (invscroll ? -1 : 1); break;
 		case 'k': can->sy += movspeed * (invscroll ? -1 : 1); break;
 		case 'l': can->sx -= movspeed * (invscroll ? -1 : 1); break;
