@@ -5078,7 +5078,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
 			rowlog_done (core);
-			char *dh_orig = core->dbg->h ? strdup (core->dbg->h->name): "";
+			char *dh_orig = core->dbg->h 
+					? strdup (core->dbg->h->name)
+					: strdup ("esil");
+			if (core->io && core->io->plugin && !core->io->plugin->isdbg) {
+				//use dh_origin if we are debugging
+				R_FREE (dh_orig);
+			}	
 			if (r_cons_is_breaked ()) {
 				goto jacuzzi;
 			}
