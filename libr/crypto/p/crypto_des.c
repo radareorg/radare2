@@ -3,7 +3,7 @@
 #include <r_lib.h>
 #include <r_crypto.h>
 
-#define DES_KEY_SIZE 32
+#define DES_KEY_SIZE 8
 #define BLOCK_SIZE 8
 #define ROTL28(rs, sh) ((((rs) << (sh)) | ((rs) >> (28 - (sh)))) & 0x0FFFFFFF) // left 28
 #define ROTL(rs, sh) (((rs) << (sh)) | ((rs) >> (32 - (sh)))) // left 32
