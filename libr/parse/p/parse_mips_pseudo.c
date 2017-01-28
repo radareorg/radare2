@@ -87,6 +87,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "subu",  "1 = 2 - 3", 3},
 		{ "sub",  "1 = 2 - 3", 3},
 		{ "sw",  "[3 + 2] = 1", 3},
+		{ "syscall",  "syscall", 0},
 		{ "xor",  "1 = 2 ^ 3", 3},
 		{ "xori",  "1 = 2 ^ 3", 3},
 		{ NULL }
@@ -186,6 +187,8 @@ static int parse(RParse *p, const char *data, char *str) {
 					}
 				}
 			}
+		} else {
+			strncpy (w0, buf, WSZ - 1);
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4 };
