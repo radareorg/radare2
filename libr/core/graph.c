@@ -2021,24 +2021,33 @@ static void update_graph_sizes (RAGraph *g) {
 			max_gn = ak;
 		}
 	}
-
+	r_cons_break_push (NULL, NULL);
 	/* while calculating the graph size, take into account long edges */
 	r_list_foreach (g->edges, it, e) {
 		RListIter *kt;
 		void *vv;
 		int v;
-
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		r_list_foreach (e->x, kt, vv) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			v = (int)(size_t)vv;
 			if (v < g->x) g->x = v;
 			if (v + 1 > max_x) max_x = v + 1;
 		}
 		r_list_foreach (e->y, kt, vv) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			v = (int)(size_t)vv;
 			if (v < g->y) g->y = v;
 			if (v + 1 > max_y) max_y = v + 1;
 		}
 	}
+	r_cons_break_pop ();
 
 	if (min_gn) {
 		const RList *neigh = r_graph_innodes (g->graph, min_gn->gnode);
@@ -2867,7 +2876,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		eprintf (
 			"Cannot create RCons.canvas context. Invalid screen "
 			"size? See scr.columns + scr.rows\n");
-		r_config_restore (hc);
 		r_config_hold_free (hc);
 		return false;
 	}
@@ -2901,13 +2909,20 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->on_curnode_change = (RANodeCallback)seek_to_node;
 	g->on_curnode_change_data = core;
 	bool asm_comments = r_config_get_i (core->config, "asm.comments");
-	r_config_set (core->config, "asm.comments", r_str_bool (r_config_get_i (core->config, "graph.comments")));
+	r_config_set (core->config, "asm.comments", 
+	  	r_str_bool (r_config_get_i (core->config, "graph.comments")));
 
 	/* we want letters as shortcuts for call/jmps */
 	core->is_asmqjmps_letter = true;
 	core->vmode = true;
 
 	grd = R_NEW0 (struct agraph_refresh_data);
+	if (!grd) {
+		r_cons_canvas_free (can);
+		r_config_restore (hc);
+		r_config_hold_free (hc);
+		return false;
+	}
 	grd->g = g;
 	grd->fs = is_interactive;
 	grd->core = core;
@@ -2921,8 +2936,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	core->cons->event_data = grd;
 	core->cons->event_resize = (RConsEvent)agraph_refresh;
+	r_cons_break_push (NULL, NULL);
 
-	while (!exit_graph && !is_error) {
+	while (!exit_graph && !is_error && !r_cons_is_breaked ()) {
 		w = r_cons_get_size (&h);
 		invscroll = r_config_get_i (core->config, "graph.invscroll");
 		ret = agraph_refresh (grd);
@@ -3287,7 +3303,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		}
 	}
-
+	r_cons_break_pop ();
 	r_config_set (core->config, "asm.comments", r_str_bool (asm_comments));
 	core->cons->event_data = NULL;
 	core->cons->event_resize = NULL;
