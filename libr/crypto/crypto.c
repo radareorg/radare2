@@ -18,15 +18,17 @@ static const crypto_name_bytes[] = {
 	{"rot", R_CRYPTO_ROT},
 	{"blowfish", R_CRYPTO_BLOWFISH},
 	{"cps2", R_CRYPTO_CPS2},
-	{"des", R_CRYPTO_DES_ECB},
+	{"des-ecb", R_CRYPTO_DES_ECB},
 	{NULL, 0}
 };
 
 R_API const char *r_crypto_name(ut64 bit) {
 	int i;
-	for (i=1; crypto_name_bytes[i].bit; i++)
-		if (bit & crypto_name_bytes[i].bit)
+	for (i = 1; crypto_name_bytes[i].bit; i++) {
+		if (bit & crypto_name_bytes[i].bit) {
 			return crypto_name_bytes[i].name;
+		}
+	}
 	return "";
 }
 
