@@ -138,13 +138,23 @@ static bool edit_bits (RCore *core) {
 			free (op);
 		}
 		{
-			r_cons_printf (Color_RESET"esl: %s\n"Color_RESET, r_strbuf_get (&analop.esil));
+			ut32 word = (x % 32);
+			r_cons_printf ("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
 		}
+		{
+			char *op = colorize_asm_string (core, asmop.buf_asm, analopType);
+			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
+			free (op);
+		}
+		r_cons_printf (Color_RESET"esl: %s\n"Color_RESET, r_strbuf_get (&analop.esil));
 		r_anal_op_fini (&analop);
 		r_cons_printf ("chr:");
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
 			char ch = IS_PRINTABLE (*byte)? *byte: '?';
+			if (i == 4) {
+				r_cons_printf (" |");
+			}
 			if (use_color) {
 				r_cons_printf (" %5s'%s%c"Color_RESET"'", " ", core->cons->pal.btext, ch);
 			} else {
@@ -154,11 +164,17 @@ static bool edit_bits (RCore *core) {
 		r_cons_printf ("\ndec:");
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
+			if (i == 4) {
+				r_cons_printf (" |");
+			}
 			r_cons_printf (" %8d", *byte);
 		}
 		r_cons_printf ("\nhex:");
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
+			if (i == 4) {
+				r_cons_printf (" |");
+			}
 			r_cons_printf ("     0x%02x", *byte);
 		}
 		r_cons_printf ("\nbit: ");
@@ -168,6 +184,9 @@ static bool edit_bits (RCore *core) {
 		}
 		for (i = 0; i < 8; i++) {
 			ut8 *byte = buf + i;
+			if (i == 4) {
+				r_cons_printf ("| ");
+			}
 			if (colorBits && i >= asmop.size) {
 				r_cons_print (Color_RESET);
 				colorBits = false;
@@ -180,16 +199,22 @@ static bool edit_bits (RCore *core) {
 		}
 		r_cons_newline ();
 		char str_pos[128];
-		memset (str_pos, '-', nbits + 7);
-		str_pos[x + (x/8)] = '^';
-		str_pos[nbits + 7] = 0;
+		memset (str_pos, '-', nbits + 9);
+		int pos = x;
+		if (pos > 31) {
+			pos += 2;
+		}
+		str_pos[pos + (x / 8)] = '^';
+		str_pos[nbits + 9] = 0;
 		str_pos[8] = ' ';
 		str_pos[17] = ' ';
 		str_pos[26] = ' ';
 		str_pos[35] = ' ';
-		str_pos[44] = ' ';
-		str_pos[53] = ' ';
-		str_pos[62] = ' ';
+		str_pos[36] = ' ';
+		str_pos[37] = ' ';
+		str_pos[46] = ' ';
+		str_pos[55] = ' ';
+		str_pos[64] = ' ';
 		r_cons_printf ("pos: %s\n", str_pos);
 		r_cons_newline ();
 		r_cons_visual_flush ();
