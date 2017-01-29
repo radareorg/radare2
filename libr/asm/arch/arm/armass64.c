@@ -140,6 +140,15 @@ static ut32 msr(const char *str, int w) {
 	return op;
 }
 
+static exception(ut32 *op, const char *arg, ut32 type) {
+	int n = (int)r_num_math (NULL, arg);
+	n /= 8;
+	*op = type;
+	*op += ((n & 0xff) << 16);
+	*op += ((n >> 8) << 8);
+	return *op != -1;
+}
+
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (!strncmp (str, "movk w", 6)) {
@@ -187,13 +196,14 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 			return true;
 		}
 	}
-	if (!strncmp (str, "svc ", 4)) {
-		int n = (int)r_num_math (NULL, str + 4);
-		n /= 8;
-		*op = 0x010000d4;
-		*op += ((n & 0xff) << 16);
-		*op += ((n >> 8) << 8);
-		return *op != -1;
+	if (!strncmp (str, "svc ", 4)) { // system level exception
+		return exception (op, str + 4, 0x010000d4);
+	}
+	if (!strncmp (str, "hvc ", 4)) { // hypervisor level exception
+		return exception (op, str + 4, 0x020000d4);
+	}
+	if (!strncmp (str, "smc ", 4)) { // secure monitor exception
+		return exception (op, str + 4, 0x040000d4);
 	}
 	if (!strncmp (str, "b ", 2)) {
 		*op = branch (str, addr, 0x14);
