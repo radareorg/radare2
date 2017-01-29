@@ -414,12 +414,11 @@ R_API int r_str_word_set0_stack(char *str) {
 	}
 	for (i = 0; str[i] && str[i+1]; i++) {
 		if (i > 0 && str[i - 1] == ' ' && str[i] == ' ') {
-			int len = strlen (str + i) + 1;
-			memmove (str + i, str + i + 1, len);
+			memmove (str + i, str + i + 1, strlen (str + i));
 			i--;
 		}
 		if (i == 0 && str[i] == ' ') {
-			memmove (str + i, str + i + 1, strlen (str + i) + 1);
+			memmove (str + i, str + i + 1, strlen (str + i));
 		}
 	}
 	if (str[i] == ' ') {
