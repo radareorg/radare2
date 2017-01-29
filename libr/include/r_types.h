@@ -377,6 +377,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif __mips__
 #define R_SYS_ARCH "mips"
 #define R_SYS_BITS R_SYS_BITS_32
+#elif __EMSCRIPTEN__
+/* we should default to wasm when ready */
+#define R_SYS_ARCH "x86"
+#define R_SYS_BITS R_SYS_BITS_32
 #else
 #define R_SYS_ARCH "unknown"
 #define R_SYS_BITS R_SYS_BITS_32
