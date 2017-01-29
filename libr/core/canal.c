@@ -2871,6 +2871,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut64 step) {
 	RFlagItem *f;
 	RAnalFunction *F;
+	RBinSymbol *S;
 	RListIter *iter;
 	RCoreAnalStats *as = NULL;
 	int piece, as_size, blocks;
@@ -2907,6 +2908,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		piece = (f->offset - from) / step;
 		as->block[piece].flags++;
 	}
+	// iter all functions
 	r_list_foreach (core->anal->fcns, iter, F) {
 		if (F->addr < from || F->addr > to) {
 			continue;
@@ -2914,10 +2916,31 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		piece = (F->addr - from) / step;
 		as->block[piece].functions++;
 	}
-	// iter all comments
 	// iter all symbols
-	// iter all imports
-	// iter all functions
+	r_list_foreach (r_bin_get_symbols (core->bin), iter, S) {
+		if (S->vaddr < from || S->vaddr > to) {
+			continue;
+		}
+		piece = (S->vaddr - from) / step;
+		as->block[piece].symbols++;
+	}
+	RList *metas = r_meta_enumerate (core->anal, -1);
+	RAnalMetaItem *M;
+	r_list_foreach (metas, iter, M) {
+		if (M->from < from || M->to > to) {
+			continue;
+		}
+		piece = (M->from - from) / step;
+		switch (M->type) {
+		case R_META_TYPE_STRING:
+			as->block[piece].strings++;
+			break;
+		case R_META_TYPE_COMMENT:
+			as->block[piece].comments++;
+			break;
+		}
+	}
+	// iter all comments
 	// iter all strings
 	return as;
 }

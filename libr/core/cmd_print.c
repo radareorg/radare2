@@ -2572,9 +2572,9 @@ static int cmd_print(void *data, const char *input) {
 				"\"blocks\":[", from, to, piece);
 			break;
 		case 'h': //p-h
-			r_cons_printf (".-------------.---------------------------------.\n");
-			r_cons_printf ("|   offset    | flags funcs cmts imps syms str  |\n");
-			r_cons_printf ("|-------------)---------------------------------|\n");
+			r_cons_printf (".-------------.----------------------------.\n");
+			r_cons_printf ("|   offset    | flags funcs cmts syms str  |\n");
+			r_cons_printf ("|-------------)----------------------------|\n");
 			break;
 		default:
 			r_cons_printf ("0x%"PFMT64x" [", from);
@@ -2592,7 +2592,6 @@ static int cmd_print(void *data, const char *input) {
 				if ((as->block[p].flags)
 						|| (as->block[p].functions)
 						|| (as->block[p].comments)
-						|| (as->block[p].imports)
 						|| (as->block[p].symbols)
 						|| (as->block[p].rwx)
 						|| (as->block[p].strings)) {
@@ -2604,7 +2603,6 @@ static int cmd_print(void *data, const char *input) {
 				if (as->block[p].flags) r_cons_printf ("%s\"flags\":%d", l?",":"", as->block[p].flags), l++;
 				if (as->block[p].functions) r_cons_printf ("%s\"functions\":%d", l?",":"", as->block[p].functions), l++;
 				if (as->block[p].comments) r_cons_printf ("%s\"comments\":%d", l?",":"", as->block[p].comments), l++;
-				if (as->block[p].imports) r_cons_printf ("%s\"imports\":%d", l?",":"", as->block[p].imports), l++;
 				if (as->block[p].symbols) r_cons_printf ("%s\"symbols\":%d", l?",":"", as->block[p].symbols), l++;
 				if (as->block[p].strings) r_cons_printf ("%s\"strings\":%d", l?",":"", as->block[p].strings), l++;
 				if (as->block[p].rwx) r_cons_printf ("%s\"rwx\":\"%s\"", l?",":"", r_str_rwx_i (as->block[p].rwx)), l++;
@@ -2615,26 +2613,23 @@ static int cmd_print(void *data, const char *input) {
 				total[0] += as->block[p].flags;
 				total[1] += as->block[p].functions;
 				total[2] += as->block[p].comments;
-				total[3] += as->block[p].imports;
 				total[4] += as->block[p].symbols;
 				total[5] += as->block[p].strings;
 				if ((as->block[p].flags)
 						|| (as->block[p].functions)
 						|| (as->block[p].comments)
-						|| (as->block[p].imports)
 						|| (as->block[p].symbols)
 						|| (as->block[p].strings)) {
-					r_cons_printf ("| 0x%09"PFMT64x" | %4d %4d %4d %4d %4d %4d   |\n", at,
-							as->block[p].flags,
-							as->block[p].functions,
-							as->block[p].comments,
-							as->block[p].imports,
-							as->block[p].symbols,
-							as->block[p].strings);
+					r_cons_printf ("| 0x%09"PFMT64x" | %4d %4d %4d %4d %4d   |\n", at,
+						as->block[p].flags,
+						as->block[p].functions,
+						as->block[p].comments,
+						as->block[p].symbols,
+						as->block[p].strings);
 				}
 				break;
 			default:
-				if (off>=at && off<ate) {
+				if (off >= at && off < ate) {
 					r_cons_memcat ("^", 1);
 				} else {
 					RIOSection *s = r_io_section_vget (core->io, at);
@@ -2651,8 +2646,6 @@ static int cmd_print(void *data, const char *input) {
 					}
 					if (as->block[p].strings > 0) {
 						r_cons_memcat ("z", 1);
-					} else if (as->block[p].imports > 0) {
-						r_cons_memcat ("i", 1);
 					} else if (as->block[p].symbols > 0) {
 						r_cons_memcat ("s", 1);
 					} else if (as->block[p].functions > 0) {
@@ -2673,11 +2666,11 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_strcat ("]}\n");
 			break;
 		case 'h':
-			//r_cons_printf ("  total    | flags funcs cmts imps syms str  |\n");
-			r_cons_printf ("|-------------)---------------------------------|\n");
-			r_cons_printf ("|    total    | %4d %4d %4d %4d %4d %4d   |\n",
+			//r_cons_printf ("  total    | flags funcs cmts syms str  |\n");
+			r_cons_printf ("|-------------)----------------------------|\n");
+			r_cons_printf ("|    total    | %4d %4d %4d %4d %4d   |\n",
 				total[0], total[1], total[2], total[3], total[4], total[5]);
-			r_cons_printf ("`-------------'---------------------------------'\n");
+			r_cons_printf ("`-------------'----------------------------'\n");
 			break;
 		default:
 			if (use_color) {
