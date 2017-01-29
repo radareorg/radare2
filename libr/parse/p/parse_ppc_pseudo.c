@@ -14,7 +14,7 @@
 #define PFMT32x "lx"
 #endif
 
-ut64 mask64(ut64 mb, ut64 me) {
+static ut64 mask64(ut64 mb, ut64 me) {
 	int i;
 	ut64 mask = 0;
 	if (mb > 63 || me > 63) {
@@ -35,7 +35,7 @@ ut64 mask64(ut64 mb, ut64 me) {
 	return mask;
 }
 
-const char* cmask64(const char *mb_c, const char *me_c){
+static const char* cmask64(const char *mb_c, const char *me_c){
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
@@ -45,7 +45,7 @@ const char* cmask64(const char *mb_c, const char *me_c){
 	return cmask;
 }
 
-ut32 mask32(ut32 mb, ut32 me) {
+static ut32 mask32(ut32 mb, ut32 me) {
 	int i;
 	ut32 mask = 0;
 	if (mb > 31 || me > 31) {
@@ -66,7 +66,7 @@ ut32 mask32(ut32 mb, ut32 me) {
 	return mask;
 }
 
-const char* cmask32(const char *mb_c, const char *me_c){
+static const char* cmask32(const char *mb_c, const char *me_c){
 	static char cmask[32];
 	ut32 mb = 32;
 	ut32 me = 32;
@@ -76,7 +76,7 @@ const char* cmask32(const char *mb_c, const char *me_c){
 	return cmask;
 }
 
-const char* inv_mask64(const char *mb_c, const char *sh){
+static const char* inv_mask64(const char *mb_c, const char *sh){
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
@@ -90,7 +90,7 @@ const char* inv_mask64(const char *mb_c, const char *sh){
 	return cmask;
 }
 
-const char* inv_mask32(const char *mb_c, const char *sh){
+static const char* inv_mask32(const char *mb_c, const char *sh){
 	static char cmask[32];
 	ut32 mb = 0;
 	ut32 me = 0;
