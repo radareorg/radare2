@@ -1512,6 +1512,25 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	RCore *core = ds->core;
 	int ret;
+	const char *mt_key, *info;
+	Sdb *s = core->anal->sdb_meta;
+	char key[100];
+	ut64 mt_sz;
+
+	//handle meta info to fix ds->oplen
+	snprintf (key, sizeof (key) - 1, "meta.0x%"PFMT64x, ds->at);
+	info = sdb_const_get (s, key, 0);
+	if (info) {
+		for (;*info; info++) {
+			snprintf (key, sizeof (key) - 1, 
+			  	"meta.%c.0x%"PFMT64x, *info, ds->at);
+			mt_key = sdb_const_get (s, key, 0);
+			mt_sz = sdb_array_get_num (s, key, 0, 0);
+			if (mt_sz) {
+				break;
+			}
+		}
+	}
 
 	if (ds->hint && ds->hint->size) {
 		ds->oplen = ds->hint->size;
@@ -1533,7 +1552,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				ds->prev_ins_eq = true;
 				r_cons_printf ("...");
 			}
-			ds->prev_ins_count ++;
+			ds->prev_ins_count++;
 			return -31337;
 		}
 		if (ds->prev_ins_eq) {
@@ -1564,11 +1583,16 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->oplen = ds->asmop.size;
 	} else {
 		ds->lastfail = 0;
-		ds->asmop.size = (ds->hint && ds->hint->size) ? ds->hint->size : r_asm_op_get_size (&ds->asmop);
+		ds->asmop.size = (ds->hint && ds->hint->size) 
+				? ds->hint->size 
+				: r_asm_op_get_size (&ds->asmop);
 		ds->oplen = ds->asmop.size;
 	}
 	if (ds->pseudo) {
-		r_parse_parse (core->parser, ds->opstr ? ds->opstr : ds->asmop.buf_asm, ds->str);
+		r_parse_parse (core->parser, ds->opstr 
+		  		? ds->opstr 
+				: ds->asmop.buf_asm, 
+				ds->str);
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
 	}
@@ -1576,6 +1600,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		r_str_case (ds->asmop.buf_asm, 1);
 	} else if (ds->capitalize) {
 		ds->asmop.buf_asm[0] = toupper (ds->asmop.buf_asm[0]);
+	}
+	if (info) {
+		ds->oplen = mt_sz;
 	}
 	return ret;
 }
