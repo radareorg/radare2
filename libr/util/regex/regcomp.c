@@ -220,25 +220,45 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 #else
 #	define	GOODFLAGS(f)	((f)&~R_REGEX_DUMP)
 #endif
-
 	cflags = GOODFLAGS (cflags);
-	if ((cflags & R_REGEX_EXTENDED) && (cflags & R_REGEX_NOSPEC))
+	if ((cflags & R_REGEX_EXTENDED) && (cflags & R_REGEX_NOSPEC)) {
 		return R_REGEX_INVARG;
-
+	}
 	if (cflags & R_REGEX_PEND) {
-		if (preg->re_endp < pattern)
-			return(R_REGEX_INVARG);
+		if (preg->re_endp < pattern) {
+			return R_REGEX_INVARG;
+		}
 		len = preg->re_endp - pattern;
-	} else len = strlen ((char *)pattern);
-
+	} else {
+		len = strlen ((char *)pattern);
+	}
 	/* do the mallocs early so failure handling is easy */
 	g = (struct re_guts *)calloc (sizeof (struct re_guts) + (NC - 1), sizeof (cat_t));
 	if (!g) {
 		return R_REGEX_ESPACE;
 	}
+	/*
+	 * Limit the pattern space to avoid a 32-bit overflow on buffer
+	 * extension.  Also avoid any signed overflow in case of conversion
+	 * so make the real limit based on a 31-bit overflow.
+	 *
+	 * Likely not applicable on 64-bit systems but handle the case
+	 * generically (who are we to stop people from using ~715MB+
+	 * patterns?).
+	 */
+	size_t maxlen = ((size_t) - 1 >> 1) / sizeof (sop) * 2 / 3;
+	if (len >= maxlen) {
+		free ((char *)g);
+		return R_REGEX_ESPACE;
+	}
 	preg->re_flags = cflags;
 	p->ssize = len / (size_t)2 * (size_t)3 + (size_t)1;	/* ugh */
-	p->strip = (sop *)calloc (p->ssize, sizeof(sop));
+	if (p->ssize < len) {
+		return R_REGEX_ESPACE;
+	}
+	assert (p->ssize >= len);
+
+	p->strip = (sop *)calloc (p->ssize, sizeof (sop));
 	if (!p->strip) {
 		free ((char *)g);
 		return R_REGEX_ESPACE;
@@ -272,25 +292,27 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 	g->nsub = 0;
 	g->ncategories = 1;	/* category 0 is "everything else" */
 	g->categories = &g->catspace[-(CHAR_MIN)]; // WTF
-	(void) memset((char *)g->catspace, 0, NC*sizeof(cat_t));
+	(void) memset ((char *)g->catspace, 0, NC*sizeof(cat_t));
 	g->backrefs = 0;
 
 	/* do it */
-	EMIT(OEND, 0);
-	g->firststate = THERE();
-	if (cflags & R_REGEX_EXTENDED)
+	EMIT (OEND, 0);
+	g->firststate = THERE ();
+	if (cflags & R_REGEX_EXTENDED) {
 		p_ere(p, OUT);
-	else if (cflags & R_REGEX_NOSPEC)
+	} else if (cflags & R_REGEX_NOSPEC) {
 		p_str (p);
-	else p_bre (p, OUT, OUT);
-	EMIT(OEND, 0);
-	g->laststate = THERE();
+	} else {
+		p_bre (p, OUT, OUT);
+	}
+	EMIT (OEND, 0);
+	g->laststate = THERE ();
 
 	/* tidy up loose ends and fill things in */
-	categorize(p, g);
-	stripsnug(p, g);
-	findmust(p, g);
-	g->nplus = pluscount(p, g);
+	categorize (p, g);
+	stripsnug (p, g);
+	findmust (p, g);
+	g->nplus = pluscount (p, g);
 	g->magic = MAGIC2;
 	preg->re_nsub = g->nsub;
 	preg->re_g = g;
@@ -300,10 +322,9 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 	if (g->iflags&BAD)
 		SETERROR(R_REGEX_ASSERT);
 #endif
-
-	/* win or lose, we're done */
-	if (p->error) /* lose */
+	if (p->error) {
 		r_regex_fini (preg);
+	}
 	return p->error;
 }
 
@@ -311,27 +332,28 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
  - p_ere - ERE parser top level, concatenation and alternation
  */
 static void p_ere(struct parse *p, int stop) { /* character this ERE should end at */
-	char c;
+	bool isFirst = true;
 	sopno prevback = 0;
 	sopno prevfwd = 0;
 	sopno conc = 0;
-	int first = 1;		/* is this the first alternative? */
+	char c;
 
 	for (;;) {
 		/* do a bunch of concatenated expressions */
 		conc = HERE();
-		while (MORE() && (c = PEEK()) != '|' && c != stop)
-			p_ere_exp(p);
-		REQUIRE(HERE() != conc, R_REGEX_EMPTY);	/* require nonempty */
+		while (MORE() && (c = PEEK()) != '|' && c != stop) {
+			p_ere_exp (p);
+		}
+		REQUIRE (HERE () != conc, R_REGEX_EMPTY); /* require nonempty */
 
-		if (!EAT('|'))
+		if (!EAT('|')) {
 			break;		/* NOTE BREAK OUT */
-
-		if (first) {
-			INSERT(OCH_, conc);	/* offset is wrong */
+		}
+		if (isFirst) {
+			INSERT (OCH_, conc);	/* offset is wrong */
 			prevfwd = conc;
 			prevback = conc;
-			first = 0;
+			isFirst = false;
 		}
 		ASTERN(OOR1, prevback);
 		prevback = THERE();
@@ -340,11 +362,10 @@ static void p_ere(struct parse *p, int stop) { /* character this ERE should end 
 		EMIT(OOR2, 0);			/* offset is very wrong */
 	}
 
-	if (!first) {		/* tail-end fixups */
+	if (!isFirst) {		/* tail-end fixups */
 		AHEAD(prevfwd);
 		ASTERN(O_CH, prevback);
 	}
-
 	assert(!MORE() || SEE(stop));
 }
 
@@ -486,8 +507,9 @@ static void p_ere_exp(struct parse *p) {
  */
 static void p_str(struct parse *p) {
 	REQUIRE(MORE(), R_REGEX_EMPTY);
-	while (MORE())
+	while (MORE()) {
 		ordinary(p, GETNEXT());
+	}
 }
 
 /*
@@ -602,8 +624,9 @@ p_simp_re(struct parse *p,
 			assert(OP(p->strip[p->pend[i]]) == ORPAREN);
 			(void) dupl(p, p->pbegin[i]+1, p->pend[i]);
 			EMIT(O_BACK, i);
-		} else
+		} else {
 			SETERROR(R_REGEX_ESUBREG);
+		}
 		p->g->backrefs = 1;
 		break;
 	case '*':
