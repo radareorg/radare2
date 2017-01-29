@@ -298,12 +298,11 @@ static int des_decrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 static struct des_state st;
 static bool doEncrypt = true;
 
-static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, bool direction) {
+static bool des_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, bool direction) {
 	ut32 keylo, keyhi, i;
 	if (keylen != DES_KEY_SIZE) {
 		return false;
 	}
-
 	// splitting the key in hi & lo
 	keylo = be32 (key);
 	keyhi = be32 (key + 4);
@@ -378,7 +377,7 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	return 0;
 }
 
-static int final (RCrypto *cry, const ut8 *buf, int len) {
+static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

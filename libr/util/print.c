@@ -7,8 +7,14 @@
 
 #define DFLT_ROWS 16
 
-static int nullprinter(const char* a, ...) { return 0; }
-static int IsInterrupted = 0;
+static void nullprinter(const char* a, ...) { }
+static void libc_printf(const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	vprintf (format, ap);
+	va_end (ap);
+}
+static bool IsInterrupted = false;
 
 R_API int r_util_lines_getline (ut64 *lines_cache, int lines_cache_sz, ut64 off) {
 	int imin = 0;
@@ -177,7 +183,7 @@ R_API RPrint *r_print_new() {
 	strcpy (p->datefmt, "%Y-%m-%d %H:%M:%S %z");
 	r_io_bind_init (p->iob);
 	p->pairs = true;
-	p->cb_printf = printf;
+	p->cb_printf = libc_printf;
 	p->oprintf = nullprinter;
 	p->bits = 32;
 	p->stride = 0;
@@ -268,7 +274,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	char space[32] = { 0 };
 	const char *white;
 #define PREOFF(x) (p && p->cons &&p->cons->pal.x)?p->cons->pal.x
-        PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: printf);
+        PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
 	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	bool dec = p? (p->flags & R_PRINT_FLAGS_ADDRDEC): false;
@@ -395,7 +401,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 }
 
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
-        PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: printf);
+        PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	ut8 rch = ch;
 	if (!IS_PRINTABLE (ch) && fmt[0]=='%'&&fmt[1]=='c')
 		rch = '.';
@@ -1115,7 +1121,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 
 // HACK :D
 static RPrint staticp = {
-	.cb_printf = printf
+	.cb_printf = libc_printf
 };
 
 /* TODO: handle screen width */

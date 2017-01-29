@@ -290,7 +290,7 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 static struct blowfish_state st;
 static int flag = 0;
 
-static int blowfish_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool blowfish_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	flag = direction;
 	return blowfish_init (&st, key, keylen);
 }
@@ -303,7 +303,7 @@ static bool blowfish_use(const char *algo) {
 	return !strcmp (algo, "blowfish");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) return false;
 	if (flag == 0) {
@@ -313,10 +313,10 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	}
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
-	return 0;
+	return true;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

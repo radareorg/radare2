@@ -716,7 +716,7 @@ main(cps_state,cps2crypt) {
 
 static ut32 cps2key[2] = {0};
 
-static int set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	crypt_direction = (direction != 0);
 	if (keylen == 8) {
 		/* fix key endianness */
@@ -737,7 +737,7 @@ static bool cps2_use(const char *algo) {
 	return !strcmp (algo, "cps2");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *output = calloc (1, len);
 	/* TODO : control decryption errors */
 	cps2_crypt ((const ut16 *)buf, (ut16*)output, len, cps2key, UPPER_LIMIT);

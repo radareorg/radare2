@@ -37,10 +37,10 @@ typedef struct r_crypto_t {
 typedef struct r_crypto_plugin_t {
 	const char *name;
 	int (*get_key_size)(RCrypto *cry);
-	int (*set_iv)(RCrypto *cry, const ut8 *iv, int ivlen);
-	int (*set_key)(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
-	int (*update)(RCrypto *cry, const ut8 *buf, int len);
-	int (*final)(RCrypto *cry, const ut8 *buf, int len);
+	bool (*set_iv)(RCrypto *cry, const ut8 *iv, int ivlen);
+	bool (*set_key)(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
+	bool (*update)(RCrypto *cry, const ut8 *buf, int len);
+	bool (*final)(RCrypto *cry, const ut8 *buf, int len);
 	bool (*use)(const char *algo);
 	int (*fini)(RCrypto *cry);
 } RCryptoPlugin;

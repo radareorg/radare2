@@ -4,7 +4,7 @@
 
 static int flag = 0;
 
-static int base64_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool base64_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	flag = direction;
 	return true;
 }
@@ -17,7 +17,7 @@ static bool base64_use(const char *algo) {
 	return !strcmp (algo, "base64");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
 	if (flag == 0) {
@@ -35,10 +35,10 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 		r_crypto_append (cry, obuf, olen);
 	}
 	free (obuf);
-	return 0;
+	return true;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

@@ -9,7 +9,7 @@ int flag = 0;
 bool iv_set = 0;
 ut8 iv[32];
 
-static int aes_cbc_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_cbc_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
@@ -25,7 +25,7 @@ static int aes_cbc_get_key_size(RCrypto *cry) {
 	return st.key_size;
 }
 
-static int aes_cbc_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
+static bool aes_cbc_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
 	if (ivlen != BLOCK_SIZE) {
 		return false;
 	}
@@ -38,7 +38,7 @@ static bool aes_cbc_use(const char *algo) {
 	return !strcmp (algo, "aes-cbc");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	if (!iv_set) {
 		eprintf ("IV not set. Use -I [iv]\n");
 		return false;
@@ -85,10 +85,10 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	r_crypto_append (cry, obuf, size);
 	free (obuf);
 	free (ibuf);
-	return 0;
+	return true;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

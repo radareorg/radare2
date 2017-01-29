@@ -149,7 +149,7 @@ static void rc6_decrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 
 static struct rc6_state st;
 
-static int rc6_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool rc6_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	return rc6_init (&st, key, keylen, direction);
 }
 
@@ -161,7 +161,7 @@ static bool rc6_use(const char *algo) {
 	return !strcmp (algo, "rc6");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	if (len % BLOCK_SIZE != 0) { //let user handle with with pad.
 		eprintf ("Input should be multiple of 128bit.\n");
 		return false;
@@ -185,10 +185,10 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
-	return 0;
+	return true;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 
@@ -202,7 +202,7 @@ RCryptoPlugin r_crypto_plugin_rc6 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = { 
+RLibStruct radare_plugin = { 
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_rc6,
 	.version = R2_VERSION

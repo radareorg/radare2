@@ -42,9 +42,9 @@ typedef struct r_print_t {
 	char datefmt[32];
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
-	int (*cb_printf)(const char *str, ...);
+	void (*cb_printf)(const char *str, ...);
 	int (*disasm)(void *p, ut64 addr);
-	int (*oprintf)(const char *str, ...);
+	void (*oprintf)(const char *str, ...);
 	char* (*get_bitfield)(void *user, const char *name, ut64 value);
 	char* (*get_enumname)(void *user, const char *name, ut64 value);
 	int interrupt;
