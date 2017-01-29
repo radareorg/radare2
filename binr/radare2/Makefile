@@ -18,7 +18,7 @@ ifeq (${COMPILER},emscripten)
 # -s INLINING_LIMIT=1
 # --memory-init-file 0
 CFLAGS+=-s EXPORTED_FUNCTIONS='["_r2_asmjs_cmd"]'
-#CFLAGS+=-Oz --memory-init-file 0 -s EXPORTED_FUNCTIONS='["_r2_asmjs_cmd"]'
+CFLAGS+=-Oz --memory-init-file 0
 endif
 
 FOOD_LIBS=$(addprefix ../../libr/,$(subst r_,,$(BINDEPS)))

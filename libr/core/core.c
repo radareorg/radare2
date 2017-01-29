@@ -2149,7 +2149,7 @@ reaccept:
 				}
 #endif
 				bufw = malloc (cmd_len + 5);
-				bufw[0] = RMT_CMD | RMT_REPLY;
+				bufw[0] = (ut8) (RMT_CMD | RMT_REPLY);
 				r_write_be32 (bufw + 1, cmd_len);
 				memcpy (bufw + 5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);

@@ -272,7 +272,6 @@ R_API int r_sys_crash_handler(const char *cmd) {
 #if __UNIX__
 	struct sigaction sigact;
 	void *array[1];
-
 	if (!checkcmd (cmd)) {
 		return false;
 	}
