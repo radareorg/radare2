@@ -140,12 +140,31 @@ static ut32 msr(const char *str, int w) {
 	return op;
 }
 
-static exception(ut32 *op, const char *arg, ut32 type) {
+static bool exception(ut32 *op, const char *arg, ut32 type) {
 	int n = (int)r_num_math (NULL, arg);
 	n /= 8;
 	*op = type;
 	*op += ((n & 0xff) << 16);
 	*op += ((n >> 8) << 8);
+	return *op != -1;
+}
+
+static bool arithmetic (ut32 *op, const char *str, int type) {
+	char *c = strchr (str + 5, 'x');
+	if (c) {
+		char *c2 = strchr (c + 1, ',');
+		if (c2) {
+			int r0 = atoi (str + 5);
+			int r1 = atoi (c + 1);
+			ut64 n = r_num_math (NULL, c2 + 1);
+			*op = type;
+			*op += r0 << 24;
+			*op += (r1 & 7) << (24 + 5);
+			*op += (r1 >> 3) << 16;
+			*op += (n & 0x3f) << 18;
+			*op += (n >> 6) << 8;
+		}
+	}
 	return *op != -1;
 }
 
@@ -175,6 +194,12 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	if (!strncmp (str, "mov x", 5)) { // w
 		*op = mov (str, 0x80d2);
 		return *op != -1;
+	}
+	if (!strncmp (str, "sub x", 5)) { // w
+		return arithmetic (op, str, 0xd1);
+	}
+	if (!strncmp (str, "add x", 5)) { // w
+		return arithmetic (op, str, 0x91);
 	}
 	if (!strncmp (str, "adr x", 5)) { // w
 		int regnum = atoi (str + 5);
