@@ -80,26 +80,23 @@ struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) 
 		return entry;
 	}
 	// MSVC SEH
-	// E8 13 09 00 00                             call    sub_44C388
-	// E9 05 00 00 00                             jmp     loc_44BA7F
-	// from des address of jmp search for
-	// 50                                         push    eax
-	// 56                                         push    esi
-	// 6A 00                                      push    0
-	// 68 00 00 40 00                             push    400000h
-	// E8 3E F9 FF FF                             call    sub_44B4FF
+	// E8 13 09 00 00  call    0x44C388
+	// E9 05 00 00 00  jmp     0x44BA7F
+	// from des address of jmp search for 68 xx xx xx xx e8 and test xx xx xx xx = imagebase
+	// 68 00 00 40 00  push    0x400000
+	// E8 3E F9 FF FF  call    0x44B4FF
 	if (b[0] == 0xe8 && b[5] == 0xe9) {
 		const st32 jmp_dst = b[6] | (b[7] << 8) | (b[8] << 16) | (b[9] << 24);
 		entry->paddr += (5 + 5 + jmp_dst);
 		entry->vaddr += (5 + 5 + jmp_dst);
 		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
 			int n = 0;
-			for (n = 0; n < sizeof (b) - 13; n++) {
-				// Maybe to ensure a correct one result, need check 68 xx xx xx xx value (last push value) match with imagebase
-				if ((b[n] & 0xf0) == 0x50 && (b[n + 1] & 0xf0) == 0x50 && b[n + 2] == 0x6a && b[n + 4] == 0x68 && b[n + 9] == 0xe8) {
-					const st32 call_dst = b[n + 10] | (b[n + 11] << 8) | (b[n + 12] << 16) | (b[n + 13] << 24);
-					entry->paddr += (n + 9 + 5 + call_dst);
-					entry->vaddr += (n + 9 + 5 + call_dst);
+			ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
+			for (n = 0; n < sizeof (b) - 5; n++) {
+				if (b[n] == 0x68 && *((ut32 *)&b[n + 1]) == imageBase && b[n + 5] == 0xe8) {
+					const st32 call_dst = b[n + 6] | (b[n + 7] << 8) | (b[n + 8] << 16) | (b[n + 9] << 24);
+					entry->paddr += (n + 5 + 5 + call_dst);
+					entry->vaddr += (n + 5 + 5 + call_dst);
 					return entry;
 				}
 			}
