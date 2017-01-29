@@ -355,7 +355,13 @@ static int cb_asmarch(void *user, void *data) {
 	r_asm_set_cpu (core->assembler, asm_cpu);
 	free (asm_cpu);
 	/* reload types and cc info */
-	r_core_anal_type_init (core);
+	// changing asm.arch changes anal.arch
+	// changing anal.arch sets types db
+	// so ressetting is redundant and may lead to bugs
+	// 1 case this is usefull is when sdb_types is null
+	if (!core->anal->sdb_types) {
+		r_core_anal_type_init (core);
+	}
 	r_core_anal_cc_init (core);
 	return true;
 }

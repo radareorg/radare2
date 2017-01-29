@@ -149,6 +149,8 @@ R_API void r_anal_list(RAnal *anal) {
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RListIter *it;
 	RAnalPlugin *h;
+
+	bool change = anal && anal->cur && strcmp (anal->cur->name, name);
 	r_list_foreach (anal->plugins, it, h) {
 		if (!strcmp (h->name, name)) {
 #if 0
@@ -159,7 +161,9 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 #endif
 			anal->cur = h;
 			r_anal_set_reg_profile (anal);
-			r_anal_set_fcnsign (anal, NULL);
+			if (change) {
+				r_anal_set_fcnsign (anal, NULL);
+			}
 			if (anal->esil) {
 				r_anal_esil_free (anal->esil);
 				anal->esil = NULL;
