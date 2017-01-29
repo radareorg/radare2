@@ -285,6 +285,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define HAVE_EPRINTF 1
 #endif
 
+#ifndef typeof
+#define typeof(arg) __typeof__(arg)
+#endif
+
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
 #define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
