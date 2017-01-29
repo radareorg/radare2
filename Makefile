@@ -12,7 +12,8 @@ ZIP=zip
 
 R2VC=$(shell git rev-list --all --count 2>/dev/null)
 ifeq ($(R2VC),)
-R2VC=9999999
+# release
+R2VC=0
 endif
 
 STRIP?=strip
