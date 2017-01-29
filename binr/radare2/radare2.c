@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #define USE_THREADS 1
 #define UNCOLORIZE_NONTTY 0
@@ -260,7 +260,7 @@ static int rabin_delegate(RThread *th) {
 					ptr = nptr + 1;
 				}
 				if (th) {
-					r_th_lock_leave(th->user);
+					r_th_lock_leave (th->user);
 				}
 			} while (nptr);
 		//r_core_cmd (&r, cmd, 0);
@@ -341,31 +341,44 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 }
 
 #if EMSCRIPTEN
+#include <emscripten.h>
 static RCore *core = NULL;
 
-char *r2_asmjs_cmd(const char *cmd) {
-	if (cmd == NULL) {
-		r_core_free (core);
+void *r2_asmjs_new(const char *cmd) {
+	return r_core_new ();
+}
+
+void r2_asmjs_free(void *core) {
+	r_core_free (core);
+}
+
+char *r2_asmjs_cmd(void *kore, const char *cmd) {
+	if (kore) {
+		if (!cmd) {
+			r_core_free (kore);
+		}
+	} else {
+		if (core) {
+			kore = core;
+		} else {
+			kore = core = r_core_new ();
+		}
 	}
-	if (core == NULL) {
-		core = r_core_new ();
-	}
-	return r_core_cmd_str (core, cmd);
+	return r_core_cmd_str (kore, cmd);
 }
 
 static void wget_cb(const char *f) {
-        char *cmd = r_str_newf ("o %s", f);
-	if (cmd) {
-		r_core_cmd (core, cmd);
-		free (cmd);
-	}
+	r_core_cmdf (core, "o %s", f);
 }
 
-void r2_asmjs_openurl(const char *url) {
-        char *file = r_str_lchr (url, '/');
-        if (file) {
-                emscripten_async_wget (url, file, wget_cb, NULL);
-        }
+void r2_asmjs_openurl(void *kore, const char *url) {
+	const char *file = r_str_lchr (url, '/');
+	if (kore) {
+		core = kore;
+	}
+	if (file) {
+		emscripten_async_wget (url, file + 1, wget_cb, NULL);
+	}
 }
 
 #else // EMSCRIPTEN
@@ -413,9 +426,9 @@ int main(int argc, char **argv, char **envp) {
 
 	r_sys_set_environ (envp);
 
-	if (r_sys_getenv ("R_DEBUG"))
+	if (r_sys_getenv ("R_DEBUG")) {
 		r_sys_crash_handler ("gdb --pid %d");
-
+	}
 	if (argc < 2) {
 		r_list_free (cmds);
 		r_list_free (evals);

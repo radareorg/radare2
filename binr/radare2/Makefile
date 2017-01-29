@@ -17,8 +17,8 @@ ifeq (${COMPILER},emscripten)
 # https://kripken.github.io/emscripten-site/docs/optimizing/Optimizing-Code.html
 # -s INLINING_LIMIT=1
 # --memory-init-file 0
-CFLAGS+=-s EXPORTED_FUNCTIONS='["_r2_asmjs_cmd"]'
-CFLAGS+=-Oz --memory-init-file 0
+CFLAGS+=-s EXPORTED_FUNCTIONS='["_r2_asmjs_new", "_r2_asmjs_cmd", "_r2_asmjs_free", "_r2_asmjs_openurl"]'
+#CFLAGS+=-Oz --memory-init-file 0
 endif
 
 FOOD_LIBS=$(addprefix ../../libr/,$(subst r_,,$(BINDEPS)))
