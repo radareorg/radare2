@@ -1112,9 +1112,9 @@ static int cb_iova(void *user, void *data) {
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
 		if (core->io->desc && r_io_desc_get (core->io, core->io->desc->fd))			//ugly fix for r2 -d ... "r2 is going to die soon ..."
-			r_core_block_read (core, 0);
+			r_core_block_read (core);
 		// reload symbol information
-		if (r_list_length (r_bin_get_sections (core->bin))>0)
+		if (r_list_length (r_bin_get_sections (core->bin))>0) {
 			r_core_cmd0 (core, ".ia*");
 		}
 	}
@@ -1137,12 +1137,14 @@ static int cb_ioff(void *user, void *data) {
 	return true;
 }
 
+#if 0
 static int cb_io_oxff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->Oxff = node->i_value;
 	return true;
 }
+#endif
 
 static int cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
@@ -2217,10 +2219,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("io.pcache", "false", &cb_iopcache, "io.cache for p-level");
 //	SETCB("io.raw", "false", &cb_ioraw, "Ignore maps/sections and use raw io");
 	SETCB("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
-	SETICB("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
+//	SETICB("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB("io.va", "true", &cb_iova, "Use virtual address layout");
-	SETCB("io.pava", "false", &cb_iopava, "Use EXPERIMENTAL paddr -> vaddr address mode");
+//	SETCB("io.pava", "false", &cb_iopava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
 
 	/* file */

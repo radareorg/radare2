@@ -229,6 +229,7 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 #endif
 R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	char *f, *ret = strdup (cmd);
+	char buf[128];
 	if (strstr (cmd, "R2_BYTES")) {
 		char *s = r_hex_bin2strdup (core->block, core->blocksize);
 		r_sys_setenv ("R2_BYTES", s);
@@ -240,17 +241,18 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 		r_sys_setenv ("R2_SIZE", sdb_fmt (0, "%"PFMT64d,
 			r_io_desc_size (core->file->desc)));
 		if (strstr (cmd, "R2_BLOCK")) {
-		r_sys_setenv ("FILE", core->file->desc->name);
-		snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size
-			(core->file->desc));
-		r_sys_setenv ("SIZE", buf);
-		if (strstr (cmd, "BLOCK")) {
-			// replace BLOCK in RET string
-			if ((f = r_file_temp ("r2block"))) {
-				if (r_file_dump (f, core->block, core->blocksize, 0)) {
-					r_sys_setenv ("R2_BLOCK", f);
+			r_sys_setenv ("FILE", core->file->desc->name);
+			snprintf (buf, sizeof (buf), "%"PFMT64d, r_io_desc_size
+				(core->file->desc));
+			r_sys_setenv ("SIZE", buf);
+			if (strstr (cmd, "BLOCK")) {
+				// replace BLOCK in RET string
+				if ((f = r_file_temp ("r2block"))) {
+					if (r_file_dump (f, core->block, core->blocksize, 0)) {
+						r_sys_setenv ("R2_BLOCK", f);
+					}
+					free (f);
 				}
-				free (f);
 			}
 		}
 	}
@@ -745,7 +747,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		}
 	}
 	if (r_io_is_listener (r->io)) {
-		r_io_desc_detach (r->io, fd);
+//		r_io_desc_detach (r->io, fd);	//do we really need this
 		r_core_serve (r, fd);
 		r_io_desc_free (fd);
 		goto beach;
@@ -782,7 +784,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	r_bin_bind (r->bin, &(fh->binb));
 	r_list_append (r->files, fh);
 	r_core_file_set_by_file (r, fh);
-	r_config_set_i (r->config, "zoom.to", fh->map->from + r_io_desc_size (r->io, fh->desc));
+	r_config_set_i (r->config, "zoom.to", fh->map->from + r_io_desc_size (fh->desc));
 
 	if (r_config_get_i (r->config, "cfg.debug")) {
 		bool swstep = true;
@@ -930,17 +932,16 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			ut64 sz = r_io_desc_size (f->desc);
 			const char *fmt;
 			if (sz == UT64_MAX) {
-				fmt = "%c %d %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64d" %s\n";
+				fmt = "%c %d %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64d"\n";
 			} else {
-				fmt = "%c %d %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64u" %s\n";
+				fmt = "%c %d %d %s @ 0x%"PFMT64x" ; %s size=%"PFMT64u"\n";
 			}
 			r_cons_printf (fmt,
 					core->io->desc->fd == f->desc->fd?'*':'-',		//what if io->desc == null ?
 					count,
 					(int)f->desc->fd, f->desc->uri, (ut64)from,
 					f->desc->flags & R_IO_WRITE? "rw": "r",
-					r_io_desc_size (f->desc),
-					overlapped?"overlaps":"");
+					r_io_desc_size (f->desc));
 			}
 			break;
 		}
@@ -1029,7 +1030,7 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	}
 
 	limit = r_config_get_i (r->config, "cfg.hashlimit");
-	if (r_io_desc_size (cf->desc) > limit)
+	if (r_io_desc_size (cf->desc) > limit) {
 		return false;
 	}
 	buf = (ut8*)r_file_slurp (file, &buf_len);

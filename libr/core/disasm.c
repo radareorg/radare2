@@ -247,6 +247,7 @@ static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
+#if 0
 	if (ds->core->io->pava) {
 		ut64 at = r_io_section_get_vaddr (ds->core->io, addr);
 		if (at == UT64_MAX || (!at && ds->at)) {
@@ -255,6 +256,7 @@ static ut64 p2v(RDisasmState *ds, ut64 addr) {
 			addr = at + addr;
 		}
 	}
+#endif
 	return addr;
 }
 
@@ -289,6 +291,7 @@ static const char * get_section_name(RCore *core, ut64 addr) {
 	RIOSection *s;
 	if (oaddr == addr) {
 		return section;
+	}
 	secs = r_io_section_vget_secs_at (core->io, addr);
 	s = secs ? ls_pop (secs): NULL;
 	ls_free (secs);

@@ -181,6 +181,19 @@ R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id)
 	return (!(length == io->sections->length));
 }
 
+R_API RIOSection *r_io_section_get_name (RIO *io, const char *name)
+{
+	RIOSection *s;
+	SdbListIter *iter;
+	if (!io || !name || !io->sections)
+		return NULL;
+	ls_foreach (io->sections, iter, s) {
+		if (s->name && (!strcmp (s->name, name)))
+			return s;
+	}
+	return NULL;
+}
+
 R_API void r_io_section_cleanup (RIO *io)
 {
 	SdbListIter *iter, *ator;

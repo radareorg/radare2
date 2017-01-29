@@ -143,7 +143,7 @@ R_API int r_io_desc_cache_read(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 		return 0;
 	}
 	if (len > desc_sz) {
-		len = (int)desc_size;
+		len = (int)desc_sz;
 	}
 	if (paddr > (desc_sz - len)) {
 		len = (int)(desc_sz - paddr);

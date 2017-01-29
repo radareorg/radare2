@@ -12,6 +12,8 @@
 #define R_IO_WRITE	2
 #define R_IO_EXEC	1
 #define R_IO_RW		R_IO_READ|R_IO_WRITE
+//remove R_IO_MAP asap
+#define R_IO_MAP	8
 
 #define R_IO_SEEK_SET	0
 #define R_IO_SEEK_CUR	1
@@ -83,6 +85,7 @@ typedef struct r_io_t {
 	void (*cb_printf)(const char *str, ...);
 	int (*cb_core_cmd)(void *user, const char *str);
 	char* (*cb_core_cmdstr)(void *user, const char *str);
+	void (*cb_core_post_write)(void *user, ut64 maddr, ut8 *orig_bytes, int orig_len);
 } RIO;
 
 typedef struct r_io_desc_t {
@@ -336,6 +339,7 @@ R_API RIOSection *r_io_section_get_i (RIO *io, ut32 id);
 R_API int r_io_section_rm (RIO *io, ut32 id);
 R_API SdbList *r_io_section_bin_get (RIO *io, ut32 bin_id);
 R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id);
+R_API RIOSection *r_io_section_get_name (RIO *io, const char *name);
 R_API void r_io_section_cleanup (RIO *io);
 R_API SdbList *r_io_section_get_secs_at (RIO *io, ut64 addr);
 R_API SdbList *r_io_section_vget_secs_at (RIO *io, ut64 vaddr);
