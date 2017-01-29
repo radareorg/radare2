@@ -90,8 +90,10 @@ init|up|update)
 		pwd
 	fi
 	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
-		echo "Updating $a ..."
-		( cd $a ; git pull )
+		if [ -d "$a" ]; then
+			echo "Updating $a ..."
+			( cd $a ; git pull )
+		fi
 	done
 
 	if [ -d "${R2PM_DBDIR}" ] && [ ! -L "${R2PM_DBDIR}" ]; then

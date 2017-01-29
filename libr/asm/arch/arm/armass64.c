@@ -205,6 +205,12 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	if (!strncmp (str, "smc ", 4)) { // secure monitor exception
 		return exception (op, str + 4, 0x040000d4);
 	}
+	if (!strncmp (str, "brk ", 4)) { // breakpoint
+		return exception (op, str + 4, 0x000020d4);
+	}
+	if (!strncmp (str, "hlt ", 4)) { // halt
+		return exception (op, str + 4, 0x000040d4);
+	}
 	if (!strncmp (str, "b ", 2)) {
 		*op = branch (str, addr, 0x14);
 		return *op != -1;
