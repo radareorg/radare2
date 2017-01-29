@@ -202,12 +202,6 @@ fi
 
 [ "$A$K" ] && TRIPLET="$K-$A-$B"
 
-OPT=-Os
-CFLAGS="${CFLAGS} -nostdinc -include ${SFLIBPATH}/${TRIPLET}/sflib.h"
-CFLAGS="${CFLAGS} -z execstack"
-CFLAGS="${CFLAGS} -fomit-frame-pointer -finline-functions -fno-zero-initialized-in-bss"
-LDFLAGS="${LDFLAGS} -nostdlib"
-
 case "$K" in
 windows)
 	#TEXT="__TEXT.__text"
@@ -225,11 +219,36 @@ darwin)
 	;;
 esac
 
+USE_CLANG=0
+case "$K-$A-$B" in
+darwin-arm-64)
+	CC="xcrun --sdk iphoneos gcc -arch arm64"
+	USE_CLANG=1
+	TEXT=0.__TEXT.__text
+	;;
+darwin-arm-32)
+	USE_CLANG=1
+	CC="xcrun --sdk iphoneos gcc -arch armv7"
+	TEXT=0.__TEXT.__text
+	;;
+esac
+
+OPT=-Os
+CFLAGS="${CFLAGS} -nostdinc -include ${SFLIBPATH}/${TRIPLET}/sflib.h"
+if [ 1 = "${USE_CLANG}" ]; then
+	CFLAGS="${CFLAGS} -fomit-frame-pointer -fno-zero-initialized-in-bss"
+else
+	CFLAGS="${CFLAGS} -z execstack -fomit-frame-pointer -finline-functions -fno-zero-initialized-in-bss"
+fi
+LDFLAGS="${LDFLAGS} -nostdlib"
+
+
 rmtemps() {
 	[ -z "$D" ] && rm -f $F.tmp $F.text $F.s $F.o
 }
 
 fail() {
+	echo "ERROR: $@"
 	rmtemps
 	exit 1
 }
@@ -239,6 +258,7 @@ if [ "$D" ]; then
 	echo "${CC} ${CFLAGS} -o $F.tmp -S ${OPT} $F"
 fi
 rm -f "$F.bin"
+echo ${CC} ${CFLAGS} -o "$F.tmp" -S ${OPT} "$F"
 ${CC} ${CFLAGS} -o "$F.tmp" -S ${OPT} "$F" || fail
 echo "${SHDR}" > $F.s
 cat "$F.tmp" \
@@ -251,11 +271,14 @@ if [ $ASM = 1 ]; then
 	exit 0
 fi
 
+echo ==============================
+
 if [ "$D" ]; then
 	echo "==> Assemble"
 	echo "${CC} ${LDFLAGS} ${OPT} -o $F.o $F.s"
 fi
-${CC} ${LDFLAGS} ${OPT} -o "$F.o" "$F.s" || fail
+echo "${CC} ${LDFLAGS} ${OPT} -o $F.o $F.s"
+${CC} ${LDFLAGS} ${OPT} -o "$F.o" "$F.s" || fail 'compile object'
 
 if [ "$D" ]; then
 	echo "==> Link"
@@ -263,8 +286,13 @@ if [ "$D" ]; then
 	echo "rabin2 -o '$F.text' -O d/S/${TEXT} $F.o"
 fi
 rabin2 -o "$F.text" -O d/S/${TEXT} $F.o
+if [ ! -f "$F.o" ]; then
+	echo "Cannot find $F.o"
+	exit 1
+fi
 if [ "`du $F.text|awk '{print $1}'`" = 0 ]; then
 	# use objcopy as falback for rabin2
+	echo "FALLBACK: Using objcopy instead of rabin2"
 	${OBJCOPY} -j .text -O binary $F.o $F.text || fail
 fi
 if [ "$C" = 1 ]; then
@@ -285,7 +313,7 @@ if [ "$D" ]; then
 	ls -l $F.text
 fi
 [ -z "$O" ] && O="$F.bin"
-ragg2 -b "$B" -C "$F.text" -f ${FMT} -a $A -o "$O" || fail
+ragg2 -b "$B" -C "$F.text" -f ${FMT} -a $A -o "$O" || fail "ragg2 cannot generate executable. Use -x"
 echo "$O"
 rmtemps
 exit 0
