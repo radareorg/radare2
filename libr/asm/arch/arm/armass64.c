@@ -176,6 +176,26 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = mov (str, 0x80d2);
 		return *op != -1;
 	}
+	if (!strncmp (str, "adr x", 5)) { // w
+		int regnum = atoi (str + 5);
+		char *arg = strchr (str + 5, ',');
+		ut64 at = 0LL;
+		if (arg) {
+			at = r_num_math (NULL, arg + 1);
+			// XXX what about negative values?
+			at = at - addr;
+			at /= 4;
+		}
+		*op = 0x00000010;
+		*op += 0x01000000 * regnum;
+		ut8 b0 = at;
+		ut8 b1 = (at >> 3) & 0xff;
+		ut8 b2 = (at >> (8 + 7)) & 0xff;
+		*op += b0 << 29;
+		*op += b1 << 16;
+		*op += b2 << 24;
+		return *op != -1;
+	}
 	if (!strcmp (str, "nop")) {
 		*op = 0x1f2003d5;
 		return *op != -1;
