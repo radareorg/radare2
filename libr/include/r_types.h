@@ -325,6 +325,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define PFMT64o "llo"
 #endif
 
+#define PFMT32x "x"
+#define PFMT32d "d"
+#define PFMT32u "u"
+#define PFMT32o "o"
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif

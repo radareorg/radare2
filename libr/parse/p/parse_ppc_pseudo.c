@@ -72,7 +72,7 @@ static const char* cmask32(const char *mb_c, const char *me_c){
 	ut32 me = 32;
 	if (mb_c) mb += atol(mb_c);
 	if (me_c) me += atol(me_c);
-	snprintf(cmask, sizeof(cmask), "0x%"PFMT32x"", mask32 (mb, me));
+	snprintf (cmask, sizeof(cmask), "0x%x", mask32 (mb, me));
 	return cmask;
 }
 
@@ -90,19 +90,21 @@ static const char* inv_mask64(const char *mb_c, const char *sh){
 	return cmask;
 }
 
-static const char* inv_mask32(const char *mb_c, const char *sh){
+#if 0
+static const char* inv_mask32(const char *mb_c, const char *sh) {
 	static char cmask[32];
 	ut32 mb = 0;
 	ut32 me = 0;
 	if (mb_c) {
-		mb = atol(mb_c);
+		mb = atol (mb_c);
 	}
 	if (sh) {
-		me = atol(sh);
+		me = atol (sh);
 	}
-	snprintf (cmask, sizeof(cmask), "0x%"PFMT32x"", mask32 (mb, ~me));
+	snprintf (cmask, sizeof(cmask), "0x%x", mask32 (mb, ~me));
 	return cmask;
 }
+#endif
 
 static int can_replace(const char *str, int idx, int max_operands) {
 	if (str[idx] < 'A' || str[idx] > 'J') {
