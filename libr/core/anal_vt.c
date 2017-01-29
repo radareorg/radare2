@@ -15,7 +15,10 @@ static RList* getVtableMethods(RCore *core, vtable_info *table) {
 		int bits = r_config_get_i (core->config, "asm.bits");
 		int wordSize = bits / 8;
 		while (curMethod < totalMethods) {
-			ut64 curAddressValue = r_io_read_i (core->io, startAddress, 8);
+			int sz;
+			ut64 curAddressValue;
+			sz = R_DIM (8, 1, 8);
+			r_io_read_at (core->io, startAddress, (ut8 *)&curAddressValue, sz);
 			RAnalFunction *curFuntion = r_anal_get_fcn_in (core->anal, curAddressValue, 0);
 			r_list_append (vtableMethods, curFuntion);
 			startAddress += wordSize;
@@ -36,8 +39,10 @@ static int inTextSection(RCore *core, ut64 curAddress) {
 }
 
 static int valueInTextSection(RCore *core, ut64 curAddress) {
+	int sz = R_DIM (8, 1, 8);
 	//value at the current address
-	ut64 curAddressValue = r_io_read_i (core->io, curAddress, 8);
+	ut64 curAddressValue;
+	r_io_read_at (core->io, curAddress, (ut8 *)&curAddressValue, sz);
 	//if the value is in text section
 	return inTextSection (core, curAddressValue);
 }
@@ -77,7 +82,7 @@ RList* search_virtual_tables(RCore *core){
 	}
 	ut64 startAddress;
 	ut64 endAddress;
-	RListIter * iter;
+	SdbListIter * iter;
 	RIOSection *section;
 	RList *vtables = r_list_newf ((RListFree)free);
 	if (!vtables) {
@@ -85,10 +90,10 @@ RList* search_virtual_tables(RCore *core){
 	}
 	ut64 bits = r_config_get_i (core->config, "asm.bits");
 	int wordSize = bits / 8;
-	r_list_foreach (core->io->sections, iter, section) {
+	ls_foreach (core->io->sections, iter, section) {
 		if (!strcmp (section->name, ".rodata")) {
 			ut8 *segBuff = calloc (1, section->size);
-			r_io_read_at (core->io, section->offset, segBuff, section->size);
+			r_io_read_at (core->io, section->addr, segBuff, section->size);
 			startAddress = section->vaddr;
 			endAddress = startAddress + (section->size) - (bits/8);
 			while (startAddress <= endAddress) {

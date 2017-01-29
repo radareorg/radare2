@@ -2063,7 +2063,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	}
 	if (totalsize == UT64_MAX) {
 		if (core->file && core->io) {
-			totalsize = r_io_desc_size (core->io, core->file->desc);
+			totalsize = r_io_desc_size (core->file->desc);
 			if ((st64) totalsize < 1) {
 				totalsize = -1;
 			}
@@ -2440,7 +2440,7 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 
 static int cmd_print(void *data, const char *input) {
 	int mode, w, p, i, l, len, total[10];
-	ut64 off, from, to, at, ate, piece;
+	ut64 off, from, to, at, ate, piece, fsz;
 	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
 	ut64 tmpseek = UT64_MAX;
@@ -2648,10 +2648,12 @@ static int cmd_print(void *data, const char *input) {
 				if (off >= at && off < ate) {
 					r_cons_memcat ("^", 1);
 				} else {
-					RIOSection *s = r_io_section_vget (core->io, at);
+					SdbList *secs = r_io_section_vget_secs_at (core->io, at);
+					RIOSection *s = secs ? ls_pop (secs) : NULL;
+					ls_free (secs);
 					if (use_color) {
 						if (s) {
-							if (s->rwx & 1) {
+							if (s->flags & 1) {		//use a define here
 								r_cons_print (Color_BGBLUE);
 							} else {
 								r_cons_print (Color_BGGREEN);
@@ -2678,8 +2680,9 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (fsz<1)
 			fsz = (core->file && core->io)? r_io_desc_size (core->file->desc): 0;
+#if 0				//wtf is this
 		if (nbsz) {
-			obsz = core->blocksize;
+			ut64 obsz = core->blocksize;
 			switch (input1) {
 			case 'p':
 			case 'e':
@@ -2691,6 +2694,7 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			}
 		}
+#endif
 		switch (mode) {
 		case 'j':
 			r_cons_strcat ("]}\n");

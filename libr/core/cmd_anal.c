@@ -3435,13 +3435,17 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	addr = core->offset;
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
-		RIOSection *s = r_io_section_vget (core->io, addr);
-		if (s && s->rwx & 1) {
+		SdbList *secs;
+		RIOSection *s;
+		secs = r_io_section_vget_secs_at (core->io, addr);
+		s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
+		if (s && s->flags & 1) {			//XXX: use a define here
 			// search in current section
 			if (s->size > binfile->size) {
 				addr = s->vaddr;
-				if (binfile->size > s->offset) {
-					len = binfile->size - s->offset;
+				if (binfile->size > s->addr) {
+					len = binfile->size - s->addr;
 				} else {
 					eprintf ("Opps something went wrong aac\n");
 					return;
@@ -3452,9 +3456,13 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 			}
 		} else {
 			// search in full file
-			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
-			if (o != UT64_MAX && binfile->size > o) {
-				len = binfile->size - o;
+			SdbList *secs;
+			RIOSection *sec;
+			secs = r_io_section_vget_secs_at (core->io, addr);
+			sec = secs ? ls_pop (secs) : NULL;
+			ls_free (secs);
+			if (sec->vaddr != sec->addr && binfile > (core->offset - sec->vaddr + sec->addr)) {
+				len = binfile->size - (core->offset - sec->vaddr + sec->addr);
 			} else {
 				if (binfile->size > core->offset) {
 					if (binfile->size > core->offset) {
@@ -4967,6 +4975,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define set(x,y) r_config_set(core->config, x, y);
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
+	SdbList *secs;
 	RIOSection *s;
 	ut64 o_align = geti ("search.align");
 	ut64 from, to, ptr;
@@ -4977,7 +4986,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	if (is_debug) {
 		r_list_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
 	} else {
-		s = r_io_section_vget (core->io, core->offset);
+		secs = r_io_section_vget_secs_at (core->io, core->offset);
+		s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
 		if (s) {
 			from = s->vaddr;
 			to = s->vaddr + s->size;
@@ -4992,7 +5003,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	char *arg = strchr (input, ' ');
 	if (arg) {
 		ptr = r_num_math (core->num, arg + 1);
-		s = r_io_section_vget (core->io, ptr);
+		secs = r_io_section_vget_secs_at (core->io, ptr);
+		s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
 	}
 	{
 		RList *ret;
@@ -5000,7 +5013,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			ret = r_core_get_boundaries_prot (core, 0, "dbg.map", &vmin, &vmax);
 		} else {
 			from = r_config_get_i (core->config, "bin.baddr");
-			to = from + ((core->file)? r_io_desc_size (core->io, core->file->desc): 0);
+			to = from + ((core->file)? r_io_desc_size (core->file->desc): 0);
 			if (!s) {
 				eprintf ("aav: Cannot find section at 0x%"PFMT64d"\n", ptr);
 				return; // WTF!
@@ -5095,7 +5108,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			char *dh_orig = core->dbg->h 
 					? strdup (core->dbg->h->name)
 					: strdup ("esil");
-			if (core->io && core->io->plugin && !core->io->plugin->isdbg) {
+			if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
 				//use dh_origin if we are debugging
 				R_FREE (dh_orig);
 			}	

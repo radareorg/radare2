@@ -219,14 +219,9 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				oto = to;
 				f = from;
 				t = to;
-				for (j = f; j < t; j += bsize) {
-					int nsize = (j + bsize < fsize) ? bsize : (fsize - j);
-					r_io_pread (io, j, buf, bsize);
-=======
 				for (j=f; j<t; j+=bsize) {
 					int nsize = (j+bsize<fsize)? bsize: (fsize-j);
 					r_io_pread_at (io, j, buf, bsize);
->>>>>>> fix a few build issues
 					from = j;
 					to = j + bsize;
 					if (to > fsize)

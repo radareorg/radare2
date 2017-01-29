@@ -311,21 +311,22 @@ static void cmd_open_map (RCore *core, const char *input) {
 	r_core_block_read (core);
 }
 
+//Why?
 R_API void r_core_file_reopen_in_malloc (RCore *core) {
 	RCoreFile *f;
 	RListIter *iter;
 	r_list_foreach (core->files, iter, f) {
-		ut64 sz = r_io_desc_size (core->io, f->desc);
+		ut64 sz = r_io_desc_size (f->desc);
 		ut8 *buf = calloc (sz, 1);
 		if (!buf) {
 			eprintf ("Cannot allocate %d\n", (int)sz);
 			continue;
 		}
-		(void)r_io_pread (core->io, 0, buf, sz);
+		r_io_pread_at (core->io, 0, buf, sz);
 		char *url = r_str_newf ("malloc://%d", (int)sz);
 		RIODesc *desc = r_io_open (core->io, url, R_IO_READ | R_IO_WRITE, 0);
 		if (desc) {
-			r_io_close (core->io, f->desc);
+			r_io_close (core->io, f->desc->fd);
 			f->desc = desc;
 			(void)r_io_write_at (core->io, 0, buf, sz);
 		} else {
@@ -544,7 +545,7 @@ static int cmd_open(void *data, const char *input) {
 				int count = 0;
 				r_list_foreach (core->files, iter, f) {
 					if (count == nth) {
-						r_io_raise (core->io, num);
+						r_io_desc_use (core->io, f->desc->fd);
 						break;
 					}
 					count++;
@@ -620,10 +621,11 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("Usage: o [file]\n");
 		}
 		break;
-	case 'f':
+	case 'F':
 		{
 			RListIter *iter = NULL;
 			RCoreFile *f;
+			ut64 ma;
 			num = atoi (input+1);
 			core->switch_file_view = 0;
 			r_list_foreach (core->files, iter, f) {
@@ -642,7 +644,7 @@ static int cmd_open(void *data, const char *input) {
 						r_cons_printf ("%d\n", file->desc->fd);
 						// MUST CLEAN BEFORE LOADING
 						if (!isn) {
-							r_core_bin_load (core, fn, ba);
+							r_core_bin_load (core, fn, baddr);
 						}
 					} else if (!nowarn) {
 						eprintf ("Cannot open file '%s'\n", fn);
@@ -656,7 +658,7 @@ static int cmd_open(void *data, const char *input) {
 				core->switch_file_view = 0;
 				r_list_foreach (core->files, iter, f) {
 					if (f->desc->fd == num) {
-						r_io_raise (core->io, num);
+						r_io_desc_use (core->io, f->desc->fd);
 						core->switch_file_view = 1;
 						// raise rbinobj too
 						int binfile_num = find_binfile_id_by_fd (core->bin, num);
