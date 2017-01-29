@@ -230,6 +230,9 @@ R_API RCore *r_core_cast(void *p) {
 
 static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt) {
 	RCore *core = (RCore *)user;
+	SdbList *secs;
+	RIOSection *sec;
+	ut64 vaddr;
 
 	if (!r_config_get_i (core->config, "asm.cmtpatch")) {
 		return;
@@ -248,8 +251,11 @@ static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt
 		return;
 	}
 
-	ut64 vaddr = r_io_section_maddr_to_vaddr (core->io, maddr);
-	vaddr = (vaddr == UT64_MAX) ? maddr : vaddr;
+	secs = r_io_section_get_secs_at (core->io, maddr);
+	sec = secs ? ls_pop (secs) : NULL;
+	ls_free (secs);
+
+	vaddr = sec ? (sec->vaddr + maddr - sec->addr) : maddr;
 
 	r_meta_add (core->anal, R_META_TYPE_COMMENT, vaddr, vaddr, comment);
 	free (comment);
@@ -2015,7 +2021,6 @@ reaccept:
 	core->io->plugin = NULL;
 	while (!r_cons_is_breaked ()) {
 #endif
-	r_cons_break (rap_break, rior);
 	while (!core->cons->breaked) {
 		c = r_socket_accept (fd);
 		if (!c) {

@@ -323,7 +323,7 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 		core->offset = addr;
 	}
 	if (rb) {
-		ret = r_core_block_read (core, 0);
+		ret = r_core_block_read (core);
 		if (!ret) {
 			core->offset = old;
 		}
@@ -451,12 +451,12 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 
 R_API int r_core_block_read(RCore *core) {
 	if (!core->file && !r_core_file_set_first_valid (core)) {
-		memset (core->block, core->io->Oxff, core->blocksize);
+		memset (core->block, 0xff, core->blocksize);		//io->Oxff
 		return -1;
 	}
 	if (core->file && core->switch_file_view) {
 		r_io_desc_use (core->io, core->file->desc->fd);
-		r_core_bin_set_by_fd (core, core->file->desc->fd); //needed?
+		r_core_bin_set_by_fd (core, core->file->desc->fd);	//needed?
 		core->switch_file_view = 0;
 	}
 	return r_io_read_at (core->io, core->offset, core->block, core->blocksize);
@@ -465,7 +465,7 @@ R_API int r_core_block_read(RCore *core) {
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (!core || !core->io || !core->file || !core->file->desc || size < 1) {
 		if (core && core->io && size > 0) {
-			memset (buf, core->io->Oxff, size);
+			memset (buf, 0xff, size);			//io->Oxff
 		}
 		return false;
 	}

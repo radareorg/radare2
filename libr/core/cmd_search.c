@@ -1246,8 +1246,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_cons_printf ("[");
 	}
 	r_cons_break_push (NULL, NULL);
-
-	r_cons_break (NULL, NULL);
 	ls_foreach (list, itermap, map) {
 		from = map->from;
 		to = map->to;
@@ -1411,6 +1409,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 
 	if (json) {
 		r_cons_printf ("]\n");
+	}
 
 	ls_free (list);
 	r_list_free (rx_list);
@@ -1949,7 +1948,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			param->boundaries = NULL;
 		}
 		r_io_desc_use (core->io, ofd);
-	} else eprintf ("No keywords defined\n");
+	//} else eprintf ("No keywords defined\n");
 
 	/* Crazy party counter (kill me please) */
 	if (!searchhits && core->search->n_kws > 0) {

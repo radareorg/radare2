@@ -1804,13 +1804,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		} else {
 			if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
 				ut64 addr = core->print->screen_bounds;
-				if (core->io->pava) {
+/*				if (core->io->pava) {
 					addr = core->offset + 32;
 				} else {
-					if (core->print->screen_bounds == core->offset) {
+*/					if (core->print->screen_bounds == core->offset) {
 						addr += r_asm_disassemble (core->assembler, &op, core->block, 32);
 					}
-				}
+//				}
 				r_core_seek (core, addr, 1);
 			} else {
 				r_core_seek (core, core->offset + obs, 1);
@@ -1849,15 +1849,15 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		} else {
 			if (core->print->screen_bounds > 1 && core->print->screen_bounds > core->offset) {
 				int delta = (core->print->screen_bounds - core->offset);
-				if (core->io->pava) {
+/*				if (core->io->pava) {
 					r_core_seek_delta (core, -32);
 				} else {
-					if (core->offset >= delta) {
+*/					if (core->offset >= delta) {
 						r_core_seek (core, core->offset - delta, 1);
 					} else {
 						r_core_seek (core, 0, 1);
 					}
-				}
+//				}
 			} else {
 				ut64 at = (core->offset>obs)?core->offset-obs:0;
 				if (core->offset >obs)

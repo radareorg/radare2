@@ -457,7 +457,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (!r_io_read_at (core->io, r_num_math (core->num,
 				input+1), buf, core->blocksize))
 					eprintf ("Cannot read hexdump\n");
-			val = radare_compare (core, core->block, buf, ret);
+			val = radare_compare (core, core->block, buf, ret, 0);
 			free (buf);
 		} return false;
 		break;

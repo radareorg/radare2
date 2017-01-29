@@ -1000,17 +1000,16 @@ static int cmd_write(void *data, const char *input) {
 					if (port) {
 						*port ++= 0;
 						char *space = strchr (port, ' ');
+						int va = core->io->va;
 						if (space) {
 							*space++ = 0;
 							sz = r_num_math (core->num, space);
 							addr = core->offset;
 						}
 						ut8 *buf = calloc (1, sz);
-						if (space) {
-							(void)r_io_vread (core->io, addr, buf, sz);
-						} else {
-							(void)r_io_pread (core->io, addr, buf, sz);
-						}
+						core->io->va = !!space;
+						r_io_read_at (core->io, addr, buf, sz);
+						core->io->va = va;
 						RSocket *s = r_socket_new (false);
 						if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
 							int done = 0;
@@ -1087,7 +1086,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 			if (tmp) {
 				if (toend) {
-					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					sz = r_io_desc_size (core->file->desc) - core->offset;
 				} else {
 					sz = (st64) r_num_math (core->num, tmp + 1);
 					if (!sz) {
@@ -1102,7 +1101,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else {
 				if (toend) {
-					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					sz = r_io_desc_size (core->file->desc) - core->offset;
 					r_core_dump (core, filename, core->offset, (ut64)sz, append);
 				} else {
 					if (!r_file_dump (filename, core->block, core->blocksize, append)) {
@@ -1119,35 +1118,6 @@ static int cmd_write(void *data, const char *input) {
 	case 'f':
 		cmd_wf (core, input);
 		break;
-<<<<<<< HEAD
-=======
-	case 'F': // wF
-		arg = (const char *)(input+((input[1]==' ')?2:1));
-		if (!strcmp (arg, "-")) {
-			int len;
-			ut8 *out;
-			char *in = r_core_editor (core, NULL, NULL);
-			if (in) {
-				out = (ut8 *)strdup (in);
-				if (out) {
-					len = r_hex_str2bin (in, out);
-					if (len>0)
-						r_io_write_at (core->io, core->offset, out, len);
-					free (out);
-				}
-				free (in);
-			}
-		} else
-		if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-			if (core->file->desc)
-				r_io_desc_use (core->io, core->file->desc->fd);
-			r_io_write_at (core->io, core->offset, buf, size);
-			WSEEK (core, size);
-			free (buf);
-			r_core_block_read (core, 0);
-		} else eprintf ("Cannot open file '%s'\n", arg);
-		break;
->>>>>>> fix a few build issues
 	case 'w':
 		str++;
 		len = (len - 1) << 1;
@@ -1192,7 +1162,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else if (r_file_exists (arg)) {
 				if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-					r_io_use_desc (core->io, core->file->desc);
+					r_io_desc_use (core->io, core->file->desc->fd);
 					if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
 						core->num->value = size;
 						WSEEK (core, size);
