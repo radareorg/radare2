@@ -613,6 +613,43 @@ static int cmtcb(void *usr, const char *k, const char *v) {
 	return 1;
 }
 
+R_API bool r_core_visual_hudclasses(RCore *core) {
+	RListIter *iter, *iter2;
+	RBinClass *c;
+	RBinField *f;
+	RBinSymbol *m;
+	ut64 addr;
+	char *res;
+	RList *list = r_list_new ();
+	if (!list) {
+		return false;
+	}
+	list->free = free;
+	RList *classes = r_bin_get_classes (core->bin);
+	r_list_foreach (classes, iter, c) {
+		r_list_foreach (c->fields, iter2, f) {
+			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
+				f->vaddr, c->name, f->name));
+		}
+		r_list_foreach (c->methods, iter2, m) {
+			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
+				m->vaddr, c->name, m->name));
+		}
+	}
+	res = r_cons_hud (list, NULL, r_config_get_i (core->config, "scr.color"));
+	if (res) {
+		char *p = strchr (res, ' ');
+		if (p) {
+			*p = 0;
+		}
+		addr = r_num_get (NULL, res);
+		r_core_seek (core, addr, true);
+		free (res);
+	}
+	r_list_free (list);
+	return res? true: false;
+}
+
 R_API bool r_core_visual_hudstuff(RCore *core) {
 	RListIter *iter;
 	RFlagItem *flag;
@@ -841,6 +878,11 @@ R_API int r_core_visual_classes(RCore *core) {
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
 			break;
+		case '_':
+			if (r_core_visual_hudclasses (core)) {
+				return true;
+			}
+			break;
 		case 'J': option += 10; break;
 		case 'j': option++; break;
 		case 'k': if (--option < 0) option = 0; break;
@@ -1030,8 +1072,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_config_toggle (core->config, "scr.color");
 			break;
 		case '_':
-			if (r_core_visual_hudstuff (core))
+			if (r_core_visual_hudstuff (core)) {
 				return true;
+			}
 			break;
 		case 'J': option += 10; break;
 		case 'o': r_flag_sort (core->flags, 0); break;
