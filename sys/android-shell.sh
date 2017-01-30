@@ -70,8 +70,8 @@ fi
 #fi
 if [ "${BUILD}" != 0 ]; then
 	if [ ! -d "${NDK}" ]; then
-		echo "Cannot find Android NDK ${NDK}"
-		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc"
+		echo "Cannot find Android NDK ${NDK}" > /dev/stderr
+		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc" > /dev/stderr
 		#echo "echo SDK=/path/to/sdk >> ~/.r2androidrc"
 		exit 1
 	fi
