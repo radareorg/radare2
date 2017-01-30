@@ -13,6 +13,8 @@
 #define JAYRO_04 0
 
 // 16 KB is the maximum size for a basic block
+// This slowdowns A LOT the analysis. by a lot i mean that using incremental
+// reads could make the analysis 4 times faster
 #define MAXBBSIZE 16 * 1024
 #define MAX_FLG_NAME_SIZE 64
 
@@ -1026,14 +1028,8 @@ repeat:
 						/* for mach0 */
 						in_plt = true;
 					}
-					if (anal->cur->arch && strstr (anal->cur->arch, "arm")) {
-						if (anal->bits == 64) {
-							if (!in_plt) goto river;
-						}
-					} else {
-						if (in_plt) {
-							goto river;
-						}
+					if (!in_plt) {
+						goto river;
 					}
 				}
 			}
