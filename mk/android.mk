@@ -1,4 +1,4 @@
-ifeq (${PATH},"${ARCH}-linux-androideabi-gcc")
+ifeq (${PATH},"/usr/arm-linux-androideabi/bin/${ARCH}-linux-androideabi-gcc")
 CC=${ARCH}-linux-androideabi-gcc
 RANLIB={ARCH}-linux-androideabi-ranlib
 USERCC=${ARCH}-linux-androideabi-gcc -fPIC -fPIE
