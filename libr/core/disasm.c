@@ -816,10 +816,9 @@ static void ds_beginline(RDisasmState *ds, RAnalFunction *f, bool nopre) {
 
 static void ds_pre_xrefs(RDisasmState *ds) {
 	RCore *core = ds->core;
-
 	if (ds->show_fcnlines) {
 		ds_setup_pre (ds, false, false);
-		if (*ds->pre != ' '){
+		if (*ds->pre != ' ') {
 			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 			ds->pre = r_str_concat (ds->pre, " ");
 		}
@@ -925,9 +924,17 @@ static void ds_show_xrefs(RDisasmState *ds) {
 
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
-			RAnalFunction *fun = r_anal_get_fcn_in (
-				core->anal, refi->addr, -1);
-			name = strdup (fun ? fun->name : "unk");
+			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, refi->addr, -1);
+			if (fun) {
+				name = strdup (fun->name);
+			} else {
+				RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
+				if (f) {
+					name = r_str_newf ("%s + %d", f->name, refi->addr - f->offset);
+				} else {
+					name = strdup ("unk");
+				}
+			}
 			if (demangle) {
 				tmp = r_bin_demangle (core->bin->cur, lang, name, refi->addr);
 				if (tmp) {
@@ -1505,6 +1512,25 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	RCore *core = ds->core;
 	int ret;
+	const char *mt_key, *info;
+	Sdb *s = core->anal->sdb_meta;
+	char key[100];
+	ut64 mt_sz;
+
+	//handle meta info to fix ds->oplen
+	snprintf (key, sizeof (key) - 1, "meta.0x%"PFMT64x, ds->at);
+	info = sdb_const_get (s, key, 0);
+	if (info) {
+		for (;*info; info++) {
+			snprintf (key, sizeof (key) - 1, 
+			  	"meta.%c.0x%"PFMT64x, *info, ds->at);
+			mt_key = sdb_const_get (s, key, 0);
+			mt_sz = sdb_array_get_num (s, key, 0, 0);
+			if (mt_sz) {
+				break;
+			}
+		}
+	}
 
 	if (ds->hint && ds->hint->size) {
 		ds->oplen = ds->hint->size;
@@ -1526,7 +1552,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				ds->prev_ins_eq = true;
 				r_cons_printf ("...");
 			}
-			ds->prev_ins_count ++;
+			ds->prev_ins_count++;
 			return -31337;
 		}
 		if (ds->prev_ins_eq) {
@@ -1557,11 +1583,16 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->oplen = ds->asmop.size;
 	} else {
 		ds->lastfail = 0;
-		ds->asmop.size = (ds->hint && ds->hint->size) ? ds->hint->size : r_asm_op_get_size (&ds->asmop);
+		ds->asmop.size = (ds->hint && ds->hint->size) 
+				? ds->hint->size 
+				: r_asm_op_get_size (&ds->asmop);
 		ds->oplen = ds->asmop.size;
 	}
 	if (ds->pseudo) {
-		r_parse_parse (core->parser, ds->opstr ? ds->opstr : ds->asmop.buf_asm, ds->str);
+		r_parse_parse (core->parser, ds->opstr 
+		  		? ds->opstr 
+				: ds->asmop.buf_asm, 
+				ds->str);
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
 	}
@@ -1569,6 +1600,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		r_str_case (ds->asmop.buf_asm, 1);
 	} else if (ds->capitalize) {
 		ds->asmop.buf_asm[0] = toupper (ds->asmop.buf_asm[0]);
+	}
+	if (info) {
+		ds->oplen = mt_sz;
 	}
 	return ret;
 }
@@ -2397,21 +2431,19 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 static void ds_align_comment(RDisasmState *ds) {
 	const int cmtcol = ds->cmtcol;
 	if (ds->show_comment_right_default) {
-		char *ll = r_cons_lastline ();
+		int cstrlen = 0;
+		char *ll = r_cons_lastline (&cstrlen);
 		if (ll) {
-			int cstrlen = strlen (ll);
 			int cols, ansilen = r_str_ansi_len (ll);
 			int utf8len = r_utf8_strlen ((const ut8*)ll);
 			int cells = utf8len - (cstrlen - ansilen);
-
+			if (cstrlen < 20) {
+				ds_print_pre (ds);
+			}
 			cols = ds->interactive ? ds->core->cons->columns : 1024;
-			//cols = r_cons_get_size (NULL);
-			if (cmtcol + 16 >= cols) {
+			if (cells < cmtcol) {
 				int len = cmtcol - cells;
-				r_cons_memset (' ', len);
-			} else if (cells < cmtcol) {
-				int len = cmtcol - cells;
-				if (len < cols) {
+				if (len < cols && len > 0) {
 					r_cons_memset (' ', len);
 				}
 			}
@@ -2766,8 +2798,8 @@ static void ds_print_relocs(RDisasmState *ds) {
 
 	if (rel) {
 		const int cmtcol = ds->cmtcol;
-		char *ll = r_cons_lastline ();
-		int cstrlen = strlen (ll);
+		int cstrlen = 0;
+		char *ll = r_cons_lastline (&cstrlen);
 		int ansilen = r_str_ansi_len (ll);
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
@@ -2941,12 +2973,14 @@ static void print_fcn_arg(RCore *core, const char *type, const char *name,
 
 static void delete_last_comment(RDisasmState *ds) {
 	if (ds->show_comment_right_default) {
-		char *ll = r_cons_lastline ();
+		int len = 0;
+		char *ll = r_cons_lastline (&len);
 		if (ll) {
-			char * begin = strstr (ll, "; ");
+			const char *begin = r_str_nstr (ll, "; ", len);
 			if (begin) {
-				int cstrlen = strlen (ll);
-				r_cons_drop (cstrlen - (int)(begin - ll));
+				// const int cstrlen = begin + len - ll;
+				// r_cons_drop (cstrlen - (int)(begin - ll));
+				r_cons_newline();
 			}
 		}
 	}

@@ -257,7 +257,7 @@ static RAnalBlock* appendBasicBlock (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 }
 
 #define FITFCNSZ() {\
-	st64 n = bb->addr+bb->size-fcn->addr; \
+	st64 n = bb->addr + bb->size-fcn->addr; \
 	if (n >= 0 && r_anal_fcn_size (fcn) <n) {r_anal_fcn_set_size (fcn, n); } } \
 	if (r_anal_fcn_size (fcn) > MAX_FCN_SIZE) { \
 		/* eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */ \
@@ -738,7 +738,7 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_ILL:
 			if (anal->opt.nopskip && len > 3 && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
-				if ((addr + delay.un_idx-oplen) == fcn->addr) {
+				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					fcn->addr += oplen;
 					bb->size -= oplen;
 					bb->addr += oplen;
@@ -783,6 +783,10 @@ repeat:
 						}
 					}
 				} else {
+					RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
+					if (fi) {
+						break;
+					}
 					skip_ret = skip_hp (anal, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
 					if (skip_ret == 1) {
 						goto repeat;
@@ -1014,6 +1018,10 @@ repeat:
 				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
 				if (s && s->name) {
 					bool in_plt = strstr (s->name, ".plt") != NULL;
+					if (!in_plt && strstr (s->name, "_stubs") != NULL) {
+						/* for mach0 */
+						in_plt = true;
+					}
 					if (anal->cur->arch && strstr (anal->cur->arch, "arm")) {
 						if (anal->bits == 64) {
 							if (!in_plt) goto river;

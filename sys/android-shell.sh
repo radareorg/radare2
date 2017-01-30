@@ -63,16 +63,18 @@ if [ ! -x /work ]
 		[ -z "${NDK}" ] && NDK=${HOME}/Downloads/android-ndk-r7b
 	fi
 
-	#if [ ! -d "${SDK}/tools" ]; then 
-	#	echo "Cannot find Android SDK ${SDK}"
-	#	echo "Edit ~/.r2androidrc with:"
-	#	echo 'SDK=~/Downloads/android-sdk-$(uname)'
-	#	echo 'NDK=~/Downloads/android-ndk-r7b'
-	#	exit 1
-	#fi
+
+#if [ ! -d "${SDK}/tools" ]; then 
+#	echo "Cannot find Android SDK ${SDK}"
+#	echo "Edit ~/.r2androidrc with:"
+#	echo 'SDK=~/Downloads/android-sdk-$(uname)'
+#	echo 'NDK=~/Downloads/android-ndk-r7b'
+#	exit 1
+#fi
+if [ "${BUILD}" != 0 ]; then
 	if [ ! -d "${NDK}" ]; then
-		echo "Cannot find Android NDK ${NDK}"
-		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc"
+		echo "Cannot find Android NDK ${NDK}" > /dev/stderr
+		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc" > /dev/stderr
 		#echo "echo SDK=/path/to/sdk >> ~/.r2androidrc"
 		exit 1
 	fi
@@ -95,26 +97,27 @@ if [ ! -x /work ]
 	#CFLAGS=-I${INCDIR}
 	#echo $NDKPATH_ARM
 
-	#PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
-	PATH=$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
-	export PATH
-	export CFLAGS
-	export NDK
-	export NDK_ARCH
-	[ -z "${SHELL}" ] && SHELL=sh
-	SHELL=sh
-	#cp ${ROOT}/ndk-gcc ${NDK}
-	#chmod +x ${NDK}/ndk-gcc
-	#CC=ndk-gcc
-	PS1="[r2-android-${NDK_ARCH}]> "
-	export CC
-	export PS1
-	export AR
-	export RANLIB
-	A=$@
-	if [ -n "$A" ]; then
-		${SHELL} -c "$A"
-	else
-		${SHELL}
-	fi
+  #PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
+  PATH=$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
+  export PATH
+  fi
+  export CFLAGS
+  export NDK
+  export NDK_ARCH
+  [ -z "${SHELL}" ] && SHELL=sh
+  SHELL=sh
+  cp ${ROOT}/ndk-gcc ${NDK}
+  chmod +x ${NDK}/ndk-gcc
+  CC=ndk-gcc
+  PS1="[r2-android-${NDK_ARCH}]> "
+  export CC
+  export PS1
+  export AR
+  export RANLIB
+  A=$@
+  if [ -n "$A" ]; then
+    ${SHELL} -c "$A"
+  else
+    ${SHELL}
+  fi
 fi

@@ -118,6 +118,7 @@ struct dex_encoded_catch_handler_t {
 };
 
 struct dex_debug_position_t {
+	ut32 source_file_idx;
 	ut64 address;
 	ut64 line;
 };

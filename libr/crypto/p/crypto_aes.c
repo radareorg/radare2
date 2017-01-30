@@ -7,7 +7,7 @@
 static struct aes_state st;
 static int flag = 0;
 
-static int aes_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
@@ -36,7 +36,7 @@ static bool aes_use (const char *algo) {
 
 #define BLOCK_SIZE 16
 
-static int update (RCrypto *cry, const ut8 *buf, int len) {
+static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
@@ -81,10 +81,10 @@ static int update (RCrypto *cry, const ut8 *buf, int len) {
 	r_crypto_append (cry, obuf, size);
 	free (obuf);
 	free (ibuf);
-	return 0;
+	return true;
 }
 
-static int final (RCrypto *cry, const ut8 *buf, int len) {
+static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 
@@ -98,7 +98,7 @@ RCryptoPlugin r_crypto_plugin_aes = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = { 
+RLibStruct radare_plugin = { 
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_aes,
 	.version = R2_VERSION

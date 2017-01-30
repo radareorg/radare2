@@ -9,6 +9,8 @@
 #define r_hash_adler32 __adler32
 #include "../../hash/adler32.c"
 
+extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
+
 #define DEBUG_PRINTF 0
 
 #if DEBUG_PRINTF
@@ -26,7 +28,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	ut64 len;
 	int uleblen;
 	if (!bin || idx < 0 || idx >= bin->header.strings_size ||
-	    !bin->strings) {
+		!bin->strings) {
 		return NULL;
 	}
 	if (bin->strings[idx] >= bin->size) {
@@ -57,7 +59,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 		char *str = calloc (1, len + 1);
 		if (str) {
 			r_buf_read_at (bin->b, (bin->strings[idx]) + uleblen,
-				       (ut8 *)str, len);
+						(ut8 *)str, len);
 			str[len] = 0;
 			return str;
 		}
@@ -294,7 +296,7 @@ out_error:
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
 static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
-				  RBinDexClass *c, int MI, int MA, int ins_size,
+				  RBinDexClass *c, int MI, int MA, int paddr, int ins_size,
 				  int insns_size, char *class_name, int regsz,
 				  int debug_info_off) {
 	struct r_bin_t *rbin = binfile->rbin;
@@ -304,6 +306,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	ut64 parameters_size;
 	ut64 param_type_idx;
 	ut16 argReg = regsz - ins_size;
+	ut32 source_file_idx = c->source_file;
 	RList *params, *debug_positions, *emitted_debug_locals = NULL; 
 	bool keep = true;
 	if (argReg >= regsz) {
@@ -519,9 +522,8 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			break;
 		case 0x9:
 			{
-			ut64 name_idx;
-			p4 = r_uleb128 (p4, p4_end - p4, &name_idx);
-			name_idx -= 1;
+			p4 = r_uleb128 (p4, p4_end - p4, &source_file_idx);
+			--source_file_idx;
 			}
 			break;
 		default:
@@ -535,6 +537,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 				keep = false;
 				break;
 			}
+			position->source_file_idx = source_file_idx;
 			position->address = address;
 			position->line = line;
 			r_list_append (debug_positions, position);
@@ -543,6 +546,24 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		}
 		opcode = *(p4++) & 0xff;
 	}
+
+	if (!binfile->sdb_addrinfo) {
+		binfile->sdb_addrinfo = sdb_new0 ();
+	}
+
+	char *fileline;
+	char offset[64];
+	char *offset_ptr;
+
+	RListIter *iter1;
+	struct dex_debug_position_t *pos;
+	r_list_foreach (debug_positions, iter1, pos) {
+		fileline = r_str_newf ("%s|%"PFMT64d, getstr (bin, pos->source_file_idx), pos->line);
+		offset_ptr = sdb_itoa (pos->address + paddr, offset, 16);
+		sdb_set (binfile->sdb_addrinfo, offset_ptr, fileline, 0);
+		sdb_set (binfile->sdb_addrinfo, fileline, offset_ptr, 0);
+	}
+
 	if (!dexdump) {
 		r_list_free (debug_positions);
 		r_list_free (emitted_debug_locals);
@@ -907,7 +928,7 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 			break;	
 		}
 		if (r_buf_read_at (binfile->buf, total, ff,
-				   sizeof (DexField)) != sizeof (DexField)) {
+				sizeof (DexField)) != sizeof (DexField)) {
 			break;
 		}
 		field.class_id = r_read_le16 (ff);
@@ -1157,17 +1178,6 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 			}
 		}
 
-		if (MC > 0 && debug_info_off > 0 && bin->header.data_offset < debug_info_off &&
-		    debug_info_off < bin->header.data_offset + bin->header.data_size) {
-			dex_parse_debug_item (binfile, bin, c, MI, MA, ins_size, 
-				insns_size, cls->name, regsz, debug_info_off);
-		} else if (MC > 0) {
-			if (dexdump) {
-				rbin->cb_printf ("      positions     :\n");
-				rbin->cb_printf ("      locals        :\n");
-			}
-		}
-
 		if (*flag_name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			sym->name = flag_name;
@@ -1181,7 +1191,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 			sym->vaddr = MC;// + 0x10;
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
-				// TODO: parse debug info
+
 				if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
 					R_FREE (sym);
 					R_FREE (signature);
@@ -1235,6 +1245,17 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				//r_list_append (bin->methods_list, sym);
 				// XXX memleak sym
 				R_FREE (sym);
+			}
+
+			if (MC > 0 && debug_info_off > 0 && bin->header.data_offset < debug_info_off &&
+				debug_info_off < bin->header.data_offset + bin->header.data_size) {
+				dex_parse_debug_item (binfile, bin, c, MI, MA, sym->paddr, ins_size, 
+					insns_size, cls->name, regsz, debug_info_off);
+			} else if (MC > 0) {
+				if (dexdump) {
+					rbin->cb_printf ("      positions     :\n");
+					rbin->cb_printf ("      locals        :\n");
+				}
 			}
 		} else {
 			R_FREE (flag_name);
@@ -1791,7 +1812,8 @@ RBinPlugin r_bin_plugin_dex = {
 	.header = &header,
 	.size = &size,
 	.get_offset = &getoffset,
-	.get_name = &getname
+	.get_name = &getname,
+	.dbginfo = &r_bin_dbginfo_dex,
 };
 
 #ifndef CORELIB

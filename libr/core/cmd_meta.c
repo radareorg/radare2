@@ -498,8 +498,8 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				} else if (type == 's') { //Cs
 					char tmp[256] = {0};
 					int i, j, name_len = 0;
-					(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 1);
-					name_len = r_str_nlen_w (tmp, sizeof (tmp));
+					(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 3);
+					name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
 					//handle wide strings
 					for (i = 0, j = 0; i < sizeof (name); i++, j++) {
 						name[i] = tmp[j];

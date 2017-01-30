@@ -243,6 +243,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	/* split the string into pieces of non-ANSI chars and print them normally,
 	** using the ANSI chars to set the attr of the canvas */
 	orig_x = c->x;
+	r_cons_break_push (NULL, NULL);
 	do {
 		const char *s_part = set_attr (c, s);
 		ch = 0;
@@ -273,7 +274,8 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 			c->x += slen;
 		}
 		s += piece_len;
-	} while (*s);
+	} while (*s && !r_cons_is_breaked ());
+	r_cons_break_pop ();
 	c->x = orig_x;
 }
 

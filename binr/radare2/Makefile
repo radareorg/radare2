@@ -4,6 +4,8 @@ BINDEPS+=r_bin r_debug r_anal r_reg r_bp r_io r_fs
 BINDEPS+=r_lang r_asm r_syscall r_hash
 BINDEPS+=r_magic r_socket r_flag r_egg r_crypto r_util
 
+include ../../config-user.mk
+
 # Apple Sign #
 CERTID?=org.radare.radare2
 BUNDLE=org.radare.radare2
@@ -12,6 +14,14 @@ ENTITL=radare2.xcent
 #ENTITL=radare2.xml
 #CFLAGS+=-flto
 #LDFLAGS+=-flto
+
+ifeq (${COMPILER},emscripten)
+# https://kripken.github.io/emscripten-site/docs/optimizing/Optimizing-Code.html
+# -s INLINING_LIMIT=1
+# --memory-init-file 0
+CFLAGS+=-s EXPORTED_FUNCTIONS='["_r2_asmjs_new", "_r2_asmjs_cmd", "_r2_asmjs_free", "_r2_asmjs_openurl"]'
+#CFLAGS+=-Oz --memory-init-file 0
+endif
 
 FOOD_LIBS=$(addprefix ../../libr/,$(subst r_,,$(BINDEPS)))
 SIGN_LIBS=$(addsuffix /libr_*.dylib,$(FOOD_LIBS))

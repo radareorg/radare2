@@ -257,7 +257,7 @@ typedef struct r_bin_xtr_metadata_t {
 typedef int (*FREE_XTR)(void *xtr_obj);
 typedef struct r_bin_xtr_extract_t {
 	char *file;
-	Sdb *sdb;
+	ut8 *buffer;
 	ut64 size;
 	ut64 offset;
 	ut64 baddr;
@@ -267,7 +267,7 @@ typedef struct r_bin_xtr_extract_t {
 	RBinXtrMetadata *metadata;
 } RBinXtrData;
 
-R_API RBinXtrData * r_bin_xtrdata_new (RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata, Sdb *sdb);
+R_API RBinXtrData * r_bin_xtrdata_new (RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata);
 R_API void r_bin_xtrdata_free (void /*RBinXtrData*/ *data);
 R_API void r_bin_info_free (RBinInfo *rb);
 R_API void r_bin_import_free(void *_imp);

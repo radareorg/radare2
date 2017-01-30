@@ -2210,6 +2210,23 @@ static int bin_classes(RCore *r, int mode) {
 		}
 		name = strdup (c->name);
 		r_name_filter (name, 0);
+		ut64 at_min = UT64_MAX;
+		ut64 at_max = 0LL;
+
+		r_list_foreach (c->methods, iter2, sym) {
+			if (sym->vaddr) {
+				if (sym->vaddr < at_min) {
+					at_min = sym->vaddr;
+				}
+				if (sym->vaddr + sym->size > at_max) {
+					at_max = sym->vaddr + sym->size;
+				}
+			}
+		}
+		if (at_min == UT64_MAX) {
+			at_min = c->addr;
+			at_max = c->addr; // XXX + size?
+		}
 
 		if (IS_MODE_SET (mode)) {
 			const char *classname = sdb_fmt (0, "class.%s", name);
@@ -2222,12 +2239,12 @@ static int bin_classes(RCore *r, int mode) {
 				}
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%08"PFMT64x" %s%s%s\n",
-				c->addr, c->name, c->super ? " " : "",
+			r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s%s%s\n",
+				at_min, at_max, c->name, c->super ? " " : "",
 				c->super ? c->super : "");
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f class.%s = 0x%"PFMT64x"\n",
-				name, c->addr);
+				name, at_min);
 			if (c->super) {
 				r_cons_printf ("f super.%s.%s = %d\n",
 					c->name, c->super, c->index);
@@ -2253,8 +2270,8 @@ static int bin_classes(RCore *r, int mode) {
 			r_cons_printf ("]}");
 		} else {
 			int m = 0;
-			r_cons_printf ("0x%08"PFMT64x" class %d %s",
-				c->addr, c->index, c->name);
+			r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" (sz %d) class %d %s",
+				at_min, at_max, (at_max - at_min), c->index, c->name);
 			if (c->super) {
 				r_cons_printf (" super: %s\n", c->super);
 			} else {

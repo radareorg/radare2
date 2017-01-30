@@ -151,11 +151,16 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 	}
 
 	const char *hline = useUtf8? RUNECODESTR_LINE_HORIZ : "-";
+	r_cons_break_push (NULL, NULL);
 	for (i = x + 1; i < x + width - 1; i++) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		if (G (i, y)) {
 			W (hline);
 		}
 	}
+	r_cons_break_pop ();
 
 	if (G (x + width - 1, y)) {
 		W (r_corner);
@@ -165,11 +170,16 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 static void draw_vertical_line (RConsCanvas *c, int x, int y, int height) {
 	int i;
 	const char *vline = useUtf8? RUNECODESTR_LINE_VERT : "|";
+	r_cons_break_push (NULL, NULL);
 	for (i = y; i < y + height; i++) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		if (G (x, i)) {
 			W (vline);
 		}
 	}
+	r_cons_break_pop ();
 }
 
 R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {

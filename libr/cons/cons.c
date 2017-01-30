@@ -826,9 +826,9 @@ R_API int r_cons_get_column() {
 }
 
 /* final entrypoint for adding stuff in the buffer screen */
-R_API void r_cons_memcat(const char *str, int len) {
+R_API int r_cons_memcat(const char *str, int len) {
 	if (len < 0 || (I.buffer_len + len) < 0) {
-		return;
+		return -1;
 	}
 	if (I.echo) {
 		write (2, str, len);
@@ -848,13 +848,15 @@ R_API void r_cons_memcat(const char *str, int len) {
 			I.breaked = true;
 		}
 	}
+	return len;
 }
 
 R_API void r_cons_memset(char ch, int len) {
 	if (!I.null && len > 0) {
 		palloc (len + 1);
-		memset (I.buffer + I.buffer_len, ch, len + 1);
+		memset (I.buffer + I.buffer_len, ch, len);
 		I.buffer_len += len;
+		I.buffer[I.buffer_len] = 0;
 	}
 }
 
@@ -873,6 +875,9 @@ R_API void r_cons_newline() {
 	if (!I.null) {
 		r_cons_strcat ("\n");
 	}
+#if __WINDOWS__
+	r_cons_reset_colors();
+#endif
 	//if (I.is_html) r_cons_strcat ("<br />\n");
 }
 
@@ -1196,14 +1201,18 @@ R_API void r_cons_highlight (const char *word) {
 	}
 }
 
-R_API char *r_cons_lastline () {
-	char *b = I.buffer+I.buffer_len;
-	while (b >I.buffer) {
+R_API char *r_cons_lastline (int *len) {
+	char *b = I.buffer + I.buffer_len;
+	while (b > I.buffer) {
 		if (*b == '\n') {
 			b++;
 			break;
 		}
 		b--;
+	}
+	if (len) {
+		int delta = b - I.buffer;
+		*len = I.buffer_len - delta;
 	}
 	return b;
 }

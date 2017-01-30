@@ -138,11 +138,9 @@ static bool isBinopHelp(const char *op) {
 	return false;
 }
 
-static bool extract_binobj(const RBinFile *bf, const RBinXtrData *data, int idx) {
+static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	ut64 bin_size = data ? data->size : 0;
 	ut8 *bytes;
-	ut8 *bytes_encoded;
-	//ut64 sz = bf ? r_buf_size (bf->buf) : 0;
 	char *arch = "unknown";
 	int bits = 0;
 	char *libname = NULL;
@@ -163,24 +161,18 @@ static bool extract_binobj(const RBinFile *bf, const RBinXtrData *data, int idx)
 		eprintf ("This is not a fat bin\n");
 		return false;
 	}
-	bytes_encoded = (ut8 *) sdb_get (data->sdb, sdb_fmt (0, "%d", data->offset), 0);
-	bytes = sdb_decode ((const char *)bytes_encoded, NULL);
-	free (bytes_encoded);
-
+	bytes = data->buffer;
 	if (!bytes) {
 		eprintf ("error: BinFile buffer is empty\n");
 		return false;
 	}
-
 	if (!arch) {
 		arch = "unknown";
 	}
 	path = strdup (filename);
-
 	if (!path) {
 		return false;
 	}
-
 	// XXX: Wrong for w32 (/)
 	ptr = strrchr (path, DIRSEP);
 	if (ptr) {
@@ -188,9 +180,7 @@ static bool extract_binobj(const RBinFile *bf, const RBinXtrData *data, int idx)
 	} else {
 		ptr = path;
 	}
-
 	outpath_sz = strlen (path) + 20;
-
 	if (outpath_sz > 0) {
 		outpath = malloc (outpath_sz);
 	}
@@ -220,7 +210,6 @@ static bool extract_binobj(const RBinFile *bf, const RBinXtrData *data, int idx)
 		}
 	}
 
-
 	if (!outfile || !r_file_dump (outfile, bytes, bin_size, 0)) {
 		eprintf ("Error extracting %s\n", outfile);
 		res = false;
@@ -232,8 +221,7 @@ static bool extract_binobj(const RBinFile *bf, const RBinXtrData *data, int idx)
 	free (outfile);
 	free (outpath);
 	free (path);
-	free (bytes);
-
+	R_FREE (data->buffer);
 	return res;
 }
 
@@ -338,7 +326,8 @@ static int rabin_dump_sections(char *scnname) {
 				free (ret);
 				return false;
 			}
-			if (output) {
+			//it does mean the user specified an output file
+			if (strcmp (output, file)) {
 				r_file_dump (output, buf, section->size, 0);
 			} else {
 				r_hex_bin2str (buf, section->size, ret);

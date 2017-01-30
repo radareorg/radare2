@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2017 - pancake */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 
@@ -35,7 +37,7 @@ static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outb
 
 static struct xor_state st;
 
-static int xor_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool xor_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	return xor_init (&st, key, keylen);
 }
 
@@ -47,16 +49,18 @@ static bool xor_use(const char *algo) {
 	return !strcmp (algo, "xor");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 	xor_crypt (&st, buf, obuf, len);
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
-	return 0;
+	return true;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 
@@ -70,7 +74,7 @@ RCryptoPlugin r_crypto_plugin_xor = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = { 
+RLibStruct radare_plugin = { 
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_xor,
 	.version = R2_VERSION

@@ -811,7 +811,7 @@ R_API char *r_file_temp (const char *prefix) {
 	return name;
 }
 
-R_API int r_file_mkstemp (const char *prefix, char **oname) {
+R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	int h;
 	char *path = r_file_tmpdir ();
 	char name[1024];

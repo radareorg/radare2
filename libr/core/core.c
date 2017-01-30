@@ -601,7 +601,7 @@ static const char *radare_argv[] = {
 	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
-	"/", "//", "/a", "/c", "/h", "/m", "/x", "/v", "/v2", "/v4", "/v8", "/r",
+	"/", "//", "/a", "/c", "/h", "/m", "/x", "/v", "/v2", "/v4", "/v8", "/r", "/re",
 	"y", "yy", "y?",
 	"wx", "ww", "w?", "wxf",
 	"p6d", "p6e", "p8", "pb", "pc",
@@ -1038,6 +1038,7 @@ openfile:
 		    (!strncmp (line->buffer.data, "dcu ", 4)) ||
 		    (!strncmp (line->buffer.data, "/v ", 3)) ||
 		    (!strncmp (line->buffer.data, "/r ", 3)) ||
+		    (!strncmp (line->buffer.data, "/re ", 4)) ||
 		    (!strncmp (line->buffer.data, "db ", 3)) ||
 		    (!strncmp (line->buffer.data, "db- ", 4)) ||
 		    (!strncmp (line->buffer.data, "f ", 2)) ||
@@ -1472,6 +1473,10 @@ static void r_core_setenv (RCore *core) {
 	free (e);
 }
 
+static int mywrite(const ut8 *buf, int len) {
+	return r_cons_memcat ((const char *)buf, len);
+}
+
 R_API int r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -1495,8 +1500,8 @@ R_API int r_core_init(RCore *core) {
 	core->print->get_enumname = getenumname;
 	core->print->get_bitfield = getbitfield;
 	core->print->offname = r_core_print_offname;
-	core->print->cb_printf = (void *)r_cons_printf;
-	core->print->write = (void *)r_cons_memcat;
+	core->print->cb_printf = r_cons_printf;
+	core->print->write = mywrite;
 	core->print->disasm = __disasm;
 	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;
 	core->print->hasrefs = (RPrintColorFor)r_core_anal_hasrefs;
@@ -2148,7 +2153,7 @@ reaccept:
 				}
 #endif
 				bufw = malloc (cmd_len + 5);
-				bufw[0] = RMT_CMD | RMT_REPLY;
+				bufw[0] = (ut8) (RMT_CMD | RMT_REPLY);
 				r_write_be32 (bufw + 1, cmd_len);
 				memcpy (bufw + 5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);

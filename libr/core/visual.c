@@ -761,11 +761,23 @@ repeat:
 						snprintf (cstr, sizeof (cstr), "%d", count);
 					}
 					fun = r_anal_get_fcn_in (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+					char *name;
+					if (fun) {
+						name = strdup (fun->name);
+					} else {
+						RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
+						if (f) {
+							name = r_str_newf ("%s + %d", f->name, refi->addr - f->offset);
+						} else {
+							name = strdup ("unk");
+						}
+					}
 					r_cons_printf (" %d [%s] 0x%08"PFMT64x" %s XREF (%s)\n",
 							idx, cstr, refi->addr,
 							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA",
-							fun?fun->name:"unk");
+							name);
+					free (name);
 					if (idx == skip) {
 						if (cols <= 90) {
 							char *dis = r_core_cmd_strf (core, "pd $r-5 @ 0x%08"PFMT64x, refi->addr);

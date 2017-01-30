@@ -51,6 +51,9 @@ static int cmd_project(void *data, const char *input) {
 		r_core_project_delete (core, file);
 		break;
 	case 's':
+		if (!file || !file[0]) { /* if no argument specified use current project */
+			file = str;
+		}
 		if (r_core_project_save (core, file)) {
 			r_config_set (core->config, "prj.name", file);
 			r_cons_println (file);

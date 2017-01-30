@@ -69,8 +69,35 @@ int linux_handle_signals (RDebug *dbg, bool self_signalled) {
 #warning DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 			case SIGTRAP:
-				dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
-				dbg->reason.bp_addr = (ut64)siginfo.si_addr;
+			{
+				if (dbg->glob_libs || dbg->glob_unlibs) {
+					ut64 pc_addr = r_debug_reg_get (dbg, "PC");
+					RBreakpointItem *b = r_bp_get_at (dbg->bp, pc_addr - dbg->bpsize);
+					if (b && b->internal) {
+						char *p = strstr (b->data, "dbg.");
+						if (p) {
+							if (r_str_startswith (p, "dbg.libs")) {
+								char str[80];
+								const char *name;
+								if (strstr (b->data, "sym.imp.dlopen")) {
+									name = r_reg_get_name (dbg->reg, R_REG_NAME_A0);
+								} else {
+									name = r_reg_get_name (dbg->reg, R_REG_NAME_A1);
+								}
+								b->data = r_str_concatf (b->data, ";ps@r:%s", name);
+								dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
+							} else if (r_str_startswith (p, "dbg.unlibs")) {
+								dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;
+							}
+						}
+					}
+				}
+				if (dbg->reason.type != R_DEBUG_REASON_NEW_LIB &&
+					dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
+					dbg->reason.bp_addr = (ut64)siginfo.si_addr;
+					dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+				}
+			}
 				break;
 			case SIGABRT: // 6 / SIGIOT // SIGABRT
 				dbg->reason.type = R_DEBUG_REASON_ABORT;

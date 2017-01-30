@@ -1,10 +1,12 @@
+/* radare - LGPL - Copyright 2009-2016 - pancake */
+
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_crypto.h>
 
 static int flag = 0;
 
-static int punycode_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool punycode_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	flag = direction;
 	return true;
 }
@@ -17,7 +19,7 @@ static bool punycode_use(const char *algo) {
 	return !strcmp (algo, "punycode");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	char *obuf;
 	int olen;
 	if (flag) {
@@ -27,10 +29,10 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	}
 	r_crypto_append (cry, (ut8*)obuf, olen);
 	free (obuf);
-	return 0;
+	return true;
 }
 
-static int final(RCrypto *cry, const ut8* buf, int len) {
+static bool final(RCrypto *cry, const ut8* buf, int len) {
 	return update (cry, buf, len);
 }
 
@@ -44,7 +46,7 @@ RCryptoPlugin r_crypto_plugin_punycode = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_punycode,
 	.version = R2_VERSION

@@ -37,10 +37,10 @@ typedef struct r_crypto_t {
 typedef struct r_crypto_plugin_t {
 	const char *name;
 	int (*get_key_size)(RCrypto *cry);
-	int (*set_iv)(RCrypto *cry, const ut8 *iv, int ivlen);
-	int (*set_key)(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
-	int (*update)(RCrypto *cry, const ut8 *buf, int len);
-	int (*final)(RCrypto *cry, const ut8 *buf, int len);
+	bool (*set_iv)(RCrypto *cry, const ut8 *iv, int ivlen);
+	bool (*set_key)(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
+	bool (*update)(RCrypto *cry, const ut8 *buf, int len);
+	bool (*final)(RCrypto *cry, const ut8 *buf, int len);
 	bool (*use)(const char *algo);
 	int (*fini)(RCrypto *cry);
 } RCryptoPlugin;
@@ -63,6 +63,7 @@ R_API const char *r_crypto_name(ut64 bit);
 
 /* plugin pointers */
 extern RCryptoPlugin r_crypto_plugin_aes;
+extern RCryptoPlugin r_crypto_plugin_des;
 extern RCryptoPlugin r_crypto_plugin_rc4;
 extern RCryptoPlugin r_crypto_plugin_xor;
 extern RCryptoPlugin r_crypto_plugin_blowfish;
@@ -88,6 +89,7 @@ extern RCryptoPlugin r_crypto_plugin_cps2;
 #define R_CRYPTO_ROT 1<<7
 #define R_CRYPTO_BLOWFISH 1<<8
 #define R_CRYPTO_CPS2 1<<9
+#define R_CRYPTO_DES_ECB 1<<10
 #define R_CRYPTO_ALL 0xFFFF
 
 #ifdef __cplusplus

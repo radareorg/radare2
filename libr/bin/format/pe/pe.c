@@ -62,7 +62,7 @@ struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) 
 	}
 	entry = PE_(r_bin_pe_get_entrypoint) (bin);
 	// option2: /x 8bff558bec83ec20
-	b[367] = 0;
+	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
 		bprintf ("Warning: Cannot read entry at 0x%08"PFMT64x"\n", entry->paddr);
 		free (entry);
@@ -72,11 +72,35 @@ struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) 
 	/* Decode the jmp instruction, this gets the address of the 'main'
 	 * function for PE produced by a compiler whose name someone forgot to
 	 * write down. */
+	// this is dirty only a single byte check, can return false positives
 	if (b[367] == 0xe8) {
-		const ut32 jmp_dst = b[368] | (b[369] << 8) | (b[370] << 16) | (b[371] << 24);
+		const st32 jmp_dst = b[368] | (b[369] << 8) | (b[370] << 16) | (b[371] << 24);
 		entry->paddr += 367 + 5 + jmp_dst;
 		entry->vaddr += 367 + 5 + jmp_dst;
 		return entry;
+	}
+	// MSVC SEH
+	// E8 13 09 00 00  call    0x44C388
+	// E9 05 00 00 00  jmp     0x44BA7F
+	// from des address of jmp search for 68 xx xx xx xx e8 and test xx xx xx xx = imagebase
+	// 68 00 00 40 00  push    0x400000
+	// E8 3E F9 FF FF  call    0x44B4FF
+	if (b[0] == 0xe8 && b[5] == 0xe9) {
+		const st32 jmp_dst = b[6] | (b[7] << 8) | (b[8] << 16) | (b[9] << 24);
+		entry->paddr += (5 + 5 + jmp_dst);
+		entry->vaddr += (5 + 5 + jmp_dst);
+		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
+			int n = 0;
+			ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
+			for (n = 0; n < sizeof (b) - 5; n++) {
+				if (b[n] == 0x68 && *((ut32 *)&b[n + 1]) == imageBase && b[n + 5] == 0xe8) {
+					const st32 call_dst = b[n + 6] | (b[n + 7] << 8) | (b[n + 8] << 16) | (b[n + 9] << 24);
+					entry->paddr += (n + 5 + 5 + call_dst);
+					entry->vaddr += (n + 5 + 5 + call_dst);
+					return entry;
+				}
+			}
+		}
 	}
 	free (entry);
 	return NULL;

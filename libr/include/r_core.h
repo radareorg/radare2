@@ -549,7 +549,6 @@ typedef struct {
 	ut32 functions;
 	ut32 symbols;
 	ut32 strings;
-	ut32 imports;
 	ut32 rwx;
 } RCoreAnalStatsItem;
 typedef struct {

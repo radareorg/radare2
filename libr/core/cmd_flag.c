@@ -71,45 +71,27 @@ static void cmd_fz(RCore *core, const char *input) {
 	}
 }
 
-static void flagbars(RCore *core) {
-	int total = 0;
-	int cols = r_cons_get_size (NULL);
-	RListIter *iter;
-	RFlagItem *flag;
-	r_list_foreach (core->flags->flags, iter, flag) {
-		total += flag->offset;
-	}
-	if (!total) // avoid a division by zero
-		return;
-	cols -= 15;
-	r_cons_printf ("Total: %d\n", total);
-	r_list_foreach (core->flags->flags, iter, flag) {
-		ut32 pbar_val = flag->offset>0 ? flag->offset : 1;
-		r_cons_printf ("%10s %.8"PFMT64d, flag->name, flag->offset);
-		r_print_progressbar (core->print,
-			(pbar_val*100)/total, cols);
-		r_cons_newline ();
-	}
-}
 
-static void flagbars_dos(RCore *core) {
-	int total = 0;
+static void flagbars(RCore *core, const char *glob) {
 	int cols = r_cons_get_size (NULL);
 	RListIter *iter;
 	RFlagItem *flag;
-	r_list_foreach (core->flags->flags, iter, flag) {
-		total = R_MAX(total,flag->offset);
+	cols -= 80;
+	if (cols < 0) {
+		cols += 80;
 	}
-	if (!total) // avoid a division by zero
-		return;
-	cols-=15;
-	r_cons_printf ("Total: %d\n", total);
 	r_list_foreach (core->flags->flags, iter, flag) {
-		ut32 pbar_val = flag->offset>0 ? flag->offset : 1;
-		r_cons_printf ("%10s %.8"PFMT64d, flag->name, flag->offset);
-		r_print_progressbar (core->print,
-			(pbar_val*100)/total, cols);
-		r_cons_newline ();
+		ut64 min = 0, max = r_io_size (core->io);
+		RIOSection *s = r_io_section_vget (core->io, flag->offset);
+		if (s) {
+			min = s->vaddr;
+			max = s->vaddr + s->size;
+		}
+		if (r_str_glob (flag->name, glob)) {
+			r_cons_printf ("0x%08"PFMT64x" ", flag->offset);
+			r_print_rangebar (core->print, flag->offset, flag->offset + flag->size, min, max, cols);
+			r_cons_printf ("  %s\n", flag->name);
+		}
 	}
 }
 
@@ -147,14 +129,15 @@ rep:
 		break;
 	case '=': // "f="
 		switch (input[1]) {
-		case '=':
-			flagbars_dos (core);
+		case ' ':
+			flagbars (core, input + 2);
 			break;
-		case '?':
-			eprintf ("Usage: f= or f== to display flag bars\n");
+		case 0:
+			flagbars (core, NULL);
 			break;
 		default:
-			flagbars (core);
+		case '?':
+			eprintf ("Usage: f= [glob] to grep for matching flag names\n");
 			break;
 		}
 		break;
@@ -714,11 +697,14 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		break;
 	case 'd': // "fd"
 		{
-			ut64 addr = 0;
+			ut64 addr = core->offset;
 			RFlagItem *f = NULL;
+			bool space_strict = true;
 			switch (input[1]) {
 			case '?':
-				eprintf ("Usage: fd [offset|flag|expression]\n");
+				eprintf ("Usage: fd[d] [offset|flag|expression]\n");
+				eprintf ("  fd $$   # describe flag + delta for given offset\n");
+				eprintf ("  fdd $$  # describe flag without space restrictions\n");
 				if (str) {
 					free (str);
 				}
@@ -726,11 +712,17 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 			case '\0':
 				addr = core->offset;
 				break;
+			case 'd':
+				space_strict = false;
+				if (input[2] == ' ') {
+					addr = r_num_math (core->num, input + 3);
+				}
+				break;
 			default:
 				addr = r_num_math (core->num, input + 2);
 				break;
 			}
-			core->flags->space_strict = true;
+			core->flags->space_strict = space_strict;
 			f = r_flag_get_at (core->flags, addr, true);
 			core->flags->space_strict = false;
 			if (f) {
@@ -760,6 +752,7 @@ eprintf ("WTF 'f .xxx' adds a variable to the function? ?!!?(%s)\n");
 		"f-","name","remove flag 'name'",
 		"f-","@addr","remove flag at address expression",
 		"f."," fname","list all local labels for the given function",
+		"f="," [glob]","list range bars graphics with flag offsets and sizes",
 		"fa"," [name] [alias]","alias a flag to evaluate an expression",
 		"fb"," [addr]","set base address for new flags",
 		"fb"," [addr] [flag*]","move flags matching 'flag' to relative addr",

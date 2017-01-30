@@ -6,7 +6,7 @@
 
 static int flag = 0;
 
-static int base91_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool base91_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	flag = direction;
 	return true;
 }
@@ -19,7 +19,7 @@ static bool base91_use(const char *algo) {
 	return !strcmp (algo, "base91");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	int olen = INSIZE; //a way to optimise memory allocation.
 	ut8 *obuf = malloc (olen);
 	if (flag == 0) {
@@ -29,10 +29,10 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	}
 	r_crypto_append (cry, obuf, olen);
 	free (obuf);
-	return 0;
+	return true;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#if __WIN32__ || __CYGWIN__ || MINGW32
+#if _WIN32 || __CYGWIN__ || MINGW32
 #include <windows.h>
 #include <fcntl.h>
 #include "transport.h"

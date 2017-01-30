@@ -5,16 +5,16 @@
 
 // TODO: use proper dwarf api here.. or deprecate
 static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
-	char *ret, *p, *offset_ptr, offset[64];
 	if (arch->sdb_addrinfo) {
-		offset_ptr = sdb_itoa (addr, offset, 16);
-		ret = sdb_get (arch->sdb_addrinfo, offset_ptr, 0);
+		char offset[64];
+		char *offset_ptr = sdb_itoa (addr, offset, 16);
+		char *ret = sdb_get (arch->sdb_addrinfo, offset_ptr, 0);
 		if (ret) {
-			p = strchr (ret, '|');
+			char *p = strchr (ret, '|');
 			if (p) {
 				*p = '\0';
-				strncpy(file, ret, len);
-				*line = atoi(p + 1);
+				strncpy (file, ret, len);
+				*line = atoi (p + 1);
 				return true;
 			}
 		}

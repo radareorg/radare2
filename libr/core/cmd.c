@@ -368,7 +368,9 @@ static int cmd_yank(void *data, const char *input) {
 					eprintf ("Invalid length\n");
 				}
 				free (out);
-			} else eprintf ("Usage: ywx [hexpairs]\n");
+			} else {
+				eprintf ("Usage: ywx [hexpairs]\n");
+			}
 			// r_core_yank_write_hex (core, input + 2);
 			break;
 		}
@@ -542,10 +544,12 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 }
 
 static int cmd_ls(void *data, const char *input) {
-	char *res = r_syscmd_ls (input + 1);
-	if (res) {
-		r_cons_print (res);
-		free (res);
+	if (*input) {
+		char *res = r_syscmd_ls (input + 1);
+		if (res) {
+			r_cons_print (res);
+			free (res);
+		}
 	}
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake */
+/* radare - LGPL - Copyright 2015-2017 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -7,17 +7,33 @@
 #include <r_util.h>
 
 static ut32 mov(const char *str, int k) {
-	const char *comma = strchr (str, ',');
 	ut32 op = UT32_MAX;
-	if (!strncmp (str, "mov", 3) && strlen (str) > 5) {
-		int w = atoi (str + 6);
-		if (w >= 0 && w < 32 && comma) {
-			int n = (int)r_num_math (NULL, comma + 1);
+	const char *op1 = strchr (str, ' ') + 1;
+	char *comma = strchr (str, ',');
+	comma[0] = '\0';
+	const char *op2 = (comma[1]) == ' ' ? comma + 2 : comma + 1;
+
+	int n = (int)r_num_math (NULL, op1 + 1);
+	int w = (int)r_num_math (NULL, op2);
+	if (!strncmp (str, "mov x", 5)) {
+		// TODO handle values > 32
+		if (n >= 0 && n < 32) {
+			if (op2[0] == 'x') {
+				w = (int)r_num_math (NULL, op2 + 1);
+				k = 0xE00300AA;
+				op = k | w << 8;
+			} else {
+				op = k | w << 29;
+			}
+		}
+		op |= n << 24;
+	} else if (!strncmp (str, "mov", 3) && strlen (str) > 5) {
+		if (n >= 0 && n < 32 && comma) {
 			op = k;
-			op |= (w << 24); // arg(0)
-			op |= ((n & 7) << 29); // arg(1)
-			op |= (((n >> 3) & 0xff) << 16); // arg(1)
-			op |= ((n >> 10) << 7); // arg(1)
+			op |= (n << 24); // arg(0)
+			op |= ((w & 7) << 29); // arg(1)
+			op |= (((w >> 3) & 0xff) << 16); // arg(1)
+			op |= ((w >> 10) << 7); // arg(1)
 		}
 	}
 	return op;
@@ -124,6 +140,34 @@ static ut32 msr(const char *str, int w) {
 	return op;
 }
 
+static bool exception(ut32 *op, const char *arg, ut32 type) {
+	int n = (int)r_num_math (NULL, arg);
+	n /= 8;
+	*op = type;
+	*op += ((n & 0xff) << 16);
+	*op += ((n >> 8) << 8);
+	return *op != -1;
+}
+
+static bool arithmetic (ut32 *op, const char *str, int type) {
+	char *c = strchr (str + 5, 'x');
+	if (c) {
+		char *c2 = strchr (c + 1, ',');
+		if (c2) {
+			int r0 = atoi (str + 5);
+			int r1 = atoi (c + 1);
+			ut64 n = r_num_math (NULL, c2 + 1);
+			*op = type;
+			*op += r0 << 24;
+			*op += (r1 & 7) << (24 + 5);
+			*op += (r1 >> 3) << 16;
+			*op += (n & 0x3f) << 18;
+			*op += (n >> 6) << 8;
+		}
+	}
+	return *op != -1;
+}
+
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (!strncmp (str, "movk w", 6)) {
@@ -147,6 +191,36 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = mov (str, 0x8052);
 		return *op != -1;
 	}
+	if (!strncmp (str, "mov x", 5)) { // w
+		*op = mov (str, 0x80d2);
+		return *op != -1;
+	}
+	if (!strncmp (str, "sub x", 5)) { // w
+		return arithmetic (op, str, 0xd1);
+	}
+	if (!strncmp (str, "add x", 5)) { // w
+		return arithmetic (op, str, 0x91);
+	}
+	if (!strncmp (str, "adr x", 5)) { // w
+		int regnum = atoi (str + 5);
+		char *arg = strchr (str + 5, ',');
+		ut64 at = 0LL;
+		if (arg) {
+			at = r_num_math (NULL, arg + 1);
+			// XXX what about negative values?
+			at = at - addr;
+			at /= 4;
+		}
+		*op = 0x00000010;
+		*op += 0x01000000 * regnum;
+		ut8 b0 = at;
+		ut8 b1 = (at >> 3) & 0xff;
+		ut8 b2 = (at >> (8 + 7)) & 0xff;
+		*op += b0 << 29;
+		*op += b1 << 16;
+		*op += b2 << 24;
+		return *op != -1;
+	}
 	if (!strcmp (str, "nop")) {
 		*op = 0x1f2003d5;
 		return *op != -1;
@@ -166,6 +240,21 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		if (*op != UT32_MAX) {
 			return true;
 		}
+	}
+	if (!strncmp (str, "svc ", 4)) { // system level exception
+		return exception (op, str + 4, 0x010000d4);
+	}
+	if (!strncmp (str, "hvc ", 4)) { // hypervisor level exception
+		return exception (op, str + 4, 0x020000d4);
+	}
+	if (!strncmp (str, "smc ", 4)) { // secure monitor exception
+		return exception (op, str + 4, 0x040000d4);
+	}
+	if (!strncmp (str, "brk ", 4)) { // breakpoint
+		return exception (op, str + 4, 0x000020d4);
+	}
+	if (!strncmp (str, "hlt ", 4)) { // halt
+		return exception (op, str + 4, 0x000040d4);
 	}
 	if (!strncmp (str, "b ", 2)) {
 		*op = branch (str, addr, 0x14);

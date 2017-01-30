@@ -524,11 +524,15 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		case 0:
+#if R2_VERSION_COMMIT == 0
+			r_cons_printf ("%s release\n", R2_VERSION);
+#else
 			if (!strcmp (R2_VERSION, R2_GITTAP)) {
 				r_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
 			} else {
 				r_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
 			}
+#endif
 			break;
 		case 'j':
 			r_cons_printf ("{\"system\":\"%s-%s\"", R_SYS_OS, R_SYS_ARCH);

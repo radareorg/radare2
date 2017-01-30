@@ -337,9 +337,11 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	if (!io || !io->desc || !buf || io->off == UT64_MAX)
 		return -1;
 	/* IGNORE check section permissions */
-	if (io->enforce_rwx & R_IO_READ)
-		if (!(r_io_section_get_rwx (io, io->off) & R_IO_READ))
+	if (io->enforce_rwx & R_IO_READ) {
+		if (!(r_io_section_get_rwx (io, io->off) & R_IO_READ)) {
 			return -1;
+		}
+	}
 	/* io->off is in maddr, but r_io_read_at works in vaddr
 	 * FIXME: in some cases, r_io_seek sets io->off in vaddr */
 	ut64 vaddr = r_io_section_maddr_to_vaddr(io, io->off);
@@ -1142,6 +1144,11 @@ if (hasperm) {
 			r_io_section_exists_for_vaddr (io, offset, hasperm));
 }
 #endif
+	if (r_list_empty (io->sections)) {
+		if ((r_io_map_exists_for_offset (io, offset))) {
+			return true;
+		}
+	}
 	if (!io_va) {
 		if ((r_io_map_exists_for_offset (io, offset))) {
 			return true;

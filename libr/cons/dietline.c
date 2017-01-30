@@ -1465,9 +1465,13 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			}
 #if USE_UTF8
-			I.buffer.index += utflen;
+			if ((I.buffer.index + utflen) <= I.buffer.length) {
+					I.buffer.index += utflen;
+			}
 #else
-			I.buffer.index++;
+			if (I.buffer.index < I.buffer.length) {
+				I.buffer.index++;
+			}
 #endif
 			break;
 		}

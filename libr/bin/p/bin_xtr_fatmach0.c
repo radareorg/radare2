@@ -103,7 +103,7 @@ static RBinXtrData * extract(RBin* bin, int idx) {
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);
 	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size,
-		narch, metadata, bin->sdb);
+		narch, metadata);
 	r_buf_free (arch->b);
 	free (arch);
 	free (hdr);
@@ -143,8 +143,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 		return NULL;
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);
-	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch,
-				 metadata, bin->sdb);
+	res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
 	r_buf_free (arch->b);
 	free (arch);
 	free (hdr);

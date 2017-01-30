@@ -81,11 +81,11 @@
   #define __BSD__ 1
   #define __UNIX__ 1
 #endif
-#if __WIN32__ || __CYGWIN__ || MINGW32
+#if _WIN32 || __CYGWIN__ || MINGW32
   #define __addr_t_defined
   #include <windows.h>
 #endif
-#if __WIN32__ || MINGW32 && !__CYGWIN__
+#if _WIN32 || MINGW32 && !__CYGWIN__
   #include <winsock.h>
   typedef int socklen_t;
   #undef USE_SOCKETS
@@ -285,6 +285,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define HAVE_EPRINTF 1
 #endif
 
+#ifndef typeof
+#define typeof(arg) __typeof__(arg)
+#endif
+
 #define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 
 #define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
@@ -320,6 +324,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define PFMT64u "llu"
 #define PFMT64o "llo"
 #endif
+
+#define PFMT32x "x"
+#define PFMT32d "d"
+#define PFMT32u "u"
+#define PFMT32o "o"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -367,6 +376,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_SYS_BITS R_SYS_BITS_32
 #elif __mips__
 #define R_SYS_ARCH "mips"
+#define R_SYS_BITS R_SYS_BITS_32
+#elif __EMSCRIPTEN__
+/* we should default to wasm when ready */
+#define R_SYS_ARCH "x86"
 #define R_SYS_BITS R_SYS_BITS_32
 #else
 #define R_SYS_ARCH "unknown"
@@ -423,7 +436,7 @@ enum {
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)
 #define R_SYS_OS "linux"
-#elif defined (__WIN32__) || defined (__CYGWIN__) || defined (MINGW32)
+#elif defined (_WIN32) || defined (__CYGWIN__) || defined (MINGW32)
 #define R_SYS_OS "windows"
 #elif defined (__NetBSD__ )
 #define R_SYS_OS "netbsd"

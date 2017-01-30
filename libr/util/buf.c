@@ -165,7 +165,9 @@ R_API const ut8 *r_buf_buffer (RBuffer *b) {
 }
 
 R_API ut64 r_buf_size (RBuffer *b) {
-	if (!b) return 0LL;
+	if (!b) {
+		return 0LL;
+	}
 	if (b->fd != -1) {
 		return b->length;
 	}

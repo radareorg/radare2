@@ -9,10 +9,11 @@ cd `dirname $PWD/$0` ; cd ..
 OLD_LDFLAGS="${LDFLAGS}"
 unset LDFLAGS
 
-export CC="emcc --ignore-dynamic-linking"
+export CC="emcc --ignore-dynamic-linking -Oz"
 export AR="emar"
 
-CFGFLAGS="./configure --prefix=/usr --disable-debugger --with-compiler=emscripten --without-pic --with-nonpic"
+CFGFLAGS="./configure --prefix=/usr --with-compiler=emscripten"
+CFGFLAGS="${CFGFLAGS} --disable-debugger --without-pic --with-nonpic"
 
 make mrproper
 cp -f plugins.emscripten.cfg plugins.cfg

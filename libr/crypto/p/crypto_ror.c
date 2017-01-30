@@ -30,7 +30,7 @@ static void ror_crypt(struct ror_state *const state, const ut8 *inbuf, ut8 *outb
 static struct ror_state st;
 static int flag = 0;
 
-static int ror_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool ror_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	flag = direction;
 	return ror_init (&st, key, keylen);
 }
@@ -43,7 +43,7 @@ static bool ror_use(const char *algo) {
 	return !strcmp (algo, "ror");
 }
 
-static int update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	if (flag) {
 		eprintf ("USE ROL\n");
 		return false;
@@ -53,10 +53,10 @@ static int update(RCrypto *cry, const ut8 *buf, int len) {
 	ror_crypt (&st, buf, obuf, len);
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
-	return 0;
+	return true;
 }
 
-static int final(RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 
@@ -70,7 +70,7 @@ RCryptoPlugin r_crypto_plugin_ror = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_ror,
 	.version = R2_VERSION

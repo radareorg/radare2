@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 
 #include "r_anal.h"
 #include "r_cons.h"
@@ -7,8 +7,14 @@
 
 #define DFLT_ROWS 16
 
-static int nullprinter(const char* a, ...) { return 0; }
-static int IsInterrupted = 0;
+static void nullprinter(const char* a, ...) { }
+static void libc_printf(const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	vprintf (format, ap);
+	va_end (ap);
+}
+static bool IsInterrupted = false;
 
 R_API int r_util_lines_getline (ut64 *lines_cache, int lines_cache_sz, ut64 off) {
 	int imin = 0;
@@ -177,7 +183,7 @@ R_API RPrint *r_print_new() {
 	strcpy (p->datefmt, "%Y-%m-%d %H:%M:%S %z");
 	r_io_bind_init (p->iob);
 	p->pairs = true;
-	p->cb_printf = printf;
+	p->cb_printf = libc_printf;
 	p->oprintf = nullprinter;
 	p->bits = 32;
 	p->stride = 0;
@@ -268,7 +274,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	char space[32] = { 0 };
 	const char *white;
 #define PREOFF(x) (p && p->cons &&p->cons->pal.x)?p->cons->pal.x
-        PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: printf);
+        PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
 	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	bool dec = p? (p->flags & R_PRINT_FLAGS_ADDRDEC): false;
@@ -395,7 +401,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 }
 
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
-        PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: printf);
+        PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
 	ut8 rch = ch;
 	if (!IS_PRINTABLE (ch) && fmt[0]=='%'&&fmt[1]=='c')
 		rch = '.';
@@ -1115,7 +1121,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 
 // HACK :D
 static RPrint staticp = {
-	.cb_printf = printf
+	.cb_printf = libc_printf
 };
 
 /* TODO: handle screen width */
@@ -1131,7 +1137,38 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
         p->cb_printf ("]");
 }
 
-R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
+	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
+	int j = 0;
+	p->cb_printf ("|");
+	if (cols < 1) {
+		cols = 1;
+	}
+	int mul = (max - min) / cols;
+	bool isFirst = true;
+	for (j = 0; j < cols; j++) {
+		ut64 startB = min + (j * mul);
+		ut64 endB = min + ((j + 1) * mul);
+		if (startA <= endB && endA >= startB) {
+			if (show_colors & isFirst) {
+				p->cb_printf (Color_GREEN"#");
+				isFirst = false;
+			} else {
+				p->cb_printf ("#");
+			}
+		} else {
+			if (isFirst) {
+				p->cb_printf ("-");
+			} else {
+				p->cb_printf (Color_RESET"-");
+				isFirst = true;
+			}
+		}
+	}
+	p->cb_printf ("|");
+}
+
+R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
 	static int mode = -1;
 	ut8 *bufz, *bufz2;
 	int i, j = 0;
