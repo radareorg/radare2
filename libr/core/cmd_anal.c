@@ -3525,50 +3525,51 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		return;
 	}
 	binfile = r_core_bin_cur (core);
-	if (!binfile) {
-		eprintf ("cur binfile null\n");
-		return;
-	}
 	addr = core->offset;
-	if (!len) {
-		// ignore search.in to avoid problems. analysis != search
-		RIOSection *s = r_io_section_vget (core->io, addr);
-		if (s && s->rwx & 1) {
-			// search in current section
-			if (s->size > binfile->size) {
-				addr = s->vaddr;
-				if (binfile->size > s->offset) {
-					len = binfile->size - s->offset;
-				} else {
-					eprintf ("Opps something went wrong aac\n");
-					return;
-				}
-			} else {
-				addr = s->vaddr;
-				len = s->size;
-			}
-		} else {
-			// search in full file
-			ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
-			if (o != UT64_MAX && binfile->size > o) {
-				len = binfile->size - o;
-			} else {
-				if (binfile->size > core->offset) {
-					if (binfile->size > core->offset) {
-						len = binfile->size - core->offset;
+	if (binfile) {
+		if (!len) {
+			// ignore search.in to avoid problems. analysis != search
+			RIOSection *s = r_io_section_vget (core->io, addr);
+			if (s && s->rwx & 1) {
+				// search in current section
+				if (s->size > binfile->size) {
+					addr = s->vaddr;
+					if (binfile->size > s->offset) {
+						len = binfile->size - s->offset;
 					} else {
 						eprintf ("Opps something went wrong aac\n");
 						return;
 					}
 				} else {
-					eprintf ("Oops invalid range\n");
-					len = 0;
+					addr = s->vaddr;
+					len = s->size;
+				}
+			} else {
+				// search in full file
+				ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
+				if (o != UT64_MAX && binfile->size > o) {
+					len = binfile->size - o;
+				} else {
+					if (binfile->size > core->offset) {
+						if (binfile->size > core->offset) {
+							len = binfile->size - core->offset;
+						} else {
+							eprintf ("Opps something went wrong aac\n");
+							return;
+						}
+					} else {
+						eprintf ("Oops invalid range\n");
+						len = 0;
+					}
 				}
 			}
 		}
+		addr_end = addr + len;
+	} else {
+		const char *search_in = r_config_get (core->config, "search.in");
+		r_list_free (r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end));
 	}
-	addr_end = addr + len;
-	if (!(buf = malloc (4096))) {
+	if (!(buf = calloc (1, 4096))) {
 		return;
 	}
 	bufi = 0;
