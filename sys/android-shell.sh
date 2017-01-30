@@ -101,9 +101,9 @@ export NDK
 export NDK_ARCH
 [ -z "${SHELL}" ] && SHELL=sh
 SHELL=sh
-cp ${ROOT}/ndk-gcc ${NDK}
-chmod +x ${NDK}/ndk-gcc
-CC=ndk-gcc
+#cp ${ROOT}/ndk-gcc ${NDK}
+#chmod +x ${NDK}/ndk-gcc
+#CC=ndk-gcc
 PS1="[r2-android-${NDK_ARCH}]> "
 export CC
 export PS1

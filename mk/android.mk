@@ -1,7 +1,8 @@
-#CC=arm-linux-androideabi-gcc
-CC=ndk-gcc -fPIC -fPIE
+CC=arm-linux-androideabi-gcc
+#CC=ndk-gcc -fPIC -fPIE
 #RANLIB=ndk-ranlib
-USERCC=ndk-gcc -fPIC -fPIE
+USERCC=arm-linux-androideabi-gcc -fPIC -fPIE
+#USERCC=ndk-gcc -fPIC -fPIE
 ARCH=arm
 
 ifeq (${NDK_ARCH},x86)
@@ -47,6 +48,7 @@ ONELIB=0
 OSTYPE=android
 LINK=
 #CC_AR=ndk-ar -r ${LIBAR}
+CC_AR=arm-linux-androideaby-ar -r ${LIBAR}
 PICFLAGS=-fPIC -fpic
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o
