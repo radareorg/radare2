@@ -13,6 +13,7 @@
 #define JAYRO_04 0
 
 // 16 KB is the maximum size for a basic block
+// this is not exactly true.. but it is underperforming by doing lot of memcpys
 #define MAXBBSIZE 16 * 1024
 #define MAX_FLG_NAME_SIZE 64
 
@@ -1018,19 +1019,22 @@ repeat:
 				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
 				if (s && s->name) {
 					bool in_plt = strstr (s->name, ".plt") != NULL;
-					if (!in_plt && strstr (s->name, "_stubs") != NULL) {
+					if (!in_plt && strstr (s->name, "_stub") != NULL) {
 						/* for mach0 */
 						in_plt = true;
 					}
-					if (anal->cur->arch && strstr (anal->cur->arch, "arm")) {
-						if (anal->bits == 64) {
-							if (!in_plt) goto river;
-						}
+					if (!in_plt) {
+						goto river;
+					}
+#if 0
+					if (anal->bits == 64) {
 					} else {
+						/* uh? */
 						if (in_plt) {
 							goto river;
 						}
 					}
+#endif
 				}
 			}
 			FITFCNSZ ();
