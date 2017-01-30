@@ -1,8 +1,13 @@
-CC=arm-linux-androideabi-gcc
-#CC=ndk-gcc -fPIC -fPIE
-#RANLIB=ndk-ranlib
-USERCC=arm-linux-androideabi-gcc -fPIC -fPIE
-#USERCC=ndk-gcc -fPIC -fPIE
+ifeq (${PATH},"${ARCH}-linux-androideabi-gcc")
+CC=${ARCH}-linux-androideabi-gcc
+RANLIB={ARCH}-linux-androideabi-ranlib
+USERCC=${ARCH}-linux-androideabi-gcc -fPIC -fPIE
+else
+CC=ndk-gcc -fPIC -fPIE
+RANLIB=ndk-ranlib
+USERCC=ndk-gcc -fPIC -fPIE
+endif
+
 ARCH=arm
 
 ifeq (${NDK_ARCH},x86)
