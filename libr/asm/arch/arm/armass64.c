@@ -7,12 +7,12 @@
 #include <r_util.h>
 
 typedef enum optype_t {
-	ARM_REG = 0, ARM_CONSTANT, ARM_FP
+	ARM_NOTYPE = -1, ARM_GPR = 0, ARM_CONSTANT, ARM_FP
 } OpType;
 
 typedef enum regtype_t {
 	ARM_UNDEFINED = -1,
-	ARM_GPR = 0, ARM_SP, ARM_PC, ARM_SIMD 
+	ARM_REG64 = 0, ARM_REG32, ARM_SP, ARM_PC, ARM_SIMD
 } RegType;
 
 typedef struct operand_t {
@@ -38,30 +38,53 @@ typedef struct Opcode_t {
 	Operand operands[3];
 } ArmOp;
 
-static ut32 mov(const char *str, int k, ArmOp *op) {
+static ut32 mov(ArmOp *op) {
 #if 1
+	int k = 0;
 	ut32 data = UT32_MAX;
-	printf ("mmmm %s] [%d]\n", op->mnemonic, strlen (op->mnemonic));
-	if (strlen (op->mnemonic) == 3) {
-		printf ("plog\n");
-		if (op->operands[0].type == ARM_REG) {
-			if (op->operands[1].type == ARM_REG) {
-				data = 0xE00300AA | op->operands[1].reg << 8;
-			} else {
+	if (!strncmp (op->mnemonic, "movz", 4)) {
+		if (op->operands[0].reg_type == ARM_REG64) {
+			k = 0x80d2;
+		} else if (op->operands[0].reg_type == ARM_REG32) {
+			k = 0x8052;
+		}
+	} else if (!strncmp (op->mnemonic, "movk", 4)) {
+		if (op->operands[0].reg_type == ARM_REG32) {
+			k = 0x8072;
+		} else if (op->operands[0].reg_type == ARM_REG64) {
+			k = 0x80f2;
+		}
+	} else if (!strncmp (op->mnemonic, "movn", 4)) {
+		if (op->operands[0].reg_type == ARM_REG32) {
+			k = 0x8012;
+		} else if (op->operands[0].reg_type == ARM_REG64) {
+			k = 0x8092;
+		}
+	} else if (!strncmp (op->mnemonic, "mov", 3)) {
+		//printf ("%d - %d [%d]\n", op->operands[0].type, op->operands[1].type, ARM_GPR);
+		if (op->operands[0].type == ARM_GPR) {
+			if (op->operands[1].type == ARM_GPR) {
+				if (op->operands[1].reg_type == ARM_REG64) {
+					k = 0xe00300aa;
+				} else {
+					k = 0xe003002a;
+				}
+				data = k | op->operands[1].reg << 8;
+			} else if (op->operands[1].type == ARM_CONSTANT) {
+				k = 0x80d2;
 				data = k | op->operands[1].immediate << 29;
 			}
 			data |=  op->operands[0].reg << 24;
-		} else if (op->operands[0].type == ARM_CONSTANT) {
-			return data;
 		}
-	} else {
-		data = k;
-		printf ("%d %d\n", op->operands[0].reg, op->operands[1].reg);
-		data |= (op->operands[0].reg << 24); // arg(0)
-		data |= ((op->operands[1].reg & 7) << 29); // arg(1)
-		data |= (((op->operands[1].reg >> 3) & 0xff) << 16); // arg(1)
-		data |= ((op->operands[1].reg >> 10) << 7); // arg(1)
+		return data;
 	}
+
+	data = k;
+	//printf ("Immediate %d\n", op->operands[1].immediate);
+	data |= (op->operands[0].reg << 24); // arg(0)
+	data |= ((op->operands[1].immediate & 7) << 29); // arg(1)
+	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
+	data |= ((op->operands[1].immediate >> 10) << 7); // arg(1)
 	return data;
 #else
 printf ("str %s\n", str);
@@ -208,7 +231,21 @@ static bool exception(ut32 *op, const char *arg, ut32 type) {
 	return *op != -1;
 }
 
-static bool arithmetic (ut32 *op, const char *str, int type) {
+static ut32 arithmetic (ArmOp *op, int k) {
+	ut32 data = UT32_MAX;
+	if (op->operands[0].type != ARM_GPR ||
+	    op->operands[1].type != ARM_CONSTANT) {
+		return data;
+	}
+
+	data = k;
+	data += op->operands[0].reg << 24;
+	data += (op->operands[1].reg & 7) << (24 + 5);
+	data += (op->operands[1].reg >> 3) << 16;
+	data += (op->operands[2].reg & 0x3f) << 18;
+	data += (op->operands[2].reg >> 6) << 8;
+	return data;
+#if 0
 	char *c = strchr (str + 5, 'x');
 	if (c) {
 		char *c2 = strchr (c + 1, ',');
@@ -225,6 +262,7 @@ static bool arithmetic (ut32 *op, const char *str, int type) {
 		}
 	}
 	return *op != -1;
+#endif
 }
 
 static bool parseOperands(char* str, ArmOp *op) {
@@ -232,7 +270,9 @@ static bool parseOperands(char* str, ArmOp *op) {
 	int operand = 0;
 	char *token = t;
 	char *x;
+
 	while (token[0] != '\0') {
+		op->operands[operand].type = ARM_NOTYPE;
 		switch (token[0]) {
 			case ' ':
 				token ++;
@@ -244,9 +284,21 @@ static bool parseOperands(char* str, ArmOp *op) {
 					x[0] = '\0';
 				}
 				op->operands_count ++;
-				op->operands[operand].type = ARM_REG;
+				op->operands[operand].type = ARM_GPR;
+				op->operands[operand].reg_type = ARM_REG64;
 				op->operands[operand].reg = r_num_math (NULL, token + 1);
-			
+
+			break;
+			case 'w':
+				x = strchr (token, ',');
+				if (x) {
+					x[0] = '\0';
+				}
+				op->operands_count ++;
+				op->operands[operand].type = ARM_GPR;
+				op->operands[operand].reg_type = ARM_REG32;
+				op->operands[operand].reg = r_num_math (NULL, token + 1);
+
 			break;
 			case 'v':
 				x = strchr (token, ',');
@@ -256,7 +308,13 @@ static bool parseOperands(char* str, ArmOp *op) {
 				op->operands_count ++;
 				op->operands[operand].type = ARM_FP;
 				op->operands[operand].reg = r_num_math (NULL, token + 1);
-			
+
+			break;
+			case 's':
+			case 'S':
+			break;
+			case 'p':
+			case 'P':
 			break;
 			case '-':
 				op->operands[operand].sign = -1;
@@ -268,17 +326,18 @@ static bool parseOperands(char* str, ArmOp *op) {
 				op->operands_count ++;
 				op->operands[operand].type = ARM_CONSTANT;
 				op->operands[operand].immediate = r_num_math (NULL, token);
-				
-			break;			
-		}	
+
+			break;
+		}
+		//printf ("operand %d type is %d - reg_type %d\n", operand, op->operands[operand].type, op->operands[operand].reg_type);
 		if (x == '\0') {
 			free (t);
 			return true;
 		}
 		token = ++x;
 		operand ++;
-			
-	} 
+
+	}
 	free (t);
 	return true;
 }
@@ -291,44 +350,24 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 	space ++;
 	parseOperands (space, op);
 	return true;
-
-}	
-
+}
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = {0};
 	parseOpcode (str, &ops);
+
 	/* TODO: write tests for this and move out the regsize logic into the mov */
-	if (!strncmp (str, "movk w", 6)) {
-		return mov (str, 0x8072, &ops) != -1;
-	}
-	if (!strncmp (str, "movk x", 6)) {
-		return mov (str, 0x80f2, &ops) != -1;
-	}
-	if (!strncmp (str, "movn x", 6)) {
-		return mov (str, 0x8092, &ops) != -1;
-	}
-	if (!strncmp (str, "movn w", 6)) {
-		*op = mov (str, 0x8012, &ops);
+	if (!strncmp (str, "mov", 3)) {
+		*op = mov (&ops);
 		return *op != -1;
 	}
-	if (!strncmp (str, "movz x", 6)) {
-		*op = mov (str, 0x80d2, &ops);
+	if (!strncmp (str, "sub", 3)) { // w
+		*op = arithmetic (&ops, 0xd1);
 		return *op != -1;
 	}
-	if (!strncmp (str, "movz ", 5)) { // w
-		*op = mov (str, 0x8052, &ops);
+	if (!strncmp (str, "add", 3)) { // w
+		*op = arithmetic (&ops, 0x91);
 		return *op != -1;
-	}
-	if (!strncmp (str, "mov x", 5)) { // w
-		*op = mov (str, 0x80d2, &ops);
-		return *op != -1;
-	}
-	if (!strncmp (str, "sub x", 5)) { // w
-		return arithmetic (op, str, 0xd1);
-	}
-	if (!strncmp (str, "add x", 5)) { // w
-		return arithmetic (op, str, 0x91);
 	}
 	if (!strncmp (str, "adr x", 5)) { // w
 		int regnum = atoi (str + 5);
