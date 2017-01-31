@@ -1975,7 +1975,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dbg.follow.child", "false", &cb_dbg_follow_child, "Continue tracing the child process on fork. By default the parent process is traced");
 	/* debug */
 	SETCB("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;s-'");
+#if DEBUGGER
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
+#else
+	SETCB("dbg.backend", "esil", &cb_dbgbackend, "Select the debugger backend");
+#endif
 	SETCB("dbg.bep", "loader", &cb_dbgbep, "break on entrypoint (loader, entry, constructor, main)");
 	if (core->cons->rows > 30) { // HACKY
 		r_config_set_i (cfg, "dbg.follow", 64);
