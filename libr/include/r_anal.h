@@ -647,6 +647,7 @@ typedef struct r_anal_t {
 	//RList *noreturn;
 	RList /*RAnalRange*/ *bits_ranges;
 	RListComparator columnSort;
+	int stackptr;
 } RAnal;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
@@ -789,6 +790,8 @@ typedef struct r_anal_bb_t {
 	struct r_anal_bb_t *jumpbb;
 	RList /*struct r_anal_bb_t*/ *cases;
 	ut8 *parent_reg_arena;
+	int stackptr;
+	int parent_stackptr;
 } RAnalBlock;
 
 typedef enum {

@@ -360,7 +360,7 @@ static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *for
 		if (up) {
 			ds_comment_lineup (ds);
 		}
-	} 
+	}
 	r_cons_printf_list (format, ap);
 	va_end (ap);
 
@@ -944,7 +944,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			}
 			ds_pre_xrefs (ds);
 			//those extra space to align
-			ds_comment (ds, false, "   %s; %s XREF from 0x%08"PFMT64x" (%s)%s\n", 
+			ds_comment (ds, false, "   %s; %s XREF from 0x%08"PFMT64x" (%s)%s\n",
 			  	COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type),
 				refi->addr, name, COLOR_RESET (ds));
 			R_FREE (name);
@@ -1162,7 +1162,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	if (ds->show_fcnlines) {
 		ds->pre = r_str_concat (ds->pre, " ");
 	}
-	ds->stackptr = 0;
+	ds->stackptr = core->anal->stackptr;
 	if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
@@ -3123,10 +3123,10 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 						ds_comment_esil (ds, true, false, ds->pal_comment);
 					}
 					ds_align_comment (ds);
-					ds_comment_esil (ds, ds->show_color? false : true, false, 
-					  		"; %s%s%s(", r_str_get (fcn_type), (fcn_type && *fcn_type &&
+					ds_comment_esil (ds, ds->show_color? false : true, false,
+							"; %s%s%s(", r_str_get (fcn_type), (fcn_type && *fcn_type &&
 							fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
-					  		r_str_get (key));
+							r_str_get (key));
 					if (!nargs) {
 						ds_comment_esil (ds, false, true, "void)");
 						break;
@@ -3209,8 +3209,8 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 						}
 						if (fmt) {
 							//it may need ds_comment_esil
-							print_fcn_arg (core, arg_orig_c_type, arg_name, 
-							  	fmt, arg_addr, on_stack);
+							print_fcn_arg (core, arg_orig_c_type, arg_name,
+								fmt, arg_addr, on_stack);
 							ds_comment_esil (ds, false, false, i!=(nargs - 1)?", ":")");
 						}
 						free (arg_orig_c_type);
@@ -3439,6 +3439,7 @@ toro:
 		len = ds->l = core->blocksize;
 	}
 
+	ds->stackptr = core->anal->stackptr;
 	r_cons_break_push (NULL, NULL);
 	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
@@ -4254,6 +4255,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	ds->len = r_anal_fcn_size (fcn);
 	ds->addr = fcn->addr;
 	ds->fcn = fcn;
+	ds->stackptr = core->anal->stackptr;
 
 	r_list_foreach (fcn->bbs, bb_iter, bb) {
 		r_list_add_sorted (bb_list, bb, cmpaddr);
