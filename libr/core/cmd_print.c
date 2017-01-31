@@ -7,6 +7,7 @@
 #include "r_types.h"
 #include "r_util.h"
 #include "ht.h"
+#include <limits.h>
 
 #define R_CORE_MAX_DISASM (1024*1024*8)
 
@@ -2297,15 +2298,23 @@ static void pr_bb (RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 			r_reg_arena_poke (core->anal->reg, saved_arena);
 		}
 	}
+	if (b->parent_stackptr != INT_MAX) {
+		core->anal->stackptr = b->parent_stackptr;
+	}
 	p_type == 'D'
 	? r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr)
 	: r_core_cmdf (core, "pI %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
 
 	if (b->jump != UT64_MAX) {
-		if (b->jump > b->addr && emu && core->anal->last_disasm_reg != NULL) {
+		if (b->jump > b->addr) {
 			RAnalBlock * jumpbb = r_anal_bb_get_jumpbb (fcn, b);
-			if (jumpbb && !jumpbb->parent_reg_arena) {
-				jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			if (jumpbb) {
+				if (emu && core->anal->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
+					jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+				}
+				if (jumpbb->parent_stackptr == INT_MAX) {
+					jumpbb->parent_stackptr = core->anal->stackptr + b->stackptr;
+				}
 			}
 		}
 		if (p_type == 'D') {
@@ -2313,10 +2322,15 @@ static void pr_bb (RCore * core, RAnalFunction * fcn, RAnalBlock * b, bool emu, 
 		}
 	}
 	if (b->fail != UT64_MAX) {
-		if (b->fail > b->addr && emu && core->anal->last_disasm_reg != NULL) {
+		if (b->fail > b->addr) {
 			RAnalBlock * failbb = r_anal_bb_get_failbb (fcn, b);
-			if (failbb && !failbb->parent_reg_arena) {
-				failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			if (failbb) {
+				if (emu && core->anal->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
+					failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+				}
+				if (failbb->parent_stackptr == INT_MAX) {
+					failbb->parent_stackptr = core->anal->stackptr + b->stackptr;
+				}
 			}
 		}
 		if (p_type == 'D') {
@@ -2333,7 +2347,7 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 	RAnalBlock *b;
 	RAnalFunction *tmp_func;
 	RListIter *locs_it = NULL;
-	
+
 	if (f->fcn_locs) {
 		locs_it = f->fcn_locs->head;
 	}
@@ -2389,6 +2403,7 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 		bool emu = r_config_get_i (core->config, "asm.emu");
 		ut64 saved_gp = 0;
 		ut8 *saved_arena;
+		int saved_stackptr = core->anal->stackptr;
 		if (emu) {
 			saved_gp = core->anal->gp;
 			saved_arena = r_reg_arena_peek (core->anal->reg);
@@ -2418,6 +2433,7 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 				R_FREE (saved_arena);
 			}
 		}
+		core->anal->stackptr = saved_stackptr;
 		r_config_set_i (core->config, "asm.lines", asm_lines);
 	}
 }
@@ -3955,13 +3971,13 @@ static int cmd_print(void *data, const char *input) {
 				ut64 v = (ut64)r_read_ble16 (core->block + i, p->big_endian);
 				if (p && p->colorfor) {
 					a = p->colorfor (p->user, v, true);
-					if (a && *a) { 
-						b = Color_RESET; 
-					} else { 
-						a = b = ""; 
+					if (a && *a) {
+						b = Color_RESET;
+					} else {
+						a = b = "";
 					}
-				} else { 
-					a = b = ""; 
+				} else {
+					a = b = "";
 				}
 				f = r_flag_get_at (core->flags, v, true);
 				fn = NULL;
@@ -3998,13 +4014,13 @@ static int cmd_print(void *data, const char *input) {
 					ut64 v = r_read_ble64 (core->block + i, p->big_endian);
 					if (p && p->colorfor) {
 						a = p->colorfor (p->user, v, true);
-						if (a && *a) { 
-							b = Color_RESET; 
-						} else { 
-							a = b = ""; 
+						if (a && *a) {
+							b = Color_RESET;
+						} else {
+							a = b = "";
 						}
-					} else { 
-						a = b = ""; 
+					} else {
+						a = b = "";
 					}
 					f = r_flag_get_at (core->flags, v, true);
 					fn = NULL;

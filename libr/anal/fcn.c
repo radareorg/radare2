@@ -312,20 +312,20 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	anal->iob.read_at (anal->iob.io, ptr, jmptbl, MAX_JMPTBL_SIZE);
 	for (offs = 0; offs + sz - 1 < MAX_JMPTBL_SIZE; offs += sz) {
 		switch (sz) {
-		case 1: 
-			jmpptr = r_read_le8 (jmptbl + offs); 
+		case 1:
+			jmpptr = r_read_le8 (jmptbl + offs);
 			break;
-		case 2: 
-			jmpptr = r_read_le16 (jmptbl + offs); 
+		case 2:
+			jmpptr = r_read_le16 (jmptbl + offs);
 			break;
-		case 4: 
-			jmpptr = r_read_le32 (jmptbl + offs); 
+		case 4:
+			jmpptr = r_read_le32 (jmptbl + offs);
 			break;
-		case 8: 
-			jmpptr = r_read_le32 (jmptbl + offs); 
+		case 8:
+			jmpptr = r_read_le32 (jmptbl + offs);
 			break; // XXX
-		default: 
-			jmpptr = r_read_le64 (jmptbl + offs); 
+		default:
+			jmpptr = r_read_le64 (jmptbl + offs);
 			break;
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
@@ -672,6 +672,10 @@ repeat:
 			if (fcn->stack > 0 && (int)op.val > 0) {
 				fcn->maxstack = fcn->stack;
 			}
+			bb->stackptr += op.stackptr;
+			break;
+		case R_ANAL_STACK_RESET:
+			bb->stackptr = 0;
 			break;
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:

@@ -1695,20 +1695,33 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 			r_reg_arena_poke (core->anal->reg, saved_arena);
 		}
 	}
+	if (b->parent_stackptr != INT_MAX) {
+		core->anal->stackptr = b->parent_stackptr;
+	}
 	char * body = get_body (core, b->addr, b->size, opts);
 	if (b->jump != UT64_MAX) {
-		if (b->jump > b->addr && emu && core->anal->last_disasm_reg != NULL) {
+		if (b->jump > b->addr) {
 			RAnalBlock * jumpbb = r_anal_bb_get_jumpbb (fcn, b);
-			if (jumpbb && !jumpbb->parent_reg_arena) {
-				jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			if (jumpbb) {
+				if (emu && core->anal->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
+					jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+				}
+				if (jumpbb->parent_stackptr == INT_MAX) {
+					jumpbb->parent_stackptr = core->anal->stackptr + b->stackptr;
+				}
 			}
 		}
 	}
 	if (b->fail != UT64_MAX) {
-		if (b->fail > b->addr && emu && core->anal->last_disasm_reg != NULL) {
+		if (b->fail > b->addr) {
 			RAnalBlock * failbb = r_anal_bb_get_failbb (fcn, b);
-			if (failbb && !failbb->parent_reg_arena) {
-				failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+			if (failbb) {
+				if (emu && core->anal->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
+					failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+				}
+				if (failbb->parent_stackptr == INT_MAX) {
+					failbb->parent_stackptr = core->anal->stackptr + b->stackptr;
+				}
 			}
 		}
 	}
@@ -1725,6 +1738,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	bool emu = r_config_get_i (core->config, "asm.emu");
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
+	int saved_stackptr = core->anal->stackptr;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
@@ -1763,6 +1777,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			R_FREE (saved_arena);
 		}
 	}
+	core->anal->stackptr = saved_stackptr;
 }
 
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
@@ -1775,6 +1790,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
+	int saved_stackptr = core->anal->stackptr;
 	core->keep_asmqjmps = false;
 
 	if (!fcn) {
@@ -1858,6 +1874,7 @@ cleanup:
 			R_FREE (saved_arena);
 		}
 	}
+	core->anal->stackptr = saved_stackptr;
 	return ret;
 }
 

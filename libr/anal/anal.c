@@ -71,6 +71,7 @@ R_API RAnal *r_anal_new() {
 	r_flag_bind_init (anal->flb);
 	anal->reg = r_reg_new ();
 	anal->last_disasm_reg = NULL;
+	anal->stackptr = 0;
 	anal->bits_ranges = r_list_newf (free);
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
