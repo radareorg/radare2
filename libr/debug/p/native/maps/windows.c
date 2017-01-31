@@ -27,9 +27,6 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 			if (mr->file != NULL)
 				r_list_append (list, mr);
 		}
-		memset (&me32, 0, sizeof (me32));
-		me32.dwSize = sizeof (me32);
-
 	} while(Module32Next (hModuleSnap, &me32));
 	CloseHandle (hModuleSnap);
 	CloseHandle (hProcess);

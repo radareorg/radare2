@@ -228,9 +228,9 @@ static void r_debug_native_stop(RDebug *dbg) {
 /* TODO: specify thread? */
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
+	/* Honor the Windows-specific signal that instructs threads to process exceptions */
 	DWORD continue_status;
-    /* Honor the Windows-specific signal that instructs threads to process exceptions */
 	if (sig == DBG_EXCEPTION_NOT_HANDLED ) {
 		continue_status = DBG_EXCEPTION_NOT_HANDLED;
 	} else {
