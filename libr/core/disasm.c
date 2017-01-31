@@ -731,9 +731,17 @@ static void ds_build_op_str(RDisasmState *ds) {
 					core->parser->flagspace = -1;
 				}
 			}
+			RCore *core = ds->core;
+			ut64 p = ds->analop.ptr;
+			char *msg = calloc (sizeof (char), 128); // is this big enough?
+			r_io_read_at (core->io, p, (ut8 *)msg, 128 - 1);
+			ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr * 8);
+			RFlagItem *flag = r_flag_get_i (core->flags, num);
+			core->parser->relsub_addr = num;
 			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
+			free (msg);
 			ds->opstr = strdup (ds->str);
 			core->parser->flagspace = ofs; // ???
 		} else {
@@ -1528,7 +1536,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case R_META_TYPE_FORMAT:
 			case R_META_TYPE_MAGIC:
 			case R_META_TYPE_HIDE:
-				snprintf (key, sizeof (key) - 1, 
+				snprintf (key, sizeof (key) - 1,
 						"meta.%c.0x%"PFMT64x, *info, ds->at);
 				mt_key = sdb_const_get (s, key, 0);
 				mt_sz = sdb_array_get_num (s, key, 0, 0);
@@ -1591,15 +1599,15 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->oplen = ds->asmop.size;
 	} else {
 		ds->lastfail = 0;
-		ds->asmop.size = (ds->hint && ds->hint->size) 
-				? ds->hint->size 
+		ds->asmop.size = (ds->hint && ds->hint->size)
+				? ds->hint->size
 				: r_asm_op_get_size (&ds->asmop);
 		ds->oplen = ds->asmop.size;
 	}
 	if (ds->pseudo) {
-		r_parse_parse (core->parser, ds->opstr 
-		  		? ds->opstr 
-				: ds->asmop.buf_asm, 
+		r_parse_parse (core->parser, ds->opstr
+		  		? ds->opstr
+				: ds->asmop.buf_asm,
 				ds->str);
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
