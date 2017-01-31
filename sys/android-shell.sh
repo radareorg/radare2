@@ -52,15 +52,15 @@ if [ ! -x /work ]
 		. ~/.r2androidrc
 		echo "Using data from ${HOME}/.r2androidrc.."
 	else
-		#[ -z "${SDK}" ] && SDK=${HOME}/Downloads/android-sdk-${OS}
+		#[ -z "${SDK}" ] && SDK="${HOME}/Downloads/android-sdk-${OS}"
 		if [ -z "${NDK}" ]; then
 			if [ "`uname`" = "Darwin" ]; then
-				NDK=${HOME}/Library/Android/sdk/ndk-bundle/
+				NDK="${HOME}/Library/Android/sdk/ndk-bundle/"
 			else
-				NDK=${HOME}/Downloads/android-ndk-r7b
+				NDK="${HOME}/Downloads/android-ndk-r7b"
 			fi
 		fi
-		[ -z "${NDK}" ] && NDK=${HOME}/Downloads/android-ndk-r7b
+		[ -z "${NDK}" ] && NDK="${HOME}/Downloads/android-ndk-r7b"
 	fi
 
 
@@ -97,27 +97,27 @@ if [ "${BUILD}" != 0 ]; then
 	#CFLAGS=-I${INCDIR}
 	#echo $NDKPATH_ARM
 
-  #PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
-  PATH=$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
-  export PATH
-  fi
-  export CFLAGS
-  export NDK
-  export NDK_ARCH
-  [ -z "${SHELL}" ] && SHELL=sh
-  SHELL=sh
-  cp ${ROOT}/ndk-gcc ${NDK}
-  chmod +x ${NDK}/ndk-gcc
-  CC=ndk-gcc
-  PS1="[r2-android-${NDK_ARCH}]> "
-  export CC
-  export PS1
-  export AR
-  export RANLIB
-  A=$@
-  if [ -n "$A" ]; then
-    ${SHELL} -c "$A"
-  else
-    ${SHELL}
-  fi
+	#PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
+	PATH=$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
+	export PATH
+	fi
+	export CFLAGS
+	export NDK
+	export NDK_ARCH
+	[ -z "${SHELL}" ] && SHELL=sh
+	SHELL=sh
+	cp ${ROOT}/ndk-gcc ${NDK}
+	chmod +x ${NDK}/ndk-gcc
+	CC=ndk-gcc
+	PS1="[r2-android-${NDK_ARCH}]> "
+	export CC
+	export PS1
+	export AR
+	export RANLIB
+	A=$@
+	if [ -n "$A" ]; then
+			${SHELL} -c "$A"
+	else
+			${SHELL}
+	fi
 fi
