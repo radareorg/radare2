@@ -22,7 +22,7 @@ if [ -z "${CC}" ]; then
 		fi
 	done
 	if [ -z "${CC}" ]; then
-		echo "Cannot find CC" > /dev/stderr
+		echo "Cannot find CC" >&2
 		exit 1
 	fi
 fi

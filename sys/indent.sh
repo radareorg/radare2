@@ -37,7 +37,7 @@ indentFile() {
 		echo "Cannot find $IFILE"
 		return
 	fi
-	echo "Indenting ${IFILE} ..." > /dev/stderr
+	echo "Indenting ${IFILE} ..." >&2
 	cp -f doc/clang-format ${CWD}/.clang-format
 	(
 	cd "$CWD"

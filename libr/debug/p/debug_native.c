@@ -914,7 +914,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #if __sun
 	char path[1024];
 	/* TODO: On solaris parse /proc/%d/map */
-	snprintf (path, sizeof(path) - 1, "pmap %d > /dev/stderr", ps.tid);
+	snprintf (path, sizeof(path) - 1, "pmap %d >&2", ps.tid);
 	system (path);
 #else
 	RDebugMap *map;
