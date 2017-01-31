@@ -812,7 +812,7 @@ show_help:
 			}
 			break;
 		case 'j':
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 			{
 				/* Single backslashes cause issues when parsing JSON output, so escape them */
 				char *escaped_path = r_str_escape (map->file);
