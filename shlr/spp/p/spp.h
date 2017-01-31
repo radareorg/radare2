@@ -131,7 +131,7 @@ TAG_CALLBACK(spp_trace)
 {
 	char b[1024];
 	if (!echo[ifl]) return 0;
-	snprintf(b, 1023, "echo '%s' > /dev/stderr", buf);
+	snprintf(b, 1023, "echo '%s' >&2", buf);
 	system(b);
 	return 0;
 }

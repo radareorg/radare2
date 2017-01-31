@@ -5,7 +5,7 @@ if [ $? != 0 ]; then
 	if [ "`uname`" = Darwin ]; then
 		brew install dialog || exit 1
 	else
-		echo "Cannot find dialog in PATH" > /dev/stderr
+		echo "Cannot find dialog in PATH" >&2
 		exit 1
 	fi
 fi

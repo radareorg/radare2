@@ -211,7 +211,7 @@ sort_vars
 
 if [ - != "${RMSTATIC}" ]; then
   if [ -z "${RMSTATIC}" ]; then
-    echo "Missing argument" > /dev/stderr
+    echo "Missing argument" >&2
     exit
   fi
   if [ -d "${RMSTATIC}" ]; then

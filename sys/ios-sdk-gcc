@@ -22,7 +22,7 @@ echo $CC $*
 ${CC} $*
 r=$?
 if [ "$r" != 0 ]; then
-	echo ${CC} $* > /dev/stderr
+	echo ${CC} $* >&2
 fi
 exit $r
 
