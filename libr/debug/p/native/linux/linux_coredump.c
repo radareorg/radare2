@@ -60,21 +60,21 @@ static const char *get_basename(const char *pfname, int len) {
 static char *prpsinfo_get_psargs(char *buffer, char *pfname, int size_psargs, int len) {
 	char paux[ELF_PRARGSZ];
 	int i, bytes_left;
-	char *p = r_mem_dup (pfname, size_psargs);
+	char *p = r_mem_dup (pfname, len);
 	if (!p) {
 		return NULL;
 	}
 	bytes_left = strlen (pfname);
 	buffer = strchr (buffer, '\0');
 
-	for (i = 0; i + bytes_left < len && i + bytes_left < (size_psargs - 1); i++) {
+	for (i = 0; i + bytes_left < len; i++) {
 		if (!buffer[i]) {
 			buffer[i] = ' ';
 		}
 		paux[i] = buffer[i];
 	}
 	paux[i] = '\0';
-	strncat (p, paux, size_psargs - bytes_left - 1);
+	strncat (p, paux, len - bytes_left - 1);
 	return p;
 }
 
@@ -268,10 +268,13 @@ static siginfo_t *linux_get_siginfo(int pid) {
 }
 
 static bool has_map_deleted_part(char *name) {
-	const char deleted_str[] = "(deleted)";
-	int len_name = strlen (name);
-	int len_suffx = strlen (deleted_str);
-	return !strncmp (name + len_name - len_suffx, deleted_str, len_suffx);
+	if (!name) {
+		const char deleted_str[] = "(deleted)";
+		int len_name = strlen (name);
+		int len_suffx = strlen (deleted_str);
+		return !strncmp (name + len_name - len_suffx, deleted_str, len_suffx);
+	}
+	return false;
 }
 
 static bool getAnonymousValue(char *keyw) {
@@ -326,7 +329,7 @@ static bool dump_this_map(char *buff_smaps, unsigned long start_addr, unsigned l
 									bool kernel_mapping,
 									ut8 perms, ut8 filter_flags) {
 	char *p, *pp, *ppp, *extern_tok, *flags_str = NULL;
-	char *identity = r_str_newf (fmt_addr, start_addr, end_addr);;
+	char *identity = r_str_newf (fmt_addr, start_addr, end_addr);
 	bool found = false;
 	char *aux = NULL;
 	ut8 vmflags = 0;
@@ -476,7 +479,8 @@ static void clean_maps(linux_map_entry_t *h) {
 	}
 }
 
-static void get_map_perms_and_offset (unsigned long start_addr, unsigned long end_addr, char *buff_maps, ut8 *flags_perm, unsigned long *offset) {
+static void get_map_perms_and_offset (unsigned long start_addr, unsigned long end_addr,
+					char *buff_maps, ut8 *flags_perm, unsigned long *offset) {
 	char *p, *pp, *aux, *extern_tok;
 	char *identity = r_str_newf (fmt_addr, start_addr, end_addr);
 	char *str = strdup (buff_maps);
@@ -512,7 +516,8 @@ static void get_map_perms_and_offset (unsigned long start_addr, unsigned long en
 				break;
 			}
 		}
-		if (((flags & P_MEM) && (flags & S_MEM)) || (!(flags & R_MEM) && !(flags & W_MEM))) {
+		if (((flags & P_MEM) && (flags & S_MEM))
+			|| (!(flags & R_MEM) && !(flags & W_MEM))) {
 			flags = WRG_PERM;
 		}
 		pp = strtok (NULL, " ");
@@ -633,7 +638,7 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg) {
 			return NULL;
 		}
 		auxv->size = size;
-		auxv->data = strdup (buff);
+		auxv->data = r_mem_dup (buff, size);
 		if (!auxv->data) {
 			free (buff);
 			free (auxv);
@@ -1235,7 +1240,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 	*section_size = size;
 
 	/* Start building note */
-	note_data = calloc (size, 1);
+	note_data = calloc (1, size);
 	if (!note_data) {
 		free (thread_id);
 		free (maps_data);
@@ -1247,12 +1252,15 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 	write_note_hdr (type, &note_data);
 	memcpy (note_data, note_info[type].name, note_info[type].size_name);
 	note_data += note_info[type].size_name;
-	memcpy (note_data, elf_proc_note->prpsinfo, note_info[type].size_roundedup);
+	memcpy (note_data, elf_proc_note->prpsinfo, note_info[type].size);
 	note_data += note_info[type].size_roundedup;
 
 	/* prstatus + fpregset + (prxfpreg) + siginfo + x86xstate per thread */
 	{
 		elf_proc_note->thread_note = R_NEW0 (thread_elf_note_t);
+		if (!elf_proc_note->thread_note) {
+			goto fail;
+		}
 		for (i = 0; i < elf_proc_note->n_threads; i++) {
 			elf_proc_note->thread_note->siginfo = linux_get_siginfo (thread_id[i]);
 			if (!elf_proc_note->thread_note->siginfo) {
@@ -1294,14 +1302,14 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			write_note_hdr (type, &note_data);
 			memcpy (note_data, note_info[type].name, note_info[type].size_name);
 			note_data += note_info[type].size_name;
-			memcpy (note_data, elf_proc_note->thread_note->prstatus, note_info[type].size_roundedup);
+			memcpy (note_data, elf_proc_note->thread_note->prstatus, note_info[type].size);
 			note_data += note_info[type].size_roundedup;
 
 			type = NT_FPREGSET_T;
 			write_note_hdr (type, &note_data);
 			memcpy (note_data, note_info[type].name, note_info[type].size_name);
 			note_data += note_info[type].size_name;
-			memcpy (note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size_roundedup);
+			memcpy (note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size);
 			note_data += note_info[type].size_roundedup;
 #if __i386__
 			if (fpx_flag) {
@@ -1309,7 +1317,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 				write_note_hdr (type, &note_data);
 				memcpy (note_data, note_info[type].name, note_info[type].size_name);
 				note_data += note_info[type].size_name;
-				memcpy (note_data, elf_proc_note->thread_note->fpx_regset, note_info[type].size_roundedup);
+				memcpy (note_data, elf_proc_note->thread_note->fpx_regset, note_info[type].size);
 				note_data += note_info[type].size_roundedup;
 				R_FREE (elf_proc_note->thread_note->fpx_regset);
 			}
@@ -1318,7 +1326,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			write_note_hdr (type, &note_data);
 			memcpy (note_data, note_info[type].name, note_info[type].size_name);
 			note_data += note_info[type].size_name;
-			memcpy (note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size_roundedup);
+			memcpy (note_data, elf_proc_note->thread_note->fp_regset, note_info[type].size);
 			note_data += note_info[type].size_roundedup;
 
 #if __arm__ || __arm64
@@ -1327,7 +1335,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 				write_note_hdr (type, &note_data);
 				memcpy (note_data, note_info[type].name, note_info[type].size_name);
 				note_data += note_info[type].size_name;
-				memcpy (note_data, elf_proc_note->thread_note->arm_vfp_data, note_info[type].size_roundedup);
+				memcpy (note_data, elf_proc_note->thread_note->arm_vfp_data, note_info[type].size);
 				note_data += note_info[type].size_roundedup;
 				R_FREE (elf_proc_note->thread_note->arm_vfp_data);
 			}
@@ -1339,7 +1347,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 				write_note_hdr (type, &note_data);
 				memcpy (note_data, note_info[type].name, note_info[type].size_name);
 				note_data += note_info[type].size_name;
-				memcpy (note_data, elf_proc_note->thread_note->xsave_data, note_info[type].size_roundedup);
+				memcpy (note_data, elf_proc_note->thread_note->xsave_data, note_info[type].size);
 				note_data += note_info[type].size_roundedup;
 				R_FREE (elf_proc_note->thread_note->xsave_data);
 			}
@@ -1348,19 +1356,20 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			R_FREE (elf_proc_note->thread_note->prstatus);
 			R_FREE (elf_proc_note->thread_note->fp_regset);
 		}
+		free (elf_proc_note->thread_note);
 	}
 	type = NT_AUXV_T;
 	write_note_hdr (type, &note_data);
 	memcpy (note_data, note_info[type].name, note_info[type].size_name);
 	note_data += note_info[type].size_name;
-	memcpy (note_data, elf_proc_note->auxv->data, note_info[type].size_roundedup);
+	memcpy (note_data, elf_proc_note->auxv->data, note_info[type].size);
 	note_data += note_info[type].size_roundedup;
 
 	type = NT_FILE_T;
 	write_note_hdr (type, &note_data);
 	memcpy (note_data, note_info[type].name, note_info[type].size_name);
 	note_data += note_info[type].size_name;
-	memcpy (note_data, maps_data, note_info[type].size_roundedup);
+	memcpy (note_data, maps_data, note_info[type].size);
 	note_data += note_info[type].size_roundedup;
 
 	detach_threads (dbg, thread_id, elf_proc_note->n_threads);
