@@ -1,25 +1,3 @@
-/* Replace single backslashes with double backslashes */
-static char *replace_backslashes(const char *orig) {
-	char *replaced = NULL;
-	int i, j;
-
-	replaced = malloc (MAX_PATH);
-	if (!replaced)
-		return NULL;
-	memset (replaced, 0, MAX_PATH);
-	for (i = 0, j = 0; i < strlen (orig); i++, j++) {
-		replaced[j] = orig[i];
-		if (orig[i] == '\\') {
-			j++;
-			replaced[j] = '\\';
-		}
-		if (j >= MAX_PATH) {
-			free (replaced);
-			return NULL;
-		}
-	}
-	return replaced;
-}
 
 static RList *w32_dbg_modules(RDebug *dbg) {
 	HANDLE hProcess = 0;
@@ -45,9 +23,7 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 		ut64 baddr = (ut64)(size_t)me32.modBaseAddr;
 		mr = r_debug_map_new (me32.szModule, baddr, baddr + me32.modBaseSize, 0, 0);
 		if (mr != NULL) {
-            /* Single backslashes can cause issues when parsing JSON output,
-             * so we replace them with double backslashes */
-			mr->file = replace_backslashes (me32.szExePath);
+			mr->file = strdup (me32.szExePath);
 			if (mr->file != NULL)
 				r_list_append (list, mr);
 		}
