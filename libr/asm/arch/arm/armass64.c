@@ -7,7 +7,7 @@
 #include <r_util.h>
 
 typedef enum optype_t {
-	ARM_NOTYPE = -1, ARM_GPR = 0, ARM_CONSTANT, ARM_FP
+	ARM_NOTYPE = -1, ARM_GPR = 0, ARM_CONSTANT, ARM_FP, ARM_LSL, ARM_SHIFT
 } OpType;
 
 typedef enum regtype_t {
@@ -26,6 +26,10 @@ typedef struct operand_t {
 			ut64 immediate;
 			int sign;
 		};
+		struct {
+			ut64 lsl;
+			ut64 shift;
+		};
 	};
 } Operand;
 
@@ -35,7 +39,7 @@ typedef struct Opcode_t {
 	size_t op_len;
 	ut8 opcode[3];
 	int operands_count;
-	Operand operands[3];
+	Operand operands[5];
 } ArmOp;
 
 static ut32 mov(ArmOp *op) {
@@ -270,6 +274,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 	int operand = 0;
 	char *token = t;
 	char *x;
+	int imm_count = 0;
 
 	while (token[0] != '\0') {
 		op->operands[operand].type = ARM_NOTYPE;
@@ -324,12 +329,26 @@ static bool parseOperands(char* str, ArmOp *op) {
 					x[0] = '\0';
 				}
 				op->operands_count ++;
-				op->operands[operand].type = ARM_CONSTANT;
-				op->operands[operand].immediate = r_num_math (NULL, token);
-
+				switch (imm_count) {
+					case 0:
+						op->operands[operand].type = ARM_CONSTANT;
+						op->operands[operand].immediate = r_num_math (NULL, token);
+					break;
+					case 1:
+						op->operands[operand].type = ARM_LSL;
+						op->operands[operand].lsl = r_num_math (NULL, token);
+					break;
+					case 2:
+						op->operands[operand].type = ARM_SHIFT;
+						op->operands[operand].shift = r_num_math (NULL, token);
+					break;
+					case 3:
+					break;
+				}
+				imm_count++;
 			break;
 		}
-		//printf ("operand %d type is %d - reg_type %d\n", operand, op->operands[operand].type, op->operands[operand].reg_type);
+		printf ("operand %d type is %d - reg_type %d\n", operand, op->operands[operand].type, op->operands[operand].reg_type);
 		if (x == '\0') {
 			free (t);
 			return true;
