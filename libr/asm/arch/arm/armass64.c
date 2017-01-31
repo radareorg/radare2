@@ -7,12 +7,21 @@
 #include <r_util.h>
 
 typedef enum optype_t {
-	ARM_NOTYPE = -1, ARM_GPR = 0, ARM_CONSTANT, ARM_FP, ARM_LSL, ARM_SHIFT
+	ARM_NOTYPE = -1, 
+	ARM_GPR = 1, 
+	ARM_CONSTANT = 2, 
+	ARM_FP = 4,
+	ARM_LSL = 8,
+	ARM_SHIFT = 16
 } OpType;
 
 typedef enum regtype_t {
 	ARM_UNDEFINED = -1,
-	ARM_REG64 = 0, ARM_REG32, ARM_SP, ARM_PC, ARM_SIMD
+	ARM_REG64 = 1, 
+	ARM_REG32 = 2,
+	ARM_SP = 4,
+	ARM_PC = 8,
+	ARM_SIMD = 16
 } RegType;
 
 typedef struct operand_t {
@@ -47,34 +56,34 @@ static ut32 mov(ArmOp *op) {
 	int k = 0;
 	ut32 data = UT32_MAX;
 	if (!strncmp (op->mnemonic, "movz", 4)) {
-		if (op->operands[0].reg_type == ARM_REG64) {
+		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x80d2;
-		} else if (op->operands[0].reg_type == ARM_REG32) {
+		} else if (op->operands[0].reg_type & ARM_REG32) {
 			k = 0x8052;
 		}
 	} else if (!strncmp (op->mnemonic, "movk", 4)) {
-		if (op->operands[0].reg_type == ARM_REG32) {
+		if (op->operands[0].reg_type & ARM_REG32) {
 			k = 0x8072;
-		} else if (op->operands[0].reg_type == ARM_REG64) {
+		} else if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x80f2;
 		}
 	} else if (!strncmp (op->mnemonic, "movn", 4)) {
-		if (op->operands[0].reg_type == ARM_REG32) {
+		if (op->operands[0].reg_type & ARM_REG32) {
 			k = 0x8012;
-		} else if (op->operands[0].reg_type == ARM_REG64) {
+		} else if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x8092;
 		}
 	} else if (!strncmp (op->mnemonic, "mov", 3)) {
 		//printf ("%d - %d [%d]\n", op->operands[0].type, op->operands[1].type, ARM_GPR);
-		if (op->operands[0].type == ARM_GPR) {
-			if (op->operands[1].type == ARM_GPR) {
-				if (op->operands[1].reg_type == ARM_REG64) {
+		if (op->operands[0].type & ARM_GPR) {
+			if (op->operands[1].type & ARM_GPR) {
+				if (op->operands[1].reg_type & ARM_REG64) {
 					k = 0xe00300aa;
 				} else {
 					k = 0xe003002a;
 				}
 				data = k | op->operands[1].reg << 8;
-			} else if (op->operands[1].type == ARM_CONSTANT) {
+			} else if (op->operands[1].type & ARM_CONSTANT) {
 				k = 0x80d2;
 				data = k | op->operands[1].immediate << 29;
 			}
@@ -90,39 +99,7 @@ static ut32 mov(ArmOp *op) {
 	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
 	data |= ((op->operands[1].immediate >> 10) << 7); // arg(1)
 	return data;
-#else
-printf ("str %s\n", str);
-	ut32 op = UT32_MAX;
-	const char *op1 = strchr (str, ' ') + 1;
-	char *comma = strchr (str, ',');
-	comma[0] = '\0';
-	const char *op2 = (comma[1]) == ' ' ? comma + 2 : comma + 1;
 
-	int n = (int)r_num_math (NULL, op1 + 1);
-	int w = (int)r_num_math (NULL, op2);
-	if (!strncmp (str, "mov x", 5)) {
-		// TODO handle values > 32
-		if (n >= 0 && n < 32) {
-			if (op2[0] == 'x') {
-				w = (int)r_num_math (NULL, op2 + 1);
-				k = 0xE00300AA;
-				op = k | w << 8;
-			} else {
-				op = k | w << 29;
-			}
-		}
-		op |= n << 24;
-	} else if (!strncmp (str, "mov", 3) && strlen (str) > 5) {
-		if (n >= 0 && n < 32 && comma) {
-			op = k;
-			op |= (n << 24); // arg(0)
-			op |= ((w & 7) << 29); // arg(1)
-			op |= (((w >> 3) & 0xff) << 16); // arg(1)
-			op |= ((w >> 10) << 7); // arg(1)
-		}
-	}
-	return op;
-#endif
 }
 
 static ut32 branch_reg(const char *str, ut64 addr, int k) {
@@ -237,36 +214,29 @@ static bool exception(ut32 *op, const char *arg, ut32 type) {
 
 static ut32 arithmetic (ArmOp *op, int k) {
 	ut32 data = UT32_MAX;
-	if (op->operands[0].type != ARM_GPR ||
-	    op->operands[1].type != ARM_CONSTANT) {
+	if (op->operands_count < 3) {
 		return data;
+	}
+
+	if (!(op->operands[0].type & ARM_GPR &&
+	      op->operands[1].type & ARM_GPR)) {
+		return data;
+	}
+	if (op->operands[2].type & ARM_GPR) {
+		k -= 6;
 	}
 
 	data = k;
 	data += op->operands[0].reg << 24;
 	data += (op->operands[1].reg & 7) << (24 + 5);
 	data += (op->operands[1].reg >> 3) << 16;
-	data += (op->operands[2].reg & 0x3f) << 18;
-	data += (op->operands[2].reg >> 6) << 8;
-	return data;
-#if 0
-	char *c = strchr (str + 5, 'x');
-	if (c) {
-		char *c2 = strchr (c + 1, ',');
-		if (c2) {
-			int r0 = atoi (str + 5);
-			int r1 = atoi (c + 1);
-			ut64 n = r_num_math (NULL, c2 + 1);
-			*op = type;
-			*op += r0 << 24;
-			*op += (r1 & 7) << (24 + 5);
-			*op += (r1 >> 3) << 16;
-			*op += (n & 0x3f) << 18;
-			*op += (n >> 6) << 8;
-		}
+	if (op->operands[2].reg_type & ARM_REG64) {
+		data += op->operands[2].reg << 8;
+	} else {
+		data += (op->operands[2].reg & 0x3f) << 18;
+		data += (op->operands[2].reg >> 6) << 8;
 	}
-	return *op != -1;
-#endif
+	return data;
 }
 
 static bool parseOperands(char* str, ArmOp *op) {
@@ -317,6 +287,14 @@ static bool parseOperands(char* str, ArmOp *op) {
 			break;
 			case 's':
 			case 'S':
+				x = strchr (token, ',');
+				if (x) {
+					x[0] = '\0';
+				}
+				op->operands_count ++;
+				op->operands[operand].type = ARM_GPR;
+				op->operands[operand].reg_type = ARM_SP | ARM_REG64;
+				op->operands[operand].reg = r_num_math (NULL, token + 1);
 			break;
 			case 'p':
 			case 'P':
@@ -348,7 +326,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 				imm_count++;
 			break;
 		}
-		printf ("operand %d type is %d - reg_type %d\n", operand, op->operands[operand].type, op->operands[operand].reg_type);
+		//printf ("operand %d type is %d - reg_type %d\n", operand, op->operands[operand].type, op->operands[operand].reg_type);
 		if (x == '\0') {
 			free (t);
 			return true;
