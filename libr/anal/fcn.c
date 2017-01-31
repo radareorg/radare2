@@ -1027,18 +1027,25 @@ repeat:
 						/* for mach0 */
 						in_plt = true;
 					}
-					if (!in_plt) {
-						goto river;
-					}
-#if 0
 					if (anal->bits == 64) {
+						if (!in_plt) {
+/* on arm64 and x86-64 the plt/stub is just a ujmp */
+							goto river;
+						}
 					} else {
-						/* uh? */
+#if 0
+/* on x86-32 the plt is ujmp,push,jmp */
+┌ (fcn) sym.imp.__cxa_finalize 6
+│   sym.imp.__cxa_finalize ();
+│     ↑↑↑      ; CALL XREF from 0x0000055e (sym.__do_global_dtors_aux)
+│     |||   0x00000420      ffa30c000000   Jmp  dword [ebx + 0xc]
+│     |||   0x00000426      6800000000     Push 0
+└     └───< 0x0000042b      e9e0ffffff     Jmp  0x410
+#endif
 						if (in_plt) {
 							goto river;
 						}
 					}
-#endif
 				}
 			}
 			FITFCNSZ ();
