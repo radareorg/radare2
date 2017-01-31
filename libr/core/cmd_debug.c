@@ -793,7 +793,7 @@ show_help:
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 						fn, map->addr);
 #if __WINDOWS__
-				/* Single quotes break the generated rabin2 command on Windows */
+				/* Use double quotes around the file path on Windows to generate valid commands */
 				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
 						map->addr, map->file);
 #else
@@ -824,7 +824,7 @@ show_help:
 						fn, map->addr);
 
 #if __WINDOWS__
-				/* Single quotes break the generated rabin2 command on Windows */
+				/* Use double quotes around the file path on Windows to generate valid commands */
 				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
 						map->addr, map->file);
 #else
@@ -3000,7 +3000,9 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
 		"dcc", "", "Continue until call (use step into)",
 		"dccu", "", "Continue until unknown call (call reg)",
+#if __WINDOWS__
 		"dce", "", "Continue execution (pass exception to program)",
+#endif
 		"dcf", "", "Continue until fork (TODO)",
 		"dck", " <signal> <pid>", "Continue sending signal to process",
 		"dco", " <num>", "Step over <num> instructions",
@@ -3063,10 +3065,12 @@ beach:
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
 		break;
+#if __WINDOWS__
 	case 'e': // "dce"
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_continue_pass_exception (core->dbg);
 		break;
+#endif
 	case 'f': // "dcf"
 		eprintf ("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
 		// we should stop in fork and vfork syscalls

@@ -1024,14 +1024,11 @@ R_API int r_debug_continue(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
 }
 
+#if __WINDOWS__
 R_API int r_debug_continue_pass_exception(RDebug *dbg) {
-#if __WINDOWS__ && !__CYGWIN__
-	return r_debug_continue_kill (dbg, 1); // TODO: Passing in 0 and 1 is stupid
-#else
-	eprintf ("Not implemented for this platform\n");
-	return false;
-#endif
+	return r_debug_continue_kill (dbg, DBG_EXCEPTION_NOT_HANDLED);
 }
+#endif
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 	eprintf ("TODO\n");

@@ -45,6 +45,8 @@ static RList *w32_dbg_modules(RDebug *dbg) {
 		ut64 baddr = (ut64)(size_t)me32.modBaseAddr;
 		mr = r_debug_map_new (me32.szModule, baddr, baddr + me32.modBaseSize, 0, 0);
 		if (mr != NULL) {
+            /* Single backslashes can cause issues when parsing JSON output,
+             * so we replace them with double backslashes */
 			mr->file = replace_backslashes (me32.szExePath);
 			if (mr->file != NULL)
 				r_list_append (list, mr);
