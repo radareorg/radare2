@@ -1515,18 +1515,26 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	const char *mt_key, *info;
 	Sdb *s = core->anal->sdb_meta;
 	char key[100];
-	ut64 mt_sz;
+	ut64 mt_sz = UT64_MAX;
 
 	//handle meta info to fix ds->oplen
 	snprintf (key, sizeof (key) - 1, "meta.0x%"PFMT64x, ds->at);
 	info = sdb_const_get (s, key, 0);
 	if (info) {
 		for (;*info; info++) {
-			snprintf (key, sizeof (key) - 1, 
-			  	"meta.%c.0x%"PFMT64x, *info, ds->at);
-			mt_key = sdb_const_get (s, key, 0);
-			mt_sz = sdb_array_get_num (s, key, 0, 0);
-			if (mt_sz) {
+			switch (*info) {
+			case R_META_TYPE_DATA:
+			case R_META_TYPE_STRING:
+			case R_META_TYPE_FORMAT:
+			case R_META_TYPE_MAGIC:
+			case R_META_TYPE_HIDE:
+				snprintf (key, sizeof (key) - 1, 
+						"meta.%c.0x%"PFMT64x, *info, ds->at);
+				mt_key = sdb_const_get (s, key, 0);
+				mt_sz = sdb_array_get_num (s, key, 0, 0);
+				if (mt_sz) {
+					break;
+				}
 				break;
 			}
 		}
@@ -1601,7 +1609,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	} else if (ds->capitalize) {
 		ds->asmop.buf_asm[0] = toupper (ds->asmop.buf_asm[0]);
 	}
-	if (info) {
+	if (info && mt_sz != UT64_MAX) {
 		ds->oplen = mt_sz;
 	}
 	return ret;
@@ -3763,7 +3771,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		r_asm_set_pc (core->assembler, ds->at);
 		// XXX copypasta from main disassembler function
 		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-		ret = r_asm_disassemble (core->assembler, &ds->asmop, core->block+i, core->blocksize-i);
+		ret = r_asm_disassemble (core->assembler, &ds->asmop,
+			core->block + i, core->blocksize - i);
 		r_anal_op_fini (&ds->analop);
 		if (ds->show_color && !hasanal) {
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + i, core->blocksize - i);
