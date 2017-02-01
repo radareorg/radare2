@@ -306,7 +306,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	ut64 parameters_size;
 	ut64 param_type_idx;
 	ut16 argReg = regsz - ins_size;
-	ut32 source_file_idx = c->source_file;
+	ut64 source_file_idx = c->source_file;
 	RList *params, *debug_positions, *emitted_debug_locals = NULL; 
 	bool keep = true;
 	if (argReg >= regsz) {
@@ -523,7 +523,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		case 0x9:
 			{
 			p4 = r_uleb128 (p4, p4_end - p4, &source_file_idx);
-			--source_file_idx;
+			source_file_idx--;
 			}
 			break;
 		default:

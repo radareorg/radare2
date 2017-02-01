@@ -1620,7 +1620,6 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (true);
 	r_core_bind (core, &core->dbg->corebind);
-	core->dbg->cb_printf = (PrintfCallback)r_cons_printf;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
 // XXX pushing unititialized regstate results in trashed reg values
