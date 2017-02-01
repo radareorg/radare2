@@ -351,10 +351,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	if (!task) {
+#if 0
+		/* this is broken, referer gets set in the riodesc after this function returns the riodesc
+		 * the pid > 0 check  doesn't seem to be reasonable to me too
+		 * what was this intended to check anyway ? */
 		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
 			eprintf ("Child killed\n");
 			kill (pid, 9);
 		}
+#endif
 		switch (errno) {
 		case EPERM:
 			eprintf ("Operation not permitted\n");
