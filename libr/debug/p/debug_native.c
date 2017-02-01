@@ -959,7 +959,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	list->free = (RListFree)_map_free;
 	while (!feof (fd)) {
 		size_t line_len;
-		ut64 map_start, map_end;
+		ut64 map_start, map_end, offset;
 
 		if (!fgets (line, sizeof (line), fd)) {
 			break;
@@ -993,10 +993,10 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		}
 #else
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
-		i = sscanf (line, "%s %s %*s %*s %*s %[^\n]", &region[2], perms, name);
-		if (i == 2) {
+		i = sscanf (line, "%s %s %08"PFMT64x" %*s %*s %[^\n]", &region[2], perms, &offset, name);
+		if (i == 3) {
 			name[0] = '\0';
-		} else if (i != 3) {
+		} else if (i != 4) {
 			eprintf ("%s: Unable to parse \"%s\"\n", __func__, path);
 			eprintf ("%s: problematic line: %s\n", __func__, line);
 			r_list_free (list);
@@ -1014,11 +1014,13 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			snprintf (name, sizeof (name), "unk%d", unk++);
 		}
 		perm = 0;
-		for (i = 0; perms[i] && i < 4; i++) {
+		for (i = 0; perms[i] && i < 5; i++) {
 			switch (perms[i]) {
 			case 'r': perm |= R_IO_READ; break;
 			case 'w': perm |= R_IO_WRITE; break;
 			case 'x': perm |= R_IO_EXEC; break;
+			case 'p': perm |= R_IO_PRIV; break;
+			case 's': perm |= R_IO_SHAR; break;
 			}
 		}
 
@@ -1032,6 +1034,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		if (!map) {
 			break;
 		}
+#if __linux__
+		map->offset = offset;
+#endif
 		map->file = strdup (name);
 		r_list_append (list, map);
 	}

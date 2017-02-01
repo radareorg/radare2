@@ -133,6 +133,7 @@ typedef struct r_debug_map_t {
 	ut64 addr;
 	ut64 addr_end;
 	ut64 size;
+	ut64 offset;
 	char *file;
 	int perm;
 	int user;

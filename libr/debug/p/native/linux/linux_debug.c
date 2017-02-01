@@ -77,7 +77,6 @@ int linux_handle_signals (RDebug *dbg, bool self_signalled) {
 						char *p = strstr (b->data, "dbg.");
 						if (p) {
 							if (r_str_startswith (p, "dbg.libs")) {
-								char str[80];
 								const char *name;
 								if (strstr (b->data, "sym.imp.dlopen")) {
 									name = r_reg_get_name (dbg->reg, R_REG_NAME_A0);

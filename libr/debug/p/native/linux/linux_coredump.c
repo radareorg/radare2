@@ -47,27 +47,21 @@ static bool is_a_kernel_mapping(const char *name) {
 		&& strncmp (name, "[stack", strlen ("[stack")));
 }
 
-static const char *get_basename(const char *pfname, int len) {
-	const char *p;
-	for (p = pfname + len; p != pfname; p--) {
-		if (*p == '/') {
-			return (p + 1);
-		}
-	}
-	return p;
-}
-
-static char *prpsinfo_get_psargs(char *buffer, char *pfname, int size_psargs, int len) {
+static char *prpsinfo_get_psargs(char *buffer, int len) {
 	char paux[ELF_PRARGSZ];
 	int i, bytes_left;
-	char *p = r_mem_dup (pfname, len);
+	char *p = r_mem_dup (buffer, len);
 	if (!p) {
 		return NULL;
 	}
-	bytes_left = strlen (pfname);
+	bytes_left = strlen (buffer);
 	buffer = strchr (buffer, '\0');
+	if (!buffer) {
+		free (p);
+		return NULL;
+	}
 
-	for (i = 0; i + bytes_left < len; i++) {
+	for (i = 0; i + bytes_left < len && i + bytes_left < ELF_PRARGSZ - 1; i++) {
 		if (!buffer[i]) {
 			buffer[i] = ' ';
 		}
@@ -105,10 +99,10 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 	if (!pfname) {
 		goto error;
 	}
-	basename = get_basename (pfname, strlen (pfname));
+	basename = r_file_basename (pfname);
 	strncpy (p->pr_fname, basename, sizeof (p->pr_fname));
 	p->pr_fname[sizeof (p->pr_fname) - 1] = 0;
-	ppsargs = prpsinfo_get_psargs (buffer, pfname, sizeof (p->pr_psargs), len);
+	ppsargs = prpsinfo_get_psargs (buffer, len);
 	if (!ppsargs) {
 		goto error;
 	}
@@ -137,7 +131,7 @@ error:
 	return NULL;
 }
 
-static proc_per_thread_t *get_proc_thread_content (int pid, int tid) {
+static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 	proc_per_thread_t *t;
 	char *temp_p_sigpend, *temp_p_sighold, *p_sigpend, *p_sighold;
 	char *buff;
@@ -150,7 +144,10 @@ static proc_per_thread_t *get_proc_thread_content (int pid, int tid) {
 	}
 
 	t = R_NEW0 (proc_per_thread_t);
-	 {
+	if (!t) {
+		return NULL;
+	}
+	{
 		char no_str[128];
 		long unsigned int no_lui;
 		int no_num;
@@ -162,7 +159,7 @@ static proc_per_thread_t *get_proc_thread_content (int pid, int tid) {
 			   &no_num, &no_num, &no_ui, &no_lui, &no_lui, &no_lui,
 			   &no_lui, &t->utime, &t->stime, &t->cutime, &t->cstime);
 		free (buff);
-	 }
+	}
 
         /* /proc/[pid]/status for uid, gid, sigpend and sighold */
 	file = sdb_fmt (0, "/proc/%d/task/%d/status", pid, tid);
@@ -278,9 +275,13 @@ static bool has_map_deleted_part(char *name) {
 }
 
 static bool getAnonymousValue(char *keyw) {
-	if (!keyw) return false;
+	if (!keyw) {
+		return false;
+	}
 	keyw = strchr (keyw, ' ');
-	if (!keyw) return false;
+	if (!keyw) {
+		return false;
+	}
 	while (*keyw && isspace (*keyw)) {
 		keyw ++;
 	}
@@ -323,19 +324,16 @@ static bool has_map_anonymous_content(char *buff_smaps, unsigned long start_addr
 	return 0;
 }
 
-static bool dump_this_map(char *buff_smaps, unsigned long start_addr, unsigned long end_addr,
-									bool file_backed,
-									bool anonymous,
-									bool kernel_mapping,
-									ut8 perms, ut8 filter_flags) {
+static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter_flags) {
 	char *p, *pp, *ppp, *extern_tok, *flags_str = NULL;
-	char *identity = r_str_newf (fmt_addr, start_addr, end_addr);
+	char *identity = r_str_newf (fmt_addr, entry->start_addr, entry->end_addr);
 	bool found = false;
 	char *aux = NULL;
-	ut8 vmflags = 0;
+	ut8 vmflags = 0, perms = entry->perms;
 
 	/* if the map doesn't have r/w quit right here */
-	if (perms & WRG_PERM) {
+	if (((perms & R_IO_PRIV) && (perms & R_IO_SHAR))
+		|| (!(perms & R_IO_READ) && !(perms & R_IO_WRITE))) {
 		return false;
 	}
 	if (!identity) {
@@ -360,7 +358,7 @@ static bool dump_this_map(char *buff_smaps, unsigned long start_addr, unsigned l
 		}
 	}
 
-	if (file_backed) {
+	if (entry->file_backed) {
 		if (filter_flags & MAP_FILE_PRIV) {
 			goto beach;
 		}
@@ -371,20 +369,20 @@ static bool dump_this_map(char *buff_smaps, unsigned long start_addr, unsigned l
 
 	if (!flags_str || !found) {
 		/* if we don't have VmFlags, let's check it out in another way */
-		if (kernel_mapping) {
+		if (entry->kernel_mapping) {
 			goto beach;
 		}
 
-		if (perms & P_MEM) {
-			if ((filter_flags & MAP_ANON_PRIV) && anonymous) {
+		if (perms & R_IO_PRIV) {
+			if ((filter_flags & MAP_ANON_PRIV) && entry->anonymous) {
 				goto beach;
 			}
-			if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
+			if ((filter_flags & MAP_HUG_PRIV) && entry->anonymous) {
 				goto beach;
 			}
 		}
 
-		if (perms & S_MEM) {
+		if (perms & R_IO_SHAR) {
 			if (filter_flags & MAP_ANON_SHR) {
 				goto beach;
 			}
@@ -428,12 +426,12 @@ static bool dump_this_map(char *buff_smaps, unsigned long start_addr, unsigned l
 		}
 
 		/* if current map comes from kernel and does not have DD flag, just stop checking */
-		if (kernel_mapping) {
+		if (entry->kernel_mapping) {
 			goto beach;
 		}
 
 		if (vmflags & HT_FLAG) {
-			if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
+			if ((filter_flags & MAP_HUG_PRIV) && entry->anonymous) {
 				goto beach;
 			}
 			if (filter_flags & MAP_HUG_SHR) {
@@ -451,10 +449,10 @@ static bool dump_this_map(char *buff_smaps, unsigned long start_addr, unsigned l
 		}
 
 		if (vmflags & PV_FLAG) {
-			if ((filter_flags & MAP_ANON_PRIV) && anonymous) {
+			if ((filter_flags & MAP_ANON_PRIV) && entry->anonymous) {
 				goto beach;
 			}
-			if ((filter_flags & MAP_HUG_PRIV) && anonymous) {
+			if ((filter_flags & MAP_HUG_PRIV) && entry->anonymous) {
 				goto beach;
 			}
 		}
@@ -479,64 +477,13 @@ static void clean_maps(linux_map_entry_t *h) {
 	}
 }
 
-static void get_map_perms_and_offset (unsigned long start_addr, unsigned long end_addr,
-					char *buff_maps, ut8 *flags_perm, unsigned long *offset) {
-	char *p, *pp, *aux, *extern_tok;
-	char *identity = r_str_newf (fmt_addr, start_addr, end_addr);
-	char *str = strdup (buff_maps);
-	ut8 flags = 0;
-
-	p = strtok_r (str, "\n", &extern_tok);
-	for (; p; p = strtok_r (NULL, "\n", &extern_tok)) {
-		if (strstr (p, identity)) {
-			break;
-		}
-	}
-	if (p) {
-		pp = strtok (p, " ");
-		pp = strtok (NULL, " ");
-		for (aux = pp ; *aux != ' ' ; aux++) {
-			switch (*aux) {
-			case 'r':
-				flags |= R_MEM;
-				break;
-			case 'w':
-				flags |= W_MEM;
-				break;
-			case 'x':
-				flags |= X_MEM;
-				break;
-			case 'p':
-				flags |= P_MEM;
-				break;
-			case 's':
-				flags |= S_MEM;
-				break;
-			case '-':
-				break;
-			}
-		}
-		if (((flags & P_MEM) && (flags & S_MEM))
-			|| (!(flags & R_MEM) && !(flags & W_MEM))) {
-			flags = WRG_PERM;
-		}
-		pp = strtok (NULL, " ");
-		*offset = strtoul (pp, &pp, 16);
-	}
-	*flags_perm = flags;
-	free (identity);
-	free (str);
-}
-
 static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) {
 	linux_map_entry_t *me_head = NULL, *me_tail = NULL;
 	RListIter *iter;
 	RDebugMap *map;
 	bool is_anonymous, is_deleted, ret;
 	char *file = NULL, *buff_maps= NULL, *buff_smaps = NULL;
-	unsigned long offset = 0;
 	int size_file = 0;
-	ut8 flags_perm;
 
 	file = r_str_newf ("/proc/%d/smaps", dbg->pid);
 	buff_smaps = r_file_slurp (file, &size_file);
@@ -563,14 +510,12 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 		}
 		pmentry->start_addr = map->addr;
 		pmentry->end_addr = map->addr_end;
-		pmentry->name = strncmp (map->name, "unk", strlen ("unk")) ? strdup (map->name) : NULL;
-		/* Since RDebugMap does not provide an offset field (offset within the file), and the perms field
-			does not contain if is share or private, we need to check that ourself */
-		get_map_perms_and_offset (pmentry->start_addr, pmentry->end_addr, buff_maps, &flags_perm, &offset);
-		pmentry->perms = flags_perm;
-		pmentry->offset = offset;
+		pmentry->offset = map->offset;
+		pmentry->name = strncmp (map->name, "unk", strlen ("unk"))
+					? strdup (map->name)
+					: NULL;
+		pmentry->perms = map->perm;
 		pmentry->kernel_mapping = false;
-
 		/* Check if is a kernel mapping */
 		if (pmentry->name && is_a_kernel_mapping (pmentry->name)) {
 			pmentry->anonymous = pmentry->kernel_mapping = true;
@@ -585,12 +530,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 		if (pmentry->name && !pmentry->kernel_mapping && !is_deleted) {
 			pmentry->file_backed = true;
 		}
-		pmentry->dumpeable = dump_this_map (buff_smaps, pmentry->start_addr,
-								pmentry->end_addr,
-								pmentry->file_backed,
-								pmentry->anonymous,
-								pmentry->kernel_mapping,
-								pmentry->perms, filter_flags);
+		pmentry->dumpeable = dump_this_map (buff_smaps, pmentry, filter_flags);
 		eprintf (fmt_addr" - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
 							pmentry->start_addr, pmentry->end_addr,
 							pmentry->anonymous, pmentry->kernel_mapping,
@@ -711,7 +651,7 @@ static int get_info_mappings(linux_map_entry_t *me_head, size_t *maps_size) {
 			*maps_size += p->end_addr - p->start_addr;
 		}
 		/* We don't count maps which does not have r/w perms */
-		if ((p->perms & R_MEM) || (p->perms & W_MEM))
+		if ((p->perms & R_IO_READ) || (p->perms & R_IO_WRITE))
 			n_entries++;
 	}
 	return n_entries;
@@ -783,7 +723,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_map_entry_t *maps, elf_offset
 
 	/* write program headers */
 	for (me_p = maps; me_p; me_p = me_p->n) {
-		if (!(me_p->perms & R_MEM) && !(me_p->perms & W_MEM)) {
+		if (!(me_p->perms & R_IO_READ) && !(me_p->perms & R_IO_WRITE)) {
 			continue;
 		}
 		phdr.p_type = PT_LOAD;
@@ -976,7 +916,9 @@ static elf_fpxregset_t *linux_get_fpx_regset (int tid) {
 	struct iovec transfer;
 	elf_fpxregset_t *fpxregset = R_NEW0 (elf_fpxregset_t);
 
-	if (!fpxregset) return NULL;
+	if (!fpxregset) {
+		return NULL;
+	}
 	transfer.iov_base = fpxregset;
 	transfer.iov_len = sizeof (elf_fpxregset_t);
 	if (ptrace (PTRACE_GETREGSET, tid, (unsigned int)NT_PRXFPREG, &transfer) < 0) {
@@ -1136,6 +1078,7 @@ static int *get_unique_thread_id (RDebug *dbg, int n_threads) {
 				found = false;
 			}
 		}
+		free (list);
 	}
 	return thread_id;
 }
@@ -1266,7 +1209,9 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 			if (!elf_proc_note->thread_note->siginfo) {
 				goto fail;
 			}
-			elf_proc_note->thread_note->prstatus = linux_get_prstatus (dbg->pid, thread_id[i], proc_data, elf_proc_note->thread_note->siginfo->si_signo);
+			elf_proc_note->thread_note->prstatus = linux_get_prstatus (dbg->pid,
+								thread_id[i], proc_data,
+								elf_proc_note->thread_note->siginfo->si_signo);
 			if (!elf_proc_note->thread_note->prstatus) {
 				goto fail;
 			}
