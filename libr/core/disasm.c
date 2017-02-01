@@ -732,18 +732,14 @@ static void ds_build_op_str(RDisasmState *ds) {
 				}
 			}
 			RCore *core = ds->core;
-			ut64 p = ds->analop.ptr;
 			core->parser->relsub_addr = 0;
-			char *msg = calloc (sizeof (char), 128); // is this big enough
-			if (msg && ds->analop.refptr) {
-				r_io_read_at (core->io, p, (ut8 *)msg, 128 - 1);
-				ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr * 8);
+			if (ds->analop.refptr) {
+				ut64 num = r_io_read_i (core->io, ds->analop.ptr, 8);
 				core->parser->relsub_addr = num;
 			}
 			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
-			free (msg);
 			ds->opstr = strdup (ds->str);
 			core->parser->flagspace = ofs; // ???
 		} else {
