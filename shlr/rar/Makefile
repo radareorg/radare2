@@ -5,7 +5,7 @@ all:
 	./a.out
 
 asm:
-	${CC} -ggdb -g main.c
+	${CC} -g main.c
 	./a.out "mov r3,r4"
 
 clean:

@@ -23,7 +23,7 @@ endif
 
 CFLAGS+=-fstrict-aliasing
 CFLAGS+=-I../../libr/include
-CFLAGS+=-Wall -g -ggdb
+CFLAGS+=-Wall -g
 LDFLAGS+=-shared
 ifeq (${OSNAME},darwin)
 SOEXT?=dylib
