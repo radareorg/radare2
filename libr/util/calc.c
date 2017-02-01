@@ -154,14 +154,19 @@ static void cin_putback (RNum *num, RNumCalc *nc, char c) {
 	nc->oc = c;
 }
 
-R_API const char *r_num_calc_index (RNum *num, const char *p) {
-	if (!num) return NULL;
+R_API const char *r_num_calc_index(RNum *num, const char *p) {
+	if (!num) {
+		return NULL;
+	}
 	if (p) {
 		num->nc.calc_buf = p;
 		num->nc.calc_len = strlen (p);
 		num->nc.calc_i = 0;
 	}
-	return num->nc.calc_buf + num->nc.calc_i;
+	if (num->nc.calc_i < num->nc.calc_len) {
+		return num->nc.calc_buf + num->nc.calc_i;
+	}
+	return NULL;
 }
 
 static int cin_get(RNum *num, RNumCalc *nc, char *c) {
@@ -315,7 +320,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 
 static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 	nc->calc_i = 0;
-	nc->calc_len = 0;
+	nc->calc_len = strlen (s);
 	nc->calc_buf = s;
 	nc->calc_err = NULL;
 }
