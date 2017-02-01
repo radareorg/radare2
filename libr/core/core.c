@@ -367,7 +367,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		// push state
 		if (str[0] && str[1]) {
 			const char *q;
-			char *o = strdup (str+1);
+			char *o = strdup (str + 1);
 			if (o) {
 				q = r_num_calc_index (core->num, NULL);
 				if (q) {
