@@ -787,7 +787,7 @@ show_help:
 			break;
 		case ':':
 			if (addr >= map->addr && addr < map->addr_end) {
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 				/* Escape backslashes in the file path on Windows */
 				char *escaped_path = r_str_escape (map->file);
 				char *escaped_name = r_str_escape (map->name);
@@ -836,7 +836,7 @@ show_help:
 			break;
 		case '*':
 			{
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 				/* Escape backslashes in the file path on Windows */
 				char *escaped_path = r_str_escape (map->file);
 				char *escaped_name = r_str_escape (map->name);
@@ -3026,7 +3026,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
 		"dcc", "", "Continue until call (use step into)",
 		"dccu", "", "Continue until unknown call (call reg)",
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 		"dce", "", "Continue execution (pass exception to program)",
 #endif
 		"dcf", "", "Continue until fork (TODO)",
@@ -3091,7 +3091,7 @@ beach:
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
 		break;
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 	case 'e': // "dce"
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_continue_pass_exception (core->dbg);

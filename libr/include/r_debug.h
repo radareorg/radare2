@@ -367,7 +367,7 @@ R_API int r_debug_continue_syscall(RDebug *dbg, int sc);
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc);
 R_API int r_debug_continue(RDebug *dbg);
 R_API int r_debug_continue_kill(RDebug *dbg, int signal);
-#if __WINDOWS__
+#if __WINDOWS__ && !__CYGWIN__
 R_API int r_debug_continue_pass_exception(RDebug *dbg);
 #endif
 
