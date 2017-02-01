@@ -733,11 +733,13 @@ static void ds_build_op_str(RDisasmState *ds) {
 			}
 			RCore *core = ds->core;
 			ut64 p = ds->analop.ptr;
-			char *msg = calloc (sizeof (char), 128); // is this big enough?
-			r_io_read_at (core->io, p, (ut8 *)msg, 128 - 1);
-			ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr * 8);
-			RFlagItem *flag = r_flag_get_i (core->flags, num);
-			core->parser->relsub_addr = num;
+			core->parser->relsub_addr = 0;
+			char *msg = calloc (sizeof (char), 128); // is this big enough
+			if (msg && ds->analop.refptr) {
+				r_io_read_at (core->io, p, (ut8 *)msg, 128 - 1);
+				ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr * 8);
+				core->parser->relsub_addr = num;
+			}
 			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
@@ -1520,7 +1522,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	RCore *core = ds->core;
 	int ret;
-	const char *mt_key, *info;
+	const char *info;
 	Sdb *s = core->anal->sdb_meta;
 	char key[100];
 	ut64 mt_sz = UT64_MAX;
@@ -1538,7 +1540,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case R_META_TYPE_HIDE:
 				snprintf (key, sizeof (key) - 1,
 						"meta.%c.0x%"PFMT64x, *info, ds->at);
-				mt_key = sdb_const_get (s, key, 0);
+				sdb_const_get (s, key, 0);
 				mt_sz = sdb_array_get_num (s, key, 0, 0);
 				if (mt_sz) {
 					break;
@@ -3708,7 +3710,6 @@ toro:
 R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes) {
 	RDisasmState *ds = NULL;
 	int i, j, ret, len = 0;
-	RAnalFunction *f;
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
@@ -3778,7 +3779,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		ds->has_description = false;
 		r_asm_set_pc (core->assembler, ds->at);
 		// XXX copypasta from main disassembler function
-		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ret = r_asm_disassemble (core->assembler, &ds->asmop,
 			core->block + i, core->blocksize - i);
 		r_anal_op_fini (&ds->analop);
@@ -3786,7 +3787,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + i, core->blocksize - i);
 			hasanal = true;
 		}
-		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		//r_conf = s_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ds->hint && ds->hint->size) {
 			ret = ds->hint->size;
 			ds->oplen = ret;
