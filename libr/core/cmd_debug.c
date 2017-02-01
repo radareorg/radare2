@@ -787,21 +787,28 @@ show_help:
 			break;
 		case ':':
 			if (addr >= map->addr && addr < map->addr_end) {
+#if __WINDOWS__
+				/* Escape backslashes in the file path on Windows */
+				char *escaped_path = r_str_escape (map->file);
+				char *escaped_name = r_str_escape (map->name);
+				r_name_filter (escaped_name, 0);
+				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+						escaped_name, map->addr);
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \'%s\'\n",
+						map->addr, escaped_path);
+				free (escaped_path);
+				free (escaped_name);
+#else
 				char *fn = strdup (map->file);
 				r_name_filter (fn, 0);
 				//r_cons_printf ("fs+module_%s\n", fn);
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 						fn, map->addr);
-#if __WINDOWS__
-				/* Use double quotes around the file path on Windows to generate valid commands */
-				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
-						map->addr, map->file);
-#else
 				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
 						map->addr, map->file);
-#endif
 				//r_cons_printf ("fs-\n");
 				free (fn);
+#endif
 			}
 			break;
 		case '.':
@@ -816,9 +823,11 @@ show_help:
 			{
 				/* Single backslashes cause issues when parsing JSON output, so escape them */
 				char *escaped_path = r_str_escape (map->file);
+				char *escaped_name = r_str_escape (map->name);
 				r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
-						map->addr, map->name, escaped_path, iter->n?",":"");
+						map->addr, escaped_name, escaped_path, iter->n?",":"");
 				free (escaped_path);
+				free (escaped_name);
 			}
 #else
 			r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
@@ -827,21 +836,29 @@ show_help:
 			break;
 		case '*':
 			{
+#if __WINDOWS__
+				/* Escape backslashes in the file path on Windows */
+				char *escaped_path = r_str_escape (map->file);
+				char *escaped_name = r_str_escape (map->name);
+				r_name_filter (escaped_name, 0);
+				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+						escaped_name, map->addr);
+				/* Use double quotes around the file path on Windows to generate valid commands */
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
+						map->addr, escaped_path);
+				free (escaped_path);
+				free (escaped_name);
+#else
 				char *fn = strdup (map->file);
 				r_name_filter (fn, 0);
 				//r_cons_printf ("fs+module_%s\n", fn);
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 						fn, map->addr);
-#if __WINDOWS__
-				/* Use double quotes around the file path on Windows to generate valid commands */
-				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
-						map->addr, map->file);
-#else
 				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
 						map->addr, map->file);
-#endif
 				//r_cons_printf ("fs-\n");
 				free (fn);
+#endif
 			}
 			break;
 		default:
