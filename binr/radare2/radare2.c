@@ -252,7 +252,6 @@ static void list_io_plugins(RIO *io) {
 		printf ("%s  %-11s %s (%s)\n", str, plugin->name,
 			plugin->desc, plugin->license);
 	}
-	return 0;
 }
 
 // Load the binary information from rabin2

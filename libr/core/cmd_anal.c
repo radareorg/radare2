@@ -3586,7 +3586,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		addr_end = addr + len;
 	} else {
 		const char *search_in = r_config_get (core->config, "search.in");
-		r_list_free (r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end));
+		ls_free (r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end));
 	}
 	if (!(buf = calloc (1, 4096))) {
 		return;
@@ -4984,7 +4984,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
 	if (is_debug) {
-		r_list_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
+		ls_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
 	} else {
 		secs = r_io_section_vget_secs_at (core->io, core->offset);
 		s = secs ? ls_pop (secs) : NULL;
@@ -5008,7 +5008,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		ls_free (secs);
 	}
 	{
-		RList *ret;
+		SdbList *ret;
 		if (is_debug) {
 			ret = r_core_get_boundaries_prot (core, 0, "dbg.map", &vmin, &vmax);
 		} else {
@@ -5020,7 +5020,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			}
 			ret = r_core_get_boundaries_prot (core, 0, "io.sections", &vmin, &vmax);
 		}
-		r_list_free (ret);
+		ls_free (ret);
 	}
 	eprintf ("aav: using from to 0x%"PFMT64x" 0x%"PFMT64x"\n", from, to);
 	eprintf ("Using vmin 0x%"PFMT64x" and vmax 0x%"PFMT64x"\n", vmin, vmax);

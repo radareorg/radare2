@@ -270,12 +270,12 @@ R_API int r_core_search_preludes(RCore *core) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	const char *where = cfg_debug? "dbg.map": "io.sections.exec";
 
-	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
-	RListIter *iter;
+	SdbList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
+	SdbListIter *iter;
 	RIOMap *p;
 
 	fc0 = count_functions (core);
-	r_list_foreach (list, iter, p) {
+	ls_foreach (list, iter, p) {
 		eprintf ("\r[>] Scanning %s 0x%"PFMT64x" - 0x%"PFMT64x" ", r_str_rwx_i (p->flags), p->from, p->to);
 		if (!cfg_debug && ! (p->flags & R_IO_MAP)) {
 			eprintf ("skip\n");
@@ -340,7 +340,7 @@ R_API int r_core_search_preludes(RCore *core) {
 		eprintf ("done\n");
 	}
 	fc1 = count_functions (core);
-	r_list_free (list);
+	ls_free (list);
 	eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
 	return ret;
 }
@@ -669,7 +669,8 @@ R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const cha
 			if (!strcmp (mode, "dbg.map")) {
 				int perm = 0;
 				*from = *to = core->offset;
-				list = r_list_newf (free);
+				list = ls_new ();
+				list->free = free;
 				r_list_foreach (core->dbg->maps, iter, map) {
 					if (*from >= map->addr && *from < map->addr_end) {
 						*from = map->addr;
@@ -686,7 +687,7 @@ R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const cha
 						nmap->to = *to;
 						nmap->flags = perm;
 						nmap->delta = 0;
-						r_list_append (list, nmap);
+						ls_append (list, nmap);
 					}
 				}
 			} else {
@@ -2093,16 +2094,16 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 static void search_similar_pattern(RCore *core, int count) {
 	RIOMap *p;
 	ut64 from, to;
-	RListIter *iter;
+	SdbListIter *iter;
 	const char *where = r_config_get (core->config, "search.in");
 
 	r_cons_break_push (NULL, NULL);
-	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
+	SdbList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
 	if (list) {
-		r_list_foreach (list, iter, p) {
+		ls_foreach (list, iter, p) {
 			search_similar_pattern_in (core, count, p->from, p->to);
 		}
-		r_list_free (list);
+		ls_free (list);
 	} else {
 		search_similar_pattern_in (core, count, from, to);
 	}

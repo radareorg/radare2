@@ -21,7 +21,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return count;
 }
 
-static int __resize(RIO *io, RIODesc *fd, ut64 count) {
+static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	RIONull *null;
 	if (fd && fd->data) {
 		null = (RIONull *)fd->data;
@@ -31,9 +31,9 @@ static int __resize(RIO *io, RIODesc *fd, ut64 count) {
 				null->offset = count - 1;
 			else	null->offset = 0LL;
 		}
-		return count;
+		return true;
 	}
-	return 0LL;
+	return false;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {

@@ -12,7 +12,7 @@ R_API int r_io_desc_init (RIO *io)
 }
 
 //shall be used by plugins for creating descs
-R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, char *uri, int flags, int mode, void *data)	//XXX kill mode
+R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data)	//XXX kill mode
 {
 	RIODesc *desc = NULL;
 	if (!io || !plugin || !uri)

@@ -103,8 +103,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->url = r_str_newf ("http://%s", pathname+8);
 			free (out);
 			free (url);
-			return r_io_desc_new (&r_io_plugin_r2web,
-				mal->fd, pathname, rw, mode, mal);
+			return r_io_desc_new (io, &r_io_plugin_r2web,
+				pathname, rw, mode, mal);
 		}
 		free (url);
 		free (mal);

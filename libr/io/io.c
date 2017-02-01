@@ -28,7 +28,7 @@ R_API RIO *r_io_init (RIO *io)
 }
 
 /* opens a file without mapping it */
-R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode)
+R_API RIODesc *r_io_open_nomap (RIO *io, const char *uri, int flags, int mode)
 {
 	RIODesc *desc;
 	RIOPlugin *plugin;
@@ -53,7 +53,7 @@ R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode)
 }
 
 /* opens a file and maps it to 0x0 */
-R_API RIODesc *r_io_open (RIO *io, char *uri, int flags, int mode)
+R_API RIODesc *r_io_open (RIO *io, const char *uri, int flags, int mode)
 {
 	RIODesc *desc;
 	if (!io || !io->maps)
@@ -66,7 +66,7 @@ R_API RIODesc *r_io_open (RIO *io, char *uri, int flags, int mode)
 }
 
 /* opens a file and maps it to an offset specified by the "at"-parameter */
-R_API RIODesc *r_io_open_at (RIO *io, char *uri, int flags, int mode, ut64 at)
+R_API RIODesc *r_io_open_at (RIO *io, const char *uri, int flags, int mode, ut64 at)
 {
 	RIODesc *desc;
 	ut64 size;
@@ -119,8 +119,8 @@ R_API bool r_io_close (RIO *io, int fd)
 		return false;
 	if (!desc->plugin->close (desc))					//close fd
 		return false;
-	r_io_desc_del (io, fd);								//remove entry from sdb-instance and free the desc-struct
-	r_io_map_cleanup (io);								//remove all dead maps
+	r_io_desc_del (io, fd);							//remove entry from sdb-instance and free the desc-struct
+	r_io_map_cleanup (io);							//remove all dead maps
 	r_io_section_cleanup (io);
 	return true;
 }
@@ -310,7 +310,7 @@ R_API int r_io_extend_at (RIO *io, ut64 addr, ut64 size)
 	cur_size = r_io_desc_size (io->desc);
 	if (addr > cur_size)
 		return false;
-	if (r_chk_overflow_add_ut64 (cur_size, size) != size)
+	if ((UT64_MAX - size) < cur_size)
 		return false;
 	if (!r_io_resize (io, cur_size + size))
 		return false;
