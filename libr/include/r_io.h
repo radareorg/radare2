@@ -195,8 +195,8 @@ typedef RIO *(*RIOGetIO) (struct r_io_bind_t *iob);
 typedef int (*RIODescUse) (RIO *io, int fd);
 typedef RIODesc *(*RIODescGet) (RIO *io, int fd);
 typedef ut64 (*RIODescSize) (RIODesc *desc);
-typedef RIODesc *(*RIOOpen) (RIO *io, char *uri, int flags, int mode);
-typedef RIODesc *(*RIOOpenAt) (RIO *io, char *uri, int flags, int mode, ut64 at);
+typedef RIODesc *(*RIOOpen) (RIO *io, const char *uri, int flags, int mode);
+typedef RIODesc *(*RIOOpenAt) (RIO *io, const  char *uri, int flags, int mode, ut64 at);
 typedef bool (*RIOClose) (RIO *io, int fd);
 typedef int (*RIOReadAt) (RIO *io, ut64 paddr, ut8 *buf, int len);
 typedef int (*RIOWriteAt) (RIO *io, ut64 paddr, ut8 *buf, int len);
@@ -225,7 +225,7 @@ typedef struct r_io_bind_t {
 
 //desc.c
 R_API int r_io_desc_init (RIO *io);
-R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, char *uri, int flags, int mode, void *data);
+R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
 R_API void r_io_desc_free (RIODesc *desc);
 R_API int r_io_desc_add (RIO *io, RIODesc *desc);
 R_API int r_io_desc_del (RIO *io, int fd);
@@ -258,9 +258,9 @@ R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta
 //io.c
 R_API RIO *r_io_new ();
 R_API RIO *r_io_init (RIO *io);
-R_API RIODesc *r_io_open_nomap (RIO *io, char *uri, int flags, int mode);
-R_API RIODesc *r_io_open (RIO *io, char *uri, int flags, int mode);
-R_API RIODesc *r_io_open_at (RIO *io, char *uri, int flags, int mode, ut64 at);
+R_API RIODesc *r_io_open_nomap (RIO *io, const char *uri, int flags, int mode);		//should return int
+R_API RIODesc *r_io_open (RIO *io, const char *uri, int flags, int mode);
+R_API RIODesc *r_io_open_at (RIO *io, const char *uri, int flags, int mode, ut64 at);
 R_API RList *r_io_open_many (RIO *io, char *uri, int flags, int mode);
 R_API bool r_io_close (RIO *io, int fd);
 R_API bool r_io_reopen (RIO *io, int fd, int flags, int mode);

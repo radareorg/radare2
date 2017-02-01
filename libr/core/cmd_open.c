@@ -287,7 +287,7 @@ static void cmd_open_map (RCore *core, const char *input) {
 					delta = r_num_math (core->num, r+1);
 				} else size = r_num_math (core->num, q+1);
 			} else size = r_io_size (core->io);		//XXX
-			if (desc = r_io_desc_get (core->io, fd)) {
+			if ((desc = r_io_desc_get (core->io, fd))) {
 				r_io_map_add (core->io, fd, desc->flags, delta, addr, size);
 			} else eprintf ("No file opened with fd %"PFMT64d"\n", fd);
 		} else eprintf ("Invalid use of om . See om? for help.");
@@ -496,7 +496,7 @@ static int cmd_open(void *data, const char *input) {
 					*filename = 0;
 					addr = r_num_math (core->num, arg);
 					r_bin_load_io (core->bin, desc, addr, 0, 0);
-					r_io_close (core->io, desc);
+					r_io_close (core->io, desc->fd);
 					r_core_cmd0 (core, ".is*");
 				} else {
 					eprintf ("Cannot open %s\n", filename + 1);
@@ -596,29 +596,31 @@ static int cmd_open(void *data, const char *input) {
 		isn = 1;
 		/* fall through */
 	case ' ':
-		if (input[(isn?2:1) - 1] == '\x00') {
-			eprintf ("Usage: on [file]\n");
-			break;
-		}
-		ptr = strchr (input+(isn?2:1), ' ');
-		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
-			*ptr = '\0';
-			addr = r_num_math (core->num, ptr+1);
-		}
-		const char *fn = input+1; //(isn?2:1);
-		if (fn && *fn) {
-			if (isn) fn++;
-			file = r_core_file_open (core, fn, perms, addr);
-			if (file) {
-				r_cons_printf ("%d\n", file->desc->fd);
-				// MUST CLEAN BEFORE LOADING
-				if (!isn)
-					r_core_bin_load (core, fn, baddr);
-			} else if (!nowarn) {
-				eprintf ("Cannot open file '%s'\n", fn);
+		{
+			if (input[(isn?2:1) - 1] == '\x00') {
+				eprintf ("Usage: on [file]\n");
+				break;
 			}
-		} else {
-			eprintf ("Usage: o [file]\n");
+			ptr = strchr (input+(isn?2:1), ' ');
+			if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
+				*ptr = '\0';
+				addr = r_num_math (core->num, ptr+1);
+			}
+			const char *fn = input+1; //(isn?2:1);
+			if (fn && *fn) {
+				if (isn) fn++;
+				file = r_core_file_open (core, fn, perms, addr);
+				if (file) {
+					r_cons_printf ("%d\n", file->desc->fd);
+					// MUST CLEAN BEFORE LOADING
+					if (!isn)
+						r_core_bin_load (core, fn, baddr);
+				} else if (!nowarn) {
+					eprintf ("Cannot open file '%s'\n", fn);
+				}
+			} else {
+				eprintf ("Usage: o [file]\n");
+			}
 		}
 		break;
 	case 'F':
@@ -627,6 +629,7 @@ static int cmd_open(void *data, const char *input) {
 			RCoreFile *f;
 			ut64 ma;
 			num = atoi (input+1);
+			char *fn = NULL;
 			core->switch_file_view = 0;
 			r_list_foreach (core->files, iter, f) {
 				if (f->desc->fd == num) {
@@ -810,10 +813,10 @@ static int cmd_open(void *data, const char *input) {
 		{
 			int fd, fdx;
 			fd = fdx = -1;
-			if (ptr = strrchr (input, ' ')) {
+			if ((ptr = strrchr (input, ' '))) {
 				fdx = (int)r_num_math (core->num, ptr+1);
 				*ptr = '\0';
-				if (ptr = strchr (input, ' '))
+				if ((ptr = strchr (input, ' ')))
 					fd = r_num_math (core->num, ptr+1);
 					
 			}

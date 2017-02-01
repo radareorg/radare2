@@ -68,7 +68,7 @@ R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin) {
 }
 
 R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
-	RListIter *iter;
+	SdbListIter *iter;
 	RIOPlugin *iop;
 	ls_foreach (io->plugins, iter, iop) {
 		if (!strcmp (name, iop->name)) {
@@ -80,7 +80,6 @@ R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
 
 R_API int r_io_plugin_list(RIO *io) {
 	RIOPlugin *plugin;
-	char str[4];
 	int n = 0;
 	SdbListIter *iter;
 	if (io) {

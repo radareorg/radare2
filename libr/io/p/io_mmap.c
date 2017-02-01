@@ -134,7 +134,7 @@ static RIODesc *r_io_mmap_open(RIO *io, const char *file, int flags, int mode) {
 	if (!(mmo = r_io_mmap_create_new_file (io, name, mode, flags))) {
 		return NULL;
 	}
-	return r_io_desc_new (&r_io_plugin_mmap, mmo->fd, mmo->filename, flags, mode, mmo);
+	return r_io_desc_new (io, &r_io_plugin_mmap, mmo->filename, flags, mode, mmo);
 }
 
 static ut64 r_io_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {

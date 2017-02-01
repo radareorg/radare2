@@ -481,7 +481,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'B':
 		case 'M': {
 				ut64 lower = UT64_MAX;
-				RListIter *iter;
+				SdbListIter *iter;
 				RIOSection *s;
 				ls_foreach (core->io->sections, iter, s) {
 					if (!s->vaddr && s->addr) {
@@ -1777,8 +1777,8 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 }
 
 static void prompt_sec(RCore *r, char *s, size_t maxlen) {
-	const SdbList * secs = r_io_section_vget_secs_at (r->io, r->offset);
-	const RIOSection *sec = secs ? ls_pop (secs) : NULL;
+	SdbList * secs = r_io_section_vget_secs_at (r->io, r->offset);
+	RIOSection *sec = secs ? ls_pop (secs) : NULL;
 	if (!sec) return;
 	ls_free (secs);
 
