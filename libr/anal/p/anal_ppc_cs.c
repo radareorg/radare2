@@ -324,7 +324,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
+#if CS_API_MAJOR >= 4
 		case PPC_INS_CMPB:
+#endif
 		case PPC_INS_CMPD:
 		case PPC_INS_CMPDI:
 		case PPC_INS_CMPLD:
