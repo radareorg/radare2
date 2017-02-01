@@ -1366,12 +1366,14 @@ static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 }
 #endif
 
-static int inSymtab(Sdb *db, struct symbol_t *symbols, int last, const char *name, ut64 addr) {
+static int inSymtab(SdbHash *hash, struct symbol_t *symbols, const char *name, ut64 addr) {
+	bool found;
 	const char *key = sdb_fmt (0, "%s.%"PFMT64x, name, addr);
-	if (sdb_const_get (db, key, NULL)) {
+	(void)sdb_ht_find (hash, key, &found);
+	if (found) {
 		return true;
 	}
-	sdb_set (db, key, "1", 0);
+	sdb_ht_insert (hash, key, "1");
 	return false;
 }
 
@@ -1379,7 +1381,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	const char *symstr;
 	struct symbol_t *symbols;
 	int from, to, i, j, s, stridx, symbols_size, symbols_count;
-	Sdb *db;
+	SdbHash *hash;
 	//ut64 text_base = get_text_base (bin);
 
 	if (!bin || !bin->symtab || !bin->symstr) {
@@ -1401,7 +1403,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (!(symbols = calloc (1, symbols_size))) {
 		return NULL;
 	}
-	db = sdb_new0 ();
+	hash = sdb_ht_new ();
 	j = 0; // symbol_idx
 	for (s = 0; s < 2; s++) {
 		switch (s) {
@@ -1436,7 +1438,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		if (to > 0x500000) {
 			bprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
 			free (symbols);
-			sdb_free (db);
+			sdb_ht_free (hash);
 			return NULL;
 		}
 		if (symbols_count >= maxsymbols) {
@@ -1484,7 +1486,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 				}
 				symbols[j].last = 0;
 			}
-			if (inSymtab (db, symbols, j, symbols[j].name, symbols[j].addr)) {
+			if (inSymtab (hash, symbols, symbols[j].name, symbols[j].addr)) {
 				symbols[j].name[0] = 0;
 				j--;
 			}
@@ -1531,7 +1533,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
 			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 			symbols[j].last = 0;
-			if (inSymtab (db, symbols, j, symbols[j].name, symbols[j].addr)) {
+			if (inSymtab (hash, symbols, symbols[j].name, symbols[j].addr)) {
 				symbols[j].name[0] = 0;
 			} else {
 				j++;
@@ -1539,7 +1541,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		}
 	}
 #endif
-	sdb_free (db);
+	sdb_ht_free (hash);
 	symbols[j].last = 1;
 	return symbols;
 }
@@ -1548,11 +1550,14 @@ static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, in
 	int i, j, sym, wordsize;
 	ut32 stype;
 	wordsize = MACH0_(get_bits)(bin) / 8;
-	if (idx<0 || idx>= bin->nsymtab)
+	if (idx < 0 || idx >= bin->nsymtab) {
 		return 0;
-	if ((bin->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY)
+	}
+	if ((bin->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY) {
 		stype = S_LAZY_SYMBOL_POINTERS;
-	else stype = S_NON_LAZY_SYMBOL_POINTERS;
+	} else {
+		stype = S_NON_LAZY_SYMBOL_POINTERS;
+	}
 
 	reloc->offset = 0;
 	reloc->addr = 0;
