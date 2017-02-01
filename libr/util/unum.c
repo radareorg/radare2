@@ -107,36 +107,46 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (num && num->callback) {
 		ok = 0;
 		ret = num->callback (num->userptr, str, &ok);
-		if (ok) return ret;
+		if (ok) {
+			return ret;
+		}
 	}
 
-	if (str[0] && str[1] && str[2])
-		if (str[0]=='\'' && str[2]=='\'')
+	if (str[0] && str[1] && str[2]) {
+		if (str[0]=='\'' && str[2]=='\'') {
 			return (ut64)str[1];
+		}
+	}
 
 	len = strlen (str);
-	if (len>3 && str[4] == ':') {
-		if (sscanf (str, "%04x", &s)==1)
-			if (sscanf (str+5, "%04x", &a)==1)
+	if (len > 3 && str[4] == ':') {
+		if (sscanf (str, "%04x", &s) == 1) {
+			if (sscanf (str+5, "%04x", &a)==1) {
 				return (ut64) ((s<<4) + a);
+			}
+		}
 	} else if (len>6 && str[6] == ':') {
-		if (sscanf (str, "0x%04x:0x%04x", &s, &a) == 2)
-			return (ut64) ((s<<4) + a);
-		if (sscanf (str, "0x%04x:%04x", &s, &a) == 2)
-			return (ut64) ((s<<4) + a);
+		if (sscanf (str, "0x%04x:0x%04x", &s, &a) == 2) {
+			return (ut64) ((s << 4) + a);
+		}
+		if (sscanf (str, "0x%04x:%04x", &s, &a) == 2) {
+			return (ut64) ((s << 4) + a);
+		}
 	}
-	if (str[0]=='0' && str[1]=='b') {
+	if (str[0] == '0' && str[1] == 'b') {
 		ret = 0;
-		for (j=0, i=strlen (str)-1; i>0; i--, j++) {
-			if (str[i]=='1') ret|=1<<j;
-			else if (str[i]!='0') break;
+		for (j = 0, i = strlen (str) - 1; i > 0; i--, j++) { 
+			if (str[i] == '1') {
+				ret|=1 << j; 
+			} else if (str[i] != '0') {
+				break;
+			}
 		}
 		sscanf (str, "0x%"PFMT64x, &ret);
-	} else
-	if (str[0]=='\'') {
+	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
 	} else
-	if (str[0]=='0' && str[1]=='x') {
+	if (str[0] == '0' && str[1] == 'x') {
 #if 0
 // 32bit chop
 #if __WINDOWS__ && MINGW32 && !__CYGWIN__
@@ -146,9 +156,10 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		ret = strtoull (str + 2, NULL, 16);
 		//sscanf (str+2, "%"PFMT64x, &ret);
 	} else {
-		lch = str[len>0?len-1:0];
-		if (*str=='0' && lch != 'b' && lch != 'h')
+		lch = str[len > 0? len - 1:0];
+		if (*str == '0' && lch != 'b' && lch != 'h') {
 			lch = 'o';
+		}
 		switch (lch) {
 		case 'h': // hexa
 			sscanf (str, "%"PFMT64x, &ret);
@@ -158,9 +169,12 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			break;
 		case 'b': // binary
 			ret = 0;
-			for (j=0, i=strlen (str)-2; i>=0; i--, j++) {
-				if (str[i]=='1') ret|=1<<j;
-				else if (str[i]!='0') break;
+			for (j = 0, i = strlen (str) - 2; i >= 0; i--, j++) {
+				if (str[i] == '1') {
+					ret|=1 << j;
+				} else if (str[i] != '0') {
+					break;
+				}
 			}
 			break;
 		case 'K': case 'k':
@@ -187,7 +201,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			break;
 		}
 	}
-	if (num) num->value = ret;
+	if (num) {
+		num->value = ret;
+	}
 	return ret;
 }
 
