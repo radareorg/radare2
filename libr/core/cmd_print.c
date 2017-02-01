@@ -1976,8 +1976,11 @@ static void cmd_print_pv(RCore *core, const char *input) {
 				}
 			}
 		}
+		//r_num_get is gonna use a dangling pointer since the internal
+		//token that RNum holds ([$$]) has been already freed by r_core_cmd_str
+		//r_num_math reload a new token so the dangling pointer is gone
 		r_cons_printf ("{\"value\":%"PFMT64d",\"string\":\"%s\"}\n",
-				r_num_get (core->num, "[$$]"),
+				r_num_math (core->num, "[$$]"),
 				str
 			);
 		free (str);
