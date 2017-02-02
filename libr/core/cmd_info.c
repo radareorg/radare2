@@ -333,9 +333,11 @@ static int cmd_info(void *data, const char *input) {
 			} else  { //iS entropy,sha1
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (mode == R_CORE_BIN_RADARE || mode == R_CORE_BIN_JSON || mode == R_CORE_BIN_SIMPLE) {
-					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 3, obj? r_list_length (obj->sections): 0);
+					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2, 
+					  	obj ? r_list_length (obj->sections) : 0);
 				} else {
-					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2, obj? r_list_length (obj->sections): 0);
+					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 1, 
+					  	obj ? r_list_length (obj->sections) : 0);
 				}
 				//we move input until get '\0'
 				while (*(++input));
