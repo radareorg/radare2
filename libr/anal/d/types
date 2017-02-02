@@ -209,13 +209,6 @@ func.sleep.args=1
 func.sleep.arg.0=int,s
 func.sleep.ret=int
 
-err=func
-func.err.args=2
-func.err.arg.0=int,eval
-func.err.arg.1=const char *,fmt
-func.err.noreturn=true
-func.err.ret=void
-
 close=func
 func.close.args=1
 func.close.arg.0=int,fildes
