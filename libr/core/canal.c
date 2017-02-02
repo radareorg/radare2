@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -2245,8 +2245,12 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 				break;
 			}
 			fill_args (core->anal, fcn, op);
-			pos += op->size;
+			int opsize = op->size;
 			r_anal_op_free (op);
+			if (opsize < 1) {
+				break;
+			}
+			pos += opsize;
 		}
 	}
 

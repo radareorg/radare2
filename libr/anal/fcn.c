@@ -420,17 +420,19 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 }
 
 R_API void fill_args(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
-	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", 'b');
-	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'b');
-	extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 's');
+	if (anal && anal->reg) {
+		extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "+", 'b');
+		extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_BP], "-", 'b');
+		extract_arg (anal, fcn, op, anal->reg->name [R_REG_NAME_SP], "+", 's');
+	}
 	extract_arg (anal, fcn, op, "bp", "+", 'b');
 	extract_arg (anal, fcn, op, "bp", "-", 'b');
 	extract_arg (anal, fcn, op, "sp", "+", 's');
 }
 
-static bool isInvalidMemory(const ut8 *buf) {
+static bool isInvalidMemory(const ut8 *buf, int len) {
 	// can be wrong
-	return !memcmp (buf, "\xff\xff\xff\xff", 4);
+	return !memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4));
 	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
 }
 
@@ -542,7 +544,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 
-	if (!noncode && anal->cur->is_valid_offset && !anal->cur->is_valid_offset (anal, addr, 0)) {
+	if (!noncode && anal->cur && anal->cur->is_valid_offset && !anal->cur->is_valid_offset (anal, addr, 0)) {
 		return R_ANAL_RET_END;
 	}
 
@@ -584,7 +586,7 @@ repeat:
 			break;
 		}
 		r_anal_op_fini (&op);
-		if (isInvalidMemory (buf + idx)) {
+		if (isInvalidMemory (buf + idx, len - idx)) {
 			FITFCNSZ();
 			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x"\n", addr+idx);
 			return R_ANAL_RET_ERROR;
@@ -1693,7 +1695,6 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 	return NULL;
 #endif
 }
-
 
 R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
 #if USE_SDB_CACHE

@@ -1591,7 +1591,7 @@ RDebugPlugin r_debug_plugin_native = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_native,
 	.version = R2_VERSION
@@ -1600,7 +1600,7 @@ struct r_lib_struct_t radare_plugin = {
 
 //#endif
 #else // DEBUGGER
-struct r_debug_plugin_t r_debug_plugin_native = {
+RDebugPlugin r_debug_plugin_native = {
 	NULL // .name = "native",
 };
 

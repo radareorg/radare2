@@ -4,18 +4,18 @@
 #include "../../arch/lh5801/lh5801.c"
 #include <r_asm.h>
 #include <r_types.h>
+#include <r_lib.h>
 
-static int disassemble(RAsm *as, RAsmOp *op, const ut8 *buf, int len)
-{
+static int disassemble(RAsm *as, RAsmOp *op, const ut8 *buf, int len) {
 	struct lh5801_insn insn;
-	int consumed;
 
-	if (!op)
+	if (!op) {
 		return 0;
+	}
 
-	consumed = lh5801_decode (&insn, buf, len);
+	int consumed = lh5801_decode (&insn, buf, len);
 	if (consumed == -1 || consumed == 0) {
-		snprintf(op->buf_asm, R_ASM_BUFSIZE, "invalid");
+		snprintf (op->buf_asm, R_ASM_BUFSIZE, "invalid");
 		op->size = 1;
 		return 0;
 	} else {
@@ -38,7 +38,7 @@ RAsmPlugin r_asm_plugin_lh5801 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_lh5801,
 	.version = R2_VERSION
