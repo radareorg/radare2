@@ -22,7 +22,6 @@ static struct {
 	{ "SIGPIPE", SIGPIPE },
 	{ "SIGALRM", SIGALRM },
 	{ "SIGTERM", SIGTERM },
-	{ "SIGSTKFLT", SIGSTKFLT },
 	{ "SIGCHLD", SIGCHLD },
 	{ "SIGCONT", SIGCONT },
 	{ "SIGSTOP", SIGSTOP },
@@ -35,12 +34,13 @@ static struct {
 	{ "SIGVTALRM", SIGVTALRM },
 	{ "SIGPROF", SIGPROF },
 #if __LINUX__
+	{ "SIGSTKFLT", SIGSTKFLT },
 	{ "SIGWINCH", SIGWINCH },
 	{ "SIGIO", SIGIO },
 	{ "SIGPWR", SIGPWR },
 	{ "SIGSTKSZ", SIGSTKSZ },
-#endif
 	{ "SIGPOLL", SIGPOLL },
+#endif
 	{ "SIGSYS", SIGSYS },
 	{ NULL }
 };
