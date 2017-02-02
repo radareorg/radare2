@@ -191,13 +191,25 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				return true;
 			}
 			if (f) {
-				if (p->relsub_addr) {
-					off = p->relsub_addr;
+				flag = r_flag_get_i2 (f, p->relsub_addr);
+				if (!flag) {
+					flag = r_flag_get_i (f, p->relsub_addr);
+				}
+				RFlagItem *flag2 = r_flag_get_i2 (f, off);
+				if (!flag2) {
+					flag2 = r_flag_get_i (f, off);
+				}
+				if (flag2 && flag != flag2) {
+					flag = flag2;
+				}
+				/*if (p->relsub_addr > 0) {
+					printf ("SUBBING\n");
+					//off = p->relsub_addr;
 				}
 				flag = r_flag_get_i2 (f, off);
 				if (!flag) {
 					flag = r_flag_get_i (f, off);
-				}
+				}*/
 				if (isvalidflag (flag)) {
 					if (p->notin_flagspace != -1) {
 						if (p->flagspace == flag->space) {
