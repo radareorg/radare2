@@ -34,7 +34,6 @@
 #include <sys/ioctl.h>
 #include <sys/resource.h>
 #include <termios.h>
-#include <signal.h>
 #include <grp.h>
 #include <errno.h>
 #if defined(__sun)
@@ -405,16 +404,15 @@ R_API int r_run_parseline (RRunProfile *p, char *b) {
 	else if (!strcmp (b, "setgid")) p->_setgid = strdup (e);
 	else if (!strcmp (b, "setegid")) p->_setegid = strdup (e);
 	else if (!strcmp (b, "nice")) p->_nice = atoi (e);
+	else if (!strcmp (b, "timeout")) p->_timeout = atoi (e);
+	else if (!strcmp (b, "timeoutsig")) p->_timeout_sig = r_signal_from_string (e);
 	else if (!memcmp (b, "arg", 3)) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
 			p->_args[n] = getstr (e);
-		} else eprintf ("Out of bounds args index: %d\n", n);
-	} else if (!strcmp (b, "timeout")) {
-		p->_timeout = atoi (e);
-	} else if (!strcmp (b, "timeoutsig")) {
-		// TODO: support non-numeric signal numbers here
-		p->_timeout_sig = atoi (e);
+		} else {
+			eprintf ("Out of bounds args index: %d\n", n);
+		}
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		FILE *fd = fopen (e, "r");
@@ -468,6 +466,7 @@ R_API const char *r_run_help() {
 	"# clearenv=true\n"
 	"# envfile=environ.txt\n"
 	"timeout=3\n"
+	"# timeoutsig=SIGTERM # or 15\n"
 	"# connect=localhost:8080\n"
 	"# listen=8080\n"
 	"# pty=false\n"

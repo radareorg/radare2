@@ -39,7 +39,7 @@ M.make ({
       "lock.c", "log.c", "mem.c", "mixed.c", "name.c",
       "num.c", "p_date.c", "p_format.c", "p_seven.c",
       "pool.c", "print.c", "prof.c", "randomart.c",
-      "range.c", "sandbox.c", "slist.c", "str.c", "strht.c",
+      "range.c", "sandbox.c", "signal.c", "slist.c", "str.c", "strht.c",
       "strpool.c", "sys.c", "thread.c", "uleb128.c", "w32-sys.c" ]
   },
   sdb: {
