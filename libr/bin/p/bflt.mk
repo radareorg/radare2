@@ -12,6 +12,8 @@ LINK+=../../util/libr_util.a
 LINK+=../../magic/libr_magic.a
 LINK+=../../socket/libr_socket.a
 LINK+=../../../shlr/gdb/lib/libgdbr.a
+LINK+=../../../shlr/wind/libr_wind.a
+LINK+=../../../shlr/qnx/lib/libqnxr.a
 LINK+=../../../shlr/bochs/lib/libbochs.a
 LINK+=../../../shlr/java/libr_java.a
 endif
