@@ -10,7 +10,7 @@ foo: all
 
 ALL_TARGETS=
 CFLAGS+=-I../../include
-ALGOS=aes.mk aes_cbc.mk
+#ALGOS=aes.mk aes_cbc.mk
 include $(ALGOS)
 
 all: ${ALL_TARGETS}

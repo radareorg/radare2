@@ -4,6 +4,7 @@ include ../../../mk/platform.mk
 CFLAGS+=-I$(LTOP)/include -I$(LTOP)/bin/format/ -Wall $(PIC_CFLAGS)
 LDFLAGS+=-L$(LTOP)/util -lr_util
 LDFLAGS+=-L$(LTOP)/bin -lr_bin
+LDFLAGS+=-L$(LTOP)/io -lr_io
 SHLR=$(LTOP)/../shlr
 
 foo: all

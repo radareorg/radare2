@@ -11,6 +11,6 @@ pre: libr_bp.${EXT_SO} libr_bp.${EXT_AR}
 
 include ${STATIC_BP_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst bp_,p/bp_,$(STATIC_OBJ)))
-OBJS=bp.o watch.o io.o plugin.o traptrace.o ${STATIC_OBJS}
+OBJS=bp.o bp_watch.o bp_io.o bp_plugin.o bp_traptrace.o ${STATIC_OBJS}
 
 include ../rules.mk

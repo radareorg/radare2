@@ -298,6 +298,7 @@ R_API int r_io_plugin_generate(RIO *io);
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);
 R_API int r_io_plugin_list(RIO *io);
 R_API int r_io_is_listener(RIO *io);
+R_API bool r_io_is_blockdevice(RIO *io);
 
 R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name);
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many);

@@ -859,7 +859,7 @@ R_API ut64 r_io_fd_size(RIO *io, int fd) {
 	return r_io_desc_size (io, desc);
 }
 
-R_API int r_io_is_blockdevice(RIO *io) {
+R_API bool r_io_is_blockdevice(RIO *io) {
 #if __UNIX__
 	if (io && io->desc && io->desc->fd) {
 		struct stat buf;
@@ -874,13 +874,13 @@ R_API int r_io_is_blockdevice(RIO *io) {
 			//	eprintf ("OPtimal blocksize: %d\n", buf.st_blksize);
 			if ((buf.st_mode & S_IFCHR) == S_IFCHR) {
 				io->desc->obsz = buf.st_blksize;
-				return 1;
+				return true;
 			}
 			return ((buf.st_mode & S_IFBLK) == S_IFBLK);
 		}
 	}
 #endif
-	return 0;
+	return false;
 }
 
 R_API ut64 r_io_size(RIO *io) {

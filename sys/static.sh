@@ -4,6 +4,12 @@ MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
+if [ `uname` = Darwin ]; then
+	STRIP="strip"
+else
+	STRIP="strip -s"
+fi
+
 # find root
 cd "$(dirname "$PWD/$0")" ; cd ..
 
@@ -37,7 +43,7 @@ for a in ${BINS} ; do
 	${MAKE} clean
 	#LDFLAGS=-static ${MAKE} -j2
 	${MAKE} -j2 || exit 1
-	strip -s $a
+	${STRIP} $a
 )
 done
 
