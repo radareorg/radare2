@@ -9,10 +9,6 @@ ifeq ($(OSTYPE),bsd)
 LDFLAGS=-lkvm
 endif
 
-#SDBPATH=../../shlr/sdb/src/
-#SDBLIB=${SDBPATH}/libsdb.a
-#LINK+=${SDBLIB}
-
 foo:
 	@${MAKE} libs
 	@${MAKE} plugins
@@ -31,7 +27,9 @@ OBJS=signal.o map.o trace.o arg.o debug.o plugin.o snap.o
 OBJS+=pid.o dreg.o ddesc.o esil.o ${STATIC_OBJS} 
 
 ifeq (${OSTYPE},darwin)
+ifneq (${NATIVE_OBJS},)
 OBJS+= p/${NATIVE_OBJS}
+endif
 endif
 
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
@@ -39,12 +37,14 @@ CFLAGS+=-I../bin/format/elf
 OBJS+=$(addprefix p/,$(NATIVE_OBJS))
 endif
 
+ifneq (${COREDUMP_OBJS},)
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux))
 OBJS+= p/${COREDUMP_OBJS}	
 endif
+endif
 
 plugins:
-	cd p && ${MAKE} all
+	$(MAKE) -C p all
 
 ios:
 	cd ../.. ; sys/rebuild.sh iosdbg
@@ -52,4 +52,5 @@ ios:
 include ../rules.mk
 
 libs: ${LIBSO} ${LIBAR}
-.PHONY: foo plugins tests libs
+
+.PHONY: foo plugins tests libs ios
