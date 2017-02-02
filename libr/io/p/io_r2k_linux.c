@@ -253,7 +253,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 	bool flag = 0;
 	ut8 garbage;
 
-	if (iodesc && iodesc->fd > 0 && buf) {
+	if (iodesc && iodesc->user > 0 && buf) {
 		struct r2k_data data;
 
 		data.pid = pid;
@@ -264,7 +264,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 			return -1;
 		}
 
-		ret = ioctl (iodesc->fd, ioctl_n, &data);
+		ret = ioctl (iodesc->user, ioctl_n, &data);
 		if (!ret) {
 			memcpy (buf, data.buff, len);
 			ret = len;
@@ -277,7 +277,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 			pageaddr -= (pageaddr % pagesize);
 			if ((len - (int)(pageaddr - address)) > 0) {
 				data.len = pageaddr - address;
-				ret = ioctl (iodesc->fd, ioctl_n, &data);
+				ret = ioctl (iodesc->user, ioctl_n, &data);
 				if (!ret) {
 					memcpy (buf + offset, data.buff, pageaddr - address);
 					flag = 1;
@@ -291,7 +291,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 					data.addr = pageaddr;
 					data.len = pagesize;
 
-					ret = ioctl (iodesc->fd, ioctl_n, &data);
+					ret = ioctl (iodesc->user, ioctl_n, &data);
 					if (!ret) {
 						memcpy (buf + offset, data.buff, pagesize);
 						flag = 1;
@@ -305,7 +305,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 
 				data.addr = pageaddr;
 				data.len = newlen;
-				ret = ioctl (iodesc->fd, ioctl_n, &data);
+				ret = ioctl (iodesc->user, ioctl_n, &data);
 				if (!ret) {
 					memcpy (buf + offset, data.buff, newlen);
 					flag = 1;
@@ -328,7 +328,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len) {
 	int ret = -1;
 
-	if (iodesc && iodesc->fd > 0 && buf) {
+	if (iodesc && iodesc->user > 0 && buf) {
 		struct r2k_data data;
 
 		data.pid = pid;
@@ -342,7 +342,7 @@ int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address
 		}
 
 		memcpy (data.buff, buf, len);
-		ret = ioctl (iodesc->fd, ioctl_n, &data);
+		ret = ioctl (iodesc->user, ioctl_n, &data);
 		if (!ret) {
 			ret = len;
 		} else {
@@ -577,7 +577,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			long page_size = sysconf (_SC_PAGESIZE);
 
 			ioctl_n = IOCTL_GET_KERNEL_MAP;
-			ret = ioctl (iodesc->fd, ioctl_n, &map_data);
+			ret = ioctl (iodesc->user, ioctl_n, &map_data);
 
 			if (ret < 0) {
 				io->cb_printf ("ioctl err: %s\n", strerror (errno));
@@ -585,7 +585,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			}
 
 			io->cb_printf ("map_data.size: %d, map_data.n_entries: %d\n", map_data.size, map_data.n_entries);
-			info = mmap (0, map_data.size, PROT_READ, MAP_SHARED, iodesc->fd, 0);
+			info = mmap (0, map_data.size, PROT_READ, MAP_SHARED, iodesc->user, 0);
 			if (info == MAP_FAILED) {
 				io->cb_printf ("mmap err: %s\n", strerror (errno));
 				break;
@@ -614,7 +614,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			//=! R[p]
 			struct r2k_control_reg reg_data;
 			ioctl_n = IOCTL_READ_CONTROL_REG;
-			ret = ioctl (iodesc->fd, ioctl_n, &reg_data);
+			ret = ioctl (iodesc->user, ioctl_n, &reg_data);
 
 			if (ret) {
 				io->cb_printf ("ioctl err: %s\n", strerror (errno));
@@ -695,7 +695,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			proc_data.pid = pid;
 			ioctl_n = IOCTL_PRINT_PROC_INFO;
 
-			ret = ioctl (iodesc->fd, ioctl_n, &proc_data);
+			ret = ioctl (iodesc->user, ioctl_n, &proc_data);
 			if (ret) {
 				io->cb_printf ("ioctl err: %s\n", strerror (errno));
 				break;
