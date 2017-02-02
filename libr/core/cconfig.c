@@ -2039,7 +2039,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("cmd.hit", "", "Run when a search hit is found");
 	SETPREF("cmd.open", "", "Run when file is opened");
 	SETPREF("cmd.prompt", "", "Prompt commands");
-	SETCB("cmd.repeat", "true", &cb_cmdrepeat, "Alias newline (empty command) as '..'");
+	SETCB("cmd.repeat", "false", &cb_cmdrepeat, "Empty command an alias for '..' (repeat last command)");
 	SETPREF("cmd.fcn.new", "", "Run when new function is analyzed");
 	SETPREF("cmd.fcn.delete", "", "Run when a function is deleted");
 	SETPREF("cmd.fcn.rename", "", "Run when a function is renamed");
