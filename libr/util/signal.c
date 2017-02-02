@@ -7,21 +7,30 @@ static struct {
 	const char *name;
 	int code;
 } signals[] = {
-	{ "SIGHUP", SIGHUP },
 	{ "SIGINT", SIGINT },
-	{ "SIGQUIT", SIGQUIT },
 	{ "SIGILL", SIGILL },
-	{ "SIGTRAP", SIGTRAP },
 	{ "SIGABRT", SIGABRT },
-	{ "SIGBUS", SIGBUS },
 	{ "SIGFPE", SIGFPE },
+	{ "SIGSEGV", SIGSEGV },
+	{ "SIGTERM", SIGTERM },
+#if __LINUX__
+	{ "SIGSTKFLT", SIGSTKFLT },
+	{ "SIGWINCH", SIGWINCH },
+	{ "SIGIO", SIGIO },
+	{ "SIGPWR", SIGPWR },
+	{ "SIGSTKSZ", SIGSTKSZ },
+	{ "SIGPOLL", SIGPOLL },
+#endif
+#if !__WINDOWS__ || __CYGWIN__
+	{ "SIGHUP", SIGHUP },
+	{ "SIGQUIT", SIGQUIT },
+	{ "SIGTRAP", SIGTRAP },
+	{ "SIGBUS", SIGBUS },
 	{ "SIGKILL", SIGKILL },
 	{ "SIGUSR1", SIGUSR1 },
-	{ "SIGSEGV", SIGSEGV },
 	{ "SIGUSR2", SIGUSR2 },
 	{ "SIGPIPE", SIGPIPE },
 	{ "SIGALRM", SIGALRM },
-	{ "SIGTERM", SIGTERM },
 	{ "SIGCHLD", SIGCHLD },
 	{ "SIGCONT", SIGCONT },
 	{ "SIGSTOP", SIGSTOP },
@@ -33,15 +42,8 @@ static struct {
 	{ "SIGXFSZ", SIGXFSZ },
 	{ "SIGVTALRM", SIGVTALRM },
 	{ "SIGPROF", SIGPROF },
-#if __LINUX__
-	{ "SIGSTKFLT", SIGSTKFLT },
-	{ "SIGWINCH", SIGWINCH },
-	{ "SIGIO", SIGIO },
-	{ "SIGPWR", SIGPWR },
-	{ "SIGSTKSZ", SIGSTKSZ },
-	{ "SIGPOLL", SIGPOLL },
-#endif
 	{ "SIGSYS", SIGSYS },
+#endif
 	{ NULL }
 };
 
