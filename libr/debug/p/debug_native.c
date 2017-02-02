@@ -229,7 +229,10 @@ static void r_debug_native_stop(RDebug *dbg) {
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if __WINDOWS__ && !__CYGWIN__
-	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
+	/* Honor the Windows-specific signal that instructs threads to process exceptions */
+	DWORD continue_status = (sig == DBG_EXCEPTION_NOT_HANDLED)
+		? DBG_EXCEPTION_NOT_HANDLED : DBG_CONTINUE;
+	if (ContinueDebugEvent (pid, tid, continue_status) == 0) {
 		print_lasterr ((char *)__FUNCTION__, "ContinueDebugEvent");
 		eprintf ("debug_contp: error\n");
 		return false;

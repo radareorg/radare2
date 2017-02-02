@@ -787,6 +787,20 @@ show_help:
 			break;
 		case ':':
 			if (addr >= map->addr && addr < map->addr_end) {
+#if __WINDOWS__ && !__CYGWIN__
+				/* Escape backslashes in the file path on Windows */
+				char *escaped_path = r_str_escape (map->file);
+				char *escaped_name = r_str_escape (map->name);
+				if (escaped_path && escaped_name) {
+					r_name_filter (escaped_name, 0);
+					r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+							escaped_name, map->addr);
+					r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \'%s\'\n",
+							map->addr, escaped_path);
+				}
+				free (escaped_path);
+				free (escaped_name);
+#else
 				char *fn = strdup (map->file);
 				r_name_filter (fn, 0);
 				//r_cons_printf ("fs+module_%s\n", fn);
@@ -796,6 +810,7 @@ show_help:
 						map->addr, map->file);
 				//r_cons_printf ("fs-\n");
 				free (fn);
+#endif
 			}
 			break;
 		case '.':
@@ -806,11 +821,40 @@ show_help:
 			}
 			break;
 		case 'j':
+#if __WINDOWS__ && !__CYGWIN__
+			{
+				/* Single backslashes cause issues when parsing JSON output, so escape them */
+				char *escaped_path = r_str_escape (map->file);
+				char *escaped_name = r_str_escape (map->name);
+				if (escaped_path && escaped_name) {
+					r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
+							map->addr, escaped_name, escaped_path, iter->n?",":"");
+				}
+				free (escaped_path);
+				free (escaped_name);
+			}
+#else
 			r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
 					map->addr, map->name, map->file, iter->n?",":"");
+#endif
 			break;
 		case '*':
 			{
+#if __WINDOWS__ && !__CYGWIN__
+				/* Escape backslashes in the file path on Windows */
+				char *escaped_path = r_str_escape (map->file);
+				char *escaped_name = r_str_escape (map->name);
+				if (escaped_path && escaped_name) {
+					r_name_filter (escaped_name, 0);
+					r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
+							escaped_name, map->addr);
+					/* Use double quotes around the file path on Windows to generate valid commands */
+					r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
+							map->addr, escaped_path);
+				}
+				free (escaped_path);
+				free (escaped_name);
+#else
 				char *fn = strdup (map->file);
 				r_name_filter (fn, 0);
 				//r_cons_printf ("fs+module_%s\n", fn);
@@ -820,6 +864,7 @@ show_help:
 						map->addr, map->file);
 				//r_cons_printf ("fs-\n");
 				free (fn);
+#endif
 			}
 			break;
 		default:
@@ -2987,6 +3032,9 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		"dca", " [sym] [sym].", "Continue at every hit on any given symbol",
 		"dcc", "", "Continue until call (use step into)",
 		"dccu", "", "Continue until unknown call (call reg)",
+#if __WINDOWS__ && !__CYGWIN__
+		"dce", "", "Continue execution (pass exception to program)",
+#endif
 		"dcf", "", "Continue until fork (TODO)",
 		"dck", " <signal> <pid>", "Continue sending signal to process",
 		"dco", " <num>", "Step over <num> instructions",
@@ -3049,6 +3097,12 @@ beach:
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
 		break;
+#if __WINDOWS__ && !__CYGWIN__
+	case 'e': // "dce"
+		r_reg_arena_swap (core->dbg->reg, true);
+		r_debug_continue_pass_exception (core->dbg);
+		break;
+#endif
 	case 'f': // "dcf"
 		eprintf ("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
 		// we should stop in fork and vfork syscalls

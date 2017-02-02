@@ -1024,6 +1024,12 @@ R_API int r_debug_continue(RDebug *dbg) {
 	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
 }
 
+#if __WINDOWS__ && !__CYGWIN__
+R_API int r_debug_continue_pass_exception(RDebug *dbg) {
+	return r_debug_continue_kill (dbg, DBG_EXCEPTION_NOT_HANDLED);
+}
+#endif
+
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 	eprintf ("TODO\n");
 	return false;
