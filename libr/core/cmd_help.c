@@ -447,6 +447,8 @@ static int cmd_help(void *data, const char *input) {
 			"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
 			">", "file", "pipe output of command to file",
 			">>", "file", "append to file",
+			"H>", "file", "pipe output of command to file in HTML",
+			"H>>", "file", "append to file with the output of command in HTML",
 			"`", "pdi~push:0[0]`",  "replace output of command inside the line",
 			"|", "cmd", "pipe output to command (pd|less) (.dr*)",
 			NULL};
