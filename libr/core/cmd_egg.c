@@ -1,10 +1,13 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
+
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_egg.h"
 
 static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
-	if (!*input) return;
+	if (!*input) {
+		return;
+	}
 	if (input[1]!=' ') {
 		char *a = r_egg_option_get (egg, key);
 		if (a) {
@@ -14,8 +17,17 @@ static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	} else r_egg_option_set (egg, key, input+2);
 }
 
-static int cmd_egg_compile(REgg *egg) {
+static void showBuffer(RBuffer *b) {
 	int i;
+	if (b && b->length > 0) {
+		for (i = 0; i < b->length; i++) {
+			r_cons_printf ("%02x", b->buf[i]);
+		}
+		r_cons_printf ("\n");
+	}
+}
+
+static int cmd_egg_compile(REgg *egg) {
 	RBuffer *b;
 	int ret = false;
 	char *p = r_egg_option_get (egg, "egg.shellcode");
@@ -42,11 +54,7 @@ static int cmd_egg_compile(REgg *egg) {
 		free (p);
 	}
 	if ((b = r_egg_get_bin (egg))) {
-		if (b->length>0) {
-			for (i=0; i<b->length; i++)
-				r_cons_printf ("%02x", b->buf[i]);
-			r_cons_printf ("\n");
-		}
+		showBuffer (b);
 		ret = true;
 	}
 	// we do not own this buffer!!
@@ -67,31 +75,34 @@ static int cmd_egg(void *data, const char *input) {
 	case 's': // "gs"
 		// TODO: pass args to r_core_syscall without vararg
 		if (input[1] == ' ') {
+			RBuffer *buf = NULL;
 			const char *ooaa = input+2;
 			while (IS_WHITESPACE(*ooaa) && *ooaa) ooaa++;
 			oa = strdup (ooaa);
-			p = strchr (oa+1, ' ');
+			p = strchr (oa + 1, ' ');
 			if (p) {
 				*p = 0;
-				r_core_syscall (core, oa, p+1);
+				buf = r_core_syscall (core, oa, p + 1);
 			} else {
-				r_core_syscall (core, oa, "");
+				buf = r_core_syscall (core, oa, "");
 			}
 			free (oa);
+			showBuffer (buf);
 		} else {
 			eprintf ("Usage: gs [syscallname] [parameters]\n");
 		}
 		break;
-	case ' ':
+	case ' ': // "g "
 		if (input[1] && input[2]) {
 			r_egg_load (egg, input+2, 0);
-			if (!cmd_egg_compile (egg))
+			if (!cmd_egg_compile (egg)) {
 				eprintf ("Cannot compile '%s'\n", input+2);
+			}
 		} else {
 			eprintf ("wat\n");
 		}
 		break;
-	case '\0':
+	case '\0': // "g"
 		if (!cmd_egg_compile (egg))
 			eprintf ("Cannot compile\n");
 		break;
@@ -101,26 +112,26 @@ static int cmd_egg(void *data, const char *input) {
 	case 'e': // "ge"
 		cmd_egg_option (egg, "egg.encoder", input);
 		break;
-	case 'i':
+	case 'i': // "gi"
 		cmd_egg_option (egg, "egg.shellcode", input);
 		break;
-	case 'l':
+	case 'l': // "gl"
 		{
 			RListIter *iter;
 			REggPlugin *p;
 			r_list_foreach (egg->plugins, iter, p) {
 				printf ("%s  %6s : %s\n",
-				(p->type==R_EGG_PLUGIN_SHELLCODE)?
+				(p->type == R_EGG_PLUGIN_SHELLCODE)?
 					"shc":"enc", p->name, p->desc);
 			}
 		}
 		break;
-	case 'r':
+	case 'r': // "gr"
 		cmd_egg_option (egg, "egg.padding", "");
 		cmd_egg_option (egg, "egg.shellcode", "");
 		cmd_egg_option (egg, "egg.encoder", "");
 		break;
-	case 'c':
+	case 'c': // "gc"
 		// list, get, set egg options
 		switch (input[1]) {
 		case ' ':
@@ -139,10 +150,8 @@ static int cmd_egg(void *data, const char *input) {
 			free (oa);
 			break;
 		case '\0':
-			// list
 			// r_pair_list (egg->pair,NULL);
-eprintf ("TODO: list options\n");
-			eprintf ("list options\n");
+			eprintf ("TODO: list options\n");
 			break;
 		default:
 			eprintf ("Usage: gc [k=v]\n");
@@ -163,8 +172,8 @@ eprintf ("TODO: list options\n");
 			"ge", " xor", "Specify an encoder",
 			"gr", "", "Reset r_egg",
 			"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
-			NULL};
-			r_core_cmd_help (core, help_msg);
+			NULL };
+		r_core_cmd_help (core, help_msg);
 		}
 		break;
 	}
