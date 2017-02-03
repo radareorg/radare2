@@ -19,12 +19,12 @@ static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char* help_msg[] = {
 		"Usage:", "ob", " # List open binary files backed by fd",
-		"ob", "", "List opened binfiles and bin objects",
-		"ob", " [fd # bobj #]", "Prioritize by fd number and object number",
-		"obb", " [fd #]", "Prioritize by fd number with current selected object",
-		"ob-", " [fd #]", "Delete binfile by fd",
-		"obd", " [binobject #]", "Delete binfile object numbers, if more than 1 object is loaded",
-		"obo", " [binobject #]", "Prioritize by bin object number",
+		"ob", "", "List opened binary files and objid",
+		"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
+		"obb", " [fd]", "Switch to open binfile by fd number",
+		"ob-", " [fd]", "Delete binfile by fd",
+		"obd", " [objid]", "Delete binary file by objid. Do nothing if only one loaded.",
+		"obo", " [objid]", "Switch to open binary file by objid",
 		NULL};
 	const char *value = NULL;
 	ut32 binfile_num = -1, binobj_num = -1;
@@ -318,7 +318,6 @@ static int cmd_open(void *data, const char *input) {
 		"o*","","list opened files in r2 commands",
 		"oa"," [?] [addr]","Open bin info from the given address",
 		"ob"," [?] [lbdos] [...]","list open binary files backed by fd",
-		"ob"," 4","priorize io and fd on 4 (bring to binfile to front)",
 		"oc"," [file]","open core file, like relaunching r2",
 		"oi","[-|idx]","alias for o, but using index instead of fd",
 		"oj","[?]	","list opened files in JSON format",
@@ -330,7 +329,7 @@ static int cmd_open(void *data, const char *input) {
 		"ood"," [args]","reopen in debugger mode (with args)",
 		"oo[bnm]"," [...]","see oo? for help",
 		"op"," ["R_LIB_EXT"]","open r2 native plugin (asm, bin, core, ..)",
-		"o"," 4","priorize io on fd 4 (bring to front)",
+		"o"," 4","Switch to open file on fd 4",
 		"o","-1","close file descriptor 1",
 		"o-","*","close all opened files",
 		"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
