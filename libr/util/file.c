@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -11,6 +11,9 @@
 #include <fcntl.h>
 #if __UNIX__
 #include <sys/mman.h>
+#endif
+#if __APPLE__
+#include <copyfile.h>
 #endif
 
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
@@ -861,7 +864,9 @@ R_API char *r_file_tmpdir() {
 R_API bool r_file_copy (const char *src, const char *dst) {
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
-#if __WINDOWS__
+#if __APPLE__
+	return copyfile (src, dst, 0, 0) != -1;
+#elif __WINDOWS__
 	return r_sys_cmdf ("copy %s %s", src, dst);
 #else
 	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
