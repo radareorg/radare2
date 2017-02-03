@@ -742,7 +742,9 @@ static void ds_build_op_str(RDisasmState *ds) {
 			RCore *core = ds->core;
 			core->parser->relsub_addr = 0;
 			if (ds->analop.refptr) {
-				ut64 num = r_io_read_i (core->io, ds->analop.ptr, 8);
+				int sz = R_DIM (8, 1, 8);
+				ut64 num;
+				r_io_read_at (core->io, ds->analop.ptr, &num, sz);
 				core->parser->relsub_addr = num;
 			}
 			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
