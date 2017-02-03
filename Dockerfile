@@ -21,6 +21,12 @@
 # $ docker export <containerid> | xz > container.xz
 # $ xz -d < container.xz | docker import -
 #
+#
+# If you willing to debug a program within Docker, you should run it in privileged mode:
+#
+# $ docker run -it --privileged radare/radare2
+# $ r2 -d /bin/true
+#
 
 # using phusion/baseimage as base image. 
 FROM ubuntu
