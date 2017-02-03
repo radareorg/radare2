@@ -225,6 +225,7 @@ static int visual_help() {
 	" r        browse anal info and comments / in cursor mode = remove byte\n"
 	" R        randomize color palette (ecr)\n"
 	" sS       step / step over\n"
+	" t        HUD for type/enum/struct/func/union\n"
 	" T        enter textlog chat console (TT)\n"
 	" uU       undo/redo seek\n"
 	" v        visual function/vars code analysis menu\n"
