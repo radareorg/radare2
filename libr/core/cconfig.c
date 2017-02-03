@@ -2178,7 +2178,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interactive mode");
 	SETI("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
 	SETCB("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
-	SETCB("scr.nkey", "flag", &cb_scrnkey, "Select the seek mode in visual");
+	SETCB("scr.nkey", "flag", &cb_scrnkey, "Affects n/N visual cmds. Select visual seek mode (fun, hit, flag)");
 	SETCB("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
 	SETPREF("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETPREF("scr.pipecolor", "false", "Enable colors when using pipes");
