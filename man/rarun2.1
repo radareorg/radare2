@@ -1,4 +1,4 @@
-.Dd May 17, 2016
+.Dd Feb 3, 2017
 .Dt RARUN2 1
 .Sh NAME
 .Nm rarun2
@@ -10,6 +10,8 @@
 .Op [--] [program] [args]
 .Sh DESCRIPTION
 This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
+.Pp
+rarun2 -t will show the terminal name and wait for a connection from another process. try rarun2 stdio=<ttypath> program=/bin/sh
 .Pp
 The program just accepts a single argument which is the filename of the configuration file to run the program.
 .Pp
