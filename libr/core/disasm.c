@@ -731,6 +731,12 @@ static void ds_build_op_str(RDisasmState *ds) {
 					core->parser->flagspace = -1;
 				}
 			}
+			RCore *core = ds->core;
+			core->parser->relsub_addr = 0;
+			if (ds->analop.refptr) {
+				ut64 num = r_io_read_i (core->io, ds->analop.ptr, 8);
+				core->parser->relsub_addr = num;
+			}
 			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
@@ -1512,7 +1518,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	RCore *core = ds->core;
 	int ret;
-	const char *mt_key, *info;
+	const char *info;
 	Sdb *s = core->anal->sdb_meta;
 	char key[100];
 	ut64 mt_sz = UT64_MAX;
@@ -1528,9 +1534,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			case R_META_TYPE_FORMAT:
 			case R_META_TYPE_MAGIC:
 			case R_META_TYPE_HIDE:
-				snprintf (key, sizeof (key) - 1, 
+				snprintf (key, sizeof (key) - 1,
 						"meta.%c.0x%"PFMT64x, *info, ds->at);
-				mt_key = sdb_const_get (s, key, 0);
+				sdb_const_get (s, key, 0);
 				mt_sz = sdb_array_get_num (s, key, 0, 0);
 				if (mt_sz) {
 					break;
@@ -1591,15 +1597,15 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->oplen = ds->asmop.size;
 	} else {
 		ds->lastfail = 0;
-		ds->asmop.size = (ds->hint && ds->hint->size) 
-				? ds->hint->size 
+		ds->asmop.size = (ds->hint && ds->hint->size)
+				? ds->hint->size
 				: r_asm_op_get_size (&ds->asmop);
 		ds->oplen = ds->asmop.size;
 	}
 	if (ds->pseudo) {
-		r_parse_parse (core->parser, ds->opstr 
-		  		? ds->opstr 
-				: ds->asmop.buf_asm, 
+		r_parse_parse (core->parser, ds->opstr
+		  		? ds->opstr
+				: ds->asmop.buf_asm,
 				ds->str);
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
@@ -3700,7 +3706,6 @@ toro:
 R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes) {
 	RDisasmState *ds = NULL;
 	int i, j, ret, len = 0;
-	RAnalFunction *f;
 	char *tmpopstr;
 	const ut64 old_offset = core->offset;
 	bool hasanal = false;
@@ -3770,7 +3775,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		ds->has_description = false;
 		r_asm_set_pc (core->assembler, ds->at);
 		// XXX copypasta from main disassembler function
-		f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		ret = r_asm_disassemble (core->assembler, &ds->asmop,
 			core->block + i, core->blocksize - i);
 		r_anal_op_fini (&ds->analop);
@@ -3778,7 +3783,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			r_anal_op (core->anal, &ds->analop, ds->at, core->block + i, core->blocksize - i);
 			hasanal = true;
 		}
-		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		//r_conf = s_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ds->hint && ds->hint->size) {
 			ret = ds->hint->size;
 			ds->oplen = ret;
