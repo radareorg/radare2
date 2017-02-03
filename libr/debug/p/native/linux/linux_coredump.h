@@ -133,6 +133,7 @@ typedef struct linux_map_entry {
 	bool dumpeable;
 	bool kernel_mapping;
 	bool file_backed;
+	bool shared;
 	char *name;
 	struct linux_map_entry *n;
 } linux_map_entry_t;

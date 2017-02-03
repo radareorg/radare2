@@ -962,6 +962,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	list->free = (RListFree)_map_free;
 	while (!feof (fd)) {
 		size_t line_len;
+		bool map_is_shared = false;
 		ut64 map_start, map_end, offset;
 
 		if (!fgets (line, sizeof (line), fd)) {
@@ -1022,8 +1023,8 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			case 'r': perm |= R_IO_READ; break;
 			case 'w': perm |= R_IO_WRITE; break;
 			case 'x': perm |= R_IO_EXEC; break;
-			case 'p': perm |= R_IO_PRIV; break;
-			case 's': perm |= R_IO_SHAR; break;
+			case 'p': map_is_shared = false; break;
+			case 's': map_is_shared = true; break;
 			}
 		}
 
@@ -1039,6 +1040,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		}
 #if __linux__
 		map->offset = offset;
+		map->shared = map_is_shared;
 #endif
 		map->file = strdup (name);
 		r_list_append (list, map);

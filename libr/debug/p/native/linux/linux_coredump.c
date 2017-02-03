@@ -332,8 +332,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 	ut8 vmflags = 0, perms = entry->perms;
 
 	/* if the map doesn't have r/w quit right here */
-	if (((perms & R_IO_PRIV) && (perms & R_IO_SHAR))
-		|| (!(perms & R_IO_READ) && !(perms & R_IO_WRITE))) {
+	if ((!(perms & R_IO_READ) && !(perms & R_IO_WRITE))) {
 		return false;
 	}
 	if (!identity) {
@@ -373,7 +372,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 			goto beach;
 		}
 
-		if (perms & R_IO_PRIV) {
+		if (perms & !entry->shared) {
 			if ((filter_flags & MAP_ANON_PRIV) && entry->anonymous) {
 				goto beach;
 			}
@@ -382,7 +381,7 @@ static bool dump_this_map(char *buff_smaps, linux_map_entry_t *entry, ut8 filter
 			}
 		}
 
-		if (perms & R_IO_SHAR) {
+		if (perms & entry->shared) {
 			if (filter_flags & MAP_ANON_SHR) {
 				goto beach;
 			}
@@ -515,6 +514,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 					? strdup (map->name)
 					: NULL;
 		pmentry->perms = map->perm;
+		pmentry->shared = map->shared;
 		pmentry->kernel_mapping = false;
 		/* Check if is a kernel mapping */
 		if (pmentry->name && is_a_kernel_mapping (pmentry->name)) {
