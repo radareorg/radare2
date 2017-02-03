@@ -404,6 +404,9 @@ static int get_pid_of(RIO *io, const char *procname) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+#if __APPLE__
+	RIOPlugin *mach_plugin;
+#endif
 	RIODesc *ret;
 	char uri[128];
 	if (!strncmp (file, "waitfor://", 10)) {
@@ -442,11 +445,18 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
+			ret = r_io_open_nomap (io, uri, rw, mode);
 #elif __APPLE__
-			sprintf (uri, "mach://%d", pid);
+			sprintf (uri, "smach://%d", pid);		//s is for spawn
+			mach_plugin = r_io_plugin_resolve (io, (const char *)&uri[1], false);
+			if (mach_plugin == r_io_plugin_get_default (io, (const char *)&uri[1], false))
+					return NULL;
+			if (!plugin->open || !plugin->close)
+			ret = plugin->open (io, uri, rw, mode);
 #else
 			// TODO: use io_procpid here? faster or what?
-			sprintf (uri, "ptrace://%d", pid);
+			sprintf (uri, "ptrace://%d", pid);	
+			ret = r_io_open_nomap (io, uri, rw, mode);
 #endif
 			ret = r_io_open_nomap (io, uri, rw, mode);
 		} else {
