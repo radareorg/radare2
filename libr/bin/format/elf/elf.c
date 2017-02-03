@@ -1268,6 +1268,8 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 			case EM_386:
 			case EM_X86_64:
 				switch (reloc_type) {
+				case 1: // unknown relocs found in voidlinux for x86-64
+					// break;
 				case R_386_GLOB_DAT:
 				case R_386_JMP_SLOT:
 					{
