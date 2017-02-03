@@ -1368,6 +1368,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case 'a':
+		{
 		if (core->file && core->file->desc && !(core->file->desc->flags & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 			r_cons_any_key (NULL);
@@ -1379,7 +1380,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_set_raw (false);
 		strcpy (buf, "wa ");
 		r_line_set_prompt (":> ");
+		r_cons_enable_mouse (false);
 		if (r_cons_fgets (buf+3, 1000, 0, NULL) <0) buf[0]='\0';
+		int wheel = r_config_get_i (core->config, "scr.wheel");
+		if (wheel) {
+			r_cons_enable_mouse (true);
+		}
 		if (*buf) {
 			if (core->print->cur_enabled) {
 				int t = core->offset + core->print->cur;
@@ -1393,6 +1399,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		showcursor (core, false);
 		r_cons_set_raw (true);
+		}
 		break;
 	case '=':
 		{ // TODO: edit
@@ -1424,15 +1431,27 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_panels (core);
 		break;
 	case 'o':
+		{
+		r_cons_enable_mouse (false);
 		visual_offset (core);
+		int wheel = r_config_get_i (core->config, "scr.wheel");
+		if (wheel) {
+			r_cons_enable_mouse (true);
+		}
+		}
 		break;
 	case 'A':
 		{
 		int oc = core->print->cur_enabled;
 		ut64 off = oc ? core->offset + core->print->cur : core->offset;
 		core->print->cur_enabled = 0;
+		r_cons_enable_mouse (false);
 		r_core_visual_asm (core, off);
 		core->print->cur_enabled = oc;
+		int wheel = r_config_get_i (core->config, "scr.wheel");
+		if (wheel) {
+			r_cons_enable_mouse (true);
+		}
 		}
 		break;
 	case 'c':
