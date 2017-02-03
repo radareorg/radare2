@@ -714,6 +714,9 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 	ut8 *ptr;
 	RAsmOp asmop;
 
+	if (!core || addr == UT64_MAX) {
+		return NULL;
+	}
 	op = R_NEW0 (RAnalOp);
 	if (!op) {
 		return NULL;
