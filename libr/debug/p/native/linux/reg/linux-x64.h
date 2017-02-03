@@ -11,7 +11,6 @@ return strdup (
 "=A5	r9\n"
 "=SN	orax\n"
 "# no profile defined for x86-64\n"
-"gpr	orax	.64	120	0\n"
 "gpr	rax	.64	80	0\n"
 "gpr	eax	.32	80	0\n"
 "gpr	ax	.16	80	0\n"
@@ -93,6 +92,7 @@ return strdup (
 "gpr	if	.1	.1161	0	interrupt\n"
 "gpr	df	.1	.1162	0	direction\n"
 "gpr	of	.1	.1163	0	overflow\n"
+"gpr    orax    .64 120 0\n"
 
 "seg@gpr	ss	.64	160	0\n"
 "seg@gpr	fs_base	.64	168	0\n"

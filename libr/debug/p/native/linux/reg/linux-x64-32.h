@@ -14,7 +14,6 @@ return strdup (
 "=SN	oeax\n"
 "gpr	eip	.32	128	0\n"
 "gpr	ip	.16	128	0\n"
-"gpr	oeax	.32	120	0\n"
 "gpr	eax	.32	80	0\n"
 "gpr	ax	.16	80	0\n"
 "gpr	ah	.8	81	0\n"
@@ -56,6 +55,7 @@ return strdup (
 "gpr	if	.1	.1161	0	interrupt\n"
 "gpr	df	.1	.1162	0	direction\n"
 "gpr	of	.1	.1163	0	overflow\n"
+"gpr    oeax    .32 120 0\n"
 #if 0
 "drx	dr0	.64	0	0\n"
 "drx	dr1	.64	8	0\n"
