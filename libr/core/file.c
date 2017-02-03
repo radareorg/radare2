@@ -360,7 +360,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	int fd = desc->fd;
 #endif
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, fd, treat_as_rawstr)) {
-		eprintf ("Cannot open %s\n", filenameuri);
+		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
 			treat_as_rawstr = true;
 			if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, desc->fd, treat_as_rawstr)) {

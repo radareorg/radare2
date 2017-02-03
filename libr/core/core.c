@@ -2321,7 +2321,7 @@ R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, 
 R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) {
 	RBuffer *b = NULL;
 	char code[1024];
-	int i, num;
+	int num;
 
 	num = r_syscall_get_num (core->anal->syscall, name);
 	if (!num) {

@@ -833,14 +833,11 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 
 R_API int r_bin_load_io(RBin *bin, RIODesc *desc, ut64 baseaddr, ut64 loadaddr,
 			 int xtr_idx) {
-	return r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr,
-					   xtr_idx, 0, NULL);
+	return r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr, xtr_idx, 0, NULL);
 }
 
-R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc,
-					 ut64 baseaddr, ut64 loadaddr,
-					 int xtr_idx, ut64 offset,
-					 const char *name, ut64 sz) {
+R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr,
+		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->get_io (iob): NULL;
 	RListIter *it;
@@ -900,13 +897,10 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc,
 				return false;
 			}
 		}
-	} else if (sz == UT64_MAX) {
-		return false;
 	}
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-
 		iob->desc_seek (io, desc, seekaddr);
 		buf_bytes = iob->desc_read (io, desc, &sz);
 		if (!buf_bytes) {
@@ -959,11 +953,8 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc,
 					    xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {
 						free (buf_bytes);
-						RIODesc *tdesc =
-							iob->desc_open (
-								io, desc->name,
-								desc->flags,
-								R_IO_READ);
+						RIODesc *tdesc = iob->desc_open (io,
+							desc->name, desc->flags, R_IO_READ);
 						if (!tdesc) {
 							return false;
 						}
@@ -993,15 +984,13 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc,
 			bin, desc->name, buf_bytes, sz, file_sz, bin->rawstr,
 			baseaddr, loadaddr, desc->fd, name, NULL, offset);
 	}
-
 	free (buf_bytes);
 
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
-R_API int r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr,
-				      ut64 loadaddr, int xtr_idx, ut64 offset,
-				      const char *name) {
+R_API bool r_bin_load_io_at_offset_as(RBin *bin, RIODesc *desc, ut64 baseaddr,
+		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
 	// adding file_sz to help reduce the performance impact on the system
 	// in this case the number of bytes read will be limited to 2MB
 	// (MIN_LOAD_SIZE)
