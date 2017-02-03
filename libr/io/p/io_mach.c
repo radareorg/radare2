@@ -338,10 +338,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char *pidpath, *endptr;
 	int pid;
 	task_t task;
-	if (!__plugin_open (io, file, 0)) {
+	if (!__plugin_open (io, file, false) && !__plugin_open (io, (const char *)&file[1]), false) {
 		return NULL;
 	}
-	pidfile = file + (file[0] == 'a' ? 9 : 7);
+	pidfile = file + (file[0] == 'a' ? 9 : (file[0] == 's' ? 8 : 7));
 	pid = (int)strtol (pidfile, &endptr, 10);
 	if (endptr == pidfile || pid < 0) {
 		return NULL;
@@ -351,6 +351,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	if (!task) {
+		if (pid > 0 && !strncmp (file, "smach://", 8)) {
+			kill (pid, 9);
+			eprintf ("Child killed\n");
+		}
 #if 0
 		/* this is broken, referer gets set in the riodesc after this function returns the riodesc
 		 * the pid > 0 check  doesn't seem to be reasonable to me too
