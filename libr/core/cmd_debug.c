@@ -3433,94 +3433,102 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'd':
 			switch (input[1]) {
-				case '\0':
-					r_debug_desc_list (core->dbg, 0);
-					break;
-				case '*':
-					r_debug_desc_list (core->dbg, 1);
-					break;
-				case 's':
-					{
-						ut64 off = UT64_MAX;
-						int fd = atoi (input + 2);
-						char *str = strchr (input + 2, ' ');
-						if (str) off = r_num_math (core->num, str+1);
-						if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off))
-							if (!r_core_syscallf (core, "lseek", "%d, 0x%"PFMT64x", %d", fd, off, 0))
-								eprintf ("Cannot seek\n");
+			case '\0':
+				r_debug_desc_list (core->dbg, 0);
+				break;
+			case '*':
+				r_debug_desc_list (core->dbg, 1);
+				break;
+			case 's':
+				{
+					ut64 off = UT64_MAX;
+					int fd = atoi (input + 2);
+					char *str = strchr (input + 2, ' ');
+					if (str) off = r_num_math (core->num, str+1);
+					if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off))
+						if (!r_core_syscallf (core, "lseek", "%d, 0x%"PFMT64x", %d", fd, off, 0))
+							eprintf ("Cannot seek\n");
+				}
+				break;
+			case 'd': // "ddd"
+				{
+					ut64 newfd = UT64_MAX;
+					int fd = atoi (input + 2);
+					char *str = strchr (input + 3, ' ');
+					if (str) newfd = r_num_math (core->num, str+1);
+					if (newfd == UT64_MAX || !r_debug_desc_dup (core->dbg, fd, newfd)) {
+						if (!r_core_syscallf (core, "dup2", "%d, %d", fd, (int)newfd)) {
+							eprintf ("Cannot dup %d %d\n", fd, (int)newfd);
+						}
 					}
-					break;
-				case 'd':
-					{
-						ut64 newfd = UT64_MAX;
-						int fd = atoi (input + 2);
-						char *str = strchr (input + 2, ' ');
-						if (str) newfd = r_num_math (core->num, str+1);
-						if (newfd == UT64_MAX || !r_debug_desc_dup (core->dbg, fd, newfd))
-							if (!r_core_syscallf (core, "dup2", "%d, %d", fd, (int)newfd))
-								eprintf ("Cannot dup %d %d\n", fd, (int)newfd);
+				}
+				break;
+			case 'r':
+				{
+					ut64 off = UT64_MAX;
+					ut64 len = UT64_MAX;
+					int fd = atoi (input + 2);
+					char *str = strchr (input + 2, ' ');
+					if (str) off = r_num_math (core->num, str+1);
+					if (str) str = strchr (str+1, ' ');
+					if (str) len = r_num_math (core->num, str+1);
+					if (len == UT64_MAX || off == UT64_MAX || \
+							!r_debug_desc_read (core->dbg, fd, off, len)) {
+						if (!r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
+									fd, off, (int)len)) {
+							eprintf ("Cannot read\n");
+						}
 					}
-					break;
-				case 'r':
-					{
-						ut64 off = UT64_MAX;
-						ut64 len = UT64_MAX;
-						int fd = atoi (input + 2);
-						char *str = strchr (input + 2, ' ');
-						if (str) off = r_num_math (core->num, str+1);
-						if (str) str = strchr (str+1, ' ');
-						if (str) len = r_num_math (core->num, str+1);
-						if (len == UT64_MAX || off == UT64_MAX || \
-								!r_debug_desc_read (core->dbg, fd, off, len))
-							if (!r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
-										fd, off, (int)len))
-								eprintf ("Cannot read\n");
-					}
-					break;
-				case 'w':
-					{
-						ut64 off = UT64_MAX;
-						ut64 len = UT64_MAX;
-						int fd = atoi (input + 2);
-						char *str = strchr (input + 2, ' ');
-						if (str) off = r_num_math (core->num, str+1);
-						if (str) str = strchr (str+1, ' ');
-						if (str) len = r_num_math (core->num, str+1);
-						if (len == UT64_MAX || off == UT64_MAX || \
-								!r_debug_desc_write (core->dbg, fd, off, len))
-							if (!r_core_syscallf (core, "write", "%d, 0x%"PFMT64x", %d",
-										fd, off, (int)len))
-								eprintf ("Cannot write\n");
-					}
-					break;
-				case '-': // "dd-"
-					// close file
-					//r_core_syscallf (core, "close", "%d", atoi (input + 2));
-					{
-						int fd = atoi (input + 2);
-						//r_core_cmdf (core, "dxs close %d", (int)r_num_math ( core->num, input + 2));
-						r_core_syscallf (core, "close", "%d", fd);
-					}
-					break;
-				case ' ':
-					// TODO: handle read, readwrite, append
-					r_core_syscallf (core, "open", "%s, %d, %d", input + 2, 2, 0644);
-					// open file
-					break;
-				case '?':
-				default:
-					{
-						const char * help_message[] = {
-							"Usage: dd", "", "Descriptors commands",
-							"dd", "", "List file descriptors",
-							"dd", " <file>", "Open and map that file into the UI",
-							"dd-", "<fd>", "Close stdout fd",
-							"dd*", "", "List file descriptors (in radare commands)",
-							NULL
-						};
-						r_core_cmd_help (core, help_message);
-					}
-					break;
+				}
+				break;
+			case 'w':
+				{
+					ut64 off = UT64_MAX;
+					ut64 len = UT64_MAX;
+					int fd = atoi (input + 2);
+					char *str = strchr (input + 2, ' ');
+					if (str) off = r_num_math (core->num, str+1);
+					if (str) str = strchr (str+1, ' ');
+					if (str) len = r_num_math (core->num, str+1);
+					if (len == UT64_MAX || off == UT64_MAX || \
+							!r_debug_desc_write (core->dbg, fd, off, len))
+						if (!r_core_syscallf (core, "write", "%d, 0x%"PFMT64x", %d",
+									fd, off, (int)len))
+							eprintf ("Cannot write\n");
+				}
+				break;
+			case '-': // "dd-"
+				// close file
+				//r_core_syscallf (core, "close", "%d", atoi (input + 2));
+				{
+					int fd = atoi (input + 2);
+					//r_core_cmdf (core, "dxs close %d", (int)r_num_math ( core->num, input + 2));
+					r_core_syscallf (core, "close", "%d", fd);
+				}
+				break;
+			case ' ':
+				// TODO: handle read, readwrite, append
+				r_core_syscallf (core, "open", "%s, %d, %d", input + 2, 2, 0644);
+				// open file
+				break;
+			case '?':
+			default:
+				{
+					const char * help_message[] = {
+						"Usage: dd", "", "Descriptors commands",
+						"dd", "", "List file descriptors",
+						"dd", " <file>", "Open and map that file into the UI",
+						"dd-", "<fd>", "Close stdout fd",
+						"dd*", "", "List file descriptors (in radare commands)",
+						"dds", " <fd> <off>", "seek given fd)",
+						"ddd", " <fd1> <fd2>", "dup2 from fd1 to fd2",
+						"ddr", " <fd> <size>", "read N bytes from fd",
+						"ddw", " <fd> <hexpairs>", "write N bytes to fd",
+						NULL
+					};
+					r_core_cmd_help (core, help_message);
+				}
+				break;
 			}
 			break;
 		case 's':
