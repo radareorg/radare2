@@ -23,6 +23,7 @@ typedef struct r_parse_t {
 	int flagspace;
 	int notin_flagspace;
 	bool relsub; // replace rip relative expressions in instruction
+	int relsub_addr;
 	struct r_parse_plugin_t *cur;
 	RAnal *anal; // weak anal ref
 	RAnalHint *hint; // weak anal ref
