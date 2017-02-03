@@ -2343,12 +2343,14 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 		eprintf ("r_egg_assemble: invalid assembly\n");
 	}
 	if ((b = r_egg_get_bin (core->egg))) {
+#if 0
 		if (b->length > 0) {
 			for (i = 0; i < b->length; i++) {
 				r_cons_printf ("%02x", b->buf[i]);
 			}
 			r_cons_printf ("\n");
 		}
+#endif
 	}
 	return b;
 }
