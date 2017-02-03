@@ -137,6 +137,7 @@ typedef struct r_debug_map_t {
 	char *file;
 	int perm;
 	int user;
+	bool shared;
 } RDebugMap;
 
 typedef struct r_debug_signal_t {

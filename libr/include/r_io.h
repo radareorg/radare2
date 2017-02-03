@@ -14,8 +14,6 @@ extern "C" {
 #define R_IO_WRITE (1 << 1)
 #define R_IO_READ  (1 << 2)
 #define R_IO_MAP   (1 << 4)
-#define R_IO_PRIV  (1 << 5)
-#define R_IO_SHAR  (1 << 6)
 #define R_IO_RW    (R_IO_READ | R_IO_WRITE)
 
 #define R_IO_SEEK_SET 0
