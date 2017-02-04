@@ -266,6 +266,13 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	return true;
 }
 
+static int __getpid (RIODesc *fd) {
+	RIOPtrace *iop = (RIOPtrace *)fd->data;
+	if (!iop)
+		return -1;
+	return iop->pid;
+}
+
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
 RIOPlugin r_io_plugin_ptrace = {
 	.name = "ptrace",
@@ -278,6 +285,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
+	.getpid = __getpid,
 	.isdbg = true
 };
 #else

@@ -10,7 +10,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 loadaddr, const char *f
 static int r_core_file_do_load_for_io_plugin (RCore *r, ut64 baseaddr, ut64 loadaddr);
 
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
-	int isdebug = r_config_get_i (core->config, "cfg.debug");
+	int isdebug = r_config_get_i (core->config, "cfg.debug");	//check the plugin, not the config-var, the config var is a lie
 	char *path;
 	ut64 ofrom = 0, laddr = r_config_get_i (core->config, "bin.laddr");
 	RCoreFile *file = NULL;
@@ -41,7 +41,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		free (obinfilepath);
 		return false;
 	}
-	newpid = odesc ? odesc->fd : -1;
+	newpid = odesc ? r_io_desc_get_pid (core->io, odesc->fd) : -1;
 
 	if (isdebug) {
 		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // KILL
@@ -121,7 +121,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		int newtid = newpid;
 		// XXX - select the right backend
 		if (core->file && core->file->desc) {
-			newpid = core->file->desc->fd;
+			newpid = r_io_desc_get_pid (core->io, core->file->desc->fd);
 #if __linux__
 			core->dbg->main_pid = newpid;
 			newtid = newpid;
@@ -129,7 +129,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 #if __WINDOWS__
 			newpid = core->io->winpid;
 			newtid = core->io->wintid;
-			r_debug_select (core->dbg, newpid, newtid);
+			r_debug_select (core->dbg, newpid, newtid);	//why do we do this here?
 #endif
 		}
 		//reopen and attach
@@ -347,7 +347,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 		return false;
 	}
 	if (cf && desc) {
-		int newpid = desc->fd;
+		int newpid = r_io_desc_get_pid (r->io, desc->fd);
 #if __WINDOWS__
 		r_debug_select (r->dbg, r->dbg->pid, r->dbg->tid);
 #else
@@ -542,7 +542,8 @@ R_API int r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// TODO? necessary to restore the desc back?
 		// RIODesc *oldesc = desc;
 		// Fix to select pid before trying to load the binary
-		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
+//		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {		//this is broken, when you want to debug a process and hexedit another file
+		if (desc->plugin && desc->plugin->isdbg) {
 			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
 			ut64 laddr = r_config_get_i (r->config, "bin.laddr");

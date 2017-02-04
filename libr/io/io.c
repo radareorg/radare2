@@ -40,7 +40,7 @@ R_API RIODesc *r_io_open_nomap (RIO *io, const char *uri, int flags, int mode)
 	desc = plugin->open (io, uri, flags, mode);
 	if (!desc)
 		return NULL;
-	if (!desc->plugin)						//for none static callbacks, those that cannot use r_io_desc_new
+	if (!desc->plugin)					//for none static callbacks, those that cannot use r_io_desc_new
 		desc->plugin = plugin;
 	if (!desc->uri)
 		desc->uri = strdup (uri);
@@ -128,8 +128,11 @@ R_API bool r_io_close (RIO *io, int fd)
 R_API bool r_io_reopen (RIO *io, int fd, int flags, int mode)
 {
 	RIODesc *old, *new;
-	if (!(old = r_io_desc_get (io, fd)) ||
-		!(new = r_io_open_nomap (io, old->uri, flags, mode)))
+	char *uri;
+	if (!(old = r_io_desc_get (io, fd)))
+			return false;
+	uri = old->referer ? old->referer : old->uri;	//does this really work, or do we have to handler debuggers ugly
+	if (!(new = r_io_open_nomap (io, uri, flags, mode)))
 			return false;
 	r_io_desc_exchange (io, old->fd, new->fd);
 	return r_io_close (io, new->fd);		//magic

@@ -11,7 +11,7 @@
 #define R_IO_READ	4
 #define R_IO_WRITE	2
 #define R_IO_EXEC	1
-#define R_IO_RW		R_IO_READ|R_IO_WRITE
+#define R_IO_RW		(R_IO_READ|R_IO_WRITE)
 //remove R_IO_MAP asap
 #define R_IO_MAP	8
 #define R_IO_PRIV	16
@@ -138,6 +138,7 @@ typedef struct r_io_plugin_t {
 	ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 	int (*close)(RIODesc *desc);
+	int (*getpid)(RIODesc *desc);
 	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
 	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	int (*accept)(RIO *io, RIODesc *desc, int fd);
@@ -236,6 +237,7 @@ R_API int r_io_desc_use (RIO *io, int fd);
 R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
 R_API ut64 r_io_desc_size (RIODesc *desc);
 R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);
+R_API int r_io_desc_get_pid (RIO *io, int fd);
 R_API int r_io_desc_fini (RIO *io);
 
 //map.c

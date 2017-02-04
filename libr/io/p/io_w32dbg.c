@@ -119,6 +119,13 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	return -1;
 }
 
+static int __getpid (RIODesc *fd) {
+	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
+	if (!iow)
+		return -1;
+	return iow->pid;
+}
+
 RIOPlugin r_io_plugin_w32dbg = {
 	.name = "w32dbg",
         .desc = "w32dbg io",
@@ -130,6 +137,7 @@ RIOPlugin r_io_plugin_w32dbg = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
+	.getpid = __getpid,
 	.isdbg = true
 };
 #else

@@ -404,9 +404,7 @@ static int get_pid_of(RIO *io, const char *procname) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-#if __APPLE__
-	RIOPlugin *mach_plugin;
-#endif
+	RIOPlugin *_plugin;
 	RIODesc *ret;
 	char uri[128];
 	if (!strncmp (file, "waitfor://", 10)) {
@@ -445,27 +443,47 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
-			ret = r_io_open_nomap (io, uri, rw, mode);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			if (_plugin == r_io_plugin_get_default (io, uri, false))
+					return NULL;
+			ret = _plugin->open (io, uri, rw, mode);
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
-			mach_plugin = r_io_plugin_resolve (io, (const char *)&uri[1], false);
-			if (mach_plugin == r_io_plugin_get_default (io, (const char *)&uri[1], false))
+			_plugin = r_io_plugin_resolve (io, (const char *)&uri[1], false);
+			if (_plugin == r_io_plugin_get_default (io, (const char *)&uri[1], false))
 					return NULL;
-			if (!plugin->open || !plugin->close)
-			ret = plugin->open (io, uri, rw, mode);
+			if (!_plugin->open || !_plugin->close)
+			ret = _plugin->open (io, uri, rw, mode);
 #else
 			// TODO: use io_procpid here? faster or what?
 			sprintf (uri, "ptrace://%d", pid);	
-			ret = r_io_open_nomap (io, uri, rw, mode);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			if (_plugin == r_io_plugin_get_default (io, uri, false))
+					return NULL;
+			ret = _plugin->open (io, uri, rw, mode);
 #endif
-			ret = r_io_open_nomap (io, uri, rw, mode);
 		} else {
 			sprintf (uri, "attach://%d", pid);
-			ret = r_io_open_nomap (io, uri, rw, mode);
+			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
+			if (_plugin == r_io_plugin_get_default (io, uri, false))
+					return NULL;
+			ret = _plugin->open (io, uri, rw, mode);
 		}
-		if (ret)
+		if (ret) {
+			ret->plugin = _plugin;
 			ret->referer = strdup (file);		//kill this
 	}
+	return ret;
+}
+
+static int __close (RIODesc *desc) {
+	int ret = -2;
+	eprintf ("something went wrong\n");
+	if (desc) {
+		eprintf ("trying to close %d with io_debug\n", desc->fd);
+		ret = -1;
+	}
+	r_sys_backtrace ();
 	return ret;
 }
 
@@ -474,6 +492,7 @@ RIOPlugin r_io_plugin_debug = {
         .desc = "Native debugger (dbg:///bin/ls dbg://1388 pidof:// waitfor://)",
 	.license = "LGPL3",
         .open = __open,
+	.close = __close,
         .check = __plugin_open,
 	.isdbg = true,
 };

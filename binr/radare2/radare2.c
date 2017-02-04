@@ -84,7 +84,7 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 		eprintf ("INValid fd\n");
 		return 0LL;
 	}
-#if __WINDOWS__
+#if 0
 	typedef struct {
 		int pid;
 		int tid;
@@ -93,17 +93,15 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	RIODesc *d = r->io->desc;
 	if (!strcmp ("w32dbg", d->plugin->name)) {
 		RIOW32Dbg *g = d->data;
-		r->io->desc->fd = g->pid;
 		r_debug_attach (r->dbg, g->pid);
 	}
 	return r->io->winbase;
-#else
-	int pid = r->io->desc->fd;
+#endif
+	int pid = r_io_desc_get_pid (r->io, r->io->desc->fd);
 	if (r_debug_attach (r->dbg, pid) == -1) {
 		return 0LL;
 	}
 	r_debug_select (r->dbg, pid, pid);
-#endif
 	r_debug_map_sync (r->dbg);
 	abspath = r_file_abspath (file);
 	if (!abspath) {

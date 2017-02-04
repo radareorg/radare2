@@ -338,7 +338,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char *pidpath, *endptr;
 	int pid;
 	task_t task;
-	if (!__plugin_open (io, file, false) && !__plugin_open (io, (const char *)&file[1]), false) {
+	if (!__plugin_open (io, file, false) && !__plugin_open (io, (const char *)&file[1], false)) {
 		return NULL;
 	}
 	pidfile = file + (file[0] == 'a' ? 9 : (file[0] == 's' ? 8 : 7));
@@ -466,6 +466,13 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	return 1;
 }
 
+static int __get_pid (RIODesc *desc) {
+	RIOMach *mach = desc ? (RIOMach *) desc->data : NULL;
+	if (mach)
+		return mach->pid;
+	return -1;
+}
+
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
 RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
@@ -474,6 +481,7 @@ RIOPlugin r_io_plugin_mach = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
+	.getpid = __get_pid,
 	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,

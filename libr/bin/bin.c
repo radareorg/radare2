@@ -914,8 +914,8 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 			ut64 maxsz = 2 * 1024 * 1024;
 			while (totalsz < maxsz) {
 				sz = 4096;
-				buf = malloc (sz)
-				buf = iob->desc_read_at (io, seekaddr + totalsz, buf, sz);
+				buf = malloc (sz);
+				iob->read_at (io, seekaddr + totalsz, buf, sz);
 				if (buf) {
 					ut8 *out = realloc (buf_bytes, totalsz + blksz);
 					if (!out) {
@@ -936,7 +936,7 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 #if 0
 		} else {
 			buf_bytes = realloc (buf_bytes, sz);
-			iob->desc_read_at (io, seekaddr, buf_bytes, sz);
+			iob->read_at (io, seekaddr, buf_bytes, sz);
 #endif
 		}
 	}
@@ -951,12 +951,12 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 					    xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {
 						free (buf_bytes);
-						RIODesc *tdesc = iob->desc_open (io,
+						RIODesc *tdesc = iob->open (io,
 							desc->name, desc->flags, R_IO_READ);
 						if (!tdesc) {
 							return false;
 						}
-						sz = iob->desc_size (io, tdesc);
+						sz = iob->desc_size (tdesc);
 						if (sz == UT64_MAX) {
 							iob->close (io, tdesc->fd);
 							return false;
