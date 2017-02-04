@@ -13,6 +13,7 @@
 #define JAYRO_04 0
 
 // 16 KB is the maximum size for a basic block
+// this is not exactly true.. but it is underperforming by doing lot of memcpys
 #define MAXBBSIZE 16 * 1024
 #define MAX_FLG_NAME_SIZE 64
 
@@ -1024,15 +1025,25 @@ repeat:
 				RIOSection *s = anal->iob.section_vget (anal->iob.io, addr);
 				if (s && s->name) {
 					bool in_plt = strstr (s->name, ".plt") != NULL;
-					if (!in_plt && strstr (s->name, "_stubs") != NULL) {
+					if (!in_plt && strstr (s->name, "_stub") != NULL) {
 						/* for mach0 */
 						in_plt = true;
 					}
-					if (anal->cur->arch && strstr (anal->cur->arch, "arm")) {
-						if (anal->bits == 64) {
-							if (!in_plt) goto river;
+					if (anal->bits == 64) {
+						if (!in_plt) {
+/* on arm64 and x86-64 the plt/stub is just a ujmp */
+							goto river;
 						}
 					} else {
+#if 0
+/* on x86-32 the plt is ujmp,push,jmp */
+┌ (fcn) sym.imp.__cxa_finalize 6
+│   sym.imp.__cxa_finalize ();
+│     ↑↑↑      ; CALL XREF from 0x0000055e (sym.__do_global_dtors_aux)
+│     |||   0x00000420      ffa30c000000   Jmp  dword [ebx + 0xc]
+│     |||   0x00000426      6800000000     Push 0
+└     └───< 0x0000042b      e9e0ffffff     Jmp  0x410
+#endif
 						if (in_plt) {
 							goto river;
 						}
