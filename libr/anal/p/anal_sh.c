@@ -808,7 +808,7 @@ static int archinfo(RAnal *anal, int q) {
 	return 2; /* :) */
 }
 
-struct r_anal_plugin_t r_anal_plugin_sh = {
+RAnalPlugin r_anal_plugin_sh = {
 	.name = "sh",
 	.desc = "SH-4 code analysis plugin",
 	.license = "LGPL3",

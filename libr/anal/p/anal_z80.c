@@ -362,7 +362,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	return ilen;
 }
 
-struct r_anal_plugin_t r_anal_plugin_z80 = {
+RAnalPlugin r_anal_plugin_z80 = {
 	.name = "z80",
 	.arch = "z80",
 	.license = "LGPL3",

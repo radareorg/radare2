@@ -455,7 +455,7 @@ static int archinfo(RAnal *anal, int q) {
 	return 4; // XXX
 }
 
-struct r_anal_plugin_t r_anal_plugin_arm_gnu = {
+RAnalPlugin r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
 	.license = "LGPL3",

@@ -156,7 +156,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 #endif
 
-struct r_anal_plugin_t r_anal_plugin_riscv = {
+RAnalPlugin r_anal_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V analysis plugin",
 	.license = "GPL",

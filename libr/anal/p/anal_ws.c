@@ -131,7 +131,7 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	return op->size;
 }
 
-struct r_anal_plugin_t r_anal_plugin_ws = {
+RAnalPlugin r_anal_plugin_ws = {
 	.name = "ws",
 	.desc = "Space, tab and linefeed analysis plugin",
 	.license = "LGPL3",

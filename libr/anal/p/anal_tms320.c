@@ -98,7 +98,7 @@ static int tms320_fini(void * unused) {
 	return tms320_dasm_fini (&engine);
 }
 
-struct r_anal_plugin_t r_anal_plugin_tms320 = {
+RAnalPlugin r_anal_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
 	.bits = 32,

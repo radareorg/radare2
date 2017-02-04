@@ -398,7 +398,7 @@ static int set_reg_profile(RAnal *esil) {
 
 	return r_reg_set_profile_string (esil->reg, p);
 }
-struct r_anal_plugin_t r_anal_plugin_pic18c = {
+RAnalPlugin r_anal_plugin_pic18c = {
 	.name = "pic18c",
 	.desc = "PIC 18c analysis plugin",
 	.license = "LGPL3",

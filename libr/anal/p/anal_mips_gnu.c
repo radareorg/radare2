@@ -524,7 +524,7 @@ static int archinfo(RAnal *anal, int q) {
 	return 4;
 }
 
-struct r_anal_plugin_t r_anal_plugin_mips_gnu = {
+RAnalPlugin r_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",

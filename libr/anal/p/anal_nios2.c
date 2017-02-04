@@ -88,7 +88,7 @@ static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) 
 	return op->size;
 }
 
-struct r_anal_plugin_t r_anal_plugin_nios2 = {
+RAnalPlugin r_anal_plugin_nios2 = {
 	.name = "nios2",
 	.desc = "NIOS II code analysis plugin",
 	.license = "LGPL3",

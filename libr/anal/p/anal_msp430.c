@@ -71,7 +71,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	return ret;
 }
 
-struct r_anal_plugin_t r_anal_plugin_msp430 = {
+RAnalPlugin r_anal_plugin_msp430 = {
 	.name = "msp430",
 	.desc = "TI MSP430 code analysis plugin",
 	.license = "LGPL3",

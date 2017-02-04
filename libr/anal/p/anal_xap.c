@@ -203,7 +203,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	return op->size;
 }
 
-struct r_anal_plugin_t r_anal_plugin_xap = {
+RAnalPlugin r_anal_plugin_xap = {
 	.name = "xap",
 	.desc = "XAP code analysis plugin",
 	.license = "LGPL3",

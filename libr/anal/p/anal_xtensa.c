@@ -1995,7 +1995,7 @@ static char *get_reg_profile(RAnal *anal) {
 	);
 }
 
-struct r_anal_plugin_t r_anal_plugin_xtensa = {
+RAnalPlugin r_anal_plugin_xtensa = {
 	.name = "xtensa",
 	.desc = "Xtensa disassembler",
 	.license = "LGPL3",

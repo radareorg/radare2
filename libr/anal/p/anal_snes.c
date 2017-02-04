@@ -219,7 +219,7 @@ static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return op->size;
 }
 
-struct r_anal_plugin_t r_anal_plugin_snes = {
+RAnalPlugin r_anal_plugin_snes = {
 	.name = "snes",
 	.desc = "SNES analysis plugin",
 	.license = "LGPL3",

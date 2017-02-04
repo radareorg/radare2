@@ -37,7 +37,7 @@ static int mal_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return false;
 }
 
-struct r_anal_plugin_t r_anal_plugin_malbolge = {
+RAnalPlugin r_anal_plugin_malbolge = {
 	.name = "malbolge",
 	.desc = "Malbolge analysis plugin",
 	.arch = "malbolge",

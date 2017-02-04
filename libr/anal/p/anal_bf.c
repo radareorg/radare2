@@ -121,7 +121,7 @@ static char *get_reg_profile(RAnal *anal) {
 	);
 }
 
-struct r_anal_plugin_t r_anal_plugin_bf = {
+RAnalPlugin r_anal_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",
