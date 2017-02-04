@@ -11,6 +11,8 @@
 
 #define R_CORE_MAX_DISASM (1024*1024*8)
 
+#define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
+
 static void cmd_pCd(RCore *core, const char *input) {
 #define C(x) r_cons_canvas_##x
 	int h, w = r_cons_get_size (&h);
@@ -437,7 +439,7 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, 
 
 static void print_format_help(RCore *core) {
 	const char* help_msg[] = {
-	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
+	"pf:", PF_USAGE_STR, "",
 	"Commands:","","",
 	"pf", "?", "Show this help",
 	"pf", "??", "Format characters",
@@ -461,7 +463,7 @@ static void print_format_help(RCore *core) {
 
 static void print_format_help_help(RCore *core) {
 	const char* help_msg[] = {
-	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
+	"pf:", PF_USAGE_STR, "",
 	"Format:", "", "",
 	" ", "b", "byte (unsigned)",
 	" ", "B", "resolve enum bitfield (see t?)",
@@ -499,7 +501,7 @@ static void print_format_help_help(RCore *core) {
 
 static void print_format_help_help_help(RCore *core) {
 	const char* help_msg[] = {
-	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
+	"pf:", PF_USAGE_STR, "",
 	"Examples:","","",
 	"pf", " B (BitFldType)arg_name`", "bitfield type",
 	"pf", " E (EnumType)arg_name`", "enum type",
