@@ -109,13 +109,15 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	if (!abspath) {
 		abspath = strdup (file);
 	}
-	r_list_foreach (r->dbg->maps, iter, map) {
-		if (!strcmp (abspath, map->name)) {
-			free (abspath);
-			return map->addr;
+	if (abspath) {
+		r_list_foreach (r->dbg->maps, iter, map) {
+			if (!strcmp (abspath, map->name)) {
+				free (abspath);
+				return map->addr;
+			}
 		}
+		free (abspath);
 	}
-	free (abspath);
 	// fallback resolution (osx/w32?)
 	// we asume maps to be loaded in order, so lower addresses come first
 	r_list_foreach (r->dbg->maps, iter, map) {
@@ -246,7 +248,7 @@ static int rabin_delegate(RThread *th) {
 	if (rabin_cmd && r_file_exists (r.file->desc->name)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
 		ptr = cmd;
-		if (ptr)
+		if (ptr) {
 			do {
 				if (th) {
 					r_th_lock_enter (th->user);
@@ -263,6 +265,7 @@ static int rabin_delegate(RThread *th) {
 					r_th_lock_leave (th->user);
 				}
 			} while (nptr);
+		}
 		//r_core_cmd (&r, cmd, 0);
 		r_str_free (rabin_cmd);
 		rabin_cmd = NULL;
@@ -733,7 +736,7 @@ int main(int argc, char **argv, char **envp) {
 		/* stdin/batch mode */
 		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
 		close (0);
-		if (sz > 0) {
+		if (buf && sz > 0) {
 			char path[1024];
 			snprintf (path, sizeof (path) - 1, "malloc://%d", sz);
 			fh = r_core_file_open (&r, path, perms, mapaddr);
@@ -744,6 +747,7 @@ int main(int argc, char **argv, char **envp) {
 				// TODO: load rbin thing
 			} else {
 				r_cons_flush ();
+				free (buf);
 				eprintf ("Cannot open %s\n", path);
 				return 1;
 			}
@@ -769,7 +773,7 @@ int main(int argc, char **argv, char **envp) {
 				r_config_set (r.config, "dbg.backend", debugbackend);
 				if (strcmp (debugbackend, "native")) {
 					if (!haveRarunProfile) {
-						pfile = argv[optind++];
+						pfile = strdup (argv[optind++]);
 					}
 					perms = R_IO_READ; // XXX. should work with rw too
 					debug = 2;
