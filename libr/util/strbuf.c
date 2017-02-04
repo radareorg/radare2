@@ -102,21 +102,24 @@ R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 
 R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	int ret;
-	char string[4096];
+	char string[1024];
 	va_list ap;
 
 	va_start (ap, fmt);
-	ret = vsnprintf (string, sizeof (string), fmt, ap);
+	ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret+2);
+		char *p = malloc (ret + 2);
 		if (!p) {
 			va_end (ap);
 			return false;
 		}
-		vsnprintf (p, ret + 1, fmt, ap);
+		*p = 0;
+		va_start (ap, fmt);
+		(void)vsnprintf (p, ret, fmt, ap);
 		ret = r_strbuf_append (sb, p);
 		free (p);
 	} else {
+		string[ret] = 0;
 		ret = r_strbuf_append (sb, string);
 	}
 	va_end (ap);
