@@ -2586,7 +2586,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		i = 0;
 		while (at + i < to && i < ret-OPSZ && !r_cons_is_breaked ()) {
 			RAnalRefType type;
-			ut64 xref_from, xref_to;
+			ut64 xref_from, xref_to = UT64_MAX;
 			xref_from = at + i;
 			r_anal_op_fini (&op);
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i);
@@ -2632,6 +2632,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				if (op.ptr != -1) {
 					type = R_ANAL_REF_TYPE_DATA;
 					xref_to = op.ptr;
+				} else if (op.val != -1) {
+					type = R_ANAL_REF_TYPE_DATA;
+					xref_to = op.val;
 				}
 				break;
 			}
@@ -2680,7 +2683,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 					free (str_string);
 				}
 				// Add to SDB
-				r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
+				if ( xref_to != UT64_MAX ) {
+					r_anal_xrefs_set (core->anal, type, xref_from, xref_to);
+				}
 			} else if (rad == 'j') {
 				// Output JSON
 				if (count > 0) {
