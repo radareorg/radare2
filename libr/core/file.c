@@ -331,7 +331,12 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 	int xtr_idx = 0; // if 0, load all if xtr is used
 	int treat_as_rawstr = false;
 
-	if (!desc) return false;
+	if (!strncmp ("dbg://", filenameuri, 6)) {
+		filenameuri += 6;
+	}
+	if (!desc) {
+		return false;
+	}
 	if (cf && desc) {
 		int newpid = desc->fd;
 #if __WINDOWS__

@@ -1964,10 +1964,12 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	RListIter *iter;
 	RAnalFunction *fcn;
-	int first = 1;
+	bool first = true;
 	r_cons_printf ("[");
 	r_list_foreach (fcns, iter, fcn) {
-		if (!first) {
+		if (first) {
+			first = false;
+		} else {
 			r_cons_printf (",");
 		}
 		if (quiet) {
@@ -1975,7 +1977,6 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 		} else {
 			fcn_print_json (core, fcn);
 		}
-		first = 0;
 	}
 	r_cons_printf ("]\n");
 	return 0;

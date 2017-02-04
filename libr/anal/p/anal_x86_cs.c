@@ -216,7 +216,6 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
 			snprintf (buf_, BUF_SZ, "%s,[%d]", out, op.size==10? 8: op.size);
 			strncpy (out, buf_, BUF_SZ);
 		}
-
 		out[BUF_SZ - 1] = 0;
 		}
 		return out;
