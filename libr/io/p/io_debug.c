@@ -405,7 +405,7 @@ static int get_pid_of(RIO *io, const char *procname) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOPlugin *_plugin;
-	RIODesc *ret;
+	RIODesc *ret = NULL;
 	char uri[128];
 	if (!strncmp (file, "waitfor://", 10)) {
 		const char *procname = file + 10;
@@ -472,6 +472,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (ret) {
 			ret->plugin = _plugin;
 			ret->referer = strdup (file);		//kill this
+		}
 	}
 	return ret;
 }
