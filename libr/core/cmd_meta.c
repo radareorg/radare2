@@ -414,8 +414,21 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case '?':
-		eprintf ("See C?\n");
-		break;
+		switch (input[0]) {
+		case 'f':
+			r_cons_println(
+				"Usage: Cf[-] [sz] [fmt..] [@addr]\n\n"
+				"'sz' indicates the byte size taken up by struct.\n"
+				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
+				"You may wish to have 'sz' != sizeof(fmt) when you have a large struct\n"
+				"but have only identified specific fields in it. In that case, use 'fmt'\n"
+				"to show the fields you know about (perhaps using 'skip' fields), and 'sz'\n"
+				"to match the total struct size in mem.\n");
+			break;
+		default:
+			eprintf ("See C?\n");
+			break;
+		}
 	case '-':
 		switch (input[2]) {
 		case '*':
