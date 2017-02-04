@@ -188,7 +188,8 @@ static int visual_help() {
 	r_cons_clear00 ();
 	return r_cons_less_str (
 	"Visual mode help:\n"
-	" ?        show this help or enter the userfriendly hud\n"
+	" ?        show this help\n"
+	" ??       show the user-friendly hud\n"
 	" &        rotate asm.bits between supported 8, 16, 32, 64\n"
 	" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
 	" @        redraw screen every 1s (multi-user view), in cursor set position\n"
