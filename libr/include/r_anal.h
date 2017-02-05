@@ -210,6 +210,8 @@ enum {
 
 #define R_ANAL_VARSUBS 32
 
+typedef struct r_anal_bb_t RAnalBlock;
+
 typedef struct r_anal_varsub_t {
 	char pat[128];
 	char sub[128];
@@ -540,7 +542,7 @@ typedef struct r_anal_case_obj_t {
 	ut32 cond; // TODO: treat like a regular condition
 	ut64 bb_ref_to;
 	ut64 bb_ref_from;
-	struct r_anal_bb_t *jumpbb;
+	RAnalBlock *jumpbb;
 } RAnalCaseOp;
 
 typedef struct r_anal_switch_obj_t {
@@ -781,13 +783,13 @@ typedef struct r_anal_bb_t {
 	ut8 op_sz;
 	/* deprecate ??? where is this used? */
 	/* iirc only java. we must use r_anal_bb_from_offset(); instead */
-	struct r_anal_bb_t *head;
-	struct r_anal_bb_t *tail;
-	struct r_anal_bb_t *next;
+	RAnalBlock *head;
+	RAnalBlock *tail;
+	RAnalBlock *next;
 	/* these are used also in pdr: */
-	struct r_anal_bb_t *prev;
-	struct r_anal_bb_t *failbb;
-	struct r_anal_bb_t *jumpbb;
+	RAnalBlock *prev;
+	RAnalBlock *failbb;
+	RAnalBlock *jumpbb;
 	RList /*struct r_anal_bb_t*/ *cases;
 	ut8 *parent_reg_arena;
 	int stackptr;
