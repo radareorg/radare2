@@ -18,9 +18,11 @@ static int cmd_project(void *data, const char *input) {
 	if (arg) {
 		arg++;
 	} else {
-		arg = input + 1;
-		if (*arg == '&') {
-			arg++;
+		if (*input) {
+			arg = input + 1;
+			if (*arg == '&') {
+				arg++;
+			}
 		}
 	}
 	file = arg;
