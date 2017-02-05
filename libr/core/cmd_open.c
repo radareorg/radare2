@@ -315,6 +315,7 @@ static int cmd_open(void *data, const char *input) {
 	const char *help_msg[] = {
 		"Usage: o","[com- ] [file] ([offset])","",
 		"o","","list opened files",
+		"o=","","list opened files (ascii-art bars)",
 		"o*","","list opened files in r2 commands",
 		"oa"," [?] [addr]","Open bin info from the given address",
 		"ob"," [?] [lbdos] [...]","list open binary files backed by fd",
