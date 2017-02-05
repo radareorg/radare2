@@ -3,6 +3,7 @@
 #include <r_util.h>
 #include <r_socket.h>
 
+#if __UNIX__
 static void fwd(int sig) {
 	/* do nothing? send kill signal to remote process */
 }
@@ -17,6 +18,7 @@ static void rarun2_tty() {
 		sleep (1);
 	}
 }
+#endif
 
 int main(int argc, char **argv) {
 	char *file;
@@ -33,8 +35,13 @@ int main(int argc, char **argv) {
 	}
 	file = argv[1];
 	if (!strcmp (file, "-t")) {
+#if __UNIX__
 		rarun2_tty ();
 		return 0;
+#else
+		eprintf ("Not supported\n");
+		return 1;
+#endif
 	}
 	if (*file && !strchr (file, '=')) {
 		p = r_run_new (file);
