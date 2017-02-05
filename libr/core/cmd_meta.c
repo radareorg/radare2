@@ -606,8 +606,8 @@ void r_comment_var_help(RCore *core, char type) {
 	case 'r':
 		r_core_cmd_help (core, help_reg);
 		break;
-	default:
-		r_cons_printf("See Cvb, Cvs and Cvr\n");
+	case '?':
+		r_cons_printf("See Cvb?, Cvs? and Cvr?\n");
 	}
 }
 
@@ -784,7 +784,7 @@ static int cmd_meta(void *data, const char *input) {
 				"CC!", " [@addr]", "edit comment with $EDITOR",
 				"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
 				"CCu", " [comment-text] [@addr]", "add unique comment",
-				"Cv", "[?]", "add comments to args",
+				"Cv", "[bsr][?]", "add comments to args",
 				"Cs", "[?] [-] [size] [@addr]", "add string",
 				"Cz", "[@addr]", "add zero-terminated string",
 				"Ch", "[-] [size] [@addr]", "hide data",
