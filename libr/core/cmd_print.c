@@ -3136,6 +3136,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf (",\"ops\":");
 					// instructions are all outputted as a json list
 					func_buf = calloc (cont_size, 1);
+					bool first = true;
 					if (func_buf) {
 						//TODO: can loc jump to another locs?
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
@@ -3145,18 +3146,33 @@ static int cmd_print(void *data, const char *input) {
 							cont_size = tmp_get_contsize (tmp_func);
 							loc_buf = calloc (cont_size, 1);;
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
+							if (!first) {
+								r_cons_drop (1);
+								r_cons_print (",");
+							}
 							r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
+							first = false;
 							free (loc_buf);
 						}
 						cont_size = tmp_get_contsize (f);
 						r_io_read_at (core->io, f->addr, func_buf, cont_size);
+						if (!first) {
+							r_cons_drop (1);
+							r_cons_print (",");
+						}
 						r_core_print_disasm_json (core, f->addr, func_buf, cont_size, 0);
+						first = false;
 						free (func_buf);
 						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 							cont_size = tmp_get_contsize (tmp_func);
 							loc_buf = calloc (cont_size, 1);;
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
+							if (!first) {
+								r_cons_drop (1);
+								r_cons_print (",");
+							}
 							r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
+							first = false;
 							free (loc_buf);
 						}
 					} else {
