@@ -493,8 +493,8 @@ static int cmd_write(void *data, const char *input) {
 	case '6':
 		{
 		int fail = 0;
-		ut8 *buf;
-		int len, str_len;
+		ut8 *buf = NULL;
+		int len = 0, str_len;
 		const char *str;
 
 		if (input[1] && input[2] != ' ')

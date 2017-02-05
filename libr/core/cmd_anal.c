@@ -4956,9 +4956,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define set(x,y) r_config_set(core->config, x, y);
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
-	RIOSection *s;
+	RIOSection *s = NULL;
 	ut64 o_align = geti ("search.align");
-	ut64 from, to, ptr;
+	ut64 from, to, ptr = 0;
 	ut64 vmin, vmax;
 	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");

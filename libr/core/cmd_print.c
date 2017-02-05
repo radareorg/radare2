@@ -82,7 +82,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 	ut64 osek = core->offset;
 	c->color = r_config_get_i (core->config, "scr.color");
 	r_core_block_size (core, rows * 32);
-	char *cmd;
+	char *cmd = NULL;
 	columns = 2;
 	for (i = 0; i < columns; i++) {
 		switch (i) {
@@ -2441,7 +2441,7 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 		bool asm_lines = r_config_get_i (core->config, "asm.lines");
 		bool emu = r_config_get_i (core->config, "asm.emu");
 		ut64 saved_gp = 0;
-		ut8 *saved_arena;
+		ut8 *saved_arena = NULL;
 		int saved_stackptr = core->anal->stackptr;
 		if (emu) {
 			saved_gp = core->anal->gp;
