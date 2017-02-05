@@ -258,7 +258,7 @@ static void cmd_pDj (RCore *core, const char *arg) {
 			eprintf ("cannot allocate %d bytes\n", bsize);
 		}
 	}
-	r_cons_print ("]\n");
+	r_cons_print ("]");
 }
 
 static void cmd_pdj (RCore *core, const char *arg) {
