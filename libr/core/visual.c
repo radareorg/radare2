@@ -223,7 +223,7 @@ static int visual_help() {
 	" O        toggle asm.esil\n"
 	" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
 	" q        back to radare shell\n"
-	" r        browse anal info and comments / in cursor mode = remove byte\n"
+	" r        refresh screen / in cursor mode browse comments\n" // browse anal info and comments / in cursor mode = remove byte\n"
 	" R        randomize color palette (ecr)\n"
 	" sS       step / step over\n"
 	" t        browse types\n"
@@ -1648,7 +1648,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_xrefs_X (core);
 		break;
 	case 'r':
-		r_core_visual_comments (core);
+		if (core->print->ocur != -1) {
+			r_core_visual_comments (core);
+		} else {
+			visual_refresh (core);
+		}
 		break;
 	case ' ':
 	case 'V':

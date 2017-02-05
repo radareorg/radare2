@@ -1311,8 +1311,9 @@ R_API int r_core_visual_comments (RCore *core) {
 						}
 					} else free (str);
 				}
-				if (!next)
+				if (!next) {
 					break;
+				}
 				cur = next;
 			}
 		}
@@ -1345,12 +1346,14 @@ R_API int r_core_visual_comments (RCore *core) {
 			//TODO
 			break;
 		case 'd':
-			if (p)
+			if (p) {
 				r_meta_del (core->anal, R_META_TYPE_ANY, from, size, p);
+			}
 			break;
 		case 'P':
-			if (--format<0)
+			if (--format < 0) {
 				format = MAX_FORMAT;
+			}
 			break;
 		case 'p':
 			format++;
@@ -1398,9 +1401,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			r_cons_any_key (NULL);
 			break;
 		}
-		if (p) {
-			R_FREE (p);
-		}
+		R_FREE (p);
 	}
 	return true;
 }
@@ -1418,8 +1419,9 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	char buf[1024];
 	RConfigNode *node;
 
-	if (!(node = r_config_node_get (core->config, name)))
+	if (!(node = r_config_node_get (core->config, name))) {
 		return;
+	}
 	if (node->flags & CN_BOOL) {
 		r_config_set_i (core->config, name, node->i_value? 0:1);
 	} else {
