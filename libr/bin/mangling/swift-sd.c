@@ -231,7 +231,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 	q = getnum (p, NULL);
 	
 	// _TF or __TW
-	if (IS_NUMBER (*p) || *p == 'v' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
+	if (IS_DIGIT (*p) || *p == 'v' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
 		if (!strncmp (p+1, "SS", 2)) {
 			strcat (out, "Swift.String.init (");
 			p += 3;
@@ -395,7 +395,7 @@ char *r_bin_demangle_swift(const char *s, int syscmd) {
 				case 'T':
 				case 'I':
 					p = resolve (types, q + 0, &attr); // type
-					if (p && *p && IS_NUMBER (p[1])) {
+					if (p && *p && IS_DIGIT (p[1])) {
 						p--;
 					}
 					break;

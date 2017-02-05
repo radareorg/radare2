@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_core.h"
+#include "r_util.h"
 
 #include <string.h>
 
@@ -2801,7 +2802,7 @@ repeat:
 	case 'Q':
 	case 'q':
 	default:
-		if (ch >= '0' && ch <= '9') {
+		if (IS_DIGIT(ch)) {
 			if (rep < 0) {
 				rep = 0;
 			}

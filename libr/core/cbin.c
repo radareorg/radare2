@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2017 - earada, pancake */
 
 #include <r_core.h>
+#include "r_util.h"
 
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
@@ -156,7 +157,7 @@ static bool string_filter(RCore *core, const char *str) {
 			bo[i] = 0;
 		}
 		for (i = 0; str[i]; i++) {
-			if (str[i] >= '0' && str[i] <= '9') {
+			if (IS_DIGIT(str[i])) {
 				nm++;
 			} else if (str[i]>='a' && str[i]<='z') {
 				lo++;
@@ -258,7 +259,7 @@ static bool string_filter(RCore *core, const char *str) {
 			bool prevd = false;
 			for (i = 0; str[i]; i++) {
 				char ch = str[i];
-				if (ch >= '0' && ch <= '9') {
+				if (IS_DIGIT(ch)) {
 					segmentsum = segmentsum*10 + (ch - '0');
 					if (segment == 3) {
 						return true;

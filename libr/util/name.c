@@ -3,7 +3,7 @@
 #include <r_util.h>
 
 R_API int r_name_validate_char(const char ch) {
-	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9'))
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch)))
 		return true;
 	switch (ch) {
 	case ':':
@@ -18,7 +18,7 @@ R_API int r_name_check(const char *name) {
 	if (!name || !*name)
 		return false;
 	/* Cannot start by number */
-	if (*name >= '0' && *name <= '9')
+	if (IS_DIGIT(*name))
 		return false;
 	/* Cannot contain non-alphanumeric chars + [:._] */
 	for (; *name != '\0'; name++)

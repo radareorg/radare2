@@ -139,7 +139,7 @@ static char *findNextNumber(char *op) {
 				if (!is_space) {
 					is_space = (p != op && (*o == ' ' || *o == ',' || *o == '['));
 				}
-				if (is_space && *p >= '0' && *p <= '9') {
+				if (is_space && IS_DIGIT(*p)) {
 					return p;
 				}
 				o = p++;
@@ -174,7 +174,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		if (x86) {
 			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
 		} else {
-			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !isseparator (*ptr2)); ptr2++);
+			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !ISSEPARATOR (*ptr2)); ptr2++);
 		}
 		off = r_num_math (NULL, ptr);
 		if (off > 0xff) {
@@ -238,7 +238,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				pnum += 2;
 			}
 			for (; *pnum; pnum++) {
-				if ((is_hex && ishexchar(*pnum)) || IS_NUMBER(*pnum)) {
+				if ((is_hex && ISHEXCHAR(*pnum)) || IS_DIGIT(*pnum)) {
 					continue;
 				}
 				break;

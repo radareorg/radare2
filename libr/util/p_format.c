@@ -1238,8 +1238,8 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 	}
 
 	i = 0;
-	if (fmt[i] >= '0' && fmt[i] <= '9') {
-		while (fmt[i] >= '0' && fmt[i] <= '9') {
+	if (IS_DIGIT(fmt[i])) {
+		while (IS_DIGIT(fmt[i])) {
 			i++;
 		}
 	}
@@ -1478,7 +1478,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!fmt) {
 		fmt = formatname;
 	}
-	while (*fmt && iswhitechar (*fmt)) fmt++;
+	while (*fmt && ISWHITECHAR (*fmt)) fmt++;
 	argend = fmt + strlen (fmt);
 	arg = fmt;
 
@@ -1501,7 +1501,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	/* get times */
 	otimes = times = atoi (arg);
 	if (times > 0) {
-		while (*arg >= '0' && *arg <= '9') {
+		while (IS_DIGIT(*arg)) {
 			arg++;
 		}
 	}

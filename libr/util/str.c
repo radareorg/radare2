@@ -553,15 +553,15 @@ R_API int r_str_char_count(const char *string, char ch) {
 }
 
 // Counts the number of words (separted by separator charactors: newlines, tabs,
-// return, space). See r_util.h for more details of the isseparator macro.
+// return, space). See r_util.h for more details of the ISSEPARATOR macro.
 R_API int r_str_word_count(const char *string) {
 	const char *text, *tmp;
 	int word;
 
-	for (text = tmp = string; *text && isseparator (*text); text++);
+	for (text = tmp = string; *text && ISSEPARATOR (*text); text++);
 	for (word = 0; *text; word++) {
-		for (;*text && !isseparator (*text); text++);
-		for (tmp = text; *text && isseparator (*text); text++);
+		for (;*text && !ISSEPARATOR (*text); text++);
+		for (tmp = text; *text && ISSEPARATOR (*text); text++);
 	}
 	return word;
 }
@@ -634,7 +634,7 @@ R_API const char *r_str_nstr(const char *from, const char *to, int size) {
 // TODO: rewrite in macro?
 R_API const char *r_str_chop_ro(const char *str) {
 	if (str) {
-		while (*str && iswhitechar (*str)) {
+		while (*str && ISWHITECHAR (*str)) {
 			str++;
 		}
 	}
@@ -711,13 +711,13 @@ R_API char *r_str_chop(char *str) {
 	if (!str) {
 		return NULL;
 	}
-	while (*str && iswhitechar (*str)) {
+	while (*str && ISWHITECHAR (*str)) {
 		memmove (str, str + 1, strlen (str + 1) + 1);
 	}
 	len = strlen (str);
 	if (len > 0) {
 		for (ptr = str + len-1; ptr != str; ptr--) {
-			if (!iswhitechar (*ptr)) {
+			if (!ISWHITECHAR (*ptr)) {
 				break;
 			}
 			*ptr = '\0';
@@ -729,7 +729,7 @@ R_API char *r_str_chop(char *str) {
 // Returns a pointer to the first non-whitespace character of str.
 R_API const char *r_str_trim_const(const char *str) {
 	if (str) {
-		for (; *str && iswhitechar (*str); str++);
+		for (; *str && ISWHITECHAR (*str); str++);
 	}
 	return str;
 }
@@ -743,7 +743,7 @@ R_API char *r_str_trim_head(char *str) {
 		return NULL;
 	}
 
-	for (p = str; *p && iswhitechar (*p); p++)
+	for (p = str; *p && ISWHITECHAR (*p); p++)
 		;
 
 	/* Take the trailing null into account */
@@ -766,7 +766,7 @@ R_API char *r_str_trim_tail(char *str) {
 	}
 
 	while (length--) {
-		if (iswhitechar (str[length])) {
+		if (ISWHITECHAR (str[length])) {
 			str[length] = '\0';
 		} else {
 			break;
@@ -832,7 +832,7 @@ R_API int r_str_ccpy(char *dst, char *src, int ch) {
 R_API char *r_str_word_get_first(const char *text) {
 	char *ret;
 	int len = 0;
-	for (;*text && isseparator (*text); text++);
+	for (;*text && ISSEPARATOR (*text); text++);
 	/* strdup */
 	len = strlen (text);
 	ret = (char *)malloc (len + 1);
@@ -1104,12 +1104,12 @@ R_API char *r_str_clean(char *str) {
 	int len;
 	char *ptr;
 	if (str) {
-		while (*str && iswhitechar (*str)) {
+		while (*str && ISWHITECHAR (*str)) {
 			str++;
 		}
 		if ((len = strlen (str)) > 0 )
 			for (ptr = str + len - 1; ptr != str; ptr = ptr - 1) {
-				if (iswhitechar (*ptr)) {
+				if (ISWHITECHAR (*ptr)) {
 					*ptr = '\0';
 				} else {
 					break;
@@ -1664,7 +1664,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		int doublequoted = 0;
 
 		// Seek the beginning of next argument (skip whitespaces)
-		while (cmdline[cmdline_current] != '\0' && iswhitechar (cmdline[cmdline_current])) {
+		while (cmdline[cmdline_current] != '\0' && ISWHITECHAR (cmdline[cmdline_current])) {
 			cmdline_current++;
 		}
 
@@ -2058,7 +2058,7 @@ R_API int r_print_format_length (const char *fmt) {
 	int viewflags = 0;
 	nargs = endian = i = j = 0;
 
-	while (*arg && iswhitechar (*arg)) {
+	while (*arg && ISWHITECHAR (*arg)) {
 		arg++;
 	}
 	/* get times */
@@ -2509,10 +2509,10 @@ R_API bool r_str_isnumber (const char *str) {
 	if (!*str) {
 		return false;
 	}
-	bool isnum = IS_NUMBER (*str) || *str == '-';
+	bool isnum = IS_DIGIT (*str) || *str == '-';
 	str++;
 	while (*str++) {
-		if (!IS_NUMBER (*str) || *str == '-') {
+		if (!IS_DIGIT (*str) || *str == '-') {
 			isnum = false;
 		}
 	}

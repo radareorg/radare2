@@ -478,7 +478,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		const char *flag = sdb_fmt (0, "%s%d_%d", searchprefix, kw->kwidx, kw->count);
 		r_flag_set (core->flags, flag, base_addr + addr, kw->keyword_length);
 	}
-	if (!strnull (cmdhit)) {
+	if (!STRNULL (cmdhit)) {
 		ut64 here = core->offset;
 		r_core_seek (core, base_addr + addr, true);
 		r_core_cmd (core, cmdhit, 0);

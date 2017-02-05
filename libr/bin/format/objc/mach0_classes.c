@@ -768,7 +768,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 }
 
 static const char *skipnum(const char *s) {
-	while (IS_NUMBER (*s)) s++;
+	while (IS_DIGIT (*s)) s++;
 	return s;
 }
 

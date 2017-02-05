@@ -979,7 +979,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		proto = RTR_PROT_RAP;
 		host = input;
 	}
-	while (*host && iswhitechar (*host))
+	while (*host && ISWHITECHAR (*host))
 		host++;
 
 	if (!(ptr = strchr (host, ':'))) {
@@ -1166,7 +1166,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 R_API void r_core_rtr_remove(RCore *core, const char *input) {
 	int fd, i;
 
-	if (input[0] >= '0' && input[0] <= '9') {
+	if (IS_DIGIT(input[0])) {
 		fd = r_num_math (core->num, input);
 		for (i = 0; i < RTR_MAX_HOSTS; i++)
 			if (rtr_host[i].fd && rtr_host[i].fd->fd == fd) {
@@ -1195,7 +1195,7 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	int fd;
 
 	prompt[0] = 0;
-	if (input[0] >= '0' && input[0] <= '9') {
+	if (IS_DIGIT(input[0])) {
 		fd = r_num_math (core->num, input);
 		for (rtr_n = 0; rtr_host[rtr_n].fd \
 			&& rtr_host[rtr_n].fd->fd != fd \

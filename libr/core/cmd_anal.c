@@ -361,7 +361,7 @@ static int var_cmd(RCore *core, const char *str) {
 		if (str[2] == '*') {
 			r_anal_var_delete_all (core->anal, fcn->addr, type);
 		} else {
-			if (IS_NUMBER (str[2])) {
+			if (IS_DIGIT (str[2])) {
 				r_anal_var_delete (core->anal, fcn->addr,
 						type, 1, (int)r_num_math (core->num, str + 1));
 			} else {
@@ -2730,7 +2730,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		r_list_pop (stats->regread);
 		R_FREE (oldregread)
 	}
-	if (!IS_NUMBER (*name)) {
+	if (!IS_DIGIT (*name)) {
 		if (!contains (stats->regs, name)) {
 			r_list_push (stats->regs, strdup (name));
 		}
@@ -2743,7 +2743,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 
 static int myregread(RAnalEsil *esil, const char *name, ut64 *val, int *len) {
 	AeaStats *stats = esil->user;
-	if (!IS_NUMBER (*name)) {
+	if (!IS_DIGIT (*name)) {
 		if (!contains (stats->regs, name)) {
 			r_list_push (stats->regs, strdup (name));
 		}
