@@ -107,30 +107,36 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 // Finds the offset of a given value in a cyclic pattern of an integer.
 R_API int r_debruijn_offset(ut64 value, bool is_big_endian) {
 	char* needle, *pattern, buf[9];
-	int retval;
+	int retval = -1;
 	char* pch;
+	// 0x10000 should be long enough. This is how peda works, and nobody complains
+	// ... but is slow. Optimize for common case.
+	int lens[2] = {0x1000, 0x10000};
+	int j;
 
 	if (value == 0) {
 		return -1;
 	}
-	// 0x10000 should be long enough. This is how peda works, and nobody complains
-	pattern = r_debruijn_pattern (0x10000, 0, debruijn_charset);
 
-	buf[8] = '\0';
-	if (is_big_endian) {
-		r_write_be64 (buf, value);
-	} else {
-		r_write_le64 (buf, value);
-	}
-	for (needle = buf; !*needle; needle++) {
-		/* do nothing here */
-	}
+	for (j = 0; j <= 2 && retval == -1; ++j) {
+		pattern = r_debruijn_pattern (lens[j], 0, debruijn_charset);
 
-	pch = strstr (pattern, needle);
-	retval = -1;
-	if (pch) {
-		retval = (int)(size_t)(pch - pattern);
+		buf[8] = '\0';
+		if (is_big_endian) {
+			r_write_be64 (buf, value);
+		} else {
+			r_write_le64 (buf, value);
+		}
+		for (needle = buf; !*needle; needle++) {
+			/* do nothing here */
+		}
+
+		pch = strstr (pattern, needle);
+
+		if (pch) {
+			retval = (int)(size_t)(pch - pattern);
+		}
+		free (pattern);
 	}
-	free (pattern);
 	return retval;
 }
