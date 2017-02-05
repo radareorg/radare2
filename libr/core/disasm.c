@@ -2772,6 +2772,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				} else if (!strcmp (kind, "invalid")) {
 					int *n = (int*)&p;
 					ut64 p = ds->analop.ptr;
+					ut64 v = ds->analop.val;
+					if (p == UT64_MAX && v != UT64_MAX) {
+						p = v; // use immediate as possible ptr
+					}
 					/* avoid double ; -1 */
 					if (p != UT64_MAX && p != UT32_MAX) {
 						if (*n > -0xfff && *n < 0xfff) {
