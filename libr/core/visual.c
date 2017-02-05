@@ -1267,7 +1267,8 @@ static bool insert_mode_enabled(RCore *core) {
 	return true;
 }
 
-R_API int r_core_visual_cmd(RCore *core, int ch) {
+R_API int r_core_visual_cmd(RCore *core, const char *arg) {
+	int ch = arg[0];
 	RAsmOp op;
 	ut64 offset = core->offset;
 	char buf[4096];
@@ -1477,7 +1478,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		{
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel) r_cons_enable_mouse (false);
-			r_core_visual_define (core);
+			r_core_visual_define (core, arg + 1);
 			if (wheel) r_cons_enable_mouse (true);
 		}
 		break;
@@ -2482,6 +2483,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	ut64 scrseek;
 	int wheel, flags, ch;
 	bool skip;
+	char arg[2] = {input[0], 0};
 
 	if (r_cons_get_size (&ch) < 1 || ch < 1) {
 		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
@@ -2500,10 +2502,11 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		return ret;
 	}
 	while (*input) {
-		if (!r_core_visual_cmd (core, input[0])) {
+		int len = *input == 'd'? 2: 1;
+		if (!r_core_visual_cmd (core, input)) {
 			return 0;
 		}
-		input++;
+		input+= len;
 	}
 	core->vmode = true;
 
@@ -2592,8 +2595,10 @@ dodo:
 			ch = r_cons_readchar ();
 			r_core_visual_show_char (core, ch);
 			if (ch == -1 || ch == 4) break; // error or eof
+			arg[0] = ch;
+			arg[1] = 0;
 		}
-	} while (skip || r_core_visual_cmd (core, ch));
+	} while (skip || r_core_visual_cmd (core, arg));
 
 	r_cons_enable_mouse (false);
 	if (color) {

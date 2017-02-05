@@ -2398,7 +2398,7 @@ static bool isDisasmPrint(int mode) {
 	return (mode == 1 || mode == 2);
 }
 
-R_API void r_core_visual_define (RCore *core) {
+R_API void r_core_visual_define (RCore *core, const char *args) {
 	int plen = core->blocksize;
 	ut64 off = core->offset;
 	int i, h = 0, n, ch, ntotal = 0;
@@ -2461,7 +2461,12 @@ R_API void r_core_visual_define (RCore *core) {
 	r_cons_flush ();
 	// get ESC+char, return 'hjkl' char
 repeat:
-	ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
+	if (*args) {
+		ch = *args;
+		args++;
+	} else {
+		ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
+	}
 
 	switch (ch) {
 	case 'F':
