@@ -426,7 +426,7 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-struct r_anal_plugin_t r_anal_plugin_v810 = {
+RAnalPlugin r_anal_plugin_v810 = {
 	.name = "v810",
 	.desc = "V810 code analysis plugin",
 	.license = "LGPL3",

@@ -123,7 +123,7 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	return ret;
 }
 
-struct r_anal_plugin_t r_anal_plugin_cr16 = {
+RAnalPlugin r_anal_plugin_cr16 = {
 	.name = "cr16",
 	.desc = "CR16 code analysis plugin",
 	.license = "LGPL3",

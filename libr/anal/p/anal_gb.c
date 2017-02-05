@@ -1451,7 +1451,7 @@ static int esil_gb_fini (RAnalEsil *esil) {
 	return true;
 }
 
-struct r_anal_plugin_t r_anal_plugin_gb = {
+RAnalPlugin r_anal_plugin_gb = {
 	.name = "gb",
 	.desc = "Gameboy CPU code analysis plugin",
 	.license = "LGPL3",

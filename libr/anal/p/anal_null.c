@@ -10,7 +10,7 @@ static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return op->size = 1;
 }
 
-struct r_anal_plugin_t r_anal_plugin_null = {
+RAnalPlugin r_anal_plugin_null = {
 	.name = "null",
 	.desc = "Fallback/Null analysis plugin",
 	.arch = "none",

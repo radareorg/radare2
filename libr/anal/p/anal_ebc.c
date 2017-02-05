@@ -161,7 +161,7 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	return ret;
 }
 
-struct r_anal_plugin_t r_anal_plugin_ebc = {
+RAnalPlugin r_anal_plugin_ebc = {
 	.name = "ebc",
 	.desc = "EBC code analysis plugin",
 	.license = "LGPL3",

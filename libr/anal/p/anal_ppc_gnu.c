@@ -139,7 +139,7 @@ static int archinfo(RAnal *anal, int q) {
 	return 4; /* :D */
 }
 
-struct r_anal_plugin_t r_anal_plugin_ppc_gnu = {
+RAnalPlugin r_anal_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.desc = "PowerPC analysis plugin",
 	.license = "LGPL3",

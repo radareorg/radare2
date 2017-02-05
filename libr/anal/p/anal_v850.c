@@ -107,7 +107,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	return ret;
 }
 
-struct r_anal_plugin_t r_anal_plugin_v850 = {
+RAnalPlugin r_anal_plugin_v850 = {
 	.name = "V850",
 	.desc = "V850 code analysis plugin",
 	.license = "LGPL3",

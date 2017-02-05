@@ -188,7 +188,7 @@ static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return op->size = ilen;
 }
 
-struct r_anal_plugin_t r_anal_plugin_i8080 = {
+RAnalPlugin r_anal_plugin_i8080 = {
 	.name = "i8080",
 	.desc = "I8080 CPU code analysis plugin",
 	.license = "LGPL3",
