@@ -323,7 +323,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 }
 
 R_API int r_num_is_float(RNum *num, const char *str) {
-	return (IS_NUMBER (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
+	return (IS_DIGIT (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
 }
 
 R_API double r_num_get_float(RNum *num, const char *str) {
@@ -521,7 +521,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p+2, hex);
-		if (hex[0] >= '0' && hex[0] <= '9') {
+		if (IS_DIGIT(hex[0])) {
 			n = r_num_math (num, p);
 		} else {
 			eprintf ("Invalid argument\n");

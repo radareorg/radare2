@@ -824,7 +824,7 @@ repeat:
 			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
 			ret = 1;
 		}
-	} else if (ch >= '0' && ch <= '9') {
+	} else if (IS_DIGIT(ch)) {
 		refi = r_list_get_n (xrefs, ch - 0x30);
 		if (refi) {
 			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
@@ -886,7 +886,7 @@ R_API int r_core_visual_xrefs_X (RCore *core) {
 	}
 	ch = r_cons_readchar ();
 	if (fun && fun->refs) {
-		if (ch >= '0' && ch <= '9') {
+		if (IS_DIGIT(ch)) {
 			refi = r_list_get_n (fun->refs, ch-0x30);
 			if (refi) {
 				r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);

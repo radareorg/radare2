@@ -721,7 +721,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					isavrseparator (*ptr_start); ptr_start++);
 			} else {
 				for (ptr_start = buf_token; *ptr_start &&
-					isseparator (*ptr_start); ptr_start++);
+					ISSEPARATOR (*ptr_start); ptr_start++);
 			}
 			if (!strncmp (ptr_start, "/*", 2)) {
 				if (!strstr (ptr_start + 2, "*/")) {

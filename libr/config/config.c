@@ -51,7 +51,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	const char *pfx = "";
 	int len = 0;
 
-	if (!strnull (str)) {
+	if (!STRNULL (str)) {
 		str = r_str_chop_ro (str);
 		len = strlen (str);
 	}
@@ -120,7 +120,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 }
 
 R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name) { 
-	if (strnull (name)) {
+	if (STRNULL (name)) {
 		return NULL;
 	}
 	return r_hashtable_lookup (cfg->ht, r_str_hash (name));
@@ -229,7 +229,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node;
 	char *ov = NULL;
 	ut64 oi;
-	if (!cfg || strnull (name)) return NULL;
+	if (!cfg || STRNULL (name)) return NULL;
 	node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->flags & CN_RO) {
@@ -256,7 +256,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 			} else {
 				free (node->value);
 				node->value = strdup (value);
-				if (*value >= '0' && *value <= '9') {
+				if (IS_DIGIT(*value)) {
 					if (strchr (value, '/')) {
 						node->i_value = r_num_get (cfg->num, value);
 					} else {

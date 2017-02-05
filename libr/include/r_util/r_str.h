@@ -1,16 +1,9 @@
 #ifndef R_STR_H
 #define R_STR_H
 
-typedef int (*RStrRangeCallback) (void *, int);
+#include "r_str_util.h"
 
-/* TODO ..use as uppercase maybe? they are macros! */
-#define strnull(x) (!x||!*x)
-#define iswhitechar(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r')
-#define iswhitespace(x) ((x)==' '||(x)=='\t')
-#define isseparator(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r'||(x)==' '|| \
-		(x)==','||(x)==';'||(x)==':'||(x)=='['||(x)==']'|| \
-		(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
-#define ishexchar(x) ((x>='0'&&x<='9') ||  (x>='a'&&x<='f') ||  (x>='A'&&x<='F'))
+typedef int (*RStrRangeCallback) (void *, int);
 
 static inline void r_str_rmch(char *s, char ch) {
 	for (;*s; s++) {

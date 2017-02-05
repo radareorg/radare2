@@ -106,7 +106,7 @@ R_API void r_cons_grep(const char *str) {
 				cons->grep.sort_invert = false;
 			}
 			cons->grep.sort = atoi (str);
-			while (IS_NUMBER (*str)) {
+			while (IS_DIGIT (*str)) {
 				str++;
 			}
 			if (*str == ':') {
@@ -283,7 +283,7 @@ static int cmp (const void *a, const void *b) {
 		ca = (colsa > sorted_column) ? r_str_word_get0 (da, sorted_column): "";
 		cb = (colsb > sorted_column) ? r_str_word_get0 (db, sorted_column): "";
 	}
-	if (IS_NUMBER (*ca) && IS_NUMBER (*cb)) {
+	if (IS_DIGIT (*ca) && IS_DIGIT (*cb)) {
 		ut64 na = r_num_get (NULL, ca);
 		ut64 nb = r_num_get (NULL, cb);
 		int ret = na > nb;

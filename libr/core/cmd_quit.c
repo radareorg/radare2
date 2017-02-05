@@ -7,7 +7,7 @@ static int cmd_Quit(void *data, const char *input) {
 	if (input[0] == '!') {
 		r_config_set (core->config, "scr.histsave", "false");
 	}
-	if (IS_NUMBER (input[0]) || input[0] == ' ') {
+	if (IS_DIGIT (input[0]) || input[0] == ' ') {
 		core->num->value = r_num_math (core->num, input);
 	} else {
 		core->num->value = -1;

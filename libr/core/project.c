@@ -24,7 +24,7 @@ static bool is_valid_project_name (const char *name) {
 		if (name[i] >= 'A' && name[i] <= 'Z') {
 			continue;
 		}
-		if (name[i] >= '0' && name[i] <= '9') {
+		if (IS_DIGIT(name[i])) {
 			continue;
 		}
 		return false;

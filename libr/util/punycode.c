@@ -62,7 +62,7 @@ static ut32 encode_var_int(const ut32 bias, const ut32 delta, char *dst) {
 }
 
 static char decode_digit(char v) {
-	if (v >= '0' && v <= '9') {
+	if (IS_DIGIT(v)) {
 		return v - 22;
 	}
 	if (v >= 'a' && v <= 'z') {

@@ -248,7 +248,7 @@ static int cmd_help(void *data, const char *input) {
 				}
 				free (ops);
 			}
-		} else if (input[1] && !IS_NUMBER (input[2])) {
+		} else if (input[1] && !IS_DIGIT (input[2])) {
 			r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->assembler, input + 2));
 		} else {
 			bool json = false;

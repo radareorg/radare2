@@ -1,6 +1,9 @@
 #ifndef R2_TYPES_H
 #define R2_TYPES_H
 
+// defines like IS_DIGIT, etc'
+#include "r_util/r_str_util.h"
+
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
 #undef __BSD__
@@ -228,11 +231,6 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_NEW(x) (x*)malloc(sizeof(x))
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
-#define IS_PRINTABLE(x) (x>=' '&&x<='~')
-#define IS_NUMBER(x) (x>='0'&&x<='9')
-#define IS_WHITESPACE(x) (x==' '||x=='\t')
-#define IS_UPPER(c) ((c) >= 'A' && (c) <= 'Z')
-#define IS_LOWER(c) ((c) >= 'a' && (c) <= 'z')
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 #define R_ARRAY_SIZE(x) (sizeof (x) / sizeof (x[0]))
 

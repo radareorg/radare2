@@ -1315,7 +1315,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		colon = NULL;
 	}
 	if (rep > 0) {
-		while (*cmd >= '0' && *cmd <= '9') {
+		while (IS_DIGIT(*cmd)) {
 			cmd++;
 		}
 		// do not repeat null cmd
@@ -1662,7 +1662,7 @@ next:
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
-		if (ptr > (cmd + 1) && iswhitechar (ptr[-2])) {
+		if (ptr > (cmd + 1) && ISWHITECHAR (ptr[-2])) {
 			char *fdnum = ptr - 1;
 			if (*fdnum == 'H') {
 				scr_html = r_config_get_i (core->config, "scr.html");
@@ -1670,7 +1670,7 @@ next:
 				pipecolor = true;
 				*fdnum = 0;
 			} else {
-				if (*fdnum >= '0' && *fdnum <= '9') {
+				if (IS_DIGIT(*fdnum)) {
 					fdn = *fdnum - '0';
 				}
 				*fdnum = 0;

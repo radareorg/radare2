@@ -78,7 +78,7 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 		}
 		if (!strcmp(ops[i].op, argv[0])) {
 			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
-				if (ops[i].str[j] >= '0' && ops[i].str[j] <= '9') {
+				if (IS_DIGIT(ops[i].str[j])) {
 					const char *w = argv[ops[i].str[j] - '0'];
 					if (w != NULL) {
 						strcpy(newstr + k, w);

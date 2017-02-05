@@ -6,7 +6,7 @@
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
 R_API int r_hex_to_byte(ut8 *val, ut8 c) {
-	if (c >= '0' && c <= '9') {
+	if (IS_DIGIT(c)) {
 		*val = (ut8)(*val) * 16 + (c - '0');
 	} else if (c >= 'A' && c <= 'F') {
 		*val = (ut8)(*val) * 16 + (c - 'A' + 10);
@@ -69,7 +69,7 @@ R_API char *r_hex_from_c(const char *code) {
 					for (code++;*code; code++) {
 						if (IS_WHITESPACE (*code))
 							continue;
-						if (IS_NUMBER (*code)) {
+						if (IS_DIGIT (*code)) {
 							parse_on = true;
 							break;
 						} else {
@@ -85,7 +85,7 @@ R_API char *r_hex_from_c(const char *code) {
 				if (!comma) comma = strchr (code, '}');
 				if (comma) {
 					char *word = r_str_ndup (code, comma - code);
-					if (IS_NUMBER (*word)) {
+					if (IS_DIGIT (*word)) {
 						ut8 n = (ut8)r_num_math (NULL, word);
 						*out++ = abc[(n >> 4) & 0xf];
 						*out++ = abc[n & 0xf];
@@ -274,7 +274,7 @@ R_API int r_hex_str_is_valid(const char* str) {
 		str += 2;
 	}
 	for (i = 0; str[i] != '\0' && str[i] != ' '; i++) {
-		if (ishexchar (str[i])) {
+		if (ISHEXCHAR (str[i])) {
 			continue;
 		}
 		return -1; //if we're here, then str isnt valid
