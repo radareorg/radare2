@@ -3875,7 +3875,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	ut64 old_offset = core->offset;
 	ut64 at;
 	int dis_opcodes = 0;
-	r_cons_printf ("[");
+	//r_cons_printf ("[");
 	int limit_by = 'b';
 
 	if (nb_opcodes != 0) {
@@ -4113,7 +4113,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			break;
 		}
 	}
-	r_cons_printf ("]");
+	// r_cons_printf ("]");
 	core->offset = old_offset;
 	r_anal_op_fini (&ds->analop);
 	return true;

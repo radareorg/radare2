@@ -241,7 +241,10 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 
 static void cmd_pDj (RCore *core, const char *arg) {
 	int bsize = r_num_math (core->num, arg);
-	if (bsize < 0) bsize = -bsize;
+	if (bsize < 0) {
+		bsize = -bsize;
+	}
+	r_cons_print ("[");
 	if (bsize <= core->blocksize) {
 		r_core_print_disasm_json (core, core->offset, core->block,
 			bsize, 0);
@@ -255,12 +258,14 @@ static void cmd_pDj (RCore *core, const char *arg) {
 			eprintf ("cannot allocate %d bytes\n", bsize);
 		}
 	}
+	r_cons_print ("]\n");
 }
 
 static void cmd_pdj (RCore *core, const char *arg) {
 	int nblines = r_num_math (core->num, arg);
+	r_cons_print ("[");
 	r_core_print_disasm_json (core, core->offset, core->block, core->blocksize, nblines);
-	r_cons_newline ();
+	r_cons_print ("]\n");
 }
 
 static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits) {
@@ -3133,7 +3138,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf ("\"name\":\"%s\"", f->name);
 					r_cons_printf (",\"size\":%d", fcn_size);
 					r_cons_printf (",\"addr\":%"PFMT64d, f->addr);
-					r_cons_printf (",\"ops\":");
+					r_cons_printf (",\"ops\":[");
 					// instructions are all outputted as a json list
 					func_buf = calloc (cont_size, 1);
 					bool first = true;
@@ -3147,7 +3152,6 @@ static int cmd_print(void *data, const char *input) {
 							loc_buf = calloc (cont_size, 1);;
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
 							if (!first) {
-								r_cons_drop (1);
 								r_cons_print (",");
 							}
 							r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
@@ -3157,7 +3161,6 @@ static int cmd_print(void *data, const char *input) {
 						cont_size = tmp_get_contsize (f);
 						r_io_read_at (core->io, f->addr, func_buf, cont_size);
 						if (!first) {
-							r_cons_drop (1);
 							r_cons_print (",");
 						}
 						r_core_print_disasm_json (core, f->addr, func_buf, cont_size, 0);
@@ -3168,7 +3171,6 @@ static int cmd_print(void *data, const char *input) {
 							loc_buf = calloc (cont_size, 1);;
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
 							if (!first) {
-								r_cons_drop (1);
 								r_cons_print (",");
 							}
 							r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
@@ -3178,7 +3180,7 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						eprintf ("cannot allocate %d bytes\n", fcn_size);
 					}
-					r_cons_printf ("}\n");
+					r_cons_printf ("]}\n");
 					pd_result = 0;
 				} else if (f) {
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {

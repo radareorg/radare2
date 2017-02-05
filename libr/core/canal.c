@@ -1005,7 +1005,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					"d}",
 					t->count, t->times);
 			}
-			r_cons_printf (",\"ops\":");
+			r_cons_printf (",\"ops\":[");
 			if (buf) {
 				r_io_read_at (core->io, bbi->addr, buf, bbi->size);
 				r_core_print_disasm_json (core, bbi->addr, buf, bbi->size, 0);
@@ -1013,7 +1013,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			} else {
 				eprintf ("cannot allocate %d bytes\n", bbi->size);
 			}
-			r_cons_printf ("}");
+			r_cons_printf ("]}");
 			continue;
 		}
 		if (bbi->jump != UT64_MAX) {
