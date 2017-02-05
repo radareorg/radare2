@@ -169,7 +169,10 @@ R_API const char *r_num_calc_index(RNum *num, const char *p) {
 		num->nc.calc_len = strlen (p);
 		num->nc.calc_i = 0;
 	}
-	return num->nc.calc_buf + num->nc.calc_i;
+	if (num->nc.calc_i < num->nc.calc_len) {
+		return num->nc.calc_buf + num->nc.calc_i;
+	}
+	return NULL;
 }
 
 static int cin_get(RNum *num, RNumCalc *nc, char *c) {
