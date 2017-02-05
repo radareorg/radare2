@@ -2381,8 +2381,17 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 				} else {
 					r_cons_print (",");
 				}
-				const char *cmd = (type_print == 'D')? "pDj": "pIj";
-				r_core_cmdf (core, "%s %"PFMT64d" @0x%"PFMT64x, cmd, b->size, b->addr);
+//				const char *cmd = (type_print == 'D')? "pDj": "pIj";
+//				r_core_cmdf (core, "%s %"PFMT64d" @ 0x%"PFMT64x, cmd, b->size, b->addr);
+
+				ut8 *buf = malloc (b->size);
+				if (buf) {
+					r_io_read_at (core->io, b->addr, buf, b->size);
+					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+					free (buf);
+				} else {
+					eprintf ("cannot allocate %d bytes\n", b->size);
+				}
 			}
 		}
 		r_list_foreach (f->bbs, iter, b) {
@@ -2391,8 +2400,20 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 			} else {
 				r_cons_print (",");
 			}
+#if 0
+			r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
 			const char *cmd = (type_print == 'D')? "pDj": "pIj";
-			r_core_cmdf (core, "%s %"PFMT64d" @0x%"PFMT64x, cmd, b->size, b->addr);
+			r_core_cmdf (core, "%s %"PFMT64d" @ 0x%"PFMT64x, cmd, b->size, b->addr);
+#endif
+
+			ut8 *buf = malloc (b->size);
+			if (buf) {
+				r_io_read_at (core->io, b->addr, buf, b->size);
+				r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+				free (buf);
+			} else {
+				eprintf ("cannot allocate %d bytes\n", b->size);
+			}
 		}
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 			r_list_foreach (tmp_func->bbs, iter, b) {
@@ -2401,8 +2422,18 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 				} else {
 					r_cons_print (",");
 				}
+#if 0
 				const char *cmd = (type_print == 'D')? "pDj": "pIj";
 				r_core_cmdf (core, "%s %"PFMT64d" @0x%"PFMT64x, cmd, b->size, b->addr);
+#endif
+				ut8 *buf = malloc (b->size);
+				if (buf) {
+					r_io_read_at (core->io, b->addr, buf, b->size);
+					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+					free (buf);
+				} else {
+					eprintf ("cannot allocate %d bytes\n", b->size);
+				}
 			}
 		}
 		r_cons_print ("]");
