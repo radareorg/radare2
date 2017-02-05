@@ -446,6 +446,9 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->midflags = r_config_get_i (core->config, "asm.midflags");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
+	if (ds->pseudo) {
+		ds->atabs = 0;
+	}
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->interactive = r_config_get_i (core->config, "scr.interactive");
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
