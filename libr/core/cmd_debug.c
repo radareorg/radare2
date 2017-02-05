@@ -1003,7 +1003,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		} else if (input[1] == ' ') {
 			int perms;
 			char *p, *q;
-			ut64 size, addr;
+			ut64 size = 0, addr;
 			p = strchr (input + 2, ' ');
 			if (p) {
 				*p++ = 0;
@@ -2963,6 +2963,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		return false;
 	}
 	from = UT64_MAX;
+	to = UT64_MAX;
 	if (input[2] == '.') {
 		ptr = strchr (input + 3, ' ');
 		if (ptr) { // TODO: put '\0' in *ptr to avoid
@@ -2992,6 +2993,10 @@ static bool cmd_dcu (RCore *core, const char *input) {
 	}
 	if (from == UT64_MAX) {
 		eprintf ("Cannot continue until address 0\n");
+		return false;
+	}
+	if (to == UT64_MAX) {
+		eprintf ("Cannot continue upto address 0\n");
 		return false;
 	}
 	if (dcu_range) {
