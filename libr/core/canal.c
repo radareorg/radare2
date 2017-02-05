@@ -2616,6 +2616,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				if (op.ptr != -1) {
 					type = R_ANAL_REF_TYPE_DATA;
 					xref_to = op.ptr;
+				} else if (op.val != -1) {
+					type = R_ANAL_REF_TYPE_DATA;
+					xref_to = op.val;
 				}
 				break;
 			}
