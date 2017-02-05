@@ -764,13 +764,30 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 		/* This make sure the structure will be printed entirely */
 		char *fmt = input + 1;
 		while (*fmt && ISWHITECHAR (*fmt)) fmt++;
-		int size = r_print_format_struct_size (fmt, core->print, mode)+10;
+		int size = r_print_format_struct_size (fmt, core->print, mode) + 10;
 		if (size > core->blocksize) {
 			r_core_block_size (core, size);
 		}
-		r_print_format (core->print, core->offset,
-			core->block, core->blocksize, fmt, mode, NULL, NULL);
+		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
+		bool syntax_ok = true;
+		char *args = strdup (fmt);
+		if(!args) {
+			r_cons_printf ("Error: Mem Allocation.");
+			free (args);
+			goto stage_left;
+		}
+		const char *arg1 = strtok (args," ");
+		if(arg1 && r_str_isnumber (arg1)) {
+			syntax_ok = false;
+			r_cons_printf ("Usage: pf [0|cnt][format-string]\n");
+		}
+		free (args);
+		if (syntax_ok) {
+			r_print_format (core->print, core->offset,
+			                core->block, core->blocksize, fmt, mode, NULL, NULL);
+		}
 	}
+stage_left:
 	free (input);
 	r_core_block_size (core, o_blocksize);
 }
