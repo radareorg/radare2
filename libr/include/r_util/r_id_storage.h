@@ -22,11 +22,14 @@ typedef struct r_id_storage_t {
 	ut32 size;
 } RIDStorage;
 
+typedef bool (*RIDStorageForeachCb)(void *user, void *data, ut32 id);
+
 R_API RIDStorage *r_id_storage_new (ut32 start_id, ut32 last_id);
 R_API bool r_id_storage_set (RIDStorage *storage, void *data, ut32 id);
 R_API bool r_id_storage_add (RIDStorage *storage, void *data, ut32 *id);
 R_API void *r_id_storage_get (RIDStorage *storage, ut32 id);
 R_API void r_id_storage_delete (RIDStorage *storage, ut32 id);
 R_API void *r_id_storage_take (RIDStorage *storage, ut32 id);
+R_API bool r_id_storage_foreach (RIDStorage *storage, RIDStorageForeachCb cb, void *user);
 R_API void r_id_storage_free (RIDStorage *storage);
 #endif

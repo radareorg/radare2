@@ -156,6 +156,20 @@ R_API void *r_id_storage_take (RIDStorage *storage, ut32 id) {
 	return ret;
 }
 
+R_API bool r_id_storage_foreach (RIDStorage *storage, RIDStorageForeachCb cb, void *user) {
+	ut32 i;
+	if (!cb || !storage || !storage->data)
+		return false;
+	for (i = 0; i < storage->top_id; i++) {
+		if (storage->data[i])
+			if (!cb (user, storage->data[i], i))
+				return false;
+	}
+	if (storage->data[i])
+		return cb (user, storage->data[i], i);
+	return true;
+}
+
 R_API void r_id_storage_free (RIDStorage *storage) {
 	if (storage) {
 		r_id_pool_free (storage->pool);
