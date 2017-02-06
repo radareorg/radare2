@@ -579,45 +579,41 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 	return false;
 }
 
-static int cmp_range(const void *a, const void *b) {
-	RAnalRange *ra = (RAnalRange *)a;
-	RAnalRange *rb = (RAnalRange *)b;
-	return (ra && rb)? ra->from > rb->from : 0;
-}
-
-static int build_range(void *p, const char *k, const char *v) {
-	RAnal *a = (RAnal *)p;
-	RList *list_range = a->bits_ranges;
-	RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (k + 5), v);
-	if (hint->bits) {
-		RAnalRange *range = R_NEW0 (RAnalRange);
-		if (range) {
-			range->bits = hint->bits;
-			range->from = hint->addr;
-			range->to = UT64_MAX;
-			r_list_append (list_range, range);
-		}
-	}
-	r_anal_hint_free (hint);
-	return 1;
-}
-
 // based on anal hint we construct a list of RAnalRange to handle
 // better arm/thumb though maybe handy in other contexts
 R_API void r_anal_build_range_on_hints(RAnal *a) {
-	RListIter *iter;
-	RAnalRange *range;
 	if (a->bits_hints_changed) {
+		SdbListIter *iter;
+		RListIter *it;
+		SdbKv *kv;
+		RAnalRange *range;
+		int range_bits = 0;
 		// construct again the range from hint to handle properly arm/thumb
 		r_list_free (a->bits_ranges);
 		a->bits_ranges = r_list_newf ((RListFree)free);
-		sdb_foreach (a->sdb_hints, build_range, a);
-		r_list_sort (a->bits_ranges, cmp_range);
-		r_list_foreach (a->bits_ranges, iter, range) {
-			if (iter->n && iter->n->data) {
-				range->to = ((RAnalRange *)(iter->n->data))->from;
+		SdbList *sdb_range = sdb_foreach_list (a->sdb_hints, true);
+		//just grab when hint->bit changes with the previous one
+		ls_foreach (sdb_range, iter, kv) {
+			RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (kv->key + 5), kv->value);
+			if (hint->bits && range_bits != hint->bits) {
+				RAnalRange *range = R_NEW0 (RAnalRange);
+				if (range) {
+					range->bits = hint->bits;
+					range->from = hint->addr;
+					range->to = UT64_MAX;
+					r_list_append (a->bits_ranges, range);
+				}
+			}
+			range_bits = hint->bits;
+			r_anal_hint_free (hint);
+		}
+		//close ranges addr
+		r_list_foreach (a->bits_ranges, it, range) {
+			if (it->n && it->n->data) {
+				range->to = ((RAnalRange *)(it->n->data))->from;
 			}
 		}
+		ls_free (sdb_range);
 		a->bits_hints_changed = false;
 	}
 }
