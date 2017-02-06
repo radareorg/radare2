@@ -140,6 +140,7 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode op) {
 	int modrm = 0;
 	int mod_byte = 0;
 	int offset = 0;
+	int mem_ref = 0;
 	st32 immediate = 0;
 	if (!op.operands[1].is_good_flag) {
 		return -1;
@@ -184,14 +185,19 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode op) {
 		if (offset < ST8_MIN || offset > ST8_MAX) {
 			mod_byte = 2;
 		}
-		data[l++] = mod_byte << 6 | modrm << 3 | op.operands[0].regs[0];
-
+		int reg0 = op.operands[0].regs[0];
+		if (reg0 == -1) {
+			mem_ref = 1;
+			reg0 = 5;
+			mod_byte = 0;
+		}
+		data[l++] = mod_byte << 6 | modrm << 3 | reg0;
 		if (op.operands[0].regs[0] == X86R_ESP) {
 			data[l++] = 0x24;
 		}
-		if (mod_byte) {
+		if (mod_byte || mem_ref) {
 			data[l++] = offset;
-			if (mod_byte == 2) {
+			if (mod_byte == 2 || mem_ref) {
 				data[l++] = offset >> 8;
 				data[l++] = offset >> 16;
 				data[l++] = offset >> 24;
@@ -280,6 +286,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode op, int op1) {
 	int reg = 0;
 	int rm = 0;
 	int rex = 0;
+	int mem_ref = 0;
 	st32 offset = 0;
 
 	if (!op.operands[1].is_good_flag) {
@@ -316,12 +323,16 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode op, int op1) {
 		}
 		reg = op.operands[1].reg;
 		rm = op.operands[0].regs[0];
-
 		offset = op.operands[0].offset * op.operands[0].offset_sign;
-		if (offset) {
-			mod_byte = 1;
-			if (offset < ST8_MIN || offset > ST8_MAX) {
-				mod_byte = 2;
+		if (rm == -1) {
+			rm = 5;
+			mem_ref = 1;
+		} else {
+			if (offset) {
+				mod_byte = 1;
+				if (offset < ST8_MIN || offset > ST8_MAX) {
+					mod_byte = 2;
+				}
 			}
 		}
 	} else if (op.operands[0].type & OT_REGALL) {
@@ -380,9 +391,9 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode op, int op1) {
 		}
 	}
 	data[l++] = mod_byte << 6 | reg << 3 | rm;
-	if (mod_byte > 0 && mod_byte < 3) {
+	if ((mod_byte > 0 && mod_byte < 3) || mem_ref) {
 		data[l++] = offset;
-		if (mod_byte == 2) {
+		if (mod_byte == 2 || mem_ref) {
 			data[l++] = offset >> 8;
 			data[l++] = offset >> 16;
 			data[l++] = offset >> 24;
