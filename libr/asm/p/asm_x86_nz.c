@@ -1063,9 +1063,10 @@ static int oplea(RAsm *a, ut8 *data, const Opcode op){
 	    op.operands[1].type & OT_MEMORY) {
 		data[l++] = 0x8d;
 		if (op.operands[1].regs[0] == X86R_UNDEFINED) {
+			int high = 0xff00 & op.operands[1].offset;
 			data[l++] = op.operands[0].reg << 3 | 5;
 			data[l++] = op.operands[1].offset;
-			data[l++] = op.operands[1].offset >> 6;
+			data[l++] = high >> 8;
 			data[l++] = op.operands[1].offset >> 16;
 			data[l++] = op.operands[1].offset >> 24;
 			return l;
