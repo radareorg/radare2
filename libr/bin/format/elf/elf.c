@@ -28,6 +28,8 @@
 #define READ32(x, i) r_read_ble32(x + i, bin->endian); i += 4;
 #define READ64(x, i) r_read_ble64(x + i, bin->endian); i += 8;
 
+#define GROWTH_FACTOR (1.5)
+
 static inline int __strnlen(const char *str, int len) {
 	int l = 0;
 	while (IS_PRINTABLE (*str) && --len) {
@@ -2437,61 +2439,83 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	if (!sym_size) {
 		return NULL;
 	}
-	//since ELF doesn't specify the symbol table size we are going to read until the end of the buffer
-	// this might be overkill.
+	//since ELF doesn't specify the symbol table size we may read until the end of the buffer
 	nsym = (bin->size - addr_sym_table) / sym_size;
-	if (nsym < 1) {
-	    return NULL;
-	}
-	sym = (Elf_(Sym)*) calloc (nsym, sym_size);
-	if (!sym) {
-	   	return NULL;
-	}
-	if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))) {
-	   	goto beach;
+	if (!UT32_MUL (&size, nsym, sizeof (Elf_ (Sym)))) {
+		goto beach;
 	}
 	if (size < 1) {
-	   	goto beach;
+		goto beach;
 	}
 	if (addr_sym_table > bin->size || addr_sym_table + size > bin->size) {
 		goto beach;
 	}
-	for (i = 0; i < nsym; i++) {
-		int j = 0;
-		r = r_buf_read_at (bin->b, addr_sym_table + i * sizeof (Elf_(Sym)), s, sizeof (Elf_(Sym)));
+	if (nsym < 1) {
+		return NULL;
+	}
+	// we reserve room for 4096 and grow as needed.
+	size_t capacity1 = 4096;
+	size_t capacity2 = 4096;
+	sym = (Elf_(Sym)*) calloc (capacity1, sym_size);
+	ret = (RBinElfSymbol*) calloc (capacity2, sizeof (struct r_bin_elf_symbol_t));
+	if (!sym || !ret) {
+		goto beach;
+	}
+	for (i = 0, ret_ctr = 0; i < nsym; i++) {
+		if (i >= capacity1) { // maybe grow
+			// You take what you want, but you eat what you take.
+			Elf_(Sym)* temp_sym = (Elf_(Sym)*) realloc(sym, (capacity1 * GROWTH_FACTOR) * sym_size);
+			if (!temp_sym) {
+				goto beach;
+			}
+			sym = temp_sym;
+			capacity1 *= GROWTH_FACTOR;
+		}
+		if (ret_ctr >= capacity2) { // maybe grow
+			RBinElfSymbol *temp_ret = realloc (ret, capacity2 * GROWTH_FACTOR * sizeof (struct r_bin_elf_symbol_t));
+			if (!temp_ret) {
+				goto beach;
+			}
+			ret = temp_ret;
+			capacity2 *= GROWTH_FACTOR;
+		}
+		// read in one entry
+		r = r_buf_read_at (bin->b, addr_sym_table + i * sizeof (Elf_ (Sym)), s, sizeof (Elf_ (Sym)));
 		if (r < 1) {
 			goto beach;
 		}
+		int j = 0;
 #if R_BIN_ELF64
-		sym[i].st_name = READ32 (s, j)
-		sym[i].st_info = READ8 (s, j)
-		sym[i].st_other = READ8 (s, j)
-		sym[i].st_shndx = READ16 (s, j)
-		sym[i].st_value = READ64 (s, j)
-		sym[i].st_size = READ64 (s, j)
+		sym[i].st_name = READ32 (s, j);
+		sym[i].st_info = READ8 (s, j);
+		sym[i].st_other = READ8 (s, j);
+		sym[i].st_shndx = READ16 (s, j);
+		sym[i].st_value = READ64 (s, j);
+		sym[i].st_size = READ64 (s, j);
 #else
-		sym[i].st_name = READ32 (s, j)
-		sym[i].st_value = READ32 (s, j)
-		sym[i].st_size = READ32 (s, j)
-		sym[i].st_info = READ8 (s, j)
-		sym[i].st_other = READ8 (s, j)
-		sym[i].st_shndx = READ16 (s, j)
+		sym[i].st_name = READ32 (s, j);
+		sym[i].st_value = READ32 (s, j);
+		sym[i].st_size = READ32 (s, j);
+		sym[i].st_info = READ8 (s, j);
+		sym[i].st_other = READ8 (s, j);
+		sym[i].st_shndx = READ16 (s, j);
 #endif
-	}
-	for (k = 1, ret_ctr = 0 ; k < nsym; k++) {
-		if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
-			if (sym[k].st_value) {
-				toffset = sym[k].st_value;
-			} else if ((toffset = get_import_addr (bin, k)) == -1) {
+		// zero symbol is always empty
+		if (i == 0) continue;
+		// Examine entry and maybe store
+		if (type == R_BIN_ELF_IMPORTS && sym[i].st_shndx == STN_UNDEF) {
+			if (sym[i].st_value) {
+				toffset = sym[i].st_value;
+			} else if ((toffset = get_import_addr (bin, i)) == -1) {
 				toffset = 0;
 			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_SYMBOLS &&
-			   sym[k].st_shndx != STN_UNDEF &&
-			   ELF_ST_TYPE(sym[k].st_info) != STT_SECTION &&
-			   ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
-			tsize = sym[k].st_size;
-			toffset = (ut64)sym[k].st_value;
+				sym[i].st_shndx != STN_UNDEF &&
+				ELF_ST_TYPE(sym[i].st_info) != STT_SECTION &&
+				ELF_ST_TYPE(sym[i].st_info) != STT_FILE) {
+			tsize = sym[i].st_size;
+			toffset = (ut64)sym[i].st_value;
 		} else {
 			continue;
 		}
@@ -2499,10 +2523,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		if (tmp_offset > bin->size) {
 			goto done;
 		}
-		if (!(ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t)))) {
-			goto beach;
-		}
-		if (sym[k].st_name + 2 > bin->strtab_size) {
+		if (sym[i].st_name + 2 > bin->strtab_size) {
 			// Since we are reading beyond the symbol table what's happening
 			// is that some entry is trying to dereference the strtab beyond its capacity
 			// is not a symbol so is the end
@@ -2511,25 +2532,35 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret[ret_ctr].offset = tmp_offset;
 		ret[ret_ctr].size = tsize;
 		{
-		   int rest = ELF_STRING_LENGTH - 1;
-		   int st_name = sym[k].st_name;
-		   int maxsize = R_MIN (bin->size, bin->strtab_size);
-		   if (st_name < 0 || st_name >= maxsize) {
-			   ret[ret_ctr].name[0] = 0;
-		   } else {
-			   const int len = __strnlen (bin->strtab+st_name, rest);
-			   memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
-		   }
+			int rest = ELF_STRING_LENGTH - 1;
+			int st_name = sym[i].st_name;
+			int maxsize = R_MIN (bin->size, bin->strtab_size);
+			if (st_name < 0 || st_name >= maxsize) {
+				ret[ret_ctr].name[0] = 0;
+			} else {
+				const int len = __strnlen (bin->strtab + st_name, rest);
+				memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
+			}
 		}
-		ret[ret_ctr].ordinal = k;
+		ret[ret_ctr].ordinal = i;
 		ret[ret_ctr].in_shdr = false;
-		ret[ret_ctr].name[ELF_STRING_LENGTH-2] = '\0';
-		fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
+		ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
+		fill_symbol_bind_and_type (&ret[ret_ctr], &sym[i]);
 		ret[ret_ctr].last = 0;
 		ret_ctr++;
 	}
 done:
+	// Size everything down to only what is used
 	{
+		nsym = i > 0 ? i : 1;
+		Elf_ (Sym) * temp_sym = (Elf_ (Sym)*)realloc (sym, (nsym * GROWTH_FACTOR) * sym_size);
+		if (!temp_sym) {
+			goto beach;
+		}
+		sym = temp_sym;
+	}
+	{
+		ret_ctr = ret_ctr > 0 ? ret_ctr : 1;
 		RBinElfSymbol *p = (RBinElfSymbol*)realloc (ret, (ret_ctr + 1) * sizeof (RBinElfSymbol));
 		if (!p) {
 			goto beach;
