@@ -3625,3 +3625,199 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	// restore register
 	r_reg_arena_pop (core->anal->reg);
 }
+
+// -------------------- TODO: move to anal/abb.c
+
+typedef struct {
+	ut64 addr;
+	ut64 len;
+	ut8 *buf;
+	ut64 bb_addr;
+	RList *bbs;
+	RList *nextbbs;
+} AbbState;
+
+typedef struct {
+	ut64 addr;
+	int bits;
+	int type;
+} AbbAddr;
+
+static AbbState *abbstate_new (ut64 len) {
+	ut8 *buf = malloc (len);
+	if (!buf) {
+		return NULL;
+	}
+	AbbState *abb = R_NEW0 (AbbState);
+	if (!abb) {
+		free (buf);
+		return NULL;
+	}
+	abb->buf = buf;
+	abb->len = len;
+	abb->bbs = r_list_new ();
+	if (!abb->bbs) {
+		return NULL;
+		free (buf);
+	}
+	abb->nextbbs = r_list_newf (free);
+	// TODO: add more boring nullchks
+	return abb;
+}
+
+static bool appendNextBB(AbbState *abb, ut64 addr, int bits) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (abb->bbs, iter, bb) {
+		if (addr == bb->addr) {
+			return false;
+		}
+	}
+	AbbAddr *n;
+	r_list_foreach (abb->nextbbs, iter, n) {
+		if (addr == n->addr) {
+			return false;
+		}
+	}
+	n = R_NEW0 (AbbAddr);
+	n->addr = addr;
+	n->bits = bits;
+	n->type = 0;
+	r_list_append (abb->nextbbs, n);
+	return true;
+}
+
+static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {//, ut64 *bb_addr, RList *bbs, RList *nextbbs) {
+	bool eob = false;
+	// eprintf ("%d\n", aop->size);
+	switch (aop->type) {
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_MJMP:
+		eob = true;
+		break;
+#if 1
+	case R_ANAL_OP_TYPE_CALL:
+		if (aop->jump != UT64_MAX) {
+			appendNextBB (abb, aop->jump, 0);
+		}
+		if (aop->fail != UT64_MAX) {
+			appendNextBB (abb, aop->fail, 0);
+		}
+		break;
+#endif
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_JMP:
+		if (aop->jump != UT64_MAX) {
+			appendNextBB (abb, aop->jump, 0);
+		}
+		if (aop->fail != UT64_MAX) {
+			appendNextBB (abb, aop->fail, 0);
+		}
+		eob = true;
+		break;
+	}
+	if (eob) {
+		RAnalBlock *bb = R_NEW0 (RAnalBlock);
+		bb->jump = aop->jump;
+		bb->fail = aop->fail;
+		bb->addr = abb->bb_addr;
+		bb->size = aop->addr - abb->bb_addr + aop->size;
+		abb->bb_addr = bb->addr + bb->size;
+		return bb;
+	}
+	return NULL;
+}
+
+static int bbExist(AbbState *abb, ut64 addr) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_foreach (abb->bbs, iter, bb) {
+		if (bb->addr == addr) {
+			return bb->size;
+		}
+	}
+	return 0;
+}
+
+R_API bool core_anal_bbs(RCore *core, ut64 len) {
+	AbbState *abb = abbstate_new (len);
+	if (!abb) {
+		return false;
+	}
+	int i;
+	RAnalBlock *bb;
+	RAnalOp aop;
+	RListIter *iter;
+	ut64 at = core->offset;
+	abb->addr = at;
+	(void)r_io_read_at (core->io, abb->addr, abb->buf, len);
+	int ti = -1;
+	for (i = 0; i < len ; i++) {
+	mountain:
+		if (!r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (len -i, 16))) {
+			continue;
+		}
+		int next = bbExist (abb, at + i);
+		if (next > 0) {
+			i += next - 1;
+			continue;
+		}
+		bb = parseOpcode (abb, &aop);
+		if (bb) {
+			r_list_append (abb->bbs, bb);
+			if (!r_list_empty (abb->nextbbs)) {
+				do {
+					AbbAddr *nat = r_list_pop (abb->nextbbs);
+					if (!bbExist (abb, nat->addr)) {
+						if (nat->addr > at && nat->addr< at + len) {
+							if (ti == -1) {
+								ti = i;
+							}
+							i = nat->addr - at;
+							abb->bb_addr = nat->addr;
+							free (nat);
+							goto mountain;
+						} else {
+							eprintf ("Out of bounds basic block for 0x%08"PFMT64x"\n", nat->addr);
+						}
+					}
+					free (nat);
+				} while (!r_list_empty (abb->nextbbs));
+				if (ti != -1) {
+					i = ti;
+					ti = -1;
+				}
+			}
+		}
+		i += aop.size - 1;
+		r_anal_op_fini (&aop);
+	}
+	// show results
+	r_list_foreach (abb->bbs, iter, bb) {
+		RFlagItem *f = r_flag_get_at (core->flags, bb->addr, true);
+		char *name;
+		if (f) {
+			if (f->offset != bb->addr) {
+				name = r_str_newf ("%s+0x%x", f->name, bb->addr - f->offset);
+			} else {
+				name = strdup (f->name);
+			}
+		} else {
+			name = r_str_newf ("bb.%"PFMT64x, bb->addr);
+		}
+		r_cons_printf ("agn 0x%08"PFMT64x" \"%s\"\n", bb->addr, name);
+		free (name);
+	}
+	r_list_foreach (abb->bbs, iter, bb) {
+		if (bb->jump != UT64_MAX) {
+			r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", bb->addr, bb->jump);
+		}
+		if (bb->fail != UT64_MAX) {
+			r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", bb->addr, bb->fail);
+		}
+	}
+	return true;
+}

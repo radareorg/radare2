@@ -6,6 +6,8 @@
 /* hacky inclusion */
 #include "anal_vt.c"
 
+R_API bool core_anal_bbs(RCore *core, ut64 len);
+
 /* better aac for windows-x86-32 */
 #define JAYRO_03 0
 
@@ -5356,6 +5358,7 @@ static int cmd_anal(void *data, const char *input) {
 	const char *help_msg[] = {
 		"Usage:", "a", "[abdefFghoprxstc] [...]",
 		"ab", " [hexpairs]", "analyze bytes",
+		"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
 		"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 		"ac", "[?] [cycles]", "analyze which op could be executed in [cycles]",
 		"ad", "[?]", "analyze data trampoline (wip)",
@@ -5406,7 +5409,10 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'b':
-		if (input[1] == ' ' || input[1] == 'j') {
+		if (input[1] == 'b') {
+			ut64 len = r_num_math (core->num, input + 2);
+			core_anal_bbs (core, len);
+		} else if (input[1] == ' ' || input[1] == 'j') {
 			ut8 *buf = malloc (strlen (input) + 1);
 			int len = r_hex_str2bin (input + 2, buf);
 			if (len > 0) {
@@ -5414,7 +5420,8 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			free (buf);
 		} else {
-			eprintf ("Usage: ab [hexpair-bytes]\n abj [hexpair-bytes] (json)");
+			eprintf ("Usage:\n ab  [hexpair-bytes]\n abj [hexpair-bytes] (json)\n");
+			eprintf (" abb [length] # analyze N bytes and extract basic blocks\n");
 		}
 		break;
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
