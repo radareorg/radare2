@@ -333,6 +333,9 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode op, int op1) {
 				if (offset < ST8_MIN || offset > ST8_MAX) {
 					mod_byte = 2;
 				}
+			} else if (op.operands[0].regs[1] != X86R_UNDEFINED) {
+				rm = 4;
+				offset = op.operands[0].regs[1] << 3;
 			}
 		}
 	} else if (op.operands[0].type & OT_REGALL) {
@@ -391,7 +394,8 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode op, int op1) {
 		}
 	}
 	data[l++] = mod_byte << 6 | reg << 3 | rm;
-	if ((mod_byte > 0 && mod_byte < 3) || mem_ref) {
+	if (offset || mem_ref) {
+	//if ((mod_byte > 0 && mod_byte < 3) || mem_ref) {
 		data[l++] = offset;
 		if (mod_byte == 2 || mem_ref) {
 			data[l++] = offset >> 8;
