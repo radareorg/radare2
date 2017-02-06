@@ -4461,6 +4461,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		"aggk", "", "show graph in key=value form",
 		"aggi", "", "enter interactive mode for the current graph",
 		"aggd", "", "print the current graph in GRAPHVIZ dot format",
+		"aggv", "", "run graphviz + viewer (see 'e cmd.graph')",
 		"agg*", "", "in r2 commands, to save in projects, etc",
 		NULL };
 	switch (*input) {
@@ -4470,6 +4471,21 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		char *o = sdb_querys (db, "NULL", 0, "*");
 		r_cons_print (o);
 		free (o);
+		break;
+	}
+	case 'v':
+	{
+		const char *cmd = r_config_get (core->config, "cmd.graph");
+		if (cmd && *cmd) {
+			char *newCmd = strdup (cmd);
+			if (newCmd) {
+				newCmd = r_str_replace (newCmd, "ag $$", "aggd", 0);
+				r_core_cmd0 (core, newCmd);
+				free (newCmd);
+			}
+		} else {
+			r_core_cmd0 (core, "agf");
+		}
 		break;
 	}
 	case 'i': // "aggi" - open current core->graph in interactive mode
