@@ -4431,7 +4431,11 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 		u = r_agraph_get_node (core->graph, args[0]);
 		v = r_agraph_get_node (core->graph, args[1]);
 		if (!u || !v) {
-			r_cons_printf ("Nodes not found!\n");
+			if (!u) {
+				r_cons_printf ("Node %s not found!\n", args[0]);
+			} else {
+				r_cons_printf ("Node %s not found!\n", args[1]);
+			}
 			r_str_argv_free (args);
 			break;
 		}
