@@ -50,51 +50,56 @@ static int visual_repeat_thread(RThread *th) {
 
 static void toggle_bits(RCore *core) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	//XXX this is not accurate it doesn't take into account mixing of bits
+	int curbits = core->assembler->bits;
+	int pbits = core->assembler->cur->bits;
 	if (fcn) {
-		int bits = fcn->bits? fcn->bits: core->assembler->bits;
+		int bits = fcn->bits? fcn->bits: curbits;
 		switch (bits) {
 		case 16: bits = 32; break;
 		case 32: bits = 64; break;
 		default: bits = 16; break;
 		}
-		fcn->bits = bits;
+		if (bits & pbits) {
+			fcn->bits = bits;
+		}
 		return;
 	}
-	switch (core->assembler->bits) {
+	switch (curbits) {
 	case 8:
-		r_config_set_i (core->config, "asm.bits", 16);
-		if (core->assembler->bits != 16) {
+		if (16 & pbits) {			
+			r_config_set_i (core->config, "asm.bits", 16);
+		} else if (32 & pbits) {
 			r_config_set_i (core->config, "asm.bits", 32);
-			if (core->assembler->bits != 32) {
-				r_config_set_i (core->config, "asm.bits", 64);
-			}
+		} else if (64 & pbits) {
+			r_config_set_i (core->config, "asm.bits", 64);
 		}
 		break;
 	case 16:
-		r_config_set_i (core->config, "asm.bits", 32);
-		if (core->assembler->bits != 32) {
+		if (32 & pbits) {			
+			r_config_set_i (core->config, "asm.bits", 32);
+		} else if (64 & pbits) {
 			r_config_set_i (core->config, "asm.bits", 64);
-			if (core->assembler->bits != 64) {
-				r_config_set_i (core->config, "asm.bits", 8);
-			}
+		} else if (8 & pbits) {
+			r_config_set_i (core->config, "asm.bits", 8);
 		}
 		break;
 	case 32:
-		r_config_set_i (core->config, "asm.bits", 64);
-		if (core->assembler->bits != 64) {
+		if (64 & pbits) {			
+			r_config_set_i (core->config, "asm.bits", 64);
+		} else if (8 & pbits) {
 			r_config_set_i (core->config, "asm.bits", 8);
-			if (core->assembler->bits != 8) {
-				r_config_set_i (core->config, "asm.bits", 16);
-			}
+		} else if (16 & pbits) {
+			r_config_set_i (core->config, "asm.bits", 16);
 		}
 		break;
 	case 64:
-		r_config_set_i (core->config, "asm.bits", 8);
-		if (core->assembler->bits != 8) {
+		if (8 & pbits) {			
+			r_config_set_i (core->config, "asm.bits", 8);
+		} else if (16 & pbits) {
 			r_config_set_i (core->config, "asm.bits", 16);
-			if (core->assembler->bits != 16) {
-				r_config_set_i (core->config, "asm.bits", 32);
-			}
+		} else if (32 & pbits) {
+			r_config_set_i (core->config, "asm.bits", 32);
 		}
 		break;
 	}
