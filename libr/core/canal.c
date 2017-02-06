@@ -1309,6 +1309,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	RAnalFunction *fcn;
 	RListIter *iter;
 
+	//update bits based on the core->offset otherwise we could have the
+	//last value set and blow everything up
+	r_anal_build_range_on_hints (core->anal);
+	r_core_seek_archbits (core, at);
+
 	if (core->io->va && !core->io->raw) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
 			return false;

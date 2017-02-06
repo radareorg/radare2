@@ -1771,11 +1771,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		char *uaddr = NULL, *name = NULL;
 		int depth = r_config_get_i (core->config, "anal.depth");
 		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
-		//update bits based on the core->offset otherwise we could have the
-		//last value set and blow everything up
-		r_anal_build_range_on_hints (core->anal);
-		r_core_seek_archbits (core, core->offset);
-		int mybits = core->assembler->bits;
 		RAnalFunction *fcn;
 		ut64 addr = core->offset;
 		if (input[1] == 'r') {
@@ -1795,24 +1790,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			// disable hasnext
 		}
 
-		bool swapbits = false;
-		if (mybits == 32) {
-			const char *asmarch = r_config_get (core->config, "asm.arch");
-			if (strstr (asmarch, "arm")) {
-				RFlagItem *item = r_flag_get_i (core->flags, addr + 1);
-				if (item) {
-					r_config_set_i (core->config, "asm.bits", 16);
-					swapbits = true;
-				}
-			}
-		}
-
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-		if (fcn && swapbits) {
-			fcn->bits = core->assembler->bits;
-		}
 		if (fcn && r_config_get_i (core->config, "anal.vars")) {
 			fcn_callconv (core, fcn);
 		}
@@ -1869,12 +1849,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 		}
 
-		if (mybits != core->assembler->bits) {
-			r_config_set_i (core->config, "asm.bits", mybits);
-		}
 		if (name) {
-			if (*name && !setFunctionName (core, addr, name, true))
+			if (*name && !setFunctionName (core, addr, name, true)) {
 				eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, addr);
+			}
 			free (name);
 		}
 		flag_every_function (core);
