@@ -936,10 +936,6 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 				totalsz += sz;
 			}
 			sz = totalsz;
-		} else {
-			free (buf_bytes);
-			iob->desc_seek (io, desc, seekaddr);
-			buf_bytes = iob->desc_read (io, desc, &sz);
 		}
 	}
 
