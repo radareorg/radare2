@@ -1767,9 +1767,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 0:
 		{
 		char *uaddr = NULL, *name = NULL;
-		int mybits = core->assembler->bits;
 		int depth = r_config_get_i (core->config, "anal.depth");
 		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
+		//update bits based on the core->offset otherwise we could have the
+		//last value set and blow everything up
+		r_core_seek_archbits (core, core->offset);
+		int mybits = core->assembler->bits;
 		RAnalFunction *fcn;
 		ut64 addr = core->offset;
 		if (input[1] == 'r') {
