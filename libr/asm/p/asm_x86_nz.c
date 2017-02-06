@@ -2228,6 +2228,9 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 		Register reg = X86R_UNDEFINED;
 		while (str[pos] != ']') {
 			pos = nextpos;
+			if (!str[pos]) {
+				break;
+			}
 			last_type = getToken (str, &pos, &nextpos);
 
 			if (last_type == TT_SPECIAL) {
