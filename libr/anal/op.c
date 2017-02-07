@@ -95,6 +95,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	memset (op, 0, sizeof (RAnalOp));
 	if (len > 0 && anal->cur && anal->cur->op) {
+		//use core binding to set asm.bits correctly based on the addr
+		//this is because of the hassle of arm/thumb
+		anal->coreb.archbits (anal->coreb.core, addr);
 		ret = anal->cur->op (anal, op, addr, data, len);
 		op->addr = addr;
 		/* consider at least 1 byte to be part of the opcode */
@@ -122,9 +125,11 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return ret;
 }
 
-R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
+R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	RAnalOp *nop = R_NEW0 (RAnalOp);
-	if (!nop) return NULL;
+	if (!nop) {
+		return NULL;
+	}
 	*nop = *op;
 	if (op->mnemonic) {
 		nop->mnemonic = strdup (op->mnemonic);

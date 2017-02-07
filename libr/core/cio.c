@@ -259,7 +259,7 @@ static void _set_bits(RCore *core, ut64 addr, int *bits) {
 }
 
 
-R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
+R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 	static char *oldarch = NULL;
 	static int oldbits = 0;
 	bool flag = false;
@@ -292,7 +292,7 @@ R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
 			}
 		}
 		free (arch);
-		return 1;
+		return;
 	}
 	if (oldarch) {
 		if (!(flag && arch && oldarch && !strcmp (oldarch, arch))) {
@@ -304,7 +304,6 @@ R_API int r_core_seek_archbits(RCore *core, ut64 addr) {
 		r_config_set_i (core->config, "asm.bits", oldbits);
 	}
 	free (arch);
-	return 0;
 }
 
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {

@@ -222,7 +222,7 @@ R_API int r_core_seek_base (RCore *core, const char *hex);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_seek_next (RCore *core, const char *type);
 R_API int r_core_seek_align(RCore *core, ut64 align, int count);
-R_API int r_core_seek_archbits (RCore *core, ut64 addr);
+R_API void r_core_seek_archbits (RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);

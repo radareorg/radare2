@@ -203,6 +203,11 @@ static const char *getName(RCore *core, ut64 addr) {
 	return item ? item->name : NULL;
 }
 
+static void archbits(RCore *core, ut64 addr) {
+	r_anal_build_range_on_hints (core->anal);
+	r_core_seek_archbits (core, addr);
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
@@ -211,6 +216,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->puts = (RCorePuts)r_cons_strcat;
 	bnd->setab = (RCoreSetArchBits)setab;
 	bnd->getName = (RCoreGetName)getName;
+	bnd->archbits = (RCoreSeekArchBits)archbits;
 	return true;
 }
 
@@ -1614,8 +1620,7 @@ R_API int r_core_init(RCore *core) {
 	r_core_bind (core, &(core->anal->coreb));
 
 	core->file = NULL;
-	core->files = r_list_new ();
-	core->files->free = (RListFree)r_core_file_free;
+	core->files = r_list_newf ((RListFree)r_core_file_free);
 	core->offset = 0LL;
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (true);
