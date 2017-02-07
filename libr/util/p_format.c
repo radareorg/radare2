@@ -1557,7 +1557,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (mode == R_PRINT_JSON && slide == 0) {
 		p->cb_printf ("[");
 	}
-	if (arg[0] == '0') {
+	if (mode && arg[0] == '0') {
 		mode |= R_PRINT_UNIONMODE;
 		arg++;
 	} else {
@@ -1592,7 +1592,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->cb_printf (",");
 				}
 				p->cb_printf ("[{\"index\":%d,\"offset\":%d},", otimes-times, seek+i);
-			} else {
+			} else if (mode) {
 				p->cb_printf ("0x%08"PFMT64x" [%d] {\n", seek+i, otimes-times);
 			}
 		}
@@ -1642,7 +1642,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 
 			tmp = *arg;
 
-			if (!args) {
+			if (mode && !args) {
 				mode |= R_PRINT_ISFIELD;
 			}
 			if (mode & R_PRINT_MUSTSEE && otimes > 1) {
@@ -1672,11 +1672,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						goto beach;
 					}
 				}
-				if (!args || (!field && ofield != MINUSONE)
+				if (mode && (!args || (!field && ofield != MINUSONE)
 						|| (field && !strncmp (field, fieldname, \
 							strchr (field, '[')
 						? strchr (field, '[') - field
-						: strlen (field) + 1))) {
+						: strlen (field) + 1)))) {
 					mode |= R_PRINT_ISFIELD;
 				} else {
 					mode &= ~R_PRINT_ISFIELD;
@@ -2021,7 +2021,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							}
 						}
 						while (size--) {
-							if (elem == -1 || elem == 0) {
+							if (mode && (elem == -1 || elem == 0)) {
 								mode |= R_PRINT_MUSTSEE;
 								if (elem == 0) {
 									elem = -2;
@@ -2109,7 +2109,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		}
 		if (otimes > 1) {
 			if (MUSTSEEJSON) p->cb_printf ("]");
-			else p->cb_printf ("}\n");
+			else if (mode) p->cb_printf ("}\n");
 		}
 		arg = orig;
 		oldslide = 0;
