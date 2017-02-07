@@ -6,6 +6,8 @@
 #define _R_LIST_C_
 #include "r_util.h"
 
+#define MERGE_DEPTH 50
+
 inline RListIter *r_list_iter_new () {
 	return calloc (1, sizeof (RListIter));
 }
@@ -487,14 +489,27 @@ static RListIter * _r_list_half_split(RListIter *head) {
 	return tmp;
 }
 
-static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
+static RListIter * _merge_sort(RListIter *head, RListComparator cmp, int depth) {
 	RListIter *second;
 	if (!head || !head->n) {
 		return head;
 	}
+	if (depth == MERGE_DEPTH) {
+		RListIter *it, *it2;
+		for (it = head; it && it->data; it = it->n) {
+			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+				if (cmp (it->data, it2->data) > 0) {
+					void *t = it->data;
+					it->data = it2->data;
+					it2->data = t;
+				}
+			}
+		}
+		return head;
+	}
 	second = _r_list_half_split (head);
-	head = _merge_sort (head, cmp);
-	second = _merge_sort (second, cmp);
+	head = _merge_sort (head, cmp, depth++);
+	second = _merge_sort (second, cmp, depth++);
 	return _merge (head, second, cmp);
 }
 
@@ -504,7 +519,7 @@ R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
 	}
 	if (!list->sorted && list->head && cmp) {
 		RListIter *iter;
-		list->head = _merge_sort (list->head, cmp);
+		list->head = _merge_sort (list->head, cmp, 0);
 		//update tail reference
 		iter = list->head;
 		while (iter && iter->n) {
