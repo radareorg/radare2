@@ -603,6 +603,10 @@ R_API void r_anal_build_range_on_hints(RAnal *a) {
 					range->to = UT64_MAX;
 					r_list_append (a->bits_ranges, range);
 				}
+			} else {
+				//remove this hint is not needed
+				r_anal_hint_unset_bits (a, hint->addr);
+				
 			}
 			range_bits = hint->bits;
 			r_anal_hint_free (hint);
