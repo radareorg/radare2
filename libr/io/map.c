@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2017 - condret */
 
 #include <r_io.h>
+#include <r_util.h>
 #include <sdb.h>
 #include <stdlib.h>
 
@@ -10,16 +11,7 @@ R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, u
 	if (!size || !io || !io->maps || ((UT64_MAX - size + 1) < addr))			//prevent overflow
 		return NULL;
 	map = R_NEW0 (RIOMap);
-	if (io->freed_map_ids) {
-		map->id = (ut32)(size_t) ls_pop (io->freed_map_ids);				//revive dead ids to prevent overflows
-		if (!io->freed_map_ids->length) {						//and keep ids low number so user don't need to type large numbers
-			ls_free (io->freed_map_ids);
-			io->freed_map_ids = NULL;						//we are not storing pointers here, so free must be NULL or it will segfault
-		}
-	} else if (io->map_id != 0xffffffff) {							//part 2 of id-overflow-prevention
-		io->map_id++;
-		map->id = io->map_id;
-	} else {
+	if (!map || !io->map_ids || !r_id_pool_grab_id (io->map_ids, &map->id)) {
 		free (map);
 		return NULL;
 	}
@@ -45,6 +37,9 @@ R_API void r_io_map_init (RIO *io)
 	if (io && !io->maps) {
 		if ((io->maps = ls_new ()))
 			io->maps->free = _map_free;
+		if (io->map_ids)
+			r_id_pool_free (io->map_ids);
+		io->map_ids = r_id_pool_new (0, 0xffffffff);
 	}
 }
 
@@ -114,11 +109,7 @@ R_API int r_io_map_del (RIO *io, ut32 id)
 	ls_foreach (io->maps, iter, map) {
 		if (map->id == id) {
 			ls_delete (io->maps, iter);
-			if (!io->freed_map_ids) {
-				io->freed_map_ids = ls_new ();
-				io->freed_map_ids->free = NULL;
-			}
-			ls_prepend (io->freed_map_ids, (void *)(size_t)id);
+			r_id_pool_kick_id (io->map_ids, id);
 			return true;
 		}
 	}
@@ -140,11 +131,7 @@ R_API int r_io_map_del_for_fd (RIO *io, int fd)
 			ls_delete (io->maps, iter);
 		} else if (map->fd == fd) {
 			ret = true;								//a map with (map->fd == fd) existed/was found and will be deleted now
-			if (!io->freed_map_ids) {
-				io->freed_map_ids = ls_new ();
-				io->freed_map_ids->free = NULL;
-			}
-			ls_prepend (io->freed_map_ids, (void *)(size_t)fd);
+			r_id_pool_kick_id (io->map_ids, map->id);
 			ls_delete (io->maps, iter);						//delete iter and map
 		}
 	}
@@ -220,11 +207,7 @@ R_API void r_io_map_cleanup (RIO *io)
 		if (!map) {									//remove iter if the map is a null-ptr, this may fix some segfaults
 			ls_delete (io->maps, iter);
 		} else if (!r_io_desc_get (io, map->fd)) {					//delete map and iter if no desc exists for map->fd in io->files
-			if (!io->freed_map_ids) {
-				io->freed_map_ids = ls_new ();
-				io->freed_map_ids->free = NULL;
-			}
-			ls_prepend (io->freed_map_ids, (void *)(size_t)map->id);
+			r_id_pool_kick_id (io->map_ids, map->id);
 			ls_delete (io->maps, iter);
 		}
 	}
@@ -237,10 +220,8 @@ R_API void r_io_map_fini (RIO *io)
 	if (io->maps)
 		ls_free (io->maps);
 	io->maps = NULL;
-	if (io->freed_map_ids)
-		ls_free (io->freed_map_ids);
-	io->freed_map_ids = NULL;
-	io->map_id = 0;
+	r_id_pool_free (io->map_ids);
+	io->map_ids = NULL;
 }
 
 //checks if (from;to) overlaps with (map->from;map->to)

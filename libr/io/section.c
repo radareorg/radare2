@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2017 - condret */
 
 #include <r_io.h>
+#include <r_util.h>
 #include <sdb.h>
 #include <r_types.h>
 #include <stdio.h>
@@ -20,6 +21,7 @@ R_API void r_io_section_init (RIO *io)
 		if ((io->sections = ls_new ()))
 			io->sections->free = section_free;
 	}
+	io->sec_ids = r_id_pool_new (0, 0xffffffff);
 }
 
 R_API void r_io_section_fini (RIO *io)
@@ -29,10 +31,8 @@ R_API void r_io_section_fini (RIO *io)
 	if (io->sections)
 		ls_free (io->sections);
 	io->sections = NULL;
-	if (io->freed_sec_ids)
-		ls_free (io->freed_sec_ids);
-	io->freed_sec_ids = NULL;
-	io->sec_id = 0;
+	r_id_pool_free (io->sec_ids);
+	io->sec_ids = NULL;
 }
 
 R_API int r_io_section_exists_for_id (RIO *io, ut32 id)
@@ -68,22 +68,14 @@ RIOSection *_section_chk_dup (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vs
 R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int flags, const char *name, ut32 bin_id, int fd)
 {
 	RIOSection *sec;
-	if (!io || !io->sections || !r_io_desc_get (io, fd) || !size || (UT64_MAX - size) < addr || (UT64_MAX - vsize) < vaddr)
-		return NULL;
-	if (!io->freed_sec_ids && io->sec_id == UT32_MAX)
+	if (!io || !io->sections || !io->sec_ids || !r_io_desc_get (io, fd) || !size || (UT64_MAX - size) < addr || (UT64_MAX - vsize) < vaddr)
 		return NULL;
 	if ((sec = _section_chk_dup (io, addr, vaddr, size, vsize, flags, name, bin_id, fd)))
 		return sec;
 	sec = R_NEW0 (RIOSection);
-	if (io->freed_sec_ids) {
-		sec->id = (ut32)(size_t) ls_pop (io->freed_sec_ids);
-		if (!io->freed_sec_ids->length) {
-			ls_free (io->freed_sec_ids);
-			io->freed_sec_ids = NULL;
-		}
-	} else {
-		io->sec_id++;
-		sec->id = io->sec_id;
+	if (!r_id_pool_grab_id (io->sec_ids, &sec->id)) {
+		free (sec);
+		return NULL;
 	}
 	sec->addr = addr;
 	sec->vaddr = vaddr;
@@ -119,16 +111,12 @@ R_API int r_io_section_rm (RIO *io, ut32 id)
 {
 	SdbListIter *iter;
 	RIOSection *s;
-	if (!io || !io->sections)
+	if (!io || !io->sections || !io->sec_ids)
 		return false;
 	ls_foreach (io->sections, iter, s) {
 		if (s->id == id) {
 			ls_delete (io->sections, iter);
-			if (!io->freed_sec_ids) {
-				io->freed_sec_ids = ls_new();
-				io->freed_sec_ids->free = NULL;
-			}
-			ls_prepend (io->freed_map_ids, (void *)(size_t)id);
+			r_id_pool_kick_id (io->sec_ids, id);
 			return true;
 		}
 	}
@@ -158,7 +146,7 @@ R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id)
 	RIOSection *s;
 	SdbListIter *iter;
 	int length;
-	if (!io || !io->sections || !io->sections->head)
+	if (!io || !io->sections || !io->sections->head || !io->sec_ids)
 		return false;
 	length = io->sections->length;
 	for (iter = io->sections->head; iter; iter = iter->n) {
@@ -168,11 +156,7 @@ R_API int r_io_section_bin_rm (RIO *io, ut32 bin_id)
 				iter->p->n = iter->n;
 			if (iter->n)
 				iter->n->p = iter->p;
-			if (!io->freed_sec_ids) {
-				io->freed_sec_ids = ls_new();
-				io->freed_sec_ids->free = NULL;
-			}
-			ls_prepend (io->freed_sec_ids, (void *)(size_t)s->id);
+			r_id_pool_kick_id (io->sec_ids, s->id);
 			section_free (s);
 			free (iter);
 			io->sections->length--;
@@ -198,7 +182,7 @@ R_API void r_io_section_cleanup (RIO *io)
 {
 	SdbListIter *iter, *ator;
 	RIOSection *section;
-	if (!io || !io->sections)
+	if (!io || !io->sections || !io->sec_ids)
 		return;
 	if (!io->files) {
 		r_io_section_fini (io);
@@ -211,11 +195,7 @@ R_API void r_io_section_cleanup (RIO *io)
 		if (!section) {
 			ls_delete (io->sections, iter);
 		} else if (!r_io_desc_get (io, section->fd)) {
-			if (!io->freed_sec_ids) {
-				io->freed_sec_ids = ls_new ();
-				io->freed_sec_ids->free = NULL;
-			}
-			ls_prepend (io->freed_sec_ids, (void *)(size_t)section->id);
+			r_id_pool_kick_id (io->sec_ids, section->id);
 			ls_delete (io->sections, iter);
 		} else {
 			if (section->filemap && !r_io_map_exists_for_id (io, section->filemap))
@@ -253,12 +233,13 @@ R_API SdbList *r_io_section_vget_secs_at (RIO *io, ut64 vaddr)
 		return NULL;
 	ls_foreach (io->sections, iter, s) {
 		if (vaddr >= s->vaddr && vaddr < (s->vaddr + s->vsize)) {
-			if (!ret)
+			if (!ret) {
 				ret = ls_new ();
+				ret->free = NULL;
+			}
 			ls_prepend (ret, s);
 		}
 	}
-	ret->free = NULL;
 	return ret;
 }
 
