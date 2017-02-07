@@ -353,7 +353,7 @@ static int init_dynamic_section(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int entries;
 	int i, j, len, r;
 	ut8 sdyn[sizeof (Elf_(Dyn))] = {0};
-	ut32 dyn_size;
+	ut32 dyn_size = 0;
 
 	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
 		return false;
@@ -2415,7 +2415,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	ut8 s[sizeof (Elf_(Sym))] = {0};
 	RBinElfSymbol *ret = NULL;
 	int i, j, k, r, tsize, nsym, ret_ctr;
-	ut64 toffset, tmp_offset;
+	ut64 toffset = 0, tmp_offset;
 	ut32 size, sym_size = 0;
 
 	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
@@ -2670,7 +2670,7 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
-	int tsize, nsym, ret_ctr, i, j, r, k, newsize;
+	int tsize, nsym, ret_ctr = 0, i, j, r, k, newsize;
 	ut64 toffset;
 	ut32 size = 0;
 	RBinElfSymbol  *ret = NULL;
