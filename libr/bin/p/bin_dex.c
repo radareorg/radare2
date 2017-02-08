@@ -1185,7 +1185,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				sym->paddr = encoded_method_addr - binfile->buf->buf;
 				sym->vaddr = encoded_method_addr - binfile->buf->buf;
 			}
-			if (MA & 0x1 == 0x1) {
+			if ((MA & 0x1) == 0x1) {
 				sym->bind = r_str_const ("GLOBAL");
 			} else {
 				sym->bind = r_str_const ("LOCAL");
