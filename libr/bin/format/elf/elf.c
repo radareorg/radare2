@@ -2422,7 +2422,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		return NULL;
 	}
 	for (j = 0; j < bin->dyn_entries; j++) {
-	    switch (bin->dyn_buf[j].d_tag) {
+		switch (bin->dyn_buf[j].d_tag) {
 		case (DT_SYMTAB):
 			addr_sym_table = Elf_(r_bin_elf_v2p) (bin, bin->dyn_buf[j].d_un.d_ptr);
 			break;
@@ -2457,7 +2457,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	size_t capacity1 = 4096;
 	size_t capacity2 = 4096;
 	sym = (Elf_(Sym)*) calloc (capacity1, sym_size);
-	ret = (RBinElfSymbol*) calloc (capacity2, sizeof (struct r_bin_elf_symbol_t));
+	ret = (RBinElfSymbol *) calloc (capacity2, sizeof (struct r_bin_elf_symbol_t));
 	if (!sym || !ret) {
 		goto beach;
 	}
@@ -2511,11 +2511,11 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 			}
 			tsize = 16;
 		} else if (type == R_BIN_ELF_SYMBOLS &&
-				sym[i].st_shndx != STN_UNDEF &&
-				ELF_ST_TYPE(sym[i].st_info) != STT_SECTION &&
-				ELF_ST_TYPE(sym[i].st_info) != STT_FILE) {
+		           sym[i].st_shndx != STN_UNDEF &&
+		           ELF_ST_TYPE (sym[i].st_info) != STT_SECTION &&
+		           ELF_ST_TYPE (sym[i].st_info) != STT_FILE) {
 			tsize = sym[i].st_size;
-			toffset = (ut64)sym[i].st_value;
+			toffset = (ut64) sym[i].st_value;
 		} else {
 			continue;
 		}
@@ -2553,7 +2553,7 @@ done:
 	// Size everything down to only what is used
 	{
 		nsym = i > 0 ? i : 1;
-		Elf_ (Sym) * temp_sym = (Elf_ (Sym)*)realloc (sym, (nsym * GROWTH_FACTOR) * sym_size);
+		Elf_ (Sym) * temp_sym = (Elf_ (Sym)*) realloc (sym, (nsym * GROWTH_FACTOR) * sym_size);
 		if (!temp_sym) {
 			goto beach;
 		}
@@ -2561,7 +2561,7 @@ done:
 	}
 	{
 		ret_ctr = ret_ctr > 0 ? ret_ctr : 1;
-		RBinElfSymbol *p = (RBinElfSymbol*)realloc (ret, (ret_ctr + 1) * sizeof (RBinElfSymbol));
+		RBinElfSymbol *p = (RBinElfSymbol *) realloc (ret, (ret_ctr + 1) * sizeof (RBinElfSymbol));
 		if (!p) {
 			goto beach;
 		}
@@ -2571,14 +2571,14 @@ done:
 	if (type == R_BIN_ELF_IMPORTS && !bin->imports_by_ord_size) {
 		bin->imports_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
-			bin->imports_by_ord = (RBinImport**)calloc (ret_ctr + 1, sizeof (RBinImport*));
+			bin->imports_by_ord = (RBinImport * *) calloc (ret_ctr + 1, sizeof (RBinImport*));
 		} else {
 			bin->imports_by_ord = NULL;
 		}
 	} else if (type == R_BIN_ELF_SYMBOLS && !bin->symbols_by_ord_size && ret_ctr) {
 		bin->symbols_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
-			bin->symbols_by_ord = (RBinSymbol**)calloc (ret_ctr + 1, sizeof (RBinSymbol*));
+			bin->symbols_by_ord = (RBinSymbol * *) calloc (ret_ctr + 1, sizeof (RBinSymbol*));
 		}else {
 			bin->symbols_by_ord = NULL;
 		}
