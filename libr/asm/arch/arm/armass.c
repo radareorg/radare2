@@ -71,7 +71,9 @@ static ArmOp ops[] = {
 	{ "cps", 0xb1, TYPE_IMM },
 	{ "nop", 0xa0e1, -1 },
 
+	{ "ldrex", 0x9f0f9000, TYPE_MEM },
 	{ "ldr", 0x9000, TYPE_MEM },
+	
 	{ "str", 0x8000, TYPE_MEM },
 
 	{ "blx", 0x30ff2fe1, TYPE_BRR },
@@ -867,10 +869,14 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				getrange (ao->a[2]);
 				if (ao->a[0] && ao->a[1]) {
 					char rn[8];
-					strncpy (rn, ao->a[1], 2);
-					rn[2] = 0;
-					ao->o |= getreg (ao->a[0]) << 20;
-					ao->o |= getreg (rn) << 8; // delta
+					strncpy (rn, ao->a[1], 7);
+					int r0 = getreg (ao->a[0]);
+					int r1 = getreg (ao->a[1]);
+					if ( (r0 < 0 || r0 > 15) || (r1 > 15 || r1 < 0) ) {
+						return 0;
+					}
+					ao->o |=  r0 << 20;
+					ao->o |=  r1 << 8; // delta
 				} else {
 					return 0;
 				}
@@ -880,7 +886,12 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->o |= (ret & 0x0f) << 24;
 				} else {
 					int num = getnum (ao->a[2]) & 0xfff;
-					ao->o |= (strstr (str, "],")) ? 4 : 5;
+					if (!strcmp (ops[i].name, "ldrex")) {
+						ao->o |= 1;
+					} else {
+						ao->o |= (strstr (str, "],")) ? 4 : 5;
+					}
+					ao->o |= 1;
 					ao->o |= (num & 0xff) << 24;
 					ao->o |= ((num >> 8) & 0xf) << 16;
 				}
