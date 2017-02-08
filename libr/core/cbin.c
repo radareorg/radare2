@@ -2240,8 +2240,8 @@ static int bin_classes(RCore *r, int mode) {
 				}
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s%s%s\n",
-				at_min, at_max, c->name, c->super ? " " : "",
+			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] %s%s%s\n",
+				c->addr, at_min, at_max, c->name, c->super ? " " : "",
 				c->super ? c->super : "");
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f class.%s = 0x%"PFMT64x"\n",
@@ -2271,8 +2271,8 @@ static int bin_classes(RCore *r, int mode) {
 			r_cons_printf ("]}");
 		} else {
 			int m = 0;
-			r_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" (sz %d) class %d %s",
-				at_min, at_max, (at_max - at_min), c->index, c->name);
+			r_cons_printf ("0x%08"PFMT64x" [0x%08"PFMT64x" - 0x%08"PFMT64x"] (sz %d) class %d %s",
+				c->addr, at_min, at_max, (at_max - at_min), c->index, c->name);
 			if (c->super) {
 				r_cons_printf (" super: %s\n", c->super);
 			} else {
