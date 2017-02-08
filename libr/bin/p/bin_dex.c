@@ -916,7 +916,6 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 	int total, i, tid;
 	DexField field;
 	const char* type_str;
-
 	for (i = 0; i < fields_count; i++) {
 		ut64 fieldIndex, accessFlags;
 		
@@ -935,13 +934,11 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 		field.type_id = r_read_le16 (ff + 2);
 		field.name_id = r_read_le32 (ff + 4);
 		char *fieldName = getstr (bin, field.name_id);
-
 		if (field.type_id >= bin->header.types_size) {
 			break;
 		}
 		tid = bin->types[field.type_id].descriptor_id;
 		type_str = getstr (bin, tid);
-
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		if (is_sfield) {
 			sym->name = r_str_newf ("%s.sfield_%s:%s", cls->name,
@@ -953,7 +950,7 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 			sym->type = r_str_const ("FIELD");
 		}
 		sym->name = r_str_replace (sym->name, "method.", "", 0);
-		sym->name = r_str_replace (sym->name, ";", "", 0);
+		//sym->name = r_str_replace (sym->name, ";", "", 0);
 		sym->paddr = sym->vaddr = total;
 		sym->ordinal = (*sym_count)++;
 		
@@ -992,17 +989,16 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 	ut16 regsz, ins_size, outs_size, tries_size;
 	ut16 handler_off, start_addr, insn_count;
 	ut32 debug_info_off, insns_size;
-
+	const ut8 *encoded_method_addr;
 	for (i = 0; i < DM; i++) {
+		encoded_method_addr = p;
 		char *method_name, *flag_name;
 		ut64 MI, MA, MC;
 		p = r_uleb128 (p, p_end - p, &MI);
 		MI += omi;
 		omi = MI;
-
 		p = r_uleb128 (p, p_end - p, &MA);
 		p = r_uleb128 (p, p_end - p, &MC);
-
 		// TODO: MOVE CHECKS OUTSIDE!
 		if (MI < bin->header.method_size) {
 			if (methods) {
@@ -1021,12 +1017,10 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 			R_FREE (signature);
 			continue;
 		}
-
 		// TODO: check size
 		// ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
 		ut64 v2, handler_type, handler_addr;
 		int t;
-
 		if (MC > 0) { 
 			// TODO: parse debug info
 			// XXX why binfile->buf->base???
@@ -1050,7 +1044,6 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 			tries_size = r_read_le16 (ff2 + 6);
 			debug_info_off = r_read_le32 (ff2 + 8);
 			insns_size = r_read_le32 (ff2 + 12);
-
 			int padd = 0;
 			if (tries_size > 0 && insns_size % 2) {
 				padd = 2;
@@ -1177,21 +1170,28 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 					"      code          : (none)\n");
 			}
 		}
-
 		if (*flag_name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			sym->name = flag_name;
-			if (is_direct) {
+			// is_direct is no longer used
+			// if method has code *addr points to code
+			// otherwise it points to the encoded method
+			if (MC > 0) { 
 				sym->type = r_str_const ("FUNC");
+				sym->paddr = MC;// + 0x10;
+				sym->vaddr = MC;// + 0x10;
 			} else {
 				sym->type = r_str_const ("METH");
+				sym->paddr = encoded_method_addr - binfile->buf->buf;
+				sym->vaddr = encoded_method_addr - binfile->buf->buf;
 			}
-			sym->bind = r_str_const ("GLOBAL");
-			sym->paddr = MC;// + 0x10;
-			sym->vaddr = MC;// + 0x10;
+			if (MA & 0x1 == 0x1) {
+				sym->bind = r_str_const ("GLOBAL");
+			} else {
+				sym->bind = r_str_const ("LOCAL");
+			}
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
-
 				if (r_buf_read_at (binfile->buf, binfile->buf->base + MC, ff2, 16) < 1) {
 					R_FREE (sym);
 					R_FREE (signature);
@@ -1203,7 +1203,6 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				ut16 tries_size = r_read_le16 (ff2 + 6);
 				//ut32 debug_info_off = r_read_le32 (ff2 + 8);
 				ut32 insns_size = r_read_le32 (ff2 + 12);
-
 				ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
 				if (tries_size > 0) {
 					//prolog_size += 2 + 8*tries_size; // we need to parse all so the catch info...
@@ -1211,9 +1210,9 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				// TODO: prolog_size
 				sym->paddr = MC + prolog_size;// + 0x10;
 				sym->vaddr = MC + prolog_size;// + 0x10;
-				if (is_direct) {
-					sym->size = insns_size * 2;
-				}
+				//if (is_direct) {
+				sym->size = insns_size * 2;
+				//}
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
 				r_list_append (bin->methods_list, sym);
 				r_list_append (cls->methods, sym);
@@ -1240,13 +1239,11 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						sdb_num_set (cdb, sdb_fmt (0, "%d", c->class_id), sym->paddr, 0);
 					}
 				}
-				// ---------------
 			} else {
-				//r_list_append (bin->methods_list, sym);
-				// XXX memleak sym
-				R_FREE (sym);
+				sym->size = 0;
+				r_list_append (bin->methods_list, sym);
+				r_list_append (cls->methods, sym);
 			}
-
 			if (MC > 0 && debug_info_off > 0 && bin->header.data_offset < debug_info_off &&
 				debug_info_off < bin->header.data_offset + bin->header.data_size) {
 				dex_parse_debug_item (binfile, bin, c, MI, MA, sym->paddr, ins_size, 
@@ -1295,7 +1292,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	cls->methods = r_list_new ();
 	if (!cls->methods) {
 		free (cls);
-		return;	
+		return;
 	}
 	cls->fields = r_list_new ();
 	if (!cls->fields) {
@@ -1409,7 +1406,15 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	//free (class_name);
 }
 
-
+static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {
+	int i;
+	for (i = 0; i < bin->header.class_size; i++) {
+		if (class_idx == bin->classes[i].class_id) {
+			return true;
+		}
+	}
+	return false;
+}
 
 static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	struct r_bin_t *rbin = arch->rbin;
@@ -1430,13 +1435,13 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	bin->imports_list = r_list_newf ((RListFree)free);
 	if (!bin->imports_list) {
 		r_list_free (bin->methods_list);
-		return false;	
+		return false;
 	}
 	bin->classes_list = r_list_newf ((RListFree)__r_bin_class_free);
 	if (!bin->classes_list) {
 		r_list_free (bin->methods_list);
 		r_list_free (bin->imports_list);
-		return false;	
+		return false;
 	}
 
 	if (bin->header.method_size>bin->size) {
@@ -1458,7 +1463,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	if (bin->classes) {
 		ut64 amount = sizeof (int) * bin->header.method_size;
 		if (amount > UT32_MAX || amount < bin->header.method_size) {
-			return false;		
+			return false;
 		}
 		methods = calloc (1, amount + 1);
 		for (i = 0; i < bin->header.class_size; i++) {
@@ -1478,6 +1483,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	if (methods) {
 		int import_count = 0;
 		int sym_count = bin->methods_list->length;
+
 		for (i = 0; i < bin->header.method_size; i++) {
 			int len = 0;
 			if (methods[i]) {
@@ -1487,9 +1493,14 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 			if (bin->methods[i].class_id > bin->header.types_size - 1) {
 				continue;
 			}
+
+			if (is_class_idx_in_code_classes(bin, bin->methods[i].class_id)) {
+				continue;
+			}
+
 			char *class_name = getstr (
 				bin, bin->types[bin->methods[i].class_id]
-					     .descriptor_id);
+						.descriptor_id);
 			if (!class_name) {
 				free (class_name);
 				continue;
@@ -1515,9 +1526,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				sym->bind = r_str_const ("NONE");
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = sym->vaddr = bin->b->base + bin->header.header_size 
-					+ bin->header.strings_size + bin->header.class_size + 
-					(sizeof (struct dex_method_t) * i) ;
+				sym->paddr = sym->vaddr = bin->b->base + bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
 				r_list_append (bin->methods_list, sym);
 				sdb_num_set (mdb, sdb_fmt (0, "method.%d", i), sym->paddr, 0);
@@ -1594,14 +1603,13 @@ static RList *entries(RBinFile *arch) {
 	if (!bin->methods_list) {
 		dex_loadcode (arch, bin);
 	}
-#if 1
-	// TODO: entry point in dalvik? WTF!
-	// XXX: entry + main???
+
+	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
 	r_list_foreach (bin->methods_list, iter, m) {
-		// LOOKING FOR ".method.main([Ljava/lang/String;)V"
-		if (strlen (m->name) > 26 &&
-		    !strcmp (m->name + strlen (m->name) - 27,
-			     ".main([Ljava/lang/String;)V")) {
+		if (strlen (m->name) > 30 && m->bind && 
+			!strcmp(m->bind, "GLOBAL") &&
+		    !strcmp (m->name + strlen (m->name) - 31,
+			     ".onCreate(Landroid/os/Bundle;)V")) {
 			if (!already_entry (ret, m->paddr)) {
 				if ((ptr = R_NEW0 (RBinAddr))) {
 					ptr->paddr = ptr->vaddr = m->paddr;
@@ -1610,7 +1618,24 @@ static RList *entries(RBinFile *arch) {
 			}
 		}
 	}
-#endif
+
+	// STEP 2. ".main([Ljava/lang/String;)V"
+	if (r_list_empty (ret)) {
+		r_list_foreach (bin->methods_list, iter, m) {
+			if (strlen (m->name) > 26 &&
+			    !strcmp (m->name + strlen (m->name) - 27,
+				     ".main([Ljava/lang/String;)V")) {
+				if (!already_entry (ret, m->paddr)) {
+					if ((ptr = R_NEW0 (RBinAddr))) {
+						ptr->paddr = ptr->vaddr = m->paddr;
+						r_list_append (ret, ptr);
+					}
+				}
+			}
+		}		
+	}
+
+	// STEP 3. NOTHING FOUND POINT TO CODE_INIT
 	if (r_list_empty (ret)) {
 		if (!already_entry (ret, bin->code_from)) {
 			ptr = R_NEW0 (RBinAddr);
