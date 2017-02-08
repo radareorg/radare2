@@ -11,6 +11,8 @@
 
 #define R_CORE_MAX_DISASM (1024*1024*8)
 
+#define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
+
 static void cmd_pCd(RCore *core, const char *input) {
 #define C(x) r_cons_canvas_##x
 	int h, w = r_cons_get_size (&h);
@@ -437,31 +439,32 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, 
 
 static void print_format_help(RCore *core) {
 	const char* help_msg[] = {
-	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
+	"pf:", PF_USAGE_STR, "",
 	"Commands:","","",
 	"pf", "?", "Show this help",
 	"pf", "??", "Format characters",
 	"pf", "???", "pf usage examples",
-	"pf", " xsi foo bar cow", "format named hex str and int (see `pf??`)",
-	"pf.", "", "List all formats",
-	"pf?", "fmt_name", "Show format of that stored one",
-	"pfs", " fmt_name", "Print the size of the format in bytes",
-	"pfo", "", "List all format files",
-	"pfo", " elf32", "Load the elf32 format definition file",
-	"pf.", "fmt_name", "Run stored format",
-	"pf.", "fmt_name.field_name", "Show specific field inside format",
+	"pf", " fmt", "Show data using the given format-string. See 'pf??' and 'pf???'.",
+	"pf.", "fmt_name", "Show data using named format",
+	"pf.", "fmt_name.field_name", "Show specific data field using named format",
+	"pfj ", "fmt_name|fmt", "Show data using (named) format in JSON",
+	"pf* ", "fmt_name|fmt", "Show data using (named) format as r2 flag create commands",
+	"pfd.", "fmt_name", "Show data using named format as graphviz commands",
+	"pf.", "name [0|cnt]fmt", "Define a new named format",
+	"pf.", "", "List all format definitions",
+	"pf?", "fmt_name", "Show the definition of a named format",
+	"pfo", "", "List all format definition files (fdf)",
+	"pfo", " fdf_name", "Load a Format Definition File (fdf)",
 	"pf.", "fmt_name.size=33", "Set new value for the size field in obj",
-	"pfj.", "fmt_name", "Print format in JSON",
-	"pfv.", "fmt_name", "Print the value(s) only. Useful for one-liners",
-	"pf*.", "fmt_name", "Display flag commands",
-	"pfd.", "fmt_name", "Display graphviz commands",
+	"pfv.", "fmt_name[.field]", "Print value(s) only for named format. Useful for one-liners",
+	"pfs", " fmt_name|fmt", "Print the size of (named) format in bytes",
 	NULL};
 	r_core_cmd_help (core, help_msg);
 }
 
 static void print_format_help_help(RCore *core) {
 	const char* help_msg[] = {
-	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
+	"pf:", PF_USAGE_STR, "",
 	"Format:", "", "",
 	" ", "b", "byte (unsigned)",
 	" ", "B", "resolve enum bitfield (see t?)",
@@ -499,8 +502,9 @@ static void print_format_help_help(RCore *core) {
 
 static void print_format_help_help_help(RCore *core) {
 	const char* help_msg[] = {
-	"pf:", "pf[.k[.f[=v]]|[ v]]|[n]|[0][ [sz] fmt] [a0 a1 ...]", "",
+	"pf:", PF_USAGE_STR, "",
 	"Examples:","","",
+	"pf", " 3xi foo bar", "3-array of struct, each with named fields: 'foo' as hex, and 'bar' as int",
 	"pf", " B (BitFldType)arg_name`", "bitfield type",
 	"pf", " E (EnumType)arg_name`", "enum type",
 	"pf.", "obj xxdz prev next size name", "Define the obj format as xxdz",

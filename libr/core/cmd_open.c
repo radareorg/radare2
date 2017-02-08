@@ -335,7 +335,7 @@ static int cmd_open(void *data, const char *input) {
 		"o-","*","close all opened files",
 		"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
 		"o"," [file]","open [file] file in read-only",
-		"o","+[file]","open file in read-write mode",
+		"o","+ [file]","open file in read-write mode",
 		"o"," [file] 0x4000","map file at 0x4000",
 		NULL
 	};

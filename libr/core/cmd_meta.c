@@ -789,7 +789,7 @@ static int cmd_meta(void *data, const char *input) {
 				"Cz", "[@addr]", "add zero-terminated string",
 				"Ch", "[-] [size] [@addr]", "hide data",
 				"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
-				"Cf", "[-] [sz] [fmt..] [@addr]", "format memory (see pf?)",
+				"Cf", "[-] [sz] [0|cnt][fmt..] [@addr]", "format memory (see pf?)",
 				"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
 				"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
 				NULL};
