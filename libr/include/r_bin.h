@@ -180,7 +180,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
 	RList/*<RBinDwarfRow>*/ *lines;
-	RList/*<??>*/ *mem;
+	RList/*<??>*/ *mem;	//RBinMem maybe?
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	struct r_bin_plugin_t *plugin;
@@ -228,6 +228,7 @@ typedef struct r_bin_t {
 	ut64 maxstrbuf;
 	int rawstr;
 	Sdb *sdb;
+	RIDPool *file_ids;
 	RList/*<RBinPlugin>*/ *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;
 	RList/*<RBinFile>*/ *binfiles;

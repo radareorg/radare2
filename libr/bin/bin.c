@@ -1071,6 +1071,7 @@ static void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	a->o = NULL;
 	r_list_free (a->objs);
 	r_list_free (a->xtr_data);
+	r_id_pool_kick_id (a->rbin->file_ids, a->id);
 	memset (a, 0, sizeof (RBinFile));
 	free (a);
 }
@@ -1282,13 +1283,16 @@ static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes,
 	if (!binfile) {
 		return NULL;
 	}
+	if (!r_id_pool_grab_id (bin->file_ids, &binfile->id)) {
+		free (binfile);		//no id means no binfile
+		return NULL;
+	}
 	r_bin_file_set_bytes (binfile, bytes, sz);
 
 	binfile->rbin = bin;
 	binfile->file = strdup (file);
 	binfile->rawstr = rawstr;
 	binfile->fd = fd;
-	binfile->id = r_num_rand (0xfffff000);
 	binfile->curxtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
 	binfile->sdb = sdb;
 	binfile->size = file_sz;
@@ -1496,6 +1500,7 @@ R_API void *r_bin_free(RBin *bin) {
 	r_list_free (bin->binxtrs);
 	r_list_free (bin->plugins);
 	sdb_free (bin->sdb);
+	r_id_pool_free (bin->file_ids);
 	memset (bin, 0, sizeof (RBin));
 	free (bin);
 	return NULL;
@@ -1823,6 +1828,7 @@ R_API RBin *r_bin_new() {
 		*static_xtr_plugin = *bin_xtr_static_plugins[i];
 		r_bin_xtr_add (bin, static_xtr_plugin);
 	}
+	bin->file_ids = r_id_pool_new (0, 0xffffffff);
 	return bin;
 }
 
