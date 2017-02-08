@@ -16,6 +16,7 @@ static bool is_valid_project_name (const char *name) {
 		case '.':
 		case '_':
 		case ':':
+		case '-':
 			continue;
 		}
 		if (name[i] >= 'a' && name[i] <= 'z') {
