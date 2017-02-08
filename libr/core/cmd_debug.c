@@ -2437,52 +2437,52 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 'h':
 		switch (input[2]) {
-			case 0:
-				r_bp_plugin_list (core->dbg->bp);
-				break;
-			case ' ':
-				if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits))
-					eprintf ("Invalid name: '%s'.\n", input + 3);
-				break;
-			case '?':
-			default:
-				eprintf ("Usage: dh [plugin-name]  # select a debug handler plugin\n");
-				break;
+		case 0:
+			r_bp_plugin_list (core->dbg->bp);
+			break;
+		case ' ':
+			if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits))
+				eprintf ("Invalid name: '%s'.\n", input + 3);
+			break;
+		case '?':
+		default:
+			eprintf ("Usage: dh [plugin-name]  # select a debug handler plugin\n");
+			break;
 		}
 		break;
-	case ' ':
-			for (p = input + 1; *p == ' '; p++);
-			if (*p == '-') {
-				r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
-			} else {
-				addr = r_num_math (core->num, input + 2);
-				if (validAddress (core, addr)) {
-					bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
-					if (bpi) {
-						free (bpi->name);
-						if (!strcmp (input + 2, "$$")) {
-							char *newname = NULL;
-							RFlagItem *f = r_flag_get_i2 (core->flags, addr);
+	case ' ': // "db"
+		for (p = input + 1; *p == ' '; p++);
+		if (*p == '-') {
+			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
+		} else {
+			addr = r_num_math (core->num, input + 2);
+			if (validAddress (core, addr)) {
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, NULL, 0);
+				if (bpi) {
+					free (bpi->name);
+					if (!strcmp (input + 2, "$$")) {
+						char *newname = NULL;
+						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
 
-							if (f) {
-								if (addr > f->offset) {
-									newname = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
-								} else {
-									newname = strdup (f->name);
-								}
+						if (f) {
+							if (addr > f->offset) {
+								newname = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+							} else {
+								newname = strdup (f->name);
 							}
-							bpi->name = newname;
-						} else {
-							bpi->name = strdup (input + 2);
 						}
+						bpi->name = newname;
 					} else {
-						eprintf ("Cannot set breakpoint at '%s'\n", input + 2);
+						bpi->name = strdup (input + 2);
 					}
 				} else {
-					eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory. See dbg.bpinmaps\n", addr);
+					eprintf ("Cannot set breakpoint at '%s'\n", input + 2);
 				}
+			} else {
+				eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory. See dbg.bpinmaps\n", addr);
 			}
-			break;
+		}
+		break;
 	case 'i':
 		switch (input[2]) {
 		case 0: // "dbi"
