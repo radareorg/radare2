@@ -906,7 +906,7 @@ static char *palColorFor(const char *k) {
 	return NULL;
 }
 
-static void core_anal_color_curr_node(RCore *core, struct r_anal_bb_t *bbi) {
+static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 	bool color_current = r_config_get_i (core->config, "graph.gv.current");
 	char *pal_curr = palColorFor ("graph.current");
 	bool current = r_anal_bb_is_in_offset (bbi, core->offset);
@@ -922,7 +922,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	int is_html = r_cons_singleton ()->is_html;
 	int is_json = opts & R_CORE_ANAL_JSON;
 	int is_keva = opts & R_CORE_ANAL_KEYVALUE;
-	struct r_anal_bb_t *bbi;
+	RAnalBlock *bbi;
 	RListIter *iter;
 	int left = 300;
 	int count = 0;
