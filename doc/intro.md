@@ -5,11 +5,11 @@
 -L: List of supported IO plugins
 -q: Exit after processing commands
 -w: Write mode enabled
--i: Interprets a r2 script
+-i [file]: Interprets a r2 script
 -A: Analyze executable at load time (xrefs, etc)
 -n: Bare load. Do not load executable info as the entrypoint
--c'cmds': Run r2 and execute commands (eg: r2 -wqc'wx 3c @ main')
--p: Creates a project for the file being analyzed (CC add a comment when opening a file as a project)
+-c 'cmds': Run r2 and execute commands (eg: r2 -wqc'wx 3c @ main')
+-p [prj]: Creates a project for the file being analyzed (CC add a comment when opening a file as a project)
 -: Opens r2 with the malloc plugin that gives a 512 bytes memory area to play with (size can be changed)
 	Similar to r2 malloc://512
 ```
@@ -99,7 +99,7 @@ Note: | and & need to be escaped
 ?v 0x4141414a - 0x41414140  = 0xa
 ```
 * `?l str`: Returns the length of string
-* `@@`: Used for iteractions
+* `@@`: Used for iterations
 ```
 wx ff @@10 20 30      Writes ff at offsets 10, 20 and 30
 wx ff @@`?s  1 10 2`  Writes ff at offsets 1, 2 and 3
