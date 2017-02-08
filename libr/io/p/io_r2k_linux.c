@@ -1,3 +1,5 @@
+#ifndef __GNU__
+
 #include "io_r2k_linux.h"
 
 #define fset(num, shift) (((num & (((ut64) 1) << shift)) == 0) ? 0 : 1)
@@ -753,3 +755,5 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	free (databuf);
 	return 0;
 }
+
+#endif
