@@ -25,7 +25,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	i = (type == R_REG_TYPE_ALL)? R_REG_TYPE_GPR: type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset dont have regs
-	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs->length == 0) {
+	if (i >= R_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
 		// seek into the other arena for redirections.
 		for (n = R_REG_TYPE_GPR; n < R_REG_TYPE_LAST; n++) {
 			// get regset mask
