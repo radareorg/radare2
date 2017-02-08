@@ -455,7 +455,7 @@ static void print_format_help(RCore *core) {
 	"pf?", "fmt_name", "Show the definition of a named format",
 	"pfo", "", "List all format definition files (fdf)",
 	"pfo", " fdf_name", "Load a Format Definition File (fdf)",
-	"pf.", "fmt_name.size=33", "Set new value for the size field in obj",
+	"pf.", "fmt_name.field_name=33", "Set new value for the specified field in named format",
 	"pfv.", "fmt_name[.field]", "Print value(s) only for named format. Useful for one-liners",
 	"pfs", " fmt_name|fmt", "Print the size of (named) format in bytes",
 	NULL};
