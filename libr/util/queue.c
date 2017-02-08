@@ -3,15 +3,18 @@
 #include <r_util.h>
 
 R_API RQueue *r_queue_new (int n) {
-	if (n <= 0) return NULL;
+	if (n <= 0) {
+		return NULL;
+	}
 	RQueue *q = R_NEW0 (RQueue);
-	if (!q) return NULL;
+	if (!q) {
+		return NULL;
+	}
 	q->elems = R_NEWS0 (void *, n);
 	if (!q->elems){
 		free (q);
 		return NULL;
 	}
-
 	q->front = 0;
 	q->rear = -1;
 	q->size = 0;
@@ -19,16 +22,16 @@ R_API RQueue *r_queue_new (int n) {
 	return q;
 }
 
-R_API void r_queue_free (RQueue *q) {
+R_API void r_queue_free(RQueue *q) {
 	free (q->elems);
 	free (q);
 }
 
-static int is_full (RQueue *q) {
+static int is_full(RQueue *q) {
 	 return q->size == q->capacity;
 }
 
-static int increase_capacity (RQueue *q) {
+static int increase_capacity(RQueue *q) {
 	unsigned int new_capacity = q->capacity * 2;
 	void **newelems;
 	int i, tmp_front;
@@ -53,7 +56,7 @@ static int increase_capacity (RQueue *q) {
 	return true;
 }
 
-R_API int r_queue_enqueue (RQueue *q, void *el) {
+R_API int r_queue_enqueue(RQueue *q, void *el) {
 	if (is_full(q)) {
 		int res = increase_capacity (q);
 		if (!res)
@@ -66,18 +69,18 @@ R_API int r_queue_enqueue (RQueue *q, void *el) {
 	return true;
 }
 
-R_API void *r_queue_dequeue (RQueue *q) {
+R_API void *r_queue_dequeue(RQueue *q) {
 	void *res;
 
-	if (r_queue_is_empty (q))
+	if (r_queue_is_empty (q)) {
 		return NULL;
-
+	}
 	res = q->elems[q->front];
 	q->front = (q->front + 1) % q->capacity;
 	q->size--;
 	return res;
 }
 
-R_API int r_queue_is_empty (RQueue *q) {
+R_API int r_queue_is_empty(RQueue *q) {
 	return q->size == 0;
 }
