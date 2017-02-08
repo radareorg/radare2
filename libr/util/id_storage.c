@@ -128,7 +128,7 @@ R_API bool r_id_storage_set(RIDStorage *storage, void *data, ut32 id) {
 }
 
 R_API bool r_id_storage_add(RIDStorage *storage, void *data, ut32 *id) {
-	if (!storage || !r_id_pool_grab_id (storage->pool, id)) {
+	if (!storage || !r_id_pool_grab_id (storage->pool, id)) {
 		return false;
 	}
 	return r_id_storage_set (storage, data, *id);
