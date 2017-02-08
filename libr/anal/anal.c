@@ -429,7 +429,7 @@ static int nonreturn_print(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
 		const char *query = sdb_fmt (-1, "func.%s.noreturn", k);
 		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
-			anal->cb_printf ("- %s\n", k);
+			anal->cb_printf ("%s\n", k);
 		}
 	}
 	if (!strncmp (k, "addr.", 5)) {
