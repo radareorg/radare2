@@ -97,7 +97,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (len > 0 && anal->cur && anal->cur->op) {
 		//use core binding to set asm.bits correctly based on the addr
 		//this is because of the hassle of arm/thumb
-		anal->coreb.archbits (anal->coreb.core, addr);
+		if (anal && anal->coreb.archbits) {
+			anal->coreb.archbits (anal->coreb.core, addr);
+		}
 		ret = anal->cur->op (anal, op, addr, data, len);
 		op->addr = addr;
 		/* consider at least 1 byte to be part of the opcode */
