@@ -73,7 +73,8 @@ static ArmOp ops[] = {
 
 	{ "ldrex", 0x9f0f9000, TYPE_MEM },
 	{ "ldr", 0x9000, TYPE_MEM },
-	
+
+	{ "strex", 0x900f8000, TYPE_MEM },	
 	{ "str", 0x8000, TYPE_MEM },
 
 	{ "blx", 0x30ff2fe1, TYPE_BRR },
@@ -857,13 +858,17 @@ static int findyz(int x, int *y, int *z) {
 
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int i, j, ret, reg, a, b;
+	bool rex = false;
 	for (i = 0; ops[i].name; i++) {
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
 			if (ao->a[0] || ops[i].type == TYPE_BKP)
 			switch (ops[i].type) {
-			case TYPE_MEM:
+			case TYPE_MEM:				
+				if (!strcmp (ops[i].name + 2, "rex")) {
+					rex = 1;
+				}
 				getrange (ao->a[0]);
 				getrange (ao->a[1]);
 				getrange (ao->a[2]);
@@ -876,17 +881,30 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						return 0;
 					}
 					ao->o |=  r0 << 20;
-					ao->o |=  r1 << 8; // delta
+					if (!strcmp (ops[i].name, "strex")) {
+						ao->o |=  r1 << 24;
+					} else {
+						ao->o |=  r1 << 8; // delta
+					}
 				} else {
 					return 0;
 				}
+				
 				ret = getreg (ao->a[2]);
 				if (ret != -1) {
-					ao->o |= (strstr (str,"],")) ? 6 : 7;
-					ao->o |= (ret & 0x0f) << 24;
+					if (rex) {
+						ao->o |= 1;
+					} else {
+						ao->o |= (strstr (str,"],")) ? 6 : 7;
+					}
+					if (!strcmp (ops[i].name, "strex")) {
+						ao->o |= (ret & 0x0f) << 8;
+					} else {
+						ao->o |= (ret & 0x0f) << 24;
+					}					
 				} else {
 					int num = getnum (ao->a[2]) & 0xfff;
-					if (!strcmp (ops[i].name, "ldrex")) {
+					if (rex) {
 						ao->o |= 1;
 					} else {
 						ao->o |= (strstr (str, "],")) ? 4 : 5;
