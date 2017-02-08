@@ -376,7 +376,11 @@ static int cmd_seek(void *data, const char *input) {
 				int instr_len;
 				ut64 addr = core->offset;
 				int numinstr = n * -1;
-				ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
+				if (r_core_prevop_addr (core, core->offset, numinstr, &addr)) {
+					ret = core->offset - addr;
+				} else {
+					ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
+				}
 				r_core_seek (core, addr, true);
 				val += ret;
 			} else {
