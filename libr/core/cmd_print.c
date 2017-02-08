@@ -444,7 +444,7 @@ static void print_format_help(RCore *core) {
 	"pf", "?", "Show this help",
 	"pf", "??", "Format characters",
 	"pf", "???", "pf usage examples",
-	"pf", " fmt", "Show data using the given format-string. See 'pf??' and 'pf???'.",
+	"pf", " fmt", "Show data using the given format-string. See 'pf\?\?' and 'pf\?\?\?'.",
 	"pf.", "fmt_name", "Show data using named format",
 	"pf.", "fmt_name.field_name", "Show specific data field using named format",
 	"pfj ", "fmt_name|fmt", "Show data using (named) format in JSON",

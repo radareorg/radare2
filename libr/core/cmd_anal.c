@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2017 - pancake, maijin */
 
 #include "r_util.h"
 #include "r_core.h"
@@ -3498,6 +3498,10 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	free (buf);
 }
 
+static void cmd_anal_blocks(RCore *core, const char *input) {
+	r_core_cmdf (core, ".abb $SS@$S");
+}
+
 static void cmd_anal_calls(RCore *core, const char *input) {
 	int bufi, minop = 1; // 4
 	ut8 *buf;
@@ -5024,6 +5028,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
 		"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
 		"aaa", "[?]", "autoname functions after aa (see afna)",
+		"aab", "[?]", "aab across io.sections.text",
 		"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 		"aad", " [len]", "analyze data references to code",
 		"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
@@ -5040,6 +5045,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 	switch (*input) {
 	case '?': r_core_cmd_help (core, help_msg_aa); break;
+	case 'b': cmd_anal_blocks (core, input + 1); break; // "aab"
 	case 'c': cmd_anal_calls (core, input + 1); break; // "aac"
 	case 'j': cmd_anal_jumps (core, input + 1); break; // "aaj"
 	case '*':
