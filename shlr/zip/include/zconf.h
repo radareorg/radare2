@@ -416,11 +416,7 @@ typedef uLong FAR uLongf;
 #  define Z_HAVE_STDARG_H
 #endif
 
-#ifdef STDC
-#  ifndef Z_SOLO
-#    include <sys/types.h>      /* for off_t */
-#  endif
-#endif
+// #    include <sys/types.h>      /* for off_t */
 
 #if defined(STDC) || defined(Z_HAVE_STDARG_H)
 #  ifndef Z_SOLO
