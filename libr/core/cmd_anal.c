@@ -3499,7 +3499,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 }
 
 static void cmd_anal_blocks(RCore *core, const char *input) {
-	r_core_cmdf (core, ".abb $SS@$S");
+	r_core_cmdf (core, "abb $SS@$S");
 }
 
 static void cmd_anal_calls(RCore *core, const char *input) {

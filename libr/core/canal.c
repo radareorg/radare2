@@ -3640,6 +3640,7 @@ typedef struct {
 	ut64 bb_addr;
 	RList *bbs;
 	RList *nextbbs;
+	Sdb *bbdb;
 } AbbState;
 
 typedef struct {
@@ -3647,6 +3648,20 @@ typedef struct {
 	int bits;
 	int type;
 } AbbAddr;
+
+static int bbExist(AbbState *abb, ut64 addr) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	if (abb->bbdb) {
+		return (int)sdb_num_get (abb->bbdb, sdb_fmt (0, "0x%08"PFMT64x, addr), NULL);
+	}
+	r_list_foreach (abb->bbs, iter, bb) {
+		if (bb->addr == addr) {
+			return bb->size;
+		}
+	}
+	return 0;
+}
 
 static AbbState *abbstate_new (ut64 len) {
 	ut8 *buf = malloc (len);
@@ -3666,19 +3681,26 @@ static AbbState *abbstate_new (ut64 len) {
 		free (buf);
 	}
 	abb->nextbbs = r_list_newf (free);
+	abb->bbdb = sdb_new0 ();
 	// TODO: add more boring nullchks
 	return abb;
+}
+
+static void abbstate_free(AbbState *as) {
+	r_list_free (as->bbs);
+	r_list_free (as->nextbbs);
+	sdb_free (as->bbdb);
+	free (as->buf);
+	free (as);
 }
 
 static bool appendNextBB(AbbState *abb, ut64 addr, int bits) {
 	RListIter *iter;
 	RAnalBlock *bb;
-	r_list_foreach (abb->bbs, iter, bb) {
-		if (addr == bb->addr) {
-			return false;
-		}
-	}
 	AbbAddr *n;
+	if (bbExist (abb, addr)) {
+		return false;
+	}
 	r_list_foreach (abb->nextbbs, iter, n) {
 		if (addr == n->addr) {
 			return false;
@@ -3692,7 +3714,7 @@ static bool appendNextBB(AbbState *abb, ut64 addr, int bits) {
 	return true;
 }
 
-static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {//, ut64 *bb_addr, RList *bbs, RList *nextbbs) {
+static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {
 	bool eob = false;
 	// eprintf ("%d\n", aop->size);
 	switch (aop->type) {
@@ -3731,20 +3753,10 @@ static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {//, ut64 *bb_addr, 
 		bb->addr = abb->bb_addr;
 		bb->size = aop->addr - abb->bb_addr + aop->size;
 		abb->bb_addr = bb->addr + bb->size;
+		sdb_num_set (abb->bbdb, sdb_fmt (0, "0x%08"PFMT64x, bb->addr), bb->size, 0);
 		return bb;
 	}
 	return NULL;
-}
-
-static int bbExist(AbbState *abb, ut64 addr) {
-	RAnalBlock *bb;
-	RListIter *iter;
-	r_list_foreach (abb->bbs, iter, bb) {
-		if (bb->addr == addr) {
-			return bb->size;
-		}
-	}
-	return 0;
 }
 
 R_API bool core_anal_bbs(RCore *core, ut64 len) {
@@ -3760,7 +3772,11 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 	abb->addr = at;
 	(void)r_io_read_at (core->io, abb->addr, abb->buf, len);
 	int ti = -1;
+	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < len ; i++) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 	mountain:
 		if (!r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (len -i, 16))) {
 			continue;
@@ -3800,6 +3816,10 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 		i += aop.size - 1;
 		r_anal_op_fini (&aop);
 	}
+	r_cons_break_pop ();
+
+	eprintf ("Found %d basic blocks\n", r_list_length (abb->bbs));
+#if 0
 	// show results
 	r_list_foreach (abb->bbs, iter, bb) {
 		RFlagItem *f = r_flag_get_at (core->flags, bb->addr, true);
@@ -3824,5 +3844,7 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 			r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", bb->addr, bb->fail);
 		}
 	}
+#endif
+	abbstate_free (abb);
 	return true;
 }
