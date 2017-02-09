@@ -2113,6 +2113,24 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 	int i;
 
 	switch (each[0]) {
+	case '=':
+		{
+		char *arg;
+		for (arg = each + 1; ; ) {
+			char *next = strchr (arg, ' ');
+			if (next) {
+				*next = 0;
+			}
+			if (arg && *arg) {
+				r_core_cmdf (core, "%s %s", cmd, arg);
+			}
+			if (!next) {
+				break;
+			}
+			arg = next + 1;
+		}
+		}
+		break;
 	case '?':
 		r_cons_printf ("Usage: @@@ [type]     # types:\n");
 		r_cons_printf (" symbols\n");
