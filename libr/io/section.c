@@ -215,12 +215,13 @@ R_API SdbList *r_io_section_get_secs_at (RIO *io, ut64 addr)
 		return NULL;
 	ls_foreach (io->sections, iter, s) {
 		if (addr >= s->addr && addr < (s->addr + s->size)) {
-			if (!ret)
+			if (!ret) {
 				ret = ls_new ();
+				ret->free = NULL;
+			}
 			ls_prepend (ret, s);
 		}
 	}
-	ret->free = NULL;
 	return ret;
 }
 

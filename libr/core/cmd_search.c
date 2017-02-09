@@ -21,7 +21,7 @@ static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
 
 struct search_parameters {
-	RList *boundaries;
+	SdbList *boundaries;
 	const char *mode;
 	ut64 from;
 	ut64 to;
@@ -43,8 +43,8 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 	RIOMap *map;
 	ut8 *buf;
 	int i, j;
-	RList *list;
-	RListIter *iter;
+	SdbList *list;
+	SdbListIter *iter;
 
 	list = r_core_get_boundaries_ok (core);
 	if (!list) {
@@ -61,7 +61,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 	for (j = minlen; j<=maxlen; j++) {
 		ut32 len = j;
 		eprintf ("Searching %s for %d byte length.\n", hashname, j);
-		r_list_foreach (list, iter, map) {
+		ls_foreach (list, iter, map) {
 			ut64 from = map->from;
 			ut64 to = map->to;
 			st64 bufsz;
@@ -97,7 +97,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 						hashname, hashstr, from+i);
 					free (s);
 					free (buf);
-					r_list_free (list);
+					ls_free (list);
 					return 1;
 				}
 				free (s);
@@ -105,11 +105,11 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			free (buf);
 		}
 	}
-	r_list_free (list);
+	ls_free (list);
 	eprintf ("No hashes found\n");
 	return 0;
 hell:
-	r_list_free (list);
+	ls_free (list);
 	return -1;
 }
 
@@ -1096,7 +1096,7 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	r_list_free (ropList);
 }
 
-R_API RList* r_core_get_boundaries_ok(RCore *core) {
+R_API SdbList* r_core_get_boundaries_ok(RCore *core) {
 	const char *searchin;
 	ut8 prot;
 	ut64 from, to;
@@ -1781,7 +1781,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	if (json) {
 		r_cons_printf("[");
 	}
-	RListIter *iter;
+	SdbListIter *iter;
 	RIOMap *map;
 	if (!searchflags && !json) {
 		r_cons_printf ("fs hits\n");
@@ -1817,7 +1817,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 		buf = (ut8 *)malloc (core->blocksize);
 		bufsz = core->blocksize;
 		r_cons_break_push (NULL, NULL);
-		r_list_foreach (param->boundaries, iter, map) {
+		ls_foreach (param->boundaries, iter, map) {
 			int fd;
 			param->from = map->from;
 			param->to = map->to;
@@ -1948,7 +1948,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 		free (buf);
 		if (maplist) {
 			param->boundaries->free = free;
-			r_list_free (param->boundaries);
+			ls_free (param->boundaries);
 			param->boundaries = NULL;
 		}
 		r_io_desc_use (core->io, ofd);
