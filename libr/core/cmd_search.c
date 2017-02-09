@@ -1830,8 +1830,8 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				break;
 			}
 
-			r_io_desc_use (core->io, map->fd);			//this needs some review
 			fd = core->io->desc->fd;
+			r_io_desc_use (core->io, map->fd);			//this needs some review
 			if (fd == -1 && core->io->desc) {
 				fd = core->io->desc->fd;
 			}
@@ -1880,7 +1880,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				if (ret < 1) {
 =======
 #endif
-				if (!r_io_read_at (core->io, at, buf, bufsz))
+				if (!r_io_is_valid_offset (core->io, at, R_IO_READ))
 				/*
 				   if (ignorecase) {
 				   int i;
@@ -1890,6 +1890,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				   */
 					break;
 				}
+				r_io_read_at (core->io, at, buf, bufsz);
 				if (param->crypto_search) {
 					int delta = 0;
 					if (param->aes_search)
