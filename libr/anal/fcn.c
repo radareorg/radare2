@@ -669,11 +669,13 @@ repeat:
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
 		case R_ANAL_STACK_INC:
-			fcn->stack += op.val;
-			if (fcn->stack > 0 && (int)op.val > 0) {
-				fcn->maxstack = fcn->stack;
+			if (R_ABS (op.val) < 8096) {
+				fcn->stack += op.val;
+				if (fcn->stack > 0 && (int)op.val > 0) {
+					fcn->maxstack = fcn->stack;
+				}
+				bb->stackptr += op.stackptr;
 			}
-			bb->stackptr += op.stackptr;
 			break;
 		case R_ANAL_STACK_RESET:
 			bb->stackptr = 0;
@@ -1256,9 +1258,11 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 	int append = 0;
 	RAnalFunction *fcn;
 
+#if 0
 	if (size < 1) {
 		return false;
 	}
+#endif
 	fcn = r_anal_get_fcn_in (a, addr, R_ANAL_FCN_TYPE_ROOT);
 	if (!fcn) {
 		if (!(fcn = r_anal_fcn_new ())) {
