@@ -88,7 +88,7 @@
   #define __addr_t_defined
   #include <windows.h>
 #endif
-#if _WIN32 || MINGW32 && !__CYGWIN__
+#if _WIN32 || MINGW32 && !(__MINGW64__ || __CYGWIN__)
   #include <winsock.h>
   typedef int socklen_t;
   #undef USE_SOCKETS
