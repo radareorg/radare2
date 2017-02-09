@@ -2996,8 +2996,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		return false;
 	}
 	if (to == UT64_MAX) {
-		eprintf ("Cannot continue upto address 0\n");
-		return false;
+		to = from;
 	}
 	if (dcu_range) {
 		r_cons_break_push (NULL, NULL);
