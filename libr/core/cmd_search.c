@@ -1859,7 +1859,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 			}
 			/* bckwrds = false -> normal search -> must be at < to
 			   bckwrds search -> check later */
-			for (; (!param->bckwrds && at < param->to) || param->bckwrds;) {
+			for (; (!param->bckwrds && (at < param->to)) || param->bckwrds;) {
 				print_search_progress (at, param->to, searchhits);
 				if (r_cons_is_breaked ()) {
 					eprintf ("\n\n");
@@ -1889,7 +1889,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				   }
 				   */
 					break;
+#if 0
 				}
+#endif
 				r_io_read_at (core->io, at, buf, bufsz);
 				if (param->crypto_search) {
 					int delta = 0;
@@ -1953,8 +1955,9 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	//} else eprintf ("No keywords defined\n");
 
 	/* Crazy party counter (kill me please) */
-	if (!searchhits && core->search->n_kws > 0) {
-		core->search->n_kws--;
+		if (!searchhits && core->search->n_kws > 0) {
+			core->search->n_kws--;
+		}
 	}
 	if (json) {
 		r_cons_printf("]");
