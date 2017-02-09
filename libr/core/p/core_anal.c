@@ -313,9 +313,9 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	} else {
 		function_label = r_str_newf ("fcn2.%08"PFMT64x, addr);
 	}
-	r_core_cmdf (core, "af+ 0x%08"PFMT64x" %d %s\n",
+	r_core_cmdf (core, "af+ 0x%08"PFMT64x" %s\n",
 		sdb_num_get (db, "addr", NULL),
-		(int)sdb_num_get (db, "size", NULL),
+		// (int)sdb_num_get (db, "size", NULL),
 		function_label);
 	// list bbs
 	{
