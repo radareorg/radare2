@@ -2072,7 +2072,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbd", " <addr>", "Disable breakpoint",
 		"dbe", " <addr>", "Enable breakpoint",
 		"dbs", " <addr>", "Toggle breakpoint",
-
+		"dbf", "", "Put a breakpoint into every no-return function",
+		//
 		"dbt", "[?]", "Display backtrace based on dbg.btdepth and dbg.btalgo",
 		"dbt*", "", "Display backtrace in flags",
 		"dbt=", "", "Display backtrace in one line (see dbt=s and dbt=b for sp or bp)",
@@ -2125,6 +2126,26 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						bpi->enabled ?  "enabled" : "disabled",
 						bpi->name ? bpi->name : "");
 			}
+		}
+		break;
+	case 'f':
+		{
+		RList *symbols = r_bin_get_symbols (core->bin);
+		RBinSymbol *symbol;
+		r_list_foreach (symbols, iter, symbol) {
+			if (symbol->type && !strcmp (symbol->type, "FUNC")) {
+				if (r_anal_noreturn_at (core->anal, symbol->vaddr)) {
+					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, NULL, 0);
+					if (bpi) {
+						bpi->name = r_str_newf ("%s.%s", "sym", symbol->name);
+					} else {
+						eprintf ("Unable to add a breakpoint"
+						"into a noreturn function %s at addr 0x%"PFMT64x"\n",
+									symbol->name, symbol->vaddr);
+					}
+				}
+			}
+		}
 		}
 		break;
 	case 't': // "dbt"
