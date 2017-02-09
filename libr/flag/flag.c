@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2007-2016 - pancake */
 
+#include <r_types.h>
 #include <r_flag.h>
 #include <r_util.h>
 #include <r_cons.h>
@@ -7,13 +8,36 @@
 
 R_LIB_VERSION(r_flag);
 
-/* aim to fix a bug in hashtable64 , collisions happen */
-/* offset needs to be xored to avoid some collisions !!! must switch to sdb */
-#define XORKEY 0x12345678
-#define XOROFF(x) (x^XORKEY)
-
 #define ISNULLSTR(x) (!(x) || !*(x))
 #define IS_IN_SPACE(f, i) ((f)->space_idx != -1 && (i)->space != (f)->space_idx)
+
+
+// Sources: http://burtleburtle.net/bob/hash/integer.html
+//          http://www.cris.com/~Ttwang/tech/inthash.htm
+// Described as public domain
+static ut32 hash_func_32(ut32 a)
+{
+    a -= (a<<6);
+    a ^= (a>>17);
+    a -= (a<<9);
+    a ^= (a<<4);
+    a -= (a<<3);
+    a ^= (a<<10);
+    a ^= (a>>15);
+    return a;
+}
+
+static ut64 hash_func_64(long key)
+{
+  key = (~key) + (key << 21); // key = (key << 21) - key - 1;
+  key = key ^ (key >> 24);
+  key = (key + (key << 3)) + (key << 8); // key * 265
+  key = key ^ (key >> 14);
+  key = (key + (key << 2)) + (key << 4); // key * 21
+  key = key ^ (key >> 28);
+  key = key + (key << 31);
+  return key;
+}
 
 static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	RList *list;
@@ -23,7 +47,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 		*ok = 0;
 	}
 	if (f) {
-		list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
+		list = r_hashtable64_lookup (f->ht_off, hash_func_64 (off));
 		item = r_list_get_top (list);
 		if (item) {
 			if (ok) {
@@ -56,11 +80,11 @@ static ut64 num_callback(RNum *user, const char *name, int *ok) {
 }
 
 static void remove_offsetmap(RFlag *f, RFlagItem *item) {
-	RList *fs_off = r_hashtable64_lookup (f->ht_off, XOROFF (item->offset));
+	RList *fs_off = r_hashtable64_lookup (f->ht_off, hash_func_64 (item->offset));
 	if (fs_off) {
 		r_list_delete_data (fs_off, item);
 		if (r_list_empty (fs_off)) {
-			r_hashtable64_remove (f->ht_off, XOROFF (item->offset));
+			r_hashtable64_remove (f->ht_off, hash_func_64 (item->offset));
 		}
 	}
 }
@@ -289,7 +313,7 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 	if (!f) {
 		return false;
 	}
-	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
+	RList *list = r_hashtable64_lookup (f->ht_off, hash_func_64 (off));
 	if (!list) {
 		return false;
 	}
@@ -314,7 +338,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RList *list;
 	if (!f) return NULL;
-	list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+	list = r_hashtable64_lookup (f->ht_off, hash_func_64(off));
 	return list ? evalFlag (f, r_list_get_top (list)) : NULL;
 }
 
@@ -326,7 +350,7 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 	RFlagItem *oitem = NULL;
 	RFlagItem *item = NULL;
 	RListIter *iter;
-	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
+	RList *list = r_hashtable64_lookup (f->ht_off, hash_func_64 (off));
 	if (!list) return NULL;
 
 	r_list_foreach (list, iter, item) {
@@ -379,7 +403,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 
 /* return the list of flag items that are associated with a given offset */
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off) {
-	return r_hashtable64_lookup (f->ht_off, XOROFF(off));
+	return r_hashtable64_lookup (f->ht_off, hash_func_64(off));
 }
 
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
@@ -449,10 +473,11 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	item->offset = off + f->base;
 	item->size = size;
 
-	list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+	list = r_hashtable64_lookup (f->ht_off, hash_func_64(off));
 	if (!list) {
 		list = r_list_new ();
-		r_hashtable64_insert (f->ht_off, XOROFF(off), list);
+		r_hashtable64_insert (f->ht_off, hash_func_64(off), list);
+
 	}
 	r_list_append (list, item);
 	return item;
