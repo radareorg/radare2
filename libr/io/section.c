@@ -344,7 +344,7 @@ bool _section_apply (RIO *io, RIOSection *sec, RIOSectionApplyMethod method)
 						return false;
 					}
 					sec->memmap = map->id;			//let the section refere to the map as a memory-map
-					if ((name = calloc (1, strlen(sec->name) + 5))) {
+					if ((name = calloc (1, strlen(sec->name) + 6))) {
 						sprintf (name, "mmap.%s", sec->name);
 						map->name = name;
 					}
@@ -357,7 +357,7 @@ bool _section_apply (RIO *io, RIOSection *sec, RIOSectionApplyMethod method)
 				if (!sec->filemap) {				//same as above
 					if ((map = r_io_map_add (io, sec->fd, sec->flags, sec->addr, sec->vaddr, sec->vsize))) {
 						sec->filemap = map->id;
-						if ((name = calloc (1, strlen(sec->name) + 5))) {
+						if ((name = calloc (1, strlen(sec->name) + 6))) {
 							sprintf (name, "fmap.%s", sec->name);
 							map->name = name;
 						}
@@ -372,7 +372,7 @@ bool _section_apply (RIO *io, RIOSection *sec, RIOSectionApplyMethod method)
 				return false;					//this usually won't happen, but checking against it doesn't hurt
 			map = r_io_map_add (io, sec->fd, sec->flags, sec->addr, sec->vaddr, sec->vsize);	//apply the mapping
 			if (map) {
-				if ((name = calloc (1, strlen(sec->name) + 5))) {
+				if ((name = calloc (1, strlen(sec->name) + 6))) {
 					sprintf (name, "fmap.%s", sec->name);
 					map->name = name;
 				}
@@ -388,7 +388,7 @@ bool _section_apply (RIO *io, RIOSection *sec, RIOSectionApplyMethod method)
 				return false;
 			map = r_io_map_add (io, sec->fd, sec->flags, sec->addr, sec->vaddr, sec->size);	//apply the mapping for the filearea
 			if (!map) return false;		
-			if ((name = calloc (1, strlen(sec->name) + 5))) {
+			if ((name = calloc (1, strlen(sec->name) + 6))) {
 				sprintf (name, "fmap.%s", sec->name);
 				map->name = name;
 			}
@@ -402,7 +402,7 @@ bool _section_apply (RIO *io, RIOSection *sec, RIOSectionApplyMethod method)
 				r_io_close (io, desc->fd);
 				return false;
 			}
-			if ((name = calloc (1, strlen(sec->name) + 5))) {
+			if ((name = calloc (1, strlen(sec->name) + 6))) {
 				sprintf (name, "mmap.%s", sec->name);
 				map->name = name;
 			}
@@ -429,7 +429,7 @@ bool _section_apply (RIO *io, RIOSection *sec, RIOSectionApplyMethod method)
 		r_io_pwrite_at (io, 0LL, buf, (int)size);			//copy from buffer to the malloc-fd
 		free (buf);
 		if ((map = r_io_map_get (io, sec->vaddr))) {			//get the malloc-map
-			if ((name = calloc (1, strlen(sec->name) + 5))) {
+			if ((name = calloc (1, strlen(sec->name) + 6))) {
 				sprintf (name, "mmap.%s", sec->name);
 				map->name = name;
 			}
