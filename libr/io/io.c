@@ -462,6 +462,7 @@ R_API int r_io_fini (RIO *io)
 	r_io_section_fini (io);
 	ls_free (io->plugins);
 	r_list_free (io->cache);
+	r_list_free (io->undo.w_list);
 	if (io->runprofile)
 		R_FREE (io->runprofile);
 	return true;
