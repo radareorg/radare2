@@ -1273,20 +1273,22 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		}
 		break;
-	case '+':
+	case '+': // "af+"
 		{
 		char *ptr = strdup (input + 3);
 		const char *ptr2;
 		int n = r_str_word_set0 (ptr);
 		const char *name = NULL;
-		ut64 addr = -1LL;
+		ut64 addr = UT64_MAX;
 		ut64 size = 0LL;
 		RAnalDiff *diff = NULL;
 		int type = R_ANAL_FCN_TYPE_FCN;
-		if (n > 2) {
+		if (n > 1) {
 			switch (n) {
 			case 5:
-				ptr2 = r_str_word_get0 (ptr, 4);
+				size = r_num_math (core->num, r_str_word_get0 (ptr, 4));
+			case 4:
+				ptr2 = r_str_word_get0 (ptr, 3);
 				if (!(diff = r_anal_diff_new ())) {
 					eprintf ("error: Cannot init RAnalDiff\n");
 					free (ptr);
@@ -1297,8 +1299,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				} else if (ptr2[0] == 'u') {
 					diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
 				}
-			case 4:
-				ptr2 = r_str_word_get0 (ptr, 3);
+			case 3:
+				ptr2 = r_str_word_get0 (ptr, 2);
 				if (strchr (ptr2, 'l')) {
 					type = R_ANAL_FCN_TYPE_LOC;
 				} else if (strchr (ptr2, 'i')) {
@@ -1308,15 +1310,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				} else {
 					type = R_ANAL_FCN_TYPE_FCN;
 				}
-			case 3:
-				name = r_str_word_get0 (ptr, 2);
 			case 2:
-				size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				name = r_str_word_get0 (ptr, 1);
 			case 1:
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			}
-			if (!r_anal_fcn_add (core->anal, addr, size, name, type, diff))
+			if (!r_anal_fcn_add (core->anal, addr, size, name, type, diff)) {
 				eprintf ("Cannot add function (duplicated)\n");
+			}
 		}
 		r_anal_diff_free (diff);
 		free (ptr);
@@ -1738,9 +1739,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			"Usage:", "af", "",
 			"af", " ([name]) ([addr])", "analyze functions (start at addr or $$)",
 			"afr", " ([name]) ([addr])", "analyze functions recursively",
-			"af+", " addr size name [type] [diff]", "hand craft a function (requires afb+)",
+			"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 			"af-", " [addr]", "clean all function analysis data (or function at addr)",
-			"afb+", " fa a sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
+			"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 			"afb", "[?] [addr]", "List basic blocks of given function",
 			"afB", " 16", "set current function as thumb (change asm.bits)",
 			"afc[c]", " ([addr])@[addr]", "calculate the Cycles (afc) or Cyclomatic Complexity (afcc)",
@@ -2126,7 +2127,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			// restore debug registers if in debugger mode
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, true);
 			break;
-		case '+':
+		case '+': // "drs+"
 			r_reg_arena_push (core->dbg->reg);
 			break;
 		case '?': {
@@ -3499,7 +3500,29 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 }
 
 static void cmd_anal_blocks(RCore *core, const char *input) {
-	r_core_cmdf (core, "abb $SS@$S");
+	RListIter *iter;
+	RIOSection *s;
+	ut64 min = UT64_MAX;
+	ut64 max = 0;
+	r_list_foreach (core->io->sections, iter, s) {
+		/* is executable */
+		if (!strstr (s->name, "text") && !strstr (s->name, "stub") && !strstr (s->name, "plt")) {
+			continue;
+		}
+		if (s->rwx & 1) {
+			if (s->vaddr < min) {
+				min = s->vaddr;
+			}
+			if (s->vaddr + s->vsize > max) {
+				max = s->vaddr + s->vsize;
+			}
+		}
+	}
+	if (min == UT64_MAX) {
+		min = core->offset;
+		max = 0xffff + min;
+	}
+	r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (max - min), min);
 }
 
 static void cmd_anal_calls(RCore *core, const char *input) {
@@ -4754,7 +4777,7 @@ static void cmd_anal_trace(RCore *core, const char *input) {
 		// XXX: not yet tested..and rsc dwarf-traces comes from r1
 		r_core_cmd (core, "at*|rsc dwarf-traces $FILE", 0);
 		break;
-	case '+':
+	case '+': // "at+"
 		ptr = input + 2;
 		addr = r_num_math (core->num, ptr);
 		ptr = strchr (ptr, ' ');

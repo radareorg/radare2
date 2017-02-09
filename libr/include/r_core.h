@@ -554,6 +554,7 @@ typedef struct {
 	RCoreAnalStatsItem *block;
 } RCoreAnalStats;
 
+R_API bool core_anal_bbs(RCore *core, ut64 len);
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose);
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
