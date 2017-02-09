@@ -5339,7 +5339,8 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 			curArch = c->bin->cur->o->info->arch;
 		}
 	}
-	if (curArch && !strcmp (curArch, "x86")) {
+	if (curArch && !strcmp (curArch, "x86") && \
+			!strcmp (((RCore*) core)->bin->cur->o->info->rclass, "elf")) {
 		const char * help_msg[] = {
 			"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
 			NULL};
@@ -5352,6 +5353,7 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 			break;
 		case 'r': //avr
 			r_core_anal_print_rtti (core);
+			break;
 		case '\0': //av
 			r_core_anal_list_vtables (core, false);
 			break;

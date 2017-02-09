@@ -598,6 +598,80 @@ extern RCorePlugin r_core_plugin_anal;
 
 #endif
 
+/*
+	RTTI Parsing Information
+	MSVC(Microsoft visual studio compiler) rtti structure
+	information:
+*/
+
+typedef struct type_descriptor_t {
+	ut64 pVFTable;//Always point to type_info's vftable
+	int spare;
+	char* className;
+} type_descriptor;
+
+typedef struct class_hierarchy_descriptor_t {
+	int signature;//always 0
+
+	//bit 0 --> Multiple inheritance
+	//bit 1 --> Virtual inheritance
+	int attributes;
+
+	//total no of base classes
+	// including itself
+	int numBaseClasses;
+
+	//Array of base class descriptor's
+	RList* baseClassArray;
+} class_hierarchy_descriptor;
+
+typedef struct base_class_descriptor_t {
+	//Type descriptor of current base class
+	type_descriptor* typeDescriptor;
+
+	//Number of direct bases
+	//of this base class
+	int numContainedBases;
+
+	//vftable offset
+	int mdisp;
+
+	// vbtable offset
+	int pdisp;
+
+	//displacement of the base class
+	//vftable pointer inside the vbtable
+	int vdisp;
+
+	//don't know what's this
+	int attributes;
+
+	//class hierarchy descriptor
+	//of this base class
+	class_hierarchy_descriptor* classDescriptor;
+} base_class_descriptor;
+
+typedef struct rtti_complete_object_locator_t {
+	int signature;
+
+	//within class offset
+	int vftableOffset;
+
+	//don't know what's this
+	int cdOffset;
+
+	//type descriptor for the current class
+	type_descriptor* typeDescriptor;
+
+	//hierarchy descriptor for current class
+	class_hierarchy_descriptor* hierarchyDescriptor;
+} rtti_complete_object_locator;
+
+typedef struct run_time_type_information_t {
+	ut64 vtable_start_addr;
+	ut64 rtti_addr;
+} rtti_struct;
+
 #ifdef __cplusplus
 }
 #endif
