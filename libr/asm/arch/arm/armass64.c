@@ -101,12 +101,6 @@ static ut32 mov(ArmOp *op) {
 
 }
 
-static ut32 branch_reg(ArmOp *op, ut64 addr, int k) {
-	ut32 data = UT32_MAX;
-
-	return data;
-}
-
 static ut32 branch(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
 	int n = 0;
@@ -195,13 +189,16 @@ static ut32 msr(const char *str, int w) {
 	return op;
 }
 
-static bool exception(ut32 *op, const char *arg, ut32 type) {
-	int n = (int)r_num_math (NULL, arg);
-	n /= 8;
-	*op = type;
-	*op += ((n & 0xff) << 16);
-	*op += ((n >> 8) << 8);
-	return *op != -1;
+static ut32 exception(ArmOp *op, ut32 k) {
+	ut32 data = UT32_MAX;
+
+	if (op->operands[0].type == ARM_CONSTANT) {
+		int n = op->operands[0].immediate;
+		data = k;
+		data += (((n / 8) & 0xff) << 16);
+		data += n << 29;//((n >> 8) << 8);
+	}
+	return data;
 }
 
 static ut32 arithmetic (ArmOp *op, int k) {
@@ -399,19 +396,24 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		}
 	}
 	if (!strncmp (str, "svc ", 4)) { // system level exception
-		return exception (op, str + 4, 0x010000d4);
+		*op = exception (&ops, 0x010000d4);
+		return *op != -1;
 	}
 	if (!strncmp (str, "hvc ", 4)) { // hypervisor level exception
-		return exception (op, str + 4, 0x020000d4);
+		*op = exception (&ops, 0x020000d4);
+		return *op != -1;
 	}
 	if (!strncmp (str, "smc ", 4)) { // secure monitor exception
-		return exception (op, str + 4, 0x040000d4);
+		*op = exception (&ops, 0x030000d4);
+		return *op != -1;
 	}
 	if (!strncmp (str, "brk ", 4)) { // breakpoint
-		return exception (op, str + 4, 0x000020d4);
+		*op = exception (&ops, 0x000020d4);
+		return *op != -1;
 	}
 	if (!strncmp (str, "hlt ", 4)) { // halt
-		return exception (op, str + 4, 0x000040d4);
+		*op = exception (&ops, 0x000040d4);
+		return *op != -1;
 	}
 	if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
