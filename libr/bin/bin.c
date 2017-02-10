@@ -975,17 +975,11 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 			}
 		}
 	}
-
 	if (!binfile) {
 		bool steal_ptr = true; // transfer buf_bytes ownership to binfile
 		binfile = r_bin_file_new_from_bytes (
 			bin, desc->name, buf_bytes, sz, file_sz, bin->rawstr,
 			baseaddr, loadaddr, desc->fd, name, NULL, offset, steal_ptr);
-	}
-	if (!binfile) {
-		// buf_bytes never leaves this function. if above failed, we still
-		// own it, so free and pass error up.
-		free(buf_bytes);
 	}
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
@@ -1288,10 +1282,16 @@ static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes,
 		return NULL;
 	}
 	if (!r_id_pool_grab_id (bin->file_ids, &binfile->id)) {
+		if (steal_ptr) { // we own the ptr, free on error
+			free ((void*) bytes);
+		}
 		free (binfile);		//no id means no binfile
 		return NULL;
 	}
-	r_bin_file_set_bytes (binfile, bytes, sz, steal_ptr);
+	int res = r_bin_file_set_bytes (binfile, bytes, sz, steal_ptr);
+	if (!res && steal_ptr) { // we own the ptr, free on error
+		free((void*) bytes);
+	}
 
 	binfile->rbin = bin;
 	binfile->file = strdup (file);
@@ -1408,6 +1408,9 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 		bf = r_bin_file_create_append (bin, file, bytes, sz, file_sz,
 					       rawstr, fd, xtrname, steal_ptr);
 		if (!bf) {
+			if(steal_ptr) {	// we own the ptr, free on error
+				free ((void*) bytes);
+			}
 			return NULL;
 		}
 		binfile_created = true;
