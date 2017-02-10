@@ -44,14 +44,14 @@ static RList *get_strings(RBinFile *a, int min, int dump);
 static void r_bin_object_delete_items(RBinObject *o);
 static void r_bin_object_free(void /*RBinObject*/ *o_);
 static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
-static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz);
+static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 //static int remove_bin_file_by_binfile (RBin *bin, RBinFile * binfile);
 //static void r_bin_free_bin_files (RBin *bin);
 static void r_bin_file_free(void /*RBinFile*/ *bf_);
 static RBinFile *r_bin_file_create_append(RBin *bin, const char *file,
 					   const ut8 *bytes, ut64 sz,
 					   ut64 file_sz, int rawstr, int fd,
-					   const char *xtrname);
+					   const char *xtrname, bool steal_ptr);
 
 static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr,
 					    const char *filename,
@@ -74,14 +74,15 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin,
 
 static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes,
 				 ut64 sz, ut64 file_sz, int rawstr, int fd,
-				 const char *xtrname, Sdb *sdb);
+				 const char *xtrname, Sdb *sdb, bool steal_ptr);
 
 static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 					    const ut8 *bytes, ut64 sz,
 					    ut64 file_sz, int rawstr,
 					    ut64 baseaddr, ut64 loadaddr,
 					    int fd, const char *pluginname,
-					    const char *xtrname, ut64 offset);
+					    const char *xtrname, ut64 offset,
+					    bool steal_ptr);
 
 static int getoffset(RBin *bin, int type, int idx);
 static const char *getname(RBin *bin, int type, int idx);
@@ -810,8 +811,8 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	if (!buf_bytes) {
 		return false;
 	}
-	r_bin_file_set_bytes (bf, buf_bytes, sz);
-	free (buf_bytes);
+	bool yes_plz_steal_ptr = true;
+	r_bin_file_set_bytes (bf, buf_bytes, sz, yes_plz_steal_ptr);
 
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
@@ -976,12 +977,16 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 	}
 
 	if (!binfile) {
+		bool steal_ptr = true; // transfer buf_bytes ownership to binfile
 		binfile = r_bin_file_new_from_bytes (
 			bin, desc->name, buf_bytes, sz, file_sz, bin->rawstr,
-			baseaddr, loadaddr, desc->fd, name, NULL, offset);
+			baseaddr, loadaddr, desc->fd, name, NULL, offset, steal_ptr);
 	}
-	free (buf_bytes);
-
+	if (!binfile) {
+		// buf_bytes never leaves this function. if above failed, we still
+		// own it, so free and pass error up.
+		free(buf_bytes);
+	}
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
@@ -1084,9 +1089,9 @@ static int r_bin_file_object_add(RBinFile *binfile, RBinObject *o) {
 static RBinFile *r_bin_file_create_append(RBin *bin, const char *file,
 					   const ut8 *bytes, ut64 sz,
 					   ut64 file_sz, int rawstr, int fd,
-					   const char *xtrname) {
+					   const char *xtrname, bool steal_ptr) {
 	RBinFile *bf = r_bin_file_new (bin, file, bytes, sz, file_sz, rawstr,
-				       fd, xtrname, bin->sdb);
+				       fd, xtrname, bin->sdb, steal_ptr);
 	if (bf) {
 		r_list_append (bin->binfiles, bf);
 	}
@@ -1107,7 +1112,7 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr,
 			return NULL;
 		}
 		bf = r_bin_file_create_append (bin, filename, bytes, sz,
-					       file_sz, rawstr, fd, xtr->name);
+					       file_sz, rawstr, fd, xtr->name, false);
 		if (!bf) {
 			return NULL; 
 		}
@@ -1253,28 +1258,31 @@ static RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin,
 }
 
 #define LIMIT_SIZE 0
-static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz) {
+static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr) {
 	if (!bytes) {
 		return false;
 	}
 	r_buf_free (binfile->buf);
 	binfile->buf = r_buf_new ();
 #if LIMIT_SIZE
-	if (sz < 1024 * 1024) {
-		r_buf_set_bytes (binfile->buf, bytes, sz);
-	} else {
-		// TODO: use r_buf_io instead of setbytes all the time to save memory
+	if (sz > 1024 * 1024) {
 		eprintf ("Too big\n");
+		// TODO: use r_buf_io instead of setbytes all the time to save memory
+		return NULL;
 	}
 #else
-	r_buf_set_bytes (binfile->buf, bytes, sz);
+	if (steal_ptr) {
+		r_buf_set_bytes_steal (binfile->buf, bytes, sz);
+	} else {
+		r_buf_set_bytes (binfile->buf, bytes, sz);
+	}
 #endif
 	return binfile->buf != NULL;
 }
 
 static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes,
 				 ut64 sz, ut64 file_sz, int rawstr, int fd,
-				 const char *xtrname, Sdb *sdb) {
+				 const char *xtrname, Sdb *sdb, bool steal_ptr) {
 	RBinFile *binfile = R_NEW0 (RBinFile);
 	if (!binfile) {
 		return NULL;
@@ -1283,7 +1291,7 @@ static RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes,
 		free (binfile);		//no id means no binfile
 		return NULL;
 	}
-	r_bin_file_set_bytes (binfile, bytes, sz);
+	r_bin_file_set_bytes (binfile, bytes, sz, steal_ptr);
 
 	binfile->rbin = bin;
 	binfile->file = strdup (file);
@@ -1378,7 +1386,8 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 					    ut64 file_sz, int rawstr,
 					    ut64 baseaddr, ut64 loadaddr,
 					    int fd, const char *pluginname,
-					    const char *xtrname, ut64 offset) {
+					    const char *xtrname, ut64 offset,
+					    bool steal_ptr) {
 	ut8 binfile_created = false;
 	RBinPlugin *plugin = NULL;
 	RBinXtrPlugin *xtr = NULL;
@@ -1397,7 +1406,7 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 
 	if (!bf) {
 		bf = r_bin_file_create_append (bin, file, bytes, sz, file_sz,
-					       rawstr, fd, xtrname);
+					       rawstr, fd, xtrname, steal_ptr);
 		if (!bf) {
 			return NULL;
 		}
@@ -1850,7 +1859,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits,
 			if (bin->cur) {
 				bin->cur->curplugin = plugin;
 			}
-			binfile = r_bin_file_new (bin, "-", NULL, 0, 0, 0, 999, NULL, NULL);
+			binfile = r_bin_file_new (bin, "-", NULL, 0, 0, 0, 999, NULL, NULL, false);
 			// create object and set arch/bits
 			obj = r_bin_object_new (binfile, plugin, 0, 0, 0, 1024);
 			binfile->o = obj;
