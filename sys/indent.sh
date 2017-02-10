@@ -14,6 +14,8 @@ INPLACE=0
 UNIFIED=0
 ROOTDIR=/
 
+UNCRUST=1
+
 if [ "${IFILE}" = "-i" ]; then
 	shift
 	INPLACE=1
@@ -26,10 +28,18 @@ if [ "${IFILE}" = "-u" ]; then
 	IFILE="$1"
 fi
 
-# yell, rather than overwrite an innocent file
-if ! type clang-format >/dev/null; then
-	echo This script requires clang-format to function
-	exit 1
+if [ "${UNCRUST}" = 1 ]; then
+	# yell, rather than overwrite an innocent file
+	if ! type uncrustify >/dev/null; then
+		echo "This script requires uncrustify to function. Check r2pm -i uncrustify"
+		exit 1
+	fi
+else
+	# yell, rather than overwrite an innocent file
+	if ! type clang-format >/dev/null; then
+		echo "This script requires clang-format to function"
+		exit 1
+	fi
 fi
 
 indentFile() {
@@ -38,10 +48,16 @@ indentFile() {
 		return
 	fi
 	echo "Indenting ${IFILE} ..." >&2
-	cp -f doc/clang-format ${CWD}/.clang-format
 	(
+if [ "${UNCRUST}" = 1 ]; then
+	cp -f doc/clang-format ${CWD}/.clang-format
+	cd "$CWD"
+	uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format
+else
+	cp -f doc/clang-format ${CWD}/.clang-format
 	cd "$CWD"
 	clang-format "${IFILE}"  > .tmp-format
+fi
 	# fix ternary conditional indent
 	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2
 	cat .tmp-format2 | sed -e 's, : ,: ,g' > .tmp-format
