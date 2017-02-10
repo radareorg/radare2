@@ -11,8 +11,9 @@ R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
 	double vld = 0.0f;
 	int off;
 	double ret = 0.0f;
-	if (!reg || !item)
+	if (!reg || !item) {
 		return 0LL;
+	}
 	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->arena];
 	switch (item->size) {
@@ -61,8 +62,9 @@ R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
 	long double vld = 0.0f;
 	int off;
 	long double ret = 0.0f;
-	if (!reg || !item)
+	if (!reg || !item) {
 		return 0LL;
+	}
 	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->arena];
 	switch (item->size) {
@@ -82,7 +84,7 @@ R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
 }
 
 R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
-	ut8 *src;
+	ut8 *src = NULL;
 
 	if (!item) {
 		eprintf ("r_reg_set_value: item is NULL\n");

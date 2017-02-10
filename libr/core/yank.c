@@ -4,13 +4,6 @@
 #include "r_print.h"
 #include "r_io.h"
 
-#ifdef IFDBG
-#undef IFDBG
-#endif
-
-#define DO_THE_DBG 0
-#define IFDBG if (DO_THE_DBG)
-
 /*
  * perform_mapped_file_yank will map in a file and yank from offset the number of len bytes from
  * filename.  if the len is -1, the all the bytes are mapped into the yank buffer.
@@ -21,8 +14,12 @@ static ut32 consume_chars(const char *input, char b);
 
 static ut32 find_next_char(const char *input, char b) {
 	ut32 i = 0;
-	if (!input) return i;
-	for (; *input != b; i++, input++) {}
+	if (!input) {
+		return i;
+	}
+	for (; *input != b; i++, input++) {
+		/* nothing */
+	}
 	return i;
 }
 
@@ -31,7 +28,9 @@ static ut32 consume_chars(const char *input, char b) {
 	if (!input) {
 		return i;
 	}
-	for (; *input == b; i++, input++) ;
+	for (; *input == b; i++, input++) {
+		/* nothing */
+	}
 	return i;
 }
 
@@ -50,8 +49,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 		// map the file in for IO operations.
 		if (yankfd && load_align) {
 			yank_file_sz = r_io_size (core->io);
-			map = r_io_map_add_next_available (core->io, yankfd->fd, R_IO_READ, 
-											  0, 0, yank_file_sz, load_align);
+			map = r_io_map_add_next_available (core->io, yankfd->fd, R_IO_READ, 0, 0, yank_file_sz, load_align);
 			loadaddr = map ? map->from : -1;
 			if (yankfd && map && loadaddr != -1) {
 				// ***NOTE*** this is important, we need to
@@ -72,31 +70,16 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 		len = yank_file_sz;
 	}
 
-	IFDBG eprintf ("yankfd: %p, yank->fd = %d, fd=%d\n", yankfd,
-		       (int)(yankfd ? yankfd->fd : -1), (int)fd);
 	// this wont happen if the file failed to open or the file failed to
 	// map into the IO layer
 	if (yankfd) {
-		ut64 res = r_io_seek (core->io, addr, R_IO_SEEK_SET),
-		     actual_len = len <= yank_file_sz ? len : 0;
+		ut64 res = r_io_seek (core->io, addr, R_IO_SEEK_SET);
+		ut64 actual_len = len <= yank_file_sz ? len : 0;
 		ut8 *buf = NULL;
-		IFDBG eprintf (
-			"Addr (%"PFMT64d
-			") file_sz (%"PFMT64d
-			") actual_len (%"PFMT64d
-			") len (%"PFMT64d
-			") bytes from file: %s\n", addr, yank_file_sz,
-			actual_len, len, filename);
 		if (actual_len > 0 && res == addr) {
-			IFDBG eprintf (
-				"Creating buffer and reading %"PFMT64d
-				" bytes from file: %s\n", actual_len, filename);
 			buf = malloc (actual_len);
 			actual_len = r_io_read_at (core->io, addr, buf,
 				actual_len);
-			IFDBG eprintf (
-				"Reading %"PFMT64d " bytes from file: %s\n",
-				actual_len, filename);
 			r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
 			res = true;
 		} else if (res != addr) {
@@ -156,12 +139,11 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	if (!buf) {
 		return false;
 	}
-	if (addr != core->offset)
+	if (addr != core->offset) {
 		r_core_seek (core, addr, 1);
-
+	}
 	r_core_read_at (core, addr, buf, len);
 	r_core_yank_set (core, addr, buf, len);
-
 	if (curseek != addr) {
 		r_core_seek (core, curseek, 1);
 	}
@@ -177,30 +159,37 @@ R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 		eprintf ("r_core_yank_string: cannot yank negative bytes\n");
 		return false;
 	}
-	if (addr != core->offset)
+	if (addr != core->offset) {
 		r_core_seek (core, addr, 1);
+	}
 	/* Ensure space and safe termination for largest possible string allowed */
-	buf = malloc (core->blocksize + 1);
-	if (!buf)
+	buf = calloc (1, core->blocksize + 1);
+	if (!buf) {
 		return false;
+	}
 	buf[core->blocksize] = 0;
 	r_core_read_at (core, addr, buf, core->blocksize);
 	if (maxlen == 0) {
-		maxlen = r_str_nlen ((const char*)buf, core->blocksize);	//Don't use strnlen, see: http://sourceforge.net/p/mingw/bugs/1912/
+		// Don't use strnlen, see: http://sourceforge.net/p/mingw/bugs/1912/
+		maxlen = r_str_nlen ((const char*)buf, core->blocksize);
 	} else if (maxlen > core->blocksize) {
 		maxlen = core->blocksize;
 	}
 	r_core_yank_set (core, addr, buf, maxlen);
-	if (curseek != addr)
+	if (curseek != addr) {
 		r_core_seek (core, curseek, 1);
+	}
 	free (buf);
 	return true;
 }
 
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len) {
-	if (len<0) return false;
-	if (len == 0 || len >= core->yank_buf->length) len =
-			core->yank_buf->length;
+	if (len < 0) {
+		return false;
+	}
+	if (len == 0 || len >= core->yank_buf->length) {
+		len = core->yank_buf->length;
+	}
 	r_core_write_at (core, addr, core->yank_buf->buf, len);
 	return true;
 }
@@ -211,7 +200,9 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 	char *str, *arg;
 	int res = false;
 
-	while (*_arg==' ') _arg++;
+	while (*_arg==' ') {
+		_arg++;
+	}
 	arg = strdup (_arg);
 	str = strchr (arg, ' ');
 	if (str) {
@@ -229,10 +220,9 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 		free (arg);
 		return res;
 	}
-
-	if (r_core_yank (core, core->offset, len) == true)
+	if (r_core_yank (core, core->offset, len) == true) {
 		res = r_core_yank_paste (core, pos, len);
-
+	}
 	free (arg);
 	return res;
 }
@@ -240,45 +230,57 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 R_API int r_core_yank_dump(RCore *core, ut64 pos) {
 	int res = false, i = 0;
 	int ybl = core->yank_buf->length;
-	if (ybl>0) {
+	if (ybl > 0) {
 		if (pos<ybl) {
 			r_cons_printf ("0x%08"PFMT64x " %d ",
 				core->yank_buf->base+pos,
 				core->yank_buf->length-pos);
-			for (i = pos; i < core->yank_buf->length; i++)
+			for (i = pos; i < core->yank_buf->length; i++) {
 				r_cons_printf ("%02x",
 					core->yank_buf->buf[i]);
+			}
 			r_cons_newline ();
 			res = true;
-		} else eprintf ("Position exceeds buffer length.\n");
-	} else eprintf ("No buffer yanked already\n");
+		} else {
+			eprintf ("Position exceeds buffer length.\n");
+		}
+	} else {
+		eprintf ("No buffer yanked already\n");
+	}
 	return res;
 }
 
 R_API int r_core_yank_hexdump(RCore *core, ut64 pos) {
 	int res = false;
 	int ybl = core->yank_buf->length;
-	if (ybl>0) {
+	if (ybl > 0) {
 		if (pos < ybl) {
 			r_print_hexdump (core->print, pos,
 				core->yank_buf->buf + pos,
 				ybl - pos, 16, 1);
 			res = true;
-		} else eprintf ("Position exceeds buffer length.\n");
-	} else eprintf ("No buffer yanked already\n");
+		} else {
+			eprintf ("Position exceeds buffer length.\n");
+		}
+	} else {
+		eprintf ("No buffer yanked already\n");
+	}
 	return res;
 }
 
 R_API int r_core_yank_cat(RCore *core, ut64 pos) {
 	int ybl = core->yank_buf->length;
-	if (ybl>0) {
+	if (ybl > 0) {
 		if (pos < ybl) {
 			r_cons_memcat ((const char*)core->yank_buf->buf + pos,
 				core->yank_buf->length - pos);
 			r_cons_newline ();
 			return true;
-		} else eprintf ("Position exceeds buffer length.\n");
-	} else r_cons_newline ();
+		}
+		eprintf ("Position exceeds buffer length.\n");
+	} else {
+		r_cons_newline ();
+	}
 	return false;
 }
 
@@ -290,7 +292,8 @@ R_API int r_core_yank_cat_string(RCore *core, ut64 pos) {
 			r_cons_memcat ((const char*)core->yank_buf->buf + pos, len);
 			r_cons_newline ();
 			return true;
-		} else eprintf ("Position exceeds buffer length.\n");
+		}
+		eprintf ("Position exceeds buffer length.\n");
 	} else {
 		r_cons_newline ();
 	}
@@ -301,8 +304,12 @@ R_API int r_core_yank_hud_file(RCore *core, const char *input) {
 	char *buf = NULL;
 	bool res = false;
 	ut32 len = 0;
-	if (!input || !*input) return false;
-	for (input++; *input==' '; input++) ;
+	if (!input || !*input) {
+		return false;
+	}
+	for (input++; *input == ' '; input++) {
+		/* nothing */
+	}
 	buf = r_cons_hud_file (input, r_config_get_i (core->config, "scr.color")); 
 	len = buf ? strlen ((const char*)buf) + 1 : 0;
 	res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
@@ -314,7 +321,9 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	char *buf = NULL;
 	ut32 len = 0;
 	int res;
-	for (input++; *input==' '; input++) ;
+	for (input++; *input==' '; input++) {
+		/* nothing */
+	}
 	buf = r_cons_hud_path (input, dir, r_config_get_i (core->config, "scr.color"));
 	len = buf ? strlen ((const char*)buf) + 1 : 0;
 	res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
@@ -322,12 +331,13 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	return res;
 }
 
-R_API int r_core_yank_file_ex(RCore *core, const char *input) {
+R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	ut64 len = 0, adv = 0, addr = 0;
-	int res = false;
+	bool res = false;
 
-	if (!input) return res;
-
+	if (!input) {
+		return res;
+	}
 	// get the number of bytes to yank
 	adv = consume_chars (input, ' ');
 	len = r_num_math (core->num, input+adv);
@@ -343,7 +353,6 @@ R_API int r_core_yank_file_ex(RCore *core, const char *input) {
 	}
 	adv++;
 
-	IFDBG eprintf ("Handling the input: %s\n", input+adv);
 	// XXX - bug, will fail if address needs to be computed and has spaces
 	addr = r_num_math (core->num, input+adv);
 
@@ -354,7 +363,6 @@ R_API int r_core_yank_file_ex(RCore *core, const char *input) {
 	}
 	adv++;
 
-	IFDBG eprintf ("Filename: %s\n", input+adv);
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	return perform_mapped_file_yank (core, addr, len, input+adv);
@@ -366,6 +374,5 @@ R_API int r_core_yank_file_all(RCore *core, const char *input) {
 		return false;
 	}
 	adv = consume_chars (input, ' ');
-	IFDBG eprintf ("Filename: %s\n", input+adv);
 	return perform_mapped_file_yank (core, 0, -1, input+adv);
 }

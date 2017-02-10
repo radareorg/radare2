@@ -1,6 +1,7 @@
-/* copyright 2015-2016 radare2 by pancake */
+/* copyright 2015-2017 radare2 by pancake */
 
 #include <r_userconf.h>
+#include <r_util.h>
 
 #ifndef R2_GITTAP
 #define R2_GITTAP ""

@@ -82,8 +82,8 @@ typedef enum {
 typedef struct r_reg_item_t {
 	char *name;
 	int /*RRegisterType*/ type;
-	int size; /* 8,16,32,64 ... 128/256 ??? */
-	int offset; /* offset in data structure */
+	int size;	/* 8,16,32,64 ... 128/256 ??? */
+	int offset;      /* offset in data structure */
 	int packed_size; /* 0 means no packed register, 1byte pack, 2b pack... */
 	bool is_float;
 	char *flags;
@@ -98,8 +98,8 @@ typedef struct r_reg_arena_t {
 
 typedef struct r_reg_set_t {
 	RRegArena *arena;
-	RList *pool; /* RRegArena */
-	RList *regs; /* RRegItem */
+	RList *pool;      /* RRegArena */
+	RList *regs;      /* RRegItem */
 	int maskregstype; /* which type of regs have this reg set (logic mask with RRegisterType  R_REG_TYPE_XXX) */
 } RRegSet;
 
@@ -138,7 +138,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile);
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
 R_API ut64 r_reg_getv(RReg *reg, const char *name);
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val);
-R_API const char *r_reg_32_to_64(RReg* reg, const char* rreg32);
+R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
 R_API const char *r_reg_get_type(int idx);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
 R_API const char *r_reg_get_role(int role);
@@ -192,7 +192,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits);
 R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size);
 R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len);
 R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len);
-R_API int r_reg_arena_set_bytes(RReg *reg, const char* str);
+R_API int r_reg_arena_set_bytes(RReg *reg, const char *str);
 R_API RRegArena *r_reg_arena_new(int size);
 R_API void r_reg_arena_free(RRegArena *ra);
 R_API int r_reg_fit_arena(RReg *reg);

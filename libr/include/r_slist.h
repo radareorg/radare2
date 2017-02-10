@@ -1,8 +1,11 @@
-/* radare - LGPL - Copyright 2013 - pancake */
-/* sliced list */
+/* radare - LGPL - Copyright 2013-2017 - pancake */
+
+/* sliced list implementation */
 
 #ifndef R2_SLIST_H
 #define R2_SLIST_H
+
+#include <r_util.h>
 
 #ifdef __cplusplus
 extern "C" {

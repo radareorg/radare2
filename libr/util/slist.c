@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2013 - pancake */
 // -- work in progress -- //
 
-#include "r_util.h"
 #include "r_slist.h"
 
 R_API RSList *r_slist_new() {

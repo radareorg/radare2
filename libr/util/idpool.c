@@ -57,7 +57,7 @@ R_API bool r_id_pool_kick_id(RIDPool *pool, ut32 kick) {
 	if (!pool->freed_ids) {
 		pool->freed_ids = r_queue_new (2);
 	}
-	r_queue_enqueue (pool->freed_ids, (void *)kick);
+	r_queue_enqueue (pool->freed_ids, (void *)(size_t)kick);
 	return true;
 }
 

@@ -47,7 +47,7 @@ R_API ut8 *r_reg_get_bytes(RReg *reg, int type, int *size) {
 }
 
 /* deserialize ALL register types into buffer */
-/* XXX does the same as r_reg_get_bytes ? */
+/* XXX does the same as r_reg_get_bytes? */
 R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 	int i, off = 0;
 	RRegArena *arena;
@@ -72,9 +72,11 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len) {
 		}
 		memset (arena->bytes, 0, arena->size);
 		memcpy (arena->bytes, buf + off,
-		R_MIN (len - off, arena->size));
+			R_MIN (len - off, arena->size));
 		off += arena->size;
-		if (off > len) return false;
+		if (off > len) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -204,8 +206,9 @@ R_API void r_reg_arena_pop(RReg *reg) {
 	RRegArena *a;
 	int i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		if (r_list_length (reg->regset[i].pool) < 2)
+		if (r_list_length (reg->regset[i].pool) < 2) {
 			continue;
+		}
 		a = r_list_pop (reg->regset[i].pool);
 		r_reg_arena_free (a);
 		a = reg->regset[i].pool->tail->data;
@@ -276,7 +279,7 @@ R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source) {
 	return ret;
 }
 
-R_API int r_reg_arena_set_bytes(RReg *reg, const char* str) {
+R_API int r_reg_arena_set_bytes(RReg *reg, const char *str) {
 	while (IS_WHITESPACE (*str)) {
 		str++;
 	}
@@ -286,7 +289,7 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char* str) {
 		return -1;
 	}
 	int bin_str_len = (len + 1) / 2; //2 hex chrs for 1 byte
-	ut8* bin_str = malloc (bin_str_len);
+	ut8 *bin_str = malloc (bin_str_len);
 	if (!bin_str) {
 		eprintf ("Failed to decode hex str.\n");
 		return -1;

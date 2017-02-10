@@ -34,7 +34,10 @@ libr/util/slist.c
 libr/util/log.c
 libr/util/cache.c
 libr/core/file.c
+libr/core/yank.c
+libr/core/blaze.c
 binr/rasm2/rasm2.c
+binr/rax2/rax2.c
 "
 case "$1" in
 "help"|-h)
