@@ -38,6 +38,7 @@ R_API bool r_buf_dump (RBuffer *buf, const char *file);
 /* methods */
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length);
+R_API int r_buf_set_bytes_steal(RBuffer *b, const ut8 *buf, ut64 length);
 R_API int r_buf_append_string(RBuffer *b, const char *str);
 R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a);
 R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length);

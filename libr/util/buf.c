@@ -287,6 +287,18 @@ R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	if (!(b->buf = malloc (length)))
 		return false;
 	memmove (b->buf, buf, length);
+
+	b->length = length;
+	b->empty = 0;
+	return true;
+}
+
+R_API int r_buf_set_bytes_steal(RBuffer *b, const ut8 *buf, ut64 length) {
+	if (length <= 0 || !buf) {
+		return false;
+	}
+	free (b->buf);
+	b->buf = (ut8*) buf;
 	b->length = length;
 	b->empty = 0;
 	return true;
