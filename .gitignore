@@ -1,4 +1,6 @@
 clang-log/
+.clang-format
+.tmp-format
 *._d
 *._o
 *.[ado]
