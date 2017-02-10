@@ -3088,16 +3088,17 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					" Home/End     - go to the top/bottom of the canvas\n"
 					" Page-UP/DOWN - scroll canvas up/down\n"
 					" C            - toggle scr.colors\n"
+					" d            - rename function\n"
 					" hjkl         - scroll canvas\n"
 					" HJKL         - move node\n"
 					" m/M          - change mouse modes\n"
-					" N            - toggle node folding/minification\n"
+					" y            - toggle node folding/minification\n"
+					" n/N          - next/previous scr.nkey (function/flag..)\n"
 					" tab          - select next node\n"
 					" TAB          - select previous node\n"
 					" t/f          - follow true/false edges\n"
 					" g([A-Za-z]*) - follow jmp/call identified by shortcut\n"
 					" G            - debug trace callgraph (generated with dtc)\n"
-					" n            - rename function\n"
 					" F            - enter flag selector\n"
 					" _            - enter hud selector\n"
 					" o            - go/seek to given offset\n"
@@ -3154,6 +3155,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		}
+		case 'r':
+			if (fcn) {
+				g->layout = r_config_get_i (core->config, "graph.layout");
+				g->need_reload_nodes = true;
+			}
+			break;
 		case 'R':
 			if (!fcn) break;
 			if (r_config_get_i (core->config, "scr.randpal")) {
@@ -3190,12 +3197,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'C':
 			r_config_toggle (core->config, "scr.color");
 			break;
-		case 'r':
-			if (fcn) {
-				g->layout = r_config_get_i (core->config, "graph.layout");
-				g->need_reload_nodes = true;
-			}
-			break;
 		case 'm':
 			mousemode++;
 			if (!mousemodes[mousemode]) {
@@ -3208,7 +3209,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				mousemode = 3;
 			}
 			break;
-		case 'n':
+		case 'd':
 			{
 				char *newname = r_cons_input ("New function name:");
 				if (newname) {
@@ -3219,6 +3220,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 					free (newname);
 				}
 			}
+			break;
+		case 'n':
+			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
+			break;
+		case 'N':
+			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
+			break;
+		case 'y':
+			agraph_toggle_mini (g);
 			break;
 		case 'J':
 			if (okey == 27) { // && r_cons_readchar () == 126) {
@@ -3257,9 +3267,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case 'v':
 			r_core_visual_anal (core);
 			break;
-		case 'N':
-			agraph_toggle_mini (g);
-			break;
 		case 'L': 
 			 {
 				RANode *n = get_anode (g->curnode);
@@ -3279,7 +3286,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			agraph_follow_true (g);
 			break;
 		case 'T':
-		// XXX WIP	agraph_merge_child (g, 0);
+			// XXX WIP	agraph_merge_child (g, 0);
 			break;
 		case 'f':
 			agraph_follow_false (g);

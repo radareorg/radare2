@@ -12,6 +12,7 @@ UseTab: Always
 IndentCaseLabels: false
 ColumnLimit: 0
 BreakBeforeBraces: Attach
+BraceWrapping: Always
 BreakBeforeTernaryOperators: false
 AllowShortIfStatementsOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
