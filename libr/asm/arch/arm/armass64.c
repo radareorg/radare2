@@ -30,6 +30,7 @@ typedef struct operand_t {
 		struct {
 			int reg;
 			RegType reg_type;
+			ut16 sp_val;
 		};
 		struct {
 			ut64 immediate;
@@ -136,22 +137,8 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 
 #include "armass64_const.h"
 
-static ut32 msrk(const char *arg) {
-	int i;
+static ut32 msrk(ut16 v) {
 	ut32 r = 0;
-	ut32 v = r_num_get (NULL, arg);
-	arg = r_str_chop_ro (arg);
-	if (!v) {
-		for (i = 0; msr_const[i].name; i++) {
-			if (!strncasecmp (arg, msr_const[i].name, strlen (msr_const[i].name))) {
-				v = msr_const[i].val;
-				break;
-			}
-		}
-		if (!v) {
-			return UT32_MAX;
-		}
-	}
 	ut32 a = ((v >> 12) & 0xf) << 1;
 	ut32 b = ((v & 0xfff) >> 3) & 0xff;
 	r |= a << 8;
@@ -159,34 +146,74 @@ static ut32 msrk(const char *arg) {
 	return r;
 }
 
-static ut32 msr(const char *str, int w) {
-	const char *comma = strchr (str, ',');
-	ut32 op = UT32_MAX;
-	if (comma) {
-		ut32 r, b;
-		/* handle swapped args */
-		if (w) {
-			char *reg = strchr (str, 'x');
-			if (!reg) {
-				return op;
+static ut32 msr(ArmOp *op, int w) {
+	ut32 data = UT32_MAX;
+	int i;
+	ut32 r, b;
+	/* handle swapped args */
+	if (w) {
+		if (op->operands[1].reg_type != (ARM_REG64 | ARM_SP)) {
+			if (op->operands[1].type == ARM_CONSTANT) {
+				for (i = 0; msr_const[i].name; i++) {
+					if (op->operands[1].immediate == msr_const[i].val) {
+						op->operands[1].sp_val = msr_const[i].val;
+						op->operands[1].reg = op->operands[1].immediate;
+						break;
+					}
+				}
+			} else {
+				return data;
 			}
-			r = atoi (reg + 1);
-			b = msrk (comma + 1);
-		} else {
-			char *reg = strchr (comma + 1, 'x');
-			if (!reg) {
-				return op;
+		}
+		r = op->operands[0].reg;
+		b = msrk (op->operands[0].sp_val);
+	} else {
+		if (op->operands[0].reg_type != (ARM_REG64 | ARM_SP)) {
+			if (op->operands[0].type == ARM_CONSTANT) {
+				for (i = 0; msr_const[i].name; i++) {
+					if (op->operands[0].immediate == msr_const[i].val) {
+						op->operands[0].sp_val = msr_const[i].val;
+						op->operands[0].reg = op->operands[0].immediate;
+						break;
+					}
+				}
+			} else {
+				return data;
 			}
-			r = atoi (reg + 1);
-			b = msrk (str + 4);
 		}
-		op = (r << 24) | b | 0xd5;
-		if (w) {
-			/* mrs */
-			op |= 0x2000;
-		}
+		r = op->operands[0].reg;
+		b = msrk (op->operands[0].sp_val);
 	}
-	return op;
+	data = (r << 24) | b | 0xd5;
+	if (w) {
+		/* mrs */
+		data |= 0x413000;
+	}
+	if (op->operands[1].reg_type == ARM_REG64) {
+		data |= op->operands[1].reg << 24;
+	}
+
+	return data;
+}
+
+static ut32 adr(ArmOp *op, int addr) {
+	ut32 data = UT32_MAX;
+	ut64 at = 0LL;
+
+	if (op->operands[1].type & ARM_CONSTANT) {
+		// XXX what about negative values?
+		at = op->operands[1].immediate - addr;
+		at /= 4;
+	}
+	data = 0x00000030;
+	data += 0x01000000 * op->operands[0].reg;
+	ut8 b0 = at;
+	ut8 b1 = (at >> 3) & 0xff;
+	ut8 b2 = (at >> (8 + 7)) & 0xff;
+	data += b0 << 29;
+	data += b1 << 16;
+	data += b2 << 24;
+	return data;
 }
 
 static ut32 exception(ArmOp *op, ut32 k) {
@@ -237,6 +264,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 
 	while (token[0] != '\0') {
 		op->operands[operand].type = ARM_NOTYPE;
+		op->operands[operand].reg_type = ARM_UNDEFINED;
 		switch (token[0]) {
 			case ' ':
 				token ++;
@@ -251,7 +279,6 @@ static bool parseOperands(char* str, ArmOp *op) {
 				op->operands[operand].type = ARM_GPR;
 				op->operands[operand].reg_type = ARM_REG64;
 				op->operands[operand].reg = r_num_math (NULL, token + 1);
-
 			break;
 			case 'w':
 				x = strchr (token, ',');
@@ -262,7 +289,6 @@ static bool parseOperands(char* str, ArmOp *op) {
 				op->operands[operand].type = ARM_GPR;
 				op->operands[operand].reg_type = ARM_REG32;
 				op->operands[operand].reg = r_num_math (NULL, token + 1);
-
 			break;
 			case 'v':
 				x = strchr (token, ',');
@@ -272,13 +298,21 @@ static bool parseOperands(char* str, ArmOp *op) {
 				op->operands_count ++;
 				op->operands[operand].type = ARM_FP;
 				op->operands[operand].reg = r_num_math (NULL, token + 1);
-
 			break;
 			case 's':
 			case 'S':
 				x = strchr (token, ',');
 				if (x) {
 					x[0] = '\0';
+				}
+				if (token[1] == 'P' || token [1] == 'p') {
+					int i;
+					for (i = 0; msr_const[i].name; i++) {
+						if (!strncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
+							op->operands[operand].sp_val = msr_const[i].val;
+							break;
+						}
+					}
 				}
 				op->operands_count ++;
 				op->operands[operand].type = ARM_GPR;
@@ -297,7 +331,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 				}
 				op->operands_count ++;
 				switch (imm_count) {
-					case 0:
+					case 0:						
 						op->operands[operand].type = ARM_CONSTANT;
 						op->operands[operand].immediate = r_num_math (NULL, token);
 					break;
@@ -356,23 +390,7 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		return *op != -1;
 	}
 	if (!strncmp (str, "adr x", 5)) { // w
-		int regnum = atoi (str + 5);
-		char *arg = strchr (str + 5, ',');
-		ut64 at = 0LL;
-		if (arg) {
-			at = r_num_math (NULL, arg + 1);
-			// XXX what about negative values?
-			at = at - addr;
-			at /= 4;
-		}
-		*op = 0x00000010;
-		*op += 0x01000000 * regnum;
-		ut8 b0 = at;
-		ut8 b1 = (at >> 3) & 0xff;
-		ut8 b2 = (at >> (8 + 7)) & 0xff;
-		*op += b0 << 29;
-		*op += b1 << 16;
-		*op += b2 << 24;
+		*op = adr (&ops, addr);
 		return *op != -1;
 	}
 	if (!strcmp (str, "nop")) {
@@ -384,13 +402,13 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		return true;
 	}
 	if (!strncmp (str, "msr ", 4)) {
-		*op = msr (str, 0);
+		*op = msr (&ops, 0);
 		if (*op != UT32_MAX) {
 			return true;
 		}
 	}
 	if (!strncmp (str, "mrs ", 4)) {
-		*op = msr (str, 1);
+		*op = msr (&ops, 1);
 		if (*op != UT32_MAX) {
 			return true;
 		}
