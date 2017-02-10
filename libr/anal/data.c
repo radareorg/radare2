@@ -77,7 +77,7 @@ static bool is_bin(const ut8 *buf, int size) {
 	if ((size >= 4 && !memcmp (buf, "\xcf\xfa\xed\xfe", 4))) {
 		return true;
 	}
-	if ((size >= 4 && !memcmp (buf, "\x7eELF", 4))) {
+	if ((size >= 4 && !memcmp (buf, "\x7f\x45\x4c\x46", 4))) { // \x7fELF
 		return true;
 	}
 	if ((size >= 2 && !memcmp (buf, "MZ", 2))) {
