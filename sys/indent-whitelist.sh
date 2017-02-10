@@ -33,6 +33,7 @@ libr/util/stack.c
 libr/util/slist.c
 libr/util/log.c
 libr/util/cache.c
+libr/util/print.c
 libr/core/file.c
 libr/core/yank.c
 libr/core/blaze.c

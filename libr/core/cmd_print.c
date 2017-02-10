@@ -4240,7 +4240,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf ("|Usage: p2 [number of bytes representing tiles]\n"
 						"NOTE: Only full tiles will be printed\n");
 			} else {
-				r_print_2bpp_tiles (core->print, core->block, len/16);
+				r_print_2bpp_tiles (core->print, core->block, len / 16);
 			}
 		}
 		break;
