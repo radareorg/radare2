@@ -2995,11 +2995,13 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': // "pif"
 			if (l != 0) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (f) {
 					ut32 bsz = core->blocksize;
-					r_core_block_size (core, r_anal_fcn_realsize (f));
-					r_core_print_disasm_instructions (core, 0, 0);
+					// int fsz = r_anal_fcn_realsize (f);
+					int fsz = r_anal_fcn_size (f); // we want max-min here
+					r_core_block_size (core, fsz);
+					r_core_print_disasm_instructions (core, fsz, 0);
 					r_core_block_size (core, bsz);
 				} else {
 					r_core_print_disasm_instructions (core,

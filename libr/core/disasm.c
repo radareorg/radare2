@@ -3793,6 +3793,10 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			ds->analop.size = ret;
 			ds->asmop.size = ret;
 		}
+		/* fix infinite loop */
+		if (ret < 1) {
+			ret = 1;
+		}
 		len += R_MAX (0, ret);
 		if (ds->hint && ds->hint->opcode) {
 			free (ds->opstr);
@@ -3826,8 +3830,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 					}
 				}
 				core->parser->hint = ds->hint;
-				r_parse_filter (core->parser, core->flags,
-						ds->asmop.buf_asm, ds->str, sizeof (ds->str), core->print->big_endian);
+				r_parse_filter (core->parser, core->flags, ds->asmop.buf_asm, ds->str,
+						sizeof (ds->str), core->print->big_endian);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds);
 				core->parser->flagspace = ofs;
