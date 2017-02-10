@@ -1,7 +1,7 @@
 -include config-user.mk
 include global.mk
 
-PREVIOUS_RELEASE=1.0.2
+PREVIOUS_RELEASE=1.2.0
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
@@ -53,7 +53,7 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C libr
 	${MAKE} -C binr
 
-.PHONY: libr/include/r_version.h
+#.PHONY: libr/include/r_version.h
 GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 ifndef SOURCE_DATE_EPOCH
@@ -71,7 +71,7 @@ libr/include/r_version.h:
 	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(BUILDSEC)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#endif$(Q) >> $@.tmp
-	@cmp -s $@.tmp $@ || (mv -f $@.tmp $@ && echo "Update libr/include/r_version.h")
+	@mv -f $@.tmp $@
 	@rm -f $@.tmp
 
 plugins.cfg:
