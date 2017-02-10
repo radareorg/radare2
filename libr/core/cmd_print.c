@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_asm.h"
 #include "r_core.h"
@@ -2998,7 +2998,7 @@ static int cmd_print(void *data, const char *input) {
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
 					ut32 bsz = core->blocksize;
-					r_core_block_size (core, r_anal_fcn_size (f));
+					r_core_block_size (core, r_anal_fcn_realsize (f));
 					r_core_print_disasm_instructions (core, 0, 0);
 					r_core_block_size (core, bsz);
 				} else {
