@@ -216,7 +216,7 @@ retry:
 				if (buf[0] == '\n' && printed) {
 					buf++;
 				}
-				D printf (" ==> 2.1: continue(%s)\n", ptr2 + delta);
+				D printf (" ==> 2.1: continue(%s)\n", buf);
 				goto retry;
 			} else {
 				do_fputs (out, "\n");

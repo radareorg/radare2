@@ -291,6 +291,6 @@ spp-sync sync-spp:
 	git add spp
 
 spp: spp-sync
-	cd spp ; $(MAKE)
+	CFLAGS=-fPIC $(MAKE) -C spp
 
 .PHONY: spp

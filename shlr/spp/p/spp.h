@@ -131,7 +131,7 @@ TAG_CALLBACK(spp_trace)
 {
 	char b[1024];
 	if (!echo[ifl]) return 0;
-	snprintf(b, 1023, "echo '%s' >&2", buf);
+	snprintf(b, 1023, "echo '%s' >&2 ", buf);
 	system(b);
 	return 0;
 }
@@ -199,7 +199,7 @@ TAG_CALLBACK(spp_include)
 TAG_CALLBACK(spp_if)
 {
 	char *var = spp_var_get(buf);
-	echo[ifl + 1] = (var && *var!='0' && *var != '\0')? 1: 0;
+	echo[ifl + 1] = (var && *var != '0' && *var != '\0') ? 1 : 0;
 	return 1;
 }
 
