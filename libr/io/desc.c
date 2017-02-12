@@ -2,7 +2,7 @@
 #include <sdb.h>
 #include <string.h>
 
-R_API int r_io_desc_init (RIO *io)
+R_API bool r_io_desc_init (RIO *io)
 {
 	if (!io || io->files)
 		return false;
@@ -44,7 +44,7 @@ R_API void r_io_desc_free (RIODesc *desc)
 	free (desc);
 }
 
-R_API int r_io_desc_add (RIO *io, RIODesc *desc)
+R_API bool r_io_desc_add (RIO *io, RIODesc *desc)
 {
 	if (!desc || !io)
 		return false;
@@ -74,7 +74,7 @@ R_API int r_io_desc_add (RIO *io, RIODesc *desc)
 	return true;
 }
 
-R_API int r_io_desc_del (RIO *io, int fd)
+R_API bool r_io_desc_del (RIO *io, int fd)
 {
 	RIODesc *desc;
 	if (!io || !(desc = r_id_storage_get (io->files, fd))) {
@@ -94,7 +94,7 @@ R_API RIODesc *r_io_desc_get (RIO *io, int fd)
 	return (RIODesc *)r_id_storage_get (io->files, fd);
 }
 
-R_API int r_io_desc_use (RIO *io, int fd)
+R_API bool r_io_desc_use (RIO *io, int fd)
 {
 	RIODesc *desc;
 	if (!(desc = r_io_desc_get (io, fd)))
@@ -153,7 +153,7 @@ R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx)
 	return true;
 }
 
-R_API r_io_desc_get_pid (RIO *io, int fd)
+R_API int r_io_desc_get_pid (RIO *io, int fd)
 {
 	RIODesc *desc;
 	if (!io || !io->files)
@@ -179,7 +179,7 @@ bool desc_fini_cb (void *user, void *data, ut32 id) {
 }
 
 //closes all descs and frees all descs and io->files
-R_API int r_io_desc_fini (RIO *io)
+R_API bool r_io_desc_fini (RIO *io)
 {
 	if (!io || !io->files)
 		return false;

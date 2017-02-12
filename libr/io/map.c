@@ -44,7 +44,7 @@ R_API void r_io_map_init (RIO *io)
 }
 
 //check if a map with exact the same properties exists
-R_API int r_io_map_exists (RIO *io, RIOMap *map)
+R_API bool r_io_map_exists (RIO *io, RIOMap *map)
 {
 	SdbListIter *iter;
 	RIOMap *m;
@@ -58,7 +58,7 @@ R_API int r_io_map_exists (RIO *io, RIOMap *map)
 }
 
 //check if a map with specified id exists
-R_API int r_io_map_exists_for_id (RIO *io, ut32 id)
+R_API bool r_io_map_exists_for_id (RIO *io, ut32 id)
 {
 	return !!(r_io_map_resolve(io, id));
 }
@@ -100,7 +100,7 @@ R_API RIOMap *r_io_map_get (RIO *io, ut64 addr)
 }
 
 //deletes a map with specified id
-R_API int r_io_map_del (RIO *io, ut32 id)
+R_API bool r_io_map_del (RIO *io, ut32 id)
 {
 	SdbListIter *iter;
 	RIOMap *map;
@@ -117,11 +117,11 @@ R_API int r_io_map_del (RIO *io, ut32 id)
 }
 
 //delete all maps with specified fd
-R_API int r_io_map_del_for_fd (RIO *io, int fd)
+R_API bool r_io_map_del_for_fd (RIO *io, int fd)
 {
 	SdbListIter *iter, *ator;
 	RIOMap *map;
-	int ret = false;
+	bool ret = false;
 	if (!io || !io->maps)
 		return ret;
 	for (iter = io->maps->head; iter != NULL; iter = ator) {
@@ -225,7 +225,7 @@ R_API void r_io_map_fini (RIO *io)
 }
 
 //checks if (from;to) overlaps with (map->from;map->to)
-R_API int r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to)					//rename pls
+R_API bool r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to)					//rename pls
 {
 	if (!map || (to < from))
 		return false;

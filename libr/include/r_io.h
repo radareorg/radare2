@@ -223,34 +223,34 @@ typedef struct r_io_bind_t {
 } RIOBind;
 
 //desc.c
-R_API int r_io_desc_init (RIO *io);
+R_API bool r_io_desc_init (RIO *io);
 R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
 R_API void r_io_desc_free (RIODesc *desc);
-R_API int r_io_desc_add (RIO *io, RIODesc *desc);
-R_API int r_io_desc_del (RIO *io, int fd);
+R_API bool r_io_desc_add (RIO *io, RIODesc *desc);
+R_API bool r_io_desc_del (RIO *io, int fd);
 R_API RIODesc *r_io_desc_get (RIO *io, int fd);
-R_API int r_io_desc_use (RIO *io, int fd);
+R_API bool r_io_desc_use (RIO *io, int fd);
 R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
 R_API ut64 r_io_desc_size (RIODesc *desc);
 R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);
 R_API int r_io_desc_get_pid (RIO *io, int fd);
-R_API int r_io_desc_fini (RIO *io);
+R_API bool r_io_desc_fini (RIO *io);
 
 //map.c
 R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API void r_io_map_init (RIO *io);
-R_API int r_io_map_exists (RIO *io, RIOMap *map);
-R_API int r_io_map_exists_for_id (RIO *io, ut32 id);
+R_API bool r_io_map_exists (RIO *io, RIOMap *map);
+R_API bool r_io_map_exists_for_id (RIO *io, ut32 id);
 R_API RIOMap *r_io_map_resolve (RIO *io, ut32 id);
 R_API RIOMap *r_io_map_add (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_get (RIO *io, ut64 addr);		//returns the map at addr with the highest priority
-R_API int r_io_map_del (RIO *io, ut32 id);
-R_API int r_io_map_del_for_fd (RIO *io, int fd);
+R_API bool r_io_map_del (RIO *io, ut32 id);
+R_API bool r_io_map_del_for_fd (RIO *io, int fd);
 R_API bool r_io_map_priorize (RIO *io, ut32 id);
 R_API bool r_io_map_priorize_for_fd (RIO *io, int fd);
 R_API void r_io_map_cleanup (RIO *io);
 R_API void r_io_map_fini (RIO *io);
-R_API int r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to);
+R_API bool r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to);
 R_API void r_io_map_set_name (RIOMap *map, const char *name);
 R_API void r_io_map_del_name (RIOMap *map);
 R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align);
