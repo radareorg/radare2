@@ -1,10 +1,11 @@
 #!/bin/sh
 
 IFILE="$1"
-cd `dirname $0`/..
+P=`readlink $0`
+cd `dirname $P`/..
 
 if [ -z "${IFILE}" ]; then
-	echo "Usage: indent.sh [-i|-u] [file] [...]"
+	echo "Usage: r2-indent [-i|-u] [file] [...]"
 	echo " -i    indent in place (modify file)"
 	echo " -u    unified diff of the file"
 	exit 1
