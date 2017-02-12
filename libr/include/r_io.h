@@ -66,15 +66,13 @@ typedef struct r_io_t {
 	int buffer_enabled;
 	int debug;
 //#warning remove debug from RIO
-	ut32 desc_fd;
-	SdbList *freed_desc_fds;
 	RIDPool *sec_ids;
 	RIDPool *map_ids;
 	SdbList *maps;
 	SdbList *sections;
+	RIDStorage *files;
 	RCache *buffer;
 	RList *cache;	//sdblist?
-	Sdb *files;	//use RIDStorage here
 	ut8 *write_mask;
 	int write_mask_len;
 	RIOUndo undo;

@@ -29,26 +29,24 @@ static void map_list (RIO *io, int mode, RPrint *print) {
 	}
 }
 
-static int desc_list_cb (void *user, const char *str_fd, const char *str_desc) {
-	RPrint *p = (RPrint *)user;					//TODO: make this fancy
-	SdbListIter *iter;
-	RIODesc *desc = (RIODesc *)(size_t)sdb_atoi (str_desc);
+static bool desc_list_cb (void *user, void *data, ut32 id) {
+	RPrint *p = (RPrint *)user;
+	RIODesc *desc = (RIODesc *)data;
 	RIOMap *map;
-	if (desc) {
-		p->cb_printf ("[%2d] %c %s : %s size=0x%"PFMT64x"\n", desc->fd, 
-				(desc->io && (desc->io->desc == desc)) ? '*' : '-',
-				desc->uri, r_str_rwx_i (desc->flags), r_io_desc_size (desc));
-		if (desc->io && desc->io->va && desc->io->maps) {
-			ls_foreach_prev (desc->io->maps, iter, map) {
-				if (map->fd == desc->fd) {
-					p->cb_printf (" [%2d] +0x%"PFMT64x" 0x%"PFMT64x
-						" - 0x%"PFMT64x" : %s : %s\n", map->id, map->delta,
-						map->from, map->to, r_str_rwx_i (map->flags), (map->name ? map->name : ""));
-				}
+	SdbListIter *iter;
+	p->cb_printf ("[%2d] %c %s : %s size=0x%"PFMT64x"\n", desc->fd, 
+			(desc->io && (desc->io->desc == desc)) ? '*' : '-',
+			desc->uri, r_str_rwx_i (desc->flags), r_io_desc_size (desc));
+	if (desc->io && desc->io->va && desc->io->maps) {
+		ls_foreach_prev (desc->io->maps, iter, map) {
+			if (map->fd == desc->fd) {
+				p->cb_printf (" [%2d] +0x%"PFMT64x" 0x%"PFMT64x
+					" - 0x%"PFMT64x" : %s : %s\n", map->id, map->delta,
+					map->from, map->to, r_str_rwx_i (map->flags), (map->name ? map->name : ""));
 			}
 		}
-		return true;
-	} return false;
+	}
+	return true;
 }
 
 static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
@@ -451,7 +449,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 #endif
 	case '\0':
-		sdb_foreach (core->io->files, desc_list_cb, core->print);
+		r_id_storage_foreach (core->io->files, desc_list_cb, core->print);
 		break;
 	case '*':
 		if ('?' == input[1]) {

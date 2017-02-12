@@ -359,13 +359,13 @@ static int __desc_cache_free_cb(void *user, const char* k, const char *v) {
 	return true;
 }
 
-static int __desc_fini_cb(void *user, const char* k, const char *v) {
-	RIODesc *desc = (RIODesc *)(void *)sdb_atoi (v);
-	if (desc && desc->cache) {
+static bool __desc_fini_cb (void *user, void *data, ut32 id) {
+	RIODesc *desc = (RIODesc *)data;
+	if (desc->cache) {
 		sdb_foreach (desc->cache, __desc_cache_free_cb, NULL);
 		sdb_free (desc->cache);
+		desc->cache = NULL;
 	}
-	desc->cache = NULL;
 	return true;
 }
 
@@ -382,5 +382,5 @@ R_API void r_io_desc_cache_fini_all(RIO *io) {
 	if (!io || !io->files) {
 		return;
 	}
-	sdb_foreach (io->files, __desc_fini_cb, NULL);
+	r_id_storage_foreach (io->files, __desc_fini_cb, NULL);
 }
