@@ -7,7 +7,7 @@
 
 static RStrHT *r_strht_init(RStrHT *s) {
 	if (s) {
-		s->ht = r_hashtable_new ();
+		s->ht = ht_new (NULL, NULL, NULL);
 		s->sp = r_strpool_new (0);
 		s->ls = r_list_new ();
 	}
@@ -16,7 +16,7 @@ static RStrHT *r_strht_init(RStrHT *s) {
 
 static void r_strht_fini(RStrHT *s) {
 	if (s) {
-		r_hashtable_free (s->ht);
+		ht_free (s->ht);
 		r_strpool_free (s->sp);
 		r_list_free (s->ls);
 	}
@@ -37,7 +37,6 @@ R_API void r_strht_del(RStrHT *s, const char *key) {
 	int i, *_i;
 	const char *k;
 	RListIter *iter;
-	ut32 h = r_str_hash (key);
 	r_list_foreach (s->ls, iter, _i) {
 		i = (int)(size_t)_i;
 		k = r_strpool_get (s->sp, i) -1; // LOL at -1
@@ -49,25 +48,23 @@ R_API void r_strht_del(RStrHT *s, const char *key) {
 			break;
 		}
 	}
-	r_hashtable_remove (s->ht, h);
+	ht_delete (s->ht, key);
 }
 
 R_API const char *r_strht_get(RStrHT *s, const char *key) {
-	ut32 h = r_str_hash (key);
-	int p = (int)(size_t)r_hashtable_lookup (s->ht, h);
+	int p = (int)(size_t)ht_find (s->ht, key, NULL);
 	return p? r_strpool_get (s->sp, p - 1): NULL;
 }
 
 R_API int r_strht_set(RStrHT *s, const char *key, const char *val) {
-	ut32 h = r_str_hash (key);
-	int v, p = (int)(size_t) r_hashtable_lookup (s->ht, h);
+	int v, p = (int)(size_t) ht_find (s->ht, key, NULL);
 	if (!p) {
 		int k = r_strpool_append (s->sp, key);
-		r_list_append (s->ls, (void*)(size_t)k+1);
+		r_list_append (s->ls, (void*)(size_t)k + 1);
 	}
-	r_hashtable_remove (s->ht, h);
+	ht_delete (s->ht, key);
 	v = r_strpool_append (s->sp, val);
-	r_hashtable_insert (s->ht, h, (void*)(size_t)v+1);
+	ht_insert (s->ht, key, (void*)(size_t)v + 1);
 	return true;
 }
 

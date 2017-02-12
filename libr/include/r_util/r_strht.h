@@ -6,7 +6,7 @@
 
 typedef struct r_strht_t {
 	RStrpool *sp;
-	RHashTable *ht;
+	SdbHash *ht;
 	RList *ls;
 } RStrHT;
 
