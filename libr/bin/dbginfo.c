@@ -24,7 +24,9 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	int line;
 	char *out = NULL, *out2 = NULL;
 	char *file_nopath = NULL;
-
+	if (!bin || !bin->cur) {
+		return NULL;
+	}
 	{
 		char *key = r_str_newf ("0x%"PFMT64x, addr);
 		char *file_line = sdb_get (bin->cur->sdb_addrinfo, key, 0);

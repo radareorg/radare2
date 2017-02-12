@@ -282,10 +282,13 @@ R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 }
 
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
-	if (length <= 0 || !buf) return false;
-	free (b->buf);
-	if (!(b->buf = malloc (length)))
+	if (length <= 0 || !buf) {
 		return false;
+	}
+	free (b->buf);
+	if (!(b->buf = malloc (length))) {
+		return false;
+	}
 	memmove (b->buf, buf, length);
 
 	b->length = length;
