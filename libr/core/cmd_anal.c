@@ -3557,7 +3557,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		SdbList *secs = r_io_section_vget_secs_at (core->io, addr);	//use map-API here
 		RIOSection *s = secs ? ls_pop (secs) : NULL;
 		ls_free (secs);
-		if (s && s->flags & 1) {
+		if (s && s->flags & (R_IO_EXEC | R_IO_READ)) {
 			// search in current section
 			if (s->size > binfile->size) {
 				addr = s->vaddr;
@@ -3612,36 +3612,59 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		if (bufi > 4000) {
 			bufi = 0;
 		}
-		if (!bufi) {
-			r_io_read_at (core->io, addr, buf, 4096);
-		}
-		if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi)) {
-			if (op.size < 1) {
-				// XXX must be +4 on arm/mips/.. like we do in disasm.c
-				op.size = minop;
+		if (r_io_is_valid_offset (core->io, op.jump, (R_IO_EXEC | R_IO_READ))) {
+			if (!bufi) {
+				r_io_read_at (core->io, addr, buf, 4096);
 			}
-			if (op.type == R_ANAL_OP_TYPE_CALL) {
+			if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi)) {
+				if (op.size < 1) {
+					// XXX must be +4 on arm/mips/.. like we do in disasm.c
+					op.size = minop;
+				}
+				if (op.type == R_ANAL_OP_TYPE_CALL) {
 #if JAYRO_03
-				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
-					fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
-					if (!fcn) {
-						r_core_anal_fcn (core, op.jump, addr,
-								R_ANAL_REF_TYPE_NULL, depth);
+					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
+						fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
+						if (!fcn) {
+							r_core_anal_fcn (core, op.jump, addr,
+									R_ANAL_REF_TYPE_NULL, depth);
+						}
 					}
-				}
 #else
-				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
-					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
-				}
+				r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 #endif
+				} else {
+					op.size = minop;
+				}
+				addr += (op.size > 0)? op.size: 1;
+				bufi += (op.size > 0)? op.size: 1;
+				r_anal_op_fini (&op);
 			}
-
+		} else if (core->io->va) {
+			SdbListIter *iter;
+			RIOMap *current;
+			if (!core->io->maps)
+				break;
+			ls_foreach_prev (core->io->maps, iter, current) {
+				if (r_io_map_is_in_range (current, addr, addr_end)) {
+					iter = core->io->maps->head;
+				} else {
+					current = NULL;
+				}
+			}
+			if (current) {
+				if (current->from > addr) {
+					bufi+= (current->from - addr);
+					addr = current->from;
+				} else {
+					bufi+= (current->to - addr + 1);
+					addr = current->to + 1;
+				}
+			}
 		} else {
-			op.size = minop;
+			break;
 		}
-		addr += (op.size > 0)? op.size: 1;
-		bufi += (op.size > 0)? op.size: 1;
-		r_anal_op_fini (&op);
+
 	}
 	r_cons_break_pop ();
 	free (buf);

@@ -363,7 +363,7 @@ R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm) {
 		return false;
 	if (r_io_desc_size (io->desc) < offset)
 		return false;
-	return ((io->desc->flags & hasperm) != hasperm);
+	return ((io->desc->flags & hasperm) == hasperm);
 }
 
 R_API int r_io_bind (RIO *io, RIOBind *bnd)
