@@ -97,7 +97,7 @@ static bool id_storage_reallocate(RIDStorage *storage, ut32 size) {
 	data = storage->data;
 	storage->data = R_NEWS0 (void *, size);
 	if (data) {
-		memcpy (storage->data, data, storage->size);
+		memcpy (storage->data, data, storage->size*sizeof(void *));
 	}
 	storage->size = size;
 	return true;
