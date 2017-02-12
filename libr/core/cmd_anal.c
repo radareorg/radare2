@@ -3605,6 +3605,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	bufi = 0;
 	r_cons_break_push (NULL, NULL);
 	while (addr < addr_end) {
+		eprintf ("%llx\n", addr);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -3612,7 +3613,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		if (bufi > 4000) {
 			bufi = 0;
 		}
-		if (r_io_is_valid_offset (core->io, op.jump, (R_IO_EXEC | R_IO_READ))) {
+		if (r_io_is_valid_offset (core->io, addr, (R_IO_EXEC | R_IO_READ))) {
 			if (!bufi) {
 				r_io_read_at (core->io, addr, buf, 4096);
 			}
