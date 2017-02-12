@@ -1,6 +1,7 @@
 #!/bin/sh
 
 IFILE="$1"
+cd `dirname $0`/..
 
 if [ -z "${IFILE}" ]; then
 	echo "Usage: indent.sh [-i|-u] [file] [...]"
@@ -26,6 +27,10 @@ if [ "${IFILE}" = "-u" ]; then
 	shift
 	UNIFIED=1
 	IFILE="$1"
+fi
+
+if [ "`echo $IFILE | cut -c 1`" != / ]; then
+	IFILE="$OLDPWD/$IFILE"
 fi
 
 if [ "${UNCRUST}" = 1 ]; then
