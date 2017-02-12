@@ -153,16 +153,15 @@ R_API void r_id_storage_delete(RIDStorage *storage, ut32 id) {
 		if (!storage->top_id) {
 			if(storage->data[storage->top_id]) {
 				id_storage_reallocate (storage, 2);
-		       } else {
-			       RIDPool *pool = r_id_pool_new (storage->pool->start_id, 
-					 			storage->pool->last_id);
-			       free (storage->data);
-			       storage->data = NULL;
-			       storage->size = 0;
-			       r_id_pool_free (storage->pool);
-			       storage->pool = pool;
-			       return;
-		       }
+			} else {
+				RIDPool *pool = r_id_pool_new (storage->pool->start_id, 
+				  storage->pool->last_id);
+				R_FREE (storage->data);
+				storage->size = 0;
+				r_id_pool_free (storage->pool);
+				storage->pool = pool;
+				return;
+			}
 		} else if ((storage->top_id + 1 ) < (storage->size / 2)) {
 			id_storage_reallocate (storage, storage->size / 2);
 		}
@@ -194,7 +193,7 @@ R_API bool r_id_storage_foreach(RIDStorage *storage, RIDStorageForeachCb cb, voi
 	return true;
 }
 
-R_API void r_id_storage_free (RIDStorage *storage) {
+R_API void r_id_storage_free(RIDStorage *storage) {
 	if (storage) {
 		r_id_pool_free (storage->pool);
 		free (storage->data);
