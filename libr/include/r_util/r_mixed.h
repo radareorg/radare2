@@ -1,14 +1,14 @@
 #ifndef R_MIXED_H
 #define R_MIXED_H
 #include <r_list.h>
-#include "ht.h"
+#include <sdb.h>
 
 #define RMIXED_MAXKEYS 256
 typedef struct r_mixed_data_t {
 	int size;
 	union {
-		RHashTable *ht;
-		RHashTable64 *ht64;
+		SdbHash *ht;
+		SdbHash *ht64;
 	} hash;
 } RMixedData;
 
