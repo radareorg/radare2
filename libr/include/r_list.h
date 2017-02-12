@@ -3,8 +3,7 @@
 
 #include <r_types.h>
 #include <r_flist.h>
-#include <ht.h>
-
+#include <sdb.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,7 +28,7 @@ typedef struct r_list_t {
 } RList;
 
 typedef struct r_list_range_t {
-	RHashTable64 *h;
+	SdbHash *h;
 	RList *l;
 	//RListComparator c;
 } RListRange;
