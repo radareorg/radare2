@@ -26,8 +26,8 @@ const int ht_primes_sizes[] = {
 // hashfunction - the function that does the hashing, must not be null.
 // comparator - the function to check if values are equal, if NULL, just checks
 // == (for storing ints).
-// keydup - function to duplicate to key (eg strdup), if NULL just does =.
-// valdup - same as keydup, but for values
+// keydup - function to duplicate to key (eg strdup), if NULL just does strup.
+// valdup - same as keydup, but for values but if NULL just assign
 // pair_free - function for freeing a keyvaluepair - if NULL just does free.
 // calcsize - function to calculate the size of a value. if NULL, just stores 0.
 static SdbHash* internal_ht_new(ut32 size, HashFunction hashfunction,
@@ -43,9 +43,9 @@ static SdbHash* internal_ht_new(ut32 size, HashFunction hashfunction,
 	ht->prime_idx = 0;
 	ht->load_factor = 1;
 	ht->hashfn = hashfunction;
-	ht->cmp = comparator? comparator: (ListComparator)strcmp;
+	ht->cmp = (ListComparator)strcmp;
 	ht->dupkey = keydup? keydup: (DupKey)strdup;
-	ht->dupvalue = valdup? valdup: (DupValue)strdup;
+	ht->dupvalue = valdup? valdup: NULL; 
 	ht->table = calloc (ht->size, sizeof (SdbList*));
 	ht->calcsizeK = calcsizeK? calcsizeK: (CalcSize)strlen;
 	ht->calcsizeV = calcsizeV? calcsizeV: (CalcSize)strlen;
@@ -103,12 +103,10 @@ bool ht_delete_internal(SdbHash* ht, const char* key, ut32* hash) {
 	return false;
 }
 
-SdbHash* ht_new(HashFunction hashfunction, ListComparator comparator,
-		 DupKey keydup, DupValue valdup, HtKvFreeFunc pair_free,
-		 CalcSize calcsizeK, CalcSize calcsizeV) {
-	HashFunction hfcn = hashfunction ? hashfunction : sdb_hash;
-	return internal_ht_new (ht_primes_sizes[0], hfcn, comparator, keydup,
-				valdup, pair_free, calcsizeK, calcsizeV);
+SdbHash* ht_new(DupValue valdup, HtKvFreeFunc pair_free, CalcSize calcsizeV) {
+	return internal_ht_new (ht_primes_sizes[0], (HashFunction)sdb_hash, 
+	  			(ListComparator)strcmp, (DupKey)strdup,
+				valdup, pair_free, (CalcSize)strlen, calcsizeV);
 }
 
 void ht_free(SdbHash* ht) {
@@ -198,11 +196,21 @@ static bool internal_ht_insert(SdbHash* ht, bool update, const char* key,
 	HtKv* kv = calloc (1, sizeof (HtKv));
 	if (kv) {
 		kv->key = ht->dupkey ((void *)key);
-		kv->value = ht->dupvalue ((void *)value);
+		if (ht->dupvalue) {
+			kv->value = ht->dupvalue ((void *)value);
+		} else {
+			kv->value = (void *)value;
+		}
 		kv->key_len = ht->calcsizeK ((void *)kv->key);
-		kv->value_len = ht->calcsizeV ((void *)kv->value);
+		if (ht->calcsizeV) {
+			kv->value_len = ht->calcsizeV ((void *)kv->value);
+		} else {
+			kv->value_len = 0;
+		}
 		if (!internal_ht_insert_kv (ht, kv, update)) {
-			ht->freefn (kv);
+			if (ht->freefn) {
+				ht->freefn (kv);
+			}
 			return false;
 		}
 		return true;

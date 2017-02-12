@@ -20,7 +20,9 @@ static int r_config_setter_s(void *data) {
 	if (!node->value || !*node->value) {
 		free (*node->cb_ptr_s);
 		*node->cb_ptr_s = NULL;
-	} else *node->cb_ptr_s = r_str_dup (*node->cb_ptr_s, node->value);
+	} else {
+		*node->cb_ptr_s = r_str_dup (*node->cb_ptr_s, node->value);
+	}
 	return true;
 }
 
@@ -28,7 +30,7 @@ R_API int r_config_set_setter_q(RConfig *cfg, const char *name, ut64 *ptr) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		node->cb_ptr_q = ptr;
-		node->setter = (void *)&r_config_setter_q;
+		node->setter = (void *) &r_config_setter_q;
 		return true;
 	}
 	return false;
@@ -38,17 +40,17 @@ R_API int r_config_set_setter_i(RConfig *cfg, const char *name, int *ptr) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		node->cb_ptr_i = ptr;
-		node->setter = (void *)&r_config_setter_i;
+		node->setter = (void *) &r_config_setter_i;
 		return true;
 	}
 	return false;
 }
 
-R_API int r_config_set_setter_s(RConfig *cfg, const char *name, char **ptr) {
+R_API int r_config_set_setter_s(RConfig *cfg, const char *name, char * *ptr) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		node->cb_ptr_s = ptr;
-		node->setter = (void *)&r_config_setter_s;
+		node->setter = (void *) &r_config_setter_s;
 		return true;
 	}
 	return false;

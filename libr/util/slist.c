@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2017 - pancake */
 // -- work in progress -- //
 
 #include "r_slist.h"
@@ -132,7 +132,7 @@ R_API void r_slist_optimize(RSList *s) {
 //eprintf ("MOD %d (block size)\n", s->mod);
 // store integers as indexes inside the allocated heap
 
-#if 0
+/*
 	RArray *items = r_array_new (10, sizeof (RSListItem));
 	RSListItem *idx = r_array_add (items);
 		idx->from = from;
@@ -157,14 +157,14 @@ INPUT
 	min offset
 	max offset
 OUTPUT
-#endif
+*/
 	// find better distribution
 	r_list_foreach (s->list, iter, ptr) {
 		//...
 	}
 }
 
-#if 0
+/*
 typedef struct {
 
 } SListStore;
@@ -186,4 +186,4 @@ typedef struct {
 --- StoreList # Heap Array of integers pointing to storage
               | we can probably just store a list of removed
               | items and the length
-#endif
+*/
