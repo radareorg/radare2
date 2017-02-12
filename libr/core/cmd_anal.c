@@ -3605,7 +3605,6 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	bufi = 0;
 	r_cons_break_push (NULL, NULL);
 	while (addr < addr_end) {
-		eprintf ("%llx\n", addr);
 		if (r_cons_is_breaked ()) {
 			break;
 		}
