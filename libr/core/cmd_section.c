@@ -15,10 +15,11 @@ static void __section_list (RIO *io, RPrint *print, int rad) {
 		ls_foreach (io->sections, iter, s) {
 			char *n = strdup (s->name);
 			r_name_filter (n, strlen (n));
-			print->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n");
+			print->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n", n, s->vaddr, s->vsize);
 			print->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->addr,
 				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->flags));
+			free (n);
 		}
 	} else {
 		ls_foreach (io->sections, iter, s) {	
