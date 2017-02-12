@@ -7,10 +7,7 @@
 
 R_LIB_VERSION(r_flag);
 
-/* aim to fix a bug in hashtable64 , collisions happen */
-/* offset needs to be xored to avoid some collisions !!! must switch to sdb */
-#define XORKEY 0x12345678
-#define XOROFF(x) (x^XORKEY)
+#define STROFF(x) sdb_fmt (2, "flg.%"PFMT64x, x)
 
 #define ISNULLSTR(x) (!(x) || !*(x))
 #define IS_IN_SPACE(f, i) ((f)->space_idx != -1 && (i)->space != (f)->space_idx)
@@ -23,7 +20,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 		*ok = 0;
 	}
 	if (f) {
-		list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
+		list = ht_find (f->ht_off, STROFF (off), NULL);
 		item = r_list_get_top (list);
 		if (item) {
 			if (ok) {
@@ -35,13 +32,20 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	return NULL;
 }
 
+static void item_list_kv_free(HtKv *kv) {
+	free (kv->key);
+	r_list_free (kv->value);
+	free (kv);
+}
+
+
 static ut64 num_callback(RNum *user, const char *name, int *ok) {
 	RFlag *f = (RFlag*)user;
 	RFlagItem *item;
 	if (ok) {
 		*ok = 0;
 	}
-	item = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
+	item = ht_find (f->ht_name, name, NULL);
 	if (item) {
 		// NOTE: to avoid warning infinite loop here we avoid recursivity
 		if (item->alias) {
@@ -56,11 +60,11 @@ static ut64 num_callback(RNum *user, const char *name, int *ok) {
 }
 
 static void remove_offsetmap(RFlag *f, RFlagItem *item) {
-	RList *fs_off = r_hashtable64_lookup (f->ht_off, XOROFF (item->offset));
+	RList *fs_off = ht_find (f->ht_off, STROFF (item->offset), NULL);
 	if (fs_off) {
 		r_list_delete_data (fs_off, item);
 		if (r_list_empty (fs_off)) {
-			r_hashtable64_remove (f->ht_off, XOROFF (item->offset));
+			ht_delete (f->ht_off, STROFF (item->offset));
 		}
 	}
 }
@@ -75,7 +79,6 @@ static int set_name(RFlagItem *item, const char *name) {
 	}
 	r_str_chop (item->name);
 	r_name_filter (item->name, 0); // TODO: name_filter should be chopping already
-	item->namehash = r_str_hash64 (item->name);
 	free (item->realname);
 	item->realname = strdup (item->name);
 	return true;
@@ -109,14 +112,13 @@ R_API RFlag * r_flag_new() {
 		r_flag_free (f);
 		return NULL;
 	}
-	f->ht_name = r_hashtable64_new ();
-	f->ht_off = r_hashtable64_new ();
+	f->ht_name = ht_new (NULL, NULL, NULL);
+	f->ht_off = ht_new (NULL, item_list_kv_free, NULL);
 #if R_FLAG_ZONE_USE_SDB
 	sdb_free (f->zones);
 #else
 	r_list_free (f->zones);
 #endif
-	f->ht_off->free = (RHashFree)r_list_free;
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		f->spaces[i] = NULL;
 	}
@@ -142,8 +144,8 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		free (f->spaces[i]);
 	}
-	r_hashtable64_free (f->ht_off);
-	r_hashtable64_free (f->ht_name);
+	ht_free (f->ht_off);
+	ht_free (f->ht_name);
 	r_list_free (f->flags);
 	r_list_free (f->spacestack);
 	r_num_free (f->num);
@@ -289,7 +291,7 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 	if (!f) {
 		return false;
 	}
-	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
+	RList *list = ht_find (f->ht_off, STROFF (off), NULL);
 	if (!list) {
 		return false;
 	}
@@ -305,16 +307,20 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
  * Otherwise, NULL is returned. */
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	RFlagItem *r;
-	if (!f) return NULL;
-	r = r_hashtable64_lookup (f->ht_name, r_str_hash64 (name));
+	if (!f) {
+		return NULL;
+	}
+	r = ht_find (f->ht_name, name, NULL);
 	return evalFlag (f, r);
 }
 
 /* return the first flag item that can be found at offset "off", or NULL otherwise */
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RList *list;
-	if (!f) return NULL;
-	list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+	if (!f) {
+		return NULL;
+	}
+	list = ht_find (f->ht_off, STROFF (off), NULL);
 	return list ? evalFlag (f, r_list_get_top (list)) : NULL;
 }
 
@@ -323,12 +329,12 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
  *
  * XXX: this function is buggy and it's not really clear what's the purpose */
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
-	RFlagItem *oitem = NULL;
-	RFlagItem *item = NULL;
+	RFlagItem *oitem = NULL, *item = NULL;
 	RListIter *iter;
-	RList *list = r_hashtable64_lookup (f->ht_off, XOROFF (off));
-	if (!list) return NULL;
-
+	RList *list = ht_find (f->ht_off, STROFF (off), NULL);
+	if (!list) {
+		return NULL;
+	}
 	r_list_foreach (list, iter, item) {
 		if (!item->name) {
 			continue;
@@ -379,7 +385,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 
 /* return the list of flag items that are associated with a given offset */
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off) {
-	return r_hashtable64_lookup (f->ht_off, XOROFF(off));
+	return ht_find (f->ht_off, STROFF (off), NULL);
 }
 
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
@@ -433,7 +439,9 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		remove_offsetmap (f, item);
 	} else {
 		item = R_NEW0 (RFlagItem);
-		if (!item) return NULL;
+		if (!item) {
+			return NULL;
+		}
 		if (!set_name (item, name)) {
 			eprintf ("Invalid flag name '%s'.\n", name);
 			free (item);
@@ -441,7 +449,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 		}
 		//item share ownership prone to uaf, that is why only
 		//f->flags has set up free pointer
-		r_hashtable64_insert (f->ht_name, item->namehash, item);
+		ht_insert (f->ht_name, item->name, item);
 		r_list_append (f->flags, item);
 	}
 
@@ -449,10 +457,10 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	item->offset = off + f->base;
 	item->size = size;
 
-	list = r_hashtable64_lookup (f->ht_off, XOROFF(off));
+	list = ht_find (f->ht_off, STROFF (off), NULL);
 	if (!list) {
 		list = r_list_new ();
-		r_hashtable64_insert (f->ht_off, XOROFF(off), list);
+		ht_insert (f->ht_off, STROFF (off), list);
 	}
 	r_list_append (list, item);
 	return item;
@@ -488,21 +496,18 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname) {
  * true is returned if everything works well, false otherwise */
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	RFlagItem *p;
-	ut64 hash;
-
 	if (!f || !item || !name || !*name) {
 		return false;
 	}
-	hash = r_str_hash64 (name);
-	p = r_hashtable64_lookup (f->ht_name, hash);
+	p = ht_find (f->ht_name, name, NULL);
 	if (p) {
 		return false;
 	}
 	if (!set_name (item, name)) {
 		return false;
 	}
-	r_hashtable64_remove (f->ht_name, hash);
-	r_hashtable64_insert (f->ht_name, item->namehash, item);
+	ht_delete (f->ht_name, name);
+	ht_insert (f->ht_name, item->name, item);
 	return true;
 }
 
@@ -513,7 +518,7 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 R_API int r_flag_unset(RFlag *f, RFlagItem *item) {
 	RListFree orig = f->flags->free;
 	remove_offsetmap (f, item);
-	r_hashtable64_remove (f->ht_name, item->namehash);
+	ht_delete (f->ht_name, item->name);
 	f->flags->free = NULL;
 	r_list_delete_data (f->flags, item);
 	f->flags->free = orig;
@@ -554,8 +559,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 /* unset the flag item with the given name.
  * returns true if the item is found and unset, false otherwise. */
 R_API int r_flag_unset_name(RFlag *f, const char *name) {
-	ut64 hash = r_str_hash64 (name);
-	RFlagItem *item = r_hashtable64_lookup (f->ht_name, hash);
+	RFlagItem *item = ht_find (f->ht_name, name, NULL);
 	if (item && r_flag_unset (f, item)) {
 		R_FREE (item);
 		return true;
@@ -572,12 +576,11 @@ R_API void r_flag_unset_all(RFlag *f) {
 		return;
 	}
 	f->flags->free = (RListFree)r_flag_item_free;
-	r_hashtable64_free (f->ht_name);
+	ht_free (f->ht_name);
 	//don't set free since f->flags will free up items when needed avoiding uaf
-	f->ht_name = r_hashtable64_new ();
-	r_hashtable64_free (f->ht_off);
-	f->ht_off = r_hashtable64_new ();
-	f->ht_off->free = (RHashFree)r_list_free;
+	f->ht_name = ht_new (NULL, NULL, NULL);
+	ht_free (f->ht_off);
+	f->ht_off = ht_new (NULL, item_list_kv_free, NULL);
 	r_flag_space_unset (f, NULL);
 }
 
