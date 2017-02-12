@@ -124,11 +124,13 @@ static int get_piece(const char *p, char *chr) {
 static char *prefixline(RConsCanvas *c, int *left) {
 	int x, len;
 	char *p;
-	if (!c || strlen (c->b) < (c->y * c->w)) {
+	int b_len = c->w * c->h; //strlen (c->b); // correct optimization?
+	int yxw = c->y * c->w;
+	if (!c || b_len < yxw) {
 		return NULL;
 	}
-	p = c->b + (c->y * c->w);
-	len = strlen (p) - 1;
+	p = c->b + yxw;
+	len = b_len - yxw - 1;
 	for (x = 0; (p[x] && x < c->x) && x < len; x++) {
 		if (p[x] == '\n') {
 			p[x] = ' ';
