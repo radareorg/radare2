@@ -109,7 +109,7 @@ R_API bool r_id_storage_set(RIDStorage *storage, void *data, ut32 id) {
 		return false;
 	}
 	n = get_msb (id + 1);
-	if (n > ((storage->size / 2) + (storage->size / 4))) {
+	if (n > (storage->size -  (storage->size / 4))) {
 		if (n < (storage->pool->last_id / 2)) {
 			if (!id_storage_reallocate (storage, n * 2)) {
 				return false;
@@ -135,14 +135,14 @@ R_API bool r_id_storage_add(RIDStorage *storage, void *data, ut32 *id) {
 }
 
 R_API void *r_id_storage_get(RIDStorage *storage, ut32 id) {
-	if (!storage || !storage->data || (storage->size >= id)) {
+	if (!storage || !storage->data || (storage->size <= id)) {
 		return NULL;
 	}
 	return storage->data[id];
 }
 
 R_API void r_id_storage_delete(RIDStorage *storage, ut32 id) {
-	if (!storage || !storage->data || (storage->size >= id)) {
+	if (!storage || !storage->data || (storage->size <= id)) {
 		return;
 	}
 	storage->data[id] = NULL;
@@ -162,7 +162,7 @@ R_API void r_id_storage_delete(RIDStorage *storage, ut32 id) {
 				storage->pool = pool;
 				return;
 			}
-		} else if ((storage->top_id + 1 ) < (storage->size / 2)) {
+		} else if ((storage->top_id + 1 ) < (storage->size / 4)) {
 			id_storage_reallocate (storage, storage->size / 2);
 		}
 	}
