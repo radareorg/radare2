@@ -2,20 +2,20 @@
 #include <sdb.h>
 #include <string.h>
 
-R_API bool r_io_desc_init (RIO *io)
-{
-	if (!io || io->files)
+R_API bool r_io_desc_init(RIO *io) {
+	if (!io || io->files) {
 		return false;
+	}
 	io->files = r_id_storage_new (3, 0x80000000);	//fd is signed
 	return true;
 }
 
 //shall be used by plugins for creating descs
-R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data)	//XXX kill mode
-{
+R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data)	{ //XXX kill mode
 	RIODesc *desc = NULL;
-	if (!io || !plugin || !uri || !io->files)
+	if (!io || !plugin || !uri || !io->files) {
 		return NULL;
+	}
 	desc = R_NEW0 (RIODesc);
 	if (!r_id_pool_grab_id (io->files->pool, &desc->fd)) {
 		free (desc);
@@ -89,8 +89,9 @@ R_API bool r_io_desc_del (RIO *io, int fd)
 
 R_API RIODesc *r_io_desc_get (RIO *io, int fd)
 {
-	if (!io)
+	if (!io) {
 		return NULL;
+	}
 	return (RIODesc *)r_id_storage_get (io->files, fd);
 }
 

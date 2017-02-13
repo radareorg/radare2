@@ -8,16 +8,18 @@ R_LIB_VERSION(r_io);
 
 void operate_on_itermap (SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, int (op (RIO *io, ut64 addr, ut8 *buf, int len)));
 
-R_API RIO *r_io_new ()
-{
-	RIO *ret = R_NEW0 (RIO);
+R_API RIO *r_io_new () {
+	RIO *ret = R_NEW0 (RIO); 
+	if (!ret) {
+		return NULL;
+	}
 	return r_io_init (ret);
 }
 
-R_API RIO *r_io_init (RIO *io)
-{
-	if (!io)
+R_API RIO *r_io_init (RIO *io) {
+	if (!io) {
 		return NULL;
+	}
 	r_io_desc_init (io);
 	r_io_map_init (io);
 	r_io_section_init (io);
@@ -468,11 +470,11 @@ R_API int r_io_fini (RIO *io)
 	return true;
 }
 
-R_API void r_io_free (RIO *io)
-{
+R_API void r_io_free (RIO *io) {
 	if (r_io_fini (io)) {
 		free (io->args);
-		free (io->write_mask);					//maybe this would be better in r_io_fini
+		//maybe this would be better in r_io_fini
+		free (io->write_mask);
 	}
 	free (io);
 }

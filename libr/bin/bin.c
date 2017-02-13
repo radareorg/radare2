@@ -845,8 +845,12 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 	RBinFile *binfile = NULL;
 	ut8 is_debugger = desc && desc->plugin && desc->plugin->isdbg;
 
-	if (!io || !desc) return false;
-	if (loadaddr == UT64_MAX) loadaddr = 0;
+	if (!io || !desc) {
+		return false;
+	}
+	if (loadaddr == UT64_MAX) {
+		loadaddr = 0;
+	}
 
 	buf_bytes = NULL;
 	file_sz = iob->desc_size (desc);
@@ -859,9 +863,7 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 	if (!sz) {
 		sz = file_sz;
 	}
-
 	bin->file = desc->name;
-
 	if (!r_list_length (bin->binfiles)) {
 		if ((!file_sz || file_sz == UT64_MAX) && is_debugger) {
 			int fail = 1;
