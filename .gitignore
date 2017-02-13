@@ -58,6 +58,7 @@ shlr/sdb/src/.sdb.exe
 shlr/sdb/src/sdb-version.h
 shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
+shlr/sdb/src/libsdb.lib
 shlr/spp/config.h
 shlr/capstone/
 sys/.mark_python-deps
@@ -74,3 +75,4 @@ tags
 .ycm_extra_conf.pyc
 .kdev4/*
 *.kdev4
+radare2-*.zip
