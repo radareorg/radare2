@@ -386,9 +386,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	pidpath = pid
 		? r_sys_pid_to_path (pid)
 		: strdup ("kernel");
-	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
-		pidpath, rw | R_IO_EXEC, mode, riom);
-	free (pidpath);
+	ret = r_io_desc_new (io, &r_io_plugin_mach, file,
+		       rw | R_IO_EXEC, mode, riom);
+	ret->name = pidpath;
 	return ret;
 }
 

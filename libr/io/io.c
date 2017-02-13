@@ -117,7 +117,7 @@ R_API bool r_io_close (RIO *io, int fd)
 	RIODesc *desc = r_io_desc_get (io, fd);
 	if (!desc || !desc->plugin || !desc->plugin->close)			//check for cb
 		return false;
-	if (!desc->plugin->close (desc))					//close fd
+	if (desc->plugin->close (desc))						//close fd
 		return false;
 	r_io_desc_del (io, fd);							//remove entry from sdb-instance and free the desc-struct
 	r_io_map_cleanup (io);							//remove all dead maps

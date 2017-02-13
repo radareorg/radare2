@@ -63,6 +63,7 @@ static int __attach (RIOW32Dbg *dbg) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
 		char *pidpath;
+		RIODesc *ret
 		RIOW32Dbg *dbg = R_NEW0 (RIOW32Dbg);
 		if (!dbg) {
 			return NULL;
@@ -73,8 +74,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			return NULL;
 		}
 		pidpath = r_sys_pid_to_path (dbg->pid);
-		return r_io_desc_new (io, &r_io_plugin_w32dbg,
-				pidpath, rw | R_IO_EXEC, mode, dbg);
+		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
+				file, rw | R_IO_EXEC, mode, dbg);
+		ret->name = pidpath;
+		return ret;
 	}
 	return NULL;
 }

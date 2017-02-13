@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2008-2016 - pancake */
 
 #include <r_userconf.h>
+#include <r_util.h>
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
@@ -198,6 +199,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			riop->pid = riop->tid = pid;
 			open_pidmem (riop);
 			desc = r_io_desc_new (io, &r_io_plugin_ptrace, file, rw | R_IO_EXEC, mode, riop);
+			desc->name = r_sys_pid_to_path (pid);
 		}
 	}
 	return desc;
