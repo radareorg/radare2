@@ -3622,19 +3622,19 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 					op.size = minop;
 				}
 				if (op.type == R_ANAL_OP_TYPE_CALL) {
+					if (r_io_is_valid_offset (core->io, op.jump, (R_IO_EXEC | R_IO_READ))) {
 #if JAYRO_03
-					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
-						fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
-						if (!fcn) {
-							r_core_anal_fcn (core, op.jump, addr,
-									R_ANAL_REF_TYPE_NULL, depth);
+						if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
+							fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
+							if (!fcn) {
+								r_core_anal_fcn (core, op.jump, addr,
+										R_ANAL_REF_TYPE_NULL, depth);
+							}
 						}
-					}
 #else
-				r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
+					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 #endif
-				} else {
-					op.size = minop;
+					}
 				}
 				addr += (op.size > 0)? op.size: 1;
 				bufi += (op.size > 0)? op.size: 1;
