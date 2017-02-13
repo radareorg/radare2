@@ -21,7 +21,7 @@ static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
 
 struct search_parameters {
-	SdbList *boundaries;
+	RList *boundaries;
 	const char *mode;
 	ut64 from;
 	ut64 to;
@@ -43,8 +43,8 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 	RIOMap *map;
 	ut8 *buf;
 	int i, j;
-	SdbList *list;
-	SdbListIter *iter;
+	RList *list;
+	RListIter *iter;
 
 	list = r_core_get_boundaries_ok (core);
 	if (!list) {
@@ -61,7 +61,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 	for (j = minlen; j<=maxlen; j++) {
 		ut32 len = j;
 		eprintf ("Searching %s for %d byte length.\n", hashname, j);
-		ls_foreach (list, iter, map) {
+		r_list_foreach (list, iter, map) {
 			ut64 from = map->from;
 			ut64 to = map->to;
 			st64 bufsz;
@@ -97,7 +97,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 						hashname, hashstr, from+i);
 					free (s);
 					free (buf);
-					ls_free (list);
+					r_list_free (list);
 					return 1;
 				}
 				free (s);
@@ -105,11 +105,11 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			free (buf);
 		}
 	}
-	ls_free (list);
+	r_list_free (list);
 	eprintf ("No hashes found\n");
 	return 0;
 hell:
-	ls_free (list);
+	r_list_free (list);
 	return -1;
 }
 
@@ -270,12 +270,12 @@ R_API int r_core_search_preludes(RCore *core) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	const char *where = cfg_debug? "dbg.map": "io.sections.exec";
 
-	SdbList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
-	SdbListIter *iter;
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
+	RListIter *iter;
 	RIOMap *p;
 
 	fc0 = count_functions (core);
-	ls_foreach (list, iter, p) {
+	r_list_foreach (list, iter, p) {
 		eprintf ("\r[>] Scanning %s 0x%"PFMT64x" - 0x%"PFMT64x" ", r_str_rwx_i (p->flags), p->from, p->to);
 		if (!cfg_debug && ! (p->flags & R_IO_MAP)) {
 			eprintf ("skip\n");
@@ -340,7 +340,7 @@ R_API int r_core_search_preludes(RCore *core) {
 		eprintf ("done\n");
 	}
 	fc1 = count_functions (core);
-	ls_free (list);
+	r_list_free (list);
 	eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
 	return ret;
 }
@@ -392,10 +392,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 			{
-				const int ctx = 16;
+				const int ctx = 0;
 				char *pre, *pos, *wrd;
 				const int len = kw->keyword_length;
-				char *buf = malloc (len + 32 + ctx * 2);
+				char *buf = calloc (1, len + 32 + ctx * 2);
 				r_core_read_at (core, addr - ctx, (ut8*)buf, len + (ctx * 2));
 				pre = getstring (buf, ctx);
 				wrd = r_str_utf16_encode (buf + ctx, len);
@@ -497,19 +497,25 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 		at, to, n, (c%2)?"[ #]":"[# ]");
 }
 
-R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, ut64 *from, ut64 *to) {
-	SdbList *list = NULL;
+R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, ut64 *from, ut64 *to) {
+	RList *list = NULL;
 	if (!strcmp (mode, "block")) {
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
 	} else if (!strcmp (mode, "io.maps")) {
+		SdbListIter *iter;
+		RIOMap *m;
 		*from = *to = 0;
-		return core->io->maps;
+		list = r_list_new ();
+		ls_foreach (core->io->maps, iter, m) {			//IO needs sdblist for performance (ls_length)
+			r_list_append (list, m);
+		}
+		return list;
 	} else if (!strcmp (mode, "io.maps.range")) {
 		SdbListIter *iter;
 		RIOMap *m;
 		*from = *to = 0;
-		list = ls_new ();
+		list = r_list_new ();
 		list->free = free;
 		ls_foreach (core->io->maps, iter, m) {
 			if (!*from) {
@@ -629,7 +635,7 @@ R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const cha
 			ls_foreach (core->io->sections, iter, s) {
 				if (!mask || (s->flags & mask)) {
 					if (!list) {
-						list = ls_new ();
+						list = r_list_new ();
 						list->free = free;
 						maplist = true;
 					}
@@ -647,7 +653,7 @@ R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const cha
 						R_FREE (map);
 						continue;
 					}
-					ls_append (list, map);
+					r_list_append (list, map);
 				}
 			}
 		} else {
@@ -669,7 +675,7 @@ R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const cha
 			if (!strcmp (mode, "dbg.map")) {
 				int perm = 0;
 				*from = *to = core->offset;
-				list = ls_new ();
+				list = r_list_new ();
 				list->free = free;
 				r_list_foreach (core->dbg->maps, iter, map) {
 					if (*from >= map->addr && *from < map->addr_end) {
@@ -687,7 +693,7 @@ R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const cha
 						nmap->to = *to;
 						nmap->flags = perm;
 						nmap->delta = 0;
-						ls_append (list, nmap);
+						r_list_append (list, nmap);
 					}
 				}
 			} else {
@@ -706,7 +712,7 @@ R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const cha
 					}
 					if ((mask && (map->perm & mask)) || add || all) {
 						if (!list) {
-							list = ls_new ();
+							list = r_list_new ();
 							list->free = free;
 							maplist = true;
 						}
@@ -725,7 +731,7 @@ R_API SdbList *r_core_get_boundaries_prot(RCore *core, int protection, const cha
 						}
 						nmap->flags = map->perm;
 						nmap->delta = 0;
-						ls_append (list, nmap);
+						r_list_append (list, nmap);
 					}
 				}
 			}
@@ -1096,12 +1102,12 @@ static void print_rop (RCore *core, RList *hitlist, char mode, bool *json_first)
 	r_list_free (ropList);
 }
 
-R_API SdbList* r_core_get_boundaries_ok(RCore *core) {
+R_API RList* r_core_get_boundaries_ok(RCore *core) {
 	const char *searchin;
 	ut8 prot;
 	ut64 from, to;
 	ut64 __from, __to;
-	SdbList *list;
+	RList *list;
 	if (!core) return NULL;
 	prot = r_config_get_i (core->config, "rop.nx") ?
 		R_IO_READ|R_IO_WRITE|R_IO_EXEC : R_IO_EXEC;
@@ -1130,9 +1136,9 @@ R_API SdbList* r_core_get_boundaries_ok(RCore *core) {
 		map->fd = core->io->desc->fd;
 		map->from = from;
 		map->to = to;
-		list = ls_new ();
+		list = r_list_new ();
 		list->free = free;
-		ls_append (list, map);
+		r_list_append (list, map);
 	}
 	return list;
 }
@@ -1150,9 +1156,9 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 	RList/*<endlist_pair>*/ *end_list = r_list_newf(free);
 	RList/*<intptr_t>*/ *badstart = r_list_new();
 	RList/*<RRegex>*/ *rx_list = NULL;
-	SdbList/*<RIOMap>*/ *list = NULL;
+	RList/*<RIOMap>*/ *list = NULL;
 	int align = core->search->align;
-	SdbListIter *itermap = NULL;
+	RListIter *itermap = NULL;
 	char* tok, *gregexp = NULL;
 	char* grep_arg = NULL;
 	bool json_first = true;
@@ -1231,15 +1237,15 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			r_list_free (rx_list);
 			r_list_free (end_list);
 			r_list_free (badstart);
-			ls_free (list);
+			r_list_free (list);
 			return false;
 		}
 		map->fd = core->io->desc->fd;
 		map->from = from;
 		map->to = to;
-		list = ls_new ();
+		list = r_list_new ();
 		list->free = free;
-		ls_append (list, map);
+		r_list_append (list, map);
 		maplist = true;
 	}
 
@@ -1247,7 +1253,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_cons_printf ("[");
 	}
 	r_cons_break_push (NULL, NULL);
-	ls_foreach (list, itermap, map) {
+	r_list_foreach (list, itermap, map) {
 		from = map->from;
 		to = map->to;
 		if (to > search_to) {
@@ -1278,7 +1284,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 				r_list_free (rx_list);
 				r_list_free (end_list);
 				r_list_free (badstart);
-				ls_free (list);
+				r_list_free (list);
 				return false;
 			}
 		}
@@ -1289,7 +1295,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			r_list_free (rx_list);
 			r_list_free (end_list);
 			r_list_free (badstart);
-			ls_free (list);
+			r_list_free (list);
 			return -1;
 		}
 		r_io_read_at (core->io, from, buf, delta);
@@ -1412,7 +1418,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 		r_cons_printf ("]\n");
 	}
 
-	ls_free (list);
+	r_list_free (list);
 	r_list_free (rx_list);
 	r_list_free (end_list);
 	r_list_free (badstart);
@@ -1781,7 +1787,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 	if (json) {
 		r_cons_printf("[");
 	}
-	SdbListIter *iter;
+	RListIter *iter;
 	RIOMap *map;
 	if (!searchflags && !json) {
 		r_cons_printf ("fs hits\n");
@@ -1817,7 +1823,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 		buf = (ut8 *)malloc (core->blocksize);
 		bufsz = core->blocksize;
 		r_cons_break_push (NULL, NULL);
-		ls_foreach (param->boundaries, iter, map) {
+		r_list_foreach (param->boundaries, iter, map) {
 			int fd;
 			param->from = map->from;
 			param->to = map->to;
@@ -1948,7 +1954,7 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 		free (buf);
 		if (maplist) {
 			param->boundaries->free = free;
-			ls_free (param->boundaries);
+			r_list_free (param->boundaries);
 			param->boundaries = NULL;
 		}
 		r_io_desc_use (core->io, ofd);
@@ -2098,16 +2104,16 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 static void search_similar_pattern(RCore *core, int count) {
 	RIOMap *p;
 	ut64 from, to;
-	SdbListIter *iter;
+	RListIter *iter;
 	const char *where = r_config_get (core->config, "search.in");
 
 	r_cons_break_push (NULL, NULL);
-	SdbList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
+	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, &from, &to);
 	if (list) {
-		ls_foreach (list, iter, p) {
+		r_list_foreach (list, iter, p) {
 			search_similar_pattern_in (core, count, p->from, p->to);
 		}
-		ls_free (list);
+		r_list_free (list);
 	} else {
 		search_similar_pattern_in (core, count, from, to);
 	}

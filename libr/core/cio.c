@@ -464,7 +464,7 @@ R_API int r_core_block_read(RCore *core) {
 
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (!core || !core->io || !core->file || !core->file->desc || size < 1) {
-		if (core && core->io && size > 0) {
+		if (core && core->io && size > 0) {			//wtf
 			memset (buf, 0xff, size);			//io->Oxff
 		}
 		return false;

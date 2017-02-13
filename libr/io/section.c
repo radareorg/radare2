@@ -68,10 +68,12 @@ RIOSection *_section_chk_dup (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vs
 R_API RIOSection *r_io_section_add (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int flags, const char *name, ut32 bin_id, int fd)
 {
 	RIOSection *sec;
-	if (!io || !io->sections || !io->sec_ids || !r_io_desc_get (io, fd) || !size || (UT64_MAX - size) < addr || (UT64_MAX - vsize) < vaddr)
+	if (!io || !io->sections || !io->sec_ids || !r_io_desc_get (io, fd) || (((ut64)(UT64_MAX - size)) < addr) || ((ut64)(UT64_MAX - vsize) < vaddr)) {
 		return NULL;
-	if ((sec = _section_chk_dup (io, addr, vaddr, size, vsize, flags, name, bin_id, fd)))
+	}
+	if ((sec = _section_chk_dup (io, addr, vaddr, size, vsize, flags, name, bin_id, fd))) {
 		return sec;
+	}
 	sec = R_NEW0 (RIOSection);
 	if (!r_id_pool_grab_id (io->sec_ids, &sec->id)) {
 		free (sec);

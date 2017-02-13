@@ -3519,7 +3519,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 	RIOSection *s;
 	ut64 min = UT64_MAX;
 	ut64 max = 0;
-	r_list_foreach (core->io->sections, iter, s) {
+	ls_foreach (core->io->sections, iter, s) {
 		/* is executable */
 		if (!(s->rwx & R_IO_EXEC)) {
 			continue;
@@ -3597,7 +3597,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		addr_end = addr + len;
 	} else {
 		const char *search_in = r_config_get (core->config, "search.in");
-		ls_free (r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end));
+		r_list_free (r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end));
 	}
 	if (!(buf = calloc (1, 4096))) {
 		return;
@@ -5038,7 +5038,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
 
 	if (is_debug) {
-		ls_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
+		r_list_free (r_core_get_boundaries_prot (core, 0, "dbg.map", &from, &to));
 	} else {
 		secs = r_io_section_vget_secs_at (core->io, core->offset);
 		s = secs ? ls_pop (secs) : NULL;
@@ -5062,7 +5062,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 		ls_free (secs);
 	}
 	{
-		SdbList *ret;
+		RList *ret;
 		if (is_debug) {
 			ret = r_core_get_boundaries_prot (core, 0, "dbg.map", &vmin, &vmax);
 		} else {
@@ -5074,7 +5074,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			}
 			ret = r_core_get_boundaries_prot (core, 0, "io.sections", &vmin, &vmax);
 		}
-		ls_free (ret);
+		r_list_free (ret);
 	}
 	eprintf ("aav: using from to 0x%"PFMT64x" 0x%"PFMT64x"\n", from, to);
 	eprintf ("Using vmin 0x%"PFMT64x" and vmax 0x%"PFMT64x"\n", vmin, vmax);
