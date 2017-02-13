@@ -453,6 +453,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			if (_plugin == r_io_plugin_get_default (io, (const char *)&uri[1], false))
 					return NULL;
 			if (!_plugin->open || !_plugin->close)
+				return NULL;
 			ret = _plugin->open (io, uri, rw, mode);
 #else
 			// TODO: use io_procpid here? faster or what?
