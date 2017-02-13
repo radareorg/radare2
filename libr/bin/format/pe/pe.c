@@ -10,6 +10,7 @@
 #include <time.h>
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
+#define MAX_METADATA_STRING_LENGTH 256
 
 #define bprintf if(bin->verbose)eprintf
 
@@ -617,6 +618,140 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin) {
 	// add filesize
 	computed_cs += bin->size;
 	return computed_cs;
+}
+
+static int bin_pe_read_metadata_string(char *to, char *from) {
+	int covered = 0;
+	while (covered < MAX_METADATA_STRING_LENGTH) {
+		to[covered] = from[covered];
+		if (from[covered] == '\0') { 
+			covered += 1;
+			break;
+		}
+		covered++;
+	}
+	while (covered % 4 != 0) covered++;
+	return covered;
+}
+
+static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
+	PE_DWord metadata_directory = bin->clr_hdr ? bin_pe_rva_to_paddr (bin, bin->clr_hdr->MetaDataDirectoryAddress) : 0;
+	PE_(image_metadata_header) *metadata = R_NEW0 (PE_(image_metadata_header));
+	int rr;
+	if (!metadata) return 0;
+	if (!metadata_directory) {
+		free (metadata);
+		return 0;
+	}
+
+
+	rr = r_buf_fread_at (bin->b, metadata_directory,
+					    (ut8*)metadata, bin->big_endian ? "1I2S": "1i2s", 1);
+	if (rr < 1) goto fail;
+
+	rr = r_buf_fread_at (bin->b, metadata_directory + 8,
+					    (ut8*)(&metadata->Reserved), bin->big_endian ? "1I": "1i", 1);
+	if (rr < 1) goto fail;
+
+	rr = r_buf_fread_at (bin->b, metadata_directory + 12,
+					    (ut8*)(&metadata->VersionStringLength), bin->big_endian ? "1I": "1i", 1);
+	if (rr < 1) goto fail;
+
+
+	printf("Metadata Signature: %x %x %d\n", metadata_directory, metadata->Signature, metadata->VersionStringLength);
+
+	// read the version string
+	int len = metadata->VersionStringLength; // XXX: dont trust this length 
+	if (len > 0) {
+		metadata->VersionString = malloc(len);
+		if (!metadata->VersionString) goto fail;
+
+		rr = r_buf_read_at (bin->b, metadata_directory + 16,
+						    (ut8*)(metadata->VersionString), len);
+		if (rr != len) {
+			eprintf ("Warning: read (metaadata header) - cannot parse version string\n");
+			free (metadata->VersionString);
+			free (metadata);
+			return 0;
+		}
+
+		printf(".NET Version: %s\n", metadata->VersionString);
+	}
+
+	// read the header after the string
+	rr = r_buf_fread_at (bin->b, metadata_directory + 16 + metadata->VersionStringLength,
+						(ut8*)(&metadata->Flags), bin->big_endian ? "2S": "2s", 1);
+
+	if (rr < 1) goto fail;
+
+	printf("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
+	bin->metadata_header = metadata;
+
+
+	// read metadata streams
+	int start_of_stream = metadata_directory + 20 + metadata->VersionStringLength;
+	PE_(image_metadata_stream) *stream;
+	PE_(image_metadata_stream) **streams = malloc(sizeof(PE_(image_metadata_stream) *) * metadata->NumberOfStreams);
+	if (!streams) goto fail;
+	int count = 0;
+
+	while (count < metadata->NumberOfStreams) {
+		stream = malloc(sizeof(PE_(image_metadata_stream)));
+		if (!stream) goto fail;
+
+		if (r_buf_fread_at (bin->b, start_of_stream, (ut8*)stream, bin->big_endian ? "2I": "2i", 1) < 1) {
+			free (stream);
+			goto fail;
+		}
+		printf("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
+		char *stream_name = malloc(MAX_METADATA_STRING_LENGTH + 1);
+		int c = bin_pe_read_metadata_string(stream_name, bin->b->buf + start_of_stream + 8);
+		if (c == 0) {
+			free(stream);
+			goto fail;
+		}
+		printf("%s %d\n", stream_name, c);
+		stream->Name = stream_name;
+		streams[count] = stream;
+		start_of_stream += 8 + c;
+		count += 1;
+	}
+	bin->streams = streams;
+	return 1;
+fail:
+	eprintf ("Warning: read (metaadata header)\n");
+	free (metadata);
+	return 0;
+}
+
+static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
+	PE_(image_data_directory) *clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
+	PE_DWord image_clr_hdr_paddr       = clr_dir ? bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress) : 0;
+	int clr_dir_size                   = clr_dir ? clr_dir->Size : 0;
+	PE_(image_clr_header) *clr_hdr 	   = R_NEW0 (PE_(image_clr_header));
+	int rr, len 					   = sizeof (PE_(image_clr_header));
+
+	if (!clr_hdr) return 0;
+	rr = r_buf_read_at (bin->b, image_clr_hdr_paddr,
+					    (ut8*)(clr_hdr), len);
+
+//	printf("%x\n", clr_hdr->HeaderSize);
+
+	if (clr_hdr->HeaderSize != 0x48) {
+		// probably not a .NET binary
+		// 64bit?
+		eprintf ("Not a .NET binary!\n");
+		free (clr_hdr);
+		return 0;
+	}
+	if (rr != len) {
+		eprintf ("Warning: read (clr header)\n");
+		free (clr_hdr);
+		return 0;
+	}
+
+	bin->clr_hdr = clr_hdr;
+	return 1;
 }
 
 static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t) *bin) {
@@ -1716,18 +1851,25 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->delay_import_directory = NULL;
 	bin->optional_header = NULL;
 	bin->data_directory = NULL;
-	bin->endian = 0; /* TODO: get endian */
-	if (!bin_pe_init_hdr(bin)) {
-		bprintf ("Warning: File is not PE\n");
+	bin->big_endian = 0;
+	if (!bin_pe_init_hdr (bin)) {
+		eprintf ("Warning: File is not PE\n");
 		return false;
 	}
-	bin_pe_init_sections (bin);
+	if (!bin_pe_init_sections (bin)) {
+		eprintf ("Warning: Cannot initialize sections\n");
+		return false;
+	}
 	bin_pe_init_imports (bin);
 	bin_pe_init_exports (bin);
 	bin_pe_init_resource (bin);
-	bin_pe_init_tls (bin);
 
-	PE_(r_bin_store_all_resource_version_info)(bin);
+	bin->big_endian = PE_(r_bin_pe_is_big_endian) (bin);
+
+	bin_pe_init_tls (bin);
+	bin_pe_init_clr_hdr (bin);
+	bin_pe_init_metadata_hdr (bin);
+	PE_(r_bin_store_all_resource_version_info) (bin);
 	bin->relocs = NULL;
 	return true;
 }
