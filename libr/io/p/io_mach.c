@@ -334,6 +334,7 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *ret = NULL;
 	RIOMach *riom;
+	char *f = NULL;
 	const char *pidfile;
 	char *pidpath, *endptr;
 	int pid;
@@ -386,8 +387,13 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	pidpath = pid
 		? r_sys_pid_to_path (pid)
 		: strdup ("kernel");
-	ret = r_io_desc_new (io, &r_io_plugin_mach, file,
-		       rw | R_IO_EXEC, mode, riom);
+	if (!strcmp (file, "smache://", 8)) {
+		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
+			       rw | R_IO_EXEC, mode, riom);
+	} else {
+		ret = r_io_desc_new (io, &r_io_plugin_mach, file,
+			       rw | R_IO_EXEC, mode, riom);
+	}
 	ret->name = pidpath;
 	return ret;
 }
