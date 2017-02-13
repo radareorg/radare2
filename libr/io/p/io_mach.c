@@ -387,7 +387,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	pidpath = pid
 		? r_sys_pid_to_path (pid)
 		: strdup ("kernel");
-	if (!strcmp (file, "smache://", 8)) {
+	if (!strncmp (file, "smach://", 8)) {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
 			       rw | R_IO_EXEC, mode, riom);
 	} else {
