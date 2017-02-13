@@ -730,7 +730,6 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr,
 		desc = iob->desc_get (io, fd);
 	}
 	if (!desc) {
-		r_io_free (io);
 		return false;
 	}
 	return r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
