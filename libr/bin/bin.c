@@ -884,9 +884,12 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 			if (tdesc) {
 				file_sz = iob->desc_size (tdesc);
 				if (file_sz != UT64_MAX) {
+					int va = tdesc->io->va;
+					tdesc->io->va = false;
 					sz = R_MIN (file_sz, sz);
 					buf_bytes = malloc (sz);
 					sz = iob->read_at (io, 0LL, buf_bytes, sz) * sz;
+					tdesc->io->va = va;
 					fail = 0;
 				}
 				iob->close (io, tdesc->fd);
@@ -951,9 +954,10 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 				if (xtr && (xtr->extract_from_bytes ||
 					    xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {
+						int va;
 						free (buf_bytes);
 						RIODesc *tdesc = iob->open (io,
-							desc->name, desc->flags, R_IO_READ);
+							desc->name, R_IO_READ, 0);
 						if (!tdesc) {
 							return false;
 						}
@@ -963,7 +967,10 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 							return false;
 						}
 						buf_bytes = malloc (sz);
+						va = tdesc->io->va;
+						tdesc->io->va = false;
 						sz = iob->read_at (io, 0LL, buf_bytes, sz) * sz;
+						tdesc->io->va = va;
 						iob->close (io, tdesc->fd);
 					} else if (sz != file_sz) {
 						iob->read_at (io, 0LL, buf_bytes, sz);
@@ -977,6 +984,7 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 			}
 		}
 	}
+end:
 	if (!binfile) {
 		bool steal_ptr = true; // transfer buf_bytes ownership to binfile
 		binfile = r_bin_file_new_from_bytes (
