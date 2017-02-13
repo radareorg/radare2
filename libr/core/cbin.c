@@ -2098,7 +2098,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		}
 		i++;
 	}
-	if (r->bin && r->bin->cur) {
+	if (r->bin && r->bin->cur && r->io && r->io->desc && r->io->desc->plugin && !r->io->desc->plugin->isdbg) {
 		r_io_section_apply_bin (r->io, r->bin->cur->id, 
 		  		R_IO_SECTION_APPLY_FOR_ANALYSIS);
 	}

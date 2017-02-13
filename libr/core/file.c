@@ -779,7 +779,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		r_config_set (r->config, "file.path", absfile);
 		free (absfile);
 	}
-	fh->map = r_core_file_get_next_map (r, fh, flags, loadaddr);
+	fh->map = r_core_file_get_next_map (r, fh, fd->flags, loadaddr);
 	if (!fh->map) {
 		r_core_file_free (fh);
 		fh = NULL;
