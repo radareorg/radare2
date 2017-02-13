@@ -1,10 +1,7 @@
 #include "sdbht.h"
 
 SdbHash* sdb_ht_new() {
-	return ht_new ((HashFunction)sdb_hash, (ListComparator)strcmp,
-		       (DupKey)strdup, (DupValue)strdup,
-		       (HtKvFreeFunc)sdb_kv_free, (CalcSize)strlen,
-		       (CalcSize)strlen);
+	return ht_new ((DupValue)strdup, (HtKvFreeFunc)sdb_kv_free, (CalcSize)strlen);
 }
 
 static bool sdb_ht_internal_insert(SdbHash* ht, const char* key,
@@ -14,11 +11,11 @@ static bool sdb_ht_internal_insert(SdbHash* ht, const char* key,
 	}
 	SdbKv* kvp = calloc (1, sizeof (SdbKv));
 	if (kvp) {
-		kvp->key = ht->dupkey ((void *)key);
-		kvp->value = ht->dupvalue ((void *)value);
-		kvp->key_len = ht->calcsizeK ((void *)kvp->key);
+		kvp->key = strdup ((void *)key);
+		kvp->value = strdup ((void *)value);
+		kvp->key_len = strlen ((void *)kvp->key);
 		kvp->expire = 0;
-		kvp->value_len = ht->calcsizeV ((void *)kvp->value);
+		kvp->value_len = strlen ((void *)kvp->value);
 		return ht_insert_kv (ht, (HtKv*)kvp, update);
 	}
 	return false;

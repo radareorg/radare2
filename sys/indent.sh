@@ -58,6 +58,8 @@ else
 	cd "$CWD"
 	clang-format "${IFILE}"  > .tmp-format
 fi
+# one of those rules fuckups the ascii art in comment blocks
+
 	# fix ternary conditional indent
 	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2
 	cat .tmp-format2 | sed -e 's, : ,: ,g' > .tmp-format
@@ -91,6 +93,10 @@ fi
 	# 0xa0
 	mv .tmp-format .tmp-format2
 	perl -ne 's/[\xa0\xc2]//g;print' < .tmp-format2 > .tmp-format
+	# remove spaces after #if 
+	mv .tmp-format .tmp-format2
+	perl -ne 's/#if\ */#if /g;print' < .tmp-format2 > .tmp-format
+	# add spce after every //
 
 	if [ "$UNIFIED" = 1 ]; then
 		diff -ru "${IFILE}" .tmp-format

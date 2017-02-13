@@ -3,6 +3,8 @@
 #include <string.h>
 #include "ls.h"
 
+#define LS_MERGE_DEPTH 50
+
 SDB_API SdbList *ls_newf(SdbListFree freefn) {
 	SdbList *list = R_NEW (SdbList);
 	if (!list) {
@@ -69,21 +71,34 @@ static SdbListIter * _sdb_list_split(SdbListIter *head) {
 	return tmp;
 }
 
-static SdbListIter * _merge_sort(SdbListIter *head, SdbListComparator cmp) {
+static SdbListIter * _merge_sort(SdbListIter *head, SdbListComparator cmp, int depth) {
 	SdbListIter *second;
 	if (!head || !head->n) {
 		return head;
 	}
+	if (depth == LS_MERGE_DEPTH) {
+		SdbListIter *it, *it2;
+		for (it = head; it && it->data; it = it->n) {
+			for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+				if (cmp (it->data, it2->data) > 0) {
+					void *t = it->data;
+					it->data = it2->data;
+					it2->data = t;
+				}
+			}
+		}
+		return head;
+	}
 	second = _sdb_list_split (head);
-	head = _merge_sort (head, cmp);
-	second = _merge_sort (second, cmp);
+	head = _merge_sort (head, cmp, depth++);
+	second = _merge_sort (second, cmp, depth++);
 	return _merge (head, second, cmp);
 }
 
 static void ls_merge_sort(SdbList *list, SdbListComparator cmp) {
 	if (list && list->head && cmp) {
 		SdbListIter *iter;
-		list->head = _merge_sort (list->head, cmp);
+		list->head = _merge_sort (list->head, cmp, 0);
 		//update tail reference
 		iter = list->head;
 		while (iter && iter->n) {

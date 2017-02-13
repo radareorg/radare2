@@ -31,7 +31,7 @@ static int destroy(RBinFile *arch) {
 
 static int check_bytes(const ut8 *buf, ut64 length) {
 	int i;
-	if (!buf) {
+	if (!buf || length < 4) {
 		return false;
 	}
 	if ((*buf != 0x80 && *buf != 0x82) || length < 4) {

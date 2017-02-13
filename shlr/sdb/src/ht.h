@@ -49,12 +49,9 @@ typedef struct ht_t {
 
 // Create a new RHashTable.
 // If hashfunction is NULL it will be used sdb_hash internally
-// If keydup or valdup are null it will be used strdup internally
+// If keydup or valdup are null it will be used an assignment
 // If keySize or valueSize are null it will be used strlen internally
-SdbHash* ht_new(HashFunction hashfunction,
-			  ListComparator comparator, DupKey keydup,
-			  DupValue valdup, HtKvFreeFunc pair_free,
-			  CalcSize keySize, CalcSize valueSize);
+SdbHash* ht_new(DupValue valdup, HtKvFreeFunc pair_free, CalcSize valueSize);
 // Destroy a hashtable and all of its entries.
 void ht_free(SdbHash* ht);
 void ht_free_deleted(SdbHash* ht);
