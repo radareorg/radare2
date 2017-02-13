@@ -292,7 +292,7 @@ RPKCS7Container *r_pkcs7_parse_container (const ut8 *buffer, ut32 length) {
 	}
 	memset (container, 0, sizeof (RPKCS7Container));
 	object = r_asn1_create_object (buffer, length);
-	if (!object || object->list.length != 2 && object->list.objects[1]->list.length != 1) {
+	if (!object || object->list.length != 2 || object->list.objects[1]->list.length != 1) {
 		free (container);
 		return NULL;
 	}
@@ -370,3 +370,19 @@ void r_pkcs7_free_attributes (RPKCS7Attributes* attributes) {
 		// Used internally pkcs #7, so it should't free attributes.
 	}
 }
+
+char* r_pkcs7_generate_string (RPKCS7Container* container) {
+	ut32 length;
+	char *str;
+	if (!container) {
+		return NULL;
+	}
+	length = 1024;
+	str = (char*) malloc(length);
+	memset(str, 0, length);
+
+
+
+	return str;
+}
+

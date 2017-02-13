@@ -97,6 +97,7 @@ R_API void r_pkcs7_free_signeddata (RPKCS7SignedData* sd);
 
 R_API RPKCS7Container *r_pkcs7_parse_container (const ut8 *buffer, ut32 length);
 R_API void r_pkcs7_free_container (RPKCS7Container* container);
+char* r_pkcs7_generate_string (RPKCS7Container* container);
 
 #endif /* R_PKCS7_H */
 
