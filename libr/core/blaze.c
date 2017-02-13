@@ -41,6 +41,22 @@ static int bbExist(AbbState *abb, ut64 addr) {
 	return 0;
 }
 
+static int fcnExist(AbbState *abb, ut64 addr) {
+	AbbAddr* a;
+	RListIter *iter;
+#if 0
+	if (abb->bbdb) {
+		return (int)sdb_num_get (abb->bbdb, sdb_fmt (0, "fcn.0x%08" PFMT64x, addr), NULL);
+	}
+#endif
+	r_list_foreach (abb->fcnents, iter, a) {
+		if (a->addr == addr) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static AbbState *abbstate_new(ut64 len) {
 	ut8 *buf = malloc (len);
 	if (!buf) {
@@ -78,9 +94,10 @@ static bool appendNextBB(AbbState *abb, ut64 addr, int bits, int type) {
 	RListIter *iter;
 	// RAnalBlock *bb;
 	AbbAddr *n;
-	if (bbExist (abb, addr)) {
+	if (!addr || addr == UT64_MAX || bbExist (abb, addr)) {
 		return false;
 	}
+	// XXX slow path use SDB HERE
 	r_list_foreach (abb->nextbbs, iter, n) {
 		if (addr == n->addr) {
 			return false;
@@ -95,8 +112,12 @@ static bool appendNextBB(AbbState *abb, ut64 addr, int bits, int type) {
 }
 
 static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {
-	bool eob = false;
-	// eprintf ("%d\n", aop->size);
+	RFlagItem *fi = r_flag_get_i (abb->core->flags, aop->addr + aop->size);
+	bool eob = fi ? true:false; //strncmp (fi->name, "sym.", 4): false;
+	if (eob) {
+		aop->fail = UT64_MAX;
+	}
+//	eprintf ("0x%llx\n", aop->addr);
 	switch (aop->type) {
 	case R_ANAL_OP_TYPE_TRAP:
 	case R_ANAL_OP_TYPE_NOP:
@@ -112,22 +133,41 @@ static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {
 		eob = true;
 		break;
 	case R_ANAL_OP_TYPE_CALL:
+//eprintf ("CALL 0x%"PFMT64x"\n", aop->addr);
 		if (aop->jump != UT64_MAX) {
+#if 0
+			RFlagItem *fi = r_flag_get_i (abb->core->flags, aop->jump);
+			if (fi) {
+				if (r_anal_noreturn_at_name (abb->core->anal, fi->name)) {
+					//if (r_anal_noreturn_at_addr (abb->core->anal, aop->jump)) 
+					eob = true;
+				}
+			}
+#endif
 			appendNextBB (abb, aop->jump, 0, 'c');
 		}
-		if (aop->fail != UT64_MAX) {
+#if 0
+		if (aop->fail != UT64_MAX && !eob) {
 			appendNextBB (abb, aop->fail, 0, 0);
 		}
+aop->jump = aop->fail; //UT64_MAX;
+aop->fail = UT64_MAX;
+#endif
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
-	case R_ANAL_OP_TYPE_JMP:
 		if (aop->jump != UT64_MAX) {
 			appendNextBB (abb, aop->jump, 0, 0);
 		}
-		if (aop->fail != UT64_MAX) {
+		if (aop->fail != UT64_MAX && !eob) {
 			appendNextBB (abb, aop->fail, 0, 0);
 		}
 		eob = true;
+		break;
+	case R_ANAL_OP_TYPE_JMP:
+		eob = true;
+		if (aop->jump != UT64_MAX) {
+			appendNextBB (abb, aop->jump, 0, 0);
+		}
 		break;
 	}
 	if (abb->wasPad) {
@@ -135,11 +175,19 @@ static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {
 		eob = true;
 	}
 	if (eob) {
+		if (aop->addr < abb->bb_addr) {
+			abb->bb_addr = aop->addr;
+		}
 		RAnalBlock *bb = R_NEW0 (RAnalBlock);
 		bb->jump = aop->jump;
 		bb->fail = aop->fail;
 		bb->addr = abb->bb_addr;
 		bb->size = aop->addr - abb->bb_addr + aop->size;
+		if (bb->size < 1) {
+			eprintf ("Invalid block size at 0x%08"PFMT64x"\n", bb->addr);
+			// XXX
+			bb->size = aop->size;
+		}
 		abb->bb_addr = bb->addr + bb->size;
 		return bb;
 	}
@@ -167,10 +215,10 @@ static void printBasicBlocks(AbbState *abb, ut64 fcnaddr, ut64 addr) {
 	sdb_bool_set (abb->bbdb, sdb_fmt (0, "bb.0x%08" PFMT64x ".0x%08" PFMT64x, fcnaddr, addr), true, 0);
 	r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %d", fcnaddr, bb->addr, bb->size);
 	if (bb->jump != UT64_MAX) {
-		r_cons_printf (" 0x%08" PFMT64x, bb->jump);
-	}
-	if (bb->fail != UT64_MAX) {
-		r_cons_printf (" 0x%08" PFMT64x, bb->fail);
+			r_cons_printf (" 0x%08" PFMT64x, bb->jump);
+			if (bb->fail != UT64_MAX) {
+				r_cons_printf (" 0x%08" PFMT64x, bb->fail);
+			}
 	}
 	r_cons_newline ();
 	if (bb->jump != UT64_MAX) {
@@ -197,8 +245,22 @@ static void findFunctions(RCore *core, AbbState *abb) {
 	AbbAddr *a;
 	eprintf ("Found %d functions\n", r_list_length (abb->fcnents));
 	r_list_foreach (abb->fcnents, iter, a) {
-		printFunction (a->addr, a->name);
+		printFunction (a->addr, NULL); //a->name);
 		printBasicBlocks (abb, a->addr, a->addr);
+	}
+	RAnalBlock *bb;
+	r_list_foreach (abb->bbs, iter, bb) {
+// if there's a flag, consider it a function
+		RFlagItem *fi = r_flag_get_i (core->flags, bb->addr);
+		if (fi) {
+			printFunction(bb->addr, fi->name);
+		} else {
+			// eprintf ("# orphan bb 0x%08"PFMT64x"\n", bb->addr);
+			printFunction (bb->addr, NULL);
+		}
+		printBasicBlocks (abb, bb->addr, bb->addr);
+	//	printFunction (a->addr, a->name);
+		// printBasicBlocks (abb, ->addr, a->addr);
 	}
 #if 0
 	RAnalBlock *bb;
@@ -228,15 +290,21 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 	abb->addr = at;
 	(void)r_io_read_at (core->io, abb->addr, abb->buf, len);
 	int ti = -1;
+	int oi = 0;
 	abb->last = at;
+	abb->core = core;
+	abb->bb_addr = abb->addr;
 	r_cons_break_push (NULL, NULL);
 	eprintf ("Analyzing basic blocks from 0x%08" PFMT64x " to 0x%08" PFMT64x "\n", abb->addr, abb->addr + len);
+
 	for (i = 0; i < len; i++) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+		oi = i;
+		ut64 obb_addr = abb->bb_addr;
 	mountain:
-		if (!r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (len - i, 16))) {
+		if (!r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (R_MAX(0, len - i), 16))) {
 			continue;
 		}
 		int next = bbExist (abb, at + i);
@@ -250,51 +318,58 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 			RFlagItem *fi = r_flag_get_i (core->flags, bb->addr);
 			if (fi || i == 0) {
 				AbbAddr *n = R_NEW0 (AbbAddr);
-				n->name = fi->name;
+				n->name = fi? fi->name: NULL;
 				n->addr = bb->addr;
 				n->bits = 0; //bb->bits;
 				// move this logic into a separate function
-				if (!strncmp (fi->name, "str.", 4)) {
-					/* do nothing here */
-				} else {
-					n->type = 'c'; // call function :D
+				if (fi) {
+					if (fi->name && !strncmp (fi->name, "str.", 4)) {
+						/* do nothing here */
+					} else {
+						n->type = 'c'; // call function :D
+					}
 				}
 				r_list_append (abb->fcnents, n);
 			}
 			/* register basic block */
 			sdb_num_set (abb->bbdb, sdb_fmt (0, "0x%08" PFMT64x, bb->addr), bb->size, 0);
 			sdb_ptr_set (abb->bbdb, sdb_fmt (0, "ptr.0x%08" PFMT64x, bb->addr), bb, 0);
-			r_list_append (abb->bbs, bb);
-			/* walk child blocks */
-			if (!r_list_empty (abb->nextbbs)) {
-				do {
-					AbbAddr *nat = r_list_pop (abb->nextbbs);
-					if (nat->type == 'c') {
-						// eprintf ("CALL %llx\n", nat->addr);
-					}
-					if (!bbExist (abb, nat->addr)) {
-						if (nat->addr > at && nat->addr < at + len) {
-							if (ti == -1) {
-								ti = i;
-							}
-							i = nat->addr - at;
-							abb->bb_addr = nat->addr;
-							if (nat->type == 'c') {
-								//		r_list_append (abb->fcnents, nat);
-							} else {
-								free (nat);
-							}
-							goto mountain;
-						} else {
-							eprintf ("Out of bounds basic block for 0x%08" PFMT64x "\n", nat->addr);
+			if (bb->addr) {
+				r_list_append (abb->bbs, bb);
+				/* walk child blocks */
+				if (!r_list_empty (abb->nextbbs)) {
+					do {
+						AbbAddr *nat = r_list_pop (abb->nextbbs);
+						if (nat->type == 'c') {
+							// eprintf ("CALL %llx\n", nat->addr);
+							r_list_append (abb->fcnents, nat);
 						}
+						if (!bbExist (abb, nat->addr)) {
+							if (nat->addr > at && nat->addr < at + len) {
+								if (ti == -1) {
+									ti = i;
+								}
+								i = nat->addr - at;
+								abb->bb_addr = nat->addr;
+								if (nat->type == 'c') {
+						//			r_list_append (abb->fcnents, nat);
+								} else {
+									free (nat);
+								}
+								goto mountain;
+							} else {
+								eprintf ("Out of bounds basic block for 0x%08" PFMT64x "\n", nat->addr);
+							}
+						}
+						free (nat);
+					} while (!r_list_empty (abb->nextbbs));
+					if (ti != -1) {
+						i = ti;
+						ti = -1;
 					}
-					free (nat);
-				} while (!r_list_empty (abb->nextbbs));
-				if (ti != -1) {
-					i = ti;
-					ti = -1;
 				}
+				i = oi;
+				abb->bb_addr = obb_addr;
 			}
 		}
 		i += aop.size - 1;

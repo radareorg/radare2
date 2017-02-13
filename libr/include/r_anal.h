@@ -1558,6 +1558,7 @@ R_API int r_anal_esil_to_reil_setup (RAnalEsil *esil, RAnal *anal, int romem, in
 R_API void r_anal_noreturn_list(RAnal *anal, int mode);
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr);
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr);
+R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
