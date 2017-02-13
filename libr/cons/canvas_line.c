@@ -111,6 +111,13 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 	if (width < 1) {
 		return;
 	}
+	/* do not render offscreen horizontal lines */
+	if (y + c->sy < 0) {
+		return;
+	}
+	if (y + c->sy > c->h) {
+		return;
+	}
 
 	switch (style) {
 	case APEX_DOT:
@@ -169,6 +176,13 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 
 static void draw_vertical_line (RConsCanvas *c, int x, int y, int height) {
 	int i;
+	/* do not render offscreen vertical lines */
+	if (x + c->sx < 0) {
+		return;
+	}
+	if (x + c->sx > c->w) {
+		return;
+	}
 	const char *vline = useUtf8? RUNECODESTR_LINE_VERT : "|";
 	r_cons_break_push (NULL, NULL);
 	for (i = y; i < y + height; i++) {
