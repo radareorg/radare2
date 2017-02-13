@@ -444,31 +444,26 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			sprintf (uri, "w32dbg://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
-			if (_plugin == r_io_plugin_get_default (io, uri, false))
-					return NULL;
 			ret = _plugin->open (io, uri, rw, mode);
 #elif __APPLE__
 			sprintf (uri, "smach://%d", pid);		//s is for spawn
 			_plugin = r_io_plugin_resolve (io, (const char *)&uri[1], false);
-			if (_plugin == r_io_plugin_get_default (io, (const char *)&uri[1], false))
-					return NULL;
-			if (!_plugin->open || !_plugin->close)
+			if (!_plugin->open || !_plugin->close) {
 				return NULL;
+			}
 			ret = _plugin->open (io, uri, rw, mode);
 #else
 			// TODO: use io_procpid here? faster or what?
 			sprintf (uri, "ptrace://%d", pid);	
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
-			if (_plugin == r_io_plugin_get_default (io, uri, false))
-					return NULL;
 			ret = _plugin->open (io, uri, rw, mode);
 #endif
 		} else {
 			sprintf (uri, "attach://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
-			if (_plugin == r_io_plugin_get_default (io, uri, false))
-					return NULL;
-			ret = _plugin->open (io, uri, rw, mode);
+			if (!_plugin->open) {
+				ret = _plugin->open (io, uri, rw, mode);
+			}
 		}
 		if (ret) {
 			ret->plugin = _plugin;

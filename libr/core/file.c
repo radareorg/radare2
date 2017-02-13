@@ -332,7 +332,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 }
 
 // XXX - need to handle index selection during debugging
-static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *filenameuri) {
+static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *filenameuri) {
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? cf->desc : NULL;
 	RBinFile *binfile = NULL;
@@ -362,12 +362,7 @@ static int r_core_file_do_load_for_debug (RCore *r, ut64 baseaddr, const char *f
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 	}
 #endif
-	// HACK if its a relative path, load from disk instead of memory
-#if __APPLE__
-	int fd = (filenameuri[0] == '.')? -1: desc->fd;
-#else
 	int fd = desc->fd;
-#endif
 	if (!r_bin_load (r->bin, filenameuri, baseaddr, UT64_MAX, xtr_idx, fd, treat_as_rawstr)) {
 		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
