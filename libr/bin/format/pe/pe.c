@@ -153,9 +153,9 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
 	char *foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
 	if (foo && *foo) {
-	   	return foo;
+		return foo;
 	} else {
-	   	free (foo); // should never happen
+		free (foo); // should never happen
 	}
 	return NULL;
 }
@@ -380,7 +380,7 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		// gmt offset for pe date is t->tm_gmtoff
 		sdb_set_owned (bin->kv,
 			"image_file_header.TimeDateStamp_string",
-			      timestr, 0);
+				  timestr, 0);
 	 }
 	bin->optional_header = &bin->nt_headers->optional_header;
 	bin->data_directory = (PE_(image_data_directory *))&bin->optional_header->DataDirectory;
@@ -447,7 +447,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 
 	sections = PE_(r_bin_pe_get_sections) (bin);
 	for (i = 0; i < bin->num_sections; i++) {
-	    	//XXX search by section with +x permission since the section can be left blank
+			//XXX search by section with +x permission since the section can be left blank
 		if (!strcmp ((char*)sections[i].name, ".text")) {
 			text_rva = sections[i].vaddr;
 			text_off = sections[i].paddr;
@@ -646,19 +646,19 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 
 
 	rr = r_buf_fread_at (bin->b, metadata_directory,
-					    (ut8*)metadata, bin->big_endian ? "1I2S": "1i2s", 1);
+						(ut8*)metadata, bin->big_endian ? "1I2S": "1i2s", 1);
 	if (rr < 1) goto fail;
 
 	rr = r_buf_fread_at (bin->b, metadata_directory + 8,
-					    (ut8*)(&metadata->Reserved), bin->big_endian ? "1I": "1i", 1);
+						(ut8*)(&metadata->Reserved), bin->big_endian ? "1I": "1i", 1);
 	if (rr < 1) goto fail;
 
 	rr = r_buf_fread_at (bin->b, metadata_directory + 12,
-					    (ut8*)(&metadata->VersionStringLength), bin->big_endian ? "1I": "1i", 1);
+						(ut8*)(&metadata->VersionStringLength), bin->big_endian ? "1I": "1i", 1);
 	if (rr < 1) goto fail;
 
 
-	printf("Metadata Signature: %x %x %d\n", metadata_directory, metadata->Signature, metadata->VersionStringLength);
+	eprintf("Metadata Signature: %x %x %d\n", metadata_directory, metadata->Signature, metadata->VersionStringLength);
 
 	// read the version string
 	int len = metadata->VersionStringLength; // XXX: dont trust this length 
@@ -667,15 +667,15 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 		if (!metadata->VersionString) goto fail;
 
 		rr = r_buf_read_at (bin->b, metadata_directory + 16,
-						    (ut8*)(metadata->VersionString), len);
+							(ut8*)(metadata->VersionString), len);
 		if (rr != len) {
-			eprintf ("Warning: read (metaadata header) - cannot parse version string\n");
+			eprintf ("Warning: read (metadata header) - cannot parse version string\n");
 			free (metadata->VersionString);
 			free (metadata);
 			return 0;
 		}
 
-		printf(".NET Version: %s\n", metadata->VersionString);
+		eprintf(".NET Version: %s\n", metadata->VersionString);
 	}
 
 	// read the header after the string
@@ -684,7 +684,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	if (rr < 1) goto fail;
 
-	printf("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
+	eprintf("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
 	bin->metadata_header = metadata;
 
 
@@ -696,21 +696,21 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 	int count = 0;
 
 	while (count < metadata->NumberOfStreams) {
-		stream = malloc(sizeof(PE_(image_metadata_stream)));
+		stream = R_NEW0(sizeof(PE_(image_metadata_stream)));
 		if (!stream) goto fail;
 
 		if (r_buf_fread_at (bin->b, start_of_stream, (ut8*)stream, bin->big_endian ? "2I": "2i", 1) < 1) {
 			free (stream);
 			goto fail;
 		}
-		printf("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
+		eprintf("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
 		char *stream_name = malloc(MAX_METADATA_STRING_LENGTH + 1);
 		int c = bin_pe_read_metadata_string(stream_name, bin->b->buf + start_of_stream + 8);
 		if (c == 0) {
 			free(stream);
 			goto fail;
 		}
-		printf("%s %d\n", stream_name, c);
+		eprintf("Stream name: %s %d\n", stream_name, c);
 		stream->Name = stream_name;
 		streams[count] = stream;
 		start_of_stream += 8 + c;
@@ -719,7 +719,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 	bin->streams = streams;
 	return 1;
 fail:
-	eprintf ("Warning: read (metaadata header)\n");
+	eprintf ("Warning: read (metadata header)\n");
 	free (metadata);
 	return 0;
 }
@@ -733,7 +733,7 @@ static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	if (!clr_hdr) return 0;
 	rr = r_buf_read_at (bin->b, image_clr_hdr_paddr,
-					    (ut8*)(clr_hdr), len);
+						(ut8*)(clr_hdr), len);
 
 //	printf("%x\n", clr_hdr->HeaderSize);
 
@@ -1934,7 +1934,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	entry->haddr  = bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) + 16;
 
 	if (entry->paddr >= bin->size) {
-	 	struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
+		struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
 		ut64 paddr = 0;
 		if (!debug) {
 			bprintf ("Warning: Invalid entrypoint ... "
@@ -1974,7 +1974,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 		if (!debug) {
 			bprintf ("Warning: NULL entrypoint\n");
 		}
-	 	struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
+		struct r_bin_pe_section_t *sections =  PE_(r_bin_pe_get_sections) (bin);
 		for (i = 0; i < bin->num_sections; i++) {
 			//If there is a section with x without w perm is a good candidate to be the entrypoint
 			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].flags & PE_IMAGE_SCN_MEM_WRITE)) {
@@ -2011,7 +2011,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	st64 exports_sz = 0;
 
 	if (!bin || !bin->data_directory) {
-	    return NULL;
+		return NULL;
 	}
 
 	data_dir_export = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
@@ -2019,7 +2019,7 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	export_dir_size = data_dir_export->Size;
 	if (bin->export_directory) {
 		if (bin->export_directory->NumberOfFunctions + 1 <
-		    bin->export_directory->NumberOfFunctions) {
+			bin->export_directory->NumberOfFunctions) {
 			// avoid integer overflow
 			return NULL;
 		}
@@ -2341,7 +2341,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 
 			dll_name[PE_NAME_LENGTH] = '\0';
 			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name, import_func_name_offset,
-				  		  curr_delay_import_dir->DelayImportAddressTable)) {
+						  curr_delay_import_dir->DelayImportAddressTable)) {
 				break;
 			}
 			if ((char *)(curr_delay_import_dir + 2) > (char *)(bin->b->buf + bin->size)) {
@@ -2596,7 +2596,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 	base_addr = PE_(r_bin_pe_get_image_base) (bin);
 
 	for (i = 0; !sections[i].last; i++) {
-	        //strcmp against .text doesn't work in somes cases
+			//strcmp against .text doesn't work in somes cases
 		if (strstr ((const char*)sections[i].name, "text")) {
 			bool fix = false;
 			int j;
