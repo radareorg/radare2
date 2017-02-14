@@ -1875,37 +1875,36 @@ out_error:
 	return;
 }
 
-static void bin_pe_get_certificate(struct PE_(r_bin_pe_obj_t) *bin) {
+static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
 	RPKCS7Container *con;
-    ut64 size, vaddr, offset;
+	ut64 size, vaddr, offset;
 	ut8 *data = NULL;
 	int len;
-    if (!bin || !bin->nt_headers) {
-    	return;
-    }
+	if (!bin || !bin->nt_headers) {
+		return;
+	}
 	size = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].Size;
 	vaddr = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress;
 	data = calloc (1, size);
 	if (!data) return;
 	if (vaddr > bin->size || vaddr + size > bin->size) {
-    	eprintf ("vaddr greater than the file\n");
+		eprintf ("vaddr greater than the file\n");
 		free (data);
-		return; 
+		return;
 	}
 	//skipping useless header..
 	len = r_buf_read_at (bin->b, vaddr + 8, data, size - 8);
 	if (len < 1) {
-    	eprintf ("Failed to get certificate from pe\n");
+		eprintf ("Failed to get certificate from pe\n");
 		R_FREE (data);
 		return;
 	}
-	con = r_pkcs7_parse_container(data, size);
-	if (con) {
-		
-	} else {
-		eprintf("Failed to parse the ASN1 structure.");
+	con = r_pkcs7_parse_container (data, size);
+	bin->pkcs7 = r_pkcs7_generate_dump(con);
+	if (!bin->pkcs7) {
+		bprintf ("Failed to parse the ASN1 structure.");
 	}
-	r_pkcs7_free_container(con);
+	r_pkcs7_free_container (con);
 	R_FREE (data);
 }
 

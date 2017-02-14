@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "r_asn1_internal.h"
 
 const char* _hex = "0123456789abcdef";
 
@@ -292,8 +293,7 @@ RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 			}
 		}
 		++i;
-	}
-	while (X509OIDList[i].oid && X509OIDList[i].name);
+	} while (X509OIDList[i].oid && X509OIDList[i].name);
 	return r_asn1_create_string (str, true, ASN1_OID_LEN);
 }
 
@@ -344,8 +344,7 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 				length64 <<= 8;
 				length64 |= byte;
 				from++;
-			}
-			while (from < end && length64 <= 0xffffffff && byte & 0x80);
+			} while (from < end && length64 <= 0xffffffff && byte & 0x80);
 			if (length64 > 0xffffffff) {
 				free (object);
 				// Malformed object - overflow (4GB+ is really too much)
@@ -580,38 +579,3 @@ RASN1String *asn1_stringify_sector (RASN1Object *object) {
 	}
 	return NULL;
 }
-/*
-ASN1String *asn1_stringify_object (ASN1Object *object) {
-	ut32 i;
-	if (!object) {
-		return NULL;
-	}
-	switch (object->class) {
-	case CLASS_CONTEXT:
-	case CLASS_UNIVERSAL:
-	{
-		ASN1String *s = NULL, *t = NULL;
-		for (i = 0; i < object->list.length; ++i) {
-			if (!s) {
-				s = asn1_stringify_sector (object->list.objects[i]);
-			} else {
-				t = asn1_stringify_sector (object->list.objects[i]);
-				if (t) {
-					s = asn1_concatenate_strings (s, asn1_create_string ("\n", false, 2), true);
-					s = asn1_concatenate_strings (s, t, true);
-				}
-			}
-		}
-		if (!s) {
-			s = asn1_stringify_integer (object->sector, object->length);
-		}
-		return s;
-	}
-	case CLASS_APPLICATION:
-		return NULL; //asn1_create_string2("Application", false);
-	case CLASS_PRIVATE:
-		return NULL; //asn1_create_string2("Private", false);
-	}
-	return asn1_create_string2 ("Unknown class", false);
-}
- */

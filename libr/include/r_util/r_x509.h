@@ -104,36 +104,15 @@ typedef struct r_x509_certificaterevocationlist {
 	RX509CRLEntry **revokedCertificates;
 } RX509CertificateRevocationList;
 
-R_API bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object);
-R_API void r_x509_free_validity (RX509Validity* validity);
-
-R_API bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object * object);
-R_API void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier * ai);
-
-R_API bool r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki, RASN1Object *object);
-R_API void r_x509_free_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki);
-
-R_API bool r_x509_parse_name (RX509Name *name, RASN1Object * object);
-R_API void r_x509_free_name (RX509Name * name);
-
-R_API bool r_x509_parse_extension (RX509Extension *ext, RASN1Object * object);
-R_API void r_x509_free_extension (RX509Extension * ex);
-
-R_API bool r_x509_parse_extensions (RX509Extensions *ext, RASN1Object * object);
-R_API void r_x509_free_extensions (RX509Extensions* ex);
-
-R_API bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * object);
-R_API void r_x509_free_tbscertificate (RX509TBSCertificate * tbsc);
+R_API RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object);
+R_API void r_x509_free_crl (RX509CertificateRevocationList *crl);
+R_API char* r_x509_generate_crl_dump (RX509CertificateRevocationList *crl);
 
 R_API RX509Certificate *r_x509_parse_certificate (RASN1Object *object);
 R_API RX509Certificate *r_x509_parse_certificate2 (const ut8 *buffer, ut32 length);
 R_API void r_x509_free_certificate (RX509Certificate* certificate);
+R_API char* r_x509_generate_certificate_dump (RX509Certificate* certificate, const char* pad);
 
-R_API RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object);
-R_API void r_x509_free_crlentry (RX509CRLEntry *entry);
-
-R_API RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object);
-R_API void r_x509_free_crl (RX509CertificateRevocationList *certificate);
 
 #ifdef __cplusplus
 }

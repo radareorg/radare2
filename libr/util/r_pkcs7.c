@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <r_util.h>
+#include "r_x509_internal.h"
+#include "r_pkcs7_internal.h"
 
 bool r_pkcs7_parse_certificaterevocationlists (RPKCS7CertificateRevocationLists *crls, RASN1Object *object) {
 	ut32 i;
@@ -195,7 +197,7 @@ void r_pkcs7_free_signerinfo (RPKCS7SignerInfo* si) {
 		r_x509_free_algorithmidentifier (&si->digestAlgorithm);
 		r_pkcs7_free_attributes (&si->authenticatedAttributes);
 		r_x509_free_algorithmidentifier (&si->digestEncryptionAlgorithm);
-		r_asn1_free_object(si->encryptedDigest);
+		r_asn1_free_object (si->encryptedDigest);
 		r_pkcs7_free_attributes (&si->unauthenticatedAttributes);
 		free (si);
 	}
@@ -371,18 +373,96 @@ void r_pkcs7_free_attributes (RPKCS7Attributes* attributes) {
 	}
 }
 
-char* r_pkcs7_generate_string (RPKCS7Container* container) {
-	ut32 length;
+char *r_pkcs7_generate_dump (RPKCS7Container* container) {
+	RPKCS7SignedData *sd;
+	ut32 i, j, length, position;
 	char *str;
 	if (!container) {
 		return NULL;
 	}
-	length = 1024;
-	str = (char*) malloc(length);
-	memset(str, 0, length);
 
+	sd = &container->signedData;
+	position = 0;
+	length = 1024 * 4;
+	str = (char*) malloc (length);
+	memset (str, 0, length);
+	position = snprintf (str + position, length, "signedData\n  Version: %u\n  Digest Algorithms:\n", sd->version);
+	for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
+		position = snprintf (str + position, length, "    %s\n", container->signedData.digestAlgorithms.elements[i]->algorithm->string);
+	}
+	position = snprintf (str + position, length, "  Certificates:\n");
+	for (i = 0; i < container->signedData.certificates.length; ++i) {
+		char *cert;
+		ut32 certsize;
+		cert = r_x509_generate_certificate_dump (container->signedData.certificates.elements[i], "    ");
+		certsize = strlen (cert);
+		if (certsize >= length - position) {
+			free (str);
+			return NULL;
+		}
+		position = snprintf (str + position, length, "\n%s", cert);
+		free (cert);
+	}
+	/*
+	position = snprintf (str + position, length, "  CRLs:\n");
+	for (i = 0; i < container->signedData.crls.length; ++i) {
+		if (!container->signedData.crls.elements[i]) continue;
+		if (container->signedData.crls.elements[i]->signature.algorithm)
+			position = snprintf (str + position, length, "     %s\n", container->signedData.crls.elements[i]->signature.algorithm->string);
+		if (container->signedData.crls.elements[i]->lastUpdate)
+			position = snprintf (str + position, length, "     %s\n", container->signedData.crls.elements[i]->lastUpdate->string);
+		if (container->signedData.crls.elements[i]->nextUpdate)
+			position = snprintf (str + position, length, "     %s\n", container->signedData.crls.elements[i]->nextUpdate->string);
+		RX509Name *name = &container->signedData.crls.elements[i]->issuer;
+		for (j = 0; name && j < name->length; ++j) {
+			if (name->oids[j] && name->names[j]) {
+				position = snprintf (str + position, length, "       %s: %s\n", name->oids[j]->string, name->names[j]->string);
+			}
+		}
+	}
+	printf ("   SignerInfos:\n");
+	for (i = 0; i < container->signedData.signerinfos.length; ++i) {
+		//			container->signedData.signerinfos.elements[i];
+		printf ("     SignerInfo[%u]\n       Version: %u\n", i, container->signedData.signerinfos.elements[i]->version);
+		printf ("       Issuer:\n");
+		for (j = 0; j < container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.length; ++j) {
+			if (container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.oids[j] &&
+					container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.names[j]) {
+				printf ("         %s: %s\n", container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.oids[j]->string,
+						container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.names[j]->string);
+			}
+		}
+		if (container->signedData.signerinfos.elements[i]->encryptedDigest) {
+			RASN1String* s = r_asn1_stringify_integer (container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.serialNumber->sector, container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.serialNumber->length);
+			if (s)
+				printf ("       Serial Number: %s\n", s->string);
+			r_asn1_free_string (s);
+		}
+		if (container->signedData.signerinfos.elements[i]->digestAlgorithm.algorithm)
+			printf ("       Digest Algorithm: %s\n", container->signedData.signerinfos.elements[i]->digestAlgorithm.algorithm->string);
+		printf ("       Authenticated Attributes:\n");
+		for (j = 0; j < container->signedData.signerinfos.elements[i]->authenticatedAttributes.length; ++j) {
+			if (container->signedData.signerinfos.elements[i]->authenticatedAttributes.elements[j]) {
+				printf ("         %s\n", container->signedData.signerinfos.elements[i]->authenticatedAttributes.elements[j]->oid->string);
+			}
+		}
+		if (container->signedData.signerinfos.elements[i]->digestEncryptionAlgorithm.algorithm)
+			printf ("       Digest Encryption Algorithm: %s\n", container->signedData.signerinfos.elements[i]->digestEncryptionAlgorithm.algorithm->string);
+		if (container->signedData.signerinfos.elements[i]->encryptedDigest) {
+			RASN1String* s = r_asn1_stringify_bytes (container->signedData.signerinfos.elements[i]->encryptedDigest->sector, container->signedData.signerinfos.elements[i]->encryptedDigest->length);
+			if (s)
+				printf ("       Encrypted Digest:\n%s\n", s->string);
+			r_asn1_free_string (s);
+		}
+		printf ("       Unauthenticated Attributes:\n");
+		for (j = 0; j < container->signedData.signerinfos.elements[i]->unauthenticatedAttributes.length; ++j) {
+			if (container->signedData.signerinfos.elements[i]->unauthenticatedAttributes.elements[j]) {
+				printf ("         %s\n", container->signedData.signerinfos.elements[i]->unauthenticatedAttributes.elements[j]->oid->string);
+			}
+		}
+	}
+	 */
 
-
-	return str;
+	return realloc (str, length + 1);
 }
 

@@ -65,39 +65,9 @@ typedef struct r_pkcs7_container_t {
 	RPKCS7SignedData signedData;
 } RPKCS7Container;
 
-R_API bool r_pkcs7_parse_certificaterevocationlists (RPKCS7CertificateRevocationLists *crls, RASN1Object *object);
-R_API void r_pkcs7_free_certificaterevocationlists (RPKCS7CertificateRevocationLists *crls);
-
-R_API bool r_pkcs7_parse_extendedcertificatesandcertificates (RPKCS7ExtendedCertificatesAndCertificates *ecac, RASN1Object *object);
-R_API void r_pkcs7_free_extendedcertificatesandcertificates (RPKCS7ExtendedCertificatesAndCertificates *ecac);
-
-R_API bool r_pkcs7_parse_digestalgorithmidentifier (RPKCS7DigestAlgorithmIdentifiers *dai, RASN1Object *object);
-R_API void r_pkcs7_free_digestalgorithmidentifier (RPKCS7DigestAlgorithmIdentifiers *dai);
-
-R_API bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object);
-R_API void r_pkcs7_free_contentinfo (RPKCS7ContentInfo* ci);
-
-R_API bool r_pkcs7_parse_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu, RASN1Object *object);
-R_API void r_pkcs7_free_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu);
-
-R_API RPKCS7Attribute* r_pkcs7_parse_attribute (RASN1Object *object);
-R_API void r_pkcs7_free_attribute (RPKCS7Attribute* attribute);
-
-R_API bool r_pkcs7_parse_attributes (RPKCS7Attributes* attribute, RASN1Object *object);
-R_API void r_pkcs7_free_attributes (RPKCS7Attributes* attribute);
-
-R_API bool r_pkcs7_parse_signerinfo (RPKCS7SignerInfo* si, RASN1Object *object);
-R_API void r_pkcs7_free_signerinfo (RPKCS7SignerInfo* si);
-
-R_API bool r_pkcs7_parse_signerinfos (RPKCS7SignerInfos* ss, RASN1Object *object);
-R_API void r_pkcs7_free_signerinfos (RPKCS7SignerInfos* ss);
-
-R_API bool r_pkcs7_parse_signeddata (RPKCS7SignedData *sd, RASN1Object *object);
-R_API void r_pkcs7_free_signeddata (RPKCS7SignedData* sd);
-
 R_API RPKCS7Container *r_pkcs7_parse_container (const ut8 *buffer, ut32 length);
 R_API void r_pkcs7_free_container (RPKCS7Container* container);
-char* r_pkcs7_generate_string (RPKCS7Container* container);
+R_API char* r_pkcs7_generate_dump (RPKCS7Container* container);
 
 #endif /* R_PKCS7_H */
 

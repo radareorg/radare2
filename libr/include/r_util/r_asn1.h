@@ -77,12 +77,7 @@ typedef struct r_asn1_object_t {
 	ASN1List list; /* List of objects contained in the sector */
 } RASN1Object;
 
-R_API ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_create_string (const char *string, bool allocated, ut32 length);
-R_API RASN1String *r_asn1_create_string2 (const char *string, bool allocated);
 R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length);
-
-R_API RASN1String *r_asn1_concatenate_strings (RASN1String* s0, RASN1String* s1, bool freestr);
 
 R_API RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length);
