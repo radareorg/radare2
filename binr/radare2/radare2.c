@@ -98,10 +98,11 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	return r->io->winbase;
 #endif
 	int pid = r_io_desc_get_pid (r->io, r->io->desc->fd);
+	int tid = r_io_desc_get_tid (r->io, r->io->desc->fd);
 	if (r_debug_attach (r->dbg, pid) == -1) {
 		return 0LL;
 	}
-	r_debug_select (r->dbg, pid, pid);
+	r_debug_select (r->dbg, pid, tid);
 	r_debug_map_sync (r->dbg);
 	abspath = r_file_abspath (file);
 	if (!abspath) {

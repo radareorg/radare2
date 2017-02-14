@@ -170,6 +170,21 @@ R_API int r_io_desc_get_pid (RIO *io, int fd)
 	return desc->plugin->getpid(desc);
 }
 
+R_API int r_io_desc_get_tid (RIO *io, int fd)
+{
+	RIODesc *desc;
+	if (!io || !io->files)
+		return -2;		//-1 is reserved for plugin internal errors
+	if (!(desc = r_io_desc_get (io, fd)))
+		return -3;
+	if (!desc->plugin)
+		return -4;
+	if (!desc->plugin->isdbg)
+		return -5;
+	if (!desc->plugin->gettid)
+		return -6;
+	return desc->plugin->gettid(desc);
+}
 
 bool desc_fini_cb (void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc *)data;

@@ -697,7 +697,7 @@ static int cb_cfgdebug(void *user, void *data) {
 					core->dbg->tid);
 #else
 			r_debug_select (core->dbg, r_io_desc_get_pid (core->io, core->file->desc->fd),
-					r_io_desc_get_pid (core->io, core->file->desc->fd));
+					r_io_desc_get_tid (core->io, core->file->desc->fd));
 #endif
 		}
 	} else {

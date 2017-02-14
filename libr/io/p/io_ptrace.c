@@ -288,6 +288,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.system = __system,
 	.write = __write,
 	.getpid = __getpid,
+	.gettid = __getpid,
 	.isdbg = true
 };
 #else

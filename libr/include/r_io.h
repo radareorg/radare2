@@ -135,6 +135,7 @@ typedef struct r_io_plugin_t {
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 	int (*close)(RIODesc *desc);
 	int (*getpid)(RIODesc *desc);
+	int (*gettid)(RIODesc *desc);
 	bool (*resize)(RIO *io, RIODesc *fd, ut64 size);
 	int (*extend)(RIO *io, RIODesc *fd, ut64 size);
 	int (*accept)(RIO *io, RIODesc *desc, int fd);
@@ -234,6 +235,7 @@ R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
 R_API ut64 r_io_desc_size (RIODesc *desc);
 R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);
 R_API int r_io_desc_get_pid (RIO *io, int fd);
+R_API int r_io_desc_get_tid (RIO *io, int fd);
 R_API bool r_io_desc_fini (RIO *io);
 
 //map.c

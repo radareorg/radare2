@@ -488,6 +488,7 @@ RIOPlugin r_io_plugin_mach = {
 	.close = __close,
 	.read = __read,
 	.getpid = __get_pid,
+	.gettid = __get_pid,
 	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,

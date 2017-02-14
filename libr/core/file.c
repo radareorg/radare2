@@ -118,15 +118,15 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		eprintf ("Cannot reopen\n");
 	}
 	if (isdebug) {
-		int newtid = newpid;
+		int newtid = r_io_desc_get_tid (core->io, core->file->desc->fd);
 		// XXX - select the right backend
 		if (core->file && core->file->desc) {
+			newtid = r_io_desc_get_tid (core->io, core->file->desc->fd);
 			newpid = r_io_desc_get_pid (core->io, core->file->desc->fd);
 #if __linux__
 			core->dbg->main_pid = newpid;
-			newtid = newpid;
 #endif
-#if __WINDOWS__
+#if 0
 			newpid = core->io->winpid;
 			newtid = core->io->wintid;
 			r_debug_select (core->dbg, newpid, newtid);	//why do we do this here?
