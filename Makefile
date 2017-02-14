@@ -205,6 +205,7 @@ install love: install-doc install-man install-www
 		rm -f last ; ln -fs $(VERSION) last
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
+	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
@@ -237,7 +238,6 @@ install-pkgconfig-symlink:
 
 
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www
-	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
 	cd libr && ${MAKE} install-symlink
 	cd binr && ${MAKE} install-symlink
 	cd shlr && ${MAKE} install-symlink
@@ -246,6 +246,8 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 		echo "$$DIR" ; \
 		${MAKE} install-symlink ); \
 	done
+	mkdir -p "${DESTDIR}${BINDIR}"
+	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
