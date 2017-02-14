@@ -8,14 +8,14 @@
 #undef PE_VWord
 
 #ifdef R_BIN_PE64
-#define PE_(name) Pe64_##name 
+#define PE_(name) Pe64_ ## name
 #define ILT_MASK1 0x8000000000000000LL
 #define ILT_MASK2 0x7fffffffffffffffLL
 #define PE_Word ut16
 #define PE_DWord ut64
 #define PE_VWord ut32
 #else
-#define PE_(name) Pe32_##name 
+#define PE_(name) Pe32_ ## name
 #define ILT_MASK1 0x80000000
 #define ILT_MASK2 0x7fffffff
 #define PE_Word ut16
@@ -103,16 +103,16 @@ typedef struct {
 #define PE_IMAGE_FILE_UP_SYSTEM_ONLY           0x4000
 #define PE_IMAGE_FILE_BYTES_REVERSED_HI        0x8000
 
-#define IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA	0x0020
+#define IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA        0x0020
 #define IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE          0x0040
 #define IMAGE_DLL_CHARACTERISTICS_FORCE_INTEGRITY       0x0080
 #define IMAGE_DLL_CHARACTERISTICS_NX_COMPAT             0x0100
 #define IMAGE_DLLCHARACTERISTICS_NO_ISOLATION           0x0200
 #define IMAGE_DLLCHARACTERISTICS_NO_SEH                 0x0400
 #define IMAGE_DLLCHARACTERISTICS_NO_BIND                0x0800
-#define IMAGE_DLLCHARACTERISTICS_APPCONTAINER		0x1000
+#define IMAGE_DLLCHARACTERISTICS_APPCONTAINER           0x1000
 #define IMAGE_DLLCHARACTERISTICS_WDM_DRIVER             0x2000
-#define IMAGE_DLLCHARACTERISTICS_GUARD_CF  		0x4000
+#define IMAGE_DLLCHARACTERISTICS_GUARD_CF               0x4000
 #define IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE  0x8000
 
 #define IMAGE_DEBUG_TYPE_CODEVIEW 2
@@ -166,8 +166,8 @@ typedef struct {
 typedef struct {
 	/* Standard fields */
 	ut16 Magic;
-	ut8  MajorLinkerVersion;
-	ut8  MinorLinkerVersion;
+	ut8 MajorLinkerVersion;
+	ut8 MinorLinkerVersion;
 	ut32 SizeOfCode;
 	ut32 SizeOfInitializedData;
 	ut32 SizeOfUninitializedData;
@@ -202,8 +202,8 @@ typedef struct {
 typedef struct {
 	/* Standard fields */
 	ut16 Magic;
-	ut8  MajorLinkerVersion;
-	ut8  MinorLinkerVersion;
+	ut8 MajorLinkerVersion;
+	ut8 MinorLinkerVersion;
 	ut32 SizeOfCode;
 	ut32 SizeOfInitializedData;
 	ut32 SizeOfUninitializedData;
@@ -233,6 +233,45 @@ typedef struct {
 	ut32 NumberOfRvaAndSizes;
 	Pe64_image_data_directory DataDirectory[PE_IMAGE_DIRECTORY_ENTRIES];
 } Pe64_image_optional_header;
+
+typedef struct {
+	ut32 HeaderSize;
+	ut16 MajorRuntimeVersion;
+	ut16 MinorRuntimeVersion;
+	ut32 MetaDataDirectoryAddress;
+	ut32 MetaDataDirectorySize;
+	ut32 Flags;
+	ut32 EntryPointToken;
+	ut32 ResourcesDirectoryAddress;
+	ut32 ResourcesDirectorySize;
+	ut32 StrongNameSignatureAddress;
+	ut32 StrongNameSignatureSize;
+	ut32 CodeManagerTableAddress;
+	ut32 CodeManagerTableSize;
+	ut32 VTableFixupsAddress;
+	ut32 VTableFixupsSize;
+	ut32 ExportAddressTableJumpsAddress;
+	ut32 ExportAddressTableJumpsSize;
+	ut32 ManagedNativeHeaderAddress;
+	ut32 ManagedNativeHeaderSize;
+} Pe32_image_clr_header, Pe64_image_clr_header;
+
+typedef struct {
+	ut64 Signature;
+	ut16 MajorVersion;
+	ut16 MinorVersion;
+	ut32 Reserved;
+	ut32 VersionStringLength;
+	char* VersionString;
+	ut16 Flags;
+	ut16 NumberOfStreams;
+} Pe32_image_metadata_header, Pe64_image_metadata_header;
+
+typedef struct {
+	ut32 Offset;
+	ut32 Size;
+	char* Name;
+} Pe32_image_metadata_stream, Pe64_image_metadata_stream;
 
 #define PE_IMAGE_SIZEOF_SHORT_NAME 8
 
@@ -334,8 +373,8 @@ typedef struct {
 typedef struct {
 	union {
 		struct {
-			ut32 NameOffset:31;
-			ut32 NameIsString:1;
+			ut32 NameOffset: 31;
+			ut32 NameIsString: 1;
 		} s;
 		ut32 Name;
 		ut16 Id;
@@ -343,8 +382,8 @@ typedef struct {
 	union {
 		ut32 OffsetToData;
 		struct {
-			ut32 OffsetToDirectory:31;
-			ut32 DataIsDirectory:1;
+			ut32 OffsetToDirectory: 31;
+			ut32 DataIsDirectory: 1;
 		} s;
 	} u2;
 } Pe_image_resource_directory_entry;
@@ -355,12 +394,12 @@ typedef struct {
 // "Yes, even PE files intended for non-UNICODE Win32 implementations use UNICODE here."
 typedef struct {
 	ut16 Length;
-	char *NameString;
+	char* NameString;
 } Pe_image_resource_directory_string;
 
 typedef struct {
 	ut16 Length;
-	ut16 *NameString;
+	ut16* NameString;
 } Pe_image_resource_directory_string_u;
 
 typedef struct {
@@ -419,52 +458,52 @@ typedef struct {
 	ut16 wValueLength; //The size, in words, of the Value member.
 	ut16 wType; //1 text; 0 binary
 	ut16 wKeyLen;
-	ut16 *szKey; //An arbitrary Unicode string
+	ut16* szKey; //An arbitrary Unicode string
 	//ut16 Padding;
-	ut16 *Value; //A zero-terminated string.
+	ut16* Value; //A zero-terminated string.
 } String;
 
 typedef struct {
 	ut16 wLength; //The length, in bytes, of this StringTable structure, including all structures indicated by the Children member.
 	ut16 wValueLength; //always 0
 	ut16 wType; //1 text; 0 binary
-	ut16 *szKey;
-		//An 8-digit hexadecimal number stored as a Unicode string.
-		//The four most significant digits represent the language identifier.
-		//The four least significant digits represent the code page for which the data is formatted
+	ut16* szKey;
+	//An 8-digit hexadecimal number stored as a Unicode string.
+	//The four most significant digits represent the language identifier.
+	//The four least significant digits represent the code page for which the data is formatted
 	//ut16 Padding;
 	ut32 numOfChildren;
-	String **Children; //An array of one or more String structures
+	String** Children; //An array of one or more String structures
 } StringTable;
 
 typedef struct {
 	ut16 wLength; //The length, in bytes, of the entire StringFileInfo block, including all structures indicated by the Children member.
 	ut16 wValueLength; //always 0
 	ut16 wType; //1 text; 0 binary
-	ut16 *szKey; //L"StringFileInfo"
+	ut16* szKey; //L"StringFileInfo"
 	//ut16 Padding;
 	ut32 numOfChildren;
-	StringTable **Children; //An array of one or more StringTable structures
+	StringTable** Children; //An array of one or more StringTable structures
 } StringFileInfo;
 
 typedef struct {
 	ut16 wLength; //The length, in bytes, of the Var structure. (with pad)
 	ut16 wValueLength; //The length, in bytes, of the Value member.
 	ut16 wType; //1 text; 0 binary
-	ut16 *szKey; //L"Translation"
+	ut16* szKey; //L"Translation"
 	//ut16 Padding;
 	ut32 numOfValues;
-	ut32 *Value; //An array of one or more values that are language and code page identifier pairs
+	ut32* Value; //An array of one or more values that are language and code page identifier pairs
 } Var;
 
 typedef struct {
 	ut16 wLength; //The length, in bytes, of the entire VarFileInfo block, including all structures indicated by the Children member. (with pad)
 	ut16 wValueLength; //always 0
 	ut16 wType; //1 text; 0 binary
-	ut16 *szKey; //L"VarFileInfo"
+	ut16* szKey; //L"VarFileInfo"
 	//ut16 Padding;
 	ut32 numOfChildren;
-	Var **Children; //Typically contains a list of languages that the application or DLL supports.
+	Var** Children; //Typically contains a list of languages that the application or DLL supports.
 } VarFileInfo;
 
 #define PE_VS_FF_DEBUG        0x00000001L
@@ -533,15 +572,15 @@ typedef struct {
 } PE_VS_FIXEDFILEINFO;
 
 typedef struct {
-	ut16             wLength; //whole structure size (padding not included (in case of multiply version info structures))
-	ut16             wValueLength; //if 0 there is no Value
-	ut16             wType; //1 text; 0 binary
-	ut16             *szKey; //L"VS_VERSION_INFO"
+	ut16 wLength;             //whole structure size (padding not included (in case of multiply version info structures))
+	ut16 wValueLength;             //if 0 there is no Value
+	ut16 wType;             //1 text; 0 binary
+	ut16* szKey;             //L"VS_VERSION_INFO"
 	//ut16             Padding1; //pad for 32 boundary
-	PE_VS_FIXEDFILEINFO *Value;
+	PE_VS_FIXEDFILEINFO* Value;
 	//ut16             Padding2; //pad for 32 boundary
-	VarFileInfo      *varFileInfo; //0 or 1 elements
-	StringFileInfo   *stringFileInfo; //0 or 1 elements
+	VarFileInfo* varFileInfo;      //0 or 1 elements
+	StringFileInfo* stringFileInfo;   //0 or 1 elements
 } PE_VS_VERSIONINFO;
 
 #endif

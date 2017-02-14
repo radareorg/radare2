@@ -379,7 +379,6 @@ R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i
 R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 	int j = 0, offset = 0, n;
 	char *str = func_name;
-	char *res = NULL;
 
 	if (!func_name) {
 		return NULL;
@@ -406,7 +405,7 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 			char saved = str[j + n];
 			str[j + n] = 0;
 			if (sdb_exists (anal->sdb_types, &str[j])) {
-				res = sdb_const_get (anal->sdb_types, &str[j], 0);
+				const char *res = sdb_const_get (anal->sdb_types, &str[j], 0);
 				bool is_func = res && !strcmp ("func", res);
 				if (is_func) {
 					return strdup (&str[j]);
@@ -415,7 +414,5 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 			str[j + n] = saved;
 		}
 	}
-
-stage_left:
 	return NULL;
 }
