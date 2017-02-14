@@ -1221,6 +1221,9 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 				r_core_asm_bwdis_len (core, &nb_bytes, &core->offset,
 						nb_opcodes);
 			}
+			if (nb_bytes > core->blocksize) {
+				r_core_block_size (core, nb_bytes);
+			}
 			r_core_read_at (core, core->offset, core->block, nb_bytes);
 		} else {
 			// workaround for the `for` loop below
