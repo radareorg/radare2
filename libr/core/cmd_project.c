@@ -158,6 +158,9 @@ static int cmd_project(void *data, const char *input) {
 				eprintf ("Usage: `Pnj` or `Pnj ...`\n");
 			}
 			break;
+		case 'x':
+			r_core_project_execute_cmds (core, fileproject);
+			break;
 		case 0:
 			{
 			char *str = r_core_project_notes_file (core, fileproject);
@@ -177,6 +180,7 @@ static int cmd_project(void *data, const char *input) {
 					"Pn", " -", "edit notes with cfg.editor",
 					"Pn-", "", "delete notes",
 					"Pn-", "str", "delete lines matching /str/ in notes",
+					"Pnx", "", "run project note commands",
 					"Pnj", "", "show notes in base64",
 					"Pnj", " [base64]", "set notes in base64",
 					NULL};

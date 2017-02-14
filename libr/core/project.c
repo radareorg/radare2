@@ -4,6 +4,7 @@
 #include <r_list.h>
 #include <r_flag.h>
 #include <r_core.h>
+#include <spp/spp.h>
 
 static bool is_valid_project_name (const char *name) {
 	int i;
@@ -279,6 +280,31 @@ static bool projectLoadRop(RCore *core, const char *prjfile) {
 	free (prjDir);
 	free (rcPath);
 	return true;
+}
+
+R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
+	char *str = r_core_project_notes_file (core, prjfile);
+	char *data = r_file_slurp (str, NULL);
+	if (!data) {
+		return;
+	}
+	Output out;
+	out.fout = NULL;
+	out.cout = r_strbuf_new (NULL);
+	r_strbuf_init (out.cout);
+	struct Proc proc;
+	spp_proc_set (&proc, "spp", 1);
+	spp_eval (data, &out);
+	free (data);
+	data = strdup (r_strbuf_get (out.cout));
+	char *bol = strtok (data, "\n");
+	while (bol) {
+		if (bol[0] == ':') {
+			r_core_cmd0 (core, bol + 1);
+		}
+		bol = strtok (NULL, "\n");
+	}
+	free (data);
 }
 
 /*** vvv thready ***/
