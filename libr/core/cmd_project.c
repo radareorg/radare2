@@ -160,7 +160,6 @@ static int cmd_project(void *data, const char *input) {
 			}
 			break;
 		case 'x':
-			printf ("Execute project note commands\n");
 			char *str = r_core_project_notes_file (core, fileproject);
 			char *data = r_file_slurp (str, NULL);
 			Output out;
@@ -169,18 +168,13 @@ static int cmd_project(void *data, const char *input) {
 			r_strbuf_init (out.cout);
 			struct Proc proc;
 			spp_proc_set (&proc, "spp", 1);
-			printf ("1\n");
 			spp_eval (data, &out);
 			free (data);
-			printf ("2\n");
 			data = strdup (r_strbuf_get (out.cout));
 			char *bol = strtok (data, "\n");
-			printf ("3\n");
 			while (bol) {
-				printf ("%s\n", bol);
 				if (bol[0] == ':') {
-					printf ("execute\n");
-
+					r_core_cmd0(core, bol + 1);
 				}
 				bol = strtok (NULL, "\n");
 			}
