@@ -630,7 +630,7 @@ static int bin_pe_read_metadata_string(char* to, char* from) {
 		}
 		covered++;
 	}
-	while (covered % 4 != 0) covered++;
+	while (covered % 4 != 0) { covered++; }
 	return covered;
 }
 
@@ -671,7 +671,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	// read the version string
 	int len = metadata->VersionStringLength; // XXX: dont trust this length
 	if (len > 0) {
-		metadata->VersionString = malloc (len);
+		metadata->VersionString = R_NEW0 (len);
 		if (!metadata->VersionString) {
 			goto fail;
 		}
@@ -703,7 +703,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	// read metadata streams
 	int start_of_stream = metadata_directory + 20 + metadata->VersionStringLength;
 	PE_(image_metadata_stream) * stream;
-	PE_(image_metadata_stream) * *streams = malloc (sizeof(PE_(image_metadata_stream)*) * metadata->NumberOfStreams);
+	PE_(image_metadata_stream) * *streams = R_NEW0 (sizeof(PE_(image_metadata_stream)*) * metadata->NumberOfStreams);
 	if (!streams) {
 		goto fail;
 	}
@@ -720,7 +720,13 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 			goto fail;
 		}
 		eprintf ("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
-		char* stream_name = malloc (MAX_METADATA_STRING_LENGTH + 1);
+		char* stream_name = R_NEW0 (MAX_METADATA_STRING_LENGTH + 1);
+
+		if (stream_name == NULL) {
+			free(stream);
+			goto fail;
+		}
+
 		int c = bin_pe_read_metadata_string (stream_name, bin->b->buf + start_of_stream + 8);
 		if (c == 0) {
 			free (stream);
@@ -750,8 +756,7 @@ static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!clr_hdr) {
 		return 0;
 	}
-	rr = r_buf_read_at (bin->b, image_clr_hdr_paddr,
-		(ut8*) (clr_hdr), len);
+	rr = r_buf_read_at (bin->b, image_clr_hdr_paddr, (ut8*) (clr_hdr), len);
 
 //	printf("%x\n", clr_hdr->HeaderSize);
 
