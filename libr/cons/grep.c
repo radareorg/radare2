@@ -652,11 +652,19 @@ R_API int r_cons_html_print(const char *ptr) {
 		return 0;
 	}
 	for (;ptr[0]; ptr = ptr + 1) {
-		if (0 && ptr[0] == '\n') {
-			printf ("<br />");
-			fflush (stdout);
-		}
-		if (ptr[0] == '<') {
+		if (ptr[0] == '\n') {                                                 
+			tmp = (int) (size_t) (ptr-str);                               
+			if (write (1, str, tmp) != tmp) {                             
+				eprintf ("r_cons_html_print: write: error\n");        
+			}                                                             
+			printf ("<br />");                                            
+			if (!ptr[1]) {                                                
+				// write new line if it's the end of the output       
+				printf ("\n");                                        
+			}                                                             
+			str = ptr + 1;                                                
+			continue;                                                     
+		} else if (ptr[0] == '<') {
 			tmp = (int) (size_t) (ptr-str);
 			if (write (1, str, tmp) != tmp) {
 				eprintf ("r_cons_html_print: write: error\n");
@@ -671,6 +679,15 @@ R_API int r_cons_html_print(const char *ptr) {
 				eprintf ("r_cons_html_print: write: error\n");
 			}
 			printf ("&gt;");
+			fflush (stdout);
+			str = ptr + 1;
+			continue;
+		} else if (ptr[0] == ' ') {
+			tmp = (int) (size_t) (ptr-str);
+			if (write (1, str, tmp) != tmp) {
+				eprintf ("r_cons_html_print: write: error\n");
+			}
+			printf ("&nbsp;");
 			fflush (stdout);
 			str = ptr + 1;
 			continue;
