@@ -3,6 +3,7 @@
 #include "r_config.h"
 #include "r_core.h"
 #include "r_print.h"
+#include "spp/spp.h"
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -158,6 +159,33 @@ static int cmd_project(void *data, const char *input) {
 				eprintf ("Usage: `Pnj` or `Pnj ...`\n");
 			}
 			break;
+		case 'x':
+			printf ("Execute project note commands\n");
+			char *str = r_core_project_notes_file (core, fileproject);
+			char *data = r_file_slurp (str, NULL);
+			Output out;
+			out.fout = NULL;
+			out.cout = r_strbuf_new ("");
+			r_strbuf_init (out.cout);
+			struct Proc proc;
+			spp_proc_set (&proc, "spp", 1);
+			printf ("1\n");
+			spp_eval (data, &out);
+			free (data);
+			printf ("2\n");
+			data = strdup (r_strbuf_get (out.cout));
+			char *bol = strtok (data, "\n");
+			printf ("3\n");
+			while (bol) {
+				printf ("%s\n", bol);
+				if (bol[0] == ':') {
+					printf ("execute\n");
+
+				}
+				bol = strtok (NULL, "\n");
+			}
+			free (data);
+			break;
 		case 0:
 			{
 			char *str = r_core_project_notes_file (core, fileproject);
@@ -177,6 +205,7 @@ static int cmd_project(void *data, const char *input) {
 					"Pn", " -", "edit notes with cfg.editor",
 					"Pn-", "", "delete notes",
 					"Pn-", "str", "delete lines matching /str/ in notes",
+					"Pnx", "", "run project note commands",
 					"Pnj", "", "show notes in base64",
 					"Pnj", " [base64]", "set notes in base64",
 					NULL};
