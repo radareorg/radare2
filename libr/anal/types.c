@@ -369,24 +369,53 @@ R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i
 	return NULL;
 }
 
-/* WTF always return 1? */
-static int captureSubString (void *p, const char *k, const char *v) {
-	char **ret = (char **)p;
-	if (strcmp (v, "func")) {
-		return 1;
-	}
-	if (strstr (ret[1], k) && (!ret[0] || strlen(k) > strlen (ret[0]))) {
-		free (ret[0]);
-		ret[0] = strdup (k);
-	}
-	return 1;
-}
+#define MIN_MATCH_LEN 4
 
+// TODO: Future optimizations
+// - symbol names are long and noisy, reduce searchspace for match here
+//   by preprocessing to delete noise, as much as we can.
+// - We ignore all func.*, but thats maybe most of sdb entries
+//   could maybe eliminate this work (strcmp).
 R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
-	char *ret[] = {
-		NULL,
-		func_name
-	};
-	sdb_foreach (anal->sdb_types, captureSubString, ret);
-	return ret[0];
+	int j = 0, offset = 0, n;
+	char *str = func_name;
+	char *res = NULL;
+
+	if (!func_name) {
+		return NULL;
+	}
+
+	size_t slen = strlen (str);
+	if (slen < MIN_MATCH_LEN) {
+		return NULL;
+	}
+
+	if(slen > 4) { // were name-matching so ignore autonamed
+		if ((str[0] == 'f' && str[1] == 'c' && str[2] == 'n' && str[3] == '.') ||
+			(str[0] == 'l' && str[1] == 'o' && str[2] == 'c' && str[3] == '.') ) {
+			return NULL;
+		}
+	}
+	while(slen > 4 &&  str[offset+3] == '.') { // strip r2 prefixes (sym, sym.imp, etc')
+		offset+=4;
+	}
+	slen -= offset;
+	str = strdup (&func_name[offset]);
+	for (n = slen; n >= MIN_MATCH_LEN; --n) {
+		for (j = 0; j < slen - (n - 1); ++j) {
+			char saved = str[j + n];
+			str[j + n] = 0;
+			if (sdb_exists (anal->sdb_types, &str[j])) {
+				res = sdb_const_get (anal->sdb_types, &str[j], 0);
+				bool is_func = res && !strcmp ("func", res);
+				if (is_func) {
+					return strdup (&str[j]);
+				}
+			}
+			str[j + n] = saved;
+		}
+	}
+
+stage_left:
+	return NULL;
 }
