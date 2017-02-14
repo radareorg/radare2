@@ -3,7 +3,6 @@
 #include "r_config.h"
 #include "r_core.h"
 #include "r_print.h"
-#include "spp/spp.h"
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -160,25 +159,7 @@ static int cmd_project(void *data, const char *input) {
 			}
 			break;
 		case 'x':
-			char *str = r_core_project_notes_file (core, fileproject);
-			char *data = r_file_slurp (str, NULL);
-			Output out;
-			out.fout = NULL;
-			out.cout = r_strbuf_new ("");
-			r_strbuf_init (out.cout);
-			struct Proc proc;
-			spp_proc_set (&proc, "spp", 1);
-			spp_eval (data, &out);
-			free (data);
-			data = strdup (r_strbuf_get (out.cout));
-			char *bol = strtok (data, "\n");
-			while (bol) {
-				if (bol[0] == ':') {
-					r_core_cmd0(core, bol + 1);
-				}
-				bol = strtok (NULL, "\n");
-			}
-			free (data);
+			r_core_project_execute_cmds (core, fileproject);
 			break;
 		case 0:
 			{
