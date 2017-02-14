@@ -11,20 +11,21 @@
 static void map_list (RIO *io, int mode, RPrint *print) {
 	SdbListIter *iter;
 	RIOMap *map;
-	if (!io || !io->maps || !print || !print->cb_printf)
+	if (!io || !io->maps || !print || !print->cb_printf) {
 		return;
+	}
 	ls_foreach_prev (io->maps, iter, map) {
 		switch (mode) {
-			case 1:
-			case 'r':
-				print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x"\n", map->fd,
-						map->from, map->to - map->from, map->delta);
-				break;
-			default:
-				print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
-						" - 0x%"PFMT64x" ; %s : %s\n", map->id, map->fd,
-						map->delta, map->from, map->to,
-						r_str_rwx_i (map->flags), (map->name ? map->name : ""));
+		case 1:
+		case 'r':
+			print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x"\n", map->fd,
+					map->from, map->to - map->from, map->delta);
+			break;
+		default:
+			print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
+					" - 0x%"PFMT64x" ; %s : %s\n", map->id, map->fd,
+					map->delta, map->from, map->to,
+					r_str_rwx_i (map->flags), (map->name ? map->name : ""));
 		}
 	}
 }
@@ -435,7 +436,6 @@ static int cmd_open(void *data, const char *input) {
 	ut64 addr, baddr = r_config_get_i (core->config, "bin.baddr");
 	int nowarn = r_config_get_i (core->config, "file.nowarn");
 	RCoreFile *file;
-	int num = -1;
 	int isn = 0;
 	char *ptr;
 	RListIter *iter;

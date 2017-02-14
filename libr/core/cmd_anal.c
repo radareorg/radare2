@@ -3448,7 +3448,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 			secs = r_io_section_vget_secs_at (core->io, addr);
 			sec = secs ? ls_pop (secs) : NULL;
 			ls_free (secs);
-			if (sec->vaddr != sec->addr && binfile > (core->offset - sec->vaddr + sec->addr)) {
+			if (sec->vaddr != sec->addr && binfile->size > (core->offset - sec->vaddr + sec->addr)) {
 				len = binfile->size - (core->offset - sec->vaddr + sec->addr);
 			} else {
 				if (binfile->size > core->offset) {
@@ -3515,7 +3515,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 }
 
 static void cmd_anal_blocks(RCore *core, const char *input) {
-	RListIter *iter;
+	SdbListIter *iter = NULL;
 	RIOSection *s;
 	ut64 min = UT64_MAX;
 	ut64 max = 0;
@@ -3641,10 +3641,11 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				r_anal_op_fini (&op);
 			}
 		} else if (core->io->va) {
-			SdbListIter *iter;
-			RIOMap *current;
-			if (!core->io->maps)
+			SdbListIter *iter = NULL;
+			RIOMap *current = NULL;
+			if (!core->io->maps) {
 				break;
+			}
 			ls_foreach_prev (core->io->maps, iter, current) {
 				if (r_io_map_is_in_range (current, addr, addr_end)) {
 					iter = core->io->maps->head;

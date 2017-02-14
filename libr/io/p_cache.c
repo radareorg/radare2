@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2017 - condret */
+
 #include <r_io.h>
 #include <r_db.h>
 #include <r_types.h>
@@ -79,7 +81,7 @@ R_API bool r_io_desc_cache_init(RIODesc *desc) {
 	return false;
 }
 
-R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
+R_API int r_io_desc_cache_write(RIODesc *desc, ut64 paddr, const ut8 *buf, int len) {
 	RIODescCache *cache;
 	ut64 desc_sz = r_io_desc_size (desc);
 	char k[64];
@@ -232,7 +234,7 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-void __riocache_free (void *user) {
+static void __riocache_free (void *user) {
 	RIOCache *cache = (RIOCache *)user;
 	if (cache) {
 		free (cache->data);
@@ -369,8 +371,7 @@ static bool __desc_fini_cb (void *user, void *data, ut32 id) {
 	return true;
 }
 
-R_API void r_io_desc_cache_fini(RIODesc *desc)
-{
+R_API void r_io_desc_cache_fini(RIODesc *desc) {
 	if (desc && desc->cache) {
 		sdb_foreach (desc->cache, __desc_cache_free_cb, NULL);
 		sdb_free (desc->cache);

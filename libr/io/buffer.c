@@ -3,32 +3,34 @@
 #include "r_io.h"
 
 R_API void r_io_buffer_close(RIO* io) {
-	if (io->buffer)
-		r_cache_flush (io->buffer);
+	r_cache_flush (io->buffer);
 	io->buffer_enabled = 0;
 }
 
 R_API int r_io_buffer_load(RIO* io, ut64 addr, int len) {
 	ut8 buf[512];
 	int i;
-	if (len<1) return false;
+	if (!io || addr == UT64_MAX || len < 1) {
+		return false;
+	}
 	io->buffer_enabled = 0;
-	for (i=0; i<len; i+=sizeof (buf)) {
+	for (i = 0; i < len; i += sizeof (buf)) {
 		memset (buf, 0xff, sizeof (buf));
-		if (!r_io_read_at (io, addr + i, buf, sizeof (buf)))
+		if (!r_io_read_at (io, addr + i, buf, sizeof (buf))) {
 			break;
+		}
 		r_cache_set (io->buffer, addr + i, buf, sizeof (buf));
 	}
 	io->buffer_enabled = 1;
 	return true;
 }
 
-R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len) {
+R_API const ut8* r_io_buffer_get(RIO* io, ut64 addr, int* len) {
 	return r_cache_get (io->buffer, addr, len);
 }
 
-R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len) {
-	const ut8 *ret;
+R_API int r_io_buffer_read(RIO* io, ut64 addr, ut8* buf, int len) {
+	const ut8* ret;
 	int next, l = 0;
 	// align addr if out of buffer if its mapped on io //
 	ret = r_cache_get (io->buffer, addr, &l);

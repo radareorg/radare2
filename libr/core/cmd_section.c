@@ -345,7 +345,6 @@ static int cmd_section(void *data, const char *input) {
 			int i, rwx = 7;
 			char *ptr = strdup (input + 1);
 			const char *name = NULL;
-			char vname[64];
 			ut64 vaddr = 0LL;
 			ut64 offset = 0LL;
 			ut64 size = 0LL;
@@ -379,8 +378,7 @@ static int cmd_section(void *data, const char *input) {
 				}
 			}
 			if (!name || !*name) {
-				sprintf (vname, "area%d", core->io->sections->length);
-				name = vname;
+				name = sdb_fmt (0, "area%d", ls_length (core->io->sections));
 			}
 			r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name, 0, fd);
 			free (ptr);

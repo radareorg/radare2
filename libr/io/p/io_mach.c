@@ -334,7 +334,6 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *ret = NULL;
 	RIOMach *riom;
-	char *f = NULL;
 	const char *pidfile;
 	char *pidpath, *endptr;
 	int pid;

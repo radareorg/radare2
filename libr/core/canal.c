@@ -2644,11 +2644,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 					continue;
 				}
 			} else if (core->io->va) {
-				SdbListIter *iter;
+				SdbListIter *iter = NULL;
 				RIOSection *s;
 				ls_foreach (core->io->sections, iter, s) {
 					if (xref_to >= s->vaddr && xref_to < s->vaddr + s->vsize) {
-						if (s->vaddr) break;
+						if (s->vaddr) {
+							break;
+						}
 					}
 				}
 				if (!iter) {

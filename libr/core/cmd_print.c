@@ -2512,7 +2512,7 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 
 static int cmd_print(void *data, const char *input) {
 	int mode, w, p, i, l, len, total[10];
-	ut64 off, from, to, at, ate, piece, fsz;
+	ut64 off, from, to, at, ate, piece, fsz = 0;
 	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
 	ut64 tmpseek = UT64_MAX;
@@ -2750,9 +2750,10 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 		}
-		if (fsz<1)
+		if (fsz < 1) {
 			fsz = (core->file && core->io)? r_io_desc_size (core->file->desc): 0;
-#if 0				//wtf is this
+		}
+#if 0
 		if (nbsz) {
 			ut64 obsz = core->blocksize;
 			switch (input1) {

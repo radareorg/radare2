@@ -1697,10 +1697,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		if (core->io->va) {
 			ut64 offset;
 			SdbList *secs;
-			if (secs = r_io_section_get_secs_at (core->io, 0LL)) {
+			if ((secs = r_io_section_get_secs_at (core->io, 0LL))) {
 				offset = ((RIOSection *)ls_pop (secs))->vaddr;
 				ls_free (secs);
-			} else	offset = 0LL;
+			} else {
+				offset = 0LL;
+			}
 			r_core_seek (core, offset, 1);
 		} else {
 			r_core_seek (core, 0, 1);
