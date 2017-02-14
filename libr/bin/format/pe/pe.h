@@ -21,7 +21,7 @@ struct r_bin_pe_addr_t {
 };
 
 struct r_bin_pe_section_t {
-	ut8  name[PE_IMAGE_SIZEOF_SHORT_NAME * 2];
+	ut8 name[PE_IMAGE_SIZEOF_SHORT_NAME * 2];
 	ut64 size;
 	ut64 vsize;
 	ut64 vaddr;
@@ -31,7 +31,7 @@ struct r_bin_pe_section_t {
 };
 
 struct r_bin_pe_import_t {
-	ut8  name[PE_NAME_LENGTH + 1];
+	ut8 name[PE_NAME_LENGTH + 1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 hint;
@@ -40,8 +40,8 @@ struct r_bin_pe_import_t {
 };
 
 struct r_bin_pe_export_t {
-	ut8  name[PE_NAME_LENGTH + 1];
-	ut8  forwarder[PE_NAME_LENGTH + 1];
+	ut8 name[PE_NAME_LENGTH + 1];
+	ut8 forwarder[PE_NAME_LENGTH + 1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut64 ordinal;
@@ -66,21 +66,21 @@ struct r_bin_pe_lib_t {
 
 struct PE_(r_bin_pe_obj_t) {
 	// these pointers contain a copy of the headers and sections!
-	PE_(image_dos_header)             *dos_header;
-	PE_(image_nt_headers)             *nt_headers;
-	PE_(image_optional_header)        *optional_header; //not free this just pointer into nt_headers
-	PE_(image_data_directory)         *data_directory;  //not free this just pointer into nt_headers
-	PE_(image_section_header)         *section_header;
-	PE_(image_export_directory)       *export_directory;
-	PE_(image_import_directory)       *import_directory;
-	PE_(image_tls_directory)          *tls_directory;
-	Pe_image_resource_directory       *resource_directory;
-	PE_(image_delay_import_directory) *delay_import_directory;
+	PE_(image_dos_header) * dos_header;
+	PE_(image_nt_headers) * nt_headers;
+	PE_(image_optional_header) * optional_header;       //not free this just pointer into nt_headers
+	PE_(image_data_directory) * data_directory;         //not free this just pointer into nt_headers
+	PE_(image_section_header) * section_header;
+	PE_(image_export_directory) * export_directory;
+	PE_(image_import_directory) * import_directory;
+	PE_(image_tls_directory) * tls_directory;
+	Pe_image_resource_directory* resource_directory;
+	PE_(image_delay_import_directory) * delay_import_directory;
 
 	// these pointers pertain to the .net relevant sections
-	PE_(image_clr_header) *clr_hdr;
-	PE_(image_metadata_header) *metadata_header;
-	PE_(image_metadata_stream) **streams;
+	PE_(image_clr_header) * clr_hdr;
+	PE_(image_metadata_header) * metadata_header;
+	PE_(image_metadata_stream) * *streams;
 
 	// these values define the real offset into the untouched binary
 	ut64 nt_header_offset;
@@ -95,16 +95,16 @@ struct PE_(r_bin_pe_obj_t) {
 	int endian;
 	bool verbose;
 	int big_endian;
-	RList *relocs;
+	RList* relocs;
 	const char* file;
 	struct r_buf_t* b;
-	Sdb *kv;
+	Sdb* kv;
 };
 
 #define GUIDSTR_LEN 34
 #define DBG_FILE_NAME_LEN 255
 
-typedef struct SDebugInfo{
+typedef struct SDebugInfo {
 	char guidstr[GUIDSTR_LEN];
 	char file_name[DBG_FILE_NAME_LEN];
 } SDebugInfo;
@@ -112,12 +112,12 @@ typedef struct SDebugInfo{
 void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin);
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin);
-struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin);
+struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t)* bin);
 struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin); // TODO
 int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin);
 ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin);
-struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin); // TODO
-struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin);
+struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* bin); // TODO
+struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(r_bin_pe_get_image_size)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin);
@@ -134,8 +134,8 @@ int PE_(r_bin_pe_is_stripped_local_syms)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin);
 void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin);
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file, bool verbose);
-struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf, bool verbose);
-int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t) *bin, struct SDebugInfo *res);
-int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t) *bin);
-int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t) *bin);
-void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t **sects);
+struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t* buf, bool verbose);
+int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t)* bin, struct SDebugInfo* res);
+int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t)* bin);
+int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin);
+void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t** sects);
