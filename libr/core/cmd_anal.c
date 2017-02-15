@@ -3521,7 +3521,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 	ut64 max = 0;
 	ls_foreach (core->io->sections, iter, s) {
 		/* is executable */
-		if (!(s->rwx & R_IO_EXEC)) {
+		if (!(s->flags & R_IO_EXEC)) {
 			continue;
 		}
 		if (s->vaddr < min) {
