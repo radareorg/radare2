@@ -501,8 +501,10 @@ static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
 	if (sections_size > bin->size) {
-		bprintf ("Invalid NumberOfSections value\n");
-		goto out_error;
+		sections_size = bin->size;
+		// massage this to make corkami happy
+		//bprintf ("Invalid NumberOfSections value\n");
+		//goto out_error;
 	}
 	if (!(bin->section_header = malloc (sections_size))) {
 		r_sys_perror ("malloc (section header)");
@@ -764,12 +766,10 @@ static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (clr_hdr->HeaderSize != 0x48) {
 		// probably not a .NET binary
 		// 64bit?
-		eprintf ("Not a .NET binary!\n");
 		free (clr_hdr);
 		return 0;
 	}
 	if (rr != len) {
-		eprintf ("Warning: read (clr header)\n");
 		free (clr_hdr);
 		return 0;
 	}
