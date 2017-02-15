@@ -271,6 +271,7 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	RFlagItem *fi;
 	RList *delayed_commands = NULL;
 	RListIter *iter;
+	ut64 loc_addr = 0;
 	char *command = NULL;
 	char *function_label;
 	bool vars = r_config_get_i (core->config, "anal.vars");
@@ -313,11 +314,9 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	} else {
 		function_label = r_str_newf ("fcn2.%08"PFMT64x, addr);
 	}
+	loc_addr = sdb_num_get (db, "addr", NULL);
 	r_core_cmdf (core, "af+ 0x%08"PFMT64x" %s\n",
-		sdb_num_get (db, "addr", NULL),
-		// (int)sdb_num_get (db, "size", NULL),
-		function_label);
-	// list bbs
+		loc_addr, function_label);
 	{
 		char *c, *bbs = sdb_get (db, "bbs", NULL);
 		sdb_aforeach (c, bbs) {
@@ -329,9 +328,7 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 			fail = sdb_array_get_num (db, FbbTo(addr), 1, NULL);
 
 			r_core_cmdf (core, "afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x,
-				sdb_num_get (db, "addr", NULL),
-				addr, (int)(addr_end-addr),
-				jump, fail);
+			  	loc_addr, addr, (int)(addr_end - addr), jump, fail);
 			sdb_aforeach_next (c);
 		}
 

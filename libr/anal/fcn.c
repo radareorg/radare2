@@ -1432,7 +1432,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 			bb = bbi;
 			mid = false;
 			break;
-		} else if ((addr > bbi->addr) && (addr < bbi->addr+bbi->size)) {
+		} else if ((addr > bbi->addr) && (addr < bbi->addr + bbi->size)) {
 			mid = true;
 		}
 	}
