@@ -5,6 +5,8 @@
 #include <sdb.h>
 #include <stdlib.h>
 
+#define END_OF_MAP_IDS	0xffffffff
+
 R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size)
 {
 	RIOMap *map = NULL;
@@ -39,7 +41,7 @@ R_API void r_io_map_init (RIO *io)
 			io->maps->free = _map_free;
 		if (io->map_ids)
 			r_id_pool_free (io->map_ids);
-		io->map_ids = r_id_pool_new (0, 0xffffffff);
+		io->map_ids = r_id_pool_new (1, END_OF_MAP_IDS);
 	}
 }
 
