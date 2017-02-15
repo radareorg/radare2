@@ -471,7 +471,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		fcn->bits = core->anal->bits;
 	}
 	fcn->addr = at;
-	r_anal_fcn_set_size (fcn, 0);
 	RFlagItem *fi = r_flag_get_at (core->flags, at, false);
 	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
 		fcn->name = strdup (fi->name);
@@ -1792,7 +1791,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 
 	r_cons_printf (FCN_LIST_VERBOSE_ENTRY, color,
 			fcn->addr,
-			r_anal_fcn_realsize (fcn),
+			r_anal_fcn_size (fcn),
 			r_list_length (fcn->bbs),
 			count_edges (fcn, &ebbs),
 			r_anal_fcn_cc (fcn),
@@ -1839,13 +1838,9 @@ static int fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
 		char *msg, *name = get_fcn_name (core, fcn);
-		int realsize = r_anal_fcn_realsize (fcn);
 		int size = r_anal_fcn_size (fcn);
-		if (realsize == size) {
-			msg = r_str_newf ("%-12d", size);
-		} else {
-			msg = r_str_newf ("%-4d -> %-4d", size, realsize);
-		}
+		int symsize = r_anal_fcn_symsize (fcn);
+		msg = r_str_newf ("%-4d -> %-4d", symsize, size);
 		r_cons_printf ("0x%08"PFMT64x" %4d %4s %s\n",
 				fcn->addr, r_list_length (fcn->bbs), msg, name);
 		free (name);
@@ -1874,7 +1869,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
-	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
+	r_cons_printf (",\"realsz\":%d", r_anal_fcn_size (fcn));
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
 	r_cons_printf (",\"cost\":%d", r_anal_fcn_cost (core->anal, fcn));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
@@ -2019,7 +2014,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
-	r_cons_printf ("\nrealsz: %d", r_anal_fcn_realsize (fcn));
+	r_cons_printf ("\nsymsz: %d", r_anal_fcn_symsize (fcn));
 	r_cons_printf ("\nstackframe: %d", fcn->maxstack);
 	r_cons_printf ("\ncall-convention: %s", fcn->cc);
 	r_cons_printf ("\ncyclomatic-cost : %d", r_anal_fcn_cost (core->anal, fcn));
@@ -3154,11 +3149,8 @@ R_API void r_core_anal_undefine (RCore *core, ut64 off) {
 
 /* Join function at addr2 into function at addr */
 // addr use to be core->offset
-R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
+R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	RListIter *iter;
-	ut64 min = 0;
-	ut64 max = 0;
-	int first = 1;
 	RAnalBlock *bb;
 	RAnalFunction *f1 = r_anal_get_fcn_at (core->anal, addr, 0);
 	RAnalFunction *f2 = r_anal_get_fcn_at (core->anal, addr2, 0);
@@ -3173,39 +3165,12 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 	// join all basic blocks from f1 into f2 if they are not
 	// delete f2
 	eprintf ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x"\n", addr, addr2);
-	r_list_foreach (f1->bbs, iter, bb) {
-		if (first) {
-			min = bb->addr;
-			max = bb->addr + bb->size;
-			first = 0;
-		} else {
-			if (bb->addr < min) {
-				min = bb->addr;
-			}
-			if (bb->addr + bb->size > max) {
-				max = bb->addr + bb->size;
-			}
-		}
-	}
 	r_list_foreach (f2->bbs, iter, bb) {
-		if (first) {
-			min = bb->addr;
-			max = bb->addr + bb->size;
-			first = 0;
-		} else {
-			if (bb->addr < min) {
-				min = bb->addr;
-			}
-			if (bb->addr + bb->size > max) {
-				max = bb->addr + bb->size;
-			}
-		}
 		r_anal_fcn_bbadd (f1, bb);
 	}
 	// TODO: import data/code/refs
 	// update size
 	f1->addr = R_MIN (addr, addr2);
-	r_anal_fcn_set_size (f1, max - min);
 	// resize
 	f2->bbs = NULL;
 	r_list_delete_data (core->anal->fcns, f2);
