@@ -295,6 +295,7 @@ R_API void r_core_debug_rr (RCore *core, RReg *reg);
 /* project */
 R_API bool r_core_project_load(RCore *core, const char *prjfile, const char *rcfile);
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prjfile, const char *rcfile);
+R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);

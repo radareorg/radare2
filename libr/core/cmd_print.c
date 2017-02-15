@@ -2396,6 +2396,9 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 		r_cons_print ("[");
 		bool isFirst = true;
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			if (tmp_func->addr > f->addr) {
 				break;
 			}
@@ -2440,6 +2443,9 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 			}
 		}
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			r_list_foreach (tmp_func->bbs, iter, b) {
 				if (isFirst) {
 					isFirst = false;
@@ -2484,6 +2490,9 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 			pr_bb (core, f, b, emu, saved_gp, saved_arena, type_print);
 		}
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			//this should be more advanced
 			r_list_foreach (tmp_func->bbs, iter, b) {
 				pr_bb (core, tmp_func, b, emu, saved_gp, saved_arena, type_print);
