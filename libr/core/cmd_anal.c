@@ -3639,7 +3639,12 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				addr += (op.size > 0)? op.size: 1;
 				bufi += (op.size > 0)? op.size: 1;
 				r_anal_op_fini (&op);
+			} else {
+				break;
 			}
+#if 0
+// all of this will be removed later, but for now I want to keep it, because I'm not sure if the current solution is the best
+// and I need to look at this later again
 		} else if (core->io->va) {
 			SdbListIter *iter = NULL;
 			RIOMap *current = NULL;
@@ -3662,6 +3667,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 					addr = current->to + 1;
 				}
 			}
+#endif
 		} else {
 			break;
 		}

@@ -50,7 +50,7 @@ R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	if (!val) return false;
 	size = R_DIM (size, 1, 8);
 	if (!r_io_read_at (io, addr, buf, size)) return false;
-	r_mem_swaporcopy (val, buf, size, endian);
+	r_mem_swaporcopy (val, (const ut8*)buf, size, endian);
 	return true;
 }
 
@@ -59,7 +59,7 @@ R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	ut8 buf[8];
 	if (!val) return false;
 	size = R_DIM (size, 1, 8);
-	r_mem_swaporcopy (buf, val, size, endian);
+	r_mem_swaporcopy (buf, (const ut8*)val, size, endian);
 	if (!r_io_write_at (io, addr, buf, size)) return false;
 	return true;
 }
