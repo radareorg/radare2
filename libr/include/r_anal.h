@@ -210,7 +210,7 @@ enum {
 
 #define R_ANAL_VARSUBS 32
 
-typedef struct r_anal_bb_t RAnalBlock;
+#define RAnalBlock struct r_anal_bb_t
 
 typedef struct r_anal_varsub_t {
 	char pat[128];
@@ -794,6 +794,7 @@ typedef struct r_anal_bb_t {
 	ut8 *parent_reg_arena;
 	int stackptr;
 	int parent_stackptr;
+#undef RAnalBlock
 } RAnalBlock;
 
 typedef enum {
