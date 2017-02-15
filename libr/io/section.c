@@ -170,6 +170,7 @@ R_API bool r_io_section_bin_rm(RIO* io, ut32 bin_id) {
 	return (!(length == io->sections->length));
 }
 
+
 R_API RIOSection* r_io_section_get_name(RIO* io, const char* name) {
 	RIOSection* s;
 	SdbListIter* iter;
@@ -301,12 +302,41 @@ R_API int r_io_section_bin_set_archbits(RIO* io, ut32 bin_id, const char* arch, 
 }
 
 R_API bool r_io_section_priorize(RIO* io, ut32 id) {
-	RIOSection* sec = r_io_section_get_i (io, id);
-	bool ret = true;
+	SdbListIter* iter;
+	RIOSection* sec;
+	bool ret = false;
 	// assuming id = 0 is invalid
-	if (!sec || !id) {
+	if (!id) {
 		return false;
 	}
+	if (!io || !io->sections) {
+		return false;
+	}
+	ls_foreach (io->sections, iter, sec) {
+		if (sec->id == id) {
+			if (io->sections->tail == iter) {
+				ret = true;
+				break;
+			}
+			if (iter->p) {
+				iter->p->n = iter->n;
+			}
+			if (iter->n) {
+				iter->n->p = iter->p;
+			}
+			if (io->sections->head == iter) {
+				io->sections->head = iter->n;
+			}
+			io->sections->tail->n = iter;
+			iter->p = io->sections->tail;
+			io->sections->tail = iter;
+			iter->n = NULL;
+			ret = true;
+			break;
+		}
+	}
+	if (!ret) return false;
+	sec = (RIOSection*)iter->data;
 	if (sec->filemap) {
 		if (!sec->memmap) {
 			return r_io_map_priorize (io, sec->filemap);

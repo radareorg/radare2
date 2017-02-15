@@ -3612,7 +3612,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		if (bufi > 4000) {
 			bufi = 0;
 		}
-		if (r_io_is_valid_real_offset (core->io, addr, (R_IO_EXEC | R_IO_READ))) {
+		if (r_io_is_valid_section_offset (core->io, addr, (R_IO_EXEC | R_IO_READ))) {
 			if (!bufi) {
 				r_io_read_at (core->io, addr, buf, 4096);
 			}
@@ -3622,7 +3622,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 					op.size = minop;
 				}
 				if (op.type == R_ANAL_OP_TYPE_CALL) {
-					if (r_io_is_valid_real_offset (core->io, op.jump, (R_IO_EXEC | R_IO_READ))) {
+					if (r_io_is_valid_section_offset (core->io, op.jump, (R_IO_EXEC | R_IO_READ))) {
 #if JAYRO_03
 						if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
 							fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
