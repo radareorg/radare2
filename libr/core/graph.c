@@ -1678,6 +1678,11 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	core->print->cur_enabled = o_cursor;
 	r_config_restore (hc);
 	r_config_hold_free (hc);
+	char *crop = r_str_ansi_crop (body, 0, 0, 60, 99999);
+	if (crop) {
+		free (body);
+		return crop;
+	}
 	return body;
 }
 
