@@ -3506,16 +3506,14 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 	ut64 max = 0;
 	r_list_foreach (core->io->sections, iter, s) {
 		/* is executable */
-		if (!strstr (s->name, "text") && !strstr (s->name, "stub") && !strstr (s->name, "plt")) {
+		if (!(s->rwx & R_IO_EXEC)) {
 			continue;
 		}
-		if (s->rwx & 1) {
-			if (s->vaddr < min) {
-				min = s->vaddr;
-			}
-			if (s->vaddr + s->vsize > max) {
-				max = s->vaddr + s->vsize;
-			}
+		if (s->vaddr < min) {
+			min = s->vaddr;
+		}
+		if (s->vaddr + s->vsize > max) {
+			max = s->vaddr + s->vsize;
 		}
 	}
 	if (min == UT64_MAX) {
