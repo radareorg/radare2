@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble, maijin */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble, maijin */
 
 #include "../blob/version.c"
 #include <getopt.c> /* getopt.h is not portable :D */
@@ -61,8 +61,9 @@ static const char *has_esil(RAnal *lanal, const char *name) {
 	RAnalPlugin *h;
 	r_list_foreach (anal->plugins, iter, h) {
 		if (!strcmp (name, h->name)) {
-			if (h->esil)
+			if (h->esil) {
 				return "Ae";
+			}
 			return "A_";
 		}
 	}
@@ -416,6 +417,15 @@ int main (int argc, char *argv[]) {
 		int sysbits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 		r_asm_set_bits (a, sysbits);
 		r_anal_set_bits (anal, sysbits);
+	}
+	char *r2arch = r_sys_getenv ("R2_ARCH");
+	if (r2arch) {
+		arch = r2arch;
+	}
+	char *r2bits = r_sys_getenv ("R2_BITS");
+	if (r2bits) {
+		bits = r_num_math (NULL, r2bits);
+		free (r2bits);
 	}
 	while ((c = getopt (argc, argv, "Ai:k:DCc:eEva:b:s:do:Bl:hjLf:F:wqO:p")) != -1) {
 		switch (c) {

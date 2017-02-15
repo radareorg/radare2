@@ -198,6 +198,7 @@ R_API void r_core_sysenv_help(const RCore* core) {
 	"R2_BLOCK", "", "TODO: dump current block to tmp file",
 	"R2_SIZE", "","file size",
 	"R2_ARCH", "", "value of asm.arch",
+	"R2_BITS", "", "arch reg size (8, 16, 32, 64)",
 	"RABIN2_LANG", "", "assume this lang to demangle",
 	"RABIN2_DEMANGLE", "", "demangle or not",
 	"PDB_SERVER", "", "e pdb.server",
@@ -256,6 +257,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	r_sys_setenv ("R2_ENDIAN", core->assembler->big_endian? "big": "little");
 	r_sys_setenv ("R2_BSIZE", sdb_fmt (0, "%d", core->blocksize));
 	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
+	r_sys_setenv ("R2_BITS", sdb_fmt(0, "%d", r_config_get_i (core->config, "asm.bits")));
 	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color")? "1": "0");
 	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")?"1":"0");
 	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")?"1":"0");
