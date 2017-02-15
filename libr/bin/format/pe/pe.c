@@ -502,6 +502,7 @@ static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
 	if (sections_size > bin->size) {
 		sections_size = bin->size;
+		bin->num_sections = bin->size / sizeof (PE_(image_section_header));
 		// massage this to make corkami happy
 		//bprintf ("Invalid NumberOfSections value\n");
 		//goto out_error;
