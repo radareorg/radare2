@@ -1822,7 +1822,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						/* only follow code/call references */
 						continue;
 					}
-					if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
+					if (!r_io_is_valid_real_offset (core->io, ref->addr, 1)) {
 						continue;
 					}
 					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
@@ -1833,7 +1833,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						RListIter *iter;
 						RAnalRef *ref;
 						r_list_foreach (f->refs, iter, ref) {
-							if (!r_io_is_valid_offset (core->io, ref->addr, 1)) {
+							if (!r_io_is_valid_real_offset (core->io, ref->addr, 1)) {
 								continue;
 							}
 							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
@@ -2319,7 +2319,7 @@ repeat:
 		goto out_return_one;
 	}
 	if (esil->exectrap) {
-		if (!r_io_is_valid_offset (core->io, addr, R_IO_EXEC)) {
+		if (!r_io_is_valid_real_offset (core->io, addr, R_IO_EXEC)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
@@ -3612,7 +3612,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		if (bufi > 4000) {
 			bufi = 0;
 		}
-		if (r_io_is_valid_offset (core->io, addr, (R_IO_EXEC | R_IO_READ))) {
+		if (r_io_is_valid_real_offset (core->io, addr, (R_IO_EXEC | R_IO_READ))) {
 			if (!bufi) {
 				r_io_read_at (core->io, addr, buf, 4096);
 			}
@@ -3622,7 +3622,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 					op.size = minop;
 				}
 				if (op.type == R_ANAL_OP_TYPE_CALL) {
-					if (r_io_is_valid_offset (core->io, op.jump, (R_IO_EXEC | R_IO_READ))) {
+					if (r_io_is_valid_real_offset (core->io, op.jump, (R_IO_EXEC | R_IO_READ))) {
 #if JAYRO_03
 						if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
 							fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
@@ -5019,7 +5019,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 	RList *list = r_list_newf (NULL);
 	r_anal_xrefs_from (core->anal, list, "xref", R_ANAL_REF_TYPE_DATA, UT64_MAX);
 	r_list_foreach (list, iter, ref) {
-		if (r_io_is_valid_offset (core->io, ref->addr, false)) {
+		if (r_io_is_valid_real_offset (core->io, ref->addr, false)) {
 			r_core_anal_fcn (core, ref->at, ref->addr, R_ANAL_REF_TYPE_NULL, 1);
 		}
 	}

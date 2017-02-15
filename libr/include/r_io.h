@@ -281,7 +281,6 @@ R_API int r_io_system (RIO *io, const char* cmd);
 R_API bool r_io_resize (RIO *io, ut64 newsize);
 R_API int r_io_extend_at (RIO *io, ut64 addr, ut64 size);
 R_API bool r_io_set_write_mask (RIO *io, const ut8 *mask, int len);
-R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API int r_io_bind (RIO *io, RIOBind *bnd);
 R_API int r_io_shift (RIO *io, ut64 start, ut64 end, st64 move);
 R_API int r_io_create (RIO *io, const char *file, int mode, int type);
@@ -366,9 +365,15 @@ R_API void r_io_desc_cache_fini_all (RIO *io);
 R_API RList *r_io_desc_cache_list (RIODesc *desc);
 
 /* io/buffer.c */
-R_API int r_io_buffer_read(RIO* io, ut64 addr, ut8* buf, int len);
-R_API int r_io_buffer_load(RIO* io, ut64 addr, int len);
-R_API void r_io_buffer_close(RIO* io);
+R_API int r_io_buffer_read (RIO* io, ut64 addr, ut8* buf, int len);
+R_API int r_io_buffer_load (RIO* io, ut64 addr, int len);
+R_API void r_io_buffer_close (RIO* io);
+
+/* io/ioutils.c */
+R_API bool r_io_is_valid_real_offset (RIO *io, ut64 offset, int hasperm);
+R_API bool r_io_is_valid_section_offset (RIO *io, ut64 offset, int hasperm);
+R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
+R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 
 extern RIOPlugin r_io_plugin_procpid;
 extern RIOPlugin r_io_plugin_malloc;

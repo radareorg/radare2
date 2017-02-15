@@ -461,23 +461,6 @@ R_API RIO* bind_get_io (RIOBind* iob) {
 	return iob? iob->io: NULL;
 }
 
-R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
-	RIOMap* map;
-	if (!io) {
-		return false;
-	}
-	if (io->va && (map = r_io_map_get (io, offset))) {
-		return ((map->flags & hasperm) == hasperm);
-	}
-	if (!io->desc) {
-		return false;
-	}
-	if (r_io_desc_size (io->desc) < offset) {
-		return false;
-	}
-	return ((io->desc->flags & hasperm) == hasperm);
-}
-
 R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	if (!io || !bnd) {
 		return false;
@@ -494,7 +477,7 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
 	bnd->system = r_io_system;
-	bnd->is_valid_offset = r_io_is_valid_offset;
+	bnd->is_valid_offset = r_io_is_valid_real_offset;
 	bnd->section_vget_secs_at = r_io_section_vget_secs_at;
 	bnd->section_add = r_io_section_add;
 	return true;
