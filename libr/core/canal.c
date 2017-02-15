@@ -1869,7 +1869,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	char *name = get_fcn_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
-	r_cons_printf (",\"realsz\":%d", r_anal_fcn_size (fcn));
+	r_cons_printf (",\"symsz\":%d", r_anal_fcn_symsize (fcn));
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
 	r_cons_printf (",\"cost\":%d", r_anal_fcn_cost (core->anal, fcn));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
