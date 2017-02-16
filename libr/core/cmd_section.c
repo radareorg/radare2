@@ -5,7 +5,7 @@
 #include "r_types.h"
 #include "r_io.h"
 
-static void __section_list (RIO *io, RPrint *print, int rad) {
+static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
 	SdbListIter *iter;
 	RIOSection *s;
 
@@ -22,14 +22,28 @@ static void __section_list (RIO *io, RPrint *print, int rad) {
 			free (n);
 		}
 	} else {
-		ls_foreach (io->sections, iter, s) {	
-			print->cb_printf ("[%02d:%02d] 0x%08"PFMT64x" %s va=0x%08"PFMT64x
-				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s",
-				s->bin_id, s->id, s->addr, r_str_rwx_i (s->flags),
-				s->vaddr, s->size, s->vsize, s->name);
-			if (s->arch && s->bits)
+		ls_foreach_prev (io->sections, iter, s) {
+			print->cb_printf ("[%02d:%02d]", s->bin_id, s->id);
+			if (io->va) {
+				if ((s->vaddr <= offset) && ((offset - s->vaddr) < s->vsize)) {
+					print->cb_printf (" * ");
+				} else {
+					print->cb_printf (" . ");
+				}
+			} else {
+				if ((s->addr <= offset) && ((offset - s->addr) < s->size)) {
+					print->cb_printf (" * ");
+				} else {
+					print->cb_printf (" . ");
+				}
+			}
+			print->cb_printf ("pa=0x%08"PFMT64x" %s va=0x%08"PFMT64x
+				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s", s->addr,
+				r_str_rwx_i (s->flags), s->vaddr, s->size, s->vsize, s->name);
+			if (s->arch && s->bits) {
 				print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
 					s->bits);
+			}
 			print->cb_printf ("\n");
 		}
 	}
@@ -389,7 +403,7 @@ static int cmd_section(void *data, const char *input) {
 	case '=':
 		//r_io_section_list_visual (core->io, core->offset, core->blocksize,
 		//			r_config_get_i (core->config, "scr.color"));
-		__section_list (core->io, core->print, false);		//TODO: create fancy stuff for this
+		__section_list (core->io, core->offset, core->print, false);		//TODO: create fancy stuff for this
 		break;
 	case '.':
 		{
@@ -411,10 +425,10 @@ static int cmd_section(void *data, const char *input) {
 		}
 		break;
 	case '\0':
-		__section_list (core->io, core->print, false);
+		__section_list (core->io, core->offset, core->print, false);
 		break;
 	case '*':
-		__section_list (core->io, core->print, true);
+		__section_list (core->io, core->offset, core->print, true);
 		break;
 	}
 	return 0;
