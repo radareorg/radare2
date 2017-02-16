@@ -1895,15 +1895,11 @@ static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
 	//skipping useless header..
 	len = r_buf_read_at (bin->b, vaddr + 8, data, size - 8);
 	if (len < 1) {
-		bprintf ("Failed to get certificate from pe\n");
 		R_FREE (data);
 		return;
 	}
 	con = r_pkcs7_parse_container (data, size);
 	bin->pkcs7 = r_pkcs7_container_dump (con);
-	if (!bin->pkcs7) {
-		bprintf ("Failed to dump the PKCS#7 structure.\n");
-	}
 	r_pkcs7_free_container (con);
 	R_FREE (data);
 }

@@ -486,8 +486,8 @@ char* r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, char* b
 	a = spki->algorithm.algorithm->string;
 	RASN1String* m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->sector, spki->subjectPublicKeyModule->length);
 	RASN1String* e = r_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
-	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %ubytes\n%s\n", pad, a, pad, m->string,
-				pad, spki->subjectPublicKeyExponent->length, e->string);
+	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
+				pad, spki->subjectPublicKeyExponent->length - 1, e->string);
 	r_asn1_free_string (m);
 	r_asn1_free_string (e);
 	return r < 0 ? NULL : buffer + (unsigned) r;

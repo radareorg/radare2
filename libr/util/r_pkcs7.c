@@ -494,7 +494,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 
 	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->sector, o->length);
 	else s = NULL;
-	r = snprintf (buffer + p, length - p, "%sEncrypted Digest:\n%s\n", pad2, s ? s->string : "Missing");
+	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
 	p += (unsigned) r;
 	r_asn1_free_string (s);
 	if (r < 0) {
