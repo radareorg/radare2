@@ -1722,11 +1722,17 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 
 R_API ut64 r_anal_fcn_firstaddr(RAnalFunction *fcn) {
 	update_tinyrange_bbs (fcn);
-	return fcn->bbr.ranges[0];
+	if (fcn && fcn->bbr.ranges) {
+		return fcn->bbr.ranges[0];
+	}
+	return 0;
 }
 R_API ut64 r_anal_fcn_lastaddr(RAnalFunction *fcn) {
 	update_tinyrange_bbs (fcn);
-	return fcn->bbr.ranges[fcn->bbr.pairs + 1];
+	if (fcn && fcn->bbr.ranges) {
+		return fcn->bbr.ranges[fcn->bbr.pairs * 2 - 1];
+	}
+	return 0;
 }
 
 R_API ut32 r_anal_fcn_length(RAnalFunction *fcn) {
