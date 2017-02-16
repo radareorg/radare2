@@ -171,6 +171,22 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
+
+static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p, int bits) {
+	RBinSymbol *ptr = *p;
+	ptr->bits = bits;
+	if (bin) {
+		if (bin->hdr.cputype == CPU_TYPE_ARM && bits < 64) {
+			if (ptr->paddr & 1) {
+				ptr->paddr--;
+				ptr->vaddr--;
+				ptr->bits = 16;
+			}
+		}
+	}
+
+}
+
 static RList* symbols(RBinFile *arch) {
 	struct MACH0_(obj_t) *bin;
 	int i;
@@ -179,7 +195,7 @@ static RList* symbols(RBinFile *arch) {
 	RBinObject *obj = arch ? arch->o : NULL;
 	RList *ret = r_list_newf (free);
 	const char *lang = "c";
-	int wordsize = 16;
+	int wordsize = 0;
 	if (!ret) {
 		return NULL;
 	}
@@ -188,7 +204,6 @@ static RList* symbols(RBinFile *arch) {
 		return NULL;
 	}
 	wordsize = MACH0_(get_bits) (obj->bin_obj);
-
 	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj))) {
 		return ret;
 	}
@@ -208,13 +223,7 @@ static RList* symbols(RBinFile *arch) {
 		ptr->vaddr = symbols[i].addr;
 		ptr->paddr = symbols[i].offset + obj->boffset;
 		ptr->size = symbols[i].size;
-		ptr->bits = wordsize;
-		if (wordsize == 16) {
-			// if thumb, hint non-thumb symbols
-			if (!(ptr->paddr & 1)) {
-				ptr->bits = 32;
-			}
-		}
+		_handle_arm_thumb (bin, &ptr, wordsize);
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
 		if (!strncmp (ptr->name, "type.", 5)) {
@@ -242,6 +251,7 @@ static RList* symbols(RBinFile *arch) {
 			ptr->forwarder = r_str_const ("NONE");
 			ptr->bind = r_str_const ("LOCAL");
 			ptr->ordinal = i++;
+			_handle_arm_thumb (bin, &ptr, wordsize);
 			r_list_append (ret, ptr);
 		}
 	}
