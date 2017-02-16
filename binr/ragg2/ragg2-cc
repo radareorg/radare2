@@ -210,7 +210,8 @@ windows)
 	;;
 darwin)
 	#TEXT="__TEXT.__text"
-	TEXT="0.__text"
+	#TEXT="0.__text"
+	TEXT=0.__TEXT.__text
 	FMT=mach0
 	;;
 *|linux)
