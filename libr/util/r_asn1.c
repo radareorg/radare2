@@ -67,7 +67,7 @@ RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
 
 RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
 	char* str;
-	if (!buffer || length != 13 || buffer[14] != 'Z') {
+	if (!buffer || length != 13 || buffer[12] != 'Z') {
 		return NULL;
 	}
 	str = (char*) malloc (24);

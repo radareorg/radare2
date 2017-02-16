@@ -162,7 +162,6 @@ void r_pkcs7_free_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu) {
 
 bool r_pkcs7_parse_signerinfo (RPKCS7SignerInfo* si, RASN1Object *object) {
 	RASN1Object **elems;
-	ut32 i;
 	ut32 shift = 3;
 	if (!si || !object || object->list.length < 5) {
 		return false;
@@ -373,96 +372,225 @@ void r_pkcs7_free_attributes (RPKCS7Attributes* attributes) {
 	}
 }
 
-char *r_pkcs7_generate_dump (RPKCS7Container* container) {
-	RPKCS7SignedData *sd;
-	ut32 i, j, length, position;
-	char *str;
-	if (!container) {
+char* r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, char* buffer, ut32 length, const char* pad) {
+	RASN1String *algo, *last, *next;
+	ut32 i, p;
+	int r;
+	char *tmp, *pad2, *pad3;
+	if (!crl || !buffer || !length) {
+		return NULL;
+	}
+	if (!pad) {
+		pad = "";
+	}
+	pad3 = r_str_newf ("%s    ", pad);
+	if (!pad3) return NULL;
+
+	pad2 = pad3 + 2;
+	algo = crl->signature.algorithm;
+	last = crl->lastUpdate;
+	next = crl->nextUpdate;
+	r = snprintf (buffer, length, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n",
+				pad, pad2, pad3, algo ? algo->string : "", pad2);
+	p = (unsigned) r;
+	if (r < 0 || !(tmp = r_x509_name_dump (&crl->issuer, buffer + p, length - p, pad3))) {
+		free (pad3);
+		return NULL;
+	}
+	p = tmp - buffer;
+	if (length <= p) {
+		free (pad3);
+		return NULL;
+	}
+	r = snprintf (buffer + p, length - p, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
+				pad2, last ? last->string : "Missing",
+				pad2, next ? next->string : "Missing", pad2);
+	p += (unsigned) r;
+	if (r < 0) {
+		free (pad3);
+		return NULL;
+	}
+	for (i = 0; i < crl->length; ++i) {
+		if (length <= p || !(tmp = r_x509_crlentry_dump (crl->revokedCertificates[i], buffer + p, length - p, pad3))) {
+			free (pad3);
+			return NULL;
+		}
+		p = tmp - buffer;
+	}
+
+	free (pad3);
+	return buffer + p;
+}
+
+char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, const char* pad) {
+	RASN1String *s;
+	RASN1Object *o;
+	ut32 i, p;
+	int r;
+	char *tmp, *pad2, *pad3;
+	if (!si || !buffer || !length) {
+		return NULL;
+	}
+	if (!pad) {
+		pad = "";
+	}
+	pad3 = r_str_newf ("%s    ", pad);
+	if (!pad3) return NULL;
+	pad2 = pad3 + 2;
+
+
+	r = snprintf (buffer, length, "%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
+	p = (unsigned) r;
+	if (r < 0) {
+		free (pad3);
 		return NULL;
 	}
 
-	sd = &container->signedData;
-	position = 0;
-	length = 1024 * 4;
-	str = (char*) malloc (length);
-	memset (str, 0, length);
-	position = snprintf (str + position, length, "signedData\n  Version: %u\n  Digest Algorithms:\n", sd->version);
-	for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
-		position = snprintf (str + position, length, "    %s\n", container->signedData.digestAlgorithms.elements[i]->algorithm->string);
+	if (length <= p || !(tmp = r_x509_name_dump (&si->issuerAndSerialNumber.issuer, buffer + p, length - p, pad3))) {
+		free (pad3);
+		return NULL;
 	}
-	position = snprintf (str + position, length, "  Certificates:\n");
-	for (i = 0; i < container->signedData.certificates.length; ++i) {
-		char *cert;
-		ut32 certsize;
-		cert = r_x509_generate_certificate_dump (container->signedData.certificates.elements[i], "    ");
-		certsize = strlen (cert);
-		if (certsize >= length - position) {
-			free (str);
+	p = tmp - buffer;
+	if ((o = si->issuerAndSerialNumber.serialNumber)) {
+		s = r_asn1_stringify_integer (o->sector, o->length);
+	} else {
+		s = NULL;
+	}
+	r = snprintf (buffer + p, length - p, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
+	p += (unsigned) r;
+	r_asn1_free_string (s);
+	if (r < 0) {
+		free (pad3);
+		return NULL;
+	}
+
+	s = si->digestAlgorithm.algorithm;
+	r = snprintf (buffer + p, length - p, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
+				pad2, pad3, s ? s->string : "Missing", pad2);
+	p += (unsigned) r;
+	if (r < 0) {
+		free (pad3);
+		return NULL;
+	}
+	for (i = 0; i < si->authenticatedAttributes.length; ++i) {
+		RPKCS7Attribute* attr = si->authenticatedAttributes.elements[i];
+		if (!attr) continue;
+		r = snprintf (buffer + p, length - p, "%s%s: %u bytes\n",
+					pad3, attr->oid ? attr->oid->string : "Missing", attr->data ? attr->data->length : 0);
+		p += (unsigned) r;
+		if (r < 0) {
+			free (pad3);
 			return NULL;
 		}
-		position = snprintf (str + position, length, "\n%s", cert);
-		free (cert);
 	}
-	/*
-	position = snprintf (str + position, length, "  CRLs:\n");
-	for (i = 0; i < container->signedData.crls.length; ++i) {
-		if (!container->signedData.crls.elements[i]) continue;
-		if (container->signedData.crls.elements[i]->signature.algorithm)
-			position = snprintf (str + position, length, "     %s\n", container->signedData.crls.elements[i]->signature.algorithm->string);
-		if (container->signedData.crls.elements[i]->lastUpdate)
-			position = snprintf (str + position, length, "     %s\n", container->signedData.crls.elements[i]->lastUpdate->string);
-		if (container->signedData.crls.elements[i]->nextUpdate)
-			position = snprintf (str + position, length, "     %s\n", container->signedData.crls.elements[i]->nextUpdate->string);
-		RX509Name *name = &container->signedData.crls.elements[i]->issuer;
-		for (j = 0; name && j < name->length; ++j) {
-			if (name->oids[j] && name->names[j]) {
-				position = snprintf (str + position, length, "       %s: %s\n", name->oids[j]->string, name->names[j]->string);
-			}
-		}
+	s = si->digestEncryptionAlgorithm.algorithm;
+	r = snprintf (buffer + p, length - p, "%sDigest Encryption Algorithm\n%s%s\n",
+				pad2, pad3, s ? s->string : "Missing");
+	p += (unsigned) r;
+	if (r < 0) {
+		free (pad3);
+		return NULL;
 	}
-	printf ("   SignerInfos:\n");
-	for (i = 0; i < container->signedData.signerinfos.length; ++i) {
-		//			container->signedData.signerinfos.elements[i];
-		printf ("     SignerInfo[%u]\n       Version: %u\n", i, container->signedData.signerinfos.elements[i]->version);
-		printf ("       Issuer:\n");
-		for (j = 0; j < container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.length; ++j) {
-			if (container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.oids[j] &&
-					container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.names[j]) {
-				printf ("         %s: %s\n", container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.oids[j]->string,
-						container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.issuer.names[j]->string);
-			}
-		}
-		if (container->signedData.signerinfos.elements[i]->encryptedDigest) {
-			RASN1String* s = r_asn1_stringify_integer (container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.serialNumber->sector, container->signedData.signerinfos.elements[i]->issuerAndSerialNumber.serialNumber->length);
-			if (s)
-				printf ("       Serial Number: %s\n", s->string);
-			r_asn1_free_string (s);
-		}
-		if (container->signedData.signerinfos.elements[i]->digestAlgorithm.algorithm)
-			printf ("       Digest Algorithm: %s\n", container->signedData.signerinfos.elements[i]->digestAlgorithm.algorithm->string);
-		printf ("       Authenticated Attributes:\n");
-		for (j = 0; j < container->signedData.signerinfos.elements[i]->authenticatedAttributes.length; ++j) {
-			if (container->signedData.signerinfos.elements[i]->authenticatedAttributes.elements[j]) {
-				printf ("         %s\n", container->signedData.signerinfos.elements[i]->authenticatedAttributes.elements[j]->oid->string);
-			}
-		}
-		if (container->signedData.signerinfos.elements[i]->digestEncryptionAlgorithm.algorithm)
-			printf ("       Digest Encryption Algorithm: %s\n", container->signedData.signerinfos.elements[i]->digestEncryptionAlgorithm.algorithm->string);
-		if (container->signedData.signerinfos.elements[i]->encryptedDigest) {
-			RASN1String* s = r_asn1_stringify_bytes (container->signedData.signerinfos.elements[i]->encryptedDigest->sector, container->signedData.signerinfos.elements[i]->encryptedDigest->length);
-			if (s)
-				printf ("       Encrypted Digest:\n%s\n", s->string);
-			r_asn1_free_string (s);
-		}
-		printf ("       Unauthenticated Attributes:\n");
-		for (j = 0; j < container->signedData.signerinfos.elements[i]->unauthenticatedAttributes.length; ++j) {
-			if (container->signedData.signerinfos.elements[i]->unauthenticatedAttributes.elements[j]) {
-				printf ("         %s\n", container->signedData.signerinfos.elements[i]->unauthenticatedAttributes.elements[j]->oid->string);
-			}
-		}
-	}
-	 */
 
-	return realloc (str, length + 1);
+	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->sector, o->length);
+	else s = NULL;
+	r = snprintf (buffer + p, length - p, "%sEncrypted Digest:\n%s\n", pad2, s ? s->string : "Missing");
+	p += (unsigned) r;
+	r_asn1_free_string (s);
+	if (r < 0) {
+		free (pad3);
+		return NULL;
+	}
+	r = snprintf (buffer + p, length - p, "%sUnauthenticated Attributes:\n", pad2);
+	p += (unsigned) r;
+	if (r < 0) {
+		free (pad3);
+		return NULL;
+	}
+	for (i = 0; i < si->unauthenticatedAttributes.length; ++i) {
+		RPKCS7Attribute* attr = si->unauthenticatedAttributes.elements[i];
+		if (!attr) continue;
+		o = attr->data;
+		r = snprintf (buffer + p, length - p, "%s%s: %u bytes\n",
+					pad3, attr->oid ? attr->oid->string : "Missing", o ? o->length : 0);
+		p += (unsigned) r;
+		if (r < 0) {
+			free (pad3);
+			return NULL;
+		}
+	}
+	return buffer + p;
+}
+
+char *r_pkcs7_container_dump (RPKCS7Container* container) {
+	RPKCS7SignedData *sd;
+	ut32 i, length, p;
+	int r;
+	char *buffer, *tmp = NULL;
+	if (!container) {
+		return NULL;
+	}
+	sd = &container->signedData;
+	p = 0;
+	length = 1024 + (container->signedData.certificates.length * 4096);
+	buffer = (char*) malloc (length);
+	if (!buffer) return NULL;
+	memset (buffer, 0, length);
+	r = snprintf (buffer, length, "signedData\n  Version: %u\n  Digest Algorithms:\n", sd->version);
+	p += (unsigned) r;
+	if (r < 0) {
+		free (buffer);
+		return NULL;
+	}
+	if (container->signedData.digestAlgorithms.elements) {
+		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
+			if (container->signedData.digestAlgorithms.elements[i]) {
+				r = snprintf (buffer + p, length - p, "    %s\n", container->signedData.digestAlgorithms.elements[i]->algorithm->string);
+				p += (unsigned) r;
+				if (r < 0 || length <= p) {
+					free (buffer);
+					return NULL;
+				}
+			}
+		}
+	}
+	r = snprintf (buffer + p, length - p, "  Certificates: %u\n", container->signedData.certificates.length);
+	p += (unsigned) r;
+	if (r < 0 || length <= p) {
+		free (buffer);
+		return NULL;
+	}
+	for (i = 0; i < container->signedData.certificates.length; ++i) {
+		if (length <= p || !(tmp = r_x509_certificate_dump (container->signedData.certificates.elements[i], buffer + p, length - p, "    "))) {
+			free (buffer);
+			return NULL;
+		}
+		p = tmp - buffer;
+	}
+
+	for (i = 0; i < container->signedData.crls.length; ++i) {
+		if (length <= p || !(tmp = r_x509_crl_dump (container->signedData.crls.elements[i], buffer + p, length - p, "    "))) {
+			free (buffer);
+			return NULL;
+		}
+		p = tmp - buffer;
+	}
+	p = tmp - buffer;
+	r = snprintf (buffer + p, length - p, "  SignerInfos:\n");
+	p += (unsigned) r;
+	if (r < 0 || length <= p) {
+		free (buffer);
+		return NULL;
+	}
+	if (container->signedData.signerinfos.elements) {
+		for (i = 0; i < container->signedData.signerinfos.length; ++i) {
+			if (length <= p || !(tmp = r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], buffer + p, length - p, "    "))) {
+				free (buffer);
+				return NULL;
+			}
+			p = tmp - buffer;
+		}
+	}
+	return buffer;
 }
 

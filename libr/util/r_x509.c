@@ -328,7 +328,6 @@ void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier * ai) {
 }
 
 void r_x509_free_validity (RX509Validity * validity) {
-	ut32 i;
 	if (!validity) {
 		return;
 	}
@@ -437,53 +436,49 @@ void r_x509_free_crl (RX509CertificateRevocationList *crl) {
 	}
 }
 
-char* r_x509_validity_dump (RX509Validity* validity, const char* pad) {
-	if (!validity) {
+char* r_x509_validity_dump (RX509Validity* validity, char* buffer, ut32 length, const char* pad) {
+	int p;
+	if (!validity || !buffer || !length) {
 		return NULL;
 	}
 	if (!pad)
 		pad = "";
 	const char* b = validity->notBefore ? validity->notBefore->string : "Missing";
 	const char* a = validity->notAfter ? validity->notAfter->string : "Missing";
-	return r_str_newf ("%sNot Before: %s\n%sNot After: %s\n", pad, pad, b, a);
+	p = snprintf (buffer, length, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
+	return p < 0 ? NULL : buffer + (unsigned) p;
 }
 
-char* r_x509_name_dump (RX509Name* name, const char* pad) {
+char* r_x509_name_dump (RX509Name* name, char* buffer, ut32 length, const char* pad) {
 	ut32 i, p, len;
+	int r;
 	char* c;
-	if (!name) {
+	if (!name || !buffer || !length) {
 		return NULL;
 	}
 	if (!pad) {
 		pad = "";
 	}
-	len = 1024;
-	c = (char*) malloc (len);
+	len = length;
+	c = buffer;
 	if (!c) {
 		return NULL;
 	}
 	for (i = 0, p = 0; i < name->length; ++i) {
 		if (!name->oids[i] || !name->names[i]) continue;
-		if (name->oids[i]->length + name->names[i]->length >= len - p) {
-			// adds +1
-			char *t = r_str_newlen (c, len + 1023);
-			free (c);
-			if (!t) {
-				return NULL;
-			}
-			memset (t + len, 0, 1024);
-			c = t;
-			len += 1024;
+		r = snprintf (c + p, len - p, "%s%s: %s\n", pad, name->oids[i]->string, name->names[i]->string);
+		p += r;
+		if (r < 0 || len < p) {
+			return NULL;
 		}
-		p = snprintf (c + p, len - p, "%s%s: %s\n", pad, name->oids[i]->string, name->names[i]->string);
 	}
-	return c;
+	return c + p;
 }
 
-char* r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, const char* pad) {
-	char *c;
+char* r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, char* buffer, ut32 length, const char* pad) {
+	int r;
 	const char *a;
-	if (!spki) {
+	if (!spki || !buffer || !length) {
 		return NULL;
 	}
 	if (!pad)
@@ -491,126 +486,237 @@ char* r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, const c
 	a = spki->algorithm.algorithm->string;
 	RASN1String* m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->sector, spki->subjectPublicKeyModule->length);
 	RASN1String* e = r_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
-	c = r_str_newf ("%sAlgorithm: %s\n%sModule: %s\n%sExponent:\n%s\n", pad, a, pad, m->string, pad, e->string);
+	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %ubytes\n%s\n", pad, a, pad, m->string,
+				pad, spki->subjectPublicKeyExponent->length, e->string);
 	r_asn1_free_string (m);
 	r_asn1_free_string (e);
-	return c;
+	return r < 0 ? NULL : buffer + (unsigned) r;
 }
 
-char* r_x509_extensions_dump (RX509Extensions* exts, const char* pad) {
+char* r_x509_extensions_dump (RX509Extensions* exts, char* buffer, ut32 length, const char* pad) {
 	ut32 i, p, len;
+	int r;
 	char* c;
-	if (!exts) {
+	if (!exts || !buffer || !length) {
 		return NULL;
 	}
 	if (!pad) {
 		pad = "";
 	}
-	len = 1024;
-	c = (char*) malloc (len);
+	len = length;
+	c = buffer;
 	if (!c) {
 		return NULL;
 	}
-	for (i = 0, p = 0; i < exts->length; ++i) {
+	for (i = 0, p = 0, r = 0; i < exts->length; ++i) {
 		//RASN1String *s;
 		RX509Extension *e = exts->extensions[i];
 		if (!e) continue;
-		ut32 sum = e->extnID->length + 64;
+		//TODO handle extensions..
 		//s = r_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
-		if (sum >= len - p) {
-			// adds +1
-			char *t = r_str_newlen (c, len + 1023);
-			free (c);
-			if (!t) {
-				return NULL;
-			}
-			memset (t + len, 0, 1024);
-			c = t;
-			len += 1024;
-		}
-		p = snprintf (c + p, len - p, "%s%s: %s\n%s%u bytes\n", pad, e->extnID->string, e->critical ? "critical" : "", pad, e->extnValue->length);
+		r = snprintf (c + p, len - p, "%s%s: %s\n%s%u bytes\n", pad, e->extnID->string, e->critical ? "critical" : "", pad, e->extnValue->length);
+		p += r;
 		//r_asn1_free_string (s);
+		if (r < 0 || len <= p) {
+			return NULL;
+		}
 	}
-	return c;
+	return c + p;
 }
 
-char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, const char* pad) {
-	RASN1String *sid, *iid;
-	char *str, *pad2, *issuer, *subject, *validity, *spki, *exts;
-	if (tbsc) {
+char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 length, const char* pad) {
+	RASN1String *sid = NULL, *iid = NULL;
+	char *pad2, *tmp;
+	ut32 p;
+	int r;
+	if (!tbsc || !buffer || !length) {
 		return NULL;
 	}
 	if (!pad) {
 		pad = "";
 	}
 	pad2 = r_str_newf ("%s  ", pad);
-	//	tbsc->version
-	issuer = r_x509_name_dump (&tbsc->issuer, pad2);
-	validity = r_x509_validity_dump (&tbsc->validity, pad2);
-	subject = r_x509_name_dump (&tbsc->subject, pad2);
-	spki = r_x509_subjectpublickeyinfo_dump (&tbsc->subjectPublicKeyInfo, pad2);
-	iid = r_asn1_stringify_integer (tbsc->issuerUniqueID->sector, tbsc->issuerUniqueID->length);
-	sid = r_asn1_stringify_integer (tbsc->subjectUniqueID->sector, tbsc->subjectUniqueID->length);
-	exts = r_x509_extensions_dump (&tbsc->extensions, pad2);
-
-	str = r_str_newf ("%sVersion: v%u\n"
-					"%sSerial Number:\n%s  %s\n"
-					"%sSignature Algorithm:\n%s  %s\n"
-					"%sIssuer:\n%s"
-					"%sValidity:\n%s"
-					"%sSubject:\n%s"
-					"%sSubject Public Key Info:\n%s"
-					"%sIssuer Unique ID:\n%s  %s"
-					"%sSubject Unique ID:\n%s  %s"
-					"%sExtensions:\n%s",
-					pad, tbsc->version + 1,
-					pad, pad, tbsc->serialNumber->string,
-					pad, pad, tbsc->signature.algorithm->string,
-					pad, issuer,
-					pad, validity,
-					pad, subject,
-					pad, spki,
-					pad, pad, iid ? iid->string : "",
-					pad, pad, sid ? sid->string : "",
-					pad, exts);
-	free (issuer);
-	free (validity);
-	free (subject);
-	free (spki);
+	if (!pad2) return NULL;
+	r = snprintf (buffer, length, "%sVersion: v%u\n"
+				"%sSerial Number:\n%s  %s\n"
+				"%sSignature Algorithm:\n%s  %s\n"
+				"%sIssuer:\n",
+				pad, tbsc->version + 1,
+				pad, pad, tbsc->serialNumber->string,
+				pad, pad, tbsc->signature.algorithm->string,
+				pad);
+	p = (unsigned) r;
+	if (r < 0 || length <= p || !(tmp = r_x509_name_dump (&tbsc->issuer, buffer + p, length - p, pad2))) {
+		free (pad2);
+		return NULL;
+	}
+	p = tmp - buffer;
+	if (length <= p) {
+		free (pad2);
+		return NULL;
+	}
+	r = snprintf (buffer + p, length - p, "%sValidity:\n", pad);
+	p += r;
+	if (r < 0 || length <= p || !(tmp = r_x509_validity_dump (&tbsc->validity, buffer + p, length - p, pad2))) {
+		free (pad2);
+		return NULL;
+	}
+	p = tmp - buffer;
+	if (r < 0 || length <= p) return NULL;
+	r = snprintf (buffer + p, length - p, "%sSubject:\n", pad);
+	p += r;
+	if (r < 0 || length <= p || !(tmp = r_x509_name_dump (&tbsc->subject, buffer + p, length - p, pad2))) {
+		free (pad2);
+		return NULL;
+	}
+	p = tmp - buffer;
+	if (r < 0 || length <= p) return NULL;
+	r = snprintf (buffer + p, length - p, "%sSubject Public Key Info:\n", pad);
+	p += r;
+	if (r < 0 || length <= p ||
+			!(tmp = r_x509_subjectpublickeyinfo_dump (&tbsc->subjectPublicKeyInfo, buffer + p, length - p, pad2))) {
+		free (pad2);
+		return NULL;
+	}
+	p = tmp - buffer;
+	if (tbsc->issuerUniqueID) {
+		iid = r_asn1_stringify_integer (tbsc->issuerUniqueID->sector, tbsc->issuerUniqueID->length);
+		if (iid) {
+			if (length <= p) return NULL;
+			r = snprintf (buffer + p, length - p, "%sIssuer Unique ID:\n%s  %s", pad, pad, iid->string);
+			p += r;
+		} else {
+			free (pad2);
+			return NULL;
+		}
+	}
+	if (tbsc->subjectUniqueID) {
+		sid = r_asn1_stringify_integer (tbsc->subjectUniqueID->sector, tbsc->subjectUniqueID->length);
+		if (sid) {
+			if (length <= p) return NULL;
+			r = snprintf (buffer + p, length - p, "%sSubject Unique ID:\n%s  %s", pad, pad, sid->string);
+			p += r;
+		} else {
+			free (pad2);
+			return NULL;
+		}
+	}
+	if (r < 0 || length <= p) return NULL;
+	r = snprintf (buffer + p, length - p, "%sExtensions:\n", pad);
+	p += r;
+	if (r < 0 || length <= p || !(tmp = r_x509_extensions_dump (&tbsc->extensions, buffer + p, length - p, pad2))) {
+		free (pad2);
+		return NULL;
+	}
 	free (pad2);
 	r_asn1_free_string (sid);
 	r_asn1_free_string (iid);
-	return str;
+	return buffer + p;
 }
 
-char* r_x509_generate_certificate_dump (RX509Certificate* certificate, const char* pad) {
+char* r_x509_certificate_dump (RX509Certificate* certificate, char* buffer, ut32 length, const char* pad) {
 	RASN1String *signature, *algo;
-	char *str, *tbsc, *pad2;
-	if (certificate) {
+	ut32 p;
+	int r;
+	char *tbsc, *pad2;
+	if (!certificate || !buffer || !length) {
 		return NULL;
 	}
 	if (!pad) {
 		pad = "";
 	}
 	pad2 = r_str_newf ("%s  ", pad);
+	if (!pad2) return NULL;
+	if ((r = snprintf (buffer, length, "%sTBSCertificate:\n", pad)) < 0) return NULL;
+	p = (unsigned) r;
+	tbsc = r_x509_tbscertificate_dump (&certificate->tbsCertificate, buffer + p, length - p, pad2);
+	p = tbsc - buffer;
+	if (length <= p) {
+		free (pad2);
+		return NULL;
+	}
 	algo = certificate->algorithmIdentifier.algorithm;
 	signature = r_asn1_stringify_bytes (certificate->signature->sector, certificate->signature->length);
-	tbsc = r_x509_tbscertificate_dump (&certificate->tbsCertificate, pad2);
-
-	str = r_str_newf ("%sCertificate:\n"
-					"%s"
-					"Algorithm:\n%s\n"
-					"%s",
-					pad, tbsc,
-					pad, algo ? algo->string : "",
-					signature ? signature->string : "");
-
-	free (tbsc);
+	r = snprintf (buffer + p, length - p, "%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n%s\n",
+				pad, pad2, algo ? algo->string : "",
+				pad, certificate->signature->length, signature ? signature->string : "");
+	if (r < 0) {
+		free (pad2);
+		return NULL;
+	}
+	p += (unsigned) r;
 	free (pad2);
 	r_asn1_free_string (signature);
-	return str;
+	return buffer + p;
 }
 
-char* r_x509_generate_crl_dump (RX509CertificateRevocationList *crl) {
-	return NULL;
+char* r_x509_crlentry_dump (RX509CRLEntry *crle, char* buffer, ut32 length, const char* pad) {
+	RASN1String *id = NULL, *utc;
+	int r;
+	if (!crle || !buffer || !length) {
+		return NULL;
+	}
+	if (!pad) {
+		pad = "";
+	}
+	utc = crle->revocationDate;
+	if (crle->userCertificate) {
+		id = r_asn1_stringify_integer (crle->userCertificate->sector, crle->userCertificate->length);
+	}
+
+	r = snprintf (buffer, length, "%sUser Certificate:\n%s  %s\n"
+				"%sRevocation Date:\n%s  %s\n",
+				pad, pad, id ? id->string : "Missing",
+				pad, pad, utc ? utc->string : "Missing");
+
+	return r < 0 ? NULL : buffer + (unsigned) r;
+}
+
+char* r_x509_crl_dump (RX509CertificateRevocationList *crl, char* buffer, ut32 length, const char* pad) {
+	RASN1String *algo, *last, *next;
+	ut32 i, p;
+	int r;
+	char *tmp, *pad2, *pad3;
+	if (!crl || !buffer || !length) {
+		return NULL;
+	}
+	if (!pad) {
+		pad = "";
+	}
+	pad3 = r_str_newf ("%s    ", pad);
+	if (!pad3) return NULL;
+	pad2 = pad3 + 2;
+	algo = crl->signature.algorithm;
+	last = crl->lastUpdate;
+	next = crl->nextUpdate;
+	r = snprintf (buffer, length, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n",
+				pad, pad2, pad3, algo ? algo->string : "", pad2);
+	p = (unsigned) r;
+	if (r < 0 || !(tmp = r_x509_name_dump (&crl->issuer, buffer + p, length - p, pad3))) {
+		free (pad3);
+		return NULL;
+	}
+	p = tmp - buffer;
+	if (length <= p) {
+		free (pad3);
+		return NULL;
+	}
+	r = snprintf (buffer + p, length - p, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
+				pad2, last ? last->string : "Missing",
+				pad2, next ? next->string : "Missing", pad2);
+	p += (unsigned) r;
+	if (r < 0) {
+		free (pad3);
+		return NULL;
+	}
+	for (i = 0; i < crl->length; ++i) {
+		if (length <= p || !(tmp = r_x509_crlentry_dump (crl->revokedCertificates[i], buffer + p, length - p, pad3))) {
+			free (pad3);
+			return NULL;
+		}
+		p = tmp - buffer;
+	}
+
+	free (pad3);
+	return buffer + p;
 }

@@ -32,5 +32,7 @@ R_API void r_pkcs7_free_signerinfos (RPKCS7SignerInfos* ss);
 R_API bool r_pkcs7_parse_signeddata (RPKCS7SignedData *sd, RASN1Object *object);
 R_API void r_pkcs7_free_signeddata (RPKCS7SignedData* sd);
 
+R_API char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, const char* pad);
+
 #endif /* R_PKCS7_INTERNAL_H */
 

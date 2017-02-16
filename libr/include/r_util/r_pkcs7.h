@@ -67,7 +67,7 @@ typedef struct r_pkcs7_container_t {
 
 R_API RPKCS7Container *r_pkcs7_parse_container (const ut8 *buffer, ut32 length);
 R_API void r_pkcs7_free_container (RPKCS7Container* container);
-R_API char* r_pkcs7_generate_dump (RPKCS7Container* container);
+R_API char* r_pkcs7_container_dump (RPKCS7Container* container);
 
 #endif /* R_PKCS7_H */
 

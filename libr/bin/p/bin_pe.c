@@ -613,9 +613,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static char *signature(RBinFile *arch) {
-	struct PE_(r_bin_pe_obj_t) *bin;
-	if (!arch || !arch->o) {
+static char *signature (RBinFile *arch) {
+	struct PE_ (r_bin_pe_obj_t) * bin;
+	if (!arch || !arch->o || !arch->o->bin_obj) {
 		return NULL;
 	}
 	bin = arch->o->bin_obj;
