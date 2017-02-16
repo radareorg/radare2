@@ -121,7 +121,7 @@ R_API int r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	if (!binfile) {
 		// Find first available binfile
 		ut32 fd = r_core_file_cur_fd (core);
-		binfile = fd != (ut32)-1 
+		binfile = fd != (ut32)-1
 				  ? r_bin_file_find_by_fd (core->bin, fd)
 				  : NULL;
 		if (!binfile) {
@@ -168,7 +168,7 @@ static bool string_filter(RCore *core, const char *str) {
 			}
 			if (str[i]=='\\') {
 				ot++;
-			}	
+			}
 			if (str[i]==' ') {
 				sp++;
 			}
@@ -302,7 +302,7 @@ static bool string_filter(RCore *core, const char *str) {
 static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
-	RBin *bin = r->bin;	
+	RBin *bin = r->bin;
 	RListIter *iter;
 	RBinString *string;
 	RBinSection *section;
@@ -406,7 +406,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 }
 
 static bool bin_raw_strings(RCore *r, int mode, int va) {
-	RBinFile *bf = r_bin_cur (r->bin);	
+	RBinFile *bf = r_bin_cur (r->bin);
 	if (!bf) {
 		const char *file = r->io->desc->uri;
 		r_sys_cmdf ("rabin2 -qzzz '%s'", file);
@@ -440,7 +440,7 @@ static bool bin_strings(RCore *r, int mode, int va) {
 	}
 	if (!plugin) {
 		return 0;
-	}		
+	}
 	if (plugin->info && plugin->name) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
 			return false;
@@ -486,7 +486,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 }
 
 R_API void r_core_anal_type_init(RCore *core) {
-	Sdb *types = NULL; 
+	Sdb *types = NULL;
 	const char *anal_arch = NULL, *os = NULL;
 	int bits = 0;
 	char *dbpath;
@@ -790,12 +790,12 @@ static int bin_dwarf(RCore *core, int mode) {
 	int lastFileLinesCount2 = 0;
 
 
-	const char *lf = NULL; 
-	int *lfl = NULL; 
+	const char *lf = NULL;
+	int *lfl = NULL;
 	char *lfc = NULL;
-	int lflc = 0; 
+	int lflc = 0;
 
-	//TODO we should need to store all this in sdb, or do a filecontentscache in libr/util 
+	//TODO we should need to store all this in sdb, or do a filecontentscache in libr/util
 	//XXX this whole thing has leaks
 	r_list_foreach (list, iter, row) {
 		if (r_cons_is_breaked ()) {
@@ -1774,7 +1774,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		snFini (&sn);
 		i++;
 	}
-	
+
 	//handle thumb and arm for entry point since they are not present in symbols
 	if (is_arm) {
 		r_list_foreach (entries, iter, entry) {
@@ -2608,13 +2608,13 @@ static int bin_signature(RCore *r, int mode) {
 
 
 R_API void r_core_bin_export_info_rad(RCore *core) {
-	Sdb *db = NULL; 
+	Sdb *db = NULL;
 	char *flagname, *offset = NULL;
 	RBinFile *bf = r_core_bin_cur (core);
 	if (!bf) {
 		return;
 	}
-	db = sdb_ns (bf->sdb, "info", 0);; 
+	db = sdb_ns (bf->sdb, "info", 0);;
 	if (!db) {
 		return;
 	}
@@ -2652,7 +2652,7 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 				free (offset_key);
 				if (off) {
 					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
-				} 
+				}
 			}
 			free (dup);
 		}
@@ -2734,7 +2734,7 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 
 R_API int r_core_bin_update_arch_bits(RCore *r) {
 	RBinFile *binfile = NULL;
-	const char *name = NULL, *arch = NULL; 
+	const char *name = NULL, *arch = NULL;
 	ut16 bits = 0;
 	if (!r) {
 		return 0;
@@ -2744,7 +2744,7 @@ R_API int r_core_bin_update_arch_bits(RCore *r) {
 	   	if (r->assembler->cur) {
 			arch = r->assembler->cur->arch;
 		}
-	} 
+	}
 	binfile = r_core_bin_cur (r);
 	name = binfile ? binfile->file : NULL;
 	if (r && r->bin && r->bin->binxtrs) {
