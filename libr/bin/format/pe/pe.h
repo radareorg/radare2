@@ -98,7 +98,8 @@ struct PE_(r_bin_pe_obj_t) {
 	RList* relocs;
 	const char* file;
 	struct r_buf_t* b;
-	Sdb* kv;
+	Sdb *kv;
+	const char* pkcs7;
 };
 
 #define GUIDSTR_LEN 34
