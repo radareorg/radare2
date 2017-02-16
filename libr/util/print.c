@@ -298,6 +298,9 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	bool dec = p? (p->flags & R_PRINT_FLAGS_ADDRDEC): false;
 	bool mod = p? (p->flags & R_PRINT_FLAGS_ADDRMOD): false;
 	char ch = p? ((p->addrmod && mod)? ((addr % p->addrmod)? ' ': ','): ' '): ' ';
+	if (p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
+		ch = '|';
+	}
 	if (use_segoff) {
 		ut32 s, a;
 		a = addr & 0xffff;
@@ -310,9 +313,9 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			const char *pre = PREOFF (offset): Color_GREEN;
 			const char *fin = Color_RESET;
 			if (dec) {
-				printfmt ("%s%s%s%c%s", pre, white, space, ch, fin);
+				printfmt ("%s%s%s%s%c", pre, white, space, fin, ch);
 			} else {
-				printfmt ("%s%04x:%04x%c%s", pre, s & 0xffff, a & 0xffff, ch, fin);
+				printfmt ("%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
 			}
 		} else {
 			if (dec) {
@@ -331,9 +334,9 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			const char *pre = PREOFF (offset): Color_GREEN;
 			const char *fin = Color_RESET;
 			if (dec) {
-				printfmt ("%s%s%" PFMT64d "%c%s", pre, white, addr, ch, fin);
+				printfmt ("%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
 			} else {
-				printfmt ("%s0x%08" PFMT64x "%c%s", pre, addr, ch, fin);
+				printfmt ("%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
 			}
 		} else {
 			if (dec) {
@@ -349,7 +352,11 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *) malloc ((strlen (str) + 2) * 32);
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;
-	const char *color_0x00 = "", *color_0x7f = "", *color_0xff = "", *color_text = "", *color_other = "";
+	const char *color_0x00 = "";
+	const char *color_0x7f = "";
+	const char *color_0xff = "";
+	const char *color_text = "";
+	const char *color_other = "";
 	int bs = p->bytespace;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	/* TODO: Use r_print_set_cursor for win support */
@@ -638,8 +645,6 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	wide = (options & R_PRINT_STRING_WIDE);
 	zeroend = (options & R_PRINT_STRING_ZEROEND);
 	urlencode = (options & R_PRINT_STRING_URLENCODE);
-	//if (p->flags & R_PRINT_FLAGS_OFFSET)
-	// r_print_addr(p, seek);
 	p->interrupt = 0;
 	for (i = 0; !p->interrupt && i < len; i++) {
 		if (zeroend && buf[i] == '\0') {
@@ -770,6 +775,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	int use_sparse = 0;
 	int use_header = 1;
 	int use_offset = 1;
+	bool compact = false;
 	int use_segoff = 0;
 	int pairs = 0;
 	const char *fmt = "%02x";
@@ -784,6 +790,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
+		compact = p->flags & R_PRINT_FLAGS_COMPACT;
 		inc = p->cols;
 		col = p->col;
 		printfmt = (PrintfCallback) p->cb_printf;
@@ -855,11 +862,15 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					snprintf (soff, sizeof (soff), "0x%08" PFMT64x, addr);
 				}
 				delta = strlen (soff) - 10;
-				for (i = 0; i < delta; i++)
+				if (compact) {
+					delta--;
+				}
+				for (i = 0; i < delta; i++) {
 					printfmt (" ");
-				//printfmt (i+1==delta?" ":" "); // NOP WTF
+				}
 			}
-			printfmt (col == 1? "|": " ");
+			/* column after number, before hex data */
+			printfmt ((col == 1)? "|": " ");
 			opad >>= 4;
 			k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 			/* extra padding for offsets > 8 digits */
@@ -872,26 +883,37 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 				printfmt (" %c", hex[(i + k) % 16]);
 				if (i & 1 || !pairs) {
-					printfmt (col != 1? " ": ((i + 1) < inc)? " ": "|");
+					if (!compact) {
+						printfmt (col != 1? " ": ((i + 1) < inc)? " ": "|");
+					}
 				}
 			}
-			printfmt ((col == 2)? "|": " ");
+			/* ascii column */
+			if (compact) {
+				printfmt (col > 0? "|": " ");
+			} else {
+				printfmt (col == 2? "|": " ");
+			}
 			for (i = 0; i < inc; i++) {
 				printfmt ("%c", hex[(i + k) % 16]);
 			}
+			if (col == 2) {
+				printfmt ("|");
+			} else {
+				printfmt (" ");
+			}
 			/* print comment header*/
-			if (p->use_comments) {
-				printfmt (col == 1? "|": " ");
+			if (p->use_comments && !compact) {
+				// printfmt (col == 2? "|": "");
 				printfmt (" comment ");
 			}
-			printfmt (col == 2? "|\n": "\n");
+			printfmt ("\n");
 		}
 	}
 
 	if (p) {
 		p->interrupt = 0;
 	}
-	//for (i=j=0; (p&&!p->interrupt) && i<len; i+=(stride?stride:inc), j+=(stride?stride:0)) {
 	for (i = j = 0; i < len; i += (stride? stride: inc), j += (stride? stride: 0)) {
 		r_print_set_screenbounds (p, addr + i);
 		if (p && p->cons && p->cons->breaked) {
@@ -920,9 +942,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (use_offset) {
 			r_print_addr (p, addr + j);
 		}
-		printfmt ((col == 1)? "|": " ");
+		if (!compact) {
+			printfmt ((col == 1)? "|": " ");
+		}
 		for (j = i; j < i + inc; j++) {
-			if (j >= len) {
+			if (!compact && j >= len) {
 				if (col == 1) {
 					if (j + 1 >= inc + i) {
 						printfmt (j % 2? "  |": "| ");
@@ -996,23 +1020,38 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (j % 2 || !pairs) {
 					if (col == 1) {
 						if (j + 1 < inc + i) {
-							printfmt (" ");
+							if (!compact) {
+								printfmt (" ");
+							}
 						} else {
 							printfmt ("|");
 						}
 					} else {
-						printfmt (" ");
+						if (!compact) {
+							printfmt (" ");
+						}
 					}
 				}
 			}
 		}
-		printfmt ((col == 2)? "|": " ");
+		if (compact) {
+			if (col == 0) {
+				printfmt (" ");
+			} else if (col == 1) {
+				//printfmt (" ");
+			} else {
+				printfmt ((col == 2)? "|": "");
+			}
+		} else {
+			printfmt ((col == 2)? "|": " ");
+		}
 		for (j = i; j < i + inc; j++) {
 			if (j >= len) {
 				break;
 			}
 			r_print_byte (p, "%c", j, buf[j]);
 		}
+		/* ascii column */
 		if (col == 2) {
 			printfmt ("|");
 		}
