@@ -683,7 +683,7 @@ int main(int argc, char **argv) {
 	case MODE_DIFF:
 	case MODE_DIFF_STRS:
 	case MODE_DIFF_IMPORTS:
-		d = r_diff_new (0LL, 0LL);
+		d = r_diff_new ();
 		r_diff_set_delta (d, delta);
 		if (diffmode == 'j') {
 			printf("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza);
