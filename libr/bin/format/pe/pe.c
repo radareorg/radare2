@@ -1875,6 +1875,35 @@ out_error:
 	return;
 }
 
+static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
+	RPKCS7Container *con;
+	ut64 size, vaddr;
+	ut8 *data = NULL;
+	int len;
+	if (!bin || !bin->nt_headers) {
+		return;
+	}
+	size = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].Size;
+	vaddr = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress;
+	data = calloc (1, size);
+	if (!data) return;
+	if (vaddr > bin->size || vaddr + size > bin->size) {
+		bprintf ("vaddr greater than the file\n");
+		free (data);
+		return;
+	}
+	//skipping useless header..
+	len = r_buf_read_at (bin->b, vaddr + 8, data, size - 8);
+	if (len < 1) {
+		R_FREE (data);
+		return;
+	}
+	con = r_pkcs7_parse_container (data, size);
+	bin->pkcs7 = r_pkcs7_container_dump (con);
+	r_pkcs7_free_container (con);
+	R_FREE (data);
+}
+
 static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->dos_header = NULL;
 	bin->nt_headers = NULL;
@@ -1897,6 +1926,7 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin_pe_init_imports (bin);
 	bin_pe_init_exports (bin);
 	bin_pe_init_resource (bin);
+	bin_pe_get_certificate(bin);
 
 	bin->big_endian = PE_(r_bin_pe_is_big_endian) (bin);
 
@@ -2859,6 +2889,7 @@ int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return HASCHR (PE_IMAGE_FILE_DEBUG_STRIPPED);
 }
 
+
 void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin) {
 		return NULL;
@@ -2870,6 +2901,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->import_directory);
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
+	free ((void*)bin->pkcs7);
 	r_buf_free (bin->b);
 	bin->b = NULL;
 	free (bin);

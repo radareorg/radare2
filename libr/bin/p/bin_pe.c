@@ -613,6 +613,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
+static char *signature (RBinFile *arch) {
+	struct PE_ (r_bin_pe_obj_t) * bin;
+	if (!arch || !arch->o || !arch->o->bin_obj) {
+		return NULL;
+	}
+	bin = arch->o->bin_obj;
+	return (char *) bin->pkcs7;
+}
+
 struct r_bin_plugin_t r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
@@ -627,6 +636,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
+	.signature = &signature,
 	.symbols = &symbols,
 	.imports = &imports,
 	.info = &info,
