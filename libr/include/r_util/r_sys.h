@@ -40,6 +40,7 @@ R_API char *r_sys_getdir(void);
 R_API int r_sys_chdir(const char *s);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
 #if __WINDOWS__
+R_API int r_sys_get_src_dir_w32(char *buf);
 R_API char *r_sys_cmd_str_w32(const char *cmd);
 #endif
 R_API int r_sys_truncate(const char *file, int sz);
