@@ -54,8 +54,8 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		} else {
 			if (hit>0) {
 				struct r_diff_op_t o = {
-					.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = la,
-					.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = lb 
+					.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = hit,
+					.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = hit 
 				};
 				d->callback (d, d->user, &o);
 				hit = 0;
