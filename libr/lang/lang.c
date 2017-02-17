@@ -9,6 +9,7 @@ R_LIB_VERSION(r_lang);
 #include "p/vala.c"  // hardcoded
 #include "p/rust.c"  // hardcoded
 #include "p/c.c"     // hardcoded
+#include "p/lib.c"
 #if __UNIX__
 #include "p/cpipe.c" // hardcoded
 #endif
@@ -48,6 +49,7 @@ R_API RLang *r_lang_new() {
 	r_lang_add (lang, &r_lang_plugin_vala);
 	r_lang_add (lang, &r_lang_plugin_rust);
 	r_lang_add (lang, &r_lang_plugin_pipe);
+	r_lang_add (lang, &r_lang_plugin_lib);
 
 	return lang;
 }
