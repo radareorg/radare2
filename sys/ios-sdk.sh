@@ -54,7 +54,7 @@ echo "BUILDING R2 FOR iOS CPU = $CPU"
 echo
 sleep 1
 
-if false ; then
+if true; then
 	make clean
 	cp -f plugins.tiny.cfg plugins.cfg
 	./configure --prefix=${PREFIX} --with-ostype=darwin \

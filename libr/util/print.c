@@ -899,12 +899,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			if (col == 2) {
 				printfmt ("|");
-			} else {
-				printfmt (" ");
 			}
 			/* print comment header*/
 			if (p->use_comments && !compact) {
-				// printfmt (col == 2? "|": "");
+				if (col != 2) {
+					printfmt (" ");
+				}
 				printfmt (" comment ");
 			}
 			printfmt ("\n");
