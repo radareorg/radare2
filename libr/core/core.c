@@ -531,7 +531,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			if (fcn) {
 				switch (str[2]) {
 				case 'B': return fcn->addr; // begin
-				case 'E': return fcn->addr + fcn->_size; // end
+				case 'E': return fcn->addr + r_anal_fcn_size (fcn); // end
 				case 'S': return r_anal_fcn_size (fcn);
 				case 'I': return fcn->ninstr;
 				/* basic blocks */

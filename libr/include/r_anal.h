@@ -270,7 +270,9 @@ typedef struct r_anal_fcn_meta_t {
 typedef struct r_anal_type_function_t {
 	char* name;
 	char* dsc; // For producing nice listings
-	ut32 _size;
+	ut32 size; //sum bbs
+	ut32 symsize; //info coming from RBin
+	ut32 length; //max-min addr from bbs
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
 	/*item_list *rets; // Type of return value */
@@ -1282,6 +1284,10 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, int type, RAnalDiff *diff);
+R_API ut64 r_anal_fcn_firstaddr(RAnalFunction *fcn);
+R_API ut64 r_anal_fcn_lastaddr(RAnalFunction *fcn);
+R_API ut32 r_anal_fcn_length(RAnalFunction *fcn);
+R_API ut32 r_anal_fcn_symsize(const RAnalFunction *fcn);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 
 /* locals */
@@ -1309,9 +1315,8 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 /* vars // globals. not here  */
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type);
 R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn);
-R_API void r_anal_fcn_set_size(RAnalFunction *fcn, ut32 size);
+R_API void r_anal_fcn_set_symsize(RAnalFunction *fcn, ut32 size);
 R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn);
-R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn);
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);

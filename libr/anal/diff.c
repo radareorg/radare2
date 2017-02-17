@@ -98,8 +98,9 @@ R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		len += bb->size;
 		fcn->fingerprint = realloc (fcn->fingerprint, len + 1);
-		if (!fcn->fingerprint)
+		if (!fcn->fingerprint) {
 			return 0;
+		}
 		memcpy (fcn->fingerprint+len-bb->size, bb->fingerprint, bb->size);
 	}
 	return len;

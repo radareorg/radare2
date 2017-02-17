@@ -3010,7 +3010,6 @@ static int cmd_print(void *data, const char *input) {
 						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (f) {
 					ut32 bsz = core->blocksize;
-					// int fsz = r_anal_fcn_realsize (f);
 					int fsz = r_anal_fcn_size (f); // we want max-min here
 					r_core_block_size (core, fsz);
 					r_core_print_disasm_instructions (core, fsz, 0);
@@ -3198,7 +3197,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 				if (f && input[2] == 'j') { // "pdfj"
 					ut8 *func_buf = NULL, *loc_buf = NULL;
-					ut32 fcn_size = r_anal_fcn_realsize (f);
+					ut32 fcn_size = r_anal_fcn_size (f);
 					cont_size = tmp_get_contsize (f);
 					r_cons_printf ("{");
 					r_cons_printf ("\"name\":\"%s\"", f->name);

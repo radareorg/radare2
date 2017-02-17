@@ -46,8 +46,7 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 		}
 		/* Fingerprint fcn */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
-			int newsize = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
-			r_anal_fcn_set_size (fcn, newsize);
+			(void)r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
 		}
 	}
 	/* Diff functions */

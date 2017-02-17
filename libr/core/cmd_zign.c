@@ -158,7 +158,7 @@ static int cmd_zign(void *data, const char *input) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				len = r_anal_fcn_realsize (fcni);
+				len = r_anal_fcn_size (fcni);
 				if (!(buf = calloc (1, len))) {
 					r_cons_break_pop ();
 					return false;
@@ -356,7 +356,7 @@ static int cmd_zign(void *data, const char *input) {
 				return false;
 			}
 			fcni = (RAnalFunction*)it->data;
-			len = r_anal_fcn_realsize (fcni);
+			len = r_anal_fcn_size (fcni);
 			if (!(buf = malloc (len))) {
 				return false;
 			}

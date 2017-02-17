@@ -4918,7 +4918,7 @@ static int compute_coverage(RCore *core) {
 	RAnalFunction *fcn;
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		cov += r_anal_fcn_realsize (fcn);
+		cov += r_anal_fcn_size (fcn);
 	}
 	return cov;
 }

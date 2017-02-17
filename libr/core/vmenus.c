@@ -2001,7 +2001,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 				r_cons_printf ("%c%c 0x%08"PFMT64x" %4d %s\n",
 					(seek == fcn->addr)?'>':' ',
 					(idx==i)?'*':' ',
-					fcn->addr, r_anal_fcn_realsize (fcn), fcn->name);
+					fcn->addr, r_anal_fcn_size (fcn), fcn->name);
 		}
 		i++;
 	}
@@ -2063,7 +2063,6 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 		: var_functions_show (core, option, 0);
 	// RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int h, w = r_cons_get_size (&h);
-	// int sz = (fcn)? R_MIN (r_anal_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
 
 	const char *cmd, *printCmds[lastPrintMode] = {
 		"pdf", "afi", "pds", "pdc", "pdr"
@@ -2785,25 +2784,22 @@ repeat:
 		break;
 	case 'f':
 		{
-			int funsize = 0;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				r_anal_fcn_resize (fcn, core->offset - fcn->addr);
 			}
 			//int depth = r_config_get_i (core->config, "anal.depth");
+#if 0
 			if (core->print->cur_enabled) {
 				if (core->print->ocur != -1) {
 					funsize = 1 + R_ABS (core->print->cur - core->print->ocur);
 				}
 				//depth = 0;
 			}
+#endif
 			r_cons_break_push (NULL, NULL);
 			r_core_cmdf (core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection
 			r_cons_break_pop ();
-			if (funsize) {
-				RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
-				r_anal_fcn_set_size (f, funsize);
-			}
 		}
 		break;
 	case 'Q':
