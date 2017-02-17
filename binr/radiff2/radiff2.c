@@ -557,17 +557,8 @@ int main(int argc, char **argv) {
 	if (argc < 3 || optind + 2 > argc) {
 		return show_help (0);
 	}
-	if (optind < argc) {
-		file = argv[optind];
-	} else {
-		file = NULL;
-	}
-
-	if (optind + 1 < argc) {
-		file2 = argv[optind + 1];
-	} else {
-		file2 = NULL;
-	}
+	file = (optind < argc)? argv[optind]: NULL;
+	file2 = (optind + 1 < argc)? argv[optind + 1] : NULL;
 
 	switch (mode) {
 	case MODE_GRAPH:
@@ -683,7 +674,7 @@ int main(int argc, char **argv) {
 	case MODE_DIFF:
 	case MODE_DIFF_STRS:
 	case MODE_DIFF_IMPORTS:
-		d = r_diff_new (0LL, 0LL);
+		d = r_diff_new ();
 		r_diff_set_delta (d, delta);
 		if (diffmode == 'j') {
 			printf("{\"files\":[{\"filename\":\"%s\", \"size\":%d, \"sha256\":\"", file, sza);

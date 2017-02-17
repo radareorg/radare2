@@ -38,7 +38,7 @@ typedef int (*RDiffCallback)(RDiff *diff, void *user, RDiffOp *op);
 
 /* XXX: this api needs to be reviewed , constructor with offa+offb?? */
 #ifdef R_API
-R_API RDiff *r_diff_new();
+R_API RDiff *r_diff_new(void);
 R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b);
 R_API RDiff *r_diff_free(RDiff *d);
 
