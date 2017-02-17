@@ -663,6 +663,7 @@ R_API int r_cons_html_print(const char *ptr) {
 				printf ("\n");                                        
 			}                                                             
 			str = ptr + 1;                                                
+			fflush (stdout);
 			continue;                                                     
 		} else if (ptr[0] == '<') {
 			tmp = (int) (size_t) (ptr-str);
