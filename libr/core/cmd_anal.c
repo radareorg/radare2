@@ -3524,6 +3524,8 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 }
 
 static void cmd_anal_calls(RCore *core, const char *input) {
+	RList *ranges = NULL;
+	RIOMap *r;
 	int bufi, minop = 1; // 4
 	ut8 *buf;
 	RBinFile *binfile;
@@ -3538,13 +3540,32 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 	binfile = r_core_bin_cur (core);
 	addr = core->offset;
 	if (binfile) {
-		if (!len) {
+		if (len) {
+			RIOMap *m = R_NEW0(RIOMap);
+			m->from = addr;
+			m->to = addr + len;
+			r_list_append (ranges, m);
+		} else {
+			RIOSection *s;
+			RListIter *iter;
+			ranges = r_list_new ();
+			r_list_foreach (core->io->sections, iter, s) {
+				if (s->rwx & 1) {
+					RIOMap *m = R_NEW0(RIOMap);
+					m->from = s->vaddr;
+					m->to = s->vaddr + s->size;
+					r_list_append (ranges, m);
+				}
+			}
+		}
+#if 0
 			// ignore search.in to avoid problems. analysis != search
 			RIOSection *s = r_io_section_vget (core->io, addr);
 			if (s && s->rwx & 1) {
 				// search in current section
 				if (s->size > binfile->size) {
 					addr = s->vaddr;
+eprintf ("-> %llx\n", addr);
 					if (binfile->size > s->offset) {
 						len = binfile->size - s->offset;
 					} else {
@@ -3552,8 +3573,13 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 						return;
 					}
 				} else {
-					addr = s->vaddr;
-					len = s->size;
+					if (len) {
+					//	addr = s->vaddr;
+						len += (s->vaddr + s->size) - addr;
+					} else {
+						addr = s->vaddr;
+						len = s->size;
+					}
 				}
 			} else {
 				// search in full file
@@ -3573,56 +3599,68 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 						len = 0;
 					}
 				}
-			}
+//			}
 		}
+#endif
 		addr_end = addr + len;
 	} else {
 		const char *search_in = r_config_get (core->config, "search.in");
-		r_list_free (r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end));
+		ranges = r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end);
 	}
 	if (!(buf = calloc (1, 4096))) {
 		return;
 	}
 	bufi = 0;
 	r_cons_break_push (NULL, NULL);
-	while (addr < addr_end) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		// TODO: too many ioreads here
-		if (bufi > 4000) {
-			bufi = 0;
-		}
-		if (!bufi) {
-			r_io_read_at (core->io, addr, buf, 4096);
-		}
-		if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi)) {
-			if (op.size < 1) {
-				// XXX must be +4 on arm/mips/.. like we do in disasm.c
+	RListIter *iter;
+	r_list_foreach (ranges, iter, r) {
+		addr = r->from;
+		addr_end = r->to;
+		// eprintf ("0x%llx - 0x%llx\n", addr, addr_end);
+		while (addr < addr_end) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			// TODO: too many ioreads here
+			if (bufi > 4000) {
+				bufi = 0;
+			}
+			if (!bufi) {
+				r_io_read_at (core->io, addr, buf, 4096);
+			}
+			if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi)) {
+				if (op.size < 1) {
+					// XXX must be +4 on arm/mips/.. like we do in disasm.c
+					op.size = minop;
+				}
+				if (op.type == R_ANAL_OP_TYPE_CALL) {
+	#if JAYRO_03
+#error FUCK
+					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
+						fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
+						if (!fcn) {
+							r_core_anal_fcn (core, op.jump, addr,
+									R_ANAL_REF_TYPE_NULL, depth);
+						}
+					}
+	#else
+// add xref here
+					RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, op.jump, R_ANAL_FCN_TYPE_NULL);
+					r_anal_fcn_xref_add (core->anal, fcn, addr, op.jump, 'C');
+					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
+					if (r_io_is_valid_offset (core->io, op.jump, 1)) {
+						r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
+					}
+	#endif
+				}
+
+			} else {
 				op.size = minop;
 			}
-			if (op.type == R_ANAL_OP_TYPE_CALL) {
-#if JAYRO_03
-				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
-					fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
-					if (!fcn) {
-						r_core_anal_fcn (core, op.jump, addr,
-								R_ANAL_REF_TYPE_NULL, depth);
-					}
-				}
-#else
-				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
-					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
-				}
-#endif
-			}
-
-		} else {
-			op.size = minop;
+			addr += (op.size > 0)? op.size: 1;
+			bufi += (op.size > 0)? op.size: 1;
+			r_anal_op_fini (&op);
 		}
-		addr += (op.size > 0)? op.size: 1;
-		bufi += (op.size > 0)? op.size: 1;
-		r_anal_op_fini (&op);
 	}
 	r_cons_break_pop ();
 	free (buf);
@@ -3825,9 +3863,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 }
 
 static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
-	RAnalFunction * fcn;
-	fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-
+	RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
 		r_cons_printf (" ; %s", fcn->name);
 	} else {
