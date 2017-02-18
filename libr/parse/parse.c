@@ -201,7 +201,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 					if (!flag2) {
 						flag2 = r_flag_get_i (f, p->relsub_addr);
 					}
-					if (!flag && flag2 == flag2) {
+					if (!flag) {
 						flag = flag2;
 					}
 				}
