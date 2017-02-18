@@ -318,7 +318,7 @@ R_API int r_io_read_at(RIO* io, ut64 addr, ut8* buf, int len) {
 	if (io->va) {
 		ret = r_io_vread_at (io, addr, buf, len);
 	} else {
-		ret = r_io_pread_at (io, addr, buf, len);
+		ret = !!r_io_pread_at (io, addr, buf, len);
 	}
 	if (io->cached_read) {
 		ret &= !!r_io_cache_read (io, addr, buf, len);

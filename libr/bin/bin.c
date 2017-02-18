@@ -903,7 +903,9 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 	if (!buf_bytes) {
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
 		buf_bytes = malloc (sz);
-		sz = iob->read_at (io, seekaddr, buf_bytes, sz) * sz;	//don't do this
+		if (!iob->read_at (io, seekaddr, buf_bytes, sz)) {
+			sz = 0;
+		}
 		if (!buf_bytes) {
 			if (!seekaddr) {
 				seekaddr = baseaddr;
@@ -921,7 +923,7 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 				buf = malloc (sz);
 				iob->read_at (io, seekaddr + totalsz, buf, sz);
 				if (buf) {
-					ut8 *out = realloc (buf_bytes, totalsz + blksz);
+					ut8 *out = realloc (buf_bytes, totalsz + blksz);	// this is wrong
 					if (!out) {
 						eprintf ("out of memory\n");
 						break;
@@ -984,7 +986,6 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 			}
 		}
 	}
-end:
 	if (!binfile) {
 		bool steal_ptr = true; // transfer buf_bytes ownership to binfile
 		binfile = r_bin_file_new_from_bytes (
