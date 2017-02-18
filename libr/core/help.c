@@ -8,8 +8,8 @@
  * {"command", "args", "description",
  * "command2", "args2", "description"}; */
 R_API void r_core_cmd_help(const RCore *core, const char * help[]) {
-	int i, max_length, padding_length,
-		use_colors = core->print->flags & R_PRINT_FLAGS_COLOR;
+	int i, max_length, padding_length;
+	bool use_colors = core->print->flags & R_PRINT_FLAGS_COLOR;
 	RCons *cons = r_cons_singleton ();
 	char const *args_color_start;
 	char const *help_color_start;
