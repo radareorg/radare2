@@ -154,11 +154,13 @@ ifneq ($(USE_ZIP),NO)
 endif
 
 clean: rmd
+	rm -f libr/libr.a
 	for DIR in shlr libr binr ; do (cd "$$DIR" ; ${MAKE} clean) ; done
 
 distclean mrproper:
 	-rm -f `find . -type f -name '*.d'`
 	rm -f `find . -type f -name '*.o'`
+	rm -f libr/libr.a
 	for DIR in libr binr shlr ; do ( cd "$$DIR" ; ${MAKE} mrproper) ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk

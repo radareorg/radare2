@@ -41,7 +41,7 @@ export LD="xcrun --sdk iphoneos ld"
 # select ios sdk version
 export IOSVER=8.3
 export IOSINC=`pwd`/sys/ios-include
-export CFLAGS=-O2
+export CFLAGS="-O2 -fembed-bitcode"
 export USE_SIMULATOR=0
 
 if [ "$1" = -s ]; then
@@ -56,7 +56,7 @@ sleep 1
 
 if true; then
 	make clean
-	cp -f plugins.tiny.cfg plugins.cfg
+	cp -f plugins.ios.cfg plugins.cfg
 	./configure --prefix=${PREFIX} --with-ostype=darwin \
 	  --without-pic --with-nonpic \
 	  --with-compiler=ios-sdk --target=arm-unknown-darwin
