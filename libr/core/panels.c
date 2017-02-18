@@ -511,7 +511,7 @@ repeat:
 	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
-
+	const char *cmd;
 	switch (key) {
 	case 'u':
 		r_core_cmd0 (core, "s-");
@@ -905,6 +905,38 @@ repeat:
 		r_core_panels_refresh (core);
 		r_cons_canvas_print (can);
 		r_cons_flush ();
+		break;
+	case R_CONS_KEY_F5:
+		cmd = r_config_get (core->config, "key.f5");
+		if (cmd && *cmd) key = r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F6:
+		cmd = r_config_get (core->config, "key.f6");
+		if (cmd && *cmd) key = r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F7:
+		cmd = r_config_get (core->config, "key.f7");
+		if (cmd && *cmd) key = r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F8:
+		cmd = r_config_get (core->config, "key.f8");
+		if (cmd && *cmd) key = r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F9:
+		cmd = r_config_get (core->config, "key.f9");
+		if (cmd && *cmd) key = r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F10:
+		cmd = r_config_get (core->config, "key.f10");
+		if (cmd && *cmd) key = r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F11:
+		cmd = r_config_get (core->config, "key.f11");
+		if (cmd && *cmd) key = r_core_cmd0 (core, cmd);
+		break;
+	case R_CONS_KEY_F12:
+		cmd = r_config_get (core->config, "key.f12");
+		if (cmd && *cmd) key = r_core_cmd0 (core, cmd);
 		break;
 	case '!':
 	case 'q':
