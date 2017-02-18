@@ -74,9 +74,9 @@ typedef struct r_core_log_t {
 } RCoreLog;
 
 typedef struct r_core_file_t {
-	RIOMap *map;
+	RIOMap *map;	//TODO: replace with mapid
 	int dbg;
-	RIODesc *desc;
+	RIODesc *desc;	//TODO: replace with fd
 	RBinBind binb;
 	const struct r_core_t *core;
 	ut8 alive;

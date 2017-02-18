@@ -725,12 +725,11 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr,
 	}
 	bin->rawstr = rawstr;
 	if (fd == -1) {
-		desc = iob->desc_open (io, file, O_RDONLY, 0644);
+		desc = iob->open (io, file, R_IO_READ, 0644);
 	} else {
-		desc = iob->desc_get_by_fd (io, fd);
+		desc = iob->desc_get (io, fd);
 	}
 	if (!desc) {
-		r_io_free (io);
 		return false;
 	}
 	return r_bin_load_io (bin, desc, baseaddr, loadaddr, xtr_idx);
@@ -746,12 +745,10 @@ R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
 		return false;
 	}
 	desc = fd == -1 ?
-		iob->desc_open (io, file, O_RDONLY, 0644) :
-		iob->desc_get_by_fd (io, fd);
-	return desc 
-		? r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr,
-						  xtr_idx, fileoffset, name)
-		: false;
+		iob->open (io, file, R_IO_READ, 0644) :
+		iob->desc_get (io, fd);
+	if (!desc) return false;
+	return r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr, xtr_idx, fileoffset, name);
 }
 
 R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
@@ -778,7 +775,7 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 	// invalidate current object reference
 	bf->o = NULL;
 
-	sz = iob->desc_size (io, desc);
+	sz = iob->desc_size (desc);
 	if (sz == UT64_MAX && desc->plugin && desc->plugin->isdbg) {
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a
@@ -788,26 +785,25 @@ R_API int r_bin_reload(RBin *bin, RIODesc *desc, ut64 baseaddr) {
 		// load the bin-properly.  Many of the plugins require all
 		// content and are not
 		// stream based loaders
-		RIODesc *tdesc = iob->desc_open (io, desc->name, desc->flags, R_IO_READ);
-		if (!tdesc) {
-			return false;
-		}
-		sz = iob->desc_size (io, tdesc);
+		RIODesc *tdesc = iob->open (io, desc->name, desc->flags, 0);
+		if (!tdesc) return false;
+		iob->desc_use (io, desc->fd);
+		sz = iob->desc_size (tdesc);
 		if (sz == UT64_MAX) {
-			iob->desc_close (io, tdesc);
+			iob->close (io, tdesc->fd);
 			return false;
 		}
-		buf_bytes = iob->desc_read (io, tdesc, &len_bytes);
-		iob->desc_close (io, tdesc);
+		buf_bytes = malloc (sz);
+		iob->read_at (io, 0LL, buf_bytes, sz);
+		iob->close (io, tdesc->fd);
 	} else if (sz == UT64_MAX || sz > (64 * 1024 * 1024)) { // too big, probably wrong
 		eprintf ("Too big\n");
 		return false;
+	} else {
+		buf_bytes = malloc (sz);
+		iob->read_at (io, 0LL, buf_bytes, sz);
 	}
-	buf_bytes = iob->desc_read (io, desc, &len_bytes);
-	if (!buf_bytes) {
-		sz = 0;
-		buf_bytes = iob->desc_read (io, desc, &sz);
-	}
+
 	if (!buf_bytes) {
 		return false;
 	}
@@ -854,7 +850,9 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 	if (loadaddr == UT64_MAX) {
 		loadaddr = 0;
 	}
-	file_sz = iob->desc_size (io, desc);
+
+	buf_bytes = NULL;
+	file_sz = iob->desc_size (desc);
 #if __APPLE__
 	/* Fix OSX/iOS debugger -- needs review for proper fix */
 	if (!file_sz || file_sz == UT64_MAX) {
@@ -864,9 +862,7 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 	if (!sz) {
 		sz = file_sz;
 	}
-
 	bin->file = desc->name;
-
 	if (!r_list_length (bin->binfiles)) {
 		if ((!file_sz || file_sz == UT64_MAX) && is_debugger) {
 			int fail = 1;
@@ -881,18 +877,22 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 			// load the bin-properly.  Many of the plugins require
 			// all content and are not
 			// stream based loaders
-			// NOTE: For RBin we dont need to open the file in
-			// read-write. This can be problematic
-			RIODesc *tdesc = iob->desc_open (io, filepath, R_IO_READ, 0); //desc->flags, R_IO_READ);
+			// NOTE: For RBin we dont need to open the file in read-write. This can be problematic
+			RIODesc *tdesc = iob->open (io, filepath, R_IO_READ, 0); //desc->flags, R_IO_READ);
+			iob->desc_use (io, tdesc->fd);
 			eprintf ("Assuming filepath %s\n", filepath);
 			if (tdesc) {
-				file_sz = iob->desc_size (io, tdesc);
+				file_sz = iob->desc_size (tdesc);
 				if (file_sz != UT64_MAX) {
+					int va = tdesc->io->va;
+					tdesc->io->va = false;
 					sz = R_MIN (file_sz, sz);
-					buf_bytes = iob->desc_read (io, tdesc, &sz);
+					buf_bytes = malloc (sz);
+					sz = iob->read_at (io, 0LL, buf_bytes, sz) * sz;
+					tdesc->io->va = va;
 					fail = 0;
 				}
-				iob->desc_close (io, tdesc);
+				iob->close (io, tdesc->fd);
 			}
 			if (fail) {
 				return false;
@@ -902,8 +902,10 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 	sz = R_MIN (file_sz, sz);
 	if (!buf_bytes) {
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-		iob->desc_seek (io, desc, seekaddr);
-		buf_bytes = iob->desc_read (io, desc, &sz);
+		buf_bytes = malloc (sz);
+		if (!iob->read_at (io, seekaddr, buf_bytes, sz)) {
+			sz = 0;
+		}
 		if (!buf_bytes) {
 			if (!seekaddr) {
 				seekaddr = baseaddr;
@@ -918,10 +920,10 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 			ut64 maxsz = 2 * 1024 * 1024;
 			while (totalsz < maxsz) {
 				sz = 4096;
-				iob->desc_seek (io, desc, seekaddr + totalsz);
-				buf = iob->desc_read (io, desc, &sz);
+				buf = malloc (sz);
+				iob->read_at (io, seekaddr + totalsz, buf, sz);
 				if (buf) {
-					ut8 *out = realloc (buf_bytes, totalsz + blksz);
+					ut8 *out = realloc (buf_bytes, totalsz + blksz);	// this is wrong
 					if (!out) {
 						eprintf ("out of memory\n");
 						break;
@@ -937,6 +939,11 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 				totalsz += sz;
 			}
 			sz = totalsz;
+#if 0
+		} else {
+			buf_bytes = realloc (buf_bytes, sz);
+			iob->read_at (io, seekaddr, buf_bytes, sz);
+#endif
 		}
 	}
 
@@ -949,22 +956,26 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 				if (xtr && (xtr->extract_from_bytes ||
 					    xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {
+						int va;
 						free (buf_bytes);
-						RIODesc *tdesc = iob->desc_open (io,
-							desc->name, desc->flags, R_IO_READ);
+						RIODesc *tdesc = iob->open (io,
+							desc->name, R_IO_READ, 0);
 						if (!tdesc) {
 							return false;
 						}
-						sz = iob->desc_size (io, tdesc);
+						sz = iob->desc_size (tdesc);
 						if (sz == UT64_MAX) {
-							iob->desc_close (io, tdesc);
+							iob->close (io, tdesc->fd);
 							return false;
 						}
-						buf_bytes = iob->desc_read (io, tdesc, &sz);
-						iob->desc_close (io, tdesc);
+						buf_bytes = malloc (sz);
+						va = tdesc->io->va;
+						tdesc->io->va = false;
+						sz = iob->read_at (io, 0LL, buf_bytes, sz) * sz;
+						tdesc->io->va = va;
+						iob->close (io, tdesc->fd);
 					} else if (sz != file_sz) {
-						free (buf_bytes);
-						buf_bytes = iob->desc_read (io, desc, &sz);
+						iob->read_at (io, 0LL, buf_bytes, sz);
 					}
 					binfile = r_bin_file_xtr_load_bytes (bin, xtr,
 						desc->name, buf_bytes, sz, file_sz,

@@ -315,8 +315,8 @@ static void cmd_write_value (RCore *core, const char *input) {
 	if (input && input[0] && input[1] && input[2]) {
 		off = r_num_math (core->num, input+2);
 	}
-	if (core->file) {
-		r_io_use_desc (core->io, core->file->desc);
+	if (core->file && core->file->desc) {
+		r_io_desc_use (core->io, core->file->desc->fd);
 	}
 	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 	if (res == UT64_MAX) return;
@@ -382,7 +382,8 @@ static bool cmd_wf(RCore *core, const char *input) {
 				return false;
 			}
 		}
-		r_io_use_desc (core->io, core->file->desc);
+		if (core->file->desc)
+			r_io_desc_use (core->io, core->file->desc->fd);
 		r_io_write_at (core->io, core->offset, buf + u_offset, u_size);
 		WSEEK (core, size);
 		free (buf);
@@ -869,6 +870,67 @@ static int cmd_write(void *data, const char *input) {
 			memset (core->block, 0xff, core->blocksize);
 			r_core_block_read (core);
 			break;
+		case 'p':
+			{
+				RIODesc *desc;
+				RIOCache *cache;
+				RList *caches;
+				RListIter *iter;
+				int fd, i;
+				bool rad = false;
+				if (core && core->io && core->io->p_cache &&
+				   core->print && core->print->cb_printf ) {
+					if (input[3] == ' ') {
+						fd = (int)r_num_math (core->num, input+3);
+						desc = r_io_desc_get (core->io, fd);
+					} else if (input [3] == '*') {
+						rad = true;
+						if (input[4] == ' ') {
+							fd = (int)r_num_math (core->num, input+4);
+							desc = r_io_desc_get (core->io, fd);
+						} else {
+							desc = core->io->desc;
+						}
+					} else if (input[3] == 'i') {
+						if (input[4] == ' ') {
+							fd = (int)r_num_math (core->num, input+4);
+							desc = r_io_desc_get (core->io, fd);
+						} else {
+							desc = core->io->desc;
+						}
+						r_io_desc_cache_commit (desc);
+						break;
+					} else {
+						desc = core->io->desc;
+					}
+					if ((caches = r_io_desc_cache_list (desc))) {
+						if (rad) {
+							core->print->cb_printf ("e io.va = false\n");
+							r_list_foreach (caches, iter, cache) {
+								core->print->cb_printf ("wx %02x", cache->data[0]);
+								for (i = 1; i < cache->size; i++) {
+									core->print->cb_printf ("%02x", cache->data[i]);
+								}
+								core->print->cb_printf (" @ 0x%08"PFMT64x" \n", cache->from);
+							}
+						} else {
+							r_list_foreach (caches, iter, cache) {
+								core->print->cb_printf ("0x%08"PFMT64x": %02x", cache->from, cache->odata[0]);
+								for (i = 1; i < cache->size; i++) {
+									core->print->cb_printf ("%02x", cache->odata[i]);
+								}
+								core->print->cb_printf (" -> %02x", cache->data[0]);
+								for (i = 1; i < cache->size; i++) {
+									core->print->cb_printf ("%02x", cache->data[i]);
+								}
+								core->print->cb_printf ("\n");
+							}
+						}
+						r_list_free (caches);
+					}
+				}
+			}
+			break;
 		case '?':
 			{
 				const char* help_msg[] = {
@@ -879,6 +941,9 @@ static int cmd_write(void *data, const char *input) {
 					"wc*","","\"\" in radare commands",
 					"wcr","","reset all write changes in cache",
 					"wci","","commit write cache",
+					"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
+					"wcp*"," [fd]","\"\" in radare commands",
+					"wcpi"," [fd]", "commit and invalidate pcache for specified fd or current fd",
 					NULL
 				};
 				r_core_cmd_help (core, help_msg);
@@ -935,17 +1000,16 @@ static int cmd_write(void *data, const char *input) {
 					if (port) {
 						*port ++= 0;
 						char *space = strchr (port, ' ');
+						int va = core->io->va;
 						if (space) {
 							*space++ = 0;
 							sz = r_num_math (core->num, space);
 							addr = core->offset;
 						}
 						ut8 *buf = calloc (1, sz);
-						if (space) {
-							(void)r_io_vread (core->io, addr, buf, sz);
-						} else {
-							(void)r_io_pread (core->io, addr, buf, sz);
-						}
+						core->io->va = !!space;
+						r_io_read_at (core->io, addr, buf, sz);
+						core->io->va = va;
 						RSocket *s = r_socket_new (false);
 						if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
 							int done = 0;
@@ -1022,7 +1086,7 @@ static int cmd_write(void *data, const char *input) {
 			}
 			if (tmp) {
 				if (toend) {
-					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					sz = r_io_desc_size (core->file->desc) - core->offset;
 				} else {
 					sz = (st64) r_num_math (core->num, tmp + 1);
 					if (!sz) {
@@ -1037,7 +1101,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else {
 				if (toend) {
-					sz = r_io_desc_size (core->io, core->file->desc) - core->offset;
+					sz = r_io_desc_size (core->file->desc) - core->offset;
 					r_core_dump (core, filename, core->offset, (ut64)sz, append);
 				} else {
 					if (!r_file_dump (filename, core->block, core->blocksize, append)) {
@@ -1064,7 +1128,8 @@ static int cmd_write(void *data, const char *input) {
 				else tmp[i] = str[i>>1];
 			}
 			str = tmp;
-			r_io_use_desc (core->io, core->file->desc);
+			if (core->file->desc)
+				r_io_desc_use (core->io, core->file->desc->fd);
 			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
 			WSEEK (core, len);
 			r_core_block_read (core);
@@ -1097,7 +1162,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			} else if (r_file_exists (arg)) {
 				if ((buf = r_file_slurp_hexpairs (arg, &size))) {
-					r_io_use_desc (core->io, core->file->desc);
+					r_io_desc_use (core->io, core->file->desc->fd);
 					if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
 						core->num->value = size;
 						WSEEK (core, size);
@@ -1230,7 +1295,8 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case ' ':
 			if (size>0) {
-				r_io_use_desc (core->io, core->file->desc);
+				if (core->file->desc)
+					r_io_desc_use (core->io, core->file->desc->fd);
 				r_io_set_write_mask (core->io, (const ut8*)str, size);
 				WSEEK (core, size);
 				eprintf ("Write mask set to '");
@@ -1281,7 +1347,8 @@ static int cmd_write(void *data, const char *input) {
 	case '?':
 		if (core->oobi) {
 			eprintf ("Writing oobi buffer!\n");
-			r_io_use_desc (core->io, core->file->desc);
+			if (core->file->desc)
+				r_io_desc_use (core->io, core->file->desc->fd);
 			r_io_write (core->io, core->oobi, core->oobi_len);
 			WSEEK (core, core->oobi_len);
 			r_core_block_read (core);

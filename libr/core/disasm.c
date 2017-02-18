@@ -247,6 +247,7 @@ static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
+#if 0
 	if (ds->core->io->pava) {
 		ut64 at = r_io_section_get_vaddr (ds->core->io, addr);
 		if (at == UT64_MAX || (!at && ds->at)) {
@@ -255,6 +256,7 @@ static ut64 p2v(RDisasmState *ds, ut64 addr) {
 			addr = at + addr;
 		}
 	}
+#endif
 	return addr;
 }
 
@@ -285,11 +287,14 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 static const char * get_section_name(RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
+	SdbList *secs;
 	RIOSection *s;
 	if (oaddr == addr) {
 		return section;
 	}
-	s = r_io_section_vget (core->io, addr);
+	secs = r_io_section_vget_secs_at (core->io, addr);
+	s = secs ? ls_pop (secs): NULL;
+	ls_free (secs);
 	if (s) {
 		snprintf (section, sizeof (section)-1, "%10s ", s->name);
 	} else {
@@ -737,8 +742,10 @@ static void ds_build_op_str(RDisasmState *ds) {
 			RCore *core = ds->core;
 			core->parser->relsub_addr = 0;
 			if (ds->analop.refptr) {
-				ut64 num = r_io_read_i (core->io, ds->analop.ptr, 8);
-				core->parser->relsub_addr = num;
+				int sz = R_DIM (8, 1, 8);
+				ut8 num[sizeof(ut64)] = {0};
+				r_io_read_at (core->io, ds->analop.ptr, (ut8*)&num, sz);
+				core->parser->relsub_addr = r_read_le64 (num);
 			}
 			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;

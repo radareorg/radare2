@@ -5,18 +5,62 @@
 #include "r_types.h"
 #include "r_io.h"
 
-static int __dump_sections_to_disk(RCore *core) {
-	char file[128];
-	RListIter *iter;
+static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
+	SdbListIter *iter;
 	RIOSection *s;
 
-	r_list_foreach (core->io->sections, iter, s) {
+	if (!io || !io->sections || !print || !print->cb_printf)
+		return;
+	if (rad) {
+		ls_foreach (io->sections, iter, s) {
+			char *n = strdup (s->name);
+			r_name_filter (n, strlen (n));
+			print->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n", n, s->vaddr, s->vsize);
+			print->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
+				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->addr,
+				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->flags));
+			free (n);
+		}
+	} else {
+		ls_foreach_prev (io->sections, iter, s) {
+			print->cb_printf ("[%02d:%02d]", s->bin_id, s->id);
+			if (io->va) {
+				if ((s->vaddr <= offset) && ((offset - s->vaddr) < s->vsize)) {
+					print->cb_printf (" * ");
+				} else {
+					print->cb_printf (" . ");
+				}
+			} else {
+				if ((s->addr <= offset) && ((offset - s->addr) < s->size)) {
+					print->cb_printf (" * ");
+				} else {
+					print->cb_printf (" . ");
+				}
+			}
+			print->cb_printf ("pa=0x%08"PFMT64x" %s va=0x%08"PFMT64x
+				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s", s->addr,
+				r_str_rwx_i (s->flags), s->vaddr, s->size, s->vsize, s->name);
+			if (s->arch && s->bits) {
+				print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
+					s->bits);
+			}
+			print->cb_printf ("\n");
+		}
+	}
+}
+
+static int __dump_sections_to_disk(RCore *core) {
+	char file[128];
+	SdbListIter *iter;
+	RIOSection *s;
+
+	ls_foreach (core->io->sections, iter, s) {
 		ut8 *buf = malloc (s->size);
-		r_io_read_at (core->io, s->offset, buf, s->size);
+		r_io_read_at (core->io, s->addr, buf, s->size);
 		snprintf (file, sizeof(file),
 			"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 			s->vaddr, s->vaddr+s->size,
-			r_str_rwx_i (s->rwx));
+			r_str_rwx_i (s->flags));
 		if (!r_file_dump (file, buf, s->size, 0)) {
 			eprintf ("Cannot write '%s'\n", file);
 			free (buf);
@@ -30,17 +74,21 @@ static int __dump_sections_to_disk(RCore *core) {
 
 static int __dump_section_to_disk(RCore *core, char *file) {
 	char *heapfile = NULL;
-	ut64 o = core->offset;
-	RListIter *iter;
+	ut64 o;
+	SdbList *secs;
+	SdbListIter *iter;
 	RIOSection *s;
 	int len = 128;
 	if (core->io->va || core->io->debug) {
-		o = r_io_section_vaddr_to_maddr_try (core->io, o);
+		secs = r_io_section_vget_secs_at (core->io, core->offset);
+		s = secs ? ls_pop (secs) : NULL;
+		ls_free (secs);
+		o = s ? core->offset - s->vaddr + s->addr : core->offset;
 	}
-	r_list_foreach (core->io->sections, iter, s) {
-		if (o >= s->offset && o < s->offset + s->size) {
+	ls_foreach (core->io->sections, iter, s) {
+		if (o >= s->addr && o < s->addr + s->size) {
 			ut8 *buf = malloc (s->size);
-			r_io_read_at (core->io, s->offset, buf, s->size);
+			r_io_read_at (core->io, s->addr, buf, s->size);
 			if (!file) {
 				heapfile = (char *)malloc (len * sizeof(char));
 				if (!heapfile) {
@@ -50,7 +98,7 @@ static int __dump_section_to_disk(RCore *core, char *file) {
 				snprintf (file, len,
 					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
 					s->vaddr, s->vaddr + s->size,
-					r_str_rwx_i (s->rwx));
+					r_str_rwx_i (s->flags));
 			}
 			if (!r_file_dump (file, buf, s->size, 0)) {
 				eprintf ("Cannot write '%s'\n", file);
@@ -192,6 +240,7 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case 'r':
 		if (input[1] == ' ') {
+			SdbList *secs;
 			RIOSection *s;
 			// int len = 0;
 			ut64 vaddr;
@@ -203,7 +252,9 @@ static int cmd_section(void *data, const char *input) {
 			} else {
 				vaddr = core->offset;
 			}
-			s = r_io_section_vget (core->io, vaddr);
+			secs = r_io_section_vget_secs_at (core->io, vaddr);
+			s = secs ? ls_pop (secs) : NULL;
+			ls_free (secs);
 			if (s) {
 				char *oldname = s->name;
 				s->name = strdup (input + 2);
@@ -241,18 +292,22 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case 'l':
 		{
-		ut64 o = core->offset;
-		RListIter *iter;
+		ut64 o;
+		SdbList *secs;
+		SdbListIter *iter;
 		RIOSection *s;
 		if (input[1] != ' ') {
 			eprintf ("Usage: Sl [file]\n");
 			return false;
 		}
 		if (core->io->va || core->io->debug) {
-			o = r_io_section_vaddr_to_maddr_try (core->io, o);
+			secs = r_io_section_vget_secs_at (core->io, core->offset);
+			s = secs ? ls_pop (secs) : NULL;
+			ls_free (secs);
+			o = s ? core->offset - s->vaddr + s->addr : core->offset;
 		}
-		r_list_foreach (core->io->sections, iter, s) {
-			if (o >= s->offset && o < s->offset + s->size) {
+		ls_foreach (core->io->sections, iter, s) {
+			if (o >= s->addr && o < s->addr + s->size) {
 				int sz;
 				char *buf = r_file_slurp (input + 2, &sz);
 				// TODO: use mmap here. we need a portable implementation
@@ -276,17 +331,17 @@ static int cmd_section(void *data, const char *input) {
 		// remove all sections
 		if (input[1] == '*') {
 			r_io_section_init (core->io);
-		}
-		if (input[1] == '.') {
-			RIOSection *s = r_io_section_vget (core->io, core->offset);
-			if (!s) {
-				return 0;
-			}
-			// use offset
-			r_io_section_rm (core->io, s->id);
-		}
-		if (input[1]) {
-			r_io_section_rm (core->io, atoi (input + 1));
+		} else if (input[1] == '0' && input[2]=='x') {		//uses the offset
+			SdbList *secs = r_io_section_vget_secs_at (core->io,
+								r_num_get (NULL, input + 1));
+			SdbListIter *iter;
+			RIOSection *s;
+			if (!secs) return 0;
+			ls_foreach (secs, iter, s)
+				r_io_section_rm (core->io, s->id);
+			ls_free (secs);
+		} else {
+			r_io_section_rm (core->io, atoi (input+1));
 		}
 		break;
 	case ' ':
@@ -304,7 +359,6 @@ static int cmd_section(void *data, const char *input) {
 			int i, rwx = 7;
 			char *ptr = strdup (input + 1);
 			const char *name = NULL;
-			char vname[64];
 			ut64 vaddr = 0LL;
 			ut64 offset = 0LL;
 			ut64 size = 0LL;
@@ -338,8 +392,7 @@ static int cmd_section(void *data, const char *input) {
 				}
 			}
 			if (!name || !*name) {
-				sprintf (vname, "area%d", r_list_length (core->io->sections));
-				name = vname;
+				name = sdb_fmt (0, "area%d", ls_length (core->io->sections));
 			}
 			r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name, 0, fd);
 			free (ptr);
@@ -348,49 +401,34 @@ static int cmd_section(void *data, const char *input) {
 		}
 		break;
 	case '=':
-		r_io_section_list_visual (core->io, core->offset, core->blocksize,
-					r_config_get_i (core->config, "scr.color"),
-					r_cons_get_size (NULL));
+		//r_io_section_list_visual (core->io, core->offset, core->blocksize,
+		//			r_config_get_i (core->config, "scr.color"));
+		__section_list (core->io, core->offset, core->print, false);		//TODO: create fancy stuff for this
 		break;
 	case '.':
-		if (input[1] == '-') {
-			ut64 o = core->offset;
-			RListIter *iter, *iter2;
-			RIOSection *s;
-			if (core->io->va || core->io->debug) {
-				o = r_io_section_vaddr_to_maddr_try (core->io, o);
+		{
+		SdbList *secs;
+		SdbListIter *iter;
+		RIOSection *s;
+		if (core->io->va || core->io->debug) {
+			secs = r_io_section_vget_secs_at (core->io, core->offset);
+		} else secs = r_io_section_get_secs_at (core->io, core->offset);
+		if (secs) {
+			ls_foreach (secs, iter, s) {
+				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
+					s->addr + s->vaddr,
+					s->addr + s->vaddr + s->size,
+					s->name);
 			}
-			r_list_foreach_safe (core->io->sections, iter, iter2, s) {
-				if (o >= s->offset && o < s->offset + s->size) {
-					r_io_section_rm (core->io, s->id);
-					if (input[2] != '*') {
-						break;
-					}
-				}
-			}
-		} else {
-			ut64 o = core->offset;
-			RListIter *iter;
-			RIOSection *s;
-			if (core->io->va || core->io->debug) {
-				o = r_io_section_vaddr_to_maddr_try (core->io, o);
-			}
-			r_list_foreach (core->io->sections, iter, s) {
-				if (o >= s->offset && o < s->offset + s->size) {
-					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
-						s->offset + s->vaddr,
-						s->offset + s->vaddr + s->size,
-						s->name);
-					break;
-				}
-			}
+		}
+		ls_free (secs);
 		}
 		break;
 	case '\0':
-		r_io_section_list (core->io, core->offset, false);
+		__section_list (core->io, core->offset, core->print, false);
 		break;
 	case '*':
-		r_io_section_list (core->io, core->offset, true);
+		__section_list (core->io, core->offset, core->print, true);
 		break;
 	}
 	return 0;

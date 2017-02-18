@@ -56,6 +56,7 @@ static bool __plugin_open(struct r_io_t *io, const char *file, bool many) {
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	char procpidpath[64];
 	int fd, ret = -1;
+	RIODesc *d;
 	if (__plugin_open (io, file, 0)) {
 		int pid = atoi (file + 10);
 		if (file[0]=='a') {
@@ -90,7 +91,9 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 			}
 			riop->pid = pid;
 			riop->fd = fd;
-			return r_io_desc_new (&r_io_plugin_procpid, -1, file, true, 0, riop);
+			d = r_io_desc_new (io, &r_io_plugin_procpid, file, true, 0, riop);	//true ... WTF
+			d->name = r_sys_pid_to_path (riop->pid);
+			return d;
 		}
 		/* kill children */
 		eprintf ("Cannot open /proc/%d/mem of already attached process\n", pid);
