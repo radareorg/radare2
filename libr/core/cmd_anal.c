@@ -3562,7 +3562,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				// add xref here
 				RAnalFunction * fcn = r_anal_get_fcn_at (core->anal, op.jump, R_ANAL_FCN_TYPE_NULL);
 				r_anal_fcn_xref_add (core->anal, fcn, addr, op.jump, 'C');
-				r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 				}
@@ -3600,10 +3599,13 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		} else {
 			RIOSection *s;
 			RListIter *iter;
-			ranges = r_list_new ();
+			ranges = r_list_newf ((RListFree)free);
 			r_list_foreach (core->io->sections, iter, s) {
 				if (s->rwx & 1) {
-					RIOMap *m = R_NEW0(RIOMap);
+					RIOMap *m = R_NEW0 (RIOMap);
+					if (!m) {
+						continue;
+					}
 					m->from = s->vaddr;
 					m->to = s->vaddr + s->size;
 					r_list_append (ranges, m);
@@ -3632,6 +3634,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 		_anal_calls (core, addr, addr_end);
 	}
 	r_cons_break_pop ();
+	r_list_free (ranges);
 }
 
 static void cmd_asf(RCore *core, const char *input) {
