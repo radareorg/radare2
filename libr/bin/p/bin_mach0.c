@@ -172,16 +172,14 @@ static RList* sections(RBinFile *arch) {
 }
 
 
-static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p, int bits) {
+static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 	RBinSymbol *ptr = *p;
-	ptr->bits = bits;
+	ptr->bits = 32;
 	if (bin) {
-		if (bin->hdr.cputype == CPU_TYPE_ARM && bits < 64) {
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-				ptr->vaddr--;
-				ptr->bits = 16;
-			}
+		if (ptr->paddr & 1) {
+			ptr->paddr--;
+			ptr->vaddr--;
+			ptr->bits = 16;
 		}
 	}
 
@@ -223,7 +221,9 @@ static RList* symbols(RBinFile *arch) {
 		ptr->vaddr = symbols[i].addr;
 		ptr->paddr = symbols[i].offset + obj->boffset;
 		ptr->size = symbols[i].size;
-		_handle_arm_thumb (bin, &ptr, wordsize);
+		if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+			_handle_arm_thumb (bin, &ptr);
+		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
 		if (!strncmp (ptr->name, "type.", 5)) {
@@ -251,7 +251,9 @@ static RList* symbols(RBinFile *arch) {
 			ptr->forwarder = r_str_const ("NONE");
 			ptr->bind = r_str_const ("LOCAL");
 			ptr->ordinal = i++;
-			_handle_arm_thumb (bin, &ptr, wordsize);
+			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
+				_handle_arm_thumb (bin, &ptr);
+			}
 			r_list_append (ret, ptr);
 		}
 	}
