@@ -3558,50 +3558,6 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				}
 			}
 		}
-#if 0
-			// ignore search.in to avoid problems. analysis != search
-			RIOSection *s = r_io_section_vget (core->io, addr);
-			if (s && s->rwx & 1) {
-				// search in current section
-				if (s->size > binfile->size) {
-					addr = s->vaddr;
-eprintf ("-> %llx\n", addr);
-					if (binfile->size > s->offset) {
-						len = binfile->size - s->offset;
-					} else {
-						eprintf ("Opps something went wrong aac\n");
-						return;
-					}
-				} else {
-					if (len) {
-					//	addr = s->vaddr;
-						len += (s->vaddr + s->size) - addr;
-					} else {
-						addr = s->vaddr;
-						len = s->size;
-					}
-				}
-			} else {
-				// search in full file
-				ut64 o = r_io_section_vaddr_to_maddr (core->io, core->offset);
-				if (o != UT64_MAX && binfile->size > o) {
-					len = binfile->size - o;
-				} else {
-					if (binfile->size > core->offset) {
-						if (binfile->size > core->offset) {
-							len = binfile->size - core->offset;
-						} else {
-							eprintf ("Opps something went wrong aac\n");
-							return;
-						}
-					} else {
-						eprintf ("Oops invalid range\n");
-						len = 0;
-					}
-				}
-//			}
-		}
-#endif
 		addr_end = addr + len;
 	} else {
 		const char *search_in = r_config_get (core->config, "search.in");
@@ -3616,7 +3572,11 @@ eprintf ("-> %llx\n", addr);
 	r_list_foreach (ranges, iter, r) {
 		addr = r->from;
 		addr_end = r->to;
-		// eprintf ("0x%llx - 0x%llx\n", addr, addr_end);
+		//this normally will happen on fuzzed binaries, dunno if with huge
+		//binaries as well
+		if (addr_end - addr > 0xffffff) {
+			continue;
+		}
 		while (addr < addr_end) {
 			if (r_cons_is_breaked ()) {
 				break;
