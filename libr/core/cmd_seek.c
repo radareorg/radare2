@@ -485,6 +485,6 @@ static int cmd_seek(void *data, const char *input) {
 		}
 			break;
 		}
-	} else r_cons_printf ("0x%"PFMT64x"\n", core->offset);
+	} else r_cons_printf ("0x%08"PFMT64x"\n", core->offset);
 	return 0;
 }
