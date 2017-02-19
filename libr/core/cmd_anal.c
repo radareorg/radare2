@@ -3532,6 +3532,9 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		return;
 	}
 	bufi = 0;
+	if (addr_end - addr > 0xffffff) {
+		return;	
+	}
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -3627,9 +3630,6 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 				addr_end = r->to;
 				//this normally will happen on fuzzed binaries, dunno if with huge
 				//binaries as well
-				if (addr_end - addr > 0xffffff) {
-					continue;
-				}
 				_anal_calls (core, addr, addr_end);
 			}
 		}
