@@ -3613,25 +3613,26 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			}
 		}
 		addr_end = addr + len;
-	} else {
-		const char *search_in = r_config_get (core->config, "search.in");
-		ranges = r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end);
 	}
 	r_cons_break_push (NULL, NULL);
-	RListIter *iter;
-	if (binfile) {
-		r_list_foreach (ranges, iter, r) {
-			addr = r->from;
-			addr_end = r->to;
-			//this normally will happen on fuzzed binaries, dunno if with huge
-			//binaries as well
-			if (addr_end - addr > 0xffffff) {
-				continue;
-			}
-			_anal_calls (core, addr, addr_end);
-		}
-	} else {
+	if (!binfile || !r_list_length (ranges)) {
+		const char *search_in = r_config_get (core->config, "search.in");
+		ranges = r_core_get_boundaries_prot (core, 0, search_in, &addr, &addr_end);
 		_anal_calls (core, addr, addr_end);
+	} else {
+		RListIter *iter;
+		if (binfile) {
+			r_list_foreach (ranges, iter, r) {
+				addr = r->from;
+				addr_end = r->to;
+				//this normally will happen on fuzzed binaries, dunno if with huge
+				//binaries as well
+				if (addr_end - addr > 0xffffff) {
+					continue;
+				}
+				_anal_calls (core, addr, addr_end);
+			}
+		}
 	}
 	r_cons_break_pop ();
 	r_list_free (ranges);
