@@ -69,7 +69,7 @@ typedef struct r_asn1_list_t {
 } ASN1List;
 
 typedef struct r_asn1_object_t {
-	ut8 class; /* class type */
+	ut8 klass; /* class type */
 	ut8 form; /* defines if contains data or objects */
 	ut8 tag; /* tag type */
 	const ut8 *sector; /* Sector containg data */

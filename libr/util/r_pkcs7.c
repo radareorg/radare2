@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2017 - wargio */
+
 #include <stdlib.h>
 #include <string.h>
 #include <r_util.h>
@@ -171,7 +173,7 @@ bool r_pkcs7_parse_signerinfo (RPKCS7SignerInfo* si, RASN1Object *object) {
 	si->version = (ut32) elems[0]->sector[0];
 	r_pkcs7_parse_issuerandserialnumber (&si->issuerAndSerialNumber, elems[1]);
 	r_x509_parse_algorithmidentifier (&si->digestAlgorithm, elems[2]);
-	if (shift < object->list.length && elems[shift]->class == CLASS_CONTEXT && elems[shift]->tag == 0) {
+	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 0) {
 		r_pkcs7_parse_attributes (&si->authenticatedAttributes, elems[shift]);
 		shift++;
 	}
@@ -184,7 +186,7 @@ bool r_pkcs7_parse_signerinfo (RPKCS7SignerInfo* si, RASN1Object *object) {
 		elems[shift] = NULL;
 		shift++;
 	}
-	if (shift < object->list.length && elems[shift]->class == CLASS_CONTEXT && elems[shift]->tag == 1) {
+	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
 		r_pkcs7_parse_attributes (&si->unauthenticatedAttributes, elems[shift]);
 	}
 	return true;
@@ -257,12 +259,12 @@ bool r_pkcs7_parse_signeddata (RPKCS7SignedData *sd, RASN1Object *object) {
 	r_pkcs7_parse_digestalgorithmidentifier (&sd->digestAlgorithms, elems[1]);
 	r_pkcs7_parse_contentinfo (&sd->contentInfo, elems[2]);
 	//Optional
-	if (shift < object->list.length && elems[shift]->class == CLASS_CONTEXT && elems[shift]->tag == 0) {
+	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 0) {
 		r_pkcs7_parse_extendedcertificatesandcertificates (&sd->certificates, elems[shift]);
 		shift++;
 	}
 	//Optional
-	if (shift < object->list.length && elems[shift]->class == CLASS_CONTEXT && elems[shift]->tag == 1) {
+	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
 		r_pkcs7_parse_certificaterevocationlists (&sd->crls, elems[shift]);
 		shift++;
 	}

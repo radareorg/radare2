@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2017 - wargio */
+
 #include <r_util.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,11 +11,11 @@ bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object) {
 	if (!validity || !object || object->list.length != 2) {
 		return false;
 	}
-	if (object->class == CLASS_UNIVERSAL &&
+	if (object->klass == CLASS_UNIVERSAL &&
 			object->tag == TAG_SEQUENCE &&
 			object->form == FORM_CONSTRUCTED) {
 		o = object->list.objects[0];
-		if (o->class == CLASS_UNIVERSAL && o->form == FORM_PRIMITIVE) {
+		if (o->klass == CLASS_UNIVERSAL && o->form == FORM_PRIMITIVE) {
 			if (o->tag == TAG_UTCTIME) {
 				validity->notBefore = r_asn1_stringify_utctime (o->sector, o->length);
 			} else if (o->tag == TAG_GENERALIZEDTIME) {
@@ -21,7 +23,7 @@ bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object) {
 			}
 		}
 		o = object->list.objects[1];
-		if (o->class == CLASS_UNIVERSAL && o->form == FORM_PRIMITIVE) {
+		if (o->klass == CLASS_UNIVERSAL && o->form == FORM_PRIMITIVE) {
 			if (o->tag == TAG_UTCTIME) {
 				validity->notAfter = r_asn1_stringify_utctime (o->sector, o->length);
 			} else if (o->tag == TAG_GENERALIZEDTIME) {
@@ -36,7 +38,7 @@ bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object
 	if (!ai || !object || object->list.length < 1) {
 		return false;
 	}
-	if (object->list.objects[0]->class == CLASS_UNIVERSAL && object->list.objects[0]->tag == TAG_OID) {
+	if (object->list.objects[0]->klass == CLASS_UNIVERSAL && object->list.objects[0]->tag == TAG_OID) {
 		ai->algorithm = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	}
 	ai->parameters = NULL; // TODO
@@ -85,7 +87,7 @@ bool r_x509_parse_name (RX509Name *name, RASN1Object * object) {
 	if (!name || !object || !object->list.length) {
 		return false;
 	}
-	if (object->class == CLASS_UNIVERSAL && object->tag == TAG_SEQUENCE) {
+	if (object->klass == CLASS_UNIVERSAL && object->tag == TAG_SEQUENCE) {
 		name->length = object->list.length;
 		name->names = (RASN1String**) calloc (name->length, sizeof (RASN1String*));
 		if (!name->names) {
@@ -101,18 +103,18 @@ bool r_x509_parse_name (RX509Name *name, RASN1Object * object) {
 		}
 		for (i = 0; i < object->list.length; ++i) {
 			RASN1Object *o = object->list.objects[i];
-			if (o->class == CLASS_UNIVERSAL &&
+			if (o->klass == CLASS_UNIVERSAL &&
 					o->tag == TAG_SET &&
 					o->form == FORM_CONSTRUCTED &&
 					o->list.length == 1) {
 				o = o->list.objects[0];
-				if (o->class == CLASS_UNIVERSAL &&
+				if (o->klass == CLASS_UNIVERSAL &&
 						o->tag == TAG_SEQUENCE) {
-					if (o->list.objects[0]->class == CLASS_UNIVERSAL &&
+					if (o->list.objects[0]->klass == CLASS_UNIVERSAL &&
 							o->list.objects[0]->tag == TAG_OID) {
 						name->oids[i] = r_asn1_stringify_oid (o->list.objects[0]->sector, o->list.objects[0]->length);
 					}
-					if (o->list.objects[0]->class == CLASS_UNIVERSAL) {
+					if (o->list.objects[0]->klass == CLASS_UNIVERSAL) {
 						name->names[i] = r_asn1_stringify_string (o->list.objects[1]->sector, o->list.objects[1]->length);
 					}
 				}
@@ -180,7 +182,7 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * objec
 	elems = object->list.objects;
 	//Following RFC
 	if (elems[0]->list.length == 1 &&
-			elems[0]->class == CLASS_CONTEXT &&
+			elems[0]->klass == CLASS_CONTEXT &&
 			elems[0]->form == FORM_CONSTRUCTED &&
 			elems[0]->list.objects[0]->tag == TAG_INTEGER &&
 			elems[0]->list.objects[0]->length == 1) {
@@ -190,7 +192,7 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * objec
 	} else {
 		tbsc->version = 0;
 	}
-	if (shift < object->list.length && elems[shift]->class == CLASS_UNIVERSAL && elems[shift]->tag == TAG_INTEGER) {
+	if (shift < object->list.length && elems[shift]->klass == CLASS_UNIVERSAL && elems[shift]->tag == TAG_INTEGER) {
 		tbsc->serialNumber = r_asn1_stringify_integer (elems[shift]->sector, elems[shift]->length);
 	}
 	r_x509_parse_algorithmidentifier (&tbsc->signature, elems[shift + 1]);
@@ -200,7 +202,7 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * objec
 	r_x509_parse_subjectpublickeyinfo (&tbsc->subjectPublicKeyInfo, elems[shift + 5]);
 	if (tbsc->version > 0) {
 		for (i = shift + 6; i < object->list.length; ++i) {
-			if (elems[i]->class != CLASS_CONTEXT) continue;
+			if (elems[i]->klass != CLASS_CONTEXT) continue;
 
 			if (elems[i]->tag == 1) {
 				tbsc->issuerUniqueID = elems[i];
@@ -233,7 +235,7 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 	}
 	memset (certificate, 0, sizeof (RX509Certificate));
 
-	if (object->class != CLASS_UNIVERSAL || object->form != FORM_CONSTRUCTED || object->list.length != 3) {
+	if (object->klass != CLASS_UNIVERSAL || object->form != FORM_CONSTRUCTED || object->list.length != 3) {
 		// Malformed certificate
 		// It needs to have tbsCertificate, algorithmIdentifier and a signature
 		r_asn1_free_object (object);
@@ -241,7 +243,7 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 		return NULL;
 	}
 	tmp = object->list.objects[2];
-	if (tmp->class != CLASS_UNIVERSAL || tmp->form != FORM_PRIMITIVE || tmp->tag != TAG_BITSTRING) {
+	if (tmp->klass != CLASS_UNIVERSAL || tmp->form != FORM_PRIMITIVE || tmp->tag != TAG_BITSTRING) {
 		r_asn1_free_object (object);
 		free (certificate);
 		return NULL;

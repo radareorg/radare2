@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2017 - wargio */
+
 #include <r_util.h>
 #include "r_oids.h"
 #include <stdlib.h>
@@ -310,7 +312,7 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	head = buffer[0];
-	object->class = head & ASN1_CLASS;
+	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
 	object->tag = head & ASN1_TAG;
 	object->sector = NULL;
