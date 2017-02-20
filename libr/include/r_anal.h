@@ -1335,6 +1335,7 @@ R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize);
 R_API int r_anal_xrefs_count(RAnal *anal);
 R_API const char *r_anal_xrefs_type_tostring (char type);
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to);
+R_API RList *r_anal_refs_get (RAnal *anal, ut64 to);
 R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 from);
 R_API void r_anal_xrefs_list(RAnal *anal, int rad);
 R_API RList* r_anal_fcn_get_refs (RAnalFunction *anal);

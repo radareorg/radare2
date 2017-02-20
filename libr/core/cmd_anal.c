@@ -1586,7 +1586,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			}
 			break;
-		default: 
+		default:
 			{
 				const char *help_msg[] = {
 					"Usage:", "afn[sa]", " Analyze function names",
@@ -3533,7 +3533,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	}
 	bufi = 0;
 	if (addr_end - addr > 0xffffff) {
-		return;	
+		return;
 	}
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
@@ -3865,24 +3865,31 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case '-': { // "ax-"
 		const char *inp;
 		ut64 a, b;
+		char *p;
+		RList *list;
+		RListIter *iter;
+		RAnalRef *ref;
 		for (inp = input + 1; *inp && IS_WHITESPACE (*inp); inp++) {
 			//nothing to see here
 		}
 		if (!strcmp (inp, "*")) {
 			r_anal_xrefs_init (core->anal);
 		} else {
-			char *p = strdup (inp);
-			char *q = strchr (p, ' ');
-			a = r_num_math (core->num, p);
-			if (q) {
-				*q++ = 0;
-				b = r_num_math (core->num, q);
+			p = strdup (inp);
+			if (p) {
+				b = r_num_math (core->num, p);
+				free (p);
 			} else {
 				//b = UT64_MAX;
 				b = core->offset;
 			}
-			r_anal_ref_del (core->anal, b, a);
-			free (p);
+			list = r_anal_refs_get (core->anal, b);
+			if (list) {
+				r_list_foreach (list, iter, ref) {
+					r_anal_ref_del (core->anal, ref->at, ref->addr);
+				}
+				r_list_free (list);
+			}
 		}
 	} break;
 	case 'g': // "axg"
@@ -4080,7 +4087,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'C': // "axC"
 	case 'c': // "axc"
 	case 'd': // "axd"
-	case ' ': 
+	case ' ':
 		{
 		char *ptr = strdup (r_str_trim_head ((char *)input + 1));
 		int n = r_str_word_set0 (ptr);
@@ -4099,7 +4106,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 		r_anal_ref_add (core->anal, addr, at, input[0]);
 		free (ptr);
-		} 
+		}
 	   	break;
 	default:
 	case '?':
@@ -5120,13 +5127,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
 			rowlog_done (core);
-			char *dh_orig = core->dbg->h 
+			char *dh_orig = core->dbg->h
 					? strdup (core->dbg->h->name)
 					: strdup ("esil");
 			if (core->io && core->io->plugin && !core->io->plugin->isdbg) {
 				//use dh_origin if we are debugging
 				R_FREE (dh_orig);
-			}	
+			}
 			if (r_cons_is_breaked ()) {
 				goto jacuzzi;
 			}
