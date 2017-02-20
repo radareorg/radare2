@@ -5,7 +5,7 @@ DEPS=
 
 OBJS=mem.o pool.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
-OBJS+=list.o flist.o uht.o uht64.o mixed.o btree.o chmod.o graph.o
+OBJS+=list.o flist.o mixed.o btree.o chmod.o graph.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o thread_lock.o thread_msg.o
 OBJS+=strpool.o bitmap.o strht.o p_date.o p_format.o print.o
