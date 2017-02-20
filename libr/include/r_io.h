@@ -173,7 +173,7 @@ typedef struct r_io_plugin_t {
 	char *license;
 	void *widget;
 	int (*listener)(RIODesc *io);
-	int (*init)();
+	int (*init)(void);
 	RIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);

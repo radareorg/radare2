@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include "sdb.h"
 
-static inline int nextcas() {
+static inline int nextcas(void) {
 	static ut32 cas = 1;
 	if (!cas) {
 		cas++;
@@ -25,7 +25,7 @@ SDB_API void sdb_global_hook(SdbHook hook, void *user) {
 }
 
 // TODO: use mmap instead of read.. much faster!
-SDB_API Sdb* sdb_new0() {
+SDB_API Sdb* sdb_new0(void) {
 	return sdb_new (NULL, NULL, 0);
 }
 

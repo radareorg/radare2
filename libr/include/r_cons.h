@@ -203,12 +203,6 @@ typedef struct r_cons_canvas_t {
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
 
-#if 0
-r_cons_click_begin();
-r_cons_click_end();
-r_cons_click_clear();
-#endif
-
 typedef struct r_cons_t {
 	RConsGrep grep;
 	RStack *cons_stack;
@@ -432,7 +426,7 @@ R_API char *r_cons_lastline (int *size);
 
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);
-R_API bool r_cons_is_breaked();
+R_API bool r_cons_is_breaked(void);
 R_API void r_cons_break_timeout(int timeout);
 R_API void r_cons_breakword(const char *s);
 
@@ -444,11 +438,11 @@ R_API void r_cons_pipe_close(int fd);
 R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
 #endif
 
-R_API void r_cons_push();
-R_API void r_cons_pop();
-R_API void r_cons_break_pop();
+R_API void r_cons_push(void);
+R_API void r_cons_pop(void);
+R_API void r_cons_break_pop(void);
 R_API void r_cons_break_push(RConsBreak cb, void*user);
-R_API void r_cons_break_clear();
+R_API void r_cons_break_clear(void);
 
 /* control */
 R_API char *r_cons_editor (const char *file, const char *str);
@@ -467,7 +461,7 @@ R_API void r_cons_gotoxy(int x, int y);
 R_API void r_cons_show_cursor (int cursor);
 R_API char *r_cons_swap_ground(const char *col);
 R_API bool r_cons_drop (int n);
-R_API void r_cons_chop ();
+R_API void r_cons_chop (void);
 R_API void r_cons_set_raw(int b);
 R_API void r_cons_set_interactive(int b);
 R_API void r_cons_set_last_interactive(void);
@@ -512,7 +506,7 @@ R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list (int rad, const char *arg);
 R_API void r_cons_pal_show (void);
 R_API int r_cons_get_size(int *rows);
-R_API bool r_cons_isatty();
+R_API bool r_cons_isatty(void);
 R_API int r_cons_get_cursor(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API int r_cons_html_print(const char *ptr);
@@ -603,8 +597,8 @@ R_API RLine *r_line_singleton(void);
 R_API void r_line_free(void);
 R_API char *r_line_get_prompt (void);
 R_API void r_line_set_prompt(const char *prompt);
-R_API int r_line_dietline_init();
-R_API void r_line_hist_free();
+R_API int r_line_dietline_init(void);
+R_API void r_line_hist_free(void);
 
 typedef int (RLineReadCallback) (void *user, const char *line);
 R_API const char *r_line_readline(void);
