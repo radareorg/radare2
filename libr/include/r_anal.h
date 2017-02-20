@@ -248,7 +248,7 @@ struct r_anal_attr_t {
 };
 
 typedef struct r_anal_fcn_store_t {
-	RHashTable64 *h;
+	SdbHash *h;
 	RList *l;
 } RAnalFcnStore;
 
@@ -830,7 +830,7 @@ typedef struct r_anal_state_type_t {
 	ut64 current_addr;
 	ut64 next_addr;
 	RList *bbs;
-	RHashTable64 *ht;
+	SdbHash *ht;
 	ut64 ht_sz;
 	RAnalFunction *current_fcn;
 	RAnalOp *current_op;
