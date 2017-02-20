@@ -674,8 +674,8 @@ repeat:
 				if (fcn->stack > 0 && (int)op.val > 0) {
 					fcn->maxstack = fcn->stack;
 				}
-				bb->stackptr += op.stackptr;
 			}
+			bb->stackptr += op.stackptr;
 			break;
 		case R_ANAL_STACK_RESET:
 			bb->stackptr = 0;
