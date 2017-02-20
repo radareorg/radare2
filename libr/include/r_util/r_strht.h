@@ -2,7 +2,7 @@
 #define R_STRHT_H
 #include <r_list.h>
 #include <r_util/r_strpool.h>
-#include "ht.h"
+#include <sdb.h>
 
 typedef struct r_strht_t {
 	RStrpool *sp;
