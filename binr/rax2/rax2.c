@@ -477,7 +477,7 @@ static int use_stdin() {
 	return 0;
 }
 
-int main (int argc, char **argv) {
+int main (int argc, char** argv) {
 	int i;
 	num = r_num_new (NULL, NULL, NULL);
 	if (argc == 1) {

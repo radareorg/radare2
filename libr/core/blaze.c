@@ -31,7 +31,7 @@ static int bbExist(AbbState *abb, ut64 addr) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	if (abb->bbdb) {
-		return (int)sdb_num_get (abb->bbdb, sdb_fmt (0, "0x%08" PFMT64x, addr), NULL);
+		return (int) sdb_num_get (abb->bbdb, sdb_fmt (0, "0x%08" PFMT64x, addr), NULL);
 	}
 	r_list_foreach (abb->bbs, iter, bb) {
 		if (bb->addr == addr) {
@@ -42,11 +42,11 @@ static int bbExist(AbbState *abb, ut64 addr) {
 }
 
 static int fcnExist(AbbState *abb, ut64 addr) {
-	AbbAddr* a;
+	AbbAddr *a;
 	RListIter *iter;
 #if 0
 	if (abb->bbdb) {
-		return (int)sdb_num_get (abb->bbdb, sdb_fmt (0, "fcn.0x%08" PFMT64x, addr), NULL);
+		return (int) sdb_num_get (abb->bbdb, sdb_fmt (0, "fcn.0x%08" PFMT64x, addr), NULL);
 	}
 #endif
 	r_list_foreach (abb->fcnents, iter, a) {
@@ -113,7 +113,7 @@ static bool appendNextBB(AbbState *abb, ut64 addr, int bits, int type) {
 
 static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {
 	RFlagItem *fi = r_flag_get_i (abb->core->flags, aop->addr + aop->size);
-	bool eob = fi ? true:false; //strncmp (fi->name, "sym.", 4): false;
+	bool eob = fi? true: false; //strncmp (fi->name, "sym.", 4): false;
 	if (eob) {
 		aop->fail = UT64_MAX;
 	}
@@ -139,7 +139,7 @@ static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {
 			RFlagItem *fi = r_flag_get_i (abb->core->flags, aop->jump);
 			if (fi) {
 				if (r_anal_noreturn_at_name (abb->core->anal, fi->name)) {
-					//if (r_anal_noreturn_at_addr (abb->core->anal, aop->jump)) 
+					//if (r_anal_noreturn_at_addr (abb->core->anal, aop->jump))
 					eob = true;
 				}
 			}
@@ -150,8 +150,8 @@ static RAnalBlock *parseOpcode(AbbState *abb, RAnalOp *aop) {
 		if (aop->fail != UT64_MAX && !eob) {
 			appendNextBB (abb, aop->fail, 0, 0);
 		}
-aop->jump = aop->fail; //UT64_MAX;
-aop->fail = UT64_MAX;
+		aop->jump = aop->fail; //UT64_MAX;
+		aop->fail = UT64_MAX;
 #endif
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
@@ -184,7 +184,7 @@ aop->fail = UT64_MAX;
 		bb->addr = abb->bb_addr;
 		bb->size = aop->addr - abb->bb_addr + aop->size;
 		if (bb->size < 1) {
-			eprintf ("Invalid block size at 0x%08"PFMT64x"\n", bb->addr);
+			eprintf ("Invalid block size at 0x%08"PFMT64x "\n", bb->addr);
 			// XXX
 			bb->size = aop->size;
 		}
@@ -215,10 +215,10 @@ static void printBasicBlocks(AbbState *abb, ut64 fcnaddr, ut64 addr) {
 	sdb_bool_set (abb->bbdb, sdb_fmt (0, "bb.0x%08" PFMT64x ".0x%08" PFMT64x, fcnaddr, addr), true, 0);
 	r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %d", fcnaddr, bb->addr, bb->size);
 	if (bb->jump != UT64_MAX) {
-			r_cons_printf (" 0x%08" PFMT64x, bb->jump);
-			if (bb->fail != UT64_MAX) {
-				r_cons_printf (" 0x%08" PFMT64x, bb->fail);
-			}
+		r_cons_printf (" 0x%08" PFMT64x, bb->jump);
+		if (bb->fail != UT64_MAX) {
+			r_cons_printf (" 0x%08" PFMT64x, bb->fail);
+		}
 	}
 	r_cons_newline ();
 	if (bb->jump != UT64_MAX) {
@@ -230,7 +230,7 @@ static void printBasicBlocks(AbbState *abb, ut64 fcnaddr, ut64 addr) {
 }
 
 static void printFunction(ut64 addr, const char *name) {
-	char *_name = name? (char *)name: r_str_newf ("fcn.%" PFMT64x, addr);
+	char *_name = name? (char *) name: r_str_newf ("fcn.%" PFMT64x, addr);
 	r_cons_printf ("af+ 0x%08" PFMT64x " %s\n", addr, _name);
 	if (!name) {
 		free (_name);
@@ -253,13 +253,13 @@ static void findFunctions(RCore *core, AbbState *abb) {
 // if there's a flag, consider it a function
 		RFlagItem *fi = r_flag_get_i (core->flags, bb->addr);
 		if (fi) {
-			printFunction(bb->addr, fi->name);
+			printFunction (bb->addr, fi->name);
 		} else {
 			// eprintf ("# orphan bb 0x%08"PFMT64x"\n", bb->addr);
 			printFunction (bb->addr, NULL);
 		}
 		printBasicBlocks (abb, bb->addr, bb->addr);
-	//	printFunction (a->addr, a->name);
+		//	printFunction (a->addr, a->name);
 		// printBasicBlocks (abb, ->addr, a->addr);
 	}
 #if 0
@@ -288,7 +288,7 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 	//RListIter *iter;
 	ut64 at = core->offset;
 	abb->addr = at;
-	(void)r_io_read_at (core->io, abb->addr, abb->buf, len);
+	(void) r_io_read_at (core->io, abb->addr, abb->buf, len);
 	int ti = -1;
 	int oi = 0;
 	abb->last = at;
@@ -303,8 +303,8 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 		}
 		oi = i;
 		ut64 obb_addr = abb->bb_addr;
-	mountain:
-		if (!r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (R_MAX(0, len - i), 16))) {
+mountain:
+		if (!r_anal_op (core->anal, &aop, abb->addr + i, abb->buf + i, R_MIN (R_MAX (0, len - i), 16))) {
 			continue;
 		}
 		int next = bbExist (abb, at + i);
@@ -352,7 +352,7 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 								i = nat->addr - at;
 								abb->bb_addr = nat->addr;
 								if (nat->type == 'c') {
-						//			r_list_append (abb->fcnents, nat);
+									//			r_list_append (abb->fcnents, nat);
 								} else {
 									free (nat);
 								}
@@ -394,15 +394,15 @@ R_API bool core_anal_bbs(RCore *core, ut64 len) {
 		} else {
 			name = r_str_newf ("bb.%"PFMT64x, bb->addr);
 		}
-		r_cons_printf ("agn 0x%08"PFMT64x" \"%s\"\n", bb->addr, name);
+		r_cons_printf ("agn 0x%08"PFMT64x " \"%s\"\n", bb->addr, name);
 		free (name);
 	}
 	r_list_foreach (abb->bbs, iter, bb) {
 		if (bb->jump != UT64_MAX) {
-			r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", bb->addr, bb->jump);
+			r_cons_printf ("age 0x%08"PFMT64x " 0x%08"PFMT64x "\n", bb->addr, bb->jump);
 		}
 		if (bb->fail != UT64_MAX) {
-			r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", bb->addr, bb->fail);
+			r_cons_printf ("age 0x%08"PFMT64x " 0x%08"PFMT64x "\n", bb->addr, bb->fail);
 		}
 	}
 #endif

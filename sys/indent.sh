@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# known bugs
+# ----------
+# - labels are indented
+# - #if 0 code is indented
+# - //comment should be // comment
+
 IFILE="$1"
 P=`readlink $0`
 cd `dirname $P`/..
