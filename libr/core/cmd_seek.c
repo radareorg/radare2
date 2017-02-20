@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include "r_types.h"
 #include "r_config.h"
@@ -16,6 +16,17 @@ static void __init_seek_line (RCore *core) {
 	if (r_core_lines_initcache (core, from, to) == -1) {
 		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
 	}
+}
+
+static void printPadded(RCore *core, int pad) {
+	if (pad < 1) {
+		pad = 8;
+	}
+	char *fmt = r_str_newf ("0x%%0%d" PFMT64x, pad);
+	char *off = r_str_newf (fmt, core->offset);
+	r_cons_printf ("%s\n", off);
+	free (off);
+	free (fmt);
 }
 
 static void __get_current_line (RCore *core) {
@@ -457,10 +468,14 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			}
 			break;
+		case ':':
+			printPadded (core, atoi (input + 1));
+			break;
 		case '?': {
 			const char * help_message[] = {
 			"Usage: s", "", " # Seek commands",
 			"s", "", "Print current address",
+			"s:", "pad", "Print current address with N padded zeros (defaults to 8)",
 			"s", " addr", "Seek to address",
 			"s-", "", "Undo seek",
 			"s-", " n", "Seek n bytes backward",
