@@ -3,7 +3,6 @@
 #include <r_anal.h>
 #include <r_types.h>
 #include <r_util.h>
-#include <r_db.h>
 #include <r_bind.h>
 
 #define IFDBG if (esil && esil->verbose > 1)

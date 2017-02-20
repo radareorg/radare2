@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 #include <r_types.h>
-#include <r_db.h>
 
 R_LIB_VERSION_HEADER (r_syscall);
 
