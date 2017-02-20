@@ -8,6 +8,9 @@ extern "C" {
 /* Endian agnostic functions working on single byte. */
 
 static inline ut8 r_read_ble8(const void *src) {
+	if (!src) {
+		return UT8_MAX;
+	}
 	return *(ut8 *)src;
 }
 
@@ -114,6 +117,9 @@ static inline void r_write_at_be64(void *dest, ut64 val, size_t offset) {
 /* Little Endian functions. */
 
 static inline ut8 r_read_le8(const void *src) {
+	if (!src) {
+		return UT8_MAX;
+	}
 	return r_read_ble8 (src);
 }
 
@@ -130,11 +136,17 @@ static inline void r_write_at_le8(void *dest, ut8 val, size_t offset) {
 }
 
 static inline ut16 r_read_le16(const void *src) {
+	if (!src) {
+		return UT16_MAX;
+	}
 	const ut8 *s = (const ut8*)src;
 	return (((ut16)s[1]) << 8) | (((ut16)s[0]) << 0);
 }
 
 static inline ut16 r_read_at_le16(const void *src, size_t offset) {
+	if (!src) {
+		return UT16_MAX;
+	}
 	const ut8 *s = (const ut8*)src + offset;
 	return r_read_le16 (s);
 }
@@ -157,12 +169,18 @@ static inline void r_write_le24(void *_dest, ut32 val) {
 }
 
 static inline ut32 r_read_le32(const void *src) {
+	if (!src) {
+		return UT32_MAX;
+	}
 	const ut8 *s = (const ut8*)src;
 	return (((ut32)s[3]) << 24) | (((ut32)s[2]) << 16) |
 		(((ut32)s[1]) << 8) | (((ut32)s[0]) << 0);
 }
 
 static inline ut32 r_read_at_le32(const void *src, size_t offset) {
+	if (!src) {
+		return UT32_MAX;
+	}
 	const ut8 *s = (const ut8*)src + offset;
 	return r_read_le32 (s);
 }
@@ -426,6 +444,7 @@ static inline int UT8_SUB(ut8 *r, ut8 a, ut8 b) {
 	}
 	return 1;
 }
+
 #ifdef __cplusplus
 }
 #endif

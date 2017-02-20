@@ -1322,7 +1322,7 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	    c->interfaces_offset <
 		    bin->header.data_offset + bin->header.data_size) {
 		p = r_buf_get_at (binfile->buf, c->interfaces_offset, NULL);
-		int types_list_size = r_read_le32(p);
+		int types_list_size = r_read_le32 (p);
 		if (types_list_size < 0 || types_list_size >= bin->header.types_size ) {
 			return;
 		}
