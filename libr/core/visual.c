@@ -164,14 +164,15 @@ R_API int r_core_visual_hud(RCore *core) {
 	char *homehud = r_str_home (R2_HOMEDIR"/hud");
 	char *res = NULL;
 	char *p = 0;
+	r_cons_singleton ()->use_color = use_color;
 
 	showcursor (core, true);
 	if (c && *c && r_file_exists (c))
-		res = r_cons_hud_file (c, use_color);
+		res = r_cons_hud_file (c);
 	if (!res && homehud)
-		res = r_cons_hud_file (homehud, use_color);
+		res = r_cons_hud_file (homehud);
 	if (!res && r_file_exists (f))
-		res = r_cons_hud_file (f, use_color);
+		res = r_cons_hud_file (f);
 	if (!res)
 		r_cons_message ("Cannot find hud file");
 

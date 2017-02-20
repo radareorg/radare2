@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_core.h>
 
@@ -756,6 +756,7 @@ static int cb_color(void *user, void *data) {
 		//c:core->print->flags ^= R_PRINT_FLAGS_COLOR;
 		core->print->flags &= (~R_PRINT_FLAGS_COLOR);
 	}
+	r_cons_singleton ()->use_color = node->i_value? 1: 0;
 	r_print_set_flags (core->print, core->print->flags);
 	return true;
 }

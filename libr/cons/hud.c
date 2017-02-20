@@ -3,11 +3,13 @@
 #include <r_cons.h>
 #include <ctype.h>
 
+#define I(x) r_cons_singleton()->x
+
 // Display the content of a file in the hud
-R_API char *r_cons_hud_file(const char *f, const bool usecolor) {
+R_API char *r_cons_hud_file(const char *f) {
 	char *s = r_file_slurp (f, NULL);
 	if (s) {
-		char *ret = r_cons_hud_string (s, usecolor);
+		char *ret = r_cons_hud_string (s);
 		free (s);
 		return ret;
 	}
@@ -16,7 +18,7 @@ R_API char *r_cons_hud_file(const char *f, const bool usecolor) {
 
 // Display a buffer in the hud (splitting it line-by-line and ignoring 
 // the lines starting with # )
-R_API char *r_cons_hud_string(const char *s, const bool usecolor) {
+R_API char *r_cons_hud_string(const char *s) {
 	char *os, *track, *ret, *o = strdup (s);
 	if (!o) {
 		return NULL;
@@ -41,7 +43,7 @@ R_API char *r_cons_hud_string(const char *s, const bool usecolor) {
 			os = o + i + 1;
 		}
 	}
-	ret = r_cons_hud (fl, NULL, usecolor);
+	ret = r_cons_hud (fl, NULL);
 	free (o);
 	r_list_free (fl);
 	return ret;
@@ -93,7 +95,7 @@ static bool strmatch(char *entry, char *filter, char* mask, const int mask_size)
 
 // Display a list of entries in the hud, filtered and emphasized based
 // on the user input.
-R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
+R_API char *r_cons_hud(RList *list, const char *prompt) {
 	const int buf_size = 128;
 	int ch, nch, first_line, current_entry_n, j, i = 0;
 	char *p, *x, user_input[buf_size], mask[buf_size];
@@ -143,7 +145,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 						r_cons_printf (" %c %s\n", first_line? '-': ' ', current_entry);
 					} else {
 						// otherwise we need to emphasize the matching part
-						if (usecolor) {
+						if (I(use_color)) {
 							last_color_change = 0;
 							last_mask = 0;
 							r_cons_printf (" %c ", first_line? '-': ' ');
@@ -266,7 +268,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt, const bool usecolor) {
 }
 
 // Display the list of files in a directory
-R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor) {
+R_API char *r_cons_hud_path(const char *path, int dir) {
 	char *tmp, *ret = NULL;
 	RList *files;
 	if (path) {
@@ -277,7 +279,7 @@ R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor) {
 	}
 	files = r_sys_dir (tmp);
 	if (files) {
-		ret = r_cons_hud (files, tmp, usecolor);
+		ret = r_cons_hud (files, tmp);
 		if (ret) {
 			tmp = r_str_concat (tmp, "/");
 			tmp = r_str_concat (tmp, ret);
@@ -285,7 +287,7 @@ R_API char *r_cons_hud_path(const char *path, int dir, const bool usecolor) {
 			free (tmp);
 			tmp = ret;
 			if (r_file_is_directory (tmp)) {
-				ret = r_cons_hud_path (tmp, dir, usecolor);
+				ret = r_cons_hud_path (tmp, dir);
 				free (tmp);
 				tmp = ret;
 			}

@@ -310,6 +310,7 @@ R_API RCons *r_cons_new() {
 	I.event_interrupt = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
+	I.use_color = false;
 	I.blankline = true;
 	I.teefile = NULL;
 	I.fix_columns = 0;
@@ -510,14 +511,13 @@ R_API const char *r_cons_get_buffer() {
 }
 
 R_API void r_cons_filter() {
-	/* grep*/
+	/* grep */
 	if (I.grep.nstrings > 0 || I.grep.tokens_used || I.grep.less || I.grep.json) {
 		r_cons_grepbuf (I.buffer, I.buffer_len);
 	}
 	/* html */
 	/* TODO */
 }
-
 
 R_API void r_cons_push() {
 	if (I.cons_stack) {

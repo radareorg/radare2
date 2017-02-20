@@ -2,6 +2,7 @@
 
 #include <r_cons.h>
 #include <r_util.h>
+#include <r_print.h>
 #include <sdb.h>
 #undef SDB_API
 #define SDB_API static
@@ -10,6 +11,7 @@ int js0n(const ut8 *js, RangstrType len, RangstrType *out);
 #include "../../shlr/sdb/src/json/path.c"
 // #include "../../shlr/sdb/src/json.c"
 
+#define I(x) r_cons_singleton()->x
 /* TODO: remove globals */
 static RList *sorted_lines = NULL;
 static RList *unsorted_lines = NULL;
@@ -323,11 +325,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 				cons->buffer_len = strlen (u);
 				cons->buffer_sz = cons->buffer_len + 1;
 				cons->grep.json = 0;
-				r_cons_newline();
+				r_cons_newline ();
 			}
 			R_FREE (cons->grep.json_path);
 		} else {
-			char *out = sdb_json_indent (buf);
+			char *out = r_print_json_indent (buf, I(use_color));
 			free (cons->buffer);
 			cons->buffer = out;
 			cons->buffer_len = strlen (out);
@@ -344,7 +346,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		int less = cons->grep.less;
 		cons->grep.less = 0;
 		if (less == 2) {
-			char *res = r_cons_hud_string (buf, true);
+			char *res = r_cons_hud_string (buf);
 			r_cons_println (res);
 			free (res);
 		} else {
