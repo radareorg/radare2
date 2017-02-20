@@ -1,7 +1,6 @@
 #ifndef R2_EGG_H
 #define R2_EGG_H
 
-#include <r_db.h>
 #include <r_asm.h>
 #include <r_lib.h>
 #include <r_util.h>

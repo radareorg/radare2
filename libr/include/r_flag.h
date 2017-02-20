@@ -4,7 +4,6 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_list.h>
-#include <r_db.h>
 
 #ifdef __cplusplus
 extern "C" {

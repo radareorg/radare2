@@ -7,7 +7,6 @@
 #include <r_util.h>
 #include <r_reg.h>
 #include <r_bp.h>
-#include <r_db.h>
 #include <r_io.h>
 #include <r_syscall.h>
 

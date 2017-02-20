@@ -3,7 +3,6 @@
 
 #include <r_util.h>
 #include <r_types.h>
-#include <r_db.h>
 #include <r_io.h>
 #include <r_list.h>
 #include <r_bin_dwarf.h>
