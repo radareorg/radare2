@@ -12,9 +12,8 @@
 /* public headers */
 #include <r_util.h>
 #include <r_types.h>
+#include <sdb.h>
 
-// TODO: wtf?
-#define ht_(name)	r_hashtable_##name
 
 /* private headers */
 #include "tms320_p.h"
@@ -1014,31 +1013,28 @@ static ut8 c55x_e_list[] = {
 	0x00, 0x00,
 };
 
-insn_head_t * lookup_insn_head(tms320_dasm_t * dasm)
-{
+insn_head_t * lookup_insn_head(tms320_dasm_t * dasm) {
 	ut8 * e_list = NULL;
-
 	/* handle some exceptions */
 
-	if (tms320_f_get_cpu(dasm) == TMS320_F_CPU_C55X)
+	if (tms320_f_get_cpu (dasm) == TMS320_F_CPU_C55X) {
 		e_list = c55x_e_list;
-
+	}
 	while (e_list && (e_list[0] && e_list[1])) {
 		if ((dasm->opcode & e_list[0]) == e_list[1]) {
-			dasm->head = ht_(lookup)(dasm->map, e_list[1]);
+			dasm->head = ht_find (dasm->map, (const char *)&e_list[1], NULL);
 			break;
 		}
 		e_list += 2;
 	}
-
 	if (!dasm->head) {
-		dasm->head = ht_(lookup)(dasm->map, dasm->opcode);
-		if (!dasm->head)
-			dasm->head = ht_(lookup)(dasm->map, dasm->opcode & 0xfe);
+		dasm->head = ht_find (dasm->map, (const char *)&dasm->opcode, NULL);
+		if (!dasm->head) {
+			ut8 key = dasm->opcode & 0xfe;
+			dasm->head = ht_find (dasm->map, (const char *)&key, NULL);
+		}
 	}
-
 	dasm->insn = dasm->head ? &dasm->head->insn : NULL;
-
 	return dasm->head;
 }
 
@@ -1106,10 +1102,13 @@ int tms320_dasm_init(tms320_dasm_t * dasm) {
 		return 0;
 	}
 
-	dasm->map = ht_(new)();
-
-	for (i = 0; i < ARRAY_SIZE(c55x_list); i++)
-		ht_(insert)(dasm->map, c55x_list[i].byte, &c55x_list[i]);
+	dasm->map = ht_new (NULL, NULL, NULL);
+	if (!dasm->map) {
+		return 0;
+	}
+	for (i = 0; i < ARRAY_SIZE(c55x_list); i++) {
+		ht_insert (dasm->map, (const char *)&c55x_list[i].byte, &c55x_list[i]);
+	}
 
 	tms320_f_set_cpu(dasm, TMS320_F_CPU_C55X);
 
@@ -1118,8 +1117,9 @@ int tms320_dasm_init(tms320_dasm_t * dasm) {
 
 int tms320_dasm_fini(tms320_dasm_t * dasm) {
 	if (dasm) {
-		if (dasm->map)
-			ht_(free)(dasm->map);
+		if (dasm->map) {
+			ht_free (dasm->map);
+		}
 		/* avoid double free */
 		memset (dasm, 0, sizeof (tms320_dasm_t));
 	}
