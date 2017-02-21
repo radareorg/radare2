@@ -407,7 +407,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 
 static bool bin_raw_strings(RCore *r, int mode, int va) {
 	RBinFile *bf = r_bin_cur (r->bin);
-	if (!bf) {
+	if (!bf && r->io && r->io->desc && r->io->desc->uri) {
 		const char *file = r->io->desc->uri;
 		r_sys_cmdf ("rabin2 -qzzz '%s'", file);
 		// eprintf ("Likely you used -nn \n");
