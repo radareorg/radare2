@@ -3864,7 +3864,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '-': { // "ax-"
 		const char *inp;
-		ut64 a, b;
+		ut64 b;
 		char *p;
 		RList *list;
 		RListIter *iter;
