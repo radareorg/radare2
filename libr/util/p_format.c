@@ -1329,7 +1329,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode) {
 					tmp = *format;
 				}
 			} else {
-				format = r_strht_get (p->formats, structname + 1);
+				format = sdb_get (p->formats, structname + 1, NULL);
 			}
 			size += tabsize * r_print_format_struct_size (format, p, mode);
 			free (structname);
@@ -1421,7 +1421,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 	if (anon) {
 		fmt = name;
 	} else {
-		fmt = r_strht_get (p->formats, name);
+		fmt = sdb_get (p->formats, name, NULL);
 	}
 	if (!fmt || !*fmt) {
 		eprintf ("Undefined struct '%s'.\n", name);
@@ -1474,7 +1474,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!formatname) {
 		return 0;
 	}
-	fmt = r_strht_get (p->formats, formatname);
+	fmt = sdb_get (p->formats, formatname, NULL);
 	if (!fmt) {
 		fmt = formatname;
 	}

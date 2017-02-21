@@ -23,6 +23,8 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 static const char *tmp_argv[TMP_ARGV_SZ];
 static bool tmp_argv_heap = false;
 
+extern int r_is_heap (void *p);
+
 static void r_line_free_autocomplete(RLine *line) {
 	int i;
 	if (tmp_argv_heap) {
@@ -748,14 +750,14 @@ static int autocomplete(RLine *line) {
 			} else {
 				*pfx = 0;
 			}
-			RStrHT *sht = core->print->formats;
-			int *i, j = 0;
-			r_list_foreach (sht->ls, iter, i) {
-				int idx = ((int)(size_t)i)-1;
-				const char *key = r_strpool_get (sht->sp, idx);
+			SdbList *sls = sdb_foreach_list (core->print->formats, false);
+			SdbListIter *iter;
+			SdbKv *kv;
+			int j = 0;
+			ls_foreach (sls, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
-				if (!len || !strncmp (line->buffer.data + chr, key, len)) {
-					tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, key);
+				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
+					tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, kv->key);
 				}
 			}
 			if (j > 0) tmp_argv_heap = true;
