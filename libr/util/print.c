@@ -212,7 +212,7 @@ R_API RPrint* r_print_new() {
 	p->cols = 16;
 	p->cur_enabled = false;
 	p->cur = p->ocur = -1;
-	p->formats = r_strht_new ();
+	p->formats = sdb_new0 ();
 	p->addrmod = 4;
 	p->flags =
 		R_PRINT_FLAGS_COLOR |
@@ -236,7 +236,7 @@ R_API RPrint* r_print_free(RPrint *p) {
 	if (!p) {
 		return NULL;
 	}
-	r_strht_free (p->formats);
+	sdb_free (p->formats);
 	p->formats = NULL;
 	if (p->zoom) {
 		free (p->zoom->buf);
