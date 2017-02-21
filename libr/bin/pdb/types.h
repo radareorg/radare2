@@ -1,5 +1,5 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef PDB_TYPES_H
+#define PDB_TYPES_H
 
 #define _R_LIST_C
 #include <r_util.h>
@@ -1203,4 +1203,4 @@ typedef struct {
 } SOmapStream;
 // end of omap structures
 
-#endif // TYPES_H
+#endif // PDB_TYPES_H
