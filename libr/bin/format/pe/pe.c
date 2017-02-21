@@ -2434,7 +2434,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_import_directory) * curr_import_dir = NULL;
 	PE_(image_delay_import_directory) * curr_delay_import_dir = NULL;
 	PE_DWord name_off = 0;
-	RStrHT* lib_map = NULL;
+	SdbHash* lib_map = NULL;
 	ut64 off; //cache value
 	int index = 0;
 	int len = 0;
@@ -2449,7 +2449,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 		bprintf ("import directory offset bigger than file\n");
 		goto out_error;
 	}
-	lib_map = r_strht_new ();
+	lib_map = sdb_ht_new ();
 	off = bin->import_directory_offset;
 	if (off < bin->size && off > 0) {
 		void* last = NULL;
@@ -2474,8 +2474,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 			}
 			libs[index].name[len - 1] = '\0';
 			r_str_case (libs[index].name, 0);
-			if (!r_strht_get (lib_map, libs[index].name)) {
-				r_strht_set (lib_map, libs[index].name, "a");
+			if (!sdb_ht_find (lib_map, libs[index].name, NULL)) {
+				sdb_ht_insert (lib_map, libs[index].name, "a");
 				libs[index++].last = 0;
 				if (index >= max_libs) {
 					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
@@ -2508,13 +2508,13 @@ next:
 			}
 			libs[index].name[len - 1] = '\0';
 			r_str_case (libs[index].name, 0);
-			if (!r_strht_get (lib_map, libs[index].name)) {
-				r_strht_set (lib_map, libs[index].name, "a");
+			if (!sdb_ht_find (lib_map, libs[index].name, NULL)) {
+				sdb_ht_insert (lib_map, libs[index].name, "a");
 				libs[index++].last = 0;
 				if (index >= max_libs) {
 					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
 					if (!libs) {
-						r_strht_free (lib_map);
+						sdb_ht_free (lib_map);
 						r_sys_perror ("realloc (libs)");
 						return NULL;
 					}
@@ -2527,11 +2527,11 @@ next:
 			}
 		}
 	}
-	r_strht_free (lib_map);
+	sdb_ht_free (lib_map);
 	libs[index].last = 1;
 	return libs;
 out_error:
-	r_strht_free (lib_map);
+	sdb_ht_free (lib_map);
 	free (libs);
 	return NULL;
 }
