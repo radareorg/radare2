@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_util
-CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
+CFLAGS+=-DCORELIB -I$(TOP)/shlr
 DEPS=
 
 OBJS=mem.o pool.o unum.o str.o hex.o file.o range.o tinyrange.o
