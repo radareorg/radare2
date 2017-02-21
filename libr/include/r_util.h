@@ -38,7 +38,6 @@
 #include "r_util/r_stack.h"
 #include "r_util/r_str.h"
 #include "r_util/r_strbuf.h"
-#include "r_util/r_strht.h"
 #include "r_util/r_strpool.h"
 #include "r_util/r_sys.h"
 #include "r_util/r_tree.h"
