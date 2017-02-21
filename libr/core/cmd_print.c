@@ -553,7 +553,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 		_input+=2;
 		if (*_input == '.') {
 			_input++;
-			val = r_strht_get (core->print->formats, _input);
+			val = sdb_get (core->print->formats, _input, NULL);
 			if (val != NULL)
 				r_cons_printf ("%d bytes\n", r_print_format_struct_size (val, core->print, mode));
 			else {
@@ -589,16 +589,12 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 					print_format_help_help (core);
 				}
 			} else {
-				RListIter *iter;
-				RStrHT *sht = core->print->formats;
-				int *i;
-				r_list_foreach (sht->ls, iter, i) {
-					int idx = ((int)(size_t)i)-1;
-					const char *key = r_strpool_get (sht->sp, idx);
-					if (!strcmp (_input, key)) {
-						const char *val = r_strht_get (core->print->formats, key);
-						r_cons_println (val);
-					}
+				SdbListIter *iter;
+				Sdb *sht = core->print->formats;
+				SdbKv *kv;
+				SdbList *sdbls = sdb_foreach_list (sht, false);
+				ls_foreach (sdbls, iter, kv) {
+					r_cons_println (kv->value);
 				}
 			}
 		} else {
@@ -680,21 +676,19 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 		core->print->num = core->num;
 		/* print all stored format */
 		if (!input[1] || !input[2]) {
-			RListIter *iter;
-			RStrHT *sht = core->print->formats;
-			int *i;
-			r_list_foreach (sht->ls, iter, i) {
-				int idx = ((int)(size_t)i)-1;
-				const char *key = r_strpool_get (sht->sp, idx);
-				const char *val = r_strht_get (core->print->formats, key);
-				r_cons_printf ("pf.%s %s\n", key, val);
+			SdbListIter *iter;
+			SdbKv *kv;
+			SdbList *sdbls = sdb_foreach_list (core->print->formats, false);
+			ls_foreach (sdbls, iter, kv) {
+				r_cons_printf ("pf.%s %s\n", kv->key, kv->value);
 			}
 			/* delete a format */
 		} else if (input[1] && input[2]=='-') {
 			if (input[3] == '*') {
-				r_strht_clear (core->print->formats);
+				sdb_free (core->print->formats);
+				core->print->formats = sdb_new0 ();
 			} else {
-				r_strht_del (core->print->formats, input + 3);
+				sdb_unset (core->print->formats, input + 3, 0);
 			}
 		} else {
 			char *name = strdup (input + (input[1]? 2: 1));
@@ -716,14 +710,15 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 				if (strchr (name, '.') != NULL) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
 					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
-					r_strht_set (core->print->formats, name, space);
+					sdb_set (core->print->formats, name, space, 0);
 				}
 				free (name);
 				free (input);
 				return;
 			}
 
-			if (!strchr (name, '.') && !r_strht_get (core->print->formats, name)) {
+			if (!strchr (name, '.') &&
+			    !sdb_get (core->print->formats, name, NULL)) {
 				eprintf ("Cannot find '%s' format.\n", name);
 				free (name);
 				free (input);
@@ -733,7 +728,7 @@ static void cmd_print_format(RCore *core, const char *_input, int len) {
 			/* Load format from name into fmt to get the size */
 			/* This make sure the whole structure will be printed */
 			const char *fmt = NULL;
-			fmt = r_strht_get (core->print->formats, name);
+			fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt != NULL) {
 				int size = r_print_format_struct_size (fmt, core->print, mode)+10;
 				if (size > core->blocksize) {
