@@ -48,7 +48,7 @@ static SdbHash* internal_ht_new(ut32 size, HashFunction hashfunction,
 	ht->dupvalue = valdup? valdup: NULL; 
 	ht->table = calloc (ht->size, sizeof (SdbList*));
 	ht->calcsizeK = calcsizeK? calcsizeK: (CalcSize)strlen;
-	ht->calcsizeV = calcsizeV? calcsizeV: (CalcSize)strlen;
+	ht->calcsizeV = calcsizeV? calcsizeV: NULL;
 	ht->freefn = pair_free;
 	ht->deleted = ls_newf (free);
 #if INSERTORDER
@@ -91,7 +91,9 @@ bool ht_delete_internal(SdbHash* ht, const char* key, ut32* hash) {
 #if EXCHANGE
 			ls_split_iter (list, iter);
 			ls_append (ht->deleted, iter);
-			list->free (iter->data);
+			if (list->free) {
+				list->free (iter->data);
+			}
 			iter->data = NULL;
 #else
 			ls_delete (list, iter);
