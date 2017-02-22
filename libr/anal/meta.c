@@ -218,6 +218,8 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 	ptr = sdb_const_get (DB, key, 0);
 	if (ptr) {
 		sdb_unset (DB, key, 0);
+		snprintf(key, sizeof(key)-1, "meta.%c.0x%"PFMT64x, type, addr);
+		sdb_unset(DB, key, 0);
 		#if 0
 		// This code is wrong, but i guess it's necessary in case type is ANY
 		for (i=0; ptr[i]; i++) {

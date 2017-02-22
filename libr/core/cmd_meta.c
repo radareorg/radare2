@@ -522,7 +522,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						if (!tmp[j + 1]) {
 							if (j + 3 < sizeof (tmp)) {
 								if (tmp[j + 3]) {
-									break;	
+									break;
 								}
 							}
 							j++;
