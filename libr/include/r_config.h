@@ -30,6 +30,7 @@ typedef struct r_config_node_t {
 	RConfigCallback getter;
 	RConfigCallback setter;
 	char *desc;
+	RList *options;
 } RConfigNode;
 
 R_API const char *r_config_node_type(RConfigNode *node);

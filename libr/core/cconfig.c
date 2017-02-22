@@ -2,10 +2,14 @@
 
 #include <r_core.h>
 
-#define SETI(x,y,z) r_config_node_desc(r_config_set_i(cfg,x,y), z);
-#define SETICB(w,x,y,z) r_config_node_desc(r_config_set_i_cb(cfg,w,x,y), z);
-#define SETPREF(x,y,z) r_config_node_desc(r_config_set(cfg,x,y), z);
-#define SETCB(w,x,y,z) r_config_node_desc(r_config_set_cb(cfg,w,x,y), z);
+#define NODECB(w,x,y) r_config_set_cb(cfg,w,x,y)
+#define NODEICB(w,x,y) r_config_set_i_cb(cfg,w,x,y)
+#define SETDESC(x,y) r_config_node_desc(x,y)
+#define SETOPTION(x,y) r_list_append((x)->options,strdup(y))
+#define SETI(x,y,z) SETDESC(r_config_set_i(cfg,x,y), z);
+#define SETICB(w,x,y,z) SETDESC(NODEICB(w,x,y), z);
+#define SETPREF(x,y,z) SETDESC(r_config_set(cfg,x,y), z);
+#define SETCB(w,x,y,z) SETDESC(NODECB(w,x,y), z);
 
 /* TODO: use loop here */
 /*------------------------------------------------------------------------------------------*/
@@ -788,7 +792,11 @@ static int cb_dbg_btalgo(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_cons_printf ("default\nfuzzy\nanal\n");
+		RListIter *iter;
+		char *option;
+		r_list_foreach (node->options, iter, option) {
+			r_cons_printf ("%s\n", option);
+		}
 		return false;
 	}
 	free (core->dbg->btalgo);
@@ -1733,6 +1741,7 @@ static char *getViewerPath() {
 R_API int r_core_config_init(RCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
+	RConfigNode *n;
 	RConfig *cfg = core->config = r_config_new (core);
 	if (!cfg) {
 		return 0;
@@ -1998,7 +2007,11 @@ R_API int r_core_config_init(RCore *core) {
 
 	SETPREF("dbg.bpinmaps", "true", "Force breakpoints to be inside a valid map");
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
-	SETCB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo, "Select backtrace algorithm");
+	n = NODECB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
+	SETDESC(n, "Select backtrace algorithm");
+	SETOPTION(n, "default");
+	SETOPTION(n, "fuzzy");
+	SETOPTION(n, "anal");
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB("dbg.aftersyscall", "true", &cb_dbg_aftersc, "Stop execution before the syscall is executed (see dcs)");
