@@ -78,7 +78,7 @@ typedef struct ascii_edge_t {
 
 struct layer_t {
 	int n_nodes;
-	RGraphNode * *nodes;
+	RGraphNode **nodes;
 	int position;
 	int height;
 	int width;
@@ -87,7 +87,7 @@ struct layer_t {
 struct agraph_refresh_data {
 	RCore *core;
 	RAGraph *g;
-	RAnalFunction * *fcn;
+	RAnalFunction **fcn;
 	int fs;
 };
 
@@ -340,10 +340,10 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 }
 
 static int **get_crossing_matrix(const RGraph *g,
-                                  const struct layer_t layers[],
-                                  int maxlayer, int i, int from_up,
-                                  int *n_rows) {
-	int j, * *m, len = layers[i].n_nodes;
+                                 const struct layer_t layers[],
+                                 int maxlayer, int i, int from_up,
+                                 int *n_rows) {
+	int j, **m, len = layers[i].n_nodes;
 
 	m = R_NEWS0 (int *, len);
 	if (!m) {
@@ -445,8 +445,8 @@ err_row:
 }
 
 static int layer_sweep(const RGraph *g, const struct layer_t layers[],
-                        int maxlayer, int i, int from_up) {
-	int * *cross_matrix;
+                       int maxlayer, int i, int from_up) {
+	int **cross_matrix;
 	RGraphNode *u, *v;
 	const RANode *au, *av;
 	int n_rows, j, changed = false;
@@ -843,7 +843,7 @@ static Sdb *compute_vertical_nodes(const RAGraph *g) {
  * - w E C, the s+(w) exists and is not in any class yet => s+(w) E C */
 static RList **compute_classes(const RAGraph *g, Sdb *v_nodes, int is_left, int *n_classes) {
 	int i, j, c;
-	RList * *res = R_NEWS0 (RList *, g->n_layers);
+	RList **res = R_NEWS0 (RList *, g->n_layers);
 	RGraphNode *gn;
 	const RListIter *it;
 	RANode *n;
@@ -912,7 +912,7 @@ static int adjust_class_val(const RAGraph *g, const RGraphNode *gn, const RGraph
 
 /* adjusts the position of previously placed left/right classes */
 /* tries to place classes as close as possible */
-static void adjust_class(const RAGraph *g, int is_left, RList * *classes, Sdb *res, int c) {
+static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *res, int c) {
 	const RGraphNode *gn;
 	const RListIter *it;
 	const RANode *an;
@@ -988,7 +988,7 @@ static int place_nodes_sel_p(int newval, int oldval, int is_first, int is_left) 
 }
 
 /* places left/right the nodes of a class */
-static void place_nodes(const RAGraph *g, const RGraphNode *gn, int is_left, Sdb *v_nodes, RList * *classes, Sdb *res, Sdb *placed) {
+static void place_nodes(const RAGraph *g, const RGraphNode *gn, int is_left, Sdb *v_nodes, RList **classes, Sdb *res, Sdb *placed) {
 	const RList *lv = hash_get_rlist (v_nodes, gn);
 	int p = 0, v, is_first = true;
 	const RGraphNode *gk;
@@ -1028,7 +1028,7 @@ static void place_nodes(const RAGraph *g, const RGraphNode *gn, int is_left, Sdb
 /* computes the position to the left/right of all the nodes */
 static Sdb *compute_pos(const RAGraph *g, int is_left, Sdb *v_nodes) {
 	Sdb *res, *placed;
-	RList * *classes;
+	RList **classes;
 	int n_classes, i;
 
 	classes = compute_classes (g, v_nodes, is_left, &n_classes);
@@ -2646,7 +2646,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RCore *core = grd->core;
 	RAGraph *g = grd->g;
-	RAnalFunction *f, * *fcn = grd->fcn;
+	RAnalFunction *f, **fcn = grd->fcn;
 
 	// allow to change the current function during debugging
 	if (g->is_instep && core->io->debug) {
@@ -3014,6 +3014,49 @@ static void seek_to_node(RANode *n, RCore *core) {
 	free (title);
 }
 
+static void graph_single_step_in(RCore *core, RAGraph *g) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		if (core->print->cur_enabled) {
+			// dcu 0xaddr
+			r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->offset + core->print->cur);
+			core->print->cur_enabled = 0;
+		} else {
+			r_core_cmd (core, "ds", 0);
+			r_core_cmd (core, ".dr*", 0);
+		}
+	} else {
+		r_core_cmd (core, "aes", 0);
+		r_core_cmd (core, ".ar*", 0);
+	}
+	g->is_instep = true;
+	g->need_reload_nodes = true;
+}
+
+static void graph_single_step_over(RCore *core, RAGraph *g) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		if (core->print->cur_enabled) {
+			r_core_cmd (core, "dcr", 0);
+			core->print->cur_enabled = 0;
+		} else {
+			r_core_cmd (core, "dso", 0);
+			r_core_cmd (core, ".dr*", 0);
+		}
+	} else {
+		r_core_cmd (core, "aeso", 0);
+		r_core_cmd (core, ".ar*", 0);
+	}
+	g->is_instep = true;
+	g->need_reload_nodes = true;
+}
+
+static void graph_breakpoint(RCore *core) {
+	r_core_cmd (core, "dbs $$", 0);
+}
+
+static void graph_continue(RCore *core) {
+	r_core_cmd (core, "dc", 0);
+}
+
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_scrinteractive = r_config_get_i (core->config, "scr.interactive");
@@ -3135,7 +3178,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		} else {
 			movspeed = g->movspeed;
 		}
-
+		const char *cmd;
 		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
@@ -3182,23 +3225,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (key_s && *key_s) {
 				r_core_cmd0 (core, key_s);
 			} else {
-				if (r_config_get_i (core->config, "cfg.debug")) {
-					r_core_cmd0 (core, "ds;.dr*");
-				} else {
-					r_core_cmd0 (core, "aes;.dr*");
-				}
+				graph_single_step_in (core, g);
 			}
-			g->is_instep = true;
-			g->need_reload_nodes = true;
 			break;
 		case 'S':
 			if (r_config_get_i (core->config, "cfg.debug")) {
 				r_core_cmd0 (core, "dso;.dr*");
 			} else {
-				r_core_cmd0 (core, "aeso;.dr*");
+				graph_single_step_over (core, g);
 			}
-			g->is_instep = true;
-			g->need_reload_nodes = true;
 			break;
 		case 'x':
 		case 'X':
@@ -3472,6 +3507,86 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case '_':
 			r_core_visual_hudstuff (core);
+			break;
+		case R_CONS_KEY_F1:
+			cmd = r_config_get (core->config, "key.f1");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			}
+			break;
+		case R_CONS_KEY_F2:
+			cmd = r_config_get (core->config, "key.f2");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			} else {
+				graph_breakpoint (core);
+			}
+			break;
+		case R_CONS_KEY_F3:
+			cmd = r_config_get (core->config, "key.f3");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			}
+			break;
+		case R_CONS_KEY_F4:
+			cmd = r_config_get (core->config, "key.f4");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			}
+			break;
+		case R_CONS_KEY_F5:
+			cmd = r_config_get (core->config, "key.f5");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			}
+			break;
+		case R_CONS_KEY_F6:
+			cmd = r_config_get (core->config, "key.f6");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			}
+			break;
+		case R_CONS_KEY_F7:
+			cmd = r_config_get (core->config, "key.f7");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			} else {
+				graph_single_step_in (core, g);
+			}
+			break;
+		case R_CONS_KEY_F8:
+			cmd = r_config_get (core->config, "key.f8");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			} else {
+				graph_single_step_over (core, g);
+			}
+			break;
+		case R_CONS_KEY_F9:
+			cmd = r_config_get (core->config, "key.f9");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			} else {
+				graph_continue (core);
+			}
+			break;
+		case R_CONS_KEY_F10:
+			cmd = r_config_get (core->config, "key.f10");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			}
+			break;
+		case R_CONS_KEY_F11:
+			cmd = r_config_get (core->config, "key.f11");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			}
+			break;
+		case R_CONS_KEY_F12:
+			cmd = r_config_get (core->config, "key.f12");
+			if (cmd && *cmd) {
+				key = r_core_cmd0 (core, cmd);
+			}
 			break;
 		case -1: // EOF
 		case ' ':

@@ -2280,10 +2280,6 @@ R_API int r_core_config_init(RCore *core) {
 		snprintf (buf + 10, sizeof (buf) - 10,
 				"Run this when F%d key is pressed in visual mode", i);
 		switch (i) {
-			case 2: p = "dbs $$"; break;
-			case 7: p = "ds"; break;
-			case 8: p = "dso"; break;
-			case 9: p = "dc"; break;
 			default: p = ""; break;
 		}
 		r_config_set (cfg, buf, p);
