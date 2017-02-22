@@ -16,6 +16,7 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	node->value = strdup (value? value: "");
 	node->flags = CN_RW | CN_STR;
 	node->i_value = r_num_get (NULL, value);
+	node->options = r_list_new ();
 	return node;
 }
 
@@ -30,6 +31,7 @@ R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
 	cn->i_value = n->i_value;
 	cn->flags = n->flags;
 	cn->setter = n->setter;
+	cn->options = r_list_clone (n->options);
 	return cn;
 }
 
@@ -41,7 +43,97 @@ R_API void r_config_node_free(void *n) {
 	free (node->name);
 	free (node->desc);
 	free (node->value);
+	r_list_free (node->options);
 	free (node);
+}
+
+static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
+	const char *val = node->value;
+	if (node->flags & CN_BOOL || node->flags & CN_INT || node->flags & CN_OFFT) {
+		if (!val) {
+			val = "0";
+		}
+		if (!strncmp (val, "0x", 2)) {
+			ut64 n = r_num_get (NULL, val);
+			cfg->cb_printf ("%"PFMT64d, n);
+		} else if (r_str_isnumber (val) || !strcmp (val, "true") || !strcmp (val, "false")) {
+			cfg->cb_printf ("%s", val);
+		} else {
+			char *sval = r_str_escape (val);
+			cfg->cb_printf ("\"%s\"", sval);
+			free (sval);
+		}
+	} else {
+		cfg->cb_printf ("\"%s\"", val);
+	}
+}
+
+static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, const char *sfx, bool verbose, bool json) {
+	char *option;
+	bool is_first;
+	RListIter *iter;
+	char *es = NULL;
+
+	if (json) {
+		if (verbose) {
+			cfg->cb_printf ("{");
+			cfg->cb_printf ("\"name\":\"%s\",", node->name);
+			cfg->cb_printf ("\"value\":");
+			config_print_value_json (cfg, node);
+			cfg->cb_printf (",\"type\":\"%s\",", r_config_node_type (node));
+			es = r_str_escape (node->desc);
+			if (es) {
+				cfg->cb_printf ("\"desc\":\"%s\",", es);
+				free (es);
+			}
+			cfg->cb_printf ("\"ro\":%s", node->flags & CN_RO ? "true" : "false");
+			if (!r_list_empty (node->options)) {
+				is_first = true;
+				cfg->cb_printf (",\"options\":[");
+				r_list_foreach (node->options, iter, option) {
+					es = r_str_escape (option);
+					if (es) {
+						if (is_first) {
+							is_first = false;
+						} else {
+							cfg->cb_printf (",");
+						}
+						cfg->cb_printf ("\"%s\"", es);
+						free (es);
+					}
+				}
+				cfg->cb_printf ("]");
+			}
+			cfg->cb_printf ("}");
+		} else {
+			cfg->cb_printf ("\"%s\":", node->name);
+			config_print_value_json (cfg, node);
+		}
+	} else {
+		if (verbose) {
+			cfg->cb_printf ("%s%s = %s%s %s; %s", pfx,
+				node->name, node->value, sfx, 
+				node->flags & CN_RO ? "(ro)" : "", 
+				node->desc);
+			if (!r_list_empty (node->options)) {
+				is_first = true;
+				cfg->cb_printf(" [");
+				r_list_foreach (node->options, iter, option) {
+					if (is_first) {
+						is_first = false;
+					} else {
+						cfg->cb_printf(", ");
+					}
+					cfg->cb_printf("%s", option);
+				}
+				cfg->cb_printf("]");
+			}
+			cfg->cb_printf ("\n");
+		} else {
+			cfg->cb_printf ("%s%s = %s%s\n", pfx,
+				node->name, node->value, sfx);
+		}
+	}
 }
 
 R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
@@ -50,6 +142,9 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	const char *sfx = "";
 	const char *pfx = "";
 	int len = 0;
+	bool verbose = false;
+	bool json = false;
+	bool json_is_first = false;
 
 	if (!STRNULL (str)) {
 		str = r_str_chop_ro (str);
@@ -60,11 +155,12 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		pfx = "\"e ";
 		sfx = "\"";
 	/* fallthrou */
+	case 'v':
+		verbose = true;
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
-				cfg->cb_printf ("%s%s = %s%s\n", pfx,
-					node->name, node->value, sfx);
+				config_print_node (cfg, node, pfx, sfx, verbose, json);
 			}
 		}
 		break;
@@ -83,39 +179,33 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 			cfg->cb_printf ("%s\n", node->name);
 		}
 		break;
+	case 'J':
+		verbose = true;
 	case 'j':
-		cfg->cb_printf ("{");
+		json = true;
+		json_is_first = true;
+		if (verbose) {
+			cfg->cb_printf ("[");
+		} else {
+			cfg->cb_printf ("{");
+		}
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
 				if (!str || !strncmp (str, node->name, len)) {
-					const char *val = node->value;
-					if (node->flags & CN_BOOL || node->flags & CN_INT || node->flags & CN_OFFT) {
-						if (!val) {
-							val = "0";
-						}
-						if (!strncmp (val, "0x", 2)) {
-							ut64 n = r_num_get (NULL, val);
-							cfg->cb_printf ("\"%s\":%"PFMT64d,
-								node->name, n);
-						} else if (r_str_isnumber (val) || !strcmp (val, "true") || !strcmp (val, "false")) {
-							cfg->cb_printf ("\"%s\":%s",
-								node->name, val);
-						} else {
-							char *sval = r_str_escape (val);
-							cfg->cb_printf ("\"%s\":\"%s\"", node->name, sval);
-							free (sval);
-						}
-					} else {
-						cfg->cb_printf ("\"%s\":\"%s\"",
-							node->name, val);
-					}
-					if (iter->n) {
+					if (!json_is_first) {
 						cfg->cb_printf (",");
+					} else {
+						json_is_first = false;
 					}
+					config_print_node (cfg, node, pfx, sfx, verbose, json);
 				}
 			}
 		}
-		cfg->cb_printf ("}\n");
+		if (verbose) {
+			cfg->cb_printf ("]\n");
+		} else {
+			cfg->cb_printf ("}\n");
+		}
 		break;
 	}
 }
