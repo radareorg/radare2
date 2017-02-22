@@ -1022,16 +1022,18 @@ insn_head_t * lookup_insn_head(tms320_dasm_t * dasm) {
 	}
 	while (e_list && (e_list[0] && e_list[1])) {
 		if ((dasm->opcode & e_list[0]) == e_list[1]) {
-			dasm->head = ht_find (dasm->map, (const char *)&e_list[1], NULL);
+			const char *key = sdb_fmt (0, "%c", e_list[1]);
+			dasm->head = ht_find (dasm->map, key, NULL);
 			break;
 		}
 		e_list += 2;
 	}
 	if (!dasm->head) {
-		dasm->head = ht_find (dasm->map, (const char *)&dasm->opcode, NULL);
+		const char *key = sdb_fmt (0, "%c", dasm->opcode);
+		dasm->head = ht_find (dasm->map, key, NULL);
 		if (!dasm->head) {
-			ut8 key = dasm->opcode & 0xfe;
-			dasm->head = ht_find (dasm->map, (const char *)&key, NULL);
+			const char *key = sdb_fmt (0, "%c", (dasm->opcode & 0xfe));
+			dasm->head = ht_find (dasm->map, key, NULL);
 		}
 	}
 	dasm->insn = dasm->head ? &dasm->head->insn : NULL;
@@ -1107,7 +1109,8 @@ int tms320_dasm_init(tms320_dasm_t * dasm) {
 		return 0;
 	}
 	for (i = 0; i < ARRAY_SIZE(c55x_list); i++) {
-		ht_insert (dasm->map, (const char *)&c55x_list[i].byte, &c55x_list[i]);
+		const char *key = sdb_fmt (0, "%c", c55x_list[i].byte);
+		ht_insert (dasm->map, key, &c55x_list[i]);
 	}
 
 	tms320_f_set_cpu(dasm, TMS320_F_CPU_C55X);
