@@ -12,6 +12,9 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loaddr, Sd
 		return NULL;
 	}
 	RBuffer *tbuf = r_buf_new ();
+	if (!tbuf) {
+		return NULL;
+	}
 	r_buf_set_bytes (tbuf, buf, sz);
 	struct r_bin_bflt_obj *res = r_bin_bflt_new_buf (tbuf);
 	r_buf_free (tbuf);
@@ -47,7 +50,8 @@ static void __patch_reloc(RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
 	r_buf_write_at (buf, addr_to_patch, (void *)val, sizeof (val));
 }
 
-static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_to_patch, int n_reloc) {
+static int search_old_relocation (struct reloc_struct_t *reloc_table,
+				  ut32 addr_to_patch, int n_reloc) {
 	int i;
 	for (i = 0; i < n_reloc; i++) {
 		if (addr_to_patch == reloc_table[i].data_offset) {
@@ -163,7 +167,8 @@ static RList *relocs(RBinFile *arch) {
 			if (amount < n_got || amount > UT32_MAX) {
 				goto out_error;
 			}
-			struct reloc_struct_t *got_table = calloc (1, n_got * sizeof (ut32));
+			struct reloc_struct_t *got_table = calloc (
+				1, n_got * sizeof (struct reloc_struct_t));
 			if (got_table) {
 				ut32 offset = 0;
 				for (i = 0; i < n_got ; offset += 4, i++) {
