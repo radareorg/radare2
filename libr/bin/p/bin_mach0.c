@@ -419,6 +419,7 @@ static RBinInfo* info(RBinFile *arch) {
 	}
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie) (arch->o->bin_obj);
+	ret->has_nx = MACH0_(has_nx) (arch->o->bin_obj);
 	return ret;
 }
 
