@@ -309,8 +309,8 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	ut64 source_file_idx = c->source_file;
 	RList *params, *debug_positions, *emitted_debug_locals = NULL; 
 	bool keep = true;
-	if (argReg >= regsz) {
-		//return; // this return breaks tests
+	if (argReg > regsz) {
+		return; // this return breaks tests
 	}
 	p4 = r_uleb128 (p4, p4_end - p4, &line_start);
 	p4 = r_uleb128 (p4, p4_end - p4, &parameters_size);
