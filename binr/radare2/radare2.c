@@ -428,6 +428,7 @@ int main(int argc, char **argv, char **envp) {
 	RList *files = r_list_new ();
 	RList *prefiles = r_list_new ();
 	int va = 1; // set va = 0 to load physical offsets from rbin
+	bool noStderr = false;
 
 	r_sys_set_environ (envp);
 
@@ -463,7 +464,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=0AMCwfF:hH::m:e:nk:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=02AMCwfF:hH::m:e:nk:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -471,6 +472,9 @@ int main(int argc, char **argv, char **envp) {
 		switch (c) {
 		case '=':
 			r.cmdremote = 1;
+			break;
+		case '2':
+			noStderr = true;
 			break;
 		case '0':
 			zerosep = true;
@@ -610,6 +614,9 @@ int main(int argc, char **argv, char **envp) {
 		default:
 			help++;
 		}
+	}
+	if (noStderr) {
+		close (2);
 	}
 	{
 		const char *dbg_profile = r_config_get (r.config, "dbg.profile");
