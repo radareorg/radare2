@@ -13,7 +13,7 @@ static void visual_refresh(RCore *core);
 static const char *printfmtSingle[] = {
 	"xc", "pd $r",
 	"pxw 64@r:SP;dr=;pd $r",
-	"pxw", "pc", "pxA", "pxa"
+	"pxw", "pxx", "pxA", "pxa"
 };
 
 static const char *printfmtColumns[] = {
@@ -2377,7 +2377,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			r_core_block_size (core, core->cons->rows * hexcols);
 			break;
 		case 4: // XXX pc
-			r_core_block_size (core, core->cons->rows * 5);
+			r_core_block_size (core, core->cons->rows * hexcols * 4);
 			break;
 		case 1: // pd
 		case 2: // pd+dbg
