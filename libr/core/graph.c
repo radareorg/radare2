@@ -281,7 +281,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		snprintf (title, sizeof (title) - 1, " %s", n->title);
 	}
 	if (shortcut) {
-		strncat (title, sdb_fmt (2, " ;[%s]", shortcut), sizeof (title) - strlen (title) - 1);
+		strncat (title, sdb_fmt (2, " ;[g%s]", shortcut), sizeof (title) - strlen (title) - 1);
 		free (shortcut);
 	}
 	if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {

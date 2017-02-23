@@ -2410,7 +2410,11 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 			}
 			shortcut = r_core_add_asmqjmp (core, ds->analop.ptr);
 			if (shortcut) {
-				r_cons_printf (" ;[%s]", shortcut);
+				if (core->is_asmqjmps_letter) {
+					r_cons_printf (" ;[g%s]", shortcut);
+				} else { 
+					r_cons_printf (" ;[%s]", shortcut);
+				}
 				free (shortcut);
 			} else {
 				r_cons_strcat (" ;[?]");
@@ -2431,7 +2435,11 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 			}
 			shortcut = r_core_add_asmqjmp (core, ds->analop.jump);
 			if (shortcut) {
-				r_cons_printf (" ;[%s]", shortcut);
+				if (core->is_asmqjmps_letter) {
+					r_cons_printf (" ;[g%s]", shortcut);
+				} else {
+					r_cons_printf (" ;[%s]", shortcut);
+				}
 				free (shortcut);
 			} else {
 				r_cons_strcat (" ;[?]");
