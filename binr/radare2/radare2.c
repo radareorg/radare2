@@ -1054,11 +1054,6 @@ int main(int argc, char **argv, char **envp) {
 				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
 			free (sha1);
 			free (path);
-			if (has_project && !zerosep) {
-				r_config_set_i (r.config, "scr.interactive", true);
-				r_config_set_i (r.config, "scr.prompt", true);
-				r_config_set_i (r.config, "scr.color", true);
-			}
 		}
 
 		r_list_foreach (evals, iter, cmdn) {
