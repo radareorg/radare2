@@ -1404,7 +1404,8 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		const char *c = core->cons->pal.ai_ascii;
 		const char *cend = Color_RESET;
 		int len, r;
-		r = r_io_read_at (core->io, value, buf, sizeof(buf));
+		r = r_io_read_at (core->io, value, buf, sizeof (buf));
+		buf[sizeof (buf) - 1] = 0;
 		if (r) {
 			switch (is_string (buf, sizeof(buf), &len)) {
 			case 1:
