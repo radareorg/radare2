@@ -70,7 +70,7 @@ static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 
 static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, const char *sfx, bool verbose, bool json) {
 	char *option;
-	bool is_first;
+	bool isFirst;
 	RListIter *iter;
 	char *es = NULL;
 
@@ -88,13 +88,13 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 			}
 			cfg->cb_printf ("\"ro\":%s", node->flags & CN_RO ? "true" : "false");
 			if (!r_list_empty (node->options)) {
-				is_first = true;
+				isFirst = true;
 				cfg->cb_printf (",\"options\":[");
 				r_list_foreach (node->options, iter, option) {
 					es = r_str_escape (option);
 					if (es) {
-						if (is_first) {
-							is_first = false;
+						if (isFirst) {
+							isFirst = false;
 						} else {
 							cfg->cb_printf (",");
 						}
@@ -116,11 +116,11 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 				node->flags & CN_RO ? "(ro)" : "", 
 				node->desc);
 			if (!r_list_empty (node->options)) {
-				is_first = true;
+				isFirst = true;
 				cfg->cb_printf(" [");
 				r_list_foreach (node->options, iter, option) {
-					if (is_first) {
-						is_first = false;
+					if (isFirst) {
+						isFirst = false;
 					} else {
 						cfg->cb_printf(", ");
 					}
@@ -144,12 +144,27 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	int len = 0;
 	bool verbose = false;
 	bool json = false;
-	bool json_is_first = false;
+	bool isFirst = false;
 
 	if (!STRNULL (str)) {
 		str = r_str_chop_ro (str);
 		len = strlen (str);
+		if (len > 0 && str[0] == 'j') {
+			str++;
+			len--;
+			json = true;
+			rad = 'J';
+		}
+		if (len > 0 && str[0] == ' ') {
+			str++;
+			len--;
+		}
+		if (strlen (str) == 0) {
+			str = NULL;
+			len = 0;
+		}
 	}
+
 	switch (rad) {
 	case 1:
 		pfx = "\"e ";
@@ -157,6 +172,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	/* fallthrou */
 	case 'v':
 		verbose = true;
+	/* fallthrou */
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
@@ -181,9 +197,10 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		break;
 	case 'J':
 		verbose = true;
+	/* fallthrou */
 	case 'j':
 		json = true;
-		json_is_first = true;
+		isFirst = true;
 		if (verbose) {
 			cfg->cb_printf ("[");
 		} else {
@@ -192,10 +209,10 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
 				if (!str || !strncmp (str, node->name, len)) {
-					if (!json_is_first) {
-						cfg->cb_printf (",");
+					if (isFirst) {
+						isFirst = false;
 					} else {
-						json_is_first = false;
+						cfg->cb_printf (",");
 					}
 					config_print_node (cfg, node, pfx, sfx, verbose, json);
 				}
