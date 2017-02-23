@@ -345,6 +345,16 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	return false;
 }
 
+static bool mustSaveHistory(RConfig *c) {
+	if (!r_config_get_i (c, "scr.histsave")) {
+		return false;
+	}
+	if (!r_config_get_i (c, "scr.interactive")) {
+		return false;
+	}
+	return true;
+}
+
 #if EMSCRIPTEN
 #include <emscripten.h>
 static RCore *core = NULL;
@@ -488,7 +498,9 @@ int main(int argc, char **argv, char **envp) {
 		case 'u':
 			r_config_set (r.config, "bin.filter", "false");
 			break;
-		case 'a': asmarch = optarg; break;
+		case 'a':
+			asmarch = optarg;
+			break;
 		case 'z': zflag++; break;
 		case 'A':
 			if (!do_analysis) do_analysis ++;
@@ -1215,9 +1227,8 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		}
 	}
-	if (r_config_get_i (r.config, "scr.histsave") &&
-			r_config_get_i (r.config, "scr.interactive") &&
-			!r_sandbox_enable (0)) {
+
+	if (mustSaveHistory(r.config)) {
 		r_line_hist_save (R2_HOMEDIR"/history");
 	}
 	// TODO: kill thread

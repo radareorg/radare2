@@ -781,7 +781,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *fmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
+	bool use_hexa = true;
 	const char *a, *b;
+
 
 	len = len - (len % step);
 	if (p) {
@@ -790,11 +792,15 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		use_header = p->flags & R_PRINT_FLAGS_HEADER;
 		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
 		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
+		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
 		compact = p->flags & R_PRINT_FLAGS_COMPACT;
 		inc = p->cols;
 		col = p->col;
 		printfmt = (PrintfCallback) p->cb_printf;
 		stride = p->stride;
+	}
+	if (!use_hexa) {
+		inc *= 4;
 	}
 	if (step < 1) {
 		step = 1;
@@ -873,18 +879,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			printfmt ((col == 1)? "|": " ");
 			opad >>= 4;
 			k = 0; // TODO: ??? SURE??? config.seek & 0xF;
-			/* extra padding for offsets > 8 digits */
-			for (i = 0; i < inc; i++) {
-				printfmt (pre);
-				if (base < 0) {
-					if (i & 1) {
-						printfmt (" ");
+			if (use_hexa) {
+				/* extra padding for offsets > 8 digits */
+				for (i = 0; i < inc; i++) {
+					printfmt (pre);
+					if (base < 0) {
+						if (i & 1) {
+							printfmt (" ");
+						}
 					}
-				}
-				printfmt (" %c", hex[(i + k) % 16]);
-				if (i & 1 || !pairs) {
-					if (!compact) {
-						printfmt (col != 1? " ": ((i + 1) < inc)? " ": "|");
+					printfmt (" %c", hex[(i + k) % 16]);
+					if (i & 1 || !pairs) {
+						if (!compact) {
+							printfmt (col != 1? " ": ((i + 1) < inc)? " ": "|");
+						}
 					}
 				}
 			}
@@ -942,93 +950,95 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (use_offset) {
 			r_print_addr (p, addr + j);
 		}
-		if (!compact) {
-			printfmt ((col == 1)? "|": " ");
-		}
-		for (j = i; j < i + inc; j++) {
-			if (!compact && j >= len) {
-				if (col == 1) {
-					if (j + 1 >= inc + i) {
-						printfmt (j % 2? "  |": "| ");
-					} else {
-						printfmt (j % 2? "   ": "  ");
-					}
-				} else {
-					if (base == 10) {
-						printfmt (j % 2? "     ": "  ");
-					} else {
-						printfmt (j % 2? "   ": "  ");
-					}
-				}
-				continue;
+		if (use_hexa) {
+			if (!compact) {
+				printfmt ((col == 1)? "|": " ");
 			}
-			if (p && (base == 32 || base == 64)) {
-				int left = len - i;
-				/* TODO: check step. it should be 2/4 for base(32) and 8 for
-				*       base(64) */
-				ut64 n = 0;
-				size_t sz_n;
-
-				if (base == 64) {
-					sz_n = sizeof (ut64);
-				} else {
-					sz_n = step == 2? sizeof (ut16): sizeof (ut32);
+			for (j = i; j < i + inc; j++) {
+				if (!compact && j >= len) {
+					if (col == 1) {
+						if (j + 1 >= inc + i) {
+							printfmt (j % 2? "  |": "| ");
+						} else {
+							printfmt (j % 2? "   ": "  ");
+						}
+					} else {
+						if (base == 10) {
+							printfmt (j % 2? "     ": "  ");
+						} else {
+							printfmt (j % 2? "   ": "  ");
+						}
+					}
+					continue;
 				}
-				sz_n = R_MIN (left, sz_n);
-				r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, p && p->big_endian);
-				r_print_cursor (p, j, 1);
-				// stub for colors
-				if (p && p->colorfor) {
-					a = p->colorfor (p->user, n, true);
-					if (a && *a) {
-						b = Color_RESET;
+				if (p && (base == 32 || base == 64)) {
+					int left = len - i;
+					/* TODO: check step. it should be 2/4 for base(32) and 8 for
+					 *       base(64) */
+					ut64 n = 0;
+					size_t sz_n;
+
+					if (base == 64) {
+						sz_n = sizeof (ut64);
+					} else {
+						sz_n = step == 2? sizeof (ut16): sizeof (ut32);
+					}
+					sz_n = R_MIN (left, sz_n);
+					r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, p && p->big_endian);
+					r_print_cursor (p, j, 1);
+					// stub for colors
+					if (p && p->colorfor) {
+						a = p->colorfor (p->user, n, true);
+						if (a && *a) {
+							b = Color_RESET;
+						} else {
+							a = b = "";
+						}
 					} else {
 						a = b = "";
 					}
+					if (base == 64) {
+						printfmt ("%s0x%016" PFMT64x "%s  ", a, (ut64) n, b);
+					} else if (step == 2) {
+						printfmt ("%s0x%04x%s ", a, (ut16) n, b);
+					} else {
+						printfmt ("%s0x%08x%s ", a, (ut32) n, b);
+					}
+					r_print_cursor (p, j, 0);
+					j += step - 1;
+				} else if (base == -8) {
+					long long w = r_read_ble64 (buf + j, p && p->big_endian);
+					printfmt ("%23" PFMT64d " ", w);
+					j += 7;
+				} else if (base == -1) {
+					st8 w = r_read_ble8 (buf + j);
+					printfmt ("%4d ", w);
+				} else if (base == -10) {
+					st16 w = r_read_ble16 (buf + j, p && p->big_endian);
+					printfmt ("%7d ", w);
+					j += 1;
+				} else if (base == 10) {
+					int w = r_read_ble32 (buf + j, p && p->big_endian);
+					printfmt ("%13d ", w);
+					j += 3;
 				} else {
-					a = b = "";
-				}
-				if (base == 64) {
-					printfmt ("%s0x%016" PFMT64x "%s  ", a, (ut64) n, b);
-				} else if (step == 2) {
-					printfmt ("%s0x%04x%s ", a, (ut16) n, b);
-				} else {
-					printfmt ("%s0x%08x%s ", a, (ut32) n, b);
-				}
-				r_print_cursor (p, j, 0);
-				j += step - 1;
-			} else if (base == -8) {
-				long long w = r_read_ble64 (buf + j, p && p->big_endian);
-				printfmt ("%23" PFMT64d " ", w);
-				j += 7;
-			} else if (base == -1) {
-				st8 w = r_read_ble8 (buf + j);
-				printfmt ("%4d ", w);
-			} else if (base == -10) {
-				st16 w = r_read_ble16 (buf + j, p && p->big_endian);
-				printfmt ("%7d ", w);
-				j += 1;
-			} else if (base == 10) {
-				int w = r_read_ble32 (buf + j, p && p->big_endian);
-				printfmt ("%13d ", w);
-				j += 3;
-			} else {
-				if (j >= len) {
-					break;
-				}
-				r_print_byte (p, fmt, j, buf[j]);
-				if (j % 2 || !pairs) {
-					if (col == 1) {
-						if (j + 1 < inc + i) {
+					if (j >= len) {
+						break;
+					}
+					r_print_byte (p, fmt, j, buf[j]);
+					if (j % 2 || !pairs) {
+						if (col == 1) {
+							if (j + 1 < inc + i) {
+								if (!compact) {
+									printfmt (" ");
+								}
+							} else {
+								printfmt ("|");
+							}
+						} else {
 							if (!compact) {
 								printfmt (" ");
 							}
-						} else {
-							printfmt ("|");
-						}
-					} else {
-						if (!compact) {
-							printfmt (" ");
 						}
 					}
 				}

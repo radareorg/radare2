@@ -3833,6 +3833,26 @@ static int cmd_print(void *data, const char *input) {
 				annotated_hexdump (core, input + 2, len);
 			}
 			break;
+		case 'x': // "pxx"
+			if (l != 0) {
+				core->print->flags |= R_PRINT_FLAGS_NONHEX;
+				r_print_hexdump (core->print, core->offset,
+					core->block, len, 8, 1);
+				core->print->flags &= ~R_PRINT_FLAGS_NONHEX;
+			}
+			break;
+		case 'X': // "pxX"
+			if (l != 0) {
+				ut8 *buf = calloc (len, 4);
+				if (buf) {
+					r_io_read_at (core->io, core->offset, buf, len * 4);
+					core->print->flags |= R_PRINT_FLAGS_NONHEX;
+					r_print_hexdump (core->print, core->offset, buf, len * 4, 8, 1);
+					core->print->flags &= ~R_PRINT_FLAGS_NONHEX;
+					free (buf);
+				}
+			}
+			break;
 		case 'A': // "pxA"
 			if (input[2]=='?') {
 				eprintf ("Usage: pxA [len]   # f.ex: pxA 4K\n"
