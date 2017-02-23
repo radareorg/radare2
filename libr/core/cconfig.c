@@ -5,11 +5,23 @@
 #define NODECB(w,x,y) r_config_set_cb(cfg,w,x,y)
 #define NODEICB(w,x,y) r_config_set_i_cb(cfg,w,x,y)
 #define SETDESC(x,y) r_config_node_desc(x,y)
-#define SETOPTION(x,y) r_list_append((x)->options,strdup(y))
+#define SETOPTIONS(x, ...) set_options(x, __VA_ARGS__)
 #define SETI(x,y,z) SETDESC(r_config_set_i(cfg,x,y), z);
 #define SETICB(w,x,y,z) SETDESC(NODEICB(w,x,y), z);
 #define SETPREF(x,y,z) SETDESC(r_config_set(cfg,x,y), z);
 #define SETCB(w,x,y,z) SETDESC(NODECB(w,x,y), z);
+
+static void set_options(RConfigNode *node, ...) {
+	va_list argp;
+	char *option = NULL;
+	va_start (argp, node);
+	option = va_arg (argp, char *);
+	while (option) {
+		r_list_append (node->options, strdup (option));
+		option = va_arg (argp, char *);
+	}
+	va_end (argp);
+}
 
 /* TODO: use loop here */
 /*------------------------------------------------------------------------------------------*/
@@ -2009,9 +2021,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
 	n = NODECB("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
 	SETDESC(n, "Select backtrace algorithm");
-	SETOPTION(n, "default");
-	SETOPTION(n, "fuzzy");
-	SETOPTION(n, "anal");
+	SETOPTIONS(n, "default", "fuzzy", "anal", NULL);
 	SETCB("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB("dbg.aftersyscall", "true", &cb_dbg_aftersc, "Stop execution before the syscall is executed (see dcs)");
