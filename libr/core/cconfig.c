@@ -23,6 +23,15 @@ static void set_options(RConfigNode *node, ...) {
 	va_end (argp);
 }
 
+static void print_node_options(RConfigNode *node) {
+	RListIter *iter;
+	char *option;
+	r_cons_printf ("%s:\n", node->desc);
+	r_list_foreach (node->options, iter, option) {
+		r_cons_printf ("%s\n", option);
+	}
+}
+
 /* TODO: use loop here */
 /*------------------------------------------------------------------------------------------*/
 
@@ -214,11 +223,21 @@ static int cb_analnoncode(void *user, void *data) {
 	return true;
 }
 
+static void update_analarch_options(RCore *core, RConfigNode *node) {
+	RAnalPlugin *h;
+	RListIter *it;
+	r_list_purge (node->options);
+	r_list_foreach (core->anal->plugins, it, h) {
+		SETOPTIONS(node, h->name, NULL);
+	}
+}
+
 static int cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_anal_list (core->anal);
+		update_analarch_options (core, node);
+		print_node_options (node);
 		return false;
 	}
 	if (*node->value) {
@@ -273,6 +292,49 @@ static int cb_asmassembler(void *user, void *data) {
 	return true;
 }
 
+static void update_asmcpu_options (RCore *core, RConfigNode *node) {
+	RAsmPlugin *h;
+	RListIter *iter;
+	const char *arch = r_config_get (core->config, "asm.arch");
+	if (!core || !core->assembler || !arch || !(*arch)) {
+		return;
+	}
+	r_list_purge (node->options);
+	r_list_foreach (core->assembler->plugins, iter, h) {
+		if (h->cpus && !strcmp (arch, h->name)) {
+			char *c = strdup (h->cpus);
+			int i, n = r_str_split (c, ',');
+			for (i = 0; i < n; i++) {
+				SETOPTIONS (node, r_str_word_get0 (c, i), NULL);
+			}
+			free (c);
+		}
+	}
+}
+
+static int cb_asmcpu(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (*node->value == '?') {
+		update_asmcpu_options (core, node);
+		/* print verbose help instead of plain option listing */
+		rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
+		return 0;
+	}
+	r_asm_set_cpu (core->assembler, node->value);
+	r_config_set (core->config, "anal.cpu", node->value);
+	return true;
+}
+
+static void update_asmarch_options(RCore *core, RConfigNode *node) {
+	RAsmPlugin *h;
+	RListIter *iter;
+	r_list_purge (node->options);
+	r_list_foreach (core->assembler->plugins, iter, h) {
+		SETOPTIONS(node, h->name, NULL);
+	}
+}
+
 static int cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
@@ -287,6 +349,8 @@ static int cb_asmarch(void *user, void *data) {
 		bits = core->anal->bits;
 	}
 	if (*node->value == '?') {
+		update_asmarch_options (core, node);
+		/* print more verbose help instead of plain option values */
 		rasm2_list (core, NULL, node->value[1]);
 		return false;
 	}
@@ -382,6 +446,10 @@ static int cb_asmarch(void *user, void *data) {
 	}
 	r_asm_set_cpu (core->assembler, asm_cpu);
 	free (asm_cpu);
+	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
+	if (asmcpu) {
+		update_asmcpu_options (core, asmcpu);
+	}
 	/* reload types and cc info */
 	// changing asm.arch changes anal.arch
 	// changing anal.arch sets types db
@@ -485,18 +553,29 @@ static int cb_asmbits(void *user, void *data) {
 	return ret;
 }
 
+static void update_asmfeatures_options (RCore *core, RConfigNode *node) {
+	int i, argc;
+	char *features;
+
+	if (core && core->assembler && core->assembler->cur) {
+		if (core->assembler->cur->features) {
+			features = strdup (core->assembler->cur->features);
+			argc = r_str_split (features, ',');
+			for (i = 0; i < argc; i++) {
+				const char *feature = r_str_word_get0 (features, i);
+				SETOPTIONS(node, feature, NULL);
+			}
+			free (features);
+		}
+	}
+}
+
 static int cb_asmfeatures(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
-		if (core && core->assembler && core->assembler->cur) {
-			if (core->assembler->cur->features) {
-				char *feat = strdup (core->assembler->cur->features);
-				r_str_replace_char (feat, ',','\n');
-				r_cons_println (feat);
-				free (feat);
-			}
-		}
+		update_asmfeatures_options (core, node);
+		print_node_options (node);
 		return 0;
 	}
 	free (core->assembler->features);
@@ -505,18 +584,6 @@ static int cb_asmfeatures(void *user, void *data) {
 		core->assembler->features = strdup (node->value);
 	}
 	return 1;
-}
-
-static int cb_asmcpu(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	if (*node->value == '?') {
-		rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
-		return 0;
-	}
-	r_asm_set_cpu (core->assembler, node->value);
-	r_config_set (core->config, "anal.cpu", node->value);
-	return true;
 }
 
 static int cb_asmlineswidth(void *user, void *data) {
@@ -538,10 +605,9 @@ static int cb_emustr(void *user, void *data) {
 static int cb_emuskip(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_cons_printf ("Concatenation of meta types encoded as characters:\n" \
-				"'d': data\n'c': code\n's': string\n'f': format\n'm': magic\n" \
-				"'h': hide\n'C': comment\n'r': run\n" \
-				"(default is 'ds' to skip data and strings)\n");
+		print_node_options (node);
+		r_cons_printf ("Concatenation of meta types encoded as characters.\n" \
+				"Default is 'ds' to skip data and strings.\n");
 		return false;
 	}
 	return true;
@@ -572,7 +638,7 @@ static int cb_asmos(void *user, void *data) {
 	RConfigNode *asmarch, *node = (RConfigNode*) data;
 
 	if (*node->value == '?') {
-		r_cons_printf ("ios\ndos\ndarwin\nlinux\nfreebsd\nopenbsd\nnetbsd\nwindows\n");
+		print_node_options (node);
 		return 0;
 	}
 	if (!node->value[0]) {
@@ -621,11 +687,7 @@ static int cb_strpurge(void *user, void *data) {
 static int cb_midflags (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->value[0] == '?') {
-		eprintf ("Valid values for asm.midflags:\n");
-		eprintf ("0  do not show middle flags\n");
-		eprintf ("1  print the middfle flag without realign instruction\n");
-		eprintf ("2  realign the instruction at the middle flag\n");
-		eprintf ("3  realign the instruction at the middle flag only if it's a sym.\n");
+		print_node_options (node);
 		return false;
 	}
 	return true;
@@ -635,15 +697,7 @@ static int cb_strfilter(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value[0] == '?') {
-		eprintf ("Valid values for bin.strfilter:\n");
-		eprintf ("a  only alphanumeric printable\n");
-		eprintf ("8  only strings with utf8 chars\n");
-		eprintf ("p  file/directory paths\n");
-		eprintf ("e  email-like addresses\n");
-		eprintf ("u  urls\n");
-		eprintf ("i  IPv4 address-like strings\n");
-		eprintf ("U  only uppercase strings\n");
-		eprintf ("f  format-strings\n");
+		print_node_options (node);
 		return false;
 	} else {
 		core->bin->strfilter = node->value[0];
@@ -662,7 +716,7 @@ static int cb_asmsyntax(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_cons_printf ("att\nintel\nmasm\njz\nregnum\n");
+		print_node_options (node);
 		return false;
 	} else {
 		int syntax = r_asm_syntax_from_string (node->value);
@@ -802,7 +856,7 @@ static int cb_decoff(void *user, void *data) {
 static int cb_dbgbep(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		r_cons_printf ("loader\nentry\nconstructor\nmain\n");
+		print_node_options (node);
 		return false;
 	}
 	return true;
@@ -812,11 +866,7 @@ static int cb_dbg_btalgo(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
-		RListIter *iter;
-		char *option;
-		r_list_foreach (node->options, iter, option) {
-			r_cons_printf ("%s\n", option);
-		}
+		print_node_options (node);
 		return false;
 	}
 	free (core->dbg->btalgo);
@@ -1069,7 +1119,7 @@ static int cb_fsview(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
-		eprintf ("Values: all|deleted|special\n");
+		print_node_options (node);
 		return false;
 	}
 	if (!strcmp (node->value, "all")) {
@@ -1344,7 +1394,7 @@ static int cb_scrint(void *user, void *data) {
 static int cb_scrnkey(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (!strcmp (node->value, "help") || *node->value == '?') {
-		r_cons_printf ("scr.nkey = fun, hit, flag\n");
+		print_node_options (node);
 		return false;
 	}
 	return true;
@@ -1576,10 +1626,7 @@ static int cb_binminstr(void *user, void *data) {
 static int cb_searchin(void *user, void *data) {
  	RConfigNode *node = (RConfigNode*) data;
  	if (*node->value == '?') {
-		r_cons_printf ("raw\nblock\nfile\nio.maps\nio.maprange\nio.section\n" \
-			"io.sections\nio.sections.write\nio.sections.exec\n" \
-			"dbg.stack\ndbg.heap\ndbg.map\ndbg.maps\n"\
-			"dbg.maps.exec\ndbg.maps.write\nanal.fcn\nanal.bb\n");
+		print_node_options (node);
  		return false;
  	}
  	return true;
@@ -1588,7 +1635,7 @@ static int cb_searchin(void *user, void *data) {
 static int cb_fileloadmethod(void *user, void *data) {
  	RConfigNode *node = (RConfigNode*) data;
  	if (*node->value == '?') {
- 		r_cons_printf ("fail\noverwrite\nappend\n");
+		print_node_options (node);
  		return false;
  	}
  	return true;
@@ -1797,7 +1844,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB("anal.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
 	SETCB("anal.noncode", "false", &cb_analnoncode, "Analyze data as code");
-	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
+	n = NODECB("anal.arch", R_SYS_ARCH, &cb_analarch);
+	SETDESC(n, "Select the architecture to use");
+	update_analarch_options (core, n);
 	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis");
@@ -1832,12 +1881,19 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
-	SETCB("asm.os", R_SYS_OS, &cb_asmos, "Select operating system (kernel) (linux, darwin, w32,..)");
+	n = NODECB("asm.os", R_SYS_OS, &cb_asmos);
+	SETDESC(n, "Select operating system (kernel)");
+	SETOPTIONS(n, "ios", "dos", "darwin", "linux", "freebsd", NULL);
+	SETOPTIONS(n, "openbsd", "netbsd", "windows", NULL);
 	SETI("asm.maxrefs", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
 	SETCB("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
 	SETPREF("asm.bytes", "true", "Display the bytes of each instruction");
 	SETPREF("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
-	SETICB("asm.midflags", 2, &cb_midflags, "Realign disassembly if there is a flag in the middle of an instruction");
+	n = NODEICB("asm.midflags", 2, &cb_midflags);
+	SETDESC(n, "Realign disassembly if there is a flag in the middle of an instruction");
+	SETOPTIONS(n, "0 = do not show flag", "1 = show without realign", NULL);
+	SETOPTIONS(n, "2 = realign at middle flag", NULL);
+	SETOPTIONS(n, "3 = realign at middle flag if sym.*", NULL);
 	SETPREF("asm.cmtflgrefs", "true", "Show comment flags associated to branch reference");
 	SETPREF("asm.cmtright", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI("asm.cmtcol", 70, "Align comments at column 60");
@@ -1860,7 +1916,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.emu", "false", "Run ESIL emulation analysis on disasm");
 	SETCB("asm.emustr", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF("asm.emuwrite", "false", "Allow asm.emu to modify memory (WARNING)");
-	SETCB("asm.emuskip", "ds", &cb_emuskip, "Skip metadata of given types in asm.emu (see e asm.emuskip=?)");
+	n = NODECB("asm.emuskip", "ds", &cb_emuskip);
+	SETDESC(n, "Skip metadata of given types in asm.emu");
+	SETOPTIONS(n, "d = data", "c = code", "s = string", "f = format", NULL);
+	SETOPTIONS(n, "m = magic", "h = hide", "C = comment", "r = run", NULL);
 	SETPREF("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF("asm.flags", "true", "Show flags");
@@ -1904,13 +1963,22 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETPREF("asm.minicols", "false", "Only show the instruction in the column disasm");
-	SETCB("asm.cpu", R_SYS_ARCH, &cb_asmcpu, "Set the kind of asm.arch cpu");
-	SETCB("asm.arch", R_SYS_ARCH, &cb_asmarch, "Set the arch to be used by asm");
-	SETCB("asm.features", "", &cb_asmfeatures, "Specify supported features by the target CPU (=? for help)");
+	RConfigNode *asmcpu = NODECB("asm.cpu", R_SYS_ARCH, &cb_asmcpu);
+	SETDESC(asmcpu, "Set the kind of asm.arch cpu");
+	RConfigNode *asmarch = NODECB("asm.arch", R_SYS_ARCH, &cb_asmarch);
+	SETDESC(asmarch, "Set the arch to be used by asm");
+	/* we need to have both asm.arch and asm.cpu defined before updating options */
+	update_asmarch_options (core, asmarch);
+	update_asmcpu_options (core, asmcpu);
+	n = NODECB("asm.features", "", &cb_asmfeatures);
+	SETDESC(n, "Specify supported features by the target CPU");
+	update_asmfeatures_options (core, n);
 	SETCB("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB("asm.decoff", "false", &cb_decoff, "Show segmented address in prompt (x86-16)");
-	SETCB("asm.syntax", "intel", &cb_asmsyntax, "Select assembly syntax");
+	n = NODECB("asm.syntax", "intel", &cb_asmsyntax);
+	SETDESC(n, "Select assembly syntax");
+	SETOPTIONS(n, "att", "intel", "masm", "jz", "regnum", NULL);
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
 	SETPREF("asm.bytespace", "false", "Separate hexadecimal bytes with a whitespace");
 #if R_SYS_BITS == R_SYS_BITS_64
@@ -1929,7 +1997,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.cmtpatch", "false", "Show patch comments in disasm");
 	SETCB("bin.strpurge", "false", &cb_strpurge, "Try to purge false positive strings");
 	SETPREF("bin.libs", "false", "Try to load libraries after loading main binary");
-	SETCB("bin.strfilter", "", &cb_strfilter, "Filter strings (?:help, a:scii, e:mail, p:ath, u:rl, 8:utf8)");
+	n = NODECB("bin.strfilter", "", &cb_strfilter);
+	SETDESC(n, "Filter strings");
+	SETOPTIONS(n, "a = only alphanumeric printable", "8 = only strings with utf8 chars", NULL);
+	SETOPTIONS(n, "p = file/directory paths", "e = email-like addresses", NULL);
+	SETOPTIONS(n, "u = urls", "i = IPv4 address-like strings", NULL);
+	SETOPTIONS(n, "U = only uppercase strings", "f = format-strings", NULL);
 	SETCB("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF("bin.lang", "", "Language for bin.demangle");
@@ -2045,7 +2118,9 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETCB("dbg.backend", "esil", &cb_dbgbackend, "Select the debugger backend");
 #endif
-	SETCB("dbg.bep", "loader", &cb_dbgbep, "break on entrypoint (loader, entry, constructor, main)");
+	n = NODECB("dbg.bep", "loader", &cb_dbgbep);
+	SETDESC(n, "Break on entrypoint");
+	SETOPTIONS(n, "loader", "entry", "constructor", "main", NULL);
 	if (core->cons->rows > 30) { // HACKY
 		r_config_set_i (cfg, "dbg.follow", 64);
 	} else {
@@ -2116,7 +2191,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");
 
 	/* filesystem */
-	SETCB("fs.view", "normal", &cb_fsview, "Set visibility options for filesystems");
+	n = NODECB("fs.view", "normal", &cb_fsview);
+	SETDESC(n, "Set visibility options for filesystems");
+	SETOPTIONS(n, "all", "deleted", "special", NULL);
 
 	/* hexdump */
 	SETPREF("hex.header", "true", "Show header in hexdumps");
@@ -2248,7 +2325,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interactive mode");
 	SETI("scr.feedback", 1, "Set visual feedback level (1=arrow on jump, 2=every key (useful for videos))");
 	SETCB("scr.html", "false", &cb_scrhtml, "Disassembly uses HTML syntax");
-	SETCB("scr.nkey", "flag", &cb_scrnkey, "Affects n/N visual cmds. Select visual seek mode (fun, hit, flag)");
+	n = NODECB("scr.nkey", "flag", &cb_scrnkey);
+	SETDESC(n, "Select visual seek mode (affects n/N visual commands)");
+	SETOPTIONS(n, "fun", "hit", "flag", NULL);
 	SETCB("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
 	SETPREF("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETPREF("scr.pipecolor", "false", "Enable colors when using pipes");
@@ -2282,7 +2361,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("search.overlap", "false", "Look for overlapped search hits");
 	SETI("search.maxhits", 0, "Maximum number of hits (0: no limit)");
 	SETI("search.from", -1, "Search start address");
-	SETCB("search.in", "file", &cb_searchin, "Specify search boundaries (raw, block, file, section, range)");
+	n = NODECB("search.in", "file", &cb_searchin);
+	SETDESC(n, "Specify search boundaries");
+	SETOPTIONS(n, "raw", "block", "file", "io.maps", "io.maprange", "io.section", NULL);
+	SETOPTIONS(n, "io.sections", "io.sections.write", "io.sections.exec", NULL);
+	SETOPTIONS(n, "dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", NULL);
+	SETOPTIONS(n, "dbg.maps.exec", "dbg.maps.write", "anal.fcn", "anal.bb", NULL);
 	SETICB("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF("search.prefix", "hit", "Prefix name in search hits label");
 	SETPREF("search.show", "true", "Show search results");
@@ -2318,7 +2402,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("file.path", "", "Path of current file");
 	SETPREF("file.sha1", "", "SHA1 hash of current file");
 	SETPREF("file.type", "", "Type of current file");
-	SETCB("file.loadmethod", "fail", &cb_fileloadmethod, "What to do when load addresses overlap: fail, overwrite, or append (next available)");
+	n = NODECB("file.loadmethod", "fail", &cb_fileloadmethod);
+	SETDESC(n, "What to do when load addresses overlap");
+	SETOPTIONS(n, "fail", "overwrite", "append", NULL);
 	SETI("file.loadalign", 1024, "Alignment of load addresses");
 	SETI("file.openmany", 1, "Maximum number of files opened at once");
 	SETPREF("file.nowarn", "true", "Suppress file loading warning messages");
