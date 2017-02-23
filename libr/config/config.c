@@ -170,9 +170,6 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		pfx = "\"e ";
 		sfx = "\"";
 	/* fallthrou */
-	case 'v':
-		verbose = true;
-	/* fallthrou */
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
@@ -187,6 +184,14 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 					cfg->cb_printf ("%20s: %s\n", node->name,
 						node->desc? node->desc: "");
 				}
+			}
+		}
+		break;
+	case 'v':
+		verbose = true;
+		r_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp (str, node->name, len)))) {
+				config_print_node (cfg, node, pfx, sfx, verbose, json);
 			}
 		}
 		break;
