@@ -114,7 +114,15 @@ fi
 		diff -ru "${IFILE}" .tmp-format
 		rm .tmp-format
 	elif [ "$INPLACE" = 1 ]; then
-		mv .tmp-format "${IFILE}"
+		if [ -s .tmp-format ]; then
+			mv .tmp-format "${IFILE}"
+		else
+			rm -f .tmp-format
+			rm -f .tmp-format2
+			rm -f ${CWD}/.clang-format
+			echo "Syntax error. Not re-indented"
+			exit 1
+		fi
 	else
 		cat .tmp-format
 		rm .tmp-format
