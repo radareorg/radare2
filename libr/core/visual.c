@@ -281,6 +281,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	ut64 bsze = core->blocksize;
 	int h;
 	(void) r_cons_get_size (&h);
+	r_cons_enable_mouse (false);
 	r_cons_gotoxy (0, h - 2);
 	r_cons_reset_colors ();
 	r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
@@ -312,6 +313,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	}
 	r_cons_show_cursor (false);
 	core->vmode = true;
+	r_cons_enable_mouse (true);
 }
 
 R_API int r_core_visual_prompt(RCore *core) {

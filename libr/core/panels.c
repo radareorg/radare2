@@ -590,6 +590,8 @@ repeat:
 			if (strstr (action, "New")) {
 				addPanelFrame ("New files", "o", 0);
 			} else if (strstr (action, "Open")) {
+				/* XXX doesnt autocompletes filenames */
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("open file: ");
 				if (res) {
 					if (*res) {
@@ -597,6 +599,7 @@ repeat:
 					}
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Info")) {
 				addPanelFrame ("Info", "i", 0);
 			} else if (strstr (action, "Database")) {
@@ -628,54 +631,71 @@ repeat:
 			} else if (strstr (action, "Calls")) {
 				r_core_cmdf (core, "aac");
 			} else if (strstr (action, "ROP")) {
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("rop grep: ");
 				if (res) {
 					r_core_cmdf (core, "\"/R %s\"", res);
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "String")) {
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("search string: ");
 				if (res) {
 					r_core_cmdf (core, "\"/ %s\"", res);
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Hexpairs")) {
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("search hexpairs: ");
 				if (res) {
 					r_core_cmdf (core, "\"/x %s\"", res);
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Code")) {
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("search code: ");
 				if (res) {
 					r_core_cmdf (core, "\"/c %s\"", res);
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Copy")) {
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("How many bytes? ");
 				if (res) {
 					r_core_cmdf (core, "\"y %s\"", res);
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Write String")) {
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("insert string: ");
 				if (res) {
 					r_core_cmdf (core, "\"w %s\"", res);
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Write Value")) {
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("insert number: ");
 				if (res) {
 					r_core_cmdf (core, "\"wv %s\"", res);
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Write Hex")) {
+				r_cons_enable_mouse (false);
 				char *res = r_cons_input ("insert hexpairs: ");
 				if (res) {
 					r_core_cmdf (core, "\"wx %s\"", res);
 					free (res);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Calculator")) {
+				r_cons_enable_mouse (false);
 				for (;;) {
 					char *s = r_cons_input ("> ");
 					if (!s || !*s) {
@@ -686,6 +706,7 @@ repeat:
 					r_cons_flush ();
 					free (s);
 				}
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "Assemble")) {
 				r_core_visual_asm (core, core->offset);
 			} else if (strstr (action, "Sections")) {
@@ -719,9 +740,11 @@ repeat:
 			} else if (strstr (action, "io.cache")) {
 				r_core_cmd0 (core, "e!io.cache");
 			} else if (strstr (action, "Fill")) {
+                                r_cons_enable_mouse (false);
 				char *s = r_cons_input ("Fill with: ");
 				r_core_cmdf (core, "wow %s", s);
 				free (s);
+                                r_cons_enable_mouse (true);
 			} else if (strstr (action, "References")) {
 				r_core_cmdf (core, "aar");
 			} else if (strstr (action, "FcnInfo")) {
@@ -878,6 +901,7 @@ repeat:
 		break;
 	case 'M':
 	{
+		r_cons_enable_mouse (false);
 		char *name = r_cons_input ("Name: ");
 		char *cmd = r_cons_input ("Command: ");
 		if (name && *name && cmd && *cmd) {
@@ -885,6 +909,7 @@ repeat:
 		}
 		free (name);
 		free (cmd);
+		r_cons_enable_mouse (true);
 	}
 	break;
 	case 'm':
