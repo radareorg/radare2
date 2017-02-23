@@ -2326,8 +2326,7 @@ repeat:
 			goto out_return_one;
 		}
 	}
-	int rc = r_io_read_at (core->io, addr, code, sizeof (code));
-	if (rc != sizeof (code)) {
+	if (!r_io_read_at (core->io, addr, code, sizeof (code))) {
 		eprintf ("read error\n");
 	}
 	r_asm_set_pc (core->assembler, addr);
