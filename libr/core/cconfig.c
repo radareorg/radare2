@@ -26,7 +26,6 @@ static void set_options(RConfigNode *node, ...) {
 static void print_node_options(RConfigNode *node) {
 	RListIter *iter;
 	char *option;
-	r_cons_printf ("%s:\n", node->desc);
 	r_list_foreach (node->options, iter, option) {
 		r_cons_printf ("%s\n", option);
 	}
