@@ -47,6 +47,12 @@ export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
 export R2PM_OLDPWD="${PWD}"
 
+if [ "`uname`" = Darwin ]; then
+	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
+else
+	export DYLD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
+fi
+
 # Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
