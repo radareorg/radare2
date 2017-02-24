@@ -587,8 +587,6 @@ R_API void r_core_anal_cc_init(RCore *core) {
 static int bin_info(RCore *r, int mode) {
 	int i, j, v;
 	char str[R_FLAG_NAME_SIZE];
-	char size_str[32];
-	char baddr_str[32];
 	RBinInfo *info = r_bin_get_info (r->bin);
 	RBinFile *binfile = r_core_bin_cur (r);
 	RBinObject *obj = r_bin_cur_object (r->bin);
@@ -603,8 +601,6 @@ static int bin_info(RCore *r, int mode) {
 	}
 	havecode = is_executable (obj) | (obj->entries != NULL);
 	compiled = get_compile_time (binfile->sdb);
-	snprintf (size_str, sizeof (size_str), "%"PFMT64u,  r_bin_get_size (r->bin));
-	snprintf (baddr_str, sizeof (baddr_str), "%"PFMT64u,  info->baddr);
 
 	if (IS_MODE_SET (mode)) {
 		r_config_set (r->config, "file.type", info->rclass);
@@ -711,7 +707,7 @@ static int bin_info(RCore *r, int mode) {
 		pair_bool ("lsyms", R_BIN_DBG_SYMS & info->dbg_info, mode, false);
 		pair_bool ("relocs", R_BIN_DBG_RELOCS & info->dbg_info, mode, false);
 		pair_str ("rpath", info->rpath, mode, false);
-		pair_str ("binsz", size_str, mode, false);
+		pair_int ("binsz", r_bin_get_size (r->bin), mode, false);
 		pair_str ("compiled", compiled, mode, false);
 		tmp_buf = r_str_escape (info->debug_file_name);
 		pair_str ("dbg_file", tmp_buf, mode, false);
