@@ -47,7 +47,11 @@ extern char **environ;
 #include <io.h>
 #include <winbase.h>
 #include <windows.h>
-#include <DbgHelp.h>
+#if defined(MINGW32)
+#include <imagehlp.h>
+#else
+ #include <dbghelp.h>
+#endif
 #endif
 
 R_LIB_VERSION(r_util);

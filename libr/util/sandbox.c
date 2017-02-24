@@ -70,7 +70,8 @@ R_API int r_sandbox_check_path (const char *path) {
 	if (*path == '/') {
 		return 0;
 	}
-#if __UNIX__
+#if __UNIX_
+	char ch;
 	if (readlink (path, &ch, 1) != -1) {
 		return false;
 	}

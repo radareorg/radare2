@@ -9,6 +9,13 @@
 
 #define ALIGNMENT sizeof (void*)
 
+#if __SDB_WINDOWS && !__CYGWIN__
+#include <intrin.h>
+#include <malloc.h>
+#include <windows.h>
+//extern void _aligned_free(void *memblock);
+#endif
+
 char *cdb_alloc(ut32 n) {
 #if __APPLE__ && !__POWERPC__
 	void *ret = NULL;
@@ -19,10 +26,6 @@ char *cdb_alloc(ut32 n) {
 	return malloc (n);
 #endif
 }
-
-#if __SDB_WINDOWS && !__CYGWIN__
-extern void _aligned_free(void *memblock);
-#endif
 
 void cdb_alloc_free(void *x) {
 #if __SDB_WINDOWS__ && !__CYGWIN__
