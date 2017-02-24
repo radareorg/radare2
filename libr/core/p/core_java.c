@@ -1404,7 +1404,8 @@ static int r_cmd_java_call(void *user, const char *input) {
 	}
 	for (; i < END_CMDS; i++) {
 		//IFDBG r_cons_printf ("Checking cmd: %s %d %s\n", JAVA_CMDS[i].name, JAVA_CMDS[i].name_len, p);
-		IFDBG r_cons_printf ("Checking cmd: %s %d\n", JAVA_CMDS[i].name, strncmp (input+5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len));
+		IFDBG r_cons_printf ("Checking cmd: %s %d\n", JAVA_CMDS[i].name,
+			strncmp (input+5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len));
 		if (!strncmp (input + 5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len)) {
 			const char *cmd = input + 5 + JAVA_CMDS[i].name_len;
 			if (*cmd && *cmd == ' ') cmd++;
@@ -1736,7 +1737,6 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 	char *class_name = NULL, *fullname = NULL, *name = NULL, *descriptor = NULL;
 	RBinJavaCPTypeObj * obj = r_bin_java_get_item_from_bin_cp_list (bin, idx);
 	char * prototype = NULL;
-
 	if (idx == 0) {
 		prototype = strdup ("NULL");
 		return prototype;
@@ -2042,7 +2042,7 @@ RCorePlugin r_core_plugin_java = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
 	.data = &r_core_plugin_java,
 	.version = R2_VERSION
