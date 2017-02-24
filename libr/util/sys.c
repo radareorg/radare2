@@ -47,9 +47,7 @@ extern char **environ;
 #include <io.h>
 #include <winbase.h>
 #include <windows.h>
-#if defined(MINGW32)
-#include <imagehlp.h>
-#else
+#if !defined(MINGW32)
  #include <dbghelp.h>
 #endif
 #endif
@@ -183,7 +181,7 @@ R_API void r_sys_backtrace(void) {
 		saved_pc = *(fp + 2);
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
-#elif __WINDOWS__
+#elif __WINDOWS__ && !defined(MINGW32)
 	unsigned int   i;
 	void *stack[100];
 	unsigned short frames;
