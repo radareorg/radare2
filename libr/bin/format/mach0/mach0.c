@@ -93,7 +93,6 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 	int len;
 
 	if (r_buf_read_at (bin->b, 0, magicbytes, 4) < 1) {
-		bprintf ("Error: read (magic)\n");
 		return false;
 	}
 	if (r_read_le32(magicbytes) == 0xfeedface) {
@@ -2345,6 +2344,9 @@ void MACH0_(headerfields)(RBinFile *file) {
 
 RList* MACH0_(fields)(RBinFile *arch) {
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(arch->buf);
+	if (!mh) {
+		return NULL;
+	}
 	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
@@ -2375,7 +2377,6 @@ struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {
 		return NULL;
 	}
 	if (r_buf_read_at (buf, 0, magicbytes, 4) < 1) {
-		eprintf ("Error: read (magic)\n");
 		free (macho_hdr);
 		return false;
 	}
