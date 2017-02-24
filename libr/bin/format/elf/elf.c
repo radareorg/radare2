@@ -2414,7 +2414,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	Elf_(Addr) addr_sym_table = 0;
 	ut8 s[sizeof (Elf_(Sym))] = {0};
 	RBinElfSymbol *ret = NULL;
-	int i, j, k, r, tsize, nsym, ret_ctr;
+	int i, j, r, tsize, nsym, ret_ctr;
 	ut64 toffset = 0, tmp_offset;
 	ut32 size, sym_size = 0;
 

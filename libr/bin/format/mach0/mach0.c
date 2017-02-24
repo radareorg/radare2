@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2017 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -2343,18 +2343,6 @@ void MACH0_(headerfields)(RBinFile *file) {
 	}
 }
 
-static RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, const char *name, const char *comment) {
-	RBinField *ptr;
-	if (!(ptr = R_NEW0 (RBinField))) {
-		return NULL;
-	}
-	ptr->name = strdup (name);
-	ptr->comment = (comment && *comment)? strdup (comment): NULL;
-	ptr->paddr = paddr;
-	ptr->vaddr = vaddr;
-	return ptr;
-}
-
 RList* MACH0_(fields)(RBinFile *arch) {
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(arch->buf);
 	RList *ret = r_list_new ();
@@ -2363,16 +2351,17 @@ RList* MACH0_(fields)(RBinFile *arch) {
 	}
 	ret->free = free;
 	ut64 addr = 0;
-#define ROW(x,y) \
-	r_list_append (ret, r_bin_field_new (addr, addr, x, sdb_fmt (0, "0x%08x", y))); \
+
+#define ROW(nam,siz,val,fmt) \
+	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt (0, "0x%08x", val), fmt)); \
 	addr += 4;
 
-	ROW("hdr.magic", mh->magic);
-	ROW("hdr.cputype", mh->cputype);
-	ROW("hdr.cpusubtype", mh->cpusubtype);
-	ROW("hdr.filetype", mh->filetype);
-	ROW("hdr.ncmds", mh->ncmds);
-	ROW("hdr.sizeofcmds", mh->sizeofcmds);
+	ROW("hdr.magic", 4, mh->magic, "x");
+	ROW("hdr.cputype", 4, mh->cputype, NULL);
+	ROW("hdr.cpusubtype", 4, mh->cpusubtype, NULL);
+	ROW("hdr.filetype", 4, mh->filetype, NULL);
+	ROW("hdr.ncmds", 4, mh->ncmds, NULL);
+	ROW("hdr.sizeofcmds", 4, mh->sizeofcmds, NULL);
 	return ret;
 }
 

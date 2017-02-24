@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, nibble, dso */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble, dso */
 
 // TODO: dlopen library and show address
 
@@ -559,12 +559,6 @@ R_API void r_bin_string_free(void *_str) {
 	RBinString *str = (RBinString *)_str;
 	free (str->string);
 	free (str);
-}
-
-R_API void r_bin_field_free(void *_fld) {
-	RBinField *fld = (RBinField *)_fld;
-	free (fld->name);
-	free (fld);
 }
 
 static void r_bin_object_free(void /*RBinObject*/ *o_) {
@@ -2653,4 +2647,29 @@ R_API const char *r_bin_entry_type_string(int etype) {
 
 R_API void r_bin_load_filter(RBin *bin, ut64 rules) {
 	bin->filter_rules = rules;
+}
+
+/* RBinField */
+R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format) {
+	RBinField *ptr;
+	if (!(ptr = R_NEW0 (RBinField))) {
+		return NULL;
+	}
+	ptr->name = strdup (name);
+	ptr->comment = (comment && *comment)? strdup (comment): NULL;
+	ptr->format = (format && *format)? strdup (format): NULL;
+	ptr->paddr = paddr;
+	ptr->size = size;
+//	ptr->visibility = ???
+	ptr->vaddr = vaddr;
+	return ptr;
+}
+
+// use void* to honor the RListFree signature
+R_API void r_bin_field_free(void *_field) {
+	RBinField *field = (RBinField*) _field;
+	free (field->name);
+	free (field->comment);
+	free (field->format);
+	free (field);
 }

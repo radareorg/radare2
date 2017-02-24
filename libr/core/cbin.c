@@ -2145,16 +2145,36 @@ static int bin_fields(RCore *r, int mode, int va) {
 		if (IS_MODE_RAD (mode)) {
 			r_name_filter (field->name, -1);
 			r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n", field->name, addr);
-			r_cons_printf ("[%02i] vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
-				i, addr, field->paddr, field->name);
+			if (field->comment && *field->comment) {
+				r_cons_printf ("CC %s @ 0x%"PFMT64x"\n", field->comment, addr);
+			}
+			if (field->format && *field->format) {
+				r_cons_printf ("pf.%s %s\n", field->name, field->format);
+			}
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("%s{\"name\":\"%s\","
-				"\"paddr\":%"PFMT64d"}",
+				"\"vaddr\":%"PFMT64d",",
+				"\"paddr\":%"PFMT64d"",
 				iter->p?",":"",
-				field->name, addr);
+				field->name,
+				field->vaddr,
+				field->paddr
+				);
+			if (field->comment && *field->comment) {
+				// TODO: filter comment before json
+				r_cons_printf (",\"comment\":\"%s\"", field->comment);
+			}
+			if (field->format && *field->format) {
+				// TODO: filter comment before json
+				r_cons_printf (",\"format\":\"%s\"", field->format);
+			}
+			r_cons_printf ("}");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf ("idx=%02i vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" name=%s\n",
-				i, addr, field->paddr, field->name);
+			const bool haveComment = (field->comment && *field->comment);
+			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s  %s%s\n",
+				field->vaddr, field->paddr, field->name,
+				haveComment? "; ": "",
+				haveComment? field->comment: "");
 		}
 		i++;
 	}

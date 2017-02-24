@@ -932,11 +932,11 @@ int main(int argc, char **argv, char **envp) {
 			// NOTE: the baddr is redefined to support PIE/ASLR
 			baddr = getBaddrFromDebugger (&r, pfile);
 			if (baddr != UT64_MAX && baddr != 0) {
-				eprintf ("bin.baddr 0x%08"PFMT64x"\n", baddr);
+				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
 				va = 2;
 			}
 			if (run_anal > 0) {
-				eprintf ("USING %llx\n", baddr);
+				eprintf ("USING 0x%" PFMT64x "\n", baddr);
 				if (r_core_bin_load (&r, pfile, baddr)) {
 					RBinObject *obj = r_bin_get_object (r.bin);
 					if (obj && obj->info) {
