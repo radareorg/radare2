@@ -499,6 +499,10 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 								n = 32; //
 							}
 						}
+						//make sure we do not overflow on r_print_format
+						if (n > core->blocksize) {
+							n = core->blocksize;
+						}
 						int r = r_print_format (core->print, addr, core->block,
 							n, p + 1, 0, NULL, NULL);
 						if (r < 0) {
