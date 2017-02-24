@@ -745,9 +745,8 @@ static ut64 size(RBinFile *arch) {
 			}
 		}
 	}
-	return off+len;
+	return off + len;
 }
-
 
 RBinPlugin r_bin_plugin_mach0 = {
 	.name = "mach0",
@@ -768,6 +767,8 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.imports = &imports,
 	.size = &size,
 	.info = &info,
+	.header = MACH0_(headerfields),
+	.fields = MACH0_(fields),
 	.libs = &libs,
 	.relocs = &relocs,
 	.create = &create,

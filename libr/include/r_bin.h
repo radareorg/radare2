@@ -434,6 +434,7 @@ typedef struct r_bin_string_t {
 
 typedef struct r_bin_field_t {
 	char *name;
+	char *comment;
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 visibility;

@@ -841,6 +841,42 @@ static int parse_dylib(struct MACH0_(obj_t)* bin, ut64 off) {
 	return true;
 }
 
+static const char *cmd_to_string(ut32 cmd) {
+	switch (cmd) {
+	case LC_DATA_IN_CODE:
+		return "LC_DATA_IN_CODE";
+	case LC_RPATH:
+		return "LC_RPATH";
+	case LC_SEGMENT:
+		return "LC_SEGMENT";
+	case LC_SEGMENT_64:
+		return "LC_SEGMENT_64";
+	case LC_SYMTAB:
+		return "LC_SYMTAB";
+	case LC_DYSYMTAB:
+		return "LC_DYSYMTAB";
+	case LC_DYLIB_CODE_SIGN_DRS:
+		return "LC_DYLIB_CODE_SIGN_DRS";
+	case LC_VERSION_MIN_MACOSX:
+		return "LC_VERSION_MIN_MACOSX";
+	case LC_VERSION_MIN_IPHONEOS:
+		return "LC_VERSION_MIN_IPHONEOS";
+	case LC_VERSION_MIN_TVOS:
+		return "LC_VERSION_MIN_TVOS";
+	case LC_VERSION_MIN_WATCHOS:
+		return "LC_VERSION_MIN_WATCHOS";
+	case LC_UUID:
+		return "LC_VERSION_MIN_UUID";
+	case LC_ENCRYPTION_INFO_64:
+		return "LC_ENCRYPTION_INFO_64";
+	case LC_ENCRYPTION_INFO:
+		return "LC_ENCRYPTION_INFO";
+	case LC_LOAD_DYLINKER:
+		return "LC_LOAD_DYLINKER";
+	}
+	return "";
+}
+
 static int init_items(struct MACH0_(obj_t)* bin) {
 	struct load_command lc = {0, 0};
 	ut8 loadc[sizeof (struct load_command)] = {0};
@@ -2267,6 +2303,77 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 		}
 	}
 	return addr;
+}
+
+void MACH0_(headerfields)(RBinFile *file) {
+	RBuffer *buf = file->buf;
+	int n = 0;
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
+	eprintf ("0x00000000  Magic       0x%x\n", mh->magic);
+	eprintf ("0x00000004  CpuType     0x%x\n", mh->cputype);
+	eprintf ("0x00000008  CpuSubType  0x%x\n", mh->cpusubtype);
+	eprintf ("0x0000000c  FileType    0x%x\n", mh->filetype);
+	eprintf ("0x00000010  nCmds       %d\n", mh->ncmds);
+	eprintf ("0x00000014  sizeOfCmds  %d\n", mh->sizeofcmds);
+	eprintf ("0x00000018  Flags       0x%x\n", mh->flags);
+
+	ut64 addr = 0x20 - 4;
+	ut32 word = 0;
+	ut8 wordbuf[sizeof(word)];
+#define READWORD() \
+		addr += 4; \
+		if (!r_buf_read_at (buf, addr, (ut8*)wordbuf, 4)) { \
+			eprintf ("Invalid address in buffer."); \
+			break; \
+		} \
+		word = r_read_le32 (wordbuf);
+	for (n = 0; n < mh->ncmds; n++) {
+		eprintf ("\nLoad Command %d\n", n);
+		READWORD();
+		eprintf ("0x%08"PFMT64x"  cmd          0x%x %s\n",
+			addr, word, cmd_to_string (word));
+		READWORD();
+		word &= 0xFFFFFF;
+		eprintf ("0x%08"PFMT64x"  cmdsize      %d\n", addr, word);
+		if ((int)(word) < 1) {
+			eprintf ("Invalid size\n");
+			break;
+		}
+		addr += word - 8;
+	}
+}
+
+static RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, const char *name, const char *comment) {
+	RBinField *ptr;
+	if (!(ptr = R_NEW0 (RBinField))) {
+		return NULL;
+	}
+	ptr->name = strdup (name);
+	ptr->comment = (comment && *comment)? strdup (comment): NULL;
+	ptr->paddr = paddr;
+	ptr->vaddr = vaddr;
+	return ptr;
+}
+
+RList* MACH0_(fields)(RBinFile *arch) {
+	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(arch->buf);
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	ret->free = free;
+	ut64 addr = 0;
+#define ROW(x,y) \
+	r_list_append (ret, r_bin_field_new (addr, addr, x, sdb_fmt (0, "0x%08x", y))); \
+	addr += 4;
+
+	ROW("hdr.magic", mh->magic);
+	ROW("hdr.cputype", mh->cputype);
+	ROW("hdr.cpusubtype", mh->cpusubtype);
+	ROW("hdr.filetype", mh->filetype);
+	ROW("hdr.ncmds", mh->ncmds);
+	ROW("hdr.sizeofcmds", mh->sizeofcmds);
+	return ret;
 }
 
 struct MACH0_(mach_header) * MACH0_(get_hdr_from_bytes)(RBuffer *buf) {

@@ -65,21 +65,20 @@ struct lib_t {
 	int last;
 };
 
-
 struct blob_index_t {
-    ut32 type;
-    ut32 offset;
+	ut32 type;
+	ut32 offset;
 }; 
 
 struct blob_t {
-    ut32 magic;
-    ut32 length;
+	ut32 magic;
+	ut32 length;
 };
 
 struct super_blob_t {
-    struct blob_t blob;
-    ut32 count;
-    struct blob_index_t index[];
+	struct blob_t blob;
+	ut32 count;
+	struct blob_index_t index[];
 }; 
 
 struct MACH0_(obj_t) {
@@ -150,6 +149,7 @@ char* MACH0_(get_class)(struct MACH0_(obj_t)* bin);
 int MACH0_(get_bits)(struct MACH0_(obj_t)* bin);
 bool MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin);
 int MACH0_(is_pie)(struct MACH0_(obj_t)* bin);
+int MACH0_(has_nx)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin);
@@ -161,4 +161,6 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr);
 struct MACH0_(mach_header)* MACH0_(get_hdr_from_bytes)(RBuffer *buf);
+void MACH0_(headerfields)(RBinFile *arch);
+RList* MACH0_(fields)(RBinFile *arch);
 #endif

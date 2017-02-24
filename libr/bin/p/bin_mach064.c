@@ -299,14 +299,16 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
+	.header = &MACH0_(headerfields),
 	.relocs = &relocs,
+	.fields = &MACH0_(fields),
 	.create = &create,
 	.classes = &MACH0_(parse_classes),
 	.write = &r_bin_write_mach0,
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mach064,
 	.version = R2_VERSION

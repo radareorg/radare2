@@ -389,13 +389,16 @@ R_API bool r_buf_append_ut16(RBuffer *b, ut16 n) {
 }
 
 R_API bool r_buf_append_ut32(RBuffer *b, ut32 n) {
-	if (b->empty) b->length = b->empty = 0;
+	if (b->empty) {
+		b->length = b->empty = 0;
+	}
 	if (b->fd != -1) {
 		return r_buf_append_bytes (b, (const ut8*)&n, sizeof (n));
 	}
-	if (!(b->buf = realloc (b->buf, b->length+sizeof (n))))
+	if (!(b->buf = realloc (b->buf, b->length+sizeof (n)))) {
 		return false;
-	memmove (b->buf+b->length, &n, sizeof (n));
+	}
+	memmove (b->buf + b->length, &n, sizeof (n));
 	b->length += sizeof (n);
 	return true;
 }

@@ -845,6 +845,7 @@ static RList* fields(RBinFile *arch) {
 			break;
 		}
 		ptr->name = strdup (field[i].name);
+		ptr->comment = NULL;
 		ptr->vaddr = field[i].offset;
 		ptr->paddr = field[i].offset;
 		r_list_append (ret, ptr);
