@@ -40,6 +40,13 @@ ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
 endif
 endif
 
+ifeq (${BUILD_OS},windows)
+  LDFLAGS+=-lDbgHelp
+endif
+ifeq (${BUILD_OS},msys_nt)
+  LDFLAGS+=-lDbgHelp
+endif
+
 EXTRA_PRE+=sdb_version
 EXTRA_PRE+=spp_config
 

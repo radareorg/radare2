@@ -2002,7 +2002,11 @@ R_API char *r_str_utf16_decode (const ut8 *s, int len) {
 		if (!s[i+1] && 0x20 <= s[i] && s[i] <= 0x7E) {
 			result[j++] = s[i];
 		} else {
+#if __WINDOWS__ && !__CYGWIN__
+			j += sprintf (&result[j], "\\u%.2x%.2x", (unsigned int) s[i], (unsigned int) s[i+1]);
+#else
 			j += sprintf (&result[j], "\\u%.2hhx%.2hhx", s[i], s[i+1]);
+#endif
 		}
 	}
 	return result;
