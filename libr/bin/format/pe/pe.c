@@ -69,7 +69,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t)*
 		free (entry);
 		return NULL;
 	}
-
+	
 	/* Decode the jmp instruction, this gets the address of the 'main'
 	* function for PE produced by a compiler whose name someone forgot to
 	* write down. */
@@ -102,6 +102,25 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t)*
 				}
 			}
 		}
+	}
+
+	// Microsoft Visual-C
+	// 50                  push eax
+	// FF 75 9C            push dword [ebp - local_64h]
+	// 56                  push    esi
+	// 56                  push    esi
+	// FF 15 CC C0  44 00  call dword [sym.imp.KERNEL32.dll_GetModuleHandleA]
+	// 50                  push    eax
+	// E8 DB DA 00 00      call    main
+	// 89 45 A0            mov dword [ebp - local_60h], eax
+	// 50                  push    eax
+	// E8 2D 00 00  00     call 0x4015a6
+
+	if (b[188] == 0x50 && b[201] == 0xe8) {
+		const st32 call_dst = b[201 + 1] | (b[201 + 2] << 8) | (b[201 + 3] << 16) | (b[201 + 4] << 24);
+		entry->paddr += (201 + 5 + call_dst);
+		entry->vaddr += (201 + 5 + call_dst);
+		return entry;
 	}
 	free (entry);
 	return NULL;
