@@ -12,7 +12,7 @@ R_API RThreadLock *r_th_lock_new() {
 		pthread_mutex_init (&thl->lock, NULL);
 #elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
 		//thl->lock = CreateSemaphore(NULL, 0, 1, NULL);
-		InitializeCriticalSection(&thl->lock);
+		InitializeCriticalSection ((LPCRITICAL_SECTION) &thl->lock);
 #endif
 	}
 	return thl;
@@ -34,7 +34,7 @@ R_API int r_th_lock_enter(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	pthread_mutex_lock(&thl->lock);
 #elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
-	EnterCriticalSection (&thl->lock);
+	EnterCriticalSection ((LPCRITICAL_SECTION) &thl->lock);
 #endif
 	return ++thl->refs;
 }
@@ -43,7 +43,7 @@ R_API int r_th_lock_leave(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	pthread_mutex_unlock (&thl->lock);
 #elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
-	LeaveCriticalSection (&thl->lock);
+	LeaveCriticalSection ((LPCRITICAL_SECTION) &thl->lock);
 	//ReleaseSemaphore (thl->lock, 1, NULL);
 #endif
 	if (thl->refs>0)
@@ -61,7 +61,7 @@ R_API void *r_th_lock_free(RThreadLock *thl) {
 #if HAVE_PTHREAD
 		pthread_mutex_destroy (&thl->lock);
 #elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
-		DeleteCriticalSection (&thl->lock);
+		DeleteCriticalSection ((LPCRITICAL_SECTION) &thl->lock);
 		CloseHandle (thl->lock);
 #endif
 		free (thl);

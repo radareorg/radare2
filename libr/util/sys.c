@@ -44,8 +44,12 @@ extern char **environ;
 #endif
 #endif
 #if __WINDOWS__ && !defined(__CYGWIN__)
-# include <io.h>
-# include <winbase.h>
+#include <io.h>
+#include <winbase.h>
+#include <windows.h>
+#if !defined(MINGW32)
+ #include <dbghelp.h>
+#endif
 #endif
 
 R_LIB_VERSION(r_util);
@@ -176,6 +180,25 @@ R_API void r_sys_backtrace(void) {
 		}
 		saved_pc = *(fp + 2);
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
+	}
+#elif __WINDOWS__ && !defined(MINGW32)
+	unsigned int   i;
+	void *stack[100];
+	unsigned short frames;
+	SYMBOL_INFO symbol;
+	HANDLE process;
+
+	process = GetCurrentProcess ();
+	
+	SymInitialize ( process, NULL, TRUE );
+	
+	frames = CaptureStackBackTrace (0, 100, stack, NULL);
+	for (i = 0; i < frames; i++) {
+		if (SymFromAddr (process, (DWORD64)stack[i], 0, &symbol)){
+			printf ("[%d]: %s (pc: 0x%"PFMT64x" fp: 0x%p)\n", frames - i - 1, symbol.Name, symbol.Address, stack[i]);
+		} else {
+			printf ("[%d]: bad stack (fp: 0x%p)\n", frames - i - 1, stack[i]);
+		}
 	}
 #else
 #warning TODO: r_sys_bt : unimplemented
@@ -781,7 +804,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 		eprintf ("Error getting the handle to Kernel32.dll\n");
 		return NULL;
 	}
-	QueryFullProcessImageNameA = GetProcAddress (kernel32, "QueryFullProcessImageNameA");
+	QueryFullProcessImageNameA = (BOOL WINAPI (*) (HANDLE, DWORD, LPTSTR, PDWORD)) GetProcAddress (kernel32, "QueryFullProcessImageNameA");
 	if (!QueryFullProcessImageNameA) {
 		// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
 		HANDLE psapi = LoadLibrary ("Psapi.dll");
@@ -789,7 +812,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 			eprintf ("Error getting the handle to Psapi.dll\n");
 			return NULL;
 		}
-		GetProcessImageFileNameA = GetProcAddress (psapi, "GetProcessImageFileNameA");
+		GetProcessImageFileNameA = (DWORD WINAPI (*) (HANDLE, LPTSTR, DWORD)) GetProcAddress (psapi, "GetProcessImageFileNameA");
 		if (!GetProcessImageFileNameA) {
 			eprintf ("Error getting the address of GetProcessImageFileNameA\n");
 			return NULL;
@@ -878,6 +901,8 @@ R_API char *r_sys_whoami (char *buf) {
 R_API int r_sys_getpid() {
 #if __UNIX__
 	return getpid ();
+#elif __WINDOWS__ && !defined(__CYGWIN__)
+	return (int) GetCurrentProcessId();
 #else
 #warning r_sys_getpid not implemented for this platform
 	return -1;
