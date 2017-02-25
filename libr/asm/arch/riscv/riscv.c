@@ -309,6 +309,7 @@ riscv_disassemble(RAsm *a, RAsmOp *rop, insn_t word, int xlen) {
 		if (op->name && op->args) {
 			snprintf (rop->buf_asm, sizeof (rop->buf_asm), "%s", op->name);
 			get_insn_args (rop->buf_asm, op->args, word, a->pc);
+			return 0;
 		} else {
 			sprintf (rop->buf_asm, "invalid word(%"PFMT64x")", (ut64)word);
 			return -1;
