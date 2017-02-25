@@ -19,12 +19,12 @@ export MAKE
 export GLOBAL=0
 export R2PM_JOBS=4
 export R2VERSION="`r2 -qv`"
-PREFIX="`r2 -hh | grep PREFIX | awk '{print $2}' 2> /dev/null`"
+PREFIX="`r2 -H PREFIX`"
 BINDIR="${PREFIX}/bin/"
 LIBDIR="${PREFIX}/lib/"
 WRKDIR="$PWD"
-export LIBEXT="`r2 -hh | grep LIBEXT | awk '{print $2}' 2> /dev/null`"
-export R2HOMEDIR="`r2 -hh | grep '^ RHOMEDIR' | awk '{print $2}' 2> /dev/null`"
+export LIBEXT="`r2 -H LIBEXT`"
+export R2HOMEDIR="`r2 -H RHOMEDIR`"
 #[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}"
 export R2PM_PLUGDIR="${R2HOMEDIR}/plugins"
 # prefix
