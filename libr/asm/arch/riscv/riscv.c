@@ -327,5 +327,5 @@ riscv_dis(RAsm *a, RAsmOp *rop, const ut8 *buf, ut64 len) {
 	memcpy (&insn, buf, 4);
 	riscv_disassemble (a, rop, insn, a->bits);
 
-	return 4;
+	return riscv_insn_length(insn);
 }
