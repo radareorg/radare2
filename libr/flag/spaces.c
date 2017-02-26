@@ -121,6 +121,7 @@ static int r_flag_space_count(RFlag *f, int n) {
 R_API int r_flag_space_list(RFlag *f, int mode) {
 	const char *defspace = NULL;
 	int count, len, i, j = 0;
+	bool allSelected = f->space_idx == -1;
 	if (mode == 'j') {
 		f->cb_printf ("[");
 	}
@@ -130,10 +131,9 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 		}
 		count = r_flag_space_count (f, i);
 		if (mode == 'j') {
-			f->cb_printf ("%s{\"name\":\"%s\"%s,\"count\":%d}",
-					j? ",":"", f->spaces[i],
-					(i==f->space_idx)? ",\"selected\":true":"",
-					count);
+			f->cb_printf ("%s{\"name\":\"%s\",\"count\":%d,\"selected\":%s}",
+					j? ",":"", f->spaces[i], count,
+					(allSelected || i == f->space_idx)? "true":"false");
 		} else if (mode=='*') {
 			f->cb_printf ("fs %s\n", f->spaces[i]);
 			if (i==f->space_idx) defspace = f->spaces[i];
@@ -150,7 +150,7 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 				spaces[0] = 0;
 			}
 			f->cb_printf ("%s%s %s %c %s\n", num0, spaces, num1,
-					(i==f->space_idx)?'*':'.',
+					(allSelected || i==f->space_idx)?'*':'.',
 					f->spaces[i]);
 		}
 		j++;
@@ -185,4 +185,53 @@ R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname) {
 		}
 	}
 	return false;
+}
+
+static void print_space_stack(RFlag *f, int ordinal, char *name, bool selected, int mode) {
+	bool first = ordinal == 0;
+	char *ename;
+	switch (mode) {
+	case 'j':
+		if (!first) {
+			f->cb_printf (",");
+		}
+		ename = r_str_escape (name);
+		f->cb_printf ("{\"ordinal\":%d,\"name\":\"%s\",\"selected\":%s}",
+			ordinal, ename, selected? "true":"false");
+		free (ename);
+		break;
+	case '*':
+		if (first) {
+			f->cb_printf ("fs %s\n", name);
+		} else {
+			f->cb_printf ("fs+%s\n", name);
+		}
+		break;
+	default:
+		f->cb_printf ("%-2d %s%s\n", ordinal, name, selected? " (selected)":"");
+		break;
+	}
+}
+
+R_API int r_flag_space_stack_list(RFlag *f, int mode) {
+	RListIter *iter;
+	char *space;
+	int i = 0;
+	if (mode == 'j') {
+		f->cb_printf ("[");
+	}
+	r_list_foreach (f->spacestack, iter, space) {
+		print_space_stack (f, i++, space, false, mode);
+	}
+	if (f->space_idx == -1) {
+		print_space_stack (f, i++, "*", true, mode);
+	} else {
+		if (f->spaces[f->space_idx]) {
+			print_space_stack (f, i++, f->spaces[f->space_idx], true, mode);
+		}
+	}
+	if (mode == 'j') {
+		f->cb_printf ("]\n");
+	}
+	return i;
 }

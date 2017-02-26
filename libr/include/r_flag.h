@@ -120,6 +120,7 @@ R_API int r_flag_space_list(RFlag *f, int mode);
 R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
 R_API int r_flag_space_pop(RFlag *f);
 R_API int r_flag_space_push(RFlag *f, const char *name);
+R_API int r_flag_space_stack_list(RFlag *f, int mode);
 
 /* zones */
 
