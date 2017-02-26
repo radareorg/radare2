@@ -45,11 +45,11 @@ documentation and/or software.
 #define S43 15
 #define S44 21
 
-static void MD5Transform (ut32 [4], const unsigned char [64]);
-static void Encode (unsigned char *, ut32 *, unsigned int);
-static void Decode (ut32 *, const unsigned char *, unsigned int);
+static void MD5Transform (ut32 [4], const ut8 [64]);
+static void Encode (ut8 *, ut32 *, unsigned int);
+static void Decode (ut32 *, const ut8 *, unsigned int);
 
-static const unsigned char PADDING[64] = {
+static const ut8 PADDING[64] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -246,18 +246,18 @@ static void MD5Transform (ut32 state[4], const ut8 block[64]) {
 	memset ((void*)x, 0, sizeof (x));
 }
 
-/* Encodes input (ut32) into output (unsigned char). Assumes len is a multiple of 4. */
+/* Encodes input (ut32) into output (ut8). Assumes len is a multiple of 4. */
 static void Encode (ut8 *output, ut32 *input, unsigned int len) {
 	unsigned int i, j;
 	for (i = 0, j = 0; j < len; i++, j += 4) {
-		output[j] = (unsigned char)(input[i] & 0xff);
-		output[j+1] = (unsigned char)((input[i] >> 8) & 0xff);
-		output[j+2] = (unsigned char)((input[i] >> 16) & 0xff);
-		output[j+3] = (unsigned char)((input[i] >> 24) & 0xff);
+		output[j] = (ut8)(input[i] & 0xff);
+		output[j+1] = (ut8)((input[i] >> 8) & 0xff);
+		output[j+2] = (ut8)((input[i] >> 16) & 0xff);
+		output[j+3] = (ut8)((input[i] >> 24) & 0xff);
 	}
 }
 
-/* Decodes input (unsigned char) into output (ut32). Assumes len is a multiple of 4 */
+/* Decodes input (ut8) into output (ut32). Assumes len is a multiple of 4 */
 static void Decode (ut32 *output, const ut8 *input, unsigned int len) {
 	unsigned int i, j;
 	for (i = 0, j = 0; j < len; i++, j += 4)

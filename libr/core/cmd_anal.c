@@ -3817,7 +3817,6 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 	}
 	r_list_foreach (xrefs, iter, ref) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
-		//assert (ref->at == addr);
 		if (fcn) {
 			r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n", pre, ref->addr, fcn->addr, fcn->name);
 			if (sdb_add (db, fcn->name, "1", 0)) {

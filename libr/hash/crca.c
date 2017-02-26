@@ -1,4 +1,4 @@
-//author: Victor Muñoz (vmunoz@ingenieria-inversa.cl
+//author: Victor Mu~noz (vmunoz@ingenieria-inversa.cl
 //license: the very same than radare, blah, blah
 //some definitions and test cases borrowed from http://www.nightmare.com/~ryb/code/CrcMoose.py (Ray Burr)
 
@@ -78,7 +78,7 @@ void crc_init_preset(t_crc_ctx *ctx, enum CRC_PRESETS preset) {
     ctx->xout=crc_presets[preset].xout;
 }
 
-#if 1
+#if 0
 #include <stdio.h>
 int main() {
     int i;

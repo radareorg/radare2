@@ -7,7 +7,7 @@
 #include "sha2.h"
 R_API void mdfour(ut8 *out, const ut8 *in, int n);
 
-#define CHKFLAG(f,x) if (f==0||f&x)
+#define CHKFLAG(f, x) if (f == 0 || f&x)
 
 R_API RHash *r_hash_new(int rst, int flags) {
 	RHash *ctx = R_NEW (RHash);
@@ -50,7 +50,7 @@ R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 	if (len > 0) {
 		MD5Update (&ctx->md5, input, len);
 	} else {
-		MD5Update (&ctx->md5, (const ut8*)"", 0);
+		MD5Update (&ctx->md5, (const ut8 *) "", 0);
 	}
 	if (ctx->rst) {
 		MD5Final (ctx->digest, &ctx->md5);
@@ -59,13 +59,16 @@ R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 }
 
 R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len) {
-	if (len<0)
+	if (len < 0) {
 		return NULL;
-	if (ctx->rst)
+	}
+	if (ctx->rst) {
 		SHA1_Init (&ctx->sha1);
+	}
 	SHA1_Update (&ctx->sha1, input, len);
-	if (ctx->rst || len == 0)
+	if (ctx->rst || len == 0) {
 		SHA1_Final (ctx->digest, &ctx->sha1);
+	}
 	return ctx->digest;
 }
 
@@ -85,8 +88,9 @@ R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len) {
 		SHA256_Init (&ctx->sha256);
 	}
 	SHA256_Update (&ctx->sha256, input, len);
-	if (ctx->rst || len == 0)
+	if (ctx->rst || len == 0) {
 		SHA256_Final (ctx->digest, &ctx->sha256);
+	}
 	return ctx->digest;
 }
 

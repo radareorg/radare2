@@ -7,9 +7,9 @@
    modification, are permitted provided that the following conditions are
    met:
 
-       * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-       * Redistributions in binary form must reproduce the above
+ * Redistributions in binary form must reproduce the above
    copyright notice, this list of conditions and the following disclaimer
    in the documentation and/or other materials provided with the
    distribution.
@@ -26,9 +26,9 @@
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-	You can contact the author at :
-	- xxHash source repository : http://code.google.com/p/xxhash/
-*/
+        You can contact the author at :
+        - xxHash source repository: http://code.google.com/p/xxhash/
+ */
 
 //**************************************
 // Includes
@@ -40,7 +40,7 @@
 
 R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
 	void *s = XXH32_init (0);
-	XXH32_feed (s, buf, (int)len);
+	XXH32_feed (s, buf, (int) len);
 	return XXH32_result (s);
 }
 
@@ -49,11 +49,11 @@ R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
 //**************************************
 #define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 
-// Note : under GCC, it may sometimes be faster to enable the (2nd) macro definition, instead of using win32 intrinsic
+// Note: under GCC, it may sometimes be faster to enable the (2nd) macro definition, instead of using win32 intrinsic
 #if defined(__WINDOWS__)
-#  define XXH_rotl32(x,r) _rotl(x,r)
+#define XXH_rotl32(x, r) _rotl (x, r)
 #else
-#  define XXH_rotl32(x,r) ((x << r) | (x >> (32 - r)))
+#define XXH_rotl32(x, r) ((x << r) | (x >> (32 - r)))
 #endif
 
 //**************************************
@@ -68,19 +68,19 @@ R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
 //**************************************
 // Macros
 //**************************************
-#define XXH_LE32(p)	r_read_le32(p)
+#define XXH_LE32(p)     r_read_le32 (p)
 
 //****************************
 // Simple Hash Functions
 //****************************
 
-unsigned int XXH32(const void* input, int len, unsigned int seed) {
-	const unsigned char* p = (const unsigned char*)input;
-	const unsigned char* const bEnd = p + len;
+unsigned int XXH32(const void *input, int len, unsigned int seed) {
+	const unsigned char *p = (const unsigned char *) input;
+	const unsigned char *const bEnd = p + len;
 	unsigned int h32;
 
-	if (len>=16) {
-		const unsigned char* const limit = bEnd - 16;
+	if (len >= 16) {
+		const unsigned char *const limit = bEnd - 16;
 		unsigned int v1 = seed + PRIME32_1 + PRIME32_2;
 		unsigned int v2 = seed + PRIME32_2;
 		unsigned int v3 = seed + 0;
@@ -103,25 +103,25 @@ unsigned int XXH32(const void* input, int len, unsigned int seed) {
 			v4 = XXH_rotl32 (v4, 13);
 			v4 *= PRIME32_1;
 			p += 4;
-		} while (p<=limit) ;
+		} while (p <= limit);
 
 		h32 = XXH_rotl32 (v1, 1) + XXH_rotl32 (v2, 7) +
-		      XXH_rotl32 (v3, 12) + XXH_rotl32 (v4, 18);
+		XXH_rotl32 (v3, 12) + XXH_rotl32 (v4, 18);
 	} else {
-		h32  = seed + PRIME32_5;
+		h32 = seed + PRIME32_5;
 	}
 
 	h32 += (unsigned int) len;
 
-	while (p<=bEnd-4) {
-		h32 += XXH_LE32(p) * PRIME32_3;
-		h32 = XXH_rotl32(h32, 17) * PRIME32_4 ;
-		p+=4;
+	while (p <= bEnd - 4) {
+		h32 += XXH_LE32 (p) * PRIME32_3;
+		h32 = XXH_rotl32 (h32, 17) * PRIME32_4;
+		p += 4;
 	}
 
-	while (p<bEnd) {
+	while (p < bEnd) {
 		h32 += (*p) * PRIME32_5;
-		h32 = XXH_rotl32(h32, 11) * PRIME32_1 ;
+		h32 = XXH_rotl32 (h32, 11) * PRIME32_1;
 		p++;
 	}
 
@@ -149,9 +149,9 @@ struct XXH_state32_t {
 	int memsize;
 };
 
-void* XXH32_init (unsigned int seed) {
-	struct XXH_state32_t* state =
-		(struct XXH_state32_t*)malloc (sizeof (struct XXH_state32_t));
+void *XXH32_init (unsigned int seed) {
+	struct XXH_state32_t *state =
+		(struct XXH_state32_t *) malloc (sizeof (struct XXH_state32_t));
 	if (!state) {
 		return NULL;
 	}
@@ -162,27 +162,27 @@ void* XXH32_init (unsigned int seed) {
 	state->v4 = seed - PRIME32_1;
 	state->total_len = 0;
 	state->memsize = 0;
-	return (void*)state;
+	return (void *) state;
 }
 
-int XXH32_feed (void* state_in, const void* input, int len) {
-	struct XXH_state32_t * state = state_in;
-	const unsigned char* p = (const unsigned char*)input;
-	const unsigned char* const bEnd = p + len;
+int XXH32_feed (void *state_in, const void *input, int len) {
+	struct XXH_state32_t *state = state_in;
+	const unsigned char *p = (const unsigned char *) input;
+	const unsigned char *const bEnd = p + len;
 
 	state->total_len += len;
 	// fill in tmp buffer
 	if (state->memsize + len < 16) {
-		memcpy(state->memory + state->memsize, input, len);
-		state->memsize +=  len;
+		memcpy (state->memory + state->memsize, input, len);
+		state->memsize += len;
 		return 0;
 	}
 
 	// some data left from previous feed
 	if (state->memsize) {
-		memcpy(state->memory + state->memsize, input, 16-state->memsize);
+		memcpy (state->memory + state->memsize, input, 16 - state->memsize);
 		{
-			const unsigned int* p32 = (const unsigned int*)state->memory;
+			const unsigned int *p32 = (const unsigned int *) state->memory;
 			state->v1 += XXH_LE32 (p32) * PRIME32_2;
 			state->v1 = XXH_rotl32 (state->v1, 13);
 			state->v1 *= PRIME32_1;
@@ -200,18 +200,18 @@ int XXH32_feed (void* state_in, const void* input, int len) {
 			state->v4 *= PRIME32_1;
 			p32++;
 		}
-		p += 16-state->memsize;
+		p += 16 - state->memsize;
 		state->memsize = 0;
 	}
 
 	{
-		const unsigned char* const limit = bEnd - 16;
+		const unsigned char *const limit = bEnd - 16;
 		unsigned int v1 = state->v1;
 		unsigned int v2 = state->v2;
 		unsigned int v3 = state->v3;
 		unsigned int v4 = state->v4;
 
-		while (p<=limit) {
+		while (p <= limit) {
 			v1 += XXH_LE32 (p) * PRIME32_2;
 			v1 = XXH_rotl32 (v1, 13);
 			v1 *= PRIME32_1;
@@ -242,31 +242,31 @@ int XXH32_feed (void* state_in, const void* input, int len) {
 	return 0;
 }
 
-unsigned int XXH32_getIntermediateResult (void* state_in) {
-	struct XXH_state32_t * state = state_in;
-	unsigned char * p   = (unsigned char*)state->memory;
-	unsigned char* bEnd = (unsigned char*)state->memory + state->memsize;
+unsigned int XXH32_getIntermediateResult (void *state_in) {
+	struct XXH_state32_t *state = state_in;
+	unsigned char *p = (unsigned char *) state->memory;
+	unsigned char *bEnd = (unsigned char *) state->memory + state->memsize;
 	unsigned int h32;
 
 
 	if (state->total_len >= 16) {
 		h32 = XXH_rotl32 (state->v1, 1) + XXH_rotl32 (state->v2, 7) +
-		      XXH_rotl32 (state->v3, 12) + XXH_rotl32 (state->v4, 18);
+		XXH_rotl32 (state->v3, 12) + XXH_rotl32 (state->v4, 18);
 	} else {
-		h32  = state->seed + PRIME32_5;
+		h32 = state->seed + PRIME32_5;
 	}
 
 	h32 += (unsigned int) state->total_len;
 
-	while (p<=bEnd-4) {
-		h32 += XXH_LE32(p) * PRIME32_3;
-		h32 = XXH_rotl32(h32, 17) * PRIME32_4 ;
+	while (p <= bEnd - 4) {
+		h32 += XXH_LE32 (p) * PRIME32_3;
+		h32 = XXH_rotl32 (h32, 17) * PRIME32_4;
 		p += 4;
 	}
 
-	while (p<bEnd) {
+	while (p < bEnd) {
 		h32 += (*p) * PRIME32_5;
-		h32 = XXH_rotl32(h32, 11) * PRIME32_1 ;
+		h32 = XXH_rotl32 (h32, 11) * PRIME32_1;
 		p++;
 	}
 	h32 ^= h32 >> 15;
@@ -277,8 +277,8 @@ unsigned int XXH32_getIntermediateResult (void* state_in) {
 	return h32;
 }
 
-unsigned int XXH32_result (void* state_in) {
-	unsigned int h32 = XXH32_getIntermediateResult(state_in);
+unsigned int XXH32_result (void *state_in) {
+	unsigned int h32 = XXH32_getIntermediateResult (state_in);
 	free (state_in);
 	return h32;
 }
