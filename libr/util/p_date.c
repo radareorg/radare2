@@ -25,9 +25,35 @@ R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len) {
 	// TODO: support p->datezone
 	// TODO: support p->datefmt
         /* la data de modificacio del fitxer, no de creacio del zip */
-        p->cb_printf("%d-%02d-%02d %d:%d:%d\n",
+        p->cb_printf ("%d-%02d-%02d %d:%d:%d\n",
                 year, month, day, hour, minutes, seconds);
 	return 4;
+}
+
+R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
+	const int hfs_unix_delta = 2082844800;
+	time_t t = 0;
+	char s[256];
+	int ret = 0;
+	const struct tm* time;
+
+	if (p && len >= sizeof (ut32)) {
+		t = r_read_ble32 (buf, p->big_endian);
+		// "%d:%m:%Y %H:%M:%S %z",
+		if (p->datefmt[0]) {
+			t += p->datezone * (60*60);
+			t += hfs_unix_delta;
+			time = (const struct tm*)gmtime((const time_t*)&t);
+			if (time) {
+				ret = strftime (s, sizeof (s), p->datefmt, time);
+				if (ret) {
+					p->cb_printf ("%s\n", s);
+					ret = sizeof (time_t);
+				}
+			} else p->cb_printf ("Invalid time\n");
+		}
+	}
+	return ret;
 }
 
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
@@ -36,7 +62,7 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	int ret = 0;
 	const struct tm* time;
 
-	if (p != NULL && len >= sizeof(ut32)) {
+	if (p && len >= sizeof (ut32)) {
 		t = r_read_ble32 (buf, p->big_endian);
 		// "%d:%m:%Y %H:%M:%S %z",
 		if (p->datefmt[0]) {

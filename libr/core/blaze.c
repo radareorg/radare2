@@ -41,6 +41,7 @@ static int bbExist(AbbState *abb, ut64 addr) {
 	return 0;
 }
 
+#if 0
 static int fcnExist(AbbState *abb, ut64 addr) {
 	AbbAddr *a;
 	RListIter *iter;
@@ -56,6 +57,7 @@ static int fcnExist(AbbState *abb, ut64 addr) {
 	}
 	return false;
 }
+#endif
 
 static AbbState *abbstate_new(ut64 len) {
 	ut8 *buf = malloc (len);

@@ -4370,7 +4370,7 @@ static int cmd_print(void *data, const char *input) {
 			c = r_cons_canvas_new (w, rows * 11);
 			for (i = 0; i < rows; i++) {
 				for (j = 0; j < cols; j++) {
-					r_cons_canvas_gotoxy (c, j*20, i*11);
+					r_cons_canvas_gotoxy (c, j * 20, i * 11);
 					core->offset += len;
 					r_core_read_at (core, core->offset, core->block, len);
 					s = r_print_randomart (core->block, len, core->offset);
@@ -4388,7 +4388,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'n': // easter
 		eprintf ("easter egg license has expired\n");
 		break;
-	case 't':
+	case 't': // "pt"
 		switch (input[1]) {
 		case ' ':
 		case '\0':
@@ -4401,6 +4401,18 @@ static int cmd_print(void *data, const char *input) {
 			}
 			for (l = 0; l < len; l += sizeof (ut32)) {
 				r_print_date_unix (core->print, core->block + l, sizeof (ut32));
+			}
+			break;
+		case 'h':
+			//len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
+			if (len < sizeof (ut32)) {
+				eprintf ("You should change the block size: b %d\n", (int)sizeof (ut32));
+			}
+			if (len % sizeof (ut32)) {
+				len = len - (len % sizeof (ut32));
+			}
+			for (l = 0; l < len; l += sizeof (ut32)) {
+				r_print_date_hfs (core->print, core->block + l, sizeof (ut32));
 			}
 			break;
 		case 'd':
@@ -4430,9 +4442,10 @@ static int cmd_print(void *data, const char *input) {
 		case '?':{
 			const char* help_msg[] = {
 			"Usage: pt", "[dn]", "print timestamps",
-			"pt", "", "print unix time (32 bit `cfg.bigendian`)",
-			"ptd","", "print dos time (32 bit `cfg.bigendian`)",
-			"ptn","", "print ntfs time (64 bit `cfg.bigendian`)",
+			"pt", "", "print UNIX time (32 bit `cfg.bigendian`)  Since January 1, 1970",
+			"ptd","", "print DOS time (32 bit `cfg.bigendian`)   Since January 1, 1980",
+			"pth","", "print HFS time (32 bit `cfg.bigendian`)   Since January 1, 1904",
+			"ptn","", "print NTFS time (64 bit `cfg.bigendian`)  Since January 1, 1601",
 			NULL};
 			r_core_cmd_help (core, help_msg);
 			}
