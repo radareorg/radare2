@@ -49,7 +49,7 @@ R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
 		th->ready = false;
 #if HAVE_PTHREAD
 		pthread_create (&th->tid, NULL, _r_th_launcher, th);
-#elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__ && !defined(__CYGWIN__)
 		th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, &th->tid);
 #endif
 	}

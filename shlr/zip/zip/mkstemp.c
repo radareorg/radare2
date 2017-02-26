@@ -38,7 +38,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#ifdef _WIN32
+#ifdef __WINDOWS__
 #include <io.h>
 #endif
 #include <stdio.h>
@@ -54,7 +54,7 @@
 int
 _zip_mkstemp(char *path)
 {
-#ifdef _WIN32
+#ifdef __WINDOWS__
 	int ret;
 	ret = _creat(_mktemp(path), _S_IREAD|_S_IWRITE);
 	if (ret == -1) {

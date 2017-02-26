@@ -50,7 +50,7 @@ R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
 #define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 
 // Note : under GCC, it may sometimes be faster to enable the (2nd) macro definition, instead of using win32 intrinsic
-#if defined(_WIN32)
+#if defined(__WINDOWS__)
 #  define XXH_rotl32(x,r) _rotl(x,r)
 #else
 #  define XXH_rotl32(x,r) ((x << r) | (x >> (32 - r)))

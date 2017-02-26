@@ -39,7 +39,7 @@
 
 #include <zlib.h>
 
-#ifdef _WIN32
+#ifdef __WINDOWS__
 #define ZIP_EXTERN __declspec(dllexport)
 /* for dup(), close(), etc. */
 #include <io.h>
@@ -61,7 +61,7 @@
 #define _zip_rename	rename
 #endif
 
-#ifdef _WIN32
+#ifdef __WINDOWS__
 #if defined(HAVE__CLOSE)
 #define close		_close
 #endif

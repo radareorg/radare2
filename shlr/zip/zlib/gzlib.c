@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "gzguts.h"
 
-#if defined(_WIN32) && !defined(__BORLANDC__)
+#if defined(__WINDOWS__) && !defined(__BORLANDC__)
 #  define LSEEK _lseeki64
 #else
 #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
@@ -189,7 +189,7 @@ local gzFile gz_open(path, fd, mode)
     }
 
     /* save the path name for error messages */
-#ifdef _WIN32
+#ifdef __WINDOWS__
     if (fd == -2) {
         len = wcstombs(NULL, path, 0);
         if (len == (size_t)-1)
@@ -203,7 +203,7 @@ local gzFile gz_open(path, fd, mode)
         free(state);
         return NULL;
     }
-#ifdef _WIN32
+#ifdef __WINDOWS__
     if (fd == -2)
         if (len)
             wcstombs(state->path, path, len + 1);
@@ -240,7 +240,7 @@ local gzFile gz_open(path, fd, mode)
 
     /* open the file with the appropriate flags (or just use fd) */
     state->fd = fd > -1 ? fd : (
-#ifdef _WIN32
+#ifdef __WINDOWS__
         fd == -2 ? _wopen(path, oflag, 0666) :
 #endif
         open((const char *)path, oflag, 0666));
@@ -302,7 +302,7 @@ gzFile ZEXPORT gzdopen(fd, mode)
 }
 
 /* -- see zlib.h -- */
-#ifdef _WIN32
+#ifdef __WINDOWS__
 gzFile ZEXPORT gzopen_w(path, mode)
     const wchar_t *path;
     const char *mode;
