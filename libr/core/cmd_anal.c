@@ -5342,7 +5342,7 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 	}
 	if (curArch && !strcmp (curArch, "x86")) {
 		const char * help_msg[] = {
-			"Usage:", "av ", "analyze the .rodata section and list virtual function present",
+			"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
 			NULL};
 		switch (input[0]) {
 		case '*'://av*
@@ -5396,7 +5396,7 @@ static int cmd_anal(void *data, const char *input) {
 		"ax", "[?]", "manage refs/xrefs (see also afx?)",
 		"as", "[?] [num]", "analyze syscall using dbg.reg",
 		"at", "[?] [.]", "analyze execution traces",
-		//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
+		"av", "[?] [.]", "show vtables",
 		NULL };
 
 	switch (input[0]) {
