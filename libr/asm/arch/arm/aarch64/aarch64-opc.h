@@ -175,8 +175,11 @@ get_operand_fields_width (const aarch64_operand *operand)
   unsigned width = 0;
   while (operand->fields[i] != FLD_NIL)
     width += fields[operand->fields[i++]].width;
-  assert (width > 0 && width < 32);
-  return width;
+  // assert (width > 0 && width < 32);
+  if (width > 0 && width < 32) {
+    return width;
+  }
+  return 0;
 }
 
 static inline const aarch64_operand *
