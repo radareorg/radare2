@@ -2305,9 +2305,10 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 				break;
 			case 'j':
 				bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-						"\"offset\":%" PFMT64d ",\"machine\":\"%s\"}",
+						"\"offset\":%" PFMT64d ",\"size\":%d,"
+						"\"machine\":\"%s\"}",
 						i? ",": "", arch, bits,
-						boffset, machine);
+						boffset, obj_size, machine);
 				break;
 			default:
 				bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%i %s\n", i,
@@ -2326,9 +2327,10 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 					break;
 				case 'j':
 					bin->cb_printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
-							"\"offset\":%" PFMT64d "}",
+							"\"offset\":%" PFMT64d ",\"size\":%d,"
+							"\"machine\":\"%s\"}",
 							i? ",": "", arch, bits,
-							boffset);
+							boffset, obj_size, machine);
 					break;
 				default:
 					bin->cb_printf ("%03i 0x%08" PFMT64x " %d %s_%d\n", i,
@@ -2344,9 +2346,10 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 					break;
 				case 'j':
 					bin->cb_printf ("%s{\"arch\":\"unk_%d\",\"bits\":%d,"
-							"\"offset\":%" PFMT64d ",\"size\":%d}",
+							"\"offset\":%" PFMT64d ",\"size\":%d,"
+							"\"machine\":\"%s\"}",
 							i? ",": "", i, bits,
-							boffset, obj_size);
+							boffset, obj_size, machine);
 					break;
 				default:
 					bin->cb_printf ("%03i 0x%08" PFMT64x " %d unk_0\n", i,
