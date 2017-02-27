@@ -1496,7 +1496,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				continue;
 			}
 
-			if (bin->methods[i].class_id > bin->header.types_size - 1) {
+			if (bin->methods[i].class_id > bin->header.types_size) {
 				continue;
 			}
 
