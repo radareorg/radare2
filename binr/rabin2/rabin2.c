@@ -649,7 +649,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'Z': set_action (R_BIN_REQ_SIZE); break;
 		case 'I': set_action (R_BIN_REQ_INFO); break;
-		case 'H': set_action (R_BIN_REQ_FIELDS); break;
+		case 'H':
+			set_action (R_BIN_REQ_FIELDS);
+			break;
 		case 'd': set_action (R_BIN_REQ_DWARF); break;
 		case 'P':
 			if (is_active (R_BIN_REQ_PDB)) {
@@ -1049,6 +1051,7 @@ int main(int argc, char **argv) {
 	run_action ("strings", R_BIN_REQ_STRINGS, R_CORE_BIN_ACC_STRINGS);
 	run_action ("info", R_BIN_REQ_INFO, R_CORE_BIN_ACC_INFO);
 	run_action ("fields", R_BIN_REQ_FIELDS, R_CORE_BIN_ACC_FIELDS);
+	run_action ("header", R_BIN_REQ_HEADER, R_CORE_BIN_ACC_HEADER);
 	run_action ("libs", R_BIN_REQ_LIBS, R_CORE_BIN_ACC_LIBS);
 	run_action ("relocs", R_BIN_REQ_RELOCS, R_CORE_BIN_ACC_RELOCS);
 	run_action ("dwarf", R_BIN_REQ_DWARF, R_CORE_BIN_ACC_DWARF);
