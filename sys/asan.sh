@@ -22,12 +22,12 @@ printf "\033[32m"
 echo "========================================================================="
 printf "\033[0m"
 sleep 1
-#export LDFLAGS="-lasan"
+export LDFLAGS="-lasan"
 
 for a in $ASAN ; do
 	export CFLAGS="${CFLAGS} -fsanitize=$a"
 done
-#export CFLAGS="${CFLAGS} -lasan"
+export CFLAGS="${CFLAGS} -lasan"
 
 echo 'int main(){return 0;}' > .a.c
 [ -z "${CC}" ] && CC=gcc
