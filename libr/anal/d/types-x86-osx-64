@@ -33,3 +33,11 @@ func.__stack_chk_fail.args=0
 func.__stack_chk_fail.noreturn=true
 func.__stack_chk_fail.ret=void
 func.__stack_chk_fail.cc=amd64
+
+sym.imp.err=func
+func.sym.imp.err.args=2
+func.sym.imp.err.arg.0=int,eval
+func.sym.imp.err.arg.1=const char *,msg
+func.sym.imp.err.noreturn=true
+func.sym.imp.err.ret=void
+func.sym.imp.err.cc=amd64
