@@ -9,6 +9,8 @@ libr/util/log.c
 libr/util/cache.c
 libr/util/print.c
 
+libr/asm/p/asm_bf.c
+
 libr/hash/calc.c
 libr/hash/crc16.c
 libr/hash/luhn.c

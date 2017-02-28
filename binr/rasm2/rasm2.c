@@ -108,9 +108,16 @@ static void rasm2_list(RAsm *la, const char *arch) {
 				printf ("\"%s\":{\"bits\":[%s],\"license\":\"%s\",\"description\":\"%s\",\"features\":\"%s\"}%s",
 					h->name, str_bits, license, h->desc, feat, iter->n? ",": "");
 			} else {
-				printf ("%s%s  %-9s  %-11s %-7s %s\n",
+				printf ("%s%s  %-9s  %-11s %-7s %s",
 					feat, feat2, bits, h->name,
 					h->license? h->license: "unknown", h->desc);
+				if (h->author) {
+					printf (" (by %s)", h->author);
+				}
+				if (h->version) {
+					printf (" v%s", h->version);
+				}
+				printf ("\n");
 			}
 		}
 	}

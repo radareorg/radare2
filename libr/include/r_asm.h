@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -118,6 +118,8 @@ typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 typedef struct r_asm_plugin_t {
 	const char *name;
 	const char *arch;
+	const char *author;
+	const char *version;
 	const char *cpus;
 	const char *desc;
 	const char *license;
