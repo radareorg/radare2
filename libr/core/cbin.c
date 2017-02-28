@@ -2722,18 +2722,19 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if ((action & R_CORE_BIN_ACC_MEM)) ret &= bin_mem (core, mode);
 	if ((action & R_CORE_BIN_ACC_VERSIONINFO)) ret &= bin_versioninfo (core, mode);
 	if ((action & R_CORE_BIN_ACC_SIGNATURE)) ret &= bin_signature (core, mode);
-//	if ((action & R_CORE_BIN_ACC_FIELDS)) ret &= bin_fields (core, mode, va);
-	if (IS_MODE_SIMPLE (mode)) {
-		if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
-			/* ignore mode, just for quiet/simple here */
-			ret &= bin_fields (core, 0, va);
-		}
-	} else {
-		if (IS_MODE_NORMAL(mode)) {
-			ret &= bin_header (core, mode);
-		} else {
+	if ((action & R_CORE_BIN_ACC_FIELDS)) {
+		if (IS_MODE_SIMPLE (mode)) {
 			if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
-				ret &= bin_fields (core, mode, va);
+				/* ignore mode, just for quiet/simple here */
+				ret &= bin_fields (core, 0, va);
+			}
+		} else {
+			if (IS_MODE_NORMAL(mode)) {
+				ret &= bin_header (core, mode);
+			} else {
+				if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
+					ret &= bin_fields (core, mode, va);
+				}
 			}
 		}
 	}
