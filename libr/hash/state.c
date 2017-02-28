@@ -6,10 +6,10 @@
 
 R_API void mdfour(ut8 *out, const ut8 *in, int n);
 
-#define CHKFLAG(f, x) if (f == 0 || f&x)
+#define CHKFLAG(x) if (!flags || flags & x)
 
 R_API RHash *r_hash_new(bool rst, int flags) {
-	RHash *ctx = R_NEW (RHash);
+	RHash *ctx = R_NEW0 (RHash);
 	if (ctx) {
 		r_hash_do_begin (ctx, flags);
 		ctx->rst = rst;
@@ -18,20 +18,20 @@ R_API RHash *r_hash_new(bool rst, int flags) {
 }
 
 R_API void r_hash_do_begin(RHash *ctx, int flags) {
-	CHKFLAG (flags, R_HASH_MD5) r_hash_do_md5 (ctx, NULL, -1);
-	CHKFLAG (flags, R_HASH_SHA1) SHA1_Init (&ctx->sha1);
-	CHKFLAG (flags, R_HASH_SHA256) SHA256_Init (&ctx->sha256);
-	CHKFLAG (flags, R_HASH_SHA384) SHA384_Init (&ctx->sha384);
-	CHKFLAG (flags, R_HASH_SHA512) SHA512_Init (&ctx->sha512);
+	CHKFLAG (R_HASH_MD5) r_hash_do_md5 (ctx, NULL, -1);
+	CHKFLAG (R_HASH_SHA1) SHA1_Init (&ctx->sha1);
+	CHKFLAG (R_HASH_SHA256) SHA256_Init (&ctx->sha256);
+	CHKFLAG (R_HASH_SHA384) SHA384_Init (&ctx->sha384);
+	CHKFLAG (R_HASH_SHA512) SHA512_Init (&ctx->sha512);
 	ctx->rst = false;
 }
 
 R_API void r_hash_do_end(RHash *ctx, int flags) {
-	CHKFLAG (flags, R_HASH_MD5) r_hash_do_md5 (ctx, NULL, -2);
-	CHKFLAG (flags, R_HASH_SHA1) SHA1_Final (ctx->digest, &ctx->sha1);
-	CHKFLAG (flags, R_HASH_SHA256) SHA256_Final (ctx->digest, &ctx->sha256);
-	CHKFLAG (flags, R_HASH_SHA384) SHA384_Final (ctx->digest, &ctx->sha384);
-	CHKFLAG (flags, R_HASH_SHA512) SHA512_Final (ctx->digest, &ctx->sha512);
+	CHKFLAG (R_HASH_MD5) r_hash_do_md5 (ctx, NULL, -2);
+	CHKFLAG (R_HASH_SHA1) SHA1_Final (ctx->digest, &ctx->sha1);
+	CHKFLAG (R_HASH_SHA256) SHA256_Final (ctx->digest, &ctx->sha256);
+	CHKFLAG (R_HASH_SHA384) SHA384_Final (ctx->digest, &ctx->sha384);
+	CHKFLAG (R_HASH_SHA512) SHA512_Final (ctx->digest, &ctx->sha512);
 	ctx->rst = true;
 }
 
