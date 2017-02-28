@@ -281,6 +281,8 @@ typedef struct r_debug_info_t {
 typedef struct r_debug_plugin_t {
 	const char *name;
 	const char *license;
+	const char *author;
+	const char *version;
 	//const char **archs; // MUST BE DEPREACTED!!!!
 	ut32 bits;
 	const char *arch;

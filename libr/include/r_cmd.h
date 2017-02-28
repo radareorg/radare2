@@ -80,6 +80,8 @@ typedef struct r_core_plugin_t {
 	const char *name;
 	const char *desc;
 	const char *license;
+	const char *author;
+	const char *version;
 	RCmdCallback call;
 	RCmdCallback init;
 	RCmdCallback deinit;
