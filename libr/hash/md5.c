@@ -238,6 +238,12 @@ static void MD5Final (ut8 digest[16], R_MD5_CTX *context) {
 
 R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
+		if (len == -1) {
+			MD5Init (&ctx->md5);
+		}
+		if (len == -2) {
+			MD5Final (ctx->digest, &ctx->md5);
+		}
 		return NULL;
 	}
 	if (ctx->rst) {
