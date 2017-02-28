@@ -20,8 +20,6 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stdio.h>
-#include <string.h>
 #include <r_hash.h>
 
 static inline ut32 F(ut32 X, ut32 Y, ut32 Z) {
@@ -37,8 +35,8 @@ static inline ut32 H(ut32 X, ut32 Y, ut32 Z) {
 }
 
 static inline ut32 lshift(ut32 x, int s) {
-	x &= 0xFFFFFFFF;
-	return ((x << s) & 0xFFFFFFFF) | (x >> (32 - s));
+	x &= UT32_MAX;
+	return ((x << s) & UT32_MAX) | (x >> (32 - s));
 }
 
 #define ROUND1(a, b, c, d, k, s) (*a) = lshift ((*a) + F (*b, *c, *d) + X[k], s)
@@ -115,10 +113,10 @@ static void mdfour64(ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {
 	*C += CC;
 	*D += DD;
 
-	*A &= 0xFFFFFFFF;
-	*B &= 0xFFFFFFFF;
-	*C &= 0xFFFFFFFF;
-	*D &= 0xFFFFFFFF;
+	*A &= UT32_MAX;
+	*B &= UT32_MAX;
+	*C &= UT32_MAX;
+	*D &= UT32_MAX;
 
 	for (j = 0; j < 16; j++) {
 		X[j] = 0;
