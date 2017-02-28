@@ -25,6 +25,7 @@ typedef struct {
 	ut32 sizeHi, sizeLo;
 } R_SHA_CTX;
 
+
 #define SHA256_BLOCK_LENGTH 64
 typedef struct _SHA256_CTX {
 	ut32 state[8];
