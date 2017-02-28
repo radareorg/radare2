@@ -59,6 +59,59 @@ static void cmd_pCd(RCore *core, const char *input) {
 	free (o_ab);
 }
 
+static void findMethodBounds(RList *methods, ut64 *min, ut64 *max) {
+	RBinSymbol *sym;
+	RListIter *iter;
+	ut64 at_min = UT64_MAX;
+	ut64 at_max = 0LL;
+
+	r_list_foreach (methods, iter, sym) {
+		if (sym->vaddr) {
+			if (sym->vaddr < at_min) {
+				at_min = sym->vaddr;
+			}
+			if (sym->vaddr + sym->size > at_max) {
+				at_max = sym->vaddr + sym->size;
+			}
+		}
+	}
+	*min = at_min;
+	*max = at_max;
+}
+
+static ut64 findClassBounds(RCore *core, const char *input, int *len) {
+	ut64 min = 0, max = 0;
+	RListIter *iter;
+	RBinClass *c;
+	RList *cs = r_bin_get_classes (core->bin);
+	if (input && *input) {
+		// resolve by name
+		r_list_foreach (cs, iter, c) {
+			if (!c || !c->name || !c->name[0]) {
+				continue;
+			}
+			findMethodBounds(c->methods, &min, &max);
+			if (len) {
+				*len = (max - min);
+			}
+			return min;
+		}
+	} else {
+		// resolve by core->offset
+		r_list_foreach (cs, iter, c) {
+			if (!c || !c->name || !c->name[0]) {
+				continue;
+			}
+			findMethodBounds(c->methods, &min, &max);
+			if (len) {
+				*len = (max - min);
+			}
+			return min;
+		}
+	}
+	return 0;
+}
+
 static void cmd_pCD(RCore *core, const char *input) {
 #define C(x) r_cons_canvas_##x
 	int h, w = r_cons_get_size (&h);
@@ -1048,12 +1101,17 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	int size = (core->anal->bits/4);
 	int count = atoi (str);
 	int i, n;
-	if (count<1) count = 1;
-	// skipsapces
-	while (*str>='0' && *str<='9') str++;
-
+	if (count < 1) {
+		count = 1;
+	}
+	// skipspaces
+	while (*str>='0' && *str<='9') {
+		str++;
+	}
 	// "px/" alone isn't a full command.
-	if (!str[0]) return;
+	if (!str[0]) {
+		return;
+	}
 #if 0
 Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 #endif
@@ -3108,6 +3166,12 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 			processed_cmd = true;
 			break;
+		case 'k': // "pdk" -print class
+			{
+				int len = 0;
+				ut64 at = findClassBounds (core, r_str_chop_ro (input + 2), &len);
+				return r_core_cmdf (core, "pD %d @ %"PFMT64d, len, at);
+			}
 		case 'i': // "pdi" // "pDi"
 			processed_cmd = true;
 			if (*input == 'D') {
@@ -3318,6 +3382,7 @@ static int cmd_print(void *data, const char *input) {
 				"pdb", "", "disassemble basic block",
 				"pdc", "", "pseudo disassembler output in C-like syntax",
 				"pdC", "", "show comments found in N instructions",
+				"pdk", "", "disassemble all methods of a class",
 				"pdj", "", "disassemble to json",
 				"pdr", "", "recursive disassemble across the function graph",
 				"pdf", "", "disassemble function",
