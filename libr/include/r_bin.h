@@ -298,6 +298,8 @@ typedef struct r_bin_xtr_plugin_t {
 typedef struct r_bin_plugin_t {
 	char *name;
 	char *desc;
+	char *author;
+	char *version;
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);

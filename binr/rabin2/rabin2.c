@@ -707,12 +707,14 @@ int main(int argc, char **argv) {
 		case 'v': return blob_version ("rabin2");
 		case 'L':
 			bin->cb_printf = (PrintfCallback)printf;
-			if (rad) {
+			if (rad == R_CORE_BIN_JSON) {
+				r_bin_list (bin, 'j');
+			} else if (rad) {
 				r_bin_list (bin, 'q');
 			} else {
-				r_bin_list (bin, rad == R_CORE_BIN_JSON);
+				r_bin_list (bin, 0);
 			}
-			return 1;
+			return 0;
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == UT64_MAX) {

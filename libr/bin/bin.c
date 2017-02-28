@@ -1510,7 +1510,7 @@ R_API void *r_bin_free(RBin *bin) {
 
 R_API int r_bin_list(RBin *bin, int json) {
 	RListIter *it;
-	RBinXtrPlugin *bp;
+	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
 	if (json == 'q') {
 		r_list_foreach (bin->plugins, it, bp) {
@@ -1525,24 +1525,26 @@ R_API int r_bin_list(RBin *bin, int json) {
 			bin->cb_printf (
 				"{\"filetype\":\"%s\",\"name\":\"%s\","
 				"\"license\":\"%s\"}",
-				bp->name, bp->desc, bp->license);
+				bp->name, bp->desc, bp->license? bp->license: "???");
 		}
 		bin->cb_printf ("],\"xtr\":[");
 		r_list_foreach (bin->binxtrs, it, bx) {
 			bin->cb_printf (
 				"{\"filetype\":\"%s\",\"name\":\"%s\","
 				"\"license\":\"%s\"}",
-				bx->name, bx->desc, bx->license);
+				bx->name, bx->desc, bx->license? bp->license: "???");
 		}
 		bin->cb_printf ("]}\n");
 	} else {
 		r_list_foreach (bin->plugins, it, bp) {
-			bin->cb_printf ("bin  %-11s %s (%s)\n",
-				bp->name, bp->desc, bp->license);
+			bin->cb_printf ("bin  %-11s %s (%s) %s %s\n",
+				bp->name, bp->desc, bp->license? bp->license: "???",
+				bp->version? bp->version: "",
+				bp->author? bp->author: "");
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
 			bin->cb_printf ("xtr  %-11s %s (%s)\n", bx->name,
-				bx->desc, bx->license);
+				bx->desc, bx->license? bp->license: "???");
 		}
 	}
 	return false;
