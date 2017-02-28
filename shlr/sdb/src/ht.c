@@ -283,7 +283,6 @@ bool ht_delete(SdbHash* ht, const char* key) {
 	return ht_delete_internal (ht, key, NULL);
 }
 
-
 void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user) {
 	ut32 i = 0;
 	HtKv *kv;
@@ -298,31 +297,4 @@ void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user) {
 			}
 		}
 	}
-}
-
-static int ht_foreach_list_cb(void *user, const char *k, const char *v) {
-	SdbList *list = (SdbList *)user;
-	SdbKv *kv = R_NEW0 (SdbKv);
-	kv->key = strdup (k);
-	kv->value = strdup (v);
-	ls_append (list, kv);
-	return 1;
-}
-
-static int __cmp_asc(const void *a, const void *b) {
-	const SdbKv *ka = a;
-	const SdbKv *kb = b;
-	return strcmp (ka->key, kb->key);
-}
-
-SdbList* ht_foreach_list(SdbHash *ht, bool sorted) {
-	SdbList *list = ls_newf ((SdbListFree)sdb_kv_free);
-	if (!list) {
-		return NULL;
-	}
-	ht_foreach (ht, ht_foreach_list_cb, list);
-	if (sorted) {
-		ls_sort (list, __cmp_asc);
-	}
-	return list;
 }

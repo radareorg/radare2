@@ -25,7 +25,7 @@ typedef char* (*DupValue)(void *);
 typedef size_t (*CalcSize)(void *);
 typedef ut32 (*HashFunction)(const char*);
 typedef int (*ListComparator)(const char *a, const char *b);
-typedef int (*HtForeachCallback)(void *user, const char *k, const char *v);
+typedef bool (*HtForeachCallback)(void *user, const char *k, void *v);
 
 
 /** ht **/
