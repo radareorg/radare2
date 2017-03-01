@@ -22,6 +22,7 @@ struct Getarg {
 #define esilprintf(op, fmt, arg...) r_strbuf_appendf (&op->esil, fmt, ##arg)
 #define INSOPS insn->detail->ppc.op_count
 #define INSOP(n) insn->detail->ppc.operands[n]
+#define IMM(x) (ut64)(insn->detail->ppc.operands[x].imm)
 
 #ifndef PFMT32x
 #define PFMT32x "lx"
@@ -56,10 +57,8 @@ static const char* cmask64(const char *mb_c, const char *me_c){
 	if (me_c) me = atol(me_c);
 	snprintf(cmask, sizeof(cmask), "0x%"PFMT64x"", mask64(mb, me));
 	return cmask;
-
 }
 
-#if 0
 static ut32 mask32(ut32 mb, ut32 me) {
 	int i;
 	ut32 mask = 0;
@@ -91,6 +90,7 @@ static const char* cmask32(const char *mb_c, const char *me_c){
 	return cmask;
 }
 
+#if 0
 static const char* inv_mask64(const char *mb_c, const char *sh){
 	static char cmask[32];
 	ut64 mb = 0;
@@ -202,7 +202,7 @@ static const char* getspr(struct Getarg *gop, int n) {
     case SPR_HID6:
         return "hid6";
     default:
-        snprintf(cspr, sizeof(cspr), "spr_%lu", spr);
+        snprintf(cspr, sizeof(cspr), "spr_%u", spr);
         break;
     }
     return cspr;
@@ -264,6 +264,7 @@ static int set_reg_profile(RAnal *anal) {
         "gpr    ctr .32 140 0\n"
         "gpr    msr .32 144 0\n"
         "gpr    pc   .32 148 0\n"
+        "gpr    cr  .64 152 0\n"
         "gpr    cr0 .8  152 0\n"
         "gpr    cr1 .8  153 0\n"
         "gpr    cr2 .8  154 0\n"
@@ -362,6 +363,7 @@ static int set_reg_profile(RAnal *anal) {
         "gpr    ctr .64 280 0\n"
         "gpr    msr .64 288 0\n"
         "gpr    pc   .64 296 0\n"
+        "gpr    cr  .64 304 0\n"
         "gpr    cr0 .8  304 0\n"
         "gpr    cr1 .8  305 0\n"
         "gpr    cr2 .8  306 0\n"
@@ -536,17 +538,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
             break;
         case PPC_INS_STB:
         case PPC_INS_STBU:
-            op->type = R_ANAL_OP_TYPE_MOV;
+            op->type = R_ANAL_OP_TYPE_STORE;
             esilprintf (op, "%s,%s", ARG(0), ARG2(1, "=[1]"));
             break;
         case PPC_INS_STH:
         case PPC_INS_STHU:
-            op->type = R_ANAL_OP_TYPE_MOV;
+            op->type = R_ANAL_OP_TYPE_STORE;
             esilprintf (op, "%s,%s", ARG(0), ARG2(1, "=[2]"));
             break;
         case PPC_INS_STD:
         case PPC_INS_STDU:
-            op->type = R_ANAL_OP_TYPE_MOV;
+            op->type = R_ANAL_OP_TYPE_STORE;
             esilprintf (op, "%s,%s", ARG(0), ARG2(1, "=[8]"));
             break;
         case PPC_INS_LA:
@@ -661,62 +663,60 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
         case PPC_INS_B:
         case PPC_INS_BA:
             op->type = R_ANAL_OP_TYPE_JMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
+            op->jump = IMM(0);
             switch (insn->detail->ppc.bc) {
             case PPC_BC_INVALID:
-                op->type = R_ANAL_OP_TYPE_JMP;
-                op->jump = (ut64)insn->detail->ppc.operands[0].imm;
                 esilprintf (op, "%s,pc,=", ARG(0));
                 break;
             case PPC_BC_LT:
                 op->type = R_ANAL_OP_TYPE_CJMP;
-                op->fail = addr + 4;
-                if (ARG(1)[0] == '\0') esilprintf (op, "cr0,0,<,?{,%s,pc,=,BREAK,},", ARG(0));
-                else esilprintf (op, "0,%s,<,?{,%s,pc,=,BREAK,},", ARG(0), ARG(1));
+                op->fail = addr + op->size;
+                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,<,?{,%s,pc,=,},", ARG(0));
+                else { esilprintf (op, "0,%s,<,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
                 break;
             case PPC_BC_LE:
                 op->type = R_ANAL_OP_TYPE_CJMP;
-                op->fail = addr + 4;
-                if (ARG(1)[0] == '\0') esilprintf (op, "cr0,0,<=,?{,%s,pc,=,BREAK,},", ARG(0));
-                else esilprintf (op, "0,%s,<=,?{,%s,pc,=,BREAK,},", ARG(0), ARG(1));
+                op->fail = addr + op->size;
+                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,<=,?{,%s,pc,=,},", ARG(0));
+                else { esilprintf (op, "0,%s,<=,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
                 break;
             case PPC_BC_EQ:
                 op->type = R_ANAL_OP_TYPE_CJMP;
-                op->fail = addr + 4;
-                if (ARG(1)[0] == '\0') esilprintf (op, "cr0,0,==,?{,%s,pc,=,BREAK,},", ARG(0));
-                else esilprintf (op, "0,%s,==,?{,%s,pc,=,BREAK,},", ARG(0), ARG(1));
+                op->fail = addr + op->size;
+                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,==,?{,%s,pc,=,},", ARG(0));
+                else { esilprintf (op, "0,%s,==,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
                 break;
             case PPC_BC_GE:
                 op->type = R_ANAL_OP_TYPE_CJMP;
-                op->fail = addr + 4;
-                if (ARG(1)[0] == '\0') esilprintf (op, "cr0,0,>=,?{,%s,pc,=,BREAK,},", ARG(0));
-                else esilprintf (op, "0,%s,>=,?{,%s,pc,=,BREAK,},", ARG(0), ARG(1));
+                op->fail = addr + op->size;
+                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,>=,?{,%s,pc,=,},", ARG(0));
+                else { esilprintf (op, "0,%s,>=,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
                 break;
             case PPC_BC_GT:
                 op->type = R_ANAL_OP_TYPE_CJMP;
-                op->fail = addr + 4;
-                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,>,?{,%s,pc,=,BREAK,},", ARG(0));
-                else esilprintf (op, "0,%s,>,?{,%s,pc,=,BREAK,},", ARG(0), ARG(1));
+                op->fail = addr + op->size;
+                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,>,?{,%s,pc,=,},", ARG(0));
+                else { esilprintf (op, "0,%s,>,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
                 break;
             case PPC_BC_NE:
                 op->type = R_ANAL_OP_TYPE_CJMP;
-                op->fail = addr + 4;
-                if (ARG(1)[0] == '\0') esilprintf (op, "cr0,0,!=,?{,%s,pc,=,BREAK,},", ARG(0));
-                else esilprintf (op, "0,%s,!=,?{,%s,pc,=,BREAK,},", ARG(0), ARG(1));
+                op->fail = addr + op->size;
+                if (ARG(1)[0] == '\0') esilprintf (op, "cr0,?{,%s,pc,=,},", ARG(0));
+                else { esilprintf (op, "%s,?{,%u,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
                 break;
             case PPC_BC_UN: // unordered
             case PPC_BC_NU: // not unordered
             case PPC_BC_SO: // summary overflow
             case PPC_BC_NS: // not summary overflow
-                op->type = R_ANAL_OP_TYPE_CJMP;
-                op->fail = addr + 4;
-                break;
             default:
+                op->type = R_ANAL_OP_TYPE_CJMP;
+                op->fail = addr + op->size;
                 break;
             }
             switch (insn->detail->ppc.operands[0].type) {
             case PPC_OP_CRX:
                 op->type = R_ANAL_OP_TYPE_CJMP;
+                op->fail = addr + op->size;
                 break;
             case PPC_OP_REG:
                 if (op->type == R_ANAL_OP_TYPE_CJMP) {
@@ -724,8 +724,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
                 } else {
                     op->type = R_ANAL_OP_TYPE_CJMP;
                 }
-                op->jump = (ut64)insn->detail->ppc.operands[1].imm;
-                op->fail = addr+4;
+                op->jump = IMM(1);
+                op->fail = addr + op->size;
                 //op->type = R_ANAL_OP_TYPE_UJMP;
             default:
                 break;
@@ -733,63 +733,63 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
             break;
         case PPC_INS_BDNZ:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr+4;
-            esilprintf (op, "ctr,0,!=,?{,%s,pc,=,BREAK,},4,pc,+=", ARG(0));
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
+            esilprintf (op, "ctr,?{,%s,pc,=,}", ARG(0));
             break;
         case PPC_INS_BDNZA:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr+4;
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
             break;
         case PPC_INS_BDNZL:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr+4;
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
             break;
         case PPC_INS_BDNZLA:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr+4;
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
             break;
         case PPC_INS_BDNZLR:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->fail = addr+4;
-            esilprintf (op, "ctr,0,!=,?{,lr,pc,=,},");
+            op->fail = addr + op->size;
+            esilprintf (op, "ctr,?{,lr,pc,=,},");
             break;
         case PPC_INS_BDNZLRL:
-            op->fail = addr+4;
+            op->fail = addr + op->size;
             op->type = R_ANAL_OP_TYPE_CJMP;
             break;
         case PPC_INS_BDZ:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr+4;
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
             esilprintf (op, "ctr,0,==,?{,%s,pc,=,}", ARG(0));
             break;
         case PPC_INS_BDZA:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr+4;
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
             break;
         case PPC_INS_BDZL:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr+4;
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
             break;
         case PPC_INS_BDZLA:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr+4;
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
             break;
         case PPC_INS_BDZLR:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->fail = addr+4;
+            op->fail = addr + op->size;
             esilprintf (op, "ctr,0,==,?{,lr,pc,=,}");
             break;
         case PPC_INS_BDZLRL:
             op->type = R_ANAL_OP_TYPE_CJMP;
-            op->fail = addr+4;
+            op->fail = addr + op->size;
             break;
         case PPC_INS_NOR:
             op->type = R_ANAL_OP_TYPE_NOR;
@@ -814,8 +814,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
         case PPC_INS_BL:
         case PPC_INS_BLA:
             op->type = R_ANAL_OP_TYPE_CALL;
-            op->jump = (ut64)insn->detail->ppc.operands[0].imm;
-            op->fail = addr + 4;
+            op->jump = IMM(0);
+            op->fail = addr + op->size;
             esilprintf (op, "pc,lr,=,%s,pc,=", ARG(0));
             break;
         case PPC_INS_TRAP:
