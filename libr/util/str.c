@@ -1580,12 +1580,27 @@ R_API bool r_str_glob (const char* str, const char *glob) {
 	const char* cp = NULL, *mp = NULL;
 	if (!glob || !strcmp (glob, "*")) {
 		return true;
-	}
 	if (!strchr (glob, '*')) {
-		return strstr (str, glob) != NULL;
+    if (*glob == '^'){
+      glob++;
+      while (*str) {
+        if (*glob != *str) {
+          return false;
+        }
+        if (!*++glob) {
+          return true;
+        }
+        str++;
+      } 
+    } else {
+		  return strstr (str, glob) != NULL;
+    }
 	}
+  if (*glob == '^'){
+      glob++;
+  }
 	while (*str && (*glob != '*')) {
-		if (*glob != *str) {
+	  if (*glob != *str) {
 			return false;
 		}
 		glob++;
