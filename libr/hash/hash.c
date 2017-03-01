@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2007-2016 pancake */
+/* radare - LGPL - Copyright 2007-2017 pancake */
 
-#include "r_hash.h"
-#include "r_util.h"
+#include <r_hash.h>
 
 R_LIB_VERSION (r_hash);
 
@@ -89,7 +88,7 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len) {
 
 R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 	int i, c;
-	for (c = i = 0, --len; i < len; i++) {
+	for (c = i = 0, len--; i < len; i++) {
 		c += R_ABS (b[i + 1] - b[i]);
 	}
 	return c;
@@ -109,6 +108,7 @@ R_API int r_hash_size(ut64 algo) {
 	#define ALGOBIT(x) if (algo & R_HASH_ ## x) { return R_HASH_SIZE_ ## x; }
 	ALGOBIT (MD4);
 	ALGOBIT (MD5);
+	ALGOBIT (SHA1);
 	ALGOBIT (SHA256);
 	ALGOBIT (SHA384);
 	ALGOBIT (SHA512);

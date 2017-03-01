@@ -20,12 +20,8 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* NOTE: This code makes no attempt to be fast! */
-#include <stdio.h>
-#include <string.h>
-#include "r_types.h"
+#include <r_hash.h>
 
-// TODO: rewrite with #define
 static inline ut32 F(ut32 X, ut32 Y, ut32 Z) {
 	return (X & Y) | ((~X) & Z);
 }
@@ -39,8 +35,8 @@ static inline ut32 H(ut32 X, ut32 Y, ut32 Z) {
 }
 
 static inline ut32 lshift(ut32 x, int s) {
-	x &= 0xFFFFFFFF;
-	return ((x << s) & 0xFFFFFFFF) | (x >> (32 - s));
+	x &= UT32_MAX;
+	return ((x << s) & UT32_MAX) | (x >> (32 - s));
 }
 
 #define ROUND1(a, b, c, d, k, s) (*a) = lshift ((*a) + F (*b, *c, *d) + X[k], s)
@@ -50,17 +46,16 @@ static inline ut32 lshift(ut32 x, int s) {
 /* this applies md4 to 64 byte chunks */
 static void mdfour64(ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {
 	int j;
-	ut32 AA, BB, CC, DD;
 	ut32 X[16];
 
 	for (j = 0; j < 16; j++) {
 		X[j] = M[j];
 	}
 
-	AA = *A;
-	BB = *B;
-	CC = *C;
-	DD = *D;
+	ut32 AA = *A;
+	ut32 BB = *B;
+	ut32 CC = *C;
+	ut32 DD = *D;
 
 	ROUND1 (A, B, C, D, 0, 3);
 	ROUND1 (D, A, B, C, 1, 7);
@@ -118,10 +113,10 @@ static void mdfour64(ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {
 	*C += CC;
 	*D += DD;
 
-	*A &= 0xFFFFFFFF;
-	*B &= 0xFFFFFFFF;
-	*C &= 0xFFFFFFFF;
-	*D &= 0xFFFFFFFF;
+	*A &= UT32_MAX;
+	*B &= UT32_MAX;
+	*C &= UT32_MAX;
+	*D &= UT32_MAX;
 
 	for (j = 0; j < 16; j++) {
 		X[j] = 0;
@@ -143,10 +138,8 @@ static void copy4(ut8 *out, ut32 x) {
 	out[3] = (x >> 24) & 0xFF;
 }
 
-/* produce a md4 message digest from data of length n bytes */
-// XXX: rename as a static method
-R_API void mdfour(ut8 *out, const ut8 *in, int n) {
-	unsigned char buf[128];
+static void mdfour(ut8 *out, const ut8 *in, int n) {
+	ut8 buf[128];
 	ut32 M[16];
 	ut32 b = n * 8;
 	int i;
@@ -191,4 +184,12 @@ R_API void mdfour(ut8 *out, const ut8 *in, int n) {
 	copy4 (out + 12, D);
 
 	A = B = C = D = 0;
+}
+
+R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len) {
+	if (len >= 0) {
+		mdfour (ctx->digest, input, len);
+		return ctx->digest;
+	}
+	return NULL;
 }

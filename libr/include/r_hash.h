@@ -25,6 +25,7 @@ typedef struct {
 	ut32 sizeHi, sizeLo;
 } R_SHA_CTX;
 
+
 #define SHA256_BLOCK_LENGTH 64
 typedef struct _SHA256_CTX {
 	ut32 state[8];
@@ -50,7 +51,7 @@ struct r_hash_t {
 	R_SHA256_CTX sha256;
 	R_SHA384_CTX sha384;
 	R_SHA512_CTX sha512;
-	int rst;
+	bool rst;
 	ut8 digest[128];
 };
 
@@ -108,7 +109,7 @@ typedef struct r_hash_seed_t {
 
 #ifdef R_API
 /* OO */
-R_API RHash *r_hash_new(int rst, int flags);
+R_API RHash *r_hash_new(bool rst, int flags);
 R_API void r_hash_free(RHash *ctx);
 
 /* methods */
