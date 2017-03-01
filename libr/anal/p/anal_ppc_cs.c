@@ -671,38 +671,68 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
             case PPC_BC_LT:
                 op->type = R_ANAL_OP_TYPE_CJMP;
                 op->fail = addr + op->size;
-                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,<,?{,%s,pc,=,},", ARG(0));
-                else { esilprintf (op, "0,%s,<,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
+                if (ARG(1)[0] == '\0') {
+                    esilprintf (op, "0,cr0,<,?{,%s,pc,=,},", ARG(0));
+                } else {
+                    esilprintf (op, "0,%s,<,?{,%s,pc,=,},", ARG(0), ARG(1));
+                    op->jump = IMM(1);
+                    op->type = R_ANAL_OP_TYPE_UCJMP;
+                }
                 break;
             case PPC_BC_LE:
                 op->type = R_ANAL_OP_TYPE_CJMP;
                 op->fail = addr + op->size;
-                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,<=,?{,%s,pc,=,},", ARG(0));
-                else { esilprintf (op, "0,%s,<=,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
+                if (ARG(1)[0] == '\0') {
+                    esilprintf (op, "0,cr0,<=,?{,%s,pc,=,},", ARG(0));
+                } else {
+                    esilprintf (op, "0,%s,<=,?{,%s,pc,=,},", ARG(0), ARG(1));
+                    op->jump = IMM(1);
+                    op->type = R_ANAL_OP_TYPE_UCJMP;
+                }
                 break;
             case PPC_BC_EQ:
                 op->type = R_ANAL_OP_TYPE_CJMP;
                 op->fail = addr + op->size;
-                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,==,?{,%s,pc,=,},", ARG(0));
-                else { esilprintf (op, "0,%s,==,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
+                if (ARG(1)[0] == '\0') {
+                    esilprintf (op, "0,cr0,==,?{,%s,pc,=,},", ARG(0));
+                } else {
+                    esilprintf (op, "0,%s,==,?{,%s,pc,=,},", ARG(0), ARG(1));
+                    op->jump = IMM(1);
+                    op->type = R_ANAL_OP_TYPE_UCJMP;
+                }
                 break;
             case PPC_BC_GE:
                 op->type = R_ANAL_OP_TYPE_CJMP;
                 op->fail = addr + op->size;
-                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,>=,?{,%s,pc,=,},", ARG(0));
-                else { esilprintf (op, "0,%s,>=,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
+                if (ARG(1)[0] == '\0') {
+                    esilprintf (op, "0,cr0,>=,?{,%s,pc,=,},", ARG(0));
+                } else {
+                    esilprintf (op, "0,%s,>=,?{,%s,pc,=,},", ARG(0), ARG(1));
+                    op->jump = IMM(1);
+                    op->type = R_ANAL_OP_TYPE_UCJMP;
+                }
                 break;
             case PPC_BC_GT:
                 op->type = R_ANAL_OP_TYPE_CJMP;
                 op->fail = addr + op->size;
-                if (ARG(1)[0] == '\0') esilprintf (op, "0,cr0,>,?{,%s,pc,=,},", ARG(0));
-                else { esilprintf (op, "0,%s,>,?{,%s,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
+                if (ARG(1)[0] == '\0') {
+                    esilprintf (op, "0,cr0,>,?{,%s,pc,=,},", ARG(0));
+                } else {
+                    esilprintf (op, "0,%s,>,?{,%s,pc,=,},", ARG(0), ARG(1));
+                    op->jump = IMM(1);
+                    op->type = R_ANAL_OP_TYPE_UCJMP;
+                }
                 break;
             case PPC_BC_NE:
                 op->type = R_ANAL_OP_TYPE_CJMP;
                 op->fail = addr + op->size;
-                if (ARG(1)[0] == '\0') esilprintf (op, "cr0,?{,%s,pc,=,},", ARG(0));
-                else { esilprintf (op, "%s,?{,%u,pc,=,},", ARG(0), ARG(1)); op->jump = IMM(1);}
+                if (ARG(1)[0] == '\0') {
+                    esilprintf (op, "cr0,?{,%s,pc,=,},", ARG(0));
+                } else {
+                    esilprintf (op, "%s,?{,%s,pc,=,},", ARG(0), ARG(1));
+                    op->jump = IMM(1);
+                    op->type = R_ANAL_OP_TYPE_UCJMP;
+                }
                 break;
             case PPC_BC_UN: // unordered
             case PPC_BC_NU: // not unordered
