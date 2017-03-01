@@ -384,10 +384,17 @@ static int cmd_info(void *data, const char *input) {
 
 			if (ptr && ptr[1]) {
 				const char *plugin_name = ptr + 1;
-				return r_bin_list_plugin (core->bin, plugin_name, json);
+				if (is_array) {
+					r_cons_printf ("\"plugin\": ");
+				}
+				r_bin_list_plugin (core->bin, plugin_name, json);
 			} else {
-				return r_bin_list (core->bin, json);
+				r_bin_list (core->bin, json);
 			}
+
+			newline = false;
+
+			goto done;
 		}
 		break;
 		case 's':
