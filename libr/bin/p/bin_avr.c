@@ -2,6 +2,21 @@
 
 #include <r_bin.h>
 
+#define CHECK4INSTR(b, instr, size) \
+	if (!instr (b) ||\
+		!instr (b + size) ||\
+		!instr (b + size * 2) ||\
+		!instr (b + size * 3)) {\
+		return false;\
+	}
+
+#define CHECK3INSTR(b, instr, size) \
+	if (!instr (b + size) ||\
+		!instr (b + size * 2) ||\
+		!instr (b + size * 3)) {\
+		return false;\
+	}
+
 static ut64 tmp_entry = UT64_MAX;
 
 static bool rjmp(const ut8* b) {
@@ -23,9 +38,7 @@ static ut64 jmp_dest(const ut8* b) {
 }
 
 static bool check_bytes_rjmp(const ut8 *b, ut64 length) {
-	if (!rjmp (b + 2)) return false;
-	if (!rjmp (b + 4)) return false;
-	if (!rjmp (b + 8)) return false;
+	CHECK3INSTR (b, rjmp, 2);
 	ut64 dst = rjmp_dest (0, b);
 	if (dst < 1 || dst > length) {
 		return false;
@@ -34,11 +47,9 @@ static bool check_bytes_rjmp(const ut8 *b, ut64 length) {
 	return true;
 }
 
+
 static bool check_bytes_jmp(const ut8 *b, ut64 length) {
-	if (!jmp (b)) return false;
-	if (!jmp (b + 4)) return false;
-	if (!jmp (b + 8)) return false;
-	if (!jmp (b + 12)) return false;
+	CHECK4INSTR (b, jmp, 4);
 	ut64 dst = jmp_dest (b);
 	if (dst < 1 || dst > length) {
 		return false;
