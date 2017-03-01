@@ -283,17 +283,17 @@ void r_pkcs7_free_signeddata (RPKCS7SignedData* sd) {
 	}
 }
 
-RPKCS7Container *r_pkcs7_parse_container (const ut8 *buffer, ut32 length) {
+RCMS *r_pkcs7_parse_cms (const ut8 *buffer, ut32 length) {
 	RASN1Object *object;
-	RPKCS7Container *container;
+	RCMS *container;
 	if (!buffer || !length) {
 		return NULL;
 	}
-	container = (RPKCS7Container*) malloc (sizeof (RPKCS7Container));
+	container = (RCMS*) malloc (sizeof (RCMS));
 	if (!container) {
 		return NULL;
 	}
-	memset (container, 0, sizeof (RPKCS7Container));
+	memset (container, 0, sizeof (RCMS));
 	object = r_asn1_create_object (buffer, length);
 	if (!object || object->list.length != 2 || object->list.objects[1]->list.length != 1) {
 		free (container);
@@ -305,7 +305,7 @@ RPKCS7Container *r_pkcs7_parse_container (const ut8 *buffer, ut32 length) {
 	return container;
 }
 
-void r_pkcs7_free_container (RPKCS7Container* container) {
+void r_pkcs7_free_cms (RCMS* container) {
 	if (container) {
 		r_asn1_free_string (container->contentType);
 		r_pkcs7_free_signeddata (&container->signedData);
@@ -494,11 +494,12 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 		return NULL;
 	}
 
-	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->sector, o->length);
-	else s = NULL;
-	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
-	p += (unsigned) r;
-	r_asn1_free_string (s);
+//	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->sector, o->length);
+//	else s = NULL;
+//	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
+//	p += (unsigned) r;
+//	r_asn1_free_string (s);
+	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
 	if (r < 0) {
 		free (pad3);
 		return NULL;
@@ -524,7 +525,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 	return buffer + p;
 }
 
-char *r_pkcs7_container_dump (RPKCS7Container* container) {
+char *r_pkcs7_cms_dump (RCMS* container) {
 	RPKCS7SignedData *sd;
 	ut32 i, length, p;
 	int r;
@@ -534,7 +535,7 @@ char *r_pkcs7_container_dump (RPKCS7Container* container) {
 	}
 	sd = &container->signedData;
 	p = 0;
-	length = 1024 + (container->signedData.certificates.length * 4096);
+	length = 2048 + (container->signedData.certificates.length * 1024);
 	buffer = (char*) malloc (length);
 	if (!buffer) return NULL;
 	memset (buffer, 0, length);

@@ -487,11 +487,13 @@ char* r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, char* b
 		pad = "";
 	a = spki->algorithm.algorithm->string;
 	RASN1String* m = r_asn1_stringify_integer (spki->subjectPublicKeyModule->sector, spki->subjectPublicKeyModule->length);
-	RASN1String* e = r_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
-	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
-				pad, spki->subjectPublicKeyExponent->length - 1, e->string);
+//	RASN1String* e = r_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
+//	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
+//				pad, spki->subjectPublicKeyExponent->length - 1, e->string);
+	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n", pad, a, pad, m->string,
+				pad, spki->subjectPublicKeyExponent->length - 1);
 	r_asn1_free_string (m);
-	r_asn1_free_string (e);
+//	r_asn1_free_string (e);
 	return r < 0 ? NULL : buffer + (unsigned) r;
 }
 
@@ -617,7 +619,8 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 }
 
 char* r_x509_certificate_dump (RX509Certificate* certificate, char* buffer, ut32 length, const char* pad) {
-	RASN1String *signature, *algo;
+//	RASN1String *signature,
+	RASN1String *algo;
 	ut32 p;
 	int r;
 	char *tbsc, *pad2;
@@ -638,17 +641,19 @@ char* r_x509_certificate_dump (RX509Certificate* certificate, char* buffer, ut32
 		return NULL;
 	}
 	algo = certificate->algorithmIdentifier.algorithm;
-	signature = r_asn1_stringify_bytes (certificate->signature->sector, certificate->signature->length);
-	r = snprintf (buffer + p, length - p, "%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n%s\n",
-				pad, pad2, algo ? algo->string : "",
-				pad, certificate->signature->length, signature ? signature->string : "");
+//	signature = r_asn1_stringify_bytes (certificate->signature->sector, certificate->signature->length);
+//	r = snprintf (buffer + p, length - p, "%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n%s\n",
+//				pad, pad2, algo ? algo->string : "",
+//				pad, certificate->signature->length, signature ? signature->string : "");
+	r = snprintf (buffer + p, length - p, "%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n",
+				pad, pad2, algo ? algo->string : "", pad, certificate->signature->length);
 	if (r < 0) {
 		free (pad2);
 		return NULL;
 	}
 	p += (unsigned) r;
 	free (pad2);
-	r_asn1_free_string (signature);
+//	r_asn1_free_string (signature);
 	return buffer + p;
 }
 

@@ -1876,7 +1876,7 @@ out_error:
 }
 
 static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
-	RPKCS7Container *con;
+	RCMS *con;
 	ut64 size, vaddr;
 	ut8 *data = NULL;
 	int len;
@@ -1886,7 +1886,9 @@ static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
 	size = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].Size;
 	vaddr = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress;
 	data = calloc (1, size);
-	if (!data) return;
+	if (!data) {
+		return;
+	}
 	if (vaddr > bin->size || vaddr + size > bin->size) {
 		bprintf ("vaddr greater than the file\n");
 		free (data);
@@ -1898,9 +1900,19 @@ static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
 		R_FREE (data);
 		return;
 	}
-	con = r_pkcs7_parse_container (data, size);
-	bin->pkcs7 = r_pkcs7_container_dump (con);
-	r_pkcs7_free_container (con);
+	con = r_pkcs7_parse_cms (data, size);
+	bin->pkcs7 = r_pkcs7_cms_dump (con);
+	if (bin->pkcs7) {
+		ut64 length = strlen(bin->pkcs7);
+		char *c = (char*) malloc(length);
+		if (c) {
+			memcpy(c, bin->pkcs7, length);
+			c[length-1] = '\0';
+			free((char*)bin->pkcs7);
+			bin->pkcs7 = c;
+		}
+	}
+	r_pkcs7_free_cms (con);
 	R_FREE (data);
 }
 
