@@ -53,7 +53,7 @@ static int rabin_show_help(int v) {
 		" -k [sdb-query]  run sdb query. for example: '*'\n"
 		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -l              linked libraries\n"
-		" -L              list supported bin plugins\n"
+		" -L [plugin]     list supported bin plugins or plugin details\n"
 		" -m [addr]       show source line at addr\n"
 		" -M              main (show address of main symbol)\n"
 		" -n [str]        show section, symbol or import named str\n"
@@ -517,6 +517,23 @@ static char *demangleAs(int type) {
 	return res;
 }
 
+static int rabin_list_plugins(const char* plugin_name) {
+	int json = 0;
+
+	if (rad == R_CORE_BIN_JSON) {
+		json = 'j';
+	} else if (rad) {
+		json = 'q';
+	}
+
+	bin->cb_printf = (PrintfCallback)printf;
+
+	if (plugin_name) {
+		return r_bin_list_plugin (bin, plugin_name, json);
+	}
+	return r_bin_list (bin, json);
+}
+
 int main(int argc, char **argv) {
 	const char *query = NULL;
 	int c, bits = 0, actions_done = 0, actions = 0;
@@ -706,15 +723,7 @@ int main(int argc, char **argv) {
 		case 'r': rad = true; break;
 		case 'v': return blob_version ("rabin2");
 		case 'L':
-			bin->cb_printf = (PrintfCallback)printf;
-			if (rad == R_CORE_BIN_JSON) {
-				r_bin_list (bin, 'j');
-			} else if (rad) {
-				r_bin_list (bin, 'q');
-			} else {
-				r_bin_list (bin, 0);
-			}
-			return 0;
+			set_action (R_BIN_REQ_LISTPLUGINS);
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == UT64_MAX) {
@@ -742,6 +751,15 @@ int main(int argc, char **argv) {
 			  return rabin_show_help (1);
 		default: action |= R_BIN_REQ_HELP;
 		}
+	}
+
+	if (is_active (R_BIN_REQ_LISTPLUGINS)) {
+		const char* plugin_name = NULL;
+		if (optind < argc) {
+			plugin_name = argv[optind];
+		}
+		rabin_list_plugins (plugin_name);
+		return 0;
 	}
 
 	if (do_demangle) {

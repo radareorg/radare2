@@ -63,6 +63,7 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_VERSIONINFO 0x800000
 #define R_BIN_REQ_PACKAGE     0x1000000
 #define R_BIN_REQ_HEADER   0x2000000
+#define R_BIN_REQ_LISTPLUGINS   0x4000000
 
 enum {
 	R_BIN_SYM_ENTRY,
@@ -512,6 +513,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf,
 						ut64 baseaddr, ut64 loadaddr,
 						RBinXtrData *xtr_data);
 R_API int r_bin_list(RBin *bin, int json);
+R_API int r_bin_list_plugin(RBin *bin, const char* name, int json);
 R_API RBinObject *r_bin_get_object(RBin *bin);
 R_API ut64 r_binfile_get_baddr (RBinFile *binfile);
 R_API ut64 r_bin_get_baddr(RBin *bin);
