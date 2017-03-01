@@ -237,7 +237,7 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
 	int ret, inplen = strlen (input)+1;
 
 	r_list_foreach (cmd->lcmds, iter, c) {
-		if (inplen >= c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
+		if (inplen >= c->cmd_len && r_str_cmp (input, c->cmd, c->cmd_len)) {
 			int lcmd = strlen (c->cmd_short);
 			int linp = strlen (input+c->cmd_len);
 			/// SLOW malloc on most situations. use stack
