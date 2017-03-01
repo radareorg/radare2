@@ -8,17 +8,21 @@ static bool rjmp(const ut8* b) {
 	return b && ((b[1] & 0xf0) == 0xc0);
 }
 
+static bool jmp(const ut8* b) {
+	return b && (b[0] == 0x0c) && (b[1] == 0x94);
+}
+
 static ut64 rjmp_dest(ut64 addr, const ut8* b) {
 	ut64 dst = 2 + addr + b[0] * 2;
 	dst += ((b[1] & 0xf) * 2) << 8;
 	return dst;
 }
 
-static int check_bytes(const ut8 *b, ut64 length) {
-	if (length < 32) {
-		return false;
-	}
-	if (!rjmp (b)) return false;
+static ut64 jmp_dest(const ut8* b) {
+	return (b[2] + (b[3] << 8)) * 2;
+}
+
+static bool check_bytes_rjmp(const ut8 *b, ut64 length) {
 	if (!rjmp (b + 2)) return false;
 	if (!rjmp (b + 4)) return false;
 	if (!rjmp (b + 8)) return false;
@@ -26,11 +30,31 @@ static int check_bytes(const ut8 *b, ut64 length) {
 	if (dst < 1 || dst > length) {
 		return false;
 	}
-	if (!rjmp (b + dst - 2)) {
+	tmp_entry = dst;
+	return true;
+}
+
+static bool check_bytes_jmp(const ut8 *b, ut64 length) {
+	if (!jmp (b)) return false;
+	if (!jmp (b + 4)) return false;
+	if (!jmp (b + 8)) return false;
+	if (!jmp (b + 12)) return false;
+	ut64 dst = jmp_dest (b);
+	if (dst < 1 || dst > length) {
 		return false;
 	}
 	tmp_entry = dst;
 	return true;
+}
+
+static int check_bytes(const ut8 *b, ut64 length) {
+	if (length < 32) {
+		return false;
+	}
+	if (!rjmp (b)) {
+		return check_bytes_jmp (b, length);
+	}
+	return check_bytes_rjmp (b, length);
 }
 
 static int check(RBinFile *arch) {
