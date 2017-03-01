@@ -232,7 +232,6 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 	return false;
 }
 
-
 R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
@@ -673,7 +672,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				lbuf = r_str_replace (lbuf, aa, val, 1);
 				free (aa);
 			}
-			p = strstr (p+5, "$sys.");
+			p = strstr (p + 5, "$sys.");
 		}
 	}
 	if (strchr (lbuf, ':')) {

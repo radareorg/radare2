@@ -61,20 +61,20 @@ indentFile() {
 	fi
 	echo "Indenting ${IFILE} ..." >&2
 	(
-if [ "${UNCRUST}" = 1 ]; then
-	cp -f doc/clang-format ${CWD}/.clang-format
-	cd "$CWD"
-	uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format
-else
-	cp -f doc/clang-format ${CWD}/.clang-format
-	cd "$CWD"
-	clang-format "${IFILE}"  > .tmp-format
-fi
+	if [ "${UNCRUST}" = 1 ]; then
+		cp -f doc/clang-format ${CWD}/.clang-format
+		cd "$CWD"
+		uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format
+	else
+		cp -f doc/clang-format ${CWD}/.clang-format
+		cd "$CWD"
+		clang-format "${IFILE}"  > .tmp-format
+	fi
 # one of those rules fuckups the ascii art in comment blocks
 
 	# fix ternary conditional indent
 	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2
-	cat .tmp-format2 | sed -e 's, : ,: ,g' > .tmp-format
+	cat .tmp-format2 | perl -ne 's/\r//g;print' | sed -e 's, : ,: ,g' > .tmp-format
 	mv .tmp-format .tmp-format2
 	# do not space before parenthesis on function signatures
 	awk '{if (/^static/ || /^R_API/) { gsub(/ \(/,"("); }; print;}' \
@@ -106,8 +106,8 @@ fi
 	mv .tmp-format .tmp-format2
 	perl -ne 's/[\xa0\xc2]//g;print' < .tmp-format2 > .tmp-format
 	# remove spaces after #if 
-	mv .tmp-format .tmp-format2
-	perl -ne 's/#if\ */#if /g;print' < .tmp-format2 > .tmp-format
+	#mv .tmp-format .tmp-format2
+	#perl -ne 's/#if\ */#if /g;print' < .tmp-format2 > .tmp-format
 	# add spce after every //
 
 	if [ "$UNIFIED" = 1 ]; then

@@ -26,11 +26,11 @@
 #include <limits.h>
 #include <fcntl.h>
 
-#ifdef _WIN32
+#ifdef __WINDOWS__
 #  include <stddef.h>
 #endif
 
-#if defined(__TURBOC__) || defined(_MSC_VER) || defined(_WIN32)
+#if defined(__TURBOC__) || defined(_MSC_VER) || defined(__WINDOWS__)
 #  include <io.h>
 #endif
 

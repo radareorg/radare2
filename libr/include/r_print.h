@@ -145,6 +145,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt, int dec, int
 #define R_PRINT_STRING_URLENCODE 4
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int options);
 R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len);
+R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_get_now(RPrint *p, char *str);

@@ -183,6 +183,8 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 RBinPlugin r_bin_plugin_rar = {
 	.name = "rar",
 	.desc = "rarvm bin plugin",
+	.author = "pancake",
+	.version = "0.1.0",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
@@ -202,7 +204,7 @@ RBinPlugin r_bin_plugin_rar = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_pe,
 	.version = R2_VERSION

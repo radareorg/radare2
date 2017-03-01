@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2017 - pancake */
 
 /* TODO: write li->fds setter/getter helpers */
 // TODO: return true/false everywhere,, not -1 or 0
@@ -86,8 +86,16 @@ R_API int r_io_plugin_list(RIO *io) {
 		str[1] = plugin->write ? 'w' : '_';
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
-		io->cb_printf ("%s  %-8s %s (%s)\n", str, plugin->name,
+		io->cb_printf ("%s  %-8s %s (%s)",
+				str, plugin->name,
 			plugin->desc, plugin->license);
+		if (plugin->version) {
+			io->cb_printf (" v%s", plugin->version);
+		}
+		if (plugin->author) {
+			io->cb_printf (" %s", plugin->author);
+		}
+		io->cb_printf ("\n");
 		n++;
 	}
 	return n;

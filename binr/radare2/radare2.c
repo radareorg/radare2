@@ -224,8 +224,6 @@ static int main_print_var(const char *var_name) {
 		{ "USER_PLUGINS", r_str_home (R2_HOMEDIR) },
 		{ NULL, NULL }
 	};
-	free (homedir);
-
 	if (var_name) {
 		while (r2_vars[i].name) {
 			if (!strcmp (r2_vars[i].name, var_name)) {
@@ -240,6 +238,7 @@ static int main_print_var(const char *var_name) {
 			i++;
 		}
 	}
+	free (homedir);
 	return 0;
 }
 

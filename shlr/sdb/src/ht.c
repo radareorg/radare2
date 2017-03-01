@@ -282,3 +282,19 @@ void* ht_find(SdbHash* ht, const char* key, bool* found) {
 bool ht_delete(SdbHash* ht, const char* key) {
 	return ht_delete_internal (ht, key, NULL);
 }
+
+void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user) {
+	ut32 i = 0;
+	HtKv *kv;
+	SdbListIter *iter;
+	for (i = 0; i < ht->size; i++) {
+		ls_foreach (ht->table[i], iter, kv) {
+			if (!kv || !kv->key || !kv->value) {
+				continue;
+			}
+			if (!cb (user, kv->key, kv->value)) {
+				return;
+			}
+		}
+	}
+}

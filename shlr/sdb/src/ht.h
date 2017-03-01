@@ -25,6 +25,7 @@ typedef char* (*DupValue)(void *);
 typedef size_t (*CalcSize)(void *);
 typedef ut32 (*HashFunction)(const char*);
 typedef int (*ListComparator)(const char *a, const char *b);
+typedef bool (*HtForeachCallback)(void *user, const char *k, void *v);
 
 
 /** ht **/
@@ -66,4 +67,6 @@ bool ht_delete(SdbHash* ht, const char* key);
 // Find the value corresponding to the matching key.
 void* ht_find(SdbHash* ht, const char* key, bool* found);
 HtKv* ht_find_kv(SdbHash* ht, const char* key, bool* found);
+void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user);
+SdbList* ht_foreach_list(SdbHash *ht, bool sorted);
 #endif // __HT_H

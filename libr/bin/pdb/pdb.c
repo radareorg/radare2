@@ -602,6 +602,7 @@ static void finish_pdb_parse(R_PDB *pdb) {
 
 typedef enum EStates {
 	ePointerState,
+	eUnionState,
 	eStructState,
 	eMemberState,
 	eUnsignedState,
@@ -627,6 +628,8 @@ static EStates convert_to_state(char *cstate) {
 		state = eMemberState;
 	} else if (strstr(cstate, "pointer")) {
 		state = ePointerState;
+	} else if (strstr(cstate, "union")) {
+		state = eUnionState;
 	} else if (strstr(cstate, "struct")) {
 		state = eStructState;
 	} else if (strstr(cstate, "unsigned")) {
@@ -675,6 +678,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			}
 			res_field[pos] = 'p';
 			break;
+		case eUnionState:
 		case eStructState:
 			res_field[pos] = '?';
 			tmp = strtok(NULL, " ");

@@ -32,6 +32,12 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	return NULL;
 }
 
+static void flag_free_kv(HtKv *kv) {
+	free (kv->key);
+	//we do not free kv->value since there is a reference in other list
+	free (kv);
+}
+
 static void item_list_kv_free(HtKv *kv) {
 	free (kv->key);
 	r_list_free (kv->value);
@@ -112,7 +118,7 @@ R_API RFlag * r_flag_new() {
 		r_flag_free (f);
 		return NULL;
 	}
-	f->ht_name = ht_new (NULL, NULL, NULL);
+	f->ht_name = ht_new (NULL, flag_free_kv, NULL);
 	f->ht_off = ht_new (NULL, item_list_kv_free, NULL);
 #if R_FLAG_ZONE_USE_SDB
 	sdb_free (f->zones);
@@ -571,14 +577,13 @@ R_API int r_flag_unset_name(RFlag *f, const char *name) {
 R_API void r_flag_unset_all(RFlag *f) {
 	f->space_idx = -1;
 	r_list_free (f->flags);
-	f->flags = r_list_new ();
+	f->flags = r_list_newf ((RListFree)r_flag_item_free);
 	if (!f->flags) {
 		return;
 	}
-	f->flags->free = (RListFree)r_flag_item_free;
 	ht_free (f->ht_name);
 	//don't set free since f->flags will free up items when needed avoiding uaf
-	f->ht_name = ht_new (NULL, NULL, NULL);
+	f->ht_name = ht_new (NULL, flag_free_kv, NULL);
 	ht_free (f->ht_off);
 	f->ht_off = ht_new (NULL, item_list_kv_free, NULL);
 	r_flag_space_unset (f, NULL);

@@ -2,7 +2,7 @@
 
 #include <r_hash.h>
 
-ut32 r_hash_adler32(const ut8 *data, int len) {
+R_API ut32 r_hash_adler32(const ut8 *data, int len) {
 	static const int MOD_ADLER = 65521;
 	ut32 a = 1, b = 0;
 	int index;

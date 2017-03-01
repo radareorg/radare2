@@ -1,31 +1,27 @@
-/* 
+/*
    Unix SMB/Netbios implementation.
    Version 1.9.
    a implementation of MD4 designed for use in the SMB authentication protocol
    Copyright (C) Andrew Tridgell 1997-1998.
    Modified by Steve French (sfrench@us.ibm.com) 2002-2003
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+ */
 
-/* NOTE: This code makes no attempt to be fast! */
-#include <stdio.h>
-#include <string.h>
-#include "r_types.h"
+#include <r_hash.h>
 
-// TODO: rewrite with #define
 static inline ut32 F(ut32 X, ut32 Y, ut32 Z) {
 	return (X & Y) | ((~X) & Z);
 }
@@ -39,27 +35,27 @@ static inline ut32 H(ut32 X, ut32 Y, ut32 Z) {
 }
 
 static inline ut32 lshift(ut32 x, int s) {
-	x &= 0xFFFFFFFF;
-	return ((x << s) & 0xFFFFFFFF) | (x >> (32 - s));
+	x &= UT32_MAX;
+	return ((x << s) & UT32_MAX) | (x >> (32 - s));
 }
 
-#define ROUND1(a,b,c,d,k,s) (*a) = lshift((*a) + F(*b,*c,*d) + X[k], s)
-#define ROUND2(a,b,c,d,k,s) (*a) = lshift((*a) + G(*b,*c,*d) + X[k] + (ut32)0x5A827999,s)
-#define ROUND3(a,b,c,d,k,s) (*a) = lshift((*a) + H(*b,*c,*d) + X[k] + (ut32)0x6ED9EBA1,s)
+#define ROUND1(a, b, c, d, k, s) (*a) = lshift ((*a) + F (*b, *c, *d) + X[k], s)
+#define ROUND2(a, b, c, d, k, s) (*a) = lshift ((*a) + G (*b, *c, *d) + X[k] + (ut32) 0x5A827999, s)
+#define ROUND3(a, b, c, d, k, s) (*a) = lshift ((*a) + H (*b, *c, *d) + X[k] + (ut32) 0x6ED9EBA1, s)
 
 /* this applies md4 to 64 byte chunks */
-static void mdfour64(ut32 * M, ut32 * A, ut32 *B, ut32 * C, ut32 *D) {
+static void mdfour64(ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {
 	int j;
-	ut32 AA, BB, CC, DD;
 	ut32 X[16];
 
-	for (j = 0; j < 16; j++)
+	for (j = 0; j < 16; j++) {
 		X[j] = M[j];
+	}
 
-	AA = *A;
-	BB = *B;
-	CC = *C;
-	DD = *D;
+	ut32 AA = *A;
+	ut32 BB = *B;
+	ut32 CC = *C;
+	ut32 DD = *D;
 
 	ROUND1 (A, B, C, D, 0, 3);
 	ROUND1 (D, A, B, C, 1, 7);
@@ -117,20 +113,22 @@ static void mdfour64(ut32 * M, ut32 * A, ut32 *B, ut32 * C, ut32 *D) {
 	*C += CC;
 	*D += DD;
 
-	*A &= 0xFFFFFFFF;
-	*B &= 0xFFFFFFFF;
-	*C &= 0xFFFFFFFF;
-	*D &= 0xFFFFFFFF;
+	*A &= UT32_MAX;
+	*B &= UT32_MAX;
+	*C &= UT32_MAX;
+	*D &= UT32_MAX;
 
-	for (j = 0; j < 16; j++)
+	for (j = 0; j < 16; j++) {
 		X[j] = 0;
+	}
 }
 
-static void copy64(ut32 * M, const ut8 *in) {
+static void copy64(ut32 *M, const ut8 *in) {
 	int i;
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < 16; i++) {
 		M[i] = (in[i * 4 + 3] << 24) | (in[i * 4 + 2] << 16) |
-		    (in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
+		(in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
+	}
 }
 
 static void copy4(ut8 *out, ut32 x) {
@@ -140,10 +138,8 @@ static void copy4(ut8 *out, ut32 x) {
 	out[3] = (x >> 24) & 0xFF;
 }
 
-/* produce a md4 message digest from data of length n bytes */
-// XXX : rename as a static method
-R_API void mdfour(ut8 *out, const ut8 *in, int n) {
-	unsigned char buf[128];
+static void mdfour(ut8 *out, const ut8 *in, int n) {
+	ut8 buf[128];
 	ut32 M[16];
 	ut32 b = n * 8;
 	int i;
@@ -154,13 +150,14 @@ R_API void mdfour(ut8 *out, const ut8 *in, int n) {
 
 	while (n > 64) {
 		copy64 (M, in);
-		mdfour64 (M,&A,&B, &C, &D);
+		mdfour64 (M, &A, &B, &C, &D);
 		in += 64;
 		n -= 64;
 	}
 
-	for (i = 0; i < 128; i++)
+	for (i = 0; i < 128; i++) {
 		buf[i] = 0;
+	}
 	memcpy (buf, in, n);
 	buf[n] = 0x80;
 
@@ -176,8 +173,9 @@ R_API void mdfour(ut8 *out, const ut8 *in, int n) {
 		mdfour64 (M, &A, &B, &C, &D);
 	}
 
-	for (i = 0; i < 128; i++)
+	for (i = 0; i < 128; i++) {
 		buf[i] = 0;
+	}
 	copy64 (M, buf);
 
 	copy4 (out, A);
@@ -186,4 +184,12 @@ R_API void mdfour(ut8 *out, const ut8 *in, int n) {
 	copy4 (out + 12, D);
 
 	A = B = C = D = 0;
+}
+
+R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len) {
+	if (len >= 0) {
+		mdfour (ctx->digest, input, len);
+		return ctx->digest;
+	}
+	return NULL;
 }

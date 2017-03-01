@@ -812,11 +812,11 @@ R_API int r_str_cmp(const char *a, const char *b, int len) {
 	}
 	for (;len--;) {
 		if (*a == '\0' || *b == '\0' || *a != *b) {
-			return true;
+			return false;
 		}
 		a++; b++;
 	}
-	return false;
+	return true;
 }
 
 // Copies all characters from src to dst up until the character 'ch'.

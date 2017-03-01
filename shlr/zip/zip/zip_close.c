@@ -47,7 +47,7 @@
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef _WIN32
+#ifdef __WINDOWS__
 #include <io.h>
 #include <fcntl.h>
 #endif
@@ -73,7 +73,7 @@ zip_close(struct zip *za)
     int error;
     char *temp;
     FILE *out;
-#ifndef _WIN32
+#ifndef __WINDOWS__
     mode_t mask;
 #endif
     struct zip_filelist *filelist;
@@ -270,7 +270,7 @@ zip_close(struct zip *za)
 	}
 	return -1;
     }
-#ifndef _WIN32
+#ifndef __WINDOWS__
     mask = umask(0);
     umask(mask);
     chmod(za->zn, 0666&~mask);
@@ -610,7 +610,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
         sprintf(temp, "%s.XXXXXX", za->zn);
     }
 
-#if __WIN32__ || __MINGW32__ || defined(_WIN32)
+#if __WIN32__ || __MINGW32__ || defined(__WINDOWS__)
     if ((tfd=open(temp, O_RDWR|O_CREAT, 0644)) == -1) {
 	_zip_error_set(&za->error, ZIP_ER_TMPOPEN, errno);
 	free(temp);
@@ -634,7 +634,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
     }
 
 #if 0
-#ifdef _WIN32
+#ifdef __WINDOWS__
     /*
       According to Pierre Joye, Windows in some environments per
       default creates text files, so force binary mode.

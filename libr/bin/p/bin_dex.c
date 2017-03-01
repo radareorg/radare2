@@ -377,6 +377,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		--parameters_size;
 	}
 
+	if (p4 <= 0) {
+		return;
+	}
 	ut8 opcode = *(p4++) & 0xff;
 	while (keep) {
 		switch (opcode) {
@@ -1496,7 +1499,7 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				continue;
 			}
 
-			if (bin->methods[i].class_id > bin->header.types_size - 1) {
+			if (bin->methods[i].class_id >= bin->header.types_size) {
 				continue;
 			}
 
@@ -1582,15 +1585,15 @@ static RList *classes(RBinFile *arch) {
 	return bin->classes_list;
 }
 
-static bool already_entry(RList *entries, ut64 vaddr) {
+static int already_entry(RList *entries, ut64 vaddr) {
 	RBinAddr *e;
 	RListIter *iter;
 	r_list_foreach (entries, iter, e) {
 		if (e->vaddr == vaddr) {
-			return true;
+			return 1;
 		}
 	}
-	return false;
+	return 0;
 }
 
 static RList *entries(RBinFile *arch) {

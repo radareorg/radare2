@@ -34,7 +34,7 @@ ST_DATA struct TCCState *tcc_state;
 
 /********************************************************/
 
-#ifdef _WIN32
+#ifdef __WINDOWS__
 // GCC appears to use '/' for relative paths and '\\' for absolute paths on Windows
 static char *normalize_slashes(char *path)
 {
@@ -344,7 +344,7 @@ ST_FUNC void tcc_open_bf(TCCState *s1, const char *filename, int initlen)
     bf->buf_end = bf->buffer + initlen;
     bf->buf_end[0] = CH_EOB; /* put eob symbol */
     pstrcpy(bf->filename, sizeof(bf->filename), filename);
-#ifdef _WIN32
+#ifdef __WINDOWS__
     normalize_slashes(bf->filename);
 #endif
     bf->line_num = 1;
@@ -551,7 +551,7 @@ LIBTCCAPI TCCState *tcc_new(void)
     if (!s)
         return NULL;
     tcc_state = s;
-#ifdef _WIN32
+#ifdef __WINDOWS__
     tcc_set_lib_path_w32(s);
 #else
     tcc_set_lib_path(s, CONFIG_TCCDIR);
@@ -596,7 +596,7 @@ LIBTCCAPI TCCState *tcc_new(void)
 #endif
 
 #ifdef TCC_TARGET_PE
-    tcc_define_symbol(s, "_WIN32", NULL);
+    tcc_define_symbol(s, "__WINDOWS__", NULL);
 # ifdef TCC_TARGET_X86_64
     tcc_define_symbol(s, "_WIN64", NULL);
 # endif

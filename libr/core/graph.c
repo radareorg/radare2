@@ -2092,7 +2092,8 @@ static const RGraphNode *find_near_of(const RAGraph *g, const RGraphNode *cur, i
 	int start_x = acur? acur->x: default_v;
 
 	graph_foreach_anode (nodes, it, gn, n) {
-		bool isNear = g->layout
+		// tab in horizontal layout is not correct, lets force vertical nextnode for now (g->layout == 0)
+		bool isNear = true
 		? is_near (n, start_x, start_y, is_next)
 			: is_near_h (n, start_x, start_y, is_next);
 		if (isNear) {

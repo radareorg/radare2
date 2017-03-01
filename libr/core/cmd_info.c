@@ -378,8 +378,25 @@ static int cmd_info(void *data, const char *input) {
 		case 'h': RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0); break;
 		case 'l': RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, obj? r_list_length (obj->libs): 0); break;
 		case 'L':
-			r_bin_list (core->bin, input[1] == 'j');
-			break;
+		{
+			char *ptr = strchr (input, ' ');
+			int json = input[1] == 'j'? 'j': 0;
+
+			if (ptr && ptr[1]) {
+				const char *plugin_name = ptr + 1;
+				if (is_array) {
+					r_cons_printf ("\"plugin\": ");
+				}
+				r_bin_list_plugin (core->bin, plugin_name, json);
+			} else {
+				r_bin_list (core->bin, json);
+			}
+
+			newline = false;
+
+			goto done;
+		}
+		break;
 		case 's':
 			if (input[1] == '.') {
 				ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
@@ -558,7 +575,7 @@ static int cmd_info(void *data, const char *input) {
 				"iI", "", "Binary info",
 				"ik", " [query]", "Key-value database from RBinObject",
 				"il", "", "Libraries",
-				"iL", "", "List all RBin plugins loaded",
+				"iL ", "[plugin]", "List all RBin plugins loaded or plugin details",
 				"im", "", "Show info about predefined memory allocation",
 				"iM", "", "Show main address",
 				"io", " [file]", "Load info from file (or last opened) use bin.baddr",

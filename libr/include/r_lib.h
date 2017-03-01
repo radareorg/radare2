@@ -33,6 +33,8 @@ typedef struct r_lib_plugin_t {
 	void *data; /* user pointer */
 	struct r_lib_handler_t *handler;
 	void *dl_handler; // DL HANDLER
+	char *author;
+	char *version;
 } RLibPlugin;
 
 /* store list of initialized plugin handlers */

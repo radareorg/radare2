@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2016 - nibble, pancake, xvilka */
+/* radare2 - LGPL - Copyright 2009-2017 - nibble, pancake, xvilka */
 
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
@@ -1051,6 +1051,8 @@ typedef struct r_anal_plugin_t {
 	char *desc;
 	char *license;
 	char *arch;
+	char *author;
+	char *version;
 	int bits;
 	int esil; // can do esil or not
 	int fileformat_type;

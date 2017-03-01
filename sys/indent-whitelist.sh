@@ -9,6 +9,17 @@ libr/util/log.c
 libr/util/cache.c
 libr/util/print.c
 
+libr/asm/p/asm_bf.c
+
+libr/hash/calc.c
+libr/hash/crc16.c
+libr/hash/luhn.c
+libr/hash/xxhash.c
+libr/hash/md4.c
+libr/hash/adler32.c
+libr/hash/hash.c
+libr/hash/sha2.c
+
 libr/reg/reg.c
 libr/reg/arena.c
 libr/reg/double.c

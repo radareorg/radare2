@@ -2690,7 +2690,6 @@ static int bin_header(RCore *r, int mode) {
 		return true;
 	}
 	return false;
-
 }
 
 R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
@@ -2717,14 +2716,28 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if ((action & R_CORE_BIN_ACC_IMPORTS)) ret &= bin_imports (core, mode, va, name);
 	if ((action & R_CORE_BIN_ACC_EXPORTS)) ret &= bin_exports (core, mode, loadaddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SYMBOLS)) ret &= bin_symbols (core, mode, loadaddr, va, at, name);
-	if ((action & R_CORE_BIN_ACC_FIELDS)) ret &= bin_fields (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_LIBS)) ret &= bin_libs (core, mode);
 	if ((action & R_CORE_BIN_ACC_CLASSES)) ret &= bin_classes (core, mode);
 	if ((action & R_CORE_BIN_ACC_SIZE)) ret &= bin_size (core, mode);
 	if ((action & R_CORE_BIN_ACC_MEM)) ret &= bin_mem (core, mode);
 	if ((action & R_CORE_BIN_ACC_VERSIONINFO)) ret &= bin_versioninfo (core, mode);
 	if ((action & R_CORE_BIN_ACC_SIGNATURE)) ret &= bin_signature (core, mode);
-	if ((action & R_CORE_BIN_ACC_HEADER)) ret &= bin_header (core, mode);
+	if ((action & R_CORE_BIN_ACC_FIELDS)) {
+		if (IS_MODE_SIMPLE (mode)) {
+			if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
+				/* ignore mode, just for quiet/simple here */
+				ret &= bin_fields (core, 0, va);
+			}
+		} else {
+			if (IS_MODE_NORMAL(mode)) {
+				ret &= bin_header (core, mode);
+			} else {
+				if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {
+					ret &= bin_fields (core, mode, va);
+				}
+			}
+		}
+	}
 	return ret;
 }
 

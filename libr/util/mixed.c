@@ -43,6 +43,12 @@ R_API int r_mixed_key_check(RMixed *m, int key, int sz) {
 	return false;
 }
 
+static void _mixed_free_kv(HtKv *kv) {
+	free (kv->key);
+	r_list_free (kv->value);
+	free (kv);
+}
+
 #define R_MIXED_KEY(m,x,y,z) r_mixed_key(m, r_offsetof(x,z), sizeof(y->z))
 R_API int r_mixed_key(RMixed *m, int key, int size) {
 	if (size > 0 && r_mixed_key_check (m, key, size)) {
@@ -56,9 +62,9 @@ R_API int r_mixed_key(RMixed *m, int key, int size) {
 			m->keys[key]->size = size;
 			switch (size) {
 			case 1: case 2: case 4:
-				m->keys[key]->hash.ht = ht_new (NULL, NULL, NULL);
+				m->keys[key]->hash.ht = ht_new (NULL, _mixed_free_kv, NULL);
 				return true;
-			case 8: m->keys[key]->hash.ht64 = ht_new (NULL, NULL, NULL);
+			case 8: m->keys[key]->hash.ht64 = ht_new (NULL, _mixed_free_kv, NULL);
 				return true;
 			}
 		}

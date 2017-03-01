@@ -53,7 +53,7 @@ static int rabin_show_help(int v) {
 		" -k [sdb-query]  run sdb query. for example: '*'\n"
 		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
 		" -l              linked libraries\n"
-		" -L              list supported bin plugins\n"
+		" -L [plugin]     list supported bin plugins or plugin details\n"
 		" -m [addr]       show source line at addr\n"
 		" -M              main (show address of main symbol)\n"
 		" -n [str]        show section, symbol or import named str\n"
@@ -517,6 +517,23 @@ static char *demangleAs(int type) {
 	return res;
 }
 
+static int rabin_list_plugins(const char* plugin_name) {
+	int json = 0;
+
+	if (rad == R_CORE_BIN_JSON) {
+		json = 'j';
+	} else if (rad) {
+		json = 'q';
+	}
+
+	bin->cb_printf = (PrintfCallback)printf;
+
+	if (plugin_name) {
+		return r_bin_list_plugin (bin, plugin_name, json);
+	}
+	return r_bin_list (bin, json);
+}
+
 int main(int argc, char **argv) {
 	const char *query = NULL;
 	int c, bits = 0, actions_done = 0, actions = 0;
@@ -649,7 +666,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'Z': set_action (R_BIN_REQ_SIZE); break;
 		case 'I': set_action (R_BIN_REQ_INFO); break;
-		case 'H': set_action (R_BIN_REQ_FIELDS); break;
+		case 'H':
+			set_action (R_BIN_REQ_FIELDS);
+			break;
 		case 'd': set_action (R_BIN_REQ_DWARF); break;
 		case 'P':
 			if (is_active (R_BIN_REQ_PDB)) {
@@ -704,13 +723,7 @@ int main(int argc, char **argv) {
 		case 'r': rad = true; break;
 		case 'v': return blob_version ("rabin2");
 		case 'L':
-			bin->cb_printf = (PrintfCallback)printf;
-			if (rad) {
-				r_bin_list (bin, 'q');
-			} else {
-				r_bin_list (bin, rad == R_CORE_BIN_JSON);
-			}
-			return 1;
+			set_action (R_BIN_REQ_LISTPLUGINS);
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == UT64_MAX) {
@@ -738,6 +751,15 @@ int main(int argc, char **argv) {
 			  return rabin_show_help (1);
 		default: action |= R_BIN_REQ_HELP;
 		}
+	}
+
+	if (is_active (R_BIN_REQ_LISTPLUGINS)) {
+		const char* plugin_name = NULL;
+		if (optind < argc) {
+			plugin_name = argv[optind];
+		}
+		rabin_list_plugins (plugin_name);
+		return 0;
 	}
 
 	if (do_demangle) {
@@ -1049,6 +1071,7 @@ int main(int argc, char **argv) {
 	run_action ("strings", R_BIN_REQ_STRINGS, R_CORE_BIN_ACC_STRINGS);
 	run_action ("info", R_BIN_REQ_INFO, R_CORE_BIN_ACC_INFO);
 	run_action ("fields", R_BIN_REQ_FIELDS, R_CORE_BIN_ACC_FIELDS);
+	run_action ("header", R_BIN_REQ_HEADER, R_CORE_BIN_ACC_HEADER);
 	run_action ("libs", R_BIN_REQ_LIBS, R_CORE_BIN_ACC_LIBS);
 	run_action ("relocs", R_BIN_REQ_RELOCS, R_CORE_BIN_ACC_RELOCS);
 	run_action ("dwarf", R_BIN_REQ_DWARF, R_CORE_BIN_ACC_DWARF);

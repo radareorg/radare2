@@ -10,7 +10,7 @@ R_API RThreadLock *r_th_lock_new() {
 		thl->refs = 0;
 #if HAVE_PTHREAD
 		pthread_mutex_init (&thl->lock, NULL);
-#elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__ && !defined(__CYGWIN__)
 		//thl->lock = CreateSemaphore(NULL, 0, 1, NULL);
 		InitializeCriticalSection(&thl->lock);
 #endif
@@ -22,7 +22,7 @@ R_API int r_th_lock_wait(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	r_th_lock_enter (thl); // locks here
 	r_th_lock_leave (thl); // releases previous mutex
-#elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__ && !defined(__CYGWIN__)
 	WaitForSingleObject (thl->lock, INFINITE);
 #else
 	while (r_th_lock_check (thl));
@@ -33,7 +33,7 @@ R_API int r_th_lock_wait(RThreadLock *thl) {
 R_API int r_th_lock_enter(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	pthread_mutex_lock(&thl->lock);
-#elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__ && !defined(__CYGWIN__)
 	EnterCriticalSection (&thl->lock);
 #endif
 	return ++thl->refs;
@@ -42,7 +42,7 @@ R_API int r_th_lock_enter(RThreadLock *thl) {
 R_API int r_th_lock_leave(RThreadLock *thl) {
 #if HAVE_PTHREAD
 	pthread_mutex_unlock (&thl->lock);
-#elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__ && !defined(__CYGWIN__)
 	LeaveCriticalSection (&thl->lock);
 	//ReleaseSemaphore (thl->lock, 1, NULL);
 #endif
@@ -60,7 +60,7 @@ R_API void *r_th_lock_free(RThreadLock *thl) {
 	if (thl) {
 #if HAVE_PTHREAD
 		pthread_mutex_destroy (&thl->lock);
-#elif _WIN32 || __WINDOWS__ && !defined(__CYGWIN__)
+#elif __WINDOWS__ && !defined(__CYGWIN__)
 		DeleteCriticalSection (&thl->lock);
 		CloseHandle (thl->lock);
 #endif

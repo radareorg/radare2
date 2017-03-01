@@ -74,7 +74,7 @@
 #ifdef FMT64
 # undef FMT64
 #endif
-#if defined(_MSC_VER) || defined(__BORLANDC__) || _WIN32 || __MINGW32__ && !defined(__CYGWIN__)
+#if defined(_MSC_VER) || defined(__BORLANDC__) || __WINDOWS__ || __MINGW32__ && !defined(__CYGWIN__)
 # define FMT64 "I64"
 #else
 # if defined(__APPLE__)

@@ -3817,7 +3817,6 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db) {
 	}
 	r_list_foreach (xrefs, iter, ref) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
-		//assert (ref->at == addr);
 		if (fcn) {
 			r_cons_printf ("%s0x%08"PFMT64x" fcn 0x%08"PFMT64x" %s\n", pre, ref->addr, fcn->addr, fcn->name);
 			if (sdb_add (db, fcn->name, "1", 0)) {
@@ -5342,7 +5341,7 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 	}
 	if (curArch && !strcmp (curArch, "x86")) {
 		const char * help_msg[] = {
-			"Usage:", "av ", "analyze the .rodata section and list virtual function present",
+			"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
 			NULL};
 		switch (input[0]) {
 		case '*'://av*
@@ -5396,7 +5395,7 @@ static int cmd_anal(void *data, const char *input) {
 		"ax", "[?]", "manage refs/xrefs (see also afx?)",
 		"as", "[?] [num]", "analyze syscall using dbg.reg",
 		"at", "[?] [.]", "analyze execution traces",
-		//"ax", " [-cCd] [f] [t]", "manage code/call/data xrefs",
+		"av", "[?] [.]", "show vtables",
 		NULL };
 
 	switch (input[0]) {
