@@ -1508,10 +1508,53 @@ R_API void *r_bin_free(RBin *bin) {
 	return NULL;
 }
 
+static int r_bin_print_plugin_details(RBin *bin, RBinPlugin *bp, int json) {
+	if (json == 'q') {
+		bin->cb_printf ("%s\n", bp->name);
+	} else if (json) {
+		bin->cb_printf (
+			"{\"name\":\"%s\",\"description\":\"%s\","
+			"\"license\":\"%s\"}\n",
+			bp->name, bp->desc, bp->license? bp->license: "???");
+	} else {
+		bin->cb_printf ("Name: %s\n", bp->name);
+		bin->cb_printf ("Description: %s\n", bp->desc);
+		if (bp->license) {
+			bin->cb_printf ("License: %s\n", bp->license);
+		}
+		if (bp->version) {
+			bin->cb_printf ("Version: %s\n", bp->version);
+		}
+		if (bp->author) {
+			bin->cb_printf ("Author: %s\n", bp->author);
+		}
+	}
+	return true;
+}
+
+static int r_bin_print_xtrplugin_details(RBin *bin, RBinXtrPlugin *bx, int json) {
+	if (json == 'q') {
+		bin->cb_printf ("%s\n", bx->name);
+	} else if (json) {
+		bin->cb_printf (
+			"{\"name\":\"%s\",\"description\":\"%s\","
+			"\"license\":\"%s\"}\n",
+			bx->name, bx->desc, bx->license? bx->license: "???");
+	} else {
+		bin->cb_printf ("Name: %s\n", bx->name);
+		bin->cb_printf ("Description: %s\n", bx->desc);
+		if (bx->license) {
+			bin->cb_printf ("License: %s\n", bx->license);
+		}
+	}
+	return true;
+}
+
 R_API int r_bin_list(RBin *bin, int json) {
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
+
 	if (json == 'q') {
 		r_list_foreach (bin->plugins, it, bp) {
 			bin->cb_printf ("%s\n", bp->name);
@@ -1520,19 +1563,26 @@ R_API int r_bin_list(RBin *bin, int json) {
 			bin->cb_printf ("%s\n", bx->name);
 		}
 	} else if (json) {
+		int i;
+
+		i = 0;
 		bin->cb_printf ("{\"bin\":[");
 		r_list_foreach (bin->plugins, it, bp) {
 			bin->cb_printf (
-				"{\"filetype\":\"%s\",\"name\":\"%s\","
+				"%s{\"name\":\"%s\",\"description\":\"%s\","
 				"\"license\":\"%s\"}",
-				bp->name, bp->desc, bp->license? bp->license: "???");
+				i? ",": "", bp->name, bp->desc, bp->license? bp->license: "???");
+			i++;
 		}
+
+		i = 0;
 		bin->cb_printf ("],\"xtr\":[");
 		r_list_foreach (bin->binxtrs, it, bx) {
 			bin->cb_printf (
-				"{\"filetype\":\"%s\",\"name\":\"%s\","
+				"%s{\"name\":\"%s\",\"description\":\"%s\","
 				"\"license\":\"%s\"}",
-				bx->name, bx->desc, bx->license? bp->license: "???");
+				i? ",": "", bx->name, bx->desc, bx->license? bx->license: "???");
+			i++;
 		}
 		bin->cb_printf ("]}\n");
 	} else {
@@ -1544,9 +1594,31 @@ R_API int r_bin_list(RBin *bin, int json) {
 		}
 		r_list_foreach (bin->binxtrs, it, bx) {
 			bin->cb_printf ("xtr  %-11s %s (%s)\n", bx->name,
-				bx->desc, bx->license? bp->license: "???");
+				bx->desc, bx->license? bx->license: "???");
 		}
 	}
+	return false;
+}
+
+R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
+	RListIter *it;
+	RBinPlugin *bp;
+	RBinXtrPlugin *bx;
+
+	r_list_foreach (bin->plugins, it, bp) {
+		if (!r_str_cmp (name, bp->name, strlen (name))) {
+			continue;
+		}
+		return r_bin_print_plugin_details (bin, bp, json);
+	}
+	r_list_foreach (bin->binxtrs, it, bx) {
+		if (!r_str_cmp (name, bx->name, strlen (name))) {
+			continue;
+		}
+		return r_bin_print_xtrplugin_details (bin, bx, json);
+	}
+
+	eprintf ("cannot find plugin %s\n", name);
 	return false;
 }
 
