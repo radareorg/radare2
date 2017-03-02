@@ -489,7 +489,7 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, 
 	return result;
 }
 
-static void task_manage_help(RCore *core) {
+static void helpCmdTasks(RCore *core) {
 	const char* help_msg[] = {
 	"Usage:", "&[-|<cmd>]", "Manage tasks",
 	"&", "", "list all running threads",
@@ -511,7 +511,7 @@ static void task_manage_help(RCore *core) {
 	r_core_cmd_help (core, help_msg);
 }
 
-static void core_cmd_foreach_help(RCore *core) {
+static void helpCmdForeach(RCore *core) {
 	const char* help_msg[] = {
 	"@@", "", " # foreach iterator command:",
 	"Repeat a command over a list of offsets", "", "",
@@ -532,7 +532,7 @@ static void core_cmd_foreach_help(RCore *core) {
 	r_core_cmd_help (core, help_msg);
 }
 
-static void temporary_offset_help(RCore *core) {
+static void helpCmdAt(RCore *core) {
 	const char* help_msg[] = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
 	"0", "", "alias for 's 0'",

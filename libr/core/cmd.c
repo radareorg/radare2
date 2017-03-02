@@ -1042,7 +1042,7 @@ static int cmd_thread(void *data, const char *input) {
 		break;
 	case '?':
 		{
-			task_manage_help(core);
+			helpCmdTasks (core);
 		}
 		break;
 	case ' ':
@@ -1807,8 +1807,8 @@ repeat_arroba:
 		if (arroba) {
 			*arroba = 0;
 		}
-		if (ptr[1] == '?'){
-			temporary_offset_help(core);
+		if (ptr[1] == '?') {
+			helpCmdAt (core);
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			usemyblock = true;
 			switch (ptr[0]) {
@@ -2268,9 +2268,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	r_cons_break_push (NULL, NULL); //pop on return
 	switch (each[0]) {
 	case '?':
-		{
-			core_cmd_foreach_help(core);
-		}
+		helpCmdForeach (core);
 		break;
 	case 'b': // "@@b" - function basic blocks
 		{

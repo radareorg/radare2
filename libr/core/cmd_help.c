@@ -409,16 +409,14 @@ static int cmd_help(void *data, const char *input) {
 	case '@':
 		{
 		if (input[1] == '@'){
-			core_cmd_foreach_help(core);
+			helpCmdForeach (core);
 		} else {
-			temporary_offset_help(core);
+			helpCmdAt (core);
 		}
 		}
 		break;
 	case '&':
-		{
-			task_manage_help(core);
-		}
+		helpCmdTasks (core);
 		break;
 	case '$':
 		if (input[1] == '?') {
