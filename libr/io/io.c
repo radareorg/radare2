@@ -954,7 +954,9 @@ R_API int r_io_close(RIO *io, RIODesc *d) {
 
 R_API int r_io_close_all(RIO *io) {
 	// LOT OF MEMLEAKS HERE
-	if (!io) return 0;
+	if (!io) {
+		return 0;
+	}
 	r_cache_free (io->buffer);
 	io->buffer = r_cache_new (); // RCache is a list of ranged buffers. maybe rename?
 	io->write_mask_fd = -1;

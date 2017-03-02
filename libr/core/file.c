@@ -893,19 +893,6 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 			ret = r_core_file_set_by_file (r, prev_cf);
 		}
 	}
-#if 0
-	{
-		RListIter *iter;
-		RIODesc *iod;
-		RCoreFile *mcf;
-		r_list_foreach (r->files, iter, mcf) {
-			r_cons_printf ("[cf]--> %p %p %d\n", mcf, mcf->desc, mcf->desc->fd);
-		}
-		r_list_foreach (r->io->files, iter, iod) {
-			r_cons_printf ("[io]--> %p %d\n", iod, iod->fd);
-		}
-	}
-#endif
 	return ret;
 }
 
@@ -1026,17 +1013,18 @@ R_API int r_core_file_binlist(RCore *core) {
 R_API int r_core_file_close_fd(RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
+	if (fd == -1) {
+		r_list_free (core->files);
+		core->files = NULL;
+		core->file = NULL;
+		return true;
+	}
 	r_list_foreach (core->files, iter, file) {
-		if (file->desc->fd == fd || fd == -1) {
+		if (file->desc->fd == fd) {
 			r_core_file_close (core, file);
 			if (file == core->file) {
 				core->file = NULL; // deref
 			}
-#if 0
-			if (r_list_empty (core->files)) {
-				core->file = NULL;
-			}
-#endif
 			return true;
 		}
 	}

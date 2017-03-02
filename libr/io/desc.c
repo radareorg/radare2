@@ -6,9 +6,10 @@
 // TODO: to be deprecated.. this is slow and boring
 
 R_API void r_io_desc_init(RIO *io) {
-	io->files = r_list_new ();
-	if (!io->files) return;
-	io->files->free = (RListFree)r_io_desc_free;
+	io->files = r_list_newf ((RListFree)r_io_desc_free);
+	if (!io->files) {
+		return;
+	}
 }
 
 R_API void r_io_desc_fini(RIO *io) {
@@ -91,11 +92,14 @@ R_API int r_io_desc_del(RIO *io, int fd) {
 	if (!r_list_empty (io->files)) {
 		io->desc = r_list_first (io->files);
 	}
+	if (fd == -1) {
+		r_list_free (io->files);
+		io->files = NULL;
+		return true;
+	}
 	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (io->files, iter, d) {
-		if (d->fd == fd || fd == -1) {
-			r_io_desc_free (d);
-			iter->data = NULL; // enforce free
+		if (d->fd == fd) {
 			r_list_delete (io->files, iter);
 			return true;
 		}
@@ -106,20 +110,24 @@ R_API int r_io_desc_del(RIO *io, int fd) {
 R_API RIODesc *r_io_desc_get(RIO *io, int fd) {
 	RListIter *iter;
 	RIODesc *d;
-	if (fd<0)
+	if (fd < 0) {
 		return NULL;
+	}
 	r_list_foreach (io->files, iter, d) {
-		if (d && d->fd == fd)
+		if (d && d->fd == fd) {
 			return d;
+		}
 	}
 	return NULL;
 }
 
 R_API ut64 r_io_desc_seek (RIO *io, RIODesc *desc, ut64 offset) {
-	if (!io || !desc)
+	if (!io || !desc) {
 		return UT64_MAX;
-	if (!desc->plugin)
+	}
+	if (!desc->plugin) {
 		return (ut64)lseek (desc->fd, offset, SEEK_SET);
+	}
 	return desc->plugin->lseek (io, desc, offset, SEEK_SET);
 }
 
