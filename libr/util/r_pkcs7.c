@@ -283,17 +283,17 @@ void r_pkcs7_free_signeddata (RPKCS7SignedData* sd) {
 	}
 }
 
-RPKCS7Container *r_pkcs7_parse_container (const ut8 *buffer, ut32 length) {
+RCMS *r_pkcs7_parse_cms (const ut8 *buffer, ut32 length) {
 	RASN1Object *object;
-	RPKCS7Container *container;
+	RCMS *container;
 	if (!buffer || !length) {
 		return NULL;
 	}
-	container = (RPKCS7Container*) malloc (sizeof (RPKCS7Container));
+	container = (RCMS*) malloc (sizeof (RCMS));
 	if (!container) {
 		return NULL;
 	}
-	memset (container, 0, sizeof (RPKCS7Container));
+	memset (container, 0, sizeof (RCMS));
 	object = r_asn1_create_object (buffer, length);
 	if (!object || object->list.length != 2 || object->list.objects[1]->list.length != 1) {
 		free (container);
@@ -305,7 +305,7 @@ RPKCS7Container *r_pkcs7_parse_container (const ut8 *buffer, ut32 length) {
 	return container;
 }
 
-void r_pkcs7_free_container (RPKCS7Container* container) {
+void r_pkcs7_free_cms (RCMS* container) {
 	if (container) {
 		r_asn1_free_string (container->contentType);
 		r_pkcs7_free_signeddata (&container->signedData);
@@ -394,7 +394,7 @@ char* r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, char* buffe
 	next = crl->nextUpdate;
 	r = snprintf (buffer, length, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n",
 				pad, pad2, pad3, algo ? algo->string : "", pad2);
-	p = (unsigned) r;
+	p = (ut32) r;
 	if (r < 0 || !(tmp = r_x509_name_dump (&crl->issuer, buffer + p, length - p, pad3))) {
 		free (pad3);
 		return NULL;
@@ -407,7 +407,7 @@ char* r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, char* buffe
 	r = snprintf (buffer + p, length - p, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
 				pad2, last ? last->string : "Missing",
 				pad2, next ? next->string : "Missing", pad2);
-	p += (unsigned) r;
+	p += (ut32) r;
 	if (r < 0) {
 		free (pad3);
 		return NULL;
@@ -442,7 +442,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 
 
 	r = snprintf (buffer, length, "%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
-	p = (unsigned) r;
+	p = (ut32) r;
 	if (r < 0) {
 		free (pad3);
 		return NULL;
@@ -459,7 +459,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 		s = NULL;
 	}
 	r = snprintf (buffer + p, length - p, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
-	p += (unsigned) r;
+	p += (ut32) r;
 	r_asn1_free_string (s);
 	if (r < 0) {
 		free (pad3);
@@ -469,7 +469,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 	s = si->digestAlgorithm.algorithm;
 	r = snprintf (buffer + p, length - p, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
 				pad2, pad3, s ? s->string : "Missing", pad2);
-	p += (unsigned) r;
+	p += (ut32) r;
 	if (r < 0) {
 		free (pad3);
 		return NULL;
@@ -479,7 +479,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 		if (!attr) continue;
 		r = snprintf (buffer + p, length - p, "%s%s: %u bytes\n",
 					pad3, attr->oid ? attr->oid->string : "Missing", attr->data ? attr->data->length : 0);
-		p += (unsigned) r;
+		p += (ut32) r;
 		if (r < 0) {
 			free (pad3);
 			return NULL;
@@ -488,23 +488,24 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 	s = si->digestEncryptionAlgorithm.algorithm;
 	r = snprintf (buffer + p, length - p, "%sDigest Encryption Algorithm\n%s%s\n",
 				pad2, pad3, s ? s->string : "Missing");
-	p += (unsigned) r;
+	p += (ut32) r;
 	if (r < 0) {
 		free (pad3);
 		return NULL;
 	}
 
-	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->sector, o->length);
-	else s = NULL;
-	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
-	p += (unsigned) r;
-	r_asn1_free_string (s);
+//	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->sector, o->length);
+//	else s = NULL;
+//	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
+//	p += (ut32) r;
+//	r_asn1_free_string (s);
+	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
 	if (r < 0) {
 		free (pad3);
 		return NULL;
 	}
 	r = snprintf (buffer + p, length - p, "%sUnauthenticated Attributes:\n", pad2);
-	p += (unsigned) r;
+	p += (ut32) r;
 	if (r < 0) {
 		free (pad3);
 		return NULL;
@@ -515,7 +516,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 		o = attr->data;
 		r = snprintf (buffer + p, length - p, "%s%s: %u bytes\n",
 					pad3, attr->oid ? attr->oid->string : "Missing", o ? o->length : 0);
-		p += (unsigned) r;
+		p += (ut32) r;
 		if (r < 0) {
 			free (pad3);
 			return NULL;
@@ -524,7 +525,7 @@ char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, c
 	return buffer + p;
 }
 
-char *r_pkcs7_container_dump (RPKCS7Container* container) {
+char *r_pkcs7_cms_dump (RCMS* container) {
 	RPKCS7SignedData *sd;
 	ut32 i, length, p;
 	int r;
@@ -534,12 +535,12 @@ char *r_pkcs7_container_dump (RPKCS7Container* container) {
 	}
 	sd = &container->signedData;
 	p = 0;
-	length = 1024 + (container->signedData.certificates.length * 4096);
+	length = 2048 + (container->signedData.certificates.length * 1024);
 	buffer = (char*) malloc (length);
 	if (!buffer) return NULL;
 	memset (buffer, 0, length);
 	r = snprintf (buffer, length, "signedData\n  Version: %u\n  Digest Algorithms:\n", sd->version);
-	p += (unsigned) r;
+	p += (ut32) r;
 	if (r < 0) {
 		free (buffer);
 		return NULL;
@@ -548,7 +549,7 @@ char *r_pkcs7_container_dump (RPKCS7Container* container) {
 		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
 			if (container->signedData.digestAlgorithms.elements[i]) {
 				r = snprintf (buffer + p, length - p, "    %s\n", container->signedData.digestAlgorithms.elements[i]->algorithm->string);
-				p += (unsigned) r;
+				p += (ut32) r;
 				if (r < 0 || length <= p) {
 					free (buffer);
 					return NULL;
@@ -557,7 +558,7 @@ char *r_pkcs7_container_dump (RPKCS7Container* container) {
 		}
 	}
 	r = snprintf (buffer + p, length - p, "  Certificates: %u\n", container->signedData.certificates.length);
-	p += (unsigned) r;
+	p += (ut32) r;
 	if (r < 0 || length <= p) {
 		free (buffer);
 		return NULL;
@@ -579,7 +580,7 @@ char *r_pkcs7_container_dump (RPKCS7Container* container) {
 	}
 	p = tmp - buffer;
 	r = snprintf (buffer + p, length - p, "  SignerInfos:\n");
-	p += (unsigned) r;
+	p += (ut32) r;
 	if (r < 0 || length <= p) {
 		free (buffer);
 		return NULL;
