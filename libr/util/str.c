@@ -1582,7 +1582,7 @@ R_API bool r_str_glob (const char* str, const char *glob) {
                 return true;
         }
         if (!strchr (glob, '*')) {
-                if (*glob == '^'){
+                if (*glob == '^') {
                         glob++;
                         while (*str) {
                                 if (*glob != *str) {
@@ -1597,7 +1597,7 @@ R_API bool r_str_glob (const char* str, const char *glob) {
                         return strstr (str, glob) != NULL;
                 }
         }
-        if (*glob == '^'){
+        if (*glob == '^') {
                 glob++;
         }
         while (*str && (*glob != '*')) {
