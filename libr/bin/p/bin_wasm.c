@@ -11,7 +11,7 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length >= 4 && !memcmp (buf, "\x00" "asm", 4));
 }
 
-ut64 entrypoint = UT64_MAX;
+static ut64 entrypoint = UT64_MAX;
 
 static int check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
@@ -39,6 +39,8 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 	return NULL; // TODO
 }
 
+static RList* sections(RBinFile *arch);
+
 static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
@@ -46,10 +48,13 @@ static RList* entries(RBinFile *arch) {
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
+	if (entrypoint == UT64_MAX) {
+		r_list_free (sections (arch));
+	}
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = 8*4;
-		ptr->vaddr = 8*4;// + baddr (arch);
+		ptr->paddr = entrypoint;
+		ptr->vaddr = entrypoint;
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -58,7 +63,7 @@ static RList* entries(RBinFile *arch) {
 static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	ut64 textsize, datasize, symssize, spszsize, pcszsize;
+	// ut64 textsize, datasize, symssize, spszsize, pcszsize;
 	if (!arch->o->info) {
 		return NULL;
 	}
@@ -87,7 +92,7 @@ static RList* sections(RBinFile *arch) {
 #endif
 		ut64 res = 0;
 		ut8 *p = buf + i + 1;
-		ut8 *afterBuf = r_uleb128 (p, 8, &res);
+		const ut8 *afterBuf = r_uleb128 (p, 8, &res);
 		int payloadLen = res;
 		int payloadSize = (int)(size_t)(afterBuf - p);
 
@@ -130,9 +135,6 @@ static RList* sections(RBinFile *arch) {
 			break;
 		case 10: // 
 			eprintf ("code:\n");
-			if (entrypoint == UT64_MAX) {
-				entrypoint = i + payloadSize + nameSize;
-			}
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				return ret;
 			}
@@ -141,6 +143,9 @@ static RList* sections(RBinFile *arch) {
 			ptr->vsize = payloadLen;
 			ptr->paddr = i + nameLen + payloadSize + nameSize + 1 + payloadSize;
 			ptr->vaddr = ptr->paddr;
+			if (entrypoint == UT64_MAX) {
+				entrypoint = ptr->vaddr;
+			}
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
 			ptr->add = true;
 			r_list_append (ret, ptr);

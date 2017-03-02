@@ -18,6 +18,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	case 0x01:
 		sprintf (op->buf_asm, "nop");
 		break;
+	case 0x03:
+		sprintf (op->buf_asm, "loop %d", buf[1]);
+		rep = 2;
+		break;
 	case 0x05:
 		sprintf (op->buf_asm, "else");
 		break;
@@ -63,6 +67,34 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		break;
 	case 0x1b:
 		sprintf (op->buf_asm, "select");
+		break;
+	case 0x41:
+		{
+			ut64 val = 0;
+			const ut8 *nxt = r_uleb128 (buf + 1, len - 1, &val);
+			sprintf (op->buf_asm, "i32.const 0x%08x", (st32)(val&UT32_MAX));
+			rep = (size_t) (nxt - buf + 1);
+		}
+		break;
+	case 0x42:
+		{
+			ut64 val = 0;
+			const ut8 *nxt = r_uleb128 (buf + 1, len - 1, &val);
+			sprintf (op->buf_asm, "i64.const 0x%08"PFMT64x, (st64)val);
+			rep = (size_t) (nxt - buf + 1);
+		}
+		break;
+	case 0x43:
+		{
+			ut32 val = r_read_le32 (buf + 1);
+			sprintf (op->buf_asm, "f32.const 0x%08x", val);
+		}
+		break;
+	case 0x44:
+		{
+			ut64 val = r_read_le64 (buf + 1);
+			sprintf (op->buf_asm, "f64.const 0x%08"PFMT64x, val);
+		}
 		break;
 	case 0x45:
 		sprintf (op->buf_asm, "i32.eqz");
