@@ -12,7 +12,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <r_asm.h>
 #include <r_anal.h>
 
-RDESContext desctx;
+static RDESContext desctx;
 
 typedef struct _cpu_const_tag {
 	const char *const key;
@@ -1571,7 +1571,7 @@ static int avr_custom_des (RAnalEsil *esil) {
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
-	if (!__esil_pop_argument(esil, &des_round)) {
+	if (!__esil_pop_argument (esil, &des_round)) {
 		return false;
 	}
 	r_anal_esil_reg_read (esil, "hf", &encrypt, NULL);
@@ -1591,7 +1591,7 @@ static int avr_custom_des (RAnalEsil *esil) {
 		int i;
 		//generating all round keys
 		r_des_permute_key (&key_lo, &key_hi);
-		for (i = 0; i < 16; ++i) {
+		for (i = 0; i < 16; i++) {
 			r_des_round_key (i, &desctx.round_key_lo[i], &desctx.round_key_hi[i], &key_lo, &key_hi);
 		}
 		r_des_permute_block0 (&buf_lo, &buf_hi);
@@ -1753,8 +1753,9 @@ static int esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val)
 }
 
 static int esil_avr_init(RAnalEsil *esil) {
-	if (!esil)
+	if (!esil) {
 		return false;
+	}
 	desctx.round = 0;
 	r_anal_esil_set_op (esil, "des", avr_custom_des);
 	r_anal_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase);

@@ -136,8 +136,8 @@ R_API void r_des_permute_block0  (ut32 *blocklo, ut32 *blockhi) {
 	lo ^= perm; hi ^= perm << 8;
 	perm = ((lo >> 1) ^ hi) & 0x55555555;
 	hi ^= perm; lo ^= perm << 1;
-	*blocklo = ROTL(lo, 1);
-	*blockhi = ROTL(hi, 1);
+	*blocklo = ROTL (lo, 1);
+	*blockhi = ROTL (hi, 1);
 }
 
 // last permutation of the block
@@ -147,8 +147,8 @@ R_API void r_des_permute_block1 (ut32 *blocklo, ut32 *blockhi) {
 	}
 	ut32 lo = *blocklo;
 	ut32 hi = *blockhi;
-	lo = ROTR(lo, 1);
-	hi = ROTR(hi, 1);
+	lo = ROTR (lo, 1);
+	hi = ROTR (hi, 1);
 	ut32 perm = ((lo >> 1) ^ hi) & 0x55555555;
 	hi ^= perm; lo ^= perm << 1;
 	perm = ((hi >> 8) ^ lo) & 0x00FF00FF;
@@ -170,11 +170,11 @@ R_API void r_des_round_key (int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut3
 		return;
 	}
 	if (i == 0 || i == 1 || i == 8 || i == 15) {
-		*deskeylo = ROTL28(*deskeylo, 1);
-		*deskeyhi = ROTL28(*deskeyhi, 1);
+		*deskeylo = ROTL28 (*deskeylo, 1);
+		*deskeyhi = ROTL28 (*deskeyhi, 1);
 	} else {
-		*deskeylo = ROTL28(*deskeylo, 2);
-		*deskeyhi = ROTL28(*deskeyhi, 2);
+		*deskeylo = ROTL28 (*deskeylo, 2);
+		*deskeyhi = ROTL28 (*deskeyhi, 2);
 	}
 
 	ut32 deslo = *deskeylo;
@@ -216,7 +216,7 @@ R_API void r_des_round (ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundk
 	lo ^= sbox4[(perm >> 16) & 0x3F];
 	lo ^= sbox6[(perm >> 8) & 0x3F];
 	lo ^= sbox8[perm & 0x3F];
-	perm = ROTR(hi, 4) ^ (*roundkeyhi);
+	perm = ROTR (hi, 4) ^ (*roundkeyhi);
 	lo ^= sbox1[(perm >> 24) & 0x3F];
 	lo ^= sbox3[(perm >> 16) & 0x3F];
 	lo ^= sbox5[(perm >> 8) & 0x3F];
