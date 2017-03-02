@@ -1042,25 +1042,7 @@ static int cmd_thread(void *data, const char *input) {
 		break;
 	case '?':
 		{
-		const char* help_msg[] = {
-			"Usage:", "&[-|<cmd>]", "Manage tasks",
-			"&", "", "list all running threads",
-			"&=", "", "show output of all tasks",
-			"&=", " 3", "show output of task 3",
-			"&j", "", "list all running threads (in JSON)",
-			"&?", "", "show this help",
-			"&+", " aa", "push to the task list",
-			"&-", " 1", "delete task #1",
-			"&", "-*", "delete all threads",
-			"&", " aa", "run analysis in background",
-			"&", " &&", "run all tasks in background",
-			"&&", "", "run all pendings tasks (and join threads)",
-			"&&&", "", "run all pendings tasks until ^C",
-			"","","TODO: last command should honor asm.bits",
-			"","","WARN: this feature is very experimental. Use it with caution",
-			NULL};
-		// TODO: integrate with =h& and bg anal/string/searchs/..
-		r_core_cmd_help (core, help_msg);
+			helpCmdTasks (core);
 		}
 		break;
 	case ' ':
@@ -1825,7 +1807,9 @@ repeat_arroba:
 		if (arroba) {
 			*arroba = 0;
 		}
-		if (ptr[0] && ptr[1] == ':' && ptr[2]) {
+		if (ptr[1] == '?') {
+			helpCmdAt (core);
+		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			usemyblock = true;
 			switch (ptr[0]) {
 			case 'f': // "@f:" // slurp file in block
@@ -2283,26 +2267,8 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	ostr = str = strdup (each);
 	r_cons_break_push (NULL, NULL); //pop on return
 	switch (each[0]) {
-	case '?':{
-		const char* help_msg[] = {
-		"@@", "", " # foreach iterator command:",
-		"Repeat a command over a list of offsets", "", "",
-		"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
-		"x", " @@dbt[abs]", "run a command on every backtrace address, bp or sp",
-		"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
-		"x", " @@=off1 off2 ..", "manual list of offsets",
-		"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
-		"x", " @@t", "\"\" on all threads (see dp)",
-		"x", " @@b", "\"\" on all basic blocks of current function (see afb)",
-		"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
-		"x", " @@f", "\"\" on all functions (see aflq)",
-		"x", " @@f:write", "\"\" on all functions matching write in the name",
-		"x", " @@c:cmd", "the same as @@=`` without the backticks",
-		"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
-		// TODO: Add @@k sdb-query-expression-here
-		NULL};
-		r_core_cmd_help (core, help_msg);
-		}
+	case '?':
+		helpCmdForeach (core);
 		break;
 	case 'b': // "@@b" - function basic blocks
 		{

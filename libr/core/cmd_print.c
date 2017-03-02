@@ -489,6 +489,97 @@ R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, 
 	return result;
 }
 
+static void helpCmdTasks(RCore *core) {
+	const char* help_msg[] = {
+	"Usage:", "&[-|<cmd>]", "Manage tasks",
+	"&", "", "list all running threads",
+	"&=", "", "show output of all tasks",
+	"&=", " 3", "show output of task 3",
+	"&j", "", "list all running threads (in JSON)",
+	"&?", "", "show this help",
+	"&+", " aa", "push to the task list",
+	"&-", " 1", "delete task #1",
+	"&", "-*", "delete all threads",
+	"&", " aa", "run analysis in background",
+	"&", " &&", "run all tasks in background",
+	"&&", "", "run all pendings tasks (and join threads)",
+	"&&&", "", "run all pendings tasks until ^C",
+	"","","TODO: last command should honor asm.bits",
+	"","","WARN: this feature is very experimental. Use it with caution",
+	NULL};
+	// TODO: integrate with =h& and bg anal/string/searchs/..
+	r_core_cmd_help (core, help_msg);
+}
+
+static void helpCmdForeach(RCore *core) {
+	const char* help_msg[] = {
+	"@@", "", " # foreach iterator command:",
+	"Repeat a command over a list of offsets", "", "",
+	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
+	"x", " @@dbt[abs]", "run a command on every backtrace address, bp or sp",
+	"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
+	"x", " @@=off1 off2 ..", "manual list of offsets",
+	"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
+	"x", " @@t", "\"\" on all threads (see dp)",
+	"x", " @@b", "\"\" on all basic blocks of current function (see afb)",
+	"x", " @@i", "\"\" on all instructions of the current function (see pdr)",
+	"x", " @@f", "\"\" on all functions (see aflq)",
+	"x", " @@f:write", "\"\" on all functions matching write in the name",
+	"x", " @@c:cmd", "the same as @@=`` without the backticks",
+	"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
+	// TODO: Add @@k sdb-query-expression-here
+	NULL};
+	r_core_cmd_help (core, help_msg);
+}
+
+static void helpCmdAt(RCore *core) {
+	const char* help_msg[] = {
+	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
+	"0", "", "alias for 's 0'",
+	"0x", "addr", "alias for 's 0x..'",
+	"#", "cmd", "if # is a number repeat the command # times",
+	"/*", "", "start multiline comment",
+	"*/", "", "end multiline comment",
+	".", "cmd", "execute output of command as r2 script",
+	".:", "8080", "wait for commands on port 8080",
+	".!", "rabin2 -re $FILE", "run command output as r2 script",
+	"*", "", "output of command in r2 script format (CC*)",
+	"j", "", "output of command in JSON format (pdj)",
+	"~", "?", "count number of lines (like wc -l)",
+	"~", "??", "show internal grep help",
+	"~", "..", "internal less",
+	"~", "{}", "json indent",
+	"~", "{}..", "json indent and less",
+	"~", "word", "grep for lines matching word",
+	"~", "!word", "grep for lines NOT matching word",
+	"~", "word[2]", "grep 3rd column of lines matching word",
+	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
+	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
+	"@", " addr[!blocksize]", "temporary set a new blocksize",
+	"@a:", "arch[:bits]", "temporary set arch and bits",
+	"@b:", "bits", "temporary set asm.bits",
+	"@e:", "k=v,k=v", "temporary change eval vars",
+	"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
+	"@i:", "nth.op", "temporary seek to the Nth relative instruction",
+	"@f:", "file", "temporary replace block with file contents",
+	"@o:", "fd", "temporary switch to another fd",
+	"@s:", "string", "same as above but from a string",
+	"@x:", "909192", "from hex pairs string",
+	"@..", "from to", "temporary set from and to for commands supporting ranges",
+	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
+	"@@", " hit*", "run the command on every flag matching 'hit*'",
+	"@@?", "[ktfb..]", "show help for the iterator operator",
+	"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
+	">", "file", "pipe output of command to file",
+	">>", "file", "append to file",
+	"H>", "file", "pipe output of command to file in HTML",
+	"H>>", "file", "append to file with the output of command in HTML",
+	"`", "pdi~push:0[0]`",  "replace output of command inside the line",
+	"|", "cmd", "pipe output to command (pd|less) (.dr*)",
+	NULL};
+	r_core_cmd_help (core, help_msg);
+}
+
 static void print_format_help(RCore *core) {
 	const char* help_msg[] = {
 	"pf:", PF_USAGE_STR, "",
