@@ -616,7 +616,7 @@ INST_HANDLER (des) {	// DES k
 	if (desctx.round < 16) {	//DES
 		op->type = R_ANAL_OP_TYPE_CRYPTO;
 		op->cycles = 1;		//redo this
-		r_strbuf_setf (&op->esil, "%d,des", d);
+		r_strbuf_setf (&op->esil, "%d,des", desctx.round);
 	}
 }
 
@@ -1583,6 +1583,10 @@ static int avr_custom_des (RAnalEsil *esil) {
 	buf_lo = text & UT32_MAX;
 	buf_hi = text >> 32;
 
+	if (des_round != desctx.round) {
+		desctx.round = des_round;
+	}
+	
 	if (!desctx.round) {
 		int i;
 		//generating all round keys
