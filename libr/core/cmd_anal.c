@@ -5163,8 +5163,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				rowlog (core, "Analyze function calls (aac)");
-				r_core_seek (core, curseek, 1);
 				(void) cmd_anal_calls (core, ""); // "aac"
+				r_core_seek (core, curseek, 1);
 				// rowlog (core, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
 				rowlog_done (core);
