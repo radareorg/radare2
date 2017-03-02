@@ -621,6 +621,34 @@ static char *signature (RBinFile *arch) {
 	bin = arch->o->bin_obj;
 	return (char *) bin->pkcs7;
 }
+
+static RBinField *newField(const char *name, ut64 addr) {
+	RBinField *bf = R_NEW0 (RBinField);
+	bf->name = strdup (name);
+	bf->vaddr = bf->paddr = addr;
+	return bf;
+}
+
+static RList *fields(RBinFile *arch) {
+	const ut8 *buf = arch ? r_buf_buffer (arch->buf) : NULL;
+
+	if (!buf) {
+		return NULL;
+	}
+	RList *list = r_list_new ();
+	struct PE_(r_bin_pe_obj_t) * bin = arch->o->bin_obj;
+
+	// TODO: we should use pf*
+	ut64 at = r_offsetof (PE_(image_nt_headers), Signature);
+	r_list_append (list, newField ("signature", at));
+
+	at = r_offsetof (PE_(image_optional_header), AddressOfEntryPoint);
+	at += bin->dos_header->e_lfanew;
+	r_list_append (list, newField ("entrypoint", at));
+
+	return list;
+}
+
 static void header(RBinFile *arch) {
 	struct PE_(r_bin_pe_obj_t) * bin = arch->o->bin_obj;
 	struct r_bin_t *rbin = arch->rbin;
@@ -723,7 +751,7 @@ static void header(RBinFile *arch) {
 	}
 }
 
-struct r_bin_plugin_t r_bin_plugin_pe = {
+RBinPlugin r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
 	.license = "LGPL3",
@@ -742,6 +770,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.imports = &imports,
 	.info = &info,
 	.header = &header,
+	.fields = &fields,
 	.libs = &libs,
 	.relocs = &relocs,
 	.minstrlen = 4,
@@ -750,7 +779,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_pe,
 	.version = R2_VERSION
