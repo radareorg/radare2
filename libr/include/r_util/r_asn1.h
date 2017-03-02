@@ -61,11 +61,9 @@ typedef struct r_asn1_string_t {
 	bool allocated;
 } RASN1String;
 
-typedef struct r_asn1_object_t RASN1Object;
-
 typedef struct r_asn1_list_t {
 	ut32 length;
-	RASN1Object **objects;
+	struct r_asn1_object_t **objects;
 } ASN1List;
 
 typedef struct r_asn1_object_t {
