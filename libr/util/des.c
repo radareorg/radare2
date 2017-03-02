@@ -94,8 +94,10 @@ static const ut32 sbox8[64] = {
 };
 
 R_API void r_des_permute_key (ut32 *keylo, ut32 *keyhi) {
-	ut32 perm;
-	perm = ((*keylo >> 4) ^ *keyhi) & 0x0F0F0F0F;
+	if (!keylo || !keyhi) {
+		return;
+	}
+	ut32 perm = ((*keylo >> 4) ^ *keyhi) & 0x0F0F0F0F;
 	*keyhi ^= perm; *keylo ^= (perm << 4);
 	perm = ((*keyhi >> 16) ^ *keylo) & 0x0000FFFF;
 	*keylo ^= perm; *keyhi ^= (perm << 16);
@@ -119,13 +121,12 @@ R_API void r_des_permute_key (ut32 *keylo, ut32 *keyhi) {
 
 // first permutation of the block
 R_API void r_des_permute_block0  (ut32 *blocklo, ut32 *blockhi) {
-	ut32 lo, hi, perm;
 	if (!blocklo || !blockhi) {
 		return;
 	}
-	lo = *blocklo;
-	hi = *blockhi;
-	perm = ((lo >> 4) ^ hi) & 0x0F0F0F0F;
+	ut32 lo = *blocklo;
+	ut32 hi = *blockhi;
+	ut32 perm = ((lo >> 4) ^ hi) & 0x0F0F0F0F;
 	hi ^= perm; lo ^= perm << 4;
 	perm = ((lo >> 16) ^ hi) & 0x0000FFFF;
 	hi ^= perm; lo ^= perm << 16;
@@ -141,13 +142,14 @@ R_API void r_des_permute_block0  (ut32 *blocklo, ut32 *blockhi) {
 
 // last permutation of the block
 R_API void r_des_permute_block1 (ut32 *blocklo, ut32 *blockhi) {
-	ut32 lo, hi, perm;
-	if (!blocklo || !blockhi) return;
-	lo = *blocklo;
-	hi = *blockhi;
+	if (!blocklo || !blockhi) {
+		return;
+	}
+	ut32 lo = *blocklo;
+	ut32 hi = *blockhi;
 	lo = ROTR(lo, 1);
 	hi = ROTR(hi, 1);
-	perm = ((lo >> 1) ^ hi) & 0x55555555;
+	ut32 perm = ((lo >> 1) ^ hi) & 0x55555555;
 	hi ^= perm; lo ^= perm << 1;
 	perm = ((hi >> 8) ^ lo) & 0x00FF00FF;
 	lo ^= perm; hi ^= perm << 8;
@@ -164,8 +166,9 @@ R_API void r_des_permute_block1 (ut32 *blocklo, ut32 *blockhi) {
 // keylo & keyhi are the derivated round keys
 // deskeylo & deskeyhi are the des derivated keys
 R_API void r_des_round_key (int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut32 *deskeyhi) {
-	ut32 deslo, deshi;
-	if (!keylo || !keyhi || !deskeylo || !deskeyhi) return;
+	if (!keylo || !keyhi || !deskeylo || !deskeyhi) {
+		return;
+	}
 	if (i == 0 || i == 1 || i == 8 || i == 15) {
 		*deskeylo = ROTL28(*deskeylo, 1);
 		*deskeyhi = ROTL28(*deskeyhi, 1);
@@ -174,8 +177,8 @@ R_API void r_des_round_key (int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut3
 		*deskeyhi = ROTL28(*deskeyhi, 2);
 	}
 
-	deslo = *deskeylo;
-	deshi = *deskeyhi;
+	ut32 deslo = *deskeylo;
+	ut32 deshi = *deskeyhi;
 
 	*keylo =((deslo << 4)  & 0x24000000) | ((deslo << 28) & 0x10000000) |
 			((deslo << 14) & 0x08000000) | ((deslo << 18) & 0x02080000) |
@@ -203,11 +206,12 @@ R_API void r_des_round_key (int i, ut32 *keylo, ut32 *keyhi, ut32 *deskeylo, ut3
 }
 
 R_API void r_des_round (ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundkeyhi) {
-	ut32 perm, lo, hi;
-	if (!buflo || !bufhi || !roundkeylo || !roundkeyhi) return;
-	lo = *buflo;
-	hi = *bufhi;
-	perm = hi ^ (*roundkeylo);
+	if (!buflo || !bufhi || !roundkeylo || !roundkeyhi) {
+		return;
+	}
+	ut32 lo = *buflo;
+	ut32 hi = *bufhi;
+	ut32 perm = hi ^ (*roundkeylo);
 	lo ^= sbox2[(perm >> 24) & 0x3F];
 	lo ^= sbox4[(perm >> 16) & 0x3F];
 	lo ^= sbox6[(perm >> 8) & 0x3F];
@@ -221,29 +225,3 @@ R_API void r_des_round (ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roundk
 	*bufhi = lo;
 	*buflo = perm;
 }
-/*
-R_API ut64 r_des_get_roundkey (ut64 key, int round, int enc) {
-	ut32 inkeyhi = key >> 32;
-	ut32 inkeylo = key & 0xFFFFFFFF;
-	ut32 outkeyhi = 0;
-	ut32 outkeylo = 0;
-	des_round_key (round, &outkeylo, &outkeyhi, &inkeylo, &inkeyhi);
-	key = outkeyhi;
-	key <<= 32;
-	key |= outkeylo;
-	return key;
-}
-
-R_API ut64 r_des_round (ut64 plaintext, ut64 round_key) {
-	ut32 keyhi = round_key >> 32;
-	ut32 keylo = round_key & 0xFFFFFFFF;
-	ut32 bufhi = plaintext >> 32;
-	ut32 buflo = plaintext & 0xFFFFFFFF;
-	des_round(&buflo, &bufhi, &keylo, &keyhi);
-	plaintext = bufhi;
-	plaintext <<= 32;
-	plaintext |= buflo;
-	return plaintext;
-}
-
-*/

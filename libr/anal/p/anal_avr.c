@@ -613,11 +613,11 @@ INST_HANDLER (dec) {	// DEC Rd
 }
 
 INST_HANDLER (des) {	// DES k
-//if (d < 16) {	//DES
-//	op->type = R_ANAL_OP_TYPE_CRYPTO;
-//	op->cycles = 1;		//redo this
-//	r_strbuf_setf (&op->esil, "%d,des", d);
-//}
+	if (desctx.round < 16) {	//DES
+		op->type = R_ANAL_OP_TYPE_CRYPTO;
+		op->cycles = 1;		//redo this
+		r_strbuf_setf (&op->esil, "%d,des", d);
+	}
 }
 
 INST_HANDLER (eijmp) {	// EIJMP
@@ -1578,9 +1578,9 @@ static int avr_custom_des (RAnalEsil *esil) {
 	r_anal_esil_reg_read (esil, "deskey", &key, NULL);
 	r_anal_esil_reg_read (esil, "text", &text, NULL);
 
-	key_lo = key & 0xffffffff;
+	key_lo = key & UT32_MAX;
 	key_hi = key >> 32;
-	buf_lo = text & 0xffffffff;
+	buf_lo = text & UT32_MAX;
 	buf_hi = text >> 32;
 
 	if (!desctx.round) {
