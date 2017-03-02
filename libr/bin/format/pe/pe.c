@@ -1903,13 +1903,15 @@ static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
 	con = r_pkcs7_parse_cms (data, size);
 	bin->pkcs7 = r_pkcs7_cms_dump (con);
 	if (bin->pkcs7) {
-		ut64 length = strlen (bin->pkcs7);
-		char *c = (char*) malloc (length);
-		if (c) {
-			memcpy (c, bin->pkcs7, length);
-			c[length-1] = '\0';
-			free ((char*)bin->pkcs7);
-			bin->pkcs7 = c;
+		int length = strlen (bin->pkcs7);
+		if (length > 0) {
+			char *c = (char*) malloc (length);
+			if (c) {
+				memcpy (c, bin->pkcs7, length);
+				c[length - 1] = '\0';
+				free ((char*)bin->pkcs7);
+				bin->pkcs7 = c;
+			}
 		}
 	}
 	r_pkcs7_free_cms (con);

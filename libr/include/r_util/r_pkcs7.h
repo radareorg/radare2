@@ -65,9 +65,9 @@ typedef struct r_pkcs7_container_t {
 	RPKCS7SignedData signedData;
 } RCMS;
 
-R_API RCMS *r_pkcs7_parse_cms (const ut8 *buffer, ut32 length);
-R_API void r_pkcs7_free_cms (RCMS* container);
-R_API char* r_pkcs7_cms_dump (RCMS* container);
+R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length);
+R_API void r_pkcs7_free_cms(RCMS* container);
+R_API char* r_pkcs7_cms_dump(RCMS* container);
 
 #endif /* R_PKCS7_H */
 
