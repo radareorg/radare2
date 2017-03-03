@@ -142,6 +142,24 @@ static int getnum(const char *str) {
 	return 0;
 }
 
+static ut32 getimmed8(const char *str) {
+	ut32 num = getnum (str);
+	ut32 rotate;
+	if (num >= 0 && num <= 0xff) {
+		return num;
+	} else {
+		for (rotate=1; rotate<16; rotate++) {
+			// rol 2
+			num = ((num << 2) | (num >> 30));
+			if (num == (num & 0xff)) {
+				return (num | (rotate << 8));
+			}
+		}
+		err = 1;
+		return 0;
+	}
+}
+
 static char *getrange(char *s) {
 	char *p = NULL;
 	while (s && *s) {
@@ -1027,8 +1045,12 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->o = 0xb0e1;
 				ao->o |= getreg (ao->a[0]) << 20;
 				ret = getreg (ao->a[1]);
-				if (ret!=-1) ao->o |= ret << 24;
-				else ao->o |= 0xa003 | getnum (ao->a[1]) << 24;
+				if (ret!=-1) {
+					ao->o |= ret << 24;
+				} else {
+					int immed = getimmed8 (ao->a[1]);
+					ao->o |= 0xa003 | (immed & 0xff) << 24 | (immed >> 8) << 16;
+				}
 				break;
 			case TYPE_MOVW:
 				ao->o |= getreg (ao->a[0]) << 20;
