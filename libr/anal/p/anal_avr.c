@@ -12,6 +12,8 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <r_asm.h>
 #include <r_anal.h>
 
+static RDESContext desctx;
+
 typedef struct _cpu_const_tag {
 	const char *const key;
 	ut8 type;
@@ -611,11 +613,11 @@ INST_HANDLER (dec) {	// DEC Rd
 }
 
 INST_HANDLER (des) {	// DES k
-//if (d < 16) {	//DES
-//	op->type = R_ANAL_OP_TYPE_CRYPTO;
-//	op->cycles = 1;		//redo this
-//	r_strbuf_setf (&op->esil, "%d,des", d);
-//}
+	if (desctx.round < 16) {	//DES
+		op->type = R_ANAL_OP_TYPE_CRYPTO;
+		op->cycles = 1;		//redo this
+		r_strbuf_setf (&op->esil, "%d,des", desctx.round);
+	}
 }
 
 INST_HANDLER (eijmp) {	// EIJMP
@@ -1564,21 +1566,50 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 }
 
 static int avr_custom_des (RAnalEsil *esil) {
-	ut64 key, text;
-	int r, enc;
+	ut64 key, encrypt, text,des_round;
+	ut32 key_lo, key_hi, buf_lo, buf_hi;
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
-	if (!__esil_pop_argument(esil, &key)) {
+	if (!__esil_pop_argument (esil, &des_round)) {
 		return false;
 	}
-	r = (int)key;
-	r_anal_esil_reg_read (esil, "hf", &key, NULL);
-	enc = (int)key;
+	r_anal_esil_reg_read (esil, "hf", &encrypt, NULL);
 	r_anal_esil_reg_read (esil, "deskey", &key, NULL);
 	r_anal_esil_reg_read (esil, "text", &text, NULL);
-	key = r_des_get_roundkey (key, r, enc);
-	text = r_des_round (text, key);
+
+	key_lo = key & UT32_MAX;
+	key_hi = key >> 32;
+	buf_lo = text & UT32_MAX;
+	buf_hi = text >> 32;
+
+	if (des_round != desctx.round) {
+		desctx.round = des_round;
+	}
+	
+	if (!desctx.round) {
+		int i;
+		//generating all round keys
+		r_des_permute_key (&key_lo, &key_hi);
+		for (i = 0; i < 16; i++) {
+			r_des_round_key (i, &desctx.round_key_lo[i], &desctx.round_key_hi[i], &key_lo, &key_hi);
+		}
+		r_des_permute_block0 (&buf_lo, &buf_hi);
+	}
+
+	if (encrypt) {
+		r_des_round (&buf_lo, &buf_hi, &desctx.round_key_lo[desctx.round], &desctx.round_key_hi[desctx.round]);
+	} else {
+		r_des_round (&buf_lo, &buf_hi, &desctx.round_key_lo[15 - desctx.round], &desctx.round_key_hi[15 - desctx.round]);
+	}
+
+	if (desctx.round == 15) {
+		r_des_permute_block1 (&buf_hi, &buf_lo);
+		desctx.round = 0;
+	} else {
+		desctx.round++;
+	}
+
 	r_anal_esil_reg_write (esil, "text", text);
 	return true;
 }
@@ -1722,8 +1753,10 @@ static int esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val)
 }
 
 static int esil_avr_init(RAnalEsil *esil) {
-	if (!esil)
+	if (!esil) {
 		return false;
+	}
+	desctx.round = 0;
 	r_anal_esil_set_op (esil, "des", avr_custom_des);
 	r_anal_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase);
 	r_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill);
