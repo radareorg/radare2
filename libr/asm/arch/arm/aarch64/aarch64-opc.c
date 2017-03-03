@@ -134,7 +134,7 @@ aarch64_select_operand_for_sizeq_field_coding (const aarch64_opcode *opcode)
     significant_operand_index [get_data_pattern (opcode->qualifiers_list[0])];
 }
 
-const aarch64_field fields[] =
+const aarch64_field aarch64_fields[] =
 {
     {  0,  0 },	/* NIL.  */
     {  0,  4 },	/* cond2: condition in truly conditional-executed inst.  */
