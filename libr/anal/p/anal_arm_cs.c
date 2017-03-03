@@ -65,11 +65,14 @@ static const char *decode_shift(arm_shifter shift) {
 	static const char *E_OP_SR = ">>";
 	static const char *E_OP_SL = "<<";
 	static const char *E_OP_RR = ">>>";
+	static const char *E_OP_ASR = ">>>>";
 	static const char *E_OP_VOID = "";
 
 	switch (shift) {
 	case ARM_SFT_ASR:
 	case ARM_SFT_ASR_REG:
+		return E_OP_ASR;
+
 	case ARM_SFT_LSR:
 	case ARM_SFT_LSR_REG:
 		return E_OP_SR;
@@ -549,6 +552,48 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return 0;
 }
 
+#define MATH32(opchar) arm32math(a, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 0)
+#define MATH32_NEG(opchar) arm32math(a, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 1)
+
+static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, char (*str)[32], const char *opchar, int negate) {
+	const char *dest = ARG(0);
+	const char *op1;
+	const char *op2;
+	bool rotate_imm = OPCOUNT() > 3;
+	if (OPCOUNT() > 2) {
+		 op1 = ARG(1);
+		 op2 = ARG(2);
+	} else {
+		op1 = dest;
+		op2 = ARG(1);
+	}
+	// right operand
+	if (rotate_imm) {
+		r_strbuf_appendf (&op->esil, "%s,", ARG(3));
+	}
+	if (strcmp(op2, "pc") == 0) {
+		r_strbuf_appendf (&op->esil, "%d,$$,+", pcdelta);
+	} else {
+		r_strbuf_appendf (&op->esil, "%s", op2);
+	}
+	if (rotate_imm) {
+		r_strbuf_appendf (&op->esil, ",>>>");
+	}
+	if (negate) {
+		r_strbuf_appendf (&op->esil, ",-1,^");
+	}
+	// left operand
+	if (strcmp(dest, op1) == 0) {
+		r_strbuf_appendf (&op->esil, ",%s,%s=", dest, opchar);
+	} else {
+		if (strcmp(op1, "pc") == 0) {
+			r_strbuf_appendf (&op->esil, ",%d,$$,+,%s,%s,=", pcdelta, opchar, dest);
+		} else {
+			r_strbuf_appendf (&op->esil, ",%s,%s,%s,=", op1, opchar, dest);
+		}
+	}
+}
+
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
 	const char *close_cond[3];
 	close_cond[0] = "\0";
@@ -644,18 +689,46 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM_INS_UDF:
 		r_strbuf_setf (&op->esil, "%s,TRAP", ARG(0));
 		break;
-	case ARM_INS_EOR:
-		if (OPCOUNT() == 2) {
-			r_strbuf_setf (&op->esil, "%s,%s,^=", ARG(1), ARG(0));
-		} else if (OPCOUNT() == 3) {
-		        r_strbuf_setf (&op->esil, "%s,%s,^,%s,=", ARG(2), ARG(1), ARG(0));
-		}
+	case ARM_INS_SADD16:
+	case ARM_INS_SADD8:
+	case ARM_INS_ADD:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		MATH32("+");
 		break;
-	case ARM_INS_ORR:
-		r_strbuf_setf (&op->esil, "%s,%s,|=", ARG(1), ARG(0));
+	case ARM_INS_SSUB16:
+	case ARM_INS_SSUB8:
+	case ARM_INS_SUBW:
+	case ARM_INS_SUB:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		MATH32("-");
+		break;
+	case ARM_INS_MUL:
+		op->type = R_ANAL_OP_TYPE_MUL;
+		MATH32("*");
 		break;
 	case ARM_INS_AND:
-		r_strbuf_setf (&op->esil, "%s,%s,&=", ARG(1), ARG(0));
+		op->type = R_ANAL_OP_TYPE_AND;
+		MATH32("&");
+		break;
+	case ARM_INS_ORR:
+		op->type = R_ANAL_OP_TYPE_OR;
+		MATH32("|");
+		break;
+	case ARM_INS_EOR:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		MATH32("^");
+		break;
+	case ARM_INS_ORN:
+		op->type = R_ANAL_OP_TYPE_OR;
+		MATH32_NEG("|");
+		break;
+	case ARM_INS_LSR:
+		op->type = R_ANAL_OP_TYPE_SHR;
+		MATH32(">>");
+		break;
+	case ARM_INS_LSL:
+		op->type = R_ANAL_OP_TYPE_SHL;
+		MATH32("<<");
 		break;
 	case ARM_INS_SVC:
 		r_strbuf_setf (&op->esil, "%s,$", ARG(0));
@@ -724,22 +797,6 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_CMN:
 		r_strbuf_appendf (&op->esil, "%s,%s,!=,$z,zf,=", ARG(1), ARG(0));
 		break;
-	case ARM_INS_LSL:
-		// suffix 'S' forces conditional flag to be updated
-		if (OPCOUNT() == 2) {
-			r_strbuf_appendf (&op->esil, "%s,%s,<<=", ARG(1), ARG(0));
-		} else if (OPCOUNT() == 3) {
-			r_strbuf_appendf (&op->esil, "%s,%s,<<,%s,=", ARG(2), ARG(1), ARG(0));
-		}
-		break;
-	case ARM_INS_LSR:
-		// suffix 'S' forces conditional flag to be updated
-		if (OPCOUNT() == 2) {
-			r_strbuf_appendf (&op->esil, "%s,%s,>>=", ARG(1), ARG(0));
-		} else if (OPCOUNT() == 3) {
-			r_strbuf_appendf (&op->esil, "%s,%s,>>,%s,=", ARG(2), ARG(1), ARG(0));
-		}
-		break;
 	case ARM_INS_B:
 		r_strbuf_appendf (&op->esil, "%s,pc,=%s", ARG(0), close_cond[close_type]);
 		break;
@@ -761,62 +818,6 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_CBNZ:
 		r_strbuf_appendf (&op->esil, "zf,!,?{,%s,pc,=", ARG(0));
-		break;
-	case ARM_INS_SSUB16:
-	case ARM_INS_SSUB8:
-	case ARM_INS_SUBW:
-	case ARM_INS_SUB:
-		if (!strcmp (ARG(2), "")) {
-			if (!strcmp (ARG(0), ARG(1))) {
-				r_strbuf_appendf (&op->esil, "0,%s,=", ARG(0));
-			} else {
-				r_strbuf_appendf (&op->esil, "%s,%s,-=",
-					ARG(1), ARG(0));
-			}
-		} else {
-			if (!strcmp (ARG(0), ARG(1))) {
-				r_strbuf_appendf (&op->esil, "%s,%s,-=", ARG(2), ARG(0));
-			} else {
-				r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
-					ARG(2), ARG(1), ARG(0));
-			}
-		}
-		break;
-	case ARM_INS_MUL:
-		r_strbuf_appendf (&op->esil, "%s,%s,*,%s,=", ARG(2), ARG(1), ARG(0));
-		break;
-	case ARM_INS_SADD16:
-	case ARM_INS_SADD8:
-	case ARM_INS_ADD:
-		if (!strcmp (ARG(2), "")) {
-			if (!strcmp (ARG(1), "pc")) {
-				int delta = thumb ? 4 : 8;
-				const char *pc = "$$";
-				r_strbuf_appendf (&op->esil,
-					"%d,%s,+,%s,+=",
-					delta, pc, ARG(0));
-			} else {
-				if (!strcmp (ARG(0), ARG(1))) {
-					r_strbuf_appendf (&op->esil, "2,%s,*=", ARG(0));
-				} else {
-					r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(1), ARG(0));
-				}
-			}
-		} else {
-			if (!strcmp (ARG(1), "pc")) {
-				const char *pc = "$$";
-				int delta = thumb ? 4 : 8;
-				r_strbuf_appendf (&op->esil, "%d,%s,+,%s,+,%s,=", delta, ARG(2), pc, ARG(0));
-			} else {
-				if (!strcmp (ARG(0), ARG(1))) {
-					r_strbuf_appendf (&op->esil, "%s,%s,+=", ARG(2), ARG(0));
-				} else if (!strcmp (ARG(2), "0")) {
-					r_strbuf_appendf (&op->esil, "%s,%s,=", ARG(1), ARG(0));
-				} else {
-					r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=", ARG(2), ARG(1), ARG(0));
-				}
-			}
-		}
 		break;
 		// TODO (maybe?): ARM Cortex allows for a STRD "double word" 64-bit store
 		// e.g. 'strD r1, r2, [r3]'
