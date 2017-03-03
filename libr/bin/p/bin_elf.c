@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -873,6 +873,17 @@ static ut64 size(RBinFile *arch) {
 
 #if !R_BIN_ELF64 && !R_BIN_CGC
 
+static void headers32(RBinFile *arch) {
+	const ut8 *buf = r_buf_get_at (arch->buf, 0, NULL);
+	eprintf ("0x00000000  ELF MAGIC   0x%08x\n", r_read_le32 (buf));
+	eprintf ("0x00000004  Type        0x%04x\n", r_read_le16 (buf + 4));
+	eprintf ("0x00000006  Machine     0x%04x\n", r_read_le16 (buf + 6));
+	eprintf ("0x00000008  Version     0x%08x\n", r_read_le32 (buf + 8));
+	eprintf ("0x0000000c  Entrypoint  0x%08x\n", r_read_le32 (buf + 12));
+	eprintf ("0x00000010  PhOff       0x%08x\n", r_read_le32 (buf + 16));
+	eprintf ("0x00000014  ShOff       0x%08x\n", r_read_le32 (buf + 20));
+}
+
 static int check_bytes(const ut8 *buf, ut64 length) {
 	return buf && length > 4 && memcmp (buf, ELFMAG, SELFMAG) == 0
 		&& buf[4] != 2;
@@ -1002,6 +1013,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.imports = &imports,
 	.info = &info,
 	.fields = &fields,
+	.header = &headers32,
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,

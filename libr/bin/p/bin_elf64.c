@@ -29,6 +29,18 @@ static ut64 get_elf_vaddr64 (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr)
 
 }
 
+static void headers64(RBinFile *arch) {
+	const ut8 *buf = r_buf_get_at (arch->buf, 0, NULL);
+	eprintf ("0x00000000  ELF64       0x%08x\n", r_read_le32 (buf));
+	eprintf ("0x00000010  Type        0x%04x\n", r_read_le16 (buf + 0x10));
+	eprintf ("0x00000012  Machine     0x%04x\n", r_read_le16 (buf + 0x12));
+	eprintf ("0x00000014  Version     0x%08x\n", r_read_le32 (buf + 0x14));
+	eprintf ("0x00000018  Entrypoint  0x%08"PFMT64x"\n", r_read_le64 (buf + 0x18));
+	eprintf ("0x00000020  PhOff       0x%08"PFMT64x"\n", r_read_le64 (buf + 0x20));
+	eprintf ("0x00000028  ShOff       0x%08"PFMT64x"\n", r_read_le64 (buf + 0x28));
+}
+
+
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
@@ -130,6 +142,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.minstrlen = 4,
 	.info = &info,
 	.fields = &fields,
+	.header = &headers64,
 	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
