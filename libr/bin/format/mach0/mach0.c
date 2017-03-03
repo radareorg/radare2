@@ -2304,7 +2304,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t)* bin) {
 	return addr;
 }
 
-void MACH0_(headerfields)(RBinFile *file) {
+void MACH0_(mach_headerfields)(RBinFile *file) {
 	RBuffer *buf = file->buf;
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(buf);
@@ -2342,7 +2342,7 @@ void MACH0_(headerfields)(RBinFile *file) {
 	}
 }
 
-RList* MACH0_(fields)(RBinFile *arch) {
+RList* MACH0_(mach_fields)(RBinFile *arch) {
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr_from_bytes)(arch->buf);
 	if (!mh) {
 		return NULL;
