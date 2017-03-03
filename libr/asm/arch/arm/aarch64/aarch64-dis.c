@@ -151,7 +151,10 @@ sign_extend (aarch64_insn value, unsigned i)
 {
   uint32_t ret = value;
 
-  assert (i < 32);
+  if (i >= 32) {
+    // assert (i < 32);
+    return 0;
+  }
   if ((value >> i) & 0x1)
     {
       uint32_t val = (uint32_t)(-1) << i;
