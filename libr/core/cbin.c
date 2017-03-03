@@ -2167,7 +2167,7 @@ static int bin_fields(RCore *r, int mode, int va) {
 			r_cons_printf ("}");
 		} else if (IS_MODE_NORMAL (mode)) {
 			const bool haveComment = (field->comment && *field->comment);
-			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s  %s%s\n",
+			r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
 				field->vaddr, field->paddr, field->name,
 				haveComment? "; ": "",
 				haveComment? field->comment: "");
