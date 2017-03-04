@@ -212,3 +212,6 @@ Disassemble?! No Disassemble Johnny No. 5!!!
 You crackme up!
 Welcome, "reenigne"
 Search returned no hits. Did you mean 'Misassemble'?
+A nullbyte walks into a bar and says ""
+This asan is defect.
+Pufferüberlauf.

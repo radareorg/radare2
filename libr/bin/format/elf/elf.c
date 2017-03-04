@@ -130,7 +130,7 @@ static int init_phdr(ELFOBJ *bin) {
 	ut32 phdr_size;
 	ut8 phdr[sizeof (Elf_(Phdr))] = {0};
 	int i, j, len;
-	if (!bin->ehdr.e_phnum) {
+	if (!bin->ehdr.e_phnum || !bin->size) {
 		return false;
 	}
 	if (bin->phdr) {

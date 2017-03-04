@@ -3,8 +3,8 @@
 #include <r_userconf.h>
 #include <r_util.h>
 
-#ifndef R2_GITTAP
-#define R2_GITTAP ""
+#ifndef R2_BRANCH
+#define R2_BRANCH ""
 #endif
 
 #ifndef R2_GITTIP
@@ -23,7 +23,7 @@ static int blob_version(const char *program) {
 			(R_SYS_BITS & 8)? 64: 32,
 			*R2_GITTAP ? R2_GITTAP: "");
 	if (*R2_GITTIP) {
-		printf ("commit: "R2_GITTIP" build: "R2_BIRTH"\n");
+		printf ("commit: "R2_GITTIP R2_BRANCH " build: "R2_BIRTH"\n");
 	}
 	return 0;
 }

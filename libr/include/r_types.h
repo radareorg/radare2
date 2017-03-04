@@ -23,6 +23,10 @@
 #undef R_FREE
 #endif
 
+#ifdef R_FREE_ALL
+#undef R_FREE_ALL
+#endif
+
 // HACK to fix capstone-android-mips build
 #undef mips
 #define mips mips
@@ -304,6 +308,20 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
 #define R_FREE(x) { free(x); x = NULL; }
+
+/* ripped from https://stackoverflow.com/questions/20991229/how-to-freeing-pointers-using-macro-in-c */
+#define R_FREE_ALL(...) \
+do { \
+    int i=0;\
+    void *pta[] = {__VA_ARGS__}; \
+    for(i=0; i < sizeof(pta)/sizeof(void*); i++) \
+    { \
+        if (pta[i])\
+        free(pta[i]); \
+        pta[i]=NULL;\
+    }\
+} while(0)
+
 
 #if __WINDOWS__
 #define HAVE_REGEXP 0
