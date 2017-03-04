@@ -91,12 +91,113 @@ static void openSignature(RCore *core, const char *str) {
 	}
 }
 
+static void fcn_zig_generate_fcn(RCore *core, RAnalFunction *fcn, int minzlen, int maxzlen, bool exact) {
+	RAnalOp *op = NULL;
+	int fcnlen = 0, oplen = 0, idx = 0, i;
+	ut8 *buf = NULL;
+	char *outbuf = NULL;
+	const char *fcnname = NULL;
+
+	fcnlen = r_anal_fcn_realsize (fcn);
+	if (!(buf = calloc (1, fcnlen))) {
+		eprintf ("Cannot allocate buffer");
+		goto exit_func;
+	}
+
+	if (r_io_read_at (core->io, fcn->addr, buf, fcnlen) != fcnlen) {
+		eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcn->addr);
+		goto exit_func;
+	}
+
+	RFlagItem *flag = r_flag_get_i (core->flags, fcn->addr);
+	if (!flag) {
+		eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcn->addr);
+		goto exit_func;
+	}
+	fcnname = flag->name;
+
+	if (!(op = r_anal_op_new ())) {
+		eprintf ("Cannot allocate RAnalOp");
+		goto exit_func;
+	}
+
+	while (idx < fcnlen && idx < maxzlen) {
+		if (exact) {
+			outbuf = r_str_concatf (outbuf, "%02x", buf[idx]);
+			idx++;
+		} else {
+			oplen = r_anal_op (core->anal, op, fcn->addr + idx, buf + idx, fcnlen - idx);
+			if (oplen < 1) {
+				break;
+			}
+			for (i = 0; i < op->nopcode; i++) {
+				outbuf = r_str_concatf (outbuf, "%02x", buf[idx + i]);
+			}
+			for (i = 0; i < R_MAX (oplen - op->nopcode, 0); i++) {
+				outbuf = r_str_concat (outbuf, "..");
+			}
+			idx += oplen;
+		}
+	}
+
+	if (idx < minzlen) {
+		eprintf ("Omitting %s zignature is too small. Length is %d. Check zign.min.\n", fcnname, idx);
+		goto exit_func;
+	}
+
+	r_cons_printf ("zb %s %s", fcnname, outbuf);
+	r_cons_newline ();
+
+exit_func:
+	free (buf);
+	free (outbuf);
+	r_anal_op_free (op);
+}
+
+static void fcn_zig_generate(RCore *core, const char *namespace, const char *filename, bool exact) {
+	RAnalFunction *fcni = NULL;
+	RListIter *iter = NULL;
+	int fdold = r_cons_singleton ()->fdout, fd = -1;
+	char *ptr = NULL;
+	int minzlen = r_config_get_i (core->config, "zign.min");
+	int maxzlen = r_config_get_i (core->config, "zign.max");
+
+	if (filename) {
+		fd = r_sandbox_open (filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
+		if (fd == -1) {
+			eprintf ("Cannot open %s in read-write\n", ptr + 1);
+			return;
+		}
+		r_cons_singleton ()->fdout = fd;
+		r_cons_strcat ("# Signatures\n");
+	}
+
+	r_cons_printf ("zn %s\n", namespace);
+	r_cons_break_push (NULL, NULL);
+
+	r_list_foreach (core->anal->fcns, iter, fcni) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		fcn_zig_generate_fcn (core, fcni, minzlen, maxzlen, exact);
+	}
+
+	r_cons_break_pop ();
+	r_cons_strcat ("zn-\n");
+
+	if (filename) {
+		r_cons_flush ();
+		r_cons_singleton ()->fdout = fdold;
+		close (fd);
+	}
+}
+
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RAnalFunction *fcni;
 	RListIter *iter;
 	RSignItem *item;
-	int i, fd = -1, len;
+	int i, len;
 	char *ptr, *name;
 
 	switch (*input) {
@@ -135,95 +236,17 @@ static int cmd_zign(void *data, const char *input) {
 	case 'G':
 	case 'g':
 		if (input[1] == ' ' && input[2]) {
-			int fdold = r_cons_singleton ()->fdout;
-			int minzlen = r_config_get_i (core->config, "zign.min");
-			int maxzlen = r_config_get_i (core->config, "zign.max");
+			bool exact = (*input == 'G');
+			const char* namespace = input + 2;
+			const char* filename = NULL;
+
 			ptr = strchr (input + 2, ' ');
 			if (ptr) {
 				*ptr = '\0';
-				fd = r_sandbox_open (ptr+1, O_RDWR|O_CREAT|O_TRUNC, 0644);
-				if (fd == -1) {
-					eprintf ("Cannot open %s in read-write\n", ptr+1);
-					return false;
-				}
-				r_cons_singleton ()->fdout = fd;
-				r_cons_strcat ("# Signatures\n");
+				filename = ptr + 1;
 			}
-			r_cons_printf ("zn %s\n", input + 2);
-			r_cons_break_push (NULL, NULL);
-			r_list_foreach (core->anal->fcns, iter, fcni) {
-				RAnalOp *op = NULL;
-				int zlen, len, oplen, idx = 0;
-				ut8 *buf;
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				len = r_anal_fcn_realsize (fcni);
-				if (!(buf = calloc (1, len))) {
-					r_cons_break_pop ();
-					return false;
-				}
-				/* XXX this is wrong. we must read for each basic block not the whole function length */
-				if (r_io_read_at (core->io, fcni->addr, buf, len) == len) {
-					RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
-					if (flag) {
-						name = flag->name;
-						if (!(op = r_anal_op_new ())) {
-							free (buf);
-							r_cons_break_pop ();
-							return false;
-						}
-						zlen = 0;
-						if (input[0] == 'G') {
-							zlen = len;
-						} else {
-							while (idx < len) {
-								oplen = r_anal_op (core->anal, op, fcni->addr + idx, buf + idx, len - idx);
-								if (oplen < 1) {
-									break;
-								}
-								if (op->nopcode) {
-									int left = R_MAX (oplen - op->nopcode, 0);
-									memset (buf + idx + op->nopcode, 0, left);
-								}
-								zlen += op->nopcode;
-								idx += oplen;
-							}
-						}
-						if (zlen > minzlen && maxzlen > zlen) {
-							r_cons_printf ("zb %s ", name);
-							for (i = 0; i < len; i++) {
-								/* XXX assuming buf[i] == 0 is wrong because mask != data */
-								if (!buf[i]) {
-									r_cons_printf ("..");
-								} else {
-									r_cons_printf ("%02x", buf[i]);
-								}
-							}
-							r_cons_newline ();
-						} else {
-							if (zlen <= minzlen) {
-								eprintf ("Omitting %s zignature is too small. Length is %d. Check zign.min.\n", name, zlen);
-							} else {
-								eprintf ("Omitting %s zignature is too big. Length is %d. Check zign.max.\n", name, zlen);
-							}
-						}
-					} else {
-						eprintf ("Unnamed function at 0x%08"PFMT64x"\n", fcni->addr);
-					}
-				} else {
-					eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcni->addr);
-				}
-				free (buf);
-				r_anal_op_free (op);
-			}
-			r_cons_break_pop ();
-			r_cons_strcat ("zn-\n");
-			if (ptr) {
-				r_cons_flush ();
-				r_cons_singleton ()->fdout = fdold;
-				close (fd);
-			}
+
+			fcn_zig_generate (core, namespace, filename, exact);
 		} else {
 			eprintf ("Usage: zg libc [libc.sig]\n");
 		}
@@ -272,7 +295,6 @@ static int cmd_zign(void *data, const char *input) {
 			// TODO: parse arg0 and arg1
 			ut64 ini, fin;
 			RList *list;
-			RListIter *iter;
 			RIOMap *map;
 
 			if (input[1]) {
