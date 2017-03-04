@@ -6,7 +6,7 @@ PREVIOUS_RELEASE=1.2.0
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm)
-BUILDSEC=$(shell date "+__%H:%M:%S")
+R2_BRANCH=$(shell git branch| cut  -d" " -f 2)
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
 USE_ZIP=YES
 ZIP=zip
@@ -57,19 +57,20 @@ all: plugins.cfg libr/include/r_version.h
 GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 ifndef SOURCE_DATE_EPOCH
-GIT_NOW=$(shell date +%Y-%m-%d)
+GIT_NOW=$(shell date +%Y-%m-%d__%H:%M:%S"; echo "branch:"; git branch| cut  -d" " -f 2)
 else
-GIT_NOW=$(shell date --utc --date="@$$SOURCE_DATE_EPOCH" +%Y-%m-%d)
+GIT_NOW=$(shell date --utc --date="@$$SOURCE_DATE_EPOCH" +%Y-%m-%d__%H:%M:%S"; echo "branch:"; git branch| cut  -d" " -f 2)
 endif
 
 libr/include/r_version.h:
 	@echo Generating r_version.h file
 	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
+        @echo $(Q)#define R2_BRANCH$(Q) >> $@.tmp
 	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
 	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
 	@echo $(Q)#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(BUILDSEC)$(ESC)"$(Q) >> $@.tmp
+	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#endif$(Q) >> $@.tmp
 	@mv -f $@.tmp $@
 	@rm -f $@.tmp
