@@ -158,7 +158,7 @@ R_API void r_sys_backtrace(void) {
 #ifdef HAVE_BACKTRACE
 	void *array[10];
 	size_t size = backtrace (array, 10);
-	printf ("Backtrace %zd stack frames.\n", size);
+	eprintf ("Backtrace %zd stack frames.\n", size);
 	backtrace_symbols_fd (array, size, 2);
 #elif __APPLE__
 	void **fp = (void **) __builtin_frame_address (0);

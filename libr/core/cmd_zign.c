@@ -100,7 +100,7 @@ static void fcn_zig_generate_fcn(RCore *core, RAnalFunction *fcn, int minzlen, i
 
 	fcnlen = r_anal_fcn_realsize (fcn);
 	if (!(buf = calloc (1, fcnlen))) {
-		eprintf ("Cannot allocate buffer");
+		eprintf ("Cannot allocate buffer\n");
 		goto exit_func;
 	}
 
@@ -117,7 +117,7 @@ static void fcn_zig_generate_fcn(RCore *core, RAnalFunction *fcn, int minzlen, i
 	fcnname = flag->name;
 
 	if (!(op = r_anal_op_new ())) {
-		eprintf ("Cannot allocate RAnalOp");
+		eprintf ("Cannot allocate RAnalOp\n");
 		goto exit_func;
 	}
 
