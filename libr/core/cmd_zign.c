@@ -91,10 +91,9 @@ static void openSignature(RCore *core, const char *str) {
 	}
 }
 
-static bool fcn_zig_generate_fcn(RCore *core, RAnalFunction *fcn, int minzlen, int maxzlen, bool exact) {
+static void fcn_zig_generate_fcn(RCore *core, RAnalFunction *fcn, int minzlen, int maxzlen, bool exact) {
 	RAnalOp *op = NULL;
 	int fcnlen = 0, oplen = 0, idx = 0, i;
-	bool retval = true;
 	ut8 *buf = NULL;
 	char *outbuf = NULL;
 	const char *fcnname = NULL;
@@ -102,13 +101,11 @@ static bool fcn_zig_generate_fcn(RCore *core, RAnalFunction *fcn, int minzlen, i
 	fcnlen = r_anal_fcn_realsize (fcn);
 	if (!(buf = calloc (1, fcnlen))) {
 		eprintf ("Cannot allocate buffer");
-		retval = false;
 		goto exit_func;
 	}
 
 	if (r_io_read_at (core->io, fcn->addr, buf, fcnlen) != fcnlen) {
 		eprintf ("Cannot read at 0x%08"PFMT64x"\n", fcn->addr);
-		retval = false;
 		goto exit_func;
 	}
 
@@ -121,7 +118,6 @@ static bool fcn_zig_generate_fcn(RCore *core, RAnalFunction *fcn, int minzlen, i
 
 	if (!(op = r_anal_op_new ())) {
 		eprintf ("Cannot allocate RAnalOp");
-		retval = false;
 		goto exit_func;
 	}
 
@@ -156,15 +152,12 @@ exit_func:
 	free (buf);
 	free (outbuf);
 	r_anal_op_free (op);
-
-	return retval;
 }
 
-static bool fcn_zig_generate(RCore *core, const char *namespace, const char *filename, bool exact) {
+static void fcn_zig_generate(RCore *core, const char *namespace, const char *filename, bool exact) {
 	RAnalFunction *fcni = NULL;
 	RListIter *iter = NULL;
 	int fdold = r_cons_singleton ()->fdout, fd = -1;
-	bool retval = true;
 	char *ptr = NULL;
 	int minzlen = r_config_get_i (core->config, "zign.min");
 	int maxzlen = r_config_get_i (core->config, "zign.max");
@@ -173,7 +166,7 @@ static bool fcn_zig_generate(RCore *core, const char *namespace, const char *fil
 		fd = r_sandbox_open (filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
 		if (fd == -1) {
 			eprintf ("Cannot open %s in read-write\n", ptr + 1);
-			return false;
+			return;
 		}
 		r_cons_singleton ()->fdout = fd;
 		r_cons_strcat ("# Signatures\n");
@@ -186,9 +179,7 @@ static bool fcn_zig_generate(RCore *core, const char *namespace, const char *fil
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		if (!(retval = fcn_zig_generate_fcn (core, fcni, minzlen, maxzlen, exact))) {
-			break;
-		}
+		fcn_zig_generate_fcn (core, fcni, minzlen, maxzlen, exact);
 	}
 
 	r_cons_break_pop ();
@@ -199,8 +190,6 @@ static bool fcn_zig_generate(RCore *core, const char *namespace, const char *fil
 		r_cons_singleton ()->fdout = fdold;
 		close (fd);
 	}
-
-	return retval;
 }
 
 static int cmd_zign(void *data, const char *input) {
