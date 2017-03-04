@@ -169,7 +169,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 				if (map->name && strstr (map->name, "heap")) {
 					types |= R_ANAL_ADDR_TYPE_HEAP;
 				}
-				if (map->name && strstr (map->name, "stack")) { 
+				if (map->name && strstr (map->name, "stack")) {
 					types |= R_ANAL_ADDR_TYPE_STACK;
 				}
 				break;
@@ -188,7 +188,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 					// TODO: we should identify which maps come from the program or other
 					//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					// find function those sections should be created by hand or esil init
-					if (strstr (ios->name, "heap")) { 
+					if (strstr (ios->name, "heap")) {
 						types |= R_ANAL_ADDR_TYPE_HEAP;
 					}
 					if (strstr (ios->name, "stack")) {
@@ -217,7 +217,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		for (i = 0; i < 8; i++) {
 			ut8 n = (addr >> (i * 8)) & 0xff;
 			if (n && !IS_PRINTABLE (n)) {
-				not_ascii = 1; 
+				not_ascii = 1;
 			}
 		}
 		if (!not_ascii) {
@@ -657,7 +657,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		for (i = 0; i < nexti; i++) {
 			if (!next[i] || r_anal_get_fcn_in (core->anal, next[i], 0)) {
 				continue;
-			}		
+			}
 			r_core_anal_fcn (core, next[i], from, 0, depth - 1);
 		}
 		free (next);
@@ -1656,7 +1656,7 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 			if ((bbi->type & R_ANAL_BB_TYPE_HEAD)) {
 				r_cons_printf ("h");
 			}
-			if ((bbi->type & R_ANAL_BB_TYPE_LAST)) { 
+			if ((bbi->type & R_ANAL_BB_TYPE_LAST)) {
 				r_cons_printf ("l");
 			}
 		} else {
@@ -1710,7 +1710,7 @@ static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 		}
 		fcn->meta.numcallrefs = numcallrefs;
 		refs = r_anal_xrefs_get (anal, fcn->addr);
-		fcn->meta.numrefs = refs? refs->length: 0; 
+		fcn->meta.numrefs = refs? refs->length: 0;
 		r_list_free (refs);
 
 		// Determine the bounds of the functions address space
@@ -1747,7 +1747,7 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 			free (name);
 			name = tmp;
 		}
-	} 
+	}
 	return name;
 }
 
@@ -2452,7 +2452,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			     (bckwrds && i > 0);
 			     bckwrds ? i-- : i++) {
 				if (r_cons_is_breaked ()) {
-					break;	
+					break;
 				}
 				r_anal_op_fini (&op);
 				if (!r_anal_op (core->anal, &op, at + i,
@@ -2658,7 +2658,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 						r_flag_space_pop (core->flags);
 					}
 					if (len > 0) {
-						r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,  
+						r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,
 								xref_to + len, (const char *)str_string);
 					}
 					free (str_string);
@@ -3349,6 +3349,107 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	return 0;
 }
 
+static void getpcfromstack_x86(RCore *core, RAnalEsil *esil) {
+	ut64 cur;
+	ut64 addr;
+	ut64 size;
+	int idx;
+	RAnalEsil esil_cpy;
+	RAnalOp op = {0};
+	RAnalFunction *fcn = NULL;
+	ut8 *buf = NULL;
+	char *tmp_esil_str = NULL;
+	int tmp_esil_str_len;
+	const char *esilstr;
+	const int maxaddrlen = 20;
+	if (!esil) {
+		return;
+	}
+	// Only for x86 as of now
+	if (strncmp (core->anal->cur->arch, "x86", 3)) {
+		return;
+	}
+
+	memcpy (&esil_cpy, esil, sizeof (esil_cpy));
+	addr = cur = esil_cpy.cur;
+	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	if (!fcn) {
+		return;
+	}
+	 
+	size = r_anal_fcn_size (fcn);
+	if (size <= 0) {
+		return;
+	}
+
+	buf = malloc (size + 2);
+	if (!buf) {
+		perror ("malloc");
+		return;
+	}
+	 
+	r_io_read_at (core->io, addr, buf, size + 1);
+
+	// Hardcoding for 2 instructions (mov e_p,[esp];ret). More work needed
+	idx = 0;
+	R_FREE (op.mnemonic);
+	if (!r_anal_op (core->anal, &op, cur, buf + idx, size - idx)) {
+		free (buf);
+		return;
+	}
+	 
+	if (op.size < 1 || (op.type != R_ANAL_OP_TYPE_MOV && op.type != R_ANAL_OP_TYPE_CMOV)) {
+		free (buf);
+		return;
+	}
+	 
+	r_asm_set_pc (core->assembler, cur);
+	esilstr = R_STRBUF_SAFEGET (&op.esil);
+
+	// Ugly code
+	// This is a hack, since ESIL doesn't always preserve values pushed on the stack. That probably needs to be rectified
+	if (!esilstr || !*esilstr || (strncmp (esilstr, "esp,[4]", 7) && strncmp (esilstr, "rsp,[8]", 7))) {
+		free (buf);
+		return;
+	}
+	tmp_esil_str_len = strlen (esilstr) + maxaddrlen - 5;
+	tmp_esil_str = (char*) malloc (tmp_esil_str_len);
+	if (!tmp_esil_str) {
+		free (buf);
+		return;
+	}
+	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%llu%s", esil_cpy.old, &esilstr[7]);
+	idx += op.size;
+	r_anal_esil_set_pc (&esil_cpy, cur);
+	r_anal_esil_parse (&esil_cpy, tmp_esil_str);
+	r_anal_esil_stack_free (&esil_cpy);
+	free (tmp_esil_str);
+
+	cur = addr + idx;
+	R_FREE(op.mnemonic);
+	if (!r_anal_op (core->anal, &op, cur, buf + idx, size - idx)) {
+		free (buf);
+		return;
+	}
+	if (op.size < 1 || (op.type != R_ANAL_OP_TYPE_RET && op.type != R_ANAL_OP_TYPE_CRET)) {
+		free (buf);
+		return;
+	}
+	r_asm_set_pc (core->assembler, cur);
+
+	esilstr = R_STRBUF_SAFEGET (&op.esil);
+	r_anal_esil_set_pc (&esil_cpy, cur);
+	if (!esilstr || !*esilstr) {
+		free (buf);
+		return;
+	}
+	r_anal_esil_parse (&esil_cpy, esilstr);
+	r_anal_esil_stack_free (&esil_cpy);
+
+	free (buf);
+	memcpy (esil, &esil_cpy, sizeof (esil_cpy));
+}
+
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	RAnalEsil *ESIL = core->anal->esil;
@@ -3428,7 +3529,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 	}
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
-	//this is necessary for the hook to read the id of analop 
+	//this is necessary for the hook to read the id of analop
 	ESIL->user = &op;
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	if (!core->io->cached) {
@@ -3500,16 +3601,16 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			(void)r_anal_esil_parse (ESIL, esilstr);
 			// looks like ^C is handled by esil_parse !!!!
 			//r_anal_esil_dumpstack (ESIL);
-			r_anal_esil_stack_free (ESIL);
+			//r_anal_esil_stack_free (ESIL);
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
 				if ((target && op.ptr == ntarget) || !target) {
 					if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
 						if (cfg_anal_strings) {
-							if (CHECKREF(op.ptr)) {
-								r_anal_ref_add (core->anal, op.ptr, cur, 'd');
-								if ((target && op.ptr == ntarget) || !target) {
-									add_string_ref (core, op.ptr);
+							if (CHECKREF(ESIL->cur)) {
+								r_anal_ref_add (core->anal, ESIL->cur, cur, 'd');
+								if ((target && ESIL->cur == ntarget) || !target) {
+									add_string_ref (core, ESIL->cur);
 								}
 							}
 						}
@@ -3596,6 +3697,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						if (myvalid (core->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'C');
 						}
+						ESIL->old = cur + op.size;
+						getpcfromstack_x86(core, ESIL);
 					}
 				}
 				break;
@@ -3622,6 +3725,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				}
 				break;
 			}
+			r_anal_esil_stack_free (ESIL);
 		}
 	}
 	free (buf);
