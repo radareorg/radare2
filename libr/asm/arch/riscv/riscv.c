@@ -287,7 +287,7 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 
 static int
 riscv_disassemble(RAsm *a, RAsmOp *rop, insn_t word, int xlen) {
-	const bool no_alias = true;
+	const bool no_alias = false;
 	const struct riscv_opcode *op = get_opcode (word);
 	if (!op) {
 		return -1;

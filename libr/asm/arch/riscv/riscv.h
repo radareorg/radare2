@@ -1,23 +1,22 @@
 /* riscv.h.  RISC-V opcode list for GDB, the GNU debugger.
-   Copyright 2011
-   Free Software Foundation, Inc.
+   Copyright (C) 2011-2017 Free Software Foundation, Inc.
    Contributed by Andrew Waterman
 
-This file is part of GDB, GAS, and the GNU binutils.
+   This file is part of GDB, GAS, and the GNU binutils.
 
-GDB, GAS, and the GNU binutils are free software; you can redistribute
-them and/or modify them under the terms of the GNU General Public
-License as published by the Free Software Foundation; either version
-1, or (at your option) any later version.
+   GDB, GAS, and the GNU binutils are free software; you can redistribute
+   them and/or modify them under the terms of the GNU General Public
+   License as published by the Free Software Foundation; either version
+   3, or (at your option) any later version.
 
-GDB, GAS, and the GNU binutils are distributed in the hope that they
-will be useful, but WITHOUT ANY WARRANTY; without even the implied
-warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
-the GNU General Public License for more details.
+   GDB, GAS, and the GNU binutils are distributed in the hope that they
+   will be useful, but WITHOUT ANY WARRANTY; without even the implied
+   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+   the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this file; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
+   You should have received a copy of the GNU General Public License
+   along with this program; see the file COPYING3. If not,
+   see <http://www.gnu.org/licenses/>.  */
 
 #ifndef _RISCV_H_
 #define _RISCV_H_
@@ -42,12 +41,15 @@ static inline unsigned int riscv_insn_length (insn_t insn)
   return 2;
 }
 
-static const char * const riscv_rm[8] = {
+static const char * const riscv_rm[8] =
+{
   "rne", "rtz", "rdn", "rup", "rmm", 0, 0, "dyn"
 };
-static const char * const riscv_pred_succ[16] = {
+
+static const char * const riscv_pred_succ[16] =
+{
   0,   "w",  "r",  "rw",  "o",  "ow",  "or",  "orw",
-  "i", "iw", "ir", "irw", "io", "iow", "ior", "iorw",
+  "i", "iw", "ir", "irw", "io", "iow", "ior", "iorw"
 };
 
 #define RVC_JUMP_BITS 11
@@ -56,7 +58,7 @@ static const char * const riscv_pred_succ[16] = {
 #define RVC_BRANCH_BITS 8
 #define RVC_BRANCH_REACH ((1ULL << RVC_BRANCH_BITS) * RISCV_BRANCH_ALIGN)
 
-#define RV_X(x, s, n) (((x) >> (s)) & ((1 << (n)) - 1))
+#define RV_X(x, s, n)  (((x) >> (s)) & ((1 << (n)) - 1))
 #define RV_IMM_SIGN(x) (-(((x) >> 31) & 1))
 
 #define EXTRACT_ITYPE_IMM(x) \
@@ -288,16 +290,8 @@ struct riscv_opcode
   unsigned long pinfo;
 };
 
-#define INSN_WRITE_GPR_D	0x00000001
-#define INSN_WRITE_GPR_RA	0x00000004
-#define INSN_WRITE_FPR_D	0x00000008
-#define INSN_READ_GPR_S		0x00000040
-#define INSN_READ_GPR_T		0x00000080
-#define INSN_READ_FPR_S		0x00000100
-#define INSN_READ_FPR_T		0x00000200
-#define INSN_READ_FPR_R		0x00000400
-/* Instruction is a simple alias (I.E. "move" for daddu/addu/or).  */
-#define	INSN_ALIAS		0x00001000
+/* Instruction is a simple alias (e.g. "mv" for "addi").  */
+#define	INSN_ALIAS		0x00000001
 /* Instruction is actually a macro.  It should be ignored by the
    disassembler, and requires special treatment by the assembler.  */
 #define INSN_MACRO		0xffffffff
@@ -329,8 +323,10 @@ enum
   M_SD,
   M_FLW,
   M_FLD,
+  M_FLQ,
   M_FSW,
   M_FSD,
+  M_FSQ,
   M_CALL,
   M_J,
   M_LI,
@@ -344,10 +340,7 @@ extern const char * const riscv_gpr_names_abi[NGPR];
 extern const char * const riscv_fpr_names_numeric[NFPR];
 extern const char * const riscv_fpr_names_abi[NFPR];
 
-extern const struct riscv_opcode riscv_builtin_opcodes[];
-extern const int bfd_riscv_num_builtin_opcodes;
-extern struct riscv_opcode *riscv_opcodes;
-extern int bfd_riscv_num_opcodes;
+extern const struct riscv_opcode riscv_opcodes[];
 #endif
 #define NUMOPCODES bfd_riscv_num_opcodes
 
