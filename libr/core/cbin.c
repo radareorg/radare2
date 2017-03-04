@@ -2675,6 +2675,11 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 					r_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
 				}
 			}
+			if ((flagname = strstr (dup, ".size"))) {
+				*flagname = 0;
+				flagname = dup;
+				r_cons_printf ("fl %s %s\n", flagname, v);
+			}
 			free (dup);
 		}
 		free (offset);
