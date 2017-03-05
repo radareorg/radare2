@@ -39,16 +39,26 @@ static Sdb* get_sdb (RBinObject *o) {
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-
+	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
 	if (check_bytes (buf, sz)) {
 		int i = 0;
 		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
 		    return NULL;
 		}
-		const unsigned char* machine = arch->buf->buf + r_offsetof(struct vsf_hdr, machine);
+		offset = r_offsetof(struct vsf_hdr, machine);
+		if (offset > arch->size) {
+			free (res);
+			return NULL;
+		}
+		const unsigned char* machine = arch->buf->buf + offset;
 		for (; i < MACHINES_MAX; i++) {
-			if (!strncmp((const char*)machine, _machines[i].name, strlen(_machines[i].name))) {
+			if (offset + strlen (_machines[i].name) > arch->size) {
+				free (res);
+				return NULL;
+			}
+			if (!strncmp ((const char *)machine, _machines[i].name,
+				      strlen (_machines[i].name))) {
 				res->machine_idx = i;
 				break;
 			}
@@ -59,7 +69,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 			return NULL;
 		}
 		// read all VSF modules
-		int offset = sizeof(struct vsf_hdr);
+		offset = sizeof (struct vsf_hdr);
 		while (offset < sz) {
 			struct vsf_module module;
 			int read = r_buf_fread_at (arch->buf, offset, (ut8*)&module, "16ccci", 1);
