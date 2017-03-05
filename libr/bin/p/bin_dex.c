@@ -326,7 +326,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		return;
 	}
 
-	struct dex_debug_local_t debug_locals[regsz];
+	struct dex_debug_local_t debug_locals[regsz + 1];
 	memset (debug_locals, 0, sizeof (struct dex_debug_local_t) * regsz);
 	if (!(MA & 0x0008)) {
 		debug_locals[argReg].name = "this";
