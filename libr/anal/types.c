@@ -395,7 +395,8 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 			return NULL;
 		}
 	}
-	while(slen > 4 &&  str[offset+3] == '.') { // strip r2 prefixes (sym, sym.imp, etc')
+	// strip r2 prefixes (sym, sym.imp, etc')
+	while(slen > 4 && (offset + 3 < slen ) && str[offset + 3] == '.') { 
 		offset+=4;
 	}
 	slen -= offset;
