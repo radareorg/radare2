@@ -3365,10 +3365,6 @@ static void getpcfromstack_x86(RCore *core, RAnalEsil *esil) {
 	if (!esil) {
 		return;
 	}
-	// Only for x86 as of now
-	if (strncmp (core->anal->cur->arch, "x86", 3)) {
-		return;
-	}
 
 	memcpy (&esil_cpy, esil, sizeof (esil_cpy));
 	addr = cur = esil_cpy.cur;
@@ -3607,7 +3603,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				if ((target && op.ptr == ntarget) || !target) {
 					if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
 						if (cfg_anal_strings) {
-							if (CHECKREF(ESIL->cur)) {
+							if (CHECKREF (ESIL->cur)) {
 								r_anal_ref_add (core->anal, ESIL->cur, cur, 'd');
 								if ((target && ESIL->cur == ntarget) || !target) {
 									add_string_ref (core, ESIL->cur);
@@ -3622,7 +3618,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				if (core->anal->bits == 64 && core->anal->cur && !strcmp (core->anal->cur->arch, "arm")) {
 					ut64 dst = ESIL->cur;
 					if ((target && dst == ntarget) || !target) {
-						if (CHECKREF(dst)) {
+						if (CHECKREF (dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'd');
 						}
 					}
@@ -3641,7 +3637,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) && myvalid (mycore->io, dst)) {
 							RFlagItem *f;
 							char *str;
-							if (CHECKREF(dst) || CHECKREF(cur)) {
+							if (CHECKREF (dst) || CHECKREF (cur)) {
 								r_anal_ref_add (core->anal, dst, cur, 'd');
 								if (cfg_anal_strings) {
 									add_string_ref (core, dst);
@@ -3661,7 +3657,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			case R_ANAL_OP_TYPE_LOAD:
 				{
 					ut64 dst = esilbreak_last_read;
-					if (dst != UT64_MAX && CHECKREF(dst)) {
+					if (dst != UT64_MAX && CHECKREF (dst)) {
 						if (myvalid (mycore->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'd');
 							if (cfg_anal_strings) {
@@ -3670,7 +3666,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						}
 					}
 					dst = esilbreak_last_data;
-					if (dst != UT64_MAX && CHECKREF(dst)) {
+					if (dst != UT64_MAX && CHECKREF (dst)) {
 						if (myvalid (mycore->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'd');
 							if (cfg_anal_strings) {
@@ -3683,7 +3679,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			case R_ANAL_OP_TYPE_JMP:
 				{
 					ut64 dst = op.jump;
-					if (CHECKREF(dst)) {
+					if (CHECKREF (dst)) {
 						if (myvalid (core->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'c');
 						}
@@ -3697,8 +3693,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						if (myvalid (core->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'C');
 						}
-						ESIL->old = cur + op.size;
-						getpcfromstack_x86(core, ESIL);
+						// Only for x86 as of now
+						if (!strncmp (core->anal->cur->arch, "x86", 3)) {
+							ESIL->old = cur + op.size;
+							getpcfromstack_x86 (core, ESIL);
+						}
 					}
 				}
 				break;
@@ -3713,7 +3712,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					if (dst == UT64_MAX) {
 						dst = r_reg_getv (core->anal->reg, pcname);
 					}
-					if (CHECKREF(dst)) {
+					if (CHECKREF (dst)) {
 						if (myvalid (core->io, dst)) {
 							RAnalRefType ref =
 								(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL
