@@ -61,7 +61,7 @@ static void MD5Final (ut8 [16], MD5_CTX *);
 }
 
 /* Encodes input (ut32) into output (ut8). Assumes len is a multiple of 4. */
-static void Encode (ut8 *output, ut32 *input, ut32 len) {
+static void Encode(ut8 *output, ut32 *input, ut32 len) {
 	ut32 i, j;
 	for (i = 0, j = 0; j < len; i++, j += 4) {
 		output[j] = (ut8)(input[i] & 0xff);
@@ -72,16 +72,17 @@ static void Encode (ut8 *output, ut32 *input, ut32 len) {
 }
 
 /* Decodes input (ut8) into output (ut32). Assumes len is a multiple of 4 */
-static void Decode (ut32 *output, const ut8 *input, ut32 len) {
+static void Decode(ut32 *output, const ut8 *input, ut32 len) {
 	ut32 i, j;
 	for (i = 0, j = 0; j < len; i++, j += 4) {
-		output[i] = ((ut32)input[j]) | (((ut32)input[j+1]) << 8) |
-			(((ut32)input[j+2]) << 16) | (((ut32)input[j+3]) << 24);
+		output[i] = ((ut32)input[j]) | (((ut32)input[j + 1]) << 8) |
+			    (((ut32)input[j + 2]) << 16) |
+			    (((ut32)input[j + 3]) << 24);
 	}
 }
 
 /* MD5 basic transformation. Transforms state based on block */
-static void MD5Transform (ut32 state[4], const ut8 block[64]) {
+static void MD5Transform(ut32 state[4], const ut8 block[64]) {
 	ut32 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
 	Decode (x, block, 64);
@@ -174,7 +175,7 @@ static const ut8 PADDING[64] = {
 };
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context */
-static void MD5Init (R_MD5_CTX *context) {
+static void MD5Init(R_MD5_CTX *context) {
 	if (context) {
 		context->count[0] = context->count[1] = 0;
 		context->state[0] = 0x67452301;
@@ -186,7 +187,7 @@ static void MD5Init (R_MD5_CTX *context) {
 
 /* MD5 block update operation. Continues an MD5 message-digest operation,
  * processing another message block, and updating the context */
-static void MD5Update (R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
+static void MD5Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
 	ut32 i;
 
 	/* Compute number of bytes mod 64 */
@@ -253,7 +254,7 @@ R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 	} else {
 		MD5Update (&ctx->md5, (const ut8 *) "", 0);
 	}
-	if (len == 0 || ctx->rst) {
+	if (ctx->rst) {
 		MD5Final (ctx->digest, &ctx->md5);
 	}
 	return ctx->digest;
