@@ -8,14 +8,14 @@
 
 static int cmd_zign(void *data, const char *input);
 
-static void fcn_zig_add(RSignItem *si, int pref, ut8 *addr, const char *prefix) {
+static void fcn_zig_add(RSignItem *si, int idx, ut8 *addr, const char *prefix) {
 	const int type = si->type;
 	if (type == 'f') {
-		r_cons_printf ("f %s.fun_%s_%d @ 0x%08"PFMT64x"\n", prefix, si->name, pref, addr);
+		r_cons_printf ("f %s.fun_%s_%d @ 0x%08"PFMT64x"\n", prefix, si->name, idx, addr);
 	} else if (type == 'p') {
-		r_cons_printf ("afn %s.fun_%s_%d 0x%08"PFMT64x"\n", prefix, si->name, pref, addr);
+		r_cons_printf ("afn %s.fun_%s_%d 0x%08"PFMT64x"\n", prefix, si->name, idx, addr);
 	} else {
-		r_cons_printf ("f %s.%s @ 0x%08"PFMT64x"\n", prefix , si->name, addr);
+		r_cons_printf ("f %s.%s_%d @ 0x%08"PFMT64x"\n", prefix , si->name, idx, addr);
 	}
 }
 
@@ -63,7 +63,7 @@ static bool fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
 		}
 		si = r_sign_check (core->sign, buf + idx, len - idx);
 		if (si) {
-			fcn_zig_add (si, idx, (ut8 *)ini + idx, prefix);
+			fcn_zig_add (si, count, (ut8 *)ini + idx, prefix);
 			eprintf ("- Found %d matching function signatures\r", count);
 			count++;
 		}
@@ -284,9 +284,9 @@ static int cmd_zign(void *data, const char *input) {
 	case 'h':
 	case 'f':
 	case 'p':
-		if (*(input + 1) == '\0' || *(input + 2) == '\0')
+		if (input[1] == '\0' || input[2] == '\0') {
 			eprintf ("Usage: z%c [name] [arg]\n", *input);
-		else{
+		} else {
 			ptr = strchr (input+3, ' ');
 			if (ptr) {
 				*ptr = 0;
@@ -403,9 +403,9 @@ static int cmd_zign(void *data, const char *input) {
 				if (si) {
 					old_fs = core->flags->space_idx;
 					r_cons_printf ("fs sign\n");
-					count++;
 					fcn_zig_add (si, count, (ut8 *)fcni->addr, r_config_get (core->config, "zign.prefix"));
 					r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
+					count++;
 				}
 			}
 			free (buf);
