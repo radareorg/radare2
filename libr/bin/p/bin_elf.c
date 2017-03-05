@@ -322,7 +322,8 @@ static RList* sections(RBinFile *arch) {
 static void _set_arm_thumb_bits(struct Elf_(r_bin_elf_obj_t) *bin, RBinSymbol **sym) {
 	int bin_bits = Elf_(r_bin_elf_get_bits) (bin);
 	RBinSymbol *ptr = *sym;
-	if (ptr->name[0] == '$' && !ptr->name[2]) {
+	int len = strlen (ptr->name);
+	if (ptr->name[0] == '$' && (len > 2 && !ptr->name[2])) {
 		switch (ptr->name[1]) {
 		case 'a' : //arm
 			ptr->bits = 32;
