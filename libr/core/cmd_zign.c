@@ -8,57 +8,76 @@
 
 static int cmd_zign(void *data, const char *input);
 
-static void fcn_zig_add(RSignItem *si, int pref, ut8 *addr, const char *prefix) {
+static void fcn_zig_add(RSignItem *si, int idx, ut8 *addr, const char *prefix) {
 	const int type = si->type;
 	if (type == 'f') {
-		r_cons_printf ("f %s.fun_%s_%d @ 0x%08"PFMT64x"\n", prefix, si->name, pref, addr);
+		r_cons_printf ("f %s.fun_%s_%d @ 0x%08"PFMT64x"\n", prefix, si->name, idx, addr);
 	} else if (type == 'p') {
-		r_cons_printf ("afn %s.fun_%s_%d 0x%08"PFMT64x"\n", prefix, si->name, pref, addr);
+		r_cons_printf ("afn %s.fun_%s_%d 0x%08"PFMT64x"\n", prefix, si->name, idx, addr);
 	} else {
-		r_cons_printf ("f %s.%s @ 0x%08"PFMT64x"\n", prefix , si->name, addr);
+		r_cons_printf ("f %s.%s_%d @ 0x%08"PFMT64x"\n", prefix , si->name, idx, addr);
 	}
 }
 
-static void fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
-	int idx, old_fs;
-	ut64 len = fin - ini;
+static bool fcn_zig_search(RCore *core, ut64 ini, ut64 fin) {
 	RSignItem *si;
-	ut8 *buf = malloc (len);
+	bool retval = true;
+	int idx = 0;
+	int count = 0;
+	int old_fs = core->flags->space_idx;
+	ut8 *buf = NULL;
+	ut64 len = fin - ini;
+	ut64 align = r_config_get_i (core->config, "search.align");
 	const char *prefix = r_config_get (core->config, "zign.prefix");
 
-	if (buf) {
-		int count = 0;
-		eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
-		old_fs = core->flags->space_idx;
-		r_cons_printf ("fs sign\n");
-		r_cons_break_push (NULL, NULL);
-		if (r_io_read_at (core->io, ini, buf, len) == len) {
-			ut64 align = r_config_get_i (core->config, "search.align");
-			for (idx = 0; idx < len; idx++) {
-				if (align != 0 && (ini + idx) % align != 0) {
-					continue;
-				}
-				if (r_cons_is_breaked()) {
-					break;
-				}
-				si = r_sign_check (core->sign, buf+idx, len-idx);
-				if (si) {
-					count++;
-					fcn_zig_add (si, idx, (ut8 *)ini + idx, prefix);
-					eprintf ("- Found %d matching function signatures\r", count);
-				}
-			}
-		} else {
-			eprintf ("Cannot read %"PFMT64d" bytes at 0x%08"PFMT64x"\n", len, ini);
-		}
-		r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
-		r_cons_break_pop ();
-		free (buf);
-		core->sign->matches = count;
-	} else {
-		eprintf ("Cannot alloc %"PFMT64d" bytes\n", len);
-		core->sign->matches = 0;
+	if (len <= 0) {
+		eprintf ("Invalid range (0x%"PFMT64x"-0x%"PFMT64x").\n", ini, fin);
+		retval = false;
+		goto exit_func;
 	}
+
+	if (!(buf = malloc (len))) {
+		eprintf ("Cannot allocate buffer\n");
+		core->sign->matches = 0;
+		retval = false;
+		goto exit_func;
+	}
+
+	if (r_io_read_at (core->io, ini, buf, len) != len) {
+		eprintf ("Cannot read %"PFMT64d" bytes at 0x%08"PFMT64x"\n", len, ini);
+		retval = false;
+		goto exit_func;
+	}
+
+	eprintf ("Ranges are: 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ini, fin);
+
+	r_cons_printf ("fs sign\n");
+	r_cons_break_push (NULL, NULL);
+
+	for (idx = 0; idx < len; idx++) {
+		if (align != 0 && (ini + idx) % align != 0) {
+			continue;
+		}
+		if (r_cons_is_breaked()) {
+			break;
+		}
+		si = r_sign_check (core->sign, buf + idx, len - idx);
+		if (si) {
+			fcn_zig_add (si, count, (ut8 *)ini + idx, prefix);
+			eprintf ("- Found %d matching function signatures\r", count);
+			count++;
+		}
+	}
+
+	core->sign->matches = count;
+
+	r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
+	r_cons_break_pop ();
+
+exit_func:
+	free (buf);
+
+	return retval;
 }
 
 static int fcn_offset_cmp(ut64 offset, const RAnalFunction *fcn) {
@@ -265,9 +284,9 @@ static int cmd_zign(void *data, const char *input) {
 	case 'h':
 	case 'f':
 	case 'p':
-		if (*(input + 1) == '\0' || *(input + 2) == '\0')
+		if (input[1] == '\0' || input[2] == '\0') {
 			eprintf ("Usage: z%c [name] [arg]\n", *input);
-		else{
+		} else {
 			ptr = strchr (input+3, ' ');
 			if (ptr) {
 				*ptr = 0;
@@ -292,42 +311,39 @@ static int cmd_zign(void *data, const char *input) {
 	case 's':
 	case '/':
 		{
-			// TODO: parse arg0 and arg1
-			ut64 ini, fin;
 			RList *list;
 			RIOMap *map;
+			ut64 ini, fin;
+			char *ptr;
+			bool retval = true;
 
-			if (input[1]) {
-				if(input[1] != ' ') {
-					eprintf ("Usage: z%c [ini] [end]\n", *input);
-					return false;
-				}
-				char *ptr = strchr (input+2, ' ');
+			if (input[1] == ' ') {
+				ptr = strchr (input + 2, ' ');
 				if (ptr) {
 					*ptr = '\0';
-					ini = r_num_math (core->num, input+2);
-					fin = r_num_math (core->num, ptr+1);
+					ini = r_num_math (core->num, input + 2);
+					fin = r_num_math (core->num, ptr + 1);
 				} else {
 					ini = core->offset;
-					fin = ini+r_num_math (core->num, input+2);
+					fin = ini+r_num_math (core->num, input + 2);
 				}
-
-				if (ini >= fin) {
-					eprintf ("Invalid range (0x%"PFMT64x"-0x%"PFMT64x").\n", ini, fin);
-					return false;
-				}
-				fcn_zig_search (core, ini, fin);
-			} else {
+				retval = fcn_zig_search (core, ini, fin);
+			} else if (input[1] == '\x0') {
 				list = r_core_get_boundaries_ok (core);
 				if (!list) {
 					eprintf ("Invalid boundaries\n");
 					return false;
 				}
 				r_list_foreach (list, iter, map) {
-					fcn_zig_search (core, map->from, map->to);
+					retval &= fcn_zig_search (core, map->from, map->to);
 				}
 				r_list_free (list);
+			} else {
+				eprintf ("Usage: z%c [ini] [end]\n", *input);
+				return false;
 			}
+
+			return retval;
 		}
 		break;
 	case 'o':
@@ -387,9 +403,9 @@ static int cmd_zign(void *data, const char *input) {
 				if (si) {
 					old_fs = core->flags->space_idx;
 					r_cons_printf ("fs sign\n");
-					count++;
 					fcn_zig_add (si, count, (ut8 *)fcni->addr, r_config_get (core->config, "zign.prefix"));
 					r_cons_printf ("fs %s\n", (old_fs == -1) ? "*" : core->flags->spaces[old_fs]);
+					count++;
 				}
 			}
 			free (buf);
