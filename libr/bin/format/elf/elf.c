@@ -2092,7 +2092,8 @@ static size_t get_relocs_num(ELFOBJ *bin) {
 static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	ut8 *buf = bin->b->buf;
 	int j = 0;
-	if (offset > bin->size) {
+	if (offset + sizeof (Elf_ (Rela)) >
+		    bin->size || offset + sizeof (Elf_(Rela)) < offset) {
 		return -1;
 	}
 	if (is_rela == DT_RELA) {
