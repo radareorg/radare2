@@ -1245,16 +1245,25 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
-			const char *comma = iter->p? ",":"";
-			const char *reloc_name = reloc->import
-				? sdb_fmt (0, "\"%s\"", reloc->import->name)
-				: reloc->symbol ? sdb_fmt (0, "\"%s\"", reloc->symbol->name) : "null";
-			r_cons_printf ("%s{\"name\":%s,"
+			if (iter->p) {
+				r_cons_printf (",{\"name\":");
+			} else {
+				r_cons_printf ("{\"name\":");
+			}
+			// take care with very long symbol names! do not use sdb_fmt or similar
+			if (reloc->import) {
+				r_cons_printf ("\"%s\"", reloc->import->name);
+			} else if (reloc->symbol) {
+				r_cons_printf ("\"%s\"", reloc->symbol->name);
+			} else {
+				r_cons_printf ("null");
+			}
+
+			r_cons_printf (","
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d","
 				"\"is_ifunc\":%s}",
-				comma, reloc_name,
 				bin_reloc_type_name (reloc),
 				reloc->vaddr, reloc->paddr,
 				r_str_bool (reloc->is_ifunc));
