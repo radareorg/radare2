@@ -780,14 +780,14 @@ static RList *strings(RBinFile *arch) {
 			goto out_error;
 		}
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
-		len = dex_read_uleb128 (buf);
+		len = dex_read_uleb128 (buf, sizeof (buf));
 
 		if (len > 1 && len < R_BIN_SIZEOF_STRINGS) {
 			ptr->string = malloc (len + 1);
 			if (!ptr->string) {
 				goto out_error;
 			}
-			off = bin->strings[i] + dex_uleb128_len (buf);
+			off = bin->strings[i] + dex_uleb128_len (buf, sizeof (buf));
 			if (off + len >= bin->size || off + len < len) {
 				free (ptr->string);
 				goto out_error;
