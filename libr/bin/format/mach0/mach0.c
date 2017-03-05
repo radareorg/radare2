@@ -181,7 +181,6 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 	bin->segs[j].cmdsize = r_read_ble32 (&segcom[i], bin->big_endian);
 	i += sizeof (ut32);
 	memcpy (&bin->segs[j].segname, &segcom[i], 16);
-	bin->segs[j].segname[15] = 0;
 	i += 16;
 #if R_BIN_MACH064
 	bin->segs[j].vmaddr = r_read_ble64 (&segcom[i], bin->big_endian);
@@ -269,7 +268,6 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 
 			i = 0;
 			memcpy (&bin->sects[k].sectname, &sec[i], 16);
-			bin->sects[k].sectname[15] = 0;
 			i += 16;
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
 			bin->sects[k].segname[15] = 0;
