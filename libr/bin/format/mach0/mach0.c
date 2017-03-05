@@ -181,6 +181,7 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 	bin->segs[j].cmdsize = r_read_ble32 (&segcom[i], bin->big_endian);
 	i += sizeof (ut32);
 	memcpy (&bin->segs[j].segname, &segcom[i], 16);
+	bin->segs[j].segname[15] = 0;
 	i += 16;
 #if R_BIN_MACH064
 	bin->segs[j].vmaddr = r_read_ble64 (&segcom[i], bin->big_endian);
@@ -268,8 +269,10 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 
 			i = 0;
 			memcpy (&bin->sects[k].sectname, &sec[i], 16);
+			bin->sects[k].sectname[15] = 0;
 			i += 16;
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
+			bin->sects[k].segname[15] = 0;
 			i += 16;
 #if R_BIN_MACH064
 			bin->sects[k].addr = r_read_ble64 (&sec[i], bin->big_endian);
@@ -1281,7 +1284,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 			sections[i].size = seg->vmsize;
 			sections[i].align = 4096;
 			sections[i].flags = seg->flags;
-			r_str_ncpy (sectname, seg->segname, sizeof (sectname)-1);
+			r_str_ncpy (sectname, seg->segname, sizeof (sectname) - 1);
 			// hack to support multiple sections with same name
 			sections[i].srwx = prot2perm (seg->initprot);
 			sections[i].last = 0;
