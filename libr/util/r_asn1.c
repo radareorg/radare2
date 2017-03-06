@@ -321,7 +321,7 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	if (!object) {
 		return NULL;
 	}
-	memset(object, 0, sizeof(RASN1Object));
+	memset (object, 0, sizeof(RASN1Object));
 	head = buffer[0];
 	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
@@ -373,7 +373,7 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	}
 	if (object->length > length) {
 		// Malformed object - overflow from data ptr
-		R_FREE(object);
+		R_FREE (object);
 	}
 	return object;
 }
@@ -392,12 +392,12 @@ ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 	while (next >= buffer && next < end) {
 		object = asn1_parse_header (next, end - next);
 		if (!object || next == object->sector) {
-			R_FREE(object);
+			R_FREE (object);
 			break;
 		}
 		next = object->sector + object->length;
 		counter++;
-		R_FREE(object);
+		R_FREE (object);
 	}
 	return counter;
 }
@@ -424,7 +424,7 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 				object->list.objects[i] = NULL;
 				inner = r_asn1_create_object (next, end - next);
 				if (!inner || next == inner->sector) {
-					R_FREE(inner);
+					R_FREE (inner);
 					break;
 				}
 				next = inner->sector + inner->length;
@@ -442,8 +442,6 @@ void r_asn1_free_object (RASN1Object **object) {
 		return;
 	}
 	if (*object) {
-		eprintf("PTR: %p\n  tag: %02x\nklass: %02x\nform: %02x\n", *object,
-			(*object)->tag, (*object)->klass, (*object)->form);
 		//this shall not be freed. it's a pointer into the buffer.
 		(*object)->sector = 0;
 		if ((*object)->list.objects) {
@@ -452,11 +450,12 @@ void r_asn1_free_object (RASN1Object **object) {
 					r_asn1_free_object (&(*object)->list.objects[i]);
 				}
 			}
-			R_FREE((*object)->list.objects);
+			R_FREE ((*object)->list.objects);
 		}
 		(*object)->list.objects = NULL;
 		(*object)->list.length = 0;
 		free (*object);
+		*object = NULL;
 	}
 }
 
