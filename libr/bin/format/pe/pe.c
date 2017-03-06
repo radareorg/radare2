@@ -3005,7 +3005,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->import_directory);
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
-	free ((void*)bin->pkcs7);
+	free ((void*)bin->signature_dump);
 	r_buf_free (bin->b);
 	bin->b = NULL;
 	free (bin);
