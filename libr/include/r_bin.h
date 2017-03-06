@@ -150,6 +150,7 @@ typedef struct r_bin_info_t {
 	int big_endian;
 	char *actual_checksum;
 	char *claimed_checksum;
+	int pe_overlay;
 	ut64 dbg_info;
 	RBinHash sum[3];
 	ut64 baddr;
