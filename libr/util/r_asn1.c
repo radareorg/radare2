@@ -392,9 +392,7 @@ ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 	while (next >= buffer && next < end) {
 		object = asn1_parse_header (next, end - next);
 		if (!object || next == object->sector) {
-			if (object) {
-				R_FREE(object);
-			}
+			R_FREE(object);
 			break;
 		}
 		next = object->sector + object->length;
@@ -426,9 +424,7 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 				object->list.objects[i] = NULL;
 				inner = r_asn1_create_object (next, end - next);
 				if (!inner || next == inner->sector) {
-					if (inner) {
-						R_FREE(inner);
-					}
+					R_FREE(inner);
 					break;
 				}
 				next = inner->sector + inner->length;
@@ -446,7 +442,7 @@ void r_asn1_free_object (RASN1Object **object) {
 		return;
 	}
 	if (*object) {
-		eprintf("PTR: %p\n  tag: %02x\nklass: %02x\nform: %02x\n", *object, 
+		eprintf("PTR: %p\n  tag: %02x\nklass: %02x\nform: %02x\n", *object,
 			(*object)->tag, (*object)->klass, (*object)->form);
 		//this shall not be freed. it's a pointer into the buffer.
 		(*object)->sector = 0;
