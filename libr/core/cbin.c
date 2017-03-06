@@ -720,6 +720,9 @@ static int bin_info(RCore *r, int mode) {
 			/* computed checksum */
 			pair_str ("cmp.csum", info->actual_checksum, mode, false);
 		}
+		if (info->rclass && !strcmp (info->rclass, "pe")) {
+			pair_bool ("overlay", info->pe_overlay, mode, false);
+		}
 
 		for (i = 0; info->sum[i].type; i++) {
 			RBinHash *h = &info->sum[i];

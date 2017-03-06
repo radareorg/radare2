@@ -207,6 +207,15 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
+static void find_pe_overlay(RBinFile *arch) {
+	ut64 pe_overlay_size;
+	ut64 pe_overlay_offset = PE_(bin_pe_get_overlay) (arch->o->bin_obj, &pe_overlay_size);
+	if (pe_overlay_offset) {
+		sdb_num_set (arch->sdb, "pe_overlay.offset", pe_overlay_offset, 0);
+		sdb_num_set (arch->sdb, "pe_overlay.size", pe_overlay_size, 0);
+	}
+}
+
 static RList* symbols(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
@@ -255,6 +264,7 @@ static RList* symbols(RBinFile *arch) {
         }
         free (imports);
 	}
+	find_pe_overlay(arch);
 	return ret;
 }
 
@@ -431,7 +441,7 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 static RBinInfo* info(RBinFile *arch) {
 	SDebugInfo di = {{0}};
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	ut32 claimed_checksum, actual_checksum;
+	ut32 claimed_checksum, actual_checksum, pe_overlay;
 
 	if (!ret) {
 		return NULL;
@@ -456,6 +466,7 @@ static RBinInfo* info(RBinFile *arch) {
 	}
 	claimed_checksum = PE_(bin_pe_get_claimed_checksum) (arch->o->bin_obj);
 	actual_checksum  = PE_(bin_pe_get_actual_checksum) (arch->o->bin_obj);
+	pe_overlay = sdb_num_get (arch->sdb, "pe_overlay.size", 0);
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
@@ -464,6 +475,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->has_pi = haschr (arch, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
 	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", claimed_checksum));
 	ret->actual_checksum  = strdup (sdb_fmt (1, "0x%08x", actual_checksum));
+	ret->pe_overlay = pe_overlay > 0;
 
 	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
 	sdb_bool_set (arch->sdb, "pe.highva", haschr(arch, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
