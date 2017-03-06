@@ -4,6 +4,7 @@
 #define R_SPACES_MAX 512
 
 typedef struct r_space_t {
+	char *name;
 	int space_idx;
 	int space_idx2;
 	char *spaces[R_SPACES_MAX];
@@ -14,7 +15,7 @@ typedef struct r_space_t {
 	void *user;
 } RSpaces;
 
-R_API void r_space_init(RSpaces *f, void (*unset_for)(void*, int), int (*count_for)(void *,int), void *user);
+R_API void r_space_init(RSpaces *f, const char *name, void (*unset_for)(void*,int), int (*count_for)(void*,int), void *user);
 R_API void r_space_fini(RSpaces *f);
 R_API int r_space_get(RSpaces *f, const char *name);
 R_API const char *r_space_get_i(RSpaces *f, int idx);
