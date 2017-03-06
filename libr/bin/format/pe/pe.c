@@ -1989,16 +1989,17 @@ static void bin_pe_get_certificate (struct PE_ (r_bin_pe_obj_t) * bin) {
 		return;
 	}
 	con = r_pkcs7_parse_cms (data, size);
-	bin->pkcs7 = r_pkcs7_cms_dump (con);
-	if (bin->pkcs7) {
-		int length = strlen (bin->pkcs7);
+	bin->is_signed = con != NULL;
+	bin->signature_dump = r_pkcs7_cms_dump (con);
+	if (bin->signature_dump) {
+		int length = strlen (bin->signature_dump);
 		if (length > 0) {
 			char *c = (char*) malloc (length);
 			if (c) {
-				memcpy (c, bin->pkcs7, length);
+				memcpy (c, bin->signature_dump, length);
 				c[length - 1] = '\0';
-				free ((char*)bin->pkcs7);
-				bin->pkcs7 = c;
+				free ((char*)bin->signature_dump);
+				bin->signature_dump = c;
 			}
 		}
 	}

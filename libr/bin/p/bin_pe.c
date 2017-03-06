@@ -439,13 +439,15 @@ static int haschr(const RBinFile* arch, ut16 dllCharacteristic) {
 }
 
 static RBinInfo* info(RBinFile *arch) {
+	struct PE_ (r_bin_pe_obj_t) *bin;
 	SDebugInfo di = {{0}};
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ut32 claimed_checksum, actual_checksum, pe_overlay;
 
 	if (!ret) {
 		return NULL;
-	}	
+	}
+	bin = arch->o->bin_obj;
 	arch->file = strdup (arch->file);
 	ret->bclass = PE_(r_bin_pe_get_class) (arch->o->bin_obj);
 	ret->rclass = strdup ("pe");
@@ -476,6 +478,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", claimed_checksum));
 	ret->actual_checksum  = strdup (sdb_fmt (1, "0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
+	ret->signature = bin->is_signed;
 
 	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
 	sdb_bool_set (arch->sdb, "pe.highva", haschr(arch, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
@@ -631,7 +634,7 @@ static char *signature (RBinFile *arch) {
 		return NULL;
 	}
 	bin = arch->o->bin_obj;
-	return (char *) bin->pkcs7;
+	return (char *) bin->signature_dump;
 }
 
 static RBinField *newField(const char *name, ut64 addr) {
