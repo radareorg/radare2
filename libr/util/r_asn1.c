@@ -15,7 +15,10 @@ ut32 ascii_len(const char *s, ut32 len) {
 		return 0;
 	}
 	const char* e = s;
-	while (s < (e + len) && *s >= 0x20 && *s <= 0x7E) s++;
+	len++;
+	while (s < (e + len) && *s >= 0x20 && *s <= 0x7E) {
+		s++;
+	}
 	return s - e;
 }
 
