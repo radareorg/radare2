@@ -10,13 +10,14 @@
 
 const char* _hex = "0123456789abcdef";
 
-ut32 ascii_len(const char *s, ut32 len) {
+static char* sanitize(char *s, ut32 len) {
 	if (!s) {
-		return 0;
+		return NULL;
 	}
-	const char* e = s;
-	len++;
-	while (s < (e + len) && *s >= 0x20 && *s <= 0x7E) {
+	char* e = s;
+	while (s <= (e + len)) {
+		if(*s < 0x20 || *s > 0x7E)
+			*s = '.';
 		s++;
 	}
 	return s - e;
@@ -70,13 +71,13 @@ RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	length = ascii_len(buffer, length + 1);
-	str = (char*) malloc (length);
+	str = (char*) malloc (length + 1);
 	if (!str) {
 		return NULL;
 	}
 	memcpy (str, buffer, length);
-	str[length - 1] = '\0';
+	sanitize(str, length + 1);
+	str[length] = '\0';
 	return r_asn1_create_string (str, true, length);
 }
 
@@ -457,8 +458,7 @@ void r_asn1_free_object (RASN1Object **object) {
 		}
 		(*object)->list.objects = NULL;
 		(*object)->list.length = 0;
-		free (*object);
-		*object = NULL;
+		R_FREE ((*object));
 	}
 }
 

@@ -635,7 +635,7 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 
 char* r_x509_certificate_dump (RX509Certificate* certificate, char* buffer, ut32 length, const char* pad) {
 //	RASN1String *signature,
-	RASN1String *algo;
+	RASN1String *algo = NULL;
 	ut32 p;
 	int r;
 	char *tbsc, *pad2;
@@ -673,7 +673,7 @@ char* r_x509_certificate_dump (RX509Certificate* certificate, char* buffer, ut32
 }
 
 char* r_x509_crlentry_dump (RX509CRLEntry *crle, char* buffer, ut32 length, const char* pad) {
-	RASN1String *id = NULL, *utc;
+	RASN1String *id = NULL, *utc = NULL;
 	int r;
 	if (!crle || !buffer || !length) {
 		return NULL;
@@ -695,7 +695,7 @@ char* r_x509_crlentry_dump (RX509CRLEntry *crle, char* buffer, ut32 length, cons
 }
 
 char* r_x509_crl_dump (RX509CertificateRevocationList *crl, char* buffer, ut32 length, const char* pad) {
-	RASN1String *algo, *last, *next;
+	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i, p;
 	int r;
 	char *tmp, *pad2, *pad3;

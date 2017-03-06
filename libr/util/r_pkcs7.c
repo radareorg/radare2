@@ -378,7 +378,7 @@ void r_pkcs7_free_attributes (RPKCS7Attributes* attributes) {
 }
 
 char* r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, char* buffer, ut32 length, const char* pad) {
-	RASN1String *algo, *last, *next;
+	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i, p;
 	int r;
 	char *tmp, *pad2, *pad3;
@@ -428,8 +428,8 @@ char* r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, char* buffe
 }
 
 char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, const char* pad) {
-	RASN1String *s;
-	RASN1Object *o;
+	RASN1String *s = NULL;
+	RASN1Object *o = NULL;
 	ut32 i, p;
 	int r;
 	char *tmp, *pad2, *pad3;
