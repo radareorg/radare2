@@ -669,9 +669,9 @@ repeat:
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
 		case R_ANAL_STACK_INC:
-			if (R_ABS (op.val) < 8096) {
-				fcn->stack += op.val;
-				if (fcn->stack > 0 && (int)op.val > 0) {
+			if (R_ABS (op.stackptr) < 8096) {
+				fcn->stack += op.stackptr;
+				if (fcn->stack > 0 && (int)op.stackptr > 0) {
 					fcn->maxstack = fcn->stack;
 				}
 			}
