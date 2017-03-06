@@ -2258,6 +2258,8 @@ R_API int r_core_config_init(RCore *core) {
 	/* file */
 	SETPREF("file.desc", "", "User defined file description (used by projects)");
 	SETPREF("file.md5", "", "MD5 sum of current file");
+	SETPREF("file.info", "true", "RBin info loaded");
+	SETPREF("file.offset", "", "Offset where the file will be mapped at");
 	SETPREF("file.path", "", "Path of current file");
 	SETPREF("file.sha1", "", "SHA1 hash of current file");
 	SETPREF("file.type", "", "Type of current file");

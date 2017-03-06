@@ -564,7 +564,8 @@ int main(int argc, char **argv, char **envp) {
 			do_list_io_plugins = true;
 			break;
 		case 'm':
-			mapaddr = r_num_math (r.num, optarg); break;
+			mapaddr = r_num_math (r.num, optarg);
+			r_config_set_i (r.config, "file.offset", mapaddr);
 			break;
 		case 'M':
 			r_config_set (r.config, "bin.demangle", "false");
@@ -572,6 +573,7 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'n':
 			run_anal--;
+			r_config_set (r.config, "file.info", "false");
 			break;
 		case 'N':
 			run_rc = 0;

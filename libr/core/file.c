@@ -798,6 +798,11 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	// check load addr to make sure its still valid
 	r_bin_bind (r->bin, &(fh->binb));
+
+	if (!r->files) {
+		r->files = r_list_newf ((RListFree)r_core_file_free);
+	}
+
 	r_list_append (r->files, fh);
 	r_core_file_set_by_file (r, fh);
 	r_config_set_i (r->config, "zoom.to", fh->map->from + r_io_desc_size (r->io, fh->desc));
@@ -936,7 +941,35 @@ R_API int r_core_file_list(RCore *core, int mode) {
 			break;
 		case '*':
 		case 'r':
-			r_cons_printf ("o %s 0x%"PFMT64x "\n", f->desc->uri, (ut64) from);
+			{
+				RListIter *it;
+				RBinFile *bf;
+				r_list_foreach (core->bin->binfiles, it, bf) {
+					if (bf->fd == f->desc->fd) {
+						char *absfile = r_file_abspath (f->desc->uri);
+						r_cons_printf ("o %s 0x%"PFMT64x "\n", absfile, (ut64) from);
+						free(absfile);
+					}
+				}
+			}
+			break;
+		case 'n':
+			{
+				RListIter *it;
+				RBinFile *bf;
+				bool header_loaded = false;
+				r_list_foreach (core->bin->binfiles, it, bf) {
+					if (bf->fd == f->desc->fd) {
+						header_loaded = true;
+						break;
+					}
+				}
+				if (!header_loaded) {
+					char *absfile = r_file_abspath (f->desc->uri);
+					r_cons_printf ("on %s 0x%"PFMT64x "\n", absfile, (ut64) from);
+					free(absfile);
+				}
+			}
 			break;
 		default:
 		{
