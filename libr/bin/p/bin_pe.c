@@ -478,7 +478,7 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", claimed_checksum));
 	ret->actual_checksum  = strdup (sdb_fmt (1, "0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
-	ret->signature = bin->is_signed;
+	ret->signature = bin ? bin->is_signed : false;
 
 	sdb_bool_set (arch->sdb, "pe.canary", has_canary(arch), 0);
 	sdb_bool_set (arch->sdb, "pe.highva", haschr(arch, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);
