@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <r_util.h>
+#include <r_types.h>
 #include "r_x509_internal.h"
 #include "r_pkcs7_internal.h"
 
@@ -540,10 +541,13 @@ char *r_pkcs7_cms_dump (RCMS* container) {
 	p = 0;
 	buffer = NULL;
 	length = 2048 + (container->signedData.certificates.length * 1024);
-	if(!length) return NULL;
-	buffer = (char*) malloc (length);
-	if (!buffer) return NULL;
-	memset (buffer, 0, length);
+	if(!length) {
+		return NULL;
+	}
+	buffer = (char*) calloc (1, length);
+	if (!buffer) {
+		return NULL;
+	}
 	r = snprintf (buffer, length, "signedData\n  Version: %u\n  Digest Algorithms:\n", sd->version);
 	p += (ut32) r;
 	if (r < 0) {

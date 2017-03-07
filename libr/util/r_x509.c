@@ -3,11 +3,11 @@
 #include <r_util.h>
 #include <stdlib.h>
 #include <string.h>
+#include <r_types.h>
 
 #include "r_x509_internal.h"
 
-#define MOVE_PTR(dst, src)			((dst) = (src)); \
-									(src) = NULL;
+#define MOVE_PTR(dst, src) { ((dst) = (src)); (src) = NULL; }
 
 bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object) {
 	RASN1Object *o;
@@ -172,7 +172,7 @@ bool r_x509_parse_extensions (RX509Extensions *ext, RASN1Object * object) {
 	for (i = 0; i < object->list.length; ++i) {
 		ext->extensions[i] = (RX509Extension*) malloc (sizeof (RX509Extension));
 		if (!r_x509_parse_extension (ext->extensions[i], object->list.objects[i])) {
-			R_FREE(ext->extensions[i]);
+			R_FREE (ext->extensions[i]);
 		}
 	}
 	return true;

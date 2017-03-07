@@ -2,6 +2,7 @@
 
 #include <r_util.h>
 #include "r_oids.h"
+#include <r_types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,17 +11,17 @@
 
 const char* _hex = "0123456789abcdef";
 
-static char* sanitize(char *s, ut32 len) {
+static char *sanitize(char *s, ut32 len) {
 	if (!s) {
 		return NULL;
 	}
 	char* e = s;
 	while (s <= (e + len)) {
-		if(*s < 0x20 || *s > 0x7E)
+		if (!IS_PRINTABLE(*s))
 			*s = '.';
 		s++;
 	}
-	return s - e;
+	return e;
 }
 
 RASN1String *r_asn1_create_string (const char *string, bool allocated, ut32 length) {
@@ -76,7 +77,7 @@ RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	memcpy (str, buffer, length);
-	sanitize(str, length + 1);
+	sanitize (str, length + 1);
 	str[length] = '\0';
 	return r_asn1_create_string (str, true, length);
 }
@@ -255,12 +256,10 @@ RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 		return NULL;
 	}
 
-	str = (char*) malloc (ASN1_OID_LEN);
+	str = (char*) calloc (1, ASN1_OID_LEN);
 	if (!str) {
 		return NULL;
 	}
-
-	memset (str, 0, ASN1_OID_LEN);
 
 	end = buffer + length;
 	t = str;
@@ -321,11 +320,10 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 
-	object = (RASN1Object*) malloc (sizeof (RASN1Object));
+	object = R_NEW0 (RASN1Object);
 	if (!object) {
 		return NULL;
 	}
-	memset (object, 0, sizeof(RASN1Object));
 	head = buffer[0];
 	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
