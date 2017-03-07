@@ -3349,7 +3349,7 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	return 0;
 }
 
-static void getpcfromstack_x86(RCore *core, RAnalEsil *esil) {
+static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	ut64 cur;
 	ut64 addr;
 	ut64 size;
@@ -3362,6 +3362,7 @@ static void getpcfromstack_x86(RCore *core, RAnalEsil *esil) {
 	int tmp_esil_str_len;
 	const char *esilstr;
 	const int maxaddrlen = 20;
+	char *spname = NULL;
 	if (!esil) {
 		return;
 	}
@@ -3372,7 +3373,7 @@ static void getpcfromstack_x86(RCore *core, RAnalEsil *esil) {
 	if (!fcn) {
 		return;
 	}
-	 
+
 	size = r_anal_fcn_size (fcn);
 	if (size <= 0) {
 		return;
@@ -3383,7 +3384,7 @@ static void getpcfromstack_x86(RCore *core, RAnalEsil *esil) {
 		perror ("malloc");
 		return;
 	}
-	 
+
 	r_io_read_at (core->io, addr, buf, size + 1);
 
 	// Hardcoding for 2 instructions (mov e_p,[esp];ret). More work needed
@@ -3393,28 +3394,37 @@ static void getpcfromstack_x86(RCore *core, RAnalEsil *esil) {
 		free (buf);
 		return;
 	}
-	 
+
 	if (op.size < 1 || (op.type != R_ANAL_OP_TYPE_MOV && op.type != R_ANAL_OP_TYPE_CMOV)) {
 		free (buf);
 		return;
 	}
-	 
+
 	r_asm_set_pc (core->assembler, cur);
 	esilstr = R_STRBUF_SAFEGET (&op.esil);
 
 	// Ugly code
 	// This is a hack, since ESIL doesn't always preserve values pushed on the stack. That probably needs to be rectified
-	if (!esilstr || !*esilstr || (strncmp (esilstr, "esp,[4]", 7) && strncmp (esilstr, "rsp,[8]", 7))) {
-		free (buf);
-		return;
+	spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	if (!spname || !*spname) {
+	    free (buf);
+	    return;
 	}
-	tmp_esil_str_len = strlen (esilstr) + maxaddrlen - 5;
+	tmp_esil_str_len = strlen (esilstr) + strlen (spname);
 	tmp_esil_str = (char*) malloc (tmp_esil_str_len);
+	tmp_esil_str[tmp_esil_str_len - 1] = '\0';
 	if (!tmp_esil_str) {
 		free (buf);
 		return;
 	}
-	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%llu%s", esil_cpy.old, &esilstr[7]);
+	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%s,[", spname);
+	if (!esilstr || !*esilstr || (strncmp ( esilstr, tmp_esil_str, strlen (tmp_esil_str)))) {
+	    free (buf);
+	    free (tmp_esil_str);
+	    return;
+	}
+
+	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%llu%s", esil_cpy.old, &esilstr[strlen (spname)]);
 	idx += op.size;
 	r_anal_esil_set_pc (&esil_cpy, cur);
 	r_anal_esil_parse (&esil_cpy, tmp_esil_str);
@@ -3693,11 +3703,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						if (myvalid (core->io, dst)) {
 							r_anal_ref_add (core->anal, dst, cur, 'C');
 						}
-						// Only for x86 as of now
-						if (!strncmp (core->anal->cur->arch, "x86", 3)) {
-							ESIL->old = cur + op.size;
-							getpcfromstack_x86 (core, ESIL);
-						}
+						ESIL->old = cur + op.size;
+						getpcfromstack (core, ESIL);
 					}
 				}
 				break;
