@@ -24,7 +24,7 @@ typedef struct {
 
 static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
 	DWORD ret;
-        ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret);
+	ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, (SIZE_T*)&ret);
 //	if (len != ret)
 //		eprintf ("Cannot read 0x%08llx\n", addr);
 	return len; // XXX: Handle read correctly and not break r2 shell
@@ -38,14 +38,14 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 
 static int w32dbg_write_at(RIOW32Dbg *dbg, const ut8 *buf, int len, ut64 addr) {
 	DWORD ret;
-	return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
+	return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, (SIZE_T*)&ret)? len: 0;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return w32dbg_write_at (fd->data, buf, len, io->off);
 }
 
-static int __plugin_open(RIO *io, const char *file, ut8 many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	if (!strncmp (file, "attach://", 9)) {
 		return true;
 	}
@@ -121,12 +121,12 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 
 RIOPlugin r_io_plugin_w32dbg = {
 	.name = "w32dbg",
-        .desc = "w32dbg io",
+	.desc = "w32dbg io",
 	.license = "LGPL3",
-        .open = __open,
-        .close = __close,
+	.open = __open,
+	.close = __close,
 	.read = __read,
-        .check = __plugin_open,
+	.check = __plugin_open,
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,

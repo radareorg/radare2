@@ -774,14 +774,16 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	BOOL WINAPI (*QueryFullProcessImageNameA) (HANDLE, DWORD, LPTSTR, PDWORD);
-	DWORD WINAPI (*GetProcessImageFileNameA) (HANDLE, LPTSTR, DWORD);
+	typedef BOOL WINAPI (*QueryFullProcessImageNameA_t) (HANDLE, DWORD, LPTSTR, PDWORD);
+	typedef DWORD WINAPI (*GetProcessImageFileNameA_t) (HANDLE, LPTSTR, DWORD);
+	GetProcessImageFileNameA_t GetProcessImageFileNameA = NULL;
+	QueryFullProcessImageNameA_t QueryFullProcessImageNameA = NULL;
 	HANDLE kernel32 = LoadLibrary ("Kernel32.dll");
 	if (!kernel32) {
 		eprintf ("Error getting the handle to Kernel32.dll\n");
 		return NULL;
 	}
-	QueryFullProcessImageNameA = GetProcAddress (kernel32, "QueryFullProcessImageNameA");
+	QueryFullProcessImageNameA = (QueryFullProcessImageNameA_t) GetProcAddress (kernel32, "QueryFullProcessImageNameA");
 	if (!QueryFullProcessImageNameA) {
 		// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
 		HANDLE psapi = LoadLibrary ("Psapi.dll");
@@ -789,7 +791,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 			eprintf ("Error getting the handle to Psapi.dll\n");
 			return NULL;
 		}
-		GetProcessImageFileNameA = GetProcAddress (psapi, "GetProcessImageFileNameA");
+		GetProcessImageFileNameA = (GetProcessImageFileNameA_t) GetProcAddress (psapi, "GetProcessImageFileNameA");
 		if (!GetProcessImageFileNameA) {
 			eprintf ("Error getting the address of GetProcessImageFileNameA\n");
 			return NULL;

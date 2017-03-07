@@ -25,7 +25,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	if (flag) {
 		obuf = r_punycode_decode ((const char *)buf, len, &olen);
 	} else {
-		obuf = r_punycode_encode ((const char *)buf, len, &olen);
+		obuf = r_punycode_encode (buf, len, &olen);
 	}
 	r_crypto_append (cry, (ut8*)obuf, olen);
 	free (obuf);

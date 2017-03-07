@@ -4,7 +4,7 @@
 #include <r_core.h>
 #include <r_lang.h>
 
-static int lang_lib_init (void *user) {
+static int lang_lib_init (RLang *user) {
 	return true;
 }
 

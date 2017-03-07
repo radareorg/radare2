@@ -8,6 +8,12 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+#if __WINDOWS__ && !__CYGWIN__
+#define HHXFMT  "x"
+#else
+#define HHXFMT  "hhx"
+#endif
+
 /* stable code */
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
@@ -2018,7 +2024,7 @@ R_API char *r_str_utf16_decode (const ut8 *s, int len) {
 		if (!s[i+1] && 0x20 <= s[i] && s[i] <= 0x7E) {
 			result[j++] = s[i];
 		} else {
-			j += sprintf (&result[j], "\\u%.2hhx%.2hhx", s[i], s[i+1]);
+			j += sprintf (&result[j], "\\u%.2"HHXFMT"%.2"HHXFMT"", s[i], s[i+1]);
 		}
 	}
 	return result;
