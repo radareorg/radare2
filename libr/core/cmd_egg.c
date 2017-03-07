@@ -27,6 +27,33 @@ static void showBuffer(RBuffer *b) {
 	}
 }
 
+static int compileShellcode (REgg *egg, const char *input){
+	int i = 0;
+	RBuffer *b;
+	if (!r_egg_shellcode (egg, input)) {
+		eprintf ("Unknown shellcode '%s'\n", input);
+	}
+	if (!r_egg_assemble (egg)){
+		eprintf ("r_egg_assemble : invalid assembly\n");
+		goto fail;
+	}
+	if (!egg->bin){
+		egg->bin = r_buf_new ();
+	}
+	if (!(b = r_egg_get_bin (egg))) {
+		eprintf ("r_egg_get_bin: invalid egg :(\n");
+		goto fail;
+	}
+	r_egg_finalize (egg);
+	for (i = 0; i < b->length; i++){
+		printf ("%02x", b->buf[i]);
+	}
+	printf ("\n");
+	return 0;
+	fail:
+	return 1;
+}
+
 static int cmd_egg_compile(REgg *egg) {
 	RBuffer *b;
 	int ret = false;
@@ -113,7 +140,12 @@ static int cmd_egg(void *data, const char *input) {
 		cmd_egg_option (egg, "egg.encoder", input);
 		break;
 	case 'i': // "gi"
-		cmd_egg_option (egg, "egg.shellcode", input);
+		if (*input && *(input+2)){
+			compileShellcode(egg,input+2);
+		}
+		else {
+			//nice error message ?
+		}
 		break;
 	case 'l': // "gl"
 		{
