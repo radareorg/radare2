@@ -510,6 +510,11 @@ static int cmd_open(void *data, const char *input) {
 	case 'n': // "on"
 		// like in r2 -n
 		isn = 1;
+		if (input[1] == '*') {
+			r_core_file_list (core, 'n');
+			break;
+		}
+
 		/* fall through */
 	case ' ':
 		{
