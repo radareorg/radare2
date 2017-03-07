@@ -623,7 +623,9 @@ typedef struct r_anal_t {
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
+	Sdb *sdb_zigns;
 	RSpaces meta_spaces;
+	RSpaces zign_spaces;
 	PrintfCallback cb_printf;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
@@ -1191,6 +1193,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os);
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
+R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcn_type_tostring(int type);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
@@ -1563,6 +1566,10 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode);
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr);
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr);
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr);
+
+/* zign spaces */
+R_API void r_sign_space_unset_for(RAnal *a, int type);
+R_API int r_sign_space_count_for(RAnal *a, int ctx);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
