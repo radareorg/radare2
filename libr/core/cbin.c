@@ -722,8 +722,9 @@ static int bin_info(RCore *r, int mode) {
 		}
 		if (info->rclass && !strcmp (info->rclass, "pe")) {
 			pair_bool ("overlay", info->pe_overlay, mode, false);
+			//this should be moved if added to mach0 (or others)
+			pair_bool ("signed", info->signature, mode, false);
 		}
-		pair_bool ("signed", info->signature, mode, false);
 
 		for (i = 0; info->sum[i].type; i++) {
 			RBinHash *h = &info->sum[i];
