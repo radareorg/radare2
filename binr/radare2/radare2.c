@@ -277,17 +277,30 @@ static int rabin_delegate(RThread *th) {
 #endif
 
 static void radare2_rc(RCore *r) {
+	char* env_debug = r_sys_getenv ("R_DEBUG");
+	bool has_debug = false;
+	if (env_debug) {
+		has_debug = true;
+		free (env_debug);
+	}
+
 	char *homerc = r_str_home (".radare2rc");
-	if (homerc) {
+	if (homerc && r_file_is_regular (homerc)) {
+		if (has_debug) {
+			eprintf ("USER CONFIG loaded from %s\n", homerc);
+		}
 		r_core_cmd_file (r, homerc);
 		free (homerc);
 	}
-	homerc = r_str_home ("/.config/radare2/radare2rc");
-	if (homerc) {
+	homerc = r_str_home (".config/radare2/radare2rc");
+	if (homerc && r_file_is_regular (homerc)) {
+		if (has_debug) {
+			eprintf ("USER CONFIG loaded from %s\n", homerc);
+		}
 		r_core_cmd_file (r, homerc);
 		free (homerc);
 	}
-	homerc = r_str_home ("/.config/radare2/radare2rc.d");
+	homerc = r_str_home (".config/radare2/radare2rc.d");
 	if (homerc) {
 		if (r_file_is_directory (homerc)) {
 			char *file;
@@ -297,6 +310,9 @@ static void radare2_rc(RCore *r) {
 				if (*file != '.') {
 					char *path = r_str_newf ("%s/%s", homerc, file);
 					if (r_file_is_regular (path)) {
+						if (has_debug) {
+							eprintf ("USER CONFIG loaded from %s\n", homerc);
+						}
 						r_core_cmd_file (r, path);
 					}
 					free (path);
