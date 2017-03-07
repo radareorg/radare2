@@ -183,14 +183,13 @@ static void r_core_anal_list_vtables_all(void *core) {
 	r_list_free (vtables);
 }
 
-rtti_struct* get_rtti_data (RCore *core, ut64 atAddress) {
+static rtti_struct* get_rtti_data (RCore *core, ut64 atAddress) {
 	ut64 bits = r_config_get_i (core->config, "asm.bits");
 	int wordSize = bits / 8;
-	ut64 curRTTIBaseLocatorAddr = r_io_read_i (core->io, atAddress - wordSize, wordSize);
-	r_cons_printf ("trying to parse rtti at 0x%08"PFMT64x"\n", curRTTIBaseLocatorAddr);
+	ut64 BaseLocatorAddr = r_io_read_i (core->io, atAddress - wordSize, wordSize);
+	r_cons_printf ("Trying to parse rtti at 0x%08"PFMT64x"\n", BaseLocatorAddr);
 	return NULL;
 }
-
 
 RList* r_core_anal_parse_rtti (void *core, bool printJson) {
 	RList* vtables = search_virtual_tables ((RCore *)core);
@@ -217,7 +216,7 @@ R_API void r_core_anal_print_rtti (void *core) {
 	rtti_struct* curRTTI;
 	if (rtti_structures) {
 		r_list_foreach (rtti_structures, RTTIIter, curRTTI) {
-			r_cons_printf ("Reached here\n");
+			eprintf ("Reached here\n");
 		}
 	}
 }
