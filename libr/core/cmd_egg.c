@@ -134,13 +134,21 @@ static int cmd_egg(void *data, const char *input) {
 			eprintf ("Cannot compile\n");
 		break;
 	case 'p': // "gp"
-		cmd_egg_option (egg, "egg.padding", input);
+		if (*input && *(input+2)) {
+			r_egg_padding(egg, input+2);
+		}
+		//cmd_egg_option (egg, "egg.padding", input);
 		break;
 	case 'e': // "ge"
-		cmd_egg_option (egg, "egg.encoder", input);
+		if (*input && *(input+2)) {
+			if (!r_egg_encode (egg,input+2)) {
+				eprintf ("Invalid encoder '%s'\n", input+2);
+			}
+		}
+		//cmd_egg_option (egg, "egg.encoder", input);
 		break;
 	case 'i': // "gi"
-		if (*input && *(input+2)){
+		if (*input && *(input+2)) {
 			compileShellcode(egg,input+2);
 		}
 		else {
