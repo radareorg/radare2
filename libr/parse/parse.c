@@ -150,11 +150,12 @@ static char *findNextNumber(char *op) {
 }
 
 static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
-	char *ptr = data, *ptr2;
+	char *ptr = data, *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
 	bool x86 = false;
+	bool computed = false;
 	if (p && p->cur && p->cur->name) {
 		if (strstr (p->cur->name, "x86")) x86 = true;
 		if (strstr (p->cur->name, "m68k")) x86 = true;
@@ -194,9 +195,11 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				RFlagItem *flag2;
 				flag = r_flag_get_i2 (f, off);
 				if (!flag) {
+					computed = false;
 					flag = r_flag_get_i (f, off);
 				}
 				if (p->relsub_addr) {
+					computed = true;
 					flag2 = r_flag_get_i2 (f, p->relsub_addr);
 					if (!flag2) {
 						flag2 = r_flag_get_i (f, p->relsub_addr);
@@ -215,12 +218,22 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						ptr = ptr2;
 						continue;
 					}
-					*ptr = 0;
 					// hack to realign pointer for colours
 					ptr2--;
 					if (*ptr2 != 0x1b) {
 						ptr2++;
 					}
+					ptr_backup = ptr;
+					if (computed && ptr != ptr2 && *ptr) {
+						if (*ptr2 == ']') {
+							ptr2++;
+							for (ptr--; ptr > data && *ptr != '['; ptr--);
+							if (ptr == data) {
+								ptr = ptr_backup;
+							}
+						}
+					}
+					*ptr = 0;
 					snprintf (str, len, "%s%s%s", data, flag->name,
 							(ptr != ptr2) ? ptr2 : "");
 					return true;
