@@ -3410,7 +3410,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	    free (buf);
 	    return;
 	}
-	tmp_esil_str_len = strlen (esilstr) + strlen (spname);
+	tmp_esil_str_len = strlen (esilstr) + strlen (spname) + maxaddrlen;
 	tmp_esil_str = (char*) malloc (tmp_esil_str_len);
 	tmp_esil_str[tmp_esil_str_len - 1] = '\0';
 	if (!tmp_esil_str) {
@@ -3424,7 +3424,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	    return;
 	}
 
-	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%llu%s", esil_cpy.old, &esilstr[strlen (spname)]);
+	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%llu%s", esil_cpy.old, &esilstr[strlen (spname) + 4]);
 	idx += op.size;
 	r_anal_esil_set_pc (&esil_cpy, cur);
 	r_anal_esil_parse (&esil_cpy, tmp_esil_str);
