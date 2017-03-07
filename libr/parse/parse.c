@@ -194,8 +194,8 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 			if (f) {
 				RFlagItem *flag2;
 				flag = r_flag_get_i2 (f, off);
+				computed = false;
 				if (!flag) {
-					computed = false;
 					flag = r_flag_get_i (f, off);
 				}
 				if (p->relsub_addr) {
