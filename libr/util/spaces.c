@@ -21,8 +21,9 @@ R_API const char *r_space_get_i (RSpaces *f, int idx) {
 	return f->spaces[idx];
 }
 
-R_API void r_space_init(RSpaces *f, void (*unset_for)(void*,int), int (*count_for)(void*,int), void *user) {
+R_API void r_space_init(RSpaces *f, const char *name, void (*unset_for)(void*,int), int (*count_for)(void*,int), void *user) {
 	int i;
+	f->name = r_str_new (name);
 	f->space_idx = -1;
 	f->space_idx2 = -1;
 	f->spacestack = r_list_new ();
@@ -41,6 +42,7 @@ R_API void r_space_fini(RSpaces *f) {
 		R_FREE (f->spaces[i]);
 	}
 	r_list_free (f->spacestack);
+	free (f->name);
 }
 
 R_API int r_space_push(RSpaces *f, const char *name) {
@@ -141,7 +143,7 @@ R_API int r_space_list(RSpaces *f, int mode) {
 					(i==f->space_idx)? ",\"selected\":true":"",
 					count);
 		} else if (mode=='*') {
-			f->cb_printf ("fs %s\n", f->spaces[i]);
+			f->cb_printf ("%s %s\n", f->name, f->spaces[i]);
 			if (i==f->space_idx) defspace = f->spaces[i];
 		} else {
 			#define INDENT 5
@@ -162,7 +164,7 @@ R_API int r_space_list(RSpaces *f, int mode) {
 		j++;
 	}
 	if (defspace) {
-		f->cb_printf ("fs %s # current\n", defspace);
+		f->cb_printf ("%s %s # current\n", f->name, defspace);
 	}
 	if (mode == 'j') {
 		f->cb_printf ("]\n");

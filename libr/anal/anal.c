@@ -55,7 +55,7 @@ R_API RAnal *r_anal_new() {
 	anal->opt.noncode = false; // do not analyze data by default
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
-	r_space_init (&anal->meta_spaces, meta_unset_for, meta_count_for, anal);
+	r_space_init (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, anal);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
 	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);

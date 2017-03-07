@@ -99,7 +99,8 @@ struct PE_(r_bin_pe_obj_t) {
 	const char* file;
 	struct r_buf_t* b;
 	Sdb *kv;
-	const char* pkcs7;
+	const char* signature_dump;
+	bool is_signed;
 };
 
 #define GUIDSTR_LEN 34
