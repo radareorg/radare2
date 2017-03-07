@@ -1,235 +1,357 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #include <r_sign.h>
 #include <r_anal.h>
 
+#define R_SIGN_KEY_MAXSZ 1024
+#define R_SIGN_VAL_MAXSZ 10240
+
 R_LIB_VERSION (r_sign);
 
-R_API RSign *r_sign_new() {
-	RSign *sig = R_NEW0 (RSign);
-	if (sig) {
-		sig->cb_printf = (PrintfCallback) printf;
-		sig->items = r_list_new ();
-		if (!sig->items) {
-			free (sig);
-			return NULL;
+static bool deserialize(RSignItem *it, const char *k, const char *v) {
+	char *k2 = NULL, *v2 = NULL, *ptr = NULL, *token = NULL;
+	int i = 0;
+	bool retval = true;
+
+	k2 = r_str_new (k);
+	v2 = r_str_new (v);
+
+	// Deserialize key: zign,<space>,<name>
+	for (ptr = (char*) k2, i = 0; ; ptr = NULL, i++) {
+		token = strtok (ptr, "|");
+		if (!token) {
+			break;
 		}
-		sig->items->free = r_sign_item_free;
-	}
-	return sig;
-}
 
-R_API void r_sign_ns(RSign *sig, const char *str) {
-	/*Set namespace*/
-	if (str) {
-		free (sig->ns);
-		sig->ns = strdup (str);
-	} else {
-		sig->ns = NULL;
-	}
-}
-
-static bool signatureExists(RSign *sig, RSignItem *item) {
-	RSignItem *s;
-	RListIter *iter;
-	r_list_foreach (sig->items, iter, s) {
-		if (s->type == item->type) {
-			if (s->name && item->name && !strcmp (s->name, item->name)) {
-				eprintf ("Dupped signature name: '%s'\n", s->name);
-				/* dupped name */
-				return true;
-			}
-			if (s->bytes && item->bytes && item->size== s->size) {
-				if (!memcmp (s->bytes, item->bytes, item->size)) {
-					eprintf ("Dupped byte signature: '%s'\n", s->name);
-					// TODO: check for mask too? or meh
-					return true;
-				}
-			}
+		switch (i) {
+		case 0:
+			// Const "zign" string
+			break;
+		case 1:
+			it->space = atoi (token);
+			break;
+		case 2:
+			it->name = r_str_new (token);
+			break;
 		}
 	}
-	return false;
+
+	// Deserialize val: <type>,size,bytes,mask
+	for (ptr = (char*) v2, i = 0; ; ptr = NULL, i++) {
+		token = strtok (ptr, "|");
+		if (!token) {
+			break;
+		}
+
+		switch (i) {
+		case 0:
+			it->type = token[0];
+			break;
+		case 1:
+			it->size = sdb_atoi (token);
+			break;
+		case 2:
+			it->bytes = malloc (it->size);
+			r_hex_str2bin(token, it->bytes);
+			break;
+		case 3:
+			it->mask = malloc (it->size);
+			r_hex_str2bin(token, it->mask);
+			break;
+		default:
+			retval = false;
+			goto exit_function;
+		}
+	}
+
+exit_function:
+	free (k2);
+	free (v2);
+
+	return retval;
 }
 
-R_API bool r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const char *arg) {
+static void serialize(RSignItem *it, char *k, char *v) {
+	char *hexbytes = NULL, *hexmask = NULL;
 	int len;
-	char *data = NULL, *ptr;
-	RSignItem *si = NULL;
-	if (!name || !arg || !anal) {
-		return false;
-	}
-	if (!(si = R_NEW0 (RSignItem))) {
-		return false;
-	}
-	si->type = type;
-	si->name = r_str_newf ("%s.%c.%s", sig->ns? sig->ns: "sys", type, name);
 
-	switch (type) {
-	case R_SIGN_FUNC: // function signature
-		// FUNC FORMAT [addr] [function-signature]
-		ptr = strchr (arg, ' ');
-		if (ptr) {
-		// TODO. matching must be done by sym/flag/function name
-		//	sig->addr =
-		}
-		if (!signatureExists (sig, si)) {
-			if (r_list_append (sig->items, si)) {
-				sig->s_func++;
-			} else {
-				r_sign_item_free (si);
-			}
-			si = NULL;
-		}
-		break;
-	case R_SIGN_HEAD: // function prefix (push ebp..)
-	case R_SIGN_BYTE: // function mask
-	case R_SIGN_BODY: // function body
-		if (!(data = r_anal_strmask (anal, arg))) {
-			r_sign_item_free (si);
-			si = NULL;
-			break;
-		}
-		len = strlen (data) + 4; // \xf0
-		si->bytes = (ut8 *)calloc (R_MAX (len, 4), 1);
-		si->mask = (ut8 *)calloc (R_MAX (len, 4), 1);
-		if (!si->bytes || !si->mask) {
-			eprintf ("Cannot malloc\n");
-			r_sign_item_free (si);
-			si = NULL;
-			break;
-		}
-		si->size = r_hex_str2binmask (data, si->bytes, si->mask);
-		if (si->size < 1) {
-			r_sign_item_free (si);
-			si = NULL;
-		} else {
-			if (!signatureExists (sig, si)) {
-				r_list_append (sig->items, si);
-				if (type == R_SIGN_HEAD) {
-					sig->s_head++;
-				} else if (type == R_SIGN_BYTE) {
-					sig->s_byte++;
-				} else if (type == R_SIGN_BODY) {
-					sig->s_func++;
-				}
-				si = NULL;
-			}
-		}
-		break;
-	default:
-	case R_SIGN_ANAL:
-		eprintf ("r_sign_add: TODO. unsupported signature type %d\n", type);
-		r_sign_item_free (si);
-		si = NULL;
-		break;
+	if (k) {
+		snprintf (k, R_SIGN_KEY_MAXSZ, "zign|%d|%s", it->space, it->name);
 	}
-	free (si);
-	free (data);
-	return false;
+
+	if (v) {
+		len = it->size * 2 + 1;
+
+		hexbytes = calloc (1, len);
+		hexmask = calloc (1, len);
+
+		r_hex_bin2str (it->bytes, it->size, hexbytes);
+		r_hex_bin2str (it->mask, it->size, hexmask);
+
+		snprintf (v, R_SIGN_VAL_MAXSZ, "%c|%d|%s|%s", it->type, it->size, hexbytes, hexmask);
+
+		free (hexbytes);
+		free (hexmask);
+	}
 }
 
-R_API void r_sign_list(RSign *sig, int rad, int json) {
-	if (rad) {
-		int i;
-		RListIter *iter;
-		RSignItem *si;
-		if (!r_list_empty (sig->items)) {
-			sig->cb_printf ("zp-\n");
+R_API bool r_sign_add(RAnal *a, int type, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
+	RSignItem *it = R_NEW0 (RSignItem);
+	char key[R_SIGN_KEY_MAXSZ], val[R_SIGN_VAL_MAXSZ];
+	bool retval = true;
+
+	it->type = type;
+	it->name = r_str_new (name);
+	it->space = a->zign_spaces.space_idx;
+	it->size = size;
+
+	it->bytes = malloc (size);
+	memcpy (it->bytes, bytes, size);
+	it->mask = malloc (size);
+	memcpy (it->mask, mask, size);
+
+	serialize (it, key, val);
+
+	if (sdb_exists (a->sdb_zigns, key)) {
+		eprintf ("error: zignature already exists\n");
+		retval = false;
+		goto exit_function;
+	}
+
+	sdb_set (a->sdb_zigns, key, val, 0);
+
+exit_function:
+	r_sign_item_free (it);
+
+	return retval;
+}
+
+R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes) {
+	ut8 *mask = NULL;
+	bool retval = true;
+
+	mask = r_anal_mask (a, size, bytes);
+	retval = r_sign_add(a, R_SIGN_ANAL, name, size, bytes, mask);
+
+	free (mask);
+	return retval;
+}
+
+struct ctxDeleteCB {
+	char buf[R_SIGN_KEY_MAXSZ];
+	RAnal *anal;
+};
+
+int zignDeleteCB(void *user, const char *k, const char *v) {
+	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *)user;
+
+	if (r_str_cmp (k, ctx->buf, strlen (ctx->buf))) {
+		sdb_remove (ctx->anal->sdb_zigns, k, 0);
+	}
+
+	return 1;
+}
+
+R_API bool r_sign_delete(RAnal *a, const char *name) {
+	RSignItem it;
+	char buf[R_SIGN_KEY_MAXSZ];
+	struct ctxDeleteCB ctx;
+
+	// Remove all flags
+	if (name[0] == '*') {
+		if (a->zign_spaces.space_idx == -1) {
+			sdb_reset (a->sdb_zigns);
+			return true;
+		} else {
+			snprintf (ctx.buf, R_SIGN_KEY_MAXSZ, "zign.%d", a->zign_spaces.space_idx);
+			ctx.anal = a;
+			sdb_foreach (a->sdb_zigns, zignDeleteCB, &ctx);
+			return true;
 		}
-		r_list_foreach (sig->items, iter, si) {
-			sig->cb_printf ("z%c %s ", si->type, si->name);
-			for (i = 0; i < si->size; i++){
-				if (!si->mask[i]) { // This is a mask
-					sig->cb_printf ("..");
-				} else {
-					sig->cb_printf ("%02x", si->bytes[i]);
-				}
-			}
-			sig->cb_printf ("\n");
+	}
+
+	// Remove specific zign
+	it.name = (char*)name;
+	it.space = a->zign_spaces.space_idx;
+	serialize (&it, buf, NULL);
+	return sdb_remove (a->sdb_zigns, buf, 0);
+}
+
+static void printZignature(RAnal *a, const char *k, const char *v, int format) {
+	RSignItem *it = R_NEW0 (RSignItem);
+	char *bytes = NULL;
+	int i;
+
+	if (!deserialize (it, k, v)) {
+		eprintf ("error: cannot deserialize zign\n");
+		goto exit_function;
+	}
+
+	if (a->zign_spaces.space_idx != it->space && a->zign_spaces.space_idx != -1) {
+		goto exit_function;
+	}
+
+	for (i = 0; i < it->size; i++){
+		if (!it->mask[i]) {
+			bytes = r_str_concatf (bytes, "..");
+		} else {
+			bytes = r_str_concatf (bytes, "%02x", it->bytes[i]);
 		}
+	}
+
+	if (format == '*') {
+		if (it->space >= 0) {
+			a->cb_printf ("zs %s\n", a->zign_spaces.spaces[it->space]);
+		} else {
+			a->cb_printf ("zs *\n");
+		}
+		a->cb_printf ("z%c %s %s\n", it->type, it->name, bytes);
+	} else if (format == 'j') {
+		if (it->space >= 0) {
+			a->cb_printf ("{\"zignspace\": \"%s\", ", a->zign_spaces.spaces[it->space]);
+		} else {
+			a->cb_printf ("{");
+		}
+		a->cb_printf ("\"name\": \"%s\", \"type\": \"%c\", \"bytes\": \"%s\"}",
+				it->name, it->type, bytes);
 	} else {
-		if (json) {
-			sig->cb_printf("{\"byte_signatures\":\"%d\","
-					"\"head_signatures\":\"%d\","
-					"\"func_signatures\":\"%d\","
-					"\"matches\":\"%d\"}\n", sig->s_byte, sig->s_head,
-					sig->s_func,sig->matches);
-		} else {
-			const int total = sig->s_byte + sig->s_anal + sig->s_func;
-			sig->cb_printf ("Loaded %d signatures\n", total);
-			sig->cb_printf ("  %d byte signatures\n", sig->s_byte);
-			sig->cb_printf ("  %d head signatures\n", sig->s_head);
-			sig->cb_printf ("  %d func signatures\n", sig->s_func);
-			sig->cb_printf ("Found %d matches\n", sig->matches);
+		if (it->space >= 0) {
+			a->cb_printf ("%s.", a->zign_spaces.spaces[it->space]);
 		}
+		a->cb_printf ("%s %c %s\n", it->name, it->type, bytes);
+	}
+
+exit_function:
+	r_sign_item_free (it);
+	free (bytes);
+}
+
+
+struct ctxListCB {
+	int idx;
+	int format;
+	RAnal *anal;
+};
+
+int zignListCB(void *user, const char *k, const char *v) {
+	struct ctxListCB *ctx = (struct ctxListCB *)user;
+
+	if (ctx->format == 'j' && ctx->idx > 0) {
+		ctx->anal->cb_printf (",");
+	}
+	printZignature (ctx->anal, k, v, ctx->format);
+	ctx->idx++;
+
+	return 1;
+}
+
+R_API void r_sign_list(RAnal *a, int format) {
+	struct ctxListCB ctx = {0, format, a};
+
+	if (format == 'j') {
+		a->cb_printf ("[");
+	}
+
+	sdb_foreach (a->sdb_zigns, zignListCB, &ctx);
+
+	if (format == 'j') {
+		a->cb_printf ("]");
 	}
 }
 
-R_API void r_sign_reset(RSign *sig) {
-	if (!sig)
-		return;
-	r_list_free (sig->items);
-	sig->items = r_list_new ();
-	sig->s_anal = sig->s_byte = sig->s_head = sig->s_func = 0;
+static int zignCount(const char *k, const char *v, int zsidx) {
+	RSignItem *it = R_NEW0 (RSignItem);
+	int retval = 0;
+
+	if (!deserialize (it, k, v)) {
+		eprintf ("error: cannot deserialize zign\n");
+		retval = 0;
+		goto exit_function;
+	}
+
+	if (it->space == zsidx) {
+		retval = 1;
+	}
+
+exit_function:
+	r_sign_item_free (it);
+
+	return retval;
 }
 
-R_API int r_sign_remove_ns(RSign* sig, const char* ns) {
-    /*Remove namespace*/
-	RListIter* iter, *iter2;
-	RSignItem* si;
-	int plen, i = 0;
+struct ctxCountForCB {
+	int idx;
+	int count;
+};
 
-	if (!sig || !ns) {
-		return -1;
-	}
-	plen = strlen (ns);
-	r_list_foreach_safe (sig->items, iter, iter2, si) {
-		if (!strncmp (si->name, ns, plen)) {
-			if (si->type == R_SIGN_BYTE)
-				sig->s_byte--;
-			else if (si->type == R_SIGN_ANAL)
-				sig->s_anal--;
-			else if (si->type == R_SIGN_HEAD)
-				sig->s_head--;
-			r_list_delete (sig->items, iter);
-			i++;
-		}
-	}
-	return i;
+int zignCountForCB(void *user, const char *k, const char *v) {
+	struct ctxCountForCB *ctx = (struct ctxCountForCB *)user;
+
+	ctx->count += zignCount (k, v, ctx->idx);
+
+	return 1;
 }
 
-R_API RSign *r_sign_free(RSign *sig) {
-	if (sig) {
-		r_list_free (sig->items);
-		free (sig->ns);
-		free (sig);
+
+R_API int r_sign_space_count_for(RAnal *a, int idx) {
+	struct ctxCountForCB ctx = {idx, 0};
+
+	sdb_foreach (a->sdb_zigns, zignCountForCB, &ctx);
+
+	return ctx.count;
+}
+
+static void zignUnset(const char *k, const char *v, int zsidx, Sdb *db) {
+	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
+	RSignItem *it = R_NEW0 (RSignItem);
+
+	if (!deserialize (it, k, v)) {
+		eprintf ("error: cannot deserialize zign\n");
+		goto exit_function;
 	}
-	return NULL;
+
+	if (it->space != zsidx) {
+		goto exit_function;
+	}
+
+	if (it->space != -1) {
+		it->space = -1;
+		serialize (it, nk, nv);
+		sdb_remove (db, k, 0);
+		sdb_set (db, nk, nv, 0);
+	}
+
+exit_function:
+	r_sign_item_free (it);
+}
+
+struct ctxUnsetForCB {
+	int idx;
+	RAnal *anal;
+};
+
+int zignUnsetForCB(void *user, const char *k, const char *v) {
+	struct ctxUnsetForCB *ctx = (struct ctxUnsetForCB *)user;
+
+	zignUnset (k, v, ctx->idx, ctx->anal->sdb_zigns);
+
+	return 1;
+}
+
+R_API void r_sign_space_unset_for(RAnal *a, int idx) {
+	struct ctxUnsetForCB ctx = {idx, a};
+
+	sdb_foreach (a->sdb_zigns, zignUnsetForCB, &ctx);
 }
 
 R_API void r_sign_item_free(void *_item) {
-	if (_item) {
-		RSignItem *item = _item;
-		free (item->bytes);
-		free (item->mask);
-		free (item->name);
-		free (item);
+	if (!_item) {
+		return;
 	}
-}
 
-R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len) {
-	RListIter *iter;
-	RSignItem *si;
-
-	if (!sig || !buf) {
-		return NULL;
-	}
-	r_list_foreach (sig->items, iter, si) {
-		if ((si->type == R_SIGN_BYTE) || (si->type == R_SIGN_BODY)) {
-			int l = (len>si->size)?si->size:len;
-			if (!r_mem_cmp_mask (buf, si->bytes, si->mask, l))
-				return si;
-		}
-	}
-	return NULL;
+	RSignItem *item = _item;
+	free (item->name);
+	free (item->bytes);
+	free (item->mask);
+	free (item);
 }

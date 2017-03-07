@@ -130,7 +130,6 @@ typedef struct r_core_t {
 	RFlag *flags;
 	RSearch *search;
 	RIOSection *section;
-	RSign *sign;
 	RFS *fs;
 	REgg *egg;
 	RCoreLog *log;

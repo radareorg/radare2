@@ -13,56 +13,27 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_sign);
 
 enum {
-	R_SIGN_BYTE = 'b',
-	R_SIGN_FUNC = 'f',
-	R_SIGN_HEAD = 'h',
-	R_SIGN_ANAL = 'a',
-	R_SIGN_BODY = 'p',
+	R_SIGN_EXACT = 'e',  // Exact match
+	R_SIGN_ANAL  = 'a',  // Anal
+	R_SIGN_METR  = 'm',  // Function metrics
 };
 
 /* signature struct */
 typedef struct r_sign_item_t {
-	int type;
 	char *name;
+	int space;
+	int type;
 	int size;
-	ut64 addr;
 	ut8 *bytes;
 	ut8 *mask;
 } RSignItem;
 
-typedef struct r_sign_t {
-	int s_anal;
-	int s_byte;
-	int s_head;
-	int s_func; // TODO: this must be an array count[N]
-	char *ns;
-	PrintfCallback cb_printf;
-	RList *items;
-	int matches;
-} RSign;
-
-typedef int (*RSignCallback)(RSignItem *si, void *user);
-
 #ifdef R_API
-R_API RSign *r_sign_new(void);
-R_API bool r_sign_add(RSign *sig, RAnal *anal, int type,
-		const char *name, const char *arg);
-R_API RSign *r_sign_free(RSign *sig);
-R_API void r_sign_ns(RSign *sig, const char *str);
-R_API void r_sign_list(RSign *sig, int rad, int json);
-R_API void r_sign_reset(RSign *sig);
+R_API bool r_sign_add(RAnal *a, int type, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
+R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes);
+R_API bool r_sign_delete(RAnal *a, const char *name);
+R_API void r_sign_list(RAnal *a, int format);
 R_API void r_sign_item_free(void *_item);
-R_API int r_sign_remove_ns(RSign* sig, const char* ns);
-R_API int r_sign_is_flirt (RBuffer *buf);
-R_API void r_sign_flirt_dump (const RAnal *anal, const char *flirt_file);
-R_API void r_sign_flirt_scan (const RAnal *anal, const char *flirt_file);
-
-// old api
-R_API int r_sign_generate(RSign *sig, const char *file, FILE *fd);
-R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len);
-R_API int r_sign_load_file(RSign *sig, const char *file);
-R_API int r_sign_option(RSign *sig, const char *option);
-R_API int r_sign_item_set(RSignItem *sig, const char *key, const char *value);
 #endif
 
 #ifdef __cplusplus
