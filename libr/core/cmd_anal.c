@@ -3966,6 +3966,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				char *comment;
 				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
 				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+				if (core->parser->relsub) {
+					core->parser->relsub_addr = addr;
+				}
 				r_list_foreach (list, iter, ref) {
 					r_core_read_at (core, ref->addr, buf, size);
 					r_asm_set_pc (core->assembler, ref->addr);
