@@ -948,6 +948,7 @@ repeat:
 #if __linux__
 		if (reason == R_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 #if DEBUGGER
+			void linux_attach_new_process (RDebug *dbg);
 			linux_attach_new_process (dbg);
 #endif
 			goto repeat;

@@ -26,7 +26,6 @@ static bool inHomeWww(const char *path) {
  */
 R_API int r_sandbox_check_path (const char *path) {
 	size_t root_len;
-	char ch;
 	char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
 
@@ -72,6 +71,7 @@ R_API int r_sandbox_check_path (const char *path) {
 		return 0;
 	}
 #if __UNIX__
+	char ch;
 	if (readlink (path, &ch, 1) != -1) {
 		return false;
 	}
