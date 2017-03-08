@@ -3872,36 +3872,24 @@ R_API RBinJavaVerificationObj* r_bin_java_verification_info_from_type(RBinJavaOb
 
 R_API RBinJavaVerificationObj* r_bin_java_read_from_buffer_verification_info_new (ut8* buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 0;
+	static int i = 0;
 	RBinJavaVerificationObj *se = R_NEW0 (RBinJavaVerificationObj);
-	if (!se) return NULL;
+	if (!se) {
+		return NULL;
+	}
 	se->file_offset = buf_offset;
 	se->tag = buffer[offset];
 	offset += 1;
 	if (se->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
-		/*if((offset + 2) <= sz) {
-			se->info.obj_val_cp_idx = R_BIN_JAVA_USHORT (buffer, offset);
-			offset += 2;
-		} else {
-			eprintf ("rbin_java_read_next_verification_info: Failed to read bytes for StackMapTable R_BIN_JAVA_STACKMAP_OBJECT Object.\n");
-			//r_bin_java_verification_info_free (se);
-			//return se;
-		}*/
 		se->info.obj_val_cp_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 	} else if (se->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
-		/*if((offset + 2) <= sz) {
-			se->info.uninit_offset = R_BIN_JAVA_USHORT (buffer, offset);
-			offset += 2;
-		} else {
-			eprintf ("rbin_java_read_next_verification_info: Failed to read bytes for StackMapTable R_BIN_JAVA_STACKMAP_UNINIT Object.\n");
-			//r_bin_java_verification_info_free (se);
-			//return se;
-		}*/
 		se->info.uninit_offset = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 	}
 	if (R_BIN_JAVA_STACKMAP_UNINIT < se->tag) {
-		eprintf ("rbin_java_read_next_verification_info: Unknown Tag: 0x%02x\n", se->tag);
+		r_bin_java_verification_info_free (se);
+		return NULL;
 	}
 	se->size = offset;
 	return se;
