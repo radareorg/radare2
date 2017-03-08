@@ -12,6 +12,28 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (buf && length > 0xffff && buf[0] != 0xcf) {
+		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
+		/* hacky check to avoid detecting multidex bins as bios */
+		/* need better fix for this */
+		if (!memcmp (buf, "dex", 3)) {
+			return 0;
+		}
+		/* Check if this a 'jmp' opcode */
+		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+}
+
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	if (!check_bytes (buf, sz)) {
 		return NULL;
@@ -57,28 +79,6 @@ static RBinInfo* info(RBinFile *arch) {
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	return ret;
-}
-
-static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 0xffff && buf[0] != 0xcf) {
-		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
-		/* hacky check to avoid detecting multidex bins as bios */
-		/* need better fix for this */
-		if (!memcmp (buf, "dex", 3)) {
-			return 0;
-		}
-		/* Check if this a 'jmp' opcode */
-		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9)) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
 }
 
 static RList* sections(RBinFile *arch) {

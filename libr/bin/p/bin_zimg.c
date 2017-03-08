@@ -44,12 +44,6 @@ static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
-static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 8) {
 		// Checking ARM zImage kernel
@@ -59,6 +53,12 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	}
 	// TODO: Add other architectures
 	return false;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static RBinInfo *info(RBinFile *arch) {
@@ -94,7 +94,7 @@ struct r_bin_plugin_t r_bin_plugin_zimg = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_zimg,
 	.version = R2_VERSION

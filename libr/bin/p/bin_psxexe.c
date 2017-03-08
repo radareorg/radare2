@@ -6,11 +6,6 @@
 #include <r_bin.h>
 #include "psxexe/psxexe.h"
 
-static void* load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	check_bytes (buf, sz);
-	return R_NOTNULL;
-}
-
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (!buf || (length < PSXEXE_ID_LEN)) {
 		return false;
@@ -23,6 +18,11 @@ static bool check(RBinFile *arch) {
 		return false;
 	}
 	return check_bytes (r_buf_buffer (arch->buf), r_buf_size (arch->buf));
+}
+
+static void* load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	check_bytes (buf, sz);
+	return R_NOTNULL;
 }
 
 static RBinInfo* info(RBinFile* arch) {

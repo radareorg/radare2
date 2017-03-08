@@ -4,11 +4,6 @@
 #include <r_lib.h>
 #include "../format/spc700/spc_specs.h"
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
-}
-
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (!buf || length < 27) {
 		return false;
@@ -20,6 +15,11 @@ static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
+}
+
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	check_bytes (buf, sz);
+	return R_NOTNULL;
 }
 
 static RBinInfo* info(RBinFile *arch) {
