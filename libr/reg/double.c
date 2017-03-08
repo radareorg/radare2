@@ -5,10 +5,8 @@
 
 #if __SDB_WINDOWS__ && !__CYGWIN__
 #define CASTLDBL (double)
-#define DBLFMT "f"
 #else
 #define CASTLDBL
-#define DBLFMT "Lf"
 #endif
 
 // TODO: add support for 80bit floating point value
@@ -116,7 +114,7 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 		return true;
 	}
 
-	eprintf ("r_reg_set_value: Cannot set %s to %"DBLFMT"\n", item->name, CASTLDBL value);
+	eprintf ("r_reg_set_value: Cannot set %s to %"LDBLFMT"\n", item->name, CASTLDBL value);
 	return false;
 }
 

@@ -8,12 +8,6 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#if __WINDOWS__ && !__CYGWIN__
-#define HHXFMT  "x"
-#else
-#define HHXFMT  "hhx"
-#endif
-
 /* stable code */
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";

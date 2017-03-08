@@ -23,8 +23,8 @@ typedef struct {
 #define R_IO_NFDS 2
 
 static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
-	DWORD ret;
-	ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, (SIZE_T*)&ret);
+	SIZE_T ret;
+	ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret);
 //	if (len != ret)
 //		eprintf ("Cannot read 0x%08llx\n", addr);
 	return len; // XXX: Handle read correctly and not break r2 shell
@@ -37,8 +37,8 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int w32dbg_write_at(RIOW32Dbg *dbg, const ut8 *buf, int len, ut64 addr) {
-	DWORD ret;
-	return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, (SIZE_T*)&ret)? len: 0;
+	SIZE_T ret;
+	return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {

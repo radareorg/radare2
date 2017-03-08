@@ -34,12 +34,6 @@
 
 #define VERBOSE_DELAY if(0)
 
-#if __WINDOWS__ && !__CYGWIN__
-#define LLXFMT "I64x"
-#else
-#define LLXFMT "llx"
-#endif
-
 #if USE_SDB_CACHE
 static Sdb *HB = NULL;
 #endif
@@ -510,7 +504,7 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 	ut8 buf[1024];
 	int i;
-	eprintf ("WALK SWITCH TABLE INTO (0x%"LLXFMT") %"LLXFMT"\n", from, at);
+	eprintf ("WALK SWITCH TABLE INTO (0x%"PFMT64x") %"PFMT64x"\n", from, at);
 	for (i = 0; i < 10; i++) {
 		anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
 		int sz = r_anal_case (anal, fcn, from, at, buf, sizeof (buf), 0);
