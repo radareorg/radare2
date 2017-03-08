@@ -73,8 +73,8 @@ indentFile() {
 # one of those rules fuckups the ascii art in comment blocks
 
 	# fix ternary conditional indent
-	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2
-	cat .tmp-format2 | perl -ne 's/\r//g;print' | sed -e 's, : ,: ,g' > .tmp-format
+#	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2
+#	cat .tmp-format2 | perl -ne 's/\r//g;print' | sed -e 's, : ,: ,g' > .tmp-format
 	mv .tmp-format .tmp-format2
 	# do not space before parenthesis on function signatures
 	awk '{if (/^static/ || /^R_API/) { gsub(/ \(/,"("); }; print;}' \
@@ -93,14 +93,14 @@ indentFile() {
 	mv .tmp-format .tmp-format2
 	perl -ne 's/[ ]+\\$/\\/g;print' < .tmp-format2 > .tmp-format
 	# spaces in { brackets
-	mv .tmp-format .tmp-format2
+	#mv .tmp-format .tmp-format2
 	#perl -ne 's/{\s/{ /g;print' < .tmp-format2 > .tmp-format
 	#perl -ne 's/{([^ \n])/{ \1/g if(!/"/);print' < .tmp-format2 > .tmp-format
 	# spaces in } brackets
 	#mv .tmp-format .tmp-format2
 	#perl -ne 's/([^ \t])}/$1 }/g if(!/"/);print' < .tmp-format2 > .tmp-format
 	# _( macro
-	#mv .tmp-format .tmp-format2
+	mv .tmp-format .tmp-format2
 	perl -ne 's/_\s\(/_(/g;print' < .tmp-format2 > .tmp-format
 	# 0xa0
 	mv .tmp-format .tmp-format2
