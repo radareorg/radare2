@@ -1211,7 +1211,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			comma = true;
 			r_list_foreach (sp_vars, iter, var) {
-				if (var->delta > f->stack) {
+				if (var->delta > f->maxstack) {
 					if ((arg_bp || !r_list_empty (regs)) && comma) {
 						comma = false;
 						r_cons_printf (", ");
@@ -1273,7 +1273,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				}
 				break;
 			case 's':
-				if ( var->delta < f->stack) {
+				if ( var->delta < f->maxstack) {
 					r_cons_printf ("var %s %s @ %s+0x%x",
 						var->type, var->name,
 						anal->reg->name[R_REG_NAME_SP],

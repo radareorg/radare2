@@ -477,7 +477,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 			count[1] ++;
 			continue;
 		}
-		count[(kind == R_ANAL_VAR_KIND_BPV && var->delta > 0) || (kind == R_ANAL_VAR_KIND_SPV && var->delta > fcn->stack)]++;
+		count[(kind == R_ANAL_VAR_KIND_BPV && var->delta > 0) || (kind == R_ANAL_VAR_KIND_SPV && var->delta > fcn->maxstack)]++;
 	}
 	r_list_free (list);
 	return count[type];
@@ -659,7 +659,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
-				if (var->delta < fcn->stack) {
+				if (var->delta < fcn->maxstack) {
 					anal->cb_printf ("{\"name\":\"%s\","
 						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":"
 						"{\"base\":\"%s\", \"offset\":%"PFMT64d"}}",
@@ -705,7 +705,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
-				if (var->delta < fcn->stack) {
+				if (var->delta < fcn->maxstack) {
 					anal->cb_printf ("var %s %s @ %s+0x%x\n",
 						var->type, var->name,
 						anal->reg->name[R_REG_NAME_SP],
