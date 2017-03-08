@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2016 - pancake */
+/* radare - LGPL - Copyright 2011-2017 - pancake, h4ng3r */
 
 #include <r_cons.h>
 #include <r_types.h>
@@ -11,22 +11,14 @@
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
-#define DEBUG_PRINTF 0
-
-#if DEBUG_PRINTF
-#define dprintf eprintf
-#else
-#define dprintf if (0)eprintf
-#endif
-
 static bool dexdump = false;
 static Sdb *mdb = NULL;
-static Sdb *cdb = NULL; // TODO: remove if it is not used
 
 static char *getstr(RBinDexObj *bin, int idx) {
 	ut8 buf[6];
 	ut64 len;
 	int uleblen;
+	char c = 0;
 	if (!bin || idx < 0 || idx >= bin->header.strings_size ||
 		!bin->strings) {
 		return NULL;
@@ -45,16 +37,14 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (!len || len >= bin->size) {
 		return NULL;
 	}
-	// TODO: improve this ugly fix
-	char c = 'a';
-	while (c) {
+	do {
 		ut64 offset = bin->strings[idx] + uleblen + len;
 		if (offset >= bin->size || offset < len) {
 			return NULL;
 		}
 		r_buf_read_at (bin->b, offset, (ut8*)&c, 1);
 		len++;
-	}
+	} while (c);
 	if ((int)len > 0 && len < R_BIN_SIZEOF_STRINGS) {
 		char *str = calloc (1, len + 1);
 		if (str) {
@@ -149,22 +139,22 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 			"?",                /* 0x20000 */
 		},
 	};
+	int i, count = countOnes (flags);
 	const int kLongest = 21;
-	int i, count;
-	char* str;
-	char* cp;
-	count = countOnes(flags);
-	// XXX check if this allocation is safe what if all the arithmetic
+	char* str, *cp;
 	// produces a huge number????
-	cp = str = (char*) malloc (count * (kLongest + 1) + 1);
+	cp = str = (char*) calloc (count + 1, (kLongest + 1));
+	if (!str) {
+		return NULL;
+	}
 	for (i = 0; i < NUM_FLAGS; i++) {
 		if (flags & 0x01) {
-			const char* accessStr = kAccessStrings[forWhat][i];
-			int len = strlen(accessStr);
+			const char *accessStr = kAccessStrings[forWhat][i];
+			int len = strlen (accessStr);
 			if (cp != str) {
 				*cp++ = ' ';
 			}
-			memcpy(cp, accessStr, len);
+			memcpy (cp, accessStr, len);
 			cp += len;
 		}
 		flags >>= 1;
@@ -230,7 +220,13 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 		}
 		buff_len = strlen (buff);
 		size += buff_len + 1;
-		signature = realloc (signature, size);
+		char *newsig = realloc (signature, size);
+		if (!newsig) {
+			eprintf ("Cannot realloc to %d\n", size);
+			free (signature);
+			break;
+		}
+		signature = newsig;
 		strcpy (signature + pos, buff);
 		pos += buff_len;
 		signature[pos] = '\0';
@@ -374,10 +370,10 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			debug_locals[reg].startAddress = address;
 			debug_locals[reg].live = true;
 		}
-		--parameters_size;
+		parameters_size--;
 	}
 
-	if (p4 <= 0) {
+	if (p4 < 1) {
 		return;
 	}
 	ut8 opcode = *(p4++) & 0xff;
@@ -442,10 +438,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			break;
 		case 0x4: //DBG_START_LOCAL_EXTENDED
 			{
-			ut64 register_num;
-			ut64 name_idx;
-			ut64 type_idx;
-			ut64 sig_idx;
+			ut64 register_num, name_idx, type_idx, sig_idx;
 			p4 = r_uleb128 (p4, p4_end - p4, &register_num);
 			p4 = r_uleb128 (p4, p4_end - p4, &name_idx);
 			name_idx -= 1;
@@ -531,7 +524,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			break;
 		default:
 			{
-			int adjusted_opcode = opcode - 0x0a;
+			int adjusted_opcode = opcode - 10;
 			address += (adjusted_opcode / 15);
 			line += -4 + (adjusted_opcode % 15);
 			struct dex_debug_position_t *position =
@@ -627,9 +620,6 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	r_list_free (params);
 }
 
-static int check (RBinFile *arch);
-static int check_bytes (const ut8 *buf, ut64 length);
-
 static Sdb *get_sdb (RBinObject *o) {
 	if (!o || !o->bin_obj) {
 		return NULL;
@@ -672,13 +662,7 @@ static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (!buf || length < 8) {
 		return false;
 	}
@@ -703,6 +687,12 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		return true;
 	}
 	return false;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static RBinInfo *info(RBinFile *arch) {
@@ -1240,6 +1230,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------
+#if 0
 				if (0) {
 					if (MA & 0x10000) { //ACC_CONSTRUCTOR
 						if (!cdb) {
@@ -1248,6 +1239,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						sdb_num_set (cdb, sdb_fmt (0, "%d", c->class_id), sym->paddr, 0);
 					}
 				}
+#endif
 			} else {
 				sym->size = 0;
 				r_list_append (bin->methods_list, sym);
@@ -1476,10 +1468,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		}
 		methods = calloc (1, amount + 1);
 		for (i = 0; i < bin->header.class_size; i++) {
-			char *super_name, *class_name;
 			struct dex_class_t *c = &bin->classes[i];
-			class_name = dex_class_name (bin, c);
-			super_name = dex_class_super_name (bin, c);
+			char *class_name = dex_class_name (bin, c);
+			char *super_name = dex_class_super_name (bin, c);
 			if (dexdump) { 
 				rbin->cb_printf ("Class #%d            -\n", i);
 			}
@@ -1681,7 +1672,6 @@ static int getoffset(RBinFile *arch, int type, int idx) {
 		return dex_get_type_offset (arch, idx);
 	case 'c': // class
 		return dex_get_type_offset (arch, idx);
-		//return sdb_num_get (cdb, sdb_fmt (0, "%d", idx), 0);
 	}
 	return -1;
 }
@@ -1764,7 +1754,6 @@ static RList *sections(RBinFile *arch) {
 		} else {
 			ptr->size = ptr->vsize = arch->buf->length - ptr->vaddr;
 			// hacky workaround
-			//dprintf ("Hack\n");
 			//ptr->size = ptr->vsize = 1024;
 		}
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; //|2;
@@ -1832,10 +1821,10 @@ RBinPlugin r_bin_plugin_dex = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
-	.load_bytes = &load_bytes,
-	.check = &check,
-	.check_bytes = &check_bytes,
-	.baddr = &baddr,
+	.load_bytes = load_bytes,
+	.check = check,
+	.check_bytes = check_bytes,
+	.baddr = baddr,
 	.entries = entries,
 	.classes = classes,
 	.sections = sections,

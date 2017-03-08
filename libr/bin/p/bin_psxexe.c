@@ -6,21 +6,19 @@
 #include <r_bin.h>
 #include "psxexe/psxexe.h"
 
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static void* load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (!buf || (length < PSXEXE_ID_LEN)) {
 		return false;
 	}
 	return !memcmp (buf, PSXEXE_ID, PSXEXE_ID_LEN);
 }
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	if (!arch || !arch->buf) {
 		return false;
 	}

@@ -11,23 +11,14 @@ typedef struct gen_hdr {
 	ut8 RegionRomSize; //Low 4 bits RomSize, Top 4 bits Region
 } SMS_Header;
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
 #define CMP8(o,x) strncmp((const char*)bs+o,x,8)
 #define CMP4(o,x) strncmp((const char*)bs+o,x,4)
-static int check_bytes(const ut8 *bs, ut64 length) {
+static bool check_bytes(const ut8 *bs, ut64 length) {
 	if (length > 0x2000 && !CMP8(0x1ff0, "TMR SEGA")) {
 		return true;
 	}
@@ -44,6 +35,12 @@ static int check_bytes(const ut8 *bs, ut64 length) {
 		return true;
 	}
 	return false;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static RBinInfo* info(RBinFile *arch) {
@@ -120,20 +117,20 @@ static RBinInfo* info(RBinFile *arch) {
 }
 
 
-struct r_bin_plugin_t r_bin_plugin_sms = {
+RBinPlugin r_bin_plugin_sms = {
 	.name = "sms",
 	.desc = "SEGA MasterSystem/GameGear",
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
-	.check = &check,
-	.check_bytes = &check_bytes,
+	.check = check,
+	.check_bytes = check_bytes,
 	.info = &info,
 	.minstrlen = 10,
 	.strfilter = 'U'
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_sms,
 	.version = R2_VERSION

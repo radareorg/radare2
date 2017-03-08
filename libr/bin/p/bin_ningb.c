@@ -18,7 +18,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	return R_NOTNULL;
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	ut8 lict[48];
 	if (!buf || length < (0x104+48))
 		return 0;
@@ -26,13 +26,13 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (lict, lic, 48))? 1: 0;
 }
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o) return false;

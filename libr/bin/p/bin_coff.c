@@ -7,9 +7,6 @@
 
 #include "coff/coff.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static Sdb* get_sdb(RBinObject *o) {
 	if (!o) {
 		return NULL;
@@ -337,14 +334,7 @@ static ut64 size(RBinFile *arch) {
 	return 0;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 #if 0
 TODO: do more checks here to avoid false positives
 
@@ -360,6 +350,13 @@ ut16 CHARACTERISTICS
 		return r_coff_supported_arch (buf);
 	}
 	return false;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
 }
 
 RBinPlugin r_bin_plugin_coff = {

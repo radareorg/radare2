@@ -18,22 +18,10 @@ typedef struct sbl_header {
 	ut32 cert_sz;
 } SBLHDR;
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 // TODO avoid globals
 static SBLHDR sb = {0};
 
-static int check(RBinFile *arch) {
-	if (arch && arch->buf) {
-		const ut8 *bytes = r_buf_buffer (arch->buf);
-		ut64 sz = r_buf_size (arch->buf);
-		return check_bytes (bytes, sz);
-	}
-	return false;
-}
-
-static int check_bytes(const ut8 *buf, ut64 bufsz) {
+static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 	if (buf && bufsz >= sizeof (SBLHDR)) {
 		RBuffer *b = r_buf_new_with_pointers (buf, bufsz);
 		int ret = r_buf_fread_at (b, 0, (ut8*)&sb, "10i", 1);
@@ -69,6 +57,15 @@ static int check_bytes(const ut8 *buf, ut64 bufsz) {
 #endif
 // TODO: Add more checks here
 		return true;
+	}
+	return false;
+}
+
+static bool check(RBinFile *arch) {
+	if (arch && arch->buf) {
+		const ut8 *bytes = r_buf_buffer (arch->buf);
+		ut64 sz = r_buf_size (arch->buf);
+		return check_bytes (bytes, sz);
 	}
 	return false;
 }

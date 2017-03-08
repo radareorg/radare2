@@ -4,23 +4,20 @@
 #include <r_lib.h>
 #include "nes/nes_specs.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
-static int check(RBinFile *arch) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (!buf || length < 4) return false;
+	return (!memcmp (buf, INES_MAGIC, 4));
+}
+
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 4) return false;
-	return (!memcmp (buf, INES_MAGIC, 4));
 }
 
 static RBinInfo* info(RBinFile *arch) {

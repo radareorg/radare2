@@ -11,8 +11,6 @@
 #define IFDBG_BIN_JAVA if(0)
 
 static Sdb *DB = NULL;
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
@@ -168,14 +166,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	bool ret = false;
 	int off, version = 0;
 	if (buf && length>32 && !memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
@@ -189,6 +180,13 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		}
 	}
 	return ret;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
 }
 
 static int retdemangle(const char *str) {

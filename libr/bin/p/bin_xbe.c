@@ -15,18 +15,18 @@ static Sdb* get_sdb (RBinObject *o) {
 	return NULL;
 }
 
-static int check_bytes(const ut8 *buf, ut64 size) {
+static bool check_bytes(const ut8 *buf, ut64 size) {
 	xbe_header *header = (xbe_header *)buf;
 	return (size > sizeof(xbe_header) && header->magic == XBE_MAGIC);
 }
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	const ut64 size = arch ? r_buf_size (arch->buf) : 0;
 
-	if (!arch || !arch->o || !bytes)
+	if (!arch || !arch->o || !bytes) {
 		return false;
-
+	}
 	return check_bytes(bytes, size);
 }
 
@@ -337,7 +337,7 @@ static ut64 baddr(RBinFile *arch) {
 	return obj->header->base;
 }
 
-struct r_bin_plugin_t r_bin_plugin_xbe = {
+RBinPlugin r_bin_plugin_xbe = {
 	.name = "xbe",
 	.desc = "Microsoft Xbox xbe format r_bin plugin",
 	.license = "LGPL3",
@@ -356,7 +356,7 @@ struct r_bin_plugin_t r_bin_plugin_xbe = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_xbe,
 	.version = R2_VERSION

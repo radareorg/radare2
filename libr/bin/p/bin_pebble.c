@@ -39,15 +39,11 @@ static Sdb* get_sdb (RBinObject *o) {
         return NULL;
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (length<8)
-		return 0;
-	if (!memcmp (buf, "PBLAPP\x00\x00", 8))
-		return 1;
-	return 0;
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	return (length > 7 && !memcmp (buf, "PBLAPP\x00\x00", 8));
 }
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);

@@ -37,18 +37,17 @@ typedef struct __attribute__((packed)) {
 	// 0x100 -- start of data section
 } DolHeader;
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (!buf || length < 6) {
+		return false;
+	}
+	return (!memcmp (buf, "\x00\x00\x01\x00\x00\x00", 6));
+}
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < 6) return false;
-	return (!memcmp (buf, "\x00\x00\x01\x00\x00\x00", 6));
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
