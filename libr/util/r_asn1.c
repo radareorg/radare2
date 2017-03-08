@@ -3,6 +3,7 @@
 #include <r_util.h>
 #include "r_oids.h"
 #include <r_types.h>
+#include <r_util.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,19 +11,6 @@
 #include "r_asn1_internal.h"
 
 const char* _hex = "0123456789abcdef";
-
-static char *sanitize(char *s, ut32 len) {
-	if (!s) {
-		return NULL;
-	}
-	char* e = s;
-	while (s <= (e + len)) {
-		if (!IS_PRINTABLE(*s))
-			*s = '.';
-		s++;
-	}
-	return e;
-}
 
 RASN1String *r_asn1_create_string (const char *string, bool allocated, ut32 length) {
 	RASN1String *s;
@@ -77,7 +65,7 @@ RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	memcpy (str, buffer, length);
-	sanitize (str, length + 1);
+	r_str_filter (str, length);
 	str[length] = '\0';
 	return r_asn1_create_string (str, true, length);
 }
@@ -312,7 +300,7 @@ RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 	return r_asn1_create_string (str, true, ASN1_OID_LEN);
 }
 
-RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
+static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	RASN1Object *object;
 	ut8 head, length8, byte;
 	ut64 length64;
@@ -369,13 +357,15 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 		object->sector = buffer + 2;
 	}
 	if (object->tag == TAG_BITSTRING && object->sector[0] == 0) {
-		object->sector++; //real sector starts +1
-		if (object->length > 0)
+		if (object->length > 0){
+			object->sector++; //real sector starts +1
 			object->length--;
+		}
 	}
 	if (object->length > length) {
 		// Malformed object - overflow from data ptr
-		R_FREE (object);
+		free(object);
+		return NULL;
 	}
 	return object;
 }
@@ -401,6 +391,7 @@ ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 		counter++;
 		R_FREE (object);
 	}
+	R_FREE (object);
 	return counter;
 }
 
@@ -419,14 +410,14 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 		} else {
 			object->list.objects = (RASN1Object**) calloc (count, sizeof (RASN1Object*));
 			if (!object->list.objects) {
-				free (object);
+				r_asn1_free_object (&object);
 				return NULL;
 			}
 			for (i = 0; next >= buffer && next < end && i < count; ++i) {
 				object->list.objects[i] = NULL;
 				inner = r_asn1_create_object (next, end - next);
 				if (!inner || next == inner->sector) {
-					R_FREE (inner);
+					r_asn1_free_object (&inner);
 					break;
 				}
 				next = inner->sector + inner->length;
@@ -440,7 +431,7 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 
 void r_asn1_free_object (RASN1Object **object) {
 	ut32 i;
-	if (object) {
+	if (!object) {
 		return;
 	}
 	if (*object) {
@@ -448,9 +439,7 @@ void r_asn1_free_object (RASN1Object **object) {
 		(*object)->sector = 0;
 		if ((*object)->list.objects) {
 			for (i = 0; i < (*object)->list.length; ++i) {
-				if ((*object)->list.objects[i]) {
-					r_asn1_free_object (&(*object)->list.objects[i]);
-				}
+				r_asn1_free_object (&(*object)->list.objects[i]);
 			}
 			R_FREE ((*object)->list.objects);
 		}

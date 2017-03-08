@@ -108,12 +108,12 @@ bool r_x509_parse_name (RX509Name *name, RASN1Object * object) {
 		}
 		for (i = 0; i < object->list.length; ++i) {
 			RASN1Object *o = object->list.objects[i];
-			if (o->klass == CLASS_UNIVERSAL &&
+			if (o && o->klass == CLASS_UNIVERSAL &&
 					o->tag == TAG_SET &&
 					o->form == FORM_CONSTRUCTED &&
 					o->list.length == 1) {
 				o = o->list.objects[0];
-				if (o->list.length > 1 &&
+				if (o && o->list.length > 1 &&
 						o->klass == CLASS_UNIVERSAL &&
 						o->tag == TAG_SEQUENCE) {
 					if (o->list.objects[0]->klass == CLASS_UNIVERSAL &&
@@ -266,7 +266,7 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 		free (certificate);
 		return NULL;
 	}
-
+	r_asn1_free_object (&object);
 	return certificate;
 }
 
@@ -278,7 +278,7 @@ RX509Certificate * r_x509_parse_certificate2 (const ut8 *buffer, ut32 length) {
 	}
 	object = r_asn1_create_object (buffer, length);
 	certificate = r_x509_parse_certificate (object);
-	r_asn1_free_object (&object);
+	//object freed by r_x509_parse_certificate
 	return certificate;
 }
 
@@ -356,7 +356,8 @@ void r_x509_free_name (RX509Name * name) {
 			r_asn1_free_string (name->oids[i]);
 			r_asn1_free_string (name->names[i]);
 		}
-		free (name->names);
+		R_FREE (name->names);
+		R_FREE (name->oids);
 	}
 	// not freeing name since it's not allocated dinamically
 }
@@ -475,7 +476,12 @@ char* r_x509_name_dump (RX509Name* name, char* buffer, ut32 length, const char* 
 		return NULL;
 	}
 	for (i = 0, p = 0; i < name->length; ++i) {
-		if (!name->oids[i] || !name->names[i]) continue;
+		if (!name->oids[i] || !name->names[i]) {
+			continue;
+		}
+		if (len <= p) {
+			return NULL;
+		}
 		r = snprintf (c + p, len - p, "%s%s: %s\n", pad, name->oids[i]->string, name->names[i]->string);
 		p += r;
 		if (r < 0 || len < p) {
@@ -530,6 +536,9 @@ char* r_x509_extensions_dump (RX509Extensions* exts, char* buffer, ut32 length, 
 		if (!e) continue;
 		//TODO handle extensions..
 		//s = r_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
+		if (len < p) {
+			return NULL;
+		}
 		r = snprintf (c + p, len - p, "%s%s: %s\n%s%u bytes\n", pad, 
 			e->extnID ? e->extnID->string : "Missing", 
 			e->critical ? "critical" : "", 
@@ -572,7 +581,7 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 	p = tmp - buffer;
 	if (length <= p) {
 		free (pad2);
-		return NULL;
+		return NULL;		
 	}
 	r = snprintf (buffer + p, length - p, "%sValidity:\n", pad);
 	p += r;
@@ -581,7 +590,10 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 		return NULL;
 	}
 	p = tmp - buffer;
-	if (r < 0 || length <= p) return NULL;
+	if (r < 0 || length <= p) {
+		free (pad2);
+		return NULL;
+	}
 	r = snprintf (buffer + p, length - p, "%sSubject:\n", pad);
 	p += r;
 	if (r < 0 || length <= p || !(tmp = r_x509_name_dump (&tbsc->subject, buffer + p, length - p, pad2))) {
@@ -589,7 +601,10 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 		return NULL;
 	}
 	p = tmp - buffer;
-	if (r < 0 || length <= p) return NULL;
+	if (r < 0 || length <= p) {
+		free (pad2);
+		return NULL;
+	}
 	r = snprintf (buffer + p, length - p, "%sSubject Public Key Info:\n", pad);
 	p += r;
 	if (r < 0 || length <= p ||
@@ -601,7 +616,10 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 	if (tbsc->issuerUniqueID) {
 		iid = r_asn1_stringify_integer (tbsc->issuerUniqueID->sector, tbsc->issuerUniqueID->length);
 		if (iid) {
-			if (length <= p) return NULL;
+			if (length <= p) {
+				free (pad2);
+				return NULL;
+			}
 			r = snprintf (buffer + p, length - p, "%sIssuer Unique ID:\n%s  %s", pad, pad, iid->string);
 			p += r;
 		} else {
@@ -612,7 +630,10 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 	if (tbsc->subjectUniqueID) {
 		sid = r_asn1_stringify_integer (tbsc->subjectUniqueID->sector, tbsc->subjectUniqueID->length);
 		if (sid) {
-			if (length <= p) return NULL;
+			if (length <= p) {
+				free (pad2);
+				return NULL;
+			}
 			r = snprintf (buffer + p, length - p, "%sSubject Unique ID:\n%s  %s", pad, pad, sid->string);
 			p += r;
 		} else {
@@ -620,7 +641,10 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 			return NULL;
 		}
 	}
-	if (r < 0 || length <= p) return NULL;
+	if (r < 0 || length <= p) {
+		free (pad2);
+		return NULL;
+	}
 	r = snprintf (buffer + p, length - p, "%sExtensions:\n", pad);
 	p += r;
 	if (r < 0 || length <= p || !(tmp = r_x509_extensions_dump (&tbsc->extensions, buffer + p, length - p, pad2))) {
@@ -646,8 +670,12 @@ char* r_x509_certificate_dump (RX509Certificate* certificate, char* buffer, ut32
 		pad = "";
 	}
 	pad2 = r_str_newf ("%s  ", pad);
-	if (!pad2) return NULL;
-	if ((r = snprintf (buffer, length, "%sTBSCertificate:\n", pad)) < 0) return NULL;
+	if (!pad2) {
+		return NULL;
+	}
+	if ((r = snprintf (buffer, length, "%sTBSCertificate:\n", pad)) < 0) {
+		return NULL;
+	}
 	p = (ut32) r;
 	tbsc = r_x509_tbscertificate_dump (&certificate->tbsCertificate, buffer + p, length - p, pad2);
 	p = tbsc - buffer;
