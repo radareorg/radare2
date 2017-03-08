@@ -58,11 +58,16 @@ static char *getstr(RBinDexObj *bin, int idx) {
 }
 
 static int countOnes(ut32 val) {
+	/* visual studio doesnt supports __buitin_clz */
+#ifdef _MSC_VER
 	int count = 0;
 	val = val - ((val >> 1) & 0x55555555);
 	val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
 	count = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 	return count;
+#else
+	return __builtin_clz (val);
+#endif
 }
 
 typedef enum {
@@ -373,7 +378,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		parameters_size--;
 	}
 
-	if (p4 < 1) {
+	if (!p4) {
 		return;
 	}
 	ut8 opcode = *(p4++) & 0xff;
