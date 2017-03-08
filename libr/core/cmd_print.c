@@ -9,11 +9,11 @@
 #include <limits.h>
 
 #define R_CORE_MAX_DISASM (1024*1024*8)
-
+#define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->pal.x)? core->cons->pal.x: def)
+#define R_CONS_COLOR(x) R_CONS_COLOR_DEF(x, "")
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
 static void cmd_pCd(RCore *core, const char *input) {
-#define C(x) r_cons_canvas_##x
 	int h, w = r_cons_get_size (&h);
 	int colwidth = r_config_get_i (core->config, "hex.cols") * 2.5;
 	int i, columns = w / colwidth;
@@ -37,10 +37,10 @@ static void cmd_pCd(RCore *core, const char *input) {
 	c->color = r_config_get_i (core->config, "scr.color");
 	r_core_block_size (core, rows * 32);
 	for (i = 0; i < columns; i++) {
-		(void)C(gotoxy)(c, i * (w / columns), 0);
+		(void)r_cons_canvas_gotoxy (c, i * (w / columns), 0);
 		char *cmd = r_str_newf ("pid %d @i:%d", rows, rows * i);
 		char *dis = r_core_cmd_str (core, cmd);
-		C(write)(c, dis);
+		r_cons_canvas_write (c, dis);
 		free (cmd);
 		free (dis);
 	}
@@ -48,8 +48,8 @@ static void cmd_pCd(RCore *core, const char *input) {
 	r_core_seek (core, osek, 1);
 
 	r_cons_pop ();
-	C(print)(c);
-	C(free)(c);
+	r_cons_canvas_print (c);
+	r_cons_canvas_free (c);
 	if (asm_minicols) {
 		r_config_set (core->config, "asm.offset", o_ao);
 		r_config_set (core->config, "asm.bytes", o_ab);
@@ -113,7 +113,6 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 }
 
 static void cmd_pCD(RCore *core, const char *input) {
-#define C(x) r_cons_canvas_##x
 	int h, w = r_cons_get_size (&h);
 	int colwidth = r_config_get_i (core->config, "hex.cols") * 2.5;
 	int i, columns = w / colwidth / 2;
@@ -141,11 +140,11 @@ static void cmd_pCD(RCore *core, const char *input) {
 	for (i = 0; i < columns; i++) {
 		switch (i) {
 		case 0:
-			(void)C(gotoxy)(c, 0, 0);
+			(void)r_cons_canvas_gotoxy (c, 0, 0);
 			cmd = r_str_newf ("dr;?e;?e backtrace:;dbt");
 			break;
 		case 1:
-			(void)C(gotoxy)(c, 28, 0);
+			(void)r_cons_canvas_gotoxy (c, 28, 0);
 			if (core->assembler->bits == 64) {
 				cmd = r_str_newf ("pxq 128@r:SP;pd@r:PC");
 			} else {
@@ -154,7 +153,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 			break;
 		}
 		char *dis = r_core_cmd_str (core, cmd);
-		C(write)(c, dis);
+		r_cons_canvas_write (c, dis);
 		free (cmd);
 		free (dis);
 	}
@@ -162,8 +161,8 @@ static void cmd_pCD(RCore *core, const char *input) {
 	r_core_seek (core, osek, 1);
 
 	r_cons_pop ();
-	C(print)(c);
-	C(free)(c);
+	r_cons_canvas_print (c);
+	r_cons_canvas_free (c);
 	if (asm_minicols) {
 		r_config_set (core->config, "asm.offset", o_ao);
 		r_config_set (core->config, "asm.bytes", o_ab);
@@ -174,7 +173,6 @@ static void cmd_pCD(RCore *core, const char *input) {
 }
 
 static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
-#define C(x) r_cons_canvas_##x
 	int h, w = r_cons_get_size (&h);
 	int hex_cols = r_config_get_i (core->config, "hex.cols");
 	int colwidth = hex_cols * 5;
@@ -194,18 +192,18 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 		bsize *= 12;
 	}
 	for (i = 0; i < columns; i++) {
-		(void)C(gotoxy)(c, i * (w / columns), 0);
+		(void)r_cons_canvas_gotoxy (c, i * (w / columns), 0);
 		char *cmd = r_str_newf ("%s %d @ %"PFMT64d, xcmd, bsize, tsek);
 		char *dis = r_core_cmd_str (core, cmd);
-		C(write)(c, dis);
+		r_cons_canvas_write (c, dis);
 		free (cmd);
 		free (dis);
 		tsek += bsize - 32;
 	}
 
 	r_cons_pop ();
-	C(print)(c);
-	C(free)(c);
+	r_cons_canvas_print (c);
+	r_cons_canvas_free (c);
 	r_config_set_i (core->config, "hex.cols", hex_cols);
 }
 
@@ -1318,6 +1316,16 @@ R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 	free (b);
 }
 
+static inline bool pdi_check_end(int nb_opcodes, int nb_bytes, int i, int j) {
+	if (nb_opcodes) {
+		if (nb_bytes) {
+			return j < nb_opcodes && i < nb_bytes;
+		}
+		return j < nb_opcodes;
+	}
+	return i < nb_bytes;
+}
+
 static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int show_offset = r_config_get_i (core->config, "asm.offset");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
@@ -1330,9 +1338,8 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 	int i=0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
-	#define PAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
-	const char *color_reg = PAL(reg): Color_YELLOW;
-	const char *color_num = PAL(num): Color_CYAN;
+	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
+	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
 
 	if (fmt == 'e') {
 		show_bytes = 0;
@@ -1390,8 +1397,8 @@ static int pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) {
 		}
 	}
 	r_cons_break_push (NULL, NULL);
-#define isTheEnd (nb_opcodes? nb_bytes? (j<nb_opcodes && i<nb_bytes) : j<nb_opcodes: i<nb_bytes)
-	for (i = j = 0; isTheEnd; j++) {
+
+	for (i = j = 0; pdi_check_end (nb_opcodes, nb_bytes, i, j); j++) {
 		RFlagItem *item;
 		if (r_cons_is_breaked ()) {
 			err = 1;
@@ -1816,7 +1823,6 @@ static void _handle_call(RCore *core, char * line, char **str) {
 // TODO: this is based on string matching, it should be written upon RAnalOp to know
 // when we have a call and such
 static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
-#define MYPAL(x) (core->cons && core->cons->pal.x)? core->cons->pal.x: ""
 	const char *linecolor = NULL;
 	char *ox, *qo, *string = NULL;
 	char *line, *s, *str, *string2 = NULL;
@@ -1861,7 +1867,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				if (len > 2) {
 					string = r_str_ndup (qo, len+2);
 				}
-				linecolor = MYPAL (comment);
+				linecolor = R_CONS_COLOR (comment);
 			}
 		}
 		ox = strstr (line, "; 0x");
@@ -1922,7 +1928,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		}
 		if (str) {
 			string2 = strdup (str);
-			linecolor = MYPAL(call);
+			linecolor = R_CONS_COLOR (call);
 		}
 		if (!string && string2) {
 			string = string2;
@@ -1959,7 +1965,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 								op = (bb->fail == UT64_MAX)? "jmp": "cjmp";
 							}
 							r_cons_printf ("%s0x%08"PFMT64x" %s 0x%08"PFMT64x"%s\n",
-									use_color? MYPAL(offset):"", addr, op,
+									use_color? R_CONS_COLOR (offset): "", addr, op,
 									bb->jump, use_color?Color_RESET:"");
 							break;
 						}
@@ -1991,7 +1997,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					string2 = r_str_chop (string2);
 					if (use_color) {
 						r_cons_printf ("%s0x%08"PFMT64x"%s %s%s%s%s%s%s%s\n",
-								MYPAL(offset), addr, Color_RESET,
+								R_CONS_COLOR (offset), addr, Color_RESET,
 								linecolor? linecolor: "",
 								string2? string2: "", string2?" ":"", string,
 								flag?" ":"", flag?flag->name:"", Color_RESET);
@@ -2651,6 +2657,14 @@ static void func_walk_blocks (RCore *core, RAnalFunction *f, char input, char ty
 		core->anal->stackptr = saved_stackptr;
 		r_config_set_i (core->config, "asm.lines", asm_lines);
 	}
+}
+
+static inline const char cmd_pxb_p(char input) {
+	return IS_PRINTABLE (input)? input: '.';
+}
+
+static inline int cmd_pxb_k(const ut8 *buffer, int x) {
+	return buffer[3 - x] << (8 * x);
 }
 
 static int cmd_print(void *data, const char *input) {
@@ -4030,23 +4044,26 @@ static int cmd_print(void *data, const char *input) {
 			ut32 n;
 			int i, c;
 			char buf[32];
-#define P(x) (IS_PRINTABLE(x)?x:'.')
-#define SPLIT_BITS(x) memmove (x + 5, x + 4, 5); x[4]=0
 			for (i = c = 0; i < len; i++,c++) {
 				if (c == 0) {
 					r_print_offset (core->print,
 						core->offset + i, 0, 0, 0, 0, NULL);
 				}
 				r_str_bits (buf, core->block+i, 8, NULL);
-				SPLIT_BITS (buf);
+
+				// split bits
+				memmove (buf + 5, buf + 4, 5);
+				buf[4] = 0;
+
 				r_cons_printf ("%s.%s  ", buf, buf+5);
 				if (c == 3) {
 					const ut8 *b = core->block + i-3;
-					#define K(x) (b[3-x]<<(8*x))
-					n = K (0) | K (1) | K (2) | K (3);
+					int (* k) (const ut8 *, int) = cmd_pxb_k;
+					const char (* p) (char) = cmd_pxb_p;
+
+					n = k (b, 0) | k (b, 1) | k (b, 2) | k (b, 3);
 					r_cons_printf ("0x%08x  %c%c%c%c\n",
-						n, P (b[0]), P (b[1]), P (b[2]),
-						P (b[3]));
+						n, p (b[0]), p (b[1]), p (b[2]), p (b[3]));
 					c = -1;
 				}
 			}

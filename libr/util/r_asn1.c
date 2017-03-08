@@ -2,6 +2,8 @@
 
 #include <r_util.h>
 #include "r_oids.h"
+#include <r_types.h>
+#include <r_util.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -63,8 +65,9 @@ RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	memcpy (str, buffer, length);
+	r_str_filter (str, length);
 	str[length] = '\0';
-	return r_asn1_create_string (str, true, length + 1);
+	return r_asn1_create_string (str, true, length);
 }
 
 RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
@@ -241,12 +244,10 @@ RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 		return NULL;
 	}
 
-	str = (char*) malloc (ASN1_OID_LEN);
+	str = (char*) calloc (1, ASN1_OID_LEN);
 	if (!str) {
 		return NULL;
 	}
-
-	memset (str, 0, ASN1_OID_LEN);
 
 	end = buffer + length;
 	t = str;
@@ -299,7 +300,7 @@ RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 	return r_asn1_create_string (str, true, ASN1_OID_LEN);
 }
 
-RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
+static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	RASN1Object *object;
 	ut8 head, length8, byte;
 	ut64 length64;
@@ -307,7 +308,7 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 
-	object = (RASN1Object*) malloc (sizeof (RASN1Object));
+	object = R_NEW0 (RASN1Object);
 	if (!object) {
 		return NULL;
 	}
@@ -315,10 +316,6 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
 	object->tag = head & ASN1_TAG;
-	object->sector = NULL;
-	object->length = 0;
-	object->list.length = 0;
-	object->list.objects = NULL;
 	length8 = buffer[1];
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
@@ -360,13 +357,14 @@ RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 		object->sector = buffer + 2;
 	}
 	if (object->tag == TAG_BITSTRING && object->sector[0] == 0) {
-		object->sector++; //real sector starts +1
-		if (object->length > 0)
+		if (object->length > 0){
+			object->sector++; //real sector starts +1
 			object->length--;
+		}
 	}
 	if (object->length > length) {
 		// Malformed object - overflow from data ptr
-		free (object);
+		free(object);
 		return NULL;
 	}
 	return object;
@@ -386,17 +384,14 @@ ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 	while (next >= buffer && next < end) {
 		object = asn1_parse_header (next, end - next);
 		if (!object || next == object->sector) {
-			//			if (object->tag != TAG_NULL)
+			R_FREE (object);
 			break;
 		}
 		next = object->sector + object->length;
 		counter++;
-		free (object);
-		object = NULL;
+		R_FREE (object);
 	}
-	if (object) {
-		free (object);
-	}
+	R_FREE (object);
 	return counter;
 }
 
@@ -415,44 +410,42 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 		} else {
 			object->list.objects = (RASN1Object**) calloc (count, sizeof (RASN1Object*));
 			if (!object->list.objects) {
-				free (object);
+				r_asn1_free_object (&object);
 				return NULL;
 			}
-			memset (object->list.objects, 0, count * sizeof (RASN1Object*));
 			for (i = 0; next >= buffer && next < end && i < count; ++i) {
+				object->list.objects[i] = NULL;
 				inner = r_asn1_create_object (next, end - next);
 				if (!inner || next == inner->sector) {
-					//if(inner->tag != TAG_NULL)
+					r_asn1_free_object (&inner);
 					break;
 				}
 				next = inner->sector + inner->length;
 				object->list.objects[i] = inner;
 				inner = NULL;
 			}
-			if (inner) {
-				free (inner);
-			}
 		}
 	}
 	return object;
 }
 
-void r_asn1_free_object (RASN1Object *object) {
+void r_asn1_free_object (RASN1Object **object) {
 	ut32 i;
-	if (object) {
+	if (!object) {
+		return;
+	}
+	if (*object) {
 		//this shall not be freed. it's a pointer into the buffer.
-		object->sector = 0;
-		if (object->list.objects && object->list.length) {
-			for (i = 0; i < object->list.length; ++i) {
-				if (object->list.objects[i]) {
-					r_asn1_free_object (object->list.objects[i]);
-				}
-				object->list.objects[i] = NULL;
+		(*object)->sector = 0;
+		if ((*object)->list.objects) {
+			for (i = 0; i < (*object)->list.length; ++i) {
+				r_asn1_free_object (&(*object)->list.objects[i]);
 			}
-			free (object->list.objects);
-			object->list.objects = NULL;
+			R_FREE ((*object)->list.objects);
 		}
-		free (object);
+		(*object)->list.objects = NULL;
+		(*object)->list.length = 0;
+		R_FREE ((*object));
 	}
 }
 

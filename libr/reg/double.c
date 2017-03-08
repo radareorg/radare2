@@ -3,6 +3,12 @@
 #include <r_reg.h>
 #include <r_util.h>
 
+#if __SDB_WINDOWS__ && !__CYGWIN__
+#define CASTLDBL (double)
+#else
+#define CASTLDBL
+#endif
+
 // TODO: add support for 80bit floating point value
 
 // long double = 128 bit
@@ -107,7 +113,8 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 				src, item->size);
 		return true;
 	}
-	eprintf ("r_reg_set_value: Cannot set %s to %Lf\n", item->name, value);
+
+	eprintf ("r_reg_set_value: Cannot set %s to %"LDBLFMT"\n", item->name, CASTLDBL value);
 	return false;
 }
 

@@ -316,11 +316,15 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
 #define PFMT64o "I64o"
+#define LDBLFMT "f"
+#define HHXFMT  "x"
 #else
 #define PFMT64x "llx"
 #define PFMT64d "lld"
 #define PFMT64u "llu"
 #define PFMT64o "llo"
+#define LDBLFMT "Lf"
+#define HHXFMT  "hhx"
 #endif
 
 #define PFMT32x "x"

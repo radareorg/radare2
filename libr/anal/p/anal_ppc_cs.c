@@ -154,7 +154,6 @@ static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 static ut64 getarg(struct Getarg *gop, int n) {
 	ut64 value = 0;
 	cs_insn *insn = gop->insn;
-	csh handle = gop->handle;
 	cs_ppc_op op;
 
 	if (n < 0 || n >= 8) {

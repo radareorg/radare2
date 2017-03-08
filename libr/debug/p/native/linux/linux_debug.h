@@ -94,8 +94,6 @@ RList *linux_desc_list (int pid);
 int linux_handle_signals (RDebug *dbg, bool self_signalled);
 int linux_dbg_wait (RDebug *dbg, int pid);
 const char *linux_reg_profile (RDebug *dbg);
-static RList *get_pid_thread_list (RDebug *dbg, int main_pid);
-static void attach_to_pid_and_threads (RDebug *dbg);
 void add_and_attach_new_thread (RDebug *dbg, int tid);
 void remove_list_thread (void);
 int match_pid (const void *pid_o, const void *th_o);

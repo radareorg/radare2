@@ -262,7 +262,7 @@ static int stop_process (int pid) {
 }
 				
 void linux_attach_new_process (RDebug *dbg) {
-	int ret = detach_procs_and_threads (dbg);
+	(void)detach_procs_and_threads (dbg);
 
 	if (dbg->threads) {
 		r_list_free (dbg->threads);
@@ -308,13 +308,19 @@ static void set_pid_signalled_status (RDebug *dbg, int pid, bool value) {
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason;
 	bool done = false;
-	bool self_signalled;
 
+	int status, flags = __WALL | WNOHANG;
 repeat:
 	do {
-		self_signalled = get_pid_signalled_status (dbg, pid);
-		int status;
-		int ret = waitpid (pid, &status, __WALL|WNOHANG);
+		bool self_signalled = get_pid_signalled_status (dbg, pid);
+		int ret = waitpid (pid, &status, flags);
+		if (ret < 0) {
+			perror ("waitpid");
+			break;
+		}
+		if (ret == 0) {
+			flags = __WALL;
+		}
 		if (ret) {
 			reason = linux_ptrace_event (dbg, pid, status);
 

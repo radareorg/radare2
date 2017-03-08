@@ -29,7 +29,7 @@ static int shm__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	shm = fd->data;
 	if (shm->buf != NULL) {
-        	(void)memcpy (shm->buf+io->off, buf, count);
+		(void)memcpy (shm->buf+io->off, buf, count);
 		return count;
 	}
 	return -1;
@@ -48,7 +48,7 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (count>32)
 		count = 32;
 	memcpy (buf, shm->buf+io->off , count);
-        return count;
+	return count;
 }
 
 static int shm__close(RIODesc *fd) {
@@ -110,27 +110,22 @@ static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-static int shm__init(RIO *io) {
-	return true;
-}
-
 RIOPlugin r_io_plugin_shm = {
 	.name = "shm",
-        .desc = "shared memory resources (shm://key)",
+	.desc = "shared memory resources (shm://key)",
 	.license = "LGPL3",
-        .open = shm__open,
-        .close = shm__close,
+	.open = shm__open,
+	.close = shm__close,
 	.read = shm__read,
-        .check = shm__plugin_open,
+	.check = shm__plugin_open,
 	.lseek = shm__lseek,
-	.init = shm__init,
 	.write = shm__write,
 };
 
 #else
 struct r_io_plugin_t r_io_plugin_shm = {
 	.name = "shm",
-        .desc = "shared memory resources (not for w32)",
+	.desc = "shared memory resources (not for w32)",
 };
 #endif
 

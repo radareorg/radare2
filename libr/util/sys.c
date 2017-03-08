@@ -46,6 +46,10 @@ extern char **environ;
 #if __WINDOWS__ && !defined(__CYGWIN__)
 # include <io.h>
 # include <winbase.h>
+typedef BOOL WINAPI (*QueryFullProcessImageNameA_t) (HANDLE, DWORD, LPTSTR, PDWORD);
+typedef DWORD WINAPI (*GetProcessImageFileNameA_t) (HANDLE, LPTSTR, DWORD);
+static GetProcessImageFileNameA_t GetProcessImageFileNameA;
+static QueryFullProcessImageNameA_t QueryFullProcessImageNameA;
 #endif
 
 R_LIB_VERSION(r_util);
@@ -774,25 +778,27 @@ R_API int r_is_heap (void *p) {
 
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	BOOL WINAPI (*QueryFullProcessImageNameA) (HANDLE, DWORD, LPTSTR, PDWORD);
-	DWORD WINAPI (*GetProcessImageFileNameA) (HANDLE, LPTSTR, DWORD);
 	HANDLE kernel32 = LoadLibrary ("Kernel32.dll");
 	if (!kernel32) {
 		eprintf ("Error getting the handle to Kernel32.dll\n");
 		return NULL;
 	}
-	QueryFullProcessImageNameA = GetProcAddress (kernel32, "QueryFullProcessImageNameA");
-	if (!QueryFullProcessImageNameA) {
-		// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
-		HANDLE psapi = LoadLibrary ("Psapi.dll");
-		if (!psapi) {
-			eprintf ("Error getting the handle to Psapi.dll\n");
-			return NULL;
+	if (!GetProcessImageFileNameA) {
+		if (!QueryFullProcessImageNameA) {
+			QueryFullProcessImageNameA = (QueryFullProcessImageNameA_t) GetProcAddress (kernel32, "QueryFullProcessImageNameA");
 		}
-		GetProcessImageFileNameA = GetProcAddress (psapi, "GetProcessImageFileNameA");
-		if (!GetProcessImageFileNameA) {
-			eprintf ("Error getting the address of GetProcessImageFileNameA\n");
-			return NULL;
+		if (!QueryFullProcessImageNameA) {
+			// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
+			HANDLE psapi = LoadLibrary ("Psapi.dll");
+			if (!psapi) {
+				eprintf ("Error getting the handle to Psapi.dll\n");
+				return NULL;
+			}
+			GetProcessImageFileNameA = (GetProcessImageFileNameA_t) GetProcAddress (psapi, "GetProcessImageFileNameA");
+			if (!GetProcessImageFileNameA) {
+				eprintf ("Error getting the address of GetProcessImageFileNameA\n");
+				return NULL;
+			}
 		}
 	}
 	HANDLE handle = NULL;
@@ -802,13 +808,13 @@ R_API char *r_sys_pid_to_path(int pid) {
 	if (handle != NULL) {
 		if (QueryFullProcessImageNameA) {
 			if (QueryFullProcessImageNameA (handle, 0, filename, &maxlength) == 0) {
-				eprintf("Error calling QueryFullProcessImageNameA\n");
+				eprintf ("Error calling QueryFullProcessImageNameA\n");
 				CloseHandle (handle);
 				return NULL;
 			}
 		} else {
 			if (GetProcessImageFileNameA (handle, filename, maxlength) == 0) {
-				eprintf("Error calling GetProcessImageFileNameA\n");
+				eprintf ("Error calling GetProcessImageFileNameA\n");
 				CloseHandle (handle);
 				return NULL;
 			}

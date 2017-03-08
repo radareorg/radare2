@@ -340,6 +340,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	int askuser = 1;
 	int ret, close_current_session = 1;
 	char *prj, *filepath;
+	ut64 mapaddr = 0;
 	if (!prjfile || !*prjfile) {
 		return false;
 	}
@@ -397,9 +398,6 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 			free (prj);
 			return false;
 		}
-		// TODO: handle load bin info or not
-		// TODO: handle base address
-		r_core_bin_load (core, filepath, UT64_MAX);
 	}
 	if (thready) {
 		(void)r_core_project_load_bg (core, prjfile, prj);
@@ -407,6 +405,15 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	} else {
 		/* load sdb stuff in here */
 		ret = r_core_project_load (core, prjfile, prj);
+	}
+
+	if (close_current_session && r_config_get_i (core->config, "file.info")) {
+		mapaddr = r_config_get_i (core->config, "file.offset");
+		if (mapaddr) {
+			r_core_bin_load (core, filepath, mapaddr);
+		} else {
+			r_core_bin_load (core, filepath, UT64_MAX);
+		}
 	}
 	free (filepath);
 	free (prj);
