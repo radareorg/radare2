@@ -135,7 +135,6 @@ bool r_x509_parse_extension (RX509Extension *ext, RASN1Object *object) {
 	if (!ext || !object || object->list.length < 2) {
 		return false;
 	}
-	memset (ext, 0, sizeof (RX509Extension));
 	o = object->list.objects[0];
 	if (o && o->tag == TAG_OID) {
 		ext->extnID = r_asn1_stringify_oid (o->sector, o->length);
@@ -149,7 +148,7 @@ bool r_x509_parse_extension (RX509Extension *ext, RASN1Object *object) {
 			ext->extnValue = o;
 			if (o == object->list.objects[1]) {
 				object->list.objects[1] = NULL;
-			} else if (object->list.length > 3 &&
+			} else if (object->list.length > 2 &&
 					o == object->list.objects[2]) {
 				object->list.objects[2] = NULL;
 			}
@@ -170,9 +169,10 @@ bool r_x509_parse_extensions (RX509Extensions *ext, RASN1Object * object) {
 	}
 	ext->length = object->list.length;
 	for (i = 0; i < object->list.length; ++i) {
-		ext->extensions[i] = (RX509Extension*) malloc (sizeof (RX509Extension));
+		ext->extensions[i] = R_NEW0 (RX509Extension);
 		if (!r_x509_parse_extension (ext->extensions[i], object->list.objects[i])) {
-			R_FREE (ext->extensions[i]);
+			r_x509_free_extension(ext->extensions[i]);
+			ext->extensions[i] = NULL;
 		}
 	}
 	return true;
