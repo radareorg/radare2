@@ -2006,6 +2006,22 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	r_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
 	r_core_cmdf (core, "afvr* @ 0x%"PFMT64x"\n", fcn->addr);
 	r_core_cmdf (core, "afvs* @ 0x%"PFMT64x"\n", fcn->addr);
+	/* Show references */
+	RListIter *refiter;
+	RAnalRef *refi;
+	r_list_foreach (fcn->refs, refiter, refi) {
+		switch (refi->type) {
+		case R_ANAL_REF_TYPE_CALL:
+			r_cons_printf ("afxC 0x%"PFMT64x" 0x%"PFMT64x"\n", fcn->addr, refi->addr);
+			break;
+		case R_ANAL_REF_TYPE_DATA:
+			r_cons_printf ("afxd 0x%"PFMT64x" 0x%"PFMT64x"\n", fcn->addr, refi->addr);
+			break;
+		case R_ANAL_REF_TYPE_CODE:
+			r_cons_printf ("afxc 0x%"PFMT64x" 0x%"PFMT64x"\n", fcn->addr, refi->addr);
+			break;
+		}
+	}
 	/*Saving Function stack frame*/
 	r_cons_printf ("afS %"PFMT64d" @ 0x%"PFMT64x"\n", fcn->maxstack, fcn->addr);
 	free (name);
