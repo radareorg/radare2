@@ -142,3 +142,6 @@ int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin);
 int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size);
 void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t** sects);
+struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin);
+struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin);
+struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin);
