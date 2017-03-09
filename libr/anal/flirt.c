@@ -570,7 +570,7 @@ static int module_match_buffer (const RAnal *anal, const RFlirtModule *module,
 						r_list_join (next_module_function->xrefs, fcn->xrefs);
 						r_list_join (next_module_function->bbs, fcn->bbs);
 						r_list_join (next_module_function->locs, fcn->locs);
-						r_list_join (next_module_function->vars, fcn->vars);
+						//r_list_join (next_module_function->vars, r_anal_var_all_list (anal, fcn);
 						next_module_function->ninstr += fcn->ninstr;
 						r_anal_fcn_del ((RAnal*) anal, fcn->addr);
 					}

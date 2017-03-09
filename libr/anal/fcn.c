@@ -1648,9 +1648,8 @@ R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
 
 /* getters */
 #if FCN_OLD
-R_API RList* r_anal_fcn_get_refs (RAnalFunction *anal) { return anal->refs; }
-R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal) { return anal->xrefs; }
-R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal) { return anal->vars; }
+R_API RList* r_anal_fcn_get_refs (RAnalFunction *fcn) { return fcn->refs; }
+R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *fcn) { return fcn->xrefs; }
 #endif
 
 R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) {

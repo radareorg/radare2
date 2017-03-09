@@ -531,7 +531,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 	if (!a || !fcn) {
 		return NULL;
 	}
-	list = r_list_new ();
+	list = r_list_newf ((RListFree)r_anal_var_free);
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
@@ -583,7 +583,19 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 		}
 	}
 	free (varlist);
-	list->free = (RListFree)r_anal_var_free;
+	return list;
+}
+
+R_API RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn) {
+	//r_anal_var_list if there are not vars with that kind returns a list with
+	//zero element
+	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_ARG);
+	if (!list) {
+		return NULL;
+	}
+	r_list_join (list, r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG));
+	r_list_join (list, r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV));
+	r_list_join (list, r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_SPV));
 	return list;
 }
 
