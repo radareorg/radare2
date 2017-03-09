@@ -335,21 +335,13 @@ static void ds_comment_lineup(RDisasmState *ds) {
 	_ds_comment_align_ (ds, true, false);
 }
 
-static void _ds_comment(RDisasmState *ds, bool nl, bool align, const char *format,
-			 va_list ap) {
-	if (ds->show_comments && !ds->show_comment_right && nl) {
-		_ds_comment_align_ (ds, true, true);
-	}
+static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
    	if (ds->show_comments && ds->show_comment_right && align) {
 		ds_align_comment (ds);
 	}
 	r_cons_printf_list (format, ap);
-}
-
-static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
-	va_list ap;
-	va_start (ap, format);
-	_ds_comment (ds, false, align, format, ap);
 	va_end (ap);
 }
 
@@ -2553,7 +2545,6 @@ static void ds_print_op_push_info(RDisasmState *ds){
 		break;
 	}
 }
-
 
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
