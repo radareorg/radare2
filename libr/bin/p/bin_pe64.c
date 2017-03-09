@@ -3,16 +3,7 @@
 #define R_BIN_PE64 1
 #include "bin_pe.c"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	int idx, ret = false;
 	if (!buf || length <= 0x3d)
 		return false;
@@ -25,7 +16,13 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_pe64 = {
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+}
+
+RBinPlugin r_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) bin plugin",
 	.license = "LGPL3",
@@ -48,7 +45,7 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_pe64,
 	.version = R2_VERSION

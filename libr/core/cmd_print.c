@@ -517,6 +517,7 @@ static void helpCmdForeach(RCore *core) {
 	"x", " @@dbt[abs]", "run a command on every backtrace address, bp or sp",
 	"x", " @@.file", "\"\" over the offsets specified in the file (one offset per line)",
 	"x", " @@=off1 off2 ..", "manual list of offsets",
+	"x", " @@/x 9090", "temporary set cmd.hit to run a command on each search result",
 	"x", " @@k sdbquery", "\"\" on all offsets returned by that sdbquery",
 	"x", " @@t", "\"\" on all threads (see dp)",
 	"x", " @@b", "\"\" on all basic blocks of current function (see afb)",

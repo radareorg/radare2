@@ -24,9 +24,6 @@ static const struct {
 };
 static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o || !o->bin_obj) {
 		return NULL;
@@ -36,6 +33,19 @@ static Sdb* get_sdb (RBinObject *o) {
 		return bin->kv;
 	}
 	return NULL;
+}
+
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (!buf || length < VICE_MAGIC_LEN) {
+		return false;
+	}
+	return (!memcmp (buf, VICE_MAGIC, VICE_MAGIC_LEN));
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
@@ -99,19 +109,6 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr,
 	}
 	// res will be assigned to arch->o->bin_obj by the callee
 	return res;
-}
-
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || length < VICE_MAGIC_LEN) {
-		return false;
-	}
-	return (!memcmp (buf, VICE_MAGIC, VICE_MAGIC_LEN));
 }
 
 static RList *mem(RBinFile *arch) {

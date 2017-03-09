@@ -1,5 +1,6 @@
 #!/bin/sh
 FILES="
+libr/util/mem.c
 libr/util/base64.c
 libr/util/name.c
 libr/util/idpool.c
@@ -65,17 +66,27 @@ binr/rabin2/rabin2.c
 binr/rasm2/rasm2.c
 binr/rax2/rax2.c
 "
+
+chk() {
+	if [ -z "$2" ]; then
+		return 0
+	fi
+	echo "$1" | grep -q "$2"
+}
+
 case "$1" in
-"help"|-h)
-	echo "Usage. sys/indent-whitelist.sh [commit] [apply]"
+help|-h)
+	echo "Usage. sys/indent-whitelist.sh [--fix] [regex]"
 	;;
-"commit")
-	sys/indent.sh -i ${FILES}
-	git commit sys/indent* ${FILES}
-	;;
-"apply")
-	sys/indent.sh -i ${FILES}
+--fix)
+	for f in $FILES ; do
+		chk $f $2 || continue
+		r2pm -r sys/indent.sh -i $f
+	done
 	;;
 *)
-	sys/indent.sh -u ${FILES}
+	for f in $FILES ; do
+		chk $f $1 || continue
+		r2pm -r sys/indent.sh -u $f
+	done
 esac

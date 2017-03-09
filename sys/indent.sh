@@ -8,10 +8,12 @@
 
 IFILE="$1"
 P=`readlink $0`
+[ -z "$P" ] && P="$0"
 cd `dirname $P`/..
 
 if [ -z "${IFILE}" ]; then
 	echo "Usage: r2-indent [-i|-u] [file] [...]"
+	echo " -a    indent all whitelisted files"
 	echo " -i    indent in place (modify file)"
 	echo " -u    unified diff of the file"
 	exit 1
@@ -19,10 +21,19 @@ fi
 
 CWD="$PWD"
 INPLACE=0
+ALLWHITE=0
 UNIFIED=0
 ROOTDIR=/
 
 UNCRUST=1
+
+if [ "${IFILE}" = "-a" ]; then
+	shift
+	ALLWHITE=1
+	IFILE="$1"
+	$CWD/sys/indent-whitelist.sh $@
+	exit 0
+fi
 
 if [ "${IFILE}" = "-i" ]; then
 	shift
@@ -42,7 +53,7 @@ fi
 
 if [ "${UNCRUST}" = 1 ]; then
 	# yell, rather than overwrite an innocent file
-	if ! type uncrustify >/dev/null; then
+	if ! r2pm -r type uncrustify >/dev/null; then
 		echo "This script requires uncrustify to function. Check r2pm -i uncrustify"
 		exit 1
 	fi
@@ -64,7 +75,7 @@ indentFile() {
 	if [ "${UNCRUST}" = 1 ]; then
 		cp -f doc/clang-format ${CWD}/.clang-format
 		cd "$CWD"
-		uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format
+		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format || exit 1
 	else
 		cp -f doc/clang-format ${CWD}/.clang-format
 		cd "$CWD"
@@ -73,8 +84,8 @@ indentFile() {
 # one of those rules fuckups the ascii art in comment blocks
 
 	# fix ternary conditional indent
-	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2
-	cat .tmp-format2 | perl -ne 's/\r//g;print' | sed -e 's, : ,: ,g' > .tmp-format
+#	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2
+#	cat .tmp-format2 | perl -ne 's/\r//g;print' | sed -e 's, : ,: ,g' > .tmp-format
 	mv .tmp-format .tmp-format2
 	# do not space before parenthesis on function signatures
 	awk '{if (/^static/ || /^R_API/) { gsub(/ \(/,"("); }; print;}' \
@@ -93,14 +104,14 @@ indentFile() {
 	mv .tmp-format .tmp-format2
 	perl -ne 's/[ ]+\\$/\\/g;print' < .tmp-format2 > .tmp-format
 	# spaces in { brackets
-	mv .tmp-format .tmp-format2
+	#mv .tmp-format .tmp-format2
 	#perl -ne 's/{\s/{ /g;print' < .tmp-format2 > .tmp-format
 	#perl -ne 's/{([^ \n])/{ \1/g if(!/"/);print' < .tmp-format2 > .tmp-format
 	# spaces in } brackets
 	#mv .tmp-format .tmp-format2
 	#perl -ne 's/([^ \t])}/$1 }/g if(!/"/);print' < .tmp-format2 > .tmp-format
 	# _( macro
-	#mv .tmp-format .tmp-format2
+	mv .tmp-format .tmp-format2
 	perl -ne 's/_\s\(/_(/g;print' < .tmp-format2 > .tmp-format
 	# 0xa0
 	mv .tmp-format .tmp-format2

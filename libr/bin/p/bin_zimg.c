@@ -14,9 +14,6 @@
 #define dprintf if (0)eprintf
 #endif
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
 	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) o->bin_obj;
@@ -47,13 +44,7 @@ static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 8) {
 		// Checking ARM zImage kernel
 		if (!memcmp (buf, "\x00\x00\xa0\xe1\x00\x00\xa0\xe1", 8)) {
@@ -62,6 +53,12 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 	}
 	// TODO: Add other architectures
 	return false;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static RBinInfo *info(RBinFile *arch) {
@@ -97,7 +94,7 @@ struct r_bin_plugin_t r_bin_plugin_zimg = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_zimg,
 	.version = R2_VERSION

@@ -401,7 +401,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 	ptr = (st64)r_num_get (NULL, addr);
 	if(*sign =='+') {
-		if (ptr < fcn->stack &&  type == 's') {
+		if (ptr < fcn->maxstack &&  type == 's') {
 			varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
 		} else {
 			varname = get_varname (anal, fcn, type, ARGPREFIX, R_ABS (ptr));
@@ -671,7 +671,7 @@ repeat:
 		case R_ANAL_STACK_INC:
 			if (R_ABS (op.stackptr) < 8096) {
 				fcn->stack += op.stackptr;
-				if (fcn->stack > 0 && (int)op.stackptr > 0) {
+				if (fcn->stack > fcn->maxstack) {
 					fcn->maxstack = fcn->stack;
 				}
 			}
@@ -680,7 +680,7 @@ repeat:
 		case R_ANAL_STACK_RESET:
 			bb->stackptr = 0;
 			break;
-		// TODO: use fcn->stack to know our stackframe
+		// TODO: use fcn->maxstack to know our stackframe
 		case R_ANAL_STACK_SET:
 			if ((int)op.ptr > 0) {
 				varname = get_varname (anal, fcn, 'b', ARGPREFIX, R_ABS(op.ptr));
@@ -691,7 +691,7 @@ repeat:
 			r_anal_var_access (anal, fcn->addr, 'b', 1, op.ptr, 1, op.addr);
 			free (varname);
 			break;
-		// TODO: use fcn->stack to know our stackframe
+		// TODO: use fcn->maxstack to know our stackframe
 		case R_ANAL_STACK_GET:
 			if (((int)op.ptr) > 0) {
 				varname = get_varname (anal, fcn, 'b', ARGPREFIX, R_ABS(op.ptr));

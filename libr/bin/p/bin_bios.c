@@ -5,14 +5,33 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
 	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
 	//if (bin->kv) return kv;
 	return NULL;
+}
+
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (buf && length > 0xffff && buf[0] != 0xcf) {
+		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
+		/* hacky check to avoid detecting multidex bins as bios */
+		/* need better fix for this */
+		if (!memcmp (buf, "dex", 3)) {
+			return 0;
+		}
+		/* Check if this a 'jmp' opcode */
+		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
@@ -62,38 +81,18 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 0xffff && buf[0] != 0xcf) {
-		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
-		/* hacky check to avoid detecting multidex bins as bios */
-		/* need better fix for this */
-		if (!memcmp (buf, "dex", 3)) {
-			return 0;
-		}
-		/* Check if this a 'jmp' opcode */
-		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9)) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
 static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	// program headers is another section
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "bootblk");
 	ptr->vsize = ptr->size = 0x10000;
 //printf ("SIZE %d\n", ptr->size);

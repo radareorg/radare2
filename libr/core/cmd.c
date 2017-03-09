@@ -2267,6 +2267,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	ostr = str = strdup (each);
 	r_cons_break_push (NULL, NULL); //pop on return
 	switch (each[0]) {
+	case '/': // "@@/"
+		{
+		const char *cmdhit = r_config_get (core->config, "cmd.hit");
+		r_config_set (core->config, "cmd.hit", cmd);
+		r_core_cmd0 (core, each);
+		r_config_set (core->config, "cmd.hit", cmdhit);
+		}
+		return 0;
 	case '?':
 		helpCmdForeach (core);
 		break;

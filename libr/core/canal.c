@@ -954,8 +954,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			sdb_num_set (DB, "nargs", fcn->nargs, 0);
 		}
 		sdb_num_set (DB, "size", r_anal_fcn_size (fcn), 0);
-		if (fcn->stack > 0) {
-			sdb_num_set (DB, "stack", fcn->stack, 0);
+		if (fcn->maxstack > 0) {
+			sdb_num_set (DB, "stack", fcn->maxstack, 0);
 		}
 		sdb_set (DB, "pos", "0,0", 0); // needs to run layout
 		sdb_set (DB, "type", r_anal_fcn_type_tostring (fcn->type), 0);
@@ -973,7 +973,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			r_anal_var_count (core->anal, fcn, 's', 0) +
 			r_anal_var_count (core->anal, fcn, 'b', 0));
 		r_cons_printf (",\"size\":%d", r_anal_fcn_size (fcn));
-		r_cons_printf (",\"stack\":%d", fcn->stack);
+		r_cons_printf (",\"stack\":%d", fcn->maxstack);
 		r_cons_printf (",\"type\":%d", fcn->type); // TODO: output string
 		//r_cons_printf (",\"cc\":%d", fcn->call); // TODO: calling convention
 		if (fcn->dsc) r_cons_printf (",\"signature\":\"%s\"", fcn->dsc);
@@ -2006,6 +2006,22 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	r_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
 	r_core_cmdf (core, "afvr* @ 0x%"PFMT64x"\n", fcn->addr);
 	r_core_cmdf (core, "afvs* @ 0x%"PFMT64x"\n", fcn->addr);
+	/* Show references */
+	RListIter *refiter;
+	RAnalRef *refi;
+	r_list_foreach (fcn->refs, refiter, refi) {
+		switch (refi->type) {
+		case R_ANAL_REF_TYPE_CALL:
+			r_cons_printf ("afxC 0x%"PFMT64x" 0x%"PFMT64x"\n", fcn->addr, refi->addr);
+			break;
+		case R_ANAL_REF_TYPE_DATA:
+			r_cons_printf ("afxd 0x%"PFMT64x" 0x%"PFMT64x"\n", fcn->addr, refi->addr);
+			break;
+		case R_ANAL_REF_TYPE_CODE:
+			r_cons_printf ("afxc 0x%"PFMT64x" 0x%"PFMT64x"\n", fcn->addr, refi->addr);
+			break;
+		}
+	}
 	/*Saving Function stack frame*/
 	r_cons_printf ("afS %"PFMT64d" @ 0x%"PFMT64x"\n", fcn->maxstack, fcn->addr);
 	free (name);

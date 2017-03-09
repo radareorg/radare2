@@ -5,9 +5,6 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static Sdb* get_sdb (RBinObject *o) {
 	if (!o) return NULL;
 	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
@@ -71,14 +68,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	int i, is_bf = 0;
 	if (buf && length > 0) {
 		int max = R_MIN (16, length);
@@ -104,6 +94,13 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		}
 	}
 	return is_bf;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
 }
 
 static RList* entries(RBinFile *arch) {

@@ -6,9 +6,6 @@
 #include <r_bin.h>
 #include "../../fs/types.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 //static char *fsname(RBinFile *arch) {
 static char *fsname(const ut8* buf, ut64 length) {
 	ut8 fs_lbuf[1024];
@@ -51,6 +48,19 @@ static Sdb* get_sdb (RBinObject *o) {
 	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
 	//if (bin->kv) return kv;
 	return NULL;
+}
+
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (!buf || (st64)length <1) return false;
+	char *p = fsname (buf, length);
+	free (p);
+	return p != NULL;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
@@ -106,22 +116,11 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (!buf || (st64)length <1) return false;
-	char *p = fsname (buf, length);
-	free (p);
-	return p != NULL;
-}
-
 RBinPlugin r_bin_plugin_fs = {
 	.name = "fs",
 	.desc = "filesystem bin plugin",
+	.author = "pancake",
+	.version = "1.0",
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
@@ -135,7 +134,7 @@ RBinPlugin r_bin_plugin_fs = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLiBStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_fs,
 	.version = R2_VERSION

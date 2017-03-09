@@ -8,24 +8,21 @@
 
 #include "../format/nin/nds.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static struct nds_hdr loaded_header;
 
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	ut8 ninlogohead[6];
 	if (!buf || length < sizeof(struct nds_hdr)) /* header size */
 		return false;
 	memcpy(ninlogohead, buf+0xc0, 6);
 	/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
 	return (!memcmp (ninlogohead, "\x24\xff\xae\x51\x69\x9a", 6))? true : false;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {

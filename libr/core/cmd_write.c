@@ -699,8 +699,15 @@ static int cmd_write(void *data, const char *input) {
 					free (data);
 				}
 			} else {
-				eprintf ("Usage: wp [-|r2patch-file]\n"
-			         "TODO: rapatch format documentation here\n");
+				r_cons_printf ("Usage: wp [-|r2patch-file]\n"
+					" ^# -> comments\n"
+					" . -> execute command\n"
+					" ! -> execute command\n"
+					" OFFSET { code block }\n"
+					" OFFSET \"string\"\n"
+					" OFFSET 01020304\n"
+					" OFFSET : assembly\n"
+					" + {code}|\"str\"|0210|: asm\n");
 			}
 		}
 		break;

@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015-2016 - pancake */
+/* radare - LGPL3 - 2015-2017 - pancake */
 
 #include <r_bin.h>
 
@@ -91,28 +91,22 @@ typedef struct gen_vect {
 	};
 } SMD_Vectors;
 
-
-
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+static bool check_bytes(const ut8 *buf, ut64 length) {
+	if (length > 0x190 && !memcmp (buf+0x100, "SEGA", 4)) {
+		return true;
+	}
+	return false;
 }
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
-	if (length > 0x190) {
-		if (!memcmp (buf+0x100, "SEGA", 4))
-			return true;
-	}
-	return false;
+static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	check_bytes (buf, sz);
+	return R_NOTNULL;
 }
 
 static RBinInfo* info(RBinFile *arch) {
@@ -300,7 +294,7 @@ static RList* entries(RBinFile *arch) { //Should be 3 offsets pointed by NMI, RE
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_smd = {
+RBinPlugin r_bin_plugin_smd = {
 	.name = "smd",
 	.desc = "SEGA Genesis/Megadrive",
 	.license = "LGPL3",
@@ -316,7 +310,7 @@ struct r_bin_plugin_t r_bin_plugin_smd = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_smd,
 	.version = R2_VERSION

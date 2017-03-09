@@ -7,13 +7,13 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (buf && length >= 4 && !memcmp (buf, "\x00" "asm", 4));
 }
 
 static ut64 entrypoint = UT64_MAX;
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);

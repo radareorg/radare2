@@ -223,6 +223,8 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (buf, len));
 	}
+	printf ("%s", cons->line->prompt);
+	fflush (stdout);
 	*buf = '\0';
 	fflush (cons->fdin);
 	if (color) {

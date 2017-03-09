@@ -6,9 +6,6 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
-static int check(RBinFile *arch);
-static int check_bytes(const ut8 *buf, ut64 length);
-
 static Sdb* get_sdb (RBinObject *o) {
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
@@ -528,14 +525,7 @@ static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 }
 
 #if !R_BIN_PE64
-static int check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	return check_bytes (bytes, sz);
-
-}
-
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int idx;
 	if (!buf) {
 		return false;
@@ -552,6 +542,13 @@ static int check_bytes(const ut8 *buf, ut64 length) {
 		}
 	}
 	return false;
+}
+
+static bool check(RBinFile *arch) {
+	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
+	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	return check_bytes (bytes, sz);
+
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */

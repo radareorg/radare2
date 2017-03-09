@@ -886,12 +886,12 @@ static void headers32(RBinFile *arch) {
 	p ("0x00000014  ShOff       0x%08x\n", r_read_le32 (buf + 20));
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	return buf && length > 4 && memcmp (buf, ELFMAG, SELFMAG) == 0
 		&& buf[4] != 2;
 }
 
-static int check(RBinFile *arch) {
+static bool check(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);

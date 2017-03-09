@@ -26,7 +26,7 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static int check_bytes(const ut8 *buf, ut64 length) {
+static bool check_bytes(const ut8 *buf, ut64 length) {
 	unsigned int exth_offset;
 	int ret = false;
 	if (!buf || length <= 0x3d) {
