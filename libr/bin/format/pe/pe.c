@@ -196,7 +196,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 			//A1 04 50 44 00                             mov     eax, ds:dword_445004
 			//89 04 24                                   mov[esp + 28h + lpTopLevelExceptionFilter], eax
 			//E8 A3 01 00 00                             call    sub_4013EE
-			ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
+			// ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
 			for (n = 0; n < sizeof (b) - 12; n++) {
 				if (b[n] == 0xa1 && b[n + 5] == 0x89 && b[n + 8] == 0xe8) {
 					const st32 call_dst = b[n + 9] | (b[n + 10] << 8) | (b[n + 11] << 16) | (b[n + 12] << 24);
@@ -937,8 +937,15 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 			goto fail;
 		}
 
-		int c = bin_pe_read_metadata_string (stream_name, (char *)(bin->b->buf + start_of_stream + 8));
+		if (r_buf_size (bin->b) < (start_of_stream + 8 + MAX_METADATA_STRING_LENGTH)) {
+			free (stream_name);
+			free (stream);
+			goto fail;
+		}
+		int c = bin_pe_read_metadata_string (stream_name,
+			(char *)(bin->b->buf + start_of_stream + 8));
 		if (c == 0) {
+			free (stream_name);
 			free (stream);
 			goto fail;
 		}
