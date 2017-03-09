@@ -247,7 +247,7 @@ beach:
 }
 
 
-static void _set_bits(RCore *core, ut64 addr, int *bits) {
+static void choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
 	RAnalRange *range;
 	RListIter *iter;
 	r_list_foreach (core->anal->bits_ranges, iter, range) {
@@ -260,50 +260,18 @@ static void _set_bits(RCore *core, ut64 addr, int *bits) {
 
 
 R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
-	static char *oldarch = NULL;
-	static int oldbits = 0;
-	bool flag = false;
 	int bits = 0;
-	char *arch = (char *)r_io_section_get_archbits (core->io, addr, &bits);
+	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);
 	if (!bits) {
-		_set_bits (core, addr, &bits);
+		//if we found bits related with anal hints pick it up
+		choose_bits_anal_hints (core, addr, &bits);
 	}
-	if (!arch) {
-		arch = strdup (r_config_get (core->config, "asm.arch"));
-		flag = true;
-	} else {
-		arch = strdup (arch);
+	if (bits) {
+		r_config_set_i (core->config, "asm.bits", bits);
 	}
-	if (arch && bits) {
-		if (bits != oldbits) {
-			r_config_set_i (core->config, "asm.bits", bits);
-			oldbits = bits;
-		}
-		if (!oldarch) {
-			RBinInfo *info = r_bin_get_info (core->bin);
-			if (info && info->arch) {
-				oldarch = strdup (info->arch);
-			} else {
-				oldarch = strdup (r_config_get (core->config, "asm.arch"));
-				oldbits = r_config_get_i (core->config, "asm.bits");
-			}
-			if (strcmp (arch, oldarch)) {
-				r_config_set (core->config, "asm.arch", arch);
-			}
-		}
-		free (arch);
-		return;
+	if (arch) {
+		r_config_set (core->config, "asm.arch", arch);
 	}
-	if (oldarch) {
-		if (!(flag && arch && oldarch && !strcmp (oldarch, arch))) {
-			r_config_set (core->config, "asm.arch", oldarch);
-		}
-		R_FREE (oldarch);
-	}
-	if (oldbits) {
-		r_config_set_i (core->config, "asm.bits", oldbits);
-	}
-	free (arch);
 }
 
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
