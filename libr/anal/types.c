@@ -191,10 +191,11 @@ R_API RList *r_anal_type_list_new() {
 }
 
 R_API void r_anal_type_header (RAnal *anal, const char *hdr) {
+	/* return */
 }
 
 R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value) {
-
+	/* return */
 }
 
 R_API int r_anal_type_link(RAnal *anal, const char *type, ut64 addr) {
@@ -235,10 +236,10 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 	snprintf (var, sizeof (var), "%s.%s", kind, t);
 	if (!strcmp (kind, "type")) {
 		const char *fmt = sdb_const_get (DB, var, NULL);
-		if (fmt)
+		if (fmt) {
 			return strdup (fmt);
-	} else
-	if (!strcmp (kind, "struct")) {
+		}
+	} else if (!strcmp (kind, "struct")) {
 		// assumes var list is sorted by offset.. should do more checks here
 		for (n = 0; (p = sdb_array_get (DB, var, n, NULL)); n++) {
 			const char *tfmt;
@@ -323,6 +324,7 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 	}
 	return NULL;
 }
+
 // Function prototypes api
 R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name) {
 	const char *fcn = sdb_const_get (anal->sdb_types, func_name, 0);
