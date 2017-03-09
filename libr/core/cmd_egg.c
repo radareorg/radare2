@@ -35,23 +35,21 @@ static int compileShellcode (REgg *egg, const char *input){
 	}
 	if (!r_egg_assemble (egg)){
 		eprintf ("r_egg_assemble : invalid assembly\n");
-		goto fail;
+		return 1;
 	}
 	if (!egg->bin){
 		egg->bin = r_buf_new ();
 	}
 	if (!(b = r_egg_get_bin (egg))) {
 		eprintf ("r_egg_get_bin: invalid egg :(\n");
-		goto fail;
+		return 1;
 	}
 	r_egg_finalize (egg);
-	for (i = 0; i < b->length; i++){
-		printf ("%02x", b->buf[i]);
+	for (i = 0; i < b->length; i++) {
+		r_cons_printf ("%02x", b->buf[i]);
 	}
-	printf ("\n");
+	r_cons_newline ();
 	return 0;
-	fail:
-	return 1;
 }
 
 static int cmd_egg_compile(REgg *egg) {
@@ -134,22 +132,22 @@ static int cmd_egg(void *data, const char *input) {
 			eprintf ("Cannot compile\n");
 		break;
 	case 'p': // "gp"
-		if (*input && *(input+2)) {
-			r_egg_padding(egg, input+2);
+		if (input[0] && input[2]) {
+			r_egg_padding(egg, input + 2);
 		}
 		//cmd_egg_option (egg, "egg.padding", input);
 		break;
 	case 'e': // "ge"
-		if (*input && *(input+2)) {
-			if (!r_egg_encode (egg,input+2)) {
+		if (input[0] && input[2]) {
+			if (!r_egg_encode (egg,input + 2)) {
 				eprintf ("Invalid encoder '%s'\n", input+2);
 			}
 		}
 		//cmd_egg_option (egg, "egg.encoder", input);
 		break;
 	case 'i': // "gi"
-		if (*input && *(input+2)) {
-			compileShellcode(egg,input+2);
+		if (input[0] && input[2]) {
+			compileShellcode (egg,input + 2);
 		}
 		else {
 			//nice error message ?
