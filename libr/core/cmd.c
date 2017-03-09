@@ -1413,17 +1413,38 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		}
 		break;
 	case '"':
-		for (cmd++; *cmd; ) {
+		for (; *cmd; ) {
 			int pipefd = -1;
 			ut64 oseek = UT64_MAX;
-			char *line, *p = find_eoq (cmd);
-			if (!p || !*p) {
-				eprintf ("Missing \" in (%s).", cmd);
-				return false;
+			char *line, *p;
+			if (*cmd == '"') {
+				cmd++;
+				p = find_eoq (cmd + 1);
+				if (!p || !*p) {
+					eprintf ("Missing \" in (%s).", cmd);
+					return false;
+				}
+				*p = 0;
+				p++;
+			} else {
+				char *sc = strchr (cmd, ';');
+				if (sc) {
+					*sc = 0;
+				}
+				r_core_cmd0 (core, cmd);
+				if (!sc) {
+					break;
+				}
+				cmd = sc + 1;
+				continue;
 			}
-			*p = 0;
 			// SKIPSPACES in p + 1
-			while (IS_WHITESPACE (p[1])) p++;
+			if (!p[0]) {
+				break;
+			}
+			while (p[1] == ';' || IS_WHITESPACE (p[1])) {
+				p++;
+			}
 			if (p[1] == '@' || (p[1] && p[2] == '@')) {
 				char *q = strchr (p + 1, '"');
 				if (q) {
