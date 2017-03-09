@@ -1081,7 +1081,8 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 				"Allocating R_IO_MAX_ALLOC set as the environment variable.\n", io->maxalloc);
 		*out_sz = io->maxalloc;
 	}
-	buf = malloc (*out_sz);
+	buf = malloc (*out_sz + 1);
+	buf[*out_sz] = 0;
 	if (!buf) {
 		if (*out_sz > R_IO_MAX_ALLOC) {
 			char *num_unit = r_num_units (NULL, *out_sz);
@@ -1090,7 +1091,8 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 				num_unit, (ut64)R_IO_MAX_ALLOC);
 			free (num_unit);
 			*out_sz = R_IO_MAX_ALLOC;
-			buf = malloc (*out_sz);
+			buf = malloc (*out_sz + 1);
+			buf[*out_sz] = 0;
 		}
 		if (!buf) {
 			char *num_unit = r_num_units (NULL, *out_sz);
