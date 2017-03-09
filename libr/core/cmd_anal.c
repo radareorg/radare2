@@ -560,6 +560,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	int ret, i, j, idx, size;
 	const char *color = "";
 	const char *esilstr;
+	const char *opexstr;
 	RAnalHint *hint;
 	RAnalEsil *esil = NULL;
 	RAsmOp asmop;
@@ -592,6 +593,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
 		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
+		opexstr = R_STRBUF_SAFEGET (&op.opex);
 		if (ret < 1 && fmt != 'd') {
 			eprintf ("Oops at 0x%08" PFMT64x " (", core->offset + idx);
 			for (i = idx, j = 0; i < core->blocksize && j < 3; ++i, ++j) {
@@ -638,6 +640,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			r_cons_printf ("\"prefix\": %" PFMT64d ",", op.prefix);
 			r_cons_printf ("\"id\": %d,", op.id);
+			if (opexstr && *opexstr) {
+				r_cons_printf ("\"opex\":%s,", opexstr);
+			}
 			r_cons_printf ("\"addr\": %" PFMT64d ",", core->offset + idx);
 			r_cons_printf ("\"bytes\": \"");
 			for (j = 0; j < size; j++) {
@@ -721,6 +726,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			printline ("prefix", "%" PFMT64d "\n", op.prefix);
 			printline ("id", "%d\n", op.id);
+			if (opexstr && *opexstr) {
+				printline ("opex", "%s\n", opexstr);
+			}
 			printline ("bytes", NULL, 0);
 			for (j = 0; j < size; j++) {
 				r_cons_printf ("%02x", buf[j + idx]);
