@@ -2973,6 +2973,7 @@ static int cmd_print(void *data, const char *input) {
 
 			if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
 				r_core_set_asm_configs (core, new_arch, new_bits, segoff);
+				r_anal_hint_set_bits (core->anal, core->offset, new_bits);
 				settings_changed = true;
 			}
 		}
@@ -3030,8 +3031,13 @@ static int cmd_print(void *data, const char *input) {
 				r_asm_code_free (acode);
 			}
 		}
-		if (settings_changed)
+		if (settings_changed) {
 			r_core_set_asm_configs (core, old_arch, old_bits, segoff);
+			r_anal_hint_set_bits (core->anal, core->offset, old_bits);
+			r_anal_build_range_on_hints (core->anal);
+			r_core_seek_archbits (core, core->offset);
+			//r_anal_hint_set_bits (core->anal, core->offset, oldbits);
+		}
 		free (old_arch);
 		free (new_arch);
 	}
@@ -3258,6 +3264,8 @@ static int cmd_print(void *data, const char *input) {
 
 		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
 			r_core_set_asm_configs (core, new_arch, new_bits, segoff);
+			//hints handy for arm
+			r_anal_hint_set_bits (core->anal, core->offset, new_bits);
 			settings_changed = true;
 		}
 
@@ -3572,12 +3580,14 @@ static int cmd_print(void *data, const char *input) {
 		}
 		core->offset = current_offset;
 		// change back asm setting if they were changed
-		if (settings_changed)
+		if (settings_changed) {
 			r_core_set_asm_configs (core, old_arch, old_bits, segoff);
-
+			r_anal_hint_set_bits (core->anal, core->offset, old_bits);
+			r_anal_build_range_on_hints (core->anal);
+			r_core_seek_archbits (core, core->offset);
+		}
 		free (old_arch);
 		free (new_arch);
-
 		if (processed_cmd) {
 			ret = pd_result;
 			goto beach;

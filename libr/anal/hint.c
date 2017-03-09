@@ -94,7 +94,6 @@ R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr) {
 	unsetHint(a, "size:", addr);
 }
 R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr) {
-
 	a->bits_hints_changed = true;
 	unsetHint(a, "bits:", addr);
 }
