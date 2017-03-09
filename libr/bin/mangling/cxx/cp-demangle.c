@@ -1521,9 +1521,6 @@ d_unqualified_name (struct d_info *di)
     return NULL;
 
   peek = d_peek_char (di);
-  if (!peek) {
-    return NULL;
-  }
   if (peek == 'B') {
     ret = d_abi_tags (di, ret);
   }
@@ -1614,9 +1611,6 @@ d_identifier (struct d_info *di, int len)
      keyword.  This '$' is not included in the length count.  We just
      ignore the '$'.  */
   char peek = d_peek_char (di);
-  if (!peek) {
-    return NULL;
-  }
   if ((di->options & DMGL_JAVA) != 0 && peek == '$') {
     d_advance (di, 1);
   }
