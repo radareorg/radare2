@@ -32,9 +32,12 @@ libr/include/r_list.h
 libr/include/r_reg.h
 libr/include/r_util.h
 
+libr/anal/var.c
+libr/anal/fcn.c
 libr/anal/cycles.c
 libr/anal/esil.c
 libr/anal/data.c
+libr/anal/flirt.c
 libr/anal/p/anal_arc.c
 
 libr/config/config.c
@@ -60,6 +63,7 @@ libr/cons/editor.c
 libr/core/file.c
 libr/core/yank.c
 libr/core/blaze.c
+libr/core/cmd_egg.c
 
 binr/radare2/radare2.c
 binr/rabin2/rabin2.c
