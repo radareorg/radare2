@@ -7,9 +7,9 @@
 #include <r_util.h>
 
 typedef enum optype_t {
-	ARM_NOTYPE = -1, 
-	ARM_GPR = 1, 
-	ARM_CONSTANT = 2, 
+	ARM_NOTYPE = -1,
+	ARM_GPR = 1,
+	ARM_CONSTANT = 2,
 	ARM_FP = 4,
 	ARM_LSL = 8,
 	ARM_SHIFT = 16
@@ -17,7 +17,7 @@ typedef enum optype_t {
 
 typedef enum regtype_t {
 	ARM_UNDEFINED = -1,
-	ARM_REG64 = 1, 
+	ARM_REG64 = 1,
 	ARM_REG32 = 2,
 	ARM_SP = 4,
 	ARM_PC = 8,
@@ -196,6 +196,138 @@ static ut32 msr(ArmOp *op, int w) {
 	return data;
 }
 
+static int countLeadingZeros(ut32 x) {
+	int val = ( x < 0 ) ? 0 : x;
+	int count = ( x < 0 ) ? 0 : 32;
+
+	while (val) {
+		val >>= 1;
+		--count;
+	}
+	return count;
+}
+
+static int countTrailingZeros(ut32 x) {
+	int count = 0;
+	while (x > 0) {
+		if ((x & 1) == 1) {
+			break;
+		} else {
+			count ++;
+			x = x >> 1;
+		}
+	}
+	return count;
+}
+
+static int countLeadingOnes(ut32 x) {
+	return countLeadingZeros (~x);
+}
+
+static int countTrailingOnes(ut32 x) {
+	return countTrailingZeros (~x);
+}
+
+static bool isMask(ut32 value) {
+  return value && ((value + 1) & value) == 0;
+}
+
+static bool isShiftedMask (ut32 value) {
+  return value && isMask ((value - 1) | value);
+}
+
+static ut32 decodeBitMasks(ut32 imm) {
+	// get element size
+	int size = 32;
+	// determine rot to make element be 0^m 1^n
+	ut32 cto, i;
+	ut32 mask = ((ut64) - 1LL) >> (64 - size);
+
+	if (isShiftedMask (imm)) {
+		i = countTrailingZeros (imm);
+		cto = countTrailingOnes (imm >> i);
+	} else {
+		imm |= ~mask;
+		if (!isShiftedMask (imm)) {
+			return UT32_MAX;
+		}
+
+		ut32 clo = countLeadingOnes (imm);
+		i = 64 - clo;
+		cto = clo + countTrailingOnes (imm) - (64 - size);
+	}
+
+	// Encode in Immr the number of RORs it would take to get *from* 0^m 1^n
+	// to our target value, where I is the number of RORs to go the opposite
+	// direction
+	ut32 immr = (size - i) & (size - 1);
+	// If size has a 1 in the n'th bit, create a value that has zeroes in
+	// bits [0, n] and ones above that.
+	ut64 nimms = ~(size - 1) << 1;
+	// Or the cto value into the low bits, which must be below the Nth bit
+	// bit mentioned above.
+	nimms |= (cto - 1);
+	// Extract and toggle seventh bit to make N field.
+	ut32 n = ((nimms >> 6) & 1) ^ 1;
+	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
+	return encoding;
+}
+
+static ut32 orr(ArmOp *op, int addr) {
+	ut32 data = UT32_MAX;
+	ut64 at = 0LL;
+
+	if (op->operands[2].type & ARM_GPR) {
+		// All operands need to be the same
+		if (!(op->operands[0].reg_type == op->operands[1].reg_type &&
+	 	    op->operands[1].reg_type == op->operands[2].reg_type)) {
+		 	   return data;
+		}
+		if (op->operands[0].reg_type & ARM_REG64) {
+			data = 0x000000aa;
+		} else {
+			data = 0x0000002a;
+		}
+		data += op->operands[0].reg << 24;
+		data += op->operands[1].reg << 29;
+		data += (op->operands[1].reg >> 3)  << 16;
+		data += op->operands[2].reg << 8;
+	} else if (op->operands[2].type & ARM_CONSTANT) {
+		// Reg types need to match
+		if (!(op->operands[0].reg_type == op->operands[1].reg_type)) {
+			return data;
+		}
+		if (op->operands[0].reg_type & ARM_REG64) {
+			data = 0x000040b2;
+		} else {
+			data = 0x00000032;
+		}
+
+		data += op->operands[0].reg << 24;
+		data += op->operands[1].reg << 29;
+		data += (op->operands[1].reg >> 3)  << 16;
+
+		ut32 imm = decodeBitMasks (op->operands[2].immediate);
+		if (imm == -1) {
+			return imm;
+		}
+		int low = imm & 0xF;
+		if (op->operands[0].reg_type & ARM_REG64) {
+			imm = ((imm >> 6) | 0x78);
+			if (imm > 120) {
+				data |= imm << 8;
+			}
+		} else {
+			imm = ((imm >> 2));
+			if (imm > 120) {
+				data |= imm << 4;
+			}
+		}
+		data |= (4 * low) << 16;
+	}
+	return data;
+}
+
 static ut32 adr(ArmOp *op, int addr) {
 	ut32 data = UT32_MAX;
 	ut64 at = 0LL;
@@ -331,7 +463,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 				}
 				op->operands_count ++;
 				switch (imm_count) {
-					case 0:						
+					case 0:
 						op->operands[operand].type = ARM_CONSTANT;
 						op->operands[operand].immediate = r_num_math (NULL, token);
 					break;
@@ -412,6 +544,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		if (*op != UT32_MAX) {
 			return true;
 		}
+	}
+	if (!strncmp (str, "orr ", 4)) {
+		*op = orr (&ops, addr);
+		return *op != UT32_MAX;
 	}
 	if (!strncmp (str, "svc ", 4)) { // system level exception
 		*op = exception (&ops, 0x010000d4);
