@@ -954,8 +954,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			sdb_num_set (DB, "nargs", fcn->nargs, 0);
 		}
 		sdb_num_set (DB, "size", r_anal_fcn_size (fcn), 0);
-		if (fcn->stack > 0) {
-			sdb_num_set (DB, "stack", fcn->stack, 0);
+		if (fcn->maxstack > 0) {
+			sdb_num_set (DB, "stack", fcn->maxstack, 0);
 		}
 		sdb_set (DB, "pos", "0,0", 0); // needs to run layout
 		sdb_set (DB, "type", r_anal_fcn_type_tostring (fcn->type), 0);
@@ -973,7 +973,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			r_anal_var_count (core->anal, fcn, 's', 0) +
 			r_anal_var_count (core->anal, fcn, 'b', 0));
 		r_cons_printf (",\"size\":%d", r_anal_fcn_size (fcn));
-		r_cons_printf (",\"stack\":%d", fcn->stack);
+		r_cons_printf (",\"stack\":%d", fcn->maxstack);
 		r_cons_printf (",\"type\":%d", fcn->type); // TODO: output string
 		//r_cons_printf (",\"cc\":%d", fcn->call); // TODO: calling convention
 		if (fcn->dsc) r_cons_printf (",\"signature\":\"%s\"", fcn->dsc);

@@ -1605,7 +1605,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 		if (fcn) {
 			fcn->maxstack = r_num_math (core->num, input + 3);
-			fcn->stack = fcn->maxstack;
+			//fcn->stack = fcn->maxstack;
 		}
 		}
 		break;
