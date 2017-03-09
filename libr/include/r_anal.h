@@ -291,7 +291,6 @@ typedef struct r_anal_type_function_t {
 	RList *fcn_locs; //sorted list of a function *.loc refs
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
-	RList *vars;
 #if FCN_OLD
 	RList *refs;
 	RList *xrefs;
@@ -1433,6 +1432,7 @@ R_API RList *r_anal_reflines_fcn_get(struct r_anal_t *anal, RAnalFunction *fcn, 
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
+R_API RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_var_list_dynamic(RAnal *anal, RAnalFunction *fcn, int kind);
 
 // calling conventions API

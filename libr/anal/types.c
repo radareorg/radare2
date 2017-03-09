@@ -118,69 +118,6 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 	return 0;
 }
 
-R_API RList *r_anal_type_fcn_list(RAnal *anal) {
-	SdbList *sdb_list = sdb_foreach_match (anal->sdb_types, "=^func$", false);
-	RList *list = r_list_newf ((RListFree)r_anal_fcn_free);
-	char *name, *value;
-	const char *key;
-	SdbListIter *sdb_iter;
-	int args_n, i;
-	SdbKv *kv;
-
-	if (!list || !sdb_list) {
-		r_list_free (list);
-		ls_free (sdb_list);
-		return 0;
-	}
-	ls_foreach (sdb_list, sdb_iter, kv) {
-		RAnalFunction *fcn = r_anal_fcn_new ();
-		r_list_append (list, fcn);
-		//setting function name and return type
-		fcn->name = strdup (kv->key);
-		//setting function return type
-		key = sdb_fmt (-1, "func.%s.ret", kv->key);
-		fcn->rets = sdb_get (anal->sdb_types, key, 0);
-		//setting calling conventions
-		key = sdb_fmt (-1, "func.%s.cc", kv->key);
-		fcn->cc = sdb_get (anal->sdb_types, key, 0);
-		//Filling function args
-		key = sdb_fmt (-1, "func.%s.args", kv->key);
-		value = sdb_get (anal->sdb_types, key, 0);
-		args_n = r_num_math (NULL, value);
-		free (value);
-		if (!args_n) {
-			continue;
-		}
-		//XXX we should handle as much calling conventions
-		//for as much architectures as we want here
-		fcn->vars = r_list_newf ((RListFree)r_anal_var_free);
-		if (!fcn->vars) {
-			continue;
-		}
-		for (i = 0; i < args_n; i++) {
-			key = r_str_newf ("func.%s.arg.%d", kv->key, i);
-			value = sdb_get (anal->sdb_types, key, 0);
-			if (value) {
-				name = strstr (value, ",");
-				*name++ = 0;
-				RAnalVar *arg = R_NEW0 (RAnalVar);
-				arg->name = strdup (name);
-				arg->type = value;
-				arg->kind = 'a';
-				//TODO Calculate the size and the delta
-				arg->delta = i;
-				r_list_append (fcn->vars, arg);
-			}
-		}
-	}
-	ls_free (sdb_list);
-	if (r_list_empty (list)) {
-		r_list_free (list);
-		return NULL;
-	}
-	return list;
-}
-
 R_API char* r_anal_type_to_str (RAnal *a, const char *type) {
 	// convert to C text... maybe that should be in format string..
 	return NULL;
