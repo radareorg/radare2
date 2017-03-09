@@ -339,7 +339,8 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const ch
 R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	int askuser = 1;
 	int ret, close_current_session = 1;
-	char *prj, *filepath;
+	char *prj, *filepath, *oldbin;
+	const char *newbin;
 	ut64 mapaddr = 0;
 	if (!prjfile || !*prjfile) {
 		return false;
@@ -366,6 +367,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 			return false;
 		}
 	}
+	oldbin = strdup (r_config_get (core->config, "file.path"));
 	if (!strcmp (prjfile, r_config_get (core->config, "prj.name"))) {
 		//eprintf ("Reloading project\n");
 		askuser = 0;
@@ -394,6 +396,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 		fh = r_core_file_open (core, filepath, 0, 0);
 		if (!fh) {
 			eprintf ("Cannot open file '%s'\n", filepath);
+			free (oldbin);
 			free (filepath);
 			free (prj);
 			return false;
@@ -415,6 +418,11 @@ R_API int r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 			r_core_bin_load (core, filepath, UT64_MAX);
 		}
 	}
+	newbin = r_config_get (core->config, "file.path");
+	if (strcmp (oldbin, newbin)) {
+		eprintf ("WARNING: file.path changed: %s => %s\n", oldbin, newbin);
+	}
+	free (oldbin);
 	free (filepath);
 	free (prj);
 	return ret;
