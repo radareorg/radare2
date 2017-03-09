@@ -5344,13 +5344,15 @@ static bool anal_fcn_data_gaps (RCore *core, const char *input) {
 
 static void r_anal_virtual_functions(void *core, const char* input) {
 	const char *curArch = NULL;
+	const char *curClass = NULL;
 	if (core) {
 		RCore *c = (RCore*)core;
 		if (c->bin && c->bin->cur && c->bin->cur->o && c->bin->cur->o->info) {
 			curArch = c->bin->cur->o->info->arch;
+			curClass = c->bin->cur->o->info->rclass;
 		}
 	}
-	if (curArch && !strcmp (curArch, "x86")) {
+	if (curArch && !strcmp (curArch, "x86") && !strcmp (curClass, "elf")) {
 		const char * help_msg[] = {
 			"Usage:", "av[*j] ", "analyze the .rodata section and list virtual function present",
 			NULL};
@@ -5360,6 +5362,9 @@ static void r_anal_virtual_functions(void *core, const char* input) {
 			break;
 		case 'j': //avj
 			r_core_anal_list_vtables (core, true);
+			break;
+		case 'r': //avr
+			r_core_anal_print_rtti (core);
 			break;
 		case '\0': //av
 			r_core_anal_list_vtables (core, false);
