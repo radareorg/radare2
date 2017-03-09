@@ -494,13 +494,17 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		return 4;
 	} else
 	if (!strcmpnull (ao->op, "bl")) {
-		int reg = getreg (ao->a[0]);
-		ao->o = 0x47;
-		if (reg == -1) {
-			ao->o |= getnum (ao->a[0]) << 8;
-		} else {
-			return 0;
-		}
+		int high, low;
+		high = low = (getnum (ao->a[0]) - 4);
+		high &= 0x7FFFFF;
+		high >>= 12;
+		high |= 0xF000;
+		low &= 0xFFF;
+		low >>= 1;
+		low |= 0xF800;
+		ao->o = low;
+		ao->o |= (high << 16);
+		thumb_swap (&ao->o);
 		// XXX: length = 4
 		return 4;
 	} else
