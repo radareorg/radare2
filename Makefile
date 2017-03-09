@@ -310,6 +310,15 @@ purge: purge-doc purge-dev user-uninstall
 	rm -rf "${DESTDIR}${LIBDIR}/radare2"
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
 
+purge2:
+	$(MAKE) purge
+ifneq ($(PREFIX),/usr)
+	$(MAKE) purge PREFIX=/usr
+endif
+ifneq ($(PREFIX),/usr/local)
+	$(MAKE) purge PREFIX=/usr/local
+endif
+
 R2V=radare2-${VERSION}
 
 dist:
