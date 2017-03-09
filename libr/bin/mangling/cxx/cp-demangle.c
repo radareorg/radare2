@@ -1475,6 +1475,9 @@ d_unqualified_name (struct d_info *di)
   char peek;
 
   peek = d_peek_char (di);
+  if (!peek) {
+    return NULL;
+  }
   if (IS_DIGIT (peek))
     ret = d_source_name (di);
   else if (IS_LOWER (peek))
@@ -1517,8 +1520,13 @@ d_unqualified_name (struct d_info *di)
   else
     return NULL;
 
-  if (d_peek_char (di) == 'B')
+  peek = d_peek_char (di);
+  if (!peek) {
+    return NULL;
+  }
+  if (peek == 'B') {
     ret = d_abi_tags (di, ret);
+  }
   return ret;
 }
 
@@ -1549,6 +1557,9 @@ d_number (struct d_info *di)
 
   negative = 0;
   peek = d_peek_char (di);
+  if (!peek) {
+    return 0;
+  }
   if (peek == 'n')
     {
       negative = 1;
@@ -1594,7 +1605,7 @@ d_identifier (struct d_info *di, int len)
 
   name = d_str (di);
 
-  if (di->send - name < len)
+  if (di->send - name < len || len < 1)
     return NULL;
 
   d_advance (di, len);
@@ -1602,9 +1613,13 @@ d_identifier (struct d_info *di, int len)
   /* A Java mangled name may have a trailing '$' if it is a C++
      keyword.  This '$' is not included in the length count.  We just
      ignore the '$'.  */
-  if ((di->options & DMGL_JAVA) != 0
-      && d_peek_char (di) == '$')
+  char peek = d_peek_char (di);
+  if (!peek) {
+    return NULL;
+  }
+  if ((di->options & DMGL_JAVA) != 0 && peek == '$') {
     d_advance (di, 1);
+  }
 
   /* Look for something which looks like a gcc encoding of an
      anonymous namespace, and replace it with a more user friendly
