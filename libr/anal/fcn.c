@@ -671,7 +671,7 @@ repeat:
 		case R_ANAL_STACK_INC:
 			if (R_ABS (op.stackptr) < 8096) {
 				fcn->stack += op.stackptr;
-				if (fcn->stack > 0 && (int)op.stackptr > 0) {
+				if (fcn->stack > fcn->maxstack) {
 					fcn->maxstack = fcn->stack;
 				}
 			}
