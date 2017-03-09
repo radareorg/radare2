@@ -8,10 +8,12 @@
 
 IFILE="$1"
 P=`readlink $0`
+[ -z "$P" ] && P="$0"
 cd `dirname $P`/..
 
 if [ -z "${IFILE}" ]; then
 	echo "Usage: r2-indent [-i|-u] [file] [...]"
+	echo " -a    indent all whitelisted files"
 	echo " -i    indent in place (modify file)"
 	echo " -u    unified diff of the file"
 	exit 1
@@ -19,10 +21,19 @@ fi
 
 CWD="$PWD"
 INPLACE=0
+ALLWHITE=0
 UNIFIED=0
 ROOTDIR=/
 
 UNCRUST=1
+
+if [ "${IFILE}" = "-a" ]; then
+	shift
+	ALLWHITE=1
+	IFILE="$1"
+	$CWD/sys/indent-whitelist.sh $@
+	exit 0
+fi
 
 if [ "${IFILE}" = "-i" ]; then
 	shift
@@ -42,7 +53,7 @@ fi
 
 if [ "${UNCRUST}" = 1 ]; then
 	# yell, rather than overwrite an innocent file
-	if ! type uncrustify >/dev/null; then
+	if ! r2pm -r type uncrustify >/dev/null; then
 		echo "This script requires uncrustify to function. Check r2pm -i uncrustify"
 		exit 1
 	fi
@@ -64,7 +75,7 @@ indentFile() {
 	if [ "${UNCRUST}" = 1 ]; then
 		cp -f doc/clang-format ${CWD}/.clang-format
 		cd "$CWD"
-		uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format
+		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format || exit 1
 	else
 		cp -f doc/clang-format ${CWD}/.clang-format
 		cd "$CWD"
