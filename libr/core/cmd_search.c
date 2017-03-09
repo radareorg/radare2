@@ -1742,9 +1742,13 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 				param->from, param->to, maxhits, regexp);
 		}
 		if (hits) {
+			const char *cmdhit = r_config_get (core->config, "cmd.hit");
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_is_breaked ()) {
 					break;
+				}
+				if (cmdhit && *cmdhit) {
+					r_core_cmdf (core, "%s @ 0x%"PFMT64x, cmdhit, hit->addr);
 				}
 				switch (outmode) {
 				case 'j':
