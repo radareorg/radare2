@@ -197,11 +197,9 @@ static ut32 msr(ArmOp *op, int w) {
 }
 
 static int countLeadingZeros(ut32 x) {
-	int val = ( x < 0 ) ? 0 : x;
-	int count = ( x < 0 ) ? 0 : 32;
-
-	while (val) {
-		val >>= 1;
+	int count = 0;
+	while (x) {
+		x >>= 1;
 		--count;
 	}
 	return count;
@@ -275,7 +273,6 @@ static ut32 decodeBitMasks(ut32 imm) {
 
 static ut32 orr(ArmOp *op, int addr) {
 	ut32 data = UT32_MAX;
-	ut64 at = 0LL;
 
 	if (op->operands[2].type & ARM_GPR) {
 		// All operands need to be the same
