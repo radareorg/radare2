@@ -61,9 +61,9 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 				break;
 			}
 			sdb_unset (db, sdb_fmt (-1, "%s.%s", name, tmp), 0);
-			sdb_unset (db, sdb_fmt (-1, "%s.0x%x", name, i), 0);			
+			sdb_unset (db, sdb_fmt (-1, "%s.0x%x", name, i), 0);
 		}
-		sdb_unset (db, name, 0);		
+		sdb_unset (db, name, 0);
 	} else {
 		eprintf ("Unrecognized type \"%s\"\n", kind);
 	}
@@ -183,34 +183,21 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 			int elements;
 			//int off;
 			//int size;
+			bool isStruct = false;
+			bool isEnum = false;
 			snprintf (var2, sizeof (var2), "%s.%s", var, p);
 			type = sdb_array_get (DB, var2, 0, NULL);
 			if (type) {
 				//off = sdb_array_get_num (DB, var2, 1, NULL);
 				//size = sdb_array_get_num (DB, var2, 2, NULL);
 				if (!strncmp (type, "struct ", 7)) {
+					char* struct_name = type + 7;
 					// TODO: iterate over all the struct fields, and format the format and vars
-					snprintf (var3, sizeof (var3), "struct.%s", type+7);
-					for (m = 0; (q = sdb_array_get (DB, var3, m, NULL)); m++) {
-						snprintf (var2, sizeof (var2), "%s.%s", var3, q);
-						type2 = sdb_array_get (DB, var2, 0, NULL); // array of type, size, ..
-						if (type2) {
-							char var4[128];
-							snprintf (var4, sizeof (var4), "type.%s", type2);
-							tfmt = sdb_const_get (DB, var4, NULL);
-							if (tfmt) {
-								filter_type (type2);
-								fmt = r_str_concat (fmt, tfmt);
-								vars = r_str_concat (vars, q);
-								vars = r_str_concat (vars, " ");
-							} else eprintf ("Cannot resolve3 type '%s'\n", var3);
-						} else eprintf ("Cannot resolve type '%s'\n", var2);
-						free (type2);
-						free (q);
-					}
+					snprintf (var3, sizeof (var3), "struct.%s", struct_name);
+					fmt = r_str_concat (fmt, "?");
+					vars = r_str_concatf (vars, "(%s)%s", struct_name, p);
+					vars = r_str_concat (vars, " ");
 				} else {
-					bool isStruct = false;
-					bool isEnum = false;
 					elements = sdb_array_get_num (DB, var2, 2, NULL);
 					// special case for char[]. Use char* format type without *
 					if (!strncmp (type, "char", 5) && elements > 0) {
@@ -222,6 +209,9 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 						if (!strncmp (type, "enum ", 5)) {
 							snprintf (var3, sizeof (var3), "%s", type + 5);
 							isEnum = true;
+						} else if (!strncmp (type, "struct ", 7)) {
+							snprintf (var3, sizeof (var3), "%s", type + 7);
+							isStruct = true;
 						} else {
 							snprintf (var3, sizeof (var3), "type.%s", type);
 						}
@@ -333,7 +323,7 @@ R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name) {
 		}
 	}
 	// strip r2 prefixes (sym, sym.imp, etc')
-	while(slen > 4 && (offset + 3 < slen ) && str[offset + 3] == '.') { 
+	while(slen > 4 && (offset + 3 < slen ) && str[offset + 3] == '.') {
 		offset+=4;
 	}
 	slen -= offset;
