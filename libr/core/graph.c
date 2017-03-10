@@ -1511,8 +1511,13 @@ static void create_edge_from_dummies(const RAGraph *g, RANode *an, RList *toremo
 	RGraphNode *from = r_list_get_n (r_graph_innodes (g->graph, n), 0);
 	RANode *a_from = get_anode (from);
 	RListIter *(*add_to_list)(RList *, void *) = NULL;
-	AEdge *e = R_NEW0 (AEdge);
-	if (!e || !a_from) {
+	AEdge *e;
+	if (!a_from) {
+		return;
+	}
+
+	e = R_NEW0 (AEdge);
+	if (!e) {
 		return;
 	}
 	e->x = r_list_new ();
