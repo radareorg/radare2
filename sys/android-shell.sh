@@ -45,7 +45,7 @@ ROOT=`dirname $PWD/$0`
 OS=`uname|tr 'A-Z' 'a-z'`
 [ "${OS}" = macosx ] && OS=darwin
 
-if [ ! -x /work ]
+if [ ! -x /work ]; then
 	echo "Building android locally with NDK instead of dockcross..."
 	# TODO: autodetect or gtfo
 	if [ -f ~/.r2androidrc ]; then
@@ -62,6 +62,7 @@ if [ ! -x /work ]
 		fi
 		[ -z "${NDK}" ] && NDK="${HOME}/Downloads/android-ndk-r7b"
 	fi
+fi
 
 
 #if [ ! -d "${SDK}/tools" ]; then 
@@ -100,7 +101,6 @@ if [ "${BUILD}" != 0 ]; then
 	#PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
 	PATH=$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
 	export PATH
-	fi
 	export CFLAGS
 	export NDK
 	export NDK_ARCH
