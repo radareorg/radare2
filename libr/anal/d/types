@@ -145,6 +145,11 @@ func.malloc.args=1
 func.malloc.arg.0=size_t,size
 func.malloc.ret= void *
 
+xmalloc=func
+func.malloc.args=1
+func.malloc.arg.0=size_t,size
+func.malloc.ret= void *
+
 realloc=func
 func.realloc.args=2
 func.realloc.arg.0=void,*ptr
