@@ -118,8 +118,7 @@ bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object) {
 
 	ci->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	if (object->list.length == 2 || !object->list.objects[1]) {
-		ci->content = object->list.objects[1];
-		object->list.objects[1] = NULL;
+		R_PTR_MOVE (ci->content, object->list.objects[1]);
 	}
 
 	return true;
@@ -127,7 +126,7 @@ bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object) {
 
 void r_pkcs7_free_contentinfo (RPKCS7ContentInfo* ci) {
 	if (ci) {
-		r_asn1_free_object (&ci->content);
+		r_asn1_free_object (ci->content);
 		r_asn1_free_string (ci->contentType);
 		// Used internally pkcs #7, so it should't free ci.
 	}
@@ -139,8 +138,7 @@ bool r_pkcs7_parse_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu, RAS
 	}
 
 	r_x509_parse_name (&iasu->issuer, object->list.objects[0]);
-	iasu->serialNumber = object->list.objects[1];
-	object->list.objects[1] = NULL;
+	R_PTR_MOVE (iasu->serialNumber, object->list.objects[1]);
 
 	return true;
 }
@@ -148,7 +146,7 @@ bool r_pkcs7_parse_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu, RAS
 void r_pkcs7_free_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu) {
 	if (iasu) {
 		r_x509_free_name (&iasu->issuer);
-		r_asn1_free_object (&iasu->serialNumber);
+		r_asn1_free_object (iasu->serialNumber);
 		// Used internally pkcs #7, so it should't free iasu.
 	}
 }
@@ -180,8 +178,7 @@ bool r_pkcs7_parse_signerinfo (RPKCS7SignerInfo* si, RASN1Object *object) {
 		shift++;
 	}
 	if (shift < object->list.length) {
-		si->encryptedDigest = elems[shift];
-		elems[shift] = NULL;
+		R_PTR_MOVE (si->encryptedDigest, object->list.objects[shift]);
 		shift++;
 	}
 	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
@@ -196,7 +193,7 @@ void r_pkcs7_free_signerinfo (RPKCS7SignerInfo* si) {
 		r_x509_free_algorithmidentifier (&si->digestAlgorithm);
 		r_pkcs7_free_attributes (&si->authenticatedAttributes);
 		r_x509_free_algorithmidentifier (&si->digestEncryptionAlgorithm);
-		r_asn1_free_object (&si->encryptedDigest);
+		r_asn1_free_object (si->encryptedDigest);
 		r_pkcs7_free_attributes (&si->unauthenticatedAttributes);
 		free (si);
 	}
@@ -288,13 +285,13 @@ RCMS *r_pkcs7_parse_cms (const ut8 *buffer, ut32 length) {
 	}
 	object = r_asn1_create_object (buffer, length);
 	if (!object || object->list.length != 2 || !object->list.objects[0] || object->list.objects[1]->list.length != 1) {
-		r_asn1_free_object (&object);
+		r_asn1_free_object (object);
 		free (container);
 		return NULL;
 	}
 	container->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	r_pkcs7_parse_signeddata (&container->signedData, object->list.objects[1]->list.objects[0]);
-	r_asn1_free_object (&object);
+	r_asn1_free_object (object);
 	return container;
 }
 
@@ -318,8 +315,7 @@ RPKCS7Attribute* r_pkcs7_parse_attribute (RASN1Object *object) {
 	memset (attribute, 0, sizeof (RPKCS7Attribute));
 	attribute->oid = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	if (object->list.length == 2) {
-		attribute->data = object->list.objects[1];
-		object->list.objects[1] = NULL;
+		R_PTR_MOVE (attribute->data, object->list.objects[1]);
 	}
 
 	return attribute;
@@ -327,7 +323,7 @@ RPKCS7Attribute* r_pkcs7_parse_attribute (RASN1Object *object) {
 
 void r_pkcs7_free_attribute (RPKCS7Attribute* attribute) {
 	if (attribute) {
-		r_asn1_free_object (&attribute->data);
+		r_asn1_free_object (attribute->data);
 		r_asn1_free_string (attribute->oid);
 		free (attribute);
 	}
@@ -341,13 +337,11 @@ bool r_pkcs7_parse_attributes (RPKCS7Attributes* attributes, RASN1Object *object
 
 	attributes->length = object->list.length;
 	if (attributes->length > 0) {
-		attributes->elements = (RPKCS7Attribute**) calloc (attributes->length, sizeof (RPKCS7Attribute*));
+		attributes->elements = R_NEWS0(RPKCS7Attribute*, attributes->length);
 		if (!attributes->elements) {
 			attributes->length = 0;
 			return false;
 		}
-		memset (attributes->elements, 0, attributes->length * sizeof (RPKCS7Attribute*));
-
 		for (i = 0; i < object->list.length; ++i) {
 			attributes->elements[i] = r_pkcs7_parse_attribute (object->list.objects[i]);
 		}
