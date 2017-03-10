@@ -719,6 +719,8 @@ repeat:
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
 			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
+		} else if (op.val && op.val != UT64_MAX && op.val != UT32_MAX) {
+			r_anal_fcn_xref_add (anal, fcn, op.addr, op.val, R_ANAL_REF_TYPE_DATA);
 		}
 
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
