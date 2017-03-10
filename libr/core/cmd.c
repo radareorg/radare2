@@ -1424,8 +1424,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					eprintf ("Missing \" in (%s).", cmd);
 					return false;
 				}
-				*p = 0;
-				p++;
+				*p++ = 0;
 			} else {
 				char *sc = strchr (cmd, ';');
 				if (sc) {
@@ -1438,38 +1437,36 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				cmd = sc + 1;
 				continue;
 			}
-			// SKIPSPACES in p + 1
-			if (!p[0]) {
-				break;
-			}
-			while (p[1] == ';' || IS_WHITESPACE (p[1])) {
-				p++;
-			}
-			if (p[1] == '@' || (p[1] && p[2] == '@')) {
-				char *q = strchr (p + 1, '"');
-				if (q) {
-					*q = 0;
+			if (p[0]) {
+				while (p[1] == ';' || IS_WHITESPACE (p[1])) {
+					p++;
 				}
-				oseek = core->offset;
-				r_core_seek (core,
-					     r_num_math (core->num, p + 2), 1);
-				if (q) {
-					*p = '"';
-					p = q;
-				} else {
-					p = NULL;
+				if (p[1] == '@' || (p[1] && p[2] == '@')) {
+					char *q = strchr (p + 1, '"');
+					if (q) {
+						*q = 0;
+					}
+					oseek = core->offset;
+					r_core_seek (core,
+						     r_num_math (core->num, p + 2), 1);
+					if (q) {
+						*p = '"';
+						p = q;
+					} else {
+						p = NULL;
+					}
 				}
-			}
-			if (p && *p && p[1] == '>') {
-				str = p + 2;
-				while (*str == '>') {
-					str++;
+				if (p && *p && p[1] == '>') {
+					str = p + 2;
+					while (*str == '>') {
+						str++;
+					}
+					while (IS_WHITESPACE (*str)) {
+						str++;
+					}
+					r_cons_flush ();
+					pipefd = r_cons_pipe_open (str, 1, p[2] == '>');
 				}
-				while (IS_WHITESPACE (*str)) {
-					str++;
-				}
-				r_cons_flush ();
-				pipefd = r_cons_pipe_open (str, 1, p[2] == '>');
 			}
 			line = strdup (cmd);
 			line = r_str_replace (line, "\\\"", "\"", true);
