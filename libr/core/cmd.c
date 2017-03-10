@@ -1442,6 +1442,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				continue;
 			}
 			if (p[0]) {
+				// workaround :D
+				if (p[0] == '@') {
+					p--;
+				}
 				while (p[1] == ';' || IS_WHITESPACE (p[1])) {
 					p++;
 				}
