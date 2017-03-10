@@ -118,8 +118,7 @@ bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object) {
 
 	ci->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	if (object->list.length == 2 || !object->list.objects[1]) {
-		ci->content = object->list.objects[1];
-		object->list.objects[1] = NULL;
+		R_PTR_MOVE (ci->content, object->list.objects[1]);
 	}
 
 	return true;
@@ -139,8 +138,7 @@ bool r_pkcs7_parse_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu, RAS
 	}
 
 	r_x509_parse_name (&iasu->issuer, object->list.objects[0]);
-	iasu->serialNumber = object->list.objects[1];
-	object->list.objects[1] = NULL;
+	R_PTR_MOVE (iasu->serialNumber, object->list.objects[1]);
 
 	return true;
 }
@@ -180,8 +178,7 @@ bool r_pkcs7_parse_signerinfo (RPKCS7SignerInfo* si, RASN1Object *object) {
 		shift++;
 	}
 	if (shift < object->list.length) {
-		si->encryptedDigest = elems[shift];
-		elems[shift] = NULL;
+		R_PTR_MOVE (si->encryptedDigest, object->list.objects[shift]);
 		shift++;
 	}
 	if (shift < object->list.length && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
