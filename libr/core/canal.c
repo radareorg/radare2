@@ -3672,7 +3672,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 								if ((f = r_flag_get_i2 (core->flags, dst))) {
 									r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
 								} else if ((str = is_string_at (mycore, dst, NULL))) {
-									char *str2 = sdb_fmt (0, "esilref: '%s'", str);
+									char *str2 = sdb_fmt (2, "esilref: '%s'", str);
+									// HACK avoid format string inside string used later as format
+									// string crashes disasm inside agf under some conditions.
+									// https://github.com/radare/radare2/issues/6937
+									r_str_replace_char (str2, '%', '&');
 									r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, str2);
 									free (str);
 								}
