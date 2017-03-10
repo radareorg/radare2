@@ -29,7 +29,8 @@
 #
 
 # using phusion/baseimage as base image. 
-FROM ubuntu
+# FROM ubuntu
+FROM phusion/baseimage
 
 # Set correct environment variables.
 ENV HOME /root
@@ -45,8 +46,8 @@ RUN mkdir -p /opt/code/
 # install packages required to compile vala and radare2
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install -y software-properties-common wget python curl
-RUN apt-get install -y gcc git bison pkg-config make glib-2.0
+RUN apt-get install -y software-properties-common wget python curl valgrind
+RUN apt-get install -y gcc git bison pkg-config make glib-2.0 unzip sudo
 #RUN apt-get install -y swig flex bison git gcc g++ make pkg-config glib-2.0
 #RUN apt-get install -y swig flex bison git gcc g++ make pkg-config glib-2.0
 #RUN apt-get install -y python-gobject-dev valgrind gdb
@@ -71,6 +72,16 @@ RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - ; apt-get install -y 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # build and install r2
-RUN cd /opt/code; git clone https://github.com/radare/radare2.git; cd radare2; ./sys/install.sh ; make symstall
+RUN cd /opt/code ; git clone --depth 1 https://github.com/radare/radare2.git; cd radare2; ./sys/install.sh
+RUN cd /opt/code/radare2 ; make symstall
+
+RUN npm install -g r2pipe
+
+RUN useradd -m r2
+RUN adduser r2 sudo
+RUN (echo r2;echo r2) | passwd r2
+USER r2
+WORKDIR /home/r2
+ENV HOME=/home/r2
 
 RUN r2 -V

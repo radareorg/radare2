@@ -209,6 +209,7 @@ install love: install-doc install-man install-www
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	sys/ldconfig.sh
@@ -250,6 +251,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	done
 	mkdir -p "${DESTDIR}${BINDIR}"
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
@@ -262,6 +264,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 
 deinstall uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/r2-indent
+	rm -f $(DESTDIR)$(BINDIR)/r2-docker
 	cd libr && ${MAKE} uninstall PARENT=1
 	cd binr && ${MAKE} uninstall PARENT=1
 	cd shlr && ${MAKE} uninstall PARENT=1
