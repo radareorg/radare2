@@ -1399,6 +1399,24 @@ R_API int r_str_is_printable(const char *str) {
 	return 1;
 }
 
+R_API int r_str_is_printable_incl_newlines(const char *str) {
+	while (*str) {
+		int ulen = r_utf8_decode ((const ut8*)str, strlen (str), NULL);
+		if (ulen > 1) {
+			str += ulen;
+			continue;
+		}
+		if (!IS_PRINTABLE (*str)) {
+			//Further check to see if it's a \n or \r
+			if (!(*str == 0x0a || *str == 0x0d)) {
+				return 0;
+			}
+		}
+		str++;
+	}
+	return 1;
+}
+
 // Length in chars of a wide string (find better name?)
 R_API int r_wstr_clen (const char *s) {
 	int len = 0;
