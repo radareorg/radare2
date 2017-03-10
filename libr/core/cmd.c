@@ -2139,6 +2139,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 	RDebug *dbg = core->dbg;
 	RList *list, *head;
 	RListIter *iter;
+	RFlagItem *flg;
 	int i;
 
 	switch (each[0]) {
@@ -2161,14 +2162,14 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case '?':
-		r_cons_printf ("Usage: @@@ [type]     # types:\n");
-		r_cons_printf (" symbols\n");
-		r_cons_printf (" imports\n");
-		r_cons_printf (" regs\n");
-		r_cons_printf (" threads\n");
-		r_cons_printf (" comments\n");
-		r_cons_printf (" functions\n");
-		r_cons_printf (" flags\n");
+		r_cons_printf ("Usage: @@@ [type]     # types:\n"
+			" symbols\n"
+			" imports\n"
+			" regs\n"
+			" threads\n"
+			" comments\n"
+			" functions\n"
+			" flags\n");
 		break;
 	case 'c':
 		switch (each[1]) {
@@ -2200,14 +2201,17 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		// registers
 		{
 			ut64 offorig = core->offset;
-			for (i=0; i < 128; i++) {
+			for (i = 0; i < 128; i++) {
 				RRegItem *item;
 				ut64 value;
 				head = r_reg_get_list (dbg->reg, i);
-				if (!head) continue;
+				if (!head) {
+					continue;
+				}
 				r_list_foreach (head, iter, item) {
-					if (item->size != core->anal->bits)
+					if (item->size != core->anal->bits) {
 						continue;
+					}
 					value = r_reg_get_value (dbg->reg, item);
 					r_core_seek (core, value, 1);
 					r_cons_printf ("%s: ", item->name);
@@ -2219,17 +2223,19 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		break;
 	case 'i':
 		// imports
-		if (0) {
+		{
 			RBinImport *imp;
 			ut64 offorig = core->offset;
 			list = r_bin_get_imports (core->bin);
 			r_list_foreach (list, iter, imp) {
-				r_core_seek (core, 0, 1);
-				r_core_cmd0 (core, cmd);
+				char *impflag = r_str_newf ("sym.imp.%s", imp->name);
+				ut64 addr = r_num_math (core->num, impflag);
+				if (addr && addr != UT64_MAX) {
+					r_core_seek (core, addr, 1);
+					r_core_cmd0 (core, cmd);
+				}
 			}
 			r_core_seek (core, offorig, 1);
-		} else {
-			eprintf ("TODO @@@ imports ^^\n");
 		}
 		break;
 	case 's':
@@ -2248,7 +2254,10 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 	case 'f':
 		switch (each[1]) {
 		case 'l': // flags
-			eprintf ("TODO @@@ flags ^^\n");
+			r_list_foreach (core->flags->flags, iter, flg) {
+				r_core_seek (core, flg->offset, 1);
+				r_core_cmd0 (core, cmd);
+			}
 			break;
 		case 'u': // functions
 			{
