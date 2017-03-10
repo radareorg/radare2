@@ -1399,6 +1399,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
 	int scr_html = -1;
+	bool eos = false;
 
 	if (!cmd) {
 		return 0;
@@ -1425,6 +1426,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					return false;
 				}
 				*p++ = 0;
+				if (!*p) {
+					eos = true;
+				}
 			} else {
 				char *sc = strchr (cmd, ';');
 				if (sc) {
@@ -1470,7 +1474,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			}
 			line = strdup (cmd);
 			line = r_str_replace (line, "\\\"", "\"", true);
-			if (p && p[1] == '|') {
+			if (p && *p && p[1] == '|') {
 				str = p + 2;
 				while (IS_WHITESPACE (*str)) {
 					str++;
@@ -1493,6 +1497,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			}
 			*p = '"';
 			cmd = p + 1;
+			if (eos) {
+				break;
+			}
 		}
 		return true;
 	case '(':
