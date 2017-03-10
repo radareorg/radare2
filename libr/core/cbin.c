@@ -1202,9 +1202,6 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
 		relocs = r_bin_get_relocs (r->bin);
-		if (!relocs) {
-			return false;
-		}
 	}
 
 	if (IS_MODE_RAD (mode)) {
@@ -1316,7 +1313,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%i relocations\n", i);
 	}
-	return true;
+	return relocs != NULL;
 }
 
 #define MYDB 1
