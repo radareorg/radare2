@@ -726,9 +726,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			printline ("prefix", "%" PFMT64d "\n", op.prefix);
 			printline ("id", "%d\n", op.id);
+#if 0
+// no opex here to avoid lot of tests broken..and having json in here is not much useful imho
 			if (opexstr && *opexstr) {
 				printline ("opex", "%s\n", opexstr);
 			}
+#endif
 			printline ("bytes", NULL, 0);
 			for (j = 0; j < size; j++) {
 				r_cons_printf ("%02x", buf[j + idx]);

@@ -60,6 +60,75 @@ struct Getarg {
 	int bits;
 };
 
+static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+	int i;
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, "{");
+	cs_x86 *x = &insn->detail->x86;
+	r_strbuf_appendf (buf, "\"operands\":[", x->op_count);
+	for (i = 0; i < x->op_count; i++) {
+		cs_x86_op *op = &x->operands[i];
+		if (i > 0) {
+			r_strbuf_append (buf, ",");
+		}
+		r_strbuf_appendf (buf, "{\"size\":%d", op->size);
+		r_strbuf_appendf (buf, ",\"rw\":%d", op->access); // read , write, read|write
+		switch (op->type) {
+		case X86_OP_REG:
+			r_strbuf_appendf (buf, ",\"type\":\"reg\"");
+			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			break;
+		case X86_OP_IMM:
+			r_strbuf_appendf (buf, ",\"type\":\"imm\"");
+			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			break;
+		case X86_OP_MEM:
+			r_strbuf_appendf (buf, ",\"type\":\"mem\"");
+			if (op->mem.segment != X86_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"segment\":\"%s\"", cs_reg_name (handle, op->mem.segment));
+			}
+			if (op->mem.base != X86_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+			}
+			if (op->mem.index != X86_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
+			}
+			r_strbuf_appendf (buf, ",\"scale\":%d", op->mem.scale);
+			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			break;
+		default:
+			r_strbuf_appendf (buf, ",\"type\":\"invalid\"");
+			break;
+		}
+		r_strbuf_appendf (buf, "}");
+	}
+	r_strbuf_appendf (buf, "]");
+	if (x->rex) {
+		r_strbuf_append (buf, ",\"rex\":true");
+	}
+	if (x->modrm) {
+		r_strbuf_append (buf, ",\"modrm\":true");
+	}
+	if (x->sib) {
+		r_strbuf_appendf (buf, ",\"sib\":%d", x->sib);
+	}
+	if (x->disp) {
+		r_strbuf_appendf (buf, ",\"disp\":%d", x->disp);
+	}
+	if (x->sib_index) {
+		r_strbuf_appendf (buf, ",\"sib_index\":\"%s\"",
+				cs_reg_name (handle, x->sib_index));
+	}
+	if (x->sib_scale) {
+		r_strbuf_appendf (buf, ",\"sib_scale\":%d", x->sib_scale);
+	}
+	if (x->sib_base) {
+		r_strbuf_appendf (buf, ",\"sib_base\":\"%s\"",
+				cs_reg_name (handle, x->sib_base));
+	}
+	r_strbuf_append (buf, "}");
+}
+
 static bool is_xmm_reg(cs_x86_op op) {
 	switch (op.reg) {
 	case X86_REG_XMM0:
@@ -290,7 +359,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (op->prefix & R_ANAL_OP_PREFIX_REP) {
 		esilprintf (op, "%s,!,?{,BREAK,},", counter);
 	}
-	// opexprintf (op, "{\"todo\":\"this\"}");
+	opex (&op->opex, *handle, insn);
 
 	switch (insn->id) {
 	case X86_INS_FNOP:
