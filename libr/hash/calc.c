@@ -89,5 +89,56 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		*ctx->digest = r_hash_luhn (buf, len);
 		return R_HASH_SIZE_LUHN;
 	}
+	if (algobit & R_HASH_CRC8_SMBUS) {
+		ut8 res = r_hash_crc_preset (buf, len, CRC_PRESET_8_SMBUS);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC8_SMBUS);
+		return R_HASH_SIZE_CRC8_SMBUS;
+	}
+	if (algobit & R_HASH_CRC15_CAN) {
+		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_15_CAN);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
+		return R_HASH_SIZE_CRC16;
+	}
+	if (algobit & R_HASH_CRC16_2) {
+		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
+		return R_HASH_SIZE_CRC16;
+	}
+	if (algobit & R_HASH_CRC16_HDLC) {
+		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_HDLC);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
+		return R_HASH_SIZE_CRC16;
+	}
+	if (algobit & R_HASH_CRC16_USB) {
+		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_USB);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
+		return R_HASH_SIZE_CRC16;
+	}
+	if (algobit & R_HASH_CRC16_CITT) {
+		ut16 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_CITT);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
+		return R_HASH_SIZE_CRC16;
+	}
+	if (algobit & R_HASH_CRC24) {
+		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_16_CITT);
+		res <<= 8;
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC24);
+		return R_HASH_SIZE_CRC24;
+	}
+	if (algobit & R_HASH_CRC32_2) {
+		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
+		return R_HASH_SIZE_CRC32;
+	}
+	if (algobit & R_HASH_CRC32C) {
+		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32C);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
+		return R_HASH_SIZE_CRC32;
+	}
+	if (algobit & R_HASH_CRC32_ECMA_267) {
+		ut32 res = r_hash_crc_preset (buf, len, CRC_PRESET_32_ECMA_267);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
+		return R_HASH_SIZE_CRC32;
+	}
 	return 0;
 }

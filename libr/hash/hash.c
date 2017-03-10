@@ -30,6 +30,16 @@ static const hash_name_bytes[] = {
 	// {"base91", R_HASH_BASE91},
 	// {"punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
+	{ "crc8-smbus", R_HASH_CRC8_SMBUS },
+	{ "crc15-can", R_HASH_CRC15_CAN },
+	{ "crc16-2", R_HASH_CRC16_2 },
+	{ "crc16-hdlc", R_HASH_CRC16_HDLC },
+	{ "crc16-usb", R_HASH_CRC16_USB },
+	{ "crc16-citt", R_HASH_CRC16_CITT },
+	{ "crc24", R_HASH_CRC24 },
+	{ "crc32-2", R_HASH_CRC32_2 },
+	{ "crc32-c", R_HASH_CRC32C },
+	{ "crc32-ecma-267", R_HASH_CRC32_ECMA_267 },
 	{ NULL, 0 }
 };
 
@@ -124,6 +134,15 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (MOD255);
 	ALGOBIT (PCPRINT);
 	ALGOBIT (LUHN);
+	ALGOBIT (CRC8_SMBUS);
+	ALGOBIT (CRC15_CAN);
+	ALGOBIT (CRC16);
+	ALGOBIT (CRC16_HDLC);
+	ALGOBIT (CRC16_USB);
+	ALGOBIT (CRC16_CITT);
+	ALGOBIT (CRC32);
+	ALGOBIT (CRC32C);
+	ALGOBIT (CRC32_ECMA_267);
 	return 0;
 }
 

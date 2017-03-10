@@ -21,7 +21,18 @@ static void handle_entropy (const ut8 *block, int len);
 static void handle_hamdist (const ut8 *block, int len);
 static void handle_parity (const ut8 *block, int len);
 static void handle_pcprint (const ut8 *input, int len);
+static void handle_mod255 (const ut8 *input, int len);
 static void handle_luhn (const ut8 *input, int len);
+static void handle_crc8_smbus (const ut8 *block, int len);
+static void handle_crc15_can (const ut8 *block, int len);
+static void handle_crc16_2 (const ut8 *block, int len);
+static void handle_crc16_hdlc (const ut8 *block, int len);
+static void handle_crc16_usb (const ut8 *block, int len);
+static void handle_crc16_citt (const ut8 *block, int len);
+static void handle_crc24 (const ut8 *block, int len);
+static void handle_crc32_2 (const ut8 *block, int len);
+static void handle_crc32c (const ut8 *block, int len);
+static void handle_crc32_ecma_267 (const ut8 *block, int len);
 
 typedef struct {
 	const char *name;
@@ -42,7 +53,18 @@ static RHashHashHandlers hash_handlers[] = {
 	{"parity", handle_parity},
 	{"hamdist", handle_hamdist},
 	{"pcprint", handle_pcprint},
+	{"mod255", handle_mod255},
 	{"luhn", handle_luhn},
+	{"crc8-smbus", handle_crc8_smbus},
+	{"crc15-can", handle_crc15_can},
+	{"crc16-2", handle_crc16_2},
+	{"crc16-hdlc", handle_crc16_hdlc},
+	{"crc16-usb", handle_crc16_usb},
+	{"crc16-citt", handle_crc16_citt},
+	{"crc24", handle_crc24},
+	{"crc32-2", handle_crc32_2},
+	{"crc32-c", handle_crc32c},
+	{"crc32-ecma-267", handle_crc32_ecma_267},
 	{NULL, NULL},
 };
 
@@ -126,8 +148,53 @@ static void handle_pcprint (const ut8 *block, int len) {
 	//r_cons_printf ("%02x\n", r_hash_pcprint (block, len));
 }
 
+static void handle_mod255 (const ut8 *block, int len) {
+	r_cons_printf ("%d\n", r_hash_mod255 (block, len));
+	//r_cons_printf ("%02x\n", r_hash_pcprint (block, len));
+}
+
 static void handle_luhn (const ut8 *block, int len) {
 	r_cons_printf ("%d\n", r_hash_luhn (block, len));
+}
+
+static void handle_crc8_smbus (const ut8 *block, int len) {
+	r_cons_printf ("%02x\n", r_hash_crc_preset (block, len, CRC_PRESET_8_SMBUS));
+}
+
+static void handle_crc15_can (const ut8 *block, int len) {
+	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_15_CAN));
+}
+
+static void handle_crc16_2 (const ut8 *block, int len) {
+	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16));
+}
+
+static void handle_crc16_hdlc (const ut8 *block, int len) {
+	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16_HDLC));
+}
+
+static void handle_crc16_usb (const ut8 *block, int len) {
+	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16_USB));
+}
+
+static void handle_crc16_citt (const ut8 *block, int len) {
+	r_cons_printf ("%04x\n", r_hash_crc_preset (block, len, CRC_PRESET_16_CITT));
+}
+
+static void handle_crc24 (const ut8 *block, int len) {
+	r_cons_printf ("%06x\n", r_hash_crc_preset (block, len, CRC_PRESET_24));
+}
+
+static void handle_crc32_2 (const ut8 *block, int len) {
+	r_cons_printf ("%08x\n", r_hash_crc_preset (block, len, CRC_PRESET_32));
+}
+
+static void handle_crc32c (const ut8 *block, int len) {
+	r_cons_printf ("%08x\n", r_hash_crc_preset (block, len, CRC_PRESET_32C));
+}
+
+static void handle_crc32_ecma_267 (const ut8 *block, int len) {
+	r_cons_printf ("%08x\n", r_hash_crc_preset (block, len, CRC_PRESET_32_ECMA_267));
 }
 
 static int cmd_hash_bang (RCore *core, const char *input) {
