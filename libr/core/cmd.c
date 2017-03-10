@@ -1399,6 +1399,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
 	int scr_html = -1;
+	bool eos = false;
+	bool haveQuote = false;
 
 	if (!cmd) {
 		return 0;
@@ -1413,46 +1415,74 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		}
 		break;
 	case '"':
-		for (cmd++; *cmd; ) {
+		for (; *cmd; ) {
 			int pipefd = -1;
 			ut64 oseek = UT64_MAX;
-			char *line, *p = find_eoq (cmd);
-			if (!p || !*p) {
-				eprintf ("Missing \" in (%s).", cmd);
-				return false;
+			char *line, *p;
+			haveQuote = *cmd == '"';
+			if (haveQuote) {
+			//	*cmd = 0;
+				cmd++;
+				p = find_eoq (cmd + 1);
+				if (!p || !*p) {
+					eprintf ("Missing \" in (%s).", cmd);
+					return false;
+				}
+				*p++ = 0;
+				if (!*p) {
+					eos = true;
+				}
+			} else {
+				char *sc = strchr (cmd, ';');
+				if (sc) {
+					*sc = 0;
+				}
+				r_core_cmd0 (core, cmd);
+				if (!sc) {
+					break;
+				}
+				cmd = sc + 1;
+				continue;
 			}
-			*p = 0;
-			// SKIPSPACES in p + 1
-			while (IS_WHITESPACE (p[1])) p++;
-			if (p[1] == '@' || (p[1] && p[2] == '@')) {
-				char *q = strchr (p + 1, '"');
-				if (q) {
-					*q = 0;
+			if (p[0]) {
+				// workaround :D
+				if (p[0] == '@') {
+					p--;
 				}
-				oseek = core->offset;
-				r_core_seek (core,
-					     r_num_math (core->num, p + 2), 1);
-				if (q) {
-					*p = '"';
-					p = q;
-				} else {
-					p = NULL;
+				while (p[1] == ';' || IS_WHITESPACE (p[1])) {
+					p++;
 				}
-			}
-			if (p && *p && p[1] == '>') {
-				str = p + 2;
-				while (*str == '>') {
-					str++;
+				if (p[1] == '@' || (p[1] && p[2] == '@')) {
+					char *q = strchr (p + 1, '"');
+					if (q) {
+						*q = 0;
+					}
+					haveQuote = q != NULL;
+					oseek = core->offset;
+					r_core_seek (core,
+						     r_num_math (core->num, p + 2), 1);
+					if (q) {
+						*p = '"';
+						p = q;
+					} else {
+						p = strchr (p + 1, ';');
+					}
 				}
-				while (IS_WHITESPACE (*str)) {
-					str++;
+				if (p && *p && p[1] == '>') {
+					str = p + 2;
+					while (*str == '>') {
+						str++;
+					}
+					while (IS_WHITESPACE (*str)) {
+						str++;
+					}
+					r_cons_flush ();
+					pipefd = r_cons_pipe_open (str, 1, p[2] == '>');
 				}
-				r_cons_flush ();
-				pipefd = r_cons_pipe_open (str, 1, p[2] == '>');
 			}
 			line = strdup (cmd);
 			line = r_str_replace (line, "\\\"", "\"", true);
-			if (p && p[1] == '|') {
+			if (p && *p && p[1] == '|') {
 				str = p + 2;
 				while (IS_WHITESPACE (*str)) {
 					str++;
@@ -1473,8 +1503,23 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			if (!p) {
 				break;
 			}
-			*p = '"';
-			cmd = p + 1;
+			if (eos) {
+				break;
+			}
+			if (haveQuote) {
+				if (*p == ';') {
+					cmd = p + 1;
+				} else {
+					if (*p == '"') {
+						cmd = p + 1;
+					} else {
+						*p = '"';
+						cmd = p;
+					}
+				}
+			} else {
+				cmd = p + 1;
+			}
 		}
 		return true;
 	case '(':
