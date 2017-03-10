@@ -88,7 +88,7 @@ R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_tag (RASN1Object *object);
 R_API RASN1String *r_asn1_stringify_object (RASN1Object *object);
 
-void r_asn1_free_object (RASN1Object **object);
+void r_asn1_free_object (RASN1Object *object);
 void r_asn1_free_string (RASN1String *string);
 
 

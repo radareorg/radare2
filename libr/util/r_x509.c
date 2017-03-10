@@ -243,13 +243,13 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 	if (object->klass != CLASS_UNIVERSAL || object->form != FORM_CONSTRUCTED || object->list.length != 3) {
 		// Malformed certificate
 		// It needs to have tbsCertificate, algorithmIdentifier and a signature
-		r_asn1_free_object (&object);
+		r_asn1_free_object (object);
 		free (certificate);
 		return NULL;
 	}
 	tmp = object->list.objects[2];
 	if (tmp->klass != CLASS_UNIVERSAL || tmp->form != FORM_PRIMITIVE || tmp->tag != TAG_BITSTRING) {
-		r_asn1_free_object (&object);
+		r_asn1_free_object (object);
 		free (certificate);
 		return NULL;
 	}
@@ -260,11 +260,11 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 	r_x509_parse_tbscertificate (&certificate->tbsCertificate, object->list.objects[0]);
 
 	if (!r_x509_parse_algorithmidentifier (&certificate->algorithmIdentifier, object->list.objects[1])) {
-		r_asn1_free_object (&object);
+		r_asn1_free_object (object);
 		free (certificate);
 		return NULL;
 	}
-	r_asn1_free_object (&object);
+	r_asn1_free_object (object);
 	return certificate;
 }
 
@@ -363,7 +363,7 @@ void r_x509_free_name (RX509Name * name) {
 void r_x509_free_extension (RX509Extension * ex) {
 	if (ex) {
 		r_asn1_free_string (ex->extnID);
-		r_asn1_free_object (&ex->extnValue);
+		r_asn1_free_object (ex->extnValue);
 		//this is allocated dinamically so, i'll free
 		free (ex);
 	}
@@ -386,9 +386,9 @@ void r_x509_free_extensions (RX509Extensions * ex) {
 void r_x509_free_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki) {
 	if (spki) {
 		r_x509_free_algorithmidentifier (&spki->algorithm);
-		r_asn1_free_object (&spki->subjectPublicKey);
-		r_asn1_free_object (&spki->subjectPublicKeyExponent);
-		r_asn1_free_object (&spki->subjectPublicKeyModule);
+		r_asn1_free_object (spki->subjectPublicKey);
+		r_asn1_free_object (spki->subjectPublicKeyExponent);
+		r_asn1_free_object (spki->subjectPublicKeyModule);
 		// No need to free spki, since it's a static variable.
 	}
 }
@@ -402,8 +402,8 @@ void r_x509_free_tbscertificate (RX509TBSCertificate * tbsc) {
 		r_x509_free_validity (&tbsc->validity);
 		r_x509_free_name (&tbsc->subject);
 		r_x509_free_subjectpublickeyinfo (&tbsc->subjectPublicKeyInfo);
-		r_asn1_free_object (&tbsc->subjectUniqueID);
-		r_asn1_free_object (&tbsc->issuerUniqueID);
+		r_asn1_free_object (tbsc->subjectUniqueID);
+		r_asn1_free_object (tbsc->issuerUniqueID);
 		r_x509_free_extensions (&tbsc->extensions);
 		//no need to free tbsc, since this functions is used internally
 	}
@@ -411,7 +411,7 @@ void r_x509_free_tbscertificate (RX509TBSCertificate * tbsc) {
 
 void r_x509_free_certificate (RX509Certificate * certificate) {
 	if (certificate) {
-		r_asn1_free_object (&certificate->signature);
+		r_asn1_free_object (certificate->signature);
 		r_x509_free_algorithmidentifier (&certificate->algorithmIdentifier);
 		r_x509_free_tbscertificate (&certificate->tbsCertificate);
 		free (certificate);
@@ -420,7 +420,7 @@ void r_x509_free_certificate (RX509Certificate * certificate) {
 
 void r_x509_free_crlentry (RX509CRLEntry *entry) {
 	if (entry) {
-		r_asn1_free_object (&entry->userCertificate);
+		r_asn1_free_object (entry->userCertificate);
 		r_asn1_free_string (entry->revocationDate);
 		free (entry);
 	}

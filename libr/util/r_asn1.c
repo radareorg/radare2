@@ -411,13 +411,13 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 			object->list.length = count;
 			object->list.objects = R_NEWS0 (RASN1Object*, count);
 			if (!object->list.objects) {
-				r_asn1_free_object (&object);
+				r_asn1_free_object (object);
 				return NULL;
 			}
 			for (i = 0; next >= buffer && next < end && i < count; ++i) {
 				inner = r_asn1_create_object (next, end - next);
 				if (!inner || next == inner->sector) {
-					r_asn1_free_object (&inner);
+					r_asn1_free_object (inner);
 					break;
 				}
 				next = inner->sector + inner->length;
@@ -428,24 +428,22 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 	return object;
 }
 
-void r_asn1_free_object (RASN1Object **object) {
+void r_asn1_free_object (RASN1Object *object) {
 	ut32 i;
 	if (!object) {
 		return;
 	}
-	if (*object) {
-		//this shall not be freed. it's a pointer into the buffer.
-		(*object)->sector = 0;
-		if ((*object)->list.objects) {
-			for (i = 0; i < (*object)->list.length; ++i) {
-				r_asn1_free_object (&(*object)->list.objects[i]);
-			}
-			R_FREE ((*object)->list.objects);
+	//this shall not be freed. it's a pointer into the buffer.
+	object->sector = 0;
+	if (object->list.objects) {
+		for (i = 0; i < object->list.length; ++i) {
+			r_asn1_free_object (object->list.objects[i]);
 		}
-		(*object)->list.objects = NULL;
-		(*object)->list.length = 0;
-		R_FREE ((*object));
+		R_FREE (object->list.objects);
 	}
+	object->list.objects = NULL;
+	object->list.length = 0;
+	R_FREE (object);
 }
 
 void r_asn1_free_string (RASN1String* str) {

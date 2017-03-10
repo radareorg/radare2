@@ -126,7 +126,7 @@ bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object) {
 
 void r_pkcs7_free_contentinfo (RPKCS7ContentInfo* ci) {
 	if (ci) {
-		r_asn1_free_object (&ci->content);
+		r_asn1_free_object (ci->content);
 		r_asn1_free_string (ci->contentType);
 		// Used internally pkcs #7, so it should't free ci.
 	}
@@ -146,7 +146,7 @@ bool r_pkcs7_parse_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu, RAS
 void r_pkcs7_free_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu) {
 	if (iasu) {
 		r_x509_free_name (&iasu->issuer);
-		r_asn1_free_object (&iasu->serialNumber);
+		r_asn1_free_object (iasu->serialNumber);
 		// Used internally pkcs #7, so it should't free iasu.
 	}
 }
@@ -193,7 +193,7 @@ void r_pkcs7_free_signerinfo (RPKCS7SignerInfo* si) {
 		r_x509_free_algorithmidentifier (&si->digestAlgorithm);
 		r_pkcs7_free_attributes (&si->authenticatedAttributes);
 		r_x509_free_algorithmidentifier (&si->digestEncryptionAlgorithm);
-		r_asn1_free_object (&si->encryptedDigest);
+		r_asn1_free_object (si->encryptedDigest);
 		r_pkcs7_free_attributes (&si->unauthenticatedAttributes);
 		free (si);
 	}
@@ -285,13 +285,13 @@ RCMS *r_pkcs7_parse_cms (const ut8 *buffer, ut32 length) {
 	}
 	object = r_asn1_create_object (buffer, length);
 	if (!object || object->list.length != 2 || !object->list.objects[0] || object->list.objects[1]->list.length != 1) {
-		r_asn1_free_object (&object);
+		r_asn1_free_object (object);
 		free (container);
 		return NULL;
 	}
 	container->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	r_pkcs7_parse_signeddata (&container->signedData, object->list.objects[1]->list.objects[0]);
-	r_asn1_free_object (&object);
+	r_asn1_free_object (object);
 	return container;
 }
 
@@ -324,7 +324,7 @@ RPKCS7Attribute* r_pkcs7_parse_attribute (RASN1Object *object) {
 
 void r_pkcs7_free_attribute (RPKCS7Attribute* attribute) {
 	if (attribute) {
-		r_asn1_free_object (&attribute->data);
+		r_asn1_free_object (attribute->data);
 		r_asn1_free_string (attribute->oid);
 		free (attribute);
 	}
