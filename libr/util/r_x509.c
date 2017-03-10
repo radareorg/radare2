@@ -615,6 +615,7 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 		iid = r_asn1_stringify_integer (tbsc->issuerUniqueID->sector, tbsc->issuerUniqueID->length);
 		if (iid) {
 			if (length <= p) {
+				r_asn1_free_string (iid);
 				free (pad2);
 				return NULL;
 			}
@@ -624,11 +625,13 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 			free (pad2);
 			return NULL;
 		}
+		r_asn1_free_string (iid);
 	}
 	if (tbsc->subjectUniqueID) {
 		sid = r_asn1_stringify_integer (tbsc->subjectUniqueID->sector, tbsc->subjectUniqueID->length);
 		if (sid) {
 			if (length <= p) {
+				r_asn1_free_string (sid);
 				free (pad2);
 				return NULL;
 			}
@@ -638,6 +641,7 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 			free (pad2);
 			return NULL;
 		}
+		r_asn1_free_string (sid);
 	}
 	if (r < 0 || length <= p) {
 		free (pad2);
@@ -650,8 +654,6 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 		return NULL;
 	}
 	free (pad2);
-	r_asn1_free_string (sid);
-	r_asn1_free_string (iid);
 	return buffer + p;
 }
 

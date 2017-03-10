@@ -315,8 +315,7 @@ RPKCS7Attribute* r_pkcs7_parse_attribute (RASN1Object *object) {
 	memset (attribute, 0, sizeof (RPKCS7Attribute));
 	attribute->oid = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	if (object->list.length == 2) {
-		attribute->data = object->list.objects[1];
-		object->list.objects[1] = NULL;
+		R_PTR_MOVE (attribute->data, object->list.objects[1]);
 	}
 
 	return attribute;
@@ -338,13 +337,11 @@ bool r_pkcs7_parse_attributes (RPKCS7Attributes* attributes, RASN1Object *object
 
 	attributes->length = object->list.length;
 	if (attributes->length > 0) {
-		attributes->elements = (RPKCS7Attribute**) calloc (attributes->length, sizeof (RPKCS7Attribute*));
+		attributes->elements = R_NEWS0(RPKCS7Attribute*, attributes->length);
 		if (!attributes->elements) {
 			attributes->length = 0;
 			return false;
 		}
-		memset (attributes->elements, 0, attributes->length * sizeof (RPKCS7Attribute*));
-
 		for (i = 0; i < object->list.length; ++i) {
 			attributes->elements[i] = r_pkcs7_parse_attribute (object->list.objects[i]);
 		}
