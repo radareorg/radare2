@@ -880,10 +880,19 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 			oline = line;
 		}
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
+		const bool scrColor = r_config_get (core->config, "scr.color");
+		const bool scrUtf8 = r_config_get (core->config, "scr.utf8");
+		const bool asmComments = r_config_get (core->config, "asm.comments");
+		r_config_set (core->config, "scr.color", "false");
+		r_config_set (core->config, "scr.utf8", "false");
+		r_config_set (core->config, "asm.comments", "false");
 		snprintf (cmd, sizeof (cmd),
 			  "pD %d @e:asm.comments=0 @ 0x%08" PFMT64x, bb->size,
 			  bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
+		r_config_set_i (core->config, "scr.color", scrColor);
+		r_config_set_i (core->config, "scr.utf8", scrUtf8);
+		r_config_set_i (core->config, "asm.comments", asmComments);
 	}
 	if (cmdstr) {
 		str = r_str_escape_dot (cmdstr);
