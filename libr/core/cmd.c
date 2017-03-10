@@ -1400,6 +1400,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	bool usemyblock = false;
 	int scr_html = -1;
 	bool eos = false;
+	bool haveQuote = false;
 
 	if (!cmd) {
 		return 0;
@@ -1418,7 +1419,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			int pipefd = -1;
 			ut64 oseek = UT64_MAX;
 			char *line, *p;
-			if (*cmd == '"') {
+			haveQuote = *cmd == '"';
+			if (haveQuote) {
+			//	*cmd = 0;
 				cmd++;
 				p = find_eoq (cmd + 1);
 				if (!p || !*p) {
@@ -1454,6 +1457,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					if (q) {
 						*q = 0;
 					}
+					haveQuote = q != NULL;
 					oseek = core->offset;
 					r_core_seek (core,
 						     r_num_math (core->num, p + 2), 1);
@@ -1461,7 +1465,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 						*p = '"';
 						p = q;
 					} else {
-						p = NULL;
+						p = strchr (p + 1, ';');
 					}
 				}
 				if (p && *p && p[1] == '>') {
@@ -1499,10 +1503,22 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			if (!p) {
 				break;
 			}
-			*p = '"';
-			cmd = p + 1;
 			if (eos) {
 				break;
+			}
+			if (haveQuote) {
+				if (*p == ';') {
+					cmd = p + 1;
+				} else {
+					if (*p == '"') {
+						cmd = p + 1;
+					} else {
+						*p = '"';
+						cmd = p;
+					}
+				}
+			} else {
+				cmd = p + 1;
 			}
 		}
 		return true;
