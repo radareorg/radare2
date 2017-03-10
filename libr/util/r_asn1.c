@@ -304,7 +304,7 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	RASN1Object *object;
 	ut8 head, length8, byte;
 	ut64 length64;
-	if (!buffer || !length) {
+	if (!buffer || length < 2) {
 		return NULL;
 	}
 
@@ -327,9 +327,9 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 				byte = buffer[2 + i8];
 				length64 <<= 8;
 				length64 |= byte;
-				if (length64 > 0xffffffff) {
+				if (length64 > length) {
 					free (object);
-					// Malformed object - overflow (128 bits instead of 32)
+					// Malformed object - overflow
 					return NULL;
 				}
 			}
@@ -343,10 +343,10 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 				length64 <<= 8;
 				length64 |= byte;
 				from++;
-			} while (from < end && length64 <= 0xffffffff && byte & 0x80);
-			if (length64 > 0xffffffff) {
+			} while (from < end && length64 <= length && byte & 0x80);
+			if (length64 > length) {
 				free (object);
-				// Malformed object - overflow (4GB+ is really too much)
+				// Malformed object - overflow
 				return NULL;
 			}
 			object->sector = from;
@@ -399,30 +399,29 @@ RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 	RASN1Object *object = asn1_parse_header (buffer, length);
 	if (object && (object->form == FORM_CONSTRUCTED || object->tag == TAG_BITSTRING || object->tag == TAG_OCTETSTRING)) {
 		ut32 i, count;
-		RASN1Object *inner;
+		RASN1Object *inner = NULL;
 		const ut8 *next = object->sector;
 		const ut8 *end = next + object->length;
+		if (end > buffer + length) {
+			free (object);
+			return NULL;
+		}
 		count = r_asn1_count_objects (object->sector, object->length);
-		inner = NULL;
-		object->list.length = count;
-		if (count == 0) {
-			object->list.objects = NULL;
-		} else {
-			object->list.objects = (RASN1Object**) calloc (count, sizeof (RASN1Object*));
+		if (count > 0) {
+			object->list.length = count;
+			object->list.objects = R_NEWS0 (RASN1Object*, count);
 			if (!object->list.objects) {
 				r_asn1_free_object (&object);
 				return NULL;
 			}
 			for (i = 0; next >= buffer && next < end && i < count; ++i) {
-				object->list.objects[i] = NULL;
 				inner = r_asn1_create_object (next, end - next);
 				if (!inner || next == inner->sector) {
 					r_asn1_free_object (&inner);
 					break;
 				}
 				next = inner->sector + inner->length;
-				object->list.objects[i] = inner;
-				inner = NULL;
+				R_PTR_MOVE (object->list.objects[i], inner);
 			}
 		}
 	}
