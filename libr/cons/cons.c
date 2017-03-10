@@ -875,9 +875,13 @@ R_API void r_cons_newline() {
 	if (!I.null) {
 		r_cons_strcat ("\n");
 	}
-#if __WINDOWS__
-	r_cons_reset_colors();
-#endif
+// This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
+//  and break json output appending extra chars.
+// this code now is managed into output.c:118 at function r_cons_w32_print
+// now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
+//#if __WINDOWS__
+	//r_cons_reset_colors();
+//#endif
 	//if (I.is_html) r_cons_strcat ("<br />\n");
 }
 
