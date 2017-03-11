@@ -92,6 +92,44 @@
 			ARG(1), REG(0));\
 	}
 
+static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+	int i;
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, "{");
+	cs_mips *x = &insn->detail->mips;
+	r_strbuf_append (buf, "\"operands\":[");
+	for (i = 0; i < x->op_count; i++) {
+		cs_mips_op *op = &x->operands[i];
+		if (i > 0) {
+			r_strbuf_append (buf, ",");
+		}
+		r_strbuf_append (buf, "{");
+		switch (op->type) {
+		case MIPS_OP_REG:
+			r_strbuf_append (buf, "\"type\":\"reg\"");
+			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			break;
+		case MIPS_OP_IMM:
+			r_strbuf_append (buf, "\"type\":\"imm\"");
+			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			break;
+		case MIPS_OP_MEM:
+			r_strbuf_append (buf, "\"type\":\"mem\"");
+			if (op->mem.base != MIPS_REG_INVALID) {
+				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+			}
+			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			break;
+		default:
+			r_strbuf_append (buf, "\"type\":\"invalid\"");
+			break;
+		}
+		r_strbuf_append (buf, "}");
+	}
+	r_strbuf_append (buf, "]");
+	r_strbuf_append (buf, "}");
+}
+
 static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 	*buf = 0;
 	switch (insn->detail->mips.operands[n].type) {
@@ -133,10 +171,12 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32];
 	int i;
+
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
 	if (insn) {
+		opex (&op->opex, *handle, insn);
 		// caching operands
 		for (i=0; i<insn->detail->mips.op_count && i<8; i++) {
 			*str[i]=0;
