@@ -350,15 +350,22 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			// XXX: inverse order?
 			for (j=0; j<16; j++) {
 				if (ao->a[j] && *ao->a[j]) {
+					int sr, er;
+					char *ers;
 					getrange (ao->a[j]); // XXX filter regname string
-					reg = thumb_getreg (ao->a[j]);
-					if (reg != -1) {
-						if (reg < 8)
-							ao->o |= 1 << (8 + reg);
-						if (reg == 8){
-							ao->o |= 1;
+					sr = er = thumb_getreg (ao->a[j]);
+					if ((ers = strchr (ao->a[j], '-'))) { // register sequence
+						er = thumb_getreg (ers+1);
+					}
+					for (reg = sr; reg <= er; reg++) {
+						if (reg != -1) {
+							if (reg < 8)
+								ao->o |= 1 << (8 + reg);
+							if (reg == 8) {
+								ao->o |= 1;
+							}
+							//	else ignore...
 						}
-					//	else ignore...
 					}
 				}
 			}
