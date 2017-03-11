@@ -1727,6 +1727,9 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			const char *name = sn.demname? sn.demname: symbol->name;
 			r_cons_printf ("0x%08"PFMT64x" %d %s\n",
 				addr, (int)symbol->size, name);
+		} else if (IS_MODE_SIMPLEST (mode)) {
+			const char *name = sn.demname? sn.demname: symbol->name;
+			r_cons_printf ("%s\n", name);
 		} else if (IS_MODE_RAD (mode)) {
 			RBinFile *binfile;
 			RBinPlugin *plugin;
