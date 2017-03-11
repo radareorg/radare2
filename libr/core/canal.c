@@ -848,15 +848,8 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	ut64 at;
 
 	if (opts & R_CORE_ANAL_GRAPHLINES) {
-#if R_ANAL_BB_HAS_OPS
-		RAnalOp *opi;
-		RListIter *iter;
-		r_list_foreach (bb->ops, iter, opi) {
-			r_bin_addr2line (core->bin, opi->addr, file, sizeof (file) - 1, &line);
-#else
 		for (at = bb->addr; at < bb->addr + bb->size; at += 2) {
 			r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line);
-#endif
 			if (line != 0 && line != oline && strcmp (file, "??")) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
