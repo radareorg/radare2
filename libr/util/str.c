@@ -1399,7 +1399,7 @@ R_API int r_str_is_printable(const char *str) {
 	return 1;
 }
 
-R_API int r_str_is_printable_incl_newlines(const char *str) {
+R_API bool r_str_is_printable_incl_newlines(const char *str) {
 	while (*str) {
 		int ulen = r_utf8_decode ((const ut8*)str, strlen (str), NULL);
 		if (ulen > 1) {
@@ -1407,14 +1407,13 @@ R_API int r_str_is_printable_incl_newlines(const char *str) {
 			continue;
 		}
 		if (!IS_PRINTABLE (*str)) {
-			//Further check to see if it's a \n or \r
-			if (!(*str == 0x0a || *str == 0x0d)) {
-				return 0;
+			if (!(*str == '\r' || *str == '\n')) {
+				return false;
 			}
 		}
 		str++;
 	}
-	return 1;
+	return true;
 }
 
 // Length in chars of a wide string (find better name?)
