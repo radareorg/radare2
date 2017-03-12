@@ -616,18 +616,18 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 			len = m->pmatch[i].rm_eo - m->pmatch[i].rm_so;
 			if (len == 0 && rec++ > MAX_RECURSION)
 				return(NULL);
-		}
-		if (stop - m->beginp >= len) {
-			if (sp > stop - len) {
-				return(NULL);	/* not enough left to match */
+			if (stop - m->beginp >= len) {
+				if (sp > stop - len) {
+					return(NULL);	/* not enough left to match */
+				}
 			}
+			ssp = m->offp + m->pmatch[i].rm_so;
+			if (memcmp(sp, ssp, len) != 0)
+				return(NULL);
+			while (m->g->strip[ss] != SOP(O_BACK, i))
+				ss++;
+			return(backref(m, sp+len, stop, ss+1, stopst, lev, rec));
 		}
-		ssp = m->offp + m->pmatch[i].rm_so;
-		if (memcmp(sp, ssp, len) != 0)
-			return(NULL);
-		while (m->g->strip[ss] != SOP(O_BACK, i))
-			ss++;
-		return(backref(m, sp+len, stop, ss+1, stopst, lev, rec));
 		break;
 	case OQUEST_:		/* to null or not */
 		dp = backref(m, sp, stop, ss+1, stopst, lev, rec);
@@ -791,7 +791,7 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		p++;
 	}
 
-	if (coldp); {
+	if (coldp) {
 		m->coldp = coldp;
 		if (ISSET(st, stopst))
 			return(p+1);
