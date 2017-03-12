@@ -400,14 +400,14 @@ static int cmd_zign(void *data, const char *input) {
 	case '?':
 		{
 			const char* help_msg[] = {
-				"Usage:", "z[*-obBmgGf/cs?] [args] ", "# Manage zignatures",
+				"Usage:", "z[*j-aof/cs] [args] ", "# Manage zignatures",
 				"z", "", "show zignagures",
 				"z*", "", "show zignatures in radare format",
 				"zj", "", "show zignatures in json format",
 				"z-", "zignature", "delete zignature",
 				"z-", "*", "delete all zignatures",
-				"zo", "[?]", "load zignatures from file",
 				"za", "[?]", "add zignature",
+				"zo", "[?]", "load zignatures from file",
 				"zf", "[?]", "manage FLIRT signatures",
 				"z/ ", "[ini] [end]", "search zignatures on range and flag matches",
 				"z/* ", "[ini] [end]", "search zignatures on range and output radare commands",
