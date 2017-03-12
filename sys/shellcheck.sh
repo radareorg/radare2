@@ -83,7 +83,6 @@ fileslist=(
 ./sys/jam.sh
 ./sys/ldconfig.sh
 ./sys/locdiff
-./sys/lua.sh
 ./sys/maemo.sh
 ./sys/mingw32-deps.sh
 ./sys/mingw32-python-deps.sh

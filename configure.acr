@@ -82,8 +82,6 @@ IFNULL SSL_LDFLAGS {
 
 ARG_WITH USE_RPATH rpath use rpath to build ;
 
-CHKLIB lua5.1
-
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
 ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin haiku ) ;
