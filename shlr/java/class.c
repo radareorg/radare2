@@ -1534,7 +1534,7 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			attr = r_bin_java_read_next_attr (bin, offset + adv, buffer, len);
 			if (!attr) {
 				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Field Attribute: %d.\n", i);
-				break;
+				return NULL;
 			}
 			if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
 				// This is necessary for determing the appropriate number of bytes when readin
@@ -1548,7 +1548,7 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			adv += attr->size;
 			if (adv + offset >= len) {
 				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Field Attribute: %d.\n", i);
-				break;
+				return NULL;
 			}
 		}
 	}
@@ -1971,7 +1971,7 @@ R_API ut8 *r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 sz, const ut64 offset,
 	ut8 *attr_buf = NULL;
 	int pending = len - offset;
 	const ut8 *a_buf = offset + buf;
-	attr_buf = (ut8 *) calloc (pending, 1);
+	attr_buf = (ut8 *) calloc (pending + 1, 1);
 	if (attr_buf == NULL) {
 		eprintf ("Unable to allocate enough bytes (0x%04"PFMT64x
 			") to read in the attribute.\n", sz);
@@ -2034,7 +2034,7 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 	if (offset + 6 > buf_len) {
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile in Attribute offset "
 			"(0x%"PFMT64x ") > len  of remaining bytes (0x%"PFMT64x ").\n", offset, buf_len);
-		return attr;
+		return NULL;
 	}
 	// ut16 attr_idx, ut32 length of attr.
 	sz = R_BIN_JAVA_UINT (a_buf, 2) + attr_idx_len; // r_bin_java_read_int (bin, buf_offset+2) + attr_idx_len;
@@ -2042,7 +2042,7 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile in Attribute len "
 			"(0x%x) + offset (0x%"PFMT64x ") exceeds length of buffer (0x%"PFMT64x ").\n",
 			sz, offset, buf_len);
-		return attr;
+		return NULL;
 	}
 	// when reading the attr bytes, need to also
 	// include the initial 6 bytes, which
@@ -4212,6 +4212,10 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 	case R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1:
 		// 1. Read the stack type
 		stack_frame->number_of_stack_items = 1;
+		if (offset > sz) {
+			r_bin_java_stack_frame_free (stack_frame);
+			return NULL;
+		}
 		se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
 		IFDBG eprintf("r_bin_java_stack_map_frame_new: Parsed R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1.\n");
 		if (se) {
@@ -4501,6 +4505,10 @@ R_API RBinJavaAttrInfo *r_bin_java_stack_map_table_attr_new(ut8 *buffer, ut64 sz
 			stack_frame = R_BIN_JAVA_GLOBAL_BIN->current_code_attr->info.code_attr.implicit_frame;
 		}
 		IFDBG eprintf("Reading StackMap Entry #%d @ 0x%08"PFMT64x ", current stack_frame: %p\n", i, buf_offset + offset, stack_frame);
+		if (offset > sz) {
+			r_bin_java_stack_map_table_attr_free (attr);
+			return NULL;
+		}
 		new_stack_frame = r_bin_java_stack_map_frame_new (buffer + offset, sz - offset, stack_frame, buf_offset + offset);
 		if (new_stack_frame) {
 			offset += new_stack_frame->size;
