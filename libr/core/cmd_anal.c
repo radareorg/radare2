@@ -4943,12 +4943,31 @@ static void rowlog_done(RCore *core) {
 
 static int compute_coverage(RCore *core) {
 	RListIter *iter;
+	RListIter *iter2;
 	RAnalFunction *fcn;
+	RIOSection *sec;
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		cov += r_anal_fcn_realsize (fcn);
+		r_list_foreach (core->io->sections, iter2, sec) {
+			int section_end = sec->vaddr + sec->vsize;
+			if (sec->rwx & 1 && fcn->addr >= sec->vaddr && fcn->addr < section_end) {
+				cov += r_anal_fcn_realsize (fcn);
+			}
+		}
 	}
 	return cov;
+}
+
+static int compute_code (RCore* core) {
+	int code = 0;
+	RListIter *iter;
+	RIOSection *sec;
+	r_list_foreach (core->io->sections, iter, sec) {
+		if (sec->rwx & 1) {
+			code += sec->vsize;
+		}
+	}
+	return code;
 }
 
 static int compute_calls(RCore *core) {
@@ -4966,7 +4985,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	int strs = r_flag_count (core->flags, "str.*");
 	int syms = r_flag_count (core->flags, "sym.*");
 	int imps = r_flag_count (core->flags, "sym.imp.*");
-	int code = r_num_get (core->num, "$SS");
+	int code = compute_code (core);
 	int covr = compute_coverage (core);
 	int call = compute_calls (core);
 	int xrfs = r_anal_xrefs_count (core->anal);
