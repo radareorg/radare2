@@ -2553,8 +2553,8 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 		core->anal->stackptr = b->parent_stackptr;
 	}
 	p_type == 'D'
-	? r_core_cmdf (core, "pD %"PFMT64d " @0x%"PFMT64x, b->size, b->addr)
-	: r_core_cmdf (core, "pI %"PFMT64d " @0x%"PFMT64x, b->size, b->addr);
+	? r_core_cmdf (core, "pD %"PFMT64d " @0x%"PFMT64x, (st64) b->size, b->addr)
+	: r_core_cmdf (core, "pI %"PFMT64d " @0x%"PFMT64x, (st64) b->size, b->addr);
 
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {
@@ -2628,7 +2628,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 					r_cons_print (",");
 				}
 // const char *cmd = (type_print == 'D')? "pDj": "pIj";
-// r_core_cmdf (core, "%s %"PFMT64d" @ 0x%"PFMT64x, cmd, b->size, b->addr);
+// r_core_cmdf (core, "%s %"PFMT64d" @ 0x%"PFMT64x, cmd, (st64) b->size, b->addr);
 
 				ut8 *buf = malloc (b->size);
 				if (buf) {
@@ -2649,7 +2649,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 #if 0
 			r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
 			const char *cmd = (type_print == 'D')? "pDj": "pIj";
-			r_core_cmdf (core, "%s %"PFMT64d " @ 0x%"PFMT64x, cmd, b->size, b->addr);
+			r_core_cmdf (core, "%s %"PFMT64d " @ 0x%"PFMT64x, cmd, (st64) b->size, b->addr);
 #endif
 
 			ut8 *buf = malloc (b->size);
@@ -2673,7 +2673,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				}
 #if 0
 				const char *cmd = (type_print == 'D')? "pDj": "pIj";
-				r_core_cmdf (core, "%s %"PFMT64d " @0x%"PFMT64x, cmd, b->size, b->addr);
+				r_core_cmdf (core, "%s %"PFMT64d " @0x%"PFMT64x, cmd, (st64) b->size, b->addr);
 #endif
 				ut8 *buf = malloc (b->size);
 				if (buf) {
