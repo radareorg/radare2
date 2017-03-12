@@ -872,10 +872,10 @@ repeat:
 	ch = r_cons_readchar ();
 	if (ch == ':') {
 		r_core_visual_prompt_input (core);
-	} else if (ch == 'j') {
+	} else if (r_cons_arrow_to_hjkl (ch) == 'j') {
 		skip++;
 		goto repeat;
-	} else if (ch == 'k') {
+	} else if (r_cons_arrow_to_hjkl (ch) == 'k') {
 		skip--;
 		if (skip < 0) {
 			skip = 0;
@@ -909,56 +909,136 @@ R_API int r_core_visual_xrefs_X(RCore *core) {
 	RAnalRef *refi;
 	RListIter *iter;
 	RAnalFunction *fun;
+	int skip = 0;
+	int idx = 0;
+	char cstr[32];
+	const int maxcount = 9;
+	ut64 references[maxcount];
 	ut64 addr = core->offset;
 	if (core->print->cur_enabled) {
 		addr += core->print->cur;
 	}
 
+repeat:
 	fun = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	if (fun) {
+		bool asm_bytes = r_config_get_i (core->config, "asm.bytes");
+		r_config_set_i (core->config, "asm.bytes", false);
 		r_cons_clear00 ();
 		r_cons_gotoxy (1, 1);
-		r_cons_printf ("[GOTO REF]> \n");
+		r_cons_printf ("[GOTO REF]> 0x%08"PFMT64x "\n", addr);
 		if (r_list_empty (fun->refs)) {
-			r_cons_printf ("\tNo REF found at 0x%"PFMT64x "\n", addr);
+			r_cons_printf ("No REF found at 0x%"PFMT64x "\n", addr);
 			r_cons_any_key (NULL);
 			r_cons_clear00 ();
 		} else {
+			int rows, cols = r_cons_get_size (&rows);
+			idx = 0;
+			count = 0;
+			char *dis = NULL;
+			rows -= 3;
+			idx = 0;
+			ut64 curat = UT64_MAX;
 			r_list_foreach (fun->refs, iter, refi) {
-				RFlagItem *f = r_flag_get_at (core->flags, refi->addr, false);
-				if (f) {
-					eprintf ("%s\n", f->name);
+				if (refi->at != addr) {
+					continue;
 				}
-				r_cons_printf (" [%i] 0x%08"PFMT64x " %s XREF 0x%08"PFMT64x " (%s)(%s)  \n", count,
-					refi->at,
-					refi->type == R_ANAL_REF_TYPE_CODE
-					? "CODE (JMP)"
-					: refi->type == R_ANAL_REF_TYPE_CALL
-					? "CODE (CALL)"
-					: "DATA",
-					refi->addr, fun->name, f? f->name: "");
-				if (++count > 9) {
+				if (idx - skip > maxcount) {
+					r_cons_printf ("...");
 					break;
 				}
+				if (!iter->n && idx < skip) {
+					skip = idx;
+				}
+				if (idx >= skip) {
+					if (count > maxcount) {
+						strcpy (cstr, "?");
+					} else {
+						snprintf (cstr, sizeof (cstr), "%d", count);
+					}
+					references[count] = refi->addr;
+					RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
+					char* name;
+					if (f) {
+						name = r_str_newf ("%s + %d", f->name, refi->addr - f->offset);
+					} else {
+						name = strdup ("unk");
+					}
+					r_cons_printf (" %d [%s] 0x%08"PFMT64x " %s REF (%s)\n",
+						idx, cstr, refi->addr,
+						refi->type == R_ANAL_REF_TYPE_CODE? "CODE (JMP)" :
+						refi->type == R_ANAL_REF_TYPE_CALL? "CODE (CALL)": "DATA",
+						name);
+					free (name);
+					if (idx == skip) {
+						free (dis);
+						curat = refi->addr;
+						dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+					}
+					if (++count >= rows) {
+						r_cons_printf ("...");
+						break;
+					}
+				}
+				idx++;
+			}
+			if (dis) {
+				if (count < rows) {
+					r_cons_newline ();
+				}
+				int i = count;
+				for (; i < 10; i++)  {
+					r_cons_newline ();
+				}
+				/* prepare highlight */
+				char *cmd = strdup (r_config_get (core->config, "scr.highlight"));
+				char *ats = r_str_newf ("%"PFMT64x, curat);
+				r_config_set (core->config, "scr.highlight", ats);
+				/* print disasm */
+				char *d = r_str_ansi_crop (dis, 0, 0, cols, rows - 9);
+				r_cons_printf ("%s", d);
+				free (d);
+				/* flush and restore highlight */
+				r_cons_flush ();
+				r_config_set (core->config, "scr.highlight", cmd);
+				free (ats);
+				free (cmd);
+				free (dis);
+				dis = NULL;
 			}
 		}
+		r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	}
-	r_cons_flush ();
+
 	if (!count) {
 		return 0;
 	}
+	r_cons_flush ();
 	ch = r_cons_readchar ();
-	if (fun && fun->refs) {
-		if (IS_DIGIT (ch)) {
-			refi = r_list_get_n (fun->refs, ch - 0x30);
-			if (refi) {
-				r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
-				ret = 1;
-			}
+	if (ch == ':') {
+		r_core_visual_prompt_input (core);
+	} else if (r_cons_arrow_to_hjkl (ch) == 'j') {
+		skip++;
+		if (skip >= count) {
+			skip = count - 1;
 		}
+		goto repeat;
+	} else if (r_cons_arrow_to_hjkl (ch) == 'k') {
+		skip--;
+		if (skip < 0) {
+			skip = 0;
+		}
+		goto repeat;
+	} else if (ch == ' ' || ch == '\n' || ch == '\r') {
+		ch = '0';
+	}
+	if (IS_DIGIT (ch) && (ch - 0x30) < count) {
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		r_core_seek (core, references[ch - 0x30], false);
+		ret = 1;
 	}
 #else
-	eprintf ("TODO: sdbize this\n");
+	eprintf ("TODO: sdbize xrefs here\n");
 #endif
 	return ret;
 }
