@@ -56,7 +56,12 @@ static bool zignAddHex(RCore *core, const char *name, int type, const char *hexb
 	blen = strlen (hexbytes) + 4;
 	bytes = malloc (blen);
 	mask = malloc (blen);
+
 	size = r_hex_str2binmask (hexbytes, bytes, mask);
+	if (size <= 0) {
+		retval = false;
+		goto exit_func;
+	}
 
 	switch (type) {
 	case R_SIGN_EXACT:
@@ -67,6 +72,7 @@ static bool zignAddHex(RCore *core, const char *name, int type, const char *hexb
 		break;
 	}
 
+exit_func:
 	free (bytes);
 	free (mask);
 
