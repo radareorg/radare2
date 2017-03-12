@@ -741,19 +741,17 @@ static bool r_core_visual_config_hud(RCore *core) {
 // TODO: show only N elements of the list
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
-static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const char *grep) {
+static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const char *grep, RList *list) {
 	bool show_color = r_config_get_i (core->config, "scr.color");
 	RListIter *iter;
 	RBinClass *c, *cur = NULL;
 	RBinSymbol *m, *mur = NULL;
-	RList *list;
 	int i = 0;
 	int skip = idx - 10;
 
 	switch (mode) {
 	case 'c':
 		r_cons_printf ("Classes:\n\n");
-		list = r_bin_get_classes (core->bin);
 		r_list_foreach (list, iter, c) {
 			if (grep) {
 				if (!r_str_casestr (c->name, grep)) {
@@ -847,14 +845,18 @@ R_API int r_core_visual_classes(RCore *core) {
 	int oldcur = 0;
 	char *grep = NULL;
 	bool grepmode = false;
-
+	RList *list = r_bin_get_classes (core->bin);
+	if (r_list_empty (list) {
+		r_cons_message ("No Classes");
+		return false;
+	}
 	for (;;) {
 		int cols;
 		r_cons_clear00 ();
 		if (grepmode) {
 			r_cons_printf ("Grep: %s\n", grep? grep: "");
 		}
-		ptr = show_class (core, mode, option, cur, grep);
+		ptr = show_class (core, mode, option, cur, grep, list);
 		switch (mode) {
 		case 'm':
 			mur = (RBinSymbol*)ptr;
