@@ -243,7 +243,7 @@ static int zignAdd(void *data, const char *input) {
 				"Usage:", "za[aemg] [args] ", "# Add zignature",
 				"zaa", "[?]", "add anal zignature",
 				"zae", "[?]", "add exact-match zignature",
-				"zam ", "name param", "add metric zignature (e.g. zm foo bbs=10 calls=printf,exit)",
+				"zam ", "name params", "add metric zignature (e.g. zm foo bbs=10 calls=printf,exit)",
 				"zaga ", "zignspace [file]", "generate anal zignatures for all functions (and save in file)",
 				"zage ", "zignspace [file]", "generate exact-match zignatures for all functions (and save in file)",
 				NULL};
@@ -376,15 +376,26 @@ static int zignFlirt(void *data, const char *input) {
 	return true;
 }
 
-static int zignSearchHitCB(RSearchKeyword *kw, void *user, ut64 addr) {
-	r_cons_printf ("%s_%d at 0x%08"PFMT64x"\n", kw->data, kw->count, addr);
-	return 1;
-}
-
 struct ctxSearchCB {
 	RCore *core;
+	RList *kwnames;
 	bool rad;
 };
+
+static int zignSearchHitCB(RSearchKeyword *kw, void *user, ut64 addr) {
+	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
+	char *name;
+
+	name = r_str_newf ("%s_%d", kw->data, kw->count, addr);
+	if (ctx->rad) {
+		r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, kw->keyword_length, addr);
+	} else {
+		r_flag_set(ctx->core->flags, name, addr, kw->keyword_length);
+	}
+	free(name);
+
+	return 1;
+}
 
 static int zignSearchCB(void *user, RSignItem *it) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
@@ -392,56 +403,61 @@ static int zignSearchCB(void *user, RSignItem *it) {
 	RAnal *a = ctx->core->anal;
 	RSearch *s = ctx->core->search;
 	RConfig *cfg = ctx->core->config;
-	char zign_name[256];
+	char *zign_name = NULL;
 	const char *zign_prefix = r_config_get (cfg, "zign.prefix");
 
-
 	if (it->space == -1) {
-		snprintf (zign_name, sizeof (zign_name), "%s.%s", zign_prefix, it->name);
+		zign_name = r_str_newf ("%s.%s", zign_prefix, it->name);
 	} else {
-		snprintf (zign_name, sizeof (zign_name), "%s.%s.%s",
-			zign_prefix, a->zign_spaces.spaces[it->space], it->name);
+		zign_name = r_str_newf ("%s.%s.%s", zign_prefix,
+			a->zign_spaces.spaces[it->space], it->name);
 	}
+	r_list_append(ctx->kwnames, zign_name);
 
 	kw = r_search_keyword_new (it->bytes, it->size, it->mask, it->size, zign_name);
-
 	r_search_kw_add (s, kw);
 
 	return 1;
 }
 
 static bool zignSearchRange(RCore *core, ut64 from, ut64 to, bool rad) {
-	struct ctxSearchCB ctx = { core, rad };
+	struct ctxSearchCB ctx;
 	ut8 *buf = malloc (core->blocksize);
 	ut64 at;
 	int rlen;
 	bool retval = true;
+
+	ctx.core = core;
+	ctx.rad = rad;
+	ctx.kwnames = r_list_new ();
 
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
 
 	r_sign_foreach (core->anal, zignSearchCB, &ctx);
 
 	r_search_begin (core->search);
-	r_search_set_callback (core->search, zignSearchHitCB, NULL);
+	r_search_set_callback (core->search, zignSearchHitCB, &ctx);
 
+	r_cons_break_push (NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
-		if (r_cons_singleton ()->breaked) {
+		if (r_cons_is_breaked ()) {
 			retval = false;
-			goto exit_func;
+			break;
 		}
 		rlen = R_MIN (core->blocksize, to - at);
 		if (!r_io_read_at (core->io, at, buf, rlen)) {
 			retval = false;
-			goto exit_func;
+			break;
 		}
 		if (r_search_update (core->search, &at, buf, rlen) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 			retval = false;
-			goto exit_func;
+			break;
 		}
 	}
+	r_cons_break_pop ();
 
-exit_func:
+	r_list_free (ctx.kwnames);
 	free (buf);
 	
 	return retval;
@@ -453,19 +469,31 @@ static bool zignDoSearch(RCore *core, ut64 from, ut64 to, bool rad) {
 	RIOMap *map;
 	bool search_all = false;
 	bool retval = true;
+	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+
+	if (rad) {
+		r_cons_printf ("fs+%s\n", zign_prefix);
+	} else {
+		if (!r_flag_space_push (core->flags, zign_prefix)) {
+			eprintf ("error: cannot create flagspace\n");
+			return false;
+		}
+	}
 
 	if (from == 0 && to == 0) {
 		search_all = true;
 	} else if (to <= from) {
 		eprintf ("error: invalid rage 0x%08"PFMT64x"-0x%08"PFMT64x"\n", from, to);
-		return false;
+		retval = false;
+		goto exit_func;
 	}
 
 	if (search_all) {
 		list = r_core_get_boundaries_ok (core);
 		if (!list) {
-			eprintf ("Invalid boundaries\n");
-			return false;
+			eprintf ("error: invalid map boundaries\n");
+			retval = false;
+			goto exit_func;
 		}
 		r_list_foreach (list, iter, map) {
 			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
@@ -475,6 +503,13 @@ static bool zignDoSearch(RCore *core, ut64 from, ut64 to, bool rad) {
 	} else {
 		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", from, to);
 		retval = zignSearchRange (core, from, to, rad);
+	}
+
+exit_func:
+	if (rad) {
+		r_cons_printf ("fs-\n");
+	} else {
+		r_flag_space_pop (core->flags);
 	}
 
 	return retval;

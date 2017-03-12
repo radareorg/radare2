@@ -3,9 +3,6 @@
 #include <r_sign.h>
 #include <r_anal.h>
 
-#define R_SIGN_KEY_MAXSZ 1024
-#define R_SIGN_VAL_MAXSZ 10240
-
 R_LIB_VERSION (r_sign);
 
 static bool deserialize(RSignItem *it, const char *k, const char *v) {
