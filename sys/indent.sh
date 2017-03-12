@@ -104,8 +104,8 @@ indentFile() {
 	perl -ne 's/} else\n[ \t]*/} else /g;print' < .tmp-format2 | \
 		awk '{if (/} else \t+/) {gsub(/} else \t+/, "} else ");} print;}' > .tmp-format
 	# do not place spaces after tabs
-	mv .tmp-format .tmp-format2
-	perl -ne 's,\t[ ]+,\t,g;print' < .tmp-format2 > .tmp-format
+	#mv .tmp-format .tmp-format2
+	#perl -ne 's,\t[ ]+,\t,g;print' < .tmp-format2 > .tmp-format
 	# drop spaces an multiline backslashes
 	mv .tmp-format .tmp-format2
 	perl -ne 's/[ ]+\\$/\\/g;print' < .tmp-format2 > .tmp-format
