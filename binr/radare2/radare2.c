@@ -81,7 +81,6 @@ static ut64 getBaddrFromDebugger(RCore *r, const char *file) {
 	RListIter *iter;
 	RDebugMap *map;
 	if (!r || !r->io || !r->io->desc) {
-		eprintf ("INValid fd\n");
 		return 0LL;
 	}
 #if __WINDOWS__
@@ -953,7 +952,9 @@ int main(int argc, char **argv, char **envp) {
 				va = 2;
 			}
 			if (run_anal > 0) {
-				eprintf ("USING 0x%" PFMT64x "\n", baddr);
+				if (baddr && baddr != UT64_MAX) {
+					eprintf ("Using 0x%" PFMT64x "\n", baddr);
+				}
 				if (r_core_bin_load (&r, pfile, baddr)) {
 					RBinObject *obj = r_bin_get_object (r.bin);
 					if (obj && obj->info) {
