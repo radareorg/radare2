@@ -1407,7 +1407,7 @@ R_API bool r_str_is_printable_incl_newlines(const char *str) {
 			continue;
 		}
 		if (!IS_PRINTABLE (*str)) {
-			if (!(*str == '\r' || *str == '\n')) {
+			if (*str != '\r' && *str != '\n' && *str != '\t') {
 				return false;
 			}
 		}
