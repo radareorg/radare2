@@ -14,7 +14,8 @@ static bool zignAddFcn(RCore *core, RAnalFunction *fcn, int type, int minzlen, i
 	fcnlen = r_anal_fcn_realsize (fcn);
 
 	if (fcnlen < minzlen) {
-		eprintf ("Omitting %s zignature is too small. Length is %d. Check zign.min.\n", fcn->name, fcnlen);
+		eprintf ("warn: omitting %s zignature is too small. Length is %d. Check zign.min.\n",
+			fcn->name, fcnlen);
 		retval = false;
 		goto exit_func;
 	}

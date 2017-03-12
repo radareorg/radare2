@@ -358,8 +358,7 @@ R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data) {
 		case R_ANAL_OP_TYPE_IJMP:
 		case R_ANAL_OP_TYPE_IRJMP:
 			if (op->nopcode != 0) {
-				memset (ret + (idx + op->nopcode) * 2,
-					0, (oplen - op->nopcode) * 2);
+				memset (ret + idx + op->nopcode, 0, oplen - op->nopcode);
 			}
 		}
 		idx += oplen;
