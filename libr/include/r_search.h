@@ -36,7 +36,7 @@ typedef struct r_search_keyword_t {
 	ut32 binmask_length;
 	ut32 idx[R_SEARCH_DISTANCE_MAX]; // searching purposes
 	int distance;
-	void const *data;
+	void *data;
 	int count;
 	int kwidx;
 	int icase; // ignore case

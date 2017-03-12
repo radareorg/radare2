@@ -142,7 +142,7 @@ struct ctxDeleteCB {
 	RAnal *anal;
 };
 
-int zignDeleteCB(void *user, const char *k, const char *v) {
+static int zignDeleteCB(void *user, const char *k, const char *v) {
 	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
 
 	if (r_str_cmp (k, ctx->buf, strlen (ctx->buf))) {
@@ -183,7 +183,7 @@ struct ctxListCB {
 	RAnal *anal;
 };
 
-int zignListCB(void *user, const char *k, const char *v) {
+static int zignListCB(void *user, const char *k, const char *v) {
 	struct ctxListCB *ctx = (struct ctxListCB *) user;
 	RSignItem *it = R_NEW0 (RSignItem);
 	RAnal *a = ctx->anal;
@@ -261,7 +261,7 @@ struct ctxCountForCB {
 	int count;
 };
 
-int zignCountForCB(void *user, const char *k, const char *v) {
+static int zignCountForCB(void *user, const char *k, const char *v) {
 	struct ctxCountForCB *ctx = (struct ctxCountForCB *) user;
 	RSignItem *it = R_NEW0 (RSignItem);
 
@@ -294,7 +294,7 @@ struct ctxUnsetForCB {
 	RAnal *anal;
 };
 
-int zignUnsetForCB(void *user, const char *k, const char *v) {
+static int zignUnsetForCB(void *user, const char *k, const char *v) {
 	struct ctxUnsetForCB *ctx = (struct ctxUnsetForCB *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	RSignItem *it = R_NEW0 (RSignItem);
@@ -334,7 +334,7 @@ struct ctxForeachCB {
 	void *user;
 };
 
-int zignForeachCB(void *user, const char *k, const char *v) {
+static int zignForeachCB(void *user, const char *k, const char *v) {
 	struct ctxForeachCB *ctx = (struct ctxForeachCB *) user;
 	RSignItem *it = R_NEW0 (RSignItem);
 	RAnal *a = ctx->anal;

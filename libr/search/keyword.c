@@ -18,6 +18,7 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut
 	kw = R_NEW0 (RSearchKeyword);
 	if (!kw) return NULL;
 	kw->type = R_SEARCH_KEYWORD_TYPE_BINARY;
+	kw->data = r_str_new (data);
 	kw->keyword_length = kwlen;
 	kw->bin_keyword = malloc (kwlen);
 	if (!kw->bin_keyword) {
@@ -41,8 +42,12 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut
 }
 
 R_API void r_search_keyword_free (RSearchKeyword *kw) {
+	if (!kw) {
+		return;
+	}
 	free (kw->bin_binmask);
 	free (kw->bin_keyword);
+	free (kw->data);
 	free (kw);
 }
 
@@ -60,8 +65,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 			bmbuf = NULL;
 		}
 	}
-	kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf),
-		bmbuf, bmlen, data);
+	kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf), bmbuf, bmlen, data);
 	if (kw) {
 		kw->icase = ignore_case;
 		kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
@@ -197,7 +201,7 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 
 	kw->bin_keyword = malloc (length+1);
 	if (!kw->bin_keyword) {
-		free (kw);
+		r_search_keyword_free (kw);
 		return NULL;
 	}
 
@@ -205,7 +209,7 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 	memcpy(kw->bin_keyword, str + start, length);
 	kw->keyword_length = length;
 	kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
-	kw->data = data;
+	kw->data = r_str_new (data);
 
 	/* Parse the options */
 	for (; str[i]; i++) {
@@ -214,7 +218,7 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 				kw->icase = true;
 				break;
 			default:
-				free(kw);
+				r_search_keyword_free (kw);
 				return NULL;
 		}
 	}
