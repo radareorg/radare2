@@ -2602,10 +2602,12 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					(void)r_io_read_at (ds->core->io, ds->analop.ptr,
 							    (ut8 *)str + 1, sizeof (str) - 1);
 					str[sizeof (str) - 1] = 0;
-					if (str[1] && r_str_is_printable (str + 1)) {
+					if (str[1] && r_str_is_printable_incl_newlines (str + 1)) {
 						str[0] = '"';
 						flag = str;
 						strcpy (str + strlen (str), "\"");
+						//Filter out remaining non printable characters, e.g. \n \r
+						r_str_filter (flag, 0);
 						string_found = true;
 					}
 				}
