@@ -151,7 +151,6 @@ static int visual_help() {
 		"?        show this help\n"
 		" ??       show the user-friendly hud\n"
 		" $        toggle asm.pseudo\n"
-		" &        rotate asm.bits between supported 8, 16, 32, 64\n"
 		" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
 		" @        redraw screen every 1s (multi-user view), in cursor set position\n"
 		" !        enter into the visual panels mode\n"
