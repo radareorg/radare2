@@ -373,6 +373,31 @@ static int zignFlirt(void *data, const char *input) {
 	return true;
 }
 
+static int zignSearch(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+
+	switch (*input) {
+	case ' ':
+		break;
+	case '*':
+		break;
+	case '?':
+		{
+			const char *help_msg[] = {
+				"Usage:", "z/[*] [ini] [end] ", "# Search signatures",
+				"z/ ", "[ini] [end]", "search zignatures on range and flag matches",
+				"z/* ", "[ini] [end]", "search zignatures on range and output radare commands",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+		}
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 
@@ -392,7 +417,7 @@ static int cmd_zign(void *data, const char *input) {
 	case 'f':
 		return zignFlirt (data, input + 1);
 	case '/':
-		break;
+		return zignSearch (data, input + 1);
 	case 'c':
 		break;
 	case 's':
@@ -409,8 +434,7 @@ static int cmd_zign(void *data, const char *input) {
 				"za", "[?]", "add zignature",
 				"zo", "[?]", "load zignatures from file",
 				"zf", "[?]", "manage FLIRT signatures",
-				"z/ ", "[ini] [end]", "search zignatures on range and flag matches",
-				"z/* ", "[ini] [end]", "search zignatures on range and output radare commands",
+				"z/", "[?]", "search zignatures",
 				"zc", "", "check zignatures at address",
 				"zs", "[?]", "manage zignspaces",
 				"NOTE:", "", "bytes can contain '..' (dots) to specify a binary mask",
