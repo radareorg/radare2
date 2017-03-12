@@ -846,7 +846,7 @@ R_API int r_core_visual_classes(RCore *core) {
 	char *grep = NULL;
 	bool grepmode = false;
 	RList *list = r_bin_get_classes (core->bin);
-	if (r_list_empty (list) {
+	if (r_list_empty (list)) {
 		r_cons_message ("No Classes");
 		return false;
 	}
