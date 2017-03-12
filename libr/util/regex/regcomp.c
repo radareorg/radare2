@@ -397,7 +397,7 @@ static void p_ere_exp(struct parse *p) {
 			p_ere(p, ')');
 		if (subno < NPAREN) {
 			p->pend[subno] = HERE();
-			if (p->pend[subno] != 0) {
+			if (!p->pend[subno]) {
 				break;
 			}
 		}
@@ -601,7 +601,7 @@ p_simp_re(struct parse *p,
 			p_bre(p, '\\', ')');
 		if (subno < NPAREN) {
 			p->pend[subno] = HERE();
-			if (p->pend[subno] == 0) {
+			if (!p->pend[subno]) {
 				break;
 			}
 		}
@@ -765,7 +765,7 @@ static void p_bracket(struct parse *p) {
 			mcinvert(p, cs);
 	}
 
-	if (!cs->multis) {		/* xxx */
+	if (cs->multis) {		/* xxx */
 		return;
 	}
 
