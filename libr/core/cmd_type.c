@@ -108,10 +108,16 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	// First, if this exists, let's remove it.
 	char *type = strdup (parsed);
 	if (type) {
-		char *name = strtok (type, "=");
-		if (!name || strchr (name, '\n') || strchr (name, ';')) {
-			/* do nothing */
-		} else {
+		char *name = NULL;
+		if ((name = strstr(type, "=type")) || (name = strstr(type, "=struct")) || (name = strstr(type, "=union")) ||
+			(name = strstr(type, "=enum")) || (name = strstr(type, "=func"))) {
+			*name = 0;
+			while (*(name - 1) != '\n' && name - 1 >= type) {
+				name--;
+			}
+
+		}
+		if (name) {
 			r_core_cmdf (core, "\"t- %s\"", name);
 			// Now add the type to sdb.
 			sdb_query_lines (core->anal->sdb_types, parsed);
