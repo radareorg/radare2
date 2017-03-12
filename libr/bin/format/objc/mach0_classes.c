@@ -735,7 +735,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = malloc (left);
+				name = malloc (left + 1);
 				if (!name) {
 					return;
 				}
@@ -743,6 +743,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *arch, RBinClass *klass) {
 					R_FREE (name);
 					return;
 				}
+				name[left] = 0;
 			}
 			class_name = r_str_newf ("%s::%s%s", klass->name, "(protocol)", name);
 			R_FREE (name);
