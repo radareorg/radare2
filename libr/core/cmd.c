@@ -2323,10 +2323,11 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	switch (each[0]) {
 	case '/': // "@@/"
 		{
-		const char *cmdhit = r_config_get (core->config, "cmd.hit");
+		char *cmdhit = strdup (r_config_get (core->config, "cmd.hit"));
 		r_config_set (core->config, "cmd.hit", cmd);
 		r_core_cmd0 (core, each);
 		r_config_set (core->config, "cmd.hit", cmdhit);
+		free (cmdhit);
 		}
 		return 0;
 	case '?':
