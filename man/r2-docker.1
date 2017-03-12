@@ -8,6 +8,8 @@
 .Op Fl s
 .Op Fl u
 .Op Fl l
+.Op Fl r
+.Op Fl d
 .Ar file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor, and this tool allows you to create a contained version inside a Docker image to open your files safely.
@@ -16,10 +18,14 @@ The options are:
 .Bl -tag -width Fl
 .It Fl s
 open shell inside the docker image (user r2, pass r2)
+.It Fl d
+debug program (only for linux-x86-32/64)
 .It Fl u
 update or create the docker image with r2 inside
 .It Fl l
 List all docker images with radare2
+.It Fl r
+Remove the radare2 docker image
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)

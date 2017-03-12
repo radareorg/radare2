@@ -110,7 +110,6 @@ fileslist=(
 ./sys/user.sh
 ./sys/valabind.sh
 ./sys/vala.sh
-./sys/whereis.sh
 )
 
 FMT=gcc
