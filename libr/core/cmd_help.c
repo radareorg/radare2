@@ -667,7 +667,7 @@ static int cmd_help(void *data, const char *input) {
 				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
 				r_line_set_prompt (foo);
 				r_cons_fgets (foo, sizeof (foo)-1, 0, NULL);
-				foo[strlen (foo)] = 0;
+				foo[sizeof (foo) - 1] = 0;
 				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 				core->num->value = r_num_math (core->num, foo);
 				}
