@@ -134,7 +134,8 @@ static RBinAddr* binsym(RBinFile *arch, int sym) {
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 		if (is_arm && addr & 1) {
 			ret->bits = 16;
-			//ret->vaddr --; // noes
+			ret->vaddr--; 
+			ret->paddr--; 
 		}
 	}
 	return ret;
