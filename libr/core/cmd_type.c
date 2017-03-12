@@ -109,10 +109,10 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	char *type = strdup (parsed);
 	if (type) {
 		char *name = NULL;
-		if ((name = strstr(type, "=type")) || (name = strstr(type, "=struct")) || (name = strstr(type, "=union")) ||
-			(name = strstr(type, "=enum")) || (name = strstr(type, "=func"))) {
+		if ((name = strstr (type, "=type")) || (name = strstr (type, "=struct")) || (name = strstr (type, "=union")) ||
+			(name = strstr (type, "=enum")) || (name = strstr (type, "=func"))) {
 			*name = 0;
-			while (*(name - 1) != '\n' && name - 1 >= type) {
+			while (*(name - 1) != '\n' && name - 1 > type) {
 				name--;
 			}
 
