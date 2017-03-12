@@ -385,9 +385,15 @@ struct ctxDoSearchCB {
 
 int zignDoSearchCB(void *user, RSignItem *it) {
 	struct ctxDoSearchCB *ctx = (struct ctxDoSearchCB *) user;
+	RAnal *a = ctx->core->anal;
 
-	eprintf ("name=%s from=0x%08"PFMT64x" to=0x%08"PFMT64x" rad=%d\n",
-		it->name, ctx->from, ctx->to, ctx->rad);
+	if (it->space == -1) {
+		eprintf ("name=%s ", it->name);
+	} else {
+		eprintf ("name=%s.%s ", a->zign_spaces.spaces[it->space], it->name);
+	}
+
+	eprintf ("from=0x%08"PFMT64x" to=0x%08"PFMT64x" rad=%d\n", ctx->from, ctx->to, ctx->rad);
 
 	return 1;
 }
@@ -444,6 +450,7 @@ static int zignSearch(void *data, const char *input) {
 
 			if (input[0]) {
 				args = r_str_new (input + 1);
+				r_str_trim_head (args);
 				n = r_str_word_set0(args);
 			} else {
 				n = 0;
@@ -461,7 +468,7 @@ static int zignSearch(void *data, const char *input) {
 			case 0:
 				break;
 			default:
-				eprintf ("usage: z/ [from] [to]\n");
+				eprintf ("usage: z/[*] [from] [to]\n");
 				retval = false;
 				goto exit_case;
 			}
