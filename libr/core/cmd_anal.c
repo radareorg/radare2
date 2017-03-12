@@ -594,6 +594,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
+		char *mnem = strdup (asmop.buf_asm);
+		char *sp = strchr (mnem, ' ');
+		if (sp) {
+			*sp = 0;
+		}
 		if (ret < 1 && fmt != 'd') {
 			eprintf ("Oops at 0x%08" PFMT64x " (", core->offset + idx);
 			for (i = idx, j = 0; i < core->blocksize && j < 3; ++i, ++j) {
@@ -634,17 +639,18 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_anal_esil_stack_free (esil);
 			}
 		} else if (fmt == 'j') {
-			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
+			r_cons_printf ("{\"opcode\":\"%s\",", asmop.buf_asm);
+			r_cons_printf ("\"mnemonic\":\"%s\",", mnem);
 			if (hint && hint->opcode) {
-				r_cons_printf ("\"ophint\": \"%s\",", hint->opcode);
+				r_cons_printf ("\"ophint\":\"%s\",", hint->opcode);
 			}
-			r_cons_printf ("\"prefix\": %" PFMT64d ",", op.prefix);
-			r_cons_printf ("\"id\": %d,", op.id);
+			r_cons_printf ("\"prefix\":%" PFMT64d ",", op.prefix);
+			r_cons_printf ("\"id\":%d,", op.id);
 			if (opexstr && *opexstr) {
 				r_cons_printf ("\"opex\":%s,", opexstr);
 			}
-			r_cons_printf ("\"addr\": %" PFMT64d ",", core->offset + idx);
-			r_cons_printf ("\"bytes\": \"");
+			r_cons_printf ("\"addr\":%" PFMT64d ",", core->offset + idx);
+			r_cons_printf ("\"bytes\":\"");
 			for (j = 0; j < size; j++) {
 				r_cons_printf ("%02x", buf[j + idx]);
 			}
@@ -713,6 +719,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline ("opcode", "%s\n", asmop.buf_asm);
+			printline ("mnemonic", "%s\n", mnem);
 			if (hint) {
 				if (hint->opcode) {
 					printline ("ophint", "%s\n", hint->opcode);
@@ -785,6 +792,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		}
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		//free (hint);
+		free (mnem);
 		r_anal_hint_free (hint);
 		if (((idx + ret) < len) && (!nops || (i + 1) < nops) && fmt != 'e' && fmt != 'r') {
 			r_cons_print (",");
