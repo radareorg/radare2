@@ -163,7 +163,7 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 			sdb_reset (a->sdb_zigns);
 			return true;
 		} else {
-			snprintf (ctx.buf, R_SIGN_KEY_MAXSZ, "zign.%d", a->zign_spaces.space_idx);
+			snprintf (ctx.buf, R_SIGN_KEY_MAXSZ, "zign|%d|", a->zign_spaces.space_idx);
 			ctx.anal = a;
 			sdb_foreach (a->sdb_zigns, zignDeleteCB, &ctx);
 			return true;
