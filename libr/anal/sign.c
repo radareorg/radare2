@@ -17,7 +17,7 @@ static bool deserialize(RSignItem *it, const char *k, const char *v) {
 	v2 = r_str_new (v);
 
 	// Deserialize key: zign,<space>,<name>
-	for (ptr = (char*) k2, i = 0; ; ptr = NULL, i++) {
+	for (ptr = k2, i = 0; ; ptr = NULL, i++) {
 		token = strtok (ptr, "|");
 		if (!token) {
 			break;
@@ -37,7 +37,7 @@ static bool deserialize(RSignItem *it, const char *k, const char *v) {
 	}
 
 	// Deserialize val: <type>,size,bytes,mask
-	for (ptr = (char*) v2, i = 0; ; ptr = NULL, i++) {
+	for (ptr = v2, i = 0; ; ptr = NULL, i++) {
 		token = strtok (ptr, "|");
 		if (!token) {
 			break;
