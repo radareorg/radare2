@@ -1954,12 +1954,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
 			if (r->bin->prefix) {
-				snprintf (str, sizeof (str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"
+				snprintf (str, sizeof (str)-1, "section %i va=0x%08"PFMT64x" pa=0x%08"
 					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s.%s",
 					i, addr, section->paddr, section->size, section->vsize,
 					perms, r->bin->prefix, section->name);
 			} else {
-				snprintf (str, sizeof (str)-1, "[%i] va=0x%08"PFMT64x" pa=0x%08"
+				snprintf (str, sizeof (str)-1, "section %i va=0x%08"PFMT64x" pa=0x%08"
 					PFMT64x" sz=%" PFMT64d" vsz=%"PFMT64d" rwx=%s %s",
 					i, addr, section->paddr, section->size, section->vsize,
 					perms, section->name);
@@ -2052,7 +2052,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 						r->bin->prefix, section->name, section->size, addr);
 				r_cons_printf ("f %s.section_end.%s 1 0x%08"PFMT64x"\n",
 						r->bin->prefix, section->name, addr + section->size);
-				r_cons_printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+				r_cons_printf ("CC section %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%s %s.%s @ 0x%08"PFMT64x"\n",
 						i, addr, section->paddr, section->size, section->vsize,
 						perms, r->bin->prefix, section->name, addr);
@@ -2062,7 +2062,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 						section->name, section->size, addr);
 				r_cons_printf ("f section_end.%s 1 0x%08"PFMT64x"\n",
 						section->name, addr + section->size);
-				r_cons_printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+				r_cons_printf ("CC section %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%s %s @ 0x%08"PFMT64x"\n",
 						i, addr, section->paddr, section->size, section->vsize,
 						perms, section->name, addr);
