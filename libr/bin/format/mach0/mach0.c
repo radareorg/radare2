@@ -593,8 +593,12 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				bin->signature = calloc (1, len + 1);
 				if (bin->signature) {
 					ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
-					memcpy (bin->signature, src, len);
-					bin->signature[len] = '\0';
+					if (off + sizeof (struct blob_t) + len < bin->b->length) {
+						memcpy (bin->signature, src, len);
+						bin->signature[len] = '\0';
+						return true;
+					}
+					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 					return true;
 				}
 			} else {
