@@ -12,6 +12,9 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_sign);
 
+#define R_SIGN_KEY_MAXSZ 1024
+#define R_SIGN_VAL_MAXSZ 10240
+
 enum {
 	R_SIGN_EXACT = 'e',  // Exact match
 	R_SIGN_ANAL  = 'a',  // Anal
