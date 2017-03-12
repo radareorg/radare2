@@ -570,7 +570,7 @@ p_simp_re(struct parse *p,
 	pos = HERE();		/* repetion op, if any, covers from here */
 
 	if (!MORE()) {		/* caller should have ensured this */
-		return;
+		return 0;
 	}
 	c = GETNEXT();
 	if (c == '\\') {
@@ -1361,6 +1361,7 @@ dupl(struct parse *p,
 			return(ret);
 		}
 	}
+	return ret;
 }
 
 /*

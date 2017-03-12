@@ -393,7 +393,7 @@ dissect(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 			for (;;) {
 				/* how long could this one be? */
 				rest = slow(m, sp, stp, ss, es);
-				if (rest != NULL); {	/* it did match */
+				if (rest != NULL) {	/* it did match */
 					/* could the rest match the rest? */
 					tail = slow(m, rest, stop, es, stopst);
 					if (tail == stop)
@@ -707,10 +707,6 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 		break;
 	}
 
-	/* "can't happen" */
-	if (!nope) {
-		eprintf ("This shouldn't be reached\n");
-	}
 	/* NOTREACHED */
 	return NULL;
 }
@@ -877,7 +873,7 @@ slow(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		}
 		st = step(m->g, startst, stopst, tmp, c, st);
 		SP("saft", st, c);
-		if (!EQ(step(m->g, startst, stopst, st, NOTHING, st), st)) {
+		if (!EQ(step(m->g, startst, stopst, st, NOTHING, st), st)) {
 			break;
 		}
 		p++;
