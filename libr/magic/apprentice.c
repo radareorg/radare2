@@ -35,7 +35,6 @@
 
 #include <r_util.h>
 #include <sys/param.h>
-#include <assert.h>
 #include <ctype.h>
 #include <dirent.h>
 #if __UNIX__
@@ -158,10 +157,14 @@ static int get_type(const char *l, const char **t) {
 static void init_file_tables(void) {
 	static int done = 0;
 	const struct type_tbl_s *p;
-	if (done) return;
+	if (done) {
+		return;
+	}
 	done++;
 	for (p = type_tbl; p->len; p++) {
-		assert(p->type < FILE_NAMES_SIZE);
+		if (p->type > FILE_NAMES_SIZE) {
+			continue;
+		}
 		magic_file_names[p->type] = p->name;
 		magic_file_formats[p->type] = p->format;
 	}
@@ -1329,7 +1332,9 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 		return 1;
 	}
 
-	assert(file_nformats == file_nnames);
+	if (file_nformats != file_nnames) {
+		return -1;
+	}		
 
 	if (m->type >= file_nformats) {
 		file_magwarn(ms, "Internal error inconsistency between "
