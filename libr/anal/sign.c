@@ -17,7 +17,7 @@ static bool deserialize(RSignItem *it, const char *k, const char *v) {
 	v2 = r_str_new (v);
 
 	// Deserialize key: zign,<space>,<name>
-	for (ptr = k2, i = 0; ; ptr = NULL, i++) {
+	for (ptr = k2, i = 0;; ptr = NULL, i++) {
 		token = strtok (ptr, "|");
 		if (!token) {
 			break;
@@ -37,7 +37,7 @@ static bool deserialize(RSignItem *it, const char *k, const char *v) {
 	}
 
 	// Deserialize val: <type>,size,bytes,mask
-	for (ptr = v2, i = 0; ; ptr = NULL, i++) {
+	for (ptr = v2, i = 0;; ptr = NULL, i++) {
 		token = strtok (ptr, "|");
 		if (!token) {
 			break;
@@ -52,11 +52,11 @@ static bool deserialize(RSignItem *it, const char *k, const char *v) {
 			break;
 		case 2:
 			it->bytes = malloc (it->size);
-			r_hex_str2bin(token, it->bytes);
+			r_hex_str2bin (token, it->bytes);
 			break;
 		case 3:
 			it->mask = malloc (it->size);
-			r_hex_str2bin(token, it->mask);
+			r_hex_str2bin (token, it->mask);
 			break;
 		default:
 			retval = false;
@@ -131,7 +131,7 @@ R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *byt
 	bool retval = true;
 
 	mask = r_anal_mask (a, size, bytes);
-	retval = r_sign_add(a, R_SIGN_ANAL, name, size, bytes, mask);
+	retval = r_sign_add (a, R_SIGN_ANAL, name, size, bytes, mask);
 
 	free (mask);
 	return retval;
@@ -143,7 +143,7 @@ struct ctxDeleteCB {
 };
 
 int zignDeleteCB(void *user, const char *k, const char *v) {
-	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *)user;
+	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
 
 	if (r_str_cmp (k, ctx->buf, strlen (ctx->buf))) {
 		sdb_remove (ctx->anal->sdb_zigns, k, 0);
@@ -171,7 +171,7 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 	}
 
 	// Remove specific zign
-	it.name = (char*)name;
+	it.name = (char *) name;
 	it.space = a->zign_spaces.space_idx;
 	serialize (&it, buf, NULL);
 	return sdb_remove (a->sdb_zigns, buf, 0);
@@ -184,7 +184,7 @@ struct ctxListCB {
 };
 
 int zignListCB(void *user, const char *k, const char *v) {
-	struct ctxListCB *ctx = (struct ctxListCB *)user;
+	struct ctxListCB *ctx = (struct ctxListCB *) user;
 	RSignItem *it = R_NEW0 (RSignItem);
 	RAnal *a = ctx->anal;
 	char *bytes = NULL;
@@ -203,7 +203,7 @@ int zignListCB(void *user, const char *k, const char *v) {
 		a->cb_printf (",");
 	}
 
-	for (i = 0; i < it->size; i++){
+	for (i = 0; i < it->size; i++) {
 		if (!it->mask[i]) {
 			bytes = r_str_concatf (bytes, "..");
 		} else {
@@ -225,7 +225,7 @@ int zignListCB(void *user, const char *k, const char *v) {
 			a->cb_printf ("{");
 		}
 		a->cb_printf ("\"name\": \"%s\", \"type\": \"%c\", \"bytes\": \"%s\"}",
-				it->name, it->type, bytes);
+			it->name, it->type, bytes);
 	} else {
 		if (it->space >= 0) {
 			a->cb_printf ("%s.", a->zign_spaces.spaces[it->space]);
@@ -243,7 +243,7 @@ exit_function:
 }
 
 R_API void r_sign_list(RAnal *a, int format) {
-	struct ctxListCB ctx = {0, format, a};
+	struct ctxListCB ctx = { 0, format, a };
 
 	if (format == 'j') {
 		a->cb_printf ("[");
@@ -262,7 +262,7 @@ struct ctxCountForCB {
 };
 
 int zignCountForCB(void *user, const char *k, const char *v) {
-	struct ctxCountForCB *ctx = (struct ctxCountForCB *)user;
+	struct ctxCountForCB *ctx = (struct ctxCountForCB *) user;
 	RSignItem *it = R_NEW0 (RSignItem);
 
 	if (!deserialize (it, k, v)) {
@@ -282,7 +282,7 @@ exit_function:
 
 
 R_API int r_sign_space_count_for(RAnal *a, int idx) {
-	struct ctxCountForCB ctx = {idx, 0};
+	struct ctxCountForCB ctx = { idx, 0 };
 
 	sdb_foreach (a->sdb_zigns, zignCountForCB, &ctx);
 
@@ -295,7 +295,7 @@ struct ctxUnsetForCB {
 };
 
 int zignUnsetForCB(void *user, const char *k, const char *v) {
-	struct ctxUnsetForCB *ctx = (struct ctxUnsetForCB *)user;
+	struct ctxUnsetForCB *ctx = (struct ctxUnsetForCB *) user;
 	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
 	RSignItem *it = R_NEW0 (RSignItem);
 	Sdb *db = ctx->anal->sdb_zigns;
@@ -323,9 +323,44 @@ exit_function:
 }
 
 R_API void r_sign_space_unset_for(RAnal *a, int idx) {
-	struct ctxUnsetForCB ctx = {idx, a};
+	struct ctxUnsetForCB ctx = { idx, a };
 
 	sdb_foreach (a->sdb_zigns, zignUnsetForCB, &ctx);
+}
+
+struct ctxForeachCB {
+	RAnal *anal;
+	RSignForeachCallback cb;
+	void *user;
+};
+
+int zignForeachCB(void *user, const char *k, const char *v) {
+	struct ctxForeachCB *ctx = (struct ctxForeachCB *) user;
+	RSignItem *it = R_NEW0 (RSignItem);
+	RAnal *a = ctx->anal;
+	int retval = 1;
+
+	if (!deserialize (it, k, v)) {
+		eprintf ("error: cannot deserialize zign\n");
+		goto exit_function;
+	}
+
+	if (a->zign_spaces.space_idx != it->space && a->zign_spaces.space_idx != -1) {
+		goto exit_function;
+	}
+
+	retval = ctx->cb (ctx->user, it);
+
+exit_function:
+	r_sign_item_free (it);
+
+	return retval;
+}
+
+R_API void r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
+	struct ctxForeachCB ctx = { a, cb, user };
+
+	sdb_foreach (a->sdb_zigns, zignForeachCB, &ctx);
 }
 
 R_API void r_sign_item_free(void *_item) {

@@ -80,7 +80,7 @@ exit_func:
 }
 
 static int zignAddAnal(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+	RCore *core = (RCore *) data;
 
 	switch (*input) {
 	case ' ':
@@ -149,14 +149,13 @@ static int zignAddAnal(void *data, const char *input) {
 		break;
 	default:
 		eprintf ("usage: zaa[f] [args]\n");
-		break;
 	}
 
 	return true;
 }
 
 static int zignAddExact(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+	RCore *core = (RCore *) data;
 
 	switch (*input) {
 	case ' ':
@@ -225,14 +224,13 @@ static int zignAddExact(void *data, const char *input) {
 		break;
 	default:
 		eprintf ("usage: zae[f] [args]\n");
-		break;
 	}
 
 	return true;
 }
 
 static int zignAdd(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+	RCore *core = (RCore *) data;
 
 	switch (*input) {
 	case 'a':
@@ -253,36 +251,36 @@ static int zignAdd(void *data, const char *input) {
 		}
 		break;
 	default:
-		break;
+		eprintf ("usage: za[aemg] [args]\n");
 	}
 
 	return true;
 }
 
 static int zignLoad(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+	RCore *core = (RCore *) data;
 
 	switch (*input) {
 	case '?':
-		{
-			const char *help_msg[] = {
-				"Usage:", "zo[dz] [args] ", "# Load zignatures from file",
-				"zo ", "filename", "load zignatures from file",
-				"zod ", "filename", "load zinatures from sdb file",
-				"zoz ", "filename", "load zinagures from gzip file",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
-		break;
+	{
+		const char *help_msg[] = {
+			"Usage:", "zo[dz] [args] ", "# Load zignatures from file",
+			"zo ", "filename", "load zignatures from file",
+			"zod ", "filename", "load zinatures from sdb file",
+			"zoz ", "filename", "load zinagures from gzip file",
+			NULL};
+		r_core_cmd_help (core, help_msg);
+	}
+	break;
 	default:
-		break;
+		eprintf ("usage: zo[dz] [args]\n");
 	}
 
 	return true;
 }
 
 static int zignSpace(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+	RCore *core = (RCore *) data;
 	RSpaces *zs = &core->anal->zign_spaces;
 
 	switch (*input) {
@@ -351,14 +349,13 @@ static int zignSpace(void *data, const char *input) {
 				count++;
 			}
 		}
-		break;
 	}
 
 	return true;
 }
 
 static int zignFlirt(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+	RCore *core = (RCore *) data;
 
 	switch (*input) {
 	case '?':
@@ -373,39 +370,129 @@ static int zignFlirt(void *data, const char *input) {
 		}
 		break;
 	default:
-		break;
+		eprintf ("usage: zf[dsz] filename\n");
 	}
 
 	return true;
 }
 
+struct ctxDoSearchCB {
+	RCore *core;
+	ut64 from;
+	ut64 to;
+	bool rad;
+};
+
+int zignDoSearchCB(void *user, RSignItem *it) {
+	struct ctxDoSearchCB *ctx = (struct ctxDoSearchCB *) user;
+
+	eprintf ("name=%s from=0x%08"PFMT64x" to=0x%08"PFMT64x" rad=%d\n",
+		it->name, ctx->from, ctx->to, ctx->rad);
+
+	return 1;
+}
+
+static bool zignDoSearch(RCore *core, ut64 from, ut64 to, bool rad) {
+	RList *list;
+	RListIter *iter;
+	RIOMap *map;
+	struct ctxDoSearchCB ctx = { core, from, to, rad };
+	bool search_all = false;
+	bool retval = true;
+
+	if (from == 0 && to == 0) {
+		search_all = true;
+	} else if (to <= from) {
+		eprintf ("error: invalid rage 0x%08"PFMT64x"-0x%08"PFMT64x"\n", from, to);
+		return false;
+	}
+
+	if (search_all) {
+		eprintf ("[+] searching all maps\n");
+
+		list = r_core_get_boundaries_ok (core);
+		if (!list) {
+			eprintf ("Invalid boundaries\n");
+			return false;
+		}
+		r_list_foreach (list, iter, map) {
+			ctx.from = map->from;
+			ctx.to = map->to;
+			r_sign_foreach (core->anal, zignDoSearchCB, &ctx);
+		}
+		r_list_free (list);
+	} else {
+		eprintf ("[+] searching from = 0x%08"PFMT64x" to = 0x%08"PFMT64x"\n", from, to);
+		r_sign_foreach (core->anal, zignDoSearchCB, &ctx);
+	}
+
+	return retval;
+}
+
 static int zignSearch(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+	RCore *core = (RCore *) data;
 
 	switch (*input) {
+	case '\x00':
 	case ' ':
-		break;
 	case '*':
+		{
+			ut64 from = 0, to = 0;
+			char *args = NULL;
+			int n = 0;
+			bool retval = true;
+
+			if (input[0]) {
+				args = r_str_new (input + 1);
+				n = r_str_word_set0(args);
+			} else {
+				n = 0;
+			}
+
+			switch (n) {
+			case 2:
+				from = r_num_math (core->num, r_str_word_get0(args, 0));
+				to = r_num_math (core->num, r_str_word_get0(args, 1));
+				break;
+			case 1:
+				from = core->offset;
+				to = r_num_math (core->num, r_str_word_get0(args, 0));
+				break;
+			case 0:
+				break;
+			default:
+				eprintf ("usage: z/ [from] [to]\n");
+				retval = false;
+				goto exit_case;
+			}
+
+			retval = zignDoSearch(core, from, to, input[0] == '*');
+
+exit_case:
+			free (args);
+
+			return retval;
+		}
 		break;
 	case '?':
 		{
 			const char *help_msg[] = {
-				"Usage:", "z/[*] [ini] [end] ", "# Search signatures",
-				"z/ ", "[ini] [end]", "search zignatures on range and flag matches",
-				"z/* ", "[ini] [end]", "search zignatures on range and output radare commands",
+				"Usage:", "z/[*] [from] [to] ", "# Search signatures",
+				"z/ ", "[from] [to]", "search zignatures on range and flag matches",
+				"z/* ", "[from] [to]", "search zignatures on range and output radare commands",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
 		break;
 	default:
-		break;
+		eprintf ("usage: z/[*] [from] [to]\n");
 	}
 
 	return true;
 }
 
 static int cmd_zign(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+	RCore *core = (RCore *) data;
 
 	switch (*input) {
 	case '\0':
@@ -450,7 +537,7 @@ static int cmd_zign(void *data, const char *input) {
 		}
 		break;
 	default:
-		break;
+		eprintf ("usage: z[*j-aof/cs] [args]\n");
 	}
 
 	return true;

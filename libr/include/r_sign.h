@@ -28,11 +28,14 @@ typedef struct r_sign_item_t {
 	ut8 *mask;
 } RSignItem;
 
+typedef int (*RSignForeachCallback)(void *user, RSignItem *it);
+
 #ifdef R_API
 R_API bool r_sign_add(RAnal *a, int type, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
+R_API void r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
 R_API void r_sign_item_free(void *_item);
 #endif
 
