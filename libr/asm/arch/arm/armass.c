@@ -247,16 +247,16 @@ static ut32 getshift(const char *str) {
 		0, "RRX" // alias for ROR #0
 	};
 
-	strncpy (type, str, sizeof (type)-1);
-
+	strncpy (type, str, sizeof (type) - 1);
 	// XXX strcaecmp is probably unportable
 	if (!strcasecmp (type, shifts[5])) {
 		// handle RRX alias case
 		shift = 6;
 	} else { // all other shift types
 		space = strchr (type, ' ');
-		if (!space)
+		if (!space) {
 			return 0;
+		}
 		*space = 0;
 		strncpy (arg, ++space, sizeof(arg) - 1);
 
@@ -266,10 +266,10 @@ static ut32 getshift(const char *str) {
 				break;
 			}
 		}
-		if (!shift)
+		if (!shift) {
 			return 0;
-		shift = (i*2);
-
+		}
+		shift = i * 2;
 		if ((i = getreg (arg)) != -1) {
 			i <<= 8; // set reg
 //			i|=1; // use reg
@@ -277,6 +277,10 @@ static ut32 getshift(const char *str) {
 			i |= shift << 4; // set shift mode
 			if (shift == 6) i |= (1 << 20);
 		} else {
+			char *bracket = strchr (arg, ']');
+			if (bracket) {
+				*bracket = '\0';
+			}
 			i = getnum (arg);
 			// ensure only the bottom 5 bits are used
 			i &= 0x1f;
@@ -888,13 +892,14 @@ static int findyz(int x, int *y, int *z) {
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int i, j, ret, reg, a, b;
 	bool rex = false;
+	int shift, low, high;
 	for (i = 0; ops[i].name; i++) {
 		if (!strncmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
 			if (ao->a[0] || ops[i].type == TYPE_BKP)
 			switch (ops[i].type) {
-			case TYPE_MEM:				
+			case TYPE_MEM:
 				if (!strcmp (ops[i].name + 2, "rex")) {
 					rex = 1;
 				}
@@ -930,7 +935,14 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						ao->o |= (ret & 0x0f) << 8;
 					} else {
 						ao->o |= (ret & 0x0f) << 24;
-					}					
+					}
+					if (ao->a[3]) {
+						shift = getshift (ao->a[3]);
+						low = shift & 0xFF;
+						high = shift & 0xFF00;
+						ao->o |= low << 24;
+						ao->o |= high << 8;
+					}				
 				} else {
 					int num = getnum (ao->a[2]) & 0xfff;
 					if (rex) {
@@ -942,6 +954,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					ao->o |= (num & 0xff) << 24;
 					ao->o |= ((num >> 8) & 0xf) << 16;
 				}
+				
 				break;
 			case TYPE_IMM:
 				if (*ao->a[0] ++== '{') {
