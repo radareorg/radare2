@@ -12,7 +12,8 @@ typedef enum optype_t {
 	ARM_CONSTANT = 2,
 	ARM_FP = 4,
 	ARM_LSL = 8,
-	ARM_SHIFT = 16
+	ARM_SHIFT = 16,
+	ARM_MEM_OPT = 32
 } OpType;
 
 typedef enum regtype_t {
@@ -40,6 +41,9 @@ typedef struct operand_t {
 			ut64 lsl;
 			ut64 shift;
 		};
+		struct {
+			ut32 mem_option;
+		};
 	};
 } Operand;
 
@@ -51,6 +55,21 @@ typedef struct Opcode_t {
 	int operands_count;
 	Operand operands[5];
 } ArmOp;
+
+static int get_mem_option(char *token) {
+	// values 4, 8, 12, are unused. XXX to adjust
+	const char *options[] = {"sy", "st", "ld", "xxx", "ish", "ishst",
+	                         "ishld", "xxx", "nsh", "nshst", "nshld",
+				 "xxx", "osh", "oshst", "oshld", NULL};
+	int i = 0;
+	while (options[i]) {
+		if (!strcasecmp (token, options[i])) {
+			return 15 - i;
+		}
+		i++;
+	}
+	return -1;
+}
 
 static ut32 mov(ArmOp *op) {
 	int k = 0;
@@ -131,6 +150,22 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 		data = k;
 		data |= n << 24;
 		data |= h << 16;
+	}
+	return data;
+}
+
+static ut32 mem_barrier (ArmOp *op, ut64 addr, int k) {
+	ut32 data = UT32_MAX;
+	data = k;
+	if (!strncmp (op->mnemonic, "isb", 3)) {
+		if (op->operands[0].mem_option == 15 || op->operands[0].type == ARM_NOTYPE) {
+			return data;
+		} else {
+			return UT32_MAX;
+		}
+	}
+	if (op->operands[0].type == ARM_MEM_OPT) {
+		data |= op->operands[0].mem_option << 16;
 	}
 	return data;
 }
@@ -390,6 +425,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 	char *token = t;
 	char *x;
 	int imm_count = 0;
+	int mem_opt = 0;
 
 	while (token[0] != '\0') {
 		op->operands[operand].type = ARM_NOTYPE;
@@ -442,14 +478,39 @@ static bool parseOperands(char* str, ArmOp *op) {
 							break;
 						}
 					}
+					op->operands_count ++;
+					op->operands[operand].type = ARM_GPR;
+					op->operands[operand].reg_type = ARM_SP | ARM_REG64;
+					op->operands[operand].reg = r_num_math (NULL, token + 1);
+					break;
 				}
-				op->operands_count ++;
-				op->operands[operand].type = ARM_GPR;
-				op->operands[operand].reg_type = ARM_SP | ARM_REG64;
-				op->operands[operand].reg = r_num_math (NULL, token + 1);
+				mem_opt = get_mem_option (token);			
+				if (mem_opt != -1) {
+					op->operands_count ++;
+					op->operands[operand].type = ARM_MEM_OPT;
+					op->operands[operand].mem_option = mem_opt;
+				}
 			break;
+			case 'L':
+			case 'l':
+			case 'I':
+			case 'i':
+			case 'N':
+			case 'n':
+			case 'O':
+			case 'o':
 			case 'p':
 			case 'P':
+				x = strchr (token, ',');
+				if (x) {
+					x[0] = '\0';
+				}
+				mem_opt = get_mem_option (token);			
+				if (mem_opt != -1) {
+					op->operands_count ++;
+					op->operands[operand].type = ARM_MEM_OPT;
+					op->operands[operand].mem_option = mem_opt;
+				}
 			break;
 			case '-':
 				op->operands[operand].sign = -1;
@@ -457,6 +518,8 @@ static bool parseOperands(char* str, ArmOp *op) {
 				x = strchr (token, ',');
 				if (x) {
 					x[0] = '\0';
+				} else {
+					break;
 				}
 				op->operands_count ++;
 				switch (imm_count) {
@@ -494,6 +557,11 @@ static bool parseOperands(char* str, ArmOp *op) {
 static bool parseOpcode(const char *str, ArmOp *op) {
 	char *in = strdup (str);
 	char *space = strchr (in, ' ');
+	if (!space) {
+		op->operands[0].type = ARM_NOTYPE;
+		op->mnemonic = in;
+ 		return true;
+	}
 	space[0] = '\0';
 	op->mnemonic = in;
 	space ++;
@@ -504,7 +572,6 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = {0};
 	parseOpcode (str, &ops);
-
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (!strncmp (str, "mov", 3)) {
 		*op = mov (&ops);
@@ -578,8 +645,20 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = branch (&ops, addr, 0x1fd6);
 		return *op != -1;
 	}
-	if (!strncmp (str, "blr x", 4)) {
+	if (!strncmp (str, "blr x", 5)) {
 		*op = branch (&ops, addr, 0x3fd6);
+		return *op != -1;
+	}
+	if (!strncmp (str, "dmb ", 4)) {
+		*op = mem_barrier (&ops, addr, 0xbf3003d5);
+		return *op != -1;
+	}
+	if (!strncmp (str, "dsb ", 4)) {
+		*op = mem_barrier (&ops, addr, 0x9f3003d5);
+		return *op != -1;
+	}
+	if (!strncmp (str, "isb", 3)) {
+		*op = mem_barrier (&ops, addr, 0xdf3f03d5);
 		return *op != -1;
 	}
 	return false;
