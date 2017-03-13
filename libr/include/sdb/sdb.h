@@ -16,6 +16,9 @@ extern "C" {
 #include "cdb_make.h"
 #include "sdb_version.h"
 
+#undef r_offsetof
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+
 /* Key value sizes */
 #define SDB_MIN_VALUE 1
 #define SDB_MAX_VALUE 0xffffff
