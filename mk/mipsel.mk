@@ -1,6 +1,6 @@
 ARCH=mipsel
 CROSS_ROOT=/usr/bin
-CROSS_TRIPLET=${ARCH}-linux-gnueabi
+CROSS_TRIPLET=${ARCH}-linux-gnu
 
 CC=${CROSS_ROOT}/${CROSS_TRIPLET}-gcc
 USERCC=${CROSS_ROOT}/${CROSS_TRIPLET}-gcc
