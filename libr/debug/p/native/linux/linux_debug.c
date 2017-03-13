@@ -159,7 +159,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				r_sys_perror ("ptrace GETEVENTMSG");
 				return R_DEBUG_REASON_ERROR;
 			}
-			eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", data);
+			eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", (ut64)data);
 			add_and_attach_new_thread (dbg, (int)data);
 			return R_DEBUG_REASON_NEW_TID;
 		}
@@ -171,7 +171,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
-			eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", data);
+			eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", (ut64)data);
 			dbg->forked_pid = data;
 			// TODO: more handling here?
 			/* we have a new process that we are already tracing */
@@ -183,7 +183,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
-		eprintf ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, data);
+		eprintf ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, (ut64)data);
 		return R_DEBUG_REASON_EXIT_PID;
 	default:
 		eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);

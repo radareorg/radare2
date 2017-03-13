@@ -4066,7 +4066,6 @@ R_API RBinJavaVerificationObj *r_bin_java_verification_info_from_type(RBinJavaOb
 
 R_API RBinJavaVerificationObj *r_bin_java_read_from_buffer_verification_info_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 0;
-	static int i = 0;
 	RBinJavaVerificationObj *se = R_NEW0 (RBinJavaVerificationObj);
 	if (!se) {
 		return NULL;
