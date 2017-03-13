@@ -510,6 +510,24 @@ exit_case:
 	return true;
 }
 
+static int zignCheck(void *data, const char *input) {
+	RCore *core = (RCore *) data;
+	RSignSearch *ss;
+	ut64 at = core->offset;
+	bool retval = true;
+	struct ctxSearchCB ctx = { core, input[0] == '*' };
+
+	ss = r_sign_search_new ();
+	r_sign_search_init (core->anal, ss, zignSearchHitCB, &ctx);
+	if (r_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
+		eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
+		retval = false;
+	}
+	r_sign_search_free (ss);
+
+	return retval;
+}
+
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 
@@ -531,7 +549,7 @@ static int cmd_zign(void *data, const char *input) {
 	case '/':
 		return zignSearch (data, input + 1);
 	case 'c':
-		break;
+		return zignCheck (data, input + 1);
 	case 's':
 		return zignSpace (data, input + 1);
 	case '?':
