@@ -72,7 +72,9 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			r_strbuf_append (buf, ",");
 		}
 		r_strbuf_appendf (buf, "{\"size\":%d", op->size);
+#if CS_API_MAJOR >= 4
 		r_strbuf_appendf (buf, ",\"rw\":%d", op->access); // read , write, read|write
+#endif
 		switch (op->type) {
 		case X86_OP_REG:
 			r_strbuf_appendf (buf, ",\"type\":\"reg\"");
