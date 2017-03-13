@@ -141,18 +141,8 @@ static int zignAddBytes(void *data, const char *input, int type) {
 		{
 			RAnalFunction *fcni = NULL;
 			RListIter *iter = NULL;
-			//const char *filename = NULL;
 			int minzlen = r_config_get_i (core->config, "zign.min");
 			int maxzlen = r_config_get_i (core->config, "zign.max");
-
-			/*
-			if (input[1] != ' ') {
-				eprintf ("usage: zaaF [file]\n");
-				return false;
-			}
-			*/
-
-			//filename = input + 2;
 
 			r_cons_break_push (NULL, NULL);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -173,7 +163,7 @@ static int zignAddBytes(void *data, const char *input, int type) {
 					"Usage:", "zaa[fF] [args] ", "# Create anal zignature",
 					"zaa ", "name bytes", "create anal zignature",
 					"zaaf ", "[name]", "create anal zignature for function (use function name if name is not given)",
-					"zaaF ", "[file]", "generate anal zignatures for all functions (and save in file)",
+					"zaaF ", "", "generate anal zignatures for all functions",
 					NULL};
 				r_core_cmd_help (core, help_msg);
 			} else {
@@ -181,7 +171,7 @@ static int zignAddBytes(void *data, const char *input, int type) {
 					"Usage:", "zae[fF] [args] ", "# Create anal zignature",
 					"zae ", "name bytes", "create anal zignature",
 					"zaef ", "[name]", "create anal zignature for function (use function name if name is not given)",
-					"zaeF ", "[file]", "generate anal zignatures for all functions (and save in file)",
+					"zaeF ", "", "generate anal zignatures for all functions",
 					NULL};
 				r_core_cmd_help (core, help_msg);
 			}
@@ -490,7 +480,7 @@ static int zignSearch(void *data, const char *input) {
 			case 0:
 				break;
 			default:
-				eprintf ("usage: zS[*] [from] [to]\n");
+				eprintf ("usage: z/[*] [from] [to]\n");
 				retval = false;
 				goto exit_case;
 			}
@@ -538,7 +528,7 @@ static int cmd_zign(void *data, const char *input) {
 		return zignAdd (data, input + 1);
 	case 'f':
 		return zignFlirt (data, input + 1);
-	case 'S':
+	case '/':
 		return zignSearch (data, input + 1);
 	case 'c':
 		break;
@@ -556,7 +546,7 @@ static int cmd_zign(void *data, const char *input) {
 				"za", "[?]", "add zignature",
 				"zo", "[?]", "load zignatures from file",
 				"zf", "[?]", "manage FLIRT signatures",
-				"zS", "[?]", "search zignatures",
+				"z/", "[?]", "search zignatures",
 				"zc", "", "check zignatures at address",
 				"zs", "[?]", "manage zignspaces",
 				"NOTE:", "", "bytes can contain '..' (dots) to specify a binary mask",
