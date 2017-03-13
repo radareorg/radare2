@@ -161,8 +161,8 @@ static void filter_type(char *t) {
 }
 
 R_API char *r_anal_type_format(RAnal *anal, const char *t) {
-	int n, m;
-	char *p, *q, var[128], var2[128], var3[128];
+	int n;
+	char *p, var[128], var2[128], var3[128];
 	char *fmt = NULL;
 	char *vars = NULL;
 	Sdb *DB = anal->sdb_types;
@@ -179,7 +179,7 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 		// assumes var list is sorted by offset.. should do more checks here
 		for (n = 0; (p = sdb_array_get (DB, var, n, NULL)); n++) {
 			const char *tfmt;
-			char *type, *type2;
+			char *type;
 			int elements;
 			//int off;
 			//int size;

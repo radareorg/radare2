@@ -462,10 +462,10 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_MEM:
 			r_strbuf_append (buf, "\"type\":\"mem\"");
-			if (op->mem.base != ARM_REG_INVALID) {
+			if (op->mem.base != ARM64_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
-			if (op->mem.index != ARM_REG_INVALID) {
+			if (op->mem.index != ARM64_REG_INVALID) {
 				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
 			}
 			r_strbuf_appendf (buf, ",\"disp\":%d", op->mem.disp);
