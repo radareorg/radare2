@@ -1,10 +1,10 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
-#include "r_anal.h"
-#include "r_cons.h"
-#include "r_core.h"
-#include "r_list.h"
-#include "r_sign.h"
+#include <r_core.h>
+#include <r_anal.h>
+#include <r_sign.h>
+#include <r_list.h>
+#include <r_cons.h>
 
 static bool zignAddFcn(RCore *core, RAnalFunction *fcn, int type, int minzlen, int maxzlen) {
 	int fcnlen = 0, len = 0;
@@ -378,65 +378,44 @@ static int zignFlirt(void *data, const char *input) {
 
 struct ctxSearchCB {
 	RCore *core;
-	RList *kwnames;
 	bool rad;
 };
 
-static int zignSearchHitCB(RSearchKeyword *kw, void *user, ut64 addr) {
+static int zignSearchHitCB(RSearchKeyword *kw, RSignItem *it, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
+	RConfig *cfg = ctx->core->config;
+	RAnal *a = ctx->core->anal;
+	const char *zign_prefix = r_config_get (cfg, "zign.prefix");
 	char *name;
 
-	name = r_str_newf ("%s_%d", kw->data, kw->count, addr);
+	if (it->space == -1) {
+		name = r_str_newf ("%s.%s_%d", zign_prefix, it->name, kw->count);
+	} else {
+		name = r_str_newf ("%s.%s.%s_%d", zign_prefix,
+			a->zign_spaces.spaces[it->space], it->name, kw->count);
+	}
+
 	if (ctx->rad) {
 		r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, kw->keyword_length, addr);
 	} else {
 		r_flag_set(ctx->core->flags, name, addr, kw->keyword_length);
 	}
+
 	free(name);
 
 	return 1;
 }
 
-static int zignSearchCB(void *user, RSignItem *it) {
-	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
-	RSearchKeyword *kw;
-	RAnal *a = ctx->core->anal;
-	RSearch *s = ctx->core->search;
-	RConfig *cfg = ctx->core->config;
-	char *zign_name = NULL;
-	const char *zign_prefix = r_config_get (cfg, "zign.prefix");
-
-	if (it->space == -1) {
-		zign_name = r_str_newf ("%s.%s", zign_prefix, it->name);
-	} else {
-		zign_name = r_str_newf ("%s.%s.%s", zign_prefix,
-			a->zign_spaces.spaces[it->space], it->name);
-	}
-	r_list_append(ctx->kwnames, zign_name);
-
-	kw = r_search_keyword_new (it->bytes, it->size, it->mask, it->size, zign_name);
-	r_search_kw_add (s, kw);
-
-	return 1;
-}
-
 static bool zignSearchRange(RCore *core, ut64 from, ut64 to, bool rad) {
-	struct ctxSearchCB ctx;
+	RSignSearch *ss;
 	ut8 *buf = malloc (core->blocksize);
 	ut64 at;
 	int rlen;
 	bool retval = true;
+	struct ctxSearchCB ctx = { core, rad };
 
-	ctx.core = core;
-	ctx.rad = rad;
-	ctx.kwnames = r_list_new ();
-
-	r_search_reset (core->search, R_SEARCH_KEYWORD);
-
-	r_sign_foreach (core->anal, zignSearchCB, &ctx);
-
-	r_search_begin (core->search);
-	r_search_set_callback (core->search, zignSearchHitCB, &ctx);
+	ss = r_sign_search_new ();
+	r_sign_search_init(core->anal, ss, zignSearchHitCB, &ctx);
 
 	r_cons_break_push (NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
@@ -449,7 +428,7 @@ static bool zignSearchRange(RCore *core, ut64 from, ut64 to, bool rad) {
 			retval = false;
 			break;
 		}
-		if (r_search_update (core->search, &at, buf, rlen) == -1) {
+		if (r_sign_search_update (core->anal, ss, &at, buf, rlen) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 			retval = false;
 			break;
@@ -457,8 +436,8 @@ static bool zignSearchRange(RCore *core, ut64 from, ut64 to, bool rad) {
 	}
 	r_cons_break_pop ();
 
-	r_list_free (ctx.kwnames);
 	free (buf);
+	r_sign_search_free (ss);
 	
 	return retval;
 }

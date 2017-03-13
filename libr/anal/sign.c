@@ -1,7 +1,8 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
-#include <r_sign.h>
 #include <r_anal.h>
+#include <r_sign.h>
+#include <r_search.h>
 
 R_LIB_VERSION (r_sign);
 
@@ -346,7 +347,9 @@ static int zignForeachCB(void *user, const char *k, const char *v) {
 		goto exit_function;
 	}
 
-	retval = ctx->cb (ctx->user, it);
+	if (ctx->cb) {
+		retval = ctx->cb (it, ctx->user);
+	}
 
 exit_function:
 	r_sign_item_free (it);
@@ -354,10 +357,85 @@ exit_function:
 	return retval;
 }
 
-R_API void r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
+R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user) {
 	struct ctxForeachCB ctx = { a, cb, user };
 
-	sdb_foreach (a->sdb_zigns, zignForeachCB, &ctx);
+	return sdb_foreach (a->sdb_zigns, zignForeachCB, &ctx);
+}
+
+R_API RSignSearch *r_sign_search_new() {
+	RSignSearch *ret = R_NEW0 (RSignSearch);
+
+	ret->search = r_search_new (R_SEARCH_KEYWORD);
+	ret->items = r_list_newf ((RListFree) r_sign_item_free);
+
+	return ret;
+}
+
+R_API void r_sign_search_free(RSignSearch *ss) {
+	if (!ss) {
+		return;
+	}
+
+	r_search_free (ss->search);
+	r_list_free (ss->items);
+	free (ss);
+}
+
+static int zignSearchHitCB(RSearchKeyword *kw, void *user, ut64 addr) {
+	RSignSearch *ss = (RSignSearch *) user;
+
+	if (ss->cb) {
+		return ss->cb (kw, (RSignItem *) kw->data, addr, ss->user);
+	}
+
+	return 1;
+}
+
+static int zignSearchCB(RSignItem *it, void *user) {
+	RSignSearch *ss = (RSignSearch *) user;
+	RSearchKeyword *kw;
+	RSignItem *it2;
+
+	it2 = r_sign_item_dup (it);
+	r_list_append(ss->items, it2);
+
+	// TODO(nibble): change arg data in r_search_keyword_new to void*
+	kw = r_search_keyword_new (it->bytes, it->size, it->mask, it->size, (const char *) it2);
+	r_search_kw_add (ss->search, kw);
+
+	return 1;
+}
+
+R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, RSignSearchCallback cb, void *user) {
+	ss->cb = cb;
+	ss->user = user;
+
+	r_list_purge (ss->items);
+	r_search_reset (ss->search, R_SEARCH_KEYWORD);
+
+	r_sign_foreach (a, zignSearchCB, ss);
+	r_search_begin (ss->search);
+	r_search_set_callback (ss->search, zignSearchHitCB, ss);
+}
+
+R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len) {
+	return r_search_update (ss->search, at, buf, len);
+}
+
+R_API RSignItem *r_sign_item_dup(RSignItem *it) {
+	RSignItem *ret = R_NEW0 (RSignItem);
+
+	ret->name = r_str_new (it->name);
+	ret->space = it->space;
+	ret->type = it->space;
+	ret->size = it->size;
+	ret->bytes = malloc (it->size);
+	memcpy (ret->bytes, it->bytes, it->size);
+	ret->mask = malloc (it->size);
+	memcpy (ret->mask, it->mask, it->size);
+
+	return ret;
 }
 
 R_API void r_sign_item_free(void *_item) {
