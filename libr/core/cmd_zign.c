@@ -79,7 +79,7 @@ exit_func:
 	return retval;
 }
 
-static int zignAddAnal(void *data, const char *input) {
+static int zignAddBytes(void *data, const char *input, int type) {
 	RCore *core = (RCore *) data;
 
 	switch (*input) {
@@ -93,14 +93,14 @@ static int zignAddAnal(void *data, const char *input) {
 			n = r_str_word_set0(args);
 
 			if (n != 2) {
-				eprintf ("usage: zaa name bytes\n");
+				eprintf ("usage: za%s name bytes\n", type == R_SIGN_ANAL? "a": "e");
 				return false;
 			}
 
 			name = r_str_word_get0(args, 0);
 			hexbytes = r_str_word_get0(args, 1);
 
-			if (!zignAddHex (core, name, R_SIGN_ANAL, hexbytes)) {
+			if (!zignAddHex (core, name, type, hexbytes)) {
 				eprintf ("error: cannot add zignature\n");
 			}
 
@@ -116,7 +116,7 @@ static int zignAddAnal(void *data, const char *input) {
 			int maxzlen = r_config_get_i (core->config, "zign.max");
 
 			if (input[1] != ' ') {
-				eprintf ("usage: zaaf name\n");
+				eprintf ("usage: za%sf name\n", type == R_SIGN_ANAL? "a": "e");
 				return false;
 			}
 
@@ -128,7 +128,7 @@ static int zignAddAnal(void *data, const char *input) {
 					break;
 				}
 				if (r_str_cmp (name, fcni->name, strlen (name))) {
-					if (!zignAddFcn (core, fcni, R_SIGN_ANAL, minzlen, maxzlen)) {
+					if (!zignAddFcn (core, fcni, type, minzlen, maxzlen)) {
 						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
 					}
 					break;
@@ -137,76 +137,30 @@ static int zignAddAnal(void *data, const char *input) {
 			r_cons_break_pop ();
 		}
 		break;
-	case '?':
-		{
-			const char *help_msg[] = {
-				"Usage:", "zaa[f] [args] ", "# Create anal zignature",
-				"zaa ", "name bytes", "create anal zignature",
-				"zaaf ", "[name]", "create anal zignature for function (use function name if name is not given)",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
-		break;
-	default:
-		eprintf ("usage: zaa[f] [args]\n");
-	}
-
-	return true;
-}
-
-static int zignAddExact(void *data, const char *input) {
-	RCore *core = (RCore *) data;
-
-	switch (*input) {
-	case ' ':
-		{
-			const char *name = NULL, *hexbytes = NULL;
-			char *args = NULL;
-			int n = 0;
-
-			args = r_str_new (input + 1);
-			n = r_str_word_set0(args);
-
-			if (n != 2) {
-				eprintf ("usage: zae name bytes\n");
-				return false;
-			}
-
-			name = r_str_word_get0(args, 0);
-			hexbytes = r_str_word_get0(args, 1);
-
-			if (!zignAddHex (core, name, R_SIGN_EXACT, hexbytes)) {
-				eprintf ("error: cannot add zignature\n");
-			}
-
-			free (args);
-		}
-		break;
-	case 'f':
+	case 'F':
 		{
 			RAnalFunction *fcni = NULL;
 			RListIter *iter = NULL;
-			const char *name = NULL;
+			//const char *filename = NULL;
 			int minzlen = r_config_get_i (core->config, "zign.min");
 			int maxzlen = r_config_get_i (core->config, "zign.max");
 
+			/*
 			if (input[1] != ' ') {
-				eprintf ("usage: zaef name\n");
+				eprintf ("usage: zaaF [file]\n");
 				return false;
 			}
+			*/
 
-			name = input + 2;
+			//filename = input + 2;
 
 			r_cons_break_push (NULL, NULL);
 			r_list_foreach (core->anal->fcns, iter, fcni) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (r_str_cmp (name, fcni->name, strlen (name))) {
-					if (!zignAddFcn (core, fcni, R_SIGN_EXACT, minzlen, maxzlen)) {
-						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
-					}
-					break;
+				if (!zignAddFcn (core, fcni, type, minzlen, maxzlen)) {
+					eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
 				}
 			}
 			r_cons_break_pop ();
@@ -214,16 +168,27 @@ static int zignAddExact(void *data, const char *input) {
 		break;
 	case '?':
 		{
-			const char *help_msg[] = {
-				"Usage:", "zae[f] [args] ", "# Create anal zignature",
-				"zae ", "name bytes", "create anal zignature",
-				"zaef ", "[name]", "create anal zignature for function (use function name if name is not given)",
-				NULL};
-			r_core_cmd_help (core, help_msg);
+			if (type == R_SIGN_ANAL) {
+				const char *help_msg[] = {
+					"Usage:", "zaa[fF] [args] ", "# Create anal zignature",
+					"zaa ", "name bytes", "create anal zignature",
+					"zaaf ", "[name]", "create anal zignature for function (use function name if name is not given)",
+					"zaaF ", "[file]", "generate anal zignatures for all functions (and save in file)",
+					NULL};
+				r_core_cmd_help (core, help_msg);
+			} else {
+				const char *help_msg[] = {
+					"Usage:", "zae[fF] [args] ", "# Create anal zignature",
+					"zae ", "name bytes", "create anal zignature",
+					"zaef ", "[name]", "create anal zignature for function (use function name if name is not given)",
+					"zaeF ", "[file]", "generate anal zignatures for all functions (and save in file)",
+					NULL};
+				r_core_cmd_help (core, help_msg);
+			}
 		}
 		break;
 	default:
-		eprintf ("usage: zae[f] [args]\n");
+		eprintf ("usage: za%s[f] [args]\n", type == R_SIGN_ANAL? "a": "e");
 	}
 
 	return true;
@@ -234,9 +199,9 @@ static int zignAdd(void *data, const char *input) {
 
 	switch (*input) {
 	case 'a':
-		return zignAddAnal (data, input + 1);
+		return zignAddBytes (data, input + 1, R_SIGN_ANAL);
 	case 'e':
-		return zignAddExact (data, input + 1);
+		return zignAddBytes (data, input + 1, R_SIGN_EXACT);
 	case '?':
 		{
 			const char *help_msg[] = {
@@ -244,8 +209,6 @@ static int zignAdd(void *data, const char *input) {
 				"zaa", "[?]", "add anal zignature",
 				"zae", "[?]", "add exact-match zignature",
 				"zam ", "name params", "add metric zignature (e.g. zm foo bbs=10 calls=printf,exit)",
-				"zaga ", "zignspace [file]", "generate anal zignatures for all functions (and save in file)",
-				"zage ", "zignspace [file]", "generate exact-match zignatures for all functions (and save in file)",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
@@ -415,7 +378,7 @@ static bool zignSearchRange(RCore *core, ut64 from, ut64 to, bool rad) {
 	struct ctxSearchCB ctx = { core, rad };
 
 	ss = r_sign_search_new ();
-	r_sign_search_init(core->anal, ss, zignSearchHitCB, &ctx);
+	r_sign_search_init (core->anal, ss, zignSearchHitCB, &ctx);
 
 	r_cons_break_push (NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
@@ -527,12 +490,12 @@ static int zignSearch(void *data, const char *input) {
 			case 0:
 				break;
 			default:
-				eprintf ("usage: z/[*] [from] [to]\n");
+				eprintf ("usage: zS[*] [from] [to]\n");
 				retval = false;
 				goto exit_case;
 			}
 
-			retval = zignDoSearch(core, from, to, input[0] == '*');
+			retval = zignDoSearch (core, from, to, input[0] == '*');
 
 exit_case:
 			free (args);
@@ -575,7 +538,7 @@ static int cmd_zign(void *data, const char *input) {
 		return zignAdd (data, input + 1);
 	case 'f':
 		return zignFlirt (data, input + 1);
-	case '/':
+	case 'S':
 		return zignSearch (data, input + 1);
 	case 'c':
 		break;
@@ -593,7 +556,7 @@ static int cmd_zign(void *data, const char *input) {
 				"za", "[?]", "add zignature",
 				"zo", "[?]", "load zignatures from file",
 				"zf", "[?]", "manage FLIRT signatures",
-				"z/", "[?]", "search zignatures",
+				"zS", "[?]", "search zignatures",
 				"zc", "", "check zignatures at address",
 				"zs", "[?]", "manage zignspaces",
 				"NOTE:", "", "bytes can contain '..' (dots) to specify a binary mask",
