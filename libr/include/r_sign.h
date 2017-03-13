@@ -57,6 +57,10 @@ R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *b
 
 R_API RSignItem *r_sign_item_dup(RSignItem *it);
 R_API void r_sign_item_free(void *_item);
+
+R_API int r_sign_is_flirt(RBuffer *buf);
+R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);
+R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file);
 #endif
 
 #ifdef __cplusplus

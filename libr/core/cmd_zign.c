@@ -311,6 +311,23 @@ static int zignFlirt(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 
 	switch (*input) {
+	case 'd':
+		if (input[1] != ' ') {
+			eprintf ("usage: zfd filename\n");
+			return false;
+		}
+		r_sign_flirt_dump (core->anal, input + 2);
+		break;
+	case 's':
+		if(input[1] != ' ') {
+			eprintf ("usage: zfs filename\n");
+			return false;
+		}
+		r_sign_flirt_scan (core->anal, input + 2);
+		break;
+	case 'z':
+		eprintf ("TODO\n");
+		break;
 	case '?':
 		{
 			const char *help_msg[] = {
