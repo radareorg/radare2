@@ -134,7 +134,7 @@ RBinPlugin r_bin_plugin_fs = {
 };
 
 #ifndef CORELIB
-RLiBStruct radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_fs,
 	.version = R2_VERSION

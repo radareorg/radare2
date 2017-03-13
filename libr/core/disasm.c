@@ -2607,7 +2607,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						flag = str;
 						strcpy (str + strlen (str), "\"");
 						//Filter out remaining non printable characters, e.g. \n \r
-						r_str_filter (flag, 0);
+						r_str_filter ((char*)flag, 0);
 						string_found = true;
 					}
 				}
