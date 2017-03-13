@@ -215,7 +215,7 @@ static int zignListCB(void *user, const char *k, const char *v) {
 		} else {
 			a->cb_printf ("zs *\n");
 		}
-		a->cb_printf ("z%c %s %s\n", it->type, it->name, bytes);
+		a->cb_printf ("zae %s %s\n", it->name, bytes);
 	} else if (ctx->format == 'j') {
 		if (it->space >= 0) {
 			a->cb_printf ("{\"zignspace\": \"%s\", ", a->zign_spaces.spaces[it->space]);
