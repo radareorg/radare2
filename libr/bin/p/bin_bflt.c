@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2017 - Oscar Salvador */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -225,8 +225,8 @@ static RList *relocs(RBinFile *arch) {
 			free (reloc_pointer_table);
 			goto out_error;
 		}
-		for (i = 0; i < obj->hdr->reloc_count; i++) {
-			//XXX it doesn't take endian as consideration when swapping
+		for (i = 0; i < n_reloc; i++) {
+			// XXX it doesn't take endian as consideration when swapping
 			ut32 reloc_offset =
 				r_swap_ut32 (reloc_pointer_table[i]) +
 				BFLT_HDR_SIZE;
