@@ -202,10 +202,15 @@ static int zignListCB(void *user, const char *k, const char *v) {
 	}
 
 	for (i = 0; i < it->size; i++) {
-		if (!it->mask[i]) {
-			bytes = r_str_concatf (bytes, "..");
+		if (it->mask[i] & 0xf0) {
+			bytes = r_str_concatf (bytes, "%x", (it->bytes[i] & 0xf0) >> 4);
 		} else {
-			bytes = r_str_concatf (bytes, "%02x", it->bytes[i]);
+			bytes = r_str_concatf (bytes, ".");
+		}
+		if (it->mask[i] & 0xf) {
+			bytes = r_str_concatf (bytes, "%x", it->bytes[i] & 0xf);
+		} else {
+			bytes = r_str_concatf (bytes, ".");
 		}
 	}
 
