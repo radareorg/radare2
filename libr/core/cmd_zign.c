@@ -383,8 +383,10 @@ static bool zignSearchRange(RCore *core, ut64 from, ut64 to, bool rad) {
 	int rlen;
 	bool retval = true;
 	struct ctxSearchCB ctx = { core, rad };
+	int align = r_config_get_i (core->config, "search.align");
 
 	ss = r_sign_search_new ();
+	ss->search->align = align;
 	r_sign_search_init (core->anal, ss, zignSearchHitCB, &ctx);
 
 	r_cons_break_push (NULL, NULL);
@@ -419,6 +421,8 @@ static bool zignDoSearch(RCore *core, ut64 from, ut64 to, bool rad) {
 	bool search_all = false;
 	bool retval = true;
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	const char *search_in = r_config_get (core->config, "search.in");
+	ut64 sin_from, sin_to;
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -438,17 +442,17 @@ static bool zignDoSearch(RCore *core, ut64 from, ut64 to, bool rad) {
 	}
 
 	if (search_all) {
-		list = r_core_get_boundaries_ok (core);
-		if (!list) {
-			eprintf ("error: invalid map boundaries\n");
-			retval = false;
-			goto exit_func;
+		list = r_core_get_boundaries_prot (core, 0, search_in, &sin_from, &sin_to);
+		if (list) {
+			r_list_foreach (list, iter, map) {
+				eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
+				retval &= zignSearchRange (core, map->from, map->to, rad);
+			}
+			r_list_free (list);
+		} else {
+			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", sin_from, sin_to);
+			retval = zignSearchRange (core, sin_from, sin_to, rad);
 		}
-		r_list_foreach (list, iter, map) {
-			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
-			retval &= zignSearchRange (core, map->from, map->to, rad);
-		}
-		r_list_free (list);
 	} else {
 		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", from, to);
 		retval = zignSearchRange (core, from, to, rad);
