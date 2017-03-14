@@ -57,7 +57,8 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
 	free (jvcname);
 }
 
-static Sdb* get_sdb (RBinObject *o) {
+static Sdb* get_sdb (RBinFile *bf) {
+	RBinObject *o = bf->o;
 	struct r_bin_java_obj_t *bin;
 	if (!o) return NULL;
 	bin = (struct r_bin_java_obj_t *) o->bin_obj;

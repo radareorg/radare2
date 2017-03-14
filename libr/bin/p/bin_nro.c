@@ -36,7 +36,7 @@ typedef struct {
 static ut32 readLE32(RBuffer *buf, int off) {
 	int left = 0;
 	const ut8 *data = r_buf_get_at (buf, off, &left);
-	return left > 3 ? r_read_le32 (data): 0;
+	return left > 3? r_read_le32 (data): 0;
 }
 
 static const char *fileType(const ut8 *buf) {
@@ -60,21 +60,21 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-mydb = sdb;
-	return (void*)(size_t)check_bytes (buf, sz);
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	mydb = sdb;
+	return (void *) (size_t) check_bytes (buf, sz);
 }
 
 static int load(RBinFile *arch) {
-	return check(arch);
+	return check (arch);
 }
 
-static int destroy (RBinFile *arch) {
+static int destroy(RBinFile *arch) {
 	return true;
 }
 
@@ -82,12 +82,12 @@ static ut64 baddr(RBinFile *arch) {
 	return readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
 }
 
-static RBinAddr* binsym(RBinFile *arch, int type) {
+static RBinAddr *binsym(RBinFile *arch, int type) {
 	return NULL; // TODO
 }
 
-static RList* entries(RBinFile *arch) {
-	RList* ret;
+static RList *entries(RBinFile *arch) {
+	RList *ret;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -101,20 +101,19 @@ static RList* entries(RBinFile *arch) {
 	return ret;
 }
 
-static Sdb* get_sdb(RBinObject *o) {
-	Sdb *kv = sdb_new0();
+static Sdb *get_sdb(RBinFile *bf) {
+	Sdb *kv = sdb_new0 ();
 	sdb_num_set (kv, "nro_start.offset", 0, 0);
 	sdb_num_set (kv, "nro_start.size", 16, 0);
 	sdb_set (kv, "nro_start.format", "xxq unused mod_memoffset padding", 0);
 	sdb_num_set (kv, "nro_header.offset", 16, 0);
 	sdb_num_set (kv, "nro_header.size", 0x70, 0);
 	sdb_set (kv, "nro_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3", 0);
-// this is an ugly trick because mydb is not accessible after loadbytes.. should be o->kv
-        sdb_ns_set (mydb, "info", kv);
+	sdb_ns_set (bf->sdb, "info", kv);
 	return kv;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList *sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	RBuffer *b = arch->buf;
@@ -136,12 +135,12 @@ static RList* sections(RBinFile *arch) {
 	ptr->vsize = 0x80;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r-x
-	ptr->add = true;
+	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->add = false;
 	r_list_append (ret, ptr);
-#if 0
-	const ut8 *buf = arch ? r_buf_buffer (arch->buf) : NULL;
+
 	int bufsz = r_buf_size (arch->buf);
+
 	ut32 mod0 = readLE32 (arch->buf, NRO_OFFSET_MODMEMOFF);
 	if (mod0 && mod0 + 8 < bufsz) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
@@ -152,9 +151,9 @@ static RList* sections(RBinFile *arch) {
 		ptr->size = mod0sz;
 		ptr->vsize = mod0sz;
 		ptr->paddr = mod0;
-		ptr->vaddr = mod0;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP; // rw-
-		ptr->add = true;
+		ptr->vaddr = mod0 + ba;
+		ptr->srwx = R_BIN_SCN_READABLE; // rw-
+		ptr->add = false;
 		r_list_append (ret, ptr);
 	} else {
 		eprintf ("Invalid MOD0 address\n");
@@ -170,14 +169,14 @@ static RList* sections(RBinFile *arch) {
 		ptr->size = sig0sz;
 		ptr->vsize = sig0sz;
 		ptr->paddr = sig0;
-		ptr->vaddr = sig0;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP; // rw-
+		ptr->vaddr = sig0 + ba;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	} else {
 		eprintf ("Invalid SIG0 address\n");
 	}
-#endif
+
 	// add text segment
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
@@ -215,27 +214,27 @@ static RList* sections(RBinFile *arch) {
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP; // rw-
 	ptr->add = true;
-	eprintf ("Base Address 0x%08"PFMT64x"\n", ba);
-	eprintf ("BSS Size 0x%08"PFMT64x"\n", (ut64)
-			readLE32(arch->buf, NRO_OFF (bss_size)));
+	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
+	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
+		readLE32 (arch->buf, NRO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-static RList* symbols(RBinFile *arch) {
+static RList *symbols(RBinFile *arch) {
 	// TODO: parse symbol table
 	return NULL;
 }
 
-static RList* imports(RBinFile *arch) {
+static RList *imports(RBinFile *arch) {
 	return NULL;
 }
 
-static RList* libs(RBinFile *arch) {
+static RList *libs(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;

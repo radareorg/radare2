@@ -5,15 +5,6 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static Sdb *get_sdb(RBinObject *o) {
-	if (!o) {
-		return NULL;
-	}
-	// struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
-	// if (bin->kv) return kv;
-	return NULL;
-}
-
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length > 0xffff && buf[0] != 0xcf && buf[0] != 0x7f) {
 		const ut32 ep = length - 0x10000 + 0xfff0; /* F000:FFF0 address */
@@ -123,11 +114,10 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_bios = {
+RBinPlugin r_bin_plugin_bios = {
 	.name = "bios",
 	.desc = "BIOS bin plugin",
 	.license = "LGPL",
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
@@ -141,7 +131,7 @@ struct r_bin_plugin_t r_bin_plugin_bios = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RlibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bios,
 	.version = R2_VERSION

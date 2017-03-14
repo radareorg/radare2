@@ -22,13 +22,6 @@ static bool check(RBinFile *arch) {
 
 }
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
-	//if (bin->kv) return kv;
-	return NULL;
-}
-
 static int load(RBinFile *arch) {
 	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
 	ut64 sz = arch ? r_buf_size (arch->buf): 0;
@@ -106,11 +99,10 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_ningba = {
+RBinPlugin r_bin_plugin_ningba = {
 	.name = "ningba",
 	.desc = "Game Boy Advance format r_bin plugin",
 	.license = "LGPL3",
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
@@ -121,7 +113,7 @@ struct r_bin_plugin_t r_bin_plugin_ningba = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_ningba,
 	.version = R2_VERSION

@@ -11,7 +11,8 @@ extern RBinWrite r_bin_write_mach0;
 
 static RBinInfo* info(RBinFile *arch);
 
-static Sdb* get_sdb (RBinObject *o) {
+static Sdb* get_sdb (RBinFile *bf) {
+	RBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
 	}

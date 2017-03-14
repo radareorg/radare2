@@ -43,13 +43,6 @@ static char *fsname(const ut8* buf, ut64 length) {
 	return NULL;
 }
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
-	//if (bin->kv) return kv;
-	return NULL;
-}
-
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (!buf || (st64)length <1) return false;
 	char *p = fsname (buf, length);
@@ -122,7 +115,6 @@ RBinPlugin r_bin_plugin_fs = {
 	.author = "pancake",
 	.version = "1.0",
 	.license = "LGPL3",
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,

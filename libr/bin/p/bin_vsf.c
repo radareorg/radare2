@@ -24,15 +24,12 @@ static const struct {
 };
 static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o || !o->bin_obj) {
+static Sdb* get_sdb (RBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) o->bin_obj;
-	if (bin->kv) {
-		return bin->kv;
-	}
-	return NULL;
+	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->o->bin_obj;
+	return bin? bin->kv: NULL;
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {

@@ -1,18 +1,11 @@
-/* radare - LGPL - Copyright 2013-2015 - pancake */
+/* radare - LGPL - Copyright 2013-2017 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
-	//if (bin->kv) return kv;
-	return NULL;
-}
-
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return R_NOTNULL;
 }
 
@@ -32,10 +25,11 @@ static RList *strings(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
+	}
 	ret->lang = NULL;
 	ret->file = arch->file? strdup (arch->file): NULL;
 	ret->type = strdup ("brainfuck");
@@ -72,9 +66,9 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	int i, is_bf = 0;
 	if (buf && length > 0) {
 		int max = R_MIN (16, length);
-		const char *p = (const char *)buf;
+		const char *p = (const char *) buf;
 		is_bf = 1;
-		for (i=0; i<max; i++) {
+		for (i = 0; i < max; i++) {
 			switch (p[i]) {
 			case '+':
 			case '-':
@@ -97,21 +91,23 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 
 }
 
-static RList* entries(RBinFile *arch) {
+static RList *entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr)))
+	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
+	}
 	ptr->paddr = ptr->vaddr = 0;
 	r_list_append (ret, ptr);
 	return ret;
@@ -121,7 +117,6 @@ struct r_bin_plugin_t r_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
 	.license = "LGPL3",
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,

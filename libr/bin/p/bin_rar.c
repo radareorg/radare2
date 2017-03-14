@@ -27,7 +27,8 @@ static bool check(RBinFile *arch) {
 	return check_bytes (bytes, sz);
 }
 
-static Sdb* get_sdb (RBinObject *o) {
+static Sdb* get_sdb (RBinFile *bf) {
+	RBinObject *o = bf->o;
 	if (!o) return NULL;
 	struct r_bin_obj_rar_t *bin = (struct r_bin_obj_rar_t *) o->bin_obj;
 	if (bin->kv) return bin->kv;

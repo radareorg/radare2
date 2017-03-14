@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2015 - ninjahacker */
+/* radare - LGPL - Copyright 2011-2017 - ninjahacker */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,25 +6,18 @@
 #include <r_bin.h>
 #include "zimg/zimg.h"
 
-#define DEBUG_PRINTF 0
-
-#if DEBUG_PRINTF
-#define dprintf eprintf
-#else
-#define dprintf if (0)eprintf
-#endif
-
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) o->bin_obj;
-	if (bin->kv) return bin->kv;
-	return NULL;
+static Sdb* get_sdb (RBinFile *bf) {
+	if (!bf || !bf->o) return NULL;
+	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) bf->o->bin_obj;
+	return bin? bin->kv: NULL;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
-	if (!buf || size == 0 || size == UT64_MAX) return NULL;
+	if (!buf || size == 0 || size == UT64_MAX) {
+		return NULL;
+	}
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, size);
 	res = r_bin_zimg_new_buf (tbuf);

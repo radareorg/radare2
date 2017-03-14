@@ -685,7 +685,7 @@ static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		o->lines = cp->lines (binfile);
 	}
 	if (cp->get_sdb) {
-		Sdb* new_kv = cp->get_sdb (o);
+		Sdb* new_kv = cp->get_sdb (binfile);
 		if (new_kv != o->kv) {
 			sdb_free (o->kv);
 		}

@@ -6,16 +6,14 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
-static Sdb* get_sdb (RBinObject *o) {
+static Sdb* get_sdb (RBinFile *bf) {
+	RBinObject *o = bf->o;
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
 		return NULL;
 	}	
 	bin = (struct PE_(r_bin_pe_obj_t) *) o->bin_obj;
-	if (bin && bin->kv) {
-		return bin->kv;
-	}
-	return NULL;
+	return bin? bin->kv: NULL;
 }
 
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){

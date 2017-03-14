@@ -7,7 +7,8 @@
 
 #include "coff/coff.h"
 
-static Sdb* get_sdb(RBinObject *o) {
+static Sdb* get_sdb(RBinFile *bf) {
+	RBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
 	}
