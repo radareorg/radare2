@@ -676,6 +676,7 @@ extern RBinPlugin r_bin_plugin_dyldcache;
 extern RBinPlugin r_bin_plugin_avr;
 extern RBinPlugin r_bin_plugin_menuet;
 extern RBinPlugin r_bin_plugin_wasm;
+extern RBinPlugin r_bin_plugin_nro;
 
 #ifdef __cplusplus
 }
