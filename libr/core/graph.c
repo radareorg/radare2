@@ -3320,6 +3320,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->need_reload_nodes = true;
 			}
 			break;
+		case '$':
+			r_core_cmd0 (core, "e!asm.pseudo");
+			g->need_reload_nodes = true;
+			break;
 		case 'R':
 			if (!fcn) {
 				break;
