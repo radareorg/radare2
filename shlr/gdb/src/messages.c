@@ -45,10 +45,50 @@ int handle_cmd(libgdbr_t* g) {
 	return send_ack (g);
 }
 
+int handle_qStatus(libgdbr_t* g) {
+	char *tok = NULL;
+	tok = strtok (g->data, ";");
+	// TODO: We do not yet handle the case where a trace is already running
+	if (strncmp (tok, "T0", 2)) {
+		send_ack (g);
+		return -1;
+	}
+	// Ensure that trace was never run
+	while (tok != NULL) {
+		if (!strncmp (tok, "tnotrun:0", 9)) {
+			return send_ack (g);
+		}
+	    tok = strtok (NULL, ";");
+	}
+	send_ack (g);
+	return -1;
+}
+
+int handle_qC(libgdbr_t* g) {
+	char *t1, *t2;
+	// We get process and thread ID
+	if (strncmp (g->data, "QC", 2)) {
+		send_ack (g);
+		return -1;
+	}
+	t2 = g->data + 2;
+	if ((t1 = strchr (g->data, 'p'))) {
+		if (!(t2 = strchr (g->data, '.'))) {
+			send_ack (g);
+			return -1;
+		} else {
+			t1++;
+			unpack_hex (t1, t2 - t1, (char*) &g->pid);
+			t2++;
+		}
+	}
+	unpack_hex (t2, strlen (t2), (char*) &g->tid);
+	return send_ack (g);
+}
+
 int handle_qSupported(libgdbr_t* g) {
 	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	char *tok = NULL;
-	int temp = sizeof (libgdbr_stub_features_t);
 	tok = strtok (g->data, ";");
 	while (tok != NULL) {
 		if (!strncmp (tok, "PacketSize=", 11)) {
@@ -137,6 +177,8 @@ int handle_qSupported(libgdbr_t* g) {
 			} else if (!strncmp (tok, "QThreadEvents", 13)) {
 				g->stub_features.QThreadEvents = (tok[13] == '+') ? 1 : 0;
 			}
+		} else if (!strncmp (tok, "multiprocess", 12)) {
+		    g->stub_features.multiprocess = (tok[12] == '+') ? 1 : 0;
 		}
 		// TODO
 		tok = strtok(NULL, ";");

@@ -109,7 +109,10 @@ typedef struct libgdbr_t {
 	ssize_t data_max;
 	uint8_t architecture;
 	registers_t* registers;
+	ssize_t pid; // little endian
+	ssize_t tid; // little endian
 	int last_code;
+	bool attached; // Remote server attached to process or created
 	libgdbr_stub_features_t stub_features;
 } libgdbr_t;
 

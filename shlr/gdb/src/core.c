@@ -458,7 +458,50 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 	ret = send_command (g, message);
 	if (ret < 0) return ret;
 	read_packet (g);
-	return handle_qSupported (g);
+	ret = handle_qSupported (g);
+	if (ret < 0) return ret;
+
+	// Check if trace is already running
+	ret = send_command (g, "qTStatus");
+	if (ret < 0) return ret;
+	read_packet (g);
+	ret = handle_qStatus (g);
+	if (ret < 0) return ret;
+
+	// Query the thread / process id
+	ret = send_command (g, "qC");
+	if (ret < 0) return ret;
+	read_packet (g);
+	ret = handle_qC (g);
+	if (ret < 0) return ret;
+
+	// Check if remote server attached to or created process
+	if (g->stub_features.multiprocess) {
+		char tmp_buf[30] = "qAttached:";
+		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), tmp_buf + 10);
+		ret = send_command (g, tmp_buf);
+	} else {
+		ret = send_command (g, "qAttached");
+	}
+	if (ret < 0) return ret;
+	read_packet (g);
+	g->attached = (g->data[0] == '1') ? true : false;
+	ret = send_ack (g);
+	if (ret < 0) return ret;
+
+	// Get name of file being executed
+	if (g->stub_features.multiprocess) {
+		char tmp_buf[40] =  { 0 };
+		char pid_buf[16] = { 0 };
+		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), pid_buf);
+		snprintf (tmp_buf, 39, "qXfer:exec-file:read:%s:0,fff", pid_buf);
+		ret = send_command (g, tmp_buf);
+	} else {
+		ret = send_command (g, "qXfer:exec-file:read::0,fff");
+	}
+	if (ret < 0) return ret;
+	read_packet (g);
+	return send_ack (g);
 }
 
 int gdbr_disconnect(libgdbr_t* g) {
