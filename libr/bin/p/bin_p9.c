@@ -18,13 +18,6 @@ static bool check(RBinFile *arch) {
 	return check_bytes (bytes, sz);
 }
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
-	//if (bin->kv) return kv;
-	return NULL;
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return (void*)(size_t)check_bytes (buf, sz);
 }
@@ -217,7 +210,6 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 	.name = "p9",
 	.desc = "Plan9 bin plugin",
 	.license = "LGPL3",
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.size = &size,

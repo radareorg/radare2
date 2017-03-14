@@ -7,13 +7,6 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static Sdb* get_sdb (RBinObject *o) {
-	if (!o) return NULL;
-	//struct r_bin_[NAME]_obj_t *bin = (struct r_bin_r_bin_[NAME]_obj_t *) o->bin_obj;
-	//if (bin->kv) return kv;
-	return NULL;
-}
-
 static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return R_NOTNULL;
 }
@@ -287,7 +280,6 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.name = "ningb",
 	.desc = "Gameboy format r_bin plugin",
 	.license = "LGPL3",
-	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
