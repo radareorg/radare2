@@ -10,7 +10,7 @@ static void fwd(int sig) {
 
 static void rarun2_tty() {
 	/* TODO: Implement in native code */
-	system ("tty");
+	r_sys_cmd ("tty");
 	close(1);
 	dup2(2, 1);
 	signal (SIGINT, fwd);
