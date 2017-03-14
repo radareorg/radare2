@@ -2450,6 +2450,16 @@ static int assemble16(RAsm *a, RAsmOp *ao, const char *str) {
 			data[l++] = 0x34;
 			data[l++] = n;
 		}
+	} else if (!strncmp (str, "jmp ", 4)) {
+		const char *space = strchr (str, ' ');
+		if (space) {
+			int n = getnum (a, space + 1);
+			if (n > 0x81) {
+				return -1;
+			}
+			data[l++] = 0xeb;
+			data[l++] = n - 2;
+		}
 	}
 	return l;
 }
