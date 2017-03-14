@@ -5,7 +5,7 @@ typedef struct {
 	int len;
 	char *ptr;
 	int ptrlen;
-	char buf[64];
+	char buf[128];
 } RStrBuf;
 
 #define R_STRBUF_SAFEGET(sb) (r_strbuf_get (sb) ? r_strbuf_get (sb) : "")

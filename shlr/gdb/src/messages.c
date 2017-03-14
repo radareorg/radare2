@@ -45,8 +45,102 @@ int handle_cmd(libgdbr_t* g) {
 	return send_ack (g);
 }
 
-int handle_connect(libgdbr_t* g) {
+int handle_qSupported(libgdbr_t* g) {
 	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
+	char *tok = NULL;
+	int temp = sizeof (libgdbr_stub_features_t);
+	tok = strtok (g->data, ";");
+	while (tok != NULL) {
+		if (!strncmp (tok, "PacketSize=", 11)) {
+			char temp_buf[20] = { 0 };
+			temp_buf[0] = '0';
+			temp_buf[1] = 'x';
+			snprintf (temp_buf + 2, 16, "%s", tok + 11);
+			g->stub_features.pkt_sz = strtoul (temp_buf, NULL, 16);
+		} else if (!strncmp (tok, "qXfer:", 6)) {
+			if (!*(tok + 6)) {
+				tok = strtok(NULL, ";");
+				continue;
+			}
+			char *p = tok + 6;
+			if (!strncmp (p, "btrace:read", 11)) {
+				g->stub_features.qXfer_btrace_read = (p[11] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "btrace-conf:read", 16)) {
+				g->stub_features.qXfer_btrace_conf_read = (p[16] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "spu:read", 8)) {
+				g->stub_features.qXfer_spu_read = (p[8] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "spu:write", 9)) {
+				g->stub_features.qXfer_spu_write = (p[9] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "libraries:read", 14)) {
+				g->stub_features.qXfer_libraries_read = (p[14] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "libraries-svr4:read", 19)) {
+				g->stub_features.qXfer_libraries_svr4_read = (p[19] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "memory-map:read", 15)) {
+				g->stub_features.qXfer_memory_map_read = (p[15] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "auxv:read", 9)) {
+				g->stub_features.qXfer_auxv_read = (p[9] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "exec-file:read", 14)) {
+				g->stub_features.qXfer_exec_file_read = (p[14] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "features:read", 13)) {
+				g->stub_features.qXfer_features_read = (p[13] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "sdata:read", 10)) {
+				g->stub_features.qXfer_sdata_read = (p[10] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "siginfo:read", 12)) {
+				g->stub_features.qXfer_siginfo_read = (p[12] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "siginfo:write", 13)) {
+				g->stub_features.qXfer_siginfo_write = (p[13] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "threads:read", 12)) {
+				g->stub_features.qXfer_threads_read = (p[12] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "traceframe-info:read", 20)) {
+				g->stub_features.qXfer_traceframe_info_read = (p[20] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "uib:read", 8)) {
+				g->stub_features.qXfer_uib_read = (p[8] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "fdpic:read", 10)) {
+				g->stub_features.qXfer_fdpic_read = (p[10] == '+') ? 1 : 0;
+			} else if (!strncmp (p, "osdata:read", 11)) {
+				g->stub_features.qXfer_osdata_read = (p[11] == '+') ? 1 : 0;
+			}
+		} else if (tok[0] == 'Q') {
+			if (!strncmp (tok, "Qbtrace", 7)) {
+				if (!*(tok + 7)) {
+					tok = strtok(NULL, ";");
+					continue;
+				}
+				char *p = tok + 7;
+				if (!strncmp (p, ":off", 4)) {
+					g->stub_features.Qbtrace_off = (p[4] == '+') ? 1 : 0;
+				} else if (!strncmp (p, ":bts", 4)) {
+					g->stub_features.Qbtrace_bts = (p[4] == '+') ? 1 : 0;
+				} else if (!strncmp (p, ":pt", 3)) {
+					g->stub_features.Qbtrace_pt = (p[3] == '+') ? 1 : 0;
+				} else if (!strncmp (p, "-conf:bts:size", 14)) {
+					g->stub_features.Qbtrace_conf_bts_size = (p[14] == '+') ? 1 : 0;
+				} else if (!strncmp (p, ":-conf:pt:size", 14)) {
+					g->stub_features.Qbtrace_conf_pt_size = (p[14] == '+') ? 1 : 0;
+				}
+			} else if (!strncmp (tok, "QNonStop", 8)) {
+				g->stub_features.QNonStop = (tok[8] == '+') ? 1 : 0;
+			} else if (!strncmp (tok, "QCatchSyscalls", 14)) {
+				g->stub_features.QCatchSyscalls = (tok[14] == '+') ? 1 : 0;
+			} else if (!strncmp (tok, "QPassSignals", 12)) {
+				g->stub_features.QPassSignals = (tok[12] == '+') ? 1 : 0;
+			} else if (!strncmp (tok, "QStartNoAckMode", 15)) {
+				g->stub_features.QStartNoAckMode = (tok[15] == '+') ? 1 : 0;
+			} else if (!strncmp (tok, "QAgent", 6)) {
+				g->stub_features.QAgent = (tok[6] == '+') ? 1 : 0;
+			} else if (!strncmp (tok, "QAllow", 6)) {
+				g->stub_features.QAllow = (tok[6] == '+') ? 1 : 0;
+			} else if (!strncmp (tok, "QDisableRandomization", 21)) {
+				g->stub_features.QDisableRandomization = (tok[21] == '+') ? 1 : 0;
+			} else if (!strncmp (tok, "QTBuffer:size", 13)) {
+				g->stub_features.QTBuffer_size = (tok[13] == '+') ? 1 : 0;
+			} else if (!strncmp (tok, "QThreadEvents", 13)) {
+				g->stub_features.QThreadEvents = (tok[13] == '+') ? 1 : 0;
+			}
+		}
+		// TODO
+		tok = strtok(NULL, ";");
+	}
 	return send_ack (g);
 }
 
@@ -62,4 +156,3 @@ int handle_setbp(libgdbr_t* g) {
 int handle_removebp(libgdbr_t* g) {
 	return send_ack (g);
 }
-

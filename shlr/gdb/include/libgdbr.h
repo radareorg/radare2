@@ -21,7 +21,7 @@
 #define MSG_NOT_SUPPORTED -1
 #define MSG_ERROR_1 -2
 
-/*! 
+/*!
  * Structure that saves a gdb message
  */
 typedef struct libgdbr_message_t {
@@ -30,16 +30,75 @@ typedef struct libgdbr_message_t {
 	uint8_t chk;	/*! Cheksum of the current message read from the packet */
 } libgdbr_message_t;
 
-/*! 
+/*!
+ * Structure that stores features supported
+ */
+
+typedef struct libgdbr_stub_features_t {
+	ssize_t pkt_sz; /* Max packet size */
+	unsigned qXfer_btrace_read : 1;
+	unsigned qXfer_btrace_conf_read : 1;
+	unsigned qXfer_spu_read : 1;
+	unsigned qXfer_spu_write : 1;
+	unsigned qXfer_libraries_read : 1;
+	unsigned qXfer_libraries_svr4_read : 1;
+	unsigned qXfer_siginfo_read : 1;
+	unsigned qXfer_siginfo_write : 1;
+	unsigned qXfer_auxv_read : 1;
+	unsigned qXfer_exec_file_read : 1;
+	unsigned qXfer_features_read : 1;
+	unsigned qXfer_memory_map_read : 1;
+	unsigned qXfer_sdata_read : 1;
+	unsigned qXfer_threads_read : 1;
+	unsigned qXfer_traceframe_info_read : 1;
+	unsigned qXfer_uib_read : 1;
+	unsigned qXfer_fdpic_read : 1;
+	unsigned qXfer_osdata_read : 1;
+	unsigned Qbtrace_off : 1;
+	unsigned Qbtrace_bts : 1;
+	unsigned Qbtrace_pt : 1;
+	unsigned Qbtrace_conf_bts_size : 1;
+	unsigned Qbtrace_conf_pt_size: 1;
+	unsigned QNonStop : 1;
+	unsigned QCatchSyscalls : 1;
+	unsigned QPassSignals : 1;
+	unsigned QStartNoAckMode : 1;
+	unsigned QAgent : 1;
+	unsigned QAllow : 1;
+	unsigned QDisableRandomization : 1;
+	unsigned QTBuffer_size : 1;
+	unsigned QThreadEvents : 1;
+	unsigned StaticTracepoint : 1;
+	unsigned InstallInTrace : 1;
+	unsigned ConditionalBreakpoints : 1;
+	unsigned ConditionalTracepoints : 1;
+	unsigned ReverseContinue : 1;
+	unsigned ReverseStep : 1;
+	unsigned swbreak : 1;
+	unsigned hwbreak : 1;
+	unsigned fork_events : 1;
+	unsigned vfork__events : 1;
+	unsigned exec_events : 1;
+	unsigned vContSupported : 1;
+	unsigned no_resumed : 1;
+	unsigned augmented_libraries_svr4_read : 1;
+	unsigned multiprocess : 1;
+	unsigned TracepointSource : 1;
+	unsigned EnableDisableTracepoints : 1;
+	unsigned tracenz : 1;
+	unsigned BreakpointCommands : 1;
+} libgdbr_stub_features_t;
+
+/*!
  * Core "object" that saves
  * the instance of the lib
  */
 typedef struct libgdbr_t {
 	char* send_buff; // defines a buffer for reading and sending stuff
-	ssize_t send_len; // definses the maximal len for the given buffer
-	ssize_t send_max; // definses the maximal len for the given buffer
+	ssize_t send_len;
+	ssize_t send_max; // defines the maximal len for the given buffer
 	char* read_buff;
-	ssize_t read_max;
+	ssize_t read_max; // defines the maximal len for the given buffer
 
 	// is already handled (i.e. already send or ...)
 	RSocket* sock;
@@ -51,6 +110,7 @@ typedef struct libgdbr_t {
 	uint8_t architecture;
 	registers_t* registers;
 	int last_code;
+	libgdbr_stub_features_t stub_features;
 } libgdbr_t;
 
 /*!

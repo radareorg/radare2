@@ -458,7 +458,7 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 	ret = send_command (g, message);
 	if (ret < 0) return ret;
 	read_packet (g);
-	return handle_connect (g);
+	return handle_qSupported (g);
 }
 
 int gdbr_disconnect(libgdbr_t* g) {
@@ -548,7 +548,7 @@ int gdbr_send_command(libgdbr_t* g, char* command) {
 		return handle_cmd (g);
 	}
 	return -1;
-}	
+}
 
 int gdbr_write_bin_registers(libgdbr_t* g){
 	uint64_t buffer_size;
@@ -649,7 +649,7 @@ int gdbr_write_registers(libgdbr_t* g, char* registers) {
 				}
 
 				memset (value, '0', register_size * 2);
-				name_end++; 
+				name_end++;
 				// be able to take hex with and without 0x
 				if (name_end[1] == 'x' || name_end[1] == 'X') name_end += 2;
 				const int val_len = strlen (name_end); // size of the rest
@@ -820,4 +820,3 @@ int send_command(libgdbr_t* g, const char* command) {
 	}
 	return -1;
 }
-
