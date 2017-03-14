@@ -513,8 +513,23 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		*from = core->offset;
 		*to = core->offset + core->blocksize;
 	} else if (!strcmp (mode, "io.maps")) {
+		RListIter *iter;
+		RIOMap *m;
+
 		*from = *to = 0;
-		return core->io->maps;
+
+		list = r_list_newf (free);
+		r_list_foreach (core->io->maps, iter, m) {
+			RIOMap *map = R_NEW0 (RIOMap);
+			map->fd = m->fd;
+			map->from = m->from;
+			map->to = m->to;
+			map->flags = m->flags;
+			map->delta = m->delta;
+			r_list_append (list, map);
+		}
+
+		return list;
 	} else if (!strcmp (mode, "io.maps.range")) {
 		RListIter *iter;
 		RIOMap *m;
