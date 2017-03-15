@@ -146,8 +146,6 @@ SDB_API bool sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, 
 		// invalid json?
 		return false;
 	}
-#define WLEN(x) (int) (size_t) (end[x] - beg[x])
-
 	beg[0] = js;
 	end[0] = rs.p + rs.f;
 	len[0] = WLEN (0);

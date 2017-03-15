@@ -6,19 +6,19 @@
 #define LS_MERGE_DEPTH 50
 
 SDB_API SdbList *ls_newf(SdbListFree freefn) {
-	SdbList *list = R_NEW (SdbList);
-	if (!list) {
-		return NULL;
+	SdbList *list = ls_new ();
+	if (list) {
+		list->free = freefn;
 	}
-	list->head = NULL;
-	list->tail = NULL;
-	list->free = freefn; // HACK
-	list->length = 0;
 	return list;
 }
 
 SDB_API SdbList *ls_new() {
-	return ls_newf (free /*XXX HACK*/);
+	SdbList *list = R_NEW0 (SdbList);
+	if (!list) {
+		return NULL;
+	}
+	return list;
 }
 
 static void ls_insertion_sort(SdbList *list, SdbListComparator cmp) {

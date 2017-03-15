@@ -238,6 +238,9 @@ bool ht_update(SdbHash* ht, const char* key, void* value) {
 // If `found` is not NULL, it will be set to true if the entry was found, false
 // otherwise.
 HtKv* ht_find_kv(SdbHash* ht, const char* key, bool* found) {
+	if (!ht) {
+		return NULL;
+	}
 	ut32 hash, bucket;
 	SdbListIter* iter;
 	HtKv* kv;
@@ -284,6 +287,9 @@ bool ht_delete(SdbHash* ht, const char* key) {
 }
 
 void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user) {
+	if (!ht) {
+		return;
+	}
 	ut32 i = 0;
 	HtKv *kv;
 	SdbListIter *iter;
