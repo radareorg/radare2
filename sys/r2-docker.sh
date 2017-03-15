@@ -19,7 +19,8 @@ showHelp() {
 	exit 1
 }
 
-ALLOW_DEBUG="--security-opt seccomp:unconfined"
+ALLOW_DEBUG="--cap-add=SYS_PTRACE"
+#ALLOW_DEBUG="--security-opt seccomp:unconfined"
 #ALLOW_DEBUG="--privileged"
 
 case "$1" in
