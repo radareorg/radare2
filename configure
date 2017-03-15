@@ -102,7 +102,7 @@ create_environ() {
 : ${DATADIR:="${SPREFIX}/share"}
 : ${INFODIR:="${DATADIR}/info"}
 : ${MANDIR:="${DATADIR}/man"}
-: ${DOCDIR:="${DOCDIR}/man"}
+: ${DOCDIR:="${DATADIR}/doc/radare2"}
 : ${LOCALSTATEDIR:="${SPREFIX}/var"}
 for A in `echo ${PATH} | sed -e 's,:, ,g'` ; do
   [ -e "$A"/ginstall ] && : ${INSTALL:="$A"/ginstall} && break
@@ -143,7 +143,6 @@ Fine tuning of the installation directories:
   --bindir=DIR           user executables [EPREFIX/bin]
   --sbindir=DIR          system admin executables [EPREFIX/sbin]
   --libexecdir=DIR       program executables [EPREFIX/libexec]
-  --docdir=DIR           documentation directory [PREFIX/doc]
   --datadir=DIR          read-only architecture-independent data [PREFIX/share]
   --sysconfdir=DIR       read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR   modifiable architecture-independent data [PREFIX/com]
@@ -153,6 +152,7 @@ Fine tuning of the installation directories:
   --includedir=DIR       C header files [PREFIX/include]
   --infodir=DIR          info documentation [DATADIR/info]
   --mandir=DIR           man documentation [DATADIR/man]
+  --docdir=DIR           documentation directory [DATADIR/doc/radare2]
 
 System types:
   --build=BUILD          configure for building on BUILD [guessed]
@@ -160,8 +160,7 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --disable-debugger     disable native debugger features 
   --with-sysmagic        force to use system's magic 
   --disable-loadlibs     disable loading plugins 
@@ -175,10 +174,8 @@ Optional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku )  (USEROSTYPE=auto)
   --without-pic          do not build libr as a program independent location 
   --with-nonpic          build the library archives .a 
-  --with-libversion      specify different libversion  (LIBVERSION=xxx)
-"
-printf "
-Some influential environment variables:
+  --with-libversion      specify different libversion  (LIBVERSION=xxx)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -186,10 +183,8 @@ Some influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
