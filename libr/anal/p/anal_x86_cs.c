@@ -904,10 +904,25 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case X86_INS_POP:
 		{
-			dst = getarg (&gop, 0, 0, NULL, DST_AR);
-			esilprintf (op,
-				"%s,[%d],%s,=,%d,%s,+=",
-				sp, rs, dst, rs, sp);
+			switch (INSOP(0).type) {
+			case X86_OP_MEM:
+				{
+					dst = getarg (&gop, 0, 1, NULL, DST_AR);
+					esilprintf (op,
+						"%s,[%d],%s,%d,%s,+=",
+						sp, rs, dst, rs, sp);
+					break;
+				}
+			case X86_OP_REG:
+			default:
+				{
+					dst = getarg (&gop, 0, 0, NULL, DST_AR);
+					esilprintf (op,
+						"%s,[%d],%s,=,%d,%s,+=",
+						sp, rs, dst, rs, sp);
+					break;
+				}
+			}
 		}
 		break;
 	case X86_INS_POPF:
