@@ -420,7 +420,7 @@ static bool zignDoSearch(RCore *core, bool rad) {
 	bool retval = true;
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	const char *mode = r_config_get (core->config, "search.in");
-	ut64 sin_from = -1, sin_to = -1;
+	ut64 sin_from = UT64_MAX, sin_to = UT64_MAX;
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
