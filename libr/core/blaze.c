@@ -73,8 +73,8 @@ static AbbState *abbstate_new(ut64 len) {
 	abb->len = len;
 	abb->bbs = r_list_new ();
 	if (!abb->bbs) {
-		return NULL;
 		free (buf);
+		return NULL;
 	}
 	abb->nextbbs = r_list_newf (free);
 	abb->fcnents = r_list_newf (free);

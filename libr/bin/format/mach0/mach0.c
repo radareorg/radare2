@@ -39,7 +39,7 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 static st64 read_sleb128(ulebr *r, ut8 *end) {
 	st64 result = 0;
 	int bit = 0;
-	ut8 byte;
+	ut8 byte = 0;
 	ut8 *p = r->p;
 	do {
 		if (p == end) {

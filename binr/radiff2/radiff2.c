@@ -378,6 +378,9 @@ static ut8 *get_imports(RCore *c, int *len) {
 	RBinImport *str, *old = NULL;
 	ut8 *buf, *ptr;
 
+	if (!c || !len) {
+		return NULL;
+	}
 	r_list_sort (list, (RListComparator)import_cmp);
 
 	*len = 0;
@@ -389,11 +392,14 @@ static ut8 *get_imports(RCore *c, int *len) {
 		}
 	}
 	ptr = buf = malloc (*len + 1);
+	if (!ptr) {
+		return NULL;
+	}
 
 	old = NULL;
 
 	r_list_foreach (list, iter, str) {
-		if (old && import_cmp (old, str) == 0) {
+		if (old && !import_cmp (old, str)) {
 			continue;
 		}
 		int namelen = strlen (str->name);
@@ -431,6 +437,9 @@ static ut8 *get_strings(RCore *c, int *len) {
 	}
 	
 	ptr = buf = malloc (*len + 1);
+	if (!ptr) {
+		return NULL;
+	}
 
 	old = NULL;
 

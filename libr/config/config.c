@@ -174,7 +174,7 @@ R_API const char* r_config_get(RConfig *cfg, const char *name) {
 R_API int r_config_toggle(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node && node->flags & CN_BOOL) {
-		r_config_set_i (cfg, name, !node->i_value);
+		(void)r_config_set_i (cfg, name, !node->i_value);
 		return true;
 	}
 	return false;
@@ -535,7 +535,7 @@ R_API int r_config_free(RConfig *cfg) {
 R_API void r_config_visual_hit_i(RConfig *cfg, const char *name, int delta) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node && (node->flags & CN_INT || node->flags & CN_OFFT)) {
-		r_config_set_i (cfg, name, r_config_get_i (cfg, name) + delta);
+		(void)r_config_set_i (cfg, name, r_config_get_i (cfg, name) + delta);
 	}
 }
 
@@ -608,10 +608,10 @@ R_API void r_config_restore(RConfigHold *h) {
 	RConfigHoldNum *hnum;
 	if (h) {
 		r_list_foreach (h->list_num, iter, hnum) {
-			r_config_set_i (h->cfg, hnum->key, hnum->value);
+			(void)r_config_set_i (h->cfg, hnum->key, hnum->value);
 		}
 		r_list_foreach (h->list_char, iter, hchar) {
-			r_config_set (h->cfg, hchar->key, hchar->value);
+			(void)r_config_set (h->cfg, hchar->key, hchar->value);
 		}
 	}
 }

@@ -138,12 +138,12 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
 	data->metadata = metadata;
 	data->loaded = 0;
 	data->buffer = malloc (size + 1);
-	data->buffer[size] = 0;
 	if (!data->buffer) {
 		free (data);
 		return NULL;
 	}
 	memcpy (data->buffer, r_buf_buffer (buf), size);
+	data->buffer[size] = 0;
 	return data;
 }
 
@@ -1402,7 +1402,7 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 		bf = r_bin_file_create_append (bin, file, bytes, sz, file_sz,
 					       rawstr, fd, xtrname, steal_ptr);
 		if (!bf) {
-			if(steal_ptr) {	// we own the ptr, free on error
+			if (steal_ptr) { // we own the ptr, free on error
 				free ((void*) bytes);
 			}
 			return NULL;
@@ -1416,12 +1416,12 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 	if (!plugin) {
 		if (pluginname) {
 			plugin = r_bin_get_binplugin_by_name (bin, pluginname);
-		}
-		if (!plugin) {
-			plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
-		}
-		if (!plugin) {
-			plugin = r_bin_get_binplugin_any (bin);
+			if (!plugin) {
+				plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
+				if (!plugin) {
+					plugin = r_bin_get_binplugin_any (bin);
+				}
+			}
 		}
 	}
 

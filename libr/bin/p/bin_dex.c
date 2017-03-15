@@ -162,7 +162,7 @@ static char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
 
 static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	ut32 proto_id, params_off, type_id, list_size;
-	char *r, *return_type = NULL, *signature = NULL, *buff = NULL; 
+	char *r = NULL, *return_type = NULL, *signature = NULL, *buff = NULL; 
 	ut8 *bufptr;
 	ut16 type_idx;
 	int pos = 0, i, size = 1;
@@ -213,7 +213,7 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 		char *newsig = realloc (signature, size);
 		if (!newsig) {
 			eprintf ("Cannot realloc to %d\n", size);
-			free (signature);
+			R_FREE (signature);
 			break;
 		}
 		signature = newsig;
@@ -221,8 +221,10 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 		pos += buff_len;
 		signature[pos] = '\0';
 	}
-	r = r_str_newf ("(%s)%s", signature, return_type);
-	free (signature);
+	if (signature) {
+		r = r_str_newf ("(%s)%s", signature, return_type);
+		free (signature);
+	}
 	return r;
 }
 

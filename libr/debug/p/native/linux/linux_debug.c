@@ -306,7 +306,7 @@ static void set_pid_signalled_status (RDebug *dbg, int pid, bool value) {
 }
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
-	RDebugReasonType reason;
+	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	bool done = false;
 
 	int status, flags = __WALL | WNOHANG;
