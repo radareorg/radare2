@@ -5170,7 +5170,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			char *dh_orig = core->dbg->h
 					? strdup (core->dbg->h->name)
 					: strdup ("esil");
-			if (core->io && core->io->plugin && !core->io->plugin->isdbg) {
+			if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
 				//use dh_origin if we are debugging
 				R_FREE (dh_orig);
 			}

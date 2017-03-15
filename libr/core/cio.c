@@ -296,13 +296,14 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 			if (ret < 1 || ret > core->blocksize) {
 				memset (core->block, core->io->Oxff, core->blocksize);
 			} else {
-				memset (core->block+ret, core->io->Oxff, core->blocksize-ret);
+				memset (core->block + ret, core->io->Oxff, core->blocksize - ret);
 			}
 			ret = core->blocksize;
 			core->offset = addr;
 		} else {
-			if (ret < 1)
+			if (ret < 1) {
 				core->offset = old;
+			}
 		}
 	}
 	if (core->section != newsection) {
@@ -315,16 +316,19 @@ R_API bool r_core_seek(RCore *core, ut64 addr, bool rb) {
 R_API int r_core_seek_delta(RCore *core, st64 addr) {
 	ut64 tmp = core->offset;
 	int ret;
-	if (addr == 0)
+	if (addr == 0) {
 		return true;
-	if (addr>0LL) {
-		/* check end of file */
-		if (0) addr = 0;
-		else addr += tmp;
+	}
+	if (addr > 0LL) {
+		/* TODO: check end of file */
+		addr += tmp;
 	} else {
 		/* check < 0 */
-		if (-addr > tmp) addr = 0;
-		else addr += tmp;
+		if (-addr > tmp) {
+			addr = 0;
+		} else {
+			addr += tmp;
+		}
 	}
 	core->offset = addr;
 	ret = r_core_seek (core, addr, 1);
@@ -337,7 +341,7 @@ R_API int r_core_seek_delta(RCore *core, st64 addr) {
 
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 	int ret;
-	if (!core->io || !core->file || size < 1) {
+	if (!core->io || !core->file || !core->file->desc || size < 1) {
 		return false;
 	}
 	ret = r_io_use_desc (core->io, core->file->desc);
@@ -352,14 +356,16 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 
 R_API int r_core_extend_at(RCore *core, ut64 addr, int size) {
 	int ret;
-	if (!core->io || !core->file || size<1)
+	if (!core->io || !core->file || !core->file->desc || size < 1) {
 		return false;
+	}
 	//ret = r_io_use_fd (core->io, core->file->desc->fd);
 	ret = r_io_use_desc (core->io, core->file->desc);
 	if (ret != -1) {
 		ret = r_io_extend_at (core->io, addr, size);
-		if (addr >= core->offset && addr <= core->offset+core->blocksize)
+		if (addr >= core->offset && addr <= core->offset+core->blocksize) {
 			r_core_block_read (core);
+		}
 	}
 	return (ret==-1)? false: true;
 }
@@ -370,6 +376,10 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	ut8 * shift_buf = NULL;
 	int res = false;
 
+	if (!core->io || !core->file || !core->file->desc) {
+		return false;
+	}
+
 	if (b_size == 0 || b_size == (ut64) -1) {
 		res = r_io_use_desc (core->io, core->file->desc);
 		file_sz = r_io_size (core->io);
@@ -378,11 +388,6 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 		fstart = file_sz - fend;
 		b_size = fend > bstart ? fend - bstart: 0;
 	}
-
-
-	if (!core->io || !core->file || b_size<1)
-		return false;
-
 
 	// XXX handling basic cases atm
 	shift_buf = malloc (b_size);
@@ -398,7 +403,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	//	res = false;
 	//}
 	// addr + dist < file_start
-	if ( addr + dist < fstart ) {
+	if (addr + dist < fstart) {
 		res = false;
 	}
 	// addr + dist > file_end

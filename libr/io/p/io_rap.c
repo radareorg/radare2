@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2011-2016 - pancake */
+/* radare - LGPL - Copyright 2011-2017 - pancake */
 
-#include "r_io.h"
-#include "r_lib.h"
-#include "r_core.h"
-#include "r_socket.h"
+#include <r_io.h>
+#include <r_lib.h>
+#include <r_core.h>
+#include <r_socket.h>
 #include <sys/types.h>
 
 // TODO: implement the rap API in r_socket ?
