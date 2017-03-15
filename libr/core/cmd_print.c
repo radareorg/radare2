@@ -2965,7 +2965,7 @@ static int cmd_print(void *data, const char *input) {
 					RIOSection *s = r_io_section_vget (core->io, at);
 					if (use_color) {
 						if (s) {
-							if (s->rwx & 1) {
+							if (s->flags & 1) {
 								r_cons_print (Color_BGBLUE);
 							} else {
 								r_cons_print (Color_BGGREEN);

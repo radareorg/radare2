@@ -698,15 +698,15 @@ static RList* patch_relocs(RBin *b) {
 		return relocs (r_bin_cur (b));
 	}
 	r_list_foreach (io->sections, iter, s) {
-		if (s->offset > offset) {
-			offset = s->offset;
+		if (s->paddr > offset) {
+			offset = s->paddr;
 			g = s;
 		}
 	}
 	if (!g) {
 		return NULL;
 	}
-	n_off = g->offset + g->size;
+	n_off = g->paddr + g->size;
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
 	size = bin->reloc_num * 4;

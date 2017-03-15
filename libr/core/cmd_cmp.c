@@ -368,7 +368,7 @@ static int cmd_cp(void *data, const char *input) {
 
 static int cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
-	int ret, i, mode = 0;
+	int ret = 0, i, mode = 0;
 	RCore *core = data;
 	ut64 val = UT64_MAX;
 	char * filled;
@@ -454,24 +454,25 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'X':
 		buf = malloc (core->blocksize);
 		if (buf) {
-			ret = r_io_read_at (core->io, r_num_math (core->num,
-				input+1), buf, core->blocksize);
-			if (ret < 1) {
+			if (!r_io_read_at (core->io, r_num_math (core->num,
+				input + 1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
+			} else {
+				val = radare_compare (core, core->block, buf, ret, mode);
 			}
-			val = radare_compare (core, core->block, buf, ret, mode);
 			free (buf);
-		} return false;
+		}
+		return false;
 		break;
 	case 'f':
 		if (input[1]!=' ') {
 			eprintf ("Please. use 'cf [file]'\n");
-			return 0;
+			return false;
 		}
 		fd = r_sandbox_fopen (input+2, "rb");
 		if (!fd) {
 			eprintf ("Cannot open file '%s'\n", input+2);
-			return 0;
+			return false;
 		}
 		buf = (ut8 *)malloc (core->blocksize);
 		if (buf) {

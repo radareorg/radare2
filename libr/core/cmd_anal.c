@@ -3435,12 +3435,12 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
 		RIOSection *s = r_io_section_vget (core->io, addr);
-		if (s && s->rwx & 1) {
+		if (s && s->flags & 1) {
 			// search in current section
 			if (s->size > binfile->size) {
 				addr = s->vaddr;
-				if (binfile->size > s->offset) {
-					len = binfile->size - s->offset;
+				if (binfile->size > s->paddr) {
+					len = binfile->size - s->paddr;
 				} else {
 					eprintf ("Opps something went wrong aac\n");
 					return;
@@ -3525,7 +3525,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 	ut64 max = 0;
 	r_list_foreach (core->io->sections, iter, s) {
 		/* is executable */
-		if (!(s->rwx & R_IO_EXEC)) {
+		if (!(s->flags & R_IO_EXEC)) {
 			continue;
 		}
 		if (s->vaddr < min) {
@@ -3623,7 +3623,7 @@ static void cmd_anal_calls(RCore *core, const char *input) {
 			RListIter *iter;
 			ranges = r_list_newf ((RListFree)free);
 			r_list_foreach (core->io->sections, iter, s) {
-				if (s->rwx & 1) {
+				if (s->flags & 1) {
 					RIOMap *m = R_NEW0 (RIOMap);
 					if (!m) {
 						continue;
@@ -4890,7 +4890,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 			if (section) {
 				from = section->vaddr;
 				to = section->vaddr + section->vsize;
-				rwx = section->rwx;
+				rwx = section->flags;
 			}
 		} else {
 			RIOMap *map = r_io_map_get (core->io, core->offset);
@@ -4958,7 +4958,7 @@ static int compute_coverage(RCore *core) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_list_foreach (core->io->sections, iter2, sec) {
 			int section_end = sec->vaddr + sec->vsize;
-			if (sec->rwx & 1 && fcn->addr >= sec->vaddr && fcn->addr < section_end) {
+			if (sec->flags & 1 && fcn->addr >= sec->vaddr && fcn->addr < section_end) {
 				cov += r_anal_fcn_realsize (fcn);
 			}
 		}
@@ -4971,7 +4971,7 @@ static int compute_code (RCore* core) {
 	RListIter *iter;
 	RIOSection *sec;
 	r_list_foreach (core->io->sections, iter, sec) {
-		if (sec->rwx & 1) {
+		if (sec->flags & 1) {
 			code += sec->vsize;
 		}
 	}

@@ -449,7 +449,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 				// is there a map somewhere within the next range for
 				// us to read from
 				next_sec = r_io_section_get_first_in_vaddr_range (io, addr + w, addr + len + w);
-				next_sec_addr = next_sec? next_sec->offset: UT64_MAX;
+				next_sec_addr = next_sec? next_sec->paddr: UT64_MAX;
 
 				if (!next_sec) {
 					next_map = r_io_map_get_first_map_in_range (io, addr + w, addr + len + w);

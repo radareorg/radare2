@@ -96,7 +96,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr) {
 
 	{
 		RIOSection *s = r_io_section_mget_in (core->io, core->offset);
-		baddr = s ? s->offset : r_config_get_i (core->config, "bin.baddr");
+		baddr = s ? s->paddr : r_config_get_i (core->config, "bin.baddr");
 	}
 
 	line_count = start_addr ? 0 : 1;

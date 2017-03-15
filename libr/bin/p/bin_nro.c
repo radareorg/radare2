@@ -5,7 +5,6 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-static Sdb *mydb = NULL;
 
 // starting at 0
 typedef struct {
@@ -66,7 +65,6 @@ static bool check(RBinFile *arch) {
 }
 
 static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	mydb = sdb;
 	return (void *) (size_t) check_bytes (buf, sz);
 }
 

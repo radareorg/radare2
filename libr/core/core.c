@@ -480,7 +480,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				RListIter *iter;
 				RIOSection *s;
 				r_list_foreach (core->io->sections, iter, s) {
-					if (!s->vaddr && s->offset) {
+					if (!s->vaddr && s->paddr) {
 						continue;
 					}
 					if (s->vaddr < lower) lower = s->vaddr;

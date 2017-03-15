@@ -48,13 +48,12 @@ typedef struct r_io_map_t {
 
 typedef struct r_io_section_t {
 	char *name;
-	ut64 offset; // TODO: rename to paddr or maddr?
+	ut64 paddr;
 	ut64 vaddr;
 	ut64 size;
 	ut64 vsize;
-	int rwx; // rename to perm? like in rdebug? what about rbin?
+	int flags;
 	int id;
-	/* */
 	int arch;
 	int bits;
 	ut32 bin_id;

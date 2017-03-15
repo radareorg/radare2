@@ -76,8 +76,8 @@ static bool iscodesection(RCore *core, ut64 addr) {
 		return true;
 	}
 	return false;
-	// BSS return (s && s->rwx & R_IO_WRITE)? 0: 1;
-	// Cstring return (s && s->rwx & R_IO_EXEC)? 1: 0;
+	// BSS return (s && s->flags & R_IO_WRITE)? 0: 1;
+	// Cstring return (s && s->flags & R_IO_EXEC)? 1: 0;
 }
 #endif
 
@@ -184,7 +184,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 			r_list_foreach (core->io->sections, iter, ios) {
 				if (addr >= ios->vaddr && addr < (ios->vaddr + ios->vsize)) {
 					// sections overlap, so we want to get the one with lower perms
-					_rwx = (_rwx != -1) ? R_MIN (_rwx, ios->rwx) : ios->rwx;
+					_rwx = (_rwx != -1) ? R_MIN (_rwx, ios->flags) : ios->flags;
 					// TODO: we should identify which maps come from the program or other
 					//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					// find function those sections should be created by hand or esil init
@@ -375,7 +375,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 	}
 	r_io_read_at (core->io, ref->addr, buf, bufsz);
 
-	if (sec->rwx & R_IO_EXEC &&
+	if (sec->flags & R_IO_EXEC &&
 	    r_anal_check_fcn (core->anal, buf, bufsz, ref->addr, sec->vaddr,
 			      sec->vaddr + sec->vsize)) {
 		if (core->anal->limit) {
@@ -623,7 +623,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				ut64 addr = fcn->addr + r_anal_fcn_size (fcn);
 				RIOSection *sect = r_io_section_vget (core->io, addr);
 				// only get next if found on an executable section
-				if (!sect || (sect && sect->rwx & 1)) {
+				if (!sect || (sect && sect->flags & 1)) {
 					for (i = 0; i < nexti; i++) {
 						if (next[i] == addr) {
 							break;
@@ -689,7 +689,7 @@ error:
 		if (fcn && has_next) {
 			ut64 newaddr = fcn->addr + r_anal_fcn_size (fcn);
 			RIOSection *sect = r_io_section_vget (core->io, newaddr);
-			if (!sect || (sect && (sect->rwx & 1))) {
+			if (!sect || (sect && (sect->flags & 1))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
 					if (!next[i]) continue;
