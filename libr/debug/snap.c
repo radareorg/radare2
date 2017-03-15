@@ -71,7 +71,7 @@ R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr) {
 	RListIter *iter;
 	RDebugSnap *snap;
 	r_list_foreach (dbg->snaps, iter, snap) {
-		if (snap->addr >= addr && snap->addr_end < addr) {
+		if (snap->addr <= addr && snap->addr_end > addr) {
 			return snap;
 		}
 	}
