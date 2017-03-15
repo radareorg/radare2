@@ -1416,11 +1416,11 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 	if (!plugin) {
 		if (pluginname) {
 			plugin = r_bin_get_binplugin_by_name (bin, pluginname);
+		}
+		if (!plugin) {
+			plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
 			if (!plugin) {
-				plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
-				if (!plugin) {
-					plugin = r_bin_get_binplugin_any (bin);
-				}
+				plugin = r_bin_get_binplugin_any (bin);
 			}
 		}
 	}
