@@ -186,13 +186,13 @@ install-man-symlink:
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
 
 install-doc:
-	${INSTALL_DIR} "${DESTDIR}${DATADIR}/doc/radare2"
-	for FILE in doc/* ; do ${INSTALL_DATA} $$FILE "${DESTDIR}${DATADIR}/doc/radare2" ; done
+	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
+	for FILE in doc/* ; do ${INSTALL_DATA} $$FILE "${DESTDIR}${DOCDIR}" ; done
 
 install-doc-symlink:
-	${INSTALL_DIR} "${DESTDIR}${DATADIR}/doc/radare2"
+	${INSTALL_DIR} "${DESTDIR}${DOCDIR}"
 	cd doc ; for FILE in * ; do \
-		ln -fs "${PWD}/doc/$$FILE" "${DESTDIR}${DATADIR}/doc/radare2" ; done
+		ln -fs "${PWD}/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
 install love: install-doc install-man install-www
 	cd libr && ${MAKE} install PARENT=1
@@ -275,7 +275,7 @@ deinstall uninstall:
 	@echo
 
 purge-doc:
-	rm -rf "${DESTDIR}${DATADIR}/doc/radare2"
+	rm -rf "${DESTDIR}${DOCDIR}"
 	cd man ; for FILE in *.1 ; do rm -f "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
 	rm -f "${DESTDIR}${MANDIR}/man1/r2.1"
 
