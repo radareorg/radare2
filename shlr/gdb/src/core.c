@@ -440,12 +440,15 @@ int gdbr_cleanup(libgdbr_t* g) {
 	free (g->send_buff);
 	g->send_len = 0;
 	free (g->read_buff);
+	if (g->exec_file_name) {
+		free (g->exec_file_name);
+	}
 	return 0;
 }
 
 int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+";
-	char tmp[255];
+	char tmp[5000];
 	int ret;
 	if (!g || !host) return -1;
 	ret = snprintf (tmp, sizeof (tmp)-1, "%d", port);
@@ -477,9 +480,10 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 
 	// Check if remote server attached to or created process
 	if (g->stub_features.multiprocess) {
-		char tmp_buf[30] = "qAttached:";
-		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), tmp_buf + 10);
-		ret = send_command (g, tmp_buf);
+		char pid_buf[20] = { 0 };
+		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), pid_buf);
+		snprintf (tmp, 4999, "qAttached:%s", pid_buf);
+		ret = send_command (g, tmp);
 	} else {
 		ret = send_command (g, "qAttached");
 	}
@@ -491,17 +495,48 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 
 	// Get name of file being executed
 	if (g->stub_features.multiprocess) {
-		char tmp_buf[40] =  { 0 };
-		char pid_buf[16] = { 0 };
+		char pid_buf[20] = { 0 };
 		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), pid_buf);
-		snprintf (tmp_buf, 39, "qXfer:exec-file:read:%s:0,fff", pid_buf);
-		ret = send_command (g, tmp_buf);
+		snprintf (tmp, 39, "qXfer:exec-file:read:%s:0,fff", pid_buf);
+		ret = send_command (g, tmp);
 	} else {
 		ret = send_command (g, "qXfer:exec-file:read::0,fff");
 	}
 	if (ret < 0) return ret;
 	read_packet (g);
-	return send_ack (g);
+	ret = handle_execFileRead (g);
+
+	// Open the file
+	char *file_to_hex = malloc (strlen (g->exec_file_name) * 2 + 1);
+	pack_hex (g->exec_file_name, strlen (g->exec_file_name), file_to_hex);
+	snprintf (tmp, 4999, "vFile:open:%s,0,0", file_to_hex);
+	free (file_to_hex);
+	ret = send_command (g, tmp);
+	if (ret < 0) return ret;
+	read_packet (g);
+	ret = send_ack (g);
+	if (ret < 0) return ret;
+
+	// Set pid/thread for next operations
+	if (g->stub_features.multiprocess) {
+		char pid_buf[20] = { 0 };
+		char tid_buf[20] = { 0 };
+		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), pid_buf);
+		pack_hex ((char*) &g->tid, strlen ((char*) &g->tid), tid_buf);
+		snprintf (tmp, 4999, "Hgp%s.%s", pid_buf, tid_buf);
+	} else {
+		char tid_buf[20] = { 0 };
+		pack_hex ((char*) &g->tid, strlen ((char*) &g->tid), tid_buf);
+		snprintf (tmp, 4999, "Hg%s", tid_buf);
+	}
+	ret = send_command (g, tmp);
+	if (ret < 0) return ret;
+	read_packet (g);
+	ret = send_ack (g);
+	if (strncmp (g->data, "OK", 2)) {
+		ret = -1;
+	}
+	return ret;
 }
 
 int gdbr_disconnect(libgdbr_t* g) {

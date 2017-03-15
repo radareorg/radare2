@@ -86,6 +86,20 @@ int handle_qC(libgdbr_t* g) {
 	return send_ack (g);
 }
 
+int handle_execFileRead (libgdbr_t* g) {
+    if (g->data[0] == 'E') {
+	send_ack (g);
+	return -1;
+    }
+    if (!g->data[1]) {
+	// We're supposed to get filename too
+	send_ack (g);
+	return -1;
+    }
+    g->exec_file_name = strdup (g->data + 1);
+    return send_ack (g);
+}
+
 int handle_qSupported(libgdbr_t* g) {
 	// TODO handle the message correct and set all infos like packetsize, thread stuff and features
 	char *tok = NULL;
@@ -98,7 +112,7 @@ int handle_qSupported(libgdbr_t* g) {
 			snprintf (temp_buf + 2, 16, "%s", tok + 11);
 			g->stub_features.pkt_sz = strtoul (temp_buf, NULL, 16);
 		} else if (!strncmp (tok, "qXfer:", 6)) {
-			if (!*(tok + 6)) {
+			if (!tok[6]) {
 				tok = strtok(NULL, ";");
 				continue;
 			}
@@ -142,7 +156,7 @@ int handle_qSupported(libgdbr_t* g) {
 			}
 		} else if (tok[0] == 'Q') {
 			if (!strncmp (tok, "Qbtrace", 7)) {
-				if (!*(tok + 7)) {
+				if (!tok[7]) {
 					tok = strtok(NULL, ";");
 					continue;
 				}
