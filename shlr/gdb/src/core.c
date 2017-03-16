@@ -4,6 +4,7 @@
 #include "core.h"
 #include "packet.h"
 #include "messages.h"
+#include "r_util/r_strbuf.h"
 
 extern char hex2char(char* hex);
 
@@ -448,12 +449,13 @@ int gdbr_cleanup(libgdbr_t* g) {
 
 int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+";
-	char tmp[5000];
+	RStrBuf tmp;
+	r_strbuf_init (&tmp);
 	int ret;
 	if (!g || !host) return -1;
-	ret = snprintf (tmp, sizeof (tmp)-1, "%d", port);
+	ret = snprintf (tmp.buf, sizeof (tmp.buf)-1, "%d", port);
 	if (!ret) return -1;
-	ret = r_socket_connect_tcp (g->sock, host, tmp, 200);
+	ret = r_socket_connect_tcp (g->sock, host, tmp.buf, 200);
 	if (!ret) return -1;
 	read_packet (g);
 	g->connected = 1;
@@ -481,9 +483,9 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 	// Check if remote server attached to or created process
 	if (g->stub_features.multiprocess) {
 		char pid_buf[20] = { 0 };
-		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), pid_buf);
-		snprintf (tmp, 4999, "qAttached:%s", pid_buf);
-		ret = send_command (g, tmp);
+		pack_hex_uint64 (g->pid, pid_buf);
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qAttached:%s", pid_buf);
+		ret = send_command (g, tmp.buf);
 	} else {
 		ret = send_command (g, "qAttached");
 	}
@@ -493,12 +495,27 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 	ret = send_ack (g);
 	if (ret < 0) return ret;
 
+	// Set the filesystem to use to be the fs visible to current process
+	if (g->stub_features.multiprocess) {
+		char pid_buf[20] = { 0 };
+		pack_hex_uint64 (g->pid, pid_buf);
+		snprintf (tmp.buf, sizeof (tmp.buf), "vFile:setfs:%s", pid_buf);
+		ret = send_command (g, tmp.buf);
+		if (ret < 0) return ret;
+	}
+	read_packet (g);
+	ret = send_ack (g);
+	if (!*g->data || g->data[0] != 'F' || g->data[1] == '-') {
+		return -1;
+	}
+	if (ret < 0) return ret;
+
 	// Get name of file being executed
 	if (g->stub_features.multiprocess) {
 		char pid_buf[20] = { 0 };
-		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), pid_buf);
-		snprintf (tmp, 39, "qXfer:exec-file:read:%s:0,fff", pid_buf);
-		ret = send_command (g, tmp);
+		pack_hex_uint64 (g->pid, pid_buf);
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "qXfer:exec-file:read:%s:0,fff", pid_buf);
+		ret = send_command (g, tmp.buf);
 	} else {
 		ret = send_command (g, "qXfer:exec-file:read::0,fff");
 	}
@@ -508,28 +525,44 @@ int gdbr_connect(libgdbr_t* g, const char* host, int port) {
 
 	// Open the file
 	char *file_to_hex = malloc (strlen (g->exec_file_name) * 2 + 1);
+	if (!file_to_hex) {
+		return -1;
+	}
 	pack_hex (g->exec_file_name, strlen (g->exec_file_name), file_to_hex);
-	snprintf (tmp, 4999, "vFile:open:%s,0,0", file_to_hex);
+	r_strbuf_setf (&tmp, "vFile:open:%s,0,0", file_to_hex);
 	free (file_to_hex);
-	ret = send_command (g, tmp);
+	if (tmp.ptr) {
+		ret = send_command (g, tmp.ptr);
+	} else {
+		ret = send_command (g, tmp.buf);
+	}
+	r_strbuf_fini (&tmp);
 	if (ret < 0) return ret;
 	read_packet (g);
-	ret = send_ack (g);
+	ret = handle_fOpen (g);
+	if (ret < 0) return ret;
+
+	// Get fstat data for file
+	snprintf (tmp.buf, sizeof (tmp.buf) - 1, "vFile:fstat:%"PFMT32x, g->exec_fd);
+	ret = send_command (g, tmp.buf);
+	if (ret < 0) return ret;
+	read_packet (g);
+	ret = handle_fstat (g);
 	if (ret < 0) return ret;
 
 	// Set pid/thread for next operations
 	if (g->stub_features.multiprocess) {
 		char pid_buf[20] = { 0 };
 		char tid_buf[20] = { 0 };
-		pack_hex ((char*) &g->pid, strlen ((char*) &g->pid), pid_buf);
-		pack_hex ((char*) &g->tid, strlen ((char*) &g->tid), tid_buf);
-		snprintf (tmp, 4999, "Hgp%s.%s", pid_buf, tid_buf);
+		pack_hex_uint64 (g->pid, pid_buf);
+		pack_hex_uint64 (g->tid, tid_buf);
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hgp%s.%s", pid_buf, tid_buf);
 	} else {
 		char tid_buf[20] = { 0 };
-		pack_hex ((char*) &g->tid, strlen ((char*) &g->tid), tid_buf);
-		snprintf (tmp, 4999, "Hg%s", tid_buf);
+		pack_hex_uint64 (g->tid, tid_buf);
+		snprintf (tmp.buf, sizeof (tmp.buf) - 1, "Hg%s", tid_buf);
 	}
-	ret = send_command (g, tmp);
+	ret = send_command (g, tmp.buf);
 	if (ret < 0) return ret;
 	read_packet (g);
 	ret = send_ack (g);

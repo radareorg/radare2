@@ -90,6 +90,26 @@ typedef struct libgdbr_stub_features_t {
 } libgdbr_stub_features_t;
 
 /*!
+ * Structure for fstat data sent by gdb remote server
+ */
+
+typedef struct libgdbr_fstat_t {
+	unsigned dev;
+	unsigned ino;
+	unsigned mode;
+	unsigned numlinks;
+	unsigned uid;
+	unsigned gid;
+	unsigned rdev;
+	uint64_t size;
+	uint64_t blksize;
+	uint64_t blocks;
+	unsigned atime;
+	unsigned mtime;
+	unsigned ctime;
+} __attribute__((packed)) libgdbr_fstat_t;
+
+/*!
  * Core "object" that saves
  * the instance of the lib
  */
@@ -115,6 +135,8 @@ typedef struct libgdbr_t {
 	bool attached; // Remote server attached to process or created
 	libgdbr_stub_features_t stub_features;
 	char* exec_file_name;
+	int exec_fd;
+	uint64_t exec_file_sz;
 } libgdbr_t;
 
 /*!

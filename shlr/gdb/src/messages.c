@@ -78,26 +78,62 @@ int handle_qC(libgdbr_t* g) {
 			return -1;
 		} else {
 			t1++;
-			unpack_hex (t1, t2 - t1, (char*) &g->pid);
+			g->pid = strtol (t1, NULL, 16);
 			t2++;
 		}
 	}
-	unpack_hex (t2, strlen (t2), (char*) &g->tid);
+	g->tid = strtol (t2, NULL, 16);
 	return send_ack (g);
 }
 
 int handle_execFileRead (libgdbr_t* g) {
-    if (g->data[0] == 'E') {
-	send_ack (g);
-	return -1;
-    }
-    if (!g->data[1]) {
-	// We're supposed to get filename too
-	send_ack (g);
-	return -1;
-    }
-    g->exec_file_name = strdup (g->data + 1);
-    return send_ack (g);
+	if (g->data[0] == 'E') {
+		send_ack (g);
+		return -1;
+	}
+	if (!g->data[1]) {
+		// We're supposed to get filename too
+		send_ack (g);
+		return -1;
+	}
+	g->exec_file_name = strdup (g->data + 1);
+	return send_ack (g);
+}
+
+int handle_fOpen (libgdbr_t* g) {
+	if (!*g->data || g->data[0] != 'F') {
+		send_ack (g);
+		return -1;
+	}
+	g->exec_fd = strtol (g->data + 1, NULL, 16);
+	return send_ack (g);
+}
+
+int handle_fstat(libgdbr_t* g) {
+	if (!*g->data || g->data[0] != 'F' || g->data[1] == '-') {
+		send_ack (g);
+		return -1;
+	}
+	int size = strtol (g->data + 1, NULL, 16);
+	if (size < sizeof (libgdbr_fstat_t)) {
+		send_ack (g);
+		return -1;
+	}
+	char *ptr = strchr (g->data, ';');
+	if (!ptr) {
+		send_ack (g);
+		return -1;
+	}
+/*
+	libgdbr_fstat_t *fstat = (libgdbr_fstat_t*) (ptr + 1);
+	g->exec_file_sz = 0;
+	unsigned char *c = &fstat->size;
+	for (int i = 0; i < 8; i++) {
+		g->exec_file_sz <<= 4;
+		g->exec_file_sz |= *c;
+	}
+*/
+	return send_ack (g);
 }
 
 int handle_qSupported(libgdbr_t* g) {

@@ -23,6 +23,8 @@ int handle_cont(libgdbr_t* g);
 int handle_qStatus(libgdbr_t* g);
 int handle_qC(libgdbr_t* g);
 int handle_execFileRead(libgdbr_t* g);
+int handle_fOpen(libgdbr_t* g);
+int handle_fstat(libgdbr_t* g);
 int handle_qSupported(libgdbr_t* g);
 int handle_setbp(libgdbr_t* g);
 int handle_removebp(libgdbr_t* g);
