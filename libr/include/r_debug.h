@@ -499,6 +499,7 @@ R_API int r_debug_snap(RDebug *dbg, ut64 addr);
 R_API int r_debug_snap_comment (RDebug *dbg, int idx, const char *msg);
 R_API int r_debug_snap_all(RDebug *dbg, int perms);
 R_API RDebugSnap* r_debug_snap_get (RDebug *dbg, ut64 addr);
+R_API int r_debug_snap_set (RDebug *dbg, int idx);
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;

@@ -584,6 +584,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		"dms*", "", "list snapshots in r2 commands",
 		"dms", " addr", "take snapshot with given id of map at address",
 		"dms", "-id", "delete memory snapshot",
+		"dmsA", " id", "apply memory snapshot",
 		"dmsC", " id comment", "add comment for given snapshot",
 		"dmsd", " id", "hexdiff given snapshot. See `ccc`.",
 		"dmsw", "", "snapshot of the writable maps",
@@ -657,6 +658,9 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		break;
 	case ' ':
 		r_debug_snap (core->dbg, r_num_math (core->num, input + 1));
+		break;
+	case 'A':
+		r_debug_snap_set (core->dbg, atoi (input + 1));
 		break;
 	case 'C':
 		r_debug_snap_comment (core->dbg, atoi (input + 1), strchr (input, ' '));
