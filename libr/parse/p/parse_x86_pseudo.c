@@ -265,9 +265,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		snprintf (newstr, sizeof (newstr) - 1, "[%s + %s]",
-			p->anal->reg->name[R_REG_NAME_SP],
-			sparg->name);
+		snprintf (newstr, sizeof (newstr) - 1, "[%s]", sparg->name);
 		if (ucase) {
 			char *plus = strchr (newstr, '+');
 			if (plus) {
@@ -310,9 +308,7 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		if (ucase) {
 			r_str_case (oldstr, true);
 		}
-		snprintf (newstr, sizeof (newstr) - 1, "[%s %c %s]",
-			p->anal->reg->name[R_REG_NAME_BP], sign,
-			bparg->name);
+		snprintf (newstr, sizeof (newstr) - 1, "[%s]", bparg->name);
 		if (ucase) {
 			char *plus = strchr (newstr, sign);
 			if (plus) {
