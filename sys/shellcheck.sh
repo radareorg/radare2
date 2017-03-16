@@ -39,7 +39,6 @@ fileslist=(
 ./media/Radare2.iosapp/Radare2
 ./mk/rapi-list
 ./sys/afl.sh
-./sys/all.sh
 ./sys/android-target.sh
 ./sys/android-build.sh
 ./sys/android-shell.sh
@@ -91,20 +90,17 @@ fileslist=(
 ./sys/osx-pkg-uninstall.sh
 ./sys/osx-pkg-uninstall.tool
 ./sys/python-bindist.sh
-./sys/python-deps.sh
 ./sys/python-dist.sh
 ./sys/python-r2pipe.sh
 ./sys/python.sh
 ./sys/rebuild.sh
 ./sys/shellcheck.sh
 ./sys/static.sh
-./sys/swig.sh
 ./sys/sync.sh
 ./sys/tiny.sh
 ./sys/uninstall.sh
 ./sys/update.sh
 ./sys/user.sh
-./sys/valabind.sh
 ./sys/vala.sh
 )
 
