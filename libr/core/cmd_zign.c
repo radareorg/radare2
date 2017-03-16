@@ -17,7 +17,7 @@ static bool zignAddFcn(RCore *core, RAnalFunction *fcn, int type, int minzlen, i
 		eprintf ("warn: omitting %s zignature is too small. Length is %d. Check zign.min.\n",
 			fcn->name, fcnlen);
 		retval = false;
-		goto exit_func;
+		goto exit_function;
 	}
 
 	len = R_MIN (fcnlen, maxzlen);
@@ -27,7 +27,7 @@ static bool zignAddFcn(RCore *core, RAnalFunction *fcn, int type, int minzlen, i
 	if (r_io_read_at (core->io, fcn->addr, buf, len) != len) {
 		eprintf ("error: cannot read at 0x%08"PFMT64x"\n", fcn->addr);
 		retval = false;
-		goto exit_func;
+		goto exit_function;
 	}
 
 	switch (type) {
@@ -41,7 +41,7 @@ static bool zignAddFcn(RCore *core, RAnalFunction *fcn, int type, int minzlen, i
 		break;
 	}
 
-exit_func:
+exit_function:
 	free (buf);
 	free (mask);
 
@@ -60,7 +60,7 @@ static bool zignAddHex(RCore *core, const char *name, int type, const char *hexb
 	size = r_hex_str2binmask (hexbytes, bytes, mask);
 	if (size <= 0) {
 		retval = false;
-		goto exit_func;
+		goto exit_function;
 	}
 
 	switch (type) {
@@ -72,7 +72,7 @@ static bool zignAddHex(RCore *core, const char *name, int type, const char *hexb
 		break;
 	}
 
-exit_func:
+exit_function:
 	free (bytes);
 	free (mask);
 
@@ -88,13 +88,15 @@ static int zignAddBytes(void *data, const char *input, int type) {
 			const char *name = NULL, *hexbytes = NULL;
 			char *args = NULL;
 			int n = 0;
+			bool retval = true;
 
 			args = r_str_new (input + 1);
 			n = r_str_word_set0(args);
 
 			if (n != 2) {
 				eprintf ("usage: za%s name bytes\n", type == R_SIGN_ANAL? "a": "e");
-				return false;
+				retval = false;
+				goto exit_case;
 			}
 
 			name = r_str_word_get0(args, 0);
@@ -102,9 +104,13 @@ static int zignAddBytes(void *data, const char *input, int type) {
 
 			if (!zignAddHex (core, name, type, hexbytes)) {
 				eprintf ("error: cannot add zignature\n");
+				retval = false;
+				goto exit_case;
 			}
 
+exit_case:
 			free (args);
+			return retval;
 		}
 		break;
 	case 'f':
@@ -179,6 +185,7 @@ static int zignAddBytes(void *data, const char *input, int type) {
 		break;
 	default:
 		eprintf ("usage: za%s[f] [args]\n", type == R_SIGN_ANAL? "a": "e");
+		return false;
 	}
 
 	return true;
@@ -205,28 +212,55 @@ static int zignAdd(void *data, const char *input) {
 		break;
 	default:
 		eprintf ("usage: za[aemg] [args]\n");
+		return false;
 	}
 
 	return true;
 }
 
-static int zignLoad(void *data, const char *input) {
+static int zignFile(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 
 	switch (*input) {
+	case ' ':
+		{
+			const char *filename;
+
+			if (input[1] != '\x00') {
+				filename = input + 1;
+				return r_sign_load (core->anal, filename);
+			} else {
+				eprintf ("Usage: zo filename\n");
+				return false;
+			}
+		}
+		break;
+	case 's':
+		{
+			const char *filename;
+
+			if (input[1] == ' ' && input[2] != '\x00') {
+				filename = input + 2;
+				return r_sign_save (core->anal, filename);
+			} else {
+				eprintf ("Usage: zos filename\n");
+				return false;
+			}
+		}
+		break;
 	case '?':
-	{
-		const char *help_msg[] = {
-			"Usage:", "zo[dz] [args] ", "# Load zignatures from file",
-			"zo ", "filename", "load zignatures from file",
-			"zod ", "filename", "load zinatures from sdb file",
-			"zoz ", "filename", "load zinagures from gzip file",
-			NULL};
-		r_core_cmd_help (core, help_msg);
-	}
-	break;
+		{
+			const char *help_msg[] = {
+				"Usage:", "zo[s] filename ", "# Manage zignature files",
+				"zo ", "filename", "load zinatures from sdb file",
+				"zos ", "filename", "save zignatures to sdb file",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+		}
+		break;
 	default:
-		eprintf ("usage: zo[dz] [args]\n");
+		eprintf ("usage: zo[s] filename\n");
+		return false;
 	}
 
 	return true;
@@ -237,27 +271,12 @@ static int zignSpace(void *data, const char *input) {
 	RSpaces *zs = &core->anal->zign_spaces;
 
 	switch (*input) {
-	case '?':
-		{
-			const char *help_msg[] = {
-				"Usage:", "zs[+-*] [namespace] ", "# Manage zignspaces",
-				"zs", "", "display zignspaces",
-				"zs ", "zignspace", "select zignspace",
-				"zs ", "*", "select all zignspaces",
-				"zs-", "zignspace", "delete zignspace",
-				"zs-", "*", "delete all zignspaces",
-				"zs+", "zignspace", "push previous zignspace and set",
-				"zs-", "", "pop to the previous zignspace",
-				"zsr ", "newname", "rename selected zignspace",
-				NULL};
-			r_core_cmd_help (core, help_msg);
-		}
-		break;
 	case '+':
 		if (input[1] != '\x00') {
 			r_space_push (zs, input + 1);
 		} else {
 			eprintf ("Usage: zs+zignspace\n");
+			return false;
 		}
 		break;
 	case 'r':
@@ -265,6 +284,7 @@ static int zignSpace(void *data, const char *input) {
 			r_space_rename (zs, NULL, input + 2);
 		} else {
 			eprintf ("Usage: zsr newname\n");
+			return false;
 		}
 		break;
 	case '-':
@@ -286,6 +306,23 @@ static int zignSpace(void *data, const char *input) {
 			r_space_set (zs, input + 1);
 		} else {
 			eprintf ("Usage: zs zignspace\n");
+			return false;
+		}
+		break;
+	case '?':
+		{
+			const char *help_msg[] = {
+				"Usage:", "zs[+-*] [namespace] ", "# Manage zignspaces",
+				"zs", "", "display zignspaces",
+				"zs ", "zignspace", "select zignspace",
+				"zs ", "*", "select all zignspaces",
+				"zs-", "zignspace", "delete zignspace",
+				"zs-", "*", "delete all zignspaces",
+				"zs+", "zignspace", "push previous zignspace and set",
+				"zs-", "", "pop to the previous zignspace",
+				"zsr ", "newname", "rename selected zignspace",
+				NULL};
+			r_core_cmd_help (core, help_msg);
 		}
 		break;
 	default:
@@ -341,6 +378,7 @@ static int zignFlirt(void *data, const char *input) {
 		break;
 	default:
 		eprintf ("usage: zf[dsz] filename\n");
+		return false;
 	}
 
 	return true;
@@ -474,6 +512,7 @@ static int zignSearch(void *data, const char *input) {
 		break;
 	default:
 		eprintf ("usage: z/[*]\n");
+		return false;
 	}
 
 	return true;
@@ -510,7 +549,7 @@ static int cmd_zign(void *data, const char *input) {
 		r_sign_delete (core->anal, input + 1);
 		break;
 	case 'o':
-		return zignLoad (data, input + 1);
+		return zignFile (data, input + 1);
 	case 'a':
 		return zignAdd (data, input + 1);
 	case 'f':
@@ -531,7 +570,7 @@ static int cmd_zign(void *data, const char *input) {
 				"z-", "zignature", "delete zignature",
 				"z-", "*", "delete all zignatures",
 				"za", "[?]", "add zignature",
-				"zo", "[?]", "load zignatures from file",
+				"zo", "[?]", "Manage zignature files",
 				"zf", "[?]", "manage FLIRT signatures",
 				"z/", "[?]", "search zignatures",
 				"zc", "", "check zignatures at address",
@@ -544,6 +583,7 @@ static int cmd_zign(void *data, const char *input) {
 		break;
 	default:
 		eprintf ("usage: z[*j-aof/cs] [args]\n");
+		return false;
 	}
 
 	return true;
