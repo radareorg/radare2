@@ -1852,7 +1852,7 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 		} else {
 			aux = r_str_newf ("%s=%s ", tmp, chkstr);
 		}
-		ret = r_str_concat (ret, aux);
+		ret = r_str_append (ret, aux);
 		free (chkstr);
 		free (aux);
 		if (*ptr && *ptr == ',') ptr++;

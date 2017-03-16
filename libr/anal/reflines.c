@@ -478,7 +478,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 			}
 		}
 	}
-	str = r_str_concat (str, (dir == 1) ? "-> "
+	str = r_str_append (str, (dir == 1) ? "-> "
 		: (dir == 2) ? "=< " : "   ");
 
 	if (core->cons->use_utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {

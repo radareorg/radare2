@@ -138,7 +138,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				}
 			}
 			if (matches) {
-				code = r_str_concatf (code, "%s; ", op.buf_asm);
+				code = r_str_appendf (code, "%s; ", op.buf_asm);
 				if (matchcount == tokcount - 1) {
 					if (tokcount == 1) {
 						tidx = idx;

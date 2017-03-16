@@ -150,7 +150,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			while (*q != '\n') {
 				q++;
 			}
-			reg->reg_profile_cmt = r_str_concatlen (
+			reg->reg_profile_cmt = r_str_appendlen (
 				reg->reg_profile_cmt, p, (int)(q - p) + 1);
 			p = q;
 			continue;
@@ -235,7 +235,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 	if (!str) {
 		base = r_sys_getenv (R_LIB_ENV);
 		if (base) {
-			file = r_str_concat (base, profile);
+			file = r_str_append (base, profile);
 			str = r_file_slurp (file, NULL);
 			free (file);
 		}

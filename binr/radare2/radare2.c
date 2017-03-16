@@ -848,7 +848,7 @@ int main(int argc, char **argv, char **envp) {
 						}
 					}
 					escaped_path = r_str_arg_escape (path);
-					pfile = r_str_concat (pfile, escaped_path);
+					pfile = r_str_append (pfile, escaped_path);
 					file = pfile; // probably leaks
 					R_FREE (escaped_path);
 					R_FREE (path);
@@ -856,16 +856,16 @@ int main(int argc, char **argv, char **envp) {
 #else
 				{
 					char *escaped_path = r_str_arg_escape (f);
-					pfile = r_str_concat (pfile, escaped_path);
-					file = pfile; // r_str_concat (file, escaped_path);
+					pfile = r_str_append (pfile, escaped_path);
+					file = pfile; // r_str_append (file, escaped_path);
 					free (escaped_path);
 				}
 #endif
 				optind++;
 				while (optind < argc) {
 					char *escaped_arg = r_str_arg_escape (argv[optind]);
-					file = r_str_concat (file, " ");
-					file = r_str_concat (file, escaped_arg);
+					file = r_str_append (file, " ");
+					file = r_str_append (file, escaped_arg);
 					free (escaped_arg);
 					optind++;
 				}

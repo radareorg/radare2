@@ -446,13 +446,13 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				if (len) {
 					*len += bytes;
 				}
-				outputptr = r_str_concat (outputptr, buffer);
+				outputptr = r_str_append (outputptr, buffer);
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
 				if (!read (sh_err[0], buffer, sizeof (buffer)-1)) {
 					break;
 				}
 				buffer[sizeof(buffer) - 1] = '\0';
-				*sterr = r_str_concat (*sterr, buffer);
+				*sterr = r_str_append (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				int inputptr_len = strlen (inputptr);
 				bytes = write (sh_in[1], inputptr, inputptr_len);

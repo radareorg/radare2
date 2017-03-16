@@ -194,9 +194,9 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 					char* struct_name = type + 7;
 					// TODO: iterate over all the struct fields, and format the format and vars
 					snprintf (var3, sizeof (var3), "struct.%s", struct_name);
-					fmt = r_str_concat (fmt, "?");
-					vars = r_str_concatf (vars, "(%s)%s", struct_name, p);
-					vars = r_str_concat (vars, " ");
+					fmt = r_str_append (fmt, "?");
+					vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
+					vars = r_str_append (vars, " ");
 				} else {
 					elements = sdb_array_get_num (DB, var2, 2, NULL);
 					// special case for char[]. Use char* format type without *
@@ -220,20 +220,20 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 					if (tfmt) {
 						filter_type (type);
 						if (elements > 0) {
-							fmt = r_str_concatf (fmt, "[%d]", elements);
+							fmt = r_str_appendf (fmt, "[%d]", elements);
 						}
 						if (isStruct) {
-							fmt = r_str_concat (fmt, "?");
-							vars = r_str_concatf (vars, "(%s)%s", p, p);
-							vars = r_str_concat (vars, " ");
+							fmt = r_str_append (fmt, "?");
+							vars = r_str_appendf (vars, "(%s)%s", p, p);
+							vars = r_str_append (vars, " ");
 						} else if (isEnum) {
-							fmt = r_str_concat (fmt, "E");
-							vars = r_str_concatf (vars, "(%s)%s", type + 5, p);
-							vars = r_str_concat (vars, " ");
+							fmt = r_str_append (fmt, "E");
+							vars = r_str_appendf (vars, "(%s)%s", type + 5, p);
+							vars = r_str_append (vars, " ");
 						} else {
-							fmt = r_str_concat (fmt, tfmt);
-							vars = r_str_concat (vars, p);
-							vars = r_str_concat (vars, " ");
+							fmt = r_str_append (fmt, tfmt);
+							vars = r_str_append (vars, p);
+							vars = r_str_append (vars, " ");
 						}
 					} else {
 						eprintf ("Cannot resolve type '%s'\n", var3);
@@ -243,8 +243,8 @@ R_API char *r_anal_type_format(RAnal *anal, const char *t) {
 			free (type);
 			free (p);
 		}
-		fmt = r_str_concat (fmt, " ");
-		fmt = r_str_concat (fmt, vars);
+		fmt = r_str_append (fmt, " ");
+		fmt = r_str_append (fmt, vars);
 		free (vars);
 		return fmt;
 	}

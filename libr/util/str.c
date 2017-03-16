@@ -909,9 +909,9 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 	return ptr;
 }
 
-R_API char *r_str_concatlen(char *ptr, const char *string, int slen) {
+R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
 	char *msg = r_str_newlen (string, slen);
-	char *ret = r_str_concat (ptr, msg);
+	char *ret = r_str_append (ptr, msg);
 	free (msg);
 	return ret;
 }
@@ -920,7 +920,7 @@ R_API char *r_str_concatlen(char *ptr, const char *string, int slen) {
  * first argument must be allocated
  * return: the pointer ptr resized to string size.
  */
-R_API char *r_str_concat(char *ptr, const char *string) {
+R_API char *r_str_append(char *ptr, const char *string) {
 	int slen, plen;
 	if (!string && !ptr) {
 		return NULL;
@@ -941,7 +941,7 @@ R_API char *r_str_concat(char *ptr, const char *string) {
 	return ptr;
 }
 
-R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
+R_API char *r_str_appendf(char *ptr, const char *fmt, ...) {
 	int ret;
 	char string[4096];
 	va_list ap;
@@ -954,18 +954,18 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
 			return NULL;
 		}
 		vsnprintf (p, ret + 1, fmt, ap);
-		ptr = r_str_concat (ptr, p);
+		ptr = r_str_append (ptr, p);
 		free (p);
 	} else {
-		ptr = r_str_concat (ptr, string);
+		ptr = r_str_append (ptr, string);
 	}
 	va_end (ap);
 	return ptr;
 }
 
-R_API char *r_str_concatch(char *x, char y) {
+R_API char *r_str_appendch(char *x, char y) {
 	char b[2] = { y, 0 };
-	return r_str_concat (x,b);
+	return r_str_append (x,b);
 }
 
 // XXX: wtf must deprecate

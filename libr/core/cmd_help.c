@@ -23,7 +23,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 		if (!dollar) {
 			break;
 		}
-		buf = r_str_concatlen (buf, msg, dollar-msg);
+		buf = r_str_appendlen (buf, msg, dollar-msg);
 		if (dollar[1]=='{') {
 			// find }
 			end = strchr (dollar+2, '}');
@@ -32,7 +32,7 @@ static char *filterFlags(RCore *core, const char *msg) {
 				end++;
 			} else {
 				msg = dollar+1;
-				buf = r_str_concat (buf, "$");
+				buf = r_str_append (buf, "$");
 				continue;
 			}
 		} else {
@@ -46,14 +46,14 @@ static char *filterFlags(RCore *core, const char *msg) {
 			ut64 val = r_num_math (core->num, word);
 			char num[32];
 			snprintf (num, sizeof (num), "0x%"PFMT64x, val);
-			buf = r_str_concat (buf, num);
+			buf = r_str_append (buf, num);
 			msg = end;
 		} else {
 			break;
 		}
 		free (word);
 	}
-	buf = r_str_concat (buf, msg);
+	buf = r_str_append (buf, msg);
 	return buf;
 }
 

@@ -661,7 +661,7 @@ static int cmd_interpret(void *data, const char *input) {
 				eol = strchr (ptr, '\n');
 				if (eol) *eol = '\0';
 				if (*ptr) {
-					char *p = r_str_concat (strdup (ptr), filter);
+					char *p = r_str_append (strdup (ptr), filter);
 					r_core_cmd0 (core, p);
 					free (p);
 				}
@@ -1782,8 +1782,8 @@ next2:
 					}
 				}
 			}
-			str = r_str_concat (str, ptr2 + 1);
-			cmd = r_str_concat (strdup (cmd), str);
+			str = r_str_append (str, ptr2 + 1);
+			cmd = r_str_append (strdup (cmd), str);
 			core->num->value = value;
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);

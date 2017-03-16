@@ -262,7 +262,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, GH(RHeap_MallocS
 			if (r_file_exists (path)) {
 				goto arena;
 			}
-			path = r_str_concat (path, ".debug");
+			path = r_str_append (path, ".debug");
 			if (r_file_exists (path)) {
 				goto arena;
 			}

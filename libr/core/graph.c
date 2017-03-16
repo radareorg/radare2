@@ -2432,9 +2432,9 @@ static void agraph_merge_child(RAGraph *g, int idx) {
 	if (cn && nn) {
 		RANode *ann = get_anode (nn);
 		RANode *acn = get_anode (cn);
-		acn->body = r_str_concat (acn->body, ann->title);
-		acn->body = r_str_concat (acn->body, "\n");
-		acn->body = r_str_concat (acn->body, ann->body);
+		acn->body = r_str_append (acn->body, ann->title);
+		acn->body = r_str_append (acn->body, "\n");
+		acn->body = r_str_append (acn->body, ann->body);
 		/* remove node from the graph */
 		acn->h += ann->h - 3;
 		free (ann->body);

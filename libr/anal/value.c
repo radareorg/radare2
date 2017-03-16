@@ -74,25 +74,25 @@ R_API char *r_anal_value_to_string (RAnalValue *value) {
 		out = r_str_new ("");
 		if (!value->base && !value->reg) {
 			if (value->imm != -1LL)
-				out = r_str_concatf (out, "0x%"PFMT64x, value->imm);
-			else out = r_str_concat (out, "-1");
+				out = r_str_appendf (out, "0x%"PFMT64x, value->imm);
+			else out = r_str_append (out, "-1");
 		} else {
 			if (value->memref) {
 				switch (value->memref) {
-				case 1: out = r_str_concat (out, "(char)"); break;
-				case 2: out = r_str_concat (out, "(short)"); break;
-				case 4: out = r_str_concat (out, "(word)"); break;
-				case 8: out = r_str_concat (out, "(dword)"); break;
+				case 1: out = r_str_append (out, "(char)"); break;
+				case 2: out = r_str_append (out, "(short)"); break;
+				case 4: out = r_str_append (out, "(word)"); break;
+				case 8: out = r_str_append (out, "(dword)"); break;
 				}
-				out = r_str_concat (out, "[");
+				out = r_str_append (out, "[");
 			}
-			if (value->mul) out = r_str_concatf (out, "%d*", value->mul);
-			if (value->reg) out = r_str_concatf (out, "%s", value->reg->name);
-			if (value->regdelta) out = r_str_concatf (out, "+%s", value->regdelta->name);
-			if (value->base!=0) out = r_str_concatf (out, "0x%"PFMT64x, value->base);
-			if (value->delta>0) out = r_str_concatf (out, "+0x%"PFMT64x, value->delta);
-			else if (value->delta<0) out = r_str_concatf (out, "-0x%"PFMT64x, -value->delta);
-			if (value->memref) out = r_str_concat (out, "]");
+			if (value->mul) out = r_str_appendf (out, "%d*", value->mul);
+			if (value->reg) out = r_str_appendf (out, "%s", value->reg->name);
+			if (value->regdelta) out = r_str_appendf (out, "+%s", value->regdelta->name);
+			if (value->base!=0) out = r_str_appendf (out, "0x%"PFMT64x, value->base);
+			if (value->delta>0) out = r_str_appendf (out, "+0x%"PFMT64x, value->delta);
+			else if (value->delta<0) out = r_str_appendf (out, "-0x%"PFMT64x, -value->delta);
+			if (value->memref) out = r_str_append (out, "]");
 		}
 	}
 	return out;
