@@ -304,22 +304,8 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 		if ((oplen = r_anal_op (anal, op, 0, buf+idx, len-idx)) < 1) {
 			break;
 		}
-		switch (op->type) {
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_RCALL:
-		case R_ANAL_OP_TYPE_ICALL:
-		case R_ANAL_OP_TYPE_IRCALL:
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-			if (op->nopcode != 0) {
-				memset (ret + (idx + op->nopcode) * 2,
-					'.', (oplen - op->nopcode) * 2);
-			}
+		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
+			memset (ret + (idx + op->nopcode) * 2, '.', (oplen - op->nopcode) * 2);
 		}
 		idx += oplen;
 	}
@@ -345,21 +331,8 @@ R_API ut8 *r_anal_mask (RAnal *anal, int size, const ut8 *data) {
 		if ((oplen = r_anal_op (anal, op, 0, data + idx, size - idx)) < 1) {
 			break;
 		}
-		switch (op->type) {
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_RCALL:
-		case R_ANAL_OP_TYPE_ICALL:
-		case R_ANAL_OP_TYPE_IRCALL:
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-			if (op->nopcode != 0) {
-				memset (ret + idx + op->nopcode, 0, oplen - op->nopcode);
-			}
+		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
+			memset (ret + idx + op->nopcode, 0, oplen - op->nopcode);
 		}
 		idx += oplen;
 	}
