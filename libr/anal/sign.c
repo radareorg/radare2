@@ -492,8 +492,6 @@ R_API bool r_sign_load(RAnal *a, const char *file) {
 R_API bool r_sign_save(RAnal *a, const char *file) {
 	bool retval = true;
 
-	// TODO(nibble): Fix sdb. If we use only one db to sync to disk,
-	// when executing f-* some null entries remain.
 	Sdb *db = sdb_new (NULL, file, 0);
 	sdb_merge (db, a->sdb_zigns);
 	retval = sdb_sync (db);
