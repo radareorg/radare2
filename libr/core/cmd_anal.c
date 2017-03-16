@@ -4983,9 +4983,12 @@ static int compute_coverage(RCore *core) {
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_list_foreach (core->io->sections, iter2, sec) {
-			int section_end = sec->vaddr + sec->vsize;
-			if (sec->flags & 1 && fcn->addr >= sec->vaddr && fcn->addr < section_end) {
-				cov += r_anal_fcn_realsize (fcn);
+			if (sec->flags & 1) {
+				ut64 section_end = sec->vaddr + sec->vsize;
+				ut64 s = r_anal_fcn_realsize (fcn);
+				if (fcn->addr >= sec->vaddr && (fcn->addr + s) < section_end) {
+					cov += s;
+				}
 			}
 		}
 	}
