@@ -454,3 +454,51 @@ R_API void r_sign_item_free(void *_item) {
 	free (item->mask);
 	free (item);
 }
+
+static int zignLoadCB(void *user, const char *k, const char *v) {
+	RAnal *a = (RAnal *) user;
+	char nk[R_SIGN_KEY_MAXSZ], nv[R_SIGN_VAL_MAXSZ];
+	RSignItem *it = R_NEW0 (RSignItem);
+
+	if (!deserialize (it, k, v)) {
+		eprintf ("error: cannot deserialize zign\n");
+		goto exit_function;
+	}
+
+	it->space = a->zign_spaces.space_idx;
+	serialize (it, nk, nv);
+	sdb_set (a->sdb_zigns, nk, nv, 0);
+
+exit_function:
+	r_sign_item_free (it);
+
+	return 1;
+}
+
+R_API bool r_sign_load(RAnal *a, const char *file) {
+	if (!r_file_exists (file)) {
+		eprintf ("error: file %s does not exist\n", file);
+		return false;
+	}
+
+	Sdb *db = sdb_new (NULL, file, 0);
+	sdb_foreach (db, zignLoadCB, a);
+	sdb_close (db);
+	sdb_free (db);
+
+	return true;
+}
+
+R_API bool r_sign_save(RAnal *a, const char *file) {
+	bool retval = true;
+
+	// TODO(nibble): Fix sdb. If we use only one db to sync to disk,
+	// when executing f-* some null entries remain.
+	Sdb *db = sdb_new (NULL, file, 0);
+	sdb_merge (db, a->sdb_zigns);
+	retval = sdb_sync (db);
+	sdb_close (db);
+	sdb_free (db);
+
+	return retval;
+}
