@@ -1249,7 +1249,7 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		int isFirst = true;
-		ret = r_str_concatf (ret, "0x%08"PFMT64x" : ", val);
+		ret = r_str_appendf (ret, "0x%08"PFMT64x" : ", val);
 		for (i = 0; i < 32; i++) {
 			if (!(val & (1 << i))) {
 				continue;
@@ -1259,12 +1259,12 @@ static char *getbitfield(void *_core, const char *name, ut64 val) {
 			if (isFirst) {
 				isFirst = false;
 			} else {
-				ret = r_str_concat (ret, " | ");
+				ret = r_str_append (ret, " | ");
 			}
 			if (res) {
-				ret = r_str_concat (ret, res);
+				ret = r_str_append (ret, res);
 			} else {
-				ret = r_str_concatf (ret, "0x%x", (1<<i));
+				ret = r_str_appendf (ret, "0x%x", (1<<i));
 			}
 		}
 	} else {

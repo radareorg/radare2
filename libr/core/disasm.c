@@ -821,7 +821,7 @@ static void ds_pre_xrefs(RDisasmState *ds) {
 		ds_setup_pre (ds, false, false);
 		if (*ds->pre != ' ') {
 			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
-			ds->pre = r_str_concat (ds->pre, " ");
+			ds->pre = r_str_append (ds->pre, " ");
 		}
 	}
 	ds_print_pre (ds);
@@ -1161,7 +1161,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	R_FREE (sign);
 	ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 	if (ds->show_fcnlines) {
-		ds->pre = r_str_concat (ds->pre, " ");
+		ds->pre = r_str_append (ds->pre, " ");
 	}
 	ds->stackptr = core->anal->stackptr;
 	if (ds->show_vars) {
@@ -1320,7 +1320,7 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 			ds_set_pre (ds, core->cons->vline[LINE_VERT]);
 		}
 		if (ds->show_fcnlines) {
-			ds->pre = r_str_concat (ds->pre, " ");
+			ds->pre = r_str_append (ds->pre, " ");
 		}
 		if (tail) {
 			r_str_replace_char (ds->pre, '\\', ' ');
@@ -2899,7 +2899,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		}
 		RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 		if (fi) {
-			msg = r_str_concatf (msg, "%s", fi->name);
+			msg = r_str_appendf (msg, "%s", fi->name);
 		}
 	}
 	if (ds) {

@@ -83,7 +83,7 @@ int linux_handle_signals (RDebug *dbg, bool self_signalled) {
 								} else {
 									name = r_reg_get_name (dbg->reg, R_REG_NAME_A1);
 								}
-								b->data = r_str_concatf (b->data, ";ps@r:%s", name);
+								b->data = r_str_appendf (b->data, ";ps@r:%s", name);
 								dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
 							} else if (r_str_startswith (p, "dbg.unlibs")) {
 								dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;

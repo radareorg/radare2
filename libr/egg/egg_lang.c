@@ -116,9 +116,9 @@ static char *find_include(const char *prefix, const char *file) {
 			if (ptr)
 				*ptr = 0;
 			free (ret);
-			ret = r_str_concatf (NULL, "%s/%s", pfx, file);
+			ret = r_str_appendf (NULL, "%s/%s", pfx, file);
 			{
-				char *filepath = r_str_concatf (NULL, "%s/%s/%s", str, pfx, file);
+				char *filepath = r_str_appendf (NULL, "%s/%s/%s", str, pfx, file);
 				// eprintf ("try (%s)\n", filepath);
 				if (r_file_exists (filepath)) {
 					free (env);
@@ -133,7 +133,7 @@ static char *find_include(const char *prefix, const char *file) {
 			ptr = strchr (str, ':');
 		}
 		free (env);
-	} else ret = r_str_concatf (NULL, "%s/%s", pfx, file);
+	} else ret = r_str_appendf (NULL, "%s/%s", pfx, file);
 	free (pfx);
 	return ret;
 }
@@ -147,7 +147,7 @@ R_API void r_egg_lang_include_path (REgg *egg, const char *path) {
 		env = r_sys_getenv (R_EGG_INCDIR_ENV);
 		tmp_ptr = env;
 	}
-	env = r_str_concatf (NULL, "%s:%s", path, env);
+	env = r_str_appendf (NULL, "%s:%s", path, env);
 	free (tmp_ptr);
 	r_sys_setenv (R_EGG_INCDIR_ENV, env);
 	free (env);

@@ -90,9 +90,9 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 		return source;
 	}
 	char *res = strdup("");
-	res = r_str_concat (res, r_print_color_op_type (core->print, optype));
+	res = r_str_append (res, r_print_color_op_type (core->print, optype));
 	tmp = r_print_colorize_opcode (source, color_reg, color_num);
-	res = r_str_concat (res, tmp);
+	res = r_str_append (res, tmp);
 	free (tmp);
 	return res;
 }
@@ -894,7 +894,7 @@ R_API int r_core_visual_classes(RCore *core) {
 				break;
 			default:
 				grep = grep
-					? r_str_concatf (grep, "%c", ch)
+					? r_str_appendf (grep, "%c", ch)
 					: r_str_newf ("%c", ch);
 				break;
 			}

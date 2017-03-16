@@ -45,10 +45,10 @@ static char *projectScriptPath(RCore *core, const char *file) {
 		}
 		prjfile = r_file_abspath (r_config_get (
 			core->config, "dir.projects"));
-		prjfile = r_str_concat (prjfile, R_SYS_DIR);
-		prjfile = r_str_concat (prjfile, file);
+		prjfile = r_str_append (prjfile, R_SYS_DIR);
+		prjfile = r_str_append (prjfile, file);
 		if (!r_file_exists (prjfile) || r_file_is_directory (prjfile)) {
-			prjfile = r_str_concat (prjfile, R_SYS_DIR "rc");
+			prjfile = r_str_append (prjfile, R_SYS_DIR "rc");
 		}
 	}
 	data = r_file_slurp (prjfile, NULL);
@@ -82,7 +82,7 @@ static bool r_core_is_project(RCore *core, const char *name) {
 		if (r_str_endswith (path, R_SYS_DIR "rc") && r_file_exists (path)) {
 			ret = true;
 		} else {
-			path = r_str_concat (path, ".d");
+			path = r_str_append (path, ".d");
 			if (r_file_is_directory (path)) {
 				ret = true;
 			}
@@ -156,14 +156,14 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		// rm project file
 		r_file_rm (path);
 		eprintf ("rm %s\n", path);
-		path = r_str_concat (path, ".d");
+		path = r_str_append (path, ".d");
 		if (r_file_is_directory (path)) {
 			char *f;
 			RListIter *iter;
 			RList *files = r_sys_dir (path);
 			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_concat (strdup (path), R_SYS_DIR);
-				filepath =r_str_concat (filepath, f);
+				char *filepath = r_str_append (strdup (path), R_SYS_DIR);
+				filepath =r_str_append (filepath, f);
 				if (!r_file_is_directory (filepath)) {
 					eprintf ("rm %s\n", filepath);
 					r_file_rm (filepath);
@@ -257,7 +257,7 @@ static bool projectLoadRop(RCore *core, const char *prjfile) {
 
 	path_ns = r_str_newf ("%s" R_SYS_DIR "rop", prjDir);
 	if (!r_file_exists (path_ns)) {
-		path_ns = r_str_concat (path_ns, ".sdb");
+		path_ns = r_str_append (path_ns, ".sdb");
 	}
 	nop_db = sdb_new (path_ns, "nop", 0);
 	sdb_ns_set (rop_db, "nop", nop_db);
@@ -752,7 +752,7 @@ static bool projectLoadXrefs(RCore *core, const char *prjName) {
 		return false;
 	}
 	if (!r_file_is_directory (db)) {
-		db = r_str_concat (db, ".d");
+		db = r_str_append (db, ".d");
 	}
 
 	if (!sdb_ns_unset (core->anal->sdb, NULL, DB)) {
