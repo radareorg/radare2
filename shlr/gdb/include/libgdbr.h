@@ -26,8 +26,8 @@
  */
 typedef struct libgdbr_message_t {
 	ssize_t len; /*! Len of the message */
-	char* msg;	/*! Pointer to the buffer that contains the message */
-	uint8_t chk;	/*! Cheksum of the current message read from the packet */
+	char *msg;      /*! Pointer to the buffer that contains the message */
+	uint8_t chk;    /*! Cheksum of the current message read from the packet */
 } libgdbr_message_t;
 
 /*!
@@ -35,58 +35,58 @@ typedef struct libgdbr_message_t {
  */
 
 typedef struct libgdbr_stub_features_t {
-	ssize_t pkt_sz; /* Max packet size */
-	unsigned qXfer_btrace_read : 1;
-	unsigned qXfer_btrace_conf_read : 1;
-	unsigned qXfer_spu_read : 1;
-	unsigned qXfer_spu_write : 1;
-	unsigned qXfer_libraries_read : 1;
-	unsigned qXfer_libraries_svr4_read : 1;
-	unsigned qXfer_siginfo_read : 1;
-	unsigned qXfer_siginfo_write : 1;
-	unsigned qXfer_auxv_read : 1;
-	unsigned qXfer_exec_file_read : 1;
-	unsigned qXfer_features_read : 1;
-	unsigned qXfer_memory_map_read : 1;
-	unsigned qXfer_sdata_read : 1;
-	unsigned qXfer_threads_read : 1;
-	unsigned qXfer_traceframe_info_read : 1;
-	unsigned qXfer_uib_read : 1;
-	unsigned qXfer_fdpic_read : 1;
-	unsigned qXfer_osdata_read : 1;
-	unsigned Qbtrace_off : 1;
-	unsigned Qbtrace_bts : 1;
-	unsigned Qbtrace_pt : 1;
-	unsigned Qbtrace_conf_bts_size : 1;
-	unsigned Qbtrace_conf_pt_size: 1;
-	unsigned QNonStop : 1;
-	unsigned QCatchSyscalls : 1;
-	unsigned QPassSignals : 1;
-	unsigned QStartNoAckMode : 1;
-	unsigned QAgent : 1;
-	unsigned QAllow : 1;
-	unsigned QDisableRandomization : 1;
-	unsigned QTBuffer_size : 1;
-	unsigned QThreadEvents : 1;
-	unsigned StaticTracepoint : 1;
-	unsigned InstallInTrace : 1;
-	unsigned ConditionalBreakpoints : 1;
-	unsigned ConditionalTracepoints : 1;
-	unsigned ReverseContinue : 1;
-	unsigned ReverseStep : 1;
-	unsigned swbreak : 1;
-	unsigned hwbreak : 1;
-	unsigned fork_events : 1;
-	unsigned vfork__events : 1;
-	unsigned exec_events : 1;
-	unsigned vContSupported : 1;
-	unsigned no_resumed : 1;
-	unsigned augmented_libraries_svr4_read : 1;
-	unsigned multiprocess : 1;
-	unsigned TracepointSource : 1;
-	unsigned EnableDisableTracepoints : 1;
-	unsigned tracenz : 1;
-	unsigned BreakpointCommands : 1;
+	ut32 pkt_sz; /* Max packet size */
+	bool qXfer_btrace_read;
+	bool qXfer_btrace_conf_read;
+	bool qXfer_spu_read;
+	bool qXfer_spu_write;
+	bool qXfer_libraries_read;
+	bool qXfer_libraries_svr4_read;
+	bool qXfer_siginfo_read;
+	bool qXfer_siginfo_write;
+	bool qXfer_auxv_read;
+	bool qXfer_exec_file_read;
+	bool qXfer_features_read;
+	bool qXfer_memory_map_read;
+	bool qXfer_sdata_read;
+	bool qXfer_threads_read;
+	bool qXfer_traceframe_info_read;
+	bool qXfer_uib_read;
+	bool qXfer_fdpic_read;
+	bool qXfer_osdata_read;
+	bool Qbtrace_off;
+	bool Qbtrace_bts;
+	bool Qbtrace_pt;
+	bool Qbtrace_conf_bts_size;
+	bool Qbtrace_conf_pt_size;
+	bool QNonStop;
+	bool QCatchSyscalls;
+	bool QPassSignals;
+	bool QStartNoAckMode;
+	bool QAgent;
+	bool QAllow;
+	bool QDisableRandomization;
+	bool QTBuffer_size;
+	bool QThreadEvents;
+	bool StaticTracepoint;
+	bool InstallInTrace;
+	bool ConditionalBreakpoints;
+	bool ConditionalTracepoints;
+	bool ReverseContinue;
+	bool ReverseStep;
+	bool swbreak;
+	bool hwbreak;
+	bool fork_events;
+	bool vfork__events;
+	bool exec_events;
+	bool vContSupported;
+	bool no_resumed;
+	bool augmented_libraries_svr4_read;
+	bool multiprocess;
+	bool TracepointSource;
+	bool EnableDisableTracepoints;
+	bool tracenz;
+	bool BreakpointCommands;
 } libgdbr_stub_features_t;
 
 /*!
@@ -114,27 +114,27 @@ typedef struct libgdbr_fstat_t {
  * the instance of the lib
  */
 typedef struct libgdbr_t {
-	char* send_buff; // defines a buffer for reading and sending stuff
+	char *send_buff; // defines a buffer for reading and sending stuff
 	ssize_t send_len;
 	ssize_t send_max; // defines the maximal len for the given buffer
-	char* read_buff;
+	char *read_buff;
 	ssize_t read_max; // defines the maximal len for the given buffer
 
 	// is already handled (i.e. already send or ...)
-	RSocket* sock;
+	RSocket *sock;
 	int connected;
 	int acks;
-	char* data;
+	char *data;
 	ssize_t data_len;
 	ssize_t data_max;
 	uint8_t architecture;
-	registers_t* registers;
+	registers_t *registers;
 	int last_code;
 	ssize_t pid; // little endian
 	ssize_t tid; // little endian
 	bool attached; // Remote server attached to process or created
 	libgdbr_stub_features_t stub_features;
-	char* exec_file_name;
+	char *exec_file_name;
 	int exec_fd;
 	uint64_t exec_file_sz;
 } libgdbr_t;
@@ -143,20 +143,20 @@ typedef struct libgdbr_t {
  * \brief Function initializes the libgdbr lib
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_init(libgdbr_t* g);
+int gdbr_init(libgdbr_t *g);
 
 /*!
  * \brief Function initializes the architecture of the gdbsession
  * \param architecture defines the architecure used (registersize, and such)
  * \returns a failure code
  */
-int gdbr_set_architecture(libgdbr_t* g, uint8_t architecture);
+int gdbr_set_architecture(libgdbr_t *g, uint8_t architecture);
 
 /*!
  * \brief frees all buffers and cleans the libgdbr instance stuff
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_cleanup(libgdbr_t* g);
+int gdbr_cleanup(libgdbr_t *g);
 
 /*!
  * \brief Function connects to a gdbserver instance
@@ -164,18 +164,18 @@ int gdbr_cleanup(libgdbr_t* g);
  * \param number that represents the port
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_connect(libgdbr_t* g, const char* server, int port);
+int gdbr_connect(libgdbr_t *g, const char *server, int port);
 
 /*!
  * \brief disconnects the lib
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_disconnect(libgdbr_t* g);
+int gdbr_disconnect(libgdbr_t *g);
 
 // Commands
-int gdbr_continue(libgdbr_t* g, int thread_id);
-int gdbr_step(libgdbr_t* g, int thread_id);
-int gdbr_read_registers(libgdbr_t* g);
+int gdbr_continue(libgdbr_t *g, int thread_id);
+int gdbr_step(libgdbr_t *g, int thread_id);
+int gdbr_read_registers(libgdbr_t *g);
 
 /*!
  * \brief Function writes general purpose registers
@@ -185,14 +185,14 @@ int gdbr_read_registers(libgdbr_t* g);
  * i.e. eax=0x123,ebx=0x234
  * \returns a failurre code (currently -1) or 0 if call successfully
  */
-int gdbr_write_bin_registers(libgdbr_t* g);
-int gdbr_write_reg(libgdbr_t* g, const char* name, char* value, int len);
-int gdbr_write_register(libgdbr_t* g, int index, char* value, int len);
-int gdbr_write_registers(libgdbr_t* g, char* registers);
-int gdbr_read_memory(libgdbr_t* g, ut64 address, ut64 len);
-int gdbr_write_memory(libgdbr_t* g, ut64 address, const uint8_t* data, ut64 len);
-int gdbr_send_command(libgdbr_t* g, char* command);
-int test_command(libgdbr_t* g, const char* command);
+int gdbr_write_bin_registers(libgdbr_t *g);
+int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len);
+int gdbr_write_register(libgdbr_t *g, int index, char *value, int len);
+int gdbr_write_registers(libgdbr_t *g, char *registers);
+int gdbr_read_memory(libgdbr_t *g, ut64 address, ut64 len);
+int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len);
+int gdbr_send_command(libgdbr_t *g, char *command);
+int test_command(libgdbr_t *g, const char *command);
 
 /*!
  * \brief Function sets normal breakpoint (0xcc, int3)
@@ -201,9 +201,9 @@ int test_command(libgdbr_t* g, const char* command);
  * \param conditions TODO: examine how this condition string should look like
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_set_bp(libgdbr_t* g, ut64 address, const char* conditions);
-int gdbr_set_hwbp(libgdbr_t* g, ut64 address, const char* conditions);
-int gdbr_remove_bp(libgdbr_t* g, ut64 address);
-int gdbr_remove_hwbp(libgdbr_t* g, ut64 address);
+int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions);
+int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions);
+int gdbr_remove_bp(libgdbr_t *g, ut64 address);
+int gdbr_remove_hwbp(libgdbr_t *g, ut64 address);
 
 #endif
