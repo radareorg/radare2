@@ -138,6 +138,26 @@ beach:
 	return -1;
 }
 
+static void seek_to_register(RCore *core, const char *input, bool is_silent) {
+	ut64 off;
+	if (core->io->debug) {
+		off = r_debug_reg_get (core->dbg, input);
+		if (!is_silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
+		r_core_seek (core, off, 1);
+	} else {
+		RReg *orig = core->dbg->reg;
+		core->dbg->reg = core->anal->reg;
+		off = r_debug_reg_get (core->dbg, input);
+		core->dbg->reg = orig;
+		if (!is_silent) {
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		}
+		r_core_seek (core, off, 1);
+	}
+}
+
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	char *cmd, *p;
@@ -145,17 +165,7 @@ static int cmd_seek(void *data, const char *input) {
 
 	if (*input == 'r') {
 		if (input[1] && input[2]) {
-			if (core->io->debug) {
-				off = r_debug_reg_get (core->dbg, input + 2);
-				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
-				r_core_seek (core, off, 1);
-			} else {
-				RReg *orig = core->dbg->reg;
-				core->dbg->reg = core->anal->reg;
-				off = r_debug_reg_get (core->dbg, input + 2);
-				core->dbg->reg = orig;
-				r_core_seek (core, off, 1);
-			}
+			seek_to_register (core, input + 2, false);
 		} else {
 			eprintf ("|Usage| 'sr PC' seek to program counter register\n");
 		}
@@ -495,6 +505,32 @@ static int cmd_seek(void *data, const char *input) {
 	case ':':
 		printPadded (core, atoi (input + 1));
 		break;
+	case 's':
+		switch (input[1]) {
+		case 'r':
+			if (!input[2] || !input[3]) {
+				eprintf ("|Usage| 'ssr PC' seek to program counter register\n");
+				break;
+			}
+			seek_to_register (core, input + 3, true);
+			break;
+		case '?': {
+			const char *help_message[] = {
+				"Usage: ss", "", " # Seek silently commands (without adding the address to the seek history)",
+				"ss", " addr", "Seek silently to address",
+				"ssr", " pc", "Seek silently to register",
+				NULL
+			};
+			r_core_cmd_help (core, help_message);
+			}
+			break;
+		default:
+			r_core_seek (core, off * sign, 1);
+			r_core_block_read (core);
+			break;
+		}
+
+		break;
 	case '?': {
 		const char *help_message[] = {
 			"Usage: s", "", " # Seek commands",
@@ -521,6 +557,7 @@ static int cmd_seek(void *data, const char *input) {
 			"sn/sp", "", "Seek next/prev scr.nkey",
 			"so", " [N]", "Seek to N next opcode(s)",
 			"sr", " pc", "Seek to register",
+			"ss", "", "Seek silently (without adding an entry to the seek history)",
 			// "sp [page]  seek page N (page = block)",
 			NULL
 		};
