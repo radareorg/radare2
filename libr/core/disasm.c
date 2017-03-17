@@ -445,6 +445,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->interactive = r_config_get_i (core->config, "scr.interactive");
 	ds->varsub = r_config_get_i (core->config, "asm.varsub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+	core->parser->localvar_only = r_config_get_i (core->config, "asm.varsub_only");
 	ds->show_vars = r_config_get_i (core->config, "asm.vars");
 	ds->show_varxs = r_config_get_i (core->config, "asm.varxs");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
@@ -1081,6 +1082,13 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 	return (size > 0) ? size : r_anal_fcn_size (f);
 }
 
+static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
+	int delta = sign == '+' ? var->delta : -var->delta;
+	const char *arg_or_var = is_var ? "var" : "arg";
+	r_cons_printf ("%s %s %s @ %s%c0x%x", arg_or_var, var->type, var->name,
+		base, sign, delta);
+}
+
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
@@ -1241,17 +1249,11 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			r_cons_printf ("%s; ", COLOR (ds, color_other));
 			switch (var->kind) {
-			case 'b':
-				if (var->delta > 0) {
-					r_cons_printf ("arg %s %s @ %s+0x%x",
-						var->type, var->name,
-						anal->reg->name[R_REG_NAME_BP],
-						var->delta);
-				} else {
-					r_cons_printf ("var %s %s @ %s-0x%x",
-						var->type, var->name,
-						anal->reg->name[R_REG_NAME_BP],
-						-var->delta);
+			case 'b': {
+				char sign = var->delta > 0 ? '+' : '-';
+				bool is_var = var->delta <= 0;
+				ds_show_functions_argvar (ds, var,
+					anal->reg->name[R_REG_NAME_BP], is_var, sign);
 				}
 				break;
 			case 'r': {
@@ -1264,17 +1266,11 @@ static void ds_show_functions(RDisasmState *ds) {
 					var->type, var->name, i->name);
 				}
 				break;
-			case 's':
-				if ( var->delta < f->maxstack) {
-					r_cons_printf ("var %s %s @ %s+0x%x",
-						var->type, var->name,
-						anal->reg->name[R_REG_NAME_SP],
-						var->delta);
-				} else {
-					r_cons_printf ("arg %s %s @ %s+0x%x",
-						var->type, var->name,
-						anal->reg->name[R_REG_NAME_SP],
-						var->delta);
+			case 's': {
+				bool is_var = var->delta < f->maxstack;
+				ds_show_functions_argvar (ds, var,
+					anal->reg->name[R_REG_NAME_SP],
+					is_var, '+');
 				}
 				break;
 			}
