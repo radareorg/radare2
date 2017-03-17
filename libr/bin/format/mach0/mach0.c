@@ -857,8 +857,12 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_SEGMENT_64";
 	case LC_SYMTAB:
 		return "LC_SYMTAB";
+	case LC_SYMSEG:
+		return "LC_SYMSEG";
 	case LC_DYSYMTAB:
 		return "LC_DYSYMTAB";
+	case LC_FUNCTION_STARTS:
+		return "LC_FUNCTION_STARTS";
 	case LC_DYLIB_CODE_SIGN_DRS:
 		return "LC_DYLIB_CODE_SIGN_DRS";
 	case LC_VERSION_MIN_MACOSX:
@@ -869,14 +873,28 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_VERSION_MIN_TVOS";
 	case LC_VERSION_MIN_WATCHOS:
 		return "LC_VERSION_MIN_WATCHOS";
+	case LC_DYLD_INFO:
+		return "LC_DYLD_INFO";
+	case LC_SOURCE_VERSION:
+		return "LC_SOURCE_VERSION";
+	case LC_MAIN:
+		return "LC_MAIN";
 	case LC_UUID:
-		return "LC_VERSION_MIN_UUID";
+		return "LC_UUID";
 	case LC_ENCRYPTION_INFO_64:
 		return "LC_ENCRYPTION_INFO_64";
 	case LC_ENCRYPTION_INFO:
 		return "LC_ENCRYPTION_INFO";
 	case LC_LOAD_DYLINKER:
 		return "LC_LOAD_DYLINKER";
+	case LC_LOAD_DYLIB:
+		return "LC_LOAD_DYLIB";
+	case LC_THREAD:
+		return "LC_THREAD";
+	case LC_UNIXTHREAD:
+		return "LC_UNIXTHREAD";
+	case LC_IDENT:
+		return "LC_IDENT";
 	}
 	return "";
 }
