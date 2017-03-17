@@ -16,7 +16,7 @@ static void doIndent(int idt, char** o, const char *tab) {
 
 R_API char* r_print_json_indent(const char* s, bool color, const char* tab) {
 	if (!color) {
-		return sdb_json_indent (s);
+		return sdb_json_indent (s, tab);
 	}
 	int indent = 0;
 	int instr = 0;

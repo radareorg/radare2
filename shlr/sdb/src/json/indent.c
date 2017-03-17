@@ -1,8 +1,18 @@
 /* sdb - MIT - Copyright 2012-2015 - pancake */
 
-SDB_API char *sdb_json_indent(const char *s) {
+static void doIndent(int idt, char** o, const char *tab) {
+	int i;
+	char *x;
+	for (i = 0; i < idt; i++) {
+		for (x = (char*) tab; *x; x++) {
+			*(*o)++ = *x;
+		}
+	}
+}
+
+SDB_API char *sdb_json_indent(const char *s, const char* tab) {
 	int indent = 0;
-	int i, instr = 0;
+	int instr = 0;
 	int osz;
 	char *o, *O, *OE, *tmp;
 	if (!s) return NULL;
@@ -40,7 +50,6 @@ SDB_API char *sdb_json_indent(const char *s) {
 		}
 		if (*s == '\n'|| *s == '\r' || *s == '\t' || *s == ' ')
 			continue;
-		#define INDENT(x) indent+=x; for (i=0;i<indent;i++) *o++ = '\t'
 		switch (*s) {
                 case ':':
                         *o++ = *s;
@@ -49,18 +58,20 @@ SDB_API char *sdb_json_indent(const char *s) {
                 case ',':
                         *o++ = *s;
                         *o++ = '\n';
-                        INDENT (0);
+			doIndent (indent, &o, tab);
                         break;
                 case '{':
                 case '[':
 			*o++ = *s;
 			*o++ = (indent!=-1)?'\n':' ';
-                        INDENT (1);
+			indent++;
+			doIndent (indent, &o, tab);
                         break;
                 case '}':
                 case ']':
                         *o++ = '\n';
-                        INDENT (-1);
+			indent--;
+			doIndent (indent, &o, tab);
                         *o++ = *s;
                         break;
 		default:

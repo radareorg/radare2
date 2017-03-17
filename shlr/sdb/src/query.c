@@ -773,7 +773,7 @@ next_quote:
 					}
 				} else {
 					// kvpath:  -> show indented json
-					char *o = sdb_json_indent (sdb_const_get (s, cmd, 0));
+					char *o = sdb_json_indent (sdb_const_get (s, cmd, 0), "  ");
 					out_concat (o);
 					free (o);
 				}
