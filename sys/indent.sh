@@ -19,6 +19,11 @@ if [ -z "${IFILE}" ]; then
 	exit 1
 fi
 
+if [ "${IFILE}" = - ]; then
+	cat > /tmp/input
+	IFILE=/tmp/input
+fi
+
 CWD="$PWD"
 INPLACE=0
 ALLWHITE=0
@@ -77,11 +82,7 @@ indentFile() {
 	if [ "${UNCRUST}" = 1 ]; then
 		cp -f doc/clang-format ${CWD}/.clang-format
 		cd "$CWD"
-		if command -v uncrustify >/dev/null 2>&1; then
-			uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format || exit 1
-		else
-			r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" > .tmp-format || exit 1
-		fi
+		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format || exit 1
 	else
 		cp -f doc/clang-format ${CWD}/.clang-format
 		cd "$CWD"
