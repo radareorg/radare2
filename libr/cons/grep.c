@@ -329,7 +329,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 			}
 			R_FREE (cons->grep.json_path);
 		} else {
-			char *out = r_print_json_indent (buf, I(use_color));
+			char *out = r_print_json_indent (buf, I(use_color), "  ");
 			free (cons->buffer);
 			cons->buffer = out;
 			cons->buffer_len = strlen (out);
