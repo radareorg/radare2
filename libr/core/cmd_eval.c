@@ -167,7 +167,9 @@ static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case 't': // env
-		if (input[1]==' ' && input[2]) {
+		if (input[1] == 'a') {
+			r_cons_printf ("%s\n", (r_num_rand (10) % 2)? "wen": "son");
+		} else if (input[1]==' ' && input[2]) {
 			RConfigNode *node = r_config_node_get (core->config, input+2);
 			if (node) {
 				const char *type = r_config_node_type (node);
