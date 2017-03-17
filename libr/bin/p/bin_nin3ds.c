@@ -18,19 +18,21 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return memcpy (&loaded_header, buf, sizeof (struct n3ds_firm_hdr));
 }
 
-static int load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) return false;
+static bool load(RBinFile *arch) {
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
+	if (!arch || !arch->o) {
+		return false;
+	}
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
 	return check_bytes (bytes, sz);
 }
@@ -41,24 +43,28 @@ static int destroy(RBinFile *arch) {
 	return true;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList *sections(RBinFile *arch) {
 	RList *ret = NULL;
-	RBinSection *sections[4] = {NULL, NULL, NULL, NULL};
+	RBinSection *sections[4] = {
+		NULL, NULL, NULL, NULL
+	};
 	int i, corrupt = false;
 
-	if (!(ret = r_list_new ())) return NULL;
+	if (!(ret = r_list_new ())) {
+		return NULL;
+	}
 
 	/* FIRM has always 4 sections, normally the 4th section is not used */
-	for (i=0; i<4; i++) {
+	for (i = 0; i < 4; i++) {
 		/* Check if section is used */
 		if (loaded_header.sections[i].size) {
-			sections[i] = R_NEW0(RBinSection);
+			sections[i] = R_NEW0 (RBinSection);
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
-			if (loaded_header.sections[i].type == 0x0)
-				strncpy(sections[i]->name, "arm9", 4);
-			else if (loaded_header.sections[i].type == 0x1)
-				strncpy(sections[i]->name, "arm11", 5);
-			else {
+			if (loaded_header.sections[i].type == 0x0) {
+				strncpy (sections[i]->name, "arm9", 4);
+			} else if (loaded_header.sections[i].type == 0x1) {
+				strncpy (sections[i]->name, "arm11", 5);
+			} else {
 				corrupt = true;
 				break;
 			}
@@ -72,26 +78,31 @@ static RList* sections(RBinFile *arch) {
 	}
 
 	/* Append sections or free them if file is corrupt to avoid memory leaks */
-	for (i=0; i<4; i++) {
+	for (i = 0; i < 4; i++) {
 		if (sections[i]) {
-			if (corrupt) free(sections[i]);
-			else r_list_append(ret, sections[i]);
+			if (corrupt) {
+				free (sections[i]);
+			} else {
+				r_list_append (ret, sections[i]);
+			}
 		}
 	}
 	if (corrupt) {
-		r_list_free(ret);
+		r_list_free (ret);
 		return NULL;
 	}
 
 	return ret;
 }
 
-static RList* entries(RBinFile *arch) {
+static RList *entries(RBinFile *arch) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr9 = NULL, *ptr11 = NULL;
 
 	if (arch && arch->buf) {
-		if (!ret) return NULL;
+		if (!ret) {
+			return NULL;
+		}
 		ret->free = free;
 		if (!(ptr9 = R_NEW0 (RBinAddr))) {
 			r_list_free (ret);
@@ -114,9 +125,11 @@ static RList* entries(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 
 	if (!arch || !arch->buf) {
 		free (ret);
@@ -133,7 +146,7 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_nin3ds = {
+RBinPlugin r_bin_plugin_nin3ds = {
 	.name = "nin3ds",
 	.desc = "Nintendo 3DS FIRM format r_bin plugin",
 	.license = "LGPL3",
@@ -148,7 +161,7 @@ struct r_bin_plugin_t r_bin_plugin_nin3ds = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nin3ds,
 	.version = R2_VERSION

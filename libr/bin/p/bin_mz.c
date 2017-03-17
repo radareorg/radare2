@@ -86,7 +86,7 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz,
 	return (void *)res;
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	if (!arch || !arch->o) {
 		return false;
 	}

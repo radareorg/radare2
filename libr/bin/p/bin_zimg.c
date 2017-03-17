@@ -6,13 +6,15 @@
 #include <r_bin.h>
 #include "zimg/zimg.h"
 
-static Sdb* get_sdb (RBinFile *bf) {
-	if (!bf || !bf->o) return NULL;
+static Sdb *get_sdb(RBinFile *bf) {
+	if (!bf || !bf->o) {
+		return NULL;
+	}
 	struct r_bin_zimg_obj_t *bin = (struct r_bin_zimg_obj_t *) bf->o->bin_obj;
 	return bin? bin->kv: NULL;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || size == 0 || size == UT64_MAX) {
@@ -25,12 +27,14 @@ static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadadd
 	return res;
 }
 
-static int load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 size = arch ? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) return false;
+static bool load(RBinFile *arch) {
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 size = arch? r_buf_size (arch->buf): 0;
+	if (!arch || !arch->o) {
+		return false;
+	}
 	arch->o->bin_obj = load_bytes (arch, bytes, size, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? true: false;
+	return arch->o->bin_obj? true: false;
 }
 
 static ut64 baddr(RBinFile *arch) {
@@ -49,14 +53,16 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
 static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	ret->file = arch->file? strdup (arch->file): NULL;
 	ret->type = strdup ("Linux zImage Kernel");
 	ret->has_va = false;
@@ -69,11 +75,11 @@ static RBinInfo *info(RBinFile *arch) {
 	ret->lang = "C";
 	ret->bits = 32;
 	ret->big_endian = 0;
-	ret->dbg_info = 0; //1 | 4 | 8; /* Stripped | LineNums | Syms */
+	ret->dbg_info = 0; // 1 | 4 | 8; /* Stripped | LineNums | Syms */
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_zimg = {
+RBinPlugin r_bin_plugin_zimg = {
 	.name = "zimg",
 	.desc = "zimg format bin plugin",
 	.license = "LGPL3",

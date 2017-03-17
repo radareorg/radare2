@@ -9,7 +9,7 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, 
 	return R_NOTNULL;
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	return true;
 }
 

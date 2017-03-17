@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - ampotos */
+/* radare - LGPL - Copyright 2015-2017 - ampotos, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,7 +13,7 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddr
 	return r_bin_internal_omf_load ((char *) buf, size);
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	const ut8 *byte = arch? r_buf_buffer (arch->buf): NULL;
 	ut64 size = arch? r_buf_size (arch->buf): 0;
 	if (!arch || !arch->o) {
@@ -89,11 +89,12 @@ static RList *sections(RBinFile *arch) {
 		return NULL;
 	}
 
-	while (ct_omf_sect < obj->nb_section)
+	while (ct_omf_sect < obj->nb_section) {
 		if (!r_bin_omf_send_sections (ret,\
 			    obj->sections[ct_omf_sect++], arch->o->bin_obj)) {
 			return ret;
 		}
+	}
 	return ret;
 }
 
@@ -151,7 +152,7 @@ static ut64 get_vaddr(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }
 
-struct r_bin_plugin_t r_bin_plugin_omf = {
+RBinPlugin r_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "omf bin plugin",
 	.license = "LGPL3",
@@ -169,7 +170,7 @@ struct r_bin_plugin_t r_bin_plugin_omf = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_omf,
 	.version = R2_VERSION

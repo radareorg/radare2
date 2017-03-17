@@ -7,38 +7,45 @@
 #include "te/te_specs.h"
 #include "te/te.h"
 
-static Sdb* get_sdb (RBinFile *bf) {
+static Sdb *get_sdb(RBinFile *bf) {
 	RBinObject *o = bf->o;
-	if (!o) return NULL;
+	if (!o) {
+		return NULL;
+	}
 	struct r_bin_te_obj_t *bin = (struct r_bin_te_obj_t *) o->bin_obj;
 	return bin? bin->kv: NULL;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct r_bin_te_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 
-	if (!buf || sz == 0 || sz == UT64_MAX) return NULL;
-	tbuf = r_buf_new();
+	if (!buf || sz == 0 || sz == UT64_MAX) {
+		return NULL;
+	}
+	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = r_bin_te_new_buf (tbuf);
-	if (res)
+	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
+	}
 	r_buf_free (tbuf);
 	return res;
 }
 
-static int load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+static bool load(RBinFile *arch) {
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
 
-	if (!arch || !arch->o) return false;
+	if (!arch || !arch->o) {
+		return false;
+	}
 	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj ? true: false;
+	return arch->o->bin_obj? true: false;
 }
 
 static int destroy(RBinFile *arch) {
-	r_bin_te_free ((struct r_bin_te_obj_t*)arch->o->bin_obj);
+	r_bin_te_free ((struct r_bin_te_obj_t *) arch->o->bin_obj);
 	return true;
 }
 
@@ -46,28 +53,31 @@ static ut64 baddr(RBinFile *arch) {
 	return r_bin_te_get_image_base (arch->o->bin_obj);
 }
 
-static RBinAddr* binsym(RBinFile *arch, int type) {
+static RBinAddr *binsym(RBinFile *arch, int type) {
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr)))
+		if (!(ret = R_NEW (RBinAddr))) {
 			return NULL;
+		}
 		ret->paddr = ret->vaddr = r_bin_te_get_main_paddr (arch->o->bin_obj);
 		break;
 	}
 	return ret;
 }
 
-static RList* entries(RBinFile *arch) {
-	RList* ret;
+static RList *entries(RBinFile *arch) {
+	RList *ret;
 	RBinAddr *ptr = NULL;
 	RBinAddr *entry = NULL;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(entry = r_bin_te_get_entrypoint (arch->o->bin_obj)))
+	if (!(entry = r_bin_te_get_entrypoint (arch->o->bin_obj))) {
 		return ret;
+	}
 	if ((ptr = R_NEW (RBinAddr))) {
 		ptr->paddr = entry->paddr;
 		ptr->vaddr = entry->vaddr;
@@ -77,55 +87,66 @@ static RList* entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList *sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_te_section_t *sections = NULL;
 	int i;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(sections = r_bin_te_get_sections(arch->o->bin_obj))) {
+	if (!(sections = r_bin_te_get_sections (arch->o->bin_obj))) {
 		free (ret);
 		return NULL;
 	}
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
-		if (sections[i].name[sizeof (sections[i].name)-1]) {
+		}
+		if (sections[i].name[sizeof (sections[i].name) - 1]) {
 			memcpy (ptr->name, sections[i].name,
 				sizeof (sections[i].name));
 			ptr->name[sizeof (sections[i].name)] = 0;
-		} else strncpy (ptr->name, (char*)sections[i].name,
-			R_BIN_SIZEOF_STRINGS);
+		} else {
+			strncpy (ptr->name, (char *) sections[i].name,
+				R_BIN_SIZEOF_STRINGS);
+		}
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
 		ptr->srwx = R_BIN_SCN_MAP;
 		ptr->add = true;
-		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags))
+		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
-		if (R_BIN_TE_SCN_IS_WRITABLE (sections[i].flags))
+		}
+		if (R_BIN_TE_SCN_IS_WRITABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_WRITABLE;
-		if (R_BIN_TE_SCN_IS_READABLE (sections[i].flags))
+		}
+		if (R_BIN_TE_SCN_IS_READABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_SHAREABLE;
-		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags))
+		}
+		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_SHAREABLE;
+		}
 		/* All TE files have _TEXT_RE section, which is 16-bit, because of
 		 * CPU start in this mode */
-		if (!strncmp(ptr->name, "_TEXT_RE", 8))
+		if (!strncmp (ptr->name, "_TEXT_RE", 8)) {
 			ptr->bits = 16;
+		}
 		r_list_append (ret, ptr);
 	}
 	free (sections);
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) return NULL;
+	if (!ret) {
+		return NULL;
+	}
 	ret->file = strdup (arch->file);
 	ret->bclass = strdup ("TE");
 	ret->rclass = strdup ("te");
@@ -149,8 +170,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 
 }

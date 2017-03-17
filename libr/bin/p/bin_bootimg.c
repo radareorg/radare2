@@ -93,7 +93,7 @@ static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 la, Sdb *s
 	return bio;
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	return true;
 }
 
@@ -246,7 +246,7 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_bootimg = {
+RBinPlugin r_bin_plugin_bootimg = {
 	.name = "bootimg",
 	.desc = "Android Boot Image",
 	.license = "LGPL3",
@@ -264,7 +264,7 @@ struct r_bin_plugin_t r_bin_plugin_bootimg = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bootimg,
 	.version = R2_VERSION

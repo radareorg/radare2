@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014-2015 - thatlemon@gmail.com, pancake */
+/* radare - LGPL - 2014-2017 - thatlemon@gmail.com, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,7 +13,7 @@ static const char *kt_name[] = {
 
 static bool check_bytes(const ut8 *buf, ut64 size) {
 	xbe_header *header = (xbe_header *) buf;
-	return (size > sizeof(xbe_header) && header->magic == XBE_MAGIC);
+	return (size > sizeof (xbe_header) && header->magic == XBE_MAGIC);
 }
 
 static bool check(RBinFile *arch) {
@@ -26,7 +26,7 @@ static bool check(RBinFile *arch) {
 	return check_bytes (bytes, size);
 }
 
-static int load(RBinFile *arch) {
+static bool load(RBinFile *arch) {
 	r_bin_xbe_obj_t *obj = NULL;
 	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
 	if (!arch || !arch->o) {
