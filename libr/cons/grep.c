@@ -660,9 +660,7 @@ R_API int r_cons_html_print(const char *ptr) {
 			if (write (1, str, tmp) != tmp) {
 				eprintf ("r_cons_html_print: write: error\n");
 			}
-			if (I(is_html)) {
-				printf ("<br />");
-			}
+			printf ("<br />");
 			if (!ptr[1]) {
 				// write new line if it's the end of the output
 				printf ("\n");

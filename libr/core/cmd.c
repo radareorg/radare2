@@ -1613,6 +1613,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		}
 	}
 
+#if 0
 	ptr = strchr (cmd, '<');
 	if (ptr) {
 		ptr[0] = '\0';
@@ -1673,6 +1674,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		}
 	}
 next:
+#endif
 	// TODO must honor " and `
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
@@ -1684,6 +1686,7 @@ next:
 		*ptr = '\0';
 		str = r_str_trim_head_tail (ptr + 1 + (ptr[1] == '>'));
 		if (!*str) {
+			eprintf ("No output?\n");
 			goto next2;
 		}
 		/* r_cons_flush() handles interactive output (to the terminal)
