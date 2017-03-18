@@ -23,6 +23,10 @@
 #undef R_FREE
 #endif
 
+#ifdef R_NEWCOPY
+#undef R_NEWCOPY
+#endif
+
 // HACK to fix capstone-android-mips build
 #undef mips
 #define mips mips
@@ -229,6 +233,14 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 #define R_NEW(x) (x*)malloc(sizeof(x))
+#define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof(x), y)
+static inline void *r_new_copy(int size, void *data) {
+	void *a = malloc(size);
+	if (a) {
+		memcpy (a, data, size);
+	}
+	return a;
+}
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
