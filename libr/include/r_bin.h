@@ -581,6 +581,7 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select_idx(RBin *bin, const char *name, int idx);
 R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id );
 R_API int r_bin_object_delete (RBin *bin, ut32 binfile_id, ut32 binobj_id);
+R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API RBinFile * r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits, const char *name);
 R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char *arch, int bits, const char *name);

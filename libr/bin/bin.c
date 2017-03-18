@@ -43,7 +43,7 @@ static int is_data_section(RBinFile *a, RBinSection *s);
 static RList *get_strings(RBinFile *a, int min, int dump);
 static void r_bin_object_delete_items(RBinObject *o);
 static void r_bin_object_free(void /*RBinObject*/ *o_);
-static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
+// static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
 static int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 //static int remove_bin_file_by_binfile (RBin *bin, RBinFile * binfile);
 //static void r_bin_free_bin_files (RBin *bin);
@@ -574,7 +574,7 @@ static void r_bin_object_free(void /*RBinObject*/ *o_) {
 // XXX - change this to RBinObject instead of RBinFile
 // makes no sense to pass in a binfile and set the RBinObject
 // kinda a clunky functions
-static int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
+R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	RBinObject *old_o;
 	RBinPlugin *cp;
 	int i, minlen;
@@ -2059,10 +2059,11 @@ R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 	RBinObject *obj = NULL;
 	int res = false;
 
+#if 0
 	if (binfile_id == UT32_MAX && binobj_id == UT32_MAX) {
 		return false;
 	}
-
+#endif
 	if (binfile_id == -1) {
 		binfile = r_bin_file_find_by_object_id (bin, binobj_id);
 		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
