@@ -99,7 +99,7 @@ static void serialize(RSignItem *it, char *k, char *v) {
 		snprintf (v, R_SIGN_VAL_MAXSZ, "%c|%d|%s|%s|%s",
 				it->type, it->size,
 				it->size > 0? hexbytes: "00",
-				it->size > 0? hexmask: "00", 
+				it->size > 0? hexmask: "00",
 				hexmetrics);
 
 		free (hexbytes);
@@ -481,6 +481,10 @@ static int searchCB(RSignItem *it, void *user) {
 	RSearchKeyword *kw;
 	RSignItem *it2;
 
+	if (it->type != R_SIGN_EXACT && it->type != R_SIGN_ANAL) {
+		return 1;
+	}
+
 	it2 = r_sign_item_dup (it);
 	r_list_append(ss->items, it2);
 
@@ -507,8 +511,55 @@ R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *b
 	return r_search_update (ss->search, at, buf, len);
 }
 
-R_API int r_sign_match_metric(RAnal *a, RAnalFunction *fcn, RSignMetricMatchCallback cb) {
-	// TODO
+static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
+	int ebbs;
+
+	if (it->metrics.cc != -1 && it->metrics.cc != r_anal_fcn_cc (fcn)) {
+		return false;
+	}
+	if (it->metrics.nbbs != -1 && it->metrics.nbbs != r_list_length (fcn->bbs)) {
+		return false;
+	}
+	if (it->metrics.edges != -1 && it->metrics.edges != r_anal_fcn_count_edges (fcn, &ebbs)) {
+		return false;
+	}
+	if (it->metrics.ebbs != -1 && it->metrics.ebbs != ebbs) {
+		return false;
+	}
+
+	return true;
+}
+
+struct ctxMetricMatchCB {
+	RAnal *anal;
+	RAnalFunction *fcn;
+	RSignMetricMatchCallback cb;
+	void *user;
+};
+
+static int metricMatchCB(RSignItem *it, void *user) {
+	struct ctxMetricMatchCB *ctx = (struct ctxMetricMatchCB *) user;
+
+	if (it->type != R_SIGN_METRIC) {
+		return 1;
+	}
+
+	if (!fcnMetricsCmp (it, ctx->fcn)) {
+		return 1;
+	}
+
+	if (ctx->cb) {
+		return ctx->cb (it, ctx->fcn, ctx->user);
+	}
+
+	return 1;
+}
+
+R_API int r_sign_match_metric(RAnal *a, RAnalFunction *fcn, RSignMetricMatchCallback cb, void *user) {
+	struct ctxMetricMatchCB ctx = { a, fcn, cb, user };
+
+	r_sign_foreach (a, metricMatchCB, &ctx);
+
 	return 0;
 }
 
@@ -517,7 +568,7 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 
 	ret->name = r_str_new (it->name);
 	ret->space = it->space;
-	ret->type = it->space;
+	ret->type = it->type;
 	ret->size = it->size;
 	ret->bytes = malloc (it->size);
 	memcpy (ret->bytes, it->bytes, it->size);

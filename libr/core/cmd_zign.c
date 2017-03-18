@@ -205,10 +205,15 @@ static bool addFcnMetrics(RCore *core, RAnalFunction *fcn) {
 	return true;
 }
 
-static bool parseAddMetricArgs(const char *args0, int nargs, RSignMetrics *metrics) {
+static bool parseMetricArgs(const char *args0, int nargs, RSignMetrics *metrics) {
 	const char *ptr = NULL;
 	int i = 0;
 	bool retval = true;
+
+	metrics->cc = -1;
+	metrics->nbbs = -1;
+	metrics->edges = -1;
+	metrics->ebbs = -1;
 
 	for (i = 0; i < nargs; i++) {
 		ptr = r_str_word_get0(args0, i);
@@ -253,7 +258,7 @@ static int cmdAddMetric(void *data, const char *input) {
 			name = r_str_word_get0(args, 0);
 			args0 = r_str_word_get0(args, 1);
 
-			if (!parseAddMetricArgs (args0, n - 1, &metrics)) {
+			if (!parseMetricArgs (args0, n - 1, &metrics)) {
 				eprintf ("error: invalid arguments\n");
 				retval = false;
 				goto exit_case;
@@ -531,6 +536,41 @@ static int cmdFlirt(void *data, const char *input) {
 	return true;
 }
 
+struct ctxMetricMatchCB {
+	RCore *core;
+	bool rad;
+	int count; // TODO(nibble): use one counter per metric zign
+};
+
+static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, bool rad) {
+	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	char *name;
+
+	if (it->space == -1) {
+		name = r_str_newf ("%s.%c.%s_%d", zign_prefix, it->type, it->name, count);
+	} else {
+		name = r_str_newf ("%s.%s.%c.%s_%d", zign_prefix, core->anal->zign_spaces.spaces[it->space],
+			it->type, it->name, count);
+	}
+
+	if (rad) {
+		r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, size, addr);
+	} else {
+		r_flag_set(core->flags, name, addr, size);
+	}
+
+	free(name);
+}
+
+static int metricMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
+	struct ctxMetricMatchCB *ctx = (struct ctxMetricMatchCB *) user;
+
+	addFlag (ctx->core, it, fcn->addr, r_anal_fcn_realsize (fcn), ctx->count, ctx->rad);
+	ctx->count++;
+
+	return 1;
+}
+
 struct ctxSearchCB {
 	RCore *core;
 	bool rad;
@@ -538,25 +578,8 @@ struct ctxSearchCB {
 
 static int searchHitCB(RSearchKeyword *kw, RSignItem *it, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
-	RConfig *cfg = ctx->core->config;
-	RAnal *a = ctx->core->anal;
-	const char *zign_prefix = r_config_get (cfg, "zign.prefix");
-	char *name;
 
-	if (it->space == -1) {
-		name = r_str_newf ("%s.%s_%d", zign_prefix, it->name, kw->count);
-	} else {
-		name = r_str_newf ("%s.%s.%s_%d", zign_prefix,
-			a->zign_spaces.spaces[it->space], it->name, kw->count);
-	}
-
-	if (ctx->rad) {
-		r_cons_printf ("f %s %d @ 0x%08"PFMT64x"\n", name, kw->keyword_length, addr);
-	} else {
-		r_flag_set(ctx->core->flags, name, addr, kw->keyword_length);
-	}
-
-	free(name);
+	addFlag (ctx->core, it, addr, kw->keyword_length, kw->count, ctx->rad);
 
 	return 1;
 }
@@ -594,13 +617,15 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad) {
 
 	free (buf);
 	r_sign_search_free (ss);
-	
+
 	return retval;
 }
 
 static bool search(RCore *core, bool rad) {
+	struct ctxMetricMatchCB ctx = { core, rad, 0 };
 	RList *list;
 	RListIter *iter;
+	RAnalFunction *fcni = NULL;
 	RIOMap *map;
 	bool retval = true;
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
@@ -616,6 +641,7 @@ static bool search(RCore *core, bool rad) {
 		}
 	}
 
+	// Anal/Exact search
 	list = r_core_get_boundaries_prot (core, R_IO_EXEC | R_IO_WRITE | R_IO_READ, mode, &sin_from, &sin_to);
 	if (list) {
 		r_list_foreach (list, iter, map) {
@@ -627,6 +653,16 @@ static bool search(RCore *core, bool rad) {
 		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", sin_from, sin_to);
 		retval = searchRange (core, sin_from, sin_to, rad);
 	}
+
+	// Metric search
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (core->anal->fcns, iter, fcni) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		r_sign_match_metric (core->anal, fcni, metricMatchCB, &ctx);
+	}
+	r_cons_break_pop ();
 
 	if (rad) {
 		r_cons_printf ("fs-\n");
@@ -668,17 +704,54 @@ static int cmdSearch(void *data, const char *input) {
 static int cmdCheck(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	RSignSearch *ss;
+	RListIter *iter;
+	RAnalFunction *fcni = NULL;
 	ut64 at = core->offset;
 	bool retval = true;
-	struct ctxSearchCB ctx = { core, input[0] == '*' };
+	bool rad = input[0] == '*';
+	struct ctxSearchCB searchCtx = { core, rad };
+	struct ctxMetricMatchCB metricMatchCtx = { core, rad, 0 };
+	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 
+	if (rad) {
+		r_cons_printf ("fs+%s\n", zign_prefix);
+	} else {
+		if (!r_flag_space_push (core->flags, zign_prefix)) {
+			eprintf ("error: cannot create flagspace\n");
+			return false;
+		}
+	}
+
+	// Anal/Exact search
 	ss = r_sign_search_new ();
-	r_sign_search_init (core->anal, ss, searchHitCB, &ctx);
+	r_sign_search_init (core->anal, ss, searchHitCB, &searchCtx);
 	if (r_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
 		eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 		retval = false;
 	}
 	r_sign_search_free (ss);
+
+	// Metric search
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (core->anal->fcns, iter, fcni) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		if (fcni->addr == core->offset) {
+			r_sign_match_metric (core->anal, fcni, metricMatchCB, &metricMatchCtx);
+			break;
+		}
+	}
+	r_cons_break_pop ();
+
+	if (rad) {
+		r_cons_printf ("fs-\n");
+	} else {
+		if (!r_flag_space_pop (core->flags)) {
+			eprintf ("error: cannot restore flagspace\n");
+			return false;
+		}
+	}
 
 	return retval;
 }
