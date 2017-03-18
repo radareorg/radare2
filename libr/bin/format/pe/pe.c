@@ -683,8 +683,9 @@ static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 		r_sys_perror ("malloc (section header)");
 		goto out_error;
 	}
-	if (r_buf_read_at (bin->b, bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
-		bin->nt_headers->file_header.SizeOfOptionalHeader,
+	bin->section_header_offset = bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) +
+		bin->nt_headers->file_header.SizeOfOptionalHeader;
+	if (r_buf_read_at (bin->b, bin->section_header_offset,
 		(ut8*) bin->section_header, sections_size) == -1) {
 		bprintf ("Warning: read (sections)\n");
 		R_FREE (bin->section_header);
