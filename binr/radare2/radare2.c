@@ -1216,8 +1216,8 @@ int main(int argc, char **argv, char **envp) {
 #if __WINDOWS__
 							} else {
 								r_debug_detach (r.dbg, r.dbg->pid);
-							}
 #endif
+							}
 						} else continue;
 					}
 				}
