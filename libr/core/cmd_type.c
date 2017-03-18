@@ -27,7 +27,7 @@ static void show_help(RCore *core) {
 		"to", " -", "Open cfg.editor to load types",
 		"to", " <path>", "Load types from C header file",
 		"tos", " <path>", "Load types from parsed Sdb database",
-		"tp", " <type>  = <address>", "cast data at <adress> to <type> and print it",
+		"tp", " <type>  = <address>", "cast data at <address> to <type> and print it",
 		"ts", "[?]", "print loaded struct types",
 		"tu", "[?]", "print loaded union types",
 		//"| ts k=v k=v @ link.addr set fields at given linked type\n"
@@ -461,7 +461,7 @@ static int cmd_type(void *data, const char *input) {
 			const char *help_message[] = {
 				"Usage:", "", "",
 				"tl", "", "list all links in readable format",
-				"tl", "[typename]", "link a type to current adress.",
+				"tl", "[typename]", "link a type to current address.",
 				"tl", "[typename] = [address]", "link type to given address.",
 				"tls", "[address]", "show link at given address",
 				"tl-*", "", "delete all links.",

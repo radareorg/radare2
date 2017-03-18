@@ -3713,7 +3713,7 @@ static int cmd_print(void *data, const char *input) {
 				"ps", "", "print string",
 				"psi", "", "print string inside curseek",
 				"psb", "", "print strings in current block",
-				"psx", "", "show string with scaped chars",
+				"psx", "", "show string with escaped chars",
 				"psz", "", "print zero terminated string",
 				"psp", "", "print pascal string",
 				"psu", "", "print utf16 unicode (json)",
