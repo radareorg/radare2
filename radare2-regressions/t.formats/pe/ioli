@@ -1,0 +1,26 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: ioli w32 1'
+FILE=../../bins/pe/ioli/w32/crackme0x00.exe
+ARGS=''
+CMDS="aaa
+axt str.250382~?0x401368
+CC~?"250382"
+"
+EXPECT='1
+1
+'
+run_test
+
+NAME='PE: ioli pocketpc 1'
+FILE=../../bins/pe/ioli/pocketpc/crackme0x00.arm.exe
+ARGS=''
+CMDS="aaa
+pd 1 @ 0x0001108c~?str.250382
+axt str.250382~?
+"
+EXPECT='1
+1
+'
+run_test

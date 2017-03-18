@@ -1,0 +1,9 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami tls_reloc.exe - open'
+FILE=../../bins/pe/tls_reloc.exe
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+run_test

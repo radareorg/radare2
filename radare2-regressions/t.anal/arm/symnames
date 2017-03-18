@@ -1,0 +1,73 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="ELF ARM: function names"
+FILE=../../bins/elf/analysis/arm_32_flags0
+CMDS='
+s sym.call_weak_fn
+af
+afi~name
+'
+EXPECT='name: sym.call_weak_fn
+'
+run_test
+
+NAME="ELF ARM: function names"
+BROKEN=
+FILE=../../bins/elf/analysis/arm_32_flags0
+CMDS='
+aa
+afl~abort
+'
+EXPECT='0x000102bc    1 12           sym.imp.abort
+'
+run_test
+
+NAME="ELF ARM: function names 2"
+BROKEN=
+FILE=../../bins/elf/analysis/arm_32_flags0
+CMDS='
+aa
+afl~weak
+'
+EXPECT='0x00010304    1 28           sym.call_weak_fn
+'
+run_test
+
+NAME="ELF ARM: function names 2"
+BROKEN=
+FILE=../../bins/elf/analysis/arm_32_flags0
+CMDS='
+af @@ sym*
+afl~weak
+'
+EXPECT='0x00010304    1 28           sym.call_weak_fn
+'
+run_test
+
+NAME="ELF ARM: aa"
+BROKEN=
+FILE=../../bins/elf/analysis/arm_32_flags0
+CMDS='
+aa
+f~sym?
+afl~?
+'
+EXPECT='19
+15
+'
+run_test
+
+NAME="ELF ARM: af @@ sym.*"
+BROKEN=
+FILE=../../bins/elf/analysis/arm_32_flags0
+CMDS='
+af @@ sym.*
+f~sym?
+afl~?
+'
+EXPECT='19
+15
+'
+run_test

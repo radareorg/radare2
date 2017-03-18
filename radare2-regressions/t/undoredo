@@ -1,0 +1,199 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=malloc://1024
+ARGS=
+CMDS='
+?e No seeks.
+s* ; ?v $$
+?e
+
+?e But try undo/redo.
+s-
+s+
+s*
+s+
+s+
+s-
+s-
+s-
+s+
+s*
+?e
+
+?e First seeks.
+s 0x10 ; s* ; ?v $$
+s 0x20 ; s* ; ?v $$
+s 0x30 ; s* ; ?v $$
+s 0x40 ; s* ; ?v $$
+?e
+
+?e Undo all seeks (and some more).
+s- ; s* ; ?v $$ ; ?e
+s- ; s* ; ?v $$ ; ?e
+s- ; s* ; ?v $$ ; ?e
+s- ; s* ; ?v $$ ; ?e
+# Test if more undos break something.
+s- ; s* ; ?v $$ ; ?e
+s- ; s* ; ?v $$ ; ?e
+
+?e Then redo them (and some more).
+s+ ; s* ; ?v $$ ; ?e
+s+ ; s* ; ?v $$ ; ?e
+s+ ; s* ; ?v $$ ; ?e
+s+ ; s* ; ?v $$ ; ?e
+# Test if more undos break something.
+s+ ; s* ; ?v $$ ; ?e
+s+ ; s* ; ?v $$ ; ?e
+
+?e Undo some seeks and then seek somewhere else.
+s- ; s-
+s* ; ?v $$ ; ?e
+s 0x50
+s* ; ?v $$ ; ?e
+# Redo now does nothing.
+s+ ; s+ ; s+
+s* ; ?v $$ ; ?e
+
+?e Undo all seeks again and perform a single seek with undo/redo.
+s- ; s- ; s-
+s* ; ?v $$ ; ?e
+s 0x100
+s* ; ?v $$ ; ?e
+s- ; s+
+s* ; ?v $$ ; ?e
+'
+EXPECT='No seeks.
+0x0
+
+But try undo/redo.
+
+First seeks.
+f undo_0 @ 0x0
+0x10
+f undo_1 @ 0x0
+f undo_0 @ 0x10
+0x20
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+0x30
+f undo_3 @ 0x0
+f undo_2 @ 0x10
+f undo_1 @ 0x20
+f undo_0 @ 0x30
+0x40
+
+Undo all seeks (and some more).
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+# Current undo/redo position.
+f redo_0 @ 0x40
+0x30
+
+f undo_1 @ 0x0
+f undo_0 @ 0x10
+# Current undo/redo position.
+f redo_0 @ 0x30
+f redo_1 @ 0x40
+0x20
+
+f undo_0 @ 0x0
+# Current undo/redo position.
+f redo_0 @ 0x20
+f redo_1 @ 0x30
+f redo_2 @ 0x40
+0x10
+
+f redo_0 @ 0x10
+f redo_1 @ 0x20
+f redo_2 @ 0x30
+f redo_3 @ 0x40
+0x0
+
+f redo_0 @ 0x10
+f redo_1 @ 0x20
+f redo_2 @ 0x30
+f redo_3 @ 0x40
+0x0
+
+f redo_0 @ 0x10
+f redo_1 @ 0x20
+f redo_2 @ 0x30
+f redo_3 @ 0x40
+0x0
+
+Then redo them (and some more).
+f undo_0 @ 0x0
+# Current undo/redo position.
+f redo_0 @ 0x20
+f redo_1 @ 0x30
+f redo_2 @ 0x40
+0x10
+
+f undo_1 @ 0x0
+f undo_0 @ 0x10
+# Current undo/redo position.
+f redo_0 @ 0x30
+f redo_1 @ 0x40
+0x20
+
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+# Current undo/redo position.
+f redo_0 @ 0x40
+0x30
+
+f undo_3 @ 0x0
+f undo_2 @ 0x10
+f undo_1 @ 0x20
+f undo_0 @ 0x30
+0x40
+
+f undo_3 @ 0x0
+f undo_2 @ 0x10
+f undo_1 @ 0x20
+f undo_0 @ 0x30
+0x40
+
+f undo_3 @ 0x0
+f undo_2 @ 0x10
+f undo_1 @ 0x20
+f undo_0 @ 0x30
+0x40
+
+Undo some seeks and then seek somewhere else.
+f undo_1 @ 0x0
+f undo_0 @ 0x10
+# Current undo/redo position.
+f redo_0 @ 0x30
+f redo_1 @ 0x40
+0x20
+
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+0x50
+
+f undo_2 @ 0x0
+f undo_1 @ 0x10
+f undo_0 @ 0x20
+0x50
+
+Undo all seeks again and perform a single seek with undo/redo.
+f redo_0 @ 0x10
+f redo_1 @ 0x20
+f redo_2 @ 0x50
+0x0
+
+f undo_0 @ 0x0
+0x100
+
+f undo_0 @ 0x0
+0x100
+
+'
+
+run_test

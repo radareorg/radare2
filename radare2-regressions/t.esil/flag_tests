@@ -1,0 +1,147 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016  sushant94
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='64bit Integer comparison [-1 == 1 (op1 < op2)]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae 1,-1,==,POP,$o,of,=,$s,sf,=,$b64,cf,=,$z,zf,="
+"aer?cf"
+"aer?sf"
+"aer?of"
+"aer?zf"
+'
+EXPECT='0x00000000
+0x00000001
+0x00000000
+0x00000000
+'
+run_test
+
+NAME='64bit Integer comparison [1 == -1 (op1 > op2)]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae -1,1,==,POP,$o,of,=,$s,sf,=,$b64,cf,=,$z,zf,="
+"aer?cf"
+"aer?sf"
+"aer?of"
+"aer?zf"
+'
+EXPECT='0x00000001
+0x00000000
+0x00000000
+0x00000000
+'
+run_test
+
+NAME='32bit Integer addition with overflow [0x80000000 + 0x80000000]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae 0x80000000,eax,=,0x80000000,ebx,=,eax,ebx,+=,$o,of,=,$s,sf,=,$c31,cf,=,$z,zf,="
+"aer?cf"
+"aer?sf"
+"aer?of"
+"aer?zf"
+'
+EXPECT='0x00000001
+0x00000000
+0x00000001
+0x00000001
+'
+run_test
+
+NAME='32bit Integer Addition [0x90000000 + 0x70000000]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae 0x70000000,eax,=,0x90000000,ebx,=,eax,ebx,+=,$o,of,=,$s,sf,=,$c31,cf,=,$z,zf,="
+"aer?cf"
+"aer?sf"
+"aer?of"
+"aer?zf"
+'
+EXPECT='0x00000001
+0x00000000
+0x00000000
+0x00000001
+'
+run_test
+
+NAME='32bit Integer Addition [0x70000000 + 0x90000000]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae 0x90000000,eax,=,0x70000000,ebx,=,eax,ebx,+=,$o,of,=,$s,sf,=,$c31,cf,=,$z,zf,="
+"aer?cf"
+"aer?sf"
+"aer?of"
+"aer?zf"
+'
+EXPECT='0x00000001
+0x00000000
+0x00000000
+0x00000001
+'
+run_test
+
+NAME='signed compare check. a > b [2 > 1]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae 2,eax,=,1,ebx,=,ebx,eax,>,$o,of,=,$s,sf,=,$c31,cf,=,$z,zf,=,sf,of,^,zf,|,!,=="
+'
+EXPECT='0x1
+'
+run_test
+
+NAME='signed compare check. a < b [2 < 1]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae 2,eax,=,1,ebx,=,ebx,eax,<,$o,of,=,$s,sf,=,$c31,cf,=,$z,zf,=,sf,of,!=,=="
+'
+EXPECT='0x1
+'
+run_test
+
+NAME='unsigned compare check. a < b [-1 < 1]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae -1,eax,=,1,ebx,=,ebx,eax,<,$o,of,=,$s,sf,=,$c31,cf,=,$z,zf,=,cf,zf,|,!,=="
+'
+EXPECT='0x0
+'
+run_test
+
+NAME='unsigned compare check. a > b [-1 > 1]'
+FILE=-
+ARGS=
+CMDS='
+e asm.arch = x86
+e asm.bits = 64
+"ae -1,eax,=,1,ebx,=,ebx,eax,>,$o,of,=,$s,sf,=,$c31,cf,=,$z,zf,=,cf,=="
+'
+EXPECT='0x0
+'
+run_test

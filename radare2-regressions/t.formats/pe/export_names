@@ -1,0 +1,18 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: export function names'
+FILE=../../bins/pe/Lab05-01.dll
+CMDS='iE~vaddr='
+EXPECT='vaddr=0x1000d847 paddr=0x0000cc47 ord=000 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_InstallRT
+vaddr=0x1000dec1 paddr=0x0000d2c1 ord=001 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_InstallSA
+vaddr=0x1000e892 paddr=0x0000dc92 ord=002 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_InstallSB
+vaddr=0x10007025 paddr=0x00006425 ord=003 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_PSLIST
+vaddr=0x1000cf30 paddr=0x0000c330 ord=004 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_ServiceMain
+vaddr=0x10007ecb paddr=0x000072cb ord=005 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_StartEXS
+vaddr=0x1000f405 paddr=0x0000e805 ord=006 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_UninstallRT
+vaddr=0x1000ea05 paddr=0x0000de05 ord=007 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_UninstallSA
+vaddr=0x1000f138 paddr=0x0000e538 ord=008 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=xdll.dll_UninstallSB
+'
+
+run_test

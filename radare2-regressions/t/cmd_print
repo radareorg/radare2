@@ -1,0 +1,602 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='p2 hello-linux-x86_64'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS='
+p2 16
+'
+EXPECT='[44m  [44m  [40m  [41m  [44m  [44m  [47m  [40m  [0m
+[44m  [41m  [47m  [47m  [40m  [47m  [47m  [40m  [0m
+[41m  [40m  [47m  [40m  [44m  [44m  [44m  [41m  [0m
+[44m  [41m  [47m  [47m  [40m  [47m  [47m  [44m  [0m
+[41m  [40m  [41m  [47m  [44m  [47m  [41m  [47m  [0m
+[40m  [44m  [44m  [47m  [47m  [44m  [41m  [41m  [0m
+[41m  [40m  [41m  [40m  [47m  [47m  [47m  [47m  [0m
+[47m  [40m  [47m  [41m  [44m  [41m  [47m  [44m  [0m
+'
+# ascii art
+EXPECT='----..==----##..
+--==####..####..
+==..##..------==
+--==####..####--
+==..==##--##==##
+..----####--====
+==..==..########
+##..##==--==##--
+'
+
+run_test
+
+NAME='p= 0xff 0x00'
+FILE=-
+BROKEN=1
+CMDS='
+b 2
+wx 0xff
+p= 2@0
+'
+EXPECT='         ___________________________________________________
+00 00ff | __________________________________________________|
+01 0000 ||
+'
+
+run_test
+
+NAME='p=b 0xff 0x00'
+FILE=-
+CMDS='
+b 2
+wx 0xff
+p=b 2 2@0
+'
+EXPECT="0x00000000 00 00ff |'__________________________________________________|
+0x00000001 01 0000 ||
+"
+
+run_test
+
+NAME='p=d'
+FILE='../bins/elf/arm1.bin'
+ARGS=-n
+CMDS='p=d 10 @ 0'
+EXPECT='min:   1  0x1
+max:   127  0x7f
+dict:  6  0x6
+range: 126  0x7e
+size:  10  0xa
+'
+
+run_test
+
+NAME='p=e 5'
+FILE='../bins/elf/arm1.bin'
+CMDS='p=e 5@0'
+EXPECT="0x00000000 00 00c3 |''''''''''''''''''''''''''''''''''''''|
+0x0001bec1 01 00c4 |                                       |
+0x00037d82 02 00c4 |                                       |
+0x00053c43 03 00c4 |                           ____________|
+0x0006fb04 04 0084 | __________________________|
+"
+
+run_test
+
+NAME='p=e 5 0x100'
+FILE='../bins/elf/arm1.bin'
+ARGS=-n
+CMDS='p=e 5 0x100'
+EXPECT="0x00000000 00 0080 |''''''''''''''''''''''___|
+0x00000033 01 006c |                     |__
+0x00000066 02 007b |                      ___|
+0x00000099 03 006a |                   __|
+0x000000cc 04 005f | __________________|
+"
+
+run_test
+
+NAME='p=e 5 0x100 1'
+ARGS=-n
+FILE='../bins/elf/arm1.bin'
+CMDS='p=e 5 0x100 1'
+EXPECT="0x00000000 00 006c |'''''''''''''''''''''|__
+0x00000033 01 007b |                      ___|
+0x00000066 02 006a |                   __|
+0x00000099 03 005f |                  |
+0x000000cc 04 005a | _________________|
+"
+
+run_test
+
+NAME='p=p 5'
+FILE='../bins/elf/arm1.bin'
+ARGS=-n
+CMDS='p=p 5@0'
+EXPECT="0x00000000 00 0032 |''''''''''|
+0x0001bec1 01 0031 |         |
+0x00037d82 02 0035 |          |__
+0x00053c43 03 0040 |            |__________
+0x0006fb04 04 0076 | _______________________|
+"
+
+run_test
+
+NAME='p=p 5 0x100'
+FILE='../bins/elf/arm1.bin'
+ARGS=-n
+CMDS='p=p 5 0x100'
+EXPECT="0x00000000 00 0032 |'''''____|
+0x00000033 01 0019 |    |
+0x00000066 02 001e |     |
+0x00000099 03 001e |     |_
+0x000000cc 04 0028 | _______|
+"
+
+run_test
+
+NAME='p=p 5 0x100 1'
+FILE='../bins/elf/arm1.bin'
+ARGS=-n
+CMDS='p=p 5 0x100 1'
+EXPECT="0x00000000 00 0019 |''''|
+0x00000033 01 001e |     |
+0x00000066 02 001e |     |_
+0x00000099 03 0028 |      _|
+0x000000cc 04 001e | _____|
+"
+
+run_test
+
+NAME='p8 10'
+FILE=malloc://1024
+CMDS='
+wx 90909090909090909090 ; p8 10
+'
+EXPECT='90909090909090909090
+'
+
+run_test
+
+
+NAME='p8 -10'
+FILE=malloc://1024
+BROKEN=
+CMDS='
+wx 90909090909090909090 ; s 10 ; p8 -10
+'
+EXPECT='90909090909090909090
+'
+
+run_test
+
+NAME='pi 3'
+FILE=malloc://512
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f
+pi 3
+'
+EXPECT='mov eax, 1
+cmp rdx, rcx
+jg 0xa
+'
+run_test
+
+NAME='pij 3'
+FILE=malloc://512
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f
+pij 3
+'
+EXPECT='[{"offset":0,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,=,$b64,cf,=,$p,pf,=,$s,sf,=,$o,of,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
+'
+run_test
+
+
+NAME='pi 6'
+FILE=malloc://512
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f00b8010000004839ca7f00
+pi 6
+'
+EXPECT='mov eax, 1
+cmp rdx, rcx
+jg 0xa
+mov eax, 1
+cmp rdx, rcx
+jg 0x14
+'
+run_test
+
+NAME='pi -5 @ 0x0040050f'
+FILE=../bins/elf/analysis/main
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+pi -5 @ 0x0040050f
+'
+EXPECT='pop rbp
+jmp sym.register_tm_clones
+push rbp
+mov rbp, rsp
+mov edi, str.Hello_World
+'
+run_test
+
+NAME='pi -5 @ 0x0040050f (anal)'
+FILE=../bins/elf/analysis/main
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+aaa
+pi -5 @ 0x0040050f
+'
+EXPECT='pop rbp
+jmp sym.register_tm_clones
+push rbp
+mov rbp, rsp
+mov edi, str.Hello_World
+'
+
+run_test
+
+
+NAME='pij -5 @ 0x0040050f'
+FILE=../bins/elf/analysis/main
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+pij -3 @ 0x0040050f
+'
+EXPECT='[{"offset":4195590,"esil":"rbp,8,rsp,-=,rsp,=[8]","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","bytes":"55","family":"cpu","type":"upush","type_num":12,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","bytes":"bfc4054000","family":"cpu","type":"mov","type_num":9,"type2_num":0}]
+'
+
+run_test
+
+
+
+NAME='pi -5'
+FILE=../bins/elf/analysis/main
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+s 0x0040050f
+pi -5
+'
+EXPECT='pop rbp
+jmp sym.register_tm_clones
+push rbp
+mov rbp, rsp
+mov edi, str.Hello_World
+'
+
+run_test
+
+NAME='pif bsz'
+FILE=malloc://1024
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 5b415c415d415e415f5dc3
+af
+b 2
+pif
+'
+EXPECT='pop rbx
+pop r12
+pop r13
+pop r14
+pop r15
+pop rbp
+ret
+'
+run_test
+
+NAME='pi~?'
+FILE=malloc://1024
+CMDS='
+pi 200~?
+pi 200~?
+pd 200~?
+'
+EXPECT='200
+200
+200
+'
+run_test
+
+NAME='tmpbits'
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+p8 1 @b:32
+e asm.bits
+'
+EXPECT='00
+64
+'
+run_test
+
+NAME='tmpbits'
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+p8 1 @b:64
+e asm.bits
+'
+EXPECT='00
+32
+'
+run_test
+
+
+NAME='pi 3'
+FILE=malloc://512
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f
+pi 3
+'
+EXPECT='mov eax, 1
+cmp rdx, rcx
+jg 0xa
+'
+run_test
+
+NAME='pij 3'
+FILE=malloc://512
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f
+pij 3
+'
+EXPECT='[{"offset":0,"esil":"1,rax,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov eax, 1","bytes":"b801000000","family":"cpu","type":"mov","type_num":9,"type2_num":0},{"offset":5,"esil":"rcx,rdx,==,$z,zf,=,$b64,cf,=,$p,pf,=,$s,sf,=,$o,of,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"cmp rdx, rcx","bytes":"4839ca","family":"cpu","type":"cmp","type_num":15,"type2_num":0},{"offset":8,"esil":"sf,of,!,^,zf,!,&,?{,10,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"jg 0xa","bytes":"7f00","family":"cpu","type":"cjmp","type_num":2147483649,"type2_num":0,"jump":10,"fail":10}]
+'
+run_test
+
+
+NAME='pi 6'
+FILE=malloc://512
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f00b8010000004839ca7f00
+pi 6
+'
+EXPECT='mov eax, 1
+cmp rdx, rcx
+jg 0xa
+mov eax, 1
+cmp rdx, rcx
+jg 0x14
+'
+run_test
+
+NAME='pi -3 @ 3'
+FILE=malloc://512
+ARGS=
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f00
+pi -3 @ 10
+'
+EXPECT='add byte [rax], al
+cmp rdx, rcx
+jg 0xa
+'
+run_test
+
+NAME='pij -3 @ 3'
+FILE=malloc://512
+ARGS=
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b8010000004839ca7f00
+pij -3 @ 10~{}
+'
+EXPECT='[
+	{
+		"offset": 3,
+		"val": 2,
+		"esil": "al,rax,+=[1],$o,of,=,$s,sf,=,$z,zf,=,$c7,cf,=,$p,pf,=",
+		"refptr": false,
+		"fcn_addr": 0,
+		"fcn_last": 0,
+		"size": 2,
+		"opcode": "add byte [rax], al",
+		"bytes": "0000",
+		"family": "cpu",
+		"type": "add",
+		"type_num": 17,
+		"type2_num": 0
+	},
+	{
+		"offset": 5,
+		"esil": "rcx,rdx,==,$z,zf,=,$b64,cf,=,$p,pf,=,$s,sf,=,$o,of,=",
+		"refptr": false,
+		"fcn_addr": 0,
+		"fcn_last": 0,
+		"size": 3,
+		"opcode": "cmp rdx, rcx",
+		"bytes": "4839ca",
+		"family": "cpu",
+		"type": "cmp",
+		"type_num": 15,
+		"type2_num": 0
+	},
+	{
+		"offset": 8,
+		"esil": "sf,of,!,^,zf,!,&,?{,10,rip,=,}",
+		"refptr": false,
+		"fcn_addr": 0,
+		"fcn_last": 0,
+		"size": 2,
+		"opcode": "jg 0xa",
+		"bytes": "7f00",
+		"family": "cpu",
+		"type": "cjmp",
+		"type_num": 2147483649,
+		"type2_num": 0,
+		"jump": 10,
+		"fail": 10
+	}
+]
+'
+run_test
+
+
+
+NAME='pi -10'
+FILE=malloc://1024
+BROKEN=
+CMDS='
+wx 90909090909090909090 ; s 10 ; pi -10
+'
+EXPECT='nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+'
+
+run_test
+
+NAME='pif bsz'
+FILE=malloc://1024
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 5b415c415d415e415f5dc3
+af
+b 2
+pif
+'
+EXPECT='pop rbx
+pop r12
+pop r13
+pop r14
+pop r15
+pop rbp
+ret
+'
+run_test
+
+NAME='pi~?'
+FILE=malloc://1024
+CMDS='
+pi 200~?
+pi 200~?
+pd 200~?
+'
+EXPECT='200
+200
+200
+'
+run_test
+
+NAME='tmpbits'
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+p8 1 @b:32
+e asm.bits
+'
+EXPECT='00
+64
+'
+run_test
+
+NAME='tmpbits'
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+p8 1 @b:64
+e asm.bits
+'
+EXPECT='00
+32
+'
+run_test
+
+NAME='pm hello.c'
+FILE=../bins/src/hello.c
+CMDS='
+pm
+'
+EXPECT='0x00000000 1 C source code
+'
+run_test
+
+NAME='pm elf/main'
+FILE=../bins/elf/analysis/main
+ARGS=-n
+CMDS='
+pm
+'
+EXPECT='0x00000000 1 ELF 64-bit LSB executable, x86-64, version 1
+'
+run_test
+
+NAME='pm mach0/fatmach0-3true'
+FILE=../bins/mach0/fatmach0-3true
+ARGS=-n
+CMDS='
+pm
+'
+EXPECT='0x00000000 1 Fat-Mach-O
+'
+run_test
+
+NAME='pm java/Hello.class'
+FILE=../bins/java/Hello.class
+ARGS=-n
+CMDS='
+pm
+'
+EXPECT='0x00000000 1 Java CLASS
+'
+run_test
+
+NAME='pm pe/a.exe'
+FILE=../bins/pe/a.exe
+ARGS=-n
+CMDS='
+pm
+'
+EXPECT='0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
+'
+run_test
+
+NAME='print raw lines'
+FILE=../files/projects/resetc64
+ARGS=
+BROKEN=
+CMDS='
+sl 5
+prl 1~[0]
+e lines.abs=true
+prl 1~[0]
+'
+EXPECT='+1
+5
+'
+run_test

@@ -1,0 +1,113 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+PLUGIN="arm"
+
+NAME="$PLUGIN: ldr code analysis"
+BROKEN=
+FILE=malloc://32
+CMDS='
+wx 20c09fe5
+wx 0cc09ae7 @ 4
+e asm.arch='$PLUGIN'
+e asm.bits=32
+# pd 2 - note different colors
+pi 2
+ao~type[2]
+ao@4~type[2]
+'
+EXPECT='ldr ip, [pc, 0x20]
+ldr ip, [sl, ip]
+address: 0x0
+opcode: ldr ip, [pc, 0x20]
+mnemonic: ldr
+prefix: 0
+id: 75
+bytes: 20c09fe5
+ptr: 0x00000028
+refptr: 4
+size: 4
+type: load
+esil: 2,2,8,$$,+,>>,<<,32,+,[4],ip,=
+stack: null
+family: cpu
+address: 0x4
+opcode: ldr ip, [sl, ip]
+mnemonic: ldr
+prefix: 0
+id: 75
+bytes: 0cc09ae7
+refptr: 0
+size: 4
+type: load
+esil: ip,sl,+,[4],ip,=
+stack: null
+family: cpu
+'
+run_test
+
+NAME="$PLUGIN: endian"
+BROKEN=
+FILE=malloc://32
+CMDS='
+e asm.arch='$PLUGIN'
+e asm.bits=32
+wx e59a9ae7
+e cfg.bigendian=false
+pi 1@0
+e cfg.bigendian=true
+pi 1@0
+'
+EXPECT='ldr sb, [sl, r5, ror 21]
+ldr sb, [sl, 0xae7]
+'
+run_test
+
+NAME="$PLUGIN: no afterjmp or nopskip"
+BROKEN=
+FILE=malloc://32
+CMDS='
+e asm.arch='$PLUGIN'
+e asm.bits=64
+wx 1f2003d5d0d8065800021fd61f2003d5
+e anal.nopskip=false
+e anal.afterjmp=false
+af
+afl~[2]
+'
+EXPECT='12
+'
+run_test
+
+NAME="$PLUGIN: afterjmp"
+BROKEN=
+FILE=malloc://32
+CMDS='
+e asm.arch='$PLUGIN'
+e asm.bits=64
+wx 1f2003d5d0d8065800021fd61f2003d5
+e anal.nopskip=false
+e anal.afterjmp=true
+af
+afl~[2]
+'
+EXPECT='12
+'
+run_test
+
+NAME="$PLUGIN: afterjmp nopskip"
+BROKEN=
+FILE=malloc://32
+CMDS='
+e asm.arch='$PLUGIN'
+e asm.bits=64
+wx 1f2003d5d0d8065800021fd61f2003d5
+e anal.nopskip=true
+e anal.afterjmp=false
+af
+afl~[2]
+'
+EXPECT='8
+'
+run_test

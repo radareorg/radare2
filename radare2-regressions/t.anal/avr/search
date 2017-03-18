@@ -1,0 +1,46 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+PLUGIN=avr
+
+NAME="avr search"
+BROKEN=
+FILE=../../bins/firmware/arduino_avr.bin
+CMDS="e asm.arch=avr
+aaa
+/c call 0x4ec
+"
+EXPECT='0x000003e2   # 4: call fcn.000004ec
+'
+run_test
+
+NAME="avr search - XXX dupped hit"
+BROKEN=
+FILE=../../bins/firmware/arduino_avr.bin
+CMDS="e asm.arch=avr
+aaa
+/c call 0x4ec
+"
+EXPECT='0x000003e2   # 4: call fcn.000004ec
+'
+run_test
+
+NAME="avr search"
+BROKEN=
+FILE=../../bins/firmware/arduino_avr.bin
+CMDS='e asm.arch=avr
+aac @ 0
+axt 0x4ec
+'
+EXPECT='call 0x3e2 call fcn.000004ec in fcn.00000360
+'
+run_test
+
+NAME="avr search"
+FILE=../../bins/firmware/arduino_avr.bin
+CMDS='e asm.arch=avr
+aaa
+axt 0x4ec
+'
+EXPECT='call 0x3e2 call fcn.000004ec in fcn.00000360
+'
+run_test

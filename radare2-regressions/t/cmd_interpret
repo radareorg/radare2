@@ -1,0 +1,14 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## "." - interpret commands from various sources
+
+NAME='.- (edit, source tmp file)'
+FILE=-
+ARGS=
+CMDS='
+e cfg.editor=/bin/true
+.-
+'
+EXPECT=''
+run_test

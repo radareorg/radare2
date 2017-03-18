@@ -1,0 +1,20 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2014  pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='unified diff and patch'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='b 16
+wow 41
+cu 16 > .p
+.wu .p
+!rm -f .p
+b 32
+cu 16
+'
+EXPECT='  0x00000000 00000000000000000000000000000000 ................ |
+  0x00000010 00000000000000000000000000000000 ................ |
+'
+run_test

@@ -1,0 +1,41 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami dll.dll - DYNAMIC_BASE/ASLR disabled'
+FILE=../../bins/pe/dll.dll
+ARGS='-n'
+CMDS="!rabin2 -I ${FILE} | grep \"pic      false\" "
+
+EXPECT='pic      false
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami aslr.dll - DYNAMIC_BASE/ASLR enabled'
+FILE=../../bins/pe/aslr.dll
+ARGS='-n'
+CMDS="!rabin2 -I ${FILE} | grep pic | grep true"
+EXPECT_ERR=""
+EXPECT='pic      true
+'
+run_test
+
+NAME='PE: corkami aslr.dll - entrypoint'
+FILE=../../bins/pe/aslr.dll
+CMDS='
+s
+'
+EXPECT='0x1001000
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami aslr.dll - pi 1'
+FILE=../../bins/pe/aslr.dll
+CMDS='
+pi 1
+'
+EXPECT='mov eax, 1
+'
+IGNORE_ERR=1
+run_test

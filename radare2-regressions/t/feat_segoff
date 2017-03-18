@@ -1,0 +1,37 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2013  pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='asm.segoff'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=16
+?e true
+pd 1~[0]
+e asm.segoff=true
+?e true
+pd 1~[0]
+e asm.segoff=true
+?e true
+pd 1~[0]
+e asm.segoff=false
+?e false
+pd 1~[0]
+e asm.segoff=true
+?e true
+pd 1~[0]
+'
+EXPECT='true
+0000:0000
+true
+0000:0000
+true
+0000:0000
+false
+0x00000000
+true
+0000:0000
+'
+run_test

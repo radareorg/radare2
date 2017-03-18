@@ -1,0 +1,29 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: checksum 1'
+FILE=../../bins/pe/a.exe
+ARGS='-A'
+CMDS="i~csum"
+EXPECT='hdr.csum 0x00005ee2
+cmp.csum 0x00005ee2
+'
+run_test
+
+NAME='PE: checksum 2'
+FILE=../../bins/pe/a2.exe
+ARGS='-A'
+CMDS="i~csum"
+EXPECT='hdr.csum 0x000079a3
+cmp.csum 0x000079a3
+'
+run_test
+
+NAME='PE: checksum 3'
+FILE=../../bins/pe/base.exe
+ARGS='-A'
+CMDS="i~csum"
+EXPECT='hdr.csum 0x0003881f
+cmp.csum 0x0003881f
+'
+run_test

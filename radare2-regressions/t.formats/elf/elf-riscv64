@@ -1,0 +1,442 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: riscv64: entrypoint'
+FILE=../../bins/elf/analysis/guess-number-riscv64
+ARGS=''
+CMDS='ie'
+EXPECT='[Entrypoints]
+vaddr=0x00010000 paddr=0x00001000 baddr=0x00010000 laddr=0x00000000 haddr=0x00000018 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='ELF: riscv64: symbols'
+FILE=../../bins/elf/analysis/guess-number-riscv64
+ARGS=''
+CMDS='is'
+EXPECT='[Symbols]
+vaddr=0x00022630 paddr=0x00013630 ord=020 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__EH_FRAME_BEGIN__
+vaddr=0x00024060 paddr=0x00015060 ord=021 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__JCR_LIST__
+vaddr=0x0001004c paddr=0x0000104c ord=022 fwd=NONE sz=0 bind=LOCAL type=FUNC name=deregister_tm_clones
+vaddr=0x00010080 paddr=0x00001080 ord=023 fwd=NONE sz=0 bind=LOCAL type=FUNC name=register_tm_clones
+vaddr=0x000100c0 paddr=0x000010c0 ord=024 fwd=NONE sz=0 bind=LOCAL type=FUNC name=__do_global_dtors_aux
+vaddr=0x00025198 paddr=0x00016198 ord=025 fwd=NONE sz=1 bind=LOCAL type=OBJECT name=completed.3084
+vaddr=0x00022628 paddr=0x00013628 ord=026 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__do_global_dtors_aux_fini_array_entry
+vaddr=0x00010104 paddr=0x00001104 ord=027 fwd=NONE sz=0 bind=LOCAL type=FUNC name=frame_dummy
+vaddr=0x000251a0 paddr=0x000161a0 ord=028 fwd=NONE sz=48 bind=LOCAL type=OBJECT name=object.3089
+vaddr=0x00022620 paddr=0x00013620 ord=029 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__frame_dummy_init_array_entry
+vaddr=0x00022630 paddr=0x00013630 ord=032 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__FRAME_END__
+vaddr=0x00024060 paddr=0x00015060 ord=033 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=__JCR_END__
+vaddr=0x00024070 paddr=0x00015070 ord=038 fwd=NONE sz=1864 bind=LOCAL type=OBJECT name=impure_data
+vaddr=0x0001226c paddr=0x0000326c ord=045 fwd=NONE sz=188 bind=LOCAL type=FUNC name=__sbprintf
+vaddr=0x000216a8 paddr=0x000126a8 ord=046 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=blanks.4193
+vaddr=0x000216b8 paddr=0x000126b8 ord=047 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=zeroes.4194
+vaddr=0x00021b20 paddr=0x00012b20 ord=049 fwd=NONE sz=34 bind=LOCAL type=OBJECT name=basefix.4147
+vaddr=0x00013958 paddr=0x00004958 ord=055 fwd=NONE sz=492 bind=LOCAL type=FUNC name=quorem
+vaddr=0x00014ef8 paddr=0x00005ef8 ord=058 fwd=NONE sz=8 bind=LOCAL type=FUNC name=__fp_unlock
+vaddr=0x00014f0c paddr=0x00005f0c ord=059 fwd=NONE sz=396 bind=LOCAL type=FUNC name=__sinit.part.1
+vaddr=0x0001509c paddr=0x0000609c ord=060 fwd=NONE sz=8 bind=LOCAL type=FUNC name=__fp_lock
+vaddr=0x000247b8 paddr=0x000157b8 ord=067 fwd=NONE sz=32 bind=LOCAL type=OBJECT name=lc_ctype_charset
+vaddr=0x000247d8 paddr=0x000157d8 ord=068 fwd=NONE sz=32 bind=LOCAL type=OBJECT name=lc_message_charset
+vaddr=0x000247f8 paddr=0x000157f8 ord=069 fwd=NONE sz=96 bind=LOCAL type=OBJECT name=lconv
+vaddr=0x00021c50 paddr=0x00012c50 ord=079 fwd=NONE sz=12 bind=LOCAL type=OBJECT name=p05.2568
+vaddr=0x00018590 paddr=0x00009590 ord=082 fwd=NONE sz=28 bind=LOCAL type=FUNC name=lflush
+vaddr=0x000250b8 paddr=0x000160b8 ord=089 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=mask
+vaddr=0x0002148c paddr=0x0001248c ord=091 fwd=NONE sz=104 bind=LOCAL type=FUNC name=sulp
+vaddr=0x00021e50 paddr=0x00012e50 ord=092 fwd=NONE sz=20 bind=LOCAL type=OBJECT name=fpi.2617
+vaddr=0x00021e68 paddr=0x00012e68 ord=093 fwd=NONE sz=20 bind=LOCAL type=OBJECT name=fpinan.2653
+vaddr=0x00021e80 paddr=0x00012e80 ord=094 fwd=NONE sz=40 bind=LOCAL type=OBJECT name=tinytens
+vaddr=0x00022010 paddr=0x00013010 ord=098 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=blanks.4178
+vaddr=0x00022020 paddr=0x00013020 ord=099 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=zeroes.4179
+vaddr=0x0001c244 paddr=0x0000d244 ord=102 fwd=NONE sz=236 bind=LOCAL type=FUNC name=__sprint_r.part.0
+vaddr=0x0001d40c paddr=0x0000e40c ord=103 fwd=NONE sz=188 bind=LOCAL type=FUNC name=__sbprintf_1
+vaddr=0x00022198 paddr=0x00013198 ord=104 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=blanks.4136
+vaddr=0x000221a8 paddr=0x000131a8 ord=105 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=zeroes.4137
+vaddr=0x0001d8a0 paddr=0x0000e8a0 ord=110 fwd=NONE sz=244 bind=LOCAL type=FUNC name=rshift
+vaddr=0x00022420 paddr=0x00013420 ord=114 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=blanks.4122
+vaddr=0x00022430 paddr=0x00013430 ord=115 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=zeroes.4123
+vaddr=0x00025190 paddr=0x00016190 ord=120 fwd=NONE sz=8 bind=LOCAL type=OBJECT name=heap_end.2381
+vaddr=0x000251f8 paddr=0x000161f8 ord=121 fwd=NONE sz=16 bind=LOCAL type=OBJECT name=t0.2343
+vaddr=0x0001fb9c paddr=0x00010b9c ord=123 fwd=NONE sz=496 bind=LOCAL type=FUNC name=_fpadd_parts
+vaddr=0x00020858 paddr=0x00011858 ord=126 fwd=NONE sz=444 bind=LOCAL type=FUNC name=_fpadd_parts_1
+vaddr=0x00022630 paddr=0x00013630 ord=130 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__fini_array_end
+vaddr=0x00022628 paddr=0x00013628 ord=131 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__fini_array_start
+vaddr=0x00022628 paddr=0x00013628 ord=132 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__init_array_end
+vaddr=0x00022620 paddr=0x00013620 ord=133 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__preinit_array_end
+vaddr=0x00022620 paddr=0x00013620 ord=134 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__init_array_start
+vaddr=0x00022620 paddr=0x00013620 ord=135 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__preinit_array_start
+vaddr=0x00017ef4 paddr=0x00008ef4 ord=136 fwd=NONE sz=56 bind=GLOBAL type=FUNC name=_mprec_log10
+vaddr=0x00017f94 paddr=0x00008f94 ord=137 fwd=NONE sz=132 bind=GLOBAL type=FUNC name=__any_on
+vaddr=0x00021d28 paddr=0x00012d28 ord=138 fwd=NONE sz=40 bind=GLOBAL type=OBJECT name=__mprec_tinytens
+vaddr=0x000103c4 paddr=0x000013c4 ord=139 fwd=NONE sz=176 bind=GLOBAL type=FUNC name=_puts_r
+vaddr=0x00020468 paddr=0x00011468 ord=140 fwd=NONE sz=64 bind=GLOBAL type=FUNC name=__cmpdf2
+vaddr=0x00020564 paddr=0x00011564 ord=141 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__eqdf2
+vaddr=0x0001f8b8 paddr=0x000108b8 ord=142 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=fstatat
+vaddr=0x0001fb14 paddr=0x00010b14 ord=143 fwd=NONE sz=28 bind=GLOBAL type=FUNC name=sysconf
+vaddr=0x00010374 paddr=0x00001374 ord=144 fwd=NONE sz=80 bind=GLOBAL type=FUNC name=printf
+vaddr=0x00024070 paddr=0x00015070 ord=145 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_fdata
+vaddr=0x0001faec paddr=0x00010aec ord=146 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=utime
+vaddr=0x0001f5e4 paddr=0x000105e4 ord=147 fwd=NONE sz=164 bind=GLOBAL type=FUNC name=_wcrtomb_r
+vaddr=0x00018b08 paddr=0x00009b08 ord=148 fwd=NONE sz=104 bind=GLOBAL type=FUNC name=__sseek
+vaddr=0x00015228 paddr=0x00006228 ord=149 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=__sinit
+vaddr=0x0001f45c paddr=0x0001045c ord=150 fwd=NONE sz=376 bind=GLOBAL type=FUNC name=__swbuf_r
+vaddr=0x00015f4c paddr=0x00006f4c ord=151 fwd=NONE sz=120 bind=GLOBAL type=FUNC name=_setlocale_r
+vaddr=0x000150a4 paddr=0x000060a4 ord=152 fwd=NONE sz=108 bind=GLOBAL type=FUNC name=__sfmoreglue
+vaddr=0x0001c234 paddr=0x0000d234 ord=153 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=ungetc
+vaddr=0x00016fac paddr=0x00007fac ord=154 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__malloc_unlock
+vaddr=0x00018ca8 paddr=0x00009ca8 ord=155 fwd=NONE sz=4756 bind=GLOBAL type=FUNC name=_strtod_r
+vaddr=0x00020e8c paddr=0x00011e8c ord=156 fwd=NONE sz=300 bind=GLOBAL type=FUNC name=__divsf3
+vaddr=0x00016dac paddr=0x00007dac ord=157 fwd=NONE sz=288 bind=GLOBAL type=FUNC name=memmove
+vaddr=0x00015218 paddr=0x00006218 ord=158 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=_cleanup
+vaddr=0x00016fb0 paddr=0x00007fb0 ord=159 fwd=NONE sz=172 bind=GLOBAL type=FUNC name=_Balloc
+vaddr=0x00021358 paddr=0x00012358 ord=160 fwd=NONE sz=140 bind=GLOBAL type=FUNC name=__fixsfsi
+vaddr=0x0001f8e8 paddr=0x000108e8 ord=161 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=faccessat
+vaddr=0x00020500 paddr=0x00011500 ord=162 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__gtdf2
+vaddr=0x00021484 paddr=0x00012484 ord=163 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=__errno
+vaddr=0x0001fa2c paddr=0x00010a2c ord=164 fwd=NONE sz=144 bind=GLOBAL type=FUNC name=times
+vaddr=0x00020780 paddr=0x00011780 ord=165 fwd=NONE sz=44 bind=GLOBAL type=FUNC name=__make_dp
+vaddr=0x00013508 paddr=0x00004508 ord=166 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=__svfscanf
+vaddr=0x00018a90 paddr=0x00009a90 ord=167 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=__seofread
+vaddr=0x00022620 paddr=0x00013620 ord=168 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_etext
+vaddr=0x0002141c paddr=0x0001241c ord=169 fwd=NONE sz=44 bind=GLOBAL type=FUNC name=__make_fp
+vaddr=0x00025870 paddr=0x00025870 ord=170 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_gp
+vaddr=0x00020c94 paddr=0x00011c94 ord=171 fwd=NONE sz=84 bind=GLOBAL type=FUNC name=__subsf3
+vaddr=0x0001f958 paddr=0x00010958 ord=172 fwd=NONE sz=36 bind=GLOBAL type=FUNC name=execve
+vaddr=0x0001f9a0 paddr=0x000109a0 ord=173 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=getpid
+vaddr=0x00016c8c paddr=0x00007c8c ord=174 fwd=NONE sz=288 bind=GLOBAL type=FUNC name=memcpy
+vaddr=0x0001e124 paddr=0x0000f124 ord=175 fwd=NONE sz=616 bind=GLOBAL type=FUNC name=__hexnan
+vaddr=0x00025068 paddr=0x00016068 ord=176 fwd=NONE sz=0 bind=GLOBAL type=OBJECT name=__TMC_END__
+vaddr=0x00014f00 paddr=0x00005f00 ord=177 fwd=NONE sz=12 bind=GLOBAL type=FUNC name=_cleanup_r
+vaddr=0x0001a384 paddr=0x0000b384 ord=178 fwd=NONE sz=7156 bind=GLOBAL type=FUNC name=_svfprintf_r
+vaddr=0x000205b4 paddr=0x000115b4 ord=179 fwd=NONE sz=132 bind=GLOBAL type=FUNC name=__floatsidf
+vaddr=0x0002055c paddr=0x0001155c ord=180 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__ltdf2
+vaddr=0x00010474 paddr=0x00001474 ord=181 fwd=NONE sz=12 bind=GLOBAL type=FUNC name=puts
+vaddr=0x00016a38 paddr=0x00007a38 ord=182 fwd=NONE sz=208 bind=GLOBAL type=FUNC name=mbrtowc
+vaddr=0x000188bc paddr=0x000098bc ord=183 fwd=NONE sz=132 bind=GLOBAL type=FUNC name=__fpclassifyd
+vaddr=0x0001351c paddr=0x0000451c ord=184 fwd=NONE sz=76 bind=GLOBAL type=FUNC name=_vfscanf_r
+vaddr=0x00017e30 paddr=0x00008e30 ord=185 fwd=NONE sz=196 bind=GLOBAL type=FUNC name=__ratio
+vaddr=0x00010330 paddr=0x00001330 ord=187 fwd=NONE sz=68 bind=GLOBAL type=FUNC name=_printf_r
+vaddr=0x0001f9f0 paddr=0x000109f0 ord=188 fwd=NONE sz=60 bind=GLOBAL type=FUNC name=isatty
+vaddr=0x00015f1c paddr=0x00006f1c ord=189 fwd=NONE sz=48 bind=GLOBAL type=FUNC name=iswspace
+vaddr=0x00021c60 paddr=0x00012c60 ord=190 fwd=NONE sz=200 bind=GLOBAL type=OBJECT name=__mprec_tens
+vaddr=0x00015fc4 paddr=0x00006fc4 ord=191 fwd=NONE sz=12 bind=GLOBAL type=FUNC name=__locale_charset
+vaddr=0x00021128 paddr=0x00012128 ord=192 fwd=NONE sz=84 bind=GLOBAL type=FUNC name=__lesf2
+vaddr=0x00025198 paddr=0x00016198 ord=193 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_bss_start
+vaddr=0x00025188 paddr=0x00016188 ord=194 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=__malloc_top_pad
+vaddr=0x0001a370 paddr=0x0000b370 ord=195 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=strtoul
+vaddr=0x00025070 paddr=0x00016070 ord=196 fwd=NONE sz=0 bind=GLOBAL type=OBJECT name=__dso_handle
+vaddr=0x00025090 paddr=0x00016090 ord=197 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=__mb_cur_max
+vaddr=0x00015fec paddr=0x00006fec ord=198 fwd=NONE sz=12 bind=GLOBAL type=FUNC name=_localeconv_r
+vaddr=0x000173e8 paddr=0x000083e8 ord=199 fwd=NONE sz=52 bind=GLOBAL type=FUNC name=__i2b
+vaddr=0x000158f8 paddr=0x000068f8 ord=200 fwd=NONE sz=1204 bind=GLOBAL type=FUNC name=__sfvwrite_r
+vaddr=0x0001fed8 paddr=0x00010ed8 ord=201 fwd=NONE sz=228 bind=GLOBAL type=FUNC name=__unpack_d
+vaddr=0x0001d580 paddr=0x0000e580 ord=202 fwd=NONE sz=260 bind=GLOBAL type=FUNC name=_fclose_r
+vaddr=0x00014ed8 paddr=0x00005ed8 ord=203 fwd=NONE sz=32 bind=GLOBAL type=FUNC name=fflush
+vaddr=0x00025180 paddr=0x00016180 ord=204 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=__malloc_max_sbrked_mem
+vaddr=0x00021448 paddr=0x00012448 ord=205 fwd=NONE sz=60 bind=GLOBAL type=FUNC name=__extendsfdf2
+vaddr=0x0001ffbc paddr=0x00010fbc ord=206 fwd=NONE sz=72 bind=GLOBAL type=FUNC name=__adddf3
+vaddr=0x00021184 paddr=0x00012184 ord=207 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__nesf2
+vaddr=0x00017ba0 paddr=0x00008ba0 ord=208 fwd=NONE sz=336 bind=GLOBAL type=FUNC name=__b2d
+vaddr=0x0001f828 paddr=0x00010828 ord=209 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=lseek
+vaddr=0x00025078 paddr=0x00016078 ord=210 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=_global_impure_ptr
+vaddr=0x0001faf4 paddr=0x00010af4 ord=211 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=chown
+vaddr=0x00018018 paddr=0x00009018 ord=212 fwd=NONE sz=1400 bind=GLOBAL type=FUNC name=_realloc_r
+vaddr=0x00010290 paddr=0x00001290 ord=213 fwd=NONE sz=160 bind=GLOBAL type=FUNC name=__libc_init_array
+vaddr=0x000221b8 paddr=0x000131b8 ord=214 fwd=NONE sz=256 bind=GLOBAL type=OBJECT name=__hexdig
+vaddr=0x0001d7fc paddr=0x0000e7fc ord=215 fwd=NONE sz=40 bind=GLOBAL type=FUNC name=_fputwc_r
+vaddr=0x00021d50 paddr=0x00012d50 ord=216 fwd=NONE sz=40 bind=GLOBAL type=OBJECT name=__mprec_bigtens
+vaddr=0x00017190 paddr=0x00008190 ord=217 fwd=NONE sz=300 bind=GLOBAL type=FUNC name=__s2b
+vaddr=0x00020638 paddr=0x00011638 ord=218 fwd=NONE sz=124 bind=GLOBAL type=FUNC name=__floatunsidf
+vaddr=0x000178a8 paddr=0x000088a8 ord=219 fwd=NONE sz=96 bind=GLOBAL type=FUNC name=__mcmp
+vaddr=0x0001fafc paddr=0x00010afc ord=220 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=chmod
+vaddr=0x00015248 paddr=0x00006248 ord=221 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=__fp_lock_all
+vaddr=0x00010048 paddr=0x00001048 ord=222 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_init
+vaddr=0x0001a178 paddr=0x0000b178 ord=223 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=strtol
+vaddr=0x00010234 paddr=0x00001234 ord=224 fwd=NONE sz=92 bind=GLOBAL type=FUNC name=__libc_fini_array
+vaddr=0x00020b74 paddr=0x00011b74 ord=225 fwd=NONE sz=216 bind=GLOBAL type=FUNC name=__unpack_f
+vaddr=0x000172bc paddr=0x000082bc ord=226 fwd=NONE sz=124 bind=GLOBAL type=FUNC name=__hi0bits
+vaddr=0x000206b4 paddr=0x000116b4 ord=227 fwd=NONE sz=148 bind=GLOBAL type=FUNC name=__fixdfsi
+vaddr=0x00019f3c paddr=0x0000af3c ord=228 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=strtod
+vaddr=0x0001f850 paddr=0x00010850 ord=229 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=write
+vaddr=0x00021124 paddr=0x00012124 ord=230 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__gtsf2
+vaddr=0x0001f864 paddr=0x00010864 ord=231 fwd=NONE sz=28 bind=GLOBAL type=FUNC name=fstat
+vaddr=0x0001f9a8 paddr=0x000109a8 ord=232 fwd=NONE sz=36 bind=GLOBAL type=FUNC name=kill
+vaddr=0x00020504 paddr=0x00011504 ord=233 fwd=NONE sz=84 bind=GLOBAL type=FUNC name=__ledf2
+vaddr=0x00017610 paddr=0x00008610 ord=234 fwd=NONE sz=312 bind=GLOBAL type=FUNC name=__pow5mult
+vaddr=0x00025174 paddr=0x00016174 ord=235 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=__nlocale_changed
+vaddr=0x000104d0 paddr=0x000014d0 ord=236 fwd=NONE sz=68 bind=GLOBAL type=FUNC name=_scanf_r
+vaddr=0x0001fb04 paddr=0x00010b04 ord=238 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=chdir
+vaddr=0x00020a14 paddr=0x00011a14 ord=239 fwd=NONE sz=352 bind=GLOBAL type=FUNC name=__pack_f
+vaddr=0x00015238 paddr=0x00006238 ord=241 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=__sfp_lock_acquire
+vaddr=0x00016bac paddr=0x00007bac ord=242 fwd=NONE sz=224 bind=GLOBAL type=FUNC name=memchr
+vaddr=0x00018940 paddr=0x00009940 ord=243 fwd=NONE sz=112 bind=GLOBAL type=FUNC name=_sprintf_r
+vaddr=0x000155ec paddr=0x000065ec ord=244 fwd=NONE sz=780 bind=GLOBAL type=FUNC name=_free_r
+vaddr=0x0001f9cc paddr=0x000109cc ord=245 fwd=NONE sz=36 bind=GLOBAL type=FUNC name=wait
+vaddr=0x00015fd0 paddr=0x00006fd0 ord=246 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=__locale_mb_cur_max
+vaddr=0x000137cc paddr=0x000047cc ord=247 fwd=NONE sz=396 bind=GLOBAL type=FUNC name=__call_exitprocs
+vaddr=0x00025170 paddr=0x00016170 ord=248 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=__mlocale_changed
+vaddr=0x00010000 paddr=0x00001000 ord=249 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_ftext
+vaddr=0x00025098 paddr=0x00016098 ord=250 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=__malloc_sbrk_base
+vaddr=0x00010000 paddr=0x00001000 ord=251 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_start
+vaddr=0x0001f89c paddr=0x0001089c ord=252 fwd=NONE sz=28 bind=GLOBAL type=FUNC name=lstat
+vaddr=0x00017748 paddr=0x00008748 ord=253 fwd=NONE sz=352 bind=GLOBAL type=FUNC name=__lshift
+vaddr=0x0001f83c paddr=0x0001083c ord=254 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=read
+vaddr=0x000211d8 paddr=0x000121d8 ord=255 fwd=NONE sz=172 bind=GLOBAL type=FUNC name=__floatsisf
+vaddr=0x0001e45c paddr=0x0000f45c ord=256 fwd=NONE sz=504 bind=GLOBAL type=FUNC name=__ssprint_r
+vaddr=0x000136cc paddr=0x000046cc ord=257 fwd=NONE sz=256 bind=GLOBAL type=FUNC name=__register_exitproc
+vaddr=0x0001e38c paddr=0x0000f38c ord=258 fwd=NONE sz=208 bind=GLOBAL type=FUNC name=strncmp
+vaddr=0x0001741c paddr=0x0000841c ord=259 fwd=NONE sz=500 bind=GLOBAL type=FUNC name=__multiply
+vaddr=0x0001f938 paddr=0x00010938 ord=260 fwd=NONE sz=32 bind=GLOBAL type=FUNC name=unlink
+vaddr=0x000251d0 paddr=0x000161d0 ord=261 fwd=NONE sz=40 bind=GLOBAL type=OBJECT name=__malloc_current_mallinfo
+vaddr=0x00021188 paddr=0x00012188 ord=262 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__eqsf2
+vaddr=0x00017cf0 paddr=0x00008cf0 ord=263 fwd=NONE sz=320 bind=GLOBAL type=FUNC name=__d2b
+vaddr=0x0001a18c paddr=0x0000b18c ord=264 fwd=NONE sz=484 bind=GLOBAL type=FUNC name=_strtoul_r
+vaddr=0x00020394 paddr=0x00011394 ord=265 fwd=NONE sz=212 bind=GLOBAL type=FUNC name=__fpcmp_parts_d
+vaddr=0x00020748 paddr=0x00011748 ord=266 fwd=NONE sz=56 bind=GLOBAL type=FUNC name=__negdf2
+vaddr=0x0001f97c paddr=0x0001097c ord=267 fwd=NONE sz=36 bind=GLOBAL type=FUNC name=fork
+vaddr=0x00013568 paddr=0x00004568 ord=268 fwd=NONE sz=356 bind=GLOBAL type=FUNC name=__swsetup_r
+vaddr=0x00020260 paddr=0x00011260 ord=269 fwd=NONE sz=308 bind=GLOBAL type=FUNC name=__divdf3
+vaddr=0x000213e4 paddr=0x000123e4 ord=270 fwd=NONE sz=56 bind=GLOBAL type=FUNC name=__negsf2
+vaddr=0x00015110 paddr=0x00006110 ord=271 fwd=NONE sz=264 bind=GLOBAL type=FUNC name=__sfp
+vaddr=0x00017f2c paddr=0x00008f2c ord=272 fwd=NONE sz=104 bind=GLOBAL type=FUNC name=__copybits
+vaddr=0x00024858 paddr=0x00015858 ord=273 fwd=NONE sz=2064 bind=GLOBAL type=OBJECT name=__malloc_av_
+vaddr=0x00015244 paddr=0x00006244 ord=274 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__sinit_lock_release
+vaddr=0x00020058 paddr=0x00011058 ord=275 fwd=NONE sz=520 bind=GLOBAL type=FUNC name=__muldf3
+vaddr=0x00018a2c paddr=0x00009a2c ord=276 fwd=NONE sz=100 bind=GLOBAL type=FUNC name=__sread
+vaddr=0x00022458 paddr=0x00013458 ord=277 fwd=NONE sz=16 bind=GLOBAL type=OBJECT name=__thenan_sf
+vaddr=0x000154bc paddr=0x000064bc ord=278 fwd=NONE sz=24 bind=GLOBAL type=FUNC name=fread
+vaddr=0x0001f7cc paddr=0x000107cc ord=279 fwd=NONE sz=48 bind=GLOBAL type=FUNC name=__syscall_error
+vaddr=0x00016fa8 paddr=0x00007fa8 ord=280 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__malloc_lock
+vaddr=0x0001fb30 paddr=0x00010b30 ord=282 fwd=NONE sz=80 bind=GLOBAL type=FUNC name=sbrk
+vaddr=0x00014e7c paddr=0x00005e7c ord=283 fwd=NONE sz=92 bind=GLOBAL type=FUNC name=_fflush_r
+vaddr=0x0001d4cc paddr=0x0000e4cc ord=284 fwd=NONE sz=180 bind=GLOBAL type=FUNC name=_calloc_r
+vaddr=0x0002108c paddr=0x0001208c ord=285 fwd=NONE sz=64 bind=GLOBAL type=FUNC name=__cmpsf2
+vaddr=0x0001fabc paddr=0x00010abc ord=286 fwd=NONE sz=32 bind=GLOBAL type=FUNC name=gettimeofday
+vaddr=0x00016ecc paddr=0x00007ecc ord=287 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=memset
+vaddr=0x00010150 paddr=0x00001150 ord=288 fwd=NONE sz=160 bind=GLOBAL type=FUNC name=main
+vaddr=0x00025178 paddr=0x00016178 ord=289 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=__malloc_max_total_mem
+vaddr=0x0001f5d4 paddr=0x000105d4 ord=290 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=__swbuf
+vaddr=0x00021180 paddr=0x00012180 ord=291 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__ltsf2
+vaddr=0x00015268 paddr=0x00006268 ord=292 fwd=NONE sz=596 bind=GLOBAL type=FUNC name=_fread_r
+vaddr=0x00018b74 paddr=0x00009b74 ord=293 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=__sclose
+vaddr=0x0001d684 paddr=0x0000e684 ord=294 fwd=NONE sz=12 bind=GLOBAL type=FUNC name=fclose
+vaddr=0x000207ac paddr=0x000117ac ord=295 fwd=NONE sz=76 bind=GLOBAL type=FUNC name=__truncdfsf2
+vaddr=0x00019f9c paddr=0x0000af9c ord=296 fwd=NONE sz=476 bind=GLOBAL type=FUNC name=_strtol_r
+vaddr=0x00013b44 paddr=0x00004b44 ord=297 fwd=NONE sz=4300 bind=GLOBAL type=FUNC name=_dtoa_r
+vaddr=0x000161c0 paddr=0x000071c0 ord=298 fwd=NONE sz=1988 bind=GLOBAL type=FUNC name=_malloc_r
+vaddr=0x0001f740 paddr=0x00010740 ord=299 fwd=NONE sz=48 bind=GLOBAL type=FUNC name=__ascii_wctomb
+vaddr=0x0001bf78 paddr=0x0000cf78 ord=300 fwd=NONE sz=240 bind=GLOBAL type=FUNC name=__submore
+vaddr=0x00015dac paddr=0x00006dac ord=301 fwd=NONE sz=176 bind=GLOBAL type=FUNC name=_fwalk
+vaddr=0x00016b48 paddr=0x00007b48 ord=302 fwd=NONE sz=100 bind=GLOBAL type=FUNC name=_mbtowc_r
+vaddr=0x00022440 paddr=0x00013440 ord=303 fwd=NONE sz=24 bind=GLOBAL type=OBJECT name=__thenan_df
+vaddr=0x000154d4 paddr=0x000064d4 ord=304 fwd=NONE sz=280 bind=GLOBAL type=FUNC name=_malloc_trim_r
+vaddr=0x00020ce8 paddr=0x00011ce8 ord=305 fwd=NONE sz=420 bind=GLOBAL type=FUNC name=__mulsf3
+vaddr=0x00018b7c paddr=0x00009b7c ord=306 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=strcmp
+vaddr=0x0001d3f8 paddr=0x0000e3f8 ord=307 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=vfiprintf
+vaddr=0x0001fb0c paddr=0x00010b0c ord=308 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=getcwd
+vaddr=0x00020560 paddr=0x00011560 ord=309 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__nedf2
+vaddr=0x00010048 paddr=0x00001048 ord=310 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_fini
+vaddr=0x000189b0 paddr=0x000099b0 ord=311 fwd=NONE sz=124 bind=GLOBAL type=FUNC name=sprintf
+vaddr=0x00022468 paddr=0x00013468 ord=312 fwd=NONE sz=256 bind=GLOBAL type=OBJECT name=__clz_tab
+vaddr=0x00025168 paddr=0x00016168 ord=313 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=_PathLocale
+vaddr=0x00019f4c paddr=0x0000af4c ord=314 fwd=NONE sz=80 bind=GLOBAL type=FUNC name=strtof
+vaddr=0x000101f0 paddr=0x000011f0 ord=315 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=atexit
+vaddr=0x000210cc paddr=0x000120cc ord=316 fwd=NONE sz=88 bind=GLOBAL type=FUNC name=__gesf2
+vaddr=0x00015ff8 paddr=0x00006ff8 ord=317 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=setlocale
+vaddr=0x00010480 paddr=0x00001480 ord=318 fwd=NONE sz=80 bind=GLOBAL type=FUNC name=scanf
+vaddr=0x000188b4 paddr=0x000098b4 ord=319 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=nanf
+vaddr=0x00025080 paddr=0x00016080 ord=320 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=_impure_ptr
+vaddr=0x00014c10 paddr=0x00005c10 ord=321 fwd=NONE sz=620 bind=GLOBAL type=FUNC name=__sflush_r
+vaddr=0x00016984 paddr=0x00007984 ord=322 fwd=NONE sz=180 bind=GLOBAL type=FUNC name=_mbrtowc_r
+vaddr=0x00015fe4 paddr=0x00006fe4 ord=323 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=__locale_cjk_lang
+vaddr=0x0001e654 paddr=0x0000f654 ord=324 fwd=NONE sz=3592 bind=GLOBAL type=FUNC name=_svfiprintf_r
+vaddr=0x000185ac paddr=0x000095ac ord=325 fwd=NONE sz=588 bind=GLOBAL type=FUNC name=__srefill_r
+vaddr=0x00016b08 paddr=0x00007b08 ord=326 fwd=NONE sz=64 bind=GLOBAL type=FUNC name=__ascii_mbtowc
+vaddr=0x00017b10 paddr=0x00008b10 ord=327 fwd=NONE sz=144 bind=GLOBAL type=FUNC name=__ulp
+vaddr=0x00015258 paddr=0x00006258 ord=328 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=__fp_unlock_all
+vaddr=0x00016008 paddr=0x00007008 ord=329 fwd=NONE sz=8 bind=GLOBAL type=FUNC name=localeconv
+vaddr=0x0001fadc paddr=0x00010adc ord=330 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=ftime
+vaddr=0x0001f880 paddr=0x00010880 ord=331 fwd=NONE sz=28 bind=GLOBAL type=FUNC name=stat
+vaddr=0x0001f8cc paddr=0x000108cc ord=332 fwd=NONE sz=28 bind=GLOBAL type=FUNC name=access
+vaddr=0x00025068 paddr=0x00016068 ord=333 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_edata
+vaddr=0x00025208 paddr=0x00025208 ord=334 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_end
+vaddr=0x0002118c paddr=0x0001218c ord=335 fwd=NONE sz=72 bind=GLOBAL type=FUNC name=__unordsf2
+vaddr=0x0001d690 paddr=0x0000e690 ord=336 fwd=NONE sz=364 bind=GLOBAL type=FUNC name=__fputwc
+vaddr=0x000134a8 paddr=0x000044a8 ord=337 fwd=NONE sz=96 bind=GLOBAL type=FUNC name=vfscanf
+vaddr=0x00018a98 paddr=0x00009a98 ord=338 fwd=NONE sz=112 bind=GLOBAL type=FUNC name=__swrite
+vaddr=0x000250a0 paddr=0x000160a0 ord=339 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=__malloc_trim_threshold
+vaddr=0x0001f91c paddr=0x0001091c ord=340 fwd=NONE sz=28 bind=GLOBAL type=FUNC name=link
+vaddr=0x00015fd8 paddr=0x00006fd8 ord=341 fwd=NONE sz=12 bind=GLOBAL type=FUNC name=__locale_msgcharset
+vaddr=0x00010204 paddr=0x00001204 ord=342 fwd=NONE sz=48 bind=GLOBAL type=FUNC name=exit
+vaddr=0x0001c348 paddr=0x0000d348 ord=343 fwd=NONE sz=4272 bind=GLOBAL type=FUNC name=_vfiprintf_r
+vaddr=0x00015e5c paddr=0x00006e5c ord=344 fwd=NONE sz=192 bind=GLOBAL type=FUNC name=_fwalk_reent
+vaddr=0x00021284 paddr=0x00012284 ord=345 fwd=NONE sz=212 bind=GLOBAL type=FUNC name=__floatunsisf
+vaddr=0x00017908 paddr=0x00008908 ord=346 fwd=NONE sz=520 bind=GLOBAL type=FUNC name=__mdiff
+vaddr=0x00025088 paddr=0x00016088 ord=347 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=__ctype_ptr__
+vaddr=0x0001523c paddr=0x0000623c ord=348 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__sfp_lock_release
+vaddr=0x000187fc paddr=0x000097fc ord=349 fwd=NONE sz=184 bind=GLOBAL type=FUNC name=__sccl
+vaddr=0x00021b48 paddr=0x00012b48 ord=350 fwd=NONE sz=257 bind=GLOBAL type=OBJECT name=_ctype_
+vaddr=0x0001f814 paddr=0x00010814 ord=351 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=openat
+vaddr=0x00020568 paddr=0x00011568 ord=352 fwd=NONE sz=72 bind=GLOBAL type=FUNC name=__unorddf2
+vaddr=0x000250a8 paddr=0x000160a8 ord=353 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=__mbtowc
+vaddr=0x00020fb8 paddr=0x00011fb8 ord=354 fwd=NONE sz=212 bind=GLOBAL type=FUNC name=__fpcmp_parts_f
+vaddr=0x0001fb80 paddr=0x00010b80 ord=355 fwd=NONE sz=28 bind=GLOBAL type=FUNC name=_exit
+vaddr=0x00016014 paddr=0x00007014 ord=356 fwd=NONE sz=428 bind=GLOBAL type=FUNC name=__smakebuf_r
+vaddr=0x00010514 paddr=0x00001514 ord=357 fwd=NONE sz=204 bind=GLOBAL type=FUNC name=strlen
+vaddr=0x0001f7fc paddr=0x000107fc ord=358 fwd=NONE sz=24 bind=GLOBAL type=FUNC name=open
+vaddr=0x000204a8 paddr=0x000114a8 ord=359 fwd=NONE sz=88 bind=GLOBAL type=FUNC name=__gedf2
+vaddr=0x0001d994 paddr=0x0000e994 ord=360 fwd=NONE sz=1936 bind=GLOBAL type=FUNC name=__gethex
+vaddr=0x000250b0 paddr=0x000160b0 ord=361 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=__wctomb
+vaddr=0x0001c330 paddr=0x0000d330 ord=362 fwd=NONE sz=24 bind=GLOBAL type=FUNC name=__sprint_r
+vaddr=0x0001f770 paddr=0x00010770 ord=363 fwd=NONE sz=92 bind=GLOBAL type=FUNC name=_wctomb_r
+vaddr=0x000207f8 paddr=0x000117f8 ord=365 fwd=NONE sz=96 bind=GLOBAL type=FUNC name=__clzdi2
+vaddr=0x00020004 paddr=0x00011004 ord=366 fwd=NONE sz=84 bind=GLOBAL type=FUNC name=__subdf3
+vaddr=0x000105e0 paddr=0x000015e0 ord=367 fwd=NONE sz=7288 bind=GLOBAL type=FUNC name=_vfprintf_r
+vaddr=0x00017338 paddr=0x00008338 ord=368 fwd=NONE sz=176 bind=GLOBAL type=FUNC name=__lo0bits
+vaddr=0x0001232c paddr=0x0000332c ord=369 fwd=NONE sz=4476 bind=GLOBAL type=FUNC name=__svfscanf_r
+vaddr=0x00025168 paddr=0x00016168 ord=370 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_fbss
+vaddr=0x0001c068 paddr=0x0000d068 ord=371 fwd=NONE sz=460 bind=GLOBAL type=FUNC name=_ungetc_r
+vaddr=0x0001f688 paddr=0x00010688 ord=373 fwd=NONE sz=184 bind=GLOBAL type=FUNC name=wcrtomb
+vaddr=0x0001f8fc paddr=0x000108fc ord=374 fwd=NONE sz=32 bind=GLOBAL type=FUNC name=close
+vaddr=0x00020c4c paddr=0x00011c4c ord=375 fwd=NONE sz=72 bind=GLOBAL type=FUNC name=__addsf3
+vaddr=0x0001fd8c paddr=0x00010d8c ord=376 fwd=NONE sz=332 bind=GLOBAL type=FUNC name=__pack_d
+vaddr=0x00012258 paddr=0x00003258 ord=377 fwd=NONE sz=20 bind=GLOBAL type=FUNC name=vfprintf
+vaddr=0x0001d824 paddr=0x0000e824 ord=378 fwd=NONE sz=120 bind=GLOBAL type=FUNC name=fputwc
+vaddr=0x00015240 paddr=0x00006240 ord=380 fwd=NONE sz=4 bind=GLOBAL type=FUNC name=__sinit_lock_acquire
+vaddr=0x00017080 paddr=0x00008080 ord=381 fwd=NONE sz=272 bind=GLOBAL type=FUNC name=__multadd
+vaddr=0x0001705c paddr=0x0000805c ord=382 fwd=NONE sz=36 bind=GLOBAL type=FUNC name=_Bfree
+
+290 symbols
+'
+
+run_test
+
+NAME='ELF: riscv64: file format'
+FILE=../../bins/elf/analysis/guess-number-riscv64
+FILTER='sed "s/^fd.*//g"'
+ARGS=''
+CMDS='if'
+EXPECT='type     EXEC (Executable file)
+file     ../../bins/elf/analysis/guess-number-riscv64
+
+size     0x9d5a8
+iorw     false
+blksz    0x0
+mode     -r--
+block    0x100
+format   elf64
+havecode true
+pic      false
+canary   false
+nx       false
+crypto   false
+va       true
+bintype  elf
+class    ELF64
+lang     c
+arch     riscv
+bits     64
+machine  RISC V
+os       linux
+subsys   linux
+endian   little
+stripped false
+static   true
+linenum  true
+lsyms    true
+relocs   true
+rpath    NONE
+binsz    643108
+'
+run_test
+
+NAME='ELF: riscv64: main analysis'
+FILE=../../bins/elf/analysis/guess-number-riscv64
+ARGS=''
+CMDS='e asm.calls=false;s sym.main;af;pdf'
+EXPECT='/ (fcn) sym.main 140
+|           0x00010150      130101fe       addi sp, sp, -32
+|           0x00010154      233c1100       sd ra, 24(sp)
+|           0x00010158      23388100       sd s0, 16(sp)
+|           0x0001015c      13040102       addi s0, sp, 32
+|           0x00010160      9307b007       li a5, 123
+|           0x00010164      2326f4fe       sw a5, -20(s0)
+|           0x00010168      9307f0ff       li a5, -1
+|           0x0001016c      2324f4fe       sw a5, -24(s0)
+|           0x00010170      b7170200       lui a5, 0x21
+|           0x00010174      1385874f       addi a0, a5, 1272
+|           0x00010178      ef00c01f       jal ra, sym.printf
+|           0x0001017c      930784fe       addi a5, s0, -24
+|           0x00010180      93850700       mv a1, a5
+|           0x00010184      b7170200       lui a5, 0x21
+|           0x00010188      13850751       addi a0, a5, 1296
+|           0x0001018c      ef00402f       jal ra, sym.scanf
+|           0x00010190      032784fe       lw a4, -24(s0)
+|           0x00010194      8327c4fe       lw a5, -20(s0)
+|       ,=< 0x00010198      631cf700       bne a4, a5, 0x101b0
+|       |   0x0001019c      b7170200       lui a5, 0x21
+|       |   0x000101a0      13858751       addi a0, a5, 1304
+|       |   0x000101a4      ef00002d       jal ra, sym.puts
+|       |   0x000101a8      93070000       li a5, 0
+|       |   0x000101ac      6f000003       j 0x101dc
+|       `-> 0x000101b0      032784fe       lw a4, -24(s0)
+|           0x000101b4      8327c4fe       lw a5, -20(s0)
+|       ,=< 0x000101b8      635af700       ble a5, a4, 0x101cc
+|       |   0x000101bc      b7170200       lui a5, 0x21
+|       |   0x000101c0      13858752       addi a0, a5, 1320
+|       |   0x000101c4      ef00002b       jal ra, sym.puts
+|       |   0x000101c8      6ff09ffa       j 0x10170
+|       `-> 0x000101cc      b7170200       lui a5, 0x21
+|           0x000101d0      13858753       addi a0, a5, 1336
+|           0x000101d4      ef00002a       jal ra, sym.puts
+\           0x000101d8      6ff09ff9       j 0x10170
+'
+run_test
+
+NAME='ELF: riscv64: full analysis'
+FILE=../../bins/elf/analysis/guess-number-riscv64
+ARGS='-A'
+CMDS='e asm.calls=false;s sym.main;pdf'
+EXPECT='/ (fcn) sym.main 140
+|              ; CALL XREF from 0x00010040 (entry0)
+|           0x00010150      130101fe       addi sp, sp, -32
+|           0x00010154      233c1100       sd ra, 24(sp)
+|           0x00010158      23388100       sd s0, 16(sp)
+|           0x0001015c      13040102       addi s0, sp, 32
+|           0x00010160      9307b007       li a5, 123
+|           0x00010164      2326f4fe       sw a5, -20(s0)
+|           0x00010168      9307f0ff       li a5, -1
+|           0x0001016c      2324f4fe       sw a5, -24(s0)
+|           0x00010170      b7170200       lui a5, 0x21
+|           0x00010174      1385874f       addi a0, a5, 1272
+|           0x00010178      ef00c01f       jal ra, sym.printf
+|           0x0001017c      930784fe       addi a5, s0, -24
+|           0x00010180      93850700       mv a1, a5
+|           0x00010184      b7170200       lui a5, 0x21
+|           0x00010188      13850751       addi a0, a5, 1296
+|           0x0001018c      ef00402f       jal ra, sym.scanf
+|           0x00010190      032784fe       lw a4, -24(s0)
+|           0x00010194      8327c4fe       lw a5, -20(s0)
+|       ,=< 0x00010198      631cf700       bne a4, a5, 0x101b0
+|       |   0x0001019c      b7170200       lui a5, 0x21
+|       |   0x000101a0      13858751       addi a0, a5, 1304
+|       |   0x000101a4      ef00002d       jal ra, sym.puts
+|       |   0x000101a8      93070000       li a5, 0
+|       |   0x000101ac      6f000003       j 0x101dc
+|       |      ; JMP XREF from 0x00010198 (sym.main)
+|       `-> 0x000101b0      032784fe       lw a4, -24(s0)
+|           0x000101b4      8327c4fe       lw a5, -20(s0)
+|       ,=< 0x000101b8      635af700       ble a5, a4, 0x101cc
+|       |   0x000101bc      b7170200       lui a5, 0x21
+|       |   0x000101c0      13858752       addi a0, a5, 1320
+|       |   0x000101c4      ef00002b       jal ra, sym.puts
+|       |   0x000101c8      6ff09ffa       j 0x10170
+|       |      ; JMP XREF from 0x000101b8 (sym.main)
+|       `-> 0x000101cc      b7170200       lui a5, 0x21
+|           0x000101d0      13858753       addi a0, a5, 1336
+|           0x000101d4      ef00002a       jal ra, sym.puts
+\           0x000101d8      6ff09ff9       j 0x10170
+'
+run_test

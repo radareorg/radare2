@@ -1,0 +1,146 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="load 16 bits omf"
+FILE=../../bins/omf/hello_world
+ARGS=''
+BROKEN=
+CMDS="iI~bits"
+EXPECT='bits     16
+'
+run_test
+
+NAME="entry point 16 bits omf"
+FILE=../../bins/omf/hello_world
+ARGS=''
+BROKEN=
+CMDS="ie~addr"
+EXPECT='vaddr=0x00001000 paddr=0x00000073 baddr=0x00001000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME="symbols 16 bits omf"
+FILE=../../bins/omf/hello_world
+ARGS=''
+BROKEN=
+CMDS="is~addr"
+EXPECT='vaddr=0x00001000 paddr=0x00000073 ord=001 fwd=NONE sz=0 bind= type= name=_start
+'
+run_test
+
+NAME="sections 16 bits omf"
+FILE=../../bins/omf/hello_world
+ARGS=''
+BROKEN=
+CMDS="iS~addr"
+EXPECT='idx=00 vaddr=0x00001000 paddr=0x00000073 sz=19 vsz=19 perm=m-rwx name=text_1
+idx=01 vaddr=0x00001013 paddr=0x00000095 sz=14 vsz=14 perm=m-rwx name=data_1
+'
+run_test
+
+NAME="virtual address 16 bits omf"
+FILE=../../bins/omf/hello_world
+ARGS=''
+BROKEN=
+CMDS="pid 1~mov[1]"
+EXPECT='ba0e00
+'
+run_test
+
+NAME="load 32 bits omf"
+FILE=../../bins/omf/hello_world32
+ARGS=''
+BROKEN=
+CMDS="iI~bits"
+EXPECT='bits     32
+'
+run_test
+
+NAME="entry point 32 bits omf"
+FILE=../../bins/omf/hello_world32
+ARGS=''
+BROKEN=
+CMDS="ie~addr"
+EXPECT='vaddr=0x00001000 paddr=0x00000074 baddr=0x00001000 laddr=0x00000000 haddr=-1 type=program
+'
+run_test
+
+NAME="symbols 32 bits omf"
+FILE=../../bins/omf/hello_world32
+ARGS=''
+BROKEN=
+CMDS="is~addr"
+EXPECT='vaddr=0x00001000 paddr=0x00000074 ord=001 fwd=NONE sz=0 bind= type= name=_start
+'
+run_test
+
+NAME="sections 32 bits omf"
+FILE=../../bins/omf/hello_world32
+ARGS=''
+BROKEN=
+CMDS="iS~addr"
+EXPECT='idx=00 vaddr=0x00001000 paddr=0x00000074 sz=29 vsz=29 perm=m-rwx name=.text_1
+idx=01 vaddr=0x0000101d paddr=0x000000a3 sz=14 vsz=14 perm=m-rwx name=.data_1
+'
+run_test
+
+NAME="virtual address 32 bits omf"
+FILE=../../bins/omf/hello_world32
+ARGS=''
+BROKEN=
+CMDS="pid 1~mov[1]"
+EXPECT='ba0e000000
+'
+run_test
+
+NAME="multiple symbols omf"
+FILE=../../bins/omf/multi_pubdef
+ARGS=''
+BROKEN=
+CMDS="is~addr"
+EXPECT='vaddr=0x00001000 paddr=0x00000084 ord=001 fwd=NONE sz=0 bind= type= name=_start
+vaddr=0x00001013 paddr=0x00000097 ord=002 fwd=NONE sz=0 bind= type= name=second_symbol
+'
+run_test
+
+NAME="null checksum omf"
+FILE=../../bins/omf/null_checks
+ARGS=''
+BROKEN=
+CMDS="is~addr"
+EXPECT='vaddr=0x00001000 paddr=0x00000073 ord=001 fwd=NONE sz=0 bind= type= name=_start
+'
+run_test
+
+NAME="invalide index segment omf"
+FILE=../../bins/omf/invalid_idx
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME="invalide string size pubdef record omf"
+FILE=../../bins/omf/invalid_str_pubdef
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME="invalide string size lnames record omf"
+FILE=../../bins/omf/invalid_str_lname
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME="invalide record size omf"
+FILE=../../bins/omf/invalid_size
+ARGS=''
+BROKEN=
+CMDS="q!"
+EXPECT=''
+run_test

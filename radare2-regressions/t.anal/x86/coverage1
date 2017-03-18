@@ -1,0 +1,18 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+FILE=../../bins/pe/test.exe
+CMDS='s 0x401000
+af
+afl
+
+'
+EXPECT='0x00401000    1 59           main
+0x0040103b    3 15   -> 277  fcn.0040103b
+0x0040104a    4 109          fcn.0040104a
+0x004010c7    1 29           fcn.004010c7
+0x004010e4    4 148          fcn.004010e4
+0x00401335    3 262          loc.00401335
+0x00404ad7    1 8            fcn.00404ad7
+'
+run_test

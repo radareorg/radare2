@@ -1,0 +1,152 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='pd call sym bug'
+FILE=../bins/mach0/hello-objc-arm
+BROKEN=
+ARGS=
+CMDS='
+e asm.lines=0
+e asm.bytes=0
+e asm.comments=0
+s sym.__Test_callMeNot_
+pd 20~?NSLog
+af
+pd 20~?NSLog
+'
+EXPECT="1
+1
+"
+run_test
+
+NAME='pd arm cortex 0'
+FILE=-
+ARGS='-a arm -b 16'
+CMDS='wx 80f30988; pi 1'
+EXPECT="invalid
+"
+run_test
+
+NAME='pd arm cortex 1'
+FILE=-
+ARGS='-a arm -b 16 -e asm.cpu=cortex'
+CMDS='wx 80f30988;pi 1'
+EXPECT="msr psp, r0
+"
+run_test
+
+NAME='pd arm cortex 2'
+FILE=-
+ARGS='-a arm -b 16'
+CMDS='e asm.cpu=cortex;wx 80f30988;pi 1'
+EXPECT="msr psp, r0
+"
+run_test
+
+NAME='pd call sym bug'
+FILE=../bins/mach0/hello-objc-arm
+ARGS=
+CMDS='
+e asm.lines=0
+e asm.bytes=0
+e asm.comments=0
+s sym.__Test_callMeNot_
+# s+2
+pi 2
+'
+EXPECT="push {r7, lr}
+mov r7, sp
+"
+run_test
+
+NAME='call fcn eip 32bit'
+FILE=../bins/elf/analysis/ls-alxchk
+ARGS=
+CMDS='
+s 0x5e50
+e asm.bits=32
+af; afn eip
+pd 1 @ 0x5f16~:0
+e asm.lines=0
+e asm.bytes=0
+e asm.comments=0
+'
+EXPECT="            0x00005f16      e835ffffff     call fcn.eip
+"
+run_test
+
+NAME='call fcn eip 64bit'
+FILE=../bins/elf/analysis/ls-alxchk
+BROKEN=1
+ARGS=
+CMDS='
+s 0x5e50
+e asm.bits=64
+af; afn eip
+pd 1 @ 0x5f16~:0
+e asm.lines=0
+e asm.bytes=0
+e asm.comments=0
+'
+EXPECT="|           0x00005f16      e835ffffff     call fcn.eip
+"
+run_test
+
+NAME='call fcn rip 64bit'
+FILE=../bins/elf/analysis/ls-alxchk
+ARGS=
+CMDS='
+s 0x5e50
+e asm.bits=64
+af; afn rip
+pd 1 @ 0x5f16~:0
+e asm.lines=0
+e asm.bytes=0
+e asm.comments=0
+'
+EXPECT="            0x00005f16      e835ffffff     call fcn.rip
+"
+run_test
+
+NAME='lea edx bug segfault for x86 32bit #5710@radare2'
+FILE=malloc://128
+ARGS=
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+e asm.lines=false
+e asm.comments=false
+pd@x:8d15d0830408
+'
+EXPECT=" 0x00000000      8d15d0830408   lea edx, [0x80483d0]
+"
+run_test
+
+
+NAME='size of function in elf x64 stub'
+FILE=../bins/other/radiff2/hellocxx-osx-fat-intel_1
+ARGS=
+CMDS='
+s 0x100000dae
+af
+afi~^size[1]
+'
+EXPECT="6
+"
+run_test
+
+NAME='crackme test'
+FILE=../bins/elf/crackme
+ARGS=
+CMDS='pd 2
+pi 2
+'
+EXPECT="            ;-- entry0:
+            ;-- section..text:
+            ;-- _start:
+            0x004005c0      31ed           xor ebp, ebp                ; section 14 va=0x004005c0 pa=0x000005c0 sz=584 vsz=584 rwx=--r-x .text
+            0x004005c2      4989d1         mov r9, rdx
+xor ebp, ebp
+mov r9, rdx
+"
+run_test

@@ -1,0 +1,290 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2013-2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='add'
+FILE=-
+ARGS=
+CMDS='ae 3,3,+
+ae 3,3,-
+'
+EXPECT='0x6
+0x0
+'
+run_test
+
+NAME='inc/dec'
+FILE=-
+ARGS=
+CMDS='
+ae 0xffffffffffffffff,++
+ae 3,++
+ae 3,--
+ae 0,--
+'
+EXPECT='0x0
+0x4
+0x2
+0xffffffffffffffff
+'
+run_test
+
+NAME='sub'
+FILE=-
+ARGS=
+CMDS='ae 1,3,-
+'
+EXPECT='0x2
+'
+run_test
+
+NAME='subeq'
+FILE=-
+ARGS=
+CMDS='e asm.bits=32
+e asm.arch=x86
+aei
+ae 3,eax,=,1,eax,-=,eax,0,+
+'
+EXPECT='0x2
+'
+run_test
+
+NAME='shift-left'
+FILE=-
+ARGS=
+CMDS='"ae 3,1,<<"
+"ae 1,3,<<"
+'
+EXPECT='0x8
+0x6
+'
+run_test
+
+NAME='shift-right'
+FILE=-
+ARGS=
+CMDS='"ae 1,8,>>"
+"ae 8,1,>>"
+'
+EXPECT='0x4
+0x0
+'
+run_test
+
+NAME='sub'
+FILE=-
+ARGS=
+CMDS='ae 3,1,-
+'
+EXPECT='0xfffffffffffffffe
+'
+run_test
+
+
+NAME='neg'
+FILE=-
+ARGS=
+CMDS='ae 3,3,+,!
+ae 3,3,-,!
+'
+EXPECT='0x0
+0x1
+'
+run_test
+
+NAME='condition'
+FILE=-
+ARGS=
+CMDS='ae 3,?{,0x80,}
+'
+EXPECT='0x80
+'
+run_test
+
+NAME='memory write (MIPS little endian)'
+FILE=-
+ARGS="-a mips"
+CMDS='e cfg.bigendian=false
+aeim
+e io.cache=true
+"ae 0x69686766,0x00100000,=[4]"
+psz @0x00100000
+'
+EXPECT='fghi
+'
+run_test
+
+NAME='memory write (MIPS big endian)'
+FILE=-
+ARGS="-a mips"
+CMDS='e cfg.bigendian=true
+aeim
+e io.cache=true
+"ae 0x69686766,0x00100000,=[4]"
+psz @0x00100000
+'
+EXPECT='ihgf
+'
+run_test
+
+NAME='memory write (non-MIPS big endian)'
+FILE=-
+ARGS=
+BROKEN=1
+CMDS='e cfg.bigendian=true
+aeim
+e io.cache=true
+"ae 0x69686766,0x00100000,=[4]"
+psz @0x00100000
+'
+EXPECT='ihgf
+'
+run_test
+
+NAME='esil poke some (32-bits ARM big endian)'
+FILE=
+ARGS="-a arm -b 32"
+BROKEN=1
+CMDS='e cfg.bigendian=true
+aeim
+e io.cache=true
+ar r0=0x00100000
+ar r1=0x69686766
+"ae r1,1,r0,=[*]"
+p8 4@0x00100000
+'
+EXPECT='69686766
+'
+run_test
+
+NAME='esil poke some (64-bits ARM big endian)'
+FILE=-
+ARGS="-a arm -b 64"
+BROKEN=
+CMDS='e cfg.bigendian=true
+aeim
+e io.cache=true
+ar x0=0x00100000
+ar x1=0x69686766
+"ae x1,1,x0,=[*]"
+p8 8@0x00100000
+'
+EXPECT='0000000069686766
+'
+run_test
+
+NAME='esil poke some (32-bits ARM little endian)'
+FILE=-
+ARGS="-a arm -b 32"
+BROKEN=
+CMDS='e cfg.bigendian=false
+aeim
+e io.cache=true
+ar r0=0x00100000
+ar r1=0x69686766
+"ae r1,1,r0,=[*]"
+p8 4@0x00100000
+'
+EXPECT='66676869
+'
+run_test
+
+NAME='esil poke some (64-bits ARM little endian)'
+FILE=-
+ARGS="-a arm -b 64"
+BROKEN=
+CMDS='e cfg.bigendian=false
+aeim
+e io.cache=true
+ar x0=0x00100000
+ar x1=0x69686766
+"ae x1,1,x0,=[*]"
+p8 8@0x00100000
+'
+EXPECT='6667686900000000
+'
+run_test
+
+NAME='esil poke some (count too long)'
+FILE=-
+ARGS="-a arm -b 64"
+BROKEN=
+CMDS='e cfg.bigendian=false
+aeim
+e io.cache=true
+ar x0=0x00100000
+ar x1=0x69686766
+"ae x1,0xffffffff,x0,=[*]"
+p8 8@0x00100000
+'
+EXPECT='6667686900000000
+'
+run_test
+
+NAME='rol'
+FILE=-
+ARGS=
+CMDS='e asm.bits=32
+e asm.arch=x86
+aei
+ar eax=0x80000010
+"ae 0x1,eax,<<<,eax,="
+ar eax
+'
+EXPECT='0x00000021
+'
+run_test
+
+NAME='ror'
+FILE=-
+ARGS=
+CMDS='e asm.bits=32
+e asm.arch=x86
+aei
+ar eax=0x02000001
+"ae 0x1,eax,>>>,eax,="
+ar eax
+'
+EXPECT='0x81000000
+'
+run_test
+
+NAME='or-mem-dst'
+FILE=-
+ARGS=
+CMDS='e asm.bits=32
+e asm.arch=x86
+aei
+ar eax=0x0000000b
+"ae 0xf,eax,=[4]"
+"ae 0xf0,eax,|=[4]"
+"ae eax,[4]"
+'
+EXPECT='0xff
+'
+run_test
+
+NAME='rep stosq'
+FILE='../bins/elf/analysis/x64-rep-stosq'
+ARGS=
+CMDS='
+3aes
+ar rcx
+ar rdi
+ar rip
+aes
+ar rcx
+ar rdi
+ar rip
+'
+EXPECT='0x00000001
+0x006000d0
+0x004000c0
+0x00000000
+0x006000d8
+0x004000c3
+'
+run_test

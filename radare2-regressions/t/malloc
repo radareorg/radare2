@@ -1,0 +1,25 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=malloc://1024
+CMDS='
+s 0x666
+s
+s 15
+s
+s 034
+s
+s 0
+s+2
+s -1
+s
+s+0x4
+s
+'
+EXPECT='0x666
+0xf
+0x1c
+0x1
+0x5
+'
+run_test

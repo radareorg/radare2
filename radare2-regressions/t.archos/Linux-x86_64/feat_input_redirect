@@ -1,0 +1,23 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='rarun2 Input redirection'
+BROKEN=1
+SHELLCMD='rarun2 ../../bins/rr2/input_redirection.rr2 | grep -q "^foo
+bar$"'
+EXITCODE=0
+run_test
+
+NAME='radare2 Input redirection'
+BROKEN=1
+FILE='../../bins/elf/two-words'
+ARGS='-R ../../bins/rr2/input_redirection.rr2 -d'
+EXPECT='foo
+bar
+'
+CMDS='
+dc
+dc
+dc
+'
+run_test

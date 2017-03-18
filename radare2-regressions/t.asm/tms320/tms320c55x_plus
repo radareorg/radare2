@@ -1,0 +1,146 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# Tests only whole disassembly opcode
+test_disasm() {
+NAME="${1} ${2}: [${3}]"
+FILE=malloc://128
+if [ "${6}" = "br" ]; then
+	BROKEN=1
+fi
+CMDS='
+e asm.arch='${1}'
+e asm.cpu='${2}'
+e anal.cpu='${2}'
+wx '${4}'
+pi 1
+'
+EXPECT="${5}
+"
+run_test
+}
+
+# Tests jump analysis
+test_jump() {
+NAME="${1} ${2}: [${3}] - jump check"
+FILE=malloc://512280
+if [ "${7}" = "br" ]; then
+	BROKEN=1
+fi
+CMDS='
+e asm.arch='${1}'
+e asm.cpu='${2}'
+e anal.cpu='${2}'
+wx '${4}' @ '${5}'
+ao 1~jump
+'
+EXPECT="jump: ${6}
+"
+run_test
+}
+
+PLUGIN=tms320
+CPU=c55x+
+
+test_disasm "${PLUGIN}" "${CPU}" "ADD" 740131 "add t1, ac1"
+test_disasm "${PLUGIN}" "${CPU}" "ADD (complex)" c261410001 "add #0x1 << #0xe, ac1, ac1"
+test_disasm "${PLUGIN}" "${CPU}" "AMAR (3 ops)" ea928014c03f "amar *ar+2, *ar+4, *ar15"
+test_disasm "${PLUGIN}" "${CPU}" "AMAR (1 op)" 621200 "amar *(ar2+t0b)"
+test_disasm "${PLUGIN}" "${CPU}" "ASUB" ae21000b "asub #0xb, xar1"
+test_disasm "${PLUGIN}" "${CPU}" "BCLR" 0a0a "bclr st0_acov0, st0_55"
+test_disasm "${PLUGIN}" "${CPU}" "CMP" a4323300 "cmp t2 == t3, tc1"
+test_disasm "${PLUGIN}" "${CPU}" "MACM" c832803400 "macm *ar2, *ar4, ac0, ac0"
+test_disasm "${PLUGIN}" "${CPU}" "MOV (complex op)" b410004032 "mov *(ar0+t0b) << t2, ac0"
+test_disasm "${PLUGIN}" "${CPU}" "MOV (combined)" 395102a0b411014033 "mov ac0.l, *ar2 || mov *(ar1+t0b) << t3, ac1"
+test_disasm "${PLUGIN}" "${CPU}" "MOV" 770030 "mov t0, ac0"
+test_disasm "${PLUGIN}" "${CPU}" "MPYM" c832003400 "mpym *ar2, *ar4, ac0"
+test_disasm "${PLUGIN}" "${CPU}" "SUB" 740081 "sub ac1, ac0"
+test_disasm "${PLUGIN}" "${CPU}" "POP" 713233 "pop t2, t3"
+test_disasm "${PLUGIN}" "${CPU}" "POP MMAP" 2461e508 "pop mmap(@st1_55)"
+test_disasm "${PLUGIN}" "${CPU}" "PUSH MMAP" 2461e400 "psh mmap(@st0_55)"
+test_disasm "${PLUGIN}" "${CPU}" "PUSH BOTH" 0d25 "pshboth xar5"
+test_disasm "${PLUGIN}" "${CPU}" "RET" 21 "ret"
+test_disasm "${PLUGIN}" "${CPU}" "RPTBLOCAL" 376e00117b00a0 "rptblocal #0x000011 || sfts ac0, #-1"
+test_disasm "${PLUGIN}" "${CPU}" "SFTS" a6818133 "sfts ac1, t3, ac1"
+test_disasm "${PLUGIN}" "${CPU}" "SFTL" a7810131 "sftl ac1, #0x31, ac1"
+test_disasm "${PLUGIN}" "${CPU}" "XCCPART" 07e4 "xccpart tc1"
+test_disasm "${PLUGIN}" "${CPU}" "XCCPART (combined)" 3605a07bb000 "xccpart ac0 <= #0 || mov #0x0, t0"
+test_disasm "${PLUGIN}" "${CPU}" "XOR" c5a3230001 "xor #0x1, ar3, ar3"
+
+# -------------------------------
+# BCC instruction
+
+BROKEN=
+NAME="C55x+: BCC"
+FILE=malloc://512280
+CMDS='
+e asm.arch=tms320
+e asm.cpu=c55x+
+e anal.cpu=c55x+
+e io.va=true
+wx 6a23f0 @ 0x53307
+s 0x53307
+pi 1
+'
+EXPECT='bcc #0x000023, !overflow(ac0)
+'
+run_test
+
+# -------------------------------
+# BCC instruction (jump check)
+
+BROKEN=
+NAME="C55x+: BCC - jump check"
+FILE=malloc://512280
+CMDS='
+e asm.arch=tms320
+e asm.cpu=c55x+
+e anal.cpu=c55x+
+e io.va=true
+wx 6a23f0 @ 0x53307
+s 0x53307
+ao 1~jump
+'
+EXPECT='jump: 0x0005332d
+'
+run_test
+
+# -------------------------------
+# B instruction
+
+BROKEN=
+NAME="C55x+: B"
+FILE=malloc://512280
+CMDS='
+e asm.arch=tms320
+e asm.cpu=c55x+
+e anal.cpu=c55x+
+e io.va=true
+wx 68ffa1 @ 0x5332a
+s 0x5332a
+pi 1
+'
+EXPECT='b #0x00ffa1
+'
+run_test
+
+# -------------------------------
+# B instruction (jump check)
+
+BROKEN=
+NAME="C55x+: B - jump check"
+FILE=malloc://512280
+CMDS='
+e asm.arch=tms320
+e asm.cpu=c55x+
+e anal.cpu=c55x+
+e io.va=true
+wx 68ffa1 @ 0x5332a
+s 0x5332a
+ao 1~jump
+'
+EXPECT='jump: 0x000532ce
+'
+run_test
+
+

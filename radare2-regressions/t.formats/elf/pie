@@ -1,0 +1,92 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: entrypoint'
+FILE=../../bins/elf/analysis/pie
+ARGS=''
+CMDS="ie~addr"
+EXPECT='vaddr=0x00000450 paddr=0x00000450 baddr=0x00000000 laddr=0x00000000 haddr=0x00000018 type=program
+'
+run_test
+
+NAME='ELF: entrypoint with baddr'
+FILE=../../bins/elf/analysis/pie
+ARGS='-B 0x300000'
+CMDS="ie~addr"
+EXPECT='vaddr=0x00300450 paddr=0x00000450 baddr=0x00300000 laddr=0x00000000 haddr=0x00000018 type=program
+'
+run_test
+
+NAME='ELF: rabin2 entrypoint with baddr'
+FILE=-
+ARGS=''
+CMDS="!rabin2 -e -B 0x300000 ../../bins/elf/analysis/pie | grep baddr"
+EXPECT='vaddr=0x00300450 paddr=0x00000450 baddr=0x00300000 laddr=0x00000000 haddr=0x00000018 type=program
+'
+run_test
+
+NAME='ELF: sym.main'
+FILE=../../bins/elf/analysis/pie
+ARGS=''
+CMDS="?v sym.main"
+EXPECT='0x5c5
+'
+run_test
+
+NAME='ELF: simple.elf - code'
+FILE=../../bins/elf/analysis/pie
+ARGS='-n'
+CMDS=".!rabin2 -rps $FILE
+?v sym.main
+e asm.bits=32
+pi 5 @ sym.main"
+EXPECT='0x5c5
+push ebp
+mov ebp, esp
+int3
+pop ebp
+ret
+'
+run_test
+
+NAME='ELF: simple.elf - code'
+FILE=../../bins/elf/analysis/pie
+ARGS='-n -b32'
+CMDS=".!rabin2 -rps $FILE
+e asm.bits=32
+pi 5 @ sym.main"
+EXPECT='push ebp
+mov ebp, esp
+int3
+pop ebp
+ret
+'
+run_test
+
+NAME='ELF: simple.elf - baddr - code'
+FILE=../../bins/elf/analysis/pie
+ARGS='-b32 -B 0x100000'
+CMDS="e asm.bits=32;pi 5 @ sym.main"
+EXPECT='push ebp
+mov ebp, esp
+int3
+pop ebp
+ret
+'
+run_test
+
+NAME='ELF: Candypop, main detection'
+FILE=../../bins/elf/analysis/candypop
+ARGS='-A'
+CMDS="? main~?0x1235"
+EXPECT='1
+'
+run_test
+
+NAME='ELF: pd around a reloc with asm.midflags'
+FILE=../../bins/elf/analysis/hello-linux-i386-pie
+ARGS=''
+CMDS='e asm.midflags=2;pd 3 @0x000004a6 ~?invalid'
+EXPECT='0
+'
+run_test

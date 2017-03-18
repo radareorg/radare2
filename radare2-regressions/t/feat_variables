@@ -1,0 +1,258 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012-2016  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME=hello-arm32
+FILE=../bins/elf/analysis/hello-arm32
+CMDS='?v $M
+?v $s
+'
+EXPECT='0x10000
+0x90c
+'
+run_test
+
+NAME=hello-arm32
+FILE=../bins/elf/analysis/hello-arm32
+ARGS="-B 0x4000"
+CMDS='?v $M
+?v $s
+'
+EXPECT='0x4000
+0x90c
+'
+run_test
+
+NAME='$FB (fcn-begin)'
+FILE=malloc://1024
+ARGS=
+CMDS='s 42
+af
+s 44
+s $FB
+s'
+EXPECT='0x2a
+'
+run_test
+
+NAME='$$ (malloc)'
+FILE=malloc://1024
+ARGS=
+CMDS='?v $$
+s 42
+?v $$
+s-
+?v $$'
+EXPECT='0x0
+0x2a
+0x0
+'
+run_test
+
+NAME='$o (malloc)'
+FILE=malloc://1024
+ARGS=
+CMDS='?v $o
+s 42
+?v $o
+s-
+?v $o
+'
+EXPECT='0x0
+0x2a
+0x0
+'
+run_test
+
+NAME='$s (malloc)'
+FILE=malloc://1024
+ARGS=
+CMDS='?v $s
+'
+EXPECT='0x400
+'
+run_test
+
+NAME='$j (malloc)'
+FILE=malloc://1024
+ARGS=
+CMDS='wa jmp 0x30
+?v $j
+wa jz 0x01
+?v $j
+wa xor eax, eax
+?v $j
+?e
+'
+EXPECT='0x30
+0x1
+0xffffffffffffffff
+
+'
+run_test
+
+NAME='$f (malloc)'
+FILE=malloc://1024
+ARGS=
+BROKEN=
+CMDS='wx eb2e
+?v $f
+wx 0f84fbffffff
+?v $f
+wx 31c0
+?v $f
+'
+EXPECT='0xffffffffffffffff
+0x6
+0xffffffffffffffff
+'
+run_test
+
+NAME='$m (malloc)'
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.arch=x86
+e asm.bits=32
+wa mov eax, [0x500]
+?v $m
+wa mov eax, ebx
+?v $m
+?e
+'
+EXPECT='0x500
+0xffffffffffffffff
+
+'
+run_test
+
+NAME='$l (malloc)'
+FILE=malloc://1024
+ARGS=
+CMDS='wa xor eax, eax
+?v $l
+wa mov esp, 0x1
+?v $l
+wx c3
+?v $l
+'
+EXPECT='0x2
+0x5
+0x1
+'
+run_test
+
+NAME='$e (malloc)'
+FILE=-
+ARGS=
+CMDS='e asm.arch=x86
+e asm.bits=32
+wa inc eax
+?v $e
+wa jmp 0x01
+?v $e
+wa ret
+?v $e
+wa call 0x01
+?v $e
+'
+EXPECT='0x0
+0x1
+0x1
+0x0
+'
+run_test
+
+NAME='$e (malloc)'
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.bits = 0x20
+?v ${asm.bits}
+'
+EXPECT='0x20
+'
+run_test
+
+NAME='$e (malloc)'
+FILE=malloc://1024
+ARGS=
+CMDS='? 5 + 3
+?v $?
+? 0
+?v $?
+'
+EXPECT='8 0x8 010 8 0000:0008 8 "\b" 00001000 8.0 8.000000f 8.000000
+0x8
+0 0x0 00 0 0000:0000 0 "\0" 00000000 0.0 0.000000f 0.000000
+0x0
+'
+run_test
+
+NAME='$$ (x86-simple)'
+FILE=../bins/elf/analysis/x86-simple
+ARGS=
+CMDS='?v $$
+s 42
+?v $$
+s-
+?v $$'
+EXPECT='0x8048060
+0x2a
+0x8048060
+'
+run_test
+
+NAME='$o (x86-simple)'
+FILE=../bins/elf/analysis/x86-simple
+ARGS=
+CMDS='?v $o
+s 42
+?v $o
+s-
+?v $o
+'
+EXPECT='0x60
+0x2a
+0x60
+'
+run_test
+
+NAME='$b (x86-simple)'
+FILE=../bins/elf/analysis/x86-simple
+ARGS=
+CMDS='b 123
+?v $b
+? $b
+'
+EXPECT='0x7b
+123 0x7b 0173 123 0000:007b 123 "{" 01111011 123.0 123.000000f 123.000000
+'
+run_test
+
+NAME='$s (x86-simple)'
+FILE=../bins/elf/analysis/x86-simple
+ARGS=
+CMDS='?v $s
+'
+EXPECT='0xfc
+'
+run_test
+
+NAME='?p and ?P'
+FILE=../bins/elf/analysis/simple.elf
+CMDS='?p 0x08000060
+?P 0x00000060
+'
+EXPECT='0x00000060
+0x08000060
+'
+run_test
+
+NAME='?p and ?P'
+FILE=../bins/elf/analysis/simple.elf
+CMDS='?p 0xdeadbeef
+?P 0xdeadbeef
+'
+EXPECT='0xffffffffffffffff
+0xffffffffffffffff
+'
+run_test

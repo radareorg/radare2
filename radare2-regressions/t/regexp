@@ -1,0 +1,36 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME="/e /test/i"
+FILE=malloc://1024
+IGNORE_ERR=1
+CMDS='
+w test
+w Test@444
+?e
+e search.in=block
+b 777
+/e /test/i
+'
+EXPECT='
+0x00000000 hit0_0 "test"
+0x000001bc hit0_1 "Test"
+'
+
+run_test
+
+
+NAME="/e m (invalid) #742"
+FILE=malloc://1024
+IGNORE_ERR=1
+CMDS='
+w test
+w Test@444
+/e m
+/e m
+/e m
+/e m
+'
+EXPECT=''
+
+run_test

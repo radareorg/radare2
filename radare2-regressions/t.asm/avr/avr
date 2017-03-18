@@ -1,0 +1,270 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+test_vector() {
+#disasm
+NAME="${1} DISasm: [${3} => ${2} ]"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+	BROKEN=1
+fi
+CMDS='
+e asm.arch='${1}'
+wx '${3}'
+pi 1
+'
+EXPECT="${2}
+"
+run_test
+
+#asm
+NAME="${1} Asm: [${2} => ${3}]"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+		BROKEN=1
+	fi
+CMDS='
+e asm.arch='${1}'
+wa '${2}' @ 0
+p8 '${4}'
+'
+EXPECT="${3}
+"
+run_test
+}
+
+PLUGIN=avr
+
+# Relative instructions require additional handling
+
+# -------------------------------
+# BRBC instructions group
+NAME="${PLUGIN} Asm: [brbc commands]"
+FILE=malloc://32
+CMDS='
+e asm.arch=avr
+wa brcc 0x4 @ 0
+wa brne 0x6 @ 2
+wa brpl 0x8 @ 4
+wa brvc 0xa @ 6
+wa brge 0xc @ 8
+wa brhc 0xe @ 0xa
+wa brtc 0x10 @ 0xc
+wa brid 0x12 @ 0xe 
+p8 16
+'
+EXPECT='08f409f40af40bf40cf40df40ef40ff4
+'
+run_test
+
+NAME="${PLUGIN} DISasm: [brbc commands]"
+FILE=malloc://32
+CMDS='
+e asm.arch=avr
+wx 08f4 @ 0
+wx 09f4 @ 2
+wx 0af4 @ 4
+wx 0bf4 @ 6
+wx 0cf4 @ 8
+wx 0df4 @ 0xa
+wx 0ef4 @ 0xc
+wx 0ff4 @ 0xe 
+pi 8
+'
+EXPECT='brcc 0x4
+brne 0x6
+brpl 0x8
+brvc 0xa
+brge 0xc
+brhc 0xe
+brtc 0x10
+brid 0x12
+'
+run_test
+
+# -------------------------------
+# BRBS instructions group
+NAME="${PLUGIN} Asm: [brbs commads]"
+FILE=malloc://32
+CMDS='
+e asm.arch=avr
+wa brcs 0x4 @ 0
+wa breq 0x6 @ 2
+wa brmi 0x8 @ 4
+wa brvs 0xa @ 6
+wa brlt 0xc @ 8
+wa brhs 0xe @ 0xa
+wa brts 0x10 @ 0xc
+wa brie 0x12 @ 0xe
+p8 16
+'
+EXPECT='08f009f00af00bf00cf00df00ef00ff0
+'
+run_test
+
+NAME="${PLUGIN} DISasm: [brbs commads]"
+FILE=malloc://32
+CMDS='
+e asm.arch=avr
+wx 08f0 @ 0
+wx 09f0 @ 2
+wx 0af0 @ 4
+wx 0bf0 @ 6
+wx 0cf0 @ 8
+wx 0df0 @ 0xa
+wx 0ef0 @ 0xc
+wx 0ff0 @ 0xe 
+pi 8
+'
+EXPECT='brcs 0x4
+breq 0x6
+brmi 0x8
+brvs 0xa
+brlt 0xc
+brhs 0xe
+brts 0x10
+brie 0x12
+'
+run_test
+
+# -------------------------------
+# Rest instructions
+test_vector "${PLUGIN}" "add r20, r24" 480f 2
+test_vector "${PLUGIN}" "adc r21, r25" 591f 2
+test_vector "${PLUGIN}" "adiw r24, 0x01" 0196 2
+test_vector "${PLUGIN}" "andi r24, 0xef" 8f7e 2
+test_vector "${PLUGIN}" "bld r14, 1" e1f8 2
+test_vector "${PLUGIN}" "brcc 0x4" 08f4 2
+test_vector "${PLUGIN}" "cli" f894 2
+test_vector "${PLUGIN}" "clr r15" ff24 2
+test_vector "${PLUGIN}" "call 0x2016" 0e940b10 4
+
+# additional analyzer tests for call
+NAME="${PLUGIN} DISasm: [0e940b00 => call 0x16] (2)"
+FILE=malloc://4096
+CMDS='
+e asm.arch=avr
+wx 0e940b00 @ 0x2d0
+s 0x2d0
+pi 1
+'
+EXPECT='call 0x16
+'
+run_test
+
+NAME="${PLUGIN} DISasm: [0e940b10 => 0x00002016] (ANAL)"
+FILE=malloc://4096
+CMDS='
+e asm.arch=avr
+wx 0e940b10 @ 0x2d0
+s 0x2d0
+ao 1~jump[1]
+'
+EXPECT='0x00002016
+'
+run_test
+
+NAME="${PLUGIN} DISasm: [0e940b10 => call] - jump check"
+FILE=malloc://4096
+CMDS='
+e asm.arch=avr
+s 0x2d0
+wx 0e940b10
+ao 1~jump
+'
+EXPECT='jump: 0x00002016
+'
+run_test
+# /additional analyzer tests for call
+
+test_vector "${PLUGIN}" "com r24" 8095 2
+test_vector "${PLUGIN}" "cp r18, r24" 2817 2
+test_vector "${PLUGIN}" "cpi r24, 0xf5" 853f 2
+test_vector "${PLUGIN}" "cpc r25, r18" 9207 2
+test_vector "${PLUGIN}" "dec r0" 0a94 2
+test_vector "${PLUGIN}" "eor r24, r25" 8927 2
+test_vector "${PLUGIN}" "elpm r0, z+" 0790 2
+test_vector "${PLUGIN}" "in r28, 0x3d" cdb7 2
+test_vector "${PLUGIN}" "inc r14" e394 2
+test_vector "${PLUGIN}" "jmp 0x246" 0c942301 4
+test_vector "${PLUGIN}" "jmp 0x20246" 0d942301 4
+test_vector "${PLUGIN}" "jmp 0x2c0246" bc942301 4
+test_vector "${PLUGIN}" "jmp 0x400246" 0c952301 4
+test_vector "${PLUGIN}" "ld r24, z" 8081 2
+test_vector "${PLUGIN}" "ldi r25, 0x07" 97e0 2
+test_vector "${PLUGIN}" "ldd r9, z+1" 9180 2
+test_vector "${PLUGIN}" "lds r24, 0x102" 80910201 4
+test_vector "${PLUGIN}" "lsl r24" 880f 2
+test_vector "${PLUGIN}" "mov r0, r31" 0f2e 2
+test_vector "${PLUGIN}" "movw r22, r18" b901 2
+test_vector "${PLUGIN}" "ori r24, 0x01" 8160 2
+test_vector "${PLUGIN}" "out 0x3e, r25" 9ebf 2
+test_vector "${PLUGIN}" "push r29" df93 2
+test_vector "${PLUGIN}" "rcall 0x4" 01d0 2
+test_vector "${PLUGIN}" "rjmp 0x4" 01c0 2
+test_vector "${PLUGIN}" "pop r28" cf91 2
+test_vector "${PLUGIN}" "ret" 0895 2
+test_vector "${PLUGIN}" "reti" 1895 2
+test_vector "${PLUGIN}" "rol r25" 991f 2
+test_vector "${PLUGIN}" "sbc r19, r25" 390b 2
+test_vector "${PLUGIN}" "sbci r19, 0xff" 3f4f 2
+test_vector "${PLUGIN}" "sbiw r24, 0x01" 0197 2
+test_vector "${PLUGIN}" "sei" 7894 2
+test_vector "${PLUGIN}" "ser r24" 8fef 2
+test_vector "${PLUGIN}" "std z+0, r1" 1082 2
+test_vector "${PLUGIN}" "std z+1, r1" 1182 2
+test_vector "${PLUGIN}" "sts 0x7c0, r25" 9093c007 4
+
+NAME="${PLUGIN} DISasm: [sts] - jump check"
+FILE=malloc://4096
+CMDS='
+e asm.arch=avr
+s 0x2d0
+wx 9093c007
+ao 1~jump
+'
+EXPECT=''
+run_test
+
+test_vector "${PLUGIN}" "sub r18, r24" 281b 2
+test_vector "${PLUGIN}" "subi r18, 0xff" 2f5f 2
+test_vector "${PLUGIN}" "tst r24" 8823 2
+
+# the next two is broken
+NAME="${PLUGIN} DISasm: negative baddr"
+BROKEN=1
+FILE=../../bins/elf/analysis/bugurtos-avr.elf
+ARGS=
+CMDS='s 0x506
+pd 2~!1
+s+2
+pd 1
+'
+EXPECT='call 0x18CE
+call 0x18CE
+'
+run_test
+
+
+NAME="${PLUGIN} DISasm: empty disasm"
+BROKEN=1
+FILE=-
+ARGS=
+CMDS='e asm.arch=avr
+e asm.bits=8
+pad 0e94
+'
+EXPECT='invalid
+'
+run_test
+
+NAME="${PLUGIN} DISasm: opcode size"
+FILE=-
+ARGS=
+CMDS='e asm.arch=avr
+wx 0e941122
+ao~size[1]
+'
+EXPECT='4
+'
+run_test

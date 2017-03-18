@@ -1,0 +1,29 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami virtrelocXP.exe - open'
+FILE=../../bins/pe/virtrelocXP.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='PE: corkami virtrelocXP.exe - entrypoint'
+FILE=../../bins/pe/virtrelocXP.exe
+CMDS='
+s
+'
+EXPECT='0x10138
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami virtrelocXP.exe - pi 1'
+FILE=../../bins/pe/virtrelocXP.exe
+CMDS='
+pi 1
+'
+EXPECT='push 0x150
+'
+IGNORE_ERR=1
+run_test

@@ -1,0 +1,131 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=malloc://1024
+NAME="add comment"
+CMDS='
+CCa 0x123 hello
+C*~?
+C*~[3]
+'
+EXPECT='1
+0x00000123
+'
+run_test
+
+FILE=../bins/elf/analysis/main
+NAME="#3829 remove comment where another meta is already defined "
+CMDS='CCu lol @ str.Hello_World
+CC- @ str.Hello_World
+pd 1 @ str.Hello_World
+'
+EXPECT='            ;-- str.Hello_World:
+            0x004005c4     .string "Hello World" ; len=12
+'
+run_test
+
+FILE=malloc://1024
+NAME="add comment"
+CMDS='
+CC hello
+C*~?
+'
+EXPECT='1
+'
+run_test
+
+FILE=malloc://1024
+NAME="add comment at"
+CMDS='
+CCa 8 hello
+C*~?
+CC*
+'
+EXPECT='1
+CCu base64:aGVsbG8= @ 0x00000008
+'
+run_test
+FILE=malloc://1024
+NAME="del comment"
+CMDS='
+CC hello
+CC-hello
+C*~?
+'
+EXPECT='0
+'
+run_test
+
+FILE=malloc://1024
+NAME="add two comment"
+CMDS='
+CC hello @ 0x200
+CC world @ 0x400
+C*~?
+'
+EXPECT='2
+'
+run_test
+
+FILE=malloc://1024
+NAME="del comment at address"
+CMDS='
+CC hello @ 0x200
+CC world @ 0x400
+CC-@0x400
+C*~?
+'
+EXPECT='1
+'
+run_test
+
+FILE=malloc://1024
+NAME="multiline comment"
+CMDS='
+e asm.bits=32
+CC hello @ 0x200
+CC world @ 0x200
+CC.@0x200~?
+CC~?
+e asm.profile=simple
+e asm.cmtright=0
+e scr.color=false
+pd 2 @ 0x200
+'
+EXPECT='1
+1
+               ; hello world
+            0x00000200      0000           add byte [eax], al
+            0x00000202      0000           add byte [eax], al
+'
+run_test
+
+FILE=malloc://1024
+NAME="cmtright"
+CMDS='
+CC hello
+e scr.color=false
+wx 90
+e asm.cmtright=1
+pd 1
+e asm.cmtright=0
+pd 1
+'
+EXPECT='            0x00000000      90             nop                         ; hello
+               ; hello
+            0x00000000      90             nop
+'
+run_test
+
+FILE=../bins/elf/analysis/main
+NAME="cmtrefs"
+CMDS='
+aaa
+e asm.cmtrefs = true
+f test.flag @ 0x004003e0
+CC test comment @ 0x004003e0
+pd 1 @ 0x0040050f
+'
+EXPECT='|           0x0040050f      e8ccfeffff     call sym.imp.puts          ; int puts(const char *s); (test.flag); (test comment)
+'
+run_test

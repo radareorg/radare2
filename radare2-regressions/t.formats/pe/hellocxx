@@ -1,0 +1,26 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: hello cxx - entry dis'
+FILE=../../bins/pe/hellocxx-mingw32.exe
+ARGS=''
+CMDS="?v entry0;pid 4"
+EXPECT='0x401280
+0x00401280    entry0:
+0x00401280               55  push ebp
+0x00401281             89e5  mov ebp, esp
+0x00401283           83ec08  sub esp, 8
+0x00401286   c7042401000000  mov dword [esp], 1
+'
+run_test
+
+NAME='PE: hello cxx - sections'
+FILE=../../bins/pe/hellocxx-mingw32.exe
+ARGS=''
+CMDS="S*~^S"
+EXPECT='S 0x00000400 0x00401000 0x0003fc00 0x00040000 .text mr-x
+S 0x00040000 0x00441000 0x00000200 0x00001000 .data mrw-
+S 0x00040200 0x00442000 0x00002c00 0x00003000 .rdata mr--
+S 0x00042e00 0x00447000 0x00000800 0x00001000 .idata mrw-
+'
+run_test

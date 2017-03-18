@@ -1,0 +1,564 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh; done
+
+# --------------------------
+# BREAK instruction
+
+NAME="ebc: [BREAK]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 0006
+pi 1
+'
+EXPECT='break 6
+'
+run_test
+
+# --------------------------
+# JMP8 instruction
+
+NAME="ebc: [JMP8.1]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx c20d
+pi 1
+'
+EXPECT='jmp8cs 0xd
+'
+run_test
+
+NAME="ebc: [JMP8.2]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 0203
+pi 1
+'
+EXPECT='jmp8 0x3
+'
+run_test
+
+NAME="ebc: [JMP8.3]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 82df
+pi 1
+'
+EXPECT='jmp8cc 0xdf
+'
+run_test
+
+# --------------------------
+# JMP instruction
+
+NAME="ebc: [JMP]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 81908a020000
+pi 1
+'
+EXPECT='jmp32cc 0x28a
+'
+run_test
+
+# --------------------------
+# CALL instruction
+
+NAME="ebc: [CALL.1]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 83109a5dffff
+pi 1
+'
+EXPECT='call32 r0(0xffff5d9a)
+'
+run_test
+
+NAME="ebc: [CALL.2]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 83107cf4ffff
+pi 1
+'
+EXPECT='call32 r0(0xfffff47c)
+'
+run_test
+
+NAME="ebc: [CALL.3]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 0307
+pi 1
+'
+EXPECT='call32a r7
+'
+run_test
+
+NAME="ebc: [CALL.4]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 832f01000010
+pi 1
+'
+EXPECT='call32exa @r7(+1, +0)
+'
+run_test
+
+# --------------------------
+# RET instruction
+
+NAME="ebc: [RET]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 0400
+pi 1
+'
+EXPECT='ret
+'
+run_test
+
+# --------------------------
+# CMP instruction
+
+NAME="ebc: [CMPgte]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 4767
+pi 1
+'
+EXPECT='cmp64gte r7, r6
+'
+run_test
+
+NAME="ebc: [CMPeq]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 4547
+pi 1
+'
+EXPECT='cmp64eq r7, r4
+'
+run_test
+
+NAME="ebc: [CMPgte]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 4767
+pi 1
+'
+EXPECT='cmp64gte r7, r6
+'
+run_test
+
+# NEG instruction
+NAME="ebc: [NEG]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 4b77
+pi 1
+'
+EXPECT='neg64 r7, r7
+'
+run_test
+
+# NOT instruction
+NAME="ebc: [NOT]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 0a77
+pi 1
+'
+EXPECT='not32 r7, r7
+'
+run_test
+
+# --------------------------
+# ADD instruction
+
+NAME="ebc: [ADD.1]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 4c47
+pi 1
+'
+EXPECT='add64 r7, r4
+'
+run_test
+
+NAME="ebc: [ADD.2]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx cc640100
+pi 1
+'
+EXPECT='add64 r4, r6(1)
+'
+run_test
+
+# --------------------------
+# AND instruction
+
+NAME="ebc: [AND]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 5447
+pi 1
+'
+EXPECT='and64 r7, r4
+'
+run_test
+
+# --------------------------
+# OR instruction
+
+NAME="ebc: [OR]"
+FILE=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx d5670f00
+pi 1
+'
+EXPECT='or64 r7, r6(15)
+'
+run_test
+
+# --------------------------
+# SHR instruction
+
+NAME="ebc: [SHR]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 5847
+pi 1
+'
+EXPECT='shr64 r7, r4
+'
+run_test
+
+# --------------------------
+# SHL instruction
+
+NAME="ebc: [SHL]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 5747
+pi 1
+'
+EXPECT='shl64 r7, r4
+'
+run_test
+
+# --------------------------
+# MOV instruction
+
+NAME="ebc: [MOV.1]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 1fc4
+pi 1
+'
+EXPECT='movdw r4, @r4
+'
+run_test
+
+NAME="ebc: [MOV.2]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 9f683800
+pi 1
+'
+EXPECT='movdw @r0(+0, +56), r6
+'
+run_test
+
+NAME="ebc: [MOV.3]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 63f787240010
+pi 1
+'
+EXPECT='movdd r7, @r7(+7, +584)
+'
+run_test
+
+NAME="ebc: [MOVnw.1]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 65873800
+pi 1
+'
+EXPECT='movsnw r7, @r0(+0, +56)
+'
+run_test
+
+NAME="ebc: [MOVnw.2]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 72871000
+pi 1
+'
+EXPECT='movnw r7, @r0(+0, +16)
+'
+run_test
+
+NAME="ebc: [MOVnw.3]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 60005000
+pi 1
+'
+EXPECT='movqw r0, r0(+0, +80)
+'
+run_test
+
+# --------------------------
+# MOVI instruction
+
+NAME="ebc: [MOVI.1]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 7737ffff
+pi 1
+'
+EXPECT='moviqw r7, 65535
+'
+run_test
+
+NAME="ebc: [MOVI.2]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 77360000
+pi 1
+'
+EXPECT='moviqw r6, 0
+'
+run_test
+
+NAME="ebc: [MOVI.3]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 776805200400
+pi 1
+'
+EXPECT='movidw @r0(+5, +0), 4
+'
+run_test
+
+# --------------------------
+# EXTND instruction
+
+NAME="ebc: [EXTND]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 5c44
+pi 1
+'
+EXPECT='extndd64 r4, r4
+'
+run_test
+
+# --------------------------
+# MOD instruction
+
+NAME="ebc: [MOD]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 92670400
+pi 1
+'
+EXPECT='mod32 r7, r6(4)
+'
+run_test
+
+# --------------------------
+# ASHR instruction
+
+NAME="ebc: [ASHR]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 99640100
+pi 1
+'
+EXPECT='ashr32 r4, r6(1)
+'
+run_test
+
+# --------------------------
+# CMPI instruction
+
+NAME="ebc: [CMPI.1]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 71070200
+pi 1
+'
+EXPECT='cmpi64wugte r7, 2
+'
+run_test
+
+NAME="ebc: [CMPI.2]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 2d1742120100
+pi 1
+'
+EXPECT='cmpi32weq r7 (+2, +144), 1
+'
+run_test
+
+# --------------------------
+# DIV instruction
+
+NAME="ebc: [DIV]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx d1670200
+pi 1
+'
+EXPECT='divu64 r7, r6(2)
+'
+run_test
+
+# --------------------------
+# MODU instruction
+
+NAME="ebc: [MODU]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 5347
+pi 1
+'
+EXPECT='modu64 r7, r4
+'
+run_test
+
+# --------------------------
+# MOVIn instruction
+
+NAME="ebc: [MOVIn.1]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 78072210
+pi 1
+'
+EXPECT='movinw r7, (+2, +8)
+'
+run_test
+
+NAME="ebc: [MOVIn.2]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 784830006400
+pi 1
+'
+EXPECT='movinw @r0(+0, +48), (+0, +100)
+'
+run_test
+
+
+
+# --------------------------
+# STORESP instruction
+
+NAME="ebc: [STORESP]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 2a07
+pi 1
+'
+EXPECT='storesp r7, FLAGS
+'
+run_test
+
+# --------------------------
+# XOR instruction
+
+NAME="ebc: [XOR]"
+FILENAME=malloc://32
+CMDS='
+e asm.arch=ebc
+e asm.bits=64
+wx 1647
+pi 1
+'
+EXPECT='xor32 r7, r4
+'
+run_test

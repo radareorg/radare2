@@ -1,0 +1,49 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+test_vector() {
+NAME="${1}: [${2}]"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+	BROKEN=1
+	if [ -n "${TRAVIS}" ]; then
+		unset BROKEN
+		return
+	fi
+fi
+CMDS='
+e asm.arch='${1}'
+e asm.bits=32
+wx '${3}'
+pi 1
+'
+EXPECT="${4}
+"
+run_test
+}
+
+PLUGIN=x86.udis
+
+test_vector "${PLUGIN}" "VADDPD YMM0, YMM0, YMM0" c5fd58c0 "vaddpd ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "AESDEC XMM0, XMM0" 660f38dec0 "aesdec xmm0, xmm0"
+test_vector "${PLUGIN}" "AESDECLAST XMM0, XMM0" 660f38dfc0 "aesdeclast xmm0, xmm0"
+test_vector "${PLUGIN}" "AESENC XMM0, XMM0" 660f38dcc0 "aesenc xmm0, xmm0"
+test_vector "${PLUGIN}" "AESENCLAST XMM0, XMM0" 660f38ddc0 "aesenclast xmm0, xmm0"
+test_vector "${PLUGIN}" "AESIMC XMM0, XMM0" 660f38dbc0 "aesimc xmm0, xmm0"
+test_vector "${PLUGIN}" "AESKEYGENASSIST XMM0, XMM0, 0X0" 660f3adfc000 "aeskeygenassist xmm0, xmm0, 0x0"
+test_vector "${PLUGIN}" "VAESDEC XMM0, XMM0, XMM0" c4e279dec0 "vaesdec xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VAESDECLAST XMM0, XMM0" c4e279dfc0 "vaesdeclast xmm0, xmm0"
+test_vector "${PLUGIN}" "VAESENC XMM0, XMM0" c4e279dcc0 "vaesenc xmm0, xmm0"
+test_vector "${PLUGIN}" "VAESENCLAST XMM0, XMM0, XMM0" c4e279ddc0 "vaesenclast xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VAESIMC XMM0, XMM0" c4e279dbc0 "vaesimc xmm0, xmm0"
+test_vector "${PLUGIN}" "VAESKEYGENASSIST XMM0, XMM0, 0X0" c4e379dfc000 "vaeskeygenassist xmm0, xmm0, 0x0"
+test_vector "${PLUGIN}" "VEXTRACTF128 XMM0, YMM0, 0X0" c4e37d19c000 "vextractf128 xmm0, ymm0, 0x0"
+test_vector "${PLUGIN}" "VBROADCASTF128 YMM0, [0X0]" c4e27d1a0500000000 "vbroadcastf128 ymm0, [0x0]" "br"
+test_vector "${PLUGIN}" "VBROADCASTSD YMM0, qword [0X0]" c4e27d190500000000 "vbroadcastsd ymm0, qword [0x0]"
+test_vector "${PLUGIN}" "VINSERTF128 YMM0, YMM0, XMM0, 0X0" c4e37d18c000 "vinsertf128 ymm0, ymm0, xmm0, 0x0"
+test_vector "${PLUGIN}" "VPERM2F128 YMM0, YMM0, YMM0, 0X0" c4e37d06c000 "vperm2f128 ymm0, ymm0, ymm0, 0x0"
+test_vector "${PLUGIN}" "VPERMILPD YMM0, YMM0, [0X0]" c4e27d0d0500000000 "vpermilpd ymm0, ymm0, [0x0]"
+test_vector "${PLUGIN}" "VPERMILPS YMM0, YMM0, [0X0]" c4e27d0c0500000000 "vpermilps ymm0, ymm0, [0x0]"
+test_vector "${PLUGIN}" "VFMADD132PD XMM0, XMM0, XMM0" c4e2f998c0 "vfmadd132pd xmm0, xmm0, xmm0" "br"
+test_vector "${PLUGIN}" "VFMADD213PD XMM0, XMM0, XMM0" c4e2f9a8c0 "vfmadd213pd xmm0, xmm0, xmm0" "br"
+test_vector "${PLUGIN}" "VFMADD231PD XMM0, XMM0, XMM0" c4e2f9b8c0 "vfmadd231pd xmm0, xmm0, xmm0" "br"

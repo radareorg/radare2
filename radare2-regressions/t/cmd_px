@@ -1,0 +1,47 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2015  Maijin
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='px 10'
+FILE=malloc://1024
+CMDS='
+wx 90909090909090909090 ; px 10
+'
+EXPECT='- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  9090 9090 9090 9090 9090                 ..........
+'
+
+run_test
+
+
+NAME='px -10'
+FILE=malloc://1024
+CMDS='
+wx 90909090909090909090 ; s 10 ; px -10
+'
+EXPECT='- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  9090 9090 9090 9090 9090                 ..........
+'
+run_test
+
+NAME='pxd 16'
+FILE=malloc://1024
+CMDS='
+wx 1020ffff30400000
+pxd 16
+'
+EXPECT='- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00000000         -57328         16432             0             0  . ..0@..........
+'
+run_test
+
+NAME='pxd 8'
+FILE=malloc://1024
+CMDS='
+wx 1020ffff30400000
+pxd 8
+'
+EXPECT='- offset -    0  1   2  3   4  5   6  7   8  9   A  B   C  D   E  F  0123456789ABCDEF
+0x00000000         -57328         16432                              . ..0@..
+'
+run_test

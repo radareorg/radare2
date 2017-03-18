@@ -1,0 +1,186 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# "!" - run commands (via system)
+
+NAME='seek far offset'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='
+s 0x7fffff8000b54000 ; ?v $$
+s 0x8fffff8000b54000 ; ?v $$
+'
+EXPECT='0x7fffff8000b54000
+0x8fffff8000b54000
+'
+run_test
+
+NAME='seek math (symbol addition)'
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='
+s sym._start + 8
+s
+'
+EXPECT='0x400418
+'
+run_test
+
+NAME='seek opcodes'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 4883c668
+s 0; so   ; ?v $$
+s 0; so 1 ; ?v $$
+'
+EXPECT='0x4
+0x4
+'
+run_test
+
+NAME='seek line'
+FILE=../bins/mach0/mac-ls
+ARGS=
+CMDS='
+sl 1; ?v $$
+e lines.from=0x100002000
+e lines.to=0x100004000
+sl 9
+sl
+sl+1
+sl
+sl-2
+sl
+sl 999999999999
+sl
+sl 0
+sl
+sl 1; ?v $$
+'
+EXPECT='0x100000000
+9
+10
+8
+8
+8
+0x1000025a3
+'
+run_test
+
+NAME='seek local flag'
+FILE=../bins/elf/analysis/main
+ARGS=
+BROKEN=
+CMDS='
+af@main
+f.foo@main+4
+s main+.foo
+s
+s main+.foo
+s
+'
+EXPECT='0x40050a
+0x40050a
+'
+run_test
+
+NAME='Redodups'
+FILE=malloc://512
+ARGS=
+CMDS='
+s $$
+s $$
+s $$
+s $$
+s*~?
+'
+EXPECT='1
+'
+
+run_test
+
+NAME='seek backwards'
+FILE='malloc://0x4000'
+CMDS='
+s 0
+b 64
+wb 38
+s 64
+wb deadbeef
+s-32
+px
+'
+EXPECT='- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000020  3838 3838 3838 3838 3838 3838 3838 3838  8888888888888888
+0x00000030  3838 3838 3838 3838 3838 3838 3838 3838  8888888888888888
+0x00000040  dead beef dead beef dead beef dead beef  ................
+0x00000050  dead beef dead beef dead beef dead beef  ................
+'
+EXPECT_ERR=''
+run_test
+
+NAME='seek silent'
+FILE=-
+CMDS='
+s 0x100
+s
+s*
+?e
+s 0x200
+s
+s*
+?e
+ss 0x300
+s
+s*
+'
+EXPECT='0x100
+f undo_0 @ 0x0
+
+0x200
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+
+0x300
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+'
+run_test
+
+NAME='seek silent to register'
+FILE=-
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+dr eax=0x200
+dr ebx=0x300
+s 0x100
+s
+s*
+?e
+sr eax
+s
+s*
+?e
+ssr ebx
+s
+s*
+'
+EXPECT='0x100
+f undo_0 @ 0x0
+
+0x200
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+
+0x300
+f undo_1 @ 0x0
+f undo_0 @ 0x100
+'
+run_test

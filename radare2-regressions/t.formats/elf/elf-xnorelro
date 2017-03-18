@@ -1,0 +1,22 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami elf-xnorelro - relro disabled'
+FILE=../../bins/elf/analysis/elf-xnorelro
+ARGS=''
+CMDS="ik~relro"
+
+EXPECT='elf.relro=no relro
+'
+run_test
+
+
+NAME='PE: corkami elf-nx -  nx disabled'
+FILE=../../bins/elf/analysis/elf-xnorelro
+ARGS=''
+CMDS="iI~^nx"
+
+EXPECT='nx       false
+'
+
+run_test

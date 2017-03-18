@@ -1,0 +1,47 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami nosectionW7.exe - open'
+FILE=../../bins/pe/nosectionW7.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='PE: nosectionW7 - entrypoint'
+FILE=../../bins/pe/nosectionW7.exe
+CMDS="S"
+EXPECT_ERR=""
+EXPECT='[00] * 0x00000138 mrwx va=0x00400138 sz=0x0108 vsz=0x0108 blob
+'
+
+run_test
+
+NAME='PE: nosectionW7 - entrypoint'
+FILE=../../bins/pe/nosectionW7.exe
+CMDS="ie"
+EXPECT_ERR=""
+EXPECT='[Entrypoints]
+vaddr=0x00400138 paddr=0x00000138 baddr=0x00400000 laddr=0x00000000 haddr=0x00000068 type=program
+
+1 entrypoints
+'
+
+run_test
+
+
+NAME='PE: nosectionW7 - entrypoint'
+FILE=../../bins/pe/nosectionW7.exe
+CMDS="pi 5"
+EXPECT_ERR=""
+EXPECT='push 0x400150
+call dword [sym.imp.msvcrt.dll_printf]
+add esp, 4
+nop
+push 0
+'
+
+run_test
+
+
+

@@ -1,0 +1,281 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012  pancake, Edd Barrett, Simon Ruderich
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='sym is not fcn'
+FILE=../../bins/mach0/mach0-i386
+BROKEN=
+IGNORE_ERR=1
+ARGS=
+CMDS='
+aa > /dev/null
+afl~sym.__mh_execute_header[0]
+'
+EXPECT=''
+run_test
+
+NAME='af x86-32'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e anal.hasnext=0
+e anal.eobjmp=false
+e asm.arch=x86
+e asm.bits=32
+wx 6a00 4889e5 c3
+af
+afl~[2]
+'
+EXPECT='6
+'
+run_test
+
+# test if function analysis works in ujmp
+NAME='af x86-32 ujmp eobjmp=true'
+FILE=malloc://1024
+BROKEN=
+ARGS=
+CMDS='
+e anal.hasnext=0
+e asm.arch=x86
+e anal.eobjmp=true
+e asm.bits=32
+wx 6a00 4889e5 ff25f8120000 ff25f8120000ffe0c3
+af
+afl~[2]
+'
+EXPECT='11
+'
+IGNORE_ERR=1
+run_test
+
+# test if function analysis works in ujmp
+NAME='af x86-32 ujmp eobjmp=false'
+FILE=malloc://1024
+BROKEN=
+ARGS=
+CMDS='
+e anal.hasnext=0
+e asm.arch=x86
+e anal.eobjmp=false
+e asm.bits=32
+wx 6a00 4889e5 ff25f8120000 ff25f8120000ffe0c3
+af
+afl~[2]
+'
+EXPECT='11
+'
+IGNORE_ERR=1
+run_test
+IGNORE_ERR=0
+
+NAME='af bug'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='e anal.hasnext=0
+e asm.arch=x86
+e anal.eobjmp=false
+e asm.bits=32
+wx 6a004889e54883e4f0488b7d08488d751089fa83c201c1e2034801f24889d1eb044883c1084883390075f64883c108e8580f000089c7e81b390000c3554889e5
+s +0x40
+wx 488d4768488d7e684889c6c9e9013a0000554889e54883c6684883c768c9e9ef390000554889e5534889f1488b5660488b4760488b583048395a307f1d7c2248
+s -0x40
+af
+b 0x80
+pIf
+'
+EXPECT='push 0
+dec eax
+mov ebp, esp
+dec eax
+and esp, 0xfffffff0
+dec eax
+mov edi, dword [ebp + 8]
+dec eax
+lea esi, [ebp + 0x10]
+mov edx, edi
+add edx, 1
+shl edx, 3
+dec eax
+add edx, esi
+dec eax
+mov ecx, edx
+jmp 0x25
+dec eax
+add ecx, 8
+dec eax
+cmp dword [ecx], 0
+jne 0x21
+dec eax
+add ecx, 8
+call 0xf8c
+mov edi, eax
+call 0x3956
+ret
+'
+run_test
+
+NAME='disasm bug'
+FILE=malloc://1024
+CMDS='e anal.hasnext=0
+e anal.eobjmp=false
+e asm.arch=x86
+e asm.bits=32
+wx 6a004889e54883e4f0488b7d08488d751089fa83c201c1e2034801f24889d1eb044883c1084883390075f64883c108e8580f000089c7e81b390000c3554889e5
+s+0x40
+wx 488d4768488d7e684889c6c9e9013a0000554889e54883c6684883c768c9e9ef390000554889e5534889f1488b5660488b4760488b583048395a307f1d7c2248
+s-0x40
+b 0x100
+af
+pIf @0
+'
+EXPECT='push 0
+dec eax
+mov ebp, esp
+dec eax
+and esp, 0xfffffff0
+dec eax
+mov edi, dword [ebp + 8]
+dec eax
+lea esi, [ebp + 0x10]
+mov edx, edi
+add edx, 1
+shl edx, 3
+dec eax
+add edx, esi
+dec eax
+mov ecx, edx
+jmp 0x25
+dec eax
+add ecx, 8
+dec eax
+cmp dword [ecx], 0
+jne 0x21
+dec eax
+add ecx, 8
+call 0xf8c
+mov edi, eax
+call 0x3956
+ret
+'
+run_test
+IGNORE_ERR=0
+
+
+NAME='call-convention'
+FILE=../../bins/elf/analysis/x86-simple
+IGNORE_ERR=1
+CMDS='
+aa
+s entry0
+afC stdcall
+afi~call-convention
+'
+EXPECT='call-convention: stdcall
+'
+run_test
+
+
+NAME='function address'
+FILE=../../bins/mach0/mach0-i386
+ARGS=
+CMDS='e anal.hasnext=0
+aa
+afo sym._foo
+afo sym._bar
+'
+EXPECT='0x00001f50
+0x00001f00
+'
+run_test
+
+
+NAME='aF'
+FILE=../../bins/mach0/mach0-i386
+ARGS=
+CMDS='e anal.hasnext=0
+aF
+afl'
+EXPECT='0x00001f50    1 47           sym._foo
+0x00001f80    1 41           sym._main
+'
+run_test
+
+
+NAME='function prelude offsets'
+FILE=../../bins/mach0/mach0-i386
+BROKEN=
+CMDS='s 0x1000
+aap
+afl~[0]
+'
+EXPECT='0x00001f00
+0x00001f50
+0x00001f80
+'
+run_test
+
+NAME='function preludes symbol names'
+FILE=../../bins/mach0/mach0-i386
+CMDS='s 0x1000
+aap
+afl
+'
+EXPECT='0x00001f00    4 73           sym._bar
+0x00001f50    1 47           sym._foo
+0x00001f80    1 41           sym._main
+'
+run_test
+
+NAME='af afF'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e anal.hasnext=0
+e anal.eobjmp=false
+e asm.arch=x86
+e asm.bits=32
+wx 6a004889e5c3
+af test
+afF
+pd 1 @ fcn.test
+'
+EXPECT='/ (fcn) fcn.test
+\           0x00000000 (6 byte folded function)
+'
+run_test
+
+NAME='af afF graph'
+FILE=malloc://1024
+ARGS=
+CMDS='
+e anal.hasnext=0
+e anal.eobjmp=false
+e asm.arch=x86
+e asm.bits=32
+wx 6a004889e5c3
+af test
+afF
+agf
+'
+k='`'
+EXPECT="[0x00000000]> VV @ fcn.test (nodes 1 edges 0 zoom 100%) BB-NORM mouse:canvas-y movements-speed:5
+.---------------------------.
+|  0x0 ;[ga]                |
+| / (fcn) fcn.test          |
+| (6 byte folded function)  |
+$k---------------------------'
+"
+run_test
+
+NAME='af-*'
+FILE=../../bins/elf/analysis/main
+ARGS=
+CMDS='
+aa
+af-*
+afl
+'
+EXPECT=''
+run_test

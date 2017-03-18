@@ -1,0 +1,92 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+test_vector() {
+NAME="${PLUGIN} ${BITS}: [${2}]"
+if [ "${4}" = "br" ]; then
+    BROKEN=1
+fi
+CMDS='!rasm2 -a '${1}' -b '${BITS}' "'${2}'"
+'
+if [ "${IGNORE_ERR}" = 1 ]; then
+EXPECT="${3}
+"
+else
+EXPECT_ERR="${3}
+"
+fi
+run_test
+}
+
+test_invalid() {
+IGNORE_ERR=0
+test_vector "${1}" "${2}" "Cannot assemble '${2}' at line 3
+invalid"
+}
+
+PLUGIN=arm
+BITS=16
+
+NAME="${PLUGIN}: arm-thumb-mclass (see below)"
+CMDS='e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortex
+wx eff31080
+# setting asm.arch ignores previous value of asm.cpu
+pi 1
+e asm.arch=arm
+pi 1
+e asm.arch=arm.gnu
+pi 1
+'
+EXPECT='mrs r0, primask
+mrs r0, primask
+mrs r0, PRIMASK
+'
+run_test
+
+NAME="${PLUGIN}: arm-thumb-mclass"
+CMDS='e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortex
+wx eff31080
+pi 1
+e asm.arch=arm.gnu
+pi 1
+'
+EXPECT='mrs r0, primask
+mrs r0, PRIMASK
+'
+run_test
+
+# Assembly tests
+test_vector "${PLUGIN}" "ldr r0, [r1]" 0868
+test_vector "${PLUGIN}" "ldr r1, [r3]" 1968
+test_vector "${PLUGIN}" "ldr r0, [r0, 0x74]" 406f
+test_vector "${PLUGIN}" "ldr r0, [r0, 0x7]" d0f80700
+test_vector "${PLUGIN}" "ldr r1, [r2, 0x124]" d2f82411
+test_vector "${PLUGIN}" "blx lr" f047
+test_vector "${PLUGIN}" "bl -0x2a" fff7e9ff
+test_vector "${PLUGIN}" "mov fp, r1" 8b46
+test_vector "${PLUGIN}" "mov r9, r1" 8946
+test_vector "${PLUGIN}" "mov r4, r1" 0c46
+test_vector "${PLUGIN}" "add sp, 0x10" 04b0
+test_vector "${PLUGIN}" "add sp, 0x16" 0df1160d
+test_vector "${PLUGIN}" "add ip, 0x26" 0cf1260c
+test_vector "${PLUGIN}" "add r7, 0xaa" 07f1aa07
+test_vector "${PLUGIN}" "sub sp, 0x30" 8cb0
+test_vector "${PLUGIN}" "sub ip, 0x33" acf1330c
+test_vector "${PLUGIN}" "sub r4, 0x69" a4f16904
+test_vector "${PLUGIN}" "sub r8, 0xf9" a8f1f908
+test_vector "${PLUGIN}" "pop {r0}" 01bc
+test_vector "${PLUGIN}" "pop {r0, r1}" 03bc
+test_vector "${PLUGIN}" "pop {r0-r1}" 03bc
+test_vector "${PLUGIN}" "pop {r0, r1, r2}" 07bc
+test_vector "${PLUGIN}" "pop {r0-r2}" 07bc
+test_vector "${PLUGIN}" "pop {r0, r1, r2, r5}" 27bc
+test_vector "${PLUGIN}" "pop {r0-r2, r5}" 27bc
+
+# Expected to fail
+test_invalid "${PLUGIN}" "b gh"
+
+

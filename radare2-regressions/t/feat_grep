@@ -1,0 +1,133 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2013  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## grep
+
+# Escaped esc
+NAME='?e ~'
+FILE=malloc://1024
+ARGS=
+CMDS='
+?e jeje~jojo
+'
+EXPECT=''
+run_test
+
+NAME='?e \~'
+FILE=malloc://1024
+ARGS=
+CMDS='
+?e jeje\~jojo
+'
+EXPECT='jeje~jojo
+'
+run_test
+
+# Basic grep.
+NAME='px~:1[1]'
+FILE=malloc://1024
+ARGS=
+CMDS='
+wx 10203040
+px~:1[1]
+'
+EXPECT='1020
+'
+run_test
+
+NAME='px~?'
+FILE=malloc://1024
+ARGS=
+CMDS='
+wx 10203040
+b 128
+px~?
+'
+EXPECT='9
+'
+run_test
+
+NAME='grep begin'
+FILE=malloc://1024
+ARGS=
+CMDS='i~^size
+'
+EXPECT='size     0x400
+'
+run_test
+
+NAME='grep end'
+FILE=malloc://1024
+ARGS=
+CMDS='i~0x400$
+'
+EXPECT='size     0x400
+'
+run_test
+
+
+NAME='i;$s'
+FILE=malloc://1024
+ARGS=
+CMDS='?v `i~size[1]`-$s;?! ?e works'
+EXPECT='0x0
+works
+'
+run_test
+
+NAME='?e~[0]'
+FILE=malloc://1024
+ARGS=
+BROKEN=
+CMDS='?e 0x3~[0];?e 0x999~[0]'
+EXPECT='0x3
+0x999
+'
+run_test
+
+NAME='?e~[0]'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='?e hello world~[0]
+?e hello world~[1]
+'
+EXPECT='hello
+world
+'
+run_test
+
+NAME='px~:1[3,5,0-1]'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='wx 102030405060708090;px~:1[3,5,0-1]'
+EXPECT='0x00000000 1020 5060 9000
+'
+run_test
+
+
+NAME='range'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='
+i~:0
+i~:1
+i~:2
+i~:..3
+i~:1..2
+i~:-1
+'
+EXPECT='file     malloc://1024
+fd       42
+size     0x400
+file     malloc://1024
+fd       42
+size     0x400
+fd       42
+format   any
+'
+FILTER='sed "s/^fd       [0-9][0-9]*/fd       42/"'
+run_test

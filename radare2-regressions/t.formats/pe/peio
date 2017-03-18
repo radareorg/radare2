@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+F=../../bins/pe/base.exe
+
+NAME='pe entrypoint'
+IGNORE_ERR=1
+BROKEN=
+FILE=$F
+ARGS=
+CMDS='s entry0
+?v entry0
+p8 8
+'
+EXPECT='0x401280
+5589e583ec08c704
+'
+run_test
+
+NAME='pe section'
+IGNORE_ERR=1
+BROKEN=
+FILE=$F
+ARGS=
+CMDS='?v section..text
+'
+EXPECT='0x401000
+'
+run_test
+
+NAME='pe symbol addr'
+IGNORE_ERR=1
+BROKEN=
+FILE=$F
+ARGS=
+CMDS='?v sym._malloc
+p8 4
+'
+EXPECT='0x401838
+5589e583
+'
+run_test

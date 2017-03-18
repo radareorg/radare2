@@ -1,0 +1,297 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012  pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='one node'
+FILE=-
+ARGS=
+CMDS='
+agn title1 body1
+aggk~nodes=
+aggk~nodes.title1.body
+aggk~nodes.title1.w
+aggk~nodes.title1.h
+'
+EXPECT='agraph.nodes=title1
+agraph.nodes.title1.body=base64:Ym9keTE=
+agraph.nodes.title1.w=0x16
+agraph.nodes.title1.h=0x4
+'
+run_test
+
+NAME='two nodes'
+FILE=-
+ARGS=
+CMDS='
+agn "Title with super long text and space" body1
+agn title2 "SuperLongBodyWithALot Of text and spaces"
+aggk~nodes=
+aggk~nodes.Title with super long text and space.body=
+aggk~nodes.title2.body=
+aggk~nodes.Title with super long text and space.w
+aggk~nodes.Title with super long text and space.h
+aggk~nodes.title2.w
+aggk~nodes.title2.h
+'
+EXPECT='agraph.nodes=Title with super long text and space,title2
+agraph.nodes.Title with super long text and space.body=base64:Ym9keTE=
+agraph.nodes.title2.body=base64:U3VwZXJMb25nQm9keVdpdGhBTG90IE9mIHRleHQgYW5kIHNwYWNlcw==
+agraph.nodes.Title with super long text and space.w=0x2a
+agraph.nodes.Title with super long text and space.h=0x4
+agraph.nodes.title2.w=0x2c
+agraph.nodes.title2.h=0x4
+'
+run_test
+
+NAME='base64 body'
+FILE=-
+ARGS=
+CMDS='agn title1 base64:aGVsbG8gd29ybGQ=
+aggk~nodes.title1.body=
+'
+EXPECT='agraph.nodes.title1.body=base64:aGVsbG8gd29ybGQ=
+'
+run_test
+
+NAME='long base64 body'
+FILE=-
+ARGS=
+CMDS='agn title1 base64:dGhpcyBpcyBhIHZlcnkgbG9uZyB0ZXh0IHRoYXQgd2hlbiBlbmNvZGVkIHdpbGwgY2F1c2UgYSAK\nIGluIHRoZSBiYXNlNjQ=
+aggk~nodes.title1.body=
+'
+EXPECT='agraph.nodes.title1.body=base64:dGhpcyBpcyBhIHZlcnkgbG9uZyB0ZXh0IHRoYXQgd2hlbiBlbmNvZGVkIHdpbGwgY2F1c2UgYSAKIGluIHRoZSBiYXNlNjQ=
+'
+run_test
+
+NAME='two nodes same title'
+FILE=-
+ARGS=
+CMDS='agn title1 body1
+agn title1 "Super long body with something"
+agn title1 "Super super super long body to do tests........"
+aggk~nodes=
+aggk~nodes.title1.body=
+aggk~nodes.title1.w=
+'
+EXPECT='agraph.nodes=title1
+agraph.nodes.title1.body=base64:Ym9keTE=
+agraph.nodes.title1.w=0x16
+'
+run_test
+
+NAME='remove node'
+FILE=-
+ARGS=
+CMDS='agn title1 body1
+agn- title1
+aggk~nodes=
+aggk~nodes.title1
+'
+EXPECT=''
+run_test
+
+NAME='remove node with title that contain spaces'
+FILE=-
+ARGS=
+CMDS='agn "Title with spaces" body1
+agn- "Title with spaces"
+aggk~nodes=
+aggk~nodes.Title with spaces
+'
+EXPECT=''
+run_test
+
+NAME='remove non-existent node'
+FILE=-
+ARGS=
+CMDS='agn "Title with spaces" body1
+agn- NotValid
+aggk~nodes=
+aggk~nodes.Title with spaces.body=
+'
+EXPECT='agraph.nodes=Title with spaces
+agraph.nodes.Title with spaces.body=base64:Ym9keTE=
+'
+run_test
+
+NAME='remove edge'
+FILE=-
+ARGS=
+CMDS='agn "Title with spaces" body1
+agn "Title with spaces 2" body2
+age- "Title with spaces" "Title with spaces 2"
+aggk~nodes=
+aggk~nodes.Title with spaces.neighbours=
+'
+EXPECT='agraph.nodes=Title with spaces,Title with spaces 2
+'
+run_test
+
+NAME='get graph of a function'
+BROKEN=1
+FILE=../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='af
+aggk $$~nodes='
+EXPECT='agraph.nodes=0x400410
+'
+run_test
+
+NAME='no selected node in non-interactive'
+FILE=-
+ARGS=
+CMDS='agn title1 body1
+agg'
+k='`'
+EXPECT="
+.--------------------.
+|  title1            |
+| body1              |
+$k--------------------'
+"
+run_test
+
+NAME='agf one'
+FILE=-
+ARGS=
+CMDS='e asm.arch=x86
+e asm.bits=32
+e asm.calls=false
+"wa push ebp;mov ebp,esp;pop ebp;ret"
+af
+agf'
+k='`'
+EXPECT="[0x00000000]> VV @ fcn.00000000 (nodes 1 edges 0 zoom 100%) BB-NORM mouse:canvas-y movements-speed:5
+.----------------------.
+|  0x0 ;[ga]           |
+| (fcn) fcn.00000000 5 |
+| push ebp             |
+| mov ebp, esp         |
+| pop ebp              |
+| ret                  |
+$k----------------------'
+"
+run_test
+
+NAME='agg one'
+FILE=-
+ARGS=
+CMDS='agn 0x0 base64:cHVzaCBlYnAKbW92IGVicCwgZXNwCnBvcCBlYnAKcmV0
+agg'
+k='`'
+EXPECT="
+.--------------------.
+|  0x0               |
+| push ebp           |
+| mov ebp, esp       |
+| pop ebp            |
+| ret                |
+$k--------------------'
+"
+run_test
+
+NAME='graph size'
+FILE=-
+ARGS=
+CMDS='aggk~agraph.w=
+aggk~agraph.h=
+agn title1 body1
+aggk~agraph.w=
+aggk~agraph.h=
+'
+EXPECT='agraph.w=0
+agraph.h=0
+agraph.w=22
+agraph.h=4
+'
+run_test
+
+NAME='graph size with edges'
+FILE=-
+ARGS=
+CMDS='agn title1 body1
+agn title2 "body2 long body with a lot of spaces and dots...."
+agn title3 body3
+age title1 title2
+age title2 title3
+age title1 title3
+age title3 title1
+aggk~agraph.w=0x35
+agg | head -2 | tail -1 | tr -d " " | grep "=----------------="
+'
+EXPECT=''
+run_test
+
+NAME='graph size with self-referenced bb'
+FILE=-
+ARGS=
+CMDS='agn title1 body1
+age title1 title1
+aggk~agraph.w=0x16
+aggk~agraph.h=0x4
+'
+EXPECT=''
+run_test
+
+NAME='graph title'
+FILE=-
+ARGS=
+k='`'
+CMDS='agn title1 body1
+e graph.title=This is the graph title
+agg
+'
+EXPECT="This is the graph title
+.--------------------.
+|  title1            |
+| body1              |
+$k--------------------'
+"
+run_test
+
+NAME='print r2 commands to create graph'
+FILE=-
+ARGS=
+CMDS='agn title1 body1
+agn title2 body2
+agn title3 base64:dGhpcyBpcyBteSBib2R5CndpdGggbmV3bGluZXM=
+age title1 title2
+age title3 title1
+agg*
+'
+EXPECT='agn "title1" base64:Ym9keTE=
+agn "title3" base64:dGhpcyBpcyBteSBib2R5CndpdGggbmV3bGluZXM=
+agn "title2" base64:Ym9keTI=
+age "title1" "title2"
+age "title3" "title1"
+'
+run_test
+
+NAME='graph self-ref block'
+FILE=-
+ARGS=
+CMDS='agn title1 body1
+age title1 title1
+agg
+'
+k='`'
+EXPECT="
+.-----.
+| .--------------------.
+| |  title1            |
+| | body1              |
+| $k--------------------'
+$k-----'
+"
+run_test
+
+NAME='with anal.nopskip'
+FILE=../bins/elf/analysis/ls-alxchk
+ARGS=
+CMDS='e anal.nopskip=true
+aaa
+s 0x00011390
+agf > /dev/null
+'
+EXPECT=""
+run_test

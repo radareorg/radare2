@@ -1,0 +1,39 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami tls_noEP.exe - open'
+FILE=../../bins/pe/tls_noEP.exe
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='PE: tls_noEP - entrypoint'
+FILE=../../bins/pe/tls_noEP.exe
+ARGS=''
+CMDS="ie"
+
+EXPECT='[Entrypoints]
+vaddr=0x00401000 paddr=0x00000200 baddr=0x00400000 laddr=0x00000000 haddr=0x00000068 type=program
+vaddr=0x00401000 paddr=0x00000200 baddr=0x00400000 laddr=0x00000000 haddr=0x00000384 type=tls
+
+2 entrypoints
+'
+
+run_test
+
+
+
+NAME='PE: tls_noEP - entrypoint'
+FILE=../../bins/pe/tls_noEP.exe
+ARGS=''
+CMDS="pi 5"
+
+EXPECT='push 0x401024
+call dword [sym.imp.msvcrt.dll_printf]
+add esp, 4
+nop
+mov dword [0x401184], 0x401070
+'
+
+run_test

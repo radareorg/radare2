@@ -1,0 +1,9 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami tinydll.dll - open'
+FILE=../../bins/pe/tinydll.dll
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+run_test

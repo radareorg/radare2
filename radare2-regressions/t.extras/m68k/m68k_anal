@@ -1,0 +1,71 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016 sqaxomonophonen
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+unset R2_NOPLUGINS
+
+NAME='negative branch bug 8bit'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.arch=m68k
+s 4
+wx 60fc
+ao | grep jump:
+'
+EXPECT='jump: 0x00000002
+'
+run_test
+
+NAME='negative branch bug 16bit'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.arch=m68k
+s 0x200
+wx 6000fe10
+ao | grep jump:
+'
+EXPECT='jump: 0x00000012
+'
+run_test
+
+NAME='negative branch bug 32bit'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.arch=m68k
+s 4
+wx 60fffffffffc
+ao | grep jump:
+'
+EXPECT='jump: 0x00000002
+'
+run_test
+
+
+NAME='jsr.l should not terminate function'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.arch=m68k
+wx 80004eb90000100080004e75
+af
+afl~[2]
+'
+EXPECT='12
+'
+run_test
+
+NAME='jsr.w should not terminate function'
+BROKEN=
+FILE=malloc://1024
+ARGS=
+CMDS='e asm.arch=m68k
+wx 80004eb8100080004e75
+af
+afl~[2]
+'
+EXPECT='10
+'
+run_test

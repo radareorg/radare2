@@ -1,0 +1,31 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=malloc://1024
+NAME="issue 3479"
+IGNORE_ERR=1
+CMDS='w aac
+p8 3
+/x 616163
+f~?
+'
+EXPECT='616163
+0x00000000 hit0_0 616163
+1
+'
+run_test
+
+FILE=malloc://1024
+NAME="issue 3479"
+BROKEN=
+IGNORE_ERR=1
+CMDS='w aac
+p8 3
+/x 6163
+f~?
+'
+EXPECT='616163
+0x00000001 hit0_0 6163
+1
+'
+run_test

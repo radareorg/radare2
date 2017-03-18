@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# TODO: This script requires ROOT to be run in OSX
+# (or just sign the r2 binary to get debugger priviledges)
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='dbg.aslr'
+FILE=../../bins/elf/analysis/pie
+ARGS=-d
+BROKEN=
+CMDS='pi 3 @ entry0
+'
+EXPECT='xor ebp, ebp
+pop esi
+mov ecx, esp
+'
+IGNORE_ERR=1
+run_test
+

@@ -1,0 +1,63 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2013-2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+
+NAME='udis pae 31ed'
+ARGS="-a x86 -b 32"
+FILE=-
+BROKEN=1
+CMDS='
+e asm.arch = x86.udis
+pae 31ed
+'
+EXPECT='ebp,ebp,^=,$z,zf,=,$p,pf,=,$s,sf,=,0,cf,=,0,of,=
+'
+
+if [ -n "${TRAVIS}" ]; then
+  unset BROKEN
+  return
+else
+  run_test
+fi
+
+
+NAME='capstone pae 31ed'
+ARGS="-a x86 -b 32"
+FILE=-
+BROKEN=
+CMDS='
+pae 31ed
+'
+EXPECT='ebp,ebp,^=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=
+'
+
+run_test
+
+
+NAME='pae 40'
+ARGS="-a x86 -b 32"
+FILE=-
+BROKEN=
+CMDS='
+pae 40
+'
+EXPECT='eax,++=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=
+'
+
+run_test
+
+
+NAME='pae 48'
+ARGS="-a x86 -b 32"
+FILE=-
+BROKEN=
+CMDS='
+pae 48
+'
+EXPECT='eax,--=,$o,of,=,$s,sf,=,$z,zf,=,$p,pf,=
+'
+
+run_test

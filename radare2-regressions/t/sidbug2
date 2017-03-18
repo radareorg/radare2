@@ -1,0 +1,17 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=-
+IGNORE_ERR=1
+CMDS='
+e search.from=0
+e search.to=10
+e search.in=raw
+b 10
+wx 0101010102
+/x 01010102
+'
+EXPECT='0x00000001 hit0_0 01010102
+'
+run_test
+

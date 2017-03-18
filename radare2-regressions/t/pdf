@@ -1,0 +1,186 @@
+#!/bin/sh
+# LGPL - Copyright (C) 2014 Fedor Sakharov
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+mkdir -p /tmp/r2-regressions/
+
+if [ $? -eq 1 ]; then
+	echo "Failed to create directory in /tmp/r2-regressions/dwarf"
+fi
+
+cp -f ../bins/elf/analysis/dwarftest /tmp/r2-regressions/dwarftest
+cp -f ../bins/src/dwarftest.c /tmp/r2-regressions/dwarftest.c
+
+#run_test
+
+NAME="pdf dwarf invalid main for analysis not found (aa)"
+BROKEN=
+FILE=/tmp/r2-regressions/dwarftest
+IGNORE_ERR=1
+ARGS=
+BROKEN=
+CMDS='e asm.dwarf=true
+e anal.nopskip=true # if set to true it fucks the test
+aa # full analysis fuckups main
+pd 1 @main'
+EXPECT='            ;-- main:
+/ (fcn) main 44
+|   main ();
+|           ; var int local_4h @ rbp-0x4
+|              ; DATA XREF from 0x0040045d (entry0)
+|           0x0040052d      55             push rbp                    ; dwarftest.c:4 {
+'
+run_test
+
+NAME="pdf dwarf invalid main for analysis not found (af)"
+BROKEN=
+FILE=/tmp/r2-regressions/dwarftest
+IGNORE_ERR=1
+ARGS=
+BROKEN=
+CMDS='e asm.dwarf=true
+e asm.arch=x86.udis
+e anal.eobjmp=false
+e asm.varsub=false
+e anal.nopskip=true # if set to true it fucks the test
+af@main # full analysis fuckups main
+pd 1 @main'
+EXPECT='            ;-- main:
+/ (fcn) main 44
+|   main (int arg_fch);
+|           ; arg int arg_fch @ rbp+0xfc
+|           0x0040052d      55             push rbp                    ; dwarftest.c:4 {
+'
+run_test
+
+NAME="pdf dwarf invalid main with dir.source"
+BROKEN=
+FILE=/tmp/r2-regressions/dwarftest
+IGNORE_ERR=1
+ARGS=
+CMDS='e dir.source=/tmp/r2-regressions
+e asm.dwarf=true
+e asm.arch=x86.udis
+e anal.eobjmp=false
+e asm.varsub=false
+e anal.nopskip=true # if set to true it fucks the test
+af@main # full analysis fuckups main
+pd 1 @main'
+EXPECT='            ;-- main:
+/ (fcn) main 44
+|   main (int arg_fch);
+|           ; arg int arg_fch @ rbp+0xfc
+|           0x0040052d      55             push rbp                    ; dwarftest.c:4 {
+'
+run_test
+
+NAME="pdf dwarf"
+BROKEN=
+FILE=/tmp/r2-regressions/dwarftest
+IGNORE_ERR=1
+ARGS=
+CMDS='e asm.dwarf=true
+e scr.interactive=false
+e dir.source=/tmp/r2-regressions
+e asm.arch=x86.udis
+e asm.varsub=false
+e anal.eobjmp=false
+e anal.nopskip=true
+af@main
+pdf@main'
+EXPECT='            ;-- main:
+/ (fcn) main 44
+|   main (int arg_fch);
+|           ; arg int arg_fch @ rbp+0xfc
+|           0x0040052d      55             push rbp                    ; dwarftest.c:4 {
+|           0x0040052e      4889e5         mov rbp, rsp
+|           0x00400531      4883ec10       sub rsp, 0x10
+|           0x00400535      c745fc000000.  mov dword [rbp-0x4], 0x0    ; dwarftest.c:7  for (i = 0; i < 5; i++) { ; [0xfc:4]=0
+|       ,=< 0x0040053c      eb0e           jmp 0x40054c
+|      .--> 0x0040053e      bfe4054000     mov edi, str.dwarftest      ; dwarftest.c:8   printf ("dwarftest\n"); ; "dwarftest" @ 0x4005e4
+|      !|   0x00400543      e8c8feffff     call sym.imp.puts
+|      !|   0x00400548      8345fc01       add dword [rbp-0x4], 0x1    ; dwarftest.c:7  for (i = 0; i < 5; i++) {
+|      !|      ; JMP XREF from 0x0040053c (main)
+|      !`-> 0x0040054c      837dfc04       cmp dword [rbp-0x4], 0x4    ; [0xfc:4]=0
+|      `==< 0x00400550      7eec           jle 0x40053e
+|           0x00400552      b800000000     mov eax, 0x0                ; dwarftest.c:11  return 0;
+|           0x00400557      c9             leave                       ; dwarftest.c:12 }
+\           0x00400558      c3             ret
+'
+run_test
+
+NAME="pdf dwarf abspath"
+BROKEN=
+FILE=/tmp/r2-regressions/dwarftest
+IGNORE_ERR=1
+ARGS=
+CMDS='
+e asm.dwarf=true
+e asm.dwarf.file=true
+e asm.dwarf.abspath=true
+e scr.interactive=false
+e dir.source=
+e asm.comments=true
+e asm.arch=x86.udis
+e asm.varsub=false
+e anal.eobjmp=false
+e anal.nopskip=true
+af@main
+pdf@main'
+EXPECT='            ;-- main:
+/ (fcn) main 44
+|   main (int arg_fch);
+|           ; arg int arg_fch @ rbp+0xfc
+|           0x0040052d      55             push rbp                    ; /tmp/r2-regressions/.//dwarftest.c:4 {
+|           0x0040052e      4889e5         mov rbp, rsp
+|           0x00400531      4883ec10       sub rsp, 0x10
+|           0x00400535      c745fc000000.  mov dword [rbp-0x4], 0x0    ; /tmp/r2-regressions/.//dwarftest.c:7  for (i = 0; i < 5; i++) { ; [0xfc:4]=0
+|       ,=< 0x0040053c      eb0e           jmp 0x40054c
+|      .--> 0x0040053e      bfe4054000     mov edi, str.dwarftest      ; /tmp/r2-regressions/.//dwarftest.c:8   printf ("dwarftest\n"); ; "dwarftest" @ 0x4005e4
+|      !|   0x00400543      e8c8feffff     call sym.imp.puts
+|      !|   0x00400548      8345fc01       add dword [rbp-0x4], 0x1    ; /tmp/r2-regressions/.//dwarftest.c:7  for (i = 0; i < 5; i++) {
+|      !|      ; JMP XREF from 0x0040053c (main)
+|      !`-> 0x0040054c      837dfc04       cmp dword [rbp-0x4], 0x4    ; [0xfc:4]=0
+|      `==< 0x00400550      7eec           jle 0x40053e
+|           0x00400552      b800000000     mov eax, 0x0                ; /tmp/r2-regressions/.//dwarftest.c:11  return 0;
+|           0x00400557      c9             leave                       ; /tmp/r2-regressions/.//dwarftest.c:12 }
+\           0x00400558      c3             ret
+'
+run_test
+
+NAME="pdf dwarf without dir.source"
+BROKEN=
+FILE=/tmp/r2-regressions/dwarftest
+IGNORE_ERR=1
+ARGS=
+CMDS='e asm.dwarf=true
+e asm.dwarf.file=true
+e asm.dwarf.abspath=false
+e scr.interactive=false
+e dir.source=
+e asm.comments=false
+e asm.arch=x86.udis
+e asm.varsub=false
+e anal.eobjmp=false
+e anal.nopskip=true
+af@main
+pdf@main'
+EXPECT='            ;-- main:
+/ (fcn) main 44
+|   main (int arg_fch);
+|           ; arg int arg_fch @ rbp+0xfc
+|           0x0040052d      55             push rbp                    ; dwarftest.c:4 {
+|           0x0040052e      4889e5         mov rbp, rsp
+|           0x00400531      4883ec10       sub rsp, 0x10
+|           0x00400535      c745fc000000.  mov dword [rbp-0x4], 0x0    ; dwarftest.c:7  for (i = 0; i < 5; i++) {
+|       ,=< 0x0040053c      eb0e           jmp 0x40054c
+|      .--> 0x0040053e      bfe4054000     mov edi, str.dwarftest      ; dwarftest.c:8   printf ("dwarftest\n");
+|      !|   0x00400543      e8c8feffff     call sym.imp.puts
+|      !|   0x00400548      8345fc01       add dword [rbp-0x4], 0x1    ; dwarftest.c:7  for (i = 0; i < 5; i++) {
+|      !`-> 0x0040054c      837dfc04       cmp dword [rbp-0x4], 0x4
+|      `==< 0x00400550      7eec           jle 0x40053e
+|           0x00400552      b800000000     mov eax, 0x0                ; dwarftest.c:11  return 0;
+|           0x00400557      c9             leave                       ; dwarftest.c:12 }
+\           0x00400558      c3             ret
+'
+run_test

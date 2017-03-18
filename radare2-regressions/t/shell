@@ -1,0 +1,34 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# Search r2 in path
+OIFS=$IFS
+IFS=:
+for A in ${PATH} ; do
+	if [ -x "$A/r2" ] ; then
+		r2_path=$A/r2
+		break
+	fi
+done
+IFS=$OIFS
+
+NAME="stdin eof"
+# Seems broken on some platforms.. strange
+BROKEN=
+SHELLCMD='echo | rarun2 timeout=1 program="$r2_path" arg1=-nq arg2=-'
+EXITCODE=0
+run_test
+
+NAME="stdin quit"
+# fails in jenkins only?
+BROKEN=
+SHELLCMD='echo q | rarun2 timeout=1 program="$r2_path" arg1=-nq arg2=-'
+EXITCODE=0
+run_test
+
+NAME="stdin quit"
+# fails in jenkins only?
+BROKEN=
+SHELLCMD='echo q 2 | rarun2 timeout=1 program="$r2_path" arg1=-nq arg2=-'
+EXITCODE=2
+run_test

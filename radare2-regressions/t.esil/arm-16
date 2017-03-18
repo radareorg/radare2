@@ -1,0 +1,435 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2015  ninjahacker
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='cmp neq unchanged zf'
+FILE=-
+ARGS=
+CMDS='
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=16
+aei
+aeim
+aer sp=0x00108000
+.aer*
+wa cmp r1, 16
+aes
+aer?cpsr
+'
+EXPECT='0x00000000
+'
+run_test
+
+NAME='cmp neq changed zf'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=16
+aei
+aeim
+aer sp=0x00108000
+aer cpsr=0xffffffff
+.aer*
+wa cmp r1, 16
+aes
+aer?cpsr
+'
+EXPECT='0xbfffffff
+'
+run_test
+
+NAME='cmp eq unchanged zf'
+FILE=-
+ARGS=
+CMDS='
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=16
+aei
+aeim
+aer sp=0x00108000
+aer r1=0x10
+aer cpsr=0x40000000
+.aer*
+wa cmp r1, 16
+aes
+aer?cpsr
+'
+EXPECT='0x40000000
+'
+run_test
+
+NAME='cmp eq changed zf'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+e esil.debug=true
+e asm.arch=arm
+e asm.bits=16
+aei
+aeim
+aer sp=0x00108000
+aer r1=0x10
+aer cpsr=0x00000000
+.aer*
+wa cmp r1, 16
+aes
+aer?cpsr
+'
+EXPECT='0x40000000
+'
+run_test
+
+# load cases
+
+NAME="ldr.w r0, [r0, r1, lsl 2]"
+BROKEN=1
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r0=4
+ar r1=2
+wx 50f82100
+wx aaaaaaaabbbbbbbb44332211@4
+aes
+ar r0
+'
+EXPECT='0x11223344
+'
+run_test
+
+# load/store multiple
+
+NAME="ldm r3!, {r1, r4, r5}"
+BROKEN=true
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r3=4		# address
+ar r1=0		# init with dummy values
+ar r4=0
+ar r5=0
+wx 32cb
+wx 111111114444444455555555@4
+aes
+ar r1; ar r4; ar r5; ar r3
+'
+EXPECT='0x11111111
+0x44444444
+0x55555555
+0x00000010
+'
+run_test
+
+NAME="stm r2!, {r1, r4, r5}"
+BROKEN=true
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r2=4		# address
+ar r1=0x11111111
+ar r4=0x44444444
+ar r5=0x55555555
+wx 32c2
+aes
+pfv x @ 4; pfv x @ 8; pfv x @ 12; ar r2
+'
+EXPECT='0x11111111
+0x44444444
+0x55555555
+0x00000010
+'
+run_test
+
+# TODO:
+# PATCH `stm r2!, {r1, r4, r5}` (@0x080001fc): `r1,r2,4,+,=[4],r4,r2,8,+,=[4],r5,r2,12,+,=[4],` ===> `r1,r2,0,+,=[4],r4,r2,4,+,=[4],r5,r2,8,+,=[4],12,r2,+=`
+
+
+# bit fields
+
+NAME="ubfx r2, r0, 8, 8"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r0=0x11223344
+wx c0f30722
+aes
+ar r2
+'
+EXPECT='0x00000033
+'
+run_test
+
+NAME="it eq"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 08bf
+aoe
+'
+EXPECT='0x0 zf,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it ne"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 18bf
+aoe
+'
+EXPECT='0x0 zf,!,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it hs"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 28bf
+aoe
+'
+EXPECT='0x0 cf,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it lo"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 38bf
+aoe
+'
+EXPECT='0x0 cf,!,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it mi"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 48bf
+aoe
+'
+EXPECT='0x0 nf,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it pl"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 58bf
+aoe
+'
+EXPECT='0x0 nf,!,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it vs"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 68bf
+aoe
+'
+EXPECT='0x0 vf,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it vc"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 78bf
+aoe
+'
+EXPECT='0x0 vf,!,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it hi"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 88bf
+aoe
+'
+EXPECT='0x0 cf,?{,zf,!,?{,6,pc,+=,},}
+'
+run_test
+
+NAME="it ls"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx 98bf
+aoe
+'
+EXPECT='0x0 cf,!,?{,zf,?{,6,pc,+=,},}
+'
+run_test
+
+
+NAME="it ge"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx a8bf
+aoe
+'
+EXPECT='0x0 nf,vf,==,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it lt"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx b8bf
+aoe
+'
+EXPECT='0x0 nf,vf,==,!,?{,6,pc,+=,}
+'
+run_test
+
+NAME="it gt"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx c8bf
+aoe
+'
+EXPECT='0x0 zf,!,?{,nf,vf,==,?{,6,pc,+=,},}
+'
+run_test
+
+NAME="it le"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx d8bf
+aoe
+'
+EXPECT='0x0 zf,?{,nf,vf,==,!,?{,6,pc,+=,},}
+'
+run_test
+
+NAME="it al"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wx e8bf
+aoe
+'
+EXPECT='0x0 6,pc,+=
+'
+run_test
+
+# LDR (register)
+NAME="ldr r2, [r3, r1]"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+ar r3=1
+ar r1=2
+wx 5a58aabbccddeeff
+aes
+ar r2
+'
+EXPECT='0xeeddccbb
+'
+run_test
+
+# logic vs arithmetic shifts
+NAME="lsrs r4, r4, 2"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r4=-8
+wx a408
+aes
+ar r4
+'
+EXPECT='0x3ffffffe
+'
+run_test
+
+# -8 == 0xfffffff8 (Two's complement on 32bit)
+NAME="asrs r4, r4, 2"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r4=-8
+wx a410
+aes
+ar r4
+'
+EXPECT='0xfffffffe
+'
+run_test
+
+NAME="orn"
+BROKEN=
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+ar r1=0x3
+ar r2=0x7
+wv 0x0002ea61
+aes
+ar r0
+'
+EXPECT='0xfffffffb
+'
+run_test
+
+NAME="add pc"
+BROKEN=
+FILE=malloc://0x200
+CMDS='
+e asm.arch=arm
+e asm.bits=16
+wv 0x4478
+aes
+ar r0
+'
+EXPECT='0x00000004
+'
+run_test

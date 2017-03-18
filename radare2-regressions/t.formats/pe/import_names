@@ -1,0 +1,10 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='dll import function names bug for ws2_32.dll'
+FILE=../../bins/pe/Lab05-01.dll
+CMDS='ii~&WS2_32,ordinal=052
+'
+EXPECT='ordinal=052 plt=0x100163cc bind=NONE type=FUNC name=WS2_32.dll_gethostbyname
+'
+run_test

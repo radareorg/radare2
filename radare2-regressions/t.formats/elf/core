@@ -1,0 +1,112 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# probably wrong
+NAME='ELF: core sections'
+FILE=../../bins/elf/analysis/core.1159
+ARGS=''
+CMDS="iS~?"
+EXPECT='20
+'
+run_test
+
+NAME='ELF: core sections with reg name'
+FILE=../../bins/elf/analysis/core.1159
+ARGS=''
+BROKEN=1
+CMDS="iS~?reg;iS"
+EXPECT='6
+'
+run_test
+
+#$ rabin2 -S core.1159
+#Warning: Cannot initialize section headers
+#Warning: Cannot initialize strings table
+#Warning: Cannot initialize dynamic section
+#[Sections]
+#idx=00 vaddr=0x00400000 paddr=0x00001000 sz=4096 vsz=4096 perm=-r-x name=phdr0
+#idx=01 vaddr=0x00600000 paddr=0x00002000 sz=4096 vsz=4096 perm=-rw- name=phdr1
+#idx=02 vaddr=0x7f594847d000 paddr=0x00003000 sz=4096 vsz=1683456 perm=-r-x name=phdr2
+#idx=03 vaddr=0x7f5948618000 paddr=0x00004000 sz=0 vsz=2097152 perm=---- name=phdr3
+#idx=04 vaddr=0x7f5948818000 paddr=0x00004000 sz=16384 vsz=16384 perm=-r-- name=phdr4
+#idx=05 vaddr=0x7f594881c000 paddr=0x00008000 sz=8192 vsz=8192 perm=-rw- name=phdr5
+#idx=06 vaddr=0x7f594881e000 paddr=0x0000a000 sz=16384 vsz=16384 perm=-rw- name=phdr6
+#idx=07 vaddr=0x7f5948822000 paddr=0x0000e000 sz=4096 vsz=139264 perm=-r-x name=phdr7
+#idx=08 vaddr=0x7f5948a1e000 paddr=0x0000f000 sz=12288 vsz=12288 perm=-rw- name=phdr8
+#idx=09 vaddr=0x7f5948a43000 paddr=0x00012000 sz=4096 vsz=4096 perm=-r-- name=phdr9
+#idx=10 vaddr=0x7f5948a44000 paddr=0x00013000 sz=4096 vsz=4096 perm=-rw- name=phdr10
+#idx=11 vaddr=0x7f5948a45000 paddr=0x00014000 sz=4096 vsz=4096 perm=-rw- name=phdr11
+#idx=12 vaddr=0x7ffe70de6000 paddr=0x00015000 sz=139264 vsz=139264 perm=-rw- name=phdr12
+#idx=13 vaddr=0x7ffe70f66000 paddr=0x00037000 sz=8192 vsz=8192 perm=-r-- name=phdr13
+#idx=14 vaddr=0x7ffe70f68000 paddr=0x00039000 sz=8192 vsz=8192 perm=-r-x name=phdr14
+#idx=15 vaddr=0xffffffffff600000 paddr=0x0003b000 sz=4096 vsz=4096 perm=-r-x name=phdr15
+#idx=16 vaddr=0x00400000 paddr=0x00000000 sz=64 vsz=64 perm=-rw- name=ehdr
+
+
+#$ objdump -h core.1159
+#
+#core.1159:     file format elf64-x86-64
+#
+#Sections:
+#Idx Name          Size      VMA               LMA               File off  Algn
+#  0 note0         00000af8  0000000000000000  0000000000000000  000003f8  2**0
+#                  CONTENTS, READONLY
+#  1 .reg/1159     000000d8  0000000000000000  0000000000000000  0000047c  2**2
+#                  CONTENTS
+#  2 .reg          000000d8  0000000000000000  0000000000000000  0000047c  2**2
+#                  CONTENTS
+#  3 .note.linuxcore.siginfo/1159 00000080  0000000000000000  0000000000000000  0000060c  2**2
+#                  CONTENTS
+#  4 .note.linuxcore.siginfo 00000080  0000000000000000  0000000000000000  0000060c  2**2
+#                  CONTENTS
+#  5 .auxv         00000130  0000000000000000  0000000000000000  000006a0  2**3
+#                  CONTENTS
+#  6 .note.linuxcore.file/1159 000001a4  0000000000000000  0000000000000000  000007e4  2**2
+#                  CONTENTS
+#  7 .note.linuxcore.file 000001a4  0000000000000000  0000000000000000  000007e4  2**2
+#                  CONTENTS
+#  8 .reg2/1159    00000200  0000000000000000  0000000000000000  0000099c  2**2
+#                  CONTENTS
+#  9 .reg2         00000200  0000000000000000  0000000000000000  0000099c  2**2
+#                  CONTENTS
+# 10 .reg-xstate/1159 00000340  0000000000000000  0000000000000000  00000bb0  2**2
+#                  CONTENTS
+# 11 .reg-xstate   00000340  0000000000000000  0000000000000000  00000bb0  2**2
+#                  CONTENTS
+# 12 load1         00001000  0000000000400000  0000000000000000  00001000  2**12
+#                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+# 13 load2         00001000  0000000000600000  0000000000000000  00002000  2**12
+#                  CONTENTS, ALLOC, LOAD
+# 14 load3a        00001000  00007f594847d000  0000000000000000  00003000  2**12
+#                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+# 15 load3b        00000000  00007f594847e000  0000000000001000  00004000  2**12
+#                  ALLOC, READONLY, CODE
+# 16 load4         00000000  00007f5948618000  0000000000000000  00004000  2**12
+#                  ALLOC, READONLY
+# 17 load5         00004000  00007f5948818000  0000000000000000  00004000  2**12
+#                  CONTENTS, ALLOC, LOAD, READONLY
+# 18 load6         00002000  00007f594881c000  0000000000000000  00008000  2**12
+#                  CONTENTS, ALLOC, LOAD
+# 19 load7         00004000  00007f594881e000  0000000000000000  0000a000  2**12
+#                  CONTENTS, ALLOC, LOAD
+# 20 load8a        00001000  00007f5948822000  0000000000000000  0000e000  2**12
+#                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+# 21 load8b        00000000  00007f5948823000  0000000000001000  0000f000  2**12
+#                  ALLOC, READONLY, CODE
+# 22 load9         00003000  00007f5948a1e000  0000000000000000  0000f000  2**12
+#                  CONTENTS, ALLOC, LOAD
+# 23 load10        00001000  00007f5948a43000  0000000000000000  00012000  2**12
+#                  CONTENTS, ALLOC, LOAD, READONLY
+# 24 load11        00001000  00007f5948a44000  0000000000000000  00013000  2**12
+#                  CONTENTS, ALLOC, LOAD
+# 25 load12        00001000  00007f5948a45000  0000000000000000  00014000  2**12
+#                  CONTENTS, ALLOC, LOAD
+# 26 load13        00022000  00007ffe70de6000  0000000000000000  00015000  2**12
+#                  CONTENTS, ALLOC, LOAD
+# 27 load14        00002000  00007ffe70f66000  0000000000000000  00037000  2**12
+#                  CONTENTS, ALLOC, LOAD, READONLY
+# 28 load15        00002000  00007ffe70f68000  0000000000000000  00039000  2**12
+#                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+# 29 load16        00001000  ffffffffff600000  0000000000000000  0003b000  2**12
+#                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+#

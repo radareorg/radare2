@@ -1,0 +1,23 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami imports.exe - open'
+FILE=../../bins/pe/imports.exe
+ARGS=''
+CMDS='ii
+is
+?v sym.imp.msvcrt.dll_printf
+'
+EXPECT='[Imports]
+ordinal=001 plt=0x004010c0 bind=NONE type=FUNC name=kernel32.dll_ExitProcess
+ordinal=001 plt=0x004010c8 bind=NONE type=FUNC name=msvcrt.dll_printf
+
+2 imports
+[Symbols]
+vaddr=0x004010c0 paddr=0x000002c0 ord=001 fwd= sz=0 bind=NONE type=FUNC name=imp.kernel32.dll_ExitProcess
+vaddr=0x004010c8 paddr=0x000002c8 ord=001 fwd= sz=0 bind=NONE type=FUNC name=imp.msvcrt.dll_printf
+
+2 symbols
+0x4010c8
+'
+run_test

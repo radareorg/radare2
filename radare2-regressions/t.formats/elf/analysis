@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2014  maijin
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+analysis_test() {
+NAME="elf $1"
+IGNORE_ERR=1
+BROKEN=
+FILE=../../bins/elf/analysis/$1
+ARGS=
+CMDS='aaa ; q'
+EXPECT=''
+run_test
+}
+
+for FILE in $(ls ../../bins/elf/analysis); do
+	if [ -f ../../bins/elf/analysis/$FILE ]; then
+    	analysis_test $FILE
+    fi
+done

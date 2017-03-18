@@ -1,0 +1,25 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: FSG 2.0- open'
+FILE=../../bins/pe/base_FSG.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test
+
+
+NAME='PE: FSG 2.0- pi 1'
+FILE=../../bins/pe/base_FSG.exe
+ARGS=''
+BROKEN=
+CMDS='e asm.functions = false
+e asm.comments = false
+e asm.bytes = false
+e asm.offset = false
+e asm.calls = false
+s entry0
+pi 1'
+EXPECT='xchg dword [0x446494], esp
+'
+run_test

@@ -1,0 +1,53 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="io ff"
+BROKEN=
+FILE=../bins/elf/analysis/hello-linux-x86_64
+CMDS='
+p8 4 @ 0x999999999
+'
+EXPECT='ffffffff
+'
+run_test
+
+NAME="io ff based on seek"
+BROKEN=
+FILE=../bins/pe/b.exe
+CMDS='
+s 0x0040200b
+p8 10
+s +1
+p8 10
+'
+EXPECT='00000000000000000000
+00000000000000000000
+'
+run_test
+
+NAME="presection read"
+FILE=../bins/mach0/ls-ios
+CMDS='
+s 0x8000
+p8 16
+s 0x8000-1
+p8 16
+'
+EXPECT='00009de404108de2014080e2042181e0
+4200009de404108de2014080e2042181
+'
+run_test
+
+NAME="presection read with io.sectonly"
+FILE=../bins/mach0/ls-ios
+CMDS='
+e io.sectonly=true
+s 0x8000
+p8 16
+s 0x8000-1
+p8 16
+'
+EXPECT='00009de404108de2014080e2042181e0
+ff00009de404108de2014080e2042181
+'
+run_test

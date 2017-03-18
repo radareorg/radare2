@@ -1,0 +1,16 @@
+rule TEST : test_rule {
+	strings:
+		$magic_string = "testing_stuff"
+		$magic_bytes = { AA ?? ?? ?? EE }
+
+	condition:
+		$magic_string or $magic_bytes
+}
+
+rule elf {
+	strings:
+		$magic_bytes = { 7F 45 4C 46 }
+	
+	condition:
+		$magic_bytes at 0
+}

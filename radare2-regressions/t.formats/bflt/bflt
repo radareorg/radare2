@@ -1,0 +1,105 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='bflt'
+BROKEN=
+FILE=../../bins/bflt/bin.bflt
+ARGS=''
+CMDS="ir"
+EXPECT='[Relocations]
+vaddr=0x00000074 paddr=0x00000074 type=SET_32
+vaddr=0x00000078 paddr=0x00000078 type=SET_32
+vaddr=0x0000007c paddr=0x0000007c type=SET_32
+vaddr=0x000000a4 paddr=0x000000a4 type=SET_32
+vaddr=0x000000a8 paddr=0x000000a8 type=SET_32
+vaddr=0x000000ac paddr=0x000000ac type=SET_32
+vaddr=0x000000dc paddr=0x000000dc type=SET_32
+vaddr=0x000000e0 paddr=0x000000e0 type=SET_32
+vaddr=0x000000e4 paddr=0x000000e4 type=SET_32
+vaddr=0x00000110 paddr=0x00000110 type=SET_32
+vaddr=0x00000148 paddr=0x00000148 type=SET_32
+vaddr=0x0000014c paddr=0x0000014c type=SET_32
+vaddr=0x0000018c paddr=0x0000018c type=SET_32
+vaddr=0x000001d4 paddr=0x000001d4 type=SET_32
+vaddr=0x0000020c paddr=0x0000020c type=SET_32
+vaddr=0x00000260 paddr=0x00000260 type=SET_32
+vaddr=0x00000264 paddr=0x00000264 type=SET_32
+vaddr=0x00000474 paddr=0x00000474 type=SET_32
+vaddr=0x00000640 paddr=0x00000640 type=SET_32
+vaddr=0x00000678 paddr=0x00000678 type=SET_32
+vaddr=0x0000067c paddr=0x0000067c type=SET_32
+vaddr=0x000006e8 paddr=0x000006e8 type=SET_32
+vaddr=0x000006ec paddr=0x000006ec type=SET_32
+vaddr=0x000006f0 paddr=0x000006f0 type=SET_32
+vaddr=0x00000814 paddr=0x00000814 type=SET_32
+vaddr=0x00000818 paddr=0x00000818 type=SET_32
+vaddr=0x0000081c paddr=0x0000081c type=SET_32
+vaddr=0x00000820 paddr=0x00000820 type=SET_32
+vaddr=0x00000824 paddr=0x00000824 type=SET_32
+vaddr=0x00000828 paddr=0x00000828 type=SET_32
+vaddr=0x0000082c paddr=0x0000082c type=SET_32
+vaddr=0x00000830 paddr=0x00000830 type=SET_32
+vaddr=0x000008a8 paddr=0x000008a8 type=SET_32
+vaddr=0x000008ac paddr=0x000008ac type=SET_32
+vaddr=0x000008f0 paddr=0x000008f0 type=SET_32
+vaddr=0x00000938 paddr=0x00000938 type=SET_32
+vaddr=0x00000968 paddr=0x00000968 type=SET_32
+vaddr=0x00000994 paddr=0x00000994 type=SET_32
+vaddr=0x00000a68 paddr=0x00000a68 type=SET_32
+vaddr=0x00000c6c paddr=0x00000c6c type=SET_32
+vaddr=0x00000f68 paddr=0x00000f68 type=SET_32
+vaddr=0x00000f6c paddr=0x00000f6c type=SET_32
+vaddr=0x00000fac paddr=0x00000fac type=SET_32
+vaddr=0x00000fd8 paddr=0x00000fd8 type=SET_32
+vaddr=0x000010a8 paddr=0x000010a8 type=SET_32
+vaddr=0x00001108 paddr=0x00001108 type=SET_32
+vaddr=0x00001620 paddr=0x00001620 type=SET_32
+vaddr=0x00001820 paddr=0x00001820 type=SET_32
+vaddr=0x00001824 paddr=0x00001824 type=SET_32
+vaddr=0x00001828 paddr=0x00001828 type=SET_32
+vaddr=0x00001950 paddr=0x00001950 type=SET_32
+vaddr=0x00001954 paddr=0x00001954 type=SET_32
+vaddr=0x00001958 paddr=0x00001958 type=SET_32
+vaddr=0x00001d58 paddr=0x00001d58 type=SET_32
+vaddr=0x00001d5c paddr=0x00001d5c type=SET_32
+vaddr=0x00001d60 paddr=0x00001d60 type=SET_32
+vaddr=0x00001d64 paddr=0x00001d64 type=SET_32
+vaddr=0x00001d68 paddr=0x00001d68 type=SET_32
+vaddr=0x00001de4 paddr=0x00001de4 type=SET_32
+vaddr=0x00001de8 paddr=0x00001de8 type=SET_32
+vaddr=0x00001dec paddr=0x00001dec type=SET_32
+vaddr=0x00001df0 paddr=0x00001df0 type=SET_32
+vaddr=0x00001df4 paddr=0x00001df4 type=SET_32
+vaddr=0x00002368 paddr=0x00002368 type=SET_32
+vaddr=0x0000239c paddr=0x0000239c type=SET_32
+vaddr=0x000023a0 paddr=0x000023a0 type=SET_32
+vaddr=0x000023a4 paddr=0x000023a4 type=SET_32
+vaddr=0x000023a8 paddr=0x000023a8 type=SET_32
+vaddr=0x000023ac paddr=0x000023ac type=SET_32
+vaddr=0x00002f30 paddr=0x00002f30 type=SET_32
+vaddr=0x00002f3c paddr=0x00002f3c type=SET_32
+vaddr=0x00002f40 paddr=0x00002f40 type=SET_32
+vaddr=0x00002f44 paddr=0x00002f44 type=SET_32
+vaddr=0x00002f48 paddr=0x00002f48 type=SET_32
+vaddr=0x00002f4c paddr=0x00002f4c type=SET_32
+vaddr=0x00002f50 paddr=0x00002f50 type=SET_32
+vaddr=0x00002f54 paddr=0x00002f54 type=SET_32
+vaddr=0x00002f60 paddr=0x00002f60 type=SET_32
+vaddr=0x00002f64 paddr=0x00002f64 type=SET_32
+vaddr=0x00002f68 paddr=0x00002f68 type=SET_32
+vaddr=0x00002f6c paddr=0x00002f6c type=SET_32
+vaddr=0x00002f70 paddr=0x00002f70 type=SET_32
+vaddr=0x00002f74 paddr=0x00002f74 type=SET_32
+vaddr=0x00002f78 paddr=0x00002f78 type=SET_32
+vaddr=0x00002fa0 paddr=0x00002fa0 type=SET_32
+vaddr=0x00002fa4 paddr=0x00002fa4 type=SET_32
+vaddr=0x00002fa8 paddr=0x00002fa8 type=SET_32
+vaddr=0x00002fac paddr=0x00002fac type=SET_32
+vaddr=0x00002fb0 paddr=0x00002fb0 type=SET_32
+vaddr=0x00002fb4 paddr=0x00002fb4 type=SET_32
+vaddr=0x00002fb8 paddr=0x00002fb8 type=SET_32
+vaddr=0x00002fbc paddr=0x00002fbc type=SET_32
+
+92 relocations
+'
+run_test

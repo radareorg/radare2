@@ -1,0 +1,27 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='objc hello-objc not encrypted'
+BROKEN=
+FILE=../../bins/mach0/hello-objc
+ARGS=
+CMDS='ic
+'
+EXPECT='0x100001180 [0x100000da0 - 0x100000e20] (sz 128) class 0 Person
+0x100000da0 method 0 sayHello
+0x100000df0 method 1 name
+0x100000e20 method 2 setName:
+'
+run_test
+
+NAME='objc generics-objc'
+BROKEN=
+FILE=../../bins/mach0/generics-objc
+ARGS=
+CMDS='ic
+'
+EXPECT='0x100001120 [0x100000e70 - 0x100000e70] (sz 0) class 0 MyCustomClass
+0x100000e70 method 0 doSomethingWithGeneric:
+'
+run_test

@@ -1,0 +1,34 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# Capstone seems to ignore address of relative calls in BL
+NAME="ARM64 bl capstone"
+BROKEN=
+FILE=malloc://32
+CMDS="s 4
+wx 07000094
+e asm.arch=arm
+e asm.bits=64
+pi 1
+ao~jump
+"
+EXPECT='bl 0x20
+jump: 0x00000020
+'
+run_test
+
+ARCH=arm.cs
+
+NAME="ARM64 bl gnu"
+BROKEN=
+FILE=malloc://32
+CMDS="s 4
+wx 07000094
+e asm.arch=arm.gnu
+e asm.bits=64
+pi 1
+ao~jump
+"
+EXPECT='bl 0x00000020
+jump: 0x00000020
+'
+run_test

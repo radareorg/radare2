@@ -1,0 +1,17 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016 pancake
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='xtensa blt'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 3a8868037813690568237915783362650232c31072650352c5108723e437640c68037813
+ao@0x1a~jump
+'
+EXPECT='jump: 0x00000002
+'
+run_test

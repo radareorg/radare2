@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2012-2013  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+	T=`mktemp .resize.XXXXXX`
+	rm -f $T
+NAME='r xx'
+FILE=$T
+ARGS=-w
+CMDS='
+i~^size[1]
+r 10
+i~^size[1]
+r 4
+i~^size[1]
+r+6
+i~^size[1]
+'
+EXPECT='0x0
+0xa
+0x4
+0xa
+'
+run_test
+	rm -f $T
+
+	T=`mktemp .resize.XXXXXX`
+	rm -f $T
+NAME='r/wx nn'
+FILE=$T
+ARGS=-w
+CMDS='
+i~^size[1]
+wx 010203
+i~^size[1]
+w hello world
+i~^size[1]
+psz
+'
+EXPECT='0x0
+0x3
+0xb
+hello world
+'
+run_test
+	rm -f $T

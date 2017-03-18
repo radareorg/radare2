@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2013-2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='avr entrypoint'
+FILE=../../bins/elf/analysis/bugurtos-avr.elf
+ARGS=
+CMDS='ie~addr
+'
+EXPECT='vaddr=0x00000000 paddr=0x00000074 baddr=0x00000000 laddr=0x00000000 haddr=0x00000018 type=program
+'
+run_test
+
+NAME='avr baddr'
+FILE=../../bins/elf/analysis/bugurtos-avr.elf
+ARGS=
+CMDS='ie~baddr[5]
+'
+EXPECT='0x00000000
+'
+run_test
+
+NAME='avr main address'
+FILE=../../bins/elf/analysis/bugurtos-avr.elf
+ARGS=
+CMDS='?v sym.main
+'
+EXPECT='0x308
+'
+run_test
+
+NAME='avr use va'
+FILE=../../bins/elf/analysis/bugurtos-avr.elf
+ARGS=
+CMDS='p8 10 @ entry0
+p8 10 @ sym.main
+'
+EXPECT='0c9446000c9430060c94
+ef92ff920f93df93cf93
+'
+run_test
+
+NAME='avr main code'
+FILE=../../bins/elf/analysis/bugurtos-avr.elf
+ARGS=
+CMDS='pi 3 @ sym.main
+'
+EXPECT='push r14
+push r15
+push r16
+'
+run_test
+
+# in paddr: soo... main address is:
+#  paddr 0x37c
+#  vaddr 0x184  * 2 = 0x308 + text_section_addr
+#
+#
+# [0x0000037c]> pd 20
+#    ;-- hit3_0:
+#    0x0000037c    ef92         push r14
+#    0x0000037e    ff92         push r15
+#    0x00000380    0f93         push r16
+#    0x00000382    df93         push r29
+#    0x00000384    cf93         push r28
+#    0x00000386    00d0         rcall 0x388

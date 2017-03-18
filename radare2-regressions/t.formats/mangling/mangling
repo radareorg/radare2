@@ -1,0 +1,509 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='m128 parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D cxx _ZNSt2147483648ios_base4InitD1Ev"'
+EXPECT='_ZNSt2147483648ios_base4InitD1Ev
+'
+run_test
+
+NAME='m128 parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var__m128@@3T__m128@@A"'
+EXPECT='__m128 var__m128
+'
+run_test
+
+NAME='m64 parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var__m64@@3T__m64@@A"'
+EXPECT='__m64 var__m64
+'
+run_test
+
+NAME='m128d parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var__m128d@@3U__m128d@@A"'
+EXPECT='__m128d var__m128d
+'
+run_test
+
+NAME='m128i parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var__m128i@@3T__m128i@@A"'
+EXPECT='__m128i var__m128i
+'
+run_test
+
+NAME='m256 parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var__m256@@3T__m256@@A"'
+EXPECT='__m256 var__m256
+'
+run_test
+
+NAME='m256d parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var__m256d@@3U__m256d@@A"'
+EXPECT='__m256d var__m256d
+'
+run_test
+
+NAME='m256i parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var__m256i@@3T__m256i@@A"'
+EXPECT='__m256i var__m256i
+'
+run_test
+
+NAME='void * parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_voidptr@@3PEAXA"'
+EXPECT='void * __ptr64 var_voidptr
+'
+run_test
+
+NAME='bool parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_bool@@3_NA"'
+EXPECT='bool var_bool
+'
+run_test
+
+NAME='char parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_char@@3DA"'
+EXPECT='char var_char
+'
+run_test
+
+NAME='signed char parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_signed_char@@3CA"'
+EXPECT='signed char var_signed_char
+'
+run_test
+
+NAME='unsigned char parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_unsigned_char@@3EA"'
+EXPECT='unsigned char var_unsigned_char
+'
+run_test
+
+NAME='short int parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_short_int@@3FA"'
+EXPECT='short int var_short_int
+'
+run_test
+
+NAME='int parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_int@@3HA"'
+EXPECT='int var_int
+'
+run_test
+
+NAME='unsigned int parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_unsigned_int@@3IA"'
+EXPECT='unsigned int var_unsigned_int
+'
+run_test
+
+NAME='long int parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_long_int@@3JA"'
+EXPECT='long int var_long_int
+'
+run_test
+
+NAME='unsigned long int parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_unsigned_long_int@@3KA"'
+EXPECT='unsigned long int var_unsigned_long_int
+'
+run_test
+
+NAME='long long parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_long_long@@3_JA"'
+EXPECT='long long(__int64) var_long_long
+'
+run_test
+
+NAME='unsigned long long parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_unsigned_long_long@@3_KA"'
+EXPECT='unsigned long long(unsigned __int64) var_unsigned_long_long
+'
+run_test
+
+NAME='"whcar_t parsing test"'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_wchar_t@@3_WA"'
+EXPECT='wchar_t var_wchar_t
+'
+run_test
+
+NAME='float parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_float@@3MA"'
+EXPECT='float var_float
+'
+run_test
+
+NAME='double parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_double@@3NA"'
+EXPECT='double var_double
+'
+run_test
+
+NAME='long double parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_long_double@@3OA"'
+EXPECT='long double var_long_double
+'
+run_test
+
+NAME='int * parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_int_ptr@@3PEAHA"'
+EXPECT='int * __ptr64 var_int_ptr
+'
+run_test
+
+NAME='const int * const parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_const_int_ptr@@3PEBHEB"'
+EXPECT='int const * __ptr64 const __ptr64 var_const_int_ptr
+'
+run_test
+
+NAME='int volatile * volatile const parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_volatile_int_ptr@@3PECHEC"'
+EXPECT='int volatile * __ptr64 volatile __ptr64 var_volatile_int_ptr
+'
+run_test
+
+NAME='int const volatile * const volatile parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_const_volatile_int_ptr@@3PEDHED"'
+EXPECT='int const volatile * __ptr64 const volatile __ptr64 var_const_volatile_int_ptr
+'
+run_test
+
+NAME='int * volatile parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_int_ptr_volatile@@3REAHEA"'
+EXPECT='int * volatile __ptr64 __ptr64 var_int_ptr_volatile
+'
+run_test
+
+NAME='arr parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?arr@@3PAHA"'
+EXPECT='int * arr
+'
+run_test
+
+NAME='arr[][] parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?arr2@@3PAY07HA"'
+EXPECT='int (*)[8] arr2
+'
+run_test
+
+NAME='arr[][][] parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?arr3@@3PAY1BA@4HA"'
+EXPECT='int (*)[16][5] arr3
+'
+run_test
+
+NAME='union parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_union@@3TUNION_TEST@@A"'
+EXPECT='union UNION_TEST var_union
+'
+run_test
+
+NAME='class parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_class@@3VCLASS_TEST@@A"'
+EXPECT='class CLASS_TEST var_class
+'
+run_test
+
+NAME='enum parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_enum@@3W4ENUM_TEST@@A"'
+EXPECT='enum ENUM_TEST var_enum
+'
+run_test
+
+NAME='union with namespace parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_union_with_namespace@TEST_NAMESPACE@@3TUNION_TEST@@A"'
+EXPECT='union UNION_TEST TEST_NAMESPACE::var_union_with_namespace
+'
+run_test
+
+NAME='class with namespace parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_class_with_namespace@TEST_NAMESPACE@@3VCLASS_TEST@@A"'
+EXPECT='class CLASS_TEST TEST_NAMESPACE::var_class_with_namespace
+'
+run_test
+
+NAME='enum with namespace parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_enum_with_namespace@TEST_NAMESPACE@@3W4ENUM_TEST@@A"'
+EXPECT='enum ENUM_TEST TEST_NAMESPACE::var_enum_with_namespace
+'
+run_test
+
+NAME='ptr with namespace parsing test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?var_ptr_with_namespace@TEST_NAMESPACE@@3PEAUSTRUCT_TEST@@EA"'
+EXPECT='struct STRUCT_TEST * __ptr64 __ptr64 TEST_NAMESPACE::var_ptr_with_namespace
+'
+run_test
+
+NAME='copy constructor demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ??0TEST_CLASS@@QEAA@AEBV0@@Z"'
+EXPECT='public: void __cdecl TEST_CLASS::constructor(class TEST_CLASS const & __ptr64) __ptr64
+'
+run_test
+
+NAME='constructor demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ??0TEST_CLASS@@QEAA@H@Z"'
+EXPECT='public: void __cdecl TEST_CLASS::constructor(int) __ptr64
+'
+run_test
+
+NAME='destructor demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ??1TEST_CLASS@@QEAA@XZ"'
+EXPECT='public: void __cdecl TEST_CLASS::~destructor(void) __ptr64
+'
+run_test
+
+NAME='operator= demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ??4TEST_CLASS@@QEAAAEAV0@AEBV0@@Z "'
+EXPECT='public: class TEST_CLASS & __ptr64 __cdecl TEST_CLASS::operator=(class TEST_CLASS const & __ptr64) __ptr64
+'
+run_test
+
+NAME='operator+ demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ??HTEST_CLASS@@QEAA?AV0@AEBV0@@Z "'
+EXPECT='public: class TEST_CLASS __cdecl TEST_CLASS::operator+(class TEST_CLASS const & __ptr64) __ptr64
+'
+run_test
+
+NAME='public function demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?public_func@TEST_CLASS@@QEAAHXZ"'
+EXPECT='public: int __cdecl TEST_CLASS::public_func(void) __ptr64
+'
+run_test
+
+NAME='static function demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?static_func@TEST_CLASS@@SAXH@Z"'
+EXPECT='public: static void __cdecl TEST_CLASS::static_func(int)
+'
+run_test
+
+NAME='private function demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?private_func@TEST_CLASS@@AEAAXXZ"'
+EXPECT='private: void __cdecl TEST_CLASS::private_func(void) __ptr64
+'
+run_test
+
+NAME='Abbreviation Of Repetead Types demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?AbbreviationOfRepeteadTypes@@YA_NPEAHHH0_N1PEA_N@Z"'
+EXPECT='bool __cdecl AbbreviationOfRepeteadTypes(int * __ptr64, int, int, int * __ptr64, bool, bool, bool * __ptr64)
+'
+run_test
+
+NAME='Abbreviation Of Repetead Names demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?AbbreviationOfRepeteadNames@@YAPEAVTEST_CLASS@@PEAV1@00AEAV1@@Z"'
+EXPECT='class TEST_CLASS * __ptr64 __cdecl AbbreviationOfRepeteadNames(class TEST_CLASS * __ptr64, class TEST_CLASS * __ptr64, class TEST_CLASS * __ptr64, class TEST_CLASS & __ptr64)
+'
+run_test
+
+NAME='Abbreviation Of Name tests demangler test3'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?SomeFunction@@YAPAVClass1@@PAV1@PAVClass2@@1AAV2@@Z"'
+EXPECT='class Class1 * __cdecl SomeFunction(class Class1 *, class Class2 *, class Class2 *, class Class2 &)
+'
+run_test
+
+NAME='Function pointer demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?Fx_i@@YAHP6AHH@Z@Z"'
+EXPECT='int __cdecl Fx_i(int (__cdecl*)(int))
+'
+run_test
+
+NAME='Function pointer with abbreviation of types demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?Fxix_i@@YAHP6AHH@ZH0@Z"'
+EXPECT='int __cdecl Fxix_i(int (__cdecl*)(int), int, int (__cdecl*)(int))
+'
+run_test
+
+NAME='Function pointer with 2 abbreviation of types demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?Fxyxy_i@@YAHP6AHH@ZP6AHF@Z01@Z"'
+EXPECT='int __cdecl Fxyxy_i(int (__cdecl*)(int), int (__cdecl*)(short int), int (__cdecl*)(int), int (__cdecl*)(short int))
+'
+run_test
+
+NAME='Function pointer with abbreviation of types demangler test 2'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?Fxyxy_i_x64@@YAHP6AHPEAH0H@ZP6AH0H0@ZP6AHH@ZP6AHF@Z@Z"'
+EXPECT='int __cdecl Fxyxy_i_x64(int (__cdecl*)(int * __ptr64, int * __ptr64, int), int (__cdecl*)(int * __ptr64, int, int * __ptr64), int (__cdecl*)(int), int (__cdecl*)(short int))
+'
+run_test
+
+NAME='func_with_arg_union_from_namespace demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?func_with_arg_union_from_namespace@@YAXTUNION_TEST@1@@Z"'
+EXPECT='void __cdecl func_with_arg_union_from_namespace(union UNION_TEST::UNION_TEST)
+'
+run_test
+
+NAME='func_with_arg_class_from_namespace demangler test 2'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?func_with_arg_class_from_namespace@@YAXVTEST@1@@Z"'
+EXPECT='void __cdecl func_with_arg_class_from_namespace(class TEST::TEST)
+'
+run_test
+
+NAME='Abbreviation Of Repetead Names (Name with Template Arguments) demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?xyz@?\$abc@V?\$def@H@@PAX@@YAXXZ"'
+EXPECT='void __cdecl abc<class def<int>, void *>::xyz(void)
+'
+run_test
+
+NAME='Abbreviation Of Name with template demangler test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ??\$MyTemplateFunction@VClass1@@@Class1@@QAEXPAV0@@Z"'
+EXPECT='public: void __thiscall Class1::MyTemplateFunction<class Class1>(class Class1 *)
+'
+run_test
+
+NAME='void __cdecl f1(union UNION_TEST::UNION_TEST,union UNION_TEST::UNION_TEST) test'
+BROKEN=
+ARGS=
+CMDS='"!rabin2 -D msvc ?f1@@YAXTUNION_TEST@1@0@Z"'
+EXPECT='void __cdecl f1(union UNION_TEST::UNION_TEST, union UNION_TEST::UNION_TEST)
+'
+run_test
+
+NAME='void __cdecl f2(union UNION_TEST::UNION_TEST,class TEST::TEST,union UNION_TEST::UNION_TEST) test'
+BROKEN=
+ARGS=  
+CMDS='"!rabin2 -D msvc ?f2@@YAXTUNION_TEST@1@VTEST@2@0@Z"'
+EXPECT='void __cdecl f2(union UNION_TEST::UNION_TEST, class TEST::TEST, union UNION_TEST::UNION_TEST)
+'
+run_test
+
+NAME='void __cdecl f3(union UNION_TEST_NEW) test'
+BROKEN=
+ARGS=  
+CMDS='"!rabin2 -D msvc ?f3@@YAXTUNION_TEST_NEW@@@Z"'
+EXPECT='void __cdecl f3(union UNION_TEST_NEW)
+'
+run_test
+
+NAME='void __cdecl f4(union NAMESPACE_1::NAMESPACE_2::UNION_NAMESPACE_2,class TEST::TEST,union UNION_TEST::UNION_TEST) test'
+BROKEN=
+ARGS=  
+CMDS='"!rabin2 -D msvc ?f4@@YAXTUNION_NAMESPACE_2@NAMESPACE_2@NAMESPACE_1@@VTEST@4@TUNION_TEST@5@@Z"'
+EXPECT='void __cdecl f4(union NAMESPACE_1::NAMESPACE_2::UNION_NAMESPACE_2, class TEST::TEST, union UNION_TEST::UNION_TEST)
+'
+run_test
+
+NAME='void __cdecl f5(union NAMESPACE_1::UNION_TEST::UNION_TEST,class TEST::TEST,union UNION_TEST::UNION_TEST) test'
+BROKEN=
+ARGS=  
+CMDS='"!rabin2 -D msvc ?f5@@YAXTUNION_TEST@1NAMESPACE_1@@VTEST@3@T11@@Z"'
+EXPECT='void __cdecl f5(union NAMESPACE_1::UNION_TEST::UNION_TEST, class TEST::TEST, union UNION_TEST::UNION_TEST)
+'
+run_test
+
+
+#?var_int_ptr_restrict@@3PEIAHEIA

@@ -1,0 +1,274 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012-2016  jvoisin, pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='Import project'
+FILE=malloc://512
+ARGS=
+CMDS="e dir.projects = ../files/projects
+Po test > /dev/null
+C*"
+EXPECT='CCu base64:U29tZSB0ZXN0 @ 0x00404890
+'
+run_test
+
+NAME='Import project with overwriting'
+FILE=malloc://512
+ARGS=
+CMDS='e dir.projects = ../files/
+CC Some test @ 0x00404890
+Po import2 > /dev/null
+CC*
+'
+EXPECT='CCu base64:U29tZSB0ZXN0 @ 0x00404890
+'
+run_test
+
+NAME='Import project with overwriting'
+FILE=malloc://512
+BROKEN=
+ARGS=
+CMDS='e dir.projects = /tmp/
+e asm.bits=64
+wx 31ed4989d15e4889e24883e4f0505449c7c09024410048c7c12024410048c7c7a0284000e857dcfffff4
+af test
+afF @ fcn.test
+pdf
+Ps testafF > /dev/null
+Pc testafF~afF
+rm /tmp/testafF
+'
+EXPECT='/ (fcn) fcn.test
+\           0x00000000 (42 byte folded function)
+afF @ 0x00000000
+'
+run_test
+
+NAME='Export project'
+FILE=malloc://512
+ARGS=
+CMDS='e dir.projects = /tmp/
+CC "Some other test" @ 0x00404890
+Ps testexp > /dev/null
+cat /tmp/testexp/rc | grep base64
+rmdir -p /tmp/testexp
+'
+EXPECT='"e bin.debase64 = false"
+CCu base64:IlNvbWUgb3RoZXIgdGVzdCI= @ 0x00404890
+'
+run_test
+
+NAME='Set, export, unset and import'
+FILE=malloc://512
+ARGS=
+CMDS='e dir.projects = /tmp/
+CC "First comment" @ 0x00404890
+CC "Second comment" @ 0x00404800
+Ps testset > /dev/null
+C- @ 0x00404890
+C- @ 0x00404800
+Po project.r2
+cat /tmp/testset/rc | grep CC
+rmdir -p /tmp/testset
+'
+EXPECT='CCu base64:IlNlY29uZCBjb21tZW50Ig== @ 0x00404800
+CCu base64:IkZpcnN0IGNvbW1lbnQi @ 0x00404890
+'
+run_test
+
+NAME='xrefs'
+FILE=malloc://512
+ARGS=
+CMDS='ax 1
+e dir.projects = /tmp/
+ax
+Ps xrefs > /dev/null
+ax
+'
+EXPECT='ref.unk.0x0=0x1
+xref.unk.0x1=0
+types=code.jmp,code.call,data.mem,data.string
+ref.unk.0x0=0x1
+xref.unk.0x1=0
+types=code.jmp,code.call,data.mem,data.string
+'
+run_test
+
+NAME='Import mapped project'
+FILE=malloc://512
+ARGS=
+CMDS="e dir.projects = ../files/projects
+Po resetc64 > /dev/null
+pu 3 @0xc000"
+EXPECT='%4c%e2%fc
+'
+run_test
+
+NAME='asm.emu in project'
+FILE=../bins/elf/analysis/simpleARM.elf
+BROKEN=
+ARGS=
+CMDS='e asm.flags = false
+e asm.emu = true
+e dir.projects = /tmp/
+Ps emu > /dev/null
+Po emu
+CC-
+pd 1
+rm /tmp/emu
+'
+EXPECT='            0x08000060      0d20a0e3       mov r2, 0xd                 ; r2=0xd -> 0x2000000 
+'
+run_test
+
+NAME='Variables in project file'
+FILE=../bins/efi/bootia32.efi
+BROKEN=
+ARGS=
+CMDS='e dir.projects = /tmp/
+af
+afvr edi blahblah typeR @ 0x10002d8d
+afvb 8 ImageHandle blah @ 0x10002d8d
+Ps var > /dev/null
+Pc var~ImageHandle
+Pc var~blahblah
+rm /tmp/var
+'
+EXPECT='afvb 8 ImageHandle blah @ 0x10002d8d
+afvr edi blahblah typeR @ 0x10002d8d
+'
+run_test
+
+
+NAME='Types and link in project file'
+FILE=-
+BROKEN=
+ARGS=
+CMDS='e dir.projects = /tmp/
+tk zoby  =  type
+tl char @ 0x0
+Ps types > /dev/null
+Pc types~?link
+Pc types~?zoby
+'
+EXPECT='10
+1
+'
+run_test
+
+NAME='Breakpoints in project file'
+FILE=../bins/elf/analysis/main
+BROKEN=1
+ARGS=
+CMDS='e dbg.bpinmaps = false
+e dir.projects = /tmp/
+db 0x1234567
+Ps breakpoints > /dev/null
+Pc breakpoints~?0x1234567
+'
+EXPECT='1
+'
+run_test
+
+NAME='Visual Marks in project file'
+FILE=../bins/elf/analysis/main
+BROKEN=
+ARGS=
+CMDS='fV 49 0x400410
+fV 50 0x400412
+Ps vmarks > /dev/null
+Pc vmarks~fV 
+Pd vmarks > /dev/null
+'
+EXPECT='fV 49 0x400410
+fV 50 0x400412
+'
+run_test
+
+NAME='Custom types in project file'
+FILE=../bins/elf/analysis/main
+BROKEN=
+ARGS=
+CMDS='tk char **=type
+tk type.char **=**z
+tk type.char **.size=64
+Ps custom_types > /dev/null
+Pc custom_types~?char **
+"td struct Foo { int bar; int x, int y }"
+Ps custom_types > /dev/null
+Pc custom_types~?char **
+Pc custom_types~?Foo
+Pd custom_types > /dev/null
+'
+EXPECT='7
+7
+5
+'
+run_test
+
+NAME='Export custom types and import again'
+FILE=../bins/elf/analysis/main
+BROKEN=1
+ARGS=
+CMDS='tk char **=type
+tk type.char **=**z
+tk type.char **.size=64
+"td struct Foo { int bar; int x, int y }"
+Ps custom_types > /dev/null
+t- char **
+t- Foo
+tk~?char **
+tk~?Foo
+Po custom_types > /dev/null
+tk~?char **
+tk~?Foo
+Pd custom_types > /dev/null
+'
+EXPECT='5
+0
+7
+5
+'
+run_test
+
+NAME='Save project for a binary and checking opened files'
+FILE='../bins/elf/analysis/main'
+BROKEN=
+ARGS=
+CMDS='e dir.projects = /tmp/
+Ps blah > /dev/null
+Po blah > /dev/null
+o*~?
+'
+EXPECT='1
+'
+run_test
+
+
+NAME='Save project for a binary without saving its info'
+FILE='../bins/elf/analysis/main'
+BROKEN=
+ARGS='-n'
+CMDS='e dir.projects = /tmp/
+Ps blah > /dev/null
+Po blah > /dev/null
+i~format'
+EXPECT=''
+
+run_test
+
+NAME='Save project for a binary without saving its info at a specific map offset'
+FILE='../bins/elf/analysis/main'
+BROKEN=
+ARGS='-n -m 0x1337'
+CMDS='e dir.projects = /tmp/
+Ps blah > /dev/null
+Po blah > /dev/null
+on*~?
+on*~[2]
+'
+EXPECT='1
+0x1337
+'
+
+run_test

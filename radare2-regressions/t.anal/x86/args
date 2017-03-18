@@ -1,0 +1,34 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="x86: fastcall argument analysis"
+FILE=../../bins/elf/analysis/fast
+BROKEN=true
+CMDS='
+aa
+s sym.fastcaslled
+afC fastcall
+afva
+pdf~arg,local
+'
+EXPECT='|           ; var int local_20h @ ebp-0x20
+|           ; var int local_1ch @ ebp-0x1c
+|           ; var int local_10h @ ebp-0x10
+|           ; var int local_ch @ ebp-0xc
+|           ; arg int arg_ecx @ ecx
+|           ; arg int arg_edx @ edx
+|           ; arg int arg_8h @ ebp+0x8
+|           ; arg int arg_ch @ ebp+0xc
+|           0x08048421      894de4         mov dword [ebp - local_1ch], ecx
+|           0x08048424      8955e0         mov dword [ebp - local_20h], edx
+|           0x08048427      8b55e4         mov edx, dword [ebp - local_1ch]
+|           0x0804842a      8b45e0         mov eax, dword [ebp - local_20h]
+|           0x0804842f      8945f4         mov dword [ebp - local_ch], eax
+|           0x08048432      8b45e0         mov eax, dword [ebp - local_20h]
+|           0x08048435      2b450c         sub eax, dword [ebp + arg_ch]
+|           0x08048438      8945f0         mov dword [ebp - local_10h], eax
+|           0x0804843b      ff7508         push dword [ebp + arg_8h]
+|           0x0804843e      ff75f0         push dword [ebp - local_10h]
+|           0x08048441      ff75f4         push dword [ebp - local_ch]
+'
+run_test

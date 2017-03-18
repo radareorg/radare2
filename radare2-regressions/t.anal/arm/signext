@@ -1,0 +1,31 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="jump sign extend : arm.cs"
+FILE=malloc://4
+CMDS='
+e asm.arch=arm
+e asm.bits=32
+e io.va=true
+wx ffffffea # bl 0x80000000
+S 0 0x7ffffffc 4 stuff m
+s 0x7ffffffc
+ao~jump
+'
+EXPECT='jump: 0x80000000
+'
+run_test
+
+NAME="jump sign extend : arm.gnu"
+FILE=malloc://4
+CMDS='
+e asm.arch=arm.gnu
+e asm.bits=32
+e io.va=true
+wx ffffffea # bl 0x80000000
+S 0 0x7ffffffc 4 stuff m
+s 0x7ffffffc
+ao~jump
+'
+EXPECT='jump: 0x80000000
+'
+run_test

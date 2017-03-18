@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+## cache
+
+rm -f .newfile
+# Cache write.
+NAME='write'
+FILE=.newfile
+ARGS=-w
+CMDS='
+w jeje
+i~size[1]
+p8 4
+'
+EXPECT='0x4
+6a656a65
+'
+run_test

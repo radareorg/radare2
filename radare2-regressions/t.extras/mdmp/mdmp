@@ -1,0 +1,420 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2013-2016  pancake, Alex Kornitzer
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+F0=../../bins/mdmp/calc.dmp
+F1=../../bins/mdmp/hello.dmp
+F2=../../bins/mdmp/hello64.dmp
+
+unset R2_NOPLUGINS
+
+# Functional Tests
+
+NAME="${PLUGIN}: open"
+FILE=$F0
+ARGS=
+CMDS='i~format
+'
+EXPECT='format   mdmp
+'
+run_test
+
+
+NAME="${PLUGIN}: info"
+FILE=$F0
+ARGS=
+CMDS='iI
+'
+EXPECT='havecode true
+pic      false
+canary   false
+nx       false
+crypto   false
+va       true
+arch     x86
+bits     64
+machine  AMD64
+os       Windows NT Workstation 6.1.7601
+minopsz  1
+maxopsz  16
+pcalign  0
+endian   little
+stripped false
+static   true
+linenum  false
+lsyms    false
+relocs   false
+rpath    NONE
+binsz    36724
+hdr.csum 0x00000000
+'
+run_test
+
+
+NAME="${PLUGIN}: sections"
+FILE=$F0
+ARGS=
+CMDS='iS~calc
+'
+EXPECT='idx=09 vaddr=0xfffe0000 paddr=0x00000000 sz=929792 vsz=929792 perm=m---- name=C:_Windows_System32_calc.exe
+'
+run_test
+
+
+NAME="${PLUGIN}: resolve vaddr to paddr"
+FILE=$F0
+ARGS=
+CMDS='px@0x03a7ff08
+'
+EXPECT='- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x03a7ff08  882c 8177 0000 0000 0000 0000 0000 0000  .,.w............
+0x03a7ff18  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ff28  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ff38  cd59 5177 0000 0000 0000 0000 0000 0000  .YQw............
+0x03a7ff48  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ff58  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ff68  e1a2 7477 0000 0000 0000 0000 0000 0000  ..tw............
+0x03a7ff78  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ff88  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ff98  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ffa8  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ffb8  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ffc8  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ffd8  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7ffe8  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x03a7fff8  0000 0000 0000 0000 0f28 7c24 4044 0f28  .........(|$@D.(
+'
+run_test
+
+
+NAME="${PLUGIN}: entrypoints nomem .dmp"
+FILE=$F0
+ARGS=
+CMDS='ie
+'
+EXPECT='[Entrypoints]
+
+0 entrypoints
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - libraries count"
+FILE=$F1
+ARGS=
+CMDS='il~libraries
+'
+EXPECT='[Linked libraries]
+57 libraries
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - libraries resolving"
+FILE=$F1
+ARGS=
+CMDS='il~kernel32.dll
+'
+EXPECT='[0x00400000] - kernel32.dll
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - entrypoints count"
+FILE=$F1
+ARGS=
+CMDS='ie~entrypoints
+'
+EXPECT='11 entrypoints
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - entrypoints resolving"
+FILE=$F1
+ARGS=
+CMDS='ie~0x004014e0
+'
+EXPECT='vaddr=0x004014e0 paddr=0x000990b2 baddr=0x00000000 laddr=0x00000000 haddr=0x00097c7a type=program
+'
+run_test
+
+
+# NOTE: Will break if pdb parsing is implemented, therefore not a regression
+NAME="${PLUGIN}: 32bit - symbols count"
+FILE=$F1
+ARGS=
+CMDS='is~symbols
+'
+EXPECT='7466 symbols
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - symbols resolving 1"
+FILE=$F1
+ARGS=
+CMDS='is~imp.KERNEL32.dll_DeleteCriticalSection:0
+'
+EXPECT='vaddr=0x00406108 paddr=0x0009dcda ord=001 fwd= sz=0 bind=NONE type=FUNC name=imp.KERNEL32.dll_DeleteCriticalSection
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - symbols resolving 2"
+FILE=$F1
+ARGS=
+CMDS='is~ntdll.dll_RtlDeleteCriticalSection:0
+'
+EXPECT='vaddr=0x76fb05a4 paddr=0x001c2176 ord=358 fwd= sz=0 bind=NONE type=FUNC name=imp.ntdll.dll_RtlDeleteCriticalSection
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - imports count"
+FILE=$F1
+ARGS=
+CMDS='ii~imports
+'
+EXPECT='2028 imports
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - imports resolving"
+FILE=$F1
+ARGS=
+CMDS='ii~KERNEL32.dll_TerminateProcess
+'
+EXPECT='ordinal=017 plt=0x00406148 bind=NONE type=FUNC name=KERNEL32.dll_TerminateProcess
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - exports count"
+FILE=$F1
+ARGS=
+CMDS='iE~exports
+'
+EXPECT='5438 exports
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - exports resolving"
+FILE=$F1
+ARGS=
+CMDS='iE~ntdll.dll_Ordinal_1
+'
+EXPECT='vaddr=0x77802620 paddr=0x0041f1f2 ord=1992 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=ntdll.dll_Ordinal_1
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - relocs count"
+FILE=$F1
+ARGS=
+CMDS='ir~relocations
+'
+EXPECT='2028 relocations
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - relocs resolving"
+FILE=$F1
+ARGS=
+CMDS='ir~msvcrt.dll___dllonexit
+'
+EXPECT='vaddr=0x00406160 paddr=0x0009dd32 type=SET_32 msvcrt.dll___dllonexit
+'
+run_test
+
+
+NAME="${PLUGIN}: 32bit - relocs following"
+FILE=$F1
+ARGS=
+CMDS='pd 12 @[0x004061cc]
+'
+EXPECT='            ;-- msvcrt.dll_vfprintf:
+            0x773e7430      8bff           mov edi, edi
+            0x773e7432      55             push rbp
+            0x773e7433      8bec           mov ebp, esp
+            0x773e7435      ff7510         push qword [rbp + 0x10]
+            0x773e7438      6a00           push 0
+            0x773e743a      ff750c         push qword [rbp + 0xc]
+            0x773e743d      ff7508         push qword [rbp + 8]
+            0x773e7440      68fdcc3777     push 0x7737ccfd
+            0x773e7445      e800feffff     call 0x773e724a
+            0x773e744a      83c414         add esp, 0x14
+            0x773e744d      5d             pop rbp
+            0x773e744e      c3             ret
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - libraries count"
+FILE=$F2
+ARGS=
+CMDS='il~libraries
+'
+EXPECT='[Linked libraries]
+49 libraries
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - libraries resolving"
+FILE=$F2
+ARGS=
+CMDS='il~kernel32.dll
+'
+EXPECT='[0x00400000] - kernel32.dll
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - entrypoints count"
+FILE=$F2
+ARGS=
+CMDS='ie~entrypoints
+'
+EXPECT='5 entrypoints
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - entrypoints resolving"
+FILE=$F2
+ARGS=
+CMDS='ie~0x00401500
+'
+EXPECT='vaddr=0x00401500 paddr=0x0009418f baddr=0x00000000 laddr=0x00000000 haddr=0x00092d37 type=program
+'
+run_test
+
+
+# NOTE: Will break if pdb parsing is implemented, therefore not a regression
+NAME="${PLUGIN}: 64bit - symbols count"
+FILE=$F2
+ARGS=
+CMDS='is~symbols
+'
+EXPECT='6824 symbols
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - symbols resolving 1"
+FILE=$F2
+ARGS=
+CMDS='is~imp.KERNEL32.dll_DeleteCriticalSection
+'
+EXPECT='vaddr=0x004081fc paddr=0x0009ae8b ord=001 fwd= sz=0 bind=NONE type=FUNC name=imp.KERNEL32.dll_DeleteCriticalSection
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - symbols resolving 2"
+FILE=$F2
+ARGS=
+CMDS='is~ntdll.dll_A_SHAFinal
+'
+EXPECT='vaddr=0x77728bf0 paddr=0x001eb87f ord=008 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=ntdll.dll_A_SHAFinal
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - imports count"
+FILE=$F2
+ARGS=
+CMDS='ii~imports
+'
+EXPECT='1509 imports
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - imports resolving"
+FILE=$F2
+ARGS=
+CMDS='ii~KERNEL32.dll_GetCurrentProcessId
+'
+EXPECT='ordinal=004 plt=0x00408214 bind=NONE type=FUNC name=KERNEL32.dll_GetCurrentProcessId
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - exports count"
+FILE=$F2
+ARGS=
+CMDS='iE~exports
+'
+EXPECT='5315 exports
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - exports resolving"
+FILE=$F2
+ARGS=
+CMDS='iE~ntdll.dll_CsrVerifyRegion
+'
+EXPECT='vaddr=0x777d24b0 paddr=0x0029513f ord=038 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=ntdll.dll_CsrVerifyRegion
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - relocs count"
+FILE=$F2
+ARGS=
+CMDS='ir~relocations
+'
+EXPECT='1509 relocations
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - relocs resolving"
+FILE=$F2
+ARGS=
+CMDS='ir~KERNEL32.dll_DeleteCriticalSection
+'
+EXPECT='vaddr=0x004081fc paddr=0x0009ae8b type=SET_64 KERNEL32.dll_DeleteCriticalSection
+'
+run_test
+
+
+NAME="${PLUGIN}: 64bit - relocs following"
+FILE=$F2
+ARGS=
+CMDS='pd 9 @[0x004083ac]
+'
+EXPECT="            ;-- msvcrt.dll_vfprintf:
+            0x7fefdb0a1a4      4883ec38       sub rsp, 0x38            ; '8'
+            0x7fefdb0a1a8      4c89442420     mov qword [rsp + 0x20], r8
+            0x7fefdb0a1ad      4c8bc2         mov r8, rdx
+            0x7fefdb0a1b0      488bd1         mov rdx, rcx
+            0x7fefdb0a1b3      488d0dea7ffa.  lea rcx, 0x7fefdab21a4   ; 0x7fefdab21a4
+            0x7fefdb0a1ba      4533c9         xor r9d, r9d
+            0x7fefdb0a1bd      e87efdffff     call 0x7fefdb09f40
+            0x7fefdb0a1c2      4883c438       add rsp, 0x38            ; '8'
+            0x7fefdb0a1c6      c3             ret
+"
+run_test
+
+
+# Bug tests
+
+NAME="${PLUGIN}: reload file"
+IGNORE_ERR=1
+BROKEN=
+FILE=$F0
+ARGS=
+CMDS='ib
+?e ok
+'
+EXPECT='ok
+'
+run_test

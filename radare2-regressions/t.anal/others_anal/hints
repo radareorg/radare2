@@ -1,0 +1,41 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ahe'
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='ao~?
+ahe test
+ao~?
+'
+EXPECT='13
+13
+'
+run_test
+
+NAME='ahe'
+BROKEN=
+FILE=malloc://512
+ARGS=
+CMDS='ahe test
+ao~^esil
+'
+EXPECT='esil: test
+'
+run_test
+
+NAME='ahe 33,rax,='
+BROKEN=
+FILE=malloc://512
+ARGS="-a x86 -b 64"
+CMDS='wx 000000
+ahe 33,rax,=
+aes
+dr?rax
+'
+EXPECT='0x00000021
+'
+run_test
+

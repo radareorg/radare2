@@ -1,0 +1,79 @@
+#!/bin/sh
+
+# TODO: This script requires ROOT to be run in OSX
+# (or just sign the r2 binary to get debugger priviledges)
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='dbg.oo 10'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='10oo
+e file.path
+'
+EXPECT='dbg:///bin/ls
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dc - i386'
+BROKEN=1
+FILE=../../bins/mach0/hello-osx-i386
+ARGS=-d
+CMDS='dc
+'
+EXPECT='Hello world!
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dc - i386 forced'
+FILE=../../bins/mach0/hello-osx-i386
+ARGS="-b 32 -d"
+CMDS='dc
+'
+EXPECT='Hello World
+'
+IGNORE_ERR=1
+run_test
+
+NAME='oo ; dc - i386'
+FILE=../../bins/mach0/hello-osx-i386
+BROKEN=1
+ARGS=-d
+CMDS='oo
+dc
+'
+EXPECT='Hello world!
+'
+IGNORE_ERR=1
+run_test
+
+NAME='oo ; dc'
+FILE=../../bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS='oo
+dc
+'
+EXPECT='Hello World
+'
+IGNORE_ERR=1
+run_test
+
+NAME='ood'
+FILE=../../bins/mach0/hello-osx-x86_64
+ARGS=-d
+CMDS='ds
+dr rip
+ood
+dr rip
+dc
+'
+EXPECT='0x7fff5fc01001
+0x7fff5fc01000
+Hello World
+'
+IGNORE_ERR=1
+run_test

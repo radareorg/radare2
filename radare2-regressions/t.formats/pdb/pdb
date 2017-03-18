@@ -1,0 +1,354 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+###############################################################################
+NAME='PDB downloader check'
+FILE=../../bins/pdb/user32.dll
+ARGS="-e pdb.server=http://radare.org/"
+CMDS='!rabin2 -PP ${R2_FILE} | grep PDB;rm user32.pdb'
+EXPECT='PDB "user32.pdb" download success
+'
+EXPECT_ERR=''
+IGNORE_ERR=0
+
+if type "cabextract" > /dev/null; then
+	run_test
+else
+	echo "[BR] Cannot find cabextract in PATH, not running pdb test"
+	test_reset
+fi
+
+
+NAME='find structure R2_TEST_STRUCT'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_STRUCT'
+EXPECT='R2_TEST_STRUCT
+'
+
+run_test
+
+NAME='find union R2_TEST_UNION'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_UNION'
+EXPECT='R2_TEST_UNION
+'
+
+run_test
+
+NAME='find enum R2_TEST_ENUM'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao R2_TEST_ENUM'
+EXPECT='R2_TEST_ENUM
+'
+
+run_test
+
+NAME='member1 offset of structure R2_TEST_STRUCT'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao 0x0'
+EXPECT='0x0
+'
+
+run_test
+
+NAME='member2 offset of structure R2_TEST_STRUCT'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao 0x4'
+EXPECT='0x4
+'
+
+run_test
+
+NAME='member1 name of structure R2_TEST_STRUCT'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao r2_struct_var_1'
+EXPECT='r2_struct_var_1
+'
+
+run_test
+
+NAME='member2 name of structure R2_TEST_STRUCT'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao r2_struct_var_2'
+EXPECT='r2_struct_var_2
+'
+
+run_test
+
+NAME='member1 type of structure R2_TEST_STRUCT'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep r2_struct_var_1 | grep -ao long'
+EXPECT='long
+'
+
+run_test
+
+NAME='member2 type of structure R2_TEST_STRUCT'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep r2_struct_var_2 | grep -ao short'
+EXPECT='short
+'
+
+run_test
+
+NAME='check size of structure R2_TEST_STRUCT'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao 0x8'
+EXPECT='0x8
+'
+
+###############################################################################
+NAME='member1 offset of union R2_TEST_UNION'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao 0x0'
+EXPECT='0x0
+'
+
+run_test
+
+NAME='member2 offset of union R2_TEST_UNION'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep r2_union_var_2 | grep -ao 0x0'
+EXPECT='0x0
+'
+
+run_test
+
+NAME='member1 name of union R2_TEST_UNION'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao r2_union_var_1'
+EXPECT='r2_union_var_1
+'
+
+run_test
+
+NAME='member2 name of union R2_TEST_UNION'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao r2_union_var_2'
+EXPECT='r2_union_var_2
+'
+
+run_test
+
+NAME='member1 type of union R2_TEST_UNION'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep r2_union_var_1 | grep -ao long'
+EXPECT='long
+'
+
+run_test
+
+NAME='member2 type of union R2_TEST_UNION'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep r2_union_var_2 | grep -ao double'
+EXPECT='double
+'
+
+run_test
+
+NAME='check size of union R2_TEST_UNION'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep R2_TEST_UNION | grep -ao 0x8'
+EXPECT='0x8
+'
+
+run_test
+
+###############################################################################
+NAME='member1 value of enum R2_TEST_ENUM'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep eENUM1_R2 | grep -ao 0x10'
+EXPECT='0x10
+'
+
+run_test
+
+NAME='member2 value of enum R2_TEST_ENUM'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep eENUM2_R2 | grep -ao 0x20'
+EXPECT='0x20
+'
+
+run_test
+
+NAME='member3 vlue of enum R2_TEST_ENUM'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep eENUM_R2_MAX | grep -ao 0x21'
+EXPECT='0x21
+'
+
+run_test
+
+NAME='member1 name of enum R2_TEST_ENUM'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao eENUM1_R2'
+EXPECT='eENUM1_R2
+eENUM1_R2
+'
+
+run_test
+
+NAME='member2 name of enum R2_TEST_ENUM'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao eENUM2_R2'
+EXPECT='eENUM2_R2
+eENUM2_R2
+'
+
+run_test
+
+NAME='member3 name of enum R2_TEST_ENUM'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep -ao eENUM_R2_MAX'
+EXPECT='eENUM_R2_MAX
+eENUM_R2_MAX
+'
+
+run_test
+
+NAME='check size of union R2_TEST_ENUM'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -P ${R2_FILE} | grep R2_TEST_ENUM | grep -ao 0x0'
+EXPECT='0x0
+'
+
+run_test
+###############################################################################
+NAME='enumerate export test'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep -ao R2_TEST_ENUM'
+EXPECT='R2_TEST_ENUM
+'
+run_test
+
+NAME='enumerate value1 export test'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep -ao eENUM1_R2=00000010'
+EXPECT='eENUM1_R2=00000010
+'
+run_test
+
+NAME='enumerate value2 export test'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep -ao eENUM2_R2=00000020'
+EXPECT='eENUM2_R2=00000020
+'
+run_test
+
+NAME='enumerate value3 export test'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep -ao eENUM_R2_MAX=00000021'
+EXPECT='eENUM_R2_MAX=00000021
+'
+run_test
+###############################################################################
+NAME='struct export test'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep -ao R2_TEST_STRUCT'
+EXPECT='R2_TEST_STRUCT
+'
+run_test
+
+NAME='struct export command'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao pf'
+EXPECT='pf
+'
+run_test
+
+NAME='struct export types'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao iw'
+EXPECT='iw
+'
+run_test
+
+NAME='struct export name1'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_1'
+EXPECT='r2_struct_var_1
+'
+run_test
+
+NAME='struct export name2'
+BROKEN=
+FILE=../../bins/pdb/Project1.pdb
+ARGS=
+CMDS='!rabin2 -Pr ${R2_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_2'
+EXPECT='r2_struct_var_2
+'
+run_test
+
+###############################################################################
+NAME='GUID CHECK'
+BROKEN=
+FILE=../../bins/pdb/user32.dll
+ARGS=
+CMDS='!rabin2 -I ${R2_FILE} | grep -ao 15F778B3671D4EFDBDCDE79905308B792'
+EXPECT='15F778B3671D4EFDBDCDE79905308B792
+'
+run_test

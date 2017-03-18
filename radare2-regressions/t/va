@@ -1,0 +1,15 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=../bins/elf/analysis/x86-simple
+IGNORE_ERR=1
+CMDS='
+e search.in=io.section
+/x 5b
+pi 1 @ hit0_0
+'
+EXPECT='0x08048065 hit0_0 5b
+pop ebx
+'
+
+run_test

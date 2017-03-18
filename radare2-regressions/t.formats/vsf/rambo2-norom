@@ -1,0 +1,32 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+
+NAME='VSF: Rambo II- open'
+BROKEN=
+FILE=../../bins/vsf/c64-rambo2-norom.vsf
+IGNORE_ERR=1
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='VSF: Rambo II- detection'
+BROKEN=
+FILE=../../bins/vsf/c64-rambo2-norom.vsf
+IGNORE_ERR=1
+ARGS=''
+CMDS="iI~os"
+EXPECT='os       C64
+'
+run_test
+
+NAME='VSF: Rambo II- ROMs'
+BROKEN=
+FILE=../../bins/vsf/c64-rambo2-norom.vsf
+IGNORE_ERR=1
+ARGS=''
+CMDS="S"
+EXPECT='[00] * 0x00000084 mrwx va=0x00000000 sz=0x10000 vsz=0x10000 RAM
+'
+run_test

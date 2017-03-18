@@ -1,0 +1,80 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='yank-segfault'
+IGNORE_ERR=1
+FILE=-
+ARGS=
+CMDS='y -2
+'
+EXPECT=''
+run_test
+
+NAME='yank-and-paste'
+FILE=-
+ARGS=
+CMDS='b 64
+w hello world
+y 5
+yy@6
+psz
+'
+EXPECT='hello hello
+'
+run_test
+
+NAME='yank-segfault2'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='y 0
+y 10
+y 10
+y 20
+y;
+y 0
+y 0
+?e ok
+'
+EXPECT='0x00000000 20 0000000000000000000000000000000000000000
+ok
+'
+run_test
+
+NAME='yank-segfault3'
+BROKEN=
+FILE=-
+ARGS=
+CMDS='y #
+?e ok
+'
+EXPECT='ok
+'
+run_test
+
+NAME='yank-segfault4'
+IGNORE_ERR=1
+BROKEN=
+FILE=-
+ARGS=
+CMDS='y 1000000000
+?e ok
+'
+EXPECT='ok
+'
+run_test
+
+NAME='yank-doublefree'
+IGNORE_ERR=1
+BROKEN=
+FILE=-
+ARGS=
+CMDS='y -5
+y -5
+?e ok
+'
+EXPECT='ok
+'
+
+run_test

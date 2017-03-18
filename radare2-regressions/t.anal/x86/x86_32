@@ -1,0 +1,97 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+CMDS='
+e asm.arch=x86.udis
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
+af
+pif~?
+afi $$~size[1]
+'
+EXPECT='32
+78
+'
+run_test
+
+CMDS='
+e asm.arch=x86.udis
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
+af
+# count basic blocks
+pdr~true?
+'
+EXPECT='8
+'
+run_test
+
+
+BROKEN=
+CMDS='
+e asm.arch=x86.udis
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3
+af
+# count basic blocks
+pdr~true?
+pdr~false?
+'
+EXPECT='3
+1
+'
+run_test
+
+NAME='int 0x80 doesn t terminate a function'
+CMDS='e asm.arch=x86
+e asm.bits=32
+e anal.hasnext=0
+wx 5589d8b900000000b885000000cd8089c35dc3
+af
+afi~size
+'
+EXPECT='size: 19
+'
+run_test
+
+NAME='ao 4~bytes'
+CMDS='e asm.arch=x86
+e asm.bits=32
+e anal.hasnext=0
+wx 554889e5415741564155
+ao 3~bytes
+'
+EXPECT='bytes: 55
+bytes: 48
+bytes: 89e5
+'
+run_test
+
+NAME='af fwd-jmp'
+BROKEN=1
+CMDS='e asm.arch=x86
+e asm.bits=32
+wx 558bec6800304000e86300000083c404eb0d6808304000e85400000083c4046814304000e84700000083c40433c05dc3
+af
+afb
+'
+EXPECT='
+'
+run_test
+
+NAME='af fwd-jmp'
+BROKEN=
+FILE=../../bins/elf/license_1.out
+CMDS='
+af @ main
+afb @ main~?
+'
+EXPECT='9
+'
+run_test

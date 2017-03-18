@@ -1,0 +1,30 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='r2 -'
+FILE=-
+ARGS=
+CMDS='e file.path
+'
+EXPECT='malloc://512
+'
+run_test
+
+NAME='r2 --'
+FILE=--
+ARGS=
+CMDS='e file.path
+'
+EXPECT='
+'
+run_test
+
+NAME='r2 --'
+FILE=../../bins/elf/bomb
+BROKEN=
+ARGS=
+CMDS='r2 -s main -qc "s" ../../bins/elf/bomb
+'
+EXPECT='0x400da0
+'
+run_test

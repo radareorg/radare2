@@ -1,0 +1,29 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='function address from operand'
+FILE=../../bins/pe/test.exe
+CMDS='e anal.datarefs=true
+s 0x401820
+af
+s 0x401880
+fd
+
+'
+EXPECT='fcn.00401880
+'
+run_test
+
+NAME='function address from data structure'
+FILE=../../bins/pe/test.exe
+CMDS='e anal.datarefs=true
+e anal.recont=true
+s 0x4039ba
+af
+s 0x401441
+fd
+
+'
+EXPECT='fcn.00401441
+'
+run_test

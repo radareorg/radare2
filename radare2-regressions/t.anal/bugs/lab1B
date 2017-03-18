@@ -1,0 +1,15 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="lab1B"
+BROKEN=1
+FILE=../../bins/anal/lab1B
+CMDS="s 0x08048a8b
+af
+afb
+"
+EXPECT='0x08048a8b 0x08048a91 00:0000 6 j 0x8048bd5 f 0x08048a91
+0x08048bd5 0x08048be4 00:0000 15
+0x08048a91 0x08048aa0 00:0000 15
+'
+run_test
+

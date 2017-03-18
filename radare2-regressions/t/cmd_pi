@@ -1,0 +1,10 @@
+
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='pi -100'
+FILE='../bins/elf/analysis/simple.elf'
+ARGS=
+CMDS='aa;pi 1;pi -100'
+EXPECT="0"
+run_test

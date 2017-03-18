@@ -1,0 +1,56 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+BROKEN=
+NAME='tiny coff'
+FILE=../../bins/coff/coff.obj
+ARGS=''
+CMDS="S;is;ir"
+EXPECT='[00] * 0x00000064 mr-x va=0x00000064 sz=0x0027 vsz=0x0027 .text_0
+[01] . 0x0000008b mrw- va=0x0000008b sz=0x001c vsz=0x001c .data_1
+[Symbols]
+vaddr=0x00000000 paddr=0x00000000 ord=000 fwd=NONE sz=4 bind= type=EXTERNAL name=MessageBoxA
+vaddr=0x00000000 paddr=0x00000000 ord=000 fwd=NONE sz=4 bind= type=EXTERNAL name=ExitProcess
+vaddr=0x00000064 paddr=0x00000064 ord=000 fwd=NONE sz=4 bind= type=STATIC name=.text
+vaddr=0x00000064 paddr=0x00000064 ord=000 fwd=NONE sz=4 bind= type=EXTERNAL name=main
+vaddr=0x00000000 paddr=0x00000000 ord=000 fwd=NONE sz=4 bind= type=STATIC name=.data
+
+5 symbols
+[Relocations]
+vaddr=0x0000006d paddr=0x0000006d type=UNKNOWN .data
+vaddr=0x00000074 paddr=0x00000074 type=UNKNOWN .data
+vaddr=0x00000080 paddr=0x00000080 type=UNKNOWN MessageBoxA
+vaddr=0x00000087 paddr=0x00000087 type=UNKNOWN ExitProcess
+
+4 relocations
+'
+run_test
+
+
+
+BROKEN=
+NAME='tiny coff'
+FILE=../../bins/coff/coff2.obj
+ARGS=''
+CMDS="S
+is~text
+s sym.__1FooBar__QAE_XZ
+pd 2"
+EXPECT='[00] . 0x0000017c m--- va=0x0000017c sz=0x00ef vsz=0x00ef .drectve_0
+[01] . 0x0000026b mr-- va=0x0000026b sz=0x0ab0 vsz=0x0ab0 .debug_S_1
+[02] . 0x00000d1b mr-- va=0x00000d1b sz=0x0074 vsz=0x0074 .debug_T_2
+[03] * 0x00000d8f mr-x va=0x00000d8f sz=0x002d vsz=0x002d .text_mn_3
+[04] . 0x00000dbc mr-- va=0x00000dbc sz=0x00d4 vsz=0x00d4 .debug_S_4
+[05] . 0x00000ec2 mr-x va=0x00000ec2 sz=0x002a vsz=0x002a .text_mn_5
+[06] . 0x00000eec mr-- va=0x00000eec sz=0x00d4 vsz=0x00d4 .debug_S_6
+[07] . 0x00000ff2 mr-- va=0x00000ff2 sz=0x0004 vsz=0x0004 .rtc_IMZ_7
+[08] . 0x00001000 mr-- va=0x00001000 sz=0x0004 vsz=0x0004 .rtc_TMZ_8
+vaddr=0x00000d8f paddr=0x00000d8f ord=000 fwd=NONE sz=4 bind= type=STATIC name=.text$mn
+vaddr=0x00000ec2 paddr=0x00000ec2 ord=000 fwd=NONE sz=4 bind= type=STATIC name=.text$mn
+            ;-- section..text_mn_5:
+            ;-- ??1FooBar@@QAE@XZ:
+            ;-- .text$mn:
+            0x00000ec2      55             push ebp                    ; section 5 va=0x00000ec2 pa=0x00000ec2 sz=42 vsz=42 rwx=m-r-x .text_mn_5
+            0x00000ec3      8bec           mov ebp, esp
+'
+run_test

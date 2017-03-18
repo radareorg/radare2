@@ -1,0 +1,15 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: dynimports'
+FILE=../../bins/elf/analysis/dynimports
+BROKEN=
+ARGS=''
+CMDS="ii~name"
+EXPECT='ordinal=001 plt=0x00400450 bind=GLOBAL type=FUNC name=write
+ordinal=002 plt=0x00400460 bind=GLOBAL type=FUNC name=strlen
+ordinal=003 plt=0x00400470 bind=GLOBAL type=FUNC name=printf
+ordinal=004 plt=0x00400480 bind=GLOBAL type=FUNC name=__libc_start_main
+ordinal=005 plt=0x00400490 bind=UNKNOWN type=NOTYPE name=__gmon_start__
+'
+run_test

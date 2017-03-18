@@ -1,0 +1,123 @@
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="noreturn errno"
+FILE=malloc://32
+CMDS="s main
+af
+afi~^size
+"
+EXPECT='size: 32
+'
+run_test
+
+NAME="thumb ldr pc-rel analysis"
+FILE=malloc://32
+CMDS="
+e asm.arch=arm
+e asm.bits=16
+wx dff80000 12000000 34000000
+pd 1
+"
+EXPECT='            0x00000000      dff80000       ldr.w r0, [0x00000008]      ; [0x8:4]=52 ; 8
+'
+run_test
+
+NAME="thumb ldr pc-rel emulation"
+FILE=malloc://32
+CMDS="
+e asm.arch=arm
+e asm.bits=16
+wx dff80000 12000000 34000000
+aes
+dr r0
+"
+EXPECT='0x00000034
+'
+run_test
+
+NAME="bx ip eof"
+FILE=malloc://32
+CMDS="
+e asm.arch=arm
+e asm.bits=16
+wx dff804c0 fc446047 18e0 0200
+af
+afi~size[1]
+"
+EXPECT='8
+'
+
+run_test
+
+NAME="thumb ldr pc-rel analysis"
+FILE=malloc://32
+CMDS="
+e asm.arch=arm
+e asm.bits=16
+wx 0149 014a 014b 0000 1111 2222 3333 4444 5555 6666
+pd 3
+"
+EXPECT='            0x00000000      0149           ldr r1, [0x00000008]        ; [0x8:4]=0x22221111 ; 8
+            0x00000002      014a           ldr r2, [0x0000000a]        ; [0x8:4]=0x22221111 ; 8
+            0x00000004      014b           ldr r3, [0x0000000c]        ; [0xc:4]=0x44443333 ; 12
+'
+run_test
+
+NAME="thumb ldr+add pc-rel analysis"
+FILE=malloc://32
+CMDS="
+e asm.arch=arm
+e asm.bits=16
+e asm.emu=1
+wx 0249 024a 024b 7944 7a44 7b44 1111 2222 3333 4444 5555 6666 7777
+pd 6
+"
+EXPECT='            0x00000000      0249           ldr r1, [0x0000000c]        ; [0xc:4]=0x22221111 ; 12 ; r1=0x22221111 -> 0xffffff00 
+            0x00000002      024a           ldr r2, [0x0000000e]        ; [0xc:4]=0x22221111 ; 12 ; r2=0x22221111 -> 0xffffff00 
+            0x00000004      024b           ldr r3, [0x00000010]        ; [0x10:4]=0x44443333 ; 16 ; r3=0x44443333 -> 0xffffff00 
+            0x00000006      7944           add r1, pc                  ; r1=0x2222111b -> 0xffffff00 
+            0x00000008      7a44           add r2, pc                  ; r2=0x2222111d -> 0xffffff00 
+            0x0000000a      7b44           add r3, pc                  ; r3=0x44443341 -> 0xffffff00 
+'
+run_test
+
+NAME="thumb adr pc-rel analysis"
+FILE=malloc://32
+CMDS="
+e asm.arch=arm
+e asm.bits=16
+wx 10b5 01a0 00bf 00bf 52616461726532207465737420737472696e6700
+pd 1 @ 0x2
+"
+EXPECT='            0x00000002      01a0           adr r0, 4                   ; 0x8 ; "Radare2 test string" ; 8
+'
+run_test
+
+NAME='pd bits override for arm'
+FILE=malloc://32
+ARGS=
+CMDS='
+e asm.arch=arm
+e asm.bits=32
+wa mov r0, r0
+e asm.bits=16
+ahb 16
+pd 1 arm 32
+pd 1 arm 32
+'
+EXPECT='            0x00000000      0000a0e1       mov r0, r0
+            0x00000000      0000a0e1       mov r0, r0
+'
+run_test
+
+NAME="thumb adr pc-rel analysis with newline"
+FILE=malloc://32
+CMDS="
+e asm.arch=arm
+e asm.bits=16
+wx 10b5 01a0 00bf 00bf 5261646172653220746573740d0a00
+pd 1 @ 0x2
+"
+EXPECT='            0x00000002      01a0           adr r0, 4                   ; 0x8 ; "Radare2 test.." ; 8
+'
+run_test

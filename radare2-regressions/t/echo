@@ -1,0 +1,8 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+CMDS='?e hello world'
+EXPECT='hello world
+'
+
+run_test

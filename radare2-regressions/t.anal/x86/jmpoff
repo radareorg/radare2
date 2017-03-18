@@ -1,0 +1,29 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="x86-64 after unknown jmp"
+FILE=../../bins/elf/analysis/ls-linux64
+CMDS='
+# e anal.afterjmp=true
+s 0x5c50
+af
+pif
+'
+EXPECT='lea rdi, [rip + 0x217631]
+lea rax, [rip + 0x217631]
+push rbp
+sub rax, rdi
+mov rbp, rsp
+cmp rax, 0xe
+jbe 0x5c80
+mov rax, qword [rip + 0x217316]
+test rax, rax
+je 0x5c80
+pop rbp
+jmp rax
+nop word [rax + rax]
+pop rbp
+ret
+'
+run_test
+

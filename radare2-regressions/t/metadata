@@ -1,0 +1,246 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=malloc://1024
+NAME="Cs"
+CMDS='
+w hello world
+Cs
+C*~[1]
+'
+EXPECT='12
+'
+run_test
+
+FILE=malloc://1024
+NAME="Cs 5"
+CMDS='
+w hello world
+Cs 5
+C*~[1]
+'
+EXPECT='5
+'
+run_test
+
+FILE=malloc://1024
+NAME="Cz"
+CMDS='
+w hello world
+Cz
+C*~[1]
+'
+EXPECT='12
+'
+run_test
+
+FILE=malloc://1024
+NAME="Cd : data"
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+w 909090
+Cd 3
+pd 2
+'
+EXPECT='            0x00000000 hex length=3 delta=0
+0x00000000  3930 39                                  909
+                                                                         ; [0x1d:4]=0
+            0x00000003      3039           xor byte [ecx], bh
+'
+run_test
+
+FILE=malloc://1024
+NAME="Cd : data + align"
+BROKEN=1
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+w 909090
+Cd 3
+s 1
+pd 2
+'
+EXPECT='            0x00000001 hex length=3 delta=1
+0x00000001  30 39                                    09
+                                                                       ; [0x1d:4]=0
+            0x00000003      3039           xor byte [ecx], bh
+'
+run_test
+
+FILE=malloc://1024
+NAME="Cs : convert to string"
+CMDS='
+w hello
+Cs 6
+pd 1
+'
+EXPECT='            0x00000000     .string "hello" ; len=6
+'
+run_test
+
+FILE=malloc://1024
+NAME="Cs : concatenated strings bug"
+BROKEN=
+CMDS='
+w hello\x00world
+e asm.linesup=0
+Cs 6
+Cs 6@6
+pd 2
+'
+EXPECT='            0x00000000     .string "hello" ; len=6
+            0x00000006     .string "world" ; len=6
+'
+run_test
+
+
+FILE=malloc://1024
+NAME="Cs : concatenated strings bug"
+BROKEN=
+CMDS='
+w hello\x00world
+e asm.linesup=0
+Cs 6
+Cs 6@6
+pd 2
+'
+EXPECT='            0x00000000     .string "hello" ; len=6
+            0x00000006     .string "world" ; len=6
+'
+run_test
+
+FILE=malloc://128
+NAME="Cs : string count bug"
+CMDS='
+w hello
+Cs 6
+C*~?
+'
+EXPECT='1
+'
+run_test
+
+FILE=malloc://128
+NAME="Ch : hide bytes in pd"
+CMDS='
+e scr.color=false
+wx 554889e54883c768
+Ch 2
+pd 2
+Ch-
+'
+EXPECT='            0x00000000 (2 bytes hidden)
+            0x00000002      89e5           mov ebp, esp
+'
+run_test
+
+FILE=malloc://1024
+NAME="Ch : add/del hide bytes"
+CMDS='
+e scr.color=false
+wx 554889e54883c768
+Ch 2@0x100
+C*~?
+Ch-@0x100
+C*~?
+'
+EXPECT='1
+0
+'
+run_test
+
+NAME="Cf should be silent"
+FILE=-
+ARGS=
+CMDS='Cf 32 2xx
+'
+EXPECT=''
+run_test
+
+NAME="format memory metadata"
+FILE=-
+ARGS=
+CMDS='wx 41424344
+Cf 4 x
+pd 1
+'
+EXPECT='            0x00000000 format x {
+0x00000000 = 0x44434241
+} 4
+'
+run_test
+
+NAME="arm1.bin dword pointers with Cd"
+FILE=../bins/elf/arm1.bin
+ARGS=
+CMDS='s 0xdb98
+Cd 4[3]
+pd 3
+'
+EXPECT='            ;-- $d_61:
+            0x0000db98      .dword 0x00085038 ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+'
+run_test
+
+NAME="arm1.bin dword pointers with Cd and ahi 1"
+FILE=../bins/elf/arm1.bin
+ARGS=
+CMDS='s 0xdb98
+Cd 4[3]
+ahi 1
+pd 3
+'
+EXPECT='            ;-- $d_61:
+            0x0000db98      .int32 00111000010100000000100000000000b ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+'
+run_test
+
+NAME="arm1.bin dword pointers with Cd and ahi 8"
+FILE=../bins/elf/arm1.bin
+ARGS=
+CMDS='s 0xdb98
+Cd 4[3]
+ahi 8
+pd 3
+'
+EXPECT='            ;-- $d_61:
+            0x0000db98      .int32 2050070o ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+'
+run_test
+
+NAME="arm1.bin dword pointers with Cd and ahi 10"
+FILE=../bins/elf/arm1.bin
+ARGS=
+CMDS='s 0xdb98
+Cd 4[3]
+ahi 10
+pd 3
+'
+EXPECT='            ;-- $d_61:
+            0x0000db98      .int32 544824 ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+'
+run_test
+
+NAME="arm1.bin dword pointers with Cd and ahi 16"
+FILE=../bins/elf/arm1.bin
+ARGS=
+CMDS='s 0xdb98
+Cd 4[3]
+ahi 16
+pd 3
+'
+EXPECT='            ;-- $d_61:
+            0x0000db98      .dword 0x00085038 ; obj.main_arena
+            0x0000db9c      .dword 0x000844ac ; obj.check_action
+            0x0000dba0      .dword 0x000663c4 ; str.free__:_invalid_pointer
+'
+run_test

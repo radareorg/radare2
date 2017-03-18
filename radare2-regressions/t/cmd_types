@@ -1,0 +1,400 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+NAME='typelinks'
+FILE=-
+CMDS="wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf0600000 
+e asm.comments=false
+s 2
+tl short
+s +6
+tl int
+s 0
+pd 8
+"
+EXPECT="            0x00000000      4157           push r15
+(short)
+0x00000002 = 0x5641
+            0x00000006      4154           push r12
+(int)
+0x00000008 = 1442089289
+            0x0000000e      fd             std
+            0x0000000f      4881eca80300.  sub rsp, 0x3a8
+            0x00000016      488b3e         mov rdi, qword [rsi]
+            0x00000019      64488b042528.  mov rax, qword fs:[0x28]
+"
+run_test
+
+NAME='typelinks 2'
+FILE=-
+CMDS="wx 48656c6c341248656c6c6f00000000000000000048656c6c6f0000000000000000009090
+tk WORD=type
+tk type.WORD=w
+tk type.WORD.size=16
+tk VbHeader=struct
+tk struct.VbHeader=szVbMagic,wRuntimeBuild,szLangDll,szSecLangDll
+tk struct.VbHeader.szVbMagic=char,0,4
+tk struct.VbHeader.wRuntimeBuild=WORD,4,0
+tk struct.VbHeader.szLangDll=char,6,14
+tk struct.VbHeader.szSecLangDll=char,20,14
+tl VbHeader @ 0x00
+pd 3
+"
+EXPECT="(VbHeader)
+     szVbMagic : 0x00000000 = Hell
+ wRuntimeBuild : 0x00000004 = 0x1234
+     szLangDll : 0x00000006 = Hello
+  szSecLangDll : 0x00000014 = Hello
+            0x00000022      90             nop
+            0x00000023      90             nop
+"
+run_test
+
+NAME='t?'
+FILE=-
+CMDS='t?~?Usage'
+EXPECT="1
+"
+run_test
+
+NAME='t'
+FILE=-
+CMDS='t'
+EXPECT='char
+char *
+int
+int16_t
+int32_t
+int64_t
+int8_t
+long
+long long
+short
+size_t
+uid_t
+uint16_t
+uint32_t
+uint64_t
+uint8_t
+unsigned char
+unsigned int
+unsigned short
+void *
+'
+run_test
+
+NAME="t <type>"
+FILE=-
+CMDS='t int
+t-*
+t int'
+EXPECT='pf d
+'
+EXPECT_ERR='Cannot find 'int' type
+'
+run_test
+
+NAME='t-enum'
+FILE=-
+CMDS='"td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
+t-pe_machine
+t~?pe_machine'
+EXPECT='0
+'
+run_test
+
+NAME='t-struct'
+BROKEN=
+FILE=-
+CMDS='"td struct three_elements{int x; char y; float z;}"
+t-three_elements
+ts~?
+'
+EXPECT='0
+'
+run_test
+
+Name='t-union'
+FILE=-
+CMDS='td union x{int x; int y; int z;}"
+tk*
+t-x
+'
+Expect='unsigned int=type
+unsigned char=type
+unsigned short=type
+int=type
+long=type
+void *=type
+char=type
+char *=type
+uint8_t=type
+uint16_t=type
+uint32_t=type
+uint64_t=type
+type.unsigned int=i
+type.unsigned char=b
+type.unsigned short=w
+type.int=d
+type.long=x
+type.void *=p
+type.char=c
+type.char *=*z
+type.uint8_t=b
+type.uint16_t=w
+type.uint32_t=d
+type.uint64_t=q
+x=union
+union.x=x,y,z
+union.x.x=int,0,0
+union.x.y=int,0,0
+union.x.z=int,0,0
+
+unsigned int=type
+unsigned char=type
+unsigned short=type
+int=type
+long=type
+void *=type
+char=type
+char *=type
+uint8_t=type
+uint16_t=type
+uint32_t=type
+uint64_t=type
+type.unsigned int=i
+type.unsigned char=b
+type.unsigned short=w
+type.int=d
+type.long=x
+type.void *=p
+type.char=b
+type.char *=*z
+type.uint8_t=b
+type.uint16_t=w
+type.uint32_t=d
+type.uint64_t=q
+
+'
+NAME='typedef'
+FILE=-
+CMDS='"td typedef int Abracadabra"
+t-Abracadabra
+t~?Abracadabra
+'
+EXPECT='0
+'
+run_test
+
+NAME='t-*'
+BROKEN=
+FILE=-
+CMDS='"td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
+t-*
+t
+'
+EXPECT=''
+run_test
+
+NAME='tb'
+BROKEN=
+FILE=-
+CMDS='
+"td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
+tb pe_machine IMAGE_FILE_MACHINE_I386
+'
+EXPECT='0x14c
+'
+run_test
+
+NAME='te'
+BROKEN=
+FILE=-
+CMDS='
+"td enum pe_machine { IMAGE_FILE_MACHINE_IA64=0x200, IMAGE_FILE_MACHINE_I386=0x14c };"
+te pe_machine 0x14c
+'
+EXPECT='IMAGE_FILE_MACHINE_I386
+'
+run_test
+
+NAME='td struct'
+BROKEN=
+FILE=-
+CMDS='
+"td struct test_struct{int x;int y;};"
+ts~?test_struct
+'
+EXPECT='1
+'
+run_test
+
+NAME='enum32'
+BROKEN=
+FILE=-
+CMDS='
+"td enum v { t=0x123, p=0x321 };"
+te~?
+tk v
+tk v.t
+tk v.p
+'
+EXPECT='1
+enum
+0x123
+0x321
+'
+run_test
+
+
+
+NAME='enum64'
+FILE=-
+CMDS='
+"td enum v { t=0x8000000000000001, p=0x8000000000000008 };"
+te~?
+tk v.t
+tk v.p
+'
+EXPECT='1
+0x8000000000000001
+0x8000000000000008
+'
+run_test
+
+NAME='to error.h'
+FILES=-
+CMDS='
+to ../bins/other/error.h
+t
+ts
+t addr
+'
+EXPECT_ERR='../bins/other/error.h:1: warning: #error this should be treated as warning
+'
+EXPECT='char
+char *
+int
+int16_t
+int32_t
+int64_t
+int8_t
+long
+long long
+short
+size_t
+uid_t
+uint16_t
+uint32_t
+uint64_t
+uint8_t
+unsigned char
+unsigned int
+unsigned short
+void *
+date
+name
+addr
+dox
+pf [127]z[40]zi street city zip
+'
+run_test
+
+NAME='to test.h'
+FILE=-
+CMDS='
+to ../bins/other/test.h
+t
+ts
+t addr
+'
+EXPECT='char
+char *
+int
+int16_t
+int32_t
+int64_t
+int8_t
+long
+long long
+short
+size_t
+uid_t
+uint16_t
+uint32_t
+uint64_t
+uint8_t
+unsigned char
+unsigned int
+unsigned short
+void *
+date
+name
+addr
+dox
+pf [127]z[40]zi street city zip
+'
+run_test
+
+NAME="t*"
+FILE=-
+CMDS="t-*
+tk a=b
+t*
+"
+EXPECT='tk a=b
+'
+run_test
+
+NAME='tp'
+BROKEN=
+FILE=-
+CMDS='"td struct person { int age; char name[10]; }"
+s 4
+w Carlos
+s 0
+wx 13
+tp person @ 0x0
+'
+EXPECT='  age : 0x00000000 = 19
+ name : 0x00000004 = Carlos
+'
+run_test
+
+NAME='unions'
+FILE=-
+CMDS='"td union x{float a;int b}"
+tu
+'
+EXPECT='x
+'
+run_test
+NAME='Types not reloaded when arch is the same'
+FILE=-
+CMDS='e asm.archx86
+e anal.arch=x86
+e anal.bits=32
+t-*
+tk a=b
+e asm.arch=x68
+e anal.arch=x86
+e anal.bits=32
+tk a
+'
+EXPECT='b
+'
+run_test
+NAME="td twice"
+FILE=-
+CMDS='"td int foo(int bar);"
+"td int foo(int bar);"
+tk~foo
+'
+EXPECT_ERR=''
+EXPECT='foo=func
+func.foo.arg.0=int,bar
+func.foo.args=1
+func.foo.cc=cdecl
+func.foo.ret=int
+'
+run_test

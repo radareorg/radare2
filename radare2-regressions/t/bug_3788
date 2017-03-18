@@ -1,0 +1,45 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME="bug 3788 #1: search in virtual address"
+FILE=../bins/vsf/c64-rambo2-norom.vsf
+IGNORE_ERR=1
+CMDS='s 0
+/x ac6c6c68
+'
+EXPECT='0x0000008a hit0_0 ac6c6c68
+'
+run_test
+
+NAME="bug 3788 #2: search with multiple sections"
+FILE=../bins/vsf/c64-rambo2-rom.vsf
+IGNORE_ERR=1
+CMDS='s 0
+e search.in=io.sections
+/x ac686b6d
+'
+EXPECT='0x0000008a hit2_0 ac686b6d
+'
+run_test
+
+NAME="bug 3788 #3: cmd.hit"
+FILE=../bins/vsf/c64-rambo2-norom.vsf
+IGNORE_ERR=1
+CMDS='s 0
+e cmd.hit = px 16
+/x ac6c6c68
+'
+EXPECT='0x0000008a hit0_0 ac6c6c68
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000008a  ac6c 6c68 6700 1200 0000 0000 0000 4b0f  .llhg.........K.
+'
+run_test
+
+NAME="bug 3788 #4: no collision in VA"
+FILE=../bins/nes/Pong.nes
+IGNORE_ERR=1
+CMDS='/x 8512a9208520
+'
+EXPECT='0x00008020 hit0_0 8512a9208520
+'
+run_test

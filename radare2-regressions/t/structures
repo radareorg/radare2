@@ -1,0 +1,69 @@
+#!/bin/sh
+
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+
+NAME='structure variable delete shadowed'
+FILE='../bins/elf/analysis/main_structure'
+CMDS='aaa
+s main
+afvb*
+"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+afvn local_110h s1
+afvt s1 S1
+afvb*
+'
+EXPECT='afvb -288 local_120h int @ 0x4004a6
+afvb -276 local_114h int @ 0x4004a6
+afvb -272 local_110h int @ 0x4004a6
+afvb -268 local_10ch int @ 0x4004a6
+afvb -264 local_108h int @ 0x4004a6
+afvb -4 local_4h int @ 0x4004a6
+afvb -288 local_120h int @ 0x4004a6
+afvb -276 local_114h int @ 0x4004a6
+afvb -272 s1 S1 @ 0x4004a6
+'
+run_test
+
+NAME='structure offset in disassembly'
+FILE='../bins/elf/analysis/main_structure'
+CMDS='aaa
+s main
+"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+afvn local_110h s1
+pd 4 @ 0x004004be~[2-4]
+afvt s1 S1
+pd 4 @ 0x004004be~[2-4]
+'
+EXPECT='mov dword [s1]
+mov dword [local_10ch]
+mov dword [local_108h]
+lea rax [s1]
+mov dword [s1.a]
+mov dword [s1.b]
+mov dword [s1.c]
+lea rax [s1.a]
+'
+run_test
+
+NAME='structure field rename reflects immediately'
+FILE='../bins/elf/analysis/main_structure'
+CMDS='aaa
+s main
+"td struct S1 { int a; int b; int c; char d[256]; short e; }"
+afvn local_110h s1
+afvt s1 S1
+pd 4 @ 0x004004be~[2-4]
+"td struct S1 { int x; int y; int c; char d[256]; short e; }"
+pd 4 @ 0x004004be~[2-4]
+'
+EXPECT='mov dword [s1.a]
+mov dword [s1.b]
+mov dword [s1.c]
+lea rax [s1.a]
+mov dword [s1.x]
+mov dword [s1.y]
+mov dword [s1.c]
+lea rax [s1.x]
+'
+run_test

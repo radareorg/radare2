@@ -1,0 +1,24 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016 pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="anal hasnext on main"
+FILE=../../bins/elf/true32
+CMDS="e anal.hasnext=true
+af@main
+afi@main~size
+"
+EXPECT="size: 261
+"
+run_test
+
+NAME="anal without hasnext on main"
+FILE=../../bins/elf/true32
+CMDS="e anal.hasnext=false
+af@main
+afi@main~size
+"
+EXPECT="size: 261
+"
+run_test

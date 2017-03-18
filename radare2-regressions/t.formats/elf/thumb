@@ -1,0 +1,149 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2013-2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='thumb entry0'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='?v entry0
+'
+EXPECT='0x82f0
+'
+run_test
+
+NAME='thumb main'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='?v sym.main
+'
+EXPECT='0x8424
+'
+run_test
+
+NAME='thumb main alignment'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='s sym.main
+pi 1
+'
+EXPECT='push {r7, lr}
+'
+run_test
+
+NAME='thumb sym'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='is~=main[1]
+is~=main[3]
+'
+EXPECT='0x00008424
+0x00000424
+'
+run_test
+
+NAME='thumb disasm'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='pi 1@ sym.main
+'
+EXPECT='push {r7, lr}
+'
+run_test
+
+
+NAME='thumb disasm 2'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='pi 7@ sym.main
+'
+EXPECT='push {r7, lr}
+add r7, sp, 0
+movs r0, 0xa
+bl loc._t_1
+adds r0, r3, 0
+mov sp, r7
+pop {r7, pc}
+'
+run_test
+
+
+NAME='mix arm and thumb'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='pi 14@ sym.main
+'
+EXPECT='push {r7, lr}
+add r7, sp, 0
+movs r0, 0xa
+bl loc._t_1
+adds r0, r3, 0
+mov sp, r7
+pop {r7, pc}
+push {r3, r4, r5, r6, r7, r8, sl, lr}
+mov r5, r0
+mov r6, r1
+mov r7, r2
+ldr r8, [pc, 0x48]
+bl sym._init
+ldr r3, [pc, 0x44]
+'
+run_test
+
+
+
+NAME='arm disasm entry0'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='pi 1@ sym.main
+'
+EXPECT='push {r7, lr}
+'
+run_test
+
+NAME='thumb anal expand'
+FILE=../../bins/elf/analysis/thumb
+ARGS=
+CMDS='pi 2@sym.main
+af@sym.main
+pi 2 @sym.main
+'
+EXPECT='push {r7, lr}
+add r7, sp, 0
+push {r7, lr}
+add r7, sp, 0
+'
+run_test
+
+
+
+NAME='arm at entry libsimplejni.so'
+FILE=../../bins/elf/analysis/libsimplejni.so
+ARGS=
+CMDS='pi 7@entry0
+'
+EXPECT='push {fp, lr}
+add fp, sp, 4
+ldr r3, [pc, 0xc]
+add r3, pc, r3
+mov r0, r3
+bl sym.imp.__cxa_finalize
+pop {fp, pc}
+'
+run_test
+
+
+NAME='thumb at sym.JNI_OnLoad'
+FILE=../../bins/elf/analysis/libsimplejni.so
+ARGS=
+CMDS='pi 6@sym.JNI_OnLoad
+'
+EXPECT='push {r4, lr}
+sub sp, 8
+mov r4, r0
+ldr r0, [pc, 0xb0]
+ldr r1, [pc, 0xb0]
+add r0, pc
+'
+run_test

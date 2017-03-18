@@ -1,0 +1,28 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+APP=../../bins/dex/test.dex
+
+NAME='DEX test.dex'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="ao~val[1]"
+EXPECT='0x00000021
+'
+run_test
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+APP=../../bins/dex/test.dex
+
+NAME='DEX test.dex'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="pd 1 @ 0x000001c4"
+EXPECT='            0x000001c4      1234           const/4 v4, 0x3             ; 3
+'
+run_test

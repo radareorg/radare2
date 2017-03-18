@@ -1,0 +1,32 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ahc'
+FILE=malloc://16
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+wx ebfe
+ahs 5
+ahc 0x25
+ahf 0x25
+ao 1~jump,fail,size[1]
+'
+EXPECT='5
+0x00000025
+0x00000025
+'
+run_test
+
+NAME='ahi S'
+FILE=malloc://16
+CMDS='
+e asm.arch=x86
+e asm.bits=32
+wx b801000000
+ahi S
+pi 1
+'
+EXPECT='mov eax, exit()
+'
+run_test

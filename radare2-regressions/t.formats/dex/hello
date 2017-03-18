@@ -1,0 +1,27 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+APP=../../bins/dex/Hello.dex
+
+NAME='DEX Hello.dex classes (ic command)'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="ic"
+EXPECT='0x00000174 [0x000001a4 - 0x0000021e] (sz 122) class 0 LHello
+0x000001a4 method 0 LHello.method.<init>(Ljava/lang/String;)V
+0x000001c0 method 1 LHello.method.main([Ljava/lang/String;)V
+0x000001e8 method 2 LHello.method.say()V
+'
+run_test
+
+NAME='DEX Hello.dex classes quiet (icq command)'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="icq"
+EXPECT='0x00000174 [0x000001a4 - 0x0000021e] LHello
+'
+run_test

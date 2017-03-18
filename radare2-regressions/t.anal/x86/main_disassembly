@@ -1,0 +1,17 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016  Maijin
+
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='Main in disassembly'
+BROKEN=
+FILE=../../bins/elf/analysis/ls2
+ARGS=
+CMDS='
+aa
+pi 1 @ 0x0040488d
+'
+EXPECT='mov rdi, main
+'
+run_test

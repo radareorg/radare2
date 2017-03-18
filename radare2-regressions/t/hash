@@ -1,0 +1,12 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=../bins/elf/analysis/x86-helloworld-gcc
+NAME="search count"
+IGNORE_ERR=1
+CMDS='ph crc32 @ $$+10
+/h crc32 83618b8a'
+EXPECT='83618b8a
+f hash.crc32.83618b8a = 0x804830a
+'
+run_test

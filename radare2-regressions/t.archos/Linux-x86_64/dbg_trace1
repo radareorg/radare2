@@ -1,0 +1,25 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2016  pancake, jduck
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# "!" - run commands (via system)
+
+NAME='dbg.trace.loop.swstep'
+FILE=../../bins/elf/analysis/x64-loop
+ARGS=-d
+BROKEN=
+CMDS='e scr.color=0
+e dbg.swstep=true
+db sym.called_in_loop
+dbc sym.called_in_loop dr PC
+dbte sym.called_in_loop
+dc
+dk 9
+'
+EXPECT='0x004004ed
+0x004004ed
+0x004004ed
+'
+IGNORE_ERR=1
+run_test

@@ -1,0 +1,324 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+APP=../../bins/dex/HelloWorld.dex
+
+NAME='DEX HelloWorld.dex symbols, fields and statics (isq command)'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="isq"
+EXPECT='0x00000168 0 LHello.sfield_localVar2:I
+0x00000160 0 LHello.ifield_localVar:I
+0x00000238 20 LHello.method.<init>()V
+0x0000025c 34 LHello.method.main([Ljava/lang/String;)V
+0x00000290 84 LHello.method.foo(I)V
+0x00000170 0 LWorld.ifield_worldVar:I
+0x00000178 0 LWorld.ifield_worldVar2:I
+0x000002f4 20 LWorld.method.<init>()V
+0x00000318 68 LWorld.method.foo(I)V
+0x000001b0 0 imp.Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
+0x000001b8 0 imp.Ljava/lang/Integer.method.<init>(I)V
+0x000001c0 0 imp.Ljava/lang/Integer.method.toString()Ljava/lang/String;
+0x000001c8 0 imp.Ljava/lang/Object.method.<init>()V
+0x000001d0 0 imp.Ljava/lang/StringBuilder.method.<init>()V
+0x000001d8 0 imp.Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+0x000001e0 0 imp.Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
+'
+run_test
+
+NAME='DEX HelloWorld.dex flags (f command)'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="f"
+EXPECT='0x00000372 6 str._init_
+0x0000037a 6 str.Findus
+0x00000382 10 str.Hello.java
+0x00000394 7 str.LHello_
+0x0000039d 2 str.LL
+0x000003a1 7 str.LWorld_
+0x000003aa 21 str.Ljava_io_PrintStream_
+0x000003c1 19 str.Ljava_lang_Integer_
+0x000003d6 18 str.Ljava_lang_Object_
+0x000003ea 18 str.Ljava_lang_String_
+0x000003fe 25 str.Ljava_lang_StringBuilder_
+0x00000419 18 str.Ljava_lang_System_
+0x00000430 2 str.VI
+0x00000434 2 str.VL
+0x00000438 10 str.World.java
+0x00000444 19 str._Ljava_lang_String_
+0x00000459 6 str.append
+0x00000461 3 str.foo
+0x00000466 6 str.foo___
+0x0000046e 8 str.localVar
+0x00000478 9 str.localVar2
+0x00000483 4 str.main
+0x00000489 3 str.out
+0x0000048e 7 str.println
+0x00000497 8 str.toString
+0x000004a1 8 str.world___
+0x000004ab 8 str.worldVar
+0x000004b5 9 str.worldVar2
+0x0000025c 1 entry0
+0x00000000 112 section.header
+0x00000070 0 section_end.header
+0x00000070 456 section.constpool
+0x00000238 0 section_end.constpool
+0x00000238 224 section.code
+0x00000318 0 section_end.code
+0x000004bc 248 section.data
+0x000005b4 0 section_end.data
+0x00000168 0 sym.LHello.sfield_localVar2:I
+0x00000160 0 sym.LHello.ifield_localVar:I
+0x00000238 20 sym.LHello.method._init___V
+0x0000025c 34 sym.LHello.method.main__Ljava_lang_String__V
+0x00000290 84 sym.LHello.method.foo_I_V
+0x00000170 0 sym.LWorld.ifield_worldVar:I
+0x00000178 0 sym.LWorld.ifield_worldVar2:I
+0x000002f4 20 sym.LWorld.method._init___V
+0x00000318 68 sym.LWorld.method.foo_I_V
+0x000001b0 0 sym.imp.Ljava_io_PrintStream.method.println_Ljava_lang_String__V
+0x000001b8 0 sym.imp.Ljava_lang_Integer.method._init__I_V
+0x000001c0 0 sym.imp.Ljava_lang_Integer.method.toString__Ljava_lang_String_
+0x000001c8 0 sym.imp.Ljava_lang_Object.method._init___V
+0x000001d0 0 sym.imp.Ljava_lang_StringBuilder.method._init___V
+0x000001d8 0 sym.imp.Ljava_lang_StringBuilder.method.append_Ljava_lang_String__Ljava_lang_StringBuilder_
+0x000001e0 0 sym.imp.Ljava_lang_StringBuilder.method.toString__Ljava_lang_String_
+0x000001e8 1 class.LHello
+0x00000208 1 class.LWorld
+'
+run_test
+
+NAME='DEX HelloWorld.dex imports (ii command)'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="ii"
+EXPECT='[Imports]
+ordinal=000 plt=0x000001b0 bind=NONE type=FUNC name=Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
+ordinal=001 plt=0x000001b8 bind=NONE type=FUNC name=Ljava/lang/Integer.method.<init>(I)V
+ordinal=002 plt=0x000001c0 bind=NONE type=FUNC name=Ljava/lang/Integer.method.toString()Ljava/lang/String;
+ordinal=003 plt=0x000001c8 bind=NONE type=FUNC name=Ljava/lang/Object.method.<init>()V
+ordinal=004 plt=0x000001d0 bind=NONE type=FUNC name=Ljava/lang/StringBuilder.method.<init>()V
+ordinal=005 plt=0x000001d8 bind=NONE type=FUNC name=Ljava/lang/StringBuilder.method.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ordinal=006 plt=0x000001e0 bind=NONE type=FUNC name=Ljava/lang/StringBuilder.method.toString()Ljava/lang/String;
+
+7 imports
+'
+run_test
+
+NAME='DEX HelloWorld.dex exports (iE command)'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="iE"
+EXPECT='[Exports]
+vaddr=0x00000238 paddr=0x00000238 ord=002 fwd= sz=20 bind=GLOBAL type=FUNC name=LHello.method.<init>()V
+vaddr=0x0000025c paddr=0x0000025c ord=003 fwd= sz=34 bind=GLOBAL type=FUNC name=LHello.method.main([Ljava/lang/String;)V
+vaddr=0x00000290 paddr=0x00000290 ord=004 fwd= sz=84 bind=GLOBAL type=FUNC name=LHello.method.foo(I)V
+vaddr=0x000002f4 paddr=0x000002f4 ord=007 fwd= sz=20 bind=GLOBAL type=FUNC name=LWorld.method.<init>()V
+vaddr=0x00000318 paddr=0x00000318 ord=008 fwd= sz=68 bind=GLOBAL type=FUNC name=LWorld.method.foo(I)V
+
+5 exports
+'
+run_test
+
+NAME='DEX HelloWorld.dex pi command'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="pi 1 @0x240; pi 1 @0x246; pi 1 @0x25c; pi 1 @0x264; pi 1 @0x276; pi 1 @0x026a; pi 1 @0x0294; pi 1 @0x0298"
+EXPECT='iput v0, v1, LHello;->localVar I
+sput v0, LHello;->localVar2 I
+sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream;
+invoke-virtual {v0, v1}, Ljava/io/PrintStream.println(Ljava/lang/String;)V ; 0x5
+invoke-virtual {v0, v1}, LHello.foo(I)V ; 0x1
+new-instance v0, LHello;
+new-instance v1, Ljava/lang/StringBuilder;
+invoke-direct {v1}, Ljava/lang/StringBuilder.<init>()V ; 0x9
+'
+run_test
+
+NAME='DEX HelloWorld.dex debug info'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="pd 1 @0x00000290|grep Hello.java; pd 1 @0x000002f4|grep World.java; pd 1 @0x00000318|grep World.java;"
+EXPECT='            0x00000290      62000400       sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream; ; Hello.java:9
+            0x000002f4      701008000100   invoke-direct {v1}, Ljava/lang/Object.<init>()V ; 0x8 ; World.java:5
+            0x00000318      62000400       sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream; ; World.java:11
+'
+run_test
+
+NAME='DEX HelloWorld.dex debug info CL'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="CL @0x00000290; CL @0x000002f4; CL @0x00000318;"
+EXPECT='file Hello.java
+line 9
+file World.java
+line 5
+file World.java
+line 11
+'
+run_test
+
+NAME='DEX HelloWorld.dex dexdump'
+FILE=${APP}
+ARGS=''
+BROKEN=
+IGNORE_ERR=1
+CMDS="iHH"
+EXPECT="DEX file header:
+magic               : 'dex\n035\0'
+checksum            : 190ab819
+signature           : 86db...7869
+file_size           : 1460
+header_size         : 112
+link_size           : 0
+link_off            : 0 (0x000000)
+string_ids_size     : 31
+string_ids_off      : 112 (0x000070)
+type_ids_size       : 11
+type_ids_off        : 236 (0x0000ec)
+proto_ids_size       : 6
+proto_ids_off        : 280 (0x000118)
+field_ids_size      : 5
+field_ids_off       : 352 (0x000160)
+method_ids_size     : 12
+method_ids_off      : 392 (0x000188)
+class_defs_size     : 2
+class_defs_off      : 488 (0x0001e8)
+data_size           : 908
+data_off            : 552 (0x000228)
+
+Class #0            -
+  Class descriptor  : 'LHello;'
+  Access flags      : 0x0001 (PUBLIC)
+  Superclass        : 'Ljava/lang/Object;'
+  Interfaces        -
+  Static fields     -
+    #0              : (in LHello;)
+      name          : 'localVar2'
+      type          : 'I'
+      access        : 0x0008 (STATIC)
+  Instance fields   -
+    #0              : (in LHello;)
+      name          : 'localVar'
+      type          : 'I'
+      access        : 0x0000 ()
+  Direct methods    -
+    #0              : (in LHello;)
+      name          : '<init>'
+      type          : '()V'
+      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      code          -
+      registers     : 2
+      ins           : 1
+      outs          : 1
+      insns size    : 10 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=4
+        0x0003 line=5
+        0x0006 line=6
+        0x0009 line=7
+      locals        :
+        0x0000 - 0x000a reg=1 this LHello;
+    #1              : (in LHello;)
+      name          : 'main'
+      type          : '([Ljava/lang/String;)V'
+      access        : 0x0009 (PUBLIC STATIC)
+      code          -
+      registers     : 3
+      ins           : 1
+      outs          : 2
+      insns size    : 17 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=14
+        0x0007 line=15
+        0x000c line=16
+        0x0010 line=17
+      locals        :
+  Virtual methods   -
+    #0              : (in LHello;)
+      name          : 'foo'
+      type          : '(I)V'
+      access        : 0x0001 (PUBLIC)
+      code          -
+      registers     : 5
+      ins           : 2
+      outs          : 2
+      insns size    : 42 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=9
+        0x0021 line=10
+        0x0029 line=11
+      locals        :
+        0x0000 - 0x002a reg=3 this LHello;
+  source_file_idx   : 2 (Hello.java)
+
+Class #1            -
+  Class descriptor  : 'LWorld;'
+  Access flags      : 0x0001 (PUBLIC)
+  Superclass        : 'Ljava/lang/Object;'
+  Interfaces        -
+  Static fields     -
+  Instance fields   -
+    #0              : (in LWorld;)
+      name          : 'worldVar'
+      type          : 'I'
+      access        : 0x0000 ()
+    #1              : (in LWorld;)
+      name          : 'worldVar2'
+      type          : 'I'
+      access        : 0x0000 ()
+  Direct methods    -
+    #0              : (in LWorld;)
+      name          : '<init>'
+      type          : '()V'
+      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      code          -
+      registers     : 2
+      ins           : 1
+      outs          : 1
+      insns size    : 10 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=5
+        0x0003 line=6
+        0x0006 line=7
+        0x0009 line=8
+      locals        :
+        0x0000 - 0x000a reg=1 this LWorld;
+  Virtual methods   -
+    #0              : (in LWorld;)
+      name          : 'foo'
+      type          : '(I)V'
+      access        : 0x0001 (PUBLIC)
+      code          -
+      registers     : 5
+      ins           : 2
+      outs          : 2
+      insns size    : 34 16-bit code units
+      catches       : (none)
+      positions     :
+        0x0000 line=11
+        0x0021 line=12
+      locals        :
+        0x0000 - 0x0022 reg=3 this LWorld;
+  source_file_idx   : 17 (World.java)
+
+"
+run_test

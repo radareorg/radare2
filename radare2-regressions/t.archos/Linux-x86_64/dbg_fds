@@ -1,0 +1,37 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2014-2015  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='dbg.fds.count'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS='dd~?
+dk 9'
+EXPECT='3
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.fds.close'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+BROKEN=1
+CMDS='dd~?
+dd-1
+dd~?
+dk 9'
+EXPECT='3
+2
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.fds.count'
+FILE=../../bins/elf/analysis/elf-nx
+ARGS=-d
+CMDS='dd~?
+dk 9'
+EXPECT='3
+'
+run_test

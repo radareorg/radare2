@@ -1,0 +1,69 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2017 maijin
+[ -e tests.sh ] && . ./tests.sh || . ../../tests.sh
+
+NAME='arm relsub >256'
+FILE=malloc://800
+ARGS=
+BROKEN=
+CMDS='wx 0d039fe5
+e asm.arch=arm
+e asm.bits=32
+e asm.comments=false
+e asm.bytes=false
+e asm.offset=false
+f sym.callback=0x315
+pd 1'
+EXPECT='                 ldr r0, [sym.callback]
+'
+run_test
+
+NAME='arm relsub <256'
+FILE=-
+ARGS=
+BROKEN=
+CMDS='wx 0c009fe5
+e asm.arch=arm
+e asm.bits=32
+e asm.comments=false
+e asm.bytes=false
+e asm.offset=false
+f sym.callback=0x14
+pd 1'
+EXPECT='                 ldr r0, [0x00000014]
+'
+run_test
+
+NAME="arm relsub"
+FILE=../../bins/elf/arm1.bin
+CMDS='e asm.arch=arm
+e asm.bits=32
+e asm.comments=false
+e asm.bytes=false
+e asm.offset=false
+pd 1 @ 0x00008168
+pd 1 @ 0x00008204
+pd 1 @ 0x0000816c
+pd 1 @ 0x000081b0
+'
+EXPECT='                 ldr r0, sym.main
+                 ldr r1, obj.object.6286
+                 ldr r3, sym.__libc_csu_init
+                 ldr r4, loc._d_6
+'
+run_test
+
+NAME="arm relsub"
+FILE=../../bins/elf/analysis/arm-ls
+BROKEN=1
+CMDS='e asm.arch=arm
+e asm.bits=32
+e asm.comments=false
+e asm.bytes=false
+e asm.offset=false
+pd 1 @ 0x00014368
+'
+EXPECT='                 ldr r0, [main]
+'
+run_test
+

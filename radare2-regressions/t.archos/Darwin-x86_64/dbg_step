@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# TODO: This script requires ROOT to be run in OSX
+# (or just sign the r2 binary to get debugger priviledges)
+# GPL 3+ - Copyright (C) 2014  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# "!" - run commands (via system)
+
+NAME='dbg.step'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='
+.dr*
+s rip
+f a=rip
+wx 90
+pi 1 # hack this shouldnt be here
+ds
+.dr*
+?v rip-a
+'
+EXPECT='nop
+0x1
+'
+IGNORE_ERR=1
+run_test
+
+NAME='dbg.symbols'
+FILE=/bin/ls
+ARGS=-d
+BROKEN=
+CMDS='is~?
+?!?e zerosyms
+'
+EXPECT='
+'
+run_test

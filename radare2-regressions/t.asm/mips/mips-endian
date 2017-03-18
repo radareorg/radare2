@@ -1,0 +1,41 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="assembler"
+CMDS='
+e asm.arch=mips.gnu
+e asm.bits=32
+e cfg.bigendian=0
+pa lui t9, 0x41
+e cfg.bigendian=1
+pa lui t9, 0x41
+e cfg.bigendian=0
+pad 4100193c
+e cfg.bigendian=1
+pad 3c190041
+'
+EXPECT='4100193c
+3c190041
+lui t9, 0x41
+lui t9, 0x41
+'
+run_test
+
+NAME="with-spaces"
+CMDS='
+e asm.arch=mips.gnu
+e asm.bits=32
+e cfg.bigendian=0
+pa addiu v0, v1, 33
+pa addiu v0 v1 33
+e cfg.bigendian=1
+pa addiu v0, v1, 33
+pa addiu v0 v1 33
+'
+EXPECT='21006224
+21006224
+24620021
+24620021
+'
+
+run_test

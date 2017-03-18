@@ -1,0 +1,90 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='test pDj missing newline issue'
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 4883c768
+pDj 4
+'
+EXPECT='[{"offset":0,"val":104,"esil":"104,rdi,+=,$o,of,=,$s,sf,=,$z,zf,=,$c63,cf,=,$p,pf,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":4,"opcode":"add rdi, 0x68","bytes":"4883c768","family":"cpu","type":"add","type_num":17,"type2_num":0}]
+'
+run_test
+
+NAME='empty irj should print empty array'
+CMDS='
+irj
+'
+EXPECT='[]'
+run_test
+
+type jq 2>/dev/null >&2
+if [ $? = 0 ]; then
+# if we have jq installed...
+if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+  arr='
+	"aa ; pdfj"
+	"izzj"
+	"ij"
+	"iej"
+	"izj"
+	"iIj"
+	"isj"
+	"iSj"
+	"irj"
+	"iRj"
+	"iSj"
+	"iSj sha1"
+	"aa ; aaij"
+	"aa ; afij"
+	"aa ; aerj"
+	"aa ; agj"
+	"aa ; agcj @ sym.main"
+	"aa ; aoj"
+	"aa ; aOj"
+	"aa ; arj"
+	"aa ; axj @ sym.main"
+	"aa ; axtj @ sym.main"
+	"aa ; axfj @ sym.main"
+	"drj"
+	"dbj"
+	"fj"
+	"fsj"
+	"p8j"
+	"pdfj"
+	"iaj"
+	"pdrj"
+	"aa ; pdfj @ sym.main"
+	"aa ; pdj @@@ functions"
+	"aa ; aflqj"
+	"aa ; aarj"
+	"oj"
+	"pDj"
+	"pdj"
+	"pij"
+	"psj @ str.csapp"
+	"sj"
+	"Sj"
+	"pdj"
+	"Tj"
+	"ij"
+	"CCj"
+	"ej"
+	"p-j"
+'
+
+IFS=`printf "\t"`
+	for i in $arr ; do
+		c="`echo $i`"
+		NAME="JSON: $c Well-formed"
+		CMDS="!r2 -qc $c ../bins/elf/bomb | jq . > /dev/null && echo \"1\""
+		EXPECT='1
+'
+		run_test
+	done
+fi
+
+else
+	echo "Not running this because there's no jq installed"
+fi

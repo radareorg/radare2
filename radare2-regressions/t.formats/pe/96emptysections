@@ -1,0 +1,45 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami 96emptysections.exe - open and analyse'
+FILE=../../bins/pe/96emptysections.exe
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami 96emptysections.exe - entrypoint'
+FILE=../../bins/pe/96emptysections.exe
+CMDS='
+s
+'
+EXPECT='0x402000
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami 96emptysections.exe - entrypoint pif'
+FILE=../../bins/pe/96emptysections.exe
+BROKEN=1
+CMDS='aaa
+pif @ entry0
+'
+EXPECT='push 0x402028
+call sub.msvcrt.dll_printf_18
+add esp, 4
+push 0
+call sub.kernel32.dll_ExitProcess_1e
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami 96workingsections.exe - sections list'
+FILE=../../bins/pe/96emptysections.exe
+ARGS='-n'
+CMDS="!rabin2 -pS ${FILE}"
+FILTER='grep sections'
+EXPECT='96 sections
+'
+IGNORE_ERR=1
+run_test

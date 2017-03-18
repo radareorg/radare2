@@ -1,0 +1,35 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2011-2013  pancake, Edd Barrett, Simon Ruderich
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# Small request.
+NAME='malloc://1'
+FILE=malloc://1
+ARGS=
+CMDS='
+b 0x40
+px
+'
+EXPECT='- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  00ff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00000010  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00000020  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00000030  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+'
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd	[0-9][0-9]*/fd	42/"'
+run_test
+
+# No memory requested.
+NAME='malloc://'
+FILE=malloc://
+ARGS=
+IGNORE_ERR=1
+CMDS='
+'
+EXPECT=
+EXPECT_ERR="Cannot allocate () 0 bytes
+Cannot open 'malloc://'
+"
+EXITCODE=1
+run_test

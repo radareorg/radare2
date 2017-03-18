@@ -1,0 +1,310 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# _movi		a2, 6
+# _movi.n	a3, 7
+# _add		a8, a2, a3
+# _addx2	a7, a2, a3
+# _addi		a2, a2, 1
+# _addi.n	a3, a2, 2
+# _movi		a4, 8
+# _movi.n	a5, 3
+# _sub		a6, a5, a4
+# _subx2	a6, a5, a4
+
+NAME="basic integer arith"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 22a0060c7330828030729022c2012b3242a0080c354065c04065d0
+aecu 0x0000001b
+ar~a2,a3,a4,a5,a6,a7,a8
+'
+EXPECT='a2 = 0x00000007
+a3 = 0x00000009
+a4 = 0x00000008
+a5 = 0x00000003
+a6 = 0xfffffffe
+a7 = 0x00000013
+a8 = 0x0000000d
+'
+run_test
+
+# _movi		a2, 0x50
+# _movi		a3, 0xbb
+# _movi		a4, -1
+# _movi		a5, 0xcc
+# _movi.n	a6, -1
+# _s32i		a3, a2, 0x00
+# _s16i		a4, a2, 0x04
+# _s8i		a5, a2, 0x08
+# _l32i		a7, a2, 0x00
+# _l16si	a8, a2, 0x04
+# _l16ui	a9, a2, 0x04
+# _l8ui		a10, a2, 0x08
+
+NAME="load/store imm"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 22a05032a0bb42afff52a0cc7cf6326200425202524208722200829202921202a20208
+aecu 0x00000023
+ar~a2,a3,a4,a5,a6,a7,a8,a9,a10
+'
+EXPECT='a2 = 0x00000050
+a3 = 0x000000bb
+a4 = 0xffffffff
+a5 = 0x000000cc
+a6 = 0xffffffff
+a7 = 0x000000bb
+a8 = 0xffffffff
+a9 = 0x0000ffff
+a10 = 0x000000cc
+'
+run_test
+
+# .org 0x00
+# test: .word 0xaabbccdd
+# .org 0x14
+# ; load 4 times because l32r size is 3 bytes
+# ; and target address is a 4-byte aligned
+# ; this ensures correct offset calculation in esil
+# _l32r a2, test
+# _l32r a3, test
+# _l32r a4, test
+# _l32r a5, test
+
+NAME="load relative"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+s 0
+wx ddccbbaa
+s 0x14
+wx 21fbff31faff41f9ff51f8ff
+f8ff
+aes
+aes
+aes
+aes
+ar~a2,a3,a4,a5
+'
+EXPECT='a2 = 0xaabbccdd
+a3 = 0xaabbccdd
+a4 = 0xaabbccdd
+a5 = 0xaabbccdd
+'
+run_test
+
+# .org 0x00
+# _call0 test1
+# _movi a2, 0x20
+# _callx0 a2
+# .org 0x10
+# test1: _ret
+# .org 0x20
+# test2: _movi a0, 0x30
+# _callx0 a0
+
+NAME="call0 ABI"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx c5000022a020c00200000000000000008000000000000000000000000000000002a030c00000
+aes
+ar~pc
+ar~a0
+aes
+aes
+ar~a2
+aes
+ar~pc
+ar~a0
+aes
+aes
+ar~pc
+ar~a0
+'
+EXPECT='pc = 0x00000010
+a0 = 0x00000003
+a2 = 0x00000020
+pc = 0x00000020
+a0 = 0x00000009
+pc = 0x00000030
+a0 = 0x00000026
+'
+run_test
+
+# _movi a2, 0x02
+# _bgei a2, 0x03, test1
+# test1_exit:
+# _beqi a2, 0x03, test1
+# .org 0x0c
+# test1: _j test1_exit
+
+NAME="branch compare imm"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 22a002e6320526320200000086fdff
+aes
+aes
+ar~pc
+aes
+ar~pc
+aes
+ar~pc
+'
+EXPECT='pc = 0x0000000c
+pc = 0x00000006
+pc = 0x00000009
+'
+run_test
+
+# _movi a2, 0x02
+# _bgez a2, test
+# .org 0x10
+# test: _j 0x00
+
+NAME="branch compare single"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 22a002d6920000000000000000000000060000
+aes
+aes
+ar~pc
+'
+EXPECT='pc = 0x00000010
+'
+run_test
+
+# _movi a2, 0x02
+# _movi a3, 0x03
+# _beq a3, a2, test
+# _bge a3, a2, test
+# .org 0x10
+# test: _j 0x00
+
+NAME="branch compare"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 22a00232a00327130627a30300000000060000
+aes
+aes
+aes
+aes
+ar~pc
+'
+EXPECT='pc = 0x00000010
+'
+run_test
+
+# .org 0
+# data1: .word 0xFF0F0000
+# data2: .word 0xFF0F1234
+# .org 0x10
+# _l32r a2, data1
+# _l32r a3, data2
+# _ball a3, a2, test
+# .org 0x20
+# test: _j test
+
+NAME="branch check mask"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 00000fff34120fff000000000000000021fcff31fcff2743060000000000000006ffff
+s 0x10
+aeip
+aes
+aes
+aes
+ar~pc
+'
+EXPECT='pc = 0x00000020
+'
+run_test
+
+# .org 0
+# data: .word 0x40000000
+# .org 0x10
+# _l32r a2, data
+# _bbsi a2, 30, test
+# .org 0x20
+# test: _j test
+
+NAME="branch check bit imm"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 0000004000000000000000000000000021fcffe7f2090000000000000000000006ffff
+s 0x10
+aeip
+aes
+aes
+ar~pc
+'
+EXPECT='pc = 0x00000020
+'
+run_test
+
+# .org 0
+# data: .word 0x04000000
+# .org 0x10
+# _l32r a2, data
+# _movi a3, 26
+# _bbs  a2, a3, test
+# .org 0x20
+# test: _j test
+
+NAME="branch check bit"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+wx 0000000400000000000000000000000021fcff32a01a37d2060000000000000006ffff
+s 0x10
+aeip
+aes
+aes
+aes
+ar~pc
+'
+EXPECT='pc = 0x00000020
+'
+run_test
+
+# .org 0
+# data: .word 0xAABBCCDD
+# .org 0x10
+# _l32r a2, data
+# _extui a3, a2, 8, 16
+
+NAME="extract unsigned imm"
+FILE=malloc://0x200
+CMDS='
+e asm.arch=xtensa
+e asm.bits=32
+e asm.esil=1
+wx ddccbbaa00000000000000000000000021fcff2038f4
+s 0x10
+aeip
+aes
+aes
+ar~a3
+'
+EXPECT='a3 = 0x0000bbcc
+'
+run_test
+

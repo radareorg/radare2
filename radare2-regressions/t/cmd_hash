@@ -1,0 +1,62 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+# # + (tab, [0AZaz] and most ascii symbols) + ~? to count lines (should never print anything)
+# ?, ! and ' are excluded
+NAME='hash_comments_noop'
+CMDS='
+#	~?
+# ~?
+#"~?
+##~?
+#$~?
+#%~?
+#&~?
+#(~?
+#)~?
+#*~?
+#+~?
+#,~?
+#-~?
+#.~?
+#/~?
+#0~?
+#:~?
+#;~?
+#<~?
+#=~?
+#>~?
+#@~?
+#A~?
+#Z~?
+#[~?
+#\~?
+#]~?
+#^~?
+#_~?
+#`~?
+#a~?
+#z~?
+#{~?
+#|~?
+#}~?
+#~~?
+'
+EXPECT=''
+run_test
+
+NAME='hash_subcommands_not_noop'
+CMDS='
+?! `#! ~?`
+?v
+?! `#? ~? `
+?v
+?! `#a ~? `
+?v
+'
+EXPECT='0
+0
+0x0
+0
+'
+run_test

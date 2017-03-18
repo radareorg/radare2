@@ -1,0 +1,264 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='rasm2 -e'
+NAME='Rasm2 arm asm/dis endian'
+CMDS="!rasm2 -a arm -b32 'mov r0, 3'
+!rasm2 -a arm -b32 -e 'mov r0, 3'
+!rasm2 -a arm -b32 -d 0300a0e3
+!rasm2 -a arm -b32 -e -d e3a00003
+"
+EXPECT='0300a0e3
+e3a00003
+mov r0, 3
+mov r0, 3
+'
+run_test
+
+NAME='rasm2 -a -e'
+NAME='Rasm2'
+CMDS="!rasm2 -a arm -b32 'mov r0, 3'"
+EXPECT='0300a0e3
+'
+run_test
+
+
+NAME='Rasm2'
+NAME='Rasm2'
+CMDS="!rasm2 -a x86 -b 64 -d '5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3' "
+EXPECT='push rbp
+mov ebp, esp
+sub esp, 0x20
+cmp eax, 0
+jne 0x16
+mov eax, 0
+jmp 0x1b
+mov eax, 1
+add esp, 0x20
+pop rbp
+ret
+'
+run_test
+
+NAME='Rasm2 #1167'
+CMDS="!rasm2 -a x86 -b 64 'cmp rax,rbx' "
+EXPECT='4839d8
+'
+run_test
+
+NAME='Rasm2 #1167 2'
+CMDS="!rasm2 -a x86 -b 64 'test rax, rbx' "
+EXPECT='4885d8
+'
+run_test
+
+NAME='Rasm2 #1167 3'
+BROKEN=
+CMDS="!rasm2 -s att -a x86.as -b 64 'test %rbx, %rax' "
+EXPECT='4885d8
+'
+run_test
+
+NAME='Rasm2 #1167 4'
+BROKEN=
+CMDS="!rasm2 -s intel -a x86.as -b 64 'test rax, rbx' "
+EXPECT='4885d8
+'
+run_test
+
+S=$
+NAME='Rasm2 #1167 5'
+CMDS="!rasm2 -s att -a x86.as -b 64 'add ${S}33, %rbx' "
+EXPECT='4883c321
+'
+run_test
+
+NAME='Rasm2 #1167 6'
+CMDS="!rasm2 -s intel -a x86.as -b 64 'add rbx, 33' "
+EXPECT='4883c321
+'
+run_test
+
+NAME='Rasm2 #1900'
+CMDS="!rasm2 -a x86 -b 32 'mov [0x33], eax'
+!rasm2 -a x86 -b 32 'mov eax, 33'
+!rasm2 -a x86 -b 32 'mov eax, 0x33'
+"
+EXPECT='890533000000
+b821000000
+b833000000
+'
+run_test
+
+NAME='Rasm2 #1900 (detect syntax error - case 1)'
+CMDS="!rasm2 -a x86 -b 32 'mov hello, eax'"
+EXPECT_ERR="Cannot assemble 'mov hello, eax' at line 3
+invalid
+"
+run_test
+
+NAME='Rasm2 #1900 (detect syntax error - case 2)'
+CMDS="!rasm2 -a x86 -b 32 'mov 33, eax'"
+EXPECT_ERR="Cannot assemble 'mov hello, eax' at line 3
+invalid
+"
+run_test
+
+NAME='Rasm2 #1900 (detect syntax error - case 3)'
+CMDS="!rasm2 -a x86 -b 32 'mov eax, hello'"
+EXPECT_ERR="Cannot assemble 'mov hello, eax' at line 3
+invalid
+"
+run_test
+
+
+NAME='rasm2 -h~Usage?"'
+CMDS='!!rasm2 -h~Usage?'
+EXPECT='1
+'
+run_test
+
+NAME='Rasm2 -C'
+CMDS="!rasm2 -C -a x86 -b 32 'mov eax, 33'"
+EXPECT='"\xb8\x21\x00\x00\x00"
+'
+run_test
+
+NAME='Rasm2 -d'
+CMDS="!rasm2 -d -a x86 -b 32 'b821000000'"
+EXPECT='mov eax, 0x21
+'
+run_test
+
+NAME='Rasm2 -D'
+CMDS="!rasm2 -D -a x86 -b 32 'b821000000'"
+EXPECT='0x00000000   5               b821000000  mov eax, 0x21
+'
+run_test
+
+NAME='Rasm2 -s'
+CMDS="!rasm2 -s att -a x86 -b 32 -D '31ed'"
+BROKEN=
+EXPECT='0x00000000   2                     31ed  xorl %ebp, %ebp
+'
+run_test
+
+NAME='Rasm2 -o'
+CMDS="!rasm2 -s att -o 0xa -a x86 -b 32 -D '31ed'"
+BROKEN=
+EXPECT='0x0000000a   2                     31ed  xorl %ebp, %ebp
+'
+run_test
+
+NAME='Rasm2 -F pseudo'
+CMDS="!rasm2 -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed "
+BROKEN=
+EXPECT='0x0000000a   2                     31ed  ebp = 0
+'
+run_test
+
+NAME='Rasm2 -F'
+CMDS="!rasm2 -o 0xa -a x86 -b 32 -D 31ed"
+BROKEN=
+EXPECT='0x0000000a   2                     31ed  xor ebp, ebp
+'
+run_test
+
+NAME='Rasm2 -F -o order bug'
+CMDS="!rasm2 -a x86 -b 32 -o 0xa -D 31ed"
+BROKEN=
+EXPECT='0x0000000a   2                     31ed  xor ebp, ebp
+'
+run_test
+
+NAME='Rasm2 -B'
+CMDS="!rasm2 -a x86 -b16 -B 'xor al, 0x34';echo"
+BROKEN=
+EXPECT='44
+'
+run_test
+
+NAME='Rasm2 -s att -ax86.as -b 64 movq %rdx, %rax'
+CMDS="!rasm2 -s att -a x86.as -b 64 'movq %rdx, %rax'"
+BROKEN=
+EXPECT='4889d0
+'
+run_test
+
+NAME='rasm2 -v~commit?"'
+CMDS='!!rasm2 -v~commit?'
+EXPECT='1
+'
+run_test
+
+NAME='Rasm2 -w'
+CMDS="!rasm2 -w -a x86 -b 32 'mov'"
+EXPECT='moves data from src to dst
+'
+run_test
+
+NAME='Rasm2  dissassemble ARM32 binary file'
+CMDS="!rasm2 -DB -a arm -o 0x200 -b 32 -f ../../bins/other/rasm2/testARM32.bin"
+BROKEN=
+EXPECT='0x00000200   4                 4661b0e1  asrs r6, r6, 2
+0x00000204   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
+0x00000208   4                 0040a0e3  mov r4, 0
+0x0000020c   4                 014084e2  add r4, r4, 1
+0x00000210   4                 043095e4  ldr r3, [r5], 4
+0x00000214   4                 0920a0e1  mov r2, sb
+0x00000218   4                 0810a0e1  mov r1, r8
+0x0000021c   4                 0700a0e1  mov r0, r7
+0x00000220   4                 33ff2fe1  blx r3
+0x00000224   4                 060054e1  cmp r4, r6
+'
+run_test
+
+NAME='Rasm2  dissassemble ARM32 binary file with skip'
+CMDS="!rasm2 -DB -a arm -o 0x200 -b 32 -f ../../bins/other/rasm2/testARM32.bin -i 4"
+BROKEN=
+EXPECT='0x00000200   4                 f087bd08  popeq {r4, r5, r6, r7, r8, sb, sl, pc}
+0x00000204   4                 0040a0e3  mov r4, 0
+0x00000208   4                 014084e2  add r4, r4, 1
+0x0000020c   4                 043095e4  ldr r3, [r5], 4
+0x00000210   4                 0920a0e1  mov r2, sb
+0x00000214   4                 0810a0e1  mov r1, r8
+0x00000218   4                 0700a0e1  mov r0, r7
+0x0000021c   4                 33ff2fe1  blx r3
+0x00000220   4                 060054e1  cmp r4, r6
+'
+run_test
+
+NAME='rasm2 esil output # ldrls pc, [pc, r3, lsl 2]'
+CMDS="!rasm2 -a arm -b32 -E 03f19f97"
+EXPECT='cf,!,?{,zf,?{,2,2,8,$$,+,>>,<<,2,r3,<<,+,[4],pc,=
+'
+run_test
+
+NAME='rasm2 endian test 1'
+CMDS="!rasm2 -e -a arm -b 32 -d 0ad0a0e1"
+EXPECT='beq 0xff42838c
+'
+run_test
+
+NAME='rasm2 endian test 2'
+CMDS="!rasm2 -e -a arm -b 32 -d fff0a0e3"
+EXPECT='invalid
+'
+run_test
+
+NAME='Rasm2  SPP include directive'
+CMDS="!rasm2 -a x86 -b 32 -p -f ../../files/rasm2/include.asm"
+BROKEN=
+EXPECT='9083e803bb00000000cd80c3
+'
+run_test
+
+NAME='Rasm2  SPP nested conditionals'
+CMDS="!rasm2 -a x86 -b 32 -p -f ../../files/rasm2/nest.asm"
+BROKEN=
+EXPECT='83c10283e90583c301b90200000090
+'
+EXPECT_ERR='WARNING: WARN (line=1)
+ERROR: ERR (line=1)
+'
+run_test

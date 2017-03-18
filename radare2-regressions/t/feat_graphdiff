@@ -1,0 +1,12 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2013 pancake
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='graphdiff segfault'
+FILE=-
+BROKEN=
+ARGS=
+CMDS='cg / 2>/dev/null
+'
+EXPECT=""
+run_test

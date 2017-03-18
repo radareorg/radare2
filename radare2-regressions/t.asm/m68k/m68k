@@ -1,0 +1,30 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="${PLUGIN}: m68k filter"
+BROKEN=
+CMDS='e asm.arch=m68k
+e asm.bits=32
+wx 33fc010000a10000
+pi 1
+f foo.bar = 0xa10000
+pi 1
+'
+EXPECT='move.w 0x100, 0xa10000.l
+move.w 0x100, foo.bar
+'
+run_test
+
+NAME="${PLUGIN}: m68k filter2"
+BROKEN=
+CMDS='e asm.arch=m68k
+e asm.bits=32
+wx 33fc010000a10000
+pi 1
+f foo.bar = 0x100
+pi 1
+'
+EXPECT='move.w 0x100, 0xa10000.l
+move.w foo.bar, 0xa10000.l
+'
+run_test

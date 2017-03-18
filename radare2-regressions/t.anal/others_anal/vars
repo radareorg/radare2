@@ -1,0 +1,347 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2015  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+NAME='afva for esp based vars'
+FILE=malloc://1024
+ARGS= 
+CMDS='e asm.calls=false
+wx 83ec108b44241899f77c241c8b44241401d08944240c8b44242099f77c24288b44240c01d0894424088b5424148b44240c8d0c028b44242c99f7f98b44240801d0894424048b54240c8b44240801c28b44240401d083c410c38d4c240483e4f0ff71fc5589e55183ec046a076a066a056a046a036a026a01e883ffffff83c41c83ec08506844850408e847feffff83c410b8000000008b4dfcc98d61fcc36690669066909055575653e887feffff81c3371b000083ec0c8b6c24208db30cffffffe8d3fdffff8d8308ffffff29c6c1fe0285f6742531ff8db60000000083ec04ff74242cff74242c55ff94bb08ffffff83c70183c41039f775e383c40c5b5e5f
+e asm.bits=32
+e asm.comments=false
+aa
+afva
+pdf
+'
+EXPECT='/ (fcn) fcn.00000000 89
+|           ; var int local_4h @ esp+0x4
+|           ; var int local_8h @ esp+0x8
+|           ; var int local_ch @ esp+0xc
+|           ; arg int arg_14h @ esp+0x14
+|           ; arg int arg_18h @ esp+0x18
+|           ; arg int arg_1ch @ esp+0x1c
+|           ; arg int arg_20h @ esp+0x20
+|           ; arg int arg_28h @ esp+0x28
+|           ; arg int arg_2ch @ esp+0x2c
+|           0x00000000      83ec10         sub esp, 0x10
+|           0x00000003      8b442418       mov eax, dword [arg_18h]
+|           0x00000007      99             cdq
+|           0x00000008      f77c241c       idiv dword [arg_1ch]
+|           0x0000000c      8b442414       mov eax, dword [arg_14h]
+|           0x00000010      01d0           add eax, edx
+|           0x00000012      8944240c       mov dword [local_ch], eax
+|           0x00000016      8b442420       mov eax, dword [arg_20h]
+|           0x0000001a      99             cdq
+|           0x0000001b      f77c2428       idiv dword [arg_28h]
+|           0x0000001f      8b44240c       mov eax, dword [local_ch]
+|           0x00000023      01d0           add eax, edx
+|           0x00000025      89442408       mov dword [local_8h], eax
+|           0x00000029      8b542414       mov edx, dword [arg_14h]
+|           0x0000002d      8b44240c       mov eax, dword [local_ch]
+|           0x00000031      8d0c02         lea ecx, [edx + eax]
+|           0x00000034      8b44242c       mov eax, dword [arg_2ch]
+|           0x00000038      99             cdq
+|           0x00000039      f7f9           idiv ecx
+|           0x0000003b      8b442408       mov eax, dword [local_8h]
+|           0x0000003f      01d0           add eax, edx
+|           0x00000041      89442404       mov dword [local_4h], eax
+|           0x00000045      8b54240c       mov edx, dword [local_ch]
+|           0x00000049      8b442408       mov eax, dword [local_8h]
+|           0x0000004d      01c2           add edx, eax
+|           0x0000004f      8b442404       mov eax, dword [local_4h]
+|           0x00000053      01d0           add eax, edx
+|           0x00000055      83c410         add esp, 0x10
+\           0x00000058      c3             ret
+'
+run_test
+
+NAME='afva for fastcall with no esp vars'
+FILE=../../bins/elf/analysis/fast
+ARGS=
+CMDS='aa
+s sym.fastcaslled
+afC fastcall
+afC
+afva
+pdf
+'
+EXPECT="fastcall
+/ (fcn) sym.fastcaslled 59
+|   sym.fastcaslled (int arg_8h, int arg_ch);
+|           ; var int local_20h @ ebp-0x20
+|           ; var int local_1ch @ ebp-0x1c
+|           ; var int local_10h @ ebp-0x10
+|           ; var int local_ch @ ebp-0xc
+|           ; arg int arg_8h @ ebp+0x8
+|           ; arg int arg_ch @ ebp+0xc
+|              ; CALL XREF from 0x080484c7 (sym.main)
+|           0x0804841b      55             push ebp
+|           0x0804841c      89e5           mov ebp, esp
+|           0x0804841e      83ec28         sub esp, 0x28               ; '('
+|           0x08048421      894de4         mov dword [local_1ch], ecx
+|           0x08048424      8955e0         mov dword [local_20h], edx
+|           0x08048427      8b55e4         mov edx, dword [local_1ch]
+|           0x0804842a      8b45e0         mov eax, dword [local_20h]
+|           0x0804842d      01d0           add eax, edx
+|           0x0804842f      8945f4         mov dword [local_ch], eax
+|           0x08048432      8b45e0         mov eax, dword [local_20h]
+|           0x08048435      2b450c         sub eax, dword [arg_ch]
+|           0x08048438      8945f0         mov dword [local_10h], eax
+|           0x0804843b      ff7508         push dword [arg_8h]
+|           0x0804843e      ff75f0         push dword [local_10h]
+|           0x08048441      ff75f4         push dword [local_ch]
+|           0x08048444      6874850408     push str._i__i__i_n ; str._i__i__i_n ; \"%i %i %i.\" @ 0x8048574
+|           0x08048449      e8a2feffff     call sym.imp.printf        ; int printf(const char *format)
+|           0x0804844e      83c410         add esp, 0x10
+|           0x08048451      90             nop
+|           0x08048452      c9             leave
+\           0x08048453      c20800         ret 8
+"
+run_test
+NAME='afva for cdecl/stdcall with no esp vars'
+FILE=../../bins/elf/analysis/fast
+ARGS=
+CMDS='e asm.calls=false
+aa
+s sym.nonfastcaslled
+afC
+afva
+pdf
+'
+EXPECT='cdecl
+/ (fcn) sym.nonfastcaslled 51
+|           ; var int local_10h @ ebp-0x10
+|           ; var int local_ch @ ebp-0xc
+|           ; arg int arg_8h @ ebp+0x8
+|           ; arg int arg_ch @ ebp+0xc
+|           ; arg int arg_10h @ ebp+0x10
+|           ; arg int arg_14h @ ebp+0x14
+|              ; CALL XREF from 0x080484db (sym.main)
+|           0x08048456      55             push ebp
+|           0x08048457      89e5           mov ebp, esp
+|           0x08048459      83ec18         sub esp, 0x18
+|           0x0804845c      8b5508         mov edx, dword [arg_8h]     ; [0x8:4]=0
+|           0x0804845f      8b450c         mov eax, dword [arg_ch]     ; [0xc:4]=0
+|           0x08048462      01d0           add eax, edx
+|           0x08048464      8945f4         mov dword [local_ch], eax
+|           0x08048467      8b450c         mov eax, dword [arg_ch]     ; [0xc:4]=0
+|           0x0804846a      2b4514         sub eax, dword [arg_14h]
+|           0x0804846d      8945f0         mov dword [local_10h], eax
+|           0x08048470      ff7510         push dword [arg_10h]
+|           0x08048473      ff75f0         push dword [local_10h]
+|           0x08048476      ff75f4         push dword [local_ch]
+|           0x08048479      6874850408     push str._i__i__i_n ; str._i__i__i_n ; "%i %i %i." @ 0x8048574
+|           0x0804847e      e86dfeffff     call sym.imp.printf
+|           0x08048483      83c410         add esp, 0x10
+|           0x08048486      90             nop
+|           0x08048487      c9             leave
+\           0x08048488      c3             ret
+'
+run_test
+
+NAME='anal vars crash'
+FILE=-
+ARGS=
+CMDS='af
+afvr-*
+afvr-*
+'
+EXPECT=""
+run_test
+
+NAME='anal vars crash 2'
+FILE=-
+ARGS=
+CMDS='e asm.calls=false
+wx 554889e5534881ec3810000048830c24004881c42010000064488b042528000000488945e831c04885ff4889fb909090909090c3 @ 10
+aa
+afvn old_1 new_1
+afvn local_18h my_local
+pd 1
+'
+EXPECT="/ (fcn) fcn.00000000 62
+|           ; var int my_local @ rbp-0x18
+|           0x00000000      0000           add byte [rax], al
+"
+run_test
+
+
+NAME='afvb & afvn'
+FILE=../../bins/efi/bootia32.efi
+ARGS=
+CMDS='af
+afvn arg_8h ImageHandle
+afvn arg_ch SystemTable
+afvb~?ImageHandle
+afvb~?SystemTable
+'
+EXPECT="1
+1
+"
+run_test
+
+NAME='afvb* & afvn'
+FILE=../../bins/efi/bootia32.efi
+ARGS=
+CMDS='af
+afvn arg_8h ImageHandle
+afvn arg_ch SystemTable
+afvb*~?ImageHandle
+afvb*~?SystemTable
+'
+EXPECT="1
+1
+"
+run_test
+
+NAME='afvb idx... & afvn'
+FILE=../../bins/efi/bootia32.efi
+ARGS=
+CMDS='af
+afvb 8 ImageHandle blah @ 0x10002d8d
+afvb*~ImageHandle
+'
+EXPECT="afvb 8 ImageHandle blah @ 0x10002d8d
+"
+run_test
+
+NAME='afvbj'
+FILE=../../bins/efi/bootia32.efi
+ARGS=
+CMDS='af
+afvb 8 ImageHandle blah @ 0x10002d8d
+afvbj~?ImageHandle
+'
+EXPECT="1
+"
+run_test
+
+NAME='afvb-ArgName'
+FILE=../../bins/efi/bootia32.efi
+BROKEN=
+ARGS=
+CMDS='af
+afvb 8 ImageHandle blah @ 0x10002d8d
+afvb-ImageHandle
+afvb~?ImageHandle
+'
+EXPECT="0
+"
+run_test
+
+
+NAME='afvr & afvn'
+FILE=../../bins/efi/bootia32.efi
+BROKEN=
+ARGS=
+CMDS='af
+afvr esi myreg int @ 0x10002d8d
+afvr~?myreg
+afvn myreg blah
+afvr~?blah
+'
+EXPECT="1
+1
+"
+run_test
+
+NAME='afvr idx & afvr*'
+FILE=../../bins/efi/bootia32.efi
+BROKEN=
+ARGS=
+CMDS='af
+afvr esi myreg int @ 0x10002d8d
+afvr*~?myreg
+afvr*~?int
+'
+EXPECT="1
+1
+"
+run_test
+
+NAME='afvr-name'
+FILE=../../bins/efi/bootia32.efi
+BROKEN=
+ARGS=
+CMDS='af
+afvr esi myreg int @ 0x10002d8d
+afvr-myreg
+afvr~?myreg
+'
+EXPECT="0
+"
+run_test
+
+NAME='afvb-* afvr-*'
+FILE=../../bins/efi/bootia32.efi
+ARGS=
+BROKEN=
+CMDS='af
+afvb-*
+afvr-*
+afvb~?
+afvr~?
+'
+EXPECT="0
+0
+"
+run_test
+
+#TODO sfvbg afvbs afvrg afvrs
+
+NAME='anal vars count'
+FILE=../../bins/mach0/ls-osx-x86_64
+ARGS=
+CMDS='af
+afvb~?
+'
+EXPECT="14
+"
+run_test
+
+NAME='anal vars retype'
+FILE=../../bins/mach0/ls-osx-x86_64
+ARGS=
+CMDS='af
+afvt local_30h char
+afvb~l_30h
+'
+EXPECT="var char local_30h @ rbp-0x30
+"
+run_test
+
+NAME='anal vars rename'
+FILE=../../bins/mach0/ls-osx-x86_64
+ARGS=
+CMDS='af
+afvn local_30h newname
+afvb~newname
+'
+EXPECT="var int newname @ rbp-0x30
+"
+run_test
+
+NAME='vars commenting'
+FILE=malloc://1024
+ARGS=
+CMDS='af
+afvb 8 local_8h int
+Cvb 0x8 comment
+pd1~comment
+'
+EXPECT="|           ; arg int local_8h @ rbp+0x8    ; comment
+"
+run_test
+
+NAME='vars display in debugger'
+FILE=../../bins/elf/analysis/fast
+ARGS=
+CMDS='aa
+s 0x0804843b
+afvd arg_ch
+afvd local_10h
+'
+EXPECT="pf d @ebp+0xc
+pf d @ebp-0x10
+"
+run_test

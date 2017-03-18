@@ -1,0 +1,146 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME="search asm commands with internal grep"
+FILE=../bins/firmware/arduino_avr.bin
+ARGS='-a avr'
+BROKEN=
+CMDS='/c ldi~0x6d'
+EXPECT='0x00000276   # 2: ldi r22, 0x6d
+'
+run_test
+
+NAME="search asm commands with filter"
+FILE=../bins/firmware/arduino_avr.bin
+ARGS='-a avr'
+BROKEN=
+CMDS='/c ldi ~ 0x18'
+EXPECT='0x00001672   # 2: ldi r24, 0x18
+0x000019a4   # 2: ldi r18, 0x18
+'
+run_test
+
+NAME="search asm commands with filter and align = 2"
+FILE=../bins/firmware/arduino_avr.bin
+ARGS='-a avr'
+BROKEN=
+CMDS='e search.align=2
+/c in ~ 0x12
+'
+EXPECT='0x00000282   # 2: in r24, 0x12
+'
+run_test
+
+NAME="Search rop gadgets for in command"
+FILE=../bins/firmware/arduino_avr.bin
+ARGS='-a avr'
+BROKEN=
+CMDS='e search.align=2
+/R in r24'
+EXPECT='  0x0000027e           0e947304  call 0x8e6
+  0x00000282               82b3  in r24, 0x12
+  0x00000284               8058  subi r24, 0x80
+  0x00000286               82bb  out 0x12, r24
+  0x00000288               0895  ret
+
+  0x00000292           0e947304  call 0x8e6
+  0x00000296               88b3  in r24, 0x18
+  0x00000298               8058  subi r24, 0x80
+  0x0000029a               88bb  out 0x18, r24
+  0x0000029c               0895  ret
+
+  0x000005c4               12c0  rjmp 0x5ea
+  0x000005c6               8fb5  in r24, 0x2f
+  0x000005c8               8f77  andi r24, 0x7f
+  0x000005ca               02c0  rjmp 0x5d0
+
+  0x000005cc               8fb5  in r24, 0x2f
+  0x000005ce               8f7d  andi r24, 0xdf
+  0x000005d0               8fbd  out 0x2f, r24
+  0x000005d2               0895  ret
+
+  0x000005d4               85b5  in r24, 0x25
+  0x000005d6               8f7d  andi r24, 0xdf
+  0x000005d8               85bd  out 0x25, r24
+  0x000005da               0895  ret
+
+'
+run_test
+
+NAME="Search rop gadgets for IN command with align=2"
+FILE=../bins/firmware/arduino_avr.bin
+ARGS='-a avr'
+BROKEN=
+CMDS='e search.align=2
+/R in r24
+'
+EXPECT='  0x0000027e           0e947304  call 0x8e6
+  0x00000282               82b3  in r24, 0x12
+  0x00000284               8058  subi r24, 0x80
+  0x00000286               82bb  out 0x12, r24
+  0x00000288               0895  ret
+
+  0x00000292           0e947304  call 0x8e6
+  0x00000296               88b3  in r24, 0x18
+  0x00000298               8058  subi r24, 0x80
+  0x0000029a               88bb  out 0x18, r24
+  0x0000029c               0895  ret
+
+  0x000005c4               12c0  rjmp 0x5ea
+  0x000005c6               8fb5  in r24, 0x2f
+  0x000005c8               8f77  andi r24, 0x7f
+  0x000005ca               02c0  rjmp 0x5d0
+
+  0x000005cc               8fb5  in r24, 0x2f
+  0x000005ce               8f7d  andi r24, 0xdf
+  0x000005d0               8fbd  out 0x2f, r24
+  0x000005d2               0895  ret
+
+  0x000005d4               85b5  in r24, 0x25
+  0x000005d6               8f7d  andi r24, 0xdf
+  0x000005d8               85bd  out 0x25, r24
+  0x000005da               0895  ret
+
+'
+run_test
+
+NAME="disasm code after search command IN"
+FILE=../bins/firmware/arduino_avr.bin
+ARGS='-a avr'
+BROKEN=
+CMDS='
+s 0
+/c in ~ 0x18
+pd 5'
+EXPECT='0x00000296   # 2: in r24, 0x18
+        ,=< 0x00000000      0c94ac00       jmp 0x158
+       ,==< 0x00000004      0c94db00       jmp 0x1b6
+      ,===< 0x00000008      0c94db00       jmp 0x1b6
+     ,====< 0x0000000c      0c94db00       jmp 0x1b6
+    ,=====< 0x00000010      0c94db00       jmp 0x1b6
+'
+run_test
+
+NAME="entry point and bin format - arduino"
+FILE=../bins/firmware/arduino_avr.bin
+ARGS=
+BROKEN=
+CMDS='
+?v $$
+i~arch[1]'
+EXPECT='0x158
+avr
+'
+run_test
+
+NAME="entry point and bin format - jumpy"
+FILE=../bins/firmware/jumpy.bin
+ARGS=
+BROKEN=
+CMDS='
+?v $$
+i~arch[1]'
+EXPECT='0x8a
+avr
+'
+run_test

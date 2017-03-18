@@ -1,0 +1,50 @@
+#!/bin/sh
+# LGPL - Copyright (C) 2015 pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="auto string memory reference (iopa)"
+BROKEN=
+FILE=malloc://8096
+IGNORE_ERR=1
+ARGS=
+CMDS='e asm.relsub=false
+e asm.arch = x86
+e asm.bits=64
+e scr.color = false
+e io.va=0
+e asm.lines=0
+e asm.bytes=0
+e asm.cmtright=10
+wx 488b3541100000
+wv8 0x500 @ 0x1048
+w Hello @ 0x500
+pd 1
+'
+EXPECT='     ; [0x1048:8]=0x500 "Hello"
+ 0x00000000      mov rsi, qword [rip + 0x1041]
+'
+run_test
+
+NAME="auto string memory reference (io.va)"
+BROKEN=
+FILE=malloc://8096
+IGNORE_ERR=1
+ARGS=
+CMDS='e asm.relsub=false
+e asm.arch = x86
+e asm.bits=64
+e scr.color = false
+e io.va=1
+e asm.lines=0
+e asm.bytes=0
+e asm.cmtright=10
+wx 488b3541100000
+wv8 0x500 @ 0x1048
+w Hello @ 0x500
+pd 1
+'
+EXPECT='     ; [0x1048:8]=0x500 "Hello"
+ 0x00000000      mov rsi, qword [rip + 0x1041]
+'
+run_test

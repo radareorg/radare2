@@ -1,0 +1,98 @@
+#!/bin/sh
+for a in . .. ../.. ../../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+test_vector() {
+NAME="${1}: [${2}]"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+	BROKEN=1
+	if [ -n "${TRAVIS}" ]; then
+		unset BROKEN
+		return
+	fi
+fi
+CMDS='
+e asm.arch='${1}'
+e asm.bits=32
+wx '${3}'
+pi 1
+'
+EXPECT="${4}
+"
+run_test
+}
+
+PLUGIN=x86
+
+test_vector "${PLUGIN}" "VPMADCSSWD XMM0, XMM0, XMM0, XMM0" 8fe878a6c000 "vpmadcsswd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFRCZPD XMM0, XMM0" 8fe97881c0 "vfrczpd xmm0, xmm0"
+test_vector "${PLUGIN}" "VCVTPH2PS XMM0, XMM0, 0" 8fe878a0c000 "vcvtph2ps xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VCVTPS2PH XMM0, XMM0, 0" 8fe878a1c000 "vcvtps2ph xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VFRCZPS XMM0, XMM0" 8fe97880c0 "vfrczps xmm0, xmm0"
+test_vector "${PLUGIN}" "VFRCZSD XMM0, XMM0" 8fe97883c0 "vfrczsd xmm0, xmm0"
+test_vector "${PLUGIN}" "VFRCZSS XMM0, XMM0" 8fe97882c0 "vfrczss xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDBD XMM0, XMM0" 8fe978c2c0 "vphaddbd xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDBQ XMM0, XMM0" 8fe978c3c0 "vphaddbq xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDBW XMM0, XMM0" 8fe978c1c0 "vphaddbw xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDDQ XMM0, XMM0" 8fe978cbc0 "vphadddq xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDWD XMM0, XMM0" 8fe978c6c0 "vphaddwd xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDWQ XMM0, XMM0" 8fe978c7c0 "vphaddwq xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHSUBBW XMM0, XMM0" 8fe978e1c0 "vphsubbw xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHSUBDQ XMM0, XMM0" 8fe978e3c0 "vphsubdq xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHSUBWD XMM0, XMM0" 8fe978e2c0 "vphsubwd xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMADDPD XMM0, XMM0, XMM0, XMM0" c4e37969c000 "vfmaddpd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMADDPS XMM0, XMM0, XMM0, XMM0" c4e37968c000 "vfmaddps xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMADDSD XMM0, XMM0, XMM0, XMM0" c4e3796bc000 "vfmaddsd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMADDSS XMM0, XMM0, XMM0, XMM0" c4e3796ac000 "vfmaddss xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMADDPD YMM0, YMM0, YMM0, YMM0" c4e37d69c000 "vfmaddpd ymm0, ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "VFMADDPS YMM0, YMM0, YMM0, YMM0" c4e37d68c000 "vfmaddps ymm0, ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "VFMSUBPD YMM0, YMM0, YMM0, YMM0" c4e37d6dc000 "vfmsubpd ymm0, ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "VFMSUBPS YMM0, YMM0, YMM0, YMM0" c4e37d6cc000 "vfmsubps ymm0, ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "VFMADDSUBPD XMM0, XMM0, XMM0, XMM0" c4e3795dc000 "vfmaddsubpd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMADDSUBPS XMM0, XMM0, XMM0, XMM0" c4e3795cc000 "vfmaddsubps xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMSUBADDPD XMM0, XMM0, XMM0, XMM0" c4e3795fc000 "vfmsubaddpd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMSUBADDPS XMM0, XMM0, XMM0, XMM0" c4e3795ec000 "vfmsubaddps xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VFMADDSUBPD YMM0, YMM0, YMM0, YMM0" c4e37d5dc000 "vfmaddsubpd ymm0, ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "VFMADDSUBPS YMM0, YMM0, YMM0, YMM0" c4e37d5cc000 "vfmaddsubps ymm0, ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "VFMSUBADDPS YMM0, YMM0, YMM0, YMM0" c4e37d5ec000 "vfmsubaddps ymm0, ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "VFMSUBADDPD YMM0, YMM0, YMM0, YMM0" c4e37d5fc000 "vfmsubaddpd ymm0, ymm0, ymm0, ymm0"
+test_vector "${PLUGIN}" "VPCMOV XMM0, XMM0, XMM0, XMM0" 8fe878a2c000 "vpcmov xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPCOMB XMM0, XMM0, XMM0, 0" 8fe878ccc000 "vpcomb xmm0, xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VPCOMD XMM0, XMM0, XMM0, 0" 8fe878cec000 "vpcomd xmm0, xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VPCOMQ XMM0, XMM0, XMM0, 0" 8fe878cfc000 "vpcomq xmm0, xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VPCOMUB XMM0, XMM0, XMM0, 0" 8fe878ecc000 "vpcomub xmm0, xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VPCOMUD XMM0, XMM0, XMM0, 0" 8fe878eec000 "vpcomud xmm0, xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VPCOMUQ XMM0, XMM0, XMM0, 0" 8fe878efc000 "vpcomuq xmm0, xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VPCOMUW XMM0, XMM0, XMM0, 0" 8fe878edc000 "vpcomuw xmm0, xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VPCOMW XMM0, XMM0, XMM0, 0" 8fe878cdc000 "vpcomw xmm0, xmm0, xmm0, 0" "br"
+test_vector "${PLUGIN}" "VPMACSDDXMM0, XMM0, XMM0, XMM0" 8fe8789ec000 "vpmacsdd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSDQH XMM0, XMM0, XMM0, XMM0" 8fe8789fc000 "vpmacsdqh xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSDQL XMM0, XMM0, XMM0, XMM0" 8fe87897c000 "vpmacsdql xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSSDD XMM0, XMM0, XMM0, XMM0" 8fe8788ec000 "vpmacssdd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSSDQH XMM0, XMM0, XMM0, XMM0" 8fe8788fc000 "vpmacssdqh xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSSDQL XMM0, XMM0, XMM0, XMM0" 8fe87887c000 "vpmacssdql xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSSWD XMM0, XMM0, XMM0, XMM0" 8fe87886c000 "vpmacsswd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSSWW XMM0, XMM0, XMM0, XMM0" 8fe87885c000 "vpmacssww xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSWD XMM0, XMM0, XMM0, XMM0" 8fe87896c000 "vpmacswd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMACSWW XMM0, XMM0, XMM0, XMM0" 8fe87895c000 "vpmacsww xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMADCSWD XMM0, XMM0, XMM0, XMM0" 8fe878b6c000 "vpmadcswd xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPPERM XMM0, XMM0, XMM0, XMM0" 8fe878a3c000 "vpperm xmm0, xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPROTB XMM0, XMM0, XMM0" 8fe97890c0 "vprotb xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPROTD XMM0, XMM0, XMM0" 8fe97892c0 "vprotd xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPROTQ XMM0, XMM0, XMM0" 8fe97893c0 "vprotq xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPROTW XMM0, XMM0, XMM0" 8fe97891c0 "vprotw xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPSHAB XMM0, XMM0, XMM0" 8fe97898c0 "vpshab xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPSHAD XMM0, XMM0, XMM0" 8fe9789ac0 "vpshad xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPSHAQ XMM0, XMM0, XMM0" 8fe9789bc0 "vpshaq xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPSHAW XMM0, XMM0, XMM0" 8fe97899c0 "vpshaw xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPSHLB XMM0, XMM0, XMM0" 8fe97894c0 "vpshlb xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPSHLD XMM0, XMM0, XMM0" 8fe97896c0 "vpshld xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPSHLQ XMM0, XMM0, XMM0" 8fe97897c0 "vpshlq xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPSHLW XMM0, XMM0, XMM0" 8fe97895c0 "vpshlw xmm0, xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDUBD XMM0, XMM0" 8fe978d2c0 "vphaddubd xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDUBQ XMM0, XMM0" 8fe978d3c0 "vphaddubq xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDUBW XMM0, XMM0" 8fe978d1c0 "vphaddubw xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDUDQ XMM0, XMM0" 8fe978dbc0 "vphaddudq xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDUWD XMM0, XMM0" 8fe978d6c0 "vphadduwd xmm0, xmm0"
+test_vector "${PLUGIN}" "VPHADDUWQ XMM0, XMM0" 8fe978d7c0 "vphadduwq xmm0, xmm0"
+test_vector "${PLUGIN}" "VPMADCSSWD XMM0, XMM0, XMM0, XMM0" 8fe878a6c000 "vpmadcsswd xmm0, xmm0, xmm0, xmm0"

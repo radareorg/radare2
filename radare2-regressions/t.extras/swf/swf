@@ -1,0 +1,13 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+unset RASM2_NOPLUGINS
+NAME='SWF: open'
+BROKEN=1
+FILE=../../bins/swf/CurveBall.swf
+ARGS=''
+CMDS="iI~arch"
+EXPECT='arch     swf
+'
+run_test
+

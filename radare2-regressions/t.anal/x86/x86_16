@@ -1,0 +1,58 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="16bit segment bounds"
+FILE=malloc://1024k
+CMDS='
+e asm.arch=x86.udis
+e asm.bits=16
+e anal.hasnext=0
+wx e9c300 @ f000:ffaa
+s f000:ffaa
+pi 1
+'
+EXPECT='jmp 0xf0070
+'
+run_test
+
+NAME="16bit segment bounds - capstone"
+FILE=malloc://1024k
+CMDS='
+e asm.arch=x86.cs
+e asm.bits=16
+e anal.hasnext=0
+wx e9c300 @ f000:ffaa
+s f000:ffaa
+pi 1
+'
+EXPECT='jmp 0xf0070
+'
+run_test
+
+NAME="16bit segment bounds 2"
+FILE=malloc://1024k
+CMDS='
+e asm.arch=x86
+e asm.bits=16
+e io.va=1
+wx e97ae7 @ f000:1911
+s f000:1911
+ao 1~jump
+'
+EXPECT='jump: 0x000f008e
+'
+run_test
+
+NAME="16bit segment bounds 2 - capstone"
+FILE=malloc://1024k
+CMDS='
+e asm.arch=x86.cs
+e asm.bits=16
+e io.va=1
+wx e97ae7 @ f000:1911
+s f000:1911
+ao 1~jump
+'
+EXPECT='jump: 0x000f008e
+'
+run_test

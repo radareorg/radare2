@@ -1,0 +1,32 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami nosectionXP.exe - open'
+FILE=../../bins/pe/nosectionXP.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='PE: nosectionXP - entrypoint'
+FILE=../../bins/pe/nosectionXP.exe
+CMDS="S"
+EXPECT_ERR=""
+EXPECT='[00] * 0x00000138 mrwx va=0x00400138 sz=0x00ff vsz=0x00ff blob
+'
+
+run_test
+
+
+NAME='PE: nosectionXP - entrypoint'
+FILE=../../bins/pe/nosectionXP.exe
+CMDS="pi 5"
+EXPECT_ERR=""
+EXPECT='push 0x400150
+call dword [sym.imp.msvcrt.dll_printf]
+add esp, 4
+nop
+push 0
+'
+
+run_test

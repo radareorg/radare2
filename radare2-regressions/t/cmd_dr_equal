@@ -1,0 +1,13 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2012-2016  maijin
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='dr= double 0x bug'
+FILE=-
+BROKEN=
+ARGS="-a x86 -b 32"
+CMDS='dr=~?0x0x
+'
+EXPECT='0
+'
+run_test

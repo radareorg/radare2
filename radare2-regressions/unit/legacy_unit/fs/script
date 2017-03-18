@@ -1,0 +1,15 @@
+m posix /
+m ext2 /foo
+ms
+ls
+cd foo
+ls
+cd ..
+ls
+pwd
+cd /sys
+pwd
+ls
+ls /
+ls /sys
+ls /proc

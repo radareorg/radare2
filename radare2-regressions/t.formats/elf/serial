@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2016  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='serial relsub'
+FILE=../../bins/elf/analysis/serial
+ARGS=
+CMDS='s 0x00400b35
+e asm.leahints=false
+e asm.bytes=false
+e asm.lines=false
+e asm.relsub=true
+e asm.comments=false
+pd 1
+af @ 0x0040073d
+pd 1
+'
+EXPECT=' 0x00400b35      lea rax, 0x0040073d
+ 0x00400b35      lea rax, fcn.0040073d
+'
+run_test
+

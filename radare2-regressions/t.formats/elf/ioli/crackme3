@@ -1,0 +1,10 @@
+#!/bin/sh
+for a in . .. ../.. ../../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: IOLI - crackme3 - with -A'
+FILE=../../../bins/elf/ioli/crackme0x03
+ARGS=
+CMDS="aa ; fs symbols ; f~sym.main"
+EXPECT='0x08048498 128 sym.main
+'
+run_test

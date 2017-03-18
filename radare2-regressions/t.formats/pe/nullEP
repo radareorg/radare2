@@ -1,0 +1,31 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami nullEP.exe - open'
+FILE=../../bins/pe/nullEP.exe
+IGNORE_ERR=1
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='PE: corkami nullEP.exe - pi 1'
+FILE=../../bins/pe/nullEP.exe
+IGNORE_ERR=1
+ARGS=''
+CMDS="pi 1"
+EXPECT='dec ebp
+'
+run_test
+
+NAME='PE: corkami nullEP.exe - Expect error Null entry'
+FILE=../../bins/pe/nullEP.exe
+BROKEN=
+ARGS=''
+CMDS=q
+EXPECT_ERR='Warning: Invalid import directory size: 0xffff is now 0x1d0
+Warning: read (tls_callback)
+Warning: NULL entrypoint
+'
+EXPECT=""
+run_test

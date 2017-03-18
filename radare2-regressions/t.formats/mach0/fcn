@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2016 pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='anal fcn names with symbols'
+FILE=../../bins/mach0/libr_bp.dylib
+ARGS=-A
+CMDS='afl~00760
+'
+EXPECT='0x00000760    7 379          sym._r_bp_new
+'
+run_test
+
+NAME='anal single fcn'
+FILE=../../bins/mach0/libr_bp.dylib
+ARGS=
+CMDS='s 0x760
+af
+afi~name
+'
+EXPECT='name: sym._r_bp_new
+'
+run_test
+
+NAME='anal main fcn'
+FILE=../../bins/mach0/ls-osx-x86_64
+BROKEN=
+ARGS=
+CMDS='af
+afi~name
+'
+EXPECT='name: main
+'
+run_test

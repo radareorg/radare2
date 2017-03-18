@@ -1,0 +1,64 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='ELF: long symbol names'
+FILE=../../bins/elf/analysis/longsym
+ARGS=''
+CMDS='?l `isq~pata`;?vi'
+EXPECT='194
+'
+run_test
+
+NAME='ELF: simple.elf - code'
+FILE=../../bins/elf/analysis/simple.elf
+ARGS=''
+CMDS="e asm.filter=false
+pid 4 @ entry0"
+EXPECT='0x08000060    section..text:
+0x08000060       b990000008  mov ecx, 0x8000090
+0x08000065       ba0d000000  mov edx, 0xd
+0x0800006a       bb01000000  mov ebx, 1
+0x0800006f       b804000000  mov eax, 4
+'
+run_test
+
+NAME='ELF: asm.midflags + local symbols'
+FILE=../../bins/elf/analysis/example.elf
+ARGS=''
+CMDS="pd 3 @ 0x356"
+EXPECT='        !   ;-- $d_62:
+        !   0x00000356  ~   00f033f9       bl sym.app_uart_get
+        !   0x0000035a      0028           cmp r0, 0
+        `=< 0x0000035c      fad1           bne 0x354
+'
+run_test
+
+NAME='ELF: asm.midflags2 + local symbols'
+FILE=../../bins/elf/analysis/example.elf
+ARGS=''
+CMDS="e asm.midflags=0
+pd 3 @ 0x356"
+EXPECT='        !   0x00000356      00f033f9       bl sym.app_uart_get
+        !   0x0000035a      0028           cmp r0, 0
+        `=< 0x0000035c      fad1           bne 0x354
+'
+run_test
+
+NAME='ELF: local symbols'
+FILE=../../bins/elf/analysis/example.elf
+BROKEN=
+ARGS=''
+CMDS="is*~d_41"
+EXPECT='f sym._d_41 0 0x00000ae0
+'
+run_test
+
+NAME='ELF: phdr override'
+FILE=../../bins/elf/analysis/phdr-override
+BROKEN=
+CMDS="iiq"
+EXPECT='system
+__libc_start_main
+__gmon_start__
+'
+run_test

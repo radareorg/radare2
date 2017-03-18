@@ -1,0 +1,566 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+tms320_c55x_test() {
+    local BROKEN=
+    local NAME="c55x -- $1"
+    local FILE=malloc://128
+    local CMDS="e asm.arch=tms320
+e asm.cpu=c55x
+e io.va=true
+wx $2
+pi 1
+"
+    local EXPECT="$3
+"
+    run_test
+}
+
+# NOP + [E] test
+
+tms320_c55x_test	"NOP"		20		"nop"
+tms320_c55x_test	"NOP E"		21		"|| nop"
+
+# RPTCC + [k8, cond] full test
+
+tms320_c55x_test	"RPTCC"		00000f		"rptcc 0x0F, ac0 == 0"		# cond = 000 0000 b
+tms320_c55x_test	"RPTCC"		00111e		"rptcc 0x1E, ac1 != 0"		# cond = 001 0001 b
+tms320_c55x_test	"RPTCC"		00222d		"rptcc 0x2D, ac2 < 0"		# cond = 010 0010 b
+tms320_c55x_test	"RPTCC"		00333c		"rptcc 0x3C, ac3 <= 0"		# cond = 011 0011 b
+tms320_c55x_test	"RPTCC"		00444b		"rptcc 0x4B, t0 > 0"		# cond = 100 0100 b
+tms320_c55x_test	"RPTCC"		00555a		"rptcc 0x5A, t1 >= 0"		# cond = 101 0101 b
+tms320_c55x_test	"RPTCC"		000669		"rptcc 0x69, t2 == 0"		# cond = 000 0110 b
+tms320_c55x_test	"RPTCC"		001778		"rptcc 0x78, t3 != 0"		# cond = 001 0111 b
+tms320_c55x_test	"RPTCC"		002887		"rptcc 0x87, ar0 < 0"		# cond = 010 1000 b
+tms320_c55x_test	"RPTCC"		003996		"rptcc 0x96, ar1 <= 0"		# cond = 011 1001 b
+tms320_c55x_test	"RPTCC"		004aa5		"rptcc 0xA5, ar2 > 0"		# cond = 100 1010 b
+tms320_c55x_test	"RPTCC"		005bb4		"rptcc 0xB4, ar3 >= 0"		# cond = 101 1011 b
+tms320_c55x_test	"RPTCC"		000cc3		"rptcc 0xC3, ar4 == 0"		# cond = 000 1100 b
+tms320_c55x_test	"RPTCC"		001dd2		"rptcc 0xD2, ar5 != 0"		# cond = 001 1101 b
+tms320_c55x_test	"RPTCC"		002ee1		"rptcc 0xE1, ar6 < 0"		# cond = 010 1110 b
+tms320_c55x_test	"RPTCC"		003ff0		"rptcc 0xF0, ar7 <= 0"		# cond = 011 1111 b
+
+tms320_c55x_test	"RPTCC"		006011		"rptcc 0x11, overflow(ac0)"	# cond = 110 0000 b
+tms320_c55x_test	"RPTCC"		007122		"rptcc 0x22, !overflow(ac1)"	# cond = 111 0001 b
+tms320_c55x_test	"RPTCC"		007233		"rptcc 0x33, !overflow(ac2)"	# cond = 111 0010 b
+tms320_c55x_test	"RPTCC"		006344		"rptcc 0x44, overflow(ac3)"	# cond = 110 0011 b
+
+tms320_c55x_test	"RPTCC"		006400		"rptcc 0x00, tc1"		# cond = 110 0100 b
+tms320_c55x_test	"RPTCC"		006500		"rptcc 0x00, tc2"		# cond = 110 0101 b
+tms320_c55x_test	"RPTCC"		006600		"rptcc 0x00, carry"		# cond = 110 0110 b
+tms320_c55x_test	"RPTCC"		006800		"rptcc 0x00, tc1 & tc2"		# cond = 110 1000 b
+tms320_c55x_test	"RPTCC"		006900		"rptcc 0x00, tc1 & !tc2"	# cond = 110 1001 b
+tms320_c55x_test	"RPTCC"		006a00		"rptcc 0x00, !tc1 & tc2"	# cond = 110 1010 b
+tms320_c55x_test	"RPTCC"		006b00		"rptcc 0x00, !tc1 & !tc2"	# cond = 110 1011 b
+tms320_c55x_test	"RPTCC"		007400		"rptcc 0x00, !tc1"		# cond = 111 0100 b
+tms320_c55x_test	"RPTCC"		007500		"rptcc 0x00, !tc2"		# cond = 111 0101 b
+tms320_c55x_test	"RPTCC"		007600		"rptcc 0x00, !carry"		# cond = 111 0110 b
+
+tms320_c55x_test	"RPTCC"		007800		"rptcc 0x00, tc1 | tc2"		# cond = 111 1000 b
+tms320_c55x_test	"RPTCC"		007900		"rptcc 0x00, tc1 | !tc2"	# cond = 111 1001 b
+tms320_c55x_test	"RPTCC"		007a00		"rptcc 0x00, !tc1 | tc2"	# cond = 111 1010 b
+tms320_c55x_test	"RPTCC"		007b00		"rptcc 0x00, !tc1 | !tc2"	# cond = 111 1011 b
+tms320_c55x_test	"RPTCC"		007c00		"rptcc 0x00, tc1 ^ tc2"		# cond = 111 1100 b
+tms320_c55x_test	"RPTCC"		007d00		"rptcc 0x00, tc1 ^ !tc2"	# cond = 111 1101 b
+tms320_c55x_test	"RPTCC"		007e00		"rptcc 0x00, !tc1 ^ tc2"	# cond = 111 1110 b
+tms320_c55x_test	"RPTCC"		007f00		"rptcc 0x00, !tc1 ^ !tc2"	# cond = 111 1111 b
+
+# RETCC
+
+tms320_c55x_test	"RETCC"		020000		"retcc ac0 == 0"
+
+# BCC + [L8] full test
+
+tms320_c55x_test	"BCC"		040030		"bcc 0x30, ac0 == 0"		# L8 = 0x30
+tms320_c55x_test	"BCC"		040021		"bcc 0x21, ac0 == 0"		# L8 = 0x21
+tms320_c55x_test	"BCC"		040012		"bcc 0x12, ac0 == 0"		# L8 = 0x12
+tms320_c55x_test	"BCC"		040003		"bcc 0x03, ac0 == 0"		# L8 = 0x03
+
+# B + [L16] full test
+
+tms320_c55x_test	"B"		063012		"b 0x3012"			# L16 = 0x3012
+tms320_c55x_test	"B"		062301		"b 0x2301"			# L16 = 0x2301
+tms320_c55x_test	"B"		061230		"b 0x1230"			# L16 = 0x1230
+tms320_c55x_test	"B"		060123		"b 0x0123"			# L16 = 0x0123
+
+# CALL
+
+tms320_c55x_test	"CALL"		08dead		"call 0xDEAD"			# L16 = 0xDEAD
+
+# RPT + [k16] test
+
+tms320_c55x_test	"RPT"		0cdead		"rpt 0xDEAD"			# k16 = 0xDEAD
+
+# RPTB + [pmad] test
+
+tms320_c55x_test	"RPTB"		0edead		"rptb 0xDEAD"			# pmad = 0xDEAD
+
+# AND/OR/XOR/ADD/SUB/SFTS/SFTSC/SFTL + [DDSS, xxSHIFTW] full test
+
+tms320_c55x_test	"AND"		100000		"and ac0 << 0x00"		# DDSS = 0000 b
+tms320_c55x_test	"OR"		101111		"or ac1 << 0x11, ac0"		# DDSS = 0001 b
+tms320_c55x_test	"XOR"		102222		"xor ac2 << 0x22, ac0"		# DDSS = 0010 b
+tms320_c55x_test	"ADD"		103333		"add ac3 << 0x33, ac0"		# DDSS = 0011 b
+tms320_c55x_test	"SUB"		104444		"sub ac0 << 0x04, ac1"		# DDSS = 0100 b
+tms320_c55x_test	"SFTS"		105555		"sfts ac1, 0x15"		# DDSS = 0101 b
+tms320_c55x_test	"SFTSC"		106666		"sftsc ac2, 0x26, ac1"		# DDSS = 0110 b
+tms320_c55x_test	"SFTL"		107777		"sftl ac3, 0x37, ac1"		# DDSS = 0111 b
+
+tms320_c55x_test	"AND"		108088		"and ac0 << 0x08, ac2"		# DDSS = 1000 b
+tms320_c55x_test	"OR"		109199		"or ac1 << 0x19, ac2"		# DDSS = 1001 b
+tms320_c55x_test	"XOR"		10a2aa		"xor ac2 << 0x2A"		# DDSS = 1010 b
+tms320_c55x_test	"ADD"		10b3bb		"add ac3 << 0x3B, ac2"		# DDSS = 1011 b
+tms320_c55x_test	"SUB"		10c4cc		"sub ac0 << 0x0C, ac3"		# DDSS = 1100 b
+tms320_c55x_test	"SFTS"		10d5dd		"sfts ac1, 0x1D, ac3"		# DDSS = 1101 b
+tms320_c55x_test	"SFTSC"		10e6ee		"sftsc ac2, 0x2E, ac3"		# DDSS = 1110 b
+tms320_c55x_test	"SFTL"		10f7ff		"sftl ac3, 0x3F"		# DDSS = 1111 b
+
+# EXP + [SS,dd] full test
+
+tms320_c55x_test	"EXP"		103800		"exp ac3, t0"			# SS = 11 b, dd = 00
+tms320_c55x_test	"EXP"		102810		"exp ac2, t1"			# SS = 10 b, dd = 01
+tms320_c55x_test	"EXP"		101820		"exp ac1, t2"			# SS = 01 b, dd = 10
+tms320_c55x_test	"EXP"		100830		"exp ac0, t3"			# SS = 00 b, dd = 11
+
+# MANT :: NEXP
+
+tms320_c55x_test	"MANT::NEXP"	109930		"mant ac1, ac2 :: nexp ac1, t3"
+
+# BCNT + [SS,SS,dd,t] full test
+
+tms320_c55x_test	"BCNT"		100ac0		"bcnt ac0, ac3, tc1, t0"
+tms320_c55x_test	"BCNT"		101a80		"bcnt ac1, ac2, tc1, t0"
+tms320_c55x_test	"BCNT"		102a50		"bcnt ac2, ac1, tc1, t1"
+tms320_c55x_test	"BCNT"		103a10		"bcnt ac3, ac0, tc1, t1"
+
+tms320_c55x_test	"BCNT"		100ae1		"bcnt ac0, ac3, tc2, t2"
+tms320_c55x_test	"BCNT"		101aa1		"bcnt ac1, ac2, tc2, t2"
+tms320_c55x_test	"BCNT"		102a71		"bcnt ac2, ac1, tc2, t3"
+tms320_c55x_test	"BCNT"		103a31		"bcnt ac3, ac0, tc2, t3"
+
+# MAXDIFF [DD,SS,SS,DD] test
+
+tms320_c55x_test	"MAXDIFF"	108c70		"maxdiff ac0, ac1, ac2, ac3"
+
+# DMAXDIFF [DD,SS,SS,DD,r] test
+
+tms320_c55x_test	"DMAXDIFF"	108d70		"dmaxdiff ac0, ac1, ac2, ac3, trn0"
+tms320_c55x_test	"DMAXDIFF"	108d71		"dmaxdiff ac0, ac1, ac2, ac3, trn1"
+
+# MINDIFF [DD,SS,SS,DD] test
+
+tms320_c55x_test	"MINDIFF"	107e80		"mindiff ac3, ac2, ac1, ac0"
+
+# DMINDIFF [DD,SS,SS,DD,r] test
+
+tms320_c55x_test	"DMINDIFF"	107f80		"dmindiff ac3, ac2, ac1, ac0, trn0"
+tms320_c55x_test	"DMINDIFF"	107f81		"dmindiff ac3, ac2, ac1, ac0, trn1"
+
+# CMP/CMPAND/CMPOR [FSSS,FDDD,cc,tt,t,u] full test
+
+tms320_c55x_test	"CMP"		1200a0		"cmp ac0 == ar2, tc1"
+tms320_c55x_test	"CMPAND"	1211b1		"cmpand ac1 == ar3, tc1, tc2"
+tms320_c55x_test	"CMPAND"	1221c9		"cmpand ac2 == ar4, !tc1, tc2"
+tms320_c55x_test	"CMPOR"		1232d2		"cmpor ac3 == ar5, tc2, tc1"
+tms320_c55x_test	"CMPOR"		1242ea		"cmpor t0 == ar6, !tc2, tc1"
+
+tms320_c55x_test	"CMPU"		1250f5		"cmpu t1 == ar7, tc2"
+tms320_c55x_test	"CMPANDU"	126106		"cmpandu t2 == ac0, tc2, tc1"
+tms320_c55x_test	"CMPANDU"	12711e		"cmpandu t3 == ac1, !tc2, tc1"
+tms320_c55x_test	"CMPORU"	128225		"cmporu ar0 == ac2, tc1, tc2"
+tms320_c55x_test	"CMPORU"	12923d		"cmporu ar1 == ac3, !tc1, tc2"
+
+# ROL/ROR + [BitIn,BitOut] full test
+
+tms320_c55x_test	"ROL"		120330		"rol carry, ac0, carry, ac3"
+tms320_c55x_test	"ROL"		121321		"rol tc2, ac1, carry, ac2"
+tms320_c55x_test	"ROR"		12231a		"ror tc2, ac2, carry, ac1"
+tms320_c55x_test	"ROR"		12330b		"ror tc2, ac3, tc2, ac0"
+
+# AADD/AMOV/ASUB + [TAx,TAy,P8] test
+
+tms320_c55x_test	"AADD"		140000		"aadd ac0, ac0"
+tms320_c55x_test	"AMOV"		140001		"amov ac0, ac0"
+tms320_c55x_test	"ASUB"		140002		"asub ac0, ac0"
+
+tms320_c55x_test	"AADD"		141104		"aadd 0x11, ac0"
+tms320_c55x_test	"AMOV"		142205		"amov 0x22, ac0"
+tms320_c55x_test	"ASUB"		143306		"asub 0x33, ac0"
+
+tms320_c55x_test	"AADD"		140008		"aadd ac0, ac0"		# ?
+tms320_c55x_test	"AMOV"		140009		"amov ac0, ac0"		# ?
+tms320_c55x_test	"ASUB"		14000a		"asub ac0, ac0"		# ?
+
+tms320_c55x_test	"AADD"		14110c		"aadd 0x11, ac0"	# ?
+tms320_c55x_test	"AMOV"		14220d		"amov 0x22, ac0"	# ?
+tms320_c55x_test	"ASUB"		14330e		"asub 0x33, ac0"	# ?
+
+# AAAD/AMOV/ASUB + [XACsrc,XACdst] test
+
+tms320_c55x_test	"AADD"		1481d0		"aadd xar0, xar5"
+tms320_c55x_test	"AMOV"		1491c1		"amov xar1, xar4"
+tms320_c55x_test	"ASUB"		14a1b2		"asub xar2, xar3"
+tms320_c55x_test	"AADD"		14b1a8		"aadd xar3, xar2"
+tms320_c55x_test	"AMOV"		14c199		"amov xar4, xar1"
+tms320_c55x_test	"ASUB"		14d18a		"asub xar5, xar0"
+
+# MOV + [k7,k9,k12] test
+
+tms320_c55x_test	"MOV"		1601a0		"mov 0x1A, dph"		# k7
+tms320_c55x_test	"MOV"		160250		"mov 0x25, dph"		# k7
+tms320_c55x_test	"MOV"		1604a0		"mov 0x4A, dph"		# k7
+
+tms320_c55x_test	"MOV"		160af3		"mov 0x0AF, pdp"	# k9
+tms320_c55x_test	"MOV"		1615f3		"mov 0x15F, pdp"	# k9
+
+tms320_c55x_test	"MOV"		1606c4		"mov 0x06C, bk03"	# k12
+tms320_c55x_test	"MOV"		1617d5		"mov 0x17D, bk47"	# k12
+tms320_c55x_test	"MOV"		1628e6		"mov 0x28E, bkc"	# k12
+tms320_c55x_test	"MOV"		1639f8		"mov 0x39F, csr"	# k12
+tms320_c55x_test	"MOV"		164a09		"mov 0x4A0, brc0"	# k12
+tms320_c55x_test	"MOV"		165b1a		"mov 0x5B1, brc1"	# k12
+
+# AND/OR/XOR + [k8] tests
+
+tms320_c55x_test	"AND"		181110		"and 0x11, ac0, ac1"
+tms320_c55x_test	"OR"		1a2232		"or 0x22, ac2, ac3"
+tms320_c55x_test	"XOR"		1c3354		"xor 0x33, t0, t1"
+
+# MPYK/MACK + [R] test
+
+tms320_c55x_test	"MPYK"		1e1110		"mpyk 0x11, ac0, ac1"
+tms320_c55x_test	"MPYK"		1e2261		"mpykr 0x22, ac1, ac2"
+
+tms320_c55x_test	"MACK"		1e3316		"mack t1, 0x33, ac0, ac1"
+tms320_c55x_test	"MACK"		1e446b		"mackr t2, 0x44, ac1, ac2"
+
+# MOV/AND/OR/XOR + [src,dst] test
+
+tms320_c55x_test	"MOV"		2204		"mov ac0, t0"
+tms320_c55x_test	"AND"		2815		"and ac1, t1"
+tms320_c55x_test	"OR"		2a26		"or ac2, t2"
+tms320_c55x_test	"XOR"		2c37		"xor ac3, t3"
+
+# ADD/SUB/MAX/MIN/ABS/NEG/NOT + [src,dst] test
+
+tms320_c55x_test	"ADD"		2400		"add ac0"
+tms320_c55x_test	"SUB"		2600		"sub ac0"
+tms320_c55x_test	"MAX"		2e00		"max ac0"
+tms320_c55x_test	"MIN"		3000		"min ac0"
+tms320_c55x_test	"ABS"		3200		"abs ac0"
+tms320_c55x_test	"NEG"		3400		"neg ac0"
+tms320_c55x_test	"NOT"		3600		"not ac0"
+
+tms320_c55x_test	"ADD"		2407		"add ac0, t3"
+tms320_c55x_test	"SUB"		2618		"sub ac1, ar0"
+tms320_c55x_test	"MAX"		2e29		"max ac2, ar1"
+tms320_c55x_test	"MIN"		303a		"min ac3, ar2"
+tms320_c55x_test	"ABS"		324b		"abs t0, ar3"
+tms320_c55x_test	"NEG"		345c		"neg t1, ar4"
+tms320_c55x_test	"NOT"		366d		"not t2, ar5"
+
+# PSH/POP + [src1,src2,dst1,dst2] test
+
+tms320_c55x_test	"PSH"		3812		"psh ac1, ac2"
+tms320_c55x_test	"POP"		3a34		"pop ac3, t0"
+
+# MOV/ADD/SUB + [k4,dst] test
+
+tms320_c55x_test	"MOV"		3cf4		"mov 0xF, t0"
+tms320_c55x_test	"MOV"		3ef5		"mov -0xF, t1"
+tms320_c55x_test	"ADD"		40f6		"add 0xF, t2"
+tms320_c55x_test	"SUB"		42f7		"sub 0xF, t3"
+
+# MOV HI(ACx), TAx test
+
+tms320_c55x_test	"MOV"		4408		"mov hi(ac0), ar0"
+
+# SFTS + [dst] test
+
+tms320_c55x_test	"SFTS"		4440		"sfts ac0, #-1"
+tms320_c55x_test	"SFTS"		4450		"sfts ac0, #1"
+
+# MOV SP/SSP/CDP/BRC0/BRC1/RPTC
+
+tms320_c55x_test	"MOV"		4488		"mov sp, ar0"
+tms320_c55x_test	"MOV"		4499		"mov ssp, ar1"
+tms320_c55x_test	"MOV"		44aa		"mov cdp, ar2"
+tms320_c55x_test	"MOV"		44cb		"mov brc0, ar3"
+tms320_c55x_test	"MOV"		44dc		"mov brc1, ar4"
+tms320_c55x_test	"MOV"		44ed		"mov rptc, ar5"
+
+# BCLR/BSET + [k4,ST0_55,ST1_55] test
+
+tms320_c55x_test	"BLCR"		4610		"bclr 0x1, st0_55"
+tms320_c55x_test	"BSET"		4621		"bset 0x2, st0_55"
+tms320_c55x_test	"BLCR"		4632		"bclr 0x3, st1_55"
+tms320_c55x_test	"BSET"		4643		"bset 0x4, st1_55"
+tms320_c55x_test	"BLCR"		4654		"bclr 0x5, st2_55"
+tms320_c55x_test	"BSET"		4665		"bset 0x6, st2_55"
+tms320_c55x_test	"BLCR"		4676		"bclr 0x7, st3_55"
+tms320_c55x_test	"BSET"		4687		"bset 0x8, st3_55"
+
+# RPT/RPTADD/RPTSUB
+
+tms320_c55x_test	"RPT"		4800		"rpt csr"
+tms320_c55x_test	"RPT"		4801		"rptadd csr, ac0"
+tms320_c55x_test	"RPT"		4802		"rptadd csr, 0x0"
+tms320_c55x_test	"RPT"		4803		"rptsub csr, 0x0"
+
+# RET/RETI
+
+tms320_c55x_test	"RET"		4804		"ret"
+tms320_c55x_test	"RET E"		4904		"|| ret"
+tms320_c55x_test	"RETI"		4805		"reti"
+
+# B + [L7] test
+
+tms320_c55x_test	"B"		4a7f		"b 0x7F"
+
+# RPTBLOCAL + [pmad] test
+
+tms320_c55x_test	"RPTBLOCAL"	4aff		"rptblocal 0x7F"
+
+# RPT + [k8] test
+
+tms320_c55x_test	"RPT"		4cff		"rpt 0xFF"
+
+# AADD + [K8] test
+
+tms320_c55x_test	"AADD"		4eff		"aadd 0xFF, sp"
+
+# SFTL
+
+tms320_c55x_test	"SFTL"		5000		"sftl ac0, #1"		# need to replace '#..' -> '0x..' ?
+tms320_c55x_test	"SFTL"		5001		"sftl ac0, #-1"		# need to replace '#..' -> '0x..' ?
+
+# POP/PSH/POPBOTH/PUSHBOTH
+
+tms320_c55x_test	"POP"		5002		"pop ac0"
+tms320_c55x_test	"POP"		5003		"pop dbl(ac0)"
+tms320_c55x_test	"PSH"		5006		"psh ac0"
+tms320_c55x_test	"PSH"		5007		"psh dbl(ac0)"
+tms320_c55x_test	"POPBOTH"	5004		"popboth ac0"
+tms320_c55x_test	"PSHBOTH"	5005		"pshboth ac0"
+
+# MOV TAx, HI(ACx)/SP/SSP/CDP/CSR/BRC0/BRC1 test
+
+tms320_c55x_test	"MOV"		5200		"mov ac0, hi(ac0)"
+tms320_c55x_test	"MOV"		5208		"mov ac0, sp"
+tms320_c55x_test	"MOV"		5209		"mov ac0, ssp"
+tms320_c55x_test	"MOV"		520a		"mov ac0, cdp"
+tms320_c55x_test	"MOV"		520c		"mov ac0, csr"
+tms320_c55x_test	"MOV"		520d		"mov ac0, brc1"
+tms320_c55x_test	"MOV"		520e		"mov ac0, brc0"
+
+# ADDV/SQA/SQS/MPY/SQR/ROUND/SAT + [R] test
+
+tms320_c55x_test	"ADDV"		5491		"addrv ac1, ac2"
+tms320_c55x_test	"SQA"		5493		"sqar ac1, ac2"
+tms320_c55x_test	"SQS"		5495		"sqsr ac1, ac2"
+tms320_c55x_test	"MPY"		5497		"mpyr ac1, ac2"
+tms320_c55x_test	"SQR"		5499		"sqrr ac1, ac2"
+tms320_c55x_test	"ROUND"		549b		"round ac1, ac2"
+tms320_c55x_test	"SAT"		549d		"satr ac1, ac2"
+
+# MAC/MAS/MPY + [R] test
+
+tms320_c55x_test	"MAC"		5601		"macr ac0, t0, ac0"	# is it correct ?
+tms320_c55x_test	"MAC"		5641		"macr ac0, t0, ac1, ac1"
+tms320_c55x_test	"MAC"		5843		"macr ac1, t0, ac0, ac1"
+tms320_c55x_test	"MAS"		5643		"masr t0, ac0, ac1"
+tms320_c55x_test	"MPY"		5841		"mpyr t0, ac0, ac1"
+
+# ADD/SUB/SFTCC/SFTL/SFTS/SFTSC test
+
+tms320_c55x_test	"ADD"		5a00		"add ac0 << t0, ac0"
+tms320_c55x_test	"SUB"		5a01		"sub ac0 << t0, ac0"
+tms320_c55x_test	"SFTCC"		5a02		"sftcc ac0, tc1"
+tms320_c55x_test	"SFTCC"		5a03		"sftcc ac0, tc2"
+
+tms320_c55x_test	"SFTL"		5c40		"sftl ac0, t0, ac1"
+tms320_c55x_test	"SFTS"		5c41		"sfts ac0, t0, ac1"
+tms320_c55x_test	"SFTSC"		5c42		"sftsc ac0, t0, ac1"
+
+# SWAP full test
+
+tms320_c55x_test	"SWAP"		5e00		"swap ac0, ac2"
+tms320_c55x_test	"SWAP"		5e01		"swap ac1, ac3"
+tms320_c55x_test	"SWAP"		5e04		"swap t0, t2"
+tms320_c55x_test	"SWAP"		5e05		"swap t1, t3"
+tms320_c55x_test	"SWAP"		5e08		"swap ar0, ar2"
+tms320_c55x_test	"SWAP"		5e09		"swap ar1, ar3"
+tms320_c55x_test	"SWAP"		5e0c		"swap ar4, t0"
+tms320_c55x_test	"SWAP"		5e0d		"swap ar5, t1"
+tms320_c55x_test	"SWAP"		5e0e		"swap ar6, t2"
+tms320_c55x_test	"SWAP"		5e0f		"swap ar7, t3"
+
+tms320_c55x_test	"SWAP"		5e10		"swapp ac0, ac2"
+tms320_c55x_test	"SWAP"		5e14		"swapp t0, t2"
+tms320_c55x_test	"SWAP"		5e18		"swapp ar0, ar2"
+tms320_c55x_test	"SWAP"		5e1c		"swapp ar4, t0"
+tms320_c55x_test	"SWAP"		5e1e		"swapp ar6, t2"
+tms320_c55x_test	"SWAP"		5e2c		"swap4 ar4, t0"
+tms320_c55x_test	"SWAP"		5e38		"swap ar0, ar1"
+
+# B/BCC/CALL/CALLCC + [l4,P24,cond] test
+
+tms320_c55x_test	"B"		6a123456	"b 0x123456"
+tms320_c55x_test	"CALL"		6c123456	"call 0x123456"
+
+tms320_c55x_test	"BCC"		6780		"bcc 0xF, ac0 == 0"
+tms320_c55x_test	"BCC"		6d001234	"bcc 0x1234, ac0 == 0"
+tms320_c55x_test	"BCC"		6800123456	"bcc 0x123456, ac0 == 0"
+tms320_c55x_test	"BCC"		6f001122	"bcc 0x22, ac0 == 0x11"
+
+tms320_c55x_test	"CALLCC"	6900123456	"callcc 0x123456, ac0 == 0"
+tms320_c55x_test	"CALLCC"	6e001234	"callcc 0x1234, ac0 == 0"
+
+# ADD/SUB/AND/OR/XOR/MOV
+
+tms320_c55x_test	"ADD"		70112240	"add 0x1122 << 0x0, ac1, ac0"
+tms320_c55x_test	"SUB"		71112241	"sub 0x1122 << 0x1, ac1, ac0"
+tms320_c55x_test	"AND"		72112242	"and 0x1122 << 0x2, ac1, ac0"
+tms320_c55x_test	"OR"		73112243	"or 0x1122 << 0x3, ac1, ac0"
+tms320_c55x_test	"XOR"		74112244	"xor 0x1122 << 0x4, ac1, ac0"
+tms320_c55x_test	"MOV"		75112245	"mov 0x1122 << 0x5, ac0"
+
+# BFXTR/BFXPA/MOV
+
+tms320_c55x_test	"BFXTR"		76112200	"bfxtr 0x1122, ac0, ac0"
+tms320_c55x_test	"BFXPA"		76112204	"bfxpa 0x1122, ac0, ac0"
+tms320_c55x_test	"MOV"		76112208	"mov 0x1122, ac0"
+tms320_c55x_test	"AMOV"		77112200	"amov 0x1122, ac0"
+
+tms320_c55x_test	"MOV"		78112200	"mov 0x1122, dp"
+tms320_c55x_test	"MOV"		78112202	"mov 0x1122, ssp"
+tms320_c55x_test	"MOV"		78112204	"mov 0x1122, cdp"
+tms320_c55x_test	"MOV"		78112206	"mov 0x1122, bsa01"
+tms320_c55x_test	"MOV"		78112208	"mov 0x1122, bsa23"
+tms320_c55x_test	"MOV"		7811220a	"mov 0x1122, bsa45"
+tms320_c55x_test	"MOV"		7811220c	"mov 0x1122, bsa67"
+tms320_c55x_test	"MOV"		7811220e	"mov 0x1122, bsac"
+tms320_c55x_test	"MOV"		78112210	"mov 0x1122, sp"
+
+# MPYK/MACK/ADD/SUB/AND/OR/XOR/MOV
+
+tms320_c55x_test	"MYPK"		79112240	"mpyk 0x1122, ac1, ac0"
+tms320_c55x_test	"MACK"		79112242	"mack t0, 0x1122, ac1, ac0"
+
+tms320_c55x_test	"ADD"		7a112240	"add 0x1122 << #16, ac1, ac0"
+tms320_c55x_test	"SUB"		7a112242	"sub 0x1122 << #16, ac1, ac0"
+tms320_c55x_test	"AND"		7a112244	"and 0x1122 << #16, ac1, ac0"
+tms320_c55x_test	"OR"		7a112246	"or 0x1122 << #16, ac1, ac0"
+tms320_c55x_test	"XOR"		7a112248	"xor 0x1122 << #16, ac1, ac0"
+tms320_c55x_test	"MOV"		7a11224a	"mov 0x1122 << #16, ac0"
+
+tms320_c55x_test	"ADD"		7b112240	"add 0x1122, ac0, t0"
+tms320_c55x_test	"SUB"		7c112240	"sub 0x1122, ac0, t0"
+tms320_c55x_test	"AND"		7d112240	"and 0x1122, ac0, t0"
+tms320_c55x_test	"OR"		7e112240	"or 0x1122, ac0, t0"
+tms320_c55x_test	"XOR"		7f112240	"xor 0x1122, ac0, t0"
+
+# IDLE
+
+tms320_c55x_test	"IDLE"		7a00000c	"idle"
+
+# MOV/ADD/SUB + [Xmem,Ymem] full test
+
+tms320_c55x_test	"MOV"		8003f0		"mov dbl(*ar0), dbl(*ar7(t0))"
+tms320_c55x_test	"MOV"		802760		"mov dbl(*ar1+), dbl(*(ar6 - t1))"
+tms320_c55x_test	"MOV"		804ad0		"mov dbl(*ar2-), dbl(*(ar5 - t0))"
+tms320_c55x_test	"MOV"		806e40		"mov dbl(*(ar3 + t0)), dbl(*(ar4 + t1))"
+tms320_c55x_test	"MOV"		8091b0		"mov dbl(*(ar4 + t1)), dbl(*(ar3 + t0))"
+tms320_c55x_test	"MOV"		80b520		"mov dbl(*(ar5 - t0)), dbl(*ar2-)"
+tms320_c55x_test	"MOV"		80d890		"mov dbl(*(ar6 - t1)), dbl(*ar1+)"
+tms320_c55x_test	"MOV"		80fc00		"mov dbl(*ar7(t0)), dbl(*ar0)"
+
+tms320_c55x_test	"MOV"		800004		"mov *ar0, *ar0"
+tms320_c55x_test	"MOV"		800008		"mov ac0, *ar0, *ar0"
+tms320_c55x_test	"ADD"		810000		"add *ar0, *ar0, ac0"
+tms320_c55x_test	"ADD"		810004		"sub *ar0, *ar0, ac0"
+tms320_c55x_test	"MOV"		810008		"mov *ar0, *ar0, ac0"
+
+# MPY/MAC/MAS/AMAR::MPY/MAC/MAS + [uu,mm(Cmem)] full test
+
+tms320_c55x_test	"MPY::MPY"	82000000		"mpy *ar0, *cdp, ac0 :: mpy *ar0, *cdp, ac0"
+tms320_c55x_test	"MPY::MPY"	82000103		"mpyr40 *ar0, *cdp+, ac0 :: mpyr40 *ar0, *cdp+, ac0"
+tms320_c55x_test	"MPY::MPY"	82000283		"mpyr40 uns(*ar0), uns(*cdp-), ac0 :: mpyr40 *ar0, *cdp-, ac0"
+tms320_c55x_test	"MPY::MPY"	82000343		"mpyr40 *ar0, *(cdp+t0), ac0 :: mpyr40 uns(*ar0), uns(*(cdp+t0)), ac0"
+tms320_c55x_test	"MPY::MPY"	820000c3		"mpyr40 uns(*ar0), uns(*cdp), ac0 :: mpyr40 uns(*ar0), uns(*cdp), ac0"
+
+tms320_c55x_test	"MAC::MPY"	82000400		"mac *ar0, *cdp, ac0 :: mpy *ar0, *cdp, ac0"
+tms320_c55x_test	"MAS::MPY"	82000800		"mas *ar0, *cdp, ac0 :: mpy *ar0, *cdp, ac0"
+tms320_c55x_test	"MAC::MAC"	83000000		"mac *ar0, *cdp, ac0 :: mac *ar0, *cdp, ac0"
+tms320_c55x_test	"MAS::MAC"	83000400		"mas *ar0, *cdp, ac0 :: mac *ar0, *cdp, ac0"
+tms320_c55x_test	"MAC::MAC"	83000800		"mac *ar0, *cdp, ac0 >> #16 :: mac *ar0, *cdp, ac0"
+tms320_c55x_test	"MAS::MAC"	84000000		"mas *ar0, *cdp, ac0 :: mac *ar0, *cdp, ac0 >> #16"
+tms320_c55x_test	"MPY::MAC"	84000800		"mpy *ar0, *cdp, ac0 :: mac *ar0, *cdp, ac0 >> #16"
+tms320_c55x_test	"MAC::MAC"	84000c00		"mac *ar0, *cdp, ac0 >> #16 :: mac *ar0, *cdp, ac0 >> #16"
+tms320_c55x_test	"MAS::MAS"	85000400		"mas *ar0, *cdp, ac0 :: mas *ar0, *cdp, ac0"
+
+tms320_c55x_test	"AMAR::MPY"	82000c00		"amar *ar0 :: mpy *ar0, *cdp, ac0"
+tms320_c55x_test	"AMAR::MAC"	83000c00		"amar *ar0 :: mac *ar0, *cdp, ac0"
+tms320_c55x_test	"AMAR::MAC"	84000400		"amar *ar0 :: mac *ar0, *cdp, ac0 >> #16"
+tms320_c55x_test	"AMAR::MAS"	85000000		"amar *ar0 :: mas *ar0, *cdp, ac0"
+
+tms320_c55x_test	"AMAR"		85000800		"amar *ar0, *ar0, *cdp"
+
+# FIRSADD/FIRSUB test
+
+tms320_c55x_test	"FIRSADD"	85000c00		"firsadd *ar0, *ar0, *cdp, ac0, ac0"
+tms320_c55x_test	"FIRSSUB"	85000c10		"firssub *ar0, *ar0, *cdp, ac0, ac0"
+
+# MPYM/MACM/MASM test
+
+tms320_c55x_test	"MPYM"		86000000	"mpym *ar0, *ar0, ac0"
+tms320_c55x_test	"MPYM"		86000001	"mpymr *ar0, *ar0, ac0"
+tms320_c55x_test	"MPYM"		86000011	"mpymr40 *ar0, *ar0, ac0"
+tms320_c55x_test	"MPYM"		86000013	"mpymr40 t3=*ar0, *ar0, ac0"
+tms320_c55x_test	"MPYM"		8600001b	"mpymr40 t3=uns(*ar0), *ar0, ac0"
+tms320_c55x_test	"MPYM"		86000017	"mpymr40 t3=*ar0, uns(*ar0), ac0"
+tms320_c55x_test	"MPYM"		8600001f	"mpymr40 t3=uns(*ar0), uns(*ar0), ac0"
+tms320_c55x_test	"MACM"		86000031	"macmr40 *ar0, *ar0, ac0"
+tms320_c55x_test	"MACM"		86000131	"macmr40 *ar0, *ar0, ac0, ac1"
+tms320_c55x_test	"MACM"		86000051	"macmr40 *ar0, *ar0, ac0 >> #16"
+tms320_c55x_test	"MACM"		86000151	"macmr40 *ar0, *ar0, ac0 >> #16, ac1"
+tms320_c55x_test	"MASM"		8600017f	"masmr40 t3=uns(*ar0), uns(*ar0), ac0, ac1"
+
+# MASM/MACM/MPYM::MOV test
+
+tms320_c55x_test	"MASM::MOV"	86000080	"masm *ar0, t0, ac0 :: mov *ar0 << #16, ac0"
+tms320_c55x_test	"MACM::MOV"	860000a0	"macm *ar0, t0, ac0 :: mov *ar0 << #16, ac0"
+tms320_c55x_test	"MPYM::MOV"	87000000	"mpym *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0"
+tms320_c55x_test	"MACM::MOV"	87000020	"macm *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0"
+tms320_c55x_test	"MASM::MOV"	87000040	"masm *ar0, t0, ac0 :: mov hi(ac0 << t2), *ar0"
+
+# LMS/SQDST/ABDST/LMSF test
+
+tms320_c55x_test	"LMS"		860000c0	"lms *ar0, *ar0, ac0, ac0"
+tms320_c55x_test	"SQDST"		860000e0	"sqdst *ar0, *ar0, ac0, ac0"
+tms320_c55x_test	"ABDST"		860000f0	"abdst *ar0, *ar0, ac0, ac0"
+tms320_c55x_test	"LMSF"		87000061	"lmsf *ar0, *ar0, ac0, ac0"
+
+# ADD/SUB/MOV::MOV test
+
+tms320_c55x_test	"ADD"		87000080	"add *ar0 << #16, ac0, ac0 :: mov hi(ac0 << t2), *ar0"
+tms320_c55x_test	"SUB"		870000a0	"sub *ar0 << #16, ac0, ac0 :: mov hi(ac0 << t2), *ar0"
+tms320_c55x_test	"MOV"		870000c0	"mov *ar0 << #16, ac0 :: mov hi(ac0 << t2), *ar0"
+
+# MOV/B/CALL/RESET/INTR/TRAP test
+
+tms320_c55x_test	"MOV"		9000		"mov ac0, ac0"
+tms320_c55x_test	"B"		9100		"b ac0"
+tms320_c55x_test	"CALL"		9200		"call ac0"
+tms320_c55x_test	"RESET"		9400		"reset"
+tms320_c55x_test	"INTR"		957f		"intr 0x1F"
+tms320_c55x_test	"TRAP"		95ff		"trap 0x1F"
+
+# XCC/XCCPART test
+
+tms320_c55x_test	"XCC"		9600		"xcc ac0 == 0"
+tms320_c55x_test	"XCCPART"	9680		"xccpart ac0 == 0"
+tms320_c55x_test	"XCC"		9e00		"xcc ac0 == 0"
+tms320_c55x_test	"XCCPART"	9e80		"xccpart ac0 == 0"
+tms320_c55x_test	"XCC"		9f00		"xcc ac0 == 0"
+tms320_c55x_test	"XCCPART"	9f80		"xccpart ac0 == 0"

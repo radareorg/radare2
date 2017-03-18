@@ -1,0 +1,50 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+PLUGIN="x86"
+
+CMDS='
+e asm.arch='$PLUGIN'
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
+af
+pif~?
+afi $$~size[1]
+'
+EXPECT='32
+78
+'
+run_test
+
+CMDS='
+e asm.arch='$PLUGIN'
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
+af
+# count basic blocks
+pdr~true?
+'
+EXPECT='8
+'
+run_test
+
+CMDS='
+e asm.arch='$PLUGIN'
+e asm.bits=32
+e anal.hasnext=0
+b 0x4e
+wx 5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3
+af
+# count basic blocks
+pdr~true?
+pdr~false?
+'
+EXPECT='3
+1
+'
+
+run_test

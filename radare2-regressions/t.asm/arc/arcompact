@@ -1,0 +1,583 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# -------------------------------
+# ABS instruction
+
+# -------------------------------
+# ABSS instruction
+
+# -------------------------------
+# ABSSW instruction
+
+# -------------------------------
+# ADC instruction
+
+# -------------------------------
+# ADD instruction
+NAME="arcompact: [ADD]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 80210503 @ 0x152
+s 0x152
+pi 1
+'
+EXPECT='add r1, r1, 0x14c
+'
+run_test
+
+# -------------------------------
+# ADD1 instruction
+# -------------------------------
+# ADD2 instruction
+NAME="arcompact: [ADD2]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 1526ce7000000401
+pi 1
+'
+EXPECT='add2 r14, 0x104, r3
+'
+run_test
+
+# -------------------------------
+# ADD3 instruction
+NAME="arcompact: [ADD3]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 5623542a
+pi 1
+'
+EXPECT='add3 r20, r19, 41
+'
+run_test
+
+# -------------------------------
+# ADD_S instruction
+NAME="arcompact: [ADD_S]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx a3c0
+pi 1
+'
+EXPECT='add_s sp, sp, 12
+'
+run_test
+
+# -------------------------------
+# ADD.NZ instruction
+NAME="arcompact: [ADD.NZ]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx c022822f0000ff0f
+pi 1
+'
+EXPECT='add.nz r18, r18, 0xfff
+'
+run_test
+
+# -------------------------------
+# AND instruction
+
+# -------------------------------
+# ASL instruction
+NAME="arcompact: [ASL]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 002e447300000100
+pi 1
+'
+EXPECT='asl r4, 1, r13
+'
+run_test
+
+# -------------------------------
+# ASL_S instruction
+
+# -------------------------------
+# ASR instruction
+
+# -------------------------------
+# ASR_S instruction
+NAME="arcompact: [ASR_S]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx da6e
+pi 1
+'
+EXPECT='asr_s r14, r14, 2
+'
+run_test
+
+# -------------------------------
+# BBIT0 instruction
+
+# -------------------------------
+# BBIT1 instruction
+
+# -------------------------------
+# BCLR instruction
+
+# -------------------------------
+# BIC instruction
+NAME="arcompact: [BIC]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 4625cd11
+pi 1
+'
+EXPECT='bic r13, r13, 7
+'
+run_test
+
+# -------------------------------
+# BL instruction
+NAME="arcompact: [BL]] - jump check"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx a60fcfff @ 0x160
+s 0x160
+ao 1~jump
+'
+EXPECT='jump: 0x00000104
+'
+run_test
+
+NAME="arcompact: [BL]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx a60fcfff @ 0x160
+s 0x160
+pi 1
+'
+EXPECT='bl 0x00000104
+'
+run_test
+
+# -------------------------------
+# BRLT instruction
+NAME="arcompact: [BRLT]"
+FILE=malloc://2048
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 2b0d1210 @ 0x4e2
+s 0x4e2
+pi 1
+'
+EXPECT='brlt r13, 0,0x0000050a
+'
+run_test
+
+# -------------------------------
+# BREQ instruction
+NAME="arcompact: [BREQ]"
+FILE=malloc://2048
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 450f1010 @ 0x4f2
+s 0x4f2
+pi 1
+'
+EXPECT='breq r15, 0,0x00000534
+'
+run_test
+
+# -------------------------------
+# BEQ instruction
+NAME="arcompact: [BEQ]"
+FILE=malloc://2048
+BROKEN=1
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 2a000100 @ 0x0
+s 0x0
+pi 1
+'
+EXPECT='beq 0x0000002a
+'
+run_test
+
+# -------------------------------
+# BRK instruction
+
+# -------------------------------
+# BMSK instruction
+# -------------------------------
+# BSET instruction
+# -------------------------------
+# BTST instruction
+# -------------------------------
+# BXOR instruction
+
+# -------------------------------
+# CMP instruction
+NAME="arcompact: [CMP]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 4c220080 @ 0x100
+s 0x100
+pi 1
+'
+EXPECT='cmp r2, 0
+'
+run_test
+
+# -------------------------------
+# CMP_S instruction
+NAME="arcompact: [CMP_S]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 80e3 @ 0x100
+s 0x100
+pi 1
+'
+EXPECT='cmp_s r3, 0
+'
+run_test
+
+# -------------------------------
+# DIVAW instruction
+
+# -------------------------------
+# EX instruction
+
+# -------------------------------
+# EXTB_S instruction
+NAME="arcompact: [EXTB_S]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 4f7a
+pi 1
+'
+EXPECT='extb_s r2, r2
+'
+run_test
+
+# -------------------------------
+# FLAG instruction
+NAME="arcompact: [FLAG]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 69204000
+pi 1
+'
+EXPECT='flag 1
+'
+run_test
+
+# -------------------------------
+# LD instruction
+NAME="arcompact: [LD]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 00120136 @ 0x148
+s 0x148
+pi 1
+'
+EXPECT='ld.as r1, [gp, 0]
+'
+run_test
+
+# -------------------------------
+# MAX instruction
+# -------------------------------
+# MIN instruction
+# -------------------------------
+# MOV instruction
+NAME="arcompact: [MOV]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 0a22803f00002839 @ 0x144
+s 0x144
+pi 1
+'
+EXPECT='mov gp, 0x3928
+'
+run_test
+
+# -------------------------------
+# MOV_S instruction
+NAME="arcompact: [MOV_S]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 8870 @ 0x100
+s 0x100
+pi 1
+'
+EXPECT='mov_s r0, r4
+'
+run_test
+
+# NOT instruction
+# -------------------------------
+# NEG instruction
+NAME="arcompact: [NEG_S]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 3379
+pi 1
+'
+EXPECT='neg_s r1, r1
+'
+run_test
+
+# -------------------------------
+# NOP instruction
+NAME="arcompact: [NOP]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 4a260070
+pi 1
+'
+EXPECT='nop 
+'
+run_test
+
+# -------------------------------
+# NOP_S instruction
+NAME="arcompact: [NOP_S]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx e078
+pi 1
+'
+EXPECT='nop_s 
+'
+run_test
+
+# -------------------------------
+# OR instruction
+NAME="arcompact: [OR]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 45244400
+pi 1
+'
+EXPECT='or r4, r4, 1
+'
+run_test
+
+# -------------------------------
+# SUB instruction
+NAME="arcompact: [SUB]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 0226837000007439 @ 0x122
+s 0x122
+pi 1
+'
+EXPECT='sub r3, 0x3974, r2
+'
+run_test
+# -------------------------------
+# SBC instruction
+
+# -------------------------------
+# TST instruction
+NAME="arcompact: [TST]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 0b24c080
+pi 1
+'
+EXPECT='tst r4, r3
+'
+run_test
+# RCMP instruction
+# -------------------------------
+# RSUB instruction
+NAME="arcompact: [RSUB]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx ce212d00
+pi 1
+'
+EXPECT='rsub.hi r1, r1, 0
+'
+run_test
+# -------------------------------
+
+# SUB1 instruction
+# SUB2 instruction
+# SUB3 instruction
+# ROR instruction
+
+# SEX instruction
+# -------------------------------
+# SLEEP instruction
+# -------------------------------
+# SWI instruction
+NAME="arcompact: [SWI]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 6f223f00
+pi 1
+'
+EXPECT='swi 
+'
+run_test
+# -------------------------------
+# BRK instruction
+# TRAP0 instruction
+# TRAP_S instruction
+# RTIE instruction
+# SYNC instruction
+# -------------------------------
+# LPNZ instruction
+NAME="arcompact: [LPNZ] - jump check"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx e820a201 @ 0x138
+s 0x138
+ao 1~jump
+'
+EXPECT='jump: 0x00000144
+'
+run_test
+
+NAME="arcompact: [LPNZ]"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx e820a201 @ 0x138
+s 0x138
+pi 1
+'
+EXPECT='lpnz 0x00000144
+'
+run_test
+# -------------------------------
+# LR instruction
+# SR instruction
+# -------------------------------
+# ST instruction
+NAME="arcompact: [ST]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx fc194080
+pi 1
+'
+EXPECT='st r1, [r1, -4]
+'
+run_test
+# -------------------------------
+# ST_S instruction
+NAME="arcompact: [ST_S]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 02a1
+pi 1
+'
+EXPECT='st_s r0, [r1, 8]
+'
+run_test
+
+# -------------------------------
+# PUSH instruction
+NAME="arcompact: [PUSH_S]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx f1c0
+pi 1
+'
+EXPECT='push_s blink
+'
+run_test
+# -------------------------------
+# POP instruction
+NAME="arcompact: [POP_S]"
+FILE=malloc://32
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx d1c0
+pi 1
+'
+EXPECT='pop_s blink
+'
+run_test
+
+# -------------------------------
+# XOR instruction
+
+# -------------------------------
+
+NAME="ARCompact ISA instruction length"
+FILE=malloc://512
+CMDS='
+e asm.arch=arc
+e asm.bits=16
+wx 0a22803f00002839 @ 0
+wx cf7200003439 @ 8
+wx 422bbc80 @ 8+6
+wx 00db @ 8+6+4
+ao 4~size
+'
+EXPECT='size: 8
+size: 6
+size: 4
+size: 2
+'
+run_test

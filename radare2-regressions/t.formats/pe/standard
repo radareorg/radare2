@@ -1,0 +1,10 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami standard.exe - open'
+FILE=../../bins/pe/standard.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test

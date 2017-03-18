@@ -1,0 +1,12 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+CMDS='
+wx 10203040
+b 128
+px~?
+'
+EXPECT='9
+'
+
+run_test

@@ -1,0 +1,277 @@
+#!/bin/sh
+# GPL 3+ - Copyright (C) 2014-2015  pancake, Maijin
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='baddr =='
+FILE=../../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='!rabin2 -qe ${R2_FILE};!rabin2 -B 0x400000 -qe ${R2_FILE}'
+EXPECT='0x00400410
+0x00400410
+'
+run_test
+
+NAME='baddr > 0'
+FILE=../../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='!rabin2 -qe ${R2_FILE};!rabin2 -B 0x800000 -qe ${R2_FILE}'
+EXPECT='0x00400410
+0x00800410
+'
+run_test
+
+NAME='baddr 0'
+FILE=../../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='!rabin2 -qe ${R2_FILE};!rabin2 -B 0 -qe ${R2_FILE}'
+EXPECT='0x00400410
+0x00000410
+'
+run_test
+
+NAME='laddr 0'
+FILE=../../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='!rabin2 -G 0 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x00400410 paddr=0x00000410 baddr=0x00400000 laddr=0x00000000 haddr=0x00000018 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='laddr 0 && baddr 0'
+FILE=../../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='!rabin2 -G 0 -B 0 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x00000410 paddr=0x00000410 baddr=0x00000000 laddr=0x00000000 haddr=0x00000018 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='rabin -k file'
+BROKEN=
+FILE=../../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='!rabin2 -k ${R2_FILE}'
+EXPECT=''
+EXPECT_ERR="r_core: Cannot open file
+"
+run_test
+
+NAME='rabin2 -K md5 -S file'
+FILE=../../bins/pe/a.exe
+ARGS=
+CMDS='!rabin2 -K md5 -S ${R2_FILE}'
+EXPECT='[Sections]
+idx=00 vaddr=0x00401000 paddr=0x00000400 sz=2560 vsz=4096 perm=m-r-x md5=3d6a5b8dc5e41b09659638ad5735e5b5 name=.text
+idx=01 vaddr=0x00402000 paddr=0x00000e00 sz=512 vsz=4096 perm=m-rw- md5=b3c542ba67f2d1a949fa1a25ce22f7e3 name=.data
+idx=02 vaddr=0x00403000 paddr=0x00001000 sz=512 vsz=4096 perm=m-r-- md5=c9a877a4e945b087b8323830442c88d6 name=.rdata
+idx=03 vaddr=0x00404000 paddr=0x00000000 sz=0 vsz=4096 perm=m-rw- md5=d41d8cd98f00b204e9800998ecf8427e name=.bss
+idx=04 vaddr=0x00405000 paddr=0x00001200 sz=1024 vsz=4096 perm=m-rw- md5=963212dc58a74f32e0f6ffce84dcf7ea name=.idata
+
+5 sections
+'
+run_test
+
+NAME='rabin2 -s file pe'
+BROKEN=
+FILE=../../bins/pe/a.exe
+ARGS=
+CMDS='!rabin2 -s ${R2_FILE}|wc -l|awk "{print \$1}"'
+EXPECT='23
+'
+run_test
+
+NAME='rabin2 -s file elf'
+BROKEN=
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS='!rabin2 -s ${R2_FILE}|wc -l|awk "{print \$1}"'
+EXPECT='36
+'
+run_test
+
+NAME='rabin2 -S and -rS file elf'
+BROKEN=
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+FILTER='sed "s/\ *//g"'
+CMDS='!rabin2 -S ${R2_FILE}|wc -l|awk "{print \$1}"
+!rabin2 -rS ${R2_FILE}|wc -l|awk "{print \$1}"
+!env RABIN2_PREFIX=prixfixe rabin2 -S ${R2_FILE} |grep prixfixe. |wc -l
+!env RABIN2_PREFIX=prixfixe rabin2 -rS ${R2_FILE} |grep prixfixe. |wc -l'
+EXPECT='42
+158
+39
+156
+'
+run_test
+
+NAME='rabin2 -z pe'
+BROKEN=
+FILE=../../bins/pe/a.exe
+ARGS=
+CMDS='!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"'
+EXPECT='4
+'
+run_test
+
+NAME='rabin2 -z elf'
+BROKEN=
+FILE=../../bins/elf/analysis/x86-helloworld-gcc
+ARGS=
+CMDS='!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"'
+EXPECT='1
+'
+run_test
+
+NAME='rabin2 -G 0x1000 -rs fatmach0'
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -G 0x1000 -rs ${R2_FILE}|grep "f " | wc -l|awk "{print \$1}"'
+EXPECT='3
+'
+run_test
+
+NAME='rabin2 -G 0x1300 -rs fatmach0'
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -G 0x1300 -rs ${R2_FILE}|wc -l|awk "{print \$1}"'
+EXPECT='1
+'
+run_test
+
+NAME='rabin2 -G 0x1000 -e fatmach0'
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -G 0x1000 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x100000ef8 paddr=0x00001ef8 baddr=0x100000000 laddr=0x00001000 haddr=0x00000570 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='rabin2 -e fatmach0'
+BROKEN=1
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x100000ef8 paddr=0x00001ef8 baddr=0x100000000 laddr=0x00001000 haddr=0x00000570 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='rabin2 -G 0x5000 -e fatmach0'
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -G 0x5000 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x00001f44 paddr=0x00005f44 baddr=0x00001000 laddr=0x00005000 haddr=0x00000420 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='rabin2 -a x86 -b 32 -e fatmach0'
+BROKEN=1
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -a x86 -b 32 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x00001f44 paddr=0x00005f44 baddr=0x00001000 laddr=0x00005000 haddr=0x00000420 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='rabin2 -B 0x2000000 -G 0x1000 -e fatmach0'
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x02000ef8 paddr=0x00001ef8 baddr=0x02000000 laddr=0x00001000 haddr=0x00000570 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='TODO: test on pie fatmach0'
+FILE=../../bins/mach0/fatmach0-3true
+BROKEN=1
+ARGS=
+CMDS='!rabin2 -B 0x2000000 -G 0x1000 -e ${R2_FILE}'
+EXPECT='???'
+run_test
+
+
+NAME='rabin2 -B 0x2000000 -e arm64'
+FILE=../../bins/mach0/hello-ios-arm64
+ARGS=
+CMDS='!rabin2 -B 0x2000000 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x02007f34 paddr=0x00007f34 baddr=0x02000000 laddr=0x00000000 haddr=0x00000468 type=program
+
+1 entrypoints
+'
+run_test
+
+NAME='rabin2 -B 0x2000000 -e arm64'
+FILE=../../bins/mach0/hello-ios-arm64
+ARGS=
+CMDS='!rabin2 -B 0x2000000 -e ${R2_FILE}'
+EXPECT='[Entrypoints]
+vaddr=0x02007f34 paddr=0x00007f34 baddr=0x02000000 laddr=0x00000000 haddr=0x00000468 type=program
+
+1 entrypoints
+'
+run_test
+
+
+
+NAME='rabin2 -a x86 -b 32 -i fatmach0'
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -a x86 -b 32 -i ${R2_FILE}'
+EXPECT='[Imports]
+ordinal=000 plt=0x00001f94 bind=NONE type=FUNC name=exit
+ordinal=001 plt=0x00000000 bind=NONE type=FUNC name=dyld_stub_binder
+
+2 imports
+'
+run_test
+
+NAME='rabin2 -G 0x5000 -i fatmach0'
+FILE=../../bins/mach0/fatmach0-3true
+ARGS=
+CMDS='!rabin2 -G 0x5000 -i ${R2_FILE}'
+EXPECT='[Imports]
+ordinal=000 plt=0x00001f94 bind=NONE type=FUNC name=exit
+ordinal=001 plt=0x00000000 bind=NONE type=FUNC name=dyld_stub_binder
+
+2 imports
+'
+run_test
+
+
+NAME='rabin2 -qqz'
+FILE=../../bins/elf/analysis/hello-linux-x86_64
+ARGS=
+CMDS='!rabin2 -qqz ${R2_FILE}'
+EXPECT='Hello World
+'
+run_test
+
+
+NAME='rabin2 -qOr'
+FILE=../../bins/elf/analysis/ls-linux-x86_64-zlul
+ARGS=
+CMDS='!rabin2 -qOr/.data/-1 ${FILE}
+!rabin2 -qOr/.data/-1 ${FILE}'
+EXPECT=''
+run_test

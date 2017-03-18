@@ -1,0 +1,36 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+CMDS='
+b 100
+ph md5 64
+ph md5 99
+w hello world
+ph md5 11
+ph md5 @!11
+ph sha1 11
+ph pcprint
+'
+EXPECT='3b5d3c7d207e37dceeedd301e35e2e58
+fa8715078d45101200a6e2bf7321aa04
+5eb63bbbe01eeed093cb22bb8f5acdc3
+5eb63bbbe01eeed093cb22bb8f5acdc3
+2aae6c35c94fcfb415dbe95f408b9ce91ee846ed
+11
+'
+run_test
+
+NAME="ph crc32"
+CMDS="b 12
+w hello world
+!rahash2 -qa crc16 -s 'hello world'
+ph crc16 11
+!rahash2 -qa crc32 -s 'hello world'
+ph crc32 11
+"
+EXPECT='39c1
+39c1
+0d4a1185
+0d4a1185
+'
+run_test

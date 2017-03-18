@@ -1,0 +1,30 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami aslr-ld.exe - open'
+FILE=../../bins/pe/aslr-ld.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami aslr-ld.exe - entrypoint'
+FILE=../../bins/pe/aslr-ld.exe
+CMDS='
+s
+'
+EXPECT='0x401000
+'
+IGNORE_ERR=1
+run_test
+
+NAME='PE: corkami aslr-ld.exe - pi 1'
+FILE=../../bins/pe/aslr-ld.exe
+CMDS='
+pi 1
+'
+EXPECT='inc dword [0x401088]
+'
+IGNORE_ERR=1
+run_test

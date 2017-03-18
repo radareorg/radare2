@@ -1,0 +1,272 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='ahi 2 + endian'
+CMDS='
+wx b8410d4300
+e asm.arch=x86
+ahi 2
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+'
+EXPECT="mov eax, 'C\\x0dA'
+mov eax, 'A\\x0dC'
+"
+run_test
+
+NAME='ahi 2 + endian 2'
+CMDS='
+wx b841424300
+e asm.arch=x86
+ahi 2
+e cfg.bigendian=false
+pi 1
+e cfg.bigendian=true
+pi 1
+'
+EXPECT="mov eax, 'CBA'
+mov eax, 'ABC'
+"
+run_test
+
+NAME='ahi none'
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+pi 1
+'
+EXPECT='sub rsp, 0x648
+'
+run_test
+
+NAME='ahi with colors'
+CMDS='e asm.bits=64
+e asm.arch=x86
+e scr.color=true
+wx 4881ec48060000
+pd 1
+ahi 10
+pd 1
+'
+EXPECT='  [36m          [0m[7m[32m0x00000000[0m      [33m48[37m81[37mec[33m48[37m06[32m00[37m.[0m  [33msub[36m rsp[0m,[36m[36m [33m0x648[0m[0m[0m
+  [36m          [0m[7m[32m0x00000000[0m      [33m48[37m81[37mec[33m48[37m06[32m00[37m.[0m  [33msub[36m rsp[0m,[36m[36m [33m1608[0m[0m[0m
+'
+run_test
+
+NAME="ahi 0x41 -> 'A'"
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+wx 4883f841 # cmp rax, 0x41
+pi 1
+ahi 2
+pi 1
+'
+EXPECT="cmp rax, 0x41
+cmp rax, 'A'
+"
+run_test
+
+NAME='ahi 0xe -> 1'
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+wx 4883f80e # cmp rax, 0xe
+pi 1
+ahi 1
+pi 1
+'
+EXPECT='cmp rax, 0xe
+cmp rax, 1110b
+'
+run_test
+
+NAME='ahi 4 -> 1'
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+wx 4883f804 # cmp rax, 4
+pi 1
+ahi 1
+pi 1
+'
+EXPECT='cmp rax, 4
+cmp rax, 100b
+'
+run_test
+
+NAME='ahi none'
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+pd 1
+'
+EXPECT='            0x00000000      4881ec480600.  sub rsp, 0x648
+'
+run_test
+
+NAME='ahi none'
+CMDS='e asm.bits=64
+e asm.arch=x86
+ahi 16
+wx 4881ec48060000
+pd 1
+'
+EXPECT='            0x00000000      4881ec480600.  sub rsp, 0x648
+'
+run_test
+
+NAME='ahi 10'
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+ahi 10
+pd 1
+'
+EXPECT='            0x00000000      4881ec480600.  sub rsp, 1608
+'
+run_test
+
+NAME='ahi 8'
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+ahi 8
+pd 1
+'
+EXPECT='            0x00000000      4881ec480600.  sub rsp, 03110
+'
+run_test
+
+NAME='ahi 1'
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+ahi 1
+pd 1
+'
+EXPECT='            0x00000000      4881ec480600.  sub rsp, 11001001000b
+'
+run_test
+
+NAME='ahi 1 - pi'
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx 4881ec48060000
+ahi 1
+pi 1
+'
+EXPECT='sub rsp, 11001001000b
+'
+run_test
+
+NAME='ahi 1'
+FILE=malloc://16
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 4883e4f0
+ahi 1
+pi 1
+'
+EXPECT='and rsp, 1111111111111111111111111111111111111111111111111111111111110000b
+'
+run_test
+
+NAME='ahi 10'
+FILE=malloc://16
+BROKEN=
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 4883e4f0
+ahi 10
+pi 1
+'
+EXPECT='and rsp, -16
+'
+run_test
+
+NAME='ahi 2'
+FILE=malloc://16
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx b841414141
+ahi 2
+pi 1
+'
+EXPECT="mov eax, 'AAAA'
+"
+run_test
+
+NAME='ah*'
+FILE=malloc://16
+CMDS='
+e asm.arch=x86
+e asm.bits=64
+wx 4883e4f0
+ahi 10 @ 0x00404879
+ah*
+'
+EXPECT='ahi 10 @ 0x404879
+'
+run_test
+
+NAME='ah.'
+FILE=malloc://16
+CMDS='
+ahi 10 @ 0x8
+s 0x8
+ah.
+'
+EXPECT=' 0x00000008 - 0x00000008 => immbase=10
+'
+run_test
+
+NAME='64bit ahi 10'
+FILE=-
+ARGS="-m 0x100001000"
+CMDS='
+e asm.relsub=false
+e asm.leahints=false
+e asm.arch=x86
+e asm.bits=64
+wx c7055f44000000000000
+pd 1
+e asm.relsub=true; pd 1
+ahi 10; pd 1
+'
+EXPECT='            0x100001000      c7055f440000.  mov dword [rip + 0x445f], 0 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov dword [0x100005469], 0 ; [0x100005469:4]=-1
+            0x100001000      c7055f440000.  mov dword [4294988905], 0  ; [0x100005469:4]=-1
+'
+run_test
+
+NAME='ahi s'
+BROKEN=1
+CMDS='e asm.bits=64
+e asm.arch=x86
+wx c74424685265
+pi 1
+ahi s
+pi 1
+'
+EXPECT="mov dword [rsp + 0x68], 0x6c896552
+mov dword [rsp + 0x68], 'Read'
+"
+run_test
+
+
+NAME='ahi s 2'
+CMDS='wx b868584d56
+e asm.bits=64
+ahi s
+pi 1
+'
+EXPECT="mov eax, 'VMXh'
+"
+run_test

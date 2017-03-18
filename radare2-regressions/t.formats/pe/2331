@@ -1,0 +1,10 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: #2331'
+FILE=../../bins/pe/2331
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+IGNORE_ERR=1
+run_test

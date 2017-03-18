@@ -1,0 +1,35 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+FILE=--
+NAME="comment spaces"
+CMDS='CS one
+CC foo
+CS two
+CC bar @ 1
+CC cow @ 2
+CC
+CS
+'
+EXPECT='0x00000001 CCu "bar"
+0x00000002 CCu "cow"
+0    1 . one
+1    2 * two
+'
+run_test
+
+FILE=--
+NAME="select all meta spaces"
+CMDS='CS one
+CC foo
+CS two
+CC bar @ 1
+CC cow @ 2
+CS *
+CC
+'
+EXPECT='0x00000000 CCu "foo"
+0x00000001 CCu "bar"
+0x00000002 CCu "cow"
+'
+run_test

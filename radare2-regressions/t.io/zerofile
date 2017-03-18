@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2012-2013  pancake, Edd Barrett, Simon Ruderich
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+
+NAME='empty file+seek'
+FILE=.empty
+ARGS=-w
+CMDS='
+w hello world
+p8 12
+psz@6
+'
+EXPECT='68656c6c6f20776f726c64ff
+world
+'
+rm -f .empty
+run_test
+rm -f .empty
+
+
+NAME='empty file+resize'
+FILE=.empty
+ARGS=-w
+CMDS='
+w hello world
+p8 12
+r-6
+psz
+'
+EXPECT='68656c6c6f20776f726c64ff
+world
+'
+rm -f .empty
+run_test
+cat .empty
+rm -f .empty

@@ -1,0 +1,150 @@
+#!/bin/sh
+# LGPL - Copyright (C) 2014 pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME="symbols non common LD script"
+FILE=../../bins/elf/analysis/custom_ldscript
+ARGS=
+CMDS='is
+'
+EXPECT='[Symbols]
+vaddr=0x00600660 paddr=0x00000660 ord=026 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__init_array_end
+vaddr=0x00600660 paddr=0x00000660 ord=027 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=_DYNAMIC
+vaddr=0x00600660 paddr=0x00000660 ord=028 fwd=NONE sz=0 bind=LOCAL type=NOTYPE name=__init_array_start
+vaddr=0x006007f8 paddr=0x000007f8 ord=029 fwd=NONE sz=0 bind=LOCAL type=OBJECT name=_GLOBAL_OFFSET_TABLE_
+vaddr=0x00400520 paddr=0x00000520 ord=030 fwd=NONE sz=2 bind=GLOBAL type=FUNC name=__libc_csu_fini
+vaddr=0x00600830 paddr=0x00000830 ord=031 fwd=NONE sz=0 bind=UNKNOWN type=NOTYPE name=data_start
+vaddr=0x00600834 paddr=0x00600834 ord=032 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_edata
+vaddr=0x00400524 paddr=0x00000524 ord=033 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_fini
+vaddr=0x00400450 paddr=0x00000450 ord=035 fwd=NONE sz=49 bind=GLOBAL type=FUNC name=process
+vaddr=0x00600830 paddr=0x00000830 ord=037 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=__data_start
+vaddr=0x00400548 paddr=0x00000548 ord=039 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=_IO_stdin_used
+vaddr=0x004004b0 paddr=0x000004b0 ord=040 fwd=NONE sz=101 bind=GLOBAL type=FUNC name=__libc_csu_init
+vaddr=0x00600838 paddr=0x00600838 ord=041 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_end
+vaddr=0x00400481 paddr=0x00000481 ord=042 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_start
+vaddr=0x00600834 paddr=0x00600834 ord=043 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=__bss_start
+vaddr=0x01c00844 paddr=0x00200844 ord=044 fwd=NONE sz=128 bind=GLOBAL type=FUNC name=main
+vaddr=0x01a00838 paddr=0x00000838 ord=045 fwd=NONE sz=8 bind=GLOBAL type=OBJECT name=obj
+vaddr=0x01c00840 paddr=0x00200840 ord=047 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=glob
+vaddr=0x004003d8 paddr=0x000003d8 ord=048 fwd=NONE sz=0 bind=GLOBAL type=FUNC name=_init
+vaddr=0x00400410 paddr=0x00000410 ord=001 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.printf
+vaddr=0x00400420 paddr=0x00000420 ord=002 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__libc_start_main
+vaddr=0x00400430 paddr=0x00000430 ord=003 fwd=NONE sz=16 bind=UNKNOWN type=NOTYPE name=imp.__gmon_start__
+vaddr=0x00400440 paddr=0x00000440 ord=004 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.atoi
+
+23 symbols
+'
+
+run_test
+
+NAME="symbols with no sections header information"
+FILE=../../bins/elf/analysis/main_nosect
+ARGS=
+CMDS='is
+'
+EXPECT='[Symbols]
+vaddr=0x004003e0 paddr=0x000003e0 ord=001 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.puts
+vaddr=0x004003f0 paddr=0x000003f0 ord=002 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__libc_start_main
+vaddr=0x00400400 paddr=0x00000400 ord=003 fwd=NONE sz=16 bind=UNKNOWN type=NOTYPE name=imp.__gmon_start__
+
+3 symbols
+'
+run_test
+
+NAME="symbols with no sections header information 2"
+FILE=../../bins/elf/analysis/clark
+ARGS=
+CMDS='is
+'
+EXPECT='[Symbols]
+vaddr=0x080487dc paddr=0x000007dc ord=008 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=_IO_stdin_used
+vaddr=0x08048370 paddr=0x00000370 ord=001 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.mprotect
+vaddr=0x08048380 paddr=0x00000380 ord=002 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.puts
+vaddr=0x08048390 paddr=0x00000390 ord=003 fwd=NONE sz=16 bind=UNKNOWN type=NOTYPE name=imp.__gmon_start__
+vaddr=0x080483a0 paddr=0x000003a0 ord=004 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.exit
+vaddr=0x080483b0 paddr=0x000003b0 ord=005 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__libc_start_main
+vaddr=0x080483c0 paddr=0x000003c0 ord=006 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.ptrace
+vaddr=0x080483d0 paddr=0x000003d0 ord=007 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.calloc
+
+8 symbols
+'
+run_test
+
+NAME="symbols with no sections header information 3"
+FILE=../../bins/elf/libmemalloc-dump-mem
+ARGS=
+CMDS='is
+'
+EXPECT='[Symbols]
+vaddr=0x00003dd0 paddr=0x00002dd0 ord=003 fwd=NONE sz=36 bind=UNKNOWN type=OBJECT name=vtableforgralloc::IMemAlloc
+vaddr=0x00001210 paddr=0x00001210 ord=006 fwd=NONE sz=68 bind=GLOBAL type=FUNC name=gralloc::IonAlloc::unmap_buffer
+vaddr=0x00001254 paddr=0x00001254 ord=011 fwd=NONE sz=96 bind=GLOBAL type=FUNC name=gralloc::IonAlloc::open_device
+vaddr=0x000012b4 paddr=0x000012b4 ord=013 fwd=NONE sz=240 bind=GLOBAL type=FUNC name=gralloc::IonAlloc::clean_buffer
+vaddr=0x000013a4 paddr=0x000013a4 ord=015 fwd=NONE sz=84 bind=GLOBAL type=FUNC name=gralloc::IonAlloc::map_buffer
+vaddr=0x000013f8 paddr=0x000013f8 ord=017 fwd=NONE sz=68 bind=GLOBAL type=FUNC name=gralloc::IonAlloc::free_buffer
+vaddr=0x0000143c paddr=0x0000143c ord=021 fwd=NONE sz=304 bind=GLOBAL type=FUNC name=gralloc::IonAlloc::alloc_buffer
+vaddr=0x0000156c paddr=0x0000156c ord=022 fwd=NONE sz=22 bind=GLOBAL type=FUNC name=gralloc::IonAlloc::close_device
+vaddr=0x00003df8 paddr=0x00002df8 ord=024 fwd=NONE sz=36 bind=GLOBAL type=OBJECT name=vtableforgralloc::IonAlloc
+vaddr=0x00003e20 paddr=0x00002e20 ord=026 fwd=NONE sz=24 bind=UNKNOWN type=OBJECT name=vtableforgralloc::IAllocController
+vaddr=0x00001614 paddr=0x00001614 ord=027 fwd=NONE sz=48 bind=GLOBAL type=FUNC name=gralloc::IonController::getAllocator
+vaddr=0x00001644 paddr=0x00001644 ord=028 fwd=NONE sz=452 bind=GLOBAL type=FUNC name=gralloc::IonController::allocate
+vaddr=0x00001808 paddr=0x00001808 ord=036 fwd=NONE sz=40 bind=GLOBAL type=FUNC name=AdrenoMemInfo::AdrenoMemInfo
+vaddr=0x00001808 paddr=0x00001808 ord=039 fwd=NONE sz=40 bind=GLOBAL type=FUNC name=AdrenoMemInfo::AdrenoMemInfo
+vaddr=0x00001830 paddr=0x00001830 ord=040 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=AdrenoMemInfo::~AdrenoMemInfo
+vaddr=0x00001830 paddr=0x00001830 ord=042 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=AdrenoMemInfo::~AdrenoMemInfo
+vaddr=0x00001840 paddr=0x00001840 ord=043 fwd=NONE sz=288 bind=GLOBAL type=FUNC name=AdrenoMemInfo::getStride
+vaddr=0x00001960 paddr=0x00001960 ord=045 fwd=NONE sz=68 bind=GLOBAL type=FUNC name=gralloc::IonController::IonController
+vaddr=0x00001960 paddr=0x00001960 ord=047 fwd=NONE sz=68 bind=GLOBAL type=FUNC name=gralloc::IonController::IonController
+vaddr=0x000019a4 paddr=0x000019a4 ord=048 fwd=NONE sz=40 bind=GLOBAL type=FUNC name=gralloc::IAllocController::getInstance
+vaddr=0x000019cc paddr=0x000019cc ord=049 fwd=NONE sz=60 bind=GLOBAL type=FUNC name=free_buffer
+vaddr=0x00001a08 paddr=0x00001a08 ord=050 fwd=NONE sz=56 bind=UNKNOWN type=FUNC name=android::Singleton<AdrenoMemInfo>::getInstance
+vaddr=0x00001a40 paddr=0x00001a40 ord=051 fwd=NONE sz=636 bind=GLOBAL type=FUNC name=getBufferSizeAndDimensions
+vaddr=0x00001cbc paddr=0x00001cbc ord=052 fwd=NONE sz=244 bind=GLOBAL type=FUNC name=alloc_buffer
+vaddr=0x00001db0 paddr=0x00001db0 ord=054 fwd=NONE sz=44 bind=UNKNOWN type=FUNC name=android::Singleton<AdrenoMemInfo>::hasInstance
+vaddr=0x00001ddc paddr=0x00001ddc ord=055 fwd=NONE sz=2 bind=UNKNOWN type=FUNC name=android::Singleton<AdrenoMemInfo>::~Singleton
+vaddr=0x00001ddc paddr=0x00001ddc ord=056 fwd=NONE sz=2 bind=UNKNOWN type=FUNC name=android::Singleton<AdrenoMemInfo>::~Singleton
+vaddr=0x00001ddc paddr=0x00001ddc ord=057 fwd=NONE sz=2 bind=UNKNOWN type=FUNC name=android::Singleton<AdrenoMemInfo>::Singleton
+vaddr=0x00001ddc paddr=0x00001ddc ord=058 fwd=NONE sz=2 bind=UNKNOWN type=FUNC name=android::Singleton<AdrenoMemInfo>::Singleton
+vaddr=0x00003e38 paddr=0x00002e38 ord=060 fwd=NONE sz=24 bind=GLOBAL type=OBJECT name=vtableforgralloc::IonController
+vaddr=0x0000400c paddr=0x0000300c ord=061 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=gralloc::IAllocController::sController
+vaddr=0x00004004 paddr=0x00003004 ord=062 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=android::Singleton<AdrenoMemInfo>::sInstance
+vaddr=0x00004008 paddr=0x00003008 ord=063 fwd=NONE sz=4 bind=GLOBAL type=OBJECT name=android::Singleton<AdrenoMemInfo>::sLock
+vaddr=0x00004004 paddr=0x00003004 ord=064 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_edata
+vaddr=0x00004004 paddr=0x00003004 ord=065 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=__bss_start
+vaddr=0x00004010 paddr=0x00004010 ord=066 fwd=NONE sz=0 bind=GLOBAL type=NOTYPE name=_end
+vaddr=0x00000000 paddr=0x00000000 ord=001 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__cxa_finalize
+vaddr=0x00000000 paddr=0x00000000 ord=002 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__cxa_atexit
+vaddr=0x00000000 paddr=0x00000000 ord=004 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__aeabi_unwind_cpp_pr0
+vaddr=0x00000000 paddr=0x00000000 ord=005 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp._ZdlPv
+vaddr=0x00000000 paddr=0x00000000 ord=007 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.munmap
+vaddr=0x00000000 paddr=0x00000000 ord=008 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__errno
+vaddr=0x00000000 paddr=0x00000000 ord=009 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.strerror
+vaddr=0x00000000 paddr=0x00000000 ord=010 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__android_log_print
+vaddr=0x00000000 paddr=0x00000000 ord=012 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.open
+vaddr=0x00000000 paddr=0x00000000 ord=014 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.ioctl
+vaddr=0x00000000 paddr=0x00000000 ord=016 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.mmap
+vaddr=0x00000000 paddr=0x00000000 ord=018 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.pthread_mutex_lock
+vaddr=0x00000000 paddr=0x00000000 ord=019 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.close
+vaddr=0x00000000 paddr=0x00000000 ord=020 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.pthread_mutex_unlock
+vaddr=0x00000000 paddr=0x00000000 ord=023 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.pthread_mutex_destroy
+vaddr=0x00000000 paddr=0x00000000 ord=025 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__cxa_pure_virtual
+vaddr=0x00000000 paddr=0x00000000 ord=029 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp._Znwj
+vaddr=0x00000000 paddr=0x00000000 ord=030 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.property_get
+vaddr=0x00000000 paddr=0x00000000 ord=031 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.strncmp
+vaddr=0x00000000 paddr=0x00000000 ord=032 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__stack_chk_fail
+vaddr=0x00000000 paddr=0x00000000 ord=033 fwd=NONE sz=16 bind=GLOBAL type=OBJECT name=imp.__stack_chk_guard
+vaddr=0x00000000 paddr=0x00000000 ord=034 fwd=NONE sz=16 bind=GLOBAL type=OBJECT name=imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE5sLockE
+vaddr=0x00000000 paddr=0x00000000 ord=035 fwd=NONE sz=16 bind=GLOBAL type=OBJECT name=imp._ZN7android9SingletonIN7qdutils17QCCompositionTypeEE9sInstanceE
+vaddr=0x00000000 paddr=0x00000000 ord=037 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.dlopen
+vaddr=0x00000000 paddr=0x00000000 ord=038 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.dlsym
+vaddr=0x00000000 paddr=0x00000000 ord=041 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.dlclose
+vaddr=0x00000000 paddr=0x00000000 ord=044 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.strncasecmp
+vaddr=0x00000000 paddr=0x00000000 ord=046 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.pthread_mutex_init
+vaddr=0x00000000 paddr=0x00000000 ord=053 fwd=NONE sz=16 bind=GLOBAL type=OBJECT name=imp.__page_size
+vaddr=0x00000000 paddr=0x00000000 ord=059 fwd=NONE sz=16 bind=GLOBAL type=FUNC name=imp.__aeabi_atexit
+
+66 symbols
+'
+
+run_test

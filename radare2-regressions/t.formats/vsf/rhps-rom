@@ -1,0 +1,37 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+
+NAME='VSF: Rocky Horror Picture Show- open'
+BROKEN=
+FILE=../../bins/vsf/c128-rhps-rom.vsf
+IGNORE_ERR=1
+ARGS='-A'
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='VSF: Rocky Horror Picture Show- detection'
+BROKEN=
+FILE=../../bins/vsf/c128-rhps-rom.vsf
+IGNORE_ERR=1
+ARGS=''
+CMDS="iI~os"
+EXPECT='os       C128
+'
+run_test
+
+NAME='VSF: Rocky Horror Picture Show- ROMs'
+BROKEN=
+FILE=../../bins/vsf/c128-rhps-rom.vsf
+IGNORE_ERR=1
+ARGS=''
+CMDS="S"
+EXPECT='[00] * 0x000420a1 mr-x va=0x00004000 sz=0x7000 vsz=0x7000 BASIC
+[01] . 0x000490a1 mr-x va=0x0000b000 sz=0x1000 vsz=0x1000 MONITOR
+[02] . 0x0004a0a1 mr-x va=0x0000c000 sz=0x1000 vsz=0x1000 EDITOR
+[03] . 0x000400a1 mr-x va=0x0000e000 sz=0x2000 vsz=0x2000 KERNAL
+[04] . 0x0000008c mrwx va=0x00000000 sz=0x10000 vsz=0x10000 RAM_BANK_0
+[05] . 0x0001008c mrwx va=0x00000000 sz=0x10000 vsz=0x10000 RAM_BANK_1
+'
+run_test

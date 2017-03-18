@@ -1,0 +1,130 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+# Tests only whole disassembly opcode
+test_vector() {
+NAME="${1}: [${2}]"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+	BROKEN=1
+fi
+CMDS='
+e asm.arch='${1}'
+wx '${3}'
+pi 1
+'
+EXPECT="${4}
+"
+run_test
+}
+
+# Tests jump analysis
+test_jump() {
+NAME="${1}: [${2}] - jump check"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+	BROKEN=1
+fi
+CMDS='
+e asm.arch='${1}'
+wx '${3}'
+ao 1~jump
+'
+EXPECT="jump: ${4}
+"
+run_test
+}
+
+PLUGIN=8051
+
+# -------------------------------
+# bitness check
+NAME="8051: checking bitness (asm.bits)"
+FILE=malloc://32
+CMDS='
+e asm.arch=8051
+e asm.bits
+'
+EXPECT='8
+'
+run_test
+
+# -------------------------------
+# bitness writing check
+NAME="8051: checking bitness writing (asm.bits)"
+BROKEN=
+FILE=malloc://32
+CMDS='
+e asm.arch=8051
+e asm.bits=8
+'
+EXPECT=''
+run_test
+
+test_vector "${PLUGIN}" "ADD" 2b "add a, r3"
+test_vector "${PLUGIN}" "ADDC" 3438 "addc a, 0x38"
+test_vector "${PLUGIN}" "ANL" 5401 "anl a, 0x1"
+test_vector "${PLUGIN}" "CJNE" b4ab13 "cjne 0xab, 0xab, 0x13"
+test_jump "${PLUGIN}" "CJNE" b4ab13 "0x00000013" "br"
+test_vector "${PLUGIN}" "CLR" e4 "clr a "
+test_vector "${PLUGIN}" "CPL" f4 "cpl a 0x0"
+test_vector "${PLUGIN}" "DEC" 14 "dec a 0x0"
+test_vector "${PLUGIN}" "DJNZ" d8fc "djnz r0, 0xfc"
+test_jump "${PLUGIN}" "DJNZ" d8fc "0x000000fc" "br"
+test_vector "${PLUGIN}" "INC" 08 "inc r0"
+test_vector "${PLUGIN}" "JC" 4003 "jc 0x05"
+test_jump "${PLUGIN}" "JC" 4003 "0x00000005"
+test_vector "${PLUGIN}" "JNC" 5007 "jnc 0x09"
+test_jump "${PLUGIN}" "JNC" 5007 "0x00000009"
+test_vector "${PLUGIN}" "JZ" 6013 "jz 0x15"
+test_jump "${PLUGIN}" "JZ" 6013 "0x00000015"
+test_vector "${PLUGIN}" "JB" 20e004 "jb bit, 0xe004"
+test_jump "${PLUGIN}" "JB" 20e004 "0x0000e004"
+test_vector "${PLUGIN}" "JNB" 30e002 "jnb bit, 0xe002"
+test_jump "${PLUGIN}" "JNB" 30e002 "0x0000e002"
+test_vector "${PLUGIN}" "LCALL" 12b6cf "lcall 0xb6cf"
+test_jump "${PLUGIN}" "LCALL" 12b6cf "0x0000b6cf"
+test_vector "${PLUGIN}" "LJMP" 022c0d "ljmp 0x2d0d" "br"
+test_jump "${PLUGIN}" "LJMP" 022c0d "0x00002d0d" "br"
+test_vector "${PLUGIN}" "MOV" f6 "mov @r0, a"
+test_vector "${PLUGIN}" "MOV R1" 7900 "mov r1, 0x00"
+test_vector "${PLUGIN}" "MOV R2" 7a00 "mov r2, 0x00"
+test_vector "${PLUGIN}" "MOV R3" 7b00 "mov r3, 0x00"
+test_vector "${PLUGIN}" "MOV R4" 7c00 "mov r4, 0x00"
+test_vector "${PLUGIN}" "MOV R5" 7d00 "mov r5, 0x00"
+test_vector "${PLUGIN}" "MOV @a" 75a07f1 "mov 0xa0, #RAM_D0 "
+test_vector "${PLUGIN}" "MOVC" 93 "movc a, @a+dptr"
+test_vector "${PLUGIN}" "MOVX" e0 "movx a, @dptr"
+test_vector "${PLUGIN}" "MUL" a4 "mul ab 0x0"
+test_vector "${PLUGIN}" "ORL" 4480 "orl a, 0x80"
+test_vector "${PLUGIN}" "PUSH" c083 "push 0x83"
+test_vector "${PLUGIN}" "POP" d083 "pop 0x83"
+test_vector "${PLUGIN}" "RET" 22 "ret"
+test_vector "${PLUGIN}" "RLC" 33 "rlc a"
+test_vector "${PLUGIN}" "RRC" 13 "rrc a"
+test_vector "${PLUGIN}" "SETB" d242 "setb 0x42"
+test_vector "${PLUGIN}" "SETB" d3 "setb c"
+test_vector "${PLUGIN}" "SJMP" 8014 "sjmp 0x16"
+test_jump "${PLUGIN}" "SJMP" 8014 "0x00000016"
+test_vector "${PLUGIN}" "SUBB" 96 "subb a, @r0"
+test_vector "${PLUGIN}" "SWAP" c4 "swap a 0x0"
+test_vector "${PLUGIN}" "XRL" 64fa "xrl a, 0xfa"
+
+# -------------------------------
+# 8051 instruction length
+NAME="8051 instruction length"
+FILE=malloc://32
+BROKEN=
+CMDS='
+e asm.arch=8051
+wx 30450d @ 0
+wx d268 @ 3
+wx ef @ 3+2
+ao 3~size
+'
+EXPECT='size: 3
+size: 2
+size: 1
+'
+run_test
+

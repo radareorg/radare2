@@ -1,0 +1,124 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='PE: corkami cm01.exe - open'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS="q!"
+EXPECT=''
+run_test
+
+NAME='PE: corkami cm01.exe - sections'
+FILE=../../bins/pe/cm01.exe
+ARGS='-n'
+CMDS="!rabin2 -S ${FILE}"
+EXPECT='[Sections]
+idx=00 vaddr=0x00401000 paddr=0x00000600 sz=1536 vsz=4096 perm=m-r-x name=CODE
+idx=01 vaddr=0x00402000 paddr=0x00000c00 sz=512 vsz=4096 perm=m-rw- name=DATA
+idx=02 vaddr=0x00403000 paddr=0x00000e00 sz=2048 vsz=4096 perm=m-rw- name=.idata
+idx=03 vaddr=0x00404000 paddr=0x00001600 sz=512 vsz=4096 perm=m-r-- name=.edata
+idx=04 vaddr=0x00405000 paddr=0x00001800 sz=512 vsz=4096 perm=msr-- name=.reloc
+idx=05 vaddr=0x00406000 paddr=0x00001a00 sz=5120 vsz=8192 perm=msr-- name=.rsrc
+
+6 sections
+'
+run_test
+
+NAME='PE: corkami cm01.exe - section seek 1'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='s 0x00401000
+S.~[2]'
+EXPECT='CODE
+'
+run_test
+
+NAME='PE: corkami cm01.exe - section seek 2'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='s 0x00402000
+S.~[2]'
+EXPECT='DATA
+'
+run_test
+
+NAME='PE: corkami cm01.exe - section seek 3'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='s 0x00403000
+S.~[2]'
+EXPECT='.idata
+'
+run_test
+
+NAME='PE: corkami cm01.exe - section seek 4'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='s 0x00404000
+S.~[2]'
+EXPECT='.edata
+'
+run_test
+
+NAME='PE: corkami cm01.exe - section seek 5'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='s 0x00405000
+S.~[2]'
+EXPECT='.reloc
+'
+run_test
+
+NAME='PE: corkami cm01.exe - section seek 6'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='s 0x00406000
+S.~[2]'
+EXPECT='.rsrc
+'
+run_test
+
+NAME='PE: corkami cm01.exe - section refs 1'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='e anal.strings = true
+aaa
+pi 2 @ 0x004010b7'
+EXPECT='push str.CrackMe_v1.0
+push str.No_need_to_disasm_the_code_
+'
+run_test
+ 
+NAME='PE: corkami cm01.exe - section refs 2'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='e anal.strings = true
+aaa
+pi 2 @ 0x0040136b'
+EXPECT='push str.No_luck_
+push str.No_luck_there__mate_
+'
+run_test
+
+NAME='PE: corkami cm01.exe - section refs 3'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='e anal.strings = true
+aaa
+pi 2 @ 0x004013af'
+EXPECT='push str.No_luck_
+push str.No_luck_there__mate_
+'
+run_test
+ 
+NAME='PE: corkami cm01.exe - section refs 4'
+FILE=../../bins/pe/cm01.exe
+ARGS=''
+CMDS='e anal.strings = true
+aaa
+pi 2 @ 0x0040134f'
+EXPECT='push str.Good_work_
+push str.Great_work__mate__Now_try_the_next_CrackMe_
+'
+run_test
+ 

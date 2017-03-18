@@ -1,0 +1,67 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2013  pancake
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='mach0 entrypoint'
+BROKEN=
+FILE=../../bins/mach0/hello-osx-i386
+ARGS=
+CMDS='ie~addr
+'
+EXPECT='vaddr=0x00001f14 paddr=0x00000f14 baddr=0x00001000 laddr=0x00000000 haddr=0x00000464 type=program
+'
+run_test
+
+NAME='mach0 entry0 data'
+BROKEN=
+FILE=../../bins/mach0/hello-osx-i386
+ARGS=
+CMDS='p8 10 @ entry0
+'
+EXPECT='6a0089e583e4f083ec10
+'
+run_test
+
+NAME='mach0 entrypoint i386 LC_MAIN'
+BROKEN=
+FILE=../../bins/mach0/mach0-i386
+ARGS=
+CMDS='ie~addr
+'
+EXPECT='vaddr=0x00001f80 paddr=0x00000f80 baddr=0x00001000 laddr=0x00000000 haddr=0x00000240 type=program
+'
+run_test
+
+NAME='mach0 entrypoint x86_64 LC_MAIN'
+BROKEN=
+FILE=../../bins/mach0/mach0_2-x86_64
+ARGS=
+CMDS='ie~addr
+'
+EXPECT='vaddr=0x100000f70 paddr=0x00000f70 baddr=0x100000000 laddr=0x00000000 haddr=0x000002e0 type=program
+'
+run_test
+
+NAME='osx mach0 entrypoint'
+BROKEN=
+FILE=../../bins/mach0/ls-osx-x86_64
+ARGS=
+CMDS='ie~addr
+'
+EXPECT='vaddr=0x1000013d8 paddr=0x000013d8 baddr=0x100000000 laddr=0x00000000 haddr=0x00000648 type=program
+'
+run_test
+
+NAME='osx mach0 ik'
+BROKEN=
+FILE=../../bins/mach0/ls-osx-x86_64
+ARGS=
+IGNORE_ERR=1
+CMDS='ik~uuid
+'
+EXPECT='mach0_cmd_8.cmd=uuid
+uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
+'
+run_test

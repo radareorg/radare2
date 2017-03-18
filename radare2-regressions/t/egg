@@ -1,0 +1,35 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='egg: darwin-x86-64 syscall close '
+FILE=malloc://1024
+CMDS='e asm.arch=x86
+e asm.bits=64
+e asm.os=darwin
+gs close 3
+'
+EXPECT='6a03488b3c2448c7c0060000020f054883c408ccc3
+'
+run_test
+
+NAME='egg: linux-x86-64 syscall close '
+FILE=malloc://1024
+CMDS='e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+gs close 3
+'
+EXPECT='6a03488b3c2448c7c0030000000f054883c408ccc3
+'
+run_test
+
+NAME='egg: linux-x86-32 syscall close '
+FILE=malloc://1024
+CMDS='e asm.arch=x86
+e asm.bits=32
+e asm.os=linux
+gs close 3
+'
+EXPECT='6a038b1c24b806000000cd8083c404ccc3
+'
+run_test

@@ -1,0 +1,79 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='section remove 1'
+FILE=../bins/elf/analysis/ls-alxchk
+CMDS='
+S-22
+S~.init_array
+S-.@section..init
+S~.init
+S-.
+S~.text
+'
+EXPECT=''
+run_test
+
+NAME='S*'
+FILE=../bins/pe/hello-mingw32
+CMDS='S*
+'
+EXPECT='f section..text 2560 0x401000
+S 0x00000400 0x00401000 0x00000a00 0x00001000 .text mr-x
+f section..data 512 0x402000
+S 0x00000e00 0x00402000 0x00000200 0x00001000 .data mrw-
+f section..rdata 512 0x403000
+S 0x00001000 0x00403000 0x00000200 0x00001000 .rdata mr--
+f section..idata 1024 0x405000
+S 0x00001200 0x00405000 0x00000400 0x00001000 .idata mrw-
+'
+run_test
+
+NAME='Sj'
+FILE=../bins/pe/hello-mingw32
+CMDS='Sj~{}
+'
+EXPECT='[
+	{
+		"name": ".text",
+		"size": 2560,
+		"vsize": 4096,
+		"flags": "m-r-x",
+		"paddr": 1024,
+		"vaddr": 4198400
+	},
+	{
+		"name": ".data",
+		"size": 512,
+		"vsize": 4096,
+		"flags": "m-rw-",
+		"paddr": 3584,
+		"vaddr": 4202496
+	},
+	{
+		"name": ".rdata",
+		"size": 512,
+		"vsize": 4096,
+		"flags": "m-r--",
+		"paddr": 4096,
+		"vaddr": 4206592
+	},
+	{
+		"name": ".bss",
+		"size": 0,
+		"vsize": 4096,
+		"flags": "m-rw-",
+		"paddr": 0,
+		"vaddr": 4210688
+	},
+	{
+		"name": ".idata",
+		"size": 1024,
+		"vsize": 4096,
+		"flags": "m-rw-",
+		"paddr": 4608,
+		"vaddr": 4214784
+	}
+]
+'
+run_test

@@ -1,0 +1,85 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+test_vector() {
+NAME="${1}: [${2}]"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+		BROKEN=1
+		if [ -n "${TRAVIS}" ]; then
+			unset BROKEN
+			return
+		fi
+	fi
+CMDS='
+e asm.arch='${1}'
+e asm.bits=64
+wx '${3}'
+pi 1
+'
+EXPECT="${4}
+"
+run_test
+}
+
+PLUGIN=arm
+
+test_vector "${PLUGIN}" "msr sp_el0, x3" 034118d5 "msr sp_el0, x3"
+test_vector "${PLUGIN}" "msr SP_EL0, x3" 034118d5 "msr sp_el0, x3"
+test_vector "${PLUGIN}" "msr 0xc208, x3" 034118d5 "msr sp_el0, x3"
+test_vector "${PLUGIN}" "mrs x3, SP_EL0" 034138d5 "mrs x3, sp_el0"
+test_vector "${PLUGIN}" "nop" 1f2003d5 nop
+test_vector "${PLUGIN}" "b 0x7fffff8" feffff15 "b 0x7fffff8"
+test_vector "${PLUGIN}" "b 0x8" 02000014 "b 8"
+test_vector "${PLUGIN}" "b 0xff4" fd030014 "b 0xff4"
+test_vector "${PLUGIN}" "b 0x7efd4" f5fb0114 "b 0x7efd4"
+test_vector "${PLUGIN}" "bl 0x8" 02000094 "bl 8"
+test_vector "${PLUGIN}" "bl 0xfd4" f5030094 "bl 0xfd4"
+test_vector "${PLUGIN}" "br x4" 80001fd6 "br x4"
+test_vector "${PLUGIN}" "br x0" 00001fd6 "br x0"
+test_vector "${PLUGIN}" "br x9" 20011fd6 "br x9"
+test_vector "${PLUGIN}" "blr x7" e0003fd6 "blr x7"
+test_vector "${PLUGIN}" "blr x12" 80013fd6 "blr x12"
+test_vector "${PLUGIN}" "mov x20, x0" f40300aa "mov x20, x0"
+test_vector "${PLUGIN}" "mov x9, 5" a90080d2 "movz x9, 0x5" // equivalent
+test_vector "${PLUGIN}" "movz x1, 5" a10080d2 "movz x1, 0x5"
+test_vector "${PLUGIN}" "movn x6, 2" 46008092 "movn x6, 0x2"
+test_vector "${PLUGIN}" "movk x16, 15" f00180f2 "movk x16, 0xf"
+
+test_vector "${PLUGIN}" "orr x2, x3, x20" 620014aa "orr x2, x3, x20"
+test_vector "${PLUGIN}" "orr x1, x23, x0" e10200aa "orr x1, x23, x0"
+test_vector "${PLUGIN}" "orr x0, x13, x20" a00114aa "orr x0, x13, x20"
+test_vector "${PLUGIN}" "orr x22, x3, 0x2" 76007fb2 "orr x22, x3, 2"
+test_vector "${PLUGIN}" "orr x2, x3, 0x3" 620440b2 "orr x2, x3, 3"
+test_vector "${PLUGIN}" "orr x2, x3, 0x7" 620840b2 "orr x2, x3, 7"
+
+test_vector "${PLUGIN}" "orr w0, w13, w20"  a001142a "orr w0, w13, w20"
+test_vector "${PLUGIN}" "orr w22, w3, 0x2" 76001f32 "orr w22, w3, 2"
+
+test_vector "${PLUGIN}" "dmb sy" bf3f03d5 "dmb sy"
+test_vector "${PLUGIN}" "dmb st" bf3e03d5 "dmb st"
+test_vector "${PLUGIN}" "dmb ld" bf3d03d5 "dmb ld"
+test_vector "${PLUGIN}" "dmb ish" bf3b03d5 "dmb ish"
+test_vector "${PLUGIN}" "dmb ishst" bf3a03d5 "dmb ishst"
+test_vector "${PLUGIN}" "dmb ishld" bf3903d5 "dmb ishld"
+test_vector "${PLUGIN}" "dmb nsh" bf3703d5 "dmb nsh"
+test_vector "${PLUGIN}" "dmb nshst" bf3603d5 "dmb nshst"
+test_vector "${PLUGIN}" "dmb nshld" bf3503d5 "dmb nshld"
+test_vector "${PLUGIN}" "dmb osh" bf3303d5 "dmb osh"
+test_vector "${PLUGIN}" "dmb oshst" bf3203d5 "dmb oshst"
+test_vector "${PLUGIN}" "dmb oshld" bf3103d5 "dmb oshld"
+
+test_vector "${PLUGIN}" "dsb sy" 9f3f03d5 "dsb sy"
+test_vector "${PLUGIN}" "dsb st" 9f3e03d5 "dsb st"
+test_vector "${PLUGIN}" "dsb ld" 9f3d03d5 "dsb ld"
+test_vector "${PLUGIN}" "dsb ish" 9f3b03d5 "dsb ish"
+test_vector "${PLUGIN}" "dsb ishst" 9f3a03d5 "dsb ishst"
+test_vector "${PLUGIN}" "dsb ishld" 9f3903d5 "dsb ishld"
+test_vector "${PLUGIN}" "dsb nsh" 9f3703d5 "dsb nsh"
+test_vector "${PLUGIN}" "dsb nshst" 9f3603d5 "dsb nshst"
+test_vector "${PLUGIN}" "dsb nshld" 9f3503d5 "dsb nshld"
+test_vector "${PLUGIN}" "dsb osh" 9f3303d5 "dsb osh"
+test_vector "${PLUGIN}" "dsb oshst" 9f3203d5 "dsb oshst"
+test_vector "${PLUGIN}" "dsb oshld" 9f3103d5 "dsb oshld"
+
+test_vector "${PLUGIN}" "isb sy" df3f03d5 "isb"

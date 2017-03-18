@@ -1,0 +1,16 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+BROKEN=
+CMDS='
+b 10
+pd~?
+pd 3~?
+pd 20~?
+'
+EXPECT='2
+3
+20
+'
+
+run_test

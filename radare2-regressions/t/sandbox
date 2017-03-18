@@ -1,0 +1,20 @@
+#!/bin/sh
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+NAME='sandbox disable'
+CMDS='e cfg.sandbox=true
+e cfg.sandbox=false
+e cfg.sandbox
+'
+EXPECT='true
+'
+run_test
+
+NAME='sandbox open'
+CMDS='e cfg.sandbox=true
+o~[3]
+oc /bin/ls
+'
+EXPECT='malloc://512
+'
+run_test

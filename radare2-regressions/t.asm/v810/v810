@@ -1,0 +1,78 @@
+#!/bin/sh
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+test_vector() {
+NAME="${1}: [${2}]"
+FILE=malloc://32
+if [ "${5}" = "br" ]; then
+	BROKEN=1
+fi
+CMDS='
+e asm.arch='${1}'
+wx '${3}'
+pi 1
+'
+EXPECT="${4}
+"
+run_test
+}
+
+PLUGIN=v810
+
+test_vector "${PLUGIN}" "MOV" 4100 "mov r1, r2"
+test_vector "${PLUGIN}" "ADD" 4104 "add r1, r2"
+test_vector "${PLUGIN}" "SUB" 4108 "sub r1, r2"
+test_vector "${PLUGIN}" "CMP" 410c "cmp r1, r2"
+test_vector "${PLUGIN}" "SHL" 4110 "shl r1, r2"
+test_vector "${PLUGIN}" "SHR" 4114 "shr r1, r2"
+test_vector "${PLUGIN}" "JMP" 0118 "jmp [r1]"
+test_vector "${PLUGIN}" "SAR" 411c "sar r1, r2"
+test_vector "${PLUGIN}" "MUL" 4120 "mul r1, r2"
+test_vector "${PLUGIN}" "DIV" 4124 "div r1, r2"
+test_vector "${PLUGIN}" "MULU" 4128 "mulu r1, r2"
+test_vector "${PLUGIN}" "DIVU" 412c "divu r1, r2"
+test_vector "${PLUGIN}" "OR" 4130 "or r1, r2"
+test_vector "${PLUGIN}" "AND" 4134 "and r1, r2"
+test_vector "${PLUGIN}" "NOT" 413c "not r1, r2"
+test_vector "${PLUGIN}" "MOV IMM" 5f40 "mov -1, r2"
+test_vector "${PLUGIN}" "ADD IMM" 4144 "add 1, r2"
+test_vector "${PLUGIN}" "CMP IMM" 404c "cmp 0, r2"
+test_vector "${PLUGIN}" "SHL IMM" 4850 "shl 8, r2"
+test_vector "${PLUGIN}" "SHR IMM" 5854 "shr 24, r2"
+test_vector "${PLUGIN}" "SAR IMM" 405c "sar 0, r2"
+test_vector "${PLUGIN}" "CLI" 0058 "cli "
+test_vector "${PLUGIN}" "SEI" 0078 "sei "
+test_vector "${PLUGIN}" "TRAP" 0f60 "trap 15"
+test_vector "${PLUGIN}" "RETI" 0064 "reti "
+test_vector "${PLUGIN}" "HALT" 0068 "halt "
+test_vector "${PLUGIN}" "LDSR" 4370 "ldsr FEPSW, r2"
+test_vector "${PLUGIN}" "STSR" 4774 "stsr TKCW, r2"
+test_vector "${PLUGIN}" "STSR" 4874 "stsr s8, r2"
+test_vector "${PLUGIN}" "BV" f881 "bv -8"
+test_vector "${PLUGIN}" "BLE" 088e "ble 8"
+test_vector "${PLUGIN}" "MOVEA" 41a0ffff "movea 0xffff, r1, r2"
+test_vector "${PLUGIN}" "ADDI" 41a4ffff "addi -1, r1, r2"
+test_vector "${PLUGIN}" "JR" ffabf8ff "jr -8"
+test_vector "${PLUGIN}" "JAL" 00ac0800 "jal 8"
+test_vector "${PLUGIN}" "ORI" 41b0ff00 "ori 0xff, r1, r2"
+test_vector "${PLUGIN}" "ANDI" 41b40000 "andi 0x0, r1, r2"
+test_vector "${PLUGIN}" "XORI" 41b80000 "xori 0x0, r1, r2"
+test_vector "${PLUGIN}" "MOVHI" 41bc0105 "movhi 0x501, r1, r2"
+test_vector "${PLUGIN}" "LD.B" 41c00000 "ld.b 0[r1], r2"
+test_vector "${PLUGIN}" "LD.H" 41c42000 "ld.h 32[r1], r2"
+test_vector "${PLUGIN}" "LD.W" 41cce0ff "ld.w -32[r1], r2"
+test_vector "${PLUGIN}" "ST.B" 41d0e0ff "st.b r2, -32[r1]"
+test_vector "${PLUGIN}" "ST.H" 41d42000 "st.h r2, 32[r1]"
+test_vector "${PLUGIN}" "ST.W" 41dc0000 "st.w r2, 0[r1]"
+test_vector "${PLUGIN}" "IN.B" 41e07b00 "in.b 123[r1], r2"
+test_vector "${PLUGIN}" "IN.H" 41e47b00 "in.h 123[r1], r2"
+test_vector "${PLUGIN}" "CAXI" 41e87b00 "caxi 123[r1], r2"
+test_vector "${PLUGIN}" "IN.W" 41ec7b00 "in.w 123[r1], r2"
+test_vector "${PLUGIN}" "OUT.B" 41f07b00 "out.b r2, 123[r1]"
+test_vector "${PLUGIN}" "OUT.H" 41f47b00 "out.h r2, 123[r1]"
+test_vector "${PLUGIN}" "OUT.W" 41fc7b00 "out.w r2, 123[r1]"
+test_vector "${PLUGIN}" "MULF.S" 4bf90018 "mulf.s r11, r10"
+test_vector "${PLUGIN}" "CVT.SW" 6af9000c "cvt.sw r10, r11"
+test_vector "${PLUGIN}" "SUBF.S" cffb0014 "subf.s r15, r30"
+test_vector "${PLUGIN}" "REV" 4ff90028 "rev r15, r10"
+test_vector "${PLUGIN}" "XB" 60f90020 "xb r11"
