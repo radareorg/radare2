@@ -1266,6 +1266,7 @@ R_API void r_anal_pin_list(RAnal *a);
 
 /* fcn.c */
 R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn);
+R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs);
 R_API RAnalFunction *r_anal_fcn_new(void);
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr);
