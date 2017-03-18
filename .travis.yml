@@ -33,7 +33,7 @@ cache:
   - apt
 
 script:
-  - git clone --depth 1 `doc/repo REGRESSIONS`
+  - git clone --depth 1 `doc/repo TEST_BINS` radare2-regressions/bins
   - ./configure --prefix=`pwd`/install > /dev/null
   - make -s -j2 > /dev/null
   - make install > /dev/null

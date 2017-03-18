@@ -3,8 +3,8 @@ include global.mk
 
 PREVIOUS_RELEASE=1.2.0
 
-R2R=radare2-regressions
-R2R_URL=$(shell doc/repo REGRESSIONS)
+R2R_BINS=radare2-regressions/bins
+R2R_BINS_URL=$(shell doc/repo TEST_BINS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
 BUILDSEC=$(shell date "+__%H:%M:%S")
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
@@ -359,12 +359,12 @@ shot:
 		radare.org:/srv/http/radareorg/get/shot
 
 tests:
-	@if [ -d $(R2R) ]; then \
-		cd $(R2R) ; git clean -xdf ; git pull ; \
+	@if [ -d $(R2R_BINS) ]; then \
+		cd $(R2R_BINS) ; git clean -xdf ; git pull ; \
 	else \
-		git clone --depth 1 "${R2R_URL}" "$(R2R)"; \
+		git clone --depth 1 "${R2R_BINS_URL}" "$(R2R_BINS)"; \
 	fi
-	cd $(R2R) ; ${MAKE}
+	cd $(R2R_BINS) ; ${MAKE}
 
 osx-sign:
 	$(MAKE) -C binr/radare2 osx-sign

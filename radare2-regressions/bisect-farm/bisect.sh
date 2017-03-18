@@ -5,13 +5,14 @@ TEST=t/cmd_disasm
 TEST=t/cmd_pdf_dwarf
 TEST=t/anal/fcn_name
 
-R2R=radare2-regressions
+R2R_BINS=radare2-regressions/bins
+R2R_BINS_URL=https://github.com/ret2libc/radare2-test-bins
 
-if [ ! -d $R2R ]; then
-	git clone https://github.com/radare/$R2R
-	cd $R2R
+if [ ! -d $R2R_BINS ]; then
+	git clone $R2R_BINS_URL $R2R_BINS
+	cd $R2R_BINS
 else
-	cd $R2R
+	cd $R2R_BINS
 	git pull
 fi
 
