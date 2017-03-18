@@ -1213,7 +1213,11 @@ int main(int argc, char **argv, char **envp) {
 							if (r_config_get_i (r.config, "dbg.exitkills") &&
 									r_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
 								r_debug_kill (r.dbg, 0, false, 9); // KILL
+#if __WINDOWS__
+							} else {
+								r_debug_detach (r.dbg, r.dbg->pid);
 							}
+#endif
 						} else continue;
 					}
 				}
