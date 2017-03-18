@@ -1274,14 +1274,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		eprintf ("The address doesn't match with any map.\n");
 		break;
-	case '\0':
-	case '*':
-	case 'j':
-	case 'q':
+	case '\0': // "dm"
+	case '*': // "dm*"
+	case 'j': // "dmj"
+	case 'q': // "dmq"
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_debug_map_list (core->dbg, core->offset, input[0]);
 		break;
-	case '=':
+	case '=': // "dm="
 		r_debug_map_sync (core->dbg);
 		r_debug_map_list_visual (core->dbg, core->offset,
 				r_config_get_i (core->config, "scr.color"),
