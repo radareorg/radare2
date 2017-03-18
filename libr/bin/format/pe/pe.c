@@ -119,6 +119,31 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 
 		}
 	}
+	// MSVC AMD64
+	// 48 83 EC 28       sub     rsp, 0x28
+	// E8 xx xx xx xx    call    xxxxxxxx
+	// 48 83 C4 28       add     rsp, 0x28
+	// E9 xx xx xx xx    jmp     xxxxxxxx
+	if (b[4] == 0xe8 && b[13] == 0xe9) {
+		const st32 jmp_dst = b[14] | (b[15] << 8) | (b[16] << 16) | (b[17] << 24);
+		entry->paddr += (5 + 13 + jmp_dst);
+		entry->vaddr += (5 + 13 + jmp_dst);
+		if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) > 0) {
+			// from des address of jmp, search for 4C ... 48 ... 8B ... E8
+			// 4C 8B C0                    mov     r8, rax
+			// 48 8B 17                    mov     rdx, qword [rdi]
+			// 8B 0B                       mov     ecx, dword [rbx]
+			// E8 xx xx xx xx              call    main
+			for (n = 0; n < sizeof (b) - 13; n++) {
+				if (b[n] == 0x4c && b[n + 3] == 0x48 && b[n + 6] == 0x8b && b[n + 8] == 0xe8) {
+					const st32 call_dst = b[n + 9] | (b[n + 10] << 8) | (b[n + 11] << 16) | (b[n + 12] << 24);
+					entry->paddr += (n + 5 + 8 + call_dst);
+					entry->vaddr += (n + 5 + 8 + call_dst);
+					return entry;
+				}
+			}
+		}
+	}
 	//Microsoft Visual-C
 	// 50                  push eax
 	// FF 75 9C            push dword [ebp - local_64h]
