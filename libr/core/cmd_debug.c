@@ -385,11 +385,11 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	int pid, sig;
 	const char *ptr, *help_msg[] = {
 		"Usage:", "dp", " # Process commands",
-		"dp", "", "List current pid and childrens",
+		"dp", "", "List current pid and children",
 		"dp", " <pid>", "List children of pid",
 		"dp*", "", "List all attachable pids",
 		"dp=", "<pid>", "Select pid",
-		"dp-", " <pid>", "Dettach select pid",
+		"dp-", " <pid>", "Detach select pid",
 		"dpa", " <pid>", "Attach and select pid",
 		"dpc", "", "Select forked pid (see dbg.forks)",
 		"dpc*", "", "Display forked pid (see dbg.forks)",
