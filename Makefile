@@ -364,7 +364,7 @@ tests:
 	else \
 		git clone --depth 1 "${R2R_BINS_URL}" "$(R2R_BINS)"; \
 	fi
-	cd $(R2R_BINS) ; ${MAKE}
+	cd radare2-regressions ; ${MAKE}
 
 osx-sign:
 	$(MAKE) -C binr/radare2 osx-sign
