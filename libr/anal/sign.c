@@ -50,17 +50,29 @@ static bool deserialize(RSignItem *it, const char *k, const char *v) {
 			break;
 		case 2:
 			if (it->size > 0) {
+				if (strlen (token) != 2 * it->size) {
+					retval = false;
+					goto exit_function;
+				}
 				it->bytes = malloc (it->size);
 				r_hex_str2bin (token, it->bytes);
 			}
 			break;
 		case 3:
 			if (it->size > 0) {
+				if (strlen (token) != 2 * it->size) {
+					retval = false;
+					goto exit_function;
+				}
 				it->mask = malloc (it->size);
 				r_hex_str2bin (token, it->mask);
 			}
 			break;
 		case 4:
+			if (strlen (token) != 2 * sizeof (RSignMetrics)) {
+				retval = false;
+				goto exit_function;
+			}
 			r_hex_str2bin (token, (ut8 *) &it->metrics);
 			break;
 		default:
