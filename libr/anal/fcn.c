@@ -1805,3 +1805,25 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 	}
 	return totalCycles;
 }
+
+R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	int edges = 0;
+	if (ebbs) {
+		*ebbs = 0;
+	}
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
+			*ebbs = *ebbs + 1;
+		} else {
+			if (bb->jump != UT64_MAX) {
+				edges ++;
+			}
+			if (bb->fail != UT64_MAX) {
+				edges ++;
+			}
+		}
+	}
+	return edges;
+}

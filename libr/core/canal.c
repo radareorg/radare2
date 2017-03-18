@@ -1756,28 +1756,6 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 	return name;
 }
 
-static int count_edges(RAnalFunction *fcn, int *ebbs) {
-	RListIter *iter;
-	RAnalBlock *bb;
-	int edges = 0;
-	if (ebbs) {
-		*ebbs = 0;
-	}
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
-			*ebbs = *ebbs + 1;
-		} else {
-			if (bb->jump != UT64_MAX) {
-				edges ++;
-			}
-			if (bb->fail != UT64_MAX) {
-				edges ++;
-			}
-		}
-	}
-	return edges;
-}
-
 #define FCN_LIST_VERBOSE_ENTRY "%s0x%08"PFMT64x" %4d %5d %5d %5d %4d 0x%08"PFMT64x" %5d 0x%08"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = get_fcn_name(core, fcn);
@@ -1799,7 +1777,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 			fcn->addr,
 			r_anal_fcn_realsize (fcn),
 			r_list_length (fcn->bbs),
-			count_edges (fcn, &ebbs),
+			r_anal_fcn_count_edges (fcn, &ebbs),
 			r_anal_fcn_cc (fcn),
 			r_anal_fcn_cost (core->anal, fcn),
 			fcn->meta.min,
@@ -1883,7 +1861,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
 	r_cons_printf (",\"cost\":%d", r_anal_fcn_cost (core->anal, fcn));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
-	r_cons_printf (",\"edges\":%d", count_edges (fcn, &ebbs));
+	r_cons_printf (",\"edges\":%d", r_anal_fcn_count_edges (fcn, &ebbs));
 	r_cons_printf (",\"ebbs\":%d", ebbs);
 	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
 	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
@@ -2054,7 +2032,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	}
 
 	r_cons_printf ("\nnum-bbs: %d", r_list_length (fcn->bbs));
-	r_cons_printf ("\nedges: %d", count_edges (fcn, &ebbs));
+	r_cons_printf ("\nedges: %d", r_anal_fcn_count_edges (fcn, &ebbs));
 	r_cons_printf ("\nend-bbs: %d", ebbs);
 	r_cons_printf ("\ncall-refs: ");
 	int outdegree = 0;
