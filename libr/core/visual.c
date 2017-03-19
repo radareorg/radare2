@@ -2702,8 +2702,8 @@ dodo:
 
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof (debugstr),
-					"?0;f tmp;sr SP;%s;?1;%s;?1;s-;"
-					"s tmp;f-tmp;pd $r", cmdvhex,
+					"?0;f tmp;ssr SP;%s;?1;%s;?1;"
+					"ss tmp;f-tmp;pd $r", cmdvhex,
 					ref? "drr": "dr=");
 				debugstr[sizeof (debugstr) - 1] = 0;
 			} else {
@@ -2722,9 +2722,9 @@ dodo:
 				const char sign = (delta < 0)? '+': '-';
 				const int absdelta = R_ABS (delta);
 				snprintf (debugstr, sizeof (debugstr),
-					"?0;f tmp;sr SP;%s %d@$$%c%d;"
-					"?1;%s;s-;"
-					"?1;s tmp;f-tmp;pd $r",
+					"?0;f tmp;ssr SP;%s %d@$$%c%d;"
+					"?1;%s;"
+					"?1;ss tmp;f-tmp;pd $r",
 					pxa? "pxa": pxw, size, sign, absdelta,
 					ref? "drr": "dr=");
 			}

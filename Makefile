@@ -5,7 +5,7 @@ PREVIOUS_RELEASE=1.2.0
 
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm)
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
 BUILDSEC=$(shell date "+__%H:%M:%S")
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
 USE_ZIP=YES
