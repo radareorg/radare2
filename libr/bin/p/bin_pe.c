@@ -761,6 +761,8 @@ static void header(RBinFile *arch) {
 	}
 }
 
+extern struct r_bin_write_t r_bin_write_pe;
+
 RBinPlugin r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
@@ -785,7 +787,8 @@ RBinPlugin r_bin_plugin_pe = {
 	.relocs = &relocs,
 	.minstrlen = 4,
 	.create = &create,
-	.get_vaddr = &get_vaddr
+	.get_vaddr = &get_vaddr,
+	.write = &r_bin_write_pe
 };
 
 #ifndef CORELIB

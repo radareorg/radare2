@@ -22,6 +22,8 @@ static bool check(RBinFile *arch) {
 	return check_bytes (bytes, sz);
 }
 
+extern struct r_bin_write_t r_bin_write_pe64;
+
 RBinPlugin r_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) bin plugin",
@@ -42,6 +44,7 @@ RBinPlugin r_bin_plugin_pe64 = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.get_vaddr = &get_vaddr,
+	.write = &r_bin_write_pe64
 };
 
 #ifndef CORELIB
