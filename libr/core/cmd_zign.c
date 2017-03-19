@@ -790,7 +790,7 @@ static int cmd_zign(void *data, const char *input) {
 				"z-", "zignature", "delete zignature",
 				"z-", "*", "delete all zignatures",
 				"za", "[?]", "add zignature",
-				"zo", "[?]", "Manage zignature files",
+				"zo", "[?]", "manage zignature files",
 				"zf", "[?]", "manage FLIRT signatures",
 				"z/", "[?]", "search zignatures",
 				"zc", "", "check zignatures at address",

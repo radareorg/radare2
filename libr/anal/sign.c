@@ -34,7 +34,7 @@ static bool deserialize(RSignItem *it, const char *k, const char *v) {
 		}
 	}
 
-	// Deserialize val: <type>|size|bytes|mask|metrics
+	// Deserialize val: type|size|bytes|mask|metrics
 	for (ptr = v2, i = 0;; ptr = NULL, i++) {
 		token = strtok (ptr, "|");
 		if (!token) {
@@ -289,8 +289,8 @@ static void listMetric(RAnal *a, RSignItem *it, int format) {
 		} else {
 			a->cb_printf ("{");
 		}
-		a->cb_printf ("\"name\": \"%s\", \"metrics\": \"cc=%d nbbs=%d edges=%d ebbs=%d\"}",
-			it->name, it->metrics.cc, it->metrics.nbbs, it->metrics.edges, it->metrics.ebbs);
+		a->cb_printf ("\"name\": \"%s\", \"type\": \"%c\", \"metrics\": \"cc=%d nbbs=%d edges=%d ebbs=%d\"}",
+			it->name, it->type, it->metrics.cc, it->metrics.nbbs, it->metrics.edges, it->metrics.ebbs);
 	} else {
 		if (it->space >= 0) {
 			a->cb_printf ("%s.", a->zign_spaces.spaces[it->space]);
@@ -524,7 +524,7 @@ R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *b
 }
 
 static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
-	int ebbs;
+	int ebbs = -1;
 
 	if (it->metrics.cc != -1 && it->metrics.cc != r_anal_fcn_cc (fcn)) {
 		return false;
