@@ -536,10 +536,11 @@ static int cmdFlirt(void *data, const char *input) {
 	return true;
 }
 
-struct ctxMetricMatchCB {
+
+struct ctxSearchCB {
 	RCore *core;
 	bool rad;
-	int count; // TODO(nibble): use one counter per metric zign
+	int count;
 };
 
 static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, bool rad) {
@@ -563,38 +564,34 @@ static void addFlag(RCore *core, RSignItem *it, ut64 addr, int size, int count, 
 }
 
 static int metricMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
-	struct ctxMetricMatchCB *ctx = (struct ctxMetricMatchCB *) user;
+	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
 
+	// TODO(nibble): use one counter per metric zign instead of ctx->count
 	addFlag (ctx->core, it, fcn->addr, r_anal_fcn_realsize (fcn), ctx->count, ctx->rad);
 	ctx->count++;
 
 	return 1;
 }
 
-struct ctxSearchCB {
-	RCore *core;
-	bool rad;
-};
-
 static int searchHitCB(RSearchKeyword *kw, RSignItem *it, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *) user;
 
 	addFlag (ctx->core, it, addr, kw->keyword_length, kw->count, ctx->rad);
+	ctx->count++;
 
 	return 1;
 }
 
-static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad) {
+static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSearchCB *ctx) {
 	RSignSearch *ss;
 	ut8 *buf = malloc (core->blocksize);
 	ut64 at;
 	int rlen;
 	bool retval = true;
-	struct ctxSearchCB ctx = { core, rad };
 
 	ss = r_sign_search_new ();
 	ss->search->align = r_config_get_i (core->config, "search.align");
-	r_sign_search_init (core->anal, ss, searchHitCB, &ctx);
+	r_sign_search_init (core->anal, ss, searchHitCB, ctx);
 
 	r_cons_break_push (NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
@@ -622,7 +619,8 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad) {
 }
 
 static bool search(RCore *core, bool rad) {
-	struct ctxMetricMatchCB ctx = { core, rad, 0 };
+	struct ctxSearchCB metric_match_ctx = { core, rad, 0 };
+	struct ctxSearchCB bytes_search_ctx = { core, rad, 0 };
 	RList *list;
 	RListIter *iter;
 	RAnalFunction *fcni = NULL;
@@ -631,6 +629,7 @@ static bool search(RCore *core, bool rad) {
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	const char *mode = r_config_get (core->config, "search.in");
 	ut64 sin_from = UT64_MAX, sin_to = UT64_MAX;
+	int hits = 0;
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -646,21 +645,22 @@ static bool search(RCore *core, bool rad) {
 	if (list) {
 		r_list_foreach (list, iter, map) {
 			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->from, map->to);
-			retval &= searchRange (core, map->from, map->to, rad);
+			retval &= searchRange (core, map->from, map->to, rad, &bytes_search_ctx);
 		}
 		r_list_free (list);
 	} else {
 		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", sin_from, sin_to);
-		retval = searchRange (core, sin_from, sin_to, rad);
+		retval = searchRange (core, sin_from, sin_to, rad, &bytes_search_ctx);
 	}
 
 	// Metric search
+	eprintf ("[+] searching function metrics\n");
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		r_sign_match_metric (core->anal, fcni, metricMatchCB, &ctx);
+		r_sign_match_metric (core->anal, fcni, metricMatchCB, &metric_match_ctx);
 	}
 	r_cons_break_pop ();
 
@@ -672,6 +672,9 @@ static bool search(RCore *core, bool rad) {
 			return false;
 		}
 	}
+
+	hits = bytes_search_ctx.count + metric_match_ctx.count;
+	eprintf ("hits: %d\n", hits);
 
 	return retval;
 }
@@ -709,9 +712,10 @@ static int cmdCheck(void *data, const char *input) {
 	ut64 at = core->offset;
 	bool retval = true;
 	bool rad = input[0] == '*';
-	struct ctxSearchCB searchCtx = { core, rad };
-	struct ctxMetricMatchCB metricMatchCtx = { core, rad, 0 };
+	struct ctxSearchCB bytes_search_ctx = { core, rad, 0 };
+	struct ctxSearchCB metric_match_ctx = { core, rad, 0 };
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	int hits = 0;
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -723,8 +727,9 @@ static int cmdCheck(void *data, const char *input) {
 	}
 
 	// Anal/Exact search
+	eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
 	ss = r_sign_search_new ();
-	r_sign_search_init (core->anal, ss, searchHitCB, &searchCtx);
+	r_sign_search_init (core->anal, ss, searchHitCB, &bytes_search_ctx);
 	if (r_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
 		eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 		retval = false;
@@ -732,13 +737,14 @@ static int cmdCheck(void *data, const char *input) {
 	r_sign_search_free (ss);
 
 	// Metric search
+	eprintf ("[+] searching function metrics\n");
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
 		if (fcni->addr == core->offset) {
-			r_sign_match_metric (core->anal, fcni, metricMatchCB, &metricMatchCtx);
+			r_sign_match_metric (core->anal, fcni, metricMatchCB, &metric_match_ctx);
 			break;
 		}
 	}
@@ -752,6 +758,9 @@ static int cmdCheck(void *data, const char *input) {
 			return false;
 		}
 	}
+
+	hits = bytes_search_ctx.count + metric_match_ctx.count;
+	eprintf ("hits: %d\n", hits);
 
 	return retval;
 }
