@@ -22,8 +22,8 @@ try to keep the codebase consistent and clean.
 * Create a topic branch from master. Please avoid working directly on the ```master``` branch.
 * Makes commits of logical units.
 * Check for unnecessary whitespace with ```git diff --check``` and be sure to follow the CODINGSTYLE (more on this in the next section).
+* When relevant, write a test in the `radare2-regressions` directory.
 * Submit the Pull Request(PR) on Github.
-* When relevant, write a test for [radare2-regressions](https://github.com/radare/radare2-regressions) and submit a PR also there.
 
 ## Coding Style guidelines
 

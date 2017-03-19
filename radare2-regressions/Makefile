@@ -14,10 +14,10 @@ LIBDIR=$(DESTDIR)/$(PREFIX)/lib
 -include config.mk
 
 
-PULLADDR=https://github.com/radare/radare2-regressions.git
+PULLADDR=https://github.com/ret2libc/radare2-test-bins.git
 
 do:
-	-git pull ${PULLADDR}
+	-cd bins && git pull ${PULLADDR}
 	@sh run_tests.sh
 
 all: commands formats tools io asm anal esil tools archos
