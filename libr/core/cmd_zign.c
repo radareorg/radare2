@@ -5,6 +5,7 @@
 #include <r_sign.h>
 #include <r_list.h>
 #include <r_cons.h>
+#include <r_util.h>
 
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, int type, int minzlen, int maxzlen) {
 	int fcnlen = 0, len = 0;

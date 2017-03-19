@@ -316,3 +316,13 @@ R_API bool r_mem_is_printable(const ut8 *a, int la) {
 	}
 	return true;
 }
+
+R_API bool r_mem_is_zero(const ut8 *b, int l) {
+	int i;
+	for (i = 0; i < l; i++) {
+		if (b[i]) {
+			return false;
+		}
+	}
+	return true;
+}

@@ -3,6 +3,7 @@
 #include <r_anal.h>
 #include <r_sign.h>
 #include <r_search.h>
+#include <r_util.h>
 
 R_LIB_VERSION (r_sign);
 
@@ -139,6 +140,12 @@ static bool addBytes(RAnal *a, int type, const char *name, ut64 size, const ut8 
 	RSignItem *it = R_NEW0 (RSignItem);
 	bool retval = true;
 
+	if (r_mem_is_zero (mask, size)) {
+		eprintf ("error: zero mask\n");
+		retval = false;
+		goto exit_function;
+	}
+
 	it->type = type;
 	it->name = r_str_new (name);
 	it->space = a->zign_spaces.space_idx;
@@ -150,6 +157,7 @@ static bool addBytes(RAnal *a, int type, const char *name, ut64 size, const ut8 
 
 	retval = add (a, it);
 
+exit_function:
 	r_sign_item_free (it);
 
 	return retval;
