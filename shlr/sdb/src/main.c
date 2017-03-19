@@ -296,7 +296,7 @@ static int jsonIndent() {
 	if (!in) {
 		return 0;
 	}
-	out = sdb_json_indent (in);
+	out = sdb_json_indent (in, "  ");
 	if (!out) {
 		free (in);
 		return 1;

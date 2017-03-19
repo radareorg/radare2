@@ -213,7 +213,7 @@ SDB_API int sdb_json_num_set(Sdb* s, const char *k, const char *p, int v, ut32 c
 SDB_API int sdb_json_num_dec(Sdb* s, const char *k, const char *p, int n, ut32 cas);
 SDB_API int sdb_json_num_inc(Sdb* s, const char *k, const char *p, int n, ut32 cas);
 
-char *sdb_json_indent(const char *s);
+char *sdb_json_indent(const char *s, const char* tab);
 char *sdb_json_unindent(const char *s);
 
 typedef struct {
