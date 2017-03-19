@@ -133,7 +133,7 @@ exit_case:
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (r_str_cmp (name, fcni->name, strlen (name))) {
+				if (!strcmp (name, fcni->name)) {
 					if (!addFcnBytes (core, fcni, type, minzlen, maxzlen)) {
 						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
 					}
@@ -293,7 +293,7 @@ exit_case:
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (r_str_cmp (name, fcni->name, strlen (name))) {
+				if (!strcmp (name, fcni->name)) {
 					if (!addFcnMetrics (core, fcni)) {
 						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
 					}
