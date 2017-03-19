@@ -56,6 +56,7 @@ libr/bin/format/objc/mach0_classes.c
 libr/cons/hud.c
 libr/cons/2048.c
 libr/cons/utf8.c
+libr/cons/grep.c
 libr/cons/line.c
 libr/cons/canvas.c
 libr/cons/editor.c
@@ -67,6 +68,7 @@ libr/core/cmd_egg.c
 
 binr/radare2/radare2.c
 binr/rabin2/rabin2.c
+binr/radiff2/radiff2.c
 binr/rasm2/rasm2.c
 binr/rax2/rax2.c
 "
