@@ -635,7 +635,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 					httpref_enabled = false;
 				}
 
-				while (*cmd == '/') cmd++;
+				while (*cmd == '/') {
+					cmd++;
+				}
 				if (httpref_enabled && (!rs->referer || (refstr && !strstr (rs->referer, refstr)))) {
 					r_socket_http_response (rs, 503, "", 0, headers);
 				} else {
