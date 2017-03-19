@@ -92,31 +92,32 @@ typedef struct gen_vect {
 } SMD_Vectors;
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (length > 0x190 && !memcmp (buf+0x100, "SEGA", 4)) {
+	if (length > 0x190 && !memcmp (buf + 0x100, "SEGA", 4)) {
 		return true;
 	}
 	return false;
 }
 
 static bool check(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
+	ut64 sz = arch? r_buf_size (arch->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	check_bytes (buf, sz);
 	return R_NOTNULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
+	}
 	ret->file = strdup (arch->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Sega Megadrive");
-	ret->bclass = r_str_ndup ((char*)arch->buf->buf + 0x100, 32);
+	ret->bclass = r_str_ndup ((char *) arch->buf->buf + 0x100, 32);
 	ret->os = strdup ("smd");
 	ret->arch = strdup ("m68k");
 	ret->bits = 16;
@@ -126,7 +127,9 @@ static RBinInfo* info(RBinFile *arch) {
 
 static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) return;
+	if (!ptr) {
+		return;
+	}
 	ptr->name = strdup (name? name: "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
@@ -135,23 +138,24 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 }
 
 static void showstr(const char *str, const ut8 *s, int len) {
-	char *msg = r_str_ndup ((const char*)s, len);
+	char *msg = r_str_ndup ((const char *) s, len);
 	eprintf ("%s: %s\n", str, msg);
 	free (msg);
 }
 
-static RList* symbols(RBinFile *arch) {
-	ut32 *vtable = (ut32*)arch->buf->buf;
+static RList *symbols(RBinFile *arch) {
+	ut32 *vtable = (ut32 *) arch->buf->buf;
 	RList *ret = NULL;
 	const char *name;
 	SMD_Header *hdr;
 	int i;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	// TODO: store all this stuff in SDB
-	hdr = (SMD_Header*)(arch->buf->buf + 0x100);
+	hdr = (SMD_Header *) (arch->buf->buf + 0x100);
 	addsym (ret, "rom_start", hdr->RomStart);
 	addsym (ret, "rom_end", hdr->RomEnd);
 	addsym (ret, "ram_start", hdr->RamStart);
@@ -160,13 +164,13 @@ static RList* symbols(RBinFile *arch) {
 	showstr ("DomesticName", hdr->DomesticName, 48);
 	showstr ("OverseasName", hdr->OverseasName, 48);
 	showstr ("ProductCode", hdr->ProductCode, 14);
-	eprintf ("Checksum: 0x%04x\n", (ut32)hdr->CheckSum);
+	eprintf ("Checksum: 0x%04x\n", (ut32) hdr->CheckSum);
 	showstr ("Peripherials", hdr->Peripherials, 16);
 	showstr ("SramCode", hdr->CountryCode, 12);
 	showstr ("ModemCode", hdr->CountryCode, 12);
 	showstr ("CountryCode", hdr->CountryCode, 16);
 	/* parse vtable */
-	for (i = 0; i<64; i++) {
+	for (i = 0; i < 64; i++) {
 		switch (i) {
 		case 0: name = "SSP"; break;
 		case 1: name = "Reset"; break;
@@ -234,22 +238,22 @@ static RList* symbols(RBinFile *arch) {
 		default: name = NULL;
 		}
 		if (name && vtable[i]) {
-			ut32 addr = 0;
-			// XXX don't know if always LE
-			addr = r_read_le32 (&vtable[i]);
+			ut32 addr = r_read_be32 (&vtable[i]);
 			addsym (ret, name, addr);
 		}
 	}
 	return ret;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList *sections(RBinFile *arch) {
 	RList *ret = NULL;
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	RBinSection *ptr;
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
@@ -257,8 +261,9 @@ static RList* sections(RBinFile *arch) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
@@ -266,12 +271,13 @@ static RList* sections(RBinFile *arch) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "text");
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{
-		SMD_Header * hdr = (SMD_Header*)(arch->buf->buf + 0x100);
+		SMD_Header *hdr = (SMD_Header *) (arch->buf->buf + 0x100);
 		ut64 baddr = hdr->RamStart;
 		ptr->vaddr += baddr;
 	}
@@ -282,14 +288,16 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList* entries(RBinFile *arch) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RList *entries(RBinFile *arch) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
-	if (!(ptr = R_NEW0 (RBinAddr)))
+	}
+	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
-	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header); //vtable[1];
+	}
+	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header); // vtable[1];
 	r_list_append (ret, ptr);
 	return ret;
 }

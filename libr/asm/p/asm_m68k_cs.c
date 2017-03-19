@@ -105,7 +105,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.cpus = "68000,68010,68020,68030,68040,68060",
 	.license = "BSD",
 	.arch = "m68k",
-	.bits = 32,
+	.bits = 16 | 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = &mnemonics,
@@ -130,7 +130,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.desc = "Capstone M68K disassembler (unsupported)",
 	.license = "BSD",
 	.arch = "m68k",
-	.bits = 32,
+	.bits = 16 | 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 };
 
