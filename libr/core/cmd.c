@@ -1255,7 +1255,9 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 	int i, argc = r_str_split (s, ',');
 	for (i = 0; i < argc; i++) {
 		char *eq, *kv = (char *)r_str_word_get0 (s, i);
-		if (!kv) break;
+		if (!kv) {
+			break;
+		}
 		eq = strchr (kv, '=');
 		if (eq) {
 			*eq = 0;
@@ -1267,8 +1269,7 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 			eprintf ("Missing '=' in e: expression (%s)\n", kv);
 		}
 	}
-	res = strdup (r_strbuf_get (buf));
-	r_strbuf_free (buf);
+	res = r_strbuf_drain (buf);
 	free (s);
 	return res;
 }
@@ -1399,6 +1400,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	int i, ret = 0, pipefd;
 	bool usemyblock = false;
 	int scr_html = -1;
+	int scr_color = -1;
 	bool eos = false;
 	bool haveQuote = false;
 
@@ -1532,11 +1534,13 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	/* comments */
 	if (*cmd != '#') {
 		ptr = (char *)r_str_lastbut (cmd, '#', quotestr);
-		if (ptr && (ptr[1] == ' ' || ptr[1] == '\t')) *ptr = '\0';
+		if (ptr && (ptr[1] == ' ' || ptr[1] == '\t')) {
+			*ptr = '\0';
+		}
 	}
 
 	/* multiple commands */
-// TODO: must honor " and ` boundaries
+	// TODO: must honor " and ` boundaries
 	//ptr = strrchr (cmd, ';');
 	if (*cmd != '#') {
 		ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
@@ -1564,14 +1568,31 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			if (!tick || (tick && tick > ptr)) {
 				*ptr = '\0';
 				cmd = r_str_clean (cmd);
-				int value = core->num->value;
-				if (*cmd) {
-					r_core_cmd_pipe (core, cmd, ptr + 1);
-				} else {
-					r_io_system (core->io, ptr + 1);
+				if (!strcmp (ptr + 1, "?")) { // "|?"
+					// TODO: should be disable scr.color in pd| ?
+					eprintf ("Usage: <r2command> | <program|H|>\n");
+					eprintf (" pd|?   - show this help\n");
+					eprintf (" pd|    - disable scr.html and scr.color\n");
+					eprintf (" pd|H   - enable scr.html, respect scr.color\n");
+					return ret;
+				} else if (!strcmp (ptr + 1, "H")) { // "|H"
+					scr_html = r_config_get_i (core->config, "scr.html");
+					r_config_set_i (core->config, "scr.html", true);
+				} else if (ptr[1]) { // "| grep .."
+					int value = core->num->value;
+					if (*cmd) {
+						r_core_cmd_pipe (core, cmd, ptr + 1);
+					} else {
+						r_io_system (core->io, ptr + 1);
+					}
+					core->num->value = value;
+					return 0;
+				} else { // "|"
+					scr_html = r_config_get_i (core->config, "scr.html");
+					r_config_set_i (core->config, "scr.html", 0);
+					scr_color = r_config_get_i (core->config, "scr.color");
+					r_config_set_i (core->config, "scr.color", false);
 				}
-				core->num->value = value;
-				return 0;
 			}
 		}
 	}
@@ -1585,6 +1606,12 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 		ret = r_cmd_call (core->rcmd, cmd);
 		if (ret == -1) {
 			eprintf ("command error(%s)\n", cmd);
+			if (scr_html != -1) {
+				r_config_set_i (core->config, "scr.html", scr_html);
+			}
+			if (scr_color != -1) {
+				r_config_set_i (core->config, "scr.color", scr_color);
+			}
 			return ret;
 		}
 		for (cmd = ptr + 2; cmd && *cmd == ' '; cmd++);
@@ -1608,6 +1635,12 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 				if (ptr[2] == '~') {
 					r_cons_grep (ptr + 3);
 				}
+				if (scr_html != -1) {
+					r_config_set_i (core->config, "scr.html", scr_html);
+				}
+			if (scr_color != -1) {
+				r_config_set_i (core->config, "scr.color", scr_color);
+			}
 				return 0;
 			}
 		}
@@ -1694,7 +1727,7 @@ next:
 		 * with piping to a file. Disable it while piping. */
 		if (ptr > (cmd + 1) && ISWHITECHAR (ptr[-2])) {
 			char *fdnum = ptr - 1;
-			if (*fdnum == 'H') {
+			if (*fdnum == 'H') { // "H>"
 				scr_html = r_config_get_i (core->config, "scr.html");
 				r_config_set_i (core->config, "scr.html", true);
 				pipecolor = true;
@@ -1741,6 +1774,9 @@ next:
 		if (scr_html != -1) {
 			r_config_set_i (core->config, "scr.html", scr_html);
 		}
+			if (scr_color != -1) {
+				r_config_set_i (core->config, "scr.color", scr_color);
+			}
 		return ret;
 	}
 next2:
@@ -1827,14 +1863,15 @@ next2:
 	}
 
 	core->tmpseek = ptr? true: false;
+	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
 		ut64 addr = UT64_MAX;
 		const char *tmpbits = NULL;
 		const char *offstr = NULL;
 		ut64 tmpbsz = core->blocksize;
-		ut64 tmpoff = core->offset;
 		char *tmpeval = NULL;
+		ut64 tmpoff = core->offset;
 		char *tmpasm = NULL;
 		int tmpfd = -1;
 		int sz, len;
@@ -2105,16 +2142,18 @@ next_arroba:
 		}
 		r_core_seek (core, tmpoff, 1);
 		*ptr = '@';
-		if (scr_html != -1) {
-			r_config_set_i (core->config, "scr.html", scr_html);
-		}
-		return ret;
+		rc = ret;
+		goto beach;
 	}
 
-	int rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
+	rc = cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): false;
 beach:
 	if (scr_html != -1) {
+		r_cons_flush ();
 		r_config_set_i (core->config, "scr.html", scr_html);
+	}
+	if (scr_color != -1) {
+		r_config_set_i (core->config, "scr.color", scr_color);
 	}
 	core->fixedblock = false;
 	return rc;
