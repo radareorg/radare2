@@ -1,0 +1,12 @@
+#!/bin/sh
+
+for a in . .. ../.. ; do [ -e $a/tests.sh ] && . $a/tests.sh ; done
+
+NAME='pe32+ msvc main'
+FILE=../../bins/pe/simplest-msvc64.exe
+ARGS=
+CMDS='iM~addr
+'
+EXPECT='vaddr=0x140001000 paddr=0x00000400
+'
+run_test

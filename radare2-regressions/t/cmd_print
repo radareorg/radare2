@@ -409,51 +409,51 @@ wx b8010000004839ca7f00
 pij -3 @ 10~{}
 '
 EXPECT='[
-	{
-		"offset": 3,
-		"val": 2,
-		"esil": "al,rax,+=[1],$o,of,=,$s,sf,=,$z,zf,=,$c7,cf,=,$p,pf,=",
-		"refptr": false,
-		"fcn_addr": 0,
-		"fcn_last": 0,
-		"size": 2,
-		"opcode": "add byte [rax], al",
-		"bytes": "0000",
-		"family": "cpu",
-		"type": "add",
-		"type_num": 17,
-		"type2_num": 0
-	},
-	{
-		"offset": 5,
-		"esil": "rcx,rdx,==,$z,zf,=,$b64,cf,=,$p,pf,=,$s,sf,=,$o,of,=",
-		"refptr": false,
-		"fcn_addr": 0,
-		"fcn_last": 0,
-		"size": 3,
-		"opcode": "cmp rdx, rcx",
-		"bytes": "4839ca",
-		"family": "cpu",
-		"type": "cmp",
-		"type_num": 15,
-		"type2_num": 0
-	},
-	{
-		"offset": 8,
-		"esil": "sf,of,!,^,zf,!,&,?{,10,rip,=,}",
-		"refptr": false,
-		"fcn_addr": 0,
-		"fcn_last": 0,
-		"size": 2,
-		"opcode": "jg 0xa",
-		"bytes": "7f00",
-		"family": "cpu",
-		"type": "cjmp",
-		"type_num": 2147483649,
-		"type2_num": 0,
-		"jump": 10,
-		"fail": 10
-	}
+  {
+    "offset": 3,
+    "val": 2,
+    "esil": "al,rax,+=[1],$o,of,=,$s,sf,=,$z,zf,=,$c7,cf,=,$p,pf,=",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "add byte [rax], al",
+    "bytes": "0000",
+    "family": "cpu",
+    "type": "add",
+    "type_num": 17,
+    "type2_num": 0
+  },
+  {
+    "offset": 5,
+    "esil": "rcx,rdx,==,$z,zf,=,$b64,cf,=,$p,pf,=,$s,sf,=,$o,of,=",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 3,
+    "opcode": "cmp rdx, rcx",
+    "bytes": "4839ca",
+    "family": "cpu",
+    "type": "cmp",
+    "type_num": 15,
+    "type2_num": 0
+  },
+  {
+    "offset": 8,
+    "esil": "sf,of,!,^,zf,!,&,?{,10,rip,=,}",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 2,
+    "opcode": "jg 0xa",
+    "bytes": "7f00",
+    "family": "cpu",
+    "type": "cjmp",
+    "type_num": 2147483649,
+    "type2_num": 0,
+    "jump": 10,
+    "fail": 10
+  }
 ]
 '
 run_test

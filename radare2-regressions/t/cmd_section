@@ -34,46 +34,46 @@ FILE=../bins/pe/hello-mingw32
 CMDS='Sj~{}
 '
 EXPECT='[
-	{
-		"name": ".text",
-		"size": 2560,
-		"vsize": 4096,
-		"flags": "m-r-x",
-		"paddr": 1024,
-		"vaddr": 4198400
-	},
-	{
-		"name": ".data",
-		"size": 512,
-		"vsize": 4096,
-		"flags": "m-rw-",
-		"paddr": 3584,
-		"vaddr": 4202496
-	},
-	{
-		"name": ".rdata",
-		"size": 512,
-		"vsize": 4096,
-		"flags": "m-r--",
-		"paddr": 4096,
-		"vaddr": 4206592
-	},
-	{
-		"name": ".bss",
-		"size": 0,
-		"vsize": 4096,
-		"flags": "m-rw-",
-		"paddr": 0,
-		"vaddr": 4210688
-	},
-	{
-		"name": ".idata",
-		"size": 1024,
-		"vsize": 4096,
-		"flags": "m-rw-",
-		"paddr": 4608,
-		"vaddr": 4214784
-	}
+  {
+    "name": ".text",
+    "size": 2560,
+    "vsize": 4096,
+    "flags": "m-r-x",
+    "paddr": 1024,
+    "vaddr": 4198400
+  },
+  {
+    "name": ".data",
+    "size": 512,
+    "vsize": 4096,
+    "flags": "m-rw-",
+    "paddr": 3584,
+    "vaddr": 4202496
+  },
+  {
+    "name": ".rdata",
+    "size": 512,
+    "vsize": 4096,
+    "flags": "m-r--",
+    "paddr": 4096,
+    "vaddr": 4206592
+  },
+  {
+    "name": ".bss",
+    "size": 0,
+    "vsize": 4096,
+    "flags": "m-rw-",
+    "paddr": 0,
+    "vaddr": 4210688
+  },
+  {
+    "name": ".idata",
+    "size": 1024,
+    "vsize": 4096,
+    "flags": "m-rw-",
+    "paddr": 4608,
+    "vaddr": 4214784
+  }
 ]
 '
 run_test

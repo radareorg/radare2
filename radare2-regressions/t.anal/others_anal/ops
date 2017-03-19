@@ -30,38 +30,38 @@ wx 31c0
 aoj~{}
 '
 EXPECT='[
-	{
-		"opcode": "xor eax, eax",
-		"mnemonic": "xor",
-		"prefix": 0,
-		"id": 334,
-		"opex": {
-			"operands": [
-				{
-					"size": 4,
-					"rw": 3,
-					"type": "reg",
-					"value": "eax"
-				},
-				{
-					"size": 4,
-					"rw": 1,
-					"type": "reg",
-					"value": "eax"
-				}
-			],
-			"modrm": true
-		},
-		"addr": 0,
-		"bytes": "31c0",
-		"size": 2,
-		"type": "xor",
-		"esil": "eax,eax,^=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
-		"refptr": 0,
-		"cycles": 1,
-		"delay": 0,
-		"family": "cpu"
-	}
+  {
+    "opcode": "xor eax, eax",
+    "mnemonic": "xor",
+    "prefix": 0,
+    "id": 334,
+    "opex": {
+      "operands": [
+        {
+          "size": 4,
+          "rw": 3,
+          "type": "reg",
+          "value": "eax"
+        },
+        {
+          "size": 4,
+          "rw": 1,
+          "type": "reg",
+          "value": "eax"
+        }
+      ],
+      "modrm": true
+    },
+    "addr": 0,
+    "bytes": "31c0",
+    "size": 2,
+    "type": "xor",
+    "esil": "eax,eax,^=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
+    "refptr": 0,
+    "cycles": 1,
+    "delay": 0,
+    "family": "cpu"
+  }
 ]
 '
 run_test

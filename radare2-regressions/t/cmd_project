@@ -272,3 +272,27 @@ EXPECT='1
 '
 
 run_test
+
+NAME='Delete a saved project (with Pd)'
+FILE='../bins/elf/analysis/main'
+BROKEN=
+ARGS='-n'
+CMDS='e dir.projects = /tmp/
+Ps blah > /dev/null
+Pd blah > /dev/null
+Pl~blah'
+EXPECT=''
+
+run_test
+
+NAME='Delete a saved project (with P-)'
+FILE='../bins/elf/analysis/main'
+BROKEN=
+ARGS='-n'
+CMDS='e dir.projects = /tmp/
+Ps blah > /dev/null
+P- blah > /dev/null
+Pl~blah'
+EXPECT=''
+
+run_test
