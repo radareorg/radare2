@@ -467,7 +467,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 	core->config = newcfg;
 
 	r_config_set (core->config, "asm.cmtright", "false");
+#if 0
+	// WHY
 	r_config_set (core->config, "scr.html", "true");
+#endif
 	r_config_set (core->config, "scr.color", "false");
 	r_config_set (core->config, "asm.bytes", "false");
 	r_config_set (core->config, "scr.interactive", "false");
