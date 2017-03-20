@@ -900,27 +900,24 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		goto fail;
 	}
 
-
 	eprintf ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
 		(ut64)metadata_directory, (ut64)metadata->Signature, (int)metadata->VersionStringLength);
 
 	// read the version string
 	int len = metadata->VersionStringLength; // XXX: dont trust this length
 	if (len > 0) {
-		metadata->VersionString = calloc (1, len);
+		metadata->VersionString = calloc (1, len + 1);
 		if (!metadata->VersionString) {
 			goto fail;
 		}
 
-		rr = r_buf_read_at (bin->b, metadata_directory + 16,
-			(ut8*) (metadata->VersionString), len);
+		rr = r_buf_read_at (bin->b, metadata_directory + 16, (ut8*)(metadata->VersionString),  len);
 		if (rr != len) {
 			eprintf ("Warning: read (metadata header) - cannot parse version string\n");
 			free (metadata->VersionString);
 			free (metadata);
 			return 0;
 		}
-
 		eprintf (".NET Version: %s\n", metadata->VersionString);
 	}
 
