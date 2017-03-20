@@ -3729,7 +3729,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg);
 		}
 			break;
-		case 'j':
+		case 'j': // "psj"
 			if (l > 0) {
 				char *str, *type;
 				ut64 vaddr;

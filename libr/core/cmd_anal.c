@@ -2627,7 +2627,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			}
 			r_flag_unset_name (core->flags, "aeim.fd");
 			r_flag_unset_name (core->flags, name);
-			eprintf ("Deinitialized %s\n", name);
+			// eprintf ("Deinitialized %s\n", name);
 			return;
 		}
 		eprintf ("Already initialized\n");
