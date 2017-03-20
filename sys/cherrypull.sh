@@ -33,3 +33,8 @@ for a in $RC ; do
 	git cherry-pick $a
 done
 git branch -D branch
+
+if [ -d t/overlay ]; then
+	make -C t apply
+	git commit -a
+fi
