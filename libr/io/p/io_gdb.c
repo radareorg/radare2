@@ -132,7 +132,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	case R_IO_SEEK_END:
 		return desc->exec_file_sz + offset;
 	default:
-	    return offset;
+		return offset;
 	}
 }
 

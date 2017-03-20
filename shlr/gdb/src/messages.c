@@ -4,6 +4,7 @@
 #include "arch.h"
 #include "core.h"
 #include "utils.h"
+#include "r_util/r_str.h"
 
 
 int handle_g(libgdbr_t *g) {
