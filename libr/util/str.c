@@ -2062,7 +2062,7 @@ R_API char *r_str_utf16_encode (const char *s, int len) {
 			*d++ = *s;
 		} else {
 			*d++ = '\\';
-			*d++ = '\\';
+		//	*d++ = '\\';
 			*d++ = 'u';
 			*d++ = '0';
 			*d++ = '0';
