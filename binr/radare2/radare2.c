@@ -444,7 +444,8 @@ int main(int argc, char **argv, char **envp) {
 	const char *forcebin = NULL;
 	const char *asmbits = NULL;
 	ut64 mapaddr = 0LL;
-	int quiet = false;
+	bool quiet = false;
+	bool quietLeak = false;
 	int is_gdb = false;
 	const char * s_seek = NULL;
 	RList *cmds = r_list_new ();
@@ -488,7 +489,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 
-	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:Ndqs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
+	while ((c = getopt (argc, argv, "=02AMCwfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:c:D:vVSzu"
 #if USE_THREADS
 "t"
 #endif
@@ -605,6 +606,10 @@ int main(int argc, char **argv, char **envp) {
 		case 'P':
 			patchfile = optarg;
 			break;
+		case 'Q':
+			quiet = true;
+			quietLeak = true;
+			break;
 		case 'q':
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
@@ -673,6 +678,9 @@ int main(int argc, char **argv, char **envp) {
 			r_core_loadlibs (&r, R_CORE_LOADLIBS_ALL, NULL);
 		}
 		run_commands (cmds, files, quiet);
+		if (quietLeak) {
+			exit (0);
+		}
 		r_io_plugin_list (r.io);
 		r_cons_flush ();
 		r_list_free (evals);
@@ -1180,8 +1188,9 @@ int main(int argc, char **argv, char **envp) {
 				}
 				if (lock) r_th_lock_enter (lock);
 				/* -1 means invalid command, -2 means quit prompt loop */
-				if ((ret = r_core_prompt_exec (&r)) == -2)
+				if ((ret = r_core_prompt_exec (&r)) == -2) {
 					break;
+				}
 				if (lock) r_th_lock_leave (lock);
 				if (rabin_th && !r_th_wait_async (rabin_th)) {
 					eprintf ("rabin thread end \n");
@@ -1254,6 +1263,10 @@ int main(int argc, char **argv, char **envp) {
 	ret = r.num->value;
 
 beach:
+	if (quietLeak) {
+		exit (ret);
+		return ret;
+	}
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command
 	// exectution.

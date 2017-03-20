@@ -37,4 +37,5 @@ git branch -D branch
 if [ -d t/overlay ]; then
 	make -C t apply
 	git commit -a
+#	git reset --hard @^^
 fi
