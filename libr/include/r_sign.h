@@ -32,12 +32,12 @@ typedef struct r_sign_item_t {
 	int space;
 	int type;
 
-	/* exact/anal zigns*/
+	// exact/anal zigns
 	int size;
 	ut8 *bytes;
 	ut8 *mask;
 
-	/* metric zigns */
+	// metric zigns
 	RSignMetrics metrics;
 } RSignItem;
 

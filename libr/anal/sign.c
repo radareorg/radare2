@@ -199,10 +199,25 @@ struct ctxDeleteCB {
 	RAnal *anal;
 };
 
-static int deleteCB(void *user, const char *k, const char *v) {
+static int deleteBySpaceCB(void *user, const char *k, const char *v) {
 	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
 
-	if (r_str_cmp (k, ctx->buf, strlen (ctx->buf))) {
+	if (!strncmp (k, ctx->buf, strlen (ctx->buf))) {
+		sdb_remove (ctx->anal->sdb_zigns, k, 0);
+	}
+
+	return 1;
+}
+
+static int deleteByNameCB(void *user, const char *k, const char *v) {
+	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
+	char *ptr;
+
+	if (!(ptr = strrchr (k, '|'))) {
+		return 1;
+	}
+
+	if (!strcmp (ptr, ctx->buf)) {
 		sdb_remove (ctx->anal->sdb_zigns, k, 0);
 	}
 
@@ -222,16 +237,15 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 		} else {
 			snprintf (ctx.buf, R_SIGN_KEY_MAXSZ, "zign|%d|", a->zign_spaces.space_idx);
 			ctx.anal = a;
-			sdb_foreach (a->sdb_zigns, deleteCB, &ctx);
+			sdb_foreach (a->sdb_zigns, deleteBySpaceCB, &ctx);
 			return true;
 		}
 	}
 
 	// Remove specific zign
-	it.name = (char *) name;
-	it.space = a->zign_spaces.space_idx;
-	serialize (&it, buf, NULL);
-	return sdb_remove (a->sdb_zigns, buf, 0);
+	snprintf (ctx.buf, R_SIGN_KEY_MAXSZ, "|%s", name);
+	ctx.anal = a;
+	return sdb_foreach (a->sdb_zigns, deleteByNameCB, &ctx);
 }
 
 struct ctxListCB {
@@ -273,8 +287,8 @@ static void listBytes(RAnal *a, RSignItem *it, int format) {
 		a->cb_printf ("\"name\": \"%s\", \"type\": \"%c\", \"bytes\": \"%s\"}",
 			it->name, it->type, bytes);
 	} else {
-		if (it->space >= 0) {
-			a->cb_printf ("%s.", a->zign_spaces.spaces[it->space]);
+		if (a->zign_spaces.space_idx == -1 && it->space >= 0) {
+			a->cb_printf ("(%s) ", a->zign_spaces.spaces[it->space]);
 		}
 		a->cb_printf ("%s %c %s\n", it->name, it->type, bytes);
 	}
@@ -300,8 +314,8 @@ static void listMetric(RAnal *a, RSignItem *it, int format) {
 		a->cb_printf ("\"name\": \"%s\", \"type\": \"%c\", \"metrics\": \"cc=%d nbbs=%d edges=%d ebbs=%d\"}",
 			it->name, it->type, it->metrics.cc, it->metrics.nbbs, it->metrics.edges, it->metrics.ebbs);
 	} else {
-		if (it->space >= 0) {
-			a->cb_printf ("%s.", a->zign_spaces.spaces[it->space]);
+		if (a->zign_spaces.space_idx == -1 && it->space >= 0) {
+			a->cb_printf ("(%s) ", a->zign_spaces.spaces[it->space]);
 		}
 		a->cb_printf ("%s %c cc=%d nbbs=%d edges=%d ebbs=%d\n",
 			it->name, it->type, it->metrics.cc, it->metrics.nbbs, it->metrics.edges, it->metrics.ebbs);
