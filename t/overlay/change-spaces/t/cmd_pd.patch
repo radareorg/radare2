@@ -1,0 +1,22 @@
+diff --git a/t/cmd_pd b/t/cmd_pd
+index a16da47f..51c1942b 100755
+--- a/t/cmd_pd
++++ b/t/cmd_pd
+@@ -68,7 +68,7 @@ e asm.bits=64
+ wx fa67bba9
+ pd 1
+ '
+-EXPECT="            0x00000000      fa67bba9       stp x26, x25, [sp, -0x50]!  ; 'P'
++EXPECT="             0x00000000      fa67bba9       stp x26, x25, [sp, -0x50]! ; 'P'
+ "
+ run_test
+ 
+@@ -82,7 +82,7 @@ e asm.bits=64
+ wx fa67bba9
+ pd 1
+ '
+-EXPECT="            0x00000000      fa67bba9       stp x26, x25, [sp, -0x50]!  ; 'P'
++EXPECT="             0x00000000      fa67bba9       stp x26, x25, [sp, -0x50]! ; 'P'
+ "
+ run_test
+ 
