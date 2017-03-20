@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,7 +99,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	if (argc>2 && !strcmp (argv[0], "xor")) {
+	if (argc > 2 && !strcmp (argv[0], "xor")) {
 		if (!strcmp (argv[1], argv[2])) {
 			argv[0] = "mov";
 			argv[2] = "0";

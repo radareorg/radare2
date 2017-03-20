@@ -59,7 +59,7 @@ typedef struct r_disam_options_t {
 	int atabsonce;
 	int atabsoff;
 	int decode;
-	int pseudo;
+	bool pseudo;
 	int filter;
 	int interactive;
 	int varsub;
@@ -504,7 +504,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
-	ds->show_comment_right = r_config_get_i (core->config, "asm.cmtright"); // XX conflict with show_comment_right_default
+	ds->show_comment_right = ds->show_comment_right_default;
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
 	ds->show_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
@@ -2484,7 +2484,7 @@ static void ds_align_comment(RDisasmState *ds) {
 
 static void ds_print_dwarf(RDisasmState *ds) {
 	if (ds->show_dwarf) {
-		int len = strlen (ds->opstr);
+		int len = ds->opstr? strlen (ds->opstr): 0;
 		if (len < 30) {
 			len = 30 - len;
 		}
@@ -3599,10 +3599,8 @@ toro:
 		if (ds->show_comments && !ds->show_comment_right) {
 			ds_show_refs (ds);
 			ds_print_ptr (ds, len + 256, idx);
-			ds_build_op_str (ds);
 			ds_print_fcn_name (ds);
 			ds_print_color_reset (ds);
-			R_FREE (ds->opstr);
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
 			}
