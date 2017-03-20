@@ -47,6 +47,7 @@ R_API RFS* r_fs_new() {
 			free (static_plugin);
 		}
 	}
+	static_plugin = NULL;
 	return fs;
 }
 
