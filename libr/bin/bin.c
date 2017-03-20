@@ -405,8 +405,8 @@ static RList *get_strings(RBinFile *a, int min, int dump) {
 					}
 					p = buf;
 					ut64 cfstr_vaddr = section->vaddr + i;
-					ut64 cstr_vaddr = (bits == 64) 
-								   ? r_read_le64 (p) 
+					ut64 cstr_vaddr = (bits == 64)
+								   ? r_read_le64 (p)
 								   : r_read_le32 (p);
 					r_list_foreach (ret, iter2, s) {
 						if (s->vaddr == cstr_vaddr) {
@@ -742,7 +742,7 @@ R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
 	desc = fd == -1 ?
 		iob->desc_open (io, file, O_RDONLY, 0644) :
 		iob->desc_get_by_fd (io, fd);
-	return desc 
+	return desc
 		? r_bin_load_io_at_offset_as (bin, desc, baseaddr, loadaddr,
 						  xtr_idx, fileoffset, name)
 		: false;
@@ -1102,7 +1102,7 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr,
 		bf = r_bin_file_create_append (bin, filename, bytes, sz,
 					       file_sz, rawstr, fd, xtr->name, false);
 		if (!bf) {
-			return NULL; 
+			return NULL;
 		}
 		if (!bin->cur) {
 			bin->cur = bf;
@@ -1122,7 +1122,7 @@ static RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr,
 			xtr->laddr = loadaddr? loadaddr : UT64_MAX;
 		}
 		bf->xtr_data = xtr_data_list ? xtr_data_list : NULL;
-	} 
+	}
 	return bf;
 }
 
@@ -1433,7 +1433,7 @@ static RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file,
 		o->size = file_sz;
 	}
 
-	if (!o) { 
+	if (!o) {
 		if (bf && binfile_created) {
 			r_list_delete_data (bin->binfiles, bf);
 		}
@@ -1917,7 +1917,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits,
 		if (!obj) {
 			if (binfile->xtr_data) {
 				RBinXtrData *xtr_data = r_list_get_n (binfile->xtr_data, 0);
-				if (!r_bin_file_object_new_from_xtr_data (bin, binfile, 
+				if (!r_bin_file_object_new_from_xtr_data (bin, binfile,
 						UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
 					return false;
 				}
@@ -2131,7 +2131,7 @@ static void list_xtr_archs(RBin *bin, int mode) {
 		int bits, i = 0;
 		char *arch, *machine;
 		r_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
-			if (!xtr_data || !xtr_data->metadata || 
+			if (!xtr_data || !xtr_data->metadata ||
 			    !xtr_data->metadata->arch) {
 				continue;
 			}

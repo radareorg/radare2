@@ -22,7 +22,7 @@ struct parse_ctx {
 static bool append(libgdbr_t *g, const char ch) {
 	char *ptr;
 
-	if (g->data_len == g->data_max) {
+	if (g->data_len == g->data_max - 1) {
 		int newsize = g->data_max * 2;
 		if (newsize < 1) {
 			return false;
@@ -166,6 +166,7 @@ int read_packet(libgdbr_t *g) {
 			return -1;
 		}
 		if (!ret) {
+			g->data[g->data_len] = '\0';
 			return 0;
 		}
 	}
