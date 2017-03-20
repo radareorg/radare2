@@ -1959,7 +1959,12 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			} else {
 				string2 = strdup (str + 1);
 			}
-			if (!string && string2) {
+			if (string2) {
+				/* the str.* flag will win over naked "string",
+				 * since it's generally more accurate */
+				if (string) {
+					R_FREE (string);
+				}
 				string = string2;
 				string2 = NULL;
 			}
