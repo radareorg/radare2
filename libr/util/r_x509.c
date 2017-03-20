@@ -36,10 +36,10 @@ bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object) {
 }
 
 bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object * object) {
-	if (!ai || !object || object->list.length < 1) {
+	if (!ai || !object || object->list.length < 1 || !object->list.objects) {
 		return false;
 	}
-	if (object->list.objects[0]->klass == CLASS_UNIVERSAL && object->list.objects[0]->tag == TAG_OID) {
+	if (object->list.objects[0] && object->list.objects[0]->klass == CLASS_UNIVERSAL && object->list.objects[0]->tag == TAG_OID) {
 		ai->algorithm = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 	}
 	ai->parameters = NULL; // TODO
