@@ -53,7 +53,8 @@
 #undef MAXCOMLEN	/* redefined in zipint.h */
 #endif
 
-#if (OpenBSD >= 201605) /* release >= 5.9 */
+/* release >= 5.9 */
+#if __OpenBSD__ && OpenBSD >= 201605
 #define LIBC_HAVE_PLEDGE 1
 #else
 #define LIBC_HAVE_PLEDGE 0
