@@ -33,3 +33,8 @@ for a in $RC ; do
 	git cherry-pick $a
 done
 git branch -D branch
+
+# merge overlay into r2r
+make -C t
+git commit -a -m remove-overlay
+git rebase -i @^^
