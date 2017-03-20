@@ -1817,6 +1817,8 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
 	int saved_stackptr = core->anal->stackptr;
+	char *shortcut = 0;
+	int shortcuts = 0;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
@@ -1828,6 +1830,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 	r_list_sort (fcn->bbs, (RListComparator) bbcmp);
 
+	shortcuts = r_config_get_i (core->config, "graph.nodejmps");
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RANode *node;
 		char *title, *body;
@@ -1837,6 +1840,14 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 		body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
 		title = get_title (bb->addr);
+
+		if (shortcuts) {
+			shortcut = r_core_add_asmqjmp (core, bb->addr);
+			if (shortcut) {
+				sdb_set (g->db, sdb_fmt (2, "agraph.nodes.%s.shortcut", title), shortcut, 0);
+				free (shortcut);
+			}
+		}
 		node = r_agraph_get_node (g, title);
 		if (node) {
 			free (node->body);
