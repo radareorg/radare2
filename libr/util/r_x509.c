@@ -236,6 +236,7 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 	}
 	certificate = (RX509Certificate*) malloc (sizeof (RX509Certificate));
 	if (!certificate) {
+		r_asn1_free_object (object);
 		return NULL;
 	}
 	memset (certificate, 0, sizeof (RX509Certificate));
@@ -248,6 +249,11 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 		return NULL;
 	}
 	tmp = object->list.objects[2];
+	if (!tmp) {
+		r_asn1_free_object (object);
+		free (certificate);
+		return NULL;
+	}
 	if (tmp->klass != CLASS_UNIVERSAL || tmp->form != FORM_PRIMITIVE || tmp->tag != TAG_BITSTRING) {
 		r_asn1_free_object (object);
 		free (certificate);
