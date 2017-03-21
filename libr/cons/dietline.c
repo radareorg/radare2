@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2017 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -1008,6 +1008,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			/* ignore atm */
 			break;
 		case 1: // ^A
+			if (gcomp) {
+				strcpy (I.buffer.data, gcomp_line);
+				I.buffer.length = strlen (I.buffer.data);
+				I.buffer.index = 0;
+				gcomp = false;
+			}
 			I.buffer.index = 0;
 			break;
 		case 2: // ^b // emacs left
@@ -1030,7 +1036,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			break;
 		case 5: // ^E
-			if (prev == 24) { // ^X = 0x18
+			if (gcomp) {
+				strcpy (I.buffer.data, gcomp_line);
+				I.buffer.index = strlen (I.buffer.data);
+				I.buffer.length = I.buffer.index;
+				gcomp = false;
+			} else if (prev == 24) { // ^X = 0x18
 				I.buffer.data[I.buffer.length] = 0; // probably unnecessary
 				tmp_ed_cmd = I.editor_cb (I.user, I.buffer.data);
 				if (tmp_ed_cmd) {
