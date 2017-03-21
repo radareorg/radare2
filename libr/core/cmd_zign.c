@@ -140,7 +140,7 @@ exit_case:
 			if (input[1] != ' ') {
 				eprintf ("usage: za%sf name [zigname]\n", type == R_SIGN_ANAL? "a": "e");
 				retval = false;
-				goto exit_case_f;
+				goto exit_case_fcn;
 			}
 
 			args = r_str_new (input + 2);
@@ -149,7 +149,7 @@ exit_case:
 			if (n < 1 || n > 2) {
 				eprintf ("usage: za%sf name [zigname]\n", type == R_SIGN_ANAL? "a": "e");
 				retval = false;
-				goto exit_case_f;
+				goto exit_case_fcn;
 			}
 
 			switch (n) {
@@ -173,7 +173,7 @@ exit_case:
 			}
 			r_cons_break_pop ();
 
-exit_case_f:
+exit_case_fcn:
 			free (args);
 			return retval;
 		}
@@ -334,7 +334,7 @@ exit_case:
 			if (input[1] != ' ') {
 				eprintf ("usage: zamf name [zigname]\n");
 				retval = false;
-				goto exit_case_f;
+				goto exit_case_fcn;
 			}
 
 			args = r_str_new (input + 2);
@@ -343,7 +343,7 @@ exit_case:
 			if (n < 1 || n > 2) {
 				eprintf ("usage: zamf name [zigname]\n");
 				retval = false;
-				goto exit_case_f;
+				goto exit_case_fcn;
 			}
 
 			switch (n) {
@@ -367,7 +367,7 @@ exit_case:
 			}
 			r_cons_break_pop ();
 
-exit_case_f:
+exit_case_fcn:
 			free (args);
 			return retval;
 		}
@@ -390,9 +390,23 @@ exit_case_f:
 		}
 		break;
 	case '?':
-		{
+		if (input[1] == '?') {
 			const char *help_msg[] = {
-				"Usage:", "zam[fF] [args] ", "# Create metric zignature",
+				"Examples:", "Metric Zignatures", " examples and documentation",
+				"cc", "", "cyclomatic complexity",
+				"edges", "", "number of edges",
+				"nbbs", "", "number of basic blocks",
+				"ebbs ", "", "number of end basic blocks",
+				"ebbs ", "", "number of end basic blocks",
+				NULL};
+			r_core_cmd_help (core, help_msg);
+			r_cons_printf ("Examples:\n"
+				" zam foo cc=2 nbbs=3 edges=3 ebbs=1\n"
+				" zam bar nbbs=3 edges=3\n");
+		} else {
+			const char *help_msg[] = {
+				"Usage:", "zam[fF?] [args] ", "# Create metric zignature",
+				"zam?? ", "", "show metrics help",
 				"zam ", "name metrics", "create metric zignature",
 				"zamf ", "name [zigname]", "create metric zignature for function",
 				"zamF ", "", "generate metric zignatures for all functions",
@@ -424,7 +438,7 @@ static int cmdAdd(void *data, const char *input) {
 				"Usage:", "za[aemg] [args] ", "# Add zignature",
 				"zaa", "[?]", "add anal zignature",
 				"zae", "[?]", "add exact-match zignature",
-				"zam ", "name metrics", "add metric zignature (e.g. zm foo bbs=10 calls=printf,exit)",
+				"zam", "[?]", "add metric zignature",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
