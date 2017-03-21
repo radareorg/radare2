@@ -47,6 +47,10 @@ script:
   - export NOOK=1
   - export NOREPORT=1
   - cd radare2-regressions
+  - cd new
+  - npm install
+  - make run
+  - cd ..
   - VERBOSE=1 make -k all
   - make unit_tests
 
