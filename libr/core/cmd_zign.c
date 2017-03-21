@@ -397,7 +397,6 @@ exit_case_fcn:
 				"edges", "", "number of edges",
 				"nbbs", "", "number of basic blocks",
 				"ebbs ", "", "number of end basic blocks",
-				"ebbs ", "", "number of end basic blocks",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 			r_cons_printf ("Examples:\n"
