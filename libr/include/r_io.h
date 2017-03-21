@@ -496,6 +496,7 @@ extern RIOPlugin r_io_plugin_r2web;
 extern RIOPlugin r_io_plugin_bochs;
 extern RIOPlugin r_io_plugin_r2k;
 extern RIOPlugin r_io_plugin_tcp;
+extern RIOPlugin r_io_plugin_null;
 
 #endif
 
