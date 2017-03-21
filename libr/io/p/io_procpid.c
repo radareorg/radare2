@@ -56,7 +56,6 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char procpidpath[64];
 	int fd, ret = -1;
-	RIODesc *d;
 	if (__plugin_open (io, file, 0)) {
 		int pid = atoi (file + 10);
 		if (file[0]=='a') {
@@ -72,7 +71,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 					eprintf ("ERRNO: %d (EINVAL)\n", errno);
 					break;
 				}
-			} else if (__waitpid(pid)) {
+			} else if (__waitpid (pid)) {
 				ret = pid;
 			} else {
 				eprintf ("Error in waitpid\n");
@@ -80,7 +79,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else {
 			ret = pid;
 		}
-		fd = ret; //TODO: use r_io_fd api
+		fd = ret; // TODO: use r_io_fd api
 		snprintf (procpidpath, sizeof (procpidpath), "/proc/%d/mem", pid);
 		fd = r_sandbox_open (procpidpath, O_RDWR, 0);
 		if (fd != -1) {
@@ -91,7 +90,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 			riop->pid = pid;
 			riop->fd = fd;
-			d = r_io_desc_new (io, &r_io_plugin_procpid, file, true, 0, riop);	//true ... WTF
+			RIODesc *d = r_io_desc_new (io, &r_io_plugin_procpid, file, true, 0, riop);
 			d->name = r_sys_pid_to_path (riop->pid);
 			return d;
 		}

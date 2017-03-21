@@ -18,7 +18,10 @@ static RList* getVtableMethods(RCore *core, vtable_info *table) {
 			int sz;
 			ut64 curAddressValue;
 			sz = R_DIM (8, 1, 8);
-			r_io_read_at (core->io, startAddress, (ut8 *)&curAddressValue, sz);
+			if (!r_io_read_at (core->io, startAddress, (ut8 *)&curAddressValue, sz)) {
+				eprintf ("read error\n");
+				break;
+			}
 			RAnalFunction *curFuntion = r_anal_get_fcn_in (core->anal, curAddressValue, 0);
 			r_list_append (vtableMethods, curFuntion);
 			startAddress += wordSize;

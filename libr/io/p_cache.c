@@ -220,13 +220,13 @@ static int __desc_cache_list_cb(void *user, const char *k, const char *v) {
 			i++;
 		} else if (prev_written) {
 			prev_written = false;
-			cache->size = i;
-			cache->to = cache->from + i - 1;
-			cache->data = realloc (cache->data, i);
-			if (!cache->data) {
-				free (cache->data);
+			char *data = realloc (cache->data, i);
+			if (!data) {
 				return false;
 			}
+			cache->data = data;
+			cache->size = i;
+			cache->to = cache->from + i - 1;
 			i = 0;
 			r_list_push (writes, cache);
 			cache = NULL;

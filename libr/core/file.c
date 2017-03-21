@@ -415,7 +415,9 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	int xtr_idx = 0; // if 0, load all if xtr is used
 	RBinPlugin *plugin;
 
-	if (!desc) return false;
+	if (!desc) {
+		return false;
+	}
 	r_io_use_desc (r->io, desc->fd);
 
 	if (!r_bin_load_io (r->bin, desc, baseaddr, loadaddr, xtr_idx)) {

@@ -131,9 +131,7 @@ static int __getpid (RIODesc *fd) {
 
 static int __gettid (RIODesc *fd) {
 	RIOW32Dbg *iow = (RIOW32Dbg *)(fd ? fd->data : NULL);
-	if (!iow)
-		return -1;
-	return iow->tid;
+	return iow? iow->tid: -1;
 }
 
 RIOPlugin r_io_plugin_w32dbg = {
@@ -152,13 +150,13 @@ RIOPlugin r_io_plugin_w32dbg = {
 	.isdbg = true
 };
 #else
-struct r_io_plugin_t r_io_plugin_w32dbg = {
+RIOPlugin r_io_plugin_w32dbg = {
 	.name = NULL
 };
 #endif
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_w32dbg,
 	.version = R2_VERSION

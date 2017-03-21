@@ -137,13 +137,11 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
 	data->file_count = file_count;
 	data->metadata = metadata;
 	data->loaded = 0;
-	data->buffer = malloc (size + 1);
-	data->buffer[size] = 0;
+	data->buffer = r_buf_drain (buf);
 	if (!data->buffer) {
 		free (data);
 		return NULL;
 	}
-	memcpy (data->buffer, r_buf_buffer (buf), size);
 	return data;
 }
 
@@ -918,6 +916,8 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 		if (!iob->read_at (io, seekaddr, buf_bytes, sz)) {
 			sz = 0;
 		}
+		// XXX this makes no sense. buf_bytes cant be null here, so this is dead code
+#if 0
 		if (!buf_bytes) {
 			if (!seekaddr) {
 				seekaddr = baseaddr;
@@ -960,6 +960,7 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 			iob->read_at (io, seekaddr, buf_bytes, sz);
 #endif
 		}
+#endif
 	}
 
 	if (!name) {
@@ -984,6 +985,10 @@ R_API int r_bin_load_io_at_offset_as_sz (RBin *bin, RIODesc *desc, ut64 baseaddr
 							return false;
 						}
 						buf_bytes = malloc (sz);
+						if (!buf_bytes) {
+							iob->close (io, tdesc->fd);
+							return false;
+						}
 						va = tdesc->io->va;
 						tdesc->io->va = false;
 						sz = iob->read_at (io, 0LL, buf_bytes, sz) * sz;

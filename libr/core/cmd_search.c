@@ -648,6 +648,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					map->to = s->vaddr + s->size;
 					map->flags = s->flags;
 					map->delta = 0;
+					if (map->from > map->to) {
+						R_FREE (map);
+						continue;
+					}
 					if (!(map->flags & protection)) {
 						R_FREE (map);
 						continue;
@@ -711,8 +715,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 					if ((mask && (map->perm & mask)) || add || all) {
 						if (!list) {
-							list = r_list_new ();
-							list->free = free;
+							list = r_list_newf (free);
 							maplist = true;
 						}
 						RIOMap *nmap = R_NEW0 (RIOMap);
@@ -1904,10 +1907,11 @@ static void do_string_search(RCore *core, struct search_parameters *param) {
 				r_io_read_at (core->io, at, buf, bufsz);
 				if (param->crypto_search) {
 					int delta = 0;
-					if (param->aes_search)
+					if (param->aes_search) {
 						delta = r_search_aes_update (core->search, at, buf, bufsz);
-					else if (param->rsa_search)
+					} else if (param->rsa_search) {
 						delta = r_search_rsa_update (core->search, at, buf, bufsz);
+					}
 					if (delta != -1) {
 						if (!r_search_hit_new (core->search, &aeskw, at+delta)) {
 							break;

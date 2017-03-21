@@ -4996,7 +4996,7 @@ static int compute_coverage(RCore *core) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		ls_foreach (core->io->sections, iter2, sec) {
 			int section_end = sec->vaddr + sec->vsize;
-			if (sec->flags & 1 && fcn->addr >= sec->vaddr && fcn->addr < section_end) {
+			if (sec->flags & R_IO_EXEC && fcn->addr >= sec->vaddr && fcn->addr < section_end) {
 				cov += r_anal_fcn_realsize (fcn);
 			}
 		}
@@ -5009,7 +5009,7 @@ static int compute_code (RCore* core) {
 	SdbListIter *iter;
 	RIOSection *sec;
 	ls_foreach (core->io->sections, iter, sec) {
-		if (sec->flags & 1) {
+		if (sec->flags & R_IO_EXEC) {
 			code += sec->vsize;
 		}
 	}
