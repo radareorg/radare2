@@ -5250,7 +5250,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
-					if (!done_aav) {
+					if (!done_aav && strstr (r_config_get (core->config, "asm.arch"), "arm")) {
 						rowlog (core, "Analyze value pointers (aav)");
 						r_core_cmd0 (core, "aav");
 						r_core_cmd0 (core, "aav $S+$SS+1");
