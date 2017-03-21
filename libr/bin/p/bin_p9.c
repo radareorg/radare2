@@ -63,15 +63,18 @@ static RList *sections(RBinFile *arch) {
 		return NULL;
 	}
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
-	ret->free = free;
-
+	if (r_buf_size (arch->buf) < 28) {
+		r_list_free (ret);
+		return NULL;
+	}
 	// add text segment
 	textsize = r_mem_get_num (arch->buf->buf + 4, 4);
 	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
+		r_list_free (ret);
+		return NULL;
 	}
 	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
 	ptr->size = textsize;
@@ -193,6 +196,9 @@ static ut64 size(RBinFile *arch) {
 		return 0;
 	}
 	// TODO: reuse section list
+	if (r_buf_size (arch->buf) < 28) {
+		return 0;
+	}
 	text = r_mem_get_num (arch->buf->buf + 4, 4);
 	data = r_mem_get_num (arch->buf->buf + 8, 4);
 	syms = r_mem_get_num (arch->buf->buf + 16, 4);
