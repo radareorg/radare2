@@ -49,7 +49,7 @@ script:
   - cd radare2-regressions
   - cd new
   - npm install
-  - make run
+  - node bin/r2r.js
   - cd ..
   - VERBOSE=1 make -k all
   - make unit_tests
