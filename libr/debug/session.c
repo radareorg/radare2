@@ -52,7 +52,7 @@ R_API int r_debug_session_add (RDebug *dbg) {
   /* save memory snapshots */
   session->memlist = r_list_newf (r_debug_snap_free);
   start = r_list_tail (dbg->snaps);
-  r_debug_snap_all (dbg, 0);
+  r_debug_snap_all (dbg, R_IO_RW);
   if (!start) {
     start = r_list_head (dbg->snaps);
   } else {
