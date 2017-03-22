@@ -450,6 +450,55 @@ static int cmdAdd(void *data, const char *input) {
 	return true;
 }
 
+static bool loadGzSdb(RAnal *a, const char *filename) {
+	ut8 *buf = NULL;
+	int size = 0;
+	char *tmpfile = NULL;
+	bool retval = true;
+
+	if (!r_file_exists (filename)) {
+		eprintf ("error: file %s does not exist\n", filename);
+		retval = false;
+		goto exit_function;
+	}
+
+	if (!(buf = r_file_gzslurp (filename, &size, 0))) {
+		eprintf ("error: cannot decompress file\n");
+		retval = false;
+		goto exit_function;
+	}
+
+	if (!(tmpfile = r_file_temp ("r2zign"))) {
+		eprintf ("error: cannot create temp file\n");
+		retval = false;
+		goto exit_function;
+	}
+
+	if (!r_file_dump (tmpfile, buf, size, 0)) {
+		eprintf ("error: cannot dump file\n");
+		retval = false;
+		goto exit_function;
+	}
+
+	if (!r_sign_load (a, tmpfile)) {
+		eprintf ("error: cannot load file\n");
+		retval = false;
+		goto exit_function;
+	}
+
+	if (!r_file_rm (tmpfile)) {
+		eprintf ("error: cannot delete temp file\n");
+		retval = false;
+		goto exit_function;
+	}
+
+exit_function:
+	free (buf);
+	free (tmpfile);
+
+	return retval;
+}
+
 static int cmdFile(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 
@@ -462,7 +511,7 @@ static int cmdFile(void *data, const char *input) {
 				filename = input + 1;
 				return r_sign_load (core->anal, filename);
 			} else {
-				eprintf ("Usage: zo filename\n");
+				eprintf ("usage: zo filename\n");
 				return false;
 			}
 		}
@@ -475,23 +524,38 @@ static int cmdFile(void *data, const char *input) {
 				filename = input + 2;
 				return r_sign_save (core->anal, filename);
 			} else {
-				eprintf ("Usage: zos filename\n");
+				eprintf ("usage: zos filename\n");
 				return false;
 			}
+		}
+		break;
+	case 'z':
+		{
+			const char *filename = NULL;
+
+			if (input[1] == ' ' && input[2] != '\x00') {
+				filename = input + 2;
+			} else {
+				eprintf ("usage: zoz filename\n");
+				return false;
+			}
+
+			return loadGzSdb (core->anal, filename);
 		}
 		break;
 	case '?':
 		{
 			const char *help_msg[] = {
-				"Usage:", "zo[s] filename ", "# Manage zignature files",
+				"Usage:", "zo[zs] filename ", "# Manage zignature files",
 				"zo ", "filename", "load zinatures from sdb file",
+				"zoz ", "filename", "load zinatures from gzipped sdb file",
 				"zos ", "filename", "save zignatures to sdb file",
 				NULL};
 			r_core_cmd_help (core, help_msg);
 		}
 		break;
 	default:
-		eprintf ("usage: zo[s] filename\n");
+		eprintf ("usage: zo[zs] filename\n");
 		return false;
 	}
 
@@ -507,7 +571,7 @@ static int cmdSpace(void *data, const char *input) {
 		if (input[1] != '\x00') {
 			r_space_push (zs, input + 1);
 		} else {
-			eprintf ("Usage: zs+zignspace\n");
+			eprintf ("usage: zs+zignspace\n");
 			return false;
 		}
 		break;
@@ -515,7 +579,7 @@ static int cmdSpace(void *data, const char *input) {
 		if (input[1] == ' ' && input[2] != '\x00') {
 			r_space_rename (zs, NULL, input + 2);
 		} else {
-			eprintf ("Usage: zsr newname\n");
+			eprintf ("usage: zsr newname\n");
 			return false;
 		}
 		break;
@@ -537,7 +601,7 @@ static int cmdSpace(void *data, const char *input) {
 		if (input[1] != '\x00') {
 			r_space_set (zs, input + 1);
 		} else {
-			eprintf ("Usage: zs zignspace\n");
+			eprintf ("usage: zs zignspace\n");
 			return false;
 		}
 		break;
