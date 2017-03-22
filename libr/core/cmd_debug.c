@@ -3450,7 +3450,7 @@ static int cmd_debug(void *data, const char *input) {
 			dot_trace_traverse (core, core->dbg->tree, input[2]);
 			break;
 		case 's': // "dts"
-			switch (input[1]) {
+			switch (input[2]) {
 			case 0:
 				r_debug_session_list (core->dbg);
 				break;
@@ -3463,7 +3463,7 @@ static int cmd_debug(void *data, const char *input) {
 			default:
 				{
 				const char *help_msg[] = {
-					"Usage:", "ats[*]", "",
+					"Usage:", "dts[*]", "",
 					"dts", "", "List all trace sessions",
 					"dts+", "", "Add trace session",
 					"dtsA", " id", "Apply trace session",
