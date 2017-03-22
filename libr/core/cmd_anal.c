@@ -5129,6 +5129,15 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	seti ("search.align", o_align);
 }
 
+static bool should_aav(RCore *core) {
+	// Don't aav on x86 for now
+	if (r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
+		return false;
+	}
+
+	return true;
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	const char *help_msg_aa[] = {
 		"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
@@ -5191,7 +5200,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
 			eprintf ("Usage: See aa? for more help\n");
 		} else {
-			bool done_aav = false;
 			ut64 curseek = core->offset;
 			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
 			r_cons_break_push (NULL, NULL);
@@ -5214,9 +5222,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "dh esil");
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
-				if (strstr (r_config_get (core->config, "asm.arch"), "arm")) {
+				if (should_aav (core)) {
 					rowlog (core, "\nAnalyze value pointers (aav)");
-					done_aav = true;
 					r_core_cmd0 (core, "aav");
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
@@ -5250,12 +5257,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
-					if (!done_aav) {
-						rowlog (core, "Analyze value pointers (aav)");
-						r_core_cmd0 (core, "aav");
-						r_core_cmd0 (core, "aav $S+$SS+1");
-						rowlog_done (core);
-					}
 				} else {
 					rowlog (core, "[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}
