@@ -660,7 +660,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		r_debug_snap (core->dbg, r_num_math (core->num, input + 1));
 		break;
 	case 'A':
-		r_debug_snap_set (core->dbg, atoi (input + 1));
+		r_debug_snap_set_idx (core->dbg, atoi (input + 1));
 		break;
 	case 'C':
 		r_debug_snap_comment (core->dbg, atoi (input + 1), strchr (input, ' '));
@@ -3449,6 +3449,29 @@ static int cmd_debug(void *data, const char *input) {
 		case 'g': // "dtg"
 			dot_trace_traverse (core, core->dbg->tree, input[2]);
 			break;
+		case 's': // "dts"
+			switch (input[1]) {
+			case 0:
+				r_debug_session_list (core->dbg);
+				break;
+			case '+':
+				r_debug_session_add (core->dbg);
+				break;
+			case 'A':
+				r_debug_session_set (core->dbg, atoi (input + 2));
+				break;
+			default:
+				{
+				const char *help_msg[] = {
+					"Usage:", "ats[*]", "",
+					"dts", "", "List all trace sessions",
+					"dts+", "", "Add trace session",
+					"dtsA", " id", "Apply trace session",
+					NULL };
+				r_core_cmd_help (core, help_msg);
+				}
+			}
+			break;
 		case '-':
 			r_tree_reset (core->dbg->tree);
 			r_debug_trace_free (core->dbg->trace);
@@ -3469,6 +3492,7 @@ static int cmd_debug(void *data, const char *input) {
 					"dtg", "", "Graph call/ret trace",
 					"dtg*", "", "Graph in agn/age commands. use .dtg*;aggi for visual",
 					"dtgi", "", "Interactive debug trace",
+					"dts", "[?]", "trace sessions",
 					"dt-", "", "Reset traces (instruction/calls)",
 					NULL
 				};

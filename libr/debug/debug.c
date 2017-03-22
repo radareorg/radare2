@@ -302,6 +302,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->trace_execs = 0;
 	dbg->anal = NULL;
 	dbg->snaps = r_list_newf (r_debug_snap_free);
+	dbg->sessions = r_list_newf (r_debug_session_free);
 	dbg->pid = -1;
 	dbg->bpsize = 1;
 	dbg->tid = -1;
@@ -345,6 +346,7 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		r_bp_free (dbg->bp);
 		//r_reg_free(&dbg->reg);
 		r_list_free (dbg->snaps);
+		r_list_free (dbg->sessions);
 		r_list_free (dbg->maps);
 		r_list_free (dbg->maps_user);
 		r_list_free (dbg->threads);
