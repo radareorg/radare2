@@ -5130,12 +5130,13 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 }
 
 static bool should_aav(RCore *core) {
-  // Don't aav on x86 for now
-  if (strstr (r_config_get (core->config, "asm.arch"), "x86")) {
-    return false;
-  } else {
-    return true;
-  }
+	int X_LEN = strlen("x86");
+	// Don't aav on x86 for now
+	if (strncmp (r_config_get (core->config, "asm.arch"), "x86", X_LEN) == 0) {
+		return false;
+	}
+
+	return true;
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
