@@ -675,7 +675,6 @@ static int cb_timezone(void *user, void *data) {
 }
 
 static int cb_cfgdebug(void *user, void *data) {
-	int ioraw = 1;
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (!core) return false;
@@ -704,15 +703,6 @@ static int cb_cfgdebug(void *user, void *data) {
 		if (core->dbg) r_debug_use (core->dbg, NULL);
 		core->bin->is_debugger = false;
 	}
-	if (core->io) {
-		r_config_set (core->config, "io.va", "true");
-		if (core->dbg && core->dbg->h) {
-			ioraw = core->dbg->h->keepio? 0: 1;
-		} else {
-			ioraw = 0;
-		}
-	}
-	r_config_set (core->config, "io.raw", ioraw? "true": "false");
 	return true;
 }
 
@@ -1142,13 +1132,6 @@ static int cb_iopava(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->pava = node->i_value;
-	return true;
-}
-
-static int cb_ioraw(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	r_io_set_raw (core->io, node->i_value);
 	return true;
 }
 
@@ -2247,7 +2230,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("io.buffer.from", 0, "Lower address of buffered cache");
 	SETI("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB("io.cache", "false", &cb_iocache, "Enable cache for io changes");
-	SETCB("io.raw", "false", &cb_ioraw, "Ignore maps/sections and use raw io");
 	SETCB("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
 	SETICB("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
