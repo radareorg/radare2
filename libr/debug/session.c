@@ -67,27 +67,42 @@ R_API int r_debug_session_add (RDebug *dbg) {
   return 1;
 }
 
-R_API int r_debug_session_set (RDebug *dbg, int idx) {
-  RDebugSession *session;
+R_API int r_debug_session_set (RDebug *dbg, RDebugSession *session) {
   RDebugSnap *snap;
-  RListIter *iterse, *itersn;
+  RListIter *iter;
   int i;
+  for (i = 0; i < R_REG_TYPE_LAST; i++) {
+    dbg->reg->regset[i].arena = session->reg[i];
+  }
+  r_debug_reg_sync (dbg, -1, 1);
+  r_list_foreach (session->memlist, iter, snap) {
+    r_debug_snap_set (dbg, snap);
+  }
+  return 1;
+}
+
+R_API int r_debug_session_set_idx (RDebug *dbg, int idx) {
+  RDebugSession *session;
+  RListIter *iter;
   ut32 count = 0;
 
 	if (!dbg || idx < 0)
 		return 0;
-	r_list_foreach (dbg->sessions, iterse, session) {
+	r_list_foreach (dbg->sessions, iter, session) {
 		if (count == idx) {
-      for (i = 0; i < R_REG_TYPE_LAST; i++) {
-        dbg->reg->regset[i].arena = session->reg[i];
-      }
-      r_debug_reg_sync (dbg, -1, 1);
-      r_list_foreach (session->memlist, itersn, snap) {
-        r_debug_snap_set (dbg, snap);
-      }
+      r_debug_session_set (dbg, session);
       return 1;
     }
     count++;
   }
   return 0;
+}
+
+R_API RDebugSession* r_debug_session_get (RDebug *dbg, ut64 addr) {
+  RDebugSession *session;
+  RListIter *iter;
+  r_list_foreach_prev (dbg->sessions, iter, session) {
+    if (session->key.addr != addr) return session;
+  }
+  return NULL;
 }
