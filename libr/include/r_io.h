@@ -124,7 +124,6 @@ typedef struct r_io_t {
 	int raised;
 	int va;
 	bool pava;
-	int raw;
 	int vio; // remove that when vio replaces the old stuff
 	int sectonly;
 	char *referer;
@@ -290,7 +289,6 @@ typedef struct r_io_range_t {
 /* io/plugin.c */
 R_API RIO *r_io_new(void);
 R_API RIO *r_io_free(RIO *io);
-R_API void r_io_set_raw(RIO *io, int raw);
 R_API bool r_io_plugin_init(RIO *io);
 R_API void r_io_raise (RIO *io, int fd);
 R_API int r_io_plugin_generate(RIO *io);
@@ -319,7 +317,6 @@ R_API int r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API RIODesc *r_io_use_fd(RIO *io, int fd);
 R_API int r_io_use_desc(RIO *io, RIODesc *fd);
 
-R_API const ut8* r_io_get_raw(RIO *io, ut64 addr, int *len);
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len);
 R_API int r_io_vread(RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API int r_io_read_internal(RIO *io, ut8 *buf, int len);

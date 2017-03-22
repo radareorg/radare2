@@ -359,10 +359,6 @@ int r_io_read_cr (RIO *io, ut64 addr, ut8 *buf, int len) {
 		return R_FAIL;
 	if (io->ff)
 		memset (buf, io->Oxff, len);
-	if (io->raw) {
-		r_io_seek (io, addr, R_IO_SEEK_SET);
-		return r_io_read_internal (io, buf, len);
-	}
 	if (io->va) {
 		r_io_vread (io, addr, buf, len); //must check return-stat
 		if (io->cached)
@@ -407,13 +403,6 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 				return 0;
 			}
 		}
-	}
-
-	if (io->raw) {
-		if (r_io_seek (io, addr, R_IO_SEEK_SET) == UT64_MAX) {
-			memset (buf, io->Oxff, len);
-		}
-		return r_io_read_internal (io, buf, len);
 	}
 
 	io->off = addr;
@@ -818,7 +807,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	// XXX: list_empty trick must be done in r_io_set_va();
 	//eprintf ("-(seek)-> 0x%08llx\n", offset);
 	//if (!io->debug && io->va && !r_list_empty (io->sections)) {
-	if (!io->debug || !io->raw) { //
+	if (!io->debug) {
 		if (io->va && !r_list_empty (io->sections)) {
 			ut64 o = r_io_section_vaddr_to_maddr_try (io, offset);
 			if (o != UT64_MAX) {
@@ -1114,10 +1103,6 @@ static ut8 *r_io_desc_read(RIO *io, RIODesc *desc, ut64 *out_sz) {
 
 static RIO *r_io_bind_get_io(RIOBind *bnd) {
 	return bnd? bnd->io: NULL;
-}
-
-R_API void r_io_set_raw(RIO *io, int raw) {
-	io->raw = raw? 1: 0;
 }
 
 // check if reading at offset or writting to offset is reasonable
