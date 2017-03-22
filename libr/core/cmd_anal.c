@@ -5130,9 +5130,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 }
 
 static bool should_aav(RCore *core) {
-	int X_LEN = strlen("x86");
 	// Don't aav on x86 for now
-	if (strncmp (r_config_get (core->config, "asm.arch"), "x86", X_LEN) == 0) {
+	if (r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 		return false;
 	}
 
@@ -5223,6 +5222,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "dh esil");
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
+				if (should_aav (core)) {
+					rowlog (core, "\nAnalyze value pointers (aav)");
+					r_core_cmd0 (core, "aav");
+					if (r_cons_is_breaked ()) {
+						goto jacuzzi;
+					}
+					r_core_cmd0 (core, "aav $S+$SS+1");
+				}
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");
 				rowlog (core, "Analyze len bytes of instructions for references (aar)");
@@ -5250,12 +5257,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog (core, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
 					rowlog_done (core);
-					if (should_aav (core)) {
-						rowlog (core, "Analyze value pointers (aav)");
-						r_core_cmd0 (core, "aav");
-						r_core_cmd0 (core, "aav $S+$SS+1");
-						rowlog_done (core);
-					}
 				} else {
 					rowlog (core, "[*] Use -AA or aaaa to perform additional experimental analysis.\n");
 				}
