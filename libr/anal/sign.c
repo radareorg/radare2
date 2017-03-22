@@ -608,6 +608,7 @@ R_API RSignItem *r_sign_item_dup(RSignItem *it) {
 	memcpy (ret->bytes, it->bytes, it->size);
 	ret->mask = malloc (it->size);
 	memcpy (ret->mask, it->mask, it->size);
+	ret->metrics = it->metrics;
 
 	return ret;
 }
