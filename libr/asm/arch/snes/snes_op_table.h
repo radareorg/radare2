@@ -7,20 +7,22 @@ enum {
 	SNES_OP_16BIT,
 	SNES_OP_24BIT,
 	SNES_OP_32BIT,
-	SNES_OP_IMM // 8- or 16-bit immediate depending on X or M flag
+	SNES_OP_IMM_M, // 8- or 16-bit immediate depending on M flag
+	SNES_OP_IMM_X // 8- or 16-bit immediate depending on X flag
 };
-
 
 typedef struct {
 	const char *name;
 	ut8 len;
+	ut8 flags;
 } snes_op_t;
 
-static int snes_op_get_size(int bits, snes_op_t* op) {
-	if (op->len == SNES_OP_IMM) {
-		return bits == 8 ? SNES_OP_16BIT : SNES_OP_24BIT;
-	} else {
-		return op->len;
+static int snes_op_get_size(int M_flag, int X_flag, snes_op_t* op) {
+
+	switch(op->len) {
+		case SNES_OP_IMM_M: return M_flag ? SNES_OP_16BIT : SNES_OP_24BIT;
+		case SNES_OP_IMM_X: return X_flag ? SNES_OP_16BIT : SNES_OP_24BIT;
+		default: return op->len;
 	}
 }
 
@@ -34,7 +36,7 @@ static snes_op_t snes_op[]={
 {"asl 0x%02x",		SNES_OP_16BIT},
 {"ora [0x%02x]",	SNES_OP_16BIT},
 {"php",			SNES_OP_8BIT},
-{"ora",			SNES_OP_IMM},
+{"ora",			SNES_OP_IMM_M},
 {"asl a",		SNES_OP_8BIT},
 {"phd",			SNES_OP_8BIT},
 {"tsb 0x%04x",		SNES_OP_24BIT},
@@ -66,7 +68,7 @@ static snes_op_t snes_op[]={
 {"rol 0x%02x",		SNES_OP_16BIT},
 {"and [0x%02x]",	SNES_OP_16BIT},
 {"plp",			SNES_OP_8BIT},
-{"and",			SNES_OP_IMM},
+{"and",			SNES_OP_IMM_M},
 {"rol a",		SNES_OP_8BIT},
 {"pld",			SNES_OP_8BIT},
 {"bit 0x%04x",		SNES_OP_24BIT},
@@ -98,7 +100,7 @@ static snes_op_t snes_op[]={
 {"lsr 0x%02x",		SNES_OP_16BIT},
 {"eor [0x%02x]",	SNES_OP_16BIT},
 {"pha",			SNES_OP_8BIT},
-{"eor",			SNES_OP_IMM},
+{"eor",			SNES_OP_IMM_M},
 {"lsr a",		SNES_OP_8BIT},
 {"phk",			SNES_OP_8BIT},
 {"jmp 0x%04x",		SNES_OP_24BIT},
@@ -130,7 +132,7 @@ static snes_op_t snes_op[]={
 {"ror 0x%02x",		SNES_OP_16BIT},
 {"adc [0x%02x]",	SNES_OP_16BIT},
 {"pla",			SNES_OP_8BIT},
-{"adc",			SNES_OP_IMM},
+{"adc",			SNES_OP_IMM_M},
 {"ror a",		SNES_OP_8BIT},
 {"rtl",			SNES_OP_8BIT},
 {"jmp (0x%04x)",	SNES_OP_24BIT},
@@ -162,7 +164,7 @@ static snes_op_t snes_op[]={
 {"stx 0x%02x",		SNES_OP_16BIT},
 {"sta [0x%02x]",	SNES_OP_16BIT},
 {"dey",			SNES_OP_8BIT},
-{"bit",			SNES_OP_IMM},
+{"bit",			SNES_OP_IMM_M},
 {"txa",			SNES_OP_8BIT},
 {"phb",			SNES_OP_8BIT},
 {"sty 0x%04x",		SNES_OP_24BIT},
@@ -185,16 +187,16 @@ static snes_op_t snes_op[]={
 {"sta 0x%04x,x",	SNES_OP_24BIT},
 {"stz 0x%04x,x",	SNES_OP_24BIT},
 {"sta 0x%06x,x",	SNES_OP_32BIT},
-{"ldy",			SNES_OP_IMM},
+{"ldy",			SNES_OP_IMM_X},
 {"lda (0x%02x,x)",	SNES_OP_16BIT},
-{"ldx",			SNES_OP_IMM},
+{"ldx",			SNES_OP_IMM_X},
 {"lda 0x%02x,s",	SNES_OP_16BIT},
 {"ldy 0x%02x",		SNES_OP_16BIT},
 {"lda 0x%02x",		SNES_OP_16BIT},
 {"ldx 0x%02x",		SNES_OP_16BIT},
 {"lda [0x%02x]",	SNES_OP_16BIT},
 {"tay",			SNES_OP_8BIT},
-{"lda",			SNES_OP_IMM},
+{"lda",			SNES_OP_IMM_M},
 {"tax",			SNES_OP_8BIT},
 {"plb",			SNES_OP_8BIT},
 {"ldy 0x%04x",		SNES_OP_24BIT},
@@ -217,7 +219,7 @@ static snes_op_t snes_op[]={
 {"lda 0x%04x,x",	SNES_OP_24BIT},
 {"ldx 0x%04x,y",	SNES_OP_24BIT},
 {"lda 0x%06x,x",	SNES_OP_32BIT},
-{"cpy",			SNES_OP_IMM},
+{"cpy",			SNES_OP_IMM_X},
 {"cmp (0x%02x,x)",	SNES_OP_16BIT},
 {"rep #0x%02x",		SNES_OP_16BIT},
 {"cmp 0x%02x,s",	SNES_OP_16BIT},
@@ -226,7 +228,7 @@ static snes_op_t snes_op[]={
 {"dec 0x%02x",		SNES_OP_16BIT},
 {"cmp [0x%02x]",	SNES_OP_16BIT},
 {"iny",			SNES_OP_8BIT},
-{"cmp",			SNES_OP_IMM},
+{"cmp",			SNES_OP_IMM_M},
 {"dex",			SNES_OP_8BIT},
 {"wai",			SNES_OP_8BIT},
 {"cpy 0x%04x",		SNES_OP_24BIT},
@@ -249,7 +251,7 @@ static snes_op_t snes_op[]={
 {"cmp 0x%04x,x",	SNES_OP_24BIT},
 {"dec 0x%04x,x",	SNES_OP_24BIT},
 {"cmp 0x%06x,x",	SNES_OP_32BIT},
-{"cpx",			SNES_OP_IMM},
+{"cpx",			SNES_OP_IMM_X},
 {"sbc (0x%02x,x)",	SNES_OP_16BIT},
 {"sep #0x%02x",		SNES_OP_16BIT},
 {"sbc 0x%02x,s",	SNES_OP_16BIT},
@@ -258,7 +260,7 @@ static snes_op_t snes_op[]={
 {"inc 0x%02x",		SNES_OP_16BIT},
 {"sbc [0x%02x]",	SNES_OP_16BIT},
 {"inx",			SNES_OP_8BIT},
-{"sbc",			SNES_OP_IMM},
+{"sbc",			SNES_OP_IMM_M},
 {"nop",			SNES_OP_8BIT},
 {"swa",			SNES_OP_8BIT},
 {"cpx 0x%04x",		SNES_OP_24BIT},
