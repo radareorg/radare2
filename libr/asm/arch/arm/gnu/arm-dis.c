@@ -3979,8 +3979,10 @@ print_insn_coprocessor (bfd_vma pc,
 	    func (stream, "%c", *c);
 	}
 
+#if 0
       if (value_in_comment > 32 || value_in_comment < -16)
 	func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
+#endif
 
       if (is_unpredictable)
 	func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -4397,11 +4399,13 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                         switch (size)
                           {
                           case 8:
-			    func (stream, "%ld ; 0x%.2lx", value, value);
+			    // func (stream, "%ld ; 0x%.2lx", value, value);
+			    func (stream, "%ld", value);
                             break;
 
                           case 16:
-                            func (stream, "%ld ; 0x%.4lx", value, value);
+                            // func (stream, "%ld ; 0x%.4lx", value, value);
+                            func (stream, "%ld", value);
                             break;
 
                           case 32:
@@ -4542,8 +4546,10 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 		func (stream, "%c", *c);
 	    }
 
+#if 0
 	  if (value_in_comment > 32 || value_in_comment < -16)
 	    func (stream, " ; 0x%lx", value_in_comment);
+#endif
 
 	  if (is_unpredictable)
 	    func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -5132,8 +5138,10 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 		func (stream, "%c", *c);
 	    }
 
+#if 0
 	  if (value_in_comment > 32 || value_in_comment < -16)
 	    func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
+#endif
 
 	  if (is_unpredictable)
 	    func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -5399,8 +5407,10 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 	      }
 	  }
 
+#if 0
 	if (value_in_comment > 32 || value_in_comment < -16)
 	  func (stream, " ; 0x%lx", value_in_comment);
+#endif
 	return;
       }
 
@@ -6017,8 +6027,10 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 	      }
 	  }
 
+#if 0
 	if (value_in_comment > 32 || value_in_comment < -16)
 	  func (stream, " ; 0x%lx", value_in_comment);
+#endif
 
 	if (is_unpredictable)
 	  func (stream, UNPREDICTABLE_INSTRUCTION);
