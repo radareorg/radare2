@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -8,7 +8,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include "dis-asm.h"
-#include "../arch/arm/gnu/gnu-arm.h"
+#include "../arch/arm/gnu/opcode-arm.h"
 
 #if 0
 #define ARM_ARCH_OPT(N, V, DF) { N, sizeof (N) - 1, V, DF }
@@ -19,48 +19,48 @@ struct arm_arch_option_table {
 	int fpu;
 };
 static const struct arm_arch_option_table arm_archs[] = {
-	ARM_ARCH_OPT ("all",          ARM_ANY,         FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv1",        ARM_ARCH_V1,     FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv2",        ARM_ARCH_V2,     FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv2a",       ARM_ARCH_V2S,    FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv2s",       ARM_ARCH_V2S,    FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv3",        ARM_ARCH_V3,     FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv3m",       ARM_ARCH_V3M,    FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv4",        ARM_ARCH_V4,     FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv4xm",      ARM_ARCH_V4xM,   FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv4t",       ARM_ARCH_V4T,    FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv4txm",     ARM_ARCH_V4TxM,  FPU_ARCH_FPA),
-	ARM_ARCH_OPT ("armv5",        ARM_ARCH_V5,     FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv5t",       ARM_ARCH_V5T,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv5txm",     ARM_ARCH_V5TxM,  FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv5te",      ARM_ARCH_V5TE,   FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv5texp",    ARM_ARCH_V5TExP, FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv5tej",     ARM_ARCH_V5TEJ,  FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6",        ARM_ARCH_V6,     FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6j",       ARM_ARCH_V6,     FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6k",       ARM_ARCH_V6K,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6z",       ARM_ARCH_V6Z,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6zk",      ARM_ARCH_V6ZK,   FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6t2",      ARM_ARCH_V6T2,   FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6kt2",     ARM_ARCH_V6KT2,  FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6zt2",     ARM_ARCH_V6ZT2,  FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6zkt2",    ARM_ARCH_V6ZKT2, FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6-m",      ARM_ARCH_V6M,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv6s-m",     ARM_ARCH_V6SM,   FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv7",        ARM_ARCH_V7,     FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("all", ARM_ANY, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv1", ARM_ARCH_V1, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv2", ARM_ARCH_V2, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv2a", ARM_ARCH_V2S, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv2s", ARM_ARCH_V2S, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv3", ARM_ARCH_V3, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv3m", ARM_ARCH_V3M, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv4", ARM_ARCH_V4, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv4xm", ARM_ARCH_V4xM, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv4t", ARM_ARCH_V4T, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv4txm", ARM_ARCH_V4TxM, FPU_ARCH_FPA),
+	ARM_ARCH_OPT ("armv5", ARM_ARCH_V5, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv5t", ARM_ARCH_V5T, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv5txm", ARM_ARCH_V5TxM, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv5te", ARM_ARCH_V5TE, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv5texp", ARM_ARCH_V5TExP, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv5tej", ARM_ARCH_V5TEJ, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6", ARM_ARCH_V6, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6j", ARM_ARCH_V6, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6k", ARM_ARCH_V6K, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6z", ARM_ARCH_V6Z, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6zk", ARM_ARCH_V6ZK, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6t2", ARM_ARCH_V6T2, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6kt2", ARM_ARCH_V6KT2, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6zt2", ARM_ARCH_V6ZT2, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6zkt2", ARM_ARCH_V6ZKT2, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6-m", ARM_ARCH_V6M, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv6s-m", ARM_ARCH_V6SM, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv7", ARM_ARCH_V7, FPU_ARCH_VFP),
 	/* The official spelling of the ARMv7 profile variants is the dashed form.
 	   Accept the non-dashed form for compatibility with old toolchains.  */
-	ARM_ARCH_OPT ("armv7a",       ARM_ARCH_V7A,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv7r",       ARM_ARCH_V7R,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv7m",       ARM_ARCH_V7M,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv7-a",      ARM_ARCH_V7A,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv7-r",      ARM_ARCH_V7R,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv7-m",      ARM_ARCH_V7M,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv7e-m",     ARM_ARCH_V7EM,   FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("armv8-a",      ARM_ARCH_V8A,    FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("xscale",       ARM_ARCH_XSCALE, FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("iwmmxt",       ARM_ARCH_IWMMXT, FPU_ARCH_VFP),
-	ARM_ARCH_OPT ("iwmmxt2",      ARM_ARCH_IWMMXT2,FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv7a", ARM_ARCH_V7A, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv7r", ARM_ARCH_V7R, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv7m", ARM_ARCH_V7M, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv7-a", ARM_ARCH_V7A, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv7-r", ARM_ARCH_V7R, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv7-m", ARM_ARCH_V7M, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv7e-m", ARM_ARCH_V7EM, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("armv8-a", ARM_ARCH_V8A, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("xscale", ARM_ARCH_XSCALE, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("iwmmxt", ARM_ARCH_IWMMXT, FPU_ARCH_VFP),
+	ARM_ARCH_OPT ("iwmmxt2", ARM_ARCH_IWMMXT2, FPU_ARCH_VFP),
 	{ NULL, 0, ARM_ARCH_NONE, ARM_ARCH_NONE }
 };
 #endif
@@ -70,38 +70,44 @@ static unsigned long Offset = 0;
 static char *buf_global = NULL;
 static unsigned char bytes[8];
 
-static int arm_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr,
-		unsigned int length, struct disassemble_info *info) {
+static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr,
+                                  unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
-	if (delta<0) return -1; // disable backward reads
-	if ((delta+length)>4) return -1;
-	memcpy (myaddr, bytes+delta, length);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
 static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
-	//--
+	// --
 }
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[32];
-	if (!buf_global)
+	if (!buf_global) {
 		return;
-	sprintf (tmp, "0x%08"PFMT64x"", (ut64)address);
+	}
+	sprintf (tmp, "0x%08"PFMT64x "", (ut64) address);
 	strcat (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
 	char *tmp;
-	if (!buf_global || !format)
+	if (!buf_global || !format) {
 		return false;
+	}
 	va_start (ap, format);
- 	tmp = malloc (strlen (format)+strlen (buf_global)+2);
+	tmp = malloc (strlen (format) + strlen (buf_global) + 2);
 	if (!tmp) {
 		va_end (ap);
 		return false;
@@ -118,26 +124,45 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int oldcpucode = 0;
 	int opsize, cpucode = 0;
 	struct disassemble_info obj;
-	char *options = (a->bits==16)? "force-thumb": "no-force-thumb";
+	char *options = (a->bits == 16)? "force-thumb": "no-force-thumb";
 
-	if (len<2) return -1;
+	if (len < 2) {
+		return -1;
+	}
 	memset (bytes, 0, sizeof (bytes));
 	memcpy (bytes, buf, R_MIN (len, 4));
-	if (a->bits<64 && len<(a->bits/8)) return -1;
+	if (a->bits < 64 && len < (a->bits / 8)) {
+		return -1;
+	}
 	buf_global = op->buf_asm;
 	Offset = a->pc;
 
 	/* prepare disassembler */
-	memset (&obj,'\0', sizeof (struct disassemble_info));
+	memset (&obj, '\0', sizeof (struct disassemble_info));
 	arm_mode = a->bits;
+#if 0
+typedef struct {
+  unsigned long core[2];
+  unsigned long coproc;
+} arm_feature_set;
+#endif
+#if 0
+arm_feature_set afs = ARM_ARCH_V7EM;
+arm_feature_set afp = FPU_ARCH_VFP_V4D16;
+printf ("v7em = core { 0x%x, 0x%x } copro 0x%x\n", afs.core[0], afs.core[1], afs.coproc);
+cpucode = afs.core[0];
+cpucode = 66471;
+#endif
+// printf ("fpu- = 0x%x\n", FPU_ARCH_VFP_V4D16);
 
-	cpucode = oldcpucode;
+	//cpucode = oldcpucode;
 	/* select cpu */
 	if (a->cpu) {
 		if (oldcpu != a->cpu) {
 			cpucode = atoi (a->cpu);
-			if (!strcmp ("v5j", a->cpu)) 
+			if (!strcmp ("v5j", a->cpu)) {
 				cpucode = 9;
+			}
 		}
 	}
 	obj.arch = 0;
@@ -153,23 +178,28 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	obj.fprintf_func = &buf_fprintf;
 	obj.stream = stdout;
 	obj.bytes_per_chunk =
-	obj.bytes_per_line = (a->bits/8);
+		obj.bytes_per_line = (a->bits / 8);
 
-	op->buf_asm[0]='\0';
-	if (a->bits==64) {
+	op->buf_asm[0] = '\0';
+	if (a->bits == 64) {
 		obj.disassembler_options = NULL;
 		memcpy (bytes, buf, 4);
-		op->size = print_insn_aarch64 ((bfd_vma)Offset, &obj);
+		op->size = print_insn_aarch64 ((bfd_vma) Offset, &obj);
 	} else {
 		obj.disassembler_options = options;
 		op->size = (obj.endian == BFD_ENDIAN_LITTLE)?
-			print_insn_little_arm ((bfd_vma)Offset, &obj):
-			print_insn_big_arm ((bfd_vma)Offset, &obj);
+		           print_insn_little_arm ((bfd_vma) Offset, &obj):
+		           print_insn_big_arm ((bfd_vma) Offset, &obj);
 	}
 	opsize = op->size;
 	if (op->size == -1) {
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
 		op->size = 4;
+	}
+	if (strstr (op->buf_asm, "UNDEF")) {
+		strcpy (op->buf_asm, "undefined");
+		op->size = 2;
+		opsize = 2;
 	}
 	return opsize;
 }
@@ -177,7 +207,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "Acorn RISC Machine CPU",
 	.disassemble = &disassemble,
@@ -185,7 +215,7 @@ RAsmPlugin r_asm_plugin_arm_gnu = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_arm_gnu,
 	.version = R2_VERSION
