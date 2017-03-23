@@ -690,6 +690,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 	}
 	/* initialize */
 	core->parser->hint = ds->hint;
+	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	if (ds->varsub && ds->opstr) {
 		ut64 at = ds->vat;
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
@@ -699,6 +700,18 @@ static void ds_build_op_str(RDisasmState *ds) {
 		if (*ds->strsub) {
 			free (ds->opstr);
 			ds->opstr = strdup (ds->strsub);
+		}
+		if (core->parser->relsub) {
+			RList *list = r_anal_refs_get (core->anal, at);
+			RListIter *iter;
+			RAnalRef *ref;
+			r_list_foreach (list, iter, ref) {
+				if (ref->type == R_ANAL_REF_TYPE_DATA
+					|| ref->type == R_ANAL_REF_TYPE_STRING) {
+					core->parser->relsub_addr = ref->addr;
+					break;
+				}
+			}
 		}
 	}
 	char *asm_str = colorize_asm_string (core, ds);
@@ -727,17 +740,18 @@ static void ds_build_op_str(RDisasmState *ds) {
 					core->parser->flagspace = -1;
 				}
 			}
-			RCore *core = ds->core;
-			core->parser->relsub_addr = 0;
 			if (ds->analop.refptr) {
 				ut64 num = r_io_read_i (core->io, ds->analop.ptr, 8);
-				core->parser->relsub_addr = num;
+				//core->parser->relsub_addr = num; // What does this do?
 			}
-			r_parse_filter (core->parser, core->flags, asm_str, ds->str, sizeof (ds->str), core->print->big_endian);
+			r_parse_filter (core->parser, core->flags, ds->opstr, ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
-			core->parser->flagspace = ofs; // ???
+			asm_str = colorize_asm_string (core, ds);
+			free (ds->opstr);
+			ds->opstr = strdup (asm_str);
+			//core->parser->flagspace = ofs; // ???
 		} else {
 			if (!ds->opstr) {
 				ds->opstr = strdup (asm_str? asm_str: "");
@@ -2427,7 +2441,7 @@ static void ds_print_core_vmode(RDisasmState *ds) {
 			if (shortcut) {
 				if (core->is_asmqjmps_letter) {
 					r_cons_printf (" ;[g%s]", shortcut);
-				} else { 
+				} else {
 					r_cons_printf (" ;[%s]", shortcut);
 				}
 				free (shortcut);
