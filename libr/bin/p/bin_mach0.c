@@ -267,7 +267,7 @@ static RList* symbols(RBinFile *arch) {
 		bin->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
 	free (symbols);
-
+	sdb_free (symcache);
 	return ret;
 }
 
