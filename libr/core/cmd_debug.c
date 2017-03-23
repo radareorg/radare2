@@ -3654,6 +3654,7 @@ static int cmd_debug(void *data, const char *input) {
 						P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
 						P ("bp_addr=0x%"PFMT64x"\n", core->dbg->reason.bp_addr);
 						P ("inbp=%s\n", r_str_bool (core->dbg->reason.bp_addr));
+						P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core, NULL));
 						P ("pid=%d\n", rdi->pid);
 						P ("tid=%d\n", rdi->tid);
 						P ("uid=%d\n", rdi->uid);
@@ -3679,6 +3680,7 @@ static int cmd_debug(void *data, const char *input) {
 						P ("\"sigpid\":%d,", core->dbg->reason.tid);
 						P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
 						P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
+						P ("\"baddr\":%"PFMT64d",", r_debug_get_baddr (core, NULL));
 						P ("\"pid\":%d,", rdi->pid);
 						P ("\"tid\":%d,", rdi->tid);
 						P ("\"uid\":%d,", rdi->uid);
