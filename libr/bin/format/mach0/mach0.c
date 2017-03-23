@@ -1457,7 +1457,6 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (symbols_size < 1) {
 		return NULL;
 	}
-
 	if (!(symbols = calloc (1, symbols_size))) {
 		return NULL;
 	}
