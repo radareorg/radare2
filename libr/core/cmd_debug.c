@@ -3255,6 +3255,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		"Usage: ds", "", "Step commands",
 		"ds", "", "Step one instruction",
 		"ds", " <num>", "Step <num> instructions",
+		"dsb", "", "Step back one instruction",
 		"dsf", "", "Step until end of frame",
 		"dsi", " <cond>", "Continue until condition matches",
 		"dsl", "", "Step one source line",
@@ -3386,6 +3387,13 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			if (bpi) r_core_cmd0 (core, delb);
 			break;
 		}
+	case 'b': // "dsb"
+		{
+			if (!r_debug_step_back (core->dbg)) {
+				eprintf ("cannot step back\n");
+			}
+			break;
+		}
 	case 'l': // "dsl"
 		r_reg_arena_swap (core->dbg->reg, true);
 		step_line (core, times);
@@ -3458,7 +3466,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_debug_session_add (core->dbg);
 				break;
 			case 'A':
-				r_debug_session_set (core->dbg, atoi (input + 2));
+				r_debug_session_set_idx (core->dbg, atoi (input + 2));
 				break;
 			default:
 				{
