@@ -1423,7 +1423,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("[Imports]");
 	}
 	r_list_foreach (imports, iter, import) {
-		char *symname, *escname;
+		char *symname;
 		ut64 addr;
 		if (name && strcmp (import->name, name)) {
 			continue;
@@ -1444,11 +1444,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			free (symname);
 			symname = prname;
 		}
-		escname = r_str_escape (symname);
 		if (IS_MODE_SET (mode)) {
 			// TODO(eddyb) symbols that are imports.
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_println (escname);
+			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
 			str = r_str_utf16_encode (symname, -1);
 			str = r_str_replace (str, "\"", "\\\"", 1);
@@ -1478,14 +1477,13 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			if (import->classname && import->classname[0]) {
 				r_cons_printf (" classname=%s", import->classname);
 			}
-			r_cons_printf (" name=%s", escname);
+			r_cons_printf (" name=%s", symname);
 			if (import->descriptor && import->descriptor[0]) {
 				r_cons_printf (" descriptor=%s", import->descriptor);
 			}
 			r_cons_newline ();
 		}
 		free (symname);
-		free (escname);
 		i++;
 	}
 	if (IS_MODE_JSON (mode)) {
