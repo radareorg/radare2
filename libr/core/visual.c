@@ -162,6 +162,7 @@ static int visual_help() {
 		" /        in cursor mode search in current block\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
+		" 0        seek to beginning of current function\n"
 		" [1-9]    follow jmp/call identified by shortcut (like ;[1])\n"
 		" ,file    add a link to the text file\n"
 		" /*+-[]   change block size, [] = resize hex.cols\n"
