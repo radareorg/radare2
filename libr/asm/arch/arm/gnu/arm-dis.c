@@ -6389,12 +6389,14 @@ select_arm_features (unsigned long mach,
     ARM_MERGE_FEATURE_SETS (*features, tmp, fset);	\
   }
 
+#if 0
 //    ARM_SET_FEATURES (ARM_FEATURE_ALL);
 ARM_SET_FEATURES2(ARM_ARCH_V7EM); //, FPU_ARCH_VFP_V4D16);
 return;
 #if 0
 FPU_ARCH_VFP_V4D16
 return;
+#endif
 #endif
 
   switch (mach)
