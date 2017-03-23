@@ -143,13 +143,24 @@ static void cmd_search_bin(RCore *core, ut64 from, ut64 to) {
 	r_cons_break_pop ();
 }
 
+static bool archIsArmOrThumb(RCore *core) {
+	if (r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
+		ut64 bits = r_config_get_i (core->config, "asm.bits");
+		if (bits < 64) {
+			return true;
+		}
+	}
+	return false;
+}
+
 R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, ut64 vmax, int vsize) {
 	int i, match, align = core->search->align, hitctr = 0;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
+	bool isarm = archIsArmOrThumb (core);
 	ut8 buf[4096];
 	bool asterisk = false;
-	ut64 v64, n = 0;
+	ut64 v64, value = 0;
 	ut32 v32;
 	ut16 v16;
 	if (from >= to) {
@@ -178,10 +189,10 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 			}
 			match = false;
 			switch (vsize) {
-			case 1: n = *(ut8*)(v); match = (buf[i] >= vmin && buf[i] <= vmax); break;
-			case 2: v16 = *((ut16*)(v)); match = (v16 >= vmin && v16 <= vmax); n = v16; break;
-			case 4: v32 = *((ut32 *)(v)); match = (v32 >= vmin && v32 <= vmax); n = v32; break;
-			case 8: v64 = *((ut64 *)(v)); match = (v64 >= vmin && v64 <= vmax); n = v64; break;
+			case 1: value = *(ut8*)(v); match = (buf[i] >= vmin && buf[i] <= vmax); break;
+			case 2: v16 = *((ut16*)(v)); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
+			case 4: v32 = *((ut32 *)(v)); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
+			case 8: v64 = *((ut64 *)(v)); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
 			default: eprintf ("Unknown vsize\n"); return -1;
 			}
 			if (match && !vinfun) {
@@ -196,13 +207,26 @@ R_API int cmd_search_value_in_range(RCore *core, ut64 from, ut64 to, ut64 vmin, 
 				}
 			}
 			if (match) {
+				if (isarm) {
+					if (value & 1) {	
+						//.dword 0x000080b9 in reality is 0x000080b8
+						value--;
+						r_anal_hint_set_bits (core->anal, value, 16);
+						//can we assume is gonna be always a function?
+						r_core_cmdf (core,"f fcn.0x%08"PFMT64x" @0x%08"PFMT64x, value, value);
+					} else { 
+						r_core_seek_archbits (core, addr);
+						ut64 bits = r_config_get_i (core->config, "asm.bits");
+						r_anal_hint_set_bits (core->anal, value, bits);
+					}
+				}
 				if (asterisk) {
-					r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", n, addr);
+					r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", value, addr);
 					r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", vsize, addr);
 					r_cons_printf ("f hit0_%d = 0x%"PFMT64x" # from 0x%"PFMT64x"\n",
-							hitctr, addr, n);
+							hitctr, addr, value);
 				} else {
-					r_core_cmdf (core,"ax 0x%"PFMT64x" 0x%"PFMT64x, n, addr);
+					r_core_cmdf (core,"ax 0x%"PFMT64x" 0x%"PFMT64x, value, addr);
 					r_core_cmdf (core,"Cd %d @ 0x%"PFMT64x, vsize, addr);
 				}
 				hitctr++;
