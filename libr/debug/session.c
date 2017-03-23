@@ -43,11 +43,10 @@ R_API int r_debug_session_add (RDebug *dbg) {
   session->key = (RDebugKey) { addr, r_debug_session_lastid (dbg) };
 
   /* save current registers */
-  r_reg_arena_push (dbg->reg);
   for (i = 0; i < R_REG_TYPE_LAST; i++) {
-    iterr = r_list_tail (dbg->reg->regset[i].pool);
-    session->reg[i] = iterr->data;
+    session->reg[i] = r_list_tail (dbg->reg->regset[i].pool);
   }
+  r_reg_arena_push (dbg->reg);
 
   /* save memory snapshots */
   session->memlist = r_list_newf (r_debug_snap_free);
@@ -69,12 +68,18 @@ R_API int r_debug_session_add (RDebug *dbg) {
 
 R_API int r_debug_session_set (RDebug *dbg, RDebugSession *session) {
   RDebugSnap *snap;
-  RListIter *iter;
+  RRegArena *arena;
+  RListIter *iter, *iterr;
   int i;
+  /* Restore all regsiter values from the stack area pointed by session */
   for (i = 0; i < R_REG_TYPE_LAST; i++) {
-    dbg->reg->regset[i].arena = session->reg[i];
+    iterr = session->reg[i];
+    arena = iterr->data;
+    memcpy (dbg->reg->regset[i].arena->bytes, arena->bytes, arena->size);
   }
   r_debug_reg_sync (dbg, -1, 1);
+
+  /* Restore all memory values from memory snapshots*/
   r_list_foreach (session->memlist, iter, snap) {
     r_debug_snap_set (dbg, snap);
   }
@@ -86,10 +91,11 @@ R_API int r_debug_session_set_idx (RDebug *dbg, int idx) {
   RListIter *iter;
   ut32 count = 0;
 
-	if (!dbg || idx < 0)
-		return 0;
-	r_list_foreach (dbg->sessions, iter, session) {
-		if (count == idx) {
+  if (!dbg || idx < 0)
+    return 0;
+
+  r_list_foreach (dbg->sessions, iter, session) {
+    if (count == idx) {
       r_debug_session_set (dbg, session);
       return 1;
     }

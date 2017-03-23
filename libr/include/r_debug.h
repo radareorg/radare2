@@ -170,7 +170,7 @@ typedef struct r_debug_key {
 
 typedef struct r_debug_session_t {
 	RDebugKey key;
-	RRegArena *reg[R_REG_TYPE_LAST];
+	RListIter *reg[R_REG_TYPE_LAST];
 	RList *memlist; // <RDebugSnap*>
 } RDebugSession;
 
@@ -518,7 +518,9 @@ R_API int r_debug_snap_set (RDebug *dbg, RDebugSnap *snap);
 R_API void r_debug_session_free (void *p) ;
 R_API int r_debug_session_list (RDebug *dbg);
 R_API int r_debug_session_add (RDebug *dbg);
-R_API int r_debug_session_set (RDebug *dbg, int idx);
+R_API int r_debug_session_set (RDebug *dbg, RDebugSession *session);
+R_API int r_debug_session_set_idx (RDebug *dbg, int idx);
+R_API RDebugSession* r_debug_session_get (RDebug *dbg, ut64 addr);
 
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;
