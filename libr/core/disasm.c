@@ -2588,7 +2588,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
 	ut64 p = ds->analop.ptr;
 	ut64 v = ds->analop.val;
-	ut64 refaddr;
+	ut64 refaddr = p;
 	RFlagItem *f, *f2;
 	bool is_lea_str = false;;
 	char *esc = ds->show_comment_right? " ": "";
