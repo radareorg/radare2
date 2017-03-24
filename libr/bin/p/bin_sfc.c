@@ -178,14 +178,14 @@ static RList* sections(RBinFile *arch) {
 		
 		for (i=0; i < ((arch->size - hdroffset)/ 0x8000) ; i++) {
 			
-			addrom(ret,"ROM",i,i*0x8000,0x400000 + (i*0x8000), 0x8000);
-			if (i % 2) addrom(ret,"ROM_MIRROR",i,i*0x8000,(i*0x8000), 0x8000);
+			addrom(ret,"ROM",i,hdroffset + i*0x8000,0x400000 + (i*0x8000), 0x8000);
+			if (i % 2) addrom(ret,"ROM_MIRROR",i,hdroffset + i*0x8000,(i*0x8000), 0x8000);
 		}
 
 	} else {
 		for (i=0; i < ((arch->size - hdroffset)/ 0x8000) ; i++) {
 
-			addrom(ret,"ROM",i,i*0x8000,0x8000 + (i*0x10000), 0x8000);
+			addrom(ret,"ROM",i,hdroffset + i*0x8000,0x8000 + (i*0x10000), 0x8000);
 		}
 	}
 	return ret;
