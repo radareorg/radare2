@@ -9,6 +9,8 @@ static int blocksize = 0;
 static int autoblocksize = 1;
 static void visual_refresh(RCore *core);
 #define PIDX (R_ABS (core->printidx % NPF))
+#define KEY_ALTQ 0xc5
+
 
 static const char *printfmtSingle[] = {
 	"xc", "pd $r",
@@ -1327,7 +1329,12 @@ static bool insert_mode_enabled(RCore *core) {
 	if (!__ime) {
 		return false;
 	}
-	char ch = r_cons_readchar ();
+	char ch = (ut8)r_cons_readchar ();
+	if ((ut8)ch == KEY_ALTQ) {
+		(void)r_cons_readchar ();
+		__ime = false;
+		return true;
+	}
 	char arrows = r_cons_arrow_to_hjkl (ch);
 	switch (ch) {
 	case 127:
@@ -1410,15 +1417,16 @@ static bool insert_mode_enabled(RCore *core) {
 		break;
 	case '?':
 		r_cons_less_str ("\nVisual Insert Mode:\n\n"
-			" tab      - toggle between ascii and hex columns\n"
-			" q        - quit insert mode\n"
+			" tab          - toggle between ascii and hex columns\n"
+			" q (or alt-q) - quit insert mode\n"
 			"\nHex column:\n"
-			" r        - remove byte in cursor\n"
-			" R        - insert byte in cursor\n"
-			" [0-9a-f] - insert hexpairs in hex column\n"
-			" hjkl     - move around\n"
+			" r            - remove byte in cursor\n"
+			" R            - insert byte in cursor\n"
+			" [0-9a-f]     - insert hexpairs in hex column\n"
+			" hjkl         - move around\n"
 			"\nAscii column:\n"
-			" arrows   - move around\n"
+			" arrows       - move around\n"
+			" alt-q        - quit insert mode\n"
 			, "?");
 		break;
 	}
@@ -1433,6 +1441,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	const char *key_s;
 	int i, ret, cols = core->print->cols, delta = 0;
 	int wheelspeed;
+	if ((ut8)ch == KEY_ALTQ) {
+		r_cons_readchar();
+		ch = 'q';
+	}
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {
