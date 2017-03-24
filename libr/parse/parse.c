@@ -139,19 +139,21 @@ static char *findNextNumber(char *op) {
 				bool is_space = ansi_found;
 				ansi_found = false;
 				if (!is_space) {
-					is_space = (p == op || *o == ' ' || *o == ',');
+					is_space = (p == op || *o == ' ' || *o == ',' || *o == '[');
 				}
 				if (*p == '[') {
 					char *t = p;
 					p++;
-					if (!IS_DIGIT(*p)) {
+					if (!IS_DIGIT (*p)) {
 						for (;*p && *p != ']'; p++);
 						if (*p == ']') {
 							continue;
-						} else p = t;
+						} else {
+							p = t;
+						}
 					}
 				}
-				if (is_space && IS_DIGIT(*p)) {
+				if (is_space && IS_DIGIT (*p)) {
 					return p;
 				}
 				o = p++;
@@ -263,7 +265,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				pnum += 2;
 			}
 			for (; *pnum; pnum++) {
-				if ((is_hex && ISHEXCHAR(*pnum)) || IS_DIGIT(*pnum)) {
+				if ((is_hex && ISHEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
 					continue;
 				}
 				break;
