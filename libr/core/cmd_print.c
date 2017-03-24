@@ -3594,7 +3594,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 0:
 			/* "pd" -> will disassemble blocksize/4 instructions */
-			if (*input == 'd') {
+			if (*input == 'd' && !core->fixedblock) {
 				l /= 4;
 			}
 			break;
