@@ -8,7 +8,7 @@
 #include "../../asm/arch/snes/snes_op_table.h"
 #include "../../asm/p/asm_snes.h"
 
-struct snes_asm_flags* snesflags = NULL;
+static struct snes_asm_flags* snesflags = NULL;
 
 static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	memset (op, '\0', sizeof (RAnalOp));
@@ -230,13 +230,13 @@ static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return op->size;
 }
 
-int snes_anal_init (void* user) {
+static int snes_anal_init (void* user) {
 	if (!snesflags) snesflags = malloc(sizeof( struct snes_asm_flags ));
 	memset(snesflags,0,sizeof (struct snes_asm_flags));
 	return 0;
 }
 
-int snes_anal_fini (void* user) {
+static int snes_anal_fini (void* user) {
 	free(snesflags);
 	snesflags = NULL;
 	return 0;
