@@ -3622,10 +3622,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
 						if (cfg_anal_strings) {
 							if (CHECKREF (ESIL->cur)) {
-								r_anal_ref_add (core->anal, ESIL->cur, cur, 'd');
-								if ((target && ESIL->cur == ntarget) || !target) {
-									add_string_ref (core, ESIL->cur);
-								}
+								r_anal_ref_add (core->anal, ESIL->cur, cur, 's');
 							}
 						}
 					}

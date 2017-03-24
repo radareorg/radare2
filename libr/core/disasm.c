@@ -2588,6 +2588,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
 	ut64 p = ds->analop.ptr;
 	ut64 v = ds->analop.val;
+	ut64 refaddr;
+	RFlagItem *f, *f2;
+	bool is_lea_str = false;;
 	char *esc = ds->show_comment_right? " ": "";
 	char *nl = ds->show_comment_right? "" : "\n";
 	bool string_found = false;
@@ -2599,14 +2602,32 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		ALIGN;
 		ds_comment (ds, true, "%s; '%c'%s", esc, ch, nl);
 	}
+	RList *list = NULL;
+	RListIter *iter;
+	RAnalRef *ref;
+	list = r_anal_refs_get (core->anal, ds->at);
+	r_list_foreach (list, iter, ref) {
+		if (ref->type == R_ANAL_REF_TYPE_STRING || ref->type == R_ANAL_REF_TYPE_DATA) {
+			if ((f = r_flag_get_i (core->flags, ref->addr))) {
+				refaddr = ref->addr;
+				is_lea_str = ref->type == 's';
+				break;
+			}
+		}
+	}
 	bool flag_printed = false;
 	if (p == UT64_MAX) {
 		/* do nothing */
-	} else if (((st64)p) > 0) {
+	} else if (((st64)p) > 0 || ((st64)refaddr) > 0) {
 		const char *kind;
 		char *msg = calloc (sizeof (char), len);
-		RFlagItem *f, *f2;
-		r_io_read_at (core->io, p, (ut8*)msg, len - 1);
+		if (((st64)p) > 0) {
+			f = r_flag_get_i (core->flags, p);
+			if (f) {
+				refaddr = p;
+			}
+		}
+		r_io_read_at (core->io, refaddr, (ut8*)msg, len - 1);
 		if (ds->analop.refptr) {
 			ut64 num = r_read_ble (msg, core->print->big_endian, ds->analop.refptr * 8);
 			st64 n = (st64)num;
@@ -2614,7 +2635,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 				const char *flag = "";
 				char str[128];
-				f = r_flag_get_i (core->flags, p);
+				f = r_flag_get_i (core->flags, refaddr);
 				if (f) {
 					flag = f->name;
 				} else if (ds->show_slow) {
@@ -2631,22 +2652,24 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 				ALIGN;
-				if (ds->opstr && *flag && strstr (ds->opstr, flag)) {
-					ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, p, nl);
-				} else {
-					ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, p,
-							*flag ? " ; " : "", flag, nl);
+				if (!is_lea_str) {
+					if (ds->opstr && *flag && strstr (ds->opstr, flag)) {
+						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s", esc, p, nl);
+					} else {
+						ds_comment (ds, true, "%s; 0x%" PFMT64x "%s%s%s", esc, p,
+								*flag ? " ; " : "", flag, nl);
+					}
 				}
 			} else {
 				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
 					ALIGN;
 					ds_comment (ds, true, "%s; [0x%" PFMT64x":%d]=-1%s",
-							esc, p, ds->analop.refptr, nl);
+							esc, refaddr, ds->analop.refptr, nl);
 				} else if (n == n32 && (n32 > -512 && n32 < 512)) {
 					ALIGN;
 					ds_comment (ds, true, "%s; [0x%" PFMT64x
-							  ":%d]=%"PFMT64d"%s", esc, p, ds->analop.refptr, n, nl);
+							  ":%d]=%"PFMT64d"%s", esc, refaddr, ds->analop.refptr, n, nl);
 				} else {
 					const char *kind, *flag = "";
 					char *msg2 = NULL;
@@ -2657,7 +2680,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						msg2 = calloc (sizeof (char), len);
 						r_io_read_at (core->io, n, (ut8*)msg2, len - 1);
 						msg2[len-1] = 0;
-						kind = r_anal_data_kind (core->anal, p, (const ut8*)msg2, len - 1);
+						kind = r_anal_data_kind (core->anal, refaddr, (const ut8*)msg2, len - 1);
 						if (kind && !strcmp (kind, "text")) {
 							r_str_filter (msg2, 0);
 							if (*msg2) {
@@ -2669,11 +2692,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 					ALIGN;
 					ds_comment (ds, true, "%s; [0x%" PFMT64x":%d]=0x%" PFMT64x "%s%s%s",
-						esc, p, ds->analop.refptr, n, (flag && *flag) ? " " : "", flag, nl);
+						esc, refaddr, ds->analop.refptr, n, (flag && *flag) ? " " : "", flag, nl);
 					free (msg2);
 				}
 				// not just for LEA
-				f2 = r_flag_get_i (core->flags, p);
+				f2 = r_flag_get_i (core->flags, refaddr);
 				if (f2 && f != f2) {
 					ALIGN;
 					ds_comment (ds, true, "%s; LEA %s%s", esc, f2->name, nl);
@@ -2687,7 +2710,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			msg[len - 1] = 0;
 		}
 #endif
-		f = r_flag_get_i (core->flags, p);
+		f = r_flag_get_i (core->flags, refaddr);
 		if (f) {
 			r_str_filter (msg, 0);
 			if (!strncmp (msg, "UH..", 4)) {
@@ -2712,10 +2735,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 							i++;
 						}
 					}
-					ds_comment (ds, false, "\" @ 0x%"PFMT64x"%s", p, nl);
+					ds_comment (ds, false, "\" @ 0x%"PFMT64x"%s", refaddr, nl);
 				} else {
 					ALIGN;
-					ds_comment (ds, true, "%s; \"%s\" @ 0x%"PFMT64x"%s", esc, msg, p, nl);
+					ds_comment (ds, true, "%s; \"%s\" @ 0x%"PFMT64x"%s", esc, msg, refaddr, nl);
 				}
 			} else {
 				if (!flag_printed) {
@@ -2725,26 +2748,26 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			}
 		} else {
-			if (p == UT64_MAX || p == UT32_MAX) {
+			if (refaddr == UT64_MAX || refaddr == UT32_MAX) {
 				ALIGN;
 				ds_comment (ds, true, "%s; -1%s", esc, nl);
-			} else if (((char)p > 0) && p >= '!' && p <= '~') {
-				char ch = p;
+			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
+				char ch = refaddr;
 				ALIGN;
 				ds_comment (ds, true, "%s; '%c'%s", esc, ch, nl);
-			} else if (p > 10) {
-				if ((st64)p < 0) {
+			} else if (refaddr > 10) {
+				if ((st64)refaddr < 0) {
 					// resolve local var if possible
-					RAnalVar *v = r_anal_var_get (core->anal, ds->at, 'v', 1, (int)p);
+					RAnalVar *v = r_anal_var_get (core->anal, ds->at, 'v', 1, (int)refaddr);
 					ALIGN;
 					if (v) {
 						ds_comment (ds, true, "%s; var %s%s", esc, v->name, nl);
 						r_anal_var_free (v);
 					} else {
-						ds_comment (ds, true, "%s; var %d%s", esc, (int)-p, nl);
+						ds_comment (ds, true, "%s; var %d%s", esc, (int)-refaddr, nl);
 					}
 				} else {
-					if (r_core_anal_address (core, p) & R_ANAL_ADDR_TYPE_ASCII) {
+					if (r_core_anal_address (core, refaddr) & R_ANAL_ADDR_TYPE_ASCII) {
 						int i = 0;
 						r_str_filter (msg, 0);
 						if (*msg) {
@@ -2765,17 +2788,17 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 										i++;
 									}
 								}
-								ds_comment (ds, false, "\" 0x%08"PFMT64x"%s ", p, nl);
+								ds_comment (ds, false, "\" 0x%08"PFMT64x"%s ", refaddr, nl);
 							} else {
 								ALIGN;
-								ds_comment (ds, true, "%s; \"%s\" 0x%08"PFMT64x" %s", esc, msg, p, nl);
+								ds_comment (ds, true, "%s; \"%s\" 0x%08"PFMT64x" %s", esc, msg, refaddr, nl);
 							}
 						}
 					}
 				}
 			}
 			//XXX this should be refactored with along the above
-			kind = r_anal_data_kind (core->anal, p, (const ut8*)msg, len - 1);
+			kind = r_anal_data_kind (core->anal, refaddr, (const ut8*)msg, len - 1);
 			if (kind) {
 				if (!strcmp (kind, "text")) {
 					r_str_filter (msg, 0);
@@ -2807,7 +2830,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						}
 					}
 				} else if (!strcmp (kind, "invalid")) {
-					int *n = (int*)&p;
+					int *n = (int*)&refaddr;
 					ut64 p = ds->analop.val;
 					if (p == UT64_MAX || p == UT32_MAX) {
 						p = ds->analop.ptr;
