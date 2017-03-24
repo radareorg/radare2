@@ -43,6 +43,7 @@ R_API int r_debug_session_add (RDebug *dbg) {
   session->key = (RDebugKey) { addr, r_debug_session_lastid (dbg) };
 
   /* save current registers */
+  r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
   for (i = 0; i < R_REG_TYPE_LAST; i++) {
     session->reg[i] = r_list_tail (dbg->reg->regset[i].pool);
   }
@@ -72,12 +73,13 @@ R_API int r_debug_session_set (RDebug *dbg, RDebugSession *session) {
   RListIter *iter, *iterr;
   int i;
   /* Restore all regsiter values from the stack area pointed by session */
+  r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
   for (i = 0; i < R_REG_TYPE_LAST; i++) {
     iterr = session->reg[i];
     arena = iterr->data;
     memcpy (dbg->reg->regset[i].arena->bytes, arena->bytes, arena->size);
   }
-  r_debug_reg_sync (dbg, -1, 1);
+  r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 1);
 
   /* Restore all memory values from memory snapshots*/
   r_list_foreach (session->memlist, iter, snap) {
