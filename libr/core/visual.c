@@ -2226,11 +2226,25 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				core->print->cur = 0;
 			} else {
 				ut64 addr = r_debug_reg_get (core->dbg, "PC");
-				if (addr) {
+				if (addr && addr != UT64_MAX) {
 					r_core_seek (core, addr, 1);
 					r_core_cmdf (core, "ar `arn PC`=0x%"PFMT64x, addr);
 				} else {
-					r_core_seek (core, r_num_get (core->num, "entry0"), 1);
+					ut64 entry = r_num_get (core->num, "entry0");
+					if (!entry || entry == UT64_MAX) {
+						RIOSection *s = r_io_section_vget (core->io, core->offset);
+						if (s) {
+							entry = s->vaddr;
+						} else {
+							RIOMap *map = r_list_first (core->io->maps);
+							if (map) {
+								entry = map->from;
+							} else {
+								entry = r_config_get_i (core->config, "bin.baddr");
+							}
+						}
+						r_core_seek (core, entry, 1);
+					}
 					//r_core_cmd (core, "s entry0", 0);
 				}
 			}
