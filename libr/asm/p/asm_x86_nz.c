@@ -116,6 +116,7 @@ typedef struct Opcode_t {
 	ut8 opcode[3];
 	int operands_count;
 	Operand operands[2];
+	bool has_bnd;
 } Opcode;
 
 static ut8 getsib(const ut8 sib) {
@@ -490,6 +491,10 @@ static int opcall(RAsm *a, ut8 *data, const Opcode op) {
 	int immediate = 0;
 	int offset = 0;
 	int mod = 0;
+
+	if (op.has_bnd) {
+		data[l++] = 0xf2;
+	}
 
 	if (op.operands[0].type & OT_GPREG) {
 		if (op.operands[0].reg == X86R_UNDEFINED) {
@@ -994,6 +999,9 @@ static int opjc(RAsm *a, ut8 *data, const Opcode op) {
 		return l;
 	}
 	immediate -= a->pc;
+	if (op.has_bnd) {
+		data[l++] = 0xf2;
+	}
 	if (!strcmp (op.mnemonic, "jmp")) {
 		if (op.operands[0].type & OT_GPREG) {
 			data[l++] = 0xff;
@@ -1610,6 +1618,9 @@ static int opout(RAsm *a, ut8 *data, const Opcode op) {
 static int opret(RAsm *a, ut8 *data, const Opcode op) {
 	int l = 0;
 	int immediate = 0;
+	if (op.has_bnd) {
+		data[l++] = 0xf2;
+	}
 	 if (op.operands[0].type == OT_UNKNOWN) {
 		data[l++] = 0xc3;
 	} else if (op.operands[0].type & (OT_CONSTANT | OT_WORD)) {
@@ -2396,6 +2407,11 @@ static int parseOperand(RAsm *a, const char *str, Operand *op) {
 }
 
 static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
+	out->has_bnd = false;
+	if (!strncmp (op, "bnd ", 4)) {
+		out->has_bnd = true;
+		op += 4;
+	}
 	char *args = strchr (op, ' ');
 	out->mnemonic = args ? r_str_ndup (op, args - op) : strdup (op);
 	out->operands[0].type = out->operands[1].type = 0;
@@ -2466,6 +2482,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	ut8 *data = ao->buf;
 	char op[128];
 	LookupTable *lt_ptr;
+	int ret_val;
 
 	if (a->bits == 16) {
 		return assemble16 (a, ao, str);
@@ -2487,7 +2504,13 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return lt_ptr->size;
 			} else {
 				if (lt_ptr->opdo) {
-					return lt_ptr->opdo (a, data, instr);
+					ret_val = lt_ptr->opdo (a, data, instr);
+					// if op supports bnd then the first byte will
+					// be 0xf2.
+					if (instr.has_bnd && data[0] != 0xf2) {
+						return -1;
+					}
+					return ret_val;
 				}
 				break;
 			}
