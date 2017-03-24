@@ -137,17 +137,11 @@ exit_case:
 			int n = 0;
 			bool retval = true;
 
-			if (input[1] != ' ') {
-				eprintf ("usage: za%sf name [zigname]\n", type == R_SIGN_ANAL? "a": "e");
-				retval = false;
-				goto exit_case_fcn;
-			}
-
-			args = r_str_new (input + 2);
+			args = r_str_new (r_str_trim_const (input + 1));
 			n = r_str_word_set0 (args);
 
-			if (n < 1 || n > 2) {
-				eprintf ("usage: za%sf name [zigname]\n", type == R_SIGN_ANAL? "a": "e");
+			if (n > 2) {
+				eprintf ("usage: za%sf [name] [zigname]\n", type == R_SIGN_ANAL? "a": "e");
 				retval = false;
 				goto exit_case_fcn;
 			}
@@ -164,7 +158,8 @@ exit_case:
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (!strcmp (name, fcni->name)) {
+				if ((!name && core->offset == fcni->addr) ||
+					(name && !strcmp (name, fcni->name))) {
 					if (!addFcnBytes (core, fcni, zigname, type, minzlen, maxzlen)) {
 						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
 					}
@@ -203,7 +198,7 @@ exit_case_fcn:
 				const char *help_msg[] = {
 					"Usage:", "zaa[fF] [args] ", "# Create anal zignature",
 					"zaa ", "name bytes", "create anal zignature",
-					"zaaf ", "name [zigname]", "create anal zignature for function",
+					"zaaf ", "[name] [zigname]", "create anal zignature for function",
 					"zaaF ", "", "generate anal zignatures for all functions",
 					NULL};
 				r_core_cmd_help (core, help_msg);
@@ -211,7 +206,7 @@ exit_case_fcn:
 				const char *help_msg[] = {
 					"Usage:", "zae[fF] [args] ", "# Create anal zignature",
 					"zae ", "name bytes", "create anal zignature",
-					"zaef ", "name [zigname]", "create anal zignature for function",
+					"zaef ", "[name] [zigname]", "create anal zignature for function",
 					"zaeF ", "", "generate anal zignatures for all functions",
 					NULL};
 				r_core_cmd_help (core, help_msg);
@@ -331,17 +326,11 @@ exit_case:
 			int n = 0;
 			bool retval = true;
 
-			if (input[1] != ' ') {
-				eprintf ("usage: zamf name [zigname]\n");
-				retval = false;
-				goto exit_case_fcn;
-			}
-
-			args = r_str_new (input + 2);
+			args = r_str_new (r_str_trim_const (input + 1));
 			n = r_str_word_set0 (args);
 
-			if (n < 1 || n > 2) {
-				eprintf ("usage: zamf name [zigname]\n");
+			if (n > 2) {
+				eprintf ("usage: zamf [name] [zigname]\n");
 				retval = false;
 				goto exit_case_fcn;
 			}
@@ -358,7 +347,8 @@ exit_case:
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (!strcmp (name, fcni->name)) {
+				if ((!name && core->offset == fcni->addr) ||
+					(name && !strcmp (name, fcni->name))) {
 					if (!addFcnMetrics (core, fcni, zigname)) {
 						eprintf ("error: could not add zignature for fcn %s\n", fcni->name);
 					}
@@ -407,7 +397,7 @@ exit_case_fcn:
 				"Usage:", "zam[fF?] [args] ", "# Create metric zignature",
 				"zam?? ", "", "show metrics help",
 				"zam ", "name metrics", "create metric zignature",
-				"zamf ", "name [zigname]", "create metric zignature for function",
+				"zamf ", "[name] [zigname]", "create metric zignature for function",
 				"zamF ", "", "generate metric zignatures for all functions",
 				NULL};
 			r_core_cmd_help (core, help_msg);

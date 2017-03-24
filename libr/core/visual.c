@@ -9,6 +9,8 @@ static int blocksize = 0;
 static int autoblocksize = 1;
 static void visual_refresh(RCore *core);
 #define PIDX (R_ABS (core->printidx % NPF))
+#define KEY_ALTQ 0xc5
+
 
 static const char *printfmtSingle[] = {
 	"xc", "pd $r",
@@ -162,6 +164,7 @@ static int visual_help() {
 		" /        in cursor mode search in current block\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
+		" 0        seek to beginning of current function\n"
 		" [1-9]    follow jmp/call identified by shortcut (like ;[1])\n"
 		" ,file    add a link to the text file\n"
 		" /*+-[]   change block size, [] = resize hex.cols\n"
@@ -1326,7 +1329,12 @@ static bool insert_mode_enabled(RCore *core) {
 	if (!__ime) {
 		return false;
 	}
-	char ch = r_cons_readchar ();
+	char ch = (ut8)r_cons_readchar ();
+	if ((ut8)ch == KEY_ALTQ) {
+		(void)r_cons_readchar ();
+		__ime = false;
+		return true;
+	}
 	char arrows = r_cons_arrow_to_hjkl (ch);
 	switch (ch) {
 	case 127:
@@ -1409,15 +1417,16 @@ static bool insert_mode_enabled(RCore *core) {
 		break;
 	case '?':
 		r_cons_less_str ("\nVisual Insert Mode:\n\n"
-			" tab      - toggle between ascii and hex columns\n"
-			" q        - quit insert mode\n"
+			" tab          - toggle between ascii and hex columns\n"
+			" q (or alt-q) - quit insert mode\n"
 			"\nHex column:\n"
-			" r        - remove byte in cursor\n"
-			" R        - insert byte in cursor\n"
-			" [0-9a-f] - insert hexpairs in hex column\n"
-			" hjkl     - move around\n"
+			" r            - remove byte in cursor\n"
+			" R            - insert byte in cursor\n"
+			" [0-9a-f]     - insert hexpairs in hex column\n"
+			" hjkl         - move around\n"
 			"\nAscii column:\n"
-			" arrows   - move around\n"
+			" arrows       - move around\n"
+			" alt-q        - quit insert mode\n"
 			, "?");
 		break;
 	}
@@ -1432,6 +1441,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	const char *key_s;
 	int i, ret, cols = core->print->cols, delta = 0;
 	int wheelspeed;
+	if ((ut8)ch == KEY_ALTQ) {
+		r_cons_readchar();
+		ch = 'q';
+	}
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch < 2) {
@@ -2225,12 +2238,27 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				core->print->cur = 0;
 			} else {
 				ut64 addr = r_debug_reg_get (core->dbg, "PC");
-				if (addr) {
+				if (addr && addr != UT64_MAX) {
 					r_core_seek (core, addr, 1);
 					r_core_cmdf (core, "ar `arn PC`=0x%"PFMT64x, addr);
 				} else {
-					r_core_seek (core, r_num_get (core->num, "entry0"), 1);
-					//r_core_cmd (core, "s entry0", 0);
+					ut64 entry = r_num_get (core->num, "entry0");
+					if (!entry || entry == UT64_MAX) {
+						RIOSection *s = r_io_section_vget (core->io, core->offset);
+						if (s) {
+							entry = s->vaddr;
+						} else {
+							RIOMap *map = r_list_first (core->io->maps);
+							if (map) {
+								entry = map->from;
+							} else {
+								entry = r_config_get_i (core->config, "bin.baddr");
+							}
+						}
+					}
+					if (entry && entry != UT64_MAX) {
+						r_core_seek (core, entry, 1);
+					}
 				}
 			}
 			break;

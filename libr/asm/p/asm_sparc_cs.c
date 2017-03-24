@@ -8,8 +8,8 @@ static csh cd = 0;
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
-	int n, ret = -1;
-	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int n = -1, ret = -1;
+	int mode = CS_MODE_BIG_ENDIAN;
 	if (a->cpu && *a->cpu) {
 		if (!strcmp (a->cpu, "v9")) {
 			mode |= CS_MODE_V9;
@@ -30,7 +30,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!op) {
 		return 0;
 	}
-	n = cs_disasm (cd, buf, len, a->pc, 1, &insn);
+	if (a->big_endian) {
+		n = cs_disasm (cd, buf, len, a->pc, 1, &insn);
+	}
 	if (n < 1) {
 		strcpy (op->buf_asm, "invalid");
 		op->size = 4;

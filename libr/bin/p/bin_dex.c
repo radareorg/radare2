@@ -213,7 +213,6 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 		char *newsig = realloc (signature, size);
 		if (!newsig) {
 			eprintf ("Cannot realloc to %d\n", size);
-			R_FREE (signature);
 			break;
 		}
 		signature = newsig;

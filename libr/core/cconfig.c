@@ -1922,7 +1922,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF("cfg.wseek", "false", "Seek after write");
 	SETCB("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	SETI("zign.min", 8, "Minimum zignature length");
+	SETI("zign.min", 16, "Minimum zignature length");
 	SETI("zign.max", 500, "Maximum zignature length");
 	SETPREF("zign.prefix", "sign", "Default prefix for zignatures matches");
 
@@ -2049,6 +2049,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("fs.view", "normal", &cb_fsview, "Set visibility options for filesystems");
 
 	/* hexdump */
+	SETPREF("hex.header", "true", "Show header in hexdumps");
 	SETCB("hex.pairs", "true", &cb_hexpairs, "Show bytes paired in 'px' hexdump");
 	SETCB("hex.compact", "false", &cb_hexcompact, "Show smallest 16 byte col hexdump (60 columns)");
 	SETI("hex.flagsz", 0, "If non zero, overrides the flag size in pxa");

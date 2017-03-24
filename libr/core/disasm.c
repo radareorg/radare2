@@ -1922,6 +1922,15 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	}
 
 	if (size == 4 || size == 8) {
+		if (r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
+			ut64 bits = r_config_get_i (core->config, "asm.bits");
+			//adjust address for arm/thumb address
+			if (bits < 64) {
+				if (n & 1) {
+					n--;
+				}
+			}
+		}
 		RFlagItem *fi = r_flag_get_i (core->flags, n);
 		if (fi) {
 			r_cons_printf (" ; %s", fi->name);

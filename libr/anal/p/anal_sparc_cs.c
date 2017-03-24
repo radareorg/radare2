@@ -18,7 +18,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode;
 	cs_insn *insn;
 	int mode, n, ret;
-	mode = CS_MODE_BIG_ENDIAN;
+
+	if (!a->big_endian) {
+		return -1;
+	}
+
+	mode = CS_MODE_LITTLE_ENDIAN;
 	if (!strcmp (a->cpu, "v9"))
 		mode |= CS_MODE_V9;
 	if (mode != omode) {
@@ -49,6 +54,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
+		case SPARC_INS_INVALID:
+			op->type = R_ANAL_OP_TYPE_ILL;
+			break;
 		case SPARC_INS_MOV:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
@@ -270,6 +278,10 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 4; /* :D */
+}
+
 RAnalPlugin r_anal_plugin_sparc_cs = {
 	.name = "sparc",
 	.desc = "Capstone SPARC analysis",
@@ -277,6 +289,7 @@ RAnalPlugin r_anal_plugin_sparc_cs = {
 	.license = "BSD",
 	.arch = "sparc",
 	.bits = 32|64,
+	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
 };
