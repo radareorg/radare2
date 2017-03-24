@@ -7,15 +7,15 @@
 #include "../arch/snes/snesdis.c"
 #include "asm_snes.h"
 
-struct snes_asm_flags* snesflags = NULL;
+static struct snes_asm_flags* snesflags = NULL;
 
-bool snes_asm_init (void* user) {
+static bool snes_asm_init (void* user) {
 	if (!snesflags) snesflags = malloc(sizeof( struct snes_asm_flags ));
 	memset(snesflags,0,sizeof (struct snes_asm_flags));
 	return 0;
 }
 
-bool snes_asm_fini (void* user) {
+static bool snes_asm_fini (void* user) {
 	free(snesflags);
 	snesflags = NULL;
 	return 0;
