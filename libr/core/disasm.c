@@ -691,6 +691,7 @@ static void ds_build_op_str(RDisasmState *ds) {
 	/* initialize */
 	core->parser->hint = ds->hint;
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+	core->parser->relsub_addr = 0;
 	if (ds->varsub && ds->opstr) {
 		ut64 at = ds->vat;
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, at, R_ANAL_FCN_TYPE_NULL);
@@ -706,8 +707,9 @@ static void ds_build_op_str(RDisasmState *ds) {
 			RListIter *iter;
 			RAnalRef *ref;
 			r_list_foreach (list, iter, ref) {
-				if (ref->type == R_ANAL_REF_TYPE_DATA
-					|| ref->type == R_ANAL_REF_TYPE_STRING) {
+				if ((ref->type == R_ANAL_REF_TYPE_DATA
+					|| ref->type == R_ANAL_REF_TYPE_STRING)
+					&& ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 					core->parser->relsub_addr = ref->addr;
 					break;
 				}
@@ -742,7 +744,9 @@ static void ds_build_op_str(RDisasmState *ds) {
 			}
 			if (ds->analop.refptr) {
 				ut64 num = r_io_read_i (core->io, ds->analop.ptr, 8);
-				//core->parser->relsub_addr = num; // What does this do?
+				if (core->parser->relsub_addr == 0) {
+					core->parser->relsub_addr = num;
+				}
 			}
 			r_parse_filter (core->parser, core->flags, ds->opstr, ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
