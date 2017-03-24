@@ -5,6 +5,9 @@
 #ifndef _SFC_SPECS_H
 #define _SFC_SPECS_H
 
+// the size of the SMC header used by some ROM files
+#define SMC_HEADER_SIZE			    0x200
+
 #define LOROM_PAGE_SIZE                     0x8000
 #define HIROM_PAGE_SIZE                     0x10000
 #define BANK_SIZE			    0x10000
