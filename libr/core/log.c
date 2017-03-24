@@ -8,37 +8,46 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 	RStrpool *sp = core->log->sp;
 	char *str = sp->str;
 
-	if (fmt=='j') r_cons_printf ("[");
-	for (i=idx=0; str && *str; i++, id++) {
-		if ((n&&n<=id)||!n) {
+	if (fmt == 'j') {
+		r_cons_printf ("[");
+	}
+	for (i = idx = 0; str && *str; i++, id++) {
+		if ((n && n <= id) || !n) {
 			switch (fmt) {
-			case 'j':r_cons_printf ("%s[%d,\"%s\"]",
-				printed?",":"",id, str); break;
-			case 't':r_cons_println (str); break;
-			case '*':r_cons_printf ("\"l %s\"\n", str); break;
+			case 'j': r_cons_printf ("%s[%d,\"%s\"]",
+					printed? ",": "", id, str); break;
+			case 't': r_cons_println (str); break;
+			case '*': r_cons_printf ("\"l %s\"\n", str); break;
 			default: r_cons_printf ("%d %s\n", id, str); break;
 			}
 			printed++;
-			if (nth && printed >= nth) break;
+			if (nth && printed >= nth) {
+				break;
+			}
 		}
 		str = r_strpool_next (sp, idx);
-		if (!str) break;
+		if (!str) {
+			break;
+		}
 		idx = r_strpool_get_index (sp, str);
 		count++;
 	}
-	if (fmt == 'j')
+	if (fmt == 'j') {
 		r_cons_printf ("]\n");
+	}
 	return count;
 }
 
-R_API RCoreLog *r_core_log_new () {
+R_API RCoreLog *r_core_log_new() {
 	RCoreLog *log = R_NEW0 (RCoreLog);
-	if (!log) return NULL;
+	if (!log) {
+		return NULL;
+	}
 	r_core_log_init (log);
 	return log;
 }
 
-R_API void r_core_log_init (RCoreLog *log) {
+R_API void r_core_log_init(RCoreLog *log) {
 	log->first = 1;
 	log->last = 1;
 	log->sp = r_strpool_new (0);
@@ -56,12 +65,15 @@ R_API void r_core_log_add(RCore *core, const char *msg) {
 
 R_API void r_core_log_del(RCore *core, int n) {
 	int idx;
-	if (n>0) {
-		if (n > core->log->last)
+	if (n > 0) {
+		if (n > core->log->last) {
 			n = core->log->last;
-		idx = n-core->log->first;
-		if (idx<0) return;
-		core->log->first += idx+1;
+		}
+		idx = n - core->log->first;
+		if (idx < 0) {
+			return;
+		}
+		core->log->first += idx + 1;
 		/* s= */ r_strpool_get_i (core->log->sp, idx);
 		r_strpool_slice (core->log->sp, idx);
 	} else {

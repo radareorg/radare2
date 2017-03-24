@@ -106,15 +106,15 @@ static const char **menus_sub[] = {
 // TODO: handle mouse wheel
 static int curnode = 0;
 
-#define G(x,y) r_cons_canvas_gotoxy (can, x, y)
+#define G(x, y) r_cons_canvas_gotoxy (can, x, y)
 #define W(x) r_cons_canvas_write (can, x)
-#define B(x,y,w,h) r_cons_canvas_box (can, x,y,w,h,NULL)
-#define B1(x,y,w,h) r_cons_canvas_box (can, x,y,w,h,Color_BLUE)
-#define B2(x,y,w,h) r_cons_canvas_box (can, x,y,w,h,Color_MAGENTA)
-#define L(x,y,x2,y2) r_cons_canvas_line (can, x,y,x2,y2,0)
-#define L1(x,y,x2,y2) r_cons_canvas_line (can, x,y,x2,y2,1)
-#define L2(x,y,x2,y2) r_cons_canvas_line (can, x,y,x2,y2,2)
-#define F(x,y,x2,y2,c) r_cons_canvas_fill (can, x,y,x2,y2,c,0)
+#define B(x, y, w, h) r_cons_canvas_box (can, x, y, w, h, NULL)
+#define B1(x, y, w, h) r_cons_canvas_box (can, x, y, w, h, Color_BLUE)
+#define B2(x, y, w, h) r_cons_canvas_box (can, x, y, w, h, Color_MAGENTA)
+#define L(x, y, x2, y2) r_cons_canvas_line (can, x, y, x2, y2, 0)
+#define L1(x, y, x2, y2) r_cons_canvas_line (can, x, y, x2, y2, 1)
+#define L2(x, y, x2, y2) r_cons_canvas_line (can, x, y, x2, y2, 2)
+#define F(x, y, x2, y2, c) r_cons_canvas_fill (can, x, y, x2, y2, c, 0)
 
 static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	char title[128];
@@ -128,7 +128,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	F (n->x, n->y, n->w, n->h, ' ');
 	if (n->type == PANEL_TYPE_FRAME) {
 		if (cur) {
-			//F (n->x,n->y, n->w, n->h, '.');
+			// F (n->x,n->y, n->w, n->h, '.');
 			snprintf (title, sizeof (title) - 1,
 				Color_BGREEN "[x] %s"Color_RESET, n->text);
 		} else {
@@ -140,7 +140,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		}
 	}
 	(void) G (n->x + 2, n->y + 2);
-	//if (
+	// if (
 // TODO: only refresh if n->refresh is set
 // TODO: temporary crop depending on out of screen offsets
 	if (n->cmd && *n->cmd) {
@@ -150,7 +150,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 			delta_y = 0;
 		}
 		if (delta_x < 0) {
-			char white [128];
+			char white[128];
 			int idx = -delta_x;
 			memset (white, ' ', sizeof(white));
 			if (idx >= sizeof (white)) {
@@ -339,7 +339,7 @@ static void addPanelFrame(const char *title, const char *cmd, ut64 addr) {
 }
 
 static int bbPanels(RCore *core, Panel **n) {
-	//panels = NULL;
+	// panels = NULL;
 	addPanelFrame ("Symbols", "isq", 0);
 	addPanelFrame ("Stack", "px 256@r:SP", 0);
 	addPanelFrame ("Registers", "dr=", 0);
@@ -378,7 +378,7 @@ static void r_core_panels_refresh(RCore *core) {
 		}
 		panels[menu_pos].y = 1;
 		free (panels[menu_pos].text);
-		panels[menu_pos].text = calloc (1, 1024); //r_str_newf ("%d", menu_y);
+		panels[menu_pos].text = calloc (1, 1024); // r_str_newf ("%d", menu_y);
 		int maxsub = 0;
 		for (i = 0; menus_sub[i]; i++) {
 			maxsub = i;
@@ -443,7 +443,7 @@ static void r_core_panels_refresh(RCore *core) {
 }
 
 static void reloadPanels(RCore *core) {
-	//W("HELLO WORLD");
+	// W("HELLO WORLD");
 	Layout_run (panels);
 }
 
@@ -501,9 +501,9 @@ static void panel_continue(RCore *core) {
 }
 
 R_API int r_core_visual_panels(RCore *core) {
-	#define OS_INIT() ostack.size = 0; ostack.panels[0] = 0;
-	#define OS_PUSH(x) if (ostack.size < LIMIT) {ostack.panels[++ostack.size] = x;}
-	#define OS_POP() ((ostack.size > 0)? ostack.panels[--ostack.size]: 0)
+#define OS_INIT() ostack.size = 0; ostack.panels[0] = 0;
+#define OS_PUSH(x) if (ostack.size < LIMIT) { ostack.panels[++ostack.size] = x; }
+#define OS_POP() ((ostack.size > 0)? ostack.panels[--ostack.size]: 0)
 	int okey, key, wheel;
 	int w, h;
 	int asm_comments = 0;
@@ -577,7 +577,7 @@ repeat:
 	case '.':
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			r_core_cmd0 (core, "sr PC");
-			//r_core_seek (core, r_num_math (core->num, "entry0"), 1);
+			// r_core_seek (core, r_num_math (core->num, "entry0"), 1);
 		} else {
 			r_core_cmd0 (core, "s entry0; px");
 		}
@@ -740,18 +740,18 @@ repeat:
 			} else if (strstr (action, "io.cache")) {
 				r_core_cmd0 (core, "e!io.cache");
 			} else if (strstr (action, "Fill")) {
-                                r_cons_enable_mouse (false);
+				r_cons_enable_mouse (false);
 				char *s = r_cons_input ("Fill with: ");
 				r_core_cmdf (core, "wow %s", s);
 				free (s);
-                                r_cons_enable_mouse (true);
+				r_cons_enable_mouse (true);
 			} else if (strstr (action, "References")) {
 				r_core_cmdf (core, "aar");
 			} else if (strstr (action, "FcnInfo")) {
 				addPanelFrame ("FcnInfo", "afi", 0);
 			} else if (strstr (action, "Graph")) {
 				r_core_visual_graph (core, NULL, NULL, true);
-				//	addPanelFrame ("Graph", "agf", 0);
+				// addPanelFrame ("Graph", "agf", 0);
 			} else if (strstr (action, "System Shell")) {
 				r_cons_set_raw (0);
 				r_cons_flush ();
@@ -811,14 +811,14 @@ repeat:
 		break;
 	case 's':
 		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "ds;.dr*"); //;sr PC");
+			r_core_cmd0 (core, "ds;.dr*"); // ;sr PC");
 		} else {
 			panel_single_step_in (core);
 		}
 		break;
 	case 'S':
 		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "dso;.dr*"); //;sr PC");
+			r_core_cmd0 (core, "dso;.dr*"); // ;sr PC");
 		} else {
 			panel_single_step_over (core);
 		}
@@ -829,10 +829,10 @@ repeat:
 		core->vmode = true;
 		break;
 	case 'C':
-		can->color = !can->color;                               //WTF
-		//r_config_toggle (core->config, "scr.color");
+		can->color = !can->color;                               // WTF
+		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
-		//	reloadPanels (core);
+		// reloadPanels (core);
 		break;
 	case 'R':
 		if (r_config_get_i (core->config, "scr.randpal")) {
@@ -1081,8 +1081,8 @@ repeat:
 		break;
 #endif
 	default:
-		//eprintf ("Key %d\n", key);
-		//sleep (1);
+		// eprintf ("Key %d\n", key);
+		// sleep (1);
 		break;
 	}
 	goto repeat;

@@ -1193,8 +1193,12 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 	if (!core || !name) {
 		return false;
 	}
+	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+	if (!fcnpfx) {
+		fcnpfx = "fcn";
+	}
 	if (r_reg_get (core->anal->reg, name, -1)) {
-		name = r_str_newf ("fcn.%s", name);
+		name = r_str_newf ("%s.%s", fcnpfx, name);
 	}
 	fcn = r_anal_get_fcn_in (core->anal, off,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
@@ -1202,7 +1206,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *name, bool prefix
 		return false;
 	}
 	if (prefix && fcnNeedsPrefix (name)) {
-		nname = r_str_newf ("fcn.%s", name);
+		nname = r_str_newf ("%s.%s", fcnpfx, name);
 	} else {
 		nname = strdup (name);
 	}

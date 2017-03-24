@@ -1721,6 +1721,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 
 	/* anal */
+	SETPREF("anal.fcnprefix", "fcn",  "Prefix new function names with this");
 	SETPREF("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETICB("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
 	SETCB("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");

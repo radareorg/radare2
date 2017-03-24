@@ -231,8 +231,12 @@ static void printBasicBlocks(AbbState *abb, ut64 fcnaddr, ut64 addr) {
 	}
 }
 
-static void printFunction(ut64 addr, const char *name) {
-	char *_name = name? (char *) name: r_str_newf ("fcn.%" PFMT64x, addr);
+static void printFunction(RCore *core, ut64 addr, const char *name) {
+	const char *pfx = r_config_get (core->config, "anal.fcnprefix");
+	if (!pfx) {
+		pfx = "fcn";
+	}
+	char *_name = name? (char *) name: r_str_newf ("%s.%" PFMT64x, pfx, addr);
 	r_cons_printf ("af+ 0x%08" PFMT64x " %s\n", addr, _name);
 	if (!name) {
 		free (_name);
@@ -247,7 +251,7 @@ static void findFunctions(RCore *core, AbbState *abb) {
 	AbbAddr *a;
 	eprintf ("Found %d functions\n", r_list_length (abb->fcnents));
 	r_list_foreach (abb->fcnents, iter, a) {
-		printFunction (a->addr, NULL); //a->name);
+		printFunction (core, a->addr, NULL); //a->name);
 		printBasicBlocks (abb, a->addr, a->addr);
 	}
 	RAnalBlock *bb;
@@ -255,10 +259,10 @@ static void findFunctions(RCore *core, AbbState *abb) {
 // if there's a flag, consider it a function
 		RFlagItem *fi = r_flag_get_i (core->flags, bb->addr);
 		if (fi) {
-			printFunction (bb->addr, fi->name);
+			printFunction (core, bb->addr, fi->name);
 		} else {
 			// eprintf ("# orphan bb 0x%08"PFMT64x"\n", bb->addr);
-			printFunction (bb->addr, NULL);
+			printFunction (core, bb->addr, NULL);
 		}
 		printBasicBlocks (abb, bb->addr, bb->addr);
 		//	printFunction (a->addr, a->name);

@@ -458,6 +458,10 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	ut64 *next = NULL;
 	int buflen, fcnlen;
 	RAnalFunction *fcn = r_anal_fcn_new ();
+	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
+	if (!fcnpfx) {
+		fcnpfx = "fcn";
+	}
 	if (!fcn) {
 		eprintf ("Error: new (fcn)\n");
 		return false;
@@ -476,7 +480,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
 		fcn->name = strdup (fi->name);
 	} else {
-		fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
+		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
 	}
 	buf = malloc (core->anal->opt.bb_max_size);
 	if (!buf) {
@@ -553,7 +557,8 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 #endif
 				fcn->name = strdup (f->name);
 			} else {
-				fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
+
+				fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
 			}
 		}
 		if (fcnlen == R_ANAL_RET_ERROR ||

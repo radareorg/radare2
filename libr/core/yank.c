@@ -39,7 +39,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 	// after our io op is done
 	RIODesc *yankfd = NULL;
 	ut64 fd = core->file? core->file->desc->fd: -1, yank_file_sz = 0,
-	loadaddr = 0, addr = offset;
+	     loadaddr = 0, addr = offset;
 	int res = false;
 
 	if (filename && *filename) {
@@ -106,7 +106,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 }
 
 R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
-	//free (core->yank_buf);
+	// free (core->yank_buf);
 	if (buf && len) {
 		r_buf_set_bytes (core->yank_buf, buf, len);
 		core->yank_buf->base = addr;
@@ -117,7 +117,7 @@ R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 
 // Call set and then null terminate the bytes.
 R_API int r_core_yank_set_str(RCore *core, ut64 addr, const char *str, ut32 len) {
-	//free (core->yank_buf);
+	// free (core->yank_buf);
 	int res = r_core_yank_set (core, addr, (ut8 *) str, len);
 	if (res == true) {
 		core->yank_buf->buf[len - 1] = 0;
