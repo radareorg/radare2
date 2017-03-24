@@ -139,7 +139,10 @@ static char *findNextNumber(char *op) {
 				bool is_space = ansi_found;
 				ansi_found = false;
 				if (!is_space) {
-					is_space = (p == op || *o == ' ' || *o == ',' || *o == '[');
+					is_space = p == op;
+					if (!is_space && o) {
+						is_space = (*o == ' ' || *o == ',' || *o == '[');
+					}
 				}
 				if (*p == '[') {
 					char *t = p;
