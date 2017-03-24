@@ -1569,8 +1569,9 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr);
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr);
 
 /* zign spaces */
-R_API void r_sign_space_unset_for(RAnal *a, int type);
-R_API int r_sign_space_count_for(RAnal *a, int ctx);
+R_API int r_sign_space_count_for(RAnal *a, int idx);
+R_API void r_sign_space_unset_for(RAnal *a, int idx);
+R_API void r_sign_space_rename_for(RAnal *a, int idx, const char *oname, const char *nname);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;

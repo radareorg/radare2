@@ -59,9 +59,6 @@ R_API bool r_sign_add_metric(RAnal *a, const char *name, RSignMetrics metrics);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 
-R_API int r_sign_space_count_for(RAnal *a, int idx);
-R_API void r_sign_space_unset_for(RAnal *a, int idx);
-
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
 
 R_API RSignSearch *r_sign_search_new();

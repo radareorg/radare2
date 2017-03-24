@@ -49,6 +49,12 @@ static int zign_count_for(void *user, int idx) {
 	return r_sign_space_count_for (anal, idx);
 }
 
+static void zign_rename_for(void *user, int idx, const char *oname, const char *nname) {
+	RSpaces *s = (RSpaces*)user;
+	RAnal *anal = (RAnal*)s->user;
+	r_sign_space_rename_for (anal, idx, oname, nname);
+}
+
 R_API RAnal *r_anal_new() {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
@@ -65,8 +71,8 @@ R_API RAnal *r_anal_new() {
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
 	anal->opt.noncode = false; // do not analyze data by default
-	r_space_init (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, anal);
-	r_space_init (&anal->zign_spaces, "zs", zign_unset_for, zign_count_for, anal);
+	r_space_new (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, NULL, anal);
+	r_space_new (&anal->zign_spaces, "zs", zign_unset_for, zign_count_for, zign_rename_for, anal);
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
@@ -120,8 +126,8 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->plugins);
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
-	r_space_fini (&a->meta_spaces);
-	r_space_fini (&a->zign_spaces);
+	r_space_free (&a->meta_spaces);
+	r_space_free (&a->zign_spaces);
 	r_anal_pin_fini (a);
 	r_list_free (a->refs);
 	r_list_free (a->types);
