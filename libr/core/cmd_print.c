@@ -4085,10 +4085,13 @@ static int cmd_print(void *data, const char *input) {
 	{
 		int show_offset = r_config_get_i (core->config, "asm.offset");
 		if (show_offset) {
-			core->print->flags |= R_PRINT_FLAGS_HEADER;
 			core->print->flags |= R_PRINT_FLAGS_OFFSET;
 		} else {
 			core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
+		}
+		if (r_config_get_i (core->config, "hex.header")) {
+			core->print->flags |= R_PRINT_FLAGS_HEADER;
+		} else {
 			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 		}
 		/* Don't show comments in default case */
