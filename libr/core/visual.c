@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_core.h>
-#include <string.h>
 
 #define NPF 7
 static int obs = 0;
@@ -2219,7 +2218,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			}
 			break;
-		case '<':
+		case '<': // "V<"
 			if (core->print->cur_enabled) {
 				char buf[128];
 				prompt_read ("dec cursor:", buf, sizeof (buf));
@@ -2230,7 +2229,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			}
 			break;
-		case '.':
+		case '.': // "V."
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			if (core->print->cur_enabled) {
 				r_config_set_i (core->config, "stack.delta", 0);
@@ -2256,7 +2255,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							}
 						}
 					}
-					if (entry && entry != UT64_MAX) {
+					if (entry != UT64_MAX) {
 						r_core_seek (core, entry, 1);
 					}
 				}
